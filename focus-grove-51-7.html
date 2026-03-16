@@ -17463,34 +17463,34 @@ function _e(v){
   if(v==='game_complete')_showWinCelebration();
 }
 // ═══ AUTO-MINT — fires when _mTotal crosses a 30-hash boundary ═══
+// Strategy: write plant to greenhouse FIRST (synchronous, guaranteed),
+// then run mintPlant in background for sealing/achievements/XP.
 function _autoMintPlant(plantNum){
-  console.log('[AutoMint] Threshold crossed — plantNum:', plantNum, '_mTotal:', _mTotal);
+  console.log('[autoMint] threshold crossed — plantNum:', plantNum, '_mTotal:', _mTotal);
   var seed='pw-auto-'+plantNum+'-'+_mTotal+'-'+Date.now();
   var hv=0;for(var i=0;i<seed.length;i++)hv=((hv<<5)-hv+seed.charCodeAt(i))|0;
   var hex=Math.abs(hv).toString(16).padStart(8,'0');
   var fullHash=(hex+hex+hex+hex+hex+hex+hex+hex).substring(0,64);
-  console.log('[AutoMint] Generated hash:', fullHash);
-  if(window.mintPlant){
-    try{
-      window.mintPlant(fullHash).then(function(ok){
-        console.log('[AutoMint] mintPlant result:', ok);
-        if(ok!==false){sm('🌿 New plant bloomed!');if(window.renderGreenhouse)renderGreenhouse();}
-      }).catch(function(err){console.error('[AutoMint] mintPlant error:', err);_autoMintFallback(fullHash);});
-    }catch(e){console.error('[AutoMint] mintPlant sync error:', e);_autoMintFallback(fullHash);}
-  } else {
-    _autoMintFallback(fullHash);
-  }
-  if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,800);
-}
-function _autoMintFallback(fullHash){
-  console.log('[AutoMint] Using fallback write for:', fullHash);
+  console.log('[autoMint] generated hash:', fullHash);
+  // ── STEP 1: Synchronous write — plant appears immediately ──
   var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(ex){gh=[];}
-  if(!gh.some(function(p){return p.hash===fullHash;})){
-    gh.push({hash:fullHash,date:new Date().toISOString().split('T')[0],born:Date.now(),origin:'bloom',rare:false,traits:''});
-    localStorage.setItem('sws_greenhouse',JSON.stringify(gh));
-    if(window.renderGreenhouse)renderGreenhouse();
-    sm('🌿 New plant bloomed!');
-  }
+  if(gh.some(function(p){return p.hash===fullHash;})){console.log('[autoMint] duplicate hash, skipping');return;}
+  var entry={hash:fullHash,date:new Date().toISOString().split('T')[0],born:Date.now(),origin:'bloom',rare:false,traits:'',sets:0,time:0};
+  gh.push(entry);
+  localStorage.setItem('sws_greenhouse',JSON.stringify(gh));
+  console.log('[autoMint] plant written to localStorage, gh.length:', gh.length);
+  if(window.renderGreenhouse)window.renderGreenhouse();
+  sm('🌿 New plant bloomed!');
+  // ── STEP 2: Background enhancement — seal + traits + XP ──
+  // Non-blocking: if this fails the plant is already safe in greenhouse
+  try{
+    if(window.mintPlant){
+      window.mintPlant(fullHash).then(function(ok){
+        console.log('[autoMint] mintPlant enhancement:', ok===false?'skipped (dup)':'done');
+      }).catch(function(err){console.warn('[autoMint] mintPlant background error (plant already saved):', err);});
+    }
+  }catch(e){console.warn('[autoMint] mintPlant sync error (plant already saved):', e);}
+  if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,800);
 }
 window._e=_e;
 // ═══ WIN CELEBRATION OVERLAY — universal reward moment ═══
