@@ -770,13 +770,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Petal Walk — Botanical Collectibles</title>
-  <meta name="description" content="A meditative pattern-matching game. Grow your focus, cultivate your attention." />
+  <title>Petal Walk — Botanical Collectible Game | Lucid Winds</title>
+  <meta name="description" content="Petal Walk by Lucid Winds. Earn unique procedural plants by playing pattern-matching games. Every plant is a one-of-one SVG artwork. Collect, breed, and grow your botanical garden.">
+  <meta name="keywords" content="Petal Walk, Lucid Winds, botanical game, plant collecting, procedural art, Pi Network, puzzle games, collectible plants">
+  <meta name="author" content="Lucid Winds">
+  <meta property="og:title" content="Petal Walk — Botanical Collectible Game">
+  <meta property="og:description" content="Earn unique procedural plants by playing games. Every plant is one-of-one. Collect, breed, and grow.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://lucidwinds.com">
+  <meta property="og:site_name" content="Lucid Winds">
+  <meta name="application-name" content="Petal Walk">
+  <meta name="apple-mobile-web-app-title" content="Petal Walk">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta name="theme-color" content="#0d100c" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Petal Walk" />
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/Logo.png" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Mono:wght@300;400;500&family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -17410,34 +17418,39 @@ try{_mTotal=parseInt(localStorage.getItem('pw_mTotal')||'0',10)||0;}catch(e){_mT
 // Maps: game_id → { event_type: base_hash_weight }
 // _dm (difficulty multiplier) applied by game init: Easy=1.0, Med=1.5, Hard=2.0, Expert=2.5
 var _aw={
-  sudoku:    {progress:2,milestone:2,game_complete:3,bonus:3,default:1},
-  memory:    {progress:1,milestone:2,game_complete:2,default:1},
-  mines:     {cleared:1,milestone:2,game_complete:3,bonus:2,default:1},
-  wordsearch:{progress:1,milestone:1,game_complete:3,default:1},
+  // ── SPRINT GAMES (under 2 min) ──
+  // Target: 3-4 hashes per completion on medium
+  memory:    {progress:0,milestone:0,game_complete:3,default:0},
+  lights:    {puzzle_solved:1,game_complete:2,default:0},
+  flood:     {game_complete:3,default:0},
+  colorsort: {progress:0,game_complete:3,default:0},
+  simon:     {round:0,game_complete:3,default:0},
+  // ── STANDARD GAMES (2-6 min) ──
+  // Target: 5-6 hashes per completion on medium
+  connect4:  {progress:0,game_complete:5,default:0},
+  checkers:  {capture:0,game_complete:5,default:0},
+  reversi:   {flip:0,game_complete:5,default:0},
+  mastermind:{progress:0,game_complete:5,bonus:1,default:0},
+  pipe:      {progress:0,game_complete:5,default:0},
+  sokoban:   {game_complete:5,default:0},
+  hanoi:     {milestone:0,game_complete:5,default:0},
+  picross:   {game_complete:5,default:0},
+  slider:    {milestone:0,game_complete:5,default:0},
+  // ── MARATHON GAMES (6-15 min) ──
+  // Target: 7-8 hashes per completion on medium
   set:       {default:1},
-  merge:     {milestone:2,reached:2,game_complete:2,default:1},
-  simon:     {round:1,game_complete:2,default:1},
-  lights:    {puzzle_solved:2,default:1},
-  slider:    {milestone:1,game_complete:3,default:1},
-  pipe:      {progress:1,game_complete:3,default:1},
-  sokoban:   {game_complete:4,default:1},
-  flood:     {game_complete:3,default:1},
-  colorsort: {progress:1,game_complete:2,default:1},
-  hanoi:     {milestone:1,game_complete:3,default:1},
-  connect4:  {progress:1,game_complete:3,default:1},
-  checkers:  {capture:1,game_complete:3,default:1},
-  reversi:   {flip:1,game_complete:3,default:1},
-  mastermind:{progress:1,game_complete:4,bonus:2,default:1},
-  battleship:{hit:1,game_complete:4,default:1},
-  farkle:    {progress:1,milestone:2,game_complete:2,default:1},
-  yahtzee:   {progress:1,milestone:1,game_complete:2,default:1},
-  klondike:  {progress:1,milestone:1,game_complete:4,default:1},
-  golf:      {milestone:1,game_complete:3,default:1},
-  freecell:  {progress:1,game_complete:4,default:1},
-  spider:    {sequence:2,game_complete:4,default:1},
-  tripeaks:  {milestone:1,game_complete:3,default:1},
-  pyramid:   {milestone:1,game_complete:3,default:1},
-  picross:   {game_complete:3,default:1}
+  merge:     {milestone:1,reached:1,game_complete:3,default:0},
+  mines:     {cleared:0,milestone:1,game_complete:4,bonus:1,default:0},
+  wordsearch:{progress:0,milestone:1,game_complete:4,default:0},
+  sudoku:    {progress:1,milestone:1,game_complete:4,bonus:1,default:0},
+  klondike:  {progress:0,milestone:1,game_complete:5,default:0},
+  freecell:  {progress:0,game_complete:6,default:0},
+  spider:    {sequence:1,game_complete:5,default:0},
+  tripeaks:  {milestone:1,game_complete:4,default:0},
+  pyramid:   {milestone:1,game_complete:4,default:0},
+  golf:      {milestone:1,game_complete:4,default:0},
+  farkle:    {progress:0,milestone:1,game_complete:3,default:0},
+  yahtzee:   {progress:0,milestone:1,game_complete:3,default:0}
 };
 function _setDiff(lv){switch(lv){case 'easy':_dm=1.0;break;case 'medium':_dm=1.5;break;case 'hard':_dm=2.0;break;case 'expert':_dm=2.5;break;default:_dm=1.0}}
 function _gr(){try{return JSON.parse(localStorage.getItem(RK))||{}}catch(e){return{}}}
@@ -17446,19 +17459,22 @@ function sh(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1
 // ═══ WEIGHTED _e() — Core attention hash engine ═══
 function _e(v){
   var w=_aw[_a]||{};
-  var base=w[v]||w[v.replace(/_\d+$/,'')]||w['default']||1;
-  var amt=Math.max(1,Math.round(base*_dm));
-  if(window.earnHashes)window.earnHashes(amt);
-  var prevPlants=Math.floor(_mTotal/30);
-  _m+=amt;_mTotal+=amt;
-  try{localStorage.setItem('pw_mTotal',String(_mTotal));}catch(e){}
-  var newPlants=Math.floor(_mTotal/30);
-  var h=document.getElementById('_h');if(h)h.textContent=_m;
-  _hashToast(amt);_play('hash');_updateGP();
+  var base=w[v]||w[v.replace(/_\d+$/,'')]||w['default']||0;
+  var amt=Math.round(base*_dm);
+  if(amt>0){
+    if(window.earnHashes)window.earnHashes(amt);
+    var prevPlants=Math.floor(_mTotal/30);
+    _m+=amt;_mTotal+=amt;
+    try{localStorage.setItem('pw_mTotal',String(_mTotal));}catch(e){}
+    var newPlants=Math.floor(_mTotal/30);
+    var h=document.getElementById('_h');if(h)h.textContent=_m;
+    _hashToast(amt);_play('hash');
+    // Auto-mint plant at every 30-hash threshold
+    if(newPlants>prevPlants){_autoMintPlant(newPlants);}
+  }
+  _updateGP();
   if(window.buildAttentionPayload)window.buildAttentionPayload(_a+'_'+v);
   if(window.updateFocusPlant)window.updateFocusPlant();
-  // Auto-mint plant at every 30-hash threshold
-  if(newPlants>prevPlants){_autoMintPlant(newPlants);}
   // Win celebration for game_complete
   if(v==='game_complete')_showWinCelebration();
 }
