@@ -12425,9 +12425,10 @@ document.addEventListener('keydown', function(e) {
   function setPity(n){ try{localStorage.setItem(_PITY_KEY,String(n));}catch(e){} }
 
   async function mintPlant(hash, opts) {
+    console.log('[mintPlant] called with hash:', hash, 'gh.length:', loadGreenhouse().length);
     var gh = loadGreenhouse();
-    if (gh.some(function(p) { return p.hash === hash; })) return false;
-    if (gh.length >= MAX_COLLECTION_SIZE) return false; // Collection full
+    if (gh.some(function(p) { return p.hash === hash; })) { console.log('[mintPlant] duplicate hash, skipping'); return false; }
+    if (gh.length >= MAX_COLLECTION_SIZE) { console.log('[mintPlant] collection full'); return false; }
     var traits = hashToTraits(hash);
     // Pity timer: if 10 consecutive non-rare mints, force rare
     var pityCount = getPity();
@@ -12830,9 +12831,11 @@ document.addEventListener('keydown', function(e) {
   }
   // Phase 28 fix: persist earned hashes immediately — force=true bypasses 2s debounce
   function earnHashes(amount) {
+    console.log('[earnHashes] amount:', amount);
     var ledger = getHashLedger();
     ledger.earned = (ledger.earned || 0) + amount;
     localStorage.setItem(HASH_LEDGER_KEY, JSON.stringify(ledger));
+    console.log('[earnHashes] ledger.earned now:', ledger.earned);
     if(window.PW_grantXP) PW_grantXP(amount * 2, 'dew_drop');
   }
   function spendHashes(amount) {
@@ -17461,21 +17464,33 @@ function _e(v){
 }
 // ═══ AUTO-MINT — fires when _mTotal crosses a 30-hash boundary ═══
 function _autoMintPlant(plantNum){
+  console.log('[AutoMint] Threshold crossed — plantNum:', plantNum, '_mTotal:', _mTotal);
   var seed='pw-auto-'+plantNum+'-'+_mTotal+'-'+Date.now();
   var hv=0;for(var i=0;i<seed.length;i++)hv=((hv<<5)-hv+seed.charCodeAt(i))|0;
   var hex=Math.abs(hv).toString(16).padStart(8,'0');
   var fullHash=(hex+hex+hex+hex+hex+hex+hex+hex).substring(0,64);
+  console.log('[AutoMint] Generated hash:', fullHash);
   if(window.mintPlant){
-    try{window.mintPlant(fullHash).catch(function(){});}catch(e){}
+    try{
+      window.mintPlant(fullHash).then(function(ok){
+        console.log('[AutoMint] mintPlant result:', ok);
+        if(ok!==false){sm('🌿 New plant bloomed!');if(window.renderGreenhouse)renderGreenhouse();}
+      }).catch(function(err){console.error('[AutoMint] mintPlant error:', err);_autoMintFallback(fullHash);});
+    }catch(e){console.error('[AutoMint] mintPlant sync error:', e);_autoMintFallback(fullHash);}
   } else {
-    // Fallback: direct write
-    var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(ex){gh=[];}
-    if(!gh.some(function(p){return p.hash===fullHash;})){
-      gh.push({hash:fullHash,date:new Date().toISOString(),rare:false,mutated:false,isCross:false,origin:'bloom'});
-      localStorage.setItem('sws_greenhouse',JSON.stringify(gh));
-    }
+    _autoMintFallback(fullHash);
   }
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,800);
+}
+function _autoMintFallback(fullHash){
+  console.log('[AutoMint] Using fallback write for:', fullHash);
+  var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(ex){gh=[];}
+  if(!gh.some(function(p){return p.hash===fullHash;})){
+    gh.push({hash:fullHash,date:new Date().toISOString().split('T')[0],born:Date.now(),origin:'bloom',rare:false,traits:''});
+    localStorage.setItem('sws_greenhouse',JSON.stringify(gh));
+    if(window.renderGreenhouse)renderGreenhouse();
+    sm('🌿 New plant bloomed!');
+  }
 }
 window._e=_e;
 // ═══ WIN CELEBRATION OVERLAY — universal reward moment ═══
@@ -17527,10 +17542,16 @@ function _showWinCelebration(){
 function _dismissWin(){var o=document.getElementById('pw-win-overlay');if(o)o.remove();}
 window._dismissWin=_dismissWin;
 function _restartCurrentGame(){
-  var gMap=document.querySelectorAll('.fg-pk .gpb');
-  for(var i=0;i<gMap.length;i++){
-    if(gMap[i].classList.contains('active')){gMap[i].click();return;}
-  }
+  _xt();_m=0;
+  if(_a==='set'){_st();return}
+  var ag=document.getElementById('fg-ag');if(!ag)return;
+  ag.innerHTML='';
+  var gi=null;for(var i=0;i<G.length;i++)if(G[i].id===_a){gi=G[i];break}
+  if(gi){var r=document.createElement('div');r.className='gr';r.textContent='📖 '+gi.r;ag.appendChild(r)}
+  var fn={memory:GM,merge:GR,simon:GS,lights:GL,mines:GN,slider:GD,sudoku:GU,farkle:GF,tripeaks:GT,pyramid:GP,wordsearch:GW,yahtzee:GY,hanoi:GH,connect4:G4,klondike:GK,picross:GX,checkers:GCK,reversi:GRV,mastermind:GMM,flood:GFL,colorsort:GCS,sokoban:GSK,pipe:GPP,golf:GGO,freecell:GFC,spider:GSP};
+  if(fn[_a])fn[_a](ag);
+  var gps=document.getElementById('gp-strip');if(gps&&gps.classList.contains('on'))_updateGP();
+  _st();
 }
 window._restartCurrentGame=_restartCurrentGame;
 function _openGamePicker(){
