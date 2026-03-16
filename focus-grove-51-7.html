@@ -17394,7 +17394,7 @@ var G=[
 {id:'mastermind',n:'Genetic Code',i:'🧬',r:'Guess the 4-color code. 🟢=right spot, ⚪=wrong spot. Tap pegs to change color.'},
 {id:'flood',n:'Flood Fill',i:'🎨',r:'Change top-left color to flood the board. Clear it in limited moves.'},
 {id:'colorsort',n:'Tube Sort',i:'🧪',r:'Pour colors between tubes until each has only one color.'},
-{id:'sokoban',n:'Crate Push',i:'📦',r:'Push crates onto green targets. You cannot pull!'},
+{id:'sokoban',n:'Potting Bench',i:'🪴',r:'Push pots onto planting beds. You cannot pull!'},
 {id:'pipe',n:'Pipe Flow',i:'🔗',r:'Rotate pipe tiles to connect the flow from start to end.'},
 {id:'golf',n:'Golf Sol.',i:'⛳',r:'Play cards ±1 from discard to clear the 7 columns.'},
 {id:'freecell',n:'FreeCell',i:'♠️',r:'All cards visible. Use 4 free cells to sort into foundations.'},
@@ -18205,21 +18205,30 @@ function GBS(a){var SZ=10,ships=[5,4,3,3,2],grid=new Array(SZ*SZ).fill(0),shots=
     if(grid[i]<=1)d.onclick=function(){var idx=parseInt(this.getAttribute('data-i'));if(grid[idx]>1)return;shots++;document.getElementById('BSs').textContent=shots;if(grid[idx]===1){grid[idx]=2;hits++;document.getElementById('BSh').textContent=hits;if(hits%3===0)_e('hit');sm('💥 Hit!');if(hits>=totalHP){_e('game_complete');sm('🌿 All sunk in '+shots+'!');_sr('battleship',{w:true,s:shots})}}else{grid[idx]=3;sm('~ Miss')}rn()};gd.appendChild(d)}}
   window._BSN=function(){place();shots=0;hits=0;document.getElementById('BSs').textContent='0';document.getElementById('BSh').textContent='0';sm('');rn()};_BSN();}
 
-// ═══ SOKOBAN ═══
-function GSK(a){var LEVELS=[{w:7,h:5,map:'#######'+'#..@..#'+'#.O.O.#'+'#..X.X#'+'#######',crates:[[2,2],[4,2]],targets:[[3,3],[4,3]]}];
-  var grid=[],w=7,h=5,px=3,py=1,moves=0,lvl=0;
-  ms(a,'👆<strong id="SKm">0</strong>');mm(a);
+// ═══ SOKOBAN (Potting Bench) ═══
+function GSK(a){var LEVELS=[
+  {w:7,h:5,map:'#######'+'#..@..#'+'#.O.O.#'+'#..X.X#'+'#######'},
+  {w:7,h:6,map:'#######'+'#.....#'+'#.O.#.#'+'#.O@X.#'+'#...X.#'+'#######'},
+  {w:8,h:6,map:'########'+'#......#'+'#.O.O..#'+'#..#.@.#'+'#.X.X..#'+'########'},
+  {w:8,h:7,map:'########'+'##.#...#'+'#..O...#'+'#.O@O..#'+'#..#.#.#'+'#.X.X.X#'+'########'},
+  {w:9,h:7,map:'#########'+'#...#...#'+'#.O...O.#'+'#..#@#..#'+'#.O...O.#'+'#.X.X.X.#'+'#########'}
+];
+  var grid=[],tgt=[],w=7,h=5,px=3,py=1,moves=0,lvl=0;
+  var _keeper='<svg viewBox="0 0 32 32" width="80%" height="80%"><circle cx="16" cy="11" r="5" fill="#7ab356" opacity="0.9"/><path d="M16,16 C12,16 9,19 9,23 L9,28 L23,28 L23,23 C23,19 20,16 16,16Z" fill="#5a8a3a" opacity="0.8"/><circle cx="16" cy="11" r="2" fill="#e8dcc8" opacity="0.7"/><path d="M14,7 C14,4 18,4 18,7" stroke="#4a7c35" stroke-width="0.8" fill="none"/></svg>';
+  var _pot='<svg viewBox="0 0 32 32" width="75%" height="75%"><path d="M8,12 L10,26 L22,26 L24,12Z" fill="#8a6530" opacity="0.85"/><rect x="6" y="10" width="20" height="4" rx="1" fill="#9a7540" opacity="0.8"/><ellipse cx="16" cy="8" rx="5" ry="3" fill="#4a7c35" opacity="0.6"/></svg>';
+  var _bed='<svg viewBox="0 0 32 32" width="70%" height="70%"><rect x="6" y="10" width="20" height="16" rx="2" fill="rgba(74,124,53,0.2)" stroke="rgba(122,179,86,0.4)" stroke-width="1" stroke-dasharray="2,2"/><path d="M12,18 L16,12 L20,18" stroke="rgba(122,179,86,0.35)" stroke-width="0.8" fill="none"/></svg>';
+  ms(a,'Level:<strong id="SKl">1</strong> · Moves:<strong id="SKm">0</strong>');mm(a);
   var gd=document.createElement('div');gd.className='skg';gd.id='SK';a.appendChild(gd);
-  var db=document.createElement('div');db.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:220px;margin:8px auto;padding:8px';db.innerHTML='<div></div><button class="gb" style="min-width:60px;min-height:60px;font-size:1.5rem;padding:10px" onclick="_SKM(0,-1)">⬆</button><div></div><button class="gb" style="min-width:60px;min-height:60px;font-size:1.5rem;padding:10px" onclick="_SKM(-1,0)">⬅</button><div></div><button class="gb" style="min-width:60px;min-height:60px;font-size:1.5rem;padding:10px" onclick="_SKM(1,0)">➡</button><div></div><button class="gb" style="min-width:60px;min-height:60px;font-size:1.5rem;padding:10px" onclick="_SKM(0,1)">⬇</button><div></div>';a.appendChild(db);mc(a).innerHTML='<button class="gb" onclick="_SKN()">🔄 Reset</button>';
-  function load(){var L=LEVELS[lvl%LEVELS.length];w=L.w;h=L.h;grid=[];for(var i=0;i<L.map.length;i++){var c=L.map[i];if(c==='@'){grid.push(0);px=i%w;py=Math.floor(i/w)}else if(c==='O'){grid.push(2)}else if(c==='X'){grid.push(3)}else if(c==='#'){grid.push(1)}else grid.push(0)}moves=0}
-  function rn(){gd.style.gridTemplateColumns='repeat('+w+',1fr)';gd.innerHTML='';for(var y=0;y<h;y++)for(var x=0;x<w;x++){var d=document.createElement('div');d.className='skc';var v=grid[y*w+x];if(x===px&&y===py){d.textContent='😀';d.style.background='rgba(26,31,23,.6)'}else if(v===1){d.style.background='rgba(74,124,53,.3)'}else if(v===2){d.textContent='📦';d.style.background='rgba(200,168,78,.1)'}else if(v===3){d.style.background='rgba(74,124,53,.15)';d.textContent='✦'}else d.style.background='rgba(26,31,23,.4)';gd.appendChild(d)}document.getElementById('SKm').textContent=moves;
-    var won=true;for(var i=0;i<grid.length;i++)if(grid[i]===3)won=false;
-    // Check crates on targets
-    if(won){_e('game_complete');_playWin();sm('🌿 Level done!');_sr('sokoban',{w:true,s:moves})}}
+  var db=document.createElement('div');db.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:220px;margin:8px auto;padding:8px';db.innerHTML='<div></div><button class="gb" style="min-width:60px;min-height:60px;font-size:1.5rem;padding:10px" onclick="_SKM(0,-1)">⬆</button><div></div><button class="gb" style="min-width:60px;min-height:60px;font-size:1.5rem;padding:10px" onclick="_SKM(-1,0)">⬅</button><div></div><button class="gb" style="min-width:60px;min-height:60px;font-size:1.5rem;padding:10px" onclick="_SKM(1,0)">➡</button><div></div><button class="gb" style="min-width:60px;min-height:60px;font-size:1.5rem;padding:10px" onclick="_SKM(0,1)">⬇</button><div></div>';a.appendChild(db);mc(a).innerHTML='<button class="gb" onclick="_SKR()">↩️ Reset</button>';
+  function load(){var L=LEVELS[lvl%LEVELS.length];w=L.w;h=L.h;grid=[];tgt=[];for(var i=0;i<L.map.length;i++){var c=L.map[i];if(c==='@'){grid.push(0);px=i%w;py=Math.floor(i/w)}else if(c==='O'){grid.push(2)}else if(c==='X'){grid.push(0);tgt.push(i)}else if(c==='#'){grid.push(1)}else grid.push(0)}moves=0}
+  function isTgt(i){for(var j=0;j<tgt.length;j++)if(tgt[j]===i)return true;return false}
+  function rn(){gd.style.gridTemplateColumns='repeat('+w+',1fr)';gd.innerHTML='';for(var y=0;y<h;y++)for(var x=0;x<w;x++){var d=document.createElement('div');d.className='skc';var i=y*w+x,v=grid[i],onTgt=isTgt(i);if(x===px&&y===py){d.innerHTML=_keeper;d.style.background=onTgt?'rgba(74,124,53,.25)':'rgba(26,31,23,.5)'}else if(v===1){d.style.background='rgba(74,124,53,.22);border:1px solid rgba(74,124,53,.18)';d.style.borderRadius='3px'}else if(v===2){d.innerHTML=_pot;d.style.background=onTgt?'rgba(122,179,86,.25)':'rgba(200,168,78,.08)';if(onTgt)d.style.boxShadow='inset 0 0 8px rgba(122,179,86,.3)'}else if(onTgt){d.innerHTML=_bed;d.style.background='rgba(74,124,53,.1)'}else{d.style.background='rgba(26,31,23,.35)'}gd.appendChild(d)}document.getElementById('SKm').textContent=moves;document.getElementById('SKl').textContent=lvl+1;
+    var won=true;for(var j=0;j<tgt.length;j++)if(grid[tgt[j]]!==2){won=false;break}
+    if(won&&tgt.length){_e('game_complete');_playWin();sm('🌿 Potted! '+moves+' moves');_sr('sokoban',{w:true,s:moves});lvl++;if(lvl<LEVELS.length)setTimeout(function(){load();rn()},1200)}}
   window._SKM=function(dx,dy){var nx=px+dx,ny=py+dy;if(nx<0||nx>=w||ny<0||ny>=h)return;var ni=ny*w+nx;if(grid[ni]===1)return;
-    if(grid[ni]===2){var bx=nx+dx,by=ny+dy;if(bx<0||bx>=w||by<0||by>=h)return;var bi=by*w+bx;if(grid[bi]===1||grid[bi]===2)return;if(grid[bi]===3)_e('progress');grid[bi]=grid[bi]===3?0:2;grid[ni]=0}
+    if(grid[ni]===2){var bx=nx+dx,by=ny+dy;if(bx<0||bx>=w||by<0||by>=h)return;var bi=by*w+bx;if(grid[bi]===1||grid[bi]===2)return;_play('slide');grid[bi]=2;grid[ni]=0;if(isTgt(bi))_e('progress')}else{_play('tap')}
     px=nx;py=ny;moves++;rn()};
-  window._SKN=function(){load();sm('');rn()};_SKN();}
+  window._SKR=function(){load();sm('');rn()};window._SKN=function(){lvl=0;load();sm('');rn()};_SKN();}
 
 // ═══ PIPE CONNECT ═══
 function GPP(a){var SZ=6,grid=[],PIPES=['┃','━','┗','┛','┓','┏'],_rc=0;
