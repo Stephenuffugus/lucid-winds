@@ -17666,7 +17666,7 @@ function GR(a){
     if(!gen)return;
     var vals=[2,4,8,16,32,64,128,256,512,1024,2048];
     for(var i=0;i<vals.length;i++){
-      try{ST[vals[i]]=gen(_TH[vals[i]],28);}catch(e){ST[vals[i]]='🌱';}
+      try{ST[vals[i]]=gen(_TH[vals[i]],56);}catch(e){ST[vals[i]]='🌱';}
     }
   })();
   var g=new Array(16).fill(0),sc=0,bt=2,ov=false,busy=false;
@@ -17714,8 +17714,11 @@ function GR(a){
       +'transition:left 150ms ease,top 150ms ease,transform 150ms ease,opacity 100ms ease;'
       +'z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;';
     var _tv=Math.min(val,2048);var _ts=ST[_tv]||'🔥';
-    if(val<=4){el.innerHTML='<div class="ti" style="width:80%;height:80%;margin:0 auto">'+_ts+'</div>';}
-    else{el.innerHTML='<div class="ti" style="width:65%;height:65%;margin:0 auto">'+_ts+'</div><div style="font-size:clamp(.5rem,1.4vw,.65rem);opacity:0.7;margin-top:-2px">'+val+'</div>';}
+    var _nc={2:'#6a8a5b',4:'#7a9a6b',8:'#8cb86e',16:'#a2c87e',32:'#c8e6b4',64:'#e8dcc8',128:'#e8dcc8',256:'#d4b455',512:'#e8c84e',1024:'#ff9b44',2048:'#ff5544'};
+    var _nf=val>=512?'clamp(.7rem,2.2vw,.95rem)':val>=64?'clamp(.6rem,1.8vw,.8rem)':'clamp(.55rem,1.6vw,.75rem)';
+    var _fw=val>=256?'700':'600';
+    if(val<=4){el.innerHTML='<div class="ti" style="width:92%;height:92%;margin:0 auto">'+_ts+'</div>';}
+    else{el.innerHTML='<div class="ti" style="width:82%;height:72%;margin:0 auto">'+_ts+'</div><div style="font-size:'+_nf+';font-weight:'+_fw+';color:'+(_nc[_tv]||'#e8dcc8')+';text-shadow:0 1px 3px rgba(0,0,0,.6);margin-top:-1px">'+val+'</div>';}
     if(animate){
       el.style.transform='scale(0)';
       setTimeout(function(){el.style.transform='scale(1)'},20);
