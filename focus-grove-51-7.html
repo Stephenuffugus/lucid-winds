@@ -2852,7 +2852,7 @@
     .tc{aspect-ratio:1;border-radius:clamp(8px,2vw,12px);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:clamp(.55rem,1.6vw,.7rem);transition:background .18s ease,transform .15s}
     .tc .ti{font-size:clamp(1.8rem,5.5vw,2.6rem);line-height:1}
     .tc.pop{animation:tilePop .2s ease}@keyframes tilePop{0%{transform:scale(0)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
-    .t0{background:rgba(26,31,23,.35)}.t2{background:#2a3124;color:#8faa7b}.t4{background:#2f3a28;color:#a2be8e}.t8{background:#354530;color:#b5d2a1}.t16{background:#3c5038;color:#c8e6b4}.t32{background:#436040;color:#dafcc8}.t64{background:var(--leaf);color:#e8ffd6}.t128{background:#5a8a3a;color:#f0ffe0}.t256{background:#7aaa4a;color:var(--black)}.t512{background:#9aba5a;color:var(--black)}.t1024{background:var(--gold);color:var(--black)}.t2048{background:#e8c84e;color:var(--black)}
+    .t0{background:rgba(26,31,23,.35)}.t2{background:rgba(26,31,23,.5)}.t4{background:rgba(30,36,26,.55)}.t8{background:rgba(34,42,28,.55)}.t16{background:rgba(38,48,32,.55)}.t32{background:rgba(42,54,36,.55)}.t64{background:rgba(46,60,38,.55)}.t128{background:rgba(50,66,40,.55)}.t256{background:rgba(54,72,42,.55)}.t512{background:rgba(58,78,44,.55);border:1px solid rgba(122,179,86,.15)}.t1024{background:rgba(42,36,20,.6);border:1px solid rgba(200,168,75,.2)}.t2048{background:rgba(42,36,20,.7);border:1px solid rgba(200,168,75,.35);box-shadow:0 0 12px rgba(200,168,75,.15)}
 
     /* Simon */
     .sb{display:grid;grid-template-columns:1fr 1fr;gap:clamp(10px,3vw,16px);width:clamp(240px,72vw,320px);margin:0 auto;padding:clamp(10px,3vw,16px);animation:boardFadeIn .4s ease}
@@ -17646,7 +17646,29 @@ function GM(a){var IC=[
 
 // ═══ MERGE 2048 ═══
 function GR(a){
-  var ST={2:'🌰',4:'🌱',8:'🌿',16:'☘️',32:'🪴',64:'🌳',128:'🌲',256:'🌴',512:'🌸',1024:'🌺',2048:'🌻'};
+  // Plant tile hashes — progression from bare seed to cosmic specimen
+  var _TH={
+    2:'0000000111000000000000000000000000000000000000000000000000000000',
+    4:'0112011151000000000000000000000000000000000000000000000000000000',
+    8:'0224022015000000000000000000000000000000000000000000000000000000',
+    16:'0336033010000000000000000000000000000000000000000000000000000000',
+    32:'0548044051000000000000000000000000000000000000000000000000000000',
+    64:'06d5033105805100000000000000000000000000000000000000000000000000',
+    128:'07d8043015801300000000000000000000000000000000000000000000000000',
+    256:'0bd9044015804400000008000000000000000000000000000000000000000000',
+    512:'08da04401a80a400500009000000000000000000000000000000000000000000',
+    1024:'09dc044fb081240090f80f000000000000000000000000000000000000000000',
+    2048:'0fdf044fbff16400f0ff0f000000000000000000000000000000000000000000'
+  };
+  var ST={};
+  (function(){
+    var gen=window._generatePlantSVG;
+    if(!gen)return;
+    var vals=[2,4,8,16,32,64,128,256,512,1024,2048];
+    for(var i=0;i<vals.length;i++){
+      try{ST[vals[i]]=gen(_TH[vals[i]],28);}catch(e){ST[vals[i]]='🌱';}
+    }
+  })();
   var g=new Array(16).fill(0),sc=0,bt=2,ov=false,busy=false;
   ms(a,'🏆 <strong id="Rs">0</strong> · Best: <strong id="Rb">2</strong>');mm(a);
 
@@ -17691,7 +17713,9 @@ function GR(a){
     el.style.cssText='position:absolute;left:'+p.x+'px;top:'+p.y+'px;width:'+p.w+'px;height:'+p.w+'px;'
       +'transition:left 150ms ease,top 150ms ease,transform 150ms ease,opacity 100ms ease;'
       +'z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;';
-    el.innerHTML='<div class="ti">'+(ST[Math.min(val,2048)]||'🔥')+'</div><div>'+val+'</div>';
+    var _tv=Math.min(val,2048);var _ts=ST[_tv]||'🔥';
+    if(val<=4){el.innerHTML='<div class="ti" style="width:80%;height:80%;margin:0 auto">'+_ts+'</div>';}
+    else{el.innerHTML='<div class="ti" style="width:65%;height:65%;margin:0 auto">'+_ts+'</div><div style="font-size:clamp(.5rem,1.4vw,.65rem);opacity:0.7;margin-top:-2px">'+val+'</div>';}
     if(animate){
       el.style.transform='scale(0)';
       setTimeout(function(){el.style.transform='scale(1)'},20);
