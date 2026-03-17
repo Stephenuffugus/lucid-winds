@@ -2748,6 +2748,15 @@
     .gs strong{color:rgba(122,179,86,.9);font-family:'Bebas Neue',sans-serif;font-size:clamp(.62rem,1.8vw,.8rem);letter-spacing:.04em}
     .gs .gh{color:var(--gold);text-shadow:0 0 10px rgba(200,168,78,.12);animation:breatheIdle 4s ease-in-out infinite}
 
+    /* Universal game toolbar */
+    .gu-bar{display:flex;align-items:center;justify-content:space-between;padding:clamp(6px,2vw,10px) clamp(10px,3vw,14px);font-size:clamp(.6rem,1.8vw,.78rem);color:var(--muted);flex-shrink:0;background:linear-gradient(180deg,rgba(13,16,12,.55) 0%,rgba(13,16,12,0) 100%);border-bottom:1px solid rgba(74,124,53,.06);letter-spacing:.02em;min-height:44px}
+    .gu-bar strong{color:rgba(122,179,86,.9);font-family:'Bebas Neue',sans-serif;font-size:clamp(.62rem,1.8vw,.8rem);letter-spacing:.04em}
+    .gu-bar .gh{color:var(--gold);text-shadow:0 0 10px rgba(200,168,78,.12);animation:breatheIdle 4s ease-in-out infinite}
+    .gu-left{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+    .gu-right{display:flex;align-items:center;gap:clamp(4px,1.2vw,8px);flex-shrink:0}
+    .gu-btn{background:none;border:1px solid rgba(74,124,53,.15);border-radius:6px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:clamp(.7rem,2vw,.9rem);-webkit-tap-highlight-color:transparent;transition:all .15s}
+    .gu-btn:active{transform:scale(.9);background:rgba(74,124,53,.1)}
+
     /* Message line — centered, legible, transitions smoothly */
     .gm{font-size:clamp(.54rem,1.5vw,.68rem);color:var(--muted);text-align:center;padding:clamp(4px,1.5vw,8px) clamp(12px,3vw,18px);min-height:1.8em;flex-shrink:0;letter-spacing:.015em;transition:color .4s ease,opacity .4s ease}
 
@@ -17670,7 +17679,24 @@ window._playWin=_playWin;
 function _st(){_s=Date.now();if(_t)clearInterval(_t);_t=setInterval(function(){var e=document.getElementById('_tt');if(!e)return;var s=Math.floor((Date.now()-_s)/1000);e.textContent=Math.floor(s/60)+':'+(s%60<10?'0':'')+(s%60)},500)}
 function _xt(){if(_t){clearInterval(_t);_t=null}}
 function sm(t){var m=document.getElementById('_gm');if(m)m.textContent=t}
-function ms(a,x){var d=document.createElement('div');d.className='gs';d.innerHTML='<div>'+(x||'')+'</div><div><span class="gh">⚡<strong id="_h">0</strong></span> · ⏱<span id="_tt">0:00</span></div>';a.appendChild(d)}
+function ms(a,x){
+  var tb=document.createElement('div');
+  tb.className='gu-bar';
+  tb.innerHTML='<div class="gu-left">'+(x||'')+'</div>'
+    +'<div class="gu-right">'
+    +'<span class="gh">\u26A1<strong id="_h">0</strong></span>'
+    +' \u00B7 \u23F1<span id="_tt">0:00</span>'
+    +' <button class="gu-btn" onclick="triggerTutorialDemo()" title="How to play">\u2753</button>'
+    +' <button class="gu-btn" onclick="if(window._toggleCB)window._toggleCB()" title="Color blind mode">\uD83C\uDFA8</button>'
+    +' <button class="gu-btn" onclick="if(window.openShop)window.openShop()" title="Shop">\uD83D\uDC8E</button>'
+    +'</div>';
+  a.appendChild(tb);
+  var gp=document.createElement('div');
+  gp.id='gp-strip';
+  gp.className='gp-strip on';
+  a.appendChild(gp);
+  _updateGP();
+}
 function mm(a,t){var d=document.createElement('div');d.className='gm';d.id='_gm';d.textContent=t||'';a.appendChild(d)}
 function mc(a){var d=document.createElement('div');d.className='gc';a.appendChild(d);return d}
 
@@ -19194,6 +19220,15 @@ function GCH(a){
 }
 
 // ═══ INIT ═══
+// ── Colorblind toggle stub ──
+window._toggleCB=function(){
+  document.body.classList.toggle('cb-mode');
+  var isOn=document.body.classList.contains('cb-mode');
+  sm(isOn?'Color blind mode ON':'Color blind mode OFF');
+};
+// ── Shop stub ──
+window.openShop=function(){sm('Shop coming soon!');};
+
 _bp();console.log('[FG] Hub v4 — '+G.length+' games');
 })();
 </script>
