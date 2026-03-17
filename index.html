@@ -19181,7 +19181,8 @@ function GCH(a){
   mm(a,'Your move');
   boardEl=document.createElement('div');boardEl.id='CHboard';
   boardEl.style.cssText='padding:4px 0';a.appendChild(boardEl);
-  mc(a).innerHTML='<select class="gsl" id="CHd"><option value="1">Beginner</option><option value="2" selected>Intermediate</option><option value="3">Advanced</option><option value="4">Expert</option></select><button class="gb" onclick="_CHNew()">🔄 New</button><button class="gb" onclick="_CHUndo()">↩ Undo</button>';
+  mc(a).innerHTML='<select class="gsl" id="CHd" style="max-width:120px" onchange="var v=this.value;_setDiff(v===\'1\'?\'easy\':v===\'2\'?\'medium\':v===\'3\'?\'hard\':\'expert\')"><option value="1">Beginner</option><option value="2" selected>Intermediate</option><option value="3">Advanced</option><option value="4">Expert</option></select><button class="gb" onclick="_CHNew()">🔄 New</button><button class="gb" onclick="_CHUndo()">↩ Undo</button>';
+  _setDiff('medium');
   initBoard();render();
 }
 
