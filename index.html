@@ -18453,6 +18453,8 @@ function GCH(a){
   var capturedB=[];  // pieces captured from black
   var gameOver=false;
   var history=[];    // for undo: {board,turn,castling,epSquare,moveCount,halfmove,capturedW,capturedB,lastMove}
+  var moveLog=[];    // sequence of moves as "frfctrtc" strings for opening book
+  var posHistory={};  // position key → count for threefold repetition
 
   function initBoard(){
     board=[];
@@ -18470,7 +18472,7 @@ function GCH(a){
     turn=W;castling={wK:true,wQ:true,bK:true,bQ:true};
     epSquare=null;moveCount=0;halfmove=0;lastMove=null;
     selSq=null;legalMoves=[];capturedW=[];capturedB=[];
-    gameOver=false;history=[];
+    gameOver=false;history=[];moveLog=[];posHistory={};
   }
 
   function cloneBoard(b){
@@ -18645,30 +18647,256 @@ function GCH(a){
     else epSquare=null;
     updateCastlingRights(m);
     lastMove={fr:m.fr,fc:m.fc,tr:m.tr,tc:m.tc};
+    moveLog.push(''+m.fr+m.fc+m.tr+m.tc);
     if(turn===B)moveCount++;
     turn=turn===W?B:W;
+    // Track position for threefold repetition
+    var pk=posKey(board,turn,castling,epSquare);
+    posHistory[pk]=(posHistory[pk]||0)+1;
   }
 
   function undoMove(){
     if(!history.length)return false;
+    // Remove position before undo
+    var pk=posKey(board,turn,castling,epSquare);
+    if(posHistory[pk])posHistory[pk]--;
     var s=history.pop();
     board=s.board;turn=s.turn;castling=s.castling;
     epSquare=s.epSquare;moveCount=s.moveCount;halfmove=s.halfmove;
     capturedW=s.capturedW;capturedB=s.capturedB;lastMove=s.lastMove;
+    moveLog.pop();
     return true;
   }
 
-  // ── AI ──
+  // Position key for repetition detection
+  function posKey(b,t,cas,ep){
+    var k='';
+    for(var r=0;r<8;r++)for(var c=0;c<8;c++){var p=b[r][c];k+=p?(p.color+p.type):'.';}
+    k+=t+(cas.wK?1:0)+(cas.wQ?1:0)+(cas.bK?1:0)+(cas.bQ?1:0);
+    if(ep)k+=ep[0]+''+ep[1];
+    return k;
+  }
+
+  // Insufficient material detection
+  function insufficientMaterial(b){
+    var wPieces=[],bPieces=[];
+    for(var r=0;r<8;r++)for(var c=0;c<8;c++){
+      var p=b[r][c];if(!p)continue;
+      if(p.color===W)wPieces.push(p.type);else bPieces.push(p.type);
+    }
+    // K vs K
+    if(wPieces.length===1&&bPieces.length===1)return true;
+    // K+B vs K or K+N vs K
+    if(wPieces.length===1&&bPieces.length===2){
+      if(bPieces.indexOf(BISHOP)>=0||bPieces.indexOf(KNIGHT)>=0)return true;
+    }
+    if(bPieces.length===1&&wPieces.length===2){
+      if(wPieces.indexOf(BISHOP)>=0||wPieces.indexOf(KNIGHT)>=0)return true;
+    }
+    return false;
+  }
+
+  // ── AI (Enhanced — positional eval, quiescence, opening book, iterative deepening) ──
+
+  // Opening book: maps move sequence to AI response (AI plays black)
+  // Coordinates: row0=rank8, col0=a-file. Move = "frfctrtc"
+  var _chBook={};
+  // Response to 1.e4
+  _chBook['6444']={fr:1,fc:2,tr:3,tc:2};           // 1...c5 (Sicilian)
+  // Response to 1.d4
+  _chBook['6343']={fr:0,fc:6,tr:2,tc:5};           // 1...Nf6 (Indian)
+  // Response to 1.c4
+  _chBook['6242']={fr:1,fc:4,tr:3,tc:4};           // 1...e5
+  // Response to 1.Nf3
+  _chBook['7655']={fr:1,fc:3,tr:3,tc:3};           // 1...d5
+  // Response to 1.b3
+  _chBook['6151']={fr:1,fc:4,tr:3,tc:4};           // 1...e5
+  // Response to 1.g3
+  _chBook['6656']={fr:1,fc:3,tr:3,tc:3};           // 1...d5
+  // Sicilian: 1.e4 c5 2.Nf3 → d6
+  _chBook['6444 1232 7655']={fr:1,fc:3,tr:2,tc:3};
+  // Sicilian: 1.e4 c5 2.Nc3 → Nc6
+  _chBook['6444 1232 7152']={fr:0,fc:1,tr:2,tc:2};
+  // Sicilian: 1.e4 c5 2.d4 → cxd4
+  _chBook['6444 1232 6343']={fr:3,fc:2,tr:4,tc:3};
+  // Sicilian Najdorf: 1.e4 c5 2.Nf3 d6 3.d4 → cxd4
+  _chBook['6444 1232 7655 1323 6343']={fr:3,fc:2,tr:4,tc:3};
+  // Open Sicilian: ...cxd4 4.Nxd4 → Nf6
+  _chBook['6444 1232 7655 1323 6343 3243 5543']={fr:0,fc:6,tr:2,tc:5};
+  // Najdorf: ...Nf6 5.Nc3 → a6
+  _chBook['6444 1232 7655 1323 6343 3243 5543 0625 7152']={fr:1,fc:0,tr:2,tc:0};
+  // Indian: 1.d4 Nf6 2.c4 → e6
+  _chBook['6343 0625 6242']={fr:1,fc:4,tr:2,tc:4};
+  // Indian: 1.d4 Nf6 2.Nf3 → d5
+  _chBook['6343 0625 7655']={fr:1,fc:3,tr:3,tc:3};
+  // Nimzo: 1.d4 Nf6 2.c4 e6 3.Nc3 → Bb4
+  _chBook['6343 0625 6242 1424 7152']={fr:0,fc:5,tr:3,tc:1};
+  // QGD: 1.d4 Nf6 2.c4 e6 3.Nf3 → d5
+  _chBook['6343 0625 6242 1424 7655']={fr:1,fc:3,tr:3,tc:3};
+  // QGD: 1.d4 Nf6 2.c4 e6 3.Nc3 Bb4 4.e3 → O-O
+  _chBook['6343 0625 6242 1424 7152 0531 6454']={fr:0,fc:4,tr:0,tc:6,castle:'K'};
+  // KID: 1.d4 Nf6 2.c4 g6
+  _chBook['6343 0625 6242']={fr:1,fc:4,tr:2,tc:4}; // e6 (flexible)
+  // English: 1.c4 e5 2.Nc3 → Nf6
+  _chBook['6242 1434 7152']={fr:0,fc:6,tr:2,tc:5};
+  // Ruy Lopez defense: 1.e4 e5 2.Nf3 → Nc6 (if AI played e5)
+  _chBook['6444 1434 7655']={fr:0,fc:1,tr:2,tc:2};
+
+  // Endgame king PST (centralize king in endgame)
+  var PST_KING_END=[-50,-40,-30,-20,-20,-30,-40,-50,-30,-20,-10,0,0,-10,-20,-30,-30,-10,20,30,30,20,-10,-30,-30,-10,30,40,40,30,-10,-30,-30,-10,30,40,40,30,-10,-30,-30,-10,20,30,30,20,-10,-30,-30,-30,0,0,0,0,-30,-30,-50,-30,-30,-30,-30,-30,-30,-50];
+
+  // Castling update helper (avoids duplicate code)
+  function _updateCas(m,cas){
+    if(m.fr===7&&m.fc===4){cas.wK=false;cas.wQ=false;}
+    if(m.fr===0&&m.fc===4){cas.bK=false;cas.bQ=false;}
+    if(m.fr===7&&m.fc===7||m.tr===7&&m.tc===7)cas.wK=false;
+    if(m.fr===7&&m.fc===0||m.tr===7&&m.tc===0)cas.wQ=false;
+    if(m.fr===0&&m.fc===7||m.tr===0&&m.tc===7)cas.bK=false;
+    if(m.fr===0&&m.fc===0||m.tr===0&&m.tc===0)cas.bQ=false;
+  }
+
   function evaluate(b){
     var score=0;
+    var wPawns=[],bPawns=[];
+    var wBishops=0,bBishops=0;
+    var wMaterial=0,bMaterial=0;
+    var wMobility=0,bMobility=0;
+    // Material + PST + piece stats
     for(var r=0;r<8;r++)for(var c=0;c<8;c++){
       var p=b[r][c];if(!p)continue;
       var val=PIECE_VAL[p.type]||0;
       var pstIdx=p.color===W?r*8+c:(7-r)*8+c;
       var pst=PST[p.type]?PST[p.type][pstIdx]:0;
-      if(p.color===W){score+=val+pst;}else{score-=val+pst;}
+      if(p.color===W){
+        score+=val+pst;wMaterial+=val;
+        if(p.type===PAWN)wPawns.push({r:r,c:c});
+        if(p.type===BISHOP)wBishops++;
+      }else{
+        score-=val+pst;bMaterial+=val;
+        if(p.type===PAWN)bPawns.push({r:r,c:c});
+        if(p.type===BISHOP)bBishops++;
+      }
     }
+    // Endgame: use centralized king PST
+    var totalMat=wMaterial+bMaterial-40000;
+    if(totalMat<2600){
+      var wk=findKing(b,W),bk=findKing(b,B);
+      if(wk)score+=PST_KING_END[wk[0]*8+wk[1]]-PST[KING][wk[0]*8+wk[1]];
+      if(bk)score-=PST_KING_END[(7-bk[0])*8+bk[1]]-PST[KING][(7-bk[0])*8+bk[1]];
+    }
+    // Bishop pair
+    if(wBishops>=2)score+=35;
+    if(bBishops>=2)score-=35;
+    // Pawn structure
+    score+=_evalPawns(wPawns,bPawns,b);
+    // King safety (middlegame only)
+    if(totalMat>2600)score+=_evalKingSafety(b,W)-_evalKingSafety(b,B);
+    // Rook bonuses
+    score+=_evalRooks(b,wPawns,bPawns);
+    // Tempo bonus (small bonus for side to move — helps break ties)
     return score;
+  }
+
+  function _evalPawns(wP,bP,b){
+    var s=0;
+    var wF=[0,0,0,0,0,0,0,0],bF=[0,0,0,0,0,0,0,0];
+    var i,c,f;
+    for(i=0;i<wP.length;i++)wF[wP[i].c]++;
+    for(i=0;i<bP.length;i++)bF[bP[i].c]++;
+    // White pawns
+    for(i=0;i<wP.length;i++){
+      c=wP[i].c;
+      // Doubled
+      if(wF[c]>1)s-=10;
+      // Isolated
+      if((c===0||wF[c-1]===0)&&(c===7||wF[c+1]===0))s-=15;
+      // Passed pawn (no enemy pawns ahead on same or adjacent files)
+      var passed=true;
+      for(var rr=wP[i].r-1;rr>=0;rr--){
+        for(var cc=c-1;cc<=c+1;cc++){
+          if(cc>=0&&cc<8&&b[rr][cc]&&b[rr][cc].type===PAWN&&b[rr][cc].color===B){passed=false;break;}
+        }
+        if(!passed)break;
+      }
+      if(passed)s+=15+(6-wP[i].r)*8;
+      // Connected (pawn on adjacent file at same/±1 rank)
+      var connected=false;
+      for(var dc=-1;dc<=1;dc+=2){
+        var nc=c+dc;if(nc<0||nc>7)continue;
+        for(var dr=-1;dr<=1;dr++){
+          var nr=wP[i].r+dr;if(nr<0||nr>7)continue;
+          if(b[nr][nc]&&b[nr][nc].type===PAWN&&b[nr][nc].color===W){connected=true;break;}
+        }
+        if(connected)break;
+      }
+      if(connected)s+=5;
+    }
+    // Black pawns
+    for(i=0;i<bP.length;i++){
+      c=bP[i].c;
+      if(bF[c]>1)s+=10;
+      if((c===0||bF[c-1]===0)&&(c===7||bF[c+1]===0))s+=15;
+      var passed2=true;
+      for(var rr2=bP[i].r+1;rr2<8;rr2++){
+        for(var cc2=c-1;cc2<=c+1;cc2++){
+          if(cc2>=0&&cc2<8&&b[rr2][cc2]&&b[rr2][cc2].type===PAWN&&b[rr2][cc2].color===W){passed2=false;break;}
+        }
+        if(!passed2)break;
+      }
+      if(passed2)s-=15+(bP[i].r-1)*8;
+      var connected2=false;
+      for(var dc2=-1;dc2<=1;dc2+=2){
+        var nc2=c+dc2;if(nc2<0||nc2>7)continue;
+        for(var dr2=-1;dr2<=1;dr2++){
+          var nr2=bP[i].r+dr2;if(nr2<0||nr2>7)continue;
+          if(b[nr2][nc2]&&b[nr2][nc2].type===PAWN&&b[nr2][nc2].color===B){connected2=true;break;}
+        }
+        if(connected2)break;
+      }
+      if(connected2)s-=5;
+    }
+    return s;
+  }
+
+  function _evalKingSafety(b,col){
+    var kp=findKing(b,col);if(!kp)return 0;
+    var safety=0,kr=kp[0],kc=kp[1];
+    var dir=col===W?-1:1;
+    // Pawn shield
+    for(var dc=-1;dc<=1;dc++){
+      var sc=kc+dc;if(sc<0||sc>7)continue;
+      var sr=kr+dir;
+      if(sr>=0&&sr<8&&b[sr][sc]&&b[sr][sc].type===PAWN&&b[sr][sc].color===col){
+        safety+=12;
+      }else{
+        safety-=15; // open lane near king
+        // Check if file is fully open (very dangerous)
+        var fileOpen=true;
+        for(var rr=0;rr<8;rr++){if(b[rr][sc]&&b[rr][sc].type===PAWN){fileOpen=false;break;}}
+        if(fileOpen)safety-=10;
+      }
+    }
+    // Penalty for king in center during middlegame
+    if(kc>=2&&kc<=5&&kr!==(col===W?7:0))safety-=20;
+    return safety;
+  }
+
+  function _evalRooks(b,wP,bP){
+    var s=0;
+    var wF=[0,0,0,0,0,0,0,0],bF=[0,0,0,0,0,0,0,0];
+    for(var i=0;i<wP.length;i++)wF[wP[i].c]++;
+    for(var j=0;j<bP.length;j++)bF[bP[j].c]++;
+    for(var r=0;r<8;r++)for(var c=0;c<8;c++){
+      var p=b[r][c];if(!p||p.type!==ROOK)continue;
+      var sign=p.color===W?1:-1;
+      // Open file
+      if(wF[c]===0&&bF[c]===0)s+=sign*20;
+      // Semi-open
+      else if((p.color===W&&wF[c]===0)||(p.color===B&&bF[c]===0))s+=sign*12;
+      // Rook on 7th rank (trapping king on 8th)
+      if((p.color===W&&r===1)||(p.color===B&&r===6))s+=sign*25;
+    }
+    return s;
   }
 
   function orderMoves(b,moves){
@@ -18677,39 +18905,78 @@ function GCH(a){
       var m=moves[i];
       var s=0;
       var target=b[m.tr][m.tc];
+      // MVV-LVA: Most Valuable Victim - Least Valuable Attacker
       if(target)s+=10*(PIECE_VAL[target.type]||0)-(PIECE_VAL[b[m.fr][m.fc].type]||0);
-      if(m.promo)s+=800;
-      if(m.castle)s+=50;
+      if(m.promo)s+=880;
+      if(m.castle)s+=60;
+      // Bonus for moves toward center
+      var centerDist=Math.abs(m.tr-3.5)+Math.abs(m.tc-3.5);
+      s-=centerDist*2;
+      // Penalty for moving king in middlegame (unless castling)
+      if(b[m.fr][m.fc].type===KING&&!m.castle)s-=30;
       scored.push({m:m,s:s});
     }
     scored.sort(function(a2,b2){return b2.s-a2.s;});
-    var out=[];for(var j=0;j<scored.length;j++)out.push(scored[j].m);
+    var out=[];for(var k=0;k<scored.length;k++)out.push(scored[k].m);
     return out;
   }
 
+  // Quiescence search — extends captures/promotions to avoid horizon effect
+  function quiesce(b,alpha,beta,isMax,cas,ep,qdepth){
+    var standPat=evaluate(b);
+    if(qdepth<=0)return standPat;
+    if(isMax){
+      if(standPat>=beta)return beta;
+      if(standPat>alpha)alpha=standPat;
+    }else{
+      if(standPat<=alpha)return alpha;
+      if(standPat<beta)beta=standPat;
+    }
+    var col=isMax?W:B;
+    var moves=getLegalMoves(b,col,cas,ep);
+    var captures=[];
+    for(var i=0;i<moves.length;i++){
+      if(b[moves[i].tr][moves[i].tc]||moves[i].ep||moves[i].promo)captures.push(moves[i]);
+    }
+    if(!captures.length)return isMax?alpha:beta;
+    captures=orderMoves(b,captures);
+    for(var j=0;j<captures.length;j++){
+      var nb=cloneBoard(b);
+      var ncas={wK:cas.wK,wQ:cas.wQ,bK:cas.bK,bQ:cas.bQ};
+      var piece=nb[captures[j].fr][captures[j].fc];
+      applyMove(nb,captures[j],ncas,ep);
+      _updateCas(captures[j],ncas);
+      var nep=null;
+      if(piece.type===PAWN&&Math.abs(captures[j].tr-captures[j].fr)===2)
+        nep=[(captures[j].fr+captures[j].tr)/2,captures[j].fc];
+      var val=quiesce(nb,alpha,beta,!isMax,ncas,nep,qdepth-1);
+      if(isMax){
+        if(val>alpha)alpha=val;
+        if(alpha>=beta)return beta;
+      }else{
+        if(val<beta)beta=val;
+        if(alpha>=beta)return alpha;
+      }
+    }
+    return isMax?alpha:beta;
+  }
+
   function minimax(b,depth,alpha,beta,isMax,cas,ep){
-    if(depth===0)return evaluate(b);
+    if(depth===0)return quiesce(b,alpha,beta,isMax,cas,ep,4);
     var col=isMax?W:B;
     var moves=getLegalMoves(b,col,cas,ep);
     if(!moves.length){
-      if(inCheck(b,col))return isMax?-99999+depth:99999-depth;
-      return 0; // stalemate
+      if(inCheck(b,col))return isMax?-99999+(4-depth):99999-(4-depth);
+      return 0;
     }
     moves=orderMoves(b,moves);
-    var best;
+    var best,i;
     if(isMax){
       best=-100000;
-      for(var i=0;i<moves.length;i++){
+      for(i=0;i<moves.length;i++){
         var nb=cloneBoard(b);var ncas={wK:cas.wK,wQ:cas.wQ,bK:cas.bK,bQ:cas.bQ};
         var piece=nb[moves[i].fr][moves[i].fc];
-        applyMove(nb,moves[i],ncas,ep);
-        // update castling
-        if(moves[i].fr===7&&moves[i].fc===4){ncas.wK=false;ncas.wQ=false;}
-        if(moves[i].fr===0&&moves[i].fc===4){ncas.bK=false;ncas.bQ=false;}
-        if(moves[i].fr===7&&moves[i].fc===7||moves[i].tr===7&&moves[i].tc===7)ncas.wK=false;
-        if(moves[i].fr===7&&moves[i].fc===0||moves[i].tr===7&&moves[i].tc===0)ncas.wQ=false;
-        if(moves[i].fr===0&&moves[i].fc===7||moves[i].tr===0&&moves[i].tc===7)ncas.bK=false;
-        if(moves[i].fr===0&&moves[i].fc===0||moves[i].tr===0&&moves[i].tc===0)ncas.bQ=false;
+        applyMove(nb,moves[i],ncas,ep);_updateCas(moves[i],ncas);
         var nep=null;
         if(piece.type===PAWN&&Math.abs(moves[i].tr-moves[i].fr)===2)nep=[(moves[i].fr+moves[i].tr)/2,moves[i].fc];
         var val=minimax(nb,depth-1,alpha,beta,false,ncas,nep);
@@ -18719,18 +18986,12 @@ function GCH(a){
       }
     }else{
       best=100000;
-      for(var j=0;j<moves.length;j++){
+      for(i=0;i<moves.length;i++){
         var nb2=cloneBoard(b);var ncas2={wK:cas.wK,wQ:cas.wQ,bK:cas.bK,bQ:cas.bQ};
-        var piece2=nb2[moves[j].fr][moves[j].fc];
-        applyMove(nb2,moves[j],ncas2,ep);
-        if(moves[j].fr===7&&moves[j].fc===4){ncas2.wK=false;ncas2.wQ=false;}
-        if(moves[j].fr===0&&moves[j].fc===4){ncas2.bK=false;ncas2.bQ=false;}
-        if(moves[j].fr===7&&moves[j].fc===7||moves[j].tr===7&&moves[j].tc===7)ncas2.wK=false;
-        if(moves[j].fr===7&&moves[j].fc===0||moves[j].tr===7&&moves[j].tc===0)ncas2.wQ=false;
-        if(moves[j].fr===0&&moves[j].fc===7||moves[j].tr===0&&moves[j].tc===7)ncas2.bK=false;
-        if(moves[j].fr===0&&moves[j].fc===0||moves[j].tr===0&&moves[j].tc===0)ncas2.bQ=false;
+        var piece2=nb2[moves[i].fr][moves[i].fc];
+        applyMove(nb2,moves[i],ncas2,ep);_updateCas(moves[i],ncas2);
         var nep2=null;
-        if(piece2.type===PAWN&&Math.abs(moves[j].tr-moves[j].fr)===2)nep2=[(moves[j].fr+moves[j].tr)/2,moves[j].fc];
+        if(piece2.type===PAWN&&Math.abs(moves[i].tr-moves[i].fr)===2)nep2=[(moves[i].fr+moves[i].tr)/2,moves[i].fc];
         var val2=minimax(nb2,depth-1,alpha,beta,true,ncas2,nep2);
         if(val2<best)best=val2;
         if(best<beta)beta=best;
@@ -18742,30 +19003,48 @@ function GCH(a){
 
   function aiMove(){
     if(gameOver||turn!==B)return;
+    // Opening book lookup
+    var bookKey=moveLog.join(' ');
+    if(_chBook[bookKey]){
+      var bm=_chBook[bookKey];
+      // Verify book move is legal
+      var legal=getLegalMoves(board,B,castling,epSquare);
+      for(var bi=0;bi<legal.length;bi++){
+        if(legal[bi].fr===bm.fr&&legal[bi].fc===bm.fc&&legal[bi].tr===bm.tr&&legal[bi].tc===bm.tc){
+          makeMove(legal[bi]);checkGameState();render();return;
+        }
+      }
+    }
     var moves=getLegalMoves(board,B,castling,epSquare);
     if(!moves.length)return;
     moves=orderMoves(board,moves);
     var bestMove=moves[0];
     var bestVal=100000;
-    // depth 3 for good play, but limit to depth 2 if many pieces
+    // Iterative deepening with time limit (1.5s for mobile safety)
+    var t0=Date.now();
+    var maxTime=1500;
     var pieceCount=0;
     for(var r=0;r<8;r++)for(var c=0;c<8;c++)if(board[r][c])pieceCount++;
-    var depth=pieceCount>14?2:3;
-    for(var i=0;i<moves.length;i++){
-      var nb=cloneBoard(board);
-      var ncas={wK:castling.wK,wQ:castling.wQ,bK:castling.bK,bQ:castling.bQ};
-      var piece=nb[moves[i].fr][moves[i].fc];
-      applyMove(nb,moves[i],ncas,epSquare);
-      if(moves[i].fr===7&&moves[i].fc===4){ncas.wK=false;ncas.wQ=false;}
-      if(moves[i].fr===0&&moves[i].fc===4){ncas.bK=false;ncas.bQ=false;}
-      if(moves[i].fr===7&&moves[i].fc===7||moves[i].tr===7&&moves[i].tc===7)ncas.wK=false;
-      if(moves[i].fr===7&&moves[i].fc===0||moves[i].tr===7&&moves[i].tc===0)ncas.wQ=false;
-      if(moves[i].fr===0&&moves[i].fc===7||moves[i].tr===0&&moves[i].tc===7)ncas.bK=false;
-      if(moves[i].fr===0&&moves[i].fc===0||moves[i].tr===0&&moves[i].tc===0)ncas.bQ=false;
-      var nep=null;
-      if(piece.type===PAWN&&Math.abs(moves[i].tr-moves[i].fr)===2)nep=[(moves[i].fr+moves[i].tr)/2,moves[i].fc];
-      var val=minimax(nb,depth-1,-100000,100000,true,ncas,nep);
-      if(val<bestVal){bestVal=val;bestMove=moves[i];}
+    var maxDepth=pieceCount>20?3:pieceCount>10?4:5;
+    for(var depth=1;depth<=maxDepth;depth++){
+      var depthBest=moves[0];
+      var depthVal=100000;
+      var timedOut=false;
+      for(var i=0;i<moves.length;i++){
+        if(Date.now()-t0>maxTime){timedOut=true;break;}
+        var nb=cloneBoard(board);
+        var ncas={wK:castling.wK,wQ:castling.wQ,bK:castling.bK,bQ:castling.bQ};
+        var piece=nb[moves[i].fr][moves[i].fc];
+        applyMove(nb,moves[i],ncas,epSquare);_updateCas(moves[i],ncas);
+        var nep=null;
+        if(piece.type===PAWN&&Math.abs(moves[i].tr-moves[i].fr)===2)nep=[(moves[i].fr+moves[i].tr)/2,moves[i].fc];
+        var val=minimax(nb,depth-1,-100000,100000,true,ncas,nep);
+        if(val<depthVal){depthVal=val;depthBest=moves[i];}
+      }
+      if(!timedOut){
+        bestMove=depthBest;bestVal=depthVal;
+      }
+      if(Date.now()-t0>maxTime)break;
     }
     makeMove(bestMove);
     checkGameState();
@@ -18777,17 +19056,25 @@ function GCH(a){
     if(!moves.length){
       gameOver=true;
       if(inCheck(board,turn)){
-        if(turn===W){sm('Checkmate — AI wins!');_sr('chess',{w:false,s:moveCount});}
-        else{sm('Checkmate — You win!');_e('game_complete');_playWin();_sr('chess',{w:true,s:moveCount});}
+        if(turn===W){sm('Checkmate \u2014 AI wins!');_sr('chess',{w:false,s:moveCount});}
+        else{sm('Checkmate \u2014 You win!');_e('game_complete');_playWin();_sr('chess',{w:true,s:moveCount});}
       }else{
-        sm('Stalemate — Draw!');_sr('chess',{w:false,s:moveCount});
+        sm('Stalemate \u2014 Draw!');_sr('chess',{w:false,s:moveCount});
       }
     }else if(halfmove>=100){
-      gameOver=true;sm('Draw — 50 move rule');_sr('chess',{w:false,s:moveCount});
-    }else if(inCheck(board,turn)){
-      sm(turn===W?'Check!':'AI is in check');
+      gameOver=true;sm('Draw \u2014 50-move rule');_sr('chess',{w:false,s:moveCount});
+    }else if(insufficientMaterial(board)){
+      gameOver=true;sm('Draw \u2014 Insufficient material');_sr('chess',{w:false,s:moveCount});
     }else{
-      sm(turn===W?'Your move':'AI thinking...');
+      // Threefold repetition
+      var pk=posKey(board,turn,castling,epSquare);
+      if(posHistory[pk]&&posHistory[pk]>=3){
+        gameOver=true;sm('Draw \u2014 Threefold repetition');_sr('chess',{w:false,s:moveCount});
+      }else if(inCheck(board,turn)){
+        sm(turn===W?'Check!':'AI is in check');
+      }else{
+        sm(turn===W?'Your move':'AI thinking...');
+      }
     }
   }
 
