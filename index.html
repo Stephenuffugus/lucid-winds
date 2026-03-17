@@ -3016,9 +3016,11 @@
     .chs.ch-last{background:rgba(200,168,75,.08)!important}
     .chs.ch-check{animation:checkFlash 0.8s ease infinite}
     @keyframes checkFlash{0%,100%{background:inherit}50%{background:rgba(180,60,60,.25)}}
-    .ch-cap-row{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;padding:4px;min-height:24px}
-    .ch-cap-row svg{width:18px;height:18px;opacity:0.5}
-    .ch-status{text-align:center;padding:6px 8px;font-size:clamp(.55rem,1.6vw,.7rem);color:var(--cream);font-family:'DM Mono',monospace}
+    .chs.ch-placed{animation:chPlace .2s ease}
+    @keyframes chPlace{0%{opacity:0;transform:scale(.7)}100%{opacity:1;transform:scale(1)}}
+    .ch-cap-row{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;padding:4px;min-height:24px;font-size:clamp(.6rem,1.8vw,.8rem)}
+    .ch-cap-row svg{width:20px;height:20px;opacity:0.55}
+    .ch-status{text-align:center;padding:6px 8px;font-size:clamp(.7rem,2.2vw,.95rem);color:var(--cream);font-family:'DM Mono',monospace}
 
     /* ══════════════════════════════════════════════════════════════════════
        OVERLAYS + GAME PICKER
@@ -18410,20 +18412,20 @@ function GCH(a){
     selectGlow:'rgba(200,168,75,.4)',moveIndicator:'rgba(122,179,86,.5)',
     lastMoveHighlight:'rgba(200,168,75,.12)',checkHighlight:'rgba(180,60,60,.35)',
     playerPieces:{
-      P:'<svg viewBox="0 0 32 32"><path d="M16 6c-1 0-2 .5-2 1.5 0 .7.4 1.2 1 1.5C13 10 12 12 12 14c0 1 .5 2 1.5 2.5L12 26h8l-1.5-9.5c1-.5 1.5-1.5 1.5-2.5 0-2-1-4-3-5 .6-.3 1-.8 1-1.5C18 6.5 17 6 16 6z" fill="#7ab356"/><path d="M14 26h4v2h-4z" fill="#4a7c35"/></svg>',
-      R:'<svg viewBox="0 0 32 32"><rect x="11" y="6" width="10" height="20" rx="1" fill="#4a7c35"/><rect x="9" y="22" width="14" height="4" rx="1" fill="#5a8c42"/><rect x="10" y="6" width="3" height="5" rx=".5" fill="#5a8c42"/><rect x="15" y="6" width="3" height="5" rx=".5" fill="#5a8c42"/><rect x="20" y="6" width="3" height="5" rx=".5" fill="#5a8c42"/></svg>',
-      N:'<svg viewBox="0 0 32 32"><path d="M10 26c0 0 1-8 3-12 1-2 2-3 3-4-2-1-3-1-4 0-.5.5-1 0-.5-.5C13 7 16 6 18 7c1 .5 2 1.5 2 3 0 2-1 4-2 6-1 3-1 7-1 10z" fill="#7ab356"/><path d="M12 8c0 0-1 1 0 2s2 1 2 0S13 8 12 8z" fill="#5a8c42"/><rect x="9" y="24" width="14" height="3" rx="1" fill="#4a7c35"/></svg>',
-      B:'<svg viewBox="0 0 32 32"><ellipse cx="16" cy="10" rx="4" ry="5" fill="#7ab356"/><path d="M16 5c-.5 0-1 .3-1 .8s.5.8 1 .8 1-.3 1-.8S16.5 5 16 5z" fill="#a0d870"/><rect x="14" y="14" width="4" height="10" rx="1" fill="#5a8c42"/><rect x="10" y="23" width="12" height="3" rx="1" fill="#4a7c35"/></svg>',
-      Q:'<svg viewBox="0 0 32 32"><circle cx="16" cy="11" r="5" fill="#7ab356"/><circle cx="16" cy="11" r="3" fill="#a0d870" opacity=".5"/><path d="M12 9c-1-2-2-3-3-3s0 2 1 4M20 9c1-2 2-3 3-3s0 2-1 4" stroke="#7ab356" stroke-width="1.2" fill="none"/><rect x="13" y="15" width="6" height="8" rx="1" fill="#5a8c42"/><rect x="10" y="22" width="12" height="3" rx="1" fill="#4a7c35"/></svg>',
-      K:'<svg viewBox="0 0 32 32"><rect x="14.5" y="3" width="3" height="5" rx=".5" fill="#c8a84b"/><rect x="13" y="5" width="6" height="2" rx=".5" fill="#c8a84b"/><circle cx="16" cy="13" r="5" fill="#7ab356"/><circle cx="16" cy="13" r="6.5" fill="none" stroke="#c8a84b" stroke-width=".8" opacity=".5"/><rect x="13" y="17" width="6" height="6" rx="1" fill="#5a8c42"/><rect x="10" y="22" width="12" height="3" rx="1" fill="#4a7c35"/></svg>'
+      K:'<svg viewBox="0 0 32 32"><path d="M16 4L14 8H12L10 12H8V16H10L8 24H24L22 16H24V12H22L20 8H18L16 4Z" fill="#7ab356" stroke="#3a5a2a" stroke-width="1"/><line x1="16" y1="4" x2="16" y2="8" stroke="#c8a84b" stroke-width="1.5"/><line x1="14" y1="6" x2="18" y2="6" stroke="#c8a84b" stroke-width="1.5"/><rect x="8" y="24" width="16" height="4" rx="1" fill="#5a8a3a"/></svg>',
+      Q:'<svg viewBox="0 0 32 32"><path d="M8 22L6 10L11 14L16 6L21 14L26 10L24 22Z" fill="#7ab356" stroke="#3a5a2a" stroke-width="1"/><circle cx="6" cy="9" r="2" fill="#c8a84b"/><circle cx="16" cy="5" r="2" fill="#c8a84b"/><circle cx="26" cy="9" r="2" fill="#c8a84b"/><rect x="8" y="22" width="16" height="4" rx="1" fill="#5a8a3a"/></svg>',
+      R:'<svg viewBox="0 0 32 32"><rect x="9" y="8" width="4" height="4" fill="#7ab356" stroke="#3a5a2a" stroke-width="0.8"/><rect x="14" y="8" width="4" height="4" fill="#7ab356" stroke="#3a5a2a" stroke-width="0.8"/><rect x="19" y="8" width="4" height="4" fill="#7ab356" stroke="#3a5a2a" stroke-width="0.8"/><rect x="10" y="12" width="12" height="12" rx="1" fill="#7ab356" stroke="#3a5a2a" stroke-width="1"/><rect x="8" y="24" width="16" height="4" rx="1" fill="#5a8a3a"/></svg>',
+      B:'<svg viewBox="0 0 32 32"><ellipse cx="16" cy="10" rx="5" ry="7" fill="#7ab356" stroke="#3a5a2a" stroke-width="1"/><circle cx="16" cy="5" r="2" fill="#c8a84b"/><rect x="13" y="17" width="6" height="7" rx="1" fill="#7ab356" stroke="#3a5a2a" stroke-width="0.8"/><rect x="8" y="24" width="16" height="4" rx="1" fill="#5a8a3a"/></svg>',
+      N:'<svg viewBox="0 0 32 32"><path d="M12 24V16C12 16 10 14 10 11C10 8 13 5 16 5C19 5 21 6 21 9L22 12L20 13V16L22 24Z" fill="#7ab356" stroke="#3a5a2a" stroke-width="1"/><circle cx="14" cy="9" r="1" fill="#3a5a2a"/><rect x="8" y="24" width="16" height="4" rx="1" fill="#5a8a3a"/></svg>',
+      P:'<svg viewBox="0 0 32 32"><circle cx="16" cy="10" r="5" fill="#7ab356" stroke="#3a5a2a" stroke-width="1"/><path d="M12 15L10 24H22L20 15Z" fill="#7ab356" stroke="#3a5a2a" stroke-width="0.8"/><rect x="8" y="24" width="16" height="4" rx="1" fill="#5a8a3a"/></svg>'
     },
     aiPieces:{
-      P:'<svg viewBox="0 0 32 32"><ellipse cx="16" cy="14" rx="4" ry="5" fill="#c8a84b"/><ellipse cx="16" cy="14" rx="2.5" ry="3" fill="#d4b85c" opacity=".4"/><path d="M16 9V7" stroke="#c8a84b" stroke-width="1.5"/><rect x="12" y="24" width="8" height="2" rx="1" fill="#a08030"/></svg>',
-      R:'<svg viewBox="0 0 32 32"><rect x="11" y="6" width="10" height="20" rx="1" fill="#c8a84b"/><rect x="9" y="22" width="14" height="4" rx="1" fill="#d4b85c"/><path d="M12 6h2v4h-2zM15 6h2v4h-2zM18 6h2v4h-2z" fill="#d4b85c"/><path d="M13 12h6M13 16h6" stroke="#a08030" stroke-width=".6"/></svg>',
-      N:'<svg viewBox="0 0 32 32"><path d="M10 26c0-3 .5-7 2-10 1-2 3-5 5-6 1-.5 2 0 2 1 0 1.5-1 3-2 5-1.5 3-2 6-2 10z" fill="#c8a84b"/><path d="M17 10c1-1 2-1 3 0 .5.5 0 1.5-1 2s-2 0-2-1V10z" fill="#d4b85c"/><path d="M14 13c-1 0-2 .5-2 1.5s1 1.5 2 1" stroke="#a08030" stroke-width=".8" fill="none"/><rect x="9" y="24" width="14" height="3" rx="1" fill="#a08030"/></svg>',
-      B:'<svg viewBox="0 0 32 32"><ellipse cx="16" cy="11" rx="4" ry="5" fill="#c8a84b"/><path d="M16 6c-.3 0-.6.2-.6.5s.3.5.6.5.6-.2.6-.5S16.3 6 16 6z" fill="#d4b85c"/><rect x="14" y="15" width="4" height="8" rx="1" fill="#a08030"/><rect x="10" y="22" width="12" height="3" rx="1" fill="#a08030"/></svg>',
-      Q:'<svg viewBox="0 0 32 32"><circle cx="16" cy="11" r="6" fill="#c8a84b"/><circle cx="16" cy="11" r="4" fill="#d4b85c" opacity=".3"/><path d="M10 11c-1-3 0-5 1-5M22 11c1-3 0-5-1-5" stroke="#c8a84b" stroke-width="1.5" fill="none"/><path d="M12 8l-1-3M20 8l1-3M16 6V3" stroke="#c8a84b" stroke-width="1" fill="none"/><circle cx="11" cy="5" r="1" fill="#d4b85c"/><circle cx="21" cy="5" r="1" fill="#d4b85c"/><circle cx="16" cy="3" r="1" fill="#d4b85c"/><rect x="12" y="16" width="8" height="6" rx="1" fill="#a08030"/><rect x="10" y="21" width="12" height="3" rx="1" fill="#a08030"/></svg>',
-      K:'<svg viewBox="0 0 32 32"><rect x="14.5" y="3" width="3" height="5" rx=".5" fill="#d4b85c"/><rect x="13" y="5" width="6" height="2" rx=".5" fill="#d4b85c"/><circle cx="16" cy="13" r="5" fill="#c8a84b"/><circle cx="16" cy="13" r="6.5" fill="none" stroke="#d4b85c" stroke-width="1" opacity=".4"/><rect x="13" y="17" width="6" height="6" rx="1" fill="#a08030"/><rect x="10" y="22" width="12" height="3" rx="1" fill="#a08030"/></svg>'
+      K:'<svg viewBox="0 0 32 32"><path d="M16 4L14 8H12L10 12H8V16H10L8 24H24L22 16H24V12H22L20 8H18L16 4Z" fill="#c8a84b" stroke="#8a6a2b" stroke-width="1"/><line x1="16" y1="4" x2="16" y2="8" stroke="#e8dcc8" stroke-width="1.5"/><line x1="14" y1="6" x2="18" y2="6" stroke="#e8dcc8" stroke-width="1.5"/><rect x="8" y="24" width="16" height="4" rx="1" fill="#a88a3b"/></svg>',
+      Q:'<svg viewBox="0 0 32 32"><path d="M8 22L6 10L11 14L16 6L21 14L26 10L24 22Z" fill="#c8a84b" stroke="#8a6a2b" stroke-width="1"/><circle cx="6" cy="9" r="2" fill="#e8dcc8"/><circle cx="16" cy="5" r="2" fill="#e8dcc8"/><circle cx="26" cy="9" r="2" fill="#e8dcc8"/><rect x="8" y="22" width="16" height="4" rx="1" fill="#a88a3b"/></svg>',
+      R:'<svg viewBox="0 0 32 32"><rect x="9" y="8" width="4" height="4" fill="#c8a84b" stroke="#8a6a2b" stroke-width="0.8"/><rect x="14" y="8" width="4" height="4" fill="#c8a84b" stroke="#8a6a2b" stroke-width="0.8"/><rect x="19" y="8" width="4" height="4" fill="#c8a84b" stroke="#8a6a2b" stroke-width="0.8"/><rect x="10" y="12" width="12" height="12" rx="1" fill="#c8a84b" stroke="#8a6a2b" stroke-width="1"/><rect x="8" y="24" width="16" height="4" rx="1" fill="#a88a3b"/></svg>',
+      B:'<svg viewBox="0 0 32 32"><ellipse cx="16" cy="10" rx="5" ry="7" fill="#c8a84b" stroke="#8a6a2b" stroke-width="1"/><circle cx="16" cy="5" r="2" fill="#e8dcc8"/><rect x="13" y="17" width="6" height="7" rx="1" fill="#c8a84b" stroke="#8a6a2b" stroke-width="0.8"/><rect x="8" y="24" width="16" height="4" rx="1" fill="#a88a3b"/></svg>',
+      N:'<svg viewBox="0 0 32 32"><path d="M12 24V16C12 16 10 14 10 11C10 8 13 5 16 5C19 5 21 6 21 9L22 12L20 13V16L22 24Z" fill="#c8a84b" stroke="#8a6a2b" stroke-width="1"/><circle cx="14" cy="9" r="1" fill="#8a6a2b"/><rect x="8" y="24" width="16" height="4" rx="1" fill="#a88a3b"/></svg>',
+      P:'<svg viewBox="0 0 32 32"><circle cx="16" cy="10" r="5" fill="#c8a84b" stroke="#8a6a2b" stroke-width="1"/><path d="M12 15L10 24H22L20 15Z" fill="#c8a84b" stroke="#8a6a2b" stroke-width="0.8"/><rect x="8" y="24" width="16" height="4" rx="1" fill="#a88a3b"/></svg>'
     }
   };
   // ── Constants ──
@@ -19025,7 +19027,8 @@ function GCH(a){
     var maxTime=1500;
     var pieceCount=0;
     for(var r=0;r<8;r++)for(var c=0;c<8;c++)if(board[r][c])pieceCount++;
-    var maxDepth=pieceCount>20?3:pieceCount>10?4:5;
+    var _chDep=parseInt((document.getElementById('CHd')||{}).value)||2;
+    var maxDepth=_chDep+(pieceCount<14?1:0);
     for(var depth=1;depth<=maxDepth;depth++){
       var depthBest=moves[0];
       var depthVal=100000;
@@ -19109,6 +19112,8 @@ function GCH(a){
       var cls='chs';
       if(selSq&&selSq[0]===r&&selSq[1]===c)cls+=' ch-sel';
       if(lastMove&&((lastMove.fr===r&&lastMove.fc===c)||(lastMove.tr===r&&lastMove.tc===c)))cls+=' ch-last';
+      // Placed piece animation on destination
+      if(lastMove&&lastMove.tr===r&&lastMove.tc===c)cls+=' ch-placed';
       // Check highlight on king
       if(isInCheck&&kingPos&&kingPos[0]===r&&kingPos[1]===c)cls+=' ch-check';
       // Legal move indicator
@@ -19176,7 +19181,7 @@ function GCH(a){
   mm(a,'Your move');
   boardEl=document.createElement('div');boardEl.id='CHboard';
   boardEl.style.cssText='padding:4px 0';a.appendChild(boardEl);
-  mc(a).innerHTML='<button class="gb" onclick="_CHNew()">🔄 New</button><button class="gb" onclick="_CHUndo()">↩ Undo</button>';
+  mc(a).innerHTML='<select class="gsl" id="CHd"><option value="1">Beginner</option><option value="2" selected>Intermediate</option><option value="3">Advanced</option><option value="4">Expert</option></select><button class="gb" onclick="_CHNew()">🔄 New</button><button class="gb" onclick="_CHUndo()">↩ Undo</button>';
   initBoard();render();
 }
 
