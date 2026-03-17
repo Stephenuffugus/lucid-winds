@@ -6328,7 +6328,11 @@ document.addEventListener('keydown', function(e) {
         var a = tBoard[tSelected[0]], b = tBoard[tSelected[1]], c = tBoard[tSelected[2]];
         if (tIsPheno(a,b,c)) {
           tScore++;
-          document.getElementById('tut-msg').innerHTML = '<span style="color:var(--sage);">That\'s a Pheno! Keep going or close when you\'re ready.</span>';
+          var tmsg='';
+          if(tScore===1)tmsg='<span style="color:var(--sage);font-size:0.7rem;font-weight:700;">\uD83C\uDF3F That\'s your first Pheno! You\'re getting it. Find another one!</span>';
+          else if(tScore===2)tmsg='<span style="color:var(--sage);">Nice \u2014 you\'re a natural! Keep going or tap I GOT IT when ready.</span>';
+          else if(tScore>=3)tmsg='<span style="color:var(--gold);">'+tScore+' Phenos! You\'ve got the hang of it. Ready to play for real?</span>';
+          document.getElementById('tut-msg').innerHTML=tmsg;
           // Remove matched cards
           var idxs = tSelected.slice().sort(function(x,y){return y-x;});
           idxs.forEach(function(ri){
@@ -6356,21 +6360,21 @@ document.addEventListener('keydown', function(e) {
     // Header
     h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">';
     h += '<div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:var(--gold);letter-spacing:0.1em;">PRACTICE MODE</div>';
-    h += '<button onclick="closeTutorial()" style="background:linear-gradient(180deg,rgba(46,40,32,0.7) 0%,rgba(32,30,24,0.8) 100%);border:1px solid rgba(200,188,160,0.2);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.65rem;padding:0.35rem 0.7rem;border-radius:6px;cursor:pointer;min-height:40px;">I GOT IT</button>';
+    h += '<button onclick="closeTutorial()" style="background:linear-gradient(180deg,rgba(46,40,32,0.7) 0%,rgba(32,30,24,0.8) 100%);border:1px solid rgba(200,188,160,0.2);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.8rem;padding:0.5rem 1.2rem;border-radius:6px;cursor:pointer;min-height:48px;">I GOT IT</button>';
     h += '</div>';
     // Rules
     h += '<div style="background:linear-gradient(180deg,rgba(42,36,28,0.5) 0%,rgba(26,30,22,0.4) 100%);border:1px solid rgba(200,188,160,0.1);border-radius:7px;padding:0.45rem 0.55rem;margin-bottom:0.4rem;">';
-    h += '<p style="font-size:0.6rem;color:var(--cream);line-height:1.6;margin:0;">Tap <strong>3 cards</strong> that share a pattern. Each feature — <strong>color, shape, count, shading</strong> — must be all same or all different.</p>';
+    h += '<p style="font-size:clamp(0.65rem,2vw,0.8rem);color:var(--cream);line-height:1.6;margin:0;">Tap <strong>3 cards</strong> that share a pattern. Each feature — <strong>color, shape, count, shading</strong> — must be all same or all different.</p>';
     h += '</div>';
     // Stats bar
-    h += '<div style="display:flex;gap:0.5rem;margin-bottom:0.35rem;font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--muted);">';
+    h += '<div style="display:flex;gap:0.5rem;margin-bottom:0.35rem;font-family:Bebas Neue,sans-serif;font-size:clamp(0.75rem,2.2vw,0.9rem);color:var(--muted);">';
     h += '<span>PHENOS: <span id="tut-score" style="color:var(--sage);">0</span></span>';
     h += '<span>DECK: <span id="tut-deck" style="color:var(--cream);">'+tDeck.length+'</span></span>';
     h += '</div>';
     // Grid
     h += '<div id="tut-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.3rem;margin-bottom:0.4rem;"></div>';
     // Message
-    h += '<div id="tut-msg" style="min-height:1.2rem;font-size:0.6rem;color:var(--muted);text-align:center;margin-bottom:0.3rem;">Find 3 cards that match. Tap to select, tap again to deselect.</div>';
+    h += '<div id="tut-msg" style="min-height:1.2rem;font-size:clamp(0.65rem,2vw,0.8rem);color:var(--muted);text-align:center;margin-bottom:0.3rem;">Find 3 cards that match. Tap to select, tap again to deselect.</div>';
     h += '</div>';
 
     ov.innerHTML = h;
