@@ -14947,6 +14947,9 @@ document.addEventListener('keydown', function(e) {
     if (_rainCanvas) _rainCanvas.classList.add('hidden');
   }
 
+  window.startRain = startRain;
+  window.stopRain = stopRain;
+
   window.toggleRain = function() {
     if (_rainActive) {
       stopRain();
@@ -19554,7 +19557,7 @@ function start(){
   }
   console.log('[LW] Onboard start(), _generatePlantSVG exists:',!!window._generatePlantSVG);
   console.log('[LW] _giftHash:',_giftHash?_giftHash.substring(0,8)+'...':'NULL');
-  _startRain();
+  if(window.startRain)window.startRain();
   // Beat 1 is already show class in HTML
   _beat=1;
   // Force Beat 1 to re-enter its show state so CSS transitions activate
@@ -19585,7 +19588,7 @@ function start(){
     if(e.target.tagName==='INPUT'||e.target.tagName==='BUTTON')return;
     if(e.target.classList&&e.target.classList.contains('ob-dot'))return; // dots handle themselves
     // Start rain on first interaction (mobile requires gesture for AudioContext)
-    if(!_rainCtx)_startRain();
+    if(window.startRain)window.startRain();
     var x=e.clientX||0;
     var w=window.innerWidth;
     if(x<w*0.3&&_beat>1){
@@ -19671,7 +19674,7 @@ function _showBeat(n){
     _resetLines(prev);
 
     if(n===4){
-      _stopRain();
+      if(window.stopRain)window.stopRain();
       _renderGiftPlant();
     } else {
       setTimeout(function(){_playLines(n);},800);
@@ -19857,7 +19860,7 @@ function finish(){
 }
 
 function skip(){
-  _stopRain();
+  if(window.stopRain)window.stopRain();
   // set-51: Skip cinematic but still show auth form (beat 4)
   // Previously this bypassed signup entirely — user got no account
   if(!_giftHash)_genGiftHash();
