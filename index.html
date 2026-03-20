@@ -19698,7 +19698,7 @@ function _renderGiftPlant(){
       }catch(e){console.error('[LW] SVG render failed:',e);}
     }
     if(!done){
-      render.innerHTML='<div style="font-size:5rem;padding-top:1.5rem;">🌿</div><div style="font-size:0.5rem;color:#5a7050;margin-top:0.5rem;">Your plant is taking shape...</div>';
+      render.innerHTML='<div style="font-size:5rem;padding-top:1.5rem;">&#x1F33F;</div><div style="font-size:0.5rem;color:#5a7050;margin-top:0.5rem;">Your plant is taking shape...</div>';
     }
   }
   setTimeout(function(){
@@ -19731,7 +19731,7 @@ function _revealPlant(){
     var hEl=document.getElementById('ob-haiku');
     if(hEl&&haiku){
       var lines=Array.isArray(haiku)?haiku:haiku.split('\n');
-      hEl.innerHTML=lines.join('<br>')+'<div class="ob-haiku-src">— '+nm+'</div>';
+      hEl.innerHTML=lines.join('<br>')+'<div class="ob-haiku-src">&mdash; '+nm+'</div>';
       hEl.classList.add('show');
     }
   },1500);
@@ -19743,7 +19743,7 @@ function _revealPlant(){
       var cName=creatures[_giftTraits.companion];
       if(cName){
         var cEl=document.getElementById('ob-creature');
-        if(cEl){cEl.textContent='"It brought a companion — '+cName+'."';cEl.classList.add('show');}
+        if(cEl){cEl.textContent='"It brought a companion \u2014 '+cName+'."';cEl.classList.add('show');}
       }
     }
   },3000);
@@ -19778,7 +19778,7 @@ function submitAuth(){
 
   // Safety: re-enable button after 10s if nothing happened
   var _authTimeout=setTimeout(function(){
-    if(btn){btn.disabled=false;btn.textContent='🌱 CLAIM THIS PLANT';}
+    if(btn){btn.disabled=false;btn.textContent='\uD83C\uDF31 CLAIM THIS PLANT';}
     if(errEl)errEl.textContent='Connection timed out. Tap to try again.';
   },10000);
 
@@ -19799,7 +19799,7 @@ function submitAuth(){
     }).catch(function(err){
       clearTimeout(_authTimeout);
       console.error('[LW] Auth error:',err.code,err.message);
-      if(btn){btn.disabled=false;btn.textContent='🌱 CLAIM THIS PLANT';}
+      if(btn){btn.disabled=false;btn.textContent='\uD83C\uDF31 CLAIM THIS PLANT';}
       var msg=err.message||'Something went wrong.';
       if(err.code==='auth/email-already-in-use'){
         // Try signing in instead
@@ -19813,7 +19813,7 @@ function submitAuth(){
         }).catch(function(e2){
           clearTimeout(_authTimeout);
           console.error('[LW] Auth error:',e2.code,e2.message);
-          if(btn){btn.disabled=false;btn.textContent='🌱 CLAIM THIS PLANT';}
+          if(btn){btn.disabled=false;btn.textContent='\uD83C\uDF31 CLAIM THIS PLANT';}
           if(errEl)errEl.textContent=e2.message||'Wrong password for existing account.';
         });
         return;
@@ -19885,10 +19885,10 @@ window.PW_creatureDiscovery=function(companionName,companionIdx){
   setTimeout(function(){
     var toast=document.createElement('div');
     toast.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999999;background:rgba(17,22,17,0.98);border:1.5px solid rgba(200,168,75,0.25);border-radius:14px;padding:1.2rem 1.5rem;text-align:center;max-width:280px;box-shadow:0 12px 40px rgba(0,0,0,0.7);animation:panelFadeIn 0.4s ease;';
-    toast.innerHTML='<div style="font-size:2.5rem;margin-bottom:0.4rem;">🦎</div>'
+    toast.innerHTML='<div style="font-size:2.5rem;margin-bottom:0.4rem;">&#x1F98E;</div>'
       +'<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--cream);margin-bottom:0.3rem;">A creature appeared!</div>'
       +'<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.5rem;">'+companionName+'</div>'
-      +'<div style="font-size:0.42rem;color:var(--muted);line-height:1.6;margin-bottom:0.6rem;">You can equip creatures in your <b style="color:var(--sage);">Greenhouse → Bestiary</b> for passive bonuses. Discover more by blooming plants!</div>'
+      +'<div style="font-size:0.42rem;color:var(--muted);line-height:1.6;margin-bottom:0.6rem;">You can equip creatures in your <b style="color:var(--sage);">Greenhouse &rarr; Bestiary</b> for passive bonuses. Discover more by blooming plants!</div>'
       +'<button onclick="this.parentElement.remove()" style="padding:0.4rem 1.2rem;border:1.5px solid rgba(122,179,86,0.2);border-radius:6px;background:rgba(26,36,22,0.3);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.6rem;cursor:pointer;min-height:44px;">GOT IT</button>';
     document.body.appendChild(toast);
     if(window.PW_grantXP)PW_grantXP(15,'first_creature');
