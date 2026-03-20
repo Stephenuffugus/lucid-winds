@@ -3606,10 +3606,10 @@
     @keyframes leafFloat{0%{opacity:0;transform:translateY(0) rotate(0deg);}15%{opacity:0.8;}85%{opacity:0.4;}100%{opacity:0;transform:translateY(-80px) translateX(var(--dx,20px)) rotate(var(--cr,180deg));}}
     /* Beat 4 (auth) keeps column layout */
     #ob-beat4{justify-content:center;align-items:center;padding:1.5rem;overflow-y:auto;text-align:center;background:#050505 url('/assets/splash-seed-540x960.jpg') center 30%/cover no-repeat;position:relative;}
-    #ob-beat4::before{content:'';position:absolute;inset:0;background:rgba(5,5,5,0.7);z-index:0;}
+    #ob-beat4::before{content:'';position:absolute;inset:0;background:rgba(5,5,5,0.7);z-index:0;pointer-events:none;}
     #ob-beat4 .ob-text,#ob-beat4 .ob-plant-wrap,#ob-beat4 .ob-name,#ob-beat4 .ob-grade,#ob-beat4 .ob-haiku,#ob-beat4 .ob-creature-text,#ob-beat4 .ob-auth,#ob-beat4 .ob-continue,#ob-beat4 #ob-manifesto{position:relative;z-index:2;}
     #ob-beat4 .ob-text{padding:0;padding-bottom:0.5rem;font-size:1.1rem;color:var(--cream);}
-    .ob-plant-wrap{position:relative;z-index:2;width:260px;height:320px;margin:0.5rem auto;display:flex;align-items:center;justify-content:center;background:linear-gradient(170deg,#1a2416 0%,#111a0e 50%,#0d100c 100%);border:2px solid rgba(200,168,75,0.3);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.6),0 0 40px rgba(200,168,75,0.08);overflow:visible;}
+    .ob-plant-wrap{position:relative;z-index:2;width:260px;height:320px;margin:0.5rem auto;display:flex;align-items:center;justify-content:center;background:linear-gradient(170deg,#2a3426 0%,#1e2818 50%,#1a2214 100%);border:2px solid rgba(200,168,75,0.3);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.6),0 0 40px rgba(200,168,75,0.08);overflow:visible;}
     .ob-plant-svg{transition:filter 1s ease;position:relative;z-index:2;display:flex;align-items:center;justify-content:center;width:100%;height:100%;}
     .ob-plant-svg.blurred{filter:blur(12px) brightness(0.7);}
     .ob-plant-svg.revealed{filter:drop-shadow(0 0 20px rgba(200,168,75,0.15));}
@@ -4274,7 +4274,7 @@ window.onerror=function(msg,url,line,col,err){
     <!-- Beat 4: Gift plant + auth -->
     <div class="ob-beat" id="ob-beat4">
       <div class="ob-text" style="font-size:0.75rem;margin-bottom:0.3rem;">This one began with you.</div>
-      <div class="ob-plant-wrap"><div id="ob-plant-render" class="ob-plant-svg blurred" style="display:flex;align-items:center;justify-content:center;"></div></div>
+      <div class="ob-plant-wrap"><div id="ob-plant-render" class="ob-plant-svg" style="display:flex;align-items:center;justify-content:center;"></div></div>
       <div id="ob-plant-name" class="ob-name" style="opacity:0;transition:opacity 1s ease;"></div>
       <div id="ob-plant-grade" class="ob-grade" style="opacity:0;transition:opacity 1s ease;"></div>
       <div id="ob-haiku" class="ob-haiku"></div>
@@ -19552,8 +19552,8 @@ function start(){
       setTimeout(function(){var sk=document.getElementById('ob-skip');if(sk)sk.classList.add('show');},4000);
     };
   } else {
-    setTimeout(function(){_playLines(1);},1500);
-    setTimeout(function(){var sk=document.getElementById('ob-skip');if(sk)sk.classList.add('show');},6000);
+    setTimeout(function(){_playLines(1);},7000);
+    setTimeout(function(){var sk=document.getElementById('ob-skip');if(sk)sk.classList.add('show');},11000);
   }
   // Tap left to go back, tap right to go forward
   el.addEventListener('click',function(e){
@@ -19818,40 +19818,16 @@ function finish(){
   _stopRain();
   if(typeof gtag!=='undefined') gtag('event','onboarding_complete',{ref_code:window._swsRef||''});
   _markOnboarded();
-
-  // Nuclear kill — every possible way to remove the onboarding screen
   var el=document.getElementById('pw-onboard');
   if(el){
-    el.style.cssText='display:none !important;opacity:0;z-index:-1;pointer-events:none;position:absolute;left:-9999px;';
+    el.style.display='none';
     try{el.parentNode.removeChild(el);}catch(e){}
   }
-
-  // Also hide by class in case ID removal fails
-  var obs=document.querySelectorAll('.ob-beat,.ob-dots,.ob-skip');
-  for(var j=0;j<obs.length;j++){obs[j].style.display='none';}
-
-  // Show keeper bar
   var kb=document.getElementById('pw-keeper-bar');if(kb)kb.style.display='flex';
   if(window.PW_UI)PW_UI.updateKeeperBar();
-
-  // Render and switch
   if(window.renderGreenhouse)renderGreenhouse();
   if(window.updateDashboard)updateDashboard();
-
-  // Force tab switch with multiple attempts
-  if(window.switchTab){
-    switchTab('greenhouse');
-    // Backup attempt after 500ms
-    setTimeout(function(){switchTab('greenhouse');},500);
-  }
-
-  // Final safety net — if still stuck after 2 seconds, force reload without onboarding
-  setTimeout(function(){
-    var panel=document.querySelector('.grove-panel.active');
-    if(!panel||panel.id!=='panel-greenhouse'){
-      window.location.reload();
-    }
-  },2000);
+  if(window.switchTab)switchTab('greenhouse');
 }
 
 function skip(){
