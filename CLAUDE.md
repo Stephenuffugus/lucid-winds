@@ -1,18 +1,19 @@
 
-# PETAL WALK — CLAUDE.md
+# LUCID WINDS — CLAUDE.md
 # Claude Code reads this file automatically on startup. THIS IS THE SOURCE OF TRUTH.
-# Last updated: March 15, 2026 — set-51 build
+# Last updated: March 20, 2026 — post-rebrand, art integration build
 
 ---
 
 ## IDENTITY
-You are the Lead Developer for Petal Walk (formerly Focus Grove during development).
+You are the Lead Developer for Lucid Winds (formerly Petal Walk, originally Focus Grove during early development).
 The Director is Stephen. You report directly to him. He makes all design and economy decisions.
-The game is built under Lucid Winds with the domain lucidwinds.com.
+The game is Lucid Winds with the domain lucidwinds.com.
 All references to "stevieweedseed" or "Stevie" are from the old parent company — NEVER use them.
+All references to "Petal Walk" or "Focus Grove" in visible UI are DEAD — the game is LUCID WINDS.
 There is no mascot. There is no age gate. General-audience botanical game.
 
-## WHAT PETAL WALK IS
+## WHAT LUCID WINDS IS
 A single-file vanilla JS/HTML5 game (ES5-compatible, no frameworks) where players earn unique procedural plants by playing pattern-matching games. Plants are one-of-one SVG artworks generated deterministically from SHA-256 hashes. Every plant has a unique procedural haiku. Uses Firebase Auth + Firestore for cloud sync and Pi Network for cryptocurrency payments. Launching on Pi Network ecosystem targeting ~47M registered users.
 
 ## THE FOUR TABS
@@ -37,6 +38,49 @@ A single-file vanilla JS/HTML5 game (ES5-compatible, no frameworks) where player
 11. 48px minimum touch targets
 12. Firebase project: focus-grove-fffa8 (Auth + Firestore at vaults/{uid})
 13. Midnight greenhouse aesthetic: deep blacks, sage greens, gold accents, cream text
+14. ES5 ONLY — no const, no let, no arrow functions
+15. Always run `node --check index.html` (or extract script blocks) before committing
+16. GA4 Measurement ID: G-XE58S4X6RX
+
+---
+
+## WORKFLOW (LOCKED)
+- **Claude Code** (this CLI) owns the codebase. All edits to index.html happen here.
+- **Claude Chat** (browser) writes specs and saves them to Google Drive. Claude Code reads specs and implements.
+- Claude Chat does NOT edit index.html anymore.
+- Hostinger auto-deploys from this repo's main branch.
+
+---
+
+## ASSETS (/assets/)
+15 FLUX-generated images deployed to /assets/ on Hostinger and committed to repo:
+```
+bg-game-540x960-1.jpg          — Game tab background
+bg-greenhouse-540x960-1.jpg    — Greenhouse tab background
+bg-menu-540x960-1.jpg          — Menu/settings background
+bg-nursery-540x960-1.jpg       — Nursery tab background
+bg-wild-540x960.jpg            — Wild tab background
+splash-seed-540x960.jpg        — Splash/loading screen
+cinema-beat1-weight-540x960-1.jpg  — Onboarding beat 1
+cinema-beat2-glint-540x960-1.jpg   — Onboarding beat 2
+cinema-beat3-tendril-540x960-1.jpg — Onboarding beat 3
+hash-mint-moment-540x540.jpg   — Hash minting moment
+card-back-540x540-1.jpg        — Plant card back
+empty-pot-540x540.jpg          — Empty greenhouse slot
+menu-frame-540x540.jpg         — Menu frame/border
+backpack-64x64-2.png           — Backpack icon (64px)
+corner-ornament-128x128-1.png  — Corner ornament (128px)
+```
+
+---
+
+## ANALYTICS (GA4)
+- Measurement ID: G-XE58S4X6RX
+- 35 events wired including:
+  - game_complete, tab_switch, onboarding_complete
+  - feral_collected, wild_plant_drop, session_start_lw
+  - plant_minted, plant_composted, breed_executed
+  - And others — see gtag() calls in index.html
 
 ---
 
@@ -360,7 +404,9 @@ window._doCrossPollination(wild, mate) — Wild tab breed execution
 ---
 
 ## ONBOARDING (PW_Onboard — Block 15)
-- 4-beat cinematic with line-by-line text, swipe navigation
+- 4-beat cinematic with FLUX background images (img tags, not inline SVGs)
+- Beat images: cinema-beat1, cinema-beat2, cinema-beat3 from /assets/
+- Line-by-line text, swipe navigation, crossfade transitions, rain audio
 - Beat 4: blurred gift plant + auth form (email/password)
 - Skip button at 6 seconds → jumps to beat 4, does NOT bypass signup
 - Gift plant: guaranteed Uncommon+ (min score 3)
@@ -397,7 +443,7 @@ window._doCrossPollination(wild, mate) — Wild tab breed execution
 
 ## DEV PANEL
 - Tap Firebase Log button 5x to reveal
-- Password: petal2026
+- Password: lucid2026
 
 ---
 
