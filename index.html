@@ -3605,11 +3605,11 @@
     @keyframes rainDrift{from{transform:translateY(-18px);}to{transform:translateY(18px);}}
     @keyframes leafFloat{0%{opacity:0;transform:translateY(0) rotate(0deg);}15%{opacity:0.8;}85%{opacity:0.4;}100%{opacity:0;transform:translateY(-80px) translateX(var(--dx,20px)) rotate(var(--cr,180deg));}}
     /* Beat 4 (auth) keeps column layout */
-    #ob-beat4{justify-content:center;align-items:center;padding:1.5rem;overflow-y:auto;text-align:center;background:#050505 url('/assets/splash-seed-540x960.jpg') center 30%/cover no-repeat;position:relative;}
+    #ob-beat4{justify-content:flex-start;align-items:center;padding:1rem 1.5rem;overflow-y:auto;text-align:center;-webkit-overflow-scrolling:touch;background:#050505 url('/assets/splash-seed-540x960.jpg') center 30%/cover no-repeat;position:relative;}
     #ob-beat4::before{content:'';position:absolute;inset:0;background:rgba(5,5,5,0.7);z-index:0;pointer-events:none;}
     #ob-beat4 .ob-text,#ob-beat4 .ob-plant-wrap,#ob-beat4 .ob-name,#ob-beat4 .ob-grade,#ob-beat4 .ob-haiku,#ob-beat4 .ob-creature-text,#ob-beat4 .ob-auth,#ob-beat4 .ob-continue,#ob-beat4 #ob-manifesto{position:relative;z-index:2;}
     #ob-beat4 .ob-text{padding:0;padding-bottom:0.5rem;font-size:1.1rem;color:var(--cream);}
-    .ob-plant-wrap{position:relative;z-index:2;width:260px;height:300px;margin:0 auto;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(26,36,22,0.6) 0%,rgba(13,16,12,0.9) 70%);border:1px solid rgba(122,179,86,0.15);border-radius:14px;overflow:hidden;}
+    .ob-plant-wrap{position:relative;width:220px;height:200px;margin:0 auto;background:radial-gradient(ellipse at center,rgba(26,36,22,0.6) 0%,rgba(13,16,12,0.9) 70%);border:1px solid rgba(122,179,86,0.15);border-radius:14px;overflow:hidden;display:flex;align-items:center;justify-content:center;}
     .ob-plant-svg{transition:filter 1s ease;position:relative;z-index:2;display:flex;align-items:center;justify-content:center;width:100%;height:100%;}
     .ob-plant-svg.blurred{filter:blur(8px) brightness(0.85);}
     .ob-plant-svg.revealed{filter:drop-shadow(0 0 20px rgba(200,168,75,0.15));}
@@ -3631,7 +3631,7 @@
     .ob-auth-err{font-size:0.65rem;color:#c07070;min-height:1.2rem;margin-bottom:0.3rem;text-align:center;font-family:'DM Mono',monospace;line-height:1.4;}
     .ob-skip{position:fixed;bottom:1.5rem;right:1rem;font-family:'DM Mono',monospace;font-size:0.4rem;color:rgba(138,145,120,0.4);cursor:pointer;z-index:2147483647;opacity:0;transition:opacity 0.5s ease;}
     .ob-skip.show{opacity:1;}
-    .ob-continue{margin-top:1rem;padding:0.5rem 1.5rem;border:1.5px solid rgba(122,179,86,0.25);border-radius:8px;background:rgba(26,36,22,0.3);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.08em;cursor:pointer;opacity:0;transition:opacity 0.8s ease;min-height:48px;pointer-events:none;position:relative;z-index:20;}
+    .ob-continue{margin-top:1rem;margin-bottom:2rem;padding:0.7rem 2rem;border:1.5px solid rgba(122,179,86,0.3);border-radius:8px;background:linear-gradient(145deg,rgba(74,124,53,0.3),rgba(26,36,22,0.5));color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;opacity:0;transition:opacity 0.8s ease;min-height:52px;pointer-events:none;position:relative;z-index:20;width:100%;max-width:300px;}
     .ob-continue.show{opacity:1;pointer-events:auto;}
     /* ═══ DEV ADMIN ═══ */
     #pw-dev-admin{display:none;position:fixed;inset:0;z-index:2147483647;background:rgba(5,8,4,0.97);backdrop-filter:blur(12px);overflow-y:auto;padding:1.2rem;}
@@ -19522,7 +19522,7 @@ function _genGiftHash(){
         if(g.name!=='Common'){_giftHash=h;_giftTraits=t;return h;}
       }else{_giftHash=h;return h;}
     }catch(e){
-      console.warn('[LW-Onboard] Gift hash attempt '+attempts+' failed:',e);
+      console.warn('[LW] Gift hash attempt '+attempts+' failed:',e);
     }
     attempts++;
   }
@@ -19544,29 +19544,41 @@ function start(){
   var el=document.getElementById('pw-onboard');if(!el)return;
   el.classList.add('active');
   var kb=document.getElementById('pw-keeper-bar');if(kb)kb.style.display='none';
-  console.log('[LW-Onboard] start() called');
-  try{_genGiftHash();}catch(e){console.error('[LW-Onboard] Gift hash generation failed:',e);}
+  console.log('[LW] start() called');
+  try{_genGiftHash();}catch(e){console.error('[LW] Gift hash generation failed:',e);}
   // Fallback: if _genGiftHash crashed, make a simple random hash
   if(!_giftHash){
     _giftHash='';
     for(var i=0;i<64;i++)_giftHash+='0123456789abcdef'[Math.floor(Math.random()*16)];
     if(window.hashToTraits){try{_giftTraits=window.hashToTraits(_giftHash);}catch(e2){_giftTraits=null;}}
   }
-  console.log('[LW-Onboard] _giftHash:',_giftHash?_giftHash.substring(0,8)+'...':'NULL');
+  console.log('[LW] Onboard start(), _generatePlantSVG exists:',!!window._generatePlantSVG);
+  console.log('[LW] _giftHash:',_giftHash?_giftHash.substring(0,8)+'...':'NULL');
   _startRain();
   // Beat 1 is already show class in HTML
   _beat=1;
+  // Force Beat 1 to re-enter its show state so CSS transitions activate
+  var beat1=document.getElementById('ob-beat1');
+  if(beat1){
+    beat1.classList.remove('show');
+    void beat1.offsetHeight;
+    beat1.classList.add('show');
+  }
   // Text starts AFTER splash screen is gone (callback from splash dismiss)
   // If no splash, starts immediately
   var hasSplash=!!document.getElementById('pw-splash');
   if(hasSplash){
     window._obTextReady=function(){
+      console.log('[LW] Starting Beat 1 text playback');
       _playLines(1);
       setTimeout(function(){var sk=document.getElementById('ob-skip');if(sk)sk.classList.add('show');},4000);
     };
   } else {
-    setTimeout(function(){_playLines(1);},7000);
-    setTimeout(function(){var sk=document.getElementById('ob-skip');if(sk)sk.classList.add('show');},11000);
+    setTimeout(function(){
+      console.log('[LW] Starting Beat 1 text playback');
+      _playLines(1);
+    },2000);
+    setTimeout(function(){var sk=document.getElementById('ob-skip');if(sk)sk.classList.add('show');},6000);
   }
   // Tap left to go back, tap right to go forward
   el.addEventListener('click',function(e){
@@ -19669,55 +19681,53 @@ function _showBeat(n){
 
 function _renderGiftPlant(){
   var render=document.getElementById('ob-plant-render');
-  if(!render)return;
 
-  // If we still don't have a hash, generate one now as last resort
+  // Ensure we have a hash
+  if(!_giftHash){
+    try{_genGiftHash();}catch(e){}
+  }
   if(!_giftHash){
     _giftHash='';
     for(var i=0;i<64;i++)_giftHash+='0123456789abcdef'[Math.floor(Math.random()*16)];
     try{if(window.hashToTraits)_giftTraits=window.hashToTraits(_giftHash);}catch(e){_giftTraits=null;}
   }
 
-  render.classList.remove('blurred');
-  render.classList.add('revealed');
-  render.style.opacity='1';
-  render.style.display='flex';
-  render.style.alignItems='center';
-  render.style.justifyContent='center';
-  render.style.width='100%';
-  render.style.height='100%';
-
-  if(render&&_giftHash){
-    try{
-      if(window._generatePlantSVG){
-        var svg=window._generatePlantSVG(_giftHash,180);
-        if(svg&&svg.length>50){
-          render.innerHTML=svg;
-          // Force SVG sizing
-          var svgEl=render.querySelector('svg');
-          if(svgEl){
-            svgEl.style.width='180px';
-            svgEl.style.height='180px';
-            svgEl.style.maxWidth='100%';
-            svgEl.style.maxHeight='100%';
-            svgEl.style.display='block';
-            svgEl.style.margin='0 auto';
+  if(render){
+    var rendered=false;
+    // Try the real renderer
+    if(window._generatePlantSVG){
+      try{
+        var svgResult=window._generatePlantSVG(_giftHash,180);
+        if(svgResult&&svgResult.length>10){
+          render.innerHTML=svgResult;
+          var svg=render.querySelector('svg');
+          if(svg){
+            svg.style.width='180px';
+            svg.style.height='180px';
+            svg.style.maxWidth='100%';
+            svg.style.display='block';
+            svg.style.margin='0 auto';
           }
-        }else{
-          render.innerHTML='<div style="font-size:5rem;line-height:1;">🌿</div>';
+          rendered=true;
+          console.log('[LW] Plant SVG rendered, length:',svgResult.length);
         }
-      }else{
-        render.innerHTML='<div style="font-size:5rem;line-height:1;">🌿</div>';
+      }catch(e){
+        console.error('[LW] _generatePlantSVG threw:',e);
       }
-    }catch(e){
-      console.error('[LW-Onboard] Plant render failed:',e);
-      render.innerHTML='<div style="font-size:5rem;line-height:1;">🌿</div>';
+    }else{
+      console.warn('[LW] window._generatePlantSVG is not defined');
+    }
+
+    // Fallback: always show SOMETHING if real renderer failed
+    if(!rendered){
+      render.innerHTML='<div style="font-size:6rem;line-height:1;padding-top:2rem;opacity:0.9;">🌿</div><div style="font-family:DM Mono,monospace;font-size:0.5rem;color:rgba(138,145,120,0.6);margin-top:0.5rem;">Your plant is taking shape...</div>';
+      console.warn('[LW] Using fallback plant display');
     }
   }
 
   // Show auth form and manifesto after delay
   setTimeout(function(){
-    var auth=document.getElementById('ob-auth');if(auth){auth.style.opacity='1';auth.classList.add('show');}
+    var auth=document.getElementById('ob-auth');if(auth)auth.classList.add('show');
     var man=document.getElementById('ob-manifesto');if(man)man.style.opacity='1';
   },1200);
 }
@@ -19765,7 +19775,15 @@ function _revealPlant(){
 
   // Show continue button
   setTimeout(function(){
-    var cont=document.getElementById('ob-continue');if(cont)cont.classList.add('show');
+    var cont=document.getElementById('ob-continue');
+    if(cont){
+      cont.classList.add('show');
+      // Scroll it into view after a moment
+      setTimeout(function(){
+        cont.scrollIntoView({behavior:'smooth',block:'center'});
+      },400);
+    }
+    console.log('[LW] Continue button .show added:',!!cont);
   },3500);
 }
 
@@ -19785,7 +19803,7 @@ function submitAuth(){
 
   if(btn){btn.disabled=true;btn.textContent='Growing...';}
   if(errEl)errEl.textContent='';
-  console.log('[LW-Onboard] submitAuth() called, giftHash:',_giftHash?'present':'NULL');
+  console.log('[LW] submitAuth called, hash:',_giftHash?_giftHash.substring(0,8):'NULL');
 
   // Save keeper name
   localStorage.setItem('pw_keeper_name',name);
@@ -19800,7 +19818,7 @@ function submitAuth(){
   if(window.firebase&&firebase.auth){
     firebase.auth().createUserWithEmailAndPassword(email,pass).then(function(cred){
       clearTimeout(_authTimeout);
-      console.log('[LW-Onboard] Firebase auth success');
+      console.log('[LW] Auth success, calling _mintGiftPlant + _revealPlant');
       // ═══ TRACK SIGN UP WITH REF CODE (set-38) ═══
       if(typeof gtag!=='undefined')gtag('event','sign_up',{method:'email',ref_code:window._swsRef||''});
       // Success — mint the gift plant
@@ -19812,21 +19830,21 @@ function submitAuth(){
       if(window.PW_grantXP)PW_grantXP(10,'first_plant');
     }).catch(function(err){
       clearTimeout(_authTimeout);
-      console.error('[LW-Onboard] Auth error:',err.code,err.message);
+      console.error('[LW] Auth error:',err.code,err.message);
       if(btn){btn.disabled=false;btn.textContent='🌱 CLAIM THIS PLANT';}
       var msg=err.message||'Something went wrong.';
       if(err.code==='auth/email-already-in-use'){
         // Try signing in instead
         firebase.auth().signInWithEmailAndPassword(email,pass).then(function(){
           clearTimeout(_authTimeout);
-          console.log('[LW-Onboard] Firebase auth success (sign-in)');
+          console.log('[LW] Auth success (sign-in), calling _mintGiftPlant + _revealPlant');
           _mintGiftPlant();
           var auth=document.getElementById('ob-auth');if(auth)auth.style.display='none';
           _revealPlant();
           if(window.PW_grantXP)PW_grantXP(10,'first_plant');
         }).catch(function(e2){
           clearTimeout(_authTimeout);
-          console.error('[LW-Onboard] Auth error:',e2.code,e2.message);
+          console.error('[LW] Auth error:',e2.code,e2.message);
           if(btn){btn.disabled=false;btn.textContent='🌱 CLAIM THIS PLANT';}
           if(errEl)errEl.textContent=e2.message||'Wrong password for existing account.';
         });
