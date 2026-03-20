@@ -3662,6 +3662,8 @@
 
 <script>
 // GLOBAL ERROR CATCHER — shows script errors visually
+console.log('[LW] Build v20260320c');
+window._lwBuild='v20260320c';
 window._errLog=[];
 window.onerror=function(msg,url,line,col,err){
   window._errLog.push(line+': '+msg);
@@ -19504,6 +19506,7 @@ return{
 })();
 </script>
 
+<script>console.log('[LW-DIAG] Pre-onboard block. pw-onboard exists:',!!document.getElementById('pw-onboard'),'pw_onboarded:',localStorage.getItem('pw_onboarded'));</script>
 <!-- ═══ FIRST OPEN EXPERIENCE — Onboarding Controller ═══ -->
 <script>
 window.PW_Onboard=(function(){
@@ -19932,6 +19935,7 @@ function goToBeat(n){
 return{start:start,submitAuth:submitAuth,finish:finish,skip:skip,goToBeat:goToBeat};
 })();
 </script>
+<script>console.log('[LW-DIAG] Post-onboard block. PW_Onboard defined:',!!window.PW_Onboard,'type:',typeof window.PW_Onboard);</script>
 
 <!-- ═══ FERAL CHALLENGE ENGINE ═══ -->
 <script>
