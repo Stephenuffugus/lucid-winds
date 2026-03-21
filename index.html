@@ -1127,6 +1127,7 @@
     .cs-card-face{backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;position:relative;}
     .cs-card-back{transform:rotateY(180deg);position:absolute;inset:0;border-radius:14px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
     .cs-flip-hint{position:absolute;bottom:6px;right:10px;font-family:'DM Mono',monospace;font-size:0.35rem;color:var(--muted);opacity:0.45;z-index:8;pointer-events:none;letter-spacing:0.04em;}
+    .cs-card-front::after{content:'';position:absolute;bottom:0;left:0;right:0;height:12%;background:linear-gradient(0deg,#050505 60%,transparent 100%);border-radius:0 0 14px 14px;pointer-events:none;z-index:0;}
     /* ═══ CAROUSEL CARD FRONTS: Seasonal frames ═══ */
     .cs-card-front[data-season="spring"]{background:url('assets/card-front-spring.png') center/cover no-repeat #050505!important;border:none!important;box-shadow:0 0 20px rgba(180,140,60,0.1)!important;}
     .cs-card-front[data-season="summer"]{background:url('assets/card-front-summer.png') center/cover no-repeat #050505!important;border:none!important;box-shadow:0 0 20px rgba(180,140,60,0.1)!important;}
@@ -13125,11 +13126,11 @@ document.addEventListener('keydown', function(e) {
     // ── BUILD FRONT FACE (art side — plant as hero) ──
     var front = '<div class="cs-card-face cs-card-front" data-season="' + sk + '" style="background:transparent;border:none;padding:1.4rem 1rem 1rem;display:flex;flex-direction:column;align-items:center;text-align:center;">';
     front += eaKnotHtml;
-    front += '<div class="cs-slot-svg" style="flex:1;display:flex;align-items:center;justify-content:center;margin:0.3rem 0;">' + svgHtml + '</div>';
-    front += '<div class="cs-slot-name" style="color:var(--cream);">' + name + '</div>';
-    front += '<div class="cs-slot-haiku">' + haiku.line1 + '<br>' + haiku.line2 + '<br>' + haiku.line3 + '</div>';
-    front += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:var(--cream);opacity:0.7;margin-top:auto;">' + seasonEmblems[_season] + ' ' + seasonNames[_season].toUpperCase() + '</div>';
-    front += '<div class="cs-flip-hint">tap to flip \u2192</div>';
+    front += '<div class="cs-slot-name" style="color:' + _seasonColors[_season] + ';position:relative;z-index:1;">' + name + '</div>';
+    front += '<div class="cs-slot-svg" style="flex:1;display:flex;align-items:center;justify-content:center;margin:0.3rem 0;position:relative;z-index:1;">' + svgHtml + '</div>';
+    front += '<div class="cs-slot-haiku" style="position:relative;z-index:1;">' + haiku.line1 + '<br>' + haiku.line2 + '<br>' + haiku.line3 + '</div>';
+    front += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:var(--cream);opacity:0.7;margin-top:auto;position:relative;z-index:1;">' + seasonEmblems[_season] + ' ' + seasonNames[_season].toUpperCase() + '</div>';
+    front += '<div class="cs-flip-hint" style="position:relative;z-index:1;">tap to flip \u2192</div>';
     front += '</div>';
 
     // ── BUILD BACK FACE (data side) ──
@@ -13162,8 +13163,8 @@ document.addEventListener('keydown', function(e) {
     var counterEl = document.getElementById('pgm-counter');
     var dlBtn     = document.getElementById('gallery-download-btn');
     if (nameEl) {
-      nameEl.textContent = typeof getPlantName === 'function' ? getPlantName(plant.hash) : '';
-      try { var _t2 = window.hashToTraits(plant.hash); var _sc = ['#E8A0BF','#D4A843','#C4763A','#A0C4E8'][(_t2 && typeof _t2.season === 'number') ? _t2.season % 4 : 0]; nameEl.style.color = _sc; } catch(e) {}
+      nameEl.textContent = '';
+      nameEl.style.display = 'none';
     }
     if (counterEl) counterEl.textContent = (_carousel.idx + 1) + ' / ' + _carousel.arr.length;
     if (dlBtn)     { dlBtn.textContent = '⬡ DOWNLOAD'; dlBtn.disabled = false; }
