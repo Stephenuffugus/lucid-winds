@@ -2011,7 +2011,14 @@
 
     /* ── GREENHOUSE ── */
     .greenhouse-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0.4rem;}
-    .greenhouse-plant{background:linear-gradient(165deg, rgba(18,24,16,0.95) 0%, rgba(13,18,11,0.98) 100%);border:1.5px solid rgba(122,179,86,0.22);border-radius:6px;padding:0.4rem 0.3rem;text-align:center;transition:all 0.3s ease;position:relative;overflow:visible;box-shadow:inset 0 0 12px rgba(122,179,86,0.03),0 0 8px rgba(122,179,86,0.06),0 1px 4px rgba(0,0,0,0.3);}
+    .greenhouse-plant{border:1.5px solid rgba(122,179,86,0.22);border-radius:6px;padding:0.4rem 0.3rem;text-align:center;transition:all 0.3s ease;position:relative;overflow:visible;box-shadow:inset 0 0 12px rgba(122,179,86,0.03),0 0 8px rgba(122,179,86,0.06),0 1px 4px rgba(0,0,0,0.3);background-size:cover;background-position:center;background-repeat:no-repeat;}
+    .gh-tier-common{background-image:url('assets/card-common.png');}
+    .gh-tier-uncommon{background-image:url('assets/card-uncommon.png');}
+    .gh-tier-rare{background-image:url('assets/card-rare.png');}
+    .gh-tier-epic{background-image:url('assets/card-epic.png');}
+    .gh-tier-legendary{background-image:url('assets/card-legendary.png');}
+    .gh-tier-mythic{background-image:url('assets/card-mythic.png');}
+    .gh-tier-cosmic{background-image:url('assets/card-cosmic.png');}
     .greenhouse-plant:hover{border-color:rgba(122,179,86,0.4);transform:translateY(-2px);box-shadow:inset 0 0 16px rgba(122,179,86,0.06),0 4px 16px rgba(0,0,0,0.25),0 0 12px rgba(122,179,86,0.08);}
     .greenhouse-plant svg{margin:0 auto;display:block;}
     .greenhouse-plant .gh-hash{font-family:'DM Mono',monospace;font-size:0.38rem;color:var(--muted);margin-top:0.1rem;opacity:0.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -12633,7 +12640,8 @@ document.addEventListener('keydown', function(e) {
           _ghTG = getTerraGrade(_ghTraits);
         } catch(e) {}
         var _seasonCls = ['season-spring','season-summer','season-autumn','season-winter'][_ghSeason] || 'season-spring';
-        var cls = 'greenhouse-plant ' + _seasonCls;
+        var _tierCls = ' gh-tier-' + ((_ghTG && _ghTG.name) ? _ghTG.name.toLowerCase() : 'common');
+        var cls = 'greenhouse-plant ' + _seasonCls + _tierCls;
         if (plant.rare) cls += ' rare';
         if (plant.mutated) cls += ' mutated';
         if (plant.isCross) cls += ' cross';
