@@ -2011,15 +2011,22 @@
 
     /* ── GREENHOUSE ── */
     .greenhouse-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0.4rem;}
-    .greenhouse-plant{border:none;border-radius:6px;padding:0.4rem 0.3rem;text-align:center;transition:all 0.3s ease;position:relative;overflow:visible;background-color:#0a0d09;background-size:cover;background-position:center;background-repeat:no-repeat;}
-    .gh-tier-common{background-image:url('assets/card-common.png');}
-    .gh-tier-uncommon{background-image:url('assets/card-uncommon.png');}
-    .gh-tier-rare{background-image:url('assets/card-rare.png');}
-    .gh-tier-epic{background-image:url('assets/card-epic.png');}
-    .gh-tier-legendary{background-image:url('assets/card-legendary.png');}
-    .gh-tier-mythic{background-image:url('assets/card-mythic.png');}
-    .gh-tier-cosmic{background-image:url('assets/card-cosmic.png');}
-    .greenhouse-plant:hover{transform:translateY(-2px);filter:brightness(1.15);}
+    /* ═══ CARD FRONT: Seasonal frames ═══ */
+    .greenhouse-plant{border:none;border-radius:8px;padding:0.4rem 0.3rem;text-align:center;transition:all 0.3s ease;position:relative;overflow:visible;background-color:#050505;background-size:cover;background-position:center;background-repeat:no-repeat;box-shadow:0 0 18px rgba(180,140,60,0.08),0 2px 6px rgba(0,0,0,0.4);}
+    .greenhouse-plant:hover{transform:translateY(-2px);filter:brightness(1.2);box-shadow:0 0 24px rgba(180,140,60,0.15),0 4px 12px rgba(0,0,0,0.3);}
+    .greenhouse-plant.season-spring{background-image:url('assets/card-front-spring.png');}
+    .greenhouse-plant.season-summer{background-image:url('assets/card-front-summer.png');}
+    .greenhouse-plant.season-autumn{background-image:url('assets/card-front-autumn.png');}
+    .greenhouse-plant.season-winter{background-image:url('assets/card-front-winter.png');}
+    /* ═══ CARD BACK: Rarity frames (used in carousel flip) ═══ */
+    .card-back-common{background-image:url('assets/card-common.png');}
+    .card-back-uncommon{background-image:url('assets/card-uncommon.png');}
+    .card-back-rare{background-image:url('assets/card-rare.png');}
+    .card-back-epic{background-image:url('assets/card-epic.png');}
+    .card-back-legendary{background-image:url('assets/card-legendary.png');}
+    .card-back-mythic{background-image:url('assets/card-mythic.png');}
+    .card-back-cosmic{background-image:url('assets/card-cosmic.png');}
+    .card-back-common,.card-back-uncommon,.card-back-rare,.card-back-epic,.card-back-legendary,.card-back-mythic,.card-back-cosmic{background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#050505;}
     .greenhouse-plant svg{margin:0 auto;display:block;}
     .greenhouse-plant .gh-hash{font-family:'DM Mono',monospace;font-size:0.38rem;color:var(--muted);margin-top:0.1rem;opacity:0.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .greenhouse-plant .gh-name{font-family:'Bebas Neue',sans-serif;font-size:0.5rem;letter-spacing:0.04em;margin-top:0.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
@@ -2030,24 +2037,10 @@
     .greenhouse-plant .gh-date{font-size:0.38rem;color:var(--muted);opacity:0.3;}
     .greenhouse-plant .gh-traits{font-family:'DM Mono',monospace;font-size:0.35rem;color:var(--sage);margin-top:0.1rem;opacity:0.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .greenhouse-plant .gh-slot{position:absolute;top:3px;left:5px;font-family:'Bebas Neue',sans-serif;font-size:0.55rem;color:rgba(122,179,86,0.35);text-shadow:0 0 6px rgba(122,179,86,0.15);letter-spacing:0.02em;}
-    .greenhouse-plant.rare{box-shadow:none;}
-    .greenhouse-plant.rare .gh-slot{color:rgba(200,168,75,0.45);text-shadow:0 0 8px rgba(200,168,75,0.2);}
-    .greenhouse-plant.rare:hover{box-shadow:none;}
-    .greenhouse-plant.mutated{border-color:rgba(200,168,75,0.25);animation:mutateGlow 3s ease-in-out infinite;}
-    .greenhouse-plant.cross{border-color:rgba(91,143,185,0.35);box-shadow:inset 0 0 14px rgba(91,143,185,0.06),0 0 10px rgba(91,143,185,0.06);}
     .cross-badge{display:inline-block;font-family:'DM Mono',monospace;font-size:0.28rem;letter-spacing:0.06em;color:#8BBFE0;background:rgba(91,143,185,0.12);border:1px solid rgba(91,143,185,0.3);border-radius:3px;padding:0.06rem 0.25rem;margin-top:0.1rem;vertical-align:middle;}
     .gallery-cross-badge{display:inline-flex;align-items:center;gap:0.25rem;font-family:'DM Mono',monospace;font-size:0.5rem;color:#8BBFE0;background:rgba(91,143,185,0.1);border:1px solid rgba(91,143,185,0.28);border-radius:5px;padding:0.2rem 0.55rem;margin:0.2rem auto;}
     @keyframes mutateGlow{0%,100%{box-shadow:0 0 8px rgba(200,168,75,0.1)}50%{box-shadow:0 0 16px rgba(200,168,75,0.25)}}
 
-    /* ── SEASONAL TEXT COLORS ── */
-    .greenhouse-plant.season-spring .gh-slot{color:rgba(232,160,191,0.45);text-shadow:0 0 6px rgba(232,160,191,0.15);}
-    .greenhouse-plant.season-spring .gh-name{color:#E8A0BF;}
-    .greenhouse-plant.season-summer .gh-slot{color:rgba(212,168,67,0.45);text-shadow:0 0 6px rgba(212,168,67,0.15);}
-    .greenhouse-plant.season-summer .gh-name{color:#D4A843;}
-    .greenhouse-plant.season-autumn .gh-slot{color:rgba(212,132,42,0.45);text-shadow:0 0 6px rgba(212,132,42,0.15);}
-    .greenhouse-plant.season-autumn .gh-name{color:#D4842A;}
-    .greenhouse-plant.season-winter .gh-slot{color:rgba(160,196,232,0.45);text-shadow:0 0 6px rgba(160,196,232,0.15);}
-    .greenhouse-plant.season-winter .gh-name{color:#A0C4E8;}
     /* EA Knot Badge — top-right */
     .ea-knot{position:absolute;top:-14px;right:-8px;width:38px;height:38px;z-index:5;display:flex;align-items:center;justify-content:center;pointer-events:none;}
     .ea-knot svg{position:absolute;top:0;left:0;width:100%;height:100%;}
@@ -12624,7 +12617,7 @@ document.addEventListener('keydown', function(e) {
           _ghTG = getTerraGrade(_ghTraits);
         } catch(e) {}
         var _seasonCls = ['season-spring','season-summer','season-autumn','season-winter'][_ghSeason] || 'season-spring';
-        var _tierCls = ' gh-tier-' + ((_ghTG && _ghTG.name) ? _ghTG.name.toLowerCase() : 'common');
+        var _tierCls = '';
         var cls = 'greenhouse-plant ' + _seasonCls + _tierCls;
         if (plant.rare) cls += ' rare';
         if (plant.mutated) cls += ' mutated';
@@ -12664,7 +12657,7 @@ document.addEventListener('keydown', function(e) {
           _eaKnotHtml +
           '<div class="gh-slot">#' + (gh.length - i) + '</div>' +
           plantSvg +
-          '<div class="gh-name" style="color:' + _sColor + ';">' + (_ghTG ? _ghTG.icon : '') + ' ' + _pName + '</div>' +
+          '<div class="gh-name" style="color:var(--cream);">' + _pName + '</div>' +
           (_sea ? '<div style="display:flex;justify-content:center;gap:3px;margin-top:1px;font-size:0.3rem;align-items:center;"><span>' + _sea.emblem + '</span></div>' : '');
       } else {
         // Undiscovered slot
