@@ -82,6 +82,16 @@
     <span class="val" id="v-plant-x">0px</span>
   </div>
   <div class="control-row">
+    <label>Name X</label>
+    <input type="range" id="sl-name-x" min="-30" max="30" value="0" step="1">
+    <span class="val" id="v-name-x">0px</span>
+  </div>
+  <div class="control-row">
+    <label>Haiku X</label>
+    <input type="range" id="sl-haiku-x" min="-30" max="30" value="0" step="1">
+    <span class="val" id="v-haiku-x">0px</span>
+  </div>
+  <div class="control-row">
     <label>BG size</label>
     <input type="range" id="sl-bgsize" min="90" max="110" value="96" step="1">
     <span class="val" id="v-bgsize">96%</span>
@@ -144,6 +154,8 @@ function update() {
   var scale = document.getElementById('sl-scale').value;
   var plantY = document.getElementById('sl-plant-y').value;
   var plantX = document.getElementById('sl-plant-x').value;
+  var nameX = document.getElementById('sl-name-x').value;
+  var haikuX = document.getElementById('sl-haiku-x').value;
   var bgSize = document.getElementById('sl-bgsize').value;
   var season = document.getElementById('sel-season').value;
 
@@ -153,8 +165,10 @@ function update() {
   elName.style.fontSize = nameFs + 'rem';
   elName.style.color = seasonColors[season];
   elName.style.top = nameMb + 'px';
+  elName.style.transform = 'translateX(' + nameX + 'px)';
   elHaiku.style.fontSize = haikuFs + 'rem';
   elHaiku.style.top = haikuMt + 'px';
+  elHaiku.style.transform = 'translateX(' + haikuX + 'px)';
   elSvg.style.transform = 'scale(' + (scale / 100) + ') translate(' + plantX + 'px, ' + plantY + 'px)';
   elSvg.style.transformOrigin = 'center center';
 
@@ -166,9 +180,11 @@ function update() {
   document.getElementById('v-scale').textContent = scale + '%';
   document.getElementById('v-plant-y').textContent = plantY + 'px';
   document.getElementById('v-plant-x').textContent = plantX + 'px';
+  document.getElementById('v-name-x').textContent = nameX + 'px';
+  document.getElementById('v-haiku-x').textContent = haikuX + 'px';
   document.getElementById('v-bgsize').textContent = bgSize + '%';
 
-  readout.innerHTML = 'padding:<code>' + pad + '% ' + Math.round(pad*0.85) + '% ' + Math.round(pad*0.7) + '%</code> | name:<code>' + nameFs + 'rem</code> top:<code>' + nameMb + 'px</code> | haiku:<code>' + haikuFs + 'rem</code> top:<code>' + haikuMt + 'px</code> | scale:<code>' + scale + '%</code> plantXY:<code>' + plantX + ',' + plantY + 'px</code>';
+  readout.innerHTML = 'padding:<code>' + pad + '% ' + Math.round(pad*0.85) + '% ' + Math.round(pad*0.7) + '%</code> | name:<code>' + nameFs + 'rem</code> top:<code>' + nameMb + 'px</code> x:<code>' + nameX + 'px</code> | haiku:<code>' + haikuFs + 'rem</code> top:<code>' + haikuMt + 'px</code> x:<code>' + haikuX + 'px</code> | scale:<code>' + scale + '%</code> plantXY:<code>' + plantX + ',' + plantY + 'px</code>';
 }
 
 document.querySelectorAll('input[type=range],select').forEach(function(el) {
