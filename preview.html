@@ -44,33 +44,33 @@
 <div class="controls">
   <div class="control-row">
     <label>Padding</label>
-    <input type="range" id="sl-pad" min="5" max="20" value="14" step="1">
+    <input type="range" id="sl-pad" min="5" max="25" value="14" step="1">
     <span class="val" id="v-pad">14%</span>
   </div>
   <div class="control-row">
     <label>Name font</label>
-    <input type="range" id="sl-name" min="0.8" max="2" value="1.1" step="0.05">
-    <span class="val" id="v-name">1.1rem</span>
+    <input type="range" id="sl-name" min="0.8" max="2" value="1.15" step="0.05">
+    <span class="val" id="v-name">1.15rem</span>
   </div>
   <div class="control-row">
     <label>Haiku font</label>
-    <input type="range" id="sl-haiku" min="0.4" max="1.2" value="0.62" step="0.02">
-    <span class="val" id="v-haiku">0.62rem</span>
+    <input type="range" id="sl-haiku" min="0.4" max="1.4" value="1.08" step="0.02">
+    <span class="val" id="v-haiku">1.08rem</span>
   </div>
   <div class="control-row">
     <label>Name offset</label>
-    <input type="range" id="sl-name-mb" min="0" max="60" value="0" step="1">
-    <span class="val" id="v-name-mb">0px</span>
+    <input type="range" id="sl-name-mb" min="0" max="60" value="28" step="1">
+    <span class="val" id="v-name-mb">28px</span>
   </div>
   <div class="control-row">
     <label>Haiku offset</label>
-    <input type="range" id="sl-haiku-mt" min="-60" max="0" value="0" step="1">
-    <span class="val" id="v-haiku-mt">0px</span>
+    <input type="range" id="sl-haiku-mt" min="-60" max="0" value="-36" step="1">
+    <span class="val" id="v-haiku-mt">-36px</span>
   </div>
   <div class="control-row">
     <label>Plant scale</label>
-    <input type="range" id="sl-scale" min="80" max="200" value="100" step="5">
-    <span class="val" id="v-scale">100%</span>
+    <input type="range" id="sl-scale" min="80" max="200" value="150" step="5">
+    <span class="val" id="v-scale">150%</span>
   </div>
   <div class="control-row">
     <label>Plant Y offset</label>
@@ -81,6 +81,11 @@
     <label>Plant X offset</label>
     <input type="range" id="sl-plant-x" min="-60" max="60" value="0" step="2">
     <span class="val" id="v-plant-x">0px</span>
+  </div>
+  <div class="control-row">
+    <label>BG size</label>
+    <input type="range" id="sl-bgsize" min="90" max="110" value="96" step="1">
+    <span class="val" id="v-bgsize">96%</span>
   </div>
   <div class="control-row">
     <label>Season</label>
@@ -139,10 +144,12 @@ function update() {
   var scale = document.getElementById('sl-scale').value;
   var plantY = document.getElementById('sl-plant-y').value;
   var plantX = document.getElementById('sl-plant-x').value;
+  var bgSize = document.getElementById('sl-bgsize').value;
   var season = document.getElementById('sel-season').value;
 
   card.style.padding = pad + '% ' + Math.round(pad * 0.85) + '% ' + Math.round(pad * 0.7) + '%';
   card.style.backgroundImage = "url('" + seasonImages[season] + "')";
+  card.style.backgroundSize = bgSize + '% ' + bgSize + '%';
   elName.style.fontSize = nameFs + 'rem';
   elName.style.color = seasonColors[season];
   elName.style.top = nameMb + 'px';
@@ -159,6 +166,7 @@ function update() {
   document.getElementById('v-scale').textContent = scale + '%';
   document.getElementById('v-plant-y').textContent = plantY + 'px';
   document.getElementById('v-plant-x').textContent = plantX + 'px';
+  document.getElementById('v-bgsize').textContent = bgSize + '%';
 
   readout.innerHTML = 'padding:<code>' + pad + '% ' + Math.round(pad*0.85) + '% ' + Math.round(pad*0.7) + '%</code> | name:<code>' + nameFs + 'rem</code> top:<code>' + nameMb + 'px</code> | haiku:<code>' + haikuFs + 'rem</code> top:<code>' + haikuMt + 'px</code> | scale:<code>' + scale + '%</code> plantXY:<code>' + plantX + ',' + plantY + 'px</code>';
 }
