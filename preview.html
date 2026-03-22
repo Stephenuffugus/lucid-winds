@@ -67,6 +67,11 @@
     <span class="val" id="v-haiku-mt">0px</span>
   </div>
   <div class="control-row">
+    <label>Plant scale</label>
+    <input type="range" id="sl-scale" min="80" max="200" value="100" step="5">
+    <span class="val" id="v-scale">100%</span>
+  </div>
+  <div class="control-row">
     <label>Season</label>
     <select id="sel-season">
       <option value="spring" selected>Spring</option>
@@ -111,6 +116,7 @@ var seasonColors = {spring:'#E8A0BF',summer:'#D4A843',autumn:'#D4842A',winter:'#
 var card = document.getElementById('card');
 var elName = document.getElementById('el-name');
 var elHaiku = document.getElementById('el-haiku');
+var elSvg = document.querySelector('.cf-art-window svg');
 var readout = document.getElementById('readout');
 
 function update() {
@@ -119,6 +125,7 @@ function update() {
   var haikuFs = document.getElementById('sl-haiku').value;
   var nameMb = document.getElementById('sl-name-mb').value;
   var haikuMt = document.getElementById('sl-haiku-mt').value;
+  var scale = document.getElementById('sl-scale').value;
   var season = document.getElementById('sel-season').value;
 
   card.style.padding = pad + '% ' + Math.round(pad * 0.85) + '% ' + Math.round(pad * 0.7) + '%';
@@ -128,14 +135,17 @@ function update() {
   elName.style.top = nameMb + 'px';
   elHaiku.style.fontSize = haikuFs + 'rem';
   elHaiku.style.top = haikuMt + 'px';
+  elSvg.style.transform = 'scale(' + (scale / 100) + ')';
+  elSvg.style.transformOrigin = 'center center';
 
   document.getElementById('v-pad').textContent = pad + '%';
   document.getElementById('v-name').textContent = nameFs + 'rem';
   document.getElementById('v-haiku').textContent = haikuFs + 'rem';
   document.getElementById('v-name-mb').textContent = nameMb + 'px';
   document.getElementById('v-haiku-mt').textContent = haikuMt + 'px';
+  document.getElementById('v-scale').textContent = scale + '%';
 
-  readout.innerHTML = 'padding:<code>' + pad + '% ' + Math.round(pad*0.85) + '% ' + Math.round(pad*0.7) + '%</code> | name:<code>' + nameFs + 'rem</code> top:<code>' + nameMb + 'px</code> | haiku:<code>' + haikuFs + 'rem</code> top:<code>' + haikuMt + 'px</code>';
+  readout.innerHTML = 'padding:<code>' + pad + '% ' + Math.round(pad*0.85) + '% ' + Math.round(pad*0.7) + '%</code> | name:<code>' + nameFs + 'rem</code> top:<code>' + nameMb + 'px</code> | haiku:<code>' + haikuFs + 'rem</code> top:<code>' + haikuMt + 'px</code> | scale:<code>' + scale + '%</code>';
 }
 
 document.querySelectorAll('input[type=range],select').forEach(function(el) {
