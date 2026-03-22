@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lucid Winds — Card Preview Sandbox</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Bebas+Neue&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0d100c;--sage:#7ab356;--gold:#c8a84b;--cream:#e8dcc8;--muted:#8a9178;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#0a0c09;color:var(--cream);font-family:'DM Mono',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;}
+
+  /* Controls */
+  .controls{width:92vw;max-width:460px;padding:12px 0;display:flex;flex-direction:column;gap:6px;}
+  .control-row{display:flex;align-items:center;gap:8px;font-size:0.7rem;}
+  .control-row label{min-width:100px;color:var(--muted);}
+  .control-row input[type="range"]{flex:1;accent-color:var(--sage);}
+  .control-row .val{min-width:50px;text-align:right;color:var(--sage);font-size:0.65rem;}
+  .control-row select{background:#1a1d18;color:var(--cream);border:1px solid var(--muted);border-radius:4px;padding:2px 6px;font-family:'DM Mono',monospace;font-size:0.65rem;}
+
+  /* Card container */
+  .card-wrap{width:92vw;max-width:460px;height:calc(100vh - 180px);max-height:600px;position:relative;margin:0 auto;}
+  .card-front{position:absolute;inset:0;display:flex;flex-direction:column;border-radius:12px;overflow:hidden;background-color:#050505;background-size:96% 96%;background-position:center;background-repeat:no-repeat;}
+
+  .cf-ea{position:absolute;top:8%;right:6%;font-family:'Bebas Neue',sans-serif;font-size:0.85rem;color:var(--gold);background:rgba(10,10,8,0.7);border:1px solid rgba(200,168,75,0.25);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;z-index:5;backdrop-filter:blur(4px);}
+
+  .cf-name{font-family:'Playfair Display',serif;font-weight:700;text-align:center;letter-spacing:0.02em;text-shadow:0 2px 8px rgba(0,0,0,0.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:auto;margin-bottom:-1.4em;position:relative;z-index:2;color:#E8A0BF;}
+
+  .cf-art-window{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;overflow:hidden;}
+  .cf-art-window svg{max-height:100%;max-width:100%;height:auto;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));}
+
+  .cf-haiku{font-family:'Playfair Display',serif;font-style:italic;color:rgba(212,207,188,0.85);line-height:1.65;text-align:center;padding:0 0.3rem 0;margin-top:-1.6em;margin-bottom:auto;position:relative;z-index:2;}
+
+  .cs-flip-hint{font-family:'DM Mono',monospace;font-size:0.35rem;color:rgba(122,179,86,0.35);text-align:center;margin-top:auto;padding-top:0.2rem;}
+
+  /* Readout */
+  .readout{width:92vw;max-width:460px;padding:8px 0;font-size:0.6rem;color:var(--muted);text-align:center;border-top:1px solid rgba(122,179,86,0.1);margin-top:8px;}
+  .readout code{color:var(--sage);}
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <div class="control-row">
+    <label>Padding</label>
+    <input type="range" id="sl-pad" min="5" max="20" value="14" step="1">
+    <span class="val" id="v-pad">14%</span>
+  </div>
+  <div class="control-row">
+    <label>Name font</label>
+    <input type="range" id="sl-name" min="0.8" max="2" value="1.1" step="0.05">
+    <span class="val" id="v-name">1.1rem</span>
+  </div>
+  <div class="control-row">
+    <label>Haiku font</label>
+    <input type="range" id="sl-haiku" min="0.4" max="1.2" value="0.62" step="0.02">
+    <span class="val" id="v-haiku">0.62rem</span>
+  </div>
+  <div class="control-row">
+    <label>Name margin-b</label>
+    <input type="range" id="sl-name-mb" min="-3" max="1" value="-1.4" step="0.1">
+    <span class="val" id="v-name-mb">-1.4em</span>
+  </div>
+  <div class="control-row">
+    <label>Haiku margin-t</label>
+    <input type="range" id="sl-haiku-mt" min="-3" max="1" value="-1.6" step="0.1">
+    <span class="val" id="v-haiku-mt">-1.6em</span>
+  </div>
+  <div class="control-row">
+    <label>Season</label>
+    <select id="sel-season">
+      <option value="spring" selected>Spring</option>
+      <option value="summer">Summer</option>
+      <option value="autumn">Autumn</option>
+      <option value="winter">Winter</option>
+    </select>
+  </div>
+</div>
+
+<div class="card-wrap">
+  <div class="card-front" id="card" style="background-image:url('assets/card-front-spring.png');">
+    <div class="cf-ea">12</div>
+    <div class="cf-name" id="el-name">The Hollow Torrentbed</div>
+    <div class="cf-art-window">
+      <svg viewBox="0 0 200 280" width="160" height="220">
+        <rect x="80" y="120" width="40" height="140" rx="6" fill="#5a3a1a"/>
+        <ellipse cx="100" cy="100" rx="60" ry="70" fill="#4a8c3f" opacity="0.85"/>
+        <ellipse cx="80" cy="80" rx="30" ry="35" fill="#6ab04c" opacity="0.7"/>
+        <ellipse cx="120" cy="75" rx="25" ry="30" fill="#7ab356" opacity="0.6"/>
+        <circle cx="100" cy="60" r="12" fill="#E8A0BF" opacity="0.8"/>
+        <circle cx="85" cy="90" r="6" fill="#c8a84b" opacity="0.5"/>
+        <rect x="60" y="255" width="80" height="25" rx="4" fill="#8a6e3e"/>
+      </svg>
+    </div>
+    <div class="cf-haiku" id="el-haiku">soft rain on dry leaves<br>the hollow torrent murmurs<br>roots drink deep below</div>
+    <div class="cs-flip-hint">tap to flip &#8594;</div>
+  </div>
+</div>
+
+<div class="readout" id="readout"></div>
+
+<script>
+var seasonImages = {
+  spring: 'assets/card-front-spring.png',
+  summer: 'assets/card-front-summer.png',
+  autumn: 'assets/card-front-autumn.png',
+  winter: 'assets/card-front-winter.png'
+};
+var seasonColors = {spring:'#E8A0BF',summer:'#D4A843',autumn:'#D4842A',winter:'#A0C4E8'};
+
+var card = document.getElementById('card');
+var elName = document.getElementById('el-name');
+var elHaiku = document.getElementById('el-haiku');
+var readout = document.getElementById('readout');
+
+function update() {
+  var pad = document.getElementById('sl-pad').value;
+  var nameFs = document.getElementById('sl-name').value;
+  var haikuFs = document.getElementById('sl-haiku').value;
+  var nameMb = document.getElementById('sl-name-mb').value;
+  var haikuMt = document.getElementById('sl-haiku-mt').value;
+  var season = document.getElementById('sel-season').value;
+
+  card.style.padding = pad + '% ' + Math.round(pad * 0.85) + '% ' + Math.round(pad * 0.7) + '%';
+  card.style.backgroundImage = "url('" + seasonImages[season] + "')";
+  elName.style.fontSize = nameFs + 'rem';
+  elName.style.color = seasonColors[season];
+  elName.style.marginBottom = nameMb + 'em';
+  elHaiku.style.fontSize = haikuFs + 'rem';
+  elHaiku.style.marginTop = haikuMt + 'em';
+
+  document.getElementById('v-pad').textContent = pad + '%';
+  document.getElementById('v-name').textContent = nameFs + 'rem';
+  document.getElementById('v-haiku').textContent = haikuFs + 'rem';
+  document.getElementById('v-name-mb').textContent = nameMb + 'em';
+  document.getElementById('v-haiku-mt').textContent = haikuMt + 'em';
+
+  readout.innerHTML = 'padding:<code>' + pad + '% ' + Math.round(pad*0.85) + '% ' + Math.round(pad*0.7) + '%</code> | name:<code>' + nameFs + 'rem</code> mb:<code>' + nameMb + 'em</code> | haiku:<code>' + haikuFs + 'rem</code> mt:<code>' + haikuMt + 'em</code>';
+}
+
+document.querySelectorAll('input[type=range],select').forEach(function(el) {
+  el.addEventListener('input', update);
+});
+update();
+</script>
+</body>
+</html>
