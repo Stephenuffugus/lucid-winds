@@ -24,12 +24,12 @@
 
   .cf-ea{position:absolute;top:8%;right:6%;font-family:'Bebas Neue',sans-serif;font-size:0.85rem;color:var(--gold);background:rgba(10,10,8,0.7);border:1px solid rgba(200,168,75,0.25);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;z-index:5;backdrop-filter:blur(4px);}
 
-  .cf-name{font-family:'Playfair Display',serif;font-weight:700;text-align:center;letter-spacing:0.02em;text-shadow:0 2px 8px rgba(0,0,0,0.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:auto;margin-bottom:-1.4em;position:relative;z-index:2;color:#E8A0BF;}
+  .cf-name{font-family:'Playfair Display',serif;font-weight:700;text-align:center;letter-spacing:0.02em;text-shadow:0 2px 8px rgba(0,0,0,0.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:auto;position:relative;z-index:2;color:#E8A0BF;}
 
   .cf-art-window{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;overflow:hidden;}
   .cf-art-window svg{max-height:100%;max-width:100%;height:auto;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));}
 
-  .cf-haiku{font-family:'Playfair Display',serif;font-style:italic;color:rgba(212,207,188,0.85);line-height:1.65;text-align:center;padding:0 0.3rem 0;margin-top:-1.6em;margin-bottom:auto;position:relative;z-index:2;}
+  .cf-haiku{font-family:'Playfair Display',serif;font-style:italic;color:rgba(212,207,188,0.85);line-height:1.65;text-align:center;padding:0 0.3rem 0;margin-bottom:auto;position:relative;z-index:2;}
 
   .cs-flip-hint{font-family:'DM Mono',monospace;font-size:0.35rem;color:rgba(122,179,86,0.35);text-align:center;margin-top:auto;padding-top:0.2rem;}
 
@@ -57,14 +57,14 @@
     <span class="val" id="v-haiku">0.62rem</span>
   </div>
   <div class="control-row">
-    <label>Name margin-b</label>
-    <input type="range" id="sl-name-mb" min="-3" max="1" value="-1.4" step="0.1">
-    <span class="val" id="v-name-mb">-1.4em</span>
+    <label>Name offset</label>
+    <input type="range" id="sl-name-mb" min="0" max="60" value="0" step="1">
+    <span class="val" id="v-name-mb">0px</span>
   </div>
   <div class="control-row">
-    <label>Haiku margin-t</label>
-    <input type="range" id="sl-haiku-mt" min="-3" max="1" value="-1.6" step="0.1">
-    <span class="val" id="v-haiku-mt">-1.6em</span>
+    <label>Haiku offset</label>
+    <input type="range" id="sl-haiku-mt" min="-60" max="0" value="0" step="1">
+    <span class="val" id="v-haiku-mt">0px</span>
   </div>
   <div class="control-row">
     <label>Season</label>
@@ -125,17 +125,17 @@ function update() {
   card.style.backgroundImage = "url('" + seasonImages[season] + "')";
   elName.style.fontSize = nameFs + 'rem';
   elName.style.color = seasonColors[season];
-  elName.style.marginBottom = nameMb + 'em';
+  elName.style.top = nameMb + 'px';
   elHaiku.style.fontSize = haikuFs + 'rem';
-  elHaiku.style.marginTop = haikuMt + 'em';
+  elHaiku.style.top = haikuMt + 'px';
 
   document.getElementById('v-pad').textContent = pad + '%';
   document.getElementById('v-name').textContent = nameFs + 'rem';
   document.getElementById('v-haiku').textContent = haikuFs + 'rem';
-  document.getElementById('v-name-mb').textContent = nameMb + 'em';
-  document.getElementById('v-haiku-mt').textContent = haikuMt + 'em';
+  document.getElementById('v-name-mb').textContent = nameMb + 'px';
+  document.getElementById('v-haiku-mt').textContent = haikuMt + 'px';
 
-  readout.innerHTML = 'padding:<code>' + pad + '% ' + Math.round(pad*0.85) + '% ' + Math.round(pad*0.7) + '%</code> | name:<code>' + nameFs + 'rem</code> mb:<code>' + nameMb + 'em</code> | haiku:<code>' + haikuFs + 'rem</code> mt:<code>' + haikuMt + 'em</code>';
+  readout.innerHTML = 'padding:<code>' + pad + '% ' + Math.round(pad*0.85) + '% ' + Math.round(pad*0.7) + '%</code> | name:<code>' + nameFs + 'rem</code> top:<code>' + nameMb + 'px</code> | haiku:<code>' + haikuFs + 'rem</code> top:<code>' + haikuMt + 'px</code>';
 }
 
 document.querySelectorAll('input[type=range],select').forEach(function(el) {
