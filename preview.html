@@ -13,25 +13,28 @@
   /* Controls */
   .controls{width:92vw;max-width:460px;padding:12px 0;display:flex;flex-direction:column;gap:6px;}
   .control-row{display:flex;align-items:center;gap:8px;font-size:0.7rem;}
-  .control-row label{min-width:100px;color:var(--muted);}
+  .control-row label{min-width:120px;color:var(--muted);}
   .control-row input[type="range"]{flex:1;accent-color:var(--sage);}
   .control-row .val{min-width:50px;text-align:right;color:var(--sage);font-size:0.65rem;}
   .control-row select{background:#1a1d18;color:var(--cream);border:1px solid var(--muted);border-radius:4px;padding:2px 6px;font-family:'DM Mono',monospace;font-size:0.65rem;}
+  .section-label{font-size:0.6rem;color:var(--gold);text-transform:uppercase;letter-spacing:0.1em;margin-top:6px;border-top:1px solid rgba(122,179,86,0.15);padding-top:6px;}
 
-  /* Card container */
-  .card-wrap{width:92vw;max-width:460px;height:calc(100vh - 180px);max-height:600px;position:relative;margin:0 auto;}
-  .card-front{position:absolute;inset:0;display:flex;flex-direction:column;border-radius:12px;overflow:hidden;background-color:#050505;background-size:96% 96%;background-position:center;background-repeat:no-repeat;}
+  /* Card container — grid layout */
+  .card-wrap{width:92vw;max-width:460px;height:calc(100vh - 260px);max-height:600px;position:relative;margin:0 auto;}
+  .card-front{position:absolute;inset:0;display:grid;grid-template-rows:auto 1fr auto;border-radius:12px;overflow:hidden;background-color:#050505;background-size:96% 96%;background-position:center;background-repeat:no-repeat;}
+
+  .cf-name-zone{display:flex;align-items:center;justify-content:center;overflow:hidden;background:transparent;border:none;}
+  .cf-art-window{display:flex;align-items:center;justify-content:center;min-height:0;overflow:hidden;background:transparent;border:none;}
+  .cf-art-window svg{max-height:100%;max-width:100%;height:auto;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));}
+  .cf-haiku-zone{display:flex;align-items:flex-end;justify-content:center;overflow:hidden;background:transparent;border:none;}
 
   .cf-ea{position:absolute;top:8%;right:6%;font-family:'Bebas Neue',sans-serif;font-size:0.85rem;color:var(--gold);background:rgba(10,10,8,0.7);border:1px solid rgba(200,168,75,0.25);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;z-index:5;backdrop-filter:blur(4px);}
 
-  .cf-name{font-family:'Playfair Display',serif;font-weight:700;text-align:center;letter-spacing:0.02em;text-shadow:0 2px 8px rgba(0,0,0,0.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:auto;position:relative;z-index:2;color:#E8A0BF;}
+  .cf-name{font-family:'Playfair Display',serif;font-weight:700;text-align:center;letter-spacing:0.02em;text-shadow:0 2px 8px rgba(0,0,0,0.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;color:#E8A0BF;}
 
-  .cf-art-window{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;overflow:hidden;}
-  .cf-art-window svg{max-height:100%;max-width:100%;height:auto;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));}
+  .cf-haiku{font-family:'Playfair Display',serif;font-style:italic;color:rgba(212,207,188,0.85);line-height:1.65;text-align:center;width:100%;}
 
-  .cf-haiku{font-family:'Playfair Display',serif;font-style:italic;color:rgba(212,207,188,0.85);line-height:1.65;text-align:center;padding:0 0.3rem 0;margin-bottom:auto;position:relative;z-index:2;}
-
-  .cs-flip-hint{font-family:'DM Mono',monospace;font-size:0.35rem;color:rgba(122,179,86,0.35);text-align:center;margin-top:auto;padding-top:0.2rem;}
+  .cs-flip-hint{font-family:'DM Mono',monospace;font-size:0.35rem;color:rgba(122,179,86,0.35);text-align:center;position:absolute;bottom:2%;left:0;right:0;}
 
   /* Readout */
   .readout{width:92vw;max-width:460px;padding:8px 0;font-size:0.6rem;color:var(--muted);text-align:center;border-top:1px solid rgba(122,179,86,0.1);margin-top:8px;}
@@ -41,55 +44,11 @@
 <body>
 
 <div class="controls">
+  <div class="section-label">Card</div>
   <div class="control-row">
     <label>Padding</label>
     <input type="range" id="sl-pad" min="5" max="25" value="14" step="1">
     <span class="val" id="v-pad">14%</span>
-  </div>
-  <div class="control-row">
-    <label>Name font</label>
-    <input type="range" id="sl-name" min="0.8" max="2" value="1.15" step="0.05">
-    <span class="val" id="v-name">1.15rem</span>
-  </div>
-  <div class="control-row">
-    <label>Haiku font</label>
-    <input type="range" id="sl-haiku" min="0.4" max="1.4" value="1.08" step="0.02">
-    <span class="val" id="v-haiku">1.08rem</span>
-  </div>
-  <div class="control-row">
-    <label>Name offset</label>
-    <input type="range" id="sl-name-mb" min="0" max="60" value="28" step="1">
-    <span class="val" id="v-name-mb">28px</span>
-  </div>
-  <div class="control-row">
-    <label>Haiku offset</label>
-    <input type="range" id="sl-haiku-mt" min="-60" max="0" value="-36" step="1">
-    <span class="val" id="v-haiku-mt">-36px</span>
-  </div>
-  <div class="control-row">
-    <label>Plant scale</label>
-    <input type="range" id="sl-scale" min="80" max="200" value="150" step="5">
-    <span class="val" id="v-scale">150%</span>
-  </div>
-  <div class="control-row">
-    <label>Plant Y offset</label>
-    <input type="range" id="sl-plant-y" min="-80" max="80" value="0" step="2">
-    <span class="val" id="v-plant-y">0px</span>
-  </div>
-  <div class="control-row">
-    <label>Plant X offset</label>
-    <input type="range" id="sl-plant-x" min="-60" max="60" value="0" step="2">
-    <span class="val" id="v-plant-x">0px</span>
-  </div>
-  <div class="control-row">
-    <label>Name X</label>
-    <input type="range" id="sl-name-x" min="-30" max="30" value="0" step="1">
-    <span class="val" id="v-name-x">0px</span>
-  </div>
-  <div class="control-row">
-    <label>Haiku X</label>
-    <input type="range" id="sl-haiku-x" min="-30" max="30" value="0" step="1">
-    <span class="val" id="v-haiku-x">0px</span>
   </div>
   <div class="control-row">
     <label>BG size</label>
@@ -105,12 +64,75 @@
       <option value="winter">Winter</option>
     </select>
   </div>
+
+  <div class="section-label">Grid Zones</div>
+  <div class="control-row">
+    <label>Name zone top</label>
+    <input type="range" id="sl-name-top" min="0" max="25" value="12" step="1">
+    <span class="val" id="v-name-top">12%</span>
+  </div>
+  <div class="control-row">
+    <label>Name zone height</label>
+    <input type="range" id="sl-name-h" min="5" max="25" value="10" step="1">
+    <span class="val" id="v-name-h">10%</span>
+  </div>
+  <div class="control-row">
+    <label>Haiku zone bottom</label>
+    <input type="range" id="sl-haiku-bot" min="0" max="25" value="8" step="1">
+    <span class="val" id="v-haiku-bot">8%</span>
+  </div>
+  <div class="control-row">
+    <label>Haiku zone height</label>
+    <input type="range" id="sl-haiku-h" min="5" max="25" value="12" step="1">
+    <span class="val" id="v-haiku-h">12%</span>
+  </div>
+
+  <div class="section-label">Typography</div>
+  <div class="control-row">
+    <label>Name font</label>
+    <input type="range" id="sl-name" min="0.8" max="2" value="1.15" step="0.05">
+    <span class="val" id="v-name">1.15rem</span>
+  </div>
+  <div class="control-row">
+    <label>Haiku font</label>
+    <input type="range" id="sl-haiku" min="0.4" max="1.4" value="1.08" step="0.02">
+    <span class="val" id="v-haiku">1.08rem</span>
+  </div>
+  <div class="control-row">
+    <label>Name X</label>
+    <input type="range" id="sl-name-x" min="-30" max="30" value="0" step="1">
+    <span class="val" id="v-name-x">0px</span>
+  </div>
+  <div class="control-row">
+    <label>Haiku X</label>
+    <input type="range" id="sl-haiku-x" min="-30" max="30" value="0" step="1">
+    <span class="val" id="v-haiku-x">0px</span>
+  </div>
+
+  <div class="section-label">Plant</div>
+  <div class="control-row">
+    <label>Plant scale</label>
+    <input type="range" id="sl-scale" min="80" max="200" value="150" step="5">
+    <span class="val" id="v-scale">150%</span>
+  </div>
+  <div class="control-row">
+    <label>Plant Y offset</label>
+    <input type="range" id="sl-plant-y" min="-80" max="80" value="0" step="2">
+    <span class="val" id="v-plant-y">0px</span>
+  </div>
+  <div class="control-row">
+    <label>Plant X offset</label>
+    <input type="range" id="sl-plant-x" min="-60" max="60" value="0" step="2">
+    <span class="val" id="v-plant-x">0px</span>
+  </div>
 </div>
 
 <div class="card-wrap">
   <div class="card-front" id="card">
     <div class="cf-ea">12</div>
-    <div class="cf-name" id="el-name">The Hollow Torrentbed</div>
+    <div class="cf-name-zone">
+      <div class="cf-name" id="el-name">The Hollow Torrentbed</div>
+    </div>
     <div class="cf-art-window">
       <svg viewBox="0 0 200 280" width="160" height="220">
         <rect x="80" y="120" width="40" height="140" rx="6" fill="#5a3a1a"/>
@@ -122,7 +144,9 @@
         <rect x="60" y="255" width="80" height="25" rx="4" fill="#8a6e3e"/>
       </svg>
     </div>
-    <div class="cf-haiku" id="el-haiku">soft rain on dry leaves<br>the hollow torrent murmurs<br>roots drink deep below</div>
+    <div class="cf-haiku-zone">
+      <div class="cf-haiku" id="el-haiku">soft rain on dry leaves<br>the hollow torrent murmurs<br>roots drink deep below</div>
+    </div>
     <div class="cs-flip-hint">tap to flip &#8594;</div>
   </div>
 </div>
@@ -149,8 +173,6 @@ function update() {
   var pad = document.getElementById('sl-pad').value;
   var nameFs = document.getElementById('sl-name').value;
   var haikuFs = document.getElementById('sl-haiku').value;
-  var nameMb = document.getElementById('sl-name-mb').value;
-  var haikuMt = document.getElementById('sl-haiku-mt').value;
   var scale = document.getElementById('sl-scale').value;
   var plantY = document.getElementById('sl-plant-y').value;
   var plantX = document.getElementById('sl-plant-x').value;
@@ -158,16 +180,21 @@ function update() {
   var haikuX = document.getElementById('sl-haiku-x').value;
   var bgSize = document.getElementById('sl-bgsize').value;
   var season = document.getElementById('sel-season').value;
+  var nameTop = document.getElementById('sl-name-top').value;
+  var nameH = document.getElementById('sl-name-h').value;
+  var haikuBot = document.getElementById('sl-haiku-bot').value;
+  var haikuH = document.getElementById('sl-haiku-h').value;
 
-  card.style.padding = pad + '% ' + Math.round(pad * 0.85) + '% ' + Math.round(pad * 0.7) + '%';
+  /* Grid: pad-top via padding, then name-zone / art(1fr) / haiku-zone / pad-bottom via padding */
+  card.style.padding = nameTop + '% ' + Math.round(pad * 0.85) + '% ' + haikuBot + '%';
+  card.style.gridTemplateRows = nameH + '% 1fr ' + haikuH + '%';
   card.style.backgroundImage = "url('" + seasonImages[season] + "')";
   card.style.backgroundSize = bgSize + '% ' + bgSize + '%';
+
   elName.style.fontSize = nameFs + 'rem';
   elName.style.color = seasonColors[season];
-  elName.style.top = nameMb + 'px';
   elName.style.transform = 'translateX(' + nameX + 'px)';
   elHaiku.style.fontSize = haikuFs + 'rem';
-  elHaiku.style.top = haikuMt + 'px';
   elHaiku.style.transform = 'translateX(' + haikuX + 'px)';
   elSvg.style.transform = 'scale(' + (scale / 100) + ') translate(' + plantX + 'px, ' + plantY + 'px)';
   elSvg.style.transformOrigin = 'center center';
@@ -175,16 +202,18 @@ function update() {
   document.getElementById('v-pad').textContent = pad + '%';
   document.getElementById('v-name').textContent = nameFs + 'rem';
   document.getElementById('v-haiku').textContent = haikuFs + 'rem';
-  document.getElementById('v-name-mb').textContent = nameMb + 'px';
-  document.getElementById('v-haiku-mt').textContent = haikuMt + 'px';
   document.getElementById('v-scale').textContent = scale + '%';
   document.getElementById('v-plant-y').textContent = plantY + 'px';
   document.getElementById('v-plant-x').textContent = plantX + 'px';
   document.getElementById('v-name-x').textContent = nameX + 'px';
   document.getElementById('v-haiku-x').textContent = haikuX + 'px';
   document.getElementById('v-bgsize').textContent = bgSize + '%';
+  document.getElementById('v-name-top').textContent = nameTop + '%';
+  document.getElementById('v-name-h').textContent = nameH + '%';
+  document.getElementById('v-haiku-bot').textContent = haikuBot + '%';
+  document.getElementById('v-haiku-h').textContent = haikuH + '%';
 
-  readout.innerHTML = 'padding:<code>' + pad + '% ' + Math.round(pad*0.85) + '% ' + Math.round(pad*0.7) + '%</code> | name:<code>' + nameFs + 'rem</code> top:<code>' + nameMb + 'px</code> x:<code>' + nameX + 'px</code> | haiku:<code>' + haikuFs + 'rem</code> top:<code>' + haikuMt + 'px</code> x:<code>' + haikuX + 'px</code> | scale:<code>' + scale + '%</code> plantXY:<code>' + plantX + ',' + plantY + 'px</code>';
+  readout.innerHTML = 'grid:<code>' + nameH + '% 1fr ' + haikuH + '%</code> | pad:<code>' + nameTop + '% ' + Math.round(pad*0.85) + '% ' + haikuBot + '%</code> | name:<code>' + nameFs + 'rem</code> x:<code>' + nameX + 'px</code> | haiku:<code>' + haikuFs + 'rem</code> x:<code>' + haikuX + 'px</code> | scale:<code>' + scale + '%</code>';
 }
 
 document.querySelectorAll('input[type=range],select').forEach(function(el) {
