@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lucid Winds — Card Preview Sandbox</title>
+<title>Lucid Winds — EA Badge Preview</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Bebas+Neue&family=DM+Mono&display=swap" rel="stylesheet">
 <style>
   :root{--bg:#0d100c;--sage:#7ab356;--gold:#c8a84b;--cream:#e8dcc8;--muted:#8a9178;}
@@ -19,21 +19,23 @@
   .control-row select{background:#1a1d18;color:var(--cream);border:1px solid var(--muted);border-radius:4px;padding:2px 6px;font-family:'DM Mono',monospace;font-size:0.65rem;}
   .section-label{font-size:0.6rem;color:var(--gold);text-transform:uppercase;letter-spacing:0.1em;margin-top:6px;border-top:1px solid rgba(122,179,86,0.15);padding-top:6px;}
 
-  /* Card container — grid layout */
-  .card-wrap{width:92vw;max-width:460px;height:calc(100vh - 260px);max-height:600px;position:relative;margin:0 auto;}
-  .card-front{position:absolute;inset:0;display:grid;grid-template-rows:auto 1fr auto;border-radius:12px;overflow:hidden;background-color:#050505;background-size:96% 96%;background-position:center;background-repeat:no-repeat;}
+  /* Card container */
+  .card-wrap{width:92vw;max-width:460px;height:calc(100vh - 320px);max-height:600px;position:relative;margin:0 auto;}
+  .card-front{position:absolute;inset:0;display:grid;grid-template-rows:12% 55% 20% auto;border-radius:12px;overflow:visible;background-color:#050505;background-size:96%;background-position:center;background-repeat:no-repeat;padding:25% 12% 8%;border:2px solid rgba(232,160,191,0.3);box-shadow:0 0 0 3px #050505, 0 0 0 5px rgba(232,160,191,0.15);}
 
-  .cf-name-zone{display:flex;align-items:center;justify-content:center;overflow:hidden;background:transparent;border:none;}
-  .cf-art-window{display:flex;align-items:center;justify-content:center;min-height:0;overflow:hidden;background:transparent;border:none;}
+  .cf-name-zone{display:flex;align-items:center;justify-content:center;overflow:hidden;background:transparent;}
+  .cf-art-window{display:flex;align-items:center;justify-content:center;min-height:0;overflow:hidden;background:transparent;}
   .cf-art-window svg{max-height:100%;max-width:100%;height:auto;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));}
-  .cf-haiku-zone{display:flex;align-items:flex-end;justify-content:center;overflow:hidden;background:transparent;border:none;}
+  .cf-haiku-zone{display:flex;align-items:flex-end;justify-content:center;overflow:hidden;background:transparent;}
 
-  .cf-ea{position:absolute;top:8%;right:6%;font-family:'Bebas Neue',sans-serif;font-size:0.85rem;color:var(--gold);background:rgba(10,10,8,0.7);border:1px solid rgba(200,168,75,0.25);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;z-index:5;backdrop-filter:blur(4px);}
+  /* EA Badge — matches current carousel styles */
+  .cf-ea{position:absolute;z-index:5;display:flex;align-items:center;justify-content:center;pointer-events:none;
+    background:rgba(13,16,12,0.72);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+    border:1px solid rgba(232,160,191,0.3);
+    font-family:'Bebas Neue',sans-serif;color:#E8A0BF;letter-spacing:0.03em;line-height:1;}
 
   .cf-name{font-family:'Playfair Display',serif;font-weight:700;text-align:center;letter-spacing:0.02em;text-shadow:0 2px 8px rgba(0,0,0,0.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;color:#E8A0BF;}
-
   .cf-haiku{font-family:'Playfair Display',serif;font-style:italic;color:rgba(212,207,188,0.85);line-height:1.65;text-align:center;width:100%;}
-
   .cs-flip-hint{font-family:'DM Mono',monospace;font-size:0.35rem;color:rgba(122,179,86,0.35);text-align:center;position:absolute;bottom:2%;left:0;right:0;}
 
   /* Readout */
@@ -44,17 +46,41 @@
 <body>
 
 <div class="controls">
-  <div class="section-label">Card</div>
+  <div class="section-label">EA Badge Position</div>
   <div class="control-row">
-    <label>Padding</label>
-    <input type="range" id="sl-pad" min="5" max="25" value="14" step="1">
-    <span class="val" id="v-pad">14%</span>
+    <label>Top</label>
+    <input type="range" id="sl-ea-top" min="0" max="80" value="12" step="1">
+    <span class="val" id="v-ea-top">12px</span>
   </div>
   <div class="control-row">
-    <label>BG size</label>
-    <input type="range" id="sl-bgsize" min="90" max="110" value="96" step="1">
-    <span class="val" id="v-bgsize">96%</span>
+    <label>Right</label>
+    <input type="range" id="sl-ea-right" min="0" max="80" value="12" step="1">
+    <span class="val" id="v-ea-right">12px</span>
   </div>
+
+  <div class="section-label">EA Badge Size</div>
+  <div class="control-row">
+    <label>Pill width</label>
+    <input type="range" id="sl-ea-w" min="20" max="80" value="48" step="1">
+    <span class="val" id="v-ea-w">48px</span>
+  </div>
+  <div class="control-row">
+    <label>Pill height</label>
+    <input type="range" id="sl-ea-h" min="20" max="80" value="48" step="1">
+    <span class="val" id="v-ea-h">48px</span>
+  </div>
+  <div class="control-row">
+    <label>Font size</label>
+    <input type="range" id="sl-ea-fs" min="0.6" max="3" value="1.61" step="0.01">
+    <span class="val" id="v-ea-fs">1.61rem</span>
+  </div>
+  <div class="control-row">
+    <label>Border radius</label>
+    <input type="range" id="sl-ea-br" min="0" max="24" value="9" step="1">
+    <span class="val" id="v-ea-br">9px</span>
+  </div>
+
+  <div class="section-label">Season</div>
   <div class="control-row">
     <label>Season</label>
     <select id="sel-season">
@@ -64,72 +90,11 @@
       <option value="winter">Winter</option>
     </select>
   </div>
-
-  <div class="section-label">Grid Zones</div>
-  <div class="control-row">
-    <label>Name zone top</label>
-    <input type="range" id="sl-name-top" min="0" max="25" value="12" step="1">
-    <span class="val" id="v-name-top">12%</span>
-  </div>
-  <div class="control-row">
-    <label>Name zone height</label>
-    <input type="range" id="sl-name-h" min="5" max="25" value="10" step="1">
-    <span class="val" id="v-name-h">10%</span>
-  </div>
-  <div class="control-row">
-    <label>Haiku zone bottom</label>
-    <input type="range" id="sl-haiku-bot" min="0" max="25" value="8" step="1">
-    <span class="val" id="v-haiku-bot">8%</span>
-  </div>
-  <div class="control-row">
-    <label>Haiku zone height</label>
-    <input type="range" id="sl-haiku-h" min="5" max="25" value="12" step="1">
-    <span class="val" id="v-haiku-h">12%</span>
-  </div>
-
-  <div class="section-label">Typography</div>
-  <div class="control-row">
-    <label>Name font</label>
-    <input type="range" id="sl-name" min="0.8" max="2" value="1.15" step="0.05">
-    <span class="val" id="v-name">1.15rem</span>
-  </div>
-  <div class="control-row">
-    <label>Haiku font</label>
-    <input type="range" id="sl-haiku" min="0.4" max="1.4" value="1.08" step="0.02">
-    <span class="val" id="v-haiku">1.08rem</span>
-  </div>
-  <div class="control-row">
-    <label>Name X</label>
-    <input type="range" id="sl-name-x" min="-30" max="30" value="0" step="1">
-    <span class="val" id="v-name-x">0px</span>
-  </div>
-  <div class="control-row">
-    <label>Haiku X</label>
-    <input type="range" id="sl-haiku-x" min="-30" max="30" value="0" step="1">
-    <span class="val" id="v-haiku-x">0px</span>
-  </div>
-
-  <div class="section-label">Plant</div>
-  <div class="control-row">
-    <label>Plant scale</label>
-    <input type="range" id="sl-scale" min="80" max="200" value="150" step="5">
-    <span class="val" id="v-scale">150%</span>
-  </div>
-  <div class="control-row">
-    <label>Plant Y offset</label>
-    <input type="range" id="sl-plant-y" min="-80" max="80" value="0" step="2">
-    <span class="val" id="v-plant-y">0px</span>
-  </div>
-  <div class="control-row">
-    <label>Plant X offset</label>
-    <input type="range" id="sl-plant-x" min="-60" max="60" value="0" step="2">
-    <span class="val" id="v-plant-x">0px</span>
-  </div>
 </div>
 
 <div class="card-wrap">
   <div class="card-front" id="card">
-    <div class="cf-ea">12</div>
+    <div class="cf-ea" id="ea-badge">12</div>
     <div class="cf-name-zone">
       <div class="cf-name" id="el-name">The Hollow Torrentbed</div>
     </div>
@@ -162,58 +127,50 @@ var seasonImages = {
   winter: 'assets/card-front-winter.png' + _cb
 };
 var seasonColors = {spring:'#E8A0BF',summer:'#D4A843',autumn:'#D4842A',winter:'#A0C4E8'};
+var seasonBorders = {
+  spring:'rgba(232,160,191,0.3)',
+  summer:'rgba(212,168,67,0.3)',
+  autumn:'rgba(212,132,42,0.3)',
+  winter:'rgba(160,196,232,0.3)'
+};
 
 var card = document.getElementById('card');
+var eaBadge = document.getElementById('ea-badge');
 var elName = document.getElementById('el-name');
-var elHaiku = document.getElementById('el-haiku');
-var elSvg = document.querySelector('.cf-art-window svg');
 var readout = document.getElementById('readout');
 
 function update() {
-  var pad = document.getElementById('sl-pad').value;
-  var nameFs = document.getElementById('sl-name').value;
-  var haikuFs = document.getElementById('sl-haiku').value;
-  var scale = document.getElementById('sl-scale').value;
-  var plantY = document.getElementById('sl-plant-y').value;
-  var plantX = document.getElementById('sl-plant-x').value;
-  var nameX = document.getElementById('sl-name-x').value;
-  var haikuX = document.getElementById('sl-haiku-x').value;
-  var bgSize = document.getElementById('sl-bgsize').value;
+  var eaTop = document.getElementById('sl-ea-top').value;
+  var eaRight = document.getElementById('sl-ea-right').value;
+  var eaW = document.getElementById('sl-ea-w').value;
+  var eaH = document.getElementById('sl-ea-h').value;
+  var eaFs = document.getElementById('sl-ea-fs').value;
+  var eaBr = document.getElementById('sl-ea-br').value;
   var season = document.getElementById('sel-season').value;
-  var nameTop = document.getElementById('sl-name-top').value;
-  var nameH = document.getElementById('sl-name-h').value;
-  var haikuBot = document.getElementById('sl-haiku-bot').value;
-  var haikuH = document.getElementById('sl-haiku-h').value;
 
-  /* Grid: pad-top via padding, then name-zone / art(1fr) / haiku-zone / pad-bottom via padding */
-  card.style.padding = nameTop + '% ' + Math.round(pad * 0.85) + '% ' + haikuBot + '%';
-  card.style.gridTemplateRows = nameH + '% 1fr ' + haikuH + '%';
   card.style.backgroundImage = "url('" + seasonImages[season] + "')";
-  card.style.backgroundSize = bgSize + '% ' + bgSize + '%';
+  card.style.borderColor = seasonBorders[season];
+  card.style.boxShadow = '0 0 0 3px #050505, 0 0 0 5px ' + seasonBorders[season].replace('0.3','0.15');
 
-  elName.style.fontSize = nameFs + 'rem';
   elName.style.color = seasonColors[season];
-  elName.style.transform = 'translateX(' + nameX + 'px)';
-  elHaiku.style.fontSize = haikuFs + 'rem';
-  elHaiku.style.transform = 'translateX(' + haikuX + 'px)';
-  elSvg.style.transform = 'scale(' + (scale / 100) + ') translate(' + plantX + 'px, ' + plantY + 'px)';
-  elSvg.style.transformOrigin = 'center center';
 
-  document.getElementById('v-pad').textContent = pad + '%';
-  document.getElementById('v-name').textContent = nameFs + 'rem';
-  document.getElementById('v-haiku').textContent = haikuFs + 'rem';
-  document.getElementById('v-scale').textContent = scale + '%';
-  document.getElementById('v-plant-y').textContent = plantY + 'px';
-  document.getElementById('v-plant-x').textContent = plantX + 'px';
-  document.getElementById('v-name-x').textContent = nameX + 'px';
-  document.getElementById('v-haiku-x').textContent = haikuX + 'px';
-  document.getElementById('v-bgsize').textContent = bgSize + '%';
-  document.getElementById('v-name-top').textContent = nameTop + '%';
-  document.getElementById('v-name-h').textContent = nameH + '%';
-  document.getElementById('v-haiku-bot').textContent = haikuBot + '%';
-  document.getElementById('v-haiku-h').textContent = haikuH + '%';
+  eaBadge.style.top = eaTop + 'px';
+  eaBadge.style.right = eaRight + 'px';
+  eaBadge.style.minWidth = eaW + 'px';
+  eaBadge.style.height = eaH + 'px';
+  eaBadge.style.fontSize = eaFs + 'rem';
+  eaBadge.style.borderRadius = eaBr + 'px';
+  eaBadge.style.borderColor = seasonBorders[season];
+  eaBadge.style.color = seasonColors[season];
 
-  readout.innerHTML = 'grid:<code>' + nameH + '% 1fr ' + haikuH + '%</code> | pad:<code>' + nameTop + '% ' + Math.round(pad*0.85) + '% ' + haikuBot + '%</code> | name:<code>' + nameFs + 'rem</code> x:<code>' + nameX + 'px</code> | haiku:<code>' + haikuFs + 'rem</code> x:<code>' + haikuX + 'px</code> | scale:<code>' + scale + '%</code>';
+  document.getElementById('v-ea-top').textContent = eaTop + 'px';
+  document.getElementById('v-ea-right').textContent = eaRight + 'px';
+  document.getElementById('v-ea-w').textContent = eaW + 'px';
+  document.getElementById('v-ea-h').textContent = eaH + 'px';
+  document.getElementById('v-ea-fs').textContent = eaFs + 'rem';
+  document.getElementById('v-ea-br').textContent = eaBr + 'px';
+
+  readout.innerHTML = 'CSS: <code>top:' + eaTop + 'px; right:' + eaRight + 'px; min-width:' + eaW + 'px; height:' + eaH + 'px; font-size:' + eaFs + 'rem; border-radius:' + eaBr + 'px;</code>';
 }
 
 document.querySelectorAll('input[type=range],select').forEach(function(el) {
