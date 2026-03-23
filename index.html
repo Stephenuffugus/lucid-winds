@@ -1076,9 +1076,12 @@
     .cs-card-back[data-tier="uncommon"]{background-image:url('assets/card-uncommon.png');}
     .cs-card-back[data-tier="rare"]{background-image:url('assets/card-rare.png');}
     .cs-card-back[data-tier="epic"]{background-image:url('assets/card-epic.png');}
-    .cs-card-back[data-tier="legendary"]{background-image:url('assets/card-legendary.png');}
+    .cs-card-back[data-tier="legendary"]{background-image:url('assets/card-legendary.png');background-size:191%;}
     .cs-card-back[data-tier="mythic"]{background-image:url('assets/card-mythic.png');}
     .cs-card-back[data-tier="cosmic"]{background-image:url('assets/card-cosmic.png');}
+    .cs-card-back[data-tier="legendary"] .cb-name{bottom:8.3% !important;}
+    .cs-card-back[data-tier="uncommon"] .cb-name{bottom:10% !important;}
+    .cs-card-back[data-tier="rare"] .cb-name{bottom:9.3% !important;}
     .cf-name-zone{display:flex;align-items:flex-end;justify-content:center;overflow:hidden;background:transparent;border:none;padding-left:10%;}
     .cf-name{font-family:'Playfair Display',serif;font-size:1.45rem;font-weight:700;text-align:center;letter-spacing:0.02em;text-shadow:0 2px 8px rgba(0,0,0,0.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;}
     .cf-art-window{display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0;background:transparent;border:none;}
@@ -13098,7 +13101,7 @@ document.addEventListener('keydown', function(e) {
     // Hash + date
     back += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--sage);opacity:0.5;word-break:break-all;text-align:center;margin-top:0.4rem;padding-top:0.3rem;border-top:1px solid rgba(74,124,53,0.06);">' + plant.hash + '</div>';
     back += '<div style="font-size:0.42rem;color:var(--muted);text-align:center;margin-top:0.1rem;">Minted ' + (plant.date || '') + dateSuffix + '</div>';
-    back += '<div style="position:absolute;bottom:8%;left:0;right:0;text-align:center;font-family:Playfair Display,serif;font-size:0.85rem;font-weight:900;color:' + sColor + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 10%;text-shadow:0 2px 8px rgba(0,0,0,0.8);">' + name + '</div>';
+    back += '<div class="cb-name" style="position:absolute;bottom:8%;left:0;right:0;text-align:center;font-family:Playfair Display,serif;font-size:0.85rem;font-weight:900;color:' + sColor + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 10%;text-shadow:0 2px 8px rgba(0,0,0,0.8);">' + name + '</div>';
     back += '<div class="cs-flip-hint">\u2190 tap to flip</div>';
     back += '</div>';
 
