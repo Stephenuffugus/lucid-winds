@@ -1072,10 +1072,10 @@
     .cs-card-front[data-season="summer"]{background-image:url('assets/card-front-summer.png');}
     .cs-card-front[data-season="autumn"]{background-image:url('assets/card-front-autumn.png');}
     .cs-card-front[data-season="winter"]{background-image:url('assets/card-front-winter.png');}
-    .cs-card-back[data-tier="common"]{background-image:url('assets/card-common.png');background-size:128% 99%;}
+    .cs-card-back[data-tier="common"]{background-image:url('assets/card-common.png');background-size:131% 99%;}
     .cs-card-back[data-tier="uncommon"]{background-image:url('assets/card-uncommon.png');}
-    .cs-card-back[data-tier="rare"]{background-image:url('assets/card-rare.png');background-size:107% 99%;}
-    .cs-card-back[data-tier="epic"]{background-image:url('assets/card-epic.png');}
+    .cs-card-back[data-tier="rare"]{background-image:url('assets/card-rare.png');background-size:105% 99%;}
+    .cs-card-back[data-tier="epic"]{background-image:url('assets/card-epic.png');background-size:171% 174%;}
     .cs-card-back[data-tier="legendary"]{background-image:url('assets/card-legendary.png');background-size:105% 101%;}
     .cs-card-back[data-tier="mythic"]{background-image:url('assets/card-mythic.png');background-size:109% 100%;}
     .cs-card-back[data-tier="cosmic"]{background-image:url('assets/card-cosmic.png');background-size:107% 99%;}
@@ -1198,12 +1198,13 @@
       font-family: 'Bebas Neue', sans-serif;
       font-size: 0.55rem; letter-spacing: 0.18em;
       color: var(--sage); margin-bottom: 0.4rem;
-      display: flex; align-items: center; gap: 0.4rem;
+      text-align: center;
       opacity: 0.9;
     }
     .dna-ledger-eyebrow::after {
-      content: ''; flex: 1;
+      content: ''; display: block;
       height: 1px; background: rgba(74,124,53,0.12);
+      margin-top: 0.25rem;
     }
     .dna-ledger-grid {
       display: grid;
@@ -12403,7 +12404,7 @@ document.addEventListener('keydown', function(e) {
 
     var html = '<div class="dna-ledger' + compact + '">';
     if (!opts.compact) {
-      html += '<div class="dna-ledger-eyebrow">⬡ DNA LEDGER</div>';
+      html += '<div class="dna-ledger-eyebrow">⬡ BOTANICAL BLUEPRINT</div>';
     }
     // Terra Grade banner
     var _tg = window.getTerraGrade(t);
@@ -13091,12 +13092,10 @@ document.addEventListener('keydown', function(e) {
     // ── BUILD BACK FACE (data side) ──
     var _tierName = (_tg && _tg.name) ? _tg.name.toLowerCase() : 'common';
     var back = '<div class="cs-card-face cs-card-back" data-season="' + sk + '" data-tier="' + _tierName + '">';
-    // Header: thumb + name + stats
-    back += '<div style="display:flex;align-items:center;gap:0.4rem;padding-bottom:0.4rem;border-bottom:1px solid rgba(74,124,53,0.08);margin-bottom:0.3rem;">';
-    back += '<div style="width:44px;height:56px;flex-shrink:0;background:rgba(13,16,12,0.3);border:1px solid rgba(74,124,53,0.1);border-radius:5px;display:flex;align-items:center;justify-content:center;">' + smallSvg + '</div>';
-    back += '<div style="flex:1;min-width:0;">';
-    back += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.45rem;letter-spacing:0.06em;display:flex;gap:0.25rem;margin-top:0.05rem;"><span style="color:' + sColor + ';">EA ' + _ea + '</span><span style="color:var(--muted);">' + seasonEmblems[_season] + ' G' + (_t ? _t.chimerGen || 1 : 1) + '</span></div>';
-    back += '</div></div>';
+    // Header: stats (no thumbnail)
+    back += '<div style="display:flex;align-items:center;justify-content:center;gap:0.4rem;padding-bottom:0.4rem;border-bottom:1px solid rgba(74,124,53,0.08);margin-bottom:0.3rem;">';
+    back += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.45rem;letter-spacing:0.06em;display:flex;gap:0.25rem;"><span style="color:' + sColor + ';">EA ' + _ea + '</span><span style="color:var(--muted);">' + seasonEmblems[_season] + ' G' + (_t ? _t.chimerGen || 1 : 1) + '</span></div>';
+    back += '</div>';
     // DNA Ledger
     back += renderDNALedger(plant);
     // Hash + date
@@ -13479,10 +13478,11 @@ document.addEventListener('keydown', function(e) {
       // Section header
       ctx.fillStyle = 'rgba(90,112,80,0.5)';
       ctx.font = '700 11px Bebas Neue, sans-serif';
-      ctx.textAlign = 'left';
+      ctx.textAlign = 'center';
       ctx.letterSpacing = '0.12em';
-      ctx.fillText('⬡ DNA LEDGER', ledgerX, ledgerY);
+      ctx.fillText('⬡ BOTANICAL BLUEPRINT', cardW / 2, ledgerY);
       ctx.letterSpacing = '';
+      ctx.textAlign = 'left';
 
       // Divider under header
       ctx.strokeStyle = 'rgba(74,124,53,0.15)';
