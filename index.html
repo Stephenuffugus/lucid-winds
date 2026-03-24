@@ -4917,7 +4917,7 @@ document.addEventListener('keydown', function(e) {
     return {
       pot:          goldenPot  ? 15 : hb(0) % 60, // 60 pot types (0-59)
       potColor:     _PAL[hc(1)],
-      stem:         hc(2),
+      stem:         (mythByte >= 0xD0) ? 9 : ((hb(2) % 24) === 9 ? 0 : hb(2) % 24),
       stemColor:    hb(5) % 12,
       stemHeight:   22 + hc(3) * 2.5,
       leafType:     hb(4),
@@ -5002,7 +5002,7 @@ document.addEventListener('keydown', function(e) {
     var lt = traits.leafType % 60;
     if (lt >= 46) ea += 3; else if (lt >= 30) ea += 2; else if (lt >= 16) ea += 1;
     // STEM TYPE (0-2)
-    var st = traits.stem % 16;
+    var st = traits.stem % 24;
     if (st === 5 || st === 6 || st === 7 || st === 8) ea += 2;
     else if (st === 3 || st === 4) ea += 1;
     // BLOOM (0-4)
@@ -5076,7 +5076,7 @@ document.addEventListener('keydown', function(e) {
     if (_lt >= 30) score += 1;
 
     // SLOT 2: Stem type (0-1)
-    var _st = t.stem % 15;
+    var _st = t.stem % 24;
     if (_st >= 8) score += 1;
 
     // SLOT 3: Bloom type (0-2)
@@ -6808,7 +6808,10 @@ document.addEventListener('keydown', function(e) {
       {name:'Straight'},  {name:'Curve L'},   {name:'Curve R'},   {name:'S-Curve'},
       {name:'Trunk'},      {name:'Braided'},   {name:'Zigzag'},    {name:'Double'},
       {name:'Cactus'},     {name:'Coral'},     {name:'Succulent'}, {name:'Twisted Vine'},
-      {name:'Ancient Bark'},{name:'Bamboo'},   {name:'Hollow Trunk'},{name:'Double'}
+      {name:'Ancient Bark'},{name:'Bamboo'},   {name:'Hollow Trunk'},
+      {name:'Vine Twist'}, {name:'Leaning'},   {name:'Kinked'},     {name:'Forking Y'},
+      {name:'Thin Wire'},  {name:'Root Pillar'},{name:'Mushroom Stipe'},
+      {name:'Crystal Spine',rare:true},{name:'Iron Trunk',rare:true}
     ],
     leaves: [
       {name:'Round'},      {name:'Willow'},    {name:'Asymmetric'},{name:'Heart'},
@@ -8060,7 +8063,7 @@ document.addEventListener('keydown', function(e) {
     var hw2= ((parseInt(uid.slice(2,4)||'0',16)/255)*3-1.5).toFixed(2);
     var side = (parseInt(uid.charAt(4)||'0',16) < 8) ? -1 : 1; // set-103-8: deterministic L/R for bonsai stems
     var stemCurve = (parseInt(uid.slice(6,8)||'44',16) / 255) * 6; // set-103-8: 0-6 range curve factor from hash
-    switch(t.stem % 15) { // set-103-8: expanded from %11 → %15 (4 new bonsai stems)
+    switch(t.stem % 24) { // expanded from %15 → %24 (9 new stems)
       case 0: // Organic straight — subtle cubic taper
         s += '<path d="M35,78 C'+(35+parseFloat(hw))+','+(mid+8)+' '+(35-parseFloat(hw))+','+(mid-8)+' 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+strokeW+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
         s += '<path d="M35.8,78 C'+(35.8+parseFloat(hw)*0.6)+','+(mid+6)+' '+(35.2-parseFloat(hw)*0.4)+','+(mid-4)+' 35.5,'+visibleTop+'" stroke="#C4E89A" stroke-width="0.4" fill="none" stroke-linecap="round" opacity="'+(op*0.3)+'"/>';
@@ -8247,7 +8250,134 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+(35-_htW*0.6)+','+(78-3)+' C'+(35-_htW*0.55)+','+(mid)+' '+(35-_htW*0.45)+','+(mid-8)+' '+(35-_htW*0.35)+','+(parseFloat(visibleTop)+2)+'" stroke="#0d100c" stroke-width="0.35" fill="none" opacity="0.15"/>';
         s += '<path d="M'+(35+_htW*0.55)+','+(78-5)+' C'+(35+_htW*0.5)+','+(mid+2)+' '+(35+_htW*0.4)+','+(mid-6)+' '+(35+_htW*0.35)+','+(parseFloat(visibleTop)+3)+'" stroke="#0d100c" stroke-width="0.3" fill="none" opacity="0.12"/>';
         break;
-    } // end switch(t.stem % 15)
+      // ── STEM BATCH 1: COMMON (cases 15–18) ──────────────────────────
+      case 15: // Vine Twist — two thin strokes spiraling loosely
+        var _vt15amp = 2.8 + Math.abs(parseFloat(hw)) * 1.2;
+        var _vt15segs = 5;
+        var _vt15segH = (78 - visibleTop) / _vt15segs;
+        var _vt15a = 'M35,78';
+        for (var _vi=1; _vi<=_vt15segs; _vi++) {
+          var _vy = 78 - _vi * _vt15segH;
+          var _vx = 35 + Math.sin(_vi * 1.4 + parseFloat(hw) * 0.5) * _vt15amp * (1 - _vi * 0.08);
+          _vt15a += ' Q' + (_vx + parseFloat(hw2) * 0.8).toFixed(1) + ',' + (_vy + _vt15segH * 0.4).toFixed(1) + ' ' + _vx.toFixed(1) + ',' + _vy.toFixed(1);
+        }
+        s += '<path d="' + _vt15a + '" fill="none" stroke="' + strokeCol + '" stroke-width="1.2" stroke-linecap="round" opacity="' + op + '"/>';
+        var _vt15b = 'M35,78';
+        for (var _vj=1; _vj<=_vt15segs; _vj++) {
+          var _vy2 = 78 - _vj * _vt15segH;
+          var _vx2 = 35 + Math.sin(_vj * 1.4 + parseFloat(hw) * 0.5 + 3.14) * _vt15amp * (1 - _vj * 0.08);
+          _vt15b += ' Q' + (_vx2 + parseFloat(hw2) * 0.8).toFixed(1) + ',' + (_vy2 + _vt15segH * 0.4).toFixed(1) + ' ' + _vx2.toFixed(1) + ',' + _vy2.toFixed(1);
+        }
+        s += '<path d="' + _vt15b + '" fill="none" stroke="' + strokeCol + '" stroke-width="1.0" stroke-linecap="round" opacity="' + (op * 0.65).toFixed(2) + '"/>';
+        s += '<path d="M35,78 C35,' + (mid + 4) + ' 35,' + (mid - 4) + ' 35,' + visibleTop + '" stroke="rgba(240,235,216,0.2)" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        break;
+      case 16: // Leaning — asymmetric off-center stem
+        var _lean16 = side * (6 + stemCurve * 1.5);
+        var _tight16y = 78 - (78 - visibleTop) * 0.25;
+        var _sweep16y = 78 - (78 - visibleTop) * 0.65;
+        s += '<path d="M35,78 C' + (35 + _lean16 * 0.3).toFixed(1) + ',' + _tight16y.toFixed(1) + ' ' + (35 + _lean16 * 0.85).toFixed(1) + ',' + _sweep16y.toFixed(1) + ' ' + (35 + _lean16 * 0.7 + parseFloat(hw)).toFixed(1) + ',' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + strokeW + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
+        s += '<path d="M35,78 C' + (35 + _lean16 * 0.3).toFixed(1) + ',' + _tight16y.toFixed(1) + ' ' + (35 + _lean16 * 0.85).toFixed(1) + ',' + _sweep16y.toFixed(1) + ' ' + (35 + _lean16 * 0.7 + parseFloat(hw)).toFixed(1) + ',' + visibleTop + '" stroke="#0d100c" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.2"/>';
+        var _rimOff16 = side * -0.8;
+        s += '<path d="M' + (35 + _rimOff16) + ',78 C' + (35 + _lean16 * 0.3 + _rimOff16).toFixed(1) + ',' + _tight16y.toFixed(1) + ' ' + (35 + _lean16 * 0.85 + _rimOff16).toFixed(1) + ',' + _sweep16y.toFixed(1) + ' ' + (35 + _lean16 * 0.7 + parseFloat(hw) + _rimOff16).toFixed(1) + ',' + visibleTop + '" stroke="rgba(240,235,216,0.4)" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
+        break;
+      case 17: // Kinked — straight stem with one sharp bend
+        var _kinkFrac = 0.35 + (stemCurve / 6) * 0.3;
+        var _kinkY = 78 - (78 - visibleTop) * _kinkFrac;
+        var _kinkX = 35 + side * (3 + Math.abs(parseFloat(hw)) * 2.5);
+        s += '<path d="M35,78 C' + (35 + parseFloat(hw) * 0.3).toFixed(1) + ',' + (78 - (78 - _kinkY) * 0.4).toFixed(1) + ' ' + (_kinkX - side * 1).toFixed(1) + ',' + (_kinkY + 3).toFixed(1) + ' ' + _kinkX.toFixed(1) + ',' + _kinkY.toFixed(1) + '" stroke="' + strokeCol + '" stroke-width="' + strokeW + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
+        var _kinkTopX = 35 + side * (parseFloat(hw2) * 1.5);
+        s += '<path d="M' + _kinkX.toFixed(1) + ',' + _kinkY.toFixed(1) + ' C' + (_kinkX + side * 0.5).toFixed(1) + ',' + (_kinkY - 4).toFixed(1) + ' ' + (_kinkTopX + parseFloat(hw) * 0.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 5).toFixed(1) + ' ' + _kinkTopX.toFixed(1) + ',' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + (parseFloat(strokeW) * 0.85).toFixed(1) + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
+        s += '<ellipse cx="' + _kinkX.toFixed(1) + '" cy="' + _kinkY.toFixed(1) + '" rx="2.2" ry="1.3" fill="' + strokeCol + '" opacity="' + (op * 0.3).toFixed(2) + '"/>';
+        s += '<path d="M35.5,78 C' + (35.5 + parseFloat(hw) * 0.2).toFixed(1) + ',' + (78 - (78 - _kinkY) * 0.3).toFixed(1) + ' ' + (_kinkX - side * 0.5).toFixed(1) + ',' + (_kinkY + 2).toFixed(1) + ' ' + _kinkX.toFixed(1) + ',' + _kinkY.toFixed(1) + '" stroke="#C4E89A" stroke-width="0.3" fill="none" opacity="' + (op * 0.2).toFixed(2) + '"/>';
+        break;
+      case 18: // Forking Y — first L-system stem, one bifurcation
+        var _forkFrac = 0.55 + (stemCurve / 6) * 0.15;
+        var _forkY = 78 - (78 - visibleTop) * _forkFrac;
+        var _forkSpread = 4 + stemCurve * 0.8;
+        s += '<path d="M35,78 C' + (35 + parseFloat(hw) * 0.5).toFixed(1) + ',' + (mid + 6).toFixed(1) + ' ' + (35 + parseFloat(hw2) * 0.3).toFixed(1) + ',' + (_forkY + 6).toFixed(1) + ' 35,' + _forkY.toFixed(1) + '" stroke="' + strokeCol + '" stroke-width="' + strokeW + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
+        var _forkLx = 35 - _forkSpread + parseFloat(hw) * 0.5;
+        s += '<path d="M35,' + _forkY.toFixed(1) + ' C' + (35 - _forkSpread * 0.3).toFixed(1) + ',' + (_forkY - 4).toFixed(1) + ' ' + (_forkLx + 1).toFixed(1) + ',' + (parseFloat(visibleTop) + 4).toFixed(1) + ' ' + _forkLx.toFixed(1) + ',' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + (parseFloat(strokeW) * 0.7).toFixed(1) + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
+        var _forkRx = 35 + _forkSpread + parseFloat(hw2) * 0.5;
+        s += '<path d="M35,' + _forkY.toFixed(1) + ' C' + (35 + _forkSpread * 0.3).toFixed(1) + ',' + (_forkY - 4).toFixed(1) + ' ' + (_forkRx - 1).toFixed(1) + ',' + (parseFloat(visibleTop) + 4).toFixed(1) + ' ' + _forkRx.toFixed(1) + ',' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + (parseFloat(strokeW) * 0.7).toFixed(1) + '" fill="none" stroke-linecap="round" opacity="' + (op * 0.85).toFixed(2) + '"/>';
+        s += '<ellipse cx="35" cy="' + _forkY.toFixed(1) + '" rx="2.5" ry="1.5" fill="' + strokeCol + '" opacity="' + (op * 0.25).toFixed(2) + '"/>';
+        s += '<path d="M35,78 C35,' + (mid + 6) + ' 35,' + (_forkY + 6) + ' 35,' + _forkY.toFixed(1) + '" stroke="#0d100c" stroke-width="0.6" fill="none" opacity="0.15"/>';
+        s += '<path d="M34.2,78 C34.2,' + (mid + 5) + ' 34.2,' + (_forkY + 5) + ' 34.2,' + _forkY.toFixed(1) + '" stroke="rgba(240,235,216,0.35)" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
+        break;
+
+      // ── STEM BATCH 2 (cases 19–23) ──────────────────────────────────
+      case 19: // Thin Wire — ultra-delicate, barely there
+        var _tw19w = isGlass ? '0.8' : '1.0';
+        s += '<path d="M35,78 C' + (35 + parseFloat(hw) * 0.4).toFixed(1) + ',' + (mid + 3).toFixed(1) + ' ' + (35 - parseFloat(hw2) * 0.3).toFixed(1) + ',' + (mid - 3).toFixed(1) + ' 35,' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + _tw19w + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
+        s += '<path d="M34.7,78 C' + (34.7 + parseFloat(hw) * 0.3).toFixed(1) + ',' + (mid + 2).toFixed(1) + ' ' + (34.7 - parseFloat(hw2) * 0.2).toFixed(1) + ',' + (mid - 2).toFixed(1) + ' 34.7,' + visibleTop + '" stroke="rgba(240,235,216,0.25)" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        break;
+      case 20: // Root Pillar — aggressive taper + visible root tendrils
+        var _rp20wBase = 3.5;
+        var _rp20wTop = 0.8;
+        s += '<path d="M' + (35 - _rp20wBase) + ',78 C' + (35 - _rp20wBase + 0.3).toFixed(1) + ',' + (mid + 4).toFixed(1) + ' ' + (35 - _rp20wTop - 0.3).toFixed(1) + ',' + (mid - 6).toFixed(1) + ' ' + (35 - _rp20wTop) + ',' + visibleTop + ' Q35,' + (parseFloat(visibleTop) - 1.5) + ' ' + (35 + _rp20wTop) + ',' + visibleTop + ' C' + (35 + _rp20wTop + 0.3).toFixed(1) + ',' + (mid - 6).toFixed(1) + ' ' + (35 + _rp20wBase - 0.3).toFixed(1) + ',' + (mid + 4).toFixed(1) + ' ' + (35 + _rp20wBase) + ',78 Z" fill="' + strokeCol + '" opacity="' + op + '"/>';
+        s += '<path d="M' + (35 - _rp20wBase) + ',78 C' + (35 - _rp20wBase + 0.3) + ',' + (mid + 4) + ' ' + (35 - _rp20wTop - 0.3) + ',' + (mid - 6) + ' ' + (35 - _rp20wTop) + ',' + visibleTop + '" stroke="rgba(240,235,216,0.4)" stroke-width="0.7" fill="none" stroke-linecap="round" opacity="' + (op * 0.55).toFixed(2) + '"/>';
+        s += '<path d="M' + (35 - _rp20wBase + 0.5) + ',78 C' + (35 - _rp20wBase - 1) + ',80 ' + (35 - _rp20wBase - 3 + parseFloat(hw) * 0.5).toFixed(1) + ',82 ' + (35 - _rp20wBase - 2 + parseFloat(hw)).toFixed(1) + ',84" stroke="' + strokeCol + '" stroke-width="0.6" fill="none" stroke-linecap="round" opacity="' + (op * 0.22).toFixed(2) + '"/>';
+        s += '<path d="M' + (35 + _rp20wBase - 0.5) + ',78 C' + (35 + _rp20wBase + 0.5) + ',80 ' + (35 + _rp20wBase + 2 + parseFloat(hw2) * 0.4).toFixed(1) + ',81.5 ' + (35 + _rp20wBase + 1.5 + parseFloat(hw2)).toFixed(1) + ',83.5" stroke="' + strokeCol + '" stroke-width="0.5" fill="none" stroke-linecap="round" opacity="' + (op * 0.18).toFixed(2) + '"/>';
+        s += '<path d="M35,78 C35,79.5 ' + (35 + parseFloat(hw) * 0.3).toFixed(1) + ',80.5 ' + (35 + parseFloat(hw) * 0.5).toFixed(1) + ',82" stroke="' + strokeCol + '" stroke-width="0.4" fill="none" stroke-linecap="round" opacity="' + (op * 0.15).toFixed(2) + '"/>';
+        var _rp20midY = parseFloat(mid);
+        s += '<path d="M' + (35 - 0.5) + ',' + (78 - 3) + ' C' + (35 - 0.7) + ',' + (_rp20midY + 1).toFixed(1) + ' ' + (35 + 0.2) + ',' + (_rp20midY - 4).toFixed(1) + ' ' + (35 - 0.1) + ',' + (parseFloat(visibleTop) + 3) + '" stroke="#0d100c" stroke-width="0.35" fill="none" opacity="0.14"/>';
+        break;
+      case 21: // Mushroom Stipe — reverse taper, wider at crown
+        var _ms21wBase = 1.8;
+        var _ms21wTop = 4.5;
+        s += '<path d="M' + (35 - _ms21wBase) + ',78 C' + (35 - _ms21wBase - 0.5).toFixed(1) + ',' + (mid + 4).toFixed(1) + ' ' + (35 - _ms21wTop + 1).toFixed(1) + ',' + (mid - 2).toFixed(1) + ' ' + (35 - _ms21wTop) + ',' + visibleTop + ' Q35,' + (parseFloat(visibleTop) - 2.5) + ' ' + (35 + _ms21wTop) + ',' + visibleTop + ' C' + (35 + _ms21wTop - 1).toFixed(1) + ',' + (mid - 2).toFixed(1) + ' ' + (35 + _ms21wBase + 0.5).toFixed(1) + ',' + (mid + 4).toFixed(1) + ' ' + (35 + _ms21wBase) + ',78 Z" fill="' + strokeCol + '" opacity="' + op + '"/>';
+        s += '<path d="M' + (35 - _ms21wBase) + ',78 C' + (35 - _ms21wBase - 0.5) + ',' + (mid + 4) + ' ' + (35 - _ms21wTop + 1) + ',' + (mid - 2) + ' ' + (35 - _ms21wTop) + ',' + visibleTop + '" stroke="rgba(240,235,216,0.4)" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="' + (op * 0.5).toFixed(2) + '"/>';
+        var _ms21rings = 3;
+        var _ms21h = 78 - parseFloat(visibleTop);
+        for (var _mri = 1; _mri <= _ms21rings; _mri++) {
+          var _mry = 78 - (_ms21h * _mri / (_ms21rings + 1));
+          var _mrFrac = _mri / (_ms21rings + 1);
+          var _mrw = _ms21wBase + (_ms21wTop - _ms21wBase) * _mrFrac;
+          s += '<path d="M' + (35 - _mrw + 0.5).toFixed(1) + ',' + _mry.toFixed(1) + ' Q35,' + (_mry - 0.8).toFixed(1) + ' ' + (35 + _mrw - 0.5).toFixed(1) + ',' + _mry.toFixed(1) + '" fill="none" stroke="rgba(240,235,216,0.12)" stroke-width="0.4" stroke-linecap="round"/>';
+        }
+        s += '<line x1="35" y1="78" x2="35" y2="' + visibleTop + '" stroke="#0d100c" stroke-width="0.5" opacity="0.1"/>';
+        s += '<path d="M' + (35 + _ms21wBase - 0.3) + ',78 C' + (35 + _ms21wBase) + ',' + (mid + 3) + ' ' + (35 + _ms21wTop - 1.5) + ',' + (mid - 3) + ' ' + (35 + _ms21wTop - 0.5) + ',' + visibleTop + '" stroke="rgba(240,235,216,0.08)" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        break;
+      case 22: // Crystal Spine — translucent faceted segments
+        var _cs22segs = 3 + Math.floor(stemCurve * 0.5);
+        var _cs22segH = (78 - visibleTop) / _cs22segs;
+        var _cs22w = 1.6;
+        for (var _ci = 0; _ci < _cs22segs; _ci++) {
+          var _cTop = 78 - (_ci + 1) * _cs22segH;
+          var _cBot = 78 - _ci * _cs22segH;
+          var _cOff = ((parseInt(uid.charAt((_ci + 2) % uid.length) || '0', 16) - 8) * 0.25);
+          var _cOffTop = _cOff * 0.7;
+          s += '<polygon points="' + (35 - _cs22w + _cOff).toFixed(1) + ',' + _cBot.toFixed(1) + ' ' + (35 - _cs22w * 0.8 + _cOffTop).toFixed(1) + ',' + _cTop.toFixed(1) + ' ' + (35 + _cs22w * 0.8 + _cOffTop).toFixed(1) + ',' + _cTop.toFixed(1) + ' ' + (35 + _cs22w + _cOff).toFixed(1) + ',' + _cBot.toFixed(1) + '" fill="' + strokeCol + '" opacity="' + (op * 0.12).toFixed(2) + '"/>';
+          s += '<polygon points="' + (35 - _cs22w + _cOff).toFixed(1) + ',' + _cBot.toFixed(1) + ' ' + (35 - _cs22w * 0.8 + _cOffTop).toFixed(1) + ',' + _cTop.toFixed(1) + ' ' + (35 + _cs22w * 0.8 + _cOffTop).toFixed(1) + ',' + _cTop.toFixed(1) + ' ' + (35 + _cs22w + _cOff).toFixed(1) + ',' + _cBot.toFixed(1) + '" fill="none" stroke="' + strokeCol + '" stroke-width="0.5" opacity="' + (op * 0.45).toFixed(2) + '"/>';
+          s += '<line x1="' + (35 - _cs22w + _cOff).toFixed(1) + '" y1="' + _cBot.toFixed(1) + '" x2="' + (35 - _cs22w * 0.8 + _cOffTop).toFixed(1) + '" y2="' + _cTop.toFixed(1) + '" stroke="rgba(240,235,216,0.35)" stroke-width="0.4" stroke-linecap="round"/>';
+          if (_ci > 0) {
+            s += '<line x1="' + (35 - _cs22w - 0.3 + _cOff).toFixed(1) + '" y1="' + _cBot.toFixed(1) + '" x2="' + (35 + _cs22w + 0.3 + _cOff).toFixed(1) + '" y2="' + _cBot.toFixed(1) + '" stroke="rgba(240,235,216,0.2)" stroke-width="0.25"/>';
+          }
+        }
+        s += '<line x1="35" y1="78" x2="35" y2="' + visibleTop + '" stroke="rgba(240,235,216,0.15)" stroke-width="0.3"/>';
+        break;
+      case 23: // Iron Trunk — dark metallic industrial stem
+        var _it23w = 3.0 + parseFloat(hw) * 0.3;
+        s += '<path d="M' + (35 - _it23w) + ',78 C' + (35 - _it23w + 0.2).toFixed(1) + ',' + (mid + 2).toFixed(1) + ' ' + (35 - _it23w * 0.8).toFixed(1) + ',' + (mid - 4).toFixed(1) + ' ' + (35 - _it23w * 0.55).toFixed(1) + ',' + visibleTop + ' Q35,' + (parseFloat(visibleTop) - 1.5) + ' ' + (35 + _it23w * 0.55).toFixed(1) + ',' + visibleTop + ' C' + (35 + _it23w * 0.8).toFixed(1) + ',' + (mid - 4).toFixed(1) + ' ' + (35 + _it23w - 0.2).toFixed(1) + ',' + (mid + 2).toFixed(1) + ' ' + (35 + _it23w) + ',78 Z" fill="#3A3A38" opacity="' + op + '" filter="url(#ds' + uid + ')"/>';
+        s += '<path d="M' + (35 - _it23w) + ',78 C' + (35 - _it23w + 0.2) + ',' + (mid + 2) + ' ' + (35 - _it23w * 0.8) + ',' + (mid - 4) + ' ' + (35 - _it23w * 0.55) + ',' + visibleTop + '" stroke="rgba(240,235,216,0.55)" stroke-width="0.9" fill="none" stroke-linecap="round" opacity="' + (op * 0.65).toFixed(2) + '"/>';
+        var _it23bands = 3;
+        for (var _ibi = 1; _ibi <= _it23bands; _ibi++) {
+          var _iby = 78 - (78 - parseFloat(visibleTop)) * (_ibi / (_it23bands + 1));
+          var _ibw = _it23w * (1 - _ibi * 0.08);
+          s += '<line x1="' + (35 - _ibw).toFixed(1) + '" y1="' + _iby.toFixed(1) + '" x2="' + (35 + _ibw).toFixed(1) + '" y2="' + _iby.toFixed(1) + '" stroke="#5A5A55" stroke-width="0.6" opacity="' + (op * 0.35).toFixed(2) + '"/>';
+          s += '<line x1="' + (35 - _ibw + 0.5).toFixed(1) + '" y1="' + (_iby - 0.5).toFixed(1) + '" x2="' + (35 + _ibw - 0.5).toFixed(1) + '" y2="' + (_iby - 0.5).toFixed(1) + '" stroke="rgba(240,235,216,0.15)" stroke-width="0.25"/>';
+        }
+        for (var _iri = 0; _iri <= _it23bands; _iri++) {
+          var _iry = 78 - (78 - parseFloat(visibleTop)) * ((_iri + 0.5) / (_it23bands + 1));
+          s += '<circle cx="35" cy="' + _iry.toFixed(1) + '" r="0.7" fill="#5A5A55" opacity="' + (op * 0.35).toFixed(2) + '"/>';
+          s += '<circle cx="35" cy="' + _iry.toFixed(1) + '" r="0.3" fill="rgba(240,235,216,0.2)"/>';
+        }
+        s += '<path d="M' + (35 + _it23w) + ',78 C' + (35 + _it23w - 0.2) + ',' + (mid + 2) + ' ' + (35 + _it23w * 0.8) + ',' + (mid - 4) + ' ' + (35 + _it23w * 0.55) + ',' + visibleTop + '" stroke="rgba(240,235,216,0.12)" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        s += '<line x1="35.3" y1="78" x2="35.3" y2="' + visibleTop + '" stroke="#1a1a18" stroke-width="0.6" opacity="' + (op * 0.2).toFixed(2) + '"/>';
+        break;
+      default: // Fallback — organic straight
+        s += '<path d="M35,78 C'+(35+parseFloat(hw))+','+(mid+8)+' '+(35-parseFloat(hw))+','+(mid-8)+' 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+strokeW+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        break;
+    } // end switch(t.stem % 24)
 
     // Glass shimmer line
     if (isGlass) {
@@ -8264,7 +8394,8 @@ document.addEventListener('keydown', function(e) {
       s += '<line x1="34.7" y1="78" x2="34.7" y2="'+visibleTop+'" stroke="#C4E89A" stroke-width="0.3" stroke-linecap="round" opacity="'+(parseFloat(rimOp)*0.38).toFixed(2)+'" style="mix-blend-mode:screen"/>';
     }
     // ── Gemini Micro-Texture: bark detail on stem ──
-    if (!isGlass && prog > 0.3) {
+    var _stemCase = t.stem % 24;
+    if (!isGlass && prog > 0.3 && _stemCase !== 22 && _stemCase !== 23) {
       var _stemSeed = (parseInt(uid, 16) || 3) + t.stem * 17;
       s += microTexture(33, visibleTop, 4, 78 - visibleTop, _stemSeed, '#1a1208', 0.1, 'bark');
     }
@@ -12730,7 +12861,7 @@ document.addEventListener('keydown', function(e) {
 
   function getTraitSummary(hash) {
     var t = hashToTraits(hash);
-    var p = [TRAIT_BANK.pots[t.pot].name, TRAIT_BANK.stems[t.stem % 16].name, TRAIT_BANK.leaves[t.leafType % 16].name];
+    var p = [TRAIT_BANK.pots[t.pot].name, TRAIT_BANK.stems[t.stem % 24].name, TRAIT_BANK.leaves[t.leafType % 16].name];
     if (t.hasFlower) p.push(TRAIT_BANK.flowers[t.flower % 46].name);
     var aName = TRAIT_BANK.auras[t.aura].name;
     if (aName !== 'None') p.push(aName + ' aura');
@@ -13013,12 +13144,12 @@ document.addEventListener('keydown', function(e) {
     { key: 'STRUCTURE',   get: function(t) {
         var b = TRAIT_BANK.pots[t.pot]; // pot shape doubles as structure
         // Use stem as structural form descriptor
-        var s = TRAIT_BANK.stems[t.stem % 16];
+        var s = TRAIT_BANK.stems[t.stem % 24];
         return { name: s.name, rare: false };
     }},
     { key: 'GROWTH PATH', get: function(t) {
         // stem % 15 for the 15-case renderer; name from full 16-slot bank
-        var s = TRAIT_BANK.stems[t.stem % 16];
+        var s = TRAIT_BANK.stems[t.stem % 24];
         return { name: s.name, rare: false };
     }},
     { key: 'FOLIAGE',     get: function(t) {
@@ -13122,7 +13253,7 @@ document.addEventListener('keydown', function(e) {
   // (kept for legacy call sites that expect a plain string)
   function getTraitSummary(hash) {
     var t = hashToTraits(hash);
-    var p = [TRAIT_BANK.pots[t.pot].name, TRAIT_BANK.stems[t.stem % 16].name, TRAIT_BANK.leaves[t.leafType % 16].name];
+    var p = [TRAIT_BANK.pots[t.pot].name, TRAIT_BANK.stems[t.stem % 24].name, TRAIT_BANK.leaves[t.leafType % 16].name];
     if (t.hasFlower) p.push(TRAIT_BANK.flowers[t.flower % 46].name);
     var aName = TRAIT_BANK.auras[t.aura].name;
     if (aName !== 'None') p.push(aName);
@@ -13178,7 +13309,7 @@ document.addEventListener('keydown', function(e) {
 
     // ── CURVE R STEM — growth vector arc (direction indicator) ───────────
     // stem % 15 === 2 maps to 'Curve R' / 'Deep curve right'
-    if ((t.stem % 15) === 2) {
+    if ((t.stem % 24) === 2) {
       badges += '<span class="substrate-badge" title="Curve R Growth Vector">'
         + '<svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">'
         + '<defs>'
@@ -14220,7 +14351,7 @@ document.addEventListener('keydown', function(e) {
       var t = hashToTraits(plant.hash);
       var ledgerRows = [];
       var potEntry = TRAIT_BANK.pots[t.pot];
-      var stemEntry = TRAIT_BANK.stems[t.stem % 16];
+      var stemEntry = TRAIT_BANK.stems[t.stem % 24];
       var leafEntry = TRAIT_BANK.leaves[t.leafType % 16];
       ledgerRows.push({ cat: 'VESSEL',      val: potEntry.name,  rare: !!potEntry.rare });
       ledgerRows.push({ cat: 'GROWTH PATH', val: stemEntry.name, rare: false });
