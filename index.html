@@ -4915,7 +4915,7 @@ document.addEventListener('keydown', function(e) {
     var crystalBase = hc(20) === 15;
 
     return {
-      pot:          goldenPot  ? 15 : hb(0) % 30, // 30 pot types (0-29)
+      pot:          goldenPot  ? 15 : hb(0) % 60, // 60 pot types (0-59)
       potColor:     _PAL[hc(1)],
       stem:         hc(2),
       stemHeight:   22 + hc(3) * 2.5,
@@ -6755,7 +6755,37 @@ document.addEventListener('keydown', function(e) {
       {name:'Mailbox'},     // 26
       {name:'Marlo Pipe'},   // 27
       {name:'Drum'},        // 28
-      {name:'Old Boot'}     // 29
+      {name:'Old Boot'},    // 29
+      {name:'Tin Can'},      // 30
+      {name:'Bucket'},       // 31
+      {name:'Mason Jar'},    // 32
+      {name:'Colander'},     // 33
+      {name:'Cracked Pot'},  // 34
+      {name:'Coconut Shell'},// 35
+      {name:'Saucer'},       // 36
+      {name:'Egg Carton'},   // 37
+      {name:'Cinder Block'}, // 38
+      {name:'Paint Can'},    // 39
+      {name:'Coffee Mug'},   // 40
+      {name:'Soup Bowl'},    // 41
+      {name:'Wooden Crate'}, // 42
+      {name:'Broken Pot'},   // 43
+      {name:'Paper Bag'},    // 44
+      {name:'Yogurt Cup'},   // 45
+      {name:'Tin Pail'},     // 46
+      {name:'Gramophone Horn'}, // 47
+      {name:'Bonsai Dish'},  // 48
+      {name:'Vintage Camera'}, // 49
+      {name:'Cauldron',rare:true}, // 50
+      {name:'Dragon Egg'},   // 51
+      {name:'Geode Hollow'}, // 52
+      {name:'Skull Planter'},// 53
+      {name:'Samurai Helmet'}, // 54
+      {name:'Clock Tower'},  // 55
+      {name:'Ancient Amphora',rare:true}, // 56
+      {name:"Philosopher's Vessel",rare:true}, // 57
+      {name:'Reserved'},     // 58
+      {name:'Reserved'}      // 59
     ],
     stems: [
       {name:'Straight'},  {name:'Curve L'},   {name:'Curve R'},   {name:'S-Curve'},
@@ -7147,9 +7177,9 @@ document.addEventListener('keydown', function(e) {
     var s = '';
     // set-103-8: Per-pot soil line — matches body width exactly
     //                  0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18
-    var soilL = [20, 20, 23, 15, 25, 28, 25, 24, 23, 22, 18, 25, 25, 24, 17, 20, 27, 22, 30, 22, 21, 29, 19, 35, 35, 19, 35, 24, 23, 25];
-    var soilR = [50, 50, 47, 55, 45, 42, 45, 46, 47, 48, 52, 45, 41, 46, 46, 50, 43, 48, 40, 48, 49, 41, 51, 35, 35, 49, 35, 46, 47, 42];
-    var si = (p === 15) ? 15 : (p < 30 ? p : p % 30);
+    var soilL = [20, 20, 23, 15, 25, 28, 25, 24, 23, 22, 18, 25, 25, 24, 17, 20, 27, 22, 30, 22, 21, 29, 19, 35, 35, 19, 35, 24, 23, 25, 23, 22, 24, 16, 20, 18, 18, 22, 24, 23, 24, 16, 22, 20, 24, 26, 22, 20, 18, 25, 22, 22, 20, 24, 22, 26, 28, 25, 20, 20];
+    var soilR = [50, 50, 47, 55, 45, 42, 45, 46, 47, 48, 52, 45, 41, 46, 46, 50, 43, 48, 40, 48, 49, 41, 51, 35, 35, 49, 35, 46, 47, 42, 47, 48, 46, 54, 50, 52, 52, 48, 46, 47, 46, 54, 48, 45, 46, 44, 48, 50, 52, 45, 48, 48, 50, 46, 48, 44, 42, 45, 50, 50];
+    var si = (p === 15) ? 15 : (p < 60 ? p : p % 60);
     s += '<line x1="'+soilL[si]+'" y1="78" x2="'+soilR[si]+'" y2="78" stroke="#3a3228" stroke-width="1.5" stroke-linecap="butt"/>';
     s += '<line x1="'+(soilL[si]+1)+'" y1="78.5" x2="'+(soilR[si]-1)+'" y2="78.5" stroke="#2a2218" stroke-width="0.5" opacity="0.3"/>';
     if (p === 15) {
@@ -7579,6 +7609,58 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M46.6,86 Q50.4,85.6 52.6,86.2" stroke="rgba(240,235,216,0.1)" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
         s += '<path d="M45.6,83.8 Q48.2,84.4 49.4,86" stroke="#4a3520" stroke-width="0.2" fill="none" stroke-linecap="round" opacity="0.6"/>';
         break;
+      // ── BATCH 1: COMMON POTS (cases 30–34) ──────────────────────────
+      case 30: // Tin Can — rusty cylinder with crumpled top edge and dent
+        s += '<rect x="23" y="79.5" width="24" height="12" rx="1.8" fill="'+g+'"/>';
+        s += '<path d="M23.8,83 Q26,84.5 23.8,86" fill="none" stroke="'+PALETTE[t.potColor]+'" stroke-width="0.6" opacity="0.35"/>';
+        s += '<path d="M23,79.2 Q26,78 29,79.4 Q32,78.2 35,79.5 Q38,78.1 41,79.3 Q44,78.4 47,79.2" fill="none" stroke="'+rim+'" stroke-width="1.8" stroke-linecap="round"/>';
+        s += '<ellipse cx="32" cy="85" rx="2.5" ry="1.5" fill="#A0522D" opacity="0.08"/>';
+        s += '<ellipse cx="40" cy="88" rx="2" ry="1.2" fill="#8B4513" opacity="0.06"/>';
+        s += '<rect x="25" y="83" width="20" height="3" rx="0.4" fill="rgba(240,235,216,0.04)"/>';
+        s += '<line x1="25" y1="83" x2="38" y2="83" stroke="rgba(240,235,216,0.06)" stroke-width="0.2"/>';
+        break;
+      case 31: // Bucket — plain metal pail with wire bail handle
+        s += '<path d="M22,78.5 L24,91 L46,91 L48,78.5 Z" fill="'+g+'"/>';
+        s += '<rect x="21.5" y="77" width="27" height="2.8" rx="1" fill="'+rim+'"/>';
+        s += '<line x1="23" y1="85" x2="47" y2="85" stroke="'+PALETTE[t.potColor]+'" stroke-width="0.6" opacity="0.3"/>';
+        s += '<path d="M24,78 Q35,71 46,78" fill="none" stroke="#8A8A7A" stroke-width="0.7" stroke-linecap="round"/>';
+        s += '<circle cx="24" cy="78" r="0.6" fill="#8A8A7A" opacity="0.5"/>';
+        s += '<circle cx="46" cy="78" r="0.6" fill="#8A8A7A" opacity="0.5"/>';
+        s += '<line x1="22.8" y1="79" x2="24.2" y2="90.5" stroke="rgba(240,235,216,0.18)" stroke-width="0.5" stroke-linecap="round"/>';
+        break;
+      case 32: // Mason Jar — clear glass canning jar with screw-thread band
+        s += '<rect x="24" y="79.5" width="22" height="12" rx="2.5" fill="'+PALETTE[t.potColor]+'" opacity="0.08"/>';
+        s += '<rect x="24" y="79.5" width="22" height="12" rx="2.5" fill="none" stroke="'+PALETTE[t.potColor]+'" stroke-width="0.9" opacity="0.4"/>';
+        s += '<rect x="23" y="77" width="24" height="3" rx="0.8" fill="#8A8A7A" opacity="0.45"/>';
+        s += '<line x1="23.5" y1="78" x2="46.5" y2="78" stroke="rgba(240,235,216,0.2)" stroke-width="0.25"/>';
+        s += '<line x1="23.5" y1="79" x2="46.5" y2="79" stroke="rgba(240,235,216,0.15)" stroke-width="0.25"/>';
+        s += '<path d="M26,80 Q29,79 31,80.5" fill="none" stroke="rgba(240,235,216,0.4)" stroke-width="0.7" stroke-linecap="round"/>';
+        s += '<path d="M26.5,81.5 Q28.5,80.5 30,81.8" fill="none" stroke="rgba(240,235,216,0.2)" stroke-width="0.35" stroke-linecap="round"/>';
+        s += '<ellipse cx="35" cy="90.5" rx="8" ry="1" fill="none" stroke="rgba(240,235,216,0.1)" stroke-width="0.4"/>';
+        s += '<rect x="25" y="80.5" width="20" height="10" rx="2" fill="rgba(240,235,216,0.015)"/>';
+        break;
+      case 33: // Colander — kitchen strainer bowl with drainage holes
+        s += '<path d="M16,78 Q14,84 22,88 L48,88 Q56,84 54,78 Z" fill="'+g+'"/>';
+        s += '<path d="M16,77 Q35,74.5 54,77 L54,79 Q35,76.5 16,79 Z" fill="'+rim+'"/>';
+        s += '<circle cx="24" cy="83" r="0.6" fill="#0d100c" opacity="0.22"/>';
+        s += '<circle cx="29" cy="85" r="0.55" fill="#0d100c" opacity="0.2"/>';
+        s += '<circle cx="35" cy="84" r="0.6" fill="#0d100c" opacity="0.22"/>';
+        s += '<circle cx="41" cy="85" r="0.55" fill="#0d100c" opacity="0.2"/>';
+        s += '<circle cx="46" cy="83" r="0.6" fill="#0d100c" opacity="0.22"/>';
+        s += '<circle cx="32" cy="86.5" r="0.5" fill="#0d100c" opacity="0.18"/>';
+        s += '<circle cx="38" cy="86.5" r="0.5" fill="#0d100c" opacity="0.18"/>';
+        s += '<path d="M16,80 Q13,81 14,83" fill="none" stroke="'+PALETTE[t.potColor]+'" stroke-width="1.2" stroke-linecap="round" opacity="0.35"/>';
+        s += '<path d="M54,80 Q57,81 56,83" fill="none" stroke="'+PALETTE[t.potColor]+'" stroke-width="1.2" stroke-linecap="round" opacity="0.35"/>';
+        break;
+      case 34: // Cracked Pot — Classic pot with diagonal crack and light leak
+        s += '<path d="M20,78 Q18,88 24,90 L46,90 Q52,88 50,78 Z" fill="'+g+'"/>';
+        s += '<rect x="20" y="76.5" width="30" height="3" rx="1.5" fill="'+rim+'"/>';
+        s += '<path d="M33,77.5 L31,80 L33.5,82 L30.5,85 L32,87" fill="none" stroke="#0d100c" stroke-width="0.5" opacity="0.35" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M33.4,77.8 L31.4,80.3 L33.9,82.3 L30.9,85.3 L32.4,87.3" fill="none" stroke="#0d100c" stroke-width="0.25" opacity="0.15" stroke-linecap="round"/>';
+        s += '<path d="M31,80 L28.5,81.5" fill="none" stroke="#0d100c" stroke-width="0.3" opacity="0.2" stroke-linecap="round"/>';
+        s += '<path d="M32,76.5 L33.5,77.5 L34,76.5" fill="#0d100c" opacity="0.12"/>';
+        s += '<path d="M32.5,78 L30.8,80.5 L33.2,82.5 L30.2,85.5" fill="none" stroke="rgba(200,168,75,0.08)" stroke-width="1.2" stroke-linecap="round"/>';
+        break;
       default: // Fallback — classic pot
         s += '<path d="M20,78 Q18,88 24,90 L46,90 Q52,88 50,78 Z" fill="'+g+'"/>';
         s += '<rect x="20" y="76.5" width="30" height="3" rx="1.5" fill="'+rim+'"/>';
@@ -7589,9 +7671,9 @@ document.addEventListener('keydown', function(e) {
     var _potCol = PALETTE[t.potColor] || '#8B7355';
     var _potDark = _hueShift(_potCol, _potSeed, -20);
     // Wood pots (barrel, stump, book, wagon, old boot) get grain, others get stipple
-    if (p === 19 || p === 20 || p === 22 || p === 23 || p === 25 || p === 29) {
+    if (p === 19 || p === 20 || p === 22 || p === 23 || p === 25 || p === 29 || p === 35 || p === 42 || p === 44) {
       s += microTexture(22, 80, 26, 10, _potSeed, _potDark, 0.12, 'grain');
-    } else if (p !== 15) { // skip golden pot
+    } else if (p !== 15 && p !== 37 && p !== 38 && p !== 50 && p !== 56 && p !== 57) {
       s += microTexture(22, 80, 26, 10, _potSeed, _potDark, 0.08, 'stipple');
     }
     return s;
