@@ -3048,6 +3048,24 @@
     .fk2::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 15% 50%,rgba(74,124,53,.04) 0%,transparent 55%);pointer-events:none;opacity:0;transition:opacity .3s}
     .fk2:hover::before,.fk2:focus::before{opacity:1}
     .fk2:active{transform:scale(.98);background:rgba(24,30,20,.82);transition-duration:.06s}
+
+    /* ── Card flip rarity reveal flash ── */
+    .cs-reveal-flash{position:absolute;inset:0;border-radius:12px;opacity:0;pointer-events:none;z-index:20;transition:opacity 0.3s;}
+    .cs-reveal-flash.active[data-tier="common"]{animation:revealCommon 1.2s ease-out forwards;}
+    .cs-reveal-flash.active[data-tier="uncommon"]{animation:revealUncommon 1.2s ease-out forwards;}
+    .cs-reveal-flash.active[data-tier="rare"]{animation:revealRare 1.4s ease-out forwards;}
+    .cs-reveal-flash.active[data-tier="epic"]{animation:revealEpic 1.6s ease-out forwards;}
+    .cs-reveal-flash.active[data-tier="legendary"]{animation:revealLegendary 1.8s ease-out forwards;}
+    .cs-reveal-flash.active[data-tier="mythic"]{animation:revealMythic 2.0s ease-out forwards;}
+    .cs-reveal-flash.active[data-tier="cosmic"]{animation:revealCosmic 2.2s ease-out forwards;}
+
+    @keyframes revealCommon{0%{opacity:0;}20%{opacity:1;box-shadow:inset 0 0 30px rgba(149,149,136,0.3);}100%{opacity:0;}}
+    @keyframes revealUncommon{0%{opacity:0;}20%{opacity:1;box-shadow:inset 0 0 40px rgba(140,184,110,0.4);}100%{opacity:0;}}
+    @keyframes revealRare{0%{opacity:0;}15%{opacity:1;box-shadow:inset 0 0 50px rgba(91,143,185,0.5);}50%{box-shadow:inset 0 0 60px rgba(91,143,185,0.3);}100%{opacity:0;}}
+    @keyframes revealEpic{0%{opacity:0;}15%{opacity:1;box-shadow:inset 0 0 60px rgba(155,89,182,0.6);}40%{box-shadow:inset 0 0 80px rgba(155,89,182,0.3);}100%{opacity:0;}}
+    @keyframes revealLegendary{0%{opacity:0;}10%{opacity:1;box-shadow:inset 0 0 80px rgba(200,168,75,0.7),0 0 20px rgba(200,168,75,0.3);}30%{box-shadow:inset 0 0 100px rgba(200,168,75,0.4),0 0 30px rgba(200,168,75,0.2);}100%{opacity:0;}}
+    @keyframes revealMythic{0%{opacity:0;}10%{opacity:1;box-shadow:inset 0 0 80px rgba(168,114,133,0.7),0 0 30px rgba(168,114,133,0.4);}25%{box-shadow:inset 0 0 120px rgba(168,114,133,0.5),0 0 40px rgba(168,114,133,0.3);}100%{opacity:0;}}
+    @keyframes revealCosmic{0%{opacity:0;background:transparent;}8%{opacity:1;background:rgba(217,79,255,0.15);box-shadow:inset 0 0 100px rgba(217,79,255,0.8),0 0 40px rgba(217,79,255,0.5);}20%{background:rgba(217,79,255,0.08);box-shadow:inset 0 0 150px rgba(217,79,255,0.5),0 0 60px rgba(217,79,255,0.3);}100%{opacity:0;background:transparent;}}
   </style>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -13117,7 +13135,11 @@ document.addEventListener('keydown', function(e) {
     back += '</div>';
 
     // ── ASSEMBLE FLIP CARD ──
-    slotEl.innerHTML = '<div class="cs-flip-wrap" onclick="this.classList.toggle(\'flipped\')"><div class="cs-flip-inner">' + front + back + '</div></div>';
+    var _isRevealed = plant.revealed ? 'true' : 'false';
+    slotEl.innerHTML = '<div class="cs-flip-wrap" data-revealed="' + _isRevealed + '" onclick="window._handleCardFlip(this)">' +
+      '<div class="cs-flip-inner">' + front + back + '</div>' +
+      '<div class="cs-reveal-flash" data-tier="' + _tierName + '"></div>' +
+      '</div>';
     slotEl.setAttribute('data-season', sk);
   }
 
@@ -13340,6 +13362,37 @@ document.addEventListener('keydown', function(e) {
     _pushModal('plant-gallery-modal');
     document.getElementById('plant-gallery-modal').classList.add('open');
     if (typeof gtag !== 'undefined') gtag('event', 'carousel_open', { idx: _carousel.idx, src: source, total: arr.length });
+  };
+
+  // ── Card flip handler: first-flip rarity reveal ────────────────────
+  window._handleCardFlip = function(el) {
+    var isFlipped = el.classList.contains('flipped');
+    var wasRevealed = el.getAttribute('data-revealed') === 'true';
+
+    if (!isFlipped && !wasRevealed) {
+      // First flip — play reveal animation
+      el.classList.add('flipped');
+      el.setAttribute('data-revealed', 'true');
+      var flash = el.querySelector('.cs-reveal-flash');
+      if (flash) {
+        flash.classList.add('active');
+        setTimeout(function() { flash.classList.remove('active'); }, 1500);
+      }
+      // Mark plant as revealed in data
+      var idx = _carousel ? _carousel.idx : 0;
+      var plant = _carousel ? _carousel.arr[idx] : null;
+      if (plant) {
+        plant.revealed = true;
+        var gh = loadGreenhouse();
+        for (var i = 0; i < gh.length; i++) {
+          if (gh[i].hash === plant.hash) { gh[i].revealed = true; break; }
+        }
+        saveGreenhouse(gh);
+      }
+    } else {
+      // Already revealed — normal flip toggle
+      el.classList.toggle('flipped');
+    }
   };
 
   // ── viewPlantDetails: backwards-compat thin wrapper ─────────────────
