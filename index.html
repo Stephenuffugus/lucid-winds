@@ -6736,7 +6736,7 @@ document.addEventListener('keydown', function(e) {
       {name:'Terrarium'},   // 7
       {name:'Clay Pipe'},    // 8
       {name:'Top Hat'},      // 9
-      {name:'V-Planter'},   // 10
+      {name:'Lampshade'},    // 10
       {name:'Teacup'},      // 11
       {name:'Rain Boot'},   // 12
       {name:'Watering Can'},// 13
@@ -7230,9 +7230,17 @@ document.addEventListener('keydown', function(e) {
         // Star sparkle
         s += '<path d="M41,84 l0.5,-1 l0.5,1 l-1,0 Z" fill="rgba(255,255,255,0.2)"/>';
         break;
-      case 10: // V-Planter
+      case 10: // Lampshade — inverted tapered shade with decorative lines
         s += '<path d="M18,78 L30,92 L40,92 L52,78 Z" fill="'+g+'"/>';
-        s += '<line x1="18" y1="77" x2="52" y2="77" stroke="'+PALETTE[t.potColor]+'" stroke-width="2" stroke-linecap="butt" opacity="0.4"/>'; // set-103-8: butt cap flush fix (was round)
+        s += '<line x1="18" y1="77" x2="52" y2="77" stroke="'+PALETTE[t.potColor]+'" stroke-width="2" stroke-linecap="butt" opacity="0.4"/>';
+        // Decorative horizontal bands
+        s += '<line x1="22" y1="81" x2="48" y2="81" stroke="'+rim+'" stroke-width="0.4" opacity="0.35"/>';
+        s += '<line x1="26" y1="85" x2="44" y2="85" stroke="'+rim+'" stroke-width="0.4" opacity="0.35"/>';
+        s += '<line x1="29" y1="89" x2="41" y2="89" stroke="'+rim+'" stroke-width="0.35" opacity="0.3"/>';
+        // Vertical panel lines
+        s += '<line x1="35" y1="78" x2="35" y2="92" stroke="'+rim+'" stroke-width="0.3" opacity="0.2"/>';
+        s += '<line x1="26.5" y1="78" x2="32.5" y2="92" stroke="'+rim+'" stroke-width="0.25" opacity="0.15"/>';
+        s += '<line x1="43.5" y1="78" x2="37.5" y2="92" stroke="'+rim+'" stroke-width="0.25" opacity="0.15"/>';
         break;
       // ── set-103-8: EXPANDED VESSELS ──────────────────────────────────
       case 11: // Teacup — round cup with handle and saucer
