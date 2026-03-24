@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
+<title>Lucid Winds — Trait Audit</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#0d100c;color:#e8dcc8;font-family:'Outfit',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;}
+  .loading{display:flex;align-items:center;justify-content:center;height:100vh;font-size:1.2rem;color:#7ab356;}
+  .controls{width:100%;max-width:480px;padding:12px;display:none;flex-direction:column;gap:10px;}
+  .row{display:flex;gap:8px;align-items:center;}
+  label{font-size:0.75rem;color:#8a9178;min-width:50px;}
+  select,input[type="number"]{background:#181c16;color:#e8dcc8;border:1px solid rgba(122,179,86,0.3);border-radius:6px;padding:8px 12px;font-size:0.85rem;flex:1;min-height:48px;}
+  select:focus,input:focus{outline:none;border-color:#7ab356;}
+  .nav-btns{display:flex;gap:8px;}
+  .nav-btns button{flex:1;min-height:48px;background:#181c16;color:#c8a84b;border:1px solid rgba(200,168,75,0.3);border-radius:6px;font-size:1rem;font-family:'Bebas Neue',sans-serif;letter-spacing:0.08em;cursor:pointer;}
+  .nav-btns button:active{background:#242a1e;transform:scale(0.97);}
+  .render-area{width:100%;max-width:480px;display:flex;flex-direction:column;align-items:center;padding:16px;}
+  .plant-frame{width:320px;height:400px;display:flex;align-items:center;justify-content:center;background:rgba(24,28,22,0.5);border:1px solid rgba(122,179,86,0.15);border-radius:12px;margin-bottom:12px;}
+  .plant-frame svg{max-width:280px;max-height:360px;}
+  .trait-info{font-size:0.7rem;color:#8a9178;text-align:center;line-height:1.6;word-break:break-all;}
+  .trait-info strong{color:#c8a84b;}
+  .trait-name{font-family:'Cinzel',serif;font-size:1.1rem;color:#c8a84b;margin-bottom:4px;text-align:center;}
+  .tier-badge{font-family:'Bebas Neue',sans-serif;font-size:0.8rem;letter-spacing:0.1em;text-align:center;margin-bottom:8px;}
+  .hash-display{font-family:'DM Mono',monospace;font-size:0.45rem;color:#7ab356;opacity:0.5;margin-top:8px;text-align:center;word-break:break-all;max-width:300px;}
+  #frame{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@700&family=Outfit:wght@400;600&family=DM+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="loading" id="loader">Loading renderer...</div>
+<div class="controls" id="controls">
+  <div class="row">
+    <label>Layer</label>
+    <select id="layer-select">
+      <option value="pot">Pot (shape)</option>
+      <option value="potColor">Pot Color</option>
+      <option value="stem">Stem</option>
+      <option value="leafType">Leaf Type</option>
+      <option value="leafColor">Leaf Color</option>
+      <option value="flower">Flower</option>
+      <option value="flowerColor">Flower Color</option>
+      <option value="base">Substrate</option>
+      <option value="companion">Companion</option>
+      <option value="aura">Aura</option>
+      <option value="mutation">Mutation</option>
+      <option value="season">Season</option>
+    </select>
+  </div>
+  <div class="row">
+    <label>Index</label>
+    <input type="number" id="idx-input" value="0" min="0">
+    <span id="idx-max" style="font-size:0.7rem;color:#8a9178;min-width:60px;"></span>
+  </div>
+  <div class="nav-btns">
+    <button onclick="go(-1)">PREV</button>
+    <button onclick="go(1)">NEXT</button>
+  </div>
+</div>
+<div class="render-area" id="render-area" style="display:none;">
+  <div class="trait-name" id="trait-name"></div>
+  <div class="tier-badge" id="tier-badge"></div>
+  <div class="plant-frame" id="plant-frame"></div>
+  <div class="trait-info" id="trait-info"></div>
+  <div class="hash-display" id="hash-display"></div>
+</div>
+<iframe id="frame" src="index.html?noboot=1"></iframe>
+<script>
+(function() {
+  var frame = document.getElementById('frame');
+  var win = null;
+  var ready = false;
+
+  // A known seed hash we'll manipulate
+  var BASE_HASH = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2';
+
+  frame.onload = function() {
+    win = frame.contentWindow;
+    // Wait for renderer to be available
+    var checks = 0;
+    var iv = setInterval(function() {
+      checks++;
+      if (win._generatePlantSVG && win.hashToTraits) {
+        clearInterval(iv);
+        ready = true;
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('controls').style.display = 'flex';
+        document.getElementById('render-area').style.display = 'flex';
+        render();
+      }
+      if (checks > 100) {
+        clearInterval(iv);
+        document.getElementById('loader').textContent = 'Failed to load renderer. Refresh to retry.';
+      }
+    }, 200);
+  };
+
+  // Build a hash that forces a specific byte value at a specific position
+  function forceHash(layer, index) {
+    // hashToTraits uses hb(n) and hc(n) to read bytes/chars from the hash
+    // hb(n) = parseInt(hash.substr(n*2, 2), 16) — full byte 0-255
+    // hc(n) = parseInt(hash[n], 16) — single char 0-15
+    var hexChars = BASE_HASH.split('');
+
+    var layerMap = {
+      pot:         { pos: 0, mode: 'byte', mod: 30 },    // hb(0) % 30
+      potColor:    { pos: 1, mode: 'char' },              // _PAL[hc(1)]
+      stem:        { pos: 2, mode: 'char' },              // hc(2)
+      leafType:    { pos: 4, mode: 'byte' },              // hb(4)
+      leafColor:   { pos: 7, mode: 'char' },              // _PAL[hc(7)]
+      flower:      { pos: 11, mode: 'byte' },             // hb(11)
+      flowerColor: { pos: 12, mode: 'char' },             // _PAL[hc(12)]
+      base:        { pos: 20, mode: 'byte', mod: 30 },    // hb(20) % 30
+      companion:   { pos: 21, mode: 'byte', mod: 60 },    // hb(21) % 60
+      aura:        { pos: 15, mode: 'byte', mod: 21 },    // hb(15) % 21
+      mutation:    { pos: 16, mode: 'byte' },              // hb(16)
+      season:      { pos: 22, mode: 'byte', mod: 4 }      // hb(22) % 4
+    };
+
+    var info = layerMap[layer];
+    if (!info) return BASE_HASH;
+
+    if (info.mode === 'byte') {
+      // hb(n) reads hash.substr(n*2, 2) as hex
+      var byteVal = info.mod ? (index % info.mod) : index;
+      // If there's a mod, we need byteVal such that byteVal % mod === index
+      if (info.mod) byteVal = index % info.mod;
+      var hexStr = ('0' + byteVal.toString(16)).slice(-2);
+      hexChars[info.pos * 2] = hexStr[0];
+      hexChars[info.pos * 2 + 1] = hexStr[1];
+    } else {
+      // hc(n) reads hash[n] as single hex char
+      hexChars[info.pos] = (index % 16).toString(16);
+    }
+
+    // Force hasFlower on so we always see blooms when auditing flowers
+    if (layer === 'flower' || layer === 'flowerColor') {
+      // hc(10) > 4 means flower visible — set hash[10] to 'f' (15)
+      hexChars[10] = 'f';
+    }
+
+    return hexChars.join('');
+  }
+
+  function getMaxIndex(layer) {
+    var maxes = {
+      pot: 30, potColor: 16, stem: 16, leafType: 256,
+      leafColor: 16, flower: 256, flowerColor: 16,
+      base: 30, companion: 60, aura: 21, mutation: 256, season: 4
+    };
+    return maxes[layer] || 30;
+  }
+
+  function getTraitLabel(layer, traits) {
+    if (!win.TRAIT_BANK) return 'Index ' + document.getElementById('idx-input').value;
+    var TB = win.TRAIT_BANK;
+    try {
+      switch(layer) {
+        case 'pot':
+          return TB.pots && TB.pots[traits.pot] ? TB.pots[traits.pot].name || ('Pot ' + traits.pot) : 'Pot ' + traits.pot;
+        case 'leafType':
+          return TB.leaves && TB.leaves[traits.leafType] ? TB.leaves[traits.leafType].name || ('Leaf ' + traits.leafType) : 'Leaf ' + traits.leafType;
+        case 'flower':
+          var fi = traits.flower % (TB.flowers ? TB.flowers.length : 46);
+          return TB.flowers && TB.flowers[fi] ? TB.flowers[fi].name || ('Flower ' + fi) : 'Flower ' + fi;
+        case 'base':
+          return TB.substrates && TB.substrates[traits.base] ? TB.substrates[traits.base].name || ('Substrate ' + traits.base) : 'Substrate ' + traits.base;
+        case 'companion':
+          return TB.companions && TB.companions[traits.companion] ? TB.companions[traits.companion].name || ('Companion ' + traits.companion) : 'Companion ' + traits.companion;
+        case 'stem':
+          var sv = traits.stemType || '';
+          return sv || ('Stem hc=' + document.getElementById('idx-input').value);
+        case 'season':
+          return ['Spring','Summer','Autumn','Winter'][traits.season] || 'Season ' + traits.season;
+        default:
+          return layer + ' ' + document.getElementById('idx-input').value;
+      }
+    } catch(e) { return layer + ' ' + document.getElementById('idx-input').value; }
+  }
+
+  function render() {
+    if (!ready) return;
+    var layer = document.getElementById('layer-select').value;
+    var idx = parseInt(document.getElementById('idx-input').value) || 0;
+    var max = getMaxIndex(layer);
+    document.getElementById('idx-max').textContent = '/ ' + (max - 1);
+
+    var hash = forceHash(layer, idx);
+    var traits, tg, svg;
+    try {
+      traits = win.hashToTraits(hash);
+      tg = win.getTerraGrade(traits);
+      svg = win._generatePlantSVG(hash, 280);
+    } catch(e) {
+      document.getElementById('plant-frame').innerHTML = '<div style="color:#c44;font-size:0.8rem;">Render error: ' + e.message + '</div>';
+      return;
+    }
+
+    document.getElementById('plant-frame').innerHTML = svg;
+    document.getElementById('trait-name').textContent = getTraitLabel(layer, traits);
+    document.getElementById('tier-badge').innerHTML = tg ? '<span style="color:' + tg.color + ';">' + tg.icon + ' ' + tg.name + '</span>' : '';
+    document.getElementById('hash-display').textContent = hash;
+
+    // Build trait summary
+    var info = '<strong>Layer:</strong> ' + layer + ' &nbsp; <strong>Index:</strong> ' + idx;
+    info += '<br><strong>Pot:</strong> ' + traits.pot + ' &nbsp; <strong>Stem:</strong> ' + (traits.stemType || 'Standard');
+    info += ' &nbsp; <strong>Leaf:</strong> ' + traits.leafType + ' &nbsp; <strong>Flower:</strong> ' + (traits.hasFlower ? traits.flower : 'none');
+    info += '<br><strong>Base:</strong> ' + traits.base + ' &nbsp; <strong>Companion:</strong> ' + traits.companion;
+    info += ' &nbsp; <strong>Aura:</strong> ' + traits.aura + ' &nbsp; <strong>Season:</strong> ' + ['Spr','Sum','Aut','Win'][traits.season];
+    document.getElementById('trait-info').innerHTML = info;
+  }
+
+  window.go = function(dir) {
+    var input = document.getElementById('idx-input');
+    var layer = document.getElementById('layer-select').value;
+    var max = getMaxIndex(layer);
+    var val = (parseInt(input.value) || 0) + dir;
+    if (val < 0) val = max - 1;
+    if (val >= max) val = 0;
+    input.value = val;
+    render();
+  };
+
+  document.getElementById('layer-select').addEventListener('change', function() {
+    document.getElementById('idx-input').value = 0;
+    render();
+  });
+  document.getElementById('idx-input').addEventListener('change', render);
+  document.getElementById('idx-input').addEventListener('input', render);
+})();
+</script>
+</body>
+</html>
