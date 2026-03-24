@@ -63,6 +63,7 @@
   </div>
 </div>
 <div class="render-area" id="render-area" style="display:none;">
+  <div id="layer-heading" style="font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.12em;color:#8a9178;text-align:center;margin-bottom:2px;"></div>
   <div class="trait-name" id="trait-name"></div>
   <div class="tier-badge" id="tier-badge"></div>
   <div class="plant-frame" id="plant-frame"></div>
@@ -230,6 +231,7 @@
     }
 
     document.getElementById('plant-frame').innerHTML = svg;
+    document.getElementById('layer-heading').textContent = (layerLabels[layer] || layer).toUpperCase() + '  #' + idx;
     document.getElementById('trait-name').textContent = getLayerName(layer, traits);
     document.getElementById('tier-badge').innerHTML = tg ? '<span style="color:' + tg.color + ';">' + tg.icon + ' ' + tg.name + '</span>' : '';
     document.getElementById('hash-display').textContent = hash;
