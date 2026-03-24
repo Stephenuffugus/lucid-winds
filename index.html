@@ -7147,8 +7147,8 @@ document.addEventListener('keydown', function(e) {
     var s = '';
     // set-103-8: Per-pot soil line — matches body width exactly
     //                  0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18
-    var soilL = [20, 20, 23, 15, 25, 28, 25, 24, 23, 22, 18, 25, 25, 24, 17, 20, 27, 22, 30, 22, 21, 29, 19, 35, 35, 19, 23, 24, 23, 25];
-    var soilR = [50, 50, 47, 55, 45, 42, 45, 46, 47, 48, 52, 45, 41, 46, 46, 50, 43, 48, 40, 48, 49, 41, 51, 35, 35, 49, 47, 46, 47, 42];
+    var soilL = [20, 20, 23, 15, 25, 28, 25, 24, 23, 22, 18, 25, 25, 24, 17, 20, 27, 22, 30, 22, 21, 29, 19, 35, 35, 19, 35, 24, 23, 25];
+    var soilR = [50, 50, 47, 55, 45, 42, 45, 46, 47, 48, 52, 45, 41, 46, 46, 50, 43, 48, 40, 48, 49, 41, 51, 35, 35, 49, 35, 46, 47, 42];
     var si = (p === 15) ? 15 : (p < 30 ? p : p % 30);
     s += '<line x1="'+soilL[si]+'" y1="78" x2="'+soilR[si]+'" y2="78" stroke="#3a3228" stroke-width="1.5" stroke-linecap="butt"/>';
     s += '<line x1="'+(soilL[si]+1)+'" y1="78.5" x2="'+(soilR[si]-1)+'" y2="78.5" stroke="#2a2218" stroke-width="0.5" opacity="0.3"/>';
@@ -7502,11 +7502,12 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M16,89 L52,89" stroke="#6a1e1e" stroke-width="0.3" opacity="0.4"/>';
         break;
       case 26: // Mailbox — rounded mailbox planter on short post
-        // Red flag — behind mailbox, just flag tip visible above top-right
-        s += '<path d="M45,82.8 L45,75" stroke="#B4433D" stroke-width="0.8" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M45,75 L49,76 L45,77" fill="#B4433D"/>';
-        // Mailbox body
+        // Red flag — behind mailbox left side, just flag tip visible above
+        s += '<path d="M24.4,82.8 L24.4,75" stroke="#B4433D" stroke-width="0.8" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M24.4,75 L28.4,76 L24.4,77" fill="#B4433D"/>';
+        // Mailbox body — fully opaque so flag pole hidden behind
         s += '<path d="M22.6,82.8 Q22.8,77.2 35.0,77.2 Q47.2,77.2 47.4,82.8 L47.4,89.4 L22.6,89.4 Z" fill="'+g+'"/>';
+        s += '<path d="M22.6,82.8 Q22.8,77.2 35.0,77.2 Q47.2,77.2 47.4,82.8 L47.4,89.4 L22.6,89.4 Z" fill="'+PALETTE[t.potColor]+'" opacity="0.95"/>';
         s += '<path d="M22.6,82.8 Q22.8,77.2 35.0,77.2 Q47.2,77.2 47.4,82.8 L47.4,89.4 L22.6,89.4 Z" fill="none" stroke="#2D1810" stroke-width="0.62" stroke-linejoin="round"/>';
         s += '<path d="M24.2,81.2 Q35.0,78.8 45.8,81.2" fill="none" stroke="rgba(240,235,216,0.28)" stroke-width="0.24" stroke-linecap="round"/>';
         s += '<path d="M23.2,83.8 L46.8,83.8" stroke="'+rim+'" stroke-width="0.28" fill="none" stroke-linecap="round" opacity="0.78"/>';
