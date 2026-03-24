@@ -6735,7 +6735,7 @@ document.addEventListener('keydown', function(e) {
       {name:'Hexagonal'},   // 6
       {name:'Terrarium'},   // 7
       {name:'Cylinder'},    // 8
-      {name:'Pedestal'},    // 9
+      {name:'Top Hat'},      // 9
       {name:'V-Planter'},   // 10
       {name:'Teacup'},      // 11
       {name:'Rain Boot'},   // 12
@@ -7210,10 +7210,23 @@ document.addEventListener('keydown', function(e) {
         s += '<rect x="23" y="78" width="24" height="14" rx="3" fill="'+g+'"/>';
         s += '<ellipse cx="35" cy="78" rx="12" ry="2" fill="'+rim+'"/>';
         break;
-      case 9: // Pedestal
-        s += '<rect x="30" y="86" width="10" height="6" rx="1" fill="'+g+'"/>';
-        s += '<rect x="22" y="78" width="26" height="9" rx="2" fill="'+g+'"/>';
-        s += '<rect x="22" y="77" width="26" height="2.5" rx="1" fill="'+rim+'"/>';
+      case 9: // Top Hat — upside-down magician's hat, brim is the base
+        // Wide brim (base)
+        s += '<ellipse cx="35" cy="91" rx="16" ry="2.2" fill="'+g+'"/>';
+        s += '<ellipse cx="35" cy="91" rx="16" ry="2.2" fill="none" stroke="'+rim+'" stroke-width="0.5" opacity="0.4"/>';
+        // Hat band (satin ribbon)
+        s += '<rect x="25" y="88.5" width="20" height="2.8" rx="0.5" fill="'+rim+'"/>';
+        s += '<path d="M25.5,89.6 Q35,89.1 44.5,89.6" stroke="rgba(240,235,216,0.3)" stroke-width="0.22" fill="none" stroke-linecap="round"/>';
+        // Hat body (tall cylinder, flared slightly at brim)
+        s += '<path d="M25.5,89 Q24.8,83 26,78.5 Q27,76.5 35,76.5 Q43,76.5 44,78.5 Q45.2,83 44.5,89 Z" fill="'+g+'"/>';
+        // Crown opening (where plant grows out)
+        s += '<ellipse cx="35" cy="77" rx="8.5" ry="1.8" fill="#2a2218"/>';
+        s += '<ellipse cx="35" cy="77" rx="8.5" ry="1.8" fill="none" stroke="'+rim+'" stroke-width="0.6" opacity="0.5"/>';
+        // Fabric sheen highlights
+        s += '<path d="M28,80 Q29,84 28.5,88" stroke="rgba(240,235,216,0.15)" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M31,77.5 Q30.5,83 31,88.5" stroke="rgba(240,235,216,0.1)" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
+        // Subtle star sparkle on the hat
+        s += '<path d="M40,82 l0.6,-1.2 l0.6,1.2 l-1.2,0 Z" fill="rgba(240,235,216,0.25)"/>';
         break;
       case 10: // V-Planter
         s += '<path d="M18,78 L30,92 L40,92 L52,78 Z" fill="'+g+'"/>';
