@@ -13100,12 +13100,12 @@ document.addEventListener('keydown', function(e) {
     // ── BUILD BACK FACE (data side) ──
     var _tierName = (_tg && _tg.name) ? _tg.name.toLowerCase() : 'common';
     var back = '<div class="cs-card-face cs-card-back" data-season="' + sk + '" data-tier="' + _tierName + '">';
-    // Header: stats (no thumbnail)
-    back += '<div style="display:flex;align-items:center;justify-content:center;gap:0.4rem;padding-bottom:0.4rem;border-bottom:1px solid rgba(74,124,53,0.08);margin-bottom:0.3rem;">';
-    back += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.45rem;letter-spacing:0.06em;display:flex;gap:0.25rem;"><span style="color:' + sColor + ';">EA ' + _ea + '</span><span style="color:var(--muted);">' + seasonEmblems[_season] + ' G' + (_t ? _t.chimerGen || 1 : 1) + '</span></div>';
-    back += '</div>';
     // DNA Ledger
     back += renderDNALedger(plant);
+    // Stats row: EA, season, gen — below ledger, 20% larger
+    back += '<div style="display:flex;align-items:center;justify-content:center;gap:0.35rem;padding-top:0.35rem;margin-top:0.3rem;border-top:1px solid rgba(74,124,53,0.08);">';
+    back += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.54rem;letter-spacing:0.06em;display:flex;gap:0.3rem;"><span style="color:' + sColor + ';">EA ' + _ea + '</span><span style="color:var(--muted);">' + seasonEmblems[_season] + '</span><span style="color:var(--muted);">Gen ' + (_t ? _t.chimerGen || 1 : 1) + '</span></div>';
+    back += '</div>';
     // Hash + date
     back += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--sage);opacity:0.5;word-break:break-all;text-align:center;margin-top:0.4rem;padding-top:0.3rem;border-top:1px solid rgba(74,124,53,0.06);">' + plant.hash + '</div>';
     back += '<div style="font-size:0.42rem;color:var(--muted);text-align:center;margin-top:0.1rem;">Minted ' + (plant.date || '') + dateSuffix + '</div>';
