@@ -4918,6 +4918,7 @@ document.addEventListener('keydown', function(e) {
       pot:          goldenPot  ? 15 : hb(0) % 60, // 60 pot types (0-59)
       potColor:     _PAL[hc(1)],
       stem:         hc(2),
+      stemColor:    hb(5) % 12,
       stemHeight:   22 + hc(3) * 2.5,
       leafType:     hb(4),
       leafCount:    4 + (hc(5) % 5),
@@ -6567,6 +6568,21 @@ document.addEventListener('keydown', function(e) {
   };
   var PAL_KEYS = ['pine','sage','terra','sand','cream','moss','slate','teal','copper','ash','plum','amber','rust','rose','violet','gold'];
 
+  var STEM_COLORS = [
+    {base:'#3A5C2A', light:'#5E8550'},  // 0: Forest Green (default)
+    {base:'#3D4A2A', light:'#5A6B42'},  // 1: Dark Olive
+    {base:'#5A6B58', light:'#7A8B72'},  // 2: Sage Gray
+    {base:'#5A3E2B', light:'#8B6B4A'},  // 3: Warm Brown
+    {base:'#5A2A2A', light:'#8B4A4A'},  // 4: Deep Burgundy
+    {base:'#2A5A5A', light:'#4A8B7A'},  // 5: Teal Green
+    {base:'#4A2A5A', light:'#7A5A8B'},  // 6: Purple Vine
+    {base:'#8A8A7A', light:'#B0B0A0'},  // 7: Bone White
+    {base:'#3A3A38', light:'#5A5A55'},  // 8: Charcoal
+    {base:'#7A4A2A', light:'#A07040'},  // 9: Copper
+    {base:'#1A5A3A', light:'#2A8A5A'},  // 10: Emerald
+    {base:'#6A5A1A', light:'#9A8A3A'}   // 11: Amber
+  ];
+
   // ── Micro hue-shift: vary a hex color by ±shift on each channel for organic variance ──
   function _hueShift(hex, seed, shift) {
     shift = shift || 8;
@@ -6637,10 +6653,11 @@ document.addEventListener('keydown', function(e) {
     d += '<stop offset="50%" stop-color="#EAE0C8" stop-opacity="0.2"/>';
     d += '<stop offset="100%" stop-color="'+pc+'" stop-opacity="0.3"/>';
     d += '</linearGradient>';
-    // Stem gradient
+    // Stem gradient — color from STEM_COLORS[t.stemColor]
+    var _sc = STEM_COLORS[t.stemColor] || STEM_COLORS[0];
     d += '<linearGradient id="sg'+uid+'" x1="0" y1="1" x2="0" y2="0">';
-    d += '<stop offset="0%" stop-color="#3A5C2A" stop-opacity="0.9"/>';
-    d += '<stop offset="100%" stop-color="#5E8550" stop-opacity="0.8"/>';
+    d += '<stop offset="0%" stop-color="'+_sc.base+'" stop-opacity="0.9"/>';
+    d += '<stop offset="100%" stop-color="'+_sc.light+'" stop-opacity="0.8"/>';
     d += '</linearGradient>';
     // Leaf gradients (2 variations)
     var lc1 = PALETTE[t.leafColors[0]] || PALETTE.sage;
