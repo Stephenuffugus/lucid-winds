@@ -3131,7 +3131,8 @@
       100%{opacity:0;background-position:-150% 0;}}
 
     /* ── Rarity symbol badge (bottom-left of card front) ── */
-    .cf-rarity-symbol{position:absolute;bottom:15%;left:8px;width:32px;height:32px;object-fit:contain;opacity:0.9;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.5));pointer-events:none;z-index:5;}
+    .cf-rarity-symbol{position:absolute;bottom:11%;left:8px;width:32px;height:32px;object-fit:contain;opacity:0.9;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.5));pointer-events:none;z-index:5;}
+    .cf-rarity-symbol--grid{bottom:4px;left:3px;width:18px;height:18px;}
   </style>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -12706,12 +12707,15 @@ document.addEventListener('keydown', function(e) {
         var _sColor = _ghTG ? _ghTG.color : 'var(--cream)';
 
         // Grid card: art front only (flip lives in carousel)
+        var _ghTierName = (_ghTG && _ghTG.name) ? _ghTG.name.toLowerCase() : 'common';
+        var _ghSymbol = plant.revealed ? '<img class="cf-rarity-symbol cf-rarity-symbol--grid" src="/assets/symbol-' + _ghTierName + '.png" alt="' + _ghTierName + '">' : '';
         el.innerHTML =
           _eaKnotHtml +
           '<div class="gh-slot">#' + (gh.length - i) + '</div>' +
           plantSvg +
           '<div class="gh-name" style="color:var(--cream);">' + _pName + '</div>' +
-          (_sea ? '<div style="display:flex;justify-content:center;gap:3px;margin-top:1px;font-size:0.3rem;align-items:center;"><span>' + _sea.emblem + '</span></div>' : '');
+          (_sea ? '<div style="display:flex;justify-content:center;gap:3px;margin-top:1px;font-size:0.3rem;align-items:center;"><span>' + _sea.emblem + '</span></div>' : '') +
+          _ghSymbol;
       } else {
         // Undiscovered slot
         el.className = 'greenhouse-plant undiscovered';
@@ -13195,6 +13199,7 @@ document.addEventListener('keydown', function(e) {
     var dateSuffix = (plant.rare ? ' \u2605 RARE' : '') + (plant.mutated ? ' \ud83e\uddec MUTATED' : '') + (plant.isCross ? ' \ud83e\uddec CROSS' : '');
 
     // ── BUILD FRONT FACE (trading card layout) ──
+    var _tierName = (_tg && _tg.name) ? _tg.name.toLowerCase() : 'common';
     var _sNameColor = _seasonColors[_season] || '#d4cfbc';
     var front = '<div class="cs-card-face cs-card-front" data-season="' + sk + '">';
     front += '<div class="cf-ea">' + _ea + '</div>';
@@ -13208,7 +13213,6 @@ document.addEventListener('keydown', function(e) {
     front += '</div>';
 
     // ── BUILD BACK FACE (data side) ──
-    var _tierName = (_tg && _tg.name) ? _tg.name.toLowerCase() : 'common';
     var back = '<div class="cs-card-face cs-card-back" data-season="' + sk + '" data-tier="' + _tierName + '">';
     // DNA Ledger
     back += renderDNALedger(plant);
