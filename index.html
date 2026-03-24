@@ -3722,35 +3722,11 @@ window.onerror=function(msg,url,line,col,err){
 <div id="landing-splash" class="hidden">
 </div>
 
-<nav>
-  <a href="/" class="nav-logo"><span>Lucid Winds</span></a>
-  <ul class="nav-links">
-    <li><a href="/">Home</a></li>
-    <li><a href="/seeds.html">Food & Flowers</a></li>
-    <li><a href="/growlog.html" style="color:var(--sage);">🌿 Grow Log</a></li>
-    
-    <li><a href="/partners.html">Partners</a></li>
-
-  </ul>
-  <button onclick="document.getElementById('rootMenu').classList.add('open')" id="menuBtn"><span></span><span></span><span></span></button>
-</nav>
-<div id="rootMenu">
-  <button onclick="document.getElementById('rootMenu').classList.remove('open')" id="rootClose">🍃</button>
-  <div class="root-item"><a href="/">Home</a></div>
-  <div class="root-divider"></div>
-  <div class="root-item"><a href="/seeds.html">Food & Flowers</a></div>
-  <div class="root-item"><a href="/growlog.html" style="color:#8FBC8F;">🌿 Open Grow Log</a></div>
-  <div class="root-divider"></div>
-  
-  <div class="root-item"><a href="/partners.html">Partners</a></div>
-  <div class="root-divider"></div>
-
-</div>
 
 <div class="game-wrap">
 
   <div class="game-header">
-    <div class="game-title">Petal <em>Walk</em></div>
+    <div class="game-title">Lucid <em>Winds</em></div>
   </div>
 
   <!-- Game panel (default) -->
@@ -3835,7 +3811,6 @@ window.onerror=function(msg,url,line,col,err){
   <!-- Milestone Drop -->
   <div class="milestone-drop" id="milestone-drop">
     <p>Deep focus achieved. Cultivate your real-world environment.</p>
-    <a href="/growlog.html">🌱 EXPLORE THE GROW LOG</a>
   </div>
 
   <!-- Message -->
@@ -4262,6 +4237,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="dev-section"><div class="dev-section-title">ACCOUNT COUNTER</div><div style="font-size:0.42rem;color:var(--muted);margin-bottom:0.3rem;">Next: <span id="dev-counter-val">?</span></div><button class="dev-btn" onclick="PW_Dev.resetCounter()">↩ RESET TO 1</button></div>
     <div class="dev-section"><div class="dev-section-title">LOCAL STORAGE</div><button class="dev-btn" onclick="PW_Dev.clearLocal()">🧹 CLEAR ALL</button></div>
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
+    <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button></div>
     <div class="dev-section"><div class="dev-section-title">NUCLEAR</div><button class="dev-btn danger" onclick="PW_Dev.fullReset()">☢ WIPE EVERYTHING</button></div>
     <div class="dev-log" id="dev-log">Ready.\n</div>
   </div>
@@ -4344,6 +4320,25 @@ window.onerror=function(msg,url,line,col,err){
       localStorage.clear();
       alert('Everything wiped. Reloading.');
       location.reload();
+    },
+    spawnTestPlants:function(){
+      if(!window.mintPlant){alert('mintPlant not available');return;}
+      var hashes=[
+        {tier:'Mythic',hash:'f4cd201fbe8f3e55d5d5f491653fb118ce589bf0651eefaec3220d51282fa60a'},
+        {tier:'Mythic',hash:'f0cd2018db8fd355d5d5fac7e65c634d0f53e09001accb627c4a574cda981e88'},
+        {tier:'Cosmic',hash:'feb9ac5c6f9fbf31f5fff9de2702cf3c173934b29334ea2fb7381944ddee3c6e'},
+        {tier:'Cosmic',hash:'fcbdace4ec9f28d1f5fff4ec2ed5324ee461d3871d17b3b71e9eb1a1c3e42e96'}
+      ];
+      var count=0;
+      hashes.forEach(function(h){
+        mintPlant(h.hash).then(function(ok){
+          if(ok!==false)count++;
+          if(count===hashes.length||h===hashes[hashes.length-1]){
+            alert('Spawned '+count+' test plants (2 Mythic, 2 Cosmic). Switch to Greenhouse.');
+            if(window.renderGreenhouse)renderGreenhouse();
+          }
+        });
+      });
     }
   };
 })();
@@ -4635,8 +4630,8 @@ window.onerror=function(msg,url,line,col,err){
 </div>
 
 <div class="game-footer">
-    Lucid Winds — botanical collectibles. <a href="/guide.html">Guide</a> · <a href="/growlog.html">Grow Log</a><br>
-    © 2026 Lucid Winds LLC · <a href="/terms.html">Terms of Service</a> · <a href="/privacy.html">Privacy Policy</a><br>
+    Lucid Winds — botanical collectibles.<br>
+    © 2026 Lucid Winds LLC<br>
     Lucid Winds is a digital botanical game. All plants are procedurally generated artworks.
   </div>
 
