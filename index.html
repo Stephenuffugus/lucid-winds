@@ -4954,89 +4954,69 @@ document.addEventListener('keydown', function(e) {
   };
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Six tiers, scored by stacking all rare trait signals.
+  // Seven tiers, scored by stacking rare trait signals. No double-dipping.
   // Exposed as window.getTerraGrade(traits) for cross-team use.
   //
   //   TIER         SCORE    COLOR     DROP RATE (approx)
   //   ─────────────────────────────────────────────────────
-  //   Common       0-4      #959588   ~40%
-  //   Uncommon     5-7      #8CB86E   ~28%
-  //   Rare         8-10     #5b8fb9   ~17%
-  //   Epic         11-14    #9B59B6   ~9%
-  //   Legendary    15-18    #C8A84B   ~4%
-  //   Mythic       19-22    #A87285   ~1.5%
-  //   Cosmic       23+      #D94FFF   ~0.5%
+  //   Common       0-2      #959588   ~38%
+  //   Uncommon     3-4      #8CB86E   ~28%
+  //   Rare         5-6      #5b8fb9   ~18%
+  //   Epic         7-8      #9B59B6   ~9%
+  //   Legendary    9-11     #C8A84B   ~4.5%
+  //   Mythic       12-14    #A87285   ~2%
+  //   Cosmic       15+      #D94FFF   ~0.5%
   //
   var _TERRA_GRADES = [
     { name:'Common',    minScore:0,  color:'#959588', icon:'○' },
-    { name:'Uncommon',  minScore:5,  color:'#8CB86E', icon:'◈' },
-    { name:'Rare',      minScore:8,  color:'#5b8fb9', icon:'◆' },
-    { name:'Epic',      minScore:11, color:'#9B59B6', icon:'◇' },
-    { name:'Legendary', minScore:15, color:'#C8A84B', icon:'✦' },
-    { name:'Mythic',    minScore:19, color:'#A87285', icon:'★' },
-    { name:'Cosmic',    minScore:23, color:'#D94FFF', icon:'✧' }
+    { name:'Uncommon',  minScore:3,  color:'#8CB86E', icon:'◈' },
+    { name:'Rare',      minScore:5,  color:'#5b8fb9', icon:'◆' },
+    { name:'Epic',      minScore:7,  color:'#9B59B6', icon:'◇' },
+    { name:'Legendary', minScore:9,  color:'#C8A84B', icon:'✦' },
+    { name:'Mythic',    minScore:12, color:'#A87285', icon:'★' },
+    { name:'Cosmic',    minScore:15, color:'#D94FFF', icon:'✧' }
   ];
 
   window.getTerraGrade = function(t) {
     if (!t) return _TERRA_GRADES[0];
     var score = 0;
 
-    // ── PHENOTYPE WEIGHTS — every trait slot contributes ──
-    // Each slot scored 0-3 based on its individual rarity within that slot.
-    // Maximum possible per slot = 3. Total slots = 8.
-    // Max theoretical score = 24 (requires god-roll across ALL traits).
-    // No single trait can exceed +5 (mythic creatures), and even that
-    // needs help from other slots to reach Legendary or Cosmic.
-
-    // SLOT 1: Leaf type (0-2)
-    // Leaf types 0-9 are common (0), 10-17 are uncommon (1), special renders get +2
+    // SLOT 1: Leaf type (0-1)
     var _lt = t.leafType % 60;
-    if (_lt >= 10 && _lt <= 14) score += 1;     // articulated/special
-    if (_lt === 15 || _lt === 16 || _lt === 17) score += 1; // Holly/Berry/Dandelion
-    if (_lt >= 30) score += 1;                   // expansion leaves
+    if (_lt >= 30) score += 1;
 
-    // SLOT 2: Stem type (0-2)
+    // SLOT 2: Stem type (0-1)
     var _st = t.stem % 15;
-    if (_st >= 4 && _st <= 7) score += 1;       // tapering/braided/zigzag/split
-    if (_st >= 8 && _st <= 10) score += 2;      // cactus/coral/succulent
-    if (_st >= 11 && _st <= 14) score += 2;     // twisted/ancient/bamboo/hollow
+    if (_st >= 8) score += 1;
 
-    // SLOT 3: Bloom type (0-3)
+    // SLOT 3: Bloom type (0-2)
     if (t.hasFlower) {
       var _bl = t.flower % 46;
-      if (_bl >= 10 && _bl <= 17) score += 1;   // orchid/rose+/pitcher/cattail/bell/fiddlehead/flytrap/chrysanthemum
-      if (_bl >= 18 && _bl <= 28) score += 2;   // moon orchid/poppy/dandelion/bird of paradise/fire flower/protea/morning glory/cherry blossom/coneflower/snapdragon/bleeding heart
-      if (_bl >= 29) score += 2;                 // expansion blooms
-      if (_bl === 15) score += 3;                // glow flower (rare)
+      if (_bl >= 18) score += 1;
+      if (_bl === 15) score += 2;
     }
 
-    // SLOT 4: Pot type (0-2)
-    if (t.pot >= 8 && t.pot <= 14) score += 1;  // specialty pots
-    if (t.pot === 15) score += 2;                // golden pot
-    if (t.pot >= 16 && t.pot <= 29) score += 1;  // artisan pots
+    // SLOT 4: Pot type (0-1)
+    if (t.pot === 15) score += 1;
 
-    // SLOT 5: Companion (0-2)
-    if (t.companion >= 20 && t.companion <= 28) score += 1;  // standard companion
-    if (t.companion >= 29) score += 2;           // rare companion slot
+    // SLOT 5: Companion — base creatures only, no mythic here (0-1)
+    if (t.companion >= 20 && t.companion <= 31) score += 1;
 
-    // SLOT 6: Aura + Base (0-3)
-    if (t.aura >= 9 && t.aura <= 15) score += 1;
-    if (t.aura === 17 || t.aura === 18) score += 2;
-    if (t.base >= 7 && t.base <= 14) score += 1;  // common substrates
-    if (t.base >= 19 && t.base <= 27) score += 1;  // expanded substrates
-    if (t.base === 15 || t.base === 28) score += 2; // Crystal Matrix + Meteorite Dust (rare)
-    if (t.base === 16 || t.base === 17 || t.base === 18 || t.base === 29) score += 2; // named specials
+    // SLOT 6: Aura (0-1)
+    if (t.aura >= 15) score += 1;
 
-    // SLOT 7: Mutation (0-4) — rare but not dominant
-    if (t.mutationName === 'Wireframe')  score += 2;
-    if (t.mutationName === 'Glass Stem') score += 3;
-    if (t.mutationName === 'Glitch')     score += 4;
+    // SLOT 7: Base/Substrate (0-1)
+    if (t.base === 15 || t.base >= 25) score += 1;
 
-    // SLOT 8: Rare feral friends (companion cases 32-38)
-    if (t.companion === 32 || t.companion === 33) score += 3; // Toad, Capybara
-    if (t.companion >= 34 && t.companion <= 36) score += 4;   // BioLum, Rune, Storm
-    if (t.companion === 37) score += 5;                        // Starfall
-    if (t.companion === 38) score += 5;                        // Beholder
+    // SLOT 8: Mutation (0-3)
+    if (t.mutationName === 'Wireframe')  score += 1;
+    if (t.mutationName === 'Glass Stem') score += 2;
+    if (t.mutationName === 'Glitch')     score += 3;
+
+    // SLOT 9: Mythic creatures — scored ONCE, not double-dipped (0-4)
+    if (t.companion === 32 || t.companion === 33) score += 2;
+    if (t.companion >= 34 && t.companion <= 36) score += 3;
+    if (t.companion === 37 || t.companion === 38) score += 4;
 
     // Find highest qualifying tier
     var grade = _TERRA_GRADES[0];
