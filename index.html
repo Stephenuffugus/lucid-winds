@@ -3126,6 +3126,9 @@
       75%{opacity:0.6;background-position:-50% 0;}
       90%{opacity:0.3;background-position:-120% 0;}
       100%{opacity:0;background-position:-150% 0;}}
+
+    /* ── Rarity symbol badge (bottom-left of card front) ── */
+    .cf-rarity-symbol{position:absolute;bottom:8px;left:8px;width:32px;height:32px;object-fit:contain;opacity:0.9;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.5));pointer-events:none;z-index:5;}
   </style>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -13174,6 +13177,9 @@ document.addEventListener('keydown', function(e) {
     front += '<div class="cf-art-window">' + svgHtml + '</div>';
     front += '<div class="cf-haiku-zone"><div class="cf-haiku">' + haiku.line1 + '<br>' + haiku.line2 + '<br>' + haiku.line3 + '</div></div>';
     front += '<div class="cs-flip-hint">tap to flip \u2192</div>';
+    if (plant.revealed) {
+      front += '<img class="cf-rarity-symbol" src="assets/symbol-' + _tierName + '.png" alt="' + _tierName + '">';
+    }
     front += '</div>';
 
     // ── BUILD BACK FACE (data side) ──
@@ -13447,6 +13453,16 @@ document.addEventListener('keydown', function(e) {
           var dur = parseFloat(getComputedStyle(flash).getPropertyValue('--rev-dur')) || 2.5;
           setTimeout(function() { flash.classList.remove('active'); }, dur * 1000 + 300);
         }, 850);
+      }
+      // Inject rarity symbol onto front face
+      var tierAttr = flash ? flash.getAttribute('data-tier') : 'common';
+      var frontFace = el.querySelector('.cs-card-front');
+      if (frontFace && !frontFace.querySelector('.cf-rarity-symbol')) {
+        var symImg = document.createElement('img');
+        symImg.className = 'cf-rarity-symbol';
+        symImg.src = 'assets/symbol-' + (tierAttr || 'common') + '.png';
+        symImg.alt = tierAttr || 'common';
+        frontFace.appendChild(symImg);
       }
       // Mark plant as revealed in data
       var idx = _carousel ? _carousel.idx : 0;
