@@ -6742,7 +6742,7 @@ document.addEventListener('keydown', function(e) {
       {name:'Watering Can'},// 13
       {name:'Wheelbarrow'}, // 14
       {name:'Golden',rare:true}, // 15 — ~6.25%
-      {name:'Stone Slab'},  // 16
+      {name:'Gravestone'},   // 16
       {name:'Woven Basket'},// 17
       {name:'Lab Flask'},   // 18
       {name:'Barrel'},      // 19
@@ -7314,10 +7314,33 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M20,78 Q18,88 24,90 L46,90 Q52,88 50,78 Z" fill="'+g+'"/>';
         s += '<rect x="20" y="76.5" width="30" height="3" rx="1.5" fill="'+rim+'"/>';
         break;
-      case 16: // Stone Slab — flat irregular natural stone
-        s += '<path d="M14,85.2 Q17,82.8 21,83.6 Q25,82.3 29,84.1 Q33,82.2 37,83.8 Q41,82.7 45,84.4 Q49,83.1 53,84.8 Q55.5,85.4 56,87.2 Q52,88.8 47,88.4 Q42,89.5 37,88.7 Q31,89.8 26,88.9 Q20,89.2 16,88.1 Q14.3,87.4 14,85.2 Z" fill="'+g+'"/>';
-        s += '<path d="M15.2,84.8 Q18.4,83.7 22.2,84.3 Q26.7,83.5 30.4,84.7 Q34.1,83.5 38.1,84.4 Q42.8,83.8 46.4,85.0 Q50.7,84.3 54.8,85.7" fill="none" stroke="'+rim+'" stroke-width="0.7" opacity="0.5"/>';
-        s += '<path d="M16.2,87.4 Q20.5,88.1 25.4,87.8 Q31.2,88.6 36.9,87.9 Q42.7,88.7 48.3,87.7 Q52.1,87.8 55.1,87.0" fill="none" stroke="#6f8f57" stroke-width="0.55" opacity="0.45"/>';
+      case 16: // Gravestone — broken headstone with RIP, plant grows from crack
+        // Ground mound
+        s += '<ellipse cx="35" cy="92" rx="18" ry="2" fill="#3a3228"/>';
+        s += '<ellipse cx="35" cy="92" rx="16" ry="1.4" fill="#2a2218" opacity="0.5"/>';
+        // Main stone body — rounded top, cracked right edge
+        s += '<path d="M26,92 L26,80 Q26,75 31,73 Q35,72 39,73 Q44,75 44,78 L44,84 L42,84.5 L44,85 L44,92 Z" fill="#8a8a82"/>';
+        // Broken chunk missing from top-right
+        s += '<path d="M44,78 L44,80 L42.5,81 L43.5,82 L44,84 L46,83 L47,80 L45.5,77 Z" fill="#0d100c"/>';
+        // Crack running down from break
+        s += '<path d="M44,84.5 L43,86 L43.8,87.5 L43,89 L43.5,91" stroke="#6a6a62" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M42.5,81 L41.5,82.5 L42,83.5" stroke="#6a6a62" stroke-width="0.35" fill="none" stroke-linecap="round"/>';
+        // Stone texture — subtle horizontal weathering lines
+        s += '<path d="M28,80 L42,80" stroke="#7a7a72" stroke-width="0.2" opacity="0.3"/>';
+        s += '<path d="M27,83 L43,83" stroke="#7a7a72" stroke-width="0.15" opacity="0.25"/>';
+        s += '<path d="M27,86 L42.5,86" stroke="#7a7a72" stroke-width="0.15" opacity="0.2"/>';
+        // Moss patches
+        s += '<path d="M27,90 Q29,89.2 31,90" stroke="#5a7a3a" stroke-width="0.6" fill="none" opacity="0.4" stroke-linecap="round"/>';
+        s += '<path d="M38,91 Q40,90.3 42,91" stroke="#5a7a3a" stroke-width="0.5" fill="none" opacity="0.35" stroke-linecap="round"/>';
+        // RIP text — carved into stone
+        s += '<text x="35" y="79" text-anchor="middle" font-family="serif" font-size="4.5" font-weight="bold" fill="#6a6a62" opacity="0.7">R.I.P</text>';
+        // Carved border line
+        s += '<path d="M28.5,81 L41,81" stroke="#6a6a62" stroke-width="0.3" opacity="0.4"/>';
+        // Small cross etching
+        s += '<line x1="35" y1="84" x2="35" y2="89" stroke="#6a6a62" stroke-width="0.4" opacity="0.35"/>';
+        s += '<line x1="33" y1="85.5" x2="37" y2="85.5" stroke="#6a6a62" stroke-width="0.4" opacity="0.35"/>';
+        // Stone edge highlight (left)
+        s += '<path d="M26.5,91 L26.5,80 Q26.5,75.5 31,73.5" stroke="rgba(240,235,216,0.12)" stroke-width="0.3" fill="none"/>';
         break;
       case 17: // Woven Basket — tapered with crosshatch
         s += '<ellipse cx="35" cy="78.8" rx="13" ry="1.7" fill="'+rim+'" opacity="0.9"/>';
