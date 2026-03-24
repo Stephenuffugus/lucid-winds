@@ -3050,22 +3050,55 @@
     .fk2:active{transform:scale(.98);background:rgba(24,30,20,.82);transition-duration:.06s}
 
     /* ── Card flip rarity reveal flash ── */
-    .cs-reveal-flash{position:absolute;inset:0;border-radius:12px;opacity:0;pointer-events:none;z-index:20;transition:opacity 0.3s;}
-    .cs-reveal-flash.active[data-tier="common"]{animation:revealCommon 1.2s ease-out forwards;}
-    .cs-reveal-flash.active[data-tier="uncommon"]{animation:revealUncommon 1.2s ease-out forwards;}
-    .cs-reveal-flash.active[data-tier="rare"]{animation:revealRare 1.4s ease-out forwards;}
-    .cs-reveal-flash.active[data-tier="epic"]{animation:revealEpic 1.6s ease-out forwards;}
-    .cs-reveal-flash.active[data-tier="legendary"]{animation:revealLegendary 1.8s ease-out forwards;}
-    .cs-reveal-flash.active[data-tier="mythic"]{animation:revealMythic 2.0s ease-out forwards;}
-    .cs-reveal-flash.active[data-tier="cosmic"]{animation:revealCosmic 2.2s ease-out forwards;}
+    .cs-reveal-flash{position:absolute;inset:0;border-radius:12px;opacity:0;pointer-events:none;z-index:20;overflow:hidden;}
+    .cs-reveal-flash::before,.cs-reveal-flash::after{content:'';position:absolute;inset:0;border-radius:12px;opacity:0;}
+    /* ::before = sparkle field, ::after = sweeping highlight */
+    .cs-reveal-flash.active::before{animation:revealSparkle var(--rev-dur,2s) ease-in-out forwards;background-image:
+      radial-gradient(1.5px 1.5px at 20% 15%, var(--rev-c1,#fff) 50%, transparent 100%),
+      radial-gradient(1px 1px at 75% 25%, var(--rev-c1,#fff) 50%, transparent 100%),
+      radial-gradient(2px 2px at 40% 60%, var(--rev-c2,#fff) 50%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 85% 70%, var(--rev-c1,#fff) 50%, transparent 100%),
+      radial-gradient(1px 1px at 15% 80%, var(--rev-c2,#fff) 50%, transparent 100%),
+      radial-gradient(2px 2px at 60% 40%, var(--rev-c1,#fff) 50%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 50% 90%, var(--rev-c2,#fff) 50%, transparent 100%),
+      radial-gradient(1px 1px at 30% 35%, var(--rev-c1,#fff) 50%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 90% 50%, var(--rev-c2,#fff) 50%, transparent 100%),
+      radial-gradient(2px 2px at 10% 55%, var(--rev-c1,#fff) 50%, transparent 100%);}
+    .cs-reveal-flash.active::after{animation:revealSweep var(--rev-dur,2s) ease-in-out forwards;background:linear-gradient(105deg,transparent 30%,var(--rev-c1,rgba(255,255,255,0.25)) 48%,var(--rev-c2,rgba(255,255,255,0.15)) 52%,transparent 70%);background-size:200% 100%;}
+    .cs-reveal-flash.active{animation:revealGlow var(--rev-dur,2s) ease-in-out forwards;}
 
-    @keyframes revealCommon{0%{opacity:0;}20%{opacity:1;box-shadow:inset 0 0 30px rgba(149,149,136,0.3);}100%{opacity:0;}}
-    @keyframes revealUncommon{0%{opacity:0;}20%{opacity:1;box-shadow:inset 0 0 40px rgba(140,184,110,0.4);}100%{opacity:0;}}
-    @keyframes revealRare{0%{opacity:0;}15%{opacity:1;box-shadow:inset 0 0 50px rgba(91,143,185,0.5);}50%{box-shadow:inset 0 0 60px rgba(91,143,185,0.3);}100%{opacity:0;}}
-    @keyframes revealEpic{0%{opacity:0;}15%{opacity:1;box-shadow:inset 0 0 60px rgba(155,89,182,0.6);}40%{box-shadow:inset 0 0 80px rgba(155,89,182,0.3);}100%{opacity:0;}}
-    @keyframes revealLegendary{0%{opacity:0;}10%{opacity:1;box-shadow:inset 0 0 80px rgba(200,168,75,0.7),0 0 20px rgba(200,168,75,0.3);}30%{box-shadow:inset 0 0 100px rgba(200,168,75,0.4),0 0 30px rgba(200,168,75,0.2);}100%{opacity:0;}}
-    @keyframes revealMythic{0%{opacity:0;}10%{opacity:1;box-shadow:inset 0 0 80px rgba(168,114,133,0.7),0 0 30px rgba(168,114,133,0.4);}25%{box-shadow:inset 0 0 120px rgba(168,114,133,0.5),0 0 40px rgba(168,114,133,0.3);}100%{opacity:0;}}
-    @keyframes revealCosmic{0%{opacity:0;background:transparent;}8%{opacity:1;background:rgba(217,79,255,0.15);box-shadow:inset 0 0 100px rgba(217,79,255,0.8),0 0 40px rgba(217,79,255,0.5);}20%{background:rgba(217,79,255,0.08);box-shadow:inset 0 0 150px rgba(217,79,255,0.5),0 0 60px rgba(217,79,255,0.3);}100%{opacity:0;background:transparent;}}
+    /* Tier colors + durations */
+    .cs-reveal-flash[data-tier="common"]{--rev-c1:rgba(180,180,165,0.9);--rev-c2:rgba(149,149,136,0.6);--rev-dur:2s;}
+    .cs-reveal-flash[data-tier="uncommon"]{--rev-c1:rgba(160,210,130,0.9);--rev-c2:rgba(120,180,90,0.7);--rev-dur:2.2s;}
+    .cs-reveal-flash[data-tier="rare"]{--rev-c1:rgba(120,175,220,0.95);--rev-c2:rgba(80,140,200,0.7);--rev-dur:2.5s;}
+    .cs-reveal-flash[data-tier="epic"]{--rev-c1:rgba(185,110,220,0.95);--rev-c2:rgba(140,70,190,0.7);--rev-dur:2.8s;}
+    .cs-reveal-flash[data-tier="legendary"]{--rev-c1:rgba(230,195,80,1);--rev-c2:rgba(200,168,75,0.8);--rev-dur:3s;}
+    .cs-reveal-flash[data-tier="mythic"]{--rev-c1:rgba(200,140,170,1);--rev-c2:rgba(168,114,133,0.8);--rev-dur:3.2s;}
+    .cs-reveal-flash[data-tier="cosmic"]{--rev-c1:rgba(235,100,255,1);--rev-c2:rgba(160,60,255,0.9);--rev-dur:3.5s;}
+
+    /* Glow: border light + box-shadow pulse */
+    @keyframes revealGlow{
+      0%{opacity:0;}
+      8%{opacity:1;box-shadow:inset 0 0 40px var(--rev-c2),0 0 15px var(--rev-c2);}
+      25%{box-shadow:inset 0 0 60px var(--rev-c1),0 0 30px var(--rev-c2);}
+      50%{box-shadow:inset 0 0 45px var(--rev-c2),0 0 20px var(--rev-c2);}
+      75%{box-shadow:inset 0 0 25px var(--rev-c2),0 0 10px transparent;}
+      100%{opacity:0;box-shadow:none;}}
+    /* Sparkle field: fade in, twinkle, fade out */
+    @keyframes revealSparkle{
+      0%{opacity:0;transform:scale(0.8) rotate(-3deg);}
+      15%{opacity:1;transform:scale(1.05) rotate(0deg);}
+      40%{opacity:0.8;transform:scale(1) rotate(1deg);}
+      60%{opacity:1;transform:scale(1.02) rotate(-0.5deg);}
+      80%{opacity:0.5;transform:scale(1) rotate(0deg);}
+      100%{opacity:0;transform:scale(1.1) rotate(1deg);}}
+    /* Sweeping shine across the card */
+    @keyframes revealSweep{
+      0%{opacity:0;background-position:200% 0;}
+      10%{opacity:0.7;}
+      50%{opacity:1;background-position:50% 0;}
+      80%{opacity:0.4;background-position:-50% 0;}
+      100%{opacity:0;background-position:-100% 0;}}
   </style>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -13376,7 +13409,8 @@ document.addEventListener('keydown', function(e) {
       var flash = el.querySelector('.cs-reveal-flash');
       if (flash) {
         flash.classList.add('active');
-        setTimeout(function() { flash.classList.remove('active'); }, 1500);
+        var dur = parseFloat(getComputedStyle(flash).getPropertyValue('--rev-dur')) || 2;
+        setTimeout(function() { flash.classList.remove('active'); }, dur * 1000 + 200);
       }
       // Mark plant as revealed in data
       var idx = _carousel ? _carousel.idx : 0;
