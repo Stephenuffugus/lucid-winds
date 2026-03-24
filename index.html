@@ -4942,7 +4942,7 @@ document.addEventListener('keydown', function(e) {
         if (_mb >= 0xF4) return 34;  // Bioluminescent Pulse (1.56%)
         if (_mb >= 0xE0) return 33;  // Capybara (7.81%)
         if (_mb >= 0xD0) return 32;  // Toad (6.25%)
-        return hb(21) % 60;          // 60 slots: 48 None + 12 creatures = 20% base rate
+        return hb(21) % 82;          // 82 slots: 48 None + 34 creatures = ~41% base rate
       })(),
       mutation:     mutByte,
       mutationName: mutName,
@@ -6969,8 +6969,30 @@ document.addEventListener('keydown', function(e) {
       {name:'Mouse'},       // idx 55
       {name:'Owl'},         // idx 56
       {name:'Silly Goose'}, // idx 57
-      {name:'None'},        // idx 58 (padding for modulo 60)
-      {name:'None'}         // idx 59 (padding for modulo 60)
+      {name:'None'},        // idx 58
+      {name:'None'},        // idx 59
+      {name:'Tree Frog'},   // idx 60
+      {name:'Rabbit'},      // idx 61
+      {name:'Cricket'},     // idx 62
+      {name:'Gecko'},       // idx 63
+      {name:'Scarab Beetle'}, // idx 64
+      {name:'Ant Trail'},   // idx 65
+      {name:'Sparrow'},     // idx 66
+      {name:'Squirrel'},    // idx 67
+      {name:'Fox'},         // idx 68
+      {name:'Chameleon',rare:true}, // idx 69
+      {name:'Seahorse'},    // idx 70
+      {name:'Koi Fish'},    // idx 71
+      {name:'Jellyfish',rare:true}, // idx 72
+      {name:'Mushroom Sprite'}, // idx 73
+      {name:'Deer Fawn'},   // idx 74
+      {name:'Raven',rare:true}, // idx 75
+      {name:'Garden Snake'}, // idx 76
+      {name:'Centipede'},   // idx 77
+      {name:'Crystal Beetle',rare:true}, // idx 78
+      {name:'Will-o-Wisp',rare:true}, // idx 79
+      {name:'Paper Butterfly'}, // idx 80
+      {name:'Wolf Spider'}  // idx 81
     ],
     mutations: [
       {name:'None'},{name:'None'},{name:'None'},{name:'None'},
@@ -12505,6 +12527,268 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M16,91.2 L17.5,92.2 L19,91.7 L17.5,91.2 Z" fill="#E8922D"/>';
         // Forehead tuft — tiny crown of feathers
         s += '<path d="M17,73.2 Q17.5,72.2 18,73 Q18.3,72 18.8,73" fill="#F0EBD8" stroke="#E0DAC8" stroke-width="0.12"/>';
+        s += '</g>';
+        break;
+
+      // ── NEW COMPANIONS (cases 60-81) ────────────────────────────────
+
+      case 60: // Tree Frog — perched on pot rim left side
+        s += '<g opacity="0.72">';
+        s += '<ellipse cx="18" cy="77" rx="2.5" ry="1.8" fill="#5A9A3A"/>';
+        s += '<circle cx="16.5" cy="75.8" r="1.2" fill="#6AAA4A"/>';
+        s += '<circle cx="16.2" cy="75.5" r="0.35" fill="#111"/>';
+        s += '<circle cx="16.3" cy="75.4" r="0.1" fill="rgba(240,235,216,0.5)"/>';
+        s += '<ellipse cx="17" cy="75.2" rx="0.6" ry="0.4" fill="#7ABA5A" opacity="0.5"/>';
+        s += '<path d="M15.5,78.5 L14.5,79.5 M20,78.2 L21,79.2" stroke="#4A8A2A" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        s += '<circle cx="17.5" cy="76.8" r="0.5" fill="#5A9A3A" opacity="0.3"><animate attributeName="r" values="0.5;0.7;0.5" dur="3s" repeatCount="indefinite"/></circle>';
+        s += '</g>';
+        break;
+      case 61: // Rabbit — sitting beside pot right side
+        s += '<g opacity="0.72">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.05,-0.03;0,0" dur="6s" repeatCount="indefinite"/>';
+        s += '<ellipse cx="58" cy="89" rx="3" ry="2.5" fill="#B8A088"/>';
+        s += '<ellipse cx="58" cy="89.5" rx="2" ry="1.5" fill="#C8B098" opacity="0.5"/>';
+        s += '<circle cx="56.5" cy="87.5" r="1.3" fill="#B8A088"/>';
+        s += '<path d="M55.8,87 L55.2,84 Q55,83 55.6,83.5 L56,86" fill="#B8A088"/>';
+        s += '<path d="M57,86.8 L57.5,83.5 Q57.7,82.5 58.2,83 L57.5,86.2" fill="#B8A088"/>';
+        s += '<path d="M55.5,84.5 L55.8,85" stroke="#D8A090" stroke-width="0.3" opacity="0.4"/>';
+        s += '<path d="M57.2,84 L57.5,84.5" stroke="#D8A090" stroke-width="0.3" opacity="0.4"/>';
+        s += '<circle cx="56.2" cy="87.3" r="0.18" fill="#111"/>';
+        s += '<circle cx="56" cy="88.2" r="0.2" fill="#D8A090"/>';
+        s += '<path d="M57.2,87.5 L57,87.2 L57.4,87.2" stroke="#B8A088" stroke-width="0.15" fill="none"/>';
+        s += '</g>';
+        break;
+      case 62: // Cricket — on soil near pot base
+        s += '<g opacity="0.70">';
+        s += '<ellipse cx="25" cy="91" rx="1.8" ry="0.8" fill="#3A4A2A"/>';
+        s += '<circle cx="23.5" cy="90.8" r="0.5" fill="#4A5A3A"/>';
+        s += '<circle cx="23.3" cy="90.7" r="0.1" fill="#111"/>';
+        s += '<line x1="23" y1="90.5" x2="22" y2="89.5" stroke="#3A4A2A" stroke-width="0.15"/>';
+        s += '<line x1="23.2" y1="90.4" x2="22.5" y2="89.2" stroke="#3A4A2A" stroke-width="0.15"/>';
+        s += '<path d="M26" y1="91.2" x2="27.5" y2="90" stroke="#3A4A2A" stroke-width="0.2" fill="none"/>';
+        s += '<line x1="26" y1="91.2" x2="27.5" y2="90" stroke="#3A4A2A" stroke-width="0.2"><animate attributeName="y2" values="90;89.5;90" dur="4s" repeatCount="indefinite"/></line>';
+        s += '</g>';
+        break;
+      case 63: // Gecko — clinging to pot side vertical
+        s += '<g opacity="0.72">';
+        s += '<path d="M52,82 Q53,80 52.5,78 Q52,77 51,77.5" fill="none" stroke="#7AAA5A" stroke-width="1.8" stroke-linecap="round"/>';
+        s += '<circle cx="51" cy="77.2" r="1" fill="#7AAA5A"/>';
+        s += '<circle cx="50.6" cy="77" r="0.2" fill="#111"/>';
+        s += '<circle cx="50.7" cy="76.9" r="0.06" fill="rgba(240,235,216,0.5)"/>';
+        s += '<path d="M53,82.5 L54,83.2 M53,80 L54.2,79.8 M51.5,78.5 L52.5,78 M50.2,77.8 L49.2,78.2" stroke="#7AAA5A" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M52,82 Q53.5,84 52.8,86" stroke="#7AAA5A" stroke-width="0.8" fill="none" stroke-linecap="round"/>';
+        s += '<line x1="50.5" y1="77.5" x2="49.5" y2="77.5" stroke="#7AAA5A" stroke-width="0.15"><animate attributeName="x2" values="49.5;48.8;49.5" dur="8s" repeatCount="indefinite"/></line>';
+        s += '</g>';
+        break;
+      case 64: // Scarab Beetle — on soil surface
+        s += '<g opacity="0.72">';
+        s += '<ellipse cx="42" cy="91" rx="1.5" ry="1" fill="#2A4A3A"/>';
+        s += '<ellipse cx="42" cy="91" rx="1.2" ry="0.8" fill="#3A6A4A" opacity="0.8"/>';
+        s += '<line x1="42" y1="90.2" x2="42" y2="91.8" stroke="#1A3A2A" stroke-width="0.15"/>';
+        s += '<circle cx="41" cy="90.3" r="0.4" fill="#2A4A3A"/>';
+        s += '<circle cx="40.8" cy="90.2" r="0.08" fill="#111"/>';
+        s += '<line x1="40.6" y1="90" x2="40" y2="89.5" stroke="#2A4A3A" stroke-width="0.12"/>';
+        s += '<line x1="40.8" y1="90" x2="40.4" y2="89.3" stroke="#2A4A3A" stroke-width="0.12"/>';
+        s += '<ellipse cx="42" cy="90.8" rx="0.8" ry="0.5" fill="rgba(200,180,100,0.15)"><animate attributeName="opacity" values="0.15;0.25;0.15" dur="4s" repeatCount="indefinite"/></ellipse>';
+        s += '</g>';
+        break;
+      case 65: // Ant Trail — 3 dots marching along pot rim
+        s += '<g opacity="0.65">';
+        s += '<circle cx="25" cy="78.5" r="0.3" fill="#2A1A10"><animate attributeName="cx" values="25;45;25" dur="12s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="30" cy="78.5" r="0.3" fill="#2A1A10"><animate attributeName="cx" values="30;50;30" dur="12s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="35" cy="78.5" r="0.3" fill="#2A1A10"><animate attributeName="cx" values="35;55;35" dur="12s" repeatCount="indefinite"/></circle>';
+        s += '</g>';
+        break;
+      case 66: // Sparrow — perched upper area
+        s += '<g opacity="0.74">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0,-0.3;0,0" dur="5s" repeatCount="indefinite"/>';
+        s += '<ellipse cx="55" cy="28" rx="2.2" ry="1.6" fill="#7A5C3E"/>';
+        s += '<ellipse cx="55" cy="28.5" rx="1.4" ry="1" fill="#A87850" opacity="0.5"/>';
+        s += '<circle cx="56.5" cy="27" r="0.9" fill="#7A5C3E"/>';
+        s += '<circle cx="56.8" cy="26.8" r="0.12" fill="#111"/>';
+        s += '<path d="M57.3,27 L58.2,26.8 L57.4,27.3 Z" fill="#A87850"/>';
+        s += '<path d="M53" y1="27.5" x2="51.5" y2="27" stroke="#6A4E38" stroke-width="0.2" fill="none"/>';
+        s += '<line x1="55" y1="29.5" x2="55" y2="30.8" stroke="#5A3E2B" stroke-width="0.15"/>';
+        s += '<line x1="56" y1="29.5" x2="56" y2="30.8" stroke="#5A3E2B" stroke-width="0.15"/>';
+        s += '</g>';
+        break;
+      case 67: // Squirrel — sitting beside pot left side
+        s += '<g opacity="0.72">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.08,-0.04;0,0" dur="5.5s" repeatCount="indefinite"/>';
+        s += '<ellipse cx="10" cy="88.5" rx="2.5" ry="2" fill="#A07040"/>';
+        s += '<circle cx="9" cy="86.5" r="1.2" fill="#A07040"/>';
+        s += '<circle cx="8.6" cy="86.2" r="0.18" fill="#111"/>';
+        s += '<circle cx="8.5" cy="85.5" r="0.45" fill="#B08050"/>';
+        s += '<circle cx="8.5" cy="85.5" r="0.25" fill="#C09060" opacity="0.5"/>';
+        s += '<path d="M12,87 Q14,84 13,82 Q12.5,81 13.5,82.5 Q15,84 13,88" fill="#A07040" stroke="#8A6030" stroke-width="0.15"/>';
+        s += '<circle cx="9.2" cy="86.8" r="0.15" fill="#D08070"/>';
+        s += '</g>';
+        break;
+      case 68: // Fox — curled near pot base right
+        s += '<g opacity="0.72">';
+        s += '<ellipse cx="56" cy="90" rx="3.5" ry="2" fill="#D08030">';
+        s += '<animate attributeName="ry" values="2;2.1;2" dur="5s" repeatCount="indefinite"/>';
+        s += '</ellipse>';
+        s += '<circle cx="54" cy="88.5" r="1.3" fill="#D08030"/>';
+        s += '<path d="M53.2,88 L52.5,86.5 Q52.3,86 52.8,86.5 L53.5,87.5" fill="#D08030"/>';
+        s += '<path d="M54.5,87.8 L55,86.2 Q55.1,85.7 55.5,86.2 L55,87.5" fill="#D08030"/>';
+        s += '<circle cx="53.5" cy="88.3" r="0.18" fill="#111"/>';
+        s += '<circle cx="54" cy="88.8" r="0.15" fill="#1A1A1A"/>';
+        s += '<ellipse cx="56" cy="90.5" rx="2" ry="0.8" fill="#E8E0D0" opacity="0.4"/>';
+        s += '<path d="M59,89.5 Q61,88 60,87 Q59.5,87.5 59.5,89" fill="#D08030" stroke="#B06020" stroke-width="0.1"/>';
+        s += '<path d="M60,87.5 Q59.8,87 60.2,87.2" fill="#F0E8D8"/>';
+        s += '</g>';
+        break;
+      case 69: // Chameleon — on stem, gripping with curled tail
+        s += '<g opacity="0.72">';
+        s += '<path d="M32,62 Q28,64 30,66 Q32,67 34,65 Q36,63 34,61 Z" fill="#5A9A3A"/>';
+        s += '<circle cx="31" cy="63" r="1" fill="#6AAA4A"/>';
+        s += '<circle cx="30.8" cy="62.8" r="0.5" fill="#7ABA5A"/>';
+        s += '<circle cx="30.6" cy="62.7" r="0.15" fill="#111"><animate attributeName="cx" values="30.6;30.4;30.8;30.6" dur="5s" repeatCount="indefinite"/></circle>';
+        s += '<path d="M34,64 Q36,65 37,67 Q37.5,68 37,68.5 Q36.5,68 36.5,67 Q36,66 35,65" fill="none" stroke="#5A9A3A" stroke-width="0.8" stroke-linecap="round"/>';
+        s += '<path d="M30,64 L29,64.5 M34,63.5 L35.2,63" stroke="#5A9A3A" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        s += '</g>';
+        break;
+      case 70: // Seahorse — floating upper-left
+        s += '<g opacity="0.70">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0,-1.5;0,0" dur="4s" repeatCount="indefinite"/>';
+        s += '<path d="M10,22 Q9,20 10,18 Q11,16 12,17 Q12.5,18 12,19 Q11.5,20 11,21 Q10.5,22 10.5,24 Q10.5,26 11,27 Q11.5,27.5 11,28 Q10,28.5 10,27 Q9.5,25.5 10,24" fill="none" stroke="#C8A060" stroke-width="1" stroke-linecap="round"/>';
+        s += '<circle cx="11.5" cy="17.5" r="0.8" fill="#C8A060"/>';
+        s += '<circle cx="11.8" cy="17.3" r="0.12" fill="#111"/>';
+        s += '<path d="M12.3,17 L13.5,16.5" stroke="#C8A060" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M10.5,20 L9.5,20.2 M10.8,22 L9.8,22.3 M10.8,24 L9.8,24.2" stroke="#D8B070" stroke-width="0.2" fill="none" opacity="0.4"/>';
+        s += '</g>';
+        break;
+      case 71: // Koi Fish — near pot base
+        s += '<g opacity="0.72">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;1,0;0,0;-1,0;0,0" dur="5s" repeatCount="indefinite"/>';
+        s += '<ellipse cx="28" cy="91" rx="3" ry="1.2" fill="#E88040"/>';
+        s += '<ellipse cx="28" cy="91" rx="2" ry="0.8" fill="#F0F0E8" opacity="0.5"/>';
+        s += '<path d="M31,91 L33,90 L33,92 Z" fill="#E88040"/>';
+        s += '<circle cx="26" cy="90.8" r="0.15" fill="#111"/>';
+        s += '<path d="M28,90.2 L29,89.5 M28,91.8 L29,92.5" stroke="#E88040" stroke-width="0.3" fill="none" opacity="0.4"/>';
+        s += '</g>';
+        break;
+      case 72: // Jellyfish — floating upper area
+        s += '<g opacity="0.55">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.5,-1;0,0;-0.5,1;0,0" dur="6s" repeatCount="indefinite"/>';
+        s += '<ellipse cx="12" cy="20" rx="3" ry="2" fill="rgba(180,160,220,0.3)"/>';
+        s += '<ellipse cx="12" cy="20" rx="3" ry="2" fill="none" stroke="rgba(180,160,220,0.25)" stroke-width="0.4"/>';
+        s += '<ellipse cx="12" cy="19.5" rx="2" ry="1" fill="rgba(220,200,240,0.15)"/>';
+        s += '<path d="M9.5,22 Q9,25 10,27" stroke="rgba(180,160,220,0.18)" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M11,22 Q10.5,26 11.5,28" stroke="rgba(180,160,220,0.15)" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M13,22 Q13.5,25 12.5,27.5" stroke="rgba(180,160,220,0.18)" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M14.5,22 Q15,24 14,26" stroke="rgba(180,160,220,0.12)" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        s += '</g>';
+        break;
+      case 73: // Mushroom Sprite — standing on soil near stem
+        s += '<g opacity="0.72">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0,-0.5;0,0" dur="3s" repeatCount="indefinite"/>';
+        s += '<line x1="30" y1="90" x2="30" y2="87" stroke="#E8D8C0" stroke-width="0.8" stroke-linecap="round"/>';
+        s += '<path d="M27,87 Q30,84 33,87 Z" fill="#C44A3A"/>';
+        s += '<circle cx="28.5" cy="86.2" r="0.4" fill="#E8D8C0" opacity="0.5"/>';
+        s += '<circle cx="31" cy="85.8" r="0.3" fill="#E8D8C0" opacity="0.4"/>';
+        s += '<circle cx="29.5" cy="87.5" r="0.12" fill="#111"/>';
+        s += '<circle cx="30.5" cy="87.5" r="0.12" fill="#111"/>';
+        s += '</g>';
+        break;
+      case 74: // Deer Fawn — standing beside pot tiny
+        s += '<g opacity="0.70">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.05,-0.02;0,0" dur="6s" repeatCount="indefinite"/>';
+        s += '<ellipse cx="8" cy="87" rx="2.8" ry="1.8" fill="#B08050"/>';
+        s += '<circle cx="6.5" cy="85.5" r="1" fill="#B08050"/>';
+        s += '<path d="M6,85 L5.5,83.5 Q5.3,83 5.8,83.5 L6.2,84.5" fill="#B08050"/>';
+        s += '<path d="M7,84.8 L7.3,83.2 Q7.4,82.7 7.8,83.2 L7.3,84.3" fill="#B08050"><animate attributeName="d" values="M7,84.8 L7.3,83.2 Q7.4,82.7 7.8,83.2 L7.3,84.3;M7,84.8 L7.5,83 Q7.6,82.5 8,83 L7.3,84.3;M7,84.8 L7.3,83.2 Q7.4,82.7 7.8,83.2 L7.3,84.3" dur="6s" repeatCount="indefinite"/></path>';
+        s += '<circle cx="6.2" cy="85.3" r="0.15" fill="#111"/>';
+        s += '<circle cx="6.5" cy="85.8" r="0.1" fill="#1A1A1A"/>';
+        s += '<ellipse cx="8.5" cy="87.2" rx="1.5" ry="0.8" fill="#C09060" opacity="0.3"/>';
+        s += '<circle cx="7.5" cy="87.5" r="0.25" fill="#E8D8C0" opacity="0.3"/>';
+        s += '<circle cx="8.5" cy="86.5" r="0.2" fill="#E8D8C0" opacity="0.25"/>';
+        s += '<line x1="6.5" y1="88.5" x2="6.5" y2="91" stroke="#8A6040" stroke-width="0.3"/>';
+        s += '<line x1="8" y1="88.5" x2="8" y2="91" stroke="#8A6040" stroke-width="0.3"/>';
+        s += '<line x1="9.5" y1="88.5" x2="9.5" y2="91" stroke="#8A6040" stroke-width="0.3"/>';
+        s += '</g>';
+        break;
+      case 75: // Raven — perched on pot rim
+        s += '<g opacity="0.78">';
+        s += '<animateTransform attributeName="transform" type="rotate" values="-2 52 78;3 52 78;-2 52 78" dur="7s" repeatCount="indefinite"/>';
+        s += '<ellipse cx="52" cy="78" rx="3" ry="2.2" fill="#1A1A1A"/>';
+        s += '<circle cx="50" cy="76.5" r="1.3" fill="#1A1A1A"/>';
+        s += '<path d="M48.8,76.5 L47,75.8 L48.5,76.8 Z" fill="#2A2A2A"/>';
+        s += '<circle cx="49.8" cy="76.2" r="0.18" fill="#333"/>';
+        s += '<circle cx="49.9" cy="76.1" r="0.06" fill="rgba(240,235,216,0.5)"/>';
+        s += '<path d="M54.5,77 L56,76 L55.5,77.5 Z" fill="#1A1A1A"/>';
+        s += '<path d="M55,77 L56.5,76.5 L56,78 Z" fill="#1A1A1A" opacity="0.7"/>';
+        s += '<line x1="51" y1="80" x2="51" y2="81.5" stroke="#2A2A2A" stroke-width="0.2"/>';
+        s += '<line x1="53" y1="80" x2="53" y2="81.5" stroke="#2A2A2A" stroke-width="0.2"/>';
+        s += '</g>';
+        break;
+      case 76: // Garden Snake — coiled near pot base
+        s += '<g opacity="0.70">';
+        s += '<path d="M44,91 Q42,89 44,87 Q46,85.5 48,87 Q50,88.5 48,90 Q46,91.5 44,91 Z" fill="none" stroke="#5A7A3A" stroke-width="1.2" stroke-linecap="round"/>';
+        s += '<circle cx="44" cy="90.5" r="0.8" fill="#5A7A3A"/>';
+        s += '<circle cx="43.7" cy="90.3" r="0.15" fill="#111"/>';
+        s += '<line x1="43.2" y1="90.5" x2="42.5" y2="90.3" stroke="#5A7A3A" stroke-width="0.15"><animate attributeName="x2" values="42.5;42;42.5" dur="6s" repeatCount="indefinite"/></line>';
+        s += '<line x1="43.2" y1="90.5" x2="42.5" y2="90.7" stroke="#5A7A3A" stroke-width="0.15"><animate attributeName="x2" values="42.5;42;42.5" dur="6s" repeatCount="indefinite"/></line>';
+        s += '</g>';
+        break;
+      case 77: // Centipede — crawling across soil
+        s += '<g opacity="0.65">';
+        s += '<path d="M20,92 Q25,91.5 30,92 Q35,91.5 40,92" fill="none" stroke="#5A3A2A" stroke-width="0.8" stroke-linecap="round">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;2,0;0,0" dur="8s" repeatCount="indefinite"/>';
+        s += '</path>';
+        for (var _cpi = 0; _cpi < 8; _cpi++) {
+          var _cpx = 21 + _cpi * 2.5;
+          s += '<line x1="'+_cpx+'" y1="91.8" x2="'+(_cpx-0.5)+'" y2="92.8" stroke="#4A2A1A" stroke-width="0.12"/>';
+          s += '<line x1="'+_cpx+'" y1="92.2" x2="'+(_cpx+0.5)+'" y2="92.8" stroke="#4A2A1A" stroke-width="0.12"/>';
+        }
+        s += '<circle cx="20" cy="91.8" r="0.4" fill="#5A3A2A"/>';
+        s += '<line x1="19.6" y1="91.5" x2="19" y2="91" stroke="#5A3A2A" stroke-width="0.1"/>';
+        s += '<line x1="19.8" y1="91.5" x2="19.3" y2="91" stroke="#5A3A2A" stroke-width="0.1"/>';
+        s += '</g>';
+        break;
+      case 78: // Crystal Beetle — faceted gem beetle on soil
+        s += '<g opacity="0.72">';
+        s += '<polygon points="42,90.2 43.5,89 45,90.2 43.5,91.5" fill="rgba(155,89,182,0.3)"/>';
+        s += '<polygon points="42,90.2 43.5,89 45,90.2 43.5,91.5" fill="none" stroke="rgba(155,89,182,0.5)" stroke-width="0.3"/>';
+        s += '<line x1="43.5" y1="89" x2="43.5" y2="91.5" stroke="rgba(200,180,240,0.3)" stroke-width="0.15"/>';
+        s += '<circle cx="42.5" cy="89.2" r="0.3" fill="rgba(155,89,182,0.4)"/>';
+        s += '<circle cx="42.3" cy="89.1" r="0.08" fill="#111"/>';
+        s += '<circle cx="43.2" cy="89.5" r="0.12" fill="rgba(240,235,216,0.4)"><animate attributeName="opacity" values="0.4;0.6;0.4" dur="3s" repeatCount="indefinite"/></circle>';
+        s += '</g>';
+        break;
+      case 79: // Will-o-Wisp — floating near canopy
+        s += '<g opacity="0.65">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;1,-1;-0.5,0.5;0,0" dur="5s" repeatCount="indefinite"/>';
+        s += '<circle cx="15" cy="35" r="1.5" fill="#C8A84B" opacity="0.15"><animate attributeName="opacity" values="0.15;0.25;0.15" dur="3s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="15" cy="35" r="0.8" fill="#E0C060" opacity="0.3"><animate attributeName="opacity" values="0.3;0.5;0.3" dur="3s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="15" cy="35" r="0.3" fill="#F0E080" opacity="0.5"/>';
+        s += '<path d="M15,36.5 Q14.5,38 15.5,39.5" stroke="#C8A84B" stroke-width="0.2" fill="none" opacity="0.15"/>';
+        s += '</g>';
+        break;
+      case 80: // Paper Butterfly — floating near bloom area
+        s += '<g opacity="0.70">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;1,-0.5;0.5,0.5;0,0" dur="5.5s" repeatCount="indefinite"/>';
+        s += '<path d="M58,30 L56,28 L54,30 Z" fill="#E8E0D0" stroke="#C8C0B0" stroke-width="0.15"/>';
+        s += '<path d="M58,30 L56,32 L54,30 Z" fill="#F0EBD8" stroke="#C8C0B0" stroke-width="0.15"/>';
+        s += '<line x1="56" y1="28" x2="56" y2="32" stroke="#B0A890" stroke-width="0.15"/>';
+        s += '<line x1="55" y1="29" x2="57" y2="29" stroke="#D8D0C0" stroke-width="0.1" opacity="0.4"/>';
+        s += '<line x1="55" y1="31" x2="57" y2="31" stroke="#D8D0C0" stroke-width="0.1" opacity="0.4"/>';
+        s += '<line x1="56" y1="27.5" x2="55.5" y2="26.5" stroke="#B0A890" stroke-width="0.1"/>';
+        s += '<line x1="56" y1="27.5" x2="56.5" y2="26.5" stroke="#B0A890" stroke-width="0.1"/>';
+        s += '</g>';
+        break;
+      case 81: // Wolf Spider — large on soil, spread legs
+        s += '<g opacity="0.70">';
+        s += '<ellipse cx="48" cy="91" rx="2" ry="1.2" fill="#3A2A1A"/>';
+        s += '<circle cx="46.5" cy="90.5" r="0.8" fill="#3A2A1A"/>';
+        s += '<circle cx="46.2" cy="90.3" r="0.12" fill="#111"/>';
+        s += '<circle cx="46.5" cy="90.3" r="0.12" fill="#111"/>';
+        var _wsLegs = [[-2.5,-1.5],[-2,-2.5],[-1.5,-3],[1.5,-3],[2,-2.5],[2.5,-1.5],[-2,1],[2,1]];
+        for (var _wli = 0; _wli < _wsLegs.length; _wli++) {
+          s += '<line x1="48" y1="91" x2="'+(48+_wsLegs[_wli][0]*1.5)+'" y2="'+(91+_wsLegs[_wli][1]*0.6)+'" stroke="#3A2A1A" stroke-width="0.2" stroke-linecap="round"/>';
+        }
+        s += '<line x1="48" y1="91" x2="49" y2="91.5" stroke="#3A2A1A" stroke-width="0.2"><animate attributeName="x2" values="49;49.3;49" dur="8s" repeatCount="indefinite"/></line>';
         s += '</g>';
         break;
     }
