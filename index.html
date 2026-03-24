@@ -7348,11 +7348,24 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M24.2,81.2 Q35,82 45.8,81.2 M23.6,83.6 Q35,84.4 46.4,83.6 M23.1,86 Q35,86.8 46.9,86 M24.6,88.2 Q35,89 45.4,88.2" fill="none" stroke="'+rim+'" stroke-width="0.45" opacity="0.28"/>';
         s += '<path d="M24.5,79.8 L30,89.6 M29.5,79.2 L35,90 M35,79.1 L40.5,90 M40.5,79.3 L45.5,89.4 M27.2,79.4 L22.8,88.9 M33,79.1 L28.2,89.8 M38.8,79.2 L34,90 M44.2,79.6 L39.4,89.7" fill="none" stroke="'+rim+'" stroke-width="0.4" opacity="0.22"/>';
         break;
-      case 18: // Lab Flask — Erlenmeyer shape
-        s += '<path d="M30,78 L30,81.2 Q30,82 35,82 Q40,82 40,81.2 L40,78 Z" fill="'+rim+'"/>';
-        s += '<path d="M30,78 L28.8,82.2 L23.5,90.8 Q22.6,92 35,92 Q47.4,92 46.5,90.8 L41.2,82.2 L40,78 Q39,79 35,79 Q31,79 30,78 Z" fill="'+g+'"/>';
-        s += '<path d="M31.2,81.8 Q35,82.6 38.8,81.8" fill="none" stroke="'+rim+'" stroke-width="0.5" opacity="0.45"/>';
-        s += '<path d="M24.6,90.4 Q35,91.2 45.4,90.4" fill="none" stroke="'+rim+'" stroke-width="0.65" opacity="0.35"/>';
+      case 18: // Lab Flask — Erlenmeyer, glass with half-full substrate
+        // Glass body outline (transparent)
+        s += '<path d="M30,78 L28.8,82.2 L23.5,90.8 Q22.6,92 35,92 Q47.4,92 46.5,90.8 L41.2,82.2 L40,78 Q39,79 35,79 Q31,79 30,78 Z" fill="rgba(200,210,220,0.06)"/>';
+        // Half-full substrate/liquid (bottom half of flask)
+        s += '<path d="M26.2,86.5 L24,90.8 Q22.6,92 35,92 Q47.4,92 46.5,90.8 L44,86.5 Z" fill="'+g+'" opacity="0.7"/>';
+        s += '<path d="M26.2,86.5 Q35,85.8 44,86.5" fill="none" stroke="'+PALETTE[t.potColor]+'" stroke-width="0.4" opacity="0.3"/>';
+        // Glass neck
+        s += '<path d="M30,78 L30,81.2 Q30,82 35,82 Q40,82 40,81.2 L40,78 Z" fill="rgba(200,210,220,0.08)"/>';
+        s += '<path d="M30,78 L30,81.2 Q30,82 35,82 Q40,82 40,81.2 L40,78 Z" fill="none" stroke="rgba(200,210,220,0.45)" stroke-width="0.6"/>';
+        // Glass body outline stroke
+        s += '<path d="M30,78 L28.8,82.2 L23.5,90.8 Q22.6,92 35,92 Q47.4,92 46.5,90.8 L41.2,82.2 L40,78" fill="none" stroke="rgba(200,210,220,0.45)" stroke-width="0.7" stroke-linejoin="round"/>';
+        // Glass sheen highlights
+        s += '<path d="M28,83 Q27,87 25,90" stroke="rgba(240,245,255,0.25)" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M29.5,83.5 Q28.5,86.5 27,89" stroke="rgba(240,245,255,0.12)" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        // Neck ring
+        s += '<path d="M31.2,81.8 Q35,82.6 38.8,81.8" fill="none" stroke="rgba(200,210,220,0.4)" stroke-width="0.5"/>';
+        // Bottom reflection
+        s += '<path d="M25,91 Q35,91.8 45,91" fill="none" stroke="rgba(240,245,255,0.15)" stroke-width="0.35"/>';
         break;
       case 19: // Barrel — rustic half-barrel planter with metal bands
         s += '<ellipse cx="35" cy="78.2" rx="13.0" ry="1.7" fill="'+rim+'"/>';
