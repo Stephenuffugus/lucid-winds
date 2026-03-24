@@ -4931,7 +4931,7 @@ document.addEventListener('keydown', function(e) {
       chimerGen:    1, // default gen 1; breeding sets this to parent max + 1
       leafSpread:   7 + (hc(14) % 6),
       aura:         hb(15) % 21,  // 0-20 aura slots
-      base:         crystalBase ? 15 : hb(20) % 30,
+      base:         crystalBase ? 15 : hb(20) % 60,
       // Companion: base rate ~20% (48 None + 12 creatures), mythic creatures override
       companion:    (function(){
         var _mb = hb(18);
@@ -6974,6 +6974,23 @@ document.addEventListener('keydown', function(e) {
       {name:'The Toad'},     // D — ~6.25%
       {name:'The Capybara'}, // E — ~6.25%
       {name:'Starfall'}      // F — ~6.25%
+    ],
+    substrates: [
+      {name:'None'},{name:'None'},{name:'None'},{name:'None'},{name:'None'},{name:'None'},{name:'None'},
+      {name:'Hydroponic'},{name:'Perlite'},{name:'Living Moss'},{name:'Volcanic Rock'},
+      {name:'Desert Sand'},{name:'Coconut Coir'},{name:'Clay Aggregate'},{name:'River Stone'},
+      {name:'Crystal Matrix',rare:true},{name:'Sulfuric Acid'},{name:'Obsidian Bed'},{name:'Mushroom Compost'},
+      {name:'Worm Castings'},{name:'Bone Meal'},{name:'Bat Guano'},{name:'Dihydrogen Oxide'},
+      {name:'Activated Charcoal'},{name:'Sphagnum Peat'},{name:'Pumice'},{name:'Zeolite'},
+      {name:'Glacial Till'},{name:'Meteorite Dust',rare:true},{name:'Mycelium Network'},
+      {name:'Leaf Mulch'},{name:'Pine Bark'},{name:'Compost Tea'},{name:'Wood Ash'},
+      {name:'Fish Emulsion'},{name:'Kelp Meal'},{name:'Green Sand'},{name:'Rock Phosphate'},
+      {name:'Sawdust'},{name:'Coffee Grounds'},{name:'Egg Shell'},{name:'Banana Peel'},
+      {name:'Vermiculite'},{name:'Charred Rice Hull'},{name:'Aqua Gel'},{name:'Lava Rock'},
+      {name:'Biochar'},{name:'Seashell Grit'},{name:'Terra Preta'},{name:'Diatomaceous Earth'},
+      {name:'Amber Resin',rare:true},{name:'Bioluminescent Soil',rare:true},{name:'Magnetic Sand',rare:true},{name:'Fossil Bed',rare:true},
+      {name:'Stardust',rare:true},{name:'Dragon Bone Ash',rare:true},{name:'Quicksilver',rare:true},
+      {name:'Phoenix Ash',rare:true},{name:'Void Essence',rare:true},{name:'Reserved'}
     ]
   };
 
@@ -11437,6 +11454,166 @@ document.addEventListener('keydown', function(e) {
       case 29: // Mycelium Network — faint white thread
         s += '<path d="M30,78.3 Q35,77.8 40,78.3" fill="none" stroke="#EAE0C8" stroke-width="0.15" opacity="0.10" stroke-linecap="round"/>';
         break;
+
+      // ── COMMON (cases 30-41) ─────────────────────────────────────
+      case 30: // Leaf Mulch
+        s += '<line x1="30" y1="78.3" x2="32" y2="78.5" stroke="#6A4E30" stroke-width="0.3" opacity="0.08" stroke-linecap="round"/>';
+        s += '<line x1="37" y1="78.4" x2="39.5" y2="78.2" stroke="#5A3E2B" stroke-width="0.25" opacity="0.07" stroke-linecap="round"/>';
+        break;
+      case 31: // Pine Bark
+        s += '<circle cx="29" cy="78.4" r="0.6" fill="#7A3A2A" opacity="0.10"/>';
+        s += '<circle cx="35" cy="78.5" r="0.5" fill="#8A4A30" opacity="0.08"/>';
+        s += '<circle cx="41" cy="78.3" r="0.55" fill="#7A3A2A" opacity="0.09"/>';
+        break;
+      case 32: break; // Compost Tea — invisible
+      case 33: // Wood Ash
+        s += '<path d="M28,78.3 Q35,78.0 42,78.3" fill="none" stroke="#9A9A90" stroke-width="0.4" opacity="0.06" stroke-linecap="round"/>';
+        break;
+      case 34: break; // Fish Emulsion — invisible
+      case 35: break; // Kelp Meal — invisible
+      case 36: // Green Sand
+        s += '<circle cx="31" cy="78.5" r="0.3" fill="#6A7A4A" opacity="0.08"/>';
+        s += '<circle cx="39" cy="78.3" r="0.25" fill="#5A6A3A" opacity="0.07"/>';
+        break;
+      case 37: // Rock Phosphate
+        s += '<ellipse cx="35" cy="78.5" rx="0.6" ry="0.35" fill="#8A8A80" opacity="0.07"/>';
+        break;
+      case 38: // Sawdust
+        s += '<circle cx="30" cy="78.4" r="0.25" fill="#C4A878" opacity="0.06"/>';
+        s += '<circle cx="35" cy="78.6" r="0.2" fill="#B89868" opacity="0.05"/>';
+        s += '<circle cx="40" cy="78.3" r="0.25" fill="#C4A878" opacity="0.06"/>';
+        break;
+      case 39: // Coffee Grounds
+        s += '<path d="M27,78.4 Q35,78.1 43,78.4" fill="none" stroke="#2D2218" stroke-width="0.5" opacity="0.05" stroke-linecap="round"/>';
+        break;
+      case 40: // Egg Shell
+        s += '<path d="M31,78.3 L31.5,78.0 L32,78.4" fill="none" stroke="#EAE0C8" stroke-width="0.3" opacity="0.10" stroke-linejoin="round"/>';
+        s += '<path d="M38,78.2 L38.3,78.0 L38.8,78.3" fill="none" stroke="#E0D8C0" stroke-width="0.25" opacity="0.08" stroke-linejoin="round"/>';
+        break;
+      case 41: break; // Banana Peel — invisible
+
+      // ── UNCOMMON (cases 42-49) ───────────────────────────────────
+      case 42: // Vermiculite — gold-flecked mica
+        s += '<circle cx="29" cy="78.3" r="0.35" fill="#C8A84B" opacity="0.14"/>';
+        s += '<circle cx="35" cy="78.5" r="0.3" fill="#D4B85B" opacity="0.12"/>';
+        s += '<circle cx="41" cy="78.2" r="0.35" fill="#C8A84B" opacity="0.13"/>';
+        break;
+      case 43: // Charred Rice Hull
+        s += '<circle cx="30" cy="78.4" r="0.3" fill="#1A1A18" opacity="0.08"/>';
+        s += '<circle cx="34" cy="78.3" r="0.25" fill="#2A2A25" opacity="0.07"/>';
+        s += '<circle cx="38" cy="78.5" r="0.3" fill="#1A1A18" opacity="0.08"/>';
+        s += '<circle cx="42" cy="78.3" r="0.2" fill="#2A2A25" opacity="0.06"/>';
+        break;
+      case 44: // Aqua Gel — translucent blue-green beads
+        s += '<circle cx="30" cy="78.4" r="0.7" fill="#4ABAB0" opacity="0.10"/>';
+        s += '<circle cx="35" cy="78.3" r="0.6" fill="#5ACAC0" opacity="0.08"/>';
+        s += '<circle cx="40" cy="78.5" r="0.65" fill="#4ABAB0" opacity="0.10"/>';
+        s += '<circle cx="29.8" cy="78.2" r="0.15" fill="#EAE0C8" opacity="0.12"/>';
+        s += '<circle cx="34.8" cy="78.1" r="0.12" fill="#EAE0C8" opacity="0.10"/>';
+        break;
+      case 45: // Lava Rock — red-black pebbles
+        s += '<circle cx="28" cy="78.5" r="0.9" fill="#4A1A1A" opacity="0.15"/>';
+        s += '<circle cx="35" cy="78.3" r="0.7" fill="#3A1210" opacity="0.14"/>';
+        s += '<circle cx="42" cy="78.5" r="0.85" fill="#4A1A1A" opacity="0.15"/>';
+        break;
+      case 46: // Biochar — dark porous chunks
+        s += '<rect x="30" y="78.2" width="1.5" height="0.8" rx="0.2" fill="#1A1A18" opacity="0.10"/>';
+        s += '<circle cx="30.5" cy="78.5" r="0.15" fill="#0d100c" opacity="0.06"/>';
+        s += '<rect x="37" y="78.3" width="1.2" height="0.7" rx="0.2" fill="#1A1A18" opacity="0.09"/>';
+        break;
+      case 47: // Seashell Grit — cream shell fragments
+        s += '<path d="M29,78.4 Q29.5,78.0 30,78.5" fill="none" stroke="#E0D8C0" stroke-width="0.4" opacity="0.12"/>';
+        s += '<path d="M35,78.3 L35.8,78.0 L36,78.4" fill="none" stroke="#EAE0C8" stroke-width="0.35" opacity="0.10"/>';
+        s += '<circle cx="41" cy="78.4" r="0.4" fill="#E0D8C0" opacity="0.10"/>';
+        break;
+      case 48: // Terra Preta — rich dark soil
+        s += '<path d="M26,78.4 Q35,78.0 44,78.4" fill="none" stroke="#1A1208" stroke-width="0.8" opacity="0.10" stroke-linecap="round"/>';
+        break;
+      case 49: // Diatomaceous Earth — fine white powder
+        s += '<path d="M27,78.3 Q35,78.0 43,78.3" fill="none" stroke="#EAE0C8" stroke-width="0.3" opacity="0.06" stroke-linecap="round"/>';
+        break;
+
+      // ── RARE (cases 50-53) ───────────────────────────────────────
+      case 50: // Amber Resin — warm amber droplet
+        s += '<ellipse cx="35" cy="78.3" rx="1.2" ry="0.6" fill="#D4A030" opacity="0.18"/>';
+        s += '<ellipse cx="35" cy="78.1" rx="0.6" ry="0.3" fill="#E8C050" opacity="0.12"/>';
+        s += '<circle cx="34.6" cy="78.0" r="0.15" fill="rgba(240,235,216,0.3)"/>';
+        break;
+      case 51: // Bioluminescent Soil — faint green glow
+        s += '<ellipse cx="35" cy="78.2" rx="6" ry="1.0" fill="#4AE050" opacity="0.06"/>';
+        s += '<circle cx="32" cy="78.3" r="0.25" fill="#6AFF70" opacity="0.15"/>';
+        s += '<circle cx="38" cy="78.1" r="0.2" fill="#6AFF70" opacity="0.12"/>';
+        break;
+      case 52: // Magnetic Sand — metallic grains
+        s += '<circle cx="33" cy="78.4" r="0.4" fill="#3A3A38" opacity="0.14"/>';
+        s += '<circle cx="34.5" cy="78.3" r="0.35" fill="#4A4A48" opacity="0.13"/>';
+        s += '<circle cx="35.5" cy="78.5" r="0.4" fill="#3A3A38" opacity="0.14"/>';
+        s += '<circle cx="37" cy="78.3" r="0.35" fill="#4A4A48" opacity="0.12"/>';
+        s += '<circle cx="34.4" cy="78.2" r="0.12" fill="rgba(240,235,216,0.2)"/>';
+        break;
+      case 53: // Fossil Bed — tiny ammonite spiral
+        s += '<path d="M35,78.3 Q35.6,78.0 35.8,78.5 Q35.4,78.8 34.8,78.6 Q34.5,78.2 35,78.3" fill="none" stroke="#8A8A7A" stroke-width="0.3" opacity="0.12"/>';
+        s += '<circle cx="35" cy="78.4" r="0.15" fill="#8A8A7A" opacity="0.10"/>';
+        break;
+
+      // ── EPIC (cases 54-56) ───────────────────────────────────────
+      case 54: // Stardust — sparkle particles
+        s += '<ellipse cx="35" cy="78.2" rx="5" ry="0.7" fill="#D4C8A8" opacity="0.05"/>';
+        s += '<circle cx="29" cy="78.3" r="0.3" fill="#EAE0C8" opacity="0.22"/>';
+        s += '<circle cx="33" cy="78.1" r="0.25" fill="#EAE0C8" opacity="0.16"/>';
+        s += '<circle cx="37" cy="78.4" r="0.3" fill="#EAE0C8" opacity="0.20"/>';
+        s += '<circle cx="41" cy="78.2" r="0.25" fill="#EAE0C8" opacity="0.14"/>';
+        s += '<line x1="29" y1="77.9" x2="29" y2="78.7" stroke="#EAE0C8" stroke-width="0.15" opacity="0.18"/>';
+        s += '<line x1="28.6" y1="78.3" x2="29.4" y2="78.3" stroke="#EAE0C8" stroke-width="0.15" opacity="0.18"/>';
+        break;
+      case 55: // Dragon Bone Ash — pale fragments + underglow
+        s += '<ellipse cx="35" cy="78.3" rx="5" ry="0.7" fill="#F0A030" opacity="0.05"/>';
+        s += '<path d="M30,78.2 L30.8,78.0 L31.2,78.4" fill="#E0D8C8" opacity="0.18"/>';
+        s += '<path d="M35,78.3 L35.5,78.0 L36.2,78.4" fill="#D8D0C0" opacity="0.16"/>';
+        s += '<path d="M39,78.2 L39.8,78.0 L40,78.5" fill="#E0D8C8" opacity="0.15"/>';
+        break;
+      case 56: // Quicksilver — metallic bead
+        s += '<circle cx="35" cy="78.3" r="0.9" fill="#C0C0C8" opacity="0.22"/>';
+        s += '<circle cx="34.7" cy="78.1" r="0.25" fill="rgba(240,235,216,0.45)"/>';
+        s += '<ellipse cx="35" cy="78.8" rx="1.5" ry="0.3" fill="#C0C0C8" opacity="0.04"/>';
+        break;
+
+      // ── LEGENDARY (case 57) — animated ───────────────────────────
+      case 57: // Phoenix Ash — smoldering amber glow
+        s += '<ellipse cx="35" cy="78.2" rx="6" ry="1.0" fill="#F0A030" opacity="0.06">';
+        s += '<animate attributeName="opacity" values="0.06;0.12;0.06" dur="4s" repeatCount="indefinite"/>';
+        s += '</ellipse>';
+        s += '<circle cx="32" cy="78" r="0.3" fill="#F08020" opacity="0.18">';
+        s += '<animate attributeName="cy" values="78;76.5;78" dur="3.5s" repeatCount="indefinite"/>';
+        s += '<animate attributeName="opacity" values="0.18;0.06;0.18" dur="3.5s" repeatCount="indefinite"/>';
+        s += '</circle>';
+        s += '<circle cx="37" cy="78" r="0.25" fill="#E07018" opacity="0.14">';
+        s += '<animate attributeName="cy" values="78;76;78" dur="4.8s" repeatCount="indefinite"/>';
+        s += '<animate attributeName="opacity" values="0.14;0.04;0.14" dur="4.8s" repeatCount="indefinite"/>';
+        s += '</circle>';
+        s += '<circle cx="35" cy="78.2" r="0.2" fill="#F0A030" opacity="0.12">';
+        s += '<animate attributeName="cy" values="78.2;77;78.2" dur="5.5s" repeatCount="indefinite"/>';
+        s += '<animate attributeName="opacity" values="0.12;0.03;0.12" dur="5.5s" repeatCount="indefinite"/>';
+        s += '</circle>';
+        break;
+
+      // ── MYTHIC (case 58) — animated void ─────────────────────────
+      case 58: // Void Essence — dark matter pulsing
+        s += '<ellipse cx="35" cy="78.2" rx="3" ry="0.8" fill="#000000" opacity="0.15">';
+        s += '<animate attributeName="rx" values="3;5;3" dur="6s" repeatCount="indefinite"/>';
+        s += '<animate attributeName="ry" values="0.8;1.2;0.8" dur="6s" repeatCount="indefinite"/>';
+        s += '<animate attributeName="opacity" values="0.15;0.08;0.15" dur="6s" repeatCount="indefinite"/>';
+        s += '</ellipse>';
+        s += '<circle cx="34" cy="78.2" r="0.12" fill="#FFFFFF" opacity="0.25">';
+        s += '<animate attributeName="opacity" values="0.25;0.05;0.25" dur="2.2s" repeatCount="indefinite"/>';
+        s += '</circle>';
+        s += '<circle cx="36" cy="78.1" r="0.10" fill="#FFFFFF" opacity="0.20">';
+        s += '<animate attributeName="opacity" values="0.20;0.03;0.20" dur="3.1s" repeatCount="indefinite"/>';
+        s += '</circle>';
+        break;
+
+      case 59: break; // Reserved
+      default: break; // Unknown — no render
     }
     return s;
   }
