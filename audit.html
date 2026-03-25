@@ -2,416 +2,401 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
-<title>Lucid Winds — Trait Audit</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lucid Winds — Leaf &amp; Stem Audit Tool</title>
 <style>
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{background:#0d100c;color:#e8dcc8;font-family:'Outfit',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;}
-  .loading{display:flex;align-items:center;justify-content:center;height:100vh;font-size:1.2rem;color:#7ab356;}
-  .controls{width:100%;max-width:480px;padding:12px;display:none;flex-direction:column;gap:10px;}
-  .row{display:flex;gap:8px;align-items:center;}
-  label{font-size:0.75rem;color:#8a9178;min-width:50px;}
-  select,input[type="number"]{background:#181c16;color:#e8dcc8;border:1px solid rgba(122,179,86,0.3);border-radius:6px;padding:8px 12px;font-size:0.85rem;flex:1;min-height:48px;}
-  select:focus,input:focus{outline:none;border-color:#7ab356;}
-  .nav-btns{display:flex;gap:8px;}
-  .nav-btns button{flex:1;min-height:48px;background:#181c16;color:#c8a84b;border:1px solid rgba(200,168,75,0.3);border-radius:6px;font-size:1rem;font-family:'Bebas Neue',sans-serif;letter-spacing:0.08em;cursor:pointer;}
-  .nav-btns button:active{background:#242a1e;transform:scale(0.97);}
-  .render-area{width:100%;max-width:480px;display:flex;flex-direction:column;align-items:center;padding:16px;}
-  .plant-frame{width:320px;height:400px;display:flex;align-items:center;justify-content:center;background:rgba(24,28,22,0.5);border:1px solid rgba(122,179,86,0.15);border-radius:12px;margin-bottom:12px;}
-  .plant-frame svg{max-width:280px;max-height:360px;}
-  .trait-name{font-family:'Cinzel',serif;font-size:1.1rem;color:#c8a84b;margin-bottom:4px;text-align:center;}
-  .tier-badge{font-family:'Bebas Neue',sans-serif;font-size:0.8rem;letter-spacing:0.1em;text-align:center;margin-bottom:8px;}
-  .layer-labels{width:100%;max-width:320px;margin-top:8px;display:flex;flex-direction:column;gap:4px;}
-  .layer-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid rgba(122,179,86,0.08);}
-  .layer-row .lbl{font-size:0.65rem;color:#8a9178;text-transform:uppercase;letter-spacing:0.06em;}
-  .layer-row .val{font-size:0.7rem;color:#e8dcc8;text-align:right;}
-  .layer-row.active .lbl{color:#c8a84b;}
-  .layer-row.active .val{color:#c8a84b;font-weight:600;}
-  .hash-display{font-family:'DM Mono',monospace;font-size:0.45rem;color:#7ab356;opacity:0.5;margin-top:10px;text-align:center;word-break:break-all;max-width:300px;}
-  #frame{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Courier New', monospace;
+  background: #0d100c;
+  color: #e8dcc8;
+  min-height: 100vh;
+  padding: 12px;
+  padding-bottom: 140px;
+}
+.bg-white { background: #f5f5f5; }
+.bg-gray { background: #444; }
+.bg-dark { background: #0d100c; }
+
+h1 { font-size: 18px; color: #c8a84b; margin-bottom: 8px; text-align: center; }
+.controls {
+  position: sticky; top: 0; z-index: 100;
+  background: #1a1d18; border-bottom: 1px solid #333;
+  padding: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+}
+.controls label { font-size: 11px; color: #8a9178; display: flex; flex-direction: column; gap: 2px; }
+.controls select, .controls input[type=range], .controls button {
+  background: #2a2d28; color: #e8dcc8; border: 1px solid #444;
+  padding: 4px 6px; font-size: 12px; border-radius: 3px;
+  font-family: inherit;
+}
+.controls button { cursor: pointer; padding: 6px 12px; }
+.controls button:hover { background: #3a3d38; }
+.controls button.active { background: #7ab356; color: #0d100c; }
+.mode-tabs { display: flex; gap: 4px; }
+.mode-tabs button { font-size: 11px; padding: 4px 8px; }
+
+.grid {
+  display: grid;
+  gap: 8px;
+  padding: 8px 0;
+}
+.grid-12 { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.grid-60 { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+
+.cell {
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 4px;
+  text-align: center;
+  position: relative;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.cell:hover { border-color: #7ab356; }
+.cell.flagged { border-color: #ff4444; border-width: 2px; }
+.cell.ok-marked { border-color: #7ab356; border-width: 2px; }
+.cell .plant-svg { display: flex; justify-content: center; align-items: center; min-height: 120px; }
+.cell .label { font-size: 10px; color: #8a9178; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cell .label b { color: #c8a84b; }
+
+.cell-actions {
+  display: flex; gap: 4px; justify-content: center; margin-top: 4px;
+}
+.cell-actions button {
+  font-size: 10px; padding: 2px 8px; border: 1px solid #555;
+  border-radius: 2px; cursor: pointer; font-family: inherit;
+}
+.btn-ok { background: #2a4a2a; color: #7ab356; }
+.btn-ok:hover { background: #3a5a3a; }
+.btn-flag { background: #4a2a2a; color: #ff6666; }
+.btn-flag:hover { background: #5a3a3a; }
+
+#flagged-list {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: #1a1d18; border-top: 1px solid #c8a84b;
+  padding: 8px 12px; font-size: 11px; z-index: 200;
+  display: none; max-height: 120px; overflow-y: auto;
+}
+#flagged-list.visible { display: block; }
+#flagged-list .header { color: #c8a84b; font-weight: bold; margin-bottom: 4px; }
+#flagged-list .items { color: #ff6666; }
+#flagged-list button { background: #2a2d28; color: #e8dcc8; border: 1px solid #444; padding: 2px 8px; cursor: pointer; font-family: inherit; font-size: 10px; margin-left: 8px; }
+
+.loading { text-align: center; padding: 40px; color: #8a9178; font-size: 14px; }
+
+#game-frame { display: none; width: 0; height: 0; border: none; }
+
+.slider-val { font-size: 10px; color: #c8a84b; min-width: 20px; text-align: center; }
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@700&family=Outfit:wght@400;600&family=DM+Mono&display=swap" rel="stylesheet">
 </head>
 <body>
-<div class="loading" id="loader">Loading renderer...</div>
-<div class="controls" id="controls">
-  <div class="row">
-    <label>Layer</label>
-    <select id="layer-select">
-      <option value="pot">Pot (shape)</option>
-      <option value="potColor">Pot Color</option>
-      <option value="stem">Stem (shape)</option>
-      <option value="stemColor">Stem Color</option>
-      <option value="leafType">Leaf Type</option>
-      <option value="leafColor">Leaf Color</option>
-      <option value="flower">Flower</option>
-      <option value="flowerColor">Flower Color</option>
-      <option value="base">Substrate</option>
-      <option value="companion">Companion</option>
-      <option value="aura">Aura</option>
-      <option value="mutation">Mutation</option>
-      <option value="season">Season</option>
+<h1>LEAF &amp; STEM AUDIT TOOL</h1>
+
+<div class="controls">
+  <div class="mode-tabs">
+    <button id="btn-grid" class="active" onclick="setMode('grid')">All 60 Leaves</button>
+    <button id="btn-single" onclick="setMode('single')">Single Leaf Focus</button>
+    <button id="btn-zoom" onclick="setMode('zoom')">Connection Closeup</button>
+    <button id="btn-stems" onclick="setMode('stems')">All 24 Stems</button>
+  </div>
+
+  <label>Leaf Type
+    <select id="sel-leaf"></select>
+  </label>
+
+  <label>Stem Shape
+    <select id="sel-stem"></select>
+  </label>
+
+  <label>Leaf Size <span class="slider-val" id="val-size">7</span>
+    <input type="range" id="sl-size" min="4" max="10" value="7" oninput="document.getElementById('val-size').textContent=this.value">
+  </label>
+
+  <label>Leaf Count <span class="slider-val" id="val-count">5</span>
+    <input type="range" id="sl-count" min="2" max="8" value="5" oninput="document.getElementById('val-count').textContent=this.value">
+  </label>
+
+  <label>
+    <span>Show Flower</span>
+    <input type="checkbox" id="chk-flower">
+  </label>
+
+  <label>Background
+    <select id="sel-bg" onchange="document.getElementById('render-area').className=this.value">
+      <option value="bg-dark">Dark</option>
+      <option value="bg-gray">Gray</option>
+      <option value="bg-white">White</option>
     </select>
-  </div>
-  <div class="row">
-    <label>Index</label>
-    <input type="number" id="idx-input" value="0" min="0">
-    <span id="idx-max" style="font-size:0.7rem;color:#8a9178;min-width:60px;"></span>
-  </div>
-  <div class="nav-btns">
-    <button onclick="go(-1)">PREV</button>
-    <button onclick="go(1)">NEXT</button>
-  </div>
+  </label>
+
+  <button onclick="renderCurrent()">Render</button>
 </div>
-<div class="render-area" id="render-area" style="display:none;">
-  <div id="layer-heading" style="font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.12em;color:#8a9178;text-align:center;margin-bottom:2px;"></div>
-  <div class="trait-name" id="trait-name"></div>
-  <div class="tier-badge" id="tier-badge"></div>
-  <div class="plant-frame" id="plant-frame"></div>
-  <div class="layer-labels" id="layer-labels"></div>
-  <div class="hash-display" id="hash-display"></div>
+
+<div id="render-area" class="bg-dark">
+  <div class="loading" id="loading-msg">Loading game renderer... <br>(iframe must load index.html)</div>
+  <div id="grid-container" class="grid" style="display:none;"></div>
 </div>
-<iframe id="frame" src="index.html?noboot=1"></iframe>
+
+<div id="flagged-list">
+  <span class="header">Flagged:</span>
+  <span class="items" id="flagged-items">None</span>
+  <button onclick="copyFlagged()">Copy to Clipboard</button>
+  <button onclick="clearFlagged()">Clear All</button>
+</div>
+
+<iframe id="game-frame" src="index.html"></iframe>
+
 <script>
+// ES5 compatible
+var LEAF_NAMES = [
+  'Organic Broad','Willow','Asymmetric Lobed','Heart','Spear','Monstera','Fern','Maple',
+  'Paddle','Needle','Monstera+','Fern+','Heart2','Coral','Fern2','Holly',
+  'Round2','Willow2','Asymmetric2','Fiddle','Spear2','Paddle2','Maple2','Heart3',
+  'Needle2','Banana','Round3','Arrow','Willow3','Asymmetric3','Round4','Spear3',
+  'Heart4','Maple3','Moth Wing','Paddle3','Round5','Willow4','Bell Petiole','Needle3',
+  'Spear4','Hookvine','Fern3','Lantern Pod','Coral Antler','Oracle Eye','Spiral Shell','Maple4',
+  'Round6','Jellyleaf','Spear5','Willow5','Heart5','Paddle4','Needle4','Scale',
+  'Round7','Willow6','Strap','Asymmetric4'
+];
+
+var STEM_NAMES = [
+  'Straight','Curve L','Curve R','S-Curve','Trunk','Braided','Zigzag','Double',
+  'Cactus','Coral','Succulent','Twisted Vine','Ancient Bark','Bamboo','Hollow Trunk',
+  'Vine Twist','Leaning','Kinked','Forking Y','Thin Wire','Root Pillar','Mushroom Stipe',
+  'Crystal Spine','Iron Trunk'
+];
+
+var STEM_COLORS = 12;
+var flagged = {};
+var gameWin = null;
+var currentMode = 'grid';
+
+// Populate dropdowns
 (function() {
-  var frame = document.getElementById('frame');
-  var win = null;
-  var ready = false;
-  var _origHTT = null; // original hashToTraits, saved on load
-
-  var BASE_HASH = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2';
-
-  frame.onload = function() {
-    win = frame.contentWindow;
-    var checks = 0;
-    var iv = setInterval(function() {
-      checks++;
-      if (win._generatePlantSVG && win.hashToTraits) {
-        clearInterval(iv);
-        ready = true;
-        _origHTT = win.hashToTraits; // save original
-        document.getElementById('loader').style.display = 'none';
-        document.getElementById('controls').style.display = 'flex';
-        document.getElementById('render-area').style.display = 'flex';
-        render();
-      }
-      if (checks > 100) {
-        clearInterval(iv);
-        document.getElementById('loader').textContent = 'Failed to load renderer. Refresh to retry.';
-      }
-    }, 200);
-  };
-
-  // ── Hash position map ──
-  // hb(i) reads chars[i]+chars[i+1] as a byte (0-255)
-  // hc(i) reads chars[i] as a nibble (0-15)
-  // Many positions OVERLAP — we must set every char explicitly.
-  //
-  // Char 0,1  → hb(0)  = pot         (% 60)
-  // Char 1    → hc(1)  = potColor    (palette key)
-  // Char 2,3  → hb(2)  = stem        (% 24)
-  // Char 3    → hc(3)  = stemHeight  (22 + val*2.5)
-  // Char 4,5  → hb(4)  = leafType
-  // Char 5    → hc(5)  = leafCount   (4 + val%5)
-  // Char 5,6  → hb(5)  = stemColor   (% 12)
-  // Char 6    → hc(6)  = leafSize    (6 + val%5)
-  // Char 7    → hc(7)  = leafColor[0]
-  // Char 8    → hc(8)  = leafColor[1]
-  // Char 9    → hc(9)  = leafColor[2]
-  // Char 10   → hc(10) = hasFlower   (>4 = yes)
-  // Char 11,12→ hb(11) = flower type
-  // Char 12   → hc(12) = flowerColor
-  // Char 13   → hc(13) = flowerSize  (4 + val%5)
-  // Char 14   → hc(14) = leafSpread  (7 + val%6)
-  // Char 15,16→ hb(15) = aura        (% 36)
-  // Char 16,17→ hb(16) = mutation
-  // Char 18,19→ hb(18) = mythic
-  // Char 20,21→ hb(20) = base        (% 60)
-  // Char 21,22→ hb(21) = companion   (% 82)
-  // Char 22,23→ hb(22) = season      (% 4)
-
-  // Neutral defaults for every char position (0-23, rest padded with 0)
-  // These produce: pot 5, potColor sage, stem 0 (Straight), stemHeight 42,
-  // leafType mid, leafCount 6, stemColor 0, leafSize 8, colors sage/pine/terra,
-  // flower visible, flower 0, flowerColor sage, flowerSize 6, leafSpread 10,
-  // aura 0, mutation 0, mythic 0, base 5, companion 31 (no creature), season 0
-  // 24 explicit hex chars — every position documented
-  // Overlap handling: shared chars get a value that works for both traits
-  var NEUTRAL = [
-    '0','5', // c0,c1: hb(0)=0x05→pot=5, hc(1)=5→potColor=moss
-    '1','8', // c2,c3: hb(2)=0x18=24→stem=24%24=0(Straight), hc(3)=8→stemHeight=42
-    '2','1', // c4,c5: hb(4)=0x21→leafType=33, hc(5)=1→leafCount=5
-    '0',     // c6:    hc(6)=0→leafSize=6.  (hb(5)=0x10→stemColor=16%12=4)
-    '5','3','6', // c7,c8,c9: hc(7-9)→leafColors
-    '7',     // c10:   hc(10)=7→hasFlower=true
-    '1','5', // c11,c12: hb(11)=0x15→flower=21, hc(12)=5→flowerColor=moss
-    '4',     // c13:   hc(13)=4→flowerSize=8
-    '5',     // c14:   hc(14)=5→leafSpread=12
-    '0','0', // c15,c16: hb(15)=0x00→aura=0.  hb(16) shares c16.
-    '0',     // c17:   hb(16)=0x00→mutation=None
-    '0','0', // c18,c19: hb(18)=0x00→mythic=None
-    '0',     // c20:   hb(20) high nibble → base high
-    '5',     // c21:   hb(20)=0x05→base=5. hb(21) high nibble→companion high
-    '1',     // c22:   hb(21)=0x51→companion=51%82=51(none). hb(22) high→season high
-    '0'      // c23:   hb(22)=0x10→season=16%4=0(Spring)
-  ];
-
-  function forceHash(layer, index) {
-    // Start with neutral — 64 chars, first 24 explicit, rest '0'
-    var c = [];
-    for (var i = 0; i < 64; i++) c[i] = i < NEUTRAL.length ? NEUTRAL[i] : '0';
-
-    // Helper: write a 2-char hex byte at char position p
-    function wb(p, v) {
-      var s = ('0' + (v & 0xFF).toString(16)).slice(-2);
-      c[p] = s[0]; c[p+1] = s[1];
-    }
-
-    // Apply the audited layer's value
-    switch(layer) {
-      case 'pot':
-        // hb(0) % 60 reads chars 0,1. char 1 = potColor (hc(1)).
-        // Write full byte to get the exact pot index, then accept
-        // that potColor will change (it's visual-only, not structural).
-        wb(0, index % 60);
-        break;
-      case 'potColor':
-        c[1] = (index % 16).toString(16);
-        break;
-      case 'stem':
-        // hb(2) % 24. char 3 = stemHeight.
-        // To keep stemHeight stable: fix char 3, vary char 2.
-        // hb(2) = char2*16 + char3_val. stemHeight = 22 + char3*2.5
-        // With char3 fixed at NEUTRAL[3]='8' (=8): hb(2) = char2*16 + 8
-        // stem = (char2*16 + 8) % 24
-        // char2=0: 8%24=8, char2=1: 24%24=0, char2=2: 40%24=16, etc.
-        // This only gives ~4 values. We need all 24.
-        // Better: accept stemHeight changes, write full byte.
-        wb(2, index % 24);
-        break;
-      case 'stemColor':
-        // hb(5) % 12 reads chars 5,6.
-        // char 5 is shared with leafCount (hc(5)) and leafType low nibble (hb(4)).
-        // To isolate: only change char 6, keep char 5 stable.
-        // hb(5) = c5*16 + c6. We need hb(5)%12 = index.
-        // With c5 fixed at NEUTRAL[5]='4' (=4): hb(5) = 4*16 + c6 = 64+c6
-        // stemColor = (64+c6) % 12. c6=0→4, c6=1→5, c6=2→6, ...c6=7→11, c6=8→0
-        // That cycles through all 12! Just offset c6.
-        // Solve: we need (64 + c6) % 12 = index → c6 = (index - 64%12 + 12) % 12 = (index - 4 + 12) % 12 = (index + 8) % 12
-        c[6] = ((index + 8) % 12).toString(16);
-        break;
-      case 'leafType':
-        // hb(4) reads chars 4,5. char 5 shared with leafCount + stemColor.
-        // Only vary char 4 (high nibble) to cycle 16 leaf families. Keep char 5 stable.
-        c[4] = (index % 16).toString(16);
-        break;
-      case 'leafColor':
-        c[7] = (index % 16).toString(16);
-        break;
-      case 'flower':
-        c[10] = 'f'; // force hasFlower = true
-        // hb(11) reads chars 11,12. char 12 = flowerColor.
-        // Write full byte — accept flowerColor changes to see all flowers.
-        wb(11, index);
-        break;
-      case 'flowerColor':
-        c[10] = 'f'; // force hasFlower = true
-        c[12] = (index % 16).toString(16);
-        break;
-      case 'base':
-        // hb(20) % 60. chars 20,21. char 21 also = companion high nibble.
-        wb(20, index % 60);
-        // Restore companion: chars 21,22 = companion byte
-        // char 21 was overwritten — re-neutralize companion
-        c[21] = NEUTRAL[21]; c[22] = NEUTRAL[22];
-        break;
-      case 'companion':
-        // hb(21) % 82. chars 21,22. char 21 = base low, char 22 = season high.
-        wb(21, index % 82);
-        // char 22 was overwritten — restore season
-        c[23] = NEUTRAL[23];
-        break;
-      case 'aura':
-        // hb(15) % 36. chars 15,16. char 16 = mutation high nibble.
-        wb(15, index % 36);
-        c[16] = '0'; c[17] = '0'; // keep mutation = None
-        break;
-      case 'mutation':
-        // hb(16). chars 16,17. char 16 also = aura low nibble.
-        wb(16, index);
-        // Aura uses hb(15) = chars 15,16. We changed char 16.
-        // Accept aura changes when auditing mutation.
-        break;
-      case 'season':
-        // hb(22) % 4. chars 22,23. char 22 = companion low nibble.
-        wb(22, index % 4);
-        break;
-    }
-
-    return c.join('');
+  var selLeaf = document.getElementById('sel-leaf');
+  for (var i = 0; i < 60; i++) {
+    var opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = i + ': ' + (LEAF_NAMES[i] || 'Case ' + i);
+    selLeaf.appendChild(opt);
   }
-
-  function getMaxIndex(layer) {
-    var maxes = {
-      pot: 60, potColor: 16, stem: 24, stemColor: 12, leafType: 16,
-      leafColor: 16, flower: 256, flowerColor: 16,
-      base: 60, companion: 82, aura: 36, mutation: 256, season: 4
-    };
-    return maxes[layer] || 30;
+  var selStem = document.getElementById('sel-stem');
+  for (var j = 0; j < 24; j++) {
+    var opt2 = document.createElement('option');
+    opt2.value = j;
+    opt2.textContent = j + ': ' + (STEM_NAMES[j] || 'Case ' + j);
+    selStem.appendChild(opt2);
   }
+})();
 
-  // Resolve human-readable name for any trait layer
-  function getLayerName(layer, traits) {
-    var TB = win.TRAIT_BANK;
-    if (!TB) return '?';
-    try {
-      switch(layer) {
-        case 'pot':
-          return (TB.pots && TB.pots[traits.pot]) ? (TB.pots[traits.pot].name || 'Pot #' + traits.pot) : 'Pot #' + traits.pot;
-        case 'potColor':
-          return traits.potColor || '?';
-        case 'stem':
-          var TB2 = win.TRAIT_BANK;
-          return (TB2 && TB2.stems && TB2.stems[traits.stem]) ? (TB2.stems[traits.stem].name || 'Stem #' + traits.stem) : (traits.stemType || 'Stem #' + traits.stem);
-        case 'stemColor':
-          return 'Color #' + (traits.stemColor || 0);
-        case 'leafType':
-          return (TB.leaves && TB.leaves[traits.leafType]) ? (TB.leaves[traits.leafType].name || 'Leaf #' + traits.leafType) : 'Leaf #' + traits.leafType;
-        case 'leafColor':
-          return (traits.leafColors && traits.leafColors[0]) ? traits.leafColors[0] : '?';
-        case 'flower':
-          if (!traits.hasFlower) return 'None';
-          var fi = traits.flower % (TB.flowers ? TB.flowers.length : 46);
-          return (TB.flowers && TB.flowers[fi]) ? (TB.flowers[fi].name || 'Flower #' + fi) : 'Flower #' + fi;
-        case 'flowerColor':
-          return traits.flowerColor || '?';
-        case 'base':
-          return (TB.substrates && TB.substrates[traits.base]) ? (TB.substrates[traits.base].name || 'Substrate #' + traits.base) : 'Substrate #' + traits.base;
-        case 'companion':
-          return (TB.companions && TB.companions[traits.companion]) ? (TB.companions[traits.companion].name || 'Companion #' + traits.companion) : 'Companion #' + traits.companion;
-        case 'aura':
-          return traits.aura === 0 ? 'None' : 'Aura #' + traits.aura;
-        case 'mutation':
-          return traits.mutationName || 'None';
-        case 'season':
-          return ['Spring','Summer','Autumn','Winter'][traits.season] || '?';
-        default:
-          return '?';
-      }
-    } catch(e) { return '?'; }
-  }
-
-  // All visible layers in render order
-  var allLayers = ['pot','potColor','stem','stemColor','base','leafType','leafColor','flower','flowerColor','companion','aura','mutation','season'];
-  var layerLabels = {
-    pot:'Pot', potColor:'Pot Color', stem:'Stem', stemColor:'Stem Color', base:'Substrate',
-    leafType:'Leaf', leafColor:'Leaf Color', flower:'Flower', flowerColor:'Flower Color',
-    companion:'Companion', aura:'Aura', mutation:'Mutation', season:'Season'
-  };
-
-  // Neutral trait values (from NEUTRAL hash)
-  var _neutralTraits = null;
-
-  // Overlap pin table: when auditing layer X, pin these traits to neutral
-  // to prevent shared hash chars from visually corrupting the audit view.
-  var OVERLAP_PINS = {
-    pot:         ['potColor'],           // chars 0,1 share char 1 with potColor
-    potColor:    ['pot'],                // char 1 is pot low nibble
-    stem:        ['stemHeight','leafSize','leafCount'],  // chars 2,3 share; pin leaves small for visibility
-    stemColor:   ['leafSize','leafType','leafCount'], // chars 5,6 shared
-    leafType:    ['leafCount','stemColor'], // chars 4,5 share char 5
-    leafColor:   [],
-    flower:      ['flowerColor'],        // chars 11,12 share char 12
-    flowerColor: ['flower'],             // char 12 is flower low nibble
-    base:        ['companion'],          // chars 20,21 share char 21
-    companion:   ['base','season'],      // chars 21,22 shared
-    aura:        ['mutationName'],       // chars 15,16 share char 16
-    mutation:    ['aura'],               // chars 16,17 share char 16
-    season:      ['companion']           // chars 22,23 share char 22
-  };
-
-  function render() {
-    if (!ready) return;
-    var layer = document.getElementById('layer-select').value;
-    var idx = parseInt(document.getElementById('idx-input').value) || 0;
-    var max = getMaxIndex(layer);
-    document.getElementById('idx-max').textContent = '/ ' + (max - 1);
-
-    var hash = forceHash(layer, idx);
-
-    // Compute neutral traits once (from the unmodified NEUTRAL hash)
-    if (!_neutralTraits) {
-      var nh = [];
-      for (var ni = 0; ni < 64; ni++) nh[ni] = ni < NEUTRAL.length ? NEUTRAL[ni] : '0';
-      _neutralTraits = _origHTT(nh.join(''));
-    }
-
-    // Install trait-pinning wrapper so _generatePlantSVG sees corrected traits
-    var pins = OVERLAP_PINS[layer] || [];
-    if (pins.length > 0) {
-      win.hashToTraits = function(h) {
-        var t = _origHTT(h);
-        for (var pi = 0; pi < pins.length; pi++) {
-          var k = pins[pi];
-          if (_neutralTraits.hasOwnProperty(k)) t[k] = _neutralTraits[k];
-        }
-        return t;
-      };
-    } else {
-      win.hashToTraits = _origHTT;
-    }
-
-    var traits, tg, svg;
-    try {
-      traits = win.hashToTraits(hash);
-      tg = win.getTerraGrade(traits);
-      svg = win._generatePlantSVG(hash, 280);
-    } catch(e) {
-      document.getElementById('plant-frame').innerHTML = '<div style="color:#c44;font-size:0.8rem;">Render error: ' + e.message + '</div>';
-      win.hashToTraits = _origHTT; // restore on error
+// Wait for iframe
+var _retryCount = 0;
+function tryConnect() {
+  try {
+    gameWin = document.getElementById('game-frame').contentWindow;
+    if (gameWin && gameWin._generateAuditPlantSVG) {
+      document.getElementById('loading-msg').style.display = 'none';
+      document.getElementById('grid-container').style.display = 'grid';
+      renderCurrent();
       return;
     }
-    // Restore original after render
-    win.hashToTraits = _origHTT;
-
-    document.getElementById('plant-frame').innerHTML = svg;
-    document.getElementById('layer-heading').textContent = (layerLabels[layer] || layer).toUpperCase() + '  #' + idx;
-    document.getElementById('trait-name').textContent = getLayerName(layer, traits);
-    document.getElementById('tier-badge').innerHTML = tg ? '<span style="color:' + tg.color + ';">' + tg.icon + ' ' + tg.name + '</span>' : '';
-    document.getElementById('hash-display').textContent = hash;
-
-    // Build all-layer label list
-    var labelsHtml = '';
-    for (var i = 0; i < allLayers.length; i++) {
-      var k = allLayers[i];
-      var isActive = (k === layer);
-      var name = getLayerName(k, traits);
-      labelsHtml += '<div class="layer-row' + (isActive ? ' active' : '') + '">';
-      labelsHtml += '<span class="lbl">' + layerLabels[k] + '</span>';
-      labelsHtml += '<span class="val">' + name + '</span>';
-      labelsHtml += '</div>';
-    }
-    document.getElementById('layer-labels').innerHTML = labelsHtml;
+  } catch(e) { /* cross-origin or not ready */ }
+  _retryCount++;
+  if (_retryCount < 20) {
+    setTimeout(tryConnect, 500);
+  } else {
+    document.getElementById('loading-msg').textContent = 'ERROR: Could not access game renderer after 10s. Check that index.html loads.';
   }
+}
+document.getElementById('game-frame').onload = function() { tryConnect(); };
+setTimeout(tryConnect, 1000); // fallback
 
-  window.go = function(dir) {
-    var input = document.getElementById('idx-input');
-    var layer = document.getElementById('layer-select').value;
-    var max = getMaxIndex(layer);
-    var val = (parseInt(input.value) || 0) + dir;
-    if (val < 0) val = max - 1;
-    if (val >= max) val = 0;
-    input.value = val;
-    render();
+function setMode(mode) {
+  currentMode = mode;
+  var btns = document.querySelectorAll('.mode-tabs button');
+  for (var i = 0; i < btns.length; i++) btns[i].className = '';
+  document.getElementById('btn-' + mode).className = 'active';
+  renderCurrent();
+}
+
+function getOverrides(leafType, stemType, stemColorIdx) {
+  return {
+    leafType: leafType,
+    stem: stemType,
+    stemColor: stemColorIdx || 0,
+    pot: 0,
+    hasFlower: document.getElementById('chk-flower').checked,
+    flower: 7,
+    companion: 60,
+    aura: 0,
+    mutation: 0,
+    leafCount: parseInt(document.getElementById('sl-count').value),
+    leafSize: parseInt(document.getElementById('sl-size').value),
+    stemHeight: 40,
+    leafSpread: 10,
+    base: 0
   };
+}
 
-  document.getElementById('layer-select').addEventListener('change', function() {
-    document.getElementById('idx-input').value = 0;
-    render();
-  });
-  document.getElementById('idx-input').addEventListener('change', render);
-  document.getElementById('idx-input').addEventListener('input', render);
-})();
+function renderPlant(overrides, size, zoom) {
+  if (!gameWin || !gameWin._generateAuditPlantSVG) return '<div style="color:red">No renderer</div>';
+  try {
+    var svg = gameWin._generateAuditPlantSVG(overrides, size);
+    if (zoom) {
+      svg = svg.replace('viewBox="0 0 70 95"', 'viewBox="10 20 50 58"');
+    }
+    return svg;
+  } catch(e) {
+    return '<div style="color:red;font-size:10px">' + e.message + '</div>';
+  }
+}
+
+function renderCurrent() {
+  var container = document.getElementById('grid-container');
+  container.innerHTML = '';
+  if (!gameWin || !gameWin._generateAuditPlantSVG) return;
+
+  if (currentMode === 'grid') renderGridMode(container);
+  else if (currentMode === 'single') renderSingleMode(container);
+  else if (currentMode === 'zoom') renderZoomMode(container);
+  else if (currentMode === 'stems') renderStemsMode(container);
+
+  updateFlaggedDisplay();
+}
+
+function renderGridMode(container) {
+  container.className = 'grid grid-60';
+  var stemType = parseInt(document.getElementById('sel-stem').value);
+  for (var i = 0; i < 60; i++) {
+    var overrides = getOverrides(i, stemType, 0);
+    var html = renderPlant(overrides, 100, false);
+    var cell = document.createElement('div');
+    cell.className = 'cell' + (flagged['leaf-' + i] ? ' flagged' : '');
+    cell.setAttribute('data-leaf', i);
+    cell.innerHTML = '<div class="plant-svg">' + html + '</div>'
+      + '<div class="label"><b>' + i + '</b>: ' + (LEAF_NAMES[i] || 'Case ' + i) + '</div>'
+      + '<div class="cell-actions">'
+      + '<button class="btn-ok" onclick="markOk(\'leaf-' + i + '\',this)">OK</button>'
+      + '<button class="btn-flag" onclick="markFlag(\'leaf-' + i + '\',this)">FLAG</button>'
+      + '</div>';
+    (function(idx) {
+      cell.querySelector('.plant-svg').onclick = function() {
+        document.getElementById('sel-leaf').value = idx;
+        setMode('single');
+      };
+    })(i);
+    container.appendChild(cell);
+  }
+}
+
+function renderSingleMode(container) {
+  container.className = 'grid grid-12';
+  var leafType = parseInt(document.getElementById('sel-leaf').value);
+  var stemType = parseInt(document.getElementById('sel-stem').value);
+  for (var sc = 0; sc < STEM_COLORS; sc++) {
+    var overrides = getOverrides(leafType, stemType, sc);
+    var html = renderPlant(overrides, 160, false);
+    var key = 'leaf-' + leafType + '-sc-' + sc;
+    var cell = document.createElement('div');
+    cell.className = 'cell' + (flagged[key] ? ' flagged' : '');
+    cell.innerHTML = '<div class="plant-svg">' + html + '</div>'
+      + '<div class="label">Stem Color <b>' + sc + '</b></div>'
+      + '<div class="cell-actions">'
+      + '<button class="btn-ok" onclick="markOk(\'' + key + '\',this)">OK</button>'
+      + '<button class="btn-flag" onclick="markFlag(\'' + key + '\',this)">FLAG</button>'
+      + '</div>';
+    container.appendChild(cell);
+  }
+}
+
+function renderZoomMode(container) {
+  container.className = 'grid grid-12';
+  var leafType = parseInt(document.getElementById('sel-leaf').value);
+  var stemType = parseInt(document.getElementById('sel-stem').value);
+  for (var sc = 0; sc < STEM_COLORS; sc++) {
+    var overrides = getOverrides(leafType, stemType, sc);
+    var html = renderPlant(overrides, 280, true);
+    var key = 'zoom-' + leafType + '-sc-' + sc;
+    var cell = document.createElement('div');
+    cell.className = 'cell' + (flagged[key] ? ' flagged' : '');
+    cell.innerHTML = '<div class="plant-svg">' + html + '</div>'
+      + '<div class="label">Closeup — Color <b>' + sc + '</b></div>'
+      + '<div class="cell-actions">'
+      + '<button class="btn-ok" onclick="markOk(\'' + key + '\',this)">OK</button>'
+      + '<button class="btn-flag" onclick="markFlag(\'' + key + '\',this)">FLAG</button>'
+      + '</div>';
+    container.appendChild(cell);
+  }
+}
+
+function renderStemsMode(container) {
+  container.className = 'grid grid-60';
+  var leafType = parseInt(document.getElementById('sel-leaf').value);
+  for (var st = 0; st < 24; st++) {
+    var overrides = getOverrides(leafType, st, 0);
+    var html = renderPlant(overrides, 120, false);
+    var key = 'stem-' + st;
+    var cell = document.createElement('div');
+    cell.className = 'cell' + (flagged[key] ? ' flagged' : '');
+    cell.innerHTML = '<div class="plant-svg">' + html + '</div>'
+      + '<div class="label"><b>' + st + '</b>: ' + (STEM_NAMES[st] || 'Case ' + st) + '</div>'
+      + '<div class="cell-actions">'
+      + '<button class="btn-ok" onclick="markOk(\'' + key + '\',this)">OK</button>'
+      + '<button class="btn-flag" onclick="markFlag(\'' + key + '\',this)">FLAG</button>'
+      + '</div>';
+    container.appendChild(cell);
+  }
+}
+
+function markOk(key, btn) {
+  delete flagged[key];
+  var cell = btn.closest('.cell');
+  cell.className = 'cell ok-marked';
+  updateFlaggedDisplay();
+}
+
+function markFlag(key, btn) {
+  flagged[key] = true;
+  var cell = btn.closest('.cell');
+  cell.className = 'cell flagged';
+  updateFlaggedDisplay();
+}
+
+function updateFlaggedDisplay() {
+  var keys = Object.keys(flagged);
+  var el = document.getElementById('flagged-list');
+  var items = document.getElementById('flagged-items');
+  if (keys.length > 0) {
+    el.className = 'visible';
+    items.textContent = keys.join(', ');
+  } else {
+    el.className = '';
+    items.textContent = 'None';
+  }
+}
+
+function copyFlagged() {
+  var keys = Object.keys(flagged);
+  var text = 'FLAGGED ITEMS (' + keys.length + '):\n' + keys.join('\n');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text);
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  alert('Copied ' + keys.length + ' flagged items to clipboard');
+}
+
+function clearFlagged() {
+  flagged = {};
+  updateFlaggedDisplay();
+  renderCurrent();
+}
 </script>
 </body>
 </html>

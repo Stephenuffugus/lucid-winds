@@ -7327,6 +7327,55 @@ document.addEventListener('keydown', function(e) {
     return svg;
   }
   window._generatePlantSVG = generatePlantSVG;
+
+  // ── AUDIT RENDERER — renders plant with trait overrides ──
+  // Used by audit.html to force specific leaf types, stem colors, etc.
+  window._generateAuditPlantSVG = function(overrides, size) {
+    // Generate a stable hash from overrides for determinism
+    var baseHash = overrides.hash || 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2';
+    var t = hashToTraits(baseHash);
+    // Apply overrides
+    if (overrides.leafType !== undefined) t.leafType = overrides.leafType;
+    if (overrides.stem !== undefined) t.stem = overrides.stem;
+    if (overrides.stemColor !== undefined) t.stemColor = overrides.stemColor;
+    if (overrides.pot !== undefined) t.pot = overrides.pot;
+    if (overrides.hasFlower !== undefined) t.hasFlower = overrides.hasFlower;
+    if (overrides.flower !== undefined) t.flower = overrides.flower;
+    if (overrides.companion !== undefined) t.companion = overrides.companion;
+    if (overrides.aura !== undefined) t.aura = overrides.aura;
+    if (overrides.mutation !== undefined) { t.mutation = overrides.mutation; t.mutationName = 'None'; }
+    if (overrides.leafCount !== undefined) t.leafCount = overrides.leafCount;
+    if (overrides.leafSize !== undefined) t.leafSize = overrides.leafSize;
+    if (overrides.stemHeight !== undefined) t.stemHeight = overrides.stemHeight;
+    if (overrides.leafSpread !== undefined) t.leafSpread = overrides.leafSpread;
+    if (overrides.flowerSize !== undefined) t.flowerSize = overrides.flowerSize;
+    if (overrides.flowerColor !== undefined) t.flowerColor = overrides.flowerColor;
+    if (overrides.base !== undefined) t.base = overrides.base;
+
+    var s = size || 200;
+    var prog = 1;
+    var uid = (baseHash).substring(0, 6);
+    var isWire = t.mutationName === 'Wireframe';
+    var isGlass = t.mutationName === 'Glass Stem';
+
+    var svg = '<svg viewBox="0 0 70 95" width="'+s+'" height="'+Math.round(s*95/70)+'" xmlns="http://www.w3.org/2000/svg">';
+    svg += buildDefs(t, uid);
+
+    // Simplified render — no breathing animation, no mutation FX, no cache
+    var visibleTop = Math.max(3, 78 - t.stemHeight);
+    var _safeBloomY = visibleTop;
+
+    svg += renderBase(t, uid);
+    svg += renderStem(t, uid, visibleTop, isGlass, prog);
+    svg += renderPot(t, uid);
+    svg += renderLeaves(t, uid, visibleTop, prog, isWire);
+    if (t.hasFlower && prog >= 0.8) {
+      svg += renderBloom(t, uid, _safeBloomY, prog);
+    }
+    svg += '</svg>';
+    return svg;
+  };
+
   // DEV hooks — cache clear + re-render for chimera toggle
   window._clearSVGCache = function() { _svgCacheKeys.length = 0; for (var k in _svgCache) delete _svgCache[k]; };
   window._reRenderAll = function() { try { renderGreenhouse(); } catch(e){} try { updateDashboard(); } catch(e){} try { renderBoard(); } catch(e){} };
@@ -8215,6 +8264,13 @@ document.addEventListener('keydown', function(e) {
       case 1: // Deep curve left — rises straight, gentle arc left, returns center
         s += '<path d="M35,78 C35,72 '+(33-parseFloat(hw))+',66 '+(31-parseFloat(hw2))+',58 C'+(30-parseFloat(hw))+',50 '+(32-parseFloat(hw2))+',40 '+(33-parseFloat(hw))+',34 C34,30 34.5,27 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+strokeW+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
         s += '<path d="M35.6,78 C35.6,72 '+(33.5-parseFloat(hw))+',66 '+(31.5-parseFloat(hw2))+',58 C'+(30.5-parseFloat(hw))+',50 '+(32.5-parseFloat(hw2))+',40 '+(33.5-parseFloat(hw))+',34 C34.2,30 34.8,27 35.4,'+visibleTop+'" stroke="#C4E89A" stroke-width="0.4" fill="none" opacity="'+(op*0.28)+'"/>';
+        // Approximate stem profile — key waypoints along the curve
+        t._stemProfile = [
+          {x: 35, y: 78}, {x: 35, y: 72},
+          {x: 33-parseFloat(hw), y: 66}, {x: 31-parseFloat(hw2), y: 58},
+          {x: 30-parseFloat(hw), y: 50}, {x: 32-parseFloat(hw2), y: 40},
+          {x: 33-parseFloat(hw), y: 34}, {x: 35, y: parseFloat(visibleTop)}
+        ];
         break;
       case 2: // Deep curve right — rises straight, gentle arc right, returns to center
         // Main body — starts vertical from pot, curves gently right mid-stem, returns center at apex
@@ -8225,10 +8281,27 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M34.2,78 C34.2,72 '+(36+parseFloat(hw))+',66 '+(38+parseFloat(hw2))+',58 C'+(39+parseFloat(hw))+',50 '+(37+parseFloat(hw2))+',40 '+(36+parseFloat(hw))+',34 C35.2,30 34.8,27 34.3,'+visibleTop+'" stroke="rgba(240,235,216,0.5)" stroke-width="0.7" fill="none" stroke-linecap="round"/>';
         // Inner glow
         s += '<path d="M35.8,76 C35.8,71 '+(37.5+parseFloat(hw))+',65 '+(39.5+parseFloat(hw2))+',57.5 C'+(40.5+parseFloat(hw))+',50 '+(38.5+parseFloat(hw2))+',41 '+(37.5+parseFloat(hw))+',35 C36.5,31 35.8,28 35.5,'+(parseFloat(visibleTop)+1)+'" stroke="#C4E89A" stroke-width="0.35" fill="none" stroke-linecap="round" opacity="0.18" style="mix-blend-mode:screen"/>';
+        // Approximate stem profile — key waypoints along the curve
+        t._stemProfile = [
+          {x: 35, y: 78}, {x: 35, y: 72},
+          {x: 37+parseFloat(hw), y: 66}, {x: 39+parseFloat(hw2), y: 58},
+          {x: 40+parseFloat(hw), y: 50}, {x: 38+parseFloat(hw2), y: 40},
+          {x: 37+parseFloat(hw), y: 34}, {x: 35, y: parseFloat(visibleTop)}
+        ];
         break;
       case 3: // Sinuous S — two opposing control points
         s += '<path d="M35,78 C'+(27+parseFloat(hw))+','+(mid+12)+' '+(43+parseFloat(hw2))+','+(mid-10)+' 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+strokeW+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
         s += '<path d="M35.7,78 C28,'+mid+' 44,'+(mid-8)+' 35.3,'+visibleTop+'" stroke="#C4E89A" stroke-width="0.4" fill="none" opacity="'+(op*0.28)+'"/>';
+        // Store stem profile — sample S-curve bezier at 8 points
+        var _s3p1x = 27+parseFloat(hw), _s3p2x = 43+parseFloat(hw2);
+        var _s3p1y = mid+12, _s3p2y = mid-10, _s3p3y = parseFloat(visibleTop);
+        t._stemProfile = [];
+        for (var _s3i = 0; _s3i <= 8; _s3i++) {
+          var _s3t = _s3i / 8, _s3u = 1 - _s3t;
+          var _s3x = _s3u*_s3u*_s3u*35 + 3*_s3u*_s3u*_s3t*_s3p1x + 3*_s3u*_s3t*_s3t*_s3p2x + _s3t*_s3t*_s3t*35;
+          var _s3y = _s3u*_s3u*_s3u*78 + 3*_s3u*_s3u*_s3t*_s3p1y + 3*_s3u*_s3t*_s3t*_s3p2y + _s3t*_s3t*_s3t*_s3p3y;
+          t._stemProfile.push({x: _s3x, y: _s3y});
+        }
         break;
       case 4: // Tapering trunk — filled cubic silhouette
         var twBase=2.8+parseFloat(hw)*0.3, twTop=0.9;
@@ -8255,6 +8328,13 @@ document.addEventListener('keydown', function(e) {
           zpArr.push('C'+(pzx+parseFloat(hw))+','+(pzy-segH*0.4)+' '+zx+','+(zy+segH*0.4)+' '+zx+','+Math.max(visibleTop,zy));
         }
         s += '<path d="'+zpArr.join(' ')+'" stroke="'+strokeCol+'" stroke-width="2" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        // Store stem profile — zigzag control points
+        t._stemProfile = [{x: 35, y: 78}];
+        for (var _zpi = 1; _zpi <= segs; _zpi++) {
+          var _zpy = 78 - _zpi * segH;
+          var _zpx = (_zpi%2===1) ? 29+parseFloat(hw) : 41+parseFloat(hw2);
+          t._stemProfile.push({x: _zpx, y: Math.max(parseFloat(visibleTop), _zpy)});
+        }
         break;
       case 7: // Split double — diverging then converging
         s += '<path d="M34.5,78 C'+(32+parseFloat(hw))+','+(mid+6)+' '+(31+parseFloat(hw2))+','+mid+' 33,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
@@ -8420,10 +8500,23 @@ document.addEventListener('keydown', function(e) {
         var _lean16 = side * (6 + stemCurve * 1.5);
         var _tight16y = 78 - (78 - visibleTop) * 0.25;
         var _sweep16y = 78 - (78 - visibleTop) * 0.65;
-        s += '<path d="M35,78 C' + (35 + _lean16 * 0.3).toFixed(1) + ',' + _tight16y.toFixed(1) + ' ' + (35 + _lean16 * 0.85).toFixed(1) + ',' + _sweep16y.toFixed(1) + ' ' + (35 + _lean16 * 0.7 + parseFloat(hw)).toFixed(1) + ',' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + strokeW + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
-        s += '<path d="M35,78 C' + (35 + _lean16 * 0.3).toFixed(1) + ',' + _tight16y.toFixed(1) + ' ' + (35 + _lean16 * 0.85).toFixed(1) + ',' + _sweep16y.toFixed(1) + ' ' + (35 + _lean16 * 0.7 + parseFloat(hw)).toFixed(1) + ',' + visibleTop + '" stroke="#0d100c" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.2"/>';
+        var _lean16topX = 35 + _lean16 * 0.7 + parseFloat(hw);
+        s += '<path d="M35,78 C' + (35 + _lean16 * 0.3).toFixed(1) + ',' + _tight16y.toFixed(1) + ' ' + (35 + _lean16 * 0.85).toFixed(1) + ',' + _sweep16y.toFixed(1) + ' ' + _lean16topX.toFixed(1) + ',' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + strokeW + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
+        s += '<path d="M35,78 C' + (35 + _lean16 * 0.3).toFixed(1) + ',' + _tight16y.toFixed(1) + ' ' + (35 + _lean16 * 0.85).toFixed(1) + ',' + _sweep16y.toFixed(1) + ' ' + _lean16topX.toFixed(1) + ',' + visibleTop + '" stroke="#0d100c" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.2"/>';
         var _rimOff16 = side * -0.8;
-        s += '<path d="M' + (35 + _rimOff16) + ',78 C' + (35 + _lean16 * 0.3 + _rimOff16).toFixed(1) + ',' + _tight16y.toFixed(1) + ' ' + (35 + _lean16 * 0.85 + _rimOff16).toFixed(1) + ',' + _sweep16y.toFixed(1) + ' ' + (35 + _lean16 * 0.7 + parseFloat(hw) + _rimOff16).toFixed(1) + ',' + visibleTop + '" stroke="rgba(240,235,216,0.4)" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M' + (35 + _rimOff16) + ',78 C' + (35 + _lean16 * 0.3 + _rimOff16).toFixed(1) + ',' + _tight16y.toFixed(1) + ' ' + (35 + _lean16 * 0.85 + _rimOff16).toFixed(1) + ',' + _sweep16y.toFixed(1) + ' ' + (_lean16topX + _rimOff16).toFixed(1) + ',' + visibleTop + '" stroke="rgba(240,235,216,0.4)" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
+        // Store stem profile — sample the cubic bezier at 8 heights
+        // Bezier: P0=(35,78), P1=(35+lean*0.3, tight16y), P2=(35+lean*0.85, sweep16y), P3=(lean16topX, visibleTop)
+        t._stemProfile = [];
+        var _l16p0x = 35, _l16p1x = 35 + _lean16 * 0.3, _l16p2x = 35 + _lean16 * 0.85, _l16p3x = _lean16topX;
+        var _l16p0y = 78, _l16p1y = _tight16y, _l16p2y = _sweep16y, _l16p3y = parseFloat(visibleTop);
+        for (var _l16i = 0; _l16i <= 8; _l16i++) {
+          var _l16t = _l16i / 8;
+          var _l16u = 1 - _l16t;
+          var _l16x = _l16u*_l16u*_l16u*_l16p0x + 3*_l16u*_l16u*_l16t*_l16p1x + 3*_l16u*_l16t*_l16t*_l16p2x + _l16t*_l16t*_l16t*_l16p3x;
+          var _l16y = _l16u*_l16u*_l16u*_l16p0y + 3*_l16u*_l16u*_l16t*_l16p1y + 3*_l16u*_l16t*_l16t*_l16p2y + _l16t*_l16t*_l16t*_l16p3y;
+          t._stemProfile.push({x: _l16x, y: _l16y});
+        }
         break;
       case 17: // Kinked — straight stem with one sharp bend
         var _kinkFrac = 0.35 + (stemCurve / 6) * 0.3;
@@ -8434,6 +8527,14 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M' + _kinkX.toFixed(1) + ',' + _kinkY.toFixed(1) + ' C' + (_kinkX + side * 0.5).toFixed(1) + ',' + (_kinkY - 4).toFixed(1) + ' ' + (_kinkTopX + parseFloat(hw) * 0.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 5).toFixed(1) + ' ' + _kinkTopX.toFixed(1) + ',' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + (parseFloat(strokeW) * 0.85).toFixed(1) + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
         s += '<ellipse cx="' + _kinkX.toFixed(1) + '" cy="' + _kinkY.toFixed(1) + '" rx="2.2" ry="1.3" fill="' + strokeCol + '" opacity="' + (op * 0.3).toFixed(2) + '"/>';
         s += '<path d="M35.5,78 C' + (35.5 + parseFloat(hw) * 0.2).toFixed(1) + ',' + (78 - (78 - _kinkY) * 0.3).toFixed(1) + ' ' + (_kinkX - side * 0.5).toFixed(1) + ',' + (_kinkY + 2).toFixed(1) + ' ' + _kinkX.toFixed(1) + ',' + _kinkY.toFixed(1) + '" stroke="#C4E89A" stroke-width="0.3" fill="none" opacity="' + (op * 0.2).toFixed(2) + '"/>';
+        // Store stem profile — two segments: base→kink, kink→top
+        t._stemProfile = [
+          {x: 35, y: 78},
+          {x: 35 + ((_kinkX - 35) * 0.3), y: 78 - (78 - _kinkY) * 0.5},
+          {x: _kinkX, y: _kinkY},
+          {x: _kinkX + (_kinkTopX - _kinkX) * 0.5, y: _kinkY - (_kinkY - parseFloat(visibleTop)) * 0.5},
+          {x: _kinkTopX, y: parseFloat(visibleTop)}
+        ];
         break;
       case 18: // Forking Y — first L-system stem, one bifurcation
         var _forkFrac = 0.55 + (stemCurve / 6) * 0.15;
@@ -8447,6 +8548,19 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="35" cy="' + _forkY.toFixed(1) + '" rx="2.5" ry="1.5" fill="' + strokeCol + '" opacity="' + (op * 0.25).toFixed(2) + '"/>';
         s += '<path d="M35,78 C35,' + (mid + 6) + ' 35,' + (_forkY + 6) + ' 35,' + _forkY.toFixed(1) + '" stroke="#0d100c" stroke-width="0.6" fill="none" opacity="0.15"/>';
         s += '<path d="M34.2,78 C34.2,' + (mid + 5) + ' 34.2,' + (_forkY + 5) + ' 34.2,' + _forkY.toFixed(1) + '" stroke="rgba(240,235,216,0.35)" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
+        // Store fork data — leaf renderer alternates branches above fork
+        t._forkData = {
+          forkY: _forkY,
+          leftX: _forkLx,
+          rightX: _forkRx,
+          topY: parseFloat(visibleTop)
+        };
+        // Profile for below fork = centered, above fork = midpoint of branches
+        t._stemProfile = [
+          {x: 35, y: 78},
+          {x: 35, y: _forkY},
+          {x: (_forkLx + _forkRx) * 0.5, y: parseFloat(visibleTop)}
+        ];
         break;
 
       // ── STEM BATCH 2 (cases 19–23) ──────────────────────────────────
@@ -8524,6 +8638,21 @@ document.addEventListener('keydown', function(e) {
         break;
     } // end switch(t.stem % 24)
 
+    // Store stem half-width for petiole exit calculation
+    // Thick/filled stems need petioles to exit from the surface, not from x=35±1.2
+    var _sc = t.stem % 24;
+    if (_sc === 4) t._stemHW = 2.8 + parseFloat(hw) * 0.3; // Tapering trunk (tapers, use mid value)
+    else if (_sc === 8) t._stemHW = 4.5; // Cactus — already handled via _stemCx
+    else if (_sc === 9) t._stemHW = 1.75; // Coral trunk
+    else if (_sc === 10) t._stemHW = 5.5; // Succulent
+    else if (_sc === 11) t._stemHW = 2.0; // Twisted Vine avg
+    else if (_sc === 12) t._stemHW = 3.2 + parseFloat(hw) * 0.4; // Ancient Bark
+    else if (_sc === 13) t._stemHW = 1.8; // Bamboo
+    else if (_sc === 14) t._stemHW = 4.0 + parseFloat(hw) * 0.5; // Hollow Trunk
+    else if (_sc === 20) t._stemHW = 2.2; // Root Pillar (mid taper)
+    else if (_sc === 21) t._stemHW = 3.2; // Mushroom Stipe (mid average)
+    else if (_sc === 23) t._stemHW = 3.0 + parseFloat(hw) * 0.3; // Iron Trunk
+
     // Glass shimmer line
     if (isGlass) {
       s += '<line x1="35.5" y1="78" x2="35.5" y2="'+visibleTop+'" stroke="#EAE0C8" stroke-width="0.4" opacity="0.15"/>';
@@ -8556,6 +8685,27 @@ document.addEventListener('keydown', function(e) {
   // Extract generation from plant hash context (stored in t.chimerGen or default 1)
   function _getChimerGen(t) { return Math.max(1, Math.min(6, t.chimerGen || 1)); }
 
+  // ── STEM CENTER LOOKUP — returns stem x at a given y ──
+  // For most stems, center is x=35. Curved/leaning/forking/kinked stems
+  // store a _stemProfile array of {y, x} points during renderStem().
+  // This lerp function interpolates between profile points so leaves
+  // and petioles emerge from where the stem actually is.
+  function _stemCenterAt(t, y) {
+    if (!t._stemProfile || t._stemProfile.length < 2) return 35;
+    var prof = t._stemProfile;
+    // Clamp to profile range
+    if (y >= prof[0].y) return prof[0].x;
+    if (y <= prof[prof.length - 1].y) return prof[prof.length - 1].x;
+    // Lerp between bracketing points
+    for (var pi = 0; pi < prof.length - 1; pi++) {
+      if (y <= prof[pi].y && y >= prof[pi + 1].y) {
+        var frac = (prof[pi].y - y) / (prof[pi].y - prof[pi + 1].y);
+        return prof[pi].x + (prof[pi + 1].x - prof[pi].x) * frac;
+      }
+    }
+    return 35;
+  }
+
   // ── LEAF RENDERER — set-104: PHYLLOTAXIS PLACEMENT ENGINE ──
   // Golden angle (137.508°) ensures no two successive leaves share the same
   // angular position. Projected to 2D, this creates natural asymmetric canopy
@@ -8579,17 +8729,23 @@ document.addEventListener('keydown', function(e) {
     for (var i = 0; i < maxLeaves; i++) {
       var lx, ly, ls, side, theta, cosT, sinT;
 
+      // Stem center at this height — computed per-branch, used by petiole code
+      var _stemCx = 35;
+
       if (_isCactus && i < t._cactusNeedles.length) {
         // ── CACTUS: leaves grow from needle tips ──
         var needle = t._cactusNeedles[i];
         lx = needle.x + needle.side * 1.5; // extend past needle tip
         ly = needle.y;
         side = needle.side;
+        _stemCx = 35 + side * 4.5; // cactus body edge (cw=4.5)
         theta = i * _GOLDEN_ANGLE + _phaseOff;
         cosT = Math.cos(theta);
         sinT = Math.sin(theta);
         var phiDecay = Math.pow(_PHI_INV, i * 0.15);
         ls = t.leafSize * 0.75 * phiDecay; // slightly smaller on cactus
+        var leafFrac = Math.max(0.1, (78 - ly) / t.stemHeight); // petiole rise needs this
+        var heightRatio = leafFrac; // for consistency with normal branch
       } else {
       // ── VERTICAL: φ-decay height spacing (Fibonacci-inspired) ──
       // Each leaf is placed higher by a golden ratio power curve.
@@ -8610,7 +8766,22 @@ document.addEventListener('keydown', function(e) {
       var envFrac = 1.0 - Math.pow((leafFrac - _PHI_INV) * 2.2, 2);
       envFrac = Math.max(0.32, Math.min(1.0, envFrac));
 
-      lx = 35 + cosT * t.leafSpread * envFrac;
+      // Stem center at this leaf's height — follows curves/leans/kinks
+      _stemCx = _stemCenterAt(t, ly);
+
+      // Forking Y: alternate leaves between left and right branch above fork
+      if (t._forkData && ly < t._forkData.forkY) {
+        var _fk = t._forkData;
+        var _branchFrac = (_fk.forkY - ly) / (_fk.forkY - _fk.topY);
+        _branchFrac = Math.min(1, _branchFrac);
+        if (i % 2 === 0) {
+          _stemCx = 35 + (_fk.leftX - 35) * _branchFrac;
+        } else {
+          _stemCx = 35 + (_fk.rightX - 35) * _branchFrac;
+        }
+      }
+
+      lx = _stemCx + cosT * t.leafSpread * envFrac;
       lx = Math.max(6, Math.min(64, lx)); // viewBox safety
 
       // ── SIZE: φ-power decay (from golden ratio demo) ──
@@ -8621,11 +8792,11 @@ document.addEventListener('keydown', function(e) {
       var depthMod = 0.82 + Math.abs(sinT) * 0.18;
       ls = t.leafSize * phiDecay * depthMod;
 
-      // ── SIDE: derived from actual position, not index ──
-      side = (lx >= 35) ? 1 : -1;
+      // ── SIDE: derived from actual position relative to stem center ──
+      side = (lx >= _stemCx) ? 1 : -1;
       // Near-center leaves nudge outward gently
-      if (Math.abs(lx - 35) < 2.8) {
-        lx = 35 + side * 3.2;
+      if (Math.abs(lx - _stemCx) < 2.8) {
+        lx = _stemCx + side * 3.2;
       }
       } // end cactus/normal branch
 
@@ -8664,13 +8835,16 @@ document.addEventListener('keydown', function(e) {
       var _pRise = leafFrac * 2.8 - 0.6 + _pAngle * 3;
 
       // Stem exit point — where petiole emerges from bark
-      var _exitX = 35 + side * 1.2;
+      // Uses _stemCx for center + _stemHW for surface width so petioles
+      // emerge from the actual stem surface, not a hardcoded offset
+      var _exitOff = (t._stemHW && t._stemHW > 1.2) ? t._stemHW : 1.2;
+      var _exitX = _stemCx + side * _exitOff;
       var _exitY = ly - 0.3 + (i % 3 - 1) * 0.4;
 
       // Leaf attachment point — the bridge endpoint where the leaf body begins
       // This is between the stem and the leaf center (lx), not at a hardcoded position
       var _attachFrac = 0.35; // leaf starts 35% of the way from stem to leaf center
-      var _attachX = 35 + (lx - 35) * _attachFrac;
+      var _attachX = _stemCx + (lx - _stemCx) * _attachFrac;
       var _attachY = ly - _pRise * 0.3;
 
       // Petiole midpoint — organic S-curve through the bridge
@@ -8678,7 +8852,7 @@ document.addEventListener('keydown', function(e) {
       var _pmY = (_exitY + _attachY) * 0.5 - _pRise * 0.35 + Math.sin(i * 1.7) * 0.4;
 
       // Bark swell — soft node bulge at stem surface
-      s += '<path d="M'+(35+side*0.3)+','+(_exitY-0.8)+' Q'+_exitX+','+(_exitY-0.2)+' '+(_exitX+side*1.2)+','+_exitY+' Q'+_exitX+','+(_exitY+0.3)+' '+(35+side*0.3)+','+(_exitY+0.6)+'" fill="'+shiftedDark+'" opacity="0.16"/>';
+      s += '<path d="M'+(_stemCx+side*0.3)+','+(_exitY-0.8)+' Q'+_exitX+','+(_exitY-0.2)+' '+(_exitX+side*1.2)+','+_exitY+' Q'+_exitX+','+(_exitY+0.3)+' '+(_stemCx+side*0.3)+','+(_exitY+0.6)+'" fill="'+shiftedDark+'" opacity="0.16"/>';
 
       // Petiole — tapered bezier from stem surface to leaf attachment
       s += '<path d="M'+_exitX+','+_exitY.toFixed(1)+' C'+_pmX.toFixed(1)+','+_pmY.toFixed(1)+' '+(_attachX-side*0.8).toFixed(1)+','+(_attachY+0.2).toFixed(1)+' '+_attachX.toFixed(1)+','+_attachY.toFixed(1)+'" stroke="'+shiftedDark+'" stroke-width="0.6" fill="none" opacity="'+(op*0.35).toFixed(2)+'" stroke-linecap="round"/>';
