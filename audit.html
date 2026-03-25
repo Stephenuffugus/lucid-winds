@@ -40,7 +40,8 @@
     <select id="layer-select">
       <option value="pot">Pot (shape)</option>
       <option value="potColor">Pot Color</option>
-      <option value="stem">Stem</option>
+      <option value="stem">Stem (shape)</option>
+      <option value="stemColor">Stem Color</option>
       <option value="leafType">Leaf Type</option>
       <option value="leafColor">Leaf Color</option>
       <option value="flower">Flower</option>
@@ -105,6 +106,7 @@
     pot:         { pos: 0, mode: 'byte', mod: 60 },
     potColor:    { pos: 1, mode: 'char' },
     stem:        { pos: 2, mode: 'byte', mod: 24 },
+    stemColor:   { pos: 5, mode: 'byte', mod: 12 },
     leafType:    { pos: 4, mode: 'byte' },
     leafColor:   { pos: 7, mode: 'char' },
     flower:      { pos: 11, mode: 'byte' },
@@ -117,9 +119,10 @@
   };
 
   function setHashByte(chars, pos, val) {
+    // hb(i) reads h[i]+h[i+1] — pos IS the char index, not byte index
     var hexStr = ('0' + val.toString(16)).slice(-2);
-    chars[pos * 2] = hexStr[0];
-    chars[pos * 2 + 1] = hexStr[1];
+    chars[pos] = hexStr[0];
+    chars[pos + 1] = hexStr[1];
   }
 
   function setHashChar(chars, pos, val) {
@@ -145,17 +148,17 @@
     }
 
     // Neutralize non-essential layers to keep view clean
-    // Hide: companion (set to high index = no creature), aura (0), mutation (0)
-    setHashByte(hexChars, 21, 31); // companion idx 31 — likely empty/minimal
-    setHashByte(hexChars, 15, 0);  // aura = 0
-    setHashByte(hexChars, 16, 0);  // mutation = 0
+    // Hide: companion (set to high index = no creature), aura (0), mutation (0 unless auditing)
+    if (layer !== 'companion') setHashByte(hexChars, 21, 31);
+    if (layer !== 'aura') setHashByte(hexChars, 15, 0);
+    if (layer !== 'mutation') setHashByte(hexChars, 16, 0);
 
     return hexChars.join('');
   }
 
   function getMaxIndex(layer) {
     var maxes = {
-      pot: 60, potColor: 16, stem: 24, leafType: 256,
+      pot: 60, potColor: 16, stem: 24, stemColor: 12, leafType: 256,
       leafColor: 16, flower: 256, flowerColor: 16,
       base: 60, companion: 82, aura: 36, mutation: 256, season: 4
     };
@@ -173,7 +176,10 @@
         case 'potColor':
           return traits.potColor || '?';
         case 'stem':
-          return traits.stemType || 'Standard';
+          var TB2 = win.TRAIT_BANK;
+          return (TB2 && TB2.stems && TB2.stems[traits.stem]) ? (TB2.stems[traits.stem].name || 'Stem #' + traits.stem) : (traits.stemType || 'Stem #' + traits.stem);
+        case 'stemColor':
+          return 'Color #' + (traits.stemColor || 0);
         case 'leafType':
           return (TB.leaves && TB.leaves[traits.leafType]) ? (TB.leaves[traits.leafType].name || 'Leaf #' + traits.leafType) : 'Leaf #' + traits.leafType;
         case 'leafColor':
@@ -191,11 +197,7 @@
         case 'aura':
           return traits.aura === 0 ? 'None' : 'Aura #' + traits.aura;
         case 'mutation':
-          var m = traits.mutation || 0;
-          if (m >= 0xF0) return 'Glitch';
-          if (m >= 0xE0) return 'Glass Stem';
-          if (m >= 0xD0) return 'Wireframe';
-          return 'None';
+          return traits.mutationName || 'None';
         case 'season':
           return ['Spring','Summer','Autumn','Winter'][traits.season] || '?';
         default:
@@ -205,9 +207,9 @@
   }
 
   // All visible layers in render order
-  var allLayers = ['pot','potColor','stem','base','leafType','leafColor','flower','flowerColor','companion','aura','mutation','season'];
+  var allLayers = ['pot','potColor','stem','stemColor','base','leafType','leafColor','flower','flowerColor','companion','aura','mutation','season'];
   var layerLabels = {
-    pot:'Pot', potColor:'Pot Color', stem:'Stem', base:'Substrate',
+    pot:'Pot', potColor:'Pot Color', stem:'Stem', stemColor:'Stem Color', base:'Substrate',
     leafType:'Leaf', leafColor:'Leaf Color', flower:'Flower', flowerColor:'Flower Color',
     companion:'Companion', aura:'Aura', mutation:'Mutation', season:'Season'
   };
