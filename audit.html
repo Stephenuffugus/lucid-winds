@@ -98,6 +98,7 @@ h1 { font-size: 18px; color: #c8a84b; margin-bottom: 8px; text-align: center; }
     <button id="btn-grid" class="active" onclick="setMode('grid')">All 60 Leaves</button>
     <button id="btn-single" onclick="setMode('single')">Single Leaf Focus</button>
     <button id="btn-zoom" onclick="setMode('zoom')">Connection Closeup</button>
+    <button id="btn-perleaf" onclick="setMode('perleaf')">Per-Leaf Index</button>
     <button id="btn-stems" onclick="setMode('stems')">All 24 Stems</button>
   </div>
 
@@ -151,13 +152,13 @@ h1 { font-size: 18px; color: #c8a84b; margin-bottom: 8px; text-align: center; }
 // ES5 compatible
 var LEAF_NAMES = [
   'Organic Broad','Willow','Asymmetric Lobed','Heart','Spear','Monstera','Fern','Maple',
-  'Paddle','Needle','Monstera+','Fern+','Heart2','Coral','Fern2','Holly',
-  'Round2','Willow2','Asymmetric2','Fiddle','Spear2','Paddle2','Maple2','Heart3',
-  'Needle2','Banana','Round3','Arrow','Willow3','Asymmetric3','Round4','Spear3',
-  'Heart4','Maple3','Moth Wing','Paddle3','Round5','Willow4','Bell Petiole','Needle3',
-  'Spear4','Hookvine','Fern3','Lantern Pod','Coral Antler','Oracle Eye','Spiral Shell','Maple4',
-  'Round6','Jellyleaf','Spear5','Willow5','Heart5','Paddle4','Needle4','Scale',
-  'Round7','Willow6','Strap','Asymmetric4'
+  'Money Plant','Needle Cluster','Monstera+','Fern+','Succulent Rosette','Coral','Cactus Pad','Holly',
+  'Berries','Filange','Serrated Fern','Fiddle Leaf','Palmate Fan','Needle Cluster 2','Elephant Ear','Sword Fern',
+  'Clover Trefoil','Banana Leaf','Silver Dollar','Arrow Leaf','Lacecap','Curled Scroll','Feather Frond','Drip Leaf',
+  'Ribbon','Snapdragon','Moth Wing','Prism Shard','Batwing Ivy','Thorn Crescent','Bell Petiole','Ghost Willow',
+  'Crown Laurel','Coilspring','Kraken Frond','Lantern Pod','Coral Antler','Oracle Eye','Spiral Shell','Dagger Ivy',
+  'Veil Fern','Jellyleaf','Watcher Frond','Stamen Burst','Compound Pinnate','Tendril Coil','Lily Pad','Scale Leaf',
+  'Grass Blade','Venus Trap','Strap Leaf','Lace Fern'
 ];
 
 var STEM_NAMES = [
@@ -235,6 +236,7 @@ function getOverrides(leafType, stemType, stemColorIdx) {
     leafSize: parseInt(document.getElementById('sl-size').value),
     stemHeight: 40,
     leafSpread: 10,
+    leafColors: ['sage', 'teal', 'moss'],
     base: 0
   };
 }
@@ -260,6 +262,7 @@ function renderCurrent() {
   if (currentMode === 'grid') renderGridMode(container);
   else if (currentMode === 'single') renderSingleMode(container);
   else if (currentMode === 'zoom') renderZoomMode(container);
+  else if (currentMode === 'perleaf') renderPerLeafMode(container);
   else if (currentMode === 'stems') renderStemsMode(container);
 
   updateFlaggedDisplay();
@@ -322,6 +325,37 @@ function renderZoomMode(container) {
     cell.className = 'cell' + (flagged[key] ? ' flagged' : '');
     cell.innerHTML = '<div class="plant-svg">' + html + '</div>'
       + '<div class="label">Closeup — Color <b>' + sc + '</b></div>'
+      + '<div class="cell-actions">'
+      + '<button class="btn-ok" onclick="markOk(\'' + key + '\',this)">OK</button>'
+      + '<button class="btn-flag" onclick="markFlag(\'' + key + '\',this)">FLAG</button>'
+      + '</div>';
+    container.appendChild(cell);
+  }
+}
+
+function renderPerLeafMode(container) {
+  container.className = 'grid grid-12';
+  var leafType = parseInt(document.getElementById('sel-leaf').value);
+  var stemType = parseInt(document.getElementById('sel-stem').value);
+  var leafCount = parseInt(document.getElementById('sl-count').value);
+  // First cell: all leaves (no solo) for reference
+  var refOverrides = getOverrides(leafType, stemType, 0);
+  var refHtml = renderPlant(refOverrides, 180, false);
+  var refCell = document.createElement('div');
+  refCell.className = 'cell';
+  refCell.innerHTML = '<div class="plant-svg">' + refHtml + '</div>'
+    + '<div class="label"><b>ALL</b> — ' + (LEAF_NAMES[leafType] || 'Case ' + leafType) + ' (' + leafCount + ' leaves)</div>';
+  container.appendChild(refCell);
+  // One cell per leaf index
+  for (var li = 0; li < leafCount; li++) {
+    var overrides = getOverrides(leafType, stemType, 0);
+    overrides.soloLeafIdx = li;
+    var html = renderPlant(overrides, 180, false);
+    var key = 'perleaf-' + leafType + '-i' + li;
+    var cell = document.createElement('div');
+    cell.className = 'cell' + (flagged[key] ? ' flagged' : '');
+    cell.innerHTML = '<div class="plant-svg">' + html + '</div>'
+      + '<div class="label">Leaf <b>#' + li + '</b></div>'
       + '<div class="cell-actions">'
       + '<button class="btn-ok" onclick="markOk(\'' + key + '\',this)">OK</button>'
       + '<button class="btn-flag" onclick="markFlag(\'' + key + '\',this)">FLAG</button>'
