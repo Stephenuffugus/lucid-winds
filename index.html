@@ -8260,7 +8260,7 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M34.5,78 C'+(32+parseFloat(hw))+','+(mid+6)+' '+(31+parseFloat(hw2))+','+mid+' 33,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
         s += '<path d="M35.5,78 C'+(38+parseFloat(hw))+','+(mid+6)+' '+(39+parseFloat(hw2))+','+mid+' 37,'+(visibleTop+2)+'" stroke="'+strokeCol+'" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="'+(op*0.8)+'"/>';
         break;
-      case 8: // Cactus — thick ribbed column, deep green, white needle lines
+      case 8: // Cactus — thick ribbed column, deep green, needles reduced 60%
         var cw = 4.5; // half-width of column
         s += '<path d="M'+(35-cw)+',78 L'+(35-cw)+','+visibleTop+' Q35,'+(visibleTop-3)+' '+(35+cw)+','+visibleTop+' L'+(35+cw)+',78 Z"'
            + ' fill="#1E4020" stroke="#2E5A30" stroke-width="0.6" opacity="'+op+'"/>';
@@ -8271,19 +8271,20 @@ document.addEventListener('keydown', function(e) {
         }
         // Left rim light
         s += '<line x1="'+(35-cw)+'" y1="78" x2="'+(35-cw)+'" y2="'+visibleTop+'" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" stroke-linecap="round" opacity="'+op+'"/>';
-        // Needles — sharp white lines radiating from column edge
+        // Needles — 60% smaller, stored for leaf alignment
         var needleY = [];
         var ny_start = parseFloat(visibleTop)+4, ny_step = (78-parseFloat(visibleTop)-8)/7;
         for (var ni=0; ni<8; ni++) needleY.push((ny_start + ni*ny_step).toFixed(1));
+        // Store needle data on traits for leaf renderer to use
+        t._cactusNeedles = [];
         needleY.forEach(function(ny,ni){
-          // alternating left / right
-          if (ni%2===0){
-            s += '<line x1="'+(35-cw)+'" y1="'+ny+'" x2="'+(35-cw-5)+'" y2="'+(parseFloat(ny)-2.5)+'"'
-               + ' stroke="#F0EBD8" stroke-width="0.7" stroke-linecap="round" opacity="0.8"/>';
-          } else {
-            s += '<line x1="'+(35+cw)+'" y1="'+ny+'" x2="'+(35+cw+5)+'" y2="'+(parseFloat(ny)-2.5)+'"'
-               + ' stroke="#F0EBD8" stroke-width="0.7" stroke-linecap="round" opacity="0.8"/>';
-          }
+          var isLeft = (ni%2===0);
+          var nx1 = isLeft ? (35-cw) : (35+cw);
+          var nx2 = isLeft ? (35-cw-2) : (35+cw+2);
+          var ny2 = (parseFloat(ny)-1).toFixed(1);
+          t._cactusNeedles.push({x: parseFloat(nx2), y: parseFloat(ny2), side: isLeft ? -1 : 1});
+          s += '<line x1="'+nx1+'" y1="'+ny+'" x2="'+nx2+'" y2="'+ny2+'"'
+             + ' stroke="#F0EBD8" stroke-width="0.4" stroke-linecap="round" opacity="0.7"/>';
         });
         break;
 
@@ -8572,27 +8573,44 @@ document.addEventListener('keydown', function(e) {
     // Per-plant phase offset — hash-derived so every plant's spiral is unique
     var _phaseOff = ((parseInt(uid, 16) || 0) % 360) * Math.PI / 180;
 
+    // Cactus needle-aligned leaf placement
+    var _isCactus = !!(t._cactusNeedles && t._cactusNeedles.length > 0);
+
     for (var i = 0; i < maxLeaves; i++) {
+      var lx, ly, ls, side, theta, cosT, sinT;
+
+      if (_isCactus && i < t._cactusNeedles.length) {
+        // ── CACTUS: leaves grow from needle tips ──
+        var needle = t._cactusNeedles[i];
+        lx = needle.x + needle.side * 1.5; // extend past needle tip
+        ly = needle.y;
+        side = needle.side;
+        theta = i * _GOLDEN_ANGLE + _phaseOff;
+        cosT = Math.cos(theta);
+        sinT = Math.sin(theta);
+        var phiDecay = Math.pow(_PHI_INV, i * 0.15);
+        ls = t.leafSize * 0.75 * phiDecay; // slightly smaller on cactus
+      } else {
       // ── VERTICAL: φ-decay height spacing (Fibonacci-inspired) ──
       // Each leaf is placed higher by a golden ratio power curve.
       // Result: leaves cluster closer at the crown, spread at the base.
       // Matches real phyllotaxis growth patterns observed in nature.
       var heightRatio = 1 - Math.pow(_PHI_INV, (i + 1) * 0.38);
       var leafFrac = 0.18 + heightRatio * 0.72; // map to 18-90% of stem
-      var ly = 78 - (t.stemHeight * leafFrac);
+      ly = 78 - (t.stemHeight * leafFrac);
       if (ly < visibleTop) continue;
 
       // ── LATERAL: golden angle spiral projection ──
-      var theta = i * _GOLDEN_ANGLE + _phaseOff;
-      var cosT = Math.cos(theta);
-      var sinT = Math.sin(theta);
+      theta = i * _GOLDEN_ANGLE + _phaseOff;
+      cosT = Math.cos(theta);
+      sinT = Math.sin(theta);
 
       // Spread envelope — bell curve peaked at φ⁻¹ height (61.8%)
       // Widest in the middle, pulls inward at crown and base
       var envFrac = 1.0 - Math.pow((leafFrac - _PHI_INV) * 2.2, 2);
       envFrac = Math.max(0.32, Math.min(1.0, envFrac));
 
-      var lx = 35 + cosT * t.leafSpread * envFrac;
+      lx = 35 + cosT * t.leafSpread * envFrac;
       lx = Math.max(6, Math.min(64, lx)); // viewBox safety
 
       // ── SIZE: φ-power decay (from golden ratio demo) ──
@@ -8601,14 +8619,15 @@ document.addEventListener('keydown', function(e) {
       // upper leaves delicate. Depth projection adds front/back variation.
       var phiDecay = Math.pow(_PHI_INV, i * 0.15); // 1.0 → 0.93 → 0.87 → ...
       var depthMod = 0.82 + Math.abs(sinT) * 0.18;
-      var ls = t.leafSize * phiDecay * depthMod;
+      ls = t.leafSize * phiDecay * depthMod;
 
       // ── SIDE: derived from actual position, not index ──
-      var side = (lx >= 35) ? 1 : -1;
+      side = (lx >= 35) ? 1 : -1;
       // Near-center leaves nudge outward gently
       if (Math.abs(lx - 35) < 2.8) {
         lx = 35 + side * 3.2;
       }
+      } // end cactus/normal branch
 
       // Hue-shifted fill so no two leaves are identical
       var baseColor = PALETTE[t.leafColors[i % 3]] || PALETTE.sage;

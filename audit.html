@@ -140,8 +140,8 @@
   var NEUTRAL = [
     '0','5', // c0,c1: hb(0)=0x05→pot=5, hc(1)=5→potColor=moss
     '1','8', // c2,c3: hb(2)=0x18=24→stem=24%24=0(Straight), hc(3)=8→stemHeight=42
-    '2','4', // c4,c5: hb(4)=0x24→leafType=36, hc(5)=4→leafCount=8
-    '3',     // c6:    hc(6)=3→leafSize=9.  (hb(5)=0x43→stemColor=43%12=7)
+    '2','1', // c4,c5: hb(4)=0x21→leafType=33, hc(5)=1→leafCount=5
+    '0',     // c6:    hc(6)=0→leafSize=6.  (hb(5)=0x10→stemColor=16%12=4)
     '5','3','6', // c7,c8,c9: hc(7-9)→leafColors
     '7',     // c10:   hc(10)=7→hasFlower=true
     '1','5', // c11,c12: hb(11)=0x15→flower=21, hc(12)=5→flowerColor=moss
@@ -317,7 +317,7 @@
   var OVERLAP_PINS = {
     pot:         ['potColor'],           // chars 0,1 share char 1 with potColor
     potColor:    ['pot'],                // char 1 is pot low nibble
-    stem:        ['stemHeight'],         // chars 2,3 share char 3 with stemHeight
+    stem:        ['stemHeight','leafSize','leafCount'],  // chars 2,3 share; pin leaves small for visibility
     stemColor:   ['leafSize','leafType','leafCount'], // chars 5,6 shared
     leafType:    ['leafCount','stemColor'], // chars 4,5 share char 5
     leafColor:   [],
