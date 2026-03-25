@@ -100,65 +100,158 @@
     }, 200);
   };
 
-  // Layers we render (pot audit focus): pot, substrate, stem, leaf, flower
-  // Everything else gets neutralized to keep the view clean
-  var layerMap = {
-    pot:         { pos: 0, mode: 'byte', mod: 60 },
-    potColor:    { pos: 1, mode: 'char' },
-    stem:        { pos: 2, mode: 'byte', mod: 24 },
-    stemColor:   { pos: 5, mode: 'byte', mod: 12 },
-    leafType:    { pos: 4, mode: 'byte' },
-    leafColor:   { pos: 7, mode: 'char' },
-    flower:      { pos: 11, mode: 'byte' },
-    flowerColor: { pos: 12, mode: 'char' },
-    base:        { pos: 20, mode: 'byte', mod: 60 },
-    companion:   { pos: 21, mode: 'byte', mod: 82 },
-    aura:        { pos: 15, mode: 'byte', mod: 36 },
-    mutation:    { pos: 16, mode: 'byte' },
-    season:      { pos: 22, mode: 'byte', mod: 4 }
-  };
+  // ── Hash position map ──
+  // hb(i) reads chars[i]+chars[i+1] as a byte (0-255)
+  // hc(i) reads chars[i] as a nibble (0-15)
+  // Many positions OVERLAP — we must set every char explicitly.
+  //
+  // Char 0,1  → hb(0)  = pot         (% 60)
+  // Char 1    → hc(1)  = potColor    (palette key)
+  // Char 2,3  → hb(2)  = stem        (% 24)
+  // Char 3    → hc(3)  = stemHeight  (22 + val*2.5)
+  // Char 4,5  → hb(4)  = leafType
+  // Char 5    → hc(5)  = leafCount   (4 + val%5)
+  // Char 5,6  → hb(5)  = stemColor   (% 12)
+  // Char 6    → hc(6)  = leafSize    (6 + val%5)
+  // Char 7    → hc(7)  = leafColor[0]
+  // Char 8    → hc(8)  = leafColor[1]
+  // Char 9    → hc(9)  = leafColor[2]
+  // Char 10   → hc(10) = hasFlower   (>4 = yes)
+  // Char 11,12→ hb(11) = flower type
+  // Char 12   → hc(12) = flowerColor
+  // Char 13   → hc(13) = flowerSize  (4 + val%5)
+  // Char 14   → hc(14) = leafSpread  (7 + val%6)
+  // Char 15,16→ hb(15) = aura        (% 36)
+  // Char 16,17→ hb(16) = mutation
+  // Char 18,19→ hb(18) = mythic
+  // Char 20,21→ hb(20) = base        (% 60)
+  // Char 21,22→ hb(21) = companion   (% 82)
+  // Char 22,23→ hb(22) = season      (% 4)
 
-  function setHashByte(chars, pos, val) {
-    // hb(i) reads h[i]+h[i+1] — pos IS the char index, not byte index
-    var hexStr = ('0' + val.toString(16)).slice(-2);
-    chars[pos] = hexStr[0];
-    chars[pos + 1] = hexStr[1];
-  }
-
-  function setHashChar(chars, pos, val) {
-    chars[pos] = (val % 16).toString(16);
-  }
+  // Neutral defaults for every char position (0-23, rest padded with 0)
+  // These produce: pot 5, potColor sage, stem 0 (Straight), stemHeight 42,
+  // leafType mid, leafCount 6, stemColor 0, leafSize 8, colors sage/pine/terra,
+  // flower visible, flower 0, flowerColor sage, flowerSize 6, leafSpread 10,
+  // aura 0, mutation 0, mythic 0, base 5, companion 31 (no creature), season 0
+  // 24 explicit hex chars — every position documented
+  // Overlap handling: shared chars get a value that works for both traits
+  var NEUTRAL = [
+    '0','5', // c0,c1: hb(0)=0x05→pot=5, hc(1)=5→potColor=moss
+    '0','8', // c2,c3: hb(2)=0x08→stem=8, hc(3)=8→stemHeight=42
+    '2','4', // c4,c5: hb(4)=0x24→leafType=36, hc(5)=4→leafCount=8
+    '3',     // c6:    hc(6)=3→leafSize=9.  (hb(5)=0x43→stemColor=43%12=7)
+    '5','3','6', // c7,c8,c9: hc(7-9)→leafColors
+    '7',     // c10:   hc(10)=7→hasFlower=true
+    '1','5', // c11,c12: hb(11)=0x15→flower=21, hc(12)=5→flowerColor=moss
+    '4',     // c13:   hc(13)=4→flowerSize=8
+    '5',     // c14:   hc(14)=5→leafSpread=12
+    '0','0', // c15,c16: hb(15)=0x00→aura=0.  hb(16) shares c16.
+    '0',     // c17:   hb(16)=0x00→mutation=None
+    '0','0', // c18,c19: hb(18)=0x00→mythic=None
+    '0',     // c20:   hb(20) high nibble → base high
+    '5',     // c21:   hb(20)=0x05→base=5. hb(21) high nibble→companion high
+    '1',     // c22:   hb(21)=0x51→companion=51%82=51(none). hb(22) high→season high
+    '0'      // c23:   hb(22)=0x10→season=16%4=0(Spring)
+  ];
 
   function forceHash(layer, index) {
-    var hexChars = BASE_HASH.split('');
-    var info = layerMap[layer];
-    if (!info) return BASE_HASH;
+    // Start with neutral — 64 chars, first 24 explicit, rest '0'
+    var c = [];
+    for (var i = 0; i < 64; i++) c[i] = i < NEUTRAL.length ? NEUTRAL[i] : '0';
 
-    // Force the audited layer
-    if (info.mode === 'byte') {
-      var byteVal = info.mod ? (index % info.mod) : index;
-      setHashByte(hexChars, info.pos, byteVal);
-    } else {
-      setHashChar(hexChars, info.pos, index);
+    // Helper: write a 2-char hex byte at char position p
+    function wb(p, v) {
+      var s = ('0' + (v & 0xFF).toString(16)).slice(-2);
+      c[p] = s[0]; c[p+1] = s[1];
     }
 
-    // Force flower visible when auditing flower layers
-    if (layer === 'flower' || layer === 'flowerColor') {
-      hexChars[10] = 'f';
+    // Apply the audited layer's value
+    switch(layer) {
+      case 'pot':
+        // hb(0) % 60 reads chars 0,1. char 1 = potColor (hc(1)).
+        // Write full byte to get the exact pot index, then accept
+        // that potColor will change (it's visual-only, not structural).
+        wb(0, index % 60);
+        break;
+      case 'potColor':
+        c[1] = (index % 16).toString(16);
+        break;
+      case 'stem':
+        // hb(2) % 24. char 3 = stemHeight.
+        // To keep stemHeight stable: fix char 3, vary char 2.
+        // hb(2) = char2*16 + char3_val. stemHeight = 22 + char3*2.5
+        // With char3 fixed at NEUTRAL[3]='8' (=8): hb(2) = char2*16 + 8
+        // stem = (char2*16 + 8) % 24
+        // char2=0: 8%24=8, char2=1: 24%24=0, char2=2: 40%24=16, etc.
+        // This only gives ~4 values. We need all 24.
+        // Better: accept stemHeight changes, write full byte.
+        wb(2, index % 24);
+        break;
+      case 'stemColor':
+        // hb(5) % 12 reads chars 5,6.
+        // char 5 is shared with leafCount (hc(5)) and leafType low nibble (hb(4)).
+        // To isolate: only change char 6, keep char 5 stable.
+        // hb(5) = c5*16 + c6. We need hb(5)%12 = index.
+        // With c5 fixed at NEUTRAL[5]='4' (=4): hb(5) = 4*16 + c6 = 64+c6
+        // stemColor = (64+c6) % 12. c6=0→4, c6=1→5, c6=2→6, ...c6=7→11, c6=8→0
+        // That cycles through all 12! Just offset c6.
+        // Solve: we need (64 + c6) % 12 = index → c6 = (index - 64%12 + 12) % 12 = (index - 4 + 12) % 12 = (index + 8) % 12
+        c[6] = ((index + 8) % 12).toString(16);
+        break;
+      case 'leafType':
+        // hb(4) reads chars 4,5. char 5 shared with leafCount + stemColor.
+        // Only vary char 4 (high nibble) to cycle 16 leaf families. Keep char 5 stable.
+        c[4] = (index % 16).toString(16);
+        break;
+      case 'leafColor':
+        c[7] = (index % 16).toString(16);
+        break;
+      case 'flower':
+        c[10] = 'f'; // force hasFlower = true
+        // hb(11) reads chars 11,12. char 12 = flowerColor.
+        // Write full byte — accept flowerColor changes to see all flowers.
+        wb(11, index);
+        break;
+      case 'flowerColor':
+        c[10] = 'f'; // force hasFlower = true
+        c[12] = (index % 16).toString(16);
+        break;
+      case 'base':
+        // hb(20) % 60. chars 20,21. char 21 also = companion high nibble.
+        wb(20, index % 60);
+        // Restore companion: chars 21,22 = companion byte
+        // char 21 was overwritten — re-neutralize companion
+        c[21] = NEUTRAL[21]; c[22] = NEUTRAL[22];
+        break;
+      case 'companion':
+        // hb(21) % 82. chars 21,22. char 21 = base low, char 22 = season high.
+        wb(21, index % 82);
+        // char 22 was overwritten — restore season
+        c[23] = NEUTRAL[23];
+        break;
+      case 'aura':
+        // hb(15) % 36. chars 15,16. char 16 = mutation high nibble.
+        wb(15, index % 36);
+        c[16] = '0'; c[17] = '0'; // keep mutation = None
+        break;
+      case 'mutation':
+        // hb(16). chars 16,17. char 16 also = aura low nibble.
+        wb(16, index);
+        // Aura uses hb(15) = chars 15,16. We changed char 16.
+        // Accept aura changes when auditing mutation.
+        break;
+      case 'season':
+        // hb(22) % 4. chars 22,23. char 22 = companion low nibble.
+        wb(22, index % 4);
+        break;
     }
 
-    // Neutralize non-essential layers to keep view clean
-    // Hide: companion (set to high index = no creature), aura (0), mutation (0 unless auditing)
-    if (layer !== 'companion') setHashByte(hexChars, 21, 31);
-    if (layer !== 'aura') setHashByte(hexChars, 15, 0);
-    if (layer !== 'mutation') setHashByte(hexChars, 16, 0);
-
-    return hexChars.join('');
+    return c.join('');
   }
 
   function getMaxIndex(layer) {
     var maxes = {
-      pot: 60, potColor: 16, stem: 24, stemColor: 12, leafType: 256,
+      pot: 60, potColor: 16, stem: 24, stemColor: 12, leafType: 16,
       leafColor: 16, flower: 256, flowerColor: 16,
       base: 60, companion: 82, aura: 36, mutation: 256, season: 4
     };
