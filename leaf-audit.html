@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
+<title>Lucid Winds — Leaf Audit</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#0d100c;color:#e8dcc8;font-family:'Outfit',system-ui,sans-serif;min-height:100vh;}
+  body.bg-white{background:#f0f0f0;color:#222;}
+  body.bg-gray{background:#555;color:#e8dcc8;}
+  .loading{display:flex;align-items:center;justify-content:center;height:100vh;font-size:1.2rem;color:#7ab356;}
+  .toolbar{position:sticky;top:0;z-index:100;background:rgba(13,16,12,0.95);border-bottom:1px solid rgba(122,179,86,0.2);padding:8px 12px;display:none;flex-direction:column;gap:6px;backdrop-filter:blur(8px);}
+  body.bg-white .toolbar{background:rgba(240,240,240,0.95);border-color:#ccc;}
+  body.bg-gray .toolbar{background:rgba(85,85,85,0.95);}
+  .tb-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  label{font-size:0.65rem;color:#8a9178;min-width:42px;text-transform:uppercase;letter-spacing:0.05em;}
+  select,input[type="number"],input[type="range"]{background:#181c16;color:#e8dcc8;border:1px solid rgba(122,179,86,0.3);border-radius:4px;padding:4px 8px;font-size:0.75rem;min-height:36px;}
+  body.bg-white select,body.bg-white input{background:#fff;color:#222;border-color:#aaa;}
+  select:focus,input:focus{outline:none;border-color:#7ab356;}
+  .mode-btns{display:flex;gap:4px;}
+  .mode-btns button{min-height:36px;padding:0 12px;background:#181c16;color:#c8a84b;border:1px solid rgba(200,168,75,0.3);border-radius:4px;font-size:0.7rem;font-family:'Bebas Neue',sans-serif;letter-spacing:0.08em;cursor:pointer;}
+  .mode-btns button.active{background:rgba(200,168,75,0.15);border-color:#c8a84b;}
+  .mode-btns button:active{transform:scale(0.97);}
+  .bg-btns button{min-height:28px;padding:0 8px;border-radius:4px;border:1px solid rgba(122,179,86,0.2);font-size:0.6rem;cursor:pointer;background:#181c16;color:#8a9178;}
+  .bg-btns button.active{border-color:#7ab356;color:#7ab356;}
+
+  /* Grid mode */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;padding:12px;max-width:1200px;margin:0 auto;}
+  .grid-cell{background:rgba(24,28,22,0.5);border:1px solid rgba(122,179,86,0.1);border-radius:8px;padding:6px;text-align:center;cursor:pointer;transition:border-color 0.2s;}
+  .grid-cell:hover{border-color:rgba(122,179,86,0.4);}
+  .grid-cell.flagged{border:2px solid #c44 !important;}
+  .grid-cell.ok{border:2px solid #5a5 !important;}
+  .grid-cell .plant-wrap{display:flex;align-items:center;justify-content:center;min-height:140px;}
+  .grid-cell .cell-label{font-family:'DM Mono',monospace;font-size:0.55rem;color:#8a9178;margin-top:4px;}
+  .grid-cell .cell-name{font-family:'Cinzel',serif;font-size:0.65rem;color:#c8a84b;margin-top:2px;}
+  body.bg-white .grid-cell{background:rgba(220,220,220,0.5);border-color:#ccc;}
+
+  /* Focus mode - 12 stem colors in a row */
+  .focus{padding:12px;max-width:1200px;margin:0 auto;}
+  .focus-title{font-family:'Cinzel',serif;font-size:1rem;color:#c8a84b;text-align:center;margin-bottom:8px;}
+  .focus-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;}
+  .focus-cell{background:rgba(24,28,22,0.5);border:1px solid rgba(122,179,86,0.1);border-radius:8px;padding:6px;text-align:center;}
+  .focus-cell.flagged{border:2px solid #c44 !important;}
+  .focus-cell.ok{border:2px solid #5a5 !important;}
+  .focus-cell .plant-wrap{display:flex;align-items:center;justify-content:center;min-height:200px;}
+  .focus-cell .cell-label{font-family:'DM Mono',monospace;font-size:0.55rem;color:#8a9178;margin-top:4px;}
+
+  /* Flag buttons */
+  .flag-row{display:flex;gap:4px;justify-content:center;margin-top:4px;}
+  .flag-row button{min-width:36px;min-height:28px;border-radius:4px;border:none;font-size:0.55rem;font-weight:600;cursor:pointer;}
+  .btn-ok{background:rgba(90,170,90,0.15);color:#5a5;border:1px solid rgba(90,170,90,0.3) !important;}
+  .btn-ok.active{background:rgba(90,170,90,0.4);}
+  .btn-flag{background:rgba(204,68,68,0.15);color:#c44;border:1px solid rgba(204,68,68,0.3) !important;}
+  .btn-flag.active{background:rgba(204,68,68,0.4);}
+
+  /* Flagged list */
+  .flagged-panel{position:sticky;bottom:0;background:rgba(13,16,12,0.95);border-top:1px solid rgba(204,68,68,0.3);padding:8px 12px;display:none;backdrop-filter:blur(8px);z-index:100;}
+  .flagged-panel h3{font-family:'Bebas Neue',sans-serif;font-size:0.75rem;color:#c44;letter-spacing:0.1em;margin-bottom:4px;}
+  .flagged-list{font-family:'DM Mono',monospace;font-size:0.6rem;color:#e8dcc8;line-height:1.6;max-height:120px;overflow-y:auto;}
+  .copy-btn{min-height:28px;padding:0 12px;background:rgba(200,168,75,0.15);color:#c8a84b;border:1px solid rgba(200,168,75,0.3);border-radius:4px;font-size:0.6rem;cursor:pointer;margin-top:4px;}
+
+  #frame{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
+  input[type="range"]{width:80px;}
+  .range-val{font-size:0.6rem;color:#c8a84b;min-width:18px;text-align:center;}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@700&family=Outfit:wght@400;600&family=DM+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="loading" id="loader">Loading renderer...</div>
+<div class="toolbar" id="toolbar">
+  <div class="tb-row">
+    <div class="mode-btns">
+      <button id="btn-grid" class="active" onclick="setMode('grid')">ALL 60</button>
+      <button id="btn-focus" onclick="setMode('focus')">FOCUS</button>
+      <button id="btn-zoom" onclick="setMode('zoom')">ZOOM 4x</button>
+    </div>
+    <label>Leaf</label>
+    <select id="sel-leaf"></select>
+    <label>Stem</label>
+    <select id="sel-stem">
+      <option value="0">0: Straight</option>
+    </select>
+  </div>
+  <div class="tb-row">
+    <label>Size</label>
+    <input type="range" id="rng-size" min="4" max="10" value="7">
+    <span class="range-val" id="val-size">7</span>
+    <label>Count</label>
+    <input type="range" id="rng-count" min="2" max="8" value="4">
+    <span class="range-val" id="val-count">4</span>
+    <label>Spread</label>
+    <input type="range" id="rng-spread" min="5" max="14" value="10">
+    <span class="range-val" id="val-spread">10</span>
+    <label style="margin-left:8px;">
+      <input type="checkbox" id="chk-flower"> Flower
+    </label>
+    <div class="bg-btns" style="margin-left:auto;">
+      <button class="active" onclick="setBg('dark')">Dark</button>
+      <button onclick="setBg('white')">White</button>
+      <button onclick="setBg('gray')">Gray</button>
+    </div>
+  </div>
+</div>
+
+<div id="content"></div>
+
+<div class="flagged-panel" id="flagged-panel">
+  <h3>FLAGGED (<span id="flag-count">0</span>)</h3>
+  <div class="flagged-list" id="flagged-list"></div>
+  <button class="copy-btn" onclick="copyFlags()">COPY LIST</button>
+</div>
+
+<iframe id="frame" src="index.html?noboot=1"></iframe>
+
+<script>
+(function() {
+  var frame = document.getElementById('frame');
+  var win = null;
+  var ready = false;
+  var _origHTT = null;
+  var _origGen = null;
+  var mode = 'grid';
+  var leafNames = [];
+  var stemNames = [];
+  var flags = {}; // key: "leaf_N" or "leaf_N_sc_M" → 'ok'|'flag'
+
+  // Stem color names
+  var STEM_COLOR_NAMES = [
+    'Forest Green','Dark Olive','Sage Gray','Warm Brown',
+    'Deep Burgundy','Teal Green','Purple Vine','Bone White',
+    'Charcoal','Copper','Terracotta','Midnight'
+  ];
+
+  frame.onload = function() {
+    win = frame.contentWindow;
+    var checks = 0;
+    var iv = setInterval(function() {
+      checks++;
+      if (win._generatePlantSVG && win.hashToTraits && win.TRAIT_BANK) {
+        clearInterval(iv);
+        ready = true;
+        _origHTT = win.hashToTraits;
+        _origGen = win._generatePlantSVG;
+        init();
+      }
+      if (checks > 150) {
+        clearInterval(iv);
+        document.getElementById('loader').textContent = 'Failed to load renderer. Refresh.';
+      }
+    }, 200);
+  };
+
+  function init() {
+    document.getElementById('loader').style.display = 'none';
+    document.getElementById('toolbar').style.display = 'flex';
+
+    // Populate leaf names from TRAIT_BANK
+    var TB = win.TRAIT_BANK;
+    if (TB && TB.leaves) {
+      for (var i = 0; i < 60; i++) {
+        var n = (TB.leaves[i] && TB.leaves[i].name) ? TB.leaves[i].name : 'Leaf #' + i;
+        leafNames.push(n);
+      }
+    }
+    // Populate stem names
+    if (TB && TB.stems) {
+      for (var i = 0; i < TB.stems.length && i < 24; i++) {
+        var n = (TB.stems[i] && TB.stems[i].name) ? TB.stems[i].name : 'Stem #' + i;
+        stemNames.push(n);
+      }
+    }
+
+    // Build leaf dropdown
+    var selLeaf = document.getElementById('sel-leaf');
+    for (var i = 0; i < 60; i++) {
+      var opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = i + ': ' + (leafNames[i] || '?');
+      selLeaf.appendChild(opt);
+    }
+
+    // Build stem dropdown
+    var selStem = document.getElementById('sel-stem');
+    selStem.innerHTML = '';
+    for (var i = 0; i < stemNames.length; i++) {
+      var opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = i + ': ' + stemNames[i];
+      selStem.appendChild(opt);
+    }
+
+    // Wire controls
+    selLeaf.onchange = render;
+    selStem.onchange = render;
+    document.getElementById('rng-size').oninput = function() {
+      document.getElementById('val-size').textContent = this.value;
+      render();
+    };
+    document.getElementById('rng-count').oninput = function() {
+      document.getElementById('val-count').textContent = this.value;
+      render();
+    };
+    document.getElementById('rng-spread').oninput = function() {
+      document.getElementById('val-spread').textContent = this.value;
+      render();
+    };
+    document.getElementById('chk-flower').onchange = render;
+
+    // Load flags from localStorage
+    try {
+      var saved = localStorage.getItem('lw_leaf_flags');
+      if (saved) flags = JSON.parse(saved);
+    } catch(e) {}
+
+    render();
+  }
+
+  // Generate a plant SVG with specific trait overrides
+  function renderAudit(overrides, size, cropZoom) {
+    if (!ready) return '<div style="color:#c44;">Not ready</div>';
+
+    // Build a base hash
+    var baseHash = '1850214353671545000000051000000000000000000000000000000000000000';
+
+    // Wrap hashToTraits to apply overrides
+    win.hashToTraits = function(h) {
+      var t = _origHTT(h);
+      if (overrides.leafType !== undefined) t.leafType = overrides.leafType;
+      if (overrides.stemColor !== undefined) t.stemColor = overrides.stemColor;
+      if (overrides.stem !== undefined) t.stem = overrides.stem;
+      if (overrides.pot !== undefined) t.pot = overrides.pot;
+      if (overrides.hasFlower !== undefined) t.hasFlower = overrides.hasFlower;
+      if (overrides.companion !== undefined) t.companion = overrides.companion;
+      if (overrides.aura !== undefined) t.aura = overrides.aura;
+      if (overrides.mutationName !== undefined) t.mutationName = overrides.mutationName;
+      if (overrides.leafCount !== undefined) t.leafCount = overrides.leafCount;
+      if (overrides.leafSize !== undefined) t.leafSize = overrides.leafSize;
+      if (overrides.stemHeight !== undefined) t.stemHeight = overrides.stemHeight;
+      if (overrides.leafSpread !== undefined) t.leafSpread = overrides.leafSpread;
+      if (overrides.flower !== undefined) t.flower = overrides.flower;
+      // Force no mythic override on stem
+      t.mythicName = 'None';
+      return t;
+    };
+
+    var svg;
+    try {
+      // Clear SVG cache so overrides take effect
+      if (win._clearSVGCache) win._clearSVGCache();
+      svg = _origGen.call(win, baseHash, size);
+    } catch(e) {
+      svg = '<div style="color:#c44;font-size:0.6rem;">Error: ' + e.message + '</div>';
+    }
+
+    // Restore original
+    win.hashToTraits = _origHTT;
+
+    // Zoom: crop the SVG viewBox to canopy zone
+    if (cropZoom && svg.indexOf('viewBox') > -1) {
+      svg = svg.replace(/viewBox="0 0 70 95"/, 'viewBox="8 15 54 65"');
+    }
+
+    return svg;
+  }
+
+  function getOverrides() {
+    return {
+      stem: parseInt(document.getElementById('sel-stem').value) || 0,
+      pot: 0,
+      hasFlower: document.getElementById('chk-flower').checked,
+      flower: 3,
+      companion: 51, // no creature
+      aura: 0,
+      mutationName: 'None',
+      leafCount: parseInt(document.getElementById('rng-count').value) || 4,
+      leafSize: parseInt(document.getElementById('rng-size').value) || 7,
+      stemHeight: 40,
+      leafSpread: parseInt(document.getElementById('rng-spread').value) || 10
+    };
+  }
+
+  function flagKey(leafIdx, stemColorIdx) {
+    if (stemColorIdx !== undefined) return 'leaf_' + leafIdx + '_sc_' + stemColorIdx;
+    return 'leaf_' + leafIdx;
+  }
+
+  function setFlag(key, val) {
+    if (val === flags[key]) {
+      delete flags[key]; // toggle off
+    } else {
+      flags[key] = val;
+    }
+    try { localStorage.setItem('lw_leaf_flags', JSON.stringify(flags)); } catch(e) {}
+    updateFlagPanel();
+    // Update button states
+    var btns = document.querySelectorAll('[data-fkey="' + key + '"]');
+    for (var i = 0; i < btns.length; i++) {
+      var b = btns[i];
+      b.classList.toggle('active', b.getAttribute('data-fval') === flags[key]);
+    }
+    // Update cell border
+    var cell = document.querySelector('[data-cellkey="' + key + '"]');
+    if (cell) {
+      cell.classList.toggle('flagged', flags[key] === 'flag');
+      cell.classList.toggle('ok', flags[key] === 'ok');
+    }
+  }
+
+  function updateFlagPanel() {
+    var panel = document.getElementById('flagged-panel');
+    var list = document.getElementById('flagged-list');
+    var count = document.getElementById('flag-count');
+    var flagged = [];
+    for (var k in flags) {
+      if (flags[k] === 'flag') flagged.push(k);
+    }
+    count.textContent = flagged.length;
+    if (flagged.length > 0) {
+      panel.style.display = 'block';
+      var lines = [];
+      flagged.sort();
+      for (var i = 0; i < flagged.length; i++) {
+        var parts = flagged[i].replace('leaf_', '').split('_sc_');
+        var li = parseInt(parts[0]);
+        var name = leafNames[li] || '?';
+        if (parts.length > 1) {
+          lines.push('Leaf ' + li + ' (' + name + ') × Stem Color ' + parts[1] + ' (' + (STEM_COLOR_NAMES[parseInt(parts[1])] || '?') + ')');
+        } else {
+          lines.push('Leaf ' + li + ' (' + name + ')');
+        }
+      }
+      list.textContent = lines.join('\n');
+    } else {
+      panel.style.display = 'none';
+    }
+  }
+
+  window.copyFlags = function() {
+    var text = document.getElementById('flagged-list').textContent;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    var btn = document.querySelector('.copy-btn');
+    btn.textContent = 'COPIED!';
+    setTimeout(function() { btn.textContent = 'COPY LIST'; }, 1500);
+  };
+
+  function flagButtons(key) {
+    var okActive = flags[key] === 'ok' ? ' active' : '';
+    var flagActive = flags[key] === 'flag' ? ' active' : '';
+    return '<div class="flag-row">' +
+      '<button class="btn-ok' + okActive + '" data-fkey="' + key + '" data-fval="ok" onclick="flagCell(\'' + key + '\',\'ok\')">OK</button>' +
+      '<button class="btn-flag' + flagActive + '" data-fkey="' + key + '" data-fval="flag" onclick="flagCell(\'' + key + '\',\'flag\')">FLAG</button>' +
+      '</div>';
+  }
+
+  window.flagCell = function(key, val) {
+    setFlag(key, val);
+  };
+
+  function renderGrid() {
+    var c = document.getElementById('content');
+    var base = getOverrides();
+    var html = '<div class="grid">';
+    for (var i = 0; i < 60; i++) {
+      var o = {};
+      for (var k in base) o[k] = base[k];
+      o.leafType = i;
+      o.stemColor = 0;
+      var key = flagKey(i);
+      var cls = flags[key] === 'flag' ? ' flagged' : (flags[key] === 'ok' ? ' ok' : '');
+      html += '<div class="grid-cell' + cls + '" data-cellkey="' + key + '" onclick="focusLeaf(' + i + ')">';
+      html += '<div class="plant-wrap">' + renderAudit(o, 120, false) + '</div>';
+      html += '<div class="cell-label">Case ' + i + '</div>';
+      html += '<div class="cell-name">' + (leafNames[i] || '?') + '</div>';
+      html += flagButtons(key);
+      html += '</div>';
+    }
+    html += '</div>';
+    c.innerHTML = html;
+  }
+
+  function renderFocus(leafIdx) {
+    var c = document.getElementById('content');
+    var base = getOverrides();
+    var name = leafNames[leafIdx] || '?';
+    var html = '<div class="focus">';
+    html += '<div class="focus-title">Leaf ' + leafIdx + ': ' + name + ' — All 12 Stem Colors</div>';
+    html += '<div class="focus-grid">';
+    for (var sc = 0; sc < 12; sc++) {
+      var o = {};
+      for (var k in base) o[k] = base[k];
+      o.leafType = leafIdx;
+      o.stemColor = sc;
+      var key = flagKey(leafIdx, sc);
+      var cls = flags[key] === 'flag' ? ' flagged' : (flags[key] === 'ok' ? ' ok' : '');
+      html += '<div class="focus-cell' + cls + '" data-cellkey="' + key + '">';
+      html += '<div class="plant-wrap">' + renderAudit(o, 200, false) + '</div>';
+      html += '<div class="cell-label">Stem Color ' + sc + ': ' + STEM_COLOR_NAMES[sc] + '</div>';
+      html += flagButtons(key);
+      html += '</div>';
+    }
+    html += '</div></div>';
+    c.innerHTML = html;
+  }
+
+  function renderZoom(leafIdx) {
+    var c = document.getElementById('content');
+    var base = getOverrides();
+    var name = leafNames[leafIdx] || '?';
+    var html = '<div class="focus">';
+    html += '<div class="focus-title">ZOOM 4x — Leaf ' + leafIdx + ': ' + name + ' — Connection Points</div>';
+    html += '<div class="focus-grid">';
+    for (var sc = 0; sc < 12; sc++) {
+      var o = {};
+      for (var k in base) o[k] = base[k];
+      o.leafType = leafIdx;
+      o.stemColor = sc;
+      var key = flagKey(leafIdx, sc);
+      var cls = flags[key] === 'flag' ? ' flagged' : (flags[key] === 'ok' ? ' ok' : '');
+      html += '<div class="focus-cell' + cls + '" data-cellkey="' + key + '">';
+      html += '<div class="plant-wrap">' + renderAudit(o, 280, true) + '</div>';
+      html += '<div class="cell-label">SC ' + sc + ': ' + STEM_COLOR_NAMES[sc] + '</div>';
+      html += flagButtons(key);
+      html += '</div>';
+    }
+    html += '</div></div>';
+    c.innerHTML = html;
+  }
+
+  function render() {
+    if (!ready) return;
+    var leafIdx = parseInt(document.getElementById('sel-leaf').value) || 0;
+    if (mode === 'grid') renderGrid();
+    else if (mode === 'focus') renderFocus(leafIdx);
+    else if (mode === 'zoom') renderZoom(leafIdx);
+    updateFlagPanel();
+  }
+
+  window.setMode = function(m) {
+    mode = m;
+    document.getElementById('btn-grid').classList.toggle('active', m === 'grid');
+    document.getElementById('btn-focus').classList.toggle('active', m === 'focus');
+    document.getElementById('btn-zoom').classList.toggle('active', m === 'zoom');
+    render();
+  };
+
+  window.focusLeaf = function(idx) {
+    document.getElementById('sel-leaf').value = idx;
+    mode = 'focus';
+    document.getElementById('btn-grid').classList.remove('active');
+    document.getElementById('btn-focus').classList.add('active');
+    document.getElementById('btn-zoom').classList.remove('active');
+    render();
+    window.scrollTo(0, 0);
+  };
+
+  window.setBg = function(bg) {
+    document.body.className = bg === 'dark' ? '' : 'bg-' + bg;
+    var btns = document.querySelectorAll('.bg-btns button');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle('active', btns[i].textContent.toLowerCase() === bg);
+    }
+  };
+})();
+</script>
+</body>
+</html>
