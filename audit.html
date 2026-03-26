@@ -104,11 +104,11 @@ h1 { font-size: 18px; color: #c8a84b; margin-bottom: 8px; text-align: center; }
   </div>
 
   <label>Leaf Type
-    <select id="sel-leaf"></select>
+    <select id="sel-leaf" onchange="renderCurrent()"></select>
   </label>
 
   <label>Stem Shape
-    <select id="sel-stem"></select>
+    <select id="sel-stem" onchange="renderCurrent()"></select>
   </label>
 
   <label>Leaf Size <span class="slider-val" id="val-size">7</span>
@@ -121,11 +121,11 @@ h1 { font-size: 18px; color: #c8a84b; margin-bottom: 8px; text-align: center; }
 
   <label>
     <span>Show Flower</span>
-    <input type="checkbox" id="chk-flower">
+    <input type="checkbox" id="chk-flower" onchange="renderCurrent()">
   </label>
 
   <label>Flower Type
-    <select id="sel-flower"></select>
+    <select id="sel-flower" onchange="document.getElementById('chk-flower').checked=true;renderCurrent()"></select>
   </label>
 
   <label>Background

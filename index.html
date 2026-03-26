@@ -12625,7 +12625,8 @@ document.addEventListener('keydown', function(e) {
     var _minFy = fs * _reach + 3;
     var fy = Math.max(_minFy, visibleTop - 2);
 
-    var bloomOp = Math.min(1, (prog - 0.8) * 5);
+    var _rawBloomOp = Math.min(1, (prog - 0.8) * 5);
+    var bloomOp = Math.min(1, _rawBloomOp * 1.45); // boost toward full opacity
     var fc = PALETTE[BLOOM_PALS[t.flower % BLOOM_PALS.length]] || PALETTE.gold;
     var bg = 'url(#bg'+uid+')';
     var s = '';
@@ -13450,6 +13451,19 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+fx+'" cy="'+(fy-(fs*0.18))+'" r="'+(fs*0.14)+'" fill="#D9E6B9" opacity="'+(0.46+bloomOp*0.14)+'"/>';
         break;
     }
+
+    // ── UNIVERSAL BLOOM HIGHLIGHT + SHADOW ──
+    // Top-left specular highlight crescent — gives 3D depth to every bloom
+    var _hlR = fs * 1.1;
+    s += '<ellipse cx="'+(fx - fs*0.25)+'" cy="'+(fy - fs*0.35)+'" rx="'+(_hlR*0.6)+'" ry="'+(_hlR*0.4)+'"'
+       + ' fill="rgba(255,255,255,0.12)" opacity="'+bloomOp+'"/>';
+    // Tight bright highlight core
+    s += '<ellipse cx="'+(fx - fs*0.15)+'" cy="'+(fy - fs*0.25)+'" rx="'+(_hlR*0.25)+'" ry="'+(_hlR*0.18)+'"'
+       + ' fill="rgba(255,255,255,0.18)" opacity="'+bloomOp+'"/>';
+    // Bottom shadow — soft dark crescent under the bloom
+    s += '<ellipse cx="'+(fx + fs*0.1)+'" cy="'+(fy + fs*0.4)+'" rx="'+(_hlR*0.55)+'" ry="'+(_hlR*0.22)+'"'
+       + ' fill="rgba(0,0,0,0.15)" opacity="'+bloomOp+'"/>';
+
     return s;
   }
 
