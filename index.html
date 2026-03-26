@@ -1065,7 +1065,7 @@
     .cs-flip-inner{position:relative;width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d;}
     .cs-flip-wrap.flipped .cs-flip-inner{transform:rotateY(180deg);}
     .cs-card-face{backface-visibility:hidden;-webkit-backface-visibility:hidden;position:absolute;inset:0;display:flex;flex-direction:column;box-sizing:border-box;border-radius:12px;overflow:hidden;}
-    .cs-card-front{position:absolute;inset:0;border-radius:12px;display:grid;grid-template-rows:12% 66% 20% auto;box-sizing:border-box;padding:25% 12% 8%;background-color:#050505;background-size:96%;background-position:center;background-repeat:no-repeat;}
+    .cs-card-front{position:absolute;inset:0;border-radius:12px;display:grid;grid-template-rows:12% 67% 20% auto;box-sizing:border-box;padding:25% 12% 8%;background-color:#050505;background-size:96%;background-position:center;background-repeat:no-repeat;}
     .cs-card-back{transform:rotateY(180deg);padding:10% 8% 6%;overflow-y:auto;-webkit-overflow-scrolling:touch;background-color:#050505;background-size:174%;background-position:center;background-repeat:no-repeat;}
     .cs-flip-hint{font-family:'DM Mono',monospace;font-size:0.35rem;color:rgba(122,179,86,0.35);text-align:center;position:absolute;bottom:4%;left:0;right:0;}
     .cs-card-front[data-season="spring"]{background-image:url('assets/card-front-spring.png');}
@@ -1106,7 +1106,7 @@
     .cs-card-back[data-tier="cosmic"] .dna-cat{background-size:6px 6px;}
     .cs-card-back[data-tier="cosmic"] .cb-nameplate{bottom:6% !important;}
     .cs-card-back[data-tier="cosmic"] .cb-name{background:linear-gradient(90deg,#ff6b6b,#ffd93d,#6bff6b,#6bb5ff,#d46bff,#ff6b6b);background-size:200% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:cosmicNameShimmer 3s linear infinite;text-shadow:none !important;}
-    @keyframes cosmicNameShimmer{0%{background-position:0% 66%;}100%{background-position:200% 66%;}}
+    @keyframes cosmicNameShimmer{0%{background-position:0% 67%;}100%{background-position:200% 67%;}}
     .cs-card-back .dna-ledger-eyebrow{font-size:0.68rem;}
     .cs-card-back .dna-cat{font-size:0.62rem;}
     .cs-card-back .dna-val{font-size:0.65rem;}
@@ -3048,7 +3048,7 @@
     /* Game picker cards — staggered entry, organic hover */
     .fk2{background:rgba(18,24,16,.78);border:1px solid rgba(74,124,53,.1);border-radius:clamp(10px,3vw,14px);padding:clamp(10px,3vw,14px) clamp(12px,3.5vw,16px);margin-bottom:clamp(6px,2vw,10px);cursor:pointer;transition:all .22s cubic-bezier(.25,.46,.45,.94);-webkit-tap-highlight-color:transparent;box-shadow:0 2px 10px rgba(0,0,0,.12);position:relative;overflow:hidden;animation:pickerStagger .35s cubic-bezier(.25,.46,.45,.94) both}
     .fk2:nth-child(1){animation-delay:.02s}.fk2:nth-child(2){animation-delay:.04s}.fk2:nth-child(3){animation-delay:.06s}.fk2:nth-child(4){animation-delay:.08s}.fk2:nth-child(5){animation-delay:.1s}.fk2:nth-child(6){animation-delay:.12s}.fk2:nth-child(7){animation-delay:.14s}.fk2:nth-child(8){animation-delay:.16s}.fk2:nth-child(9){animation-delay:.18s}.fk2:nth-child(10){animation-delay:.2s}
-    .fk2::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 15% 66%,rgba(74,124,53,.04) 0%,transparent 55%);pointer-events:none;opacity:0;transition:opacity .3s}
+    .fk2::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 15% 67%,rgba(74,124,53,.04) 0%,transparent 55%);pointer-events:none;opacity:0;transition:opacity .3s}
     .fk2:hover::before,.fk2:focus::before{opacity:1}
     .fk2:active{transform:scale(.98);background:rgba(24,30,20,.82);transition-duration:.06s}
 
@@ -3056,7 +3056,7 @@
     /* Phase 1: opaque mask hides card back. Phase 2: shake. Phase 3: sweep reveals. */
     .cs-reveal-flash{position:absolute;inset:0;border-radius:12px;pointer-events:none;z-index:20;overflow:hidden;opacity:0;}
     /* Mask state: solid dark cover before reveal */
-    .cs-reveal-flash.masked{opacity:1;background:radial-gradient(ellipse at 50% 66%,#181c16 0%,#0d100c 100%);}
+    .cs-reveal-flash.masked{opacity:1;background:radial-gradient(ellipse at 50% 67%,#181c16 0%,#0d100c 100%);}
     /* Shake state: card trembles with anticipation */
     .cs-flip-wrap.shaking{animation:revealShake 0.8s ease-in-out;}
     @keyframes revealShake{
@@ -3076,14 +3076,14 @@
     .cs-reveal-flash.active::before{animation:revealSparkle var(--rev-dur,2.5s) ease-in-out forwards;background-image:
       radial-gradient(3px 3px at 18% 12%, var(--rev-c1,#fff) 50%, transparent 100%),
       radial-gradient(2px 2px at 72% 22%, var(--rev-c1,#fff) 50%, transparent 100%),
-      radial-gradient(3.5px 3.5px at 38% 66%, var(--rev-c2,#fff) 50%, transparent 100%),
-      radial-gradient(2.5px 2.5px at 82% 66%, var(--rev-c1,#fff) 50%, transparent 100%),
+      radial-gradient(3.5px 3.5px at 38% 67%, var(--rev-c2,#fff) 50%, transparent 100%),
+      radial-gradient(2.5px 2.5px at 82% 67%, var(--rev-c1,#fff) 50%, transparent 100%),
       radial-gradient(2px 2px at 12% 78%, var(--rev-c2,#fff) 50%, transparent 100%),
       radial-gradient(3px 3px at 58% 38%, var(--rev-c1,#fff) 50%, transparent 100%),
       radial-gradient(2.5px 2.5px at 48% 88%, var(--rev-c2,#fff) 50%, transparent 100%),
       radial-gradient(2px 2px at 28% 32%, var(--rev-c1,#fff) 50%, transparent 100%),
-      radial-gradient(3px 3px at 88% 66%, var(--rev-c2,#fff) 50%, transparent 100%),
-      radial-gradient(3.5px 3.5px at 8% 66%, var(--rev-c1,#fff) 50%, transparent 100%),
+      radial-gradient(3px 3px at 88% 67%, var(--rev-c2,#fff) 50%, transparent 100%),
+      radial-gradient(3.5px 3.5px at 8% 67%, var(--rev-c1,#fff) 50%, transparent 100%),
       radial-gradient(2px 2px at 65% 75%, var(--rev-c1,#fff) 50%, transparent 100%),
       radial-gradient(2.5px 2.5px at 42% 18%, var(--rev-c2,#fff) 50%, transparent 100%),
       radial-gradient(3px 3px at 92% 85%, var(--rev-c1,#fff) 50%, transparent 100%),
@@ -3104,9 +3104,9 @@
 
     /* Glow + mask dissolve: starts opaque, sweep reveals card, then fades */
     @keyframes revealGlow{
-      0%{opacity:1;background:radial-gradient(ellipse at 50% 66%,#181c16,#0d100c);box-shadow:inset 0 0 60px var(--rev-c2),0 0 25px var(--rev-c2);}
-      15%{opacity:1;background:radial-gradient(ellipse at 50% 66%,rgba(24,28,22,0.95),rgba(13,16,12,0.95));box-shadow:inset 0 0 80px var(--rev-c1),0 0 45px var(--rev-c2);}
-      35%{opacity:0.85;background:radial-gradient(ellipse at 50% 66%,rgba(24,28,22,0.5),rgba(13,16,12,0.4));box-shadow:inset 0 0 100px var(--rev-c1),0 0 60px var(--rev-c2);}
+      0%{opacity:1;background:radial-gradient(ellipse at 50% 67%,#181c16,#0d100c);box-shadow:inset 0 0 60px var(--rev-c2),0 0 25px var(--rev-c2);}
+      15%{opacity:1;background:radial-gradient(ellipse at 50% 67%,rgba(24,28,22,0.95),rgba(13,16,12,0.95));box-shadow:inset 0 0 80px var(--rev-c1),0 0 45px var(--rev-c2);}
+      35%{opacity:0.85;background:radial-gradient(ellipse at 50% 67%,rgba(24,28,22,0.5),rgba(13,16,12,0.4));box-shadow:inset 0 0 100px var(--rev-c1),0 0 60px var(--rev-c2);}
       55%{opacity:0.4;background:transparent;box-shadow:inset 0 0 70px var(--rev-c2),0 0 35px var(--rev-c2);}
       75%{opacity:0.2;box-shadow:inset 0 0 35px var(--rev-c2),0 0 15px transparent;}
       100%{opacity:0;background:transparent;box-shadow:none;}}
@@ -3214,7 +3214,7 @@
   z-index: 450;
   pointer-events: none;
   background: radial-gradient(
-    ellipse 55% 66% at 50% 45%,
+    ellipse 55% 67% at 50% 45%,
     transparent 50%,
     rgba(10, 13, 9, 0.55) 100%
   );
@@ -3394,7 +3394,7 @@
 
 .night-mode .map-vignette {
   background: radial-gradient(
-    ellipse 50% 66% at 50% 66%,
+    ellipse 50% 67% at 50% 67%,
     transparent 40%,
     rgba(10, 13, 9, 0.7) 100%
   );
@@ -4926,7 +4926,7 @@ document.addEventListener('keydown', function(e) {
     var crystalBase = hc(20) === 15;
 
     return {
-      pot:          goldenPot  ? 15 : hb(0) % 66, // 60 pot types (0-59)
+      pot:          goldenPot  ? 15 : hb(0) % 67, // 60 pot types (0-59)
       potColor:     _PAL[hc(1)],
       stem:         (mythByte >= 0xD0) ? 9 : ((hb(2) % 24) === 9 ? 0 : hb(2) % 24),
       stemColor:    hb(5) % 12,
@@ -4942,7 +4942,7 @@ document.addEventListener('keydown', function(e) {
       chimerGen:    1, // default gen 1; breeding sets this to parent max + 1
       leafSpread:   7 + (hc(14) % 6),
       aura:         hb(15) % 36,  // 0-35 aura slots (0-4 = none)
-      base:         crystalBase ? 15 : hb(20) % 66,
+      base:         crystalBase ? 15 : hb(20) % 67,
       // Companion: base rate ~20% (48 None + 12 creatures), mythic creatures override
       companion:    (function(){
         var _mb = hb(18);
@@ -5010,7 +5010,7 @@ document.addEventListener('keydown', function(e) {
     if (!traits) return 0;
     var ea = 0;
     // LEAF TYPE (0-3)
-    var lt = traits.leafType % 66;
+    var lt = traits.leafType % 67;
     if (lt >= 46) ea += 3; else if (lt >= 30) ea += 2; else if (lt >= 16) ea += 1;
     // STEM TYPE (0-2)
     var st = traits.stem % 24;
@@ -5018,7 +5018,7 @@ document.addEventListener('keydown', function(e) {
     else if (st === 3 || st === 4) ea += 1;
     // BLOOM (0-4)
     if (traits.hasFlower) {
-      var fl = traits.flower % 66;
+      var fl = traits.flower % 67;
       if (fl === 15 || fl >= 34) ea += 3; else if (fl >= 20) ea += 2; else if (fl >= 10) ea += 1;
     }
     // POT (0-1)
@@ -5083,7 +5083,7 @@ document.addEventListener('keydown', function(e) {
     var score = 0;
 
     // SLOT 1: Leaf type (0-1)
-    var _lt = t.leafType % 66;
+    var _lt = t.leafType % 67;
     if (_lt >= 30) score += 1;
 
     // SLOT 2: Stem type (0-1)
@@ -5092,7 +5092,7 @@ document.addEventListener('keydown', function(e) {
 
     // SLOT 3: Bloom type (0-2)
     if (t.hasFlower) {
-      var _bl = t.flower % 66;
+      var _bl = t.flower % 67;
       if (_bl >= 18) score += 1;
       if (_bl === 15) score += 2;
     }
@@ -5713,7 +5713,7 @@ document.addEventListener('keydown', function(e) {
 
   function fmtRecord(secs) {
     if (!secs && secs !== 0) return '—:——';
-    return Math.floor(secs / 60) + ':' + String(secs % 66).padStart(2, '0');
+    return Math.floor(secs / 60) + ':' + String(secs % 67).padStart(2, '0');
   }
 
   function renderRecords() {
@@ -6458,7 +6458,7 @@ document.addEventListener('keydown', function(e) {
   function getTimeSec() { return Math.floor((Date.now() - startTime) / 1000); }
   function getTimeStr() {
     var s = getTimeSec();
-    return Math.floor(s / 60) + ':' + String(s % 66).padStart(2, '0');
+    return Math.floor(s / 60) + ':' + String(s % 67).padStart(2, '0');
   }
 
   function setMsg(txt, cls) {
@@ -6976,7 +6976,8 @@ document.addEventListener('keydown', function(e) {
       {name:'Black-Eyed Susan'},              // 62
       {name:'Sacred Lotus'},                  // 63
       {name:'Wisteria Cascade V2'},           // 64
-      {name:'Violet'}                         // 65
+      {name:'Violet'},                        // 65
+      {name:'Flame Bloom',rare:true}          // 66
     ],
     auras: [
       {name:'None'},{name:'None'},{name:'None'},{name:'None'},{name:'None'},
@@ -7275,7 +7276,7 @@ document.addEventListener('keydown', function(e) {
     // and that position is guaranteed to keep all petal art inside the viewBox.
     var _safeBloomY = visibleTop;
     if (t.hasFlower && prog >= 0.8) {
-      var _bCase = t.flower % 66;
+      var _bCase = t.flower % 67;
       var _bReach = 1.5;
       if (_bCase >= 10 && _bCase <= 14) _bReach = 2.0;
       if (_bCase >= 15 && _bCase <= 17) _bReach = 2.2;
@@ -7414,7 +7415,7 @@ document.addEventListener('keydown', function(e) {
     //                  0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18
     var soilL = [20, 20, 23, 15, 25, 28, 25, 24, 23, 22, 18, 25, 25, 24, 17, 20, 27, 22, 30, 22, 21, 29, 19, 35, 35, 19, 35, 24, 23, 25, 23, 22, 24, 16, 20, 18, 18, 22, 24, 23, 24, 16, 22, 20, 24, 26, 22, 20, 18, 25, 22, 22, 20, 24, 22, 26, 28, 25, 20, 20];
     var soilR = [50, 50, 47, 55, 45, 42, 45, 46, 47, 48, 52, 45, 41, 46, 46, 50, 43, 48, 40, 48, 49, 41, 51, 35, 35, 49, 35, 46, 47, 42, 47, 48, 46, 54, 50, 52, 52, 48, 46, 47, 46, 54, 48, 45, 46, 44, 48, 50, 52, 45, 48, 48, 50, 46, 48, 44, 42, 45, 50, 50];
-    var si = (p === 15) ? 15 : (p < 60 ? p : p % 66);
+    var si = (p === 15) ? 15 : (p < 60 ? p : p % 67);
     s += '<line x1="'+soilL[si]+'" y1="78" x2="'+soilR[si]+'" y2="78" stroke="#3a3228" stroke-width="1.5" stroke-linecap="butt"/>';
     s += '<line x1="'+(soilL[si]+1)+'" y1="78.5" x2="'+(soilR[si]-1)+'" y2="78.5" stroke="#2a2218" stroke-width="0.5" opacity="0.3"/>';
     if (p === 15) {
@@ -9420,7 +9421,7 @@ document.addEventListener('keydown', function(e) {
       var _vSpread = -1.0; // default: moderate spread for standard leaves
 
       // ── Per-leaf-type SPECIFIC overrides ──
-      switch(t.leafType % 66) {
+      switch(t.leafType % 67) {
         case 3: // Heart — leaf 4 paired with leaf 3 on left, near stem
           _vSpread = -1.2;
           if (i === 4) { var _h4 = _posFor(3); lx = _h4.stemCx - Math.abs(_h4.lx - _h4.stemCx) * 0.4; ly = _h4.ly - 1; ls = _h4.ls; side = -1; cosT = _h4.cosT; sinT = _h4.sinT; leafFrac = _h4.leafFrac; _stemCx = _h4.stemCx; }
@@ -9510,13 +9511,13 @@ document.addEventListener('keydown', function(e) {
       // to draw the eye to the central bloom. The flower is the hero;
       // leaves become supporting context. Stronger blooms = more dimming.
       if (t.hasFlower && prog >= 0.8) {
-        var _bloomComplexity = (t.flower % 66 >= 18) ? 0.72 : 0.82; // exotic blooms dim more
+        var _bloomComplexity = (t.flower % 67 >= 18) ? 0.72 : 0.82; // exotic blooms dim more
         op = op * _bloomComplexity;
       }
 
       // Per-type opacity boost — solid leaf shapes need full opacity
       // so overlapping leaves don't show through and break the illusion
-      var _lt60 = t.leafType % 66;
+      var _lt60 = t.leafType % 67;
       if (_lt60 === 7 || _lt60 === 8 || _lt60 === 9 || _lt60 === 14 || _lt60 === 22 || _lt60 === 23 || _lt60 === 26 || _lt60 === 27 || _lt60 === 28 || _lt60 === 37 || _lt60 === 49) { op = Math.max(0.92, Math.min(1.0, op * 1.8)); }
 
       // set-104: Pre-compute chimera vein style for ALL leaf cases
@@ -9571,7 +9572,7 @@ document.addEventListener('keydown', function(e) {
       // using bodyD so inline chimera veins can't bleed past leaf edges.
       var _preLeafMark = s.length;
 
-      switch(t.leafType % 66) { // set-103-8: expanded from %50 → %60 (10 new leaf types)
+      switch(t.leafType % 67) { // set-103-8: expanded from %50 → %60 (10 new leaf types)
         case 0: // Organic broad — fiddlehead-inspired with curled tip + vein detail
           ls = ls * 1.35;
           ot = ly - ls; ob = ly + ls * 0.5; tip = lx + side * ls * 0.45; tipY = ly - ls * 1.0;
@@ -12522,7 +12523,7 @@ document.addEventListener('keydown', function(e) {
         s += '<defs><clipPath id="'+clipVein+'"><path d="'+bodyD+'"/></clipPath></defs>';
         s += '<g clip-path="url(#'+clipVein+')">';
 
-        switch(t.leafType % 66) {
+        switch(t.leafType % 67) {
           case 0: // Organic broad — pinnate
             if (chiVar === 0) {
               chiVeinD = 'M'+ox+','+ly+' C'+(ox+side*ls*0.16)+','+(ly-ls*0.22)+' '+(lx+side*ls*0.02)+','+(ly-ls*0.63)+' '+(lx+side*ls*0.08)+','+ot+' M'+(ox+side*ls*0.14)+','+(ly-ls*0.18)+' Q'+(ox+side*ls*0.34)+','+(ly-ls*0.28)+' '+(ox+side*ls*0.54)+','+(ly-ls*0.30)+' Q'+(tip-side*ls*0.26)+','+(ly-ls*0.36)+' '+(tip-side*ls*0.12)+','+(ly-ls*0.50)+' M'+(ox+side*ls*0.24)+','+(ly-ls*0.34)+' Q'+(ox+side*ls*0.40)+','+(ly-ls*0.50)+' '+(ox+side*ls*0.58)+','+(ly-ls*0.60)+' Q'+(tip-side*ls*0.22)+','+(ly-ls*0.70)+' '+(tip-side*ls*0.10)+','+(ly-ls*0.82)+' M'+(ox+side*ls*0.34)+','+(ly-ls*0.52)+' Q'+(ox+side*ls*0.50)+','+(ly-ls*0.66)+' '+(lx+side*ls*0.14)+','+(ly-ls*0.74)+' Q'+(tip-side*ls*0.18)+','+(ly-ls*0.84)+' '+(tip-side*ls*0.04)+','+(ly-ls*0.92)+' M'+(ox+side*ls*0.18)+','+(ly-ls*0.24)+' Q'+(ox+side*ls*0.10)+','+(ly-ls*0.42)+' '+(ox+side*ls*0.06)+','+(ly-ls*0.56)+' M'+(ox+side*ls*0.30)+','+(ly-ls*0.44)+' Q'+(ox+side*ls*0.22)+','+(ly-ls*0.62)+' '+(ox+side*ls*0.18)+','+(ly-ls*0.76);
@@ -12629,7 +12630,7 @@ document.addEventListener('keydown', function(e) {
 
     // ── Per-bloom-class maximum upward reach (in multiples of fs) ──
     // Measured from coordinate audit of all 46 cases.
-    var _bc = t.flower % 66;
+    var _bc = t.flower % 67;
     var _reach = 1.5; // cases 0-9: standard blooms
     if (_bc >= 10 && _bc <= 14) _reach = 2.0; // orchid/rose+/pitcher
     if (_bc >= 15 && _bc <= 17) _reach = 2.2; // glow/cattail/bell
@@ -12658,6 +12659,7 @@ document.addEventListener('keydown', function(e) {
     if (_bc === 63) _reach = 2.0; // Sacred Lotus
     if (_bc === 64) _reach = 1.5; // Wisteria V2 (pendant cascade — minimal above fy)
     if (_bc === 65) _reach = 2.0; // Violet
+    if (_bc === 66) _reach = 2.8; // Flame Bloom (tall flames)
 
     // Safe bloom zone: bloom top must stay at y >= 3 (3px viewBox buffer)
     var _minFy = fs * _reach + 3;
@@ -12677,7 +12679,7 @@ document.addEventListener('keydown', function(e) {
       return s;
     }
 
-    switch(t.flower % 66) { // set-103-8: expanded → %46 (38 original + 8 ChatGPT art round)
+    switch(t.flower % 67) { // set-103-8: expanded → %46 (38 original + 8 ChatGPT art round)
       case 0: // Bud — organic teardrop with sepal tips
         s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.35)+'" fill="'+bg+'" opacity="'+(0.25*bloomOp)+'"/>';
         for (var bi=0; bi<3; bi++) {
@@ -13564,6 +13566,139 @@ document.addEventListener('keydown', function(e) {
           // Tight specular dot
           s += '<ellipse cx="'+(fx - fs*0.25)+'" cy="'+(fy - fs*0.3)+'" rx="'+(fs*0.18)+'" ry="'+(fs*0.12)+'"'
              + ' fill="rgba(255,255,255,0.22)" opacity="'+bloomOp+'"/>';
+        })();
+        break;
+      case 66: // Flame Bloom — fire petals with ragged edges, ember core, flicker animation
+        (function(){
+          // Fire doesn't follow the rules of flowers. No smooth beziers here.
+          // Each petal is a tongue of flame — jagged upper edge, sharp peaks,
+          // wide base tapering to irregular points. Color goes from white-hot
+          // at the core through bright amber to deep red at the petal tips.
+          // Subtle CSS animation on the tips for gentle flicker.
+          // The ember core glows with the gc filter.
+
+          var _flPetals = 9;
+          var _flBaseR = fs * 0.5; // base width of the fire
+          // Flame colors — inner to outer, hot to cool
+          var _flInner = '#F0A030';  // bright amber
+          var _flMid = '#D87020';    // orange
+          var _flOuter = '#A03020';  // deep red
+          var _flHot = '#FFD870';    // white-hot center
+
+          // ── HEAT HAZE — subtle glow behind the entire flame ──
+          s += '<ellipse cx="'+fx+'" cy="'+(fy - fs*0.4)+'" rx="'+(fs*1.3)+'" ry="'+(fs*1.6)+'"'
+             + ' fill="'+_flInner+'" opacity="'+(0.06*bloomOp)+'" filter="url(#gc'+uid+')"/>';
+
+          // ── OUTER FLAME TONGUES — 9 ragged-edged flame petals ──
+          // Each flame has a unique height and jaggedness
+          var _flHeights = [];
+          for (var hi = 0; hi < _flPetals; hi++) {
+            // Heights vary — tallest in center, shorter at edges, with randomness
+            var centerDist = Math.abs(hi - (_flPetals - 1) / 2) / ((_flPetals - 1) / 2);
+            var baseH = fs * (2.2 - centerDist * 0.8);
+            var jitter = Math.sin(hi * 4.7) * fs * 0.35;
+            _flHeights.push(baseH + jitter);
+          }
+
+          for (var fi = 0; fi < _flPetals; fi++) {
+            var fFrac = fi / (_flPetals - 1); // 0 to 1 across the spread
+            var fX = fx + (fFrac - 0.5) * _flBaseR * 2.4; // spread across base
+            var fH = _flHeights[fi];
+            var fTipY = fy - fH;
+            var fW = _flBaseR * (0.25 + Math.sin(fi * 2.3) * 0.08); // varying width
+
+            // Flame tip sways slightly — randomized x offset at tip
+            var tipSway = Math.sin(fi * 3.1) * fs * 0.15;
+            var fTipX = fX + tipSway;
+
+            // Ragged edge — the flame path has sharp angular control points, not smooth
+            // Left edge: 2-3 jagged points climbing upward
+            var jag1X = fX - fW * 0.6;
+            var jag1Y = fy - fH * 0.25;
+            var jag2X = fX - fW * 0.3 + Math.sin(fi * 5.1) * fW * 0.4;
+            var jag2Y = fy - fH * 0.5;
+            var jag3X = fX - fW * 0.15 + Math.sin(fi * 3.8) * fW * 0.2;
+            var jag3Y = fy - fH * 0.75;
+            // Right edge: mirrored but different jags
+            var jag4X = fX + fW * 0.2 + Math.sin(fi * 4.3) * fW * 0.25;
+            var jag4Y = fy - fH * 0.7;
+            var jag5X = fX + fW * 0.4 + Math.sin(fi * 2.7) * fW * 0.3;
+            var jag5Y = fy - fH * 0.4;
+            var jag6X = fX + fW * 0.55;
+            var jag6Y = fy - fH * 0.15;
+
+            // Color: center petals are brighter, edge petals are redder
+            var centerFrac = 1 - Math.abs(fi - (_flPetals-1)/2) / ((_flPetals-1)/2);
+            var flColor = centerFrac > 0.6 ? _flInner : centerFrac > 0.3 ? _flMid : _flOuter;
+
+            // Flame body — angular polygon path (NOT smooth beziers)
+            s += '<path d="M'+fX.toFixed(1)+','+fy  // base center
+               + ' L'+jag1X.toFixed(1)+','+jag1Y.toFixed(1)
+               + ' L'+jag2X.toFixed(1)+','+jag2Y.toFixed(1)
+               + ' L'+jag3X.toFixed(1)+','+jag3Y.toFixed(1)
+               + ' Q'+(fTipX - fW*0.1).toFixed(1)+','+(fTipY + fH*0.05).toFixed(1)+' '+fTipX.toFixed(1)+','+fTipY.toFixed(1)  // sharp tip with tiny curve
+               + ' Q'+(fTipX + fW*0.1).toFixed(1)+','+(fTipY + fH*0.05).toFixed(1)+' '+jag4X.toFixed(1)+','+jag4Y.toFixed(1)
+               + ' L'+jag5X.toFixed(1)+','+jag5Y.toFixed(1)
+               + ' L'+jag6X.toFixed(1)+','+jag6Y.toFixed(1)
+               + ' Z"'
+               + ' fill="'+flColor+'" opacity="'+(0.9*bloomOp)+'" stroke="rgba(0,0,0,0.04)" stroke-width="0.1">';
+            // Gentle flicker animation on the tip — subtle translate oscillation
+            s += '<animateTransform attributeName="transform" type="translate"'
+               + ' values="0,0;'+(Math.sin(fi*2.1)*0.3).toFixed(1)+','+(Math.sin(fi*1.7)*-0.4).toFixed(1)+';0,0"'
+               + ' dur="'+(1.8 + Math.sin(fi*3.2)*0.6).toFixed(1)+'s" repeatCount="indefinite"/>';
+            s += '</path>';
+
+            // Inner glow core per flame — brighter center stripe
+            if (centerFrac > 0.3) {
+              s += '<path d="M'+fX.toFixed(1)+','+fy
+                 + ' Q'+fX.toFixed(1)+','+(fy - fH*0.5).toFixed(1)+' '+fTipX.toFixed(1)+','+(fTipY + fH*0.1).toFixed(1)+'"'
+                 + ' fill="none" stroke="'+_flHot+'" stroke-width="'+(fW*0.3)+'" stroke-linecap="round" opacity="'+(0.35*centerFrac*bloomOp).toFixed(2)+'"/>';
+            }
+
+            // Flame edge highlight — bright left edge (heat shimmer)
+            s += '<path d="M'+fX.toFixed(1)+','+fy
+               + ' L'+jag1X.toFixed(1)+','+jag1Y.toFixed(1)
+               + ' L'+jag2X.toFixed(1)+','+jag2Y.toFixed(1)
+               + ' L'+jag3X.toFixed(1)+','+jag3Y.toFixed(1)+'"'
+               + ' fill="none" stroke="rgba(255,240,180,0.2)" stroke-width="0.3" stroke-linejoin="round" opacity="'+bloomOp+'"/>';
+          }
+
+          // ── EMBER CORE — white-hot center at the base of all flames ──
+          // Outer ember glow
+          s += '<ellipse cx="'+fx+'" cy="'+(fy + fs*0.05)+'" rx="'+(_flBaseR*0.7)+'" ry="'+(_flBaseR*0.35)+'"'
+             + ' fill="'+_flInner+'" opacity="'+(0.5*bloomOp)+'" filter="url(#gc'+uid+')"/>';
+          // Mid ember
+          s += '<ellipse cx="'+fx+'" cy="'+(fy + fs*0.02)+'" rx="'+(_flBaseR*0.45)+'" ry="'+(_flBaseR*0.22)+'"'
+             + ' fill="'+_flHot+'" opacity="'+(0.7*bloomOp)+'"/>';
+          // White-hot center
+          s += '<ellipse cx="'+fx+'" cy="'+fy+'" rx="'+(_flBaseR*0.25)+'" ry="'+(_flBaseR*0.12)+'"'
+             + ' fill="#FFF8E0" opacity="'+(0.85*bloomOp)+'"/>';
+          // Specular spark
+          s += '<circle cx="'+(fx - _flBaseR*0.08)+'" cy="'+(fy - _flBaseR*0.03)+'" r="'+(_flBaseR*0.06)+'"'
+             + ' fill="rgba(255,255,255,0.5)" opacity="'+bloomOp+'"/>';
+
+          // ── SPARK PARTICLES — tiny bright dots floating above the flames ──
+          var _sparks = [
+            {x: fx - fs*0.3, y: fy - fs*1.8, r: 0.03, op: 0.4},
+            {x: fx + fs*0.4, y: fy - fs*2.1, r: 0.025, op: 0.35},
+            {x: fx - fs*0.1, y: fy - fs*2.5, r: 0.02, op: 0.3},
+            {x: fx + fs*0.2, y: fy - fs*1.5, r: 0.035, op: 0.45},
+            {x: fx - fs*0.5, y: fy - fs*1.3, r: 0.02, op: 0.3}
+          ];
+          for (var si = 0; si < _sparks.length; si++) {
+            var sp = _sparks[si];
+            s += '<circle cx="'+sp.x.toFixed(1)+'" cy="'+sp.y.toFixed(1)+'" r="'+(fs*sp.r)+'"'
+               + ' fill="'+_flHot+'" opacity="'+(sp.op*bloomOp).toFixed(2)+'">';
+            // Spark float animation — drifts upward
+            s += '<animateTransform attributeName="transform" type="translate"'
+               + ' values="0,0;'+(Math.sin(si*2.4)*0.5).toFixed(1)+','+(-(0.5 + si*0.2)).toFixed(1)+';0,0"'
+               + ' dur="'+(2.5 + si*0.4).toFixed(1)+'s" repeatCount="indefinite"/>';
+            s += '</circle>';
+          }
+
+          // ── BASE SHADOW — hot glow on the ground beneath ──
+          s += '<ellipse cx="'+fx+'" cy="'+(fy + fs*0.2)+'" rx="'+(_flBaseR*1.1)+'" ry="'+(_flBaseR*0.2)+'"'
+             + ' fill="'+_flOuter+'" opacity="'+(0.15*bloomOp)+'"/>';
         })();
         break;
       case 65: // Violet — 5 asymmetric petals with face pattern and guide-line whiskers
@@ -15811,12 +15946,12 @@ document.addEventListener('keydown', function(e) {
 
   // ── AURA RENDERER ──
   // ── Phase 23: MANDALA HALO RENDERER ─────────────────────────────────────
-  // Only fires when t.flower % 66 === 7 (Mandala trait).
+  // Only fires when t.flower % 67 === 7 (Mandala trait).
   // Sits between BLOOM and COMPANION layers — physically attached to plant.
   // set-104: Added viewBox containment clamp — halo radius (up to 33px) was
   // rendering above y=0 on tall stems. Now hy is clamped so halo fits.
   function renderHalo(t, uid, visibleTop) {
-    if ((t.flower % 66) !== 7) return ''; // set-103-8: updated from %35
+    if ((t.flower % 67) !== 7) return ''; // set-103-8: updated from %35
     if (!t.hasFlower) return '';
     var stemTop = Math.max(10, 78 - t.stemHeight);
     var hx = 35;
@@ -18468,7 +18603,7 @@ document.addEventListener('keydown', function(e) {
   function getTraitSummary(hash) {
     var t = hashToTraits(hash);
     var p = [TRAIT_BANK.pots[t.pot].name, TRAIT_BANK.stems[t.stem % 24].name, TRAIT_BANK.leaves[t.leafType % 16].name];
-    if (t.hasFlower) p.push(TRAIT_BANK.flowers[t.flower % 66].name);
+    if (t.hasFlower) p.push(TRAIT_BANK.flowers[t.flower % 67].name);
     var aName = TRAIT_BANK.auras[t.aura].name;
     if (aName !== 'None') p.push(aName + ' aura');
     var bName = TRAIT_BANK.bases[t.base].name;
@@ -18764,7 +18899,7 @@ document.addEventListener('keydown', function(e) {
     }},
     { key: 'FLOWER',      get: function(t) {
         if (!t.hasFlower) return null;
-        var f = TRAIT_BANK.flowers[t.flower % 66];
+        var f = TRAIT_BANK.flowers[t.flower % 67];
         return { name: f.name, rare: !!f.rare };
     }},
     { key: 'AURA',        get: function(t) {
@@ -18860,7 +18995,7 @@ document.addEventListener('keydown', function(e) {
   function getTraitSummary(hash) {
     var t = hashToTraits(hash);
     var p = [TRAIT_BANK.pots[t.pot].name, TRAIT_BANK.stems[t.stem % 24].name, TRAIT_BANK.leaves[t.leafType % 16].name];
-    if (t.hasFlower) p.push(TRAIT_BANK.flowers[t.flower % 66].name);
+    if (t.hasFlower) p.push(TRAIT_BANK.flowers[t.flower % 67].name);
     var aName = TRAIT_BANK.auras[t.aura].name;
     if (aName !== 'None') p.push(aName);
     var bName = TRAIT_BANK.bases[t.base].name;
@@ -19026,7 +19161,7 @@ document.addEventListener('keydown', function(e) {
         var _pName = 'Plant';
         try {
           var _leafName = (TRAIT_BANK && TRAIT_BANK.leaves && TRAIT_BANK.leaves[_ghTraits.leafType]) ? TRAIT_BANK.leaves[_ghTraits.leafType].name : '';
-          var _bloomName = (TRAIT_BANK && TRAIT_BANK.flowers && TRAIT_BANK.flowers[_ghTraits.flower % 66]) ? TRAIT_BANK.flowers[_ghTraits.flower % 66].name : '';
+          var _bloomName = (TRAIT_BANK && TRAIT_BANK.flowers && TRAIT_BANK.flowers[_ghTraits.flower % 67]) ? TRAIT_BANK.flowers[_ghTraits.flower % 67].name : '';
           _pName = _bloomName || _leafName || 'Plant';
         } catch(e2) {}
         var _sea = window.getSeasonInfo ? window.getSeasonInfo(_ghTraits) : null;
@@ -19963,7 +20098,7 @@ document.addEventListener('keydown', function(e) {
       ledgerRows.push({ cat: 'GROWTH PATH', val: stemEntry.name, rare: false });
       ledgerRows.push({ cat: 'FOLIAGE',     val: leafEntry.name, rare: !!leafEntry.rare });
       if (t.hasFlower) {
-        var flEntry = TRAIT_BANK.flowers[t.flower % 66];
+        var flEntry = TRAIT_BANK.flowers[t.flower % 67];
         ledgerRows.push({ cat: 'FLOWER', val: flEntry.name, rare: !!flEntry.rare });
       }
       var aurEntry = TRAIT_BANK.auras[t.aura];
@@ -20925,7 +21060,7 @@ document.addEventListener('keydown', function(e) {
           + 'background:' + pCol[p % 5] + ';'
           + '--dur:'  + (2.2 + (p % 6) * 0.45).toFixed(1) + 's;'
           + '--del:'  + ((p * 28) % 280 / 100).toFixed(2) + 's;'
-          + '--dy:'   + (-(35 + (p * 13) % 66)) + 'px;'
+          + '--dy:'   + (-(35 + (p * 13) % 67)) + 'px;'
           + '--dx:'   + (((p * 7) % 15 - 7) * 8) + 'px;'
           + '"></div>';
       }
