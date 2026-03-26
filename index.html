@@ -13701,126 +13701,97 @@ document.addEventListener('keydown', function(e) {
              + ' fill="rgba(255,255,255,0.2)" opacity="'+bloomOp+'"/>';
         })();
         break;
-      case 59: // Angel's Trumpet — huge pendant trumpet flaring wide at opening
+      case 59: // Angel's Trumpet — pendant trumpet on arching stem, hangs to side
         (function(){
-          // Brugmansia: HUGE trumpet hanging straight downward.
-          // Narrow neck at top flares to 2x width at bottom opening.
-          // The longest downward bloom — dramatic pendant silhouette.
-          // Internal highlight along upper-left. Stamens hang from inside.
-          // 5 pleated lobes visible at the flared opening.
+          // Brugmansia: trumpet hangs off an arching stem that bends 180°.
+          // The stem curves from the bloom anchor point outward and downward,
+          // then the trumpet hangs from that bend. Smaller scale, offset to side.
 
-          var _atNeckW = fs * 0.3;   // narrow at top
-          var _atOpenW = fs * 1.6;   // wide flare at bottom
-          var _atH = fs * 3.0;       // total pendant length
-          var _atTopY = fy + fs * 0.15; // neck starts just below bloom anchor
+          // Flower center is OFFSET to the right and below via the arching stem
+          var _atOx = fx + fs * 1.2;  // trumpet center — offset right
+          var _atOy = fy + fs * 0.6;  // and slightly down
+          var _atNeckW = fs * 0.18;
+          var _atOpenW = fs * 0.7;
+          var _atH = fs * 1.6;
+          var _atTopY = _atOy;
           var _atBotY = _atTopY + _atH;
 
-          // ── GREEN CALYX — wraps the neck ──
-          s += '<path d="M'+(fx - _atNeckW*0.8)+','+_atTopY
-             + ' Q'+(fx - _atNeckW*1.2)+','+(_atTopY - fs*0.3)+' '+(fx - _atNeckW*0.3)+','+(_atTopY - fs*0.45)
-             + ' L'+(fx + _atNeckW*0.3)+','+(_atTopY - fs*0.45)
-             + ' Q'+(fx + _atNeckW*1.2)+','+(_atTopY - fs*0.3)+' '+(fx + _atNeckW*0.8)+','+_atTopY+' Z"'
-             + ' fill="#4A6A35" opacity="'+(0.9*bloomOp)+'" stroke="#3A5228" stroke-width="0.2"/>';
-          // Calyx vein lines
-          s += '<line x1="'+fx+'" y1="'+(_atTopY - fs*0.42)+'" x2="'+(fx - _atNeckW*0.5)+'" y2="'+_atTopY+'"'
-             + ' stroke="#3A5228" stroke-width="0.15" opacity="'+(0.5*bloomOp)+'"/>';
-          s += '<line x1="'+fx+'" y1="'+(_atTopY - fs*0.42)+'" x2="'+(fx + _atNeckW*0.5)+'" y2="'+_atTopY+'"'
-             + ' stroke="#3A5228" stroke-width="0.15" opacity="'+(0.5*bloomOp)+'"/>';
-          // Calyx highlight
-          s += '<path d="M'+(fx - _atNeckW*0.5)+','+(_atTopY - fs*0.15)
-             + ' Q'+fx+','+(_atTopY - fs*0.5)+' '+(fx + _atNeckW*0.2)+','+(_atTopY - fs*0.2)+'"'
-             + ' fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="0.3" opacity="'+bloomOp+'"/>';
+          // ── ARCHING STEM — 180° bend from bloom anchor to flower ──
+          // Curves up from fx,fy then arches right and down to the trumpet neck
+          s += '<path d="M'+fx+','+fy
+             + ' C'+(fx + fs*0.2)+','+(fy - fs*0.8)+' '+(fx + fs*1.0)+','+(fy - fs*0.6)+' '+_atOx+','+_atOy+'"'
+             + ' fill="none" stroke="#5E8550" stroke-width="'+(fs*0.08)+'" stroke-linecap="round" opacity="'+(0.85*bloomOp)+'"/>';
+          // Stem highlight
+          s += '<path d="M'+fx+','+fy
+             + ' C'+(fx + fs*0.18)+','+(fy - fs*0.78)+' '+(fx + fs*0.98)+','+(fy - fs*0.58)+' '+_atOx+','+_atOy+'"'
+             + ' fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="'+(fs*0.03)+'" opacity="'+bloomOp+'"/>';
 
-          // ── TRUMPET BODY — left side curve ──
-          // The trumpet widens as it descends
-          s += '<path d="M'+(fx - _atNeckW)+','+_atTopY
-             + ' C'+(fx - _atNeckW*1.1)+','+(_atTopY + _atH*0.3)
-             + ' '+(fx - _atOpenW*0.7)+','+(_atTopY + _atH*0.65)
-             + ' '+(fx - _atOpenW)+','+_atBotY.toFixed(1)+'"'
-             + ' fill="none" stroke="'+fc+'" stroke-width="'+(fs*0.5)+'" stroke-linecap="round" opacity="'+(0.55*bloomOp)+'"/>';
-          // Right side curve
-          s += '<path d="M'+(fx + _atNeckW)+','+_atTopY
-             + ' C'+(fx + _atNeckW*1.1)+','+(_atTopY + _atH*0.3)
-             + ' '+(fx + _atOpenW*0.7)+','+(_atTopY + _atH*0.65)
-             + ' '+(fx + _atOpenW)+','+_atBotY.toFixed(1)+'"'
-             + ' fill="none" stroke="'+fc+'" stroke-width="'+(fs*0.5)+'" stroke-linecap="round" opacity="'+(0.55*bloomOp)+'"/>';
-
-          // ── FILLED TRUMPET BODY — solid shape ──
-          s += '<path d="M'+(fx - _atNeckW)+','+_atTopY
-             + ' C'+(fx - _atNeckW*1.1)+','+(_atTopY + _atH*0.3)+' '+(fx - _atOpenW*0.7)+','+(_atTopY + _atH*0.65)+' '+(fx - _atOpenW)+','+_atBotY.toFixed(1)
-             + ' L'+(fx + _atOpenW)+','+_atBotY.toFixed(1)
-             + ' C'+(fx + _atOpenW*0.7)+','+(_atTopY + _atH*0.65)+' '+(fx + _atNeckW*1.1)+','+(_atTopY + _atH*0.3)+' '+(fx + _atNeckW)+','+_atTopY+' Z"'
-             + ' fill="'+fc+'" opacity="'+(0.88*bloomOp)+'" stroke="rgba(0,0,0,0.05)" stroke-width="0.15"/>';
-
-          // ── INTERIOR SHADOW — darker inside the trumpet ──
-          s += '<path d="M'+(fx - _atNeckW*0.6)+','+(_atTopY + fs*0.2)
-             + ' C'+(fx - _atNeckW*0.7)+','+(_atTopY + _atH*0.35)+' '+(fx - _atOpenW*0.45)+','+(_atTopY + _atH*0.6)+' '+(fx - _atOpenW*0.7)+','+(_atBotY - fs*0.1).toFixed(1)
-             + ' L'+(fx + _atOpenW*0.7)+','+(_atBotY - fs*0.1).toFixed(1)
-             + ' C'+(fx + _atOpenW*0.45)+','+(_atTopY + _atH*0.6)+' '+(fx + _atNeckW*0.7)+','+(_atTopY + _atH*0.35)+' '+(fx + _atNeckW*0.6)+','+(_atTopY + fs*0.2)+' Z"'
-             + ' fill="rgba(0,0,0,0.15)" opacity="'+bloomOp+'"/>';
-
-          // ── PLEATED LOBES — 5 subtle pleat lines visible on the trumpet surface ──
-          for (var li = 0; li < 5; li++) {
-            var lFrac = (li / 4) - 0.5; // -0.5 to 0.5
-            // Each pleat runs from neck to opening edge
-            var lTopX = fx + lFrac * _atNeckW * 1.4;
-            var lBotX = fx + lFrac * _atOpenW * 1.6;
-            var lMidX = fx + lFrac * (_atNeckW + _atOpenW) * 0.5;
-            var lMidY = _atTopY + _atH * 0.5;
-            s += '<path d="M'+lTopX.toFixed(1)+','+(_atTopY + fs*0.1)
-               + ' Q'+lMidX.toFixed(1)+','+lMidY.toFixed(1)+' '+lBotX.toFixed(1)+','+_atBotY.toFixed(1)+'"'
-               + ' fill="none" stroke="rgba(0,0,0,0.06)" stroke-width="0.25" opacity="'+bloomOp+'"/>';
-            // Pleat highlight — alternating
-            if (li % 2 === 0) {
-              s += '<path d="M'+(lTopX + fs*0.03).toFixed(1)+','+(_atTopY + fs*0.15)
-                 + ' Q'+(lMidX + fs*0.03).toFixed(1)+','+(lMidY + fs*0.05).toFixed(1)+' '+(lBotX + fs*0.05).toFixed(1)+','+_atBotY.toFixed(1)+'"'
-                 + ' fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.2" opacity="'+bloomOp+'"/>';
-            }
+          // ── GREEN CALYX at bend point ──
+          for (var cx = 0; cx < 4; cx++) {
+            var cxAng = ((cx * 90 + 45) - 90) * Math.PI / 180;
+            var cxTx = _atOx + Math.cos(cxAng) * fs * 0.12;
+            var cxTy = _atOy + Math.sin(cxAng) * fs * 0.08 - fs * 0.05;
+            s += '<line x1="'+_atOx+'" y1="'+(_atOy - fs*0.03)+'" x2="'+cxTx.toFixed(1)+'" y2="'+cxTy.toFixed(1)+'"'
+               + ' stroke="#4A6A35" stroke-width="'+(fs*0.04)+'" stroke-linecap="round" opacity="'+(0.75*bloomOp)+'"/>';
           }
 
-          // ── LEFT HIGHLIGHT — upper-left edge catches light ──
-          s += '<path d="M'+(fx - _atNeckW*0.9)+','+(_atTopY + fs*0.05)
-             + ' C'+(fx - _atNeckW*1.0)+','+(_atTopY + _atH*0.25)+' '+(fx - _atOpenW*0.6)+','+(_atTopY + _atH*0.55)+' '+(fx - _atOpenW*0.85)+','+(_atBotY - fs*0.1).toFixed(1)+'"'
-             + ' fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="0.6" stroke-linecap="round" opacity="'+bloomOp+'"/>';
+          // ── FILLED TRUMPET BODY ──
+          s += '<path d="M'+(_atOx - _atNeckW)+','+_atTopY
+             + ' C'+(_atOx - _atNeckW*1.15)+','+(_atTopY + _atH*0.3)+' '+(_atOx - _atOpenW*0.7)+','+(_atTopY + _atH*0.65)+' '+(_atOx - _atOpenW)+','+_atBotY.toFixed(1)
+             + ' L'+(_atOx + _atOpenW)+','+_atBotY.toFixed(1)
+             + ' C'+(_atOx + _atOpenW*0.7)+','+(_atTopY + _atH*0.65)+' '+(_atOx + _atNeckW*1.15)+','+(_atTopY + _atH*0.3)+' '+(_atOx + _atNeckW)+','+_atTopY+' Z"'
+             + ' fill="'+fc+'" opacity="'+(0.9*bloomOp)+'" stroke="rgba(0,0,0,0.06)" stroke-width="0.15"/>';
 
-          // ── RIGHT SHADOW EDGE ──
-          s += '<path d="M'+(fx + _atNeckW*0.9)+','+(_atTopY + fs*0.05)
-             + ' C'+(fx + _atNeckW*1.0)+','+(_atTopY + _atH*0.25)+' '+(fx + _atOpenW*0.6)+','+(_atTopY + _atH*0.55)+' '+(fx + _atOpenW*0.85)+','+(_atBotY - fs*0.1).toFixed(1)+'"'
-             + ' fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="0.5" stroke-linecap="round" opacity="'+bloomOp+'"/>';
+          // ── INTERIOR SHADOW ──
+          s += '<path d="M'+(_atOx - _atNeckW*0.5)+','+(_atTopY + fs*0.1)
+             + ' C'+(_atOx - _atNeckW*0.6)+','+(_atTopY + _atH*0.35)+' '+(_atOx - _atOpenW*0.4)+','+(_atTopY + _atH*0.6)+' '+(_atOx - _atOpenW*0.6)+','+(_atBotY - fs*0.05).toFixed(1)
+             + ' L'+(_atOx + _atOpenW*0.6)+','+(_atBotY - fs*0.05).toFixed(1)
+             + ' C'+(_atOx + _atOpenW*0.4)+','+(_atTopY + _atH*0.6)+' '+(_atOx + _atNeckW*0.6)+','+(_atTopY + _atH*0.35)+' '+(_atOx + _atNeckW*0.5)+','+(_atTopY + fs*0.1)+' Z"'
+             + ' fill="rgba(0,0,0,0.14)" opacity="'+bloomOp+'"/>';
 
-          // ── FLARED RIM — scalloped bottom edge of the opening ──
-          var _rimPts = 7;
+          // ── PLEAT LINES — 4 running down the trumpet ──
+          for (var li = 0; li < 4; li++) {
+            var lFrac = (li / 3) - 0.5;
+            var lTopX = _atOx + lFrac * _atNeckW * 1.2;
+            var lBotX = _atOx + lFrac * _atOpenW * 1.5;
+            var lMidX = _atOx + lFrac * (_atNeckW + _atOpenW) * 0.45;
+            s += '<path d="M'+lTopX.toFixed(1)+','+(_atTopY + fs*0.06)
+               + ' Q'+lMidX.toFixed(1)+','+(_atTopY + _atH*0.5).toFixed(1)+' '+lBotX.toFixed(1)+','+_atBotY.toFixed(1)+'"'
+               + ' fill="none" stroke="rgba(0,0,0,0.06)" stroke-width="0.2" opacity="'+bloomOp+'"/>';
+          }
+
+          // ── LEFT HIGHLIGHT ──
+          s += '<path d="M'+(_atOx - _atNeckW*0.85)+','+(_atTopY + fs*0.03)
+             + ' C'+(_atOx - _atNeckW*0.95)+','+(_atTopY + _atH*0.25)+' '+(_atOx - _atOpenW*0.55)+','+(_atTopY + _atH*0.55)+' '+(_atOx - _atOpenW*0.8)+','+(_atBotY - fs*0.06).toFixed(1)+'"'
+             + ' fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="0.45" stroke-linecap="round" opacity="'+bloomOp+'"/>';
+
+          // ── RIGHT SHADOW ──
+          s += '<path d="M'+(_atOx + _atNeckW*0.85)+','+(_atTopY + fs*0.03)
+             + ' C'+(_atOx + _atNeckW*0.95)+','+(_atTopY + _atH*0.25)+' '+(_atOx + _atOpenW*0.55)+','+(_atTopY + _atH*0.55)+' '+(_atOx + _atOpenW*0.8)+','+(_atBotY - fs*0.06).toFixed(1)+'"'
+             + ' fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="0.35" stroke-linecap="round" opacity="'+bloomOp+'"/>';
+
+          // ── SCALLOPED RIM ──
+          var _rimPts = 5;
           for (var ri = 0; ri < _rimPts; ri++) {
-            var rFrac = (ri / (_rimPts - 1)) - 0.5; // -0.5 to 0.5
-            var rX = fx + rFrac * _atOpenW * 2;
-            var rDip = Math.sin(ri * 1.8) * fs * 0.15;
-            s += '<ellipse cx="'+rX.toFixed(1)+'" cy="'+(_atBotY + rDip).toFixed(1)+'" rx="'+(fs*0.12)+'" ry="'+(fs*0.06)+'"'
-               + ' fill="'+fc+'" opacity="'+(0.75*bloomOp)+'"/>';
+            var rFrac = (ri / (_rimPts - 1)) - 0.5;
+            var rX = _atOx + rFrac * _atOpenW * 1.8;
+            var rDip = Math.sin(ri * 2.0) * fs * 0.08;
+            s += '<ellipse cx="'+rX.toFixed(1)+'" cy="'+(_atBotY + rDip).toFixed(1)+'" rx="'+(fs*0.07)+'" ry="'+(fs*0.035)+'"'
+               + ' fill="'+fc+'" opacity="'+(0.8*bloomOp)+'"/>';
           }
-          // Rim highlight arc
-          s += '<path d="M'+(fx - _atOpenW*0.9)+','+_atBotY.toFixed(1)
-             + ' Q'+fx+','+(_atBotY + fs*0.2).toFixed(1)+' '+(fx + _atOpenW*0.9)+','+_atBotY.toFixed(1)+'"'
-             + ' fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="0.4" opacity="'+bloomOp+'"/>';
+          s += '<path d="M'+(_atOx - _atOpenW*0.8)+','+_atBotY.toFixed(1)
+             + ' Q'+_atOx+','+(_atBotY + fs*0.1).toFixed(1)+' '+(_atOx + _atOpenW*0.8)+','+_atBotY.toFixed(1)+'"'
+             + ' fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.3" opacity="'+bloomOp+'"/>';
 
-          // ── STAMENS — 3 thin lines hanging from inside the trumpet ──
-          for (var sti = 0; sti < 3; sti++) {
-            var stOff = (sti - 1) * fs * 0.15;
-            var stLen = _atH * 0.25;
-            var stEndY = _atBotY + stLen;
-            // Stamen line
-            s += '<line x1="'+(fx + stOff)+'" y1="'+(_atBotY - fs*0.3).toFixed(1)+'" x2="'+(fx + stOff*0.6).toFixed(1)+'" y2="'+stEndY.toFixed(1)+'"'
-               + ' stroke="'+PALETTE.cream+'" stroke-width="'+(fs*0.04)+'" stroke-linecap="round" opacity="'+(0.7*bloomOp)+'"/>';
-            // Anther dot
-            s += '<circle cx="'+(fx + stOff*0.6).toFixed(1)+'" cy="'+stEndY.toFixed(1)+'" r="'+(fs*0.06)+'"'
+          // ── STAMENS — 2 hanging from inside ──
+          for (var sti = 0; sti < 2; sti++) {
+            var stOff = (sti - 0.5) * fs * 0.1;
+            var stEndY = _atBotY + _atH * 0.15;
+            s += '<line x1="'+(_atOx + stOff)+'" y1="'+(_atBotY - fs*0.15).toFixed(1)+'" x2="'+(_atOx + stOff*0.5).toFixed(1)+'" y2="'+stEndY.toFixed(1)+'"'
+               + ' stroke="'+PALETTE.cream+'" stroke-width="'+(fs*0.03)+'" stroke-linecap="round" opacity="'+(0.7*bloomOp)+'"/>';
+            s += '<circle cx="'+(_atOx + stOff*0.5).toFixed(1)+'" cy="'+stEndY.toFixed(1)+'" r="'+(fs*0.04)+'"'
                + ' fill="'+PALETTE.gold+'" opacity="'+(0.85*bloomOp)+'"/>';
-            // Anther highlight
-            s += '<circle cx="'+(fx + stOff*0.6 - fs*0.015).toFixed(1)+'" cy="'+(stEndY - fs*0.015).toFixed(1)+'" r="'+(fs*0.025)+'"'
-               + ' fill="rgba(255,255,255,0.3)" opacity="'+bloomOp+'"/>';
           }
-
-          // ── NECK GLOW — warm ambient light from inside the trumpet ──
-          s += '<ellipse cx="'+fx+'" cy="'+(_atTopY + _atH*0.3)+'" rx="'+(_atNeckW*0.8)+'" ry="'+(_atH*0.12)+'"'
-             + ' fill="rgba(255,255,220,0.08)" opacity="'+bloomOp+'"/>';
         })();
         break;
       case 58: // Hydrangea Head — dense dome of 20 tiny 4-petal flowers, each a different shade
