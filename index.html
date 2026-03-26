@@ -9348,12 +9348,12 @@ document.addEventListener('keydown', function(e) {
           side = (_zzBendX < 35) ? 1 : -1;
           lx = _stemCx + side * t.leafSpread * 0.35; // tighter — was 0.6
         } else if (i === 6) {
-          // Leaf 6 — at the LAST bend point (not the crown), left side
+          // Leaf 6 — down and far left, attached at the bend
           _zzBendY = 78 - _zzSegs * _zzSegH; // last bend
-          ly = _zzBendY + _zzSegH * 0.3; // down from top near last bend
+          ly = _zzBendY + _zzSegH * 0.6; // pushed down toward lower bend
           _stemCx = _stemCenterAt(t, ly);
           side = -1;
-          lx = _stemCx - t.leafSpread * 0.4;
+          lx = _stemCx - t.leafSpread * 0.65; // far left, tight to bend
         } else {
           // Leaf 7 — at crown, opposite leaf 6
           ly = 78 - t.stemHeight + 3;
