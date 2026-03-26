@@ -9030,6 +9030,16 @@ document.addEventListener('keydown', function(e) {
         var _msWidthAtY = 1.8 * (1 - _msFrac) + 4.5 * _msFrac; // lerp base→top
         _stemCx = 35;
         lx = 35 + side * (_msWidthAtY + t.leafSpread * 0.25);
+        // Leaves 4, 6 — force left to stem edge (stipe widens upward)
+        if (i === 4 || i === 6) {
+          side = -1;
+          lx = 35 - _msWidthAtY - t.leafSpread * 0.05;
+        }
+        // Leaves 3, 5, 7 — force right to stem edge
+        if (i === 3 || i === 5 || i === 7) {
+          side = 1;
+          lx = 35 + _msWidthAtY + t.leafSpread * 0.05;
+        }
       }
       if (_stemCase === 20) {
         // Root Pillar: aggressive taper — wide at base (3.5), thin at top (0.8)
