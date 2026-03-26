@@ -9263,6 +9263,14 @@ document.addEventListener('keydown', function(e) {
         side = _d7side;
         // Place leaf extending outward from branch surface (stroke-width 1.5 = ±0.75)
         lx = _d7bx + _d7side * (0.75 + t.leafSpread * 0.4);
+        // Leaf 4 — move left to meet left branch stem
+        if (i === 4) {
+          lx = _d7bx - (0.75 + t.leafSpread * 0.15); // tight left contact
+        }
+        // Leaves 3 and 5 — nudge left slightly toward stem
+        if (i === 3 || i === 5) {
+          lx -= 1.5;
+        }
       }
       if (_stemCase === 5) {
         // Braided: two strands weave. Place leaves precisely at strand edges.
