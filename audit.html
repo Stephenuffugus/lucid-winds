@@ -100,6 +100,7 @@ h1 { font-size: 18px; color: #c8a84b; margin-bottom: 8px; text-align: center; }
     <button id="btn-zoom" onclick="setMode('zoom')">Connection Closeup</button>
     <button id="btn-perleaf" onclick="setMode('perleaf')">Per-Leaf Index</button>
     <button id="btn-stems" onclick="setMode('stems')">All 24 Stems</button>
+    <button id="btn-blooms" onclick="setMode('blooms')">All Blooms</button>
   </div>
 
   <label>Leaf Type
@@ -121,6 +122,10 @@ h1 { font-size: 18px; color: #c8a84b; margin-bottom: 8px; text-align: center; }
   <label>
     <span>Show Flower</span>
     <input type="checkbox" id="chk-flower">
+  </label>
+
+  <label>Flower Type
+    <select id="sel-flower"></select>
   </label>
 
   <label>Background
@@ -168,6 +173,18 @@ var STEM_NAMES = [
   'Crystal Spine','Iron Trunk'
 ];
 
+var FLOWER_NAMES = [
+  'Bud','Rose','Hibiscus','Lotus','Dahlia','Tulip','Spike','Mandala',
+  'Bud Variant','Spike Variant','Orchid','Rose+','Carnivorous Flytrap','Pitcher Plant',
+  'Cattails','Bell Flowers','Fiddlehead Fern','Chrysanthemum','Moon Orchid','Poppy',
+  'Dandelion Puff','Bird of Paradise','Fire Flower','Protea','Morning Glory',
+  'Sunflower','Coneflower','Snapdragon','Cherry Blossom','Stamen Cluster',
+  'Trumpet Vine','Bleeding Heart','Umbel','Catkin','Sacred Lotus',
+  'Dragon Arum','Titan Arum','Carrion Starfish','Passionflower','Crown Imperial',
+  'Corpse Lily','Foxglove','Magnolia','Wisteria Cascade','Cactus Bloom',
+  'Ghost Orchid','Peony'
+];
+
 var STEM_COLORS = 12;
 var flagged = {};
 var gameWin = null;
@@ -188,6 +205,13 @@ var currentMode = 'grid';
     opt2.value = j;
     opt2.textContent = j + ': ' + (STEM_NAMES[j] || 'Case ' + j);
     selStem.appendChild(opt2);
+  }
+  var selFlower = document.getElementById('sel-flower');
+  for (var k = 0; k < FLOWER_NAMES.length; k++) {
+    var opt3 = document.createElement('option');
+    opt3.value = k;
+    opt3.textContent = k + ': ' + FLOWER_NAMES[k];
+    selFlower.appendChild(opt3);
   }
 })();
 
@@ -228,7 +252,7 @@ function getOverrides(leafType, stemType, stemColorIdx) {
     stemColor: stemColorIdx || 0,
     pot: 0,
     hasFlower: document.getElementById('chk-flower').checked,
-    flower: 7,
+    flower: parseInt(document.getElementById('sel-flower').value),
     companion: 60,
     aura: 0,
     mutation: 0,
@@ -264,6 +288,7 @@ function renderCurrent() {
   else if (currentMode === 'zoom') renderZoomMode(container);
   else if (currentMode === 'perleaf') renderPerLeafMode(container);
   else if (currentMode === 'stems') renderStemsMode(container);
+  else if (currentMode === 'blooms') renderBloomsMode(container);
 
   updateFlaggedDisplay();
 }
@@ -379,6 +404,35 @@ function renderStemsMode(container) {
       + '<button class="btn-ok" onclick="markOk(\'' + key + '\',this)">OK</button>'
       + '<button class="btn-flag" onclick="markFlag(\'' + key + '\',this)">FLAG</button>'
       + '</div>';
+    container.appendChild(cell);
+  }
+}
+
+function renderBloomsMode(container) {
+  container.className = 'grid grid-60';
+  var stemType = parseInt(document.getElementById('sel-stem').value);
+  var leafType = parseInt(document.getElementById('sel-leaf').value);
+  for (var fl = 0; fl < FLOWER_NAMES.length; fl++) {
+    var overrides = getOverrides(leafType, stemType, 0);
+    overrides.hasFlower = true;
+    overrides.flower = fl;
+    var html = renderPlant(overrides, 120, false);
+    var key = 'bloom-' + fl;
+    var cell = document.createElement('div');
+    cell.className = 'cell' + (flagged[key] ? ' flagged' : '');
+    cell.innerHTML = '<div class="plant-svg">' + html + '</div>'
+      + '<div class="label"><b>' + fl + '</b>: ' + (FLOWER_NAMES[fl] || 'Case ' + fl) + '</div>'
+      + '<div class="cell-actions">'
+      + '<button class="btn-ok" onclick="markOk(\'' + key + '\',this)">OK</button>'
+      + '<button class="btn-flag" onclick="markFlag(\'' + key + '\',this)">FLAG</button>'
+      + '</div>';
+    (function(idx) {
+      cell.querySelector('.plant-svg').onclick = function() {
+        document.getElementById('sel-flower').value = idx;
+        document.getElementById('chk-flower').checked = true;
+        setMode('single');
+      };
+    })(fl);
     container.appendChild(cell);
   }
 }
