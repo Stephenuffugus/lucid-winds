@@ -3082,7 +3082,7 @@
       radial-gradient(3px 3px at 58% 38%, var(--rev-c1,#fff) 50%, transparent 100%),
       radial-gradient(2.5px 2.5px at 48% 88%, var(--rev-c2,#fff) 50%, transparent 100%),
       radial-gradient(2px 2px at 28% 32%, var(--rev-c1,#fff) 50%, transparent 100%),
-      radial-gradient(3px 3px at 88% 48%, var(--rev-c2,#fff) 50%, transparent 100%),
+      radial-gradient(3px 3px at 88% 49%, var(--rev-c2,#fff) 50%, transparent 100%),
       radial-gradient(3.5px 3.5px at 8% 52%, var(--rev-c1,#fff) 50%, transparent 100%),
       radial-gradient(2px 2px at 65% 75%, var(--rev-c1,#fff) 50%, transparent 100%),
       radial-gradient(2.5px 2.5px at 42% 18%, var(--rev-c2,#fff) 50%, transparent 100%),
@@ -5018,7 +5018,7 @@ document.addEventListener('keydown', function(e) {
     else if (st === 3 || st === 4) ea += 1;
     // BLOOM (0-4)
     if (traits.hasFlower) {
-      var fl = traits.flower % 48;
+      var fl = traits.flower % 49;
       if (fl === 15 || fl >= 34) ea += 3; else if (fl >= 20) ea += 2; else if (fl >= 10) ea += 1;
     }
     // POT (0-1)
@@ -5092,7 +5092,7 @@ document.addEventListener('keydown', function(e) {
 
     // SLOT 3: Bloom type (0-2)
     if (t.hasFlower) {
-      var _bl = t.flower % 48;
+      var _bl = t.flower % 49;
       if (_bl >= 18) score += 1;
       if (_bl === 15) score += 2;
     }
@@ -6935,7 +6935,7 @@ document.addEventListener('keydown', function(e) {
       {name:'Bird of Paradise'},             // 21
       {name:'Fire Flower',rare:true},        // 22
       {name:'Protea'},                       // 23
-      {name:'Morning Glory'},                // 24
+      {name:'Anthurium'},                    // 24
       {name:'Cherry Blossom'},               // 25
       {name:'Coneflower'},                   // 26
       {name:'Snapdragon'},                   // 27
@@ -6958,7 +6958,8 @@ document.addEventListener('keydown', function(e) {
       {name:'Cactus Bloom',rare:true},       // 44
       {name:'Ghost Orchid',rare:true},       // 45
       {name:'Peony'},                         // 46
-      {name:'Lantern Bloom'}                  // 47
+      {name:'Lantern Bloom'},                 // 47
+      {name:'Sunflower'}                      // 48
     ],
     auras: [
       {name:'None'},{name:'None'},{name:'None'},{name:'None'},{name:'None'},
@@ -7257,7 +7258,7 @@ document.addEventListener('keydown', function(e) {
     // and that position is guaranteed to keep all petal art inside the viewBox.
     var _safeBloomY = visibleTop;
     if (t.hasFlower && prog >= 0.8) {
-      var _bCase = t.flower % 48;
+      var _bCase = t.flower % 49;
       var _bReach = 1.5;
       if (_bCase >= 10 && _bCase <= 14) _bReach = 2.0;
       if (_bCase >= 15 && _bCase <= 17) _bReach = 2.2;
@@ -9492,7 +9493,7 @@ document.addEventListener('keydown', function(e) {
       // to draw the eye to the central bloom. The flower is the hero;
       // leaves become supporting context. Stronger blooms = more dimming.
       if (t.hasFlower && prog >= 0.8) {
-        var _bloomComplexity = (t.flower % 48 >= 18) ? 0.72 : 0.82; // exotic blooms dim more
+        var _bloomComplexity = (t.flower % 49 >= 18) ? 0.72 : 0.82; // exotic blooms dim more
         op = op * _bloomComplexity;
       }
 
@@ -12611,7 +12612,7 @@ document.addEventListener('keydown', function(e) {
 
     // ── Per-bloom-class maximum upward reach (in multiples of fs) ──
     // Measured from coordinate audit of all 46 cases.
-    var _bc = t.flower % 48;
+    var _bc = t.flower % 49;
     var _reach = 1.5; // cases 0-9: standard blooms
     if (_bc >= 10 && _bc <= 14) _reach = 2.0; // orchid/rose+/pitcher
     if (_bc >= 15 && _bc <= 17) _reach = 2.2; // glow/cattail/bell
@@ -12622,6 +12623,7 @@ document.addEventListener('keydown', function(e) {
     if (_bc === 45) _reach = 2.8; // Ghost Orchid
     if (_bc === 46) _reach = 2.0; // Peony
     if (_bc === 47) _reach = 2.8; // Lantern Bloom (pendant — extends downward)
+    if (_bc === 48) _reach = 2.0; // Sunflower
 
     // Safe bloom zone: bloom top must stay at y >= 3 (3px viewBox buffer)
     var _minFy = fs * _reach + 3;
@@ -12641,7 +12643,7 @@ document.addEventListener('keydown', function(e) {
       return s;
     }
 
-    switch(t.flower % 48) { // set-103-8: expanded → %46 (38 original + 8 ChatGPT art round)
+    switch(t.flower % 49) { // set-103-8: expanded → %46 (38 original + 8 ChatGPT art round)
       case 0: // Bud — organic teardrop with sepal tips
         s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.35)+'" fill="'+bg+'" opacity="'+(0.25*bloomOp)+'"/>';
         for (var bi=0; bi<3; bi++) {
@@ -13070,7 +13072,7 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="'+fx+'" cy="'+fy+'" rx="'+(fs*0.44)+'" ry="'+(fs*0.62)+'" fill="'+PALETTE.gold+'" opacity="'+(0.86*bloomOp)+'"/>';
         s += '<path d="M'+(fx-fs*0.2)+','+(fy-fs*0.85)+' C'+(fx+fs*0.3)+','+(fy-fs*0.95)+' '+(fx+fs*0.9)+','+(fy-fs*0.45)+' '+(fx+fs*0.95)+','+fy+'" fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" stroke-linecap="round" opacity="'+(bloomOp*0.3)+'"/>';
         break;
-      case 24: // Morning Glory — sky trumpet
+      case 24: // Anthurium — sky trumpet
         s += '<path d="M'+fx+','+fy+' C'+(fx-fs*0.92)+','+(fy-fs*0.35)+' '+(fx-fs*1.18)+','+(fy-fs*1.18)+' '+fx+','+(fy-fs*1.55)+' C'+(fx+fs*1.18)+','+(fy-fs*1.18)+' '+(fx+fs*0.92)+','+(fy-fs*0.35)+' '+fx+','+fy+' Z" fill="'+fc+'" opacity="'+(0.72*bloomOp)+'"/>';
         s += '<path d="M'+(fx-fs*0.28)+','+(fy+fs*0.1)+' C'+(fx-fs*0.18)+','+(fy-fs*0.36)+' '+(fx+fs*0.18)+','+(fy-fs*0.36)+' '+(fx+fs*0.28)+','+(fy+fs*0.1)+' C'+(fx+fs*0.18)+','+(fy+fs*0.38)+' '+(fx-fs*0.18)+','+(fy+fs*0.38)+' '+(fx-fs*0.28)+','+(fy+fs*0.1)+' Z" fill="'+fc+'" opacity="'+(0.52*bloomOp)+'"/>';
         s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.18)+'" r="'+(fs*0.16)+'" fill="'+PALETTE.gold+'" opacity="'+(0.85*bloomOp)+'"/>';
@@ -13436,6 +13438,58 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+fx+'" cy="'+(fy+_lbH)+'" r="'+(fs*0.12)+'" fill="'+fc+'" opacity="'+(0.7*bloomOp)+'"/>';
         })();
         break;
+      case 48: // Sunflower — wide flat ray petals around dark center disc
+        (function(){
+          var _sfPetals = 13;
+          var _sfReach = fs * 1.8;
+          var _sfPW = fs * 0.4; // petal width
+          // Ray petals — tapered bezier loops radiating outward
+          for (var pi = 0; pi < _sfPetals; pi++) {
+            var ang = (pi * 360 / _sfPetals - 90) * Math.PI / 180;
+            var tipX = fx + Math.cos(ang) * _sfReach;
+            var tipY = fy + Math.sin(ang) * _sfReach;
+            // Slight variation in petal length
+            var vary = 1 + Math.sin(pi * 3.7) * 0.08;
+            tipX = fx + Math.cos(ang) * _sfReach * vary;
+            tipY = fy + Math.sin(ang) * _sfReach * vary;
+            // Control points for tapered petal
+            var cp1x = fx + Math.cos(ang - 0.2) * _sfReach * 0.4;
+            var cp1y = fy + Math.sin(ang - 0.2) * _sfReach * 0.4;
+            var cp2x = tipX - Math.cos(ang) * _sfPW * 0.3 + Math.cos(ang + Math.PI*0.5) * _sfPW * 0.3;
+            var cp2y = tipY - Math.sin(ang) * _sfPW * 0.3 + Math.sin(ang + Math.PI*0.5) * _sfPW * 0.3;
+            var cp3x = tipX - Math.cos(ang) * _sfPW * 0.3 - Math.cos(ang + Math.PI*0.5) * _sfPW * 0.3;
+            var cp3y = tipY - Math.sin(ang) * _sfPW * 0.3 - Math.sin(ang + Math.PI*0.5) * _sfPW * 0.3;
+            var cp4x = fx + Math.cos(ang + 0.2) * _sfReach * 0.4;
+            var cp4y = fy + Math.sin(ang + 0.2) * _sfReach * 0.4;
+            s += '<path d="M'+fx+','+fy
+               + ' C'+cp1x.toFixed(1)+','+cp1y.toFixed(1)+' '+cp2x.toFixed(1)+','+cp2y.toFixed(1)+' '+tipX.toFixed(1)+','+tipY.toFixed(1)
+               + ' C'+cp3x.toFixed(1)+','+cp3y.toFixed(1)+' '+cp4x.toFixed(1)+','+cp4y.toFixed(1)+' '+fx+','+fy+' Z"'
+               + ' fill="'+fc+'" opacity="'+(0.92*bloomOp)+'" stroke="rgba(0,0,0,0.1)" stroke-width="0.2"/>';
+            // Petal midrib vein
+            var mx = fx + Math.cos(ang) * _sfReach * 0.55 * vary;
+            var my = fy + Math.sin(ang) * _sfReach * 0.55 * vary;
+            s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+mx.toFixed(1)+'" y2="'+my.toFixed(1)+'"'
+               + ' stroke="rgba(0,0,0,0.08)" stroke-width="0.3" opacity="'+bloomOp+'"/>';
+          }
+          // Dark center disc
+          var _discR = fs * 0.65;
+          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+_discR+'" fill="#3A2810" opacity="'+(0.95*bloomOp)+'"/>';
+          // Seed dots in Fibonacci spiral pattern
+          var _phi = 137.508 * Math.PI / 180; // golden angle
+          for (var si = 0; si < 12; si++) {
+            var _sdR = _discR * 0.15 + (_discR * 0.7) * Math.sqrt(si / 12);
+            var _sdA = si * _phi;
+            var _sdx = fx + Math.cos(_sdA) * _sdR;
+            var _sdy = fy + Math.sin(_sdA) * _sdR;
+            s += '<circle cx="'+_sdx.toFixed(1)+'" cy="'+_sdy.toFixed(1)+'" r="'+(fs*0.05)+'" fill="#5A4020" opacity="'+(0.7*bloomOp)+'"/>';
+          }
+          // Disc highlight — upper-left crescent
+          s += '<ellipse cx="'+(fx-_discR*0.25)+'" cy="'+(fy-_discR*0.2)+'" rx="'+(_discR*0.45)+'" ry="'+(_discR*0.35)+'"'
+             + ' fill="rgba(255,255,255,0.12)" opacity="'+bloomOp+'"/>';
+          // Disc rim highlight
+          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+_discR+'" fill="none" stroke="rgba(200,168,75,0.25)" stroke-width="0.4" opacity="'+bloomOp+'"/>';
+        })();
+        break;
       case 46: // Peony — dense layered rosette, 3 rings of ruffled petals
         (function(){
           var _pnRings = [
@@ -13511,12 +13565,12 @@ document.addEventListener('keydown', function(e) {
 
   // ── AURA RENDERER ──
   // ── Phase 23: MANDALA HALO RENDERER ─────────────────────────────────────
-  // Only fires when t.flower % 48 === 7 (Mandala trait).
+  // Only fires when t.flower % 49 === 7 (Mandala trait).
   // Sits between BLOOM and COMPANION layers — physically attached to plant.
   // set-104: Added viewBox containment clamp — halo radius (up to 33px) was
   // rendering above y=0 on tall stems. Now hy is clamped so halo fits.
   function renderHalo(t, uid, visibleTop) {
-    if ((t.flower % 48) !== 7) return ''; // set-103-8: updated from %35
+    if ((t.flower % 49) !== 7) return ''; // set-103-8: updated from %35
     if (!t.hasFlower) return '';
     var stemTop = Math.max(10, 78 - t.stemHeight);
     var hx = 35;
@@ -16168,7 +16222,7 @@ document.addEventListener('keydown', function(e) {
   function getTraitSummary(hash) {
     var t = hashToTraits(hash);
     var p = [TRAIT_BANK.pots[t.pot].name, TRAIT_BANK.stems[t.stem % 24].name, TRAIT_BANK.leaves[t.leafType % 16].name];
-    if (t.hasFlower) p.push(TRAIT_BANK.flowers[t.flower % 48].name);
+    if (t.hasFlower) p.push(TRAIT_BANK.flowers[t.flower % 49].name);
     var aName = TRAIT_BANK.auras[t.aura].name;
     if (aName !== 'None') p.push(aName + ' aura');
     var bName = TRAIT_BANK.bases[t.base].name;
@@ -16464,7 +16518,7 @@ document.addEventListener('keydown', function(e) {
     }},
     { key: 'FLOWER',      get: function(t) {
         if (!t.hasFlower) return null;
-        var f = TRAIT_BANK.flowers[t.flower % 48];
+        var f = TRAIT_BANK.flowers[t.flower % 49];
         return { name: f.name, rare: !!f.rare };
     }},
     { key: 'AURA',        get: function(t) {
@@ -16560,7 +16614,7 @@ document.addEventListener('keydown', function(e) {
   function getTraitSummary(hash) {
     var t = hashToTraits(hash);
     var p = [TRAIT_BANK.pots[t.pot].name, TRAIT_BANK.stems[t.stem % 24].name, TRAIT_BANK.leaves[t.leafType % 16].name];
-    if (t.hasFlower) p.push(TRAIT_BANK.flowers[t.flower % 48].name);
+    if (t.hasFlower) p.push(TRAIT_BANK.flowers[t.flower % 49].name);
     var aName = TRAIT_BANK.auras[t.aura].name;
     if (aName !== 'None') p.push(aName);
     var bName = TRAIT_BANK.bases[t.base].name;
@@ -16726,7 +16780,7 @@ document.addEventListener('keydown', function(e) {
         var _pName = 'Plant';
         try {
           var _leafName = (TRAIT_BANK && TRAIT_BANK.leaves && TRAIT_BANK.leaves[_ghTraits.leafType]) ? TRAIT_BANK.leaves[_ghTraits.leafType].name : '';
-          var _bloomName = (TRAIT_BANK && TRAIT_BANK.flowers && TRAIT_BANK.flowers[_ghTraits.flower % 48]) ? TRAIT_BANK.flowers[_ghTraits.flower % 48].name : '';
+          var _bloomName = (TRAIT_BANK && TRAIT_BANK.flowers && TRAIT_BANK.flowers[_ghTraits.flower % 49]) ? TRAIT_BANK.flowers[_ghTraits.flower % 49].name : '';
           _pName = _bloomName || _leafName || 'Plant';
         } catch(e2) {}
         var _sea = window.getSeasonInfo ? window.getSeasonInfo(_ghTraits) : null;
@@ -17663,7 +17717,7 @@ document.addEventListener('keydown', function(e) {
       ledgerRows.push({ cat: 'GROWTH PATH', val: stemEntry.name, rare: false });
       ledgerRows.push({ cat: 'FOLIAGE',     val: leafEntry.name, rare: !!leafEntry.rare });
       if (t.hasFlower) {
-        var flEntry = TRAIT_BANK.flowers[t.flower % 48];
+        var flEntry = TRAIT_BANK.flowers[t.flower % 49];
         ledgerRows.push({ cat: 'FLOWER', val: flEntry.name, rare: !!flEntry.rare });
       }
       var aurEntry = TRAIT_BANK.auras[t.aura];
