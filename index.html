@@ -1065,7 +1065,7 @@
     .cs-flip-inner{position:relative;width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d;}
     .cs-flip-wrap.flipped .cs-flip-inner{transform:rotateY(180deg);}
     .cs-card-face{backface-visibility:hidden;-webkit-backface-visibility:hidden;position:absolute;inset:0;display:flex;flex-direction:column;box-sizing:border-box;border-radius:12px;overflow:hidden;}
-    .cs-card-front{position:absolute;inset:0;border-radius:12px;display:grid;grid-template-rows:12% 69% 20% auto;box-sizing:border-box;padding:25% 12% 8%;background-color:#050505;background-size:96%;background-position:center;background-repeat:no-repeat;}
+    .cs-card-front{position:absolute;inset:0;border-radius:12px;display:grid;grid-template-rows:12% 70% 20% auto;box-sizing:border-box;padding:25% 12% 8%;background-color:#050505;background-size:96%;background-position:center;background-repeat:no-repeat;}
     .cs-card-back{transform:rotateY(180deg);padding:10% 8% 6%;overflow-y:auto;-webkit-overflow-scrolling:touch;background-color:#050505;background-size:174%;background-position:center;background-repeat:no-repeat;}
     .cs-flip-hint{font-family:'DM Mono',monospace;font-size:0.35rem;color:rgba(122,179,86,0.35);text-align:center;position:absolute;bottom:4%;left:0;right:0;}
     .cs-card-front[data-season="spring"]{background-image:url('assets/card-front-spring.png');}
@@ -1106,7 +1106,7 @@
     .cs-card-back[data-tier="cosmic"] .dna-cat{background-size:6px 6px;}
     .cs-card-back[data-tier="cosmic"] .cb-nameplate{bottom:6% !important;}
     .cs-card-back[data-tier="cosmic"] .cb-name{background:linear-gradient(90deg,#ff6b6b,#ffd93d,#6bff6b,#6bb5ff,#d46bff,#ff6b6b);background-size:200% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:cosmicNameShimmer 3s linear infinite;text-shadow:none !important;}
-    @keyframes cosmicNameShimmer{0%{background-position:0% 69%;}100%{background-position:200% 69%;}}
+    @keyframes cosmicNameShimmer{0%{background-position:0% 70%;}100%{background-position:200% 70%;}}
     .cs-card-back .dna-ledger-eyebrow{font-size:0.68rem;}
     .cs-card-back .dna-cat{font-size:0.62rem;}
     .cs-card-back .dna-val{font-size:0.65rem;}
@@ -3063,7 +3063,7 @@
     /* Game picker cards — staggered entry, organic hover */
     .fk2{background:rgba(18,24,16,.78);border:1px solid rgba(74,124,53,.1);border-radius:clamp(10px,3vw,14px);padding:clamp(10px,3vw,14px) clamp(12px,3.5vw,16px);margin-bottom:clamp(6px,2vw,10px);cursor:pointer;transition:all .22s cubic-bezier(.25,.46,.45,.94);-webkit-tap-highlight-color:transparent;box-shadow:0 2px 10px rgba(0,0,0,.12);position:relative;overflow:hidden;animation:pickerStagger .35s cubic-bezier(.25,.46,.45,.94) both}
     .fk2:nth-child(1){animation-delay:.02s}.fk2:nth-child(2){animation-delay:.04s}.fk2:nth-child(3){animation-delay:.06s}.fk2:nth-child(4){animation-delay:.08s}.fk2:nth-child(5){animation-delay:.1s}.fk2:nth-child(6){animation-delay:.12s}.fk2:nth-child(7){animation-delay:.14s}.fk2:nth-child(8){animation-delay:.16s}.fk2:nth-child(9){animation-delay:.18s}.fk2:nth-child(10){animation-delay:.2s}
-    .fk2::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 15% 69%,rgba(74,124,53,.04) 0%,transparent 55%);pointer-events:none;opacity:0;transition:opacity .3s}
+    .fk2::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 15% 70%,rgba(74,124,53,.04) 0%,transparent 55%);pointer-events:none;opacity:0;transition:opacity .3s}
     .fk2:hover::before,.fk2:focus::before{opacity:1}
     .fk2:active{transform:scale(.98);background:rgba(24,30,20,.82);transition-duration:.06s}
 
@@ -3071,7 +3071,7 @@
     /* Phase 1: opaque mask hides card back. Phase 2: shake. Phase 3: sweep reveals. */
     .cs-reveal-flash{position:absolute;inset:0;border-radius:12px;pointer-events:none;z-index:20;overflow:hidden;opacity:0;}
     /* Mask state: solid dark cover before reveal */
-    .cs-reveal-flash.masked{opacity:1;background:radial-gradient(ellipse at 50% 69%,#181c16 0%,#0d100c 100%);}
+    .cs-reveal-flash.masked{opacity:1;background:radial-gradient(ellipse at 50% 70%,#181c16 0%,#0d100c 100%);}
     /* Shake state: card trembles with anticipation */
     .cs-flip-wrap.shaking{animation:revealShake 0.8s ease-in-out;}
     @keyframes revealShake{
@@ -3091,14 +3091,14 @@
     .cs-reveal-flash.active::before{animation:revealSparkle var(--rev-dur,2.5s) ease-in-out forwards;background-image:
       radial-gradient(3px 3px at 18% 12%, var(--rev-c1,#fff) 50%, transparent 100%),
       radial-gradient(2px 2px at 72% 22%, var(--rev-c1,#fff) 50%, transparent 100%),
-      radial-gradient(3.5px 3.5px at 38% 69%, var(--rev-c2,#fff) 50%, transparent 100%),
-      radial-gradient(2.5px 2.5px at 82% 69%, var(--rev-c1,#fff) 50%, transparent 100%),
+      radial-gradient(3.5px 3.5px at 38% 70%, var(--rev-c2,#fff) 50%, transparent 100%),
+      radial-gradient(2.5px 2.5px at 82% 70%, var(--rev-c1,#fff) 50%, transparent 100%),
       radial-gradient(2px 2px at 12% 78%, var(--rev-c2,#fff) 50%, transparent 100%),
       radial-gradient(3px 3px at 58% 38%, var(--rev-c1,#fff) 50%, transparent 100%),
       radial-gradient(2.5px 2.5px at 48% 88%, var(--rev-c2,#fff) 50%, transparent 100%),
       radial-gradient(2px 2px at 28% 32%, var(--rev-c1,#fff) 50%, transparent 100%),
-      radial-gradient(3px 3px at 88% 69%, var(--rev-c2,#fff) 50%, transparent 100%),
-      radial-gradient(3.5px 3.5px at 8% 69%, var(--rev-c1,#fff) 50%, transparent 100%),
+      radial-gradient(3px 3px at 88% 70%, var(--rev-c2,#fff) 50%, transparent 100%),
+      radial-gradient(3.5px 3.5px at 8% 70%, var(--rev-c1,#fff) 50%, transparent 100%),
       radial-gradient(2px 2px at 65% 75%, var(--rev-c1,#fff) 50%, transparent 100%),
       radial-gradient(2.5px 2.5px at 42% 18%, var(--rev-c2,#fff) 50%, transparent 100%),
       radial-gradient(3px 3px at 92% 85%, var(--rev-c1,#fff) 50%, transparent 100%),
@@ -3119,9 +3119,9 @@
 
     /* Glow + mask dissolve: starts opaque, sweep reveals card, then fades */
     @keyframes revealGlow{
-      0%{opacity:1;background:radial-gradient(ellipse at 50% 69%,#181c16,#0d100c);box-shadow:inset 0 0 60px var(--rev-c2),0 0 25px var(--rev-c2);}
-      15%{opacity:1;background:radial-gradient(ellipse at 50% 69%,rgba(24,28,22,0.95),rgba(13,16,12,0.95));box-shadow:inset 0 0 80px var(--rev-c1),0 0 45px var(--rev-c2);}
-      35%{opacity:0.85;background:radial-gradient(ellipse at 50% 69%,rgba(24,28,22,0.5),rgba(13,16,12,0.4));box-shadow:inset 0 0 100px var(--rev-c1),0 0 60px var(--rev-c2);}
+      0%{opacity:1;background:radial-gradient(ellipse at 50% 70%,#181c16,#0d100c);box-shadow:inset 0 0 60px var(--rev-c2),0 0 25px var(--rev-c2);}
+      15%{opacity:1;background:radial-gradient(ellipse at 50% 70%,rgba(24,28,22,0.95),rgba(13,16,12,0.95));box-shadow:inset 0 0 80px var(--rev-c1),0 0 45px var(--rev-c2);}
+      35%{opacity:0.85;background:radial-gradient(ellipse at 50% 70%,rgba(24,28,22,0.5),rgba(13,16,12,0.4));box-shadow:inset 0 0 100px var(--rev-c1),0 0 60px var(--rev-c2);}
       55%{opacity:0.4;background:transparent;box-shadow:inset 0 0 70px var(--rev-c2),0 0 35px var(--rev-c2);}
       75%{opacity:0.2;box-shadow:inset 0 0 35px var(--rev-c2),0 0 15px transparent;}
       100%{opacity:0;background:transparent;box-shadow:none;}}
@@ -3229,7 +3229,7 @@
   z-index: 450;
   pointer-events: none;
   background: radial-gradient(
-    ellipse 55% 69% at 50% 45%,
+    ellipse 55% 70% at 50% 45%,
     transparent 50%,
     rgba(10, 13, 9, 0.55) 100%
   );
@@ -3409,7 +3409,7 @@
 
 .night-mode .map-vignette {
   background: radial-gradient(
-    ellipse 50% 69% at 50% 69%,
+    ellipse 50% 70% at 50% 70%,
     transparent 40%,
     rgba(10, 13, 9, 0.7) 100%
   );
@@ -4941,7 +4941,7 @@ document.addEventListener('keydown', function(e) {
     var crystalBase = hc(20) === 15;
 
     return {
-      pot:          goldenPot  ? 15 : hb(0) % 69, // 60 pot types (0-59)
+      pot:          goldenPot  ? 15 : hb(0) % 70, // 60 pot types (0-59)
       potColor:     _PAL[hc(1)],
       stem:         (mythByte >= 0xD0) ? 9 : ((hb(2) % 24) === 9 ? 0 : hb(2) % 24),
       stemColor:    hb(5) % 12,
@@ -4957,7 +4957,7 @@ document.addEventListener('keydown', function(e) {
       chimerGen:    1, // default gen 1; breeding sets this to parent max + 1
       leafSpread:   7 + (hc(14) % 6),
       aura:         hb(15) % 36,  // 0-35 aura slots (0-4 = none)
-      base:         crystalBase ? 15 : hb(20) % 69,
+      base:         crystalBase ? 15 : hb(20) % 70,
       // Companion: base rate ~20% (48 None + 12 creatures), mythic creatures override
       companion:    (function(){
         var _mb = hb(18);
@@ -5025,7 +5025,7 @@ document.addEventListener('keydown', function(e) {
     if (!traits) return 0;
     var ea = 0;
     // LEAF TYPE (0-3)
-    var lt = traits.leafType % 69;
+    var lt = traits.leafType % 70;
     if (lt >= 46) ea += 3; else if (lt >= 30) ea += 2; else if (lt >= 16) ea += 1;
     // STEM TYPE (0-2)
     var st = traits.stem % 24;
@@ -5033,7 +5033,7 @@ document.addEventListener('keydown', function(e) {
     else if (st === 3 || st === 4) ea += 1;
     // BLOOM (0-4)
     if (traits.hasFlower) {
-      var fl = traits.flower % 69;
+      var fl = traits.flower % 70;
       if (fl === 15 || fl >= 34) ea += 3; else if (fl >= 20) ea += 2; else if (fl >= 10) ea += 1;
     }
     // POT (0-1)
@@ -5098,7 +5098,7 @@ document.addEventListener('keydown', function(e) {
     var score = 0;
 
     // SLOT 1: Leaf type (0-1)
-    var _lt = t.leafType % 69;
+    var _lt = t.leafType % 70;
     if (_lt >= 30) score += 1;
 
     // SLOT 2: Stem type (0-1)
@@ -5107,7 +5107,7 @@ document.addEventListener('keydown', function(e) {
 
     // SLOT 3: Bloom type (0-2)
     if (t.hasFlower) {
-      var _bl = t.flower % 69;
+      var _bl = t.flower % 70;
       if (_bl >= 18) score += 1;
       if (_bl === 15) score += 2;
     }
@@ -5728,7 +5728,7 @@ document.addEventListener('keydown', function(e) {
 
   function fmtRecord(secs) {
     if (!secs && secs !== 0) return '—:——';
-    return Math.floor(secs / 60) + ':' + String(secs % 69).padStart(2, '0');
+    return Math.floor(secs / 60) + ':' + String(secs % 70).padStart(2, '0');
   }
 
   function renderRecords() {
@@ -6473,7 +6473,7 @@ document.addEventListener('keydown', function(e) {
   function getTimeSec() { return Math.floor((Date.now() - startTime) / 1000); }
   function getTimeStr() {
     var s = getTimeSec();
-    return Math.floor(s / 60) + ':' + String(s % 69).padStart(2, '0');
+    return Math.floor(s / 60) + ':' + String(s % 70).padStart(2, '0');
   }
 
   function setMsg(txt, cls) {
@@ -6994,7 +6994,8 @@ document.addEventListener('keydown', function(e) {
       {name:'Violet'},                        // 65
       {name:'Flame Bloom',rare:true},         // 66
       {name:'Ice Rose',rare:true},            // 67
-      {name:'Void Blossom',rare:true}         // 68
+      {name:'Void Blossom',rare:true},        // 68
+      {name:'Clock Flower',rare:true}         // 69
     ],
     auras: [
       {name:'None'},{name:'None'},{name:'None'},{name:'None'},{name:'None'},
@@ -7293,7 +7294,7 @@ document.addEventListener('keydown', function(e) {
     // and that position is guaranteed to keep all petal art inside the viewBox.
     var _safeBloomY = visibleTop;
     if (t.hasFlower && prog >= 0.8) {
-      var _bCase = t.flower % 69;
+      var _bCase = t.flower % 70;
       var _bReach = 1.5;
       if (_bCase >= 10 && _bCase <= 14) _bReach = 2.0;
       if (_bCase >= 15 && _bCase <= 17) _bReach = 2.2;
@@ -7432,7 +7433,7 @@ document.addEventListener('keydown', function(e) {
     //                  0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18
     var soilL = [20, 20, 23, 15, 25, 28, 25, 24, 23, 22, 18, 25, 25, 24, 17, 20, 27, 22, 30, 22, 21, 29, 19, 35, 35, 19, 35, 24, 23, 25, 23, 22, 24, 16, 20, 18, 18, 22, 24, 23, 24, 16, 22, 20, 24, 26, 22, 20, 18, 25, 22, 22, 20, 24, 22, 26, 28, 25, 20, 20];
     var soilR = [50, 50, 47, 55, 45, 42, 45, 46, 47, 48, 52, 45, 41, 46, 46, 50, 43, 48, 40, 48, 49, 41, 51, 35, 35, 49, 35, 46, 47, 42, 47, 48, 46, 54, 50, 52, 52, 48, 46, 47, 46, 54, 48, 45, 46, 44, 48, 50, 52, 45, 48, 48, 50, 46, 48, 44, 42, 45, 50, 50];
-    var si = (p === 15) ? 15 : (p < 60 ? p : p % 69);
+    var si = (p === 15) ? 15 : (p < 60 ? p : p % 70);
     s += '<line x1="'+soilL[si]+'" y1="78" x2="'+soilR[si]+'" y2="78" stroke="#3a3228" stroke-width="1.5" stroke-linecap="butt"/>';
     s += '<line x1="'+(soilL[si]+1)+'" y1="78.5" x2="'+(soilR[si]-1)+'" y2="78.5" stroke="#2a2218" stroke-width="0.5" opacity="0.3"/>';
     if (p === 15) {
@@ -9438,7 +9439,7 @@ document.addEventListener('keydown', function(e) {
       var _vSpread = -1.0; // default: moderate spread for standard leaves
 
       // ── Per-leaf-type SPECIFIC overrides ──
-      switch(t.leafType % 69) {
+      switch(t.leafType % 70) {
         case 3: // Heart — leaf 4 paired with leaf 3 on left, near stem
           _vSpread = -1.2;
           if (i === 4) { var _h4 = _posFor(3); lx = _h4.stemCx - Math.abs(_h4.lx - _h4.stemCx) * 0.4; ly = _h4.ly - 1; ls = _h4.ls; side = -1; cosT = _h4.cosT; sinT = _h4.sinT; leafFrac = _h4.leafFrac; _stemCx = _h4.stemCx; }
@@ -9528,13 +9529,13 @@ document.addEventListener('keydown', function(e) {
       // to draw the eye to the central bloom. The flower is the hero;
       // leaves become supporting context. Stronger blooms = more dimming.
       if (t.hasFlower && prog >= 0.8) {
-        var _bloomComplexity = (t.flower % 69 >= 18) ? 0.72 : 0.82; // exotic blooms dim more
+        var _bloomComplexity = (t.flower % 70 >= 18) ? 0.72 : 0.82; // exotic blooms dim more
         op = op * _bloomComplexity;
       }
 
       // Per-type opacity boost — solid leaf shapes need full opacity
       // so overlapping leaves don't show through and break the illusion
-      var _lt60 = t.leafType % 69;
+      var _lt60 = t.leafType % 70;
       if (_lt60 === 7 || _lt60 === 8 || _lt60 === 9 || _lt60 === 14 || _lt60 === 22 || _lt60 === 23 || _lt60 === 26 || _lt60 === 27 || _lt60 === 28 || _lt60 === 37 || _lt60 === 49) { op = Math.max(0.92, Math.min(1.0, op * 1.8)); }
 
       // set-104: Pre-compute chimera vein style for ALL leaf cases
@@ -9589,7 +9590,7 @@ document.addEventListener('keydown', function(e) {
       // using bodyD so inline chimera veins can't bleed past leaf edges.
       var _preLeafMark = s.length;
 
-      switch(t.leafType % 69) { // set-103-8: expanded from %50 → %60 (10 new leaf types)
+      switch(t.leafType % 70) { // set-103-8: expanded from %50 → %60 (10 new leaf types)
         case 0: // Organic broad — fiddlehead-inspired with curled tip + vein detail
           ls = ls * 1.35;
           ot = ly - ls; ob = ly + ls * 0.5; tip = lx + side * ls * 0.45; tipY = ly - ls * 1.0;
@@ -12540,7 +12541,7 @@ document.addEventListener('keydown', function(e) {
         s += '<defs><clipPath id="'+clipVein+'"><path d="'+bodyD+'"/></clipPath></defs>';
         s += '<g clip-path="url(#'+clipVein+')">';
 
-        switch(t.leafType % 69) {
+        switch(t.leafType % 70) {
           case 0: // Organic broad — pinnate
             if (chiVar === 0) {
               chiVeinD = 'M'+ox+','+ly+' C'+(ox+side*ls*0.16)+','+(ly-ls*0.22)+' '+(lx+side*ls*0.02)+','+(ly-ls*0.63)+' '+(lx+side*ls*0.08)+','+ot+' M'+(ox+side*ls*0.14)+','+(ly-ls*0.18)+' Q'+(ox+side*ls*0.34)+','+(ly-ls*0.28)+' '+(ox+side*ls*0.54)+','+(ly-ls*0.30)+' Q'+(tip-side*ls*0.26)+','+(ly-ls*0.36)+' '+(tip-side*ls*0.12)+','+(ly-ls*0.50)+' M'+(ox+side*ls*0.24)+','+(ly-ls*0.34)+' Q'+(ox+side*ls*0.40)+','+(ly-ls*0.50)+' '+(ox+side*ls*0.58)+','+(ly-ls*0.60)+' Q'+(tip-side*ls*0.22)+','+(ly-ls*0.70)+' '+(tip-side*ls*0.10)+','+(ly-ls*0.82)+' M'+(ox+side*ls*0.34)+','+(ly-ls*0.52)+' Q'+(ox+side*ls*0.50)+','+(ly-ls*0.66)+' '+(lx+side*ls*0.14)+','+(ly-ls*0.74)+' Q'+(tip-side*ls*0.18)+','+(ly-ls*0.84)+' '+(tip-side*ls*0.04)+','+(ly-ls*0.92)+' M'+(ox+side*ls*0.18)+','+(ly-ls*0.24)+' Q'+(ox+side*ls*0.10)+','+(ly-ls*0.42)+' '+(ox+side*ls*0.06)+','+(ly-ls*0.56)+' M'+(ox+side*ls*0.30)+','+(ly-ls*0.44)+' Q'+(ox+side*ls*0.22)+','+(ly-ls*0.62)+' '+(ox+side*ls*0.18)+','+(ly-ls*0.76);
@@ -12647,7 +12648,7 @@ document.addEventListener('keydown', function(e) {
 
     // ── Per-bloom-class maximum upward reach (in multiples of fs) ──
     // Measured from coordinate audit of all 46 cases.
-    var _bc = t.flower % 69;
+    var _bc = t.flower % 70;
     var _reach = 1.5; // cases 0-9: standard blooms
     if (_bc >= 10 && _bc <= 14) _reach = 2.0; // orchid/rose+/pitcher
     if (_bc >= 15 && _bc <= 17) _reach = 2.2; // glow/cattail/bell
@@ -12679,6 +12680,7 @@ document.addEventListener('keydown', function(e) {
     if (_bc === 66) _reach = 2.8; // Flame Bloom (tall flames)
     if (_bc === 67) _reach = 2.0; // Ice Rose
     if (_bc === 68) _reach = 2.0; // Void Blossom
+    if (_bc === 69) _reach = 2.0; // Clock Flower
 
     // Safe bloom zone: bloom top must stay at y >= 3 (3px viewBox buffer)
     var _minFy = fs * _reach + 3;
@@ -12698,7 +12700,7 @@ document.addEventListener('keydown', function(e) {
       return s;
     }
 
-    switch(t.flower % 69) { // set-103-8: expanded → %46 (38 original + 8 ChatGPT art round)
+    switch(t.flower % 70) { // set-103-8: expanded → %46 (38 original + 8 ChatGPT art round)
       case 0: // Bud — organic teardrop with sepal tips
         s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.35)+'" fill="'+bg+'" opacity="'+(0.25*bloomOp)+'"/>';
         for (var bi=0; bi<3; bi++) {
@@ -13585,6 +13587,181 @@ document.addEventListener('keydown', function(e) {
           // Tight specular dot
           s += '<ellipse cx="'+(fx - fs*0.25)+'" cy="'+(fy - fs*0.3)+'" rx="'+(fs*0.18)+'" ry="'+(fs*0.12)+'"'
              + ' fill="rgba(255,255,255,0.22)" opacity="'+bloomOp+'"/>';
+        })();
+        break;
+      case 69: // Clock Flower — 12 precise petals as hour markers, clock hands, tick animation
+        (function(){
+          // A flower that grew in the shape of time.
+          // 12 thin blade-like petals at EXACT 30° intervals — no organic variation.
+          // The mathematical precision IS the beauty. This flower doesn't sway.
+          // Hour-marker dots at each petal tip. Two clock hands in contrasting color.
+          // Central pivot jewel. Minute markers between petals.
+          // Slow tick animation on the second hand.
+          // Ignores fc — always in aged brass and ivory.
+
+          var _ckR = fs * 1.5; // clock face radius
+          var _ckBrass = '#B8986A';    // aged brass
+          var _ckIvory = '#F0EBD8';    // ivory face
+          var _ckDark = '#2A2418';     // dark markings
+          var _ckAccent = '#8A6840';   // warm accent
+
+          // ── CLOCK FACE — faint ivory disc behind everything ──
+          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(_ckR*0.88)+'"'
+             + ' fill="'+_ckIvory+'" opacity="'+(0.12*bloomOp)+'"/>';
+          // Face shadow ring — depth
+          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(_ckR*0.9)+'"'
+             + ' fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="0.5" opacity="'+bloomOp+'"/>';
+
+          // ── 12 HOUR PETALS — thin blade-like forms at exact 30° intervals ──
+          for (var hi = 0; hi < 12; hi++) {
+            var hAng = ((hi * 30) - 90) * Math.PI / 180; // exact 30° spacing
+            var hPerp = hAng + Math.PI * 0.5;
+            // Every 3rd petal (12, 3, 6, 9 positions) is slightly longer and wider
+            var isCardinal = (hi % 3 === 0);
+            var hReach = _ckR * (isCardinal ? 1.0 : 0.88);
+            var hW = fs * (isCardinal ? 0.15 : 0.1); // thin blades, not wide petals
+
+            var hTipX = fx + Math.cos(hAng) * hReach;
+            var hTipY = fy + Math.sin(hAng) * hReach;
+
+            // Blade shape — narrow, straight-edged, precise
+            var hBaseL = fx + Math.cos(hPerp) * hW;
+            var hBaseR = fx - Math.cos(hPerp) * hW;
+            var hBaseLy = fy + Math.sin(hPerp) * hW;
+            var hBaseRy = fy - Math.sin(hPerp) * hW;
+            // Slight taper toward tip — not bezier, straight lines for precision
+            var hMidL = fx + Math.cos(hAng) * hReach * 0.6 + Math.cos(hPerp) * hW * 0.6;
+            var hMidR = fx + Math.cos(hAng) * hReach * 0.6 - Math.cos(hPerp) * hW * 0.6;
+            var hMidLy = fy + Math.sin(hAng) * hReach * 0.6 + Math.sin(hPerp) * hW * 0.6;
+            var hMidRy = fy + Math.sin(hAng) * hReach * 0.6 - Math.sin(hPerp) * hW * 0.6;
+
+            // Petal body — aged brass fill
+            s += '<path d="M'+hBaseL.toFixed(1)+','+hBaseLy.toFixed(1)
+               + ' L'+hMidL.toFixed(1)+','+hMidLy.toFixed(1)
+               + ' L'+hTipX.toFixed(1)+','+hTipY.toFixed(1)
+               + ' L'+hMidR.toFixed(1)+','+hMidRy.toFixed(1)
+               + ' L'+hBaseR.toFixed(1)+','+hBaseRy.toFixed(1)+' Z"'
+               + ' fill="'+_ckBrass+'" opacity="'+(0.95*bloomOp)+'" stroke="'+_ckAccent+'" stroke-width="0.15"/>';
+
+            // Petal center ridge — crisp line for precision
+            s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+hTipX.toFixed(1)+'" y2="'+hTipY.toFixed(1)+'"'
+               + ' stroke="'+_ckDark+'" stroke-width="'+(isCardinal ? '0.2' : '0.12')+'" opacity="'+(0.3*bloomOp).toFixed(2)+'"/>';
+
+            // Left-edge highlight — catches light
+            s += '<line x1="'+hBaseL.toFixed(1)+'" y1="'+hBaseLy.toFixed(1)+'" x2="'+hTipX.toFixed(1)+'" y2="'+hTipY.toFixed(1)+'"'
+               + ' stroke="rgba(255,255,240,0.15)" stroke-width="0.2" opacity="'+bloomOp+'"/>';
+
+            // Right-edge shadow
+            s += '<line x1="'+hBaseR.toFixed(1)+'" y1="'+hBaseRy.toFixed(1)+'" x2="'+hTipX.toFixed(1)+'" y2="'+hTipY.toFixed(1)+'"'
+               + ' stroke="rgba(0,0,0,0.08)" stroke-width="0.15" opacity="'+bloomOp+'"/>';
+
+            // ── HOUR MARKER DOT — at each petal tip ──
+            var dotR = fs * (isCardinal ? 0.07 : 0.045);
+            // Dot shadow
+            s += '<circle cx="'+(hTipX + fs*0.01).toFixed(1)+'" cy="'+(hTipY + fs*0.01).toFixed(1)+'" r="'+(dotR*1.2)+'"'
+               + ' fill="rgba(0,0,0,0.12)" opacity="'+bloomOp+'"/>';
+            // Dot body — ivory
+            s += '<circle cx="'+hTipX.toFixed(1)+'" cy="'+hTipY.toFixed(1)+'" r="'+dotR+'"'
+               + ' fill="'+_ckIvory+'" opacity="'+(0.95*bloomOp)+'" stroke="'+_ckAccent+'" stroke-width="0.12"/>';
+            // Dot specular
+            s += '<circle cx="'+(hTipX - dotR*0.25).toFixed(1)+'" cy="'+(hTipY - dotR*0.25).toFixed(1)+'" r="'+(dotR*0.35)+'"'
+               + ' fill="rgba(255,255,255,0.35)" opacity="'+bloomOp+'"/>';
+          }
+
+          // ── MINUTE MARKERS — 60 tiny tick marks between the petals ──
+          for (var mi = 0; mi < 60; mi++) {
+            if (mi % 5 === 0) continue; // skip hour positions (already have petals)
+            var mAng = ((mi * 6) - 90) * Math.PI / 180;
+            var mInner = _ckR * 0.78;
+            var mOuter = _ckR * 0.83;
+            var mx1 = fx + Math.cos(mAng) * mInner;
+            var my1 = fy + Math.sin(mAng) * mInner;
+            var mx2 = fx + Math.cos(mAng) * mOuter;
+            var my2 = fy + Math.sin(mAng) * mOuter;
+            s += '<line x1="'+mx1.toFixed(1)+'" y1="'+my1.toFixed(1)+'" x2="'+mx2.toFixed(1)+'" y2="'+my2.toFixed(1)+'"'
+               + ' stroke="'+_ckBrass+'" stroke-width="0.1" opacity="'+(0.35*bloomOp).toFixed(2)+'"/>';
+          }
+
+          // ── INNER RING — decorative brass circle connecting the petal bases ──
+          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.35)+'"'
+             + ' fill="none" stroke="'+_ckBrass+'" stroke-width="0.3" opacity="'+(0.4*bloomOp).toFixed(2)+'"/>';
+          // Inner ring highlight
+          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.35)+'"'
+             + ' fill="none" stroke="rgba(255,255,240,0.1)" stroke-width="0.15" opacity="'+bloomOp+'"/>';
+
+          // ── CLOCK HANDS — the mechanical soul ──
+          // Hour hand — short, wider, dark
+          var _hourAng = ((-90 + 60) * Math.PI / 180); // points at ~2 o'clock
+          var _hourLen = _ckR * 0.45;
+          var _hourTipX = fx + Math.cos(_hourAng) * _hourLen;
+          var _hourTipY = fy + Math.sin(_hourAng) * _hourLen;
+          // Hour hand shadow
+          s += '<line x1="'+(fx+fs*0.015)+'" y1="'+(fy+fs*0.015)+'" x2="'+(_hourTipX+fs*0.015).toFixed(1)+'" y2="'+(_hourTipY+fs*0.015).toFixed(1)+'"'
+             + ' stroke="rgba(0,0,0,0.15)" stroke-width="'+(fs*0.08)+'" stroke-linecap="round" opacity="'+bloomOp+'"/>';
+          // Hour hand body
+          s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+_hourTipX.toFixed(1)+'" y2="'+_hourTipY.toFixed(1)+'"'
+             + ' stroke="'+_ckDark+'" stroke-width="'+(fs*0.07)+'" stroke-linecap="round" opacity="'+(0.9*bloomOp)+'"/>';
+          // Hour hand highlight edge
+          s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+_hourTipX.toFixed(1)+'" y2="'+_hourTipY.toFixed(1)+'"'
+             + ' stroke="rgba(255,255,240,0.12)" stroke-width="'+(fs*0.02)+'" opacity="'+bloomOp+'"/>';
+
+          // Minute hand — longer, thinner, dark
+          var _minAng = ((-90 + 210) * Math.PI / 180); // points at ~7 o'clock
+          var _minLen = _ckR * 0.7;
+          var _minTipX = fx + Math.cos(_minAng) * _minLen;
+          var _minTipY = fy + Math.sin(_minAng) * _minLen;
+          // Minute hand shadow
+          s += '<line x1="'+(fx+fs*0.01)+'" y1="'+(fy+fs*0.01)+'" x2="'+(_minTipX+fs*0.01).toFixed(1)+'" y2="'+(_minTipY+fs*0.01).toFixed(1)+'"'
+             + ' stroke="rgba(0,0,0,0.12)" stroke-width="'+(fs*0.05)+'" stroke-linecap="round" opacity="'+bloomOp+'"/>';
+          // Minute hand body
+          s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+_minTipX.toFixed(1)+'" y2="'+_minTipY.toFixed(1)+'"'
+             + ' stroke="'+_ckDark+'" stroke-width="'+(fs*0.045)+'" stroke-linecap="round" opacity="'+(0.88*bloomOp)+'"/>';
+          // Minute hand highlight
+          s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+_minTipX.toFixed(1)+'" y2="'+_minTipY.toFixed(1)+'"'
+             + ' stroke="rgba(255,255,240,0.1)" stroke-width="'+(fs*0.015)+'" opacity="'+bloomOp+'"/>';
+
+          // Second hand — thinnest, accent color, with TICK animation
+          var _secLen = _ckR * 0.75;
+          // The second hand rotates — slow continuous sweep
+          s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+fx+'" y2="'+(fy - _secLen).toFixed(1)+'"'
+             + ' stroke="#A85520" stroke-width="'+(fs*0.025)+'" stroke-linecap="round" opacity="'+(0.75*bloomOp)+'">'
+             + '<animateTransform attributeName="transform" type="rotate"'
+             + ' from="0 '+fx+' '+fy+'" to="360 '+fx+' '+fy+'"'
+             + ' dur="60s" repeatCount="indefinite"/>'
+             + '</line>';
+          // Second hand counterweight — tiny tail behind center
+          s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+fx+'" y2="'+(fy + _secLen*0.15).toFixed(1)+'"'
+             + ' stroke="#A85520" stroke-width="'+(fs*0.03)+'" stroke-linecap="round" opacity="'+(0.6*bloomOp)+'">'
+             + '<animateTransform attributeName="transform" type="rotate"'
+             + ' from="0 '+fx+' '+fy+'" to="360 '+fx+' '+fy+'"'
+             + ' dur="60s" repeatCount="indefinite"/>'
+             + '</line>';
+
+          // ── CENTRAL PIVOT JEWEL — the axis of time ──
+          // Outer ring
+          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.14)+'"'
+             + ' fill="'+_ckBrass+'" opacity="'+(0.95*bloomOp)+'" stroke="'+_ckAccent+'" stroke-width="0.2"/>';
+          // Inner jewel
+          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.08)+'"'
+             + ' fill="'+_ckDark+'" opacity="'+(0.9*bloomOp)+'"/>';
+          // Jewel highlight — polished brass specular
+          s += '<circle cx="'+(fx - fs*0.025)+'" cy="'+(fy - fs*0.025)+'" r="'+(fs*0.035)+'"'
+             + ' fill="rgba(255,255,230,0.45)" opacity="'+bloomOp+'"/>';
+          // Jewel shadow ring
+          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.15)+'"'
+             + ' fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="0.25" opacity="'+bloomOp+'"/>';
+
+          // ── OUTER RIM — decorative brass bezel ──
+          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(_ckR*0.92)+'"'
+             + ' fill="none" stroke="'+_ckBrass+'" stroke-width="0.5" opacity="'+(0.5*bloomOp).toFixed(2)+'"/>';
+          // Bezel highlight — upper-left arc
+          s += '<path d="M'+(fx - _ckR*0.65)+','+(fy - _ckR*0.65)
+             + ' A '+(_ckR*0.92)+' '+(_ckR*0.92)+' 0 0 1 '+(fx + _ckR*0.65)+','+(fy - _ckR*0.65)+'"'
+             + ' fill="none" stroke="rgba(255,255,230,0.12)" stroke-width="0.4" opacity="'+bloomOp+'"/>';
+          // Bezel shadow — lower-right arc
+          s += '<path d="M'+(fx + _ckR*0.65)+','+(fy + _ckR*0.65)
+             + ' A '+(_ckR*0.92)+' '+(_ckR*0.92)+' 0 0 1 '+(fx - _ckR*0.65)+','+(fy + _ckR*0.65)+'"'
+             + ' fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="0.35" opacity="'+bloomOp+'"/>';
         })();
         break;
       case 68: // Void Blossom — space-filled petals, starfield inside, purple core glow
@@ -16277,12 +16454,12 @@ document.addEventListener('keydown', function(e) {
 
   // ── AURA RENDERER ──
   // ── Phase 23: MANDALA HALO RENDERER ─────────────────────────────────────
-  // Only fires when t.flower % 69 === 7 (Mandala trait).
+  // Only fires when t.flower % 70 === 7 (Mandala trait).
   // Sits between BLOOM and COMPANION layers — physically attached to plant.
   // set-104: Added viewBox containment clamp — halo radius (up to 33px) was
   // rendering above y=0 on tall stems. Now hy is clamped so halo fits.
   function renderHalo(t, uid, visibleTop) {
-    if ((t.flower % 69) !== 7) return ''; // set-103-8: updated from %35
+    if ((t.flower % 70) !== 7) return ''; // set-103-8: updated from %35
     if (!t.hasFlower) return '';
     var stemTop = Math.max(10, 78 - t.stemHeight);
     var hx = 35;
@@ -18934,7 +19111,7 @@ document.addEventListener('keydown', function(e) {
   function getTraitSummary(hash) {
     var t = hashToTraits(hash);
     var p = [TRAIT_BANK.pots[t.pot].name, TRAIT_BANK.stems[t.stem % 24].name, TRAIT_BANK.leaves[t.leafType % 16].name];
-    if (t.hasFlower) p.push(TRAIT_BANK.flowers[t.flower % 69].name);
+    if (t.hasFlower) p.push(TRAIT_BANK.flowers[t.flower % 70].name);
     var aName = TRAIT_BANK.auras[t.aura].name;
     if (aName !== 'None') p.push(aName + ' aura');
     var bName = TRAIT_BANK.bases[t.base].name;
@@ -19230,7 +19407,7 @@ document.addEventListener('keydown', function(e) {
     }},
     { key: 'FLOWER',      get: function(t) {
         if (!t.hasFlower) return null;
-        var f = TRAIT_BANK.flowers[t.flower % 69];
+        var f = TRAIT_BANK.flowers[t.flower % 70];
         return { name: f.name, rare: !!f.rare };
     }},
     { key: 'AURA',        get: function(t) {
@@ -19326,7 +19503,7 @@ document.addEventListener('keydown', function(e) {
   function getTraitSummary(hash) {
     var t = hashToTraits(hash);
     var p = [TRAIT_BANK.pots[t.pot].name, TRAIT_BANK.stems[t.stem % 24].name, TRAIT_BANK.leaves[t.leafType % 16].name];
-    if (t.hasFlower) p.push(TRAIT_BANK.flowers[t.flower % 69].name);
+    if (t.hasFlower) p.push(TRAIT_BANK.flowers[t.flower % 70].name);
     var aName = TRAIT_BANK.auras[t.aura].name;
     if (aName !== 'None') p.push(aName);
     var bName = TRAIT_BANK.bases[t.base].name;
@@ -19492,7 +19669,7 @@ document.addEventListener('keydown', function(e) {
         var _pName = 'Plant';
         try {
           var _leafName = (TRAIT_BANK && TRAIT_BANK.leaves && TRAIT_BANK.leaves[_ghTraits.leafType]) ? TRAIT_BANK.leaves[_ghTraits.leafType].name : '';
-          var _bloomName = (TRAIT_BANK && TRAIT_BANK.flowers && TRAIT_BANK.flowers[_ghTraits.flower % 69]) ? TRAIT_BANK.flowers[_ghTraits.flower % 69].name : '';
+          var _bloomName = (TRAIT_BANK && TRAIT_BANK.flowers && TRAIT_BANK.flowers[_ghTraits.flower % 70]) ? TRAIT_BANK.flowers[_ghTraits.flower % 70].name : '';
           _pName = _bloomName || _leafName || 'Plant';
         } catch(e2) {}
         var _sea = window.getSeasonInfo ? window.getSeasonInfo(_ghTraits) : null;
@@ -20429,7 +20606,7 @@ document.addEventListener('keydown', function(e) {
       ledgerRows.push({ cat: 'GROWTH PATH', val: stemEntry.name, rare: false });
       ledgerRows.push({ cat: 'FOLIAGE',     val: leafEntry.name, rare: !!leafEntry.rare });
       if (t.hasFlower) {
-        var flEntry = TRAIT_BANK.flowers[t.flower % 69];
+        var flEntry = TRAIT_BANK.flowers[t.flower % 70];
         ledgerRows.push({ cat: 'FLOWER', val: flEntry.name, rare: !!flEntry.rare });
       }
       var aurEntry = TRAIT_BANK.auras[t.aura];
@@ -21391,7 +21568,7 @@ document.addEventListener('keydown', function(e) {
           + 'background:' + pCol[p % 5] + ';'
           + '--dur:'  + (2.2 + (p % 6) * 0.45).toFixed(1) + 's;'
           + '--del:'  + ((p * 28) % 280 / 100).toFixed(2) + 's;'
-          + '--dy:'   + (-(35 + (p * 13) % 69)) + 'px;'
+          + '--dy:'   + (-(35 + (p * 13) % 70)) + 'px;'
           + '--dx:'   + (((p * 7) % 15 - 7) * 8) + 'px;'
           + '"></div>';
       }
