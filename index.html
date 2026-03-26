@@ -1435,6 +1435,21 @@
     @keyframes cdnPulse {
       0%,100% { opacity: 0.6; } 50% { opacity: 1; }
     }
+    /* ── FANTASY BLOOM CSS ── */
+    @keyframes iceShimmer {
+      0%,100% { opacity: 0.45; filter: brightness(1); }
+      25% { opacity: 0.55; filter: brightness(1.12); }
+      50% { opacity: 0.5; filter: brightness(1.06); }
+      75% { opacity: 0.6; filter: brightness(1.18); }
+    }
+    @keyframes frostPulse {
+      0%,100% { stroke-opacity: 0.5; }
+      50% { stroke-opacity: 0.8; }
+    }
+    @keyframes iceGlow {
+      0%,100% { opacity: 0.04; }
+      50% { opacity: 0.08; }
+    }
     .cdn-plant-wrap {
       transition: transform 0.7s cubic-bezier(0.4,0,0.2,1), opacity 0.5s ease;
     }
@@ -13585,12 +13600,14 @@ document.addEventListener('keydown', function(e) {
           var _iceDark = '#8AB0C8';   // deeper ice shadow
           var _frostW = '#FFFFFF';    // pure white frost lines
 
-          // ── COLD AURA — blue glow radiating outward ──
+          // ── COLD AURA — blue glow radiating outward, breathing ──
           s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(_irR*1.2)+'"'
-             + ' fill="'+_iceFill+'" opacity="'+(0.05*bloomOp)+'" filter="url(#gc'+uid+')"/>';
-          // Second tighter cold ring
+             + ' fill="'+_iceFill+'" opacity="'+(0.05*bloomOp)+'" filter="url(#gc'+uid+')"'
+             + ' style="animation:iceGlow 5s ease-in-out infinite"/>';
+          // Second tighter cold ring — offset phase
           s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(_irR*0.85)+'"'
-             + ' fill="'+_iceEdge+'" opacity="'+(0.04*bloomOp)+'" filter="url(#gc'+uid+')"/>';
+             + ' fill="'+_iceEdge+'" opacity="'+(0.04*bloomOp)+'" filter="url(#gc'+uid+')"'
+             + ' style="animation:iceGlow 4s ease-in-out 1.5s infinite"/>';
 
           // ── OUTER RING — 8 ice petals, concentric rose construction ──
           for (var oi = 0; oi < 8; oi++) {
@@ -13611,11 +13628,12 @@ document.addEventListener('keydown', function(e) {
             var ocp4x = fx + Math.cos(oAng) * oReach * 0.25 - Math.cos(oPerp) * oPW * 0.6;
             var ocp4y = fy + Math.sin(oAng) * oReach * 0.25 - Math.sin(oPerp) * oPW * 0.6;
 
-            // Ice petal body — translucent fill with SHARP crystal-edge stroke
+            // Ice petal body — translucent fill with SHARP crystal-edge stroke + shimmer
             s += '<path d="M'+fx+','+fy
                + ' C'+ocp1x.toFixed(1)+','+ocp1y.toFixed(1)+' '+ocp2x.toFixed(1)+','+ocp2y.toFixed(1)+' '+oTipX.toFixed(1)+','+oTipY.toFixed(1)
                + ' C'+ocp3x.toFixed(1)+','+ocp3y.toFixed(1)+' '+ocp4x.toFixed(1)+','+ocp4y.toFixed(1)+' '+fx+','+fy+' Z"'
-               + ' fill="'+_iceFill+'" fill-opacity="'+(0.5*bloomOp).toFixed(2)+'" stroke="'+_frostW+'" stroke-width="0.4" stroke-opacity="'+(0.6*bloomOp).toFixed(2)+'"/>';
+               + ' fill="'+_iceFill+'" fill-opacity="'+(0.5*bloomOp).toFixed(2)+'" stroke="'+_frostW+'" stroke-width="0.4" stroke-opacity="'+(0.6*bloomOp).toFixed(2)+'"'
+               + ' style="animation:iceShimmer '+(6 + oi*0.5).toFixed(1)+'s ease-in-out '+(oi*0.4).toFixed(1)+'s infinite"/>';
 
             // ── FROST VEINS — branching ice-crystal lines inside petal ──
             // Main frost vein — central line
@@ -13654,10 +13672,11 @@ document.addEventListener('keydown', function(e) {
                  + ' transform="rotate('+(oAng*180/Math.PI).toFixed(0)+','+prX.toFixed(1)+','+prY.toFixed(1)+')"/>';
             }
 
-            // Crystal edge highlight — sharp bright line on one edge
+            // Crystal edge highlight — sharp bright line with frost pulse
             s += '<path d="M'+fx+','+fy
                + ' C'+ocp1x.toFixed(1)+','+ocp1y.toFixed(1)+' '+ocp2x.toFixed(1)+','+ocp2y.toFixed(1)+' '+oTipX.toFixed(1)+','+oTipY.toFixed(1)+'"'
-               + ' fill="none" stroke="'+_frostW+'" stroke-width="0.5" opacity="'+(0.3*bloomOp).toFixed(2)+'"/>';
+               + ' fill="none" stroke="'+_frostW+'" stroke-width="0.5" opacity="'+(0.3*bloomOp).toFixed(2)+'"'
+               + ' style="animation:frostPulse '+(5 + oi*0.3).toFixed(1)+'s ease-in-out '+(oi*0.6).toFixed(1)+'s infinite"/>';
 
             // Ice shadow edge — cool blue on opposite side
             s += '<path d="M'+fx+','+fy
@@ -13703,7 +13722,8 @@ document.addEventListener('keydown', function(e) {
             hexPath += (hi === 0 ? 'M' : 'L') + hx.toFixed(1) + ',' + hy.toFixed(1);
           }
           hexPath += ' Z';
-          s += '<path d="'+hexPath+'" fill="'+_iceEdge+'" fill-opacity="'+(0.7*bloomOp).toFixed(2)+'" stroke="'+_frostW+'" stroke-width="0.4" stroke-opacity="'+(0.7*bloomOp).toFixed(2)+'"/>';
+          s += '<path d="'+hexPath+'" fill="'+_iceEdge+'" fill-opacity="'+(0.7*bloomOp).toFixed(2)+'" stroke="'+_frostW+'" stroke-width="0.4" stroke-opacity="'+(0.7*bloomOp).toFixed(2)+'"'
+             + ' style="animation:iceShimmer 4.5s ease-in-out infinite"/>';
           // Crystal facet lines inside hexagon
           for (var ci = 0; ci < 3; ci++) {
             var cAng1 = (ci * 60 - 30) * Math.PI / 180;
