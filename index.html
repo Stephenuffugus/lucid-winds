@@ -9012,6 +9012,17 @@ document.addEventListener('keydown', function(e) {
           lx = _stemCx - _trHW - t.leafSpread * 0.1; // left wall contact
         }
       }
+      if (_stemCase === 22) {
+        // Crystal Spine: force specific leaves to stem sides for contact
+        _stemCx = _stemCenterAt(t, ly);
+        var _csHW = t._stemHW || 1.5;
+        if (i === 1) { side = 1; lx = _stemCx + _csHW + t.leafSpread * 0.15; } // right outside
+        if (i === 2) { side = -1; lx = _stemCx - _csHW - t.leafSpread * 0.15; } // left
+        if (i === 3) { side = 1; lx = _stemCx + _csHW + t.leafSpread * 0.15; } // right
+        // leaf 4 stays as-is
+        if (i === 5) { side = 1; lx = _stemCx + _csHW + t.leafSpread * 0.15; } // right
+        if (i === 6) { side = 1; lx = _stemCx + _csHW + t.leafSpread * 0.1; } // right, tight
+      }
       if (_stemCase === 21) {
         // Mushroom Stipe: reverse taper — thin at base (1.8), fat at top (4.5)
         var _msTopY = 78 - t.stemHeight;
