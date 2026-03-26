@@ -8947,23 +8947,69 @@ document.addEventListener('keydown', function(e) {
       // ── STEM-SHAPE SPECIFIC OVERRIDES ──
       var _stemCase = t.stem % 24;
       if (_stemCase === 1) {
-        // Curve L: stem curves left. Leaf 0 should extend left at ~22°
-        // Leaves 3 and 6 need tighter stem contact
+        // Curve L: stem curves left. All leaves nudged right to contact stem.
+        _stemCx = _stemCenterAt(t, ly);
+        lx += 1.5; // nudge ALL leaves right toward stem contact
         if (i === 0) {
           // Push leaf 0 to the LEFT side (the direction the stem curves)
           var _cl0Ang = -0.38; // ~22° from horizontal, leftward
-          var _cl0Reach = t.leafSpread * 0.7;
+          var _cl0Reach = t.leafSpread * 0.55;
           side = -1; // force left
-          lx = _stemCx - _cl0Reach;
+          lx = _stemCx - _cl0Reach + 1.5;
           // Also adjust ly slightly to follow the curve slope
           ly += 2;
           _stemCx = _stemCenterAt(t, ly);
-          lx = _stemCx - _cl0Reach;
+          lx = _stemCx - _cl0Reach + 1.5;
         }
         // Leaves 3 and 6 — pull much closer to stem for solid contact
         if (i === 3 || i === 6) {
           _stemCx = _stemCenterAt(t, ly);
           lx = _stemCx + (lx - _stemCx) * 0.35; // 65% closer to stem
+        }
+      }
+      if (_stemCase === 2) {
+        // Curve R: stem curves right. All leaves nudged left to contact stem.
+        _stemCx = _stemCenterAt(t, ly);
+        lx -= 1.5; // nudge ALL leaves left toward stem contact
+        if (i === 0) {
+          // Push leaf 0 to the RIGHT side (the direction the stem curves)
+          var _cr0Reach = t.leafSpread * 0.55;
+          side = 1; // force right
+          lx = _stemCx + _cr0Reach - 1.5;
+          ly += 2;
+          _stemCx = _stemCenterAt(t, ly);
+          lx = _stemCx + _cr0Reach - 1.5;
+        }
+        // Leaves 2, 5, 7 — pull much closer to stem for solid contact
+        if (i === 2 || i === 5 || i === 7) {
+          _stemCx = _stemCenterAt(t, ly);
+          lx = _stemCx + (lx - _stemCx) * 0.35; // 65% closer to stem
+        }
+        // Leaves 3 and 6 — also pull closer for consistency
+        if (i === 3 || i === 6) {
+          _stemCx = _stemCenterAt(t, ly);
+          lx = _stemCx + (lx - _stemCx) * 0.35;
+        }
+      }
+      if (_stemCase === 3) {
+        // S-Curve: leaf 7 needs to move left to contact stem
+        if (i === 7) {
+          _stemCx = _stemCenterAt(t, ly);
+          side = -1; // force left
+          lx = _stemCx - t.leafSpread * 0.35; // tight left contact
+        }
+      }
+      if (_stemCase === 4) {
+        // Trunk: wide stem — leaves 0,1 need to reach outer wall; leaf 7 left contact
+        _stemCx = _stemCenterAt(t, ly);
+        var _trHW = t._stemHW || 3.0; // trunk half-width
+        if (i === 0 || i === 1) {
+          // Push outward to meet the outside wall of the trunk
+          lx = _stemCx + side * (_trHW + t.leafSpread * 0.15);
+        }
+        if (i === 7) {
+          side = -1; // force left
+          lx = _stemCx - _trHW - t.leafSpread * 0.1; // left wall contact
         }
       }
       if (_stemCase === 21) {
