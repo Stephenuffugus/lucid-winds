@@ -12633,7 +12633,7 @@ document.addEventListener('keydown', function(e) {
     if (_bc === 45) _reach = 2.8; // Ghost Orchid
     if (_bc === 46) _reach = 2.0; // Peony
     if (_bc === 47) _reach = 2.8; // Lantern Bloom (pendant — extends downward)
-    if (_bc === 48) _reach = 2.0; // Sunflower
+    if (_bc === 48) _reach = 2.8; // Sunflower (large golden petals)
     if (_bc === 49) _reach = 2.0; // Jasmine Cluster
     if (_bc === 50) _reach = 2.0; // Marigold
     if (_bc === 51) _reach = 2.5; // Iris (standards reach upward)
@@ -14633,38 +14633,61 @@ document.addEventListener('keydown', function(e) {
           }
         })();
         break;
-      case 48: // Sunflower — wide flat ray petals around dark center disc
+      case 48: // Sunflower — large golden ray petals around dark center disc
         (function(){
+          // Sunflower petals are ALWAYS warm golden tones regardless of hash color
+          // Each petal gets a unique shade cycling through yellow/gold/amber/orange
+          var _sfPals = ['#E8C020','#D4A014','#DAB030','#C89018','#E0A828','#D4B455','#CC8820','#E8B830','#D09020','#DBA428','#C8A030','#E0B838','#D49828'];
           var _sfPetals = 13;
-          var _sfReach = fs * 1.8;
-          var _sfPW = fs * 0.4; // petal width
-          // Ray petals — tapered bezier loops radiating outward
+          var _sfReach = fs * 2.2; // LARGE petals
+          var _sfPW = fs * 0.6; // wide petals
+          // Ray petals — wide tapered bezier loops radiating outward
           for (var pi = 0; pi < _sfPetals; pi++) {
             var ang = (pi * 360 / _sfPetals - 90) * Math.PI / 180;
-            var tipX = fx + Math.cos(ang) * _sfReach;
-            var tipY = fy + Math.sin(ang) * _sfReach;
-            // Slight variation in petal length
-            var vary = 1 + Math.sin(pi * 3.7) * 0.08;
-            tipX = fx + Math.cos(ang) * _sfReach * vary;
-            tipY = fy + Math.sin(ang) * _sfReach * vary;
-            // Control points for tapered petal
-            var cp1x = fx + Math.cos(ang - 0.2) * _sfReach * 0.4;
-            var cp1y = fy + Math.sin(ang - 0.2) * _sfReach * 0.4;
-            var cp2x = tipX - Math.cos(ang) * _sfPW * 0.3 + Math.cos(ang + Math.PI*0.5) * _sfPW * 0.3;
-            var cp2y = tipY - Math.sin(ang) * _sfPW * 0.3 + Math.sin(ang + Math.PI*0.5) * _sfPW * 0.3;
-            var cp3x = tipX - Math.cos(ang) * _sfPW * 0.3 - Math.cos(ang + Math.PI*0.5) * _sfPW * 0.3;
-            var cp3y = tipY - Math.sin(ang) * _sfPW * 0.3 - Math.sin(ang + Math.PI*0.5) * _sfPW * 0.3;
-            var cp4x = fx + Math.cos(ang + 0.2) * _sfReach * 0.4;
-            var cp4y = fy + Math.sin(ang + 0.2) * _sfReach * 0.4;
+            var perpSf = ang + Math.PI * 0.5;
+            // Variation in petal length for organic feel
+            var vary = 1 + Math.sin(pi * 3.7) * 0.1;
+            var tipX = fx + Math.cos(ang) * _sfReach * vary;
+            var tipY = fy + Math.sin(ang) * _sfReach * vary;
+            var petalColor = _sfPals[pi % _sfPals.length];
+            // Wide rounded bezier control points
+            var cp1x = fx + Math.cos(ang) * _sfReach * 0.3 + Math.cos(perpSf) * _sfPW * 0.6;
+            var cp1y = fy + Math.sin(ang) * _sfReach * 0.3 + Math.sin(perpSf) * _sfPW * 0.6;
+            var cp2x = tipX + Math.cos(perpSf) * _sfPW * 0.2;
+            var cp2y = tipY + Math.sin(perpSf) * _sfPW * 0.2;
+            var cp3x = tipX - Math.cos(perpSf) * _sfPW * 0.2;
+            var cp3y = tipY - Math.sin(perpSf) * _sfPW * 0.2;
+            var cp4x = fx + Math.cos(ang) * _sfReach * 0.3 - Math.cos(perpSf) * _sfPW * 0.6;
+            var cp4y = fy + Math.sin(ang) * _sfReach * 0.3 - Math.sin(perpSf) * _sfPW * 0.6;
+            // Petal body — full opacity warm golden
             s += '<path d="M'+fx+','+fy
                + ' C'+cp1x.toFixed(1)+','+cp1y.toFixed(1)+' '+cp2x.toFixed(1)+','+cp2y.toFixed(1)+' '+tipX.toFixed(1)+','+tipY.toFixed(1)
                + ' C'+cp3x.toFixed(1)+','+cp3y.toFixed(1)+' '+cp4x.toFixed(1)+','+cp4y.toFixed(1)+' '+fx+','+fy+' Z"'
-               + ' fill="'+fc+'" opacity="'+(0.92*bloomOp)+'" stroke="rgba(0,0,0,0.1)" stroke-width="0.2"/>';
+               + ' fill="'+petalColor+'" opacity="'+(0.96*bloomOp)+'" stroke="rgba(140,90,10,0.15)" stroke-width="0.2"/>';
             // Petal midrib vein
-            var mx = fx + Math.cos(ang) * _sfReach * 0.55 * vary;
-            var my = fy + Math.sin(ang) * _sfReach * 0.55 * vary;
+            var mx = fx + Math.cos(ang) * _sfReach * 0.6 * vary;
+            var my = fy + Math.sin(ang) * _sfReach * 0.6 * vary;
             s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+mx.toFixed(1)+'" y2="'+my.toFixed(1)+'"'
-               + ' stroke="rgba(0,0,0,0.08)" stroke-width="0.3" opacity="'+bloomOp+'"/>';
+               + ' stroke="rgba(120,70,5,0.12)" stroke-width="0.3" opacity="'+bloomOp+'"/>';
+            // Secondary veins
+            var sv1x = fx + Math.cos(ang + 0.12) * _sfReach * 0.45 * vary;
+            var sv1y = fy + Math.sin(ang + 0.12) * _sfReach * 0.45 * vary;
+            var sv2x = fx + Math.cos(ang - 0.12) * _sfReach * 0.45 * vary;
+            var sv2y = fy + Math.sin(ang - 0.12) * _sfReach * 0.45 * vary;
+            s += '<line x1="'+(fx+Math.cos(ang)*_sfReach*0.2).toFixed(1)+'" y1="'+(fy+Math.sin(ang)*_sfReach*0.2).toFixed(1)+'" x2="'+sv1x.toFixed(1)+'" y2="'+sv1y.toFixed(1)+'"'
+               + ' stroke="rgba(120,70,5,0.06)" stroke-width="0.2" opacity="'+bloomOp+'"/>';
+            s += '<line x1="'+(fx+Math.cos(ang)*_sfReach*0.2).toFixed(1)+'" y1="'+(fy+Math.sin(ang)*_sfReach*0.2).toFixed(1)+'" x2="'+sv2x.toFixed(1)+'" y2="'+sv2y.toFixed(1)+'"'
+               + ' stroke="rgba(120,70,5,0.06)" stroke-width="0.2" opacity="'+bloomOp+'"/>';
+            // Highlight edge — upper-left petals
+            if (pi < 5) {
+              s += '<path d="M'+fx+','+fy
+                 + ' C'+cp1x.toFixed(1)+','+cp1y.toFixed(1)+' '+cp2x.toFixed(1)+','+cp2y.toFixed(1)+' '+tipX.toFixed(1)+','+tipY.toFixed(1)+'"'
+                 + ' fill="none" stroke="rgba(255,255,220,0.2)" stroke-width="0.4" opacity="'+bloomOp+'"/>';
+            }
+            // Shadow edge — lower petals
+            s += '<path d="M'+fx+','+fy
+               + ' C'+cp4x.toFixed(1)+','+cp4y.toFixed(1)+' '+cp3x.toFixed(1)+','+cp3y.toFixed(1)+' '+tipX.toFixed(1)+','+tipY.toFixed(1)+'"'
+               + ' fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="0.3" opacity="'+bloomOp+'"/>';
           }
           // Dark center disc
           var _discR = fs * 0.65;
