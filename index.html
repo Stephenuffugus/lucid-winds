@@ -5108,6 +5108,47 @@ document.addEventListener('keydown', function(e) {
     return '<span style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;color:' + c + ';background:rgba(0,0,0,0.4);padding:1px 5px;border-radius:3px;border:1px solid ' + c + '44;">EA ' + ea + '</span>';
   };
 
+  // ═══ HARDINESS SCORE ═══════════════════════════════════════════════════
+  // Composite durability metric from trait layers, breed layers, compost
+  // heritage, generation, and Terra Grade. Scale: 1.0 (fragile) – 7.0 (Cosmic).
+  window.getHardiness = function(traits, plant) {
+    if (!traits) return 1;
+    var h = 1;
+    if (traits.aura >= 1) h += 0.5;
+    if (traits.base >= 7) h += 0.5;
+    if (traits.hasFlower) h += 0.25;
+    if (traits.mutationName === 'Wireframe') h += 1;
+    if (traits.mutationName === 'Glass Stem') h += 1;
+    if (traits.mutationName === 'Glitch') h += 1.5;
+    if (traits.companion >= 32 && traits.companion <= 33) h += 1;
+    if (traits.companion >= 34 && traits.companion <= 36) h += 1.5;
+    if (traits.companion >= 37) h += 2;
+    if (plant && plant.breedLayers) {
+      var bl = plant.breedLayers;
+      var layerCount = 0;
+      if (bl.chimeraVein) layerCount++;
+      if (bl.vigorBand) layerCount++;
+      if (bl.spectrumLeaf) layerCount++;
+      if (bl.thornedCrown) layerCount++;
+      if (bl.rootTendrils) layerCount++;
+      if (bl.canopyWeave) layerCount++;
+      if (bl.biolumSpots) layerCount++;
+      if (bl.aerialRoot) layerCount++;
+      h += layerCount * 0.5;
+    }
+    if (plant && plant.mycelialCrown) h += 2;
+    var gen = (plant && plant.generation) ? plant.generation : (traits.chimerGen || 1);
+    if (gen > 1) h += (gen - 1) * 0.5;
+    var tg = null;
+    try { tg = window.getTerraGrade(traits); } catch(e) {}
+    if (tg && tg.name === 'Cosmic') {
+      h = 7;
+    } else {
+      h = Math.min(6.5, h);
+    }
+    return Math.round(h * 10) / 10;
+  };
+
   // ─────────────────────────────────────────────────────────────────────────
   // Seven tiers, scored by stacking rare trait signals. No double-dipping.
   // Exposed as window.getTerraGrade(traits) for cross-team use.
@@ -5198,6 +5239,25 @@ document.addEventListener('keydown', function(e) {
       if (t.breedLayers.aerialRoot) score += 1;
     }
 
+    // SLOT 13: Compost layers
+    if (t.compostLayers) {
+      if (t.compostLayers.mycelialCrown) score += 1;
+      if (t.compostLayers.substrateEcho) score += 1;
+      if (t.compostLayers.leafMemory) score += 1;
+      if (t.compostLayers.auraResidue) score += 1;
+      if (t.compostLayers.tierImprint) score += 2;
+      if (t.compostLayers.dualHeritage) score += 2;
+      if (t.compostLayers.deepRoot) score += 1;
+    }
+
+    // SLOT 14: Synergy bonuses
+    if (typeof checkSynergies === 'function') {
+      var _syn = checkSynergies(t);
+      if (_syn.length >= 1) score += 1;
+      if (_syn.length >= 3) score += 2;
+      if (_syn.length >= 5) score += 3;
+    }
+
     // Find highest qualifying tier
     var grade = _TERRA_GRADES[0];
     for (var gi = _TERRA_GRADES.length - 1; gi >= 0; gi--) {
@@ -5275,6 +5335,58 @@ document.addEventListener('keydown', function(e) {
   }
 
   window.evaluateBreedLayers = evaluateBreedLayers;
+
+  // ═══ SYNERGY ENGINE — trait combination bonuses ═══════════════════════════
+  var SYNERGY_META = [
+    { id:'crystalline',  emoji:'💠', name:'Crystalline Harmony',  desc:'Crystal base + Glass Stem mutation',
+      test: function(t){ return (t.base >= 25) && (t.mutation >= 0xE0 && t.mutation < 0xF0); } },
+    { id:'deepglow',     emoji:'🔮', name:'Deep Glow',            desc:'Biolum aura + rare flower',
+      test: function(t){ return (t.aura >= 18) && t.hasFlower && (t.flower >= 60); } },
+    { id:'ancientroots', emoji:'🌿', name:'Ancient Roots',        desc:'Braided stem + Mycelial Crown',
+      test: function(t){ return (t.stemType === 'Braided' || (typeof t.stem !== 'undefined' && t.stem > 12)) && t.mycelialCrown; } },
+    { id:'chimeraforce', emoji:'⚡', name:'Chimera Force',        desc:'Gen 3+ chimera + breed layer',
+      test: function(t){ return (t.chimerGen >= 3) && t.breedLayers && Object.keys(t.breedLayers).some(function(k){ return t.breedLayers[k]; }); } },
+    { id:'seasonalecho', emoji:'🌀', name:'Seasonal Echo',        desc:'Compost Substrate Echo + matching season substrate',
+      test: function(t){ return t.compostLayers && t.compostLayers.substrateEcho && (t.base >= 20); } },
+    { id:'floralcrown',  emoji:'🌸', name:'Floral Crown',         desc:'Rare flower + crown companion',
+      test: function(t){ return t.hasFlower && (t.flower >= 55) && (t.companion >= 30 && t.companion < 40); } },
+    { id:'mossweave',    emoji:'🍃', name:'Moss Weave',           desc:'5+ leaves + Leaf Memory compost',
+      test: function(t){ return (t.leafCount >= 7) && t.compostLayers && t.compostLayers.leafMemory; } },
+    { id:'stormborn',    emoji:'⛈', name:'Stormborn',             desc:'Glitch mutation + mythic companion',
+      test: function(t){ return (t.mutation >= 0xF0) && (t.companion >= 32 && t.companion <= 38); } },
+    { id:'deepheritage', emoji:'📜', name:'Deep Heritage',        desc:'Dual Heritage + Tier Imprint compost',
+      test: function(t){ return t.compostLayers && t.compostLayers.dualHeritage && t.compostLayers.tierImprint; } },
+    { id:'cosmicbloom',  emoji:'🌌', name:'Cosmic Bloom',         desc:'Cosmic-tier score + any synergy',
+      test: function(t){ return false; /* evaluated post-hoc */ } }
+  ];
+
+  function checkSynergies(t) {
+    if (!t) return [];
+    var active = [];
+    // Resolve mutation byte for synergy tests
+    if (typeof t.mutation === 'undefined' && t.hash) {
+      try { t.mutation = parseInt(t.hash.slice(32, 34), 16); } catch(e) { t.mutation = 0; }
+    }
+    // Resolve stem numeric value
+    if (typeof t.stem === 'undefined' && t.hash) {
+      try { var _hc2 = parseInt(t.hash[2], 16); t.stem = _hc2; } catch(e) { t.stem = 0; }
+    }
+    for (var i = 0; i < SYNERGY_META.length; i++) {
+      if (SYNERGY_META[i].id === 'cosmicbloom') continue; // post-hoc
+      try { if (SYNERGY_META[i].test(t)) active.push(SYNERGY_META[i]); } catch(e) {}
+    }
+    // Cosmic Bloom: triggered if score >= 18 AND at least 1 other synergy
+    if (active.length > 0) {
+      try {
+        var _tg = getTerraGrade(t);
+        if (_tg && _tg.score >= 18) active.push(SYNERGY_META[SYNERGY_META.length - 1]);
+      } catch(e) {}
+    }
+    return active;
+  }
+
+  window.checkSynergies = checkSynergies;
+  window.SYNERGY_META = SYNERGY_META;
 
   // ─────────────────────────────────────────────────────────────────────────
   // Cross-Pollination Engine
@@ -7418,6 +7530,10 @@ document.addEventListener('keydown', function(e) {
     visibleTop = Math.max(stemTop, visibleTop);
     svg += renderStem(t, uid, visibleTop, isGlass, prog);
 
+    // ── Spec 15: Breed/compost layers on stem body (after stem, before pot) ──
+    if (t.breedLayers && t.breedLayers.vigorBand) svg += renderVigorBand(t, uid, visibleTop);
+    if (t.compostLayers && t.compostLayers.nutrientVeins) svg += renderNutrientVeins(uid, visibleTop, t.compostLayers.nutrientVeins);
+
     // 5. POT (rim now sits IN FRONT of stem — creates depth)
     svg += renderPot(t, uid);
 
@@ -7429,6 +7545,12 @@ document.addEventListener('keydown', function(e) {
     }
     // 5.5 MYCELIAL CROWN — composted heritage threads at stem base (set-103-8)
     if (prog >= 0.3) svg += renderMycelialCrown(t);
+
+    // ── Spec 15: Breed/compost layers at pot/soil level (after pot, before foliage) ──
+    if (t.breedLayers && t.breedLayers.rootTendrils) svg += renderRootTendrils(uid);
+    if (t.compostLayers && t.compostLayers.decomposerRings) svg += renderDecomposerRings(uid);
+    if (t.compostLayers && t.compostLayers.phoenixAsh) svg += renderPhoenixAsh(uid, t.compostLayers.phoenixAsh);
+    if (t.compostLayers && t.compostLayers.fossilImprint) svg += renderFossilImprint(uid, t.compostLayers.fossilImprint);
 
     // ── set-103-8-14: ORGANIC SWAY — subtle wind animation on foliage ──
     // Each plant gets a unique sway period (5.5-8.5s) derived from uid so
@@ -7453,6 +7575,11 @@ document.addEventListener('keydown', function(e) {
 
     // 6. LEAVES
     if (prog >= 0.15) svg += renderLeaves(t, uid, visibleTop, prog, isWire);
+
+    // ── Spec 15: Breed layers after leaves, before bloom ──
+    if (t.breedLayers && t.breedLayers.thornedCrown) svg += renderThornedCrown(uid, visibleTop);
+    if (t.breedLayers && t.breedLayers.canopyWeave && window._lastLeafPositions) svg += renderCanopyWeave(uid, window._lastLeafPositions);
+    if (t.breedLayers && t.breedLayers.biolumSpots && window._lastLeafPositions) svg += renderBiolumSpots(uid, window._lastLeafPositions, window._lastLeafSizes);
 
     // ── set-104: SAFE BLOOM ANCHOR — compute once, use for calyx/bloom/halo ──
     // This ensures calyx, bloom, and halo all agree on where the flower sits,
@@ -7506,8 +7633,15 @@ document.addEventListener('keydown', function(e) {
     // 7.5 MANDALA HALO — uses _safeBloomY for consistent positioning
     if (prog >= 0.8 && t.hasFlower) svg += renderHalo(t, uid, _safeBloomY);
 
+    // ── Spec 15: Pollen dusting after bloom ──
+    if (t.breedLayers && t.breedLayers.pollenDusting && t.hasFlower) svg += renderPollenDusting(t, uid, 35, _safeBloomY, t.flowerSize);
+
     // Close foliage clip + sway wrapper
     svg += '</g>';
+
+    // ── Spec 15: Breed/compost layers after foliage clip ──
+    if (t.breedLayers && t.breedLayers.aerialRoot && window._lastLowestLeaf) svg += renderAerialRoot(uid, window._lastLowestLeaf.x, window._lastLowestLeaf.y);
+    if (t.compostLayers && t.compostLayers.sporeHalo) svg += renderSporeHalo(uid, visibleTop);
 
     // 8. COMPANION
     if (prog >= 1) svg += renderCompanion(t, uid);
@@ -9021,6 +9155,10 @@ document.addEventListener('keydown', function(e) {
     var maxLeaves = Math.round(t.leafCount * prog);
     var fillAttr = isWire ? 'fill="none" stroke-width="0.8"' : '';
 
+    // ── Spec 15: collect leaf positions for breed layer renderers ──
+    var _leafPositions = [];
+    var _leafSizes = [];
+
     // Per-plant phase offset — hash-derived so every plant's spiral is unique
     var _phaseOff = ((parseInt(uid, 16) || 0) % 360) * Math.PI / 180;
 
@@ -9670,6 +9808,10 @@ document.addEventListener('keydown', function(e) {
       _prevSide = side;
 
       lx = Math.max(6, Math.min(64, lx)); // re-clamp after adjustments
+
+      // ── Spec 15: track leaf positions for breed layer renderers ──
+      _leafPositions.push({ x: lx, y: ly });
+      _leafSizes.push(ls);
 
       // Hue-shifted fill so no two leaves are identical
       var baseColor = PALETTE[t.leafColors[i % 3]] || PALETTE.sage;
@@ -12782,6 +12924,16 @@ document.addEventListener('keydown', function(e) {
       }
 
     }
+
+    // ── Spec 15: expose leaf positions for breed layer renderers ──
+    var _lowestLeaf = null;
+    _leafPositions.forEach(function(lp) {
+      if (!_lowestLeaf || lp.y > _lowestLeaf.y) _lowestLeaf = lp;
+    });
+    window._lastLeafPositions = _leafPositions;
+    window._lastLeafSizes = _leafSizes;
+    window._lastLowestLeaf = _lowestLeaf;
+
     return s;
   }
 
@@ -12798,6 +12950,263 @@ document.addEventListener('keydown', function(e) {
     s += '<path d="M34.9,77.4 C33.8,78.2 32.8,79.2 31.8,80.6 C31.0,81.8 30.2,82.8 29.2,83.6" stroke="rgba(234,224,200,0.55)" stroke-width="0.35" fill="none"/>';
     s += '<path d="M35.1,77.3 C36.2,77.8 37.6,78.8 39.2,80.2 C40.4,81.2 41.6,81.8 43.0,82.0" stroke="rgba(234,224,200,0.55)" stroke-width="0.35" fill="none"/>';
     s += '<path d="M35.0,76.9 C34.6,77.8 34.0,78.8 33.0,79.8 M34.1,78.0 C35.0,78.8 36.0,79.6 37.2,80.6" stroke="rgba(234,224,200,0.55)" stroke-width="0.35" fill="none"/>';
+    return s;
+  }
+
+  // ═══ BREED + COMPOST LAYER SVG RENDERERS (Spec 15) ═══════════════
+  // 13 functions. All ES5. All tested. All within 70x95 viewBox.
+  // Wired into generatePlantSVG at insertion points in Part B.
+
+  // B1: VIGOR BAND — horizontal bark ring at stem midpoint
+  function renderVigorBand(t, uid, visibleTop) {
+    var s = '';
+    var midY = 78 - (78 - visibleTop) * 0.5;
+    var hw = 1.8 + (parseInt(uid.charAt(8) || '4', 16) % 4) * 0.3;
+    s += '<line x1="' + (35 - hw) + '" y1="' + midY + '" x2="' + (35 + hw) + '" y2="' + midY + '" stroke="#2A1E14" stroke-width="0.7" opacity="0.35" stroke-linecap="round"/>';
+    s += '<line x1="' + (35 - hw * 0.75) + '" y1="' + (midY - 0.9) + '" x2="' + (35 + hw * 0.6) + '" y2="' + (midY - 0.85) + '" stroke="rgba(240,235,216,0.2)" stroke-width="0.3" stroke-linecap="round"/>';
+    s += '<line x1="' + (35 - hw * 0.55) + '" y1="' + (midY + 0.85) + '" x2="' + (35 + hw * 0.8) + '" y2="' + (midY + 0.9) + '" stroke="#2A1E14" stroke-width="0.45" opacity="0.25" stroke-linecap="round"/>';
+    s += '<ellipse cx="35" cy="' + midY + '" rx="' + (hw + 0.4) + '" ry="1.1" fill="#3A2A1A" opacity="0.08"/>';
+    return s;
+  }
+
+  // B2: POLLEN DUSTING — golden specks floating near bloom
+  function renderPollenDusting(t, uid, fx, fy, fs) {
+    var s = '';
+    var count = 6 + (parseInt(uid.charAt(10) || '3', 16) % 5);
+    for (var i = 0; i < count; i++) {
+      var seed = (parseInt(uid.charAt((i * 3) % 64) || '7', 16) + i * 41) % 256;
+      var dx = ((seed % 17) - 8) * 1.1;
+      var dy = ((seed % 13) - 6) * 1.1;
+      var r = 0.35 + (seed % 5) * 0.1;
+      var op = 0.25 + (seed % 4) * 0.08;
+      var px = Math.max(5, Math.min(65, fx + dx));
+      var py = Math.max(3, Math.min(fy + fs + 4, fy + dy));
+      var dur = (2.2 + (seed % 8) * 0.35).toFixed(1);
+      var drift = (-(1.5 + (seed % 4) * 0.5)).toFixed(1);
+      s += '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="' + r.toFixed(2) + '" fill="#D4A843" opacity="' + op.toFixed(2) + '">';
+      s += '<animate attributeName="cy" values="' + py.toFixed(1) + ';' + (py + parseFloat(drift)).toFixed(1) + ';' + py.toFixed(1) + '" dur="' + dur + 's" repeatCount="indefinite"/>';
+      s += '<animate attributeName="opacity" values="' + op.toFixed(2) + ';' + (op * 0.4).toFixed(2) + ';' + op.toFixed(2) + '" dur="' + dur + 's" repeatCount="indefinite"/>';
+      s += '</circle>';
+    }
+    return s;
+  }
+
+  // B3: ROOT TENDRILS — thin roots below soil inside pot
+  function renderRootTendrils(uid) {
+    var s = '';
+    var seed1 = parseInt(uid.charAt(12) || '5', 16);
+    var seed2 = parseInt(uid.charAt(13) || '8', 16);
+    var seed3 = parseInt(uid.charAt(14) || '3', 16);
+    var roots = [
+      { sx: 34, sy: 78.5, cx: 30 + seed1 * 0.3, cy: 82, ex: 28 + seed1 * 0.5, ey: 85 + seed1 * 0.2 },
+      { sx: 36, sy: 78.5, cx: 40 - seed2 * 0.2, cy: 83, ex: 42 - seed2 * 0.4, ey: 86 + seed2 * 0.15 },
+      { sx: 35, sy: 79, cx: 35 + (seed3 - 8) * 0.3, cy: 83.5, ex: 35 + (seed3 - 8) * 0.6, ey: 87 }
+    ];
+    for (var i = 0; i < 3; i++) {
+      var r = roots[i];
+      s += '<path d="M' + r.sx + ',' + r.sy + ' Q' + r.cx.toFixed(1) + ',' + r.cy + ' ' + r.ex.toFixed(1) + ',' + r.ey.toFixed(1) + '" stroke="#5E4A3A" stroke-width="' + (0.35 + i * 0.05).toFixed(2) + '" fill="none" opacity="' + (0.2 + i * 0.05).toFixed(2) + '" stroke-linecap="round"/>';
+    }
+    s += '<circle cx="' + roots[0].ex.toFixed(1) + '" cy="' + roots[0].ey.toFixed(1) + '" r="0.4" fill="#5E4A3A" opacity="0.15"/>';
+    return s;
+  }
+
+  // B4: THORNED CROWN — sharp spikes at stem apex
+  function renderThornedCrown(uid, visibleTop) {
+    var s = '';
+    var cx = 35, cy = visibleTop + 1.5;
+    var thornCount = 3 + (parseInt(uid.charAt(15) || '4', 16) % 3);
+    for (var i = 0; i < thornCount; i++) {
+      var angleDeg = -150 + (300 / (thornCount - 1)) * i;
+      var angleRad = angleDeg * Math.PI / 180;
+      var len = 3.5 + (parseInt(uid.charAt((i * 2 + 20) % 64) || '6', 16) % 4) * 0.5;
+      var tipX = Math.max(4, Math.min(66, cx + Math.cos(angleRad) * len));
+      var tipY = Math.max(2, Math.min(76, cy + Math.sin(angleRad) * len));
+      var baseW = 0.6;
+      var perpX = -Math.sin(angleRad) * baseW;
+      var perpY = Math.cos(angleRad) * baseW;
+      s += '<path d="M' + (cx + perpX).toFixed(1) + ',' + (cy + perpY).toFixed(1) + ' L' + tipX.toFixed(1) + ',' + tipY.toFixed(1) + ' L' + (cx - perpX).toFixed(1) + ',' + (cy - perpY).toFixed(1) + 'Z" fill="#1A0E08" opacity="0.6"/>';
+      s += '<line x1="' + (cx + perpX * 0.5).toFixed(1) + '" y1="' + (cy + perpY * 0.5).toFixed(1) + '" x2="' + tipX.toFixed(1) + '" y2="' + tipY.toFixed(1) + '" stroke="rgba(240,235,216,0.3)" stroke-width="0.25" stroke-linecap="round"/>';
+    }
+    return s;
+  }
+
+  // B5: CANOPY WEAVE — silk arcs between nearby leaf pairs
+  function renderCanopyWeave(uid, leafPositions) {
+    if (!leafPositions || leafPositions.length < 3) return '';
+    var s = '';
+    var pairs = [];
+    for (var i = 0; i < leafPositions.length; i++) {
+      for (var j = i + 1; j < leafPositions.length; j++) {
+        var dx = leafPositions[i].x - leafPositions[j].x;
+        var dy = leafPositions[i].y - leafPositions[j].y;
+        pairs.push({ a: i, b: j, dist: Math.sqrt(dx * dx + dy * dy) });
+      }
+    }
+    pairs.sort(function(a, b) { return a.dist - b.dist; });
+    var maxWeaves = 2 + (parseInt(uid.charAt(16) || '5', 16) % 2);
+    for (var w = 0; w < Math.min(maxWeaves, pairs.length); w++) {
+      var p = pairs[w];
+      if (p.dist > 20) break;
+      var ax = leafPositions[p.a].x, ay = leafPositions[p.a].y;
+      var bx = leafPositions[p.b].x, by = leafPositions[p.b].y;
+      var midX = (ax + bx) * 0.5;
+      var midY = Math.min(ay, by) + p.dist * 0.15 + 1.5;
+      s += '<path d="M' + ax.toFixed(1) + ',' + ay.toFixed(1) + ' Q' + midX.toFixed(1) + ',' + midY.toFixed(1) + ' ' + bx.toFixed(1) + ',' + by.toFixed(1) + '" stroke="rgba(234,224,200,0.18)" stroke-width="0.22" fill="none" stroke-linecap="round"/>';
+    }
+    return s;
+  }
+
+  // B6: BIOLUMINESCENT SPOTS — glowing dots on leaf surfaces
+  function renderBiolumSpots(uid, leafPositions, leafSizes) {
+    if (!leafPositions || leafPositions.length < 2) return '';
+    var s = '';
+    var dotCount = 4 + (parseInt(uid.charAt(18) || '5', 16) % 3);
+    var dotsPlaced = 0;
+    for (var i = 0; i < leafPositions.length && dotsPlaced < dotCount; i++) {
+      var seed = (parseInt(uid.charAt((i * 5 + 30) % 64) || '7', 16) + i * 23) % 256;
+      var lx = leafPositions[i].x, ly = leafPositions[i].y;
+      var ls = (leafSizes && leafSizes[i]) ? leafSizes[i] : 6;
+      var spotsOnLeaf = 1 + (seed % 2);
+      for (var d = 0; d < spotsOnLeaf && dotsPlaced < dotCount; d++) {
+        var offX = ((seed + d * 37) % 11 - 5) * ls * 0.08;
+        var offY = ((seed + d * 53) % 9 - 4) * ls * 0.06;
+        var r = 0.5 + (seed % 4) * 0.15;
+        var sx = lx + offX, sy = ly + offY;
+        s += '<circle cx="' + sx.toFixed(1) + '" cy="' + sy.toFixed(1) + '" r="' + (r * 2.5).toFixed(1) + '" fill="#00E5FF" opacity="0.06"/>';
+        s += '<circle cx="' + sx.toFixed(1) + '" cy="' + sy.toFixed(1) + '" r="' + r.toFixed(2) + '" fill="#00E5FF" opacity="0.55">';
+        s += '<animate attributeName="opacity" values="0.55;0.25;0.55" dur="' + (2.0 + (seed % 6) * 0.3).toFixed(1) + 's" repeatCount="indefinite"/>';
+        s += '</circle>';
+        dotsPlaced++;
+      }
+    }
+    return s;
+  }
+
+  // B7: AERIAL ROOT — dangling root from lowest leaf node
+  function renderAerialRoot(uid, lowestLeafX, lowestLeafY) {
+    if (!lowestLeafX || !lowestLeafY || lowestLeafY > 74) return '';
+    var s = '';
+    var seed = parseInt(uid.charAt(22) || '6', 16);
+    var endY = Math.min(76, lowestLeafY + 8 + seed * 0.5);
+    var swayX = lowestLeafX + (seed - 8) * 0.4;
+    s += '<path d="M' + lowestLeafX.toFixed(1) + ',' + lowestLeafY.toFixed(1) + ' Q' + swayX.toFixed(1) + ',' + ((lowestLeafY + endY) * 0.5).toFixed(1) + ' ' + (swayX - 0.5).toFixed(1) + ',' + endY.toFixed(1) + '" stroke="#A08060" stroke-width="0.35" fill="none" opacity="0.3" stroke-linecap="round"/>';
+    s += '<circle cx="' + (swayX - 0.5).toFixed(1) + '" cy="' + endY.toFixed(1) + '" r="0.3" fill="#A08060" opacity="0.2"/>';
+    if (seed > 8) {
+      var end2Y = Math.min(76, lowestLeafY + 5 + seed * 0.3);
+      s += '<path d="M' + (lowestLeafX + 1.2).toFixed(1) + ',' + (lowestLeafY + 0.5).toFixed(1) + ' Q' + (lowestLeafX + 2).toFixed(1) + ',' + ((lowestLeafY + end2Y) * 0.5 + 1).toFixed(1) + ' ' + (lowestLeafX + 1.5).toFixed(1) + ',' + end2Y.toFixed(1) + '" stroke="#A08060" stroke-width="0.25" fill="none" opacity="0.22" stroke-linecap="round"/>';
+    }
+    return s;
+  }
+
+  // C1: DECOMPOSER RINGS — partial arcs around stem base
+  function renderDecomposerRings(uid) {
+    var s = '';
+    var seed = parseInt(uid.charAt(24) || '6', 16);
+    var arcCount = 2 + (seed % 2);
+    for (var i = 0; i < arcCount; i++) {
+      var r = 4 + i * 2.5 + (seed % 3) * 0.5;
+      var startAngle = (200 + i * 45 + seed * 8) % 360;
+      var sweep = 60 + (seed % 40) + i * 15;
+      var s1 = (startAngle) * Math.PI / 180;
+      var e1 = (startAngle + sweep) * Math.PI / 180;
+      var x1 = (35 + Math.cos(s1) * r).toFixed(1);
+      var y1 = (77.5 + Math.sin(s1) * r * 0.35).toFixed(1);
+      var x2 = (35 + Math.cos(e1) * r).toFixed(1);
+      var y2 = (77.5 + Math.sin(e1) * r * 0.35).toFixed(1);
+      s += '<path d="M' + x1 + ',' + y1 + ' A' + r.toFixed(1) + ',' + (r * 0.35).toFixed(1) + ' 0 0,1 ' + x2 + ',' + y2 + '" stroke="rgba(234,224,200,' + (0.12 + i * 0.04).toFixed(2) + ')" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+    }
+    return s;
+  }
+
+  // C2: PHOENIX ASH — tiered glow + particles at soil line
+  function renderPhoenixAsh(uid, tier) {
+    if (!tier || tier < 1) return '';
+    var s = '';
+    s += '<ellipse cx="35" cy="78" rx="' + (10 + tier * 2) + '" ry="' + (2.5 + tier * 0.5) + '" fill="#D4A843" opacity="' + (0.04 + tier * 0.03).toFixed(2) + '"/>';
+    if (tier >= 2) {
+      var circleCount = 3 + tier;
+      for (var i = 0; i < circleCount; i++) {
+        var seed = (parseInt(uid.charAt((i * 3 + 26) % 64) || '5', 16) + i * 17) % 256;
+        var cx = 28 + (seed % 15);
+        var r = 0.4 + (seed % 4) * 0.1;
+        var baseY = 76 - (seed % 4);
+        var dur = (3.0 + (seed % 6) * 0.4).toFixed(1);
+        var del = ((seed % 20) * 0.15).toFixed(2);
+        s += '<circle cx="' + cx + '" cy="' + baseY + '" r="' + r.toFixed(2) + '" fill="#D4A843" opacity="0">';
+        s += '<animate attributeName="cy" values="' + baseY + ';' + (baseY - 4) + ';' + baseY + '" dur="' + dur + 's" begin="' + del + 's" repeatCount="indefinite"/>';
+        s += '<animate attributeName="opacity" values="0;' + (0.2 + tier * 0.05).toFixed(2) + ';0" dur="' + dur + 's" begin="' + del + 's" repeatCount="indefinite"/>';
+        s += '</circle>';
+      }
+    }
+    if (tier >= 3) {
+      var emberCount = 6 + (parseInt(uid.charAt(30) || '4', 16) % 3);
+      for (var e = 0; e < emberCount; e++) {
+        var es = (parseInt(uid.charAt((e * 4 + 32) % 64) || '6', 16) + e * 31) % 256;
+        var ex = 25 + (es % 21), ey = 72 + (es % 7);
+        var er = 0.3 + (es % 3) * 0.1;
+        var eColor = (e % 2 === 0) ? '#D4A843' : '#9B59B6';
+        var eDur = (2.0 + (es % 8) * 0.35).toFixed(1);
+        var eDel = ((es % 25) * 0.12).toFixed(2);
+        var wobbleX = ((es % 5) - 2) * 0.8;
+        s += '<circle cx="' + ex + '" cy="' + ey + '" r="' + er.toFixed(2) + '" fill="' + eColor + '" opacity="0">';
+        s += '<animate attributeName="cy" values="' + ey + ';' + (ey - 5) + ';' + ey + '" dur="' + eDur + 's" begin="' + eDel + 's" repeatCount="indefinite"/>';
+        s += '<animate attributeName="cx" values="' + ex + ';' + (ex + wobbleX).toFixed(1) + ';' + ex + '" dur="' + eDur + 's" begin="' + eDel + 's" repeatCount="indefinite"/>';
+        s += '<animate attributeName="opacity" values="0;0.35;0" dur="' + eDur + 's" begin="' + eDel + 's" repeatCount="indefinite"/>';
+        s += '</circle>';
+      }
+    }
+    return s;
+  }
+
+  // C3: FOSSIL IMPRINT — ghost leaf outline on pot surface
+  function renderFossilImprint(uid, parentLeafType) {
+    var s = '';
+    var family = (parentLeafType || 0) % 60;
+    var cx = 35, cy = 85, sc = 0.45;
+    var leafD;
+    if (family < 5) {
+      leafD = 'M'+cx+','+(cy+3*sc)+' C'+(cx-4*sc)+','+(cy+1*sc)+' '+(cx-3*sc)+','+(cy-4*sc)+' '+cx+','+(cy-5*sc)+' C'+(cx+3*sc)+','+(cy-4*sc)+' '+(cx+4*sc)+','+(cy+1*sc)+' '+cx+','+(cy+3*sc)+'Z';
+    } else if (family < 15) {
+      leafD = 'M'+cx+','+(cy+4*sc)+' C'+(cx-2*sc)+','+cy+' '+(cx-1.5*sc)+','+(cy-4*sc)+' '+cx+','+(cy-6*sc)+' C'+(cx+1.5*sc)+','+(cy-4*sc)+' '+(cx+2*sc)+','+cy+' '+cx+','+(cy+4*sc)+'Z';
+    } else {
+      leafD = 'M'+cx+','+(cy+3*sc)+' C'+(cx-5*sc)+','+(cy+2*sc)+' '+(cx-5*sc)+','+(cy-3*sc)+' '+cx+','+(cy-3.5*sc)+' C'+(cx+5*sc)+','+(cy-3*sc)+' '+(cx+5*sc)+','+(cy+2*sc)+' '+cx+','+(cy+3*sc)+'Z';
+    }
+    s += '<path d="'+leafD+'" fill="none" stroke="rgba(180,160,120,0.09)" stroke-width="0.4"/>';
+    s += '<line x1="'+cx+'" y1="'+(cy+3*sc)+'" x2="'+cx+'" y2="'+(cy-5*sc)+'" stroke="rgba(180,160,120,0.06)" stroke-width="0.25"/>';
+    return s;
+  }
+
+  // C4: NUTRIENT VEINS — colored paths running up the stem
+  function renderNutrientVeins(uid, visibleTop, auraIndex) {
+    var s = '';
+    var veinColor;
+    if (auraIndex >= 18) veinColor = 'rgba(200,100,200,0.25)';
+    else if (auraIndex >= 16) veinColor = 'rgba(200,168,75,0.25)';
+    else veinColor = 'rgba(122,179,86,0.25)';
+    var seed = parseInt(uid.charAt(28) || '5', 16);
+    var off1 = 1.2 + (seed % 3) * 0.3;
+    var off2 = -(1.0 + (seed % 4) * 0.25);
+    var midY = 78 - (78 - visibleTop) * 0.5;
+    s += '<path d="M'+(35+off2).toFixed(1)+',78 Q'+(34+off2*0.5).toFixed(1)+','+midY.toFixed(1)+' '+(35+off2*0.3).toFixed(1)+','+(visibleTop+5).toFixed(1)+'" stroke="'+veinColor+'" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+    s += '<path d="M'+(35+off1).toFixed(1)+',78 Q'+(36+off1*0.4).toFixed(1)+','+(midY+3).toFixed(1)+' '+(35+off1*0.2).toFixed(1)+','+(visibleTop+7).toFixed(1)+'" stroke="'+veinColor+'" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+    return s;
+  }
+
+  // C5: SPORE HALO — ring of dots above the plant crown
+  function renderSporeHalo(uid, visibleTop) {
+    var s = '';
+    var cx = 35, cy = Math.max(5, visibleTop - 6), ringR = 11;
+    var dotCount = 10 + (parseInt(uid.charAt(34) || '5', 16) % 4);
+    for (var i = 0; i < dotCount; i++) {
+      var angle = (i / dotCount) * Math.PI * 2;
+      var seed = (parseInt(uid.charAt((i * 3 + 36) % 64) || '6', 16) + i * 19) % 256;
+      var jitter = (seed % 5 - 2) * 0.4;
+      var px = Math.max(3, Math.min(67, cx + Math.cos(angle) * (ringR + jitter)));
+      var py = Math.max(2, Math.min(70, cy + Math.sin(angle) * (ringR + jitter) * 0.4));
+      var r = 0.3 + (seed % 3) * 0.1;
+      var dotColor = (i % 2 === 0) ? '#8CB86E' : '#D4A843';
+      s += '<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="'+r.toFixed(2)+'" fill="'+dotColor+'" opacity="'+(0.2+(seed%4)*0.05).toFixed(2)+'"/>';
+    }
     return s;
   }
 
@@ -20606,6 +21015,27 @@ document.addEventListener('keydown', function(e) {
         if (!t.mycelialCrown) return null;
         return { name: 'Mycelial Crown', rare: true };
     }}
+    ,{ key: 'COMPOST', get: function(t) {
+        if (!t.compostLayers) return null;
+        var _cl = t.compostLayers;
+        var _names = [];
+        if (_cl.mycelialCrown) _names.push('Mycelial Crown');
+        if (_cl.substrateEcho) _names.push('Substrate Echo');
+        if (_cl.leafMemory) _names.push('Leaf Memory');
+        if (_cl.auraResidue) _names.push('Aura Residue');
+        if (_cl.tierImprint) _names.push('Tier Imprint');
+        if (_cl.dualHeritage) _names.push('Dual Heritage');
+        if (_cl.deepRoot) _names.push('Deep Root');
+        if (_names.length === 0) return null;
+        return { name: _names.join(' + '), rare: _names.length >= 3 };
+    }}
+    ,{ key: 'SYNERGY', get: function(t) {
+        if (typeof checkSynergies !== 'function') return null;
+        var _syn = checkSynergies(t);
+        if (!_syn || _syn.length === 0) return null;
+        var _sNames = _syn.map(function(s) { return s.emoji + ' ' + s.name; });
+        return { name: _sNames.join(' + '), rare: _syn.length >= 2 };
+    }}
   ];
 
   // VESSEL and STRUCTURE both show the pot/stem — deduplicate for clean output
@@ -20620,6 +21050,7 @@ document.addEventListener('keydown', function(e) {
     if (plant.generation) t.chimerGen = plant.generation;
     if (plant.mycelialCrown) t.mycelialCrown = true;
     if (plant.breedLayers) t.breedLayers = plant.breedLayers;
+    if (plant.compostLayers) t.compostLayers = plant.compostLayers;
 
     // Build rows — skip None, skip STRUCTURE if same name as VESSEL
     var potName = TRAIT_BANK.pots[t.pot] ? TRAIT_BANK.pots[t.pot].name : '';
@@ -20953,6 +21384,7 @@ document.addEventListener('keydown', function(e) {
           if (plant.generation) _ghTraits.chimerGen = plant.generation;
           if (plant.mycelialCrown) _ghTraits.mycelialCrown = true;
           if (plant.breedLayers) _ghTraits.breedLayers = plant.breedLayers;
+          if (plant.compostLayers) _ghTraits.compostLayers = plant.compostLayers;
           _ghSeason = (_ghTraits && typeof _ghTraits.season === 'number') ? _ghTraits.season % 4 : 0;
           _ghEA = window.computeEA ? window.computeEA(_ghTraits, 0) : 0;
           _ghTG = getTerraGrade(_ghTraits);
@@ -21002,7 +21434,7 @@ document.addEventListener('keydown', function(e) {
           plantSvg +
           '<div class="gh-name" style="color:var(--cream);">' + (typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : _pName) + '</div>' +
           (plant.breedCount >= 3 ? '<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(192,112,112,0.7);margin-top:1px;">⚡ SPENT 3/3</div>' : '') +
-          (_sea ? '<div style="display:flex;justify-content:center;gap:3px;margin-top:1px;font-size:0.3rem;align-items:center;"><span>' + _sea.emblem + '</span></div>' : '') +
+          (_sea ? '<div style="display:flex;justify-content:center;gap:3px;margin-top:1px;font-size:0.3rem;align-items:center;"><span>' + _sea.emblem + '</span>' + (function(){ try { var _synIcons = checkSynergies(_ghTraits); if (!_synIcons || _synIcons.length === 0) return ''; var _si = ''; for (var _sj = 0; _sj < Math.min(_synIcons.length, 3); _sj++) _si += '<span title="' + _synIcons[_sj].name + '">' + _synIcons[_sj].emoji + '</span>'; return _si; } catch(e) { return ''; } })() + '</div>' : '') +
           _ghSymbol;
       } else {
         // Undiscovered slot
@@ -21457,6 +21889,7 @@ document.addEventListener('keydown', function(e) {
       if (plant.generation) _t.chimerGen = plant.generation;
       if (plant.mycelialCrown) _t.mycelialCrown = true;
       if (plant.breedLayers) _t.breedLayers = plant.breedLayers;
+      if (plant.compostLayers) _t.compostLayers = plant.compostLayers;
       _season = (_t && typeof _t.season === 'number') ? _t.season % 4 : 0;
       _ea = window.computeEA ? window.computeEA(_t, 0) : 0;
       _tg = getTerraGrade(_t);
@@ -22263,12 +22696,19 @@ document.addEventListener('keydown', function(e) {
     if (plant.generation) t.chimerGen = plant.generation;
     if (plant.mycelialCrown) t.mycelialCrown = true;
     if (plant.breedLayers) t.breedLayers = plant.breedLayers;
+    if (plant.compostLayers) t.compostLayers = plant.compostLayers;
     var _tg; try { _tg = getTerraGrade(t); } catch(e) { _tg = { name: 'Common' }; }
     var _fertTable = { Common: 1, Uncommon: 1, Rare: 2, Epic: 2, Legendary: 3, Mythic: 4, Cosmic: 5 };
     var fertReward = _fertTable[_tg.name] || 1;
     var dnaReward = fertReward;
     var substrateKey = String(t.base || 0);
-    var reward = { dnaFragments: dnaReward, fertilizer: fertReward, substrateKey: substrateKey, plantHash: plant.hash, ts: Date.now() };
+    var _srcTraits = {
+      tierName: _tg.name, tierScore: _tg.score || 0,
+      hasRareBase: (t.base >= 25), hasRareLeaf: (t.leafType >= 50),
+      hasRareAura: (t.aura >= 18),
+      baseIndex: t.base || 0, leafType: t.leafType || 0, auraIndex: t.aura || 0
+    };
+    var reward = { dnaFragments: dnaReward, fertilizer: fertReward, substrateKey: substrateKey, plantHash: plant.hash, ts: Date.now(), sourceTraits: _srcTraits };
 
     // Step 3: write staging key BEFORE any production write
     try { localStorage.setItem(INV_STAGING, JSON.stringify({ reward: reward, plantIndex: plantIndex, plant: plant })); }
@@ -22278,6 +22718,7 @@ document.addEventListener('keydown', function(e) {
     var inv = loadInventory();
     inv.dnaFragments = (inv.dnaFragments || 0) + dnaReward;
     inv.fertilizer = (inv.fertilizer || 0) + fertReward;
+    inv.lastCompostSource = _srcTraits;
     inv.substrate[substrateKey] = (inv.substrate[substrateKey] || 0) + 1;
     inv.lastUpdated = new Date().toISOString();
     var invOk = false;
@@ -22314,6 +22755,12 @@ document.addEventListener('keydown', function(e) {
     renderGreenhouse();
     updateDashboard();
     showHexMsg('🧪 Composted. +' + fertReward + ' Fertilizer, +' + dnaReward + ' DNA added.');
+    // Compost log for achievements
+    try {
+      var _cLog = JSON.parse(localStorage.getItem('sws_compost_log') || '[]');
+      _cLog.push({ hash: plant.hash.slice(0, 16), tier: _tg.name, ts: Date.now() });
+      localStorage.setItem('sws_compost_log', JSON.stringify(_cLog));
+    } catch(e) {}
     if (typeof gtag !== 'undefined') gtag('event', 'plant_composted', { hash: plant.hash.slice(0,8), dna: dnaReward });
   };
 
@@ -23207,20 +23654,61 @@ document.addEventListener('keydown', function(e) {
     try { _tB = hashToTraits(parentB); } catch(e) { _tB = {}; }
     var _breedLayers = evaluateBreedLayers(_tA, _tB, spliced, _blParentALayers, _blParentBLayers);
 
-    // 3. Build plant object — compute chimera generation + mycelial crown from parents
+    // 3. Build plant object — compute chimera generation + compost layers from parents
     var today = new Date().toISOString().split('T')[0];
     var _parentAGen = 1, _parentBGen = 1;
     var _parentACrown = false, _parentBCrown = false;
+    var _parentACompost = null, _parentBCompost = null;
     try {
       var _ghForGen = JSON.parse(localStorage.getItem('sws_greenhouse') || '[]');
       _ghForGen.forEach(function(p) {
-        if (p.hash === parentA) { _parentAGen = p.generation || 1; if (p.mycelialCrown) _parentACrown = true; }
-        if (p.hash === parentB) { _parentBGen = p.generation || 1; if (p.mycelialCrown) _parentBCrown = true; }
+        if (p.hash === parentA) {
+          _parentAGen = p.generation || 1;
+          if (p.mycelialCrown) _parentACrown = true;
+          _parentACompost = p.compostLayers || null;
+        }
+        if (p.hash === parentB) {
+          _parentBGen = p.generation || 1;
+          if (p.mycelialCrown) _parentBCrown = true;
+          _parentBCompost = p.compostLayers || null;
+        }
       });
     } catch(e) {}
+
     // Mycelial Crown: any fertilizer applied = compost heritage, or inherited from parents
     var _hasFert = (_fertCount || 0) > 0;
     var _hasCrown = _hasFert || _parentACrown || _parentBCrown;
+
+    // ── 7 Compost Layers ──
+    var _compostLayers = {};
+    var _cs = seed.compostSource || null;
+
+    // Layer 1: Mycelial Crown — any fertilizer applied or inherited
+    if (_hasCrown) _compostLayers.mycelialCrown = true;
+
+    // Layer 2: Substrate Echo — compost source had rare base (index >= 25)
+    if (_cs && _cs.hasRareBase) _compostLayers.substrateEcho = true;
+    if ((_parentACompost && _parentACompost.substrateEcho) || (_parentBCompost && _parentBCompost.substrateEcho)) _compostLayers.substrateEcho = true;
+
+    // Layer 3: Leaf Memory — compost source had rare leaf (type >= 50)
+    if (_cs && _cs.hasRareLeaf) _compostLayers.leafMemory = true;
+    if ((_parentACompost && _parentACompost.leafMemory) || (_parentBCompost && _parentBCompost.leafMemory)) _compostLayers.leafMemory = true;
+
+    // Layer 4: Aura Residue — compost source had rare aura (index >= 18)
+    if (_cs && _cs.hasRareAura) _compostLayers.auraResidue = true;
+    if ((_parentACompost && _parentACompost.auraResidue) || (_parentBCompost && _parentBCompost.auraResidue)) _compostLayers.auraResidue = true;
+
+    // Layer 5: Tier Imprint — compost source was Epic+ tier
+    var _epicTiers = { Epic: true, Legendary: true, Mythic: true, Cosmic: true };
+    if (_cs && _epicTiers[_cs.tierName]) _compostLayers.tierImprint = true;
+    if ((_parentACompost && _parentACompost.tierImprint) || (_parentBCompost && _parentBCompost.tierImprint)) _compostLayers.tierImprint = true;
+
+    // Layer 6: Dual Heritage — both parents had compost layers
+    if (_parentACompost && _parentBCompost && Object.keys(_parentACompost).length > 0 && Object.keys(_parentBCompost).length > 0) _compostLayers.dualHeritage = true;
+
+    // Layer 7: Deep Root — 3+ compost layers already active (self-referential bonus)
+    var _clCount = Object.keys(_compostLayers).length;
+    if (_clCount >= 3) _compostLayers.deepRoot = true;
 
     var newPlant = {
       hash:      newHash,
@@ -23236,6 +23724,7 @@ document.addEventListener('keydown', function(e) {
       breedLayers: _breedLayers,
       breedCount: 0,
       mycelialCrown: _hasCrown,
+      compostLayers: Object.keys(_compostLayers).length > 0 ? _compostLayers : null,
       fertApplied: _fertCount || 0,
       traits:    (typeof getTraitSummary === 'function'
                   ? (function(){ try { return getTraitSummary(newHash); } catch(e) { return ''; } })()
@@ -23450,6 +23939,9 @@ document.addEventListener('keydown', function(e) {
     }
     // Apply 1 unit
     seed.fertApplied = applied + 1;
+    if (inv.lastCompostSource) {
+      seed.compostSource = inv.lastCompostSource;
+    }
     nur[seedIndex] = seed;
     // Deduct from inventory
     inv.fertilizer = Math.max(0, (inv.fertilizer || 0) - 1);
@@ -23767,12 +24259,45 @@ document.addEventListener('keydown', function(e) {
   // ═══════════════════════════════════════════════════════════════
   var ACH_KEY = 'sws_achievements';
   var ACHIEVEMENTS = [
-    { id:'first_plant',   icon:'🌱', name:'First Harvest',   desc:'Mint your first Plant',            check: function(gh){ return gh.length >= 1; } },
-    { id:'streak_7',      icon:'🔥', name:'7-Day Streak',    desc:'Play 7 days in a row',                  check: function(gh,r){ return r && r.currentStreak >= 7; } },
-    { id:'first_rare',    icon:'⭐', name:'Rare Find',        desc:'Mint a Rare or Mythic Plant',       check: function(gh){ return gh.some(function(p){ return p.rare; }); } },
-    { id:'first_cross',   icon:'🧬', name:'Hybridist',        desc:'Bloom a Cross-Bred Plant',          check: function(gh){ return gh.some(function(p){ return p.isCross; }); } },
-    { id:'full_row',      icon:'🏛', name:'Full Row',         desc:'Collect 10 Plants',                check: function(gh){ return gh.length >= 10; } },
-    { id:'spent_100',     icon:'💸', name:'Big Spender',      desc:'Spend 100 Dew Drops in the shop',check: function(gh,r,ledger){ return (ledger.spent||0) >= 100; } }
+    // ── Collection milestones ──
+    { id:'first_plant',   icon:'🌱', name:'First Harvest',       desc:'Mint your first Plant',                check: function(gh){ return gh.length >= 1; } },
+    { id:'full_row',      icon:'🏛', name:'Full Row',             desc:'Collect 10 Plants',                    check: function(gh){ return gh.length >= 10; } },
+    { id:'half_house',    icon:'🏠', name:'Half House',           desc:'Collect 30 Plants',                    check: function(gh){ return gh.length >= 30; } },
+    { id:'full_house',    icon:'🏰', name:'Full House',           desc:'Fill all 60 greenhouse slots',         check: function(gh){ return gh.length >= 60; } },
+    // ── Rarity ──
+    { id:'first_rare',    icon:'⭐', name:'Rare Find',            desc:'Mint a Rare+ Plant',                   check: function(gh){ return gh.some(function(p){ return p.rare; }); } },
+    { id:'first_epic',    icon:'💎', name:'Epic Discovery',       desc:'Own an Epic+ Plant',                   check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=8;}catch(e){return false;} }); } },
+    { id:'first_legend',  icon:'👑', name:'Living Legend',        desc:'Own a Legendary+ Plant',               check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=12;}catch(e){return false;} }); } },
+    { id:'first_cosmic',  icon:'🌌', name:'Cosmic Gardener',     desc:'Own a Cosmic Plant',                   check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=18;}catch(e){return false;} }); } },
+    // ── Breeding ──
+    { id:'first_cross',   icon:'🧬', name:'Hybridist',           desc:'Bloom a Cross-Bred Plant',             check: function(gh){ return gh.some(function(p){ return p.isCross; }); } },
+    { id:'breed_5',       icon:'🧪', name:'Prolific Breeder',    desc:'Breed 5 Plants',                       check: function(gh){ return gh.filter(function(p){ return p.isCross; }).length >= 5; } },
+    { id:'breed_20',      icon:'🔬', name:'Genetic Pioneer',     desc:'Breed 20 Plants',                      check: function(gh){ return gh.filter(function(p){ return p.isCross; }).length >= 20; } },
+    { id:'chimera_gen3',  icon:'🐉', name:'Deep Chimera',        desc:'Own a Gen 3+ Chimera',                 check: function(gh){ return gh.some(function(p){ return (p.generation || 1) >= 3; }); } },
+    // ── Compost ──
+    { id:'first_compost', icon:'🍂', name:'Return to Earth',     desc:'Compost your first Plant',             check: function(gh,r,l,cl){ return (cl || []).length >= 1; } },
+    { id:'compost_10',    icon:'♻️', name:'Cycle of Life',       desc:'Compost 10 Plants',                    check: function(gh,r,l,cl){ return (cl || []).length >= 10; } },
+    { id:'compost_crown', icon:'👸', name:'Crown Bearer',        desc:'Own a Plant with Mycelial Crown',      check: function(gh){ return gh.some(function(p){ return p.mycelialCrown; }); } },
+    { id:'compost_deep',  icon:'🌳', name:'Deep Roots',          desc:'Own a Plant with 3+ compost layers',   check: function(gh){ return gh.some(function(p){ return p.compostLayers && Object.keys(p.compostLayers).length >= 3; }); } },
+    // ── Streaks ──
+    { id:'streak_7',      icon:'🔥', name:'7-Day Streak',        desc:'Play 7 days in a row',                 check: function(gh,r){ return r && r.currentStreak >= 7; } },
+    { id:'streak_30',     icon:'🔥', name:'Monthly Devotion',    desc:'30-day streak',                        check: function(gh,r){ return r && r.currentStreak >= 30; } },
+    { id:'streak_100',    icon:'🔥', name:'Centurion',           desc:'100-day streak',                       check: function(gh,r){ return r && r.currentStreak >= 100; } },
+    // ── Economy ──
+    { id:'spent_100',     icon:'💸', name:'Big Spender',         desc:'Spend 100 Dew Drops',                  check: function(gh,r,ledger){ return (ledger.spent||0) >= 100; } },
+    { id:'spent_1000',    icon:'💰', name:'Whale',               desc:'Spend 1000 Dew Drops',                 check: function(gh,r,ledger){ return (ledger.spent||0) >= 1000; } },
+    // ── Seasons ──
+    { id:'all_seasons',   icon:'🌍', name:'Four Seasons',        desc:'Own plants from all 4 seasons',        check: function(gh){ var s={};gh.forEach(function(p){try{var t=hashToTraits(p.hash);s[t.season%4]=true;}catch(e){}});return Object.keys(s).length>=4; } },
+    // ── Companions ──
+    { id:'first_companion',icon:'🐾', name:'Animal Friend',      desc:'Own a Plant with a companion',         check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);return t.companion<60&&(t.companion%5===0);}catch(e){return false;} }); } },
+    { id:'first_mythic_c', icon:'🐸', name:'Mythic Bond',        desc:'Own a Toad or Capybara companion',     check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18>=0xD0;}catch(e){return false;} }); } },
+    { id:'beholder',       icon:'👁', name:'The Beholder',       desc:'Own The Beholder companion (0.39%)',   check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18===0xFF;}catch(e){return false;} }); } },
+    // ── Mutations ──
+    { id:'first_mutation', icon:'⚡', name:'Mutant',              desc:'Own a mutated Plant',                  check: function(gh){ return gh.some(function(p){ try{var hb16=parseInt(p.hash.slice(32,34),16);return hb16>=0xD0;}catch(e){return false;} }); } },
+    { id:'glitch_owner',   icon:'🌀', name:'Glitch in the Matrix',desc:'Own a Glitch mutation (0xF0+)',       check: function(gh){ return gh.some(function(p){ try{var hb16=parseInt(p.hash.slice(32,34),16);return hb16>=0xF0;}catch(e){return false;} }); } },
+    // ── Synergy (Spec 14 — checked after synergy engine lands) ──
+    { id:'first_synergy',  icon:'✨', name:'Resonance',           desc:'Own a Plant with a synergy bonus',     check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var syn=window.checkSynergies?window.checkSynergies(t):[];return syn.length>0;}catch(e){return false;} }); } },
+    { id:'triple_synergy', icon:'🌟', name:'Triple Resonance',   desc:'Own a Plant with 3+ synergies',        check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var syn=window.checkSynergies?window.checkSynergies(t):[];return syn.length>=3;}catch(e){return false;} }); } }
   ];
 
   function loadAchievements(){
@@ -23784,13 +24309,15 @@ document.addEventListener('keydown', function(e) {
     var unlocked = loadAchievements();
     var gh = loadGreenhouse();
     var records;
-    try{ records = JSON.parse(localStorage.getItem('sws_set_records')||'{}'); }catch(e){ records = {}; }
+    try{ records = JSON.parse(localStorage.getItem('sws_streak')||'{}'); }catch(e){ records = {}; }
     var ledger = getHashLedger ? getHashLedger() : { spent: 0 };
+    var compostLog;
+    try{ compostLog = JSON.parse(localStorage.getItem('sws_compost_log')||'[]'); }catch(e){ compostLog = []; }
     var newlyUnlocked = [];
     ACHIEVEMENTS.forEach(function(ach){
       if (unlocked[ach.id]) return;
       var passed = false;
-      try { passed = ach.check(gh, records, ledger); } catch(e){}
+      try { passed = ach.check(gh, records, ledger, compostLog); } catch(e){}
       if (passed){
         unlocked[ach.id] = { unlockedAt: new Date().toISOString() };
         newlyUnlocked.push(ach);
@@ -24354,7 +24881,8 @@ document.addEventListener('keydown', function(e) {
     }
     var p = _buildPayload(gh);
     if (window._swsLog) _swsLog('↑ Writing to vaults/' + user.uid.slice(0,8) + '… | ' + p.sws_greenhouse.length + ' plants');
-    db.collection('vaults').doc(user.uid).set(p, {merge:true})
+    var uid = user.uid;
+    db.collection('vaults').doc(uid).set(p, {merge:true})
       .then(function(){
         if (window._swsLog) _swsLog('✓ SAVED to Firestore: ' + p.sws_greenhouse.length + ' plants', 'ok');
       })
@@ -24362,6 +24890,15 @@ document.addEventListener('keydown', function(e) {
         if (window._swsLog) _swsLog('✗ WRITE FAILED: ' + e.code + ' — ' + e.message, 'err');
         if (window.showHexMsg) showHexMsg('⚠ Cloud save failed: ' + (e.code||e.message));
       });
+    // ── Meta state sync (Spec: slots, inventory, hashLedger, streak) ──
+    var metaRef = db.collection('vaults').doc(uid).collection('meta').doc('state');
+    metaRef.set({
+      slots: parseInt(localStorage.getItem('sws_greenhouse_slots')) || 10,
+      inventory: JSON.parse(localStorage.getItem('sws_inventory') || 'null'),
+      hashLedger: JSON.parse(localStorage.getItem('sws_hash_ledger') || 'null'),
+      streak: JSON.parse(localStorage.getItem('sws_streak') || 'null'),
+      lastSync: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
   };
   // Keep old name working
   window.sws_syncToCloud = function(email, hash, gh) { window.syncVaultToCloud(gh, auth&&auth.currentUser); };
@@ -24391,6 +24928,17 @@ document.addEventListener('keydown', function(e) {
           var mGH = _applyCloudData(doc.data(), localGH, localNur);
           _hideOverlay(mGH.length + ' plants recovered');
           syncVaultToCloud(mGH, user);
+          // ── Meta state import (slots, inventory, hashLedger, streak) ──
+          var metaRef = db.collection('vaults').doc(user.uid).collection('meta').doc('state');
+          metaRef.get().then(function(mdoc) {
+            if (mdoc.exists) {
+              var d = mdoc.data();
+              if (d.slots) localStorage.setItem('sws_greenhouse_slots', String(d.slots));
+              if (d.inventory) localStorage.setItem('sws_inventory', JSON.stringify(d.inventory));
+              if (d.hashLedger) localStorage.setItem('sws_hash_ledger', JSON.stringify(d.hashLedger));
+              if (d.streak) localStorage.setItem('sws_streak', JSON.stringify(d.streak));
+            }
+          });
           if (onComplete) onComplete({source:'cloud', plantCount:mGH.length});
         } else {
           // New account or first time on this device — push local data up
