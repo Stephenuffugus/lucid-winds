@@ -20058,13 +20058,32 @@ document.addEventListener('keydown', function(e) {
         s += '<polygon points="42,90.2 42.5,89.8 43,90.5" fill="rgba(255,200,100,0.06)"><animate attributeName="fill" values="rgba(255,200,100,0.06);rgba(100,200,255,0.08);rgba(200,100,255,0.06);rgba(255,200,100,0.06)" dur="5s" repeatCount="indefinite"/></polygon>';
         s += '</g>';
         break;
-      case 79: // Will-o-Wisp — floating near canopy
-        s += '<g opacity="0.65">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;1,-1;-0.5,0.5;0,0" dur="5s" repeatCount="indefinite"/>';
-        s += '<circle cx="15" cy="35" r="1.5" fill="#C8A84B" opacity="0.15"><animate attributeName="opacity" values="0.15;0.25;0.15" dur="3s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="15" cy="35" r="0.8" fill="#E0C060" opacity="0.3"><animate attributeName="opacity" values="0.3;0.5;0.3" dur="3s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="15" cy="35" r="0.3" fill="#F0E080" opacity="0.5"/>';
-        s += '<path d="M15,36.5 Q14.5,38 15.5,39.5" stroke="#C8A84B" stroke-width="0.2" fill="none" opacity="0.15"/>';
+      case 79: // Will-o-Wisp — ethereal marshlight drifting near canopy (Rare)
+        // Ignis fatuus: the mysterious wandering light of marshes and bogs.
+        // Not a creature — a phenomenon. A sphere of ghostly golden-green
+        // flame that beckons, flickers, and trails luminous wisps. In folklore
+        // it leads travelers astray. In your garden, it chose to stay.
+        s += '<g opacity="0.75">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;1.2,-1.5;-0.8,0.5;0.5,-0.8;0,0" dur="7s" repeatCount="indefinite"/>';
+        // Outermost halo — barely visible, very wide
+        s += '<circle cx="15" cy="35" r="4" fill="rgba(200,168,75,0.03)"><animate attributeName="r" values="4;4.5;3.8;4" dur="3s" repeatCount="indefinite"/></circle>';
+        // Second halo — warm glow field
+        s += '<circle cx="15" cy="35" r="2.5" fill="rgba(200,180,80,0.06)"><animate attributeName="opacity" values="0.06;0.12;0.06" dur="2.5s" repeatCount="indefinite"/></circle>';
+        // Inner glow — stronger
+        s += '<circle cx="15" cy="35" r="1.5" fill="rgba(220,190,80,0.15)"><animate attributeName="opacity" values="0.15;0.28;0.12;0.22;0.15" dur="2s" repeatCount="indefinite"/></circle>';
+        // Core — bright, intense, small
+        s += '<circle cx="15" cy="35" r="0.7" fill="rgba(240,220,120,0.45)"><animate attributeName="opacity" values="0.45;0.65;0.35;0.55;0.45" dur="1.8s" repeatCount="indefinite"/></circle>';
+        // Hot center — white-gold pinpoint
+        s += '<circle cx="15" cy="35" r="0.3" fill="rgba(255,248,200,0.7)"><animate attributeName="opacity" values="0.7;0.9;0.5;0.8;0.7" dur="1.5s" repeatCount="indefinite"/></circle>';
+        // Trailing wisps — luminous smoke-light streamers below the core
+        // Each wisp has its own drift animation for organic movement
+        s += '<path d="M14.5,36 Q14,38 14.8,40 Q15.2,41 14.5,42" fill="none" stroke="rgba(200,180,80,0.1)" stroke-width="0.3" stroke-linecap="round"><animate attributeName="d" values="M14.5,36 Q14,38 14.8,40 Q15.2,41 14.5,42;M14.5,36 Q13.5,38.5 14.2,40.5 Q15,42 14,43;M14.5,36 Q14,38 14.8,40 Q15.2,41 14.5,42" dur="4s" repeatCount="indefinite"/></path>';
+        s += '<path d="M15.5,36 Q16,38.5 15.2,40.5 Q14.8,41.5 15.5,42.5" fill="none" stroke="rgba(220,200,100,0.08)" stroke-width="0.25" stroke-linecap="round"><animate attributeName="d" values="M15.5,36 Q16,38.5 15.2,40.5 Q14.8,41.5 15.5,42.5;M15.5,36 Q16.5,38 16,40 Q15.5,42 16,43;M15.5,36 Q16,38.5 15.2,40.5 Q14.8,41.5 15.5,42.5" dur="5s" repeatCount="indefinite"/></path>';
+        s += '<path d="M15,36.5 Q14.5,39 15.3,41.5" fill="none" stroke="rgba(200,168,75,0.06)" stroke-width="0.2" stroke-linecap="round"><animate attributeName="d" values="M15,36.5 Q14.5,39 15.3,41.5;M15,36.5 Q14,39.5 14.8,42;M15,36.5 Q14.5,39 15.3,41.5" dur="3.5s" repeatCount="indefinite"/></path>';
+        // Sparkle motes — tiny bright points that appear and fade around the wisp
+        s += '<circle cx="14" cy="34" r="0.1" fill="rgba(255,240,160,0.3)"><animate attributeName="opacity" values="0;0.5;0" dur="2.2s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="16.5" cy="35.5" r="0.08" fill="rgba(255,240,160,0.25)"><animate attributeName="opacity" values="0.25;0;0.25" dur="1.8s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="14.5" cy="36.5" r="0.1" fill="rgba(255,240,160,0.2)"><animate attributeName="opacity" values="0;0.4;0" dur="2.5s" repeatCount="indefinite"/></circle>';
         s += '</g>';
         break;
       case 80: // Paper Butterfly — floating near bloom area
