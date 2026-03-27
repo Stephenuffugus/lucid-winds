@@ -22071,6 +22071,18 @@ document.addEventListener('keydown', function(e) {
         if (_crownCount > 0) _spotFacts.push('Crown heritage: ' + _crownCount + ' plant' + (_crownCount > 1 ? 's' : ''));
         var _crossCount = 0; gh.forEach(function(p) { if (p.isCross) _crossCount++; });
         if (_crossCount > 0) _spotFacts.push('Bred: ' + _crossCount + ' · Minted: ' + (gh.length - _crossCount));
+        // Rarity tier breakdown
+        if (window.hashToTraits && window.getTerraGrade) {
+          var _tierCounts = {};
+          gh.forEach(function(p) { try { var t = hashToTraits(p.hash); if(p.generation)t.chimerGen=p.generation; if(p.breedLayers)t.breedLayers=p.breedLayers; if(p.compostLayers)t.compostLayers=p.compostLayers; var g = getTerraGrade(t); _tierCounts[g.name] = (_tierCounts[g.name]||0)+1; } catch(e){} });
+          var _tierStr = [];
+          ['Cosmic','Mythic','Legendary','Epic','Rare','Uncommon'].forEach(function(tn) { if(_tierCounts[tn]) _tierStr.push(_tierCounts[tn]+' '+tn); });
+          if (_tierStr.length > 0) _spotFacts.push(_tierStr.join(' · '));
+        }
+        // Companion count
+        var _compCount = 0;
+        gh.forEach(function(p) { try { var t = hashToTraits(p.hash); if(t.companion >= 20) _compCount++; } catch(e){} });
+        if (_compCount > 0) _spotFacts.push(_compCount + ' companion' + (_compCount>1?'s':'') + ' discovered');
         if (_spotFacts.length > 0) {
           var _spotIdx = Math.floor(Date.now() / 10000) % _spotFacts.length;
           _spotEl.textContent = _spotFacts[_spotIdx];
