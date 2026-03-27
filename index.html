@@ -18694,7 +18694,7 @@ document.addEventListener('keydown', function(e) {
         // Not just a shape — a living sphere of water with internal refraction,
         // surface tension membrane, specular highlight, and caustic light
         // patterns beneath it. The simplest companion, but precisely executed.
-        s += '<g opacity="0.55">';
+        s += '<g opacity="0.55" transform="translate(55,25) scale(1.4) translate(-55,-25)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0,-1.5;0.2,0;0,0" dur="4s" repeatCount="indefinite"/>';
         // Caustic light pattern on surface below — light refracted through the drop
         s += '<ellipse cx="55" cy="31" rx="2" ry="0.5" fill="rgba(120,180,220,0.06)"><animate attributeName="rx" values="2;2.5;2" dur="3s" repeatCount="indefinite"/></ellipse>';
@@ -18980,24 +18980,46 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M57.5,88 L58,87.3" stroke="#1A1A1A" stroke-width="0.12" fill="none"/>';
         s += '</g>';
         break;
-      case 27: // Snail — on soil, bottom-left
-        s += '<g opacity="0.68">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.5,0;1,0;0.5,0;0,0" dur="6s" repeatCount="indefinite"/>';
-        // Slime trail
-        s += '<path d="M2,91 Q6,90.8 10,91" fill="none" stroke="#D7E0D2" stroke-width="0.3" opacity="0.2"/>';
-        // Shell — spiral at x=8
-        s += '<circle cx="8" cy="89.2" r="2.2" fill="#8B6A4E"/>';
-        s += '<path d="M6.2,89.2 a1.4,1.4 0 1,0 2.8,0 a0.8,0.8 0 1,1 -1.6,0 a0.35,0.35 0 1,0 0.7,0" fill="none" stroke="#D5B08A" stroke-width="0.18" opacity="0.65"/>';
-        // Body — extending right
-        s += '<path d="M10,90 Q12,91 14,90.5 Q15,90 15.5,89.5" fill="none" stroke="#A8B08E" stroke-width="1.2" stroke-linecap="round"/>';
-        // Head
-        s += '<circle cx="15.5" cy="89.5" r="0.6" fill="#8E9780"/>';
-        // Eye stalks
-        s += '<path d="M15.3,89.2 L15.8,88.2 M15.8,89.2 L16.4,88.4" fill="none" stroke="#8E9780" stroke-width="0.12" stroke-linecap="round"/>';
-        s += '<circle cx="15.8" cy="88.1" r="0.15" fill="#1A1A1A"/>';
-        s += '<circle cx="16.4" cy="88.3" r="0.15" fill="#1A1A1A"/>';
-        // Shell highlight
-        s += '<path d="M6.8,88.2 Q8,87.6 9.2,88.2" fill="none" stroke="#E7D7C7" stroke-width="0.12" opacity="0.45"/>';
+      case 27: // Garden Snail — gliding across soil, bottom-left
+        // Cornu aspersum: the common garden snail. The shell is a
+        // logarithmic spiral — one of nature's most perfect geometries.
+        // Moves on a single muscular foot secreting a shimmering slime trail.
+        // Two pairs of tentacles: upper (optical, with eyes) and lower (sensory).
+        s += '<g opacity="0.76" transform="translate(10,89) scale(1.4) translate(-10,-89)">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.4,0;0.8,0;0.4,0;0,0" dur="7s" repeatCount="indefinite"/>';
+        // Slime trail — iridescent, shimmering
+        s += '<path d="M1,91 Q5,90.7 10,91" fill="none" stroke="rgba(210,220,200,0.15)" stroke-width="0.5"/>';
+        s += '<path d="M1,91 Q5,90.8 10,91" fill="none" stroke="rgba(240,240,220,0.06)" stroke-width="1.5"/>';
+        // Shadow beneath shell
+        s += '<ellipse cx="8.5" cy="91" rx="3" ry="0.5" fill="#0d100c" opacity="0.08"/>';
+        // Shell — logarithmic spiral, banded pattern
+        s += '<circle cx="8" cy="88.5" r="2.8" fill="#8B6A4E"/>';
+        // Shell banding — growth lines (darker bands spiraling)
+        s += '<path d="M5.5,88.5 a2.5,2.5 0 1,0 5,0 a1.6,1.6 0 1,1 -3.2,0 a0.9,0.9 0 1,0 1.8,0 a0.4,0.4 0 1,1 -0.8,0" fill="none" stroke="#A88468" stroke-width="0.25" opacity="0.5"/>';
+        // Shell highlight — glossy sheen on upper dome
+        s += '<ellipse cx="7.2" cy="87.5" rx="1.2" ry="0.8" fill="rgba(240,230,210,0.12)"/>';
+        s += '<ellipse cx="7" cy="87.2" rx="0.5" ry="0.35" fill="rgba(255,250,240,0.15)"/>';
+        // Shell lip — the aperture edge is thicker
+        s += '<path d="M10.2,87.5 Q10.8,88.5 10.5,89.8 Q10.2,90.5 9.5,91" stroke="#7A5A3E" stroke-width="0.4" fill="none" opacity="0.4"/>';
+        // Body — muscular foot extending from shell
+        s += '<path d="M10,90 Q12,91.2 14,90.8 Q15.5,90.2 16,89.5" fill="none" stroke="#8E9780" stroke-width="1.5" stroke-linecap="round"/>';
+        // Foot sole — lighter, slightly translucent
+        s += '<path d="M10.5,90.5 Q12.5,91.5 14.5,91" fill="none" stroke="#B0B898" stroke-width="0.5" opacity="0.25" stroke-linecap="round"/>';
+        // Mantle edge — the collar where body meets shell
+        s += '<path d="M10,89.5 Q10.5,89 10.5,89.8" fill="none" stroke="#7A8A6A" stroke-width="0.3" opacity="0.4"/>';
+        // Head — slightly wider than body
+        s += '<ellipse cx="16" cy="89.5" rx="0.8" ry="0.65" fill="#8E9780"/>';
+        // Upper tentacles (optical) — long, with eyes at tips
+        s += '<path d="M15.8,89.2 Q16,88 16.2,87.2" stroke="#8E9780" stroke-width="0.18" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M16.2,89.2 Q16.5,88.2 16.8,87.5" stroke="#8E9780" stroke-width="0.18" fill="none" stroke-linecap="round"/>';
+        // Eyes — tiny dark dots at tentacle tips
+        s += '<circle cx="16.2" cy="87.1" r="0.18" fill="#1A1A1A"/>';
+        s += '<circle cx="16.8" cy="87.4" r="0.18" fill="#1A1A1A"/>';
+        // Lower tentacles (sensory) — shorter, no eyes
+        s += '<path d="M16" y1="89.8" Q16.3,90 16.5,89.8" stroke="#8E9780" stroke-width="0.12" fill="none"/>';
+        s += '<path d="M16.3" y1="89.8" Q16.6,90 16.8,89.8" stroke="#8E9780" stroke-width="0.12" fill="none"/>';
+        // Mouth — tiny opening
+        s += '<circle cx="16.3" cy="89.8" r="0.08" fill="#6A7A5A" opacity="0.4"/>';
         s += '</g>';
         break;
       case 28: // Ruby-throated Hummingbird — hovering left side, facing bloom
@@ -19040,7 +19062,7 @@ document.addEventListener('keydown', function(e) {
         s += '</g>';
         break;
       case 29: // Dragonfly — upper-left corner, figure-8 hover
-        s += '<g opacity="0.7">';
+        s += '<g opacity="0.75" transform="translate(12,10) scale(1.4) translate(-12,-10)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;1.5,-1;-0.8,0.6;1,1.2;0,0" dur="4.2s" repeatCount="indefinite"/>';
         // 4 transparent wings with rapid flutter — anchored at (12, 10)
         s += '<ellipse cx="10.5" cy="8.5" rx="4" ry="1.1" fill="#DDF7FA" opacity="0.26"><animate attributeName="opacity" values="0.14;0.34;0.14" dur="0.24s" repeatCount="indefinite"/></ellipse>';
@@ -19059,7 +19081,7 @@ document.addEventListener('keydown', function(e) {
         s += '</g>';
         break;
       case 30: // Caterpillar — crawling across bottom, left to right
-        s += '<g opacity="0.72">';
+        s += '<g opacity="0.76" transform="translate(18,90) scale(1.3) translate(-18,-90)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.6,0;1.2,0;0.6,0;0,0" dur="4.5s" repeatCount="indefinite"/>';
         // Body segments — horizontal across bottom, y=90
         var _cBy = 90, _cBx = 10;
@@ -19084,8 +19106,8 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+(_cBx+1)+','+(_cBy-0.6)+' Q'+(_cBx+8)+','+(_cBy-1.4)+' '+(_cBx+15)+','+(_cBy-0.8)+'" fill="none" stroke="#CBE8AF" stroke-width="0.12" opacity="0.38"/>';
         s += '</g>';
         break;
-      case 31: // Spider — descending from top-right corner on silk thread
-        s += '<g opacity="0.78">';
+      case 31: // Garden Spider — descending from top-right corner on silk thread
+        s += '<g opacity="0.80" transform="translate(60,19) scale(1.3) translate(-60,-19)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0,1;0,2;0,1;0,0" dur="5.6s" repeatCount="indefinite"/>';
         // Silk thread
         s += '<line x1="60" y1="2" x2="60" y2="19" stroke="#D9E1D5" stroke-width="0.15" opacity="0.55"/>';
