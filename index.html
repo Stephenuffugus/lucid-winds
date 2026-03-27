@@ -19000,27 +19000,43 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M6.8,88.2 Q8,87.6 9.2,88.2" fill="none" stroke="#E7D7C7" stroke-width="0.12" opacity="0.45"/>';
         s += '</g>';
         break;
-      case 28: // Hummingbird — left side mid-height, facing right toward plant
-        var _hbx = 8, _hby = 48; // left side, vertical middle
-        s += '<g opacity="0.74">';
+      case 28: // Ruby-throated Hummingbird — hovering left side, facing bloom
+        // Archilochus colubris: the only bird that can hover in place and
+        // fly backwards. Wings beat 53x/second creating a figure-8 blur.
+        // Iridescent gorget (throat patch) flashes ruby red in light.
+        // The beak is a precision nectar probe. Smallest bird in NA.
+        var _hbx = 8, _hby = 48;
+        s += '<g opacity="0.80" transform="translate('+_hbx+','+_hby+') scale(1.6) translate(-'+_hbx+',-'+_hby+')">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.8,-0.6;-0.4,0.3;0.5,0.4;0,0" dur="3.6s" repeatCount="indefinite"/>';
-        // Beak — pointing right toward plant
-        s += '<path d="M'+(_hbx+4.5)+','+(_hby-1.2)+' Q'+(_hbx+6.2)+','+(_hby-1.6)+' '+(_hbx+7)+','+(_hby-0.9)+' Q'+(_hbx+6.2)+','+(_hby-0.5)+' '+(_hbx+4.5)+','+(_hby-1.2)+'" fill="#2E2A24" opacity="0.9"/>';
-        // Body — iridescent green
-        s += '<path d="M'+(_hbx+1)+','+(_hby-0.4)+' Q'+(_hbx+2.8)+','+(_hby-1.4)+' '+(_hbx+4.6)+','+(_hby-1.0)+' Q'+(_hbx+3.8)+','+(_hby+0.1)+' '+(_hbx+2)+','+(_hby+0.3)+' Q'+(_hbx+1.2)+','+(_hby+0.05)+' '+(_hbx+1)+','+(_hby-0.4)+' Z" fill="#3FAF9B"/>';
-        // Tail — left
-        s += '<path d="M'+(_hbx+0.5)+','+_hby+' Q'+(_hbx-0.8)+','+(_hby+0.5)+' '+(_hbx-2)+','+(_hby+1.6)+' Q'+(_hbx-0.2)+','+(_hby+1.2)+' '+(_hbx+0.6)+','+(_hby+0.4)+'" fill="#56C3D8" opacity="0.9"/>';
-        // Wings — rapid flutter
-        s += '<path d="M'+(_hbx+1.8)+','+(_hby-0.2)+' Q'+(_hbx+1)+','+(_hby-3.2)+' '+(_hbx-0.5)+','+(_hby-4)+' Q'+(_hbx+1.5)+','+(_hby-3.5)+' '+(_hbx+2.8)+','+(_hby-0.8)+'" fill="#A9E4E8" opacity="0.28">';
-        s += '<animate attributeName="opacity" values="0.15;0.45;0.15;0.32;0.15" dur="0.3s" repeatCount="indefinite"/>';
-        s += '</path>';
-        s += '<path d="M'+(_hbx+1.7)+','+(_hby+0.1)+' Q'+(_hbx+2.6)+','+(_hby-2.6)+' '+(_hbx+4)+','+(_hby-3.4)+' Q'+(_hbx+2.6)+','+(_hby-2.1)+' '+(_hbx+2.1)+','+(_hby+0.4)+'" fill="#DDF7F8" opacity="0.24">';
-        s += '<animate attributeName="opacity" values="0.12;0.38;0.12;0.28;0.12" dur="0.3s" repeatCount="indefinite"/>';
-        s += '</path>';
-        // Eye
-        s += '<circle cx="'+(_hbx+4.1)+'" cy="'+(_hby-0.9)+'" r="0.4" fill="#111"/>';
-        // Chest highlight
-        s += '<path d="M'+(_hbx+2.2)+','+(_hby-0.05)+' Q'+(_hbx+3.3)+','+_hby+' '+(_hbx+4.2)+','+(_hby-0.4)+'" fill="none" stroke="#E6F6C8" stroke-width="0.12" stroke-linecap="round" opacity="0.42"/>';
+        // Wings — figure-8 flutter blur (53 beats/sec = invisible, we show ghost)
+        // Upstroke ghost
+        s += '<path d="M'+(_hbx+1.8)+','+(_hby-0.2)+' Q'+(_hbx+0.5)+','+(_hby-3.5)+' '+(_hbx-1)+','+(_hby-4.5)+' Q'+(_hbx+1)+','+(_hby-4)+' '+(_hbx+2.8)+','+(_hby-0.8)+'" fill="#A9E4E8" opacity="0.2"><animate attributeName="opacity" values="0.1;0.35;0.1;0.25;0.1" dur="0.15s" repeatCount="indefinite"/></path>';
+        // Downstroke ghost
+        s += '<path d="M'+(_hbx+1.7)+','+(_hby+0.1)+' Q'+(_hbx+2.2)+','+(_hby-3)+' '+(_hbx+4)+','+(_hby-4)+' Q'+(_hbx+2.5)+','+(_hby-2.5)+' '+(_hbx+2.1)+','+(_hby+0.4)+'" fill="#DDF7F8" opacity="0.18"><animate attributeName="opacity" values="0.08;0.3;0.08;0.2;0.08" dur="0.15s" repeatCount="indefinite"/></path>';
+        // Wing motion blur disc — the circular sweep path visible at speed
+        s += '<ellipse cx="'+(_hbx+1.5)+'" cy="'+(_hby-2)+'" rx="2.5" ry="2" fill="rgba(200,230,240,0.04)" transform="rotate(-15,'+(_hbx+1.5)+','+(_hby-2)+')"><animate attributeName="opacity" values="0.04;0.08;0.04" dur="0.15s" repeatCount="indefinite"/></ellipse>';
+        // Tail — forked, iridescent blue-green
+        s += '<path d="M'+(_hbx+0.5)+','+_hby+' Q'+(_hbx-1)+','+(_hby+0.8)+' '+(_hbx-2.5)+','+(_hby+2)+'" fill="none" stroke="#56C3D8" stroke-width="0.8" stroke-linecap="round" opacity="0.85"/>';
+        s += '<path d="M'+(_hbx+0.5)+','+(_hby+0.3)+' Q'+(_hbx-0.5)+','+(_hby+1.2)+' '+(_hbx-1.5)+','+(_hby+2.2)+'" fill="none" stroke="#4AB0C8" stroke-width="0.6" stroke-linecap="round" opacity="0.7"/>';
+        // Body — compact, iridescent emerald green
+        s += '<path d="M'+(_hbx+0.8)+','+(_hby-0.5)+' Q'+(_hbx+2.5)+','+(_hby-1.5)+' '+(_hbx+4.5)+','+(_hby-1.0)+' Q'+(_hbx+4)+','+(_hby+0.2)+' '+(_hbx+2)+','+(_hby+0.5)+' Q'+(_hbx+1)+','+(_hby+0.1)+' '+(_hbx+0.8)+','+(_hby-0.5)+' Z" fill="#2A9A78"/>';
+        // Iridescent sheen on back
+        s += '<path d="M'+(_hbx+1.5)+','+(_hby-0.5)+' Q'+(_hbx+3)+','+(_hby-1.2)+' '+(_hbx+4)+','+(_hby-0.8)+'" fill="none" stroke="rgba(100,220,180,0.2)" stroke-width="0.8" stroke-linecap="round"/>';
+        // White belly
+        s += '<path d="M'+(_hbx+2)+','+(_hby+0.1)+' Q'+(_hbx+3)+','+(_hby+0.3)+' '+(_hbx+4)+','+(_hby+0.1)+'" fill="none" stroke="#E8E0D0" stroke-width="0.5" opacity="0.3" stroke-linecap="round"/>';
+        // Head — small, round
+        s += '<circle cx="'+(_hbx+4.2)+'" cy="'+(_hby-0.8)+'" r="1" fill="#2A8A68"/>';
+        // Ruby gorget (throat patch) — THE hummingbird flash
+        s += '<path d="M'+(_hbx+3.5)+','+(_hby-0.2)+' Q'+(_hbx+4.2)+','+(_hby+0.2)+' '+(_hbx+4.8)+','+(_hby-0.3)+'" fill="rgba(200,40,40,0.4)" stroke="none"/>';
+        s += '<path d="M'+(_hbx+3.5)+','+(_hby-0.2)+' Q'+(_hbx+4.2)+','+(_hby+0.2)+' '+(_hbx+4.8)+','+(_hby-0.3)+'" fill="rgba(220,60,60,0.2)"><animate attributeName="fill" values="rgba(220,60,60,0.2);rgba(255,40,40,0.4);rgba(220,60,60,0.2)" dur="2s" repeatCount="indefinite"/></path>';
+        // Eye — dark, prominent
+        s += '<circle cx="'+(_hbx+4.5)+'" cy="'+(_hby-1)+'" r="0.35" fill="#111"/>';
+        s += '<circle cx="'+(_hbx+4.55)+'" cy="'+(_hby-1.1)+'" r="0.1" fill="rgba(240,235,216,0.5)"/>';
+        // Beak — long, thin, precision nectar probe
+        s += '<path d="M'+(_hbx+5)+','+(_hby-0.9)+' L'+(_hbx+7.5)+','+(_hby-0.7)+'" stroke="#2E2A24" stroke-width="0.35" stroke-linecap="round"/>';
+        s += '<path d="M'+(_hbx+5)+','+(_hby-0.7)+' L'+(_hbx+7.5)+','+(_hby-0.6)+'" stroke="#3E3A34" stroke-width="0.25" stroke-linecap="round" opacity="0.6"/>';
+        // Feet — tiny, tucked up in flight
+        s += '<path d="M'+(_hbx+2.5)+','+(_hby+0.3)+' L'+(_hbx+2.5)+','+(_hby+0.8)+'" stroke="#5A5040" stroke-width="0.1"/>';
         s += '</g>';
         break;
       case 29: // Dragonfly — upper-left corner, figure-8 hover
