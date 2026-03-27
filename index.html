@@ -4240,6 +4240,7 @@ window.onerror=function(msg,url,line,col,err){
       <div id="wtp-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:0.2rem 0.5rem;font-size:0.5rem;color:var(--muted);line-height:1.7;border-top:1px solid rgba(74,124,53,0.06);padding-top:0.4rem;margin-bottom:0.45rem;"></div>
       <div style="display:flex;gap:0.3rem;">
         <button onclick="FG_Wild.closeTP()" style="flex:1;padding:0.4rem;border-radius:6px;border:2px solid rgba(74,124,53,0.12);cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:0.65rem;background:rgba(90,112,80,0.06);color:var(--muted);min-height:48px;">CLOSE</button>
+        <button id="wtp-inspect" style="flex:1;padding:0.4rem;border-radius:6px;border:2px solid rgba(122,179,86,0.2);cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:0.65rem;background:rgba(122,179,86,0.08);color:var(--sage);min-height:48px;">🔍 INSPECT</button>
         <button id="wtp-act" style="flex:1;padding:0.4rem;border-radius:6px;border:2px solid rgba(200,168,75,0.12);cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:0.65rem;background:rgba(200,168,75,0.06);color:var(--gold);min-height:48px;display:none;">🎒 HARVEST</button>
       </div>
       <!-- OWN PLANT ACTIONS — shown only for your plants -->
@@ -25109,6 +25110,19 @@ function showTP(p,mk){
   if(re){if(p.rarities&&p.rarities.length>0){var rh='';for(var i=0;i<p.rarities.length;i++)rh+='<span style="display:inline-block;padding:0.1rem 0.35rem;border-radius:3px;font-size:0.42rem;margin:0.08rem 0.1rem 0 0;background:rgba(0,0,0,0.3);color:'+(p.gc||'var(--gold)')+';border:1px solid '+(p.gc||'var(--gold)')+';">\u2605 '+p.rarities[i]+'</span>';re.innerHTML=rh;re.style.display='block';}else re.style.display='none';}
   var gr=document.getElementById('wtp-grid');
   if(gr){var t=p.traits||{};var eaScore=window.computeEA?window.computeEA(t,p.days):0;var seasonInfo=window.getSeasonInfo?window.getSeasonInfo(t):{name:'?',emblem:'?'};var rows=[['EA Power',window.eaBadge?window.eaBadge(eaScore,p.gc):''+eaScore],['Season',seasonInfo.emblem+' '+seasonInfo.name+(seasonInfo.inPeak?' <span style="color:var(--sage);">(Peak!)</span>':'')],['Days',p.days+'d'],['Pollen','<span style="color:var(--gold);">'+p.pollen+'</span>'],['Status','<span style="color:'+(p.status==='Thriving'?'var(--sage)':'var(--cream)')+';">'+p.status+'</span>'],['Mutation',t.mutationName||'None'],['Flower',t.hasFlower?'Yes':'No'],['Leaves',t.leafCount||'?']];var h='';for(var i=0;i<rows.length;i++)h+='<div>'+rows[i][0]+' <b style="color:var(--cream);">'+rows[i][1]+'</b></div>';gr.innerHTML=h;}
+
+  // INSPECT button — opens plant in carousel for full detail view
+  var inspBtn=document.getElementById('wtp-inspect');
+  if(inspBtn){
+    inspBtn.onclick=function(){
+      // Build a temporary plant object with the wild plant's data
+      var _wildPlant={hash:p.hash,date:p.date||'',born:Date.now(),origin:'wild',rare:false,traits:''};
+      if(window.openCarousel){
+        closeTP();
+        openCarousel([_wildPlant],0,'wild-inspect');
+      }
+    };
+  }
 
   // === OWNERSHIP DETECTION ===
   var ab=document.getElementById('wtp-act');
