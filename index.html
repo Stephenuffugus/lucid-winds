@@ -19909,18 +19909,56 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M6.7,82.5 Q6.6,82 6.8,82" fill="#D8A878" opacity="0.3"/>';
         s += '</g>';
         break;
-      case 75: // Raven — perched on pot rim
-        s += '<g opacity="0.78">';
-        s += '<animateTransform attributeName="transform" type="rotate" values="-2 52 78;3 52 78;-2 52 78" dur="7s" repeatCount="indefinite"/>';
-        s += '<ellipse cx="52" cy="78" rx="3" ry="2.2" fill="#1A1A1A"/>';
-        s += '<circle cx="50" cy="76.5" r="1.3" fill="#1A1A1A"/>';
-        s += '<path d="M48.8,76.5 L47,75.8 L48.5,76.8 Z" fill="#2A2A2A"/>';
-        s += '<circle cx="49.8" cy="76.2" r="0.18" fill="#333"/>';
-        s += '<circle cx="49.9" cy="76.1" r="0.06" fill="rgba(240,235,216,0.5)"/>';
-        s += '<path d="M54.5,77 L56,76 L55.5,77.5 Z" fill="#1A1A1A"/>';
-        s += '<path d="M55,77 L56.5,76.5 L56,78 Z" fill="#1A1A1A" opacity="0.7"/>';
-        s += '<line x1="51" y1="80" x2="51" y2="81.5" stroke="#2A2A2A" stroke-width="0.2"/>';
-        s += '<line x1="53" y1="80" x2="53" y2="81.5" stroke="#2A2A2A" stroke-width="0.2"/>';
+      case 75: // Common Raven — perched on pot rim, head cocked (Rare)
+        // Corvus corax: largest songbird, one of the smartest animals on Earth.
+        // Jet black with iridescent purple-blue sheen, massive curved beak,
+        // shaggy throat hackles, intelligent aware eye. Perched with head tilted
+        // in the characteristic "What have we here?" curiosity pose.
+        s += '<g opacity="0.85" transform="translate(52,77) scale(1.35) translate(-52,-77)">';
+        s += '<animateTransform attributeName="transform" type="rotate" values="-1 52 78;2 52 78;-1 52 78" dur="6s" repeatCount="indefinite"/>';
+        // Shadow on rim
+        s += '<ellipse cx="52" cy="80.5" rx="3" ry="0.4" fill="#0d100c" opacity="0.15"/>';
+        // Tail — long, wedge-shaped, layered feathers
+        s += '<path d="M55,78 Q57,77.5 58.5,77 Q58,77.8 57,78.2 Z" fill="#1A1A1A"/>';
+        s += '<path d="M55.5,78.2 Q57.5,78 58.5,77.5 Q58,78.2 56.5,78.5 Z" fill="#1A1A1A" opacity="0.8"/>';
+        // Tail feather edges — subtle iridescence
+        s += '<path d="M56,77.5 Q57.5,77.2 58.5,77" fill="none" stroke="rgba(80,70,120,0.15)" stroke-width="0.2"/>';
+        // Body — large, powerful
+        s += '<ellipse cx="52" cy="78" rx="3.2" ry="2.4" fill="#141414"/>';
+        // Wing folded against body
+        s += '<path d="M50,77 Q49.5,78 50,79 Q52,79.5 54,78.5 Q54.5,77.5 54,77 Z" fill="#1A1A1A"/>';
+        // Wing coverts — subtle feather layering
+        s += '<path d="M50.5,77.5 Q52,77 53.5,77.5" fill="none" stroke="rgba(100,90,140,0.12)" stroke-width="0.3"/>';
+        s += '<path d="M50.5,78 Q52,77.5 53.5,78" fill="none" stroke="rgba(100,90,140,0.1)" stroke-width="0.25"/>';
+        // Iridescent sheen — the purple-blue catch-light that distinguishes raven plumage
+        s += '<ellipse cx="51.5" cy="77.5" rx="1.5" ry="1" fill="rgba(70,60,120,0.06)"/>';
+        s += '<ellipse cx="52.5" cy="78.5" rx="1.2" ry="0.7" fill="rgba(40,80,70,0.04)"/>';
+        // Breast
+        s += '<ellipse cx="51" cy="79" rx="1.5" ry="1" fill="#1A1A1A"/>';
+        // Throat hackles — shaggy, scraggly feathers (raven's "beard")
+        s += '<path d="M50.5,78 Q50,78.5 50.2,79.2" stroke="#222" stroke-width="0.25" fill="none"/>';
+        s += '<path d="M50.8,78.2 Q50.5,78.8 50.5,79.5" stroke="#222" stroke-width="0.2" fill="none"/>';
+        s += '<path d="M51.2,78 Q50.8,78.5 50.8,79" stroke="#222" stroke-width="0.2" fill="none"/>';
+        // Head — turned slightly (curiosity)
+        s += '<circle cx="50" cy="76.2" r="1.5" fill="#141414"/>';
+        // Forehead — slightly domed
+        s += '<path d="M49,75.5 Q50,74.8 51,75.5" fill="#141414"/>';
+        // The BEAK — massive, curved, THE raven's weapon
+        // Upper mandible with curved culmen
+        s += '<path d="M48.8,76.3 L47,75.5 Q46.8,75.8 47.2,76 L48.5,76.5" fill="#2A2828"/>';
+        // Lower mandible
+        s += '<path d="M48.8,76.5 L47.2,76.2 Q46.8,76 47,76.5 L48.5,76.8" fill="#323030"/>';
+        // Beak highlight — horn sheen
+        s += '<path d="M48.5,76 Q47.8,75.8 47.2,76" fill="none" stroke="rgba(80,75,70,0.3)" stroke-width="0.15"/>';
+        // Nasal bristles — feathers covering nostrils (corvid feature)
+        s += '<path d="M49,76 L48.5,75.8 M49.2,76.1 L48.7,76" stroke="#1A1A1A" stroke-width="0.15"/>';
+        // Eye — the intelligent eye. Ravens look at you and you KNOW they're thinking.
+        s += '<circle cx="49.5" cy="75.8" r="0.4" fill="#1A1A18"/>';
+        s += '<circle cx="49.5" cy="75.8" r="0.25" fill="#2A2A28"/>';
+        s += '<circle cx="49.6" cy="75.7" r="0.08" fill="rgba(240,235,216,0.6)"/>';
+        // Legs — thick, gripping pot rim
+        s += '<path d="M51,80 L51,81 L50.3,81.5 M51,81 L51.7,81.5 M51,81 L51,81.5" stroke="#2A2828" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M53,79.8 L53,80.8 L52.3,81.3 M53,80.8 L53.7,81.3 M53,80.8 L53,81.3" stroke="#2A2828" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 76: // Garden Snake — coiled near pot base
