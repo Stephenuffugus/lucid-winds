@@ -4514,10 +4514,10 @@ window.onerror=function(msg,url,line,col,err){
     spawnTestPlants:function(){
       if(!window.mintPlant){alert('mintPlant not available');return;}
       var hashes=[
-        {tier:'Mythic',hash:'f4cd201fbe8f3e55d5d5f491653fb118ce589bf0651eefaec3220d51282fa60a'},
-        {tier:'Mythic',hash:'f0cd2018db8fd355d5d5fac7e65c634d0f53e09001accb627c4a574cda981e88'},
-        {tier:'Cosmic',hash:'feb9ac5c6f9fbf31f5fff9de2702cf3c173934b29334ea2fb7381944ddee3c6e'},
-        {tier:'Cosmic',hash:'fcbdace4ec9f28d1f5fff4ec2ed5324ee461d3871d17b3b71e9eb1a1c3e42e96'}
+        {tier:'Mythic',hash:'0717c6d1139407e768d2041ac0dd26dd275f2b83a3fad5fb792316a35ba217d8'},  // Toad (mythByte=0xD2)
+        {tier:'Mythic',hash:'b5de4f83f6ad365885ecc07018e30a1964742e55de539af5a5f650ce5cd4e629'},  // Capybara (mythByte=0xEC)
+        {tier:'Cosmic',hash:'98e42ce4fae1a70ea0ff1665ea7e7573e98e6d2c377d16bb893220754a579a4b'},  // Beholder (mythByte=0xFF)
+        {tier:'Cosmic',hash:'8c63fd69b9e4dcb5d3ff68bee8d21947af80ae28947b697c3c2469f3f7a01108'}   // Beholder + Albino mutation
       ];
       var count=0;
       hashes.forEach(function(h){
@@ -7504,13 +7504,13 @@ document.addEventListener('keydown', function(e) {
       {name:'Starfall'},             // idx 37
       {name:'Beholder',rare:true},   // idx 38
       {name:'Cat'},         // idx 39 — renderer: Kitty
-      {name:'Platypus'},    // idx 40 — renderer: Platypus
+      {name:'Platypus',rare:true},    // idx 40 — renderer: Platypus (Rare)
       {name:'Praying Mantis'}, // idx 41 — renderer: Mantis
       {name:'Hedgehog'},    // idx 42 — renderer: Hedgehog
-      {name:'Pangolin'},    // idx 43 — renderer: Pangolin
-      {name:'Luna Moth'},   // idx 44 — renderer: Luna Moth
+      {name:'Pangolin',rare:true},    // idx 43 — renderer: Pangolin (Rare)
+      {name:'Luna Moth',rare:true},   // idx 44 — renderer: Luna Moth (Rare)
       {name:'Hermit Crab'}, // idx 45 — renderer: Hermit Crab
-      {name:'Glow Snail'},  // idx 46 — renderer: Glow Snail
+      {name:'Glow Snail',rare:true},  // idx 46 — renderer: Glow Snail (Rare)
       {name:'Axolotl',rare:true}, // idx 47
       {name:'Scorpion',rare:true},// idx 48
       {name:'Origami Crane',rare:true}, // idx 49
@@ -7580,10 +7580,16 @@ document.addEventListener('keydown', function(e) {
       {name:'Biochar'},{name:'Seashell Grit'},{name:'Terra Preta'},{name:'Diatomaceous Earth'},
       {name:'Amber Resin',rare:true},{name:'Bioluminescent Soil',rare:true},{name:'Magnetic Sand',rare:true},{name:'Fossil Bed',rare:true},
       {name:'Stardust',rare:true},{name:'Dragon Bone Ash',rare:true},{name:'Quicksilver',rare:true},
-      {name:'Phoenix Ash',rare:true},{name:'Void Essence',rare:true},{name:'Reserved'}
+      {name:'Phoenix Ash',rare:true},{name:'Void Essence',rare:true},{name:'Moonstone Dust',rare:true},
+      // Indices 61-70: expanded substrates (common-uncommon fills)
+      {name:'Pine Bark'},{name:'Crushed Granite'},{name:'Kaolin Clay'},{name:'Kelp Meal'},
+      {name:'Oyster Shell'},{name:'Basalt Gravel'},{name:'Coco Peat'},{name:'Gypsum'},
+      {name:'Silica Sand'},{name:'Marble Chips'},{name:'River Clay'}
     ]
   };
 
+  // Alias: bases → substrates (code reads TRAIT_BANK.bases, expanded data lives in substrates)
+  TRAIT_BANK.bases = TRAIT_BANK.substrates;
   window.TRAIT_BANK = TRAIT_BANK;
   var TOTAL_COMBOS = 16*16*16*16*16*16*16*16; // 4,294,967,296
 
@@ -20257,12 +20263,14 @@ document.addEventListener('keydown', function(e) {
     if (gh.some(function(p) { return p.hash === hash; })) { console.log('[mintPlant] duplicate hash, skipping'); return false; }
     if (gh.length >= MAX_COLLECTION_SIZE) { console.log('[mintPlant] collection full'); return false; }
     var traits = hashToTraits(hash);
-    // Pity timer: if 10 consecutive non-rare mints, force rare
+    // Pity timer: Model H — reset on Uncommon+ (score >= 2), not just isRare
+    var _pityGrade = window.getTerraGrade ? getTerraGrade(traits) : null;
+    var _pityIsGood = _pityGrade ? _pityGrade.score >= 2 : traits.isRare;
     var pityCount = getPity();
-    if (!traits.isRare && pityCount >= 10) {
-      traits.isRare = true; // override — player earned it
+    if (!_pityIsGood && pityCount >= 10) {
+      traits.isRare = true; // override — player earned it after 10 commons
       setPity(0);
-    } else if (traits.isRare) {
+    } else if (_pityIsGood) {
       setPity(0);
     } else {
       setPity(pityCount + 1);
