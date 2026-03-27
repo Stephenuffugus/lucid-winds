@@ -7367,8 +7367,8 @@ document.addEventListener('keydown', function(e) {
       {name:'Tulip'},                        // 5
       {name:'Spike'},                        // 6
       {name:'Mandala'},                      // 7
-      {name:'Bud Variant'},                  // 8
-      {name:'Spike Variant'},                // 9
+      {name:'Clover Head'},                   // 8
+      {name:'Bottlebrush'},                  // 9
       {name:'Orchid'},                       // 10
       {name:'Rose+'},                        // 11
       {name:'Carnivorous Flytrap'},          // 12
@@ -13803,15 +13803,37 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.18)+'" fill="'+PALETTE.gold+'" opacity="'+(0.9*bloomOp)+'"/>';
         s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.74)+'" fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" opacity="'+(bloomOp*0.24)+'"'+'/>';
         break;
-      case 2: // Hibiscus — 5 wide overlapping petals with stamen column
+      case 2: // Hibiscus — 5 wide overlapping petals with stamen column and veining
+        var _h2dark = _hueShift(fc, parseInt(uid.slice(1,3),16), 18);
+        // Back petal shadows (slightly offset and darker)
+        for (var hi2b=0; hi2b<5; hi2b++) {
+          var ha2b=(hi2b*72-90)*Math.PI/180;
+          var htx2b=fx+Math.cos(ha2b)*fs*1.2+0.4, hty2b=fy+Math.sin(ha2b)*fs*1.2+0.3;
+          s += '<path d="M'+fx+','+fy+' C'+(fx-Math.sin(ha2b)*fs*0.7+Math.cos(ha2b)*fs*0.3)+','+(fy+Math.cos(ha2b)*fs*0.7+Math.sin(ha2b)*fs*0.3)+' '+htx2b+','+(hty2b-Math.sin(ha2b)*fs*0.3)+' '+htx2b+','+hty2b+' C'+(htx2b+Math.sin(ha2b)*fs*0.35)+','+(hty2b+Math.cos(ha2b)*fs*0.2)+' '+(fx+Math.sin(ha2b)*fs*0.5)+','+(fy-Math.cos(ha2b)*fs*0.5)+' '+fx+','+fy+'Z" fill="'+_h2dark+'" opacity="'+(0.25*bloomOp)+'"/>';
+        }
+        // Main petals
         for (var hi=0; hi<5; hi++) {
           var ha=(hi*72-90)*Math.PI/180, hr=fs*0.55;
           var hpx=fx+Math.cos(ha)*hr, hpy=fy+Math.sin(ha)*hr;
           var htx=fx+Math.cos(ha)*fs*1.15, hty=fy+Math.sin(ha)*fs*1.15;
-          s += '<path d="M'+fx+','+fy+' C'+(hpx-Math.sin(ha)*fs*0.65)+','+(hpy+Math.cos(ha)*fs*0.65)+' '+htx+','+(hty-Math.sin(ha)*fs*0.3)+' '+htx+','+hty+' C'+(htx+Math.sin(ha)*fs*0.35)+','+(hty+Math.cos(ha)*fs*0.25)+' '+(hpx+Math.sin(ha)*fs*0.55)+','+(hpy-Math.cos(ha)*fs*0.55)+' '+fx+','+fy+'Z" fill="'+fc+'" opacity="'+(0.58*bloomOp)+'"/>';
+          s += '<path d="M'+fx+','+fy+' C'+(hpx-Math.sin(ha)*fs*0.65)+','+(hpy+Math.cos(ha)*fs*0.65)+' '+htx+','+(hty-Math.sin(ha)*fs*0.3)+' '+htx+','+hty+' C'+(htx+Math.sin(ha)*fs*0.35)+','+(hty+Math.cos(ha)*fs*0.25)+' '+(hpx+Math.sin(ha)*fs*0.55)+','+(hpy-Math.cos(ha)*fs*0.55)+' '+fx+','+fy+'Z" fill="'+fc+'" opacity="'+(0.6*bloomOp)+'"/>';
+          // Petal vein — midline from center to tip
+          s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+htx.toFixed(1)+'" y2="'+hty.toFixed(1)+'" stroke="rgba(240,235,216,0.12)" stroke-width="0.25" opacity="'+(bloomOp*0.45)+'"/>';
+          // Secondary veins — 2 branching from midline
+          var _v2dx = Math.cos(ha)*fs*0.55, _v2dy = Math.sin(ha)*fs*0.55;
+          s += '<line x1="'+(fx+_v2dx*0.4).toFixed(1)+'" y1="'+(fy+_v2dy*0.4).toFixed(1)+'" x2="'+(fx+_v2dx*0.4-Math.sin(ha)*fs*0.2).toFixed(1)+'" y2="'+(fy+_v2dy*0.4+Math.cos(ha)*fs*0.2).toFixed(1)+'" stroke="rgba(240,235,216,0.08)" stroke-width="0.2" opacity="'+(bloomOp*0.4)+'"/>';
         }
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.22)+'" fill="'+PALETTE.gold+'" opacity="'+(0.85*bloomOp)+'"/>';
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.06)+'" fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" opacity="'+(bloomOp*0.18)+'"'+'/>';
+        // Stamen column — tall protruding structure with anthers
+        s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+fx+'" y2="'+(fy-fs*0.9)+'" stroke="'+PALETTE.cream+'" stroke-width="'+(fs*0.08).toFixed(1)+'" stroke-linecap="round" opacity="'+(0.6*bloomOp)+'"/>';
+        // 5 anthers at top of column
+        for (var _ha=0; _ha<5; _ha++) {
+          var _haa = (_ha*72-90)*Math.PI/180;
+          s += '<circle cx="'+(fx+Math.cos(_haa)*fs*0.12).toFixed(1)+'" cy="'+(fy-fs*0.85+Math.sin(_haa)*fs*0.06).toFixed(1)+'" r="'+(fs*0.06).toFixed(2)+'" fill="'+PALETTE.gold+'" opacity="'+(0.8*bloomOp)+'"/>';
+        }
+        // Stigma at tip
+        s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.95)+'" r="'+(fs*0.05)+'" fill="'+PALETTE.cream+'" opacity="'+(0.7*bloomOp)+'"/>';
+        // Soft outer glow
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.1)+'" fill="none" stroke="rgba(240,235,216,0.15)" stroke-width="0.6" opacity="'+(bloomOp*0.2)+'"/>';
         break;
       case 3: // Lotus — boat-shaped petals, 2 staggered layers with veining
         for (var li=0; li<8; li++) {
@@ -13889,21 +13911,43 @@ document.addEventListener('keydown', function(e) {
         }
         break;
 
-      case 8: // Alias → Bud
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.35)+'" fill="'+bg+'" opacity="'+(0.25*bloomOp)+'"/>';
-        for (var bi8=0; bi8<3; bi8++) {
-          var ba8=(bi8*120-90)*Math.PI/180, br8=fs*0.45;
-          var bpx8=fx+Math.cos(ba8)*br8, bpy8=fy+Math.sin(ba8)*br8;
-          s += '<path d="M'+fx+','+fy+' C'+(bpx8-Math.sin(ba8)*fs*0.35)+','+(bpy8+Math.cos(ba8)*fs*0.35)+' '+(bpx8+Math.cos(ba8)*fs*0.6)+','+(bpy8+Math.sin(ba8)*fs*0.6)+' '+(fx+Math.cos(ba8)*fs*1.1)+','+(fy+Math.sin(ba8)*fs*1.1)+' C'+(bpx8+Math.sin(ba8)*fs*0.4)+','+(bpy8-Math.cos(ba8)*fs*0.4)+' '+fx+','+(fy+fs*0.3)+' '+fx+','+fy+'Z" fill="'+fc+'" opacity="'+(0.6*bloomOp)+'"/>';
+      case 8: // Clover Head — compact spherical cluster of tiny tubular florets
+        // Base dome shadow
+        s += '<circle cx="'+(fx+0.3)+'" cy="'+(fy+0.3)+'" r="'+(fs*0.85)+'" fill="#0d100c" opacity="'+(0.1*bloomOp)+'"/>';
+        // Cluster of ~14 tiny florets arranged in a hemisphere
+        var _c8hue = _hueShift(fc, parseInt(uid.slice(0,2),16), 10);
+        for (var _c8i=0; _c8i<14; _c8i++) {
+          var _c8a = (_c8i * 137.508) * Math.PI / 180; // golden angle spiral
+          var _c8r = fs * 0.15 + (_c8i * fs * 0.045);
+          var _c8x = fx + Math.cos(_c8a) * Math.min(_c8r, fs*0.65);
+          var _c8y = fy + Math.sin(_c8a) * Math.min(_c8r, fs*0.55) * 0.75;
+          var _c8sz = fs * (0.18 - _c8i * 0.006);
+          s += '<circle cx="'+_c8x.toFixed(1)+'" cy="'+_c8y.toFixed(1)+'" r="'+_c8sz.toFixed(2)+'" fill="'+(_c8i%3===0 ? _c8hue : fc)+'" opacity="'+((0.7 - _c8i*0.02)*bloomOp).toFixed(2)+'"/>';
+          // Tiny stamen dot at center of each floret
+          if (_c8i < 8) s += '<circle cx="'+_c8x.toFixed(1)+'" cy="'+(_c8y-_c8sz*0.3).toFixed(1)+'" r="'+(fs*0.04).toFixed(2)+'" fill="'+PALETTE.cream+'" opacity="'+(0.4*bloomOp).toFixed(2)+'"/>';
         }
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.28)+'" fill="'+PALETTE.cream+'" opacity="'+(0.7*bloomOp)+'"/>';
+        // Soft dome highlight
+        s += '<ellipse cx="'+(fx-fs*0.15)+'" cy="'+(fy-fs*0.2)+'" rx="'+(fs*0.35)+'" ry="'+(fs*0.25)+'" fill="rgba(240,235,216,0.1)" opacity="'+(bloomOp*0.4)+'"/>';
         break;
 
-      case 9: // Alias → Spike
-        for (var si9=0; si9<5; si9++) {
-          var sy9=fy-si9*fs*0.45, sr9=fs*(0.38-si9*0.06);
-          s += '<path d="M'+(fx-sr9)+','+sy9+' C'+(fx-sr9*0.6)+','+(sy9-sr9*1.2)+' '+(fx+sr9*0.6)+','+(sy9-sr9*1.2)+' '+(fx+sr9)+','+sy9+' C'+(fx+sr9*0.5)+','+(sy9+sr9*0.5)+' '+(fx-sr9*0.5)+','+(sy9+sr9*0.5)+' '+(fx-sr9)+','+sy9+'Z" fill="'+fc+'" opacity="'+((0.72-si9*0.09)*bloomOp)+'"/>';
+      case 9: // Bottlebrush — exposed stamens radiating outward, no petals
+        // Central pistil (thick vertical column)
+        s += '<line x1="'+fx+'" y1="'+(fy+fs*0.3)+'" x2="'+fx+'" y2="'+(fy-fs*1.5)+'" stroke="'+_hueShift(fc, 55, 18)+'" stroke-width="'+(fs*0.12).toFixed(1)+'" stroke-linecap="round" opacity="'+(0.6*bloomOp)+'"/>';
+        // 20+ stamen filaments radiating from the column
+        for (var _b9i=0; _b9i<22; _b9i++) {
+          var _b9y = fy + fs*0.2 - _b9i * fs * 0.08;
+          var _b9ang = (_b9i * 137.508 + 30) * Math.PI / 180;
+          var _b9side = (_b9i % 2 === 0) ? 1 : -1;
+          var _b9len = fs * (0.5 + Math.sin(_b9i * 0.7) * 0.15);
+          var _b9tx = fx + _b9side * _b9len;
+          var _b9ty = _b9y - fs * 0.08;
+          // Filament
+          s += '<line x1="'+fx+'" y1="'+_b9y.toFixed(1)+'" x2="'+_b9tx.toFixed(1)+'" y2="'+_b9ty.toFixed(1)+'" stroke="'+fc+'" stroke-width="0.35" opacity="'+((0.65 - _b9i*0.015)*bloomOp).toFixed(2)+'" stroke-linecap="round"/>';
+          // Anther (pollen sac at tip)
+          s += '<circle cx="'+_b9tx.toFixed(1)+'" cy="'+_b9ty.toFixed(1)+'" r="'+(fs*0.08).toFixed(2)+'" fill="'+PALETTE.gold+'" opacity="'+((0.7 - _b9i*0.02)*bloomOp).toFixed(2)+'"/>';
         }
+        // Highlight along pistil
+        s += '<line x1="'+(fx-0.3)+'" y1="'+(fy+fs*0.15)+'" x2="'+(fx-0.3)+'" y2="'+(fy-fs*1.3)+'" stroke="rgba(240,235,216,0.3)" stroke-width="0.3" stroke-linecap="round" opacity="'+(bloomOp*0.5)+'"/>';
         break;
 
       case 10: // Orchid — complex layered petals with labellum lip
