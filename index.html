@@ -19539,16 +19539,56 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="57.5" cy="27.5" rx="1.0" ry="0.6" fill="rgba(240,220,180,0.1)"/>';
         s += '</g>';
         break;
-      case 67: // Squirrel — sitting beside pot left side
-        s += '<g opacity="0.72">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.08,-0.04;0,0" dur="5.5s" repeatCount="indefinite"/>';
-        s += '<ellipse cx="10" cy="88.5" rx="2.5" ry="2" fill="#A07040"/>';
-        s += '<circle cx="9" cy="86.5" r="1.2" fill="#A07040"/>';
-        s += '<circle cx="8.6" cy="86.2" r="0.18" fill="#111"/>';
-        s += '<circle cx="8.5" cy="85.5" r="0.45" fill="#B08050"/>';
-        s += '<circle cx="8.5" cy="85.5" r="0.25" fill="#C09060" opacity="0.5"/>';
-        s += '<path d="M12,87 Q14,84 13,82 Q12.5,81 13.5,82.5 Q15,84 13,88" fill="#A07040" stroke="#8A6030" stroke-width="0.15"/>';
-        s += '<circle cx="9.2" cy="86.8" r="0.15" fill="#D08070"/>';
+      case 67: // Grey Squirrel — sitting upright beside pot left side
+        // Sciurus carolinensis: the iconic bushy-tailed rodent. Defining feature
+        // is the enormous plume tail curving up over the body. Sitting on haunches
+        // with front paws held near chest. Grizzled grey-brown fur, lighter belly.
+        s += '<g opacity="0.82" transform="translate(10,87) scale(1.5) translate(-10,-87)">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.1,-0.06;0,0" dur="4s" repeatCount="indefinite"/>';
+        // Shadow
+        s += '<ellipse cx="10.5" cy="91.5" rx="3" ry="0.6" fill="#0d100c" opacity="0.1"/>';
+        // Tail — THE defining feature. Enormous plume curling up and over body.
+        // Built with multiple overlapping curves for fluffy volume.
+        s += '<path d="M12,88 Q15,86 14,83 Q13.5,81 14.5,80 Q15.5,79 15,80.5 Q14.5,82 15,84 Q15.5,86 13,89" fill="#9A7A55" stroke="#8A6A45" stroke-width="0.2" opacity="0.75"/>';
+        // Tail fluff — lighter edges for volume
+        s += '<path d="M13,83 Q14.5,81.5 14,80.5" fill="none" stroke="#B8A078" stroke-width="0.8" stroke-linecap="round" opacity="0.3"/>';
+        s += '<path d="M14,85 Q15,83.5 14.5,82" fill="none" stroke="#B8A078" stroke-width="0.6" stroke-linecap="round" opacity="0.25"/>';
+        // Body — sitting upright on haunches, round and hunched
+        s += '<ellipse cx="10" cy="88.5" rx="2.8" ry="2.2" fill="#8A7050"/>';
+        // Belly — lighter cream-gray
+        s += '<ellipse cx="10.2" cy="89" rx="1.8" ry="1.5" fill="#C8B898" opacity="0.45"/>';
+        // Haunches — rounded thigh bulk visible at sides
+        s += '<ellipse cx="11.5" cy="89.5" rx="1.5" ry="1.0" fill="#8A7050" opacity="0.5"/>';
+        // Head — blunt, rounded, facing slightly right
+        s += '<circle cx="9.5" cy="86" r="1.5" fill="#8A7050"/>';
+        // Cheek fluff
+        s += '<ellipse cx="10" cy="86.5" rx="0.8" ry="0.6" fill="#B09A78" opacity="0.3"/>';
+        // Ears — small and rounded (grey squirrel, not red — no tufts)
+        s += '<ellipse cx="8.8" cy="84.8" rx="0.5" ry="0.7" fill="#8A7050"/>';
+        s += '<ellipse cx="8.8" cy="84.8" rx="0.3" ry="0.45" fill="#C0A880" opacity="0.3"/>';
+        s += '<ellipse cx="10.2" cy="84.8" rx="0.5" ry="0.65" fill="#8A7050"/>';
+        s += '<ellipse cx="10.2" cy="84.8" rx="0.3" ry="0.4" fill="#C0A880" opacity="0.3"/>';
+        // Eye — large, dark, round, alert (squirrels have prominent eyes)
+        s += '<circle cx="9.8" cy="85.8" r="0.5" fill="#1A1410"/>';
+        s += '<circle cx="9.9" cy="85.6" r="0.15" fill="rgba(240,235,216,0.55)"/>';
+        // Nose — small dark triangle
+        s += '<circle cx="8.5" cy="86.3" r="0.2" fill="#3A2A20"/>';
+        // Whiskers
+        s += '<line x1="8.3" y1="86.3" x2="7" y2="85.8" stroke="#B09A78" stroke-width="0.06" opacity="0.35"/>';
+        s += '<line x1="8.3" y1="86.4" x2="7" y2="86.6" stroke="#B09A78" stroke-width="0.06" opacity="0.35"/>';
+        // Front paws — held up near chest, clutching pose
+        s += '<ellipse cx="9" cy="88" rx="0.45" ry="0.35" fill="#9A8060"/>';
+        s += '<ellipse cx="9.8" cy="87.8" rx="0.4" ry="0.3" fill="#9A8060"/>';
+        // Tiny finger lines on paws
+        s += '<line x1="8.7" y1="88" x2="8.5" y2="88.2" stroke="#7A6040" stroke-width="0.06"/>';
+        s += '<line x1="9" y1="88.1" x2="8.9" y2="88.3" stroke="#7A6040" stroke-width="0.06"/>';
+        // Hind feet — visible below body
+        s += '<ellipse cx="11" cy="90.5" rx="0.7" ry="0.3" fill="#8A7050"/>';
+        s += '<ellipse cx="9.5" cy="90.5" rx="0.6" ry="0.25" fill="#8A7050"/>';
+        // Fur grizzle texture — subtle dark flecks on back
+        s += '<circle cx="10.5" cy="87.5" r="0.15" fill="#6A5030" opacity="0.2"/>';
+        s += '<circle cx="11" cy="88" r="0.12" fill="#6A5030" opacity="0.15"/>';
+        s += '<circle cx="10" cy="87" r="0.1" fill="#6A5030" opacity="0.2"/>';
         s += '</g>';
         break;
       case 68: // Fox — curled near pot base right
