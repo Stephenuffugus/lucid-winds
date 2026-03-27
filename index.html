@@ -7603,32 +7603,89 @@ document.addEventListener('keydown', function(e) {
   // Capped at 200 entries: when limit exceeded, oldest 50 keys are evicted
   // to prevent memory bloat in long sessions with large greenhouses.
   // WeakMap is unsuitable for string primitives; plain Object is correct.
+  // ═══ DUAL-LAYER SVG CACHE: in-memory (fast) + IndexedDB (persistent) ═══
+  // L1: in-memory object — instant lookup for current session
+  // L2: IndexedDB — survives page reloads, loads greenhouse in milliseconds
   var _svgCache = {};
   var _svgCacheKeys = [];
   var _SVG_CACHE_MAX = 200;
   var _SVG_CACHE_EVICT = 50;
+
+  // IndexedDB setup
+  var _idbReady = false;
+  var _idb = null;
+  (function _initIDB() {
+    try {
+      var req = indexedDB.open('lw_svg_cache', 1);
+      req.onupgradeneeded = function(e) { e.target.result.createObjectStore('svgs'); };
+      req.onsuccess = function(e) { _idb = e.target.result; _idbReady = true; };
+      req.onerror = function() { _idbReady = false; };
+    } catch(e) { _idbReady = false; }
+  })();
+
+  function _idbGet(key, cb) {
+    if (!_idbReady || !_idb) { cb(null); return; }
+    try {
+      var tx = _idb.transaction('svgs', 'readonly');
+      var req = tx.objectStore('svgs').get(key);
+      req.onsuccess = function() { cb(req.result || null); };
+      req.onerror = function() { cb(null); };
+    } catch(e) { cb(null); }
+  }
+
+  function _idbSet(key, val) {
+    if (!_idbReady || !_idb) return;
+    try {
+      var tx = _idb.transaction('svgs', 'readwrite');
+      tx.objectStore('svgs').put(val, key);
+    } catch(e) {}
+  }
 
   function _svgCacheGet(key) { return _svgCache[key] || null; }
 
   function _svgCacheSet(key, val) {
     if (!_svgCache[key]) { _svgCacheKeys.push(key); }
     _svgCache[key] = val;
-    // Evict oldest entries when over limit
+    _idbSet(key, val); // persist to IndexedDB
     if (_svgCacheKeys.length > _SVG_CACHE_MAX) {
       var evict = _svgCacheKeys.splice(0, _SVG_CACHE_EVICT);
       evict.forEach(function(k) { delete _svgCache[k]; });
     }
   }
 
+  // Pre-warm L1 cache from IndexedDB on load
+  function _prewarmCache(hashes) {
+    if (!_idbReady || !_idb || !hashes.length) return;
+    try {
+      var tx = _idb.transaction('svgs', 'readonly');
+      var store = tx.objectStore('svgs');
+      hashes.forEach(function(h) {
+        var sizes = [50, 200]; // grid + carousel
+        sizes.forEach(function(s) {
+          var key = h + '|' + s + '|1.00';
+          if (_svgCache[key]) return; // already warm
+          var req = store.get(key);
+          req.onsuccess = function() {
+            if (req.result && !_svgCache[key]) {
+              _svgCache[key] = req.result;
+              if (_svgCacheKeys.indexOf(key) < 0) _svgCacheKeys.push(key);
+            }
+          };
+        });
+      });
+    } catch(e) {}
+  }
+
   function generatePlantSVG(hash, size, progress) {
     var s = size || 70;
     var prog = (typeof progress === 'number') ? Math.min(1, Math.max(0, progress)) : 1;
+    var _isThumb = s <= 60; // Thumbnail mode: skip filters, halo, companion, mutation FX
 
     // Phase 26: SVG render cache — skip full re-render on duplicate calls
     // Rare plants with breathe animation are NOT cached (uid uses Date.now/1000)
     var t0 = hashToTraits(hash);
     var _cacheKey = (hash || 'x') + '|' + s + '|' + prog.toFixed(2);
-    var _skipCache = t0.isRare && prog >= 1; // breathe animation is time-based
+    var _skipCache = !_isThumb && t0.isRare && prog >= 1; // breathe animation is time-based
     if (!_skipCache) {
       var _cached = _svgCacheGet(_cacheKey);
       if (_cached) return _cached;
@@ -7659,11 +7716,17 @@ document.addEventListener('keydown', function(e) {
     var isPixel = t.mutationName === 'Pixel Art';
 
     var svg = '<svg viewBox="0 0 70 95" width="'+s+'" height="'+Math.round(s*95/70)+'" xmlns="http://www.w3.org/2000/svg">';
-    svg += buildDefs(t, uid);
+    if (_isThumb) {
+      // Thumbnail: minimal defs — just pot gradient, skip all filters
+      var _tc = PALETTE[t.potColor] || PALETTE.terra;
+      svg += '<defs><linearGradient id="pg_'+uid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+_tc.light+'"/><stop offset="100%" stop-color="'+_tc.dark+'"/></linearGradient></defs>';
+    } else {
+      svg += buildDefs(t, uid);
+    }
 
     // ── Phase 23: Breathing / float animation wrapper for rare plants ──
     var breathId = 'breath_' + uid + '_' + Math.floor(Date.now()/1000);
-    if (t.isRare && prog >= 1) {
+    if (t.isRare && prog >= 1 && !_isThumb) {
       svg += '<style>#' + breathId + '{animation:breathe_' + uid + ' 4.2s ease-in-out infinite;}</style>';
 
       svg += '<style>@keyframes breathe_' + uid + '{0%,100%{transform:translateY(0px);}50%{transform:translateY(-1.5px);}}</style>';
@@ -7791,31 +7854,33 @@ document.addEventListener('keydown', function(e) {
     if (prog >= 0.8 && t.hasFlower) svg += renderBloom(t, uid, _safeBloomY, prog);
 
     // 7.5 MANDALA HALO — uses _safeBloomY for consistent positioning
-    if (prog >= 0.8 && t.hasFlower) svg += renderHalo(t, uid, _safeBloomY);
+    if (!_isThumb && prog >= 0.8 && t.hasFlower) svg += renderHalo(t, uid, _safeBloomY);
 
     // ── Spec 15: Pollen dusting after bloom ──
-    if (t.breedLayers && t.breedLayers.pollenDusting && t.hasFlower) svg += renderPollenDusting(t, uid, 35, _safeBloomY, t.flowerSize);
+    if (!_isThumb && t.breedLayers && t.breedLayers.pollenDusting && t.hasFlower) svg += renderPollenDusting(t, uid, 35, _safeBloomY, t.flowerSize);
 
     // Close foliage clip + sway wrapper
     svg += '</g>';
 
-    // ── Spec 15: Breed/compost layers after foliage clip ──
-    if (t.breedLayers && t.breedLayers.aerialRoot && window._lastLowestLeaf) svg += renderAerialRoot(uid, window._lastLowestLeaf.x, window._lastLowestLeaf.y);
-    if (t.compostLayers && t.compostLayers.sporeHalo) svg += renderSporeHalo(uid, visibleTop);
+    if (!_isThumb) {
+      // ── Spec 15: Breed/compost layers after foliage clip ──
+      if (t.breedLayers && t.breedLayers.aerialRoot && window._lastLowestLeaf) svg += renderAerialRoot(uid, window._lastLowestLeaf.x, window._lastLowestLeaf.y);
+      if (t.compostLayers && t.compostLayers.sporeHalo) svg += renderSporeHalo(uid, visibleTop);
 
-    // 8. COMPANION
-    if (prog >= 1) svg += renderCompanion(t, uid);
+      // 8. COMPANION
+      if (prog >= 1) svg += renderCompanion(t, uid);
 
-    // 9. MYTHIC — rare creatures and effects
-    // mythic layer removed — creatures now render as companions
+      // 9. MYTHIC — rare creatures and effects
+      // mythic layer removed — creatures now render as companions
 
-    // 10. MUTATION FX
-    if (isMut && prog >= 1) svg += renderMutationFX(t, uid);
+      // 10. MUTATION FX
+      if (isMut && prog >= 1) svg += renderMutationFX(t, uid);
+    }
 
     // Terra Grade — expressed via card name color, not SVG badge
     // (removed SVG icon to avoid overlapping plant art)
 
-    if (t.isRare && prog >= 1) {
+    if (t.isRare && prog >= 1 && !_isThumb) {
       svg += '</g>'; // close breathing wrapper
     }
 
@@ -20524,6 +20589,10 @@ document.addEventListener('keydown', function(e) {
     MAX_COLLECTION_SIZE = getGHSlots();
     var gh = loadGreenhouse();
     window._padGHPlants = gh; // set-51: expose for flip-card back action buttons
+    // Pre-warm SVG cache from IndexedDB for all greenhouse plants
+    if (typeof _prewarmCache === 'function') {
+      _prewarmCache(gh.map(function(p) { return p.hash; }));
+    }
     var grid = document.getElementById('greenhouse-grid');
     var countEl = document.getElementById('gh-count');
     var fillEl = document.getElementById('gh-progress-fill');
