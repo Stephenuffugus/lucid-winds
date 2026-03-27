@@ -1071,7 +1071,7 @@
     .cs-flip-inner{position:relative;width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d;will-change:transform;-webkit-backface-visibility:hidden;}
     .cs-flip-wrap.flipped .cs-flip-inner{transform:rotateY(180deg);}
     .cs-card-face{backface-visibility:hidden;-webkit-backface-visibility:hidden;position:absolute;inset:0;display:flex;flex-direction:column;box-sizing:border-box;border-radius:12px;overflow:hidden;will-change:transform;transform:translateZ(0);}
-    .cs-card-front{position:absolute;inset:0;border-radius:12px;display:grid;grid-template-rows:12% 71% 20% auto;box-sizing:border-box;padding:25% 12% 8%;background-color:#050505;background-size:96%;background-position:center;background-repeat:no-repeat;}
+    .cs-card-front{position:absolute;inset:0;border-radius:12px;display:grid;grid-template-rows:10% 64% 22% auto;box-sizing:border-box;padding:18% 12% 6%;background-color:#050505;background-size:96%;background-position:center;background-repeat:no-repeat;}
     .cs-card-back{transform:rotateY(180deg);padding:10% 8% 6%;overflow-y:auto;-webkit-overflow-scrolling:touch;background-color:#050505;background-size:174%;background-position:center;background-repeat:no-repeat;}
     .cs-flip-hint{font-family:'DM Mono',monospace;font-size:0.35rem;color:rgba(122,179,86,0.35);text-align:center;position:absolute;bottom:4%;left:0;right:0;}
     .cs-card-front[data-season="spring"]{background-image:url('assets/card-front-spring.png');}
@@ -1133,7 +1133,7 @@
     .cf-art-window{display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0;background:transparent;border:none;}
     .cf-art-window svg{max-height:100%;max-width:80%;height:auto;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));transform:none;}
     .cf-haiku-zone{display:flex;align-items:center;justify-content:center;overflow:hidden;background:transparent;border:none;}
-    .cf-haiku{font-family:'Playfair Display',serif;font-style:italic;font-size:0.52rem;color:rgba(212,207,188,0.85);text-align:center;line-height:1.55;width:100%;cursor:pointer;}
+    .cf-haiku{font-family:'Playfair Display',serif;font-style:italic;font-size:0.62rem;color:rgba(212,207,188,0.88);text-align:center;line-height:1.5;width:100%;cursor:pointer;-webkit-tap-highlight-color:transparent;}
     .cf-ea{position:absolute;top:11%;right:10%;font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--gold);background:rgba(10,10,8,0.75);border:1.5px solid rgba(200,168,75,0.3);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;z-index:5;backdrop-filter:blur(4px);}
     .cs-card-front[data-season="spring"] .cf-ea,.cs-card-front[data-season="winter"] .cf-ea{top:11%;right:5%;}
     .cs-card-front[data-season="autumn"] .cf-ea{top:10%;right:5%;}
@@ -7917,11 +7917,8 @@ document.addEventListener('keydown', function(e) {
       if (t.breedLayers && t.breedLayers.aerialRoot && window._lastLowestLeaf) svg += renderAerialRoot(uid, window._lastLowestLeaf.x, window._lastLowestLeaf.y);
       if (t.compostLayers && t.compostLayers.sporeHalo) svg += renderSporeHalo(uid, visibleTop);
 
-      // 8. COMPANION — scaled 25% larger, transform-origin at viewBox center-bottom
-      if (prog >= 1) {
-        var _compSvg = renderCompanion(t, uid);
-        if (_compSvg) svg += '<g transform="translate(35,85) scale(1.25) translate(-35,-85)">' + _compSvg + '</g>';
-      }
+      // 8. COMPANION — individual scaling deferred to per-case work
+      if (prog >= 1) svg += renderCompanion(t, uid);
 
       // 9. MYTHIC — rare creatures and effects
       // mythic layer removed — creatures now render as companions
@@ -21611,7 +21608,7 @@ document.addEventListener('keydown', function(e) {
     var _npHtml = typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : name;
     front += '<div class="cf-name-zone"><div class="cf-name" style="color:' + _sNameColor + ';">' + _npHtml + '</div></div>';
     front += '<div class="cf-art-window">' + svgHtml + '</div>';
-    front += '<div class="cf-haiku-zone"><div class="cf-haiku" onclick="event.stopPropagation();window._zoomHaiku(this)" data-h1="' + (haiku.line1||'').replace(/"/g,'&quot;') + '" data-h2="' + (haiku.line2||'').replace(/"/g,'&quot;') + '" data-h3="' + (haiku.line3||'').replace(/"/g,'&quot;') + '">' + haiku.line1 + '<br>' + haiku.line2 + '<br>' + haiku.line3 + '</div></div>';
+    front += '<div class="cf-haiku-zone"><div class="cf-haiku" data-h1="' + (haiku.line1||'').replace(/"/g,'&quot;') + '" data-h2="' + (haiku.line2||'').replace(/"/g,'&quot;') + '" data-h3="' + (haiku.line3||'').replace(/"/g,'&quot;') + '">' + haiku.line1 + '<br>' + haiku.line2 + '<br>' + haiku.line3 + '</div></div>';
     front += '<div class="cs-flip-hint">tap to flip \u2192</div>';
     if (plant.revealed) {
       front += '<img class="cf-rarity-symbol" src="/assets/symbol-' + _tierName + '.png" alt="' + _tierName + '">';
@@ -21908,8 +21905,12 @@ document.addEventListener('keydown', function(e) {
 
   // ── Card flip handler: first-flip rarity reveal ────────────────────
   // ── Haiku zoom overlay — tap haiku text to read large ──
-  window._zoomHaiku = function(el) {
+  // ── Haiku zoom — delegated click handler (more reliable than inline onclick) ──
+  document.addEventListener('click', function(e) {
+    var el = e.target.closest('.cf-haiku');
     if (!el) return;
+    e.stopPropagation();
+    e.preventDefault();
     var h1 = el.getAttribute('data-h1') || '';
     var h2 = el.getAttribute('data-h2') || '';
     var h3 = el.getAttribute('data-h3') || '';
@@ -21924,7 +21925,7 @@ document.addEventListener('keydown', function(e) {
       '<div style="margin-top:1.2rem;font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);letter-spacing:0.1em;">TAP ANYWHERE TO CLOSE</div>' +
       '</div>';
     document.body.appendChild(ov);
-  };
+  }, true); // capture phase — fires BEFORE flip handler
 
   window._handleCardFlip = function(el) {
     // Lazy-load back face content on first flip
