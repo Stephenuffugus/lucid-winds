@@ -20086,7 +20086,7 @@ document.addEventListener('keydown', function(e) {
       'jagged','jointed','knotted','lidded','lustred','mantled','marbled','matted','moated','mottled','mounded','muted',
       'needled','pebbled','pitted','plated','pleated','seeded','settled','silted','spindled','spotted','threaded','wicked',
       'rooted','antique','baleful','densewood','icebound','oblique','pulselit','stonebound','tactile','dire','gnarled','wired',
-      'gaseous'
+      'tattered'
     ],
     a3: [ // 3-syllable (84 words)
       'abyssal','alchemic','alkaline','ammonic','anoxic','apical','ascetic','auroral','autumnal','basaltic','bifurcate','botryoid',
@@ -20145,24 +20145,87 @@ document.addEventListener('keydown', function(e) {
   function _hw(rng,bank){var arr=_HW[bank];return arr[rng()%arr.length];}
   function _hCap(str){return str.charAt(0).toUpperCase()+str.slice(1);}
 
+  // ═══ THEMATIC WORD GROUPS — ensures all words in a haiku share a mood ═══
+  // Each theme has curated nouns, adjectives, and verbs that belong together.
+  // The template builder selects a theme first, then draws only from that theme.
+  var _HT = {
+    water: {
+      n1:['brook','creek','dew','flood','fog','mist','rain','rill','stream','wash','well','pond','tarn','wake','surge','tide','squall'],
+      n2:['basin','cascade','cistern','current','delta','eddy','harbor','inlet','lagoon','meadow','ripple','runoff','torrent','watershed','tideway'],
+      a1:['damp','deep','cold','still','soft','calm','slick'],
+      a2:['brackish','coastal','dewbound','fogbound','glacial','mistbound','shallow','sodden','sunken','tidal','waterbound'],
+      v1:['drinks','seeps','fills','floods','rains','wells','sips','cools','wets'],
+      v2:['gathers','ripples','cascades','channels','eddies','washes','murmurs','settles']
+    },
+    earth: {
+      n1:['bone','cairn','cliff','crag','den','dune','ledge','loam','mound','ridge','rift','scar','slab','slope','trench','vault','shelf','pit'],
+      n2:['barrow','bedrock','cavern','cobble','gravel','grotto','moraine','outcrop','pebble','quarry','ravine','sandbank','stratum','tunnel','chasm','geode'],
+      a1:['dry','rough','dense','grim','worn','aged','packed'],
+      a2:['ancient','barren','buried','earthen','fractured','graven','hardened','hollow','lithic','olden','petrine','riven','stonebound','weathered'],
+      v1:['grips','holds','guards','splits','cracks','heals','seals','marks'],
+      v2:['anchors','shelters','darkens','settles','burrows','hollows','shadows','crumbles']
+    },
+    botanical: {
+      n1:['bloom','bough','bract','bulb','fern','frond','husk','leaf','root','seed','stem','stalk','thorn','sprig','corm','bole'],
+      n2:['alder','anther','arbor','aspen','bramble','calyx','canopy','floret','lichen','orchid','pollen','rhizome','sepal','tendril','thicket','taproot'],
+      a1:['green','laced','pale','twined','veined','leafy','barbed','mossed'],
+      a2:['ancient','blooming','climbing','creeping','dormant','fallow','feral','fibrous','fungal','pinnate','rooted','verdant','withered','woven'],
+      v1:['blooms','climbs','clings','coils','grows','roots','seeds','stems','weaves'],
+      v2:['gathers','cradles','nurtures','ripens','scatters','trembles','opens','whispers']
+    },
+    light: {
+      n1:['dawn','dusk','flame','flare','gleam','glint','glow','haze','mote','orb','veil','wisp','wick','gloom'],
+      n2:['candle','cinder','ember','halo','lantern','mirror','phantom','prism','shadow','signal','spiral','whisper','vigil','comet'],
+      a1:['faint','pale','dim','hushed','soft','still','lone','murk'],
+      a2:['ambered','ashen','distant','dusken','eerie','ghostlit','gleaming','gloaming','hidden','lambent','lustrous','moonlit','nocturne','shadowed','spectral','umbral','velvet'],
+      v1:['fades','glows','gleams','glints','hides','looms','veils','wakes','dreams'],
+      v2:['flickers','shimmers','softens','beckons','darkens','shadows','whispers','trembles']
+    },
+    weather: {
+      n1:['frost','gale','haze','mist','rain','snow','squall','storm','wind','drift','fog','ice','chill'],
+      n2:['cyclone','skyfall','ashfall','cloudbank','snowdrift','icefall','torrent','tempest','rainfall','stormlight','fogbank','jetstream'],
+      a1:['blown','cold','numb','chilled','rimed','damp','bleak'],
+      a2:['bitter','brumal','cindered','drifting','gelid','glacial','icebound','scattered','windcut','waxen','frigid','frosted'],
+      v1:['bends','cools','frosts','lifts','stirs','warms','chills','drifts'],
+      v2:['blankets','covers','scatters','settles','whispers','gathers','trembles','softens']
+    }
+  };
+  var _HT_KEYS = ['water','earth','botanical','light','weather'];
+
+  // Themed word picker — falls back to main bank if theme bank is empty/missing
+  function _htw(rng, bank, theme) {
+    var tb = _HT[theme];
+    if (tb && tb[bank] && tb[bank].length > 0) return tb[bank][rng() % tb[bank].length];
+    return _hw(rng, bank); // fallback to full bank
+  }
+
   function getHaiku(hash) {
     var h = (hash || '00000000000000000000000000000000').toLowerCase();
     var selector = parseInt(h[25], 16) || 0;
     if (selector < 8) {
+      // Pre-composed mode — use curated line banks (highest quality)
       var i1 = (parseInt(h[26]+h[27], 16) || 0) % HAIKU_A.length;
       var i2 = (parseInt(h[28]+h[29], 16) || 0) % HAIKU_B.length;
       var i3 = (parseInt(h[30]+h[31], 16) || 0) % HAIKU_C.length;
       return { line1: HAIKU_A[i1], line2: HAIKU_B[i2], line3: HAIKU_C[i3] };
     }
+    // Template-builder mode — select a THEME first, then all words share it
     var seed1 = parseInt(h.slice(26, 30), 16) || 1;
     var seed2 = parseInt(h.slice(30, 34), 16) || 2;
     var seed3 = parseInt(h.slice(34, 38), 16) || 3;
+    var themeSeed = parseInt(h.slice(38, 40), 16) || 0;
+    var theme = _HT_KEYS[themeSeed % _HT_KEYS.length];
     var rng1 = _haikuRng(seed1), rng2 = _haikuRng(seed2), rng3 = _haikuRng(seed3);
-    return {
+    // Override _hw to use themed version for this haiku
+    var _origHw = _hw;
+    _hw = function(rng, bank) { return _htw(rng, bank, theme); };
+    var result = {
       line1: _hCap(_H5[rng1() % _H5.length](rng1)),
       line2: _hCap(_H7[rng2() % _H7.length](rng2)),
       line3: _hCap(_H5[rng3() % _H5.length](rng3))
     };
+    _hw = _origHw; // restore
+    return result;
   }
   window.getHaiku = getHaiku; // Exposed for onboarding + card rendering
 

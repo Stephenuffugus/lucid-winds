@@ -646,7 +646,7 @@
     'the moth found the bloom by scent',
     'snails write their own silver roads',
     'fence posts rotted from within',
-    'meadows grow where car parks were',
+    'meadows grow where stone walls were',
     'churchyard yews have seen it all',
     'quarries fill with rain and frogs',
     'ditches grow wild on their own',
