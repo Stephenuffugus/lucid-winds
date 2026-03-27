@@ -28424,7 +28424,7 @@ function GL(a){var SZ=5,gr=[],ini=[],mv=0,sl=0,pz=0;
   var _lampOn='<svg class="lamp-svg" viewBox="0 0 32 32" width="60%" height="60%"><circle cx="16" cy="13" r="8" fill="rgba(122,179,86,0.35)"/><path d="M16,6 C16,6 10,10 10,15 C10,18 12,20 14,20.5 L14,24 L18,24 L18,20.5 C20,20 22,18 22,15 C22,10 16,6 16,6Z" fill="#7ab356" opacity="0.85"/><line x1="14" y1="24" x2="18" y2="24" stroke="#5a8a3a" stroke-width="0.8" opacity="0.6"/><line x1="14.5" y1="25.5" x2="17.5" y2="25.5" stroke="#5a8a3a" stroke-width="0.8" opacity="0.5"/><circle cx="16" cy="13" r="2.5" fill="#e8dcc8" opacity="0.6"/><circle cx="16" cy="13" r="1" fill="#fff" opacity="0.5"/></svg>';
   var _lampOff='<svg class="lamp-svg" viewBox="0 0 32 32" width="60%" height="60%"><path d="M16,8 C16,8 11,11 11,15.5 C11,18 13,19.5 14.5,20 L14.5,23 L17.5,23 L17.5,20 C19,19.5 21,18 21,15.5 C21,11 16,8 16,8Z" fill="#3a4a30" opacity="0.5"/><line x1="14.5" y1="23" x2="17.5" y2="23" stroke="#2a3424" stroke-width="0.8" opacity="0.3"/><line x1="15" y1="24.5" x2="17" y2="24.5" stroke="#2a3424" stroke-width="0.8" opacity="0.25"/></svg>';
   function anim(i,wasOn){var el=gd.children[i];if(!el)return;var cls=wasOn?'l-off':'l-on';el.classList.add(cls);setTimeout(function(){if(el)el.classList.remove(cls)},450)}
-  function rn(changed){gd.innerHTML='';for(var i=0;i<SZ*SZ;i++){var d=document.createElement('div');d.className='lc '+(gr[i]?'lo':'lf');d.innerHTML=gr[i]?_lampOn:_lampOff;d.setAttribute('data-i',i);d.onclick=function(){var el=this;var x=parseInt(el.getAttribute('data-i'));var r=Math.floor(x/SZ),c=x%SZ;el.classList.add('ltap');setTimeout(function(){el.classList.remove('ltap')},260);_play("click");var af=[];var pairs=[[r,c],[r-1,c],[r+1,c],[r,c-1],[r,c+1]];for(var p=0;p<pairs.length;p++){var pr=pairs[p][0],pc=pairs[p][1];if(pr>=0&&pr<SZ&&pc>=0&&pc<SZ)af.push({idx:pr*SZ+pc,was:gr[pr*SZ+pc]})}tg(r,c);tg(r-1,c);tg(r+1,c);tg(r,c-1);tg(r,c+1);mv++;document.getElementById('Lm').textContent=mv;rn(af);if(ok()){sl++;document.getElementById('Ls').textContent=sl;_e('puzzle_solved');_playWin();sm('🌿 Done! '+mv+' moves')}};gd.appendChild(d)}if(changed){for(var j=0;j<changed.length;j++)anim(changed[j].idx,changed[j].was)}}
+  function rn(changed){gd.innerHTML='';for(var i=0;i<SZ*SZ;i++){var d=document.createElement('div');d.className='lc '+(gr[i]?'lo':'lf');d.innerHTML=gr[i]?_lampOn:_lampOff;d.setAttribute('data-i',i);d.onclick=function(){var el=this;var x=parseInt(el.getAttribute('data-i'));var r=Math.floor(x/SZ),c=x%SZ;el.classList.add('ltap');setTimeout(function(){el.classList.remove('ltap')},260);_play("click");var af=[];var pairs=[[r,c],[r-1,c],[r+1,c],[r,c-1],[r,c+1]];for(var p=0;p<pairs.length;p++){var pr=pairs[p][0],pc=pairs[p][1];if(pr>=0&&pr<SZ&&pc>=0&&pc<SZ)af.push({idx:pr*SZ+pc,was:gr[pr*SZ+pc]})}tg(r,c);tg(r-1,c);tg(r+1,c);tg(r,c-1);tg(r,c+1);mv++;document.getElementById('Lm').textContent=mv;rn(af);if(ok()){sl++;document.getElementById('Ls').textContent=sl;_e('puzzle_solved');_e('game_complete');_playWin();sm('🌿 Done! '+mv+' moves');_sr('lights',{w:true,s:mv})}};gd.appendChild(d)}if(changed){for(var j=0;j<changed.length;j++)anim(changed[j].idx,changed[j].was)}}
   function gn(){gr=[];for(var i=0;i<SZ*SZ;i++)gr.push(0);var n=5+Math.floor(Math.random()*8);for(var t=0;t<n;t++){var ri=Math.floor(Math.random()*SZ),ci=Math.floor(Math.random()*SZ);tg(ri,ci);tg(ri-1,ci);tg(ri+1,ci);tg(ri,ci-1);tg(ri,ci+1)}if(ok()){tg(2,2);tg(1,2);tg(3,2);tg(2,1);tg(2,3)}ini=gr.slice()}
   window._LN=function(){pz++;mv=0;document.getElementById('Lp').textContent=pz;document.getElementById('Lm').textContent='0';sm('');gn();rn()};window._LR=function(){gr=ini.slice();mv=0;document.getElementById('Lm').textContent='0';sm('Reset');rn()};_LN();}
 
@@ -28771,7 +28771,29 @@ function GPP(a){var SZ=6,grid=[],_rc=0;
   ];
   ms(a);mm(a);var gd=document.createElement('div');gd.className='ppg';gd.id='PP';gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';a.appendChild(gd);mc(a).innerHTML='<button class="gb" onclick="_PPN()">🔄 New</button>';
   function gen(){grid=[];_rc=0;for(var i=0;i<SZ*SZ;i++){grid.push({type:Math.floor(Math.random()*6),rot:0});for(var r=0;r<Math.floor(Math.random()*4);r++)grid[i].rot=(grid[i].rot+1)%4}}
-  function rn(){gd.innerHTML='';for(var i=0;i<SZ*SZ;i++){var d=document.createElement('div');d.className='ppc';d.style.cssText='transform:rotate('+(grid[i].rot*90)+'deg);overflow:hidden';d.innerHTML=PIPE_SVG[grid[i].type];d.setAttribute('data-i',i);d.onclick=function(){var idx=parseInt(this.getAttribute('data-i'));_play('click');grid[idx].rot=(grid[idx].rot+1)%4;_rc++;if(_rc%5===0)_e('progress');rn()};gd.appendChild(d)}}
+  function _ppCheck(){
+    // Simple connectivity check: count how many pipes point at each other
+    var connections=0;
+    var EXITS=[ // for each type: which directions are open at rot=0 [up,right,down,left]
+      [1,0,1,0], // 0: vertical
+      [0,1,0,1], // 1: horizontal
+      [1,1,0,0], // 2: corner UR
+      [1,0,0,1], // 3: corner UL
+      [0,0,1,1], // 4: corner DL (inverted from rendering)
+      [0,1,1,0]  // 5: corner DR
+    ];
+    function exits(i){var t=grid[i].type,r=grid[i].rot%4,e=EXITS[t]||[0,0,0,0];var re=e.slice();for(var rr=0;rr<r;rr++){re=[re[3],re[0],re[1],re[2]];}return re;}
+    for(var y=0;y<SZ;y++)for(var x=0;x<SZ;x++){
+      var e=exits(y*SZ+x);
+      // Check right neighbor
+      if(x<SZ-1){var ne=exits(y*SZ+x+1);if(e[1]&&ne[3])connections++;}
+      // Check down neighbor
+      if(y<SZ-1){var ne2=exits((y+1)*SZ+x);if(e[2]&&ne2[0])connections++;}
+    }
+    return connections;
+  }
+  var _ppBest=0;
+  function rn(){gd.innerHTML='';for(var i=0;i<SZ*SZ;i++){var d=document.createElement('div');d.className='ppc';d.style.cssText='transform:rotate('+(grid[i].rot*90)+'deg);overflow:hidden;transition:transform 0.15s ease';d.innerHTML=PIPE_SVG[grid[i].type];d.setAttribute('data-i',i);d.onclick=function(){var idx=parseInt(this.getAttribute('data-i'));_play('click');grid[idx].rot=(grid[idx].rot+1)%4;_rc++;var conn=_ppCheck();if(conn>_ppBest){_ppBest=conn;if(_rc%4===0)_e('progress');}sm(conn+' connections');if(conn>=SZ*(SZ-1)*2-4){_e('game_complete');_playWin();sm('🌿 All connected! '+_rc+' rotations');_sr('pipe',{w:true,s:_rc});}rn()};gd.appendChild(d)}}
   window._PPN=function(){gen();sm('Rotate pipes to connect');rn()};_PPN();}
 
 // ═══ GOLF SOLITAIRE ═══
