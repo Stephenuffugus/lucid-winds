@@ -25949,7 +25949,7 @@ function _addPlant(p){
   var glow=p.own?'background:radial-gradient(circle,rgba(122,179,86,0.12) 0%,transparent 70%);':'';
   var th=Math.round(sz*40/30)+24;
   var html='<div style="position:relative;width:'+(sz+20)+'px;height:'+th+'px;'+glow+'display:flex;align-items:center;justify-content:center;cursor:pointer;">'+badge+svg+tag+'</div>';
-  var pd={lat:p.lat,lng:p.lng,hash:p.hash,own:p.own,name:info.nm,grade:info.grade,gc:info.gc,days:p.days||0,pollen:p.pollen||0,status:p.status||'Growing',traits:info.t,rarities:info.rarities};
+  var pd={lat:p.lat,lng:p.lng,hash:p.hash,own:p.own,name:info.nm,grade:info.grade,gc:info.gc,days:p.days||0,pollen:p.pollen||0,status:p.status||'Growing',traits:info.t,rarities:info.rarities,defenderGame:p.defenderGame||'set',ownerUid:p.ownerUid||'',ownerName:p.ownerName||'Keeper'};
   var mk=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:html,iconSize:[sz+20,th+16],iconAnchor:[(sz+20)/2,th]}),zIndexOffset:p.own?500:100}).addTo(_map).on('click',function(){showTP(pd,mk);});
 }
 
@@ -26019,6 +26019,40 @@ function closeTP(){var tp=document.getElementById('w-tp');if(tp){tp.style.opacit
 function _harvestToPouch(p){
   if(!p||!p.hash){_toast('No plant selected.');return;}
   if(p.own){_toast('You can\'t harvest your own plant!');return;} // SAFETY CHECK
+  // Check proximity
+  if(_uLat&&p.lat){
+    var distToPlant=_dist(_uLat,_uLng,p.lat,p.lng);
+    if(distToPlant>COLLECT_RANGE){_toast('Walk closer! '+Math.round(distToPlant)+'m away.');return;}
+  }
+  // Check cooldown on this plant
+  if(p._harvestCooldown&&Date.now()<p._harvestCooldown){
+    var secs=Math.ceil((p._harvestCooldown-Date.now())/1000);
+    _toast('Defended! Try again in '+secs+'s');return;
+  }
+  // Must beat the planter's chosen defender game
+  var defGame=p.defenderGame||'set';
+  var grade=p.grade||'Common';
+  if(window.FG_Challenge&&FG_Challenge.startSpecific){
+    FG_Challenge.startSpecific(defGame,grade,function(success){
+      if(success){
+        _doHarvest(p);
+        _play('match');
+      } else {
+        p._harvestCooldown=Date.now()+120000;
+        _play('buzz');
+        _toast('Defended! Try again in 2 minutes.');
+      }
+    });
+  } else if(window.FG_Challenge){
+    FG_Challenge.start(grade,function(success){
+      if(success){_doHarvest(p);_play('match');}
+      else{p._harvestCooldown=Date.now()+120000;_play('buzz');_toast('Defended! Try again in 2 minutes.');}
+    });
+  } else {
+    _doHarvest(p);
+  }
+}
+function _doHarvest(p){
   var plantObj={hash:p.hash,name:p.name,grade:p.grade||'Common',origin:'wild',hp:'h',pi:parseInt(p.hash.charAt(0),16)%5};
   if(window.FG_Backpack){
     if(!FG_Backpack.ap(plantObj)){_toast('Plant slots full!');return;}
@@ -26026,14 +26060,32 @@ function _harvestToPouch(p){
     if(_pouch.length>=MAX_POUCH){_toast('Pouch full!');return;}
     _pouch.push({hash:p.hash,name:p.name,type:'harvest',grade:p.grade,gc:p.gc});_savePouch();
   }
-  // Remove from wild
   var wild=_getWild().filter(function(w){return w.hash!==p.hash;});
   _saveWild(wild);
   if(_selMk&&_map)_map.removeLayer(_selMk);
   closeTP();
   if(window.FG_Backpack)FG_Backpack.render();
   _updateCounts();
-  _toast('\ud83c\udf92 '+p.name+' harvested!');
+  try{
+    if(window.db&&p.ownerUid&&p.hash){
+      var docId=p.ownerUid+'_'+p.hash.slice(0,16);
+      window.db.collection('wildDrops').doc(docId).delete()
+        .then(function(){if(window._swsLog)_swsLog('Harvest: deleted shared drop '+docId,'ok');})
+        .catch(function(e){if(window._swsLog)_swsLog('Harvest delete err: '+e.message,'err');});
+    }
+  }catch(e){}
+  var dewReward={Common:3,Uncommon:5,Rare:8,Epic:12,Legendary:18,Mythic:25,Cosmic:40};
+  var reward=dewReward[p.grade]||3;
+  try{
+    if(window.db&&p.ownerUid){
+      var rewardDoc={type:'harvest_reward',amount:reward,grade:p.grade||'Common',
+        plantName:p.name||'Plant',harvesterUid:window.firebase&&firebase.auth().currentUser?firebase.auth().currentUser.uid:'',
+        timestamp:new Date().toISOString()};
+      window.db.collection('vaults').doc(p.ownerUid).collection('pendingRewards').add(rewardDoc)
+        .catch(function(e){if(window._swsLog)_swsLog('Reward write err: '+e.message,'err');});
+    }
+  }catch(e){}
+  _toast('\ud83c\udf92 '+p.name+' harvested! Owner earns '+reward+' Dew Drops.');
 }
 
 // ═══ WATER OWN PLANT (GPS-proximate only) ═══
@@ -26180,7 +26232,7 @@ function _drop(pl){
   if(!_uLat||!_uLng){_toast('No location.');return;}
   if((MAX_DROPS-_drops)<=0)return;
   var wild=_getWild();
-  var la=_uLat+(Math.random()-0.5)*0.003,lo=_uLng+(Math.random()-0.5)*0.003;
+  var la=_uLat+(Math.random()-0.5)*0.0005,lo=_uLng+(Math.random()-0.5)*0.0005;
   var zone=_zoneKey(la,lo);
 
   // Territory check
@@ -26319,8 +26371,19 @@ function _updateCounts(){
   var total=_getPollen();
   if(lastTick>0&&w.length>0){
     var elapsed=Math.floor((now-lastTick)/60000);
-    var earned=elapsed*w.length;
-    if(earned>0){total+=earned;_savePollen(total);}
+    if(elapsed>0){
+      var pollenRates={Common:1,Uncommon:2,Rare:4,Epic:6,Legendary:9,Mythic:12,Cosmic:15};
+      var hourlyTotal=0;
+      for(var i=0;i<w.length;i++){
+        var grade='Common';
+        try{if(window.hashToTraits&&window.getTerraGrade&&w[i].hash){
+          var tr=window.hashToTraits(w[i].hash);grade=window.getTerraGrade(tr).label||'Common';
+        }}catch(e){}
+        hourlyTotal+=(pollenRates[grade]||1);
+      }
+      var earned=Math.floor(hourlyTotal*elapsed/60);
+      if(earned>0){total+=earned;_savePollen(total);}
+    }
   }
   localStorage.setItem('fg_pollen_tick',String(now));
   var p=document.getElementById('w-pollen');if(p)p.textContent=total;
@@ -26330,17 +26393,33 @@ function useFC(){}
 function _toast(m){var e=document.getElementById('w-toast');if(!e)return;e.textContent=m;e.style.opacity='1';e.style.transform='translate(-50%,-50%) scale(1)';clearTimeout(_tt);_tt=setTimeout(function(){e.style.opacity='0';e.style.transform='translate(-50%,-50%) scale(0.95)';},3500);}
 
 var _wd=45;setInterval(function(){_wd=(_wd+(Math.random()>0.5?12:-8)+360)%360;var w=document.getElementById('w-wind');if(w){var ds=['N','NE','E','SE','S','SW','W','NW'];w.textContent=ds[Math.round(_wd/45)%8]+' '+(5+Math.round(Math.random()*10))+'mph';}},8000);
-setInterval(function(){var w=_getWild();if(w.length>0){var total=_getPollen()+w.length;_savePollen(total);var p=document.getElementById('w-pollen');if(p)p.textContent=total;localStorage.setItem('fg_pollen_tick',String(Date.now()));}},60000);
+setInterval(function(){var w=_getWild();if(w.length>0){
+  var pollenRates={Common:1,Uncommon:2,Rare:4,Epic:6,Legendary:9,Mythic:12,Cosmic:15};
+  var hourlyTotal=0;
+  for(var i=0;i<w.length;i++){
+    var grade='Common';
+    try{if(window.hashToTraits&&window.getTerraGrade&&w[i].hash){
+      var tr=window.hashToTraits(w[i].hash);grade=window.getTerraGrade(tr).label||'Common';
+    }}catch(e){}
+    hourlyTotal+=(pollenRates[grade]||1);
+  }
+  var remainder=0;try{remainder=parseFloat(localStorage.getItem('fg_pollen_rem')||'0');}catch(e){}
+  var minuteEarned=hourlyTotal/60+remainder;
+  var wholeEarned=Math.floor(minuteEarned);
+  localStorage.setItem('fg_pollen_rem',String(minuteEarned-wholeEarned));
+  if(wholeEarned>0){var total=_getPollen()+wholeEarned;_savePollen(total);var p=document.getElementById('w-pollen');if(p)p.textContent=total;}
+  localStorage.setItem('fg_pollen_tick',String(Date.now()));
+}},60000);
 
 // ═══ DROP FROM BACKPACK — place a plant from BP onto the map ═══
 function _dropFromBP(p){
   if(!_uLat||!_uLng){_toast('Need GPS location to drop.');return;}
   if(typeof gtag!=='undefined') gtag('event','wild_plant_drop',{lat:_uLat.toFixed(3),lng:_uLng.toFixed(3)});
   var wild=_getWild();
-  var la=_uLat+(Math.random()-0.5)*0.003,lo=_uLng+(Math.random()-0.5)*0.003;
+  var la=_uLat+(Math.random()-0.5)*0.0005,lo=_uLng+(Math.random()-0.5)*0.0005;
   var zone=_zoneKey(la,lo);
   if(wild.some(function(w){return _zoneKey(w.lat,w.lng)===zone;})){
-    la=_uLat+(Math.random()-0.5)*0.005;lo=_uLng+(Math.random()-0.5)*0.005;
+    la=_uLat+(Math.random()-0.5)*0.0008;lo=_uLng+(Math.random()-0.5)*0.0008;
   }
   // Route through defender picker
   _pendingDrop={plant:p,lat:la,lng:lo,wild:wild,fromBP:true};
@@ -26351,11 +26430,15 @@ function _writeSharedDrop(lat,lng,hash,ea,defGame,traits){
   try{
     var user=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
     if(!user||!user.uid||!window.db)return;
+    var grade='Common';
+    try{if(traits&&window.getTerraGrade){grade=window.getTerraGrade(traits).label||'Common';}}catch(e){}
     window.db.collection('wildDrops').doc(user.uid+'_'+hash.slice(0,16)).set({
       lat:lat,lng:lng,hash:hash,ownerUid:user.uid,
       ownerName:localStorage.getItem('pw_keeper_name')||'Keeper',
       ea:ea||0,defenderGame:defGame||'set',
       season:(traits&&traits.season)||0,status:'alive',
+      grade:grade,
+      zone:_zoneKey(lat,lng),
       droppedAt:new Date().toISOString()
     }).catch(function(e){if(window._swsLog)_swsLog('Shared drop err: '+e.message,'err');});
   }catch(e){}
@@ -26363,8 +26446,16 @@ function _writeSharedDrop(lat,lng,hash,ea,defGame,traits){
 function _loadSharedDrops(){
   try{
     var user=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
-    if(!user||!window.db||!_map)return;
-    window.db.collection('wildDrops').where('status','==','alive').limit(100).get()
+    if(!user||!window.db||!_map||!_uLat)return;
+    var cLat=Math.round(_uLat/ZONE_SIZE)*ZONE_SIZE;
+    var cLng=Math.round(_uLng/ZONE_SIZE)*ZONE_SIZE;
+    var zones=[];
+    for(var dLat=-1;dLat<=1;dLat++){
+      for(var dLng=-1;dLng<=1;dLng++){
+        zones.push((cLat+dLat*ZONE_SIZE).toFixed(4)+','+(cLng+dLng*ZONE_SIZE).toFixed(4));
+      }
+    }
+    window.db.collection('wildDrops').where('zone','in',zones).where('status','==','alive').get()
       .then(function(snap){
         var count=0;
         snap.forEach(function(doc){
@@ -26379,8 +26470,37 @@ function _loadSharedDrops(){
             ea:d.ea||0,defenderGame:d.defenderGame||'set',season:d.season||0});
           count++;
         });
-        if(count>0&&window._swsLog)_swsLog('Loaded '+count+' shared drops','ok');
-      }).catch(function(e){if(window._swsLog)_swsLog('Shared load err: '+e.message,'err');});
+        if(count>0&&window._swsLog)_swsLog('Loaded '+count+' shared drops from '+zones.length+' zones','ok');
+      }).catch(function(e){
+        if(e.message&&e.message.indexOf('index')>=0){
+          if(window._swsLog)_swsLog('Zone index not ready — loading fallback','warn');
+          _loadSharedDropsFallback(user);
+        } else {
+          if(window._swsLog)_swsLog('Shared load err: '+e.message,'err');
+        }
+      });
+  }catch(e){}
+}
+function _loadSharedDropsFallback(user){
+  try{
+    window.db.collection('wildDrops').where('status','==','alive').limit(50).get()
+      .then(function(snap){
+        var count=0;
+        snap.forEach(function(doc){
+          var d=doc.data();if(!d.lat||!d.lng||!d.hash)return;
+          if(_uLat&&d.lat){var dist=_dist(_uLat,_uLng,d.lat,d.lng);if(dist>500)return;}
+          var isOwn=(d.ownerUid===user.uid);
+          var existing=_getWild();
+          if(existing.some(function(w){return w.hash===d.hash;}))return;
+          _addPlant({lat:d.lat,lng:d.lng,hash:d.hash,own:isOwn,
+            days:Math.floor((Date.now()-new Date(d.droppedAt||Date.now()).getTime())/86400000),
+            pollen:0,status:isOwn?'Your Plant':'Wild',
+            ownerName:d.ownerName||'Keeper',ownerUid:d.ownerUid,
+            ea:d.ea||0,defenderGame:d.defenderGame||'set',season:d.season||0});
+          count++;
+        });
+        if(window._swsLog)_swsLog('Fallback: loaded '+count+' nearby drops','ok');
+      }).catch(function(e){if(window._swsLog)_swsLog('Fallback load err: '+e.message,'err');});
   }catch(e){}
 }
 
@@ -29293,31 +29413,73 @@ function _tapMemory(idx){
   }
 }
 
-// ═══ TYPE 3: SPOT THE DIFFERENCE ═══
-var SPOT_ICONS=['\ud83c\udf3f','\ud83c\udf38','\ud83c\udf42','\ud83c\udf3b','\ud83c\udf3a','\ud83c\udf35','\ud83c\udf39','\ud83c\udf3e','\u2618\ufe0f'];
-function _genSpot(difficulty){
-  var sz=difficulty>=1?4:3;var grid=[];for(var i=0;i<sz*sz;i++)grid.push(SPOT_ICONS[Math.floor(Math.random()*SPOT_ICONS.length)]);
-  var diffIdx=Math.floor(Math.random()*grid.length);var orig=grid[diffIdx];
-  var alt=SPOT_ICONS.filter(function(ic){return ic!==orig;});
-  var changed=alt[Math.floor(Math.random()*alt.length)];
-  return{sz:sz,gridA:grid.slice(),gridB:grid.map(function(v,i){return i===diffIdx?changed:v;}),answer:diffIdx};
+// ═══ TYPE 3: GROWTH SEQUENCE (replaced Spot the Difference) ═══
+var GROWTH_STAGES=[
+  {name:'Seed',icon:'\ud83c\udf30',desc:'Dormant'},
+  {name:'Sprout',icon:'\ud83c\udf31',desc:'First leaves'},
+  {name:'Growing',icon:'\ud83c\udf3f',desc:'Establishing'},
+  {name:'Bloom',icon:'\ud83c\udf3a',desc:'Full flower'}
+];
+var GROWTH_STAGES_HARD=[
+  {name:'Seed',icon:'\ud83c\udf30',desc:'Dormant'},
+  {name:'Germinating',icon:'\ud83d\udca7',desc:'Water activates'},
+  {name:'Sprout',icon:'\ud83c\udf31',desc:'First leaves'},
+  {name:'Growing',icon:'\ud83c\udf3f',desc:'Establishing'},
+  {name:'Flowering',icon:'\ud83c\udf3c',desc:'Buds forming'},
+  {name:'Bloom',icon:'\ud83c\udf3a',desc:'Full flower'}
+];
+function _genGrowth(difficulty){
+  var stages=difficulty>=2?GROWTH_STAGES_HARD.slice():difficulty>=1?GROWTH_STAGES.concat([{name:'Flowering',icon:'\ud83c\udf3c',desc:'Buds forming'}]):GROWTH_STAGES.slice();
+  var shuffled=stages.slice();
+  for(var i=shuffled.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=shuffled[i];shuffled[i]=shuffled[j];shuffled[j]=t;}
+  var same=true;for(var k=0;k<shuffled.length;k++){if(shuffled[k].name!==stages[k].name){same=false;break;}}
+  if(same){var tmp=shuffled[0];shuffled[0]=shuffled[1];shuffled[1]=tmp;}
+  return{correct:stages,shuffled:shuffled,picked:[],remaining:shuffled.map(function(s,i){return{stage:s,idx:i,used:false};})};
 }
-function _renderSpot(){
+function _renderGrowth(){
   var b=document.getElementById('fc-board');if(!b)return;var s=_state;
-  b.style.gridTemplateColumns='1fr 1fr';
-  var h='';
-  // Grid A (reference)
-  h+='<div style="display:grid;grid-template-columns:repeat('+s.sz+',1fr);gap:3px;">';
-  for(var i=0;i<s.gridA.length;i++)h+='<div style="width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:rgba(26,36,22,0.3);border-radius:4px;border:1px solid rgba(74,124,53,0.08);">'+s.gridA[i]+'</div>';
+  b.style.gridTemplateColumns='1fr';
+  var h='<div style="text-align:center;margin-bottom:10px;">';
+  h+='<div style="display:flex;gap:6px;justify-content:center;margin-bottom:14px;min-height:54px;">';
+  for(var i=0;i<s.correct.length;i++){
+    var picked=s.picked[i];
+    h+='<div style="width:48px;height:54px;border-radius:8px;background:rgba(26,36,22,0.5);border:1.5px solid '+(picked?'rgba(122,179,86,0.4)':'rgba(74,124,53,0.15)')+';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;">';
+    if(picked){h+='<div style="font-size:1.1rem;">'+picked.icon+'</div><div style="font-size:0.28rem;color:var(--sage);">'+picked.name+'</div>';}
+    else{h+='<div style="font-size:0.6rem;color:var(--muted);">'+(i+1)+'</div>';}
+    h+='</div>';
+  }
   h+='</div>';
-  // Grid B (find the diff)
-  h+='<div style="display:grid;grid-template-columns:repeat('+s.sz+',1fr);gap:3px;">';
-  for(var i=0;i<s.gridB.length;i++)h+='<div onclick="FG_Challenge._tap('+i+')" style="width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:rgba(26,36,22,0.3);border-radius:4px;border:1px solid rgba(74,124,53,0.08);cursor:pointer;">'+s.gridB[i]+'</div>';
-  h+='</div>';
-  h+='<div style="grid-column:span 2;text-align:center;font-size:0.42rem;color:var(--muted);margin-top:4px;">Tap the different cell in the right grid</div>';
+  h+='<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">';
+  for(var i=0;i<s.remaining.length;i++){
+    var r=s.remaining[i];
+    if(r.used)h+='<div style="width:60px;height:64px;"></div>';
+    else h+='<div onclick="FG_Challenge._tap('+i+')" style="width:60px;height:64px;border-radius:8px;background:rgba(74,124,53,0.12);border:1.5px solid rgba(74,124,53,0.2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:transform 0.1s;" ontouchstart="this.style.transform=\'scale(0.92)\'" ontouchend="this.style.transform=\'scale(1)\'">'
+      +'<div style="font-size:1.3rem;">'+r.stage.icon+'</div>'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--cream);">'+r.stage.name+'</div>'
+      +'</div>';
+  }
+  h+='</div></div>';
+  h+='<div style="text-align:center;font-size:0.42rem;color:var(--muted);margin-top:6px;">Tap stages in growth order</div>';
   b.innerHTML=h;
 }
-function _tapSpot(idx){if(_solved)return;if(idx===_state.answer)_win();else{try{navigator.vibrate&&navigator.vibrate(50);}catch(e){}}}
+function _tapGrowth(idx){
+  if(_solved)return;var s=_state;
+  if(s.remaining[idx].used)return;
+  var tapped=s.remaining[idx].stage;
+  var expectedIdx=s.picked.length;
+  if(tapped.name===s.correct[expectedIdx].name){
+    s.remaining[idx].used=true;s.picked.push(tapped);
+    _renderGrowth();
+    if(s.picked.length===s.correct.length)_win();
+  } else {
+    var els=document.querySelectorAll('#fc-board div[onclick]');
+    if(els[idx])els[idx].style.borderColor='#c07070';
+    setTimeout(function(){
+      s.picked=[];for(var i=0;i<s.remaining.length;i++)s.remaining[i].used=false;_renderGrowth();
+    },400);
+    try{navigator.vibrate&&navigator.vibrate(50);}catch(e){}
+  }
+}
 
 // ═══ TYPE 4: COLOR MATCH ═══
 var CM_PALETTE=[{n:'Sage',c:'#7ab356'},{n:'Gold',c:'#C8A84B'},{n:'Cream',c:'#F0EBD8'},{n:'Moss',c:'#1a2416'},{n:'Forest',c:'#2A5C2A'},{n:'Copper',c:'#b87333'},{n:'Dusk',c:'#6a5a8a'},{n:'Ember',c:'#c76a30'}];
@@ -29427,28 +29589,14 @@ function _tapWord(idx){
 function _tap(v){
   if(_type==='set')_tapSet(v);
   else if(_type==='memory')_tapMemory(v);
-  else if(_type==='spot')_tapSpot(v);
+  else if(_type==='spot')_tapGrowth(v);
   else if(_type==='color')_tapColor(v);
   else if(_type==='math')_tapMath(v);
   else if(_type==='word')_tapWord(v);
 }
 
 // ═══ START — picks random type ═══
-function start(grade, callback) {
-  _callback=callback;_solved=false;clearInterval(_timer);
-
-  var times={Common:30000,Uncommon:28000,Rare:25000,Epic:22000,Legendary:20000,Mythic:18000,Cosmic:15000};
-  _timeMax=times[grade]||25000;_timeLeft=_timeMax;
-
-  // Difficulty: 0=easy, 1=medium, 2=hard
-  var diff=0;
-  if(grade==='Rare'||grade==='Epic')diff=1;
-  if(grade==='Legendary'||grade==='Mythic'||grade==='Cosmic')diff=2;
-
-  // Pick random challenge type
-  var types=['set','memory','spot','color','math','word'];
-  _type=types[Math.floor(Math.random()*types.length)];
-
+function _setupChallenge(diff, grade) {
   var sub=document.getElementById('fc-subtitle');
   var title=document.getElementById('fc-title');
   var board=document.getElementById('fc-board');
@@ -29466,13 +29614,12 @@ function start(grade, callback) {
     if(title)title.textContent='PATTERN MEMORY';
     if(sub)sub.textContent=(grade||'Common')+' — Memorize, then tap in order';
     _renderMemory();
-    // Show phase, then hide after 2.5s
     setTimeout(function(){if(!_solved){_state.phase='input';_renderMemory();}},2500);
   }else if(_type==='spot'){
-    _state=_genSpot(diff);
-    if(title)title.textContent='SPOT THE DIFFERENCE';
-    if(sub)sub.textContent=(grade||'Common')+' — Find the one cell that differs';
-    _renderSpot();
+    _state=_genGrowth(diff);
+    if(title)title.textContent='GROWTH SEQUENCE';
+    if(sub)sub.textContent=(grade||'Common')+' — Tap stages in growth order';
+    _renderGrowth();
   }else if(_type==='color'){
     _state=_genColor(diff);
     if(title)title.textContent='COLOR MATCH';
@@ -29502,7 +29649,36 @@ function start(grade, callback) {
   _startTimer();
 }
 
-return{start:start,_tap:_tap,_close:_close};
+function start(grade, callback) {
+  _callback=callback;_solved=false;clearInterval(_timer);
+
+  var times={Common:45000,Uncommon:42000,Rare:38000,Epic:35000,Legendary:32000,Mythic:28000,Cosmic:25000};
+  _timeMax=times[grade]||38000;_timeLeft=_timeMax;
+
+  var diff=0;
+  if(grade==='Rare'||grade==='Epic')diff=1;
+  if(grade==='Legendary'||grade==='Mythic'||grade==='Cosmic')diff=2;
+
+  // Pick random challenge type
+  var types=['set','memory','spot','color','math','word'];
+  _type=types[Math.floor(Math.random()*types.length)];
+
+  _setupChallenge(diff, grade);
+}
+
+function startSpecific(type, grade, callback) {
+  _callback=callback;_solved=false;clearInterval(_timer);
+  var times={Common:45000,Uncommon:42000,Rare:38000,Epic:35000,Legendary:32000,Mythic:28000,Cosmic:25000};
+  _timeMax=times[grade]||38000;_timeLeft=_timeMax;
+  var diff=0;
+  if(grade==='Rare'||grade==='Epic')diff=1;
+  if(grade==='Legendary'||grade==='Mythic'||grade==='Cosmic')diff=2;
+  var validTypes=['set','memory','spot','color','math','word'];
+  _type=(validTypes.indexOf(type)>=0)?type:'set';
+  _setupChallenge(diff, grade);
+}
+
+return{start:start,startSpecific:startSpecific,_tap:_tap,_close:_close};
 })();
 </script>
 
