@@ -18690,18 +18690,81 @@ document.addEventListener('keydown', function(e) {
     var fs = t.flowerSize || 6;
     var s = '';
     switch(ci) {
-      case 20: // Droplet
-        s += '<path d="M55,18 C55,18 51,24 51,26 C51,28.5 52.8,30 55,30 C57.2,30 59,28.5 59,26 C59,24 55,18 55,18Z" fill="#5b8fb9" opacity="0.35">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0,-2;0,0" dur="3s" repeatCount="indefinite"/>';
-        s += '</path>';
+      case 20: // Water Droplet — a perfect raindrop clinging to the plant
+        // Not just a shape — a living sphere of water with internal refraction,
+        // surface tension membrane, specular highlight, and caustic light
+        // patterns beneath it. The simplest companion, but precisely executed.
+        s += '<g opacity="0.55">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0,-1.5;0.2,0;0,0" dur="4s" repeatCount="indefinite"/>';
+        // Caustic light pattern on surface below — light refracted through the drop
+        s += '<ellipse cx="55" cy="31" rx="2" ry="0.5" fill="rgba(120,180,220,0.06)"><animate attributeName="rx" values="2;2.5;2" dur="3s" repeatCount="indefinite"/></ellipse>';
+        // Drop shadow — soft, directly beneath
+        s += '<ellipse cx="55" cy="30.5" rx="1.5" ry="0.3" fill="rgba(10,20,30,0.08)"/>';
+        // Main drop body — perfect teardrop with surface tension bulge
+        s += '<path d="M55,18 C55,18 51,24 51,26.5 C51,29 52.8,30.5 55,30.5 C57.2,30.5 59,29 59,26.5 C59,24 55,18 55,18Z" fill="rgba(91,143,185,0.18)"/>';
+        // Surface tension membrane — visible edge where air meets water
+        s += '<path d="M55,18 C55,18 51,24 51,26.5 C51,29 52.8,30.5 55,30.5 C57.2,30.5 59,29 59,26.5 C59,24 55,18 55,18Z" fill="none" stroke="rgba(160,200,230,0.35)" stroke-width="0.3"/>';
+        // Internal refraction — the world seen through water is curved
+        s += '<ellipse cx="54" cy="26" rx="2" ry="2.5" fill="rgba(180,210,240,0.08)" transform="rotate(-10,54,26)"/>';
+        // Specular highlight — bright catch-light (the "shine" on the drop)
+        s += '<ellipse cx="53.5" cy="23" rx="0.8" ry="1.2" fill="rgba(240,248,255,0.5)" transform="rotate(-15,53.5,23)"/>';
+        s += '<ellipse cx="53.8" cy="23.5" rx="0.4" ry="0.7" fill="rgba(255,255,255,0.3)" transform="rotate(-15,53.8,23.5)"/>';
+        // Bottom highlight — light gathering at base
+        s += '<ellipse cx="55" cy="29" rx="1.2" ry="0.5" fill="rgba(200,230,255,0.1)"/>';
+        // Tiny wobble — surface tension oscillation
+        s += '<animate attributeName="opacity" values="0.55;0.6;0.52;0.58;0.55" dur="3s" repeatCount="indefinite"/>';
+        s += '</g>';
         break;
-      case 21: // Bee — hovers
-        s += '<g opacity="0.7">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;1,-1.5;-0.5,0.5;0,0" dur="4s" repeatCount="indefinite"/>';
-        s += '<ellipse cx="12" cy="30" rx="3" ry="2" fill="#C8A84B"/>';
-        s += '<line x1="11" y1="30" x2="13" y2="30" stroke="#2D4221" stroke-width="0.5"/>';
-        s += '<ellipse cx="10" cy="28" rx="2.5" ry="1.2" fill="#EAE0C8" opacity="0.35"/>';
-        s += '<ellipse cx="14" cy="28" rx="2.5" ry="1.2" fill="#EAE0C8" opacity="0.35"/>';
+      case 21: // Honeybee — hovering near the bloom
+        // Apis mellifera: the essential pollinator. Fuzzy golden thorax,
+        // striped amber-and-black abdomen, translucent veined wings that
+        // blur in flight. The bee that makes gardens possible.
+        s += '<g opacity="0.78" transform="translate(12,29) scale(1.4) translate(-12,-29)">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.8,-1.2;-0.3,0.4;0.5,-0.8;0,0" dur="3.5s" repeatCount="indefinite"/>';
+        // Wings — translucent with venation, rapid flutter
+        // Forewings (larger)
+        s += '<ellipse cx="10.5" cy="27.5" rx="3" ry="1.4" fill="rgba(230,225,210,0.2)" stroke="rgba(200,195,180,0.15)" stroke-width="0.12" transform="rotate(-25,10.5,27.5)"><animate attributeName="ry" values="1.4;0.6;1.4" dur="0.15s" repeatCount="indefinite"/></ellipse>';
+        s += '<ellipse cx="13.5" cy="27.5" rx="3" ry="1.4" fill="rgba(230,225,210,0.18)" stroke="rgba(200,195,180,0.15)" stroke-width="0.12" transform="rotate(25,13.5,27.5)"><animate attributeName="ry" values="1.4;0.6;1.4" dur="0.15s" repeatCount="indefinite"/></ellipse>';
+        // Wing veins — faint internal structure
+        s += '<line x1="10.5" y1="27.5" x2="8.5" y2="26.5" stroke="rgba(180,175,160,0.1)" stroke-width="0.06"/>';
+        s += '<line x1="13.5" y1="27.5" x2="15.5" y2="26.5" stroke="rgba(180,175,160,0.1)" stroke-width="0.06"/>';
+        // Hindwings (smaller, overlapping)
+        s += '<ellipse cx="11" cy="28.2" rx="2" ry="1" fill="rgba(230,225,210,0.15)" transform="rotate(-15,11,28.2)"><animate attributeName="ry" values="1;0.4;1" dur="0.15s" repeatCount="indefinite"/></ellipse>';
+        s += '<ellipse cx="13" cy="28.2" rx="2" ry="1" fill="rgba(230,225,210,0.15)" transform="rotate(15,13,28.2)"><animate attributeName="ry" values="1;0.4;1" dur="0.15s" repeatCount="indefinite"/></ellipse>';
+        // Thorax — fuzzy, golden-brown (the "teddy bear")
+        s += '<ellipse cx="12" cy="29" rx="1.8" ry="1.4" fill="#B89840"/>';
+        // Thorax fur texture
+        s += '<ellipse cx="12" cy="29" rx="1.3" ry="1.0" fill="#C8A848" opacity="0.4"/>';
+        s += '<ellipse cx="11.8" cy="28.5" rx="0.8" ry="0.5" fill="rgba(220,200,120,0.15)"/>';
+        // Abdomen — striped (THE bee signature)
+        s += '<ellipse cx="12" cy="31" rx="1.5" ry="2.0" fill="#C8A040"/>';
+        // Black stripes — 4 bands
+        s += '<path d="M10.7,30.2 Q12,30 13.3,30.2" fill="none" stroke="#1A1A18" stroke-width="0.35"/>';
+        s += '<path d="M10.5,31" Q12,30.8 13.5,31" fill="none" stroke="#1A1A18" stroke-width="0.4"/>';
+        s += '<path d="M10.7,31.8 Q12,31.6 13.3,31.8" fill="none" stroke="#1A1A18" stroke-width="0.35"/>';
+        s += '<path d="M11,32.5 Q12,32.3 13,32.5" fill="none" stroke="#1A1A18" stroke-width="0.3"/>';
+        // Stinger — tiny point at abdomen tip
+        s += '<line x1="12" y1="33" x2="12" y2="33.5" stroke="#3A3028" stroke-width="0.15" stroke-linecap="round"/>';
+        // Head — round, facing right
+        s += '<circle cx="12" cy="27.8" r="1.0" fill="#2A2418"/>';
+        // Compound eyes — large, oval, iridescent
+        s += '<ellipse cx="11.3" cy="27.6" rx="0.45" ry="0.55" fill="#4A3A28"/>';
+        s += '<ellipse cx="12.7" cy="27.6" rx="0.45" ry="0.55" fill="#4A3A28"/>';
+        // Eye highlight
+        s += '<ellipse cx="11.2" cy="27.4" rx="0.15" ry="0.2" fill="rgba(200,180,120,0.3)"/>';
+        // Antennae — elbowed (bee characteristic)
+        s += '<path d="M11.5,27 L11,26 L10.5,25.5" fill="none" stroke="#2A2418" stroke-width="0.12" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M12.5,27 L13,26 L13.5,25.5" fill="none" stroke="#2A2418" stroke-width="0.12" stroke-linecap="round" stroke-linejoin="round"/>';
+        // Legs — 3 pairs, rear pair with pollen baskets
+        s += '<line x1="11.2" y1="29.8" x2="10" y2="30.5" stroke="#3A3018" stroke-width="0.12"/>';
+        s += '<line x1="12.8" y1="29.8" x2="14" y2="30.5" stroke="#3A3018" stroke-width="0.12"/>';
+        s += '<line x1="11" y1="30.8" x2="9.8" y2="31.5" stroke="#3A3018" stroke-width="0.12"/>';
+        s += '<line x1="13" y1="30.8" x2="14.2" y2="31.5" stroke="#3A3018" stroke-width="0.12"/>';
+        // Rear legs with pollen baskets (corbiculae — golden clumps)
+        s += '<line x1="11.2" y1="31.5" x2="10" y2="32.5" stroke="#3A3018" stroke-width="0.15"/>';
+        s += '<circle cx="10" cy="32.5" r="0.3" fill="#D8B840" opacity="0.5"/>';
+        s += '<line x1="12.8" y1="31.5" x2="14" y2="32.5" stroke="#3A3018" stroke-width="0.15"/>';
+        s += '<circle cx="14" cy="32.5" r="0.25" fill="#D8B840" opacity="0.45"/>';
         s += '</g>';
         break;
       case 22: // Pollen
