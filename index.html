@@ -19772,16 +19772,44 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="28.5" cy="90" rx="1.5" ry="0.6" fill="rgba(255,240,200,0.06)"><animate attributeName="opacity" values="0.06;0.14;0.06" dur="3s" repeatCount="indefinite"/></ellipse>';
         s += '</g>';
         break;
-      case 72: // Jellyfish — floating upper area
-        s += '<g opacity="0.55">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.5,-1;0,0;-0.5,1;0,0" dur="6s" repeatCount="indefinite"/>';
-        s += '<ellipse cx="12" cy="20" rx="3" ry="2" fill="rgba(180,160,220,0.3)"/>';
-        s += '<ellipse cx="12" cy="20" rx="3" ry="2" fill="none" stroke="rgba(180,160,220,0.25)" stroke-width="0.4"/>';
-        s += '<ellipse cx="12" cy="19.5" rx="2" ry="1" fill="rgba(220,200,240,0.15)"/>';
-        s += '<path d="M9.5,22 Q9,25 10,27" stroke="rgba(180,160,220,0.18)" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M11,22 Q10.5,26 11.5,28" stroke="rgba(180,160,220,0.15)" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M13,22 Q13.5,25 12.5,27.5" stroke="rgba(180,160,220,0.18)" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M14.5,22 Q15,24 14,26" stroke="rgba(180,160,220,0.12)" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+      case 72: // Moon Jellyfish — translucent bell drifting in upper area (Rare)
+        // Aurelia aurita: 95% water, almost entirely transparent. The bell
+        // pulses gently for locomotion. Four horseshoe gonads visible through
+        // the glass-clear dome. Trailing tentacles drift in invisible currents.
+        // This should be the most ethereal, ghostly companion in the game.
+        s += '<g opacity="0.65" transform="translate(12,20) scale(1.5) translate(-12,-20)">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.6,-1.2;0.2,0;-0.4,0.8;0,0" dur="7s" repeatCount="indefinite"/>';
+        // Bell dome — translucent hemisphere, pulsing
+        s += '<ellipse cx="12" cy="19.5" rx="3.5" ry="2.5" fill="rgba(180,170,220,0.12)" stroke="rgba(180,170,220,0.2)" stroke-width="0.35">';
+        s += '<animate attributeName="ry" values="2.5;2.2;2.5" dur="3.5s" repeatCount="indefinite"/>';
+        s += '<animate attributeName="rx" values="3.5;3.8;3.5" dur="3.5s" repeatCount="indefinite"/>';
+        s += '</ellipse>';
+        // Bell edge — slightly more opaque rim (thicker tissue at margin)
+        s += '<path d="M8.5,20.5 Q10,21.5 12,21.8 Q14,21.5 15.5,20.5" fill="none" stroke="rgba(200,190,240,0.25)" stroke-width="0.5" stroke-linecap="round">';
+        s += '<animate attributeName="d" values="M8.5,20.5 Q10,21.5 12,21.8 Q14,21.5 15.5,20.5;M8.2,20.8 Q10,21.8 12,22 Q14,21.8 15.8,20.8;M8.5,20.5 Q10,21.5 12,21.8 Q14,21.5 15.5,20.5" dur="3.5s" repeatCount="indefinite"/>';
+        s += '</path>';
+        // Inner dome highlight — refraction of light through the bell
+        s += '<ellipse cx="11.5" cy="19" rx="2" ry="1.2" fill="rgba(230,220,255,0.1)"/>';
+        // Four horseshoe gonads — the "four-leaf clover" visible through the bell
+        // These purple-pink loops are the most recognizable feature of Aurelia
+        var _jg72 = [[11,19.2,-0.3],[13,19.2,0.3],[11,20.2,-0.2],[13,20.2,0.2]];
+        for (var _j72i = 0; _j72i < 4; _j72i++) {
+          var _j72g = _jg72[_j72i];
+          s += '<path d="M'+_j72g[0]+','+_j72g[1]+' Q'+(_j72g[0]+_j72g[2]*3)+','+(_j72g[1]-0.4)+' '+(_j72g[0]+_j72g[2]*1.5)+','+(_j72g[1]+0.5)+'" fill="none" stroke="rgba(180,120,170,0.2)" stroke-width="0.5" stroke-linecap="round"/>';
+        }
+        // Oral arms — 4 short, frilly tendrils from center of bell
+        s += '<path d="M11.5,21.5 Q11,23 10.8,24.5 Q10.5,25 11,24.8" fill="none" stroke="rgba(200,180,230,0.18)" stroke-width="0.5" stroke-linecap="round"/>';
+        s += '<path d="M12,21.5 Q12.2,23.5 12,25 Q11.8,25.5 12.3,25.2" fill="none" stroke="rgba(200,180,230,0.15)" stroke-width="0.45" stroke-linecap="round"/>';
+        s += '<path d="M12.5,21.5 Q13,23 13.2,24.5 Q13.5,25 13,24.8" fill="none" stroke="rgba(200,180,230,0.18)" stroke-width="0.5" stroke-linecap="round"/>';
+        s += '<path d="M12,21.8 Q11.5,24 11.8,26" fill="none" stroke="rgba(190,170,220,0.12)" stroke-width="0.35" stroke-linecap="round"/>';
+        // Trailing tentacles — long, gossamer-thin threads
+        // These drift in invisible currents — slightly different periods for organic feel
+        s += '<path d="M9.5,21 Q9,24 9.5,27 Q10,29 9.8,30" fill="none" stroke="rgba(180,170,220,0.12)" stroke-width="0.2" stroke-linecap="round"><animate attributeName="d" values="M9.5,21 Q9,24 9.5,27 Q10,29 9.8,30;M9.5,21 Q8.5,24 9,27 Q9.5,29.5 9,31;M9.5,21 Q9,24 9.5,27 Q10,29 9.8,30" dur="5s" repeatCount="indefinite"/></path>';
+        s += '<path d="M10.8,21.5 Q10.5,25 11,28 Q11.5,30 11,31.5" fill="none" stroke="rgba(180,170,220,0.1)" stroke-width="0.18" stroke-linecap="round"><animate attributeName="d" values="M10.8,21.5 Q10.5,25 11,28 Q11.5,30 11,31.5;M10.8,21.5 Q10,25 10.5,28.5 Q11,31 10.8,32;M10.8,21.5 Q10.5,25 11,28 Q11.5,30 11,31.5" dur="6s" repeatCount="indefinite"/></path>';
+        s += '<path d="M13,21.5 Q13.5,25 13,28 Q12.5,30.5 13,32" fill="none" stroke="rgba(180,170,220,0.1)" stroke-width="0.18" stroke-linecap="round"><animate attributeName="d" values="M13,21.5 Q13.5,25 13,28 Q12.5,30.5 13,32;M13,21.5 Q14,25 13.5,28.5 Q13,31 13.5,32.5;M13,21.5 Q13.5,25 13,28 Q12.5,30.5 13,32" dur="5.5s" repeatCount="indefinite"/></path>';
+        s += '<path d="M14.5,21 Q15,24 14.5,27 Q14,29.5 14.5,31" fill="none" stroke="rgba(180,170,220,0.08)" stroke-width="0.15" stroke-linecap="round"><animate attributeName="d" values="M14.5,21 Q15,24 14.5,27 Q14,29.5 14.5,31;M14.5,21 Q15.5,24 15,27.5 Q14.5,30 15,31.5;M14.5,21 Q15,24 14.5,27 Q14,29.5 14.5,31" dur="7s" repeatCount="indefinite"/></path>';
+        // Bioluminescent glow — faint pulse from center
+        s += '<ellipse cx="12" cy="20" rx="2" ry="1.5" fill="rgba(200,180,255,0.04)"><animate attributeName="opacity" values="0.04;0.1;0.04" dur="3.5s" repeatCount="indefinite"/></ellipse>';
         s += '</g>';
         break;
       case 73: // Mushroom Sprite — standing on soil near stem
