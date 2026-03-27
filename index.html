@@ -3777,9 +3777,9 @@
     .ob-auth-btn{width:100%;padding:0.6rem;border:none;border-radius:8px;background:linear-gradient(145deg,var(--leaf),var(--forest));color:var(--cream);font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;}
     .ob-auth-btn:disabled{opacity:0.5;}
     .ob-auth-err{font-size:0.65rem;color:#c07070;min-height:1.2rem;margin-bottom:0.3rem;text-align:center;font-family:'DM Mono',monospace;line-height:1.4;}
-    .ob-skip{position:fixed;bottom:1.5rem;right:1rem;font-family:'DM Mono',monospace;font-size:0.4rem;color:rgba(138,145,120,0.4);cursor:pointer;z-index:2147483647;opacity:0;transition:opacity 0.5s ease;}
+    .ob-skip{position:fixed;bottom:calc(1.5rem + env(safe-area-inset-bottom, 0px));right:1rem;font-family:'DM Mono',monospace;font-size:0.4rem;color:rgba(138,145,120,0.4);cursor:pointer;z-index:2147483647;opacity:0;transition:opacity 0.5s ease;}
     .ob-skip.show{opacity:1;}
-    .ob-continue{margin-top:1rem;margin-bottom:2rem;padding:0.7rem 2rem;border:1.5px solid rgba(122,179,86,0.3);border-radius:8px;background:rgba(26,36,22,0.4);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;opacity:0;transition:opacity 0.8s ease;min-height:52px;pointer-events:none;position:relative;z-index:20;width:100%;max-width:300px;}
+    .ob-continue{margin-top:1rem;margin-bottom:calc(2rem + env(safe-area-inset-bottom, 0px));padding:0.7rem 2rem;border:1.5px solid rgba(122,179,86,0.3);border-radius:8px;background:rgba(26,36,22,0.4);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;opacity:0;transition:opacity 0.8s ease;min-height:52px;pointer-events:none;position:relative;z-index:20;width:100%;max-width:300px;}
     .ob-continue.show{opacity:1;pointer-events:auto;}
     /* ═══ DEV ADMIN ═══ */
     #pw-dev-admin{display:none;position:fixed;inset:0;z-index:2147483647;background:rgba(5,8,4,0.97);backdrop-filter:blur(12px);overflow-y:auto;padding:1.2rem;}
@@ -7352,7 +7352,11 @@ document.addEventListener('keydown', function(e) {
       {name:'Coral Antler',rare:true},{name:'Oracle Eye',rare:true},{name:'Spiral Shell',rare:true},{name:'Maple'},
       {name:'Round'},      {name:'Jellyleaf',rare:true},{name:'Spear'},{name:'Willow'},
       {name:'Heart'},      {name:'Paddle'},    {name:'Needle'},    {name:'Scale'},
-      {name:'Round'},      {name:'Willow'},    {name:'Strap'},     {name:'Asymmetric'}
+      {name:'Round'},      {name:'Willow'},    {name:'Strap'},     {name:'Asymmetric'},
+      {name:'Crystal Shard',rare:true},{name:'Ember Leaf',rare:true},{name:'Feather Frond',rare:true},
+      {name:'Lunar Disc',rare:true},{name:'Spine Needle',rare:true},{name:'Ribbon Curl',rare:true},
+      {name:'Prism Blade',rare:true},{name:'Frost Plate',rare:true},{name:'Void Petal',rare:true},
+      {name:'Wishbone',rare:true},{name:'Lantern Pod',rare:true}
     ],
     flowers: [
       {name:'Bud'},                          // 0
@@ -13005,6 +13009,175 @@ document.addEventListener('keydown', function(e) {
           if (true) {
             s += '<path d="M'+ox.toFixed(1)+','+ly.toFixed(1)+' C'+_lfMidX.toFixed(1)+','+_lfMidY.toFixed(1)+' '+(_lfTipX-Math.cos(_lfAng)*_lfLen*0.08*side).toFixed(1)+','+(_lfTipY-Math.sin(_lfAng)*_lfLen*0.08).toFixed(1)+' '+_lfTipX.toFixed(1)+','+_lfTipY.toFixed(1)+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
           }
+          break;
+
+        // ═══ RARE+ EXPANDED LEAVES (cases 60-70) ═══
+        case 60: // Crystal Shard — angular geometric leaf, faceted like a gemstone
+          var _csLen = ls * 2.2;
+          var _csAng = -0.3 - leafFrac * 0.4;
+          var _csTx = ox + Math.cos(_csAng) * _csLen * 0.8 * side;
+          var _csTy = ly + Math.sin(_csAng) * _csLen * 0.8;
+          var _csMx = ox + Math.cos(_csAng) * _csLen * 0.45 * side;
+          var _csMy = ly + Math.sin(_csAng) * _csLen * 0.45;
+          var _csW = ls * 0.7;
+          var _csPa = _csAng + Math.PI * 0.5;
+          var _csLx = _csMx + Math.cos(_csPa) * _csW * side;
+          var _csLy = _csMy + Math.sin(_csPa) * _csW;
+          var _csRx = _csMx - Math.cos(_csPa) * _csW * 0.6 * side;
+          var _csRy = _csMy - Math.sin(_csPa) * _csW * 0.6;
+          bodyD = 'M'+ox+','+ly+' L'+_csLx.toFixed(1)+','+_csLy.toFixed(1)+' L'+_csTx.toFixed(1)+','+_csTy.toFixed(1)+' L'+_csRx.toFixed(1)+','+_csRy.toFixed(1)+' Z';
+          s += '<path d="'+bodyD+'" fill="'+baseColor+'" opacity="'+(op*0.8).toFixed(2)+'"/>';
+          s += '<path d="M'+ox+','+ly+' L'+_csTx.toFixed(1)+','+_csTy.toFixed(1)+'" stroke="rgba(240,235,216,0.4)" stroke-width="0.3"/>';
+          s += '<path d="M'+_csLx.toFixed(1)+','+_csLy.toFixed(1)+' L'+_csTx.toFixed(1)+','+_csTy.toFixed(1)+'" stroke="rgba(240,235,216,0.2)" stroke-width="0.2"/>';
+          break;
+
+        case 61: // Ember Leaf — flame-shaped with warm gradient tip
+          var _elLen = ls * 2.4;
+          var _elAng = -0.25 - leafFrac * 0.35;
+          var _elTx = ox + Math.cos(_elAng) * _elLen * 0.85 * side;
+          var _elTy = ly + Math.sin(_elAng) * _elLen * 0.85;
+          var _elW = ls * 0.5;
+          var _elPa = _elAng + Math.PI * 0.5;
+          bodyD = 'M'+ox+','+ly+' Q'+(ox+Math.cos(_elPa)*_elW*1.2*side).toFixed(1)+','+(ly+Math.sin(_elPa)*_elW*1.2-_elLen*0.2).toFixed(1)+' '+_elTx.toFixed(1)+','+_elTy.toFixed(1)+' Q'+(ox-Math.cos(_elPa)*_elW*0.8*side).toFixed(1)+','+(ly-Math.sin(_elPa)*_elW*0.8-_elLen*0.15).toFixed(1)+' '+ox+','+ly+' Z';
+          s += '<path d="'+bodyD+'" fill="'+baseColor+'" opacity="'+(op*0.8).toFixed(2)+'"/>';
+          s += '<path d="M'+ox+','+ly+' Q'+(ox+Math.cos(_elAng)*_elLen*0.4*side).toFixed(1)+','+(ly+Math.sin(_elAng)*_elLen*0.4).toFixed(1)+' '+_elTx.toFixed(1)+','+_elTy.toFixed(1)+'" fill="none" stroke="'+shiftedDark+'" stroke-width="0.4" opacity="'+(op*0.4).toFixed(2)+'"/>';
+          break;
+
+        case 62: // Feather Frond — elongated barbed leaf like a bird feather
+          var _ffLen = ls * 2.8;
+          var _ffAng = -0.2 - leafFrac * 0.3;
+          var _ffTx = ox + Math.cos(_ffAng) * _ffLen * 0.9 * side;
+          var _ffTy = ly + Math.sin(_ffAng) * _ffLen * 0.9;
+          var _ffW = ls * 0.35;
+          var _ffPa = _ffAng + Math.PI * 0.5;
+          bodyD = 'M'+ox+','+ly+' C'+(ox+Math.cos(_ffPa)*_ffW*side).toFixed(1)+','+(ly+Math.sin(_ffPa)*_ffW-_ffLen*0.15).toFixed(1)+' '+(_ffTx+Math.cos(_ffPa)*_ffW*0.3*side).toFixed(1)+','+(_ffTy+Math.sin(_ffPa)*_ffW*0.3).toFixed(1)+' '+_ffTx.toFixed(1)+','+_ffTy.toFixed(1)+' C'+(_ffTx-Math.cos(_ffPa)*_ffW*0.2*side).toFixed(1)+','+(_ffTy-Math.sin(_ffPa)*_ffW*0.2).toFixed(1)+' '+(ox-Math.cos(_ffPa)*_ffW*0.6*side).toFixed(1)+','+(ly-Math.sin(_ffPa)*_ffW*0.6-_ffLen*0.1).toFixed(1)+' '+ox+','+ly+' Z';
+          s += '<path d="'+bodyD+'" fill="'+baseColor+'" opacity="'+(op*0.75).toFixed(2)+'"/>';
+          // Barbs — 5 pairs of fine lines radiating from rachis
+          for (var _fb = 0; _fb < 5; _fb++) {
+            var _fbt = 0.15 + _fb * 0.15;
+            var _fbx = ox + (_ffTx - ox) * _fbt;
+            var _fby = ly + (_ffTy - ly) * _fbt;
+            var _fbl = _ffW * (0.8 - _fbt * 0.5);
+            s += '<line x1="'+_fbx.toFixed(1)+'" y1="'+_fby.toFixed(1)+'" x2="'+(_fbx+Math.cos(_ffPa)*_fbl*side).toFixed(1)+'" y2="'+(_fby+Math.sin(_ffPa)*_fbl).toFixed(1)+'" stroke="'+shiftedDark+'" stroke-width="0.2" opacity="'+(op*0.3).toFixed(2)+'"/>';
+            s += '<line x1="'+_fbx.toFixed(1)+'" y1="'+_fby.toFixed(1)+'" x2="'+(_fbx-Math.cos(_ffPa)*_fbl*0.7*side).toFixed(1)+'" y2="'+(_fby-Math.sin(_ffPa)*_fbl*0.7).toFixed(1)+'" stroke="'+shiftedDark+'" stroke-width="0.2" opacity="'+(op*0.3).toFixed(2)+'"/>';
+          }
+          break;
+
+        case 63: // Lunar Disc — perfectly circular leaf with concentric rings
+          var _ldR = ls * 1.1;
+          var _ldAng = -0.35 - leafFrac * 0.3;
+          var _ldCx = ox + Math.cos(_ldAng) * _ldR * 1.8 * side;
+          var _ldCy = ly + Math.sin(_ldAng) * _ldR * 1.8;
+          bodyD = 'M'+(_ldCx-_ldR).toFixed(1)+','+_ldCy.toFixed(1)+' A'+_ldR.toFixed(1)+','+_ldR.toFixed(1)+' 0 1,1 '+(_ldCx+_ldR).toFixed(1)+','+_ldCy.toFixed(1)+' A'+_ldR.toFixed(1)+','+_ldR.toFixed(1)+' 0 1,1 '+(_ldCx-_ldR).toFixed(1)+','+_ldCy.toFixed(1)+' Z';
+          s += '<circle cx="'+_ldCx.toFixed(1)+'" cy="'+_ldCy.toFixed(1)+'" r="'+_ldR.toFixed(1)+'" fill="'+baseColor+'" opacity="'+(op*0.75).toFixed(2)+'"/>';
+          s += '<circle cx="'+_ldCx.toFixed(1)+'" cy="'+_ldCy.toFixed(1)+'" r="'+(_ldR*0.65).toFixed(1)+'" fill="none" stroke="'+shiftedLight+'" stroke-width="0.25" opacity="'+(op*0.2).toFixed(2)+'"/>';
+          s += '<circle cx="'+_ldCx.toFixed(1)+'" cy="'+_ldCy.toFixed(1)+'" r="'+(_ldR*0.35).toFixed(1)+'" fill="none" stroke="'+shiftedLight+'" stroke-width="0.2" opacity="'+(op*0.15).toFixed(2)+'"/>';
+          break;
+
+        case 64: // Spine Needle — long thin conifer needle with sharp point
+          var _snLen = ls * 3.0;
+          var _snAng = -0.15 - leafFrac * 0.4;
+          var _snTx = ox + Math.cos(_snAng) * _snLen * side;
+          var _snTy = ly + Math.sin(_snAng) * _snLen;
+          var _snW = ls * 0.12;
+          var _snPa = _snAng + Math.PI * 0.5;
+          bodyD = 'M'+ox+','+ly+' L'+(ox+Math.cos(_snPa)*_snW*side).toFixed(1)+','+(ly+Math.sin(_snPa)*_snW).toFixed(1)+' L'+_snTx.toFixed(1)+','+_snTy.toFixed(1)+' L'+(ox-Math.cos(_snPa)*_snW*side).toFixed(1)+','+(ly-Math.sin(_snPa)*_snW).toFixed(1)+' Z';
+          s += '<path d="'+bodyD+'" fill="'+baseColor+'" opacity="'+(op*0.85).toFixed(2)+'"/>';
+          s += '<line x1="'+ox+'" y1="'+ly+'" x2="'+_snTx.toFixed(1)+'" y2="'+_snTy.toFixed(1)+'" stroke="'+shiftedDark+'" stroke-width="0.2" opacity="'+(op*0.3).toFixed(2)+'"/>';
+          break;
+
+        case 65: // Ribbon Curl — long spiraling ribbon that twists along its length
+          var _rcLen = ls * 2.6;
+          var _rcAng = -0.2 - leafFrac * 0.35;
+          var _rcW = ls * 0.4;
+          var _rcSteps = 4;
+          for (var _rci = 0; _rci < _rcSteps; _rci++) {
+            var _rct = _rci / _rcSteps;
+            var _rcnt = (_rci + 1) / _rcSteps;
+            var _rcx1 = ox + Math.cos(_rcAng) * _rcLen * _rct * side;
+            var _rcy1 = ly + Math.sin(_rcAng) * _rcLen * _rct;
+            var _rcx2 = ox + Math.cos(_rcAng) * _rcLen * _rcnt * side;
+            var _rcy2 = ly + Math.sin(_rcAng) * _rcLen * _rcnt;
+            var _rcTwist = Math.sin(_rct * Math.PI * 2.5) * _rcW;
+            var _rcPa = _rcAng + Math.PI * 0.5;
+            s += '<path d="M'+_rcx1.toFixed(1)+','+_rcy1.toFixed(1)+' Q'+(_rcx1+Math.cos(_rcPa)*_rcTwist*side).toFixed(1)+','+(_rcy1+Math.sin(_rcPa)*_rcTwist).toFixed(1)+' '+_rcx2.toFixed(1)+','+_rcy2.toFixed(1)+'" fill="none" stroke="'+baseColor+'" stroke-width="'+(ls*0.35*(1-_rct*0.5)).toFixed(1)+'" opacity="'+(op*0.8).toFixed(2)+'" stroke-linecap="round"/>';
+          }
+          bodyD = ''; // ribbon has no fill body
+          break;
+
+        case 66: // Prism Blade — wide flat leaf with rainbow refraction line
+          var _pbLen = ls * 2.3;
+          var _pbAng = -0.3 - leafFrac * 0.35;
+          var _pbTx = ox + Math.cos(_pbAng) * _pbLen * 0.85 * side;
+          var _pbTy = ly + Math.sin(_pbAng) * _pbLen * 0.85;
+          var _pbW = ls * 0.65;
+          var _pbPa = _pbAng + Math.PI * 0.5;
+          bodyD = 'M'+ox+','+ly+' C'+(ox+Math.cos(_pbPa)*_pbW*side).toFixed(1)+','+(ly+Math.sin(_pbPa)*_pbW-_pbLen*0.2).toFixed(1)+' '+(_pbTx+Math.cos(_pbPa)*_pbW*0.5*side).toFixed(1)+','+(_pbTy+Math.sin(_pbPa)*_pbW*0.5).toFixed(1)+' '+_pbTx.toFixed(1)+','+_pbTy.toFixed(1)+' C'+(_pbTx-Math.cos(_pbPa)*_pbW*0.4*side).toFixed(1)+','+(_pbTy-Math.sin(_pbPa)*_pbW*0.4).toFixed(1)+' '+(ox-Math.cos(_pbPa)*_pbW*0.7*side).toFixed(1)+','+(ly-Math.sin(_pbPa)*_pbW*0.7-_pbLen*0.15).toFixed(1)+' '+ox+','+ly+' Z';
+          s += '<path d="'+bodyD+'" fill="'+baseColor+'" opacity="'+(op*0.8).toFixed(2)+'"/>';
+          s += '<path d="M'+ox+','+ly+' L'+_pbTx.toFixed(1)+','+_pbTy.toFixed(1)+'" stroke="'+shiftedDark+'" stroke-width="0.4" opacity="'+(op*0.35).toFixed(2)+'"/>';
+          break;
+
+        case 67: // Frost Plate — wide leaf with ice crystal veins
+          var _fpLen = ls * 2.0;
+          var _fpAng = -0.35 - leafFrac * 0.3;
+          var _fpTx = ox + Math.cos(_fpAng) * _fpLen * 0.8 * side;
+          var _fpTy = ly + Math.sin(_fpAng) * _fpLen * 0.8;
+          var _fpW = ls * 0.75;
+          var _fpPa = _fpAng + Math.PI * 0.5;
+          bodyD = 'M'+ox+','+ly+' C'+(ox+Math.cos(_fpPa)*_fpW*side).toFixed(1)+','+(ly+Math.sin(_fpPa)*_fpW-_fpLen*0.15).toFixed(1)+' '+(_fpTx+Math.cos(_fpPa)*_fpW*0.4*side).toFixed(1)+','+(_fpTy+Math.sin(_fpPa)*_fpW*0.4).toFixed(1)+' '+_fpTx.toFixed(1)+','+_fpTy.toFixed(1)+' C'+(_fpTx-Math.cos(_fpPa)*_fpW*0.35*side).toFixed(1)+','+(_fpTy-Math.sin(_fpPa)*_fpW*0.35).toFixed(1)+' '+(ox-Math.cos(_fpPa)*_fpW*0.6*side).toFixed(1)+','+(ly-Math.sin(_fpPa)*_fpW*0.6-_fpLen*0.1).toFixed(1)+' '+ox+','+ly+' Z';
+          s += '<path d="'+bodyD+'" fill="'+baseColor+'" opacity="'+(op*0.75).toFixed(2)+'"/>';
+          // Ice crystal veins — 3 forking lines
+          for (var _iv = 0; _iv < 3; _iv++) {
+            var _ivt = 0.2 + _iv * 0.25;
+            var _ivx = ox + (_fpTx - ox) * _ivt;
+            var _ivy = ly + (_fpTy - ly) * _ivt;
+            var _ivl = _fpW * 0.6 * (1 - _ivt * 0.4);
+            s += '<line x1="'+_ivx.toFixed(1)+'" y1="'+_ivy.toFixed(1)+'" x2="'+(_ivx+Math.cos(_fpPa)*_ivl*side).toFixed(1)+'" y2="'+(_ivy+Math.sin(_fpPa)*_ivl).toFixed(1)+'" stroke="rgba(160,196,232,0.4)" stroke-width="0.25" stroke-linecap="round"/>';
+            s += '<line x1="'+_ivx.toFixed(1)+'" y1="'+_ivy.toFixed(1)+'" x2="'+(_ivx-Math.cos(_fpPa)*_ivl*0.6*side).toFixed(1)+'" y2="'+(_ivy-Math.sin(_fpPa)*_ivl*0.6).toFixed(1)+'" stroke="rgba(160,196,232,0.3)" stroke-width="0.2" stroke-linecap="round"/>';
+          }
+          break;
+
+        case 68: // Void Petal — dark teardrop with glowing edge
+          var _vpLen = ls * 2.1;
+          var _vpAng = -0.3 - leafFrac * 0.35;
+          var _vpTx = ox + Math.cos(_vpAng) * _vpLen * 0.85 * side;
+          var _vpTy = ly + Math.sin(_vpAng) * _vpLen * 0.85;
+          var _vpW = ls * 0.55;
+          var _vpPa = _vpAng + Math.PI * 0.5;
+          bodyD = 'M'+ox+','+ly+' Q'+(ox+Math.cos(_vpPa)*_vpW*1.3*side).toFixed(1)+','+(ly+Math.sin(_vpPa)*_vpW*1.3-_vpLen*0.25).toFixed(1)+' '+_vpTx.toFixed(1)+','+_vpTy.toFixed(1)+' Q'+(ox-Math.cos(_vpPa)*_vpW*0.9*side).toFixed(1)+','+(ly-Math.sin(_vpPa)*_vpW*0.9-_vpLen*0.18).toFixed(1)+' '+ox+','+ly+' Z';
+          s += '<path d="'+bodyD+'" fill="#1a1d18" opacity="'+(op*0.9).toFixed(2)+'"/>';
+          s += '<path d="'+bodyD+'" fill="none" stroke="'+baseColor+'" stroke-width="0.4" opacity="'+(op*0.6).toFixed(2)+'"/>';
+          break;
+
+        case 69: // Wishbone — Y-shaped forking leaf
+          var _wbLen = ls * 2.0;
+          var _wbAng = -0.25 - leafFrac * 0.35;
+          var _wbFork = 0.55; // fork point
+          var _wbFx = ox + Math.cos(_wbAng) * _wbLen * _wbFork * side;
+          var _wbFy = ly + Math.sin(_wbAng) * _wbLen * _wbFork;
+          var _wbSpread = 0.4;
+          var _wbT1x = _wbFx + Math.cos(_wbAng - _wbSpread) * _wbLen * 0.5 * side;
+          var _wbT1y = _wbFy + Math.sin(_wbAng - _wbSpread) * _wbLen * 0.5;
+          var _wbT2x = _wbFx + Math.cos(_wbAng + _wbSpread) * _wbLen * 0.45 * side;
+          var _wbT2y = _wbFy + Math.sin(_wbAng + _wbSpread) * _wbLen * 0.45;
+          s += '<line x1="'+ox+'" y1="'+ly+'" x2="'+_wbFx.toFixed(1)+'" y2="'+_wbFy.toFixed(1)+'" stroke="'+baseColor+'" stroke-width="'+(ls*0.25).toFixed(1)+'" opacity="'+(op*0.8).toFixed(2)+'" stroke-linecap="round"/>';
+          s += '<line x1="'+_wbFx.toFixed(1)+'" y1="'+_wbFy.toFixed(1)+'" x2="'+_wbT1x.toFixed(1)+'" y2="'+_wbT1y.toFixed(1)+'" stroke="'+baseColor+'" stroke-width="'+(ls*0.2).toFixed(1)+'" opacity="'+(op*0.75).toFixed(2)+'" stroke-linecap="round"/>';
+          s += '<line x1="'+_wbFx.toFixed(1)+'" y1="'+_wbFy.toFixed(1)+'" x2="'+_wbT2x.toFixed(1)+'" y2="'+_wbT2y.toFixed(1)+'" stroke="'+baseColor+'" stroke-width="'+(ls*0.18).toFixed(1)+'" opacity="'+(op*0.7).toFixed(2)+'" stroke-linecap="round"/>';
+          bodyD = ''; // line-based, no fill body
+          break;
+
+        case 70: // Lantern Pod — bulbous enclosed leaf with translucent shell
+          var _lpR = ls * 0.9;
+          var _lpAng = -0.35 - leafFrac * 0.3;
+          var _lpCx = ox + Math.cos(_lpAng) * _lpR * 2.2 * side;
+          var _lpCy = ly + Math.sin(_lpAng) * _lpR * 2.2;
+          bodyD = 'M'+ox+','+ly+' Q'+(ox+(_lpCx-ox)*0.3+Math.cos(_lpAng+Math.PI*0.5)*_lpR*0.5*side).toFixed(1)+','+(ly+(_lpCy-ly)*0.3).toFixed(1)+' '+_lpCx.toFixed(1)+','+_lpCy.toFixed(1)+' Q'+(ox+(_lpCx-ox)*0.3-Math.cos(_lpAng+Math.PI*0.5)*_lpR*0.3*side).toFixed(1)+','+(ly+(_lpCy-ly)*0.3).toFixed(1)+' '+ox+','+ly+' Z';
+          s += '<ellipse cx="'+_lpCx.toFixed(1)+'" cy="'+_lpCy.toFixed(1)+'" rx="'+_lpR.toFixed(1)+'" ry="'+(_lpR*1.3).toFixed(1)+'" fill="'+baseColor+'" opacity="'+(op*0.5).toFixed(2)+'"/>';
+          s += '<ellipse cx="'+_lpCx.toFixed(1)+'" cy="'+_lpCy.toFixed(1)+'" rx="'+_lpR.toFixed(1)+'" ry="'+(_lpR*1.3).toFixed(1)+'" fill="none" stroke="'+shiftedLight+'" stroke-width="0.3" opacity="'+(op*0.35).toFixed(2)+'"/>';
+          // Inner glow
+          s += '<ellipse cx="'+_lpCx.toFixed(1)+'" cy="'+(_lpCy-_lpR*0.2).toFixed(1)+'" rx="'+(_lpR*0.4).toFixed(1)+'" ry="'+(_lpR*0.5).toFixed(1)+'" fill="rgba(240,235,216,0.15)" opacity="'+(op*0.4).toFixed(2)+'"/>';
+          // Stem to pod
+          s += '<line x1="'+ox+'" y1="'+ly+'" x2="'+_lpCx.toFixed(1)+'" y2="'+(_lpCy+_lpR*1.3).toFixed(1)+'" stroke="'+shiftedDark+'" stroke-width="0.35" opacity="'+(op*0.4).toFixed(2)+'" stroke-linecap="round"/>';
           break;
 
       }
@@ -19806,7 +19979,7 @@ document.addEventListener('keydown', function(e) {
 
   function getTraitSummary(hash) {
     var t = hashToTraits(hash);
-    var p = [TRAIT_BANK.pots[t.pot].name, TRAIT_BANK.stems[t.stem % 24].name, TRAIT_BANK.leaves[t.leafType % 16].name];
+    var p = [TRAIT_BANK.pots[t.pot].name, TRAIT_BANK.stems[t.stem % 24].name, TRAIT_BANK.leaves[t.leafType % 71].name];
     if (t.hasFlower) p.push(TRAIT_BANK.flowers[t.flower % 71].name);
     var aName = TRAIT_BANK.auras[t.aura].name;
     if (aName !== 'None') p.push(aName + ' aura');
@@ -20124,7 +20297,7 @@ document.addEventListener('keydown', function(e) {
         return { name: s.name, rare: false };
     }},
     { key: 'FOLIAGE',     get: function(t) {
-        var l = TRAIT_BANK.leaves[t.leafType % 16];
+        var l = TRAIT_BANK.leaves[t.leafType % 71];
         return { name: l.name, rare: !!l.rare };
     }},
     { key: 'FLOWER',      get: function(t) {
@@ -20434,7 +20607,7 @@ document.addEventListener('keydown', function(e) {
   // (kept for legacy call sites that expect a plain string)
   function getTraitSummary(hash) {
     var t = hashToTraits(hash);
-    var p = [TRAIT_BANK.pots[t.pot].name, TRAIT_BANK.stems[t.stem % 24].name, TRAIT_BANK.leaves[t.leafType % 16].name];
+    var p = [TRAIT_BANK.pots[t.pot].name, TRAIT_BANK.stems[t.stem % 24].name, TRAIT_BANK.leaves[t.leafType % 71].name];
     if (t.hasFlower) p.push(TRAIT_BANK.flowers[t.flower % 71].name);
     var aName = TRAIT_BANK.auras[t.aura].name;
     if (aName !== 'None') p.push(aName);
@@ -21736,7 +21909,7 @@ document.addEventListener('keydown', function(e) {
       var ledgerRows = [];
       var potEntry = TRAIT_BANK.pots[t.pot];
       var stemEntry = TRAIT_BANK.stems[t.stem % 24];
-      var leafEntry = TRAIT_BANK.leaves[t.leafType % 16];
+      var leafEntry = TRAIT_BANK.leaves[t.leafType % 71];
       ledgerRows.push({ cat: 'VESSEL',      val: potEntry.name,  rare: !!potEntry.rare });
       ledgerRows.push({ cat: 'GROWTH PATH', val: stemEntry.name, rare: false });
       ledgerRows.push({ cat: 'FOLIAGE',     val: leafEntry.name, rare: !!leafEntry.rare });
@@ -28568,25 +28741,25 @@ function _markOnboarded(){localStorage.setItem('pw_onboarded','1');}
 
 // Generate a gift plant hash guaranteed Uncommon+ (min score 3)
 function _genGiftHash(){
-  var attempts=0;
-  while(attempts<200){
+  // Gift plant must be Uncommon+ (score >= 2). Try 500 times.
+  // hashToTraits + getTerraGrade are in Block 5, loaded before Block 15 (onboarding).
+  var bestHash='';var bestScore=0;
+  for(var attempts=0;attempts<500;attempts++){
     var h='';for(var i=0;i<64;i++)h+='0123456789abcdef'[Math.floor(Math.random()*16)];
     try{
       if(window.hashToTraits&&window.getTerraGrade){
         var t=window.hashToTraits(h);
         var g=window.getTerraGrade(t);
-        if(g.name!=='Common'){_giftHash=h;_giftTraits=t;return h;}
-      }else{_giftHash=h;return h;}
-    }catch(e){
-      console.warn('[LW] Gift hash attempt '+attempts+' failed:',e);
-    }
-    attempts++;
+        if(g.score>bestScore){bestHash=h;bestScore=g.score;}
+        if(g.score>=2){_giftHash=h;_giftTraits=t;console.log('[LW] Gift plant: '+g.name+' (score '+g.score+', attempt '+attempts+')');return h;}
+      }
+    }catch(e){}
   }
-  // Fallback: use whatever we got
-  var h='';for(var i=0;i<64;i++)h+='0123456789abcdef'[Math.floor(Math.random()*16)];
-  _giftHash=h;
-  try{if(window.hashToTraits)_giftTraits=window.hashToTraits(h);}catch(e){_giftTraits=null;}
-  return h;
+  // Fallback: use the best hash we found (even if Common — better than random)
+  _giftHash=bestHash||('a'.repeat(64));
+  try{if(window.hashToTraits)_giftTraits=window.hashToTraits(_giftHash);}catch(e){_giftTraits=null;}
+  console.log('[LW] Gift plant fallback, best score: '+bestScore);
+  return _giftHash;
 }
 
 function _getHaiku(hash){
