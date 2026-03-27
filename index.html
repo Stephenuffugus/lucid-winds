@@ -19686,14 +19686,45 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="32" cy="62" rx="1.5" ry="0.8" fill="rgba(140,220,80,0.1)"/>';
         s += '</g>';
         break;
-      case 70: // Seahorse — floating upper-left
-        s += '<g opacity="0.70">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0,-1.5;0,0" dur="4s" repeatCount="indefinite"/>';
-        s += '<path d="M10,22 Q9,20 10,18 Q11,16 12,17 Q12.5,18 12,19 Q11.5,20 11,21 Q10.5,22 10.5,24 Q10.5,26 11,27 Q11.5,27.5 11,28 Q10,28.5 10,27 Q9.5,25.5 10,24" fill="none" stroke="#C8A060" stroke-width="1" stroke-linecap="round"/>';
-        s += '<circle cx="11.5" cy="17.5" r="0.8" fill="#C8A060"/>';
-        s += '<circle cx="11.8" cy="17.3" r="0.12" fill="#111"/>';
-        s += '<path d="M12.3,17 L13.5,16.5" stroke="#C8A060" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M10.5,20 L9.5,20.2 M10.8,22 L9.8,22.3 M10.8,24 L9.8,24.2" stroke="#D8B070" stroke-width="0.2" fill="none" opacity="0.4"/>';
+      case 70: // Seahorse — floating upper-left, upright posture
+        // Hippocampus: the only fish that swims upright. Horse-shaped head,
+        // tubular snout, bony segmented armor, prehensile curling tail,
+        // tiny fluttering dorsal fin, and a coronet crown unique to each.
+        s += '<g opacity="0.78" transform="translate(11,22) scale(1.5) translate(-11,-22)">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.3,-1.2;0,0;-0.2,0.8;0,0" dur="5.5s" repeatCount="indefinite"/>';
+        // Tail — prehensile curl (tighter than chameleon, forward-curling)
+        s += '<path d="M10.5,27 Q10,28.5 10.5,29.5 Q11.5,30.5 12,29.5 Q12.2,28.5 11.5,28 Q11,27.5 10.8,28.2" fill="none" stroke="#C8A060" stroke-width="0.9" stroke-linecap="round"/>';
+        // Trunk — segmented bony armor (the ribbed column)
+        // Each segment is a slightly wider band
+        var _sh70y = 19;
+        for (var _sh70i = 0; _sh70i < 8; _sh70i++) {
+          var _sh70sy = _sh70y + _sh70i * 1.1;
+          var _sh70w = 1.0 + Math.sin(_sh70i * 0.5) * 0.25;
+          s += '<ellipse cx="10.8" cy="'+_sh70sy.toFixed(1)+'" rx="'+_sh70w.toFixed(2)+'" ry="0.55" fill="#C8A060" opacity="'+(0.7 - _sh70i*0.03).toFixed(2)+'"/>';
+          // Ring joint line
+          if (_sh70i > 0) s += '<line x1="'+(10.8-_sh70w).toFixed(1)+'" y1="'+(_sh70sy-0.3).toFixed(1)+'" x2="'+(10.8+_sh70w).toFixed(1)+'" y2="'+(_sh70sy-0.3).toFixed(1)+'" stroke="#A08040" stroke-width="0.12" opacity="0.3"/>';
+        }
+        // Belly highlight — lighter ventral
+        s += '<path d="M11.3,20 Q11.5,23 11.2,26" fill="none" stroke="#E0C888" stroke-width="0.5" opacity="0.25" stroke-linecap="round"/>';
+        // Head — horse-shaped, tilted forward
+        s += '<path d="M10.5,18.5 Q10,17 10.5,16 Q11,15 12,15.5 Q12.5,16 12.2,17 Q12,17.8 11,18.5 Z" fill="#D0A858"/>';
+        // Coronet — small crown on top of head (unique to each seahorse)
+        s += '<path d="M11,15.5 L10.8,14.8 L11.2,15 L11.5,14.5 L11.6,15.2 L12,14.8 L11.8,15.5" fill="#D8B868" stroke="#C0A050" stroke-width="0.1"/>';
+        // Snout — long tubular, the "horse" part
+        s += '<path d="M10.2,17.2 Q9,16.8 8.2,16.8" fill="none" stroke="#C8A060" stroke-width="0.6" stroke-linecap="round"/>';
+        // Snout tip — tiny mouth opening
+        s += '<circle cx="8.2" cy="16.8" r="0.15" fill="#A08040"/>';
+        // Eye — round, prominent, with brow ridge
+        s += '<circle cx="11.2" cy="16.2" r="0.55" fill="#1A1A18"/>';
+        s += '<circle cx="11.3" cy="16" r="0.15" fill="rgba(240,220,160,0.6)"/>';
+        // Brow ridge above eye
+        s += '<path d="M10.7,15.8 Q11.2,15.5 11.7,15.8" fill="none" stroke="#B09050" stroke-width="0.2" opacity="0.5"/>';
+        // Dorsal fin — tiny, fan-shaped, fluttering on back
+        s += '<path d="M11.5,20 Q12.5,19.5 12.8,20 Q12.5,20.5 11.5,20.8" fill="rgba(200,180,120,0.25)" stroke="#C8A060" stroke-width="0.15"/>';
+        // Dorsal fin flutter animation
+        s += '<path d="M11.5,21.5 Q12.3,21 12.5,21.5 Q12.3,22 11.5,22.3" fill="rgba(200,180,120,0.2)" stroke="#C8A060" stroke-width="0.12"><animate attributeName="d" values="M11.5,21.5 Q12.3,21 12.5,21.5 Q12.3,22 11.5,22.3;M11.5,21.5 Q12.6,21.2 12.8,21.8 Q12.5,22.3 11.5,22.3;M11.5,21.5 Q12.3,21 12.5,21.5 Q12.3,22 11.5,22.3" dur="1.2s" repeatCount="indefinite"/></path>';
+        // Pectoral fin — tiny, near gill area
+        s += '<path d="M10,19 Q9.2,18.5 9,19 Q9.2,19.5 10,19.5" fill="rgba(200,180,120,0.2)" stroke="#C8A060" stroke-width="0.1"/>';
         s += '</g>';
         break;
       case 71: // Koi Fish — near pot base
