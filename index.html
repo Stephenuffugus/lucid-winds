@@ -5486,8 +5486,8 @@ document.addEventListener('keydown', function(e) {
   // ─────────────────────────────────────────────────────────────────────────
   // Nursery — 3-day watering cycle
   // ─────────────────────────────────────────────────────────────────────────
-  function _loadNursery(){ return _ls('sws_nursery')||[]; }
-  function _saveNursery(n){ _ss('sws_nursery',n); }
+  function _loadNursery(){ try{var j=window._secureGet?window._secureGet('sws_nursery'):localStorage.getItem('sws_nursery');return JSON.parse(j)||[];}catch(e){return [];} }
+  function _saveNursery(n){ if(window._secureSet){window._secureSet('sws_nursery',n);}else{_ss('sws_nursery',n);} }
 
   function addSeed(opts){
     var nursery=_loadNursery();
@@ -5954,6 +5954,58 @@ document.addEventListener('keydown', function(e) {
   // FOCUS GROVE — The Grow Game
   // Pattern matching + Proof of Attention
   // ═══════════════════════════════════
+
+  // ═══ LOCALSTORAGE INTEGRITY — HMAC signatures on critical data ═══
+  var _intSalt = '';
+  var _intKey = '';
+
+  function _initIntegrity() {
+    var user = window.firebase && firebase.auth() && firebase.auth().currentUser;
+    if (user && user.uid) {
+      var uidHash = 0;
+      for (var i = 0; i < user.uid.length; i++) {
+        uidHash = ((uidHash << 5) - uidHash + user.uid.charCodeAt(i)) | 0;
+      }
+      _intSalt = Math.abs(uidHash).toString(36);
+    } else {
+      _intSalt = '';
+      for (var j = 0; j < 16; j++) _intSalt += Math.floor(Math.random() * 16).toString(16);
+    }
+    _intKey = 'lw_' + _intSalt + '_2026';
+  }
+
+  function _sign(value) {
+    var str = value + _intKey;
+    var hash = 5381;
+    for (var i = 0; i < str.length; i++) {
+      hash = ((hash << 5) + hash + str.charCodeAt(i)) & 0xFFFFFFFF;
+    }
+    return hash.toString(36);
+  }
+
+  function _secureSet(key, value) {
+    var json = typeof value === 'string' ? value : JSON.stringify(value);
+    var sig = _sign(json);
+    localStorage.setItem(key, json);
+    localStorage.setItem(key + '_sig', sig);
+  }
+
+  function _secureGet(key) {
+    var json = localStorage.getItem(key);
+    if (!json) return null;
+    if (!_intKey) return json; // integrity not initialized yet, allow read
+    var storedSig = localStorage.getItem(key + '_sig');
+    var expectedSig = _sign(json);
+    if (storedSig !== expectedSig) {
+      if (window._swsLog) _swsLog('INTEGRITY FAIL: ' + key + ' was tampered', 'err');
+      return null;
+    }
+    return json;
+  }
+
+  window._secureSet = _secureSet;
+  window._secureGet = _secureGet;
+  window._initIntegrity = _initIntegrity;
 
   var WALLET = '0xba1F63F220DA4d5639c5EB0f7de8A4aFBd46828B';
   var SCHEMA = 'network.xyo.attention.set';
@@ -20858,7 +20910,7 @@ document.addEventListener('keydown', function(e) {
     '</svg>';
 
   function loadGreenhouse() {
-    try { return JSON.parse(localStorage.getItem(GH_KEY)) || []; } catch(e) { return []; }
+    try { return JSON.parse(_secureGet(GH_KEY) || localStorage.getItem(GH_KEY)) || []; } catch(e) { return []; }
   }
 
   // ── saveGreenhouse — Phase 32: single write intercept ────────────────
@@ -20867,7 +20919,7 @@ document.addEventListener('keydown', function(e) {
   // scatter sws_syncToCloud calls across the codebase.
   // Sync is non-blocking: we fire-and-forget the Promise.
   function saveGreenhouse(g) {
-    localStorage.setItem(GH_KEY, JSON.stringify(g));
+    _secureSet(GH_KEY, g);
     _swsCloudWriteTrigger(g);
   }
 
@@ -21494,21 +21546,21 @@ document.addEventListener('keydown', function(e) {
   var SHOP_KEY = 'sws_shop_unlocks';
 
   function getHashLedger() {
-    try { return JSON.parse(localStorage.getItem(HASH_LEDGER_KEY)) || { spent: 0, earned: 0 }; } catch(e) { return { spent: 0, earned: 0 }; }
+    try { return JSON.parse(_secureGet(HASH_LEDGER_KEY) || localStorage.getItem(HASH_LEDGER_KEY)) || { spent: 0, earned: 0 }; } catch(e) { return { spent: 0, earned: 0 }; }
   }
   // Phase 28 fix: persist earned hashes immediately — force=true bypasses 2s debounce
   function earnHashes(amount) {
     console.log('[earnHashes] amount:', amount);
     var ledger = getHashLedger();
     ledger.earned = (ledger.earned || 0) + amount;
-    localStorage.setItem(HASH_LEDGER_KEY, JSON.stringify(ledger));
+    _secureSet(HASH_LEDGER_KEY, ledger);
     console.log('[earnHashes] ledger.earned now:', ledger.earned);
     if(window.PW_grantXP) PW_grantXP(amount * 2, 'dew_drop');
   }
   function spendHashes(amount) {
     var ledger = getHashLedger();
     ledger.spent = (ledger.spent || 0) + amount;
-    localStorage.setItem(HASH_LEDGER_KEY, JSON.stringify(ledger));
+    _secureSet(HASH_LEDGER_KEY, ledger);
   }
   function getTotalHashes() {
     // FIX: read persisted ledger.earned instead of volatile attentionPayloads.length
@@ -23662,7 +23714,7 @@ document.addEventListener('keydown', function(e) {
     if (!pending || !pending.nur || !pending.gh) return;
     // Interrupted bloom detected — replay commit silently
     try {
-      localStorage.setItem('sws_nursery',    JSON.stringify(pending.nur));
+      _secureSet('sws_nursery', pending.nur);
       localStorage.removeItem(BLOOM_STAGING_KEY);
       // Phase 32: use saveGreenhouse so cloud sync fires on recovery replay
       saveGreenhouse(pending.gh);
@@ -23798,8 +23850,8 @@ document.addEventListener('keydown', function(e) {
 
     // 6. Commit both production keys
     var nurOk = false, ghOk = false;
-    try { localStorage.setItem('sws_nursery',    JSON.stringify(nur)); nurOk = true; } catch(e) {}
-    try { localStorage.setItem('sws_greenhouse', JSON.stringify(gh));  ghOk  = true; } catch(e) {}
+    try { _secureSet('sws_nursery', nur); nurOk = true; } catch(e) {}
+    try { _secureSet('sws_greenhouse', gh);  ghOk  = true; } catch(e) {}
 
     // 7. Clear staging key only if BOTH writes succeeded
     if (nurOk && ghOk) {
@@ -23831,7 +23883,7 @@ document.addEventListener('keydown', function(e) {
   // --------------------------------------------------------------------------
   window.handleBloomBtn = function(seedId) {
     var nur;
-    try { nur = JSON.parse(localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur = []; }
+    try { nur = JSON.parse(_secureGet('sws_nursery') || localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur = []; }
     var seedIndex = nur.findIndex(function(s) { return s.id === seedId; });
     if (seedIndex < 0) { _setNurMsg('Seed not found. Please refresh.'); return; }
     var seed = nur[seedIndex];
@@ -23851,7 +23903,7 @@ document.addEventListener('keydown', function(e) {
   // --------------------------------------------------------------------------
   window.handleWaterSeed = function(seedId) {
     var nur;
-    try { nur = JSON.parse(localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur = []; }
+    try { nur = JSON.parse(_secureGet('sws_nursery') || localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur = []; }
     var seedIndex = nur.findIndex(function(s) { return s.id === seedId; });
     if (seedIndex < 0) { _setNurMsg('Seed not found. Please refresh.'); return; }
 
@@ -23882,7 +23934,7 @@ document.addEventListener('keydown', function(e) {
       _throttledSave('sws_nursery', JSON.stringify(nur), true); // Phase 27: force-flush before _executeBloom re-read
       // Re-read to ensure seedIndex is still valid after save
       var nur2;
-      try { nur2 = JSON.parse(localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur2 = nur; }
+      try { nur2 = JSON.parse(_secureGet('sws_nursery') || localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur2 = nur; }
       var idx2 = nur2.findIndex(function(s) { return s.id === seedId; });
       if (idx2 >= 0) {
         // Small delay for the message to render before overlay
@@ -23916,7 +23968,7 @@ document.addEventListener('keydown', function(e) {
     }
 
     var nur;
-    try { nur = JSON.parse(localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur = []; }
+    try { nur = JSON.parse(_secureGet('sws_nursery') || localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur = []; }
     var seedIndex = nur.findIndex(function(s) { return s.id === seedId; });
     if (seedIndex < 0) { _setNurMsg('Seed not found.'); return; }
     var seed = nur[seedIndex];
@@ -23951,7 +24003,7 @@ document.addEventListener('keydown', function(e) {
       _setNurMsg('⚡ 21 Dew Drops spent — third watering unlocked! Cross-pollinating…');
       _throttledSave('sws_nursery', JSON.stringify(nur), true); // force-flush
       var nur3;
-      try { nur3 = JSON.parse(localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur3 = nur; }
+      try { nur3 = JSON.parse(_secureGet('sws_nursery') || localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur3 = nur; }
       var idx3 = nur3.findIndex(function(s) { return s.id === seedId; });
       if (idx3 >= 0) {
         setTimeout(function() { _executeBloom(nur3, idx3, nur3[idx3]); }, 300);
@@ -23971,7 +24023,7 @@ document.addEventListener('keydown', function(e) {
       return;
     }
     var nur;
-    try { nur = JSON.parse(localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur = []; }
+    try { nur = JSON.parse(_secureGet('sws_nursery') || localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur = []; }
     var seedIndex = nur.findIndex(function(s) { return s.id === seedId; });
     if (seedIndex < 0) { _setNurMsg('Seed not found.'); return; }
     var seed = nur[seedIndex];
@@ -23990,7 +24042,7 @@ document.addEventListener('keydown', function(e) {
     inv.fertilizer = Math.max(0, (inv.fertilizer || 0) - 1);
     inv.lastUpdated = new Date().toISOString();
     try {
-      localStorage.setItem('sws_nursery', JSON.stringify(nur));
+      _secureSet('sws_nursery', nur);
       localStorage.setItem(INV_KEY, JSON.stringify(inv));
     } catch(e) {
       _setNurMsg('Storage error.');
@@ -24372,7 +24424,7 @@ document.addEventListener('keydown', function(e) {
       newlyUnlocked.forEach(function(ach){
         var ledger2 = getHashLedger ? getHashLedger() : { spent: 0 };
         ledger2.spent = Math.max(0, (ledger2.spent||0) - 25);
-        try{ localStorage.setItem('sws_hash_ledger', JSON.stringify(ledger2)); }catch(e){}
+        try{ _secureSet('sws_hash_ledger', ledger2); }catch(e){}
         _showAchToast(ach);
         if(typeof gtag!=='undefined') gtag('event','achievement_unlock',{id:ach.id});
       });
@@ -24789,7 +24841,7 @@ document.addEventListener('keydown', function(e) {
     if (titleEl) titleEl.textContent = label || '⬡ ASSETS RECOVERED';
     if (countEl) {
       var nur = 0;
-      try { nur = (JSON.parse(localStorage.getItem('sws_nursery') || '[]') || []).length; } catch(e) {}
+      try { nur = (JSON.parse(_secureGet('sws_nursery') || localStorage.getItem('sws_nursery') || '[]') || []).length; } catch(e) {}
       countEl.textContent = plantCount + ' Plant' + (plantCount === 1 ? '' : 's') +
         (nur > 0 ? ' · ' + nur + ' Nursery Seeds' : '');
     }
@@ -24862,7 +24914,7 @@ document.addEventListener('keydown', function(e) {
       wildPlants:      _ls('fg_wild_plants')  || [],
       wildDropState:   _ls('fg_w_d')          || {},
       ferals:          _ls('fg_ferals')       || [],
-      pollen:          parseInt(localStorage.getItem('fg_pollen')||'0'),
+      pollen:          parseInt((window._secureGet?window._secureGet('fg_pollen'):localStorage.getItem('fg_pollen'))||'0'),
       lastSync: new Date().toISOString(),
       clientVersion: 'set-40'
     };
@@ -24888,10 +24940,10 @@ document.addEventListener('keydown', function(e) {
     if (data.achievements)   _ss('sws_achievements',   data.achievements);
     if (data.rewardsClaimed) _ss('sws_rewards_claimed',data.rewardsClaimed);
     // Restore wild tab state from cloud
-    if (data.wildPlants && data.wildPlants.length) _ss('fg_wild_plants', data.wildPlants);
-    if (data.wildDropState) _ss('fg_w_d', data.wildDropState);
+    if (data.wildPlants && data.wildPlants.length) { if(window._secureSet){window._secureSet('fg_wild_plants',data.wildPlants);}else{_ss('fg_wild_plants', data.wildPlants);} }
+    if (data.wildDropState) { if(window._secureSet){window._secureSet('fg_w_d',data.wildDropState);}else{_ss('fg_w_d', data.wildDropState);} }
     if (data.ferals && data.ferals.length) _ss('fg_ferals', data.ferals);
-    if (typeof data.pollen === 'number') localStorage.setItem('fg_pollen', String(data.pollen));
+    if (typeof data.pollen === 'number') { if(window._secureSet){window._secureSet('fg_pollen',String(data.pollen));}else{localStorage.setItem('fg_pollen', String(data.pollen));} }
     _vaultHydrated = true;
     console.log('[Vault] Hydrated. Cloud:', cGH.length, '| Merged:', mGH.length);
     if (window.renderGreenhouse) renderGreenhouse();
@@ -24961,7 +25013,7 @@ document.addEventListener('keydown', function(e) {
     if (window._swsLog) _swsLog('↓ Reading vaults/' + user.uid.slice(0,8) + '…');
     var localGH=[], localNur=[];
     try{localGH =JSON.parse(localStorage.getItem('sws_greenhouse')||'[]')||[];}catch(e){}
-    try{localNur=JSON.parse(localStorage.getItem('sws_nursery')   ||'[]')||[];}catch(e){}
+    try{localNur=JSON.parse(_secureGet('sws_nursery') || localStorage.getItem('sws_nursery')   ||'[]')||[];}catch(e){}
     if (window._swsLog) _swsLog('  Local state: ' + localGH.length + ' plants, ' + localNur.length + ' nursery');
 
     db.collection('vaults').doc(user.uid).get()
@@ -24978,7 +25030,7 @@ document.addEventListener('keydown', function(e) {
               var d = mdoc.data();
               if (d.slots) localStorage.setItem('sws_greenhouse_slots', String(d.slots));
               if (d.inventory) localStorage.setItem('sws_inventory', JSON.stringify(d.inventory));
-              if (d.hashLedger) localStorage.setItem('sws_hash_ledger', JSON.stringify(d.hashLedger));
+              if (d.hashLedger) _secureSet('sws_hash_ledger', d.hashLedger);
               if (d.streak) localStorage.setItem('sws_streak', JSON.stringify(d.streak));
             }
           });
@@ -25012,6 +25064,7 @@ document.addEventListener('keydown', function(e) {
     var signout = document.getElementById('dash-signout-row');
     if (user) {
       if (window._swsLog) _swsLog('✓ Auth: user=' + user.email + ' uid=' + user.uid.slice(0,8) + '…', 'ok');
+      if (window._initIntegrity) _initIntegrity();
       if (signout) {
         signout.style.display = 'flex';
         var emailEl = document.getElementById('dash-auth-email');
@@ -25750,11 +25803,12 @@ var TILES='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 var MAX_DROPS=3,MAX_POUCH=3,COLLECT_RANGE=150,ZONE_SIZE=0.001;
 var _map=null,_uM=null,_uLat=null,_uLng=null,_trail=[],_tLine=null,_inited=false;
 var _drops=0,_pouch=[],_sel=null,_selMk=null,_menuOpen=false,_tt=null;
+var _lastGeoTime=0,_lastGeoLat=0,_lastGeoLng=0,_speedKmh=0;
 var GC={Common:'#8a9a7a',Uncommon:'#5a9e3f',Rare:'#4a90d9',Epic:'#9b59b6',Legendary:'#C8A84B',Mythic:'#e74c3c',Cosmic:'#ff6ec7'};
 var FALLBACK=[40.758,-73.9855];
 
-function _getWild(){try{return JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){return[];}}
-function _saveWild(a){localStorage.setItem('fg_wild_plants',JSON.stringify(a));}
+function _getWild(){try{var j=window._secureGet?window._secureGet('fg_wild_plants'):localStorage.getItem('fg_wild_plants');return JSON.parse(j||'[]');}catch(e){return[];}}
+function _saveWild(a){if(window._secureSet){window._secureSet('fg_wild_plants',a);}else{localStorage.setItem('fg_wild_plants',JSON.stringify(a));}}
 function _getGH(){try{return JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){return[];}}
 function _saveGH(a){localStorage.setItem('sws_greenhouse',JSON.stringify(a));}
 function _zoneKey(a,b){return(Math.round(a/ZONE_SIZE)*ZONE_SIZE).toFixed(4)+','+(Math.round(b/ZONE_SIZE)*ZONE_SIZE).toFixed(4);}
@@ -25771,6 +25825,20 @@ function activate(){
   // Always reload drop state in case day changed or tab switched
   _loadState();
   _updateUI();
+  // Night hour warning banner
+  var _nh = new Date().getHours();
+  var _nb = document.getElementById('w-night-banner');
+  if (_nh >= 23 || _nh < 5) {
+    if (!_nb) {
+      _nb = document.createElement('div');
+      _nb.id = 'w-night-banner';
+      _nb.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(180,130,40,0.92);color:#fff;text-align:center;padding:10px 16px;font-size:0.7rem;font-family:inherit;letter-spacing:0.02em;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);';
+      _nb.textContent = '\u26A0 Late hours. Stay safe and aware of your surroundings.';
+      document.body.appendChild(_nb);
+    }
+  } else {
+    if (_nb) _nb.remove();
+  }
   setTimeout(function(){if(_map)_map.invalidateSize();},100);
   setTimeout(function(){if(_map)_map.invalidateSize();},500);
   setTimeout(function(){if(_map)_map.invalidateSize();},1500);
@@ -25814,6 +25882,10 @@ function _initGeo(){
     var nL=p.coords.latitude,nN=p.coords.longitude;
     if(_uLat&&_uLng){var d=_dist(_uLat,_uLng,nL,nN);if(d>0.7&&d<50){var s=document.getElementById('w-steps');if(s)s.textContent=parseInt(s.textContent||'0')+Math.round(d/0.75);}}
     _uLat=nL;_uLng=nN;
+    // Speed tracking
+    var _now=Date.now();
+    if(_lastGeoTime>0&&_lastGeoLat){var _sd=_dist(_lastGeoLat,_lastGeoLng,nL,nN);var _dt=(_now-_lastGeoTime)/1000;if(_dt>0)_speedKmh=(_sd/_dt)*3.6;}
+    _lastGeoTime=_now;_lastGeoLat=nL;_lastGeoLng=nN;
     if(_uM)_uM.setLatLng([_uLat,_uLng]);
     _trail.push([_uLat,_uLng]);
     if(_tLine)_tLine.setLatLngs(_trail);else if(_map)_tLine=L.polyline(_trail,{color:'rgba(122,179,86,0.2)',weight:3,lineCap:'round'}).addTo(_map);
@@ -26219,13 +26291,13 @@ function _waterOwnPlant(p,mk){
   }
 
   // Check Dew Drop cost (5 hashes)
-  var ledger={};try{ledger=JSON.parse(localStorage.getItem('sws_hash_ledger')||'{}');}catch(e){}
+  var ledger={};try{var _hlRaw=window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger');ledger=JSON.parse(_hlRaw||'{}');}catch(e){}
   var balance=(ledger.earned||0)-(ledger.spent||0);
   if(balance<5){_toast('Need 5 Dew Drops to water. You have '+balance+'.');return;}
 
   // Spend 5 hashes
   ledger.spent=(ledger.spent||0)+5;
-  localStorage.setItem('sws_hash_ledger',JSON.stringify(ledger));
+  if(window._secureSet){window._secureSet('sws_hash_ledger',ledger);}else{localStorage.setItem('sws_hash_ledger',JSON.stringify(ledger));}
 
   // Update wild plant stress
   var wild=_getWild();
@@ -26267,8 +26339,8 @@ function _doCrossPollination(wildPlant,matePlant){
     var rewardMsg='';
     if(roll<0.6){
       var pollenBonus=5+Math.floor(Math.random()*10);
-      var currentPollen=0;try{currentPollen=parseInt(localStorage.getItem('fg_pollen')||'0');}catch(e){}
-      localStorage.setItem('fg_pollen',String(currentPollen+pollenBonus));
+      var currentPollen=_getPollen();
+      _savePollen(currentPollen+pollenBonus);
       rewardMsg='+'+pollenBonus+' pollen!';
     } else if(roll<0.9){
       var dewBonus=2+Math.floor(Math.random()*4);
@@ -26321,6 +26393,7 @@ function _renderPouch(){if(window.FG_Backpack)FG_Backpack.render();}
 
 // ═══ PICKER — drop from greenhouse to wild ═══
 function openPicker(){
+  if(_speedKmh>25){_toast('\ud83c\udf3f Slow down to plant! Moving too fast.');return;}
   if(!_uLat){_toast('Getting location...');return;}
   var rem=MAX_DROPS-_drops;
   if(rem<=0){_toast('All 3 drops used today!');return;}
@@ -26471,16 +26544,22 @@ function _finishDrop(defenderGame){
 // ═══ STATE ═══
 function _loadState(){
   var td=new Date().toISOString().slice(0,10);
-  try{var d=JSON.parse(localStorage.getItem('fg_w_d')||'{}');_drops=(d.d===td)?(d.c||0):0;}catch(e){_drops=0;}
+  try{var raw=window._secureGet?window._secureGet('fg_w_d'):localStorage.getItem('fg_w_d');var d=JSON.parse(raw||'{}');_drops=(d.d===td)?(d.c||0):0;}catch(e){_drops=0;}
   try{_pouch=JSON.parse(localStorage.getItem('fg_pouch')||'[]');}catch(e){_pouch=[];}
+  // Midnight reset: clear stale feral breed date
+  var storedBreedDate='';
+  try{storedBreedDate=localStorage.getItem('fg_feral_breed_date')||'';}catch(e){}
+  if(storedBreedDate!==td){
+    localStorage.removeItem('fg_feral_breed_date');
+  }
 }
-function _saveState(){localStorage.setItem('fg_w_d',JSON.stringify({d:new Date().toISOString().slice(0,10),c:_drops}));}
+function _saveState(){var val=JSON.stringify({d:new Date().toISOString().slice(0,10),c:_drops});if(window._secureSet){window._secureSet('fg_w_d',val);}else{localStorage.setItem('fg_w_d',val);}}
 function _savePouch(){localStorage.setItem('fg_pouch',JSON.stringify(_pouch));}
 
 // ═══ UI ═══
 function _updateUI(){var rem=Math.max(0,MAX_DROPS-_drops);var b=document.getElementById('dbb');if(b){b.textContent=rem;b.classList.toggle('lo',rem<=1);}var f=document.getElementById('dfb');if(f)f.style.opacity=rem<=0?'0.4':'1';}
-function _getPollen(){try{return parseInt(localStorage.getItem('fg_pollen')||'0');}catch(e){return 0;}}
-function _savePollen(v){localStorage.setItem('fg_pollen',String(v));}
+function _getPollen(){try{var j=window._secureGet?window._secureGet('fg_pollen'):localStorage.getItem('fg_pollen');return parseInt(j||'0');}catch(e){return 0;}}
+function _savePollen(v){if(window._secureSet){window._secureSet('fg_pollen',String(v));}else{localStorage.setItem('fg_pollen',String(v));}}
 function _updateCounts(){
   var w=_getWild();
   var c=document.getElementById('w-count');if(c)c.textContent=w.length;
@@ -26531,6 +26610,7 @@ setInterval(function(){var w=_getWild();if(w.length>0){
 
 // ═══ DROP FROM BACKPACK — place a plant from BP onto the map ═══
 function _dropFromBP(p){
+  if(_speedKmh>25){_toast('\ud83c\udf3f Slow down to plant! Moving too fast.');return;}
   if(!_uLat||!_uLng){_toast('Need GPS location to drop.');return;}
   if(typeof gtag!=='undefined') gtag('event','wild_plant_drop',{lat:_uLat.toFixed(3),lng:_uLng.toFixed(3)});
   var wild=_getWild();
@@ -28599,10 +28679,10 @@ window.PW_grantXP=function(amount,reason){
 
 // ═══ UPDATE STATS ═══
 function updateStats(){
-  var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
-  var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
-  var pollen=0;try{pollen=parseInt(localStorage.getItem('fg_pollen')||'0');}catch(e){}
-  var dew=0;try{var hl=JSON.parse(localStorage.getItem('sws_hash_ledger')||'{}');dew=(hl.earned||0)-(hl.spent||0);}catch(e){}
+  var gh=[];try{gh=JSON.parse((window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse'))||'[]');}catch(e){}
+  var wild=[];try{wild=JSON.parse((window._secureGet?window._secureGet('fg_wild_plants'):localStorage.getItem('fg_wild_plants'))||'[]');}catch(e){}
+  var pollen=0;try{pollen=parseInt((window._secureGet?window._secureGet('fg_pollen'):localStorage.getItem('fg_pollen'))||'0');}catch(e){}
+  var dew=0;try{var hl=JSON.parse((window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger'))||'{}');dew=(hl.earned||0)-(hl.spent||0);}catch(e){}
   var e=function(id,v){var el=document.getElementById(id);if(el)el.textContent=v;};
   e('cs-s-plants',gh.length);e('cs-s-pollen',pollen);e('cs-s-wild',wild.length);
   e('cs-s-dew',dew);e('cs-s-days',Math.max(1,Math.floor((Date.now()-(parseInt(localStorage.getItem('pw_start')||Date.now())))/86400000)+1));
@@ -29968,7 +30048,7 @@ window.addEventListener('bp-seed-to-nursery', function(e) {
   } else {
     // Fallback: direct write in correct format
     var nursery = [];
-    try { nursery = JSON.parse(localStorage.getItem('sws_nursery') || '[]') || []; } catch(ex) {}
+    try { var _nRaw = window._secureGet ? window._secureGet('sws_nursery') : localStorage.getItem('sws_nursery'); nursery = JSON.parse(_nRaw || '[]') || []; } catch(ex) {}
     if (nursery.length >= 3) { if (window._toast) _toast('Nursery full!'); return; }
     var today = new Date().toISOString().slice(0, 10);
     nursery.push({
@@ -29982,7 +30062,7 @@ window.addEventListener('bp-seed-to-nursery', function(e) {
       status: 'growing',
       nickname: null
     });
-    localStorage.setItem('sws_nursery', JSON.stringify(nursery));
+    if (window._secureSet) { window._secureSet('sws_nursery', nursery); } else { localStorage.setItem('sws_nursery', JSON.stringify(nursery)); }
     if (window.renderNursery) renderNursery();
   }
   if (window.syncVaultToCloud) setTimeout(syncVaultToCloud, 500);
