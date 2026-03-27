@@ -4035,7 +4035,10 @@ window.onerror=function(msg,url,line,col,err){
   <div class="grove-panel" id="panel-nursery">
     <div class="panel-header">
       <div class="panel-header-title">NURSERY</div>
-      <button class="game-btn" onclick="openCrossPollinateFlow()" style="font-size:0.5rem;padding:0.2rem 0.5rem;">🧬 BREED</button>
+      <div style="display:flex;gap:0.3rem;align-items:center;">
+        <button id="nur-expand-btn" onclick="expandNurSlot()" style="font-family:'Bebas Neue',sans-serif;font-size:0.38rem;letter-spacing:0.06em;background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.3);color:var(--gold);border-radius:5px;padding:0.15rem 0.35rem;cursor:pointer;min-height:28px;white-space:nowrap;">+ SLOT</button>
+        <button class="game-btn" onclick="openCrossPollinateFlow()" style="font-size:0.5rem;padding:0.2rem 0.5rem;">🧬 BREED</button>
+      </div>
     </div>
     <div id="nur-wallet-balance" class="wallet-balance">Balance: — ⚡</div>
     <div class="nur-streak-strip">
@@ -4046,11 +4049,7 @@ window.onerror=function(msg,url,line,col,err){
       <span id="nur-next-milestone" class="nur-milestone-next"></span>
     </div>
     <div id="nur-msg"></div>
-    <div class="nur-grid">
-      <div class="nur-slot" id="nur-slot-0"></div>
-      <div class="nur-slot" id="nur-slot-1"></div>
-      <div class="nur-slot" id="nur-slot-2"></div>
-    </div>
+    <div class="nur-grid" id="nur-grid"></div>
     <div style="margin-top:0.6rem;padding:0.5rem 0.6rem;background:rgba(13,16,12,0.35);border-radius:6px;border:1px solid rgba(74,124,53,0.08);">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:0.44rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.15rem;">HOW CROSS-POLLINATION WORKS</div>
       <p style="font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);line-height:1.6;opacity:0.7;">Select two Plants to mix their DNA. The child inherits traits from both parents — rare traits are recessive and only pass under the right genetic conditions. Water your seed once per day for 3 days, then bloom it into your Greenhouse.</p>
@@ -5490,9 +5489,26 @@ document.addEventListener('keydown', function(e) {
   function _loadNursery(){ try{var j=window._secureGet?window._secureGet('sws_nursery'):localStorage.getItem('sws_nursery');return JSON.parse(j)||[];}catch(e){return [];} }
   function _saveNursery(n){ if(window._secureSet){window._secureSet('sws_nursery',n);}else{_ss('sws_nursery',n);} }
 
+  var NUR_SLOTS_KEY = 'sws_nursery_slots';
+  var NUR_SLOTS_BASE = 3;
+  var NUR_SLOTS_MAX = 6;
+  function getNurSlots() {
+    try {
+      var stored = parseInt(localStorage.getItem(NUR_SLOTS_KEY), 10);
+      if (stored >= NUR_SLOTS_BASE && stored <= NUR_SLOTS_MAX) return stored;
+      return NUR_SLOTS_BASE;
+    } catch(e) { return NUR_SLOTS_BASE; }
+  }
+  function setNurSlots(n) {
+    var clamped = Math.max(NUR_SLOTS_BASE, Math.min(NUR_SLOTS_MAX, n));
+    localStorage.setItem(NUR_SLOTS_KEY, String(clamped));
+    return clamped;
+  }
+
   function addSeed(opts){
     var nursery=_loadNursery();
-    if(nursery.length>=3) return {ok:false,reason:'NURSERY_FULL'};
+    var maxSlots = getNurSlots();
+    if(nursery.length>=maxSlots) return {ok:false,reason:'NURSERY_FULL'};
     var today=_today();
     var seed={
       id:'nur_'+Date.now()+'_'+Math.floor(Math.random()*1000),
@@ -5616,7 +5632,9 @@ document.addEventListener('keydown', function(e) {
     recordActivity: recordActivity,
     claimMilestone: claimMilestone,
     getStreak: getStreak,
-    useMercySeed: useMercySeed
+    useMercySeed: useMercySeed,
+    getNurSlots: getNurSlots,
+    setNurSlots: setNurSlots
   };
 
 }());
@@ -22107,15 +22125,40 @@ document.addEventListener('keydown', function(e) {
       nmEl.textContent = nextM ? (nextM - streak.currentStreak) + 'd to milestone' : '★ All milestones reached';
     }
 
-    for (var i = 0; i < 3; i++) {
-      var seed   = nursery[i] || null;
-      var slotEl = document.getElementById('nur-slot-' + i);
-      if (!slotEl) continue;
-      slotEl.innerHTML = _buildNurSlotHTML(seed, i);
-      slotEl.className = 'nur-slot' + (seed && FG_Data.isBloomReady(seed) ? ' ready' : '');
+    var maxNurSlots = FG_Data.getNurSlots ? FG_Data.getNurSlots() : 3;
+    var nurGrid = document.getElementById('nur-grid');
+    if (nurGrid) {
+      nurGrid.innerHTML = '';
+      for (var i = 0; i < maxNurSlots; i++) {
+        var seed = nursery[i] || null;
+        var slotDiv = document.createElement('div');
+        slotDiv.id = 'nur-slot-' + i;
+        slotDiv.className = 'nur-slot' + (seed && FG_Data.isBloomReady(seed) ? ' ready' : '');
+        slotDiv.innerHTML = _buildNurSlotHTML(seed, i);
+        nurGrid.appendChild(slotDiv);
+      }
     }
+    // Hide expand button at max
+    var nurExpBtn = document.getElementById('nur-expand-btn');
+    if (nurExpBtn) nurExpBtn.style.display = (maxNurSlots >= 6) ? 'none' : '';
   }
   window.renderNursery = renderNursery;
+
+  window.expandNurSlot = function() {
+    if (!window.FG_Data || !FG_Data.getNurSlots) return;
+    var current = FG_Data.getNurSlots();
+    if (current >= 6) {
+      if (window._toast) _toast('Maximum 6 nursery slots reached.');
+      else if (window.showHexMsg) showHexMsg('Maximum 6 nursery slots.');
+      return;
+    }
+    if (!confirm('Expand nursery to ' + (current + 1) + ' slots?\n\n(Pi payment will be required when marketplace launches. Free during beta.)')) return;
+    FG_Data.setNurSlots(current + 1);
+    if (window._haptic) _haptic('tab');
+    renderNursery();
+    if (window.showHexMsg) showHexMsg('Nursery expanded to ' + (current + 1) + ' slots.');
+    if (typeof gtag !== 'undefined') gtag('event', 'nur_slot_expanded', { slots: current + 1 });
+  };
 
   function _buildNurSlotHTML(seed, idx) {
     if (!seed) {
@@ -25338,7 +25381,7 @@ function _doCrossPollination(wildPlant,matePlant){
       var offGen=result.nonce;
       if(window.FG_Data&&FG_Data.addSeed){
         var addResult=FG_Data.addSeed({seedHash:offHash,parentAHash:wildPlant.hash,parentBHash:matePlant.hash,nonce:offGen});
-        if(!addResult.ok){_toast('Nursery full (3/3). Bloom or abandon a seed first.');return;}
+        if(!addResult.ok){_toast('Nursery full. Bloom or abandon a seed first.');return;}
       }
       // Increment breedCount on both parents
       var _bcGh3=[];try{_bcGh3=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
@@ -29014,7 +29057,7 @@ window.addEventListener('bp-seed-to-nursery', function(e) {
       if (window.renderNursery) renderNursery();
       if (window._toast) _toast('\ud83c\udf31 Feral seed added to nursery! Water it daily.');
     } else {
-      if (window._toast) _toast('Nursery full (3/3). Bloom a seed first.');
+      if (window._toast) _toast('Nursery full. Bloom or abandon a seed first.');
     }
   } else {
     // Fallback: direct write in correct format
@@ -29319,7 +29362,7 @@ window.bsExecuteBreed=function(){
         var offGen=result.nonce;
         if(window.FG_Data&&window.FG_Data.addSeed){
           var res=window.FG_Data.addSeed({seedHash:offHash,parentAHash:_plantA.hash,parentBHash:mate.hash,nonce:offGen});
-          if(!res.ok){if(window._toast)window._toast('Nursery full (3/3). Bloom or abandon a seed first.');return;}
+          if(!res.ok){if(window._toast)window._toast('Nursery full. Bloom or abandon a seed first.');return;}
         }
         // Increment breedCount on both parents
         var _bcGh2=[];try{_bcGh2=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
