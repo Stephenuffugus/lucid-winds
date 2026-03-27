@@ -25834,22 +25834,140 @@ function _loadAll(){
   if(!document.getElementById('_fA')){var s=document.createElement('style');s.id='_fA';s.textContent='@keyframes _fP{0%,100%{transform:translate(-50%,-50%) scale(1);box-shadow:0 0 10px rgba(200,168,75,0.5);}50%{transform:translate(-50%,-50%) scale(1.25);box-shadow:0 0 18px rgba(200,168,75,0.7);}}@keyframes _fR{0%{width:14px;height:14px;opacity:0.5;}100%{width:36px;height:36px;opacity:0;}}';document.head.appendChild(s);}
 }
 
-// ═══ FERAL SPAWNING ═══
+// ═══ FERAL SPAWNING — Breeding Pair System ═══
+// Ferals only spawn when 2+ plants exist in same/adjacent zones.
+// 8% daily chance per breeding pair. Offspring rarity from parents.
+// Wind-directed placement. Natural selection in full zones.
+var FERAL_SPAWN_RATE = 0.08;
+var FERAL_ZONE_CAP = 2;
+
+// Breed hash — crypto.getRandomValues with parent byte mixing
+function _breedHash(hashA, hashB) {
+  var _rb = new Uint8Array(32);
+  crypto.getRandomValues(_rb);
+  var offspring = Array.from(_rb).map(function(b){return b.toString(16).padStart(2,'0');}).join('').split('');
+  // 70% parent fidelity: copy bytes from parents
+  for (var b = 0; b < 64; b++) {
+    var roll = _rb[b % 32] / 255;
+    if (roll < 0.35 && hashA && hashA.charAt(b)) {
+      offspring[b] = hashA.charAt(b);
+    } else if (roll < 0.70 && hashB && hashB.charAt(b)) {
+      offspring[b] = hashB.charAt(b);
+    }
+  }
+  return offspring.join('');
+}
+
+// Adjust offspring rarity — nudge hash bytes to target tier
+function _adjustOffspringRarity(hash, gradeA, gradeB) {
+  var tiers = ['Common','Uncommon','Rare','Epic','Legendary','Mythic','Cosmic'];
+  var idxA = tiers.indexOf(gradeA); if (idxA < 0) idxA = 0;
+  var idxB = tiers.indexOf(gradeB); if (idxB < 0) idxB = 0;
+  var avg = (idxA + idxB) / 2;
+  var roll = Math.random();
+  var targetIdx;
+  if (roll < 0.10) targetIdx = Math.min(6, Math.ceil(avg) + 1);
+  else if (roll < 0.30) targetIdx = Math.max(0, Math.floor(avg) - 1);
+  else targetIdx = Math.round(avg);
+  var chars = hash.split('');
+  if (targetIdx >= 5) { chars[32] = 'f'; chars[33] = 'e'; }
+  else if (targetIdx >= 3) { chars[32] = 'c'; chars[33] = Math.floor(Math.random() * 4).toString(16); }
+  else if (targetIdx <= 1) { chars[32] = Math.floor(Math.random() * 8).toString(16); chars[33] = Math.floor(Math.random() * 16).toString(16); }
+  if (targetIdx >= 4) { chars[42] = '2'; chars[43] = Math.floor(2 + Math.random() * 6).toString(16); }
+  return chars.join('');
+}
+
 function _spawnFerals(){
   if(!_uLat||!_map)return;
   var td=new Date().toISOString().slice(0,10);
   var data=[];try{data=JSON.parse(localStorage.getItem('fg_ferals')||'[]');}catch(e){}
-  data=data.filter(function(f){return f.date===td&&!f.collected;});
-  var near=0;
-  for(var i=0;i<data.length;i++){if(_dist(_uLat,_uLng,data[i].lat,data[i].lng)<500){near++;_addFeral(data[i]);}}
-  var need=Math.max(0,2-near);
-  for(var f=0;f<need;f++){
-    var a=Math.random()*Math.PI*2,r=0.0008+Math.random()*0.002;
-    var h='';for(var j=0;j<64;j++)h+='0123456789abcdef'[Math.floor(Math.random()*16)];
-    var fe={lat:_uLat+Math.cos(a)*r,lng:_uLng+Math.sin(a)*r,hash:h,date:td,collected:false};
-    data.push(fe);_addFeral(fe);
+  var todayFerals=data.filter(function(f){return f.date===td&&!f.collected;});
+  for(var i=0;i<todayFerals.length;i++){
+    if(_dist(_uLat,_uLng,todayFerals[i].lat,todayFerals[i].lng)<500){_addFeral(todayFerals[i]);}
   }
-  localStorage.setItem('fg_ferals',JSON.stringify(data));
+  var lastBreed='';try{lastBreed=localStorage.getItem('fg_feral_breed_date')||'';}catch(e){}
+  if(lastBreed===td)return;
+  localStorage.setItem('fg_feral_breed_date',td);
+  var allPlants=_getWild().slice();
+  if(allPlants.length<2)return;
+  var zones={};
+  for(var p=0;p<allPlants.length;p++){
+    var pl=allPlants[p];if(!pl||!pl.lat||!pl.lng)continue;
+    var zk=_zoneKey(pl.lat,pl.lng);if(!zones[zk])zones[zk]=[];zones[zk].push(pl);
+  }
+  var pairs=[];var zoneKeys=Object.keys(zones);
+  for(var z=0;z<zoneKeys.length;z++){
+    var plantsHere=zones[zoneKeys[z]];
+    if(plantsHere.length>=2){
+      var pairCount=Math.min(6,Math.floor(plantsHere.length*(plantsHere.length-1)/2));
+      for(var pp=0;pp<pairCount;pp++){
+        var idxA=Math.floor(Math.random()*plantsHere.length);
+        var idxB=(idxA+1+Math.floor(Math.random()*(plantsHere.length-1)))%plantsHere.length;
+        pairs.push({a:plantsHere[idxA],b:plantsHere[idxB],zone:zoneKeys[z]});
+      }
+    }
+  }
+  for(var z1=0;z1<zoneKeys.length;z1++){
+    var parts1=zoneKeys[z1].split(',');var lat1=parseFloat(parts1[0]),lng1=parseFloat(parts1[1]);
+    for(var z2=z1+1;z2<zoneKeys.length;z2++){
+      var parts2=zoneKeys[z2].split(',');var lat2=parseFloat(parts2[0]),lng2=parseFloat(parts2[1]);
+      if(Math.abs(lat1-lat2)<=ZONE_SIZE*1.5&&Math.abs(lng1-lng2)<=ZONE_SIZE*1.5){
+        var pA=zones[zoneKeys[z1]][Math.floor(Math.random()*zones[zoneKeys[z1]].length)];
+        var pB=zones[zoneKeys[z2]][Math.floor(Math.random()*zones[zoneKeys[z2]].length)];
+        pairs.push({a:pA,b:pB,zone:zoneKeys[z1]});
+      }
+    }
+  }
+  if(pairs.length===0)return;
+  var newFerals=[];
+  for(var pr=0;pr<pairs.length;pr++){
+    if(Math.random()>=FERAL_SPAWN_RATE)continue;
+    var parentA=pairs[pr].a,parentB=pairs[pr].b;
+    var offspringHash=_breedHash(parentA.hash,parentB.hash);
+    var gradeA='Common',gradeB='Common';
+    try{if(window.hashToTraits&&window.getTerraGrade){
+      var tA=window.hashToTraits(parentA.hash);gradeA=window.getTerraGrade(tA).name||'Common';
+      var tB=window.hashToTraits(parentB.hash);gradeB=window.getTerraGrade(tB).name||'Common';
+    }}catch(e){}
+    offspringHash=_adjustOffspringRarity(offspringHash,gradeA,gradeB);
+    var windRad=(_wd||0)*Math.PI/180;
+    var baseLat=parseFloat(pairs[pr].zone.split(',')[0]);
+    var baseLng=parseFloat(pairs[pr].zone.split(',')[1]);
+    var targetLat=baseLat+Math.cos(windRad)*ZONE_SIZE+(Math.random()-0.5)*ZONE_SIZE*0.3;
+    var targetLng=baseLng+Math.sin(windRad)*ZONE_SIZE+(Math.random()-0.5)*ZONE_SIZE*0.3;
+    var targetZone=_zoneKey(targetLat,targetLng);
+    var feralsInZone=0;
+    for(var fc=0;fc<todayFerals.length;fc++){if(_zoneKey(todayFerals[fc].lat,todayFerals[fc].lng)===targetZone)feralsInZone++;}
+    for(var fc2=0;fc2<newFerals.length;fc2++){if(_zoneKey(newFerals[fc2].lat,newFerals[fc2].lng)===targetZone)feralsInZone++;}
+    if(feralsInZone>=FERAL_ZONE_CAP){
+      var feralInfo=_buildInfo(offspringHash);var feralTraits=feralInfo.t;
+      var feralEA=window.computeEA?window.computeEA(feralTraits,0):0;
+      var weakest=null,weakestEA=999;var wildPlants=_getWild();
+      for(var wp=0;wp<wildPlants.length;wp++){
+        if(_zoneKey(wildPlants[wp].lat,wildPlants[wp].lng)===targetZone){
+          var wpTraits=null;try{wpTraits=window.hashToTraits(wildPlants[wp].hash);}catch(e){}
+          var wpDays=wildPlants[wp].date?Math.floor((Date.now()-new Date(wildPlants[wp].date).getTime())/86400000):0;
+          var wpEA=window.computeEA?window.computeEA(wpTraits,wpDays):0;
+          if(wpEA<weakestEA){weakestEA=wpEA;weakest=wildPlants[wp];}
+        }
+      }
+      if(weakest&&feralEA>weakestEA){
+        var displaced=_getWild().filter(function(w){return w.hash!==weakest.hash;});_saveWild(displaced);
+        _toast('\ud83c\udf31 Natural selection! A feral (EA '+feralEA+') displaced a weaker plant (EA '+weakestEA+').');
+      } else {continue;}
+    }
+    var feralSeed={lat:targetLat,lng:targetLng,hash:offspringHash,date:td,collected:false,parentA:parentA.hash.slice(0,8),parentB:parentB.hash.slice(0,8)};
+    newFerals.push(feralSeed);todayFerals.push(feralSeed);
+    if(_dist(_uLat,_uLng,targetLat,targetLng)<500){_addFeral(feralSeed);}
+  }
+  var threeDaysAgo=new Date(Date.now()-3*86400000).toISOString().slice(0,10);
+  var allFerals=data.filter(function(f){return f.date>=threeDaysAgo;});
+  allFerals=allFerals.concat(newFerals);
+  localStorage.setItem('fg_ferals',JSON.stringify(allFerals));
+  if(newFerals.length>0){
+    _toast('\ud83c\udf43 '+newFerals.length+' feral seed'+(newFerals.length>1?'s':'')+' blew in on the wind!');
+    if(window._swsLog)_swsLog('Bred '+newFerals.length+' ferals from '+pairs.length+' pairs ('+Math.round(FERAL_SPAWN_RATE*100)+'% rate)','ok');
+  }
 }
 
 function _addFeral(f){
