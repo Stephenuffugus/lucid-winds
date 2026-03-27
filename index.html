@@ -1119,8 +1119,11 @@
     .cb-haiku{font-family:'Playfair Display',serif;font-style:italic;font-size:0.6rem;color:rgba(212,207,188,0.85);line-height:1.6;text-align:center;}
     .cb-hash{font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--sage);opacity:0.5;word-break:break-all;text-align:center;}
     .cb-date{font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--muted);text-align:center;}
-    .cf-name-zone{display:flex;align-items:flex-end;justify-content:center;overflow:hidden;background:transparent;border:none;padding-left:10%;}
-    .cf-name{font-family:'Playfair Display',serif;font-size:1.45rem;font-weight:700;text-align:center;letter-spacing:0.02em;text-shadow:0 2px 8px rgba(0,0,0,0.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;}
+    .cf-name-zone{display:flex;align-items:flex-end;justify-content:center;overflow:hidden;background:transparent;border:none;padding:0 6%;}
+    .cf-name{font-family:'Playfair Display',serif;font-weight:700;text-align:center;letter-spacing:0.02em;text-shadow:0 2px 8px rgba(0,0,0,0.8);width:100%;line-height:1.15;}
+    .cf-name .np-top{display:block;font-size:0.55rem;font-style:italic;letter-spacing:0.06em;opacity:0.7;font-weight:400;}
+    .cf-name .np-main{display:block;font-size:1.3rem;}
+    .cf-name .np-title{display:block;font-size:0.5rem;font-style:italic;letter-spacing:0.05em;opacity:0.65;font-weight:400;margin-top:1px;}
     .cf-art-window{display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0;background:transparent;border:none;}
     .cf-art-window svg{max-height:100%;max-width:80%;height:auto;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));transform:none;}
     .cf-haiku-zone{display:flex;align-items:center;justify-content:center;overflow:hidden;background:transparent;border:none;}
@@ -2047,7 +2050,9 @@
     .card-back-common,.card-back-uncommon,.card-back-rare,.card-back-epic,.card-back-legendary,.card-back-mythic,.card-back-cosmic{background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#050505;}
     .greenhouse-plant svg{margin:0 auto;display:block;}
     .greenhouse-plant .gh-hash{font-family:'DM Mono',monospace;font-size:0.38rem;color:var(--muted);margin-top:0.1rem;opacity:0.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .greenhouse-plant .gh-name{font-family:'Bebas Neue',sans-serif;font-size:0.5rem;letter-spacing:0.04em;margin-top:0.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
+    .greenhouse-plant .gh-name{font-family:'Playfair Display',serif;font-size:0.38rem;font-weight:700;letter-spacing:0.02em;margin-top:0.15rem;line-height:1.15;text-align:center;max-height:2.2em;overflow:hidden;}
+    .greenhouse-plant .gh-name .np-top{display:none;}
+    .greenhouse-plant .gh-name .np-title{display:none;}
     .gh-grid-selector{display:flex;gap:0.25rem;margin-bottom:0.3rem;}
     .gh-grid-btn{background:linear-gradient(180deg,rgba(46,40,32,0.5) 0%,rgba(32,30,24,0.6) 100%);border:1px solid rgba(200,188,160,0.12);color:rgba(200,188,160,0.5);font-family:'DM Mono',monospace;font-size:0.45rem;padding:0.25rem 0.5rem;border-radius:5px;cursor:pointer;min-height:34px;transition:all 0.15s;}
     .gh-grid-btn.active{border-color:rgba(122,179,86,0.3);color:var(--sage);background:rgba(74,124,53,0.1);}
@@ -2396,7 +2401,10 @@
     .bs-role{font-family:'Bebas Neue',sans-serif;font-size:0.5rem;letter-spacing:0.12em;color:var(--muted);opacity:0.5;margin-bottom:0.15rem;}
     .bs-head{display:flex;align-items:center;gap:0.3rem;padding-bottom:0.25rem;border-bottom:1px solid rgba(74,124,53,0.06);margin-bottom:0.2rem;}
     .bs-thumb{width:42px;height:54px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(13,16,12,0.3);border:1px solid rgba(74,124,53,0.08);border-radius:4px;}
-    .bs-name{font-family:'Playfair Display',serif;font-size:0.7rem;font-weight:900;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .bs-name{font-family:'Playfair Display',serif;font-size:0.7rem;font-weight:900;line-height:1.15;overflow:hidden;}
+    .bs-name .np-top{display:inline;font-size:0.4rem;font-style:italic;opacity:0.7;font-weight:400;margin-right:0.15rem;}
+    .bs-name .np-main{font-size:0.65rem;}
+    .bs-name .np-title{display:block;font-size:0.35rem;font-style:italic;opacity:0.6;font-weight:400;}
     .bs-meta{font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.05em;display:flex;gap:0.25rem;margin-top:0.05rem;}
     .bs-row{display:flex;justify-content:space-between;align-items:baseline;padding:0.14rem 0;border-bottom:1px dotted rgba(74,124,53,0.04);}
     .bs-cat{font-size:0.48rem;color:var(--cream);opacity:0.4;letter-spacing:0.04em;flex-shrink:0;}
@@ -18920,6 +18928,31 @@ document.addEventListener('keydown', function(e) {
     return name;
   }
 
+  // ═══ NAMEPLATE — structured HTML for plant names ═══
+  // Splits "The Adjective Noun of the Mythic" into styled parts
+  function buildNameplate(hash) {
+    var t = hashToTraits(hash);
+    var h = (hash || '').toLowerCase();
+    while (h.length < 64) h += '0';
+    var adjIdx = (parseInt(h[22]+h[23]+h[24], 16) || 0) % NAME_ADJ.length;
+    var nounIdx = (parseInt(h[32]+h[33]+h[34], 16) || 0) % NAME_NOUN.length;
+    var adj = NAME_ADJ[adjIdx];
+    var noun = NAME_NOUN[nounIdx];
+
+    var TITLES_MYTHIC = {
+      'The Toad':'of the Toad','The Capybara':'of the Capybara',
+      'Starfall':'of the Starfall','Bioluminescent Pulse':'of the Bioluminescence',
+      'Ancient Rune Field':'of the Ancient Runes','Storm Wraith':'of the Storm',
+      'The Beholder':'of the Beholder'
+    };
+    var title = (t.mythicName !== 'None' && TITLES_MYTHIC[t.mythicName]) ? TITLES_MYTHIC[t.mythicName] : '';
+
+    return '<span class="np-top">The ' + adj + '</span>'
+      + '<span class="np-main">' + noun + '</span>'
+      + (title ? '<span class="np-title">' + title + '</span>' : '');
+  }
+  window.buildNameplate = buildNameplate;
+
   // ═══ REALM — third name component ("of [Realm]") ═══
   function getPlantRealm(hash) {
     var h = (hash || '').toLowerCase();
@@ -20967,7 +21000,7 @@ document.addEventListener('keydown', function(e) {
           _eaKnotHtml +
           '<div class="gh-slot">#' + (realIdx + 1) + '</div>' +
           plantSvg +
-          '<div class="gh-name" style="color:var(--cream);">' + _pName + '</div>' +
+          '<div class="gh-name" style="color:var(--cream);">' + (typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : _pName) + '</div>' +
           (plant.breedCount >= 3 ? '<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(192,112,112,0.7);margin-top:1px;">⚡ SPENT 3/3</div>' : '') +
           (_sea ? '<div style="display:flex;justify-content:center;gap:3px;margin-top:1px;font-size:0.3rem;align-items:center;"><span>' + _sea.emblem + '</span></div>' : '') +
           _ghSymbol;
@@ -21462,7 +21495,8 @@ document.addEventListener('keydown', function(e) {
     var _sNameColor = _seasonColors[_season] || '#d4cfbc';
     var front = '<div class="cs-card-face cs-card-front" data-season="' + sk + '">';
     front += '<div class="cf-ea">' + _ea + '</div>';
-    front += '<div class="cf-name-zone"><div class="cf-name" style="color:' + _sNameColor + ';">' + name + '</div></div>';
+    var _npHtml = typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : name;
+    front += '<div class="cf-name-zone"><div class="cf-name" style="color:' + _sNameColor + ';">' + _npHtml + '</div></div>';
     front += '<div class="cf-art-window">' + svgHtml + '</div>';
     front += '<div class="cf-haiku-zone"><div class="cf-haiku">' + haiku.line1 + '<br>' + haiku.line2 + '<br>' + haiku.line3 + '</div></div>';
     front += '<div class="cs-flip-hint">tap to flip \u2192</div>';
@@ -29171,7 +29205,8 @@ function _renderCard(el,plant,role){
   var svg='';try{if(window._generatePlantSVG)svg=window._generatePlantSVG(plant.hash,26);}catch(e){}
   var h='<div class="bs-role">'+role+'</div>';
   h+='<div class="bs-head"><div class="bs-thumb">'+svg+'</div><div style="flex:1;min-width:0;">';
-  h+='<div class="bs-name" style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">'+i.nm+'</div>';
+  var _bsNp = typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : i.nm;
+  h+='<div class="bs-name" style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">'+_bsNp+'</div>';
   var _bc = plant.breedCount || 0;
   var _bcColor = _bc >= 3 ? 'rgba(192,112,112,0.9)' : _bc >= 2 ? 'rgba(200,168,75,0.9)' : 'var(--muted)';
   h+='<div class="bs-meta"><span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">'+(i.tg?i.tg.icon:'')+' '+(i.tg?i.tg.name:'')+'</span>';
