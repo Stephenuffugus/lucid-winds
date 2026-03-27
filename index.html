@@ -8858,8 +8858,14 @@ document.addEventListener('keydown', function(e) {
         }
         break;
       case 1: // Deep curve left — rises straight, gentle arc left, returns center
+        // Main body
         s += '<path d="M35,78 C35,72 '+(33-parseFloat(hw))+',66 '+(31-parseFloat(hw2))+',58 C'+(30-parseFloat(hw))+',50 '+(32-parseFloat(hw2))+',40 '+(33-parseFloat(hw))+',34 C34,30 34.5,27 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+strokeW+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
-        s += '<path d="M35.6,78 C35.6,72 '+(33.5-parseFloat(hw))+',66 '+(31.5-parseFloat(hw2))+',58 C'+(30.5-parseFloat(hw))+',50 '+(32.5-parseFloat(hw2))+',40 '+(33.5-parseFloat(hw))+',34 C34.2,30 34.8,27 35.4,'+visibleTop+'" stroke="#C4E89A" stroke-width="0.4" fill="none" opacity="'+(op*0.28)+'"/>';
+        // Taper overlay — dark inner shadow
+        s += '<path d="M35,78 C35,72 '+(33-parseFloat(hw))+',66 '+(31-parseFloat(hw2))+',58 C'+(30-parseFloat(hw))+',50 '+(32-parseFloat(hw2))+',40 '+(33-parseFloat(hw))+',34 C34,30 34.5,27 35,'+visibleTop+'" stroke="#0d100c" stroke-width="1.0" fill="none" stroke-linecap="round" opacity="0.2"/>';
+        // Bright rim-light — left edge (light source)
+        s += '<path d="M35.6,78 C35.6,72 '+(33.5-parseFloat(hw))+',66 '+(31.5-parseFloat(hw2))+',58 C'+(30.5-parseFloat(hw))+',50 '+(32.5-parseFloat(hw2))+',40 '+(33.5-parseFloat(hw))+',34 C34.2,30 34.8,27 35.4,'+visibleTop+'" stroke="rgba(240,235,216,0.45)" stroke-width="0.65" fill="none" stroke-linecap="round"/>';
+        // Inner glow — subtle screen blend
+        s += '<path d="M34.4,76 C34.4,71 '+(32.5-parseFloat(hw))+',65 '+(30.5-parseFloat(hw2))+',57 C'+(29.5-parseFloat(hw))+',49 '+(31.5-parseFloat(hw2))+',39 '+(32.5-parseFloat(hw))+',33 C33.5,29 34.2,26 34.6,'+(parseFloat(visibleTop)+1)+'" stroke="#C4E89A" stroke-width="0.35" fill="none" stroke-linecap="round" opacity="0.16" style="mix-blend-mode:screen"/>';
         // Approximate stem profile — key waypoints along the curve
         t._stemProfile = [
           {x: 35, y: 78}, {x: 35, y: 72},
@@ -8886,8 +8892,14 @@ document.addEventListener('keydown', function(e) {
         ];
         break;
       case 3: // Sinuous S — two opposing control points
+        // Main body
         s += '<path d="M35,78 C'+(27+parseFloat(hw))+','+(mid+12)+' '+(43+parseFloat(hw2))+','+(mid-10)+' 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+strokeW+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
-        s += '<path d="M35.7,78 C28,'+mid+' 44,'+(mid-8)+' 35.3,'+visibleTop+'" stroke="#C4E89A" stroke-width="0.4" fill="none" opacity="'+(op*0.28)+'"/>';
+        // Dark shadow — right side
+        s += '<path d="M35.4,78 C'+(27.8+parseFloat(hw))+','+(mid+11)+' '+(43.5+parseFloat(hw2))+','+(mid-9)+' 35.4,'+visibleTop+'" stroke="#0d100c" stroke-width="0.9" fill="none" stroke-linecap="round" opacity="0.2"/>';
+        // Bright rim-light — left edge
+        s += '<path d="M34.3,78 C'+(26.2+parseFloat(hw))+','+(mid+12)+' '+(42.2+parseFloat(hw2))+','+(mid-10)+' 34.3,'+visibleTop+'" stroke="rgba(240,235,216,0.4)" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
+        // Inner glow
+        s += '<path d="M35.7,76 C28,'+mid+' 44,'+(mid-8)+' 35.3,'+(parseFloat(visibleTop)+1)+'" stroke="#C4E89A" stroke-width="0.35" fill="none" opacity="'+(op*0.18)+'" style="mix-blend-mode:screen"/>';
         // Store stem profile — sample S-curve bezier at 8 points
         var _s3p1x = 27+parseFloat(hw), _s3p2x = 43+parseFloat(hw2);
         var _s3p1y = mid+12, _s3p2y = mid-10, _s3p3y = parseFloat(visibleTop);
@@ -8921,12 +8933,16 @@ document.addEventListener('keydown', function(e) {
         }
         break;
       case 5: // Braided — two interleaving C-curves
+        // Shadow between strands — renders first (behind both strands)
+        s += '<path d="M35,78 C35,'+(mid+8)+' 35,'+(mid-6)+' 35,'+visibleTop+'" stroke="#0d100c" stroke-width="2.4" fill="none" opacity="0.15"/>';
         // Left strand
         s += '<path d="M34,78 C'+(30+parseFloat(hw))+','+(mid+8)+' '+(38+parseFloat(hw2))+','+(mid-6)+' 34,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.6" fill="none" opacity="'+op+'"/>';
         // Right strand
         s += '<path d="M36,78 C'+(40+parseFloat(hw))+','+(mid+8)+' '+(32+parseFloat(hw2))+','+(mid-6)+' 36,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.6" fill="none" opacity="'+(op*0.72)+'"/>';
+        // Rim highlight on left strand
+        s += '<path d="M33.6,77 C'+(29.5+parseFloat(hw))+','+(mid+7)+' '+(37.5+parseFloat(hw2))+','+(mid-5)+' 33.6,'+(parseFloat(visibleTop)+1)+'" stroke="rgba(240,235,216,0.4)" stroke-width="0.45" fill="none" stroke-linecap="round"/>';
         // Rim highlight on right strand
-        s += '<path d="M36.3,77 C'+(40.5+parseFloat(hw))+','+(mid+7)+' '+(32.5+parseFloat(hw2))+','+(mid-5)+' 36.3,'+(parseFloat(visibleTop)+1)+'" stroke="rgba(240,235,216,0.35)" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M36.3,77 C'+(40.5+parseFloat(hw))+','+(mid+7)+' '+(32.5+parseFloat(hw2))+','+(mid-5)+' 36.3,'+(parseFloat(visibleTop)+1)+'" stroke="rgba(240,235,216,0.3)" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
         // Profile: alternate between the two strands so leaves attach to whichever is closer
         // Sample BOTH strands and pick the one farther from center (outer surface)
         var _s5Lp1x = 30+parseFloat(hw), _s5Lp2x = 38+parseFloat(hw2);
@@ -8955,6 +8971,10 @@ document.addEventListener('keydown', function(e) {
           zpArr.push('C'+(pzx+parseFloat(hw))+','+(pzy-segH*0.4)+' '+zx+','+(zy+segH*0.4)+' '+zx+','+Math.max(visibleTop,zy));
         }
         s += '<path d="'+zpArr.join(' ')+'" stroke="'+strokeCol+'" stroke-width="2" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        // Dark shadow offset
+        s += '<path d="'+zpArr.join(' ')+'" stroke="#0d100c" stroke-width="1.2" fill="none" stroke-linecap="round" opacity="0.18" transform="translate(0.4,0.3)"/>';
+        // Rim-light
+        s += '<path d="'+zpArr.join(' ')+'" stroke="rgba(240,235,216,0.35)" stroke-width="0.5" fill="none" stroke-linecap="round" transform="translate(-0.3,-0.2)"/>';
         // Store stem profile — zigzag control points
         t._stemProfile = [{x: 35, y: 78}];
         for (var _zpi = 1; _zpi <= segs; _zpi++) {
@@ -8964,8 +8984,16 @@ document.addEventListener('keydown', function(e) {
         }
         break;
       case 7: // Split double — diverging then converging
+        // Shadow between branches
+        s += '<path d="M35,78 L35,'+visibleTop+'" stroke="#0d100c" stroke-width="2.0" fill="none" opacity="0.12"/>';
+        // Left branch
         s += '<path d="M34.5,78 C'+(32+parseFloat(hw))+','+(mid+6)+' '+(31+parseFloat(hw2))+','+mid+' 33,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        // Right branch
         s += '<path d="M35.5,78 C'+(38+parseFloat(hw))+','+(mid+6)+' '+(39+parseFloat(hw2))+','+mid+' 37,'+(visibleTop+2)+'" stroke="'+strokeCol+'" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="'+(op*0.8)+'"/>';
+        // Rim-light on left branch
+        s += '<path d="M34.1,77 C'+(31.5+parseFloat(hw))+','+(mid+5)+' '+(30.5+parseFloat(hw2))+','+(mid-1)+' 32.6,'+(parseFloat(visibleTop)+1)+'" stroke="rgba(240,235,216,0.38)" stroke-width="0.45" fill="none" stroke-linecap="round"/>';
+        // Rim-light on right branch
+        s += '<path d="M35.9,77 C'+(38.5+parseFloat(hw))+','+(mid+5)+' '+(39.5+parseFloat(hw2))+','+(mid-1)+' 37.4,'+(parseFloat(visibleTop)+3)+'" stroke="rgba(240,235,216,0.3)" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
         // Store both branch paths for leaf placement
         t._dblLeft = []; t._dblRight = [];
         for (var _d7i = 0; _d7i <= 8; _d7i++) {
@@ -9205,7 +9233,12 @@ document.addEventListener('keydown', function(e) {
         var _kinkTopX = 35 + side * (parseFloat(hw2) * 1.5);
         s += '<path d="M' + _kinkX.toFixed(1) + ',' + _kinkY.toFixed(1) + ' C' + (_kinkX + side * 0.5).toFixed(1) + ',' + (_kinkY - 4).toFixed(1) + ' ' + (_kinkTopX + parseFloat(hw) * 0.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 5).toFixed(1) + ' ' + _kinkTopX.toFixed(1) + ',' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + (parseFloat(strokeW) * 0.85).toFixed(1) + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
         s += '<ellipse cx="' + _kinkX.toFixed(1) + '" cy="' + _kinkY.toFixed(1) + '" rx="2.2" ry="1.3" fill="' + strokeCol + '" opacity="' + (op * 0.3).toFixed(2) + '"/>';
-        s += '<path d="M35.5,78 C' + (35.5 + parseFloat(hw) * 0.2).toFixed(1) + ',' + (78 - (78 - _kinkY) * 0.3).toFixed(1) + ' ' + (_kinkX - side * 0.5).toFixed(1) + ',' + (_kinkY + 2).toFixed(1) + ' ' + _kinkX.toFixed(1) + ',' + _kinkY.toFixed(1) + '" stroke="#C4E89A" stroke-width="0.3" fill="none" opacity="' + (op * 0.2).toFixed(2) + '"/>';
+        // Dark shadow on lower segment
+        s += '<path d="M35.3,78 C' + (35.3 + parseFloat(hw) * 0.3).toFixed(1) + ',' + (78 - (78 - _kinkY) * 0.35).toFixed(1) + ' ' + (_kinkX - side * 0.8).toFixed(1) + ',' + (_kinkY + 2.5).toFixed(1) + ' ' + _kinkX.toFixed(1) + ',' + _kinkY.toFixed(1) + '" stroke="#0d100c" stroke-width="0.9" fill="none" opacity="0.18"/>';
+        // Bright rim-light on lower segment
+        s += '<path d="M34.5,78 C' + (34.5 + parseFloat(hw) * 0.25).toFixed(1) + ',' + (78 - (78 - _kinkY) * 0.38).toFixed(1) + ' ' + (_kinkX - side * 1.2).toFixed(1) + ',' + (_kinkY + 3).toFixed(1) + ' ' + (_kinkX - side * 0.3).toFixed(1) + ',' + _kinkY.toFixed(1) + '" stroke="rgba(240,235,216,0.38)" stroke-width="0.55" fill="none" stroke-linecap="round"/>';
+        // Inner glow
+        s += '<path d="M35.5,78 C' + (35.5 + parseFloat(hw) * 0.2).toFixed(1) + ',' + (78 - (78 - _kinkY) * 0.3).toFixed(1) + ' ' + (_kinkX - side * 0.5).toFixed(1) + ',' + (_kinkY + 2).toFixed(1) + ' ' + _kinkX.toFixed(1) + ',' + _kinkY.toFixed(1) + '" stroke="#C4E89A" stroke-width="0.3" fill="none" opacity="' + (op * 0.16).toFixed(2) + '" style="mix-blend-mode:screen"/>';
         // Store stem profile — two segments: base→kink, kink→top
         t._stemProfile = [
           {x: 35, y: 78},
@@ -9225,6 +9258,12 @@ document.addEventListener('keydown', function(e) {
         var _forkRx = 35 + _forkSpread + parseFloat(hw2) * 0.5;
         s += '<path d="M35,' + _forkY.toFixed(1) + ' C' + (35 + _forkSpread * 0.3).toFixed(1) + ',' + (_forkY - 4).toFixed(1) + ' ' + (_forkRx - 1).toFixed(1) + ',' + (parseFloat(visibleTop) + 4).toFixed(1) + ' ' + _forkRx.toFixed(1) + ',' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + (parseFloat(strokeW) * 0.7).toFixed(1) + '" fill="none" stroke-linecap="round" opacity="' + (op * 0.85).toFixed(2) + '"/>';
         s += '<ellipse cx="35" cy="' + _forkY.toFixed(1) + '" rx="2.5" ry="1.5" fill="' + strokeCol + '" opacity="' + (op * 0.25).toFixed(2) + '"/>';
+        // Rim-light on main trunk
+        s += '<path d="M34.2,78 C' + (34.2 + parseFloat(hw) * 0.4).toFixed(1) + ',' + (mid + 5).toFixed(1) + ' ' + (34.2 + parseFloat(hw2) * 0.2).toFixed(1) + ',' + (_forkY + 5).toFixed(1) + ' 34.2,' + _forkY.toFixed(1) + '" stroke="rgba(240,235,216,0.4)" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
+        // Rim-light on left branch
+        s += '<path d="M34.5,' + _forkY.toFixed(1) + ' C' + (34.5 - _forkSpread * 0.25).toFixed(1) + ',' + (_forkY - 3.5).toFixed(1) + ' ' + (_forkLx + 1.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 3.5).toFixed(1) + ' ' + (_forkLx + 0.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 0.5) + '" stroke="rgba(240,235,216,0.35)" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
+        // Rim-light on right branch
+        s += '<path d="M35.5,' + _forkY.toFixed(1) + ' C' + (35.5 + _forkSpread * 0.25).toFixed(1) + ',' + (_forkY - 3.5).toFixed(1) + ' ' + (_forkRx - 1.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 3.5).toFixed(1) + ' ' + (_forkRx - 0.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 0.5) + '" stroke="rgba(240,235,216,0.3)" stroke-width="0.35" fill="none" stroke-linecap="round"/>';
         s += '<path d="M35,78 C35,' + (mid + 6) + ' 35,' + (_forkY + 6) + ' 35,' + _forkY.toFixed(1) + '" stroke="#0d100c" stroke-width="0.6" fill="none" opacity="0.15"/>';
         s += '<path d="M34.2,78 C34.2,' + (mid + 5) + ' 34.2,' + (_forkY + 5) + ' 34.2,' + _forkY.toFixed(1) + '" stroke="rgba(240,235,216,0.35)" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
         // Store fork data — leaf renderer alternates branches above fork
