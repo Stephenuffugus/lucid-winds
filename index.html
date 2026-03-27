@@ -18840,20 +18840,97 @@ document.addEventListener('keydown', function(e) {
         s += '<line x1="54.5" y1="25.5" x2="55.2" y2="26.3" stroke="#2A2820" stroke-width="0.08"/>';
         s += '</g>';
         break;
-      case 24: // Butterfly
-        s += '<g opacity="0.55">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;2,-3;-1,1;0,0" dur="6s" repeatCount="indefinite"/>';
-        s += '<ellipse cx="58" cy="22" rx="3" ry="2" fill="#8B5E6B" transform="rotate(-20,58,22)"/>';
-        s += '<ellipse cx="62" cy="22" rx="3" ry="2" fill="#8B5E6B" transform="rotate(20,62,22)"/>';
-        s += '<line x1="60" y1="20" x2="60" y2="24" stroke="#5C3D5E" stroke-width="0.5"/>';
+      case 24: // Monarch Butterfly — stained-glass wings, drifting near bloom
+        // Danaus plexippus: the world's most recognizable butterfly.
+        // Orange wings with black veining like a stained-glass window,
+        // white spots along borders. Clubbed antennae. The icon.
+        s += '<g opacity="0.72" transform="translate(60,22) scale(1.3) translate(-60,-22)">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;1.5,-2;-0.8,1;0.5,-1.5;0,0" dur="6s" repeatCount="indefinite"/>';
+        // Left forewing — orange with black veining
+        s += '<path d="M60,22 Q57,20 55,18 Q54,17 55,19 Q56,21 58,22 Q56.5,23 55.5,25 Q55,26 56,25 Q58,23 60,22" fill="#E08830" opacity="0.7"/>';
+        // Right forewing
+        s += '<path d="M60,22 Q63,20 65,18 Q66,17 65,19 Q64,21 62,22 Q63.5,23 64.5,25 Q65,26 64,25 Q62,23 60,22" fill="#D87828" opacity="0.65"/>';
+        // Left hindwing — slightly rounder, with tail
+        s += '<path d="M60,22 Q58,23 56,24.5 Q55,25.5 56,25 Q58,24 60,22.5" fill="#E08830" opacity="0.55"/>';
+        // Right hindwing
+        s += '<path d="M60,22 Q62,23 64,24.5 Q65,25.5 64,25 Q62,24 60,22.5" fill="#D87828" opacity="0.5"/>';
+        // Black vein lines — the stained-glass framework
+        s += '<path d="M60,22 L56,19" stroke="#1A1A18" stroke-width="0.2" opacity="0.5"/>';
+        s += '<path d="M60,22 L57.5,18" stroke="#1A1A18" stroke-width="0.18" opacity="0.45"/>';
+        s += '<path d="M60,22 L64,19" stroke="#1A1A18" stroke-width="0.2" opacity="0.5"/>';
+        s += '<path d="M60,22 L62.5,18" stroke="#1A1A18" stroke-width="0.18" opacity="0.45"/>';
+        s += '<path d="M60,22 L56.5,24.5" stroke="#1A1A18" stroke-width="0.15" opacity="0.4"/>';
+        s += '<path d="M60,22 L63.5,24.5" stroke="#1A1A18" stroke-width="0.15" opacity="0.4"/>';
+        // White border spots — characteristic monarch pattern
+        s += '<circle cx="55.5" cy="18.5" r="0.2" fill="rgba(240,235,216,0.5)"/>';
+        s += '<circle cx="56.5" cy="18" r="0.18" fill="rgba(240,235,216,0.45)"/>';
+        s += '<circle cx="64.5" cy="18.5" r="0.2" fill="rgba(240,235,216,0.5)"/>';
+        s += '<circle cx="63.5" cy="18" r="0.18" fill="rgba(240,235,216,0.45)"/>';
+        s += '<circle cx="55.5" cy="25" r="0.15" fill="rgba(240,235,216,0.4)"/>';
+        s += '<circle cx="64.5" cy="25" r="0.15" fill="rgba(240,235,216,0.4)"/>';
+        // Body — black, slender
+        s += '<line x1="60" y1="20.5" x2="60" y2="24" stroke="#1A1A18" stroke-width="0.5" stroke-linecap="round"/>';
+        // Head
+        s += '<circle cx="60" cy="20.3" r="0.4" fill="#1A1A18"/>';
+        // Clubbed antennae (butterfly — NOT feathery)
+        s += '<path d="M59.8,20 Q59,19 58.5,18.5" stroke="#1A1A18" stroke-width="0.1" fill="none" stroke-linecap="round"/>';
+        s += '<circle cx="58.5" cy="18.5" r="0.12" fill="#1A1A18"/>';
+        s += '<path d="M60.2,20 Q61,19 61.5,18.5" stroke="#1A1A18" stroke-width="0.1" fill="none" stroke-linecap="round"/>';
+        s += '<circle cx="61.5" cy="18.5" r="0.12" fill="#1A1A18"/>';
+        // Wing flutter — gentle tilt animation
+        s += '<animateTransform attributeName="transform" type="rotate" values="-3,60,22;5,60,22;-3,60,22" dur="2s" repeatCount="indefinite" additive="sum"/>';
         s += '</g>';
         break;
-      case 25: // Moth — subtle, ghostly
-        s += '<g opacity="0.3">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;-1,2;1,-1;0,0" dur="8s" repeatCount="indefinite"/>';
-        s += '<ellipse cx="10" cy="18" rx="2.5" ry="3" fill="#EAE0C8" transform="rotate(-15,10,18)"/>';
-        s += '<ellipse cx="14" cy="18" rx="2.5" ry="3" fill="#EAE0C8" transform="rotate(15,14,18)"/>';
-        s += '<circle cx="12" cy="18" r="0.8" fill="#7A7A6E"/>';
+      case 25: // Luna Moth — ghostly pale-green with trailing tails
+        // Actias luna: the most ethereal insect in North America. Pale
+        // lime-green wings with long sweeping hindwing tails, eyespots,
+        // and feathery antennae. Adults live only ~7 days, have no mouth,
+        // and exist solely to find a mate by moonlight. Ghostly and brief.
+        s += '<g opacity="0.48" transform="translate(12,18) scale(1.3) translate(-12,-18)">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;-1,1.5;0.8,-0.5;-0.5,1;0,0" dur="8s" repeatCount="indefinite"/>';
+        // Left forewing — broad, falcate (sickle-curved outer edge)
+        s += '<path d="M12,18 Q9,16 7,14 Q6,13.5 7,15 Q8,17 10,18 Q8.5,19 7.5,21 Q7,22 8,21 Q10,19 12,18" fill="#A0D880" opacity="0.5"/>';
+        // Right forewing
+        s += '<path d="M12,18 Q15,16 17,14 Q18,13.5 17,15 Q16,17 14,18 Q15.5,19 16.5,21 Q17,22 16,21 Q14,19 12,18" fill="#98D078" opacity="0.45"/>';
+        // Left hindwing with TRAILING TAIL (luna moth signature!)
+        s += '<path d="M12,18 Q10,19 8.5,20.5 Q8,22 8.5,21 Q10,20 12,19" fill="#A0D880" opacity="0.4"/>';
+        s += '<path d="M8.5,21 Q7.5,23.5 8,25 Q8.5,25.5 8.5,24.5 Q8,23 8.5,21" fill="#90C870" opacity="0.35"/>';
+        // Right hindwing tail
+        s += '<path d="M12,18 Q14,19 15.5,20.5 Q16,22 15.5,21 Q14,20 12,19" fill="#98D078" opacity="0.38"/>';
+        s += '<path d="M15.5,21 Q16.5,23.5 16,25 Q15.5,25.5 15.5,24.5 Q16,23 15.5,21" fill="#88C068" opacity="0.32"/>';
+        // Wing veins — delicate, radiating from body
+        s += '<path d="M12,18 L8,15" stroke="rgba(130,190,100,0.15)" stroke-width="0.1"/>';
+        s += '<path d="M12,18 L9,16" stroke="rgba(130,190,100,0.12)" stroke-width="0.08"/>';
+        s += '<path d="M12,18 L16,15" stroke="rgba(130,190,100,0.15)" stroke-width="0.1"/>';
+        s += '<path d="M12,18 L15,16" stroke="rgba(130,190,100,0.12)" stroke-width="0.08"/>';
+        // EYESPOTS — one on each forewing (luna moth identifier)
+        // Left eyespot — concentric rings
+        s += '<circle cx="9" cy="16.5" r="0.6" fill="rgba(80,60,100,0.2)"/>';
+        s += '<circle cx="9" cy="16.5" r="0.35" fill="rgba(200,180,80,0.2)"/>';
+        s += '<circle cx="9" cy="16.5" r="0.15" fill="rgba(40,30,60,0.3)"/>';
+        // Right eyespot
+        s += '<circle cx="15" cy="16.5" r="0.6" fill="rgba(80,60,100,0.2)"/>';
+        s += '<circle cx="15" cy="16.5" r="0.35" fill="rgba(200,180,80,0.2)"/>';
+        s += '<circle cx="15" cy="16.5" r="0.15" fill="rgba(40,30,60,0.3)"/>';
+        // Leading edge highlight — darker front edge of forewing
+        s += '<path d="M12,18 Q9,16 7,14" fill="none" stroke="rgba(150,100,80,0.15)" stroke-width="0.3"/>';
+        s += '<path d="M12,18 Q15,16 17,14" fill="none" stroke="rgba(150,100,80,0.15)" stroke-width="0.3"/>';
+        // Body — white, furry
+        s += '<ellipse cx="12" cy="18" rx="0.5" ry="1.5" fill="#E8E0D0" opacity="0.6"/>';
+        s += '<ellipse cx="12" cy="18" rx="0.35" ry="1" fill="#F0EAD8" opacity="0.3"/>';
+        // Head
+        s += '<circle cx="12" cy="16.8" r="0.4" fill="#E0D8C8" opacity="0.5"/>';
+        // Feathery antennae (moth — NOT clubbed like butterfly)
+        // Plumose (feather-like) — the male luna moth's antennae are magnificent
+        s += '<path d="M11.8,16.5 Q11,15.5 10.5,15" stroke="#C0B8A0" stroke-width="0.12" fill="none"/>';
+        s += '<path d="M12.2,16.5 Q13,15.5 13.5,15" stroke="#C0B8A0" stroke-width="0.12" fill="none"/>';
+        // Antenna plumes — tiny side branches
+        s += '<line x1="11" y1="15.8" x2="10.5" y2="15.5" stroke="#C0B8A0" stroke-width="0.06"/>';
+        s += '<line x1="11.2" y1="15.5" x2="10.8" y2="15.2" stroke="#C0B8A0" stroke-width="0.06"/>';
+        s += '<line x1="13" y1="15.8" x2="13.5" y2="15.5" stroke="#C0B8A0" stroke-width="0.06"/>';
+        s += '<line x1="12.8" y1="15.5" x2="13.2" y2="15.2" stroke="#C0B8A0" stroke-width="0.06"/>';
+        // Moonlight glow — luna moths are associated with the moon
+        s += '<ellipse cx="12" cy="18" rx="3" ry="3.5" fill="rgba(160,220,130,0.03)"><animate attributeName="opacity" values="0.03;0.06;0.03" dur="4s" repeatCount="indefinite"/></ellipse>';
         s += '</g>';
         break;
       // ── set-103-8-14: NEW COMPANIONS (ChatGPT Art Round) ───────────────
