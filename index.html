@@ -2053,6 +2053,14 @@
     .gh-grid-btn.active{border-color:rgba(122,179,86,0.3);color:var(--sage);background:rgba(74,124,53,0.1);}
     .gh-grid-btn:hover{border-color:rgba(200,188,160,0.25);}
     .greenhouse-plant .gh-date{font-size:0.38rem;color:var(--muted);opacity:0.3;}
+    .lt-tree{margin-top:0.35rem;padding:0.3rem;background:rgba(13,16,12,0.3);border-radius:6px;border:1px solid rgba(74,124,53,0.06);}
+    .lt-section-title{font-family:'Bebas Neue',sans-serif;font-size:0.38rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.2rem;}
+    .lt-branch{margin-bottom:0.2rem;padding-left:0.3rem;border-left:1px solid rgba(74,124,53,0.1);}
+    .lt-parent{display:flex;align-items:center;gap:0.2rem;font-size:0.35rem;margin:1px 0;}
+    .lt-label{font-family:'DM Mono',monospace;font-size:0.3rem;color:var(--muted);width:0.8rem;text-align:center;flex-shrink:0;}
+    .lt-name{font-family:'Playfair Display',serif;font-size:0.36rem;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%;}
+    .lt-meta{font-family:'DM Mono',monospace;font-size:0.3rem;color:var(--muted);}
+    .lt-grandparents{padding-left:0.5rem;opacity:0.7;}
     .greenhouse-plant .gh-traits{font-family:'DM Mono',monospace;font-size:0.35rem;color:var(--sage);margin-top:0.1rem;opacity:0.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .greenhouse-plant .gh-slot{position:absolute;top:3px;left:5px;font-family:'Bebas Neue',sans-serif;font-size:0.55rem;color:rgba(122,179,86,0.35);text-shadow:0 0 6px rgba(122,179,86,0.15);letter-spacing:0.02em;}
     .cross-badge{display:inline-block;font-family:'DM Mono',monospace;font-size:0.28rem;letter-spacing:0.06em;color:#8BBFE0;background:rgba(91,143,185,0.12);border:1px solid rgba(91,143,185,0.3);border-radius:3px;padding:0.06rem 0.25rem;margin-top:0.1rem;vertical-align:middle;}
@@ -3992,16 +4000,24 @@ window.onerror=function(msg,url,line,col,err){
     <div class="panel-header">
       <div class="panel-header-title">PLANTS</div>
       <div style="display:flex;align-items:center;gap:0.4rem;">
-        <div class="greenhouse-count" id="gh-count">0 / 50</div>
+        <div class="greenhouse-count" id="gh-count">0 / 10</div>
+        <button id="gh-expand-btn" onclick="expandGHSlot()" style="font-family:'Bebas Neue',sans-serif;font-size:0.4rem;letter-spacing:0.06em;background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.3);color:var(--gold);border-radius:5px;padding:0.15rem 0.4rem;cursor:pointer;min-height:28px;white-space:nowrap;">+ SLOT (1 π)</button>
       </div>
     </div>
     <div class="gh-progress">
       <div class="gh-progress-bar"><div class="gh-progress-fill" id="gh-progress-fill" style="width:0%"></div></div>
     </div>
-    <div class="gh-grid-selector">
-      <button class="gh-grid-btn" onclick="setGHGrid(1)">1×1</button>
-      <button class="gh-grid-btn" onclick="setGHGrid(2)">2×2</button>
-      <button class="gh-grid-btn active" onclick="setGHGrid(5)">Grid</button>
+    <div class="gh-grid-selector" style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="display:flex;gap:0.2rem;" id="gh-grid-btns">
+        <button class="gh-grid-btn" onclick="setGHGrid(1)">1×1</button>
+        <button class="gh-grid-btn" onclick="setGHGrid(2)">2×2</button>
+        <button class="gh-grid-btn active" onclick="setGHGrid(5)">Grid</button>
+      </div>
+      <div style="display:flex;gap:0.2rem;" id="gh-sort-btns">
+        <button class="gh-grid-btn active" onclick="setGHSort('newest')">New</button>
+        <button class="gh-grid-btn" onclick="setGHSort('rarest')">Rare</button>
+        <button class="gh-grid-btn" onclick="setGHSort('name')">A-Z</button>
+      </div>
     </div>
     <div class="greenhouse-grid" id="greenhouse-grid">
       <div class="greenhouse-empty">No Plants yet. Complete a game to mint your first one.</div>
@@ -4572,6 +4588,10 @@ window.onerror=function(msg,url,line,col,err){
         <button class="pgm-act-btn gold" onclick="openMarketModal()">🌐 TRADE</button>
         <button class="pgm-act-btn gold" onclick="openPrintModal()">🖨 PRINT</button>
       </div>
+      <div class="pgm-btn-row">
+        <button class="pgm-act-btn" onclick="carouselBreed()" style="border-color:rgba(200,168,75,0.3);color:var(--gold);">🧬 BREED</button>
+        <button class="pgm-act-btn" onclick="carouselCompost()" style="border-color:rgba(139,46,46,0.3);color:rgba(192,112,112,0.9);">🧪 COMPOST</button>
+      </div>
     </div>
 
   </div>
@@ -4984,7 +5004,7 @@ document.addEventListener('keydown', function(e) {
       mutation:     mutByte,
       mutationName: mutName,
       mythic:       mythByte,
-      mythicName:   'None', // set-103-8-14: mythic layer removed — creatures moved to companions
+      mythicName:   mythName,
       isRare: goldenPot||glowFlower||crystalBase||mutName!=='None'||mythName!=='None',
       season: hb(22) % 4  // 0=Spring, 1=Summer, 2=Autumn, 3=Winter
     };
@@ -5155,6 +5175,21 @@ document.addEventListener('keydown', function(e) {
     if (t.companion >= 34 && t.companion <= 36) score += 3;
     if (t.companion === 37 || t.companion === 38) score += 4;
 
+    // SLOT 10: Mycelial Crown — composted heritage (+2)
+    if (t.mycelialCrown) score += 2;
+
+    // SLOT 12: Breed layers
+    if (t.breedLayers) {
+      if (t.breedLayers.chimeraVein) score += 1;
+      if (t.breedLayers.vigorBand) score += 1;
+      if (t.breedLayers.spectrumLeaf) score += 2;
+      if (t.breedLayers.thornedCrown) score += 2;
+      if (t.breedLayers.biolumSpots) score += 2;
+      if (t.breedLayers.rootTendrils) score += 1;
+      if (t.breedLayers.canopyWeave) score += 1;
+      if (t.breedLayers.aerialRoot) score += 1;
+    }
+
     // Find highest qualifying tier
     var grade = _TERRA_GRADES[0];
     for (var gi = _TERRA_GRADES.length - 1; gi >= 0; gi--) {
@@ -5164,6 +5199,74 @@ document.addEventListener('keydown', function(e) {
   };
 
   // _TERRA_GRADES: internal only — not exposed on window (anti-cheat)
+
+  // ═══ BREED LAYER ENGINE — deterministic layer activation at bloom ═══
+  // Uses seed hash bytes 40-53 for probability rolls (no Math.random).
+  // Max 4 layers per plant. Highest Terra-value layers kept if >4 trigger.
+  // Called by _executeBloom after the child hash is computed.
+  function evaluateBreedLayers(tA, tB, seedHash, pALayers, pBLayers) {
+    function roll(pos) { return parseInt(seedHash[40 + pos] || '8', 16) / 16; }
+    var pA = pALayers || {};
+    var pB = pBLayers || {};
+    var L = {};
+
+    // T1: Chimera Vein — different primary leaf colors, 60%/75%
+    var cvOk = tA.leafColors[0] !== tB.leafColors[0];
+    L.chimeraVein = cvOk && roll(0) < (pA.chimeraVein || pB.chimeraVein ? 0.75 : 0.60);
+
+    // T1: Vigor Band — stem height diff >= 10, 20%/30%
+    var vbOk = Math.abs(tA.stemHeight - tB.stemHeight) >= 10;
+    L.vigorBand = vbOk && roll(1) < (pA.vigorBand ? 0.30 : 0.20);
+
+    // T1: Pollen Dusting — both flower, 35%, never inherits
+    L.pollenDusting = (tA.hasFlower && tB.hasFlower) && roll(2) < 0.35;
+
+    // T1: Root Tendrils — stem types differ by 3+, 25%/30%
+    var rtOk = Math.abs((tA.stem % 15) - (tB.stem % 15)) >= 3;
+    L.rootTendrils = rtOk && roll(3) < (pA.rootTendrils || pB.rootTendrils ? 0.30 : 0.25);
+
+    // T2: Hybrid Bloom — both flower, different types, 30%, never inherits
+    L.hybridBloom = (tA.hasFlower && tB.hasFlower && (tA.flower % 46) !== (tB.flower % 46)) && roll(4) < 0.30;
+
+    // T2: Spectrum Leaf — 4+ unique leaf colors, 15%/75%
+    var allC = {};
+    tA.leafColors.forEach(function(c) { allC[c] = 1; });
+    tB.leafColors.forEach(function(c) { allC[c] = 1; });
+    var slOk = Object.keys(allC).length >= 4;
+    L.spectrumLeaf = slOk && roll(5) < (pA.spectrumLeaf || pB.spectrumLeaf ? 0.75 : 0.15);
+
+    // T2: Canopy Weave — both leafCount 4+, 20%/35%
+    var cwOk = tA.leafCount >= 4 && tB.leafCount >= 4;
+    L.canopyWeave = cwOk && roll(6) < (pA.canopyWeave || pB.canopyWeave ? 0.35 : 0.20);
+
+    // T3: Thorned Crown — Obsidian base (16) + other leafCount 5+, 40%/50%
+    var tcOk = ((tA.base % 30 === 16) && tB.leafCount >= 5) || ((tB.base % 30 === 16) && tA.leafCount >= 5);
+    L.thornedCrown = tcOk && roll(7) < (pA.thornedCrown || pB.thornedCrown ? 0.50 : 0.40);
+
+    // T3: Bioluminescent Spots — Biolum Pulse mythic (comp 34) + leafSize diff > 3, 30%/35%
+    var bsOk = ((tA.companion === 34) || (tB.companion === 34)) && Math.abs(tA.leafSize - tB.leafSize) > 3;
+    L.biolumSpots = bsOk && roll(8) < (pA.biolumSpots || pB.biolumSpots ? 0.35 : 0.30);
+
+    // T3: Aerial Root — Hanging pot (case 4) + tall stem (>40), 15%/25%
+    var arOk = ((tA.pot === 4) && tB.stemHeight > 40) || ((tB.pot === 4) && tA.stemHeight > 40);
+    L.aerialRoot = arOk && roll(9) < (pA.aerialRoot || pB.aerialRoot ? 0.25 : 0.15);
+
+    // Cap at 4 layers — keep highest Terra value
+    var _vals = {
+      chimeraVein:1, vigorBand:1, pollenDusting:0, rootTendrils:1,
+      hybridBloom:1, spectrumLeaf:2, canopyWeave:1,
+      thornedCrown:2, biolumSpots:2, aerialRoot:1
+    };
+    var active = Object.keys(L).filter(function(k) { return L[k]; });
+    if (active.length > 4) {
+      active.sort(function(a, b) { return (_vals[b] || 0) - (_vals[a] || 0); });
+      active.slice(4).forEach(function(k) { L[k] = false; });
+    }
+
+    return L;
+  }
+
+  window.evaluateBreedLayers = evaluateBreedLayers;
 
   // ─────────────────────────────────────────────────────────────────────────
   // Cross-Pollination Engine
@@ -5191,20 +5294,62 @@ document.addEventListener('keydown', function(e) {
     }
     // positions 32-63 come from SEED directly (already set)
 
-    // Mendelian recessive overrides
+    // Mendelian recessive overrides (non-mythic, non-mutation traits)
     if(a[0]==='f' && b[0]==='f') child[0]='f';   // Golden Pot
     if(a[11]==='f'&& b[11]==='f') child[11]='f'; // Glow Flower
-    // Mutation: both mutated → higher tier
+
+    // ── INBREEDING DEPRESSION (Critical Systems spec) ──────────────
+    // Byte positions: mutation = [16,17], mythic = [18,19]
+    // Threshold: 0xD0+ = active trait (Wireframe/Glass/Glitch or Mythic creature)
     var mA=parseInt(a[16]+a[17],16)||0, mB=parseInt(b[16]+b[17],16)||0;
-    if(mA>=0xD0&&mB>=0xD0){
-      var mHigh=Math.max(mA,mB).toString(16).padStart(2,'0');
-      child[16]=mHigh[0]; child[17]=mHigh[1];
-    }
-    // Mythic: both mythic → higher tier
     var yA=parseInt(a[18]+a[19],16)||0, yB=parseInt(b[18]+b[19],16)||0;
-    if(yA>=0xD0&&yB>=0xD0){
-      var yHigh=Math.max(yA,yB).toString(16).padStart(2,'0');
-      child[18]=yHigh[0]; child[19]=yHigh[1];
+    var _sameMut   = mA >= 0xD0 && mB >= 0xD0 && Math.abs(mA - mB) < 16;
+    var _sameMythic = yA >= 0xD0 && yB >= 0xD0 && Math.abs(yA - yB) < 16;
+
+    if (_sameMut && _sameMythic) {
+      // GENETIC COLLAPSE — both byte pairs rerolled from fresh entropy
+      // 0% chance of inheriting either trait
+      var _gcSeed = seed.slice(40, 48); // use unused seed bytes
+      child[16] = _gcSeed[0] || '4'; child[17] = _gcSeed[1] || '2';
+      child[18] = _gcSeed[2] || '3'; child[19] = _gcSeed[3] || '1';
+    } else {
+      // MUTATION bytes
+      if (_sameMut) {
+        // Same mutation on both parents → reroll with 70% chance of losing it
+        var _mReroll = parseInt(seed[48] || '8', 16);
+        if (_mReroll < 11) {
+          // 11/16 = ~69% → trait lost, reroll to sub-threshold
+          child[16] = seed[49] || '6'; child[17] = seed[50] || '3';
+        } else {
+          // 5/16 = ~31% → trait survives but at lower tier
+          var mLow = Math.max(0xD0, Math.min(mA, mB));
+          var mLowHex = mLow.toString(16).padStart(2, '0');
+          child[16] = mLowHex[0]; child[17] = mLowHex[1];
+        }
+      } else if (mA >= 0xD0 && mB >= 0xD0) {
+        // Different mutations — normal Mendelian: higher tier wins
+        var mHigh = Math.max(mA, mB).toString(16).padStart(2, '0');
+        child[16] = mHigh[0]; child[17] = mHigh[1];
+      }
+
+      // MYTHIC bytes
+      if (_sameMythic) {
+        // Same mythic on both parents → reroll with 70% chance of losing it
+        var _yReroll = parseInt(seed[51] || '7', 16);
+        if (_yReroll < 11) {
+          // ~69% → trait lost
+          child[18] = seed[52] || '5'; child[19] = seed[53] || '2';
+        } else {
+          // ~31% → trait survives at lower tier
+          var yLow = Math.max(0xD0, Math.min(yA, yB));
+          var yLowHex = yLow.toString(16).padStart(2, '0');
+          child[18] = yLowHex[0]; child[19] = yLowHex[1];
+        }
+      } else if (yA >= 0xD0 && yB >= 0xD0) {
+        // Different mythics — normal Mendelian: higher tier wins
+        var yHigh = Math.max(yA, yB).toString(16).padStart(2, '0');
+        child[18] = yHigh[0]; child[19] = yHigh[1];
+      }
     }
 
     return { childHash: child.join(''), nonce: nonce };
@@ -9881,7 +10026,7 @@ document.addEventListener('keydown', function(e) {
                  + ' fill="none" stroke="rgba(240,235,216,0.3)" stroke-width="0.4" stroke-linecap="round"/>';
             }
             // ── Needle chimera vein — single central line per needle ──
-            if (true) { // veins always on
+            if (t.chimerGen > 1) { // veins only on bred plants (gen 2+)
               var _nChiColor = shiftedLight;
               var _nChiVar = (parseInt(uid, 16) + i) % 2;
               var _ncvD = '';
@@ -10107,7 +10252,7 @@ document.addEventListener('keydown', function(e) {
             }
           }
           // ── Cactus chimera vein — single faint center line ──
-          if (true) { // veins always on
+          if (t.chimerGen > 1) { // veins only on bred plants (gen 2+)
             var _c14chi = shiftedLight;
             var _c14var = (parseInt(uid, 16) + i) % 2;
             var _c14d = '';
@@ -10124,7 +10269,7 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="' + bodyD + '" fill="'+fill+'" stroke="'+stroke+'" opacity="'+op+'" filter="url(#ds'+uid+')"/>';
           s += '<path d="M'+(ox+side*ls*0.10)+','+(ly-ls*0.18)+' Q'+(ox+side*ls*0.42)+','+(ly-ls*0.26)+' '+(ox+side*ls*0.70)+','+(ly-ls*0.50)+' Q'+(lx+side*ls*0.02)+','+(ly-ls*0.82)+' '+lx+','+ot+'" fill="none" stroke="'+shiftedLight+'" stroke-width="0.42" opacity="'+(op*0.24)+'" stroke-linecap="round"/>';
           s += '<path d="M'+ox+','+ly+' Q'+(ox+side*ls*0.30)+','+(ly-ls*0.48)+' '+(ox+side*ls*0.56)+','+(ly-ls*0.86)+' Q'+(ox+side*ls*0.78)+','+(ly-ls*1.10)+' '+lx+','+ot+'" fill="none" stroke="'+shiftedDark+'" stroke-width="0.5" opacity="'+(op*0.36)+'" stroke-linecap="round"/>';
-          if (true) { // veins always on
+          if (t.chimerGen > 1) { // veins only on bred plants (gen 2+)
             var _c15chi = shiftedLight;
             var _c15var = (parseInt(uid,16)+i)%2;
             var _c15d = '';
@@ -10162,7 +10307,7 @@ document.addEventListener('keydown', function(e) {
             // Specular highlight
             s += '<circle cx="'+(_b.x-_b.r*0.25).toFixed(1)+'" cy="'+(_b.y-_b.r*0.3).toFixed(1)+'" r="'+(_b.r*0.3).toFixed(2)+'" fill="'+shiftedLight+'" opacity="'+(op*0.3).toFixed(2)+'"/>';
           }
-          if (true) { // veins always on
+          if (t.chimerGen > 1) { // veins only on bred plants (gen 2+)
             var _c16chi = shiftedLight;
             var _c16var = (parseInt(uid,16)+i)%2;
             var _c16d = '';
@@ -10262,7 +10407,7 @@ document.addEventListener('keydown', function(e) {
           // Base shadow — darkens where leaf meets petiole
           s += '<path d="M'+(ox-side*ls*0.08)+','+ly+' Q'+(ox+side*ls*0.1)+','+(ly-ls*0.15)+' '+(ox+side*ls*0.25)+','+(ly-ls*0.25)+'" fill="none" stroke="'+shiftedDark+'" stroke-width="0.8" opacity="'+(op*0.2).toFixed(2)+'" stroke-linecap="round"/>';
           // ── Serrated Fern chimera vein ──
-          if (true) { // veins always on
+          if (t.chimerGen > 1) { // veins only on bred plants (gen 2+)
             var _c18chi = shiftedLight;
             var _c18var = (parseInt(uid,16)+i)%2;
             var _c18d = '';
@@ -10288,7 +10433,7 @@ document.addEventListener('keydown', function(e) {
           // Base shadow
           s += '<path d="M'+(ox-side*ls*0.05)+','+ly+' Q'+(ox+side*ls*0.15)+','+(ly-ls*0.15)+' '+(ox+side*ls*0.35)+','+(ly-ls*0.25)+'" fill="none" stroke="'+shiftedDark+'" stroke-width="0.8" opacity="'+(op*0.2).toFixed(2)+'" stroke-linecap="round"/>';
           // ── Fiddle Leaf chimera vein ──
-          if (true) { // veins always on
+          if (t.chimerGen > 1) { // veins only on bred plants (gen 2+)
             var _c19chi = shiftedLight;
             var _c19var = (parseInt(uid,16)+i)%2;
             var _c19d = '';
@@ -10479,7 +10624,7 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="M'+(ox-side*ls*0.04)+','+ly+' Q'+(ox+side*ls*0.08)+','+(ly-ls*0.2)+' '+(ox+side*ls*0.18)+','+(ly-ls*0.35)+'" fill="none" stroke="'+shiftedDark+'" stroke-width="0.8" opacity="'+(op*0.2).toFixed(2)+'" stroke-linecap="round"/>';
 
           // ── Case 23 chimera vein ──
-          if (true) { // veins always on
+          if (t.chimerGen > 1) { // veins only on bred plants (gen 2+)
             var _c23chi = shiftedLight;
             var _c23var = (parseInt(uid,16)+i)%2;
             var _c23d = '';
@@ -10521,7 +10666,7 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="M'+(ox-side*ls*0.05)+','+ly+' Q'+(ox+side*ls*0.08)+','+(ly-ls*0.15)+' '+(ox+side*ls*0.15)+','+(ly-ls*0.3)+'" fill="none" stroke="'+shiftedDark+'" stroke-width="0.8" opacity="'+(op*0.2).toFixed(2)+'" stroke-linecap="round"/>';
 
           // ── Case 24 chimera vein ──
-          if (true) { // veins always on
+          if (t.chimerGen > 1) { // veins only on bred plants (gen 2+)
             var _c24chi = shiftedLight;
             var _c24var = (parseInt(uid,16)+i)%2;
             var _c24d = '';
@@ -10682,7 +10827,7 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="M'+(ox-side*ls*0.05)+','+ly+' Q'+(ox+side*ls*0.12)+','+(ly-ls*0.2)+' '+(ox+side*ls*0.3)+','+(ly-ls*0.35)+'" fill="none" stroke="'+shiftedDark+'" stroke-width="0.8" opacity="'+(op*0.2).toFixed(2)+'" stroke-linecap="round"/>';
 
           // ── Case 27 chimera vein ──
-          if (true) { // veins always on
+          if (t.chimerGen > 1) { // veins only on bred plants (gen 2+)
             var _c27chi = shiftedLight;
             var _c27var = (parseInt(uid,16)+i)%2;
             var _c27d = '';
@@ -10734,7 +10879,7 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="M'+(ox-side*ls*0.04)+','+ly+' Q'+(ox+side*ls*0.1)+','+(ly-ls*0.12)+' '+(ox+side*ls*0.25)+','+(ly-ls*0.22)+'" fill="none" stroke="'+shiftedDark+'" stroke-width="0.8" opacity="'+(op*0.2).toFixed(2)+'" stroke-linecap="round"/>';
 
           // ── Case 28 chimera vein ──
-          if (true) { // veins always on
+          if (t.chimerGen > 1) { // veins only on bred plants (gen 2+)
             var _c28chi = shiftedLight;
             var _c28var = (parseInt(uid,16)+i)%2;
             var _c28d = '';
@@ -11260,7 +11405,7 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="M'+(ox-side*ls*0.05)+','+ly+' Q'+(ox+side*ls*0.15)+','+(ly-ls*0.12)+' '+(ox+side*ls*0.35)+','+(ly-ls*0.18)+'" fill="none" stroke="'+shiftedDark+'" stroke-width="0.8" opacity="'+(op*0.22).toFixed(2)+'" stroke-linecap="round"/>';
 
           // ── Case 37 chimera vein ──
-          if (true) { // veins always on
+          if (t.chimerGen > 1) { // veins only on bred plants (gen 2+)
             var _c37chi = shiftedLight;
             var _c37var = (parseInt(uid,16)+i)%2;
             var _c37d = '';
@@ -18803,406 +18948,8 @@ document.addEventListener('keydown', function(e) {
 
   // ═══ PROCEDURAL HAIKU (set-103: 211×216×216 = 9,844,416 combinations) ═══
   var HAIKU_A = [
-    'Moss drinks from split stone','Seeds wait under ash','Frost grips the root crown','Sap climbs in thin light','Dark mold turns the husk','Wind combs the dry pods','Buds hold their fire','Mycelia spread','Pollen veils the air','Thaw wakes the buried','Cambium hums low','Stone keeps the night cool','Fern tips uncoil slow','Rain salts the black soil','Moth wings stir the bloom','Gnats drift near sweet rot','Bark splits after thaw','Loam folds the seed down','Needles net the mist','Shade pools at the base','Old rings keep the drought','Mold blooms in the cracks','Ash packs the root bed','Cold dew skins the moss','Roots press under stone','Pods dry into bells','The stem keeps its arc','Frost rims the leaf scars','Rain dims the bee tracks','Cap threads through leaf mold','Bog cools the root hair','Moss climbs the north face','Dead bark feeds the seam','Seeds rest in silt beds','The loam stores old heat','Hyphae braid the rot','The husk splits at noon','Moss softens the wall','Peat holds the print still','Stone drinks the day heat','Lichen grips old brick','Thorn hooks catch the fog','Ash feeds the new shoot','Green tips bruise the dark','The loam takes all husks','Cold rain sinks through duff','Moss hides the ant trail','Fog cools the leaf ribs','Bog lifts gas threads','Shade knits around stems','Moss fills the hoof print','Frost nips the soft tips','Loam cools the nest roots','Dawn warms the peat crust','Moss seals the branch fork','Ferns count the drip beats','Peat stains the root threads','Gnats ring the damp air','Stone cools the seed store','Mud slicks the stem base','Night dew wets the awns','Ash ghosts the leaf veins','Rain threads the branch tips','Seeds ride the wasp gust','Loam grips the split nut','Fog wets the cone lips','Moss veils the stump rings','Sap salts the ant jaws','Rain clouds the root well','Spore dust dims moonlight','Clay cools hidden bulbs','Bark drinks quiet rain','Fog crowns the tall reeds','Seeds listen in loam','Caps glow under logs','Cold sap waits below','Green veins stir slowly','Pebbles cradle roots','Moss drinks dim starlight','Night feeds silent buds','Fungal threads wander','Wind tests brittle husks','Roots drink iron rain','Old bark breathes resin','Fern scrolls unfurl slow','Mycelial braids','Moss softens old scars','Rain dims the spines','Clay drinks falling ash','Green pulses stir loam','Bark folds the lichens','Mist feeds quiet caps','Seeds bide in dark seams','Roots map silent veins','Stone sleeps under moss','Hyphae taste old wood','Fern shadows ripple','Moss seals the fracture','Pebbles guard the corm','Caps crown fallen logs','Loam drinks soft thunder','Seeds hide in furrows','Clay swallows the husk','Bark harbors lichens','Mycelial knots','Spores drift through shade','Sepals hold the rain','Pollen stains the dusk','Xylem drinks the fog','Petioles bow low','The cambium sleeps','Fronds darken with dew','Resin seals the scar','Thorns remember frost','Lichen takes the bark','Roots listen in peat','Stamens fade by dusk','Pistils wait in shade','A bract cups the rot','Stone cradles the bulb','Tannins stain the rain','The pod splits in fog','A tuber dreams deep','Phloem hums below','Corm under cold clay','Hyphae map the dark','Rachis bends with dew','Sap cools into dusk','Loam swallows the seed','Petiole in rain','Moss covers the thorn','Frost clings to the bract','Rot sweetens the root','The sepal bruises','Shade gathers in bark','Stolons creep through peat','Anthers dim with rain','Dew beads on calyx','Corollas sink low','Stone remembers roots','Resin coats the thorn','A frond drinks the mist','Loam darkens with sap','Starlight feeds the bloom','Tide pulls at the root','Dawn cracks the dry husk','Petals catch the moon','Ice unlocks the seed','Warmth stirs the old corm','Wind scatters pollen','The grove hums at dusk','Spring splits the hard earth','Clouds shadow the fern','Salt air bends the grass','The vine finds the light','Heat ripens the fruit','Autumn strips the crown','Dew mirrors the sky','The sprout breaks the dark','Currents rock the kelp','Snow guards the deep roots','Fire clears old growth','The bloom turns to face','Peat remembers rain','Embers feed the ash','The tendril reaches','Creek song feeds the bank','Light bends through the leaf','The acorn falls far','Soil holds the first green','Twilight dims the grove','Entropy grows wild','Memory takes root','Threads weave through dark loam','Rime coats the still pond','Bark curls in dry heat','Roots grip the wet ledge','Mist holds the ravine','Spores ride the warm draft','Shade cools the split trunk','Stone wears the rain smooth','Frost etched the dry bark','Roots comb the gravel','Lichen films the arch','Peat darkens the well','Sap beads on cold wood','Salt rims the tide pool','Ferns crowd the north wall','Dew loads the bowed grass','Caps split the bark seam','Wind strips the seed heads','Clay holds the bone still','Moss quilts the stump top','Fog dims the far ridge','Rust stains the seep face','Buds clench through the frost','Ash silts the creek bed','Night cools the bare stone','Stems bow in wet wind','Pods rattle when dry','Loam warms the first roots','Dew fills the cup fern','Bark peels in long strips','Brine crusts the low growth','Spore clouds drift at dusk','Roots fork at the clay','Shade slows the green push','Stone splits from the freeze','Thorns hook the still mist','Frost thins the bark edge','Rain wakes the dry corm','Sap pools in the wound','Moss maps the damp wall','Dew strings the web tight','Wind tests the new growth','Roots read the wet dark','Rime locks the bud scales','Bark knits the old scar','Fog thins at the ridge','Seeds press through the ash','Mold veils the damp grain','Resin seals the break','Bark greys in salt wind','Ice cracks the old wall','Moss eats the grout line','Shade thins at the crown','Spores find the draft first','Dew weighs the bloom down','Silt packs the creek bend','Roots smell the wet chalk','Cold slows the green push','Bark wraps the old wound','Salt dries the low ferns','Fog hides the tree line','Ash drifts on still ponds','Roots pry the flagstone','Dew beads on bare thorns','Mist wraps the bole tight','Grain splits with the frost','Pods hang from dry stems','Stone yields to the root','Bark chars but holds firm','Fog feeds the still moss','Rain scours the bare rock','Buds swell in warm rain','Stems twist toward the gap','Wind hones the ridge pines','Rime builds on each twig','Roots breach the drain tile','Loam seals the old grave','Dawn melts the bud ice','Moss furs the wet slate','Frost paints the dead grass','Roots bridge the crevice','Sap stalls in deep cold','Chalk dust coats the roots','Wind strips the bark clean','Seeds lodge in cracked walls','Rain feeds the blind roots','Spores cling to damp wool','Dusk stills the tall reeds','Roots weave through the scree','Mold creeps through damp straw','Frost locks the clay tight','Bark holds the bolt scar','Rain wets the ash bed','Fog pools in the col','Stone cups the spring rain','Roots find salt by taste','Mist clings to dead elm','Dew drips from the awns','Rime stars the bare twig','Frost seals the bud tight','Mist drapes the still gorge','Bark stores the year cold','Spores bloom in dead elm','Salt cakes the low scrub','Rain finds the fault line','Dew fogs the still leaf','Shade holds the corm safe','Fog drowns the low bloom','Bark flakes in spring thaw','Wind bends the shore grass','Roots feel the flood first','Cold locks the sap still','Moss pads the bird nest','Dew wets the awn tips','Sap drips from pruned limbs','Frost cracks the clay pipe','Rain fills the hoof ruts','Mist thins at the crest','Shade cools the bulb nest','Bark guards the heart wood','Spores dust the wet ledge','Salt prunes the marsh grass','Wind sorts the loose seed','Roots thread the grout lines','Rain drums the broad leaves','Frost sketched the fern fronds','Dew loads the web strands','Moss blanks the grave text','Bark tightens in cold','Roots mine the subsoil','Snow bends the young birch','Fog blurs the tree crowns','Sap gels below frost','Wind scatters the chaff','Dew pearls on the silk','Mist wets the lichen','Bark seals the tap wound','Wind lifts the ripe spore','Rain pocks the dry dust','Snow guards the root crown','Roots sense the spring thaw','Bark maps the wet years','Dew wakes the dry spore','Mist names each contour','Shade weighs the low fern','Wind counts the bare limbs','Rain sounds the deep soil','Snow reads the branch load','Bark knows the wind side','Mold tastes the damp air','Frost probes the cracked glaze','Sap tests the new wood','Dawn stirs the fen birds','Fog names the low ground','Dew finds each groove first','Rain reads the grain slope','Bark counts the lean years','Frost hunts the green stem','Wind reads the tree flags','Moss feels the stone breathe','Rain wakes the still creek','Dew maps the leaf veins','Shade finds the bruised fruit','Frost tastes the green bud','Wind sorts the ripe seed','Rain tests the new leaf','Bark tells the storm years','Fog reads the contours','Roots hear the stream first','Dew weighs the silk down','Frost greets the bare wood','Rain teaches the slope','Moss learns the north face','Shade marks the deer trail','Wind tests the branch join','Dew proves the cold snapped','Frost writes on the glass','Rain weighs the ripe head','Mist maps the creek path','Bark reads the blade scars','One pod ticks the ground','Dew drops from the thorn','Ice lets the branch go','One ant crests the bark','Fog swallows the ridge','One spore holds the dark','Rain dots the dust skin','The shoot leans toward light','The bud holds on tight','One seed braves the crack','Dew lends the moss weight','The fern shields its young','Bark smells of wet rust','Cold stone warms the palm','Rain hits the dust hard','Salt crusts the dry pod','Rain falls on bare ground','Roots go where roots go','The path fades to moss','Just wet stones and moss','The vine took the gate','Moss claims the lost step','Dusk pools in the fern','Frost writes and then leaves','The stump holds its rings','Rain begs at the bark','The bog holds its tongue','One leaf turns alone','The creek finds the low','Wind parts the dead grass','Dawn gilds the wet bark','Shade has its own cold','The oak sheds its dead','Sap moves before dawn','Dew gives what rain lent','The cliff sheds a stone','Roots knit the wound shut','Snow bends and lets go','The pond holds the sky','Ash smells of what burned','Growth splits the old paint','The ridge wears the wind','Rime crowns the bare thorn','Dew weighs more than stone','The root meets the seep','Bark curls toward the sun','Fog eats the old trail','The lichen just grows','Light moves through the leaf','The bark just holds on','The moss asks for shade','Three spores on wet bark','Root tip meets limestone','Two caps in the duff','Sap runs at first thaw','Frost line at two feet','Wind fills the whole gorge','The scree speaks when stepped','Rain fills the cupped moss','The ridge blocks the sun','One frond curls to light','Dew bends the grass blades','Stone cools the bare foot','Bark flakes in the hand','One spore catches wind','The soil smells of rain','Rime films the still pool','Roots sip the dark seep','Shade cools the fox den','The grain holds the years','Fog drapes the still birch','Night feeds the mushroom','Dew runs the vein paths','The bluff sheds its face','Frost beads on the web','Stone holds what it heard','The gulch fills with dark','Peat dyes the stream brown','New roots taste the dark','Rain bows the ripe wheat','Mist beads on the frond','The limb groans with ice','Seeds wait in the char','Dawn thaws the top inch','The cap breaks the duff','Fog turns the wood grey','One seed tests the frost','Dew weighs the silk thread','The fell wears its snow','Roots part the wet clay','Stone keeps what rain gave','The haze dims the fells','Frost nails the bud shut','Rain wakes the stone smell','The crag wears its rime','The bark smells of age','Ice groans in the lake','The root feels the rock','Soil tastes of iron','Rain sounds on the thatch','The cold has a smell','Frost clicks on the glass','Dew chills the bare hand','The wind tastes of salt','Bark roughens the palm','Moss hums with the damp','Stone warms where weight sat','The gorge has its voice','Rain wets the stones smell','Night air cools the tongue','Old wood speaks in creaks','The leaf drips its weight','Fog tastes of the sea','Stone gives off its rain','Roots hum in the dark','Lichen grows at night','Seeds shift in their hulls','Bark heals in the dark','The web mends by dawn','Mold maps the night air','The bloom tracks the sun','Sap rose through the dark','Roots grew while it rained','The root chose the left','Two roots share the seep','The stem counts the hours','Leaves close before rain','The vine picks the strong','Roots warn the neighbors','Seeds count the cold days','The bloom knows the bee','Roots hear the water','The tree marks the wound','One cell holds the plan','The spore weighs nothing','Dew holds the whole sky','One grain starts the dune','The lichen paints slow','Peat builds one leaf thick','Fog brings the salt news','Rain taps a slow code','Frost writes its warning','Dawn reads the dew map','The wind has a taste','Snow muffles the wood','The web reads the wind','Moss knows the dry side','Bark thins at the scar','The bud picks its day','Roots share through the dark','One leaf tests the cold','The pond holds its breath','Dusk thins the birdsong','The cliff talks in drops','Seeds dream in the hull','Bark holds the old scent','The marsh speaks in gas','The moss counts the drips','The vine chose the gap','One cell builds the whole','The moth works the dusk','Stars steer the lost spore','Dark feeds the pale root','Frost writes the first draft','Rain speaks to the seed','The soil smells alive','Bark reads the wind speed','Night wakes the pale moth','The grove hums with trade','Dew beads on the silk','Stone holds the days warmth','Shade guards the young fern','Frost drew the map first','The peat smells of time','Wind reads the bare crown','Moss drinks the fog blind','One root touched the stream','Dawn stirs the damp spore','No one on the hill','Light finds the deep moss','One drop holds the storm','Grass bends with the herd','The rice greets the flood','Ice holds the old breath','Rain darkens the path','Frost whitens the field','Bark roughens with age','Dew silvers the web','Wind shakes the last leaf','Roots drink the spring melt','Moss greens the north side','Snow hides the known path','Sun cracks the dry mud','Fog thins near the creek','Bark stores the cold night','Salt dries the low field','Shade deepens at noon','Rain fills the cracked bowl','Wind strips the dead bark','Frost grips the gate latch','Dew loads the seed head','Roots split the porch step','Moss fills the boot print','Rain beads on the leaf','Snow bends the old fence','Wind dries the fresh cut','Dew wets the turned earth','Frost marks the low spots','Bark peels in the heat','Rain pools in the ruts','Roots lift the old path','Wind hums through the gap','Dew drips from the eave','Roots crack the old pipe','Snow caps the fence posts','Rain wets the fresh stump','Fog hides the tall pines','Wind combs the marsh grass','Rain streaks the bare cliff','Roots grip the stream bank','Snow muffles the woods','Wind bows the wheat field','Dew chills the bare soil','Rain drums the tin roof','Moss softens the grave','Wind tests the weak limbs','Light slants through the trees','Shadows cross the path','Green creeps up the wall','Buds swell on bare limbs','One leaf spins and falls','Crows line the bare oak','Berries stain the stone','Weeds split the tarmac','Vines grip the old sign','Rain drums on the leaves','Owls call in the dark','Twigs snap underfoot','Bees hum in the hedge','Frogs sing in the marsh','Bats click in the barn','Cold mud grips the boot','Sun warms the flat rock','Thorns catch the wool sleeve','Sand shifts underfoot','Peat gives with each step','Cut grass fills the lane','Pine pitch heats the air','Wild garlic fills the wood','Leaf mold scents the trail','Spring comes late this year','First frost came at dawn','The old oak came down','Hail stripped the young corn','Blight hit the old elm','The heron waits still','One hawk rides the draft','The fox crossed at dawn','Snails trace the wet stone','The wren fills the hedge','Ants farm the dark soil','The otter slides through','Geese vee the grey dawn','The mole reads the dark','Spiders claim the eave','The crow guards the field','Slugs silver the path','The toad holds the damp','Swifts scream through the gap','The badger dug the bank','Light spills through the crown','Sun finds the one gap','Gold light hits the bark','Shade shifts with the hours','Dawn bleeds through the mist','Dusk turns the lake gold','Stars fill the cleared sky','Moon whites the bare field','Light pools on the floor','Sun stripes the birch trunks','The lark climbs the dawn','One bee works the sage','The hare crossed the frost','Swifts slice the warm dusk','The pike holds the pool','One ant lifts the crumb','Geese cross the flat grey','The snail crossed the path','Dew weights the long grass','Light shifts on the stream','Wind tests the new leaf','Rain woke the clay smell','Shade crept past the wall','Chalk shows through the mud','The well held through drought','Mist clung to the oaks','Snow sealed the east road','Peat springs at each step','The creek changed its course','Bats looped the dark barn','Rain soaked the turned field','The frog found the damp','Wind stripped the old thatch','Rust bloomed on the chain','Sun split the seed case','The tide turned at noon','Smoke rose from the slash','Stars blazed through the clear','Frost split the clay pipe','The finch picked the seed','Wind found the one gap','Dusk bronzed the whole field','Rain pooled in the rut','The bank slid in the rain','Moon rose through the pines','Leaves blocked the old drain','The field steamed at dawn','Crows stripped the sown field','The fox marked the post','Rain found the roof leak','Dew held in the rose','Wind shook the last plum','Frost etched the still pond','Worms pulled the leaves down','Starlings filled the sky','Brook carved the soft bank','Gold light hit the ridge','The toad sat in the rain','The wren scouts the thorns','re hallways. Purposeful, fearless for 
-their size.
-
-```
-','       (ants-cross-the-cracked-slab = 5) ✓
-```
-Anyone with a patio has watched this. The ants use the crack 
-as a highway. Infrastructure from breakage.
-
-```
-','          (the-hare-froze-mid-field = 5) ✓
-```
-Hares freeze when spotted — total stillness, ears flat, 
-trusting camouflage. You see one ONLY when you','Moths crowd the lit pane','The robin claimed the fork','Crows mob the lone hawk','The vole ran the hedge','Swans hiss at the bank','The mole broke the lawn','s frustration. The mole','Starlings wheeled at dusk','The stoat watched from stone','Geese grazed the school field','t care about 
-property boundaries.
-
-```
-','        (the-jay-screamed-a-warn-ing = 6) ✗
-REWRITE:
-','        (the-jay-screamed-its-a-larm = 6) ✗
-','     (the-jay-shrieked-from-the-oak = 6) ✗
-','            (the-jay-gave-the-a-larm = 6) ✗
-','       (jays-screamed-from-the-oaks = 5) ✓
-```
-Jays are the forest alarm system. Their screams alert every 
-other species to predators. Sentinel behavior.
-
-```
-','         (newts-stirred-in-the-pond = 5) ✓
-```
-Spring. Newts emerging from hibernation into garden ponds.
-That first stirring — slow, tentative, ancient.
-
-```
-','         (the-cuck-oo-called-at-dawn = 5) ✓
-```
-The cuckoo','s 
-most famous announcement. Two notes, unmistakable.
-
-```
-','         (spi-ders-bal-looned-at-dusk = 5) ✓
-```
-Ballooning — spiders releasing silk threads and riding 
-the wind. They can travel hundreds of miles. Baby spiders 
-do this to disperse. You','The heron speared the fish','Mice gnawed the stored grain','The fox dug the nest out','s cruelty 
-stated without judgment. The fox did what foxes do.
-
-### 1B. LIGHT (15 lines)
-
-Different qualities of light. Different times of day.
-Different effects on landscape.
-
-```
-','       (sun-broke-through-the-cloud = 5) ✓
-```
-The moment. Everyone has felt it. Warmth returning after grey.
-
-```
-','          (light-pooled-in-the-dell = 5) ✓
-```
-Light collecting in a low place like water. A dell is a 
-natural light-trap on bright days.
-
-```
-','        (dawn-crept-through-the-fog = 5) ✓
-```
-Slow dawn. Fog diffusing the light. Not a sharp sunrise — 
-a gradual seeping of pale warmth.
-
-```
-','       (dusk-stained-the-west-hills = 5) ✓
-```
-Orange and pink on the western skyline. "Stained" — like 
-dye spreading through fabric. Permanent-looking but 
-temporary.
-
-```
-','         (moon-lit-the-flood-ed-field = 6) ✗
-REWRITE:
-','            (moon-lit-the-bare-field = 5) ✓
-```
-
-```
-','         (light-razed-the-tree-line = 5) ✓
-```
-"Razed" as in "grazed" — light skimming the tops of trees 
-at sunrise or sunset. The treetops catch fire while the 
-trunks stay dark. Wait — "razed" means destroyed. Wrong word.
-REWRITE:
-```
-','        (light-grazed-the-tree-line = 5) ✓
-```
-
-```
-','          (sun-caught-the-wet-slate = 5) ✓
-```
-Wet slate roofs flashing in sudden sun. That specific flash 
-of reflected light off wet stone.
-
-```
-','           (shade-ate-the-east-wall = 5) ✓
-```
-As the sun moves west, shade claims the east-facing wall. 
-"Ate" — shade as consumer, advancing steadily.
-
-```
-','     (stars-pricked-the-black-field = 5) ✓
-```
-Looking up from a dark field at night. Stars not just visible 
-but SHARP — pin-prick bright against pure black.
-
-```
-','      (light-bled-through-the-slats = 5) ✓
-```
-Barn light. Shed light. Light finding gaps in old wood.
-"Bled" — light as liquid, seeping through.
-
-```
-','            (gold-leaf-lit-the-path = 5) ✓
-```
-Autumn leaves on a path, catching low sun. The path glowing 
-gold from reflected leaf-light.
-
-```
-','        (dawn-turned-the-frost-pink = 5) ✓
-```
-That ten-minute window when low dawn light hits frost and 
-turns it rose-pink before it melts. Fleeting, unmistakable.
-
-```
-','     (cloud-shade-crossed-the-wheat = 5) ✓
-```
-Cloud shadows moving across a wheat field. That wave of 
-darkness sweeping over gold. Visible from any hillside.
-
-```
-','         (sun-warmed-the-stone-seat = 5) ✓
-```
-A stone bench in sun. The specific warmth of sun-heated stone 
-under your body. Touch and warmth combined.
-
-```
-','           (light-died-in-the-gorge = 5) ✓
-```
-Deep gorges lose direct light early. The shadow rises from 
-the bottom like dark water filling a channel.
-
-### 1C. SOUND (15 lines)
-
-```
-','      (crows-cawed-through-the-mist = 5) ✓
-```
-Sound in fog. Crows are louder in mist — sound carries 
-differently in wet air.
-
-```
-','        (rain-ticked-the-dry-leaves = 5) ✓
-```
-The first drops of rain on dead leaves. Not drumming yet — 
-ticking. Individual drops, individual sounds.
-
-```
-','       (wind-keened-through-the-wi-re = 6) ✗ — wire = 2
-REWRITE:
-','      (wind-keened-through-the-fence = 5) ✓
-```
-Wire fences singing in wind. That eerie, sustained note.
-"Keened" — a wail for the dead. The fence mourning.
-
-```
-','           (ice-pinged-in-the-glass = 5) ✓
-```
-The sound of ice cracking in a glass of water. But also: 
-ice making sharp sounds as it forms on still water.
-
-```
-','        (the-creek-rushed-the-bridge = 5) ✓
-```
-High water. The sound of a creek pushed past normal level, 
-surging against bridge supports. Urgency.
-
-```
-','          (gra-vel-crunched-the-lane = 5) ✓
-```
-Wait — "crunched" needs a subject. Gravel doesn','Feet crunched the gravel','s an honest observation.
-Actually — our rules say no modern/tech words. Phone is tech.
-REWRITE:
-```
-','         (wind-hummed-the-taut-wi-re = 6) ✗ — wire = 2
-','         (wind-hummed-the-taut-line = 5) ✓
-```
-
-```
-','     (geese-called-through-the-dark = 5) ✓
-```
-Night migration. Geese overhead in darkness. You hear them 
-but can','Rain rang the tin roof','Twigs cracked in the frost','The brook found its voice','Wind roared through the col','Pine creaked in the gale','The bell buoy clanged once','Rooks argued the elm','s exactly what it sounds like.
-
-### 1D. SMELL (15 lines)
-
-The most underrepresented sense in the entire haiku system.
-Smell is the most emotionally powerful sense — direct line 
-to the limbic system, to memory.
-
-```
-','         (wet-earth-filled-the-nose = 5) ✓
-```
-Petrichor. The smell that follows rain on dry ground.
-"Filled the nose" — involuntary, overwhelming, welcome.
-
-```
-','            (pine-warmed-in-the-sun = 5) ✓
-```
-Terpenes releasing from pine needles in heat. The smell 
-of a summer forest. Mediterranean, boreal, everywhere 
-pine grows. The warmth MAKES the smell.
-
-```
-','           (rot-sweet-ened-the-shade = 5) ✓
-```
-Decomposing fruit in an orchard. Sweet, cloying, alive.
-The shade holds the scent. Not unpleasant — complex.
-
-```
-','         (the-hay-barn-smelled-warm = 5) ✓
-```
-Hay. Warm wood. Dust motes. The smell of a barn on a 
-summer afternoon. Temperature and smell fused.
-
-```
-','       (smoke-stained-the-night-air = 5) ✓
-```
-Woodsmoke in cold evening air. The smell that means 
-someone is home. Chimneys, campfires, cooking fires.
-
-```
-','          (mint-burst-from-the-step = 5) ✓
-```
-Wild mint growing in cracks. When you step on it, the 
-scent explodes. Involuntary aromatherapy.
-
-```
-','         (thyme-bruised-on-the-path = 5) ✓
-```
-Wild thyme on footpaths. Same mechanism as mint — crush 
-releases essential oils. Mediterranean, but spreading worldwide.
-
-```
-','            (tar-melt-ed-in-the-heat = 5) ✓
-```
-Hot tar on a summer road or boat hull. That specific 
-petroleum-meets-sun smell. Universal in summer.
-
-```
-','          (sea-weed-banked-the-shore = 5) ✓
-```
-The smell of rotting seaweed at the tide line. Iodine, salt, 
-decay. Not pleasant, not unpleasant — MARINE.
-
-```
-','         (damp-plas-ter-smelled-cold = 5) ✓
-```
-An old building. Damp walls. That specific mineral-cold 
-smell of wet lime plaster. Museums, churches, cellars.
-
-```
-','      (crushed-dock-filled-the-hand = 5) ✓
-```
-Dock leaf crushed in the palm — the remedy for nettle stings.
-Green, astringent, cooling. Every child in Britain knows this.
-
-```
-','          (li-chen-smelled-like-rain = 5) ✓
-```
-Wet lichen has a specific, clean, mineral scent. Like rain 
-on stone, but from the organism, not the water.
-
-```
-','         (bloom-scent-drew-the-moth = 5) ✓
-```
-Night-blooming flowers release scent specifically to attract 
-moths. The scent IS the invitation. Chemistry as communication.
-
-```
-','        (the-bon-fi-re-smelled-of-oak = 7) ✗ — bonfire = 3 syl? No: bon-fire = 2. the(1) bon(1)fire(2) smelled(1) of(1) oak(1) = 6 ✗
-REWRITE:
-','        (oak-smoke-filled-the-field = 5) ✓
-```
-Different woods make different smoke. Oak smoke is specific — 
-heavy, sweet, persistent. Barbecue and bonfire.
-
-```
-','        (bruised-fern-smelled-green = 4) ✗
-','    (the-bruised-fern-smelled-green = 5) ✓
-```
-Crushed bracken has a bright green scent — chlorophyll 
-and terpenes releasing. "Smelled green" — synesthesia 
-that everyone understands.
-
-### 1E. HUMAN TRACES (15 lines)
-
-Nature interacting with what humans left behind.
-
-```
-','        (moss-furred-the-park-bench = 5) ✓
-```
-"Furred" — moss growing like fur on a neglected bench.
-Texture verb. You can feel this.
-
-```
-','        (weeds-split-the-front-step = 5) ✓
-```
-The most domestic version of "life finds a crack."
-YOUR front step. YOUR weeds.
-
-```
-','           (vines-veiled-the-win-dow = 5) ✓
-```
-An abandoned house. Vines growing over the glass.
-The house going blind.
-
-```
-','        (the-well-grew-a-fern-crown = 6) ✗
-REWRITE:
-','        (ferns-crowned-the-old-well = 5) ✓
-```
-An unused well with ferns growing around its rim.
-The well wearing a green crown. Dignity in abandonment.
-
-```
-','          (rust-laced-the-gate-shut = 5) ✓
-```
-A gate rusted closed. "Laced" — rust as embroidery, 
-weaving the gate into a permanent fixture.
-
-```
-','       (roots-heaved-the-grave-slab = 5) ✓
-```
-Tree roots lifting gravestones in old churchyards. 
-The living displacing the memorial of the dead.
-Not disrespectful — inevitable.
-
-```
-','         (moss-read-the-carved-name = 5) ✓
-```
-Moss growing into the incised letters on a gravestone.
-The moss "reading" the name by filling the grooves.
-
-```
-','              (i-vy-held-the-wall-up = 5) ✓
-```
-Common: old walls that would collapse without the ivy 
-holding the stones together. The parasite becomes 
-the structural support.
-
-```
-','           (the-path-grew-back-shut = 5) ✓
-```
-An unused path closing. Vegetation reclaiming the route.
-The landscape healing a wound.
-
-```
-','   (li-chen-claimed-the-bench-plaque = 6) ✗
-REWRITE:
-','       (li-chen-ate-the-brass-plaque = 6) ✗
-','       (li-chen-hid-the-plaque-words = 6) ✗
-Replace entirely:
-','           (weeds-hid-the-mile-stone = 5) ✓
-```
-A milestone on an old road, invisible beneath growth.
-The distance marker lost. Nobody measuring anymore.
-
-```
-','           (wind-took-the-shed-door = 5) ✓
-```
-A shed with its door blown off. Open to weather now.
-The shed becoming a shelter for birds, mice, spiders.
-
-```
-','     (net-tles-filled-the-door-frame = 5) ✓
-```
-Wait: net(1)tles(2) filled(1) the(1) door(1) frame(1) = 6 ✗
-REWRITE:
-','           (net-tles-choked-the-door = 5) ✓
-```
-
-```
-','      (the-roof-fell-and-light-came = 6) ✗
-REWRITE:
-','        (the-roof-fell-to-the-green = 6) ✗
-','     (roof-fell-and-light-rushed-in = 6) ✗
-Replace:
-','      (the-floor-grew-its-own-grass = 6) ✗
-','      (grass-grew-through-the-floor = 5) ✓
-```
-
-```
-','        (swifts-nest-ed-the-old-eave = 6) ✗
-REWRITE:
-','The wren dips the stream','One crow scans the field','The heron stands still','A finch tests the thorn','The fox sniffs the gate','One moth finds the lamp','Ants map the cracked stone','The owl drops from oak','A vole skims the hedge','The snail trails the wall','Bees crowd the warm stone','The newt holds the pool','A frog grips the reeds','The mole lifts the turf','One worm threads the loam','Swans part the still lake','The robin picks seed','A hare reads the wind','The beetle climbs glass','One deer tests the edge','The toad blinks in shade','Gnats cloud the still ditch','The crow walks the plough','A swift turns on air','The otter breaks glass','Spiders web the eaves','The badger digs deep','Flies work the sloe bush','Ice creaks on the lake','Hail taps on the pane','Wind hums in the fence','Leaves scrape the dry path','One drop hits the pail','The creek talks to stone','Reeds click in the wind','The gate hinge cries out','Geese call from the grey','Pine sighs in the gust','The roof drips all night','Crows shout from the elm','A bell rings through mist','Gravel grinds the boot','Wet earth hits the nose','Wood smoke scents the lane','Wild mint stains the path','Hay dries in the sun','Bruised sage fills the hand','Rot steams from the pile','The fox den reeks warm','Salt wind loads the air','Thyme drifts from the hill','Wet ferns slap the shin','Stone warms in the palm','Dew wets the cuffed sleeve','Nettles sting the wrist','Grit scrapes the bare knee','Lichen flakes like paint','Warm soil yields to touch','Clay clings to the spade','Vines grip the shed wall','The gate latch holds rust','Pears drop on the shed','The well sweats with cold','Weeds crack the brick path','The fence post leans south','Hens scratch the warm dirt','The porch step gives way','Rust blooms on the chain','A vine claims the wall','The pump drips all day','Wasps build in the eave','The plough cuts the clay','Seeds split the pot rim','The compost heap steams','Dusk gilds the whole field','Gold light hits the ridge','Stars blaze through the clear','Cloud shade sweeps the moor','The sun leaves the glen','Dawn cracks the east ridge','Clouds drag the low hills','The moon silks the pond','Shade cools the south wall','Sun strikes the wet slate','Bats loop the dark barn','Owls call from the yew','The pond breathes at dark','Stars map the still field','Slugs work the night path','The hedge stirs with life','Dew forms in the dark','Fox eyes catch the torch','Mist fills the low field','Night air cools the glass','Tide pulls the sand flat','Wind bends the long grass','Smoke leans in the wind','The web shakes with dew','Snow loads the still branch','The stream braids the sand','Dust coats the still shelf','Waves comb the shingle','Pollen loads the bee','The thorn holds the wool','Acorns hit the roof','A child climbs the oak','Sticks dam the small brook','The puddle holds sky','Hands cup a small frog','The rope swing hangs still','One stone skips the pond','Pine cones fill the pail','Bare feet cross the creek','The tree fort still stands','A jar holds the bug','Chalk lines cross the walk','Knees green from the hill','The branch bends but holds','Mud pies dry in sun','Leaves pressed in a book','A kite pulls the string','Stones stack by the stream','A child reads the clouds','Crab grass stains the palm','The feeder swings full','Herbs crowd the sill pot','The clothesline drips dawn','A wren nests the box','Cats watch from the sill','The lawn drinks the hose','Weeds split the front step','Bees find the window','The mower rests cold','One rose climbs the post','The rain barrel brims','A bird hits the glass','Ants trail the jam lid','The gutter drips green','Spiders own the shed','The porch light draws moths','Clover feeds the yard','The hose coils like vine','A wasp checks the eave','The screen door slaps shut','Acorns drum the tin','The eave drips a beat','A chain link fence hums','Dry leaves scratch the road','The well echoes back','One walnut hits hard','Wind sings in the wire','The first ice cracks loud','A screen door creaks wide','Rooks shout from the field','Hail drums the greenhouse','The lake ice groans deep','A match strikes the dark','Water glugs the drain','Sheep bleat from the fog','Wind moans through the gap','The tin roof pings hard','A cork pops the still','Dry pods rattle on','Logs shift in the grate','A horse stamps the yard','Snow thuds from the branch','Wind scrapes the dry corn','The flue hums at night','A crow breaks the hush','The pot steams with sage','Bees build the gold comb','Bread cools on the rack','The plum splits its skin','Tea steeps in the dark','Jam pots line the shelf','The fig drops when ripe','Dough rises in warmth','Crab apples turn red','The still drips all night','Salt dries on the rack','Mint crowds the clay pot','Grapes swell on the vine','The cheese breathes its rind','Smoke cures the hung meat','Yeast feeds in the dark','The pear bruised where held','Wild plums scent the lane','The worm turns the soil','One bee loads its legs','The snail writes in slime','Ants haul twice their weight','A dung beetle rolls','The weevil bores slow','Mites work the dead leaf','The grub chews the dark','One wasp chews the wood','Pill bugs curl to balls','The leech reads the warmth','Earth worms braid the clay','Spiders mend each dawn','The tick waits for years','Bees pack the cell tight','A slug ploughs the dew','Beetles strip the log','The midge swarm hangs still','Lace wings hunt the green','Wood lice tend the rot','Sap climbs in the dark','The toad hunts by sound','Slugs feast while we sleep','Night bloom scents the air','The barn owl glides low','Fungi stretch at night','Moths read the cool air','The vole runs the hedge','Dew forms while we sleep','Worms surface at dark','The moon pulls the tide','Night frost draws the sap','Stars guide the long flight','Bats read the whole room','The yew breathes at night','Snails graze the dusk wall','The still pond heats up','Roots grow in the dark','Scent trails fill the night','Tree frogs tune the dusk','The first breath shows white','Swallows cut the spring','The last leaf lets go','Buds crack the brown twig','The first wasp of March','The pond skim breaks up','Geese write the sky south','Sun warms the cold bench','The first green push comes','Heat bakes the clay hard','The horse chestnut drops','Crows mob the bare elm','The plum tree goes white','Conkers split their husks','Smoke curls from the stack','A crocus breaks through','The last frost pulls back','Berries stain the path','The swift banks the barn','A fox prints the snow','Crows roost in the elm','The pike lurks the weed','A hare bolts the field','Bats skim the still pond','The shrew threads the grass','A stork tops the pole','The wasp probes the jam','A rat gnaws the beam','The swan guards the nest','The finch raids the bush','Geese graze the stubble','A worm threads the clay','The mink slides the bank','A door bangs the frame','Slate cracks in the heat','Wood pops in the stove','A plank creaks with weight','A stone hits the well','Tin ticks in the heat','The chain swings and clinks','Wind keens through the slats','The pump clunks and drips','Old books smell of dust','Hemp dries on the rack','Wax drips from the comb','Yew sap stains the hands','The forge heats the air','The flint cuts the thumb','Wet wool chills the skin','The rope burns the grip','Chalk dries on the hands','Bark rasps the bare palm','Sun hits the glass hard','Light drains from the gorge','Cloud breaks on the peak','Dusk smooths the rough field','The lamp draws the moths','The axe rests in wood','Smoke curls from the flue','A can fills with rain','The boot cakes with mud','Nails rust in the beam','The barn door hangs loose','The gate swells with rain','Tiles crack in the frost','Stars wheel past the oak','The pond gleams at night','Night dew slicks the path','An owl hunts the barn','First frost steals the green','Geese stream south at dusk','The plum tree blooms white','Tide marks the high line','Wind scours the chalk cliff','Grain bows to the wind','The dam holds the flood','Sand fills the boot treads','Stone steps wear to troughs','The weir foams at dusk','Hail shreds the vine leaves','The cairn marks the col','Ash drifts from the grate','The pond iced at dawn','Salt crusts the old chain','The hedge steams at dawn','Rime glazed the whole field','The ditch brims with rain','Coal dust coats the sill','Smoke curls from the slash'
+    'Moss drinks from split stone','Seeds wait under ash','Frost grips the root crown','Sap climbs in thin light','Dark mold turns the husk','Wind combs the dry pods','Buds hold their fire','Mycelia spread','Pollen veils the air','Thaw wakes the buried','Cambium hums low','Stone keeps the night cool','Fern tips uncoil slow','Rain salts the black soil','Moth wings stir the bloom','Gnats drift near sweet rot','Bark splits after thaw','Loam folds the seed down','Needles net the mist','Shade pools at the base','Old rings keep the drought','Mold blooms in the cracks','Ash packs the root bed','Cold dew skins the moss','Roots press under stone','Pods dry into bells','The stem keeps its arc','Frost rims the leaf scars','Rain dims the bee tracks','Cap threads through leaf mold','Bog cools the root hair','Moss climbs the north face','Dead bark feeds the seam','Seeds rest in silt beds','The loam stores old heat','Hyphae braid the rot','The husk splits at noon','Moss softens the wall','Peat holds the print still','Stone drinks the day heat','Lichen grips old brick','Thorn hooks catch the fog','Ash feeds the new shoot','Green tips bruise the dark','The loam takes all husks','Cold rain sinks through duff','Moss hides the ant trail','Fog cools the leaf ribs','Bog lifts gas threads','Shade knits around stems','Moss fills the hoof print','Frost nips the soft tips','Loam cools the nest roots','Dawn warms the peat crust','Moss seals the branch fork','Ferns count the drip beats','Peat stains the root threads','Gnats ring the damp air','Stone cools the seed store','Mud slicks the stem base','Night dew wets the awns','Ash ghosts the leaf veins','Rain threads the branch tips','Seeds ride the wasp gust','Loam grips the split nut','Fog wets the cone lips','Moss veils the stump rings','Sap salts the ant jaws','Rain clouds the root well','Spore dust dims moonlight','Clay cools hidden bulbs','Bark drinks quiet rain','Fog crowns the tall reeds','Seeds listen in loam','Caps glow under logs','Cold sap waits below','Green veins stir slowly','Pebbles cradle roots','Moss drinks dim starlight','Night feeds silent buds','Fungal threads wander','Wind tests brittle husks','Roots drink iron rain','Old bark breathes resin','Fern scrolls unfurl slow','Mycelial braids','Moss softens old scars','Rain dims the spines','Clay drinks falling ash','Green pulses stir loam','Bark folds the lichens','Mist feeds quiet caps','Seeds bide in dark seams','Roots map silent veins','Stone sleeps under moss','Hyphae taste old wood','Fern shadows ripple','Moss seals the fracture','Pebbles guard the corm','Caps crown fallen logs','Loam drinks soft thunder','Seeds hide in furrows','Clay swallows the husk','Bark harbors lichens','Mycelial knots','Spores drift through shade','Sepals hold the rain','Pollen stains the dusk','Xylem drinks the fog','Petioles bow low','The cambium sleeps','Fronds darken with dew','Resin seals the scar','Thorns remember frost','Lichen takes the bark','Roots listen in peat','Stamens fade by dusk','Pistils wait in shade','A bract cups the rot','Stone cradles the bulb','Tannins stain the rain','The pod splits in fog','A tuber dreams deep','Phloem hums below','Corm under cold clay','Hyphae map the dark','Rachis bends with dew','Sap cools into dusk','Loam swallows the seed','Petiole in rain','Moss covers the thorn','Frost clings to the bract','Rot sweetens the root','The sepal bruises','Shade gathers in bark','Stolons creep through peat','Anthers dim with rain','Dew beads on calyx','Corollas sink low','Stone remembers roots','Resin coats the thorn','A frond drinks the mist','Loam darkens with sap','Starlight feeds the bloom','Tide pulls at the root','Dawn cracks the dry husk','Petals catch the moon','Ice unlocks the seed','Warmth stirs the old corm','Wind scatters pollen','The grove hums at dusk','Spring splits the hard earth','Clouds shadow the fern','Salt air bends the grass','The vine finds the light','Heat ripens the fruit','Autumn strips the crown','Dew mirrors the sky','The sprout breaks the dark','Currents rock the kelp','Snow guards the deep roots','Fire clears old growth','The bloom turns to face','Peat remembers rain','Embers feed the ash','The tendril reaches','Creek song feeds the bank','Light bends through the leaf','The acorn falls far','Soil holds the first green','Twilight dims the grove','Entropy grows wild','Memory takes root','Threads weave through dark loam','Rime coats the still pond','Bark curls in dry heat','Roots grip the wet ledge','Mist holds the ravine','Spores ride the warm draft','Shade cools the split trunk','Stone wears the rain smooth','Frost etched the dry bark','Roots comb the gravel','Lichen films the arch','Peat darkens the well','Sap beads on cold wood','Salt rims the tide pool','Ferns crowd the north wall','Dew loads the bowed grass','Caps split the bark seam','Wind strips the seed heads','Clay holds the bone still','Moss quilts the stump top','Fog dims the far ridge','Rust stains the seep face','Buds clench through the frost','Ash silts the creek bed','Night cools the bare stone','Stems bow in wet wind','Pods rattle when dry','Loam warms the first roots','Dew fills the cup fern','Bark peels in long strips','Brine crusts the low growth','Spore clouds drift at dusk','Roots fork at the clay','Shade slows the green push','Stone splits from the freeze','Thorns hook the still mist','Frost thins the bark edge','Rain wakes the dry corm','Sap pools in the wound','Moss maps the damp wall','Dew strings the web tight','Wind tests the new growth','Roots read the wet dark','Rime locks the bud scales','Bark knits the old scar','Fog thins at the ridge','Seeds press through the ash','Mold veils the damp grain','Resin seals the break','Bark greys in salt wind','Ice cracks the old wall','Moss eats the grout line','Shade thins at the crown','Spores find the draft first','Dew weighs the bloom down','Silt packs the creek bend','Roots smell the wet chalk','Cold slows the green push','Bark wraps the old wound','Salt dries the low ferns','Fog hides the tree line','Ash drifts on still ponds','Roots pry the flagstone','Dew beads on bare thorns','Mist wraps the bole tight','Grain splits with the frost','Pods hang from dry stems','Stone yields to the root','Bark chars but holds firm','Fog feeds the still moss','Rain scours the bare rock','Buds swell in warm rain','Stems twist toward the gap','Wind hones the ridge pines','Rime builds on each twig','Roots breach the drain tile','Loam seals the old grave','Dawn melts the bud ice','Moss furs the wet slate','Frost paints the dead grass','Roots bridge the crevice','Sap stalls in deep cold','Chalk dust coats the roots','Wind strips the bark clean','Seeds lodge in cracked walls','Rain feeds the blind roots','Spores cling to damp wool','Dusk stills the tall reeds','Roots weave through the scree','Mold creeps through damp straw','Frost locks the clay tight','Bark holds the bolt scar','Rain wets the ash bed','Fog pools in the col','Stone cups the spring rain','Roots find salt by taste','Mist clings to dead elm','Dew drips from the awns','Rime stars the bare twig','Frost seals the bud tight','Mist drapes the still gorge','Bark stores the year cold','Spores bloom in dead elm','Salt cakes the low scrub','Rain finds the fault line','Dew fogs the still leaf','Shade holds the corm safe','Fog drowns the low bloom','Bark flakes in spring thaw','Wind bends the shore grass','Roots feel the flood first','Cold locks the sap still','Moss pads the bird nest','Dew wets the awn tips','Sap drips from pruned limbs','Frost cracks the clay pipe','Rain fills the hoof ruts','Mist thins at the crest','Shade cools the bulb nest','Bark guards the heart wood','Spores dust the wet ledge','Salt prunes the marsh grass','Wind sorts the loose seed','Roots thread the grout lines','Rain drums the broad leaves','Frost sketched the fern fronds','Dew loads the web strands','Moss blanks the grave text','Bark tightens in cold','Roots mine the subsoil','Snow bends the young birch','Fog blurs the tree crowns','Sap gels below frost','Wind scatters the chaff','Dew pearls on the silk','Mist wets the lichen','Bark seals the tap wound','Wind lifts the ripe spore','Rain pocks the dry dust','Snow guards the root crown','Roots sense the spring thaw','Bark maps the wet years','Dew wakes the dry spore','Mist names each contour','Shade weighs the low fern','Wind counts the bare limbs','Rain sounds the deep soil','Snow reads the branch load','Bark knows the wind side','Mold tastes the damp air','Frost probes the cracked glaze','Sap tests the new wood','Dawn stirs the fen birds','Fog names the low ground','Dew finds each groove first','Rain reads the grain slope','Bark counts the lean years','Frost hunts the green stem','Wind reads the tree flags','Moss feels the stone breathe','Rain wakes the still creek','Dew maps the leaf veins','Shade finds the bruised fruit','Frost tastes the green bud','Wind sorts the ripe seed','Rain tests the new leaf','Bark tells the storm years','Fog reads the contours','Roots hear the stream first','Dew weighs the silk down','Frost greets the bare wood','Rain teaches the slope','Moss learns the north face','Shade marks the deer trail','Wind tests the branch join','Dew proves the cold snapped','Frost writes on the glass','Rain weighs the ripe head','Mist maps the creek path','Bark reads the blade scars','One pod ticks the ground','Dew drops from the thorn','Ice lets the branch go','One ant crests the bark','Fog swallows the ridge','One spore holds the dark','Rain dots the dust skin','The shoot leans toward light','The bud holds on tight','One seed braves the crack','Dew lends the moss weight','The fern shields its young','Bark smells of wet rust','Cold stone warms the palm','Rain hits the dust hard','Salt crusts the dry pod','Rain falls on bare ground','Roots go where roots go','The path fades to moss','Just wet stones and moss','The vine took the gate','Moss claims the lost step','Dusk pools in the fern','Frost writes and then leaves','The stump holds its rings','Rain begs at the bark','The bog holds its tongue','One leaf turns alone','The creek finds the low','Wind parts the dead grass','Dawn gilds the wet bark','Shade has its own cold','The oak sheds its dead','Sap moves before dawn','Dew gives what rain lent','The cliff sheds a stone','Roots knit the wound shut','Snow bends and lets go','The pond holds the sky','Ash smells of what burned','Growth splits the old paint','The ridge wears the wind','Rime crowns the bare thorn','Dew weighs more than stone','The root meets the seep','Bark curls toward the sun','Fog eats the old trail','The lichen just grows','Light moves through the leaf','The bark just holds on','The moss asks for shade','Three spores on wet bark','Root tip meets limestone','Two caps in the duff','Sap runs at first thaw','Frost line at two feet','Wind fills the whole gorge','The scree speaks when stepped','Rain fills the cupped moss','The ridge blocks the sun','One frond curls to light','Dew bends the grass blades','Stone cools the bare foot','Bark flakes in the hand','One spore catches wind','The soil smells of rain','Rime films the still pool','Roots sip the dark seep','Shade cools the fox den','The grain holds the years','Fog drapes the still birch','Night feeds the mushroom','Dew runs the vein paths','The bluff sheds its face','Frost beads on the web','Stone holds what it heard','The gulch fills with dark','Peat dyes the stream brown','New roots taste the dark','Rain bows the ripe wheat','Mist beads on the frond','The limb groans with ice','Seeds wait in the char','Dawn thaws the top inch','The cap breaks the duff','Fog turns the wood grey','One seed tests the frost','Dew weighs the silk thread','The fell wears its snow','Roots part the wet clay','Stone keeps what rain gave','The haze dims the fells','Frost nails the bud shut','Rain wakes the stone smell','The crag wears its rime','The bark smells of age','Ice groans in the lake','The root feels the rock','Soil tastes of iron','Rain sounds on the thatch','The cold has a smell','Frost clicks on the glass','Dew chills the bare hand','The wind tastes of salt','Bark roughens the palm','Moss hums with the damp','Stone warms where weight sat','The gorge has its voice','Rain wets the stones smell','Night air cools the tongue','Old wood speaks in creaks','The leaf drips its weight','Fog tastes of the sea','Stone gives off its rain','Roots hum in the dark','Lichen grows at night','Seeds shift in their hulls','Bark heals in the dark','The web mends by dawn','Mold maps the night air','The bloom tracks the sun','Sap rose through the dark','Roots grew while it rained','The root chose the left','Two roots share the seep','The stem counts the hours','Leaves close before rain','The vine picks the strong','Roots warn the neighbors','Seeds count the cold days','The bloom knows the bee','Roots hear the water','The tree marks the wound','One cell holds the plan','The spore weighs nothing','Dew holds the whole sky','One grain starts the dune','The lichen paints slow','Peat builds one leaf thick','Fog brings the salt news','Rain taps a slow code','Frost writes its warning','Dawn reads the dew map','The wind has a taste','Snow muffles the wood','The web reads the wind','Moss knows the dry side','Bark thins at the scar','The bud picks its day','Roots share through the dark','One leaf tests the cold','The pond holds its breath','Dusk thins the birdsong','The cliff talks in drops','Seeds dream in the hull','Bark holds the old scent','The marsh speaks in gas','The moss counts the drips','The vine chose the gap','One cell builds the whole','The moth works the dusk','Stars steer the lost spore','Dark feeds the pale root','Frost writes the first draft','Rain speaks to the seed','The soil smells alive','Bark reads the wind speed','Night wakes the pale moth','The grove hums with trade','Dew beads on the silk','Stone holds the days warmth','Shade guards the young fern','Frost drew the map first','The peat smells of time','Wind reads the bare crown','Moss drinks the fog blind','One root touched the stream','Dawn stirs the damp spore','No one on the hill','Light finds the deep moss','One drop holds the storm','Grass bends with the herd','The rice greets the flood','Ice holds the old breath','Rain darkens the path','Frost whitens the field','Bark roughens with age','Dew silvers the web','Wind shakes the last leaf','Roots drink the spring melt','Moss greens the north side','Snow hides the known path','Sun cracks the dry mud','Fog thins near the creek','Bark stores the cold night','Salt dries the low field','Shade deepens at noon','Rain fills the cracked bowl','Wind strips the dead bark','Frost grips the gate latch','Dew loads the seed head','Roots split the porch step','Moss fills the boot print','Rain beads on the leaf','Snow bends the old fence','Wind dries the fresh cut','Dew wets the turned earth','Frost marks the low spots','Bark peels in the heat','Rain pools in the ruts','Roots lift the old path','Wind hums through the gap','Dew drips from the eave','Roots crack the old pipe','Snow caps the fence posts','Rain wets the fresh stump','Fog hides the tall pines','Wind combs the marsh grass','Rain streaks the bare cliff','Roots grip the stream bank','Snow muffles the woods','Wind bows the wheat field','Dew chills the bare soil','Rain drums the tin roof','Moss softens the grave','Wind tests the weak limbs','Light slants through the trees','Shadows cross the path','Green creeps up the wall','Buds swell on bare limbs','One leaf spins and falls','Crows line the bare oak','Berries stain the stone','Weeds split the tarmac','Vines grip the old sign','Rain drums on the leaves','Owls call in the dark','Twigs snap underfoot','Bees hum in the hedge','Frogs sing in the marsh','Bats click in the barn','Cold mud grips the boot','Sun warms the flat rock','Thorns catch the wool sleeve','Sand shifts underfoot','Peat gives with each step','Cut grass fills the lane','Pine pitch heats the air','Wild garlic fills the wood','Leaf mold scents the trail','Spring comes late this year','First frost came at dawn','The old oak came down','Hail stripped the young corn','Blight hit the old elm','The heron waits still','One hawk rides the draft','The fox crossed at dawn','Snails trace the wet stone','The wren fills the hedge','Ants farm the dark soil','The otter slides through','Geese vee the grey dawn','The mole reads the dark','Spiders claim the eave','The crow guards the field','Slugs silver the path','The toad holds the damp','Swifts scream through the gap','The badger dug the bank','Light spills through the crown','Sun finds the one gap','Gold light hits the bark','Shade shifts with the hours','Dawn bleeds through the mist','Dusk turns the lake gold','Stars fill the cleared sky','Moon whites the bare field','Light pools on the floor','Sun stripes the birch trunks','The lark climbs the dawn','One bee works the sage','The hare crossed the frost','Swifts slice the warm dusk','The pike holds the pool','One ant lifts the crumb','Geese cross the flat grey','The snail crossed the path','Dew weights the long grass','Light shifts on the stream','Wind tests the new leaf','Rain woke the clay smell','Shade crept past the wall','Chalk shows through the mud','The well held through drought','Mist clung to the oaks','Snow sealed the east road','Peat springs at each step','The creek changed its course','Bats looped the dark barn','Rain soaked the turned field','The frog found the damp','Wind stripped the old thatch','Rust bloomed on the chain','Sun split the seed case','The tide turned at noon','Smoke rose from the slash','Stars blazed through the clear','Frost split the clay pipe','The finch picked the seed','Wind found the one gap','Dusk bronzed the whole field','Rain pooled in the rut','The bank slid in the rain','Moon rose through the pines','Leaves blocked the old drain','The field steamed at dawn','Crows stripped the sown field','The fox marked the post','Rain found the roof leak','Dew held in the rose','Wind shook the last plum','Frost etched the still pond','Worms pulled the leaves down','Starlings filled the sky','Brook carved the soft bank','Gold light hit the ridge','The toad sat in the rain','The wren scouts the thorns',
+    'The wren dips the stream','One crow scans the field','The heron stands still','A finch tests the thorn','The fox sniffs the gate','One moth finds the lamp','Ants map the cracked stone','The owl drops from oak','A vole skims the hedge','The snail trails the wall','Bees crowd the warm stone','The newt holds the pool','A frog grips the reeds','The mole lifts the turf','One worm threads the loam','Swans part the still lake','The robin picks seed','A hare reads the wind','The beetle climbs glass','One deer tests the edge','The toad blinks in shade','Gnats cloud the still ditch','The crow walks the plough','A swift turns on air','The otter breaks glass','Spiders web the eaves','The badger digs deep','Flies work the sloe bush','Ice creaks on the lake','Hail taps on the pane','Wind hums in the fence','Leaves scrape the dry path','One drop hits the pail','The creek talks to stone','Reeds click in the wind','The gate hinge cries out','Geese call from the grey','Pine sighs in the gust','The roof drips all night','Crows shout from the elm','A bell rings through mist','Gravel grinds the boot','Wet earth hits the nose','Wood smoke scents the lane','Wild mint stains the path','Hay dries in the sun','Bruised sage fills the hand','Rot steams from the pile','The fox den reeks warm','Salt wind loads the air','Thyme drifts from the hill','Wet ferns slap the shin','Stone warms in the palm','Dew wets the cuffed sleeve','Nettles sting the wrist','Grit scrapes the bare knee','Lichen flakes like paint','Warm soil yields to touch','Clay clings to the spade','Vines grip the shed wall','The gate latch holds rust','Pears drop on the shed','The well sweats with cold','Weeds crack the brick path','The fence post leans south','Hens scratch the warm dirt','The porch step gives way','Rust blooms on the chain','A vine claims the wall','The pump drips all day','Wasps build in the eave','The plough cuts the clay','Seeds split the pot rim','The compost heap steams','Dusk gilds the whole field','Gold light hits the ridge','Stars blaze through the clear','Cloud shade sweeps the moor','The sun leaves the glen','Dawn cracks the east ridge','Clouds drag the low hills','The moon silks the pond','Shade cools the south wall','Sun strikes the wet slate','Bats loop the dark barn','Owls call from the yew','The pond breathes at dark','Stars map the still field','Slugs work the night path','The hedge stirs with life','Dew forms in the dark','Fox eyes catch the torch','Mist fills the low field','Night air cools the glass','Tide pulls the sand flat','Wind bends the long grass','Smoke leans in the wind','The web shakes with dew','Snow loads the still branch','The stream braids the sand','Dust coats the still shelf','Waves comb the shingle','Pollen loads the bee','The thorn holds the wool','Acorns hit the roof','A child climbs the oak','Sticks dam the small brook','The puddle holds sky','Hands cup a small frog','The rope swing hangs still','One stone skips the pond','Pine cones fill the pail','Bare feet cross the creek','The tree fort still stands','A jar holds the bug','Chalk lines cross the walk','Knees green from the hill','The branch bends but holds','Mud pies dry in sun','Leaves pressed in a book','A kite pulls the string','Stones stack by the stream','A child reads the clouds','Crab grass stains the palm','The feeder swings full','Herbs crowd the sill pot','The clothesline drips dawn','A wren nests the box','Cats watch from the sill','The lawn drinks the hose','Weeds split the front step','Bees find the window','The mower rests cold','One rose climbs the post','The rain barrel brims','A bird hits the glass','Ants trail the jam lid','The gutter drips green','Spiders own the shed','The porch light draws moths','Clover feeds the yard','The hose coils like vine','A wasp checks the eave','The screen door slaps shut','Acorns drum the tin','The eave drips a beat','A chain link fence hums','Dry leaves scratch the road','The well echoes back','One walnut hits hard','Wind sings in the wire','The first ice cracks loud','A screen door creaks wide','Rooks shout from the field','Hail drums the greenhouse','The lake ice groans deep','A match strikes the dark','Water glugs the drain','Sheep bleat from the fog','Wind moans through the gap','The tin roof pings hard','A cork pops the still','Dry pods rattle on','Logs shift in the grate','A horse stamps the yard','Snow thuds from the branch','Wind scrapes the dry corn','The flue hums at night','A crow breaks the hush','The pot steams with sage','Bees build the gold comb','Bread cools on the rack','The plum splits its skin','Tea steeps in the dark','Jam pots line the shelf','The fig drops when ripe','Dough rises in warmth','Crab apples turn red','The still drips all night','Salt dries on the rack','Mint crowds the clay pot','Grapes swell on the vine','The cheese breathes its rind','Smoke cures the hung meat','Yeast feeds in the dark','The pear bruised where held','Wild plums scent the lane','The worm turns the soil','One bee loads its legs','The snail writes in slime','Ants haul twice their weight','A dung beetle rolls','The weevil bores slow','Mites work the dead leaf','The grub chews the dark','One wasp chews the wood','Pill bugs curl to balls','The leech reads the warmth','Earth worms braid the clay','Spiders mend each dawn','The tick waits for years','Bees pack the cell tight','A slug ploughs the dew','Beetles strip the log','The midge swarm hangs still','Lace wings hunt the green','Wood lice tend the rot','Sap climbs in the dark','The toad hunts by sound','Slugs feast while we sleep','Night bloom scents the air','The barn owl glides low','Fungi stretch at night','Moths read the cool air','The vole runs the hedge','Dew forms while we sleep','Worms surface at dark','The moon pulls the tide','Night frost draws the sap','Stars guide the long flight','Bats read the whole room','The yew breathes at night','Snails graze the dusk wall','The still pond heats up','Roots grow in the dark','Scent trails fill the night','Tree frogs tune the dusk','The first breath shows white','Swallows cut the spring','The last leaf lets go','Buds crack the brown twig','The first wasp of March','The pond skim breaks up','Geese write the sky south','Sun warms the cold bench','The first green push comes','Heat bakes the clay hard','The horse chestnut drops','Crows mob the bare elm','The plum tree goes white','Conkers split their husks','Smoke curls from the stack','A crocus breaks through','The last frost pulls back','Berries stain the path','The swift banks the barn','A fox prints the snow','Crows roost in the elm','The pike lurks the weed','A hare bolts the field','Bats skim the still pond','The shrew threads the grass','A stork tops the pole','The wasp probes the jam','A rat gnaws the beam','The swan guards the nest','The finch raids the bush','Geese graze the stubble','A worm threads the clay','The mink slides the bank','A door bangs the frame','Slate cracks in the heat','Wood pops in the stove','A plank creaks with weight','A stone hits the well','Tin ticks in the heat','The chain swings and clinks','Wind keens through the slats','The pump clunks and drips','Old books smell of dust','Hemp dries on the rack','Wax drips from the comb','Yew sap stains the hands','The forge heats the air','The flint cuts the thumb','Wet wool chills the skin','The rope burns the grip','Chalk dries on the hands','Bark rasps the bare palm','Sun hits the glass hard','Light drains from the gorge','Cloud breaks on the peak','Dusk smooths the rough field','The lamp draws the moths','The axe rests in wood','Smoke curls from the flue','A can fills with rain','The boot cakes with mud','Nails rust in the beam','The barn door hangs loose','The gate swells with rain','Tiles crack in the frost','Stars wheel past the oak','The pond gleams at night','Night dew slicks the path','An owl hunts the barn','First frost steals the green','Geese stream south at dusk','The plum tree blooms white','Tide marks the high line','Wind scours the chalk cliff','Grain bows to the wind','The dam holds the flood','Sand fills the boot treads','Stone steps wear to troughs','The weir foams at dusk','Hail shreds the vine leaves','The cairn marks the col','Ash drifts from the grate','The pond iced at dawn','Salt crusts the old chain','The hedge steams at dawn','Rime glazed the whole field','The ditch brims with rain','Coal dust coats the sill','Smoke curls from the slash'
   ];
   var HAIKU_B = [
     'Sap threads the bark grain with warmth',
@@ -20194,165 +19941,98 @@ REWRITE:
     'nature does the math for us'
   ];
   var HAIKU_C = [
-    'Old roots hold the slope','Moss keeps the stone damp','Rain marks the stem skin','Seeds wait through the burn','Frost seals the crown tight','Lichen grips the wall','Sap lifts through thin veins','Rot mends the broken','Wind strips the dry pods','Buds keep their slow charge','Fog skins each spine tip','Loam takes the husk down','Hyphae braid the dark','Pollen veils the reeds','Thaw loosens the crust','Bark holds the old rings','Stone cools the seed bed','Fern tips seek dim light','Rain salts the peat crust','Moth wings stir warm dust','Gnats feed where fruit rots','Bark opens with thaw','Loam keeps the corm still','Needles net wet fog','Shade pools near the base','Old rings keep dry years','Mold webs the wall crack','Bees dust the gold tips','Ash feeds the new stem','Cold dew films the moss','The stem keeps its curve','Frost rims cut leaf scars','Caps rise through leaf mold','Moss climbs the north wall','Dead bark feeds red rot','Seeds rest below reeds','Loam stores the last heat','Hyphae lace the pit','Thin shoots test the crust','Night swells the seed coat','Stems lean into mist','Burls sleep in hard wood','The husk parts at noon','Veins fork through the blade','Midges cloud the reeds','Dark rain oils the bark','Moss softens old brick','Dry pods click in gusts','Peat keeps prints from rain','Mud cools the tubers','Stone drinks noon heat back','Lichen veils old brick','Rain taps the seed hull','The bulb stores leaf gold','Spore dust coats the fern','Shade seals the cut stem','Thorn hooks catch fog beads','The rind keeps frost out','Roots bend round salt veins','Wet bark smells of rot','Ash feeds the first shoot','Night air slows the sap','Green tips bruise the dusk','Loam takes all husks back','Mold webs the root ball','Cold rain fills the duff','Pods split in dry heat','The bud tests the chill','Spore smoke marks the beam','Roots knot through hard pan','Wet clay grips the bulb','Pollen marks the pond','The stalk keeps still time','Rotsweet draws the flies','Needles bank the snow','Shade knits round green stems','Rot thins the old wood','Spores seed damp logs','Frost nips soft leaf tips','Aphids gloss the veins','The cane keeps green pulp','Mud veils the rhizome','Rain pools in leaf cups','Hyphae net the pit','Thin bark cups warm gnats','Roots skirt old bone beds','Cap skin sheds brown dust','The stem drinks from fog','Starch waits in the corm','Rime fades from the moss','The root keeps its map','Wind rocks cone scales','Wet heat swells the pods','The shard cuts root tips','Bark knots hold old rain','The bulb reads the thaw','Salt crust rims the flats','The pit keeps leaf broth','Mud slicks stem bases','Moss nests in wall cracks','The root drinks seep fog','Caps rise from dung heat','The bark holds worm paths','Shade mutes thorn shine','The stem hoards moon milk','Stone cracks take root hairs','Spore bloom dims the jar','The leaf keeps drip marks','Old mulch feeds the bed','Dry thatch hides seed eyes','The loam breathes cool steam','Peat holds slow fire','Frost locks the sap rise','Beetles mine the rot','Root tips find marl veins','Dew threads cling to thorns','Spore dust veils the cap','Roots claim the darkness','Stone listens below','Moss remembers rain','Caps bloom in silence','Loam guards the embers','Roots split the shale','Fern veins hold water','Mycelia glow','Green veins awaken','Roots read the strata','Moss veils the bones','Spores seed the dark','Roots weave the ravine','Caps whisper spores','Loam feeds the forest','Caps lift quietly','Spores find dark loam','Stone waits patiently','Spores claim the log','Roots pierce the bedrock','Stone keeps the silence','Seeds settle softly','Spore tides wander','Fern shadows deepen','Caps crown the forest','Moss eats the old bark','A pistil bends low','Dew chills petiole','Rhizome under stone','Sepals close at dusk','Xylem keeps the rain','A thorn catches fog','Calyx full of dew','Cambium gone still','Hyphae drink the rot','A frond splits the mist','Tuber under peat','Lignin in wet wood','Resin in cold cuts','Anthers bruise with dusk','Pollen on black moss','Corolla fades slow','A bract hides the scar','Stolon through the clay','The pod cracks at dusk','Tannin stains the loam','Corm under the frost','Nectar thins in shade','A sepal holds mold','Rachis in the fog','Petiole bows low','The calyx gathers','Sap beads on the thorn','Lichen takes the stone','Mold climbs the old bulb','Stamens dim in rain','Pistils taste the peat','Dew sinks into bark','A tendril knots tight','The root drinks tannin','Shade covers the pod','Frost enters the bract','The forest returns','Moonlight marks the path','Seasons turn the wheel','Green answers the rain','The canopy waits','Still water runs deep','The garden persists','One leaf holds the storm','The grove knows your name','Time braids through the rings','Seeds recall fire','Old wood feeds the new','The spore finds its home','Silence grows the moss','The stem will not break','The vine always climbs','Roots outlast the stone','Warmth returns to soil','The petal lets go','All seeds carry hope','New growth crowns the dead','The earth takes it back','One bloom lights the shade','all green things return','the slope holds its soil','stone learns from the rain','moss claims the old wall','the seed finds its dark','bark heals what frost split','loam holds the warmth close','dew feeds the lichen','spores ride the last light','the grove stands through wind','roots drink the slow seep','the ridge sheds its snow','ash gives the soil back','mist crowns the dead wood','the corm keeps its store','green threads find the cracks','shade deepens the pool','pods wait for the wind','stone holds what rain wrote','frost yields to the root','silt buries the old','the fern knows the shade','clay molds to the root','rain dims the dry thorns','cold wakes the deep bulb','the rot feeds what grows','old scars hold the moss','the drift buries seed','rime coats the bare stem','the well holds dark rain','roots know the way down','fog lifts from the fen','bark splits and then heals','the peat holds its dead','light bends through the spore','the stone gives up salt','moss mends the old crack','seeds dream under ash','the trunk splits in thaw','cold feeds the still roots','dew marks the night path','rain reads the bark grain','the husk gives way slow','sap rises from dark','the scree holds the seed','loam breathes through the frost','the clay keeps its shape','new roots find the seam','the soil repays all','frost writes on the stone','bark records each year','the fen holds its breath','moss outlasts the wall','roots accept the dark','loam forgives the ash','stone answers the rain','spores need the wind most','the crown sways but holds','dew gives the moss life','ice shapes what will grow','the stump feeds the new','shade teaches the root','the gorge holds damp air','bark knows when to split','sap slows but still moves','the bulb waits for warmth','moss quilts the bare ground','rain finds every crack','the ridge bears the wind','old roots feed young shoots','the thaw starts below','spores land where they must','frost gives then it takes','peat keeps the old scent','the silt buries deep','bark grows from within','seeds trust the cold ground','the flint holds its spark','fog gives what rain lacks','the reef builds from death','rime melts into roots','the grove holds its ground','ash turns into soil','the cliff sheds its face','roots learn the hard way','mold claims what falls still','the marsh breathes through reeds','growth finds a way through','dusk cools the baked clay','time grinds the stone smooth','the col holds the mist','roots weave what wind broke','night feeds the slow roots','the vale collects dew','the slope knows the rain','stone cracks and seeds move','moss smooths the rough edge','the fen breathes out fog','bark thins toward the crown','frost comes and frost goes','loam turns the dead green','the reed bends then springs','shade marks the safe ground','the tor sheds its skin','rain carves the old path','sap knows its own weight','the spore trusts the wind','roots drink what stone weeps','the creek shapes the stone','bark holds the last warmth','seeds bank on the cold','mold works through the night','the drift warms the roots','ice taught the stone cracks','loam takes what was green','shade wins at the base','rain rusts the old gate','spores wait for the damp','the bog preserves all','frost maps the weak points','the bark writes in rings','silt smooths the stream bed','shade guides the young shoots','moss keeps the stone true','rain tests the whole slope','the corm bides its time','roots find their own depth','frost strips the soft bark','the vale fills with mist','growth heals the cut limb','dew feeds the slow mold','seeds know the right depth','the creek takes the path','bark shields the green pith','frost prunes the weak limbs','the loam pays its debts','shade hides the young fern','rain shapes more than wind','the root maps the rock','stone yields in the end','all bark holds a year','the slope finds its grade','roots know no straight lines','stone speaks through its cracks','dew proves the night cold','loam asks for nothing','frost breaks and roots mend','rain writes in the stone','moss takes the long view','bark is the slow scab','shade favors the small','roots learn by going','the ground keeps the score','the seed needs the fall','stone bows to the root','dew shares the dawn light','frost serves the strong buds','the soil holds the proof','shade hides no small thing','rain builds the deep loam','roots solve the same maze','bark asks the wind where','the creek bows to stone','seeds fall and seeds rise','frost prunes with no waste','the spore needs the rot','stone wears the rain print','roots work the night shift','loam keeps its accounts','the reed reads the wind','dew loans the moss life','shade breeds the deep green','frost writes its own will','the peat keeps all debts','roots talk through the dark','bark heals from within','the cliff sheds for good','moss writes the last word','the root knows the rock','dew maps the colds reach','the fen holds no grudge','stone keeps the old weight','rain pays the stone toll','the slope reads each step','frost picks the weak joints','seeds hold the whole plan','Then the silence holds','The pond goes still now','One branch holds the moon','The ridge cuts the light','The nest is enough','The bud did not break','Each seed has its chance','The rings do not lie','The grain runs one way','The moss is just moss','Let the vine have it','The loam forgets names','Shade asks no credit','Roots need the dark most','Stone has no hurry','All paths lead to loam','The bark does not boast','Dew keeps no record','The old wood still holds','Rain asks the same path','The seed chose the crack','The grove has no king','Cold has its uses','The spore asks for damp','Roots never look back','The rill knows its bed','Ash has no regrets','The clay holds the print','Stone takes the long way','Frost is not the foe','The web holds the dew','This was always here','The dark does the work','Sap owes the cold debt','The mold means no harm','Loam was a forest','Rain has no favorites','The seed keeps its word','Shade gives and asks not','The silt tells no tales','Bark wears its own scars','What fell feeds what stands','The wind has no path','Moss needs just the dew','The grove carries on','This is enough light','The leaf has done well','To grow is the point','The soil does the math','One gram feeds the grove','Ash makes the soil rich','The ridge is the ridge','The rock face just waits','The stream chose this path','Green does not explain','The bark asked for none','One inch took ten years','The root has no name','Shade does not compete','The deep soil is warm','All dust was alive','The stone has been rain','Rain needs no applause','The fen forgets none','Moss grows on its own','The seed has its plan','The spore chose the dark','The stump does not grieve','The fell sleeps in fog','What breaks makes the soil','Wood holds the old flex','Roots do not complain','The slope finds its rest','The dew was enough','Silt takes the low ground','The root found its way','All growth has its cost','The bark hides the pulse','Shade does the slow work','Green needs no defense','Stone does not forget','The peat keeps its word','Roots owe the dark all','The grain tells the truth','Dew gives without terms','The clay keeps its cool','One bloom earns the light','Bark wears what time wrote','The seep feeds the well','Spores trust what wind does','Shade covers the rest','Still the forest grows','The root will outlive','Rain gives without thought','The bark knows the lean','Stone was once the sea','Shade grants the small life','The peat holds each year','Green owes the dark all','The seed is a bet','Moss writes on the stone','The grove is one tree','Wind chose the shape first','Scree is the cliffs gift','The flood left its gift','Rain reads no borders','Dead wood is the door','The moss has no clock','Roots know the truth first','Stone keeps what life drops','The seed trusts the soil','Growth needs no applause','The root has no doubt','All shade is a gift','Moss asks the bare least','Each branch earns its light','Ash returns the debt','The fall feeds the spring','Salt finds every wound','The dark grows the most','One bloom pays the tree','The scar is the proof','Roots share without thought','The wood does not lie','Shade costs the tree light','The stem will not beg','Nothing grows for free','The grove opens wide','Frost taught the deep roots','Rain keeps no accounts','The log feeds the next','Stone learns the slow way','All roots share one dark','The seed knows its work','Old bark holds old rain','The cliff gives one rock','Shade has its own warmth','What dies feeds what lives','Ash is not the end','Rain gives and moves on','Sap flows without thought','Whats hidden holds most','Roots know more than leaves','Depth is where life starts','The web holds the grove','The dark feeds the light','Be still and it comes','Moss can heal the break','The garden forgives','All wounds want the moss','Shade is the first balm','The grove waits for all','Root touch heals the soil','The earth has been worse','Life finds the way back','Stone has seen it all','The soil will rebuild','What burned will grow back','The seed bank holds on','No tree stands alone','The grove shares its food','The sick tree gets fed','Shade is shared not sold','The gift moves through dark','Night is not the foe','Moths serve the night bloom','Stars guide the lost spore','What sleeps serves the dawn','All growth carries grief','The bond is the root','Joy breaks through the dark','The old way still works','Flame cleans the forest','The land knows its name','Ask the elder root','The song holds the map','Trust the oldest path','The bloom is enough','Whats small is not weak','The slow path still holds','Each leaf is a lung','One grove breathes for all','The hill needs no name','Moss speaks to no one','The path needs no feet','Light asks no witness','Stone has no complaint','The stream needs no map','Shade serves in silence','Wind signs no contract','The grass keeps growing','Weeds crown the old wall','The whole hides in one','Each drop was the sea','One seed holds all oaks','Grass knows the winds mood','Grass bends and then springs','The flood is the gift','Make room for the flood','Ice holds the first breath','The sealed lake still lives','The drop joins the sea','Love moves the slow sap','The earth does not rush','Time sides with the root','The wound taught the bark','Rain does not keep score','Green bets on the sun','The bark wrote it down','Night built the mushroom','Ash paid the soil back','Rain is the first gift','The slow path wins here','The rain will come back','Green fills every gap','Frost serves the strong roots','Seeds land where they land','The slow way still works','Old roots feed young trees','Rain asks no one first','The bark tells the truth','Shade serves the smallest','Dead leaves feed the soil','The hedge holds its ground','One bloom draws the bee','The fox knows the path','The wren builds from scraps','Frost prunes the garden','The storm clears the air','One root holds the bank','Mud keeps what falls in','The owl hunts the edge','The worm turns the earth','The nest holds the egg','Seeds wait for their turn','The well fills from rain','Thorns guard the soft fruit','The hawk reads the field','Mud dries and then cracks','The old wall still stands','Rain wears the stone down','The bees found the bloom','Frost draws on the glass','The pond holds the clouds','Wind shapes the dune grass','The den smells of earth','Smoke lifts from the peat','Moss grows where it should','The brook finds the low','Dead wood hosts new life','The path heals with grass','Roots hold what rain brought','The field floods and feeds','Bark bears the old scars','Shade cools the baked ground','Orchards stand through frost','Weeds heal the bare ground','The web holds through wind','Rain serves the whole slope','Growth finds every crack','The seed took its chance','Spring keeps its promise','The bud kept its nerve','One crack is enough','Shoots find their own light','The slow way still wins','The wait was worth it','Time favors the root','Patience is the root','What falls feeds the ground','The old feeds the new','All things come around','Snow melts and seeds sprout','Frost goes and green comes','The trunk bends but holds','What bent did not break','Life comes back from less','Green came back from ash','Roots held through it all','No root works alone','The grove shares the rain','Old trees feed the young','Shade serves without thanks','Bark shields what is soft','The hedge blocks the wind','Home is where roots hold','The den holds the warmth','The end feeds the start','What ends begins here','The first green is proof','The frost is not the end','The bare branch holds spring','Dead wood starts the new','The land was here first','Soil gets the last word','What grew wild stays wild','The hawk sees it all','Light finds every leaf','Wind chose the strong shape','The fox trusts its nose','Stars guide the night moth','Sound carries through cold','The cliff sheds each year','Light teaches the shoot','The field holds the lark','Wind earns the smooth stone','The hedge shelters all','Bees read the blooms code','The owl knows the dark','Sun ripens the fruit','The worm tills the earth','Flame made the soil rich','Wind writes the trees shape','Shade taught the pale fern','The fox finds the way','Hawks see what roots miss','Wind prunes what must go','The wren sings for all','Bees know the best blooms','Shade grows the slow fern','Light chooses no one','The flood left rich soil','Clay holds what it takes','Storms pass and things grow','The field knows its birds','Old walls grow their own','What rusts feeds the earth','The creek finds the way','Green goes where it will','The moon pulls the sap','Mud turns back to field','The vole knows the hedge','Weeds hold the loose bank','New growth hides the scar','Dawn warms the cold stone','Roots drink in the dark','Time broke the stone wall','The hedge fed the birds','Wind cleans the dead wood','The oak stands its ground','Bark holds the trees years','Snow blanks the whole field','Life fills the small gaps','The seed found the crack','Green wins the long game','The worm earned the soil','Frost comes but frost goes','All shade was once sun','Roots trust the deep dark','The strong tree bends first','Rain takes the short path','The thorns earned the rose','What falls grows again','One oak fed the hill','Dry earth cracks and waits','The slow ones endure','Cold taught the deep root','The flood gives and takes','Weeds heal what harm did','Night builds what day shows','Wind writes in the sand','What burned bloomed back twice','Stone yields but stone lasts','The bark stores the proof','Birds plant the hedgerow','Mud holds each footprint','The still pond sees all','Frost thins the weak limbs','What bends does not break','Growth heals the stripped bark','The nest holds through storms','Dew writes on each blade','Wind shapes but roots choose','The old paths know best','Hedges outlive farms','Each bloom earns the bee','Light finds the last leaf','Peat holds the whole past','Floods make the soil new','What grew grows once more','The wall taught the vine','Shade serves the young growth','Wind sorts the strong wood','Wind finds every flaw','The gale chose the weak','Wind writes the tree','      (wind-writes-the-trees-shape = 5) ✓
-```
-Wait — exists in Batch 013 C-lines. DUPLICATE. REMOVE.
-```
-','           (wind-tests-ev-ry-branch = 5) ✓
-','         (the-calm-earned-the-storm = 5) ✓
-','t break','What the wind strips stays','Wind takes the dues first','The breeze served the seed','The gale pruned the crown','Wind clears the way through','Light shows no favor','Dawn keeps no record','Light asks for no thanks','Sun serves the small fern','Shade has its own gifts','The owl owns the dusk','Stars guide without charge','Dawn forgives the night','Light bends to the low','Moon serves the lost moth','Dusk softens all edges','Light finds the way down','The flock turns as one','Each tree lifts the grove','The herd guards the young','The swarm finds the way','No bloom serves just one','The grove speaks as one','Each part serves the whole','The hedge shelters both','t choose sides.
-
-```
-','             (the-web-is-the-bridge = 5) ✓
-```
-Mycorrhizal networks. Spider webs. The web as connection 
-infrastructure. Not a trap — a bridge.
-
-```
-','           (the-pack-reads-the-wind = 5) ✓
-','              (one-bee-maps-for-all = 5) ✓
-```
-The waggle dance. One bee scouts, returns, dances the map, 
-and the whole hive benefits. Individual service, collective gain.
-
-```
-','            (no-nest-is-built-a-lone = 5) ✓
-```
-
-Clean: 12 community C-lines.
-
-### 2D. SHELTER TRUTHS (10 lines)
-
-The giving of protection. Structures that shield.
-
-```
-','          (the-eave-guards-the-nest = 5) ✓
-','          (bark-is-the-first-shield = 5) ✓
-','   (the-hedge-breaks-the-north-wind = 6) ✗
-REWRITE:
-','        (the-hedge-breaks-the-blast = 5) ✓
-','          (stone-walls-cut-the-wind = 5) ✓
-','       (the-den-holds-the-warmth-in = 6) ✗
-REWRITE:
-','            (the-den-keeps-the-heat = 5) ✓
-','           (bark-wraps-what-is-soft = 5) ✓
-','      (the-hull-holds-the-storm-out = 6) ✗
-REWRITE:
-','            (hulls-keep-the-sea-out = 5) ✓
-','         (the-shell-guards-the-seed = 5) ✓
-','         (the-wall-breaks-the-frost = 5) ✓
-','         (the-lee-side-holds-warmth = 5) ✓
-```
-
-Clean: 10 shelter C-lines.
-
-### 2E. TIME TRUTHS (12 lines)
-
-Not "patience of roots" — TIME as a force, a teacher, a sculptor.
-
-```
-','         (time-wrote-the-tree-rings = 5) ✓
-','      (years-smooth-the-rough-stone = 5) ✓
-','      (time-heals-the-stripped-land = 5) ✓
-','      (spring-earned-the-hard-frost = 5) ✓
-```
-Spring didn','The long game wins here','No clock rules the bloom','Slow games always win','Age teaches the bark','Time gifts the patient','Time carves its own proof','Years earn the smooth stone','Dusk ends what dawn starts','The crow solves the lock','Eels know the sea road','The wren fears no storm','The hawk earned the sky','The mole trusts the dark','The hive thinks as one','Ants lift more than weight','The heron earns the catch','Swifts sleep on the wing','The fox reads the snow','The geese trade the lead','s from A not C. Let me use actual C:)*
-Moon serves the lost moth *(021-C)*
-
-(Moth trilogy. Drawn to light, finding by scent, served by moon.
-Three relationships between moth and the world.)
-
-**2.**
-Crows cawed through the mist *(021-A)*
-*crows remember where they hid *(020-B)*
-The crow solves the lock *(021-C)*
-
-(Crow trilogy. Voice, memory, intelligence. The most 
-underestimated bird, in three acts.)
-
-**3.**
-Sun broke through the cloud *(021-A)*
-*where the tree fell light pours in *(017-B)*
-Light asks for no thanks *(021-C)*
-
-(Light giving. Cloud breaking, gap filling, no thanks needed.
-Generosity without ego.)
-
-**4.**
-Wet earth filled the nose *(021-A)*
-*the field looks different after rain *(020-B)*
-Dawn forgives the night *(021-C)*
-
-(Smell, change, renewal. The earth after rain. Everything 
-looking different. Dawn forgiving the darkness.)
-
-**5.**
-The heron speared the fish *(021-A)*
-*herons hold their ground all day *(020-B)*
-The heron earns the catch *(021-C)*
-
-(Heron trilogy. Strike, patience, earning. The catch was 
-EARNED through stillness.)
-
-**6.**
-Moss furred the park bench *(021-A)*
-*thresholds wear a coat of moss *(020-B)*
-Old walls grow their own *(020-C)*
-
-(Reclamation trilogy. The bench, the threshold, the wall — 
-all growing their own green coats.)
-
-**7.**
-Dusk stained the west hills *(021-A)*
-*colors change but not the hills *(020-B)*
-Dusk softens all edges *(021-C)*
-
-(Dusk trilogy. Staining, changing, softening. The hills 
-underneath don','t fully explain.)
-
----
-
-Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shares its warmth','Shade shelters the small','The deep feeds the high','Old wood holds its warmth','Fire clears the way','The creek finds the sea','Dawn asks no one',',
-',',
-```
-
-**Syllable verification (all 30):**
-- "The hawk sees it all" → the(1) hawk(1) sees(1) it(1) all(1) = 5 ✓
-- "Light finds the last leaf" → light(1) finds(1) the(1) last(1) leaf(1) = 5 ✓
-- "What bends does not break" → what(1) bends(1) does(1) not(1) break(1) = 5 ✓
-- "The fox trusts its nose" → the(1) fox(1) trusts(1) its(1) nose(1) = 5 ✓
-- "Nothing grows for free" → noth-ing(2) grows(1) for(1) free(1) = 5 ✓
-- "Stone yields in the end" → stone(1) yields(1) in(1) the(1) end(1) = 5 ✓
-- "Ash was once a tree" → ash(1) was(1) once(1) a(1) tree(1) = 5 ✓
-- "Salt finds every wound" → salt(1) finds(1) ev-ry(2) wound(1) = 5 ✓
-- "Wind shows no favor" → wind(1) shows(1) no(1) fa-vor(2) = 5 ✓
-- "The hive shares its warmth" → the(1) hive(1) shares(1) its(1) warmth(1) = 5 ✓
-- "Shade shelters the small" → shade(1) shel-ters(2) the(1) small(1) = 5 ✓
-- "The deep feeds the high" → the(1) deep(1) feeds(1) the(1) high(1) = 5 ✓
-- "Old wood holds its warmth" → old(1) wood(1) holds(1) its(1) warmth(1) = 5 ✓
-- "Fire clears the way" → fi-re(2) clears(1) the(1) way(1) = 5 ✓
-- "The creek finds the sea" → the(1) creek(1) finds(1) the(1) sea(1) = 5 ✓
-- "Dawn asks no one','s(1) leave(1) = 5 ✓
-- "Thorns guard what is sweet" → thorns(1) guard(1) what(1) is(1) sweet(1) = 5 ✓
-- "The owl hunts alone" → the(1) owl(1) hunts(1) a-lone(2) = 5 ✓
-- "Still pools run most deep" → still(1) pools(1) run(1) most(1) deep(1) = 5 ✓
-- "The seed knows its time" → the(1) seed(1) knows(1) its(1) time(1) = 5 ✓
-- "Wolves run as one mind" → wolves(1) run(1) as(1) one(1) mind(1) = 5 ✓
-- "Each weed earns its ground" → each(1) weed(1) earns(1) its(1) ground(1) = 5 ✓
-- "The cave keeps its cool" → the(1) cave(1) keeps(1) its(1) cool(1) = 5 ✓
-- "Drought tests the true bloom" → drought(1) tests(1) the(1) true(1) bloom(1) = 5 ✓
-- "All streams seek the low" → all(1) streams(1) seek(1) the(1) low(1) = 5 ✓
-- "The wren fights for song" → the(1) wren(1) fights(1) for(1) song(1) = 5 ✓
-- "Slow work builds the reef" → slow(1) work(1) builds(1) the(1) reef(1) = 5 ✓
-- "A hedge outlives war" → a(1) hedge(1) out-lives(2) war(1) = 5 ✓
-- "The pond clears its face" → the(1) pond(1) clears(1) its(1) face(1) = 5 ✓
-- "Dust was once a hill" → dust(1) was(1) once(1) a(1) hill(1) = 5 ✓
-
-**C-line quality check — the silence test:**
-- "What bends does not break" — long silence. ✓
-- "Nothing grows for free" — long silence. ✓
-- "Ash was once a tree" — long silence. ✓
-- "Dawn asks no one','We were all seeds once','The climb taught the child','Play is the first work','Joy needs no reason','All forts fall in time','The creek taught the way','Dirt washed off at dusk','We knew before words','The yard knows your weight','Weeds earn their own space','The gate keeps no one','Home starts at the dirt','Fences fall to green','The shed holds the past','All lawns want the wild','Sound proves the world real','The bell says enough','Hush holds the most weight','All creeks find their voice','The ear knows the truth','Noise fades but song stays','Still air hides the bird','Bread needs time and heat','Sweet comes from the dirt','The fruit holds the tree','Taste tells the whole truth','Salt keeps what it finds','Good earth feeds the tongue','Small jaws move the world','The worm asks no thanks','Wings start as a crawl','Six legs built this soil','The snail wastes no step','Size proves nothing here','Dark does the real work','Night owns half the world','The dark is not rest','Roots grow in the black','Stars steer what we sow','The night feeds the day','Sleep builds what wakes use','Spring keeps its own clock','The year turns on scent','Change wears no warning','Green comes when green comes','Cold teaches patience','Seasons ask no leave','The wheel does not stop','Wind tests every branch','The calm earned the storm','Wind bows but wont break','The web is the bridge','The pack reads the wind','One bee maps for all','No nest is built alone','The eave guards the nest','Bark is the first shield','The hedge breaks the blast','Stone walls cut the wind','The den keeps the heat','Bark wraps what is soft','Hulls keep the sea out','The shell guards the seed','The wall breaks the frost','The lee side holds warmth','Time wrote the tree rings','Years smooth the rough stone','Time heals the stripped land','Spring earned the hard frost','Life bets on the small','What cracks lets light in','The low ground gets fed','The burnt field blooms first','Age writes on the bark','The flood makes it new','The bee earns the bloom','Want drives the deep root','Night grew the mushroom','Loss made room for more','What bends earns more years','Trust goes to the old','Scars prove the tree lived','The ache makes it grow','Use wears the fine edge','Give the weeds their due','The plain ones endure','What serves does not boast'
+    'Old roots hold the slope','Moss keeps the stone damp','Rain marks the stem skin','Seeds wait through the burn','Frost seals the crown tight','Lichen grips the wall','Sap lifts through thin veins','Rot mends the broken','Wind strips the dry pods','Buds keep their slow charge',
+    'Fog skins each spine tip','Loam takes the husk down','Hyphae braid the dark','Pollen veils the reeds','Thaw loosens the crust','Bark holds the old rings','Stone cools the seed bed','Fern tips seek dim light','Rain salts the peat crust','Moth wings stir warm dust',
+    'Gnats feed where fruit rots','Bark opens with thaw','Loam keeps the corm still','Needles net wet fog','Shade pools near the base','Old rings keep dry years','Mold webs the wall crack','Bees dust the gold tips','Ash feeds the new stem','Cold dew films the moss',
+    'The stem keeps its curve','Frost rims cut leaf scars','Caps rise through leaf mold','Moss climbs the north wall','Dead bark feeds red rot','Seeds rest below reeds','Loam stores the last heat','Hyphae lace the pit','Thin shoots test the crust','Night swells the seed coat',
+    'Stems lean into mist','Burls sleep in hard wood','The husk parts at noon','Veins fork through the blade','Midges cloud the reeds','Dark rain oils the bark','Moss softens old brick','Dry pods click in gusts','Peat keeps prints from rain','Mud cools the tubers',
+    'Stone drinks noon heat back','Lichen veils old brick','Rain taps the seed hull','The bulb stores leaf gold','Spore dust coats the fern','Shade seals the cut stem','Thorn hooks catch fog beads','The rind keeps frost out','Roots bend round salt veins','Wet bark smells of rot',
+    'Ash feeds the first shoot','Night air slows the sap','Green tips bruise the dusk','Loam takes all husks back','Mold webs the root ball','Cold rain fills the duff','Pods split in dry heat','The bud tests the chill','Spore smoke marks the beam','Roots knot through hard pan',
+    'Wet clay grips the bulb','Pollen marks the pond','The stalk keeps still time','Rotsweet draws the flies','Needles bank the snow','Shade knits round green stems','Rot thins the old wood','Spores seed damp logs','Frost nips soft leaf tips','Aphids gloss the veins',
+    'The cane keeps green pulp','Mud veils the rhizome','Rain pools in leaf cups','Hyphae net the pit','Thin bark cups warm gnats','Roots skirt old bone beds','Cap skin sheds brown dust','The stem drinks from fog','Starch waits in the corm','Rime fades from the moss',
+    'The root keeps its map','Wind rocks cone scales','Wet heat swells the pods','The shard cuts root tips','Bark knots hold old rain','The bulb reads the thaw','Salt crust rims the flats','The pit keeps leaf broth','Mud slicks stem bases','Moss nests in wall cracks',
+    'The root drinks seep fog','Caps rise from dung heat','The bark holds worm paths','Shade mutes thorn shine','The stem hoards moon milk','Stone cracks take root hairs','Spore bloom dims the jar','The leaf keeps drip marks','Old mulch feeds the bed','Dry thatch hides seed eyes',
+    'The loam breathes cool steam','Peat holds slow fire','Frost locks the sap rise','Beetles mine the rot','Root tips find marl veins','Dew threads cling to thorns','Spore dust veils the cap','Roots claim the darkness','Stone listens below','Moss remembers rain',
+    'Caps bloom in silence','Loam guards the embers','Roots split the shale','Fern veins hold water','Mycelia glow','Green veins awaken','Roots read the strata','Moss veils the bones','Spores seed the dark','Roots weave the ravine',
+    'Caps whisper spores','Loam feeds the forest','Caps lift quietly','Spores find dark loam','Stone waits patiently','Spores claim the log','Roots pierce the bedrock','Stone keeps the silence','Seeds settle softly','Spore tides wander',
+    'Fern shadows deepen','Caps crown the forest','Moss eats the old bark','A pistil bends low','Dew chills petiole','Rhizome under stone','Sepals close at dusk','Xylem keeps the rain','A thorn catches fog','Calyx full of dew',
+    'Cambium gone still','Hyphae drink the rot','A frond splits the mist','Tuber under peat','Lignin in wet wood','Resin in cold cuts','Anthers bruise with dusk','Pollen on black moss','Corolla fades slow','A bract hides the scar',
+    'Stolon through the clay','The pod cracks at dusk','Tannin stains the loam','Corm under the frost','Nectar thins in shade','A sepal holds mold','Rachis in the fog','Petiole bows low','The calyx gathers','Sap beads on the thorn',
+    'Lichen takes the stone','Mold climbs the old bulb','Stamens dim in rain','Pistils taste the peat','Dew sinks into bark','A tendril knots tight','The root drinks tannin','Shade covers the pod','Frost enters the bract','The forest returns',
+    'Moonlight marks the path','Seasons turn the wheel','Green answers the rain','The canopy waits','Still water runs deep','The garden persists','One leaf holds the storm','The grove knows your name','Time braids through the rings','Seeds recall fire',
+    'Old wood feeds the new','The spore finds its home','Silence grows the moss','The stem will not break','The vine always climbs','Roots outlast the stone','Warmth returns to soil','The petal lets go','All seeds carry hope','New growth crowns the dead',
+    'The earth takes it back','One bloom lights the shade','all green things return','the slope holds its soil','stone learns from the rain','moss claims the old wall','the seed finds its dark','bark heals what frost split','loam holds the warmth close','dew feeds the lichen',
+    'spores ride the last light','the grove stands through wind','roots drink the slow seep','the ridge sheds its snow','ash gives the soil back','mist crowns the dead wood','the corm keeps its store','green threads find the cracks','shade deepens the pool','pods wait for the wind',
+    'stone holds what rain wrote','frost yields to the root','silt buries the old','the fern knows the shade','clay molds to the root','rain dims the dry thorns','cold wakes the deep bulb','the rot feeds what grows','old scars hold the moss','the drift buries seed',
+    'rime coats the bare stem','the well holds dark rain','roots know the way down','fog lifts from the fen','bark splits and then heals','the peat holds its dead','light bends through the spore','the stone gives up salt','moss mends the old crack','seeds dream under ash',
+    'the trunk splits in thaw','cold feeds the still roots','dew marks the night path','rain reads the bark grain','the husk gives way slow','sap rises from dark','the scree holds the seed','loam breathes through the frost','the clay keeps its shape','new roots find the seam',
+    'the soil repays all','frost writes on the stone','bark records each year','the fen holds its breath','moss outlasts the wall','roots accept the dark','loam forgives the ash','stone answers the rain','spores need the wind most','the crown sways but holds',
+    'dew gives the moss life','ice shapes what will grow','the stump feeds the new','shade teaches the root','the gorge holds damp air','bark knows when to split','sap slows but still moves','the bulb waits for warmth','moss quilts the bare ground','rain finds every crack',
+    'the ridge bears the wind','old roots feed young shoots','the thaw starts below','spores land where they must','frost gives then it takes','peat keeps the old scent','the silt buries deep','bark grows from within','seeds trust the cold ground','the flint holds its spark',
+    'fog gives what rain lacks','the reef builds from death','rime melts into roots','the grove holds its ground','ash turns into soil','the cliff sheds its face','roots learn the hard way','mold claims what falls still','the marsh breathes through reeds','growth finds a way through',
+    'dusk cools the baked clay','time grinds the stone smooth','the col holds the mist','roots weave what wind broke','night feeds the slow roots','the vale collects dew','the slope knows the rain','stone cracks and seeds move','moss smooths the rough edge','the fen breathes out fog',
+    'bark thins toward the crown','frost comes and frost goes','loam turns the dead green','the reed bends then springs','shade marks the safe ground','the tor sheds its skin','rain carves the old path','sap knows its own weight','the spore trusts the wind','roots drink what stone weeps',
+    'the creek shapes the stone','bark holds the last warmth','seeds bank on the cold','mold works through the night','the drift warms the roots','ice taught the stone cracks','loam takes what was green','shade wins at the base','rain rusts the old gate','spores wait for the damp',
+    'the bog preserves all','frost maps the weak points','the bark writes in rings','silt smooths the stream bed','shade guides the young shoots','moss keeps the stone true','rain tests the whole slope','the corm bides its time','roots find their own depth','frost strips the soft bark',
+    'the vale fills with mist','growth heals the cut limb','dew feeds the slow mold','seeds know the right depth','the creek takes the path','bark shields the green pith','frost prunes the weak limbs','the loam pays its debts','shade hides the young fern','rain shapes more than wind',
+    'the root maps the rock','stone yields in the end','all bark holds a year','the slope finds its grade','roots know no straight lines','stone speaks through its cracks','dew proves the night cold','loam asks for nothing','frost breaks and roots mend','rain writes in the stone',
+    'moss takes the long view','bark is the slow scab','shade favors the small','roots learn by going','the ground keeps the score','the seed needs the fall','stone bows to the root','dew shares the dawn light','frost serves the strong buds','the soil holds the proof',
+    'shade hides no small thing','rain builds the deep loam','roots solve the same maze','bark asks the wind where','the creek bows to stone','seeds fall and seeds rise','frost prunes with no waste','the spore needs the rot','stone wears the rain print','roots work the night shift',
+    'loam keeps its accounts','the reed reads the wind','dew loans the moss life','shade breeds the deep green','frost writes its own will','the peat keeps all debts','roots talk through the dark','bark heals from within','the cliff sheds for good','moss writes the last word',
+    'the root knows the rock','dew maps the colds reach','the fen holds no grudge','stone keeps the old weight','rain pays the stone toll','the slope reads each step','frost picks the weak joints','seeds hold the whole plan','Then the silence holds','The pond goes still now',
+    'One branch holds the moon','The ridge cuts the light','The nest is enough','The bud did not break','Each seed has its chance','The rings do not lie','The grain runs one way','The moss is just moss','Let the vine have it','The loam forgets names',
+    'Shade asks no credit','Roots need the dark most','Stone has no hurry','All paths lead to loam','The bark does not boast','Dew keeps no record','The old wood still holds','Rain asks the same path','The seed chose the crack','The grove has no king',
+    'Cold has its uses','The spore asks for damp','Roots never look back','The rill knows its bed','Ash has no regrets','The clay holds the print','Stone takes the long way','Frost is not the foe','The web holds the dew','This was always here',
+    'The dark does the work','Sap owes the cold debt','The mold means no harm','Loam was a forest','Rain has no favorites','The seed keeps its word','Shade gives and asks not','The silt tells no tales','Bark wears its own scars','What fell feeds what stands',
+    'The wind has no path','Moss needs just the dew','The grove carries on','This is enough light','The leaf has done well','To grow is the point','The soil does the math','One gram feeds the grove','Ash makes the soil rich','The ridge is the ridge',
+    'The rock face just waits','The stream chose this path','Green does not explain','The bark asked for none','One inch took ten years','The root has no name','Shade does not compete','The deep soil is warm','All dust was alive','The stone has been rain',
+    'Rain needs no applause','The fen forgets none','Moss grows on its own','The seed has its plan','The spore chose the dark','The stump does not grieve','The fell sleeps in fog','What breaks makes the soil','Wood holds the old flex','Roots do not complain',
+    'The slope finds its rest','The dew was enough','Silt takes the low ground','The root found its way','All growth has its cost','The bark hides the pulse','Shade does the slow work','Green needs no defense','Stone does not forget','The peat keeps its word',
+    'Roots owe the dark all','The grain tells the truth','Dew gives without terms','The clay keeps its cool','One bloom earns the light','Bark wears what time wrote','The seep feeds the well','Spores trust what wind does','Shade covers the rest','Still the forest grows',
+    'The root will outlive','Rain gives without thought','The bark knows the lean','Stone was once the sea','Shade grants the small life','The peat holds each year','Green owes the dark all','The seed is a bet','Moss writes on the stone','The grove is one tree',
+    'Wind chose the shape first','Scree is the cliffs gift','The flood left its gift','Rain reads no borders','Dead wood is the door','The moss has no clock','Roots know the truth first','Stone keeps what life drops','The seed trusts the soil','Growth needs no applause',
+    'The root has no doubt','All shade is a gift','Moss asks the bare least','Each branch earns its light','Ash returns the debt','The fall feeds the spring','Salt finds every wound','The dark grows the most','One bloom pays the tree','The scar is the proof',
+    'Roots share without thought','The wood does not lie','Shade costs the tree light','The stem will not beg','Nothing grows for free','The grove opens wide','Frost taught the deep roots','Rain keeps no accounts','The log feeds the next','Stone learns the slow way',
+    'All roots share one dark','The seed knows its work','Old bark holds old rain','The cliff gives one rock','Shade has its own warmth','What dies feeds what lives','Ash is not the end','Rain gives and moves on','Sap flows without thought','Whats hidden holds most',
+    'Roots know more than leaves','Depth is where life starts','The web holds the grove','The dark feeds the light','Be still and it comes','Moss can heal the break','The garden forgives','All wounds want the moss','Shade is the first balm','The grove waits for all',
+    'Root touch heals the soil','The earth has been worse','Life finds the way back','Stone has seen it all','The soil will rebuild','What burned will grow back','The seed bank holds on','No tree stands alone','The grove shares its food','The sick tree gets fed',
+    'Shade is shared not sold','The gift moves through dark','Night is not the foe','Moths serve the night bloom','Stars guide the lost spore','What sleeps serves the dawn','All growth carries grief','The bond is the root','Joy breaks through the dark','The old way still works',
+    'Flame cleans the forest','The land knows its name','Ask the elder root','The song holds the map','Trust the oldest path','The bloom is enough','Whats small is not weak','The slow path still holds','Each leaf is a lung','One grove breathes for all',
+    'The hill needs no name','Moss speaks to no one','The path needs no feet','Light asks no witness','Stone has no complaint','The stream needs no map','Shade serves in silence','Wind signs no contract','The grass keeps growing','Weeds crown the old wall',
+    'The whole hides in one','Each drop was the sea','One seed holds all oaks','Grass knows the winds mood','Grass bends and then springs','The flood is the gift','Make room for the flood','Ice holds the first breath','The sealed lake still lives','The drop joins the sea',
+    'Love moves the slow sap','The earth does not rush','Time sides with the root','The wound taught the bark','Rain does not keep score','Green bets on the sun','The bark wrote it down','Night built the mushroom','Ash paid the soil back','Rain is the first gift',
+    'The slow path wins here','The rain will come back','Green fills every gap','Frost serves the strong roots','Seeds land where they land','The slow way still works','Old roots feed young trees','Rain asks no one first','The bark tells the truth','Shade serves the smallest',
+    'Dead leaves feed the soil','The hedge holds its ground','One bloom draws the bee','The fox knows the path','The wren builds from scraps','Frost prunes the garden','The storm clears the air','One root holds the bank','Mud keeps what falls in','The owl hunts the edge',
+    'The worm turns the earth','The nest holds the egg','Seeds wait for their turn','The well fills from rain','Thorns guard the soft fruit','The hawk reads the field','Mud dries and then cracks','The old wall still stands','Rain wears the stone down','The bees found the bloom',
+    'Frost draws on the glass','The pond holds the clouds','Wind shapes the dune grass','The den smells of earth','Smoke lifts from the peat','Moss grows where it should','The brook finds the low','Dead wood hosts new life','The path heals with grass','Roots hold what rain brought',
+    'The field floods and feeds','Bark bears the old scars','Shade cools the baked ground','Orchards stand through frost','Weeds heal the bare ground','The web holds through wind','Rain serves the whole slope','Growth finds every crack','The seed took its chance','Spring keeps its promise',
+    'The bud kept its nerve','One crack is enough','Shoots find their own light','The slow way still wins','The wait was worth it','Time favors the root','Patience is the root','What falls feeds the ground','The old feeds the new','All things come around',
+    'Snow melts and seeds sprout','Frost goes and green comes','The trunk bends but holds','What bent did not break','Life comes back from less','Green came back from ash','Roots held through it all','No root works alone','The grove shares the rain','Old trees feed the young',
+    'Shade serves without thanks','Bark shields what is soft','The hedge blocks the wind','Home is where roots hold','The den holds the warmth','The end feeds the start','What ends begins here','The first green is proof','The frost is not the end','The bare branch holds spring',
+    'Dead wood starts the new','The land was here first','Soil gets the last word','What grew wild stays wild','The hawk sees it all','Light finds every leaf','Wind chose the strong shape','The fox trusts its nose','Stars guide the night moth','Sound carries through cold',
+    'The cliff sheds each year','Light teaches the shoot','The field holds the lark','Wind earns the smooth stone','The hedge shelters all','Bees read the blooms code','The owl knows the dark','Sun ripens the fruit','The worm tills the earth','Flame made the soil rich',
+    'Wind writes the trees shape','Shade taught the pale fern','The fox finds the way','Hawks see what roots miss','Wind prunes what must go','The wren sings for all','Bees know the best blooms','Shade grows the slow fern','Light chooses no one','The flood left rich soil',
+    'Clay holds what it takes','Storms pass and things grow','The field knows its birds','Old walls grow their own','What rusts feeds the earth','The creek finds the way','Green goes where it will','The moon pulls the sap','Mud turns back to field','The vole knows the hedge',
+    'Weeds hold the loose bank','New growth hides the scar','Dawn warms the cold stone','Roots drink in the dark','Time broke the stone wall','The hedge fed the birds','Wind cleans the dead wood','The oak stands its ground','Bark holds the trees years','Snow blanks the whole field',
+    'Life fills the small gaps','The seed found the crack','Green wins the long game','The worm earned the soil','Frost comes but frost goes','All shade was once sun','Roots trust the deep dark','The strong tree bends first','Rain takes the short path','The thorns earned the rose',
+    'What falls grows again','One oak fed the hill','Dry earth cracks and waits','The slow ones endure','Cold taught the deep root','The flood gives and takes','Weeds heal what harm did','Night builds what day shows','Wind writes in the sand','What burned bloomed back twice',
+    'Stone yields but stone lasts','The bark stores the proof','Birds plant the hedgerow','Mud holds each footprint','The still pond sees all','Frost thins the weak limbs','What bends does not break','Growth heals the stripped bark','The nest holds through storms','Dew writes on each blade',
+    'Wind shapes but roots choose','The old paths know best','Hedges outlive farms','Each bloom earns the bee','Light finds the last leaf','Peat holds the whole past','Floods make the soil new','What grew grows once more','The wall taught the vine','Shade serves the young growth',
+    'Wind sorts the strong wood','Wind finds every flaw','The gale chose the weak','Wind writes the tree','What the wind strips stays','Wind takes the dues first','The breeze served the seed','The gale pruned the crown','Wind clears the way through','Light shows no favor',
+    'Dawn keeps no record','Light asks for no thanks','Sun serves the small fern','Shade has its own gifts','The owl owns the dusk','Stars guide without charge','Dawn forgives the night','Light bends to the low','Moon serves the lost moth','Dusk softens all edges',
+    'Light finds the way down','The flock turns as one','Each tree lifts the grove','The herd guards the young','The swarm finds the way','No bloom serves just one','The grove speaks as one','Each part serves the whole','The hedge shelters both','The long game wins here',
+    'No clock rules the bloom','Slow games always win','Age teaches the bark','Time gifts the patient','Time carves its own proof','Years earn the smooth stone','Dusk ends what dawn starts','The crow solves the lock','Eels know the sea road','The wren fears no storm',
+    'The hawk earned the sky','The mole trusts the dark','The hive thinks as one','Ants lift more than weight','The heron earns the catch','Swifts sleep on the wing','The fox reads the snow','The geese trade the lead','Ash was once a tree','Wind shows no favor',
+    'The hive shares its warmth','Shade shelters the small','The deep feeds the high','Old wood holds its warmth','Fire clears the way','The creek finds the sea','Dawn asks no one','We were all seeds once','The climb taught the child','Play is the first work',
+    'Joy needs no reason','All forts fall in time','The creek taught the way','Dirt washed off at dusk','We knew before words','The yard knows your weight','Weeds earn their own space','The gate keeps no one','Home starts at the dirt','Fences fall to green',
+    'The shed holds the past','All lawns want the wild','Sound proves the world real','The bell says enough','Hush holds the most weight','All creeks find their voice','The ear knows the truth','Noise fades but song stays','Still air hides the bird','Bread needs time and heat',
+    'Sweet comes from the dirt','The fruit holds the tree','Taste tells the whole truth','Salt keeps what it finds','Good earth feeds the tongue','Small jaws move the world','The worm asks no thanks','Wings start as a crawl','Six legs built this soil','The snail wastes no step',
+    'Size proves nothing here','Dark does the real work','Night owns half the world','The dark is not rest','Roots grow in the black','Stars steer what we sow','The night feeds the day','Sleep builds what wakes use','Spring keeps its own clock','The year turns on scent',
+    'Change wears no warning','Green comes when green comes','Cold teaches patience','Seasons ask no leave','The wheel does not stop','Wind tests every branch','The calm earned the storm','Wind bows but wont break','The web is the bridge','The pack reads the wind',
+    'One bee maps for all','No nest is built alone','The eave guards the nest','Bark is the first shield','The hedge breaks the blast','Stone walls cut the wind','The den keeps the heat','Bark wraps what is soft','Hulls keep the sea out','The shell guards the seed',
+    'The wall breaks the frost','The lee side holds warmth','Time wrote the tree rings','Years smooth the rough stone','Time heals the stripped land','Spring earned the hard frost','Life bets on the small','What cracks lets light in','The low ground gets fed','The burnt field blooms first',
+    'Age writes on the bark','The flood makes it new','The bee earns the bloom','Want drives the deep root','Night grew the mushroom','Loss made room for more','What bends earns more years','Trust goes to the old','Scars prove the tree lived','The ache makes it grow',
+    'Use wears the fine edge','Give the weeds their due','The plain ones endure','What serves does not boast'
   ];
 
   // ═══ HAIKU ENGINE v4 — Gemini ear-checked banks + Director verified ═══
@@ -20557,7 +20237,30 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
   }
   // ═ GREENHOUSE
   var GH_KEY = 'sws_greenhouse';
-  var MAX_COLLECTION_SIZE = 50;
+  var GH_SLOTS_KEY = 'sws_greenhouse_slots';
+  var GH_SLOTS_BASE = 10;
+  var GH_SLOTS_MAX = 60;
+
+  function getGHSlots() {
+    try {
+      var stored = parseInt(localStorage.getItem(GH_SLOTS_KEY), 10);
+      if (stored >= GH_SLOTS_BASE && stored <= GH_SLOTS_MAX) return stored;
+      // Auto-adjust for existing players
+      var ghLen = 0;
+      try { ghLen = (JSON.parse(localStorage.getItem('sws_greenhouse')) || []).length; } catch(e2) {}
+      var autoSlots = Math.max(GH_SLOTS_BASE, Math.min(GH_SLOTS_MAX, ghLen + 2));
+      localStorage.setItem(GH_SLOTS_KEY, String(autoSlots));
+      return autoSlots;
+    } catch(e) { return GH_SLOTS_BASE; }
+  }
+
+  function setGHSlots(n) {
+    var clamped = Math.max(GH_SLOTS_BASE, Math.min(GH_SLOTS_MAX, n));
+    localStorage.setItem(GH_SLOTS_KEY, String(clamped));
+    return clamped;
+  }
+
+  var MAX_COLLECTION_SIZE = getGHSlots();
 
   // ══════════════════════════════════════════════════════════════════════
   // PLANT SEAL — Cryptographic integrity layer
@@ -20756,7 +20459,8 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
       phenos: phenosFound,
       time: getTimeSec(),
       rare: traits.isRare,
-      traits: getTraitSummary(hash)
+      traits: getTraitSummary(hash),
+      breedCount: 0
     };
     if (opts && opts.isCross) entry.isCross = true;
     // PLANT SEAL — cryptographic signature
@@ -20865,6 +20569,10 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
         if (t.mythicName === 'None') return null;
         return { name: t.mythicName, rare: false, tier: 'mythic' };
     }}
+    ,{ key: 'HERITAGE', get: function(t) {
+        if (!t.mycelialCrown) return null;
+        return { name: 'Mycelial Crown', rare: true };
+    }}
   ];
 
   // VESSEL and STRUCTURE both show the pot/stem — deduplicate for clean output
@@ -20876,6 +20584,9 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
     opts = opts || {};
     var t;
     try { t = hashToTraits(plant.hash); } catch(e) { return ''; }
+    if (plant.generation) t.chimerGen = plant.generation;
+    if (plant.mycelialCrown) t.mycelialCrown = true;
+    if (plant.breedLayers) t.breedLayers = plant.breedLayers;
 
     // Build rows — skip None, skip STRUCTURE if same name as VESSEL
     var potName = TRAIT_BANK.pots[t.pot] ? TRAIT_BANK.pots[t.pot].name : '';
@@ -20929,6 +20640,84 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
     }
     return html;
   }
+
+  // ═══ LINEAGE TREE — 3-generation family tree from parent hashes ═══
+  function renderLineageTree(plant) {
+    if (!plant || !plant.parentAHash || !plant.parentBHash) return '';
+    var gh = loadGreenhouse();
+
+    function _findPlant(hash) {
+      for (var i = 0; i < gh.length; i++) {
+        if (gh[i].hash === hash) return gh[i];
+      }
+      return null;
+    }
+
+    function _nameOf(hash) {
+      return typeof getPlantName === 'function' ? getPlantName(hash) : hash.substring(0, 8);
+    }
+
+    function _genOf(p) {
+      return p ? (p.generation || 1) : 1;
+    }
+
+    function _gradeOf(hash) {
+      try {
+        var t = hashToTraits(hash);
+        var tg = getTerraGrade(t);
+        return '<span style="color:' + tg.color + ';">' + tg.name + '</span>';
+      } catch(e) { return ''; }
+    }
+
+    function _parentLine(hash, label) {
+      var p = _findPlant(hash);
+      var name = _nameOf(hash);
+      var gen = _genOf(p);
+      var grade = _gradeOf(hash);
+      var ghostCls = p ? '' : ' style="opacity:0.4;"';
+      var ghostTag = p ? '' : ' <span style="font-size:0.3rem;color:rgba(192,112,112,0.6);">[composted]</span>';
+      return '<div class="lt-parent"' + ghostCls + '>'
+        + '<span class="lt-label">' + label + '</span>'
+        + '<span class="lt-name">' + name + '</span>'
+        + '<span class="lt-meta">Gen ' + gen + ' · ' + grade + '</span>'
+        + ghostTag
+        + '</div>';
+    }
+
+    // Build tree: this plant + 2 parents + up to 4 grandparents
+    var pA = _findPlant(plant.parentAHash);
+    var pB = _findPlant(plant.parentBHash);
+
+    var html = '<div class="lt-tree">';
+    html += '<div class="lt-section-title">LINEAGE</div>';
+
+    // Parent A subtree
+    html += '<div class="lt-branch">';
+    html += _parentLine(plant.parentAHash, '♀');
+    if (pA && pA.parentAHash) {
+      html += '<div class="lt-grandparents">';
+      html += _parentLine(pA.parentAHash, '↖');
+      html += _parentLine(pA.parentBHash, '↗');
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // Parent B subtree
+    html += '<div class="lt-branch">';
+    html += _parentLine(plant.parentBHash, '♂');
+    if (pB && pB.parentAHash) {
+      html += '<div class="lt-grandparents">';
+      html += _parentLine(pB.parentAHash, '↖');
+      html += _parentLine(pB.parentBHash, '↗');
+      html += '</div>';
+    }
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  window.renderLineageTree = renderLineageTree;
 
   // ── Back-compat: getTraitSummary now delegates to renderDNALedger data ──
   // (kept for legacy call sites that expect a plain string)
@@ -21020,12 +20809,50 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
     } else {
       grid.style.gridTemplateColumns = '';  // reset to CSS default (5)
     }
-    // Update active button
-    document.querySelectorAll('.gh-grid-btn').forEach(function(b) { b.classList.remove('active'); });
-    var btns = document.querySelectorAll('.gh-grid-btn');
+    // Update active button (scoped to grid btns only)
+    var btns = document.querySelectorAll('#gh-grid-btns .gh-grid-btn');
+    btns.forEach(function(b) { b.classList.remove('active'); });
     if (cols === 1 && btns[0]) btns[0].classList.add('active');
     else if (cols === 2 && btns[1]) btns[1].classList.add('active');
     else if (btns[2]) btns[2].classList.add('active');
+  };
+
+  var _ghSortMode = 'newest'; // 'newest' | 'rarest' | 'name'
+
+  window.setGHSort = function(mode) {
+    _ghSortMode = mode;
+    // Update active button
+    var btns = document.querySelectorAll('#gh-sort-btns .gh-grid-btn');
+    btns.forEach(function(b) { b.classList.remove('active'); });
+    var modes = ['newest', 'rarest', 'name'];
+    var idx = modes.indexOf(mode);
+    if (idx >= 0 && btns[idx]) btns[idx].classList.add('active');
+    renderGreenhouse();
+  };
+
+  window.expandGHSlot = function() {
+    var current = getGHSlots();
+    if (current >= GH_SLOTS_MAX) {
+      showHexMsg('Maximum 60 slots reached.');
+      return;
+    }
+
+    // ── Pi Payment Hook ──────────────────────────────────
+    // When Pi SDK is integrated, replace this block with:
+    //   Pi.createPayment({ amount: 1, memo: 'Greenhouse slot ' + (current+1) })
+    //     .then(function(payment) { ... complete payment ... setGHSlots(current+1); })
+    // For now: local expansion with confirmation
+    if (!confirm('Expand greenhouse to ' + (current + 1) + ' slots?\n\n(Pi payment will be required when marketplace launches. Free during beta.)')) {
+      return;
+    }
+    // ── End Payment Hook ─────────────────────────────────
+
+    var newSlots = setGHSlots(current + 1);
+    MAX_COLLECTION_SIZE = newSlots;
+    _haptic('tab');
+    renderGreenhouse();
+    showHexMsg('Greenhouse expanded to ' + newSlots + ' slots.');
+    if (typeof gtag !== 'undefined') gtag('event', 'gh_slot_expanded', { slots: newSlots });
   };
 
   // ── ONE GAME PER DEVICE — device fingerprint lock ──
@@ -21041,6 +20868,7 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
   })();
 
   function renderGreenhouse() {
+    MAX_COLLECTION_SIZE = getGHSlots();
     var gh = loadGreenhouse();
     window._padGHPlants = gh; // set-51: expose for flip-card back action buttons
     var grid = document.getElementById('greenhouse-grid');
@@ -21051,6 +20879,28 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
     var pct = Math.round((gh.length / MAX_COLLECTION_SIZE) * 100);
     countEl.textContent = gh.length + ' / ' + MAX_COLLECTION_SIZE;
     if (fillEl) fillEl.style.width = pct + '%';
+    var expandBtn = document.getElementById('gh-expand-btn');
+    if (expandBtn) expandBtn.style.display = (MAX_COLLECTION_SIZE >= GH_SLOTS_MAX) ? 'none' : '';
+
+    // Sort plants based on current mode
+    var sorted = gh.slice(); // copy so we don't mutate localStorage order
+    if (_ghSortMode === 'rarest') {
+      sorted.sort(function(a, b) {
+        var sa = 0, sb = 0;
+        try { var _ta = hashToTraits(a.hash); if (a.generation) _ta.chimerGen = a.generation; if (a.mycelialCrown) _ta.mycelialCrown = true; if (a.breedLayers) _ta.breedLayers = a.breedLayers; sa = getTerraGrade(_ta).score; } catch(e) {}
+        try { var _tb = hashToTraits(b.hash); if (b.generation) _tb.chimerGen = b.generation; if (b.mycelialCrown) _tb.mycelialCrown = true; if (b.breedLayers) _tb.breedLayers = b.breedLayers; sb = getTerraGrade(_tb).score; } catch(e) {}
+        return sb - sa; // highest score first
+      });
+    } else if (_ghSortMode === 'name') {
+      sorted.sort(function(a, b) {
+        var na = '', nb = '';
+        try { na = (typeof getPlantName === 'function' ? getPlantName(a.hash) : a.hash.slice(0,8)).toLowerCase(); } catch(e) {}
+        try { nb = (typeof getPlantName === 'function' ? getPlantName(b.hash) : b.hash.slice(0,8)).toLowerCase(); } catch(e) {}
+        return na < nb ? -1 : na > nb ? 1 : 0;
+      });
+    } else {
+      sorted.reverse(); // newest first (default)
+    }
 
     grid.innerHTML = '';
 
@@ -21059,14 +20909,17 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
     for (var i = 0; i < slotsToShow; i++) {
       var el = document.createElement('div');
 
-      if (i < gh.length) {
-        // Collected plant
-        var plant = gh[gh.length - 1 - i]; // newest first
-        var realIdx = gh.length - 1 - i;
+      if (i < sorted.length) {
+        // Collected plant — use sorted order, map back to raw index for actions
+        var plant = sorted[i];
+        var realIdx = gh.indexOf(plant);
         // set-51: compute traits early for season class + EA knot
         var _ghTraits = null, _ghSeason = 0, _ghEA = 0, _ghTG = null;
         try {
           _ghTraits = hashToTraits(plant.hash);
+          if (plant.generation) _ghTraits.chimerGen = plant.generation;
+          if (plant.mycelialCrown) _ghTraits.mycelialCrown = true;
+          if (plant.breedLayers) _ghTraits.breedLayers = plant.breedLayers;
           _ghSeason = (_ghTraits && typeof _ghTraits.season === 'number') ? _ghTraits.season % 4 : 0;
           _ghEA = window.computeEA ? window.computeEA(_ghTraits, 0) : 0;
           _ghTG = getTerraGrade(_ghTraits);
@@ -21112,9 +20965,10 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
         var _ghSymbol = plant.revealed ? '<img class="cf-rarity-symbol cf-rarity-symbol--grid" src="/assets/symbol-' + _ghTierName + '.png" alt="' + _ghTierName + '">' : '';
         el.innerHTML =
           _eaKnotHtml +
-          '<div class="gh-slot">#' + (gh.length - i) + '</div>' +
+          '<div class="gh-slot">#' + (realIdx + 1) + '</div>' +
           plantSvg +
           '<div class="gh-name" style="color:var(--cream);">' + _pName + '</div>' +
+          (plant.breedCount >= 3 ? '<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(192,112,112,0.7);margin-top:1px;">⚡ SPENT 3/3</div>' : '') +
           (_sea ? '<div style="display:flex;justify-content:center;gap:3px;margin-top:1px;font-size:0.3rem;align-items:center;"><span>' + _sea.emblem + '</span></div>' : '') +
           _ghSymbol;
       } else {
@@ -21192,6 +21046,7 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
       var subTotal = Object.values(inv.substrate || {}).reduce(function(a,b){ return a+b; }, 0);
       invEl.innerHTML =
         '<div class="inventory-label">⬡ INVENTORY</div>' +
+        '<div class="inventory-val" style="color:var(--gold);">' + (inv.fertilizer||0) + ' FERT</div>' +
         '<div class="inventory-val">' + (inv.dnaFragments||0) + ' DNA</div>' +
         '<div class="inventory-val" style="color:var(--muted);font-size:0.55rem;">· ' + subTotal + ' SUBSTRATE</div>';
     }
@@ -21566,6 +21421,9 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
     var _t = null, _season = 0, _ea = 0, _tg = null, _sea = null;
     try {
       _t = hashToTraits(plant.hash);
+      if (plant.generation) _t.chimerGen = plant.generation;
+      if (plant.mycelialCrown) _t.mycelialCrown = true;
+      if (plant.breedLayers) _t.breedLayers = plant.breedLayers;
       _season = (_t && typeof _t.season === 'number') ? _t.season % 4 : 0;
       _ea = window.computeEA ? window.computeEA(_t, 0) : 0;
       _tg = getTerraGrade(_t);
@@ -21624,6 +21482,7 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
     // Rarity label
     back += '<div class="cb-rarity" style="color:' + sColor + ';">' + (_tg ? _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon : 'COMMON') + '</div>';
     // Hash + date
+    if (plant.parentAHash) back += renderLineageTree(plant);
     back += '<div class="cb-hash" style="margin-top:0.4rem;padding-top:0.3rem;border-top:1px solid rgba(74,124,53,0.06);">' + plant.hash + '</div>';
     back += '<div class="cb-date" style="margin-top:0.1rem;">Minted ' + (plant.date || '') + dateSuffix + '</div>';
     back += '<div class="cb-nameplate" style="position:absolute;bottom:8%;left:10%;right:10%;"><span class="cb-name" style="color:' + sColor + ';">' + name + '</span></div>';
@@ -21932,6 +21791,30 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
     galleryPlant = null;
     _carousel.arr = []; _carousel.busy = false;
     if (window.FG_Audio) FG_Audio.setRarityTier(0);
+  };
+
+  // ── Carousel action wrappers (greenhouse mechanics fix) ──────────────
+  window.carouselCompost = function() {
+    if (!galleryPlant) return;
+    var idx = galleryPlant.collectionIndex;
+    if (typeof idx !== 'number' || idx < 0) return;
+    var gh = loadGreenhouse();
+    if (idx >= gh.length) return;
+    var name = typeof getPlantName === 'function' ? getPlantName(gh[idx].hash) : 'this plant';
+    if (confirm('Compost "' + name + '"?\n\nThis permanently removes the plant from your Greenhouse and adds DNA Fragments to your Inventory. This cannot be undone.')) {
+      closePlantGallery();
+      compostPlant(idx);
+    }
+  };
+
+  window.carouselBreed = function() {
+    if (!galleryPlant) return;
+    closePlantGallery();
+    if (window.openBreedScreen) {
+      openBreedScreen(galleryPlant, 'greenhouse');
+    } else if (window.openCrossPollinateFlow) {
+      openCrossPollinateFlow();
+    }
   };
 
   // ═══ DOWNLOAD PLANT CARD — Canvas Renderer ═══
@@ -22315,8 +22198,12 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
   var INV_STAGING = 'sws_inventory_pending';
 
   function loadInventory() {
-    try { return JSON.parse(localStorage.getItem(INV_KEY) || 'null') || { dnaFragments: 0, substrate: {}, lastUpdated: null }; }
-    catch(e) { return { dnaFragments: 0, substrate: {}, lastUpdated: null }; }
+    try {
+      var inv = JSON.parse(localStorage.getItem(INV_KEY) || 'null') || { dnaFragments: 0, substrate: {}, fertilizer: 0, lastUpdated: null };
+      if (typeof inv.fertilizer !== 'number') inv.fertilizer = 0;
+      return inv;
+    }
+    catch(e) { return { dnaFragments: 0, substrate: {}, fertilizer: 0, lastUpdated: null }; }
   }
 
   function saveInventory(inv, force) {
@@ -22337,11 +22224,17 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
       showHexMsg('⚠ Invalid plant data.'); return;
     }
 
-    // Step 2: compute reward payload
+    // Step 2: compute reward payload — fertilizer by Terra Grade tier
     var t; try { t = hashToTraits(plant.hash); } catch(e) { t = {}; }
-    var dnaReward    = plant.rare ? 3 : (plant.isCross ? 2 : 1);
+    if (plant.generation) t.chimerGen = plant.generation;
+    if (plant.mycelialCrown) t.mycelialCrown = true;
+    if (plant.breedLayers) t.breedLayers = plant.breedLayers;
+    var _tg; try { _tg = getTerraGrade(t); } catch(e) { _tg = { name: 'Common' }; }
+    var _fertTable = { Common: 1, Uncommon: 1, Rare: 2, Epic: 2, Legendary: 3, Mythic: 4, Cosmic: 5 };
+    var fertReward = _fertTable[_tg.name] || 1;
+    var dnaReward = fertReward;
     var substrateKey = String(t.base || 0);
-    var reward = { dnaFragments: dnaReward, substrateKey: substrateKey, plantHash: plant.hash, ts: Date.now() };
+    var reward = { dnaFragments: dnaReward, fertilizer: fertReward, substrateKey: substrateKey, plantHash: plant.hash, ts: Date.now() };
 
     // Step 3: write staging key BEFORE any production write
     try { localStorage.setItem(INV_STAGING, JSON.stringify({ reward: reward, plantIndex: plantIndex, plant: plant })); }
@@ -22350,6 +22243,7 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
     // Step 4: add reward to sws_inventory
     var inv = loadInventory();
     inv.dnaFragments = (inv.dnaFragments || 0) + dnaReward;
+    inv.fertilizer = (inv.fertilizer || 0) + fertReward;
     inv.substrate[substrateKey] = (inv.substrate[substrateKey] || 0) + 1;
     inv.lastUpdated = new Date().toISOString();
     var invOk = false;
@@ -22369,6 +22263,7 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
     if (!ghOk) {
       // Rollback: restore inventory to pre-compost state
       inv.dnaFragments -= dnaReward;
+      inv.fertilizer = Math.max(0, (inv.fertilizer || 0) - fertReward);
       inv.substrate[substrateKey] = Math.max(0, (inv.substrate[substrateKey] || 1) - 1);
       try { localStorage.setItem(INV_KEY, JSON.stringify(inv)); } catch(e2) {}
       showHexMsg('⚠ Greenhouse write failed — transaction rolled back.'); return;
@@ -22384,7 +22279,7 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
     closePlantGallery();
     renderGreenhouse();
     updateDashboard();
-    showHexMsg('🧪 Composted. +'+ dnaReward +' DNA Fragment'+(dnaReward>1?'s':'')+' added to Inventory.');
+    showHexMsg('🧪 Composted. +' + fertReward + ' Fertilizer, +' + dnaReward + ' DNA added.');
     if (typeof gtag !== 'undefined') gtag('event', 'plant_composted', { hash: plant.hash.slice(0,8), dna: dnaReward });
   };
 
@@ -22402,6 +22297,7 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
       var r = pending.reward;
       if (r) {
         inv.dnaFragments = (inv.dnaFragments || 0) + r.dnaFragments;
+        inv.fertilizer = (inv.fertilizer || 0) + (r.fertilizer || 0);
         inv.substrate[r.substrateKey] = (inv.substrate[r.substrateKey] || 0) + 1;
         inv.lastUpdated = new Date().toISOString();
         try { localStorage.setItem(INV_KEY, JSON.stringify(inv)); } catch(e) {}
@@ -22707,6 +22603,17 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
       pips += '<span class="nur-pip' + (seed.waterLog.length > p ? ' watered' : '') + '"></span>';
     }
     var dayLabel = seed.waterLog.length + '/3 watered';
+    var stateLabel, stateColor;
+    if (bloomReady) {
+      stateLabel = '🌸 READY TO BLOOM';
+      stateColor = 'var(--gold)';
+    } else if (wateredToday) {
+      stateLabel = '💤 Resting — come back tomorrow';
+      stateColor = 'var(--muted)';
+    } else {
+      stateLabel = '💧 Needs water today';
+      stateColor = 'var(--sage)';
+    }
     // Progressive growth visual
     var days = seed.waterLog.length;
     var svgHtml;
@@ -22739,22 +22646,32 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
     var waterLabel    = wateredToday ? '✓ WATERED' : '💧 WATER';
     var waterDisabled = (wateredToday || bloomReady) ? 'disabled' : '';
 
+    var _seedFert = seed.fertApplied || 0;
+    var _invFert = 0;
+    try { _invFert = loadInventory().fertilizer || 0; } catch(e) {}
+    var _fertMax = 25;
+    var _canFert = _invFert > 0 && _seedFert < _fertMax && !bloomReady;
+
     var actionBtns;
     if (bloomReady) {
       actionBtns = '<button class="nur-btn bloom" data-sid="' + sid + '" onclick="handleBloomBtn(this.dataset.sid)">🌸 BLOOM</button>';
     } else {
       actionBtns = '<button class="nur-btn water" data-sid="' + sid + '" onclick="handleWaterSeed(this.dataset.sid)" ' + waterDisabled + '>' + waterLabel + '</button>';
     }
+    actionBtns += '<button class="nur-btn" data-sid="' + sid + '" onclick="handleApplyFertilizer(this.dataset.sid)" style="background:rgba(200,168,75,0.06);border-color:rgba(200,168,75,0.2);color:var(--gold);font-size:0.42rem;"' + (_canFert ? '' : ' disabled') + ' title="Apply 1 fertilizer for +1% rarity boost">🌿 FERT ' + _seedFert + '/' + _fertMax + '</button>';
+
+    var _fertInfo = (seed.fertApplied || 0) > 0 ? '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--gold);margin-top:2px;">🌿 ' + (seed.fertApplied || 0) + '/25 fertilizer (+' + (seed.fertApplied || 0) + '% rarity)</div>' : '';
 
     return '<div class="nur-slot-inner">' +
       '<div class="nur-plant-col">' + svgHtml + '</div>' +
       '<div class="nur-info-col">' +
         '<div class="nur-slot-label">Seed ' + (idx + 1) + '</div>' +
-        '<div class="nur-hash-snippet">' + seed.seedHash.substring(0,10) + '…</div>' +
-        '<div class="nur-parents-line">⊕ ' + seed.parentAHash.substring(0,6) + ' × ' + seed.parentBHash.substring(0,6) + '</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:' + stateColor + ';margin:2px 0;font-weight:600;">' + stateLabel + '</div>' +
+        '<div class="nur-parents-line">⊕ ' + (typeof getPlantName === 'function' ? getPlantName(seed.parentAHash) : seed.parentAHash.substring(0,6)) + ' × ' + (typeof getPlantName === 'function' ? getPlantName(seed.parentBHash) : seed.parentBHash.substring(0,6)) + '</div>' +
         '<div class="nur-pips">' + pips + '<span class="nur-pip-label">' + dayLabel + '</span></div>' +
+        _fertInfo +
         '<div class="nur-actions">' + actionBtns +
-          (!bloomReady && wateredToday ? '<button class="nur-btn" data-sid="' + sid + '" onclick="handleFertilize(this.dataset.sid)" style="background:rgba(200,168,75,0.08);border-color:rgba(200,168,75,0.28);color:var(--gold);font-size:0.44rem;" title="Spend 21 Dew Drops to skip cooldown">⚡ 21 FERTILIZE</button>' : '') +
+          (!bloomReady && wateredToday ? '<button class="nur-btn" data-sid="' + sid + '" onclick="handleFertilize(this.dataset.sid)" style="background:rgba(200,168,75,0.08);border-color:rgba(200,168,75,0.28);color:var(--gold);font-size:0.44rem;" title="Spend 21 Dew Drops to skip cooldown">⚡ 21 SKIP DAY</button>' : '') +
           '<button class="nur-btn abandon" data-sid="' + sid + '" onclick="handleRemoveSeed(this.dataset.sid)" title="Abandon">✕</button>' +
         '</div>' +
       '</div>' +
@@ -22814,9 +22731,15 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
   window.selectCPPlant = function(idx, hash) {
     if (_cpSelectedA && _cpSelectedA.index === idx) { _cpSelectedA = null; }
     else if (_cpSelectedB && _cpSelectedB.index === idx) { _cpSelectedB = null; }
-    else if (!_cpSelectedA) { _cpSelectedA = { index:idx, hash:hash }; }
+    else if (!_cpSelectedA) {
+      var _bcP = loadGreenhouse()[idx];
+      if (_bcP && (_bcP.breedCount || 0) >= 3) { _setCPMsg('Genetics Exhausted — this plant has already been bred 3 times.'); return; }
+      _cpSelectedA = { index:idx, hash:hash };
+    }
     else if (!_cpSelectedB) {
       if (_cpSelectedA.hash === hash) { _setCPMsg('A plant cannot self-pollinate.'); return; }
+      var _bcP2 = loadGreenhouse()[idx];
+      if (_bcP2 && (_bcP2.breedCount || 0) >= 3) { _setCPMsg('Genetics Exhausted — this plant has already been bred 3 times.'); return; }
       _cpSelectedB = { index:idx, hash:hash };
     } else {
       if (_cpSelectedA.hash === hash) { _setCPMsg('Already selected as Parent A.'); return; }
@@ -22859,6 +22782,16 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
           _setNurMsg(addResult.reason==='NURSERY_FULL' ? 'Nursery is full.' : 'Could not add seed: '+addResult.reason);
           return;
         }
+        // Increment breedCount on both parents
+        var _bcGh = loadGreenhouse();
+        var _bcChanged = false;
+        _bcGh.forEach(function(p) {
+          if (p.hash === selA.hash || p.hash === selB.hash) {
+            p.breedCount = (p.breedCount || 0) + 1;
+            _bcChanged = true;
+          }
+        });
+        if (_bcChanged) saveGreenhouse(_bcGh);
         if (typeof gtag!=='undefined') gtag('event','pollination_event',{ nonce:result.nonce, parentA:selA.hash.slice(0,8), parentB:selB.hash.slice(0,8) });
         renderNursery();
         switchTab('nursery');
@@ -22901,12 +22834,14 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
   //   Expected mutations: 64 * 0.05 = 3.2 characters per bloom on average.
   //   Returns { hash, mutated (bool), count (int) }.
   // --------------------------------------------------------------------------
-  function applyMutationRNG(hash) {
+  function applyMutationRNG(hash, fertCount) {
     var chars = hash.split('');
     var mutated = false;
     var count = 0;
+    // Base 5% mutation rate + 1% per fertilizer applied (max 25 = 30%)
+    var mutRate = 0.05 + (Math.min(fertCount || 0, 25) * 0.01);
     for (var i = 0; i < chars.length; i++) {
-      if (Math.random() < 0.05) {
+      if (Math.random() < mutRate) {
         chars[i] = (Math.random() < 0.5) ? 'e' : 'f';
         mutated = true;
         count++;
@@ -22978,6 +22913,66 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
   // --------------------------------------------------------------------------
   // set-81: wrapped in _queueOverlay — serializes with _showDiscoveryOverlay.
   // Collect path uses _fadeOverlayOut (200ms kinetic close) then _releaseOverlay.
+  // ═══ INHERITANCE ANALYZER — determines what the child got from each parent ═══
+  function analyzeInheritance(childHash, parentAHash, parentBHash) {
+    var cT, aT, bT;
+    try { cT = hashToTraits(childHash); } catch(e) { return null; }
+    try { aT = hashToTraits(parentAHash); } catch(e) { return null; }
+    try { bT = hashToTraits(parentBHash); } catch(e) { return null; }
+
+    var nameA = typeof getPlantName === 'function' ? getPlantName(parentAHash) : parentAHash.substring(0, 6);
+    var nameB = typeof getPlantName === 'function' ? getPlantName(parentBHash) : parentBHash.substring(0, 6);
+
+    var inherited = [];
+    var novel = [];
+
+    // Check key trait slots for parent match
+    var _checks = [
+      { name: 'Golden Pot', child: cT.pot === 15, a: aT.pot === 15, b: bT.pot === 15 },
+      { name: 'Glow Flower', child: cT.flower === 15 && cT.hasFlower, a: aT.flower === 15 && aT.hasFlower, b: bT.flower === 15 && bT.hasFlower },
+      { name: cT.mythicName || 'None', child: cT.companion >= 32 && cT.companion <= 38, a: aT.companion >= 32, b: bT.companion >= 32, mythic: true },
+      { name: cT.mutationName || 'None', child: cT.mutationName !== 'None', a: aT.mutationName !== 'None', b: bT.mutationName !== 'None', mutation: true }
+    ];
+
+    _checks.forEach(function(c) {
+      if (!c.child) return;
+      if (c.name === 'None') return;
+      if (c.a && !c.b) {
+        inherited.push({ trait: c.name, from: nameA, side: 'A', mythic: c.mythic, mutation: c.mutation });
+      } else if (c.b && !c.a) {
+        inherited.push({ trait: c.name, from: nameB, side: 'B', mythic: c.mythic, mutation: c.mutation });
+      } else if (c.a && c.b) {
+        inherited.push({ trait: c.name, from: 'both parents', side: 'both', mythic: c.mythic, mutation: c.mutation });
+      } else {
+        novel.push({ trait: c.name, mythic: c.mythic, mutation: c.mutation });
+      }
+    });
+
+    // Check leaf type match
+    if (cT.leafType === aT.leafType && cT.leafType !== bT.leafType) {
+      var lName = (window.TRAIT_BANK && TRAIT_BANK.leaves && TRAIT_BANK.leaves[cT.leafType]) ? TRAIT_BANK.leaves[cT.leafType].name : 'Leaf #' + cT.leafType;
+      inherited.push({ trait: lName + ' canopy', from: nameA, side: 'A' });
+    } else if (cT.leafType === bT.leafType && cT.leafType !== aT.leafType) {
+      var lName2 = (window.TRAIT_BANK && TRAIT_BANK.leaves && TRAIT_BANK.leaves[cT.leafType]) ? TRAIT_BANK.leaves[cT.leafType].name : 'Leaf #' + cT.leafType;
+      inherited.push({ trait: lName2 + ' canopy', from: nameB, side: 'B' });
+    }
+
+    // Determine drama level
+    var hasMythic = inherited.some(function(i) { return i.mythic; });
+    var hasMutation = inherited.some(function(i) { return i.mutation; });
+    var level = 'quick'; // default
+    if (hasMythic || hasMutation || novel.length > 0) level = 'full';
+    else if (inherited.length > 0) level = 'standard';
+
+    return {
+      inherited: inherited,
+      novel: novel,
+      level: level,
+      parentAName: nameA,
+      parentBName: nameB
+    };
+  }
+
   function triggerCinematicReveal(newHash, mutated, mutCount) {
     _queueOverlay(function() {
       var ov = document.getElementById('cinematic-reveal');
@@ -23017,17 +23012,71 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
       var banner   = mutated ? '🧬 MUTATION SUCCESSFUL'  : '🧬 CROSS-BREED COMPLETE';
       var mutLabel = mutated ? '<div class="cr-mut-tag">⚡ GENETIC DRIFT · ' + mutCount + ' CHAR' + (mutCount === 1 ? '' : 'S') + ' ALTERED</div>' : '';
 
+      // ── Inheritance cascade (Spec 10) ──────────────────────────────
+      var _inherit = null;
+      try {
+        // _executeBloom sets these on window before calling triggerCinematicReveal
+        var _pAH = window._lastBloomParentA || '';
+        var _pBH = window._lastBloomParentB || '';
+        if (_pAH && _pBH) _inherit = analyzeInheritance(newHash, _pAH, _pBH);
+      } catch(e) {}
+
+      var cascadeHtml = '';
+      if (_inherit && _inherit.inherited.length > 0) {
+        cascadeHtml += '<div class="cr-cascade" style="margin:0.3rem 0;padding:0.3rem 0.5rem;background:rgba(13,16,12,0.4);border-radius:6px;border:1px solid rgba(74,124,53,0.1);">';
+        cascadeHtml += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.38rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.15rem;">INHERITED TRAITS</div>';
+        _inherit.inherited.forEach(function(item) {
+          var arrow = item.side === 'A' ? '← ' : item.side === 'B' ? '→ ' : '◆ ';
+          var color = item.mythic ? 'var(--gold)' : item.mutation ? 'rgba(192,112,112,0.9)' : 'var(--cream)';
+          cascadeHtml += '<div style="font-family:DM Mono,monospace;font-size:0.36rem;color:' + color + ';margin:2px 0;opacity:0;">'
+            + arrow + '<b>' + item.trait + '</b> <span style="color:var(--muted);font-size:0.3rem;">from ' + item.from + '</span>'
+            + '</div>';
+        });
+        cascadeHtml += '</div>';
+      }
+
+      if (_inherit && _inherit.novel.length > 0) {
+        cascadeHtml += '<div style="margin:0.15rem 0;padding:0.2rem 0.5rem;">';
+        _inherit.novel.forEach(function(item) {
+          var color = item.mythic ? 'var(--gold)' : item.mutation ? 'rgba(192,112,112,0.9)' : 'var(--sage)';
+          cascadeHtml += '<div style="font-family:DM Mono,monospace;font-size:0.36rem;color:' + color + ';margin:2px 0;opacity:0;">'
+            + '✦ <b>' + item.trait + '</b> <span style="color:var(--muted);font-size:0.3rem;">— new expression</span>'
+            + '</div>';
+        });
+        cascadeHtml += '</div>';
+      }
+
       var _revGrade = window.getTerraGrade(window.hashToTraits(newHash));
+
+      // Grade reveal line
+      var gradeHtml = '<div class="cr-grade-reveal" style="margin:0.3rem 0;font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;color:' + _revGrade.color + ';text-shadow:0 0 10px ' + _revGrade.color + '44;text-align:center;opacity:0;">'
+        + _revGrade.icon + ' ' + _revGrade.name.toUpperCase() + ' ' + _revGrade.icon
+        + '</div>';
+
       ov.innerHTML = particles
         + '<div class="cr-banner' + (mutated ? ' mutated' : '') + '">' + banner + '</div>'
         + mutLabel
         + '<div class="cr-plant-wrap' + (mutated ? ' mutated' : '') + '">' + plantSVG + '</div>'
         + (plantName ? '<div class="cr-plant-name" style="color:'+_revGrade.color+';text-shadow:0 0 12px '+_revGrade.color+'44;">'   + plantName + '</div>' : '')
+        + cascadeHtml
+        + gradeHtml
         + '<div class="cr-plant-hash">'                + hs        + '</div>'
-        + renderDNALedger({ hash: newHash })
         + (hk.line1  ? '<div class="cr-haiku">'        + hk.line1 + '<br>' + hk.line2 + '<br>' + hk.line3 + '</div>' : '')
-        + renderSubstrateBadge({ hash: newHash })
         + '<button class="cr-collect-btn" id="cr-collect-btn">[ COLLECT SPECIMEN ]</button>';
+
+      // ── Staggered fade-in for cascade lines ──────────────────────
+      setTimeout(function() {
+        var lines = ov.querySelectorAll('.cr-cascade div[style*="opacity:0"], .cr-grade-reveal, div[style*="new expression"]');
+        for (var li = 0; li < lines.length; li++) {
+          (function(el, delay) {
+            setTimeout(function() {
+              el.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+              el.style.opacity = '1';
+              el.style.transform = 'translateY(0)';
+            }, delay);
+          })(lines[li], 600 + li * 350);
+        }
+      }, 100);
 
       _pushModal('cinematic-reveal');
       ov.classList.add('open');
@@ -23103,22 +23152,57 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
     // 1. DNA Splice
     var parentA = seed.parentAHash || seed.seedHash || '';
     var parentB = seed.parentBHash || seed.seedHash || '';
-    var spliced = generateSplicedHash(parentA, parentB);
+    var spliced = seed.seedHash || generateSplicedHash(parentA, parentB);
 
-    // 2. Mutation RNG
-    var mut = applyMutationRNG(spliced);
+    // 2. Mutation RNG — fertilizer boosts mutation probability
+    var _fertCount = seed.fertApplied || 0;
+    var mut = applyMutationRNG(spliced, _fertCount);
     var newHash = mut.hash;
 
-    // 3. Build plant object
+    // Evaluate breed layers from parent traits
+    var _blParentALayers = null, _blParentBLayers = null;
+    try {
+      var _blGh = JSON.parse(localStorage.getItem('sws_greenhouse') || '[]');
+      _blGh.forEach(function(p) {
+        if (p.hash === parentA) _blParentALayers = p.breedLayers || null;
+        if (p.hash === parentB) _blParentBLayers = p.breedLayers || null;
+      });
+    } catch(e) {}
+    var _tA, _tB;
+    try { _tA = hashToTraits(parentA); } catch(e) { _tA = {}; }
+    try { _tB = hashToTraits(parentB); } catch(e) { _tB = {}; }
+    var _breedLayers = evaluateBreedLayers(_tA, _tB, spliced, _blParentALayers, _blParentBLayers);
+
+    // 3. Build plant object — compute chimera generation + mycelial crown from parents
     var today = new Date().toISOString().split('T')[0];
+    var _parentAGen = 1, _parentBGen = 1;
+    var _parentACrown = false, _parentBCrown = false;
+    try {
+      var _ghForGen = JSON.parse(localStorage.getItem('sws_greenhouse') || '[]');
+      _ghForGen.forEach(function(p) {
+        if (p.hash === parentA) { _parentAGen = p.generation || 1; if (p.mycelialCrown) _parentACrown = true; }
+        if (p.hash === parentB) { _parentBGen = p.generation || 1; if (p.mycelialCrown) _parentBCrown = true; }
+      });
+    } catch(e) {}
+    // Mycelial Crown: any fertilizer applied = compost heritage, or inherited from parents
+    var _hasFert = (_fertCount || 0) > 0;
+    var _hasCrown = _hasFert || _parentACrown || _parentBCrown;
+
     var newPlant = {
       hash:      newHash,
       isCross:   true,
       born:      Date.now(),
       origin:    'cross',
+      parentAHash: parentA,
+      parentBHash: parentB,
       timestamp: Date.now(),
       date:      today,
       rare:      mut.mutated,
+      generation: Math.max(_parentAGen, _parentBGen) + 1,
+      breedLayers: _breedLayers,
+      breedCount: 0,
+      mycelialCrown: _hasCrown,
+      fertApplied: _fertCount || 0,
       traits:    (typeof getTraitSummary === 'function'
                   ? (function(){ try { return getTraitSummary(newHash); } catch(e) { return ''; } })()
                   : '')
@@ -23170,6 +23254,9 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
 
     // 8. UI refresh then cinematic reveal
     renderNursery();
+    // Pass parent context to cinematic reveal for inheritance cascade
+    window._lastBloomParentA = parentA;
+    window._lastBloomParentB = parentB;
     triggerCinematicReveal(newHash, mut.mutated, mut.count);
   }
 
@@ -23308,6 +23395,42 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
       renderNursery();
       _setNurMsg('⚡ 21 Dew Drops spent. Cooldown bypassed — ' + seed.waterLog.length + '/3 days done.');
     }
+  };
+
+  // ── Apply composted fertilizer to a nursery seed (rarity boost) ───────
+  window.handleApplyFertilizer = function(seedId) {
+    var inv = loadInventory();
+    if ((inv.fertilizer || 0) <= 0) {
+      _setNurMsg('No fertilizer. Compost plants to earn some.');
+      return;
+    }
+    var nur;
+    try { nur = JSON.parse(localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur = []; }
+    var seedIndex = nur.findIndex(function(s) { return s.id === seedId; });
+    if (seedIndex < 0) { _setNurMsg('Seed not found.'); return; }
+    var seed = nur[seedIndex];
+    var applied = seed.fertApplied || 0;
+    if (applied >= 25) {
+      _setNurMsg('Max fertilizer reached (25/25).');
+      return;
+    }
+    // Apply 1 unit
+    seed.fertApplied = applied + 1;
+    nur[seedIndex] = seed;
+    // Deduct from inventory
+    inv.fertilizer = Math.max(0, (inv.fertilizer || 0) - 1);
+    inv.lastUpdated = new Date().toISOString();
+    try {
+      localStorage.setItem('sws_nursery', JSON.stringify(nur));
+      localStorage.setItem(INV_KEY, JSON.stringify(inv));
+    } catch(e) {
+      _setNurMsg('Storage error.');
+      return;
+    }
+    _haptic('tab');
+    renderNursery();
+    updateDashboard();
+    _setNurMsg('🌿 Fertilizer applied. ' + seed.fertApplied + '/25 (+' + seed.fertApplied + '% rarity boost).');
   };
 
   // ── Bloom Reveal (legacy flip-card — kept for non-nursery hash reveals) ──
@@ -23792,7 +23915,7 @@ Built to Claude Code','Ash was once a tree','Wind shows no favor','The hive shar
     var grid = document.getElementById('greenhouse-grid');
     if (grid) grid.innerHTML = '';
     var ghCount = document.getElementById('gh-count');
-    if (ghCount) ghCount.textContent = 'Plants: 0 / 50';
+    if (ghCount) ghCount.textContent = 'Plants: 0 / ' + (typeof getGHSlots === 'function' ? getGHSlots() : 10);
     var fill = document.getElementById('gh-progress-fill');
     if (fill) fill.style.width = '0%';
     var hashEl  = document.getElementById('dash-hashes');
@@ -29049,9 +29172,12 @@ function _renderCard(el,plant,role){
   var h='<div class="bs-role">'+role+'</div>';
   h+='<div class="bs-head"><div class="bs-thumb">'+svg+'</div><div style="flex:1;min-width:0;">';
   h+='<div class="bs-name" style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">'+i.nm+'</div>';
+  var _bc = plant.breedCount || 0;
+  var _bcColor = _bc >= 3 ? 'rgba(192,112,112,0.9)' : _bc >= 2 ? 'rgba(200,168,75,0.9)' : 'var(--muted)';
   h+='<div class="bs-meta"><span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">'+(i.tg?i.tg.icon:'')+' '+(i.tg?i.tg.name:'')+'</span>';
   h+='<span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">EA '+i.ea+'</span>';
-  h+='<span style="color:var(--muted);">'+_seasonEmblems[i.season]+' G'+(i.t?i.t.chimerGen||1:1)+'</span></div>';
+  h+='<span style="color:var(--muted);">'+_seasonEmblems[i.season]+' G'+(i.t?i.t.chimerGen||1:1)+'</span>';
+  h+='<span style="color:'+_bcColor+';">'+(_bc>=3?'⚡ SPENT':'🧬 '+_bc+'/3')+'</span></div>';
   h+='</div></div>';
   // Layers
   if(i.t){
@@ -29109,6 +29235,65 @@ function _renderForecast(){
   }
   h+='</div>';
   h+='<div class="bs-chimera">\ud83e\uddec <span>Gen '+offGen+' Chimera — <b>-'+(offGen-1)*2+' EA</b> but <b>2× climate immunity</b>.</span></div>';
+
+  // Inbreeding depression warning
+  var _mutA = iA.t.mutationName || 'None';
+  var _mutB = iB.t.mutationName || 'None';
+  var _mythA = iA.t.mythicName || 'None';
+  var _mythB = iB.t.mythicName || 'None';
+  var _sameMut = _mutA !== 'None' && _mutA === _mutB;
+  var _sameMythic = _mythA !== 'None' && _mythA === _mythB;
+
+  if (_sameMut && _sameMythic) {
+    h += '<div style="margin-top:0.4rem;padding:0.4rem;background:rgba(192,60,60,0.12);border:1px solid rgba(192,60,60,0.3);border-radius:6px;font-size:0.4rem;color:rgba(192,112,112,0.95);line-height:1.6;">';
+    h += '<b>⚠ GENETIC COLLAPSE</b><br>';
+    h += 'Both parents share <b>' + _mutA + '</b> mutation AND <b>' + _mythA + '</b> mythic.<br>';
+    h += 'Offspring has <b>0% chance</b> of inheriting either trait.';
+    h += '</div>';
+  } else if (_sameMythic) {
+    h += '<div style="margin-top:0.4rem;padding:0.4rem;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.25);border-radius:6px;font-size:0.4rem;color:var(--gold);line-height:1.6;">';
+    h += '<b>⚠ GENETIC SIMILARITY</b><br>';
+    h += 'Both parents have <b>' + _mythA + '</b>.<br>';
+    h += '~70% chance offspring loses this mythic. Consider a genetically distant partner.';
+    h += '</div>';
+  } else if (_sameMut) {
+    h += '<div style="margin-top:0.4rem;padding:0.4rem;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.25);border-radius:6px;font-size:0.4rem;color:var(--gold);line-height:1.6;">';
+    h += '<b>⚠ GENETIC SIMILARITY</b><br>';
+    h += 'Both parents have <b>' + _mutA + '</b> mutation.<br>';
+    h += '~70% chance offspring loses this mutation. Consider a genetically distant partner.';
+    h += '</div>';
+  }
+
+  // ── Layer forecast with qualitative labels ──────────────────────
+  var _layerChecks = [
+    { name: 'Chimera Vein', ok: iA.t.leafColors[0] !== iB.t.leafColors[0], prob: 0.60, terra: '+1' },
+    { name: 'Vigor Band', ok: Math.abs(iA.t.stemHeight - iB.t.stemHeight) >= 10, prob: 0.20, terra: '+1' },
+    { name: 'Pollen Dusting', ok: iA.t.hasFlower && iB.t.hasFlower, prob: 0.35, terra: '—' },
+    { name: 'Root Tendrils', ok: Math.abs((iA.t.stem % 15) - (iB.t.stem % 15)) >= 3, prob: 0.25, terra: '+1' },
+    { name: 'Spectrum Leaf', ok: (function() { var c={}; iA.t.leafColors.forEach(function(x){c[x]=1}); iB.t.leafColors.forEach(function(x){c[x]=1}); return Object.keys(c).length>=4; })(), prob: 0.15, terra: '+2' },
+    { name: 'Canopy Weave', ok: iA.t.leafCount >= 4 && iB.t.leafCount >= 4, prob: 0.20, terra: '+1' },
+    { name: 'Thorned Crown', ok: ((iA.t.base%30===16)&&iB.t.leafCount>=5)||((iB.t.base%30===16)&&iA.t.leafCount>=5), prob: 0.40, terra: '+2' },
+    { name: 'Biolum Spots', ok: ((iA.t.companion===34)||(iB.t.companion===34))&&Math.abs(iA.t.leafSize-iB.t.leafSize)>3, prob: 0.30, terra: '+2' },
+    { name: 'Aerial Root', ok: ((iA.t.pot===4)&&iB.t.stemHeight>40)||((iB.t.pot===4)&&iA.t.stemHeight>40), prob: 0.15, terra: '+1' }
+  ];
+
+  var eligibleLayers = _layerChecks.filter(function(l) { return l.ok; });
+  if (eligibleLayers.length > 0) {
+    h += '<div style="margin-top:0.35rem;padding:0.3rem;background:rgba(13,16,12,0.35);border-radius:6px;border:1px solid rgba(74,124,53,0.08);">';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.36rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.15rem;">POSSIBLE LAYERS</div>';
+    eligibleLayers.forEach(function(l) {
+      var label, color;
+      if (l.prob >= 0.50) { label = 'LIKELY'; color = 'var(--sage)'; }
+      else if (l.prob >= 0.20) { label = 'POSSIBLE'; color = 'var(--gold)'; }
+      else { label = 'RARE'; color = 'rgba(192,112,112,0.8)'; }
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:0.35rem;margin:2px 0;">';
+      h += '<span style="color:var(--cream);">' + l.name + ' <span style="color:var(--muted);font-size:0.3rem;">' + l.terra + ' Terra</span></span>';
+      h += '<span style="font-family:Bebas Neue,sans-serif;font-size:0.32rem;letter-spacing:0.06em;color:' + color + ';">' + label + ' ✓</span>';
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+
   fc.innerHTML=h;
 }
 
@@ -29118,9 +29303,13 @@ window.openBreedScreen=function(plantA,context){
   // Build partner list from greenhouse excluding plantA
   var gh=[];
   try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
-  _partners=gh.filter(function(p){return p.hash!==plantA.hash;});
+  _partners=gh.filter(function(p){return p.hash!==plantA.hash && (p.breedCount||0)<3;});
+  if((plantA.breedCount||0)>=3){
+    if(window._toast)window._toast('Genetics Exhausted — this plant has been bred 3 times.');
+    return;
+  }
   if(!_partners.length){
-    if(window._toast)window._toast('Need at least 2 plants to cross-pollinate.');
+    if(window._toast)window._toast('No eligible partners. Need plants with under 3 breeds.');
     return;
   }
   _pIdx=0;
@@ -29174,31 +29363,32 @@ window.bsExecuteBreed=function(){
   if(_plantACtx==='wild'&&typeof _doCrossPollination==='function'){
     _doCrossPollination(_plantA,mate);
   } else {
-    // Greenhouse context — use FG_Data
-    var combined=_plantA.hash+mate.hash+Date.now();
-    var hashNum=0;
-    for(var i=0;i<combined.length;i++){hashNum=((hashNum<<5)-hashNum+combined.charCodeAt(i))|0;}
-    var offHash=Math.abs(hashNum).toString(16).padStart(8,'0');
-    var seed=offHash;
-    while(offHash.length<64){offHash+=Math.abs((hashNum=((hashNum<<5)-hashNum+offHash.charCodeAt(offHash.length%seed.length))|0)).toString(16).padStart(4,'0');}
-    offHash=offHash.substring(0,64);
-    var p1Gen=1,p2Gen=1;
-    try{var t1=window.hashToTraits(_plantA.hash);var t2=window.hashToTraits(mate.hash);p1Gen=t1.chimerGen||1;p2Gen=t2.chimerGen||1;}catch(e){}
-    var offGen=Math.max(p1Gen,p2Gen)+1;
-    if(window.FG_Data&&window.FG_Data.addSeed){
-      var res=window.FG_Data.addSeed({seedHash:offHash,parentAHash:_plantA.hash,parentBHash:mate.hash,nonce:offGen});
-      if(!res.ok){if(window._toast)window._toast('Nursery full (3/3). Bloom or abandon a seed first.');return;}
+    // Greenhouse context — use FG_Data.crossPollinateHashes (SHA-256 + Mendelian)
+    if(window.FG_Data&&window.FG_Data.crossPollinateHashes){
+      FG_Data.crossPollinateHashes(_plantA.hash,mate.hash).then(function(result){
+        var offHash=result.childHash;
+        var offGen=result.nonce;
+        if(window.FG_Data&&window.FG_Data.addSeed){
+          var res=window.FG_Data.addSeed({seedHash:offHash,parentAHash:_plantA.hash,parentBHash:mate.hash,nonce:offGen});
+          if(!res.ok){if(window._toast)window._toast('Nursery full (3/3). Bloom or abandon a seed first.');return;}
+        }
+        // Increment breedCount on both parents
+        var _bcGh2=[];try{_bcGh2=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+        var _bcDirty=false;
+        _bcGh2.forEach(function(p){
+          if(p.hash===_plantA.hash||p.hash===mate.hash){p.breedCount=(p.breedCount||0)+1;_bcDirty=true;}
+        });
+        if(_bcDirty&&window.saveGreenhouse)saveGreenhouse(_bcGh2);
+        if(window.renderNursery)renderNursery();
+        if(window.switchTab)switchTab('nursery');
+        if(window._toast)window._toast('\ud83c\udf31 Seed planted! Water 3 days to bloom.');
+        if(window.PW_grantXP)PW_grantXP(5,'cross_pollinate');
+        if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
+      });
     } else {
-      var nursery=[];try{nursery=JSON.parse(localStorage.getItem('sws_nursery')||'[]')||[];}catch(e){}
-      if(nursery.length>=3){if(window._toast)window._toast('Nursery full!');return;}
-      nursery.push({id:'nur_'+Date.now(),seedHash:offHash,parentAHash:_plantA.hash,parentBHash:mate.hash,nonce:offGen,plantedAt:new Date().toISOString().slice(0,10),waterLog:[new Date().toISOString().slice(0,10)],status:'growing',nickname:null});
-      localStorage.setItem('sws_nursery',JSON.stringify(nursery));
+      // Fallback: no FG_Data available
+      if(window._toast)window._toast('Breeding engine not loaded. Try again.');
     }
-    if(window.renderNursery)renderNursery();
-    if(window.switchTab)switchTab('nursery');
-    if(window._toast)window._toast('\ud83c\udf31 Seed planted! Water 3 days to bloom.');
-    if(window.PW_grantXP)PW_grantXP(5,'cross_pollinate');
-    if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
   }
   window.closeBreedScreen();
 };
