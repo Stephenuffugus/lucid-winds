@@ -7943,6 +7943,14 @@ document.addEventListener('keydown', function(e) {
     return svg;
   }
   window._generatePlantSVG = generatePlantSVG;
+  // Expose renderer internals for dev panel and external tools
+  window._LW = {
+    PALETTE: PALETTE, STEM_COLORS: STEM_COLORS,
+    hueShift: _hueShift, mutColor: _mutColor,
+    renderBloom: renderBloom, renderLeaves: renderLeaves,
+    renderCompanion: renderCompanion, renderStem: renderStem,
+    buildDefs: buildDefs
+  };
 
   // ── AUDIT RENDERER — renders plant with trait overrides ──
   // Used by audit.html to force specific leaf types, stem colors, etc.
@@ -13805,16 +13813,25 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.22)+'" fill="'+PALETTE.gold+'" opacity="'+(0.85*bloomOp)+'"/>';
         s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.06)+'" fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" opacity="'+(bloomOp*0.18)+'"'+'/>';
         break;
-      case 3: // Lotus — boat-shaped petals, 2 staggered layers
+      case 3: // Lotus — boat-shaped petals, 2 staggered layers with veining
         for (var li=0; li<8; li++) {
           var la=(li*45+(li<4?0:22.5))*Math.PI/180;
           var lr=li<4?fs*0.52:fs*0.72, lr2=li<4?fs*1.1:fs*0.85;
           var lpx=fx+Math.cos(la)*lr, lpy=fy+Math.sin(la)*lr;
           var ltx=fx+Math.cos(la)*lr2, lty=fy+Math.sin(la)*lr2;
+          // Petal body
           s += '<path d="M'+fx+','+fy+' C'+(lpx-Math.sin(la)*fs*0.38)+','+(lpy+Math.cos(la)*fs*0.38)+' '+ltx+','+(lty-Math.sin(la)*fs*0.2)+' '+ltx+','+lty+' C'+(ltx+Math.sin(la)*fs*0.25)+','+(lty+Math.cos(la)*fs*0.15)+' '+(lpx+Math.sin(la)*fs*0.35)+','+(lpy-Math.cos(la)*fs*0.35)+' '+fx+','+fy+'Z" fill="'+fc+'" opacity="'+((li<4?0.72:0.48)*bloomOp)+'"/>';
+          // Petal vein — center line to tip
+          s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+ltx.toFixed(1)+'" y2="'+lty.toFixed(1)+'" stroke="rgba(240,235,216,0.15)" stroke-width="0.25" opacity="'+(bloomOp*0.4)+'"/>';
+          // Rim highlight on outer petals
+          if (li >= 4) {
+            s += '<path d="M'+fx+','+fy+' C'+(lpx-Math.sin(la)*fs*0.38)+','+(lpy+Math.cos(la)*fs*0.38)+' '+ltx+','+(lty-Math.sin(la)*fs*0.2)+' '+ltx+','+lty+'" fill="none" stroke="rgba(240,235,216,0.25)" stroke-width="0.35" opacity="'+(bloomOp*0.5)+'"/>';
+          }
         }
+        // Gold seed pod center — multi-layer
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.3)+'" fill="'+_hueShift(PALETTE.gold, 33, 10)+'" opacity="'+(0.75*bloomOp)+'"/>';
         s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.26)+'" fill="'+PALETTE.gold+'" opacity="'+(0.88*bloomOp)+'"/>';
-        s += '<ellipse cx="'+fx+'" cy="'+fy+'" rx="'+(fs*1.1)+'" ry="'+(fs*0.52)+'" fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" opacity="'+(bloomOp*0.16)+'"'+'/>';
+        s += '<circle cx="'+(fx-fs*0.06)+'" cy="'+(fy-fs*0.06)+'" r="'+(fs*0.1)+'" fill="'+PALETTE.cream+'" opacity="'+(0.3*bloomOp)+'"/>';
         break;
       case 4: // Dahlia — three rings of tapered petals
         for (var di=0; di<18; di++) {
@@ -13827,16 +13844,38 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.22)+'" fill="'+PALETTE.cream+'" opacity="'+(0.7*bloomOp)+'"/>';
         s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.88)+'" fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" opacity="'+(bloomOp*0.16)+'"'+'/>';
         break;
-      case 5: // Tulip — cupped bezier form with inner highlight
-        s += '<path d="M'+(fx-fs)+','+fy+' C'+(fx-fs*0.9)+','+(fy-fs*0.6)+' '+(fx-fs*0.35)+','+(fy-fs*1.6)+' '+fx+','+(fy-fs*1.3)+' C'+(fx+fs*0.35)+','+(fy-fs*1.6)+' '+(fx+fs*0.9)+','+(fy-fs*0.6)+' '+(fx+fs)+','+fy+' C'+(fx+fs*0.5)+','+(fy+fs*0.45)+' '+(fx-fs*0.5)+','+(fy+fs*0.45)+' '+(fx-fs)+','+fy+'Z" fill="'+fc+'" opacity="'+(0.72*bloomOp)+'"/>';
-        s += '<path d="M'+(fx-fs*0.5)+','+fy+' C'+(fx-fs*0.45)+','+(fy-fs*0.5)+' '+(fx-fs*0.15)+','+(fy-fs*1.15)+' '+fx+','+(fy-fs*1.0)+'" fill="none" stroke="'+PALETTE.cream+'" stroke-width="0.6" opacity="'+(0.25*bloomOp)+'"/>';
-        break;
-      case 6: // Spike — elongated florets with bezier taper
-        for (var si=0; si<5; si++) {
-          var sy=fy-si*fs*0.45, sr=fs*(0.38-si*0.06);
-          s += '<path d="M'+(fx-sr)+','+sy+' C'+(fx-sr*0.6)+','+(sy-sr*1.2)+' '+(fx+sr*0.6)+','+(sy-sr*1.2)+' '+(fx+sr)+','+sy+' C'+(fx+sr*0.5)+','+(sy+sr*0.5)+' '+(fx-sr*0.5)+','+(sy+sr*0.5)+' '+(fx-sr)+','+sy+'Z" fill="'+fc+'" opacity="'+((0.72-si*0.09)*bloomOp)+'"/>';
-          s += '<path d="M'+(fx-sr)+','+sy+' C'+(fx-sr*0.6)+','+(sy-sr*1.2)+' '+(fx+sr*0.6)+','+(sy-sr*1.2)+' '+(fx+sr)+','+sy+'" fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" stroke-linecap="round" opacity="'+(0.52*bloomOp)+'"'+'/>';
+      case 5: // Tulip — cupped bezier form with layered petals and interior glow
+        // Back petals (darker, slightly larger)
+        var _t5dark = _hueShift(fc, parseInt(uid.slice(2,4),16), 15);
+        s += '<path d="M'+(fx-fs*1.05)+','+(fy+fs*0.1)+' C'+(fx-fs*0.95)+','+(fy-fs*0.7)+' '+(fx-fs*0.38)+','+(fy-fs*1.7)+' '+fx+','+(fy-fs*1.4)+' C'+(fx+fs*0.38)+','+(fy-fs*1.7)+' '+(fx+fs*0.95)+','+(fy-fs*0.7)+' '+(fx+fs*1.05)+','+(fy+fs*0.1)+' C'+(fx+fs*0.55)+','+(fy+fs*0.5)+' '+(fx-fs*0.55)+','+(fy+fs*0.5)+' '+(fx-fs*1.05)+','+(fy+fs*0.1)+'Z" fill="'+_t5dark+'" opacity="'+(0.5*bloomOp)+'"/>';
+        // Front petal cup (main shape)
+        s += '<path d="M'+(fx-fs)+','+fy+' C'+(fx-fs*0.9)+','+(fy-fs*0.6)+' '+(fx-fs*0.35)+','+(fy-fs*1.6)+' '+fx+','+(fy-fs*1.3)+' C'+(fx+fs*0.35)+','+(fy-fs*1.6)+' '+(fx+fs*0.9)+','+(fy-fs*0.6)+' '+(fx+fs)+','+fy+' C'+(fx+fs*0.5)+','+(fy+fs*0.45)+' '+(fx-fs*0.5)+','+(fy+fs*0.45)+' '+(fx-fs)+','+fy+'Z" fill="'+fc+'" opacity="'+(0.75*bloomOp)+'"/>';
+        // Petal veins — 3 subtle internal lines
+        for (var _tv=0; _tv<3; _tv++) {
+          var _tvx = fx + (_tv-1)*fs*0.3;
+          s += '<path d="M'+_tvx+','+fy+' C'+_tvx+','+(fy-fs*0.4)+' '+(fx+(_tv-1)*fs*0.1)+','+(fy-fs*1.0)+' '+fx+','+(fy-fs*1.25)+'" fill="none" stroke="rgba(240,235,216,0.2)" stroke-width="0.3" opacity="'+(bloomOp*0.5)+'"/>';
         }
+        // Interior glow — warm center
+        s += '<ellipse cx="'+fx+'" cy="'+(fy-fs*0.15)+'" rx="'+(fs*0.4)+'" ry="'+(fs*0.25)+'" fill="'+PALETTE.cream+'" opacity="'+(0.12*bloomOp)+'"/>';
+        // Rim highlight — left edge specular
+        s += '<path d="M'+(fx-fs*0.9)+','+(fy-fs*0.1)+' C'+(fx-fs*0.85)+','+(fy-fs*0.55)+' '+(fx-fs*0.35)+','+(fy-fs*1.45)+' '+fx+','+(fy-fs*1.2)+'" fill="none" stroke="rgba(240,235,216,0.35)" stroke-width="0.5" stroke-linecap="round" opacity="'+(bloomOp*0.6)+'"/>';
+        break;
+      case 6: // Spike — vertical inflorescence with layered florets
+        // Central rachis (flower stem)
+        s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+fx+'" y2="'+(fy-fs*2.0)+'" stroke="'+_hueShift(fc, 42, 20)+'" stroke-width="0.7" opacity="'+(0.5*bloomOp)+'" stroke-linecap="round"/>';
+        // 7 florets graduating from large (bottom) to small (top)
+        for (var si6=0; si6<7; si6++) {
+          var sy6=fy-si6*fs*0.32, sr6=fs*(0.42-si6*0.04);
+          var sxOff = Math.sin(si6*0.8)*sr6*0.3; // subtle alternating offset
+          // Shadow layer
+          s += '<ellipse cx="'+(fx+sxOff+0.3)+'" cy="'+(sy6+0.3)+'" rx="'+sr6.toFixed(1)+'" ry="'+(sr6*0.65).toFixed(1)+'" fill="#0d100c" opacity="'+(0.08*bloomOp)+'"/>';
+          // Floret body
+          s += '<ellipse cx="'+(fx+sxOff)+'" cy="'+sy6+'" rx="'+sr6.toFixed(1)+'" ry="'+(sr6*0.6).toFixed(1)+'" fill="'+fc+'" opacity="'+((0.75-si6*0.06)*bloomOp).toFixed(2)+'"/>';
+          // Top rim highlight
+          s += '<path d="M'+(fx+sxOff-sr6*0.7)+','+(sy6-sr6*0.25)+' Q'+(fx+sxOff)+','+(sy6-sr6*0.8)+' '+(fx+sxOff+sr6*0.7)+','+(sy6-sr6*0.25)+'" fill="none" stroke="rgba(240,235,216,0.3)" stroke-width="0.35" opacity="'+(bloomOp*0.5)+'"/>';
+        }
+        // Crown bud at top — tiny unopened point
+        s += '<ellipse cx="'+fx+'" cy="'+(fy-fs*2.15)+'" rx="'+(fs*0.15)+'" ry="'+(fs*0.22)+'" fill="'+_hueShift(fc, 77, 12)+'" opacity="'+(0.6*bloomOp)+'"/>';
         break;
       case 7: // Mandala — Phase 23: emit tight luminous centre; Halo via renderHalo()
         s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.38)+'" fill="url(#bg'+uid+')" opacity="'+(0.82*bloomOp)+'" filter="url(#gc'+uid+')"/>';
