@@ -7154,8 +7154,8 @@ document.addEventListener('keydown', function(e) {
     var pc = PALETTE[t.potColor] || PALETTE.terra;
     if (_colorMut) pc = _mutColor(pc, _mn);
     d += '<linearGradient id="pg'+uid+'" x1="0" y1="0" x2="0" y2="1">';
-    d += '<stop offset="0%" stop-color="'+pc+'" stop-opacity="0.9"/>';
-    d += '<stop offset="100%" stop-color="'+pc+'" stop-opacity="0.5"/>';
+    d += '<stop offset="0%" stop-color="'+pc+'" stop-opacity="1.0"/>';
+    d += '<stop offset="100%" stop-color="'+pc+'" stop-opacity="0.85"/>';
     d += '</linearGradient>';
     // Pot rim highlight
     var _rimHL = _colorMut ? _mutColor('#EAE0C8', _mn) : '#EAE0C8';
@@ -7770,11 +7770,16 @@ document.addEventListener('keydown', function(e) {
     // 5. POT (rim now sits IN FRONT of stem — creates depth)
     svg += renderPot(t, uid);
 
+    // Compute stem tip X from profile (curved stems don't end at x=35)
+    var _stemTipX = 35;
+    if (t._stemProfile && t._stemProfile.length > 0) {
+      _stemTipX = t._stemProfile[t._stemProfile.length - 1].x;
+    }
     // 5.25 STEM TERMINAL NODE — apical meristem bridging stem to canopy
     if (prog >= 0.4) {
       var _tnCol = _hueShift(PALETTE.moss, parseInt(uid.slice(4,6),16), 6);
-      svg += '<ellipse cx="35" cy="'+visibleTop+'" rx="1.8" ry="1.1" fill="'+_tnCol+'" opacity="'+(0.3 + prog*0.2)+'"/>';
-      svg += '<ellipse cx="35" cy="'+visibleTop+'" rx="1.0" ry="0.6" fill="rgba(240,235,216,0.15)"/>';
+      svg += '<ellipse cx="'+_stemTipX.toFixed(1)+'" cy="'+visibleTop+'" rx="1.8" ry="1.1" fill="'+_tnCol+'" opacity="'+(0.3 + prog*0.2)+'"/>';
+      svg += '<ellipse cx="'+_stemTipX.toFixed(1)+'" cy="'+visibleTop+'" rx="1.0" ry="0.6" fill="rgba(240,235,216,0.15)"/>';
     }
     // 5.5 MYCELIAL CROWN — composted heritage threads at stem base (set-103-8)
     if (prog >= 0.3) svg += renderMycelialCrown(t);
@@ -7834,7 +7839,7 @@ document.addEventListener('keydown', function(e) {
 
     // 6.5 CALYX — universal receptacle grounding bloom to stem
     if (prog >= 0.8 && t.hasFlower) {
-      var _cx = 35, _cy = _safeBloomY;
+      var _cx = _stemTipX, _cy = _safeBloomY;
       var _cw = 2.8 + t.flowerSize * 0.3;
       var _ch = 2.2;
       var _cCol = _hueShift(PALETTE.pine, parseInt(uid.slice(0,2),16), 8);
@@ -7844,9 +7849,9 @@ document.addEventListener('keydown', function(e) {
       // Without this, exotic blooms on tall stems float disconnected.
       var _stipeGap = _safeBloomY - visibleTop;
       if (_stipeGap > 2) {
-        svg += '<line x1="35" y1="'+visibleTop+'" x2="35" y2="'+_safeBloomY+'" stroke="'+_cCol+'" stroke-width="0.8" opacity="0.4" stroke-linecap="round"/>';
+        svg += '<line x1="'+_stemTipX.toFixed(1)+'" y1="'+visibleTop+'" x2="'+_cx.toFixed(1)+'" y2="'+_safeBloomY+'" stroke="'+_cCol+'" stroke-width="0.8" opacity="0.4" stroke-linecap="round"/>';
         // Stipe highlight
-        svg += '<line x1="34.6" y1="'+(visibleTop+0.5)+'" x2="34.6" y2="'+(_safeBloomY-0.5)+'" stroke="rgba(240,235,216,0.12)" stroke-width="0.25" stroke-linecap="round"/>';
+        svg += '<line x1="'+(_stemTipX-0.4).toFixed(1)+'" y1="'+(visibleTop+0.5)+'" x2="'+(_cx-0.4).toFixed(1)+'" y2="'+(_safeBloomY-0.5)+'" stroke="rgba(240,235,216,0.12)" stroke-width="0.25" stroke-linecap="round"/>';
       }
 
       // Receptacle cup — tapered from stem width to bloom base
@@ -7860,8 +7865,17 @@ document.addEventListener('keydown', function(e) {
       }
     }
 
-    // 7. BLOOM — uses _safeBloomY to guarantee viewBox containment
-    if (prog >= 0.8 && t.hasFlower) svg += renderBloom(t, uid, _safeBloomY, prog);
+    // 7. BLOOM — follows stem tip position
+    if (prog >= 0.8 && t.hasFlower) {
+      var _bloomDx = _stemTipX - 35;
+      if (Math.abs(_bloomDx) > 0.5) {
+        svg += '<g transform="translate('+_bloomDx.toFixed(1)+',0)">';
+        svg += renderBloom(t, uid, _safeBloomY, prog);
+        svg += '</g>';
+      } else {
+        svg += renderBloom(t, uid, _safeBloomY, prog);
+      }
+    }
 
     // 7a. DUAL BLOOM — forking stems get a second smaller bloom on the other branch
     if (prog >= 0.8 && t.hasFlower && !_isThumb) {
@@ -7882,8 +7896,15 @@ document.addEventListener('keydown', function(e) {
       }
     }
 
-    // 7.5 MANDALA HALO — uses _safeBloomY for consistent positioning
-    if (!_isThumb && prog >= 0.8 && t.hasFlower) svg += renderHalo(t, uid, _safeBloomY);
+    // 7.5 MANDALA HALO — follows bloom position
+    if (!_isThumb && prog >= 0.8 && t.hasFlower) {
+      var _haloDx = _stemTipX - 35;
+      if (Math.abs(_haloDx) > 0.5) {
+        svg += '<g transform="translate('+_haloDx.toFixed(1)+',0)">' + renderHalo(t, uid, _safeBloomY) + '</g>';
+      } else {
+        svg += renderHalo(t, uid, _safeBloomY);
+      }
+    }
 
     // ── Spec 15: Pollen dusting after bloom ──
     if (!_isThumb && t.breedLayers && t.breedLayers.pollenDusting && t.hasFlower) svg += renderPollenDusting(t, uid, 35, _safeBloomY, t.flowerSize);
@@ -7896,8 +7917,11 @@ document.addEventListener('keydown', function(e) {
       if (t.breedLayers && t.breedLayers.aerialRoot && window._lastLowestLeaf) svg += renderAerialRoot(uid, window._lastLowestLeaf.x, window._lastLowestLeaf.y);
       if (t.compostLayers && t.compostLayers.sporeHalo) svg += renderSporeHalo(uid, visibleTop);
 
-      // 8. COMPANION
-      if (prog >= 1) svg += renderCompanion(t, uid);
+      // 8. COMPANION — scaled 25% larger, transform-origin at viewBox center-bottom
+      if (prog >= 1) {
+        var _compSvg = renderCompanion(t, uid);
+        if (_compSvg) svg += '<g transform="translate(35,85) scale(1.25) translate(-35,-85)">' + _compSvg + '</g>';
+      }
 
       // 9. MYTHIC — rare creatures and effects
       // mythic layer removed — creatures now render as companions
