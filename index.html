@@ -19273,13 +19273,41 @@ document.addEventListener('keydown', function(e) {
       case 36: // Storm Wraith
         s += renderStormWraith(t, uid);
         break;
-      case 37: // Starfall — animated shooting star
-        s += '<g opacity="0.6">';
-        s += '<line x1="8" y1="6" x2="25" y2="20" stroke="#C8A84B" stroke-width="1" opacity="0.4"><animate attributeName="opacity" values="0;0.5;0" dur="4s" repeatCount="indefinite"/></line>';
-        s += '<circle cx="8" cy="6" r="2" fill="#C8A84B" opacity="0.7"><animate attributeName="opacity" values="0;0.8;0" dur="4s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,0;-6,-4;0,0" dur="4s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="12" cy="9" r="0.7" fill="#EAE0C8" opacity="0.3"><animate attributeName="opacity" values="0;0.4;0" dur="3.5s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="18" cy="14" r="0.5" fill="#EAE0C8" opacity="0.2"><animate attributeName="opacity" values="0;0.3;0" dur="5s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="55" cy="12" r="1" fill="#EAE0C8" opacity="0.15"><animate attributeName="opacity" values="0.15;0.05;0.15" dur="6s" repeatCount="indefinite"/></circle>';
+      case 37: // Starfall — meteor shower with sparking trail (LEGENDARY)
+        // A celestial event made companion. Not one star but a recurring
+        // shower of meteors streaking across the sky above the plant.
+        // Each meteor has a bright head, elongated tail, and trail of
+        // disintegrating sparks. The garden exists under a blessed sky.
+        s += '<g opacity="0.65">';
+        // Background star field — tiny fixed points for depth
+        var _sf37stars = [[5,4],[15,8],[62,5],[52,15],[8,22],[58,28],[25,3],[45,10],[10,16],[55,20],[38,6],[20,18]];
+        for (var _sf37i = 0; _sf37i < _sf37stars.length; _sf37i++) {
+          var _sfs = _sf37stars[_sf37i];
+          s += '<circle cx="'+_sfs[0]+'" cy="'+_sfs[1]+'" r="'+(0.15 + (_sf37i%3)*0.1).toFixed(2)+'" fill="#EAE0C8" opacity="'+(0.08 + (_sf37i%4)*0.03).toFixed(2)+'"><animate attributeName="opacity" values="'+(0.08+_sf37i%4*0.03).toFixed(2)+';'+(0.02).toFixed(2)+';'+(0.08+_sf37i%4*0.03).toFixed(2)+'" dur="'+((3+_sf37i%5)*1.1).toFixed(1)+'s" repeatCount="indefinite"/></circle>';
+        }
+        // Meteor 1 — primary, bright, crossing from upper-left to mid-right
+        s += '<g><animateTransform attributeName="transform" type="translate" values="0,0;30,20;60,40" dur="3.5s" repeatCount="indefinite"/>';
+        // Meteor head — bright white-gold core
+        s += '<circle cx="5" cy="5" r="1.2" fill="#EAE0C8" opacity="0"><animate attributeName="opacity" values="0;0;0.8;0.9;0.5;0;0;0" dur="3.5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="5" cy="5" r="0.5" fill="#FFF8E0" opacity="0"><animate attributeName="opacity" values="0;0;1;1;0.6;0;0;0" dur="3.5s" repeatCount="indefinite"/></circle>';
+        // Tail — elongated glow trailing behind
+        s += '<line x1="5" y1="5" x2="-4" y2="-1" stroke="#C8A84B" stroke-width="0.8" opacity="0" stroke-linecap="round"><animate attributeName="opacity" values="0;0;0.5;0.4;0.2;0;0;0" dur="3.5s" repeatCount="indefinite"/></line>';
+        s += '<line x1="5" y1="5" x2="-8" y2="-3" stroke="#C8A84B" stroke-width="0.3" opacity="0" stroke-linecap="round"><animate attributeName="opacity" values="0;0;0.3;0.2;0.1;0;0;0" dur="3.5s" repeatCount="indefinite"/></line>';
+        // Spark fragments — tiny dots breaking off the tail
+        s += '<circle cx="0" cy="3" r="0.2" fill="#E0C060" opacity="0"><animate attributeName="opacity" values="0;0;0.4;0.2;0;0;0;0" dur="3.5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="-3" cy="1" r="0.15" fill="#D8B850" opacity="0"><animate attributeName="opacity" values="0;0;0;0.3;0.15;0;0;0" dur="3.5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="-6" cy="-1" r="0.12" fill="#C8A84B" opacity="0"><animate attributeName="opacity" values="0;0;0;0;0.25;0.1;0;0" dur="3.5s" repeatCount="indefinite"/></circle>';
+        s += '</g>';
+        // Meteor 2 — secondary, smaller, different timing
+        s += '<g><animateTransform attributeName="transform" type="translate" values="0,0;25,18;50,36" dur="5s" repeatCount="indefinite"/>';
+        s += '<circle cx="55" cy="3" r="0.8" fill="#EAE0C8" opacity="0"><animate attributeName="opacity" values="0;0;0;0.6;0.7;0.3;0;0" dur="5s" repeatCount="indefinite"/></circle>';
+        s += '<line x1="55" y1="3" x2="50" y2="0" stroke="#C8A84B" stroke-width="0.5" opacity="0" stroke-linecap="round"><animate attributeName="opacity" values="0;0;0;0.35;0.25;0.1;0;0" dur="5s" repeatCount="indefinite"/></line>';
+        s += '</g>';
+        // Meteor 3 — faint, distant
+        s += '<g><animateTransform attributeName="transform" type="translate" values="0,0;20,15;40,30" dur="7s" repeatCount="indefinite"/>';
+        s += '<circle cx="30" cy="2" r="0.5" fill="#EAE0C8" opacity="0"><animate attributeName="opacity" values="0;0;0;0;0.4;0.5;0.2;0" dur="7s" repeatCount="indefinite"/></circle>';
+        s += '<line x1="30" y1="2" x2="27" y2="0" stroke="#C8A84B" stroke-width="0.3" opacity="0" stroke-linecap="round"><animate attributeName="opacity" values="0;0;0;0;0.2;0.3;0.1;0" dur="7s" repeatCount="indefinite"/></line>';
+        s += '</g>';
         s += '</g>';
         break;
       case 38: // The Beholder — floating eye creature (ultra-rare)
