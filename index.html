@@ -2825,6 +2825,8 @@
     .gp-label{font-family:'Bebas Neue',sans-serif;font-size:clamp(.55rem,1.6vw,.72rem);color:var(--cream);letter-spacing:.08em;margin-bottom:3px}
     .gp-bar{height:6px;background:rgba(26,31,23,.6);border-radius:3px;overflow:hidden;border:1px solid rgba(74,124,53,.1)}
     .gp-fill{height:100%;background:linear-gradient(90deg,rgba(74,124,53,.6) 0%,rgba(122,179,86,.7) 50%,rgba(200,168,78,.6) 100%);border-radius:3px;transition:width .6s cubic-bezier(.25,.46,.45,.94);box-shadow:0 0 8px rgba(122,179,86,.15)}
+    .gp-fill.near-bloom{background:linear-gradient(90deg,rgba(122,179,86,.8) 0%,rgba(200,168,78,.9) 60%,rgba(220,180,80,1) 100%);box-shadow:0 0 12px rgba(200,168,75,.35);animation:nearBloomPulse 1.5s ease infinite;}
+    @keyframes nearBloomPulse{0%,100%{box-shadow:0 0 8px rgba(200,168,75,.25);}50%{box-shadow:0 0 18px rgba(200,168,75,.55);}}
     .gp-count{font-family:'DM Mono',monospace;font-size:clamp(.42rem,1.2vw,.52rem);color:var(--muted);margin-top:3px;letter-spacing:.02em}
     /* Hash toast — floats up from growth strip */
     .hash-toast{position:absolute;right:clamp(14px,4vw,22px);top:50%;font-family:'Bebas Neue',sans-serif;font-size:clamp(.7rem,2vw,.9rem);color:var(--gold);text-shadow:0 0 10px rgba(200,168,78,.3);pointer-events:none;animation:hashFloat 1.2s cubic-bezier(.25,.46,.45,.94) forwards;z-index:2}
@@ -3751,6 +3753,8 @@
     @keyframes rainDrift{from{transform:translateY(-18px);}to{transform:translateY(18px);}}
     @keyframes leafFloat{0%{opacity:0;transform:translateY(0) rotate(0deg);}15%{opacity:0.8;}85%{opacity:0.4;}100%{opacity:0;transform:translateY(-80px) translateX(var(--dx,20px)) rotate(var(--cr,180deg));}}
     @keyframes mintFlash{0%{opacity:0;}15%{opacity:1;}100%{opacity:0;}}
+    @keyframes tierFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes tierRevealPop{0%{opacity:0;transform:scale(0.5);}60%{opacity:1;transform:scale(1.15);}100%{opacity:1;transform:scale(1);}}
     @keyframes sparkBurst{0%{opacity:1;transform:translate(0,0) scale(1);}60%{opacity:0.8;transform:translate(var(--sdx,0),var(--sdy,0)) scale(1.2);}100%{opacity:0;transform:translate(var(--sdx,0),var(--sdy,0)) scale(0);}}
     /* Beat 4 (auth) keeps column layout */
     #ob-beat4{justify-content:flex-start;align-items:center;padding:1rem 1.5rem;overflow-y:auto;text-align:center;-webkit-overflow-scrolling:touch;background:#050505 url('/assets/splash-seed-540x960.jpg') center 30%/cover no-repeat;position:relative;}
@@ -27821,7 +27825,10 @@ function _showWinCelebration(){
   var h='<div style="text-align:center;max-width:340px;">';
 
   if(plantComplete){
-    // ── MODE 2: PLANT EARNED ──
+    // ── MODE 2: PLANT EARNED — Anticipation → Reveal → Celebrate ──
+    // Inspired by: D2 item beams, PoE currency drops, Pokémon egg hatching,
+    // gacha pull sequences. The moment BEFORE the reveal creates more
+    // dopamine than the reveal itself.
     var _lastGh = [];
     try { _lastGh = JSON.parse(localStorage.getItem('sws_greenhouse') || '[]'); } catch(e) {}
     var _lastMinted = _lastGh[_lastGh.length - 1];
@@ -27830,18 +27837,36 @@ function _showWinCelebration(){
     if(typeof window._generatePlantSVG==='function'){
       try{svg=window._generatePlantSVG(pvh,200,1.0);}catch(e){}
     }
+    // Compute Terra Grade for tier-colored reveal
+    var _mintTraits = null, _mintGrade = null;
+    try { _mintTraits = window.hashToTraits(pvh); _mintGrade = window.getTerraGrade(_mintTraits); } catch(e) {}
+    var _tierColor = _mintGrade ? _mintGrade.color : 'var(--gold)';
+    var _tierName = _mintGrade ? _mintGrade.name.toUpperCase() : 'COMMON';
+    var _tierIcon = _mintGrade ? _mintGrade.icon : '○';
+    var _plantName = '';
+    try { if(window.getPlantName) _plantName = window.getPlantName(pvh); } catch(e) {}
+
     var tip='Your first plant! Visit your Greenhouse to see it.';
     if(ghLen>=20)tip='Botanist status. Your greenhouse is filling up.';
     else if(ghLen>=10)tip='Serious collector. Drop a plant in the Wild to claim territory.';
     else if(ghLen>=5)tip='Collection growing! Check your Terra Grade scores.';
     else if(ghLen>=2)tip='Two plants! Try cross-breeding in the Nursery.';
 
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--sage);letter-spacing:0.15em;margin-bottom:0.2rem;">NEW PLANT UNLOCKED</div>';
-    h+='<div style="margin:0.3rem auto 0.4rem;">'+svg+'</div>';
-    h+='<div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:900;color:var(--gold);margin-bottom:0.15rem;">🌿 FULL BLOOM</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--cream);opacity:0.75;margin-bottom:0.5rem;">'+tip+'</div>';
-    h+='<button onclick="_dismissWin();switchTab(\'greenhouse\');" style="width:100%;padding:0.55rem;margin-bottom:0.3rem;border:1.5px solid rgba(200,168,75,0.4);border-radius:8px;background:linear-gradient(180deg,rgba(200,168,75,0.2),rgba(120,100,40,0.3));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">VIEW IN GREENHOUSE</button>';
+    // Phase 1: "NEW PLANT" header (visible immediately)
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--sage);letter-spacing:0.18em;margin-bottom:0.3rem;opacity:0;animation:tierFadeIn 0.5s ease 0.3s forwards;">NEW PLANT UNLOCKED</div>';
+    // Phase 2: Plant silhouette → revealed (1.5s delay, grows in)
+    h+='<div id="mint-plant-reveal" style="margin:0.3rem auto 0.2rem;opacity:0;transform:scale(0.3);filter:brightness(0) blur(4px);transition:all 1.2s cubic-bezier(0.16,1,0.3,1);">'+svg+'</div>';
+    // Phase 3: Name (fades in after plant reveals)
+    h+='<div style="font-family:Playfair Display,serif;font-size:0.75rem;font-weight:700;color:var(--cream);margin-bottom:0.1rem;opacity:0;animation:tierFadeIn 0.5s ease 2.2s forwards;">'+(_plantName||'Unknown Specimen')+'</div>';
+    // Phase 4: TERRA GRADE REVEAL — the big moment. Color matches tier.
+    h+='<div id="mint-tier-reveal" style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;font-weight:900;letter-spacing:0.12em;margin-bottom:0.1rem;opacity:0;transform:scale(0.5);color:'+_tierColor+';text-shadow:0 0 20px '+_tierColor+'44, 0 0 40px '+_tierColor+'22;animation:tierRevealPop 0.6s cubic-bezier(0.34,1.56,0.64,1) 2.8s forwards;">'+_tierIcon+' '+_tierName+' '+_tierIcon+'</div>';
+    // Phase 5: Tip text
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--cream);opacity:0;margin-bottom:0.5rem;animation:tierFadeIn 0.5s ease 3.5s forwards;">'+tip+'</div>';
+    // Buttons (appear last)
+    h+='<div style="opacity:0;animation:tierFadeIn 0.4s ease 3.8s forwards;">';
+    h+='<button onclick="_dismissWin();switchTab(\'greenhouse\');" style="width:100%;padding:0.55rem;margin-bottom:0.3rem;border:1.5px solid '+_tierColor+'66;border-radius:8px;background:linear-gradient(180deg,rgba(200,168,75,0.2),rgba(120,100,40,0.3));color:'+_tierColor+';font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">VIEW IN GREENHOUSE</button>';
     h+='<button onclick="_dismissWin();_restartCurrentGame();" style="width:100%;padding:0.45rem;border:1.5px solid rgba(122,179,86,0.25);border-radius:8px;background:rgba(46,60,38,0.3);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;">KEEP PLAYING</button>';
+    h+='</div>';
   } else {
     // ── MODE 1: NORMAL WIN ──
     var pct=Math.round((inPlant/30)*100);
@@ -27858,6 +27883,20 @@ function _showWinCelebration(){
   ov.innerHTML=h;
   document.body.appendChild(ov);
   if(plantComplete){
+    // Phase 2 trigger: plant grows from silhouette after 0.8s delay
+    setTimeout(function() {
+      var _rv = document.getElementById('mint-plant-reveal');
+      if (_rv) {
+        _rv.style.opacity = '1';
+        _rv.style.transform = 'scale(1)';
+        _rv.style.filter = 'brightness(1) blur(0px)';
+      }
+    }, 800);
+    // Phase 4 trigger: tier-colored flash at reveal moment
+    setTimeout(function() {
+      var _tr = document.getElementById('mint-tier-reveal');
+      if (_tr) { _haptic('bloom'); if(window._play) _play('match'); }
+    }, 2800);
     // Gold flash — screen flares white-gold then fades
     var flash=document.createElement('div');
     flash.style.cssText='position:absolute;inset:0;background:radial-gradient(circle,rgba(200,168,75,0.6),rgba(200,168,75,0) 70%);pointer-events:none;opacity:0;animation:mintFlash 1.2s ease forwards;';
@@ -27927,7 +27966,9 @@ function _updateGP(){
   var pvh=(hex+hex+hex+hex).substring(0,20);
   var svg=(typeof window._generatePlantSVG==='function')?window._generatePlantSVG(pvh,48,prog):'<div style="font-size:1.5rem;text-align:center">🌱</div>';
   var pct=Math.round(prog*100);
-  el.innerHTML='<div class="gp-plant">'+svg+'</div><div class="gp-info"><div class="gp-label">'+lbl+'</div><div class="gp-bar"><div class="gp-fill" style="width:'+pct+'%"></div></div><div class="gp-count">⚡ '+inPlant+' / 30 · This game: '+_m+'</div></div>';
+  var _nearCls = prog >= 0.83 && prog < 1 ? ' near-bloom' : '';
+  var _urgentLabel = prog >= 0.83 && prog < 1 ? ' — <span style="color:var(--gold);">'+(30-inPlant)+' to bloom!</span>' : '';
+  el.innerHTML='<div class="gp-plant">'+svg+'</div><div class="gp-info"><div class="gp-label">'+lbl+_urgentLabel+'</div><div class="gp-bar"><div class="gp-fill'+_nearCls+'" style="width:'+pct+'%"></div></div><div class="gp-count">⚡ '+inPlant+' / 30 · This game: '+_m+'</div></div>';
 }
 // ═══ GAME SOUND SYSTEM — synthesized tones, greenhouse mood ═══
 var _sfxDef={tap:{f:440,d:.05,t:'sine'},match:{f:660,d:.12,t:'sine'},slide:{f:330,d:.08,t:'triangle'},snap:{f:520,d:.04,t:'square'},dice:{f:200,d:.18,t:'sawtooth'},buzz:{f:180,d:.2,t:'sawtooth'},click:{f:600,d:.03,t:'square'},flip:{f:350,d:.07,t:'triangle'},hash:{f:880,d:.06,t:'sine'},lose:{f:220,d:.4,t:'triangle'},dig:{f:300,d:.06,t:'triangle'},drop:{f:260,d:.1,t:'sine'}};
