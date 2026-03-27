@@ -18934,27 +18934,50 @@ document.addEventListener('keydown', function(e) {
         s += '</g>';
         break;
       // ── set-103-8-14: NEW COMPANIONS (ChatGPT Art Round) ───────────────
-      case 26: // Ladybug — crawling on soil, bottom-right
-        s += '<g opacity="0.72">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.6,0;1.2,0;0.6,0;0,0" dur="5.5s" repeatCount="indefinite"/>';
-        // Body — red shell
-        s += '<ellipse cx="56" cy="89.5" rx="2.2" ry="1.6" fill="#C62828"/>';
-        // Center line
-        s += '<line x1="56" y1="87.9" x2="56" y2="91.1" stroke="#1A1A1A" stroke-width="0.22"/>';
-        // Head
-        s += '<circle cx="53.6" cy="89.5" r="0.75" fill="#1A1A1A"/>';
-        // Spots
-        s += '<circle cx="55" cy="88.8" r="0.4" fill="#111"/>';
-        s += '<circle cx="57" cy="88.8" r="0.4" fill="#111"/>';
-        s += '<circle cx="55.2" cy="90.2" r="0.35" fill="#111"/>';
-        s += '<circle cx="56.8" cy="90.2" r="0.35" fill="#111"/>';
-        // Antennae
-        s += '<path d="M53.2,89.2 L52.2,88.4 M53.2,89.8 L52.4,90.4" fill="none" stroke="#1A1A1A" stroke-width="0.12" stroke-linecap="round"/>';
-        // Legs
-        s += '<path d="M54.5,90.8 L54,91.5 M56,91.1 L56,91.8 M57.5,90.8 L58,91.5" fill="none" stroke="#1A1A1A" stroke-width="0.12" stroke-linecap="round"/>';
-        s += '<path d="M54.5,88.2 L54,87.5 M57.5,88.2 L58,87.5" fill="none" stroke="#1A1A1A" stroke-width="0.12" stroke-linecap="round"/>';
-        // Shell highlight
-        s += '<path d="M54.5,88.5 Q56,88 57.5,88.5" fill="none" stroke="#F6D7D7" stroke-width="0.15" opacity="0.45"/>';
+      case 26: // Seven-spot Ladybug — crawling on soil, bottom-right
+        // Coccinella septempunctata: the classic "ladybird beetle." Bright
+        // red elytra with exactly 7 black spots (3 per wing + 1 shared).
+        // Round, dome-shaped, glossy. Children's first beloved insect.
+        s += '<g opacity="0.80" transform="translate(56,89.5) scale(1.35) translate(-56,-89.5)">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.5,0;1,0;0.5,0;0,0" dur="5.5s" repeatCount="indefinite"/>';
+        // Shadow
+        s += '<ellipse cx="56.2" cy="91.2" rx="2.5" ry="0.5" fill="#0d100c" opacity="0.1"/>';
+        // Pronotum (thorax shield) — black with two white spots
+        s += '<ellipse cx="53.8" cy="89.5" rx="1.2" ry="1.0" fill="#1A1A1A"/>';
+        s += '<circle cx="53.2" cy="89.2" r="0.2" fill="rgba(240,235,216,0.35)"/>';
+        s += '<circle cx="53.2" cy="89.8" r="0.2" fill="rgba(240,235,216,0.35)"/>';
+        // Elytra (wing covers) — bright red dome
+        s += '<ellipse cx="56" cy="89.5" rx="2.5" ry="1.8" fill="#D42828"/>';
+        // Dome highlight — glossy shell sheen
+        s += '<ellipse cx="55.2" cy="88.8" rx="1.2" ry="0.7" fill="rgba(255,120,120,0.15)"/>';
+        s += '<ellipse cx="55" cy="88.5" rx="0.5" ry="0.3" fill="rgba(255,200,200,0.2)"/>';
+        // Center suture line — where elytra meet
+        s += '<line x1="56" y1="87.7" x2="56" y2="91.3" stroke="#1A1A1A" stroke-width="0.25"/>';
+        // THE 7 SPOTS — species-specific pattern (septempunctata = "seven-spotted")
+        // Left elytra: 3 spots
+        s += '<circle cx="54.8" cy="88.5" r="0.5" fill="#111"/>';
+        s += '<circle cx="54.5" cy="89.8" r="0.45" fill="#111"/>';
+        s += '<circle cx="55.2" cy="90.5" r="0.4" fill="#111"/>';
+        // Right elytra: 3 spots
+        s += '<circle cx="57.2" cy="88.5" r="0.5" fill="#111"/>';
+        s += '<circle cx="57.5" cy="89.8" r="0.45" fill="#111"/>';
+        s += '<circle cx="56.8" cy="90.5" r="0.4" fill="#111"/>';
+        // Shared center spot (straddles suture line)
+        s += '<circle cx="56" cy="88.2" r="0.35" fill="#111"/>';
+        // Head — small, mostly hidden under pronotum
+        s += '<circle cx="52.8" cy="89.5" r="0.5" fill="#1A1A1A"/>';
+        // Eyes — tiny
+        s += '<circle cx="52.5" cy="89.3" r="0.1" fill="#333"/>';
+        s += '<circle cx="52.5" cy="89.7" r="0.1" fill="#333"/>';
+        // Antennae — short, elbowed
+        s += '<path d="M52.5,89.2 Q52,88.8 51.5,88.5" stroke="#1A1A1A" stroke-width="0.12" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M52.5,89.8 Q52,90.2 51.5,90.4" stroke="#1A1A1A" stroke-width="0.12" fill="none" stroke-linecap="round"/>';
+        // Legs — 3 pairs, tucked under dome
+        s += '<path d="M54.5,91 L54,91.8 L53.5,91.6" stroke="#1A1A1A" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M56,91.3 L56,92 L55.5,91.8" stroke="#1A1A1A" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M57.5,91 L58,91.8 L58.5,91.6" stroke="#1A1A1A" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M54.5,88 L54,87.3" stroke="#1A1A1A" stroke-width="0.12" fill="none"/>';
+        s += '<path d="M57.5,88 L58,87.3" stroke="#1A1A1A" stroke-width="0.12" fill="none"/>';
         s += '</g>';
         break;
       case 27: // Snail — on soil, bottom-left
