@@ -27780,6 +27780,8 @@ function _e(v){
     var newPlants=Math.floor(_mTotal/30);
     var h=document.getElementById('_h');if(h)h.textContent=_m;
     _hashToast(amt);_play('hash');
+    // Daily welcome on first hash of the day
+    _checkDailyWelcome();
     // Milestone pings at 10/30 and 20/30 — subtle urgency builders
     var _inP = _mTotal % 30; if(_mTotal > 0 && _inP === 0) _inP = 30;
     var _prevInP = (_mTotal - amt) % 30; if((_mTotal-amt) > 0 && _prevInP === 0) _prevInP = 30;
@@ -27983,6 +27985,30 @@ function _hashToast(n){
   var t=document.createElement('div');t.className='hash-toast';t.textContent='+'+n+' ⚡';
   s.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},1300);
 }
+// ═══ DAILY WELCOME — first hash earn of the day ═══
+var _dailyWelcomed = false;
+function _checkDailyWelcome(){
+  if(_dailyWelcomed) return;
+  var today = new Date().toISOString().slice(0,10);
+  var lastDay = '';
+  try { lastDay = localStorage.getItem('lw_last_play_day')||''; } catch(e){}
+  if(lastDay !== today){
+    _dailyWelcomed = true;
+    try { localStorage.setItem('lw_last_play_day', today); } catch(e){}
+    // Count days played
+    var daysPlayed = 1;
+    try { daysPlayed = parseInt(localStorage.getItem('lw_days_played')||'0',10) + 1; localStorage.setItem('lw_days_played', String(daysPlayed)); } catch(e){}
+    // Count plants
+    var plantCount = 0;
+    try { plantCount = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]').length; } catch(e){}
+    var welcomeTitle = daysPlayed <= 1 ? 'Welcome, Keeper' : 'Day ' + daysPlayed;
+    var welcomeSub = plantCount > 0 ? plantCount + ' plant' + (plantCount>1?'s':'') + ' in your greenhouse' : 'Play games to grow your first plant';
+    _milestoneToast(welcomeTitle, welcomeSub);
+  } else {
+    _dailyWelcomed = true;
+  }
+}
+
 function _milestoneToast(title, sub){
   var t=document.createElement('div');
   t.style.cssText='position:fixed;top:4.5rem;left:50%;transform:translateX(-50%);z-index:99998;background:rgba(26,36,22,0.92);border:1.5px solid rgba(200,168,75,0.3);border-radius:10px;padding:0.4rem 1rem;text-align:center;pointer-events:none;backdrop-filter:blur(8px);animation:tierFadeIn 0.4s ease;';
