@@ -1062,9 +1062,9 @@
       box-sizing: border-box;
     }
     .cs-flip-wrap{perspective:1000px;width:92vw;max-width:460px;height:calc(100vh - 180px);max-height:600px;margin:0 auto;position:relative;}
-    .cs-flip-inner{position:relative;width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d;}
+    .cs-flip-inner{position:relative;width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d;will-change:transform;-webkit-backface-visibility:hidden;}
     .cs-flip-wrap.flipped .cs-flip-inner{transform:rotateY(180deg);}
-    .cs-card-face{backface-visibility:hidden;-webkit-backface-visibility:hidden;position:absolute;inset:0;display:flex;flex-direction:column;box-sizing:border-box;border-radius:12px;overflow:hidden;}
+    .cs-card-face{backface-visibility:hidden;-webkit-backface-visibility:hidden;position:absolute;inset:0;display:flex;flex-direction:column;box-sizing:border-box;border-radius:12px;overflow:hidden;will-change:transform;transform:translateZ(0);}
     .cs-card-front{position:absolute;inset:0;border-radius:12px;display:grid;grid-template-rows:12% 71% 20% auto;box-sizing:border-box;padding:25% 12% 8%;background-color:#050505;background-size:96%;background-position:center;background-repeat:no-repeat;}
     .cs-card-back{transform:rotateY(180deg);padding:10% 8% 6%;overflow-y:auto;-webkit-overflow-scrolling:touch;background-color:#050505;background-size:174%;background-position:center;background-repeat:no-repeat;}
     .cs-flip-hint{font-family:'DM Mono',monospace;font-size:0.35rem;color:rgba(122,179,86,0.35);text-align:center;position:absolute;bottom:4%;left:0;right:0;}
@@ -20925,11 +20925,22 @@ document.addEventListener('keydown', function(e) {
     var name  = typeof getPlantName === 'function' ? getPlantName(plant.hash) : plant.hash.slice(0,8);
     var haiku = typeof getHaiku     === 'function' ? getHaiku(plant.hash)     : { line1:'', line2:'', line3:'' };
     var _seasonColors = ['#E8A0BF','#D4A843','#C4763A','#A0C4E8'];
-    var svgHtml = generatePlantSVG(plant.hash, 200);
+    // Carousel SVG cache — avoid regenerating on every swipe
+    var _csSvgKey = 'cs_' + plant.hash;
+    var _csSmKey = 'csm_' + plant.hash;
+    var svgHtml = _svgCacheGet(_csSvgKey);
+    if (!svgHtml) {
+      svgHtml = generatePlantSVG(plant.hash, 200);
+      _svgCacheSet(_csSvgKey, svgHtml);
+    }
     if (plant.mutated) {
       svgHtml = svgHtml.replace('<svg ', '<svg style="filter:drop-shadow(0 0 10px rgba(200,168,75,0.5)) drop-shadow(0 0 20px rgba(200,168,75,0.2));" ');
     }
-    var smallSvg = generatePlantSVG(plant.hash, 40);
+    var smallSvg = _svgCacheGet(_csSmKey);
+    if (!smallSvg) {
+      smallSvg = generatePlantSVG(plant.hash, 40);
+      _svgCacheSet(_csSmKey, smallSvg);
+    }
 
     // EA knot SVGs
     var _eaKnotSvgs = [
@@ -21016,6 +21027,15 @@ document.addEventListener('keydown', function(e) {
     _populateSlot(document.getElementById('cs-slot-0'), prevPlant);   // prev
     _populateSlot(document.getElementById('cs-slot-1'), activePlant); // active
     _populateSlot(document.getElementById('cs-slot-2'), nextPlant);   // next
+
+    // Performance: strip SVG animations from non-active slots
+    // Only the center card (slot-1) gets animated elements
+    var _sideSlots = [document.getElementById('cs-slot-0'), document.getElementById('cs-slot-2')];
+    for (var _si = 0; _si < _sideSlots.length; _si++) {
+      if (!_sideSlots[_si]) continue;
+      var _anims = _sideSlots[_si].querySelectorAll('animate, animateTransform');
+      for (var _ai = 0; _ai < _anims.length; _ai++) _anims[_ai].parentNode.removeChild(_anims[_ai]);
+    }
 
     // Reset track to center — no animation
     var track = document.getElementById('pgm-track');
