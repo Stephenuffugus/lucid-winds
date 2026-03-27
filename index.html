@@ -4015,6 +4015,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="gh-progress">
       <div class="gh-progress-bar"><div class="gh-progress-fill" id="gh-progress-fill" style="width:0%"></div></div>
     </div>
+    <div id="gh-spotlight" style="font-family:'DM Mono',monospace;font-size:0.33rem;color:var(--muted);text-align:center;padding:0.15rem 0;min-height:1em;"></div>
     <div class="gh-grid-selector" style="display:flex;justify-content:space-between;align-items:center;">
       <div style="display:flex;gap:0.2rem;" id="gh-grid-btns">
         <button class="gh-grid-btn" onclick="setGHGrid(1)">1×1</button>
@@ -7483,6 +7484,13 @@ document.addEventListener('keydown', function(e) {
 
     var t = t0;
     var uid = (hash || 'x').substring(0, 6);
+
+    // Dark plant visibility floor — prevent invisible plants on dark backgrounds
+    var _darkPlantBoost = false;
+    var _dpHex = PALETTE[t.leafColors[0]] || '#888888';
+    var _dpLum = 0.2126*(parseInt(_dpHex.slice(1,3),16)/255) + 0.7152*(parseInt(_dpHex.slice(3,5),16)/255) + 0.0722*(parseInt(_dpHex.slice(5,7),16)/255);
+    if (_dpLum < 0.12) _darkPlantBoost = true;
+
     var isMut = t.mutationName !== 'None';
     var isWire = t.mutationName === 'Wireframe';
     var isGlass = t.mutationName === 'Glass Stem';
@@ -9831,6 +9839,8 @@ document.addEventListener('keydown', function(e) {
       if (t._soloLeafIdx !== undefined && i !== t._soloLeafIdx) {
         op = op * 0.15;
       }
+      // Dark plant boost — 30% brighter leaves for low-luminance plants
+      if (_darkPlantBoost) op = Math.min(1.0, op * 1.3);
 
       // set-104: BLOOM EMPHASIS — when flower is present, dim leaves
       // to draw the eye to the central bloom. The flower is the hero;
@@ -12818,7 +12828,12 @@ document.addEventListener('keydown', function(e) {
         var sy = ly + sinA * len * 0.15 + cosA * ls * 0.25;
         var stx = ox + cosA * len * 0.65 - sinA * ls * 0.15;
         var sty = ly + sinA * len * 0.65 + cosA * ls * 0.15;
-        s += '<path d="M'+_f(sx)+','+_f(sy)+' Q'+_f((sx+stx)/2)+','+_f((sy+sty)/2)+' '+_f(stx)+','+_f(sty)+'" stroke="rgba(240,235,216,0.09)" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        var _specOp = _darkPlantBoost ? 0.35 : 0.09;
+        s += '<path d="M'+_f(sx)+','+_f(sy)+' Q'+_f((sx+stx)/2)+','+_f((sy+sty)/2)+' '+_f(stx)+','+_f(sty)+'" stroke="rgba(240,235,216,'+_specOp.toFixed(2)+')" stroke-width="'+(_darkPlantBoost?'0.5':'0.25')+'" fill="none" stroke-linecap="round"/>';
+        // Dark plant boost — cream outline on leaf body for visibility
+        if (_darkPlantBoost) {
+          s += '<path d="M'+_f(ox)+','+_f(ly)+' Q'+_f(vcx)+','+_f(vcy)+' '+_f(vx)+','+_f(vy)+'" stroke="rgba(240,235,216,0.15)" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        }
         // Secondary veins — 2 branching off midrib (botanical accuracy)
         var _sv1x = ox + cosA * len * 0.35;
         var _sv1y = ly + sinA * len * 0.35;
@@ -20902,7 +20917,8 @@ document.addEventListener('keydown', function(e) {
       time: getTimeSec(),
       rare: traits.isRare,
       traits: getTraitSummary(hash),
-      breedCount: 0
+      breedCount: 0,
+      generation: 1
     };
     if (opts && opts.isCross) entry.isCross = true;
     // PLANT SEAL — cryptographic signature
@@ -21346,13 +21362,33 @@ document.addEventListener('keydown', function(e) {
     var expandBtn = document.getElementById('gh-expand-btn');
     if (expandBtn) expandBtn.style.display = (MAX_COLLECTION_SIZE >= GH_SLOTS_MAX) ? 'none' : '';
 
+    // Collection Spotlight
+    var _spotEl = document.getElementById('gh-spotlight');
+    if (_spotEl && gh.length >= 2) {
+      try {
+        var _spotFacts = [];
+        var _oldest = gh[0]; var _oDays = Math.floor((Date.now() - (_oldest.born || Date.now())) / 86400000);
+        if (_oDays > 0) _spotFacts.push('Oldest: ' + (typeof getPlantName === 'function' ? getPlantName(_oldest.hash) : 'Plant') + ' (' + _oDays + 'd)');
+        var _maxGen = 1; gh.forEach(function(p) { if ((p.generation || 1) > _maxGen) _maxGen = p.generation || 1; });
+        if (_maxGen > 1) _spotFacts.push('Longest line: Gen ' + _maxGen);
+        var _crownCount = 0; gh.forEach(function(p) { if (p.mycelialCrown) _crownCount++; });
+        if (_crownCount > 0) _spotFacts.push('Crown heritage: ' + _crownCount + ' plant' + (_crownCount > 1 ? 's' : ''));
+        var _crossCount = 0; gh.forEach(function(p) { if (p.isCross) _crossCount++; });
+        if (_crossCount > 0) _spotFacts.push('Bred: ' + _crossCount + ' · Minted: ' + (gh.length - _crossCount));
+        if (_spotFacts.length > 0) {
+          var _spotIdx = Math.floor(Date.now() / 10000) % _spotFacts.length;
+          _spotEl.textContent = _spotFacts[_spotIdx];
+        }
+      } catch(e) { _spotEl.textContent = ''; }
+    } else if (_spotEl) { _spotEl.textContent = ''; }
+
     // Sort plants based on current mode
     var sorted = gh.slice(); // copy so we don't mutate localStorage order
     if (_ghSortMode === 'rarest') {
       sorted.sort(function(a, b) {
         var sa = 0, sb = 0;
-        try { var _ta = hashToTraits(a.hash); if (a.generation) _ta.chimerGen = a.generation; if (a.mycelialCrown) _ta.mycelialCrown = true; if (a.breedLayers) _ta.breedLayers = a.breedLayers; sa = getTerraGrade(_ta).score; } catch(e) {}
-        try { var _tb = hashToTraits(b.hash); if (b.generation) _tb.chimerGen = b.generation; if (b.mycelialCrown) _tb.mycelialCrown = true; if (b.breedLayers) _tb.breedLayers = b.breedLayers; sb = getTerraGrade(_tb).score; } catch(e) {}
+        try { var _ta = hashToTraits(a.hash); if (a.generation) _ta.chimerGen = a.generation; if (a.mycelialCrown) _ta.mycelialCrown = true; if (a.breedLayers) _ta.breedLayers = a.breedLayers; if (a.compostLayers) _ta.compostLayers = a.compostLayers; sa = getTerraGrade(_ta).score; } catch(e) {}
+        try { var _tb = hashToTraits(b.hash); if (b.generation) _tb.chimerGen = b.generation; if (b.mycelialCrown) _tb.mycelialCrown = true; if (b.breedLayers) _tb.breedLayers = b.breedLayers; if (b.compostLayers) _tb.compostLayers = b.compostLayers; sb = getTerraGrade(_tb).score; } catch(e) {}
         return sb - sa; // highest score first
       });
     } else if (_ghSortMode === 'name') {
@@ -22755,6 +22791,13 @@ document.addEventListener('keydown', function(e) {
     renderGreenhouse();
     updateDashboard();
     showHexMsg('🧪 Composted. +' + fertReward + ' Fertilizer, +' + dnaReward + ' DNA added.');
+    // First-compost breadcrumb
+    try {
+      var _cLogLen = (JSON.parse(localStorage.getItem('sws_compost_log') || '[]')).length;
+      if (_cLogLen <= 1) {
+        setTimeout(function() { showHexMsg('🌿 Fertilizer ready! Head to the Nursery and apply it to a seed before bloom for a rarity boost.'); }, 2500);
+      }
+    } catch(e) {}
     // Compost log for achievements
     try {
       var _cLog = JSON.parse(localStorage.getItem('sws_compost_log') || '[]');
@@ -26049,76 +26092,54 @@ function _crossPollinate(p){
 
 // ═══ EXECUTE CROSS-POLLINATION ═══
 function _doCrossPollination(wildPlant,matePlant){
-  // Generate offspring hash from both parents
-  var combined=wildPlant.hash+matePlant.hash+Date.now();
-  var offspringHash='';
-  var hashNum=0;
-  for(var i=0;i<combined.length;i++){hashNum=((hashNum<<5)-hashNum+combined.charCodeAt(i))|0;}
-  offspringHash=Math.abs(hashNum).toString(16).padStart(8,'0');
-  // Extend to 64 chars
-  var seed=offspringHash;
-  while(offspringHash.length<64){offspringHash+=Math.abs((hashNum=((hashNum<<5)-hashNum+offspringHash.charCodeAt(offspringHash.length%seed.length))|0)).toString(16).padStart(4,'0');}
-  offspringHash=offspringHash.substring(0,64);
+  function _cpReward(offGen){
+    var roll=Math.random();
+    var rewardMsg='';
+    if(roll<0.6){
+      var pollenBonus=5+Math.floor(Math.random()*10);
+      var currentPollen=0;try{currentPollen=parseInt(localStorage.getItem('fg_pollen')||'0');}catch(e){}
+      localStorage.setItem('fg_pollen',String(currentPollen+pollenBonus));
+      rewardMsg='+'+pollenBonus+' pollen!';
+    } else if(roll<0.9){
+      var dewBonus=2+Math.floor(Math.random()*4);
+      if(window.earnHashes)window.earnHashes(dewBonus);
+      rewardMsg='+'+dewBonus+' Dew Drops!';
+    } else {
+      var hashBonus=3+Math.floor(Math.random()*5);
+      if(window.earnHashes)window.earnHashes(hashBonus);
+      rewardMsg='+'+hashBonus+' hashes toward a new plant!';
+    }
+    _play('match');
+    var parentInfo=_buildInfo(wildPlant.hash);
+    var mateInfo=_buildInfo(matePlant.hash);
+    var chimerMsg=offGen>1?' Gen '+offGen+' chimera — 2× climate immunity, -'+(offGen-1)*2+' EA':'';
+    _toast('\ud83c\udf31 Cross-pollinated!\n'+parentInfo.nm+' × '+mateInfo.nm+'\nSeed → Nursery.'+chimerMsg+'\n'+rewardMsg);
+    if(window.PW_grantXP)PW_grantXP(5,'cross_pollinate');
+    if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
+  }
 
-  // Compute chimera generation: max of parents + 1
-  var p1Gen=1,p2Gen=1;
-  try{
-    var p1t=window.hashToTraits?window.hashToTraits(wildPlant.hash):null;
-    var p2t=window.hashToTraits?window.hashToTraits(matePlant.hash):null;
-    if(p1t)p1Gen=p1t.chimerGen||1;
-    if(p2t)p2Gen=p2t.chimerGen||1;
-  }catch(e){}
-  var offspringGen=Math.max(p1Gen,p2Gen)+1;
-
-  // Add to nursery via FG_Data (correct format for nursery renderer)
-  if(window.FG_Data&&FG_Data.addSeed){
-    var addResult=FG_Data.addSeed({
-      seedHash:offspringHash,
-      parentAHash:wildPlant.hash,
-      parentBHash:matePlant.hash,
-      nonce:offspringGen
+  // Use SHA-256 Mendelian hash via FG_Data
+  if(window.FG_Data&&FG_Data.crossPollinateHashes){
+    FG_Data.crossPollinateHashes(wildPlant.hash,matePlant.hash).then(function(result){
+      var offHash=result.childHash;
+      var offGen=result.nonce;
+      if(window.FG_Data&&FG_Data.addSeed){
+        var addResult=FG_Data.addSeed({seedHash:offHash,parentAHash:wildPlant.hash,parentBHash:matePlant.hash,nonce:offGen});
+        if(!addResult.ok){_toast('Nursery full (3/3). Bloom or abandon a seed first.');return;}
+      }
+      // Increment breedCount on both parents
+      var _bcGh3=[];try{_bcGh3=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+      var _bcDirty3=false;
+      _bcGh3.forEach(function(p){
+        if(p.hash===wildPlant.hash||p.hash===matePlant.hash){p.breedCount=(p.breedCount||0)+1;_bcDirty3=true;}
+      });
+      if(_bcDirty3&&window.saveGreenhouse)saveGreenhouse(_bcGh3);
+      if(window.renderNursery)renderNursery();
+      _cpReward(offGen);
     });
-    if(!addResult.ok){_toast('Nursery full (3/3). Bloom or abandon a seed first.');return;}
   } else {
-    // Fallback: direct write in correct format
-    var nursery=[];try{nursery=JSON.parse(localStorage.getItem('sws_nursery')||'[]')||[];}catch(e){}
-    if(nursery.length>=3){_toast('Nursery full!');return;}
-    nursery.push({id:'nur_'+Date.now(),seedHash:offspringHash,parentAHash:wildPlant.hash,parentBHash:matePlant.hash,nonce:offspringGen,plantedAt:new Date().toISOString().slice(0,10),waterLog:[new Date().toISOString().slice(0,10)],status:'growing',nickname:null});
-    localStorage.setItem('sws_nursery',JSON.stringify(nursery));
+    _toast('Breeding engine not loaded. Try again.');
   }
-  if(window.renderNursery)renderNursery();
-
-  // Reward for the planter (random roll: 60% pollen, 30% dew, 10% hashes)
-  var roll=Math.random();
-  var rewardMsg='';
-  if(roll<0.6){
-    // Pollen boost
-    var pollenBonus=5+Math.floor(Math.random()*10);
-    var currentPollen=0;try{currentPollen=parseInt(localStorage.getItem('fg_pollen')||'0');}catch(e){}
-    localStorage.setItem('fg_pollen',String(currentPollen+pollenBonus));
-    rewardMsg='+'+pollenBonus+' pollen!';
-  } else if(roll<0.9){
-    // Dew Drops
-    var dewBonus=2+Math.floor(Math.random()*4);
-    if(window.earnHashes)window.earnHashes(dewBonus);
-    rewardMsg='+'+dewBonus+' Dew Drops!';
-  } else {
-    // Hashes toward new plant
-    var hashBonus=3+Math.floor(Math.random()*5);
-    if(window.earnHashes)window.earnHashes(hashBonus);
-    rewardMsg='+'+hashBonus+' hashes toward a new plant!';
-  }
-
-  _play('match');
-  var parentInfo=_buildInfo(wildPlant.hash);
-  var mateInfo=_buildInfo(matePlant.hash);
-  var chimerMsg=offspringGen>1?' Gen '+offspringGen+' chimera — 2× climate immunity, -'+(offspringGen-1)*2+' EA':'';
-  _toast('\ud83c\udf31 Cross-pollinated!\n'+parentInfo.nm+' × '+mateInfo.nm+'\nSeed → Nursery.'+chimerMsg+'\n'+rewardMsg);
-
-  // XP reward
-  if(window.PW_grantXP)PW_grantXP(5,'cross_pollinate');
-
-  if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
 }
 window._doCrossPollination=_doCrossPollination;
 
@@ -26573,17 +26594,16 @@ function _e(v){
 // then run mintPlant in background for sealing/achievements/XP.
 function _autoMintPlant(plantNum){
   console.log('[autoMint] threshold crossed — plantNum:', plantNum, '_mTotal:', _mTotal);
-  var seed='pw-auto-'+plantNum+'-'+_mTotal+'-'+Date.now();
-  var hv=0;for(var i=0;i<seed.length;i++)hv=((hv<<5)-hv+seed.charCodeAt(i))|0;
-  var hex=Math.abs(hv).toString(16).padStart(8,'0');
-  var fullHash=(hex+hex+hex+hex+hex+hex+hex+hex).substring(0,64);
+  var _rBytes = new Uint8Array(32);
+  crypto.getRandomValues(_rBytes);
+  var fullHash = Array.from(_rBytes).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
   console.log('[autoMint] generated hash:', fullHash);
   // ── STEP 1: Synchronous write — plant appears immediately ──
   var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(ex){gh=[];}
   if(gh.some(function(p){return p.hash===fullHash;})){console.log('[autoMint] duplicate hash, skipping');return;}
-  var entry={hash:fullHash,date:new Date().toISOString().split('T')[0],born:Date.now(),origin:'bloom',rare:false,traits:'',sets:0,time:0};
+  var entry={hash:fullHash,date:new Date().toISOString().split('T')[0],born:Date.now(),origin:'bloom',rare:false,traits:'',sets:0,time:0,breedCount:0,generation:1};
   gh.push(entry);
-  localStorage.setItem('sws_greenhouse',JSON.stringify(gh));
+  if(window.saveGreenhouse){saveGreenhouse(gh);}else{localStorage.setItem('sws_greenhouse',JSON.stringify(gh));}
   console.log('[autoMint] plant written to localStorage, gh.length:', gh.length);
   if(window.renderGreenhouse)window.renderGreenhouse();
   sm('🌿 New plant bloomed!');
@@ -26617,11 +26637,10 @@ function _showWinCelebration(){
 
   if(plantComplete){
     // ── MODE 2: PLANT EARNED ──
-    var seed='pw-auto-'+Math.floor(_mTotal/30)+'-'+_mTotal+'-'+Date.now();
-    var hv=0;for(var i=0;i<seed.length;i++)hv=((hv<<5)-hv+seed.charCodeAt(i))|0;
-    var hex=Math.abs(hv).toString(16);
-    while(hex.length<8)hex='0'+hex;
-    var pvh=(hex+hex+hex+hex+hex+hex+hex+hex).substring(0,64);
+    var _lastGh = [];
+    try { _lastGh = JSON.parse(localStorage.getItem('sws_greenhouse') || '[]'); } catch(e) {}
+    var _lastMinted = _lastGh[_lastGh.length - 1];
+    var pvh = _lastMinted ? _lastMinted.hash : '0'.repeat(64);
     var svg='<div style="font-size:3rem;">🌿</div>';
     if(typeof window._generatePlantSVG==='function'){
       try{svg=window._generatePlantSVG(pvh,200,1.0);}catch(e){}
@@ -29078,9 +29097,11 @@ function _mintGiftPlant(){
     born:Date.now(),
     origin:'gift',
     rare:true,
-    traits:null
+    traits:null,
+    breedCount:0,
+    generation:1
   });
-  localStorage.setItem('sws_greenhouse',JSON.stringify(gh));
+  if(window.saveGreenhouse){saveGreenhouse(gh);}else{localStorage.setItem('sws_greenhouse',JSON.stringify(gh));}
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
 }
 
