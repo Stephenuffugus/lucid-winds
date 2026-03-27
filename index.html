@@ -27890,15 +27890,23 @@ function _showWinCelebration(){
     h+='<button onclick="_dismissWin();_restartCurrentGame();" style="width:100%;padding:0.45rem;border:1.5px solid rgba(122,179,86,0.25);border-radius:8px;background:rgba(46,60,38,0.3);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;">KEEP PLAYING</button>';
     h+='</div>';
   } else {
-    // ── MODE 1: NORMAL WIN ──
+    // ── MODE 1: NORMAL WIN — progress-aware, near-bloom urgency ──
     var pct=Math.round((inPlant/30)*100);
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:0.3rem;">WELL PLAYED</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--gold);margin-bottom:0.5rem;">⚡ '+_m+' Dew Drops earned</div>';
-    h+='<div style="width:100%;height:8px;background:rgba(42,48,37,0.6);border-radius:4px;overflow:hidden;margin-bottom:0.15rem;"><div style="width:'+pct+'%;height:100%;background:linear-gradient(90deg,var(--leaf),var(--sage));border-radius:4px;transition:width 0.6s ease;"></div></div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);margin-bottom:0.7rem;">'+inPlant+' / 30 to next plant</div>';
-    h+='<button onclick="_dismissWin();_restartCurrentGame();" style="width:100%;padding:0.55rem;margin-bottom:0.3rem;border:1.5px solid rgba(122,179,86,0.35);border-radius:8px;background:linear-gradient(180deg,rgba(74,124,53,0.3),rgba(26,60,22,0.4));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">PLAY AGAIN</button>';
-    h+='<button onclick="_dismissWin();_openGamePicker();" style="width:100%;padding:0.45rem;margin-bottom:0.3rem;border:1.5px solid rgba(200,168,75,0.15);border-radius:8px;background:rgba(46,40,32,0.4);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;">TRY ANOTHER GAME</button>';
-    h+='<button onclick="_dismissWin();switchTab(\'greenhouse\');" style="width:100%;padding:0.4rem;border:none;border-radius:8px;background:none;color:var(--muted);font-family:DM Mono,monospace;font-size:0.42rem;cursor:pointer;min-height:40px;">view greenhouse →</button>';
+    var _winNear = inPlant >= 25;
+    var _winRemain = 30 - inPlant;
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:0.15rem;">WELL PLAYED</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--gold);margin-bottom:0.4rem;">⚡ '+_m+' Dew Drops earned</div>';
+    // Progress bar — gold-pulsing when near bloom
+    h+='<div style="width:100%;height:10px;background:rgba(42,48,37,0.6);border-radius:5px;overflow:hidden;margin-bottom:0.15rem;"><div class="'+(_winNear?'near-bloom':'')+'" style="width:'+pct+'%;height:100%;background:linear-gradient(90deg,var(--leaf),var(--sage)'+(_winNear?',var(--gold)':'')+');border-radius:5px;transition:width 0.8s ease;"></div></div>';
+    if (_winNear) {
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);margin-bottom:0.4rem;animation:nearBloomPulse 1.5s ease infinite;">'+_winRemain+' MORE TO FULL BLOOM</div>';
+    } else {
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);margin-bottom:0.5rem;">'+inPlant+' / 30 to next plant</div>';
+    }
+    // Primary CTA — bigger and more prominent when near bloom
+    h+='<button onclick="_dismissWin();_restartCurrentGame();" style="width:100%;padding:'+(_winNear?'0.65rem':'0.55rem')+';margin-bottom:0.3rem;border:1.5px solid '+(_winNear?'rgba(200,168,75,0.5)':'rgba(122,179,86,0.35)')+';border-radius:8px;background:linear-gradient(180deg,'+(_winNear?'rgba(200,168,75,0.25),rgba(120,100,40,0.35)':'rgba(74,124,53,0.3),rgba(26,60,22,0.4)')+');color:'+(_winNear?'var(--gold)':'var(--sage)')+';font-family:Bebas Neue,sans-serif;font-size:'+(_winNear?'0.95rem':'0.85rem')+';letter-spacing:0.1em;cursor:pointer;min-height:48px;">'+(_winNear?'ONE MORE GAME':'PLAY AGAIN')+'</button>';
+    h+='<button onclick="_dismissWin();_openGamePicker();" style="width:100%;padding:0.45rem;margin-bottom:0.3rem;border:1px solid rgba(200,188,160,0.12);border-radius:8px;background:rgba(46,40,32,0.3);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.06em;cursor:pointer;min-height:44px;">TRY ANOTHER GAME</button>';
+    h+='<button onclick="_dismissWin();switchTab(\'greenhouse\');" style="width:100%;padding:0.35rem;border:none;border-radius:8px;background:none;color:var(--muted);font-family:DM Mono,monospace;font-size:0.4rem;cursor:pointer;min-height:38px;">view greenhouse →</button>';
   }
 
   h+='</div>';
