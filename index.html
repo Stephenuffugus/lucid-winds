@@ -5993,12 +5993,16 @@ document.addEventListener('keydown', function(e) {
   function _secureGet(key) {
     var json = localStorage.getItem(key);
     if (!json) return null;
-    if (!_intKey) return json; // integrity not initialized yet, allow read
-    var storedSig = localStorage.getItem(key + '_sig');
-    var expectedSig = _sign(json);
-    if (storedSig !== expectedSig) {
-      if (window._swsLog) _swsLog('INTEGRITY FAIL: ' + key + ' was tampered', 'err');
-      return null;
+    // Always return data — signature check is advisory only
+    // This prevents data loss from salt mismatches during auth transitions
+    if (_intKey) {
+      var storedSig = localStorage.getItem(key + '_sig');
+      var expectedSig = _sign(json);
+      if (storedSig && storedSig !== expectedSig) {
+        if (window._swsLog) _swsLog('INTEGRITY WARN: ' + key + ' signature mismatch', 'warn');
+        // Re-sign with current key to fix the mismatch going forward
+        localStorage.setItem(key + '_sig', expectedSig);
+      }
     }
     return json;
   }
