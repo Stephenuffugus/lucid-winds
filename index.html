@@ -1007,7 +1007,8 @@
       align-items: stretch;
       overflow: hidden;
     }
-    #plant-gallery-modal.open { display: flex; }
+    #plant-gallery-modal.open { display: flex; animation: carouselOpen 0.3s cubic-bezier(0.16,1,0.3,1); }
+    @keyframes carouselOpen { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
 
     /* ── Top bar: name + close + counter ── */
     .pgm-topbar {
@@ -1044,6 +1045,7 @@
       transform: translateX(-33.333%);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
+      contain: layout style;
     }
     .pgm-track.animating {
       transition: transform 0.32s cubic-bezier(0.25,0.46,0.45,0.94);
@@ -1060,8 +1062,10 @@
       overflow: hidden;
       padding: 0;
       box-sizing: border-box;
+      contain: layout style paint;
+      isolation: isolate;
     }
-    .cs-flip-wrap{perspective:1000px;width:92vw;max-width:460px;height:calc(100vh - 180px);max-height:600px;margin:0 auto;position:relative;}
+    .cs-flip-wrap{perspective:1000px;width:92vw;max-width:460px;height:calc(100vh - 180px);max-height:600px;margin:0 auto;position:relative;contain:layout style paint;}
     .cs-flip-inner{position:relative;width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d;will-change:transform;-webkit-backface-visibility:hidden;}
     .cs-flip-wrap.flipped .cs-flip-inner{transform:rotateY(180deg);}
     .cs-card-face{backface-visibility:hidden;-webkit-backface-visibility:hidden;position:absolute;inset:0;display:flex;flex-direction:column;box-sizing:border-box;border-radius:12px;overflow:hidden;will-change:transform;transform:translateZ(0);}
@@ -2011,6 +2015,12 @@
     .grove-panel{display:none;overflow-y:auto;overflow-x:hidden;overscroll-behavior-x:contain;padding-top:calc(44px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);}
     .grove-panel.active{display:block;animation:panelFadeIn 0.25s ease;}
     @keyframes panelFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+    /* Botanical loading spinner — three rotating leaves */
+    .lw-spinner{display:flex;align-items:center;justify-content:center;gap:0.3rem;padding:1rem;}
+    .lw-spinner-leaf{width:8px;height:8px;border-radius:50% 0;background:var(--sage);opacity:0.3;animation:spinPulse 1.2s ease infinite;}
+    .lw-spinner-leaf:nth-child(2){animation-delay:0.2s;}
+    .lw-spinner-leaf:nth-child(3){animation-delay:0.4s;}
+    @keyframes spinPulse{0%,100%{opacity:0.2;transform:scale(0.8);}50%{opacity:1;transform:scale(1.2);}}
     .panel-header{
       display:flex;align-items:center;justify-content:space-between;
       margin-bottom:0.4rem;padding:0.35rem 0.5rem;
@@ -2175,7 +2185,7 @@
     .hex-btn{background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.25);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.06em;padding:0.25rem 0.5rem;border-radius:4px;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
     .hex-btn:hover{background:rgba(200,168,75,0.15);}
     .hex-btn.owned-btn{background:rgba(122,179,86,0.08);border-color:rgba(122,179,86,0.2);color:var(--sage);cursor:default;}
-    .hex-msg{font-size:0.45rem;color:var(--gold);text-align:center;min-height:0.6rem;margin-top:0.3rem;transition:opacity 0.3s;}
+    .hex-msg{font-size:0.45rem;color:var(--gold);text-align:center;min-height:0.6rem;margin-top:0.3rem;transition:opacity 0.3s ease,transform 0.3s ease;}
 
     /* ── HASH ECONOMY PRIMER MODAL ── */
     #hash-economy-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:99998;align-items:center;justify-content:center;padding:1rem;}
@@ -3712,6 +3722,8 @@
     .rain-layer{animation:rainDrift 0.9s linear infinite;}
     @keyframes rainDrift{from{transform:translateY(-18px);}to{transform:translateY(18px);}}
     @keyframes leafFloat{0%{opacity:0;transform:translateY(0) rotate(0deg);}15%{opacity:0.8;}85%{opacity:0.4;}100%{opacity:0;transform:translateY(-80px) translateX(var(--dx,20px)) rotate(var(--cr,180deg));}}
+    @keyframes mintFlash{0%{opacity:0;}15%{opacity:1;}100%{opacity:0;}}
+    @keyframes sparkBurst{0%{opacity:1;transform:translate(0,0) scale(1);}60%{opacity:0.8;transform:translate(var(--sdx,0),var(--sdy,0)) scale(1.2);}100%{opacity:0;transform:translate(var(--sdx,0),var(--sdy,0)) scale(0);}}
     /* Beat 4 (auth) keeps column layout */
     #ob-beat4{justify-content:flex-start;align-items:center;padding:1rem 1.5rem;overflow-y:auto;text-align:center;-webkit-overflow-scrolling:touch;background:#050505 url('/assets/splash-seed-540x960.jpg') center 30%/cover no-repeat;position:relative;}
     #ob-beat4::before{content:'';position:absolute;inset:0;background:rgba(5,5,5,0.7);z-index:0;pointer-events:none;}
@@ -3818,7 +3830,7 @@ window.onerror=function(msg,url,line,col,err){
   #vault-hydration-overlay.no-session { display: none; }
 </style>
 <div id="vault-hydration-overlay" class="no-session">
-  <div class="vho-hex">⬡</div>
+  <div class="lw-spinner"><div class="lw-spinner-leaf"></div><div class="lw-spinner-leaf"></div><div class="lw-spinner-leaf"></div></div>
   <div class="vho-label">RECOVERING VAULT</div>
   <div class="vho-sub" id="vho-status">Connecting to cloud…</div>
 </div>
@@ -4896,6 +4908,11 @@ document.addEventListener('keydown', function(e) {
   };
   firebase.initializeApp(firebaseConfig);
   var db   = firebase.firestore();
+  // Enable offline persistence — queues writes during outage, replays on reconnect
+  db.enablePersistence({synchronizeTabs:true}).catch(function(err){
+    if(err.code==='failed-precondition')console.warn('Firestore persistence: multiple tabs open');
+    else if(err.code==='unimplemented')console.warn('Firestore persistence: browser unsupported');
+  });
   var auth = firebase.auth();
   auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){});
 
@@ -20311,17 +20328,19 @@ document.addEventListener('keydown', function(e) {
     //   Pi.createPayment({ amount: 1, memo: 'Greenhouse slot ' + (current+1) })
     //     .then(function(payment) { ... complete payment ... setGHSlots(current+1); })
     // For now: local expansion with confirmation
-    if (!confirm('Expand greenhouse to ' + (current + 1) + ' slots?\n\n(Pi payment will be required when marketplace launches. Free during beta.)')) {
-      return;
-    }
-    // ── End Payment Hook ─────────────────────────────────
-
-    var newSlots = setGHSlots(current + 1);
-    MAX_COLLECTION_SIZE = newSlots;
-    _haptic('tab');
-    renderGreenhouse();
-    showHexMsg('Greenhouse expanded to ' + newSlots + ' slots.');
-    if (typeof gtag !== 'undefined') gtag('event', 'gh_slot_expanded', { slots: newSlots });
+    _lwConfirm({
+      title: 'EXPAND GREENHOUSE',
+      body: 'Add slot ' + (current + 1) + '?<br><span style="color:var(--muted);font-size:0.35rem;">Pi payment required at launch. Free during beta.</span>',
+      yes: 'EXPAND',
+      no: 'NOT YET'
+    }, function() {
+      var newSlots = setGHSlots(current + 1);
+      MAX_COLLECTION_SIZE = newSlots;
+      _haptic('tab');
+      renderGreenhouse();
+      showHexMsg('Greenhouse expanded to ' + newSlots + ' slots.');
+      if (typeof gtag !== 'undefined') gtag('event', 'gh_slot_expanded', { slots: newSlots });
+    });
   };
 
   // ── ONE GAME PER DEVICE — device fingerprint lock ──
@@ -20483,7 +20502,20 @@ document.addEventListener('keydown', function(e) {
           '<div class="gh-mystery">' + UNDISCOVERED_SVG + '<div class="gh-question">?</div></div>';
       }
 
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(6px)';
       grid.appendChild(el);
+    }
+    // Staggered reveal — cards cascade in
+    var _ghCards = grid.children;
+    for (var _si = 0; _si < _ghCards.length; _si++) {
+      (function(card, delay) {
+        setTimeout(function() {
+          card.style.transition = 'opacity 0.28s ease, transform 0.28s ease';
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, delay);
+      })(_ghCards[_si], 20 + _si * 25);
     }
   }
 
@@ -20946,20 +20978,17 @@ document.addEventListener('keydown', function(e) {
     var _seasonColors = ['#E8A0BF','#D4A843','#C4763A','#A0C4E8'];
     // Carousel SVG cache — avoid regenerating on every swipe
     var _csSvgKey = 'cs_' + plant.hash;
-    var _csSmKey = 'csm_' + plant.hash;
     var svgHtml = _svgCacheGet(_csSvgKey);
     if (!svgHtml) {
       svgHtml = generatePlantSVG(plant.hash, 200);
+      // Strip all SVG animations for static carousel cards — prevents constant repaints
+      svgHtml = svgHtml.replace(/<animate[^>]*\/>/gi, '').replace(/<animate[^<]*<\/animate>/gi, '').replace(/<animateTransform[^>]*\/>/gi, '').replace(/<animateTransform[^<]*<\/animateTransform>/gi, '');
       _svgCacheSet(_csSvgKey, svgHtml);
     }
     if (plant.mutated) {
       svgHtml = svgHtml.replace('<svg ', '<svg style="filter:drop-shadow(0 0 10px rgba(200,168,75,0.5)) drop-shadow(0 0 20px rgba(200,168,75,0.2));" ');
     }
-    var smallSvg = _svgCacheGet(_csSmKey);
-    if (!smallSvg) {
-      smallSvg = generatePlantSVG(plant.hash, 40);
-      _svgCacheSet(_csSmKey, smallSvg);
-    }
+    // smallSvg removed — back face is lazy-loaded, no thumbnail needed at creation
 
     // EA knot SVGs
     var _eaKnotSvgs = [
@@ -20988,22 +21017,11 @@ document.addEventListener('keydown', function(e) {
     }
     front += '</div>';
 
-    // ── BUILD BACK FACE (data side) ──
-    var back = '<div class="cs-card-face cs-card-back" data-season="' + sk + '" data-tier="' + _tierName + '">';
-    // DNA Ledger
-    back += renderDNALedger(plant);
-    // Stats row: EA, season, gen — below ledger, 20% larger
-    back += '<div style="display:flex;align-items:center;justify-content:center;gap:0.35rem;padding-top:0.35rem;margin-top:0.3rem;border-top:1px solid rgba(74,124,53,0.08);">';
-    back += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.54rem;letter-spacing:0.06em;display:flex;gap:0.3rem;"><span style="color:' + sColor + ';">EA ' + _ea + '</span><span style="color:var(--muted);">' + seasonEmblems[_season] + '</span><span style="color:var(--muted);">Gen ' + (_t ? _t.chimerGen || 1 : 1) + '</span></div>';
+    // ── BUILD BACK FACE (lazy — populated on first flip for performance) ──
+    var back = '<div class="cs-card-face cs-card-back cs-back-lazy" data-season="' + sk + '" data-tier="' + _tierName + '">';
+    back += '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;opacity:0.4;">';
+    back += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.12em;color:var(--sage);">TAP TO REVEAL</div>';
     back += '</div>';
-    // Rarity label
-    back += '<div class="cb-rarity" style="color:' + sColor + ';">' + (_tg ? _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon : 'COMMON') + '</div>';
-    // Hash + date
-    if (plant.parentAHash) back += renderLineageTree(plant);
-    back += '<div class="cb-hash" style="margin-top:0.4rem;padding-top:0.3rem;border-top:1px solid rgba(74,124,53,0.06);">' + plant.hash + '</div>';
-    back += '<div class="cb-date" style="margin-top:0.1rem;">Minted ' + (plant.date || '') + dateSuffix + '</div>';
-    back += '<div class="cb-nameplate" style="position:absolute;bottom:8%;left:10%;right:10%;"><span class="cb-name" style="color:' + sColor + ';">' + name + '</span></div>';
-    back += '<div class="cs-flip-hint">\u2190 tap to flip</div>';
     back += '</div>';
 
     // ── ASSEMBLE FLIP CARD ──
@@ -21046,15 +21064,6 @@ document.addEventListener('keydown', function(e) {
     _populateSlot(document.getElementById('cs-slot-0'), prevPlant);   // prev
     _populateSlot(document.getElementById('cs-slot-1'), activePlant); // active
     _populateSlot(document.getElementById('cs-slot-2'), nextPlant);   // next
-
-    // Performance: strip SVG animations from non-active slots
-    // Only the center card (slot-1) gets animated elements
-    var _sideSlots = [document.getElementById('cs-slot-0'), document.getElementById('cs-slot-2')];
-    for (var _si = 0; _si < _sideSlots.length; _si++) {
-      if (!_sideSlots[_si]) continue;
-      var _anims = _sideSlots[_si].querySelectorAll('animate, animateTransform');
-      for (var _ai = 0; _ai < _anims.length; _ai++) _anims[_ai].parentNode.removeChild(_anims[_ai]);
-    }
 
     // Reset track to center — no animation
     var track = document.getElementById('pgm-track');
@@ -21247,8 +21256,52 @@ document.addEventListener('keydown', function(e) {
     if (typeof gtag !== 'undefined') gtag('event', 'carousel_open', { idx: _carousel.idx, src: source, total: arr.length });
   };
 
+  // ── Lazy back-face builder: populates DNA ledger on first flip ─────
+  function _populateBackLazy(backEl) {
+    if (!backEl || !backEl.classList.contains('cs-back-lazy')) return;
+    var plant = _carousel ? _carousel.arr[_carousel.idx] : null;
+    if (!plant) return;
+
+    var _t = null, _season = 0, _ea = 0, _tg = null;
+    try {
+      _t = hashToTraits(plant.hash);
+      if (plant.generation) _t.chimerGen = plant.generation;
+      if (plant.mycelialCrown) _t.mycelialCrown = true;
+      if (plant.breedLayers) _t.breedLayers = plant.breedLayers;
+      if (plant.compostLayers) _t.compostLayers = plant.compostLayers;
+      _season = (_t && typeof _t.season === 'number') ? _t.season % 4 : 0;
+      _ea = window.computeEA ? window.computeEA(_t, 0) : 0;
+      _tg = getTerraGrade(_t);
+    } catch(e) {}
+
+    var seasonEmblems = ['\ud83c\udf38','\u2600\ufe0f','\ud83c\udf42','\u2744\ufe0f'];
+    var _seasonColors = ['#E8A0BF','#D4A843','#C4763A','#A0C4E8'];
+    var sColor = _tg ? _tg.color : 'var(--cream)';
+    var name = typeof getPlantName === 'function' ? getPlantName(plant.hash) : plant.hash.slice(0, 8);
+    var dateSuffix = (plant.rare ? ' \u2605 RARE' : '') + (plant.mutated ? ' \ud83e\uddec MUTATED' : '') + (plant.isCross ? ' \ud83e\uddec CROSS' : '');
+
+    var html = '';
+    html += renderDNALedger(plant);
+    html += '<div style="display:flex;align-items:center;justify-content:center;gap:0.35rem;padding-top:0.35rem;margin-top:0.3rem;border-top:1px solid rgba(74,124,53,0.08);">';
+    html += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.54rem;letter-spacing:0.06em;display:flex;gap:0.3rem;"><span style="color:' + sColor + ';">EA ' + _ea + '</span><span style="color:var(--muted);">' + seasonEmblems[_season] + '</span><span style="color:var(--muted);">Gen ' + (_t ? _t.chimerGen || 1 : 1) + '</span></div>';
+    html += '</div>';
+    html += '<div class="cb-rarity" style="color:' + sColor + ';">' + (_tg ? _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon : 'COMMON') + '</div>';
+    if (plant.parentAHash) html += renderLineageTree(plant);
+    html += '<div class="cb-hash" style="margin-top:0.4rem;padding-top:0.3rem;border-top:1px solid rgba(74,124,53,0.06);">' + plant.hash + '</div>';
+    html += '<div class="cb-date" style="margin-top:0.1rem;">Minted ' + (plant.date || '') + dateSuffix + '</div>';
+    html += '<div class="cb-nameplate" style="position:absolute;bottom:8%;left:10%;right:10%;"><span class="cb-name" style="color:' + sColor + ';">' + name + '</span></div>';
+    html += '<div class="cs-flip-hint">\u2190 tap to flip</div>';
+
+    backEl.innerHTML = html;
+    backEl.classList.remove('cs-back-lazy');
+  }
+
   // ── Card flip handler: first-flip rarity reveal ────────────────────
   window._handleCardFlip = function(el) {
+    // Lazy-load back face content on first flip
+    var backFace = el.querySelector('.cs-back-lazy');
+    if (backFace) _populateBackLazy(backFace);
+
     var isFlipped = el.classList.contains('flipped');
     var wasRevealed = el.getAttribute('data-revealed') === 'true';
 
@@ -21327,10 +21380,7 @@ document.addEventListener('keydown', function(e) {
     var gh = loadGreenhouse();
     if (idx >= gh.length) return;
     var name = typeof getPlantName === 'function' ? getPlantName(gh[idx].hash) : 'this plant';
-    if (confirm('Compost "' + name + '"?\n\nThis permanently removes the plant from your Greenhouse and adds DNA Fragments to your Inventory. This cannot be undone.')) {
-      closePlantGallery();
-      compostPlant(idx);
-    }
+    confirmCompost(idx);
   };
 
   window.carouselBreed = function() {
@@ -21627,9 +21677,19 @@ document.addEventListener('keydown', function(e) {
     }
   });
 
+  var _hexTimer = null;
   function showHexMsg(txt) {
     var el = document.getElementById('hex-msg');
-    if (el) { el.textContent = txt; setTimeout(function() { el.textContent = ''; }, 4000); }
+    if (!el) return;
+    clearTimeout(_hexTimer);
+    el.textContent = txt;
+    el.style.opacity = '1';
+    el.style.transform = 'translateY(0)';
+    _hexTimer = setTimeout(function() {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(-3px)';
+      setTimeout(function() { el.textContent = ''; }, 350);
+    }, 3800);
   }
 
   // ═══ TAB SWITCHING ═══
@@ -21913,10 +21973,66 @@ document.addEventListener('keydown', function(e) {
     closePlantActionDrawer();
     var gh = loadGreenhouse();
     if (plantIndex < 0 || plantIndex >= gh.length) return;
-    var name = typeof getPlantName === 'function' ? getPlantName(gh[plantIndex].hash) : 'this plant';
-    if (confirm('Compost "' + name + '"?\n\nThis permanently removes the plant from your Greenhouse and adds DNA Fragments to your Inventory. This cannot be undone.')) {
-      compostPlant(plantIndex);
-    }
+    var plant = gh[plantIndex];
+    var name = typeof getPlantName === 'function' ? getPlantName(plant.hash) : 'this plant';
+    var traits = null; try{traits=hashToTraits(plant.hash);}catch(e){}
+    var tg = traits && window.getTerraGrade ? getTerraGrade(traits) : null;
+    var tierName = tg ? tg.name : 'Common';
+    var fertTable = {Common:1,Uncommon:1,Rare:2,Epic:2,Legendary:3,Mythic:4,Cosmic:5};
+    var fertReward = fertTable[tierName] || 1;
+    var svg = '';try{svg=generatePlantSVG(plant.hash,80);}catch(e){}
+    // In-game compost confirmation modal
+    var modal = document.createElement('div');
+    modal.id = 'compost-confirm-modal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
+    var h = '<div style="text-align:center;max-width:320px;background:rgba(18,22,16,0.95);border:1.5px solid rgba(200,168,75,0.25);border-radius:14px;padding:1.2rem 1rem;box-shadow:0 12px 40px rgba(0,0,0,0.6);">';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);letter-spacing:0.15em;margin-bottom:0.4rem;">RETURN TO EARTH</div>';
+    h += '<div style="margin:0 auto 0.3rem;opacity:0.7;">'+svg+'</div>';
+    h += '<div style="font-family:Playfair Display,serif;font-size:0.7rem;color:var(--cream);margin-bottom:0.15rem;">'+name+'</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);margin-bottom:0.5rem;">'+tierName+' · This cannot be undone</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--sage);margin-bottom:0.6rem;">You will receive <span style="color:var(--gold);">+'+fertReward+' Fertilizer</span></div>';
+    h += '<button onclick="_execCompost('+plantIndex+')" style="width:100%;padding:0.5rem;margin-bottom:0.3rem;border:1.5px solid rgba(200,80,60,0.4);border-radius:8px;background:linear-gradient(180deg,rgba(180,60,40,0.25),rgba(120,30,20,0.35));color:#e8a0a0;font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">COMPOST</button>';
+    h += '<button onclick="_closeCompostModal()" style="width:100%;padding:0.4rem;border:1px solid rgba(122,179,86,0.2);border-radius:8px;background:rgba(46,60,38,0.2);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;">KEEP PLANT</button>';
+    h += '</div>';
+    modal.innerHTML = h;
+    document.body.appendChild(modal);
+    _haptic('tab');
+  };
+  window._closeCompostModal = function(){
+    var m = document.getElementById('compost-confirm-modal');
+    if(m) m.remove();
+  };
+  window._execCompost = function(plantIndex){
+    _closeCompostModal();
+    _haptic('disc');
+    compostPlant(plantIndex);
+  };
+
+  // ═══ REUSABLE IN-GAME CONFIRM MODAL ═══
+  // Replaces raw browser confirm() for player-facing actions
+  window._lwConfirm = function(opts, onYes) {
+    var title = opts.title || 'CONFIRM';
+    var body = opts.body || '';
+    var yes = opts.yes || 'CONFIRM';
+    var no = opts.no || 'CANCEL';
+    var danger = opts.danger || false;
+    var m = document.createElement('div');
+    m.id = 'lw-confirm-modal';
+    m.style.cssText = 'position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
+    var h = '<div style="text-align:center;max-width:320px;background:rgba(18,22,16,0.95);border:1.5px solid rgba(200,168,75,0.25);border-radius:14px;padding:1.2rem 1rem;box-shadow:0 12px 40px rgba(0,0,0,0.6);">';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);letter-spacing:0.15em;margin-bottom:0.3rem;">' + title + '</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--cream);line-height:1.6;margin-bottom:0.6rem;">' + body + '</div>';
+    var yBorder = danger ? 'rgba(200,80,60,0.4)' : 'rgba(122,179,86,0.35)';
+    var yBg = danger ? 'linear-gradient(180deg,rgba(180,60,40,0.25),rgba(120,30,20,0.35))' : 'linear-gradient(180deg,rgba(74,124,53,0.3),rgba(26,60,22,0.4))';
+    var yColor = danger ? '#e8a0a0' : 'var(--sage)';
+    h += '<button id="lw-confirm-yes" style="width:100%;padding:0.5rem;margin-bottom:0.3rem;border:1.5px solid ' + yBorder + ';border-radius:8px;background:' + yBg + ';color:' + yColor + ';font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">' + yes + '</button>';
+    h += '<button id="lw-confirm-no" style="width:100%;padding:0.4rem;border:1px solid rgba(122,179,86,0.15);border-radius:8px;background:rgba(46,60,38,0.15);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;">' + no + '</button>';
+    h += '</div>';
+    m.innerHTML = h;
+    document.body.appendChild(m);
+    _haptic('tab');
+    document.getElementById('lw-confirm-yes').onclick = function() { m.remove(); if (onYes) onYes(); };
+    document.getElementById('lw-confirm-no').onclick = function() { m.remove(); };
   };
 
   window.shareDrawerPlant = function(plantIndex) {
@@ -22036,7 +22152,7 @@ document.addEventListener('keydown', function(e) {
     if (tab === 'nursery') renderNursery();
     if (tab === 'binder') renderBinder();
     if (tab === 'wild' && window.FG_Wild) FG_Wild.activate();
-    if (tab === 'wild') { console.log('[switchTab] wild — FG_Backpack:', !!window.FG_Backpack, 'FG_Wild:', !!window.FG_Wild); }
+    if (tab === 'wild') { console.log('[switchTab] wild — FG_Backpack:', !!window.FG_Backpack, 'FG_Wild:', !!window.FG_Wild); if(window.FG_Wild&&FG_Wild._afMarkWildEntry)FG_Wild._afMarkWildEntry(); }
     // Map overlays — show on Wild tab regardless of backpack state
     var vig=document.querySelector('.map-vignette');
     var glass=document.querySelector('.map-glass-highlight');
@@ -22144,6 +22260,27 @@ document.addEventListener('keydown', function(e) {
   }
   window.renderNursery = renderNursery;
 
+  // Visual pulse on nursery seed cards after water/fertilize
+  function _nurPulse(slotIdx, type) {
+    var slot = document.getElementById('nur-slot-' + slotIdx);
+    if (!slot) return;
+    var color = type === 'fertilize' ? 'rgba(200,168,75,0.4)' : 'rgba(91,143,185,0.4)';
+    var glow = document.createElement('div');
+    glow.style.cssText = 'position:absolute;inset:-2px;border-radius:14px;background:transparent;box-shadow:inset 0 0 20px ' + color + ',0 0 15px ' + color + ';pointer-events:none;opacity:0;z-index:2;';
+    slot.style.position = 'relative';
+    slot.appendChild(glow);
+    // Animate: pulse in, hold, fade out
+    requestAnimationFrame(function() {
+      glow.style.transition = 'opacity 0.3s ease';
+      glow.style.opacity = '1';
+      setTimeout(function() {
+        glow.style.transition = 'opacity 0.8s ease';
+        glow.style.opacity = '0';
+        setTimeout(function() { if (glow.parentNode) glow.remove(); }, 900);
+      }, 600);
+    });
+  }
+
   window.expandNurSlot = function() {
     if (!window.FG_Data || !FG_Data.getNurSlots) return;
     var current = FG_Data.getNurSlots();
@@ -22152,12 +22289,18 @@ document.addEventListener('keydown', function(e) {
       else if (window.showHexMsg) showHexMsg('Maximum 6 nursery slots.');
       return;
     }
-    if (!confirm('Expand nursery to ' + (current + 1) + ' slots?\n\n(Pi payment will be required when marketplace launches. Free during beta.)')) return;
-    FG_Data.setNurSlots(current + 1);
-    if (window._haptic) _haptic('tab');
-    renderNursery();
-    if (window.showHexMsg) showHexMsg('Nursery expanded to ' + (current + 1) + ' slots.');
-    if (typeof gtag !== 'undefined') gtag('event', 'nur_slot_expanded', { slots: current + 1 });
+    _lwConfirm({
+      title: 'EXPAND NURSERY',
+      body: 'Add slot ' + (current + 1) + '?<br><span style="color:var(--muted);font-size:0.35rem;">Pi payment required at launch. Free during beta.</span>',
+      yes: 'EXPAND',
+      no: 'NOT YET'
+    }, function() {
+      FG_Data.setNurSlots(current + 1);
+      if (window._haptic) _haptic('tab');
+      renderNursery();
+      if (window.showHexMsg) showHexMsg('Nursery expanded to ' + (current + 1) + ' slots.');
+      if (typeof gtag !== 'undefined') gtag('event', 'nur_slot_expanded', { slots: current + 1 });
+    });
   };
 
   function _buildNurSlotHTML(seed, idx) {
@@ -22943,6 +23086,8 @@ document.addEventListener('keydown', function(e) {
       _throttledSave('sws_nursery', JSON.stringify(nur));
       renderNursery();
       _setNurMsg('💧 Watered. ' + seed.waterLog.length + '/3 days done.');
+      _haptic('tab');
+      _nurPulse(seedIndex, 'water');
     }
   };
 
@@ -23008,6 +23153,8 @@ document.addEventListener('keydown', function(e) {
       _throttledSave('sws_nursery', JSON.stringify(nur)); // throttled (Phase 27)
       renderNursery();
       _setNurMsg('⚡ 21 Dew Drops spent. Cooldown bypassed — ' + seed.waterLog.length + '/3 days done.');
+      _haptic('sync');
+      _nurPulse(seedIndex, 'fertilize');
     }
   };
 
@@ -23119,10 +23266,18 @@ document.addEventListener('keydown', function(e) {
 
   window.handleRemoveSeed = function(id) {
     if (!window.FG_Data) return;
-    if (!confirm('Abandon this seed? It cannot be recovered.')) return;
-    FG_Data.removeSeed(id);
-    renderNursery();
-    _setNurMsg('Seed abandoned. Nursery slot freed.');
+    _lwConfirm({
+      title: 'ABANDON SEED',
+      body: 'This seed will be lost forever.<br>The nursery slot will be freed.',
+      yes: 'ABANDON',
+      no: 'KEEP GROWING',
+      danger: true
+    }, function() {
+      FG_Data.removeSeed(id);
+      _haptic('disc');
+      renderNursery();
+      _setNurMsg('Seed abandoned. Nursery slot freed.');
+    });
   };
 
   // ── Streak Milestone Toast ──
@@ -24324,7 +24479,13 @@ document.addEventListener('keydown', function(e) {
     var btn = document.getElementById('sws-id-submit-btn');
     if (!btn) return;
     btn.disabled = isLoading;
-    if (text) btn.textContent = text;
+    if (isLoading) {
+      btn.innerHTML = '<span class="lw-spinner" style="padding:0;gap:0.2rem;display:inline-flex;vertical-align:middle;"><span class="lw-spinner-leaf" style="width:5px;height:5px;"></span><span class="lw-spinner-leaf" style="width:5px;height:5px;"></span><span class="lw-spinner-leaf" style="width:5px;height:5px;"></span></span> ' + (text || '');
+      btn.style.opacity = '0.7';
+    } else {
+      btn.textContent = text || '⬡ INITIALIZE IDENTITY';
+      btn.style.opacity = '1';
+    }
   }
   _swsSetLoading = _swsSetLoading; // expose for cross-scope access
 
@@ -24797,6 +24958,44 @@ function _e(v){if(window._e)window._e(v);}
 function _play(id){if(window._play)window._play(id);}
 var TILES='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 var MAX_DROPS=3,MAX_POUCH=3,COLLECT_RANGE=150,ZONE_SIZE=0.001;
+// ═══ ANTI-FARMING: economy protection ═══
+var AF_HARVEST_KEY='fg_af_harvests';
+var AF_MIN_WILD_MS=7200000; // 2hr minimum wild time before harvest
+function _afGetToday(){return new Date().toISOString().slice(0,10);}
+function _afGetState(){
+  try{var raw=localStorage.getItem(AF_HARVEST_KEY);var s=JSON.parse(raw||'{}');
+  if(s.day!==_afGetToday())return{day:_afGetToday(),count:0,planters:{},firstWild:0};
+  return s;}catch(e){return{day:_afGetToday(),count:0,planters:{},firstWild:0};}
+}
+function _afSave(s){try{localStorage.setItem(AF_HARVEST_KEY,JSON.stringify(s));}catch(e){}}
+function _afGetCap(){
+  // Daily harvest cap = backpack slots (3 base, up to 6 upgraded)
+  if(window.FG_Backpack&&FG_Backpack.getState){
+    var st=FG_Backpack.getState();return(st&&st.cap)?st.cap:3;
+  }return 3;
+}
+function _afMarkWildEntry(){
+  var s=_afGetState();if(!s.firstWild)s.firstWild=Date.now();_afSave(s);
+}
+function _afCanHarvest(planterUid){
+  var s=_afGetState();
+  // Check 1: daily harvest cap
+  var cap=_afGetCap();
+  if(s.count>=cap)return{ok:false,reason:'Daily harvest limit reached ('+cap+'/day). Come back tomorrow!'};
+  // Check 2: 2hr minimum wild time
+  if(s.firstWild&&(Date.now()-s.firstWild)<AF_MIN_WILD_MS){
+    var mins=Math.ceil((AF_MIN_WILD_MS-(Date.now()-s.firstWild))/60000);
+    return{ok:false,reason:'Explore the Wild for a bit longer! '+mins+' min remaining.'};
+  }
+  // Check 3: same planter can't be harvested 2x/day by same player
+  if(planterUid&&s.planters[planterUid]>=2)return{ok:false,reason:'You\'ve already harvested from this planter twice today.'};
+  return{ok:true};
+}
+function _afRecordHarvest(planterUid){
+  var s=_afGetState();s.count=(s.count||0)+1;
+  if(planterUid){s.planters[planterUid]=(s.planters[planterUid]||0)+1;}
+  _afSave(s);
+}
 var _map=null,_uM=null,_uLat=null,_uLng=null,_trail=[],_tLine=null,_inited=false;
 var _drops=0,_pouch=[],_sel=null,_selMk=null,_menuOpen=false,_tt=null;
 var _lastGeoTime=0,_lastGeoLat=0,_lastGeoLng=0,_speedKmh=0;
@@ -25223,6 +25422,9 @@ function closeTP(){var tp=document.getElementById('w-tp');if(tp){tp.style.opacit
 function _harvestToPouch(p){
   if(!p||!p.hash){_toast('No plant selected.');return;}
   if(p.own){_toast('You can\'t harvest your own plant!');return;} // SAFETY CHECK
+  // Anti-farming checks
+  var afCheck=_afCanHarvest(p.ownerUid||'');
+  if(!afCheck.ok){_toast(afCheck.reason);return;}
   // Check proximity
   if(_uLat&&p.lat){
     var distToPlant=_dist(_uLat,_uLng,p.lat,p.lng);
@@ -25257,6 +25459,7 @@ function _harvestToPouch(p){
   }
 }
 function _doHarvest(p){
+  _afRecordHarvest(p.ownerUid||'');
   var plantObj={hash:p.hash,name:p.name,grade:p.grade||'Common',origin:'wild',hp:'h',pi:parseInt(p.hash.charAt(0),16)%5};
   if(window.FG_Backpack){
     if(!FG_Backpack.ap(plantObj)){_toast('Plant slots full!');return;}
@@ -25537,10 +25740,13 @@ function _finishDrop(defenderGame){
   var dropTraits=null;try{dropTraits=window.hashToTraits(pl.hash);}catch(e){}
   var dropEA=window.computeEA?window.computeEA(dropTraits,0):0;
 
+  var _dropUid='';try{var _du=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_du)_dropUid=_du.uid;}catch(e){}
   wild.push({
     lat:la,lng:lo,hash:pl.hash,
     date:new Date().toISOString(),
     own:true,
+    ownerUid:_dropUid,
+    ownerName:localStorage.getItem('pw_keeper_name')||'Keeper',
     ea:dropEA,
     defenderGame:defenderGame||'set',
     season:dropTraits?dropTraits.season:0
@@ -25716,7 +25922,7 @@ function _loadSharedDropsFallback(user){
   }catch(e){}
 }
 
-return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense};
+return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry};
 })();
 </script>
 <!-- DEV: Chimera Vein Toggle -->
@@ -26004,7 +26210,21 @@ function _showWinCelebration(){
   h+='</div>';
   ov.innerHTML=h;
   document.body.appendChild(ov);
-  if(plantComplete&&typeof _spawnLeafParticles==='function'){_spawnLeafParticles(ov);}
+  if(plantComplete){
+    // Gold flash — screen flares white-gold then fades
+    var flash=document.createElement('div');
+    flash.style.cssText='position:absolute;inset:0;background:radial-gradient(circle,rgba(200,168,75,0.6),rgba(200,168,75,0) 70%);pointer-events:none;opacity:0;animation:mintFlash 1.2s ease forwards;';
+    ov.appendChild(flash);
+    // Gold sparkle burst — 20 particles radiate from center
+    for(var si=0;si<20;si++){(function(i){
+      var angle=(i/20)*Math.PI*2;var dist=60+Math.random()*120;
+      var dx=Math.cos(angle)*dist;var dy=Math.sin(angle)*dist;
+      var sp=document.createElement('div');
+      sp.style.cssText='position:absolute;left:50%;top:40%;width:4px;height:4px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px var(--gold);pointer-events:none;opacity:0;animation:sparkBurst 1.4s ease forwards;animation-delay:'+(i*30)+'ms;--sdx:'+dx+'px;--sdy:'+dy+'px;';
+      ov.appendChild(sp);
+    })(si);}
+    if(typeof _spawnLeafParticles==='function')_spawnLeafParticles(ov);
+  }
   setTimeout(function(){if(document.getElementById('pw-win-overlay'))_dismissWin();},15000);
 }
 function _dismissWin(){var o=document.getElementById('pw-win-overlay');if(o)o.remove();}
