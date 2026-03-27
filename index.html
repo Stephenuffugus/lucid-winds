@@ -2057,6 +2057,24 @@
     .greenhouse-plant.season-summer{background-image:url('assets/card-front-summer.png');}
     .greenhouse-plant.season-autumn{background-image:url('assets/card-front-autumn.png');}
     .greenhouse-plant.season-winter{background-image:url('assets/card-front-winter.png');}
+    /* Chimera dual-season borders: top+left from season A, bottom+right from season B */
+    .greenhouse-plant.chimera-dual{border:2px solid;border-image:none;position:relative;}
+    .greenhouse-plant.chimera-dual::after{content:'';position:absolute;inset:-1px;border-radius:8px;pointer-events:none;z-index:1;border:2px solid transparent;}
+    .chimera-dual.dual-sp-su{border-color:#E8A0BF;border-right-color:#D4A843;border-bottom-color:#D4A843;}
+    .chimera-dual.dual-sp-au{border-color:#E8A0BF;border-right-color:#D4842A;border-bottom-color:#D4842A;}
+    .chimera-dual.dual-sp-wi{border-color:#E8A0BF;border-right-color:#A0C4E8;border-bottom-color:#A0C4E8;}
+    .chimera-dual.dual-su-sp{border-color:#D4A843;border-right-color:#E8A0BF;border-bottom-color:#E8A0BF;}
+    .chimera-dual.dual-su-au{border-color:#D4A843;border-right-color:#D4842A;border-bottom-color:#D4842A;}
+    .chimera-dual.dual-su-wi{border-color:#D4A843;border-right-color:#A0C4E8;border-bottom-color:#A0C4E8;}
+    .chimera-dual.dual-au-sp{border-color:#D4842A;border-right-color:#E8A0BF;border-bottom-color:#E8A0BF;}
+    .chimera-dual.dual-au-su{border-color:#D4842A;border-right-color:#D4A843;border-bottom-color:#D4A843;}
+    .chimera-dual.dual-au-wi{border-color:#D4842A;border-right-color:#A0C4E8;border-bottom-color:#A0C4E8;}
+    .chimera-dual.dual-wi-sp{border-color:#A0C4E8;border-right-color:#E8A0BF;border-bottom-color:#E8A0BF;}
+    .chimera-dual.dual-wi-su{border-color:#A0C4E8;border-right-color:#D4A843;border-bottom-color:#D4A843;}
+    .chimera-dual.dual-wi-au{border-color:#A0C4E8;border-right-color:#D4842A;border-bottom-color:#D4842A;}
+    /* Carousel chimera dual borders */
+    .cs-flip-wrap.chimera-dual{border:2px solid;border-radius:12px;}
+    .cs-flip-wrap.chimera-dual .cs-card-face{border:none;}
     /* ═══ CARD BACK: Rarity frames (used in carousel flip) ═══ */
     .card-back-common{background-image:url('assets/card-back-common.png');}
     .card-back-uncommon{background-image:url('assets/card-uncommon.png');}
@@ -20105,6 +20123,20 @@ document.addEventListener('keydown', function(e) {
 
   // ═══ PER-LAYER RARITY CLASSIFIER — returns tier name + color for DNA ledger ═══
   var _TIER_COLORS = {common:'#959588',uncommon:'#8CB86E',rare:'#5b8fb9',epic:'#9B59B6',legendary:'#C8A84B',mythic:'#A87285',cosmic:'#D94FFF'};
+  // Returns chimera dual-border class if plant has two different parent seasons
+  var _SEASON_KEYS = ['sp','su','au','wi'];
+  function _chimeraDualClass(plant) {
+    if (!plant || !plant.parentAHash || !plant.parentBHash) return '';
+    if ((plant.generation || 1) <= 1) return '';
+    try {
+      var hA = plant.parentAHash, hB = plant.parentBHash;
+      var sA = (parseInt(hA[22]+hA[23],16)||0) % 4;
+      var sB = (parseInt(hB[22]+hB[23],16)||0) % 4;
+      if (sA === sB) return ''; // same season — no dual border
+      return 'chimera-dual dual-' + _SEASON_KEYS[sA] + '-' + _SEASON_KEYS[sB];
+    } catch(e) { return ''; }
+  }
+
   function _layerTier(cat, t) {
     if (cat==='VESSEL') {
       var _p=t.pot%71;
@@ -20579,7 +20611,9 @@ document.addEventListener('keydown', function(e) {
         } catch(e) {}
         var _seasonCls = ['season-spring','season-summer','season-autumn','season-winter'][_ghSeason] || 'season-spring';
         var _tierCls = '';
+        var _dualCls = _chimeraDualClass(plant);
         var cls = 'greenhouse-plant ' + _seasonCls + _tierCls;
+        if (_dualCls) cls += ' ' + _dualCls;
         if (plant.rare) cls += ' rare';
         if (plant.mutated) cls += ' mutated';
         if (plant.isCross) cls += ' cross';
@@ -20661,6 +20695,7 @@ document.addEventListener('keydown', function(e) {
   // ═══ EXPOSE CRITICAL FUNCTIONS ON WINDOW ═══
   window.mintPlant = mintPlant;
   window.renderGreenhouse = renderGreenhouse;
+  window._chimeraDualClass = _chimeraDualClass;
   window.loadGreenhouse = loadGreenhouse;
 
   // ═══ HASH LEDGER — tracks earned and spent ═══
@@ -21066,20 +21101,11 @@ document.addEventListener('keydown', function(e) {
     if (!plate) return;
     var nameEl = plate.querySelector('.cb-name');
     if (!nameEl) return;
-    // Start at max size, shrink until it fits the plate width
-    var maxSize = 0.95;
-    var minSize = 0.45;
-    var step = 0.02;
-    nameEl.style.fontSize = maxSize + 'rem';
-    // Need a frame for layout to compute
-    requestAnimationFrame(function() {
-      var plateW = plate.offsetWidth;
-      var sz = maxSize;
-      while (sz > minSize && nameEl.scrollWidth > plateW) {
-        sz -= step;
-        nameEl.style.fontSize = sz + 'rem';
-      }
-    });
+    // CSS-first: overflow hidden + text-overflow handles most cases
+    nameEl.style.fontSize = '0.85rem';
+    nameEl.style.overflow = 'hidden';
+    nameEl.style.textOverflow = 'ellipsis';
+    nameEl.style.whiteSpace = 'nowrap';
   }
 
   // ── Populate a single slot with plant data ───────────────────────────
@@ -21170,6 +21196,12 @@ document.addEventListener('keydown', function(e) {
       '<div class="cs-reveal-flash" data-tier="' + _tierName + '"></div>' +
       '</div>';
     slotEl.setAttribute('data-season', sk);
+    // Chimera dual-season border
+    var _dualCls = window._chimeraDualClass ? window._chimeraDualClass(plant) : '';
+    if (_dualCls) {
+      var _fw = slotEl.querySelector('.cs-flip-wrap');
+      if (_fw) _fw.className = _fw.className.replace(/chimera-dual\S*/g, '') + ' ' + _dualCls;
+    }
     // Auto-fit name into nameplate
     _fitNameplate(slotEl);
   }
@@ -21200,9 +21232,12 @@ document.addEventListener('keydown', function(e) {
     var activePlant = _carousel.arr[_carousel.idx];
     var nextPlant   = _carousel.arr[_carousel.idx + 1] || null;
 
-    _populateSlot(document.getElementById('cs-slot-0'), prevPlant);   // prev
+    // Active card first (visible immediately), side cards deferred for speed
     _populateSlot(document.getElementById('cs-slot-1'), activePlant); // active
-    _populateSlot(document.getElementById('cs-slot-2'), nextPlant);   // next
+    requestAnimationFrame(function() {
+      _populateSlot(document.getElementById('cs-slot-0'), prevPlant);   // prev
+      _populateSlot(document.getElementById('cs-slot-2'), nextPlant);   // next
+    });
 
     // Reset track to center — no animation
     var track = document.getElementById('pgm-track');
@@ -21524,9 +21559,10 @@ document.addEventListener('keydown', function(e) {
 
   window.carouselBreed = function() {
     if (!galleryPlant) return;
+    var plant = galleryPlant; // capture before close nulls it
     closePlantGallery();
     if (window.openBreedScreen) {
-      openBreedScreen(galleryPlant, 'greenhouse');
+      openBreedScreen(plant, 'greenhouse');
     } else if (window.openCrossPollinateFlow) {
       openCrossPollinateFlow();
     }
