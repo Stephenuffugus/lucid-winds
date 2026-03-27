@@ -5181,81 +5181,108 @@ document.addEventListener('keydown', function(e) {
   // Seven tiers, scored by stacking rare trait signals. No double-dipping.
   // Exposed as window.getTerraGrade(traits) for cross-team use.
   //
-  //   TIER         SCORE    COLOR     DROP RATE (approx)
+  //   MODEL H TIER THRESHOLDS — Loot Distribution Master Spec
+  //   TIER         SCORE    COLOR     TARGET %
   //   ─────────────────────────────────────────────────────
-  //   Common       0-2      #959588   ~38%
-  //   Uncommon     3-4      #8CB86E   ~28%
-  //   Rare         5-6      #5b8fb9   ~18%
-  //   Epic         7-8      #9B59B6   ~9%
-  //   Legendary    9-11     #C8A84B   ~4.5%
-  //   Mythic       12-14    #A87285   ~2%
-  //   Cosmic       15+      #D94FFF   ~0.5%
+  //   Common       0-1      #959588   ~42%
+  //   Uncommon     2-3      #8CB86E   ~28%
+  //   Rare         4-5      #5b8fb9   ~16%
+  //   Epic         6-7      #9B59B6   ~9%
+  //   Legendary    8-9      #C8A84B   ~3.5%
+  //   Mythic       10-11    #A87285   ~1.2%
+  //   Cosmic       12+      #D94FFF   ~0.3%
   //
   var _TERRA_GRADES = [
     { name:'Common',    minScore:0,  color:'#959588', icon:'○' },
-    { name:'Uncommon',  minScore:3,  color:'#8CB86E', icon:'◈' },
-    { name:'Rare',      minScore:5,  color:'#5b8fb9', icon:'◆' },
-    { name:'Epic',      minScore:7,  color:'#9B59B6', icon:'◇' },
-    { name:'Legendary', minScore:9,  color:'#C8A84B', icon:'✦' },
-    { name:'Mythic',    minScore:12, color:'#A87285', icon:'★' },
-    { name:'Cosmic',    minScore:15, color:'#D94FFF', icon:'✧' }
+    { name:'Uncommon',  minScore:2,  color:'#8CB86E', icon:'◈' },
+    { name:'Rare',      minScore:4,  color:'#5b8fb9', icon:'◆' },
+    { name:'Epic',      minScore:6,  color:'#9B59B6', icon:'◇' },
+    { name:'Legendary', minScore:8,  color:'#C8A84B', icon:'✦' },
+    { name:'Mythic',    minScore:10, color:'#A87285', icon:'★' },
+    { name:'Cosmic',    minScore:12, color:'#D94FFF', icon:'✧' }
   ];
 
+  // ═══ MODEL H SCORING ENGINE — Loot Distribution Master Spec ═══
+  // 5 base slots (best-of pairing) + 2 spikes (mutation, mythic)
+  // + earned layers (breed, compost, synergy)
+  // Inspired by D&D, Diablo 2, Path of Exile loot curves.
   window.getTerraGrade = function(t) {
     if (!t) return _TERRA_GRADES[0];
     var score = 0;
 
-    // SLOT 1: Leaf type (0-1)
-    var _lt = t.leafType % 71;
-    if (_lt >= 30) score += 1;
+    // ── SLOT 1: VESSEL — best of (pot rarity, substrate rarity) ── max +2
+    var potS = 0;
+    if (t.pot === 15) potS = 2;  // Golden Pot (Legendary)
+    else {
+      var _p = t.pot % 71;
+      // Rare pots: Terrarium(7), Amphora(21), Cauldron(22), Urn(23), Bonsai(27), Stone(28)
+      // + expanded: Cauldron(50), Geode(51), Fossil Bowl(52)
+      if (_p===7||_p===21||_p===22||_p===23||_p===27||_p===28) potS = 1;
+      if (_p===50||_p===51||_p===52) potS = 1;  // Epic pots (expanded bank)
+      if (_p===56||_p===57) potS = 2; // Legendary/Mythic pots (post-expansion)
+    }
+    var subS = 0;
+    var _b = t.base % 71;
+    // Rare substrates: Crystal(15), Sulfuric(16), Obsidian(17), Meteorite(28), Mycelium(29)
+    // + expanded: Amber(52), Biolum Soil(53), Stardust(56), Void Essence(60)
+    if (_b===15||_b===16||_b===17||_b===28||_b===29) subS = 1;
+    if (_b===52||_b===53||_b===56||_b===60) subS = 1;  // Rare+ expanded substrates
+    score += (potS > subS ? potS : subS);
 
-    // SLOT 2: Stem type (0-1)
+    // ── SLOT 2: FOLIAGE — best of (stem rarity, leaf rarity) ── max +1
+    var stemS = 0;
     var _st = t.stem % 24;
-    if (_st >= 8) score += 1;
+    if (_st===12||_st===14||_st===22||_st===23) stemS = 1;  // Epic stems + Crystal Spine, Iron Trunk
+    var leafS = 0;
+    var _lt = t.leafType % 71;
+    if (_lt>=40&&_lt<=49) leafS = 1;  // Epic leaves (fantasy set 2)
+    if (_lt>=60&&_lt<=65) leafS = 1;  // Rare+ expanded leaves
+    score += (stemS > leafS ? stemS : leafS);
 
-    // SLOT 3: Bloom type (0-2)
+    // ── SLOT 3: BLOOM ── max +2
     if (t.hasFlower) {
       var _bl = t.flower % 71;
-      if (_bl >= 18) score += 1;
-      if (_bl === 15) score += 2;
+      if (_bl===15) score += 2;  // Glow Flower (Legendary)
+      else if (_bl>=34&&_bl<=45) score += 1;  // Epic exotics
+      else if (_bl>=66&&_bl<=70) score += 1;  // Rare+ expanded (Flame, Ice Rose, Void, Clock, Prism)
     }
 
-    // SLOT 4: Pot type (0-1)
-    if (t.pot === 15) score += 1;
+    // ── SLOT 4: AURA ── max +1
+    // Epic auras: Spider Web(17), Poison Miasma(18), Frost Crystal(19), Ember Glow(20)
+    // + expanded: Void Eclipse(29), Stained Glass(35)
+    var _au = t.aura % 36;
+    if ((_au>=17&&_au<=20)||_au===29||_au===35) score += 1;
 
-    // SLOT 5: Companion — base creatures only, no mythic here (0-1)
-    if (t.companion >= 20 && t.companion <= 31) score += 1;
+    // ── SLOT 5: COMPANION — base path only (non-mythic) ── max +1
+    if (t.mythic < 0xD0) {
+      var _c = t.companion;
+      // Rare+ base creatures: Platypus(40), Pangolin(43), Luna Moth(44),
+      // Glow Snail(46), Axolotl(47), Scorpion(48), Origami Crane(49), Gnome(50)
+      // + expanded: Chameleon(69), Jellyfish(72), Raven(75), Crystal Beetle(78), Will-o-Wisp(79)
+      if (_c===40||_c===43||_c===44||_c===46||_c===47||_c===48||_c===49||_c===50) score += 1;
+      if (_c===69||_c===72||_c===75||_c===78||_c===79) score += 1;
+    }
 
-    // SLOT 6: Aura (0-1)
-    if (t.aura >= 15) score += 1;
+    // ── SPIKE: MUTATION (0-3) ──
+    var _mn = t.mutationName;
+    if (_mn==='Wireframe'||_mn==='Albino'||_mn==='Silhouette') score += 1;
+    else if (_mn==='Fossil'||_mn==='Glass Stem'||_mn==='Neon'||_mn==='Bioluminescent') score += 2;
+    else if (_mn==='Golden'||_mn==='Ink Wash'||_mn==='Porcelain'||_mn==='Glitch'||_mn==='Holographic'||_mn==='Pixel Art') score += 3;
 
-    // SLOT 7: Base/Substrate (0-1)
-    if (t.base === 15 || t.base >= 25) score += 1;
+    // ── SPIKE: MYTHIC COMPANION (0-8) ── scored by mythic byte tier
+    var _mb = t.mythic;
+    if (_mb===0xFF) score += 8;                          // Beholder (Cosmic)
+    else if (_mb>=0xFE) score += 7;                      // Starfall
+    else if (_mb>=0xFC) score += 6;                      // Storm Wraith
+    else if (_mb>=0xF4&&_mb<0xFC) score += 5;            // Biolum Pulse + Ancient Rune
+    else if (_mb>=0xD0&&_mb<0xF4) score += 4;            // Toad + Capybara
 
-    // SLOT 8: Mutation (0-3)
-    if (t.mutationName === 'Wireframe')      score += 1;
-    if (t.mutationName === 'Albino')         score += 1;
-    if (t.mutationName === 'Silhouette')     score += 1;
-    if (t.mutationName === 'Fossil')         score += 2;
-    if (t.mutationName === 'Glass Stem')     score += 2;
-    if (t.mutationName === 'Neon')           score += 2;
-    if (t.mutationName === 'Bioluminescent') score += 2;
-    if (t.mutationName === 'Golden')         score += 3;
-    if (t.mutationName === 'Ink Wash')       score += 3;
-    if (t.mutationName === 'Porcelain')      score += 3;
-    if (t.mutationName === 'Glitch')         score += 3;
-    if (t.mutationName === 'Holographic')    score += 3;
-    if (t.mutationName === 'Pixel Art')      score += 3;
+    // ── EARNED LAYERS (breeding, composting, synergies) ──
 
-    // SLOT 9: Mythic creatures — scored ONCE, not double-dipped (0-4)
-    if (t.companion === 32 || t.companion === 33) score += 2;
-    if (t.companion >= 34 && t.companion <= 36) score += 3;
-    if (t.companion === 37 || t.companion === 38) score += 4;
-
-    // SLOT 10: Mycelial Crown — composted heritage (+2)
+    // Mycelial Crown — composted heritage (+2)
     if (t.mycelialCrown) score += 2;
 
-    // SLOT 12: Breed layers
+    // Breed layers (0-8)
     if (t.breedLayers) {
       if (t.breedLayers.chimeraVein) score += 1;
       if (t.breedLayers.vigorBand) score += 1;
@@ -5267,7 +5294,7 @@ document.addEventListener('keydown', function(e) {
       if (t.breedLayers.aerialRoot) score += 1;
     }
 
-    // SLOT 13: Compost layers
+    // Compost layers (0-7)
     if (t.compostLayers) {
       if (t.compostLayers.mycelialCrown) score += 1;
       if (t.compostLayers.substrateEcho) score += 1;
@@ -5278,7 +5305,7 @@ document.addEventListener('keydown', function(e) {
       if (t.compostLayers.deepRoot) score += 1;
     }
 
-    // SLOT 14: Synergy bonuses
+    // Synergy bonuses (0-3)
     if (typeof checkSynergies === 'function') {
       var _syn = checkSynergies(t);
       if (_syn.length >= 1) score += 1;
@@ -5291,7 +5318,7 @@ document.addEventListener('keydown', function(e) {
     for (var gi = _TERRA_GRADES.length - 1; gi >= 0; gi--) {
       if (score >= _TERRA_GRADES[gi].minScore) { grade = _TERRA_GRADES[gi]; break; }
     }
-    return { name: grade.name, color: grade.color, icon: grade.icon, score: score };
+    return { name: grade.name, color: grade.color, icon: grade.icon, score: score, label: grade.name };
   };
 
   // _TERRA_GRADES: internal only — not exposed on window (anti-cheat)
@@ -20076,6 +20103,91 @@ document.addEventListener('keydown', function(e) {
   // by skipping STRUCTURE if it would duplicate VESSEL's name
   var DNA_DEDUPE_KEYS = ['VESSEL', 'STRUCTURE', 'GROWTH PATH'];
 
+  // ═══ PER-LAYER RARITY CLASSIFIER — returns tier name + color for DNA ledger ═══
+  var _TIER_COLORS = {common:'#959588',uncommon:'#8CB86E',rare:'#5b8fb9',epic:'#9B59B6',legendary:'#C8A84B',mythic:'#A87285',cosmic:'#D94FFF'};
+  function _layerTier(cat, t) {
+    if (cat==='VESSEL') {
+      var _p=t.pot%71;
+      if (_p===15) return {tier:'legendary',color:_TIER_COLORS.legendary};
+      if (_p===56||_p===57) return {tier:'legendary',color:_TIER_COLORS.legendary};
+      if (_p===50||_p===51||_p===52) return {tier:'epic',color:_TIER_COLORS.epic};
+      if (_p===7||_p===21||_p===22||_p===23||_p===27||_p===28) return {tier:'rare',color:_TIER_COLORS.rare};
+      if (_p===4||_p===5||_p===6||_p===11||_p===12||_p===13||_p===14||_p===16||_p===18||_p===20||_p===24||_p===25||_p===26) return {tier:'uncommon',color:_TIER_COLORS.uncommon};
+      return {tier:'common',color:_TIER_COLORS.common};
+    }
+    if (cat==='FOLIAGE') {
+      var _lt=t.leafType%71;
+      if (_lt>=60&&_lt<=65) return {tier:'rare',color:_TIER_COLORS.rare};
+      if (_lt>=40&&_lt<=49) return {tier:'epic',color:_TIER_COLORS.epic};
+      if (_lt>=30&&_lt<=39) return {tier:'rare',color:_TIER_COLORS.rare};
+      if (_lt>=10&&_lt<=29) return {tier:'uncommon',color:_TIER_COLORS.uncommon};
+      return {tier:'common',color:_TIER_COLORS.common};
+    }
+    if (cat==='FLOWER') {
+      if (!t.hasFlower) return null;
+      var _bl=t.flower%71;
+      if (_bl===15) return {tier:'legendary',color:_TIER_COLORS.legendary};
+      if (_bl>=66&&_bl<=70) return {tier:'rare',color:_TIER_COLORS.rare};
+      if (_bl>=34&&_bl<=45) return {tier:'epic',color:_TIER_COLORS.epic};
+      if (_bl>=18&&_bl<=33) return {tier:'rare',color:_TIER_COLORS.rare};
+      if (_bl>=10&&_bl<=17) return {tier:'uncommon',color:_TIER_COLORS.uncommon};
+      return {tier:'common',color:_TIER_COLORS.common};
+    }
+    if (cat==='AURA') {
+      var _au=t.aura%36;
+      if (_au<5) return null;
+      if (_au===29||_au===35) return {tier:'epic',color:_TIER_COLORS.epic};
+      if ((_au>=17&&_au<=20)) return {tier:'epic',color:_TIER_COLORS.epic};
+      if (_au===9||_au===11||_au===13||_au===15) return {tier:'rare',color:_TIER_COLORS.rare};
+      if (_au>=5&&_au<=8||_au===10||_au===12) return {tier:'uncommon',color:_TIER_COLORS.uncommon};
+      return {tier:'common',color:_TIER_COLORS.common};
+    }
+    if (cat==='SUBSTRATE') {
+      var _b=t.base%71;
+      if (_b<7) return null;
+      if (_b===52||_b===53||_b===56||_b===60) return {tier:'rare',color:_TIER_COLORS.rare};
+      if (_b===15||_b===28) return {tier:'legendary',color:_TIER_COLORS.legendary};
+      if (_b===16||_b===17||_b===29) return {tier:'rare',color:_TIER_COLORS.rare};
+      if (_b===7||_b===10||_b===18||_b===22) return {tier:'uncommon',color:_TIER_COLORS.uncommon};
+      return {tier:'common',color:_TIER_COLORS.common};
+    }
+    if (cat==='COMPANION') {
+      if (t.companion===38) return {tier:'cosmic',color:_TIER_COLORS.cosmic};
+      if (t.companion===37) return {tier:'legendary',color:_TIER_COLORS.legendary};
+      if (t.companion>=34&&t.companion<=36) return {tier:'legendary',color:_TIER_COLORS.legendary};
+      if (t.companion===33) return {tier:'mythic',color:_TIER_COLORS.mythic};
+      if (t.companion===32) return {tier:'mythic',color:_TIER_COLORS.mythic};
+      if (t.companion===69||t.companion===72||t.companion===75||t.companion===78||t.companion===79) return {tier:'rare',color:_TIER_COLORS.rare};
+      if (t.companion===40||t.companion===43||t.companion===44||t.companion===46||t.companion===47||t.companion===48) return {tier:'rare',color:_TIER_COLORS.rare};
+      if (t.companion===49||t.companion===50) return {tier:'epic',color:_TIER_COLORS.epic};
+      if (t.companion===28||t.companion===29||t.companion===39||t.companion===41||t.companion===42||t.companion===45) return {tier:'uncommon',color:_TIER_COLORS.uncommon};
+      if (t.companion>=20&&t.companion<=27) return {tier:'common',color:_TIER_COLORS.common};
+      return null;
+    }
+    if (cat==='MUTATION') {
+      var _mn=t.mutationName;
+      if (_mn==='None') return null;
+      if (_mn==='Golden'||_mn==='Ink Wash'||_mn==='Porcelain'||_mn==='Glitch'||_mn==='Holographic'||_mn==='Pixel Art') return {tier:'epic',color:_TIER_COLORS.epic};
+      if (_mn==='Fossil'||_mn==='Glass Stem'||_mn==='Neon'||_mn==='Bioluminescent') return {tier:'rare',color:_TIER_COLORS.rare};
+      return {tier:'uncommon',color:_TIER_COLORS.uncommon};
+    }
+    if (cat==='MYTHIC') {
+      if (t.mythicName==='None') return null;
+      if (t.mythicName==='The Beholder') return {tier:'cosmic',color:_TIER_COLORS.cosmic};
+      if (t.mythicName==='Starfall'||t.mythicName==='Storm Wraith') return {tier:'legendary',color:_TIER_COLORS.legendary};
+      if (t.mythicName==='Ancient Rune Field'||t.mythicName==='Bioluminescent Pulse') return {tier:'legendary',color:_TIER_COLORS.legendary};
+      return {tier:'mythic',color:_TIER_COLORS.mythic};
+    }
+    if (cat==='GROWTH PATH'||cat==='STRUCTURE') {
+      var _st=t.stem%24;
+      if (_st===22||_st===23) return {tier:'epic',color:_TIER_COLORS.epic};
+      if (_st===12||_st===14) return {tier:'epic',color:_TIER_COLORS.epic};
+      if (_st>=5&&_st<=11) return {tier:'uncommon',color:_TIER_COLORS.uncommon};
+      return {tier:'common',color:_TIER_COLORS.common};
+    }
+    return {tier:'common',color:_TIER_COLORS.common};
+  }
+
   function renderDNALedger(plant, opts) {
     if (!plant || !plant.hash) return '';
     opts = opts || {};
@@ -20098,7 +20210,8 @@ document.addEventListener('keydown', function(e) {
       // Dedupe: skip STRUCTURE if its name === VESSEL (same case, e.g. pot shape)
       if (seenNames[result.name] && DNA_DEDUPE_KEYS.indexOf(cat.key) >= 0) return;
       seenNames[result.name] = true;
-      rows.push({ cat: cat.key, name: result.name, rare: result.rare, tier: result.tier || (result.rare ? 'rare' : 'standard') });
+      var _lt = _layerTier(cat.key, t);
+      rows.push({ cat: cat.key, name: result.name, rare: result.rare, tier: result.tier || (result.rare ? 'rare' : 'standard'), layerTier: _lt });
     });
 
     if (!rows.length) return '';
@@ -20117,10 +20230,13 @@ document.addEventListener('keydown', function(e) {
     html += '<div class="dna-ledger-grid">';
     rows.forEach(function(row) {
       var tierClass = row.tier === 'mythic' ? 'mythic' : row.tier === 'mutation' ? 'mutation' : row.rare ? 'rare' : '';
+      var _lc = row.layerTier;
+      var _valColor = _lc ? _lc.color : '';
+      var _tierLabel = _lc && _lc.tier !== 'common' ? '<span style="font-size:0.28rem;opacity:0.7;margin-left:4px;text-transform:uppercase;letter-spacing:0.06em;">' + _lc.tier + '</span>' : '';
       html += '<div class="dna-cat">' + row.cat + '</div>'
-            + '<div class="dna-val' + (tierClass ? ' '+tierClass : '') + '">'
-            + (row.rare || row.tier === 'mutation' || row.tier === 'mythic' ? '★ ' : '')
-            + row.name + '</div>';
+            + '<div class="dna-val' + (tierClass ? ' '+tierClass : '') + '"'
+            + (_valColor ? ' style="color:'+_valColor+';"' : '') + '>'
+            + row.name + _tierLabel + '</div>';
     });
     html += '</div></div>';
 
