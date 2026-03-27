@@ -19334,15 +19334,26 @@ document.addEventListener('keydown', function(e) {
 
       // ── NEW COMPANIONS (cases 60-81) ────────────────────────────────
 
-      case 60: // Tree Frog — perched on pot rim left side
-        s += '<g opacity="0.72">';
+      case 60: // Tree Frog — perched on pot rim left side, scaled up
+        s += '<g opacity="0.78" transform="translate(14,72) scale(1.8) translate(-14,-72)">';
         s += '<ellipse cx="18" cy="77" rx="2.5" ry="1.8" fill="#5A9A3A"/>';
         s += '<circle cx="16.5" cy="75.8" r="1.2" fill="#6AAA4A"/>';
-        s += '<circle cx="16.2" cy="75.5" r="0.35" fill="#111"/>';
-        s += '<circle cx="16.3" cy="75.4" r="0.1" fill="rgba(240,235,216,0.5)"/>';
-        s += '<ellipse cx="17" cy="75.2" rx="0.6" ry="0.4" fill="#7ABA5A" opacity="0.5"/>';
-        s += '<path d="M15.5,78.5 L14.5,79.5 M20,78.2 L21,79.2" stroke="#4A8A2A" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
-        s += '<circle cx="17.5" cy="76.8" r="0.5" fill="#5A9A3A" opacity="0.3"><animate attributeName="r" values="0.5;0.7;0.5" dur="3s" repeatCount="indefinite"/></circle>';
+        // Bulging eyes (characteristic tree frog feature)
+        s += '<circle cx="15.8" cy="75.2" r="0.7" fill="#7ACA5A"/>';
+        s += '<circle cx="15.8" cy="75.2" r="0.35" fill="#111"/>';
+        s += '<circle cx="15.9" cy="75.0" r="0.12" fill="rgba(240,235,216,0.6)"/>';
+        s += '<circle cx="17.5" cy="75.2" r="0.6" fill="#7ACA5A"/>';
+        s += '<circle cx="17.5" cy="75.2" r="0.3" fill="#111"/>';
+        s += '<circle cx="17.6" cy="75.0" r="0.1" fill="rgba(240,235,216,0.6)"/>';
+        // Toe pads gripping rim
+        s += '<circle cx="15.2" cy="78.5" r="0.4" fill="#4AAA3A"/>';
+        s += '<circle cx="15.8" cy="78.8" r="0.35" fill="#4AAA3A"/>';
+        s += '<circle cx="20.2" cy="78.3" r="0.4" fill="#4AAA3A"/>';
+        s += '<circle cx="20.8" cy="78.6" r="0.35" fill="#4AAA3A"/>';
+        // Belly highlight
+        s += '<ellipse cx="17.5" cy="77.5" rx="1.5" ry="0.8" fill="#A0D870" opacity="0.25"/>';
+        // Throat pulse
+        s += '<ellipse cx="17" cy="76.8" rx="0.8" ry="0.5" fill="#80C050" opacity="0.2"><animate attributeName="ry" values="0.5;0.7;0.5" dur="3s" repeatCount="indefinite"/></ellipse>';
         s += '</g>';
         break;
       case 61: // Rabbit — sitting beside pot right side
@@ -19360,15 +19371,30 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M57.2,87.5 L57,87.2 L57.4,87.2" stroke="#B8A088" stroke-width="0.15" fill="none"/>';
         s += '</g>';
         break;
-      case 62: // Cricket — on soil near pot base
-        s += '<g opacity="0.70">';
-        s += '<ellipse cx="25" cy="91" rx="1.8" ry="0.8" fill="#3A4A2A"/>';
-        s += '<circle cx="23.5" cy="90.8" r="0.5" fill="#4A5A3A"/>';
-        s += '<circle cx="23.3" cy="90.7" r="0.1" fill="#111"/>';
-        s += '<line x1="23" y1="90.5" x2="22" y2="89.5" stroke="#3A4A2A" stroke-width="0.15"/>';
-        s += '<line x1="23.2" y1="90.4" x2="22.5" y2="89.2" stroke="#3A4A2A" stroke-width="0.15"/>';
-        s += '<path d="M26" y1="91.2" x2="27.5" y2="90" stroke="#3A4A2A" stroke-width="0.2" fill="none"/>';
-        s += '<line x1="26" y1="91.2" x2="27.5" y2="90" stroke="#3A4A2A" stroke-width="0.2"><animate attributeName="y2" values="90;89.5;90" dur="4s" repeatCount="indefinite"/></line>';
+      case 62: // Cricket — on soil near pot base, detailed and scaled up
+        s += '<g opacity="0.76" transform="translate(25,90) scale(2.2) translate(-25,-90)">';
+        // Abdomen
+        s += '<ellipse cx="25" cy="90.5" rx="2.0" ry="1.0" fill="#3A5A2A"/>';
+        // Thorax
+        s += '<ellipse cx="23.5" cy="90.2" rx="1.2" ry="0.8" fill="#4A6A3A"/>';
+        // Head
+        s += '<circle cx="22.2" cy="89.8" r="0.7" fill="#4A6A3A"/>';
+        // Eyes
+        s += '<circle cx="21.8" cy="89.5" r="0.2" fill="#111"/>';
+        s += '<circle cx="21.9" cy="89.4" r="0.06" fill="rgba(240,235,216,0.5)"/>';
+        // Antennae — long and curved
+        s += '<path d="M22,89.5 Q20.5,88 19.5,87.5" fill="none" stroke="#3A5A2A" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M22.3,89.3 Q21.5,87.5 21,86.5" fill="none" stroke="#3A5A2A" stroke-width="0.18" stroke-linecap="round"/>';
+        // Hind legs — large, powerful (cricket defining feature)
+        s += '<path d="M25.5,90.8 L27,89.2 L28.5,91" fill="none" stroke="#3A5A2A" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M25,91" L26.5,89.5 L28,91.2" fill="none" stroke="#3A5A2A" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>';
+        // Front legs
+        s += '<line x1="23" y1="90.8" x2="22" y2="91.5" stroke="#3A5A2A" stroke-width="0.2" stroke-linecap="round"/>';
+        s += '<line x1="23.5" y1="91" x2="22.8" y2="91.6" stroke="#3A5A2A" stroke-width="0.2" stroke-linecap="round"/>';
+        // Wing cover detail
+        s += '<path d="M24,90 Q25.5,89.5 26.5,90.3" fill="none" stroke="#5A7A4A" stroke-width="0.15" opacity="0.4"/>';
+        // Chirp pulse
+        s += '<line x1="26.5" y1="89.5" x2="28" y2="88.5" stroke="#3A5A2A" stroke-width="0.2" opacity="0.3"><animate attributeName="opacity" values="0.3;0.5;0.3" dur="2s" repeatCount="indefinite"/></line>';
         s += '</g>';
         break;
       case 63: // Gecko — clinging to pot side vertical
@@ -19382,23 +19408,60 @@ document.addEventListener('keydown', function(e) {
         s += '<line x1="50.5" y1="77.5" x2="49.5" y2="77.5" stroke="#7AAA5A" stroke-width="0.15"><animate attributeName="x2" values="49.5;48.8;49.5" dur="8s" repeatCount="indefinite"/></line>';
         s += '</g>';
         break;
-      case 64: // Scarab Beetle — on soil surface
-        s += '<g opacity="0.72">';
-        s += '<ellipse cx="42" cy="91" rx="1.5" ry="1" fill="#2A4A3A"/>';
-        s += '<ellipse cx="42" cy="91" rx="1.2" ry="0.8" fill="#3A6A4A" opacity="0.8"/>';
-        s += '<line x1="42" y1="90.2" x2="42" y2="91.8" stroke="#1A3A2A" stroke-width="0.15"/>';
-        s += '<circle cx="41" cy="90.3" r="0.4" fill="#2A4A3A"/>';
-        s += '<circle cx="40.8" cy="90.2" r="0.08" fill="#111"/>';
-        s += '<line x1="40.6" y1="90" x2="40" y2="89.5" stroke="#2A4A3A" stroke-width="0.12"/>';
-        s += '<line x1="40.8" y1="90" x2="40.4" y2="89.3" stroke="#2A4A3A" stroke-width="0.12"/>';
-        s += '<ellipse cx="42" cy="90.8" rx="0.8" ry="0.5" fill="rgba(200,180,100,0.15)"><animate attributeName="opacity" values="0.15;0.25;0.15" dur="4s" repeatCount="indefinite"/></ellipse>';
+      case 64: // Scarab Beetle — on soil surface, jeweled carapace
+        s += '<g opacity="0.78" transform="translate(42,90) scale(2.0) translate(-42,-90)">';
+        // Shadow
+        s += '<ellipse cx="42.3" cy="91.3" rx="1.8" ry="0.6" fill="#0d100c" opacity="0.15"/>';
+        // Abdomen (elytra / wing covers)
+        s += '<ellipse cx="42" cy="91" rx="1.8" ry="1.2" fill="#1A4A3A"/>';
+        // Wing cover seam
+        s += '<line x1="42" y1="90" x2="42" y2="92" stroke="#0d2A1A" stroke-width="0.2"/>';
+        // Metallic sheen
+        s += '<ellipse cx="41.5" cy="90.6" rx="0.6" ry="0.8" fill="rgba(200,180,100,0.12)"/>';
+        s += '<ellipse cx="42.5" cy="90.6" rx="0.6" ry="0.8" fill="rgba(200,180,100,0.08)"/>';
+        // Pronotum (thorax shield)
+        s += '<ellipse cx="42" cy="89.8" rx="1.0" ry="0.6" fill="#2A5A3A"/>';
+        // Head
+        s += '<circle cx="42" cy="89.2" r="0.55" fill="#1A4A3A"/>';
+        // Eyes
+        s += '<circle cx="41.6" cy="89.1" r="0.12" fill="#111"/>';
+        s += '<circle cx="42.4" cy="89.1" r="0.12" fill="#111"/>';
+        // Mandibles
+        s += '<path d="M41.7,88.8 L41.3,88.5" stroke="#1A4A3A" stroke-width="0.15" stroke-linecap="round"/>';
+        s += '<path d="M42.3,88.8 L42.7,88.5" stroke="#1A4A3A" stroke-width="0.15" stroke-linecap="round"/>';
+        // 3 pairs of legs
+        s += '<line x1="41" y1="90.5" x2="40" y2="91.3" stroke="#1A3A2A" stroke-width="0.15"/>';
+        s += '<line x1="41" y1="91" x2="39.8" y2="91.6" stroke="#1A3A2A" stroke-width="0.15"/>';
+        s += '<line x1="41.5" y1="91.5" x2="40.5" y2="92" stroke="#1A3A2A" stroke-width="0.15"/>';
+        s += '<line x1="43" y1="90.5" x2="44" y2="91.3" stroke="#1A3A2A" stroke-width="0.15"/>';
+        s += '<line x1="43" y1="91" x2="44.2" y2="91.6" stroke="#1A3A2A" stroke-width="0.15"/>';
+        s += '<line x1="42.5" y1="91.5" x2="43.5" y2="92" stroke="#1A3A2A" stroke-width="0.15"/>';
+        // Gold shimmer pulse
+        s += '<ellipse cx="42" cy="90.7" rx="1.2" ry="0.8" fill="rgba(200,168,75,0.08)"><animate attributeName="opacity" values="0.08;0.18;0.08" dur="4s" repeatCount="indefinite"/></ellipse>';
         s += '</g>';
         break;
-      case 65: // Ant Trail — 3 dots marching along pot rim
-        s += '<g opacity="0.65">';
-        s += '<circle cx="25" cy="78.5" r="0.3" fill="#2A1A10"><animate attributeName="cx" values="25;45;25" dur="12s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="30" cy="78.5" r="0.3" fill="#2A1A10"><animate attributeName="cx" values="30;50;30" dur="12s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="35" cy="78.5" r="0.3" fill="#2A1A10"><animate attributeName="cx" values="35;55;35" dur="12s" repeatCount="indefinite"/></circle>';
+      case 65: // Ant Trail — 5 ants marching along pot rim with legs
+        s += '<g opacity="0.72">';
+        // 5 ants, each with head + thorax + abdomen + 6 legs + antennae
+        for (var _a65i = 0; _a65i < 5; _a65i++) {
+          var _a65x = 22 + _a65i * 5.5;
+          var _a65y = 78.5;
+          s += '<g><animateTransform attributeName="transform" type="translate" values="0,0;'+(_a65i*2+10)+',0;0,0" dur="'+(10+_a65i)+'" repeatCount="indefinite"/>';
+          // Abdomen
+          s += '<ellipse cx="'+(_a65x+1.2)+'" cy="'+_a65y+'" rx="0.7" ry="0.45" fill="#2A1A10"/>';
+          // Thorax
+          s += '<ellipse cx="'+_a65x+'" cy="'+_a65y+'" rx="0.45" ry="0.35" fill="#3A2A1A"/>';
+          // Head
+          s += '<circle cx="'+(_a65x-0.7)+'" cy="'+_a65y+'" r="0.35" fill="#2A1A10"/>';
+          // Antennae
+          s += '<path d="M'+(_a65x-1)+','+_a65y+' L'+(_a65x-1.6)+','+(_a65y-0.5)+'" stroke="#2A1A10" stroke-width="0.08"/>';
+          s += '<path d="M'+(_a65x-0.9)+','+(_a65y-0.1)+' L'+(_a65x-1.4)+','+(_a65y-0.7)+'" stroke="#2A1A10" stroke-width="0.08"/>';
+          // 3 pairs of legs
+          s += '<line x1="'+(_a65x-0.3)+'" y1="'+_a65y+'" x2="'+(_a65x-0.6)+'" y2="'+(_a65y+0.6)+'" stroke="#2A1A10" stroke-width="0.08"/>';
+          s += '<line x1="'+_a65x+'" y1="'+_a65y+'" x2="'+_a65x+'" y2="'+(_a65y+0.65)+'" stroke="#2A1A10" stroke-width="0.08"/>';
+          s += '<line x1="'+(_a65x+0.5)+'" y1="'+_a65y+'" x2="'+(_a65x+0.7)+'" y2="'+(_a65y+0.6)+'" stroke="#2A1A10" stroke-width="0.08"/>';
+          s += '</g>';
+        }
         s += '</g>';
         break;
       case 66: // Sparrow — perched upper area
@@ -26619,61 +26682,9 @@ function _loadSharedDropsFallback(user){
 return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry};
 })();
 </script>
-<!-- DEV: Chimera Vein Toggle -->
-<script>
-(function(){
-  var _chiGen = 1; // cycles 1-6
-  window._toggleChimera = function() {
-    _chiGen = (_chiGen % 6) + 1;
-    var btn = document.getElementById('chimera-toggle-btn');
-    var genColors = ['#00E5FF','#2979FF','#7C4DFF','#AA00FF','#FF1744','#FF00E5'];
-    btn.textContent = '[DEV] Gen ' + _chiGen;
-    btn.style.borderColor = genColors[_chiGen - 1];
-    btn.style.color = genColors[_chiGen - 1];
-    // Patch hashToTraits to force chimerGen
-    if (!window._origHashToTraits) window._origHashToTraits = window.hashToTraits;
-    window.hashToTraits = function(hash) {
-      var t = window._origHashToTraits(hash);
-      t.chimerGen = _chiGen;
-      return t;
-    };
-    // Flush SVG cache and force full re-render
-    if (window._clearSVGCache) window._clearSVGCache();
-    // BRUTE FORCE: find every plant SVG on the page and re-render it
-    if (window._generatePlantSVG) {
-      // Method 1: data-hash elements (greenhouse grid)
-      document.querySelectorAll('[data-hash]').forEach(function(el) {
-        var h = el.getAttribute('data-hash');
-        var svgEl = el.querySelector('.plant-svg-container, .plant-container, [class*=plant]');
-        if (h && svgEl) svgEl.innerHTML = window._generatePlantSVG(h, svgEl.offsetWidth || 110, 1);
-      });
-      // Method 2: find ALL SVGs with plant viewBox, extract hash from nearby text
-      document.querySelectorAll('svg[viewBox="0 0 70 95"]').forEach(function(svg) {
-        var parent = svg.parentElement;
-        if (!parent) return;
-        // Look up for hash text in surrounding elements
-        var container = parent.closest('.cr-plant-wrap, .disc-plant-wrap, .cdn-plant-wrap, .flip-card-front, .flip-card-back') || parent;
-        var root = container.closest('[class*=overlay], [class*=modal], [class*=drawer], [class*=card]') || container.parentElement;
-        if (!root) return;
-        // Find hash string: 64 hex chars
-        var text = root.textContent || '';
-        var hashMatch = text.match(/[0-9a-f]{64}/);
-        if (hashMatch) {
-          var size = svg.getAttribute('width') || svg.clientWidth || 200;
-          parent.innerHTML = window._generatePlantSVG(hashMatch[0], parseInt(size), 1);
-        }
-      });
-    }
-    // Also try standard re-renders
-    if (window._reRenderAll) window._reRenderAll();
-  };
-})();
-</script>
-<!-- DEV: Spawn Mythic+Cosmic -->
-<button onclick="PW_Dev.spawnTestPlants()" style="position:fixed;top:50%;left:8px;z-index:999999;transform:translateY(-50%);background:rgba(168,114,133,0.9);color:#fff;padding:10px 14px;font-family:'DM Mono',monospace;font-size:0.5rem;border-radius:6px;border:1px solid rgba(217,79,255,0.4);cursor:pointer;backdrop-filter:blur(4px);line-height:1.3;text-align:center;">SPAWN<br>MYTHIC<br>+COSMIC</button>
-<!-- DEV: Chimera Toggle + Fast Forward -->
-<button id="chimera-toggle-btn" onclick="_toggleChimera()" style="position:fixed;top:12px;right:12px;z-index:999999;background:rgba(13,16,12,0.9);color:var(--sage);padding:8px 12px;font-family:'DM Mono',monospace;font-size:0.55rem;border-radius:6px;border:1px solid rgba(122,179,86,0.25);cursor:pointer;opacity:0.4;backdrop-filter:blur(4px);" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.4'">[DEV] Chimera: OFF</button>
-<button onclick="debugFastForward()" style="position:fixed;bottom:70px;right:12px;z-index:999999;background:rgba(200,168,75,0.15);color:var(--gold);padding:8px 12px;font-family:'DM Mono',monospace;font-size:0.55rem;border-radius:6px;border:1px solid rgba(200,168,75,0.25);cursor:pointer;opacity:0.4;backdrop-filter:blur(4px);" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.4'">[DEV] +5/+3</button>
+<!-- DEV: Spawn Mythic+Cosmic (hidden — requires dev panel password) -->
+<!-- Chimera toggle removed — veins confirmed working -->
+<!-- Fast Forward removed — use dev panel instead -->
 
 <!-- DEV BUTTON — remove before production -->
 <!-- set-102: Firebase diagnostic log — shows EVERY auth + Firestore operation -->
