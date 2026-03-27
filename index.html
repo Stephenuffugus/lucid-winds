@@ -18762,7 +18762,7 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="12" cy="31" rx="1.5" ry="2.0" fill="#C8A040"/>';
         // Black stripes — 4 bands
         s += '<path d="M10.7,30.2 Q12,30 13.3,30.2" fill="none" stroke="#1A1A18" stroke-width="0.35"/>';
-        s += '<path d="M10.5,31" Q12,30.8 13.5,31" fill="none" stroke="#1A1A18" stroke-width="0.4"/>';
+        s += '<path d="M10.5,31 Q12,30.8 13.5,31" fill="none" stroke="#1A1A18" stroke-width="0.4"/>';
         s += '<path d="M10.7,31.8 Q12,31.6 13.3,31.8" fill="none" stroke="#1A1A18" stroke-width="0.35"/>';
         s += '<path d="M11,32.5 Q12,32.3 13,32.5" fill="none" stroke="#1A1A18" stroke-width="0.3"/>';
         // Stinger — tiny point at abdomen tip
@@ -19038,8 +19038,8 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="16.2" cy="87.1" r="0.18" fill="#1A1A1A"/>';
         s += '<circle cx="16.8" cy="87.4" r="0.18" fill="#1A1A1A"/>';
         // Lower tentacles (sensory) — shorter, no eyes
-        s += '<path d="M16" y1="89.8" Q16.3,90 16.5,89.8" stroke="#8E9780" stroke-width="0.12" fill="none"/>';
-        s += '<path d="M16.3" y1="89.8" Q16.6,90 16.8,89.8" stroke="#8E9780" stroke-width="0.12" fill="none"/>';
+        s += '<path d="M16,89.8 Q16.3,90 16.5,89.8" fill="none" stroke="#8E9780" stroke-width="0.12"/>';
+        s += '<path d="M16.3,89.8 Q16.6,90 16.8,89.8" fill="none" stroke="#8E9780" stroke-width="0.12"/>';
         // Mouth — tiny opening
         s += '<circle cx="16.3" cy="89.8" r="0.08" fill="#6A7A5A" opacity="0.4"/>';
         s += '</g>';
@@ -19799,7 +19799,7 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M22.3,89.3 Q21.5,87.5 21,86.5" fill="none" stroke="#3A5A2A" stroke-width="0.18" stroke-linecap="round"/>';
         // Hind legs — large, powerful (cricket defining feature)
         s += '<path d="M25.5,90.8 L27,89.2 L28.5,91" fill="none" stroke="#3A5A2A" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round"/>';
-        s += '<path d="M25,91" L26.5,89.5 L28,91.2" fill="none" stroke="#3A5A2A" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>';
+        s += '<path d="M25,91 L26.5,89.5 L28,91.2" fill="none" stroke="#3A5A2A" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>';
         // Front legs
         s += '<line x1="23" y1="90.8" x2="22" y2="91.5" stroke="#3A5A2A" stroke-width="0.2" stroke-linecap="round"/>';
         s += '<line x1="23.5" y1="91" x2="22.8" y2="91.6" stroke="#3A5A2A" stroke-width="0.2" stroke-linecap="round"/>';
@@ -22171,7 +22171,7 @@ document.addEventListener('keydown', function(e) {
         // Plant name
         var _pName = 'Plant';
         try {
-          var _leafName = (TRAIT_BANK && TRAIT_BANK.leaves && TRAIT_BANK.leaves[_ghTraits.leafType]) ? TRAIT_BANK.leaves[_ghTraits.leafType].name : '';
+          var _leafName = (TRAIT_BANK && TRAIT_BANK.leaves && TRAIT_BANK.leaves[_ghTraits.leafType % 71]) ? TRAIT_BANK.leaves[_ghTraits.leafType % 71].name : '';
           var _bloomName = (TRAIT_BANK && TRAIT_BANK.flowers && TRAIT_BANK.flowers[_ghTraits.flower % 71]) ? TRAIT_BANK.flowers[_ghTraits.flower % 71].name : '';
           _pName = _bloomName || _leafName || 'Plant';
         } catch(e2) {}
@@ -24386,10 +24386,10 @@ document.addEventListener('keydown', function(e) {
 
     // Check leaf type match
     if (cT.leafType === aT.leafType && cT.leafType !== bT.leafType) {
-      var lName = (window.TRAIT_BANK && TRAIT_BANK.leaves && TRAIT_BANK.leaves[cT.leafType]) ? TRAIT_BANK.leaves[cT.leafType].name : 'Leaf #' + cT.leafType;
+      var lName = (window.TRAIT_BANK && TRAIT_BANK.leaves && TRAIT_BANK.leaves[cT.leafType % 71]) ? TRAIT_BANK.leaves[cT.leafType % 71].name : 'Leaf #' + cT.leafType;
       inherited.push({ trait: lName + ' canopy', from: nameA, side: 'A' });
     } else if (cT.leafType === bT.leafType && cT.leafType !== aT.leafType) {
-      var lName2 = (window.TRAIT_BANK && TRAIT_BANK.leaves && TRAIT_BANK.leaves[cT.leafType]) ? TRAIT_BANK.leaves[cT.leafType].name : 'Leaf #' + cT.leafType;
+      var lName2 = (window.TRAIT_BANK && TRAIT_BANK.leaves && TRAIT_BANK.leaves[cT.leafType % 71]) ? TRAIT_BANK.leaves[cT.leafType % 71].name : 'Leaf #' + cT.leafType;
       inherited.push({ trait: lName2 + ' canopy', from: nameB, side: 'B' });
     }
 
@@ -27033,7 +27033,7 @@ function _buildInfo(hash){
       if(t.pot===15) rarities.push('Golden Pot');
       if(t.base===15) rarities.push('Crystal Base');
       if(t.aura>0) rarities.push('Aura');
-      if(t.hasFlower&&(t.flower%46)>34) rarities.push('Exotic Bloom');
+      if(t.hasFlower&&(t.flower%71)>34) rarities.push('Exotic Bloom');
       rarities=rarities.slice(0,3);
       try{var tg=window.getTerraGrade(t);grade=tg.label;gc=tg.color||GC[grade]||'#8a9a7a';}catch(e){}
     }
@@ -31114,12 +31114,12 @@ var _seasonNames=['Spring','Summer','Autumn','Winter'];
 // Layer categories for card back
 var _LAYERS=[
   {key:'VESSEL',get:function(t){var b=window.TRAIT_BANK;return b&&b.pots&&b.pots[t.pot]?b.pots[t.pot].name:'Pot #'+t.pot;}},
-  {key:'STEM',get:function(t){return t.stem>12?'Braided':t.stem>8?'Twisted':t.stem>4?'Curved':'Standard';},rare:function(t){return t.stem>12;},inherit:true,tag:function(t){return t.stem>12?'DOM':'';}},
-  {key:'CANOPY',get:function(t){var b=window.TRAIT_BANK;return b&&b.leaves&&b.leaves[t.leafType]?b.leaves[t.leafType].name:'Leaf #'+t.leafType;},rare:function(t){var b=window.TRAIT_BANK;return b&&b.leaves&&b.leaves[t.leafType]&&b.leaves[t.leafType].rare;},inherit:true,tag:function(){return 'MIX';}},
-  {key:'BLOOM',get:function(t){if(!t.hasFlower)return 'None';var b=window.TRAIT_BANK;return b&&b.flowers&&b.flowers[t.flower%46]?b.flowers[t.flower%46].name:'Bloom #'+t.flower;},rare:function(t){var b=window.TRAIT_BANK;return t.hasFlower&&b&&b.flowers&&b.flowers[t.flower%46]&&b.flowers[t.flower%46].rare;},inherit:true,tag:function(){return 'MIX';},none:function(t){return !t.hasFlower;}},
+  {key:'STEM',get:function(t){var b=window.TRAIT_BANK;var si=t.stem%24;return b&&b.stems&&b.stems[si]?b.stems[si].name:'Stem #'+si;},rare:function(t){var b=window.TRAIT_BANK;var si=t.stem%24;return b&&b.stems&&b.stems[si]&&b.stems[si].rare;},inherit:true,tag:function(t){var b=window.TRAIT_BANK;var si=t.stem%24;return(b&&b.stems&&b.stems[si]&&b.stems[si].rare)?'DOM':'';}},
+  {key:'CANOPY',get:function(t){var li=t.leafType%71;var b=window.TRAIT_BANK;return b&&b.leaves&&b.leaves[li]?b.leaves[li].name:'Leaf #'+li;},rare:function(t){var li=t.leafType%71;var b=window.TRAIT_BANK;return b&&b.leaves&&b.leaves[li]&&b.leaves[li].rare;},inherit:true,tag:function(){return 'MIX';}},
+  {key:'BLOOM',get:function(t){if(!t.hasFlower)return 'None';var b=window.TRAIT_BANK;return b&&b.flowers&&b.flowers[t.flower%71]?b.flowers[t.flower%71].name:'Bloom #'+t.flower;},rare:function(t){var b=window.TRAIT_BANK;return t.hasFlower&&b&&b.flowers&&b.flowers[t.flower%71]&&b.flowers[t.flower%71].rare;},inherit:true,tag:function(){return 'MIX';},none:function(t){return !t.hasFlower;}},
   {key:'SUBSTRATE',get:function(t){var b=window.TRAIT_BANK;return b&&b.substrates&&b.substrates[t.base]?b.substrates[t.base].name:'Base #'+t.base;},rare:function(t){var b=window.TRAIT_BANK;return b&&b.substrates&&b.substrates[t.base]&&b.substrates[t.base].rare;},inherit:true,tag:function(t){var b=window.TRAIT_BANK;return(b&&b.substrates&&b.substrates[t.base]&&b.substrates[t.base].rare)?'DOM':'';}},
-  {key:'AURA',get:function(t){var a=t.aura;return a>18?'Prismatic':a>14?'Solar Flare':a>10?'Soft Haze':a>6?'Amber Glow':a>2?'Mist':'None';},none:function(t){return t.aura<=2;}},
-  {key:'COMPANION',get:function(t){var c=t.companion;if(c>=48)return 'None';var names=['Cricket','Ladybug','Firefly','Butterfly','Tree Frog','Gecko','Snail','Beetle','Dragonfly','Hummingbird','Owl','Hedgehog'];return c<12?names[c]:'Creature #'+c;},mythic:function(t){return t.companion>=32&&t.companion<48;},none:function(t){return t.companion>=48;}},
+  {key:'AURA',get:function(t){var b=window.TRAIT_BANK;if(b&&b.auras&&b.auras[t.aura]){var n=b.auras[t.aura].name;return n==='None'?'None':n;}return t.aura>2?'Aura #'+t.aura:'None';},none:function(t){var b=window.TRAIT_BANK;if(b&&b.auras&&b.auras[t.aura])return b.auras[t.aura].name==='None';return t.aura<=4;},rare:function(t){var b=window.TRAIT_BANK;return b&&b.auras&&b.auras[t.aura]&&b.auras[t.aura].rare;}},
+  {key:'COMPANION',get:function(t){var b=window.TRAIT_BANK;if(b&&b.companions&&b.companions[t.companion]){var n=b.companions[t.companion].name;return n==='None'?'None':n;}return t.companion<20?'None':'Creature #'+t.companion;},mythic:function(t){return t.companion>=32&&t.companion<=38;},rare:function(t){var b=window.TRAIT_BANK;return b&&b.companions&&b.companions[t.companion]&&b.companions[t.companion].rare;},none:function(t){var b=window.TRAIT_BANK;if(b&&b.companions&&b.companions[t.companion])return b.companions[t.companion].name==='None';return t.companion<20;}},
   {key:'MUTATION',get:function(t){return t.mutationName||'None';},mutation:function(t){return t.mutationName&&t.mutationName!=='None';},inherit:true,tag:function(t){return(t.mutationName&&t.mutationName!=='None')?'RISK':'';},none:function(t){return !t.mutationName||t.mutationName==='None';}}
 ];
 
