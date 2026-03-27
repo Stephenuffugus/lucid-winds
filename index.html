@@ -2452,7 +2452,14 @@
     .bs-row.heritable{background:linear-gradient(90deg,rgba(200,168,75,0.04),rgba(200,168,75,0.02));border-radius:3px;margin:0 -0.1rem;padding:0.1rem;}
     .bs-row.heritable .bs-val{animation:bsGenePulse 3s ease-in-out infinite;}
     @keyframes bsGenePulse{0%,100%{text-shadow:none;}50%{text-shadow:0 0 6px rgba(200,168,75,0.25);}}
-    .bs-tag{font-family:'Bebas Neue',sans-serif;font-size:0.38rem;letter-spacing:0.08em;color:var(--gold);opacity:0.5;margin-left:0.15rem;}
+    .bs-tag{font-family:'Bebas Neue',sans-serif;font-size:0.38rem;letter-spacing:0.06em;padding:0.04rem 0.12rem;border-radius:3px;margin-left:0.1rem;display:inline-block;line-height:1;}
+    .bs-tag.tag-dom{background:rgba(122,179,86,0.15);color:var(--sage);border:1px solid rgba(122,179,86,0.2);}
+    .bs-tag.tag-mix{background:rgba(200,168,75,0.12);color:var(--gold);border:1px solid rgba(200,168,75,0.18);}
+    .bs-tag.tag-risk{background:rgba(200,80,60,0.12);color:#d8a0a0;border:1px solid rgba(200,80,60,0.18);}
+    .bs-compat{text-align:center;padding:0.3rem;margin-bottom:0.25rem;border-radius:8px;background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.12);}
+    .bs-compat-score{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.08em;}
+    .bs-compat-label{font-family:'DM Mono',monospace;font-size:0.33rem;color:var(--muted);margin-top:0.08rem;}
+    .bs-row.match .bs-cat::after{content:' ═';font-size:0.28rem;color:var(--sage);opacity:0.5;}
     .bs-forecast{background:rgba(26,36,22,0.3);border:1.5px solid rgba(200,168,75,0.15);border-radius:9px;padding:0.5rem 0.55rem 0.45rem;margin-top:0.1rem;}
     .bs-fc-title{font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.14em;color:var(--gold);opacity:0.85;margin-bottom:0.35rem;display:flex;align-items:center;gap:0.3rem;}
     .bs-fc-title::after{content:'';flex:1;height:1px;background:rgba(200,168,75,0.1);}
@@ -31155,11 +31162,48 @@ function _renderCard(el,plant,role){
       var rowCls=isH?' heritable':'';
       var valCls=isRare?' rare':isMythic?' mythic':isMut?' mutation':isNone?' none':'';
       var star=(isRare||isMythic||isMut)?'\u2605 ':'';
-      var tagH=tag?'<span class="bs-tag">'+tag+'</span>':'';
+      var tagCls=tag==='DOM'?' tag-dom':tag==='MIX'?' tag-mix':tag==='RISK'?' tag-risk':'';
+      var tagLabel=tag==='DOM'?'DOMINANT':tag==='MIX'?'BLENDS':tag==='RISK'?'RISKY':'';
+      var tagH=tag?'<span class="bs-tag'+tagCls+'">'+tagLabel+'</span>':'';
       h+='<div class="bs-row'+rowCls+'"><span class="bs-cat">'+L.key+'</span><span class="bs-val'+valCls+'">'+star+val+tagH+'</span></div>';
     });
   }
   el.innerHTML=h;
+}
+
+// Genetic compatibility score — how good is this pairing?
+function _compatScore(tA, tB) {
+  if (!tA || !tB) return 50;
+  var score = 50; // base
+  // Diversity bonus: different traits = better offspring variety
+  if (tA.stem !== tB.stem) score += 5;
+  if ((tA.leafType%71) !== (tB.leafType%71)) score += 5;
+  if (tA.hasFlower !== tB.hasFlower || (tA.flower%71) !== (tB.flower%71)) score += 5;
+  if (tA.aura !== tB.aura) score += 4;
+  if ((tA.base%71) !== (tB.base%71)) score += 4;
+  // Season diversity — different seasons = wider offspring possibilities
+  if (tA.season !== tB.season) score += 6;
+  // Rarity synergy — both rare in different layers = better
+  var rareCountA = 0, rareCountB = 0;
+  if (tA.pot === 15 || tA.mutationName !== 'None') rareCountA++;
+  if (tA.hasFlower && (tA.flower%71) >= 34) rareCountA++;
+  if (tB.pot === 15 || tB.mutationName !== 'None') rareCountB++;
+  if (tB.hasFlower && (tB.flower%71) >= 34) rareCountB++;
+  score += Math.min(rareCountA, 2) * 4 + Math.min(rareCountB, 2) * 4;
+  // Penalty: same mutation = genetic similarity risk
+  if (tA.mutationName !== 'None' && tA.mutationName === tB.mutationName) score -= 10;
+  // Penalty: same mythic = collapse risk
+  if (tA.mythicName !== 'None' && tA.mythicName === tB.mythicName) score -= 12;
+  // Companion bonus — different companions = chance of rare offspring companion
+  if (tA.companion !== tB.companion && tA.companion >= 20 && tB.companion >= 20) score += 5;
+  return Math.max(10, Math.min(98, score));
+}
+function _compatLabel(score) {
+  if (score >= 85) return {label:'EXCELLENT MATCH',color:'#8CB86E'};
+  if (score >= 70) return {label:'GOOD PAIRING',color:'var(--sage)'};
+  if (score >= 55) return {label:'COMPATIBLE',color:'var(--gold)'};
+  if (score >= 40) return {label:'FAIR',color:'var(--muted)'};
+  return {label:'LOW DIVERSITY',color:'#d8a0a0'};
 }
 
 function _renderForecast(){
@@ -31168,6 +31212,10 @@ function _renderForecast(){
   var iA=_info(_plantA.hash);
   var iB=_info(_partners[_pIdx].hash);
   if(!iA.t||!iB.t){fc.innerHTML='';return;}
+
+  // Genetic compatibility score
+  var _cscore = _compatScore(iA.t, iB.t);
+  var _clabel = _compatLabel(_cscore);
 
   // Simple forecast heuristics
   var eaA=iA.ea,eaB=iB.ea;
@@ -31186,7 +31234,9 @@ function _renderForecast(){
   var sw=[10,10,10,10];sw[sA]+=30;sw[sB]+=30;
   var swTotal=sw[0]+sw[1]+sw[2]+sw[3];
 
-  var h='<div class="bs-fc-title">\ud83c\udf31 OFFSPRING FORECAST</div>';
+  // Compatibility score banner
+  var h='<div class="bs-compat"><div class="bs-compat-score" style="color:'+_clabel.color+';">'+_cscore+'% — '+_clabel.label+'</div><div class="bs-compat-label">Genetic diversity · Trait synergy · Rarity overlap</div></div>';
+  h+='<div class="bs-fc-title">\ud83c\udf31 OFFSPRING FORECAST</div>';
   h+='<div class="bs-meter"><div class="bs-ml">EA Range</div><div class="bs-mt"><div class="bs-mf gold" style="width:'+eaPct+'%"></div></div><div class="bs-mv gold">'+eaLow+' — '+eaHigh+'</div></div>';
   h+='<div class="bs-meter"><div class="bs-ml">Rare+</div><div class="bs-mt"><div class="bs-mf gold" style="width:'+rarePct+'%"></div></div><div class="bs-mv gold">'+rarePct+'%</div></div>';
   h+='<div class="bs-meter"><div class="bs-ml">Mutation</div><div class="bs-mt"><div class="bs-mf warn" style="width:'+mutPct+'%"></div></div><div class="bs-mv warn">'+mutPct+'%</div></div>';
@@ -31257,6 +31307,14 @@ function _renderForecast(){
     h += '</div>';
   }
 
+  // Tag legend — help players understand inheritance
+  h+='<div style="margin-top:0.4rem;padding:0.3rem;background:rgba(13,16,12,0.3);border-radius:6px;border:1px solid rgba(74,124,53,0.06);">';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.4rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.2rem;">INHERITANCE GUIDE</div>';
+  h+='<div style="display:flex;gap:0.3rem;flex-wrap:wrap;">';
+  h+='<div style="font-size:0.32rem;color:var(--sage);"><span class="bs-tag tag-dom">DOMINANT</span> Likely passes to offspring</div>';
+  h+='<div style="font-size:0.32rem;color:var(--gold);"><span class="bs-tag tag-mix">BLENDS</span> Mixes traits from both parents</div>';
+  h+='<div style="font-size:0.32rem;color:#d8a0a0;"><span class="bs-tag tag-risk">RISKY</span> Unpredictable — may mutate or vanish</div>';
+  h+='</div></div>';
   fc.innerHTML=h;
 }
 
