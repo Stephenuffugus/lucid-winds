@@ -1130,7 +1130,7 @@
     .cf-name .np-top{display:block;font-size:0.55rem;font-style:italic;letter-spacing:0.06em;opacity:0.7;font-weight:400;}
     .cf-name .np-main{display:block;font-size:1.3rem;}
     .cf-name .np-title{display:block;font-size:0.5rem;font-style:italic;letter-spacing:0.05em;opacity:0.65;font-weight:400;margin-top:1px;}
-    .cf-art-window{display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0;background:transparent;border:none;}
+    .cf-art-window{display:flex;align-items:flex-end;justify-content:center;overflow:hidden;min-height:0;background:transparent;border:none;padding-bottom:2%;}
     .cf-art-window svg{max-height:100%;max-width:80%;height:auto;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));transform:none;}
     .cf-haiku-zone{display:flex;align-items:center;justify-content:center;overflow:hidden;background:transparent;border:none;}
     .cf-haiku{font-family:'Playfair Display',serif;font-style:italic;font-size:0.62rem;color:rgba(212,207,188,0.88);text-align:center;line-height:1.5;width:100%;cursor:pointer;-webkit-tap-highlight-color:transparent;}
@@ -28329,16 +28329,21 @@ function GR(a){
 
     // After animation completes, clean up merges, spawn new, check game over
     setTimeout(function(){
-      // Remove merged-away tiles and rebuild from g[] state
+      // Remove merged-away tiles
       for(var t=tiles.length-1;t>=0;t--){
         if(tiles[t]._remove)rmTile(tiles[t]);
       }
-      // Update remaining tile values and classes for merges
-      // Easiest: full redraw from state, then spawn with animation
-      for(var t=tiles.length-1;t>=0;t--)rmTile(tiles[t]);
-      tiles=[];
-      for(var i=0;i<16;i++){
-        if(g[i])mkTile(i,g[i],false);
+      // Update surviving tiles: sync value with g[] and refresh visuals
+      for(var t=0;t<tiles.length;t++){
+        var ti=tiles[t];
+        var nv=g[ti.idx];
+        if(nv&&nv!==ti.val){
+          ti.val=nv;
+          ti.el.className='tc t'+Math.min(nv,2048);
+          ti.el.querySelector('.ti').innerHTML=ST[Math.min(nv,2048)]||'🔥';
+          ti.el.querySelector('.ti').parentNode.lastElementChild.textContent=nv;
+          ti.el.classList.add('pop');setTimeout((function(e){return function(){e.classList.remove('pop')}})(ti.el),200);
+        }
       }
       document.getElementById('Rs').textContent=sc;
 
