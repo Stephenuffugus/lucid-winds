@@ -3315,6 +3315,21 @@
   );
   box-shadow: inset 0 0 80px rgba(10, 13, 9, 0.4);
 }
+/* Ambient root tendrils at map edges — botanical depth */
+.map-vignette::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0; height: 30%;
+  background: linear-gradient(to top, rgba(10,13,9,0.6) 0%, transparent 100%);
+  pointer-events: none;
+}
+.map-vignette::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 15%;
+  background: linear-gradient(to bottom, rgba(10,13,9,0.4) 0%, transparent 100%);
+  pointer-events: none;
+}
 
 /* Subtle glass reflection — upper left arc */
 .map-glass-highlight {
@@ -3343,7 +3358,12 @@
   opacity: 0;
   z-index: 452;
   pointer-events: none;
+  box-shadow: 0 0 3px rgba(200,168,75,0.4);
 }
+/* Varied pollen — every 3rd is green, every 5th is larger */
+.pollen-particle:nth-child(3n) { background: rgba(122,179,86,0.6); box-shadow: 0 0 4px rgba(122,179,86,0.3); }
+.pollen-particle:nth-child(5n) { width: 4px !important; height: 4px !important; }
+.pollen-particle:nth-child(7n) { border-radius: 40%; transform: rotate(45deg); }
 
 @keyframes pollen-drift {
   0%   { opacity: 0; transform: translate(0, 0); }
@@ -3377,9 +3397,14 @@
 .wild-plant-marker {
   cursor: pointer;
   transition: transform 0.2s ease;
+  animation: plantBreath 4s ease-in-out infinite;
 }
 .wild-plant-marker:active {
   transform: scale(0.88);
+}
+@keyframes plantBreath {
+  0%, 100% { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)); }
+  50% { filter: drop-shadow(0 2px 8px rgba(74,124,53,0.4)) drop-shadow(0 4px 12px rgba(0,0,0,0.5)); }
 }
 
 /* Rarity glow ring behind each wild plant marker */
@@ -3423,6 +3448,21 @@
 @keyframes feral-bob {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-4px); }
+}
+/* Territory zone ring — shows on own plant when trait panel open */
+.territory-ring {
+  position: absolute;
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(122,179,86,0.2);
+  background: radial-gradient(circle, rgba(122,179,86,0.06) 0%, rgba(122,179,86,0.02) 50%, transparent 70%);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: territoryPulse 3s ease-in-out infinite;
+}
+@keyframes territoryPulse {
+  0%, 100% { opacity: 0.5; transform: translate(-50%,-50%) scale(1); }
+  50% { opacity: 0.8; transform: translate(-50%,-50%) scale(1.05); }
 }
 
 .feral-seed-ring {
@@ -4282,11 +4322,13 @@ window.onerror=function(msg,url,line,col,err){
   <!-- WILD MAP — placeholder panel -->
   <div class="grove-panel" id="panel-wild" style="padding:0!important;padding-bottom:0!important;">
     <!-- STATS STRIP -->
-    <div style="display:flex;align-items:center;gap:0.35rem;padding:0.35rem 0.5rem;background:rgba(13,16,12,0.97);border-bottom:1px solid rgba(74,124,53,0.06);">
-      <div><div style="font-size:0.42rem;color:var(--muted);font-weight:600;">WILD</div><div style="font-family:'Bebas Neue',sans-serif;font-size:0.85rem;color:var(--sage);" id="w-count">0</div></div>
-      <div style="width:1px;height:16px;background:rgba(122,179,86,0.08);"></div>
-      <div><div style="font-size:0.42rem;color:var(--muted);font-weight:600;">POLLEN</div><div style="font-family:'Bebas Neue',sans-serif;font-size:0.85rem;color:var(--gold);" id="w-pollen">0</div></div>
-      <div style="margin-left:auto;font-size:0.42rem;color:var(--muted);" id="w-wind">— —</div>
+    <div style="display:flex;align-items:center;gap:0.35rem;padding:0.35rem 0.5rem;background:linear-gradient(180deg,rgba(13,16,12,0.98),rgba(18,24,16,0.95));border-bottom:1px solid rgba(74,124,53,0.1);box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+      <div><div style="font-size:0.32rem;color:var(--muted);font-weight:600;letter-spacing:0.08em;">PLANTED</div><div style="font-family:'Bebas Neue',sans-serif;font-size:0.85rem;color:var(--sage);" id="w-count">0</div></div>
+      <div style="width:1px;height:20px;background:rgba(122,179,86,0.1);"></div>
+      <div><div style="font-size:0.32rem;color:var(--muted);font-weight:600;letter-spacing:0.08em;">DROPS</div><div style="font-family:'Bebas Neue',sans-serif;font-size:0.85rem;color:var(--cream);" id="w-drops-left">3</div></div>
+      <div style="width:1px;height:20px;background:rgba(122,179,86,0.1);"></div>
+      <div><div style="font-size:0.32rem;color:var(--muted);font-weight:600;letter-spacing:0.08em;">POLLEN</div><div style="font-family:'Bebas Neue',sans-serif;font-size:0.85rem;color:var(--gold);" id="w-pollen">0</div></div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:0.25rem;font-size:0.38rem;color:var(--muted);" id="w-wind">— —</div>
       <div id="w-needle" style="display:none;"></div><div id="w-steps" style="display:none;">0</div>
     </div>
     <!-- MAP -->
@@ -27642,7 +27684,7 @@ function _saveState(){var val=JSON.stringify({d:new Date().toISOString().slice(0
 function _savePouch(){localStorage.setItem('fg_pouch',JSON.stringify(_pouch));}
 
 // ═══ UI ═══
-function _updateUI(){var rem=Math.max(0,MAX_DROPS-_drops);var b=document.getElementById('dbb');if(b){b.textContent=rem;b.classList.toggle('lo',rem<=1);}var f=document.getElementById('dfb');if(f)f.style.opacity=rem<=0?'0.4':'1';}
+function _updateUI(){var rem=Math.max(0,MAX_DROPS-_drops);var b=document.getElementById('dbb');if(b){b.textContent=rem;b.classList.toggle('lo',rem<=1);}var f=document.getElementById('dfb');if(f)f.style.opacity=rem<=0?'0.4':'1';var dl=document.getElementById('w-drops-left');if(dl){dl.textContent=rem;dl.style.color=rem<=0?'var(--muted)':rem<=1?'var(--gold)':'var(--cream)';}}
 function _getPollen(){try{var j=window._secureGet?window._secureGet('fg_pollen'):localStorage.getItem('fg_pollen');return parseInt(j||'0');}catch(e){return 0;}}
 function _savePollen(v){if(window._secureSet){window._secureSet('fg_pollen',String(v));}else{localStorage.setItem('fg_pollen',String(v));}}
 function _updateCounts(){
