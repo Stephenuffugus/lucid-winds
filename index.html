@@ -21479,8 +21479,14 @@ document.addEventListener('keydown', function(e) {
   async function mintPlant(hash, opts) {
     console.log('[mintPlant] called with hash:', hash, 'gh.length:', loadGreenhouse().length);
     var gh = loadGreenhouse();
-    if (gh.some(function(p) { return p.hash === hash; })) { console.log('[mintPlant] duplicate hash, skipping'); return false; }
-    if (gh.length >= MAX_COLLECTION_SIZE) { console.log('[mintPlant] collection full'); return false; }
+    // Check if this plant was pre-written by _autoMintPlant (bare-bones entry)
+    var existingIdx = -1;
+    for (var _mi = 0; _mi < gh.length; _mi++) {
+      if (gh[_mi].hash === hash) { existingIdx = _mi; break; }
+    }
+    var isEnhance = existingIdx >= 0 && gh[existingIdx].traits === '';
+    if (existingIdx >= 0 && !isEnhance) { console.log('[mintPlant] duplicate hash, skipping'); return false; }
+    if (existingIdx < 0 && gh.length >= MAX_COLLECTION_SIZE) { console.log('[mintPlant] collection full'); return false; }
     var traits = hashToTraits(hash);
     // Pity timer: Model H — reset on Uncommon+ (score >= 2), not just isRare
     var _pityGrade = window.getTerraGrade ? getTerraGrade(traits) : null;
@@ -21509,7 +21515,18 @@ document.addEventListener('keydown', function(e) {
     if (opts && opts.isCross) entry.isCross = true;
     // PLANT SEAL — cryptographic signature
     await _sealPlant(entry);
-    gh.push(entry);
+    if (isEnhance) {
+      // Enhance the bare-bones entry written by _autoMintPlant
+      var _existing = gh[existingIdx];
+      _existing.rare = entry.rare;
+      _existing.traits = entry.traits;
+      _existing.phenos = entry.phenos;
+      _existing.time = entry.time;
+      _existing.seal = entry.seal;
+      console.log('[mintPlant] enhanced pre-written plant at index', existingIdx);
+    } else {
+      gh.push(entry);
+    }
     saveGreenhouse(gh);
     // Check achievements
     setTimeout(checkAchievements, 200);
@@ -22236,6 +22253,7 @@ document.addEventListener('keydown', function(e) {
   window.renderGreenhouse = renderGreenhouse;
   window._chimeraDualClass = _chimeraDualClass;
   window.loadGreenhouse = loadGreenhouse;
+  window.saveGreenhouse = saveGreenhouse;
 
   // ═══ HASH LEDGER — tracks earned and spent ═══
   var HASH_LEDGER_KEY = 'sws_hash_ledger';
@@ -27678,7 +27696,7 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
     if(_dtc>=5){
       _dtc=0;
       var pw=prompt('Dev password:');
-      if(pw==='petal2026'){
+      if(pw==='lucid2026'){
         document.getElementById('pw-dev-admin').classList.add('open');
       }
     }
@@ -28017,7 +28035,8 @@ function _updateGP(){
   var pct=Math.round(prog*100);
   var _nearCls = prog >= 0.83 && prog < 1 ? ' near-bloom' : '';
   var _urgentLabel = prog >= 0.83 && prog < 1 ? ' — <span style="color:var(--gold);">'+(30-inPlant)+' to bloom!</span>' : '';
-  el.innerHTML='<div class="gp-plant">'+svg+'</div><div class="gp-info"><div class="gp-label">'+lbl+_urgentLabel+'</div><div class="gp-bar"><div class="gp-fill'+_nearCls+'" style="width:'+pct+'%"></div></div><div class="gp-count">⚡ '+inPlant+' / 30 · This game: '+_m+'</div></div>';
+  el.innerHTML='<div class="gp-plant">'+svg+'</div><div class="gp-info"><div class="gp-label">'+lbl+_urgentLabel+'</div><div class="gp-bar"><div class="gp-fill'+_nearCls+'" style="width:'+pct+'%;transition:none"></div></div><div class="gp-count">⚡ '+inPlant+' / 30 · This game: '+_m+'</div></div>';
+  setTimeout(function(){var f=el.querySelector('.gp-fill');if(f)f.style.transition='';},60);
 }
 // ═══ GAME SOUND SYSTEM — synthesized tones, greenhouse mood ═══
 var _sfxDef={tap:{f:440,d:.05,t:'sine'},match:{f:660,d:.12,t:'sine'},slide:{f:330,d:.08,t:'triangle'},snap:{f:520,d:.04,t:'square'},dice:{f:200,d:.18,t:'sawtooth'},buzz:{f:180,d:.2,t:'sawtooth'},click:{f:600,d:.03,t:'square'},flip:{f:350,d:.07,t:'triangle'},hash:{f:880,d:.06,t:'sine'},lose:{f:220,d:.4,t:'triangle'},dig:{f:300,d:.06,t:'triangle'},drop:{f:260,d:.1,t:'sine'}};
@@ -28084,7 +28103,7 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_a=id;_m=_mTotal%30;_dm=1.
   if(gi){var r=document.createElement('div');r.className='gr';r.textContent='📖 '+gi.r;ag.appendChild(r)}
   var fn={memory:GM,merge:GR,simon:GS,lights:GL,mines:GN,slider:GD,sudoku:GU,farkle:GF,tripeaks:GT,pyramid:GP,wordsearch:GW,yahtzee:GY,hanoi:GH,connect4:G4,klondike:GK,picross:GX,checkers:GCK,reversi:GRV,mastermind:GMM,flood:GFL,colorsort:GCS,sokoban:GSK,pipe:GPP,golf:GGO,freecell:GFC,spider:GSP,chess:GCH};
   try{if(fn[id])fn[id](ag);else{ag.innerHTML+='<div style="padding:2rem;text-align:center;color:var(--muted)">Coming soon</div>'}}catch(e){console.error('[Game '+id+']',e);ag.innerHTML+='<div style="padding:2rem;text-align:center;color:#c75050">Game error — tap 🔄 New to retry</div>'}
-  if(window.buildAttentionPayload)window.buildAttentionPayload(_a+'_game_start');_st()};
+  _st()};
 
 // ═══════════════════ GAME IMPLEMENTATIONS ═══════════════════
 
