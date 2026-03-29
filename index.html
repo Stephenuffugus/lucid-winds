@@ -28719,13 +28719,16 @@ function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null;
 
   ms(a,'Round: <strong id="Sr">0</strong> · Best: <strong id="Sb">0</strong>');mm(a);
 
-  // ── Chord & octave selectors ──
-  var opts=document.createElement('div');opts.className='simon-opts';
-  var chSel='<label>CHORD</label> <select id="Sch" onchange="_SCH()">';
+  // ── Chord & octave selectors (inline styles — no CSS can override) ──
+  var opts=document.createElement('div');
+  opts.style.cssText='display:flex;gap:10px;justify-content:center;align-items:center;padding:12px 16px;flex-wrap:wrap;background:#1a1f17;border:2px solid #7ab356;border-radius:10px;margin:0 auto 8px;width:94%;max-width:460px';
+  var _ss='style="background:#ffffff;border:2px solid #7ab356;color:#000000;font-size:15px;padding:10px 14px;border-radius:8px;min-height:48px;min-width:100px"';
+  var _ls='style="font-size:13px;color:#C8A84B;font-family:Bebas Neue,sans-serif;letter-spacing:0.06em"';
+  var chSel='<label '+_ls+'>CHORD</label> <select '+_ss+' id="Sch" onchange="_SCH()">';
   var chKeys=Object.keys(CHORDS);
   for(var ci=0;ci<chKeys.length;ci++){chSel+='<option value="'+chKeys[ci]+'"'+(chKeys[ci]===_chord?' selected':'')+'>'+chKeys[ci]+'</option>';}
   chSel+='</select>';
-  var ocSel='<label>OCTAVE</label> <select id="Soc" onchange="_SOC()">';
+  var ocSel='<label '+_ls+'>OCTAVE</label> <select '+_ss+' id="Soc" onchange="_SOC()">';
   var ocKeys=Object.keys(OCTAVES);
   for(var oi=0;oi<ocKeys.length;oi++){ocSel+='<option value="'+OCTAVES[ocKeys[oi]]+'"'+(OCTAVES[ocKeys[oi]]===_oct?' selected':'')+'>'+ocKeys[oi]+'</option>';}
   ocSel+='</select>';
