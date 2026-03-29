@@ -3090,10 +3090,10 @@
     .ppc.ppok{border-color:rgba(122,179,86,.45);background:rgba(74,124,53,.1);box-shadow:0 0 10px rgba(74,124,53,.06)}
 
     /* Flood Fill */
-    .ffg{display:grid;gap:clamp(1px,.3vw,2px);width:clamp(260px,80vw,360px);margin:0 auto;padding:clamp(4px,1.5vw,8px);background:rgba(13,16,12,.25);border-radius:clamp(6px,2vw,10px);animation:boardFadeIn .4s ease}
-    .ffc{aspect-ratio:1;border-radius:clamp(2px,.6vw,5px);transition:background .2s ease}
+    .ffg{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;width:clamp(280px,88vw,400px);margin:0 auto;padding:6px;border-radius:12px;background:url('assets/games/flood/board.png') center/cover;box-shadow:inset 0 0 30px rgba(0,0,0,.4),0 4px 20px rgba(0,0,0,.3);animation:boardFadeIn .4s ease}
+    .ffc{aspect-ratio:1;border-radius:4px;background-size:cover;background-position:center}
     .ffb{display:flex;gap:clamp(6px,2vw,10px);justify-content:center;padding:clamp(8px,2.5vw,12px)}
-    .ffp{width:48px;height:48px;border-radius:clamp(8px,3vw,14px);cursor:pointer;border:2.5px solid transparent;-webkit-tap-highlight-color:transparent;transition:all .18s cubic-bezier(.25,.46,.45,.94);box-shadow:0 2px 8px rgba(0,0,0,.18)}
+    .ffp{width:48px;height:48px;border-radius:clamp(8px,3vw,14px);cursor:pointer;border:2.5px solid transparent;-webkit-tap-highlight-color:transparent;transition:all .18s cubic-bezier(.25,.46,.45,.94);box-shadow:0 2px 8px rgba(0,0,0,.18);background-size:cover;background-position:center}
     .ffp:active{transform:scale(.88);transition-duration:.06s}
     .ffp.ffa{border-color:var(--cream);box-shadow:0 0 12px rgba(255,255,255,.1),0 0 0 3px rgba(240,235,216,.08)}
 
@@ -28787,93 +28787,17 @@ function GH(a){var pegs=[[],[],[]],discs=5,moves=0,sp=-1;var COLS=['#4a7c35','#7
   window._HN=function(){discs=parseInt(document.getElementById('Hd').value);_setDiff(discs<=4?'easy':discs<=5?'medium':discs<=6?'hard':'expert');pegs=[[],[],[]];for(var i=discs-1;i>=0;i--)pegs[0].push(i);moves=0;sp=-1;document.getElementById('Hm').textContent='0';document.getElementById('Ho').textContent=(Math.pow(2,discs)-1);sm('');rn()};_HN();}
 
 // ═══ AUTUMN LEAVES (FLOOD FILL) ═══
-function GFL(a){
-  var SZ=8,grid=[],moves=0,maxMoves=22;
-  var LEAVES=['assets/games/flood/leaf-sage.png','assets/games/flood/leaf-gold.png','assets/games/flood/leaf-slate.png','assets/games/flood/leaf-copper.png','assets/games/flood/leaf-plum.png','assets/games/flood/leaf-crimson.png'];
-  var NAMES=['Sage','Gold','Slate','Copper','Plum','Crimson'];
-
-  ms(a,'Moves: <strong id="FFm">0</strong> / '+maxMoves);mm(a);
-
-  // Board grid
-  var gd=document.createElement('div');
-  gd.style.cssText='display:grid;grid-template-columns:repeat('+SZ+',1fr);gap:2px;width:clamp(280px,88vw,400px);margin:0 auto;padding:6px;border-radius:12px;background:url(assets/games/flood/board.png) center/cover;box-shadow:inset 0 0 30px rgba(0,0,0,.4),0 4px 20px rgba(0,0,0,.3)';
-  a.appendChild(gd);
-
-  // Leaf picker buttons
-  var pb=document.createElement('div');
-  pb.style.cssText='display:flex;gap:clamp(6px,2vw,10px);justify-content:center;padding:clamp(8px,2.5vw,12px);flex-wrap:wrap';
-  a.appendChild(pb);
-
+function GFL(a){var SZ=8,grid=[],moves=0,maxMoves=22;
+  var LF=['assets/games/flood/leaf-sage.png','assets/games/flood/leaf-gold.png','assets/games/flood/leaf-slate.png','assets/games/flood/leaf-copper.png','assets/games/flood/leaf-plum.png','assets/games/flood/leaf-crimson.png'];
+  ms(a,'Moves: <strong id="FFm">0</strong>/'+maxMoves);mm(a);
+  var gd=document.createElement('div');gd.className='ffg';a.appendChild(gd);
+  var pb=document.createElement('div');pb.className='ffb';a.appendChild(pb);
   mc(a).innerHTML='<button class="gb" onclick="_FFN()">🔄 New</button>';
-
-  function gen(){
-    grid=[];
-    for(var i=0;i<SZ*SZ;i++)grid.push(Math.floor(Math.random()*6));
-    moves=0;
-  }
-
-  function flood(oc,nc){
-    if(oc===nc)return;
-    var visited=new Array(SZ*SZ).fill(false);
-    var q=[0];
-    while(q.length){
-      var i=q.shift();
-      if(i<0||i>=SZ*SZ||visited[i])continue;
-      if(grid[i]!==oc&&grid[i]!==nc)continue;
-      if(grid[i]===oc){
-        grid[i]=nc;visited[i]=true;
-        var r=Math.floor(i/SZ),c=i%SZ;
-        if(r>0)q.push(i-SZ);if(r<SZ-1)q.push(i+SZ);
-        if(c>0)q.push(i-1);if(c<SZ-1)q.push(i+1);
-      }else if(grid[i]===nc){
-        visited[i]=true;
-        var r=Math.floor(i/SZ),c=i%SZ;
-        if(r>0)q.push(i-SZ);if(r<SZ-1)q.push(i+SZ);
-        if(c>0)q.push(i-1);if(c<SZ-1)q.push(i+1);
-      }
-    }
-  }
-
-  function rn(){
-    gd.innerHTML='';
-    for(var i=0;i<SZ*SZ;i++){
-      var d=document.createElement('div');
-      d.style.cssText='aspect-ratio:1;border-radius:4px;background:url('+LEAVES[grid[i]]+') center/cover;transition:background .2s ease';
-      gd.appendChild(d);
-    }
-    // Picker buttons
-    pb.innerHTML='';
-    for(var j=0;j<6;j++){
-      var b=document.createElement('div');
-      var isActive=grid[0]===j;
-      b.style.cssText='width:48px;height:48px;border-radius:12px;cursor:pointer;border:2.5px solid '+(isActive?'var(--cream)':'transparent')+';background:url('+LEAVES[j]+') center/cover;box-shadow:'+(isActive?'0 0 12px rgba(255,255,255,.15),':'')+'0 2px 8px rgba(0,0,0,.2);transition:all .18s ease;-webkit-tap-highlight-color:transparent';
-      b.setAttribute('data-c',j);
-      b.onclick=function(){
-        var c=parseInt(this.getAttribute('data-c'));
-        if(grid[0]===c)return;
-        _play('tap');
-        flood(grid[0],c);
-        moves++;
-        document.getElementById('FFm').textContent=moves;
-        if(grid.every(function(v){return v===grid[0]})){
-          _e('game_win');_playWin();
-          sm('🍂 Flooded in '+moves+'!');
-          _sr('flood',{w:true,s:moves});
-        }else if(moves>=maxMoves){
-          _e('game_loss');_play('lose');
-          sm('Out of moves!');
-          _sr('flood',{w:false,s:moves});
-        }
-        rn();
-      };
-      pb.appendChild(b);
-    }
-    document.getElementById('FFm').textContent=moves;
-  }
-
-  window._FFN=function(){gen();sm('');rn()};
-  _FFN();
-}
+  function gen(){grid=[];for(var i=0;i<SZ*SZ;i++)grid.push(Math.floor(Math.random()*6));moves=0}
+  function flood(oc,nc){if(oc===nc)return;var vis=new Array(SZ*SZ).fill(false);var q=[0];while(q.length){var i=q.shift();if(i<0||i>=SZ*SZ||vis[i])continue;if(grid[i]!==oc&&grid[i]!==nc)continue;vis[i]=true;if(grid[i]===oc)grid[i]=nc;var r=Math.floor(i/SZ),c=i%SZ;if(r>0)q.push(i-SZ);if(r<SZ-1)q.push(i+SZ);if(c>0)q.push(i-1);if(c<SZ-1)q.push(i+1)}}
+  function rn(){gd.innerHTML='';for(var i=0;i<SZ*SZ;i++){var d=document.createElement('div');d.className='ffc';d.style.backgroundImage='url('+LF[grid[i]]+')';gd.appendChild(d)}
+    pb.innerHTML='';for(var j=0;j<6;j++){var b=document.createElement('div');b.className='ffp'+(grid[0]===j?' ffa':'');b.style.backgroundImage='url('+LF[j]+')';b.setAttribute('data-c',j);b.onclick=function(){var c=parseInt(this.getAttribute('data-c'));if(grid[0]===c)return;_play('tap');flood(grid[0],c);moves++;document.getElementById('FFm').textContent=moves;if(grid.every(function(v){return v===grid[0]})){_e('game_win');_playWin();sm('🍂 Flooded in '+moves+'!');_sr('flood',{w:true,s:moves})}else if(moves>=maxMoves){_e('game_loss');_play('lose');sm('Out of moves!');_sr('flood',{w:false,s:moves})}rn()};pb.appendChild(b)}document.getElementById('FFm').textContent=moves}
+  window._FFN=function(){gen();sm('');rn()};_FFN();}
 
 // ═══ PIPE CONNECT ═══
 function GPP(a){var SZ=6,grid=[],_rc=0;
