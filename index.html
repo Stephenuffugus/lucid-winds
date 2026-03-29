@@ -28719,21 +28719,25 @@ function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null;
 
   ms(a,'Round: <strong id="Sr">0</strong> · Best: <strong id="Sb">0</strong>');mm(a);
 
-  // ── Chord & octave selectors (inline styles — no CSS can override) ──
-  var opts=document.createElement('div');
-  opts.style.cssText='display:flex;gap:10px;justify-content:center;align-items:center;padding:12px 16px;flex-wrap:wrap;background:#1a1f17;border:2px solid #7ab356;border-radius:10px;margin:0 auto 8px;width:94%;max-width:460px';
-  var _ss='style="background:#ffffff;border:2px solid #7ab356;color:#000000;font-size:15px;padding:10px 14px;border-radius:8px;min-height:48px;min-width:100px"';
-  var _ls='style="font-size:13px;color:#C8A84B;font-family:Bebas Neue,sans-serif;letter-spacing:0.06em"';
-  var chSel='<label '+_ls+'>CHORD</label> <select '+_ss+' id="Sch" onchange="_SCH()">';
+  // ── Chord & octave: tap-to-cycle buttons (no <select>, Android kills those) ──
   var chKeys=Object.keys(CHORDS);
-  for(var ci=0;ci<chKeys.length;ci++){chSel+='<option value="'+chKeys[ci]+'"'+(chKeys[ci]===_chord?' selected':'')+'>'+chKeys[ci]+'</option>';}
-  chSel+='</select>';
-  var ocSel='<label '+_ls+'>OCTAVE</label> <select '+_ss+' id="Soc" onchange="_SOC()">';
-  var ocKeys=Object.keys(OCTAVES);
-  for(var oi=0;oi<ocKeys.length;oi++){ocSel+='<option value="'+OCTAVES[ocKeys[oi]]+'"'+(OCTAVES[ocKeys[oi]]===_oct?' selected':'')+'>'+ocKeys[oi]+'</option>';}
-  ocSel+='</select>';
-  opts.innerHTML=chSel+' '+ocSel;
+  var ocKeys=Object.keys(OCTAVES);var ocVals=[];for(var ok=0;ok<ocKeys.length;ok++)ocVals.push(OCTAVES[ocKeys[ok]]);
+  var _chIdx=0,_ocIdx=1;
+  var opts=document.createElement('div');
+  opts.style.cssText='display:flex;gap:8px;justify-content:center;align-items:center;padding:10px 12px;background:rgba(13,16,12,.7);border:1.5px solid rgba(122,179,86,.25);border-radius:10px;margin:0 auto 8px;width:94%;max-width:460px';
+  opts.innerHTML=''
+    +'<div style="text-align:center;flex:1">'
+    +'<div style="font-size:11px;color:#C8A84B;font-family:Bebas Neue,sans-serif;letter-spacing:.08em;margin-bottom:4px">CHORD</div>'
+    +'<div id="Sch" onclick="_SCH()" style="background:rgba(26,31,23,.9);border:2px solid rgba(122,179,86,.4);color:#e8dcc8;font-family:DM Mono,monospace;font-size:14px;padding:10px 8px;border-radius:8px;min-height:48px;cursor:pointer;display:flex;align-items:center;justify-content:center">'+_chord+'</div>'
+    +'</div>'
+    +'<div style="text-align:center;flex:1">'
+    +'<div style="font-size:11px;color:#C8A84B;font-family:Bebas Neue,sans-serif;letter-spacing:.08em;margin-bottom:4px">OCTAVE</div>'
+    +'<div id="Soc" onclick="_SOC()" style="background:rgba(26,31,23,.9);border:2px solid rgba(122,179,86,.4);color:#e8dcc8;font-family:DM Mono,monospace;font-size:14px;padding:10px 8px;border-radius:8px;min-height:48px;cursor:pointer;display:flex;align-items:center;justify-content:center">'+ocKeys[_ocIdx]+'</div>'
+    +'</div>';
   a.appendChild(opts);
+
+  window._SCH=function(){_chIdx=(_chIdx+1)%chKeys.length;_chord=chKeys[_chIdx];FR=_buildFR();document.getElementById('Sch').textContent=_chord};
+  window._SOC=function(){_ocIdx=(_ocIdx+1)%ocKeys.length;_oct=ocVals[_ocIdx];FR=_buildFR();document.getElementById('Soc').textContent=ocKeys[_ocIdx]};
 
   window._SCH=function(){var el=document.getElementById('Sch');if(el)_chord=el.value;FR=_buildFR();};
   window._SOC=function(){var el=document.getElementById('Soc');if(el)_oct=parseFloat(el.value);FR=_buildFR();};
