@@ -3871,8 +3871,8 @@
 
 <script>
 // GLOBAL ERROR CATCHER — shows script errors visually
-console.log('[LW] Build v20260320c');
-window._lwBuild='v20260320c';
+console.log('[LW] Build v20260330a');
+window._lwBuild='v20260330a';
 window._errLog=[];
 window.onerror=function(msg,url,line,col,err){
   // Ignore cross-origin "Script error." — CORS noise from GA4/Firebase
@@ -3883,6 +3883,23 @@ window.onerror=function(msg,url,line,col,err){
   d.style.display='block';
   d.innerHTML+='<div>L'+line+': '+msg+'</div>';
 };
+// DEBUG: visible build version + panel state monitor
+(function(){
+  var dbg=document.createElement('div');
+  dbg.id='_dbg';
+  dbg.style.cssText='position:fixed;bottom:70px;right:4px;z-index:99999999;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:9px;padding:3px 6px;border-radius:4px;pointer-events:none;';
+  dbg.textContent='v30a';
+  document.body.appendChild(dbg);
+  setInterval(function(){
+    var panels=document.querySelectorAll('.grove-panel');
+    var active=[];
+    panels.forEach(function(p){if(p.classList.contains('active'))active.push(p.id.replace('panel-',''))});
+    var ag=document.getElementById('fg-ag');
+    var agOn=ag&&ag.classList.contains('on');
+    var agKids=ag?ag.children.length:0;
+    dbg.textContent='v30a|'+active.join(',')+' ag:'+(agOn?'ON':'off')+'/'+agKids;
+  },500);
+})();
 </script>
 
 <!-- ═══ VAULT HYDRATION OVERLAY (set-93) ═══════════════════════════════════
@@ -31093,11 +31110,13 @@ window.addEventListener('bp-seed-to-nursery', function(e) {
 
 <!-- Service Worker Registration -->
 <script>
+// KILL any stale service workers — sw.js no longer exists
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').then(function(reg) {
-    console.log('[SW] Registered. Scope:', reg.scope);
-  }).catch(function(err) {
-    console.warn('[SW] Registration failed:', err);
+  navigator.serviceWorker.getRegistrations().then(function(regs) {
+    regs.forEach(function(reg) {
+      reg.unregister();
+      console.log('[SW] Unregistered stale worker:', reg.scope);
+    });
   });
 }
 </script>
