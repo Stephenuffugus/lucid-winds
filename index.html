@@ -28724,15 +28724,15 @@ function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null;
   var ocKeys=Object.keys(OCTAVES);var ocVals=[];for(var ok=0;ok<ocKeys.length;ok++)ocVals.push(OCTAVES[ocKeys[ok]]);
   var _chIdx=0,_ocIdx=1;
   var opts=document.createElement('div');
-  opts.style.cssText='display:flex;gap:8px;justify-content:center;align-items:center;padding:10px 12px;background:rgba(13,16,12,.7);border:1.5px solid rgba(122,179,86,.25);border-radius:10px;margin:0 auto 8px;width:94%;max-width:460px';
+  opts.style.cssText='display:flex;gap:8px;justify-content:center;align-items:center;padding:10px 12px;background:#111;border:2px solid #7ab356;border-radius:10px;margin:0 auto 8px;width:94%;max-width:460px';
   opts.innerHTML=''
     +'<div style="text-align:center;flex:1">'
-    +'<div style="font-size:11px;color:#C8A84B;font-family:Bebas Neue,sans-serif;letter-spacing:.08em;margin-bottom:4px">CHORD</div>'
-    +'<div id="Sch" onclick="_SCH()" style="background:rgba(26,31,23,.9);border:2px solid rgba(122,179,86,.4);color:#e8dcc8;font-family:DM Mono,monospace;font-size:14px;padding:10px 8px;border-radius:8px;min-height:48px;cursor:pointer;display:flex;align-items:center;justify-content:center">'+_chord+'</div>'
+    +'<div style="font-size:13px;color:#C8A84B;font-family:Bebas Neue,sans-serif;letter-spacing:.08em;margin-bottom:4px">CHORD</div>'
+    +'<div id="Sch" onclick="_SCH()" style="background:#222;border:2px solid #7ab356;font-family:DM Mono,monospace;font-size:16px;padding:12px 8px;border-radius:8px;min-height:48px;cursor:pointer;display:flex;align-items:center;justify-content:center"><span style="color:#ffffff">'+_chord+'</span></div>'
     +'</div>'
     +'<div style="text-align:center;flex:1">'
-    +'<div style="font-size:11px;color:#C8A84B;font-family:Bebas Neue,sans-serif;letter-spacing:.08em;margin-bottom:4px">OCTAVE</div>'
-    +'<div id="Soc" onclick="_SOC()" style="background:rgba(26,31,23,.9);border:2px solid rgba(122,179,86,.4);color:#e8dcc8;font-family:DM Mono,monospace;font-size:14px;padding:10px 8px;border-radius:8px;min-height:48px;cursor:pointer;display:flex;align-items:center;justify-content:center">'+ocKeys[_ocIdx]+'</div>'
+    +'<div style="font-size:13px;color:#C8A84B;font-family:Bebas Neue,sans-serif;letter-spacing:.08em;margin-bottom:4px">OCTAVE</div>'
+    +'<div id="Soc" onclick="_SOC()" style="background:#222;border:2px solid #7ab356;font-family:DM Mono,monospace;font-size:16px;padding:12px 8px;border-radius:8px;min-height:48px;cursor:pointer;display:flex;align-items:center;justify-content:center"><span style="color:#ffffff">'+ocKeys[_ocIdx]+'</span></div>'
     +'</div>';
   a.appendChild(opts);
 
@@ -28745,8 +28745,8 @@ function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null;
     +'<div class="st" id="s3" onclick="_SP(3)"><span class="sl">WINTER</span></div>';
   a.appendChild(bd);
   a.appendChild(opts);
-  window._SCH=function(){_chIdx=(_chIdx+1)%chKeys.length;_chord=chKeys[_chIdx];FR=_buildFR();document.getElementById('Sch').textContent=_chord};
-  window._SOC=function(){_ocIdx=(_ocIdx+1)%ocKeys.length;_oct=ocVals[_ocIdx];FR=_buildFR();document.getElementById('Soc').textContent=ocKeys[_ocIdx]};
+  window._SCH=function(){_chIdx=(_chIdx+1)%chKeys.length;_chord=chKeys[_chIdx];FR=_buildFR();document.getElementById('Sch').innerHTML='<span style="color:#ffffff">'+_chord+'</span>'};
+  window._SOC=function(){_ocIdx=(_ocIdx+1)%ocKeys.length;_oct=ocVals[_ocIdx];FR=_buildFR();document.getElementById('Soc').innerHTML='<span style="color:#ffffff">'+ocKeys[_ocIdx]+'</span>'};
   mc(a).innerHTML='<button class="gb" onclick="_SN()">🔄 New</button>';
 
   // ── Tone: warm triangle wave with gentle decay ──
