@@ -7805,9 +7805,16 @@ document.addEventListener('keydown', function(e) {
 
     var svg = '<svg viewBox="0 0 70 95" width="'+s+'" height="'+Math.round(s*95/70)+'" xmlns="http://www.w3.org/2000/svg">';
     if (_isThumb) {
-      // Thumbnail: minimal defs — just pot gradient, skip all filters
+      // Thumbnail: minimal defs — pot + rim + stem gradients, skip filters
       var _tc = PALETTE[t.potColor] || PALETTE.terra;
-      svg += '<defs><linearGradient id="pg_'+uid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+_tc.light+'"/><stop offset="100%" stop-color="'+_tc.dark+'"/></linearGradient></defs>';
+      var _sc2 = STEM_COLORS[t.stemColor] || STEM_COLORS[0];
+      var _scB = _sc2.base || '#3A5C2A';
+      var _scL = _sc2.light || '#5E8550';
+      svg += '<defs>';
+      svg += '<linearGradient id="pg'+uid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+_tc+'"/><stop offset="100%" stop-color="'+_tc+'" stop-opacity="0.8"/></linearGradient>';
+      svg += '<linearGradient id="pr'+uid+'" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="'+_tc+'" stop-opacity="0.3"/><stop offset="50%" stop-color="#EAE0C8" stop-opacity="0.2"/><stop offset="100%" stop-color="'+_tc+'" stop-opacity="0.3"/></linearGradient>';
+      svg += '<linearGradient id="sg'+uid+'" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="'+_scB+'" stop-opacity="0.9"/><stop offset="100%" stop-color="'+_scL+'" stop-opacity="0.8"/></linearGradient>';
+      svg += '</defs>';
     } else {
       svg += buildDefs(t, uid);
     }
