@@ -3752,8 +3752,7 @@
 .nb.on{color:var(--sage);}.nb svg{width:22px;height:22px;}.nl{font-family:'Bebas Neue',sans-serif;font-size:10px;letter-spacing:0.1em;}
 
     /* ═══ ONBOARDING ═══ */
-    #pw-onboard{display:none;position:fixed;inset:0;z-index:2147483646;background:#050505;overflow:hidden;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
-    #pw-onboard.active{display:flex;}
+    #pw-onboard{display:none!important;}
     .ob-beat{display:none;position:absolute;inset:0;flex-direction:column;opacity:0;transition:opacity 1.8s ease;}
     .ob-beat.show{display:flex;opacity:1;}
     .ob-beat.fade-out{opacity:0;transition:opacity 1.8s ease;}
@@ -3869,8 +3868,10 @@
 
 <script>
 // GLOBAL ERROR CATCHER — shows script errors visually
-console.log('[LW] Build v20260330a');
-window._lwBuild='v20260330a';
+console.log('[LW] Build v20260330b');
+window._lwBuild='v20260330b';
+// Force onboarded — onboarding overlay was blocking entire app
+try{localStorage.setItem('pw_onboarded','1')}catch(e){}
 window._errLog=[];
 window.onerror=function(msg,url,line,col,err){
   // Ignore cross-origin "Script error." — CORS noise from GA4/Firebase
