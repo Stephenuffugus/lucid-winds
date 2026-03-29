@@ -28736,12 +28736,6 @@ function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null;
     +'</div>';
   a.appendChild(opts);
 
-  window._SCH=function(){_chIdx=(_chIdx+1)%chKeys.length;_chord=chKeys[_chIdx];FR=_buildFR();document.getElementById('Sch').textContent=_chord};
-  window._SOC=function(){_ocIdx=(_ocIdx+1)%ocKeys.length;_oct=ocVals[_ocIdx];FR=_buildFR();document.getElementById('Soc').textContent=ocKeys[_ocIdx]};
-
-  window._SCH=function(){var el=document.getElementById('Sch');if(el)_chord=el.value;FR=_buildFR();};
-  window._SOC=function(){var el=document.getElementById('Soc');if(el)_oct=parseFloat(el.value);FR=_buildFR();};
-
   // ── Season tiles with artwork ──
   var bd=document.createElement('div');bd.className='sb';
   bd.innerHTML=''
@@ -28750,6 +28744,9 @@ function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null;
     +'<div class="st" id="s2" onclick="_SP(2)"><span class="sl">AUTUMN</span></div>'
     +'<div class="st" id="s3" onclick="_SP(3)"><span class="sl">WINTER</span></div>';
   a.appendChild(bd);
+  a.appendChild(opts);
+  window._SCH=function(){_chIdx=(_chIdx+1)%chKeys.length;_chord=chKeys[_chIdx];FR=_buildFR();document.getElementById('Sch').textContent=_chord};
+  window._SOC=function(){_ocIdx=(_ocIdx+1)%ocKeys.length;_oct=ocVals[_ocIdx];FR=_buildFR();document.getElementById('Soc').textContent=ocKeys[_ocIdx]};
   mc(a).innerHTML='<button class="gb" onclick="_SN()">🔄 New</button>';
 
   // ── Tone: warm triangle wave with gentle decay ──
