@@ -3091,7 +3091,8 @@
 
     /* Flood Fill */
     .ffg{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;width:clamp(280px,88vw,400px);margin:0 auto;padding:6px;border-radius:12px;background:url('assets/games/flood/board.png') center/cover;box-shadow:inset 0 0 30px rgba(0,0,0,.4),0 4px 20px rgba(0,0,0,.3)}
-    .ffc{aspect-ratio:1;border-radius:4px;background-size:cover;background-position:center}
+    .ffc{border-radius:4px;overflow:hidden}
+    .ffc img{width:100%;height:100%;display:block;object-fit:cover}
     .ffb{display:flex;gap:clamp(6px,2vw,10px);justify-content:center;padding:clamp(8px,2.5vw,12px)}
     .ffp{width:48px;height:48px;border-radius:clamp(8px,3vw,14px);cursor:pointer;border:2.5px solid transparent;-webkit-tap-highlight-color:transparent;background-size:cover;background-position:center;box-shadow:0 2px 8px rgba(0,0,0,.18);min-height:48px}
     .ffp:active{transform:scale(.88)}
@@ -28810,7 +28811,7 @@ function GFL(a){var SZ=8,grid=[],moves=0,maxMoves=22;
   mc(a).innerHTML='<button class="gb" onclick="_FFN()">🔄 New</button>';
   function gen(){grid=[];for(var i=0;i<SZ*SZ;i++)grid.push(Math.floor(Math.random()*6));moves=0}
   function flood(oc,nc){if(oc===nc)return;var vis=new Array(SZ*SZ).fill(false);var q=[0];while(q.length){var i=q.shift();if(i<0||i>=SZ*SZ||vis[i])continue;if(grid[i]!==oc&&grid[i]!==nc)continue;vis[i]=true;if(grid[i]===oc)grid[i]=nc;var r=Math.floor(i/SZ),c=i%SZ;if(r>0)q.push(i-SZ);if(r<SZ-1)q.push(i+SZ);if(c>0)q.push(i-1);if(c<SZ-1)q.push(i+1)}}
-  function rn(){gd.innerHTML='';for(var i=0;i<SZ*SZ;i++){var d=document.createElement('div');d.className='ffc';d.style.backgroundImage='url('+LF[grid[i]]+')';gd.appendChild(d)}
+  function rn(){gd.innerHTML='';for(var i=0;i<SZ*SZ;i++){var d=document.createElement('div');d.className='ffc';d.innerHTML='<img src="'+LF[grid[i]]+'" alt="">';gd.appendChild(d)}
     pb.innerHTML='';for(var j=0;j<6;j++){var b=document.createElement('div');b.className='ffp'+(grid[0]===j?' ffa':'');b.style.backgroundImage='url('+LF[j]+')';b.setAttribute('data-c',j);b.onclick=function(){var c=parseInt(this.getAttribute('data-c'));if(grid[0]===c)return;_play('tap');flood(grid[0],c);moves++;document.getElementById('FFm').textContent=moves;if(grid.every(function(v){return v===grid[0]})){_e('game_win');_playWin();sm('🍂 Flooded in '+moves+'!');_sr('flood',{w:true,s:moves})}else if(moves>=maxMoves){_e('game_loss');_play('lose');sm('Out of moves!');_sr('flood',{w:false,s:moves})}rn()};pb.appendChild(b)}document.getElementById('FFm').textContent=moves}
   window._FFN=function(){gen();sm('');rn()};_FFN();}
 
