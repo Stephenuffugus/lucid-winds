@@ -2950,17 +2950,18 @@
 
     .ng{display:grid;gap:clamp(1px,.4vw,3px);background:rgba(16,20,14,.65);border-radius:clamp(8px,2vw,12px);padding:clamp(3px,1vw,6px);width:clamp(280px,94vw,420px);margin:0 auto;box-shadow:inset 0 0 24px rgba(0,0,0,.12),0 4px 20px rgba(0,0,0,.22);animation:boardFadeIn .4s cubic-bezier(.25,.46,.45,.94)}
     .nc{aspect-ratio:1;border-radius:clamp(3px,.8vw,6px);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:clamp(.65rem,1.8vw,.85rem);font-weight:700;-webkit-tap-highlight-color:transparent;transition:all .15s cubic-bezier(.25,.46,.45,.94);position:relative}
-    /* Hidden cell — earth */
-    .nc.nh{background:rgba(32,40,28,.82);border:1px solid rgba(48,56,42,.65);box-shadow:inset 0 1px 0 rgba(74,124,53,.05),inset 0 -1px 0 rgba(0,0,0,.08)}
-    .nc.nh:active{background:rgba(42,51,37,.8);transform:scale(.92);transition-duration:.06s}
-    /* Revealed */
-    .nc.nr{background:rgba(18,22,16,.55);border:1px solid rgba(24,28,22,.45);cursor:default;box-shadow:inset 0 2px 5px rgba(0,0,0,.08);animation:cellReveal .2s ease}
-    /* Flagged — gold accent */
-    .nc.nf{background:rgba(200,168,78,.06);border:1px solid rgba(200,168,78,.22);box-shadow:0 0 10px rgba(200,168,78,.05);animation:cellReveal .25s cubic-bezier(.34,1.56,.64,1)}
-    /* Mine hit */
-    .nc.nb{background:rgba(199,80,80,.12);border:1px solid rgba(199,80,80,.25);box-shadow:0 0 14px rgba(199,80,80,.08);animation:rootPulse .5s ease}
+    /* Hidden cell — forest floor tile */
+    .nc.nh{background:rgba(32,40,28,.82) url('assets/games/minesweeper/hidden.png') center/cover;border:1px solid rgba(48,56,42,.65);box-shadow:inset 0 1px 0 rgba(74,124,53,.05),inset 0 -1px 0 rgba(0,0,0,.08)}
+    .nc.nh:active{filter:brightness(1.3);transform:scale(.92);transition-duration:.06s}
+    /* Revealed — dug up soil */
+    .nc.nr{background:rgba(18,22,16,.55) url('assets/games/minesweeper/revealed.png') center/cover;border:1px solid rgba(24,28,22,.45);cursor:default;box-shadow:inset 0 2px 5px rgba(0,0,0,.08);animation:cellReveal .2s ease}
+    /* Flagged — orange pennant */
+    .nc.nf{background:rgba(200,168,78,.06) url('assets/games/minesweeper/flag.png') center/cover;border:1px solid rgba(200,168,78,.22);box-shadow:0 0 10px rgba(200,168,78,.05);animation:cellReveal .25s cubic-bezier(.34,1.56,.64,1)}
+    /* Mine hit — red mushroom */
+    .nc.nb{background:rgba(199,80,80,.12) url('assets/games/minesweeper/mine.png') center/cover;border:1px solid rgba(199,80,80,.25);box-shadow:0 0 14px rgba(199,80,80,.08);animation:rootPulse .5s ease}
     /* Number colors — botanical spectrum, boosted readability */
     .x1{color:#5aaa5a}.x2{color:#92c47e}.x3{color:#cc8e52}.x4{color:#5e92ba}.x5{color:#cc6666}.x6{color:#9474be}.x7{color:var(--gold)}.x8{color:#aaa}
+    .nc.nr[class*="x"]{text-shadow:0 1px 3px rgba(0,0,0,.8),0 0 6px rgba(0,0,0,.5)}
     /* ══════════════════════════════════════════════════════════════════════
        REMAINING 16 GAMES — Viewport-Scaled + Motion Polish
        ══════════════════════════════════════════════════════════════════════ */
@@ -28785,7 +28786,7 @@ function GN(a){var rw=10,cl=10,mn=15,bd=[],ov=false,fi=true,fm=false,rv=0,fg=0,s
   function ix(r,c){return r*cl+c}function pl(sr,sc){var p=0;while(p<mn){var r=Math.floor(Math.random()*rw),c=Math.floor(Math.random()*cl);if(Math.abs(r-sr)<=1&&Math.abs(c-sc)<=1||bd[ix(r,c)].m)continue;bd[ix(r,c)].m=true;p++}for(var r=0;r<rw;r++)for(var c=0;c<cl;c++){if(bd[ix(r,c)].m)continue;var n=0;for(var dr=-1;dr<=1;dr++)for(var dc=-1;dc<=1;dc++){var nr=r+dr,nc=c+dc;if(nr>=0&&nr<rw&&nc>=0&&nc<cl&&bd[ix(nr,nc)].m)n++}bd[ix(r,c)].a=n}}
   function re(r,c){if(r<0||r>=rw||c<0||c>=cl)return;var x=bd[ix(r,c)];if(x.rv||x.fl)return;_play('dig');x.rv=true;rv++;if(x.m){ov=true;bd.forEach(function(c){if(c.m)c.sm=true});x.ht=true;_e('game_loss');_play('lose');sm('🦠 Root rot!');_sr('mines',{w:false,s:rv});rn();return}if(rv%Math.max(8,Math.floor(sf/5))===0)_e('cleared');if(x.a===0)for(var dr=-1;dr<=1;dr++)for(var dc=-1;dc<=1;dc++)re(r+dr,c+dc)}
   function cw(){document.getElementById('Nr').textContent=rv;if(rv===sf&&!ov){ov=true;_e('game_win');sm('🌿 Clean!');_sr('mines',{w:true,s:rv})}}
-  function rn(){gd.innerHTML='';gd.style.gridTemplateColumns='repeat('+cl+',1fr)';for(var r=0;r<rw;r++)for(var c=0;c<cl;c++){var x=bd[ix(r,c)];var d=document.createElement('div');d.setAttribute('data-r',r);d.setAttribute('data-c',c);if(x.rv){d.className='nc '+(x.ht?'nb':x.sm?'nr':'nr'+(x.a?' x'+x.a:''));d.textContent=x.ht?'🦠':x.sm?'🦠':(x.a||'')}else if(x.sm){d.className='nc nr';d.textContent='🦠'}else if(x.fl){d.className='nc nf';d.textContent='🚩'}else{d.className='nc nh';d.onclick=function(){if(ov)return;var cr=parseInt(this.getAttribute('data-r')),cc=parseInt(this.getAttribute('data-c'));if(fm){var z=bd[ix(cr,cc)];if(!z.rv){_play('snap');z.fl=!z.fl;fg+=z.fl?1:-1;document.getElementById('Nf').textContent=fg;rn()}return}if(bd[ix(cr,cc)].fl)return;if(fi){pl(cr,cc);fi=false}re(cr,cc);rn();cw()}}gd.appendChild(d)}}
+  function rn(){gd.innerHTML='';gd.style.gridTemplateColumns='repeat('+cl+',1fr)';for(var r=0;r<rw;r++)for(var c=0;c<cl;c++){var x=bd[ix(r,c)];var d=document.createElement('div');d.setAttribute('data-r',r);d.setAttribute('data-c',c);if(x.rv){d.className='nc '+(x.ht?'nb':x.sm?'nb':'nr'+(x.a?' x'+x.a:''));d.textContent=x.ht?'':x.sm?'':(x.a||'')}else if(x.sm){d.className='nc nb';d.textContent=''}else if(x.fl){d.className='nc nf';d.textContent=''}else{d.className='nc nh';d.onclick=function(){if(ov)return;var cr=parseInt(this.getAttribute('data-r')),cc=parseInt(this.getAttribute('data-c'));if(fm){var z=bd[ix(cr,cc)];if(!z.rv){_play('snap');z.fl=!z.fl;fg+=z.fl?1:-1;document.getElementById('Nf').textContent=fg;rn()}return}if(bd[ix(cr,cc)].fl)return;if(fi){pl(cr,cc);fi=false}re(cr,cc);rn();cw()}}gd.appendChild(d)}}
   window._NF=function(){fm=!fm;document.getElementById('Nfb').className='gb'+(fm?' gon':'')};
   window._NN=function(){var p=document.getElementById('Nd').value.split('-');rw=cl=parseInt(p[0]);mn=parseInt(p[1]);_setDiff(rw<=8?'easy':rw<=10?'medium':'hard');sf=rw*cl-mn;bd=[];for(var i=0;i<rw*cl;i++)bd.push({m:false,rv:false,fl:false,a:0,ht:false,sm:false});ov=false;fi=true;rv=0;fg=0;fm=false;document.getElementById('Nn').textContent=mn;document.getElementById('Nf').textContent='0';document.getElementById('Nr').textContent='0';document.getElementById('Ns').textContent=sf;sm('');rn()};_NN();}
 
