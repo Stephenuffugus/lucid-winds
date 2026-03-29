@@ -2022,7 +2022,7 @@
       border-bottom:2px solid var(--sage);color:var(--cream);
       box-shadow:0 0 16px rgba(122,179,86,0.2);
     }
-    .grove-panel{display:none;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;padding-top:calc(44px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));height:calc(100dvh - 5.5rem);max-height:calc(100dvh - 5.5rem);box-sizing:border-box;}
+    .grove-panel{display:none;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;padding-top:calc(44px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));height:calc(100vh - 5.5rem);max-height:calc(100vh - 5.5rem);height:calc(100dvh - 5.5rem);max-height:calc(100dvh - 5.5rem);box-sizing:border-box;position:relative;}
     .grove-panel.active{display:block;animation:panelFadeIn 0.25s ease;}
     @keyframes panelFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
     /* Botanical loading spinner — three rotating leaves */
@@ -28390,7 +28390,7 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;_m=Math.m
   var fn={memory:GM,merge:GR,simon:GS,lights:GL,mines:GN,slider:GD,sudoku:GU,farkle:GF,tripeaks:GT,pyramid:GP,wordsearch:GW,yahtzee:GY,hanoi:GH,connect4:G4,klondike:GK,picross:GX,checkers:GCK,reversi:GRV,mastermind:GMM,flood:GFL,colorsort:GCS,sokoban:GSK,pipe:GPP,golf:GGO,freecell:GFC,spider:GSP,chess:GCH};
   try{if(fn[id])fn[id](ag);else{ag.innerHTML+='<div style="padding:2rem;text-align:center;color:var(--muted)">Coming soon</div>'}}catch(e){console.error('[Game '+id+']',e);ag.innerHTML+='<div style="padding:2rem;text-align:center;color:#c75050">Game error — tap 🔄 New to retry</div>'}
   _st();
-  setTimeout(function(){var panel=ag.closest('.grove-panel');if(panel){panel.scrollTop=ag.offsetTop-8;}},60);};
+  setTimeout(function(){ag.scrollIntoView({behavior:'smooth',block:'start'});},80);};
 
 // ═══════════════════ GAME IMPLEMENTATIONS ═══════════════════
 
