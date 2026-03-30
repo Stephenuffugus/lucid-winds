@@ -118,6 +118,12 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
 </div>
 <div id="gs-suggest" style="display:none;padding:6px 12px;background:rgba(16,20,14,.9);border-bottom:1px solid rgba(74,124,53,.1);max-height:120px;overflow-y:auto"></div>
 
+<div style="display:flex;gap:4px;padding:4px 12px;flex-wrap:wrap;background:rgba(13,16,12,.3);border-bottom:1px solid rgba(74,124,53,.06)">
+  <button class="gs-btn" onclick="GS.save()">💾 Save</button>
+  <button class="gs-btn" onclick="GS.load()">📂 Load</button>
+  <button class="gs-btn" onclick="GS.clearSection()">🗑 Clear Section</button>
+  <button class="gs-btn" onclick="GS.undo()">↩ Undo</button>
+</div>
 <div class="gs-sections" id="gs-sections"></div>
 <div id="gs-sec-indicator" style="padding:4px 12px;font-size:.55rem;font-family:Bebas Neue,sans-serif;letter-spacing:.08em"></div>
 <div id="gs-layers"></div>
@@ -184,18 +190,19 @@ var GS = (function(){
 
   // ── Drum Synth Definitions ──
   var DRUMS = [
-    {name:'Kick',  syn:function(t){var c=getCtx();var o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(40,t+0.12);g.gain.setValueAtTime(0.8,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.3);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.3)}},
-    {name:'Snare', syn:function(t){var c=getCtx();var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.15,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);n.buffer=b;var g=c.createGain();g.gain.setValueAtTime(0.6,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.15);var o=c.createOscillator();o.type='triangle';o.frequency.setValueAtTime(200,t);o.frequency.exponentialRampToValueAtTime(80,t+0.06);var og=c.createGain();og.gain.setValueAtTime(0.5,t);og.gain.exponentialRampToValueAtTime(0.001,t+0.06);n.connect(g);g.connect(c.destination);o.connect(og);og.connect(c.destination);n.start(t);o.start(t);o.stop(t+0.15)}},
-    {name:'Hi-Hat',syn:function(t){var c=getCtx();var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.05,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3);n.buffer=b;var hp=c.createBiquadFilter();hp.type='highpass';hp.frequency.value=7000;var g=c.createGain();g.gain.setValueAtTime(0.3,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.05);n.connect(hp);hp.connect(g);g.connect(c.destination);n.start(t)}},
-    {name:'O-Hat', syn:function(t){var c=getCtx();var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.2,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.5);n.buffer=b;var hp=c.createBiquadFilter();hp.type='highpass';hp.frequency.value=6000;var g=c.createGain();g.gain.setValueAtTime(0.25,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.2);n.connect(hp);hp.connect(g);g.connect(c.destination);n.start(t)}},
-    {name:'Clap',  syn:function(t){var c=getCtx();for(var j=0;j<3;j++){var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.02,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1);n.buffer=b;var bp=c.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1200;bp.Q.value=2;var g=c.createGain();g.gain.setValueAtTime(0.4,t+j*0.015);g.gain.exponentialRampToValueAtTime(0.001,t+j*0.015+0.08);n.connect(bp);bp.connect(g);g.connect(c.destination);n.start(t+j*0.015)}}},
-    {name:'Tom',   syn:function(t){var c=getCtx();var o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(120,t);o.frequency.exponentialRampToValueAtTime(60,t+0.15);g.gain.setValueAtTime(0.5,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.2);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.2)}},
-    {name:'Rim',   syn:function(t){var c=getCtx();var o=c.createOscillator(),g=c.createGain();o.type='square';o.frequency.value=800;g.gain.setValueAtTime(0.3,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.03);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.03)}},
-    {name:'Crash', syn:function(t){var c=getCtx();var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.6,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1);n.buffer=b;var hp=c.createBiquadFilter();hp.type='highpass';hp.frequency.value=4000;var g=c.createGain();g.gain.setValueAtTime(0.3,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.6);n.connect(hp);hp.connect(g);g.connect(c.destination);n.start(t)}}
+    {name:'Kick',  syn:function(t,v){v=v||1;var c=getCtx();var o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(40,t+0.12);g.gain.setValueAtTime(0.8*v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.3);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.3)}},
+    {name:'Snare', syn:function(t,v){v=v||1;var c=getCtx();var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.15,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);n.buffer=b;var g=c.createGain();g.gain.setValueAtTime(0.6*v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.15);var o=c.createOscillator();o.type='triangle';o.frequency.setValueAtTime(200,t);o.frequency.exponentialRampToValueAtTime(80,t+0.06);var og=c.createGain();og.gain.setValueAtTime(0.5*v,t);og.gain.exponentialRampToValueAtTime(0.001,t+0.06);n.connect(g);g.connect(c.destination);o.connect(og);og.connect(c.destination);n.start(t);o.start(t);o.stop(t+0.15)}},
+    {name:'Hi-Hat',syn:function(t,v){v=v||1;var c=getCtx();var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.05,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3);n.buffer=b;var hp=c.createBiquadFilter();hp.type='highpass';hp.frequency.value=7000;var g=c.createGain();g.gain.setValueAtTime(0.3*v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.05);n.connect(hp);hp.connect(g);g.connect(c.destination);n.start(t)}},
+    {name:'O-Hat', syn:function(t,v){v=v||1;var c=getCtx();var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.2,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.5);n.buffer=b;var hp=c.createBiquadFilter();hp.type='highpass';hp.frequency.value=6000;var g=c.createGain();g.gain.setValueAtTime(0.25*v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.2);n.connect(hp);hp.connect(g);g.connect(c.destination);n.start(t)}},
+    {name:'Clap',  syn:function(t,v){v=v||1;var c=getCtx();for(var j=0;j<3;j++){var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.02,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1);n.buffer=b;var bp=c.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1200;bp.Q.value=2;var g=c.createGain();g.gain.setValueAtTime(0.4*v,t+j*0.015);g.gain.exponentialRampToValueAtTime(0.001,t+j*0.015+0.08);n.connect(bp);bp.connect(g);g.connect(c.destination);n.start(t+j*0.015)}}},
+    {name:'Tom',   syn:function(t,v){v=v||1;var c=getCtx();var o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(120,t);o.frequency.exponentialRampToValueAtTime(60,t+0.15);g.gain.setValueAtTime(0.5*v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.2);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.2)}},
+    {name:'Rim',   syn:function(t,v){v=v||1;var c=getCtx();var o=c.createOscillator(),g=c.createGain();o.type='square';o.frequency.value=800;g.gain.setValueAtTime(0.3*v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.03);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.03)}},
+    {name:'Crash', syn:function(t,v){v=v||1;var c=getCtx();var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.6,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1);n.buffer=b;var hp=c.createBiquadFilter();hp.type='highpass';hp.frequency.value=4000;var g=c.createGain();g.gain.setValueAtTime(0.3*v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.6);n.connect(hp);hp.connect(g);g.connect(c.destination);n.start(t)}}
   ];
 
   // ── Bass Synth ──
-  function playBassNote(freq, t){
+  function playBassNote(freq, t, vol){
+    var v = vol || 1;
     var c = getCtx();
     var o = c.createOscillator(), g = c.createGain();
     o.type = 'sawtooth';
@@ -203,19 +210,20 @@ var GS = (function(){
     var f = c.createBiquadFilter();
     f.type = 'lowpass'; f.frequency.setValueAtTime(800, t);
     f.frequency.exponentialRampToValueAtTime(200, t + 0.15);
-    g.gain.setValueAtTime(0.15, t);
+    g.gain.setValueAtTime(0.15 * v, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
     o.connect(f); f.connect(g); g.connect(c.destination);
     o.start(t); o.stop(t + 0.22);
   }
 
   // ── Melody/Chord Synth ──
-  function playToneNote(freq, t, dur){
+  function playToneNote(freq, t, dur, vol){
+    var v = vol || 1;
     var c = getCtx();
     var o = c.createOscillator(), g = c.createGain();
     o.type = 'sine';
     o.frequency.value = freq;
-    g.gain.setValueAtTime(0.08, t);
+    g.gain.setValueAtTime(0.08 * v, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + (dur || 0.2));
     o.connect(g); g.connect(c.destination);
     o.start(t); o.stop(t + (dur || 0.22));
@@ -249,7 +257,7 @@ var GS = (function(){
     for(var i=0;i<LAYER_TYPES.length;i++){
       var lt = LAYER_TYPES[i];
       var rows = lt.type === 'drum' ? lt.rows : getScaleNotes(lt.octave).length;
-      v[lt.id] = {grid:[], mute:false, solo:false};
+      v[lt.id] = {grid:[], mute:false, solo:false, vol:80};
       for(var r=0;r<rows*STEPS;r++) v[lt.id].grid.push(0);
     }
     return v;
@@ -278,6 +286,7 @@ var GS = (function(){
 
   // ── Transport ──
   var expandedLayer = 'drums';
+  var _undoStack = [];
   var arrMode = true; // play through arrangement
   var arrIdx = 0; // current position in arrangement
   var zoomLevel = 1; // 0=tiny, 1=default, 2=big, 3=huge
@@ -301,34 +310,41 @@ var GS = (function(){
     if(!v) return;
     var t = getCtx().currentTime;
 
+    // Check solo state — if any layer is soloed, only play soloed layers
+    var anySolo = v.drums.solo || v.bass.solo || v.chords.solo || v.melody.solo;
+
     // Play drums
-    if(!v.drums.mute){
+    if(!v.drums.mute && (!anySolo || v.drums.solo)){
+      var dVol = (v.drums.vol !== undefined ? v.drums.vol : 80) / 80;
       for(var d=0;d<DRUMS.length;d++){
-        if(v.drums.grid[d*STEPS+step]) DRUMS[d].syn(t);
+        if(v.drums.grid[d*STEPS+step]) DRUMS[d].syn(t, dVol);
       }
     }
 
     // Play bass
-    if(!v.bass.mute){
-      var bassNotes = getScaleNotes(2);
+    if(!v.bass.mute && (!anySolo || v.bass.solo)){
+      var bVol = (v.bass.vol !== undefined ? v.bass.vol : 80) / 80;
+      var bassNotes = getScaleNotes(LAYER_TYPES[1].octave);
       for(var b=0;b<bassNotes.length;b++){
-        if(v.bass.grid[b*STEPS+step]) playBassNote(bassNotes[b].freq, t);
+        if(v.bass.grid[b*STEPS+step]) playBassNote(bassNotes[b].freq, t, bVol);
       }
     }
 
     // Play chords
-    if(!v.chords.mute){
-      var chordNotes = getScaleNotes(3);
+    if(!v.chords.mute && (!anySolo || v.chords.solo)){
+      var cVol = (v.chords.vol !== undefined ? v.chords.vol : 80) / 80;
+      var chordNotes = getScaleNotes(LAYER_TYPES[2].octave);
       for(var c=0;c<chordNotes.length;c++){
-        if(v.chords.grid[c*STEPS+step]) playToneNote(chordNotes[c].freq, t, 0.3);
+        if(v.chords.grid[c*STEPS+step]) playToneNote(chordNotes[c].freq, t, 0.3, cVol);
       }
     }
 
     // Play melody
-    if(!v.melody.mute){
-      var melNotes = getScaleNotes(4);
+    if(!v.melody.mute && (!anySolo || v.melody.solo)){
+      var mVol = (v.melody.vol !== undefined ? v.melody.vol : 80) / 80;
+      var melNotes = getScaleNotes(LAYER_TYPES[3].octave);
       for(var m=0;m<melNotes.length;m++){
-        if(v.melody.grid[m*STEPS+step]) playToneNote(melNotes[m].freq, t, 0.15);
+        if(v.melody.grid[m*STEPS+step]) playToneNote(melNotes[m].freq, t, 0.15, mVol);
       }
     }
 
@@ -411,6 +427,7 @@ var GS = (function(){
         +'<div class="gs-layer-name">'+lt.name+(lt.type==='note'?' <span style="font-size:.5rem;color:var(--muted);font-family:DM Mono,monospace">Oct '+lt.octave+'</span>':'')+'</div>'
         +(lt.type==='note'?'<div style="display:flex;gap:2px" onclick="event.stopPropagation()"><div class="gs-mute" onclick="GS.octShift(\''+lt.id+'\',-1)" style="font-size:.5rem;padding:2px 5px">▼</div><div class="gs-mute" onclick="GS.octShift(\''+lt.id+'\',1)" style="font-size:.5rem;padding:2px 5px">▲</div></div>':'')
         +'<div class="gs-layer-mini">'+miniHtml+'</div>'
+        +'<input type="range" min="0" max="100" value="'+(ld.vol!==undefined?ld.vol:80)+'" style="width:40px;accent-color:'+(({drums:'#e88a4a',bass:'#c75050',chords:'#a0c4e8',melody:'#c8a84b'})[lt.id]||'var(--sage)')+'" onclick="event.stopPropagation()" oninput="event.stopPropagation();GS.setVol(\''+lt.id+'\',this.value)">'
         +'<div class="gs-mute'+(ld.mute?' on':'')+'" onclick="event.stopPropagation();GS.toggleMute(\''+lt.id+'\')">M</div>'
         +'<div class="gs-solo'+(ld.solo?' on':'')+'" onclick="event.stopPropagation();GS.toggleSolo(\''+lt.id+'\')">S</div>'
         +'</div>';
@@ -548,6 +565,8 @@ var GS = (function(){
       var s = parseInt(el.getAttribute('data-s'));
       var v = getCurrentVar(); if(!v) return;
       var idx = r * STEPS + s;
+      _undoStack.push({lid:lid, idx:idx, was:v[lid].grid[idx]});
+      if(_undoStack.length > 200) _undoStack.shift();
       v[lid].grid[idx] = v[lid].grid[idx] ? 0 : 1;
 
       // Preview sound on tap
@@ -578,9 +597,52 @@ var GS = (function(){
       renderArrangement();
     },
     arrDel: function(i){
-      if(song.arrangement.length <= 1) return; // keep at least one
+      if(song.arrangement.length <= 1) return;
       song.arrangement.splice(i, 1);
       renderArrangement();
+    },
+    save: function(){
+      var data = {song:song, bpm:bpm, rootIdx:rootIdx, scaleKey:scaleKey,
+        layers:LAYER_TYPES.map(function(l){return {id:l.id,octave:l.octave}})};
+      try{
+        localStorage.setItem('gs_song', JSON.stringify(data));
+        alert('Song saved!');
+      }catch(e){alert('Save failed: '+e.message);}
+    },
+    load: function(){
+      try{
+        var raw = localStorage.getItem('gs_song');
+        if(!raw){alert('No saved song found');return;}
+        var data = JSON.parse(raw);
+        song = data.song;
+        bpm = data.bpm || 120;
+        rootIdx = data.rootIdx || 0;
+        scaleKey = data.scaleKey || 'Min Penta';
+        if(data.layers){data.layers.forEach(function(dl){for(var i=0;i<LAYER_TYPES.length;i++){if(LAYER_TYPES[i].id===dl.id)LAYER_TYPES[i].octave=dl.octave;}});}
+        document.getElementById('gs-bpm').textContent = bpm;
+        currentSection = 'A'; currentVar = 0;
+        stop();
+        renderScaleSelectors();
+        renderAll();
+        alert('Song loaded!');
+      }catch(e){alert('Load failed: '+e.message);}
+    },
+    clearSection: function(){
+      if(!confirm('Clear all layers in '+currentSection+(currentVar+1)+'?')) return;
+      var v = getCurrentVar(); if(!v) return;
+      for(var lid in v){v[lid].grid = v[lid].grid.map(function(){return 0});}
+      renderLayers();
+    },
+    undo: function(){
+      if(!_undoStack.length) return;
+      var state = _undoStack.pop();
+      var v = getCurrentVar(); if(!v) return;
+      v[state.lid].grid[state.idx] = state.was;
+      renderLayers();
+    },
+    setVol: function(lid, val){
+      var v = getCurrentVar(); if(!v) return;
+      v[lid].vol = parseInt(val);
     },
     playScale: function(){
       var c = getCtx();
