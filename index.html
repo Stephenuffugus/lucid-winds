@@ -29936,7 +29936,7 @@ function _cdArt(s,r){
   if(r===10)return _CD_BASE+sn+'-jack.png';
   if(r===11)return _CD_BASE+sn+'-queen.png';
   if(r===12)return _CD_BASE+sn+'-king.png';
-  return '';
+  return _CD_BASE+sn+'-ace.png'; // number cards use ace art dimmed
 }
 
 function _cdMk(){var d=[];for(var s=0;s<4;s++)for(var r=0;r<13;r++)d.push({s:s,r:r,up:false});return d}
@@ -29957,21 +29957,24 @@ function _cdEl(card){
     if(_cdIsRed(card.s))d.className+=' gc-red';
     var clr=_SUIT_CLR[card.s];
     var rnk=_cdRnk(card.r);
-    var sym=_SUIT_SYM[card.s];
+    var pip=_CD_BASE+_SUIT_NAME[card.s]+'.png';
     var art=_cdArt(card.s,card.r);
-    // Corner label: rank + suit symbol
-    var corner='<div style="position:absolute;top:3px;left:4px;line-height:1;z-index:2;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:0">'
+    var isFace=card.r===0||card.r>=10; // ace, J, Q, K
+    // Corner label: rank + small suit image
+    var corner='<div style="position:absolute;top:3px;left:4px;line-height:1;z-index:2;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:1px">'
       +'<div style="color:'+clr+';font-size:clamp(.7rem,2.2vw,1rem);font-weight:900;font-style:italic;text-shadow:0 1px 3px #000,0 0 8px #000">'+rnk+'</div>'
-      +'<div style="font-size:clamp(.45rem,1.3vw,.6rem);line-height:1;filter:drop-shadow(0 1px 2px #000)">'+sym+'</div>'
+      +'<img src="'+pip+'" style="width:clamp(8px,2.2vw,14px);height:clamp(8px,2.2vw,14px);filter:drop-shadow(0 1px 2px #000)" alt="">'
       +'</div>';
-    if(art){
-      d.style.backgroundImage="url('"+art+"')";
-      d.innerHTML=corner;
+    if(!isFace){
+      // Number cards: ace art dimmed as watermark
+      d.style.backgroundImage="linear-gradient(rgba(14,18,12,.7),rgba(14,18,12,.7)),url('"+art+"')";
+      d.style.backgroundSize='100%,65%';
+      d.style.backgroundPosition='center,center 55%';
+      d.style.backgroundRepeat='no-repeat,no-repeat';
     }else{
-      var pip=_CD_BASE+_SUIT_NAME[card.s]+'.png';
-      d.innerHTML=corner
-        +'<img src="'+pip+'" style="width:50%;height:auto;opacity:.7;filter:drop-shadow(0 0 6px rgba(0,0,0,.6));pointer-events:none" alt="">';
+      d.style.backgroundImage="url('"+art+"')";
     }
+    d.innerHTML=corner;
   }else{
     d.className+=' gc-dn';
     _cdBackStyle(d);
