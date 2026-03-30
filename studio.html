@@ -97,6 +97,22 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
 .gs-arr-add{border-style:dashed;color:var(--muted);min-width:60px;font-size:1.2rem!important;padding:10px 18px!important}
 
 /* Sampler Panel */
+.gs-circle{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(8,10,6,.97);z-index:95;padding:12px;overflow-y:auto}
+.gs-circle.open{display:flex;flex-direction:column}
+.gs-circle h3{font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--gold);letter-spacing:.08em;text-align:center}
+.gs-circle .view-title{font-size:.65rem;color:var(--sage);text-align:center;margin:4px 0;font-family:'Bebas Neue',sans-serif;letter-spacing:.06em}
+.gs-circle .view-desc{font-size:.5rem;color:var(--muted);text-align:center;margin-bottom:8px;line-height:1.4;max-width:320px;margin-left:auto;margin-right:auto}
+.gs-circle .nav{display:flex;align-items:center;justify-content:center;gap:12px;margin:6px 0}
+.gs-circle .nav button{background:none;border:1.5px solid var(--border);color:var(--cream);font-size:1rem;width:40px;height:40px;border-radius:50%;cursor:pointer}
+.gs-circle .nav button:active{background:rgba(122,179,86,.15)}
+.gs-circle .nav span{font-size:.55rem;color:var(--cream);min-width:40px;text-align:center}
+.gs-circle svg text{font-family:'DM Mono',monospace;fill:var(--cream)}
+.gs-circle .progs{display:flex;flex-direction:column;gap:6px;margin-top:8px;max-width:340px;margin-left:auto;margin-right:auto}
+.gs-circle .prog-row{display:flex;align-items:center;gap:6px;padding:6px 8px;background:rgba(26,31,23,.6);border:1px solid var(--border);border-radius:6px;cursor:pointer;min-height:40px}
+.gs-circle .prog-row:active{border-color:var(--sage);background:rgba(26,31,23,.9)}
+.gs-circle .prog-name{font-size:.5rem;color:var(--gold);min-width:70px;font-family:'Bebas Neue',sans-serif;letter-spacing:.04em}
+.gs-circle .prog-chords{font-size:.55rem;color:var(--cream);flex:1}
+.gs-circle .prog-genre{font-size:.4rem;color:var(--muted)}
 .gs-euclid{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(8,10,6,.97);z-index:90;padding:14px 12px;border-top:2px solid var(--sage);border-radius:12px 12px 0 0;max-height:70vh;overflow-y:auto}
 .gs-euclid.open{display:block}
 .gs-euclid h3{font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--sage);letter-spacing:.08em;margin-bottom:8px}
@@ -189,12 +205,30 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
   <button class="gs-btn" onclick="GS.undo()">↩</button>
   <button class="gs-btn" onclick="GS.openSampler()">🎤 Sampler</button>
   <button class="gs-btn" onclick="GS.openEuclid()">◉ Rhythm</button>
+  <button class="gs-btn" onclick="GS.openCircle()">⊙ Circle</button>
 </div>
 <div class="gs-sections" id="gs-sections"></div>
 <div id="gs-sec-indicator" style="padding:4px 12px;font-size:.55rem;font-family:Bebas Neue,sans-serif;letter-spacing:.08em"></div>
 <div id="gs-layers"></div>
 <div class="gs-arr" id="gs-arr"></div>
 
+<div class="gs-circle" id="gs-circle">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <h3>⊙ CIRCLE OF FIFTHS</h3>
+    <button class="gs-btn" onclick="GS.closeCircle()" style="padding:6px 12px;min-height:36px">✕</button>
+  </div>
+  <div class="nav">
+    <button onclick="GS.circleNav(-1)">◀</button>
+    <span id="gs-circle-idx">1 / 8</span>
+    <button onclick="GS.circleNav(1)">▶</button>
+  </div>
+  <div class="view-title" id="gs-circle-title"></div>
+  <div style="display:flex;justify-content:center">
+    <svg id="gs-circle-svg" width="280" height="280" viewBox="0 0 280 280"></svg>
+  </div>
+  <div class="view-desc" id="gs-circle-desc"></div>
+  <div class="progs" id="gs-circle-progs"></div>
+</div>
 <div class="gs-euclid" id="gs-euclid">
   <div style="display:flex;align-items:center;justify-content:space-between">
     <h3>◉ RHYTHM GENERATOR</h3>
@@ -1256,6 +1290,169 @@ var GS = (function(){
     renderArrangement();
   }
 
+  // ── Circle of Fifths Reference ──
+  var _circleView = 0;
+  var FIFTHS_ORDER = ['C','G','D','A','E','B','F#','Db','Ab','Eb','Bb','F'];
+  var FIFTHS_MINOR = ['Am','Em','Bm','F#m','C#m','G#m','Ebm','Bbm','Fm','Cm','Gm','Dm'];
+  // Map note name to index in FIFTHS_ORDER
+  function fifthIdx(note){
+    for(var i=0;i<12;i++) if(FIFTHS_ORDER[i]===note||FIFTHS_ORDER[i].replace('#','♯')===note) return i;
+    // Try enharmonics
+    var en={'C#':'Db','D#':'Eb','F#':'Gb','G#':'Ab','A#':'Bb','Gb':'F#','Db':'C#','Eb':'D#','Ab':'G#','Bb':'A#'};
+    if(en[note]) for(var i=0;i<12;i++) if(FIFTHS_ORDER[i]===en[note]) return i;
+    return 0;
+  }
+  function currentRoot(){return ALL_NOTES[rootIdx]}
+
+  var CIRCLE_VIEWS = [
+    {title:'THE CIRCLE OF FIFTHS',
+     desc:'Clockwise = fifths (G→D→A). Counter-clockwise = fourths (F→Bb→Eb). Adjacent keys share 6 of 7 notes — they\'re your safest modulation targets.',
+     highlights:function(root){var ri=fifthIdx(root);return [{idx:ri,color:'var(--gold)',label:'Root'},{idx:(ri+1)%12,color:'var(--sage)',label:'V'},{idx:(ri+11)%12,color:'var(--sage)',label:'IV'}]}},
+    {title:'RELATIVE MAJOR / MINOR',
+     desc:'Every major key has a relative minor 3 semitones below — they share all the same notes. The inner ring shows the minor keys. Am is the relative minor of C.',
+     highlights:function(root){var ri=fifthIdx(root);return [{idx:ri,color:'var(--gold)',label:'Major'},{idx:ri,color:'#E8A0BF',label:'Rel min',ring:'inner'}]}},
+    {title:'COMMON PROGRESSIONS',
+     desc:'The most-used chord progressions in Western music, shown in your current key. Tap any to see it highlighted on the circle.',
+     highlights:function(root){var ri=fifthIdx(root);return [{idx:ri,color:'var(--gold)',label:'I'}]},
+     progs:true},
+    {title:'THE "AXIS" SYSTEM',
+     desc:'Opposite keys on the circle are a tritone apart — maximum tension. Jazz uses tritone substitution: replace V7 with bII7 (the chord directly across the circle).',
+     highlights:function(root){var ri=fifthIdx(root);return [{idx:ri,color:'var(--gold)',label:'I'},{idx:(ri+6)%12,color:'#c75050',label:'Tritone'}]}},
+    {title:'MODAL INTERCHANGE',
+     desc:'Borrow chords from parallel modes. In C major, steal bVII (Bb), bVI (Ab), bIII (Eb) from C minor. These are the darker neighbors on the flat side of the circle.',
+     highlights:function(root){var ri=fifthIdx(root);return [{idx:ri,color:'var(--gold)',label:'I'},{idx:(ri+10)%12,color:'#a0c4e8',label:'bVII'},{idx:(ri+9)%12,color:'#a0c4e8',label:'bVI'},{idx:(ri+8)%12,color:'#a0c4e8',label:'bIII'}]}},
+    {title:'SECONDARY DOMINANTS',
+     desc:'Any chord can be approached by its own V chord. V/V is one step clockwise from V on the circle. V/vi is one step clockwise from vi. This is how you create forward motion.',
+     highlights:function(root){var ri=fifthIdx(root);return [{idx:ri,color:'var(--gold)',label:'I'},{idx:(ri+1)%12,color:'var(--sage)',label:'V'},{idx:(ri+2)%12,color:'#c8a84b80',label:'V/V'},{idx:(ri+3)%12,color:'#c8a84b60',label:'V/V/V'}]}},
+    {title:'NEGATIVE HARMONY',
+     desc:'Mirror the circle across the axis between I and V. Major becomes minor, tension flips direction. C major\'s negative is G minor. Ernst Levy\'s concept, popularized by Jacob Collier.',
+     highlights:function(root){var ri=fifthIdx(root);return [{idx:ri,color:'var(--gold)',label:'I'},{idx:(ri+1)%12,color:'var(--sage)',label:'V'},{idx:(ri+11)%12,color:'#E8A0BF',label:'neg I'},{idx:(ri+10)%12,color:'#E8A0BF',label:'neg V'}]}},
+    {title:'NASHVILLE NUMBER SYSTEM',
+     desc:'Replace chord names with scale degree numbers. Works in ANY key. Session musicians in Nashville read charts this way — learn it once, transpose instantly.',
+     highlights:function(root){
+       var ri=fifthIdx(root);
+       var nums=['I','V','II','VI','III','VII','#IV/bV','bII','bVI','bIII','bVII','IV'];
+       var out=[];
+       for(var i=0;i<12;i++) out.push({idx:(ri+i)%12,color:i===0?'var(--gold)':i<6?'var(--sage)':'var(--muted)',label:nums[i]});
+       return out;
+     }}
+  ];
+
+  // Common progressions relative to root (as steps on the fifths circle)
+  var PROG_PRESETS = [
+    {name:'Pop Canon',     nums:'I – V – vi – IV',       steps:[0,1,11,11], genre:'Pop, rock, country'},
+    {name:'50s / Doo-Wop', nums:'I – vi – IV – V',       steps:[0,11,11,1], genre:'Oldies, ballads'},
+    {name:'Jazz ii-V-I',   nums:'ii – V – I',            steps:[0,1,1],     genre:'Jazz, bossa nova'},
+    {name:'12-Bar Blues',   nums:'I – I – I – I – IV – IV – I – I – V – IV – I – V', steps:[0,0,0,0,11,0,1,0,1,11,1,1], genre:'Blues, rock & roll'},
+    {name:'Andalusian',    nums:'i – bVII – bVI – V',    steps:[0,10,11,1], genre:'Flamenco, metal, film'},
+    {name:'Royal Road',    nums:'IV – V – iii – vi',     steps:[0,1,1,11],  genre:'J-pop, anime, video games'},
+    {name:'Coltrane Changes',nums:'I – bVI – bIII – I',  steps:[0,8,8,4],   genre:'Jazz, Coltrane'},
+    {name:'Plagal',        nums:'I – IV – I',            steps:[0,11,1],    genre:'Gospel, hymns, Amen cadence'},
+    {name:'Minor Descent', nums:'i – bVII – bVI – bVII', steps:[0,10,11,1], genre:'Rock, grunge, emo'},
+    {name:'Rhythm Changes',nums:'I – vi – ii – V',       steps:[0,11,11,1], genre:'Bebop jazz, standards'},
+    {name:'Neo-Soul',      nums:'ii – V – I – IV',       steps:[0,1,1,11],  genre:'Neo-soul, R&B'},
+    {name:'Backdoor ii-V', nums:'ii – bVII – I',         steps:[0,10,2],    genre:'Jazz, steely dan'}
+  ];
+
+  function drawCircle(highlights, showNums){
+    var svg = document.getElementById('gs-circle-svg');
+    var cx=140, cy=140, rOuter=115, rInner=78, rText=98;
+    var html = '';
+    // Draw ring
+    html += '<circle cx="'+cx+'" cy="'+cy+'" r="'+rOuter+'" fill="none" stroke="rgba(74,124,53,.2)" stroke-width="1"/>';
+    html += '<circle cx="'+cx+'" cy="'+cy+'" r="'+rInner+'" fill="none" stroke="rgba(74,124,53,.12)" stroke-width="1"/>';
+    // Lines from center
+    for(var i=0;i<12;i++){
+      var ang = (i * 30 - 90) * Math.PI / 180;
+      var x1 = cx + rInner * Math.cos(ang), y1 = cy + rInner * Math.sin(ang);
+      var x2 = cx + rOuter * Math.cos(ang), y2 = cy + rOuter * Math.sin(ang);
+      html += '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="rgba(74,124,53,.1)" stroke-width="1"/>';
+    }
+    // Build highlight map
+    var hlMap = {}, hlInner = {};
+    if(highlights){
+      for(var h=0;h<highlights.length;h++){
+        var hl = highlights[h];
+        if(hl.ring === 'inner') hlInner[hl.idx] = hl;
+        else hlMap[hl.idx] = hl;
+      }
+    }
+    // Outer ring — major keys
+    for(var i=0;i<12;i++){
+      var ang = (i * 30 - 90) * Math.PI / 180;
+      var x = cx + rText * Math.cos(ang), y = cy + rText * Math.sin(ang);
+      var hl = hlMap[i];
+      var col = hl ? hl.color : 'var(--cream)';
+      var sz = hl ? '11' : '9';
+      var labelText = showNums && hl ? hl.label : FIFTHS_ORDER[i];
+      // Background circle for highlighted nodes
+      if(hl) html += '<circle cx="'+x+'" cy="'+y+'" r="16" fill="'+(col)+'" fill-opacity=".15" stroke="'+col+'" stroke-width="1.5"/>';
+      html += '<text x="'+x+'" y="'+(y+3.5)+'" text-anchor="middle" font-size="'+sz+'" fill="'+col+'" font-weight="'+(hl?'bold':'normal')+'">'+labelText+'</text>';
+      // Label below for highlights
+      if(hl && hl.label && !showNums){
+        html += '<text x="'+x+'" y="'+(y+14)+'" text-anchor="middle" font-size="6" fill="'+col+'" opacity=".7">'+hl.label+'</text>';
+      }
+    }
+    // Inner ring — minor keys
+    var innerR = 56;
+    for(var i=0;i<12;i++){
+      var ang = (i * 30 - 90) * Math.PI / 180;
+      var x = cx + innerR * Math.cos(ang), y = cy + innerR * Math.sin(ang);
+      var hl = hlInner[i];
+      var col = hl ? hl.color : 'var(--muted)';
+      html += '<text x="'+x+'" y="'+(y+3)+'" text-anchor="middle" font-size="7" fill="'+col+'">'+FIFTHS_MINOR[i]+'</text>';
+    }
+    svg.innerHTML = html;
+  }
+
+  function renderCircleView(){
+    var view = CIRCLE_VIEWS[_circleView];
+    document.getElementById('gs-circle-idx').textContent = (_circleView+1)+' / '+CIRCLE_VIEWS.length;
+    document.getElementById('gs-circle-title').textContent = view.title;
+    document.getElementById('gs-circle-desc').textContent = view.desc;
+    var root = currentRoot();
+    var hl = view.highlights(root);
+    var showNums = view.title.indexOf('NASHVILLE') >= 0;
+    drawCircle(hl, showNums);
+    // Progressions
+    var progsEl = document.getElementById('gs-circle-progs');
+    if(view.progs){
+      var ri = fifthIdx(root);
+      var html = '';
+      for(var p=0;p<PROG_PRESETS.length;p++){
+        var pr = PROG_PRESETS[p];
+        // Transpose nums to current key
+        var chords = pr.nums;
+        html += '<div class="prog-row" onclick="GS.circleShowProg('+p+')">'
+          +'<div class="prog-name">'+pr.name+'</div>'
+          +'<div class="prog-chords">'+chords+'</div>'
+          +'<div class="prog-genre">'+pr.genre+'</div>'
+          +'</div>';
+      }
+      progsEl.innerHTML = html;
+      progsEl.style.display = '';
+    } else {
+      progsEl.innerHTML = '';
+      progsEl.style.display = 'none';
+    }
+  }
+
+  function circleShowProg(progIdx){
+    var root = currentRoot();
+    var ri = fifthIdx(root);
+    var pr = PROG_PRESETS[progIdx];
+    var hl = [{idx:ri, color:'var(--gold)', label:'Start'}];
+    var pos = ri;
+    var colors = ['var(--sage)','#a0c4e8','#E8A0BF','#c8a84b','#c75050','var(--cream)','var(--muted)','#a0c4e8','var(--sage)','#E8A0BF','#c8a84b','#c75050'];
+    for(var i=0;i<pr.steps.length;i++){
+      pos = (pos + pr.steps[i]) % 12;
+      var already = false;
+      for(var h=0;h<hl.length;h++){if(hl[h].idx===pos)already=true;}
+      if(!already) hl.push({idx:pos, color:colors[i%colors.length], label:''+(i+2)});
+    }
+    drawCircle(hl, false);
+  }
+
   // ── Euclidean Rhythm Generator ──
   function bjorklund(hits, steps){
     if(hits >= steps) { var r=[]; for(var i=0;i<steps;i++) r.push(1); return r; }
@@ -1602,6 +1799,20 @@ var GS = (function(){
       accentMode = !accentMode;
       var el = document.getElementById('gs-accent');
       el.className = accentMode ? 'gs-btn accent-on' : 'gs-btn';
+    },
+    openCircle: function(){
+      document.getElementById('gs-circle').classList.add('open');
+      renderCircleView();
+    },
+    closeCircle: function(){
+      document.getElementById('gs-circle').classList.remove('open');
+    },
+    circleNav: function(dir){
+      _circleView = (_circleView + dir + CIRCLE_VIEWS.length) % CIRCLE_VIEWS.length;
+      renderCircleView();
+    },
+    circleShowProg: function(idx){
+      circleShowProg(idx);
     },
     openEuclid: function(){
       document.getElementById('gs-euclid').classList.add('open');
