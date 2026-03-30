@@ -27928,7 +27928,8 @@ var G=[
 {id:'flood',n:'Autumn Leaves',i:'🍂',r:'Tap a leaf to flood from the top-left. Cover the forest floor in one color!'},
 {id:'pipe',n:'Vine Flow',i:'🌿',r:'Rotate vine tiles to connect all vines back to the root!'},
 {id:'chess',n:'Grove Chess',i:'♟',r:'Classic chess against AI. Tap a piece, tap where to move.'},
-{id:'c4',n:'Connect Fleur',i:'🌸',r:'Drop flowers to connect 4 in a row \u2014 horizontal, vertical, or diagonal!'}
+{id:'c4',n:'Connect Fleur',i:'🌸',r:'Drop flowers to connect 4 in a row \u2014 horizontal, vertical, or diagonal!'},
+{id:'song',n:'Seed Song',i:'🎵',r:'Compose a melody on the grove sequencer. Tap cells, hit play, make music!'}
 ];
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
 // ═══ HASH ACCUMULATION BUFFER ═══
@@ -27998,7 +27999,7 @@ var _afClass={
 };
 // Game → class mapping
 var _afGameClass={
-  memory:'sprint',lights:'sprint',simon:'sprint',flood:'sprint',c4:'standard',
+  memory:'sprint',lights:'sprint',simon:'sprint',flood:'sprint',c4:'standard',song:'free',
   pipe:'standard',hanoi:'standard',
   set:'marathon',merge:'marathon',mines:'marathon',wordsearch:'marathon',sudoku:'marathon',chess:'marathon'
 };
@@ -28023,7 +28024,8 @@ var _aw={
   wordsearch:{milestone:1,game_win:5,game_loss:0,default:0},
   sudoku:    {progress:1,milestone:1,game_win:5,game_loss:0,default:0},
   chess:     {game_win:8,game_loss:1,default:0},
-  c4:        {game_win:4,game_loss:0,default:0}
+  c4:        {game_win:4,game_loss:0,default:0},
+  song:      {default:0}
 };
 function _setDiff(lv){switch(lv){case 'easy':_dm=1.0;break;case 'medium':_dm=1.5;break;case 'hard':_dm=2.0;break;case 'expert':_dm=2.5;break;default:_dm=1.0}}
 function _gr(){try{return JSON.parse(localStorage.getItem(RK))||{}}catch(e){return{}}}
@@ -28230,7 +28232,7 @@ function _restartCurrentGame(){
   ag.innerHTML='';
   var gi=null;for(var i=0;i<G.length;i++)if(G[i].id===_a){gi=G[i];break}
   if(gi){var r=document.createElement('div');r.className='gr';r.textContent='📖 '+gi.r;ag.appendChild(r)}
-  var fn={memory:GM,merge:GR,simon:GS,lights:GL,mines:GN,sudoku:GU,wordsearch:GW,hanoi:GH,flood:GFL,pipe:GPP,chess:GCH,c4:GC4};
+  var fn={memory:GM,merge:GR,simon:GS,lights:GL,mines:GN,sudoku:GU,wordsearch:GW,hanoi:GH,flood:GFL,pipe:GPP,chess:GCH,c4:GC4,song:GSG};
   try{if(fn[_a])fn[_a](ag)}catch(e){console.error('[Game '+_a+']',e);ag.innerHTML+='<div style="padding:2rem;text-align:center;color:#c75050">Game error — tap 🔄 New to retry</div>'}
   var gps=document.getElementById('gp-strip');if(gps&&gps.classList.contains('on')){try{_updateGP()}catch(e){}}
   _st();
@@ -28372,7 +28374,7 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;_m=Math.m
   if(gps){gps.classList.add('on');try{_updateGP()}catch(e){console.warn('[GP]',e)}}
   var gi=null;for(var i=0;i<G.length;i++)if(G[i].id===id){gi=G[i];break}
   if(gi){var r=document.createElement('div');r.className='gr';r.textContent='📖 '+gi.r;ag.appendChild(r)}
-  var fn={memory:GM,merge:GR,simon:GS,lights:GL,mines:GN,sudoku:GU,wordsearch:GW,hanoi:GH,flood:GFL,pipe:GPP,chess:GCH,c4:GC4};
+  var fn={memory:GM,merge:GR,simon:GS,lights:GL,mines:GN,sudoku:GU,wordsearch:GW,hanoi:GH,flood:GFL,pipe:GPP,chess:GCH,c4:GC4,song:GSG};
   try{if(fn[id])fn[id](ag);else{ag.innerHTML+='<div style="padding:2rem;text-align:center;color:var(--muted)">Coming soon</div>'}}catch(e){console.error('[Game '+id+']',e);ag.innerHTML='<div style="padding:2rem;text-align:center;color:#c75050;font-size:16px">ERROR in '+id+': '+e.message+'</div>'}
   _st();
   };
@@ -29767,6 +29769,80 @@ function GC4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0;
       turn=2;sm('AI thinking...');rn();setTimeout(aiMove,300)};
     gd.appendChild(d)}window.scrollTo(0,_scrollY)}
   window._C4N=function(){init();sm('Your turn');rn()};_C4N();}
+
+// ═══ SEED SONG — Step Sequencer ═══
+function GSG(a){
+  var STEPS=16,NOTES=8,grid=[],playing=false,step=0,timer=null,bpm=120;
+  // Pentatonic scale — always sounds good
+  var FREQ=[523.25,493.88,440,392,349.23,329.63,293.66,261.63]; // C5 down to C4
+  var NOTE_NAMES=['C5','B4','A4','G4','F4','E4','D4','C4'];
+  var WAVE='sine';
+  var waves=['sine','triangle','square','sawtooth'];var waveIdx=0;
+  ms(a);mm(a,'Tap cells to compose');
+  // Note labels + grid wrapper
+  var wrap=document.createElement('div');wrap.style.cssText='display:flex;width:clamp(300px,96vw,460px);margin:0 auto';
+  // Note labels column
+  var labels=document.createElement('div');labels.style.cssText='display:flex;flex-direction:column;justify-content:space-around;padding:2px 4px 2px 0;flex-shrink:0';
+  for(var n=0;n<NOTES;n++){var lb=document.createElement('div');lb.style.cssText='font-size:clamp(.4rem,1.2vw,.55rem);color:var(--muted);font-family:DM Mono,monospace;text-align:right;line-height:1';lb.textContent=NOTE_NAMES[n];labels.appendChild(lb)}
+  wrap.appendChild(labels);
+  // Grid
+  var gd=document.createElement('div');gd.id='SGg';gd.style.cssText='display:grid;grid-template-columns:repeat('+STEPS+',1fr);gap:2px;flex:1';wrap.appendChild(gd);a.appendChild(wrap);
+  // Playhead indicator
+  var ph=document.createElement('div');ph.id='SGph';ph.style.cssText='display:flex;width:clamp(300px,96vw,460px);margin:2px auto 0;padding-left:24px';
+  for(var s=0;s<STEPS;s++){var dot=document.createElement('div');dot.style.cssText='flex:1;height:4px;border-radius:2px;margin:0 1px;background:rgba(74,124,53,.15);transition:background .1s';dot.setAttribute('data-s',s);ph.appendChild(dot)}
+  a.appendChild(ph);
+  // Controls
+  var ctrl=mc(a);
+  ctrl.innerHTML='<button class="gb" id="SGplay" onclick="_SGPlay()" style="min-width:60px">▶ Play</button>'
+    +'<button class="gb" onclick="_SGWave()">🎹 Sine</button>'
+    +'<div style="display:flex;align-items:center;gap:4px"><span style="font-size:clamp(.5rem,1.4vw,.65rem);color:var(--muted)">BPM</span><input type="range" min="60" max="200" value="120" style="width:80px;accent-color:var(--sage)" oninput="_SGBpm(this.value)"><span id="SGbpm" style="font-size:clamp(.5rem,1.4vw,.65rem);color:var(--cream);font-family:DM Mono,monospace;min-width:24px">120</span></div>'
+    +'<button class="gb" onclick="_SGClear()">🗑 Clear</button>'
+    +'<button class="gb" onclick="_SGRand()">🎲 Random</button>';
+  function init(){grid=[];for(var i=0;i<NOTES*STEPS;i++)grid.push(0);stop()}
+  function playNote(noteIdx){
+    try{if(!_sctx)_sctx=new(window.AudioContext||window.webkitAudioContext)();
+      var o=_sctx.createOscillator(),g=_sctx.createGain();
+      o.type=WAVE;o.frequency.value=FREQ[noteIdx];
+      g.gain.value=0.08;g.gain.exponentialRampToValueAtTime(0.001,_sctx.currentTime+0.2);
+      o.connect(g);g.connect(_sctx.destination);
+      o.start(_sctx.currentTime);o.stop(_sctx.currentTime+0.22);
+    }catch(e){}}
+  function tick(){
+    // Highlight playhead
+    var dots=document.getElementById('SGph');if(dots){var dd=dots.children;for(var i=0;i<dd.length;i++)dd[i].style.background=i===step?'var(--sage)':'rgba(74,124,53,.15)'}
+    // Highlight column
+    var cells=gd.children;for(var i=0;i<cells.length;i++){var cs=Math.floor(i/NOTES);/* not used */}
+    // Play notes in this step
+    for(var n=0;n<NOTES;n++){if(grid[n*STEPS+step])playNote(n)}
+    // Visual pulse on active cells in this column
+    for(var n=0;n<NOTES;n++){var ci=n*STEPS+step;if(cells[ci]&&grid[ci])cells[ci].style.transform='scale(1.15)';
+      if(cells[ci])setTimeout(function(el){el.style.transform=''}.bind(null,cells[ci]),100)}
+    step=(step+1)%STEPS;
+  }
+  function stop(){playing=false;step=0;if(timer)clearInterval(timer);timer=null;
+    var btn=document.getElementById('SGplay');if(btn)btn.textContent='▶ Play';
+    var dots=document.getElementById('SGph');if(dots){var dd=dots.children;for(var i=0;i<dd.length;i++)dd[i].style.background='rgba(74,124,53,.15)'}}
+  function rn(){gd.innerHTML='';for(var n=0;n<NOTES;n++)for(var s=0;s<STEPS;s++){
+    var d=document.createElement('div');var on=grid[n*STEPS+s];
+    var isDownbeat=s%4===0;
+    d.style.cssText='aspect-ratio:1;border-radius:clamp(2px,.6vw,4px);cursor:pointer;transition:background .1s,transform .1s;min-height:0;'
+      +'background:'+(on?'var(--sage)':isDownbeat?'rgba(42,48,37,.5)':'rgba(26,31,23,.4)')+';'
+      +'border:1px solid '+(on?'rgba(122,179,86,.5)':'rgba(74,124,53,.08)')+';'
+      +(on?'box-shadow:0 0 6px rgba(122,179,86,.25);':'');
+    d.setAttribute('data-n',n);d.setAttribute('data-s',s);
+    d.onclick=function(){var ni=parseInt(this.getAttribute('data-n')),si=parseInt(this.getAttribute('data-s'));
+      grid[ni*STEPS+si]=grid[ni*STEPS+si]?0:1;if(grid[ni*STEPS+si])playNote(ni);rn()};
+    gd.appendChild(d)}}
+  window._SGPlay=function(){if(playing){stop();rn();return}playing=true;step=0;
+    var btn=document.getElementById('SGplay');if(btn)btn.textContent='⏹ Stop';
+    timer=setInterval(tick,60000/bpm/4)};
+  window._SGBpm=function(v){bpm=parseInt(v);document.getElementById('SGbpm').textContent=v;if(playing){clearInterval(timer);timer=setInterval(tick,60000/bpm/4)}};
+  window._SGWave=function(){waveIdx=(waveIdx+1)%waves.length;WAVE=waves[waveIdx];var names=['Sine','Triangle','Square','Saw'];
+    var btns=ctrl.querySelectorAll('.gb');if(btns[1])btns[1].textContent='🎹 '+names[waveIdx]};
+  window._SGClear=function(){for(var i=0;i<grid.length;i++)grid[i]=0;stop();rn()};
+  window._SGRand=function(){for(var i=0;i<grid.length;i++)grid[i]=Math.random()<0.15?1:0;rn()};
+  init();rn();
+}
 
 // ═══ INIT ═══
 // ── Colorblind toggle stub ──
