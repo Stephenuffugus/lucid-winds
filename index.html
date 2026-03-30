@@ -29820,9 +29820,9 @@ function GSG(a){
   a.appendChild(selRow);
   // Note labels + scrollable grid wrapper
   var wrap=document.createElement('div');wrap.id='SGwrap';wrap.style.cssText='display:flex;width:clamp(300px,96vw,460px);margin:0 auto';
-  var labels=document.createElement('div');labels.id='SGlbl';labels.style.cssText='display:flex;flex-direction:column;justify-content:space-around;padding:2px 4px 2px 0;flex-shrink:0;min-width:28px';
+  var labels=document.createElement('div');labels.id='SGlbl';labels.style.cssText='display:flex;flex-direction:column;justify-content:space-around;padding:6px 6px 6px 0;flex-shrink:0;min-width:28px';
   wrap.appendChild(labels);
-  var scroll=document.createElement('div');scroll.id='SGscroll';scroll.style.cssText='flex:1;overflow-x:auto;-webkit-overflow-scrolling:touch';
+  var scroll=document.createElement('div');scroll.id='SGscroll';scroll.style.cssText='flex:1;overflow-x:auto;-webkit-overflow-scrolling:touch;background:rgba(8,10,6,.9);border-radius:6px;padding:4px;border:1px solid rgba(74,124,53,.15)';
   var gd=document.createElement('div');gd.id='SGg';scroll.appendChild(gd);wrap.appendChild(scroll);a.appendChild(wrap);
   // Playhead
   var ph=document.createElement('div');ph.id='SGph';ph.style.cssText='display:flex;width:clamp(300px,96vw,460px);margin:2px auto 0;padding-left:28px;overflow:hidden';a.appendChild(ph);
@@ -29863,9 +29863,9 @@ function GSG(a){
     for(var n=0;n<NOTES;n++)for(var s=0;s<STEPS;s++){
       var d=document.createElement('div');var on=grid[n*STEPS+s];var db=s%4===0;
       d.style.cssText='width:'+cw+'px;height:'+cw+'px;border-radius:clamp(2px,.6vw,4px);cursor:pointer;transition:background .1s,transform .1s;'
-        +'background:'+(on?'var(--sage)':db?'rgba(42,48,37,.5)':'rgba(26,31,23,.4)')+';'
-        +'border:1px solid '+(on?'rgba(122,179,86,.5)':'rgba(74,124,53,.08)')+';'
-        +(on?'box-shadow:0 0 6px rgba(122,179,86,.25);':'');
+        +'background:'+(on?'rgba(122,179,86,.85)':db?'rgba(50,58,42,.7)':'rgba(36,42,30,.6)')+';'
+        +'border:1px solid '+(on?'rgba(122,179,86,.6)':'rgba(74,124,53,.2)')+';'
+        +(on?'box-shadow:0 0 8px rgba(122,179,86,.35);':'');
       d.setAttribute('data-n',n);d.setAttribute('data-s',s);
       d.onclick=function(){var ni=parseInt(this.getAttribute('data-n')),si=parseInt(this.getAttribute('data-s'));
         grid[ni*STEPS+si]=grid[ni*STEPS+si]?0:1;if(grid[ni*STEPS+si])playNote(ni);rn()};
