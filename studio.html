@@ -183,6 +183,9 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
     <input type="range" min="0" max="100" value="0" oninput="GS.setHumanize(this.value)">
     <strong id="gs-humanize">0%</strong>
   </div>
+  <select class="gs-btn" id="gs-groove" onchange="GS.setGroove(this.value)" style="max-width:90px;font-size:.55rem;padding:4px 6px">
+    <option value="none">Groove: Off</option>
+  </select>
   <select class="gs-btn" id="gs-steps" onchange="GS.setSteps(this.value)" style="max-width:70px">
     <option value="16">16</option>
     <option value="32" selected>32</option>
@@ -996,6 +999,51 @@ var GS = (function(){
   var nextStepTime = 0;     // when the next step should play (in ctx.currentTime)
   var _rafId = null;
 
+  // ── Groove Templates ──
+  // Each template is 16 entries (one per 16th note in a bar), repeated for 32/64 steps.
+  // timeShift: fraction of step duration to shift (+late, -early). velScale: multiplier.
+  var activeGroove = 'none';
+  var GROOVE_TEMPLATES = {
+    'none':       null,
+    'MPC 60':     {name:'MPC 60 Swing',     t:[0,.042,0,.042, 0,.042,0,.042, 0,.042,0,.042, 0,.042,0,.042], v:[1,.75,1,.75, 1,.75,1,.75, 1,.75,1,.75, 1,.75,1,.75]},
+    'Dilla':      {name:'J Dilla (Drunk)',   t:[0,.06,-.02,.08, .01,.05,-.03,.07, .02,.04,0,.09, -.01,.06,.03,.05], v:[1,.7,.85,.65, .95,.6,.9,.7, 1,.65,.8,.6, .9,.7,.85,.55]},
+    'Shuffle':    {name:'Triplet Shuffle',   t:[0,.08,0,.08, 0,.08,0,.08, 0,.08,0,.08, 0,.08,0,.08], v:[1,.55,1,.55, 1,.55,1,.55, 1,.55,1,.55, 1,.55,1,.55]},
+    'Push':       {name:'Straight Push',     t:[-.01,-.015,-.01,-.015, -.01,-.015,-.01,-.015, -.01,-.015,-.01,-.015, -.01,-.015,-.01,-.015], v:[1.05,1,1.05,1, 1.05,1,1.05,1, 1.05,1,1.05,1, 1.05,1,1.05,1]},
+    'Laid Back':  {name:'Laid Back',         t:[.015,.02,.015,.02, .015,.02,.015,.02, .015,.02,.015,.02, .015,.02,.015,.02], v:[.95,.85,.95,.85, .95,.85,.95,.85, .95,.85,.95,.85, .95,.85,.95,.85]},
+    'SP-1200':    {name:'SP-1200',           t:[0,.035,.01,.04, 0,.03,.01,.045, 0,.035,.01,.04, 0,.03,.01,.045], v:[1,.8,.9,.7, 1,.75,.85,.65, 1,.8,.9,.7, 1,.75,.85,.65]},
+    'House':      {name:'House Bounce',      t:[0,.015,0,.015, 0,.015,0,.015, 0,.015,0,.015, 0,.015,0,.015], v:[1,.6,.85,.6, 1,.6,.85,.6, 1,.6,.85,.6, 1,.6,.85,.6]},
+    'Bossa':      {name:'Bossa Nova',        t:[0,.03,0,.025, 0,.035,0,.02, 0,.03,0,.025, 0,.035,0,.02], v:[1,.7,.8,.6, .9,.65,.85,.55, 1,.7,.8,.6, .9,.65,.85,.55]}
+  };
+
+  function applyGroove(stepNum, baseTime, baseVel){
+    if(activeGroove === 'none' || !GROOVE_TEMPLATES[activeGroove]) return {time:baseTime, vel:baseVel};
+    var g = GROOVE_TEMPLATES[activeGroove];
+    var gi = stepNum % 16;
+    var stepDur = 60.0 / bpm / 4;
+    return {time: baseTime + g.t[gi] * stepDur, vel: baseVel * g.v[gi]};
+  }
+
+  // ── Step Probability + Ratchets ──
+  // Stored per-layer per-variation as sparse objects: prob:{idx:0-100}, ratch:{idx:2-8}
+  // prob: percentage chance the step fires (default 100)
+  // ratch: number of retriggers within the step (default 1 = normal)
+
+  function shouldPlay(ld, idx){
+    if(!ld.prob) return true;
+    var p = ld.prob[idx];
+    if(p === undefined) return true;
+    return Math.random() * 100 < p;
+  }
+
+  function scheduleRatchets(fn, ratchCount, stepDur, time){
+    // fn(time) is called ratchCount times evenly within stepDur
+    if(!ratchCount || ratchCount <= 1){ fn(time); return; }
+    var interval = stepDur / ratchCount;
+    for(var i=0;i<ratchCount;i++){
+      fn(time + i * interval);
+    }
+  }
+
   function applyHumanize(baseVel, isAccent, baseTime){
     if(humanize === 0) return {vel: baseVel, time: baseTime};
     var h = humanize / 100;
@@ -1021,21 +1069,30 @@ var GS = (function(){
     if(!v) return;
     var anySolo = v.drums.solo || v.bass.solo || v.chords.solo || v.melody.solo;
 
+    _stepDur16 = 60.0 / bpm / 4;
+    // Apply groove template to base time
+    var gTime = applyGroove(stepNum, time, 1.0);
+
     // Drums
     if(!v.drums.mute && (!anySolo || v.drums.solo)){
       var dVol = (v.drums.vol !== undefined ? v.drums.vol : 80) / 80;
       var totalDrumRows = DRUMS.length + extraDrumRows.length;
       for(var d=0;d<totalDrumRows;d++){
-        var dCell = v.drums.grid[d*STEPS+stepNum];
-        if(dCell){
+        var dIdx = d*STEPS+stepNum;
+        var dCell = v.drums.grid[dIdx];
+        if(dCell && shouldPlay(v.drums, dIdx)){
           var dAcc = dCell === 2;
-          var hd = applyHumanize(dVol * (dAcc ? 1.0 : 0.7), dAcc, time);
-          playDrumPad(d, hd.time, hd.vel);
+          var dBase = dVol * gTime.vel * (dAcc ? 1.0 : 0.7);
+          var ratch = (v.drums.ratch && v.drums.ratch[dIdx]) || 1;
+          var dd = d; // capture for closure
+          scheduleRatchets(function(t){
+            var hd = applyHumanize(dBase, dAcc, t);
+            playDrumPad(dd, hd.time, hd.vel);
+          }, ratch, _stepDur16, gTime.time);
         }
       }
     }
     // Note layers — bass, chords, melody (with piano roll duration)
-    _stepDur16 = 60.0 / bpm / 4;
     var noteLids = ['bass','chords','melody'];
     var noteLTs = [1,2,3]; // LAYER_TYPES indices
     var notePlayFns = [playBassNote, playChordNote, playLeadNote];
@@ -1049,15 +1106,20 @@ var GS = (function(){
       for(var nr=0;nr<nNotes.length;nr++){
         var nIdx = nr*STEPS+stepNum;
         var nCell = nLd.grid[nIdx];
-        if(!nCell) continue; // no head here — tails are empty cells, skip
-        if(isNoteTail(nLd, nr, stepNum)) continue; // safety
+        if(!nCell) continue;
+        if(isNoteTail(nLd, nr, stepNum)) continue;
+        if(!shouldPlay(nLd, nIdx)) continue;
         var nLen = nLens[nIdx] || 1;
         var dur = nLen * _stepDur16;
         var nAcc = nCell === 2;
-        var nv = nVol * (nAcc ? 1.0 : 0.7);
-        var hn = applyHumanize(nv, nAcc, time);
-        if(layerSampleName[nLid]) playSamplePitched(layerSampleName[nLid], nNotes[nr].freq, hn.time, hn.vel, nLid, dur);
-        else notePlayFns[nl](nNotes[nr].freq, hn.time, hn.vel, dur);
+        var nv = nVol * gTime.vel * (nAcc ? 1.0 : 0.7);
+        var ratch = (nLd.ratch && nLd.ratch[nIdx]) || 1;
+        var captFreq = nNotes[nr].freq, captLid = nLid, captDur = dur, captNl = nl;
+        scheduleRatchets(function(t){
+          var hn = applyHumanize(nv, nAcc, t);
+          if(layerSampleName[captLid]) playSamplePitched(layerSampleName[captLid], captFreq, hn.time, hn.vel, captLid, captDur);
+          else notePlayFns[captNl](captFreq, hn.time, hn.vel, captDur);
+        }, ratch, _stepDur16, gTime.time);
       }
     }
     tickMetronome(time);
@@ -1227,6 +1289,17 @@ var GS = (function(){
         +'<span>Sus</span><input type="range" min="0" max="100" value="'+(adsrState.s*100)+'" style="width:45px;accent-color:var(--gold)" oninput="GS.setADSR(\''+lt.id+'\',\'s\',this.value/100)">'
         +'<span>Rel</span><input type="range" min="10" max="1000" value="'+(adsrState.r*1000)+'" style="width:45px;accent-color:var(--gold)" oninput="GS.setADSR(\''+lt.id+'\',\'r\',this.value/1000)">'
         +'</div>':'')
+        +'<div style="display:flex;gap:8px;padding:4px 8px;flex-wrap:wrap;font-size:.5rem;color:var(--muted);align-items:center;border-top:1px solid rgba(74,124,53,.06)">'
+        +'<span style="color:#E8A0BF">Prob</span><input type="range" min="1" max="100" value="'+(ld.probability!==undefined?ld.probability:100)+'" style="width:60px;accent-color:#E8A0BF" oninput="GS.setProb(\''+lt.id+'\',this.value)"><strong style="font-size:.5rem;color:var(--cream);min-width:22px" id="gs-prob-'+lt.id+'">'+(ld.probability!==undefined?ld.probability:100)+'%</strong>'
+        +'<span style="color:#a0c4e8">Ratchet</span><select style="font-size:.5rem;padding:2px 4px;background:rgba(26,31,23,.8);color:var(--cream);border:1px solid var(--border);border-radius:3px" onchange="GS.setRatchet(\''+lt.id+'\',this.value)">'
+        +'<option value="1"'+(ld.ratchetAll===1||!ld.ratchetAll?' selected':'')+'>1x</option>'
+        +'<option value="2"'+(ld.ratchetAll===2?' selected':'')+'>2x</option>'
+        +'<option value="3"'+(ld.ratchetAll===3?' selected':'')+'>3x</option>'
+        +'<option value="4"'+(ld.ratchetAll===4?' selected':'')+'>4x</option>'
+        +'<option value="6"'+(ld.ratchetAll===6?' selected':'')+'>6x</option>'
+        +'<option value="8"'+(ld.ratchetAll===8?' selected':'')+'>8x</option>'
+        +'</select>'
+        +'</div>'
         +'</div></div>';
     }
 
@@ -1282,6 +1355,17 @@ var GS = (function(){
       html+='</optgroup>';
     }
     scaleEl.innerHTML = html;
+    // Populate groove dropdown
+    var grooveEl = document.getElementById('gs-groove');
+    if(grooveEl){
+      html = '<option value="none">Groove: Off</option>';
+      for(var gk in GROOVE_TEMPLATES){
+        if(gk === 'none') continue;
+        var g = GROOVE_TEMPLATES[gk];
+        html += '<option value="'+gk+'">'+g.name+'</option>';
+      }
+      grooveEl.innerHTML = html;
+    }
   }
 
   function renderAll(){
@@ -1794,6 +1878,37 @@ var GS = (function(){
     setHumanize: function(val){
       humanize = parseInt(val);
       document.getElementById('gs-humanize').textContent = val + '%';
+    },
+    setGroove: function(val){
+      activeGroove = val;
+    },
+    setProb: function(lid, val){
+      var v = getCurrentVar(); if(!v) return;
+      v[lid].probability = parseInt(val);
+      // Apply uniform probability to all active cells
+      if(!v[lid].prob) v[lid].prob = {};
+      var rows = lid==='drums'?(DRUMS.length+extraDrumRows.length):getScaleNotes(LAYER_TYPES[lid==='bass'?1:lid==='chords'?2:3].octave).length;
+      for(var r=0;r<rows;r++){
+        for(var s=0;s<STEPS;s++){
+          var idx=r*STEPS+s;
+          if(v[lid].grid[idx]) v[lid].prob[idx] = parseInt(val);
+        }
+      }
+      var el = document.getElementById('gs-prob-'+lid);
+      if(el) el.textContent = val + '%';
+    },
+    setRatchet: function(lid, val){
+      var v = getCurrentVar(); if(!v) return;
+      v[lid].ratchetAll = parseInt(val);
+      // Apply uniform ratchet to all active cells
+      if(!v[lid].ratch) v[lid].ratch = {};
+      var rows = lid==='drums'?(DRUMS.length+extraDrumRows.length):getScaleNotes(LAYER_TYPES[lid==='bass'?1:lid==='chords'?2:3].octave).length;
+      for(var r=0;r<rows;r++){
+        for(var s=0;s<STEPS;s++){
+          var idx=r*STEPS+s;
+          if(v[lid].grid[idx]) v[lid].ratch[idx] = parseInt(val);
+        }
+      }
     },
     toggleAccent: function(){
       accentMode = !accentMode;
