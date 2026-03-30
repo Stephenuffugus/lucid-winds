@@ -27921,7 +27921,7 @@ var G=[
 {id:'wordsearch',n:'Root Words',i:'🔤',r:'Tap letters in sequence to find hidden botanical words.'},
 {id:'hanoi',n:'Root Stack',i:'🗼',r:'Move all discs to the right peg. Never place big on small.'},
 {id:'flood',n:'Autumn Leaves',i:'🍂',r:'Tap a leaf to flood from the top-left. Cover the forest floor in one color!'},
-{id:'pipe',n:'Pipe Flow',i:'🔗',r:'Rotate pipe tiles to connect the flow from start to end.'},
+{id:'pipe',n:'Vine Flow',i:'🌿',r:'Rotate vine tiles to connect all vines back to the root!'},
 {id:'chess',n:'Grove Chess',i:'♟',r:'Classic chess against AI. Tap a piece, tap where to move.'}
 ];
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
@@ -28817,60 +28817,49 @@ function GFL(a){var SZ=8,grid=[],moves=0,maxMoves=22;
   window._FFC=function(c){if(grid[0]===c)return;_play('tap');flood(grid[0],c);moves++;document.getElementById('FFm').textContent=moves;rn();if(grid.every(function(v){return v===grid[0]})){_e('game_win');_playWin();sm('🍂 Flooded in '+moves+'!');_sr('flood',{w:true,s:moves})}else if(moves>=maxMoves){_e('game_loss');_play('lose');sm('Out of moves!');_sr('flood',{w:false,s:moves})}};
   window._FFN=function(){gen();sm('');rn()};_FFN();}
 
-// ═══ PIPE CONNECT (Vine Flow) ═══
-function GPP(a){var SZ=6,grid=[],_rc=0,srcI=0,endI=0;
+// ═══ VINE FLOW (Net/Netwalk) ═══
+function GPP(a){var SZ=6,grid=[],_rc=0,srcI=14;
   var VI='assets/games/pipe/';
-  var IMG_ST=VI+'vine-straight.png',IMG_CR=VI+'vine-corner.png',IMG_SR=VI+'vine-source.png',IMG_EN=VI+'vine-end.png',IMG_BG=VI+'vine-bg.png';
-  // Exits at rot=0: straight=[up,down], corner=[up,right], source=[all], end=[left]
+  var IMG_ST=VI+'vine-straight.png',IMG_CR=VI+'vine-corner.png',IMG_SR=VI+'vine-source.png',IMG_EN=VI+'vine-end.png';
   var EX_ST=[1,0,1,0],EX_CR=[1,1,0,0],EX_SR=[1,1,1,1],EX_EN=[0,0,0,1];
   ms(a,'<span id="PPc">0</span>/'+SZ*SZ+' vines');mm(a);
   var gd=document.createElement('div');gd.className='lg';gd.id='PP';gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';gd.style.gap='2px';gd.style.width='clamp(300px,92vw,420px)';a.appendChild(gd);
   mc(a).innerHTML='<button class="gb" onclick="_PPN()">🔄 New</button>';
-  function adjCount(ci,vis){var cy=Math.floor(ci/SZ),cx=ci%SZ,c=0;if(cy>0&&!vis[ci-SZ])c++;if(cx<SZ-1&&!vis[ci+1])c++;if(cy<SZ-1&&!vis[ci+SZ])c++;if(cx>0&&!vis[ci-1])c++;return c}
-  function makePath(){
-    var vis=[];for(var i=0;i<SZ*SZ;i++)vis.push(false);
-    var path=[srcI];vis[srcI]=true;
-    while(path.length<SZ*SZ){
-      var cur=path[path.length-1],cy=Math.floor(cur/SZ),cx=cur%SZ,nb=[];
-      if(cy>0&&!vis[cur-SZ])nb.push(cur-SZ);if(cx<SZ-1&&!vis[cur+1])nb.push(cur+1);
-      if(cy<SZ-1&&!vis[cur+SZ])nb.push(cur+SZ);if(cx>0&&!vis[cur-1])nb.push(cur-1);
-      if(!nb.length)break;
-      nb.sort(function(x,y){return adjCount(x,vis)-adjCount(y,vis)});
-      var mn=adjCount(nb[0],vis),ties=[];
-      for(var t=0;t<nb.length;t++){if(adjCount(nb[t],vis)===mn)ties.push(nb[t])}
-      var pick=ties[Math.floor(Math.random()*ties.length)];
-      path.push(pick);vis[pick]=true;
-    }
-    return path;
-  }
+  function nbs(ci){var cy=Math.floor(ci/SZ),cx=ci%SZ,r=[];if(cy>0)r.push(ci-SZ);if(cx<SZ-1)r.push(ci+1);if(cy<SZ-1)r.push(ci+SZ);if(cx>0)r.push(ci-1);return r}
   function dirOf(f,t){var d=t-f;return d===-SZ?0:d===1?1:d===SZ?2:d===-1?3:-1}
   function gen(){
-    grid=[];_rc=0;
-    var path=makePath(),tries=0;
-    while(path.length<SZ*SZ&&tries<100){path=makePath();tries++}
-    endI=path[path.length-1];
-    var el=document.getElementById('PPc');if(el)el.parentNode.innerHTML='<span id="PPc">0</span>/'+path.length+' vines';
-    for(var i=0;i<SZ*SZ;i++)grid.push(null);
-    for(var p=0;p<path.length;p++){
-      var ci=path[p];
-      if(p===0){
-        grid[ci]={img:IMG_SR,ex:EX_SR,rot:0,fixed:true};
-      }else if(p===path.length-1){
-        var d=dirOf(ci,path[p-1]);
-        grid[ci]={img:IMG_EN,ex:EX_EN,rot:(d+1)%4,fixed:true};
+    grid=[];_rc=0;srcI=7+Math.floor(Math.random()*4)*SZ+Math.floor(Math.random()*4);
+    // Build spanning tree via randomized DFS from source
+    var adj=[];for(var i=0;i<SZ*SZ;i++)adj.push([]);
+    var vis=[];for(var i=0;i<SZ*SZ;i++)vis.push(false);
+    var stk=[srcI];vis[srcI]=true;
+    while(stk.length){var cur=stk[stk.length-1];var nb=nbs(cur);var unvis=[];
+      for(var j=0;j<nb.length;j++){if(!vis[nb[j]])unvis.push(nb[j])}
+      if(!unvis.length){stk.pop();continue}
+      var next=unvis[Math.floor(Math.random()*unvis.length)];
+      adj[cur].push(next);adj[next].push(cur);vis[next]=true;stk.push(next)}
+    // Map each cell to piece type based on tree degree and connection directions
+    for(var i=0;i<SZ*SZ;i++){
+      var dirs=[];for(var j=0;j<adj[i].length;j++)dirs.push(dirOf(i,adj[i][j]));
+      dirs.sort(function(a,b){return a-b});var deg=dirs.length;
+      if(deg>=3){
+        // Cross piece (source image) for 3+ connections — all 4 exits open
+        grid.push({img:IMG_SR,ex:EX_SR,rot:0})
+      }else if(deg===1){
+        // Dead end (bloom image) — single exit
+        var erm=[1,2,3,0];grid.push({img:IMG_EN,ex:EX_EN,rot:erm[dirs[0]]})
       }else{
-        var d1=dirOf(ci,path[p-1]),d2=dirOf(ci,path[p+1]);
-        var lo=Math.min(d1,d2),hi=Math.max(d1,d2);
-        if((lo===0&&hi===2)||(lo===1&&hi===3)){
-          grid[ci]={img:IMG_ST,ex:EX_ST,rot:lo===0?0:1,fixed:false};
+        var d0=dirs[0],d1=dirs[1];
+        if((d0===0&&d1===2)||(d0===1&&d1===3)){
+          grid.push({img:IMG_ST,ex:EX_ST,rot:d0===0?0:1})
         }else{
           var cm={1:0,6:1,11:2,3:3};
-          grid[ci]={img:IMG_CR,ex:EX_CR,rot:cm[lo*4+hi],fixed:false};
+          grid.push({img:IMG_CR,ex:EX_CR,rot:cm[Math.min(d0,d1)*4+Math.max(d0,d1)]})
         }
       }
     }
-    for(var i=0;i<SZ*SZ;i++){if(!grid[i])grid[i]={img:IMG_BG,ex:[0,0,0,0],rot:0,fixed:true}}
-    for(var i=0;i<SZ*SZ;i++){if(!grid[i].fixed){var s=Math.floor(Math.random()*3)+1;grid[i].rot=(grid[i].rot+s)%4}}
+    // Scramble all tiles 1-3 clicks
+    for(var i=0;i<SZ*SZ;i++){grid[i].rot=(grid[i].rot+1+Math.floor(Math.random()*3))%4}
   }
   function pExit(i){var g=grid[i],r=g.rot%4,e=g.ex.slice();for(var rr=0;rr<r;rr++){e=[e[3],e[0],e[1],e[2]];}return e}
   function _ppCheck(){
@@ -28880,17 +28869,16 @@ function GPP(a){var SZ=6,grid=[],_rc=0,srcI=0,endI=0;
       var nb=[cy>0?ci-SZ:-1,cx<SZ-1?ci+1:-1,cy<SZ-1?ci+SZ:-1,cx>0?ci-1:-1];
       var op=[2,3,0,1];
       for(var d=0;d<4;d++){var ni=nb[d];if(ni<0||vis[ni])continue;if(e[d]){var ne=pExit(ni);if(ne[op[d]]){vis[ni]=true;q.push(ni);cnt++}}}}
-    return {won:vis[endI],count:cnt,vis:vis}}
+    return {count:cnt,vis:vis}}
   function rn(){gd.innerHTML='';var st=_ppCheck();var el=document.getElementById('PPc');if(el)el.textContent=st.count;
     for(var i=0;i<SZ*SZ;i++){var d=document.createElement('div');d.className='lc';var g=grid[i];
       d.style.background='url('+g.img+') center/cover #1a1e16';d.style.transform='rotate('+(g.rot*90)+'deg)';d.style.transition='transform 0.15s ease';
       if(st.vis[i])d.style.boxShadow='inset 0 0 12px rgba(122,179,86,.4)';
-      if(i===srcI){d.style.boxShadow='0 0 10px rgba(122,179,86,.6),inset 0 0 12px rgba(122,179,86,.4)'}
-      else if(i===endI&&st.vis[i]){d.style.boxShadow='0 0 10px rgba(200,168,75,.6),inset 0 0 12px rgba(122,179,86,.4)'}
-      else if(i===endI){d.style.boxShadow='0 0 10px rgba(200,168,75,.6)'}
-      if(!g.fixed){d.setAttribute('data-i',i);d.onclick=function(){var idx=parseInt(this.getAttribute('data-i'));_play('click');grid[idx].rot=(grid[idx].rot+1)%4;_rc++;rn();var res=_ppCheck();if(res.won){_e('game_win');_playWin();sm('🌿 Root to bloom! '+_rc+' rotations');_sr('pipe',{w:true,s:_rc})}}}
+      if(i===srcI)d.style.border='2px solid rgba(122,179,86,.7)';
+      d.setAttribute('data-i',i);d.onclick=function(){var idx=parseInt(this.getAttribute('data-i'));_play('click');grid[idx].rot=(grid[idx].rot+1)%4;_rc++;rn();
+        if(_ppCheck().count===SZ*SZ){_e('game_win');_playWin();sm('🌿 All vines connected! '+_rc+' rotations');_sr('pipe',{w:true,s:_rc})}};
       gd.appendChild(d)}}
-  window._PPN=function(){gen();sm('Connect root to bloom');rn()};_PPN();}
+  window._PPN=function(){gen();sm('Rotate vines \u2014 connect all to the root');rn()};_PPN();}
 
 // ═══ GROVE CHESS ═══
 function GCH(a){
