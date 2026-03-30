@@ -1123,7 +1123,7 @@
     .cs-card-back .dna-val{font-size:0.65rem;}
     /* ═══ CARD BACK TYPOGRAPHY ═══ */
     .cb-nameplate{height:auto;max-height:1.4rem;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0.1rem 0.4rem;background:transparent;border-radius:3px;}
-    .cb-name{font-family:'Cinzel',serif;font-size:0.72rem;font-weight:700;text-align:center;letter-spacing:0.05em;text-shadow:0 1px 4px rgba(0,0,0,0.8),0 0 12px rgba(0,0,0,0.4);white-space:nowrap;display:block;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+    .cb-name{font-family:'Playfair Display',serif;font-size:0.72rem;font-weight:700;text-align:center;letter-spacing:0.05em;text-shadow:0 1px 4px rgba(0,0,0,0.8),0 0 12px rgba(0,0,0,0.4);white-space:nowrap;display:block;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
     .cb-rarity{font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:0.15em;text-align:center;margin-top:0.15rem;}
     .cb-ledger-label{font-family:'Outfit',sans-serif;font-size:0.55rem;font-weight:600;letter-spacing:0.06em;color:var(--muted);}
     .cb-ledger-value{font-family:'Outfit',sans-serif;font-size:0.55rem;font-weight:400;color:var(--cream);}
@@ -2851,6 +2851,7 @@
     /* ── GAME AREA CONTAINER ── */
     #fg-ag{display:none;flex-direction:column;padding:0 0 calc(var(--nav-h,58px) + var(--sb,0px)) 0;touch-action:pan-y;}
     #fg-ag.on{display:flex}
+    #fg-ag.sol{background:radial-gradient(ellipse at 50% 30%,rgba(18,32,14,.95) 0%,rgba(8,14,6,.98) 60%,rgba(4,8,3,1) 100%);position:relative;z-index:1}
 
     /* ══════════════════════════════════════════════════════════════════════
        SHARED COMPONENTS — consistent across all 21 games
@@ -2888,7 +2889,7 @@
     .gsl:focus{border-color:rgba(74,124,53,.4);outline:none}
 
     /* Rules / How to Play — prominent instructional card */
-    .gr{font-size:clamp(.52rem,1.5vw,.66rem);color:rgba(200,195,178,.65);text-align:center;padding:clamp(10px,3vw,16px) clamp(16px,5vw,24px);line-height:1.7;flex-shrink:0;background:rgba(26,31,23,.4);border:1px solid rgba(74,124,53,.08);border-radius:clamp(8px,2.5vw,12px);margin:clamp(6px,2vw,10px) clamp(10px,3vw,16px);font-style:normal;letter-spacing:.015em;box-shadow:inset 0 0 16px rgba(0,0,0,.06);animation:boardFadeIn .5s ease .1s both}
+    .gr{font-size:clamp(.48rem,1.3vw,.58rem);color:rgba(200,195,178,.5);text-align:center;padding:clamp(4px,1.5vw,6px) clamp(10px,3vw,16px);line-height:1.5;flex-shrink:0;background:rgba(26,31,23,.3);border:1px solid rgba(74,124,53,.06);border-radius:clamp(6px,2vw,10px);margin:clamp(2px,1vw,4px) clamp(6px,2vw,10px);font-style:normal;letter-spacing:.015em;animation:boardFadeIn .5s ease .1s both}
     /* ══════════════════════════════════════════════════════════════════════
        PRIORITY 1: SET — The Core Pattern Matcher
        ══════════════════════════════════════════════════════════════════════ */
@@ -3016,11 +3017,11 @@
     .fdie:active{transform:scale(.9) rotate(-3deg);transition-duration:.06s}
 
     /* ── Shared card classes — ~2x bigger base, scales up for tablets/desktop ── */
-    .gc{width:clamp(56px,13.5vw,110px);height:clamp(78px,19vw,154px);border-radius:clamp(5px,1.4vw,10px);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:clamp(.75rem,2.4vw,1.1rem);font-weight:900;transition:all .15s ease;-webkit-tap-highlight-color:transparent;flex-shrink:0;box-sizing:border-box}
-    .gc-up{background-color:rgba(26,31,23,.92);background-size:cover;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(74,124,53,.35);color:var(--cream);cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,0.3);position:relative;overflow:hidden}
-    .gc-dn{background-color:rgba(30,38,26,.8);background-size:cover;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(42,48,37,.45);cursor:default}
+    .gc{width:clamp(56px,13.5vw,110px);height:clamp(78px,19vw,154px);border-radius:clamp(5px,1.4vw,10px);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:clamp(.75rem,2.4vw,1.1rem);font-weight:900;transition:all .15s ease;-webkit-tap-highlight-color:transparent;flex-shrink:0;box-sizing:border-box}
+    .gc-up{background-color:rgba(20,26,18,.94);background-size:cover;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(74,124,53,.4);color:var(--cream);cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,0.3);position:relative;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.35),inset 0 0 12px rgba(74,124,53,.06)}
+    .gc-dn{background-color:rgba(30,38,26,.8);background-size:cover;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(42,48,37,.5);cursor:default;box-shadow:0 2px 5px rgba(0,0,0,.3)}
     .gc-sel{box-shadow:inset 0 0 0 99px rgba(200,168,78,.18),0 0 8px rgba(200,168,78,.4)!important;border-color:rgba(200,168,78,.5)!important}
-    .gc-empty{background:transparent;border:1.5px dashed rgba(74,124,53,.15)}
+    .gc-empty{background:rgba(14,20,12,.4);border:1.5px dashed rgba(74,124,53,.2);border-radius:clamp(5px,1.4vw,10px)}
     .gc-fnd{background-color:rgba(26,31,23,.5);background-size:50%;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(74,124,53,.2)}
     .gc-disc{box-shadow:inset 0 0 0 99px rgba(200,168,78,.12);border:2px solid rgba(200,168,78,.35);color:var(--gold);font-size:clamp(.8rem,2.5vw,1rem);font-weight:800}
     .gc-red{color:#daa520}
@@ -3029,13 +3030,13 @@
     .gc-stk .gc:last-child{height:clamp(78px,19vw,154px)}
     .gc:active{transform:scale(.95);transition-duration:.06s}
     /* ── Pyramid / TriPeaks cards ── */
-    .tpc{width:clamp(48px,12vw,80px);height:clamp(67px,16.8vw,112px);border-radius:clamp(4px,1vw,8px);display:inline-flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:clamp(.7rem,2.2vw,1rem);font-weight:900;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+    .tpc{width:clamp(48px,12vw,80px);height:clamp(67px,16.8vw,112px);border-radius:clamp(4px,1vw,8px);display:inline-flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:clamp(.7rem,2.2vw,1rem);font-weight:900;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s;box-shadow:0 2px 6px rgba(0,0,0,.25)}
     .tpc:active{transform:translateY(-3px) scale(.97)}
-    .tpd{width:clamp(56px,13.5vw,110px);height:clamp(78px,19vw,154px);border-radius:clamp(5px,1.2vw,10px);display:inline-flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:clamp(.85rem,2.8vw,1.15rem);font-weight:900;box-shadow:0 3px 8px rgba(0,0,0,.25)}
+    .tpd{width:clamp(56px,13.5vw,110px);height:clamp(78px,19vw,154px);border-radius:clamp(5px,1.2vw,10px);display:inline-flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:clamp(.85rem,2.8vw,1.15rem);font-weight:900;box-shadow:0 3px 8px rgba(0,0,0,.25)}
     /* ── Klondike / FreeCell / Spider (same as .gc) ── */
-    .kcard{width:clamp(56px,13.5vw,110px);height:clamp(78px,19vw,154px);border-radius:clamp(5px,1.4vw,10px);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:clamp(.75rem,2.4vw,1.1rem);font-weight:900;box-shadow:0 2px 5px rgba(0,0,0,.22)}
-    .kcard-up{background-color:rgba(26,31,23,.92);background-size:cover;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(74,124,53,.35);color:var(--cream);position:relative;overflow:hidden}
-    .kcard-dn{background-color:rgba(30,38,26,.8);background-size:cover;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(42,48,37,.45)}
+    .kcard{width:clamp(56px,13.5vw,110px);height:clamp(78px,19vw,154px);border-radius:clamp(5px,1.4vw,10px);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:clamp(.75rem,2.4vw,1.1rem);font-weight:900;box-shadow:0 2px 5px rgba(0,0,0,.22)}
+    .kcard-up{background-color:rgba(20,26,18,.94);background-size:cover;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(74,124,53,.4);color:var(--cream);position:relative;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.35),inset 0 0 12px rgba(74,124,53,.06)}
+    .kcard-dn{background-color:rgba(30,38,26,.8);background-size:cover;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(42,48,37,.5);box-shadow:0 2px 5px rgba(0,0,0,.3)}
     .kcard-sel{box-shadow:inset 0 0 0 99px rgba(200,168,78,.18),0 0 8px rgba(200,168,78,.4);border-color:rgba(200,168,78,.5)}
     .kcard-fnd{background-color:rgba(26,31,23,.45);background-size:50%;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(74,124,53,.2)}
     .kcard-empty{border:1.5px dashed rgba(74,124,53,.12);border-radius:clamp(5px,1.4vw,10px)}
@@ -28243,6 +28244,8 @@ function _restartCurrentGame(){
   if(_a==='set'){_st();return}
   var ag=document.getElementById('fg-ag');if(!ag)return;
   ag.innerHTML='';
+  var _solG2={golf:1,klondike:1,spider:1,freecell:1,pyramid:1,tripeaks:1};
+  ag.classList.toggle('sol',!!_solG2[_a]);
   var gi=null;for(var i=0;i<G.length;i++)if(G[i].id===_a){gi=G[i];break}
   if(gi){var r=document.createElement('div');r.className='gr';r.textContent='📖 '+gi.r;ag.appendChild(r)}
   var fn={memory:GM,merge:GR,simon:GS,lights:GL,mines:GN,sudoku:GU,wordsearch:GW,hanoi:GH,flood:GFL,pipe:GPP,chess:GCH,c4:GC4,song:GSG,golf:GGF,klondike:GKL,spider:GSP,freecell:GFC,pyramid:GPY,tripeaks:GTP};
@@ -28382,8 +28385,9 @@ window._cs=function(){document.getElementById('fg-sc').classList.remove('open')}
 window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;_m=Math.min(_hashFilled,30);_dm=1.0;
   document.querySelectorAll('.fg-c').forEach(function(c){c.classList.toggle('on',c.getAttribute('data-g')===id)});
   var sw=document.getElementById('sw'),ag=document.getElementById('fg-ag'),gps=document.getElementById('gp-strip');
-  if(id==='set'){sw.style.display='';ag.classList.remove('on');ag.innerHTML='';if(gps){gps.classList.add('on');try{_updateGP()}catch(e){}}return}
-  sw.style.display='none';ag.classList.add('on');ag.innerHTML='';
+  var _solGames={golf:1,klondike:1,spider:1,freecell:1,pyramid:1,tripeaks:1};
+  if(id==='set'){sw.style.display='';ag.classList.remove('on');ag.classList.remove('sol');ag.innerHTML='';if(gps){gps.classList.add('on');try{_updateGP()}catch(e){}}return}
+  sw.style.display='none';ag.classList.add('on');ag.classList.toggle('sol',!!_solGames[id]);ag.innerHTML='';
   if(gps){gps.classList.add('on');try{_updateGP()}catch(e){console.warn('[GP]',e)}}
   var gi=null;for(var i=0;i<G.length;i++)if(G[i].id===id){gi=G[i];break}
   if(gi){var r=document.createElement('div');r.className='gr';r.textContent='📖 '+gi.r;ag.appendChild(r)}
@@ -29953,20 +29957,20 @@ function _cdEl(card){
     if(_cdIsRed(card.s))d.className+=' gc-red';
     var clr=_SUIT_CLR[card.s];
     var rnk=_cdRnk(card.r);
+    var sym=_SUIT_SYM[card.s];
     var art=_cdArt(card.s,card.r);
+    // Corner label: rank + suit symbol
+    var corner='<div style="position:absolute;top:3px;left:4px;line-height:1;z-index:2;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:0">'
+      +'<div style="color:'+clr+';font-size:clamp(.7rem,2.2vw,1rem);font-weight:900;font-style:italic;text-shadow:0 1px 3px #000,0 0 8px #000">'+rnk+'</div>'
+      +'<div style="font-size:clamp(.45rem,1.3vw,.6rem);line-height:1;filter:drop-shadow(0 1px 2px #000)">'+sym+'</div>'
+      +'</div>';
     if(art){
-      // Face card or ace — full art background + corner label
       d.style.backgroundImage="url('"+art+"')";
-      d.innerHTML='<div style="position:absolute;top:3px;left:4px;line-height:1;z-index:2;pointer-events:none">'
-        +'<div style="color:'+clr+';font-size:clamp(.6rem,1.8vw,.85rem);font-weight:800;text-shadow:0 1px 3px #000,0 0 8px #000">'+rnk+'</div>'
-        +'</div>';
+      d.innerHTML=corner;
     }else{
-      // Number card — rank + centered suit pip image
       var pip=_CD_BASE+_SUIT_NAME[card.s]+'.png';
-      d.innerHTML='<div style="position:absolute;top:3px;left:4px;line-height:1;z-index:2;pointer-events:none">'
-        +'<div style="color:'+clr+';font-size:clamp(.6rem,1.8vw,.85rem);font-weight:800;text-shadow:0 1px 3px #000,0 0 8px #000">'+rnk+'</div>'
-        +'</div>'
-        +'<img src="'+pip+'" style="width:55%;height:auto;opacity:.85;filter:drop-shadow(0 0 4px rgba(0,0,0,.5));pointer-events:none" alt="">';
+      d.innerHTML=corner
+        +'<img src="'+pip+'" style="width:50%;height:auto;opacity:.7;filter:drop-shadow(0 0 6px rgba(0,0,0,.6));pointer-events:none" alt="">';
     }
   }else{
     d.className+=' gc-dn';
