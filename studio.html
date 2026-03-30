@@ -371,6 +371,37 @@ var GS = (function(){
     'FM Bell':function(freq,t,v){var c=getCtx(),dst=getDest('melody');var mod=c.createOscillator(),mg=c.createGain(),car=c.createOscillator(),cg=c.createGain();mod.type='sine';mod.frequency.value=freq*3.5;mg.gain.setValueAtTime(freq*4,t);mg.gain.exponentialRampToValueAtTime(freq*0.01,t+0.5);car.type='sine';car.frequency.value=freq;cg.gain.setValueAtTime(0.07*v,t);cg.gain.exponentialRampToValueAtTime(0.001,t+0.6);mod.connect(mg);mg.connect(car.frequency);car.connect(cg);cg.connect(dst);mod.start(t);car.start(t);mod.stop(t+0.62);car.stop(t+0.62)},
     'Pluck':function(freq,t,v){var c=getCtx(),dst=getDest('melody');var o=c.createOscillator(),g=c.createGain(),f=c.createBiquadFilter();o.type='sawtooth';o.frequency.value=freq;f.type='lowpass';f.frequency.setValueAtTime(4000,t);f.frequency.exponentialRampToValueAtTime(300,t+0.08);g.gain.setValueAtTime(0.1*v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.12);o.connect(f);f.connect(g);g.connect(dst);o.start(t);o.stop(t+0.14)}
   };
+  // ── Custom drum pad samples ──
+  var drumSamples = [null,null,null,null,null,null,null,null]; // per-pad sample name or null
+
+  function playDrumPad(idx, t, vol){
+    var sName = drumSamples[idx];
+    if(sName && sampleBuffers[sName]){
+      // Play custom sample through drum bus
+      var c=getCtx(),dst=getDest('drums');
+      var src=c.createBufferSource(),g=c.createGain();
+      src.buffer=sampleBuffers[sName];g.gain.value=(vol||1)*0.5;
+      src.connect(g);g.connect(dst);src.start(t);
+    } else {
+      DRUMS[idx].syn(t, vol);
+    }
+  }
+
+  // ── Pitched sample playback for note layers ──
+  var layerSampleName = {bass:null,chords:null,melody:null}; // sample name or null = use synth
+  var SAMPLE_ROOT_FREQ = 261.63; // assume samples are at C4
+
+  function playSamplePitched(sName, freq, t, vol, lid){
+    var buf = sampleBuffers[sName]; if(!buf) return;
+    var c=getCtx(),dst=getDest(lid);
+    var src=c.createBufferSource(),g=c.createGain();
+    src.buffer=buf;
+    src.playbackRate.value = freq / SAMPLE_ROOT_FREQ;
+    g.gain.setValueAtTime((vol||1)*0.12, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + Math.min(buf.duration / src.playbackRate.value, 0.5));
+    src.connect(g);g.connect(dst);src.start(t);
+  }
+
   function getPreset(lid){var v=getCurrentVar();if(!v||!v[lid])return '';return v[lid].preset||''}
   function playBassNote(freq,t,vol){(BASS_PRESETS[getPreset('bass')]||BASS_PRESETS['Pluck Bass'])(freq,t,vol||1)}
   function playChordNote(freq,t,vol){(CHORD_PRESETS[getPreset('chords')]||CHORD_PRESETS['Warm Pad'])(freq,t,vol||1)}
@@ -498,9 +529,34 @@ var GS = (function(){
     var html = '';
     for(var name in sampleBuffers){
       var dur = sampleBuffers[name].duration.toFixed(2);
-      html += '<div class="gs-sample-chip" onclick="GS.editSample(\''+name+'\')">'
+      // Check if assigned anywhere
+      var assigned = [];
+      for(var di=0;di<drumSamples.length;di++){if(drumSamples[di]===name)assigned.push(DRUMS[di].name)}
+      for(var lid in layerSampleName){if(layerSampleName[lid]===name)assigned.push(lid)}
+      var assignStr = assigned.length ? ' → '+assigned.join(', ') : '';
+      html += '<div style="margin-bottom:6px">'
+        +'<div class="gs-sample-chip" onclick="GS.editSample(\''+name+'\')">'
         +'🔊 '+name+' <span style="color:var(--muted)">'+dur+'s</span>'
-        +'<span class="del" onclick="event.stopPropagation();GS.deleteSample(\''+name+'\')">✕</span></div>';
+        +(assignStr?'<span style="color:var(--sage);font-size:.45rem">'+assignStr+'</span>':'')
+        +'<span class="del" onclick="event.stopPropagation();GS.deleteSample(\''+name+'\')">✕</span></div>'
+        +'<div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:3px">'
+        +'<div style="font-size:.4rem;color:var(--muted);padding:2px 0">Assign:</div>';
+      // Drum pad assign buttons
+      for(var di=0;di<DRUMS.length;di++){
+        var isOn = drumSamples[di]===name;
+        html += '<div class="gs-sample-chip" style="font-size:.4rem;padding:3px 6px;min-height:24px;'+(isOn?'border-color:#e88a4a;color:#e88a4a;':'')
+          +'" onclick="GS.assignDrum('+di+',\''+name+'\')">'+DRUMS[di].name+'</div>';
+      }
+      // Note layer assign buttons
+      var noteLayers = ['bass','chords','melody'];
+      var noteColors = {bass:'#c75050',chords:'#a0c4e8',melody:'#c8a84b'};
+      for(var ni=0;ni<noteLayers.length;ni++){
+        var nl = noteLayers[ni];
+        var isOnN = layerSampleName[nl]===name;
+        html += '<div class="gs-sample-chip" style="font-size:.4rem;padding:3px 6px;min-height:24px;'+(isOnN?'border-color:'+noteColors[nl]+';color:'+noteColors[nl]+';':'')
+          +'" onclick="GS.assignLayer(\''+nl+'\',\''+name+'\')">'+nl+'</div>';
+      }
+      html += '</div></div>';
     }
     if(!html) html = '<div style="font-size:.5rem;color:var(--muted)">No samples yet — record or import one</div>';
     el.innerHTML = html;
@@ -668,38 +724,47 @@ var GS = (function(){
     // Check solo state — if any layer is soloed, only play soloed layers
     var anySolo = v.drums.solo || v.bass.solo || v.chords.solo || v.melody.solo;
 
-    // Play drums
+    // Play drums (custom samples or synth)
     if(!v.drums.mute && (!anySolo || v.drums.solo)){
       var dVol = (v.drums.vol !== undefined ? v.drums.vol : 80) / 80;
       for(var d=0;d<DRUMS.length;d++){
-        if(v.drums.grid[d*STEPS+step]) DRUMS[d].syn(t, dVol);
+        if(v.drums.grid[d*STEPS+step]) playDrumPad(d, t, dVol);
       }
     }
 
-    // Play bass
+    // Play bass (sample or synth)
     if(!v.bass.mute && (!anySolo || v.bass.solo)){
       var bVol = (v.bass.vol !== undefined ? v.bass.vol : 80) / 80;
       var bassNotes = getScaleNotes(LAYER_TYPES[1].octave);
       for(var b=0;b<bassNotes.length;b++){
-        if(v.bass.grid[b*STEPS+step]) playBassNote(bassNotes[b].freq, t, bVol);
+        if(v.bass.grid[b*STEPS+step]){
+          if(layerSampleName.bass) playSamplePitched(layerSampleName.bass, bassNotes[b].freq, t, bVol, 'bass');
+          else playBassNote(bassNotes[b].freq, t, bVol);
+        }
       }
     }
 
-    // Play chords
+    // Play chords (sample or synth)
     if(!v.chords.mute && (!anySolo || v.chords.solo)){
       var cVol = (v.chords.vol !== undefined ? v.chords.vol : 80) / 80;
       var chordNotes = getScaleNotes(LAYER_TYPES[2].octave);
       for(var c=0;c<chordNotes.length;c++){
-        if(v.chords.grid[c*STEPS+step]) playChordNote(chordNotes[c].freq, t, cVol);
+        if(v.chords.grid[c*STEPS+step]){
+          if(layerSampleName.chords) playSamplePitched(layerSampleName.chords, chordNotes[c].freq, t, cVol, 'chords');
+          else playChordNote(chordNotes[c].freq, t, cVol);
+        }
       }
     }
 
-    // Play melody
+    // Play melody (sample or synth)
     if(!v.melody.mute && (!anySolo || v.melody.solo)){
       var mVol = (v.melody.vol !== undefined ? v.melody.vol : 80) / 80;
       var melNotes = getScaleNotes(LAYER_TYPES[3].octave);
       for(var m=0;m<melNotes.length;m++){
-        if(v.melody.grid[m*STEPS+step]) playLeadNote(melNotes[m].freq, t, mVol);
+        if(v.melody.grid[m*STEPS+step]){
+          if(layerSampleName.melody) playSamplePitched(layerSampleName.melody, melNotes[m].freq, t, mVol, 'melody');
+          else playLeadNote(melNotes[m].freq, t, mVol);
+        }
       }
     }
 
@@ -953,12 +1018,13 @@ var GS = (function(){
       // Preview sound on tap
       if(v[lid].grid[idx]){
         var t = getCtx().currentTime;
-        if(lid === 'drums') DRUMS[r].syn(t);
+        if(lid === 'drums') playDrumPad(r, t, 1);
         else{
           var oct = lid==='bass'?LAYER_TYPES[1].octave:lid==='chords'?LAYER_TYPES[2].octave:LAYER_TYPES[3].octave;
           var notes = getScaleNotes(oct);
           if(notes[r]){
-            if(lid==='bass') playBassNote(notes[r].freq, t, 1);
+            if(layerSampleName[lid]) playSamplePitched(layerSampleName[lid], notes[r].freq, t, 1, lid);
+            else if(lid==='bass') playBassNote(notes[r].freq, t, 1);
             else if(lid==='chords') playChordNote(notes[r].freq, t, 1);
             else playLeadNote(notes[r].freq, t, 1);
           }
@@ -1346,6 +1412,26 @@ var GS = (function(){
       _trimStart = 0; _trimEnd = 1;
       drawWaveform(_editBuffer);
       document.getElementById('gs-rec-status').textContent = 'Editing: '+name+' ('+_editBuffer.duration.toFixed(2)+'s)';
+    },
+    assignDrum: function(padIdx, name){
+      // Toggle — if already assigned, unassign
+      if(drumSamples[padIdx] === name) drumSamples[padIdx] = null;
+      else drumSamples[padIdx] = name;
+      renderSampleList();
+      // Preview the sound
+      var t = getCtx().currentTime;
+      playDrumPad(padIdx, t, 1);
+    },
+    assignLayer: function(lid, name){
+      // Toggle
+      if(layerSampleName[lid] === name) layerSampleName[lid] = null;
+      else layerSampleName[lid] = name;
+      renderSampleList();
+      // Preview at middle pitch
+      if(layerSampleName[lid]){
+        var t = getCtx().currentTime;
+        playSamplePitched(name, SAMPLE_ROOT_FREQ, t, 1, lid);
+      }
     },
     deleteSample: function(name){
       if(!confirm('Delete "'+name+'"?')) return;
