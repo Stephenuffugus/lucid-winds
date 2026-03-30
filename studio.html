@@ -821,98 +821,115 @@ var GS = (function(){
     return true;
   }
 
-  function tick(){
+  // ═══ ROCK-SOLID TRANSPORT — Web Audio Clock Scheduling ═══
+  // Based on Chris Wilson's "A Tale of Two Clocks" — the industry standard.
+  // Audio events are scheduled ahead of time using ctx.currentTime (sample-accurate).
+  // A JS timer just triggers the scheduler frequently. Visual updates run on RAF.
+  var LOOK_AHEAD = 0.1;    // schedule 100ms ahead
+  var SCHED_INTERVAL = 25;  // check every 25ms
+  var nextStepTime = 0;     // when the next step should play (in ctx.currentTime)
+  var _rafId = null;
+
+  function getStepDuration(stepNum){
+    var base = 60.0 / bpm / 4; // duration of one 16th note in seconds
+    if(swing === 0) return base;
+    var swingRatio = swing / 100;
+    if(stepNum % 2 === 0) return base * (1 + swingRatio * 0.5);
+    else return base * (1 - swingRatio * 0.5);
+  }
+
+  function scheduleStep(stepNum, time){
     var v = getCurrentVar();
     if(!v) return;
-    var t = getCtx().currentTime;
-
-    // Check solo state — if any layer is soloed, only play soloed layers
     var anySolo = v.drums.solo || v.bass.solo || v.chords.solo || v.melody.solo;
 
-    // Play drums (custom samples or synth)
+    // Drums
     if(!v.drums.mute && (!anySolo || v.drums.solo)){
       var dVol = (v.drums.vol !== undefined ? v.drums.vol : 80) / 80;
-      for(var d=0;d<DRUMS.length;d++){
-        if(v.drums.grid[d*STEPS+step]) playDrumPad(d, t, dVol);
+      var totalDrumRows = DRUMS.length + extraDrumRows.length;
+      for(var d=0;d<totalDrumRows;d++){
+        if(v.drums.grid[d*STEPS+stepNum]) playDrumPad(d, time, dVol);
       }
     }
-
-    // Play bass (sample or synth)
+    // Bass
     if(!v.bass.mute && (!anySolo || v.bass.solo)){
       var bVol = (v.bass.vol !== undefined ? v.bass.vol : 80) / 80;
       var bassNotes = getScaleNotes(LAYER_TYPES[1].octave);
       for(var b=0;b<bassNotes.length;b++){
-        if(v.bass.grid[b*STEPS+step]){
-          if(layerSampleName.bass) playSamplePitched(layerSampleName.bass, bassNotes[b].freq, t, bVol, 'bass');
-          else playBassNote(bassNotes[b].freq, t, bVol);
+        if(v.bass.grid[b*STEPS+stepNum]){
+          if(layerSampleName.bass) playSamplePitched(layerSampleName.bass, bassNotes[b].freq, time, bVol, 'bass');
+          else playBassNote(bassNotes[b].freq, time, bVol);
         }
       }
     }
-
-    // Play chords (sample or synth)
+    // Chords
     if(!v.chords.mute && (!anySolo || v.chords.solo)){
       var cVol = (v.chords.vol !== undefined ? v.chords.vol : 80) / 80;
       var chordNotes = getScaleNotes(LAYER_TYPES[2].octave);
       for(var c=0;c<chordNotes.length;c++){
-        if(v.chords.grid[c*STEPS+step]){
-          if(layerSampleName.chords) playSamplePitched(layerSampleName.chords, chordNotes[c].freq, t, cVol, 'chords');
-          else playChordNote(chordNotes[c].freq, t, cVol);
+        if(v.chords.grid[c*STEPS+stepNum]){
+          if(layerSampleName.chords) playSamplePitched(layerSampleName.chords, chordNotes[c].freq, time, cVol, 'chords');
+          else playChordNote(chordNotes[c].freq, time, cVol);
         }
       }
     }
-
-    // Play melody (sample or synth)
+    // Melody
     if(!v.melody.mute && (!anySolo || v.melody.solo)){
       var mVol = (v.melody.vol !== undefined ? v.melody.vol : 80) / 80;
       var melNotes = getScaleNotes(LAYER_TYPES[3].octave);
       for(var m=0;m<melNotes.length;m++){
-        if(v.melody.grid[m*STEPS+step]){
-          if(layerSampleName.melody) playSamplePitched(layerSampleName.melody, melNotes[m].freq, t, mVol, 'melody');
-          else playLeadNote(melNotes[m].freq, t, mVol);
+        if(v.melody.grid[m*STEPS+stepNum]){
+          if(layerSampleName.melody) playSamplePitched(layerSampleName.melody, melNotes[m].freq, time, mVol, 'melody');
+          else playLeadNote(melNotes[m].freq, time, mVol);
         }
       }
     }
+    tickMetronome(time);
+  }
 
-    tickMetronome(t);
-    renderStep();
-    step = (step + 1) % STEPS;
-    if(step === 0){
-      if(arrMode && song.arrangement.length > 1){
-        arrIdx = (arrIdx + 1) % song.arrangement.length;
-        loadArrBlock(arrIdx);
-      } else if(!looping){
-        stop(); return;
+  function scheduler(){
+    var c = getCtx();
+    // Schedule all steps that fall within the look-ahead window
+    while(nextStepTime < c.currentTime + LOOK_AHEAD){
+      scheduleStep(step, nextStepTime);
+      // Advance step
+      var dur = getStepDuration(step);
+      nextStepTime += dur;
+      step = (step + 1) % STEPS;
+      if(step === 0){
+        if(arrMode && song.arrangement.length > 1){
+          arrIdx = (arrIdx + 1) % song.arrangement.length;
+          loadArrBlock(arrIdx);
+        } else if(!looping){
+          stop(); return;
+        }
       }
     }
-    if(playing) scheduleTick();
   }
 
-  function getTickMs(){
-    var base = 60000 / bpm / 4;
-    if(swing === 0) return base;
-    // Swing: odd steps (offbeats) are delayed, even steps shortened
-    var swingRatio = swing / 100; // 0 to 0.8
-    if(step % 2 === 0) return base * (1 - swingRatio * 0.5);
-    else return base * (1 + swingRatio * 0.5);
-  }
-
-  function scheduleTick(){
-    if(timer) clearTimeout(timer);
-    timer = setTimeout(tick, getTickMs());
+  // Visual update loop — runs on requestAnimationFrame, reads current step from audio clock
+  function visualLoop(){
+    if(!playing) return;
+    // Figure out which step the playhead is on based on current time
+    renderStep();
+    _rafId = requestAnimationFrame(visualLoop);
   }
 
   function start(){
-    getCtx();
+    var c = getCtx();
     playing = true; step = 0; arrIdx = 0;
+    nextStepTime = c.currentTime + 0.05; // small offset to let things settle
     if(arrMode && song.arrangement.length > 0) loadArrBlock(0);
     document.getElementById('gs-play').textContent = '⏸ Pause';
     document.getElementById('gs-play').className = 'gs-btn stop';
-    scheduleTick();
+    timer = setInterval(scheduler, SCHED_INTERVAL);
+    _rafId = requestAnimationFrame(visualLoop);
   }
 
   function stop(){
     playing = false; step = 0;
-    if(timer) clearTimeout(timer); timer = null;
+    if(timer){clearInterval(timer); timer = null;}
+    if(_rafId){cancelAnimationFrame(_rafId); _rafId = null;}
     document.getElementById('gs-play').textContent = '▶ Play';
     document.getElementById('gs-play').className = 'gs-btn play';
     renderStep();
@@ -1083,7 +1100,7 @@ var GS = (function(){
     setBpm: function(v){
       bpm = parseInt(v);
       document.getElementById('gs-bpm').textContent = v;
-      if(playing){clearInterval(timer);timer=setInterval(tick,60000/bpm/4);}
+      // No timer restart needed — scheduler reads bpm live
     },
     toggleLoop: function(){
       looping = !looping;
