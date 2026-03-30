@@ -3118,9 +3118,11 @@
     .bsc.bss{background:rgba(74,124,53,.18);border-color:rgba(122,179,86,.35)}
 
     /* Chess */
-    .chb{display:grid;grid-template-columns:repeat(8,1fr);width:clamp(300px,90vw,400px);margin:0 auto;border:2px solid rgba(74,124,53,.3);border-radius:4px;overflow:hidden}
-    .chs{aspect-ratio:1;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;min-height:38px;-webkit-tap-highlight-color:transparent;transition:background .15s}
-    .chs svg{width:80%;height:80%}
+    .ch-wrap{position:relative;width:clamp(300px,92vw,420px);margin:0 auto}
+    .ch-bg{width:100%;display:block;border-radius:6px}
+    .chb{display:grid;grid-template-columns:repeat(8,1fr);position:absolute;top:6.5%;left:6.5%;right:6.5%;bottom:6.5%;overflow:hidden}
+    .chs{aspect-ratio:1;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;min-height:0;-webkit-tap-highlight-color:transparent;transition:background .15s}
+    .chs img{width:90%;height:90%;object-fit:contain;pointer-events:none}
     .chs.ch-sel{box-shadow:inset 0 0 0 2px rgba(200,168,75,.6)}
     .chs.ch-move::after{content:'';position:absolute;width:10px;height:10px;border-radius:50%;background:rgba(122,179,86,.45);z-index:1}
     .chs.ch-cap::after{content:'';position:absolute;width:85%;height:85%;border-radius:50%;border:3px solid rgba(180,60,60,.45);background:transparent;z-index:1}
@@ -28895,25 +28897,26 @@ function GPP(a){var SZ=6,grid=[],_rc=0,srcI=0,endI=0;
 
 // ═══ GROVE CHESS ═══
 function GCH(a){
+  var _chArt='assets/games/chess/';
   var _skinChess={
     lightSq:'rgba(42,48,37,.5)',darkSq:'rgba(74,124,53,.25)',
     selectGlow:'rgba(200,168,75,.4)',moveIndicator:'rgba(122,179,86,.5)',
     lastMoveHighlight:'rgba(200,168,75,.12)',checkHighlight:'rgba(180,60,60,.35)',
     playerPieces:{
-      K:'<svg viewBox="0 0 32 32"><line x1="16" y1="2" x2="16" y2="7" stroke="#c8a84b" stroke-width="2" stroke-linecap="round"/><line x1="13.5" y1="4.5" x2="18.5" y2="4.5" stroke="#c8a84b" stroke-width="2" stroke-linecap="round"/><path d="M10 10C10 7 13 5.5 16 7C19 5.5 22 7 22 10L23 18H9L10 10Z" fill="#7ab356" stroke="#3a5a2a" stroke-width="1"/><path d="M9 18L8 22C8 23 9 24 10 24H22C23 24 24 23 24 22L23 18Z" fill="#5a8a3a" stroke="#3a5a2a" stroke-width="0.8"/><rect x="7" y="24" width="18" height="4" rx="2" fill="#3a5a2a"/><rect x="8" y="24.5" width="16" height="1.5" rx="0.8" fill="#5a8a3a"/></svg>',
-      Q:'<svg viewBox="0 0 32 32"><path d="M8 22L6 10L11 14L16 6L21 14L26 10L24 22Z" fill="#7ab356" stroke="#3a5a2a" stroke-width="1"/><circle cx="6" cy="9" r="2" fill="#c8a84b"/><circle cx="16" cy="5" r="2" fill="#c8a84b"/><circle cx="26" cy="9" r="2" fill="#c8a84b"/><rect x="8" y="22" width="16" height="4" rx="1" fill="#5a8a3a"/></svg>',
-      R:'<svg viewBox="0 0 32 32"><rect x="9" y="8" width="4" height="4" fill="#7ab356" stroke="#3a5a2a" stroke-width="0.8"/><rect x="14" y="8" width="4" height="4" fill="#7ab356" stroke="#3a5a2a" stroke-width="0.8"/><rect x="19" y="8" width="4" height="4" fill="#7ab356" stroke="#3a5a2a" stroke-width="0.8"/><rect x="10" y="12" width="12" height="12" rx="1" fill="#7ab356" stroke="#3a5a2a" stroke-width="1"/><rect x="8" y="24" width="16" height="4" rx="1" fill="#5a8a3a"/></svg>',
-      B:'<svg viewBox="0 0 32 32"><circle cx="16" cy="4" r="1.8" fill="#c8a84b"/><path d="M13 20C13 12 12 9 16 4C20 9 19 12 19 20Z" fill="#7ab356" stroke="#3a5a2a" stroke-width="1"/><line x1="16" y1="8" x2="16" y2="14" stroke="#3a5a2a" stroke-width="1.2" stroke-linecap="round"/><path d="M12 20C12 20 11 22 12 23H20C21 22 20 20 20 20Z" fill="#5a8a3a" stroke="#3a5a2a" stroke-width="0.8"/><rect x="8" y="24" width="16" height="4" rx="2" fill="#3a5a2a"/><rect x="9" y="24.5" width="14" height="1.5" rx="0.8" fill="#5a8a3a"/></svg>',
-      N:'<svg viewBox="0 0 32 32"><path d="M20 24V18C21 16 22 14 22 11C22 7 19 4 16 4C14 4 12 5 11 7L9 11L11 12C11 12 10 14 10 16V24Z" fill="#7ab356" stroke="#3a5a2a" stroke-width="1"/><circle cx="18" cy="8" r="1" fill="#3a5a2a"/><path d="M11 7L9 9L11 10" fill="none" stroke="#3a5a2a" stroke-width="1" stroke-linecap="round"/><path d="M14 4C14 4 15 2 17 2C18 2 19 3 19 4" fill="none" stroke="#5a8a3a" stroke-width="1.5" stroke-linecap="round"/><rect x="8" y="24" width="16" height="4" rx="2" fill="#3a5a2a"/><rect x="9" y="24.5" width="14" height="1.5" rx="0.8" fill="#5a8a3a"/></svg>',
-      P:'<svg viewBox="0 0 32 32"><circle cx="16" cy="10" r="5" fill="#7ab356" stroke="#3a5a2a" stroke-width="1"/><path d="M12 15L10 24H22L20 15Z" fill="#7ab356" stroke="#3a5a2a" stroke-width="0.8"/><rect x="8" y="24" width="16" height="4" rx="1" fill="#5a8a3a"/></svg>'
+      K:'<img src="'+_chArt+'p-king-green.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
+      Q:'<img src="'+_chArt+'p-queen-green.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
+      R:'<img src="'+_chArt+'p-rook-green.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
+      B:'<img src="'+_chArt+'p-bishop-green.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
+      N:'<img src="'+_chArt+'p-knight-green.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
+      P:'<img src="'+_chArt+'p-pawn-green.png" style="width:85%;height:85%;object-fit:contain;pointer-events:none">'
     },
     aiPieces:{
-      K:'<svg viewBox="0 0 32 32"><line x1="16" y1="2" x2="16" y2="7" stroke="#e8dcc8" stroke-width="2" stroke-linecap="round"/><line x1="13.5" y1="4.5" x2="18.5" y2="4.5" stroke="#e8dcc8" stroke-width="2" stroke-linecap="round"/><path d="M10 10C10 7 13 5.5 16 7C19 5.5 22 7 22 10L23 18H9L10 10Z" fill="#c8a84b" stroke="#8a6a2b" stroke-width="1"/><path d="M9 18L8 22C8 23 9 24 10 24H22C23 24 24 23 24 22L23 18Z" fill="#a88a3b" stroke="#8a6a2b" stroke-width="0.8"/><rect x="7" y="24" width="18" height="4" rx="2" fill="#8a6a2b"/><rect x="8" y="24.5" width="16" height="1.5" rx="0.8" fill="#a88a3b"/></svg>',
-      Q:'<svg viewBox="0 0 32 32"><path d="M8 22L6 10L11 14L16 6L21 14L26 10L24 22Z" fill="#c8a84b" stroke="#8a6a2b" stroke-width="1"/><circle cx="6" cy="9" r="2" fill="#e8dcc8"/><circle cx="16" cy="5" r="2" fill="#e8dcc8"/><circle cx="26" cy="9" r="2" fill="#e8dcc8"/><rect x="8" y="22" width="16" height="4" rx="1" fill="#a88a3b"/></svg>',
-      R:'<svg viewBox="0 0 32 32"><rect x="9" y="8" width="4" height="4" fill="#c8a84b" stroke="#8a6a2b" stroke-width="0.8"/><rect x="14" y="8" width="4" height="4" fill="#c8a84b" stroke="#8a6a2b" stroke-width="0.8"/><rect x="19" y="8" width="4" height="4" fill="#c8a84b" stroke="#8a6a2b" stroke-width="0.8"/><rect x="10" y="12" width="12" height="12" rx="1" fill="#c8a84b" stroke="#8a6a2b" stroke-width="1"/><rect x="8" y="24" width="16" height="4" rx="1" fill="#a88a3b"/></svg>',
-      B:'<svg viewBox="0 0 32 32"><circle cx="16" cy="4" r="1.8" fill="#e8dcc8"/><path d="M13 20C13 12 12 9 16 4C20 9 19 12 19 20Z" fill="#c8a84b" stroke="#8a6a2b" stroke-width="1"/><line x1="16" y1="8" x2="16" y2="14" stroke="#8a6a2b" stroke-width="1.2" stroke-linecap="round"/><path d="M12 20C12 20 11 22 12 23H20C21 22 20 20 20 20Z" fill="#a88a3b" stroke="#8a6a2b" stroke-width="0.8"/><rect x="8" y="24" width="16" height="4" rx="2" fill="#8a6a2b"/><rect x="9" y="24.5" width="14" height="1.5" rx="0.8" fill="#a88a3b"/></svg>',
-      N:'<svg viewBox="0 0 32 32"><path d="M20 24V18C21 16 22 14 22 11C22 7 19 4 16 4C14 4 12 5 11 7L9 11L11 12C11 12 10 14 10 16V24Z" fill="#c8a84b" stroke="#8a6a2b" stroke-width="1"/><circle cx="18" cy="8" r="1" fill="#8a6a2b"/><path d="M11 7L9 9L11 10" fill="none" stroke="#8a6a2b" stroke-width="1" stroke-linecap="round"/><path d="M14 4C14 4 15 2 17 2C18 2 19 3 19 4" fill="none" stroke="#a88a3b" stroke-width="1.5" stroke-linecap="round"/><rect x="8" y="24" width="16" height="4" rx="2" fill="#8a6a2b"/><rect x="9" y="24.5" width="14" height="1.5" rx="0.8" fill="#a88a3b"/></svg>',
-      P:'<svg viewBox="0 0 32 32"><circle cx="16" cy="10" r="5" fill="#c8a84b" stroke="#8a6a2b" stroke-width="1"/><path d="M12 15L10 24H22L20 15Z" fill="#c8a84b" stroke="#8a6a2b" stroke-width="0.8"/><rect x="8" y="24" width="16" height="4" rx="1" fill="#a88a3b"/></svg>'
+      K:'<img src="'+_chArt+'p-king-gold.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
+      Q:'<img src="'+_chArt+'p-queen-gold.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
+      R:'<img src="'+_chArt+'p-rook-gold.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
+      B:'<img src="'+_chArt+'p-bishop-gold.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
+      N:'<img src="'+_chArt+'p-knight-gold.png" style="width:90%;height:90%;object-fit:contain;pointer-events:none">',
+      P:'<img src="'+_chArt+'p-pawn-gold.png" style="width:85%;height:85%;object-fit:contain;pointer-events:none">'
     }
   };
   // ── Constants ──
@@ -29515,7 +29518,8 @@ function GCH(a){
     var maxTime=1500;
     var pieceCount=0;
     for(var r=0;r<8;r++)for(var c=0;c<8;c++)if(board[r][c])pieceCount++;
-    var _chDep=parseInt((document.getElementById('CHd')||{}).value)||2;
+    var _chDepMap={1:2,2:3,3:4,4:5};
+    var _chDep=_chDepMap[parseInt((document.getElementById('CHd')||{}).value)]||3;
     var maxDepth=_chDep+(pieceCount<14?1:0);
     for(var depth=1;depth<=maxDepth;depth++){
       var depthBest=moves[0];
@@ -29593,10 +29597,10 @@ function GCH(a){
     for(var cj=0;cj<capturedB.length;cj++)capWHtml+=_skinChess.playerPieces[capturedB[cj]]||'';
     capWHtml+='</div>';
     // Board
-    var bHtml='<div class="chb">';
+    var bHtml='<div class="ch-wrap"><img class="ch-bg" src="'+_chArt+'chess-board.png"><div class="chb">';
     for(var r=0;r<8;r++)for(var c=0;c<8;c++){
       var isDark=(r+c)%2===1;
-      var bg=isDark?sk.darkSq:sk.lightSq;
+      var bg=isDark?'rgba(0,0,0,.12)':'rgba(255,255,255,.08)';
       var cls='chs';
       if(selSq&&selSq[0]===r&&selSq[1]===c)cls+=' ch-sel';
       if(lastMove&&((lastMove.fr===r&&lastMove.fc===c)||(lastMove.tr===r&&lastMove.tc===c)))cls+=' ch-last';
@@ -29614,7 +29618,7 @@ function GCH(a){
       var content=piece?getPieceSVG(piece):'';
       bHtml+='<div class="'+cls+'" style="background:'+bg+'" onclick="_CHClick('+r+','+c+')">'+content+'</div>';
     }
-    bHtml+='</div>';
+    bHtml+='</div></div>';
     var statusText='';
     var gm=document.getElementById('_gm');
     if(gm)statusText=gm.textContent;
@@ -29669,7 +29673,7 @@ function GCH(a){
   mm(a,'Your move');
   boardEl=document.createElement('div');boardEl.id='CHboard';
   boardEl.style.cssText='padding:4px 0';a.appendChild(boardEl);
-  mc(a).innerHTML='<select class="gsl" id="CHd" style="max-width:120px" onchange="var v=this.value;_setDiff(v===\'1\'?\'easy\':v===\'2\'?\'medium\':v===\'3\'?\'hard\':\'expert\')"><option value="1">Beginner</option><option value="2" selected>Intermediate</option><option value="3">Advanced</option><option value="4">Expert</option></select><button class="gb" onclick="_CHNew()">🔄 New</button><button class="gb" onclick="_CHUndo()">↩ Undo</button>';
+  mc(a).innerHTML='<select class="gsl" id="CHd" style="max-width:130px" onchange="var v=this.value;_setDiff(v===\'1\'?\'easy\':v===\'2\'?\'medium\':v===\'3\'?\'hard\':\'expert\')"><option value="1">Seedling</option><option value="2" selected>Sapling</option><option value="3">Old Growth</option><option value="4">Ancient</option></select><button class="gb" onclick="_CHNew()">🔄 New</button><button class="gb" onclick="_CHUndo()">↩ Undo</button>';
   _setDiff('medium');
   initBoard();render();
 }
