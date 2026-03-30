@@ -28749,7 +28749,9 @@ function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null;
 // ═══ LIGHTS OUT ═══
 function GL(a){var SZ=5,gr=[],ini=[],mv=0,sl=0,pz=0;
   ms(a,'#<strong id="Lp">1</strong> · 👆<strong id="Lm">0</strong> · ✅<strong id="Ls">0</strong>');mm(a);
-  var gd=document.createElement('div');gd.className='lg';gd.id='Lg';gd.style.backgroundImage='url(assets/games/lights/grid.png)';gd.style.backgroundSize='100% 100%';gd.style.backgroundPosition='center';gd.style.width='clamp(300px,92vw,420px)';gd.style.padding='clamp(14px,5vw,24px)';gd.style.borderRadius='8px';a.appendChild(gd);mc(a).innerHTML='<button class="gb" onclick="_LN()">🔄 New</button><button class="gb" onclick="_LR()">↩️ Reset</button>';
+  var bw=document.createElement('div');bw.style.cssText='position:relative;width:clamp(300px,92vw,420px);margin:0 auto';
+  var bg=document.createElement('img');bg.src='assets/games/lights/grid.png';bg.style.cssText='width:100%;display:block;border-radius:8px';bw.appendChild(bg);
+  var gd=document.createElement('div');gd.className='lg';gd.id='Lg';gd.style.cssText='position:absolute;top:8%;left:8%;right:8%;bottom:18%;grid-template-columns:repeat(5,1fr);gap:clamp(4px,1.5vw,8px)';bw.appendChild(gd);a.appendChild(bw);mc(a).innerHTML='<button class="gb" onclick="_LN()">🔄 New</button><button class="gb" onclick="_LR()">↩️ Reset</button>';
   function tg(r,c){if(r>=0&&r<SZ&&c>=0&&c<SZ)gr[r*SZ+c]=gr[r*SZ+c]?0:1}function ok(){for(var i=0;i<SZ*SZ;i++)if(gr[i])return false;return true}
   var _lampOn='assets/games/lights/lamp-on-green.png';
   var _lampOff='assets/games/lights/lamp-off.png';
