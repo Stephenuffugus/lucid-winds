@@ -85,6 +85,22 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
 .gs-arr-block.sec-C{border-color:rgba(160,196,232,.4);color:#a0c4e8}
 .gs-arr-add{border-style:dashed;color:var(--muted);min-width:60px;font-size:1.2rem!important;padding:10px 18px!important}
 
+/* Sampler Panel */
+.gs-sampler{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(8,10,6,.97);z-index:100;overflow-y:auto;padding:12px}
+.gs-sampler.open{display:block}
+.gs-sampler-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.gs-sampler-head h2{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);letter-spacing:.08em}
+.gs-wave-canvas{width:100%;height:80px;background:rgba(16,20,14,.8);border-radius:6px;border:1px solid var(--border);cursor:crosshair;touch-action:none}
+.gs-sample-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.gs-sample-chip{font-size:.55rem;padding:6px 10px;border-radius:4px;border:1px solid var(--border);color:var(--cream);cursor:pointer;background:rgba(26,31,23,.6);font-family:'DM Mono',monospace;min-height:36px;display:flex;align-items:center;gap:4px}
+.gs-sample-chip:active{transform:scale(.95)}
+.gs-sample-chip .del{color:var(--muted);margin-left:4px;font-size:.7rem}
+.gs-rec-btn{width:56px;height:56px;border-radius:50%;border:3px solid #c75050;background:rgba(199,80,80,.15);color:#c75050;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.gs-rec-btn.recording{background:rgba(199,80,80,.4);animation:recPulse 1s ease infinite}
+@keyframes recPulse{0%,100%{box-shadow:0 0 0 0 rgba(199,80,80,.4)}50%{box-shadow:0 0 0 12px rgba(199,80,80,0)}}
+.gs-trim-bar{height:20px;background:rgba(26,31,23,.8);border-radius:4px;position:relative;margin:8px 0;border:1px solid var(--border)}
+.gs-trim-region{position:absolute;top:0;bottom:0;background:rgba(122,179,86,.2);border-left:3px solid var(--sage);border-right:3px solid var(--sage)}
+
 /* Footer */
 .gs-foot{padding:6px 12px;text-align:center;font-size:.45rem;color:var(--muted);border-top:1px solid rgba(74,124,53,.06)}
 .gs-foot a{color:var(--sage);text-decoration:none}
@@ -136,15 +152,46 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
   <button class="gs-btn" onclick="GS.copySection()">📋 Copy</button>
   <button class="gs-btn" onclick="GS.pasteSection()">📌 Paste</button>
   <button class="gs-btn" onclick="GS.undo()">↩</button>
-  <button class="gs-btn" onclick="GS.importSample()">🎤 Import</button>
+  <button class="gs-btn" onclick="GS.openSampler()">🎤 Sampler</button>
 </div>
 <div class="gs-sections" id="gs-sections"></div>
 <div id="gs-sec-indicator" style="padding:4px 12px;font-size:.55rem;font-family:Bebas Neue,sans-serif;letter-spacing:.08em"></div>
 <div id="gs-layers"></div>
 <div class="gs-arr" id="gs-arr"></div>
 
+<div class="gs-sampler" id="gs-sampler">
+  <div class="gs-sampler-head">
+    <h2>🎤 SAMPLER</h2>
+    <button class="gs-btn" onclick="GS.closeSampler()">✕ Close</button>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
+    <button class="gs-rec-btn" id="gs-rec-btn" onclick="GS.toggleRecord()">⏺</button>
+    <div>
+      <div style="font-size:.6rem;color:var(--cream)">Tap to record (3s max)</div>
+      <div style="font-size:.45rem;color:var(--muted)" id="gs-rec-status">Ready</div>
+      <div style="font-size:.4rem;color:var(--muted);margin-top:2px">Samples kept under 3s for copyright safety</div>
+    </div>
+    <button class="gs-btn" onclick="GS.importSample()" style="margin-left:auto">📂 File</button>
+  </div>
+  <canvas class="gs-wave-canvas" id="gs-wave-canvas" width="400" height="80"></canvas>
+  <div class="gs-trim-bar" id="gs-trim-bar">
+    <div class="gs-trim-region" id="gs-trim-region" style="left:0;right:0"></div>
+  </div>
+  <div style="display:flex;gap:4px;flex-wrap:wrap;margin:8px 0">
+    <button class="gs-btn" onclick="GS.samplePreview()">▶ Preview</button>
+    <button class="gs-btn" onclick="GS.sampleTrimApply()">✂ Trim</button>
+    <button class="gs-btn" onclick="GS.sampleReverse()">🔄 Reverse</button>
+    <button class="gs-btn" onclick="GS.samplePitchUp()">⬆ Pitch+</button>
+    <button class="gs-btn" onclick="GS.samplePitchDown()">⬇ Pitch-</button>
+    <button class="gs-btn" onclick="GS.sampleNormalize()">📊 Normalize</button>
+    <button class="gs-btn" onclick="GS.sampleSave()">💾 Save to Kit</button>
+  </div>
+  <div style="font-size:.6rem;color:var(--gold);font-family:'Bebas Neue',sans-serif;margin-top:8px;letter-spacing:.06em">YOUR SAMPLES</div>
+  <div class="gs-sample-list" id="gs-sample-list"></div>
+</div>
+
 <div class="gs-foot">
-  <a href="/">← Back to Lucid Winds</a> · Grove Studio v0.1
+  <a href="/">← Back to Lucid Winds</a> · Grove Studio v1.1
 </div>
 
 <script>
@@ -327,23 +374,123 @@ var GS = (function(){
   function playChordNote(freq,t,vol){(CHORD_PRESETS[getPreset('chords')]||CHORD_PRESETS['Warm Pad'])(freq,t,vol||1)}
   function playLeadNote(freq,t,vol){(LEAD_PRESETS[getPreset('melody')]||LEAD_PRESETS['Sine Lead'])(freq,t,vol||1)}
 
-  // ── Sample Import Engine ──
+  // ── Sample Engine ──
   var sampleBuffers = {}; // name → AudioBuffer
-  function loadSampleFile(file, name){
+  var _editBuffer = null; // currently editing
+  var _editName = '';
+  var _trimStart = 0, _trimEnd = 1; // 0-1 range
+  var _isRecording = false, _recorder = null, _recStream = null;
+  var MAX_SAMPLE_SEC = 3.0; // copyright-safe limit
+
+  function loadSampleFile(file, callback){
     var reader = new FileReader();
     reader.onload = function(e){
       getCtx().decodeAudioData(e.target.result, function(buffer){
-        sampleBuffers[name] = buffer;
-        renderLayers();
-      }, function(err){alert('Could not decode: '+file.name)});
+        // Enforce max length
+        if(buffer.duration > MAX_SAMPLE_SEC){
+          var c = getCtx();
+          var trimLen = Math.floor(c.sampleRate * MAX_SAMPLE_SEC);
+          var trimBuf = c.createBuffer(buffer.numberOfChannels, trimLen, c.sampleRate);
+          for(var ch=0;ch<buffer.numberOfChannels;ch++){
+            trimBuf.getChannelData(ch).set(buffer.getChannelData(ch).subarray(0, trimLen));
+          }
+          buffer = trimBuf;
+        }
+        if(callback) callback(buffer);
+      }, function(){alert('Could not decode audio');});
     };
     reader.readAsArrayBuffer(file);
   }
-  function playSample(name, t, vol){
-    var buf = sampleBuffers[name]; if(!buf) return;
+
+  function playSampleBuffer(buf, t, vol){
+    if(!buf) return;
     var c=getCtx();var src=c.createBufferSource(),g=c.createGain();
     src.buffer=buf;g.gain.value=(vol||1)*0.5;
     src.connect(g);g.connect(c.destination);src.start(t);
+  }
+
+  function playSample(name, t, vol){playSampleBuffer(sampleBuffers[name], t, vol)}
+
+  function drawWaveform(buf){
+    var canvas = document.getElementById('gs-wave-canvas');
+    if(!canvas || !buf) return;
+    var ctx2d = canvas.getContext('2d');
+    var w = canvas.width, h = canvas.height;
+    ctx2d.clearRect(0,0,w,h);
+    var data = buf.getChannelData(0);
+    var step = Math.ceil(data.length / w);
+
+    // Background
+    ctx2d.fillStyle = 'rgba(16,20,14,.8)';
+    ctx2d.fillRect(0,0,w,h);
+
+    // Trim region
+    var ts = Math.floor(_trimStart * w), te = Math.floor(_trimEnd * w);
+    ctx2d.fillStyle = 'rgba(122,179,86,.1)';
+    ctx2d.fillRect(ts, 0, te-ts, h);
+
+    // Waveform
+    ctx2d.beginPath();
+    ctx2d.strokeStyle = '#7ab356';
+    ctx2d.lineWidth = 1;
+    for(var x=0;x<w;x++){
+      var min=1,max=-1;
+      for(var j=0;j<step;j++){
+        var val = data[x*step+j] || 0;
+        if(val<min)min=val;if(val>max)max=val;
+      }
+      var yMin = (1+min)*h/2, yMax = (1+max)*h/2;
+      ctx2d.moveTo(x, yMin);
+      ctx2d.lineTo(x, yMax);
+    }
+    ctx2d.stroke();
+
+    // Trim handles
+    ctx2d.fillStyle = '#7ab356';
+    ctx2d.fillRect(ts-1, 0, 3, h);
+    ctx2d.fillRect(te-1, 0, 3, h);
+
+    // Center line
+    ctx2d.strokeStyle = 'rgba(200,168,75,.2)';
+    ctx2d.beginPath();ctx2d.moveTo(0,h/2);ctx2d.lineTo(w,h/2);ctx2d.stroke();
+
+    // Update trim bar
+    var trimRegion = document.getElementById('gs-trim-region');
+    if(trimRegion){trimRegion.style.left=(_trimStart*100)+'%';trimRegion.style.right=((1-_trimEnd)*100)+'%';}
+  }
+
+  function renderSampleList(){
+    var el = document.getElementById('gs-sample-list');
+    if(!el) return;
+    var html = '';
+    for(var name in sampleBuffers){
+      var dur = sampleBuffers[name].duration.toFixed(2);
+      html += '<div class="gs-sample-chip" onclick="GS.editSample(\''+name+'\')">'
+        +'🔊 '+name+' <span style="color:var(--muted)">'+dur+'s</span>'
+        +'<span class="del" onclick="event.stopPropagation();GS.deleteSample(\''+name+'\')">✕</span></div>';
+    }
+    if(!html) html = '<div style="font-size:.5rem;color:var(--muted)">No samples yet — record or import one</div>';
+    el.innerHTML = html;
+  }
+
+  // Trim bar drag
+  function initTrimDrag(){
+    var bar = document.getElementById('gs-trim-bar');
+    if(!bar) return;
+    bar.addEventListener('pointerdown', function(e){
+      var rect = bar.getBoundingClientRect();
+      var pct = (e.clientX - rect.left) / rect.width;
+      // Snap to nearest handle
+      if(Math.abs(pct - _trimStart) < Math.abs(pct - _trimEnd)){
+        var move = function(ev){_trimStart = Math.max(0, Math.min(_trimEnd-0.02, (ev.clientX-rect.left)/rect.width));drawWaveform(_editBuffer)};
+        var up = function(){document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up)};
+        document.addEventListener('pointermove',move);document.addEventListener('pointerup',up);
+      } else {
+        var move2 = function(ev){_trimEnd = Math.max(_trimStart+0.02, Math.min(1, (ev.clientX-rect.left)/rect.width));drawWaveform(_editBuffer)};
+        var up2 = function(){document.removeEventListener('pointermove',move2);document.removeEventListener('pointerup',up2)};
+        document.addEventListener('pointermove',move2);document.addEventListener('pointerup',up2);
+      }
+    });
   }
 
   // ── WAV encoder ──
@@ -991,6 +1138,15 @@ var GS = (function(){
       var v = getCurrentVar(); if(!v||!v[lid]) return;
       v[lid].preset = name;
     },
+    openSampler: function(){
+      document.getElementById('gs-sampler').classList.add('open');
+      renderSampleList();
+      initTrimDrag();
+    },
+    closeSampler: function(){
+      document.getElementById('gs-sampler').classList.remove('open');
+      if(_isRecording) GS.toggleRecord();
+    },
     importSample: function(){
       var input = document.createElement('input');
       input.type = 'file';
@@ -998,11 +1154,155 @@ var GS = (function(){
       input.multiple = true;
       input.onchange = function(){
         for(var i=0;i<input.files.length;i++){
-          var f = input.files[i];
-          loadSampleFile(f, f.name.replace(/\.[^.]+$/,''));
+          (function(f){
+            loadSampleFile(f, function(buf){
+              var name = f.name.replace(/\.[^.]+$/,'').substring(0,20);
+              sampleBuffers[name] = buf;
+              _editBuffer = buf; _editName = name;
+              _trimStart = 0; _trimEnd = 1;
+              drawWaveform(buf);
+              renderSampleList();
+              document.getElementById('gs-rec-status').textContent = 'Loaded: '+name+' ('+buf.duration.toFixed(2)+'s)';
+            });
+          })(input.files[i]);
         }
       };
       input.click();
+    },
+    toggleRecord: function(){
+      if(_isRecording){
+        _isRecording = false;
+        if(_recorder) _recorder.stop();
+        if(_recStream) _recStream.getTracks().forEach(function(t){t.stop()});
+        document.getElementById('gs-rec-btn').classList.remove('recording');
+        document.getElementById('gs-rec-status').textContent = 'Processing...';
+        return;
+      }
+      navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+        _recStream = stream;
+        _isRecording = true;
+        document.getElementById('gs-rec-btn').classList.add('recording');
+        document.getElementById('gs-rec-status').textContent = 'Recording... (3s max)';
+        var chunks = [];
+        _recorder = new MediaRecorder(stream);
+        _recorder.ondataavailable = function(e){chunks.push(e.data)};
+        _recorder.onstop = function(){
+          _isRecording = false;
+          var blob = new Blob(chunks, {type:'audio/webm'});
+          var reader = new FileReader();
+          reader.onload = function(e){
+            getCtx().decodeAudioData(e.target.result, function(buf){
+              // Enforce max length
+              if(buf.duration > MAX_SAMPLE_SEC){
+                var c=getCtx(),len=Math.floor(c.sampleRate*MAX_SAMPLE_SEC);
+                var tb=c.createBuffer(1,len,c.sampleRate);
+                tb.getChannelData(0).set(buf.getChannelData(0).subarray(0,len));
+                buf=tb;
+              }
+              var name = 'rec-'+Date.now().toString(36).slice(-4);
+              _editBuffer = buf; _editName = name;
+              _trimStart = 0; _trimEnd = 1;
+              drawWaveform(buf);
+              document.getElementById('gs-rec-status').textContent = 'Recorded: '+buf.duration.toFixed(2)+'s — edit and save';
+            });
+          };
+          reader.readAsArrayBuffer(blob);
+        };
+        _recorder.start();
+        // Auto-stop at max length
+        setTimeout(function(){if(_isRecording)GS.toggleRecord()}, MAX_SAMPLE_SEC * 1000);
+      }).catch(function(err){
+        alert('Mic access denied: '+err.message);
+        document.getElementById('gs-rec-status').textContent = 'Mic denied';
+      });
+    },
+    samplePreview: function(){
+      if(!_editBuffer) return;
+      var c=getCtx();
+      var startSamp = Math.floor(_trimStart * _editBuffer.length);
+      var endSamp = Math.floor(_trimEnd * _editBuffer.length);
+      var len = endSamp - startSamp;
+      var trimBuf = c.createBuffer(1, len, c.sampleRate);
+      trimBuf.getChannelData(0).set(_editBuffer.getChannelData(0).subarray(startSamp, endSamp));
+      playSampleBuffer(trimBuf, c.currentTime, 1);
+    },
+    sampleTrimApply: function(){
+      if(!_editBuffer) return;
+      var c=getCtx();
+      var startSamp = Math.floor(_trimStart * _editBuffer.length);
+      var endSamp = Math.floor(_trimEnd * _editBuffer.length);
+      var len = endSamp - startSamp;
+      var trimBuf = c.createBuffer(1, len, c.sampleRate);
+      trimBuf.getChannelData(0).set(_editBuffer.getChannelData(0).subarray(startSamp, endSamp));
+      _editBuffer = trimBuf;
+      _trimStart = 0; _trimEnd = 1;
+      drawWaveform(trimBuf);
+      document.getElementById('gs-rec-status').textContent = 'Trimmed: '+trimBuf.duration.toFixed(2)+'s';
+    },
+    sampleReverse: function(){
+      if(!_editBuffer) return;
+      var c=getCtx();
+      var buf = c.createBuffer(1, _editBuffer.length, c.sampleRate);
+      var src = _editBuffer.getChannelData(0), dst = buf.getChannelData(0);
+      for(var i=0;i<src.length;i++) dst[i] = src[src.length-1-i];
+      _editBuffer = buf;
+      drawWaveform(buf);
+      document.getElementById('gs-rec-status').textContent = 'Reversed';
+    },
+    samplePitchUp: function(){
+      if(!_editBuffer) return;
+      var c=getCtx();
+      var ratio = 0.8; // shorter = higher pitch
+      var newLen = Math.floor(_editBuffer.length * ratio);
+      var buf = c.createBuffer(1, newLen, c.sampleRate);
+      var src = _editBuffer.getChannelData(0), dst = buf.getChannelData(0);
+      for(var i=0;i<newLen;i++){var si=i/ratio;var idx=Math.floor(si);var frac=si-idx;dst[i]=src[idx]*(1-frac)+(src[idx+1]||0)*frac;}
+      _editBuffer = buf;
+      drawWaveform(buf);
+      document.getElementById('gs-rec-status').textContent = 'Pitch up — '+buf.duration.toFixed(2)+'s';
+    },
+    samplePitchDown: function(){
+      if(!_editBuffer) return;
+      var c=getCtx();
+      var ratio = 1.25; // longer = lower pitch
+      var newLen = Math.min(Math.floor(_editBuffer.length * ratio), Math.floor(c.sampleRate * MAX_SAMPLE_SEC));
+      var buf = c.createBuffer(1, newLen, c.sampleRate);
+      var src = _editBuffer.getChannelData(0), dst = buf.getChannelData(0);
+      for(var i=0;i<newLen;i++){var si=i/ratio;var idx=Math.floor(si);var frac=si-idx;dst[i]=(src[idx]||0)*(1-frac)+(src[idx+1]||0)*frac;}
+      _editBuffer = buf;
+      drawWaveform(buf);
+      document.getElementById('gs-rec-status').textContent = 'Pitch down — '+buf.duration.toFixed(2)+'s';
+    },
+    sampleNormalize: function(){
+      if(!_editBuffer) return;
+      var data = _editBuffer.getChannelData(0);
+      var peak = 0;
+      for(var i=0;i<data.length;i++){var abs=Math.abs(data[i]);if(abs>peak)peak=abs;}
+      if(peak > 0 && peak < 1){var gain=1/peak;for(var i=0;i<data.length;i++)data[i]*=gain;}
+      drawWaveform(_editBuffer);
+      document.getElementById('gs-rec-status').textContent = 'Normalized (peak: '+peak.toFixed(3)+' → 1.0)';
+    },
+    sampleSave: function(){
+      if(!_editBuffer) return;
+      var name = _editName || 'sample-'+Date.now().toString(36).slice(-4);
+      if(sampleBuffers[name]){name += '-'+Math.floor(Math.random()*99)}
+      sampleBuffers[name] = _editBuffer;
+      renderSampleList();
+      document.getElementById('gs-rec-status').textContent = 'Saved as "'+name+'" — assign to a drum pad';
+    },
+    editSample: function(name){
+      if(!sampleBuffers[name]) return;
+      _editBuffer = sampleBuffers[name];
+      _editName = name;
+      _trimStart = 0; _trimEnd = 1;
+      drawWaveform(_editBuffer);
+      document.getElementById('gs-rec-status').textContent = 'Editing: '+name+' ('+_editBuffer.duration.toFixed(2)+'s)';
+    },
+    deleteSample: function(name){
+      if(!confirm('Delete "'+name+'"?')) return;
+      delete sampleBuffers[name];
+      if(_editName === name){_editBuffer=null;_editName='';var cv=document.getElementById('gs-wave-canvas');if(cv)cv.getContext('2d').clearRect(0,0,cv.width,cv.height);}
+      renderSampleList();
     },
     _clipboard: null,
     playScale: function(){
