@@ -28820,24 +28820,31 @@ function GFL(a){var SZ=8,grid=[],moves=0,maxMoves=22;
 // ═══ PIPE CONNECT ═══
 function GPP(a){var SZ=6,grid=[],_rc=0;
   var VI='assets/games/pipe/';
-  var PIPE_IMG=[VI+'vine-straight.png',VI+'vine-straight.png',VI+'vine-corner.png',VI+'vine-corner.png',VI+'vine-corner.png',VI+'vine-corner.png'];
-  var PIPE_ROT=[0,90,0,270,180,90];
-  ms(a);mm(a);var gd=document.createElement('div');gd.className='lg';gd.id='PP';gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';gd.style.gap='2px';gd.style.width='clamp(300px,92vw,420px)';a.appendChild(gd);mc(a).innerHTML='<button class="gb" onclick="_PPN()">🔄 New</button>';
-  function gen(){grid=[];_rc=0;for(var i=0;i<SZ*SZ;i++){grid.push({type:Math.floor(Math.random()*6),rot:0});for(var r=0;r<Math.floor(Math.random()*4);r++)grid[i].rot=(grid[i].rot+1)%4}}
+  var PIPE_IMG=[VI+'vine-straight.png',VI+'vine-straight.png',VI+'vine-corner.png',VI+'vine-corner.png',VI+'vine-corner.png',VI+'vine-corner.png',VI+'vine-source.png',VI+'vine-end.png'];
+  var PIPE_ROT=[0,90,0,270,180,90,0,0];
+  var EXITS=[[1,0,1,0],[0,1,0,1],[1,1,0,0],[1,0,0,1],[0,0,1,1],[0,1,1,0],[1,1,1,1],[0,0,0,1]];
+  var SRC=0,END=SZ*SZ-1;
+  ms(a,'<span id="PPc">0</span>/'+SZ*SZ+' connected');mm(a);
+  var gd=document.createElement('div');gd.className='lg';gd.id='PP';gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';gd.style.gap='2px';gd.style.width='clamp(300px,92vw,420px)';a.appendChild(gd);
+  mc(a).innerHTML='<button class="gb" onclick="_PPN()">🔄 New</button>';
+  function gen(){grid=[];_rc=0;for(var i=0;i<SZ*SZ;i++){if(i===SRC){grid.push({type:6,rot:0})}else if(i===END){grid.push({type:7,rot:0})}else{grid.push({type:Math.floor(Math.random()*6),rot:0});for(var r=0;r<Math.floor(Math.random()*4);r++)grid[i].rot=(grid[i].rot+1)%4}}}
+  function pExit(i){var t=grid[i].type,r=grid[i].rot%4,e=EXITS[t]||[0,0,0,0];var re=e.slice();for(var rr=0;rr<r;rr++){re=[re[3],re[0],re[1],re[2]];}return re;}
   function _ppCheck(){
-    var connections=0;
-    var EXITS=[[1,0,1,0],[0,1,0,1],[1,1,0,0],[1,0,0,1],[0,0,1,1],[0,1,1,0]];
-    function exits(i){var t=grid[i].type,r=grid[i].rot%4,e=EXITS[t]||[0,0,0,0];var re=e.slice();for(var rr=0;rr<r;rr++){re=[re[3],re[0],re[1],re[2]];}return re;}
-    for(var y=0;y<SZ;y++)for(var x=0;x<SZ;x++){
-      var e=exits(y*SZ+x);
-      if(x<SZ-1){var ne=exits(y*SZ+x+1);if(e[1]&&ne[3])connections++;}
-      if(y<SZ-1){var ne2=exits((y+1)*SZ+x);if(e[2]&&ne2[0])connections++;}
-    }
-    return connections;
-  }
-  var _ppBest=0;
-  function rn(){gd.innerHTML='';for(var i=0;i<SZ*SZ;i++){var d=document.createElement('div');d.className='lc';var totalRot=PIPE_ROT[grid[i].type]+(grid[i].rot*90);d.style.background='url('+PIPE_IMG[grid[i].type]+') center/cover #1a1e16';d.style.transform='rotate('+totalRot+'deg)';d.style.transition='transform 0.15s ease';d.setAttribute('data-i',i);d.onclick=function(){var idx=parseInt(this.getAttribute('data-i'));_play('click');grid[idx].rot=(grid[idx].rot+1)%4;_rc++;var conn=_ppCheck();if(conn>_ppBest){_ppBest=conn;if(_rc%4===0)_e('progress');}sm(conn+' connections');if(conn>=SZ*(SZ-1)*2-4){_e('game_win');_playWin();sm('🌿 All connected! '+_rc+' rotations');_sr('pipe',{w:true,s:_rc});}rn()};gd.appendChild(d)}}
-  window._PPN=function(){gen();sm('Rotate vines to connect');rn()};_PPN();}
+    var vis=[];for(var x=0;x<SZ*SZ;x++)vis.push(false);
+    var q=[SRC];vis[SRC]=true;var cnt=1;
+    while(q.length){var ci=q.shift();var e=pExit(ci);var cy=Math.floor(ci/SZ),cx=ci%SZ;
+      var nb=[cy>0?ci-SZ:-1,cx<SZ-1?ci+1:-1,cy<SZ-1?ci+SZ:-1,cx>0?ci-1:-1];
+      var op=[2,3,0,1];
+      for(var d=0;d<4;d++){var ni=nb[d];if(ni<0||vis[ni])continue;if(e[d]){var ne=pExit(ni);if(ne[op[d]]){vis[ni]=true;q.push(ni);cnt++}}}}
+    return {won:vis[END],count:cnt,vis:vis}}
+  function rn(){gd.innerHTML='';var st=_ppCheck();var el=document.getElementById('PPc');if(el)el.textContent=st.count;
+    for(var i=0;i<SZ*SZ;i++){var d=document.createElement('div');d.className='lc';var totalRot=PIPE_ROT[grid[i].type]+(grid[i].rot*90);d.style.background='url('+PIPE_IMG[grid[i].type]+') center/cover #1a1e16';d.style.transform='rotate('+totalRot+'deg)';d.style.transition='transform 0.15s ease';
+      if(st.vis[i])d.style.boxShadow='inset 0 0 12px rgba(122,179,86,.4)';
+      if(i===SRC)d.style.boxShadow='0 0 10px rgba(122,179,86,.6)';
+      else if(i===END)d.style.boxShadow='0 0 10px rgba(200,168,75,.6)';
+      if(i!==SRC&&i!==END){d.setAttribute('data-i',i);d.onclick=function(){var idx=parseInt(this.getAttribute('data-i'));_play('click');grid[idx].rot=(grid[idx].rot+1)%4;_rc++;rn();var res=_ppCheck();if(res.won){_e('game_win');_playWin();sm('🌿 Root to bloom! '+_rc+' rotations');_sr('pipe',{w:true,s:_rc})}}}
+      gd.appendChild(d)}}
+  window._PPN=function(){gen();sm('Connect root to bloom');rn()};_PPN();}
 
 // ═══ GROVE CHESS ═══
 function GCH(a){
