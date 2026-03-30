@@ -3015,49 +3015,31 @@
     .fdie.fk{border-color:var(--gold);background:rgba(200,168,78,.06);box-shadow:0 0 16px rgba(200,168,78,.1)}
     .fdie:active{transform:scale(.9) rotate(-3deg);transition-duration:.06s}
 
-    /* ── Shared card classes ── */
-    .gc{width:clamp(42px,12.5vw,56px);height:clamp(58px,17.5vw,78px);border-radius:clamp(4px,1.2vw,6px);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:clamp(.7rem,2.2vw,.95rem);font-weight:700;transition:all .15s ease;-webkit-tap-highlight-color:transparent;flex-shrink:0;box-sizing:border-box}
+    /* ── Shared card classes — ~2x bigger base, scales up for tablets/desktop ── */
+    .gc{width:clamp(56px,13.5vw,110px);height:clamp(78px,19vw,154px);border-radius:clamp(5px,1.4vw,10px);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:clamp(.75rem,2.4vw,1.1rem);font-weight:700;transition:all .15s ease;-webkit-tap-highlight-color:transparent;flex-shrink:0;box-sizing:border-box}
     .gc-up{background-color:rgba(26,31,23,.92);background-size:cover;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(74,124,53,.35);color:var(--cream);cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,0.3);position:relative;overflow:hidden}
     .gc-dn{background-color:rgba(30,38,26,.8);background-size:cover;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(42,48,37,.45);cursor:default}
     .gc-sel{box-shadow:inset 0 0 0 99px rgba(200,168,78,.18),0 0 8px rgba(200,168,78,.4)!important;border-color:rgba(200,168,78,.5)!important}
-    .gc-empty{background:transparent;border:1.5px dashed rgba(74,124,53,.1)}
-    .gc-fnd{background-color:rgba(26,31,23,.5);background-size:60%;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(74,124,53,.2)}
+    .gc-empty{background:transparent;border:1.5px dashed rgba(74,124,53,.15)}
+    .gc-fnd{background-color:rgba(26,31,23,.5);background-size:50%;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(74,124,53,.2)}
     .gc-disc{box-shadow:inset 0 0 0 99px rgba(200,168,78,.12);border:2px solid rgba(200,168,78,.35);color:var(--gold);font-size:clamp(.8rem,2.5vw,1rem);font-weight:800}
     .gc-red{color:#d4a843}
-    .gc-stk{display:flex;flex-direction:column;min-width:clamp(42px,12.5vw,56px)}
-    .gc-stk .gc{height:clamp(16px,4.5vw,20px);align-items:flex-start;padding-top:2px;font-size:clamp(.6rem,1.8vw,.8rem)}
-    .gc-stk .gc:last-child{height:clamp(58px,17.5vw,78px)}
-    .gc:active{transform:scale(.93);transition-duration:.06s}
+    .gc-stk{display:flex;flex-direction:column;min-width:clamp(56px,13.5vw,110px)}
+    .gc-stk .gc{height:clamp(22px,5.5vw,32px);align-items:flex-start;padding-top:2px;font-size:clamp(.6rem,1.8vw,.8rem)}
+    .gc-stk .gc:last-child{height:clamp(78px,19vw,154px)}
+    .gc:active{transform:scale(.95);transition-duration:.06s}
     /* ── Pyramid / TriPeaks cards ── */
-    .tpc{width:clamp(38px,11vw,52px);height:clamp(52px,15vw,72px);border-radius:clamp(4px,1vw,6px);display:inline-flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:clamp(.65rem,2vw,.85rem);font-weight:700;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+    .tpc{width:clamp(48px,12vw,80px);height:clamp(67px,16.8vw,112px);border-radius:clamp(4px,1vw,8px);display:inline-flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:clamp(.7rem,2.2vw,1rem);font-weight:700;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s;box-shadow:0 2px 6px rgba(0,0,0,.25)}
     .tpc:active{transform:translateY(-3px) scale(.97)}
-    .tpd{width:clamp(42px,12vw,56px);height:clamp(58px,17vw,78px);border-radius:clamp(5px,1.2vw,7px);display:inline-flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:clamp(.8rem,2.5vw,1rem);font-weight:800;box-shadow:0 3px 8px rgba(0,0,0,.25)}
-    /* ── Klondike / FreeCell / Spider ── */
-    .kcard{width:clamp(42px,12.5vw,56px);height:clamp(58px,17.5vw,78px);border-radius:clamp(4px,1.2vw,7px);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:clamp(.7rem,2.2vw,.95rem);font-weight:700;box-shadow:0 2px 5px rgba(0,0,0,.22)}
+    .tpd{width:clamp(56px,13.5vw,110px);height:clamp(78px,19vw,154px);border-radius:clamp(5px,1.2vw,10px);display:inline-flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:clamp(.85rem,2.8vw,1.15rem);font-weight:800;box-shadow:0 3px 8px rgba(0,0,0,.25)}
+    /* ── Klondike / FreeCell / Spider (same as .gc) ── */
+    .kcard{width:clamp(56px,13.5vw,110px);height:clamp(78px,19vw,154px);border-radius:clamp(5px,1.4vw,10px);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:clamp(.75rem,2.4vw,1.1rem);font-weight:700;box-shadow:0 2px 5px rgba(0,0,0,.22)}
     .kcard-up{background-color:rgba(26,31,23,.92);background-size:cover;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(74,124,53,.35);color:var(--cream);position:relative;overflow:hidden}
     .kcard-dn{background-color:rgba(30,38,26,.8);background-size:cover;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(42,48,37,.45)}
     .kcard-sel{box-shadow:inset 0 0 0 99px rgba(200,168,78,.18),0 0 8px rgba(200,168,78,.4);border-color:rgba(200,168,78,.5)}
-    .kcard-fnd{background:rgba(26,31,23,.45);border:1.5px solid rgba(74,124,53,.2)}
-    .kcard-empty{border:1.5px dashed rgba(74,124,53,.12);border-radius:clamp(4px,1.2vw,7px)}
-    .kcard-stack{height:clamp(16px,4.5vw,20px);border-radius:4px;display:flex;align-items:flex-start;justify-content:center;padding-top:2px;font-size:clamp(.7rem,2vw,.95rem);cursor:pointer}
-
-    /* ── Responsive card scaling for tablets / landscape / desktop ── */
-    @media(min-width:600px){
-      .gc{width:clamp(52px,8vw,72px);height:clamp(72px,11.2vw,100px);border-radius:clamp(5px,1vw,8px)}
-      .gc-stk{min-width:clamp(52px,8vw,72px)}
-      .gc-stk .gc{height:clamp(18px,3vw,24px)}
-      .gc-stk .gc:last-child{height:clamp(72px,11.2vw,100px)}
-      .kcard{width:clamp(52px,8vw,72px);height:clamp(72px,11.2vw,100px);border-radius:clamp(5px,1vw,8px)}
-      .kcard-stack{height:clamp(18px,3vw,24px)}
-    }
-    @media(min-width:1024px){
-      .gc{width:clamp(64px,5.5vw,88px);height:clamp(89px,7.7vw,122px);border-radius:clamp(6px,.8vw,10px)}
-      .gc-stk{min-width:clamp(64px,5.5vw,88px)}
-      .gc-stk .gc{height:clamp(20px,2vw,28px)}
-      .gc-stk .gc:last-child{height:clamp(89px,7.7vw,122px)}
-      .kcard{width:clamp(64px,5.5vw,88px);height:clamp(89px,7.7vw,122px);border-radius:clamp(6px,.8vw,10px)}
-      .kcard-stack{height:clamp(20px,2vw,28px)}
-    }
+    .kcard-fnd{background-color:rgba(26,31,23,.45);background-size:50%;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(74,124,53,.2)}
+    .kcard-empty{border:1.5px dashed rgba(74,124,53,.12);border-radius:clamp(5px,1.4vw,10px)}
+    .kcard-stack{height:clamp(22px,5.5vw,32px);border-radius:5px;display:flex;align-items:flex-start;justify-content:center;padding-top:2px;font-size:clamp(.7rem,2vw,.95rem);cursor:pointer}
 
     /* Yahtzee */
     .ysc{width:100%;font-size:clamp(.6rem,1.8vw,.8rem);border-collapse:collapse;background:rgba(16,20,14,.25);border-radius:clamp(6px,2vw,10px);overflow:hidden;animation:boardFadeIn .4s ease}
@@ -29931,40 +29913,19 @@ var _SUIT_NAME=['shroom','flower','bee','bird'];
 var _CD_BASE='assets/games/cards/';
 var _CD_BACK=_CD_BASE+'playing-card-backs.png';
 
-// Pip positions for number cards [left%, top%] — standard playing card layout
-var _PIP_POS={
-  1:[[50,50]],
-  2:[[50,28],[50,72]],
-  3:[[50,22],[50,50],[50,78]],
-  4:[[33,25],[67,25],[33,75],[67,75]],
-  5:[[33,22],[67,22],[50,50],[33,78],[67,78]],
-  6:[[33,22],[67,22],[33,50],[67,50],[33,78],[67,78]],
-  7:[[33,20],[67,20],[50,35],[33,50],[67,50],[33,80],[67,80]],
-  8:[[33,20],[67,20],[33,40],[67,40],[50,55],[33,65],[67,65],[50,80]],
-  9:[[33,18],[67,18],[33,38],[67,38],[50,50],[33,62],[67,62],[33,82],[67,82]],
-  10:[[33,16],[67,16],[50,28],[33,38],[67,38],[33,62],[67,62],[50,72],[33,84],[67,84]]
-};
-
-// Preload all card images
-var _cdImgs={};
+// Preload all card images (tiny files now — ~300KB total)
 (function(){
-  var files=['card-front','playing-card-backs'];
+  var files=['playing-card-backs'];
   for(var s=0;s<4;s++){
     var n=_SUIT_NAME[s];
-    files.push(n);
-    files.push(n+'-ace');
-    files.push(n+'-jack');
-    files.push(n+'-queen');
-    files.push(n+'-king');
+    files.push(n,n+'-ace',n+'-jack',n+'-queen',n+'-king');
   }
   for(var i=0;i<files.length;i++){
     var img=new Image();
     img.src=_CD_BASE+files[i]+'.png';
-    _cdImgs[files[i]]=img;
   }
 })();
 
-// Get the art image path for a card (face cards + aces get unique art)
 function _cdArt(s,r){
   var sn=_SUIT_NAME[s];
   if(r===0)return _CD_BASE+sn+'-ace.png';
@@ -29980,34 +29941,6 @@ function _cdRnk(r){return _RANK_SYM[r]}
 function _cdSuit(s){return _SUIT_SYM[s]}
 function _cdIsRed(s){return s===1||s===2} // "gold" suits = Flower + Bee
 
-// Corner overlay: rank + mini pip — visible even when stacked
-function _cdCorner(s,r){
-  var clr=_SUIT_CLR[s];
-  var pip=_CD_BASE+_SUIT_NAME[s]+'.png';
-  return '<div style="position:absolute;top:2px;left:3px;display:flex;flex-direction:column;align-items:center;gap:0;line-height:1;z-index:2;pointer-events:none">'
-    +'<span style="color:'+clr+';font-size:clamp(.5rem,1.5vw,.7rem);font-weight:800;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,.8)">'+_cdRnk(r)+'</span>'
-    +'<img src="'+pip+'" style="width:clamp(7px,2vw,11px);height:clamp(7px,2vw,11px);filter:drop-shadow(0 1px 2px rgba(0,0,0,.9))" alt="">'
-    +'</div>';
-}
-
-// Build pip field for number cards (rank 1-9 = values 2-10)
-function _cdPips(s,r){
-  var count=r+1;
-  var pos=_PIP_POS[count];
-  if(!pos)return '';
-  var pip=_CD_BASE+_SUIT_NAME[s]+'.png';
-  var h='';
-  for(var i=0;i<pos.length;i++){
-    var flip=pos[i][1]>60;
-    h+='<img src="'+pip+'" style="position:absolute;left:'+pos[i][0]+'%;top:'+pos[i][1]+'%;'
-      +'width:clamp(9px,2.8vw,15px);height:clamp(9px,2.8vw,15px);'
-      +'transform:translate(-50%,-50%)'+(flip?' rotate(180deg)':'')+';'
-      +'filter:drop-shadow(0 0 2px rgba(0,0,0,.6));pointer-events:none" alt="">';
-  }
-  return h;
-}
-
-// Apply card-back image to any element
 function _cdBackStyle(el){
   el.style.backgroundImage="url('"+_CD_BACK+"')";
 }
@@ -30018,14 +29951,22 @@ function _cdEl(card){
   if(card.up){
     d.className+=' gc-up';
     if(_cdIsRed(card.s))d.className+=' gc-red';
+    var clr=_SUIT_CLR[card.s];
+    var rnk=_cdRnk(card.r);
     var art=_cdArt(card.s,card.r);
     if(art){
-      // Face card or ace — full unique art
+      // Face card or ace — full art background + corner label
       d.style.backgroundImage="url('"+art+"')";
-      d.innerHTML=_cdCorner(card.s,card.r);
+      d.innerHTML='<div style="position:absolute;top:3px;left:4px;line-height:1;z-index:2;pointer-events:none">'
+        +'<div style="color:'+clr+';font-size:clamp(.6rem,1.8vw,.85rem);font-weight:800;text-shadow:0 1px 3px #000,0 0 8px #000">'+rnk+'</div>'
+        +'</div>';
     }else{
-      // Number card (2-10) — dark bg with pip layout
-      d.innerHTML=_cdCorner(card.s,card.r)+_cdPips(card.s,card.r);
+      // Number card — rank + centered suit pip image
+      var pip=_CD_BASE+_SUIT_NAME[card.s]+'.png';
+      d.innerHTML='<div style="position:absolute;top:3px;left:4px;line-height:1;z-index:2;pointer-events:none">'
+        +'<div style="color:'+clr+';font-size:clamp(.6rem,1.8vw,.85rem);font-weight:800;text-shadow:0 1px 3px #000,0 0 8px #000">'+rnk+'</div>'
+        +'</div>'
+        +'<img src="'+pip+'" style="width:55%;height:auto;opacity:.85;filter:drop-shadow(0 0 4px rgba(0,0,0,.5));pointer-events:none" alt="">';
     }
   }else{
     d.className+=' gc-dn';
@@ -30434,7 +30375,7 @@ function GKL(a){
 
     // Waste (show top card only for draw-1; top 3 fanned for draw-3)
     var wasteWrap=document.createElement('div');
-    wasteWrap.style.cssText='position:relative;width:clamp(42px,12.5vw,56px);height:clamp(58px,17.5vw,78px)';
+    wasteWrap.style.cssText='position:relative;width:clamp(56px,13.5vw,110px);height:clamp(78px,19vw,154px)';
     if(waste.length>0){
       var showCount=drawCount===3?Math.min(3,waste.length):1;
       for(var wi=0;wi<showCount;wi++){
@@ -30484,7 +30425,7 @@ function GKL(a){
 
     for(var c=0;c<7;c++){
       var colDiv=document.createElement('div');
-      colDiv.style.cssText='display:flex;flex-direction:column;min-width:clamp(42px,12.5vw,56px);align-items:center';
+      colDiv.style.cssText='display:flex;flex-direction:column;min-width:clamp(56px,13.5vw,110px);align-items:center';
 
       if(tableau[c].length===0){
         var em=document.createElement('div');
@@ -30499,7 +30440,7 @@ function GKL(a){
 
           // Overlap: negative margin except first card
           if(i>0){
-            cdEl.style.marginTop=card.up?'-36px':'-42px';
+            cdEl.style.marginTop=card.up?'-52px':'-58px';
           }
           // Stacked cards show partial height unless last
           if(i<tableau[c].length-1){
@@ -30630,15 +30571,15 @@ function GSP(a){
     tabRow.style.cssText='display:flex;gap:clamp(2px,.7vw,4px);justify-content:center;padding:clamp(2px,1vw,4px) 0;width:clamp(320px,98vw,740px);margin:0 auto';
     for(var c=0;c<10;c++){
       var colDiv=document.createElement('div');colDiv.className='gc-stk';
-      colDiv.style.cssText='min-width:clamp(32px,9.5vw,44px)';
+      colDiv.style.cssText='min-width:clamp(42px,9.5vw,64px)';
       if(tab[c].length===0){
-        var em=document.createElement('div');em.className='gc gc-empty';em.style.width='clamp(32px,9.5vw,44px)';em.style.height='clamp(44px,13vw,60px)';
+        var em=document.createElement('div');em.className='gc gc-empty';em.style.width='clamp(42px,9.5vw,64px)';em.style.height='clamp(59px,13.3vw,90px)';
         (function(ci){em.onclick=function(){tapCol(ci)}})(c);
         colDiv.appendChild(em);
       }else{
         for(var i=0;i<tab[c].length;i++){
           var cd=_cdEl(tab[c][i]);
-          cd.style.width='clamp(32px,9.5vw,44px)';cd.style.height='clamp(44px,13vw,60px)';cd.style.fontSize='clamp(.5rem,1.6vw,.7rem)';
+          cd.style.width='clamp(42px,9.5vw,64px)';cd.style.height='clamp(59px,13.3vw,90px)';cd.style.fontSize='clamp(.55rem,1.6vw,.75rem)';
           if(sel&&sel.col===c&&i>=sel.idx)cd.className+=' gc-sel';
           (function(ci,ii){cd.onclick=function(){tapCol(ci,ii)}})(c,i);
           colDiv.appendChild(cd);
@@ -30904,11 +30845,11 @@ function GPY(a){
       for(var c=0;c<=r;c++){
         var pi=idx;
         if(removed[pi]){
-          var em=document.createElement('div');em.style.cssText='width:clamp(36px,10vw,48px);height:clamp(50px,14vw,68px)';
+          var em=document.createElement('div');em.style.cssText='width:clamp(48px,11.5vw,72px);height:clamp(67px,16vw,100px)';
           rowDiv.appendChild(em);
         }else{
           var cd=_cdEl(pyr[pi]);
-          cd.style.width='clamp(36px,10vw,48px)';cd.style.height='clamp(50px,14vw,68px)';cd.style.fontSize='clamp(.5rem,1.5vw,.7rem)';
+          cd.style.width='clamp(48px,11.5vw,72px)';cd.style.height='clamp(67px,16vw,100px)';cd.style.fontSize='clamp(.6rem,1.6vw,.8rem)';
           if(!isExposed(pi))cd.style.opacity='.5';
           else cd.style.cursor='pointer';
           if(sel&&sel.type==='pyr'&&sel.idx===pi)cd.className+=' gc-sel';
@@ -31043,12 +30984,12 @@ function GTP(a){
           rowDiv.appendChild(gap);
         }
         if(removed[pi]){
-          var em=document.createElement('div');em.style.cssText='width:clamp(32px,9vw,42px);height:clamp(44px,12.5vw,58px)';
+          var em=document.createElement('div');em.style.cssText='width:clamp(42px,9.5vw,62px);height:clamp(59px,13.3vw,87px)';
           rowDiv.appendChild(em);
         }else{
           var cd=_cdEl(peaks[pi]);
-          cd.style.width='clamp(32px,9vw,42px)';cd.style.height='clamp(44px,12.5vw,58px)';cd.style.fontSize='clamp(.45rem,1.4vw,.65rem)';
-          if(!peaks[pi].up){cd.className='gc gc-dn';_cdBackStyle(cd);cd.style.width='clamp(32px,9vw,42px)';cd.style.height='clamp(44px,12.5vw,58px)';cd.innerHTML='';}
+          cd.style.width='clamp(42px,9.5vw,62px)';cd.style.height='clamp(59px,13.3vw,87px)';cd.style.fontSize='clamp(.55rem,1.5vw,.7rem)';
+          if(!peaks[pi].up){cd.className='gc gc-dn';_cdBackStyle(cd);cd.style.width='clamp(42px,9.5vw,62px)';cd.style.height='clamp(59px,13.3vw,87px)';cd.innerHTML='';}
           else if(isExposed(pi)){cd.style.cursor='pointer';(function(ii){cd.onclick=function(){tapPeak(ii)}})(pi);}
           else{cd.style.opacity='.5';}
           rowDiv.appendChild(cd);
