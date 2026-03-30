@@ -90,7 +90,7 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
 .gs-sampler.open{display:block}
 .gs-sampler-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .gs-sampler-head h2{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);letter-spacing:.08em}
-.gs-wave-canvas{width:100%;height:80px;background:rgba(16,20,14,.8);border-radius:6px;border:1px solid var(--border);cursor:crosshair;touch-action:none}
+.gs-wave-canvas{width:100%;height:140px;background:rgba(16,20,14,.8);border-radius:6px;border:1px solid var(--border);cursor:col-resize;touch-action:none}
 .gs-sample-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .gs-sample-chip{font-size:.55rem;padding:6px 10px;border-radius:4px;border:1px solid var(--border);color:var(--cream);cursor:pointer;background:rgba(26,31,23,.6);font-family:'DM Mono',monospace;min-height:36px;display:flex;align-items:center;gap:4px}
 .gs-sample-chip:active{transform:scale(.95)}
@@ -173,9 +173,11 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
     </div>
     <button class="gs-btn" onclick="GS.importSample()" style="margin-left:auto">📂 File</button>
   </div>
-  <canvas class="gs-wave-canvas" id="gs-wave-canvas" width="400" height="80"></canvas>
-  <div class="gs-trim-bar" id="gs-trim-bar">
-    <div class="gs-trim-region" id="gs-trim-region" style="left:0;right:0"></div>
+  <canvas class="gs-wave-canvas" id="gs-wave-canvas" width="400" height="140"></canvas>
+  <div style="display:flex;justify-content:space-between;padding:2px 4px;font-size:.45rem;color:var(--muted);font-family:DM Mono,monospace">
+    <span id="gs-trim-start-label">0.00s</span>
+    <span>← drag edges to trim →</span>
+    <span id="gs-trim-end-label">0.00s</span>
   </div>
   <div style="display:flex;gap:4px;flex-wrap:wrap;margin:8px 0">
     <button class="gs-btn" onclick="GS.samplePreview()">▶ Preview</button>
@@ -414,49 +416,80 @@ var GS = (function(){
   function drawWaveform(buf){
     var canvas = document.getElementById('gs-wave-canvas');
     if(!canvas || !buf) return;
+    // Resize canvas to actual pixel width
+    var rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * (window.devicePixelRatio || 1);
+    canvas.height = rect.height * (window.devicePixelRatio || 1);
     var ctx2d = canvas.getContext('2d');
-    var w = canvas.width, h = canvas.height;
+    var dpr = window.devicePixelRatio || 1;
+    ctx2d.scale(dpr, dpr);
+    var w = rect.width, h = rect.height;
     ctx2d.clearRect(0,0,w,h);
     var data = buf.getChannelData(0);
     var step = Math.ceil(data.length / w);
 
     // Background
-    ctx2d.fillStyle = 'rgba(16,20,14,.8)';
+    ctx2d.fillStyle = 'rgba(16,20,14,.9)';
     ctx2d.fillRect(0,0,w,h);
 
-    // Trim region
+    // Dimmed regions outside trim
     var ts = Math.floor(_trimStart * w), te = Math.floor(_trimEnd * w);
-    ctx2d.fillStyle = 'rgba(122,179,86,.1)';
+    ctx2d.fillStyle = 'rgba(0,0,0,.5)';
+    ctx2d.fillRect(0, 0, ts, h);
+    ctx2d.fillRect(te, 0, w-te, h);
+
+    // Active trim region subtle highlight
+    ctx2d.fillStyle = 'rgba(122,179,86,.06)';
     ctx2d.fillRect(ts, 0, te-ts, h);
 
-    // Waveform
-    ctx2d.beginPath();
-    ctx2d.strokeStyle = '#7ab356';
-    ctx2d.lineWidth = 1;
+    // Waveform — draw dimmed outside, bright inside
     for(var x=0;x<w;x++){
       var min=1,max=-1;
       for(var j=0;j<step;j++){
-        var val = data[x*step+j] || 0;
+        var val = data[Math.min(x*step+j, data.length-1)] || 0;
         if(val<min)min=val;if(val>max)max=val;
       }
       var yMin = (1+min)*h/2, yMax = (1+max)*h/2;
+      var inTrim = x >= ts && x <= te;
+      ctx2d.strokeStyle = inTrim ? '#7ab356' : 'rgba(122,179,86,.25)';
+      ctx2d.lineWidth = inTrim ? 1.5 : 1;
+      ctx2d.beginPath();
       ctx2d.moveTo(x, yMin);
       ctx2d.lineTo(x, yMax);
+      ctx2d.stroke();
     }
-    ctx2d.stroke();
 
-    // Trim handles
-    ctx2d.fillStyle = '#7ab356';
-    ctx2d.fillRect(ts-1, 0, 3, h);
-    ctx2d.fillRect(te-1, 0, 3, h);
+    // Trim handles — thick draggable bars
+    var handleW = 8;
+    ctx2d.fillStyle = 'rgba(122,179,86,.9)';
+    ctx2d.fillRect(ts-handleW/2, 0, handleW, h);
+    ctx2d.fillRect(te-handleW/2, 0, handleW, h);
+
+    // Handle grip lines
+    ctx2d.strokeStyle = 'rgba(0,0,0,.4)';
+    ctx2d.lineWidth = 1;
+    for(var gi=-1;gi<=1;gi++){
+      ctx2d.beginPath();ctx2d.moveTo(ts+gi*2, h*0.3);ctx2d.lineTo(ts+gi*2, h*0.7);ctx2d.stroke();
+      ctx2d.beginPath();ctx2d.moveTo(te+gi*2, h*0.3);ctx2d.lineTo(te+gi*2, h*0.7);ctx2d.stroke();
+    }
+
+    // Handle arrows
+    ctx2d.fillStyle = '#fff';
+    ctx2d.font = (12)+'px sans-serif';
+    ctx2d.textAlign = 'center';
+    ctx2d.fillText('◀', ts, h/2+4);
+    ctx2d.fillText('▶', te, h/2+4);
 
     // Center line
-    ctx2d.strokeStyle = 'rgba(200,168,75,.2)';
+    ctx2d.strokeStyle = 'rgba(200,168,75,.15)';
+    ctx2d.lineWidth = 0.5;
     ctx2d.beginPath();ctx2d.moveTo(0,h/2);ctx2d.lineTo(w,h/2);ctx2d.stroke();
 
-    // Update trim bar
-    var trimRegion = document.getElementById('gs-trim-region');
-    if(trimRegion){trimRegion.style.left=(_trimStart*100)+'%';trimRegion.style.right=((1-_trimEnd)*100)+'%';}
+    // Update time labels
+    var sl = document.getElementById('gs-trim-start-label');
+    var el = document.getElementById('gs-trim-end-label');
+    if(sl) sl.textContent = (_trimStart * buf.duration).toFixed(2) + 's';
+    if(el) el.textContent = (_trimEnd * buf.duration).toFixed(2) + 's';
   }
 
   function renderSampleList(){
@@ -473,24 +506,40 @@ var GS = (function(){
     el.innerHTML = html;
   }
 
-  // Trim bar drag
+  // Direct canvas trim drag — slide left/right handles on the waveform
   function initTrimDrag(){
-    var bar = document.getElementById('gs-trim-bar');
-    if(!bar) return;
-    bar.addEventListener('pointerdown', function(e){
-      var rect = bar.getBoundingClientRect();
+    var canvas = document.getElementById('gs-wave-canvas');
+    if(!canvas) return;
+    var dragging = null; // 'start' or 'end'
+
+    canvas.addEventListener('pointerdown', function(e){
+      if(!_editBuffer) return;
+      e.preventDefault();
+      var rect = canvas.getBoundingClientRect();
       var pct = (e.clientX - rect.left) / rect.width;
-      // Snap to nearest handle
-      if(Math.abs(pct - _trimStart) < Math.abs(pct - _trimEnd)){
-        var move = function(ev){_trimStart = Math.max(0, Math.min(_trimEnd-0.02, (ev.clientX-rect.left)/rect.width));drawWaveform(_editBuffer)};
-        var up = function(){document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up)};
-        document.addEventListener('pointermove',move);document.addEventListener('pointerup',up);
-      } else {
-        var move2 = function(ev){_trimEnd = Math.max(_trimStart+0.02, Math.min(1, (ev.clientX-rect.left)/rect.width));drawWaveform(_editBuffer)};
-        var up2 = function(){document.removeEventListener('pointermove',move2);document.removeEventListener('pointerup',up2)};
-        document.addEventListener('pointermove',move2);document.addEventListener('pointerup',up2);
-      }
+      // Which handle is closer?
+      var distStart = Math.abs(pct - _trimStart);
+      var distEnd = Math.abs(pct - _trimEnd);
+      dragging = distStart < distEnd ? 'start' : 'end';
+      // Immediately move to touch point
+      if(dragging === 'start') _trimStart = Math.max(0, Math.min(_trimEnd - 0.01, pct));
+      else _trimEnd = Math.max(_trimStart + 0.01, Math.min(1, pct));
+      drawWaveform(_editBuffer);
     });
+
+    canvas.addEventListener('pointermove', function(e){
+      if(!dragging || !_editBuffer) return;
+      e.preventDefault();
+      var rect = canvas.getBoundingClientRect();
+      var pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      if(dragging === 'start') _trimStart = Math.max(0, Math.min(_trimEnd - 0.01, pct));
+      else _trimEnd = Math.max(_trimStart + 0.01, Math.min(1, pct));
+      drawWaveform(_editBuffer);
+    });
+
+    canvas.addEventListener('pointerup', function(){dragging = null});
+    canvas.addEventListener('pointercancel', function(){dragging = null});
+    canvas.addEventListener('pointerleave', function(){dragging = null});
   }
 
   // ── WAV encoder ──
