@@ -29716,12 +29716,11 @@ function GCH(a){
 
 // ═══ CONNECT FLEUR ═══
 function GC4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0;
-  var VI='assets/games/chess/';
-  var IMG_P='assets/games/c4/c4-flower-green.png',IMG_A='assets/games/c4/c4-flower-gold.png';
+  var IMG_P='assets/games/c4/zinnia.png',IMG_A='assets/games/c4/calendula.png';
   ms(a,'Moves: <strong id="C4m">0</strong>');mm(a);
   var bw=document.createElement('div');bw.style.cssText='position:relative;width:clamp(300px,92vw,420px);margin:0 auto';
-  var bg=document.createElement('img');bg.src='assets/games/c4/c4-board.png';bg.style.cssText='width:100%;display:block;border-radius:8px';bw.appendChild(bg);
-  var gd=document.createElement('div');gd.className='lg';gd.id='C4g';gd.style.cssText='position:absolute;top:5%;left:3%;right:3%;bottom:5%;grid-template-columns:repeat(7,1fr);gap:clamp(2px,0.8vw,4px)';bw.appendChild(gd);a.appendChild(bw);
+  var bg=document.createElement('img');bg.src='assets/games/c4/board.png';bg.style.cssText='width:100%;display:block;border-radius:8px';bw.appendChild(bg);
+  var gd=document.createElement('div');gd.className='lg';gd.id='C4g';gd.style.cssText='position:absolute;top:2.5%;left:3.5%;right:3.5%;bottom:2.5%;grid-template-columns:repeat(7,1fr);gap:clamp(1px,0.5vw,3px)';bw.appendChild(gd);a.appendChild(bw);
   mc(a).innerHTML='<select class="gsl" id="C4d"><option value="1">Seedling</option><option value="2" selected>Sapling</option><option value="3">Old Growth</option></select><button class="gb" onclick="_C4N()">🔄 New</button>';
   function init(){bd=[];for(var i=0;i<ROWS*COLS;i++)bd.push(0);turn=1;over=false;mv=0;document.getElementById('C4m').textContent='0'}
   function drop(col){for(var r=ROWS-1;r>=0;r--){if(bd[r*COLS+col]===0){bd[r*COLS+col]=turn;return r;}}}
