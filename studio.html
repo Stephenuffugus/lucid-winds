@@ -41,10 +41,22 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
 .gs-layer{border-bottom:1px solid rgba(74,124,53,.06);transition:all .2s}
 .gs-layer-head{display:flex;align-items:center;gap:6px;padding:6px 10px;cursor:pointer;background:rgba(16,20,14,.4)}
 .gs-layer-head:active{background:rgba(16,20,14,.7)}
-.gs-layer-name{font-family:'Bebas Neue',sans-serif;font-size:.75rem;letter-spacing:.06em;flex:1;color:var(--cream)}
+.gs-layer-name{font-family:'Bebas Neue',sans-serif;font-size:.75rem;letter-spacing:.06em;flex:1}
+.gs-layer.ly-drums .gs-layer-name{color:#e88a4a}
+.gs-layer.ly-bass .gs-layer-name{color:#c75050}
+.gs-layer.ly-chords .gs-layer-name{color:#a0c4e8}
+.gs-layer.ly-melody .gs-layer-name{color:#c8a84b}
+.gs-layer.ly-drums .gs-layer-head{border-left:3px solid #e88a4a}
+.gs-layer.ly-bass .gs-layer-head{border-left:3px solid #c75050}
+.gs-layer.ly-chords .gs-layer-head{border-left:3px solid #a0c4e8}
+.gs-layer.ly-melody .gs-layer-head{border-left:3px solid #c8a84b}
 .gs-layer-mini{display:flex;gap:1px;flex:2;height:16px;overflow:hidden;border-radius:3px}
 .gs-layer-mini div{flex:1;background:var(--cell)}
 .gs-layer-mini div.on{background:var(--cell-on)}
+.ly-drums .gs-layer-mini div.on{background:#e88a4a}
+.ly-bass .gs-layer-mini div.on{background:#c75050}
+.ly-chords .gs-layer-mini div.on{background:#a0c4e8}
+.ly-melody .gs-layer-mini div.on{background:#c8a84b}
 .gs-mute,.gs-solo{font-size:.55rem;padding:3px 8px;border-radius:3px;cursor:pointer;border:1px solid rgba(74,124,53,.15);color:var(--muted);font-family:'DM Mono',monospace}
 .gs-mute.on{border-color:#c75050;color:#c75050;background:rgba(199,80,80,.08)}
 .gs-solo.on{border-color:var(--gold);color:var(--gold);background:rgba(200,168,75,.08)}
@@ -55,7 +67,11 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
 .gs-grid{display:grid;gap:2px}
 .gs-grid-row{display:contents}
 .gs-cell{border-radius:3px;cursor:pointer;transition:background .08s,transform .08s;border:1px solid var(--border);min-height:0}
-.gs-cell.on{background:var(--cell-on)!important;border-color:rgba(122,179,86,.5);box-shadow:0 0 6px rgba(122,179,86,.25)}
+.gs-cell.on{border-color:rgba(122,179,86,.5);box-shadow:0 0 6px rgba(122,179,86,.25)}
+.ly-drums .gs-cell.on{background:rgba(232,138,74,.8)!important;border-color:rgba(232,138,74,.5);box-shadow:0 0 6px rgba(232,138,74,.3)}
+.ly-bass .gs-cell.on{background:rgba(199,80,80,.8)!important;border-color:rgba(199,80,80,.5);box-shadow:0 0 6px rgba(199,80,80,.3)}
+.ly-chords .gs-cell.on{background:rgba(160,196,232,.7)!important;border-color:rgba(160,196,232,.5);box-shadow:0 0 6px rgba(160,196,232,.3)}
+.ly-melody .gs-cell.on{background:rgba(200,168,75,.8)!important;border-color:rgba(200,168,75,.5);box-shadow:0 0 6px rgba(200,168,75,.3)}
 .gs-cell.db{background:var(--cell-db)}
 .gs-cell.playhead{box-shadow:inset 0 0 0 2px var(--sage)}
 .gs-label{font-size:.45rem;color:var(--muted);font-family:'DM Mono',monospace;display:flex;align-items:center;justify-content:flex-end;padding-right:4px;white-space:nowrap}
@@ -390,7 +406,7 @@ var GS = (function(){
         miniHtml += '<div'+(hasNote?' class="on"':'')+'></div>';
       }
 
-      html += '<div class="gs-layer'+(isExp?' expanded':'')+'">'
+      html += '<div class="gs-layer ly-'+lt.id+(isExp?' expanded':'')+'">'
         +'<div class="gs-layer-head" onclick="GS.expandLayer(\''+lt.id+'\')">'
         +'<div class="gs-layer-name">'+lt.name+(lt.type==='note'?' <span style="font-size:.5rem;color:var(--muted);font-family:DM Mono,monospace">Oct '+lt.octave+'</span>':'')+'</div>'
         +(lt.type==='note'?'<div style="display:flex;gap:2px" onclick="event.stopPropagation()"><div class="gs-mute" onclick="GS.octShift(\''+lt.id+'\',-1)" style="font-size:.5rem;padding:2px 5px">▼</div><div class="gs-mute" onclick="GS.octShift(\''+lt.id+'\',1)" style="font-size:.5rem;padding:2px 5px">▲</div></div>':'')
