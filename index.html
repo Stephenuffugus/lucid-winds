@@ -28807,8 +28807,8 @@ function GFL(a){var SZ=8,grid=[],moves=0,maxMoves=22;
   var LF=['assets/games/flood/leaf-sage.png','assets/games/flood/leaf-gold.png','assets/games/flood/leaf-slate.png','assets/games/flood/leaf-copper.png','assets/games/flood/leaf-plum.png','assets/games/flood/leaf-crimson.png'];
   var CC=['#4a7c35','#C8A84B','#4a7aaa','#c76a30','#9b59b6','#c75050'];
   ms(a,'Moves: <strong id="FFm">0</strong>/'+maxMoves);mm(a);
-  var gd=document.createElement('div');gd.className='lg';gd.id='FFg';gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';gd.style.gap='2px';a.appendChild(gd);
-  var pb=document.createElement('div');pb.className='lg';pb.style.gridTemplateColumns='repeat(6,1fr)';pb.style.gap='8px';pb.style.padding='12px';a.appendChild(pb);
+  var gd=document.createElement('div');gd.className='lg';gd.id='FFg';gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';gd.style.gap='2px';gd.style.width='clamp(300px,92vw,420px)';a.appendChild(gd);
+  var pb=document.createElement('div');pb.className='lg';pb.style.gridTemplateColumns='repeat(6,1fr)';pb.style.gap='8px';pb.style.padding='12px';pb.style.width='clamp(300px,92vw,420px)';a.appendChild(pb);
   mc(a).innerHTML='<button class="gb" onclick="_FFN()">🔄 New</button>';
   function gen(){grid=[];for(var i=0;i<SZ*SZ;i++)grid.push(Math.floor(Math.random()*6));moves=0}
   function flood(oc,nc){if(oc===nc)return;var vis=[];for(var x=0;x<SZ*SZ;x++)vis.push(false);var q=[0];while(q.length){var i=q.shift();if(i<0||i>=SZ*SZ||vis[i])continue;if(grid[i]!==oc&&grid[i]!==nc)continue;vis[i]=true;if(grid[i]===oc)grid[i]=nc;var r=Math.floor(i/SZ),c=i%SZ;if(r>0)q.push(i-SZ);if(r<SZ-1)q.push(i+SZ);if(c>0)q.push(i-1);if(c<SZ-1)q.push(i+1)}}
@@ -28819,40 +28819,25 @@ function GFL(a){var SZ=8,grid=[],moves=0,maxMoves=22;
 
 // ═══ PIPE CONNECT ═══
 function GPP(a){var SZ=6,grid=[],_rc=0;
-  var PIPE_SVG=[
-    '<svg viewBox="0 0 32 32"><line x1="16" y1="0" x2="16" y2="32" stroke="#7ab356" stroke-width="6" stroke-linecap="round"/></svg>',
-    '<svg viewBox="0 0 32 32"><line x1="0" y1="16" x2="32" y2="16" stroke="#7ab356" stroke-width="6" stroke-linecap="round"/></svg>',
-    '<svg viewBox="0 0 32 32"><path d="M16 0V16H32" fill="none" stroke="#7ab356" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    '<svg viewBox="0 0 32 32"><path d="M16 0V16H0" fill="none" stroke="#7ab356" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    '<svg viewBox="0 0 32 32"><path d="M0 16H16V0" fill="none" stroke="#7ab356" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    '<svg viewBox="0 0 32 32"><path d="M32 16H16V0" fill="none" stroke="#7ab356" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-  ];
-  ms(a);mm(a);var gd=document.createElement('div');gd.className='ppg';gd.id='PP';gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';a.appendChild(gd);mc(a).innerHTML='<button class="gb" onclick="_PPN()">🔄 New</button>';
+  var VI='assets/games/pipe/';
+  var PIPE_IMG=[VI+'vine-straight.png',VI+'vine-straight.png',VI+'vine-corner.png',VI+'vine-corner.png',VI+'vine-corner.png',VI+'vine-corner.png'];
+  var PIPE_ROT=[0,90,0,270,180,90];
+  ms(a);mm(a);var gd=document.createElement('div');gd.className='lg';gd.id='PP';gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';gd.style.gap='2px';gd.style.width='clamp(300px,92vw,420px)';a.appendChild(gd);mc(a).innerHTML='<button class="gb" onclick="_PPN()">🔄 New</button>';
   function gen(){grid=[];_rc=0;for(var i=0;i<SZ*SZ;i++){grid.push({type:Math.floor(Math.random()*6),rot:0});for(var r=0;r<Math.floor(Math.random()*4);r++)grid[i].rot=(grid[i].rot+1)%4}}
   function _ppCheck(){
-    // Simple connectivity check: count how many pipes point at each other
     var connections=0;
-    var EXITS=[ // for each type: which directions are open at rot=0 [up,right,down,left]
-      [1,0,1,0], // 0: vertical
-      [0,1,0,1], // 1: horizontal
-      [1,1,0,0], // 2: corner UR
-      [1,0,0,1], // 3: corner UL
-      [0,0,1,1], // 4: corner DL (inverted from rendering)
-      [0,1,1,0]  // 5: corner DR
-    ];
+    var EXITS=[[1,0,1,0],[0,1,0,1],[1,1,0,0],[1,0,0,1],[0,0,1,1],[0,1,1,0]];
     function exits(i){var t=grid[i].type,r=grid[i].rot%4,e=EXITS[t]||[0,0,0,0];var re=e.slice();for(var rr=0;rr<r;rr++){re=[re[3],re[0],re[1],re[2]];}return re;}
     for(var y=0;y<SZ;y++)for(var x=0;x<SZ;x++){
       var e=exits(y*SZ+x);
-      // Check right neighbor
       if(x<SZ-1){var ne=exits(y*SZ+x+1);if(e[1]&&ne[3])connections++;}
-      // Check down neighbor
       if(y<SZ-1){var ne2=exits((y+1)*SZ+x);if(e[2]&&ne2[0])connections++;}
     }
     return connections;
   }
   var _ppBest=0;
-  function rn(){gd.innerHTML='';for(var i=0;i<SZ*SZ;i++){var d=document.createElement('div');d.className='ppc';d.style.cssText='transform:rotate('+(grid[i].rot*90)+'deg);overflow:hidden;transition:transform 0.15s ease';d.innerHTML=PIPE_SVG[grid[i].type];d.setAttribute('data-i',i);d.onclick=function(){var idx=parseInt(this.getAttribute('data-i'));_play('click');grid[idx].rot=(grid[idx].rot+1)%4;_rc++;var conn=_ppCheck();if(conn>_ppBest){_ppBest=conn;if(_rc%4===0)_e('progress');}sm(conn+' connections');if(conn>=SZ*(SZ-1)*2-4){_e('game_win');_playWin();sm('🌿 All connected! '+_rc+' rotations');_sr('pipe',{w:true,s:_rc});}rn()};gd.appendChild(d)}}
-  window._PPN=function(){gen();sm('Rotate pipes to connect');rn()};_PPN();}
+  function rn(){gd.innerHTML='';for(var i=0;i<SZ*SZ;i++){var d=document.createElement('div');d.className='lc';var totalRot=PIPE_ROT[grid[i].type]+(grid[i].rot*90);d.style.background='url('+PIPE_IMG[grid[i].type]+') center/cover #1a1e16';d.style.transform='rotate('+totalRot+'deg)';d.style.transition='transform 0.15s ease';d.setAttribute('data-i',i);d.onclick=function(){var idx=parseInt(this.getAttribute('data-i'));_play('click');grid[idx].rot=(grid[idx].rot+1)%4;_rc++;var conn=_ppCheck();if(conn>_ppBest){_ppBest=conn;if(_rc%4===0)_e('progress');}sm(conn+' connections');if(conn>=SZ*(SZ-1)*2-4){_e('game_win');_playWin();sm('🌿 All connected! '+_rc+' rotations');_sr('pipe',{w:true,s:_rc});}rn()};gd.appendChild(d)}}
+  window._PPN=function(){gen();sm('Rotate vines to connect');rn()};_PPN();}
 
 // ═══ GROVE CHESS ═══
 function GCH(a){
