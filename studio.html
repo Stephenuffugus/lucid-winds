@@ -371,13 +371,25 @@ var GS = (function(){
     'FM Bell':function(freq,t,v){var c=getCtx(),dst=getDest('melody');var mod=c.createOscillator(),mg=c.createGain(),car=c.createOscillator(),cg=c.createGain();mod.type='sine';mod.frequency.value=freq*3.5;mg.gain.setValueAtTime(freq*4,t);mg.gain.exponentialRampToValueAtTime(freq*0.01,t+0.5);car.type='sine';car.frequency.value=freq;cg.gain.setValueAtTime(0.07*v,t);cg.gain.exponentialRampToValueAtTime(0.001,t+0.6);mod.connect(mg);mg.connect(car.frequency);car.connect(cg);cg.connect(dst);mod.start(t);car.start(t);mod.stop(t+0.62);car.stop(t+0.62)},
     'Pluck':function(freq,t,v){var c=getCtx(),dst=getDest('melody');var o=c.createOscillator(),g=c.createGain(),f=c.createBiquadFilter();o.type='sawtooth';o.frequency.value=freq;f.type='lowpass';f.frequency.setValueAtTime(4000,t);f.frequency.exponentialRampToValueAtTime(300,t+0.08);g.gain.setValueAtTime(0.1*v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.12);o.connect(f);f.connect(g);g.connect(dst);o.start(t);o.stop(t+0.14)}
   };
-  // ── Custom drum pad samples ──
+  // ── Custom drum pad samples + extra sample rows ──
   var drumSamples = [null,null,null,null,null,null,null,null]; // per-pad sample name or null
+  var extraDrumRows = []; // up to 3: {name:'my sample', sampleName:'...'}
+  var MAX_EXTRA_DRUMS = 3;
 
   function playDrumPad(idx, t, vol){
+    if(idx >= DRUMS.length){
+      // Extra sample row
+      var extra = extraDrumRows[idx - DRUMS.length];
+      if(extra && extra.sampleName && sampleBuffers[extra.sampleName]){
+        var c=getCtx(),dst=getDest('drums');
+        var src=c.createBufferSource(),g=c.createGain();
+        src.buffer=sampleBuffers[extra.sampleName];g.gain.value=(vol||1)*0.5;
+        src.connect(g);g.connect(dst);src.start(t);
+      }
+      return;
+    }
     var sName = drumSamples[idx];
     if(sName && sampleBuffers[sName]){
-      // Play custom sample through drum bus
       var c=getCtx(),dst=getDest('drums');
       var src=c.createBufferSource(),g=c.createGain();
       src.buffer=sampleBuffers[sName];g.gain.value=(vol||1)*0.5;
@@ -622,7 +634,7 @@ var GS = (function(){
   var currentSection = 'A', currentVar = 0;
   var swing = 0; // 0-80, percentage of swing feel
 
-  // Layer types (octave is mutable)
+  // Layer types (octave is mutable, drum rows dynamic)
   var LAYER_TYPES = [
     {id:'drums', name:'Drums', type:'drum', rows:DRUMS.length, labels:DRUMS.map(function(d){return d.name}), octave:0},
     {id:'bass',  name:'Bass',  type:'note', octave:2, rows:0, labels:[]},
@@ -644,7 +656,7 @@ var GS = (function(){
     var v = {};
     for(var i=0;i<LAYER_TYPES.length;i++){
       var lt = LAYER_TYPES[i];
-      var rows = lt.type === 'drum' ? lt.rows : getScaleNotes(lt.octave).length;
+      var rows = lt.type === 'drum' ? (lt.rows + extraDrumRows.length) : getScaleNotes(lt.octave).length;
       v[lt.id] = {grid:[], mute:false, solo:false, vol:80, preset:lt.id==='bass'?'Pluck Bass':lt.id==='chords'?'Warm Pad':lt.id==='melody'?'Sine Lead':''};
       for(var r=0;r<rows*STEPS;r++) v[lt.id].grid.push(0);
     }
@@ -691,8 +703,17 @@ var GS = (function(){
   function getPresetOptions(lid){
     var presets = lid==='bass'?BASS_PRESETS:lid==='chords'?CHORD_PRESETS:LEAD_PRESETS;
     var current = getPreset(lid);
-    var html = '';
+    var html = '<optgroup label="Synths">';
     for(var name in presets) html += '<option value="'+name+'"'+(name===current?' selected':'')+'>'+name+'</option>';
+    html += '</optgroup>';
+    // Add saved samples
+    var hasSamples = false;
+    for(var sn in sampleBuffers){hasSamples = true; break;}
+    if(hasSamples){
+      html += '<optgroup label="Your Samples">';
+      for(var sn in sampleBuffers) html += '<option value="smp:'+sn+'"'+((current==='smp:'+sn)?' selected':'')+'>🔊 '+sn+'</option>';
+      html += '</optgroup>';
+    }
     return html;
   }
   var expandedLayer = 'drums';
@@ -846,8 +867,8 @@ var GS = (function(){
       var lt = LAYER_TYPES[li];
       var ld = v[lt.id];
       var isExp = expandedLayer === lt.id;
-      var rows = lt.type === 'drum' ? lt.rows : getScaleNotes(lt.octave).length;
-      var labels = lt.type === 'drum' ? lt.labels : getScaleNotes(lt.octave).map(function(n){return n.name});
+      var rows = lt.type === 'drum' ? (lt.rows + extraDrumRows.length) : getScaleNotes(lt.octave).length;
+      var labels = lt.type === 'drum' ? lt.labels.concat(extraDrumRows.map(function(e){return e.name})) : getScaleNotes(lt.octave).map(function(n){return n.name});
 
       // Mini pattern preview
       var miniHtml = '';
@@ -878,6 +899,10 @@ var GS = (function(){
           var db = s%4===0;
           html += '<div class="gs-cell'+(on?' on':'')+(db?' db':'')+'" data-l="'+lt.id+'" data-r="'+r+'" data-s="'+s+'" onclick="GS.cellClick(this)" style="height:'+cs+'px;width:'+cs+'px"></div>';
         }
+      }
+      // Add sample button for drums
+      if(lt.type==='drum' && extraDrumRows.length < MAX_EXTRA_DRUMS){
+        html += '<div style="padding:4px 8px"><button class="gs-btn" onclick="GS.addDrumSample()" style="font-size:.55rem;padding:4px 10px;min-height:32px">+ Sample Pad ('+extraDrumRows.length+'/'+MAX_EXTRA_DRUMS+')</button></div>';
       }
       // FX controls below grid
       var fxState = ld.fx || {filter:20000, filterQ:0.7, delay:0, delayFb:0, reverb:0};
@@ -1252,6 +1277,12 @@ var GS = (function(){
     setPreset: function(lid, name){
       var v = getCurrentVar(); if(!v||!v[lid]) return;
       v[lid].preset = name;
+      // Handle sample selection (prefixed with "smp:")
+      if(name.indexOf('smp:') === 0){
+        layerSampleName[lid] = name.substring(4);
+      } else {
+        layerSampleName[lid] = null;
+      }
     },
     openSampler: function(){
       document.getElementById('gs-sampler').classList.add('open');
@@ -1399,11 +1430,16 @@ var GS = (function(){
     },
     sampleSave: function(){
       if(!_editBuffer) return;
-      var name = _editName || 'sample-'+Date.now().toString(36).slice(-4);
+      var name = prompt('Name this sample:', _editName || 'my-sample');
+      if(!name) return;
+      name = name.replace(/[^a-zA-Z0-9_\- ]/g,'').substring(0,20).trim();
+      if(!name) name = 'sample';
       if(sampleBuffers[name]){name += '-'+Math.floor(Math.random()*99)}
       sampleBuffers[name] = _editBuffer;
+      _editName = name;
       renderSampleList();
-      document.getElementById('gs-rec-status').textContent = 'Saved as "'+name+'" — assign to a drum pad';
+      renderLayers(); // update preset dropdowns
+      document.getElementById('gs-rec-status').textContent = 'Saved "'+name+'" — available in all instruments';
     },
     editSample: function(name){
       if(!sampleBuffers[name]) return;
@@ -1412,6 +1448,28 @@ var GS = (function(){
       _trimStart = 0; _trimEnd = 1;
       drawWaveform(_editBuffer);
       document.getElementById('gs-rec-status').textContent = 'Editing: '+name+' ('+_editBuffer.duration.toFixed(2)+'s)';
+    },
+    addDrumSample: function(){
+      if(extraDrumRows.length >= MAX_EXTRA_DRUMS){alert('Max '+MAX_EXTRA_DRUMS+' sample pads');return}
+      // Pick from saved samples
+      var names = Object.keys(sampleBuffers);
+      if(!names.length){alert('Save a sample first (🎤 Sampler)');return}
+      var pick = prompt('Pick a sample:\n'+names.map(function(n,i){return (i+1)+'. '+n}).join('\n')+'\n\nEnter number or name:');
+      if(!pick) return;
+      var sName = null;
+      var idx = parseInt(pick);
+      if(idx >= 1 && idx <= names.length) sName = names[idx-1];
+      else{for(var i=0;i<names.length;i++){if(names[i].toLowerCase()===pick.toLowerCase()){sName=names[i];break}}}
+      if(!sName){alert('Sample not found');return}
+      extraDrumRows.push({name:sName, sampleName:sName});
+      // Extend drum grids in all sections
+      var keys=['A','B','C'];
+      for(var ki=0;ki<keys.length;ki++){var sec=song.sections[keys[ki]];
+        for(var vi=0;vi<sec.vars.length;vi++){
+          var g=sec.vars[vi].drums.grid;
+          for(var s=0;s<STEPS;s++) g.push(0); // add one row of steps
+        }}
+      renderLayers();
     },
     assignDrum: function(padIdx, name){
       // Toggle — if already assigned, unassign
