@@ -3123,17 +3123,20 @@
     .chb{display:grid;grid-template-columns:repeat(8,1fr);position:absolute;top:4.5%;left:4.5%;right:4.5%;bottom:4.5%;overflow:hidden}
     .chs{aspect-ratio:1;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;min-height:0;-webkit-tap-highlight-color:transparent;transition:background .15s}
     .chs img{width:90%;height:90%;object-fit:contain;pointer-events:none}
-    .chs.ch-sel{box-shadow:inset 0 0 0 2px rgba(200,168,75,.6)}
-    .chs.ch-move::after{content:'';position:absolute;width:10px;height:10px;border-radius:50%;background:rgba(122,179,86,.45);z-index:1}
-    .chs.ch-cap::after{content:'';position:absolute;width:85%;height:85%;border-radius:50%;border:3px solid rgba(180,60,60,.45);background:transparent;z-index:1}
-    .chs.ch-last{background:rgba(200,168,75,.08)!important}
-    .chs.ch-check{animation:checkFlash 0.8s ease infinite}
+    .chs.ch-sel{box-shadow:inset 0 0 0 2.5px rgba(200,168,75,.7);background:rgba(200,168,75,.15)!important}
+    .chs.ch-move::after{content:'';position:absolute;width:28%;height:28%;border-radius:50%;background:rgba(122,179,86,.5);z-index:1;box-shadow:0 0 6px rgba(122,179,86,.3)}
+    .chs.ch-cap::after{content:'';position:absolute;width:80%;height:80%;border-radius:50%;border:3px solid rgba(200,60,60,.5);background:rgba(200,60,60,.08);z-index:1}
+    .chs.ch-last{background:rgba(200,168,75,.18)!important;box-shadow:inset 0 0 8px rgba(200,168,75,.2)}
+    .chs.ch-check{animation:checkFlash 0.8s ease infinite;box-shadow:inset 0 0 12px rgba(200,50,50,.4)!important}
     @keyframes checkFlash{0%,100%{background:inherit}50%{background:rgba(180,60,60,.25)}}
     .chs.ch-placed{animation:chPlace .2s ease}
     @keyframes chPlace{0%{opacity:0;transform:scale(.7)}100%{opacity:1;transform:scale(1)}}
-    .ch-cap-row{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;padding:4px;min-height:24px;font-size:clamp(.6rem,1.8vw,.8rem)}
-    .ch-cap-row svg{width:20px;height:20px;opacity:0.55}
+    .ch-cap-row{display:flex;flex-wrap:wrap;justify-content:center;gap:1px;padding:4px 8px;min-height:28px}
+    .ch-cap-row img{width:28px;height:28px;opacity:0.6;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
     .ch-status{text-align:center;padding:6px 8px;font-size:clamp(.7rem,2.2vw,.95rem);color:var(--cream);font-family:'DM Mono',monospace}
+    .ch-promo{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;gap:6px;background:rgba(13,16,12,.95);border:2px solid rgba(200,168,75,.5);border-radius:12px;padding:10px 14px;z-index:10;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+    .ch-promo img{width:48px;height:48px;cursor:pointer;border-radius:8px;border:2px solid transparent;transition:border-color .15s,transform .15s}
+    .ch-promo img:active{transform:scale(.9)}
 
     /* Tap-based game boards: allow vertical scroll, prevent double-tap zoom */
     .ug,.mg,.wg,.ng,.lg,.sb,.dg,.c4g,.ckb,.rvb,.mmr,.ppg,.ffg,.csw,.skg,.bsg,.chb{touch-action:pan-y}
@@ -29129,6 +29132,7 @@ function GCH(a){
     });
     var piece=board[m.fr][m.fc];
     var cap=applyMove(board,m,castling,epSquare);
+    board._lastCap=!!cap;
     if(cap){
       if(cap.color===W)capturedW.push(cap.type);
       else capturedB.push(cap.type);
@@ -29628,26 +29632,54 @@ function GCH(a){
     window.scrollTo(0,_scrollY);
   }
 
+  var _chPendingPromo=null;
+  function _chDoMove(m){
+    var wasCapture=!!board[m.tr][m.tc]||m.ep;
+    var wasCastle=!!m.castle;
+    selSq=null;_chPendingPromo=null;
+    makeMove(m);
+    var isCheck=inCheck(board,turn);
+    checkGameState();
+    if(wasCapture)_play('dig');
+    else if(wasCastle)_play('click');
+    else _play('tap');
+    if(isCheck)setTimeout(function(){_play('lose')},200);
+    render();
+    if(!gameOver&&turn===B)setTimeout(function(){sm('AI thinking...');render();setTimeout(function(){
+      aiMove();
+      var aiCheck=inCheck(board,W);
+      if(board._lastCap)_play('dig');else _play('tap');
+      if(aiCheck)setTimeout(function(){_play('lose')},200);
+    },50);},350);
+  }
+  window._CHPromo=function(type){
+    if(!_chPendingPromo)return;
+    _chPendingPromo.promo=type;
+    _chDoMove(_chPendingPromo);
+  };
   window._CHClick=function(r,c){
-    if(gameOver||turn!==W)return;
+    if(gameOver||turn!==W||_chPendingPromo)return;
     var piece=board[r][c];
-    // If we have a selection, check if this is a legal move target
     if(selSq){
       var allLegal=getLegalMoves(board,W,castling,epSquare);
       for(var i=0;i<allLegal.length;i++){
         var m=allLegal[i];
         if(m.fr===selSq[0]&&m.fc===selSq[1]&&m.tr===r&&m.tc===c){
-          selSq=null;
-          makeMove(m);
-          checkGameState();
-          render();
-          if(!gameOver&&turn===B)setTimeout(function(){sm('AI thinking...');render();setTimeout(aiMove,50);},350);
-          return;
+          if(m.promo){
+            _chPendingPromo=m;_play('tap');
+            var promoHtml='<div class="ch-promo">';
+            var pts=[QUEEN,ROOK,BISHOP,KNIGHT];
+            for(var pi=0;pi<pts.length;pi++)promoHtml+='<img src="'+_chArt+'p-'+{Q:'queen',R:'rook',B:'bishop',N:'knight'}[pts[pi]]+'-green.png" onclick="_CHPromo(\''+pts[pi]+'\')">';
+            promoHtml+='</div>';
+            var wrap=document.querySelector('.ch-wrap');
+            if(wrap){var pd=document.createElement('div');pd.innerHTML=promoHtml;wrap.appendChild(pd.firstChild)}
+            return;
+          }
+          _chDoMove(m);return;
         }
       }
     }
-    // Select own piece
-    if(piece&&piece.color===W){selSq=[r,c];}
+    if(piece&&piece.color===W){_play('click');selSq=[r,c];}
     else{selSq=null;}
     render();
   };
