@@ -2833,7 +2833,7 @@
     @keyframes pickerStagger{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
 
     /* ── UNIVERSAL GROWTH STRIP — shows plant growing across all games ── */
-    .gp-strip{display:none;align-items:center;gap:clamp(10px,3vw,16px);padding:clamp(8px,2.5vw,12px) clamp(12px,3.5vw,18px);background:linear-gradient(180deg,rgba(13,16,12,.45) 0%,rgba(13,16,12,.2) 100%);border-bottom:1px solid rgba(74,124,53,.06);flex-shrink:0;position:relative;overflow:hidden;min-height:56px}
+    .gp-strip{display:none;align-items:center;padding:6px clamp(12px,3.5vw,18px);background:linear-gradient(180deg,rgba(13,16,12,.3) 0%,rgba(13,16,12,.1) 100%);border-bottom:1px solid rgba(74,124,53,.06);flex-shrink:0;position:relative;overflow:hidden;min-height:0}
     .gp-strip.on{display:flex}
     .gp-plant{flex-shrink:0;width:52px;height:52px;display:flex;align-items:flex-end;justify-content:center}
     .gp-plant svg{filter:drop-shadow(0 2px 6px rgba(0,0,0,.2));transition:all .8s ease}
@@ -28308,7 +28308,7 @@ function _updateGP(){
   var remain=30-inPlant;
   var _nearCls=prog>=0.83&&prog<1?' near-bloom':'';
   var _urgentLabel=prog>=0.83&&prog<1?' \u2014 <span style="color:var(--gold);">'+remain+' to bloom!</span>':'';
-  el.innerHTML='<div class="gp-plant">'+svg+'</div><div class="gp-info"><div class="gp-label">'+lbl+_urgentLabel+'</div><div class="gp-bar"><div class="gp-fill'+_nearCls+'" style="width:'+pct+'%;transition:none"></div></div><div class="gp-count">\u26a1 '+inPlant+' / 30</div></div>';
+  el.innerHTML='<div style="flex:1;min-width:0"><div class="gp-bar"><div class="gp-fill'+_nearCls+'" style="width:'+pct+'%;transition:none"></div></div></div>';
   setTimeout(function(){var f=el.querySelector('.gp-fill');if(f)f.style.transition='';},60);
 }
 // ═══ GAME SOUND SYSTEM — synthesized tones, greenhouse mood ═══
