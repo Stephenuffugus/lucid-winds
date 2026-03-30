@@ -27927,7 +27927,8 @@ var G=[
 {id:'hanoi',n:'Root Stack',i:'🗼',r:'Move all discs to the right peg. Never place big on small.'},
 {id:'flood',n:'Autumn Leaves',i:'🍂',r:'Tap a leaf to flood from the top-left. Cover the forest floor in one color!'},
 {id:'pipe',n:'Vine Flow',i:'🌿',r:'Rotate vine tiles to connect all vines back to the root!'},
-{id:'chess',n:'Grove Chess',i:'♟',r:'Classic chess against AI. Tap a piece, tap where to move.'}
+{id:'chess',n:'Grove Chess',i:'♟',r:'Classic chess against AI. Tap a piece, tap where to move.'},
+{id:'c4',n:'Connect Fleur',i:'🌸',r:'Drop flowers to connect 4 in a row \u2014 horizontal, vertical, or diagonal!'}
 ];
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
 // ═══ HASH ACCUMULATION BUFFER ═══
@@ -27997,7 +27998,7 @@ var _afClass={
 };
 // Game → class mapping
 var _afGameClass={
-  memory:'sprint',lights:'sprint',simon:'sprint',flood:'sprint',
+  memory:'sprint',lights:'sprint',simon:'sprint',flood:'sprint',c4:'standard',
   pipe:'standard',hanoi:'standard',
   set:'marathon',merge:'marathon',mines:'marathon',wordsearch:'marathon',sudoku:'marathon',chess:'marathon'
 };
@@ -28021,7 +28022,8 @@ var _aw={
   mines:     {cleared:1,game_win:5,game_loss:0,default:0},
   wordsearch:{milestone:1,game_win:5,game_loss:0,default:0},
   sudoku:    {progress:1,milestone:1,game_win:5,game_loss:0,default:0},
-  chess:     {game_win:8,game_loss:1,default:0}
+  chess:     {game_win:8,game_loss:1,default:0},
+  c4:        {game_win:4,game_loss:0,default:0}
 };
 function _setDiff(lv){switch(lv){case 'easy':_dm=1.0;break;case 'medium':_dm=1.5;break;case 'hard':_dm=2.0;break;case 'expert':_dm=2.5;break;default:_dm=1.0}}
 function _gr(){try{return JSON.parse(localStorage.getItem(RK))||{}}catch(e){return{}}}
@@ -28228,7 +28230,7 @@ function _restartCurrentGame(){
   ag.innerHTML='';
   var gi=null;for(var i=0;i<G.length;i++)if(G[i].id===_a){gi=G[i];break}
   if(gi){var r=document.createElement('div');r.className='gr';r.textContent='📖 '+gi.r;ag.appendChild(r)}
-  var fn={memory:GM,merge:GR,simon:GS,lights:GL,mines:GN,sudoku:GU,wordsearch:GW,hanoi:GH,flood:GFL,pipe:GPP,chess:GCH};
+  var fn={memory:GM,merge:GR,simon:GS,lights:GL,mines:GN,sudoku:GU,wordsearch:GW,hanoi:GH,flood:GFL,pipe:GPP,chess:GCH,c4:GC4};
   try{if(fn[_a])fn[_a](ag)}catch(e){console.error('[Game '+_a+']',e);ag.innerHTML+='<div style="padding:2rem;text-align:center;color:#c75050">Game error — tap 🔄 New to retry</div>'}
   var gps=document.getElementById('gp-strip');if(gps&&gps.classList.contains('on')){try{_updateGP()}catch(e){}}
   _st();
@@ -28370,7 +28372,7 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;_m=Math.m
   if(gps){gps.classList.add('on');try{_updateGP()}catch(e){console.warn('[GP]',e)}}
   var gi=null;for(var i=0;i<G.length;i++)if(G[i].id===id){gi=G[i];break}
   if(gi){var r=document.createElement('div');r.className='gr';r.textContent='📖 '+gi.r;ag.appendChild(r)}
-  var fn={memory:GM,merge:GR,simon:GS,lights:GL,mines:GN,sudoku:GU,wordsearch:GW,hanoi:GH,flood:GFL,pipe:GPP,chess:GCH};
+  var fn={memory:GM,merge:GR,simon:GS,lights:GL,mines:GN,sudoku:GU,wordsearch:GW,hanoi:GH,flood:GFL,pipe:GPP,chess:GCH,c4:GC4};
   try{if(fn[id])fn[id](ag);else{ag.innerHTML+='<div style="padding:2rem;text-align:center;color:var(--muted)">Coming soon</div>'}}catch(e){console.error('[Game '+id+']',e);ag.innerHTML='<div style="padding:2rem;text-align:center;color:#c75050;font-size:16px">ERROR in '+id+': '+e.message+'</div>'}
   _st();
   };
@@ -29711,6 +29713,61 @@ function GCH(a){
   _setDiff('medium');
   initBoard();render();
 }
+
+// ═══ CONNECT FLEUR ═══
+function GC4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0;
+  var VI='assets/games/chess/';
+  var IMG_P='assets/games/c4/c4-flower-green.png',IMG_A='assets/games/c4/c4-flower-gold.png';
+  ms(a,'Moves: <strong id="C4m">0</strong>');mm(a);
+  var bw=document.createElement('div');bw.style.cssText='position:relative;width:clamp(300px,92vw,420px);margin:0 auto';
+  var bg=document.createElement('img');bg.src='assets/games/c4/c4-board.png';bg.style.cssText='width:100%;display:block;border-radius:8px';bw.appendChild(bg);
+  var gd=document.createElement('div');gd.className='lg';gd.id='C4g';gd.style.cssText='position:absolute;top:5%;left:3%;right:3%;bottom:5%;grid-template-columns:repeat(7,1fr);gap:clamp(2px,0.8vw,4px)';bw.appendChild(gd);a.appendChild(bw);
+  mc(a).innerHTML='<select class="gsl" id="C4d"><option value="1">Seedling</option><option value="2" selected>Sapling</option><option value="3">Old Growth</option></select><button class="gb" onclick="_C4N()">🔄 New</button>';
+  function init(){bd=[];for(var i=0;i<ROWS*COLS;i++)bd.push(0);turn=1;over=false;mv=0;document.getElementById('C4m').textContent='0'}
+  function drop(col){for(var r=ROWS-1;r>=0;r--){if(bd[r*COLS+col]===0){bd[r*COLS+col]=turn;return r;}}}
+  function check(p){
+    for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){
+      if(c+3<COLS&&bd[r*COLS+c]===p&&bd[r*COLS+c+1]===p&&bd[r*COLS+c+2]===p&&bd[r*COLS+c+3]===p)return true;
+      if(r+3<ROWS&&bd[r*COLS+c]===p&&bd[(r+1)*COLS+c]===p&&bd[(r+2)*COLS+c]===p&&bd[(r+3)*COLS+c]===p)return true;
+      if(r+3<ROWS&&c+3<COLS&&bd[r*COLS+c]===p&&bd[(r+1)*COLS+c+1]===p&&bd[(r+2)*COLS+c+2]===p&&bd[(r+3)*COLS+c+3]===p)return true;
+      if(r+3<ROWS&&c-3>=0&&bd[r*COLS+c]===p&&bd[(r+1)*COLS+c-1]===p&&bd[(r+2)*COLS+c-2]===p&&bd[(r+3)*COLS+c-3]===p)return true;
+    }return false}
+  function isFull(){for(var c=0;c<COLS;c++)if(bd[c]===0)return false;return true}
+  // AI — minimax with alpha-beta
+  function score(b){
+    function sc4(r,c,dr,dc){var ct=[0,0,0];for(var i=0;i<4;i++){var nr=r+dr*i,nc=c+dc*i;if(nr<0||nr>=ROWS||nc<0||nc>=COLS)return 0;ct[b[nr*COLS+nc]]++;}
+      if(ct[2]===4)return 1000;if(ct[1]===4)return -1000;if(ct[2]===3&&ct[0]===1)return 50;if(ct[1]===3&&ct[0]===1)return -50;if(ct[2]===2&&ct[0]===2)return 5;if(ct[1]===2&&ct[0]===2)return -5;return 0}
+    var s=0;for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){s+=sc4(r,c,0,1)+sc4(r,c,1,0)+sc4(r,c,1,1)+sc4(r,c,1,-1)}
+    for(var c=0;c<COLS;c++){var cc=Math.abs(c-3);s-=cc;}return s}
+  function minimax(b,depth,alpha,beta,isMax){
+    if(check(2))return {s:10000+depth};if(check(1))return {s:-10000-depth};if(isFull())return {s:0};if(depth===0)return {s:score(b)};
+    var best={s:isMax?-Infinity:Infinity,c:-1};var order=[3,2,4,1,5,0,6];
+    for(var oi=0;oi<order.length;oi++){var c=order[oi];if(b[c]!==0)continue;
+      var r=-1;for(var rr=ROWS-1;rr>=0;rr--){if(b[rr*COLS+c]===0){r=rr;break;}}if(r<0)continue;
+      b[r*COLS+c]=isMax?2:1;var val=minimax(b,depth-1,alpha,beta,!isMax);b[r*COLS+c]=0;
+      if(isMax){if(val.s>best.s){best={s:val.s,c:c}}alpha=Math.max(alpha,val.s)}
+      else{if(val.s<best.s){best={s:val.s,c:c}}beta=Math.min(beta,val.s)}
+      if(beta<=alpha)break}return best}
+  function aiMove(){
+    var depMap={1:3,2:5,3:7};var dep=depMap[parseInt((document.getElementById('C4d')||{}).value)]||5;
+    var res=minimax(bd.slice(),dep,-Infinity,Infinity,true);
+    if(res.c<0){for(var c=0;c<COLS;c++)if(bd[c]===0){res.c=c;break;}}
+    drop(res.c);_play('drop');mv++;document.getElementById('C4m').textContent=mv;
+    if(check(2)){over=true;_e('game_loss');_play('lose');sm('🌼 AI wins!');_sr('c4',{w:false,s:mv})}
+    else if(isFull()){over=true;sm('Draw!');_sr('c4',{w:false,s:mv})}
+    else{turn=1;sm('Your turn')}rn()}
+  function rn(){var _scrollY=window.scrollY;gd.innerHTML='';for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){
+    var d=document.createElement('div');d.className='lc';var v=bd[r*COLS+c];
+    if(v===1)d.style.background='url('+IMG_P+') center/85% no-repeat';
+    else if(v===2)d.style.background='url('+IMG_A+') center/85% no-repeat';
+    d.style.borderRadius='50%';d.setAttribute('data-c',c);
+    d.onclick=function(){if(over||turn!==1)return;var col=parseInt(this.getAttribute('data-c'));if(bd[col]!==0)return;
+      _play('tap');drop(col);mv++;document.getElementById('C4m').textContent=mv;
+      if(check(1)){over=true;_e('game_win');_playWin();sm('🌸 You win!');_sr('c4',{w:true,s:mv});rn();return}
+      if(isFull()){over=true;sm('Draw!');_sr('c4',{w:false,s:mv});rn();return}
+      turn=2;sm('AI thinking...');rn();setTimeout(aiMove,300)};
+    gd.appendChild(d)}window.scrollTo(0,_scrollY)}
+  window._C4N=function(){init();sm('Your turn');rn()};_C4N();}
 
 // ═══ INIT ═══
 // ── Colorblind toggle stub ──
