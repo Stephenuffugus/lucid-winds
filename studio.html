@@ -115,14 +115,27 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
   </select>
   <button class="gs-btn" onclick="GS.playScale()">🎵 Hear</button>
   <button class="gs-btn" id="gs-suggest-btn" onclick="GS.showSuggestions()">💡</button>
+  <div class="gs-bpm">
+    <span>Swing</span>
+    <input type="range" min="0" max="80" value="0" oninput="GS.setSwing(this.value)">
+    <strong id="gs-swing">0%</strong>
+  </div>
+  <select class="gs-btn" id="gs-steps" onchange="GS.setSteps(this.value)" style="max-width:70px">
+    <option value="16">16</option>
+    <option value="32" selected>32</option>
+    <option value="64">64</option>
+  </select>
+  <button class="gs-btn" onclick="GS.exportWAV()">⬇ Export</button>
 </div>
 <div id="gs-suggest" style="display:none;padding:6px 12px;background:rgba(16,20,14,.9);border-bottom:1px solid rgba(74,124,53,.1);max-height:120px;overflow-y:auto"></div>
 
 <div style="display:flex;gap:4px;padding:4px 12px;flex-wrap:wrap;background:rgba(13,16,12,.3);border-bottom:1px solid rgba(74,124,53,.06)">
   <button class="gs-btn" onclick="GS.save()">💾 Save</button>
   <button class="gs-btn" onclick="GS.load()">📂 Load</button>
-  <button class="gs-btn" onclick="GS.clearSection()">🗑 Clear Section</button>
-  <button class="gs-btn" onclick="GS.undo()">↩ Undo</button>
+  <button class="gs-btn" onclick="GS.clearSection()">🗑 Clear</button>
+  <button class="gs-btn" onclick="GS.copySection()">📋 Copy</button>
+  <button class="gs-btn" onclick="GS.pasteSection()">📌 Paste</button>
+  <button class="gs-btn" onclick="GS.undo()">↩</button>
 </div>
 <div class="gs-sections" id="gs-sections"></div>
 <div id="gs-sec-indicator" style="padding:4px 12px;font-size:.55rem;font-family:Bebas Neue,sans-serif;letter-spacing:.08em"></div>
@@ -229,10 +242,29 @@ var GS = (function(){
     o.start(t); o.stop(t + (dur || 0.22));
   }
 
+  // ── WAV encoder ──
+  function audioBufferToWav(buffer){
+    var numCh=buffer.numberOfChannels,sr=buffer.sampleRate,len=buffer.length;
+    var data=buffer.getChannelData(0);
+    var bitsPerSample=16,byteRate=sr*numCh*bitsPerSample/8;
+    var blockAlign=numCh*bitsPerSample/8;
+    var dataSize=len*numCh*bitsPerSample/8;
+    var buf=new ArrayBuffer(44+dataSize);
+    var v=new DataView(buf);
+    function writeStr(o,s){for(var i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))}
+    writeStr(0,'RIFF');v.setUint32(4,36+dataSize,true);writeStr(8,'WAVE');
+    writeStr(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,numCh,true);
+    v.setUint32(24,sr,true);v.setUint32(28,byteRate,true);v.setUint16(32,blockAlign,true);v.setUint16(34,bitsPerSample,true);
+    writeStr(36,'data');v.setUint32(40,dataSize,true);
+    for(var i=0;i<len;i++){var s=Math.max(-1,Math.min(1,data[i]));v.setInt16(44+i*2,s<0?s*0x8000:s*0x7FFF,true);}
+    return buf;
+  }
+
   // ── State ──
   var bpm = 120, playing = false, looping = true, step = 0, timer = null;
   var rootIdx = 0, scaleKey = 'Min Penta';
   var currentSection = 'A', currentVar = 0;
+  var swing = 0; // 0-80, percentage of swing feel
 
   // Layer types (octave is mutable)
   var LAYER_TYPES = [
@@ -355,9 +387,24 @@ var GS = (function(){
         arrIdx = (arrIdx + 1) % song.arrangement.length;
         loadArrBlock(arrIdx);
       } else if(!looping){
-        stop();
+        stop(); return;
       }
     }
+    if(playing) scheduleTick();
+  }
+
+  function getTickMs(){
+    var base = 60000 / bpm / 4;
+    if(swing === 0) return base;
+    // Swing: odd steps (offbeats) are delayed, even steps shortened
+    var swingRatio = swing / 100; // 0 to 0.8
+    if(step % 2 === 0) return base * (1 - swingRatio * 0.5);
+    else return base * (1 + swingRatio * 0.5);
+  }
+
+  function scheduleTick(){
+    if(timer) clearTimeout(timer);
+    timer = setTimeout(tick, getTickMs());
   }
 
   function start(){
@@ -366,12 +413,12 @@ var GS = (function(){
     if(arrMode && song.arrangement.length > 0) loadArrBlock(0);
     document.getElementById('gs-play').textContent = '⏸ Pause';
     document.getElementById('gs-play').className = 'gs-btn stop';
-    timer = setInterval(tick, 60000 / bpm / 4);
+    scheduleTick();
   }
 
   function stop(){
     playing = false; step = 0;
-    if(timer) clearInterval(timer); timer = null;
+    if(timer) clearTimeout(timer); timer = null;
     document.getElementById('gs-play').textContent = '▶ Play';
     document.getElementById('gs-play').className = 'gs-btn play';
     renderStep();
@@ -644,6 +691,144 @@ var GS = (function(){
       var v = getCurrentVar(); if(!v) return;
       v[lid].vol = parseInt(val);
     },
+    setSwing: function(val){
+      swing = parseInt(val);
+      document.getElementById('gs-swing').textContent = val + '%';
+    },
+    setSteps: function(val){
+      var newSteps = parseInt(val);
+      if(newSteps === STEPS) return;
+      // Resize all grids in all sections
+      var keys = ['A','B','C'];
+      for(var ki=0;ki<keys.length;ki++){
+        var sec = song.sections[keys[ki]];
+        for(var vi=0;vi<sec.vars.length;vi++){
+          for(var lid in sec.vars[vi]){
+            var old = sec.vars[vi][lid].grid;
+            var lt = null;
+            for(var li=0;li<LAYER_TYPES.length;li++){if(LAYER_TYPES[li].id===lid)lt=LAYER_TYPES[li];}
+            var rows = lt && lt.type==='drum' ? lt.rows : getScaleNotes(lt?lt.octave:3).length;
+            var newGrid = [];
+            for(var r=0;r<rows;r++){
+              for(var s=0;s<newSteps;s++){
+                newGrid.push(s < STEPS ? (old[r*STEPS+s]||0) : 0);
+              }
+            }
+            sec.vars[vi][lid].grid = newGrid;
+          }
+        }
+      }
+      STEPS = newSteps;
+      stop();
+      renderAll();
+    },
+    copySection: function(){
+      var v = getCurrentVar();
+      if(!v) return;
+      GS._clipboard = {};
+      for(var lid in v){
+        GS._clipboard[lid] = {grid:v[lid].grid.slice(), mute:v[lid].mute, solo:v[lid].solo, vol:v[lid].vol};
+      }
+      alert('Copied ' + currentSection + (currentVar+1));
+    },
+    pasteSection: function(){
+      if(!GS._clipboard){alert('Nothing copied');return;}
+      if(!confirm('Paste over ' + currentSection + (currentVar+1) + '?')) return;
+      var v = getCurrentVar(); if(!v) return;
+      for(var lid in GS._clipboard){
+        if(v[lid]){
+          v[lid].grid = GS._clipboard[lid].grid.slice();
+          v[lid].vol = GS._clipboard[lid].vol;
+        }
+      }
+      renderLayers();
+    },
+    exportWAV: function(){
+      alert('Rendering audio...');
+      try{
+        var sampleRate = 44100;
+        var stepDur = 60 / bpm / 4;
+        var totalSteps = 0;
+        for(var ai=0;ai<song.arrangement.length;ai++) totalSteps += STEPS;
+        var duration = totalSteps * stepDur;
+        var offCtx = new OfflineAudioContext(1, Math.ceil(sampleRate * duration), sampleRate);
+        var t = 0;
+        for(var ai=0;ai<song.arrangement.length;ai++){
+          var block = song.arrangement[ai];
+          var sec = block.charAt(0);
+          var vr = parseInt(block.charAt(1)) - 1;
+          var sv = song.sections[sec].vars[vr];
+          if(!sv) continue;
+          for(var s=0;s<STEPS;s++){
+            // Drums
+            if(!sv.drums.mute){
+              var dV = (sv.drums.vol||80)/80;
+              for(var d=0;d<DRUMS.length;d++){
+                if(sv.drums.grid[d*STEPS+s]){
+                  // Simple kick/snare for export — sine burst
+                  var o=offCtx.createOscillator(),g=offCtx.createGain();
+                  o.type='sine';o.frequency.setValueAtTime(d===0?150:d===1?200:d<4?8000:300,t);
+                  if(d===0)o.frequency.exponentialRampToValueAtTime(40,t+0.12);
+                  g.gain.setValueAtTime((d<2?0.6:0.3)*dV,t);g.gain.exponentialRampToValueAtTime(0.001,t+(d<2?0.2:0.05));
+                  o.connect(g);g.connect(offCtx.destination);o.start(t);o.stop(t+0.3);
+                }
+              }
+            }
+            // Bass
+            if(!sv.bass.mute){
+              var bV=(sv.bass.vol||80)/80;
+              var bn=getScaleNotes(LAYER_TYPES[1].octave);
+              for(var b=0;b<bn.length;b++){
+                if(sv.bass.grid[b*STEPS+s]){
+                  var o=offCtx.createOscillator(),g=offCtx.createGain();
+                  o.type='sawtooth';o.frequency.value=bn[b].freq;
+                  var f=offCtx.createBiquadFilter();f.type='lowpass';f.frequency.setValueAtTime(800,t);f.frequency.exponentialRampToValueAtTime(200,t+0.15);
+                  g.gain.setValueAtTime(0.12*bV,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.2);
+                  o.connect(f);f.connect(g);g.connect(offCtx.destination);o.start(t);o.stop(t+0.22);
+                }
+              }
+            }
+            // Chords
+            if(!sv.chords.mute){
+              var cV=(sv.chords.vol||80)/80;
+              var cn=getScaleNotes(LAYER_TYPES[2].octave);
+              for(var c=0;c<cn.length;c++){
+                if(sv.chords.grid[c*STEPS+s]){
+                  var o=offCtx.createOscillator(),g=offCtx.createGain();
+                  o.type='sine';o.frequency.value=cn[c].freq;
+                  g.gain.setValueAtTime(0.06*cV,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+                  o.connect(g);g.connect(offCtx.destination);o.start(t);o.stop(t+0.32);
+                }
+              }
+            }
+            // Melody
+            if(!sv.melody.mute){
+              var mV=(sv.melody.vol||80)/80;
+              var mn=getScaleNotes(LAYER_TYPES[3].octave);
+              for(var m=0;m<mn.length;m++){
+                if(sv.melody.grid[m*STEPS+s]){
+                  var o=offCtx.createOscillator(),g=offCtx.createGain();
+                  o.type='sine';o.frequency.value=mn[m].freq;
+                  g.gain.setValueAtTime(0.07*mV,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.15);
+                  o.connect(g);g.connect(offCtx.destination);o.start(t);o.stop(t+0.17);
+                }
+              }
+            }
+            t += stepDur;
+          }
+        }
+        offCtx.startRendering().then(function(buffer){
+          var wav = audioBufferToWav(buffer);
+          var blob = new Blob([wav], {type:'audio/wav'});
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url; a.download = 'grove-studio-export.wav';
+          a.click(); URL.revokeObjectURL(url);
+          alert('Exported!');
+        });
+      }catch(e){alert('Export error: '+e.message);}
+    },
+    _clipboard: null,
     playScale: function(){
       var c = getCtx();
       var intervals = SCALES[scaleKey] || [0,2,4,5,7,9,11];
