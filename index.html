@@ -29722,7 +29722,7 @@ function GC4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0;
   ms(a,'Moves: <strong id="C4m">0</strong>');mm(a);
   var bw=document.createElement('div');bw.style.cssText='position:relative;width:clamp(300px,92vw,420px);margin:0 auto';
   var bg=document.createElement('img');bg.src='assets/games/c4/board.png';bg.style.cssText='width:100%;display:block;border-radius:8px';bw.appendChild(bg);
-  var gd=document.createElement('div');gd.className='lg';gd.id='C4g';gd.style.cssText='position:absolute;top:1%;left:1%;right:1%;bottom:1%;grid-template-columns:repeat(7,1fr);gap:0';bw.appendChild(gd);a.appendChild(bw);
+  var gd=document.createElement('div');gd.className='lg';gd.id='C4g';gd.style.cssText='position:absolute;top:3.5%;left:3%;right:3%;bottom:3.5%;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(6,1fr);gap:3.5% 2.5%';bw.appendChild(gd);a.appendChild(bw);
   mc(a).innerHTML='<select class="gsl" id="C4d"><option value="1">Seedling</option><option value="2" selected>Sapling</option><option value="3">Old Growth</option></select><button class="gb" onclick="_C4N()">🔄 New</button>';
   function init(){bd=[];for(var i=0;i<ROWS*COLS;i++)bd.push(0);turn=1;over=false;mv=0;document.getElementById('C4m').textContent='0'}
   function drop(col){for(var r=ROWS-1;r>=0;r--){if(bd[r*COLS+col]===0){bd[r*COLS+col]=turn;return r;}}}
@@ -29761,9 +29761,9 @@ function GC4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0;
     else{turn=1;sm('Your turn')}rn()}
   function rn(){var _scrollY=window.scrollY;gd.innerHTML='';for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){
     var d=document.createElement('div');var v=bd[r*COLS+c];
-    d.style.cssText='aspect-ratio:1;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent';
-    if(v===1)d.style.background='url('+IMG_P+') center/82% no-repeat';
-    else if(v===2)d.style.background='url('+IMG_A+') center/82% no-repeat';
+    d.style.cssText='aspect-ratio:1;border-radius:50%;cursor:pointer;overflow:hidden;-webkit-tap-highlight-color:transparent';
+    if(v===1){d.style.background='url('+IMG_P+') center/cover';d.style.boxShadow='inset 0 0 4px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.3)';}
+    else if(v===2){d.style.background='url('+IMG_A+') center/cover';d.style.boxShadow='inset 0 0 4px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.3)';}
     d.setAttribute('data-c',c);
     d.onclick=function(){if(over||turn!==1)return;var col=parseInt(this.getAttribute('data-c'));if(bd[col]!==0)return;
       _play('tap');drop(col);mv++;document.getElementById('C4m').textContent=mv;
