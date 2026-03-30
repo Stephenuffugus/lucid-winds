@@ -29749,26 +29749,34 @@ function GC4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0;
       if(isMax){if(val.s>best.s){best={s:val.s,c:c}}alpha=Math.max(alpha,val.s)}
       else{if(val.s<best.s){best={s:val.s,c:c}}beta=Math.min(beta,val.s)}
       if(beta<=alpha)break}return best}
+  var _c4Enc=['Nice try! Go again 🌱','Almost had it! One more? 🌿','The garden grows through practice 🌻','Every loss plants a seed of wisdom 🍃','You learn more from losses \u2014 rematch? 🌸'];
+  var _c4Win=['Brilliant! You bloomed! 🌸','Your garden flourishes! 🌺','Masterful placement! 🌻','The grove is proud! 🌿','Connect Fleur champion! 🏆'];
   function aiMove(){
     var depMap={1:3,2:5,3:7};var dep=depMap[parseInt((document.getElementById('C4d')||{}).value)]||5;
     var res=minimax(bd.slice(),dep,-Infinity,Infinity,true);
     if(res.c<0){for(var c=0;c<COLS;c++)if(bd[c]===0){res.c=c;break;}}
     drop(res.c);_play('drop');mv++;document.getElementById('C4m').textContent=mv;
-    if(check(2)){over=true;_e('game_loss');_play('lose');sm('🌼 AI wins!');_sr('c4',{w:false,s:mv})}
-    else if(isFull()){over=true;sm('Draw!');_sr('c4',{w:false,s:mv})}
+    if(check(2)){over=true;_e('game_loss');_play('lose');sm(_c4Enc[Math.floor(Math.random()*_c4Enc.length)]);_sr('c4',{w:false,s:mv})}
+    else if(isFull()){over=true;sm('A draw! Well matched \u2014 try again? 🌿');_sr('c4',{w:false,s:mv})}
     else{turn=1;sm('Your turn')}rn()}
   function rn(){var _scrollY=window.scrollY;gd.innerHTML='';for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){
-    var d=document.createElement('div');d.className='lc';var v=bd[r*COLS+c];
-    if(v===1)d.style.background='url('+IMG_P+') center/80% no-repeat';
-    else if(v===2)d.style.background='url('+IMG_A+') center/80% no-repeat';
-    d.style.borderRadius='50%';d.setAttribute('data-c',c);
+    var d=document.createElement('div');var v=bd[r*COLS+c];
+    d.style.cssText='aspect-ratio:1;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent';
+    if(v===1)d.style.background='url('+IMG_P+') center/82% no-repeat';
+    else if(v===2)d.style.background='url('+IMG_A+') center/82% no-repeat';
+    d.setAttribute('data-c',c);
     d.onclick=function(){if(over||turn!==1)return;var col=parseInt(this.getAttribute('data-c'));if(bd[col]!==0)return;
       _play('tap');drop(col);mv++;document.getElementById('C4m').textContent=mv;
-      if(check(1)){over=true;_e('game_win');_playWin();sm('🌸 You win!');_sr('c4',{w:true,s:mv});rn();return}
-      if(isFull()){over=true;sm('Draw!');_sr('c4',{w:false,s:mv});rn();return}
+      if(check(1)){over=true;_e('game_win');_playWin();sm(_c4Win[Math.floor(Math.random()*_c4Win.length)]);_sr('c4',{w:true,s:mv});rn();return}
+      if(isFull()){over=true;sm('A draw! Well matched \u2014 try again? 🌿');_sr('c4',{w:false,s:mv});rn();return}
       turn=2;sm('AI thinking...');rn();setTimeout(aiMove,300)};
-    gd.appendChild(d)}window.scrollTo(0,_scrollY)}
-  window._C4N=function(){init();sm('Your turn');rn()};_C4N();}
+    gd.appendChild(d)}
+    // Show New Game button prominently when game over
+    if(over){var ob=document.createElement('div');ob.style.cssText='position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:5';
+      ob.innerHTML='<button class="gb" onclick="_C4N()" style="font-size:clamp(.7rem,2.2vw,.95rem);padding:8px 20px;background:rgba(13,16,12,.9);border:2px solid var(--sage);box-shadow:0 4px 16px rgba(0,0,0,.5)">🔄 New Game</button>';
+      bw.appendChild(ob)}else{var oldBtn=bw.querySelector('div[style*="bottom:8px"]');if(oldBtn)oldBtn.remove()}
+    window.scrollTo(0,_scrollY)}
+  window._C4N=function(){init();sm('Your turn');var oldBtn=bw.querySelector('div[style*="bottom:8px"]');if(oldBtn)oldBtn.remove();rn()};_C4N();}
 
 // ═══ SEED SONG — Step Sequencer ═══
 function GSG(a){
