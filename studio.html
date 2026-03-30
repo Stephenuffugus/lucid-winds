@@ -91,7 +91,10 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
   </select>
   <select class="gs-btn" id="gs-scale" onchange="GS.setScale(this.value)" style="max-width:150px">
   </select>
+  <button class="gs-btn" onclick="GS.playScale()">🎵 Hear</button>
+  <button class="gs-btn" id="gs-suggest-btn" onclick="GS.showSuggestions()">💡</button>
 </div>
+<div id="gs-suggest" style="display:none;padding:6px 12px;background:rgba(16,20,14,.9);border-bottom:1px solid rgba(74,124,53,.1);max-height:120px;overflow-y:auto"></div>
 
 <div class="gs-sections" id="gs-sections"></div>
 <div id="gs-layers"></div>
@@ -549,6 +552,57 @@ var GS = (function(){
       if(song.arrangement.length <= 1) return; // keep at least one
       song.arrangement.splice(i, 1);
       renderArrangement();
+    },
+    playScale: function(){
+      var c = getCtx();
+      var intervals = SCALES[scaleKey] || [0,2,4,5,7,9,11];
+      var rootFreq = 261.63 * Math.pow(2, rootIdx / 12);
+      var t = c.currentTime;
+      // Play ascending then root an octave up
+      for(var i=0;i<=intervals.length;i++){
+        var semi = i < intervals.length ? intervals[i] : 12;
+        var freq = rootFreq * Math.pow(2, semi / 12);
+        (function(f, when){
+          var o=c.createOscillator(),g=c.createGain();
+          o.type='sine';o.frequency.value=f;
+          g.gain.setValueAtTime(0.1,when);g.gain.exponentialRampToValueAtTime(0.001,when+0.25);
+          o.connect(g);g.connect(c.destination);o.start(when);o.stop(when+0.28);
+        })(freq, t + i * 0.22);
+      }
+    },
+    showSuggestions: function(){
+      var el = document.getElementById('gs-suggest');
+      if(el.style.display !== 'none'){el.style.display='none';return;}
+      // Find scales that share the most notes with current scale
+      var current = SCALES[scaleKey];
+      if(!current) return;
+      var currentSet = {};
+      for(var i=0;i<current.length;i++) currentSet[current[i]] = true;
+      var matches = [];
+      for(var name in SCALES){
+        if(name === scaleKey) continue;
+        var s = SCALES[name];
+        var shared = 0, total = s.length;
+        for(var j=0;j<s.length;j++){if(currentSet[s[j]]) shared++;}
+        var pct = Math.round(shared / Math.max(current.length, total) * 100);
+        if(shared >= 3) matches.push({name:name, shared:shared, total:total, pct:pct});
+      }
+      matches.sort(function(a,b){return b.pct - a.pct || b.shared - a.shared;});
+      var html = '<div style="font-size:.55rem;color:var(--gold);margin-bottom:4px;font-family:Bebas Neue,sans-serif;letter-spacing:.06em">RELATED TO '+scaleKey.toUpperCase()+' ('+ALL_NOTES[rootIdx]+')</div>';
+      var shown = Math.min(matches.length, 12);
+      for(var k=0;k<shown;k++){
+        var m = matches[k];
+        var barW = m.pct;
+        var isModeRelative = m.total === current.length && m.shared === current.length;
+        html += '<div style="display:flex;align-items:center;gap:6px;padding:2px 0;cursor:pointer" onclick="GS.setScale(\''+m.name+'\');document.getElementById(\'gs-scale\').value=\''+m.name+'\'">'
+          +'<div style="font-size:.5rem;color:var(--cream);min-width:90px;font-family:DM Mono,monospace">'+m.name+'</div>'
+          +'<div style="flex:1;height:6px;background:rgba(26,31,23,.6);border-radius:3px;overflow:hidden"><div style="width:'+barW+'%;height:100%;background:'+(isModeRelative?'var(--gold)':'var(--sage)')+';border-radius:3px"></div></div>'
+          +'<div style="font-size:.4rem;color:var(--muted);min-width:30px">'+m.shared+'/'+m.total+(isModeRelative?' ★':'')+'</div>'
+          +'</div>';
+      }
+      if(matches.length === 0) html += '<div style="font-size:.5rem;color:var(--muted)">No close matches</div>';
+      el.innerHTML = html;
+      el.style.display = 'block';
     },
     zoom: function(dir){
       zoomLevel = Math.max(0, Math.min(3, zoomLevel + dir));
