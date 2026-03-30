@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Grove Studio — Lucid Winds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d100c;--sage:#7ab356;--gold:#c8a84b;--cream:#e8dcc8;--muted:#8a9178;--dark:#1a1e16;--cell:rgba(36,42,30,.6);--cell-db:rgba(50,58,42,.7);--cell-on:rgba(122,179,86,.85);--border:rgba(74,124,53,.2)}
+html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospace;height:100%;overflow-x:hidden;-webkit-tap-highlight-color:transparent}
+
+/* Header */
+.gs-head{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid rgba(74,124,53,.1);background:rgba(13,16,12,.6)}
+.gs-logo{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);letter-spacing:.1em}
+.gs-logo span{color:var(--sage)}
+
+/* Transport */
+.gs-transport{display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(16,20,14,.8);border-bottom:1px solid rgba(74,124,53,.08);flex-wrap:wrap}
+.gs-btn{background:rgba(26,31,23,.8);border:1.5px solid var(--border);color:var(--cream);font-family:'DM Mono',monospace;font-size:.7rem;padding:6px 12px;border-radius:6px;cursor:pointer;min-height:36px;-webkit-tap-highlight-color:transparent;transition:all .15s}
+.gs-btn:active{transform:scale(.95)}
+.gs-btn.on{border-color:var(--sage);color:var(--sage);box-shadow:0 0 8px rgba(122,179,86,.2)}
+.gs-btn.play{border-color:var(--sage);color:var(--sage)}
+.gs-btn.stop{border-color:#c75050;color:#c75050}
+.gs-bpm{display:flex;align-items:center;gap:4px}
+.gs-bpm input[type=range]{width:70px;accent-color:var(--sage)}
+.gs-bpm span{font-size:.65rem;color:var(--muted);min-width:20px}
+.gs-bpm strong{font-size:.7rem;color:var(--cream);min-width:28px}
+
+/* Section tabs */
+.gs-sections{display:flex;gap:4px;padding:8px 12px;background:rgba(13,16,12,.4);border-bottom:1px solid rgba(74,124,53,.06)}
+.gs-sec{font-family:'Bebas Neue',sans-serif;font-size:.8rem;padding:4px 14px;border-radius:4px;cursor:pointer;border:1.5px solid rgba(74,124,53,.15);color:var(--muted);letter-spacing:.06em;transition:all .15s}
+.gs-sec.active{border-color:var(--gold);color:var(--gold);background:rgba(200,168,75,.06)}
+.gs-sec-var{font-size:.55rem;opacity:.6;margin-left:2px}
+
+/* Layer strip */
+.gs-layer{border-bottom:1px solid rgba(74,124,53,.06);transition:all .2s}
+.gs-layer-head{display:flex;align-items:center;gap:6px;padding:6px 10px;cursor:pointer;background:rgba(16,20,14,.4)}
+.gs-layer-head:active{background:rgba(16,20,14,.7)}
+.gs-layer-name{font-family:'Bebas Neue',sans-serif;font-size:.75rem;letter-spacing:.06em;flex:1;color:var(--cream)}
+.gs-layer-mini{display:flex;gap:1px;flex:2;height:16px;overflow:hidden;border-radius:3px}
+.gs-layer-mini div{flex:1;background:var(--cell)}
+.gs-layer-mini div.on{background:var(--cell-on)}
+.gs-mute,.gs-solo{font-size:.55rem;padding:3px 8px;border-radius:3px;cursor:pointer;border:1px solid rgba(74,124,53,.15);color:var(--muted);font-family:'DM Mono',monospace}
+.gs-mute.on{border-color:#c75050;color:#c75050;background:rgba(199,80,80,.08)}
+.gs-solo.on{border-color:var(--gold);color:var(--gold);background:rgba(200,168,75,.08)}
+
+/* Expanded layer grid */
+.gs-grid-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;background:rgba(8,10,6,.9);padding:4px;display:none}
+.gs-layer.expanded .gs-grid-wrap{display:block}
+.gs-grid{display:grid;gap:2px}
+.gs-grid-row{display:contents}
+.gs-cell{border-radius:3px;cursor:pointer;transition:background .08s,transform .08s;border:1px solid var(--border);min-height:0}
+.gs-cell.on{background:var(--cell-on)!important;border-color:rgba(122,179,86,.5);box-shadow:0 0 6px rgba(122,179,86,.25)}
+.gs-cell.db{background:var(--cell-db)}
+.gs-cell.playhead{box-shadow:inset 0 0 0 2px var(--sage)}
+.gs-label{font-size:.45rem;color:var(--muted);font-family:'DM Mono',monospace;display:flex;align-items:center;justify-content:flex-end;padding-right:4px;white-space:nowrap}
+
+/* Arrangement */
+.gs-arr{display:flex;gap:4px;padding:8px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;background:rgba(13,16,12,.3);border-top:1px solid rgba(74,124,53,.08)}
+.gs-arr-block{font-family:'Bebas Neue',sans-serif;font-size:.65rem;padding:6px 10px;border-radius:4px;border:1.5px solid rgba(74,124,53,.2);color:var(--cream);cursor:pointer;white-space:nowrap;min-width:40px;text-align:center;transition:all .15s}
+.gs-arr-block.playing{border-color:var(--sage);color:var(--sage);box-shadow:0 0 8px rgba(122,179,86,.2)}
+.gs-arr-add{border-style:dashed;color:var(--muted)}
+
+/* Footer */
+.gs-foot{padding:6px 12px;text-align:center;font-size:.45rem;color:var(--muted);border-top:1px solid rgba(74,124,53,.06)}
+.gs-foot a{color:var(--sage);text-decoration:none}
+</style>
+</head>
+<body>
+
+<div class="gs-head">
+  <div class="gs-logo"><span>GROVE</span> STUDIO</div>
+  <div style="font-size:.5rem;color:var(--muted)">by Lucid Winds</div>
+</div>
+
+<div class="gs-transport" id="gs-transport">
+  <button class="gs-btn play" id="gs-play" onclick="GS.toggle()">▶ Play</button>
+  <button class="gs-btn" onclick="GS.stop()">⏹</button>
+  <div class="gs-bpm">
+    <span>BPM</span>
+    <input type="range" min="40" max="240" value="120" oninput="GS.setBpm(this.value)">
+    <strong id="gs-bpm">120</strong>
+  </div>
+  <button class="gs-btn" id="gs-loop" onclick="GS.toggleLoop()">🔁</button>
+  <select class="gs-btn" id="gs-root" onchange="GS.setRoot(this.value)" style="max-width:52px">
+  </select>
+  <select class="gs-btn" id="gs-scale" onchange="GS.setScale(this.value)" style="max-width:100px">
+  </select>
+</div>
+
+<div class="gs-sections" id="gs-sections"></div>
+<div id="gs-layers"></div>
+<div class="gs-arr" id="gs-arr"></div>
+
+<div class="gs-foot">
+  <a href="/">← Back to Lucid Winds</a> · Grove Studio v0.1
+</div>
+
+<script>
+// ═══ GROVE STUDIO — DAW Lite ═══
+var GS = (function(){
+  'use strict';
+
+  // ── Audio Context ──
+  var ctx = null;
+  function getCtx(){
+    if(!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if(ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  // ── Constants ──
+  var STEPS = 32;
+  var ALL_NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  var SCALES = {
+    'Maj Penta':[0,2,4,7,9],'Min Penta':[0,3,5,7,10],
+    'Blues':[0,3,5,6,7,10],'Egyptian':[0,2,5,7,10],
+    'Ionian':[0,2,4,5,7,9,11],'Dorian':[0,2,3,5,7,9,10],
+    'Phrygian':[0,1,3,5,7,8,10],'Lydian':[0,2,4,6,7,9,11],
+    'Mixolydian':[0,2,4,5,7,9,10],'Aeolian':[0,2,3,5,7,8,10],
+    'Locrian':[0,1,3,5,6,8,10],
+    'Harm Min':[0,2,3,5,7,8,11],'Mel Min':[0,2,3,5,7,9,11],
+    'Whole Tone':[0,2,4,6,8,10]
+  };
+
+  // ── Drum Synth Definitions ──
+  var DRUMS = [
+    {name:'Kick',  syn:function(t){var c=getCtx();var o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(40,t+0.12);g.gain.setValueAtTime(0.8,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.3);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.3)}},
+    {name:'Snare', syn:function(t){var c=getCtx();var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.15,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);n.buffer=b;var g=c.createGain();g.gain.setValueAtTime(0.6,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.15);var o=c.createOscillator();o.type='triangle';o.frequency.setValueAtTime(200,t);o.frequency.exponentialRampToValueAtTime(80,t+0.06);var og=c.createGain();og.gain.setValueAtTime(0.5,t);og.gain.exponentialRampToValueAtTime(0.001,t+0.06);n.connect(g);g.connect(c.destination);o.connect(og);og.connect(c.destination);n.start(t);o.start(t);o.stop(t+0.15)}},
+    {name:'Hi-Hat',syn:function(t){var c=getCtx();var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.05,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3);n.buffer=b;var hp=c.createBiquadFilter();hp.type='highpass';hp.frequency.value=7000;var g=c.createGain();g.gain.setValueAtTime(0.3,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.05);n.connect(hp);hp.connect(g);g.connect(c.destination);n.start(t)}},
+    {name:'O-Hat', syn:function(t){var c=getCtx();var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.2,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.5);n.buffer=b;var hp=c.createBiquadFilter();hp.type='highpass';hp.frequency.value=6000;var g=c.createGain();g.gain.setValueAtTime(0.25,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.2);n.connect(hp);hp.connect(g);g.connect(c.destination);n.start(t)}},
+    {name:'Clap',  syn:function(t){var c=getCtx();for(var j=0;j<3;j++){var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.02,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1);n.buffer=b;var bp=c.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1200;bp.Q.value=2;var g=c.createGain();g.gain.setValueAtTime(0.4,t+j*0.015);g.gain.exponentialRampToValueAtTime(0.001,t+j*0.015+0.08);n.connect(bp);bp.connect(g);g.connect(c.destination);n.start(t+j*0.015)}}},
+    {name:'Tom',   syn:function(t){var c=getCtx();var o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(120,t);o.frequency.exponentialRampToValueAtTime(60,t+0.15);g.gain.setValueAtTime(0.5,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.2);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.2)}},
+    {name:'Rim',   syn:function(t){var c=getCtx();var o=c.createOscillator(),g=c.createGain();o.type='square';o.frequency.value=800;g.gain.setValueAtTime(0.3,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.03);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.03)}},
+    {name:'Crash', syn:function(t){var c=getCtx();var n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*0.6,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1);n.buffer=b;var hp=c.createBiquadFilter();hp.type='highpass';hp.frequency.value=4000;var g=c.createGain();g.gain.setValueAtTime(0.3,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.6);n.connect(hp);hp.connect(g);g.connect(c.destination);n.start(t)}}
+  ];
+
+  // ── Bass Synth ──
+  function playBassNote(freq, t){
+    var c = getCtx();
+    var o = c.createOscillator(), g = c.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(freq, t);
+    var f = c.createBiquadFilter();
+    f.type = 'lowpass'; f.frequency.setValueAtTime(800, t);
+    f.frequency.exponentialRampToValueAtTime(200, t + 0.15);
+    g.gain.setValueAtTime(0.15, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+    o.connect(f); f.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + 0.22);
+  }
+
+  // ── Melody/Chord Synth ──
+  function playToneNote(freq, t, dur){
+    var c = getCtx();
+    var o = c.createOscillator(), g = c.createGain();
+    o.type = 'sine';
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0.08, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + (dur || 0.2));
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + (dur || 0.22));
+  }
+
+  // ── State ──
+  var bpm = 120, playing = false, looping = true, step = 0, timer = null;
+  var rootIdx = 0, scaleKey = 'Min Penta';
+  var currentSection = 'A', currentVar = 0;
+
+  // Layer types
+  var LAYER_TYPES = [
+    {id:'drums', name:'Drums', type:'drum', rows:DRUMS.length, labels:DRUMS.map(function(d){return d.name})},
+    {id:'bass',  name:'Bass',  type:'note', octave:2, rows:0, labels:[]},
+    {id:'chords',name:'Chords',type:'note', octave:3, rows:0, labels:[]},
+    {id:'melody',name:'Melody',type:'note', octave:4, rows:0, labels:[]}
+  ];
+
+  // Song data
+  var song = {
+    sections: {
+      A: {name:'Verse',  vars:[createEmptyVar()]},
+      B: {name:'Chorus', vars:[createEmptyVar()]},
+      C: {name:'Bridge', vars:[createEmptyVar()]}
+    },
+    arrangement: ['A1']
+  };
+
+  function createEmptyVar(){
+    var v = {};
+    for(var i=0;i<LAYER_TYPES.length;i++){
+      var lt = LAYER_TYPES[i];
+      var rows = lt.type === 'drum' ? lt.rows : getScaleNotes(lt.octave).length;
+      v[lt.id] = {grid:[], mute:false, solo:false};
+      for(var r=0;r<rows*STEPS;r++) v[lt.id].grid.push(0);
+    }
+    return v;
+  }
+
+  function getScaleNotes(octave){
+    var intervals = SCALES[scaleKey] || [0,2,4,5,7,9,11];
+    var notes = [];
+    for(var oct=1;oct>=0;oct--){
+      for(var i=intervals.length-1;i>=0;i--){
+        var semi = intervals[i] + (octave+oct) * 12;
+        var freq = 16.35 * Math.pow(2, (rootIdx + intervals[i] + (octave+oct)*12) / 12);
+        var name = ALL_NOTES[(rootIdx + intervals[i]) % 12] + (octave + oct);
+        notes.push({freq:freq, name:name});
+      }
+    }
+    return notes;
+  }
+
+  function getCurrentVar(){
+    var sec = song.sections[currentSection];
+    if(!sec) return null;
+    if(!sec.vars[currentVar]) sec.vars[currentVar] = createEmptyVar();
+    return sec.vars[currentVar];
+  }
+
+  // ── Transport ──
+  var expandedLayer = 'drums';
+
+  function tick(){
+    var v = getCurrentVar();
+    if(!v) return;
+    var t = getCtx().currentTime;
+
+    // Play drums
+    if(!v.drums.mute){
+      for(var d=0;d<DRUMS.length;d++){
+        if(v.drums.grid[d*STEPS+step]) DRUMS[d].syn(t);
+      }
+    }
+
+    // Play bass
+    if(!v.bass.mute){
+      var bassNotes = getScaleNotes(2);
+      for(var b=0;b<bassNotes.length;b++){
+        if(v.bass.grid[b*STEPS+step]) playBassNote(bassNotes[b].freq, t);
+      }
+    }
+
+    // Play chords
+    if(!v.chords.mute){
+      var chordNotes = getScaleNotes(3);
+      for(var c=0;c<chordNotes.length;c++){
+        if(v.chords.grid[c*STEPS+step]) playToneNote(chordNotes[c].freq, t, 0.3);
+      }
+    }
+
+    // Play melody
+    if(!v.melody.mute){
+      var melNotes = getScaleNotes(4);
+      for(var m=0;m<melNotes.length;m++){
+        if(v.melody.grid[m*STEPS+step]) playToneNote(melNotes[m].freq, t, 0.15);
+      }
+    }
+
+    renderStep();
+    step = (step + 1) % STEPS;
+    if(step === 0 && !looping){
+      stop();
+    }
+  }
+
+  function start(){
+    getCtx();
+    playing = true; step = 0;
+    document.getElementById('gs-play').textContent = '⏸ Pause';
+    document.getElementById('gs-play').className = 'gs-btn stop';
+    timer = setInterval(tick, 60000 / bpm / 4);
+  }
+
+  function stop(){
+    playing = false; step = 0;
+    if(timer) clearInterval(timer); timer = null;
+    document.getElementById('gs-play').textContent = '▶ Play';
+    document.getElementById('gs-play').className = 'gs-btn play';
+    renderStep();
+  }
+
+  // ── Render ──
+  function renderSections(){
+    var el = document.getElementById('gs-sections');
+    var html = '';
+    var keys = ['A','B','C'];
+    for(var i=0;i<keys.length;i++){
+      var k = keys[i], sec = song.sections[k];
+      for(var v=0;v<sec.vars.length;v++){
+        var isActive = k===currentSection && v===currentVar;
+        html += '<div class="gs-sec'+(isActive?' active':'')+'" onclick="GS.selectSection(\''+k+'\','+v+')">'
+          +k+(v+1)+'<span class="gs-sec-var"> '+sec.name+'</span></div>';
+      }
+      if(sec.vars.length < 5){
+        html += '<div class="gs-sec" onclick="GS.addVar(\''+k+'\')" style="border-style:dashed;color:var(--muted)">+'+k+'</div>';
+      }
+    }
+    el.innerHTML = html;
+  }
+
+  function renderLayers(){
+    var el = document.getElementById('gs-layers');
+    var v = getCurrentVar();
+    if(!v) return;
+    var html = '';
+
+    for(var li=0;li<LAYER_TYPES.length;li++){
+      var lt = LAYER_TYPES[li];
+      var ld = v[lt.id];
+      var isExp = expandedLayer === lt.id;
+      var rows = lt.type === 'drum' ? lt.rows : getScaleNotes(lt.octave).length;
+      var labels = lt.type === 'drum' ? lt.labels : getScaleNotes(lt.octave).map(function(n){return n.name});
+
+      // Mini pattern preview
+      var miniHtml = '';
+      for(var s=0;s<STEPS;s++){
+        var hasNote = false;
+        for(var r=0;r<rows;r++){if(ld.grid[r*STEPS+s]){hasNote=true;break;}}
+        miniHtml += '<div'+(hasNote?' class="on"':'')+'></div>';
+      }
+
+      html += '<div class="gs-layer'+(isExp?' expanded':'')+'">'
+        +'<div class="gs-layer-head" onclick="GS.expandLayer(\''+lt.id+'\')">'
+        +'<div class="gs-layer-name">'+lt.name+'</div>'
+        +'<div class="gs-layer-mini">'+miniHtml+'</div>'
+        +'<div class="gs-mute'+(ld.mute?' on':'')+'" onclick="event.stopPropagation();GS.toggleMute(\''+lt.id+'\')">M</div>'
+        +'<div class="gs-solo'+(ld.solo?' on':'')+'" onclick="event.stopPropagation();GS.toggleSolo(\''+lt.id+'\')">S</div>'
+        +'</div>';
+
+      // Expanded grid
+      html += '<div class="gs-grid-wrap"><div class="gs-grid" style="grid-template-columns:28px repeat('+STEPS+',1fr)" id="gs-grid-'+lt.id+'">';
+      for(var r=0;r<rows;r++){
+        html += '<div class="gs-label">'+labels[r]+'</div>';
+        for(var s=0;s<STEPS;s++){
+          var on = ld.grid[r*STEPS+s];
+          var db = s%4===0;
+          html += '<div class="gs-cell'+(on?' on':'')+(db?' db':'')+'" data-l="'+lt.id+'" data-r="'+r+'" data-s="'+s+'" onclick="GS.cellClick(this)" style="height:20px"></div>';
+        }
+      }
+      html += '</div></div></div>';
+    }
+
+    el.innerHTML = html;
+  }
+
+  function renderStep(){
+    // Update playhead on expanded grid
+    var cells = document.querySelectorAll('.gs-cell');
+    for(var i=0;i<cells.length;i++){
+      cells[i].classList.remove('playhead');
+      if(playing && parseInt(cells[i].getAttribute('data-s')) === step){
+        cells[i].classList.add('playhead');
+      }
+    }
+    // Update mini strips
+    var minis = document.querySelectorAll('.gs-layer-mini');
+    for(var m=0;m<minis.length;m++){
+      var dots = minis[m].children;
+      for(var d=0;d<dots.length;d++){
+        if(playing && d === step) dots[d].style.opacity = '1';
+        else dots[d].style.opacity = '';
+      }
+    }
+  }
+
+  function renderArrangement(){
+    var el = document.getElementById('gs-arr');
+    var html = '';
+    for(var i=0;i<song.arrangement.length;i++){
+      var block = song.arrangement[i];
+      html += '<div class="gs-arr-block" onclick="GS.arrClick('+i+')">'+block+'</div>';
+    }
+    html += '<div class="gs-arr-block gs-arr-add" onclick="GS.arrAdd()">+</div>';
+    el.innerHTML = html;
+  }
+
+  function renderScaleSelectors(){
+    var rootEl = document.getElementById('gs-root');
+    var html = '';
+    for(var i=0;i<12;i++) html += '<option value="'+i+'"'+(i===rootIdx?' selected':'')+'>'+ALL_NOTES[i]+'</option>';
+    rootEl.innerHTML = html;
+
+    var scaleEl = document.getElementById('gs-scale');
+    html = '';
+    var keys = Object.keys(SCALES);
+    for(var i=0;i<keys.length;i++) html += '<option value="'+keys[i]+'"'+(keys[i]===scaleKey?' selected':'')+'>'+keys[i]+'</option>';
+    scaleEl.innerHTML = html;
+  }
+
+  function renderAll(){
+    renderSections();
+    renderLayers();
+    renderArrangement();
+  }
+
+  // ── Public API ──
+  return {
+    init: function(){
+      renderScaleSelectors();
+      renderAll();
+    },
+    toggle: function(){
+      if(playing) stop(); else start();
+    },
+    stop: stop,
+    setBpm: function(v){
+      bpm = parseInt(v);
+      document.getElementById('gs-bpm').textContent = v;
+      if(playing){clearInterval(timer);timer=setInterval(tick,60000/bpm/4);}
+    },
+    toggleLoop: function(){
+      looping = !looping;
+      document.getElementById('gs-loop').classList.toggle('on', looping);
+    },
+    setRoot: function(v){rootIdx=parseInt(v);renderLayers();},
+    setScale: function(v){scaleKey=v;renderLayers();},
+    selectSection: function(k, v){
+      currentSection = k; currentVar = v;
+      renderAll();
+    },
+    addVar: function(k){
+      var sec = song.sections[k];
+      if(sec.vars.length >= 5) return;
+      // Copy last variation
+      var last = sec.vars[sec.vars.length-1];
+      var copy = {};
+      for(var lid in last){
+        copy[lid] = {grid:last[lid].grid.slice(), mute:last[lid].mute, solo:last[lid].solo};
+      }
+      sec.vars.push(copy);
+      currentSection = k;
+      currentVar = sec.vars.length - 1;
+      renderAll();
+    },
+    expandLayer: function(id){
+      expandedLayer = expandedLayer === id ? null : id;
+      renderLayers();
+    },
+    toggleMute: function(id){
+      var v = getCurrentVar(); if(!v) return;
+      v[id].mute = !v[id].mute;
+      renderLayers();
+    },
+    toggleSolo: function(id){
+      var v = getCurrentVar(); if(!v) return;
+      v[id].solo = !v[id].solo;
+      renderLayers();
+    },
+    cellClick: function(el){
+      var lid = el.getAttribute('data-l');
+      var r = parseInt(el.getAttribute('data-r'));
+      var s = parseInt(el.getAttribute('data-s'));
+      var v = getCurrentVar(); if(!v) return;
+      var idx = r * STEPS + s;
+      v[lid].grid[idx] = v[lid].grid[idx] ? 0 : 1;
+
+      // Preview sound on tap
+      if(v[lid].grid[idx]){
+        var t = getCtx().currentTime;
+        if(lid === 'drums') DRUMS[r].syn(t);
+        else{
+          var oct = lid==='bass'?2:lid==='chords'?3:4;
+          var notes = getScaleNotes(oct);
+          if(notes[r]) playToneNote(notes[r].freq, t, lid==='bass'?0.2:0.15);
+        }
+      }
+
+      el.classList.toggle('on');
+      // Update mini strip
+      renderLayers();
+    },
+    arrClick: function(i){
+      var block = song.arrangement[i];
+      var sec = block.charAt(0);
+      var vr = parseInt(block.charAt(1)) - 1;
+      currentSection = sec;
+      currentVar = vr;
+      renderAll();
+    },
+    arrAdd: function(){
+      song.arrangement.push(currentSection + (currentVar+1));
+      renderArrangement();
+    }
+  };
+})();
+
+GS.init();
+</script>
+</body>
+</html>
