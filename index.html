@@ -29905,19 +29905,17 @@ function _cdEl(card){
     var rnk=_cdRnk(card.r);
     var pip=_CD_BASE+_SUIT_NAME[card.s]+'.png';
     var art=_cdArt(card.s,card.r);
-    var art=_cdArt(card.s,card.r);
-    // Corner label: rank + small suit image
-    var corner='<div style="position:absolute;top:3px;left:4px;line-height:1;z-index:2;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:1px">'
+    // Corner label: rank only
+    var corner='<div style="position:absolute;top:3px;left:4px;line-height:1;z-index:2;pointer-events:none">'
       +'<div style="color:'+clr+';font-size:clamp(.7rem,2.2vw,1rem);font-weight:700;text-shadow:0 1px 3px #000,0 0 8px #000">'+rnk+'</div>'
-      +'<img src="'+pip+'" style="width:clamp(8px,2.2vw,14px);height:clamp(8px,2.2vw,14px);filter:drop-shadow(0 1px 2px #000)" alt="">'
       +'</div>';
     if(art){
       d.style.backgroundImage="url('"+art+"')";
       d.innerHTML=corner;
     }else{
-      // Number card: rank corner + centered suit pip
+      // Number card: rank in corner + large suit image centered
       d.innerHTML=corner
-        +'<img src="'+pip+'" style="width:45%;height:auto;opacity:.65;filter:drop-shadow(0 0 6px rgba(0,0,0,.5));pointer-events:none" alt="">';
+        +'<img src="'+pip+'" style="width:55%;height:auto;opacity:.75;filter:drop-shadow(0 0 6px rgba(0,0,0,.5));pointer-events:none" alt="">';
     }
   }else{
     d.className+=' gc-dn';
