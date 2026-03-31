@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.01.6';
+  var LW_VERSION='2026.04.01.7';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3379,6 +3379,10 @@
 .scanner-ring{border:2px solid rgba(122,179,86,0.25)!important;background:radial-gradient(circle,rgba(122,179,86,0.03) 0%,rgba(122,179,86,0.01) 60%,transparent 100%)!important;box-shadow:0 0 20px rgba(122,179,86,0.1);animation:scannerPulse 4s ease-in-out infinite;}
 @keyframes scannerPulse{0%,100%{border-color:rgba(122,179,86,0.2);box-shadow:0 0 15px rgba(122,179,86,0.08);}50%{border-color:rgba(122,179,86,0.35);box-shadow:0 0 25px rgba(122,179,86,0.15);}}
 
+/* ── BOTANICAL VIEWPORT FRAME ── ready for Gemini image */
+#wild-frame{position:fixed;inset:0;z-index:454;pointer-events:none;background:url('assets/games/wild/viewport-frame.png') center/100% 100% no-repeat;display:none;}
+#panel-wild #wild-frame,.tod-dawn #wild-frame,.tod-dusk #wild-frame,.tod-night #wild-frame{display:block;}
+
 /* ── STEP COUNTER in log bar ── */
 .wild-log-steps{display:flex;align-items:center;gap:3px;font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--muted);white-space:nowrap;}
 .wild-log-steps svg{width:12px;height:12px;opacity:0.6;}
@@ -4551,6 +4555,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="map-hex-overlay"></div>
     <div id="wild-map-tod"></div>
     <div class="map-fog"><div class="fog-wisp"></div><div class="fog-wisp"></div><div class="fog-wisp"></div></div>
+    <div id="wild-frame"></div>
     <!-- TOAST -->
     <div id="w-toast" style="position:fixed;top:40%;left:50%;transform:translate(-50%,-50%) scale(0.95);background:rgba(17,22,17,0.96);border:1px solid rgba(74,124,53,0.15);border-radius:10px;padding:0.6rem 1rem;z-index:99999;max-width:82%;font-size:0.65rem;color:var(--cream);text-align:center;line-height:1.5;opacity:0;transition:opacity 0.25s,transform 0.25s;pointer-events:none;box-shadow:0 8px 28px rgba(0,0,0,0.5);"></div>
     <!-- TRAIT PANEL v2 — premium bottom sheet -->
@@ -4587,10 +4592,10 @@ window.onerror=function(msg,url,line,col,err){
       </div>
     </div>
     <!-- PICKER -->
-    <div id="w-picker" style="position:fixed;bottom:0;left:0;right:0;z-index:99997;background:rgba(17,22,17,0.98);border-top:1px solid rgba(74,124,53,0.08);border-radius:16px 16px 0 0;transform:translateY(100%);transition:transform 0.32s;max-height:48vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 -8px 28px rgba(0,0,0,0.4);">
-      <div style="width:28px;height:3px;background:rgba(122,179,86,0.12);border-radius:2px;margin:0.5rem auto 0.3rem;"></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:0 0.7rem 0.3rem;"><div id="wpk-title" style="font-family:'Bebas Neue',sans-serif;font-size:0.75rem;color:var(--sage);">DROP A SPECIMEN</div><div id="wpk-lim" style="font-size:0.45rem;color:var(--muted);">3 left</div><button onclick="FG_Wild.closePicker()" style="width:32px;height:32px;border-radius:50%;border:2px solid rgba(74,124,53,0.1);cursor:pointer;background:rgba(90,112,80,0.06);color:var(--muted);font-size:0.65rem;display:flex;align-items:center;justify-content:center;">✕</button></div>
-      <div style="overflow-y:auto;padding:0.3rem 0.5rem 0.5rem;flex:1;"><div id="wpk-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.4rem;"></div></div>
+    <div id="w-picker" class="dpk2">
+      <div class="dpk2-handle"></div>
+      <div class="dpk2-head"><div><div class="dpk2-title" id="wpk-title">DROP A SPECIMEN</div><div class="dpk2-lim" id="wpk-lim">3 remaining</div></div><button class="dpk2-close" onclick="FG_Wild.closePicker()">&#10005;</button></div>
+      <div class="dpk2-grid" id="wpk-grid"></div>
     </div>
   </div>
 
@@ -28239,17 +28244,18 @@ function openPicker(){
   var gr=document.getElementById('wpk-grid');gr.innerHTML='';
   for(var i=0;i<gh.length;i++){(function(pl){
     var c=document.createElement('div');
-    c.style.cssText='background:rgba(26,36,22,0.25);border:1px solid rgba(74,124,53,0.06);border-radius:6px;padding:0.3rem 0.15rem 0.25rem;text-align:center;cursor:pointer;min-height:44px;-webkit-tap-highlight-color:rgba(122,179,86,0.15);';
-    var sv='';try{if(window._generatePlantSVG)sv=window._generatePlantSVG(pl.hash,38);}catch(e){}
-    if(!sv)sv='<div style="width:38px;height:50px;margin:0 auto;background:rgba(122,179,86,0.15);border-radius:8px;"></div>';
+    c.className='dpk2-card';
+    var sv='';try{if(window._generatePlantSVG)sv=window._generatePlantSVG(pl.hash,40);}catch(e){}
+    if(!sv)sv='<div style="width:40px;height:48px;background:rgba(122,179,86,0.15);border-radius:8px;"></div>';
     var info=_buildInfo(pl.hash);
-    c.innerHTML=sv+'<div style="font-size:0.38rem;color:var(--cream);margin-top:0.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+info.nm+'</div>';
+    var gc=GC[info.grade]||'#8a9a7a';
+    c.innerHTML='<div class="dpk2-card-svg">'+sv+'</div><div class="dpk2-card-name">'+info.nm+'</div><div class="dpk2-card-grade" style="color:'+gc+';">'+info.grade.toUpperCase()+'</div>';
     c.onclick=function(e){e.stopPropagation();_drop(pl);};
     gr.appendChild(c);
   })(gh[i]);}
-  document.getElementById('w-picker').style.transform='translateY(0)';
+  document.getElementById('w-picker').classList.add('open');
 }
-function closePicker(){var pk=document.getElementById('w-picker');if(pk)pk.style.transform='translateY(100%)';}
+function closePicker(){var pk=document.getElementById('w-picker');if(pk)pk.classList.remove('open');}
 
 function _drop(pl){
   closePicker();
