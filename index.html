@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.03.31.4';
+  var LW_VERSION='2026.03.31.5';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3672,6 +3672,11 @@
 #bps{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 8px);left:72px;right:72px;height:48px;overflow-x:auto;overflow-y:hidden;display:flex;gap:6px;align-items:center;padding:2px 6px;z-index:999;opacity:0;transform:translateX(-24px);transition:opacity 0.3s ease 0.15s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.15s;scrollbar-width:none;}
 #bps::-webkit-scrollbar{display:none;}
 #bpe.open #bps{opacity:1;transform:translateX(0);}
+/* Return to Base button */
+#bp-rtb{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 62px);right:12px;z-index:999;min-width:100px;height:40px;border-radius:20px;border:1.5px solid rgba(200,168,75,0.3);background:rgba(13,16,12,0.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.5rem;letter-spacing:0.06em;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 14px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(0,0,0,0.4);-webkit-tap-highlight-color:transparent;}
+#bp-rtb:active{transform:scale(0.92);box-shadow:0 2px 8px rgba(0,0,0,0.3);}
+#bp-rtb.on-cooldown{border-color:rgba(138,145,121,0.15);color:var(--muted);opacity:0.7;}
+#bp-rtb .rtb-timer{font-family:'DM Mono',monospace;font-size:0.38rem;color:var(--muted);}
 
 /* Plant slot — STRONGER RARITY COLORS */
 .ps{width:64px;height:68px;flex-shrink:0;position:relative;cursor:pointer;transition:transform 0.15s;border-radius:10px;}
@@ -4543,7 +4548,7 @@ window.onerror=function(msg,url,line,col,err){
   <!-- Backpack icon + badge -->
   <div id="bpi" onclick="BP.toggle()" style="display:none;"><div id="bpb" class="e">0</div></div>
   <!-- Backpack expanded L-shape -->
-  <div id="bpe"><div id="bpbk" onclick="BP.close()"></div><div id="bpp"></div><div id="bps"></div></div>
+  <div id="bpe"><div id="bpbk" onclick="BP.close()"></div><div id="bpp"></div><div id="bps"></div><div id="bp-rtb" onclick="BP.returnToBase()" style="display:none;"></div></div>
   <!-- Plant info card with hold-to-release -->
   <div id="pic"><div class="pic-top"><div class="pic-plant" id="pic-pl"></div><div class="pic-info"><div class="pic-name" id="pic-nm">—</div><div class="pic-grade" id="pic-gr">—</div><div class="pic-origin" id="pic-or">—</div></div><button class="pic-close" onclick="BP.cpi()">✕</button></div><div class="htc" id="htc-rel" onmousedown="BP.hts()" ontouchstart="BP.hts()" onmouseup="BP.hte()" ontouchend="BP.hte()" onmouseleave="BP.hte()"><div class="htc-fill" id="htcf"></div><span class="htc-label">HOLD TO RELEASE TO WILD</span></div></div>
   <!-- Seed info card with hold-to-send-to-nursery -->
@@ -27388,6 +27393,49 @@ function _initGeo(){
     _trail.push([_uLat,_uLng]);
     if(_tLine)_tLine.setLatLngs(_trail);else if(_map)_tLine=L.polyline(_trail,{color:'rgba(122,179,86,0.2)',weight:3,lineCap:'round'}).addTo(_map);
   },null,{enableHighAccuracy:true,maximumAge:5000});}catch(e){}
+  // ═══ COMPASS — device orientation ═══
+  _initCompass();
+}
+
+function _initCompass(){
+  var windEl=document.getElementById('w-wind');if(!windEl)return;
+  var compassImg=windEl.querySelector('img');
+  var cardinals=['N','NE','E','SE','S','SW','W','NW'];
+  function _updateCompass(heading){
+    if(compassImg)compassImg.style.transform='rotate('+(-heading)+'deg)';
+    var idx=Math.round(heading/45)%8;
+    var txt=windEl.querySelector('span');
+    if(!txt){txt=document.createElement('span');txt.style.cssText='font-family:Bebas Neue,sans-serif;font-size:0.4rem;color:var(--cream);letter-spacing:0.06em;';windEl.appendChild(txt);}
+    txt.textContent=cardinals[idx];
+  }
+  // Try absolute orientation first (iOS requires permission)
+  if(window.DeviceOrientationEvent){
+    // iOS 13+ requires permission request
+    if(typeof DeviceOrientationEvent.requestPermission==='function'){
+      // Will request on first tap (can't auto-request)
+      windEl.onclick=function(){
+        DeviceOrientationEvent.requestPermission().then(function(state){
+          if(state==='granted'){
+            window.addEventListener('deviceorientation',function(e){
+              var h=e.webkitCompassHeading||e.alpha||0;
+              _updateCompass(h);
+            });
+            windEl.onclick=null;
+          }
+        }).catch(function(){});
+      };
+    } else {
+      window.addEventListener('deviceorientationabsolute',function(e){
+        if(e.alpha!==null)_updateCompass(360-e.alpha);
+      });
+      // Fallback to regular deviceorientation
+      window.addEventListener('deviceorientation',function(e){
+        if(e.webkitCompassHeading){_updateCompass(e.webkitCompassHeading);}
+        else if(e.absolute&&e.alpha!==null){_updateCompass(360-e.alpha);}
+      });
+    }
+  }
+  _updateCompass(0); // default: North
 }
 
 function _placeUser(){
@@ -27778,7 +27826,11 @@ function _doHarvest(p){
   }
 
   var dewReward={Common:3,Uncommon:5,Rare:8,Epic:12,Legendary:18,Mythic:25,Cosmic:40};
-  var reward=dewReward[p.grade]||3;
+  var baseReward=dewReward[p.grade]||3;
+  // Diminishing returns: 80% decay per harvest today
+  var harvestCount=_afGetCachedState().count||0;
+  var decay=Math.pow(0.8,harvestCount);
+  var reward=Math.max(1,Math.round(baseReward*decay));
   var myUid='';try{var _mu=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_mu)myUid=_mu.uid;}catch(e){}
 
   // ── Firestore transaction: atomic harvest ──
@@ -32920,10 +32972,95 @@ function ap(o){if(st.plants.length>=xp()){toast('Backpack full!');return false;}
 function as(o){if(st.seeds.length>=xc()){toast('Seed pouch full!');return false;}st.seeds.push(o);st.fc++;render();hap();cu();return true;}
 function ul(k,m,s){if(st.unlocks[k])return;st.unlocks[k]=true;render();celeb(m,s);}
 function cu(){if(!st.unlocks.slot2&&st.ph>=1)ul('slot2','Second plant slot unlocked!','Harvest plants to fill it.');if(!st.unlocks.slot3&&st.pollen>=100)ul('slot3','Third slot unlocked!','100 pollen reached.');if(!st.unlocks.slot4&&st.gp>=10)ul('slot4','Bonus slot earned!','10 games played.');if(!st.unlocks.slot5&&st.wd>=5)ul('slot5','Fifth slot unlocked!','5 plants in the Wild.');if(!st.unlocks.seed5&&st.fc>=1)ul('seed5','Seed pouch expands to 5!','Find ferals as you walk.');if(!st.unlocks.seed10&&st.fc>=5)ul('seed10','Pouch holds 10!','Your eye sharpens.');}
+// ═══ RETURN TO BASE — unload backpack to greenhouse ═══
+var RTB_COOLDOWN_MS=6*3600000; // 6 hours between returns
+var RTB_KEY='fg_rtb_last';
+
+function _rtbGetLast(){try{return parseInt(localStorage.getItem(RTB_KEY)||'0');}catch(e){return 0;}}
+function _rtbCanReturn(){return(Date.now()-_rtbGetLast())>=RTB_COOLDOWN_MS;}
+function _rtbTimeLeft(){var ms=RTB_COOLDOWN_MS-(Date.now()-_rtbGetLast());return ms>0?ms:0;}
+
+function returnToBase(){
+  if(!_rtbCanReturn()){
+    var left=_rtbTimeLeft();
+    var hrs=Math.floor(left/3600000);var mins=Math.ceil((left%3600000)/60000);
+    toast('Cooldown: '+hrs+'h '+mins+'m until next return');
+    return;
+  }
+  var plants=st.plants.slice();
+  var seeds=st.seeds.slice();
+  if(plants.length===0&&seeds.length===0){toast('Backpack is empty!');return;}
+
+  // Deliver plants to greenhouse
+  var ghRaw=localStorage.getItem('sws_greenhouse')||'[]';
+  var gh=[];try{gh=JSON.parse(ghRaw);}catch(e){}
+  var delivered=0;
+  for(var i=0;i<plants.length;i++){
+    var p=plants[i];
+    if(gh.some(function(g){return g.hash===p.hash;}))continue;
+    gh.push({hash:p.hash,date:new Date().toISOString(),born:Date.now(),origin:p.origin||'wild',rare:false,traits:null,breedCount:0,generation:1});
+    delivered++;
+  }
+  localStorage.setItem('sws_greenhouse',JSON.stringify(gh));
+  st.plants=[];
+
+  // Deliver seeds to nursery
+  var seedCount=0;
+  for(var j=0;j<seeds.length;j++){
+    window.dispatchEvent(new CustomEvent('bp-seed-to-nursery',{detail:seeds[j]}));
+    seedCount++;
+  }
+  st.seeds=[];
+
+  // Record return time
+  localStorage.setItem(RTB_KEY,String(Date.now()));
+
+  // Also write to server-side dailyStats
+  try{
+    var u=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
+    if(u&&window.db){
+      window.db.collection('vaults').doc(u.uid).collection('meta').doc('dailyStats').set({
+        lastReturnToBase:firebase.firestore.FieldValue.serverTimestamp()
+      },{merge:true});
+    }
+  }catch(e){}
+
+  render();_rtbRender();hap();
+  if(window.renderGreenhouse)renderGreenhouse();
+  if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
+  var msg='Returned to base!';
+  if(delivered>0)msg+=' '+delivered+' plant'+(delivered>1?'s':'')+' → greenhouse.';
+  if(seedCount>0)msg+=' '+seedCount+' seed'+(seedCount>1?'s':'')+' → nursery.';
+  celeb('🏠 '+msg,'Next return in 6 hours.');
+  if(typeof gtag!=='undefined')gtag('event','return_to_base',{plants:delivered,seeds:seedCount});
+}
+
+function _rtbRender(){
+  var btn=document.getElementById('bp-rtb');if(!btn)return;
+  btn.style.display='block';
+  if(_rtbCanReturn()){
+    btn.classList.remove('on-cooldown');
+    var total=st.plants.length+st.seeds.length;
+    btn.innerHTML='🏠 RETURN'+(total>0?' ('+total+')':'');
+  } else {
+    btn.classList.add('on-cooldown');
+    var left=_rtbTimeLeft();
+    var hrs=Math.floor(left/3600000);var mins=Math.ceil((left%3600000)/60000);
+    btn.innerHTML='🏠 <span class="rtb-timer">'+hrs+'h '+mins+'m</span>';
+  }
+}
+
+// Update timer display every minute
+var _rtbTimer=null;
+function _rtbStartTimer(){
+  if(_rtbTimer)return;
+  _rtbTimer=setInterval(function(){_rtbRender();},60000);
+}
+
 // ═══ CLOUD SYNC ═══
-function getState(){return{plants:st.plants,seeds:st.seeds,unlocks:st.unlocks,daily:st.daily,pollen:st.pollen,hashes:st.hashes,steps:st.steps,drops:st.drops,ph:st.ph,gp:st.gp,fc:st.fc,wd:st.wd};}
-function loadFromCloud(data){if(!data)return;if(data.plants)st.plants=data.plants;if(data.seeds)st.seeds=data.seeds;if(data.unlocks){for(var k in data.unlocks)st.unlocks[k]=data.unlocks[k];}if(typeof data.pollen==='number')st.pollen=data.pollen;if(typeof data.hashes==='number')st.hashes=data.hashes;if(typeof data.steps==='number')st.steps=data.steps;if(typeof data.ph==='number')st.ph=data.ph;if(typeof data.gp==='number')st.gp=data.gp;if(typeof data.fc==='number')st.fc=data.fc;if(typeof data.wd==='number')st.wd=data.wd;render();}
-return{init:init,toggle:toggle,open:open,close:close,render:render,tp:tp,ts:ts,s2n:s2n,sns:sns,sne:sne,hts:hts,hte:hte,ap:ap,as:as,cu:cu,cpi:cpi,csi:csi,getState:getState,loadFromCloud:loadFromCloud};
+function getState(){return{plants:st.plants,seeds:st.seeds,unlocks:st.unlocks,daily:st.daily,pollen:st.pollen,hashes:st.hashes,steps:st.steps,drops:st.drops,ph:st.ph,gp:st.gp,fc:st.fc,wd:st.wd,lastRTB:_rtbGetLast()};}
+function loadFromCloud(data){if(!data)return;if(data.plants)st.plants=data.plants;if(data.seeds)st.seeds=data.seeds;if(data.unlocks){for(var k in data.unlocks)st.unlocks[k]=data.unlocks[k];}if(typeof data.pollen==='number')st.pollen=data.pollen;if(typeof data.hashes==='number')st.hashes=data.hashes;if(typeof data.steps==='number')st.steps=data.steps;if(typeof data.ph==='number')st.ph=data.ph;if(typeof data.gp==='number')st.gp=data.gp;if(typeof data.fc==='number')st.fc=data.fc;if(typeof data.wd==='number')st.wd=data.wd;if(data.lastRTB)localStorage.setItem(RTB_KEY,String(data.lastRTB));render();_rtbRender();_rtbStartTimer();}
+return{init:init,toggle:toggle,open:open,close:close,render:render,tp:tp,ts:ts,s2n:s2n,sns:sns,sne:sne,hts:hts,hte:hte,ap:ap,as:as,cu:cu,cpi:cpi,csi:csi,getState:getState,loadFromCloud:loadFromCloud,returnToBase:returnToBase,_rtbRender:_rtbRender,_rtbStartTimer:_rtbStartTimer};
 })();
 window.BP=BP;
 window._BP_UI=UI;
@@ -32951,13 +33088,18 @@ window.FG_Backpack.show = function() {
   if (dfi && !dfi.querySelector('svg') && window._BP_UI) dfi.innerHTML = window._BP_UI.spr || '';
   var sdhi = document.getElementById('sdhi');
   if (sdhi && !sdhi.querySelector('svg') && window._BP_UI) sdhi.innerHTML = window._BP_UI.hx || '';
+  // Show return-to-base button + start cooldown timer
+  if (BP._rtbRender) BP._rtbRender();
+  if (BP._rtbStartTimer) BP._rtbStartTimer();
 };
 window.FG_Backpack.hide = function() {
   if (window.BP) BP.close();
   var el = document.getElementById('bpi');
   var fab = document.getElementById('dfb');
+  var rtb = document.getElementById('bp-rtb');
   if (el) el.style.display = 'none';
   if (fab) fab.style.display = 'none';
+  if (rtb) rtb.style.display = 'none';
   var stp = document.getElementById('stp');
   if (stp) stp.style.display = 'none';
   // Hide map overlays
