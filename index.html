@@ -29955,7 +29955,7 @@ function _cdArt(s,r){
   if(r===10)return _CD_BASE+sn+'-jack.png';
   if(r===11)return _CD_BASE+sn+'-queen.png';
   if(r===12)return _CD_BASE+sn+'-king.png';
-  return _CD_BASE+sn+'-ace.png'; // number cards use ace art dimmed
+  return '';
 }
 
 function _cdMk(){var d=[];for(var s=0;s<4;s++)for(var r=0;r<13;r++)d.push({s:s,r:r,up:false});return d}
@@ -29978,22 +29978,20 @@ function _cdEl(card){
     var rnk=_cdRnk(card.r);
     var pip=_CD_BASE+_SUIT_NAME[card.s]+'.png';
     var art=_cdArt(card.s,card.r);
-    var isFace=card.r===0||card.r>=10; // ace, J, Q, K
+    var art=_cdArt(card.s,card.r);
     // Corner label: rank + small suit image
     var corner='<div style="position:absolute;top:3px;left:4px;line-height:1;z-index:2;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:1px">'
       +'<div style="color:'+clr+';font-size:clamp(.7rem,2.2vw,1rem);font-weight:900;font-style:italic;text-shadow:0 1px 3px #000,0 0 8px #000">'+rnk+'</div>'
       +'<img src="'+pip+'" style="width:clamp(8px,2.2vw,14px);height:clamp(8px,2.2vw,14px);filter:drop-shadow(0 1px 2px #000)" alt="">'
       +'</div>';
-    if(!isFace){
-      // Number cards: ace art dimmed as watermark
-      d.style.backgroundImage="linear-gradient(rgba(14,18,12,.7),rgba(14,18,12,.7)),url('"+art+"')";
-      d.style.backgroundSize='100%,65%';
-      d.style.backgroundPosition='center,center 55%';
-      d.style.backgroundRepeat='no-repeat,no-repeat';
-    }else{
+    if(art){
       d.style.backgroundImage="url('"+art+"')";
+      d.innerHTML=corner;
+    }else{
+      // Number card: rank corner + centered suit pip
+      d.innerHTML=corner
+        +'<img src="'+pip+'" style="width:45%;height:auto;opacity:.65;filter:drop-shadow(0 0 6px rgba(0,0,0,.5));pointer-events:none" alt="">';
     }
-    d.innerHTML=corner;
   }else{
     d.className+=' gc-dn';
     _cdBackStyle(d);
@@ -30720,37 +30718,41 @@ function GFC(a){
   function rn(){
     gd.innerHTML='';
     var topRow=document.createElement('div');
-    topRow.style.cssText='display:flex;gap:clamp(3px,1vw,5px);justify-content:center;padding:clamp(2px,1vw,4px) 0;width:clamp(320px,100vw,680px);margin:0 auto;align-items:flex-start';
+    var fcW='clamp(42px,11.5vw,72px)',fcH='clamp(59px,16vw,100px)',fcF='clamp(.55rem,1.6vw,.75rem)';
+    topRow.style.cssText='display:flex;gap:clamp(2px,.6vw,4px);justify-content:center;padding:clamp(2px,1vw,4px) 0;width:clamp(320px,100vw,680px);margin:0 auto;align-items:flex-start';
     // Free cells
     for(var i=0;i<4;i++){
       var el;
       if(free[i]){el=_cdEl(free[i]);if(sel&&sel.type==='free'&&sel.idx===i)el.className+=' gc-sel';}
-      else{el=document.createElement('div');el.className='gc gc-empty';el.innerHTML='<span style="color:var(--muted);font-size:.45rem">free</span>';}
+      else{el=document.createElement('div');el.className='gc gc-empty';}
+      el.style.width=fcW;el.style.height=fcH;el.style.fontSize=fcF;
       (function(ii){el.onclick=function(){doSelect('free',ii)}})(i);
       el.style.cursor='pointer';topRow.appendChild(el);
     }
-    var sp=document.createElement('div');sp.style.cssText='width:clamp(8px,2.5vw,16px)';topRow.appendChild(sp);
+    var sp=document.createElement('div');sp.style.cssText='width:clamp(4px,1.5vw,10px)';topRow.appendChild(sp);
     // Foundations
     for(var f=0;f<4;f++){
       var el;
       if(fnd[f].length>0){el=_cdEl(fnd[f][fnd[f].length-1]);}
       else{el=document.createElement('div');el.className='gc gc-fnd';el.style.backgroundImage="url('"+_CD_BASE+_SUIT_NAME[f]+".png')";}
+      el.style.width=fcW;el.style.height=fcH;el.style.fontSize=fcF;
       (function(fi){el.onclick=function(){doSelect('fnd',fi)}})(f);
       el.style.cursor='pointer';topRow.appendChild(el);
     }
     gd.appendChild(topRow);
     // Tableau
     var tabRow=document.createElement('div');
-    tabRow.style.cssText='display:flex;gap:clamp(2px,.8vw,4px);justify-content:center;padding:clamp(2px,.8vw,3px) 0;width:clamp(320px,100vw,680px);margin:0 auto';
+    tabRow.style.cssText='display:flex;gap:clamp(2px,.6vw,3px);justify-content:center;padding:clamp(2px,.8vw,3px) 0;width:clamp(320px,100vw,680px);margin:0 auto';
     for(var c=0;c<8;c++){
-      var colDiv=document.createElement('div');colDiv.className='gc-stk';
+      var colDiv=document.createElement('div');colDiv.className='gc-stk';colDiv.style.minWidth=fcW;
       if(tab[c].length===0){
-        var em=document.createElement('div');em.className='gc gc-empty';
+        var em=document.createElement('div');em.className='gc gc-empty';em.style.width=fcW;em.style.height=fcH;
         (function(ci){em.onclick=function(){doSelect('tab',ci)}})(c);
         colDiv.appendChild(em);
       }else{
         for(var i=0;i<tab[c].length;i++){
           var cd=_cdEl(tab[c][i]);
+          cd.style.width=fcW;cd.style.height=fcH;cd.style.fontSize=fcF;
           if(sel&&sel.type==='tab'&&sel.idx===c&&i>=sel.cardIdx)cd.className+=' gc-sel';
           (function(ci,ii){cd.onclick=function(){doSelect('tab',ci,ii)}})(c,i);
           cd.style.cursor='pointer';colDiv.appendChild(cd);
