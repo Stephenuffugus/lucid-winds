@@ -3690,6 +3690,73 @@
 .dpk-item .dpk-nm{font-family:'Playfair Display',serif;font-size:8px;color:var(--cream);text-align:center;line-height:1.2;}
 .dpk-item .dpk-gr{font-family:'Bebas Neue',sans-serif;font-size:7px;letter-spacing:0.06em;}
 .dpk-empty{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-align:center;padding:20px;line-height:1.5;}
+/* ═══ WILD TAB v2 — Premium Redesign ═══ */
+
+/* ── Wild Log Bar (top navigation) ── */
+.wild-log{position:relative;display:flex;align-items:center;justify-content:space-between;padding:8px 16px;min-height:48px;background:url('assets/games/wild/wild-log-bar.png') center/cover no-repeat;background-color:rgba(32,24,14,.95);border-bottom:1px solid rgba(80,60,30,.3);z-index:10}
+.wild-log-stat{display:flex;flex-direction:column;align-items:center;gap:1px}
+.wild-log-val{font-family:'Bebas Neue',sans-serif;font-size:clamp(.85rem,2.5vw,1.1rem);color:var(--cream);line-height:1;text-shadow:0 1px 4px rgba(0,0,0,.8)}
+.wild-log-lbl{font-family:'DM Mono',monospace;font-size:clamp(.32rem,1vw,.42rem);color:rgba(200,188,160,.5);letter-spacing:.1em;text-transform:uppercase}
+.wild-log-wind{font-family:'DM Mono',monospace;font-size:clamp(.35rem,1vw,.45rem);color:var(--muted);display:flex;align-items:center;gap:4px}
+
+/* ── Trait Panel v2 (bottom sheet) ── */
+.wtp2{position:fixed;bottom:0;left:0;right:0;z-index:99998;background:linear-gradient(180deg,rgba(13,16,12,.97) 0%,rgba(8,12,6,.99) 100%);border-top:1px solid rgba(74,124,53,.12);border-radius:16px 16px 0 0;padding:0;max-width:680px;margin:0 auto;box-shadow:0 -8px 40px rgba(0,0,0,.6);transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.56,.64,1);overflow:hidden}
+.wtp2.open{transform:translateY(0)}
+.wtp2-handle{width:32px;height:4px;background:rgba(122,179,86,.15);border-radius:2px;margin:8px auto 0}
+.wtp2-hero{display:flex;align-items:center;gap:12px;padding:12px 16px 8px}
+.wtp2-svg{flex-shrink:0;width:64px;height:64px;border-radius:12px;background:rgba(26,36,22,.6);border:1.5px solid rgba(74,124,53,.2);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.wtp2-info{flex:1;min-width:0}
+.wtp2-name{font-family:'Playfair Display',serif;font-size:clamp(.85rem,2.5vw,1.1rem);font-weight:700;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wtp2-grade{font-family:'Bebas Neue',sans-serif;font-size:clamp(.5rem,1.5vw,.65rem);letter-spacing:.1em;margin-top:2px}
+.wtp2-owner{font-family:'DM Mono',monospace;font-size:clamp(.35rem,1vw,.42rem);color:var(--muted);margin-top:3px}
+
+/* Stats grid */
+.wtp2-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(74,124,53,.04);margin:0 12px;border-radius:8px;overflow:hidden}
+.wtp2-stat{display:flex;flex-direction:column;align-items:center;padding:8px 4px;background:rgba(13,16,12,.6)}
+.wtp2-stat-val{font-family:'Bebas Neue',sans-serif;font-size:clamp(.7rem,2vw,.9rem);color:var(--cream);line-height:1}
+.wtp2-stat-lbl{font-family:'DM Mono',monospace;font-size:clamp(.28rem,.8vw,.35rem);color:var(--muted);letter-spacing:.08em;margin-top:2px;text-transform:uppercase}
+
+/* Action buttons */
+.wtp2-actions{display:flex;gap:8px;padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+.wtp2-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px 6px;border-radius:10px;border:1.5px solid rgba(74,124,53,.15);background:rgba(26,36,22,.4);cursor:pointer;min-height:56px;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.wtp2-btn:active{transform:scale(.95);background:rgba(74,124,53,.12)}
+.wtp2-btn-icon{font-size:clamp(.9rem,2.5vw,1.2rem)}
+.wtp2-btn-lbl{font-family:'Bebas Neue',sans-serif;font-size:clamp(.42rem,1.2vw,.55rem);letter-spacing:.08em;color:var(--sage)}
+.wtp2-btn.gold{border-color:rgba(200,168,75,.2);background:rgba(200,168,75,.06)}
+.wtp2-btn.gold .wtp2-btn-lbl{color:var(--gold)}
+.wtp2-btn.gold:active{background:rgba(200,168,75,.15)}
+.wtp2-btn:disabled{opacity:.35;pointer-events:none}
+
+/* Proximity badge (inline in panel) */
+.wtp2-prox{font-family:'DM Mono',monospace;font-size:clamp(.35rem,1vw,.42rem);color:var(--muted);text-align:center;padding:0 16px 4px}
+
+/* ── Drop Picker v2 ── */
+.dpk2{position:fixed;bottom:0;left:0;right:0;z-index:99997;background:linear-gradient(0deg,rgba(13,16,12,.98),rgba(13,16,12,.94));border-top:1px solid rgba(74,124,53,.1);border-radius:16px 16px 0 0;transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.56,.64,1);max-height:55vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 -12px 40px rgba(0,0,0,.5)}
+.dpk2.open{transform:translateY(0)}
+.dpk2-handle{width:32px;height:4px;background:rgba(122,179,86,.12);border-radius:2px;margin:8px auto 4px}
+.dpk2-head{display:flex;align-items:center;justify-content:space-between;padding:4px 16px 8px}
+.dpk2-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(.7rem,2vw,.9rem);color:var(--sage);letter-spacing:.1em}
+.dpk2-lim{font-family:'DM Mono',monospace;font-size:clamp(.35rem,1vw,.42rem);color:var(--muted)}
+.dpk2-close{width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(74,124,53,.12);background:rgba(26,36,22,.3);color:var(--muted);font-size:clamp(.6rem,1.6vw,.8rem);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.dpk2-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:4px 16px 16px;overflow-y:auto;flex:1;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.dpk2-card{background:rgba(26,36,22,.3);border-radius:12px;padding:10px 6px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;border:2px solid rgba(74,124,53,.1);transition:all .15s;-webkit-tap-highlight-color:transparent}
+.dpk2-card:active{border-color:rgba(122,179,86,.4);background:rgba(74,124,53,.1);transform:scale(.96)}
+.dpk2-card-svg{width:48px;height:48px;display:flex;align-items:center;justify-content:center}
+.dpk2-card-svg svg{width:40px;height:40px}
+.dpk2-card-name{font-family:'Playfair Display',serif;font-size:clamp(.35rem,1vw,.45rem);color:var(--cream);text-align:center;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.dpk2-card-grade{font-family:'Bebas Neue',sans-serif;font-size:clamp(.3rem,.9vw,.38rem);letter-spacing:.06em}
+
+/* ── Backpack v2 ── */
+.bp2-icon{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 10px);left:12px;z-index:999;width:52px;height:52px;cursor:pointer;transition:transform .2s;filter:drop-shadow(0 3px 10px rgba(0,0,0,.6));background:url('assets/games/wild/backpack-closed.png') center/contain no-repeat}
+.bp2-icon:active{transform:scale(.88)}
+.bp2-badge{position:absolute;top:-5px;right:-5px;min-width:22px;height:22px;border-radius:11px;background:var(--gold);color:#0d100c;font-family:'Bebas Neue',sans-serif;font-size:12px;display:flex;align-items:center;justify-content:center;padding:0 5px;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.4);transition:all .25s}
+.bp2-badge.empty{opacity:0;transform:scale(.5)}
+
+/* Drop FAB v2 */
+.drop-fab{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 10px);right:12px;z-index:999;width:52px;height:52px;border-radius:50%;cursor:pointer;border:2px solid rgba(74,124,53,.3);background:rgba(26,36,22,.85) url('assets/games/wild/wild-drop-fab.png') center/60% no-repeat;box-shadow:0 4px 16px rgba(0,0,0,.4);transition:all .2s;-webkit-tap-highlight-color:transparent}
+.drop-fab:active{transform:scale(.88);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.drop-fab-badge{position:absolute;top:-5px;right:-5px;min-width:22px;height:22px;border-radius:11px;background:var(--sage);color:#0d100c;font-family:'Bebas Neue',sans-serif;font-size:12px;display:flex;align-items:center;justify-content:center;padding:0 5px;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+
 /* ═══ ACHIEVEMENT BAR + STEP TRACKER + PROXIMITY ═══ */
 #ab{position:fixed;top:36px;left:12px;right:12px;z-index:95;display:none;background:rgba(13,16,12,0.85);border:1px solid rgba(74,124,53,0.08);border-radius:8px;padding:6px 10px;backdrop-filter:blur(6px);align-items:center;gap:8px;}
 #ab.show{display:flex;}
