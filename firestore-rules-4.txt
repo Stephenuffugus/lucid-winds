@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Player Vaults: private data owned by each player ──
+    match /vaults/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+      // Meta subcollection (state, dailyStats)
+      match /meta/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // Pending rewards: any authenticated player can WRITE (to reward a planter),
+      // but only the vault owner can READ and DELETE (to claim rewards)
+      match /pendingRewards/{rewardId} {
+        allow read, delete: if request.auth != null && request.auth.uid == uid;
+        allow create: if request.auth != null
+          && request.auth.uid != uid  // can't reward yourself
+          && request.resource.data.keys().hasAll(['type', 'amount', 'grade', 'plantName', 'harvesterUid', 'timestamp'])
+          && request.resource.data.amount is number
+          && request.resource.data.amount > 0
+          && request.resource.data.amount <= 40;  // max Cosmic reward
+      }
+    }
+
+    // ── Wild Drops: shared plants visible to all authenticated players ──
+    match /wildDrops/{dropId} {
+      allow read: if request.auth != null;
+      // Only the owner can create their own drops
+      allow create: if request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasAll(['lat', 'lng', 'hash', 'ownerUid', 'zone', 'status']);
+      // Any authenticated player can delete (harvest) — transaction handles race conditions
+      allow delete: if request.auth != null;
+      // Only owner can update their own drops (e.g. defender game change)
+      allow update: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid;
+    }
+
+    // ── Account Counter: server-managed sequential pioneer badges ──
+    match /meta/accountCounter {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+  }
+}

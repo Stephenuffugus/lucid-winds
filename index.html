@@ -26083,6 +26083,44 @@ document.addEventListener('keydown', function(e) {
     setTimeout(function(){ if(ov) ov.classList.add('dismissed'); }, msg ? 600 : 0);
   }
 
+  // ── Claim pending rewards on login (harvest rewards from displaced plants) ──
+  function _claimPendingRewards(uid) {
+    if (!uid || !db) return;
+    var rewardsRef = db.collection('vaults').doc(uid).collection('pendingRewards');
+    rewardsRef.get().then(function(snap) {
+      if (snap.empty) return;
+      var totalDew = 0;
+      var batch = db.batch();
+      var count = 0;
+      snap.forEach(function(doc) {
+        var d = doc.data();
+        totalDew += (d.amount || 0);
+        batch.delete(doc.ref);
+        count++;
+      });
+      if (totalDew <= 0) return;
+      // Apply rewards: add hashes to player's ledger
+      batch.commit().then(function() {
+        // Credit hashes to player
+        try {
+          var ledgerRaw = _secureGet('sws_hash_ledger') || localStorage.getItem('sws_hash_ledger');
+          var ledger = JSON.parse(ledgerRaw || '{}');
+          ledger.balance = (ledger.balance || 0) + totalDew;
+          var ledgerStr = JSON.stringify(ledger);
+          if (window._secureSet) _secureSet('sws_hash_ledger', ledgerStr);
+          else localStorage.setItem('sws_hash_ledger', ledgerStr);
+          if (window.updateDashboard) updateDashboard();
+        } catch(e) {}
+        if (window._swsLog) _swsLog('Claimed ' + count + ' rewards: +' + totalDew + ' Dew Drops', 'ok');
+        if (window.showHexMsg) showHexMsg('+' + totalDew + ' Dew Drops from your Wild plants!');
+      }).catch(function(e) {
+        if (window._swsLog) _swsLog('Reward claim batch err: ' + e.message, 'err');
+      });
+    }).catch(function(e) {
+      if (window._swsLog) _swsLog('Reward query err: ' + e.message, 'err');
+    });
+  }
+
   // ── syncVaultToCloud (set-102): DUAL LOCK + visible diagnostics ─────────
   window.syncVaultToCloud = function(gh, fbUser) {
     var user = fbUser || (auth && auth.currentUser) || null;
@@ -26150,6 +26188,8 @@ document.addEventListener('keydown', function(e) {
               if (d.streak) localStorage.setItem('sws_streak', JSON.stringify(d.streak));
             }
           });
+          // ── Claim pending rewards (harvest rewards from displaced plants) ──
+          _claimPendingRewards(user.uid);
           if (onComplete) onComplete({source:'cloud', plantCount:mGH.length});
         } else {
           // New account or first time on this device — push local data up
@@ -26923,43 +26963,140 @@ function _e(v){if(window._e)window._e(v);}
 function _play(id){if(window._play)window._play(id);}
 var TILES='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 var MAX_DROPS=3,MAX_POUCH=3,COLLECT_RANGE=75,ZONE_SIZE=0.001;
-// ═══ ANTI-FARMING: economy protection ═══
+// ═══ ANTI-FARMING: server-side economy protection ═══
+// Source of truth: Firestore vaults/{uid}/meta/dailyStats
+// localStorage is a read cache only — never trusted for enforcement
 var AF_HARVEST_KEY='fg_af_harvests';
 var AF_MIN_WILD_MS=7200000; // 2hr minimum wild time before harvest
-function _afGetToday(){return new Date().toISOString().slice(0,10);}
-function _afGetState(){
-  try{var raw=localStorage.getItem(AF_HARVEST_KEY);var s=JSON.parse(raw||'{}');
-  if(s.day!==_afGetToday())return{day:_afGetToday(),count:0,planters:{},firstWild:0};
-  return s;}catch(e){return{day:_afGetToday(),count:0,planters:{},firstWild:0};}
+var _afCache=null; // in-memory cache of today's stats
+var _serverDayOffset=0; // ms offset: serverTime = Date.now() + _serverDayOffset
+
+// Get server-aligned "today" string (UTC). Uses offset learned from Firestore.
+function _afGetToday(){
+  var serverNow=new Date(Date.now()+_serverDayOffset);
+  return serverNow.toISOString().slice(0,10);
 }
-function _afSave(s){try{localStorage.setItem(AF_HARVEST_KEY,JSON.stringify(s));}catch(e){}}
+
+// Learn server time offset on first Firestore read
+function _afLearnServerTime(firestoreTimestamp){
+  if(firestoreTimestamp&&firestoreTimestamp.toMillis){
+    _serverDayOffset=firestoreTimestamp.toMillis()-Date.now();
+  }
+}
+
+// Fresh empty state for a new day
+function _afFreshState(){return{day:_afGetToday(),count:0,drops:0,planters:{},firstWild:0,feralCollects:0};}
+
+// Read from localStorage cache (fast, for UI checks before Firestore confirms)
+function _afGetCachedState(){
+  if(_afCache&&_afCache.day===_afGetToday())return _afCache;
+  try{var raw=localStorage.getItem(AF_HARVEST_KEY);var s=JSON.parse(raw||'{}');
+  if(s.day!==_afGetToday())return _afFreshState();
+  _afCache=s;return s;}catch(e){return _afFreshState();}
+}
+
+// Save to localStorage cache
+function _afSaveCache(s){
+  _afCache=s;
+  try{localStorage.setItem(AF_HARVEST_KEY,JSON.stringify(s));}catch(e){}
+}
+
+// Get current user's dailyStats Firestore ref
+function _afRef(){
+  try{
+    var u=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
+    if(!u||!u.uid||!window.db)return null;
+    return window.db.collection('vaults').doc(u.uid).collection('meta').doc('dailyStats');
+  }catch(e){return null;}
+}
+
+// Hydrate cache from Firestore (called on wild tab entry + auth)
+function _afHydrate(cb){
+  var ref=_afRef();
+  if(!ref){if(cb)cb(_afGetCachedState());return;}
+  ref.get().then(function(doc){
+    if(doc.exists){
+      var d=doc.data();
+      // Learn server time from the doc's lastWrite timestamp
+      if(d.lastWrite)_afLearnServerTime(d.lastWrite);
+      var today=_afGetToday();
+      if(d.day===today){
+        var s={day:today,count:d.count||0,drops:d.drops||0,
+          planters:d.planters||{},firstWild:d.firstWild||0,feralCollects:d.feralCollects||0};
+        _afSaveCache(s);
+        if(cb)cb(s);
+      } else {
+        // Server doc is stale (yesterday) — fresh day
+        var fresh=_afFreshState();_afSaveCache(fresh);
+        if(cb)cb(fresh);
+      }
+    } else {
+      var fresh=_afFreshState();_afSaveCache(fresh);
+      if(cb)cb(fresh);
+    }
+  }).catch(function(e){
+    if(window._swsLog)_swsLog('AF hydrate err: '+e.message,'err');
+    if(cb)cb(_afGetCachedState());
+  });
+}
+
+// Write daily stats to Firestore (server is source of truth)
+function _afWriteServer(updates){
+  var ref=_afRef();
+  if(!ref)return;
+  updates.lastWrite=firebase.firestore.FieldValue.serverTimestamp();
+  updates.day=_afGetToday();
+  ref.set(updates,{merge:true}).catch(function(e){
+    if(window._swsLog)_swsLog('AF write err: '+e.message,'err');
+  });
+}
+
 function _afGetCap(){
-  // Daily harvest cap = backpack slots (3 base, up to 6 upgraded)
   if(window.FG_Backpack&&FG_Backpack.getState){
     var st=FG_Backpack.getState();return(st&&st.cap)?st.cap:3;
   }return 3;
 }
+
 function _afMarkWildEntry(){
-  var s=_afGetState();if(!s.firstWild)s.firstWild=Date.now();_afSave(s);
+  var s=_afGetCachedState();
+  if(!s.firstWild){
+    s.firstWild=Date.now()+_serverDayOffset;
+    _afSaveCache(s);
+    _afWriteServer({firstWild:s.firstWild});
+  }
 }
+
+// Synchronous check against cache (UI gating before harvest attempt)
 function _afCanHarvest(planterUid){
-  var s=_afGetState();
-  // Check 1: daily harvest cap
+  var s=_afGetCachedState();
   var cap=_afGetCap();
   if(s.count>=cap)return{ok:false,reason:'Daily harvest limit reached ('+cap+'/day). Come back tomorrow!'};
-  // Check 2: 2hr minimum wild time
-  if(s.firstWild&&(Date.now()-s.firstWild)<AF_MIN_WILD_MS){
-    var mins=Math.ceil((AF_MIN_WILD_MS-(Date.now()-s.firstWild))/60000);
+  var serverNow=Date.now()+_serverDayOffset;
+  if(s.firstWild&&(serverNow-s.firstWild)<AF_MIN_WILD_MS){
+    var mins=Math.ceil((AF_MIN_WILD_MS-(serverNow-s.firstWild))/60000);
     return{ok:false,reason:'Explore the Wild for a bit longer! '+mins+' min remaining.'};
   }
-  // Check 3: same planter can't be harvested 2x/day by same player
   if(planterUid&&s.planters[planterUid]>=2)return{ok:false,reason:'You\'ve already harvested from this planter twice today.'};
   return{ok:true};
 }
+
+// Record harvest to both cache and Firestore
 function _afRecordHarvest(planterUid){
-  var s=_afGetState();s.count=(s.count||0)+1;
+  var s=_afGetCachedState();
+  s.count=(s.count||0)+1;
   if(planterUid){s.planters[planterUid]=(s.planters[planterUid]||0)+1;}
-  _afSave(s);
+  _afSaveCache(s);
+  // Write to Firestore — server is the real enforcer
+  var updates={count:s.count,planters:s.planters};
+  _afWriteServer(updates);
+}
+
+// Record drop to both cache and Firestore
+function _afRecordDrop(){
+  var s=_afGetCachedState();
+  s.drops=(s.drops||0)+1;
+  _afSaveCache(s);
+  _afWriteServer({drops:s.drops});
 }
 var _map=null,_uM=null,_uLat=null,_uLng=null,_trail=[],_tLine=null,_inited=false;
 var _drops=0,_pouch=[],_sel=null,_selMk=null,_menuOpen=false,_tt=null;
@@ -26982,8 +27119,9 @@ function activate(){
     if(!window.L)_toast('Error: Leaflet not loaded. Check internet connection.');
   }catch(e){}
   if(!_inited){_initMap();_initGeo();_inited=true;}
-  // Always reload drop state in case day changed or tab switched
-  _loadState();
+  // Hydrate anti-farming state from Firestore, then reload local state
+  _afHydrate(function(){_loadState();_updateUI();});
+  _loadState(); // also load immediately from cache for fast UI
   _updateUI();
   // First-visit onboarding
   if(!localStorage.getItem('lw_wild_onboarded')){
@@ -27451,12 +27589,70 @@ function _harvestToPouch(p){
   }
 }
 function _doHarvest(p){
-  _afRecordHarvest(p.ownerUid||'');
+  // Pre-check: backpack has room (don't start transaction if we can't hold the plant)
   var plantObj={hash:p.hash,name:p.name,grade:p.grade||'Common',origin:'wild',hp:'h',pi:parseInt(p.hash.charAt(0),16)%5};
+  if(window.FG_Backpack){
+    // ap() returns false if full — dry-check via getState
+    var _bpSt=FG_Backpack.getState?FG_Backpack.getState():null;
+    if(_bpSt&&_bpSt.plants&&_bpSt.plants.length>=(_bpSt.cap||3)){_toast('Plant slots full!');return;}
+  } else {
+    if(_pouch.length>=MAX_POUCH){_toast('Pouch full!');return;}
+  }
+
+  var dewReward={Common:3,Uncommon:5,Rare:8,Epic:12,Legendary:18,Mythic:25,Cosmic:40};
+  var reward=dewReward[p.grade]||3;
+  var myUid='';try{var _mu=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_mu)myUid=_mu.uid;}catch(e){}
+
+  // ── Firestore transaction: atomic harvest ──
+  // Prevents double-harvest race condition between two players
+  if(window.db&&p.ownerUid&&p.hash){
+    var docId=p.ownerUid+'_'+p.hash.slice(0,16);
+    var dropRef=window.db.collection('wildDrops').doc(docId);
+    window.db.runTransaction(function(tx){
+      return tx.get(dropRef).then(function(doc){
+        if(!doc.exists){throw new Error('ALREADY_HARVESTED');}
+        // Plant still exists — safe to harvest. Delete it atomically.
+        tx.delete(dropRef);
+        // Write reward for the displaced planter
+        if(p.ownerUid&&p.ownerUid!==myUid){
+          var rewardRef=window.db.collection('vaults').doc(p.ownerUid).collection('pendingRewards').doc();
+          tx.set(rewardRef,{
+            type:'harvest_reward',amount:reward,grade:p.grade||'Common',
+            plantName:p.name||'Plant',harvesterUid:myUid,
+            timestamp:firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+      });
+    }).then(function(){
+      // Transaction succeeded — apply local state
+      _afRecordHarvest(p.ownerUid||'');
+      _harvestApplyLocal(p,plantObj,reward);
+      if(window._swsLog)_swsLog('Harvest TX OK: '+docId,'ok');
+    }).catch(function(e){
+      if(e.message==='ALREADY_HARVESTED'){
+        _toast('Someone else got that plant first!');
+        // Clean up local marker
+        var wild=_getWild().filter(function(w){return w.hash!==p.hash;});
+        _saveWild(wild);if(_selMk&&_map)_map.removeLayer(_selMk);closeTP();_updateCounts();
+      } else {
+        if(window._swsLog)_swsLog('Harvest TX err: '+e.message,'err');
+        // Fallback: apply locally anyway (offline resilience)
+        _afRecordHarvest(p.ownerUid||'');
+        _harvestApplyLocal(p,plantObj,reward);
+      }
+    });
+  } else {
+    // No Firestore (offline or demo mode) — local only
+    _afRecordHarvest(p.ownerUid||'');
+    _harvestApplyLocal(p,plantObj,reward);
+  }
+}
+
+// Apply harvest results to local state (called after transaction succeeds or in offline mode)
+function _harvestApplyLocal(p,plantObj,reward){
   if(window.FG_Backpack){
     if(!FG_Backpack.ap(plantObj)){_toast('Plant slots full!');return;}
   } else {
-    if(_pouch.length>=MAX_POUCH){_toast('Pouch full!');return;}
     _pouch.push({hash:p.hash,name:p.name,type:'harvest',grade:p.grade,gc:p.gc});_savePouch();
   }
   var wild=_getWild().filter(function(w){return w.hash!==p.hash;});
@@ -27465,25 +27661,6 @@ function _doHarvest(p){
   closeTP();
   if(window.FG_Backpack)FG_Backpack.render();
   _updateCounts();
-  try{
-    if(window.db&&p.ownerUid&&p.hash){
-      var docId=p.ownerUid+'_'+p.hash.slice(0,16);
-      window.db.collection('wildDrops').doc(docId).delete()
-        .then(function(){if(window._swsLog)_swsLog('Harvest: deleted shared drop '+docId,'ok');})
-        .catch(function(e){if(window._swsLog)_swsLog('Harvest delete err: '+e.message,'err');});
-    }
-  }catch(e){}
-  var dewReward={Common:3,Uncommon:5,Rare:8,Epic:12,Legendary:18,Mythic:25,Cosmic:40};
-  var reward=dewReward[p.grade]||3;
-  try{
-    if(window.db&&p.ownerUid){
-      var rewardDoc={type:'harvest_reward',amount:reward,grade:p.grade||'Common',
-        plantName:p.name||'Plant',harvesterUid:window.firebase&&firebase.auth().currentUser?firebase.auth().currentUser.uid:'',
-        timestamp:new Date().toISOString()};
-      window.db.collection('vaults').doc(p.ownerUid).collection('pendingRewards').add(rewardDoc)
-        .catch(function(e){if(window._swsLog)_swsLog('Reward write err: '+e.message,'err');});
-    }
-  }catch(e){}
   _toast('\ud83c\udf92 '+p.name+' harvested! Owner earns '+reward+' Dew Drops.');
 }
 
@@ -27745,7 +27922,7 @@ function _finishDrop(defenderGame){
   var pd=_pendingDrop;_pendingDrop=null;
   var pl=pd.plant,la=pd.lat,lo=pd.lng,wild=pd.wild;
 
-  _drops++;_saveState();
+  _drops++;_saveState();_afRecordDrop();
   var gh=_getGH().filter(function(g){return g.hash!==pl.hash;});_saveGH(gh);
 
   // Compute EA at drop time
@@ -27775,7 +27952,7 @@ function _finishDrop(defenderGame){
 
 // ═══ STATE ═══
 function _loadState(){
-  var td=new Date().toISOString().slice(0,10);
+  var td=_afGetToday(); // server-aligned day
   try{var raw=window._secureGet?window._secureGet('fg_w_d'):localStorage.getItem('fg_w_d');var d=JSON.parse(raw||'{}');_drops=(d.d===td)?(d.c||0):0;}catch(e){_drops=0;}
   try{_pouch=JSON.parse(localStorage.getItem('fg_pouch')||'[]');}catch(e){_pouch=[];}
   // Midnight reset: clear stale feral breed date
@@ -27785,7 +27962,7 @@ function _loadState(){
     localStorage.removeItem('fg_feral_breed_date');
   }
 }
-function _saveState(){var val=JSON.stringify({d:new Date().toISOString().slice(0,10),c:_drops});if(window._secureSet){window._secureSet('fg_w_d',val);}else{localStorage.setItem('fg_w_d',val);}}
+function _saveState(){var val=JSON.stringify({d:_afGetToday(),c:_drops});if(window._secureSet){window._secureSet('fg_w_d',val);}else{localStorage.setItem('fg_w_d',val);}}
 function _savePouch(){localStorage.setItem('fg_pouch',JSON.stringify(_pouch));}
 
 // ═══ UI ═══
