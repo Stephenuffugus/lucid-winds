@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.01.4';
+  var LW_VERSION='2026.04.01.5';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -803,6 +803,11 @@
         localStorage.removeItem('fg_pouch');
         localStorage.removeItem('fg_feral_breed_date');
         console.log('[LW] Cleared stale wild data for fresh start.');
+      }
+      // v2026.04.01.5: Re-enable onboarding (was force-skipped during dev)
+      if(!stored||stored<'2026.04.01.5'){
+        localStorage.removeItem('pw_onboarded');
+        console.log('[LW] Reset onboarding flag — cinematic will play.');
       }
       localStorage.setItem('lw_version',LW_VERSION);
       console.log('[LW] Version changed: '+stored+' → '+LW_VERSION+'. Reloading.');
@@ -3946,7 +3951,8 @@
 .nb.on{color:var(--sage);}.nb svg{width:22px;height:22px;}.nl{font-family:'Bebas Neue',sans-serif;font-size:10px;letter-spacing:0.1em;}
 
     /* ═══ ONBOARDING ═══ */
-    #pw-onboard{display:none!important;}
+    #pw-onboard{display:none;position:fixed;inset:0;z-index:10001;background:#050805;overflow:hidden;}
+    #pw-onboard.active{display:block;}
     .ob-beat{display:none;position:absolute;inset:0;flex-direction:column;opacity:0;transition:opacity 1.8s ease;}
     .ob-beat.show{display:flex;opacity:1;}
     .ob-beat.fade-out{opacity:0;transition:opacity 1.8s ease;}
@@ -4064,8 +4070,7 @@
 // GLOBAL ERROR CATCHER — shows script errors visually
 console.log('[LW] Build v20260330b');
 window._lwBuild='v20260330b';
-// Force onboarded — onboarding overlay was blocking entire app
-try{localStorage.setItem('pw_onboarded','1')}catch(e){}
+// Onboarding controlled by PW_Onboard module — do NOT force skip here
 window._errLog=[];
 window.onerror=function(msg,url,line,col,err){
   // Ignore cross-origin "Script error." — CORS noise from GA4/Firebase
