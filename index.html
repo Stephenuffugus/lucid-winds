@@ -787,6 +787,20 @@
   <!-- GA4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-XE58S4X6RX"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
+  <script>
+  // ═══ VERSION CHECK — force reload on deploy ═══
+  var LW_VERSION='2026.03.31.3';
+  (function(){
+    var stored=localStorage.getItem('lw_version');
+    if(stored&&stored!==LW_VERSION){
+      localStorage.setItem('lw_version',LW_VERSION);
+      console.log('[LW] Version changed: '+stored+' → '+LW_VERSION+'. Reloading.');
+      location.reload(true);
+      return;
+    }
+    localStorage.setItem('lw_version',LW_VERSION);
+  })();
+  </script>
   <script>(function(){
     var CK=7776000;
     function sR(r){var c=r.trim();if(!c)return;localStorage.setItem('sws_ref',c);sessionStorage.setItem('sws_ref',c);document.cookie='sws_ref='+c+'; path=/; max-age='+CK+'; SameSite=Lax';}
@@ -27161,8 +27175,25 @@ var _snapDebounce=null; // debounce timer for moveend re-subscription
 var GC={Common:'#8a9a7a',Uncommon:'#5a9e3f',Rare:'#4a90d9',Epic:'#9b59b6',Legendary:'#C8A84B',Mythic:'#e74c3c',Cosmic:'#ff6ec7'};
 var FALLBACK=[40.758,-73.9855];
 
+var WILD_MAX_AGE_DAYS=14; // wild plants expire after 14 days
 function _getWild(){try{var j=window._secureGet?window._secureGet('fg_wild_plants'):localStorage.getItem('fg_wild_plants');return JSON.parse(j||'[]');}catch(e){return[];}}
 function _saveWild(a){if(window._secureSet){window._secureSet('fg_wild_plants',a);}else{localStorage.setItem('fg_wild_plants',JSON.stringify(a));}}
+// Prune expired wild plants from localStorage (14-day max age)
+function _pruneWild(){
+  var wild=_getWild();if(!wild.length)return wild;
+  var now=Date.now(),cutoff=WILD_MAX_AGE_DAYS*86400000;
+  var fresh=wild.filter(function(w){
+    if(!w||!w.hash)return false;
+    if(!w.date)return false; // no date = stale data, remove
+    var age=now-new Date(w.date).getTime();
+    return age<cutoff&&age>-86400000; // keep if <14 days and not future-dated
+  });
+  if(fresh.length!==wild.length){
+    if(window._swsLog)_swsLog('Pruned '+(wild.length-fresh.length)+' expired wild plants','ok');
+    _saveWild(fresh);
+  }
+  return fresh;
+}
 function _getGH(){try{return JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){return[];}}
 function _saveGH(a){localStorage.setItem('sws_greenhouse',JSON.stringify(a));}
 function _zoneKey(a,b){return(Math.round(a/ZONE_SIZE)*ZONE_SIZE).toFixed(4)+','+(Math.round(b/ZONE_SIZE)*ZONE_SIZE).toFixed(4);}
@@ -27176,6 +27207,8 @@ function activate(){
     if(!window.L)_toast('Error: Leaflet not loaded. Check internet connection.');
   }catch(e){}
   if(!_inited){_initMap();_initGeo();_inited=true;}
+  // Prune expired wild plants before loading
+  _pruneWild();
   // Hydrate anti-farming state from Firestore, then reload local state
   _afHydrate(function(){_loadState();_updateUI();});
   _loadState(); // also load immediately from cache for fast UI
@@ -27364,8 +27397,8 @@ function _placeUser(){
 
 function _loadAll(){
   if(!_map||!_uLat)return;
-  var saved=_getWild();
-  for(var i=0;i<saved.length;i++){var w=saved[i];if(!w||!w.hash)continue;var d=w.date?Math.floor((Date.now()-new Date(w.date).getTime())/86400000):0;_addPlant({lat:w.lat,lng:w.lng,hash:w.hash,own:true,days:d,pollen:d*3,status:d>7?'Thriving':d>2?'Growing':'Young'});}
+  var saved=_pruneWild();
+  for(var i=0;i<saved.length;i++){var w=saved[i];if(!w||!w.hash)continue;var d=w.date?Math.floor((Date.now()-new Date(w.date).getTime())/86400000):0;_addPlant({lat:w.lat,lng:w.lng,hash:w.hash,own:w.own!==false,days:d,pollen:d*3,status:d>7?'Thriving':d>2?'Growing':'Young',ownerUid:w.ownerUid||'',ownerName:w.ownerName||'Keeper',defenderGame:w.defenderGame||'set'});}
   _spawnFerals();_updateCounts();
   _subscribeSharedDrops();
   if(!document.getElementById('_fA')){var s=document.createElement('style');s.id='_fA';s.textContent='@keyframes _fP{0%,100%{transform:translate(-50%,-50%) scale(1);box-shadow:0 0 10px rgba(200,168,75,0.5);}50%{transform:translate(-50%,-50%) scale(1.25);box-shadow:0 0 18px rgba(200,168,75,0.7);}}@keyframes _fR{0%{width:14px;height:14px;opacity:0.5;}100%{width:36px;height:36px;opacity:0;}}';document.head.appendChild(s);}
