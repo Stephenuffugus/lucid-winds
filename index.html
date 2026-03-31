@@ -4413,14 +4413,12 @@ window.onerror=function(msg,url,line,col,err){
 
   <!-- WILD MAP — placeholder panel -->
   <div class="grove-panel" id="panel-wild" style="padding:0!important;padding-bottom:0!important;">
-    <!-- STATS STRIP -->
-    <div style="display:flex;align-items:center;gap:0.35rem;padding:0.35rem 0.5rem;background:linear-gradient(180deg,rgba(13,16,12,0.98),rgba(18,24,16,0.95));border-bottom:1px solid rgba(74,124,53,0.1);box-shadow:0 2px 8px rgba(0,0,0,0.3);">
-      <div><div style="font-size:0.32rem;color:var(--muted);font-weight:600;letter-spacing:0.08em;">PLANTED</div><div style="font-family:'Bebas Neue',sans-serif;font-size:0.85rem;color:var(--sage);" id="w-count">0</div></div>
-      <div style="width:1px;height:20px;background:rgba(122,179,86,0.1);"></div>
-      <div><div style="font-size:0.32rem;color:var(--muted);font-weight:600;letter-spacing:0.08em;">DROPS</div><div style="font-family:'Bebas Neue',sans-serif;font-size:0.85rem;color:var(--cream);" id="w-drops-left">3</div></div>
-      <div style="width:1px;height:20px;background:rgba(122,179,86,0.1);"></div>
-      <div><div style="font-size:0.32rem;color:var(--muted);font-weight:600;letter-spacing:0.08em;">POLLEN</div><div style="font-family:'Bebas Neue',sans-serif;font-size:0.85rem;color:var(--gold);" id="w-pollen">0</div></div>
-      <div style="margin-left:auto;display:flex;align-items:center;gap:0.25rem;font-size:0.38rem;color:var(--muted);" id="w-wind">— —</div>
+    <!-- WILD LOG BAR -->
+    <div class="wild-log">
+      <div class="wild-log-stat"><div class="wild-log-val" id="w-count">0</div><div class="wild-log-lbl">planted</div></div>
+      <div class="wild-log-stat"><div class="wild-log-val" id="w-drops-left">3</div><div class="wild-log-lbl">drops</div></div>
+      <div class="wild-log-stat"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl">pollen</div></div>
+      <div class="wild-log-wind" id="w-wind">— —</div>
       <div id="w-needle" style="display:none;"></div><div id="w-steps" style="display:none;">0</div>
     </div>
     <!-- MAP -->
@@ -4428,23 +4426,37 @@ window.onerror=function(msg,url,line,col,err){
     <div class="map-hex-overlay"></div>
     <!-- TOAST -->
     <div id="w-toast" style="position:fixed;top:40%;left:50%;transform:translate(-50%,-50%) scale(0.95);background:rgba(17,22,17,0.96);border:1px solid rgba(74,124,53,0.15);border-radius:10px;padding:0.6rem 1rem;z-index:99999;max-width:82%;font-size:0.65rem;color:var(--cream);text-align:center;line-height:1.5;opacity:0;transition:opacity 0.25s,transform 0.25s;pointer-events:none;box-shadow:0 8px 28px rgba(0,0,0,0.5);"></div>
-    <!-- TRAIT PANEL -->
-    <div id="w-tp" style="position:fixed;bottom:calc(130px + env(safe-area-inset-bottom, 0px));left:6px;right:6px;z-index:99998;background:rgba(17,22,17,0.97);border:1px solid rgba(74,124,53,0.1);border-radius:12px;padding:0.75rem;max-width:670px;margin:0 auto;box-shadow:0 10px 30px rgba(0,0,0,0.5);transform:translateY(20px) scale(0.97);opacity:0;transition:all 0.28s;pointer-events:none;">
-      <div style="display:flex;gap:0.5rem;margin-bottom:0.4rem;"><div id="wtp-svg" style="flex-shrink:0;"></div><div style="flex:1;min-width:0;"><div id="wtp-name" style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;">—</div><div id="wtp-grade" style="font-family:'Bebas Neue',sans-serif;font-size:0.6rem;letter-spacing:0.1em;margin-top:3px;">—</div><div id="wtp-rarest" style="display:none;margin-top:0.3rem;"></div></div></div>
-      <div id="wtp-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:0.2rem 0.5rem;font-size:0.5rem;color:var(--muted);line-height:1.7;border-top:1px solid rgba(74,124,53,0.06);padding-top:0.4rem;margin-bottom:0.45rem;"></div>
-      <div style="display:flex;gap:0.3rem;">
-        <button onclick="FG_Wild.closeTP()" style="flex:1;padding:0.4rem;border-radius:6px;border:2px solid rgba(74,124,53,0.12);cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:0.65rem;background:rgba(90,112,80,0.06);color:var(--muted);min-height:48px;">CLOSE</button>
-        <button id="wtp-inspect" style="flex:1;padding:0.4rem;border-radius:6px;border:2px solid rgba(122,179,86,0.2);cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:0.65rem;background:rgba(122,179,86,0.08);color:var(--sage);min-height:48px;">🔍 INSPECT</button>
-        <button id="wtp-act" style="flex:1;padding:0.4rem;border-radius:6px;border:2px solid rgba(200,168,75,0.12);cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:0.65rem;background:rgba(200,168,75,0.06);color:var(--gold);min-height:48px;display:none;">🎒 HARVEST</button>
-      </div>
-      <!-- OWN PLANT ACTIONS — shown only for your plants -->
-      <div id="wtp-own-actions" style="display:none;margin-top:0.3rem;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:0.5rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.3rem;text-align:center;">🌱 YOUR PLANT</div>
-        <div style="display:flex;gap:0.3rem;">
-          <button id="wtp-water" style="flex:1;padding:0.4rem;border-radius:6px;border:2px solid rgba(74,124,53,0.2);cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:0.6rem;background:rgba(74,124,53,0.08);color:var(--sage);min-height:48px;">💧 WATER</button>
-          <button id="wtp-cross" style="flex:1;padding:0.4rem;border-radius:6px;border:2px solid rgba(200,168,75,0.15);cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:0.6rem;background:rgba(200,168,75,0.06);color:var(--gold);min-height:48px;">🌿 CROSS-POLLINATE</button>
+    <!-- TRAIT PANEL v2 — premium bottom sheet -->
+    <div id="w-tp" class="wtp2">
+      <div class="wtp2-handle"></div>
+      <div class="wtp2-hero">
+        <div class="wtp2-svg" id="wtp-svg"></div>
+        <div class="wtp2-info">
+          <div class="wtp2-name" id="wtp-name">—</div>
+          <div class="wtp2-grade" id="wtp-grade">—</div>
+          <div class="wtp2-owner" id="wtp-owner"></div>
+          <div id="wtp-rarest" style="display:none;margin-top:3px;"></div>
         </div>
-        <div id="wtp-own-status" style="font-family:'DM Mono',monospace;font-size:0.38rem;color:var(--muted);text-align:center;margin-top:0.25rem;min-height:0.8rem;"></div>
+      </div>
+      <div class="wtp2-stats" id="wtp-grid">
+        <div class="wtp2-stat"><div class="wtp2-stat-val" id="wtp-ea">—</div><div class="wtp2-stat-lbl">EA</div></div>
+        <div class="wtp2-stat"><div class="wtp2-stat-val" id="wtp-season">—</div><div class="wtp2-stat-lbl">Season</div></div>
+        <div class="wtp2-stat"><div class="wtp2-stat-val" id="wtp-days">—</div><div class="wtp2-stat-lbl">Days</div></div>
+        <div class="wtp2-stat"><div class="wtp2-stat-val" id="wtp-status">—</div><div class="wtp2-stat-lbl">Status</div></div>
+      </div>
+      <div class="wtp2-prox" id="wtp-own-status"></div>
+      <!-- Action buttons — other player's plant -->
+      <div class="wtp2-actions" id="wtp-other-actions">
+        <button class="wtp2-btn" onclick="FG_Wild.closeTP()"><div class="wtp2-btn-icon">✕</div><div class="wtp2-btn-lbl">Close</div></button>
+        <button class="wtp2-btn" id="wtp-inspect"><div class="wtp2-btn-icon">🔍</div><div class="wtp2-btn-lbl">Inspect</div></button>
+        <button class="wtp2-btn gold" id="wtp-act" style="display:none"><div class="wtp2-btn-icon">🎒</div><div class="wtp2-btn-lbl">Harvest</div></button>
+      </div>
+      <!-- Action buttons — your own plant -->
+      <div class="wtp2-actions" id="wtp-own-actions" style="display:none">
+        <button class="wtp2-btn" onclick="FG_Wild.closeTP()"><div class="wtp2-btn-icon">✕</div><div class="wtp2-btn-lbl">Close</div></button>
+        <button class="wtp2-btn" id="wtp-inspect2"><div class="wtp2-btn-icon">🔍</div><div class="wtp2-btn-lbl">Inspect</div></button>
+        <button class="wtp2-btn" id="wtp-water"><div class="wtp2-btn-icon">💧</div><div class="wtp2-btn-lbl">Water</div></button>
+        <button class="wtp2-btn gold" id="wtp-cross"><div class="wtp2-btn-icon">🧬</div><div class="wtp2-btn-lbl">Breed</div></button>
       </div>
     </div>
     <!-- PICKER -->
@@ -27335,76 +27347,68 @@ function _addPlant(p){
 function showTP(p,mk){
   _sel=p;_selMk=mk||null;
   var tp=document.getElementById('w-tp');if(!tp)return;
-  var sv=document.getElementById('wtp-svg');if(sv&&window._generatePlantSVG&&p.hash){try{sv.innerHTML=window._generatePlantSVG(p.hash,56);}catch(e){}}
+  // Hero: SVG + name + grade
+  var sv=document.getElementById('wtp-svg');if(sv&&window._generatePlantSVG&&p.hash){try{sv.innerHTML=window._generatePlantSVG(p.hash,48);}catch(e){}}
   var n=document.getElementById('wtp-name');if(n){n.textContent=p.name||'?';n.style.color=p.gc||'var(--cream)';}
-  var g=document.getElementById('wtp-grade');if(g){
-    var seasonHtml='';if(p.traits&&window.seasonBadge)seasonHtml=' '+window.seasonBadge(p.traits);
-    g.innerHTML=(p.grade||'COMMON').toUpperCase()+seasonHtml;g.style.color=p.gc;
-  }
+  var g=document.getElementById('wtp-grade');if(g){g.textContent=(p.grade||'COMMON').toUpperCase();g.style.color=p.gc;}
+  var ow=document.getElementById('wtp-owner');if(ow){ow.textContent=p.own?'Your plant':(p.ownerName||'Wild specimen');}
+  // Rarest traits
   var re=document.getElementById('wtp-rarest');
-  if(re){if(p.rarities&&p.rarities.length>0){var rh='';for(var i=0;i<p.rarities.length;i++)rh+='<span style="display:inline-block;padding:0.1rem 0.35rem;border-radius:3px;font-size:0.42rem;margin:0.08rem 0.1rem 0 0;background:rgba(0,0,0,0.3);color:'+(p.gc||'var(--gold)')+';border:1px solid '+(p.gc||'var(--gold)')+';">\u2605 '+p.rarities[i]+'</span>';re.innerHTML=rh;re.style.display='block';}else re.style.display='none';}
-  var gr=document.getElementById('wtp-grid');
-  if(gr){var t=p.traits||{};var eaScore=window.computeEA?window.computeEA(t,p.days):0;var seasonInfo=window.getSeasonInfo?window.getSeasonInfo(t):{name:'?',emblem:'?'};var rows=[['EA Power',window.eaBadge?window.eaBadge(eaScore,p.gc):''+eaScore],['Season',seasonInfo.emblem+' '+seasonInfo.name+(seasonInfo.inPeak?' <span style="color:var(--sage);">(Peak!)</span>':'')],['Days',p.days+'d'],['Pollen','<span style="color:var(--gold);">'+p.pollen+'</span>'],['Status','<span style="color:'+(p.status==='Thriving'?'var(--sage)':'var(--cream)')+';">'+p.status+'</span>'],['Mutation',t.mutationName||'None'],['Flower',t.hasFlower?'Yes':'No'],['Leaves',t.leafCount||'?']];var h='';for(var i=0;i<rows.length;i++)h+='<div>'+rows[i][0]+' <b style="color:var(--cream);">'+rows[i][1]+'</b></div>';gr.innerHTML=h;}
+  if(re){if(p.rarities&&p.rarities.length>0){var rh='';for(var i=0;i<p.rarities.length;i++)rh+='<span style="display:inline-block;padding:2px 6px;border-radius:3px;font-size:clamp(.35rem,1vw,.42rem);margin:2px 2px 0 0;background:rgba(0,0,0,0.3);color:'+(p.gc||'var(--gold)')+';border:1px solid '+(p.gc||'var(--gold)')+';">\u2605 '+p.rarities[i]+'</span>';re.innerHTML=rh;re.style.display='block';}else re.style.display='none';}
+  // Stats grid — populate the 4 stat cells
+  var t=p.traits||{};
+  var eaScore=window.computeEA?window.computeEA(t,p.days):0;
+  var seasonInfo=window.getSeasonInfo?window.getSeasonInfo(t):{name:'?',emblem:'?'};
+  var ea=document.getElementById('wtp-ea');if(ea){ea.textContent=eaScore;ea.style.color=eaScore>=15?'var(--gold)':'var(--cream)';}
+  var sn=document.getElementById('wtp-season');if(sn){sn.innerHTML=seasonInfo.emblem;sn.title=seasonInfo.name+(seasonInfo.inPeak?' (Peak!)':'');}
+  var dy=document.getElementById('wtp-days');if(dy)dy.textContent=p.days+'d';
+  var st=document.getElementById('wtp-status');if(st){st.textContent=p.status||'—';st.style.color=p.status==='Thriving'?'var(--sage)':'var(--cream)';}
 
-  // INSPECT button — opens plant in carousel for full detail view
-  var inspBtn=document.getElementById('wtp-inspect');
-  if(inspBtn){
-    inspBtn.onclick=function(){
-      // Build a temporary plant object with the wild plant's data
-      var _wildPlant={hash:p.hash,date:p.date||'',born:Date.now(),origin:'wild',rare:false,traits:''};
-      if(window.openCarousel){
-        closeTP();
-        openCarousel([_wildPlant],0,'wild-inspect');
-      }
-    };
-  }
+  // Wire INSPECT buttons (both own and other)
+  var inspFn=function(){
+    var _wildPlant={hash:p.hash,date:p.date||'',born:Date.now(),origin:'wild',rare:false,traits:''};
+    if(window.openCarousel){closeTP();openCarousel([_wildPlant],0,'wild-inspect');}
+  };
+  var inspBtn=document.getElementById('wtp-inspect');if(inspBtn)inspBtn.onclick=inspFn;
+  var inspBtn2=document.getElementById('wtp-inspect2');if(inspBtn2)inspBtn2.onclick=inspFn;
 
   // === OWNERSHIP DETECTION ===
   var ab=document.getElementById('wtp-act');
+  var otherAct=document.getElementById('wtp-other-actions');
   var ownActions=document.getElementById('wtp-own-actions');
   var ownStatus=document.getElementById('wtp-own-status');
 
   if(p.own){
-    // YOUR PLANT — no harvest, show water + cross-pollinate
-    if(ab)ab.style.display='none';
-    if(ownActions)ownActions.style.display='block';
-
-    // Water button — only works if GPS proximate
+    if(otherAct)otherAct.style.display='none';
+    if(ownActions)ownActions.style.display='flex';
     var waterBtn=document.getElementById('wtp-water');
     if(waterBtn){
       waterBtn.onclick=function(){_waterOwnPlant(p,mk);};
-      // Check proximity
+      waterBtn.disabled=false;
       if(_uLat&&p.lat){
         var distToPlant=_dist(_uLat,_uLng,p.lat,p.lng);
         if(distToPlant>COLLECT_RANGE){
-          waterBtn.style.opacity='0.4';
-          if(ownStatus)ownStatus.textContent='Walk within '+Math.round(COLLECT_RANGE)+'m to water ('+Math.round(distToPlant)+'m away)';
+          waterBtn.disabled=true;
+          if(ownStatus)ownStatus.textContent=Math.round(distToPlant)+'m away \u2014 walk within '+Math.round(COLLECT_RANGE)+'m to water';
         } else {
-          waterBtn.style.opacity='1';
-          if(ownStatus)ownStatus.textContent='You are close enough to tend this plant';
+          if(ownStatus)ownStatus.textContent='Close enough to tend this plant';
         }
       }
     }
-
-    // Cross-pollinate button
     var crossBtn=document.getElementById('wtp-cross');
-    if(crossBtn){
-      crossBtn.onclick=function(){_crossPollinate(p);};
-    }
-
+    if(crossBtn)crossBtn.onclick=function(){_crossPollinate(p);};
   } else {
-    // SOMEONE ELSE'S PLANT — show harvest
     if(ownActions)ownActions.style.display='none';
+    if(otherAct)otherAct.style.display='flex';
     if(ab){
-      ab.style.display='block';
-      ab.textContent='\ud83c\udf92 HARVEST';
+      ab.style.display='flex';
       ab.onclick=function(){_harvestToPouch(p);};
     }
   }
 
-  tp.style.opacity='1';tp.style.transform='translateY(0) scale(1)';tp.style.pointerEvents='auto';
+  tp.classList.add('open');
 }
-function closeTP(){var tp=document.getElementById('w-tp');if(tp){tp.style.opacity='0';tp.style.transform='translateY(20px) scale(0.97)';tp.style.pointerEvents='none';}var oa=document.getElementById('wtp-own-actions');if(oa)oa.style.display='none';var ab=document.getElementById('wtp-act');if(ab)ab.style.display='none';_sel=null;_selMk=null;}
+function closeTP(){var tp=document.getElementById('w-tp');if(tp)tp.classList.remove('open');var oa=document.getElementById('wtp-own-actions');if(oa)oa.style.display='none';var ot=document.getElementById('wtp-other-actions');if(ot)ot.style.display='flex';var ab=document.getElementById('wtp-act');if(ab)ab.style.display='none';_sel=null;_selMk=null;}
 
 // ═══ HARVEST TO BACKPACK (other players' plants only) ═══
 function _harvestToPouch(p){
