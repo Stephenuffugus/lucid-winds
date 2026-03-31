@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.01.9';
+  var LW_VERSION='2026.04.01.10';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -22550,6 +22550,8 @@ document.addEventListener('keydown', function(e) {
         var _compCount = 0;
         gh.forEach(function(p) { try { var t = hashToTraits(p.hash); if(t.companion >= 20) _compCount++; } catch(e){} });
         if (_compCount > 0) _spotFacts.push(_compCount + ' companion' + (_compCount>1?'s':'') + ' discovered');
+        // Wild tab nudge for players who haven't tried it
+        if(!localStorage.getItem('lw_first_drop')&&gh.length>=2) _spotFacts.push('Ready for the Wild? Drop plants on the map to claim territory.');
         if (_spotFacts.length > 0) {
           var _spotIdx = Math.floor(Date.now() / 10000) % _spotFacts.length;
           _spotEl.textContent = _spotFacts[_spotIdx];
@@ -28186,6 +28188,11 @@ function _harvestApplyLocal(p,plantObj,reward){
   if(window.FG_Backpack)FG_Backpack.render();
   _updateCounts();
   _toast('\ud83c\udf92 '+p.name+' harvested! Owner earns '+reward+' Dew Drops.');
+  // First harvest milestone
+  if(!localStorage.getItem('lw_first_harvest')){
+    localStorage.setItem('lw_first_harvest','1');
+    setTimeout(function(){_toast('\ud83c\udf1f First harvest! Hit RETURN TO BASE when your backpack is full.');},2500);
+  }
 }
 
 // ═══ WATER OWN PLANT (GPS-proximate only) ═══
@@ -28471,6 +28478,13 @@ function _finishDrop(defenderGame){
   _updateCounts();_updateUI();_drawTerritory();
   if(window.renderGreenhouse)renderGreenhouse();
   _toast('\ud83c\udf31 Planted with '+defenderGame.toUpperCase()+' defense (EA: '+dropEA+')');
+  // First drop milestone
+  if(!localStorage.getItem('lw_first_drop')){
+    localStorage.setItem('lw_first_drop','1');
+    setTimeout(function(){
+      _toast('\ud83c\udf1f First plant in the Wild! Walk around — ferals will spawn near breeding pairs.');
+    },2500);
+  }
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
   _writeSharedDrop(la,lo,pl.hash,dropEA,defenderGame,dropTraits,pd.displaced);
 }
