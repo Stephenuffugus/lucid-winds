@@ -26922,7 +26922,7 @@ window.FG_Wild=(function(){
 function _e(v){if(window._e)window._e(v);}
 function _play(id){if(window._play)window._play(id);}
 var TILES='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-var MAX_DROPS=3,MAX_POUCH=3,COLLECT_RANGE=150,ZONE_SIZE=0.001;
+var MAX_DROPS=3,MAX_POUCH=3,COLLECT_RANGE=75,ZONE_SIZE=0.001;
 // ═══ ANTI-FARMING: economy protection ═══
 var AF_HARVEST_KEY='fg_af_harvests';
 var AF_MIN_WILD_MS=7200000; // 2hr minimum wild time before harvest
@@ -27335,10 +27335,7 @@ function _addPlant(p){
   var seasonEmb='';if(info.t&&window.getSeasonInfo){var si=window.getSeasonInfo(info.t);seasonEmb=' <span style="font-size:0.35rem;">'+si.emblem+'</span>';}
   var tag='<div style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-family:Bebas Neue,sans-serif;font-size:0.35rem;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,0.8);color:'+info.gc+';pointer-events:none;">'+info.nm+seasonEmb+'</div>';
   var th=Math.round(sz*40/30)+14;
-  var isRare=info.grade&&info.grade!=='COMMON'&&info.grade!=='UNCOMMON';
-  var markerImg=isRare?'assets/games/wild/wild-marker-rare.png':'assets/games/wild/wild-marker-common.png';
   var html='<div style="position:relative;width:'+(sz+6)+'px;height:'+th+'px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7));">'
-    +'<img src="'+markerImg+'" style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:'+(sz+10)+'px;height:'+(sz+10)+'px;opacity:.35;pointer-events:none" alt="">'
     +svg
     +tag
     +'</div>';
@@ -32382,10 +32379,10 @@ var SL=[{id:1},{id:2,h:'Harvest 1st plant',k:'slot2'},{id:3,h:'100 pollen',k:'sl
 var SC=[{c:1,k:'seed1'},{c:5,k:'seed5'},{c:10,k:'seed10'},{c:15,k:'seed15'},{c:20,k:'seed20'}];
 function xp(){var c=1;for(var i=1;i<SL.length;i++){var s=SL[i];if(st.unlocks[s.k]){if(s.dy){var td=new Date().toISOString().split('T')[0];if(st.daily!==td)c++;}else c++;}}return c;}
 function xc(){var c=1;for(var i=SC.length-1;i>=0;i--){if(st.unlocks[SC[i].k]){c=SC[i].c;break;}}return c;}
-function init(){var el=document.getElementById('bpi');if(el){var s=el.querySelector('svg');if(s)s.remove();el.insertAdjacentHTML('afterbegin',I.packC);}render();}
+function init(){var el=document.getElementById('bpi');if(el){var s=el.querySelector('svg');if(s)s.remove();}render();}
 function toggle(){if(_o)close();else open();}
-function open(){_o=true;hap();var el=document.getElementById('bpi');if(el){var s=el.querySelector('svg');if(s)s.remove();el.insertAdjacentHTML('afterbegin',I.packO);}document.getElementById('bpe').classList.add('open');render();}
-function close(){_o=false;csi();cpi();var el=document.getElementById('bpi');if(el){var s=el.querySelector('svg');if(s)s.remove();el.insertAdjacentHTML('afterbegin',I.packC);}document.getElementById('bpe').classList.remove('open');}
+function open(){_o=true;hap();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-open.png')";}document.getElementById('bpe').classList.add('open');render();}
+function close(){_o=false;csi();cpi();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-closed.png')";}document.getElementById('bpe').classList.remove('open');}
 function csi(){_ss=null;document.getElementById('sdi').classList.remove('show');}
 function cpi(){_sp=null;document.getElementById('pic').classList.remove('show');}
 function render(){
