@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.01.16';
+  var LW_VERSION='2026.04.01.17';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3403,12 +3403,11 @@
 /* Medallion nav — 4 circular buttons embedded in the frame's bottom bar */
 #wild-nav{position:fixed;bottom:0;left:0;right:0;z-index:460;display:none;height:80px;padding-bottom:env(safe-area-inset-bottom,0px);}
 #wild-nav .wn-row{display:flex;justify-content:space-around;align-items:center;height:100%;max-width:400px;margin:0 auto;padding:0 24px;}
-.wn-btn{width:52px;height:52px;border-radius:50%;border:2px solid rgba(200,168,75,0.25);background:rgba(13,16,12,0.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;box-shadow:0 3px 12px rgba(0,0,0,0.4);-webkit-tap-highlight-color:transparent;padding:0;overflow:hidden;}
-.wn-btn:active{transform:scale(0.9);}
-.wn-btn.active{border-color:rgba(122,179,86,0.5);box-shadow:0 0 16px rgba(122,179,86,0.2),0 3px 12px rgba(0,0,0,0.4);}
-.wn-btn img{width:36px;height:36px;object-fit:contain;}
-.wn-btn svg{width:24px;height:24px;color:var(--muted);}
-.wn-btn.active svg{color:var(--sage);}
+.wn-btn{width:56px;height:56px;border-radius:50%;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;-webkit-tap-highlight-color:transparent;padding:0;overflow:hidden;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.5));}
+.wn-btn:active{transform:scale(0.88);}
+.wn-btn.active{filter:drop-shadow(0 0 12px rgba(122,179,86,0.3)) drop-shadow(0 3px 8px rgba(0,0,0,0.5));}
+.wn-btn img{width:56px;height:56px;object-fit:contain;border-radius:50%;}
+.wn-btn:not(.active) img{opacity:0.6;filter:saturate(0.5);}
 .wn-lbl{display:none;} /* labels hidden — icons only in medallions */
 
 /* ── STEP COUNTER in log bar ── */
@@ -4941,16 +4940,16 @@ window.onerror=function(msg,url,line,col,err){
   <div id="wild-nav">
     <div class="wn-row">
       <button class="wn-btn" onclick="switchTab('game')" title="Game">
-        <svg viewBox="0 0 40 40" width="24" height="24"><rect x="4" y="6" width="14" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="22" y="6" width="14" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="11" cy="15" r="2" fill="currentColor" opacity="0.6"/><circle cx="29" cy="15" r="2" fill="currentColor" opacity="0.6"/></svg>
+        <img src="assets/games/wild/nav-game.png" alt="Game">
       </button>
       <button class="wn-btn" onclick="switchTab('greenhouse')" title="Greenhouse">
-        <svg viewBox="0 0 40 40" width="24" height="24"><path d="M6,36 L6,18 L20,8 L34,18 L34,36 Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><line x1="20" y1="16" x2="20" y2="22" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="17" cy="19" r="2" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="23" cy="19" r="2" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+        <img src="assets/games/wild/nav-greenhouse.png" alt="Greenhouse">
       </button>
       <button class="wn-btn" onclick="switchTab('nursery')" title="Nursery">
-        <svg viewBox="0 0 40 40" width="24" height="24"><path d="M20,34 L20,20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M20,20 Q12,14 14,8 Q18,10 20,14 Q22,10 26,8 Q28,14 20,20Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="20" cy="8" r="2" fill="currentColor" opacity="0.4"/></svg>
+        <img src="assets/games/wild/nav-nursery.png" alt="Nursery">
       </button>
       <button class="wn-btn active" onclick="switchTab('wild')" title="Wild">
-        <svg viewBox="0 0 40 40" width="24" height="24"><circle cx="20" cy="20" r="14" fill="none" stroke="currentColor" stroke-width="1.2"/><line x1="20" y1="6" x2="20" y2="34" stroke="currentColor" stroke-width="0.8" opacity="0.3"/><line x1="6" y1="20" x2="34" y2="20" stroke="currentColor" stroke-width="0.8" opacity="0.3"/><path d="M20,8 L22,16 L20,14 L18,16 Z" fill="currentColor"/></svg>
+        <img src="assets/games/wild/nav-wild.png" alt="Wild">
       </button>
     </div>
   </div>
