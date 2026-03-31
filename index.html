@@ -29906,11 +29906,11 @@ function _cdEl(card){
     var pip=_CD_BASE+_SUIT_NAME[card.s]+'.png';
     var art=_cdArt(card.s,card.r);
     if(art){
-      // Face card / ace: rank + small pip in corner for suit ID
       d.style.backgroundImage="url('"+art+"')";
+      var needsPip=card.r>=10; // J Q K only
       d.innerHTML='<div style="position:absolute;top:3px;left:4px;line-height:1;z-index:2;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:1px">'
         +'<div style="color:'+clr+';font-size:clamp(.7rem,2.2vw,1rem);font-weight:700;text-shadow:0 1px 3px #000,0 0 8px #000">'+rnk+'</div>'
-        +'<img src="'+pip+'" style="width:clamp(8px,2.2vw,14px);height:clamp(8px,2.2vw,14px);filter:drop-shadow(0 1px 2px #000)" alt="">'
+        +(needsPip?'<img src="'+pip+'" style="width:clamp(8px,2.2vw,14px);height:clamp(8px,2.2vw,14px);filter:drop-shadow(0 1px 2px #000)" alt="">':'')
         +'</div>';
     }else{
       // Number card: suit image fills card, rank in corner
