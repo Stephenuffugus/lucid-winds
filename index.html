@@ -2853,7 +2853,7 @@
     #fg-ag.on{display:flex}
     #fg-ag.sol{background:radial-gradient(ellipse at 50% 30%,rgba(18,32,14,.95) 0%,rgba(8,14,6,.98) 60%,rgba(4,8,3,1) 100%)}
     #fg-ag.sol-fs{padding-bottom:0;position:fixed;inset:0;z-index:1000;overflow-y:auto}
-    body.sol-fs .fg-bottomnav,body.sol-fs .fg-pk,body.sol-fs .game-header,body.sol-fs #gp-strip{display:none!important}
+    body.sol-fs .fg-bottomnav,body.sol-fs .fg-pk,body.sol-fs .game-header{display:none!important}
 
     /* ══════════════════════════════════════════════════════════════════════
        SHARED COMPONENTS — consistent across all 21 games
@@ -2865,7 +2865,7 @@
     .gs .gh{color:var(--gold);text-shadow:0 0 10px rgba(200,168,78,.12);animation:breatheIdle 4s ease-in-out infinite}
 
     /* Universal game toolbar */
-    .gu-bar{display:flex;align-items:center;justify-content:space-between;padding:2px clamp(6px,2vw,10px);font-size:clamp(.55rem,1.6vw,.7rem);color:var(--muted);flex-shrink:0;background:rgba(13,16,12,.45);letter-spacing:.02em;min-height:32px}
+    .gu-bar{display:flex;align-items:center;justify-content:space-between;padding:2px clamp(6px,2vw,10px);font-size:clamp(.55rem,1.6vw,.7rem);color:var(--muted);flex-shrink:0;background:rgba(13,16,12,.85);letter-spacing:.02em;min-height:32px;position:relative;z-index:10}
     .gu-bar strong{color:rgba(122,179,86,.9);font-family:'Bebas Neue',sans-serif;font-size:clamp(.58rem,1.6vw,.72rem);letter-spacing:.04em}
     .gu-bar .gh{color:var(--gold);text-shadow:0 0 10px rgba(200,168,78,.12)}
     .gu-left{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
@@ -29845,7 +29845,7 @@ function GC4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0;
 function GSG(a){
   // Load Grove Studio in fullscreen iframe
   var fr=document.createElement('iframe');
-  fr.src='assets/studio-ai-pro.html';
+  fr.src='/studio.html';
   fr.style.cssText='width:100%;height:calc(100vh - 40px);border:none;border-radius:8px;background:#060610';
   fr.allow='autoplay';
   a.appendChild(fr);
@@ -30395,18 +30395,19 @@ function GKL(a){
         (function(ci){em.onclick=function(){tapTab(ci,0)}})(c);
         colDiv.appendChild(em);
       }else{
-        for(var i=0;i<tableau[c].length;i++){
+        var depth=tableau[c].length;
+        for(var i=0;i<depth;i++){
           var card=tableau[c][i];
           var cdEl=_cdEl(card);
           cdEl.style.width=klW;cdEl.style.height=klH;cdEl.style.fontSize=klF;
 
-          // Overlap: negative margin except first card
-          if(i>0){
-            cdEl.style.marginTop=card.up?'-46px':'-50px';
-          }
-          // Stacked cards show partial height unless last
-          if(i<tableau[c].length-1){
-            cdEl.style.height=card.up?'clamp(18px,5vw,24px)':'clamp(14px,3.8vw,18px)';
+          // Stacked cards: show peek only, last card full height
+          if(i<depth-1){
+            // Compress peek when stack is deep
+            var peekUp=depth>10?'clamp(12px,3.5vw,16px)':depth>7?'clamp(14px,4vw,18px)':'clamp(16px,4.5vw,22px)';
+            var peekDn=depth>10?'clamp(8px,2.5vw,12px)':depth>7?'clamp(10px,3vw,14px)':'clamp(12px,3.5vw,16px)';
+            cdEl.style.height=card.up?peekUp:peekDn;
+            cdEl.style.overflow='hidden';
             cdEl.style.alignItems='flex-start';
             cdEl.style.paddingTop='2px';
             cdEl.style.fontSize=klF;
