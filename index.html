@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.01.5';
+  var LW_VERSION='2026.04.01.6';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -4724,7 +4724,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="dev-section"><div class="dev-section-title">LOCAL STORAGE</div><button class="dev-btn" onclick="PW_Dev.clearLocal()">🧹 CLEAR ALL</button></div>
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
     <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button></div>
-    <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button></div>
+    <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE RANDOM PLANT</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿x5 GENERATE 5 PLANTS</button></div>
     <div class="dev-section"><div class="dev-section-title">NUCLEAR</div><button class="dev-btn danger" onclick="PW_Dev.fullReset()">☢ WIPE EVERYTHING</button></div>
     <div class="dev-log" id="dev-log">Ready.\n</div>
   </div>
@@ -4834,6 +4834,25 @@ window.onerror=function(msg,url,line,col,err){
       localStorage.clear();
       alert('Everything wiped. Reloading.');
       location.reload();
+    },
+    generatePlant:function(count){
+      count=count||1;
+      if(!window.mintPlant){alert('mintPlant not available');return;}
+      var minted=0;
+      function _mint(){
+        var h='';for(var i=0;i<64;i++)h+='0123456789abcdef'[Math.floor(Math.random()*16)];
+        var grade='?';
+        try{if(window.hashToTraits&&window.getTerraGrade){grade=window.getTerraGrade(window.hashToTraits(h)).label;}}catch(e){}
+        mintPlant(h).then(function(ok){
+          minted++;
+          if(minted>=count){
+            alert('Generated '+minted+' plant'+(minted>1?'s':'')+'. Check greenhouse.');
+            if(window.renderGreenhouse)renderGreenhouse();
+            if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
+          } else {_mint();}
+        });
+      }
+      _mint();
     },
     spawnTestPlants:function(){
       if(!window.mintPlant){alert('mintPlant not available');return;}
