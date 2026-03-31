@@ -28789,9 +28789,9 @@ function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null;
 
   function fl(i,d){var e=document.getElementById('s'+i);if(!e)return;e.classList.add('lt');tn(FR[i],d);setTimeout(function(){e.classList.remove('lt')},d)}
   function ps(){pl=true;pt=false;sm('Watch...');var i=0,sp=Math.max(220,480-rd*12);var iv=setInterval(function(){if(i>=sq.length){clearInterval(iv);pl=false;pt=true;pi=0;sm('Your turn!');return}fl(sq[i],sp*.7);i++},sp)}
-  function nr(){rd++;document.getElementById('Sr').textContent=rd;sq.push(Math.floor(Math.random()*4));if(rd>1&&(rd-1)%5===0)_e('round_'+(rd-1));setTimeout(ps,500)}
-  window._SP=function(i){if(!pt||pl)return;fl(i,180);if(i===sq[pi]){pi++;if(pi>=sq.length){pt=false;sm('✓ Round '+rd+'!');setTimeout(nr,700)}}else{pt=false;if(rd>br){br=rd;document.getElementById('Sb').textContent=br}_e('game_loss');_play('lose');sm('🍂 Round '+rd+'! Best: '+br);_sr('simon',{w:false,s:rd})}};
-  window._SN=function(){sq=[];pi=0;rd=0;pl=false;pt=false;document.getElementById('Sr').textContent='0';sm('Watch...');setTimeout(nr,600)};_SN();}
+  function nr(){rd++;var _sr2=document.getElementById('Sr');if(_sr2)_sr2.textContent=rd;sq.push(Math.floor(Math.random()*4));if(rd>1&&(rd-1)%5===0)_e('round_'+(rd-1));setTimeout(ps,500)}
+  window._SP=function(i){if(!pt||pl)return;fl(i,180);if(i===sq[pi]){pi++;if(pi>=sq.length){pt=false;sm('✓ Round '+rd+'!');setTimeout(nr,700)}}else{pt=false;if(rd>br){br=rd;var _sb2=document.getElementById('Sb');if(_sb2)_sb2.textContent=br}_e('game_loss');_play('lose');sm('🍂 Round '+rd+'! Best: '+br);_sr('simon',{w:false,s:rd})}};
+  window._SN=function(){sq=[];pi=0;rd=0;pl=false;pt=false;var _sr3=document.getElementById('Sr');if(_sr3)_sr3.textContent='0';sm('Watch...');setTimeout(nr,600)};_SN();}
 
 // ═══ LIGHTS OUT ═══
 function GL(a){var SZ=5,gr=[],ini=[],mv=0,sl=0,pz=0;
