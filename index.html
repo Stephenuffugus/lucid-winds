@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.01.10';
+  var LW_VERSION='2026.04.01.11';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3388,7 +3388,8 @@
 @keyframes scannerPulse{0%,100%{border-color:rgba(122,179,86,0.2);box-shadow:0 0 15px rgba(122,179,86,0.08);}50%{border-color:rgba(122,179,86,0.35);box-shadow:0 0 25px rgba(122,179,86,0.15);}}
 
 /* ── BOTANICAL VIEWPORT FRAME ── ready for Gemini image */
-#wild-frame{position:fixed;inset:0;z-index:454;pointer-events:none;background:url('assets/games/wild/viewport-frame.png') center/cover no-repeat;display:none;opacity:0.85;}
+#wild-frame{position:fixed;inset:0;z-index:454;pointer-events:none;display:none;opacity:0.9;}
+#wild-frame img{width:100%;height:100%;object-fit:fill;}
 
 /* ── STEP COUNTER in log bar ── */
 .wild-log-steps{display:flex;align-items:center;gap:3px;font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--muted);white-space:nowrap;}
@@ -3854,7 +3855,7 @@
 
 /* Action buttons */
 .wtp2-actions{display:flex;gap:8px;padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
-.wtp2-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px 6px;border-radius:10px;border:1.5px solid rgba(74,124,53,.15);background:rgba(26,36,22,.4);cursor:pointer;min-height:56px;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.wtp2-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px 6px;border-radius:10px;border:1.5px solid rgba(74,124,53,.15);background:rgba(26,36,22,.4);cursor:pointer;min-height:68px;transition:all .15s;-webkit-tap-highlight-color:transparent}
 .wtp2-btn:active{transform:scale(.95);background:rgba(74,124,53,.12)}
 .wtp2-btn-icon{font-size:clamp(.9rem,2.5vw,1.2rem)}
 .wtp2-btn-lbl{font-family:'Bebas Neue',sans-serif;font-size:clamp(.42rem,1.2vw,.55rem);letter-spacing:.08em;color:var(--sage)}
@@ -4555,14 +4556,14 @@ window.onerror=function(msg,url,line,col,err){
       <div class="wild-log-stat"><div class="wild-log-val" id="w-drops-left">3</div><div class="wild-log-lbl">drops</div></div>
       <div class="wild-log-stat"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl">pollen</div></div>
       <div class="wild-log-steps" id="w-step-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16v-4a4 4 0 014-4h0a4 4 0 014 4v1a3 3 0 003 3h0a3 3 0 003-3V8"/></svg><span id="w-steps">0</span>m</div>
-      <div class="wild-log-wind" id="w-wind"><img src="assets/games/wild/wild-compass-v4.png" style="width:24px;height:24px;opacity:.7" alt=""> —</div>
+      <div class="wild-log-wind" id="w-wind"><img src="assets/games/wild/wild-compass-v4.png" style="width:32px;height:32px;opacity:.8" alt=""> —</div>
     </div>
     <!-- MAP -->
     <div id="wild-map" style="width:100%;height:calc(100vh - 12rem - env(safe-area-inset-bottom, 0px));height:calc(100dvh - 12rem - env(safe-area-inset-bottom, 0px));min-height:250px;"></div>
     <div class="map-hex-overlay"></div>
     <div id="wild-map-tod"></div>
     <div class="map-fog"><div class="fog-wisp"></div><div class="fog-wisp"></div><div class="fog-wisp"></div></div>
-    <div id="wild-frame"></div>
+    <div id="wild-frame"><img src="assets/games/wild/viewport-frame.png" alt=""></div>
     <!-- TOAST -->
     <div id="w-toast" style="position:fixed;top:40%;left:50%;transform:translate(-50%,-50%) scale(0.95);background:rgba(17,22,17,0.96);border:1px solid rgba(74,124,53,0.15);border-radius:10px;padding:0.6rem 1rem;z-index:99999;max-width:82%;font-size:0.65rem;color:var(--cream);text-align:center;line-height:1.5;opacity:0;transition:opacity 0.25s,transform 0.25s;pointer-events:none;box-shadow:0 8px 28px rgba(0,0,0,0.5);"></div>
     <!-- TRAIT PANEL v2 — premium bottom sheet -->
@@ -4587,15 +4588,15 @@ window.onerror=function(msg,url,line,col,err){
       <!-- Action buttons — other player's plant -->
       <div class="wtp2-actions" id="wtp-other-actions">
         <button class="wtp2-btn" onclick="FG_Wild.closeTP()"><div class="wtp2-btn-icon">✕</div><div class="wtp2-btn-lbl">Close</div></button>
-        <button class="wtp2-btn" id="wtp-inspect"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-inspect-btn-v4.png" style="width:28px;height:28px" alt=""></div><div class="wtp2-btn-lbl">Inspect</div></button>
-        <button class="wtp2-btn gold" id="wtp-act" style="display:none"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-harvest-btn-v4.png" style="width:28px;height:28px" alt=""></div><div class="wtp2-btn-lbl">Harvest</div></button>
+        <button class="wtp2-btn" id="wtp-inspect"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-inspect-btn-v4.png" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Inspect</div></button>
+        <button class="wtp2-btn gold" id="wtp-act" style="display:none"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-harvest-btn-v4.png" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Harvest</div></button>
       </div>
       <!-- Action buttons — your own plant -->
       <div class="wtp2-actions" id="wtp-own-actions" style="display:none">
         <button class="wtp2-btn" onclick="FG_Wild.closeTP()"><div class="wtp2-btn-icon">✕</div><div class="wtp2-btn-lbl">Close</div></button>
-        <button class="wtp2-btn" id="wtp-inspect2"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-inspect-btn-v4.png" style="width:28px;height:28px" alt=""></div><div class="wtp2-btn-lbl">Inspect</div></button>
-        <button class="wtp2-btn" id="wtp-water"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-water-btn-v4.png" style="width:28px;height:28px" alt=""></div><div class="wtp2-btn-lbl">Water</div></button>
-        <button class="wtp2-btn gold" id="wtp-cross"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-breed-btn-v4.png" style="width:28px;height:28px" alt=""></div><div class="wtp2-btn-lbl">Breed</div></button>
+        <button class="wtp2-btn" id="wtp-inspect2"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-inspect-btn-v4.png" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Inspect</div></button>
+        <button class="wtp2-btn" id="wtp-water"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-water-btn-v4.png" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Water</div></button>
+        <button class="wtp2-btn gold" id="wtp-cross"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-breed-btn-v4.png" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Breed</div></button>
       </div>
     </div>
     <!-- PICKER -->
