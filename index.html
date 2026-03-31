@@ -24115,7 +24115,7 @@ document.addEventListener('keydown', function(e) {
     var vig=document.querySelector('.map-vignette');
     var glass=document.querySelector('.map-glass-highlight');
     if(tab==='wild'){if(vig)vig.style.display='block';if(glass)glass.style.display='block';_startPollenParticles();}
-    else{if(vig)vig.style.display='none';if(glass)glass.style.display='none';_stopPollenParticles();}
+    else{if(vig)vig.style.display='none';if(glass)glass.style.display='none';_stopPollenParticles();if(window.FG_Wild&&FG_Wild._unsubShared)FG_Wild._unsubShared();}
     // Show/hide backpack + drop FAB on Wild tab
     if (window.FG_Backpack) {
       if (tab === 'wild') { FG_Backpack.show(); FG_Backpack.init(); }
@@ -27101,6 +27101,11 @@ function _afRecordDrop(){
 var _map=null,_uM=null,_uLat=null,_uLng=null,_trail=[],_tLine=null,_inited=false;
 var _drops=0,_pouch=[],_sel=null,_selMk=null,_menuOpen=false,_tt=null;
 var _lastGeoTime=0,_lastGeoLat=0,_lastGeoLng=0,_speedKmh=0;
+// ── Shared drop real-time listener state ──
+var _sharedMarkers={}; // hash → {marker, data} for live shared drops
+var _snapUnsub=null;   // Firestore onSnapshot unsubscribe function
+var _snapZones=null;   // currently subscribed zone set (string for comparison)
+var _snapDebounce=null; // debounce timer for moveend re-subscription
 var GC={Common:'#8a9a7a',Uncommon:'#5a9e3f',Rare:'#4a90d9',Epic:'#9b59b6',Legendary:'#C8A84B',Mythic:'#e74c3c',Cosmic:'#ff6ec7'};
 var FALLBACK=[40.758,-73.9855];
 
@@ -27191,6 +27196,8 @@ function _initMap(){
   _map.on('click',function(){closePicker();closeTP();});
   // Map skin: sync zoom for CSS data attribute
   _map.on('zoomend',function(){_map.getContainer().setAttribute('data-zoom',_map.getZoom());});
+  // Re-subscribe to shared drops when map view changes significantly
+  _map.on('moveend',function(){_scheduleResubscribe();});
   _map.getContainer().setAttribute('data-zoom',_map.getZoom());
   // Night mode check
   var _hour=new Date().getHours();if(_hour>=23||_hour<5)_map.getContainer().classList.add('night-mode');
@@ -27239,7 +27246,7 @@ function _loadAll(){
   var saved=_getWild();
   for(var i=0;i<saved.length;i++){var w=saved[i];if(!w||!w.hash)continue;var d=w.date?Math.floor((Date.now()-new Date(w.date).getTime())/86400000):0;_addPlant({lat:w.lat,lng:w.lng,hash:w.hash,own:true,days:d,pollen:d*3,status:d>7?'Thriving':d>2?'Growing':'Young'});}
   _spawnFerals();_updateCounts();
-  _loadSharedDrops();
+  _subscribeSharedDrops();
   if(!document.getElementById('_fA')){var s=document.createElement('style');s.id='_fA';s.textContent='@keyframes _fP{0%,100%{transform:translate(-50%,-50%) scale(1);box-shadow:0 0 10px rgba(200,168,75,0.5);}50%{transform:translate(-50%,-50%) scale(1.25);box-shadow:0 0 18px rgba(200,168,75,0.7);}}@keyframes _fR{0%{width:14px;height:14px;opacity:0.5;}100%{width:36px;height:36px;opacity:0;}}';document.head.appendChild(s);}
 }
 
@@ -27856,13 +27863,13 @@ function _drop(pl){
       _toast('Defended! This zone has a plant with EA '+theirEA+'. Yours is EA '+myEA+'. Grow stronger.');
       return;
     }
-    // TAKEOVER — your plant is stronger
+    // TAKEOVER — your plant is stronger (local check passed, server TX in _finishDrop)
     wild=wild.filter(function(w){return w.hash!==existing.hash;});
     _toast('\ud83c\udf3f Takeover! Your EA '+myEA+' displaced EA '+theirEA+'!');
   }
 
-  // Show defender game picker
-  _pendingDrop={plant:pl,lat:la,lng:lo,wild:wild};
+  // Show defender game picker — pass displaced plant info for server-side TX
+  _pendingDrop={plant:pl,lat:la,lng:lo,wild:wild,displaced:existing||null};
   _showDefenderPicker();
 }
 
@@ -27947,7 +27954,7 @@ function _finishDrop(defenderGame){
   if(window.renderGreenhouse)renderGreenhouse();
   _toast('\ud83c\udf31 Planted with '+defenderGame.toUpperCase()+' defense (EA: '+dropEA+')');
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
-  _writeSharedDrop(la,lo,pl.hash,dropEA,defenderGame,dropTraits);
+  _writeSharedDrop(la,lo,pl.hash,dropEA,defenderGame,dropTraits,pd.displaced);
 }
 
 // ═══ STATE ═══
@@ -28033,13 +28040,13 @@ function _dropFromBP(p){
   _showDefenderPicker();
 }
 // ═══ SHARED WILD DROPS — visible to all players ═══
-function _writeSharedDrop(lat,lng,hash,ea,defGame,traits){
+function _writeSharedDrop(lat,lng,hash,ea,defGame,traits,displaced){
   try{
     var user=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
     if(!user||!user.uid||!window.db)return;
     var grade='Common';
     try{if(traits&&window.getTerraGrade){grade=window.getTerraGrade(traits).label||'Common';}}catch(e){}
-    window.db.collection('wildDrops').doc(user.uid+'_'+hash.slice(0,16)).set({
+    var newDropData={
       lat:lat,lng:lng,hash:hash,ownerUid:user.uid,
       ownerName:localStorage.getItem('pw_keeper_name')||'Keeper',
       ea:ea||0,defenderGame:defGame||'set',
@@ -28047,47 +28054,175 @@ function _writeSharedDrop(lat,lng,hash,ea,defGame,traits){
       grade:grade,
       zone:_zoneKey(lat,lng),
       droppedAt:new Date().toISOString()
-    }).catch(function(e){if(window._swsLog)_swsLog('Shared drop err: '+e.message,'err');});
+    };
+    var newDocId=user.uid+'_'+hash.slice(0,16);
+
+    if(displaced&&displaced.ownerUid&&displaced.hash){
+      // ── TAKEOVER: atomic transaction ──
+      // Delete displaced plant, create new drop, reward displaced planter
+      var oldDocId=displaced.ownerUid+'_'+displaced.hash.slice(0,16);
+      var oldRef=window.db.collection('wildDrops').doc(oldDocId);
+      var newRef=window.db.collection('wildDrops').doc(newDocId);
+      var dewReward={Common:3,Uncommon:5,Rare:8,Epic:12,Legendary:18,Mythic:25,Cosmic:40};
+      var reward=dewReward[displaced.grade||'Common']||3;
+
+      window.db.runTransaction(function(tx){
+        return tx.get(oldRef).then(function(doc){
+          if(doc.exists){
+            // Re-verify EA server-side: the displaced plant still exists
+            var serverEA=doc.data().ea||0;
+            if(ea<=serverEA){throw new Error('EA_DEFENDED');}
+            tx.delete(oldRef);
+            // Reward displaced planter
+            if(displaced.ownerUid!==user.uid){
+              var rewardRef=window.db.collection('vaults').doc(displaced.ownerUid).collection('pendingRewards').doc();
+              tx.set(rewardRef,{
+                type:'takeover_reward',amount:reward,grade:displaced.grade||'Common',
+                plantName:displaced.name||'Plant',harvesterUid:user.uid,
+                timestamp:firebase.firestore.FieldValue.serverTimestamp()
+              });
+            }
+          }
+          // Place new plant regardless (zone might be empty now)
+          tx.set(newRef,newDropData);
+        });
+      }).then(function(){
+        if(window._swsLog)_swsLog('Takeover TX OK — displaced '+oldDocId,'ok');
+      }).catch(function(e){
+        if(e.message==='EA_DEFENDED'){
+          _toast('Takeover failed — their plant grew stronger since you checked!');
+          if(window._swsLog)_swsLog('Takeover EA check failed server-side','warn');
+        } else {
+          if(window._swsLog)_swsLog('Takeover TX err: '+e.message,'err');
+          // Fallback: just write the new drop (old one may already be gone)
+          window.db.collection('wildDrops').doc(newDocId).set(newDropData).catch(function(){});
+        }
+      });
+    } else {
+      // No takeover — simple write
+      window.db.collection('wildDrops').doc(newDocId).set(newDropData)
+        .catch(function(e){if(window._swsLog)_swsLog('Shared drop err: '+e.message,'err');});
+    }
   }catch(e){}
 }
-function _loadSharedDrops(){
-  try{
-    var user=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
-    if(!user||!window.db||!_map||!_uLat)return;
-    var cLat=Math.round(_uLat/ZONE_SIZE)*ZONE_SIZE;
-    var cLng=Math.round(_uLng/ZONE_SIZE)*ZONE_SIZE;
-    var zones=[];
-    for(var dLat=-1;dLat<=1;dLat++){
-      for(var dLng=-1;dLng<=1;dLng++){
-        zones.push((cLat+dLat*ZONE_SIZE).toFixed(4)+','+(cLng+dLng*ZONE_SIZE).toFixed(4));
-      }
+// ═══ REAL-TIME SHARED DROPS — live onSnapshot listener ═══
+
+// Compute zone keys visible on current map bounds (capped at 9 for Firestore 'in' query)
+function _getVisibleZones(){
+  if(!_map)return[];
+  var b=_map.getBounds();
+  var sLat=b.getSouth(),nLat=b.getNorth(),wLng=b.getWest(),eLng=b.getEast();
+  // Clamp to reasonable area — max ~9 zones (3x3 grid at ZONE_SIZE)
+  var cLat=(_uLat||(sLat+nLat)/2),cLng=(_uLng||(wLng+eLng)/2);
+  var zones=[];
+  for(var dLat=-1;dLat<=1;dLat++){
+    for(var dLng=-1;dLng<=1;dLng++){
+      var zLat=Math.round(cLat/ZONE_SIZE)*ZONE_SIZE+dLat*ZONE_SIZE;
+      var zLng=Math.round(cLng/ZONE_SIZE)*ZONE_SIZE+dLng*ZONE_SIZE;
+      zones.push(zLat.toFixed(4)+','+zLng.toFixed(4));
     }
-    window.db.collection('wildDrops').where('zone','in',zones).where('status','==','alive').get()
-      .then(function(snap){
-        var count=0;
+  }
+  return zones;
+}
+
+// Debounced re-subscribe when map pans/zooms
+function _scheduleResubscribe(){
+  if(_snapDebounce)clearTimeout(_snapDebounce);
+  _snapDebounce=setTimeout(function(){
+    _snapDebounce=null;
+    var newZones=_getVisibleZones().sort().join('|');
+    if(newZones!==_snapZones)_subscribeSharedDrops();
+  },800);
+}
+
+// Main subscription — real-time listener for shared drops
+function _subscribeSharedDrops(){
+  var user=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
+  if(!user||!window.db||!_map)return;
+
+  var zones=_getVisibleZones();
+  if(zones.length===0)return;
+  var zoneKey=zones.sort().join('|');
+  if(zoneKey===_snapZones)return; // already watching these zones
+
+  // Unsubscribe previous listener
+  if(_snapUnsub){_snapUnsub();_snapUnsub=null;}
+  _snapZones=zoneKey;
+
+  if(window._swsLog)_swsLog('Subscribing to '+zones.length+' zones (live)','ok');
+
+  try{
+    _snapUnsub=window.db.collection('wildDrops')
+      .where('zone','in',zones)
+      .where('status','==','alive')
+      .onSnapshot(function(snap){
+        var seenHashes={};
         snap.forEach(function(doc){
           var d=doc.data();if(!d.lat||!d.lng||!d.hash)return;
+          seenHashes[d.hash]=true;
+
+          // Skip if we already have this marker
+          if(_sharedMarkers[d.hash])return;
+
           var isOwn=(d.ownerUid===user.uid);
-          var existing=_getWild();
-          if(existing.some(function(w){return w.hash===d.hash;}))return;
-          _addPlant({lat:d.lat,lng:d.lng,hash:d.hash,own:isOwn,
+          // Skip if in local wild (own plants already rendered by _loadAll)
+          var localWild=_getWild();
+          if(localWild.some(function(w){return w.hash===d.hash;}))return;
+
+          var pd={lat:d.lat,lng:d.lng,hash:d.hash,own:isOwn,
             days:Math.floor((Date.now()-new Date(d.droppedAt||Date.now()).getTime())/86400000),
             pollen:0,status:isOwn?'Your Plant':'Wild',
             ownerName:d.ownerName||'Keeper',ownerUid:d.ownerUid,
-            ea:d.ea||0,defenderGame:d.defenderGame||'set',season:d.season||0});
-          count++;
+            ea:d.ea||0,defenderGame:d.defenderGame||'set',season:d.season||0,grade:d.grade||'Common'};
+
+          var mk=_addSharedMarker(pd);
+          _sharedMarkers[d.hash]={marker:mk,data:pd};
         });
-        if(count>0&&window._swsLog)_swsLog('Loaded '+count+' shared drops from '+zones.length+' zones','ok');
-      }).catch(function(e){
+
+        // Remove markers for plants that disappeared (harvested by another player)
+        var hashes=Object.keys(_sharedMarkers);
+        for(var i=0;i<hashes.length;i++){
+          if(!seenHashes[hashes[i]]){
+            var entry=_sharedMarkers[hashes[i]];
+            if(entry&&entry.marker&&_map)_map.removeLayer(entry.marker);
+            delete _sharedMarkers[hashes[i]];
+          }
+        }
+      },function(e){
         if(e.message&&e.message.indexOf('index')>=0){
-          if(window._swsLog)_swsLog('Zone index not ready — loading fallback','warn');
+          if(window._swsLog)_swsLog('Zone index not ready — one-shot fallback','warn');
           _loadSharedDropsFallback(user);
         } else {
-          if(window._swsLog)_swsLog('Shared load err: '+e.message,'err');
+          if(window._swsLog)_swsLog('Snapshot err: '+e.message,'err');
         }
       });
-  }catch(e){}
+  }catch(e){if(window._swsLog)_swsLog('Subscribe err: '+e,'err');}
 }
+
+// Detach listener (called on tab switch away from wild)
+function _unsubscribeSharedDrops(){
+  if(_snapUnsub){_snapUnsub();_snapUnsub=null;}
+  _snapZones=null;
+}
+
+// Add a single shared drop marker to the map (returns the Leaflet marker)
+function _addSharedMarker(p){
+  if(!_map)return null;
+  var sz=p.own?40:26,svg='';
+  if(window._generatePlantSVG&&p.hash){try{svg=window._generatePlantSVG(p.hash,sz);}catch(e){}}
+  if(!svg||svg.length<30){var fc=p.own?'#7ab356':'#5a7050';svg='<svg viewBox="0 0 30 40" width="'+sz+'" height="'+Math.round(sz*40/30)+'" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="30" width="14" height="10" rx="2" fill="#5a3a1f"/><line x1="15" y1="30" x2="15" y2="12" stroke="#3A5C2A" stroke-width="3" stroke-linecap="round"/><ellipse cx="8" cy="18" rx="7" ry="5" fill="'+fc+'" opacity="0.85" transform="rotate(-20 8 18)"/><ellipse cx="22" cy="15" rx="7" ry="5" fill="'+fc+'" opacity="0.8" transform="rotate(15 22 15)"/></svg>';}
+  var info=_buildInfo(p.hash);
+  var seasonEmb='';if(info.t&&window.getSeasonInfo){var si=window.getSeasonInfo(info.t);seasonEmb=' <span style="font-size:0.35rem;">'+si.emblem+'</span>';}
+  var tag='<div style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-family:Bebas Neue,sans-serif;font-size:0.35rem;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,0.8);color:'+info.gc+';pointer-events:none;">'+info.nm+seasonEmb+'</div>';
+  var th=Math.round(sz*40/30)+14;
+  var html='<div style="position:relative;width:'+(sz+6)+'px;height:'+th+'px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7));">'
+    +svg+tag+'</div>';
+  var pd={lat:p.lat,lng:p.lng,hash:p.hash,own:p.own,name:info.nm,grade:info.grade||p.grade,gc:info.gc,days:p.days||0,pollen:p.pollen||0,status:p.status||'Growing',traits:info.t,rarities:info.rarities,defenderGame:p.defenderGame||'set',ownerUid:p.ownerUid||'',ownerName:p.ownerName||'Keeper'};
+  var mk=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:html,iconSize:[sz+6,th],iconAnchor:[(sz+6)/2,th-6]}),zIndexOffset:p.own?500:100}).addTo(_map).on('click',function(){showTP(pd,mk);});
+  return mk;
+}
+
+// One-shot fallback when zone index isn't ready
 function _loadSharedDropsFallback(user){
   try{
     window.db.collection('wildDrops').where('status','==','alive').limit(50).get()
@@ -28096,14 +28231,15 @@ function _loadSharedDropsFallback(user){
         snap.forEach(function(doc){
           var d=doc.data();if(!d.lat||!d.lng||!d.hash)return;
           if(_uLat&&d.lat){var dist=_dist(_uLat,_uLng,d.lat,d.lng);if(dist>500)return;}
+          if(_sharedMarkers[d.hash])return;
           var isOwn=(d.ownerUid===user.uid);
-          var existing=_getWild();
-          if(existing.some(function(w){return w.hash===d.hash;}))return;
-          _addPlant({lat:d.lat,lng:d.lng,hash:d.hash,own:isOwn,
+          var pd={lat:d.lat,lng:d.lng,hash:d.hash,own:isOwn,
             days:Math.floor((Date.now()-new Date(d.droppedAt||Date.now()).getTime())/86400000),
             pollen:0,status:isOwn?'Your Plant':'Wild',
             ownerName:d.ownerName||'Keeper',ownerUid:d.ownerUid,
-            ea:d.ea||0,defenderGame:d.defenderGame||'set',season:d.season||0});
+            ea:d.ea||0,defenderGame:d.defenderGame||'set',season:d.season||0,grade:d.grade||'Common'};
+          var mk=_addSharedMarker(pd);
+          _sharedMarkers[d.hash]={marker:mk,data:pd};
           count++;
         });
         if(window._swsLog)_swsLog('Fallback: loaded '+count+' nearby drops','ok');
@@ -28111,7 +28247,7 @@ function _loadSharedDropsFallback(user){
   }catch(e){}
 }
 
-return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry};
+return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops};
 })();
 </script>
 <!-- DEV: Spawn Mythic+Cosmic (hidden — requires dev panel password) -->
