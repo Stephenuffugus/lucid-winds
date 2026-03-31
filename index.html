@@ -789,10 +789,21 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.03.31.8';
+  var LW_VERSION='2026.04.01.1';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
+      // ── One-time migrations on version change ──
+      // v2026.04.01.1: Clear stale wild test data from dev sessions
+      if(!stored||stored<'2026.04.01'){
+        localStorage.removeItem('fg_wild_plants');
+        localStorage.removeItem('fg_ferals');
+        localStorage.removeItem('fg_af_harvests');
+        localStorage.removeItem('fg_w_d');
+        localStorage.removeItem('fg_pouch');
+        localStorage.removeItem('fg_feral_breed_date');
+        console.log('[LW] Cleared stale wild data for fresh start.');
+      }
       localStorage.setItem('lw_version',LW_VERSION);
       console.log('[LW] Version changed: '+stored+' → '+LW_VERSION+'. Reloading.');
       location.reload(true);
@@ -4698,6 +4709,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="dev-section"><div class="dev-section-title">ACCOUNT COUNTER</div><div style="font-size:0.42rem;color:var(--muted);margin-bottom:0.3rem;">Next: <span id="dev-counter-val">?</span></div><button class="dev-btn" onclick="PW_Dev.resetCounter()">↩ RESET TO 1</button></div>
     <div class="dev-section"><div class="dev-section-title">LOCAL STORAGE</div><button class="dev-btn" onclick="PW_Dev.clearLocal()">🧹 CLEAR ALL</button></div>
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
+    <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET WILD DATA</button></div>
     <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button></div>
     <div class="dev-section"><div class="dev-section-title">NUCLEAR</div><button class="dev-btn danger" onclick="PW_Dev.fullReset()">☢ WIPE EVERYTHING</button></div>
     <div class="dev-log" id="dev-log">Ready.\n</div>
@@ -4770,6 +4782,20 @@ window.onerror=function(msg,url,line,col,err){
       if(window.loadVaultFromCloud){
         loadVaultFromCloud(function(r){alert('Hydration result: '+JSON.stringify(r));});
       }else{alert('loadVaultFromCloud not defined. _vaultHydrated forced to true.');}
+    },
+    resetWild:function(){
+      if(!confirm('Reset all Wild tab data? (plants, ferals, backpack, anti-farming)'))return;
+      localStorage.removeItem('fg_wild_plants');
+      localStorage.removeItem('fg_ferals');
+      localStorage.removeItem('fg_af_harvests');
+      localStorage.removeItem('fg_w_d');
+      localStorage.removeItem('fg_pouch');
+      localStorage.removeItem('fg_feral_breed_date');
+      localStorage.removeItem('fg_pollen');
+      localStorage.removeItem('fg_pollen_tick');
+      localStorage.removeItem('fg_rtb_last');
+      alert('Wild data cleared. Reload to see clean map.');
+      location.reload();
     },
     fullReset:function(){
       if(!confirm('NUCLEAR: Wipe everything — local + cloud + sign out?'))return;
