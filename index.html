@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.03.31.5';
+  var LW_VERSION='2026.03.31.6';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3678,6 +3678,26 @@
 #bp-rtb.on-cooldown{border-color:rgba(138,145,121,0.15);color:var(--muted);opacity:0.7;}
 #bp-rtb .rtb-timer{font-family:'DM Mono',monospace;font-size:0.38rem;color:var(--muted);}
 
+/* ═══ HARVEST REVEAL OVERLAY ═══ */
+#reveal-overlay{position:fixed;inset:0;z-index:10000;background:rgba(8,10,7,0.96);display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
+#reveal-overlay.active{display:flex;}
+.reveal-card{width:200px;height:280px;perspective:800px;margin:0 auto;}
+.reveal-inner{width:100%;height:100%;position:relative;transition:transform 0.8s cubic-bezier(0.4,0,0.2,1);transform-style:preserve-3d;}
+.reveal-card.flipped .reveal-inner{transform:rotateY(180deg);}
+.reveal-front,.reveal-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-direction:column;}
+.reveal-front{background:linear-gradient(145deg,rgba(26,36,22,0.95),rgba(13,16,12,0.98));border:2px solid rgba(200,168,75,0.3);box-shadow:0 0 30px rgba(200,168,75,0.15);}
+.reveal-front::after{content:'?';font-family:'Bebas Neue',sans-serif;font-size:4rem;color:rgba(200,168,75,0.15);letter-spacing:0.1em;}
+.reveal-back{transform:rotateY(180deg);background:linear-gradient(145deg,rgba(20,28,18,0.98),rgba(13,16,12,0.99));border:2px solid transparent;padding:16px;gap:8px;overflow:hidden;}
+.reveal-glow{position:absolute;inset:-20px;border-radius:50%;opacity:0;transition:opacity 0.6s,box-shadow 0.6s;pointer-events:none;}
+.reveal-card.flipped .reveal-glow{opacity:1;}
+.reveal-svg{width:120px;height:120px;display:flex;align-items:center;justify-content:center;}
+.reveal-name{font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:0.06em;text-align:center;color:var(--cream);}
+.reveal-grade{font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.1em;padding:3px 10px;border-radius:4px;background:rgba(0,0,0,0.3);}
+.reveal-haiku{font-family:'DM Mono',monospace;font-size:0.35rem;color:var(--muted);text-align:center;line-height:1.6;margin-top:4px;}
+.reveal-count{font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--muted);position:absolute;top:16px;right:16px;}
+.reveal-tap{font-family:'DM Mono',monospace;font-size:0.35rem;color:var(--muted);position:absolute;bottom:20px;animation:revealPulse 2s ease-in-out infinite;}
+@keyframes revealPulse{0%,100%{opacity:0.4;}50%{opacity:0.8;}}
+
 /* Plant slot — STRONGER RARITY COLORS */
 .ps{width:64px;height:68px;flex-shrink:0;position:relative;cursor:pointer;transition:transform 0.15s;border-radius:10px;}
 .ps:active{transform:scale(0.9);}
@@ -4553,6 +4573,8 @@ window.onerror=function(msg,url,line,col,err){
   <div id="pic"><div class="pic-top"><div class="pic-plant" id="pic-pl"></div><div class="pic-info"><div class="pic-name" id="pic-nm">—</div><div class="pic-grade" id="pic-gr">—</div><div class="pic-origin" id="pic-or">—</div></div><button class="pic-close" onclick="BP.cpi()">✕</button></div><div class="htc" id="htc-rel" onmousedown="BP.hts()" ontouchstart="BP.hts()" onmouseup="BP.hte()" ontouchend="BP.hte()" onmouseleave="BP.hte()"><div class="htc-fill" id="htcf"></div><span class="htc-label">HOLD TO RELEASE TO WILD</span></div></div>
   <!-- Seed info card with hold-to-send-to-nursery -->
   <div id="sdi"><div class="sir"><span>📍</span><span class="sv" id="sdl">—</span></div><div class="sir"><span>🌡</span><span class="sv" id="sdc">—</span></div><div class="sir"><span id="sdhi"></span><span class="sv" id="sdh">—</span></div><div class="htc" id="htc-nur" onmousedown="BP.sns()" ontouchstart="BP.sns()" onmouseup="BP.sne()" ontouchend="BP.sne()" onmouseleave="BP.sne()" style="border-color:rgba(74,124,53,0.2);background:rgba(74,124,53,0.06);color:var(--sage);"><div class="htc-fill" id="htcn" style="background:rgba(74,124,53,0.15);"></div><span class="htc-label">HOLD TO SEND TO NURSERY</span></div><button class="sia" onclick="BP.csi()" style="margin-top:4px;font-size:10px;border-color:rgba(74,124,53,0.1);color:var(--muted);">CANCEL</button></div>
+  <!-- Harvest Reveal Overlay -->
+  <div id="reveal-overlay"><div class="reveal-count" id="rev-count"></div><div class="reveal-card" id="rev-card"><div class="reveal-inner"><div class="reveal-front"></div><div class="reveal-back"><div class="reveal-glow" id="rev-glow"></div><div class="reveal-svg" id="rev-svg"></div><div class="reveal-name" id="rev-name"></div><div class="reveal-grade" id="rev-grade"></div><div class="reveal-haiku" id="rev-haiku"></div></div></div></div><div class="reveal-tap" id="rev-tap">tap to reveal</div></div>
   <!-- Drop FAB -->
   <button id="dfb" onclick="FG_Wild.openPicker()" style="display:none;"><span id="dfi"></span><div id="dbb">3</div></button>
   <!-- Drop picker overlay -->
@@ -27443,11 +27465,46 @@ function _placeUser(){
   _uM=L.marker([_uLat,_uLng],{icon:L.divIcon({className:'',html:'<div style="width:20px;height:20px;position:relative;"><div style="width:50px;height:50px;border-radius:50%;background:radial-gradient(circle,rgba(74,144,217,0.03),transparent 70%);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div><div style="width:14px;height:14px;background:linear-gradient(135deg,#5a9ed9,#3878b8);border-radius:50%;border:2.5px solid rgba(74,144,217,0.25);box-shadow:0 0 12px rgba(74,144,217,0.5);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div></div>',iconSize:[20,20],iconAnchor:[10,10]}),zIndexOffset:1000}).addTo(_map);
 }
 
+// ═══ TERRITORY HEXES — show owned zones on map ═══
+var _territoryLayers=[];
+function _drawTerritory(){
+  // Clear old territory
+  for(var i=0;i<_territoryLayers.length;i++){if(_map)_map.removeLayer(_territoryLayers[i]);}
+  _territoryLayers=[];
+  if(!_map)return;
+  var wild=_getWild();
+  var zones={};
+  // Group own plants by zone
+  for(var j=0;j<wild.length;j++){
+    var w=wild[j];if(!w||!w.lat||!w.own)continue;
+    var zk=_zoneKey(w.lat,w.lng);
+    if(!zones[zk])zones[zk]={lat:w.lat,lng:w.lng};
+  }
+  var half=ZONE_SIZE/2;
+  for(var k in zones){
+    var z=zones[k];
+    var cLat=Math.round(z.lat/ZONE_SIZE)*ZONE_SIZE;
+    var cLng=Math.round(z.lng/ZONE_SIZE)*ZONE_SIZE;
+    // Draw hex-like polygon (6 sides approximating H3)
+    var pts=[];
+    for(var a=0;a<6;a++){
+      var angle=(a*60-30)*Math.PI/180;
+      pts.push([cLat+half*Math.sin(angle),cLng+half*1.15*Math.cos(angle)]);
+    }
+    var hex=L.polygon(pts,{
+      color:'rgba(122,179,86,0.35)',weight:1.5,
+      fillColor:'rgba(122,179,86,0.06)',fillOpacity:1,
+      dashArray:'4,4',interactive:false
+    }).addTo(_map);
+    _territoryLayers.push(hex);
+  }
+}
+
 function _loadAll(){
   if(!_map||!_uLat)return;
   var saved=_pruneWild();
   for(var i=0;i<saved.length;i++){var w=saved[i];if(!w||!w.hash)continue;var d=w.date?Math.floor((Date.now()-new Date(w.date).getTime())/86400000):0;_addPlant({lat:w.lat,lng:w.lng,hash:w.hash,own:w.own!==false,days:d,pollen:d*3,status:d>7?'Thriving':d>2?'Growing':'Young',ownerUid:w.ownerUid||'',ownerName:w.ownerName||'Keeper',defenderGame:w.defenderGame||'set'});}
-  _spawnFerals();_updateCounts();
+  _spawnFerals();_updateCounts();_drawTerritory();
   _subscribeSharedDrops();
   if(!document.getElementById('_fA')){var s=document.createElement('style');s.id='_fA';s.textContent='@keyframes _fP{0%,100%{transform:translate(-50%,-50%) scale(1);box-shadow:0 0 10px rgba(200,168,75,0.5);}50%{transform:translate(-50%,-50%) scale(1.25);box-shadow:0 0 18px rgba(200,168,75,0.7);}}@keyframes _fR{0%{width:14px;height:14px;opacity:0.5;}100%{width:36px;height:36px;opacity:0;}}';document.head.appendChild(s);}
 }
@@ -28173,7 +28230,7 @@ function _finishDrop(defenderGame){
   _saveWild(wild);
   _addPlant({lat:la,lng:lo,hash:pl.hash,own:true,days:0,pollen:0,status:'Just Planted'});
   if(_map)_map.panTo([la,lo],{animate:true,duration:0.5});
-  _updateCounts();_updateUI();
+  _updateCounts();_updateUI();_drawTerritory();
   if(window.renderGreenhouse)renderGreenhouse();
   _toast('\ud83c\udf31 Planted with '+defenderGame.toUpperCase()+' defense (EA: '+dropEA+')');
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
@@ -33028,11 +33085,16 @@ function returnToBase(){
   render();_rtbRender();hap();
   if(window.renderGreenhouse)renderGreenhouse();
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
-  var msg='Returned to base!';
-  if(delivered>0)msg+=' '+delivered+' plant'+(delivered>1?'s':'')+' → greenhouse.';
-  if(seedCount>0)msg+=' '+seedCount+' seed'+(seedCount>1?'s':'')+' → nursery.';
-  celeb('🏠 '+msg,'Next return in 6 hours.');
   if(typeof gtag!=='undefined')gtag('event','return_to_base',{plants:delivered,seeds:seedCount});
+
+  // Trigger reveal sequence for delivered plants
+  if(delivered>0&&window._startReveal){
+    window._startReveal(plants,seedCount);
+  } else {
+    var msg='Returned to base!';
+    if(seedCount>0)msg+=' '+seedCount+' seed'+(seedCount>1?'s':'')+' → nursery.';
+    celeb('\ud83c\udfe0 '+msg,'Next return in 6 hours.');
+  }
 }
 
 function _rtbRender(){
@@ -33149,6 +33211,109 @@ window.addEventListener('bp-seed-to-nursery', function(e) {
   }
   if (window.syncVaultToCloud) setTimeout(syncVaultToCloud, 500);
 });
+</script>
+
+<!-- ═══ HARVEST REVEAL MODULE ═══ -->
+<script>
+(function(){
+'use strict';
+var GC={Common:'#8a9a7a',Uncommon:'#5a9e3f',Rare:'#4a90d9',Epic:'#9b59b6',Legendary:'#C8A84B',Mythic:'#e74c3c',Cosmic:'#ff6ec7'};
+var _queue=[];
+var _seedCount=0;
+var _idx=0;
+var _active=false;
+
+window._startReveal=function(plants,seeds){
+  if(!plants||plants.length===0)return;
+  _queue=plants.slice();
+  _seedCount=seeds||0;
+  _idx=0;
+  _active=true;
+  _showNext();
+};
+
+function _showNext(){
+  var overlay=document.getElementById('reveal-overlay');
+  if(!overlay)return;
+  if(_idx>=_queue.length){_finish();return;}
+
+  overlay.classList.add('active');
+  var card=document.getElementById('rev-card');
+  var countEl=document.getElementById('rev-count');
+  var tapEl=document.getElementById('rev-tap');
+  if(card)card.classList.remove('flipped');
+  if(countEl)countEl.textContent=(_idx+1)+' / '+_queue.length;
+  if(tapEl)tapEl.textContent='tap to reveal';
+
+  // Set up click to flip
+  overlay.onclick=function(){
+    if(!card.classList.contains('flipped')){
+      _flipReveal(_queue[_idx]);
+      card.classList.add('flipped');
+      if(tapEl)tapEl.textContent='tap for next';
+      try{navigator.vibrate&&navigator.vibrate([15,50,25]);}catch(e){}
+    } else {
+      _idx++;
+      if(_idx<_queue.length){_showNext();}
+      else{_finish();}
+    }
+  };
+}
+
+function _flipReveal(plant){
+  var hash=plant.hash;
+  var info={nm:'Plant',grade:'Common',gc:'#8a9a7a',t:null};
+  try{
+    if(window.hashToTraits&&hash){
+      info.t=window.hashToTraits(hash);
+      var A=['Verdant','Shadow','Golden','Crimson','Pale','Iron','Ember','Frost','Dusk','Storm','Moss','Jade','Azure','Copper','Silk','Wild'];
+      var N=['Wisp','Bloom','Fern','Thorn','Crown','Root','Drift','Spiral','Haze','Phantom','Crest','Veil','Shard','Arch','Spire','Reed'];
+      info.nm=A[parseInt(hash.substring(0,2),16)%A.length]+' '+N[parseInt(hash.substring(2,4),16)%N.length];
+      if(window.getTerraGrade){var tg=window.getTerraGrade(info.t);info.grade=tg.label||'Common';}
+      info.gc=GC[info.grade]||GC.Common;
+    }
+  }catch(e){}
+
+  // Render SVG
+  var svgEl=document.getElementById('rev-svg');
+  if(svgEl&&window._generatePlantSVG){try{svgEl.innerHTML=window._generatePlantSVG(hash,100);}catch(e){svgEl.innerHTML='';}}
+
+  // Name + grade
+  var nameEl=document.getElementById('rev-name');
+  if(nameEl){nameEl.textContent=info.nm;nameEl.style.color=info.gc;}
+  var gradeEl=document.getElementById('rev-grade');
+  if(gradeEl){gradeEl.textContent=info.grade.toUpperCase();gradeEl.style.color=info.gc;gradeEl.style.borderColor=info.gc;}
+
+  // Haiku
+  var haikuEl=document.getElementById('rev-haiku');
+  if(haikuEl&&window.getHaiku){
+    try{var hk=window.getHaiku(hash);haikuEl.innerHTML=(hk.line1||'')+'<br>'+(hk.line2||'')+'<br>'+(hk.line3||'');}
+    catch(e){haikuEl.innerHTML='';}
+  }
+
+  // Glow ring color
+  var glowEl=document.getElementById('rev-glow');
+  if(glowEl){glowEl.style.boxShadow='0 0 60px '+info.gc+',0 0 120px '+info.gc+'40';}
+
+  // Card border color
+  var card=document.getElementById('rev-card');
+  var back=card?card.querySelector('.reveal-back'):null;
+  if(back){back.style.borderColor=info.gc;}
+
+  // GA event
+  if(typeof gtag!=='undefined')gtag('event','harvest_reveal',{grade:info.grade,name:info.nm});
+}
+
+function _finish(){
+  var overlay=document.getElementById('reveal-overlay');
+  if(overlay){overlay.classList.remove('active');overlay.onclick=null;}
+  _active=false;
+  _queue=[];
+  var msg='\ud83c\udfe0 Returned to base!';
+  if(_seedCount>0)msg+=' +'+_seedCount+' seed'+(_seedCount>1?'s':'');
+  if(window.showHexMsg)showHexMsg(msg);
+}
+})();
 </script>
 
 <!-- Service Worker Registration -->
