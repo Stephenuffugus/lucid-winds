@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.03.31.6';
+  var LW_VERSION='2026.03.31.7';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3340,6 +3340,20 @@
 .firefly{position:fixed;width:3px;height:3px;background:rgba(200,200,100,0.8);border-radius:50%;pointer-events:none;z-index:453;box-shadow:0 0 6px rgba(200,200,100,0.5),0 0 12px rgba(200,200,100,0.2);}
 @keyframes fireflyFloat{0%{opacity:0;transform:translate(0,0);}20%{opacity:0.8;}50%{opacity:0.3;transform:translate(var(--fx,30px),var(--fy,-40px));}80%{opacity:0.7;}100%{opacity:0;transform:translate(var(--fx2,-20px),var(--fy2,30px));}}
 
+/* ── DRIFTING FOG WISPS ── */
+.map-fog{position:fixed;inset:0;z-index:448;pointer-events:none;overflow:hidden;opacity:0.5;}
+.fog-wisp{position:absolute;width:200%;height:100%;background:repeating-linear-gradient(90deg,transparent 0%,rgba(13,16,12,0.03) 10%,transparent 20%,rgba(122,179,86,0.015) 30%,transparent 40%);animation:fogDrift var(--fog-dur,80s) linear infinite;top:0;left:var(--fog-left,-50%);}
+.fog-wisp:nth-child(2){top:30%;animation-duration:calc(var(--fog-dur,80s) * 1.3);animation-delay:-20s;opacity:0.7;background:repeating-linear-gradient(95deg,transparent 0%,rgba(10,13,9,0.04) 8%,transparent 18%,rgba(200,168,75,0.01) 25%,transparent 35%);}
+.fog-wisp:nth-child(3){top:60%;animation-duration:calc(var(--fog-dur,80s) * 0.9);animation-delay:-40s;opacity:0.5;}
+@keyframes fogDrift{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.tod-night .map-fog{opacity:0.8;}
+.tod-dawn .map-fog{opacity:0.6;}
+.tod-dusk .map-fog{opacity:0.7;}
+
+/* ── SCANNER RANGE RING ── */
+.scanner-ring{border:2px solid rgba(122,179,86,0.25)!important;background:radial-gradient(circle,rgba(122,179,86,0.03) 0%,rgba(122,179,86,0.01) 60%,transparent 100%)!important;box-shadow:0 0 20px rgba(122,179,86,0.1);animation:scannerPulse 4s ease-in-out infinite;}
+@keyframes scannerPulse{0%,100%{border-color:rgba(122,179,86,0.2);box-shadow:0 0 15px rgba(122,179,86,0.08);}50%{border-color:rgba(122,179,86,0.35);box-shadow:0 0 25px rgba(122,179,86,0.15);}}
+
 /* ── STEP COUNTER in log bar ── */
 .wild-log-steps{display:flex;align-items:center;gap:3px;font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--muted);white-space:nowrap;}
 .wild-log-steps svg{width:12px;height:12px;opacity:0.6;}
@@ -4511,6 +4525,7 @@ window.onerror=function(msg,url,line,col,err){
     <div id="wild-map" style="width:100%;height:calc(100vh - 12rem - env(safe-area-inset-bottom, 0px));height:calc(100dvh - 12rem - env(safe-area-inset-bottom, 0px));min-height:250px;"></div>
     <div class="map-hex-overlay"></div>
     <div id="wild-map-tod"></div>
+    <div class="map-fog"><div class="fog-wisp"></div><div class="fog-wisp"></div><div class="fog-wisp"></div></div>
     <!-- TOAST -->
     <div id="w-toast" style="position:fixed;top:40%;left:50%;transform:translate(-50%,-50%) scale(0.95);background:rgba(17,22,17,0.96);border:1px solid rgba(74,124,53,0.15);border-radius:10px;padding:0.6rem 1rem;z-index:99999;max-width:82%;font-size:0.65rem;color:var(--cream);text-align:center;line-height:1.5;opacity:0;transition:opacity 0.25s,transform 0.25s;pointer-events:none;box-shadow:0 8px 28px rgba(0,0,0,0.5);"></div>
     <!-- TRAIT PANEL v2 — premium bottom sheet -->
@@ -27412,6 +27427,7 @@ function _initGeo(){
     if(_lastGeoTime>0&&_lastGeoLat){var _sd=_dist(_lastGeoLat,_lastGeoLng,nL,nN);var _dt=(_now-_lastGeoTime)/1000;if(_dt>0)_speedKmh=(_sd/_dt)*3.6;}
     _lastGeoTime=_now;_lastGeoLat=nL;_lastGeoLng=nN;
     if(_uM)_uM.setLatLng([_uLat,_uLng]);
+    if(_scanRing)_scanRing.setLatLng([_uLat,_uLng]);
     _trail.push([_uLat,_uLng]);
     if(_tLine)_tLine.setLatLngs(_trail);else if(_map)_tLine=L.polyline(_trail,{color:'rgba(122,179,86,0.2)',weight:3,lineCap:'round'}).addTo(_map);
   },null,{enableHighAccuracy:true,maximumAge:5000});}catch(e){}
@@ -27460,9 +27476,13 @@ function _initCompass(){
   _updateCompass(0); // default: North
 }
 
+var _lantern=null,_scanRing=null;
 function _placeUser(){
   if(!_map||!_uLat)return;
-  _uM=L.marker([_uLat,_uLng],{icon:L.divIcon({className:'',html:'<div style="width:20px;height:20px;position:relative;"><div style="width:50px;height:50px;border-radius:50%;background:radial-gradient(circle,rgba(74,144,217,0.03),transparent 70%);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div><div style="width:14px;height:14px;background:linear-gradient(135deg,#5a9ed9,#3878b8);border-radius:50%;border:2.5px solid rgba(74,144,217,0.25);box-shadow:0 0 12px rgba(74,144,217,0.5);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div></div>',iconSize:[20,20],iconAnchor:[10,10]}),zIndexOffset:1000}).addTo(_map);
+  // Player marker with lantern glow
+  _uM=L.marker([_uLat,_uLng],{icon:L.divIcon({className:'',html:'<div style="width:20px;height:20px;position:relative;"><div style="width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(200,168,75,0.08) 0%,rgba(122,179,86,0.04) 30%,transparent 70%);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;"></div><div style="width:50px;height:50px;border-radius:50%;background:radial-gradient(circle,rgba(200,168,75,0.06),transparent 70%);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div><div style="width:14px;height:14px;background:linear-gradient(135deg,#5a9ed9,#3878b8);border-radius:50%;border:2.5px solid rgba(74,144,217,0.25);box-shadow:0 0 12px rgba(74,144,217,0.5),0 0 24px rgba(200,168,75,0.15);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div></div>',iconSize:[20,20],iconAnchor:[10,10]}),zIndexOffset:1000}).addTo(_map);
+  // Scanner range ring (75m collection radius)
+  _scanRing=L.circle([_uLat,_uLng],{radius:COLLECT_RANGE,className:'scanner-ring',fill:true,stroke:true,weight:2}).addTo(_map);
 }
 
 // ═══ TERRITORY HEXES — show owned zones on map ═══
