@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.03.31.3';
+  var LW_VERSION='2026.03.31.4';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -27626,7 +27626,9 @@ function _buildInfo(hash){
 
 // ═══ ADD PLANT TO MAP ═══
 // Rarity glow ring HTML for plant markers
-function _glowRing(grade){
+// Glow rings only on YOUR plants — wild plants stay mysterious
+function _glowRing(grade,own){
+  if(!own)return '';
   var g=(grade||'Common').toLowerCase();
   return '<div class="wild-glow wild-glow-'+g+'"></div>';
 }
@@ -27637,10 +27639,13 @@ function _addPlant(p){
   if(window._generatePlantSVG&&p.hash){try{svg=window._generatePlantSVG(p.hash,sz);}catch(e){}}
   if(!svg||svg.length<30){var fc=p.own?'#7ab356':'#5a7050';svg='<svg viewBox="0 0 30 40" width="'+sz+'" height="'+Math.round(sz*40/30)+'" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="30" width="14" height="10" rx="2" fill="#5a3a1f"/><line x1="15" y1="30" x2="15" y2="12" stroke="#3A5C2A" stroke-width="3" stroke-linecap="round"/><ellipse cx="8" cy="18" rx="7" ry="5" fill="'+fc+'" opacity="0.85" transform="rotate(-20 8 18)"/><ellipse cx="22" cy="15" rx="7" ry="5" fill="'+fc+'" opacity="0.8" transform="rotate(15 22 15)"/></svg>';}
   var info=_buildInfo(p.hash);
-  var seasonEmb='';if(info.t&&window.getSeasonInfo){var si=window.getSeasonInfo(info.t);seasonEmb=' <span style="font-size:0.35rem;">'+si.emblem+'</span>';}
-  var tag='<div style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-family:Bebas Neue,sans-serif;font-size:0.35rem;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,0.8);color:'+info.gc+';pointer-events:none;">'+info.nm+seasonEmb+'</div>';
+  // Own plants: show name in rarity color + season emblem + glow
+  // Wild plants: show name in muted neutral — rarity is a mystery until harvest
+  var tagColor=p.own?info.gc:'var(--muted)';
+  var seasonEmb='';if(p.own&&info.t&&window.getSeasonInfo){var si=window.getSeasonInfo(info.t);seasonEmb=' <span style="font-size:0.35rem;">'+si.emblem+'</span>';}
+  var tag='<div style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-family:Bebas Neue,sans-serif;font-size:0.35rem;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,0.8);color:'+tagColor+';pointer-events:none;">'+info.nm+seasonEmb+'</div>';
   var th=Math.round(sz*40/30)+14;
-  var glow=_glowRing(info.grade);
+  var glow=_glowRing(info.grade,p.own);
   var html='<div style="position:relative;width:'+(sz+6)+'px;height:'+th+'px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7));">'
     +glow+svg+tag+'</div>';
   var pd={lat:p.lat,lng:p.lng,hash:p.hash,own:p.own,name:info.nm,grade:info.grade,gc:info.gc,days:p.days||0,pollen:p.pollen||0,status:p.status||'Growing',traits:info.t,rarities:info.rarities,defenderGame:p.defenderGame||'set',ownerUid:p.ownerUid||'',ownerName:p.ownerName||'Keeper'};
@@ -27653,18 +27658,25 @@ function showTP(p,mk){
   var tp=document.getElementById('w-tp');if(!tp)return;
   // Hero: SVG + name + grade
   var sv=document.getElementById('wtp-svg');if(sv&&window._generatePlantSVG&&p.hash){try{sv.innerHTML=window._generatePlantSVG(p.hash,48);}catch(e){}}
-  var n=document.getElementById('wtp-name');if(n){n.textContent=p.name||'?';n.style.color=p.gc||'var(--cream)';}
-  var g=document.getElementById('wtp-grade');if(g){g.textContent=(p.grade||'COMMON').toUpperCase();g.style.color=p.gc;}
+  var n=document.getElementById('wtp-name');if(n){n.textContent=p.name||'?';n.style.color=p.own?(p.gc||'var(--cream)'):'var(--cream)';}
+  var g=document.getElementById('wtp-grade');
+  if(g){
+    if(p.own){g.textContent=(p.grade||'COMMON').toUpperCase();g.style.color=p.gc;}
+    else{g.textContent='UNKNOWN';g.style.color='var(--muted)';}
+  }
   var ow=document.getElementById('wtp-owner');if(ow){ow.textContent=p.own?'Your plant':(p.ownerName||'Wild specimen');}
-  // Rarest traits
+  // Rarest traits — hidden for non-owned plants (mystery until harvest)
   var re=document.getElementById('wtp-rarest');
-  if(re){if(p.rarities&&p.rarities.length>0){var rh='';for(var i=0;i<p.rarities.length;i++)rh+='<span style="display:inline-block;padding:2px 6px;border-radius:3px;font-size:clamp(.35rem,1vw,.42rem);margin:2px 2px 0 0;background:rgba(0,0,0,0.3);color:'+(p.gc||'var(--gold)')+';border:1px solid '+(p.gc||'var(--gold)')+';">\u2605 '+p.rarities[i]+'</span>';re.innerHTML=rh;re.style.display='block';}else re.style.display='none';}
-  // Stats grid — populate the 4 stat cells
+  if(re){
+    if(p.own&&p.rarities&&p.rarities.length>0){var rh='';for(var i=0;i<p.rarities.length;i++)rh+='<span style="display:inline-block;padding:2px 6px;border-radius:3px;font-size:clamp(.35rem,1vw,.42rem);margin:2px 2px 0 0;background:rgba(0,0,0,0.3);color:'+(p.gc||'var(--gold)')+';border:1px solid '+(p.gc||'var(--gold)')+';">\u2605 '+p.rarities[i]+'</span>';re.innerHTML=rh;re.style.display='block';}
+    else re.style.display='none';
+  }
+  // Stats grid — hide EA and season for non-owned (keep days and status visible)
   var t=p.traits||{};
   var eaScore=window.computeEA?window.computeEA(t,p.days):0;
   var seasonInfo=window.getSeasonInfo?window.getSeasonInfo(t):{name:'?',emblem:'?'};
-  var ea=document.getElementById('wtp-ea');if(ea){ea.textContent=eaScore;ea.style.color=eaScore>=15?'var(--gold)':'var(--cream)';}
-  var sn=document.getElementById('wtp-season');if(sn){sn.innerHTML=seasonInfo.emblem;sn.title=seasonInfo.name+(seasonInfo.inPeak?' (Peak!)':'');}
+  var ea=document.getElementById('wtp-ea');if(ea){ea.textContent=p.own?eaScore:'?';ea.style.color=p.own&&eaScore>=15?'var(--gold)':'var(--muted)';}
+  var sn=document.getElementById('wtp-season');if(sn){sn.innerHTML=p.own?seasonInfo.emblem:'?';sn.title=p.own?(seasonInfo.name+(seasonInfo.inPeak?' (Peak!)':'')):'Harvest to reveal';}
   var dy=document.getElementById('wtp-days');if(dy)dy.textContent=p.days+'d';
   var st=document.getElementById('wtp-status');if(st){st.textContent=p.status||'—';st.style.color=p.status==='Thriving'?'var(--sage)':'var(--cream)';}
 
@@ -28371,10 +28383,11 @@ function _addSharedMarker(p){
   if(window._generatePlantSVG&&p.hash){try{svg=window._generatePlantSVG(p.hash,sz);}catch(e){}}
   if(!svg||svg.length<30){var fc=p.own?'#7ab356':'#5a7050';svg='<svg viewBox="0 0 30 40" width="'+sz+'" height="'+Math.round(sz*40/30)+'" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="30" width="14" height="10" rx="2" fill="#5a3a1f"/><line x1="15" y1="30" x2="15" y2="12" stroke="#3A5C2A" stroke-width="3" stroke-linecap="round"/><ellipse cx="8" cy="18" rx="7" ry="5" fill="'+fc+'" opacity="0.85" transform="rotate(-20 8 18)"/><ellipse cx="22" cy="15" rx="7" ry="5" fill="'+fc+'" opacity="0.8" transform="rotate(15 22 15)"/></svg>';}
   var info=_buildInfo(p.hash);
-  var seasonEmb='';if(info.t&&window.getSeasonInfo){var si=window.getSeasonInfo(info.t);seasonEmb=' <span style="font-size:0.35rem;">'+si.emblem+'</span>';}
-  var tag='<div style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-family:Bebas Neue,sans-serif;font-size:0.35rem;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,0.8);color:'+info.gc+';pointer-events:none;">'+info.nm+seasonEmb+'</div>';
+  var tagColor=p.own?info.gc:'var(--muted)';
+  var seasonEmb='';if(p.own&&info.t&&window.getSeasonInfo){var si=window.getSeasonInfo(info.t);seasonEmb=' <span style="font-size:0.35rem;">'+si.emblem+'</span>';}
+  var tag='<div style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-family:Bebas Neue,sans-serif;font-size:0.35rem;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,0.8);color:'+tagColor+';pointer-events:none;">'+info.nm+seasonEmb+'</div>';
   var th=Math.round(sz*40/30)+14;
-  var glow=_glowRing(info.grade||p.grade);
+  var glow=_glowRing(info.grade||p.grade,p.own);
   var html='<div style="position:relative;width:'+(sz+6)+'px;height:'+th+'px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7));">'
     +glow+svg+tag+'</div>';
   var pd={lat:p.lat,lng:p.lng,hash:p.hash,own:p.own,name:info.nm,grade:info.grade||p.grade,gc:info.gc,days:p.days||0,pollen:p.pollen||0,status:p.status||'Growing',traits:info.t,rarities:info.rarities,defenderGame:p.defenderGame||'set',ownerUid:p.ownerUid||'',ownerName:p.ownerName||'Keeper'};
