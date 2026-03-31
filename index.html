@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.01.1';
+  var LW_VERSION='2026.04.01.2';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -4709,7 +4709,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="dev-section"><div class="dev-section-title">ACCOUNT COUNTER</div><div style="font-size:0.42rem;color:var(--muted);margin-bottom:0.3rem;">Next: <span id="dev-counter-val">?</span></div><button class="dev-btn" onclick="PW_Dev.resetCounter()">↩ RESET TO 1</button></div>
     <div class="dev-section"><div class="dev-section-title">LOCAL STORAGE</div><button class="dev-btn" onclick="PW_Dev.clearLocal()">🧹 CLEAR ALL</button></div>
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
-    <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET WILD DATA</button></div>
+    <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button></div>
     <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button></div>
     <div class="dev-section"><div class="dev-section-title">NUCLEAR</div><button class="dev-btn danger" onclick="PW_Dev.fullReset()">☢ WIPE EVERYTHING</button></div>
     <div class="dev-log" id="dev-log">Ready.\n</div>
@@ -4796,6 +4796,19 @@ window.onerror=function(msg,url,line,col,err){
       localStorage.removeItem('fg_rtb_last');
       alert('Wild data cleared. Reload to see clean map.');
       location.reload();
+    },
+    purgeFirestoreDrops:function(){
+      if(!confirm('DELETE all wildDrops docs from Firestore? This removes every plant on the global map.'))return;
+      try{
+        var db=firebase.firestore();
+        db.collection('wildDrops').get().then(function(snap){
+          var batch=db.batch();
+          var count=0;
+          snap.forEach(function(doc){batch.delete(doc.ref);count++;});
+          if(count===0){alert('No wildDrops docs found.');return;}
+          batch.commit().then(function(){alert('Deleted '+count+' wildDrops docs.');location.reload();}).catch(function(e){alert('Batch error: '+e.message);});
+        }).catch(function(e){alert('Query error: '+e.message);});
+      }catch(e){alert(e.message);}
     },
     fullReset:function(){
       if(!confirm('NUCLEAR: Wipe everything — local + cloud + sign out?'))return;
@@ -28483,8 +28496,11 @@ function _subscribeSharedDrops(){
       .where('status','==','alive')
       .onSnapshot(function(snap){
         var seenHashes={};
+        var now=Date.now();
         snap.forEach(function(doc){
           var d=doc.data();if(!d.lat||!d.lng||!d.hash)return;
+          // Skip drops older than 14 days (stale Firestore data)
+          if(d.droppedAt){var age=now-new Date(d.droppedAt).getTime();if(age>WILD_MAX_AGE_DAYS*86400000)return;}
           seenHashes[d.hash]=true;
 
           // Skip if we already have this marker
@@ -28556,8 +28572,10 @@ function _loadSharedDropsFallback(user){
     window.db.collection('wildDrops').where('status','==','alive').limit(50).get()
       .then(function(snap){
         var count=0;
+        var now=Date.now();
         snap.forEach(function(doc){
           var d=doc.data();if(!d.lat||!d.lng||!d.hash)return;
+          if(d.droppedAt){var age=now-new Date(d.droppedAt).getTime();if(age>WILD_MAX_AGE_DAYS*86400000)return;}
           if(_uLat&&d.lat){var dist=_dist(_uLat,_uLng,d.lat,d.lng);if(dist>500)return;}
           if(_sharedMarkers[d.hash])return;
           var isOwn=(d.ownerUid===user.uid);
