@@ -29822,7 +29822,22 @@ function GC4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0;
       else{d.style.background='rgba(10,8,4,.7)';d.style.boxShadow='inset 0 2px 6px rgba(0,0,0,.6)';}
     }
     var ob=document.getElementById('C4ob');
-    if(ob){ob.innerHTML=over?'<button class="gb" onclick="_C4N()" style="font-size:clamp(.7rem,2.2vw,.95rem);padding:8px 20px">🔄 New Game</button>':'';}
+    if(ob){
+      if(!over){ob.innerHTML='';}
+      else if(check(1)){
+        // Player won — the global _showWinCelebration handles this
+        ob.innerHTML='';
+      }else{
+        // Loss or draw — show result + try again
+        var isLoss=check(2);
+        var msg=isLoss?_c4Enc[Math.floor(Math.random()*_c4Enc.length)]:'A draw! Well matched.';
+        ob.innerHTML='<div style="text-align:center;padding:clamp(8px,3vw,16px);background:rgba(26,31,23,.85);border:1px solid rgba(74,124,53,.15);border-radius:12px;margin:8px auto;max-width:320px">'
+          +'<div style="font-family:Bebas Neue,sans-serif;font-size:clamp(.8rem,2.5vw,1.1rem);color:'+(isLoss?'var(--cream)':'var(--gold)')+';letter-spacing:.08em;margin-bottom:6px">'+(isLoss?'GAME OVER':'DRAW')+'</div>'
+          +'<div style="font-size:clamp(.45rem,1.3vw,.6rem);color:var(--muted);margin-bottom:10px">'+msg+'</div>'
+          +'<button class="gb" onclick="_C4N()" style="font-size:clamp(.6rem,1.8vw,.8rem);padding:8px 20px;width:100%;min-height:44px">TRY AGAIN</button>'
+          +'</div>';
+      }
+    }
     window.scrollTo(0,_scrollY)}
   window._C4N=function(){init();gd.innerHTML='';sm('Your turn');rn()};_C4N();}
 
