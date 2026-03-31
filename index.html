@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.01.12';
+  var LW_VERSION='2026.04.01.13';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3388,7 +3388,10 @@
 @keyframes scannerPulse{0%,100%{border-color:rgba(122,179,86,0.2);box-shadow:0 0 15px rgba(122,179,86,0.08);}50%{border-color:rgba(122,179,86,0.35);box-shadow:0 0 25px rgba(122,179,86,0.15);}}
 
 /* ── BOTANICAL VIEWPORT FRAME ── ready for Gemini image */
-#wild-frame{position:fixed;inset:0;z-index:454;pointer-events:none;display:none;opacity:0.9;}
+/* Frame layers: above map/fog/vignette, below ALL interactive UI.
+   Uses z-index 450 but the log bar, buttons, panels all use 999+.
+   The log bar is position:relative inside the panel so it's above fixed overlays. */
+#wild-frame{position:fixed;inset:0;z-index:450;pointer-events:none;display:none;opacity:0.9;}
 #wild-frame img{width:100%;height:100%;object-fit:fill;}
 
 /* ── STEP COUNTER in log bar ── */
@@ -3830,7 +3833,7 @@
 /* ═══ WILD TAB v2 — Premium Redesign ═══ */
 
 /* ── Wild Log Bar (top navigation) ── */
-.wild-log{position:relative;display:flex;align-items:center;justify-content:space-between;padding:8px 16px;min-height:48px;background:url('assets/games/wild/wild-log-bar-v4.png') center/cover no-repeat;background-color:rgba(32,24,14,.95);border-bottom:1px solid rgba(80,60,30,.3);z-index:10}
+.wild-log{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:8px 16px;padding-top:calc(8px + env(safe-area-inset-top,0px));min-height:48px;background:url('assets/games/wild/wild-log-bar-v4.png') center/cover no-repeat;background-color:rgba(32,24,14,.95);border-bottom:1px solid rgba(80,60,30,.3);z-index:460}
 .wild-log-stat{display:flex;flex-direction:column;align-items:center;gap:1px}
 .wild-log-val{font-family:'Bebas Neue',sans-serif;font-size:clamp(.85rem,2.5vw,1.1rem);color:var(--cream);line-height:1;text-shadow:0 1px 4px rgba(0,0,0,.8)}
 .wild-log-lbl{font-family:'DM Mono',monospace;font-size:clamp(.32rem,1vw,.42rem);color:rgba(200,188,160,.5);letter-spacing:.1em;text-transform:uppercase}
