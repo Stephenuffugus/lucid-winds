@@ -29856,7 +29856,7 @@ function GSG(a){
 // GREEN: 🍄 Mushroom (sage), 🐦 Bird (teal)
 // GOLD:  🌸 Flower (gold), 🐝 Bee (amber)
 var _SUIT_SYM=['🍄','🌸','🐝','🐦'];
-var _SUIT_CLR=['#7ab356','#daa520','#daa520','#7ab356'];
+var _SUIT_CLR=['#6dbf4a','#daa520','#e8c94a','#48c9a4'];
 var _SUIT_GRP=['green','gold','gold','green']; // alternating groups
 var _RANK_SYM=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 var _SUIT_NAME=['shroom','flower','bee','bird'];
@@ -29906,11 +29906,10 @@ function _cdEl(card){
     var pip=_CD_BASE+_SUIT_NAME[card.s]+'.png';
     var art=_cdArt(card.s,card.r);
     d.style.backgroundImage="url('"+art+"')";
-    var needsPip=card.r>=10; // J Q K only — new suits need identification
-    d.innerHTML='<div style="position:absolute;top:3px;left:4px;line-height:1;z-index:2;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:1px">'
+    d.innerHTML='<div style="position:absolute;top:3px;left:4px;line-height:1;z-index:2;pointer-events:none">'
       +'<div style="color:'+clr+';font-size:clamp(.7rem,2.2vw,1rem);font-weight:700;text-shadow:0 1px 3px #000,0 0 8px #000">'+rnk+'</div>'
-      +(needsPip?'<img src="'+pip+'" style="width:clamp(8px,2.2vw,14px);height:clamp(8px,2.2vw,14px);filter:drop-shadow(0 1px 2px #000)" alt="">':'')
-      +'</div>';
+      +'</div>'
+      +'<img src="'+pip+'" style="position:absolute;top:3px;right:4px;width:clamp(10px,3vw,18px);height:clamp(10px,3vw,18px);z-index:2;pointer-events:none;filter:drop-shadow(0 1px 3px #000)" alt="">';
   }else{
     d.className+=' gc-dn';
     _cdBackStyle(d);
