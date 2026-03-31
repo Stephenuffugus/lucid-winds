@@ -3274,17 +3274,61 @@
    Apply to the Leaflet tile pane. One line, massive impact.
    ═══════════════════════════════════════════════════════════════ */
 .leaflet-tile-pane {
-  filter: brightness(0.7) saturate(0.3) sepia(0.4) hue-rotate(70deg) contrast(1.1);
-  transition: filter 0.5s ease;
+  filter: brightness(0.65) saturate(0.25) sepia(0.45) hue-rotate(75deg) contrast(1.15);
+  transition: filter 0.8s ease;
 }
 
-/* Optional: slightly brighter when zoomed in (closer = more detail visible) */
+/* Slightly brighter + richer when zoomed in (closer = more detail) */
 .leaflet-container[data-zoom="16"] .leaflet-tile-pane,
-.leaflet-container[data-zoom="17"] .leaflet-tile-pane,
+.leaflet-container[data-zoom="17"] .leaflet-tile-pane {
+  filter: brightness(0.72) saturate(0.32) sepia(0.4) hue-rotate(72deg) contrast(1.12);
+}
 .leaflet-container[data-zoom="18"] .leaflet-tile-pane,
 .leaflet-container[data-zoom="19"] .leaflet-tile-pane {
-  filter: brightness(0.75) saturate(0.35) sepia(0.35) hue-rotate(70deg) contrast(1.1);
+  filter: brightness(0.78) saturate(0.38) sepia(0.35) hue-rotate(70deg) contrast(1.1);
 }
+
+/* ── TIME-OF-DAY MAP TINT ──
+   .tod-dawn  = 5-7AM warm amber
+   .tod-day   = 7AM-5PM (no tint)
+   .tod-dusk  = 5-8PM orange-purple
+   .tod-night = 8PM-5AM deep blue
+   Applied to #wild-map-tod overlay via JS */
+#wild-map-tod{position:fixed;inset:0;z-index:449;pointer-events:none;transition:background 2s ease,opacity 2s ease;opacity:0;}
+.tod-dawn #wild-map-tod{opacity:1;background:linear-gradient(180deg,rgba(200,140,50,0.08) 0%,rgba(180,120,60,0.04) 100%);}
+.tod-dusk #wild-map-tod{opacity:1;background:linear-gradient(180deg,rgba(160,80,40,0.1) 0%,rgba(100,50,120,0.06) 100%);}
+.tod-night #wild-map-tod{opacity:1;background:radial-gradient(ellipse 60% 60% at 50% 50%,transparent 30%,rgba(20,30,60,0.12) 100%);}
+.tod-dawn .leaflet-tile-pane{filter:brightness(0.7) saturate(0.35) sepia(0.5) hue-rotate(50deg) contrast(1.1);}
+.tod-dusk .leaflet-tile-pane{filter:brightness(0.6) saturate(0.3) sepia(0.5) hue-rotate(60deg) contrast(1.1);}
+
+/* ── RARITY GLOW RINGS ── animated radiance behind plant markers */
+.wild-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;z-index:-1;}
+.wild-glow-common{width:30px;height:30px;box-shadow:0 0 8px rgba(138,154,122,0.3);animation:glowPulse 4s ease-in-out infinite;}
+.wild-glow-uncommon{width:32px;height:32px;box-shadow:0 0 10px rgba(90,158,63,0.4);animation:glowPulse 3.5s ease-in-out infinite;}
+.wild-glow-rare{width:34px;height:34px;box-shadow:0 0 14px rgba(74,144,217,0.5),0 0 28px rgba(74,144,217,0.2);animation:glowPulse 3s ease-in-out infinite;}
+.wild-glow-epic{width:36px;height:36px;box-shadow:0 0 16px rgba(155,89,182,0.5),0 0 32px rgba(155,89,182,0.2);animation:glowPulse 2.8s ease-in-out infinite;}
+.wild-glow-legendary{width:40px;height:40px;box-shadow:0 0 20px rgba(200,168,75,0.6),0 0 40px rgba(200,168,75,0.25);animation:glowBreathe 3s ease-in-out infinite;}
+.wild-glow-mythic{width:44px;height:44px;box-shadow:0 0 22px rgba(231,76,60,0.5),0 0 44px rgba(231,76,60,0.2);animation:glowBreathe 2.5s ease-in-out infinite;}
+.wild-glow-cosmic{width:48px;height:48px;box-shadow:0 0 26px rgba(255,110,199,0.6),0 0 52px rgba(255,110,199,0.25),0 0 80px rgba(255,110,199,0.1);animation:glowAurora 4s ease-in-out infinite;}
+@keyframes glowPulse{0%,100%{opacity:0.5;transform:translate(-50%,-50%) scale(1);}50%{opacity:0.8;transform:translate(-50%,-50%) scale(1.1);}}
+@keyframes glowBreathe{0%,100%{opacity:0.4;transform:translate(-50%,-50%) scale(0.9);}50%{opacity:1;transform:translate(-50%,-50%) scale(1.2);}}
+@keyframes glowAurora{0%{opacity:0.5;transform:translate(-50%,-50%) scale(1) rotate(0deg);}50%{opacity:1;transform:translate(-50%,-50%) scale(1.15) rotate(180deg);}100%{opacity:0.5;transform:translate(-50%,-50%) scale(1) rotate(360deg);}}
+
+/* ── SEASONAL PARTICLES ── replace base pollen with season-themed */
+.season-particle{position:fixed;pointer-events:none;z-index:452;opacity:0;}
+.sp-spring{width:6px;height:6px;background:radial-gradient(circle,rgba(232,160,191,0.7),rgba(232,160,191,0.2));border-radius:50% 50% 50% 0;transform:rotate(-45deg);}
+.sp-summer{width:3px;height:3px;background:rgba(212,168,67,0.6);border-radius:50%;box-shadow:0 0 4px rgba(212,168,67,0.3);}
+.sp-autumn{width:7px;height:5px;border-radius:40%;background:linear-gradient(135deg,rgba(212,132,42,0.7),rgba(180,80,20,0.5));transform:rotate(var(--spin,15deg));}
+.sp-winter{width:4px;height:4px;background:rgba(200,220,240,0.5);border-radius:50%;box-shadow:0 0 6px rgba(160,196,232,0.3);}
+@keyframes seasonDrift{0%{opacity:0;transform:translate(0,0) rotate(var(--spin,0deg));}15%{opacity:var(--peak,0.3);}85%{opacity:calc(var(--peak,0.3)*0.4);}100%{opacity:0;transform:translate(var(--dx,20px),var(--dy,80px)) rotate(calc(var(--spin,0deg) + 180deg));}}
+
+/* ── FIREFLIES (night mode only) ── */
+.firefly{position:fixed;width:3px;height:3px;background:rgba(200,200,100,0.8);border-radius:50%;pointer-events:none;z-index:453;box-shadow:0 0 6px rgba(200,200,100,0.5),0 0 12px rgba(200,200,100,0.2);}
+@keyframes fireflyFloat{0%{opacity:0;transform:translate(0,0);}20%{opacity:0.8;}50%{opacity:0.3;transform:translate(var(--fx,30px),var(--fy,-40px));}80%{opacity:0.7;}100%{opacity:0;transform:translate(var(--fx2,-20px),var(--fy2,30px));}}
+
+/* ── STEP COUNTER in log bar ── */
+.wild-log-steps{display:flex;align-items:center;gap:3px;font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--muted);white-space:nowrap;}
+.wild-log-steps svg{width:12px;height:12px;opacity:0.6;}
 /* ═══════════════════════════════════════════════════════════════
    2. HEX GRID UNDERLAY — suggests H3 cell system
    Place a div with class .map-hex-overlay INSIDE the map container,
@@ -3533,19 +3577,22 @@
    9. NIGHT MODE — auto-applies between 11PM-5AM per directive
    Add class .night-mode to the map container via JS.
    ═══════════════════════════════════════════════════════════════ */
-.night-mode .leaflet-tile-pane {
-  filter: brightness(0.5) saturate(0.2) sepia(0.5) hue-rotate(70deg) contrast(1.05);
+.night-mode .leaflet-tile-pane,
+.tod-night .leaflet-tile-pane {
+  filter: brightness(0.45) saturate(0.18) sepia(0.5) hue-rotate(80deg) contrast(1.05);
 }
 
-.night-mode .map-vignette {
+.night-mode .map-vignette,
+.tod-night .map-vignette {
   background: radial-gradient(
     ellipse 50% 71% at 50% 71%,
-    transparent 40%,
-    rgba(10, 13, 9, 0.7) 100%
+    transparent 35%,
+    rgba(8, 12, 20, 0.7) 100%
   );
 }
 
-.night-mode .map-hex-overlay { opacity: 0.015; }
+.night-mode .map-hex-overlay,
+.tod-night .map-hex-overlay { opacity: 0.015; }
 
     /* WILD DOCK — fixed position, always visible above bottom nav
        bottom = nav min-height (58px) + nav top-pad (0.35rem ≈ 5.6px) + safe-area
@@ -4418,12 +4465,13 @@ window.onerror=function(msg,url,line,col,err){
       <div class="wild-log-stat"><div class="wild-log-val" id="w-count">0</div><div class="wild-log-lbl">planted</div></div>
       <div class="wild-log-stat"><div class="wild-log-val" id="w-drops-left">3</div><div class="wild-log-lbl">drops</div></div>
       <div class="wild-log-stat"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl">pollen</div></div>
+      <div class="wild-log-steps" id="w-step-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16v-4a4 4 0 014-4h0a4 4 0 014 4v1a3 3 0 003 3h0a3 3 0 003-3V8"/></svg><span id="w-steps">0</span>m</div>
       <div class="wild-log-wind" id="w-wind"><img src="assets/games/wild/wild-compass-v2.png" style="width:24px;height:24px;opacity:.7" alt=""> —</div>
-      <div id="w-needle" style="display:none;"></div><div id="w-steps" style="display:none;">0</div>
     </div>
     <!-- MAP -->
     <div id="wild-map" style="width:100%;height:calc(100vh - 12rem - env(safe-area-inset-bottom, 0px));height:calc(100dvh - 12rem - env(safe-area-inset-bottom, 0px));min-height:250px;"></div>
     <div class="map-hex-overlay"></div>
+    <div id="wild-map-tod"></div>
     <!-- TOAST -->
     <div id="w-toast" style="position:fixed;top:40%;left:50%;transform:translate(-50%,-50%) scale(0.95);background:rgba(17,22,17,0.96);border:1px solid rgba(74,124,53,0.15);border-radius:10px;padding:0.6rem 1rem;z-index:99999;max-width:82%;font-size:0.65rem;color:var(--cream);text-align:center;line-height:1.5;opacity:0;transition:opacity 0.25s,transform 0.25s;pointer-events:none;box-shadow:0 8px 28px rgba(0,0,0,0.5);"></div>
     <!-- TRAIT PANEL v2 — premium bottom sheet -->
@@ -24065,22 +24113,26 @@ document.addEventListener('keydown', function(e) {
   var _pollenInterval = null;
   function _startPollenParticles() {
     if (_pollenInterval) return;
+    // Lighter base pollen (fewer, smaller — seasonal particles carry the theme)
     _pollenInterval = setInterval(function() {
       var p = document.createElement('div');
       p.className = 'pollen-particle';
       var x = 10 + Math.random() * 80;
-      var dur = 6 + Math.random() * 8;
-      var size = 2 + Math.random() * 3;
+      var dur = 8 + Math.random() * 10;
+      var size = 2 + Math.random() * 2;
       var delay = Math.random() * 2;
       p.style.cssText = 'left:' + x + '%;bottom:-10px;width:' + size + 'px;height:' + size + 'px;animation:pollenFloat ' + dur + 's ease-in ' + delay + 's forwards;';
       document.body.appendChild(p);
       setTimeout(function() { try { p.remove(); } catch(e) {} }, (dur + delay) * 1000 + 500);
-    }, 800);
+    }, 1500);
+    // Also start seasonal particles
+    if (window.FG_Wild && FG_Wild._startSeasons) FG_Wild._startSeasons();
   }
   function _stopPollenParticles() {
     if (_pollenInterval) { clearInterval(_pollenInterval); _pollenInterval = null; }
     var ps = document.querySelectorAll('.pollen-particle');
     for (var i = 0; i < ps.length; i++) try { ps[i].remove(); } catch(e) {}
+    if (window.FG_Wild && FG_Wild._stopSeasons) FG_Wild._stopSeasons();
   }
 
   window.switchTab = function(tab) {
@@ -27199,16 +27251,85 @@ function _initMap(){
   // Re-subscribe to shared drops when map view changes significantly
   _map.on('moveend',function(){_scheduleResubscribe();});
   _map.getContainer().setAttribute('data-zoom',_map.getZoom());
-  // Night mode check
-  var _hour=new Date().getHours();if(_hour>=23||_hour<5)_map.getContainer().classList.add('night-mode');
-  // Pollen particle spawner
-  setInterval(function(){
-    var p=document.createElement('div');p.className='pollen-particle';
-    var sz=2+Math.random()*2;
-    p.style.cssText='left:'+(Math.random()*100)+'%;top:'+(Math.random()*100)+'%;width:'+sz+'px;height:'+sz+'px;--dx:'+(Math.random()*60-30)+'px;--dy:'+(Math.random()*-80-20)+'px;animation:pollen-drift '+(6+Math.random()*8)+'s ease forwards;';
-    var panel=document.getElementById('panel-wild');if(panel)panel.appendChild(p);
-    setTimeout(function(){p.remove();},14000);
-  },1200);
+  // Time-of-day class on panel
+  _updateTimeOfDay();
+  setInterval(_updateTimeOfDay,300000); // re-check every 5 min
+
+  // Seasonal particle spawner (replaces basic pollen)
+  _startSeasonalParticles();
+}
+
+// ═══ TIME OF DAY ═══
+function _updateTimeOfDay(){
+  var panel=document.getElementById('panel-wild');if(!panel)return;
+  var h=new Date().getHours();
+  panel.classList.remove('tod-dawn','tod-dusk','tod-night');
+  if(_map)_map.getContainer().classList.remove('night-mode');
+  if(h>=5&&h<7){panel.classList.add('tod-dawn');}
+  else if(h>=17&&h<20){panel.classList.add('tod-dusk');}
+  else if(h>=20||h<5){panel.classList.add('tod-night');if(_map)_map.getContainer().classList.add('night-mode');_spawnFireflies();}
+}
+
+// ═══ FIREFLIES (night only) ═══
+var _fireflyTimer=null;
+function _spawnFireflies(){
+  if(_fireflyTimer)return;
+  _fireflyTimer=setInterval(function(){
+    var panel=document.getElementById('panel-wild');if(!panel)return;
+    if(!panel.classList.contains('tod-night')){clearInterval(_fireflyTimer);_fireflyTimer=null;return;}
+    var f=document.createElement('div');f.className='firefly';
+    f.style.cssText='left:'+(10+Math.random()*80)+'%;top:'+(10+Math.random()*70)+'%;--fx:'+(Math.random()*60-30)+'px;--fy:'+(Math.random()*-60-10)+'px;--fx2:'+(Math.random()*40-20)+'px;--fy2:'+(Math.random()*40-20)+'px;animation:fireflyFloat '+(5+Math.random()*8)+'s ease-in-out forwards;';
+    panel.appendChild(f);
+    setTimeout(function(){f.remove();},13000);
+  },2500);
+}
+
+// ═══ SEASONAL PARTICLES ═══
+var _seasonParticleTimer=null;
+function _startSeasonalParticles(){
+  if(_seasonParticleTimer)return;
+  // Determine current season from real-world month
+  var month=new Date().getMonth(); // 0-11
+  var season;
+  if(month>=2&&month<=4)season='spring';
+  else if(month>=5&&month<=7)season='summer';
+  else if(month>=8&&month<=10)season='autumn';
+  else season='winter';
+  var interval=season==='autumn'?900:season==='spring'?1100:season==='winter'?1400:1300;
+  _seasonParticleTimer=setInterval(function(){
+    var panel=document.getElementById('panel-wild');if(!panel||panel.style.display==='none')return;
+    var p=document.createElement('div');
+    p.className='season-particle sp-'+season;
+    var spin=Math.random()*360;
+    var peak=season==='summer'?0.2:0.35;
+    var dx,dy,dur;
+    if(season==='autumn'){dx=(Math.random()*40-10);dy=(60+Math.random()*40);dur=4+Math.random()*4;}
+    else if(season==='winter'){dx=(Math.random()*30-15);dy=(50+Math.random()*30);dur=5+Math.random()*5;}
+    else if(season==='spring'){dx=(Math.random()*50-25);dy=(Math.random()*-60-20);dur=6+Math.random()*6;}
+    else{dx=(Math.random()*40-20);dy=(Math.random()*-50-15);dur=7+Math.random()*5;}
+    p.style.cssText='left:'+(Math.random()*100)+'%;top:'+(season==='autumn'||season==='winter'?(Math.random()*20)+'%':(60+Math.random()*30)+'%')+';--spin:'+spin+'deg;--dx:'+dx+'px;--dy:'+dy+'px;--peak:'+peak+';animation:seasonDrift '+dur+'s ease forwards;';
+    panel.appendChild(p);
+    setTimeout(function(){p.remove();},Math.ceil(dur*1000)+500);
+  },interval);
+}
+function _stopSeasonalParticles(){
+  if(_seasonParticleTimer){clearInterval(_seasonParticleTimer);_seasonParticleTimer=null;}
+}
+
+// ═══ STEP COUNTER MILESTONES ═══
+var _lastStepMilestone=0;
+function _checkStepMilestone(){
+  var el=document.getElementById('w-steps');if(!el)return;
+  var meters=parseInt(el.textContent||'0');
+  var milestones=[500,1000,2500,5000,10000];
+  for(var i=milestones.length-1;i>=0;i--){
+    if(meters>=milestones[i]&&_lastStepMilestone<milestones[i]){
+      _lastStepMilestone=milestones[i];
+      var labels={500:'500m walked!',1000:'1km explorer!',2500:'2.5km trekker!',5000:'5km ranger!',10000:'10km legend!'};
+      _toast('\ud83e\udeb4 '+labels[milestones[i]]);
+      break;
+    }
+  }
 }
 
 function _initGeo(){
@@ -27224,7 +27345,7 @@ function _initGeo(){
   },{enableHighAccuracy:true,timeout:8000,maximumAge:30000});
   try{navigator.geolocation.watchPosition(function(p){
     var nL=p.coords.latitude,nN=p.coords.longitude;
-    if(_uLat&&_uLng){var d=_dist(_uLat,_uLng,nL,nN);if(d>0.7&&d<50){var s=document.getElementById('w-steps');if(s)s.textContent=parseInt(s.textContent||'0')+Math.round(d/0.75);}}
+    if(_uLat&&_uLng){var d=_dist(_uLat,_uLng,nL,nN);if(d>0.7&&d<50){var s=document.getElementById('w-steps');if(s){s.textContent=parseInt(s.textContent||'0')+Math.round(d);_checkStepMilestone();}}}
     _uLat=nL;_uLng=nN;
     // Speed tracking
     var _now=Date.now();
@@ -27471,6 +27592,12 @@ function _buildInfo(hash){
 }
 
 // ═══ ADD PLANT TO MAP ═══
+// Rarity glow ring HTML for plant markers
+function _glowRing(grade){
+  var g=(grade||'Common').toLowerCase();
+  return '<div class="wild-glow wild-glow-'+g+'"></div>';
+}
+
 function _addPlant(p){
   if(!_map)return;
   var sz=p.own?40:26,svg='';
@@ -27480,10 +27607,9 @@ function _addPlant(p){
   var seasonEmb='';if(info.t&&window.getSeasonInfo){var si=window.getSeasonInfo(info.t);seasonEmb=' <span style="font-size:0.35rem;">'+si.emblem+'</span>';}
   var tag='<div style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-family:Bebas Neue,sans-serif;font-size:0.35rem;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,0.8);color:'+info.gc+';pointer-events:none;">'+info.nm+seasonEmb+'</div>';
   var th=Math.round(sz*40/30)+14;
+  var glow=_glowRing(info.grade);
   var html='<div style="position:relative;width:'+(sz+6)+'px;height:'+th+'px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7));">'
-    +svg
-    +tag
-    +'</div>';
+    +glow+svg+tag+'</div>';
   var pd={lat:p.lat,lng:p.lng,hash:p.hash,own:p.own,name:info.nm,grade:info.grade,gc:info.gc,days:p.days||0,pollen:p.pollen||0,status:p.status||'Growing',traits:info.t,rarities:info.rarities,defenderGame:p.defenderGame||'set',ownerUid:p.ownerUid||'',ownerName:p.ownerName||'Keeper'};
   var mk=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:html,iconSize:[sz+6,th],iconAnchor:[(sz+6)/2,th-6]}),zIndexOffset:p.own?500:100}).addTo(_map).on('click',function(){showTP(pd,mk);});
 }
@@ -28215,8 +28341,9 @@ function _addSharedMarker(p){
   var seasonEmb='';if(info.t&&window.getSeasonInfo){var si=window.getSeasonInfo(info.t);seasonEmb=' <span style="font-size:0.35rem;">'+si.emblem+'</span>';}
   var tag='<div style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-family:Bebas Neue,sans-serif;font-size:0.35rem;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,0.8);color:'+info.gc+';pointer-events:none;">'+info.nm+seasonEmb+'</div>';
   var th=Math.round(sz*40/30)+14;
+  var glow=_glowRing(info.grade||p.grade);
   var html='<div style="position:relative;width:'+(sz+6)+'px;height:'+th+'px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7));">'
-    +svg+tag+'</div>';
+    +glow+svg+tag+'</div>';
   var pd={lat:p.lat,lng:p.lng,hash:p.hash,own:p.own,name:info.nm,grade:info.grade||p.grade,gc:info.gc,days:p.days||0,pollen:p.pollen||0,status:p.status||'Growing',traits:info.t,rarities:info.rarities,defenderGame:p.defenderGame||'set',ownerUid:p.ownerUid||'',ownerName:p.ownerName||'Keeper'};
   var mk=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:html,iconSize:[sz+6,th],iconAnchor:[(sz+6)/2,th-6]}),zIndexOffset:p.own?500:100}).addTo(_map).on('click',function(){showTP(pd,mk);});
   return mk;
@@ -28247,7 +28374,7 @@ function _loadSharedDropsFallback(user){
   }catch(e){}
 }
 
-return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops};
+return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles};
 })();
 </script>
 <!-- DEV: Spawn Mythic+Cosmic (hidden — requires dev panel password) -->
