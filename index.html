@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.01.3';
+  var LW_VERSION='2026.04.01.4';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -27849,7 +27849,11 @@ function _glowRing(grade,own){
 function _addPlant(p){
   if(!_map)return;
   var sz=p.own?40:26,svg='';
-  if(window._generatePlantSVG&&p.hash){try{svg=window._generatePlantSVG(p.hash,sz);}catch(e){}}
+  if(p.own){
+    if(window._generatePlantSVG&&p.hash){try{svg=window._generatePlantSVG(p.hash,sz);}catch(e){}}
+  } else {
+    svg='<img src="assets/games/wild/wild-marker-common-v2.png" style="width:'+sz+'px;height:'+sz+'px;filter:drop-shadow(0 0 4px rgba(122,179,86,0.3));" alt="">';
+  }
   if(!svg||svg.length<30){var fc=p.own?'#7ab356':'#5a7050';svg='<svg viewBox="0 0 30 40" width="'+sz+'" height="'+Math.round(sz*40/30)+'" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="30" width="14" height="10" rx="2" fill="#5a3a1f"/><line x1="15" y1="30" x2="15" y2="12" stroke="#3A5C2A" stroke-width="3" stroke-linecap="round"/><ellipse cx="8" cy="18" rx="7" ry="5" fill="'+fc+'" opacity="0.85" transform="rotate(-20 8 18)"/><ellipse cx="22" cy="15" rx="7" ry="5" fill="'+fc+'" opacity="0.8" transform="rotate(15 22 15)"/></svg>';}
   var info=_buildInfo(p.hash);
   // Own plants: show name in rarity color + season emblem + glow
@@ -27870,8 +27874,12 @@ function showTP(p,mk){
   _sel=p;_selMk=mk||null;
   var tp=document.getElementById('w-tp');if(!tp)return;
   // Hero: SVG + name + grade
-  var sv=document.getElementById('wtp-svg');if(sv&&window._generatePlantSVG&&p.hash){try{sv.innerHTML=window._generatePlantSVG(p.hash,48);}catch(e){}}
-  var n=document.getElementById('wtp-name');if(n){n.textContent=p.name||'?';n.style.color=p.own?(p.gc||'var(--cream)'):'var(--cream)';}
+  var sv=document.getElementById('wtp-svg');
+  if(sv){
+    if(p.own&&window._generatePlantSVG&&p.hash){try{sv.innerHTML=window._generatePlantSVG(p.hash,48);}catch(e){}}
+    else if(!p.own){sv.innerHTML='<img src="assets/games/wild/wild-marker-common-v2.png" style="width:48px;height:48px;filter:drop-shadow(0 0 8px rgba(122,179,86,0.4));" alt="">';}
+  }
+  var n=document.getElementById('wtp-name');if(n){n.textContent=p.own?(p.name||'?'):'Wild Specimen';n.style.color=p.own?(p.gc||'var(--cream)'):'var(--cream)';}
   var g=document.getElementById('wtp-grade');
   if(g){
     if(p.own){g.textContent=(p.grade||'COMMON').toUpperCase();g.style.color=p.gc;}
@@ -28600,7 +28608,13 @@ function _unsubscribeSharedDrops(){
 function _addSharedMarker(p){
   if(!_map)return null;
   var sz=p.own?40:26,svg='';
-  if(window._generatePlantSVG&&p.hash){try{svg=window._generatePlantSVG(p.hash,sz);}catch(e){}}
+  if(p.own){
+    // Own plants: show the actual procedural SVG
+    if(window._generatePlantSVG&&p.hash){try{svg=window._generatePlantSVG(p.hash,sz);}catch(e){}}
+  } else {
+    // Non-owned: generic leaf icon — rarity is a mystery
+    svg='<img src="assets/games/wild/wild-marker-common-v2.png" style="width:'+sz+'px;height:'+sz+'px;filter:drop-shadow(0 0 4px rgba(122,179,86,0.3));" alt="">';
+  }
   if(!svg||svg.length<30){var fc=p.own?'#7ab356':'#5a7050';svg='<svg viewBox="0 0 30 40" width="'+sz+'" height="'+Math.round(sz*40/30)+'" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="30" width="14" height="10" rx="2" fill="#5a3a1f"/><line x1="15" y1="30" x2="15" y2="12" stroke="#3A5C2A" stroke-width="3" stroke-linecap="round"/><ellipse cx="8" cy="18" rx="7" ry="5" fill="'+fc+'" opacity="0.85" transform="rotate(-20 8 18)"/><ellipse cx="22" cy="15" rx="7" ry="5" fill="'+fc+'" opacity="0.8" transform="rotate(15 22 15)"/></svg>';}
   var info=_buildInfo(p.hash);
   var tagColor=p.own?info.gc:'var(--muted)';
