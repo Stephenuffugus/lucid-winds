@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.01.2';
+  var LW_VERSION='2026.04.01.3';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3350,6 +3350,15 @@
 /* ── FIREFLIES (night mode only) ── */
 .firefly{position:fixed;width:3px;height:3px;background:rgba(200,200,100,0.8);border-radius:50%;pointer-events:none;z-index:453;box-shadow:0 0 6px rgba(200,200,100,0.5),0 0 12px rgba(200,200,100,0.2);}
 @keyframes fireflyFloat{0%{opacity:0;transform:translate(0,0);}20%{opacity:0.8;}50%{opacity:0.3;transform:translate(var(--fx,30px),var(--fy,-40px));}80%{opacity:0.7;}100%{opacity:0;transform:translate(var(--fx2,-20px),var(--fy2,30px));}}
+
+/* ── FERAL COLLECTION BURST ── */
+@keyframes feralFlash{0%{opacity:0.4;}100%{opacity:0;}}
+@keyframes feralParticle{0%{opacity:1;transform:translate(-50%,-50%) translate(0,0) scale(1);}100%{opacity:0;transform:translate(-50%,-50%) translate(var(--fdx),var(--fdy)) scale(0.3);}}
+@keyframes feralLabel{0%{opacity:0;transform:scale(0.5);}30%{opacity:1;transform:scale(1.1);}60%{opacity:1;transform:scale(1);}100%{opacity:0;transform:scale(1) translateY(-10px);}}
+
+/* ── BIOLUMINESCENT TRAIL ── */
+.trail-glow{filter:drop-shadow(0 0 4px rgba(122,179,86,0.4)) drop-shadow(0 0 8px rgba(122,179,86,0.15));animation:trailBreath 6s ease-in-out infinite;}
+@keyframes trailBreath{0%,100%{opacity:0.7;}50%{opacity:1;}}
 
 /* ── DRIFTING FOG WISPS ── */
 .map-fog{position:fixed;inset:0;z-index:448;pointer-events:none;overflow:hidden;opacity:0.5;}
@@ -27245,7 +27254,7 @@ function _afRecordDrop(){
   _afSaveCache(s);
   _afWriteServer({drops:s.drops});
 }
-var _map=null,_uM=null,_uLat=null,_uLng=null,_trail=[],_tLine=null,_inited=false;
+var _map=null,_uM=null,_uLat=null,_uLng=null,_trail=[],_tLine=null,_tGlow=null,_inited=false;
 var _drops=0,_pouch=[],_sel=null,_selMk=null,_menuOpen=false,_tt=null;
 var _lastGeoTime=0,_lastGeoLat=0,_lastGeoLng=0,_speedKmh=0;
 // ── Shared drop real-time listener state ──
@@ -27468,7 +27477,12 @@ function _initGeo(){
     if(_uM)_uM.setLatLng([_uLat,_uLng]);
     if(_scanRing)_scanRing.setLatLng([_uLat,_uLng]);
     _trail.push([_uLat,_uLng]);
-    if(_tLine)_tLine.setLatLngs(_trail);else if(_map)_tLine=L.polyline(_trail,{color:'rgba(122,179,86,0.2)',weight:3,lineCap:'round'}).addTo(_map);
+    if(_tLine){_tLine.setLatLngs(_trail);if(_tGlow)_tGlow.setLatLngs(_trail);}
+    else if(_map){
+      // Bioluminescent trail — outer glow + inner bright line
+      _tGlow=L.polyline(_trail,{color:'rgba(122,179,86,0.08)',weight:14,lineCap:'round',lineJoin:'round',interactive:false}).addTo(_map);
+      _tLine=L.polyline(_trail,{color:'rgba(122,179,86,0.3)',weight:4,lineCap:'round',lineJoin:'round',interactive:false,className:'trail-glow'}).addTo(_map);
+    }
   },null,{enableHighAccuracy:true,maximumAge:5000});}catch(e){}
   // ═══ COMPASS — device orientation ═══
   _initCompass();
@@ -27759,9 +27773,44 @@ function _doCollectFeral(f,mk){
   var reward=dewReward[info.grade]||1;
   if(window.earnHashes)window.earnHashes(reward);
   _e('progress');
-  _toast('\ud83c\udf1f Feral seed collected! +'+reward+' Dew Drops');
+  // Feral collection animation — seed crack burst
+  _feralBurst(info.grade,info.gc,info.nm,reward);
   if(typeof gtag!=='undefined') gtag('event','feral_collected',{grade:info.grade,dew_reward:reward});
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
+}
+
+// ═══ FERAL COLLECTION BURST ═══
+function _feralBurst(grade,gc,name,reward){
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;z-index:9999;pointer-events:none;display:flex;align-items:center;justify-content:center;';
+  // Flash
+  var flash=document.createElement('div');
+  flash.style.cssText='position:absolute;inset:0;background:'+gc+';opacity:0;animation:feralFlash 0.6s ease-out forwards;';
+  overlay.appendChild(flash);
+  // Particles burst
+  for(var i=0;i<12;i++){
+    var p=document.createElement('div');
+    var angle=(i*30)*Math.PI/180;
+    var dist=40+Math.random()*60;
+    var dx=Math.cos(angle)*dist;
+    var dy=Math.sin(angle)*dist;
+    var sz=3+Math.random()*4;
+    p.style.cssText='position:absolute;width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+gc+';top:50%;left:50%;box-shadow:0 0 6px '+gc+';opacity:0;animation:feralParticle 0.8s ease-out forwards;--fdx:'+dx+'px;--fdy:'+dy+'px;';
+    overlay.appendChild(p);
+  }
+  // Grade label
+  var label=document.createElement('div');
+  label.style.cssText='position:relative;font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:'+gc+';letter-spacing:0.1em;text-shadow:0 0 20px '+gc+',0 2px 8px rgba(0,0,0,0.8);opacity:0;animation:feralLabel 1.5s ease-out 0.3s forwards;';
+  label.textContent=grade.toUpperCase();
+  overlay.appendChild(label);
+  // Reward text
+  var rw=document.createElement('div');
+  rw.style.cssText='position:absolute;top:calc(50% + 30px);font-family:DM Mono,monospace;font-size:0.45rem;color:var(--cream);opacity:0;animation:feralLabel 1.2s ease-out 0.5s forwards;text-shadow:0 1px 4px rgba(0,0,0,0.8);';
+  rw.textContent=name+' +'+reward+' Dew';
+  overlay.appendChild(rw);
+  document.body.appendChild(overlay);
+  try{navigator.vibrate&&navigator.vibrate([20,40,30]);}catch(e){}
+  setTimeout(function(){overlay.remove();},2200);
 }
 
 // ═══ PLANT INFO BUILDER ═══
