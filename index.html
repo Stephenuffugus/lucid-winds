@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.01.7';
+  var LW_VERSION='2026.04.01.8';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3355,6 +3355,14 @@
 /* ── FIREFLIES (night mode only) ── */
 .firefly{position:fixed;width:3px;height:3px;background:rgba(200,200,100,0.8);border-radius:50%;pointer-events:none;z-index:453;box-shadow:0 0 6px rgba(200,200,100,0.5),0 0 12px rgba(200,200,100,0.2);}
 @keyframes fireflyFloat{0%{opacity:0;transform:translate(0,0);}20%{opacity:0.8;}50%{opacity:0.3;transform:translate(var(--fx,30px),var(--fy,-40px));}80%{opacity:0.7;}100%{opacity:0;transform:translate(var(--fx2,-20px),var(--fy2,30px));}}
+
+/* ── PROXIMITY PULSE — nearby wild plants ── */
+.wild-prox-near{animation:proxNear 2s ease-in-out infinite!important;}
+.wild-prox-close{animation:proxClose 1.2s ease-in-out infinite!important;filter:drop-shadow(0 0 8px rgba(200,168,75,0.4))!important;}
+.wild-prox-close::after{content:'';position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px var(--gold);animation:proxDot 1.2s ease-in-out infinite;}
+@keyframes proxNear{0%,100%{transform:scale(1);filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));}50%{transform:scale(1.08);filter:drop-shadow(0 2px 8px rgba(122,179,86,0.3));}}
+@keyframes proxClose{0%,100%{transform:scale(1);filter:drop-shadow(0 0 6px rgba(200,168,75,0.3));}50%{transform:scale(1.12);filter:drop-shadow(0 0 12px rgba(200,168,75,0.5));}}
+@keyframes proxDot{0%,100%{opacity:0.5;transform:translateX(-50%) scale(0.8);}50%{opacity:1;transform:translateX(-50%) scale(1.2);}}
 
 /* ── FERAL COLLECTION BURST ── */
 @keyframes feralFlash{0%{opacity:0.4;}100%{opacity:0;}}
@@ -6358,6 +6366,60 @@ document.addEventListener('keydown', function(e) {
     ns.connect(bp2); bp2.connect(ng); ng.connect(_masterGain); ns.start(now);
   }
 
+  // ── Wild Ambient Sound ──
+  var _ambientNode=null,_ambientGain=null;
+  function startWildAmbient(){
+    if(_ambientNode||!_enabled)return;
+    var ctx=_getCtx();if(!ctx||ctx.state!=='running')return;
+    // Brown noise (wind) through low-pass filter
+    var bufSize=ctx.sampleRate*2;
+    var buf=ctx.createBuffer(1,bufSize,ctx.sampleRate);
+    var data=buf.getChannelData(0);
+    var last=0;
+    for(var i=0;i<bufSize;i++){var w=Math.random()*2-1;last=(last+0.02*w)/1.02;data[i]=last*3.5;}
+    _ambientNode=ctx.createBufferSource();
+    _ambientNode.buffer=buf;_ambientNode.loop=true;
+    var lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=400;lp.Q.value=0.5;
+    _ambientGain=ctx.createGain();_ambientGain.gain.value=0;
+    _ambientGain.gain.linearRampToValueAtTime(0.06*_volume,ctx.currentTime+2);
+    _ambientNode.connect(lp);lp.connect(_ambientGain);_ambientGain.connect(_masterGain);
+    _ambientNode.start();
+  }
+  function stopWildAmbient(){
+    if(!_ambientNode)return;
+    try{
+      if(_ambientGain){_ambientGain.gain.linearRampToValueAtTime(0,(_ctx?_ctx.currentTime:0)+1.5);}
+      setTimeout(function(){try{_ambientNode.stop();_ambientNode.disconnect();}catch(e){}finally{_ambientNode=null;_ambientGain=null;}},2000);
+    }catch(e){_ambientNode=null;_ambientGain=null;}
+  }
+  function playCollectChime(){
+    var ctx=_getCtx();if(!ctx||ctx.state!=='running'||!_enabled)return;
+    var now=ctx.currentTime;
+    // Rising three-note chime (pentatonic: C5, E5, G5)
+    var freqs=[523,659,784];
+    for(var i=0;i<freqs.length;i++){
+      var osc=ctx.createOscillator();osc.type='sine';osc.frequency.value=freqs[i];
+      var g=ctx.createGain();g.gain.setValueAtTime(0,now+i*0.12);
+      g.gain.linearRampToValueAtTime(0.12*_volume,now+i*0.12+0.03);
+      g.gain.exponentialRampToValueAtTime(0.001,now+i*0.12+0.6);
+      osc.connect(g);g.connect(_masterGain);osc.start(now+i*0.12);osc.stop(now+i*0.12+0.7);
+    }
+  }
+  function playRevealFanfare(grade){
+    var ctx=_getCtx();if(!ctx||ctx.state!=='running'||!_enabled)return;
+    var now=ctx.currentTime;
+    // Grade determines richness: more notes for rarer plants
+    var bases={Common:[262,330],Uncommon:[262,330,392],Rare:[262,330,392,523],Epic:[262,330,392,523,659],Legendary:[262,330,392,523,659,784],Mythic:[262,330,392,523,659,784,988],Cosmic:[262,330,392,523,659,784,988,1047]};
+    var freqs=bases[grade]||bases.Common;
+    for(var i=0;i<freqs.length;i++){
+      var osc=ctx.createOscillator();osc.type=i<3?'sine':'triangle';osc.frequency.value=freqs[i];
+      var g=ctx.createGain();g.gain.setValueAtTime(0,now+i*0.1);
+      g.gain.linearRampToValueAtTime(0.1*_volume,now+i*0.1+0.04);
+      g.gain.exponentialRampToValueAtTime(0.001,now+i*0.1+0.8);
+      osc.connect(g);g.connect(_masterGain);osc.start(now+i*0.1);osc.stop(now+i*0.1+0.9);
+    }
+  }
+
   // ── Public API ──
   window.FG_Audio = {
     setEnabled: function(b){
@@ -6380,6 +6442,10 @@ document.addEventListener('keydown', function(e) {
       if(_prewarmed) _applySoundscapeTier(tier);
     },
     getRarityTier: getRarityTier,
+    startWildAmbient: startWildAmbient,
+    stopWildAmbient: stopWildAmbient,
+    playCollectChime: playCollectChime,
+    playRevealFanfare: playRevealFanfare,
     get enabled(){ return _enabled; }
   };
 
@@ -24298,8 +24364,8 @@ document.addEventListener('keydown', function(e) {
     // Map overlays — show on Wild tab regardless of backpack state
     var vig=document.querySelector('.map-vignette');
     var glass=document.querySelector('.map-glass-highlight');
-    if(tab==='wild'){if(vig)vig.style.display='block';if(glass)glass.style.display='block';_startPollenParticles();}
-    else{if(vig)vig.style.display='none';if(glass)glass.style.display='none';_stopPollenParticles();if(window.FG_Wild&&FG_Wild._unsubShared)FG_Wild._unsubShared();}
+    if(tab==='wild'){if(vig)vig.style.display='block';if(glass)glass.style.display='block';_startPollenParticles();if(window.FG_Audio&&FG_Audio.enabled)try{FG_Audio.startWildAmbient();}catch(e){}}
+    else{if(vig)vig.style.display='none';if(glass)glass.style.display='none';_stopPollenParticles();if(window.FG_Wild&&FG_Wild._unsubShared)FG_Wild._unsubShared();if(window.FG_Audio)try{FG_Audio.stopWildAmbient();}catch(e){}}
     // Show/hide backpack + drop FAB on Wild tab
     if (window.FG_Backpack) {
       if (tab === 'wild') { FG_Backpack.show(); FG_Backpack.init(); }
@@ -27467,6 +27533,31 @@ function _stopSeasonalParticles(){
   if(_seasonParticleTimer){clearInterval(_seasonParticleTimer);_seasonParticleTimer=null;}
 }
 
+// ═══ PROXIMITY PULSE — nearby plants glow brighter ═══
+function _updateProximity(){
+  if(!_uLat||!_uLng)return;
+  var hashes=Object.keys(_sharedMarkers);
+  for(var i=0;i<hashes.length;i++){
+    var entry=_sharedMarkers[hashes[i]];
+    if(!entry||!entry.data||!entry.marker)continue;
+    var d=entry.data;
+    if(!d.lat)continue;
+    var dist=_dist(_uLat,_uLng,d.lat,d.lng);
+    var el=entry.marker.getElement();
+    if(!el)continue;
+    if(dist<=COLLECT_RANGE){
+      // In range — bright pulse + collectible indicator
+      el.className='leaflet-marker-icon leaflet-zoom-animated leaflet-interactive wild-prox-close';
+    } else if(dist<=150){
+      // Approaching — gentle pulse
+      el.className='leaflet-marker-icon leaflet-zoom-animated leaflet-interactive wild-prox-near';
+    } else {
+      // Far — normal
+      el.className='leaflet-marker-icon leaflet-zoom-animated leaflet-interactive';
+    }
+  }
+}
+
 // ═══ STEP COUNTER MILESTONES ═══
 var _lastStepMilestone=0;
 function _checkStepMilestone(){
@@ -27504,6 +27595,7 @@ function _initGeo(){
     _lastGeoTime=_now;_lastGeoLat=nL;_lastGeoLng=nN;
     if(_uM)_uM.setLatLng([_uLat,_uLng]);
     if(_scanRing)_scanRing.setLatLng([_uLat,_uLng]);
+    _updateProximity();
     _trail.push([_uLat,_uLng]);
     if(_tLine){_tLine.setLatLngs(_trail);if(_tGlow)_tGlow.setLatLngs(_trail);}
     else if(_map){
@@ -27803,6 +27895,7 @@ function _doCollectFeral(f,mk){
   _e('progress');
   // Feral collection animation — seed crack burst
   _feralBurst(info.grade,info.gc,info.nm,reward);
+  if(window.FG_Audio&&FG_Audio.enabled)try{FG_Audio.playCollectChime();}catch(e){}
   if(typeof gtag!=='undefined') gtag('event','feral_collected',{grade:info.grade,dew_reward:reward});
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
 }
@@ -33404,10 +33497,13 @@ function _showNext(){
   // Set up click to flip
   overlay.onclick=function(){
     if(!card.classList.contains('flipped')){
-      _flipReveal(_queue[_idx]);
+      var _revPlant=_queue[_idx];
+      _flipReveal(_revPlant);
       card.classList.add('flipped');
       if(tapEl)tapEl.textContent='tap for next';
       try{navigator.vibrate&&navigator.vibrate([15,50,25]);}catch(e){}
+      // Play grade-appropriate fanfare
+      if(window.FG_Audio&&FG_Audio.enabled){try{var _rg='Common';if(window.hashToTraits&&window.getTerraGrade&&_revPlant.hash){_rg=window.getTerraGrade(window.hashToTraits(_revPlant.hash)).label||'Common';}FG_Audio.playRevealFanfare(_rg);}catch(e){}}
     } else {
       _idx++;
       if(_idx<_queue.length){_showNext();}
