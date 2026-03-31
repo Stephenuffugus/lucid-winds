@@ -3027,9 +3027,7 @@
     .gc-fnd{background-color:rgba(26,31,23,.5);background-size:50%;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(74,124,53,.2)}
     .gc-disc{box-shadow:inset 0 0 0 99px rgba(200,168,78,.12);border:2px solid rgba(200,168,78,.35);color:var(--gold);font-size:clamp(.8rem,2.5vw,1rem);font-weight:800}
     .gc-red{color:#daa520}
-    .gc-stk{display:flex;flex-direction:column;min-width:clamp(56px,13.5vw,110px)}
-    .gc-stk .gc{height:clamp(22px,5.5vw,32px);align-items:flex-start;padding-top:2px;font-size:clamp(.6rem,1.8vw,.8rem)}
-    .gc-stk .gc:last-child{height:clamp(78px,19vw,154px)}
+    .gc-stk{display:flex;flex-direction:column}
     .gc:active{transform:scale(.95);transition-duration:.06s}
     /* ── Pyramid / TriPeaks cards ── */
     .tpc{width:clamp(48px,12vw,80px);height:clamp(67px,16.8vw,112px);border-radius:clamp(4px,1vw,8px);display:inline-flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-size:clamp(.7rem,2.2vw,1rem);font-weight:700;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s;box-shadow:0 2px 6px rgba(0,0,0,.25)}
@@ -28361,7 +28359,7 @@ function ms(a,x){
   var isSol=document.body.classList.contains('sol-fs');
   var tb=document.createElement('div');
   tb.className='gu-bar';
-  tb.innerHTML=(isSol?'<button class="gu-btn" onclick="_solExitFS()" title="Back" style="opacity:1;font-size:clamp(.7rem,2vw,.9rem)">&#9664;</button>':'')
+  tb.innerHTML=(isSol?'<button onclick="_solExitFS()" style="background:rgba(74,124,53,.2);border:1px solid rgba(74,124,53,.35);border-radius:6px;color:var(--sage);font-family:DM Sans,sans-serif;font-size:clamp(.5rem,1.4vw,.65rem);font-weight:700;padding:4px 10px;cursor:pointer;display:flex;align-items:center;gap:4px;min-height:32px;-webkit-tap-highlight-color:transparent">&#9664; GAMES</button>':'')
     +'<div class="gu-left">'+(x||'')+'</div>'
     +'<div class="gu-right">'
     +'<span class="gh">\u26A1<strong id="_h">'+_m+'</strong></span>'
@@ -30092,8 +30090,9 @@ function GGF(a){
     if(sc)sc.textContent=countLeft();
 
     // Top row: stock, waste, score
+    var gfW='clamp(46px,12.5vw,80px)',gfH='clamp(64px,17.5vw,112px)',gfF='clamp(.6rem,1.8vw,.85rem)';
     var topRow=document.createElement('div');
-    topRow.style.cssText='display:flex;gap:clamp(4px,1.2vw,6px);justify-content:center;padding:clamp(2px,1vw,4px) 0;width:clamp(320px,100vw,680px);margin:0 auto;align-items:center';
+    topRow.style.cssText='display:flex;gap:clamp(2px,.8vw,4px);justify-content:center;padding:clamp(2px,1vw,4px) 0;width:clamp(320px,100vw,680px);margin:0 auto;align-items:center';
 
     // Stock
     var stEl=document.createElement('div');
@@ -30107,6 +30106,7 @@ function GGF(a){
       stEl.className='gc gc-empty';
       stEl.innerHTML='<span style="color:var(--muted);font-size:clamp(.5rem,1.5vw,.7rem)">empty</span>';
     }
+    stEl.style.width=gfW;stEl.style.height=gfH;
     topRow.appendChild(stEl);
 
     // Waste
@@ -30118,6 +30118,7 @@ function GGF(a){
     }else{
       wEl.className='gc gc-empty';
     }
+    wEl.style.width=gfW;wEl.style.height=gfH;
     topRow.appendChild(wEl);
 
     // Spacer
@@ -30133,19 +30134,20 @@ function GGF(a){
 
     // Tableau
     var tabRow=document.createElement('div');
-    tabRow.style.cssText='display:flex;gap:clamp(3px,1vw,5px);justify-content:center;padding:clamp(2px,.8vw,3px) 0;width:clamp(320px,100vw,680px);margin:0 auto';
+    tabRow.style.cssText='display:flex;gap:clamp(2px,.8vw,4px);justify-content:center;padding:clamp(2px,.8vw,3px) 0;width:clamp(320px,100vw,680px);margin:0 auto';
 
     for(var c=0;c<7;c++){
       var colDiv=document.createElement('div');
-      colDiv.className='gc-stk';
+      colDiv.className='gc-stk';colDiv.style.minWidth=gfW;
 
       if(cols[c].length===0){
         var em=document.createElement('div');
-        em.className='gc gc-empty';
+        em.className='gc gc-empty';em.style.width=gfW;em.style.height=gfH;
         colDiv.appendChild(em);
       }else{
         for(var i=0;i<cols[c].length;i++){
           var cd=_cdEl(cols[c][i]);
+          cd.style.width=gfW;cd.style.height=gfH;cd.style.fontSize=gfF;
           if(i===cols[c].length-1){
             cd.style.cursor='pointer';
             (function(ci){cd.onclick=function(){tapCol(ci)}})(c);
@@ -30599,18 +30601,19 @@ function GSP(a){
     info.textContent=completed+'/8 runs';topRow.appendChild(info);
     gd.appendChild(topRow);
     var tabRow=document.createElement('div');
-    tabRow.style.cssText='display:flex;gap:clamp(1px,.4vw,3px);justify-content:center;padding:clamp(2px,1vw,4px) 0;width:clamp(320px,100vw,740px);margin:0 auto';
+    var spW='clamp(34px,9vw,60px)',spH='clamp(48px,12.6vw,84px)',spF='clamp(.5rem,1.4vw,.65rem)';
+    tabRow.style.cssText='display:flex;gap:clamp(1px,.3vw,2px);justify-content:center;padding:clamp(2px,1vw,4px) 0;width:clamp(320px,99vw,700px);margin:0 auto';
     for(var c=0;c<10;c++){
       var colDiv=document.createElement('div');colDiv.className='gc-stk';
-      colDiv.style.cssText='min-width:clamp(42px,9.5vw,64px)';
+      colDiv.style.minWidth=spW;
       if(tab[c].length===0){
-        var em=document.createElement('div');em.className='gc gc-empty';em.style.width='clamp(42px,9.5vw,64px)';em.style.height='clamp(59px,13.3vw,90px)';
+        var em=document.createElement('div');em.className='gc gc-empty';em.style.width=spW;em.style.height=spH;
         (function(ci){em.onclick=function(){tapCol(ci)}})(c);
         colDiv.appendChild(em);
       }else{
         for(var i=0;i<tab[c].length;i++){
           var cd=_cdEl(tab[c][i]);
-          cd.style.width='clamp(42px,9.5vw,64px)';cd.style.height='clamp(59px,13.3vw,90px)';cd.style.fontSize='clamp(.55rem,1.6vw,.75rem)';
+          cd.style.width=spW;cd.style.height=spH;cd.style.fontSize=spF;
           if(sel&&sel.col===c&&i>=sel.idx)cd.className+=' gc-sel';
           (function(ci,ii){cd.onclick=function(){tapCol(ci,ii)}})(c,i);
           colDiv.appendChild(cd);
