@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.01.11';
+  var LW_VERSION='2026.04.01.12';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -28821,6 +28821,8 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
       }
     }
   });
+  // URL shortcut: ?dev=lucid2026 opens dev panel immediately
+  try{var _devParam=new URLSearchParams(window.location.search).get('dev');if(_devParam==='lucid2026'){document.getElementById('pw-dev-admin').classList.add('open');}}catch(e){}
 })();
 </script>
 
