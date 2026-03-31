@@ -2852,6 +2852,8 @@
     #fg-ag{display:none;flex-direction:column;padding:0 0 calc(var(--nav-h,58px) + var(--sb,0px)) 0;touch-action:pan-y;}
     #fg-ag.on{display:flex}
     #fg-ag.sol{background:radial-gradient(ellipse at 50% 30%,rgba(18,32,14,.95) 0%,rgba(8,14,6,.98) 60%,rgba(4,8,3,1) 100%);position:relative;z-index:1}
+    #fg-ag.sol-fs{padding-bottom:0;position:fixed;inset:0;z-index:1000;overflow-y:auto}
+    body.sol-fs .fg-bottomnav,body.sol-fs .fg-pk,body.sol-fs .game-header,body.sol-fs #gp-strip{display:none!important}
 
     /* ══════════════════════════════════════════════════════════════════════
        SHARED COMPONENTS — consistent across all 21 games
@@ -24007,6 +24009,8 @@ document.addEventListener('keydown', function(e) {
   window.switchTab = function(tab) {
     _haptic('tab');
     if(typeof gtag!=='undefined') gtag('event','tab_switch',{tab:tab});
+    // Exit solitaire fullscreen when switching tabs
+    if(document.body.classList.contains('sol-fs')&&window._solExitFS){document.body.classList.remove('sol-fs');var _ag=document.getElementById('fg-ag');if(_ag)_ag.classList.remove('sol-fs')}
 
     // ═══ Tab background switching (set-38) ═══
     var _tabBgNames=['game','greenhouse','nursery','wild','dashboard','binder'];
@@ -28341,10 +28345,24 @@ window._playWin=_playWin;
 function _st(){_s=Date.now();if(_t)clearInterval(_t);_t=setInterval(function(){var e=document.getElementById('_tt');if(!e)return;var s=Math.floor((Date.now()-_s)/1000);e.textContent=Math.floor(s/60)+':'+(s%60<10?'0':'')+(s%60)},500)}
 function _xt(){if(_t){clearInterval(_t);_t=null}}
 function sm(t){var m=document.getElementById('_gm');if(m)m.textContent=t}
+function _solEnterFS(){
+  var ag=document.getElementById('fg-ag');
+  if(ag){ag.classList.add('sol-fs')}
+  document.body.classList.add('sol-fs');
+}
+function _solExitFS(){
+  var ag=document.getElementById('fg-ag');
+  if(ag){ag.classList.remove('sol-fs')}
+  document.body.classList.remove('sol-fs');
+  window._sg('set');
+}
+window._solExitFS=_solExitFS;
 function ms(a,x){
+  var isSol=document.body.classList.contains('sol-fs');
   var tb=document.createElement('div');
   tb.className='gu-bar';
-  tb.innerHTML='<div class="gu-left">'+(x||'')+'</div>'
+  tb.innerHTML=(isSol?'<button class="gu-btn" onclick="_solExitFS()" title="Back" style="opacity:1;font-size:clamp(.7rem,2vw,.9rem)">&#9664;</button>':'')
+    +'<div class="gu-left">'+(x||'')+'</div>'
     +'<div class="gu-right">'
     +'<span class="gh">\u26A1<strong id="_h">'+_m+'</strong></span>'
     +' \u00B7 \u23F1<span id="_tt">0:00</span>'
@@ -28386,8 +28404,9 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;_m=Math.m
   document.querySelectorAll('.fg-c').forEach(function(c){c.classList.toggle('on',c.getAttribute('data-g')===id)});
   var sw=document.getElementById('sw'),ag=document.getElementById('fg-ag'),gps=document.getElementById('gp-strip');
   var _solGames={golf:1,klondike:1,spider:1,freecell:1,pyramid:1,tripeaks:1};
-  if(id==='set'){sw.style.display='';ag.classList.remove('on');ag.classList.remove('sol');ag.innerHTML='';if(gps){gps.classList.add('on');try{_updateGP()}catch(e){}}return}
+  if(id==='set'){_solExitFS();sw.style.display='';ag.classList.remove('on');ag.classList.remove('sol');ag.innerHTML='';if(gps){gps.classList.add('on');try{_updateGP()}catch(e){}}return}
   sw.style.display='none';ag.classList.add('on');ag.classList.toggle('sol',!!_solGames[id]);ag.innerHTML='';
+  if(_solGames[id]){_solEnterFS()}else{_solExitFS()}
   if(gps){gps.classList.add('on');try{_updateGP()}catch(e){console.warn('[GP]',e)}}
   var gi=null;for(var i=0;i<G.length;i++)if(G[i].id===id){gi=G[i];break}
   if(gi){var r=document.createElement('div');r.className='gr';r.textContent='📖 '+gi.r;ag.appendChild(r)}
