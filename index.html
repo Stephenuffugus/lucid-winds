@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.01.14';
+  var LW_VERSION='2026.04.01.15';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3723,22 +3723,22 @@
     .cs-close{position:fixed;top:calc(0.5rem + env(safe-area-inset-top, 0px));right:0.5rem;width:36px;height:36px;border-radius:50%;border:2px solid rgba(74,124,53,0.15);background:rgba(26,36,22,0.6);color:var(--muted);font-size:0.75rem;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:99999;}
     /* ═══ BACKPACK SYSTEM CSS (from demo) ═══ */
 /* ═══ BACKPACK ═══ */
-#bpi{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 8px);left:12px;z-index:999;width:52px;height:52px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 10px rgba(0,0,0,0.6));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat}
+#bpi{position:fixed;top:calc(64px + env(safe-area-inset-top,0px));right:12px;z-index:999;width:52px;height:52px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 10px rgba(0,0,0,0.6));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat}
 #bpi:active{transform:scale(0.88);}
-#bpb{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;border-radius:10px;background:var(--gold);color:var(--black);font-family:'Bebas Neue',sans-serif;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,0.4);transition:all 0.25s ease;}
+#bpb{position:absolute;top:-4px;left:-4px;min-width:20px;height:20px;border-radius:10px;background:var(--gold);color:var(--black);font-family:'Bebas Neue',sans-serif;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,0.4);transition:all 0.25s ease;}
 #bpb.e{opacity:0;transform:scale(0.5);}
 #bpe{position:fixed;inset:0;z-index:998;display:none;pointer-events:none;}
 #bpe.open{display:block;pointer-events:auto;}
 #bpbk{position:absolute;inset:0;background:rgba(8,10,7,0.6);opacity:0;transition:opacity 0.3s;backdrop-filter:blur(3px);}
 #bpe.open #bpbk{opacity:1;}
-#bpp{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 62px);left:10px;width:68px;max-height:calc(100vh - 180px);overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column-reverse;gap:8px;padding:4px;z-index:999;opacity:0;transform:translateY(24px);transition:opacity 0.3s ease 0.05s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.05s;scrollbar-width:none;}
+#bpp{position:fixed;top:calc(120px + env(safe-area-inset-top,0px));right:10px;width:68px;max-height:calc(100vh - 240px);overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:8px;padding:4px;z-index:999;opacity:0;transform:translateY(-24px);transition:opacity 0.3s ease 0.05s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.05s;scrollbar-width:none;}
 #bpp::-webkit-scrollbar{display:none;}
 #bpe.open #bpp{opacity:1;transform:translateY(0);}
-#bps{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 8px);left:72px;right:72px;height:48px;overflow-x:auto;overflow-y:hidden;display:flex;gap:6px;align-items:center;padding:2px 6px;z-index:999;opacity:0;transform:translateX(-24px);transition:opacity 0.3s ease 0.15s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.15s;scrollbar-width:none;}
+#bps{position:fixed;top:calc(68px + env(safe-area-inset-top,0px));right:70px;left:12px;height:48px;overflow-x:auto;overflow-y:hidden;display:flex;gap:6px;align-items:center;padding:2px 6px;z-index:999;opacity:0;transform:translateX(24px);transition:opacity 0.3s ease 0.15s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.15s;scrollbar-width:none;}
 #bps::-webkit-scrollbar{display:none;}
 #bpe.open #bps{opacity:1;transform:translateX(0);}
 /* Return to Base button */
-#bp-rtb{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 62px);right:12px;z-index:999;min-width:100px;height:40px;border-radius:20px;border:1.5px solid rgba(200,168,75,0.3);background:rgba(13,16,12,0.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.5rem;letter-spacing:0.06em;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 14px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(0,0,0,0.4);-webkit-tap-highlight-color:transparent;}
+#bp-rtb{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom,0px) + 8px);left:12px;z-index:999;min-width:100px;height:40px;border-radius:20px;border:1.5px solid rgba(200,168,75,0.3);background:rgba(13,16,12,0.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.5rem;letter-spacing:0.06em;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 14px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(0,0,0,0.4);-webkit-tap-highlight-color:transparent;}
 #bp-rtb:active{transform:scale(0.92);box-shadow:0 2px 8px rgba(0,0,0,0.3);}
 #bp-rtb.on-cooldown{border-color:rgba(138,145,121,0.15);color:var(--muted);opacity:0.7;}
 #bp-rtb .rtb-timer{font-family:'DM Mono',monospace;font-size:0.38rem;color:var(--muted);}
@@ -3796,7 +3796,7 @@
 .se{width:42px;height:42px;flex-shrink:0;border-radius:50%;border:1.5px dashed rgba(200,168,75,0.08);opacity:0.2;}
 
 /* Drop FAB */
-#dfb{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 4px);right:12px;z-index:999;width:54px;height:54px;border-radius:50%;border:2px solid rgba(200,168,75,.3);cursor:pointer;background:rgba(26,36,22,.85) url('assets/games/wild/wild-drop-fab-v4.png') center/70% no-repeat;box-shadow:0 4px 16px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;transition:transform 0.15s;}
+#dfb{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom,0px) + 8px);right:12px;z-index:999;width:54px;height:54px;border-radius:50%;border:2px solid rgba(200,168,75,.3);cursor:pointer;background:rgba(26,36,22,.85) url('assets/games/wild/wild-drop-fab-v4.png') center/70% no-repeat;box-shadow:0 4px 16px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;transition:transform 0.15s;}
 @keyframes fr{0%,100%{box-shadow:0 4px 20px rgba(42,92,42,0.5),0 0 0 3px rgba(122,179,86,0.08)}50%{box-shadow:0 6px 24px rgba(42,92,42,0.6),0 0 0 5px rgba(122,179,86,0.12)}}
 #dfb:active{transform:scale(0.9);animation:none;}
 #dbb{position:absolute;top:-3px;right:-3px;width:20px;height:20px;border-radius:50%;background:var(--sage);color:var(--black);font-family:'Bebas Neue',sans-serif;font-size:11px;display:flex;align-items:center;justify-content:center;pointer-events:none;}
@@ -3804,7 +3804,7 @@
 @keyframes dw{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
 
 /* ═══ PLANT INFO CARD (tap plant in backpack) ═══ */
-#pic{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 8px);left:80px;right:16px;z-index:1002;background:rgba(13,16,12,0.97);border:1px solid rgba(74,124,53,0.12);border-radius:14px;padding:14px;box-shadow:0 16px 48px rgba(0,0,0,0.6);display:none;opacity:0;transition:opacity 0.2s,transform 0.2s;transform:translateY(10px);}
+#pic{position:fixed;top:calc(120px + env(safe-area-inset-top,0px));left:12px;right:80px;z-index:1002;background:rgba(13,16,12,0.97);border:1px solid rgba(74,124,53,0.12);border-radius:14px;padding:14px;box-shadow:0 16px 48px rgba(0,0,0,0.6);display:none;opacity:0;transition:opacity 0.2s,transform 0.2s;transform:translateY(10px);}
 #pic.show{display:block;opacity:1;transform:translateY(0);}
 #pic .pic-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
 #pic .pic-plant{width:48px;height:48px;border-radius:8px;display:flex;align-items:center;justify-content:center;border:2px solid transparent;}
