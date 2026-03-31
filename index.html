@@ -4418,7 +4418,7 @@ window.onerror=function(msg,url,line,col,err){
       <div class="wild-log-stat"><div class="wild-log-val" id="w-count">0</div><div class="wild-log-lbl">planted</div></div>
       <div class="wild-log-stat"><div class="wild-log-val" id="w-drops-left">3</div><div class="wild-log-lbl">drops</div></div>
       <div class="wild-log-stat"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl">pollen</div></div>
-      <div class="wild-log-wind" id="w-wind">— —</div>
+      <div class="wild-log-wind" id="w-wind"><img src="assets/games/wild/wild-compass.png" style="width:24px;height:24px;opacity:.7" alt=""> —</div>
       <div id="w-needle" style="display:none;"></div><div id="w-steps" style="display:none;">0</div>
     </div>
     <!-- MAP -->
@@ -4448,15 +4448,15 @@ window.onerror=function(msg,url,line,col,err){
       <!-- Action buttons — other player's plant -->
       <div class="wtp2-actions" id="wtp-other-actions">
         <button class="wtp2-btn" onclick="FG_Wild.closeTP()"><div class="wtp2-btn-icon">✕</div><div class="wtp2-btn-lbl">Close</div></button>
-        <button class="wtp2-btn" id="wtp-inspect"><div class="wtp2-btn-icon">🔍</div><div class="wtp2-btn-lbl">Inspect</div></button>
-        <button class="wtp2-btn gold" id="wtp-act" style="display:none"><div class="wtp2-btn-icon">🎒</div><div class="wtp2-btn-lbl">Harvest</div></button>
+        <button class="wtp2-btn" id="wtp-inspect"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-inspect-btn.png" style="width:28px;height:28px" alt=""></div><div class="wtp2-btn-lbl">Inspect</div></button>
+        <button class="wtp2-btn gold" id="wtp-act" style="display:none"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-harvest-btn.png" style="width:28px;height:28px" alt=""></div><div class="wtp2-btn-lbl">Harvest</div></button>
       </div>
       <!-- Action buttons — your own plant -->
       <div class="wtp2-actions" id="wtp-own-actions" style="display:none">
         <button class="wtp2-btn" onclick="FG_Wild.closeTP()"><div class="wtp2-btn-icon">✕</div><div class="wtp2-btn-lbl">Close</div></button>
-        <button class="wtp2-btn" id="wtp-inspect2"><div class="wtp2-btn-icon">🔍</div><div class="wtp2-btn-lbl">Inspect</div></button>
-        <button class="wtp2-btn" id="wtp-water"><div class="wtp2-btn-icon">💧</div><div class="wtp2-btn-lbl">Water</div></button>
-        <button class="wtp2-btn gold" id="wtp-cross"><div class="wtp2-btn-icon">🧬</div><div class="wtp2-btn-lbl">Breed</div></button>
+        <button class="wtp2-btn" id="wtp-inspect2"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-inspect-btn.png" style="width:28px;height:28px" alt=""></div><div class="wtp2-btn-lbl">Inspect</div></button>
+        <button class="wtp2-btn" id="wtp-water"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-water-btn.png" style="width:28px;height:28px" alt=""></div><div class="wtp2-btn-lbl">Water</div></button>
+        <button class="wtp2-btn gold" id="wtp-cross"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-breed-btn.png" style="width:28px;height:28px" alt=""></div><div class="wtp2-btn-lbl">Breed</div></button>
       </div>
     </div>
     <!-- PICKER -->
@@ -27243,7 +27243,7 @@ function _spawnFerals(){
 
 function _addFeral(f){
   if(!_map||f.collected)return;
-  var h='<div style="width:24px;height:24px;position:relative;cursor:pointer;"><div style="width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#f0d060,#C8A84B,#7a5a18);box-shadow:0 0 10px rgba(200,168,75,0.5);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);animation:_fP 2.5s ease-in-out infinite;"></div><div style="width:14px;height:14px;border-radius:50%;border:1.5px solid rgba(200,168,75,0.3);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);animation:_fR 2.5s ease-out infinite;"></div><div style="position:absolute;bottom:-11px;left:50%;transform:translateX(-50%);font-family:DM Mono,monospace;font-size:0.3rem;color:var(--gold);white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,0.9);background:rgba(8,11,7,0.75);padding:1px 4px;border-radius:2px;">FERAL SEED</div></div>';
+  var h='<div style="width:32px;height:40px;position:relative;cursor:pointer;"><img src="assets/games/wild/wild-feral-marker.png" style="width:32px;height:32px;filter:drop-shadow(0 0 8px rgba(200,168,75,.5));animation:_fP 2.5s ease-in-out infinite" alt=""><div style="position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);font-family:DM Mono,monospace;font-size:0.28rem;color:var(--gold);white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.9);background:rgba(8,11,7,.8);padding:1px 4px;border-radius:2px;">FERAL</div></div>';
   var mk=L.marker([f.lat,f.lng],{icon:L.divIcon({className:'',html:h,iconSize:[24,38],iconAnchor:[12,12]}),zIndexOffset:800}).addTo(_map);
   mk.on('click',function(){_collectFeral(f,mk);});
 }
@@ -27335,7 +27335,10 @@ function _addPlant(p){
   var seasonEmb='';if(info.t&&window.getSeasonInfo){var si=window.getSeasonInfo(info.t);seasonEmb=' <span style="font-size:0.35rem;">'+si.emblem+'</span>';}
   var tag='<div style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-family:Bebas Neue,sans-serif;font-size:0.35rem;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,0.8);color:'+info.gc+';pointer-events:none;">'+info.nm+seasonEmb+'</div>';
   var th=Math.round(sz*40/30)+14;
-  var html='<div style="position:relative;width:'+(sz+6)+'px;height:'+th+'px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.6));">'
+  var isRare=info.grade&&info.grade!=='COMMON'&&info.grade!=='UNCOMMON';
+  var markerImg=isRare?'assets/games/wild/wild-marker-rare.png':'assets/games/wild/wild-marker-common.png';
+  var html='<div style="position:relative;width:'+(sz+6)+'px;height:'+th+'px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7));">'
+    +'<img src="'+markerImg+'" style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:'+(sz+10)+'px;height:'+(sz+10)+'px;opacity:.35;pointer-events:none" alt="">'
     +svg
     +tag
     +'</div>';
