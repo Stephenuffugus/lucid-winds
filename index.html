@@ -4563,8 +4563,8 @@ window.onerror=function(msg,url,line,col,err){
     <div class="wild-log">
       <div class="wild-log-stat"><div class="wild-log-val" id="w-count">0</div><div class="wild-log-lbl">planted</div></div>
       <div class="wild-log-stat"><div class="wild-log-val" id="w-drops-left">3</div><div class="wild-log-lbl">drops</div></div>
+      <div class="wild-log-stat"><div class="wild-log-val" style="color:rgba(91,175,220,0.9)" id="w-dew">0</div><div class="wild-log-lbl">dew</div></div>
       <div class="wild-log-stat"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl">pollen</div></div>
-      <div class="wild-log-steps" id="w-step-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16v-4a4 4 0 014-4h0a4 4 0 014 4v1a3 3 0 003 3h0a3 3 0 003-3V8"/></svg><span id="w-steps">0</span>m</div>
       <div class="wild-log-wind" id="w-wind"><img src="assets/games/wild/wild-compass-v4.png" style="width:44px;height:44px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));" alt=""><span></span></div>
     </div>
     <!-- MAP -->
@@ -4630,7 +4630,8 @@ window.onerror=function(msg,url,line,col,err){
   <!-- Backpack icon + badge -->
   <div id="bpi" onclick="BP.toggle()" style="display:none;"><div id="bpb" class="e">0</div></div>
   <!-- Backpack expanded L-shape -->
-  <div id="bpe"><div id="bpbk" onclick="BP.close()"></div><div id="bpp"></div><div id="bps"></div><div id="bp-rtb" onclick="BP.returnToBase()" style="display:none;"></div></div>
+  <div id="bpe"><div id="bpbk" onclick="BP.close()"></div><div id="bpp"></div><div id="bps"></div></div>
+  <div id="bp-rtb" onclick="BP.returnToBase()" style="display:none;"></div>
   <!-- Plant info card with hold-to-release -->
   <div id="pic"><div class="pic-top"><div class="pic-plant" id="pic-pl"></div><div class="pic-info"><div class="pic-name" id="pic-nm">—</div><div class="pic-grade" id="pic-gr">—</div><div class="pic-origin" id="pic-or">—</div></div><button class="pic-close" onclick="BP.cpi()">✕</button></div><div class="htc" id="htc-rel" onmousedown="BP.hts()" ontouchstart="BP.hts()" onmouseup="BP.hte()" ontouchend="BP.hte()" onmouseleave="BP.hte()"><div class="htc-fill" id="htcf"></div><span class="htc-label">HOLD TO RELEASE TO WILD</span></div></div>
   <!-- Seed info card with hold-to-send-to-nursery -->
@@ -28565,21 +28566,23 @@ function _showDefenderPicker(){
   if(sub)sub.textContent='Pick the challenge that protects your plant';
 
   var games=[
-    {id:'set',name:'Quick SET',icon:'\ud83c\udccf',desc:'Find matching sets'},
-    {id:'memory',name:'Pattern Memory',icon:'\ud83e\udde0',desc:'Remember the sequence'},
-    {id:'spot',name:'Spot Difference',icon:'\ud83d\udc41',desc:'Find what changed'},
-    {id:'color',name:'Color Match',icon:'\ud83c\udfa8',desc:'Match the swatch'},
-    {id:'math',name:'Math Sprout',icon:'\ud83d\udd22',desc:'Solve the equation'},
-    {id:'word',name:'Word Scramble',icon:'\ud83d\udcdd',desc:'Unscramble the word'}
+    {id:'set',name:'Quick SET',icon:'\ud83c\udccf',desc:'Find 3 matching cards',diff:'Easy'},
+    {id:'memory',name:'Memory',icon:'\ud83e\udde0',desc:'Remember the pattern',diff:'Medium'},
+    {id:'growth',name:'Growth',icon:'\ud83c\udf31',desc:'Order the stages',diff:'Medium'},
+    {id:'color',name:'Color',icon:'\ud83c\udfa8',desc:'Match the target hue',diff:'Easy'},
+    {id:'math',name:'Math',icon:'\ud83d\udd22',desc:'Solve the equation',diff:'Hard'},
+    {id:'word',name:'Word',icon:'\ud83d\udcdd',desc:'Unscramble letters',diff:'Hard'}
   ];
 
-  var h='';
+  var h='<div style="font-family:DM Mono,monospace;font-size:0.3rem;color:var(--muted);text-align:center;margin-bottom:6px;">Harder games are tougher for harvesters to beat</div>';
   for(var i=0;i<games.length;i++){
     var g=games[i];
-    h+='<div class="fc-card" onclick="FG_Wild._pickDefense(\''+g.id+'\')" style="flex-direction:column;gap:4px;padding:8px;">';
-    h+='<div style="font-size:1.2rem;">'+g.icon+'</div>';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;color:var(--cream);letter-spacing:0.06em;">'+g.name+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--muted);">'+g.desc+'</div>';
+    var dc=g.diff==='Easy'?'var(--sage)':g.diff==='Medium'?'var(--gold)':'#c07070';
+    h+='<div class="fc-card" onclick="FG_Wild._pickDefense(\''+g.id+'\')" style="flex-direction:column;gap:6px;padding:10px 8px;">';
+    h+='<div style="font-size:1.4rem;">'+g.icon+'</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--cream);letter-spacing:0.06em;">'+g.name+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:var(--muted);line-height:1.3;">'+g.desc+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.25rem;color:'+dc+';letter-spacing:0.06em;margin-top:auto;">'+g.diff+'</div>';
     h+='</div>';
   }
   if(board)board.innerHTML=h;
@@ -28684,6 +28687,13 @@ function _updateCounts(){
   }
   localStorage.setItem('fg_pollen_tick',String(now));
   var p=document.getElementById('w-pollen');if(p)p.textContent=total;
+  // Update Dew Drops balance display
+  try{
+    var _dlRaw=window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger');
+    var _dl=JSON.parse(_dlRaw||'{}');
+    var dewBal=Math.max(0,(_dl.earned||0)-(_dl.spent||0));
+    var dEl=document.getElementById('w-dew');if(dEl)dEl.textContent=dewBal;
+  }catch(e){}
 }
 function toggleMenu(){}
 function useFC(){}
