@@ -4748,7 +4748,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="dev-section"><div class="dev-section-title">ACCOUNT COUNTER</div><div style="font-size:0.42rem;color:var(--muted);margin-bottom:0.3rem;">Next: <span id="dev-counter-val">?</span></div><button class="dev-btn" onclick="PW_Dev.resetCounter()">↩ RESET TO 1</button></div>
     <div class="dev-section"><div class="dev-section-title">LOCAL STORAGE</div><button class="dev-btn" onclick="PW_Dev.clearLocal()">🧹 CLEAR ALL</button></div>
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
-    <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 PLANTS NEAR ME</button></div>
+    <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button></div>
     <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button></div>
     <div class="dev-section"><div class="dev-section-title">NUCLEAR</div><button class="dev-btn danger" onclick="PW_Dev.fullReset()">☢ WIPE EVERYTHING</button></div>
     <div class="dev-log" id="dev-log">Ready.\n</div>
@@ -4859,6 +4859,47 @@ window.onerror=function(msg,url,line,col,err){
       }
       localStorage.setItem('fg_wild_plants',JSON.stringify(wild));
       alert('Dropped 3 test plants! Switch to Wild tab.');
+    },
+    seedArea:function(){
+      // Seed 100 plants across a ~500m radius for ecosystem testing
+      // Creates 5 plants per zone in a 5x5 grid of ~111m zones
+      if(!confirm('Seed 100 plants in a 500m radius? (local + Firestore)'))return;
+      var cLat=40.758,cLng=-73.9855;
+      try{var w=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');if(w.length>0&&w[0].lat){cLat=w[0].lat;cLng=w[0].lng;}}catch(e){}
+      var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+      var uid='';try{var u=firebase.auth().currentUser;if(u)uid=u.uid;}catch(e){}
+      var db=null;try{db=firebase.firestore();}catch(e){}
+      var ZONE=0.001;var count=0;
+      var defGames=['set','memory','growth','color','math','word'];
+      for(var dx=-2;dx<=2;dx++){
+        for(var dy=-2;dy<=2;dy++){
+          var zoneLat=cLat+dx*ZONE;
+          var zoneLng=cLng+dy*ZONE;
+          for(var p=0;p<4;p++){
+            var h='';for(var j=0;j<64;j++)h+='0123456789abcdef'[Math.floor(Math.random()*16)];
+            var pLat=zoneLat+(Math.random()-0.5)*ZONE*0.8;
+            var pLng=zoneLng+(Math.random()-0.5)*ZONE*0.8;
+            var defGame=defGames[Math.floor(Math.random()*defGames.length)];
+            var ea=3+Math.floor(Math.random()*12);
+            var season=Math.floor(Math.random()*4);
+            var plant={lat:pLat,lng:pLng,hash:h,date:new Date().toISOString(),own:true,ownerUid:uid,ownerName:'Seed',ea:ea,defenderGame:defGame,season:season};
+            wild.push(plant);
+            // Also write to Firestore for cross-account visibility
+            if(db&&uid){
+              var zk=Math.round(pLat/ZONE)*ZONE;var zlk=Math.round(pLng/ZONE)*ZONE;
+              db.collection('wildDrops').doc(uid+'_'+h.slice(0,16)).set({
+                lat:pLat,lng:pLng,hash:h,ownerUid:uid,ownerName:'Seed',
+                ea:ea,defenderGame:defGame,season:season,status:'alive',
+                grade:'Common',zone:zk.toFixed(4)+','+zlk.toFixed(4),
+                droppedAt:new Date().toISOString()
+              }).catch(function(){});
+            }
+            count++;
+          }
+        }
+      }
+      localStorage.setItem('fg_wild_plants',JSON.stringify(wild));
+      alert('Seeded '+count+' plants across 25 zones (500m radius)!\nSwitch to Wild tab. Ferals will spawn within days.');
     },
     purgeFirestoreDrops:function(){
       if(!confirm('DELETE all wildDrops docs from Firestore? This removes every plant on the global map.'))return;
