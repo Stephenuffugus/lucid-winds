@@ -4567,6 +4567,8 @@ window.onerror=function(msg,url,line,col,err){
       <div class="wild-log-stat"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl">pollen</div></div>
       <div class="wild-log-wind" id="w-wind"><img src="assets/games/wild/wild-compass-v4.png" style="width:44px;height:44px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));" alt=""><span></span></div>
     </div>
+    <!-- RECENTER BUTTON -->
+    <button id="w-recenter" onclick="if(window.FG_Wild&&window.FG_Wild._recenter)FG_Wild._recenter();" style="display:none;position:fixed;bottom:calc(140px + env(safe-area-inset-bottom,0px));left:12px;z-index:999;width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(74,144,217,0.3);background:rgba(13,16,12,0.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,0.4);-webkit-tap-highlight-color:transparent;color:rgba(74,144,217,0.8);font-size:0.7rem;">&#8982;</button>
     <!-- MAP -->
     <div id="wild-map" style="width:100%;height:100vh;height:100dvh;min-height:250px;"></div>
     <div class="map-hex-overlay"></div>
@@ -29008,7 +29010,12 @@ function _loadSharedDropsFallback(user){
   }catch(e){}
 }
 
-return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles};
+function _recenter(){
+  if(_map&&_uLat){_map.setView([_uLat,_uLng],17,{animate:true,duration:0.6});_toast('Recentered on your location.');}
+  else{_toast('Waiting for GPS...');}
+}
+
+return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter};
 })();
 </script>
 <!-- DEV: Spawn Mythic+Cosmic (hidden — requires dev panel password) -->
@@ -33673,6 +33680,8 @@ window.FG_Backpack.show = function() {
   if (BP._rtbStartTimer) BP._rtbStartTimer();
   // Check midnight auto-deliver on Wild tab entry
   if (BP.checkMidnightDeliver) BP.checkMidnightDeliver();
+  // Show recenter button
+  var rc = document.getElementById('w-recenter'); if (rc) rc.style.display = 'flex';
 };
 window.FG_Backpack.hide = function() {
   if (window.BP) BP.close();
@@ -33682,6 +33691,7 @@ window.FG_Backpack.hide = function() {
   if (el) el.style.display = 'none';
   if (fab) fab.style.display = 'none';
   if (rtb) rtb.style.display = 'none';
+  var rc = document.getElementById('w-recenter'); if (rc) rc.style.display = 'none';
   var stp = document.getElementById('stp');
   if (stp) stp.style.display = 'none';
   // Hide map overlays
