@@ -24639,7 +24639,11 @@ document.addEventListener('keydown', function(e) {
       stateLabel = '🌸 READY TO BLOOM';
       stateColor = 'var(--gold)';
     } else if (wateredToday) {
-      stateLabel = '💤 Resting — come back tomorrow';
+      // Calculate hours until midnight (next water window)
+      var _now = new Date();
+      var _midnight = new Date(_now);_midnight.setHours(24,0,0,0);
+      var _hrsLeft = Math.ceil((_midnight.getTime() - _now.getTime()) / 3600000);
+      stateLabel = '\ud83d\udca4 Resting — water again in ' + _hrsLeft + 'h';
       stateColor = 'var(--muted)';
     } else {
       stateLabel = '💧 Needs water today';
