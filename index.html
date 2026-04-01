@@ -4217,6 +4217,7 @@ window.onerror=function(msg,url,line,col,err){
       <div style="font-family:DM Mono,monospace;font-size:clamp(.32rem,.9vw,.4rem);color:rgba(91,175,220,0.9);white-space:nowrap;"><span id="game-dew-val">0</span> dew</div>
       <div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;position:relative;"><div id="game-dew-fill" style="height:100%;background:linear-gradient(90deg,rgba(91,175,220,0.6),rgba(122,179,86,0.7));border-radius:2px;width:0%;transition:width 0.4s ease;"></div></div>
       <div style="font-family:DM Mono,monospace;font-size:clamp(.28rem,.8vw,.35rem);color:var(--muted);white-space:nowrap;"><span id="game-dew-progress">0</span>/30</div>
+      <div id="game-streak" style="font-family:DM Mono,monospace;font-size:clamp(.28rem,.8vw,.35rem);color:var(--gold);white-space:nowrap;opacity:0.7;"></div>
     </div>
   </div>
   <div class="fg-pk" id="fg-pk"></div>
@@ -4673,6 +4674,7 @@ window.onerror=function(msg,url,line,col,err){
       <div class="kb-xp-wrap" onclick="PW_UI.openCharacter()"><div class="kb-xp-fill" id="kb-xp-fill" style="width:0%;"></div></div>
       <div class="kb-rank" id="kb-rank">Lvl 1 · Seedling · 0 / 25 XP</div>
     </div>
+    <div id="kb-dew" style="font-family:DM Mono,monospace;font-size:0.35rem;color:rgba(91,175,220,0.85);padding:3px 7px;background:rgba(91,175,220,0.06);border:1px solid rgba(91,175,220,0.1);border-radius:4px;white-space:nowrap;cursor:pointer;" onclick="if(window.openEconModal)openEconModal();">0 dew</div>
     <div id="pw-lb-toggle" onclick="PW_UI.toggleLeaderboard()"><span id="lb-my-rank">#—</span> <span style="font-size:0.4rem;">▼</span></div>
   </div>
   <div id="pw-lb-dropdown">
@@ -22823,7 +22825,7 @@ document.addEventListener('keydown', function(e) {
     if(window.PW_grantXP) PW_grantXP(amount * 2, 'dew_drop');
     _updateGameDew();
   }
-  // Update game tab dew balance + mint progress bar
+  // Update game tab dew balance + mint progress bar + keeper bar dew
   function _updateGameDew() {
     var ledger = getHashLedger();
     var balance = Math.max(0, (ledger.earned || 0) - (ledger.spent || 0));
@@ -22832,6 +22834,17 @@ document.addEventListener('keydown', function(e) {
     var mintProg = typeof window._getHashProgress === 'function' ? window._getHashProgress() : 0;
     var fill = document.getElementById('game-dew-fill'); if (fill) fill.style.width = Math.round(Math.min(mintProg, 30) / 30 * 100) + '%';
     var pg = document.getElementById('game-dew-progress'); if (pg) pg.textContent = mintProg;
+    // Keeper bar dew badge (visible on all non-wild tabs)
+    var kbd = document.getElementById('kb-dew'); if (kbd) kbd.textContent = balance + ' dew';
+    // Streak display on game tab
+    var gs = document.getElementById('game-streak');
+    if (gs) {
+      try {
+        var _sr = JSON.parse(localStorage.getItem('fg_data_records') || '{}');
+        var _streak = (_sr.streak && _sr.streak.count) ? _sr.streak.count : 0;
+        gs.textContent = _streak > 0 ? '\ud83d\udd25 ' + _streak + 'd' : '';
+      } catch(e) { gs.textContent = ''; }
+    }
   }
   window._updateGameDew = _updateGameDew;
   function spendHashes(amount) {
@@ -24308,7 +24321,8 @@ document.addEventListener('keydown', function(e) {
     h += '<div style="margin:0 auto 0.3rem;opacity:0.7;">'+svg+'</div>';
     h += '<div style="font-family:Playfair Display,serif;font-size:0.7rem;color:var(--cream);margin-bottom:0.15rem;">'+name+'</div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);margin-bottom:0.5rem;">'+tierName+' · This cannot be undone</div>';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--sage);margin-bottom:0.6rem;">You will receive <span style="color:var(--gold);">+'+fertReward+' Fertilizer</span></div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--sage);margin-bottom:0.2rem;">You will receive <span style="color:var(--gold);">+'+fertReward+' Fertilizer</span></div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.3rem;color:var(--muted);margin-bottom:0.5rem;line-height:1.5;">Apply fertilizer to nursery seeds for +1% rarity boost each (max 25)</div>';
     h += '<button onclick="_execCompost('+plantIndex+')" style="width:100%;padding:0.5rem;margin-bottom:0.3rem;border:1.5px solid rgba(200,80,60,0.4);border-radius:8px;background:linear-gradient(180deg,rgba(180,60,40,0.25),rgba(120,30,20,0.35));color:#e8a0a0;font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">COMPOST</button>';
     h += '<button onclick="_closeCompostModal()" style="width:100%;padding:0.4rem;border:1px solid rgba(122,179,86,0.2);border-radius:8px;background:rgba(46,60,38,0.2);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;">KEEP PLANT</button>';
     h += '</div>';
@@ -28407,6 +28421,7 @@ function _harvestApplyLocal(p,plantObj,reward){
   if(window.FG_Backpack)FG_Backpack.render();
   _updateCounts();
   // ── Harvest reveal flash: show the plant they caught ──
+  try{navigator.vibrate&&navigator.vibrate([25,40,40,60,55]);}catch(e){} // bloom crescendo
   _showHarvestReveal(p,reward);
   // First harvest milestone
   if(!localStorage.getItem('lw_first_harvest')){
@@ -28720,6 +28735,7 @@ function _finishDrop(defenderGame){
   if(_map)_map.panTo([la,lo],{animate:true,duration:0.5});
   _updateCounts();_updateUI();_drawTerritory();
   if(window.renderGreenhouse)renderGreenhouse();
+  try{navigator.vibrate&&navigator.vibrate([30,55,30]);}catch(e){} // sync pulse — planted!
   _toast('\ud83c\udf31 Planted with '+defenderGame.toUpperCase()+' defense (EA: '+dropEA+')');
   // Drop burst animation at map coordinates
   setTimeout(function(){
