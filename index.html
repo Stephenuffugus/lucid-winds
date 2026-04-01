@@ -4884,13 +4884,16 @@ window.onerror=function(msg,url,line,col,err){
             var season=Math.floor(Math.random()*4);
             var plant={lat:pLat,lng:pLng,hash:h,date:new Date().toISOString(),own:true,ownerUid:uid,ownerName:'Seed',ea:ea,defenderGame:defGame,season:season};
             wild.push(plant);
+            // Compute real grade for this hash
+            var grade='Common';
+            try{if(window.hashToTraits&&window.getTerraGrade){var _st=window.hashToTraits(h);grade=window.getTerraGrade(_st).name||'Common';}}catch(e){}
             // Also write to Firestore for cross-account visibility
             if(db&&uid){
-              var zk=Math.round(pLat/ZONE)*ZONE;var zlk=Math.round(pLng/ZONE)*ZONE;
+              var zk=(Math.round(pLat/ZONE)*ZONE).toFixed(4)+','+(Math.round(pLng/ZONE)*ZONE).toFixed(4);
               db.collection('wildDrops').doc(uid+'_'+h.slice(0,16)).set({
                 lat:pLat,lng:pLng,hash:h,ownerUid:uid,ownerName:'Seed',
                 ea:ea,defenderGame:defGame,season:season,status:'alive',
-                grade:'Common',zone:zk.toFixed(4)+','+zlk.toFixed(4),
+                grade:grade,zone:zk,
                 droppedAt:new Date().toISOString()
               }).catch(function(){});
             }
@@ -28053,11 +28056,15 @@ function _spawnFerals(){
       var tB=window.hashToTraits(parentB.hash);gradeB=window.getTerraGrade(tB).name||'Common';
     }}catch(e){}
     offspringHash=_adjustOffspringRarity(offspringHash,gradeA,gradeB);
-    var windRad=(_wd||0)*Math.PI/180;
+    // Feral placement: mostly random scatter around parents with gentle wind nudge
+    // Wind influence is ~20% direction, 80% random — prevents hard regional locks
+    var windRad=((_wd||0)+Math.random()*180-90)*Math.PI/180; // wind ± 90° scatter
     var baseLat=parseFloat(pairs[pr].zone.split(',')[0]);
     var baseLng=parseFloat(pairs[pr].zone.split(',')[1]);
-    var targetLat=baseLat+Math.cos(windRad)*ZONE_SIZE+(Math.random()-0.5)*ZONE_SIZE*0.3;
-    var targetLng=baseLng+Math.sin(windRad)*ZONE_SIZE+(Math.random()-0.5)*ZONE_SIZE*0.3;
+    var windStr=0.2+Math.random()*0.3; // 20-50% wind influence
+    var randStr=1-windStr; // rest is pure random
+    var targetLat=baseLat+Math.cos(windRad)*ZONE_SIZE*windStr+(Math.random()-0.5)*ZONE_SIZE*randStr;
+    var targetLng=baseLng+Math.sin(windRad)*ZONE_SIZE*windStr+(Math.random()-0.5)*ZONE_SIZE*randStr;
     var targetZone=_zoneKey(targetLat,targetLng);
     var feralsInZone=0;
     for(var fc=0;fc<todayFerals.length;fc++){if(_zoneKey(todayFerals[fc].lat,todayFerals[fc].lng)===targetZone)feralsInZone++;}
