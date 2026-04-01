@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.01.26';
+  var LW_VERSION='2026.04.01.27';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3717,7 +3717,7 @@
     .cs-close{position:fixed;top:calc(0.5rem + env(safe-area-inset-top, 0px));right:0.5rem;width:36px;height:36px;border-radius:50%;border:2px solid rgba(74,124,53,0.15);background:rgba(26,36,22,0.6);color:var(--muted);font-size:0.75rem;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:99999;}
     /* ═══ BACKPACK SYSTEM CSS (from demo) ═══ */
 /* ═══ BACKPACK ═══ */
-#bpi{position:fixed;top:calc(68px + env(safe-area-inset-top,0px));right:10px;z-index:999;width:56px;height:56px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat}
+#bpi{position:fixed;top:calc(80px + env(safe-area-inset-top,0px));right:10px;z-index:999;width:56px;height:56px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat}
 #bpi:active{transform:scale(0.88);}
 #bpb{position:absolute;top:-4px;left:-4px;min-width:20px;height:20px;border-radius:10px;background:var(--gold);color:var(--black);font-family:'Bebas Neue',sans-serif;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,0.4);transition:all 0.25s ease;}
 #bpb.e{opacity:0;transform:scale(0.5);}
@@ -3838,10 +3838,10 @@
 /* ═══ WILD TAB v2 — Premium Redesign ═══ */
 
 /* ── Wild Log Bar (top navigation) ── */
-.wild-log{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-around;padding:8px 10px;padding-top:calc(8px + env(safe-area-inset-top,0px));min-height:56px;background:url('assets/games/wild/wild-log-bar-v4.png') center/cover no-repeat;background-color:rgba(20,16,10,.97);border-bottom:2px solid rgba(200,168,75,0.12);z-index:460;box-shadow:0 6px 24px rgba(0,0,0,0.6);}
-.wild-log-stat{display:flex;flex-direction:column;align-items:center;gap:1px;background:rgba(8,10,6,0.55);padding:4px 10px;border-radius:8px;border:1px solid rgba(200,168,75,0.06);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
-.wild-log-val{font-family:'Bebas Neue',sans-serif;font-size:clamp(.85rem,2.5vw,1.1rem);color:var(--cream);line-height:1;text-shadow:0 1px 4px rgba(0,0,0,.9),0 0 8px rgba(0,0,0,.5)}
-.wild-log-lbl{font-family:'DM Mono',monospace;font-size:clamp(.32rem,1vw,.42rem);color:rgba(200,188,160,.6);letter-spacing:.1em;text-transform:uppercase}
+.wild-log{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-around;padding:10px 8px 8px;padding-top:calc(10px + env(safe-area-inset-top,0px));min-height:72px;background:url('assets/games/wild/wild-log-bar-v4.png') center/cover no-repeat;background-color:rgba(20,16,10,.98);background-size:100% 100%;border-bottom:2px solid rgba(200,168,75,0.1);z-index:460;box-shadow:0 8px 32px rgba(0,0,0,0.7);}
+.wild-log-stat{display:flex;flex-direction:column;align-items:center;gap:2px;background:rgba(5,6,4,0.7);padding:5px 12px;border-radius:6px;border:1px solid rgba(200,168,75,0.08);box-shadow:inset 0 2px 6px rgba(0,0,0,0.5),inset 0 -1px 0 rgba(200,168,75,0.05);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
+.wild-log-val{font-family:'Bebas Neue',sans-serif;font-size:clamp(.9rem,2.8vw,1.2rem);color:var(--cream);line-height:1;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,.6)}
+.wild-log-lbl{font-family:'DM Mono',monospace;font-size:clamp(.3rem,.9vw,.38rem);color:rgba(200,168,75,.45);letter-spacing:.12em;text-transform:uppercase}
 .wild-log-wind{font-family:'DM Mono',monospace;font-size:clamp(.35rem,1vw,.45rem);color:var(--muted);display:flex;align-items:center;gap:4px}
 
 /* ── Trait Panel v2 (bottom sheet) ── */
@@ -4744,7 +4744,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="dev-section"><div class="dev-section-title">LOCAL STORAGE</div><button class="dev-btn" onclick="PW_Dev.clearLocal()">🧹 CLEAR ALL</button></div>
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
     <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button></div>
-    <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE RANDOM PLANT</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿x5 GENERATE 5 PLANTS</button></div>
+    <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button></div>
     <div class="dev-section"><div class="dev-section-title">NUCLEAR</div><button class="dev-btn danger" onclick="PW_Dev.fullReset()">☢ WIPE EVERYTHING</button></div>
     <div class="dev-log" id="dev-log">Ready.\n</div>
   </div>
@@ -4854,6 +4854,26 @@ window.onerror=function(msg,url,line,col,err){
       localStorage.clear();
       alert('Everything wiped. Reloading.');
       location.reload();
+    },
+    fillGreenhouse:function(){
+      if(!window.mintPlant){alert('mintPlant not available');return;}
+      var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+      var slots=parseInt(localStorage.getItem('sws_greenhouse_slots')||'10');
+      var need=Math.max(0,slots-gh.length);
+      if(need===0){alert('Greenhouse already full ('+gh.length+'/'+slots+')');return;}
+      var minted=0;
+      function _mint(){
+        var h='';for(var i=0;i<64;i++)h+='0123456789abcdef'[Math.floor(Math.random()*16)];
+        mintPlant(h).then(function(){
+          minted++;
+          if(minted>=need){
+            alert('Filled greenhouse: +'+minted+' plants. Ready for breeding!');
+            if(window.renderGreenhouse)renderGreenhouse();
+            if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
+          } else {_mint();}
+        });
+      }
+      _mint();
     },
     generatePlant:function(count){
       count=count||1;
