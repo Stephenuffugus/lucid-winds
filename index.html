@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.01.22';
+  var LW_VERSION='2026.04.01.23';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -27251,7 +27251,7 @@ var MAX_DROPS=3,MAX_POUCH=3,COLLECT_RANGE=75,ZONE_SIZE=0.001;
 // Source of truth: Firestore vaults/{uid}/meta/dailyStats
 // localStorage is a read cache only — never trusted for enforcement
 var AF_HARVEST_KEY='fg_af_harvests';
-var AF_MIN_WILD_MS=600000; // 10min minimum wild time before harvest (was 2hr — too punishing for new players)
+var AF_MIN_WILD_MS=0; // DISABLED — minimum wild time removed, daily cap + diminishing returns are sufficient
 var _afCache=null; // in-memory cache of today's stats
 var _serverDayOffset=0; // ms offset: serverTime = Date.now() + _serverDayOffset
 
