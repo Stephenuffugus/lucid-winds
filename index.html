@@ -2036,7 +2036,8 @@
       box-shadow:0 0 16px rgba(122,179,86,0.2);
     }
     .grove-panel{display:none;overflow-y:visible;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(44px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);}
-    .grove-panel.active{display:block;}
+    .grove-panel.active{display:block;animation:_tabIn 0.25s ease;}
+    @keyframes _tabIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
     @keyframes panelFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
     /* Botanical loading spinner — three rotating leaves */
     .lw-spinner{display:flex;align-items:center;justify-content:center;gap:0.3rem;padding:1rem;}
@@ -28301,6 +28302,7 @@ function _fjInteract(p){
 
   if(reward>0){
     if(window.earnHashes)window.earnHashes(reward);
+    _play(reward>=2?'discover':'tap'); // discovery sparkle vs scout tap
     _toast(rewardType+(j._count?' \u00b7 '+j._count+' species found':''));
     if(window._updateGameDew)_updateGameDew();
   }
@@ -28504,7 +28506,7 @@ function _harvestToPouch(p){
     });
   } else if(window.FG_Challenge){
     FG_Challenge.start(grade,function(success){
-      if(success){_doHarvest(p);_play('match');}
+      if(success){_doHarvest(p);_play('collect');}
       else{p._harvestCooldown=Date.now()+10000;_play('buzz');_toast('Defended! Try again in 10 seconds.');}
     });
   } else {
@@ -28655,6 +28657,7 @@ function _waterOwnPlant(p,mk){
   _play('match');
   // Watering earns pollen as a caretaker reward
   var _waterPollen=3;var _curPol=_getPollen();_savePollen(_curPol+_waterPollen);
+  _play('water');
   _toast('\ud83d\udca7 Watered! Stress reduced. (-5 Dew, +'+_waterPollen+' Pollen)');
   if(mk&&mk._icon){
     var mEl=mk._icon;
@@ -29788,12 +29791,66 @@ function _updateGP(){
   el.innerHTML='<div style="flex:1;min-width:0"><div class="gp-bar"><div class="gp-fill'+_nearCls+'" style="width:'+pct+'%;transition:none"></div></div></div>';
   setTimeout(function(){var f=el.querySelector('.gp-fill');if(f)f.style.transition='';},60);
 }
-// ═══ GAME SOUND SYSTEM — synthesized tones, greenhouse mood ═══
-var _sfxDef={tap:{f:440,d:.05,t:'sine'},match:{f:660,d:.12,t:'sine'},slide:{f:330,d:.08,t:'triangle'},snap:{f:520,d:.04,t:'square'},dice:{f:200,d:.18,t:'sawtooth'},buzz:{f:180,d:.2,t:'sawtooth'},click:{f:600,d:.03,t:'square'},flip:{f:350,d:.07,t:'triangle'},hash:{f:880,d:.06,t:'sine'},lose:{f:220,d:.4,t:'triangle'},dig:{f:300,d:.06,t:'triangle'},drop:{f:260,d:.1,t:'sine'}};
+// ═══ GAME SOUND SYSTEM — botanical synth, premium feel ═══
 var _sctx=null;
-function _play(id){if(!window.FG_Audio||!FG_Audio.enabled)return;var s=_sfxDef[id];if(!s)return;try{if(!_sctx)_sctx=new(window.AudioContext||window.webkitAudioContext)();var o=_sctx.createOscillator(),g=_sctx.createGain();o.type=s.t;o.frequency.value=s.f;g.gain.value=0.07;g.gain.exponentialRampToValueAtTime(0.001,_sctx.currentTime+s.d);o.connect(g);g.connect(_sctx.destination);o.start(_sctx.currentTime);o.stop(_sctx.currentTime+s.d)}catch(e){}}
+function _getACtx(){if(!_sctx){try{_sctx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}return _sctx;}
+// Play a single tone with envelope
+function _tone(freq,dur,type,vol,delay){
+  var ctx=_getACtx();if(!ctx)return;
+  var t=ctx.currentTime+(delay||0);
+  var o=ctx.createOscillator(),g=ctx.createGain();
+  o.type=type||'sine';o.frequency.value=freq;
+  g.gain.setValueAtTime(vol||0.06,t);
+  g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+  o.connect(g);g.connect(ctx.destination);
+  o.start(t);o.stop(t+dur+0.01);
+}
+// Play a chord (multiple frequencies)
+function _chord(freqs,dur,type,vol){
+  for(var i=0;i<freqs.length;i++)_tone(freqs[i],dur,type,(vol||0.04),0);
+}
+// Named sound profiles — each is a small composition
+var _sfxDef={
+  // UI
+  tap:    function(){_tone(520,0.04,'sine',0.05);},
+  click:  function(){_tone(680,0.03,'square',0.03);},
+  flip:   function(){_tone(400,0.06,'triangle',0.04);_tone(600,0.06,'triangle',0.03,0.04);},
+  slide:  function(){_tone(350,0.08,'triangle',0.04);},
+  // Game
+  match:  function(){_tone(523,0.1,'sine',0.05);_tone(659,0.1,'sine',0.04,0.06);_tone(784,0.15,'sine',0.05,0.12);}, // C-E-G arpeggio
+  hash:   function(){_tone(880,0.05,'sine',0.04);_tone(1108,0.08,'sine',0.03,0.03);}, // bright ping + shimmer
+  snap:   function(){_tone(580,0.03,'square',0.04);},
+  buzz:   function(){_tone(160,0.15,'sawtooth',0.04);_tone(140,0.1,'sawtooth',0.03,0.08);}, // low warning
+  lose:   function(){_tone(330,0.2,'triangle',0.04);_tone(260,0.3,'triangle',0.04,0.15);}, // descending
+  dice:   function(){_tone(220,0.12,'sawtooth',0.03);_tone(280,0.08,'sawtooth',0.02,0.06);},
+  // Wild
+  drop:   function(){_tone(440,0.08,'sine',0.04);_tone(554,0.1,'sine',0.04,0.05);_tone(659,0.15,'sine',0.04,0.1);}, // A-C#-E plant-down arpeggio
+  dig:    function(){_tone(280,0.05,'triangle',0.04);_tone(350,0.04,'triangle',0.03,0.03);},
+  // Discovery/reward
+  discover:function(){_tone(659,0.08,'sine',0.04);_tone(784,0.08,'sine',0.04,0.06);_tone(988,0.15,'sine',0.05,0.12);}, // E-G-B discovery sparkle
+  collect: function(){_chord([523,659,784],0.2,'sine',0.03);_tone(1047,0.3,'sine',0.04,0.15);}, // C major + high C
+  water:   function(){_tone(600,0.1,'sine',0.03);_tone(800,0.08,'sine',0.02,0.06);_tone(700,0.12,'sine',0.03,0.1);}, // water droplet cascade
+};
+
+function _play(id){
+  if(!window.FG_Audio||!FG_Audio.enabled)return;
+  var fn=_sfxDef[id];if(fn)try{fn();}catch(e){}
+}
 window._play=_play;
-function _playWin(){if(!window.FG_Audio||!FG_Audio.enabled)return;try{if(!_sctx)_sctx=new(window.AudioContext||window.webkitAudioContext)();[523,659,784].forEach(function(f,i){var o=_sctx.createOscillator(),g=_sctx.createGain();o.type='sine';o.frequency.value=f;g.gain.value=0.06;g.gain.exponentialRampToValueAtTime(0.001,_sctx.currentTime+0.3+i*0.08);o.connect(g);g.connect(_sctx.destination);o.start(_sctx.currentTime+i*0.08);o.stop(_sctx.currentTime+0.35+i*0.08)})}catch(e){}}
+
+function _playWin(){
+  if(!window.FG_Audio||!FG_Audio.enabled)return;
+  try{
+    // Victory fanfare: C major 7th arpeggio → resolve
+    _tone(523,0.12,'sine',0.05);      // C5
+    _tone(659,0.12,'sine',0.05,0.08); // E5
+    _tone(784,0.12,'sine',0.05,0.16); // G5
+    _tone(988,0.2,'sine',0.05,0.24);  // B5
+    _tone(1047,0.4,'sine',0.06,0.36); // C6 — resolve
+    // Soft pad underneath
+    _chord([262,330,392],0.6,'triangle',0.02);
+  }catch(e){}
+}
 window._playWin=_playWin;
 function _st(){_s=Date.now();if(_t)clearInterval(_t);_t=setInterval(function(){var e=document.getElementById('_tt');if(!e)return;var s=Math.floor((Date.now()-_s)/1000);e.textContent=Math.floor(s/60)+':'+(s%60<10?'0':'')+(s%60)},500)}
 function _xt(){if(_t){clearInterval(_t);_t=null}}
