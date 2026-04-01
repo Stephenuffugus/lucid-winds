@@ -4606,6 +4606,7 @@ window.onerror=function(msg,url,line,col,err){
         <button class="wtp2-btn" onclick="FG_Wild.closeTP()"><div class="wtp2-btn-icon">✕</div><div class="wtp2-btn-lbl">Close</div></button>
         <button class="wtp2-btn" id="wtp-inspect2"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-inspect-btn-v4.png" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Inspect</div></button>
         <button class="wtp2-btn" id="wtp-water"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-water-btn-v4.png" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Water</div></button>
+        <button class="wtp2-btn" id="wtp-defense"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-territory-shield-v4.png" style="width:36px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Defense</div></button>
         <button class="wtp2-btn gold" id="wtp-cross"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-breed-btn-v4.png" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Breed</div></button>
       </div>
     </div>
@@ -27715,6 +27716,22 @@ function _updateProximity(){
       el.className='leaflet-marker-icon leaflet-zoom-animated leaflet-interactive';
     }
   }
+  // Feral proximity alert — pulse when a feral enters collection range
+  try{
+    var ferals=JSON.parse(localStorage.getItem('fg_ferals')||'[]');
+    for(var fi=0;fi<ferals.length;fi++){
+      var f=ferals[fi];
+      if(!f||f.collected||!f.lat)continue;
+      var fd=_dist(_uLat,_uLng,f.lat,f.lng);
+      if(fd<=COLLECT_RANGE&&!f._alerted){
+        f._alerted=true;
+        _toast('\ud83c\udf30 Feral seed nearby! Tap it to collect.');
+        try{navigator.vibrate&&navigator.vibrate([15,30,15]);}catch(e){}
+      } else if(fd>COLLECT_RANGE*2){
+        f._alerted=false; // reset when far enough away
+      }
+    }
+  }catch(e){}
 }
 
 // ═══ STEP COUNTER MILESTONES ═══
@@ -28164,7 +28181,14 @@ function _addPlant(p){
   var th=Math.round(sz*40/30)+14;
   var glow=_glowRing(info.grade,p.own);
   var shield=_shieldBadge(p);
-  var html='<div style="position:relative;width:'+(sz+6)+'px;height:'+th+'px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7));">'
+  // Age-based visual for own plants
+  var ageFilter='filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7));';
+  if(p.own){
+    var d=p.days||0;
+    if(d<=2)ageFilter='filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7)) drop-shadow(0 0 6px rgba(122,179,86,0.4));'; // young — bright green aura
+    else if(d>=7)ageFilter='filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7)) drop-shadow(0 0 5px rgba(200,168,75,0.25));'; // established — warm gold
+  }
+  var html='<div style="position:relative;width:'+(sz+6)+'px;height:'+th+'px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;'+ageFilter+'">'
     +glow+shield+svg+tag+'</div>';
   var pd={lat:p.lat,lng:p.lng,hash:p.hash,own:p.own,name:info.nm,grade:info.grade,gc:info.gc,days:p.days||0,pollen:p.pollen||0,status:p.status||'Growing',traits:info.t,rarities:info.rarities,defenderGame:p.defenderGame||'set',ownerUid:p.ownerUid||'',ownerName:p.ownerName||'Keeper'};
   var mk=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:html,iconSize:[sz+6,th],iconAnchor:[(sz+6)/2,th-6]}),zIndexOffset:p.own?500:100}).addTo(_map).on('click',function(){showTP(pd,mk);});
@@ -28251,6 +28275,14 @@ function showTP(p,mk){
     }
     var crossBtn=document.getElementById('wtp-cross');
     if(crossBtn)crossBtn.onclick=function(){_crossPollinate(p);};
+    // Defense change button — show current game, tap to change
+    var defBtn=document.getElementById('wtp-defense');
+    if(defBtn){
+      var _gNames={set:'SET',memory:'Memory',growth:'Growth',color:'Color',math:'Math',word:'Word'};
+      var _curDef=_gNames[p.defenderGame]||'SET';
+      defBtn.querySelector('.wtp2-btn-lbl').textContent=_curDef;
+      defBtn.onclick=function(){_changeDefense(p);};
+    }
   } else {
     if(ownActions)ownActions.style.display='none';
     if(otherAct)otherAct.style.display='flex';
@@ -29068,6 +29100,66 @@ function _recenter(){
   if(_map&&_uLat){_map.setView([_uLat,_uLng],17,{animate:true,duration:0.6});_toast('Recentered on your location.');}
   else{_toast('Waiting for GPS...');}
 }
+// ═══ CHANGE DEFENSE GAME — update defender game on own wild plant ═══
+function _changeDefense(p){
+  closeTP();
+  // Reuse fc-modal for game selection
+  var modal=document.getElementById('fc-modal');
+  if(!modal){_toast('Challenge modal not loaded.');return;}
+  var board=document.getElementById('fc-board');
+  var title=document.getElementById('fc-title');
+  var sub=document.getElementById('fc-subtitle');
+  var timerWrap=document.getElementById('fc-timer-wrap');
+  var timerText=document.getElementById('fc-timer-text');
+  if(timerWrap)timerWrap.style.display='none';
+  if(timerText)timerText.style.display='none';
+  if(title)title.textContent='CHANGE DEFENSE';
+  if(sub)sub.textContent='Pick the challenge harvesters must beat';
+  var games=[
+    {id:'set',name:'Quick SET',icon:'\ud83c\udccf',desc:'Find 3 matching cards',diff:'Easy'},
+    {id:'memory',name:'Memory',icon:'\ud83e\udde0',desc:'Remember the pattern',diff:'Medium'},
+    {id:'growth',name:'Growth',icon:'\ud83c\udf31',desc:'Order the stages',diff:'Medium'},
+    {id:'color',name:'Color',icon:'\ud83c\udfa8',desc:'Match the target hue',diff:'Easy'},
+    {id:'math',name:'Math',icon:'\ud83d\udd22',desc:'Solve the equation',diff:'Hard'},
+    {id:'word',name:'Word',icon:'\ud83d\udcdd',desc:'Unscramble letters',diff:'Hard'}
+  ];
+  var h='';
+  for(var i=0;i<games.length;i++){
+    var g=games[i];
+    var dc=g.diff==='Easy'?'var(--sage)':g.diff==='Medium'?'var(--gold)':'#c07070';
+    var sel=g.id===p.defenderGame?' border-color:var(--gold);background:rgba(200,168,75,0.1);':'';
+    h+='<div class="fc-card" onclick="_applyDefenseChange(\''+p.hash+'\',\''+g.id+'\')" style="flex-direction:column;gap:6px;padding:10px 8px;'+sel+'">';
+    h+='<div style="font-size:1.4rem;">'+g.icon+'</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--cream);letter-spacing:0.06em;">'+g.name+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:var(--muted);line-height:1.3;">'+g.desc+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.25rem;color:'+dc+';letter-spacing:0.06em;margin-top:auto;">'+g.diff+(g.id===p.defenderGame?' \u2713':'')+'</div>';
+    h+='</div>';
+  }
+  if(board){board.innerHTML=h;board.style.gridTemplateColumns='repeat(3,1fr)';}
+  modal.classList.add('open');
+}
+window._applyDefenseChange=function(hash,gameId){
+  var modal=document.getElementById('fc-modal');if(modal)modal.classList.remove('open');
+  var timerWrap=document.getElementById('fc-timer-wrap');if(timerWrap)timerWrap.style.display='block';
+  var timerText=document.getElementById('fc-timer-text');if(timerText)timerText.style.display='block';
+  // Update local wild plant
+  var wild=_getWild();
+  for(var i=0;i<wild.length;i++){
+    if(wild[i].hash===hash){wild[i].defenderGame=gameId;break;}
+  }
+  _saveWild(wild);
+  // Update Firestore
+  try{
+    var user=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
+    if(user&&window.db){
+      var docId=user.uid+'_'+hash.slice(0,16);
+      window.db.collection('wildDrops').doc(docId).update({defenderGame:gameId}).catch(function(){});
+    }
+  }catch(e){}
+  var _gNames={set:'SET',memory:'Memory',growth:'Growth',color:'Color',math:'Math',word:'Word'};
+  _toast('\ud83d\udee1 Defense changed to '+(_gNames[gameId]||gameId));
+  if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
+};
 function _logTip(msg){_toast(msg);}
 
 return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip};
