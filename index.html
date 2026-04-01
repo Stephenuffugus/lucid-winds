@@ -28176,6 +28176,9 @@ function showTP(p,mk){
   if(p.own){
     if(otherAct)otherAct.style.display='none';
     if(ownActions)ownActions.style.display='flex';
+    // Pollen rate info
+    var _polRates={Common:1,Uncommon:2,Rare:4,Epic:6,Legendary:9,Mythic:12,Cosmic:15};
+    var _polRate=_polRates[p.grade]||1;
     var waterBtn=document.getElementById('wtp-water');
     if(waterBtn){
       waterBtn.onclick=function(){_waterOwnPlant(p,mk);};
@@ -28184,10 +28187,12 @@ function showTP(p,mk){
         var distToPlant=_dist(_uLat,_uLng,p.lat,p.lng);
         if(distToPlant>COLLECT_RANGE){
           waterBtn.disabled=true;
-          if(ownStatus)ownStatus.textContent=Math.round(distToPlant)+'m away \u2014 walk within '+Math.round(COLLECT_RANGE)+'m to water';
+          if(ownStatus){ownStatus.innerHTML=Math.round(distToPlant)+'m away \u2014 walk within '+Math.round(COLLECT_RANGE)+'m to water<br><span style="color:var(--gold);">Earning '+_polRate+' pollen/hr</span>';ownStatus.style.display='block';}
         } else {
-          if(ownStatus)ownStatus.textContent='Close enough to tend this plant';
+          if(ownStatus){ownStatus.innerHTML='Close enough to tend this plant<br><span style="color:var(--gold);">Earning '+_polRate+' pollen/hr</span>';ownStatus.style.display='block';}
         }
+      } else {
+        if(ownStatus){ownStatus.innerHTML='<span style="color:var(--gold);">Earning '+_polRate+' pollen/hr</span>';ownStatus.style.display='block';}
       }
     }
     var crossBtn=document.getElementById('wtp-cross');
@@ -33595,10 +33600,47 @@ function _rtbStartTimer(){
   _rtbTimer=setInterval(function(){_rtbRender();},60000);
 }
 
+// ═══ MIDNIGHT AUTO-DELIVER ═══
+// At midnight, any plants/seeds left in backpack auto-deliver to greenhouse/nursery
+var MIDNIGHT_KEY='fg_bp_midnight';
+function checkMidnightDeliver(){
+  var today=new Date().toISOString().split('T')[0];
+  var lastCheck=localStorage.getItem(MIDNIGHT_KEY)||'';
+  if(lastCheck===today)return; // already checked today
+  localStorage.setItem(MIDNIGHT_KEY,today);
+  if(st.plants.length===0&&st.seeds.length===0)return;
+  // Auto-deliver everything
+  var ghRaw=localStorage.getItem('sws_greenhouse')||'[]';
+  var gh=[];try{gh=JSON.parse(ghRaw);}catch(e){}
+  var delivered=0;
+  for(var i=0;i<st.plants.length;i++){
+    var p=st.plants[i];
+    if(gh.some(function(g){return g.hash===p.hash;}))continue;
+    gh.push({hash:p.hash,date:new Date().toISOString(),born:Date.now(),origin:p.origin||'wild',rare:false,traits:null,breedCount:0,generation:1});
+    delivered++;
+  }
+  localStorage.setItem('sws_greenhouse',JSON.stringify(gh));
+  var seedCount=st.seeds.length;
+  for(var j=0;j<st.seeds.length;j++){
+    window.dispatchEvent(new CustomEvent('bp-seed-to-nursery',{detail:st.seeds[j]}));
+  }
+  st.plants=[];st.seeds=[];render();
+  if(delivered>0||seedCount>0){
+    var msg='Midnight delivery: ';
+    if(delivered>0)msg+=delivered+' plant'+(delivered>1?'s':'');
+    if(delivered>0&&seedCount>0)msg+=', ';
+    if(seedCount>0)msg+=seedCount+' seed'+(seedCount>1?'s':'');
+    msg+=' sent home.';
+    toast(msg);
+    if(window.renderGreenhouse)window.renderGreenhouse();
+    if(window.syncVaultToCloud)setTimeout(window.syncVaultToCloud,500);
+  }
+}
+
 // ═══ CLOUD SYNC ═══
 function getState(){return{plants:st.plants,seeds:st.seeds,unlocks:st.unlocks,daily:st.daily,pollen:st.pollen,hashes:st.hashes,steps:st.steps,drops:st.drops,ph:st.ph,gp:st.gp,fc:st.fc,wd:st.wd,lastRTB:_rtbGetLast()};}
 function loadFromCloud(data){if(!data)return;if(data.plants)st.plants=data.plants;if(data.seeds)st.seeds=data.seeds;if(data.unlocks){for(var k in data.unlocks)st.unlocks[k]=data.unlocks[k];}if(typeof data.pollen==='number')st.pollen=data.pollen;if(typeof data.hashes==='number')st.hashes=data.hashes;if(typeof data.steps==='number')st.steps=data.steps;if(typeof data.ph==='number')st.ph=data.ph;if(typeof data.gp==='number')st.gp=data.gp;if(typeof data.fc==='number')st.fc=data.fc;if(typeof data.wd==='number')st.wd=data.wd;if(data.lastRTB)localStorage.setItem(RTB_KEY,String(data.lastRTB));render();_rtbRender();_rtbStartTimer();}
-return{init:init,toggle:toggle,open:open,close:close,render:render,tp:tp,ts:ts,s2n:s2n,sns:sns,sne:sne,hts:hts,hte:hte,ap:ap,as:as,cu:cu,cpi:cpi,csi:csi,getState:getState,loadFromCloud:loadFromCloud,returnToBase:returnToBase,_rtbRender:_rtbRender,_rtbStartTimer:_rtbStartTimer};
+return{init:init,toggle:toggle,open:open,close:close,render:render,tp:tp,ts:ts,s2n:s2n,sns:sns,sne:sne,hts:hts,hte:hte,ap:ap,as:as,cu:cu,cpi:cpi,csi:csi,getState:getState,loadFromCloud:loadFromCloud,returnToBase:returnToBase,_rtbRender:_rtbRender,_rtbStartTimer:_rtbStartTimer,checkMidnightDeliver:checkMidnightDeliver};
 })();
 window.BP=BP;
 window._BP_UI=UI;
@@ -33629,6 +33671,8 @@ window.FG_Backpack.show = function() {
   // Show return-to-base button + start cooldown timer
   if (BP._rtbRender) BP._rtbRender();
   if (BP._rtbStartTimer) BP._rtbStartTimer();
+  // Check midnight auto-deliver on Wild tab entry
+  if (BP.checkMidnightDeliver) BP.checkMidnightDeliver();
 };
 window.FG_Backpack.hide = function() {
   if (window.BP) BP.close();
