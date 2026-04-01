@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.01.24';
+  var LW_VERSION='2026.04.01.25';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -33613,6 +33613,127 @@ function _finish(){
   if(_seedCount>0)msg+=' +'+_seedCount+' seed'+(_seedCount>1?'s':'');
   if(window.showHexMsg)showHexMsg(msg);
 }
+})();
+</script>
+
+<!-- ═══ PI NETWORK SDK — optional payment layer ═══ -->
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<script>
+(function(){
+'use strict';
+// Pi SDK — gracefully degrades outside Pi Browser
+var _piReady=false;
+var _piUser=null;
+
+function _initPi(){
+  if(typeof Pi==='undefined'){console.log('[Pi] Not in Pi Browser — payments disabled.');return;}
+  try{
+    Pi.init({version:'2.0',sandbox:true}); // sandbox:true for testnet, false for mainnet
+    console.log('[Pi] SDK initialized (sandbox mode).');
+    _piReady=true;
+  }catch(e){console.log('[Pi] Init failed:',e.message);}
+}
+
+function authenticate(cb){
+  if(!_piReady){if(cb)cb(null);return;}
+  Pi.authenticate(['username','payments'],function(payment){
+    // Handle incomplete payment from previous session
+    _completePayment(payment.identifier,payment.transaction?payment.transaction.txid:null);
+  }).then(function(auth){
+    _piUser={uid:auth.user.uid,username:auth.user.username,token:auth.accessToken};
+    console.log('[Pi] Authenticated:',_piUser.username);
+    if(cb)cb(_piUser);
+  }).catch(function(e){
+    console.log('[Pi] Auth failed:',e);
+    if(cb)cb(null);
+  });
+}
+
+function createPayment(amount,memo,metadata,onSuccess,onCancel){
+  if(!_piReady){
+    if(window.showHexMsg)showHexMsg('Pi payments not available — open in Pi Browser');
+    return;
+  }
+  Pi.createPayment({amount:amount,memo:memo,metadata:metadata},{
+    onReadyForServerApproval:function(paymentId){
+      _approvePayment(paymentId);
+    },
+    onReadyForServerCompletion:function(paymentId,txid){
+      _completePayment(paymentId,txid,function(){
+        if(onSuccess)onSuccess(paymentId);
+      });
+    },
+    onCancel:function(paymentId){
+      console.log('[Pi] Payment cancelled:',paymentId);
+      if(onCancel)onCancel();
+    },
+    onError:function(error){
+      console.error('[Pi] Payment error:',error);
+      if(window.showHexMsg)showHexMsg('Payment error — try again');
+    }
+  });
+}
+
+// Server-side approval — calls Firebase Cloud Function
+function _approvePayment(paymentId){
+  // TODO: Replace with actual Cloud Function URL after deployment
+  var url='https://us-central1-focus-grove-fffa8.cloudfunctions.net/piApprove';
+  try{
+    var xhr=new XMLHttpRequest();
+    xhr.open('POST',url,true);
+    xhr.setRequestHeader('Content-Type','application/json');
+    xhr.send(JSON.stringify({paymentId:paymentId}));
+  }catch(e){console.error('[Pi] Approve error:',e);}
+}
+
+// Server-side completion — calls Firebase Cloud Function
+function _completePayment(paymentId,txid,cb){
+  var url='https://us-central1-focus-grove-fffa8.cloudfunctions.net/piComplete';
+  try{
+    var xhr=new XMLHttpRequest();
+    xhr.open('POST',url,true);
+    xhr.setRequestHeader('Content-Type','application/json');
+    xhr.onload=function(){if(cb)cb();};
+    xhr.send(JSON.stringify({paymentId:paymentId,txid:txid}));
+  }catch(e){console.error('[Pi] Complete error:',e);}
+}
+
+// ── Payment wrappers for game features ──
+window.LW_Pi={
+  ready:function(){return _piReady;},
+  user:function(){return _piUser;},
+  authenticate:authenticate,
+  // Greenhouse slot expansion — 1 Pi per slot
+  buySlot:function(slotNum,cb){
+    createPayment(1,'Greenhouse Slot '+slotNum,{type:'slot',slot:slotNum},function(){
+      // Deliver: increment slot count
+      var slots=parseInt(localStorage.getItem('sws_greenhouse_slots')||'10')+1;
+      localStorage.setItem('sws_greenhouse_slots',String(slots));
+      if(window.renderGreenhouse)renderGreenhouse();
+      if(window.syncVaultToCloud)syncVaultToCloud();
+      if(window.showHexMsg)showHexMsg('Slot '+slotNum+' unlocked!');
+      if(cb)cb(true);
+    },function(){if(cb)cb(false);});
+  },
+  // Emergency pouch slot — 10 Pi, once per day
+  buyEmergencySlot:function(cb){
+    createPayment(10,'Emergency Pouch Slot',{type:'emergency_pouch'},function(){
+      if(window.FG_Backpack&&FG_Backpack.ul)FG_Backpack.ul('slot6','Emergency slot unlocked!','One-time daily.');
+      if(cb)cb(true);
+    },function(){if(cb)cb(false);});
+  },
+  // Field pouch upgrade — Pi per slot
+  buyPouchUpgrade:function(cb){
+    createPayment(1,'Field Pouch Upgrade',{type:'pouch_upgrade'},function(){
+      // Deliver: increment seed pouch capacity
+      if(window.showHexMsg)showHexMsg('Seed pouch expanded!');
+      if(cb)cb(true);
+    },function(){if(cb)cb(false);});
+  }
+};
+
+// Initialize on load
+_initPi();
 })();
 </script>
 
