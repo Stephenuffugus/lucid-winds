@@ -28195,32 +28195,38 @@ function showTP(p,mk){
   } else {
     if(ownActions)ownActions.style.display='none';
     if(otherAct)otherAct.style.display='flex';
+    // Proximity hint + reward preview for non-owned plants
+    var _dewRewards={Common:3,Uncommon:5,Rare:8,Epic:12,Legendary:18,Mythic:25,Cosmic:40};
+    var _reward=_dewRewards[p.grade]||'?';
+    var _tooFar=false;
+    var _distOther=0;
+    if(_uLat&&p.lat){_distOther=_dist(_uLat,_uLng,p.lat,p.lng);_tooFar=_distOther>COLLECT_RANGE;}
     if(ab){
       ab.style.display='flex';
-      ab.onclick=function(){_harvestToPouch(p);};
-    }
-    // Proximity hint for non-owned plants
-    if(ownStatus){
-      if(_uLat&&p.lat){
-        var _distOther=_dist(_uLat,_uLng,p.lat,p.lng);
-        if(_distOther>COLLECT_RANGE){
-          ownStatus.textContent=Math.round(_distOther)+'m away \u2014 walk within '+Math.round(COLLECT_RANGE)+'m to harvest';
-          ownStatus.style.display='block';
-          if(ab)ab.style.display='none';
-        } else {
-          ownStatus.textContent='Walk close. Tap Harvest. Beat their challenge to collect.';
-          ownStatus.style.display='block';
-        }
+      if(_tooFar){
+        ab.style.opacity='0.35';ab.style.pointerEvents='none';
+        var _abLbl=ab.querySelector('.wtp2-btn-lbl');
+        if(_abLbl)_abLbl.textContent=Math.round(_distOther)+'m away';
       } else {
-        ownStatus.textContent='Tap Harvest to collect \u2014 beat their challenge to win it.';
-        ownStatus.style.display='block';
+        ab.style.opacity='1';ab.style.pointerEvents='auto';
+        ab.onclick=function(){_harvestToPouch(p);};
+        var _abLbl2=ab.querySelector('.wtp2-btn-lbl');
+        if(_abLbl2)_abLbl2.textContent='Harvest';
       }
+    }
+    if(ownStatus){
+      if(_tooFar){
+        ownStatus.innerHTML='Walk within '+Math.round(COLLECT_RANGE)+'m to harvest <span style="color:rgba(91,175,220,0.9);">\u2b50 '+_reward+' Dew</span>';
+      } else {
+        ownStatus.innerHTML='Beat their challenge to harvest <span style="color:rgba(91,175,220,0.9);">\u2b50 '+_reward+' Dew</span>';
+      }
+      ownStatus.style.display='block';
     }
   }
 
   tp.classList.add('open');
 }
-function closeTP(){var tp=document.getElementById('w-tp');if(tp)tp.classList.remove('open');var oa=document.getElementById('wtp-own-actions');if(oa)oa.style.display='none';var ot=document.getElementById('wtp-other-actions');if(ot)ot.style.display='flex';var ab=document.getElementById('wtp-act');if(ab)ab.style.display='none';var os=document.getElementById('wtp-own-status');if(os){os.style.display='none';os.textContent='';}var sl=document.getElementById('wtp-status');if(sl){var lb=sl.parentNode.querySelector('.wtp2-stat-lbl');if(lb)lb.textContent='Status';}_sel=null;_selMk=null;}
+function closeTP(){var tp=document.getElementById('w-tp');if(tp)tp.classList.remove('open');var oa=document.getElementById('wtp-own-actions');if(oa)oa.style.display='none';var ot=document.getElementById('wtp-other-actions');if(ot)ot.style.display='flex';var ab=document.getElementById('wtp-act');if(ab){ab.style.display='none';ab.style.opacity='1';ab.style.pointerEvents='auto';var _abl=ab.querySelector('.wtp2-btn-lbl');if(_abl)_abl.textContent='Harvest';}var os=document.getElementById('wtp-own-status');if(os){os.style.display='none';os.textContent='';}var sl=document.getElementById('wtp-status');if(sl){var lb=sl.parentNode.querySelector('.wtp2-stat-lbl');if(lb)lb.textContent='Status';}_sel=null;_selMk=null;}
 
 // ═══ HARVEST TO BACKPACK (other players' plants only) ═══
 function _harvestToPouch(p){
@@ -28339,12 +28345,34 @@ function _harvestApplyLocal(p,plantObj,reward){
   closeTP();
   if(window.FG_Backpack)FG_Backpack.render();
   _updateCounts();
-  _toast('\ud83c\udf92 '+p.name+' harvested! Owner earns '+reward+' Dew Drops.');
+  // ── Harvest reveal flash: show the plant they caught ──
+  _showHarvestReveal(p,reward);
   // First harvest milestone
   if(!localStorage.getItem('lw_first_harvest')){
     localStorage.setItem('lw_first_harvest','1');
     setTimeout(function(){_toast('\ud83c\udf1f First harvest! Hit RETURN TO BASE when your backpack is full.');},2500);
   }
+}
+function _showHarvestReveal(p,reward){
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(10px);animation:panelFadeIn 0.3s ease;pointer-events:auto;';
+  var plantSvg='';
+  if(window._generatePlantSVG&&p.hash){try{plantSvg=window._generatePlantSVG(p.hash,100);}catch(e){}}
+  var nm=p.name||'Plant';
+  var grade=(p.grade||'Common').toUpperCase();
+  var gc=p.gc||'var(--cream)';
+  var h='<div style="text-align:center;opacity:0;animation:tierRevealPop 0.5s ease 0.1s forwards;">';
+  h+='<div style="width:120px;height:120px;border-radius:16px;background:rgba(26,36,22,0.6);border:2px solid '+gc+';display:flex;align-items:center;justify-content:center;margin:0 auto 0.4rem;box-shadow:0 0 30px rgba(122,179,86,0.15);">'+plantSvg+'</div>';
+  h+='<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--cream);margin-bottom:0.15rem;">'+nm+'</div>';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:'+gc+';letter-spacing:0.1em;margin-bottom:0.3rem;">'+grade+'</div>';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:rgba(91,175,220,0.9);margin-bottom:0.1rem;">+'+reward+' Dew Drops to owner</div>';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);margin-top:0.2rem;">\ud83c\udf92 Added to backpack</div>';
+  h+='</div>';
+  ov.innerHTML=h;
+  ov.onclick=function(){ov.style.opacity='0';ov.style.transition='opacity 0.25s';setTimeout(function(){if(ov.parentNode)ov.remove();},300);};
+  document.body.appendChild(ov);
+  // Auto-dismiss after 2.5 seconds
+  setTimeout(function(){if(ov.parentNode){ov.style.opacity='0';ov.style.transition='opacity 0.25s';setTimeout(function(){if(ov.parentNode)ov.remove();},300);}},2500);
 }
 
 // ═══ WATER OWN PLANT (GPS-proximate only) ═══
@@ -28627,11 +28655,31 @@ function _finishDrop(defenderGame){
     season:dropTraits?dropTraits.season:0
   });
   _saveWild(wild);
-  _addPlant({lat:la,lng:lo,hash:pl.hash,own:true,days:0,pollen:0,status:'Just Planted'});
+  _addPlant({lat:la,lng:lo,hash:pl.hash,own:true,days:0,pollen:0,status:'Just Planted',defenderGame:defenderGame||'set'});
   if(_map)_map.panTo([la,lo],{animate:true,duration:0.5});
   _updateCounts();_updateUI();_drawTerritory();
   if(window.renderGreenhouse)renderGreenhouse();
   _toast('\ud83c\udf31 Planted with '+defenderGame.toUpperCase()+' defense (EA: '+dropEA+')');
+  // Drop burst animation at map coordinates
+  setTimeout(function(){
+    if(!_map)return;
+    var pt=_map.latLngToContainerPoint([la,lo]);
+    var cx=pt.x,cy=pt.y;
+    var mapEl=document.getElementById('wild-map');
+    if(!mapEl)return;
+    var rect=mapEl.getBoundingClientRect();
+    cx+=rect.left;cy+=rect.top;
+    for(var _di=0;_di<12;_di++){(function(i){
+      var angle=(i/12)*Math.PI*2;
+      var dist=25+Math.random()*30;
+      var dx=Math.cos(angle)*dist;var dy=Math.sin(angle)*dist;
+      var leaf=document.createElement('div');
+      leaf.innerHTML='\ud83c\udf3f';
+      leaf.style.cssText='position:fixed;left:'+cx+'px;top:'+cy+'px;pointer-events:none;z-index:99999;font-size:0.6rem;opacity:0;animation:sparkBurst 1s ease forwards;animation-delay:'+(i*30)+'ms;--sdx:'+dx+'px;--sdy:'+dy+'px;';
+      document.body.appendChild(leaf);
+      setTimeout(function(){if(leaf.parentNode)leaf.remove();},1200);
+    })(_di);}
+  },600);
   // First drop milestone
   var _eh=document.getElementById('w-empty-hint');if(_eh)_eh.remove();
   if(!localStorage.getItem('lw_first_drop')){
