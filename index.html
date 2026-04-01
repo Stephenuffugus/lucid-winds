@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.01.23';
+  var LW_VERSION='2026.04.01.24';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3391,12 +3391,12 @@
 
 /* Medallion nav — 4 circular buttons embedded in the frame's bottom bar */
 #wild-nav{position:fixed;bottom:0;left:0;right:0;z-index:460;display:none;padding:8px 0;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));background:linear-gradient(0deg,rgba(8,10,6,0.96) 0%,rgba(13,16,12,0.88) 75%,transparent 100%);box-shadow:0 -4px 20px rgba(0,0,0,0.5);}
-#wild-nav .wn-row{display:flex;justify-content:space-around;align-items:center;max-width:420px;margin:0 auto;padding:0 12px;}
-.wn-btn{width:72px;height:72px;border-radius:50%;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;-webkit-tap-highlight-color:transparent;padding:0;overflow:hidden;filter:drop-shadow(0 3px 10px rgba(0,0,0,0.5));}
-.wn-btn:active{transform:scale(0.88);}
-.wn-btn.active{filter:drop-shadow(0 0 14px rgba(122,179,86,0.35)) drop-shadow(0 3px 10px rgba(0,0,0,0.5));}
-.wn-btn img{width:72px;height:72px;object-fit:contain;border-radius:50%;}
-.wn-btn:not(.active) img{opacity:0.55;filter:saturate(0.4) brightness(0.8);}
+#wild-nav .wn-row{display:flex;gap:6px;align-items:center;padding:0 10px;}
+.wn-btn{flex:1;height:64px;border-radius:10px;border:1.5px solid rgba(74,124,53,0.15);background:rgba(13,16,12,0.6);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;-webkit-tap-highlight-color:transparent;padding:4px;overflow:hidden;}
+.wn-btn:active{transform:scale(0.93);}
+.wn-btn.active{border-color:rgba(122,179,86,0.4);background:rgba(74,124,53,0.12);box-shadow:0 0 12px rgba(122,179,86,0.15);}
+.wn-btn img{width:48px;height:48px;object-fit:contain;border-radius:8px;}
+.wn-btn:not(.active) img{opacity:0.5;filter:saturate(0.3) brightness(0.7);}
 .wn-lbl{display:none;} /* labels hidden — icons only in medallions */
 
 /* ── STEP COUNTER in log bar ── */
@@ -22654,7 +22654,7 @@ document.addEventListener('keydown', function(e) {
           grid.appendChild(el);
           continue;
         }
-        var plantSvg = generatePlantSVG(plant.hash, 50);
+        var plantSvg = generatePlantSVG(plant.hash, 65);
         if (plant.mutated) {
           plantSvg = plantSvg.replace('<svg ', '<svg style="filter:drop-shadow(0 0 6px rgba(200,168,75,0.5)) drop-shadow(0 0 12px rgba(200,168,75,0.2));" ');
         }
