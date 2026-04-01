@@ -5645,57 +5645,82 @@ document.addEventListener('keydown', function(e) {
     if (!t) return _TERRA_GRADES[0];
     var score = 0;
 
-    // ── SLOT 1: VESSEL — best of (pot rarity, substrate rarity) ── max +2
+    // ── SLOT 1: VESSEL — best of (pot rarity, substrate rarity) ── max +3
     var potS = 0;
     if (t.pot === 15) potS = 2;  // Golden Pot (Legendary)
     else {
       var _p = t.pot % 71;
       // Rare pots: Terrarium(7), Amphora(21), Cauldron(22), Urn(23), Bonsai(27), Stone(28)
-      // + expanded: Cauldron(50), Geode(51), Fossil Bowl(52)
       if (_p===7||_p===21||_p===22||_p===23||_p===27||_p===28) potS = 1;
-      if (_p===50||_p===51||_p===52) potS = 1;  // Epic pots (expanded bank)
-      if (_p===56||_p===57) potS = 2; // Legendary/Mythic pots (post-expansion)
+      // Epic pots (expanded): Cauldron(50), Geode(51), Fossil Bowl(52), Obsidian Crucible(53), Glass Orb(54)
+      if (_p===50||_p===51||_p===52||_p===53||_p===54) potS = 1;
+      // Legendary pots: Ancient Amphora(56), Philosopher's Vessel(57), Moonstone Urn(58)
+      if (_p===56||_p===57||_p===58) potS = 2;
+      // Mythic pot: World Seed Cradle(59)
+      if (_p===59) potS = 3;
     }
     var subS = 0;
     var _b = t.base % 71;
     // Rare substrates: Crystal(15), Sulfuric(16), Obsidian(17), Meteorite(28), Mycelium(29)
-    // + expanded: Amber(52), Biolum Soil(53), Stardust(56), Void Essence(60)
     if (_b===15||_b===16||_b===17||_b===28||_b===29) subS = 1;
-    if (_b===52||_b===53||_b===56||_b===60) subS = 1;  // Rare+ expanded substrates
+    // Epic substrates: Amber(52), Biolum Soil(53), Magnetic Sand(54), Fossil Bed(55)
+    if (_b===52||_b===53||_b===54||_b===55) subS = 1;
+    // Legendary substrates: Stardust(56), Dragon Bone Ash(57), Quicksilver(58)
+    if (_b===56||_b===57||_b===58) subS = 2;
+    // Mythic substrates: Phoenix Ash(59), Void Essence(60), Moonstone Dust(61)
+    if (_b===59||_b===60||_b===61) subS = 3;
     score += (potS > subS ? potS : subS);
 
-    // ── SLOT 2: FOLIAGE — best of (stem rarity, leaf rarity) ── max +1
+    // ── SLOT 2: FOLIAGE — best of (stem rarity, leaf rarity) ── max +2
     var stemS = 0;
     var _st = t.stem % 24;
-    if (_st===12||_st===14||_st===22||_st===23) stemS = 1;  // Epic stems + Crystal Spine, Iron Trunk
+    // Epic stems: Ancient Bark(12), Hollow Trunk(14)
+    if (_st===12||_st===14) stemS = 1;
+    // Legendary stems: Crystal Spine(22), Iron Trunk(23)
+    if (_st===22||_st===23) stemS = 2;
     var leafS = 0;
     var _lt = t.leafType % 71;
-    if (_lt>=40&&_lt<=49) leafS = 1;  // Epic leaves (fantasy set 2)
-    if (_lt>=60&&_lt<=65) leafS = 1;  // Rare+ expanded leaves
+    // Epic leaves: Crown Laurel(40)-Jellyleaf(49)
+    if (_lt>=40&&_lt<=49) leafS = 1;
+    // Legendary leaves: Crystal Shard(60), Ember Leaf(61), Feather Frond(62)
+    if (_lt>=60&&_lt<=62) leafS = 2;
+    // Mythic leaves: Void Petal(68), Wishbone(69), Lantern Pod(70)
+    if (_lt>=68&&_lt<=70) leafS = 2;
+    // Rare expanded: Lunar Disc(63)-Frost Plate(67)
+    if (_lt>=63&&_lt<=67) leafS = 1;
     score += (stemS > leafS ? stemS : leafS);
 
-    // ── SLOT 3: BLOOM ── max +2
+    // ── SLOT 3: BLOOM ── max +3
     if (t.hasFlower) {
       var _bl = t.flower % 71;
-      if (_bl===15) score += 2;  // Glow Flower (Legendary)
-      else if (_bl>=34&&_bl<=45) score += 1;  // Epic exotics
-      else if (_bl>=66&&_bl<=70) score += 1;  // Rare+ expanded (Flame, Ice Rose, Void, Clock, Prism)
+      // Mythic bloom: Titan Arum(38) — only one per ~1.4%
+      if (_bl===38) score += 3;
+      // Legendary blooms: Glow Flower(15), Ghost Orchid(41), Dragon Arum(37), Carrion Starfish(39)
+      else if (_bl===15||_bl===41||_bl===37||_bl===39) score += 2;
+      // Epic exotics: idx 34-45 (minus the legendaries already counted)
+      else if (_bl>=34&&_bl<=45) score += 1;
+      // Rare+ expanded: Flame Bloom(66), Ice Rose(67), Void Blossom(68), Clock Flower(69), Prism Bloom(70)
+      else if (_bl>=66&&_bl<=70) score += 1;
     }
 
-    // ── SLOT 4: AURA ── max +1
-    // Epic auras: Spider Web(17), Poison Miasma(18), Frost Crystal(19), Ember Glow(20)
-    // + expanded: Void Eclipse(29), Stained Glass(35)
+    // ── SLOT 4: AURA ── max +2
     var _au = t.aura % 36;
-    if ((_au>=17&&_au<=20)||_au===29||_au===35) score += 1;
+    // Legendary auras: Void Eclipse(29), Stained Glass(35)
+    if (_au===29||_au===35) score += 2;
+    // Epic auras: Spider Web(17), Poison Miasma(18), Frost Crystal(19), Ember Glow(20)
+    // + Northern Lights V2(31), Lightning Bugs(33)
+    else if ((_au>=17&&_au<=20)||_au===31||_au===33) score += 1;
 
-    // ── SLOT 5: COMPANION — base path only (non-mythic) ── max +1
+    // ── SLOT 5: COMPANION — base path only (non-mythic) ── max +2
     if (t.mythic < 0xD0) {
       var _c = t.companion;
-      // Rare+ base creatures: Platypus(40), Pangolin(43), Luna Moth(44),
-      // Glow Snail(46), Axolotl(47), Scorpion(48), Origami Crane(49), Gnome(50)
-      // + expanded: Chameleon(69), Jellyfish(72), Raven(75), Crystal Beetle(78), Will-o-Wisp(79)
-      if (_c===40||_c===43||_c===44||_c===46||_c===47||_c===48||_c===49||_c===50) score += 1;
-      if (_c===69||_c===72||_c===75||_c===78||_c===79) score += 1;
+      // Rare base creatures: Platypus(40), Pangolin(43), Luna Moth(44),
+      // Glow Snail(46), Axolotl(47), Scorpion(48)
+      if (_c===40||_c===43||_c===44||_c===46||_c===47||_c===48) score += 1;
+      // Epic companions: Origami Crane(49), Gnome(50), Chameleon(69), Jellyfish(72)
+      if (_c===49||_c===50||_c===69||_c===72) score += 1;
+      // Legendary companions: Raven(75), Crystal Beetle(78), Will-o-Wisp(79)
+      if (_c===75||_c===78||_c===79) score += 2;
     }
 
     // ── SPIKE: MUTATION (0-3) ──
