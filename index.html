@@ -4575,6 +4575,7 @@ window.onerror=function(msg,url,line,col,err){
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Daily drops remaining. Resets at midnight.')"><div class="wild-log-val" id="w-drops-left">3</div><div class="wild-log-lbl">drops</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Dew Drops \u2014 earned by harvesting. Use to water plants or skip nursery days.')"><div class="wild-log-val" style="color:rgba(91,175,220,0.9)" id="w-dew">0</div><div class="wild-log-lbl">dew</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Pollen \u2014 earned passively from planted wild plants. Rarer plants earn faster.')"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl">pollen</div></div>
+      <div class="wild-log-stat" onclick="FG_Wild._logTip('Other players\u2019 plants visible nearby. Tap one to harvest!')"><div class="wild-log-val" style="color:var(--sage)" id="w-nearby">0</div><div class="wild-log-lbl">nearby</div></div>
       <div class="wild-log-wind" id="w-wind"><img src="assets/games/wild/wild-compass-v4.png" style="width:44px;height:44px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));" alt=""><span></span></div>
     </div>
     <!-- RECENTER BUTTON -->
@@ -28812,6 +28813,8 @@ function _updateCounts(){
   }
   localStorage.setItem('fg_pollen_tick',String(now));
   var p=document.getElementById('w-pollen');if(p)p.textContent=total;
+  // Update nearby count (shared drops visible on map)
+  var nb=document.getElementById('w-nearby');if(nb){var _nbCount=_sharedMarkers?Object.keys(_sharedMarkers).length:0;nb.textContent=_nbCount;}
   // Update Dew Drops balance display
   try{
     var _dlRaw=window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger');
