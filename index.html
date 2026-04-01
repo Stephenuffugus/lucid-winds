@@ -22660,10 +22660,34 @@ document.addEventListener('keydown', function(e) {
     // Empty greenhouse welcome for new players
     if (gh.length === 0) {
       var _welcome = document.createElement('div');
-      _welcome.style.cssText = 'grid-column:1/-1;text-align:center;padding:2rem 1rem;';
-      _welcome.innerHTML = '<div style="font-size:2rem;margin-bottom:0.4rem;opacity:0.6;">🌱</div>' +
-        '<div style="font-family:Playfair Display,serif;font-size:0.8rem;color:var(--cream);margin-bottom:0.3rem;">Your greenhouse is empty</div>' +
-        '<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);line-height:1.6;max-width:240px;margin:0 auto 0.6rem;">Play games to earn Dew Drops. Every 30 drops blooms a unique, one-of-one plant.</div>' +
+      _welcome.style.cssText = 'grid-column:1/-1;text-align:center;padding:1.5rem 1rem;';
+      var _prog = typeof window._getHashProgress === 'function' ? window._getHashProgress() : 0;
+      var _pct = Math.round(Math.min(_prog, 30) / 30 * 100);
+      _welcome.innerHTML =
+        '<div style="font-size:2rem;margin-bottom:0.3rem;opacity:0.6;">\ud83c\udf31</div>' +
+        '<div style="font-family:Playfair Display,serif;font-size:0.8rem;color:var(--cream);margin-bottom:0.4rem;">Your greenhouse awaits</div>' +
+        // Loop diagram
+        '<div style="display:flex;align-items:center;justify-content:center;gap:0.3rem;margin-bottom:0.5rem;">' +
+          '<div style="background:rgba(26,36,22,0.6);border:1px solid rgba(74,124,53,0.15);border-radius:8px;padding:0.3rem 0.4rem;text-align:center;">' +
+            '<div style="font-size:0.7rem;">\ud83c\udccf</div>' +
+            '<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:var(--sage);">Play</div>' +
+          '</div>' +
+          '<div style="color:var(--muted);font-size:0.5rem;">\u2192</div>' +
+          '<div style="background:rgba(26,36,22,0.6);border:1px solid rgba(91,175,220,0.15);border-radius:8px;padding:0.3rem 0.4rem;text-align:center;">' +
+            '<div style="font-size:0.7rem;">\ud83d\udca7</div>' +
+            '<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(91,175,220,0.9);">Earn Dew</div>' +
+          '</div>' +
+          '<div style="color:var(--muted);font-size:0.5rem;">\u2192</div>' +
+          '<div style="background:rgba(26,36,22,0.6);border:1px solid rgba(200,168,75,0.15);border-radius:8px;padding:0.3rem 0.4rem;text-align:center;">' +
+            '<div style="font-size:0.7rem;">\ud83c\udf3f</div>' +
+            '<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:var(--gold);">Bloom</div>' +
+          '</div>' +
+        '</div>' +
+        // Progress bar
+        (_prog > 0 ? '<div style="display:flex;align-items:center;gap:6px;max-width:200px;margin:0 auto 0.5rem;">' +
+          '<div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;"><div style="width:'+_pct+'%;height:100%;background:linear-gradient(90deg,rgba(91,175,220,0.6),rgba(122,179,86,0.7));border-radius:2px;"></div></div>' +
+          '<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--muted);">'+_prog+'/30</div></div>' : '') +
+        '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);line-height:1.6;max-width:240px;margin:0 auto 0.5rem;">Every 30 Dew Drops blooms a unique, one-of-one plant. No two are alike.</div>' +
         '<button onclick="switchTab(\'game\')" style="padding:0.45rem 1.2rem;border:1.5px solid rgba(122,179,86,0.35);border-radius:8px;background:linear-gradient(180deg,rgba(74,124,53,0.2),rgba(26,60,22,0.3));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">START PLAYING</button>';
       grid.appendChild(_welcome);
     }
