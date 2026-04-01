@@ -789,7 +789,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.01.19';
+  var LW_VERSION='2026.04.01.20';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3402,8 +3402,8 @@
 #wild-frame img{width:100%;height:100%;object-fit:fill;}
 
 /* Medallion nav — 4 circular buttons embedded in the frame's bottom bar */
-#wild-nav{position:fixed;bottom:0;left:0;right:0;z-index:460;display:none;height:80px;padding-bottom:env(safe-area-inset-bottom,0px);}
-#wild-nav .wn-row{display:flex;justify-content:space-around;align-items:center;height:100%;max-width:400px;margin:0 auto;padding:0 24px;}
+#wild-nav{position:fixed;bottom:0;left:0;right:0;z-index:460;display:none;padding:10px 0;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));background:linear-gradient(0deg,rgba(8,10,6,0.95) 0%,rgba(13,16,12,0.85) 80%,transparent 100%);box-shadow:0 -4px 20px rgba(0,0,0,0.4);}
+#wild-nav .wn-row{display:flex;justify-content:space-around;align-items:center;max-width:360px;margin:0 auto;padding:0 16px;}
 .wn-btn{width:56px;height:56px;border-radius:50%;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;-webkit-tap-highlight-color:transparent;padding:0;overflow:hidden;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.5));}
 .wn-btn:active{transform:scale(0.88);}
 .wn-btn.active{filter:drop-shadow(0 0 12px rgba(122,179,86,0.3)) drop-shadow(0 3px 8px rgba(0,0,0,0.5));}
@@ -3850,10 +3850,10 @@
 /* ═══ WILD TAB v2 — Premium Redesign ═══ */
 
 /* ── Wild Log Bar (top navigation) ── */
-.wild-log{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:8px 16px;padding-top:calc(8px + env(safe-area-inset-top,0px));min-height:48px;background:url('assets/games/wild/wild-log-bar-v4.png') center/cover no-repeat;background-color:rgba(32,24,14,.95);border-bottom:1px solid rgba(80,60,30,.3);z-index:460}
-.wild-log-stat{display:flex;flex-direction:column;align-items:center;gap:1px}
-.wild-log-val{font-family:'Bebas Neue',sans-serif;font-size:clamp(.85rem,2.5vw,1.1rem);color:var(--cream);line-height:1;text-shadow:0 1px 4px rgba(0,0,0,.8)}
-.wild-log-lbl{font-family:'DM Mono',monospace;font-size:clamp(.32rem,1vw,.42rem);color:rgba(200,188,160,.5);letter-spacing:.1em;text-transform:uppercase}
+.wild-log{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-around;padding:6px 12px;padding-top:calc(6px + env(safe-area-inset-top,0px));min-height:52px;background:url('assets/games/wild/wild-log-bar-v4.png') center/cover no-repeat;background-color:rgba(32,24,14,.95);border-bottom:1px solid rgba(80,60,30,.3);z-index:460;box-shadow:0 4px 16px rgba(0,0,0,0.5);}
+.wild-log-stat{display:flex;flex-direction:column;align-items:center;gap:1px;background:rgba(8,10,6,0.5);padding:3px 8px;border-radius:6px;backdrop-filter:blur(2px);}
+.wild-log-val{font-family:'Bebas Neue',sans-serif;font-size:clamp(.85rem,2.5vw,1.1rem);color:var(--cream);line-height:1;text-shadow:0 1px 4px rgba(0,0,0,.9),0 0 8px rgba(0,0,0,.5)}
+.wild-log-lbl{font-family:'DM Mono',monospace;font-size:clamp(.32rem,1vw,.42rem);color:rgba(200,188,160,.6);letter-spacing:.1em;text-transform:uppercase}
 .wild-log-wind{font-family:'DM Mono',monospace;font-size:clamp(.35rem,1vw,.45rem);color:var(--muted);display:flex;align-items:center;gap:4px}
 
 /* ── Trait Panel v2 (bottom sheet) ── */
@@ -4579,7 +4579,7 @@ window.onerror=function(msg,url,line,col,err){
       <div class="wild-log-wind" id="w-wind"><img src="assets/games/wild/wild-compass-v4.png" style="width:32px;height:32px;opacity:.8" alt=""> —</div>
     </div>
     <!-- MAP -->
-    <div id="wild-map" style="width:100%;height:calc(100vh - 12rem - env(safe-area-inset-bottom, 0px));height:calc(100dvh - 12rem - env(safe-area-inset-bottom, 0px));min-height:250px;"></div>
+    <div id="wild-map" style="width:100%;height:100vh;height:100dvh;min-height:250px;"></div>
     <div class="map-hex-overlay"></div>
     <div id="wild-map-tod"></div>
     <div class="map-fog"><div class="fog-wisp"></div><div class="fog-wisp"></div><div class="fog-wisp"></div></div>
