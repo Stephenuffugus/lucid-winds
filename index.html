@@ -1639,48 +1639,34 @@
 
     /* ═══ PERSISTENT BOTTOM NAV — FIXED position, never moves ═══ */
     .fg-bottomnav{
-      display:flex;gap:0.35rem;
+      display:flex;gap:0;
       position:fixed;bottom:0;left:0;right:0;z-index:999;
-      padding:0.35rem 0.4rem;
-      padding-bottom:calc(0.35rem + env(safe-area-inset-bottom, 0px));
-      background:linear-gradient(180deg,rgba(22,20,16,0.97) 0%,rgba(10,12,8,0.99) 100%);
-      border-top:1px solid rgba(200,188,160,0.08);
+      padding:0;
+      padding-bottom:env(safe-area-inset-bottom, 0px);
+      background:rgba(10,12,8,0.98);
+      border-top:none;
       max-width:680px;margin:0 auto;
     }
     .fg-nav-btn{
       flex:1;
-      background:linear-gradient(180deg,rgba(46,40,32,0.6) 0%,rgba(32,30,24,0.7) 100%);
-      border:1px solid rgba(200,188,160,0.12);
-      box-shadow:inset 0 1px 0 rgba(240,235,216,0.04), 0 2px 6px rgba(0,0,0,0.25);
-      color:rgba(200,188,160,0.45);
-      font-family:'Bebas Neue',sans-serif;font-size:0.5rem;letter-spacing:0.08em;
-      padding:0.3rem 0.2rem 0.25rem;min-height:58px;cursor:pointer;text-align:center;
-      transition:all 0.2s;position:relative;
-      border-radius:8px;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.12rem;
+      background:none;border:none;
+      cursor:pointer;
+      transition:all 0.15s;position:relative;
+      padding:0;min-height:auto;
+      display:flex;align-items:center;justify-content:center;
+      -webkit-tap-highlight-color:transparent;
     }
-    .fg-nav-btn:hover{
-      border-color:rgba(200,188,160,0.22);
-      background:linear-gradient(180deg,rgba(56,50,40,0.65) 0%,rgba(38,36,28,0.75) 100%);
-      color:rgba(200,188,160,0.7);
-    }
-    .fg-nav-btn:active{transform:scale(0.97);}
-    .fg-nav-btn.active{
-      border-color:rgba(122,179,86,0.35);
-      background:linear-gradient(180deg,rgba(74,124,53,0.12) 0%,rgba(26,60,22,0.2) 100%);
-      color:var(--sage);
-      box-shadow:inset 0 1px 0 rgba(122,179,86,0.08), 0 2px 8px rgba(0,0,0,0.3), 0 0 12px rgba(122,179,86,0.06);
-    }
+    .fg-nav-btn img{width:100%;height:auto;display:block;}
+    .fg-nav-btn:not(.active) img{opacity:0.4;filter:saturate(0.3) brightness(0.6);}
+    .fg-nav-btn.active img{opacity:1;filter:brightness(1.05) drop-shadow(0 0 8px rgba(122,179,86,0.15));}
+    .fg-nav-btn:active{transform:scale(0.94);}
     .fg-nav-btn.active::after{
-      content:'';position:absolute;bottom:4px;left:25%;right:25%;height:2px;
+      content:'';position:absolute;bottom:2px;left:20%;right:20%;height:2px;
       background:var(--sage);border-radius:1px;opacity:0.8;
       animation:navDotIn 0.25s ease;
     }
     @keyframes navDotIn{from{transform:scaleX(0);opacity:0;}to{transform:scaleX(1);opacity:0.8;}}
-    .fg-nav-img{width:28px;height:28px;display:flex;align-items:center;justify-content:center;}
-    .fg-nav-img svg{color:inherit;}
-    .fg-nav-label{display:block;font-size:0.6rem;letter-spacing:0.1em;opacity:0.8;margin-top:0.05rem;}
-    .fg-nav-btn.active .fg-nav-label{opacity:1;}
+    .fg-nav-label{display:none;}
 
     /* ── set-78: SWS ID Modal — CSS VAR ALIGNED (--moss, --black, --gold) ── */
     #sws-id-modal{
@@ -3392,14 +3378,14 @@
 #wild-frame{display:none!important;}
 
 /* Medallion nav — 4 circular buttons embedded in the frame's bottom bar */
-#wild-nav{position:fixed;bottom:0;left:0;right:0;z-index:460;display:none;padding:10px 0 8px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));background:linear-gradient(0deg,rgba(8,10,6,0.97) 0%,rgba(13,16,12,0.93) 80%,rgba(13,16,12,0.7) 95%,transparent 100%);border-top:1px solid rgba(200,168,75,0.1);box-shadow:0 -6px 30px rgba(0,0,0,0.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
-#wild-nav .wn-row{display:flex;gap:6px;align-items:center;padding:0 10px;}
-.wn-btn{flex:1;height:72px;border-radius:6px;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;-webkit-tap-highlight-color:transparent;padding:0;overflow:visible;}
+#wild-nav{position:fixed;bottom:0;left:0;right:0;z-index:460;display:none;padding:0;padding-bottom:env(safe-area-inset-bottom,0px);background:rgba(10,12,8,0.98);border-top:none;}
+#wild-nav .wn-row{display:flex;gap:0;align-items:center;padding:0;}
+.wn-btn{flex:1;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;-webkit-tap-highlight-color:transparent;padding:0;overflow:visible;}
 .wn-btn:active{transform:scale(0.92);}
-.wn-btn.active{filter:drop-shadow(0 0 10px rgba(200,168,75,0.25));}
-.wn-btn img{width:auto;height:68px;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.5));}
-.wn-btn:not(.active) img{opacity:0.5;filter:saturate(0.3) brightness(0.6) drop-shadow(0 2px 6px rgba(0,0,0,0.4));}
-.wn-lbl{display:none;} /* labels hidden — icons only in medallions */
+.wn-btn.active{filter:drop-shadow(0 0 8px rgba(122,179,86,0.15));}
+.wn-btn img{width:100%;height:auto;display:block;}
+.wn-btn:not(.active) img{opacity:0.4;filter:saturate(0.3) brightness(0.6);}
+.wn-lbl{display:none;}
 
 /* ── STEP COUNTER in log bar ── */
 .wild-log-steps{display:flex;align-items:center;gap:3px;font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--muted);white-space:nowrap;}
@@ -4956,40 +4942,28 @@ window.onerror=function(msg,url,line,col,err){
 })();
 </script>
 
-  <!-- PERSISTENT BOTTOM NAV — distinct card buttons -->
+  <!-- PERSISTENT BOTTOM NAV — stone tablet v5 buttons -->
   <div class="fg-bottomnav">
-    <button class="fg-nav-btn active" onclick="switchTab('game')">
-      <div class="fg-nav-img"><img src="assets/games/wild/nav-game-stone.png" style="width:36px;height:44px;object-fit:contain;" alt=""></div>
-      <span class="fg-nav-label">GAME</span>
-    </button>
-    <button class="fg-nav-btn" onclick="switchTab('greenhouse')">
-      <div class="fg-nav-img"><img src="assets/games/wild/nav-greenhouse-stone.png" style="width:36px;height:44px;object-fit:contain;" alt=""></div>
-      <span class="fg-nav-label">GREENHOUSE</span>
-    </button>
-    <button class="fg-nav-btn" onclick="switchTab('nursery')">
-      <div class="fg-nav-img"><img src="assets/games/wild/nav-nursery-stone.png" style="width:36px;height:44px;object-fit:contain;" alt=""></div>
-      <span class="fg-nav-label">NURSERY</span>
-    </button>
-    <button class="fg-nav-btn" onclick="switchTab('wild')">
-      <div class="fg-nav-img"><img src="assets/games/wild/nav-wild-stone.png" style="width:36px;height:44px;object-fit:contain;" alt=""></div>
-      <span class="fg-nav-label">WILD</span>
-    </button>
+    <button class="fg-nav-btn active" onclick="switchTab('game')"><img src="assets/games/wild/nav-game-v5.png" alt="Game"></button>
+    <button class="fg-nav-btn" onclick="switchTab('greenhouse')"><img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse"></button>
+    <button class="fg-nav-btn" onclick="switchTab('nursery')"><img src="assets/games/wild/nav-nursery-v5.png" alt="Nursery"></button>
+    <button class="fg-nav-btn" onclick="switchTab('wild')"><img src="assets/games/wild/nav-wild-v5.png" alt="Wild"></button>
   </div>
 
-  <!-- WILD TAB MEDALLION NAV — replaces bottom nav when on Wild tab -->
+  <!-- WILD TAB NAV — replaces bottom nav when on Wild tab -->
   <div id="wild-nav">
     <div class="wn-row">
       <button class="wn-btn" onclick="switchTab('game')" title="Game">
-        <img src="assets/games/wild/nav-game-stone.png" alt="Game">
+        <img src="assets/games/wild/nav-game-v5.png" alt="Game">
       </button>
       <button class="wn-btn" onclick="switchTab('greenhouse')" title="Greenhouse">
-        <img src="assets/games/wild/nav-greenhouse-stone.png" alt="Greenhouse">
+        <img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse">
       </button>
       <button class="wn-btn" onclick="switchTab('nursery')" title="Nursery">
-        <img src="assets/games/wild/nav-nursery-stone.png" alt="Nursery">
+        <img src="assets/games/wild/nav-nursery-v5.png" alt="Nursery">
       </button>
       <button class="wn-btn active" onclick="switchTab('wild')" title="Wild">
-        <img src="assets/games/wild/nav-wild-stone.png" alt="Wild">
+        <img src="assets/games/wild/nav-wild-v5.png" alt="Wild">
       </button>
     </div>
   </div>
