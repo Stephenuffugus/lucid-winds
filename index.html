@@ -1666,7 +1666,8 @@
       animation:navDotIn 0.25s ease;
     }
     @keyframes navDotIn{from{transform:scaleX(0);opacity:0;}to{transform:scaleX(1);opacity:0.8;}}
-    .fg-nav-label{display:none;}
+    .fg-nav-label{display:block;position:absolute;bottom:6px;left:0;right:0;font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.12em;color:rgba(232,220,200,0.85);text-shadow:0 1px 4px rgba(0,0,0,1),0 0 8px rgba(0,0,0,0.9);pointer-events:none;text-align:center;}
+    .fg-nav-btn:not(.active) .fg-nav-label{opacity:0.5;}
 
     /* ── set-78: SWS ID Modal — CSS VAR ALIGNED (--moss, --black, --gold) ── */
     #sws-id-modal{
@@ -3385,7 +3386,9 @@
 .wn-btn.active{filter:drop-shadow(0 0 8px rgba(122,179,86,0.15));}
 .wn-btn img{width:100%;height:auto;display:block;}
 .wn-btn:not(.active) img{opacity:0.4;filter:saturate(0.3) brightness(0.6);}
-.wn-lbl{display:none;}
+.wn-lbl{display:block;position:absolute;bottom:6px;left:0;right:0;font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.12em;color:rgba(232,220,200,0.85);text-shadow:0 1px 4px rgba(0,0,0,1),0 0 8px rgba(0,0,0,0.9);pointer-events:none;text-align:center;}
+.wn-btn:not(.active) .wn-lbl{opacity:0.5;}
+.wn-btn{position:relative;}
 
 /* ── STEP COUNTER in log bar ── */
 .wild-log-steps{display:flex;align-items:center;gap:3px;font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--muted);white-space:nowrap;}
@@ -4944,26 +4947,26 @@ window.onerror=function(msg,url,line,col,err){
 
   <!-- PERSISTENT BOTTOM NAV — stone tablet v5 buttons -->
   <div class="fg-bottomnav">
-    <button class="fg-nav-btn active" onclick="switchTab('game')"><img src="assets/games/wild/nav-game-v5.png" alt="Game"></button>
-    <button class="fg-nav-btn" onclick="switchTab('greenhouse')"><img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse"></button>
-    <button class="fg-nav-btn" onclick="switchTab('nursery')"><img src="assets/games/wild/nav-nursery-v5.png" alt="Nursery"></button>
-    <button class="fg-nav-btn" onclick="switchTab('wild')"><img src="assets/games/wild/nav-wild-v5.png" alt="Wild"></button>
+    <button class="fg-nav-btn active" onclick="switchTab('game')"><img src="assets/games/wild/nav-game-v5.png" alt="Game"><span class="fg-nav-label">GAME</span></button>
+    <button class="fg-nav-btn" onclick="switchTab('greenhouse')"><img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse"><span class="fg-nav-label">GREENHOUSE</span></button>
+    <button class="fg-nav-btn" onclick="switchTab('nursery')"><img src="assets/games/wild/nav-nursery-v5.png" alt="Nursery"><span class="fg-nav-label">NURSERY</span></button>
+    <button class="fg-nav-btn" onclick="switchTab('wild')"><img src="assets/games/wild/nav-wild-v5.png" alt="Wild"><span class="fg-nav-label">WILD</span></button>
   </div>
 
   <!-- WILD TAB NAV — replaces bottom nav when on Wild tab -->
   <div id="wild-nav">
     <div class="wn-row">
       <button class="wn-btn" onclick="switchTab('game')" title="Game">
-        <img src="assets/games/wild/nav-game-v5.png" alt="Game">
+        <img src="assets/games/wild/nav-game-v5.png" alt="Game"><span class="wn-lbl">GAME</span>
       </button>
       <button class="wn-btn" onclick="switchTab('greenhouse')" title="Greenhouse">
-        <img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse">
+        <img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse"><span class="wn-lbl">GREENHOUSE</span>
       </button>
       <button class="wn-btn" onclick="switchTab('nursery')" title="Nursery">
-        <img src="assets/games/wild/nav-nursery-v5.png" alt="Nursery">
+        <img src="assets/games/wild/nav-nursery-v5.png" alt="Nursery"><span class="wn-lbl">NURSERY</span>
       </button>
       <button class="wn-btn active" onclick="switchTab('wild')" title="Wild">
-        <img src="assets/games/wild/nav-wild-v5.png" alt="Wild">
+        <img src="assets/games/wild/nav-wild-v5.png" alt="Wild"><span class="wn-lbl">WILD</span>
       </button>
     </div>
   </div>
