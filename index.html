@@ -27785,6 +27785,8 @@ function _updateProximity(){
       el.className='leaflet-marker-icon leaflet-zoom-animated leaflet-interactive';
     }
   }
+  // Passive pollen from nearby plants (every 10min per plant)
+  _fjPassivePollen();
   // Feral proximity alert — pulse when a feral enters collection range
   try{
     var ferals=JSON.parse(localStorage.getItem('fg_ferals')||'[]');
@@ -28268,8 +28270,85 @@ function _addPlant(p){
 }
 
 // ═══ TRAIT PANEL ═══
+// ═══ FIELD JOURNAL — reward every plant interaction ═══
+// Every plant is a point of interest. Tapping always pays.
+var FJ_KEY='lw_field_journal';
+function _fjLoad(){try{return JSON.parse(localStorage.getItem(FJ_KEY)||'{}');}catch(e){return {};}}
+function _fjSave(j){localStorage.setItem(FJ_KEY,JSON.stringify(j));}
+
+function _fjInteract(p){
+  if(!p||!p.hash)return;
+  var j=_fjLoad();
+  var today=new Date().toISOString().split('T')[0];
+  var key=p.hash.slice(0,16);
+  var entry=j[key]||{};
+  var reward=0;var rewardType='';
+
+  // DISCOVERY: first time ever tapping this plant
+  if(!entry.discovered){
+    entry.discovered=today;
+    reward+=2;rewardType='New discovery! +2 Dew';
+    // Track total discoveries
+    j._count=(j._count||0)+1;
+  }
+  // SCOUT: first inspect this plant today
+  else if(entry.lastScout!==today){
+    reward+=1;rewardType='Scouted +1 Dew';
+  }
+  entry.lastScout=today;
+  j[key]=entry;
+  _fjSave(j);
+
+  if(reward>0){
+    if(window.earnHashes)window.earnHashes(reward);
+    _toast(rewardType+(j._count?' \u00b7 '+j._count+' species found':''));
+    if(window._updateGameDew)_updateGameDew();
+  }
+}
+
+// Passive proximity pollen — called from _updateProximity on GPS update
+function _fjPassivePollen(){
+  if(!_uLat||!_uLng)return;
+  var j=_fjLoad();
+  var now=Date.now();
+  var earned=0;
+  // Check shared markers
+  var hashes=Object.keys(_sharedMarkers);
+  for(var i=0;i<hashes.length;i++){
+    var entry=_sharedMarkers[hashes[i]];
+    if(!entry||!entry.data||!entry.data.lat)continue;
+    var dist=_dist(_uLat,_uLng,entry.data.lat,entry.data.lng);
+    if(dist<=COLLECT_RANGE){
+      var fk='_pp_'+hashes[i].slice(0,12);
+      var lastPoll=j[fk]||0;
+      if(now-lastPoll>=600000){ // 10 min cooldown per plant
+        j[fk]=now;
+        earned++;
+      }
+    }
+  }
+  // Also check own wild plants
+  var wild=_getWild();
+  for(var w=0;w<wild.length;w++){
+    if(!wild[w].lat)continue;
+    var wd=_dist(_uLat,_uLng,wild[w].lat,wild[w].lng);
+    if(wd<=COLLECT_RANGE){
+      var wk='_pp_'+wild[w].hash.slice(0,12);
+      var wlp=j[wk]||0;
+      if(now-wlp>=600000){j[wk]=now;earned++;}
+    }
+  }
+  if(earned>0){
+    var currentPollen=_getPollen();
+    _savePollen(currentPollen+earned);
+    _fjSave(j);
+  }
+}
+
 function showTP(p,mk){
   _sel=p;_selMk=mk||null;
+  // Reward interaction (discovery/scout)
+  _fjInteract(p);
   var tp=document.getElementById('w-tp');if(!tp)return;
   // Hero: SVG + name + grade
   var sv=document.getElementById('wtp-svg');
@@ -28574,7 +28653,9 @@ function _waterOwnPlant(p,mk){
 
   // Visual feedback — sound + toast + water particle burst on marker
   _play('match');
-  _toast('\ud83d\udca7 Watered! Stress reduced. (-5 Dew Drops)');
+  // Watering earns pollen as a caretaker reward
+  var _waterPollen=3;var _curPol=_getPollen();_savePollen(_curPol+_waterPollen);
+  _toast('\ud83d\udca7 Watered! Stress reduced. (-5 Dew, +'+_waterPollen+' Pollen)');
   if(mk&&mk._icon){
     var mEl=mk._icon;
     // Brief glow pulse
