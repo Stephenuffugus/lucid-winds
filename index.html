@@ -4209,6 +4209,12 @@ window.onerror=function(msg,url,line,col,err){
   <div class="grove-panel active" id="panel-game">
   <div class="game-header">
     <div class="game-title">Lucid <em>Winds</em></div>
+    <!-- Dew Drop progress bar — shows balance + progress to next plant -->
+    <div id="game-dew-bar" style="display:flex;align-items:center;gap:8px;padding:4px 12px;margin-top:2px;">
+      <div style="font-family:DM Mono,monospace;font-size:clamp(.32rem,.9vw,.4rem);color:rgba(91,175,220,0.9);white-space:nowrap;"><span id="game-dew-val">0</span> dew</div>
+      <div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;position:relative;"><div id="game-dew-fill" style="height:100%;background:linear-gradient(90deg,rgba(91,175,220,0.6),rgba(122,179,86,0.7));border-radius:2px;width:0%;transition:width 0.4s ease;"></div></div>
+      <div style="font-family:DM Mono,monospace;font-size:clamp(.28rem,.8vw,.35rem);color:var(--muted);white-space:nowrap;"><span id="game-dew-progress">0</span>/30</div>
+    </div>
   </div>
   <div class="fg-pk" id="fg-pk"></div>
   <div id="gp-strip" class="gp-strip"></div>
@@ -22785,7 +22791,19 @@ document.addEventListener('keydown', function(e) {
     _secureSet(HASH_LEDGER_KEY, ledger);
     console.log('[earnHashes] ledger.earned now:', ledger.earned);
     if(window.PW_grantXP) PW_grantXP(amount * 2, 'dew_drop');
+    _updateGameDew();
   }
+  // Update game tab dew balance + mint progress bar
+  function _updateGameDew() {
+    var ledger = getHashLedger();
+    var balance = Math.max(0, (ledger.earned || 0) - (ledger.spent || 0));
+    var dv = document.getElementById('game-dew-val'); if (dv) dv.textContent = balance;
+    // Mint progress: hashes toward next plant (0-30)
+    var mintProg = typeof window._getHashProgress === 'function' ? window._getHashProgress() : 0;
+    var fill = document.getElementById('game-dew-fill'); if (fill) fill.style.width = Math.round(Math.min(mintProg, 30) / 30 * 100) + '%';
+    var pg = document.getElementById('game-dew-progress'); if (pg) pg.textContent = mintProg;
+  }
+  window._updateGameDew = _updateGameDew;
   function spendHashes(amount) {
     var ledger = getHashLedger();
     ledger.spent = (ledger.spent || 0) + amount;
@@ -24433,6 +24451,8 @@ document.addEventListener('keydown', function(e) {
     // Switch panel
     document.querySelectorAll('.grove-panel').forEach(function(p) { p.classList.remove('active'); });
     document.getElementById('panel-' + tab).classList.add('active');
+    // Update dew balance on every tab switch
+    if(window._updateGameDew)_updateGameDew();
     // set-104: ALWAYS scroll to top on tab switch — prevents seeing bottom
     // of a short panel while the header is off-screen above
     window.scrollTo(0, 0);
