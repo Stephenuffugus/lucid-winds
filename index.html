@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-03s';
+  var _SVG_CACHE_VER = '2026-04-03t';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21089,14 +21089,8 @@ document.addEventListener('keydown', function(e) {
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.18,0.04;0.34,0;0.18,-0.04;0,0" dur="6s" repeatCount="indefinite"/>';
         // Shadow
         s += '<ellipse cx="57" cy="92.5" rx="6" ry="0.7" fill="#0d100c" opacity="0.12"/>';
-        // Tail — thick, long, covered in scales, trailing behind right side
-        s += '<path d="M62,89 Q64,89.5 66,90 Q68,90 69,89.5 Q69.5,89 69,88.5" fill="#8A7048" stroke="#7A6038" stroke-width="0.2"/>';
-        // Tail scales — overlapping rows
-        var _pgTail = [[63,89.3],[64.5,89.6],[66,89.8],[67.5,89.6],[68.5,89.2]];
-        for (var _pti = 0; _pti < _pgTail.length; _pti++) {
-          var _ptx = _pgTail[_pti][0], _pty = _pgTail[_pti][1];
-          s += '<path d="M'+_ptx+','+(_pty-0.4)+' Q'+(_ptx+0.5)+','+(_pty+0.3)+' '+_ptx+','+(_pty+0.6)+' Q'+(_ptx-0.5)+','+(_pty+0.3)+' '+_ptx+','+(_pty-0.4)+' Z" fill="#9A8058" stroke="#7A6038" stroke-width="0.1" opacity="0.7"/>';
-        }
+        // Tail — THICK at base where it connects to body, tapering to tip
+        s += '<path d="M60,88 Q62,88.5 64,89 Q66,89.5 68,89.5 Q69,89.2 69.5,88.5 Q69.5,88 69,87.8 Q68,88 66,88.5 Q64,88.5 62,88 Q60.5,87.5 60,87.5 Z" fill="#8A7048" stroke="#7A6038" stroke-width="0.2"/>';
         // Hind legs — short, thick, powerful claws
         s += '<path d="M59,90.5 Q59,91.5 58.5,92" stroke="#7A6038" stroke-width="1" fill="none" stroke-linecap="round"/>';
         s += '<path d="M61,90 Q61.5,91 61,92" stroke="#7A6038" stroke-width="1" fill="none" stroke-linecap="round"/>';
@@ -21105,25 +21099,29 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M61,92 L60.5,92.5 M61,92 L61,92.5 M61,92 L61.5,92.4" stroke="#5A4028" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
         // Body — elongated, hunched, covered in overlapping scales
         s += '<path d="M52,88 Q52,86.5 54,85.5 Q57,84.5 60,85.5 Q62,86.5 62,88.5 Q62,90.5 60,91.5 Q57,92 54,91.5 Q52,90.5 52,88 Z" fill="#8A7048"/>';
-        // SCALES — the defining feature, overlapping like artichoke leaves
-        // Multiple rows radiating from center outward
-        var _pgScales = [
-          // Top row
-          [54,86,0.9],[55.5,85.5,1.0],[57,85.3,1.0],[58.5,85.5,1.0],[60,86,0.9],
-          // Middle row
-          [53,87.5,1.0],[54.5,87,1.1],[56,86.8,1.1],[57.5,86.8,1.1],[59,87,1.1],[60.5,87.5,1.0],
-          // Lower row
-          [53.5,89,0.9],[55,88.5,1.0],[56.5,88.3,1.0],[58,88.3,1.0],[59.5,88.5,1.0],[61,89,0.9],
-          // Side/belly row
-          [54,90.2,0.8],[55.5,90,0.9],[57,89.8,0.9],[58.5,90,0.9],[60,90.2,0.8]
-        ];
-        for (var _psi = 0; _psi < _pgScales.length; _psi++) {
-          var _ps = _pgScales[_psi];
-          var _psx = _ps[0], _psy = _ps[1], _psz = _ps[2];
-          // Each scale: diamond shape with highlight
-          s += '<path d="M'+_psx+','+(_psy-_psz*0.6)+' Q'+(_psx+_psz*0.5)+','+_psy+' '+_psx+','+(_psy+_psz*0.6)+' Q'+(_psx-_psz*0.5)+','+_psy+' '+_psx+','+(_psy-_psz*0.6)+' Z" fill="#9A8058" stroke="#7A6038" stroke-width="0.12"/>';
-          // Scale highlight — top edge catches light
-          s += '<path d="M'+(_psx-_psz*0.3)+','+(_psy-_psz*0.2)+' Q'+_psx+','+(_psy-_psz*0.6)+' '+(_psx+_psz*0.3)+','+(_psy-_psz*0.2)+'" fill="none" stroke="#B8A070" stroke-width="0.15" opacity="0.3"/>';
+        // SCALES — V-shaped irregular pattern covering entire body
+        // Uses procedural placement with V chevron marks
+        var _pgSeed43 = 43;
+        var _pgSCols = ['#9A8058','#8A7048','#A88A60','#7A6038','#9A7850'];
+        for (var _psi = 0; _psi < 80; _psi++) {
+          _pgSeed43 = (_pgSeed43 * 1103515245 + 12345) & 0x7FFFFFFF;
+          var _psx = 52.5 + (_pgSeed43 % 1000) / 1000 * 10;
+          _pgSeed43 = (_pgSeed43 * 1103515245 + 12345) & 0x7FFFFFFF;
+          var _psy = 85.5 + (_pgSeed43 % 1000) / 1000 * 6;
+          // Ellipse body check
+          var _psdx = (_psx - 57) / 5.5, _psdy = (_psy - 88.5) / 3.5;
+          if (_psdx * _psdx + _psdy * _psdy > 1) continue;
+          _pgSeed43 = (_pgSeed43 * 1103515245 + 12345) & 0x7FFFFFFF;
+          var _psSize = 0.4 + (_pgSeed43 % 100) / 120;
+          var _psCol = _pgSCols[_psi % _pgSCols.length];
+          // V-shaped chevron scale mark
+          s += '<path d="M'+(_psx-_psSize*0.5).toFixed(1)+','+_psy.toFixed(1)+' L'+_psx.toFixed(1)+','+(_psy+_psSize*0.7).toFixed(1)+' L'+(_psx+_psSize*0.5).toFixed(1)+','+_psy.toFixed(1)+'" fill="none" stroke="'+_psCol+'" stroke-width="0.15" opacity="0.5" stroke-linejoin="round"/>';
+        }
+        // Tail V-scales
+        for (var _pts = 0; _pts < 12; _pts++) {
+          var _ptsx = 62 + _pts * 0.6;
+          var _ptsy = 88.2 + Math.sin(_pts * 0.8) * 0.4;
+          s += '<path d="M'+(_ptsx-0.3).toFixed(1)+','+_ptsy.toFixed(1)+' L'+_ptsx.toFixed(1)+','+(_ptsy+0.4).toFixed(1)+' L'+(_ptsx+0.3).toFixed(1)+','+_ptsy.toFixed(1)+'" fill="none" stroke="#7A6038" stroke-width="0.12" opacity="0.45" stroke-linejoin="round"/>';
         }
         // Front legs — positioned forward, thick with big claws
         s += '<path d="M54,90 Q53.5,91 53.5,92" stroke="#7A6038" stroke-width="1" fill="none" stroke-linecap="round"/>';
@@ -21133,13 +21131,14 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M53.5,92 L53.5,92.8" stroke="#5A4028" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
         s += '<path d="M55.5,92 Q55,92.8 54.5,93" stroke="#5A4028" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
         s += '<path d="M55.5,92 L55.5,92.8" stroke="#5A4028" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
-        // Neck — short, scaled, merging into head
-        s += '<path d="M53,87 Q52,86.5 51.5,86 Q51,85.5 51,85" fill="#8A7048"/>';
-        // Head — small, elongated cone shape, no external ears
-        s += '<path d="M50,86 Q49.5,85.5 49.5,85 Q49.5,84.5 50,84 Q51,83.5 52,84 Q52.5,84.5 52.5,85 Q52.5,85.5 52,86 Q51,86.5 50,86 Z" fill="#9A8058"/>';
-        // Head scales — smaller, tighter
-        s += '<path d="M50.5,84.5 Q51,84 51.5,84.5" fill="none" stroke="#7A6038" stroke-width="0.1" opacity="0.3"/>';
-        s += '<path d="M50.2,85 Q50.7,84.5 51.2,85" fill="none" stroke="#7A6038" stroke-width="0.1" opacity="0.3"/>';
+        // Neck — THICK, same width as head, connecting body to head
+        s += '<path d="M54,87 Q53,86 52,85.5 Q51,85 50.5,85 L50.5,84.5 Q51,84 52,84 Q53,84 53.5,85 Q54,86 54,87 Z" fill="#8A7048"/>';
+        // Head — small, elongated cone shape
+        s += '<path d="M49.5,86 Q49,85.5 49,85 Q49,84.5 49.5,84 Q50.5,83.3 52,83.5 Q53,84 53,85 Q53,85.5 52.5,86 Q51.5,86.5 49.5,86 Z" fill="#9A8058"/>';
+        // Head V-scales — smaller, tighter chevrons
+        s += '<path d="M50,84.5 L50.5,84.9 L51,84.5" fill="none" stroke="#7A6038" stroke-width="0.1" opacity="0.35" stroke-linejoin="round"/>';
+        s += '<path d="M51,84.8 L51.5,85.2 L52,84.8" fill="none" stroke="#7A6038" stroke-width="0.1" opacity="0.3" stroke-linejoin="round"/>';
+        s += '<path d="M49.5,85.2 L50,85.6 L50.5,85.2" fill="none" stroke="#7A6038" stroke-width="0.1" opacity="0.3" stroke-linejoin="round"/>';
         // Snout — very long, narrow, conical (ant-eating adaptation)
         s += '<path d="M49.5,85 Q48.5,85 47.5,85 Q47,85 46.5,85.2" fill="none" stroke="#A08858" stroke-width="0.8" stroke-linecap="round"/>';
         // Nostril
@@ -21147,9 +21146,9 @@ document.addEventListener('keydown', function(e) {
         // Eye — tiny (pangolins have poor eyesight)
         s += '<circle cx="50" cy="84.8" r="0.3" fill="#1A1008"/>';
         s += '<circle cx="50.1" cy="84.7" r="0.08" fill="rgba(200,180,120,0.5)"/>';
-        // Pointy ears — small triangular
-        s += '<path d="M51,84 L50.5,83 L51.5,83.5 Z" fill="#9A8058"/>';
-        s += '<path d="M52,84 L52.5,83 L51.5,83.5 Z" fill="#9A8058"/>';
+        // Pointy ears — connected to top of head
+        s += '<path d="M50.5,84 L50,82.8 L51,83.5 Z" fill="#9A8058"/>';
+        s += '<path d="M51.5,83.8 L52.2,82.6 L52.5,83.8 Z" fill="#9A8058"/>';
         // Pink tongue — long, thin, sticking out of snout tip
         s += '<path d="M46.5,85.2 Q45,85.5 43.5,85.3 Q42.5,85 42,85.2" stroke="#D88A8A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
         s += '</g>';
