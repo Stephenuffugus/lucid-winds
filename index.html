@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-05g';
+  var _SVG_CACHE_VER = '2026-04-05h';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -22812,13 +22812,17 @@ document.addEventListener('keydown', function(e) {
           if (_cp77i > 0) s += '<line x1="'+(_cp77x-0.8).toFixed(1)+'" y1="'+_cp77y.toFixed(1)+'" x2="'+(_cp77x-0.8).toFixed(1)+'" y2="'+(_cp77y-_cp77w*0.3).toFixed(1)+'" stroke="#5A3018" stroke-width="0.08" opacity="0.3"/>';
           // Dorsal stripe — lighter center line
           s += '<line x1="'+(_cp77x-0.6).toFixed(1)+'" y1="'+_cp77y.toFixed(1)+'" x2="'+(_cp77x+0.6).toFixed(1)+'" y2="'+_cp77y.toFixed(1)+'" stroke="#A07040" stroke-width="0.1" opacity="0.2"/>';
-          // Legs — one pair per segment, alternating slight angle
+          // Legs — 3 pairs per segment (6 legs total)
           var _cp77legDir = (_cp77i % 2 === 0) ? -1 : 1;
           var _cp77legLen = 0.8 + Math.sin(_cp77t * Math.PI) * 0.3;
-          // Left leg
-          s += '<line x1="'+_cp77x.toFixed(1)+'" y1="'+(_cp77y+_cp77w*0.3).toFixed(1)+'" x2="'+(_cp77x-_cp77legLen+_cp77legDir*0.15).toFixed(1)+'" y2="'+(_cp77y+_cp77w+0.5).toFixed(1)+'" stroke="#5A3018" stroke-width="0.1" stroke-linecap="round"/>';
-          // Right leg
-          s += '<line x1="'+_cp77x.toFixed(1)+'" y1="'+(_cp77y+_cp77w*0.3).toFixed(1)+'" x2="'+(_cp77x+_cp77legLen-_cp77legDir*0.15).toFixed(1)+'" y2="'+(_cp77y+_cp77w+0.5).toFixed(1)+'" stroke="#5A3018" stroke-width="0.1" stroke-linecap="round"/>';
+          for (var _cp77p = 0; _cp77p < 3; _cp77p++) {
+            var _cp77lx = _cp77x + (_cp77p - 1) * 0.5;
+            var _cp77off = _cp77legDir * 0.15 * (_cp77p - 1);
+            // Left leg
+            s += '<line x1="'+_cp77lx.toFixed(1)+'" y1="'+(_cp77y+_cp77w*0.3).toFixed(1)+'" x2="'+(_cp77lx-_cp77legLen+_cp77off).toFixed(1)+'" y2="'+(_cp77y+_cp77w+0.5).toFixed(1)+'" stroke="#5A3018" stroke-width="0.08" stroke-linecap="round"/>';
+            // Right leg
+            s += '<line x1="'+_cp77lx.toFixed(1)+'" y1="'+(_cp77y+_cp77w*0.3).toFixed(1)+'" x2="'+(_cp77lx+_cp77legLen-_cp77off).toFixed(1)+'" y2="'+(_cp77y+_cp77w+0.5).toFixed(1)+'" stroke="#5A3018" stroke-width="0.08" stroke-linecap="round"/>';
+          }
         }
         // Head — wider, darker, with forcipules
         s += '<ellipse cx="20" cy="91.5" rx="1.1" ry="0.8" fill="#5A2A18"/>';
@@ -22831,9 +22835,7 @@ document.addEventListener('keydown', function(e) {
         // Eyes — two small simple eyes (ocelli)
         s += '<circle cx="19.3" cy="91.2" r="0.12" fill="#1A1410"/>';
         s += '<circle cx="19.3" cy="91.7" r="0.1" fill="#1A1410"/>';
-        // Tail cerci — trailing sensory appendages at rear
-        s += '<line x1="40" y1="91.3" x2="41.5" y2="91" stroke="#7A4A28" stroke-width="0.08" stroke-linecap="round"/>';
-        s += '<line x1="40" y1="91.7" x2="41.5" y2="92" stroke="#7A4A28" stroke-width="0.08" stroke-linecap="round"/>';
+        // (tail cerci removed — were disconnected from body)
         s += '</g>';
         break;
       case 78: // Crystal Beetle — living gemstone insect on soil (Rare)
