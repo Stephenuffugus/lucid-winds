@@ -1119,7 +1119,7 @@
     .cs-flip-inner{position:relative;width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d;will-change:transform;-webkit-backface-visibility:hidden;}
     .cs-flip-wrap.flipped .cs-flip-inner{transform:rotateY(180deg);}
     .cs-card-face{backface-visibility:hidden;-webkit-backface-visibility:hidden;position:absolute;inset:0;display:flex;flex-direction:column;box-sizing:border-box;border-radius:12px;overflow:hidden;will-change:transform;transform:translateZ(0);}
-    .cs-card-front{position:absolute;inset:0;border-radius:12px;box-sizing:border-box;background-color:#050505;background-size:96%;background-position:center;background-repeat:no-repeat;}
+    .cs-card-front{position:absolute;inset:0;border-radius:12px;display:grid;grid-template-rows:13% 55% 26% auto;box-sizing:border-box;padding:6% 8% 4%;background-color:#050505;background-size:96%;background-position:center;background-repeat:no-repeat;}
     .cs-card-back{transform:rotateY(180deg);padding:10% 8% 6%;overflow-y:auto;-webkit-overflow-scrolling:touch;background-color:#050505;background-size:174%;background-position:center;background-repeat:no-repeat;}
     .cs-flip-hint{font-family:'DM Mono',monospace;font-size:0.35rem;color:rgba(122,179,86,0.35);text-align:center;position:absolute;bottom:4%;left:0;right:0;}
     .cs-card-front[data-season="spring"]{background-image:url('assets/cards/fronts/front-spring.png');}
@@ -1174,30 +1174,16 @@
     .cb-haiku{font-family:'Playfair Display',serif;font-style:italic;font-size:0.6rem;color:rgba(212,207,188,0.85);line-height:1.6;text-align:center;}
     .cb-hash{font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--sage);opacity:0.5;word-break:break-all;text-align:center;}
     .cb-date{font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--muted);text-align:center;}
-    /* ═══ CARD FRONT ZONES — positioned per card-align-tool (set-39) ═══ */
-    .cf-name-zone{position:absolute;display:flex;align-items:center;justify-content:center;overflow:hidden;background:transparent;border:none;left:10%;top:5%;width:81%;height:12%;}
+    .cf-name-zone{display:flex;align-items:center;justify-content:center;overflow:hidden;background:transparent;border:none;padding:0 4%;}
     .cf-name{font-family:'Playfair Display',serif;font-weight:700;text-align:center;letter-spacing:0.02em;text-shadow:0 2px 8px rgba(0,0,0,0.8);width:100%;line-height:1.15;}
     .cf-name .np-top{display:block;font-size:0.55rem;font-style:italic;letter-spacing:0.06em;opacity:0.7;font-weight:400;}
     .cf-name .np-main{display:block;font-size:1.3rem;}
     .cf-name .np-title{display:block;font-size:0.5rem;font-style:italic;letter-spacing:0.05em;opacity:0.65;font-weight:400;margin-top:1px;}
-    .cf-art-window{position:absolute;display:flex;align-items:center;justify-content:center;overflow:hidden;background:transparent;border:none;left:12%;top:17%;width:77%;height:53%;}
+    .cf-art-window{display:flex;align-items:flex-end;justify-content:center;overflow:hidden;min-height:0;background:transparent;border:none;padding-bottom:2%;}
     .cf-art-window svg{max-height:100%;max-width:80%;height:auto;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));transform:none;}
-    .cf-haiku-zone{position:absolute;display:flex;align-items:center;justify-content:center;overflow:hidden;background:transparent;border:none;left:9%;top:70%;width:82%;height:23%;}
+    .cf-haiku-zone{display:flex;align-items:center;justify-content:center;overflow:hidden;background:transparent;border:none;padding:0 4%;}
     .cf-haiku{font-family:'Playfair Display',serif;font-style:italic;font-size:0.62rem;color:rgba(212,207,188,0.88);text-align:center;line-height:1.5;width:100%;cursor:pointer;-webkit-tap-highlight-color:transparent;}
     .cf-ea{position:absolute;top:11%;right:10%;font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--gold);background:rgba(10,10,8,0.75);border:1.5px solid rgba(200,168,75,0.3);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;z-index:5;backdrop-filter:blur(4px);}
-    /* Per-season zone positions from alignment tool */
-    .cs-card-front[data-season="spring"] .cf-name-zone{left:9.3%;top:5.4%;width:83.3%;height:13.1%;}
-    .cs-card-front[data-season="spring"] .cf-art-window{left:11.3%;top:18%;width:77.3%;height:52.7%;}
-    .cs-card-front[data-season="spring"] .cf-haiku-zone{left:7.3%;top:70.2%;width:84%;height:23.6%;}
-    .cs-card-front[data-season="summer"] .cf-name-zone{left:10%;top:4.9%;width:81%;height:12.1%;}
-    .cs-card-front[data-season="summer"] .cf-art-window{left:12%;top:16.5%;width:76.7%;height:55.4%;}
-    .cs-card-front[data-season="summer"] .cf-haiku-zone{left:13.7%;top:71.7%;width:73%;height:21.7%;}
-    .cs-card-front[data-season="autumn"] .cf-name-zone{left:9.7%;top:3%;width:82.7%;height:14%;}
-    .cs-card-front[data-season="autumn"] .cf-art-window{left:12%;top:16.5%;width:77%;height:51.2%;}
-    .cs-card-front[data-season="autumn"] .cf-haiku-zone{left:7.7%;top:67.7%;width:84%;height:25.4%;}
-    .cs-card-front[data-season="winter"] .cf-name-zone{left:10%;top:4.9%;width:82.3%;height:11.8%;}
-    .cs-card-front[data-season="winter"] .cf-art-window{left:12%;top:16.7%;width:79%;height:55.4%;}
-    .cs-card-front[data-season="winter"] .cf-haiku-zone{left:8%;top:71.9%;width:86%;height:23.6%;}
     .cs-card-front[data-season="spring"] .cf-ea,.cs-card-front[data-season="winter"] .cf-ea{top:11%;right:5%;}
     .cs-card-front[data-season="autumn"] .cf-ea{top:10%;right:5%;}
     /* Stats bar between haiku and plant */
