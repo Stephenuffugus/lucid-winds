@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Card Alignment Tool</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d100c; color:#e8dcc8; font-family:'DM Mono',monospace; padding:0.75rem; }
+  h1 { font-family:sans-serif; font-size:1rem; color:#c8a84b; margin-bottom:0.4rem; }
+  .tabs { display:flex; gap:4px; margin-bottom:0.5rem; flex-wrap:wrap; }
+  .tab { padding:8px 12px; border:1px solid rgba(122,179,86,0.2); border-radius:6px; background:rgba(26,36,22,0.6); color:#7ab356; cursor:pointer; font-size:0.7rem; font-family:sans-serif; min-height:44px; display:flex; align-items:center; }
+  .tab.active { background:rgba(122,179,86,0.2); border-color:#7ab356; color:#c8a84b; }
+
+  .card-wrap {
+    width:min(300px, 85vw);
+    margin:0 auto;
+    position:relative;
+  }
+  .card-wrap img {
+    width:100%;
+    height:auto;
+    display:block;
+    border-radius:10px;
+  }
+  .box-layer {
+    position:absolute;
+    top:0; left:0; right:0; bottom:0;
+    overflow:hidden;
+  }
+
+  .align-box {
+    position:absolute;
+    border:2px dashed;
+    border-radius:4px;
+    cursor:move;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    touch-action:none;
+    z-index:10;
+  }
+  .align-box.box-name { border-color:#c8a84b; background:rgba(200,168,75,0.15); }
+  .align-box.box-art { border-color:#7ab356; background:rgba(122,179,86,0.1); }
+  .align-box.box-haiku { border-color:#a0c4e8; background:rgba(160,196,232,0.1); }
+
+  .align-box .box-label {
+    font-family:sans-serif;
+    font-weight:700;
+    font-size:0.55rem;
+    pointer-events:none;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    text-shadow:0 1px 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
+  }
+  .box-name .box-label { color:#c8a84b; }
+  .box-art .box-label { color:#7ab356; }
+  .box-haiku .box-label { color:#a0c4e8; }
+
+  .resize-handle {
+    position:absolute;
+    bottom:-3px;
+    right:-3px;
+    width:16px;
+    height:16px;
+    border-radius:3px;
+    cursor:nwse-resize;
+    touch-action:none;
+    z-index:11;
+  }
+  .box-name .resize-handle { background:#c8a84b; }
+  .box-art .resize-handle { background:#7ab356; }
+  .box-haiku .resize-handle { background:#a0c4e8; }
+
+  .legend { display:flex; gap:8px; margin:0.4rem auto; max-width:300px; }
+  .legend-item { display:flex; align-items:center; gap:3px; font-size:0.55rem; }
+  .legend-dot { width:10px; height:10px; border-radius:2px; border:1px dashed; }
+
+  .controls { margin-top:0.6rem; max-width:300px; margin-left:auto; margin-right:auto; }
+  .output-box {
+    background:rgba(0,0,0,0.4);
+    border:1px solid rgba(122,179,86,0.15);
+    border-radius:6px;
+    padding:0.4rem;
+    font-size:0.5rem;
+    color:#7ab356;
+    white-space:pre-wrap;
+    margin-top:0.4rem;
+    line-height:1.4;
+    max-height:120px;
+    overflow-y:auto;
+  }
+  .save-btn {
+    padding:10px 16px;
+    border:1.5px solid rgba(200,168,75,0.4);
+    border-radius:8px;
+    background:rgba(200,168,75,0.12);
+    color:#c8a84b;
+    cursor:pointer;
+    font-size:0.75rem;
+    font-family:sans-serif;
+    font-weight:700;
+    min-height:48px;
+    margin-top:0.5rem;
+    width:100%;
+    letter-spacing:0.04em;
+  }
+</style>
+</head>
+<body>
+
+<h1>CARD ALIGNMENT</h1>
+
+<div class="tabs" id="mode-tabs">
+  <div class="tab active" onclick="setMode('front')">FRONTS</div>
+  <div class="tab" onclick="setMode('back')">BACKS</div>
+</div>
+<div class="tabs" id="card-tabs"></div>
+<div class="legend" id="legend"></div>
+
+<div class="card-wrap" id="card-wrap">
+  <img id="card-img" src="" alt="">
+  <div class="box-layer" id="box-layer"></div>
+</div>
+
+<div class="controls">
+  <div class="output-box" id="output">Pick a card...</div>
+  <button class="save-btn" onclick="copyAll()">COPY ALL — PASTE TO CLAUDE</button>
+</div>
+
+<script>
+var cards = {
+  front: [
+    { id:'spring', label:'Spring', src:'cards/fronts/card-front-spring.png' },
+    { id:'summer', label:'Summer', src:'cards/fronts/card-front-summer.png' },
+    { id:'autumn', label:'Autumn', src:'cards/fronts/card-front-autumn.png' },
+    { id:'winter', label:'Winter', src:'cards/fronts/card-front-winter.png' }
+  ],
+  back: [
+    { id:'common',    label:'Common',    src:'cards/backs/back-common.png' },
+    { id:'uncommon',  label:'Uncommon',  src:'cards/backs/back-uncommon.png' },
+    { id:'rare',      label:'Rare',      src:'cards/backs/back-rare.png' },
+    { id:'epic',      label:'Epic',      src:'cards/backs/back-epic.png' },
+    { id:'legendary', label:'Legendary', src:'cards/backs/back-legendary.png' },
+    { id:'mythic',    label:'Mythic',    src:'cards/backs/back-mythic.png' },
+    { id:'cosmic',    label:'Cosmic',    src:'cards/backs/back-cosmic.png' }
+  ]
+};
+
+var boxConfigs = {
+  front: [
+    { key:'name',  label:'NAME',  cls:'box-name',  def:{l:10,t:5,w:80,h:10} },
+    { key:'art',   label:'ART',   cls:'box-art',   def:{l:12,t:18,w:76,h:50} },
+    { key:'haiku', label:'HAIKU', cls:'box-haiku', def:{l:8,t:72,w:84,h:18} }
+  ],
+  back: [
+    { key:'name',  label:'NAME',  cls:'box-name', def:{l:10,t:82,w:80,h:7} }
+  ]
+};
+
+var saved = {};
+try { saved = JSON.parse(localStorage.getItem('lw_align_v3') || '{}'); } catch(e) {}
+
+var mode = 'front', currentCard = null;
+var layer = document.getElementById('box-layer');
+var output = document.getElementById('output');
+var img = document.getElementById('card-img');
+var wrap = document.getElementById('card-wrap');
+var activeBox = null, action = null, sx, sy, sl, st2, sw, sh;
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('#mode-tabs .tab').forEach(function(t) {
+    t.classList.toggle('active', t.textContent.toLowerCase().indexOf(m) > -1);
+  });
+  buildTabs();
+  selectCard(cards[m][0]);
+}
+
+function buildTabs() {
+  var el = document.getElementById('card-tabs');
+  el.innerHTML = '';
+  cards[mode].forEach(function(c) {
+    var t = document.createElement('div');
+    t.className = 'tab';
+    t.textContent = c.label;
+    t.onclick = function() { selectCard(c); };
+    el.appendChild(t);
+  });
+}
+
+function updateLegend() {
+  var el = document.getElementById('legend');
+  el.innerHTML = '';
+  var colors = { 'box-name':'#c8a84b', 'box-art':'#7ab356', 'box-haiku':'#a0c4e8' };
+  boxConfigs[mode].forEach(function(bc) {
+    el.innerHTML += '<div class="legend-item"><div class="legend-dot" style="background:' + (colors[bc.cls]||'#c8a84b') + '22;border-color:' + (colors[bc.cls]||'#c8a84b') + ';"></div>' + bc.label + '</div>';
+  });
+}
+
+function selectCard(c) {
+  currentCard = c;
+  img.src = c.src;
+  document.querySelectorAll('#card-tabs .tab').forEach(function(t) {
+    t.classList.toggle('active', t.textContent === c.label);
+  });
+  // Wait for image to load so we know dimensions
+  img.onload = function() { buildBoxes(); };
+  if (img.complete) buildBoxes();
+}
+
+function buildBoxes() {
+  layer.innerHTML = '';
+  var pw = layer.offsetWidth;
+  var ph = layer.offsetHeight;
+  if (!pw || !ph) return;
+
+  boxConfigs[mode].forEach(function(bc) {
+    var key = mode + '_' + currentCard.id + '_' + bc.key;
+    var s = saved[key] || { l:bc.def.l, t:bc.def.t, w:bc.def.w, h:bc.def.h };
+
+    var box = document.createElement('div');
+    box.className = 'align-box ' + bc.cls;
+    box.setAttribute('data-key', bc.key);
+    box.innerHTML = '<span class="box-label">' + bc.label + '</span><div class="resize-handle"></div>';
+
+    box.style.left = s.l + '%';
+    box.style.top = s.t + '%';
+    box.style.width = s.w + '%';
+    box.style.height = s.h + '%';
+
+    // Drag
+    box.addEventListener('pointerdown', function(e) {
+      if (e.target.classList.contains('resize-handle')) return;
+      activeBox = box; action = 'drag';
+      sx = e.clientX; sy = e.clientY;
+      sl = box.offsetLeft; st2 = box.offsetTop;
+      box.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+
+    // Resize
+    box.querySelector('.resize-handle').addEventListener('pointerdown', function(e) {
+      activeBox = box; action = 'resize';
+      sx = e.clientX; sy = e.clientY;
+      sw = box.offsetWidth; sh = box.offsetHeight;
+      e.target.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+
+    layer.appendChild(box);
+  });
+  updateLegend();
+  updateOutput();
+}
+
+document.addEventListener('pointermove', function(e) {
+  if (!activeBox) return;
+  var pw = layer.offsetWidth, ph = layer.offsetHeight;
+
+  if (action === 'drag') {
+    var dx = e.clientX - sx, dy = e.clientY - sy;
+    var nx = sl + dx, ny = st2 + dy;
+    var bw = activeBox.offsetWidth, bh = activeBox.offsetHeight;
+    // Clamp to card edges
+    nx = Math.max(0, Math.min(nx, pw - bw));
+    ny = Math.max(0, Math.min(ny, ph - bh));
+    activeBox.style.left = nx + 'px';
+    activeBox.style.top = ny + 'px';
+  }
+  if (action === 'resize') {
+    var dx = e.clientX - sx, dy = e.clientY - sy;
+    var nw = sw + dx, nh = sh + dy;
+    var bl = activeBox.offsetLeft, bt = activeBox.offsetTop;
+    // Clamp: can't extend past card right/bottom edge
+    nw = Math.max(30, Math.min(nw, pw - bl));
+    nh = Math.max(14, Math.min(nh, ph - bt));
+    activeBox.style.width = nw + 'px';
+    activeBox.style.height = nh + 'px';
+  }
+  savePositions();
+  updateOutput();
+});
+
+document.addEventListener('pointerup', function() { activeBox = null; action = null; });
+
+function savePositions() {
+  if (!currentCard) return;
+  var pw = layer.offsetWidth, ph = layer.offsetHeight;
+  var boxes = layer.querySelectorAll('.align-box');
+  for (var i = 0; i < boxes.length; i++) {
+    var b = boxes[i];
+    var k = mode + '_' + currentCard.id + '_' + b.getAttribute('data-key');
+    saved[k] = {
+      l: +(b.offsetLeft / pw * 100).toFixed(1),
+      t: +(b.offsetTop / ph * 100).toFixed(1),
+      w: +(b.offsetWidth / pw * 100).toFixed(1),
+      h: +(b.offsetHeight / ph * 100).toFixed(1)
+    };
+  }
+  localStorage.setItem('lw_align_v3', JSON.stringify(saved));
+}
+
+function updateOutput() {
+  if (!currentCard) return;
+  var lines = mode.toUpperCase() + ' — ' + currentCard.label + '\n';
+  boxConfigs[mode].forEach(function(bc) {
+    var k = mode + '_' + currentCard.id + '_' + bc.key;
+    var d = saved[k] || bc.def;
+    lines += '  ' + bc.label + ': left:' + d.l + '% top:' + d.t + '% w:' + d.w + '% h:' + d.h + '%\n';
+  });
+  output.textContent = lines;
+}
+
+function copyAll() {
+  var text = '=== CARD ALIGNMENT VALUES ===\n\n';
+  ['front','back'].forEach(function(m) {
+    cards[m].forEach(function(c) {
+      text += m.toUpperCase() + ' — ' + c.label + '\n';
+      boxConfigs[m].forEach(function(bc) {
+        var k = m + '_' + c.id + '_' + bc.key;
+        var d = saved[k] || bc.def;
+        text += '  ' + bc.label + ': left:' + d.l + '% top:' + d.t + '% w:' + d.w + '% h:' + d.h + '%\n';
+      });
+      text += '\n';
+    });
+  });
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(function() {
+      alert('Copied! Paste to Claude.');
+    }).catch(function() { fallbackCopy(text); });
+  } else { fallbackCopy(text); }
+}
+
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:40%;z-index:9999;font-size:11px;background:#111;color:#7ab356;padding:0.5rem;border:2px solid #c8a84b;';
+  document.body.appendChild(ta);
+  ta.select();
+  ta.focus();
+  alert('Select all text above, copy it, then paste to Claude. Tap anywhere else to close.');
+  ta.addEventListener('blur', function() { ta.remove(); });
+}
+
+setMode('front');
+</script>
+</body>
+</html>
