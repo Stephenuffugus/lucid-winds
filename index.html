@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-03c';
+  var _SVG_CACHE_VER = '2026-04-03d';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -20186,69 +20186,48 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M57.5,88 L58,87.3" stroke="#1A1A1A" stroke-width="0.12" fill="none"/>';
         s += '</g>';
         break;
-      case 27: // Garden Snail — gliding across soil, bottom-left
-        // Cornu aspersum. Realistic fleshy body, nautilus-like spiral shell,
-        // wavy slime trail, two pairs of tentacles with eyes.
-        s += '<g opacity="0.82" transform="translate(10,89) scale(1.5) translate(-10,-89)">';
+      case 27: // Garden Snail — simple, recognizable, bottom-left
+        s += '<g opacity="0.85" transform="translate(10,89) scale(1.5) translate(-10,-89)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.4,0;0.8,0;0.4,0;0,0" dur="7s" repeatCount="indefinite"/>';
-        // Slime trail — wavy iridescent S-curves
-        s += '<path d="M-4,91.5 Q-2,90.5 0,91.5 Q2,92.5 4,91.2 Q6,90 8,91 Q9,91.5 9.5,91" fill="none" stroke="rgba(210,220,200,0.2)" stroke-width="0.7" stroke-linecap="round"/>';
-        s += '<path d="M-4,91.5 Q-2,90.8 0,91.6 Q2,92.4 4,91.3 Q6,90.2 8,91.1 Q9,91.5 9.5,91" fill="none" stroke="rgba(255,255,240,0.05)" stroke-width="2.2"/>';
+        // ── SLIME TRAIL — thick, long, wavy line behind snail ──
+        s += '<path d="M-6,91.5 Q-3,90.5 -1,91.5 Q1,92.5 3,91 Q5,89.5 7,91 Q9,92 10,91" fill="none" stroke="rgba(200,215,190,0.22)" stroke-width="1.5" stroke-linecap="round"/>';
+        s += '<path d="M-6,91.5 Q-3,90.8 -1,91.6 Q1,92.4 3,91.1 Q5,89.8 7,91.1 Q9,92 10,91" fill="none" stroke="rgba(255,255,240,0.06)" stroke-width="3"/>';
         // Shadow
-        s += '<ellipse cx="10" cy="91.5" rx="5" ry="0.6" fill="#0d100c" opacity="0.1"/>';
-        // Body / muscular foot — fleshy, tapered
-        s += '<path d="M10,90.5 Q11,91.5 13,91.5 Q14.5,91.5 16,91 Q17,90.5 17.5,90 Q17.5,89.5 17,89.5 Q16,89.8 14.5,90 Q12.5,90.2 10.5,89.8 Z" fill="#8A9878"/>';
-        // Foot sole
-        s += '<path d="M11,91.3 Q13,91.8 15.5,91.2" fill="none" stroke="#A8B898" stroke-width="0.4" opacity="0.3" stroke-linecap="round"/>';
-        // Foot muscle ripples
-        s += '<path d="M11,90.5 Q12,90.2 13,90.5" fill="none" stroke="#7A8A6A" stroke-width="0.12" opacity="0.2"/>';
-        s += '<path d="M13.5,90.3 Q14.5,90 15.5,90.3" fill="none" stroke="#7A8A6A" stroke-width="0.12" opacity="0.18"/>';
-        // Skin texture
-        s += '<circle cx="12" cy="90.5" r="0.15" fill="#7A8A68" opacity="0.15"/>';
-        s += '<circle cx="14" cy="90.2" r="0.12" fill="#7A8A68" opacity="0.12"/>';
-        // Mantle collar
-        s += '<path d="M9.5,89.5 Q10.5,89 11,89.5 Q11.5,90 10.5,90.5" fill="#7A8A6A" opacity="0.5"/>';
-        // SHELL — realistic spiral, tighter coils visible from aperture inward
-        // Outer shell body — rounded dome
-        s += '<path d="M10.5,89.5 Q10.2,86.5 8,84.8 Q5.5,83.5 3.5,85 Q2.2,86.8 2.5,89 Q3,91 5.5,91.8 Q8,91.8 10,90.5" fill="#9B7A58"/>';
-        s += '<path d="M10.5,89.5 Q10.2,86.5 8,84.8 Q5.5,83.5 3.5,85 Q2.2,86.8 2.5,89 Q3,91 5.5,91.8 Q8,91.8 10,90.5" fill="none" stroke="#6A4A30" stroke-width="0.35"/>';
-        // Spiral groove lines — concentric arcs getting tighter toward center
-        s += '<path d="M9.8,87 Q8,85 5.5,85 Q3.5,85.5 3,87.5" fill="none" stroke="#6A4A30" stroke-width="0.3" opacity="0.4"/>';
-        s += '<path d="M9,87.5 Q7.5,86 5.8,86 Q4.2,86.5 3.8,88" fill="none" stroke="#7A5A38" stroke-width="0.25" opacity="0.35"/>';
-        s += '<path d="M8.2,88 Q7,87 6.2,87 Q5,87.5 4.8,88.5" fill="none" stroke="#7A5A38" stroke-width="0.22" opacity="0.3"/>';
-        s += '<path d="M7.2,88.3 Q6.5,87.8 6,88 Q5.5,88.3 5.5,88.8" fill="none" stroke="#8A6A48" stroke-width="0.18" opacity="0.25"/>';
-        s += '<path d="M6.5,88.5 Q6.2,88.3 6,88.5 Q5.8,88.7 6,88.9" fill="none" stroke="#8A6A48" stroke-width="0.15" opacity="0.2"/>';
-        // Spiral center
-        s += '<circle cx="6" cy="88.6" r="0.2" fill="#8A6A48" opacity="0.4"/>';
-        // Shell banding — alternating lighter/darker bands
-        s += '<path d="M9,85.5 Q7,84.5 5,85.5" stroke="#B8A078" stroke-width="0.4" fill="none" opacity="0.18"/>';
-        s += '<path d="M8,86.5 Q6.5,86 5,86.8" stroke="#8A6A48" stroke-width="0.3" fill="none" opacity="0.15"/>';
-        s += '<path d="M4,86.5 Q3,88 4,89.5" stroke="#B8A078" stroke-width="0.3" fill="none" opacity="0.12"/>';
-        // Shell highlight — glossy dome
-        s += '<ellipse cx="6" cy="85.8" rx="1.8" ry="1.2" fill="rgba(240,230,210,0.15)"/>';
-        s += '<ellipse cx="5.5" cy="85.5" rx="0.7" ry="0.5" fill="rgba(255,250,240,0.2)"/>';
-        // Aperture lip — thickened edge where snail emerges
-        s += '<path d="M10.5,89.5 Q11,88.8 10.8,90 Q10.2,91 9.5,91.3" stroke="#8A6A48" stroke-width="0.55" fill="none" opacity="0.45" stroke-linecap="round"/>';
-        // Neck — angled UPWARD from foot to raised head
-        s += '<path d="M16,90.2 Q16.5,89.5 17,88.5 Q17.3,87.5 17.2,87" fill="#8E9780" stroke="none"/>';
-        s += '<path d="M15.5,90.5 Q16,89.5 16.5,88.5 Q17,87.5 17,87" fill="none" stroke="#7A8A6A" stroke-width="0.8" stroke-linecap="round" opacity="0.3"/>';
-        // Head — raised above body, angled up
-        s += '<path d="M16.5,87.5 Q17.5,87 18,86.5 Q18.2,86 17.8,85.8 Q17,86 16.5,86.5 Q16,87 16.5,87.5 Z" fill="#8E9780"/>';
-        // Upper tentacles — reaching upward from raised head
-        s += '<path d="M17.2,86 Q17.5,85 17.8,84" stroke="#8E9780" stroke-width="0.22" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M17.8,86.2 Q18.2,85 18.5,84.3" stroke="#8E9780" stroke-width="0.22" fill="none" stroke-linecap="round"/>';
-        // Eyes at tips
-        s += '<circle cx="17.8" cy="83.9" r="0.22" fill="#1A1A18"/>';
-        s += '<circle cx="18.5" cy="84.2" r="0.22" fill="#1A1A18"/>';
-        s += '<circle cx="17.85" cy="83.8" r="0.06" fill="rgba(240,235,216,0.45)"/>';
-        s += '<circle cx="18.55" cy="84.1" r="0.06" fill="rgba(240,235,216,0.45)"/>';
-        // Lower tentacles — shorter
-        s += '<path d="M17.5,86.5 Q17.8,86.8 18.2,86.5" fill="none" stroke="#8E9780" stroke-width="0.15" stroke-linecap="round"/>';
-        s += '<path d="M17.8,86.6 Q18.1,86.9 18.5,86.6" fill="none" stroke="#8E9780" stroke-width="0.15" stroke-linecap="round"/>';
-        // Mouth
-        s += '<circle cx="17.8" cy="87" r="0.08" fill="#6A7A5A" opacity="0.4"/>';
-        // Moisture sheen
-        s += '<path d="M12,90.3 Q14,89.8 16,90" fill="none" stroke="rgba(240,245,230,0.1)" stroke-width="0.3" stroke-linecap="round"/>';
+        s += '<ellipse cx="11" cy="92" rx="6" ry="0.6" fill="#0d100c" opacity="0.1"/>';
+        // ── BODY — one continuous piece: foot → neck → head ──
+        // The entire soft body is a single filled shape
+        s += '<path d="M9,91 Q10,91.8 12,91.8 Q14,91.8 15.5,91.2 Q17,90.5 17.8,89.5 Q18.2,88.5 18,87.5 Q17.5,87 17,87.2 Q16.5,87.5 16,88 Q15,89 13,89.5 Q11,89.8 9.5,89.5 Z" fill="#8A9878"/>';
+        // Lighter belly edge
+        s += '<path d="M10,91.5 Q13,92 16,91" fill="none" stroke="#A8B898" stroke-width="0.4" opacity="0.3" stroke-linecap="round"/>';
+        // Skin moisture sheen
+        s += '<path d="M11,90.5 Q14,90 16.5,89" fill="none" stroke="rgba(240,245,230,0.1)" stroke-width="0.4" stroke-linecap="round"/>';
+        // ── SHELL — round with clear spiral on it ──
+        // Main shell dome — sitting on the back of the body
+        s += '<circle cx="7" cy="87.5" r="3.8" fill="#9B7A58"/>';
+        s += '<circle cx="7" cy="87.5" r="3.8" fill="none" stroke="#6A4A30" stroke-width="0.35"/>';
+        // THE SPIRAL — classic snail shell spiral, drawn as one continuous coiling path
+        s += '<path d="M10.5,88 Q10,85 7,84 Q4,84 3.5,87 Q3.5,89.5 6,90.5 Q8.5,90.5 9.5,88.5 Q10,87 8.5,86 Q7,85.5 5.5,86.5 Q4.8,87.5 5.5,88.5 Q6.5,89 7.5,88.5 Q8,88 7.5,87.5 Q7,87.2 6.5,87.5" fill="none" stroke="#5A3A20" stroke-width="0.35" opacity="0.6"/>';
+        // Shell highlight — glossy sheen
+        s += '<ellipse cx="6" cy="86" rx="1.5" ry="1.2" fill="rgba(240,230,210,0.18)"/>';
+        s += '<ellipse cx="5.5" cy="85.5" rx="0.6" ry="0.4" fill="rgba(255,250,240,0.22)"/>';
+        // Shell banding — subtle color variation
+        s += '<path d="M4,85.5 Q7,83.5 10,86" fill="none" stroke="#B8A078" stroke-width="0.3" opacity="0.15"/>';
+        s += '<path d="M3.5,88 Q5,90 8,90" fill="none" stroke="#7A5A38" stroke-width="0.25" opacity="0.12"/>';
+        // ── HEAD — at the end of the body, angled up ──
+        s += '<ellipse cx="17.5" cy="87.5" rx="1" ry="0.8" fill="#8E9780"/>';
+        // ── 2 ANTENNAE with 2 EYEBALLS ──
+        // Left antenna
+        s += '<path d="M17,87 Q16.5,85.5 16.8,84.5" stroke="#8E9780" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        // Right antenna
+        s += '<path d="M18,87 Q18.5,85.5 18.2,84.5" stroke="#8E9780" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        // Left eyeball
+        s += '<circle cx="16.8" cy="84.3" r="0.3" fill="#1A1A18"/>';
+        s += '<circle cx="16.85" cy="84.2" r="0.08" fill="rgba(240,235,216,0.5)"/>';
+        // Right eyeball
+        s += '<circle cx="18.2" cy="84.3" r="0.3" fill="#1A1A18"/>';
+        s += '<circle cx="18.25" cy="84.2" r="0.08" fill="rgba(240,235,216,0.5)"/>';
+        // Mouth — tiny smile
+        s += '<path d="M17,88 Q17.5,88.3 18,88" fill="none" stroke="#6A7A5A" stroke-width="0.15" opacity="0.4" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 28: // Ruby-throated Hummingbird — hovering left side, facing bloom
@@ -20340,12 +20319,17 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+(_cBx+13.4)+','+(_cBy-0.8)+' L'+(_cBx+15.2)+','+(_cBy-1.6)+'" fill="none" stroke="#4D6C40" stroke-width="0.15" stroke-linecap="round"/>';
         s += '<circle cx="'+(_cBx+14.8)+'" cy="'+(_cBy-2.5)+'" r="0.15" fill="#4D6C40"/>';
         s += '<circle cx="'+(_cBx+15.2)+'" cy="'+(_cBy-1.6)+'" r="0.15" fill="#4D6C40"/>';
-        // Prolegs
-        s += '<line x1="'+(_cBx+2.0)+'" y1="'+(_cBy+1)+'" x2="'+(_cBx+2.0)+'" y2="'+(_cBy+1.8)+'" stroke="#4E6F43" stroke-width="0.2"/>';
-        s += '<line x1="'+(_cBx+4.1)+'" y1="'+(_cBy+1.1)+'" x2="'+(_cBx+4.1)+'" y2="'+(_cBy+1.9)+'" stroke="#4E6F43" stroke-width="0.2"/>';
-        s += '<line x1="'+(_cBx+6.3)+'" y1="'+(_cBy+1.2)+'" x2="'+(_cBx+6.3)+'" y2="'+(_cBy+2.0)+'" stroke="#4E6F43" stroke-width="0.2"/>';
-        s += '<line x1="'+(_cBx+8.5)+'" y1="'+(_cBy+1.1)+'" x2="'+(_cBx+8.5)+'" y2="'+(_cBy+1.9)+'" stroke="#4E6F43" stroke-width="0.2"/>';
-        s += '<line x1="'+(_cBx+10.5)+'" y1="'+(_cBy+1)+'" x2="'+(_cBx+10.5)+'" y2="'+(_cBy+1.8)+'" stroke="#4E6F43" stroke-width="0.2"/>';
+        // Legs — 4 per body segment (2 left, 2 right), not on head
+        var _cSegX = [_cBx, _cBx+2.0, _cBx+4.1, _cBx+6.3, _cBx+8.5, _cBx+10.5];
+        for (var _cli = 0; _cli < _cSegX.length; _cli++) {
+          var _clx = _cSegX[_cli];
+          // Left side — 2 legs angled left
+          s += '<line x1="'+(_clx-0.4)+'" y1="'+(_cBy+0.8)+'" x2="'+(_clx-1.2)+'" y2="'+(_cBy+1.8)+'" stroke="#4E6F43" stroke-width="0.18"/>';
+          s += '<line x1="'+(_clx-0.2)+'" y1="'+(_cBy+1)+'" x2="'+(_clx-0.8)+'" y2="'+(_cBy+2)+'" stroke="#4E6F43" stroke-width="0.18"/>';
+          // Right side — 2 legs angled right
+          s += '<line x1="'+(_clx+0.4)+'" y1="'+(_cBy+0.8)+'" x2="'+(_clx+1.2)+'" y2="'+(_cBy+1.8)+'" stroke="#4E6F43" stroke-width="0.18"/>';
+          s += '<line x1="'+(_clx+0.2)+'" y1="'+(_cBy+1)+'" x2="'+(_clx+0.8)+'" y2="'+(_cBy+2)+'" stroke="#4E6F43" stroke-width="0.18"/>';
+        }
         // Dorsal stripe
         s += '<path d="M'+(_cBx+1)+','+(_cBy-0.6)+' Q'+(_cBx+6)+','+(_cBy-1.4)+' '+(_cBx+12)+','+(_cBy-0.8)+'" fill="none" stroke="#CBE8AF" stroke-width="0.18" opacity="0.5"/>';
         // Ventral stripe
