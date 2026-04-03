@@ -4855,7 +4855,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
     <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button></div>
     <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button></div>
-    <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button></div>
+    <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button><button class="dev-btn" onclick="PW_Dev.cardFrontAligner()">🃏 CARD FRONT ALIGNMENT</button></div>
     <div class="dev-section"><div class="dev-section-title">NUCLEAR</div><button class="dev-btn danger" onclick="PW_Dev.fullReset()">☢ WIPE EVERYTHING</button></div>
     <div class="dev-log" id="dev-log">Ready.\n</div>
   </div>
@@ -5222,6 +5222,188 @@ window.onerror=function(msg,url,line,col,err){
 
       // Initial render
       setTimeout(_render,100);
+    },
+    // ═══ CARD FRONT ALIGNMENT TOOL ═══
+    cardFrontAligner:function(){
+      var ov=document.getElementById('cfa-tool');
+      if(ov){ov.remove();}
+
+      // Get a sample plant (first in greenhouse or generate one)
+      var gh=window.loadGreenhouse?loadGreenhouse():[];
+      if(!gh.length){alert('Need at least 1 plant in greenhouse');return;}
+
+      // Current CSS values
+      var _vals={
+        nameRow:13, artRow:55, haikuRow:26,
+        padTop:6, padSide:8, padBot:4,
+        nameFontMain:1.3, nameFontTop:0.55, nameFontTitle:0.5,
+        haikuFont:0.62, haikuLine:1.5,
+        nameLetterSp:0.04,
+        artMaxW:80, artPadBot:2,
+        eaTop:11, eaRight:10
+      };
+
+      ov=document.createElement('div');ov.id='cfa-tool';
+      ov.style.cssText='position:fixed;inset:0;z-index:2147483646;background:rgba(5,8,4,0.98);display:flex;flex-direction:column;overflow:hidden;';
+
+      // Top bar
+      var top='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid rgba(122,179,86,0.2);flex-shrink:0;">';
+      top+='<div style="font-family:Cormorant Garamond,serif;font-size:1rem;color:var(--gold);font-weight:700;">Card Front Alignment</div>';
+      top+='<div style="display:flex;gap:8px;">';
+      top+='<button id="cfa-prev" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(122,179,86,0.3);background:none;color:var(--sage);font-size:0.7rem;cursor:pointer;">◀</button>';
+      top+='<span id="cfa-counter" style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);align-self:center;">1/'+gh.length+'</span>';
+      top+='<button id="cfa-next" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(122,179,86,0.3);background:none;color:var(--sage);font-size:0.7rem;cursor:pointer;">▶</button>';
+      top+='<button id="cfa-close" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(192,80,80,0.3);background:none;color:#c07070;font-size:0.7rem;cursor:pointer;">✕</button>';
+      top+='</div></div>';
+
+      // Main area: card preview left, controls right (or stacked on narrow)
+      var main='<div style="display:flex;flex:1;overflow:hidden;">';
+
+      // Card preview
+      main+='<div id="cfa-card-wrap" style="flex:1;display:flex;align-items:center;justify-content:center;padding:8px;min-width:0;">';
+      main+='<div id="cfa-card" style="width:280px;max-width:80vw;aspect-ratio:2.5/3.5;position:relative;border-radius:12px;overflow:hidden;background:#050505;"></div>';
+      main+='</div>';
+
+      // Controls panel (scrollable)
+      main+='<div id="cfa-controls" style="width:200px;overflow-y:auto;padding:8px;border-left:1px solid rgba(122,179,86,0.15);flex-shrink:0;font-family:DM Mono,monospace;font-size:0.38rem;color:var(--cream);">';
+
+      var sliders=[
+        {key:'nameRow',    label:'Name Row %',    min:5,  max:25, step:0.5},
+        {key:'artRow',     label:'Art Row %',     min:35, max:70, step:0.5},
+        {key:'haikuRow',   label:'Haiku Row %',   min:10, max:40, step:0.5},
+        {key:'padTop',     label:'Pad Top %',     min:0,  max:15, step:0.5},
+        {key:'padSide',    label:'Pad Side %',    min:0,  max:15, step:0.5},
+        {key:'padBot',     label:'Pad Bottom %',  min:0,  max:10, step:0.5},
+        {key:'nameFontMain',label:'Name Size rem', min:0.6,max:2.0,step:0.05},
+        {key:'nameFontTop', label:'Name Top rem',  min:0.3,max:0.9,step:0.05},
+        {key:'nameFontTitle',label:'Name Title rem',min:0.3,max:0.8,step:0.05},
+        {key:'nameLetterSp',label:'Name Spacing',  min:0,  max:0.15,step:0.005},
+        {key:'haikuFont',  label:'Haiku Size rem', min:0.35,max:1.0,step:0.02},
+        {key:'haikuLine',  label:'Haiku Line H',   min:1.0,max:2.2,step:0.05},
+        {key:'artMaxW',    label:'Art Max W %',    min:50, max:100,step:1},
+        {key:'artPadBot',  label:'Art Pad Bot %',  min:0,  max:8,  step:0.5},
+        {key:'eaTop',      label:'EA Badge Top %', min:0,  max:25, step:0.5},
+        {key:'eaRight',    label:'EA Badge Right %',min:0, max:20, step:0.5}
+      ];
+      for(var i=0;i<sliders.length;i++){
+        var s=sliders[i];
+        main+='<div style="margin-bottom:6px;">';
+        main+='<div style="display:flex;justify-content:space-between;"><span>'+s.label+'</span><span id="cfa-v-'+s.key+'">'+_vals[s.key]+'</span></div>';
+        main+='<input type="range" id="cfa-s-'+s.key+'" min="'+s.min+'" max="'+s.max+'" step="'+s.step+'" value="'+_vals[s.key]+'" style="width:100%;accent-color:var(--sage);height:20px;">';
+        main+='</div>';
+      }
+      // Copy CSS button
+      main+='<button id="cfa-copy" style="width:100%;margin-top:8px;padding:8px;border:1px solid rgba(200,168,75,0.3);border-radius:4px;background:rgba(200,168,75,0.08);color:var(--gold);font-family:DM Mono,monospace;font-size:0.4rem;cursor:pointer;">COPY CSS</button>';
+      // Grid lines toggle
+      main+='<label style="display:flex;align-items:center;gap:6px;margin-top:8px;cursor:pointer;"><input type="checkbox" id="cfa-grid" checked><span>Show grid lines</span></label>';
+      main+='</div>';
+      main+='</div>';
+
+      ov.innerHTML=top+main;
+      document.body.appendChild(ov);
+
+      var _idx=0;
+      var _cardEl=document.getElementById('cfa-card');
+
+      function _renderCard(){
+        var p=gh[_idx];
+        if(!p)return;
+        var t=hashToTraits(p.hash);
+        var season=t.season%4;
+        var seasonKeys=['spring','summer','autumn','winter'];
+        var seasonEmblems=['\ud83c\udf38','\u2600\ufe0f','\ud83c\udf42','\u2744\ufe0f'];
+        var sk=seasonKeys[season];
+        var ea=window.computeEA?computeEA(t,0):0;
+        var tg=getTerraGrade(t);
+        var name=typeof getPlantName==='function'?getPlantName(p.hash):p.hash.slice(0,8);
+        var haiku=typeof getHaiku==='function'?getHaiku(p.hash):{line1:'',line2:'',line3:''};
+        var svg=window._generatePlantSVG?_generatePlantSVG(p.hash,180):'';
+        svg=svg.replace(/<animate[^>]*\/>/gi,'').replace(/<animate[^<]*<\/animate>/gi,'').replace(/<animateTransform[^>]*\/>/gi,'');
+        var np=typeof buildNameplate==='function'?buildNameplate(p.hash):name;
+        var showGrid=document.getElementById('cfa-grid').checked;
+        var gridBorder=showGrid?'border:1px dashed rgba(122,179,86,0.25);':'';
+
+        var h='<div style="display:grid;grid-template-rows:'+_vals.nameRow+'% '+_vals.artRow+'% '+_vals.haikuRow+'% auto;width:100%;height:100%;padding:'+_vals.padTop+'% '+_vals.padSide+'% '+_vals.padBot+'%;box-sizing:border-box;background-size:96%;background-position:center;background-repeat:no-repeat;background-image:url(assets/cards/fronts/front-'+sk+'.png);background-color:#050505;border-radius:12px;">';
+
+        // Name zone
+        h+='<div style="display:flex;align-items:center;justify-content:center;overflow:hidden;'+gridBorder+'">';
+        h+='<div style="font-family:Cormorant Garamond,Playfair Display,serif;font-weight:700;text-align:center;letter-spacing:'+_vals.nameLetterSp+'em;text-shadow:0 2px 8px rgba(0,0,0,0.8);width:100%;line-height:1.15;color:var(--cream);">'+np+'</div>';
+        h+='</div>';
+
+        // Art zone
+        h+='<div style="display:flex;align-items:flex-end;justify-content:center;overflow:hidden;padding-bottom:'+_vals.artPadBot+'%;'+gridBorder+'">';
+        h+='<div style="max-height:100%;max-width:'+_vals.artMaxW+'%;">'+svg+'</div>';
+        h+='</div>';
+
+        // Haiku zone
+        h+='<div style="display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0 4%;'+gridBorder+'">';
+        h+='<div style="font-family:Playfair Display,serif;font-style:italic;font-size:'+_vals.haikuFont+'rem;color:rgba(212,207,188,0.88);text-align:center;line-height:'+_vals.haikuLine+';width:100%;">'+haiku.line1+'<br>'+haiku.line2+'<br>'+haiku.line3+'</div>';
+        h+='</div>';
+
+        // Hint zone
+        h+='<div style="display:flex;align-items:center;justify-content:center;'+gridBorder+'">';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:rgba(122,179,86,0.35);">tap to flip \u2192</div>';
+        h+='</div>';
+
+        h+='</div>';
+
+        // EA badge
+        h+='<div style="position:absolute;top:'+_vals.eaTop+'%;right:'+_vals.eaRight+'%;font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--gold);background:rgba(10,10,8,0.75);border:1.5px solid rgba(200,168,75,0.3);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">'+ea+'</div>';
+
+        _cardEl.innerHTML=h;
+
+        // Apply font sizes via style injection for np-main, np-top, np-title
+        var npMain=_cardEl.querySelector('.np-main');
+        if(npMain)npMain.style.fontSize=_vals.nameFontMain+'rem';
+        var npTop=_cardEl.querySelector('.np-top');
+        if(npTop)npTop.style.fontSize=_vals.nameFontTop+'rem';
+        var npTitle=_cardEl.querySelector('.np-title');
+        if(npTitle)npTitle.style.fontSize=_vals.nameFontTitle+'rem';
+
+        document.getElementById('cfa-counter').textContent=(_idx+1)+'/'+gh.length;
+      }
+
+      // Wire sliders
+      var allSliders=document.querySelectorAll('#cfa-controls input[type=range]');
+      for(var j=0;j<allSliders.length;j++){
+        (function(sl){
+          sl.addEventListener('input',function(){
+            var key=sl.id.replace('cfa-s-','');
+            _vals[key]=parseFloat(sl.value);
+            document.getElementById('cfa-v-'+key).textContent=sl.value;
+            _renderCard();
+          });
+        })(allSliders[j]);
+      }
+
+      // Grid toggle
+      document.getElementById('cfa-grid').addEventListener('change',function(){_renderCard();});
+
+      // Nav
+      document.getElementById('cfa-prev').onclick=function(){_idx=(_idx-1+gh.length)%gh.length;_renderCard();};
+      document.getElementById('cfa-next').onclick=function(){_idx=(_idx+1)%gh.length;_renderCard();};
+      document.getElementById('cfa-close').onclick=function(){ov.remove();};
+
+      // Copy CSS
+      document.getElementById('cfa-copy').onclick=function(){
+        var css='.cs-card-front{grid-template-rows:'+_vals.nameRow+'% '+_vals.artRow+'% '+_vals.haikuRow+'% auto;padding:'+_vals.padTop+'% '+_vals.padSide+'% '+_vals.padBot+'%;}\n';
+        css+='.cf-name{letter-spacing:'+_vals.nameLetterSp+'em;}\n';
+        css+='.cf-name .np-main{font-size:'+_vals.nameFontMain+'rem;}\n';
+        css+='.cf-name .np-top{font-size:'+_vals.nameFontTop+'rem;}\n';
+        css+='.cf-name .np-title{font-size:'+_vals.nameFontTitle+'rem;}\n';
+        css+='.cf-haiku{font-size:'+_vals.haikuFont+'rem;line-height:'+_vals.haikuLine+';}\n';
+        css+='.cf-art-window svg{max-width:'+_vals.artMaxW+'%;}\n';
+        css+='.cf-art-window{padding-bottom:'+_vals.artPadBot+'%;}\n';
+        css+='.cf-ea{top:'+_vals.eaTop+'%;right:'+_vals.eaRight+'%;}\n';
+
+        if(navigator.clipboard){
+          navigator.clipboard.writeText(css).then(function(){alert('CSS copied!');});
+        }else{
+          prompt('Copy this CSS:',css);
+        }
+      };
+
+      _renderCard();
     }
   };
 })();
