@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-04u';
+  var _SVG_CACHE_VER = '2026-04-04v';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -22634,8 +22634,10 @@ document.addEventListener('keydown', function(e) {
         // in the characteristic "What have we here?" curiosity pose.
         s += '<g opacity="0.9" transform="translate(52,77) scale(1.35) translate(-52,-77)">';
         s += '<animateTransform attributeName="transform" type="rotate" values="-1 52 78;2 52 78;-1 52 78" dur="6s" repeatCount="indefinite"/>';
-        // White glow aura — so raven is visible on dark backgrounds
-        s += '<ellipse cx="52" cy="77" rx="6" ry="5" fill="rgba(255,255,255,0.03)"/>';
+        // White glow outline — follows raven body shape
+        s += '<ellipse cx="52" cy="78" rx="3.8" ry="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.8"/>';
+        s += '<circle cx="50" cy="76.2" r="2" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.6"/>';
+        s += '<path d="M55,78 Q57,77.5 58.5,77" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="0.6"/>';
         // Shadow on rim
         s += '<ellipse cx="52" cy="80.5" rx="3" ry="0.4" fill="#0d100c" opacity="0.15"/>';
         // Tail — long, wedge-shaped, layered feathers
@@ -22688,40 +22690,40 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="52" cy="78" rx="2.5" ry="1.5" fill="rgba(80,70,130,0.06)"/>';
         s += '</g>';
         break;
-      case 76: // Garter Snake — coiled near pot base, striped pattern
-        // Thamnophis sirtalis: the classic garden snake. Olive-green with
-        // three cream/yellow longitudinal stripes running head to tail.
-        // Slender, harmless, elegant. Coiled in a loose resting spiral.
-        s += '<g opacity="1" transform="translate(46,89) scale(1.4) translate(-46,-89)">';
-        // Body coil — open S-curve, NOT a closed circle. Tail end visible.
-        s += '<path d="M44,91 Q42,89.5 43.5,87.5 Q45,85.5 47.5,86.5 Q50,87.5 49,89.5 Q48,91 47,91.5" fill="none" stroke="#4A6A30" stroke-width="1.6" stroke-linecap="round"/>';
-        // Tail tip — tapered end, not connecting back to head
-        s += '<path d="M47,91.5 Q48,92 49,92" fill="none" stroke="#4A6A30" stroke-width="0.8" stroke-linecap="round"/>';
-        // Dorsal stripe — cream center line following body curve (signature)
-        s += '<path d="M44,91 Q42,89.5 43.5,87.5 Q45,85.5 47.5,86.5 Q50,87.5 49,89.5 Q48,91 46,91.5" fill="none" stroke="#D8C888" stroke-width="0.3" stroke-linecap="round" opacity="0.55"/>';
-        // Lateral stripes — one on each side of dorsal
-        s += '<path d="M44.2,91.3 Q42.2,89.8 43.7,87.8 Q45.2,85.8 47.7,86.8 Q50.2,87.8 49.2,89.8 Q48.2,91.3 46.2,91.8" fill="none" stroke="#C8B870" stroke-width="0.2" stroke-linecap="round" opacity="0.3"/>';
-        s += '<path d="M43.8,90.7 Q41.8,89.2 43.3,87.2 Q44.8,85.2 47.3,86.2 Q49.8,87.2 48.8,89.2 Q47.8,90.7 45.8,91.2" fill="none" stroke="#C8B870" stroke-width="0.2" stroke-linecap="round" opacity="0.3"/>';
-        // Scale texture — subtle keeled pattern along body
-        for (var _gs76 = 0; _gs76 < 5; _gs76++) {
-          var _gs76t = 0.15 + _gs76 * 0.17;
-          var _gs76x = 44 + Math.sin(_gs76t * 6.5) * 3;
-          var _gs76y = 91 - _gs76t * 5.5 + Math.cos(_gs76t * 6.5) * 1.5;
-          s += '<path d="M'+(_gs76x-0.4).toFixed(1)+','+_gs76y.toFixed(1)+' Q'+_gs76x.toFixed(1)+','+(_gs76y-0.3).toFixed(1)+' '+(_gs76x+0.4).toFixed(1)+','+_gs76y.toFixed(1)+'" fill="none" stroke="rgba(80,110,50,0.15)" stroke-width="0.1"/>';
-        }
-        // Head — small, distinct from neck, pointed
-        s += '<ellipse cx="44" cy="90.8" rx="1.0" ry="0.7" fill="#4A6A30"/>';
-        // Head stripe continuing
-        s += '<line x1="44.8" y1="90.8" x2="43.2" y2="90.8" stroke="#D8C888" stroke-width="0.2" opacity="0.4"/>';
-        // Eye — round pupil (non-venomous)
-        s += '<circle cx="43.5" cy="90.5" r="0.25" fill="#1A1A18"/>';
-        s += '<circle cx="43.5" cy="90.5" r="0.15" fill="#3A3A30"/>';
-        s += '<circle cx="43.6" cy="90.4" r="0.05" fill="rgba(240,235,216,0.5)"/>';
-        // Forked tongue — the classic snake flick
-        s += '<line x1="43" y1="90.8" x2="42.2" y2="90.5" stroke="#C85050" stroke-width="0.1" stroke-linecap="round"><animate attributeName="x2" values="42.2;41.5;42.2" dur="4s" repeatCount="indefinite"/></line>';
-        s += '<line x1="43" y1="90.8" x2="42.2" y2="91.1" stroke="#C85050" stroke-width="0.1" stroke-linecap="round"><animate attributeName="x2" values="42.2;41.5;42.2" dur="4s" repeatCount="indefinite"/></line>';
-        // Belly showing at coil inner curve — lighter
-        s += '<path d="M45,90 Q46,89.5 47,90" fill="none" stroke="#B8C888" stroke-width="0.6" opacity="0.15"/>';
+      case 76: // Garden Snake — spring coil shape, green with stripes
+        s += '<g opacity="1" transform="translate(46,87) scale(1.5) translate(-46,-87)">';
+        // Shadow
+        s += '<ellipse cx="46" cy="93" rx="5" ry="0.5" fill="#0d100c" opacity="0.1"/>';
+        // ── BODY — spring/coil shape, S-curves stacked ──
+        // Main body path — spring shape: left-right-left-right
+        s += '<path d="M43,84 Q40,85 42,86.5 Q44,88 48,87 Q52,86 50,88 Q48,90 44,89.5 Q40,89 42,91 Q44,92.5 48,92" fill="none" stroke="#4A7A30" stroke-width="1.8" stroke-linecap="round"/>';
+        // Lighter green stripe 1 — follows same path, offset slightly
+        s += '<path d="M43,84 Q40,85 42,86.5 Q44,88 48,87 Q52,86 50,88 Q48,90 44,89.5 Q40,89 42,91 Q44,92.5 48,92" fill="none" stroke="#6AA848" stroke-width="0.4" stroke-linecap="round" opacity="0.5"/>';
+        // Lighter green stripe 2 — other side
+        s += '<path d="M43,84 Q40,85 42,86.5 Q44,88 48,87 Q52,86 50,88 Q48,90 44,89.5 Q40,89 42,91 Q44,92.5 48,92" fill="none" stroke="#8AC060" stroke-width="0.25" stroke-linecap="round" opacity="0.35" stroke-dasharray="0.8 0.6"/>';
+        // ── TAIL — pointed tip at the end ──
+        s += '<path d="M48,92 Q49.5,92.2 50.5,92" fill="none" stroke="#4A7A30" stroke-width="1" stroke-linecap="round"/>';
+        s += '<path d="M50.5,92 L52,91.8" fill="none" stroke="#4A7A30" stroke-width="0.4"/>';
+        // Tail stripes
+        s += '<path d="M48.5,92 Q50,92.1 51.5,91.9" fill="none" stroke="#6AA848" stroke-width="0.15" opacity="0.4"/>';
+        // ── HEAD — rounded, thicker than body ──
+        s += '<ellipse cx="42.5" cy="83.5" rx="1.5" ry="1.2" fill="#4A7A30"/>';
+        // Head lighter top
+        s += '<ellipse cx="42.3" cy="83.2" rx="0.8" ry="0.6" fill="#5A8A40" opacity="0.3"/>';
+        // 2 black eyes
+        s += '<circle cx="41.8" cy="83" r="0.3" fill="#111"/>';
+        s += '<circle cx="41.9" cy="82.9" r="0.08" fill="rgba(240,235,216,0.5)"/>';
+        s += '<circle cx="43" cy="83" r="0.3" fill="#111"/>';
+        s += '<circle cx="43.1" cy="82.9" r="0.08" fill="rgba(240,235,216,0.5)"/>';
+        // Nostril
+        s += '<circle cx="41.5" cy="83.5" r="0.08" fill="#2A4A18" opacity="0.4"/>';
+        // Mouth line
+        s += '<path d="M41.5,83.8 Q42.5,84.2 43.5,83.8" fill="none" stroke="#3A5A28" stroke-width="0.12" opacity="0.3"/>';
+        // ── RED FORKED TONGUE — sticking out, animated flick ──
+        s += '<line x1="41.5" y1="83.8" x2="40.5" y2="83.5" stroke="#D03030" stroke-width="0.15" stroke-linecap="round"><animate attributeName="x2" values="40.5;39.8;40.5" dur="3s" repeatCount="indefinite"/></line>';
+        s += '<line x1="41.5" y1="83.8" x2="40.5" y2="84.2" stroke="#D03030" stroke-width="0.15" stroke-linecap="round"><animate attributeName="x2" values="40.5;39.8;40.5" dur="3s" repeatCount="indefinite"/></line>';
+        // Neck connecting head to body
+        s += '<path d="M42.5,84.2 Q43,84 43,84" fill="none" stroke="#4A7A30" stroke-width="1.8" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 77: // Garden Centipede — crawling across soil, segmented body
