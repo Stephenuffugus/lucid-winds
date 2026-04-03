@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-03p';
+  var _SVG_CACHE_VER = '2026-04-03q';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21420,31 +21420,34 @@ document.addEventListener('keydown', function(e) {
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.18,-0.04;0.34,0;0.18,0.04;0,0" dur="6.8s" repeatCount="indefinite"/>';
         // Shadow
         s += '<ellipse cx="57" cy="92.5" rx="6" ry="0.6" fill="#0d100c" opacity="0.1"/>';
-        // Tail — long, flat, with dorsal fin (connected to body)
-        s += '<path d="M60,90 Q62,90 64,89.5 Q65.5,89 66,88.5 Q66.5,88 66,87.8 Q65.5,88 64,88.5 Q62,89 60,89.5 Z" fill="#D7A79A"/>';
-        // Tail fin edge — translucent
-        s += '<path d="M61,89 Q63,88.5 65,88 Q66,87.8 66,88.2" fill="none" stroke="#E8C0B0" stroke-width="0.3" opacity="0.3"/>';
-        // Dorsal fin — along tail top
-        s += '<path d="M60,89.5 Q62,88 64,87.5 Q65,87 66,87.8" fill="#E8C0B0" opacity="0.2"/>';
-        // Hind legs — tiny, splayed, webbed toes
-        s += '<path d="M58,91 Q58.5,91.5 58.5,92" stroke="#D7A79A" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M58.5,92 L58,92.4 M58.5,92 L58.5,92.5 M58.5,92 L59,92.4 M58.5,92 L59.3,92.2" stroke="#D7A79A" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M56,91.2 Q55.5,91.8 55.5,92" stroke="#D7A79A" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M55.5,92 L55,92.4 M55.5,92 L55.5,92.5 M55.5,92 L56,92.4" stroke="#D7A79A" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
-        // Body — soft, pudgy, salamander-shaped (CONNECTED to tail)
-        s += '<path d="M51,89.5 Q51,88 53,87 Q56,86.5 59,87 Q61,88 61,89.5 Q61,91 59,92 Q56,92.5 53,92 Q51,91 51,89.5 Z" fill="#D7A79A"/>';
-        // Belly — lighter, pinkish white
-        s += '<path d="M53,91 Q56,92 59,91" fill="#EACFC5" opacity="0.3"/>';
-        // Skin spots — axolotls have freckle-like spots
-        var _axSpots = [[53,88.5],[54.5,88],[56,87.5],[57.5,88],[59,88.5],[54,90],[56,90.5],[58,90]];
+        // TAIL — long, translucent pink fin tapering to a point
+        // Tail body — tapers from body width down to tip
+        s += '<path d="M60,89.5 Q62,89.5 64,89 Q65.5,88.5 67,87.5 Q67.5,87 67,87 Q66,87.5 64,88.5 Q62,89 60,89 Z" fill="rgba(215,167,154,0.5)"/>';
+        // Dorsal fin — translucent pink, runs along top of tail
+        s += '<path d="M60,89 Q62,87.5 64,86.8 Q66,86.5 67,87" fill="rgba(232,192,176,0.25)" stroke="rgba(200,140,130,0.2)" stroke-width="0.2"/>';
+        // Ventral fin — translucent pink, runs along bottom
+        s += '<path d="M60,89.5 Q62,90 64,89.8 Q66,89 67,87.5" fill="rgba(232,192,176,0.2)" stroke="rgba(200,140,130,0.15)" stroke-width="0.2"/>';
+        // Tail fin edge shimmer
+        s += '<path d="M62,87 Q64,86.5 66.5,87" fill="none" stroke="rgba(240,200,190,0.15)" stroke-width="0.3"/>';
+        // Hind legs — LONGER, reaching down with splayed webbed toes
+        s += '<path d="M58,90 Q58.5,91 59,92.5" stroke="#D7A79A" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M59,92.5 L58.3,93 M59,92.5 L59,93.2 M59,92.5 L59.7,93 M59,92.5 L59.8,92.8" stroke="#D7A79A" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M56,90.5 Q55.5,91.5 55.5,92.5" stroke="#D7A79A" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M55.5,92.5 L55,93 M55.5,92.5 L55.5,93.2 M55.5,92.5 L56.2,93" stroke="#D7A79A" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        // Body — THINNER, elongated salamander shape (not pudgy)
+        s += '<path d="M51.5,89.5 Q51.5,88.5 53,87.5 Q55.5,87 58.5,87.5 Q60.5,88 60.5,89 Q60.5,90.5 58.5,91 Q55.5,91.5 53,91 Q51.5,90.5 51.5,89.5 Z" fill="#D7A79A"/>';
+        // Belly — lighter
+        s += '<path d="M53.5,90.5 Q56.5,91 59,90.5" fill="#EACFC5" opacity="0.3"/>';
+        // Skin spots
+        var _axSpots = [[53.5,88.5],[55,88],[56.5,87.8],[58,88.2],[54.5,90],[56.5,90.2],[58.5,89.5]];
         for (var _axi = 0; _axi < _axSpots.length; _axi++) {
-          s += '<circle cx="'+_axSpots[_axi][0]+'" cy="'+_axSpots[_axi][1]+'" r="0.25" fill="#C09080" opacity="0.2"/>';
+          s += '<circle cx="'+_axSpots[_axi][0]+'" cy="'+_axSpots[_axi][1]+'" r="0.2" fill="#C09080" opacity="0.2"/>';
         }
-        // Front legs — tiny, stubby, reaching forward
-        s += '<path d="M53,90 Q52,90.5 51.5,91" stroke="#D7A79A" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M51.5,91 L51,91.4 M51.5,91 L51.5,91.5 M51.5,91 L52,91.4 M51.5,91 L51,91.2" stroke="#D7A79A" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M54.5,90.5 Q54,91 53.5,91.2" stroke="#D7A79A" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M53.5,91.2 L53,91.5 M53.5,91.2 L53.5,91.7 M53.5,91.2 L54,91.5" stroke="#D7A79A" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        // Front legs — LONGER, reaching forward with splayed toes
+        s += '<path d="M53.5,90 Q52.5,90.5 51.5,91.5" stroke="#D7A79A" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M51.5,91.5 L51,92 M51.5,91.5 L51.5,92.2 M51.5,91.5 L52.2,92 M51.5,91.5 L50.8,91.8" stroke="#D7A79A" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M55,90.5 Q54,91 53.5,92" stroke="#D7A79A" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M53.5,92 L53,92.4 M53.5,92 L53.5,92.6 M53.5,92 L54.2,92.3" stroke="#D7A79A" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
         // Head — WIDE, flat, connected to body (overlapping fill)
         s += '<path d="M50,89 Q49.5,88 50,87 Q51,86 53,86 Q54,86.5 54,87.5 Q54,89 53,90 Q51.5,90.5 50,89.5 Z" fill="#E6BBB0"/>';
         // The SMILE — axolotl's famous permanent grin
