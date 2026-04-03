@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-04z';
+  var _SVG_CACHE_VER = '2026-04-05a';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21835,7 +21835,7 @@ document.addEventListener('keydown', function(e) {
         s += '</g>';
         break;
       case 57: // Silly Goose — bottom-left, head tilted, iconic troublemaker energy
-        s += '<g opacity="0.85" transform="translate(12,88) scale(1.3) translate(-12,-88)">';
+        s += '<g opacity="1" transform="translate(12,88) scale(1.3) translate(-12,-88)">';
         // Subtle waddle animation
         s += '<animateTransform attributeName="transform" type="rotate" values="-2 14 88;3 14 88;-1 14 88;2 14 88;-2 14 88" dur="3.8s" repeatCount="indefinite"/>';
         // Body — chunky white oval
@@ -21869,23 +21869,23 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M16,91.2 L17.5,92.2 L19,91.7 L17.5,91.2 Z" fill="#E8922D"/>';
         // Forehead tuft — tiny crown of feathers
         s += '<path d="M17,73.2 Q17.5,72.2 18,73 Q18.3,72 18.8,73" fill="#F0EBD8" stroke="#E0DAC8" stroke-width="0.12"/>';
-        // ── 3 MUSIC NOTES floating above head ──
-        // Note 1 — eighth note
-        s += '<g opacity="0.5"><animate attributeName="opacity" values="0.5;0.3;0.5" dur="3s" repeatCount="indefinite"/>';
-        s += '<circle cx="20" cy="72" r="0.5" fill="#4A4A42"/>';
-        s += '<line x1="20.5" y1="72" x2="20.5" y2="69.5" stroke="#4A4A42" stroke-width="0.2"/>';
-        s += '<path d="M20.5,69.5 Q21.5,70 21.5,71" stroke="#4A4A42" stroke-width="0.2" fill="none"/>';
+        // ── 3 MUSIC NOTES — red, yellow, blue, spaced apart ──
+        // Note 1 — red eighth note (left)
+        s += '<g opacity="0.6"><animate attributeName="opacity" values="0.6;0.35;0.6" dur="3s" repeatCount="indefinite"/>';
+        s += '<circle cx="18" cy="72" r="0.5" fill="#C83030"/>';
+        s += '<line x1="18.5" y1="72" x2="18.5" y2="69.5" stroke="#C83030" stroke-width="0.2"/>';
+        s += '<path d="M18.5,69.5 Q19.5,70 19.5,71" stroke="#C83030" stroke-width="0.2" fill="none"/>';
         s += '</g>';
-        // Note 2 — quarter note
-        s += '<g opacity="0.4"><animate attributeName="opacity" values="0.4;0.25;0.4" dur="3.5s" repeatCount="indefinite"/>';
-        s += '<circle cx="22" cy="71" r="0.45" fill="#4A4A42"/>';
-        s += '<line x1="22.45" y1="71" x2="22.45" y2="68.5" stroke="#4A4A42" stroke-width="0.18"/>';
+        // Note 2 — yellow quarter note (center, higher)
+        s += '<g opacity="0.5"><animate attributeName="opacity" values="0.5;0.3;0.5" dur="3.5s" repeatCount="indefinite"/>';
+        s += '<circle cx="21" cy="70" r="0.45" fill="#D0A020"/>';
+        s += '<line x1="21.45" y1="70" x2="21.45" y2="67.5" stroke="#D0A020" stroke-width="0.18"/>';
         s += '</g>';
-        // Note 3 — eighth note (smaller, higher)
-        s += '<g opacity="0.35"><animate attributeName="opacity" values="0.35;0.2;0.35" dur="4s" repeatCount="indefinite"/>';
-        s += '<circle cx="21" cy="69.5" r="0.4" fill="#4A4A42"/>';
-        s += '<line x1="21.4" y1="69.5" x2="21.4" y2="67.5" stroke="#4A4A42" stroke-width="0.18"/>';
-        s += '<path d="M21.4,67.5 Q22.2,68 22.2,68.8" stroke="#4A4A42" stroke-width="0.18" fill="none"/>';
+        // Note 3 — blue eighth note (right, highest)
+        s += '<g opacity="0.45"><animate attributeName="opacity" values="0.45;0.25;0.45" dur="4s" repeatCount="indefinite"/>';
+        s += '<circle cx="24" cy="68.5" r="0.4" fill="#3080C0"/>';
+        s += '<line x1="24.4" y1="68.5" x2="24.4" y2="66.5" stroke="#3080C0" stroke-width="0.18"/>';
+        s += '<path d="M24.4,66.5 Q25.2,67 25.2,67.8" stroke="#3080C0" stroke-width="0.18" fill="none"/>';
         s += '</g>';
         s += '</g>';
         break;
@@ -21901,7 +21901,7 @@ document.addEventListener('keydown', function(e) {
         // ── HIND LEGS — long toes with bulbous ends ──
         // Left hind leg
         s += '<path d="M19,77.5 Q19.5,78.5 19.5,79" stroke="#2080C8" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
-        s += '<line x1="19.5,79" x2="19" y1="79" y2="79.8" stroke="#2080C8" stroke-width="0.15"/>';
+        s += '<line x1="19.5" y1="79" x2="19" y2="79.8" stroke="#2080C8" stroke-width="0.15"/>';
         s += '<line x1="19.5" y1="79" x2="19.5" y2="79.8" stroke="#2080C8" stroke-width="0.15"/>';
         s += '<line x1="19.5" y1="79" x2="20" y2="79.8" stroke="#2080C8" stroke-width="0.15"/>';
         s += '<line x1="19.5" y1="79" x2="20.5" y2="79.6" stroke="#2080C8" stroke-width="0.15"/>';
@@ -21960,13 +21960,13 @@ document.addEventListener('keydown', function(e) {
         // Head black spots
         s += '<circle cx="15.5" cy="74.5" r="0.25" fill="#1A1A1A" opacity="0.5"/>';
         s += '<circle cx="16.8" cy="74.8" r="0.2" fill="#1A1A1A" opacity="0.4"/>';
-        // ── EYES — big, shiny, black, bulging ──
+        // ── EYES — big, shiny, black, bulging with bright white highlights ──
         s += '<circle cx="15" cy="74.2" r="0.8" fill="#0A0A0A"/>';
-        s += '<circle cx="15.2" cy="74" r="0.25" fill="rgba(200,220,255,0.5)"/>';
-        s += '<circle cx="14.9" cy="74.3" r="0.08" fill="rgba(255,255,255,0.4)"/>';
+        s += '<circle cx="15.3" cy="73.9" r="0.3" fill="rgba(255,255,255,0.6)"/>';
+        s += '<circle cx="14.8" cy="74.4" r="0.1" fill="rgba(255,255,255,0.45)"/>';
         s += '<circle cx="17.2" cy="74.2" r="0.7" fill="#0A0A0A"/>';
-        s += '<circle cx="17.4" cy="74" r="0.22" fill="rgba(200,220,255,0.5)"/>';
-        s += '<circle cx="17.1" cy="74.3" r="0.07" fill="rgba(255,255,255,0.4)"/>';
+        s += '<circle cx="17.5" cy="73.9" r="0.25" fill="rgba(255,255,255,0.6)"/>';
+        s += '<circle cx="17" cy="74.4" r="0.08" fill="rgba(255,255,255,0.45)"/>';
         // Nostril
         s += '<circle cx="15.8" cy="75.2" r="0.08" fill="#1A4A6A" opacity="0.4"/>';
         // Mouth line
@@ -21987,7 +21987,9 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="56.5" cy="91" rx="0.7" ry="0.4" fill="#C8B098"/>';
         // Hind foot visible
         s += '<ellipse cx="60" cy="91" rx="0.8" ry="0.35" fill="#C8B098"/>';
-        // Head — moved UP and forward, clearly above body
+        // Neck — connecting head to body
+        s += '<path d="M55.5,87 Q56,88 57,88.5 Q58,88.5 57.5,87.5 Q57,87 56,86.5 Q55.5,86.5 55.5,87 Z" fill="#B8A088"/>';
+        // Head — above body, connected via neck
         s += '<circle cx="55" cy="85.5" r="1.8" fill="#B8A088"/>';
         // Cheek fluff
         s += '<ellipse cx="54.5" cy="86.2" rx="1" ry="0.6" fill="#C8B8A0" opacity="0.25"/>';
@@ -22088,6 +22090,8 @@ document.addEventListener('keydown', function(e) {
         s += '<line x1="52.5" y1="82.4" x2="51.5" y2="82.5" stroke="#C84020" stroke-width="0.15" opacity="0.5"/>';
         // Nostril
         s += '<circle cx="52" cy="82.4" r="0.08" fill="#8A4010" opacity="0.4"/>';
+        // Light highlight down right side of body — visibility on dark bg
+        s += '<path d="M59.5,84 Q60,86 60,88 Q60,90 59,91" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 64: // Scarab Beetle — iridescent jeweled carapace on soil
