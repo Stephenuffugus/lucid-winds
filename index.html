@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-04v';
+  var _SVG_CACHE_VER = '2026-04-04w';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -22535,10 +22535,24 @@ document.addEventListener('keydown', function(e) {
         // beneath the cap. Faint luminous glow says "this is alive."
         s += '<g opacity="0.9" transform="translate(-5,0) translate(30,88) scale(1.8) translate(-30,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0,-0.4;0,0;0.15,0;0,0" dur="4s" repeatCount="indefinite"/>';
-        // See-through glow around sprite — easier to see
-        s += '<ellipse cx="30" cy="88" rx="4" ry="4" fill="rgba(255,255,240,0.04)"/>';
-        // Luminous ground glow — sprite is faintly magical
-        s += '<ellipse cx="30" cy="91" rx="2.5" ry="0.5" fill="rgba(200,180,120,0.08)"><animate attributeName="rx" values="2.5;3;2.5" dur="3s" repeatCount="indefinite"/></ellipse>';
+        // ── WILL-O-WISP STYLE GLOW — white shades ──
+        // Outer fog — soft white drifting shapes
+        s += '<ellipse cx="30" cy="88" rx="5" ry="4.5" fill="rgba(255,255,240,0.06)" transform="rotate(10,30,88)"><animate attributeName="rx" values="5;5.5;4.5;5" dur="4s" repeatCount="indefinite"/></ellipse>';
+        s += '<ellipse cx="29" cy="89" rx="4" ry="3.5" fill="rgba(255,250,230,0.07)" transform="rotate(-8,29,89)"><animate attributeName="ry" values="3.5;4;3;3.5" dur="5s" repeatCount="indefinite"/></ellipse>';
+        // Fog wisps — drifting white smoke
+        s += '<path d="M27,89 Q26,91 27,93 Q28,94 27,95" fill="none" stroke="rgba(255,255,240,0.08)" stroke-width="0.8" stroke-linecap="round"><animate attributeName="d" values="M27,89 Q26,91 27,93 Q28,94 27,95;M27,89 Q25.5,91.5 26.5,93.5 Q28.5,95 27,96;M27,89 Q26,91 27,93 Q28,94 27,95" dur="5s" repeatCount="indefinite"/></path>';
+        s += '<path d="M33,89 Q34,91 33,93 Q32,94 33,95" fill="none" stroke="rgba(255,250,235,0.06)" stroke-width="0.6" stroke-linecap="round"><animate attributeName="d" values="M33,89 Q34,91 33,93 Q32,94 33,95;M33,89 Q34.5,91.5 33.5,93.5 Q31.5,95 33,96;M33,89 Q34,91 33,93 Q32,94 33,95" dur="6s" repeatCount="indefinite"/></path>';
+        // Middle halo — warm white
+        s += '<circle cx="30" cy="88" r="3" fill="rgba(255,250,230,0.1)"><animate attributeName="opacity" values="0.1;0.18;0.08;0.15;0.1" dur="2.5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="30" cy="88" r="2" fill="rgba(255,255,240,0.18)"><animate attributeName="opacity" values="0.18;0.3;0.15;0.25;0.18" dur="2s" repeatCount="indefinite"/></circle>';
+        // Bright core — warm white
+        s += '<circle cx="30" cy="88.5" r="1.2" fill="rgba(255,250,230,0.25)"><animate attributeName="opacity" values="0.25;0.4;0.2;0.35;0.25" dur="1.8s" repeatCount="indefinite"/></circle>';
+        // Sparkle motes — white bright points
+        s += '<circle cx="28" cy="86.5" r="0.1" fill="rgba(255,255,240,0.5)"><animate attributeName="opacity" values="0;0.6;0" dur="2.2s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="32" cy="87" r="0.08" fill="rgba(255,250,230,0.4)"><animate attributeName="opacity" values="0.4;0;0.4" dur="1.8s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="28.5" cy="90" r="0.1" fill="rgba(255,255,240,0.35)"><animate attributeName="opacity" values="0;0.5;0" dur="2.5s" repeatCount="indefinite"/></circle>';
+        // Ground glow — brighter
+        s += '<ellipse cx="30" cy="91" rx="2.5" ry="0.5" fill="rgba(255,240,200,0.12)"><animate attributeName="rx" values="2.5;3.5;2.5" dur="3s" repeatCount="indefinite"/></ellipse>';
         // Tiny body — simple pale form (childlike, innocent)
         s += '<path d="M29.2,90 Q29,88.5 29.5,87.5 Q30,87 30.5,87.5 Q31,88.5 30.8,90 Z" fill="#E8DCC8" opacity="0.75"/>';
         // Belly highlight
