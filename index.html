@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-03g';
+  var _SVG_CACHE_VER = '2026-04-03h';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21091,6 +21091,19 @@ document.addEventListener('keydown', function(e) {
           // Each spine: dark base stroke + lighter tip
           s += '<line x1="'+_hsx+'" y1="'+_hsy+'" x2="'+(_hsx+_hdx)+'" y2="'+(_hsy+_hdy)+'" stroke="#7A5C3E" stroke-width="0.3" stroke-linecap="round"/>';
           s += '<line x1="'+(_hsx+_hdx*0.5)+'" y1="'+(_hsy+_hdy*0.5)+'" x2="'+(_hsx+_hdx)+'" y2="'+(_hsy+_hdy)+'" stroke="#C8B8A0" stroke-width="0.2" stroke-linecap="round" opacity="0.5"/>';
+        }
+        // Extra thin spines — 20 more filling gaps across the back
+        var _hgExtra = [
+          [53.2,88,-1.0,-1.3],[54.2,87.5,-0.6,-1.7],[55.2,87,-0.3,-1.9],[56,86.8,-0.1,-2.0],
+          [57,86.6,0.1,-2.0],[58.2,86.8,0.4,-1.9],[59.2,87.2,0.7,-1.6],[60.2,87.8,0.9,-1.3],
+          [53.8,89,-1.2,-0.7],[55,88.5,-0.6,-1.3],[56.5,88,0,-1.5],[58,88,0.3,-1.4],
+          [59.5,88.5,0.8,-1.1],[60.5,89,1.1,-0.6],[54.8,86.8,-0.35,-1.85],[57.8,86.5,0.15,-2.0],
+          [55.5,88,-0.5,-1.5],[58.5,88,0.5,-1.5],[56,89,-0.2,-1.2],[58,89,0.4,-1.0]
+        ];
+        for (var _hei = 0; _hei < _hgExtra.length; _hei++) {
+          var _he = _hgExtra[_hei];
+          s += '<line x1="'+_he[0]+'" y1="'+_he[1]+'" x2="'+(_he[0]+_he[2])+'" y2="'+(_he[1]+_he[3])+'" stroke="#8A6C4E" stroke-width="0.15" stroke-linecap="round" opacity="0.3"/>';
+          s += '<line x1="'+(_he[0]+_he[2]*0.6)+'" y1="'+(_he[1]+_he[3]*0.6)+'" x2="'+(_he[0]+_he[2])+'" y2="'+(_he[1]+_he[3])+'" stroke="#D0C0A8" stroke-width="0.1" stroke-linecap="round" opacity="0.35"/>';
         }
         // Spine highlight band — lighter tips catch the light
         s += '<path d="M54,85 Q57,84 60,85" fill="none" stroke="#D8C8B0" stroke-width="0.2" opacity="0.15"/>';
