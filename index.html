@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-03f';
+  var _SVG_CACHE_VER = '2026-04-03g';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -20946,11 +20946,12 @@ document.addEventListener('keydown', function(e) {
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.28,0.05;0.52,0;0.28,-0.05;0,0" dur="6.2s" repeatCount="indefinite"/>';
         // Shadow
         s += '<ellipse cx="57" cy="91.5" rx="6" ry="0.7" fill="#0d100c" opacity="0.12"/>';
-        // Tail — flat, wide, beaver-like (used for fat storage + swimming rudder)
-        s += '<path d="M51,89 Q49.5,89 48.5,89.5 Q47.5,90 48,90.5 Q49,91 51,90.5" fill="#6A4E38"/>';
-        // Tail texture — leathery scales
-        s += '<path d="M49,89.5 L49.5,90" stroke="#5A3E28" stroke-width="0.1" fill="none" opacity="0.3"/>';
-        s += '<path d="M50,89.3 L50.3,90" stroke="#5A3E28" stroke-width="0.1" fill="none" opacity="0.25"/>';
+        // Tail — flat, wide, beaver-like, CONNECTED into body mass
+        s += '<path d="M53,89 Q51,89 49.5,89.5 Q48,90 47.5,90.5 Q47,91 48,91 Q49.5,91 51.5,90.5 Q53,90 53,89 Z" fill="#6A4E38"/>';
+        // Tail texture — leathery cross-hatch scales
+        s += '<path d="M49,89.8 L49.5,90.3 M50,89.5 L50.5,90.2 M51,89.3 L51.3,90 M48.5,90.2 L49,90.7 M49.5,90 L50,90.5" stroke="#5A3E28" stroke-width="0.1" fill="none" opacity="0.3"/>';
+        // Tail outline
+        s += '<path d="M53,89 Q51,89 49.5,89.5 Q48,90 47.5,90.5 Q47,91 48,91 Q49.5,91 51.5,90.5" fill="none" stroke="#5A3E28" stroke-width="0.2" opacity="0.3"/>';
         // Hind legs — short, tucked, webbed
         s += '<path d="M53,90 Q52.5,90.5 52.5,91.2" stroke="#7A5C3E" stroke-width="0.8" fill="none" stroke-linecap="round"/>';
         s += '<path d="M52,91.2 L51.5,91.5 M52.5,91.2 L52.5,91.6 M53,91.2 L53.3,91.5" stroke="#8A6C4E" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
@@ -20960,11 +20961,20 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M53,86.5 Q56,85.5 59,86.5" fill="none" stroke="#5A3E28" stroke-width="0.3" opacity="0.2"/>';
         // Belly — lighter, cream-colored (platypus underside is pale)
         s += '<path d="M53,90.5 Q56.5,91.2 59.5,90.5" fill="#C09868" opacity="0.25"/>';
-        // Dense fur texture — waterproof double coat
-        var _plFur = [[52,87.5],[54,87],[55.5,86.5],[57,86.5],[58.5,87],[60,87.5],[53,89],[55,89.5],[57,89.5],[59,89]];
-        for (var _pfi = 0; _pfi < _plFur.length; _pfi++) {
-          var _pfx = _plFur[_pfi][0], _pfy = _plFur[_pfi][1];
-          s += '<path d="M'+_pfx+','+_pfy+' Q'+(_pfx+0.4)+','+(_pfy+0.3)+' '+(_pfx+0.8)+','+_pfy+'" stroke="#6A4E38" stroke-width="0.1" fill="none" opacity="0.2"/>';
+        // Dense fur texture — 100+ procedural waterproof double coat lines
+        var _plCols40 = ['#5A3E28','#6A4E38','#7A5C3E','#8A6C4E','#4A3018','#6A5038','#5A4830'];
+        for (var _pfi = 0; _pfi < 110; _pfi++) {
+          var _pfs = (_pfi * 11 + 5) % 110;
+          var _pfx = 52 + (_pfs % 18) * 0.53;
+          var _pfy = 86 + ((_pfs * 3 + _pfi * 7) % 110) / 20;
+          // Ellipse boundary for body shape
+          var _pfcx = 56.5, _pfcy = 88.5, _pfrx = 5.5, _pfry = 2.8;
+          var _pfdx = (_pfx - _pfcx) / _pfrx, _pfdy = (_pfy - _pfcy) / _pfry;
+          if (_pfdx * _pfdx + _pfdy * _pfdy > 1) continue;
+          var _pfc = _plCols40[_pfi % _plCols40.length];
+          var _pflen = 0.4 + (_pfi % 4) * 0.1;
+          var _pftilt = ((_pfi % 5) - 2) * 0.05;
+          s += '<line x1="'+_pfx.toFixed(1)+'" y1="'+_pfy.toFixed(1)+'" x2="'+(_pfx+_pftilt).toFixed(2)+'" y2="'+(_pfy+_pflen).toFixed(2)+'" stroke="'+_pfc+'" stroke-width="0.07" opacity="0.25"/>';
         }
         // Front legs — short, strong, webbed (extend beyond toes for swimming)
         s += '<path d="M59.5,90 Q60,90.8 60,91.2" stroke="#7A5C3E" stroke-width="0.8" fill="none" stroke-linecap="round"/>';
@@ -20976,16 +20986,17 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="61.6" cy="87.7" r="0.1" fill="rgba(240,235,216,0.5)"/>';
         // Ear hole — just a tiny opening (no external ear)
         s += '<circle cx="60.8" cy="87.5" r="0.15" fill="#5A3E28" opacity="0.4"/>';
-        // BILL — the platypus's defining feature: rubbery, electroreceptive
-        s += '<path d="M63,88.5 Q64,88 65.5,88.2 Q66.5,88.5 66.5,89 Q66.5,89.5 65.5,89.8 Q64,90 63,89.5 Z" fill="#A89078"/>';
-        // Bill nostrils — on top surface near tip
-        s += '<circle cx="65" cy="88.6" r="0.12" fill="#6A5A4A" opacity="0.5"/>';
-        s += '<circle cx="65.5" cy="88.7" r="0.12" fill="#6A5A4A" opacity="0.5"/>';
-        // Bill texture — slightly rubbery/leathery look
-        s += '<path d="M63.5,88.8 Q65,88.5 66,88.8" fill="none" stroke="#8A7A68" stroke-width="0.15" opacity="0.2"/>';
-        s += '<path d="M63.5,89.2 Q65,89.5 66,89.2" fill="none" stroke="#8A7A68" stroke-width="0.15" opacity="0.18"/>';
-        // Bill edge highlight
-        s += '<path d="M63,88.5 Q64.5,88 66,88.3" fill="none" stroke="#B8A890" stroke-width="0.15" opacity="0.2"/>';
+        // BILL — dark grey-brown, rubbery, electroreceptive
+        s += '<path d="M63,88.5 Q64,88 65.5,88.2 Q66.5,88.5 66.5,89 Q66.5,89.5 65.5,89.8 Q64,90 63,89.5 Z" fill="#4A4038"/>';
+        s += '<path d="M63,88.5 Q64,88 65.5,88.2 Q66.5,88.5 66.5,89 Q66.5,89.5 65.5,89.8 Q64,90 63,89.5 Z" fill="none" stroke="#3A3028" stroke-width="0.2"/>';
+        // Bill nostrils
+        s += '<circle cx="65" cy="88.6" r="0.14" fill="#2A2018" opacity="0.6"/>';
+        s += '<circle cx="65.5" cy="88.7" r="0.14" fill="#2A2018" opacity="0.6"/>';
+        // Bill texture
+        s += '<path d="M63.5,88.8 Q65,88.4 66,88.8" fill="none" stroke="#5A5048" stroke-width="0.15" opacity="0.25"/>';
+        s += '<path d="M63.5,89.2 Q65,89.6 66,89.2" fill="none" stroke="#5A5048" stroke-width="0.15" opacity="0.22"/>';
+        // Bill edge highlight — subtle
+        s += '<path d="M63.2,88.6 Q64.5,88.2 66,88.4" fill="none" stroke="rgba(200,190,170,0.12)" stroke-width="0.15"/>';
         s += '</g>';
         break;
       case 41: // Praying Mantis — upright on pot rim, raptorial prayer pose, facing viewer
