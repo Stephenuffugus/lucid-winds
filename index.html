@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-05f';
+  var _SVG_CACHE_VER = '2026-04-05g';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21399,53 +21399,52 @@ document.addEventListener('keydown', function(e) {
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.12,0;0.24,0.02;0.12,0;0,0" dur="6.6s" repeatCount="indefinite"/>';
         // Shadow
         s += '<ellipse cx="57" cy="92.5" rx="6" ry="0.5" fill="#0d100c" opacity="0.12"/>';
-        // ── 8 LEGS — 4 per side, skinny, ending in points ──
+        // ── 8 LEGS — 4 per side, from skinny body edges ──
         // Left side (4 legs)
-        s += '<path d="M55,89 L52.5,90.5 L52,91.5" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
-        s += '<path d="M55.5,89.5 L53,91 L52.5,92" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
-        s += '<path d="M56,90 L54,91.5 L53.5,92.2" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
-        s += '<path d="M56.5,90.2 L55,91.5 L54.5,92" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
+        s += '<path d="M55,88 L52.5,90 L52,91" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
+        s += '<path d="M55.5,88.5 L53,90.5 L52.5,91.5" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
+        s += '<path d="M56.5,88.5 L54.5,91 L54,91.8" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
+        s += '<path d="M57.5,88.5 L56,91 L55.5,91.5" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
         // Right side (4 legs)
-        s += '<path d="M58,89 L60.5,90.5 L61,91.5" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
-        s += '<path d="M57.5,89.5 L60,91 L60.5,92" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
-        s += '<path d="M57,90 L59,91.5 L59.5,92.2" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
-        s += '<path d="M56.5,90.2 L58,91.5 L58.5,92" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
+        s += '<path d="M55,90 L52.5,91.5 L52,92" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
+        s += '<path d="M56,90 L53.5,92 L53,92.5" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
+        s += '<path d="M57,90 L55,92 L54.5,92.5" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
+        s += '<path d="M58,90 L56.5,91.5 L56,92" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
         // ── BODY — round at front, tapering to skinny tail sections ──
-        // Main body (prosoma + wide abdomen) — round at front
-        s += '<path d="M53,88.5 Q53,87 55,86.5 Q57,86 59,86.5 Q61,87.5 61,89 Q61,90.5 59,91.5 Q57,92 55,91.5 Q53,90.5 53,88.5 Z" fill="#7A4828"/>';
-        // Shiny highlight — glossy carapace
-        s += '<ellipse cx="56.5" cy="87.5" rx="2" ry="1" fill="rgba(220,160,80,0.15)"/>';
-        s += '<ellipse cx="56" cy="87.2" rx="1" ry="0.5" fill="rgba(255,220,150,0.12)"/>';
-        // Orange-red highlight accents
-        s += '<path d="M55,87 Q57,86.5 59,87" fill="none" stroke="rgba(200,100,40,0.12)" stroke-width="0.4"/>';
-        s += '<ellipse cx="57" cy="88.5" rx="1.5" ry="0.8" fill="rgba(180,80,30,0.06)"/>';
-        // Segment lines on body
-        s += '<path d="M54,88.5 Q57,88 60,88.5" fill="none" stroke="#5A3018" stroke-width="0.12" opacity="0.3"/>';
-        s += '<path d="M54.5,89.5 Q57,89 59.5,89.5" fill="none" stroke="#5A3018" stroke-width="0.12" opacity="0.25"/>';
-        s += '<path d="M55,90.5 Q57,90 59,90.5" fill="none" stroke="#5A3018" stroke-width="0.1" opacity="0.2"/>';
+        // Main body — MUCH SKINNIER, elongated oval
+        s += '<ellipse cx="57" cy="89" rx="4" ry="1.5" fill="#7A4828"/>';
+        // Shiny highlight
+        s += '<ellipse cx="56.5" cy="88.5" rx="2" ry="0.6" fill="rgba(220,160,80,0.15)"/>';
+        s += '<ellipse cx="56" cy="88.3" rx="0.8" ry="0.3" fill="rgba(255,220,150,0.12)"/>';
+        // Orange-red highlight
+        s += '<ellipse cx="57" cy="88.8" rx="1.5" ry="0.5" fill="rgba(180,80,30,0.06)"/>';
+        // Segment lines — VERTICAL (curved top to bottom across body)
+        s += '<path d="M55,87.5 Q55,89 55,90.5" fill="none" stroke="#5A3018" stroke-width="0.12" opacity="0.3"/>';
+        s += '<path d="M56,87.5 Q56,89 56,90.5" fill="none" stroke="#5A3018" stroke-width="0.12" opacity="0.3"/>';
+        s += '<path d="M57,87.5 Q57,89 57,90.5" fill="none" stroke="#5A3018" stroke-width="0.12" opacity="0.25"/>';
+        s += '<path d="M58,87.5 Q58,89 58,90.5" fill="none" stroke="#5A3018" stroke-width="0.1" opacity="0.25"/>';
+        s += '<path d="M59,87.8 Q59,89 59,90.2" fill="none" stroke="#5A3018" stroke-width="0.1" opacity="0.2"/>';
         // Body outline
-        s += '<path d="M53,88.5 Q53,87 55,86.5 Q57,86 59,86.5 Q61,87.5 61,89 Q61,90.5 59,91.5 Q57,92 55,91.5 Q53,90.5 53,88.5" fill="none" stroke="#4A2810" stroke-width="0.2" opacity="0.3"/>';
+        s += '<ellipse cx="57" cy="89" rx="4" ry="1.5" fill="none" stroke="#4A2810" stroke-width="0.2" opacity="0.3"/>';
         // Head area — slightly darker front
-        s += '<ellipse cx="54" cy="88" rx="1.5" ry="1.2" fill="#6A3820" opacity="0.4"/>';
+        s += '<ellipse cx="54" cy="89" rx="1.2" ry="1" fill="#6A3820" opacity="0.4"/>';
         // Eyes
-        s += '<circle cx="53.8" cy="87.5" r="0.2" fill="#2A1808"/>';
-        s += '<circle cx="54.5" cy="87.5" r="0.2" fill="#2A1808"/>';
-        s += '<circle cx="53.85" cy="87.4" r="0.06" fill="rgba(240,220,160,0.4)"/>';
+        s += '<circle cx="53.5" cy="88.5" r="0.2" fill="#2A1808"/>';
+        s += '<circle cx="54.2" cy="88.5" r="0.2" fill="#2A1808"/>';
+        s += '<circle cx="53.55" cy="88.4" r="0.06" fill="rgba(240,220,160,0.4)"/>';
         // ── 2 LARGE CLAWS — bigger than head ──
         // Left claw arm
-        s += '<path d="M53.5,87.5 Q52,87 51,86" stroke="#7A4828" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M53.5,88 Q52,87.5 51,86.5" stroke="#7A4828" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
         // Left claw pincer — BIG
-        s += '<path d="M51,86 Q50,85 49,85.2 Q48.2,85.8 48.5,86.5 Q49,87.2 50,87 Q50.5,86.8 51,86" fill="#8A5830"/>';
-        s += '<path d="M51,86 Q50.5,85.5 49.5,85.5 Q48.8,86 49,86.8 Q49.5,87 50.5,86.8" fill="none" stroke="#5A3018" stroke-width="0.15"/>';
-        // Claw shiny highlight
-        s += '<ellipse cx="49.5" cy="86" rx="0.5" ry="0.4" fill="rgba(220,160,80,0.15)"/>';
+        s += '<path d="M51,86.5 Q50,85.5 49,85.7 Q48.2,86.3 48.5,87 Q49,87.7 50,87.5 Q50.5,87.3 51,86.5" fill="#8A5830"/>';
+        s += '<path d="M51,86.5 Q50.5,86 49.5,86 Q48.8,86.5 49,87.3 Q49.5,87.5 50.5,87.3" fill="none" stroke="#5A3018" stroke-width="0.15"/>';
+        s += '<ellipse cx="49.5" cy="86.5" rx="0.5" ry="0.4" fill="rgba(220,160,80,0.15)"/>';
         // Right claw arm
-        s += '<path d="M53.5,88.5 Q52,89 51,89.5" stroke="#7A4828" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M53.5,90 Q52,90.5 51,91" stroke="#7A4828" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
         // Right claw pincer — BIG
-        s += '<path d="M51,89.5 Q50,90 49,89.8 Q48.2,89.2 48.5,88.5 Q49,87.8 50,88 Q50.5,88.2 51,89.5" fill="#8A5830"/>';
-        s += '<path d="M51,89.5 Q50.5,90 49.5,89.5 Q48.8,89 49,88.2 Q49.5,88 50.5,88.2" fill="none" stroke="#5A3018" stroke-width="0.15"/>';
-        // Claw shiny highlight
-        s += '<ellipse cx="49.5" cy="89" rx="0.5" ry="0.4" fill="rgba(220,160,80,0.15)"/>';
+        s += '<path d="M51,91 Q50,91.5 49,91.3 Q48.2,90.7 48.5,90 Q49,89.3 50,89.5 Q50.5,89.7 51,91" fill="#8A5830"/>';
+        s += '<path d="M51,91 Q50.5,91.5 49.5,91 Q48.8,90.5 49,89.7 Q49.5,89.5 50.5,89.7" fill="none" stroke="#5A3018" stroke-width="0.15"/>';
+        s += '<ellipse cx="49.5" cy="90.5" rx="0.5" ry="0.4" fill="rgba(220,160,80,0.15)"/>';
         // ── TAIL — segments getting skinnier, curving up to a point ──
         // Segment 1 (thickest, at body)
         s += '<path d="M60,89 Q61,88.5 61.5,88" stroke="#7A4828" stroke-width="1.2" fill="none" stroke-linecap="round"/>';
