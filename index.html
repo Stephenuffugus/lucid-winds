@@ -4865,6 +4865,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
     <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button></div>
     <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button></div>
+    <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button></div>
     <div class="dev-section"><div class="dev-section-title">NUCLEAR</div><button class="dev-btn danger" onclick="PW_Dev.fullReset()">☢ WIPE EVERYTHING</button></div>
     <div class="dev-log" id="dev-log">Ready.\n</div>
   </div>
@@ -5100,6 +5101,137 @@ window.onerror=function(msg,url,line,col,err){
           }
         });
       });
+    },
+    // ═══ COMPANION & AURA TESTER (set-39) ═══
+    companionTester:function(){
+      var ov=document.getElementById('comp-tester');
+      if(ov){ov.remove();}
+      ov=document.createElement('div');ov.id='comp-tester';
+      ov.style.cssText='position:fixed;inset:0;z-index:2147483647;background:rgba(5,8,4,0.98);overflow-y:auto;padding:0.75rem;';
+
+      // State
+      var _hash='';for(var i=0;i<64;i++)_hash+='0123456789abcdef'[Math.floor(Math.random()*16)];
+      var _compIdx=20;var _auraIdx=0;var _baseIdx=0;var _sz=200;var _hasFlower=true;
+      var _stemIdx=0;
+
+      // Companion names from TRAIT_BANK
+      var _compNames=[];
+      try{var tb=window.TRAIT_BANK||{};var cl=tb.companions||[];for(var ci=0;ci<cl.length;ci++)_compNames.push(ci+': '+(cl[ci].name||'None'));}catch(e){for(var ci2=0;ci2<82;ci2++)_compNames.push(ci2+': idx'+ci2);}
+
+      // Aura names
+      var _auraNames=[];
+      try{var al=(window.TRAIT_BANK||{}).auras||[];for(var ai=0;ai<al.length;ai++)_auraNames.push(ai+': '+(al[ai].name||'None'));}catch(e){for(var ai2=0;ai2<36;ai2++)_auraNames.push(ai2+': idx'+ai2);}
+
+      // Substrate names
+      var _baseNames=[];
+      try{var bl=(window.TRAIT_BANK||{}).substrates||[];for(var bi=0;bi<bl.length;bi++)_baseNames.push(bi+': '+(bl[bi].name||'None'));}catch(e){for(var bi2=0;bi2<71;bi2++)_baseNames.push(bi2+': idx'+bi2);}
+
+      function _render(){
+        // Override traits via hash manipulation — build a custom traits object
+        var t=null;
+        try{t=window.hashToTraits(_hash);}catch(e){return;}
+        t.companion=_compIdx;
+        t.aura=_auraIdx;
+        t.base=_baseIdx;
+        t.hasFlower=_hasFlower;
+        t.stem=_stemIdx;
+        // Render with overridden traits
+        var svg='';
+        try{svg=window._generatePlantSVG(_hash,_sz,1.0,t);}catch(e){
+          // Fallback — generate without trait override
+          try{svg=window._generatePlantSVG(_hash,_sz);}catch(e2){svg='<div style="color:red;">Render error</div>';}
+        }
+        var stage=document.getElementById('ct-stage');if(stage)stage.innerHTML=svg;
+        var label=document.getElementById('ct-label');
+        var cn=_compNames[_compIdx]||('idx '+_compIdx);
+        var an=_auraNames[_auraIdx]||('idx '+_auraIdx);
+        if(label)label.textContent=cn;
+        var info=document.getElementById('ct-info');
+        if(info)info.textContent='Aura: '+an+' | Size: '+_sz+'px';
+      }
+
+      function _buildSelect(id,items,val,cb){
+        var h='<select id="'+id+'" style="width:100%;padding:8px;border:1px solid rgba(122,179,86,0.2);border-radius:6px;background:rgba(26,36,22,0.8);color:#e8dcc8;font-size:0.5rem;font-family:DM Mono,monospace;min-height:40px;">';
+        for(var i=0;i<items.length;i++){
+          h+='<option value="'+i+'"'+(i===val?' selected':'')+'>'+items[i]+'</option>';
+        }
+        h+='</select>';return h;
+      }
+
+      var h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">';
+      h+='<div style="font-family:sans-serif;font-size:0.9rem;color:#c8a84b;">COMPANION & AURA TESTER</div>';
+      h+='<button onclick="document.getElementById(\'comp-tester\').remove()" style="width:40px;height:40px;border-radius:50%;border:1px solid rgba(200,168,75,0.3);background:none;color:#c8a84b;font-size:0.8rem;cursor:pointer;">✕</button>';
+      h+='</div>';
+
+      // Stage
+      h+='<div id="ct-stage" style="width:min(320px,90vw);height:min(380px,55vh);margin:0 auto;background:radial-gradient(ellipse at 50% 80%,rgba(26,36,22,0.6),#050505 70%);border:1px solid rgba(74,124,53,0.15);border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:visible;"></div>';
+      h+='<div id="ct-label" style="text-align:center;font-family:sans-serif;font-size:0.65rem;color:#c8a84b;margin:0.3rem 0 0.1rem;letter-spacing:0.06em;"></div>';
+      h+='<div id="ct-info" style="text-align:center;font-size:0.42rem;color:#8a9178;margin-bottom:0.3rem;"></div>';
+
+      // Companion nav
+      h+='<div style="max-width:320px;margin:0 auto;">';
+      h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin-bottom:0.2rem;">COMPANION</div>';
+      h+='<div style="display:flex;gap:6px;align-items:center;justify-content:center;margin-bottom:0.3rem;">';
+      h+='<button onclick="window._ctPrev()" style="width:48px;height:48px;border-radius:50%;border:1.5px solid rgba(200,168,75,0.3);background:rgba(200,168,75,0.08);color:#c8a84b;font-size:1.2rem;cursor:pointer;">&#9664;</button>';
+      h+='<button onclick="window._ctNext()" style="width:48px;height:48px;border-radius:50%;border:1.5px solid rgba(200,168,75,0.3);background:rgba(200,168,75,0.08);color:#c8a84b;font-size:1.2rem;cursor:pointer;">&#9654;</button>';
+      h+='</div>';
+      h+=_buildSelect('ct-comp',_compNames,_compIdx);
+
+      h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin:0.4rem 0 0.2rem;">AURA</div>';
+      h+=_buildSelect('ct-aura',_auraNames,_auraIdx);
+
+      h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin:0.4rem 0 0.2rem;">SUBSTRATE</div>';
+      h+=_buildSelect('ct-base',_baseNames,_baseIdx);
+
+      h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin:0.4rem 0 0.2rem;">STEM TYPE (0-23)</div>';
+      h+='<input type="range" id="ct-stem" min="0" max="23" value="0" style="width:100%;accent-color:#7ab356;">';
+
+      h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin:0.4rem 0 0.2rem;">PLANT SIZE</div>';
+      h+='<input type="range" id="ct-size" min="120" max="300" value="200" style="width:100%;accent-color:#7ab356;">';
+
+      h+='<div style="display:flex;gap:6px;margin-top:0.4rem;flex-wrap:wrap;">';
+      h+='<button onclick="window._ctRandom()" style="flex:1;padding:8px;border:1px solid rgba(200,168,75,0.3);border-radius:6px;background:rgba(200,168,75,0.08);color:#c8a84b;font-size:0.55rem;font-family:sans-serif;cursor:pointer;min-height:44px;">RANDOM PLANT</button>';
+      h+='<button onclick="window._ctFlower()" style="flex:1;padding:8px;border:1px solid rgba(122,179,86,0.3);border-radius:6px;background:rgba(122,179,86,0.08);color:#7ab356;font-size:0.55rem;font-family:sans-serif;cursor:pointer;min-height:44px;">TOGGLE BLOOM</button>';
+      h+='</div>';
+      h+='</div>';
+
+      ov.innerHTML=h;
+      document.body.appendChild(ov);
+
+      // Wire events after DOM exists
+      var compSel=document.getElementById('ct-comp');
+      var auraSel=document.getElementById('ct-aura');
+      var baseSel=document.getElementById('ct-base');
+      var stemSlider=document.getElementById('ct-stem');
+      var sizeSlider=document.getElementById('ct-size');
+
+      compSel.onchange=function(){_compIdx=parseInt(this.value);_render();};
+      auraSel.onchange=function(){_auraIdx=parseInt(this.value);_render();};
+      baseSel.onchange=function(){_baseIdx=parseInt(this.value);_render();};
+      stemSlider.oninput=function(){_stemIdx=parseInt(this.value);_render();};
+      sizeSlider.oninput=function(){_sz=parseInt(this.value);_render();};
+
+      window._ctPrev=function(){
+        _compIdx--;if(_compIdx<0)_compIdx=_compNames.length-1;
+        // Skip None slots
+        while(_compIdx<20&&_compIdx>0)_compIdx--;
+        if(_compIdx<20)_compIdx=_compNames.length-1;
+        compSel.value=_compIdx;_render();
+      };
+      window._ctNext=function(){
+        _compIdx++;if(_compIdx>=_compNames.length)_compIdx=20;
+        // Skip None slots
+        while(_compIdx<20)_compIdx++;
+        compSel.value=_compIdx;_render();
+      };
+      window._ctRandom=function(){
+        _hash='';for(var ri=0;ri<64;ri++)_hash+='0123456789abcdef'[Math.floor(Math.random()*16)];
+        _render();
+      };
+      window._ctFlower=function(){_hasFlower=!_hasFlower;_render();};
+
+      // Initial render
+      setTimeout(_render,100);
     }
   };
 })();
@@ -8427,7 +8559,7 @@ document.addEventListener('keydown', function(e) {
     } catch(e) {}
   }
 
-  function generatePlantSVG(hash, size, progress) {
+  function generatePlantSVG(hash, size, progress, traitOverrides) {
     var s = size || 70;
     var prog = (typeof progress === 'number') ? Math.min(1, Math.max(0, progress)) : 1;
     var _isThumb = s <= 60; // Thumbnail mode: skip filters, halo, companion, mutation FX
@@ -8435,8 +8567,10 @@ document.addEventListener('keydown', function(e) {
     // Phase 26: SVG render cache — skip full re-render on duplicate calls
     // Rare plants with breathe animation are NOT cached (uid uses Date.now/1000)
     var t0 = hashToTraits(hash);
-    var _cacheKey = (hash || 'x') + '|' + s + '|' + prog.toFixed(2);
-    var _skipCache = !_isThumb && t0.isRare && prog >= 1; // breathe animation is time-based
+    // set-39: Allow trait overrides for companion/aura tester
+    if (traitOverrides) { for (var _ok in traitOverrides) { if (traitOverrides.hasOwnProperty(_ok)) t0[_ok] = traitOverrides[_ok]; } }
+    var _cacheKey = (hash || 'x') + '|' + s + '|' + prog.toFixed(2) + (traitOverrides ? '|ov' : '');
+    var _skipCache = !!traitOverrides || (!_isThumb && t0.isRare && prog >= 1); // breathe animation is time-based; always skip cache for overrides
     if (!_skipCache) {
       var _cached = _svgCacheGet(_cacheKey);
       if (_cached) return _cached;
