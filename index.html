@@ -5909,7 +5909,7 @@ document.addEventListener('keydown', function(e) {
     //   0xFF       → The Beholder      (1/256 = 0.39%)   COSMIC
     //   0xFE       → Starfall           (1/256 = 0.39%)   LEGENDARY
     //   0xFC-0xFD  → Storm Wraith       (2/256 = 0.78%)   LEGENDARY
-    //   0xF8-0xFB  → Ancient Rune Field (4/256 = 1.56%)   LEGENDARY
+    //   0xF8-0xFB  → Raccoon (4/256 = 1.56%)   LEGENDARY
     //   0xF4-0xF7  → Biolum Pulse       (4/256 = 1.56%)   LEGENDARY
     //   0xE0-0xF3  → The Capybara       (20/256 = 7.81%)  MYTHIC
     //   0xD0-0xDF  → The Toad           (16/256 = 6.25%)  MYTHIC
@@ -5918,8 +5918,8 @@ document.addEventListener('keydown', function(e) {
       mythByte === 0xFF ? 'The Beholder'          :
       mythByte >= 0xFE  ? 'Starfall'              :
       mythByte >= 0xFC  ? 'Storm Wraith'          :
-      mythByte >= 0xF8  ? 'Ancient Rune Field'    :
-      mythByte >= 0xF4  ? 'Bioluminescent Pulse'  :
+      mythByte >= 0xF8  ? 'Raccoon'    :
+      mythByte >= 0xF4  ? 'Woolly Mammoth'  :
       mythByte >= 0xE0  ? 'The Capybara'          :
       mythByte >= 0xD0  ? 'The Toad'              : 'None';
 
@@ -5951,8 +5951,8 @@ document.addEventListener('keydown', function(e) {
         if (_mb === 0xFF) return 38; // Beholder (0.39%)
         if (_mb >= 0xFE) return 37;  // Starfall (0.39%)
         if (_mb >= 0xFC) return 36;  // Storm Wraith (0.78%)
-        if (_mb >= 0xF8) return 35;  // Ancient Rune Field (1.56%)
-        if (_mb >= 0xF4) return 34;  // Bioluminescent Pulse (1.56%)
+        if (_mb >= 0xF8) return 35;  // Raccoon (1.56%)
+        if (_mb >= 0xF4) return 34;  // Woolly Mammoth (1.56%)
         if (_mb >= 0xE0) return 33;  // Capybara (7.81%)
         if (_mb >= 0xD0) return 32;  // Toad (6.25%)
         return hb(21) % 82;          // 82 slots: 48 None + 34 creatures = ~41% base rate
@@ -8302,7 +8302,7 @@ document.addEventListener('keydown', function(e) {
     d += '<stop offset="100%" stop-color="#5b8fb9" stop-opacity="0.2"/>';
     d += '</linearGradient>';
     // ── Phase 3 Mythic Filters ──
-    if(t.mythicName==='Bioluminescent Pulse'){
+    if(t.mythicName==='Woolly Mammoth'){
       d+='<radialGradient id="bio_bg_'+uid+'" cx="50%" cy="50%">';
       d+='<stop offset="0%" stop-color="#00e5cc" stop-opacity="0.2"/>';
       d+='<stop offset="55%" stop-color="#006b6b" stop-opacity="0.09"/>';
@@ -8562,8 +8562,8 @@ document.addEventListener('keydown', function(e) {
       {name:'Spider'},      // idx 31
       {name:'Toad'},        // idx 32 (mythic path)
       {name:'Capybara'},    // idx 33 (mythic path)
-      {name:'Bioluminescent Pulse'}, // idx 34
-      {name:'Ancient Rune Field'},   // idx 35
+      {name:'Woolly Mammoth'}, // idx 34
+      {name:'Raccoon'},   // idx 35
       {name:'Storm Wraith'},         // idx 36
       {name:'Starfall'},             // idx 37
       {name:'Beholder',rare:true},   // idx 38
@@ -19119,12 +19119,30 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M22,46 Q35,42.8 48,46" fill="none" stroke="rgba(220,230,242,0.07)" stroke-width="0.28" stroke-linecap="round"/>';
         s += '</g>';
         break;
-      case 14: // Halo — soft radial glow behind canopy
-        s += '<g opacity="0.22">';
-        s += '<circle cx="35" cy="40" r="24" fill="rgba(255,210,120,0.08)"><animate attributeName="opacity" values="0.06;0.1;0.06" dur="10s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="35" cy="40" r="18" fill="rgba(255,220,150,0.12)"/>';
-        s += '<circle cx="35" cy="40" r="12" fill="rgba(255,235,190,0.16)"/>';
-        s += '<circle cx="35" cy="40" r="7" fill="rgba(255,245,220,0.2)"/>';
+      case 14: // Nordic Runes — Elder Futhark glyphs rising from soil, ancient and mystical
+        s += '<g>';
+        var _nrGlyphs = [
+          'M0,-4 L0,4 M0,-2 L3,0 L0,2',            // Fehu (ᚠ) — wealth
+          'M0,-4 L0,4 M0,-4 L3,-2 L0,0 M0,0 L3,2 L0,4', // Berkano (ᛒ) — birch
+          'M0,-4 L0,4 M0,-4 L3,0 M0,4 L3,0',        // Dagaz (ᛞ) — dawn
+          'M-1.5,-4 L0,0 L1.5,-4 M0,0 L0,4',        // Algiz (ᛉ) — protection
+          'M0,-4 L0,4 M0,-2 L2.5,-4 M0,2 L2.5,4',   // Ansuz (ᚨ) — wisdom
+          'M0,-4 L0,4 L3,4 M0,0 L3,0',              // Laguz (ᛚ) — water
+          'M-1.5,-4 L1.5,4 M1.5,-4 L-1.5,4'         // Gebo (ᚷ) — gift
+        ];
+        var _nrTV = [t.pot%7, t.stem%7, t.leafType%7, t.leafCount%7, (t.flower||0)%7, t.aura%7, t.base%7];
+        for (var _nr = 0; _nr < 7; _nr++) {
+          var _nrx = (8 + (_nrTV[_nr] / 6) * 52).toFixed(1);
+          var _nry = (12 + (_nrTV[(_nr+3)%7] / 6) * 58).toFixed(1);
+          var _nrdur = (6 + _nr * 0.8).toFixed(1);
+          var _nrbeg = (_nr * 1.1).toFixed(1);
+          var _nrGlyph = _nrGlyphs[_nrTV[_nr]];
+          s += '<g transform="translate('+_nrx+','+_nry+')" opacity="0">';
+          s += '<path d="'+_nrGlyph+'" fill="none" stroke="rgba(200,168,75,0.6)" stroke-width="0.7" stroke-linecap="round"/>';
+          s += '<animateTransform attributeName="transform" type="translate" values="'+_nrx+','+_nry+';'+_nrx+','+(parseFloat(_nry)-90).toFixed(1)+'" dur="'+_nrdur+'s" begin="'+_nrbeg+'s" repeatCount="indefinite" calcMode="linear"/>';
+          s += '<animate attributeName="opacity" values="0;0.55;0.55;0" keyTimes="0;0.12;0.78;1" dur="'+_nrdur+'s" begin="'+_nrbeg+'s" repeatCount="indefinite"/>';
+          s += '</g>';
+        }
         s += '</g>';
         break;
       case 15: // Vortex — spiral arms with centre pulse
@@ -19137,18 +19155,19 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="35" cy="40" r="2.2" fill="rgba(235,245,255,0.12)"><animate attributeName="opacity" values="0.08;0.14;0.08" dur="9s" repeatCount="indefinite"/></circle>';
         s += '</g>';
         break;
-      case 16: // Shimmer — full-height wavy heat-haze columns
-        s += '<g opacity="0.18">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0,-2;0,0" dur="14s" repeatCount="indefinite"/>';
-        s += '<path d="M8,95 Q10,82 8,68 Q6,54 8,40 Q10,26 8,12 Q7,6 8,0" fill="none" stroke="rgba(255,245,220,0.10)" stroke-width="0.5" stroke-linecap="round"/>';
-        s += '<path d="M16,95 Q14,84 16,70 Q18,56 16,42 Q14,28 16,14 Q17,7 16,0" fill="none" stroke="rgba(220,235,255,0.09)" stroke-width="0.45" stroke-linecap="round"/>';
-        s += '<path d="M24,95 Q26,83 24,69 Q22,55 24,41 Q26,27 24,13 Q23,6 24,0" fill="none" stroke="rgba(255,240,210,0.10)" stroke-width="0.48" stroke-linecap="round"/>';
-        s += '<path d="M32,95 Q30,85 32,71 Q34,57 32,43 Q30,29 32,15 Q33,8 32,0" fill="none" stroke="rgba(225,238,255,0.09)" stroke-width="0.44" stroke-linecap="round"/>';
-        s += '<path d="M40,95 Q42,84 40,70 Q38,56 40,42 Q42,28 40,14 Q39,7 40,0" fill="none" stroke="rgba(255,242,218,0.10)" stroke-width="0.46" stroke-linecap="round"/>';
-        s += '<path d="M48,95 Q46,83 48,69 Q50,55 48,41 Q46,27 48,13 Q49,6 48,0" fill="none" stroke="rgba(220,235,255,0.09)" stroke-width="0.45" stroke-linecap="round"/>';
-        s += '<path d="M56,95 Q58,84 56,70 Q54,56 56,42 Q58,28 56,14 Q55,7 56,0" fill="none" stroke="rgba(255,240,210,0.10)" stroke-width="0.48" stroke-linecap="round"/>';
-        s += '<path d="M64,95 Q62,82 64,68 Q66,54 64,40 Q62,26 64,12 Q65,6 64,0" fill="none" stroke="rgba(225,238,255,0.09)" stroke-width="0.44" stroke-linecap="round"/>';
+      case 16: // Bioluminescent Pulse — teal/cyan pulsing glow with vertical energy lines
+        s += '<g>';
+        s += '<ellipse cx="35" cy="47" rx="30" ry="40" fill="url(#bio_bg_'+uid+')" filter="url(#bio_f_'+uid+')" opacity="0">';
+        s += '<animate attributeName="opacity" values="0.3;0.72;0.3" dur="3.4s" repeatCount="indefinite" calcMode="linear"/>';
+        s += '</ellipse>';
         s += '</g>';
+        var _bioXs=[28,35,42],_bioXes=[25,36,45],_bioCls=['#00d4b8','#4dd0e1','#00e5cc'];
+        for(var _bi=0;_bi<3;_bi++){
+          var _bdur=(3.1+_bi*0.85)+'s', _bbeg=(_bi*1.05)+'s';
+          s += '<line x1="'+_bioXs[_bi]+'" y1="77" x2="'+_bioXes[_bi]+'" y2="18" stroke="'+_bioCls[_bi]+'" stroke-width="0.65" opacity="0" stroke-linecap="round">';
+          s += '<animate attributeName="opacity" values="0;0.3;0.14;0" dur="'+_bdur+'" begin="'+_bbeg+'" repeatCount="indefinite"/>';
+          s += '</line>';
+        }
         break;
       case 17: // Spider Web — upper-right corner, spider dangles mid-plant
         // Hub at upper-right corner (60,8) — web fans down and left
@@ -20368,11 +20387,141 @@ document.addEventListener('keydown', function(e) {
         s += '<animate attributeName="opacity" values="1;0.97;1" dur="4s" repeatCount="indefinite"/>';
         s += '</g>';
         break;
-      case 34: // Bioluminescent Pulse
-        s += renderBioLuminescence(t, uid);
+      case 34: // Woolly Mammoth — ancient ice-age guardian (LEGENDARY)
+        // Mammuthus primigenius: the iconic Pleistocene megafauna.
+        // Long shaggy fur, domed skull, curved tusks, small ears,
+        // trunk raised in greeting. A living fossil companion.
+        s += '<g opacity="1" transform="translate(4,0) translate(56,82) scale(1.2) translate(-56,-82)">';
+        // Shadow beneath
+        s += '<ellipse cx="56" cy="90" rx="8" ry="1.2" fill="#0d100c" opacity="0.18"/>';
+        // Hind legs — thick, columnar, elephant-style
+        s += '<rect x="50" y="85" width="2.8" height="5" rx="1" fill="#5A4A3A"/>';
+        s += '<rect x="58" y="85" width="2.8" height="5" rx="1" fill="#4A3A2A"/>';
+        // Hind feet
+        s += '<ellipse cx="51.4" cy="90" rx="1.8" ry="0.7" fill="#4A3A2A"/>';
+        s += '<ellipse cx="59.4" cy="90" rx="1.8" ry="0.7" fill="#3A2A1A"/>';
+        // Body — massive barrel shape with shaggy outline
+        s += '<ellipse cx="56" cy="83" rx="7.5" ry="5" fill="#6A5A4A"/>';
+        // Shaggy fur underside — long hanging strands
+        var _mmFur = [[49,85],[50.5,86.5],[52,87],[54,87.5],[56,87],[58,86.5],[60,86],[61.5,85],[63,84]];
+        for (var _mf = 0; _mf < _mmFur.length; _mf++) {
+          var _fx = _mmFur[_mf][0], _fy = _mmFur[_mf][1];
+          s += '<path d="M'+_fx+','+(_fy-2)+' Q'+(_fx+0.3)+','+_fy+' '+(_fx-0.2)+','+(_fy+0.8)+'" stroke="#5A4A38" stroke-width="0.3" fill="none" opacity="0.5"/>';
+          s += '<path d="M'+(_fx+0.8)+','+(_fy-1.8)+' Q'+(_fx+1.1)+','+_fy+' '+(_fx+0.6)+','+(_fy+0.6)+'" stroke="#6A5A48" stroke-width="0.25" fill="none" opacity="0.4"/>';
+        }
+        // Front legs — slightly forward
+        s += '<rect x="49" y="84" width="2.8" height="5.5" rx="1" fill="#5A4A3A"/>';
+        s += '<rect x="55" y="84.5" width="2.8" height="5" rx="1" fill="#4A3A2A"/>';
+        // Front feet
+        s += '<ellipse cx="50.4" cy="89.5" rx="1.8" ry="0.7" fill="#4A3A2A"/>';
+        s += '<ellipse cx="56.4" cy="89.5" rx="1.8" ry="0.7" fill="#3A2A1A"/>';
+        // Fur texture on body — shaggy horizontal strokes
+        for (var _mt = 0; _mt < 6; _mt++) {
+          var _mtx = 50 + _mt * 2.2;
+          var _mty = 80 + (_mt % 3) * 1.5;
+          s += '<path d="M'+_mtx+','+_mty+' Q'+(_mtx+1.5)+','+(_mty+0.5)+' '+(_mtx+2.5)+','+_mty+'" stroke="#7A6A58" stroke-width="0.15" fill="none" opacity="0.25"/>';
+        }
+        // Hump — mammoth's distinctive fat hump above shoulders
+        s += '<ellipse cx="53" cy="78.5" rx="4" ry="2.5" fill="#7A6A5A"/>';
+        // Neck
+        s += '<path d="M51,80 Q49,78 48,76 Q47,74 48,72" fill="#6A5A4A" stroke="#5A4A3A" stroke-width="0.3"/>';
+        // Head — domed skull (mammoth's distinctive high forehead)
+        s += '<ellipse cx="47" cy="73" rx="4" ry="3.5" fill="#7A6A5A"/>';
+        // Domed forehead — the mammoth's signature feature
+        s += '<path d="M44,71 Q47,68.5 50,71" fill="#8A7A6A" stroke="none"/>';
+        // Eye — small, dark, intelligent
+        s += '<circle cx="45.5" cy="72.5" r="0.6" fill="#1A1008"/>';
+        s += '<circle cx="45.6" cy="72.3" r="0.15" fill="rgba(200,180,120,0.5)"/>';
+        // Ear — tiny compared to African elephant (cold adaptation)
+        s += '<ellipse cx="44" cy="73" rx="1" ry="1.5" fill="#8A7A6A"/>';
+        s += '<ellipse cx="44" cy="73" rx="0.5" ry="1" fill="#6A5A4A" opacity="0.4"/>';
+        // Trunk — long, raised slightly, showing the twin-fingered tip
+        s += '<path d="M45,74.5 Q44,76 43,78 Q42,80 41.5,82 Q41,83 41.5,84 Q42,84.5 42.5,84" fill="none" stroke="#7A6A5A" stroke-width="1.8" stroke-linecap="round"/>';
+        // Trunk ridges
+        s += '<path d="M44.5,75.5 Q44,75.8 43.5,76" stroke="#5A4A3A" stroke-width="0.15" fill="none" opacity="0.3"/>';
+        s += '<path d="M43.8,77.5 Q43.3,77.8 42.8,78.2" stroke="#5A4A3A" stroke-width="0.15" fill="none" opacity="0.3"/>';
+        s += '<path d="M43,79.5 Q42.5,80 42,80.5" stroke="#5A4A3A" stroke-width="0.15" fill="none" opacity="0.3"/>';
+        // Trunk tip — twin finger-like projections (mammoth-specific)
+        s += '<path d="M42,84 Q41.5,84.5 41.8,85" stroke="#7A6A5A" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M42.5,84 Q42.8,84.8 42.5,85.2" stroke="#7A6A5A" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        // TUSKS — massive curved ivory, the mammoth's glory
+        s += '<path d="M46,74 Q44,76 42,79 Q40,82 39,85 Q38.5,87 39.5,88 Q40.5,88.5 41.5,87.5" fill="none" stroke="#E8DCC8" stroke-width="1.2" stroke-linecap="round"/>';
+        // Tusk sheen
+        s += '<path d="M45,75 Q43.5,77 42,79.5 Q40.5,82.5 40,85" fill="none" stroke="rgba(240,235,216,0.35)" stroke-width="0.4" stroke-linecap="round"/>';
+        // Long shaggy head fur — hanging from chin and sides
+        s += '<path d="M44.5,74.5 Q44,76 43.5,77" stroke="#6A5A48" stroke-width="0.3" fill="none" opacity="0.4"/>';
+        s += '<path d="M46,75 Q45.5,76.5 45,77.5" stroke="#5A4A38" stroke-width="0.25" fill="none" opacity="0.35"/>';
+        s += '<path d="M48,75.5 Q47.5,77 47,78" stroke="#6A5A48" stroke-width="0.25" fill="none" opacity="0.35"/>';
+        // Tail — short, tufted
+        s += '<path d="M63.5,82 Q65,81 66,82.5" stroke="#5A4A3A" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M66,82.5 Q66.5,83.5 66,84" stroke="#6A5A48" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        s += '</g>';
         break;
-      case 35: // Ancient Rune Field
-        s += renderRuneField(t, uid);
+      case 35: // Raccoon — clever nocturnal bandit (LEGENDARY)
+        // Procyon lotor: the common raccoon. Masked face, ringed tail,
+        // dexterous paws, hunched posture. Intelligent, curious, mischievous.
+        // Sitting upright holding something, looking at the plant.
+        s += '<g opacity="1" transform="translate(-4,0) translate(18,82) scale(1.15) translate(-18,-82)">';
+        // Shadow
+        s += '<ellipse cx="18" cy="90" rx="5.5" ry="0.8" fill="#0d100c" opacity="0.15"/>';
+        // Tail — thick, ringed (the raccoon's signature)
+        s += '<path d="M12,86 Q8,84 6,82 Q4,80 5,78" fill="none" stroke="#7A7A72" stroke-width="2.8" stroke-linecap="round"/>';
+        // Tail rings — dark bands
+        s += '<path d="M11,85.5 Q9,84 8,83" stroke="#3A3A32" stroke-width="2.8" stroke-linecap="butt" opacity="0.5"/>';
+        s += '<path d="M7,82 Q5.5,80.5 5.5,79.5" stroke="#3A3A32" stroke-width="2.8" stroke-linecap="butt" opacity="0.5"/>';
+        // Tail tip dark
+        s += '<circle cx="5" cy="78" r="1.4" fill="#3A3A32" opacity="0.5"/>';
+        // Hind legs — sitting position, tucked
+        s += '<ellipse cx="14" cy="88.5" rx="2.2" ry="1.2" fill="#6A6A62"/>';
+        s += '<ellipse cx="22" cy="88.5" rx="2.2" ry="1.2" fill="#5A5A52"/>';
+        // Body — hunched, sitting upright
+        s += '<ellipse cx="18" cy="84" rx="5" ry="4.5" fill="#7A7A72"/>';
+        // Belly — lighter grey
+        s += '<ellipse cx="18" cy="85.5" rx="3" ry="2.5" fill="#9A9A92" opacity="0.35"/>';
+        // Fur texture
+        s += '<path d="M14,82 Q15,81.5 16,82" stroke="#6A6A60" stroke-width="0.15" fill="none" opacity="0.3"/>';
+        s += '<path d="M19,81 Q20,80.5 21,81" stroke="#6A6A60" stroke-width="0.15" fill="none" opacity="0.3"/>';
+        // Front paws — the raccoon's famously dexterous hands, held up
+        s += '<path d="M14.5,84 Q13,82.5 12.5,81" fill="none" stroke="#7A7A72" stroke-width="1.5" stroke-linecap="round"/>';
+        s += '<path d="M21.5,84 Q23,82.5 23.5,81" fill="none" stroke="#6A6A62" stroke-width="1.5" stroke-linecap="round"/>';
+        // Tiny fingers on paws
+        s += '<circle cx="12.2" cy="80.8" r="0.8" fill="#5A5A52"/>';
+        s += '<path d="M11.5,80.5 L11.3,80 M12,80.2 L12,79.6 M12.7,80.5 L13,80" stroke="#5A5A52" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
+        s += '<circle cx="23.8" cy="80.8" r="0.8" fill="#4A4A42"/>';
+        s += '<path d="M23.2,80.5 L23,80 M23.8,80.2 L23.8,79.6 M24.4,80.5 L24.7,80" stroke="#4A4A42" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
+        // Neck
+        s += '<path d="M16,80 Q18,79 20,80" fill="#7A7A72"/>';
+        // Head — round, slightly pointed snout
+        s += '<ellipse cx="18" cy="76.5" rx="3.8" ry="3" fill="#8A8A82"/>';
+        // MASK — the raccoon's iconic dark eye mask
+        s += '<path d="M14.5,76 Q16,74.8 18,75.5 Q20,74.8 21.5,76 Q20,77 18,76.5 Q16,77 14.5,76 Z" fill="#2A2A22" opacity="0.75"/>';
+        // White fur above and below mask
+        s += '<path d="M15,74.8 Q18,73.5 21,74.8" fill="none" stroke="#C0C0B8" stroke-width="0.5" opacity="0.35"/>';
+        s += '<path d="M15.5,77.2 Q18,78 20.5,77.2" fill="none" stroke="#B0B0A8" stroke-width="0.4" opacity="0.3"/>';
+        // Eyes — bright, beady, within the mask
+        s += '<circle cx="16.2" cy="75.8" r="0.65" fill="#1A1A12"/>';
+        s += '<circle cx="19.8" cy="75.8" r="0.65" fill="#1A1A12"/>';
+        // Eye shine
+        s += '<circle cx="16.4" cy="75.6" r="0.18" fill="rgba(240,235,216,0.55)"/>';
+        s += '<circle cx="20" cy="75.6" r="0.18" fill="rgba(240,235,216,0.55)"/>';
+        // Ears — rounded, dark-tipped
+        s += '<ellipse cx="15.2" cy="73.8" rx="1.2" ry="1.5" fill="#8A8A82"/>';
+        s += '<ellipse cx="15.2" cy="73.3" rx="0.7" ry="0.8" fill="#3A3A32" opacity="0.4"/>';
+        s += '<ellipse cx="20.8" cy="73.8" rx="1.2" ry="1.5" fill="#8A8A82"/>';
+        s += '<ellipse cx="20.8" cy="73.3" rx="0.7" ry="0.8" fill="#3A3A32" opacity="0.4"/>';
+        // Snout — pointed, lighter
+        s += '<ellipse cx="18" cy="77.8" rx="1.5" ry="1" fill="#A0A098"/>';
+        // Nose — small, dark, rounded
+        s += '<ellipse cx="18" cy="77.3" rx="0.5" ry="0.35" fill="#2A2A22"/>';
+        // Whiskers
+        s += '<line x1="16.5" y1="77.8" x2="14" y2="77.3" stroke="#B0B0A0" stroke-width="0.06" opacity="0.3"/>';
+        s += '<line x1="16.5" y1="78" x2="14" y2="78.3" stroke="#B0B0A0" stroke-width="0.06" opacity="0.25"/>';
+        s += '<line x1="19.5" y1="77.8" x2="22" y2="77.3" stroke="#B0B0A0" stroke-width="0.06" opacity="0.3"/>';
+        s += '<line x1="19.5" y1="78" x2="22" y2="78.3" stroke="#B0B0A0" stroke-width="0.06" opacity="0.25"/>';
+        // Hind feet visible
+        s += '<ellipse cx="14" cy="89.5" rx="1.5" ry="0.6" fill="#5A5A52"/>';
+        s += '<ellipse cx="22" cy="89.5" rx="1.5" ry="0.6" fill="#4A4A42"/>';
+        s += '</g>';
         break;
       case 36: // Storm Wraith
         s += renderStormWraith(t, uid);
@@ -21940,11 +22089,11 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="55" cy="12" r="1" fill="#EAE0C8" opacity="0.15"><animate attributeName="opacity" values="0.15;0.05;0.15" dur="6s" repeatCount="indefinite"/></circle>';
         s += '</g>';
         break;
-      case 'Bioluminescent Pulse':
-        s += renderBioLuminescence(t, uid);
+      case 'Woolly Mammoth':
+        // Rendered as normal companion (case 34), not mythic overlay
         break;
-      case 'Ancient Rune Field':
-        s += renderRuneField(t, uid);
+      case 'Raccoon':
+        // Rendered as normal companion (case 35), not mythic overlay
         break;
       case 'Storm Wraith':
         s += renderStormWraith(t, uid);
@@ -22018,8 +22167,8 @@ document.addEventListener('keydown', function(e) {
       'The Toad':             'of the Toad',
       'The Capybara':         'of the Capybara',
       'Starfall':             'of the Starfall',
-      'Bioluminescent Pulse': 'of the Bioluminescence',
-      'Ancient Rune Field':   'of the Ancient Runes',
+      'Woolly Mammoth': 'of the Mammoth',
+      'Raccoon':   'of the Raccoon',
       'Storm Wraith':         'of the Storm',
       'The Beholder':         'of the Beholder'  // set-103-8
     };
@@ -22047,8 +22196,8 @@ document.addEventListener('keydown', function(e) {
 
     var TITLES_MYTHIC = {
       'The Toad':'of the Toad','The Capybara':'of the Capybara',
-      'Starfall':'of the Starfall','Bioluminescent Pulse':'of the Bioluminescence',
-      'Ancient Rune Field':'of the Ancient Runes','Storm Wraith':'of the Storm',
+      'Starfall':'of the Starfall','Woolly Mammoth':'of the Mammoth',
+      'Raccoon':'of the Raccoon','Storm Wraith':'of the Storm',
       'The Beholder':'of the Beholder'
     };
     var title = (t.mythicName !== 'None' && TITLES_MYTHIC[t.mythicName]) ? TITLES_MYTHIC[t.mythicName] : '';
@@ -22070,8 +22219,8 @@ document.addEventListener('keydown', function(e) {
       'The Toad':             'of the Toad',
       'The Capybara':         'of the Capybara',
       'Starfall':             'of the Starfall',
-      'Bioluminescent Pulse': 'of the Bioluminescence',
-      'Ancient Rune Field':   'of the Ancient Runes',
+      'Woolly Mammoth': 'of the Mammoth',
+      'Raccoon':   'of the Raccoon',
       'Storm Wraith':         'of the Storm',
       'The Beholder':         'of the Beholder'
     };
@@ -22829,7 +22978,7 @@ document.addEventListener('keydown', function(e) {
       if (t.mythicName==='None') return null;
       if (t.mythicName==='The Beholder') return {tier:'cosmic',color:_TIER_COLORS.cosmic};
       if (t.mythicName==='Starfall'||t.mythicName==='Storm Wraith') return {tier:'legendary',color:_TIER_COLORS.legendary};
-      if (t.mythicName==='Ancient Rune Field'||t.mythicName==='Bioluminescent Pulse') return {tier:'legendary',color:_TIER_COLORS.legendary};
+      if (t.mythicName==='Raccoon'||t.mythicName==='Woolly Mammoth') return {tier:'legendary',color:_TIER_COLORS.legendary};
       return {tier:'mythic',color:_TIER_COLORS.mythic};
     }
     if (cat==='GROWTH PATH'||cat==='STRUCTURE') {
