@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-03m';
+  var _SVG_CACHE_VER = '2026-04-03n';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -20584,11 +20584,9 @@ document.addEventListener('keydown', function(e) {
         for (var _mhli = 0; _mhli < _mmHL.length; _mhli++) {
           s += '<path d="M'+_mmHL[_mhli][0]+','+_mmHL[_mhli][1]+' Q'+(_mmHL[_mhli][0]+0.2)+','+(_mmHL[_mhli][1]+1.5)+' '+(_mmHL[_mhli][0]-0.2)+','+(_mmHL[_mhli][1]+2.2)+'" stroke="#5A4A38" stroke-width="0.35" fill="none" opacity="0.4"/>';
         }
-        // Body — massive barrel with shoulder hump as single connected mass
-        s += '<path d="M44,81 Q43.5,77 46,74.5 Q49,72 53,71.5 Q57,71 61,73 Q64,75 65.5,78 Q66.5,81 66,85 Q65,88.5 62,90 Q58,91.5 54,91 Q50,91 47,89.5 Q44.5,87.5 44,81 Z" fill="#6A5A4A"/>';
-        // Shoulder hump — high dorsal fat deposit
-        s += '<path d="M47,74 Q49,70 52,69 Q55,69.5 56,72" fill="#7A6A5A"/>';
-        s += '<path d="M48,71 Q51,69.5 54,71" fill="none" stroke="#8A7A6A" stroke-width="0.4" opacity="0.25"/>';
+        // Body — single shape WITH shoulder hump built in (same color, one piece)
+        // The hump rises at the shoulder then slopes down to the rump
+        s += '<path d="M44,81 Q43.5,78 45,75 Q47,72 49,70 Q51,69 53,69 Q55,69 57,70 Q60,72 63,75 Q65,78 65.5,81 Q66,85 64,88.5 Q62,90 58,91.5 Q54,91.5 50,91 Q47,89.5 45,87.5 Q44,85 44,81 Z" fill="#6A5A4A"/>';
         // Body fur — dense, thin shaggy strands (procedural, many more points)
         var _mmF = [[44.5,82],[45,83],[45.5,84],[46,85],[47,85.5],[48,86],[49,86.5],[50,87],[51,87.5],[52,88],[53,88],[54,88],[55,88],[56,87.5],[57,87.5],[58,87],[59,87],[60,86.5],[61,86],[62,85.5],[63,84.5],[64,83.5],[65,82],[65.5,81],[45.5,79],[46.5,78.5],[47.5,78],[48.5,77.5],[49.5,77],[50.5,76.5],[51.5,76],[52.5,76],[53.5,76],[54.5,76],[55.5,76.5],[56.5,77],[57.5,77.5],[58.5,78],[59.5,78.5],[60.5,79],[61.5,79.5],[62.5,80],[63.5,80.5],[64.5,81]];
         var _mmCols = ['#4A3A28','#5A4A38','#6A5A48','#5A4830','#4A3828','#5A4A3A'];
@@ -20628,13 +20626,15 @@ document.addEventListener('keydown', function(e) {
         }
         // Neck highlight
         s += '<path d="M45,73 Q44,71 43.5,69 Q43,67.5 42.5,66.5" fill="none" stroke="#7A6A5A" stroke-width="1.2" opacity="0.35" stroke-linecap="round"/>';
-        // Head — large domed skull with fluffy fur
-        s += '<path d="M39.5,68.5 Q39,65.5 40.5,63.5 Q42.5,61.5 45.5,61 Q48,61.5 49.5,63.5 Q50.5,65.5 50,68 Q49,70.5 46.5,71.5 Q43,72 40.5,70.5 Z" fill="#7A6A5A"/>';
-        // Domed forehead — mammoth's high skull with fur tufts
-        s += '<path d="M41.5,64 Q44,61.5 47.5,63.5" fill="#8A7A6A"/>';
-        s += '<path d="M42,63.5 Q44.5,61.5 47,63.5" fill="none" stroke="#9A8A7A" stroke-width="0.35" opacity="0.25"/>';
-        // Fluffy head fur — hanging DOWN, not standing up
-        var _mmHF = [[41,63],[42.5,62.5],[44,62],[45.5,62],[47,62.5],[48.5,63.5],[40.5,65],[49.5,65.5],[41.5,64],[43,63],[45,62.5],[46.5,63],[48,64]];
+        // Head — mammoth skull: HIGH dome at back, slopes steeply down to narrow face
+        // NOT a circle — tall at the crown, narrowing toward the trunk/mouth
+        s += '<path d="M40,70 Q39.5,68 40,66 Q40.5,64 42,62.5 Q44,61 46,61 Q48,61 49.5,62.5 Q50.5,64 50.5,66 Q50.5,68 49.5,69.5 Q48,71 46,71.5 Q44,72 42,71.5 Q40.5,71 40,70 Z" fill="#7A6A5A"/>';
+        // The dome peak — highest point at back of skull (mammoth signature)
+        s += '<path d="M48,62 Q49.5,61 50,62.5" fill="#7A6A5A"/>';
+        // Skull slope line — steep descent from dome to face
+        s += '<path d="M41,66 Q40.5,68 40.5,70" fill="none" stroke="#6A5A4A" stroke-width="0.3" opacity="0.2"/>';
+        // Fluffy head fur — hanging DOWN from the dome
+        var _mmHF = [[41,64],[42,63],[43.5,62.5],[45,62],[46.5,62],[48,62.5],[49.5,63.5],[40.5,66],[50,66],[41.5,65],[43,64],[45,63],[47,63],[49,64.5]];
         for (var _mhfi = 0; _mhfi < _mmHF.length; _mhfi++) {
           var _mhfx = _mmHF[_mhfi][0], _mhfy = _mmHF[_mhfi][1];
           var _mhfDx = ((_mhfi % 3) - 1) * 0.15;
