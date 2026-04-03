@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-05v';
+  var _SVG_CACHE_VER = '2026-04-05w';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -22688,50 +22688,63 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M6.5,83.2 Q6.4,82.8 6.6,82.8" fill="#D8A878" opacity="0.3"/>';
         s += '</g>';
         break;
-      case 75: // Common Raven — grey body, black outline, white eye (Rare)
-        // Based on reference: body is GREY not black. Black outline.
-        // Wing is darker grey. Legs lighter grey. White eye dot.
+      case 75: // Common Raven — realistic, grey body, black outline (Rare)
+        // Reference: grey body, darker wing, lighter legs, white eye,
+        // curved pointed beak, segmented legs with knobby knees, pointy claws.
         s += '<g opacity="1" transform="translate(52,77) scale(1.35) translate(-52,-77)">';
         s += '<animateTransform attributeName="transform" type="rotate" values="-1 52 78;2 52 78;-1 52 78" dur="6s" repeatCount="indefinite"/>';
         // Shadow
-        s += '<ellipse cx="52" cy="81" rx="3" ry="0.4" fill="#0d100c" opacity="0.15"/>';
-        // ── TAIL — wedge-shaped, darker grey, layered feathers ──
-        s += '<path d="M55,78 Q57,77.5 59,77.5 Q58.5,78.5 57,78.5 Z" fill="#3A3A3A"/>';
-        s += '<path d="M55.5,78 Q57.5,77.8 59,78 Q58,78.5 56.5,78.8 Z" fill="#3A3A3A" opacity="0.7"/>';
+        s += '<ellipse cx="52" cy="81.5" rx="3.5" ry="0.4" fill="#0d100c" opacity="0.15"/>';
+        // ── TAIL — connected to body, wedge shape, darker grey ──
+        s += '<path d="M55,77.5 Q57,77 59,77 Q59.5,77.5 59,78 Q57,78.5 55.5,78.5" fill="#3A3A3A"/>';
+        s += '<path d="M55,77.5 Q57,77 59,77 Q59.5,77.5 59,78 Q57,78.5 55.5,78.5" fill="none" stroke="#1A1A1A" stroke-width="0.2"/>';
         // Tail feather lines
-        s += '<path d="M56,77.8 L58,77.5" stroke="#1A1A1A" stroke-width="0.15" fill="none"/>';
-        s += '<path d="M56,78.2 L58,78" stroke="#1A1A1A" stroke-width="0.12" fill="none"/>';
-        // ── LEGS — lighter grey, thin, with toes ──
-        s += '<path d="M51,80 L51,81.2 L50.2,81.8 M51,81.2 L51.8,81.8 M51,81.2 L51,81.8" stroke="#6A6A68" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M53,79.8 L53,81 L52.2,81.5 M53,81 L53.8,81.5 M53,81 L53,81.5" stroke="#6A6A68" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
-        // ── BODY — GREY fill, black outline ──
-        s += '<ellipse cx="52" cy="78" rx="3.2" ry="2.4" fill="#4A4A4A"/>';
-        s += '<ellipse cx="52" cy="78" rx="3.2" ry="2.4" fill="none" stroke="#1A1A1A" stroke-width="0.3"/>';
-        // Breast — slightly lighter grey
-        s += '<ellipse cx="51" cy="79" rx="1.5" ry="1" fill="#555" opacity="0.5"/>';
-        // ── WING — DARKER grey than body, with feather edge lines ──
-        s += '<path d="M50,77 Q49.5,78 50,79 Q52,79.5 54.5,78.5 Q55,77.5 54.5,77 Z" fill="#3A3A3A"/>';
-        s += '<path d="M50,77 Q49.5,78 50,79 Q52,79.5 54.5,78.5 Q55,77.5 54.5,77" fill="none" stroke="#1A1A1A" stroke-width="0.2"/>';
-        // Feather edge lines on wing — curved, layered (like reference)
-        s += '<path d="M50.5,77.5 Q52,77 54,77.5" fill="none" stroke="#1A1A1A" stroke-width="0.18"/>';
-        s += '<path d="M50.5,78 Q52,77.5 54,78" fill="none" stroke="#1A1A1A" stroke-width="0.15"/>';
-        s += '<path d="M50.8,78.5 Q52,78 53.5,78.5" fill="none" stroke="#1A1A1A" stroke-width="0.12"/>';
-        s += '<path d="M51,79 Q52,78.5 53.5,79" fill="none" stroke="#2A2A2A" stroke-width="0.1"/>';
-        // ── THROAT HACKLES — scruffy hanging feathers ──
-        s += '<path d="M50.5,77.5 Q50,78.2 50.2,79" stroke="#3A3A3A" stroke-width="0.25" fill="none"/>';
-        s += '<path d="M50.8,77.8 Q50.5,78.5 50.5,79.2" stroke="#3A3A3A" stroke-width="0.2" fill="none"/>';
-        s += '<path d="M51.2,77.8 Q50.8,78.3 50.8,78.8" stroke="#3A3A3A" stroke-width="0.18" fill="none"/>';
-        // ── HEAD — grey fill, black outline ──
-        s += '<circle cx="50" cy="76.2" r="1.5" fill="#4A4A4A"/>';
-        s += '<circle cx="50" cy="76.2" r="1.5" fill="none" stroke="#1A1A1A" stroke-width="0.25"/>';
-        // ── BEAK — black, massive, curved ──
-        s += '<path d="M48.8,76.3 L46.8,75.5 Q46.5,75.8 47,76.2 L48.5,76.5" fill="#1A1A1A"/>';
-        s += '<path d="M48.8,76.5 L47,76.2 Q46.5,76 46.8,76.5 L48.5,76.8" fill="#2A2A2A"/>';
+        s += '<path d="M56,77.5 L58.5,77.2" stroke="#1A1A1A" stroke-width="0.12" fill="none"/>';
+        s += '<path d="M56,78 L58.5,77.8" stroke="#1A1A1A" stroke-width="0.1" fill="none"/>';
+        // ── LEGS — lighter grey, 2 segments, bulbous knee, pointy claws ──
+        // Left leg: upper segment → knee → lower segment → claws
+        s += '<line x1="51" y1="79.5" x2="51" y2="80.5" stroke="#7A7A78" stroke-width="0.35"/>';
+        s += '<circle cx="51" cy="80.5" r="0.25" fill="#7A7A78"/>';
+        s += '<line x1="51" y1="80.5" x2="51" y2="81.5" stroke="#7A7A78" stroke-width="0.3"/>';
+        // Left claws — pointy
+        s += '<path d="M51,81.5 L50.3,82 M51,81.5 L51,82.2 M51,81.5 L51.7,82" stroke="#4A4A48" stroke-width="0.15" fill="none"/>';
+        // Right leg
+        s += '<line x1="53" y1="79.5" x2="53.2" y2="80.3" stroke="#7A7A78" stroke-width="0.35"/>';
+        s += '<circle cx="53.2" cy="80.3" r="0.25" fill="#7A7A78"/>';
+        s += '<line x1="53.2" y1="80.3" x2="53.2" y2="81.3" stroke="#7A7A78" stroke-width="0.3"/>';
+        // Right claws
+        s += '<path d="M53.2,81.3 L52.5,81.8 M53.2,81.3 L53.2,82 M53.2,81.3 L53.9,81.8" stroke="#4A4A48" stroke-width="0.15" fill="none"/>';
+        // ── BODY — grey oval, angled/offset to the left, black outline ──
+        s += '<ellipse cx="52" cy="78" rx="3.5" ry="2.2" fill="#4A4A4A" transform="rotate(-15,52,78)"/>';
+        s += '<ellipse cx="52" cy="78" rx="3.5" ry="2.2" fill="none" stroke="#1A1A1A" stroke-width="0.3" transform="rotate(-15,52,78)"/>';
+        // Breast — lighter grey
+        s += '<ellipse cx="50.5" cy="79" rx="1.5" ry="1" fill="#585858" opacity="0.5"/>';
+        // ── WING — darker grey, overlapping body, feather edge lines ──
+        s += '<path d="M50,77 Q49.5,78 50,79.2 Q52,79.8 55,78.5 Q55.5,77.5 55,77 Z" fill="#353535"/>';
+        s += '<path d="M50,77 Q49.5,78 50,79.2 Q52,79.8 55,78.5 Q55.5,77.5 55,77" fill="none" stroke="#1A1A1A" stroke-width="0.2"/>';
+        // Feather edge curves — layered like reference
+        s += '<path d="M50.5,77.5 Q52.5,77 54.5,77.5" fill="none" stroke="#1A1A1A" stroke-width="0.18"/>';
+        s += '<path d="M50.5,78 Q52.5,77.5 54.5,78" fill="none" stroke="#1A1A1A" stroke-width="0.15"/>';
+        s += '<path d="M50.8,78.5 Q52.5,78 54,78.5" fill="none" stroke="#1A1A1A" stroke-width="0.12"/>';
+        s += '<path d="M51,79 Q52.5,78.5 53.5,79" fill="none" stroke="#2A2A2A" stroke-width="0.1"/>';
+        // Throat hackles — scruffy feathers
+        s += '<path d="M50,77.5 Q49.5,78.2 49.8,79" stroke="#3A3A3A" stroke-width="0.25" fill="none"/>';
+        s += '<path d="M50.3,77.8 Q50,78.5 50,79.2" stroke="#3A3A3A" stroke-width="0.2" fill="none"/>';
+        // ── HEAD — OVAL (not circle), grey, black outline ──
+        s += '<ellipse cx="49.5" cy="76" rx="1.8" ry="1.4" fill="#4A4A4A"/>';
+        s += '<ellipse cx="49.5" cy="76" rx="1.8" ry="1.4" fill="none" stroke="#1A1A1A" stroke-width="0.25"/>';
+        // ── BEAK — curved downward triangle, pointed tip ──
+        // Upper mandible — curves down to a point
+        s += '<path d="M48,76 Q47,75.5 46,75.8 Q45.5,76.2 46,76.5 L48,76.3" fill="#1A1A1A"/>';
+        // Lower mandible — shorter
+        s += '<path d="M48,76.5 L46.5,76.5 Q46,76.3 46.2,76.8 L48,76.8" fill="#2A2A2A"/>';
+        // Beak outline
+        s += '<path d="M48,76 Q47,75.5 46,75.8 Q45.5,76.2 46,76.5" fill="none" stroke="#0A0A0A" stroke-width="0.15"/>';
         // Nasal bristles
-        s += '<path d="M49,76 L48.5,75.8 M49.2,76.1 L48.7,76" stroke="#1A1A1A" stroke-width="0.12"/>';
-        // ── EYE — WHITE dot (like reference) ──
-        s += '<circle cx="49.5" cy="75.8" r="0.35" fill="#F0F0F0"/>';
-        s += '<circle cx="49.5" cy="75.8" r="0.15" fill="#1A1A1A"/>';
+        s += '<path d="M48.5,75.8 L48,75.6 M48.5,76 L48,75.9" stroke="#1A1A1A" stroke-width="0.1"/>';
+        // ── EYE — white dot with tiny black pupil ──
+        s += '<circle cx="49" cy="75.8" r="0.35" fill="#F0F0F0"/>';
+        s += '<circle cx="49" cy="75.8" r="0.12" fill="#1A1A1A"/>';
         s += '</g>';
         break;
       case 76: // Garden Snake — spring coil shape, green with stripes
