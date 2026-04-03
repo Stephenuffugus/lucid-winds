@@ -8345,7 +8345,7 @@ document.addEventListener('keydown', function(e) {
       // 12 creature slots → ~37.5% total (3.125% each)
       {name:'Navi'},         // idx 20
       {name:'Bee'},         // idx 21
-      {name:'Pollen'},      // idx 22
+      {name:'Pill Bug'},     // idx 22
       {name:'Firefly'},     // idx 23
       {name:'Butterfly'},   // idx 24
       {name:'Moth'},        // idx 25
@@ -19651,39 +19651,54 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="14" cy="32.5" r="0.25" fill="#D8B840" opacity="0.45"/>';
         s += '</g>';
         break;
-      case 22: // Pollen Cloud — drift of golden motes catching sunlight
-        // Microscopic pollen grains are nature's most beautiful geometry:
-        // spiky spheres, ridged ellipsoids, lacework orbs. This cloud of
-        // golden motes drifts lazily through the garden air, each grain
-        // catching and releasing light independently.
-        s += '<g opacity="0.50">';
-        // 12 pollen grains drifting at different speeds and positions
-        var _p22grains = [
-          {x:20,y:25,r:0.8,dur:4.5,dx:1.5,dy:-1}, {x:50,y:32,r:0.6,dur:5.2,dx:-1,dy:0.8},
-          {x:15,y:42,r:0.7,dur:3.8,dx:0.8,dy:-1.5}, {x:55,y:20,r:0.65,dur:6,dx:-1.2,dy:1},
-          {x:8,y:35,r:0.5,dur:4,dx:1,dy:0.5}, {x:60,y:45,r:0.55,dur:5.5,dx:-0.8,dy:-1.2},
-          {x:30,y:18,r:0.7,dur:4.8,dx:0.5,dy:1.5}, {x:42,y:50,r:0.45,dur:5,dx:1.2,dy:-0.5},
-          {x:25,y:55,r:0.5,dur:3.5,dx:-0.5,dy:-1}, {x:48,y:15,r:0.6,dur:5.8,dx:0.8,dy:0.8},
-          {x:12,y:30,r:0.4,dur:4.2,dx:1,dy:1.2}, {x:58,y:38,r:0.5,dur:4.6,dx:-1.5,dy:-0.5}
+      case 22: // Pill Bug (Armadillidium vulgare) — nature's soil purifier
+        // These tiny isopods eat heavy metals and purify contaminated soil.
+        // Segmented armor plates overlap like medieval plate mail. When
+        // disturbed they curl into a perfect sphere. Sits at pot base,
+        // slowly trundling along with antennae probing ahead.
+        var _pbx = 58, _pby = 88;
+        s += '<g opacity="0.82" transform="translate('+_pbx+','+_pby+') scale(1.4) translate(-'+_pbx+',-'+_pby+')">';
+        // Slow trundle movement
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;1.5,0;3,0;1.5,0;0,0" dur="8s" repeatCount="indefinite"/>';
+        // Shadow beneath
+        s += '<ellipse cx="'+_pbx+'" cy="'+(_pby+2.5)+'" rx="4" ry="0.6" fill="rgba(0,0,0,0.1)"/>';
+        // Body — 7 overlapping armor segments, slate gray with subtle purple sheen
+        var _pbSegs = [
+          {dx:-5.0, w:2.0, h:2.8, c:'#6B6B78'},
+          {dx:-3.2, w:2.2, h:3.2, c:'#727280'},
+          {dx:-1.2, w:2.3, h:3.5, c:'#787888'},
+          {dx:0.9,  w:2.3, h:3.5, c:'#787888'},
+          {dx:3.0,  w:2.2, h:3.2, c:'#727280'},
+          {dx:4.8,  w:2.0, h:2.8, c:'#6B6B78'},
+          {dx:6.4,  w:1.6, h:2.2, c:'#636370'}
         ];
-        for (var _p22i = 0; _p22i < _p22grains.length; _p22i++) {
-          var _p = _p22grains[_p22i];
-          var _p22hue = _p22i % 3 === 0 ? '#D8B840' : _p22i % 3 === 1 ? '#C8A84B' : '#E0C860';
-          // Each grain: small sphere with highlight + subtle spiky corona
-          s += '<g><animateTransform attributeName="transform" type="translate" values="0,0;'+_p.dx+','+_p.dy+';0,0" dur="'+_p.dur+'s" repeatCount="indefinite"/>';
-          // Grain body
-          s += '<circle cx="'+_p.x+'" cy="'+_p.y+'" r="'+_p.r+'" fill="'+_p22hue+'" opacity="0.35"><animate attributeName="opacity" values="0.35;0.15;0.35" dur="'+(_p.dur*0.8).toFixed(1)+'s" repeatCount="indefinite"/></circle>';
-          // Specular dot
-          s += '<circle cx="'+(_p.x-_p.r*0.3)+'" cy="'+(_p.y-_p.r*0.3)+'" r="'+(_p.r*0.3).toFixed(2)+'" fill="rgba(255,248,200,0.4)"/>';
-          // Spiky corona — 4 tiny radiating lines (pollen grain texture)
-          if (_p.r > 0.5) {
-            for (var _p22s = 0; _p22s < 4; _p22s++) {
-              var _p22sa = (_p22s * 90 + _p22i * 30) * Math.PI / 180;
-              s += '<line x1="'+_p.x+'" y1="'+_p.y+'" x2="'+(_p.x+Math.cos(_p22sa)*_p.r*1.4).toFixed(1)+'" y2="'+(_p.y+Math.sin(_p22sa)*_p.r*1.4).toFixed(1)+'" stroke="'+_p22hue+'" stroke-width="0.08" opacity="0.2"/>';
-            }
-          }
-          s += '</g>';
+        for (var _pbi = 0; _pbi < _pbSegs.length; _pbi++) {
+          var _seg = _pbSegs[_pbi];
+          s += '<ellipse cx="'+(_pbx+_seg.dx)+'" cy="'+_pby+'" rx="'+_seg.w+'" ry="'+_seg.h+'" fill="'+_seg.c+'"/>';
+          // Segment ridge line — gives 3D plate armor look
+          s += '<ellipse cx="'+(_pbx+_seg.dx)+'" cy="'+(_pby-0.3)+'" rx="'+(_seg.w*0.85)+'" ry="'+(_seg.h*0.5)+'" fill="none" stroke="rgba(200,200,210,0.15)" stroke-width="0.2"/>';
         }
+        // Dorsal ridge — center line down the back
+        s += '<path d="M'+(_pbx-5)+','+_pby+' Q'+_pbx+','+(_pby-1.8)+' '+(_pbx+7)+','+_pby+'" fill="none" stroke="rgba(180,180,195,0.12)" stroke-width="0.3"/>';
+        // Head — smaller, rounder, darker
+        s += '<ellipse cx="'+(_pbx-6.5)+'" cy="'+_pby+'" rx="1.8" ry="2.2" fill="#5A5A68"/>';
+        // Eyes — two tiny dark dots
+        s += '<circle cx="'+(_pbx-7.5)+'" cy="'+(_pby-0.8)+'" r="0.3" fill="#222"/>';
+        s += '<circle cx="'+(_pbx-7.5)+'" cy="'+(_pby+0.8)+'" r="0.3" fill="#222"/>';
+        // Antennae — two segmented feelers probing ahead
+        s += '<path d="M'+(_pbx-8)+','+(_pby-0.5)+' Q'+(_pbx-10)+','+(_pby-2)+' '+(_pbx-11)+','+(_pby-1.5)+'" fill="none" stroke="#5A5A68" stroke-width="0.25" stroke-linecap="round"/>';
+        s += '<path d="M'+(_pbx-8)+','+(_pby+0.5)+' Q'+(_pbx-10)+','+(_pby+2)+' '+(_pbx-11)+','+(_pby+1.5)+'" fill="none" stroke="#5A5A68" stroke-width="0.25" stroke-linecap="round"/>';
+        // Antennae tips — tiny bulbs
+        s += '<circle cx="'+(_pbx-11)+'" cy="'+(_pby-1.5)+'" r="0.2" fill="#808090"/>';
+        s += '<circle cx="'+(_pbx-11)+'" cy="'+(_pby+1.5)+'" r="0.2" fill="#808090"/>';
+        // Legs — 7 pairs of tiny legs underneath, barely visible
+        for (var _pbl = 0; _pbl < 7; _pbl++) {
+          var _lx = _pbx - 5 + _pbl * 1.8;
+          s += '<line x1="'+_lx+'" y1="'+(_pby+2.5)+'" x2="'+(_lx+0.3)+'" y2="'+(_pby+3.5)+'" stroke="#5A5A68" stroke-width="0.15" opacity="0.5"/>';
+          s += '<line x1="'+_lx+'" y1="'+(_pby+2.5)+'" x2="'+(_lx-0.3)+'" y2="'+(_pby+3.5)+'" stroke="#5A5A68" stroke-width="0.15" opacity="0.5"/>';
+        }
+        // Subtle sheen — iridescent highlight on center plates
+        s += '<ellipse cx="'+(_pbx+0.5)+'" cy="'+(_pby-1)+'" rx="3" ry="1" fill="rgba(160,150,200,0.06)"/>';
         s += '</g>';
         break;
       case 23: // Firefly — beetle with bioluminescent lantern
