@@ -8343,7 +8343,7 @@ document.addEventListener('keydown', function(e) {
       {name:'None'},{name:'None'},{name:'None'},{name:'None'},
       {name:'None'},{name:'None'},{name:'None'},{name:'None'},
       // 12 creature slots → ~37.5% total (3.125% each)
-      {name:'Droplet'},     // idx 20
+      {name:'Navi'},         // idx 20
       {name:'Bee'},         // idx 21
       {name:'Pollen'},      // idx 22
       {name:'Firefly'},     // idx 23
@@ -19569,29 +19569,34 @@ document.addEventListener('keydown', function(e) {
     var fs = t.flowerSize || 6;
     var s = '';
     switch(ci) {
-      case 20: // Water Droplet — a perfect raindrop clinging to the plant
-        // Not just a shape — a living sphere of water with internal refraction,
-        // surface tension membrane, specular highlight, and caustic light
-        // patterns beneath it. The simplest companion, but precisely executed.
-        s += '<g opacity="0.55" transform="translate(55,25) scale(1.4) translate(-55,-25)">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0,-1.5;0.2,0;0,0" dur="4s" repeatCount="indefinite"/>';
-        // Caustic light pattern on surface below — light refracted through the drop
-        s += '<ellipse cx="55" cy="31" rx="2" ry="0.5" fill="rgba(120,180,220,0.06)"><animate attributeName="rx" values="2;2.5;2" dur="3s" repeatCount="indefinite"/></ellipse>';
-        // Drop shadow — soft, directly beneath
-        s += '<ellipse cx="55" cy="30.5" rx="1.5" ry="0.3" fill="rgba(10,20,30,0.08)"/>';
-        // Main drop body — perfect teardrop with surface tension bulge
-        s += '<path d="M55,18 C55,18 51,24 51,26.5 C51,29 52.8,30.5 55,30.5 C57.2,30.5 59,29 59,26.5 C59,24 55,18 55,18Z" fill="rgba(91,143,185,0.18)"/>';
-        // Surface tension membrane — visible edge where air meets water
-        s += '<path d="M55,18 C55,18 51,24 51,26.5 C51,29 52.8,30.5 55,30.5 C57.2,30.5 59,29 59,26.5 C59,24 55,18 55,18Z" fill="none" stroke="rgba(160,200,230,0.35)" stroke-width="0.3"/>';
-        // Internal refraction — the world seen through water is curved
-        s += '<ellipse cx="54" cy="26" rx="2" ry="2.5" fill="rgba(180,210,240,0.08)" transform="rotate(-10,54,26)"/>';
-        // Specular highlight — bright catch-light (the "shine" on the drop)
-        s += '<ellipse cx="53.5" cy="23" rx="0.8" ry="1.2" fill="rgba(240,248,255,0.5)" transform="rotate(-15,53.5,23)"/>';
-        s += '<ellipse cx="53.8" cy="23.5" rx="0.4" ry="0.7" fill="rgba(255,255,255,0.3)" transform="rotate(-15,53.8,23.5)"/>';
-        // Bottom highlight — light gathering at base
-        s += '<ellipse cx="55" cy="29" rx="1.2" ry="0.5" fill="rgba(200,230,255,0.1)"/>';
-        // Tiny wobble — surface tension oscillation
-        s += '<animate attributeName="opacity" values="0.55;0.6;0.52;0.58;0.55" dur="3s" repeatCount="indefinite"/>';
+      case 20: // Navi — glowing fairy companion, blue-white orb with translucent wings
+        // Inspired by the iconic fairy guide. A radiant blue-white sphere of light
+        // with delicate diamond-shaped wings, trailing sparkle motes, hovering near
+        // the plant with a gentle bobbing orbit. The glow illuminates nearby leaves.
+        s += '<g opacity="0.85" transform="translate(55,22) scale(1.5) translate(-55,-22)">';
+        // Orbit path — gentle figure-8 hover
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;2,-1.5;0.5,1;-1.5,-0.5;0,0" dur="5s" repeatCount="indefinite"/>';
+        // Outer glow — large soft halo
+        s += '<circle cx="55" cy="22" r="6" fill="rgba(140,200,255,0.08)"><animate attributeName="r" values="6;7.5;6" dur="2s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="55" cy="22" r="4" fill="rgba(160,220,255,0.12)"><animate attributeName="r" values="4;5;4" dur="2s" repeatCount="indefinite"/></circle>';
+        // Core body — brilliant blue-white orb
+        s += '<circle cx="55" cy="22" r="2.2" fill="rgba(180,230,255,0.7)"><animate attributeName="r" values="2.2;2.5;2.2" dur="1.5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="55" cy="22" r="1.4" fill="rgba(220,245,255,0.85)"/>';
+        // Hot center — pure white
+        s += '<circle cx="55" cy="22" r="0.7" fill="rgba(255,255,255,0.9)"/>';
+        // Wings — translucent diamond shapes, rapid flutter
+        s += '<path d="M53,22 L49,18 L48,22 L53,22Z" fill="rgba(180,230,255,0.2)" stroke="rgba(200,240,255,0.3)" stroke-width="0.2"><animate attributeName="opacity" values="0.2;0.35;0.2" dur="0.3s" repeatCount="indefinite"/></path>';
+        s += '<path d="M57,22 L61,18 L62,22 L57,22Z" fill="rgba(180,230,255,0.2)" stroke="rgba(200,240,255,0.3)" stroke-width="0.2"><animate attributeName="opacity" values="0.2;0.35;0.2" dur="0.3s" repeatCount="indefinite"/></path>';
+        // Lower wings — smaller
+        s += '<path d="M53.5,23 L50,26 L49.5,23 L53.5,23Z" fill="rgba(160,210,255,0.15)" stroke="rgba(180,230,255,0.2)" stroke-width="0.15"><animate attributeName="opacity" values="0.15;0.25;0.15" dur="0.3s" repeatCount="indefinite"/></path>';
+        s += '<path d="M56.5,23 L60,26 L60.5,23 L56.5,23Z" fill="rgba(160,210,255,0.15)" stroke="rgba(180,230,255,0.2)" stroke-width="0.15"><animate attributeName="opacity" values="0.15;0.25;0.15" dur="0.3s" repeatCount="indefinite"/></path>';
+        // Sparkle trail — 4 tiny motes trailing behind
+        s += '<circle cx="52" cy="24" r="0.3" fill="rgba(200,240,255,0.5)"><animate attributeName="opacity" values="0.5;0.1;0.5" dur="1.2s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="50" cy="25.5" r="0.2" fill="rgba(200,240,255,0.4)"><animate attributeName="opacity" values="0.4;0.05;0.4" dur="1.6s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="48.5" cy="24" r="0.25" fill="rgba(180,230,255,0.35)"><animate attributeName="opacity" values="0.35;0.08;0.35" dur="2s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="51" cy="27" r="0.15" fill="rgba(200,240,255,0.3)"><animate attributeName="opacity" values="0.3;0.05;0.3" dur="1.8s" repeatCount="indefinite"/></circle>';
+        // Ground illumination — soft pool of light beneath
+        s += '<ellipse cx="55" cy="30" rx="4" ry="0.8" fill="rgba(140,200,255,0.04)"><animate attributeName="rx" values="4;5;4" dur="2s" repeatCount="indefinite"/></ellipse>';
         s += '</g>';
         break;
       case 21: // Honeybee — hovering near the bloom
