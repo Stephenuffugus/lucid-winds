@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-03d';
+  var _SVG_CACHE_VER = '2026-04-03e';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -20467,14 +20467,22 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M49.5,79 Q54,78 59,78 Q62,79 63,80.5" fill="none" stroke="#9A7040" stroke-width="0.4" opacity="0.2"/>';
         // Belly — sagging, lighter
         s += '<path d="M51,90 Q55.5,92 60,90" fill="#C8A068" opacity="0.2"/>';
-        // Variegated fur — many thin lines in varied brown shades
-        var _cp33fur = [[49,82.5],[49.8,83],[50.5,82],[51.2,82.5],[52,81.5],[52.8,82],[53.5,81],[54.2,81.5],[55,81],[55.8,81.5],[56.5,82],[57.2,82.5],[58,82],[58.8,83],[59.5,83.5],[60.5,84],[61.5,84.5],[62,85],[50,85.5],[51,86],[52,86.5],[53,87],[54,87.5],[55,87.5],[56,87.5],[57,87],[58,86.5],[59,86],[60,85.5],[61,85]];
-        var _cp33cols = ['#7A5028','#8A6038','#9A7048','#A88058','#6A4018','#8A6838','#7A5830'];
-        for (var _cp33i = 0; _cp33i < _cp33fur.length; _cp33i++) {
-          var _cfx = _cp33fur[_cp33i][0], _cfy = _cp33fur[_cp33i][1];
+        // Dense fur — 120+ procedural thin lines across the entire body
+        // Uses hash-like distribution seeded from loop index for even coverage
+        var _cp33cols = ['#7A5028','#8A6038','#9A7048','#A88058','#6A4018','#8A6838','#7A5830','#6A5028','#9A6838','#A07040'];
+        for (var _cp33i = 0; _cp33i < 120; _cp33i++) {
+          // Distribute across body bounding box: x=49-63, y=79-91
+          var _cfSeed = (_cp33i * 7 + 13) % 120;
+          var _cfx = 49 + (_cfSeed % 15) * 0.95;
+          var _cfy = 79 + ((_cfSeed * 3 + _cp33i * 5) % 120) / 10;
+          // Skip if outside body silhouette (rough oval check)
+          var _cfcx = 56, _cfcy = 85, _cfrx = 8, _cfry = 6.5;
+          var _cfdx = (_cfx - _cfcx) / _cfrx, _cfdy = (_cfy - _cfcy) / _cfry;
+          if (_cfdx * _cfdx + _cfdy * _cfdy > 1) continue;
           var _cfc = _cp33cols[_cp33i % _cp33cols.length];
-          s += '<line x1="'+_cfx+'" y1="'+_cfy+'" x2="'+(_cfx+0.15)+'" y2="'+(_cfy+1.2)+'" stroke="'+_cfc+'" stroke-width="0.1" opacity="0.25"/>';
-          s += '<line x1="'+(_cfx+0.4)+'" y1="'+(_cfy+0.05)+'" x2="'+(_cfx+0.55)+'" y2="'+(_cfy+0.9)+'" stroke="'+_cp33cols[(_cp33i+3)%_cp33cols.length]+'" stroke-width="0.08" opacity="0.2"/>';
+          var _cfLen = 0.6 + (_cp33i % 5) * 0.15;
+          var _cfDx = ((_cp33i % 3) - 1) * 0.08;
+          s += '<line x1="'+_cfx.toFixed(1)+'" y1="'+_cfy.toFixed(1)+'" x2="'+(_cfx+_cfDx).toFixed(2)+'" y2="'+(_cfy+_cfLen).toFixed(2)+'" stroke="'+_cfc+'" stroke-width="0.07" opacity="0.28"/>';
         }
         // Front leg — far side (partially visible)
         s += '<path d="M52,90 L51.5,92.5" stroke="#7A5028" stroke-width="2.5" stroke-linecap="round"/>';
@@ -20484,8 +20492,10 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="49.5" cy="92.8" rx="1.6" ry="0.6" fill="#7A5028"/>';
         // Webbed toes on near front foot
         s += '<path d="M48.4,93.2 L48.1,93.8 M49,93.3 L49,94 M49.8,93.3 L50,93.9 M50.6,93.2 L50.9,93.7" stroke="#6A4018" stroke-width="0.16" fill="none" stroke-linecap="round"/>';
-        // Neck — THICK, wide, merging body into head (capybaras have barely any neck)
-        s += '<path d="M48,82 Q46.5,80 46,78 Q45.5,76 46,75 L51,73.5 Q51.5,75.5 51,78 Q50.5,80 50,82 Z" fill="#A87848"/>';
+        // Neck — THICK, back edge curves down smoothly into body shoulder
+        s += '<path d="M48,82 Q46.5,80 46,78 Q45.5,76 46,75 L51,73.5 Q51.5,75 51.5,77 Q51.5,79 50.5,80.5 Q49.5,81.5 48.5,82 Z" fill="#A87848"/>';
+        // Neck fur continuation on back edge
+        s += '<path d="M50.5,77 Q50,79 49.5,80.5" fill="none" stroke="#9A7040" stroke-width="0.3" opacity="0.15"/>';
         s += '<path d="M47,80 Q46.5,78 46.5,76" fill="none" stroke="#B89860" stroke-width="0.6" opacity="0.2" stroke-linecap="round"/>';
         // Head — BOXY, flat-topped rectangle in profile (capybara's defining shape)
         // Wide, blunt, almost squared — NOT round like a bear
