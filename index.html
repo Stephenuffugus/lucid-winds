@@ -5611,13 +5611,13 @@ document.addEventListener('keydown', function(e) {
       stemColor:    hb(5) % 12,
       stemHeight:   22 + hc(3) * 2.5,
       leafType:     hb(4),
-      leafCount:    4 + (hc(5) % 5),
-      leafSize:     6 + (hc(6) % 5),
+      leafCount:    5 + (hc(5) % 6),
+      leafSize:     8 + (hc(6) % 7),
       leafColors:   [_PAL[hc(7)],_PAL[hc(8)],_PAL[hc(9)]],
       hasFlower:    hc(10) > 4,
       flower:       glowFlower ? 15 : hb(11),
       flowerColor:  _PAL[hc(12)],
-      flowerSize:   4 + (hc(13) % 5),
+      flowerSize:   6 + (hc(13) % 7),
       chimerGen:    1, // default gen 1; breeding sets this to parent max + 1
       leafSpread:   7 + (hc(14) % 6),
       aura:         hb(15) % 36,  // 0-35 aura slots (0-4 = none)
@@ -5722,6 +5722,9 @@ document.addEventListener('keydown', function(e) {
     // AGE (0-3)
     var d = days || 0;
     if (d >= 90) ea += 3; else if (d >= 30) ea += 2; else if (d >= 7) ea += 1;
+    // SYNERGY BONUS (cosmetic + EA only, never affects Terra Grade)
+    var syn = window.getSynergy ? window.getSynergy(traits) : null;
+    if (syn) ea += syn.ea;
     // CHIMERA PENALTY: -2 per gen
     var gen = (traits.chimerGen || 1) - 1;
     if (gen > 0) ea -= gen * 2;
@@ -5731,6 +5734,72 @@ document.addEventListener('keydown', function(e) {
     var c = gc || '#8a9a7a';
     if (ea >= 20) c = '#ff6ec7'; else if (ea >= 15) c = '#f1c40f'; else if (ea >= 10) c = '#9b59b6';
     return '<span style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;color:' + c + ';background:rgba(0,0,0,0.4);padding:1px 5px;border-radius:3px;border:1px solid ' + c + '44;">EA ' + ea + '</span>';
+  };
+
+  // ═══ SYNERGY ENGINE (set-39) ═══════════════════════════════════════════
+  // 40 synergies. Two traits from different layers must align.
+  // First match wins — one synergy max per plant. Never affects Terra Grade.
+  // EA bonus stacks with existing EA. Visual effect rendered separately.
+  var _SYNERGIES = [
+    // ELEMENTAL
+    {id:1, name:'Frozen Flame',      a:function(t){return t.flower%71===67;},     b:function(t){return t.leafType%71===61;},  ea:2, theme:'elemental', fx:'leaves flicker orange↔ice-blue'},
+    {id:2, name:'Magma Heart',       a:function(t){return t.base%71===17;},       b:function(t){return t.aura%36===20;},      ea:2, theme:'elemental', fx:'molten cracks pulse through substrate'},
+    {id:3, name:'Permafrost',        a:function(t){return t.season===3;},         b:function(t){return t.leafType%71===67;},  ea:1, theme:'elemental', fx:'ice crystals creep along leaf edges'},
+    {id:4, name:'Ember Drift',       a:function(t){return t.flower%71===66;},     b:function(t){return t.base%71===59;},      ea:2, theme:'elemental', fx:'ember particles rise from base'},
+    {id:5, name:'Stormglass',        a:function(t){return t.stem%24===22;},       b:function(t){return t.aura%36===19;},      ea:2, theme:'elemental', fx:'prismatic shards refract through stem'},
+    {id:6, name:'Sunstroke',         a:function(t){return t.season===1;},         b:function(t){return t.aura%36===6;},       ea:1, theme:'elemental', fx:'deep amber bathes entire plant'},
+    {id:7, name:'Monsoon Bloom',     a:function(t){return t.season===0;},         b:function(t){return t.flower%71===3;},     ea:1, theme:'elemental', fx:'rain-drop ripples radiate from bloom'},
+    {id:8, name:'Bonfire Vigil',     a:function(t){return t.pot%71===50;},        b:function(t){return t.companion===23;},    ea:1, theme:'elemental', fx:'fireflies orbit cauldron rim with gold trails'},
+    {id:9, name:'Scorched Earth',    a:function(t){return t.base%71===57;},       b:function(t){return t.stem%24===12;},      ea:2, theme:'elemental', fx:'bark shifts to charcoal with glowing grain'},
+    {id:10,name:'Static Charge',     a:function(t){return t.stem%24===6;},        b:function(t){return t.leafType%71===60;},  ea:1, theme:'elemental', fx:'spark particles jump between leaf tips'},
+    // NATURE
+    {id:11,name:'Symbiosis',         a:function(t){return t.base%71===18;},       b:function(t){return t.companion===27;},    ea:1, theme:'nature', fx:'mycelium threads connect substrate to snail'},
+    {id:12,name:"Pollinator's Crown",a:function(t){return t.flower%71===10;},     b:function(t){return t.companion===28;},    ea:2, theme:'nature', fx:'iridescent pollen motes swirl to hummingbird'},
+    {id:13,name:'Old Growth',        a:function(t){return t.stem%24===4;},        b:function(t){return t.base%71===9;},       ea:1, theme:'nature', fx:'moss creeps up lower trunk, breathing slowly'},
+    {id:14,name:'Hedge Witch',       a:function(t){return t.pot%71===53;},        b:function(t){return t.companion===43;},    ea:2, theme:'nature', fx:'green runes orbit skull eye sockets'},
+    {id:15,name:'Nectar Tide',       a:function(t){return t.flower%71===2;},      b:function(t){return t.companion===24;},    ea:1, theme:'nature', fx:'butterfly wings pulse with hibiscus color'},
+    {id:16,name:'Web Garden',        a:function(t){return t.aura%36===17;},       b:function(t){return t.companion===31;},    ea:2, theme:'nature', fx:'dew drops bead along web strands'},
+    {id:17,name:'Bamboo Grove',      a:function(t){return t.stem%24===13;},       b:function(t){return t.leafType%71===4;},   ea:1, theme:'nature', fx:'leaves sway in unison like a single gust'},
+    {id:18,name:'Fern Hollow',       a:function(t){return t.stem%24===14;},       b:function(t){return t.leafType%71===6;},   ea:1, theme:'nature', fx:'tiny fronds peek from hollow trunk opening'},
+    {id:19,name:'Autumn Harvest',    a:function(t){return t.season===2;},         b:function(t){return t.leafType%71===7;},   ea:1, theme:'nature', fx:'one leaf drifts down and fades each cycle'},
+    {id:20,name:'Coral Reef',        a:function(t){return t.stem%24===9;},        b:function(t){return t.base%71===8;},       ea:1, theme:'nature', fx:'caustic light ripples across pebble substrate'},
+    // COSMIC
+    {id:21,name:'Stardust Crown',    a:function(t){return t.base%71===56;},       b:function(t){return t.flower%71===15;},    ea:2, theme:'cosmic', fx:'bloom white-hot, stardust streams upward'},
+    {id:22,name:'Meteor Garden',     a:function(t){return t.base%71===28;},       b:function(t){return t.aura%36===8;},       ea:2, theme:'cosmic', fx:'meteorite streaks fall through aura'},
+    {id:23,name:'Lunar Tide',        a:function(t){return t.leafType%71===63;},   b:function(t){return t.aura%36===7;},       ea:2, theme:'cosmic', fx:'leaves glow silver, cast circular light pools'},
+    {id:24,name:'Aurora Veil',       a:function(t){return t.aura%36===5;},        b:function(t){return t.flower%71===5;},     ea:1, theme:'cosmic', fx:'aurora colors bleed into tulip petals'},
+    {id:25,name:'Seed Nexus',        a:function(t){return t.aura%36===9;},        b:function(t){return t.pot%71===57;},       ea:2, theme:'cosmic', fx:'sacred geometry pulses between pot and aura'},
+    {id:26,name:'Clock Garden',      a:function(t){return t.flower%71===69;},     b:function(t){return t.stem%24===3;},       ea:1, theme:'cosmic', fx:'clock ticks in real time, stem sways as pendulum'},
+    {id:27,name:'Holographic Prism', a:function(t){return t.mutationName==='Holographic';}, b:function(t){return t.leafType%71===9;}, ea:2, theme:'cosmic', fx:'needles split into full rainbow refraction'},
+    {id:28,name:'Stained Vigil',     a:function(t){return t.aura%36===35;},       b:function(t){return t.stem%24===23;},      ea:2, theme:'cosmic', fx:'colored light panels project onto iron trunk'},
+    {id:29,name:'Void Gate',         a:function(t){return t.flower%71===68;},     b:function(t){return t.aura%36===29;},      ea:2, theme:'cosmic', fx:'black hole distortion warps around bloom'},
+    {id:30,name:'Neon Pulse',        a:function(t){return t.mutationName==='Neon';}, b:function(t){return t.stem%24===7;},     ea:1, theme:'cosmic', fx:'both stems alternate neon pink and cyan'},
+    // DARK
+    {id:31,name:'Miasma Pitcher',    a:function(t){return t.aura%36===18;},       b:function(t){return t.flower%71===34;},    ea:2, theme:'dark', fx:'toxic vapor pours from pitcher into aura'},
+    {id:32,name:'Bone Altar',        a:function(t){return t.pot%71===51;},        b:function(t){return t.base%71===15;},      ea:1, theme:'dark', fx:'crystals glow within, illuminating egg cracks'},
+    {id:33,name:"Titan's Maw",       a:function(t){return t.flower%71===36;},     b:function(t){return t.companion===32;},    ea:2, theme:'dark', fx:'toad mesmerized; purple scent-lines waft from bloom'},
+    {id:34,name:'Fossil Memory',     a:function(t){return t.mutationName==='Fossil';}, b:function(t){return t.base%71===52;}, ea:1, theme:'dark', fx:'fossil imprint extends into substrate'},
+    {id:35,name:'Shadow Loom',       a:function(t){return t.mutationName==='Silhouette';}, b:function(t){return t.leafType%71===68;}, ea:2, theme:'dark', fx:'void petals show inverted starfield texture'},
+    // MYTHICAL
+    {id:36,name:'Dragon Keep',       a:function(t){return t.flower%71===35;},     b:function(t){return t.pot%71===56;},       ea:2, theme:'mythical', fx:'amphora glows with firelight, dragon casts shadows'},
+    {id:37,name:"Alchemist's Rose",  a:function(t){return t.pot%71===15;},        b:function(t){return t.flower%71===1;},     ea:1, theme:'mythical', fx:'rose petals shift to metallic gold at tips'},
+    {id:38,name:"Beholder's Gaze",   a:function(t){return t.companion===38;},     b:function(t){return t.leafType%71===62;},  ea:2, theme:'mythical', fx:'beholder eye tracks largest frond with green scan'},
+    {id:39,name:'Capybara Oasis',    a:function(t){return t.companion===33;},     b:function(t){return t.stem%24===10;},      ea:2, theme:'mythical', fx:'capybara rests against succulent, water beads both'},
+    {id:40,name:'Wise Owl Roost',    a:function(t){return t.companion===57;},     b:function(t){return t.stem%24===5;},       ea:1, theme:'mythical', fx:'owl perches in braid junction, golden eye blink'}
+  ];
+
+  // Get the synergy for a plant (or null if none)
+  window.getSynergy = function(traits) {
+    if (!traits) return null;
+    for (var i = 0; i < _SYNERGIES.length; i++) {
+      var s = _SYNERGIES[i];
+      try {
+        if (s.a(traits) && s.b(traits)) {
+          return { id:s.id, name:s.name, ea:s.ea, theme:s.theme, fx:s.fx };
+        }
+      } catch(e) {}
+    }
+    return null;
   };
 
   // ═══ HARDINESS SCORE ═══════════════════════════════════════════════════
@@ -22467,6 +22536,11 @@ document.addEventListener('keydown', function(e) {
     var _tg = window.getTerraGrade(t);
     html += '<div style="text-align:center;padding:0.2rem 0 0.3rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.1em;font-size:0.55rem;color:'+_tg.color+';text-shadow:0 0 8px '+_tg.color+'44;">'
           + _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon + '</div>';
+    // Synergy badge
+    var _dSyn = window.getSynergy ? window.getSynergy(t) : null;
+    if (_dSyn) {
+      html += '<div style="text-align:center;padding:0.15rem 0 0.25rem;"><span style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;letter-spacing:0.08em;color:var(--gold);background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.25);border-radius:10px;padding:2px 8px;">\u2726 ' + _dSyn.name.toUpperCase() + ' SYNERGY</span></div>';
+    }
     html += '<div class="dna-ledger-grid">';
     rows.forEach(function(row) {
       var tierClass = row.tier === 'mythic' ? 'mythic' : row.tier === 'mutation' ? 'mutation' : row.rare ? 'rare' : '';
@@ -23480,6 +23554,11 @@ document.addEventListener('keydown', function(e) {
     var _npHtml = typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : name;
     front += '<div class="cf-name-zone"><div class="cf-name" style="color:' + _sNameColor + ';">' + _npHtml + '</div></div>';
     front += '<div class="cf-art-window">' + svgHtml + '</div>';
+    // Synergy badge (if any)
+    var _syn = window.getSynergy ? window.getSynergy(_t) : null;
+    if (_syn) {
+      front += '<div class="cf-synergy" style="position:absolute;bottom:26%;left:50%;transform:translateX(-50%);z-index:6;"><span style="font-family:Bebas Neue,sans-serif;font-size:0.45rem;letter-spacing:0.08em;color:var(--gold);background:rgba(13,16,12,0.8);border:1px solid rgba(200,168,75,0.35);border-radius:12px;padding:2px 10px;white-space:nowrap;backdrop-filter:blur(4px);">\u2726 ' + _syn.name.toUpperCase() + '</span></div>';
+    }
     front += '<div class="cf-haiku-zone"><div class="cf-haiku" data-h1="' + (haiku.line1||'').replace(/"/g,'&quot;') + '" data-h2="' + (haiku.line2||'').replace(/"/g,'&quot;') + '" data-h3="' + (haiku.line3||'').replace(/"/g,'&quot;') + '">' + haiku.line1 + '<br>' + haiku.line2 + '<br>' + haiku.line3 + '</div></div>';
     front += '<div class="cs-flip-hint">tap to flip \u2192</div>';
     if (plant.revealed) {
