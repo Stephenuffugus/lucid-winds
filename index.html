@@ -5261,7 +5261,7 @@ window.onerror=function(msg,url,line,col,err){
 
       // Card preview
       main+='<div id="cfa-card-wrap" style="flex:1;display:flex;align-items:center;justify-content:center;padding:8px;min-width:0;">';
-      main+='<div id="cfa-card" style="width:280px;max-width:80vw;aspect-ratio:2.5/3.5;position:relative;border-radius:12px;overflow:hidden;background:#050505;"></div>';
+      main+='<div id="cfa-card" style="width:92vw;max-width:460px;height:calc(100vh - 180px);max-height:600px;position:relative;border-radius:12px;overflow:hidden;background:#050505;contain:layout style paint;isolation:isolate;"></div>';
       main+='</div>';
 
       // Controls panel (scrollable)
@@ -5323,7 +5323,7 @@ window.onerror=function(msg,url,line,col,err){
         var showGrid=document.getElementById('cfa-grid').checked;
         var gridBorder=showGrid?'border:1px dashed rgba(122,179,86,0.25);':'';
 
-        var h='<div style="display:grid;grid-template-rows:'+_vals.nameRow+'% '+_vals.artRow+'% '+_vals.haikuRow+'% auto;width:100%;height:100%;padding:'+_vals.padTop+'% '+_vals.padSide+'% '+_vals.padBot+'%;box-sizing:border-box;background-size:96%;background-position:center;background-repeat:no-repeat;background-image:url(assets/cards/fronts/front-'+sk+'.png);background-color:#050505;border-radius:12px;">';
+        var h='<div style="position:absolute;inset:0;display:grid;grid-template-rows:'+_vals.nameRow+'% '+_vals.artRow+'% '+_vals.haikuRow+'% auto;padding:'+_vals.padTop+'% '+_vals.padSide+'% '+_vals.padBot+'%;box-sizing:border-box;background-size:96%;background-position:center;background-repeat:no-repeat;background-image:url(assets/cards/fronts/front-'+sk+'.png);background-color:#050505;border-radius:12px;">';
 
         // Name zone
         h+='<div style="display:flex;align-items:center;justify-content:center;overflow:hidden;'+gridBorder+'">';
@@ -5402,6 +5402,25 @@ window.onerror=function(msg,url,line,col,err){
           prompt('Copy this CSS:',css);
         }
       };
+
+      // Scale the card to fit available space while keeping exact game dimensions
+      function _fitCard(){
+        var wrap=document.getElementById('cfa-card-wrap');
+        var card=document.getElementById('cfa-card');
+        if(!wrap||!card)return;
+        // The card has real game CSS sizing (92vw × calc(100vh-180px)), so measure its natural size
+        card.style.transform='none';
+        var cw=card.offsetWidth, ch=card.offsetHeight;
+        var ww=wrap.offsetWidth-16, wh=wrap.offsetHeight-16;
+        var scale=Math.min(ww/cw, wh/ch, 1);
+        card.style.transform='scale('+scale+')';
+        card.style.transformOrigin='center center';
+      }
+      _fitCard();
+      window.addEventListener('resize',_fitCard);
+      // Clean up resize listener on close
+      var _origClose=document.getElementById('cfa-close').onclick;
+      document.getElementById('cfa-close').onclick=function(){window.removeEventListener('resize',_fitCard);ov.remove();};
 
       _renderCard();
     }
