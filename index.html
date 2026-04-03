@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-04x';
+  var _SVG_CACHE_VER = '2026-04-04y';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -22392,8 +22392,10 @@ document.addEventListener('keydown', function(e) {
       case 70: // Seahorse — upright, round body, horse head, curling tail
         s += '<g opacity="0.85" transform="translate(11,22) scale(1.6) translate(-11,-22)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.3,-1;0,0;-0.2,0.7;0,0" dur="5.5s" repeatCount="indefinite"/>';
-        // ── TAIL — prehensile curl, tighter spiral ──
-        s += '<path d="M10.5,26 Q10,27.5 10.5,28.5 Q11.5,29.5 12,28.5 Q12,27.5 11.2,27 Q10.8,27 10.8,27.5 Q11,28 11.3,27.8" fill="none" stroke="#C8A060" stroke-width="1" stroke-linecap="round"/>';
+        // ── TAIL — curling inward tightly to a skinny point ──
+        s += '<path d="M10.5,26 Q10,27.5 10.5,29 Q11.5,30 12,29.5 Q12.5,28.5 12,27.5 Q11.5,27 11.2,27.5 Q11,28 11.3,28.2 Q11.5,28 11.4,27.8" fill="none" stroke="#C8A060" stroke-width="0.8" stroke-linecap="round"/>';
+        // Tail gets thinner toward the tight curl point
+        s += '<path d="M11.2,27.5 Q11,28 11.3,28.2" fill="none" stroke="#C8A060" stroke-width="0.4" stroke-linecap="round"/>';
         // ── BODY — round potbelly (seahorse signature shape) ──
         s += '<path d="M9.5,21 Q9,19.5 10,18.5 Q11,18 12,18.5 Q13,19.5 13,21 Q13,23 12.5,24.5 Q12,25.5 11,26 Q10,25.5 9.5,24 Q9,22.5 9.5,21 Z" fill="#D0A858"/>';
         // Belly — rounder, lighter front
@@ -22420,8 +22422,29 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="10.9" cy="15.8" r="0.18" fill="rgba(240,220,160,0.6)"/>';
         // Brow ridge
         s += '<path d="M10.3,15.5 Q10.8,15.2 11.5,15.5" fill="none" stroke="#A08040" stroke-width="0.2" opacity="0.4"/>';
-        // ── DORSAL FIN — fluttering on back ──
-        s += '<path d="M12.2,20 Q13.2,19.5 13.5,20.2 Q13.2,21 12.2,21.2" fill="rgba(210,180,120,0.25)" stroke="#C8A060" stroke-width="0.12"><animate attributeName="d" values="M12.2,20 Q13.2,19.5 13.5,20.2 Q13.2,21 12.2,21.2;M12.2,20 Q13.5,19.8 13.8,20.5 Q13.5,21.2 12.2,21.2;M12.2,20 Q13.2,19.5 13.5,20.2 Q13.2,21 12.2,21.2" dur="1.2s" repeatCount="indefinite"/></path>';
+        // ── FAN MANE — runs from top of head all the way down to tail ──
+        // Each segment fans outward then curves concave back in before the next
+        // Segment 1 — top of head
+        s += '<path d="M12,16 Q13.5,15.5 13.8,16.5 Q13.2,17 12.2,17" fill="rgba(210,180,120,0.3)" stroke="#C8A060" stroke-width="0.12"/>';
+        // Segment 2
+        s += '<path d="M12.3,17.5 Q14,17 14.2,18 Q13.5,18.5 12.5,18.5" fill="rgba(210,180,120,0.28)" stroke="#C8A060" stroke-width="0.12"/>';
+        // Segment 3
+        s += '<path d="M12.5,19 Q14,18.5 14.3,19.5 Q13.5,20 12.8,20" fill="rgba(210,180,120,0.25)" stroke="#C8A060" stroke-width="0.1"/>';
+        // Segment 4
+        s += '<path d="M12.8,20.5 Q14.2,20 14.5,21 Q13.8,21.5 13,21.5" fill="rgba(210,180,120,0.22)" stroke="#C8A060" stroke-width="0.1"/>';
+        // Segment 5
+        s += '<path d="M13,22 Q14.2,21.5 14.3,22.5 Q13.5,23 12.8,23" fill="rgba(210,180,120,0.2)" stroke="#C8A060" stroke-width="0.1"/>';
+        // Segment 6 — mid body
+        s += '<path d="M12.5,23.5 Q13.8,23 14,24 Q13.2,24.5 12.2,24.5" fill="rgba(210,180,120,0.18)" stroke="#C8A060" stroke-width="0.08"/>';
+        // Segment 7 — lower body
+        s += '<path d="M12,25 Q13,24.5 13.2,25.5 Q12.5,26 11.5,25.8" fill="rgba(210,180,120,0.15)" stroke="#C8A060" stroke-width="0.08"/>';
+        // Segment 8 — into tail
+        s += '<path d="M11,26 Q12,25.8 12.2,26.5 Q11.5,27 10.8,26.8" fill="rgba(210,180,120,0.12)" stroke="#C8A060" stroke-width="0.08"/>';
+        // Fin ray lines through mane segments
+        s += '<line x1="12.5" y1="16.5" x2="13.5" y2="16" stroke="#B89848" stroke-width="0.06" opacity="0.2"/>';
+        s += '<line x1="12.8" y1="19" x2="14" y2="18.8" stroke="#B89848" stroke-width="0.06" opacity="0.18"/>';
+        s += '<line x1="13" y1="21" x2="14.2" y2="20.8" stroke="#B89848" stroke-width="0.06" opacity="0.15"/>';
+        s += '<line x1="12.5" y1="23.5" x2="13.5" y2="23.2" stroke="#B89848" stroke-width="0.05" opacity="0.12"/>';
         // Pectoral fin — tiny, near head
         s += '<path d="M9.5,19 Q8.8,18.5 8.5,19 Q8.8,19.5 9.5,19.5" fill="rgba(210,180,120,0.2)" stroke="#C8A060" stroke-width="0.1"/>';
         // ── IRIDESCENT BUBBLES — floating around ──
