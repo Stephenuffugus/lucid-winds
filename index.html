@@ -20693,43 +20693,84 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M57.7,24.2 L58.1,24.9 L58.5,24.2 Z" fill="#B0A890"/>';
         s += '</g>';
         break;
-      case 39: // Kitty — standing tail-up on bottom-right soil, classic cat stance
-        s += '<g opacity="1" transform="translate(57,89) scale(1.5) translate(-57,-89)">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.2,0;0.4,0;0.2,0;0,0" dur="5.8s" repeatCount="indefinite"/>';
-        // Body — standing horizontal, facing left
-        s += '<ellipse cx="57" cy="89.2" rx="3.8" ry="1.8" fill="#8A6C4E"/>';
-        // Head — facing left, slightly turned toward viewer
-        s += '<ellipse cx="53.2" cy="88.4" rx="1.8" ry="1.6" fill="#A87850"/>';
-        // Ears
-        s += '<path d="M52.0,87.2 L52.5,85.8 L53.2,87.0 Z" fill="#A87850"/>';
-        s += '<path d="M53.4,86.9 L54.0,85.6 L54.6,87.0 Z" fill="#A87850"/>';
-        // Inner ears — pink
-        s += '<path d="M52.3,87.1 L52.6,86.2 L52.9,87.0 Z" fill="#D7A79A"/>';
-        s += '<path d="M53.6,86.85 L53.95,86.0 L54.3,86.9 Z" fill="#D7A79A"/>';
-        // Eyes — alert, looking at viewer
-        s += '<circle cx="52.5" cy="88.2" r="0.35" fill="#C8A84B"/>';
-        s += '<circle cx="53.8" cy="88.2" r="0.35" fill="#C8A84B"/>';
-        s += '<ellipse cx="52.5" cy="88.2" rx="0.14" ry="0.28" fill="#111"/>';
-        s += '<ellipse cx="53.8" cy="88.2" rx="0.14" ry="0.28" fill="#111"/>';
-        // Nose
-        s += '<path d="M53.0,88.8 L53.15,89.0 L53.3,88.8 Z" fill="#D4908A"/>';
-        // Whiskers
-        s += '<path d="M52.2,88.9 L50.8,88.5 M52.2,89.1 L50.6,89.2 M54.0,88.9 L55.4,88.5 M54.0,89.1 L55.6,89.2" stroke="#C8B8A8" stroke-width="0.08" fill="none" stroke-linecap="round" opacity="0.5"/>';
-        // Front legs
-        s += '<line x1="54.5" y1="90.2" x2="54.5" y2="92.0" stroke="#8A6C4E" stroke-width="0.7" stroke-linecap="round"/>';
-        s += '<line x1="55.8" y1="90.4" x2="55.8" y2="92.0" stroke="#8A6C4E" stroke-width="0.7" stroke-linecap="round"/>';
-        // Back legs
-        s += '<line x1="58.2" y1="90.4" x2="58.2" y2="92.0" stroke="#7A5C3E" stroke-width="0.7" stroke-linecap="round"/>';
-        s += '<line x1="59.5" y1="90.2" x2="59.5" y2="92.0" stroke="#7A5C3E" stroke-width="0.7" stroke-linecap="round"/>';
-        // Paws
-        s += '<ellipse cx="54.5" cy="92.1" rx="0.55" ry="0.25" fill="#A87850"/>';
-        s += '<ellipse cx="55.8" cy="92.1" rx="0.55" ry="0.25" fill="#A87850"/>';
-        s += '<ellipse cx="58.2" cy="92.1" rx="0.55" ry="0.25" fill="#8A6C4E"/>';
-        s += '<ellipse cx="59.5" cy="92.1" rx="0.55" ry="0.25" fill="#8A6C4E"/>';
-        // TAIL — straight up, the classic pose
-        s += '<path d="M60.2,88.8 Q60.8,86.5 60.5,84.0 Q60.3,82.8 60.6,82.2" stroke="#8A6C4E" stroke-width="1.0" fill="none" stroke-linecap="round"/>';
-        // The detail that sells it
-        s += '<circle cx="60.6" cy="88.2" r="0.3" fill="#7A5C3E"/>';
+      case 39: // Kitty — standing tail-up, classic cat stance, facing left
+        s += '<g opacity="1" transform="translate(57,84) scale(1.8) translate(-57,-84)">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.15,0;0.3,0;0.15,0;0,0" dur="5.8s" repeatCount="indefinite"/>';
+        // Shadow
+        s += '<ellipse cx="57" cy="91.5" rx="5" ry="0.6" fill="#0d100c" opacity="0.12"/>';
+        // TAIL — high, curving up from rump (drawn first, behind body)
+        s += '<path d="M60.5,86 Q62,84 62.5,81.5 Q63,79.5 62,78 Q61.5,77.5 61.8,77" stroke="#8A6C4E" stroke-width="1.2" fill="none" stroke-linecap="round"/>';
+        // Tail highlight
+        s += '<path d="M60.8,85.5 Q62.2,83.5 62.6,81.5" stroke="#A08060" stroke-width="0.3" fill="none" opacity="0.25" stroke-linecap="round"/>';
+        // Back legs — visible haunches with proper feline anatomy
+        s += '<path d="M58.5,88.5 Q59,89.5 58.8,91" stroke="#7A5C3E" stroke-width="1.2" stroke-linecap="round" fill="none"/>';
+        s += '<path d="M59.8,88 Q60.5,89.5 60,91" stroke="#7A5C3E" stroke-width="1.2" stroke-linecap="round" fill="none"/>';
+        // Back paws
+        s += '<ellipse cx="58.8" cy="91.2" rx="0.75" ry="0.35" fill="#8A6C4E"/>';
+        s += '<ellipse cx="60" cy="91.2" rx="0.75" ry="0.35" fill="#7A5C3E"/>';
+        // Body — elongated barrel, proper cat shape (shoulders higher, tapers to hip)
+        s += '<path d="M53.5,87.5 Q53,86 54,84.5 Q55.5,83.5 57,84 Q59,83.5 60.5,85 Q61.5,86.5 61,88 Q60.5,89.5 59,90 Q57,90.5 55,90 Q53.5,89.5 53.5,87.5 Z" fill="#8A6C4E"/>';
+        // Shoulder definition — cats have prominent scapulae
+        s += '<path d="M54,85 Q55,83.8 56.5,84" fill="#9A7C5E" opacity="0.3"/>';
+        // Hip definition
+        s += '<path d="M59.5,85 Q60.5,85.5 61,87" fill="#7A5C3E" opacity="0.25"/>';
+        // Belly — lighter
+        s += '<path d="M55,89.5 Q57,90.2 59,89.5" fill="#B09070" opacity="0.2"/>';
+        // Fur texture — soft strokes along body
+        s += '<path d="M55,84.5 Q56,84 57,84.5" stroke="#9A7C5E" stroke-width="0.12" fill="none" opacity="0.2"/>';
+        s += '<path d="M57.5,84 Q58.5,83.8 59.5,84.5" stroke="#9A7C5E" stroke-width="0.12" fill="none" opacity="0.18"/>';
+        s += '<path d="M55,86 Q56.5,85.5 58,86" stroke="#7A5C3E" stroke-width="0.1" fill="none" opacity="0.15"/>';
+        // Front legs — proper cat stance, slight bend
+        s += '<path d="M54.5,88.5 Q54.2,89.5 54.5,91" stroke="#8A6C4E" stroke-width="1.2" stroke-linecap="round" fill="none"/>';
+        s += '<path d="M56,88.8 Q55.8,89.8 56,91" stroke="#8A6C4E" stroke-width="1.2" stroke-linecap="round" fill="none"/>';
+        // Front paws — slightly larger than back
+        s += '<ellipse cx="54.5" cy="91.2" rx="0.8" ry="0.35" fill="#A87850"/>';
+        s += '<ellipse cx="56" cy="91.2" rx="0.8" ry="0.35" fill="#A87850"/>';
+        // Toe lines on front paws
+        s += '<path d="M54.1,91.2 L54.1,91.5 M54.5,91.2 L54.5,91.55 M54.9,91.2 L54.9,91.5" stroke="#7A5C3E" stroke-width="0.08" fill="none" opacity="0.3"/>';
+        // Neck — thick, connects body to head (overlapping fill)
+        s += '<path d="M54,85.5 Q53,84.5 52.5,83.5 Q52,83 52.5,82.5 L55,83 Q55,84 54.5,85" fill="#8A6C4E"/>';
+        // Head — round, proper feline proportions, OVERLAPPING neck
+        s += '<ellipse cx="53" cy="82" rx="2.5" ry="2.2" fill="#A87850"/>';
+        // Cheek fluff — wider lower face
+        s += '<path d="M50.8,82.5 Q51,83.5 52,84" fill="#B08860" opacity="0.2"/>';
+        s += '<path d="M55.2,82.5 Q55,83.5 54,84" fill="#B08860" opacity="0.2"/>';
+        // LEFT ear — triangle, properly connected to head top-left
+        s += '<path d="M51,81 L51.2,78.8 L52.5,80.5 Z" fill="#A87850"/>';
+        s += '<path d="M51.3,80.8 L51.4,79.3 L52.2,80.4 Z" fill="#D7A79A" opacity="0.6"/>';
+        // RIGHT ear — triangle, properly connected to head top-right
+        s += '<path d="M53.5,80.5 L54.8,78.8 L55,81 Z" fill="#A87850"/>';
+        s += '<path d="M53.8,80.4 L54.6,79.3 L54.7,80.8 Z" fill="#D7A79A" opacity="0.6"/>';
+        // Forehead — subtle lighter M-pattern (tabby marking)
+        s += '<path d="M51.8,81 Q53,80.2 54.2,81" fill="none" stroke="#C09868" stroke-width="0.2" opacity="0.2"/>';
+        // Eyes — large, almond-shaped, golden (cat's defining feature)
+        s += '<ellipse cx="52" cy="82" rx="0.6" ry="0.5" fill="#C8A84B"/>';
+        s += '<ellipse cx="54" cy="82" rx="0.6" ry="0.5" fill="#C8A84B"/>';
+        // Slit pupils
+        s += '<ellipse cx="52" cy="82" rx="0.18" ry="0.42" fill="#111"/>';
+        s += '<ellipse cx="54" cy="82" rx="0.18" ry="0.42" fill="#111"/>';
+        // Eye specular — double highlight (Beholder technique)
+        s += '<circle cx="52.15" cy="81.8" r="0.12" fill="rgba(240,235,216,0.65)"/>';
+        s += '<circle cx="51.9" cy="82.15" r="0.06" fill="rgba(240,235,216,0.35)"/>';
+        s += '<circle cx="54.15" cy="81.8" r="0.12" fill="rgba(240,235,216,0.65)"/>';
+        s += '<circle cx="53.9" cy="82.15" r="0.06" fill="rgba(240,235,216,0.35)"/>';
+        // Eye liner — dark rim around each eye
+        s += '<ellipse cx="52" cy="82" rx="0.65" ry="0.55" fill="none" stroke="#4A3828" stroke-width="0.12" opacity="0.4"/>';
+        s += '<ellipse cx="54" cy="82" rx="0.65" ry="0.55" fill="none" stroke="#4A3828" stroke-width="0.12" opacity="0.4"/>';
+        // Nose — small inverted triangle, pink
+        s += '<path d="M52.85,83 L53,83.3 L53.15,83 Z" fill="#D4908A"/>';
+        s += '<circle cx="53" cy="83.1" r="0.06" fill="#B07068" opacity="0.4"/>';
+        // Mouth lines — from nose down
+        s += '<path d="M53,83.3 L52.7,83.7 M53,83.3 L53.3,83.7" stroke="#8A6848" stroke-width="0.1" fill="none" opacity="0.25"/>';
+        // Whiskers — long, flowing, 3 per side
+        s += '<path d="M51.5,83 Q49.5,82.3 48,82.5" stroke="#C8B8A8" stroke-width="0.1" fill="none" stroke-linecap="round" opacity="0.4"/>';
+        s += '<path d="M51.5,83.3 Q49.5,83.2 47.8,83.5" stroke="#C8B8A8" stroke-width="0.1" fill="none" stroke-linecap="round" opacity="0.35"/>';
+        s += '<path d="M51.5,83.6 Q49.8,84 48.5,84.5" stroke="#C8B8A8" stroke-width="0.08" fill="none" stroke-linecap="round" opacity="0.3"/>';
+        s += '<path d="M54.5,83 Q56.5,82.3 58,82.5" stroke="#C8B8A8" stroke-width="0.1" fill="none" stroke-linecap="round" opacity="0.4"/>';
+        s += '<path d="M54.5,83.3 Q56.5,83.2 58.2,83.5" stroke="#C8B8A8" stroke-width="0.1" fill="none" stroke-linecap="round" opacity="0.35"/>';
+        s += '<path d="M54.5,83.6 Q56.2,84 57.5,84.5" stroke="#C8B8A8" stroke-width="0.08" fill="none" stroke-linecap="round" opacity="0.3"/>';
+        // Chin tuft
+        s += '<path d="M52.5,84 Q53,84.5 53.5,84" fill="#B89870" opacity="0.15"/>';
         s += '</g>';
         break;
       case 40: // Platypus — waddling on bottom-right soil, facing right
