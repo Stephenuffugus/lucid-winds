@@ -8573,7 +8573,7 @@ document.addEventListener('keydown', function(e) {
       {name:'Hedgehog'},    // idx 42 — renderer: Hedgehog
       {name:'Pangolin',rare:true},    // idx 43 — renderer: Pangolin (Rare)
       {name:'Luna Moth',rare:true},   // idx 44 — renderer: Luna Moth (Rare)
-      {name:'Hermit Crab'}, // idx 45 — renderer: Hermit Crab
+      {name:'Porcupine'}, // idx 45 — renderer: Hermit Crab
       {name:'Glow Snail',rare:true},  // idx 46 — renderer: Glow Snail (Rare)
       {name:'Axolotl',rare:true}, // idx 47
       {name:'Scorpion',rare:true},// idx 48
@@ -21005,57 +21005,155 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="51.5" cy="84" rx="0.4" ry="0.3" fill="#8A7048" opacity="0.5"/>';
         s += '</g>';
         break;
-      case 44: // Luna Moth companion — ultra-rare, top-left corner, slow moonlike drift
-        s += '<g opacity="0.78" transform="translate(10,12) scale(1.4) translate(-10,-12)">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.18,-0.22;0.36,0;0.18,0.18;0,0" dur="7.4s" repeatCount="indefinite"/>';
-        // Upper wings
-        s += '<path d="M10,10.2 C8.5,8.9 6.6,8.5 5.0,9.0 C3.6,9.5 2.9,10.7 3.1,12.0 C3.3,13.5 4.6,14.6 6.2,14.9 C7.8,15.2 9.2,14.6 10,13.3 Z" fill="#B7DFA8"/>';
-        s += '<path d="M10,10.2 C11.5,8.9 13.4,8.5 15.0,9.0 C16.4,9.5 17.1,10.7 16.9,12.0 C16.7,13.5 15.4,14.6 13.8,14.9 C12.2,15.2 10.8,14.6 10,13.3 Z" fill="#B7DFA8"/>';
-        // Lower wings — tailed
-        s += '<path d="M9.9,13.0 C8.9,12.5 7.7,12.6 6.7,13.1 C5.6,13.7 5.0,14.8 5.1,15.9 C5.2,17.1 6.1,18.0 7.3,18.3 C8.4,18.6 9.4,18.2 10,17.4 Z" fill="#CFE8B6"/>';
-        s += '<path d="M10.1,13.0 C11.1,12.5 12.3,12.6 13.3,13.1 C14.4,13.7 15.0,14.8 14.9,15.9 C14.8,17.1 13.9,18.0 12.7,18.3 C11.6,18.6 10.6,18.2 10,17.4 Z" fill="#CFE8B6"/>';
-        // Body
-        s += '<ellipse cx="10" cy="13.9" rx="0.7" ry="4.1" fill="#92B37D"/>';
-        // Wing eyespots
-        s += '<circle cx="7.0" cy="12.0" r="0.34" fill="#A87850" opacity="0.55"/>';
-        s += '<circle cx="13.1" cy="12.0" r="0.34" fill="#A87850" opacity="0.55"/>';
-        s += '<circle cx="7.6" cy="16.2" r="0.28" fill="#A87850" opacity="0.48"/>';
-        s += '<circle cx="12.5" cy="16.2" r="0.28" fill="#A87850" opacity="0.48"/>';
-        // Antennae
-        s += '<path d="M9.8,9.9 Q9.3,9.0 8.7,8.7 M10.2,9.9 Q10.7,9.0 11.3,8.7" stroke="#92B37D" stroke-width="0.16" fill="none" stroke-linecap="round"/>';
-        // Wing veins
-        s += '<path d="M10,13.0 Q8.8,11.7 7.2,10.9 M10,13.0 Q11.2,11.7 12.8,10.9 M10,14.2 Q8.8,15.2 7.5,15.8 M10,14.2 Q11.2,15.2 12.5,15.8" stroke="rgba(240,235,216,0.16)" stroke-width="0.18" fill="none" stroke-linecap="round"/>';
+      case 44: // Luna Moth — ethereal, top-left corner, slow moonlike drift
+        // Actias luna. Pale green wings with long sweeping tails,
+        // feathery antennae, concentric eyespots. Ghostly and beautiful.
+        s += '<g opacity="0.92" transform="translate(10,14) scale(1.5) translate(-10,-14)">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.2,-0.25;0.4,0;0.2,0.2;0,0" dur="7.4s" repeatCount="indefinite"/>';
+        // Moonlight glow — faint ethereal halo
+        s += '<ellipse cx="10" cy="14" rx="10" ry="8" fill="rgba(183,223,168,0.04)"><animate attributeName="opacity" values="0.03;0.06;0.03" dur="4s" repeatCount="indefinite"/></ellipse>';
+        // HINDWINGS — drawn first (behind forewings), with long TAILS
+        s += '<path d="M9.8,13.5 C8.5,13 7,13.2 6,14 C5,15 4.8,16.5 5.2,17.5 C5.6,18.2 6.5,18.5 7.5,18.3 Q9,17.8 10,16.5 Z" fill="#CFE8B6"/>';
+        s += '<path d="M10.2,13.5 C11.5,13 13,13.2 14,14 C15,15 15.2,16.5 14.8,17.5 C14.4,18.2 13.5,18.5 12.5,18.3 Q11,17.8 10,16.5 Z" fill="#CFE8B6"/>';
+        // TAILS — long, sweeping, twisted (luna moth's signature)
+        s += '<path d="M5.2,17.5 Q4,19 3.5,21 Q3.2,22.5 4,23" fill="#CFE8B6" stroke="#B0D8A0" stroke-width="0.15"/>';
+        s += '<path d="M14.8,17.5 Q16,19 16.5,21 Q16.8,22.5 16,23" fill="#CFE8B6" stroke="#B0D8A0" stroke-width="0.15"/>';
+        // Tail twist detail
+        s += '<path d="M3.8,20 Q4.2,20.5 3.8,21" fill="none" stroke="#A0C890" stroke-width="0.15" opacity="0.3"/>';
+        s += '<path d="M16.2,20 Q15.8,20.5 16.2,21" fill="none" stroke="#A0C890" stroke-width="0.15" opacity="0.3"/>';
+        // FOREWINGS — broader, more swept
+        s += '<path d="M10,10 C8,8.5 5.5,8.2 4,9 C2.8,9.8 2.5,11.2 3,12.5 C3.5,14 5,15 7,15.2 C8.5,15.3 9.5,14.5 10,13.5 Z" fill="#B7DFA8"/>';
+        s += '<path d="M10,10 C12,8.5 14.5,8.2 16,9 C17.2,9.8 17.5,11.2 17,12.5 C16.5,14 15,15 13,15.2 C11.5,15.3 10.5,14.5 10,13.5 Z" fill="#B7DFA8"/>';
+        // Forewing leading edge — darker border
+        s += '<path d="M10,10 C8,8.5 5.5,8.2 4,9" fill="none" stroke="#8AB87A" stroke-width="0.3" opacity="0.35"/>';
+        s += '<path d="M10,10 C12,8.5 14.5,8.2 16,9" fill="none" stroke="#8AB87A" stroke-width="0.3" opacity="0.35"/>';
+        // Wing veins — radiating from body center
+        s += '<path d="M10,12 Q8,11 6,10" fill="none" stroke="rgba(240,235,216,0.18)" stroke-width="0.2"/>';
+        s += '<path d="M10,12 Q8.5,12.5 6.5,13" fill="none" stroke="rgba(240,235,216,0.15)" stroke-width="0.18"/>';
+        s += '<path d="M10,12 Q12,11 14,10" fill="none" stroke="rgba(240,235,216,0.18)" stroke-width="0.2"/>';
+        s += '<path d="M10,12 Q11.5,12.5 13.5,13" fill="none" stroke="rgba(240,235,216,0.15)" stroke-width="0.18"/>';
+        // Hindwing veins
+        s += '<path d="M10,14.5 Q8,15.5 6.5,16.5" fill="none" stroke="rgba(240,235,216,0.12)" stroke-width="0.15"/>';
+        s += '<path d="M10,14.5 Q12,15.5 13.5,16.5" fill="none" stroke="rgba(240,235,216,0.12)" stroke-width="0.15"/>';
+        // Body — furry thorax + segmented abdomen
+        s += '<ellipse cx="10" cy="11.5" rx="0.9" ry="1.8" fill="#92B37D"/>';
+        s += '<ellipse cx="10" cy="14.5" rx="0.6" ry="2.5" fill="#82A36D"/>';
+        // Body fur — fluffy white thorax
+        s += '<ellipse cx="10" cy="11" rx="1.1" ry="1" fill="#D0E8C0" opacity="0.25"/>';
+        // EYESPOTS — concentric rings (3 layers each, luna moth technique)
+        // Forewing eyespots
+        s += '<circle cx="6.5" cy="12" r="0.8" fill="rgba(80,60,100,0.2)"/>';
+        s += '<circle cx="6.5" cy="12" r="0.5" fill="rgba(200,180,80,0.25)"/>';
+        s += '<circle cx="6.5" cy="12" r="0.2" fill="rgba(40,30,60,0.35)"/>';
+        s += '<circle cx="13.5" cy="12" r="0.8" fill="rgba(80,60,100,0.2)"/>';
+        s += '<circle cx="13.5" cy="12" r="0.5" fill="rgba(200,180,80,0.25)"/>';
+        s += '<circle cx="13.5" cy="12" r="0.2" fill="rgba(40,30,60,0.35)"/>';
+        // Hindwing eyespots — slightly smaller
+        s += '<circle cx="7.2" cy="16" r="0.6" fill="rgba(80,60,100,0.18)"/>';
+        s += '<circle cx="7.2" cy="16" r="0.35" fill="rgba(200,180,80,0.22)"/>';
+        s += '<circle cx="7.2" cy="16" r="0.15" fill="rgba(40,30,60,0.3)"/>';
+        s += '<circle cx="12.8" cy="16" r="0.6" fill="rgba(80,60,100,0.18)"/>';
+        s += '<circle cx="12.8" cy="16" r="0.35" fill="rgba(200,180,80,0.22)"/>';
+        s += '<circle cx="12.8" cy="16" r="0.15" fill="rgba(40,30,60,0.3)"/>';
+        // ANTENNAE — feathery/plumose (male luna moth's key ID)
+        s += '<path d="M9.7,10 Q9.2,9 8.5,8.5" stroke="#92B37D" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M10.3,10 Q10.8,9 11.5,8.5" stroke="#92B37D" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
+        // Feathery barbs on antennae
+        s += '<path d="M9.4,9.3 L9,9 M9.2,9.5 L8.8,9.2 M9.6,9.1 L9.2,8.8" stroke="#A0C890" stroke-width="0.08" fill="none"/>';
+        s += '<path d="M10.6,9.3 L11,9 M10.8,9.5 L11.2,9.2 M10.4,9.1 L10.8,8.8" stroke="#A0C890" stroke-width="0.08" fill="none"/>';
+        // Legs — tiny, tucked (moths barely use them)
+        s += '<path d="M9.5,13 L9,13.5 M10.5,13 L11,13.5" stroke="#82A36D" stroke-width="0.1" fill="none" opacity="0.3"/>';
         s += '</g>';
         break;
-      case 45: // Hermit Crab — on bottom-right soil, slow side-shuffle (Uncommon)
-        s += '<g opacity="0.80" transform="translate(56,89) scale(1.3) translate(-56,-89)">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.22,0;0.42,0;0.22,0.04;0,0" dur="6.1s" repeatCount="indefinite"/>';
-        s += '<path d="M58.8,89.6 C60.4,89.1 61.3,88.0 61.1,86.9 C60.9,85.6 59.7,84.8 58.2,84.9 C56.8,85.0 55.7,85.9 55.4,87.0 C55.1,88.2 55.8,89.3 57.1,89.8 C57.6,90.0 58.2,89.95 58.8,89.6 Z" fill="#8A6C4E"/>';
-        s += '<path d="M58.6,89.1 C59.5,88.8 60.0,88.2 59.9,87.4 C59.8,86.5 59.0,85.9 58.0,86.0 C57.1,86.1 56.4,86.6 56.2,87.4 C56.0,88.2 56.5,88.9 57.3,89.2" stroke="rgba(240,235,216,0.22)" stroke-width="0.24" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M57.6,88.9 C56.8,89.2 56.0,89.3 55.2,89.4 C54.2,89.5 53.4,89.4 52.8,89.1 C52.2,88.8 52.1,88.1 52.4,87.6 C52.8,87.0 53.6,86.7 54.5,86.9 C55.2,87.0 55.8,87.3 56.4,87.7" fill="#A87850"/>';
-        s += '<circle cx="53.25" cy="86.95" r="0.16" fill="#111"/>';
-        s += '<circle cx="54.0" cy="86.72" r="0.16" fill="#111"/>';
-        s += '<path d="M52.8,87.1 L52.4,86.2 M53.9,86.85 L53.7,85.95" stroke="#7A5C3E" stroke-width="0.18" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M52.0,89.35 Q51.4,89.9 50.8,89.4 M52.8,89.65 Q52.2,90.2 51.6,89.8 M53.8,89.72 Q53.3,90.3 52.6,90.0 M54.8,89.65 Q54.4,90.2 53.8,90.0" stroke="#7A5C3E" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M55.1,88.4 Q54.1,88.2 53.5,87.8" stroke="#A87850" stroke-width="0.18" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M50.9,91.6 Q56.0,92.8 61.2,91.5" stroke="rgba(240,235,216,0.2)" stroke-width="0.28" fill="none" stroke-linecap="round"/>';
+      case 45: // Porcupine — waddling on bottom-right, quills raised
+        // Erethizon dorsatum. North American porcupine. Round body,
+        // short legs, long quills with barbed tips, small face.
+        s += '<g opacity="1" transform="translate(56,87) scale(1.5) translate(-56,-87)">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.2,0;0.38,0;0.2,0;0,0" dur="6s" repeatCount="indefinite"/>';
+        // Shadow
+        s += '<ellipse cx="57" cy="92.5" rx="5.5" ry="0.7" fill="#0d100c" opacity="0.12"/>';
+        // Short legs — thick, hidden under body
+        s += '<path d="M54,91 L54,92" stroke="#4A3828" stroke-width="1" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M56,91.2 L56,92" stroke="#4A3828" stroke-width="1" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M59,91 L59,92" stroke="#3A2818" stroke-width="1" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M61,90.8 L61,92" stroke="#3A2818" stroke-width="1" fill="none" stroke-linecap="round"/>';
+        // Feet
+        s += '<ellipse cx="54" cy="92" rx="0.8" ry="0.35" fill="#4A3828"/>';
+        s += '<ellipse cx="56" cy="92" rx="0.8" ry="0.35" fill="#4A3828"/>';
+        s += '<ellipse cx="59" cy="92" rx="0.8" ry="0.35" fill="#3A2818"/>';
+        s += '<ellipse cx="61" cy="92" rx="0.8" ry="0.35" fill="#3A2818"/>';
+        // Body — round, hunched
+        s += '<path d="M52,89 Q52,87 54,86 Q57.5,85 61,86 Q63,87 63,89 Q63,91 61,92 Q57.5,93 54,92 Q52,91 52,89 Z" fill="#5A4030"/>';
+        // Underfur — darker, visible between quills
+        s += '<ellipse cx="57.5" cy="89.5" rx="4" ry="2.5" fill="#3A2818" opacity="0.3"/>';
+        // QUILLS — the defining feature, long sharp spines radiating outward
+        var _pqQuills = [
+          [54,87,-1.5,-2.5],[55,86.5,-0.8,-2.8],[56,86,-0.3,-3.0],[57,85.8,0,-3.1],
+          [58,85.8,0.2,-3.0],[59,86,0.6,-2.8],[60,86.5,1.0,-2.5],[61,87,1.5,-2.2],[62,87.5,1.8,-1.8],
+          [53,88,-2.0,-1.5],[54.5,87.5,-1.2,-2.2],[59.5,87.5,1.2,-2.0],[61.5,88,2.0,-1.2],
+          [53.5,89.5,-2.0,-0.5],[62,89,2.0,-0.3],
+          [54,90.5,-1.5,0.8],[55,91,-0.8,1.0],[59,91,0.5,1.0],[60.5,90.5,1.5,0.8]
+        ];
+        for (var _pqi = 0; _pqi < _pqQuills.length; _pqi++) {
+          var _pq = _pqQuills[_pqi];
+          // Each quill: dark base, white/cream barbed tip
+          s += '<line x1="'+_pq[0]+'" y1="'+_pq[1]+'" x2="'+(_pq[0]+_pq[2])+'" y2="'+(_pq[1]+_pq[3])+'" stroke="#3A2818" stroke-width="0.25" stroke-linecap="round"/>';
+          s += '<line x1="'+(_pq[0]+_pq[2]*0.6)+'" y1="'+(_pq[1]+_pq[3]*0.6)+'" x2="'+(_pq[0]+_pq[2])+'" y2="'+(_pq[1]+_pq[3])+'" stroke="#E8DCC8" stroke-width="0.2" stroke-linecap="round" opacity="0.7"/>';
+        }
+        // Head — small relative to body, connected via overlapping fill
+        s += '<path d="M53,89 Q52,88.5 51.5,88 Q51,87.5 51.5,87 Q52,86.5 53,87 Q53.5,87.5 53.5,88.5 Q53.5,89 53,89 Z" fill="#6A5040"/>';
+        // Snout — blunt, rounded
+        s += '<ellipse cx="51.5" cy="87.8" rx="1" ry="0.7" fill="#7A6050"/>';
+        // Nose — dark
+        s += '<ellipse cx="51" cy="87.8" rx="0.3" ry="0.22" fill="#1A1008"/>';
+        s += '<circle cx="51.1" cy="87.7" r="0.06" fill="rgba(240,235,216,0.4)"/>';
+        // Eye — small, beady
+        s += '<circle cx="52" cy="87.5" r="0.35" fill="#1A1008"/>';
+        s += '<circle cx="52.1" cy="87.4" r="0.1" fill="rgba(200,180,120,0.5)"/>';
+        // Ears — small, round, partially hidden in quills
+        s += '<ellipse cx="52.5" cy="86.8" rx="0.5" ry="0.6" fill="#6A5040"/>';
+        s += '<ellipse cx="53.2" cy="86.5" rx="0.5" ry="0.6" fill="#6A5040"/>';
+        // Whiskers
+        s += '<path d="M51,88 L49.5,87.5 M51,88.2 L49.5,88.5" stroke="#B0A090" stroke-width="0.06" fill="none" opacity="0.3"/>';
         s += '</g>';
         break;
-      case 46: // Glow Snail — ultra-rare, low on bottom-right soil with faint luminous shell (Rare)
-        s += '<g opacity="0.80" transform="translate(55,89) scale(1.35) translate(-55,-89)">';
+      case 46: // Glow Snail — luminous shell, gliding on bottom-right soil (Rare)
+        // Garden snail with bioluminescent shell. Connected body flows
+        // from shell to head/tentacles as one continuous mass.
+        s += '<g opacity="1" transform="translate(55,88) scale(1.5) translate(-55,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.16,0;0.3,0.03;0.16,0;0,0" dur="7.2s" repeatCount="indefinite"/>';
-        s += '<ellipse cx="54.2" cy="90.6" rx="2.3" ry="1.1" fill="#A87850"/>';
-        s += '<path d="M57.8,89.9 C57.8,88.2 56.5,86.8 54.8,86.8 C53.1,86.8 51.8,88.2 51.8,89.9 C51.8,91.6 53.1,92.9 54.8,92.9 C56.5,92.9 57.8,91.6 57.8,89.9 Z" fill="rgba(196,232,154,0.16)"/>';
-        s += '<circle cx="54.8" cy="89.9" r="2.45" fill="#B7DFA8" opacity="0.34"/>';
-        s += '<circle cx="54.8" cy="89.9" r="1.95" fill="#CFE8B6" opacity="0.36"/>';
-        s += '<path d="M56.45,89.9 C56.45,88.98 55.7,88.22 54.78,88.22 C53.86,88.22 53.1,88.98 53.1,89.9 C53.1,90.82 53.86,91.58 54.78,91.58 C55.7,91.58 56.45,90.82 56.45,89.9 Z" fill="none" stroke="#92B37D" stroke-width="0.26" opacity="0.72"/>';
-        s += '<path d="M54.78,89.9 C54.78,89.34 54.34,88.9 53.78,88.9 C53.22,88.9 52.78,89.34 52.78,89.9 C52.78,90.46 53.22,90.9 53.78,90.9" fill="none" stroke="#92B37D" stroke-width="0.24" opacity="0.72" stroke-linecap="round"/>';
-        s += '<path d="M56.0,90.25 Q57.2,90.35 58.1,89.95 Q59.0,89.55 59.15,88.9 Q59.28,88.28 58.8,87.92 Q58.28,87.55 57.45,87.72 Q56.82,87.85 56.18,88.28" fill="#A87850"/>';
-        s += '<circle cx="58.46" cy="88.44" r="0.12" fill="#111"/>';
-        s += '<path d="M58.9,88.28 L59.22,87.58 M58.36,88.18 L58.52,87.46" stroke="#A87850" stroke-width="0.16" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M55.1,87.9 Q55.45,87.45 56.0,87.28" stroke="rgba(240,235,216,0.28)" stroke-width="0.18" fill="none" stroke-linecap="round"/>';
-        s += '<ellipse cx="55.0" cy="91.6" rx="4.6" ry="0.7" fill="rgba(196,232,154,0.08)"/>';
-        s += '<path d="M51.0,91.8 Q55.7,92.8 59.2,91.45" stroke="rgba(240,235,216,0.18)" stroke-width="0.24" fill="none" stroke-linecap="round"/>';
+        // Slime trail — faint iridescent
+        s += '<path d="M50,92 Q54,92.5 58,92" fill="none" stroke="rgba(196,232,154,0.06)" stroke-width="1.5"/>';
+        // Body/foot — muscular base, extends from shell forward (CONNECTED)
+        s += '<path d="M51,91.5 Q53,92.2 55.5,92 Q58,91.5 59,90.5 Q58.5,90 57,90 Q55,90.5 53,91 Q51.5,91.2 51,91.5 Z" fill="#A87850"/>';
+        // Body texture — muscle ripples on foot
+        s += '<path d="M52,91.5 Q54,91.8 56,91.5" fill="none" stroke="#8A6838" stroke-width="0.1" opacity="0.2"/>';
+        s += '<path d="M53,91.8 Q55,92 57,91.8" fill="none" stroke="#8A6838" stroke-width="0.1" opacity="0.15"/>';
+        // Shell — spiral, sitting ON the body (overlapping for connection)
+        s += '<ellipse cx="55" cy="89.5" rx="3.2" ry="2.8" fill="#B7DFA8" opacity="0.45"/>';
+        s += '<ellipse cx="55" cy="89.5" rx="2.5" ry="2.2" fill="#CFE8B6" opacity="0.4"/>';
+        // Shell spiral — logarithmic whorl
+        s += '<path d="M57,89.5 C57,88.3 56.1,87.3 55,87.3 C53.9,87.3 53,88.3 53,89.5 C53,90.7 53.9,91.7 55,91.7 C56.1,91.7 57,90.7 57,89.5 Z" fill="none" stroke="#92B37D" stroke-width="0.3" opacity="0.7"/>';
+        s += '<path d="M56,89.5 C56,88.9 55.6,88.4 55,88.4 C54.4,88.4 54,88.9 54,89.5 C54,90.1 54.4,90.6 55,90.6" fill="none" stroke="#92B37D" stroke-width="0.25" opacity="0.6" stroke-linecap="round"/>';
+        s += '<circle cx="55" cy="89.5" r="0.5" fill="#D8ECC8" opacity="0.3"/>';
+        // Shell glow — bioluminescent pulse
+        s += '<ellipse cx="55" cy="89.5" rx="3.5" ry="3" fill="rgba(196,232,154,0.05)"><animate attributeName="opacity" values="0.03;0.08;0.03" dur="3s" repeatCount="indefinite"/></ellipse>';
+        // Shell highlight — light catching on curve
+        s += '<path d="M53.5,88 Q55,87.5 56.5,88.5" fill="none" stroke="rgba(240,235,216,0.2)" stroke-width="0.3"/>';
+        // Head/neck — extending forward from body, CONTINUOUS with foot
+        s += '<path d="M51,91.5 Q50,91 49.5,90.5 Q49,90 49.5,89.5 Q50,89 50.5,89.5 Q51,90 51,91 Z" fill="#A87850"/>';
+        // Upper tentacles — eyes on stalks
+        s += '<path d="M50,89.5 Q49.5,88.5 49,88" stroke="#A87850" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M50.5,89.5 Q50.5,88.5 51,88" stroke="#A87850" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        // Eyes — tiny dots at tentacle tips
+        s += '<circle cx="49" cy="88" r="0.2" fill="#1A1008"/>';
+        s += '<circle cx="51" cy="88" r="0.2" fill="#1A1008"/>';
+        s += '<circle cx="49.05" cy="87.9" r="0.06" fill="rgba(240,235,216,0.5)"/>';
+        s += '<circle cx="51.05" cy="87.9" r="0.06" fill="rgba(240,235,216,0.5)"/>';
+        // Lower tentacles — shorter, sensory
+        s += '<path d="M50,90 L49,89.5 M50.5,90 L50.2,89.2" stroke="#8A6838" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        // Shadow under shell
+        s += '<ellipse cx="55" cy="92" rx="3.5" ry="0.5" fill="#0d100c" opacity="0.1"/>';
         s += '</g>';
         break;
       case 47: // Axolotl — ultra-rare, low on bottom-right soil, soft magical ground-rest pose (Rare)
