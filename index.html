@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-04s';
+  var _SVG_CACHE_VER = '2026-04-04t';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21342,8 +21342,7 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M60,89 Q62,87.5 64,86.8 Q66,86.5 67,87" fill="rgba(232,192,176,0.25)" stroke="rgba(200,140,130,0.2)" stroke-width="0.2"/>';
         // Ventral fin — translucent pink, runs along bottom
         s += '<path d="M60,89.5 Q62,90 64,89.8 Q66,89 67,87.5" fill="rgba(232,192,176,0.2)" stroke="rgba(200,140,130,0.15)" stroke-width="0.2"/>';
-        // Tail fin edge shimmer
-        s += '<path d="M62,87 Q64,86.5 66.5,87" fill="none" stroke="rgba(240,200,190,0.15)" stroke-width="0.3"/>';
+        // (tail fin shimmer removed — was creating extra disconnected line)
         // Hind legs — LONGER, reaching down with splayed webbed toes
         s += '<path d="M58,90 Q58.5,91 59,92.5" stroke="#D7A79A" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
         s += '<path d="M59,92.5 L58.3,93 M59,92.5 L59,93.2 M59,92.5 L59.7,93 M59,92.5 L59.8,92.8" stroke="#D7A79A" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
@@ -21395,65 +21394,79 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="52.2" cy="88.8" r="0.1" fill="#A08070" opacity="0.4"/>';
         s += '</g>';
         break;
-      case 48: // Scorpion — emperor scorpion, bottom-right soil (Rare)
-        // Pandinus imperator. Glossy black exoskeleton, large pedipalps
-        // (claws), segmented tail curling over body with stinger.
+      case 48: // Scorpion — brown, shiny, big claws, curving tail (Rare)
         s += '<g opacity="1" transform="translate(56,88) scale(1.55) translate(-56,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.12,0;0.24,0.02;0.12,0;0,0" dur="6.6s" repeatCount="indefinite"/>';
         // Shadow
-        s += '<ellipse cx="57" cy="92.5" rx="5" ry="0.5" fill="#0d100c" opacity="0.12"/>';
-        // Legs — 4 pairs, splayed outward
-        s += '<path d="M55,90 L53,91.5 L52.5,92" stroke="#3A2A1A" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M55.5,90.5 L53.5,92 L53,92.5" stroke="#3A2A1A" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M56.5,90.5 L54.5,92 L54,92.4" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M57,90 L55.5,91.5 L55,91.8" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M58,90 L60,91.5 L60.5,92" stroke="#3A2A1A" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M57.5,90.5 L59.5,92 L60,92.5" stroke="#3A2A1A" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M57,90.5 L59,92 L59.5,92.4" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M56.5,90 L58.5,91.5 L59,91.8" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
-        // Abdomen (opisthosoma) — wide, segmented
-        s += '<path d="M54,89 Q54,87.5 56.5,87 Q59,87.5 59,89 Q59,90.5 56.5,91 Q54,90.5 54,89 Z" fill="#2A1A10"/>';
-        // Segment lines — 7 tergites
-        for (var _sci = 0; _sci < 5; _sci++) {
-          var _scy = 87.8 + _sci * 0.6;
-          s += '<path d="M54.5,'+_scy+' Q56.5,'+(_scy-0.2)+' 58.5,'+_scy+'" fill="none" stroke="#1A0A00" stroke-width="0.12" opacity="0.3"/>';
-        }
-        // Exoskeleton sheen — glossy highlight
-        s += '<path d="M55,88 Q56.5,87.3 58,88" fill="none" stroke="rgba(200,180,120,0.12)" stroke-width="0.4"/>';
-        // Cephalothorax (prosoma) — connected to front
-        s += '<path d="M56.5,87 Q55,86.5 54,86.5 Q53,86.5 52.5,87 Q52,87.5 52.5,88 Q53,88.5 54,88.5 Q55,88.5 56.5,88 Z" fill="#3A2818"/>';
-        // Eyes — 2 median eyes on top + lateral clusters
-        s += '<circle cx="53.5" cy="87.2" r="0.2" fill="#4A3A28"/>';
-        s += '<circle cx="54.2" cy="87.2" r="0.2" fill="#4A3A28"/>';
-        s += '<circle cx="53.6" cy="87.1" r="0.06" fill="rgba(200,200,180,0.4)"/>';
-        // PEDIPALPS (claws) — large, powerful, the scorpion's hands
-        // Left claw
-        s += '<path d="M53,87.5 Q51.5,87 50.5,86.5 Q50,86.3 49.5,86.5" stroke="#3A2818" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M49.5,86.5 Q49,86 48.5,86.3 Q48.2,86.8 48.8,87.2 Q49.3,87.4 49.5,86.5" fill="#3A2818"/>';
-        // Right claw
-        s += '<path d="M53,88 Q51.5,88.5 50.5,89 Q50,89.2 49.5,89" stroke="#3A2818" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M49.5,89 Q49,89.5 48.5,89.2 Q48.2,88.7 48.8,88.3 Q49.3,88.1 49.5,89" fill="#3A2818"/>';
-        // Claw highlight — glossy
-        s += '<path d="M50,86.5 Q49.5,86.5 49,86.8" fill="none" stroke="rgba(200,180,120,0.15)" stroke-width="0.2"/>';
-        s += '<path d="M50,89 Q49.5,89 49,88.7" fill="none" stroke="rgba(200,180,120,0.15)" stroke-width="0.2"/>';
-        // METASOMA (tail) — 5 segments curving up and over body, ending in telson (stinger)
-        s += '<path d="M58.5,88.5 Q60,88 61,87 Q62,85.5 62.5,84 Q63,82.5 62.5,81.5 Q62,81 61.5,81.5" fill="none" stroke="#2A1A10" stroke-width="1.2" stroke-linecap="round"/>';
-        // Tail segments — visible joints
-        s += '<path d="M59.5,87.5 Q60,87.3 60.3,87.5" stroke="#1A0A00" stroke-width="0.15" fill="none" opacity="0.4"/>';
-        s += '<path d="M61,86 Q61.3,85.8 61.5,86" stroke="#1A0A00" stroke-width="0.15" fill="none" opacity="0.4"/>';
-        s += '<path d="M62,84.5 Q62.3,84.3 62.5,84.5" stroke="#1A0A00" stroke-width="0.15" fill="none" opacity="0.4"/>';
-        s += '<path d="M62.5,83 Q62.7,82.8 62.8,83" stroke="#1A0A00" stroke-width="0.12" fill="none" opacity="0.4"/>';
-        // Tail highlight
-        s += '<path d="M59,88 Q60.5,87 61.5,85.5 Q62.2,84 62.5,82.5" fill="none" stroke="rgba(200,180,120,0.1)" stroke-width="0.3"/>';
-        // STINGER (telson) — sharp, curved, venomous
-        s += '<path d="M61.5,81.5 Q61,81 61.2,80.5 Q61.5,80 62,80.3" fill="#4A3018" stroke="#3A2010" stroke-width="0.15"/>';
-        // Venom droplet — tiny, glistening at tip
-        s += '<circle cx="61.8" cy="80.2" r="0.15" fill="rgba(180,220,140,0.4)"/>';
-        // Edge highlights — separation from dark backgrounds
-        s += '<path d="M54,87 Q54,87.5 56.5,87 Q59,87.5 59,89 Q59,90.5 56.5,91" fill="none" stroke="rgba(200,180,120,0.12)" stroke-width="0.4"/>';
-        s += '<path d="M49.5,86.5 Q50,86.3 50.5,86.5" fill="none" stroke="rgba(200,180,120,0.1)" stroke-width="0.25"/>';
-        s += '<path d="M49.5,89 Q49,89.2 49.5,89" fill="none" stroke="rgba(200,180,120,0.1)" stroke-width="0.25"/>';
-        s += '<path d="M59,88 Q60.5,87 61.5,85.5 Q62.2,84 62.5,82.5 Q63,81.5 62.5,81" fill="none" stroke="rgba(200,180,120,0.15)" stroke-width="0.35"/>';
+        s += '<ellipse cx="57" cy="92.5" rx="6" ry="0.5" fill="#0d100c" opacity="0.12"/>';
+        // ── 8 LEGS — 4 per side, skinny, ending in points ──
+        // Left side (4 legs)
+        s += '<path d="M55,89 L52.5,90.5 L52,91.5" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
+        s += '<path d="M55.5,89.5 L53,91 L52.5,92" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
+        s += '<path d="M56,90 L54,91.5 L53.5,92.2" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
+        s += '<path d="M56.5,90.2 L55,91.5 L54.5,92" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
+        // Right side (4 legs)
+        s += '<path d="M58,89 L60.5,90.5 L61,91.5" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
+        s += '<path d="M57.5,89.5 L60,91 L60.5,92" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
+        s += '<path d="M57,90 L59,91.5 L59.5,92.2" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
+        s += '<path d="M56.5,90.2 L58,91.5 L58.5,92" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
+        // ── BODY — round at front, tapering to skinny tail sections ──
+        // Main body (prosoma + wide abdomen) — round at front
+        s += '<path d="M53,88.5 Q53,87 55,86.5 Q57,86 59,86.5 Q61,87.5 61,89 Q61,90.5 59,91.5 Q57,92 55,91.5 Q53,90.5 53,88.5 Z" fill="#7A4828"/>';
+        // Shiny highlight — glossy carapace
+        s += '<ellipse cx="56.5" cy="87.5" rx="2" ry="1" fill="rgba(220,160,80,0.15)"/>';
+        s += '<ellipse cx="56" cy="87.2" rx="1" ry="0.5" fill="rgba(255,220,150,0.12)"/>';
+        // Orange-red highlight accents
+        s += '<path d="M55,87 Q57,86.5 59,87" fill="none" stroke="rgba(200,100,40,0.12)" stroke-width="0.4"/>';
+        s += '<ellipse cx="57" cy="88.5" rx="1.5" ry="0.8" fill="rgba(180,80,30,0.06)"/>';
+        // Segment lines on body
+        s += '<path d="M54,88.5 Q57,88 60,88.5" fill="none" stroke="#5A3018" stroke-width="0.12" opacity="0.3"/>';
+        s += '<path d="M54.5,89.5 Q57,89 59.5,89.5" fill="none" stroke="#5A3018" stroke-width="0.12" opacity="0.25"/>';
+        s += '<path d="M55,90.5 Q57,90 59,90.5" fill="none" stroke="#5A3018" stroke-width="0.1" opacity="0.2"/>';
+        // Body outline
+        s += '<path d="M53,88.5 Q53,87 55,86.5 Q57,86 59,86.5 Q61,87.5 61,89 Q61,90.5 59,91.5 Q57,92 55,91.5 Q53,90.5 53,88.5" fill="none" stroke="#4A2810" stroke-width="0.2" opacity="0.3"/>';
+        // Head area — slightly darker front
+        s += '<ellipse cx="54" cy="88" rx="1.5" ry="1.2" fill="#6A3820" opacity="0.4"/>';
+        // Eyes
+        s += '<circle cx="53.8" cy="87.5" r="0.2" fill="#2A1808"/>';
+        s += '<circle cx="54.5" cy="87.5" r="0.2" fill="#2A1808"/>';
+        s += '<circle cx="53.85" cy="87.4" r="0.06" fill="rgba(240,220,160,0.4)"/>';
+        // ── 2 LARGE CLAWS — bigger than head ──
+        // Left claw arm
+        s += '<path d="M53.5,87.5 Q52,87 51,86" stroke="#7A4828" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        // Left claw pincer — BIG
+        s += '<path d="M51,86 Q50,85 49,85.2 Q48.2,85.8 48.5,86.5 Q49,87.2 50,87 Q50.5,86.8 51,86" fill="#8A5830"/>';
+        s += '<path d="M51,86 Q50.5,85.5 49.5,85.5 Q48.8,86 49,86.8 Q49.5,87 50.5,86.8" fill="none" stroke="#5A3018" stroke-width="0.15"/>';
+        // Claw shiny highlight
+        s += '<ellipse cx="49.5" cy="86" rx="0.5" ry="0.4" fill="rgba(220,160,80,0.15)"/>';
+        // Right claw arm
+        s += '<path d="M53.5,88.5 Q52,89 51,89.5" stroke="#7A4828" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        // Right claw pincer — BIG
+        s += '<path d="M51,89.5 Q50,90 49,89.8 Q48.2,89.2 48.5,88.5 Q49,87.8 50,88 Q50.5,88.2 51,89.5" fill="#8A5830"/>';
+        s += '<path d="M51,89.5 Q50.5,90 49.5,89.5 Q48.8,89 49,88.2 Q49.5,88 50.5,88.2" fill="none" stroke="#5A3018" stroke-width="0.15"/>';
+        // Claw shiny highlight
+        s += '<ellipse cx="49.5" cy="89" rx="0.5" ry="0.4" fill="rgba(220,160,80,0.15)"/>';
+        // ── TAIL — segments getting skinnier, curving up to a point ──
+        // Segment 1 (thickest, at body)
+        s += '<path d="M60,89 Q61,88.5 61.5,88" stroke="#7A4828" stroke-width="1.2" fill="none" stroke-linecap="round"/>';
+        // Segment 2
+        s += '<path d="M61.5,88 Q62,87 62.5,86" stroke="#6A3820" stroke-width="1" fill="none" stroke-linecap="round"/>';
+        // Segment 3
+        s += '<path d="M62.5,86 Q63,85 63,84" stroke="#6A3820" stroke-width="0.8" fill="none" stroke-linecap="round"/>';
+        // Segment 4
+        s += '<path d="M63,84 Q63,83 62.5,82" stroke="#5A3018" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
+        // Segment 5 (thinnest)
+        s += '<path d="M62.5,82 Q62,81.5 62,81" stroke="#5A3018" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
+        // Tail segment joints
+        s += '<circle cx="61.5" cy="88" r="0.2" fill="#5A3018" opacity="0.3"/>';
+        s += '<circle cx="62.5" cy="86" r="0.18" fill="#5A3018" opacity="0.3"/>';
+        s += '<circle cx="63" cy="84" r="0.15" fill="#5A3018" opacity="0.3"/>';
+        s += '<circle cx="62.5" cy="82" r="0.12" fill="#5A3018" opacity="0.3"/>';
+        // Tail orange highlight
+        s += '<path d="M60.5,88.5 Q61.5,87.5 62.5,86" fill="none" stroke="rgba(200,120,50,0.12)" stroke-width="0.3"/>';
+        // STINGER — sharp point curving up
+        s += '<path d="M62,81 L61.5,80 L62.2,80.5" fill="#4A2810"/>';
+        s += '<circle cx="61.6" cy="80" r="0.12" fill="rgba(180,220,140,0.4)"/>';
         s += '</g>';
         break;
       case 49: // Origami Crane — thick folded paper, distinct creases, triangle head
