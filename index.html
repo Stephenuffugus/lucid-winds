@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-03q';
+  var _SVG_CACHE_VER = '2026-04-03r';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -20466,216 +20466,130 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="48" cy="74" rx="7" ry="5" fill="rgba(200,168,75,0.02)"><animate attributeName="opacity" values="0.02;0.05;0.02" dur="4s" repeatCount="indefinite"/></ellipse>';
         s += '</g>';
         break;
-      case 33: // The Capybara — MYTHIC, profile view facing left, sitting calmly
-        // Hydrochoerus hydrochaeris: world's largest rodent. PROFILE VIEW.
-        // Barrel body, blunt rectangular head, tiny ears, eyes set high,
-        // short legs, coarse bristly fur. The ultimate chill animal.
+      case 33: // The Capybara — MYTHIC, profile facing left, sitting
+        // Real capybara: ONE connected mass. Head flows directly into body
+        // with almost no neck. Flat back, huge barrel, boxy head, short legs.
         s += '<g opacity="1" transform="translate(56,87) scale(1.3) translate(-56,-87)">';
         // Mythic glow
         s += '<ellipse cx="56" cy="89" rx="10" ry="6" fill="rgba(200,168,75,0.03)"><animate attributeName="opacity" values="0.03;0.06;0.03" dur="5s" repeatCount="indefinite"/></ellipse>';
         // Shadow
-        s += '<ellipse cx="55" cy="93" rx="8" ry="1" fill="#0d100c" opacity="0.15"/>';
-        // Tail — tiny stubby nub at rear (capybaras have almost no tail)
-        s += '<ellipse cx="64" cy="86.5" rx="0.8" ry="0.5" fill="#8A6838" transform="rotate(-20,64,86.5)"/>';
-        // Hind leg — far side (partially hidden)
-        s += '<path d="M60,90 L60.5,92.5" stroke="#7A5028" stroke-width="2.8" stroke-linecap="round"/>';
-        s += '<ellipse cx="60.5" cy="92.8" rx="1.6" ry="0.6" fill="#6A4018"/>';
-        // Hind leg — near side
-        s += '<path d="M57,90.5 L57,92.5" stroke="#8A6038" stroke-width="3" stroke-linecap="round"/>';
-        s += '<ellipse cx="57" cy="92.8" rx="1.7" ry="0.65" fill="#7A5028"/>';
-        // Webbed toes on near hind foot
-        s += '<path d="M55.8,93.2 L55.5,93.8 M56.5,93.3 L56.4,94 M57.5,93.3 L57.6,94 M58.3,93.2 L58.6,93.8" stroke="#6A4018" stroke-width="0.18" fill="none" stroke-linecap="round"/>';
-        // Body — barrel-shaped rectangular oval (capybara signature shape)
-        // Flat back, heavy belly, higher at shoulder, lower at rump
-        s += '<path d="M48,84 Q48,81 49,79.5 Q50,78.5 53,78 Q57,77.5 60,78 Q63,79 63.5,81 Q64,83 63.5,86 Q63,89 61,90.5 Q58,91.5 55,91.5 Q52,91.5 50,90.5 Q48.5,89 48,86 Z" fill="#A87848"/>';
-        // Flat back line — capybaras have a distinctly level dorsal profile
-        s += '<path d="M49.5,79 Q54,78 59,78 Q62,79 63,80.5" fill="none" stroke="#9A7040" stroke-width="0.4" opacity="0.2"/>';
-        // Belly — sagging, lighter
-        s += '<path d="M51,90 Q55.5,92 60,90" fill="#C8A068" opacity="0.2"/>';
-        // Dense fur — 120+ procedural thin lines across the entire body
-        // Uses hash-like distribution seeded from loop index for even coverage
+        s += '<ellipse cx="55" cy="93.5" rx="9" ry="1" fill="#0d100c" opacity="0.15"/>';
+        // Hind legs — short, barely visible under barrel body
+        s += '<path d="M59,91 L59.5,93" stroke="#7A5028" stroke-width="2.8" stroke-linecap="round"/>';
+        s += '<ellipse cx="59.5" cy="93.2" rx="1.5" ry="0.5" fill="#6A4018"/>';
+        s += '<path d="M56,91.5 L56,93" stroke="#8A6038" stroke-width="3" stroke-linecap="round"/>';
+        s += '<ellipse cx="56" cy="93.2" rx="1.6" ry="0.55" fill="#7A5028"/>';
+        // Front legs
+        s += '<path d="M50,90.5 L49.5,93" stroke="#7A5028" stroke-width="2.5" stroke-linecap="round"/>';
+        s += '<ellipse cx="49.5" cy="93.2" rx="1.4" ry="0.5" fill="#6A4018"/>';
+        s += '<path d="M47.5,89.5 L47,93" stroke="#8A6038" stroke-width="2.8" stroke-linecap="round"/>';
+        s += '<ellipse cx="47" cy="93.2" rx="1.5" ry="0.55" fill="#7A5028"/>';
+        // ── THE WHOLE ANIMAL as one continuous silhouette ──
+        // Head + body as a single connected path — no separate neck piece
+        // Starts at snout, goes up over flat forehead, across flat back, down rump,
+        // under belly, back to chin. ONE shape.
+        s += '<path d="M42,82 Q42,80 43,78.5 Q44,77.5 45,77 L46,77 Q46.5,76 47.5,75.5 Q49,75 51,75.5 Q52,76 52,77 L62,77 Q63.5,78 64,80 Q64.5,83 64,86 Q63.5,89 62,91 Q60,92 56,92 Q52,92 49,91 Q47,90 46,88 Q44,86 43,84 Q42,83 42,82 Z" fill="#A87848"/>';
+        // Flat back line
+        s += '<path d="M52,77 L62,77" fill="none" stroke="#9A7040" stroke-width="0.3" opacity="0.2"/>';
+        // Belly — lighter underside
+        s += '<path d="M48,91 Q53,92.5 60,91" fill="#C8A068" opacity="0.2"/>';
+        // Head-body boundary — subtle jaw line showing where head ends
+        s += '<path d="M46,82 Q46.5,80 47,78" fill="none" stroke="#8A6838" stroke-width="0.3" opacity="0.15"/>';
+        // ── FUR — 150 sporadic thin lines using LCG pseudo-random ──
         var _cp33cols = ['#7A5028','#8A6038','#9A7048','#A88058','#6A4018','#8A6838','#7A5830','#6A5028','#9A6838','#A07040'];
-        for (var _cp33i = 0; _cp33i < 120; _cp33i++) {
-          // Distribute across body bounding box: x=49-63, y=79-91
-          var _cfSeed = (_cp33i * 7 + 13) % 120;
-          var _cfx = 49 + (_cfSeed % 15) * 0.95;
-          var _cfy = 79 + ((_cfSeed * 3 + _cp33i * 5) % 120) / 10;
-          // Skip if outside body silhouette (rough oval check)
-          var _cfcx = 56, _cfcy = 85, _cfrx = 8, _cfry = 6.5;
-          var _cfdx = (_cfx - _cfcx) / _cfrx, _cfdy = (_cfy - _cfcy) / _cfry;
+        var _cp33seed = 47;
+        for (var _cp33i = 0; _cp33i < 150; _cp33i++) {
+          _cp33seed = (_cp33seed * 1103515245 + 12345) & 0x7FFFFFFF;
+          var _cfx = 43 + (_cp33seed % 1000) / 1000 * 21;
+          _cp33seed = (_cp33seed * 1103515245 + 12345) & 0x7FFFFFFF;
+          var _cfy = 76 + (_cp33seed % 1000) / 1000 * 16;
+          // Rough body silhouette check
+          if (_cfx < 44 && _cfy > 84) continue;
+          if (_cfx < 42.5 || _cfx > 64) continue;
+          if (_cfy < 76.5 || _cfy > 91.5) continue;
+          // Ellipse check for main barrel
+          var _cfdx = (_cfx - 54) / 11, _cfdy = (_cfy - 84) / 8;
           if (_cfdx * _cfdx + _cfdy * _cfdy > 1) continue;
           var _cfc = _cp33cols[_cp33i % _cp33cols.length];
-          var _cfLen = 0.6 + (_cp33i % 5) * 0.15;
-          var _cfDx = ((_cp33i % 3) - 1) * 0.08;
-          s += '<line x1="'+_cfx.toFixed(1)+'" y1="'+_cfy.toFixed(1)+'" x2="'+(_cfx+_cfDx).toFixed(2)+'" y2="'+(_cfy+_cfLen).toFixed(2)+'" stroke="'+_cfc+'" stroke-width="0.07" opacity="0.28"/>';
+          _cp33seed = (_cp33seed * 1103515245 + 12345) & 0x7FFFFFFF;
+          var _cfLen = 0.5 + (_cp33seed % 100) / 180;
+          var _cfTilt = ((_cp33seed % 100) - 50) / 700;
+          s += '<line x1="'+_cfx.toFixed(1)+'" y1="'+_cfy.toFixed(1)+'" x2="'+(_cfx+_cfTilt).toFixed(2)+'" y2="'+(_cfy+_cfLen).toFixed(2)+'" stroke="'+_cfc+'" stroke-width="0.07" opacity="0.28"/>';
         }
-        // Front leg — far side (partially visible)
-        s += '<path d="M52,90 L51.5,92.5" stroke="#7A5028" stroke-width="2.5" stroke-linecap="round"/>';
-        s += '<ellipse cx="51.5" cy="92.8" rx="1.5" ry="0.55" fill="#6A4018"/>';
-        // Front leg — near side
-        s += '<path d="M50,89.5 L49.5,92.5" stroke="#8A6038" stroke-width="2.8" stroke-linecap="round"/>';
-        s += '<ellipse cx="49.5" cy="92.8" rx="1.6" ry="0.6" fill="#7A5028"/>';
-        // Webbed toes on near front foot
-        s += '<path d="M48.4,93.2 L48.1,93.8 M49,93.3 L49,94 M49.8,93.3 L50,93.9 M50.6,93.2 L50.9,93.7" stroke="#6A4018" stroke-width="0.16" fill="none" stroke-linecap="round"/>';
-        // Neck — THICK, back edge connects to TOP of body at shoulder
-        // Front edge (left/throat): M48,82 up to L51,73.5
-        // Back edge (right/nape): from 51,73.5 curves down to meet body dorsal at ~51,79
-        s += '<path d="M48,82 Q46.5,80 46,78 Q45.5,76 46,75 L51,73.5 Q53,75 53.5,77 Q54,78.5 53.5,79.5 Q53,80 52,80.5 Q50,81 48,82 Z" fill="#A87848"/>';
-        // Nape highlight
-        s += '<path d="M51.5,75 Q51.5,77 51,78.5" fill="none" stroke="#9A7040" stroke-width="0.3" opacity="0.15"/>';
-        s += '<path d="M47,80 Q46.5,78 46.5,76" fill="none" stroke="#B89860" stroke-width="0.6" opacity="0.2" stroke-linecap="round"/>';
-        // Head — BOXY, flat-topped rectangle in profile (capybara's defining shape)
-        // Wide, blunt, almost squared — NOT round like a bear
-        s += '<path d="M42.5,76.5 Q42.5,73.5 44,72 Q46,71 49.5,71 Q51.5,71.5 52,73.5 Q52,76 51.5,77.5 Q50,79 47.5,79.5 Q44.5,79.5 43,78 Z" fill="#B88858"/>';
-        // Flat-top forehead — almost horizontal line across skull
-        s += '<path d="M44,72.5 L49.5,72" fill="none" stroke="#A07848" stroke-width="0.5" opacity="0.25"/>';
-        // Head highlight
-        s += '<path d="M45,73 Q47.5,72 50,73" fill="none" stroke="#C8A878" stroke-width="0.35" opacity="0.2"/>';
-        // Ear — single tiny rounded bump visible in profile (near ear)
-        s += '<path d="M49,72 Q49.8,70.5 50.5,71 Q50.8,72 50,72.5" fill="#9A6840"/>';
-        s += '<path d="M49.5,71.5 Q50,71 50.3,71.5" fill="#B88858" opacity="0.35"/>';
-        // Far ear — just a hint poking above skull
-        s += '<path d="M47.5,72 Q47.8,71 48.5,71.2" fill="#8A6038" opacity="0.5"/>';
-        // Eye — small, set HIGH on head (sees while submerged)
-        // Profile: only one eye visible
-        s += '<circle cx="47.5" cy="74" r="0.65" fill="#2D1810"/>';
-        s += '<circle cx="47.6" cy="73.8" r="0.18" fill="rgba(200,180,120,0.55)"/>';
-        s += '<circle cx="47.7" cy="73.7" r="0.06" fill="rgba(240,235,216,0.4)"/>';
-        // Brow ridge
-        s += '<path d="M46.8,73.2 Q47.5,72.8 48.2,73.2" fill="none" stroke="#8A6838" stroke-width="0.25" opacity="0.3"/>';
-        // Snout — large, blunt, squared-off in profile (no round shapes)
-        s += '<path d="M43.5,76 Q42.5,76.5 42,77 Q41.5,77.8 42,78.5 Q43,79 44.2,78.5 Q44.5,78 44,77 Z" fill="#B88858"/>';
-        // Nostril — on snout end
-        s += '<ellipse cx="42" cy="77.3" rx="0.35" ry="0.28" fill="#3A2A18"/>';
-        // Morillo — subtle bump above nose (scent gland)
-        s += '<path d="M43,73.5 Q44,73 44.5,73.5 Q44.5,74 43.5,74.2 Q43,74 43,73.5 Z" fill="#9A7048" opacity="0.35"/>';
-        // Mouth line — serene, content
-        s += '<path d="M42,78.3 Q43,78.8 44.5,78.5" fill="none" stroke="#7A5838" stroke-width="0.25" opacity="0.35"/>';
-        // Whiskers — short, sparse, stiff
-        s += '<line x1="42" y1="77.5" x2="40" y2="77" stroke="#C0A878" stroke-width="0.1" opacity="0.3"/>';
-        s += '<line x1="42" y1="77.8" x2="39.8" y2="78" stroke="#C0A878" stroke-width="0.08" opacity="0.25"/>';
-        s += '<line x1="42.2" y1="78.2" x2="40.2" y2="78.6" stroke="#C0A878" stroke-width="0.08" opacity="0.2"/>';
-        // Cheek fur — coarse bristles visible in profile
-        s += '<path d="M44,77 Q43.5,78 44,79" stroke="#9A7048" stroke-width="0.15" fill="none" opacity="0.2"/>';
-        s += '<path d="M45,77.5 Q44.5,78.5 45,79.5" stroke="#9A7048" stroke-width="0.12" fill="none" opacity="0.15"/>';
+        // ── FACE DETAILS ──
+        // Tiny round ear — just a small bump on the skull top
+        s += '<path d="M50.5,75.5 Q51,74.5 51.8,75 Q52,75.8 51.2,76" fill="#9A6840"/>';
+        s += '<path d="M51,75.2 Q51.3,74.8 51.5,75.2" fill="#B88858" opacity="0.3"/>';
+        // Eye — small, set HIGH on the head
+        s += '<circle cx="46" cy="78.5" r="0.6" fill="#2D1810"/>';
+        s += '<circle cx="46.1" cy="78.3" r="0.16" fill="rgba(200,180,120,0.55)"/>';
+        // Nostril — on the blunt snout face
+        s += '<ellipse cx="42.5" cy="81" rx="0.35" ry="0.28" fill="#3A2A18"/>';
+        // Mouth line
+        s += '<path d="M42.5,82 Q43.5,82.5 45,82.2" fill="none" stroke="#7A5838" stroke-width="0.2" opacity="0.35"/>';
+        // Whiskers — sparse, stiff
+        s += '<line x1="42.5" y1="81.5" x2="40.5" y2="81" stroke="#C0A878" stroke-width="0.08" opacity="0.25"/>';
+        s += '<line x1="42.5" y1="82" x2="40.5" y2="82.2" stroke="#C0A878" stroke-width="0.08" opacity="0.2"/>';
         // Zen breathing
         s += '<animate attributeName="opacity" values="1;0.97;1" dur="4s" repeatCount="indefinite"/>';
         s += '</g>';
         break;
-      case 34: // Woolly Mammoth — ancient ice-age guardian (LEGENDARY)
-        // Mammuthus primigenius. Profile facing left. Thick connected anatomy.
-        // Massive fluffy body, high shoulder hump, domed skull, small furry ears,
-        // thick neck, columnar legs with fur fringe, curved tusks, long trunk.
+      case 34: // Woolly Mammoth — LEGENDARY, profile facing left
+        // Fresh build. ONE connected silhouette: high-domed head slopes
+        // down into thick neck into humped shoulder, long sloping back to
+        // low rump. Trunk hangs from face. Short tusks. Thick pillar legs.
+        // Covered in long hanging fur.
         s += '<g opacity="1" transform="translate(12,0) translate(55,82) scale(1.15) translate(-55,-82)">';
         // Shadow
-        s += '<ellipse cx="56" cy="92.5" rx="10" ry="1.2" fill="#0d100c" opacity="0.18"/>';
-        // Tail — short rope with tuft at butt
-        s += '<path d="M66,80 Q68,79 69,80.5 Q69.5,82 68.5,83" stroke="#5A4A3A" stroke-width="0.7" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M68.2,82.5 Q69,83.5 68.3,84 Q67.8,84 67.5,83.5" fill="#5A4A3A"/>';
-        // Hind legs — thick pillars with fur fringe, drawn BEFORE body
-        // Far hind leg
-        s += '<path d="M60.5,86 Q61,88 61,92" stroke="#4A3A2A" stroke-width="4" stroke-linecap="round"/>';
-        s += '<ellipse cx="61" cy="92" rx="2.2" ry="0.8" fill="#3A2A1A"/>';
-        // Near hind leg
-        s += '<path d="M57,87 Q57,89 57,92" stroke="#5A4A3A" stroke-width="4.5" stroke-linecap="round"/>';
-        s += '<ellipse cx="57" cy="92" rx="2.4" ry="0.85" fill="#4A3A2A"/>';
-        // Hind leg fur fringe (shaggy ankles)
-        var _mmHL = [[55.5,90],[56.5,90.5],[57.5,90.5],[58.5,90],[59.5,89],[60,89.5],[61,89.5],[62,89]];
-        for (var _mhli = 0; _mhli < _mmHL.length; _mhli++) {
-          s += '<path d="M'+_mmHL[_mhli][0]+','+_mmHL[_mhli][1]+' Q'+(_mmHL[_mhli][0]+0.2)+','+(_mmHL[_mhli][1]+1.5)+' '+(_mmHL[_mhli][0]-0.2)+','+(_mmHL[_mhli][1]+2.2)+'" stroke="#5A4A38" stroke-width="0.35" fill="none" opacity="0.4"/>';
+        s += '<ellipse cx="55" cy="92.5" rx="10" ry="1.2" fill="#0d100c" opacity="0.18"/>';
+        // Legs — thick pillars, drawn BEFORE body
+        s += '<path d="M60,87 L60.5,92" stroke="#4A3A2A" stroke-width="3.5" stroke-linecap="round"/>';
+        s += '<ellipse cx="60.5" cy="92" rx="2" ry="0.7" fill="#3A2A1A"/>';
+        s += '<path d="M56,88 L56,92" stroke="#5A4A3A" stroke-width="4" stroke-linecap="round"/>';
+        s += '<ellipse cx="56" cy="92" rx="2.2" ry="0.75" fill="#4A3A2A"/>';
+        s += '<path d="M50,87 L49.5,92" stroke="#4A3A2A" stroke-width="3.5" stroke-linecap="round"/>';
+        s += '<ellipse cx="49.5" cy="92" rx="2" ry="0.7" fill="#3A2A1A"/>';
+        s += '<path d="M47,86 L46.5,92" stroke="#5A4A3A" stroke-width="4" stroke-linecap="round"/>';
+        s += '<ellipse cx="46.5" cy="92" rx="2.2" ry="0.75" fill="#4A3A2A"/>';
+        // ── ENTIRE ANIMAL as one connected silhouette ──
+        // Trunk tip → up trunk → face → high dome → down through thick neck →
+        // shoulder hump (highest point) → long sloping back → low rump →
+        // under belly → back to trunk base
+        s += '<path d="M38,85 Q37.5,83 38,80 Q39,77 40,74 Q41,72 41.5,70 Q42,68.5 43,67 Q44.5,65.5 46.5,65 Q48.5,65 50,66.5 Q51,68 51,70 Q52,69 54,68 Q56,68 58,69 Q61,71 63.5,74 Q65.5,78 65.5,82 Q65.5,86 64,88.5 Q62,90.5 58,91.5 Q54,92 50,91.5 Q47,91 45,89.5 Q43.5,88 43,86 Q42,84.5 41.5,82 Q41,78 40.5,75 Q40,72 39.5,70.5 Q39,71 38.5,73 Q38,76 37.5,79 Q37,82 37.5,84 Q38,85.5 38,85 Z" fill="#6A5A4A"/>';
+        // ── SHAGGY FUR — 150 hanging strands, LCG pseudo-random ──
+        var _mmCols34 = ['#4A3A28','#5A4A38','#6A5A48','#5A4830','#4A3828','#5A4A3A','#3A2A18','#6A5A4A'];
+        var _mm34seed = 71;
+        for (var _mf34 = 0; _mf34 < 150; _mf34++) {
+          _mm34seed = (_mm34seed * 1103515245 + 12345) & 0x7FFFFFFF;
+          var _mfx34 = 38 + (_mm34seed % 1000) / 1000 * 28;
+          _mm34seed = (_mm34seed * 1103515245 + 12345) & 0x7FFFFFFF;
+          var _mfy34 = 66 + (_mm34seed % 1000) / 1000 * 26;
+          // Rough silhouette check
+          if (_mfx34 < 39 && _mfy34 > 86) continue;
+          if (_mfx34 > 65) continue;
+          if (_mfy34 < 67 || _mfy34 > 91) continue;
+          var _mfd34x = (_mfx34 - 52) / 14, _mfd34y = (_mfy34 - 80) / 12;
+          if (_mfd34x * _mfd34x + _mfd34y * _mfd34y > 1) continue;
+          var _mfc34 = _mmCols34[_mf34 % _mmCols34.length];
+          _mm34seed = (_mm34seed * 1103515245 + 12345) & 0x7FFFFFFF;
+          var _mfLen34 = 1.0 + (_mm34seed % 100) / 80;
+          var _mfTilt34 = ((_mm34seed % 100) - 50) / 500;
+          s += '<line x1="'+_mfx34.toFixed(1)+'" y1="'+_mfy34.toFixed(1)+'" x2="'+(_mfx34+_mfTilt34).toFixed(2)+'" y2="'+(_mfy34+_mfLen34).toFixed(2)+'" stroke="'+_mfc34+'" stroke-width="0.15" opacity="0.4"/>';
         }
-        // Body — single shape WITH shoulder hump built in (same color, one piece)
-        // The hump rises at the shoulder then slopes down to the rump
-        s += '<path d="M44,81 Q43.5,78 45,75 Q47,72 49,70 Q51,69 53,69 Q55,69 57,70 Q60,72 63,75 Q65,78 65.5,81 Q66,85 64,88.5 Q62,90 58,91.5 Q54,91.5 50,91 Q47,89.5 45,87.5 Q44,85 44,81 Z" fill="#6A5A4A"/>';
-        // Body fur — dense, thin shaggy strands (procedural, many more points)
-        var _mmF = [[44.5,82],[45,83],[45.5,84],[46,85],[47,85.5],[48,86],[49,86.5],[50,87],[51,87.5],[52,88],[53,88],[54,88],[55,88],[56,87.5],[57,87.5],[58,87],[59,87],[60,86.5],[61,86],[62,85.5],[63,84.5],[64,83.5],[65,82],[65.5,81],[45.5,79],[46.5,78.5],[47.5,78],[48.5,77.5],[49.5,77],[50.5,76.5],[51.5,76],[52.5,76],[53.5,76],[54.5,76],[55.5,76.5],[56.5,77],[57.5,77.5],[58.5,78],[59.5,78.5],[60.5,79],[61.5,79.5],[62.5,80],[63.5,80.5],[64.5,81]];
-        var _mmCols = ['#4A3A28','#5A4A38','#6A5A48','#5A4830','#4A3828','#5A4A3A'];
-        for (var _mfi = 0; _mfi < _mmF.length; _mfi++) {
-          var _mfx = _mmF[_mfi][0], _mfy = _mmF[_mfi][1];
-          var _mfc = _mmCols[_mfi % _mmCols.length];
-          var _mfDx = ((_mfi % 3) - 1) * 0.1;
-          s += '<path d="M'+_mfx+','+_mfy+' Q'+(_mfx+_mfDx)+','+(_mfy+0.8)+' '+(_mfx+_mfDx-0.1)+','+(_mfy+1.6)+'" stroke="'+_mfc+'" stroke-width="0.18" fill="none" opacity="0.4"/>';
-          s += '<path d="M'+(_mfx+0.4)+','+_mfy+' Q'+(_mfx+0.4+_mfDx)+','+(_mfy+0.6)+' '+(_mfx+0.3+_mfDx)+','+(_mfy+1.2)+'" stroke="'+_mmCols[(_mfi+2)%_mmCols.length]+'" stroke-width="0.12" fill="none" opacity="0.3"/>';
-        }
-        // Belly fur skirt — long hanging fringe under belly
-        var _mmBelly = [[48,89],[50,89.5],[52,90],[54,90],[56,89.5],[58,89]];
-        for (var _mbi = 0; _mbi < _mmBelly.length; _mbi++) {
-          var _mbx = _mmBelly[_mbi][0], _mby = _mmBelly[_mbi][1];
-          s += '<path d="M'+_mbx+','+_mby+' Q'+(_mbx+0.1)+','+(_mby+1.5)+' '+(_mbx-0.2)+','+(_mby+2.5)+'" stroke="#5A4A38" stroke-width="0.35" fill="none" opacity="0.35"/>';
-          s += '<path d="M'+(_mbx+0.8)+','+_mby+' Q'+(_mbx+1)+','+(_mby+1.2)+' '+(_mbx+0.6)+','+(_mby+2)+'" stroke="#4A3A28" stroke-width="0.25" fill="none" opacity="0.3"/>';
-        }
-        // Front legs — slightly forward, thick pillars
-        // Far front leg
-        s += '<path d="M51,87 Q50.5,89 50.5,92" stroke="#4A3A2A" stroke-width="4" stroke-linecap="round"/>';
-        s += '<ellipse cx="50.5" cy="92" rx="2.2" ry="0.8" fill="#3A2A1A"/>';
-        // Near front leg
-        s += '<path d="M48,86 Q47.5,88.5 47.5,92" stroke="#5A4A3A" stroke-width="4.5" stroke-linecap="round"/>';
-        s += '<ellipse cx="47.5" cy="92" rx="2.4" ry="0.85" fill="#4A3A2A"/>';
-        // Front leg fur fringe
-        var _mmFL = [[46,89.5],[47,90],[48,90],[49,89.5],[50,89],[51,89.5],[52,89]];
-        for (var _mfli = 0; _mfli < _mmFL.length; _mfli++) {
-          s += '<path d="M'+_mmFL[_mfli][0]+','+_mmFL[_mfli][1]+' Q'+(_mmFL[_mfli][0]+0.15)+','+(_mmFL[_mfli][1]+1.5)+' '+(_mmFL[_mfli][0]-0.15)+','+(_mmFL[_mfli][1]+2.2)+'" stroke="#5A4A38" stroke-width="0.3" fill="none" opacity="0.35"/>';
-        }
-        // Neck — THICK wide mass, bottom extends INTO the body/shoulder
-        s += '<path d="M46,78 Q45,76 44.5,73 Q43.5,70 42.5,68 Q42,67 42,66.5 L48,64.5 Q48.5,67 49,70 Q49.5,73 49,76 Q48.5,78 48,79 Z" fill="#6A5A4A"/>';
-        // Neck fur — shaggy hanging strands on underside
-        var _mmNF = [[43,69],[44,70.5],[45,71.5],[46,72.5],[43.5,67.5],[44.5,68.5]];
-        for (var _mnfi = 0; _mnfi < _mmNF.length; _mnfi++) {
-          var _mnx = _mmNF[_mnfi][0], _mny = _mmNF[_mnfi][1];
-          s += '<path d="M'+_mnx+','+_mny+' Q'+(_mnx-0.3)+','+(_mny+2)+' '+(_mnx+0.1)+','+(_mny+3)+'" stroke="#5A4A38" stroke-width="0.3" fill="none" opacity="0.4"/>';
-        }
-        // Neck highlight
-        s += '<path d="M45,73 Q44,71 43.5,69 Q43,67.5 42.5,66.5" fill="none" stroke="#7A6A5A" stroke-width="1.2" opacity="0.35" stroke-linecap="round"/>';
-        // Head — mammoth skull: HIGH dome at back, slopes steeply down to narrow face
-        // NOT a circle — tall at the crown, narrowing toward the trunk/mouth
-        s += '<path d="M40,70 Q39.5,68 40,66 Q40.5,64 42,62.5 Q44,61 46,61 Q48,61 49.5,62.5 Q50.5,64 50.5,66 Q50.5,68 49.5,69.5 Q48,71 46,71.5 Q44,72 42,71.5 Q40.5,71 40,70 Z" fill="#7A6A5A"/>';
-        // The dome peak — highest point at back of skull (mammoth signature)
-        s += '<path d="M48,62 Q49.5,61 50,62.5" fill="#7A6A5A"/>';
-        // Skull slope line — steep descent from dome to face
-        s += '<path d="M41,66 Q40.5,68 40.5,70" fill="none" stroke="#6A5A4A" stroke-width="0.3" opacity="0.2"/>';
-        // Fluffy head fur — hanging DOWN from the dome
-        var _mmHF = [[41,64],[42,63],[43.5,62.5],[45,62],[46.5,62],[48,62.5],[49.5,63.5],[40.5,66],[50,66],[41.5,65],[43,64],[45,63],[47,63],[49,64.5]];
-        for (var _mhfi = 0; _mhfi < _mmHF.length; _mhfi++) {
-          var _mhfx = _mmHF[_mhfi][0], _mhfy = _mmHF[_mhfi][1];
-          var _mhfDx = ((_mhfi % 3) - 1) * 0.15;
-          s += '<path d="M'+_mhfx+','+_mhfy+' Q'+(_mhfx+_mhfDx)+','+(_mhfy+0.8)+' '+(_mhfx+_mhfDx-0.1)+','+(_mhfy+1.5)+'" stroke="#7A6A58" stroke-width="0.2" fill="none" opacity="0.4"/>';
-          s += '<path d="M'+(_mhfx+0.4)+','+_mhfy+' Q'+(_mhfx+0.4+_mhfDx)+','+(_mhfy+0.6)+' '+(_mhfx+0.3+_mhfDx)+','+(_mhfy+1.2)+'" stroke="#6A5A48" stroke-width="0.14" fill="none" opacity="0.3"/>';
-        }
-        // Far ear — peeking above skull line (small, cold-adapted)
-        s += '<path d="M46.5,63.5 Q47,62 47.8,62.5 Q48,63.5 47,64.5" fill="#6A5A4A"/>';
-        s += '<path d="M47,63 Q47.3,62.5 47.6,63" fill="#5A4A3A" opacity="0.4"/>';
-        // Near ear — small rounded flap with fluffy edge
-        s += '<path d="M48.5,64.5 Q50.2,62.5 51,64.5 Q50.8,66 49.2,67" fill="#7A6A5A"/>';
-        s += '<path d="M49,65 Q50,63.5 50.5,65" fill="#6A5A4A" opacity="0.5"/>';
-        // Ear fur fringe
-        s += '<path d="M48.5,64.2 Q48,63.2 48.3,62.5" stroke="#7A6A58" stroke-width="0.25" fill="none" opacity="0.35"/>';
-        s += '<path d="M50.5,64 Q51.2,63 50.8,62.5" stroke="#7A6A58" stroke-width="0.2" fill="none" opacity="0.3"/>';
-        s += '<path d="M49,64.5 Q49.5,63.5 49.8,63" stroke="#6A5A48" stroke-width="0.15" fill="none" opacity="0.25"/>';
-        // Eye — small, dark, ancient intelligence
-        s += '<circle cx="42" cy="67" r="0.75" fill="#1A1008"/>';
-        s += '<circle cx="42.1" cy="66.8" r="0.2" fill="rgba(200,180,120,0.55)"/>';
-        s += '<circle cx="42.2" cy="66.7" r="0.07" fill="rgba(240,235,216,0.35)"/>';
-        // Brow ridge — heavy
-        s += '<path d="M41,66.2 Q42,65.6 43.2,66.2" fill="none" stroke="#5A4A3A" stroke-width="0.4" opacity="0.35"/>';
-        // Trunk — long, curving down and curling up at tip
-        s += '<path d="M41.5,69.5 Q40.5,72 39.5,75 Q38.5,78 38,81 Q37.5,83.5 38,85 Q38.5,86 39.3,85.5" fill="none" stroke="#7A6A5A" stroke-width="2.5" stroke-linecap="round"/>';
-        // Trunk highlight
-        s += '<path d="M41.8,70 Q41,72.5 40,75.5 Q39,78.5 38.5,81.5" fill="none" stroke="#8A7A6A" stroke-width="0.6" opacity="0.25" stroke-linecap="round"/>';
-        // Trunk ridges — wrinkled segments
-        s += '<path d="M41,72 Q40.5,72.3 40,72.5" stroke="#5A4A3A" stroke-width="0.22" fill="none" opacity="0.35"/>';
-        s += '<path d="M40.2,74.5 Q39.7,74.8 39.2,75" stroke="#5A4A3A" stroke-width="0.22" fill="none" opacity="0.35"/>';
-        s += '<path d="M39.5,77 Q39,77.3 38.5,77.5" stroke="#5A4A3A" stroke-width="0.2" fill="none" opacity="0.3"/>';
-        s += '<path d="M38.8,79.5 Q38.3,79.8 38,80" stroke="#5A4A3A" stroke-width="0.2" fill="none" opacity="0.3"/>';
-        s += '<path d="M38.3,82 Q38,82.3 37.8,82.5" stroke="#5A4A3A" stroke-width="0.18" fill="none" opacity="0.25"/>';
-        // Trunk tip — twin finger-like projections
-        s += '<path d="M39,85.5 Q38.5,86.2 38.8,87" stroke="#7A6A5A" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M39.5,85.5 Q40,86.5 39.5,87.2" stroke="#7A6A5A" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
-        // TUSKS — short curved ivory, less than half original size
-        s += '<path d="M42,70 Q41,72 40,74 Q39.5,75.5 40,76.5 Q40.5,77 41,76.5" fill="none" stroke="#E8DCC8" stroke-width="1.2" stroke-linecap="round"/>';
-        // Tusk sheen
-        s += '<path d="M41.5,71 Q40.5,73 40,75" fill="none" stroke="rgba(255,250,235,0.35)" stroke-width="0.4" stroke-linecap="round"/>';
-        // Tusk shadow
-        s += '<path d="M42,70.5 Q41,72.5 40.2,74.5" fill="none" stroke="rgba(160,140,110,0.2)" stroke-width="0.25" stroke-linecap="round"/>';
+        // Small ear — tiny flap behind dome
+        s += '<path d="M49.5,66.5 Q50.5,65.5 51,66.5 Q50.8,67.5 50,67.5" fill="#5A4A3A"/>';
+        // Eye — small, deep-set
+        s += '<circle cx="43" cy="68" r="0.6" fill="#1A1008"/>';
+        s += '<circle cx="43.1" cy="67.8" r="0.16" fill="rgba(200,180,120,0.5)"/>';
+        // Trunk ridges
+        s += '<path d="M40.5,73 Q40,73.3 39.5,73.5" stroke="#4A3A28" stroke-width="0.2" fill="none" opacity="0.3"/>';
+        s += '<path d="M39.5,76 Q39,76.3 38.5,76.5" stroke="#4A3A28" stroke-width="0.2" fill="none" opacity="0.3"/>';
+        s += '<path d="M38.5,79 Q38,79.3 37.8,79.5" stroke="#4A3A28" stroke-width="0.18" fill="none" opacity="0.25"/>';
+        // Tusks — short, curving out from face
+        s += '<path d="M42.5,70 Q41.5,72 41,74 Q40.8,75 41.2,75.5" fill="none" stroke="#E8DCC8" stroke-width="1" stroke-linecap="round"/>';
+        s += '<path d="M42,71 Q41,73 40.8,74.5" fill="none" stroke="rgba(255,250,235,0.3)" stroke-width="0.35" stroke-linecap="round"/>';
+        // Tail — short tuft at rump
+        s += '<path d="M64.5,83 Q66,82 66.5,83 Q66.5,84 65.5,84" stroke="#5A4A3A" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 35: // Raccoon — clever nocturnal bandit (LEGENDARY)
@@ -20784,8 +20698,8 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="60" cy="85" r="0.3" fill="#6A7A68"/>';
         // Tucked leg — bent, originating from body
         s += '<path d="M59,80.5 Q58,83 57.5,84.5 Q58,85.5 59,85 Q60,84 59.5,82" stroke="#7A8A78" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
-        // Foot — splayed toes connected to leg
-        s += '<path d="M59,89.5 L57.5,90.2 M60,89.5 L60,90.5 M60,89.5 L61.5,90.2" stroke="#7A8A78" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        // Foot — long spread toes (herons have unwedded, long toes)
+        s += '<path d="M60,89.5 L58,90.5 M60,89.5 L59.5,91 M60,89.5 L60.5,91 M60,89.5 L62,90.5" stroke="#7A8A78" stroke-width="0.35" fill="none" stroke-linecap="round"/>';
         // Neck — long S-curve (heron's signature)
         s += '<path d="M58,76 Q57,74 57.5,72 Q58,70 59,68 Q60,66 60.5,64" fill="none" stroke="#8A9AA8" stroke-width="1.8" stroke-linecap="round"/>';
         // Neck front — lighter
