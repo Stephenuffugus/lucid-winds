@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-05a';
+  var _SVG_CACHE_VER = '2026-04-05b';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21796,20 +21796,31 @@ document.addEventListener('keydown', function(e) {
       case 56: // Owl — flying, wings spread, brown V feather pattern
         s += '<g opacity="0.88" transform="translate(58,22) scale(1.5) translate(-58,-22)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.5,-0.5;0,0;-0.3,0.3;0,0" dur="4s" repeatCount="indefinite"/>';
-        // ── WINGS — spread for flight ──
-        // Left wing
-        s += '<path d="M60,12 Q57,10 54,9 Q53,9 54,10 Q56,11 59,12.5" fill="#7A5C3E" opacity="0.85"/>';
-        s += '<path d="M54.5,9.5 Q56,10 58,11" fill="none" stroke="#6A4E38" stroke-width="0.2" opacity="0.3"/>';
-        // Right wing
-        s += '<path d="M64,12 Q67,10 70,9 Q71,9 70,10 Q68,11 65,12.5" fill="#6A4E30" opacity="0.8"/>';
-        s += '<path d="M69.5,9.5 Q68,10 66,11" fill="none" stroke="#5A3E28" stroke-width="0.2" opacity="0.3"/>';
+        // ── WINGS — semicircle shape: flat top, rounded bottom ──
+        // Left wing — semicircle arc, flat edge at top
+        s += '<path d="M60,11.5 L54,11.5 Q52,11.5 52,13 Q52,15 54,15.5 Q57,15 60,13" fill="#7A5C3E"/>';
+        s += '<path d="M60,11.5 L54,11.5 Q52,11.5 52,13 Q52,15 54,15.5 Q57,15 60,13" fill="none" stroke="#5A3E28" stroke-width="0.15" opacity="0.3"/>';
+        // Left wing V feather marks
+        s += '<path d="M55,12 L56,12.5 L57,12" fill="none" stroke="#3A2818" stroke-width="0.2" opacity="0.4"/>';
+        s += '<path d="M54,13 L55,13.5 L56,13" fill="none" stroke="#3A2818" stroke-width="0.18" opacity="0.35"/>';
+        s += '<path d="M53.5,14 L54.5,14.5 L55.5,14" fill="none" stroke="#3A2818" stroke-width="0.15" opacity="0.3"/>';
+        s += '<path d="M57,12.5 L58,13 L59,12.5" fill="none" stroke="#3A2818" stroke-width="0.15" opacity="0.3"/>';
+        // Right wing — semicircle arc, flat edge at top
+        s += '<path d="M64,11.5 L70,11.5 Q72,11.5 72,13 Q72,15 70,15.5 Q67,15 64,13" fill="#6A4E30"/>';
+        s += '<path d="M64,11.5 L70,11.5 Q72,11.5 72,13 Q72,15 70,15.5 Q67,15 64,13" fill="none" stroke="#5A3E28" stroke-width="0.15" opacity="0.3"/>';
+        // Right wing V feather marks
+        s += '<path d="M67,12 L68,12.5 L69,12" fill="none" stroke="#3A2818" stroke-width="0.2" opacity="0.4"/>';
+        s += '<path d="M68,13 L69,13.5 L70,13" fill="none" stroke="#3A2818" stroke-width="0.18" opacity="0.35"/>';
+        s += '<path d="M68.5,14 L69.5,14.5 L70.5,14" fill="none" stroke="#3A2818" stroke-width="0.15" opacity="0.3"/>';
+        s += '<path d="M65,12.5 L66,13 L67,12.5" fill="none" stroke="#3A2818" stroke-width="0.15" opacity="0.3"/>';
         // ── BODY ──
         s += '<ellipse cx="62" cy="13" rx="2.5" ry="3.2" fill="#7A5C3E"/>';
-        // Brown V feather marks on body
-        s += '<path d="M61,11.5 L62,12 L63,11.5" fill="none" stroke="#5A3E28" stroke-width="0.2" opacity="0.4"/>';
-        s += '<path d="M60.8,12.5 L62,13 L63.2,12.5" fill="none" stroke="#5A3E28" stroke-width="0.2" opacity="0.35"/>';
-        s += '<path d="M61,13.5 L62,14 L63,13.5" fill="none" stroke="#5A3E28" stroke-width="0.18" opacity="0.3"/>';
-        s += '<path d="M61.2,14.5 L62,15 L62.8,14.5" fill="none" stroke="#5A3E28" stroke-width="0.15" opacity="0.25"/>';
+        // Dark brown V feather marks on body
+        s += '<path d="M61,11.5 L62,12 L63,11.5" fill="none" stroke="#3A2818" stroke-width="0.22" opacity="0.45"/>';
+        s += '<path d="M60.8,12.5 L62,13 L63.2,12.5" fill="none" stroke="#3A2818" stroke-width="0.22" opacity="0.4"/>';
+        s += '<path d="M61,13.5 L62,14 L63,13.5" fill="none" stroke="#3A2818" stroke-width="0.2" opacity="0.35"/>';
+        s += '<path d="M61.2,14.5 L62,15 L62.8,14.5" fill="none" stroke="#3A2818" stroke-width="0.18" opacity="0.3"/>';
+        s += '<path d="M61.5,15.2 L62,15.6 L62.5,15.2" fill="none" stroke="#3A2818" stroke-width="0.15" opacity="0.25"/>';
         // Belly — lighter
         s += '<ellipse cx="62" cy="14" rx="1.5" ry="1.5" fill="#B8A888" opacity="0.3"/>';
         // ── HEAD — round, with ear tufts connected to body top ──
@@ -21830,6 +21841,12 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="62.9" cy="10.65" r="0.1" fill="rgba(240,235,216,0.6)"/>';
         // Beak — small, curved
         s += '<path d="M61.7,11.5 L62,12 L62.3,11.5 Z" fill="#A87850"/>';
+        // Legs — dangling, same shade as beak
+        s += '<path d="M61.5,15.5 L61.2,17" stroke="#A87850" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M62.5,15.5 L62.8,17" stroke="#A87850" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        // Talons
+        s += '<path d="M61.2,17 L60.8,17.3 M61.2,17 L61.2,17.4 M61.2,17 L61.5,17.3" stroke="#A87850" stroke-width="0.12" fill="none"/>';
+        s += '<path d="M62.8,17 L62.5,17.3 M62.8,17 L62.8,17.4 M62.8,17 L63.2,17.3" stroke="#A87850" stroke-width="0.12" fill="none"/>';
         // Tail
         s += '<path d="M61,15.8 Q62,16.5 63,15.8" fill="#6A4E38" opacity="0.6"/>';
         s += '</g>';
