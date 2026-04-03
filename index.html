@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-04n';
+  var _SVG_CACHE_VER = '2026-04-04p';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21582,51 +21582,61 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M10,88 Q10.5,87 10.8,86.2" fill="none" stroke="rgba(240,235,216,0.12)" stroke-width="0.25" stroke-linecap="round"/>';
         s += '</g>';
         break;
-      case 53: // Turtle — bottom-right, facing left, 3/4 view with domed shell
-        s += '<g opacity="0.85" transform="translate(58,88) scale(1.7) translate(-58,-88)">';
+      case 53: // Turtle — profile facing left, flat-bottom shell, turtle pattern
+        s += '<g opacity="0.88" transform="translate(58,88) scale(1.7) translate(-58,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.15,0;0.3,0.02;0.15,0;0,0" dur="7.1s" repeatCount="indefinite"/>';
         // Shadow
-        s += '<ellipse cx="58" cy="92" rx="4.5" ry="0.7" fill="#0d100c" opacity="0.1"/>';
-        // Tail — small, poking out back right
-        s += '<path d="M62,90 L63,90.5 L62.5,90.8" fill="#6BA348" stroke="#4A7A38" stroke-width="0.1"/>';
-        // Hind legs — stubby, clawed
-        s += '<path d="M60,91 Q60.5,91.5 60.2,92" stroke="#5A8A40" stroke-width="1" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M56.5,91.2 Q56,91.8 56.3,92" stroke="#5A8A40" stroke-width="0.9" fill="none" stroke-linecap="round"/>';
-        // Front legs — reaching forward
-        s += '<path d="M55,90.5 Q54,91 53.5,91.5" stroke="#5A8A40" stroke-width="1" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M56,91 Q55.5,91.5 55,91.8" stroke="#5A8A40" stroke-width="0.8" fill="none" stroke-linecap="round"/>';
-        // Tiny claws on front feet
-        s += '<path d="M53.5,91.5 L53.2,91.8 M53.5,91.5 L53.8,91.9 M53.5,91.5 L53.4,92" stroke="#4A7A38" stroke-width="0.12" fill="none" stroke-linecap="round"/>';
-        // Shell — domed carapace, 3/4 view showing height
-        // Shell base (underside visible)
-        s += '<ellipse cx="58.5" cy="90.5" rx="4" ry="2.5" fill="#6BA348"/>';
-        // Shell dome — raised top with perspective
-        s += '<path d="M54.5,90 Q55,87 58.5,86.5 Q62,87 62.5,90" fill="#7AB358"/>';
-        // Shell edge rim
-        s += '<path d="M54.5,90 Q58.5,91 62.5,90" fill="none" stroke="#5A9A3C" stroke-width="0.3"/>';
-        // Scute pattern — hexagonal plates on shell dome
-        // Central vertebral scutes
-        s += '<path d="M57,87.5 Q58.5,87 60,87.5 Q60,88.5 58.5,89 Q57,88.5 57,87.5 Z" fill="none" stroke="#5A8A40" stroke-width="0.2" opacity="0.4"/>';
-        s += '<path d="M58,88.5 Q58.5,88.8 59,88.5 Q59,89.3 58.5,89.6 Q58,89.3 58,88.5 Z" fill="none" stroke="#5A8A40" stroke-width="0.18" opacity="0.35"/>';
-        // Costal scutes — side plates
-        s += '<path d="M55.5,88 Q56.5,87.5 57,87.5" fill="none" stroke="#5A8A40" stroke-width="0.18" opacity="0.3"/>';
-        s += '<path d="M60,87.5 Q60.5,87.5 61.5,88" fill="none" stroke="#5A8A40" stroke-width="0.18" opacity="0.3"/>';
-        s += '<path d="M55,89 Q56,88.5 57,88.5" fill="none" stroke="#5A8A40" stroke-width="0.15" opacity="0.25"/>';
-        s += '<path d="M60,88.5 Q61,88.5 62,89" fill="none" stroke="#5A8A40" stroke-width="0.15" opacity="0.25"/>';
-        // Shell highlight — dome catch light
-        s += '<path d="M56.5,87.5 Q58.5,87 60,87.5" fill="none" stroke="rgba(200,230,160,0.15)" stroke-width="0.4"/>';
-        // Shell growth line texture
-        s += '<path d="M55.5,89.5 Q58.5,90 61.5,89.5" fill="none" stroke="#6BA348" stroke-width="0.12" opacity="0.2"/>';
-        // Head — small, round, extending left from shell on neck
-        s += '<path d="M55,90 Q54,89.5 53,89.5 Q52,89.5 51.5,90" fill="#6BA348" stroke="none"/>';
-        s += '<ellipse cx="52" cy="89.8" rx="1.4" ry="1.1" fill="#6BA348"/>';
-        // Head pattern
-        s += '<path d="M51.5,89.5 Q52,89 52.5,89.5" fill="none" stroke="#7AC058" stroke-width="0.15" opacity="0.3"/>';
-        // Eye — dark, gentle
-        s += '<circle cx="51.5" cy="89.5" r="0.2" fill="#111"/>';
-        s += '<circle cx="51.55" cy="89.4" r="0.06" fill="rgba(240,235,216,0.5)"/>';
-        // Mouth — content smile
-        s += '<path d="M51.2,90.1 Q51.8,90.4 52.3,90.1" stroke="#4A6741" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        s += '<ellipse cx="58" cy="92" rx="5" ry="0.6" fill="#0d100c" opacity="0.1"/>';
+        // ── POINTY TAIL — sticking out back of shell ──
+        s += '<path d="M62.5,90.5 L64,91 L63.8,91.5 L62.5,91" fill="#5A8A40"/>';
+        s += '<path d="M63,91 L64,91" fill="none" stroke="#4A7A38" stroke-width="0.1"/>';
+        // ── 4 LEGS — all connected to body under shell ──
+        // Back left leg
+        s += '<path d="M60.5,91 L61,92" stroke="#5A8A40" stroke-width="1.2" fill="none" stroke-linecap="round"/>';
+        s += '<ellipse cx="61" cy="92" rx="0.6" ry="0.3" fill="#5A8A40"/>';
+        // Back right leg
+        s += '<path d="M57,91.2 L56.5,92" stroke="#5A8A40" stroke-width="1.1" fill="none" stroke-linecap="round"/>';
+        s += '<ellipse cx="56.5" cy="92" rx="0.6" ry="0.3" fill="#5A8A40"/>';
+        // Front left leg
+        s += '<path d="M55.5,90.5 L55,91.8" stroke="#5A8A40" stroke-width="1.2" fill="none" stroke-linecap="round"/>';
+        s += '<ellipse cx="55" cy="91.8" rx="0.6" ry="0.3" fill="#5A8A40"/>';
+        // Front right leg
+        s += '<path d="M53.5,90 L52.5,91.5" stroke="#5A8A40" stroke-width="1.1" fill="none" stroke-linecap="round"/>';
+        s += '<ellipse cx="52.5" cy="91.5" rx="0.6" ry="0.3" fill="#5A8A40"/>';
+        // ── SHELL — domed top, FLAT bottom ──
+        // Flat bottom (plastron)
+        s += '<path d="M54,91 L63,91" stroke="#8AB060" stroke-width="0.8" fill="none"/>';
+        s += '<path d="M54.5,91 L62.5,91 L62.5,90.5 Q58.5,91 54.5,90.5 Z" fill="#8AB060"/>';
+        // Domed top (carapace)
+        s += '<path d="M54,90.5 Q55,87 58.5,86 Q62,87 63,90.5 Z" fill="#6BA348"/>';
+        // Shell outline
+        s += '<path d="M54,90.5 Q55,87 58.5,86 Q62,87 63,90.5" fill="none" stroke="#4A7A30" stroke-width="0.25"/>';
+        // ── TURTLE PATTERN — hexagonal scute plates ──
+        // Central vertebral scutes (row down the spine)
+        s += '<path d="M57.5,87 L58.5,86.8 L59.5,87 L59.5,87.8 L58.5,88 L57.5,87.8 Z" fill="none" stroke="#4A7A30" stroke-width="0.2" opacity="0.5"/>';
+        s += '<path d="M57.5,88.2 L58.5,88 L59.5,88.2 L59.5,89 L58.5,89.2 L57.5,89 Z" fill="none" stroke="#4A7A30" stroke-width="0.18" opacity="0.45"/>';
+        s += '<path d="M57.8,89.4 L58.5,89.2 L59.2,89.4 L59.2,90 L58.5,90.2 L57.8,90 Z" fill="none" stroke="#4A7A30" stroke-width="0.15" opacity="0.4"/>';
+        // Left costal scutes
+        s += '<path d="M55.5,87.5 L56.5,87 L57.5,87.5 L57.5,88.2 L56.5,88.5 L55.5,88.2 Z" fill="none" stroke="#4A7A30" stroke-width="0.18" opacity="0.4"/>';
+        s += '<path d="M55,88.5 L56,88.2 L57,88.5 L57,89.2 L56,89.5 L55,89.2 Z" fill="none" stroke="#4A7A30" stroke-width="0.15" opacity="0.35"/>';
+        // Right costal scutes
+        s += '<path d="M59.5,87.5 L60.5,87 L61.5,87.5 L61.5,88.2 L60.5,88.5 L59.5,88.2 Z" fill="none" stroke="#4A7A30" stroke-width="0.18" opacity="0.4"/>';
+        s += '<path d="M60,88.5 L61,88.2 L62,88.5 L62,89.2 L61,89.5 L60,89.2 Z" fill="none" stroke="#4A7A30" stroke-width="0.15" opacity="0.35"/>';
+        // Marginal scutes — small rectangles around edge
+        s += '<path d="M55,89.5 Q56,90 57,89.8 M60,89.8 Q61,90 62,89.5" fill="none" stroke="#4A7A30" stroke-width="0.12" opacity="0.3"/>';
+        // Shell highlight
+        s += '<path d="M56.5,87 Q58.5,86.5 60.5,87" fill="none" stroke="rgba(200,230,160,0.15)" stroke-width="0.4"/>';
+        // ── NECK — thick, connecting head to shell ──
+        s += '<path d="M54,90 Q53,89.5 52,89 Q51,89 50.5,89.5 Q51,90 52,90.5 Q53,90.5 54,90.5" fill="#5A8A40"/>';
+        // ── HEAD ──
+        s += '<ellipse cx="50.5" cy="89.5" rx="1.5" ry="1.2" fill="#6BA348"/>';
+        // Eye
+        s += '<circle cx="50" cy="89.2" r="0.25" fill="#111"/>';
+        s += '<circle cx="50.05" cy="89.1" r="0.07" fill="rgba(240,235,216,0.5)"/>';
+        // Nostril
+        s += '<circle cx="49.5" cy="89.5" r="0.06" fill="#3A5A30" opacity="0.4"/>';
+        // Mouth
+        s += '<path d="M49.5,89.8 Q50.2,90.2 50.8,89.8" stroke="#4A6741" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
         // Nostril
         s += '<circle cx="51.3" cy="89.8" r="0.06" fill="#3A5A30" opacity="0.4"/>';
         s += '</g>';
