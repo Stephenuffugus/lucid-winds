@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-06m';
+  var _SVG_CACHE_VER = '2026-04-06n';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21634,21 +21634,21 @@ document.addEventListener('keydown', function(e) {
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.15,0;0.3,0.02;0.15,0;0,0" dur="7.1s" repeatCount="indefinite"/>';
         // Shadow
         s += '<ellipse cx="58" cy="92" rx="5" ry="0.6" fill="#0d100c" opacity="0.1"/>';
-        // ── POINTY TAIL — sharp pointed triangle ──
-        s += '<path d="M62.5,90.5 L64.5,90.8 L62.5,91.2" fill="#5A8A40"/>';
-        // ── 4 LEGS — all BELOW shell, connected to body ──
+        // ── POINTY TAIL — 2 shades darker ──
+        s += '<path d="M62.5,90.5 L64.5,90.8 L62.5,91.2" fill="#3A6A20"/>';
+        // ── 4 LEGS — 2 shades darker ──
         // Back right leg (far)
-        s += '<path d="M61,91 L61.5,92.5" stroke="#5A8A40" stroke-width="1" fill="none" stroke-linecap="round"/>';
-        s += '<ellipse cx="61.5" cy="92.5" rx="0.6" ry="0.3" fill="#5A8A40"/>';
+        s += '<path d="M61,91 L61.5,92.5" stroke="#3A6A20" stroke-width="1" fill="none" stroke-linecap="round"/>';
+        s += '<ellipse cx="61.5" cy="92.5" rx="0.6" ry="0.3" fill="#3A6A20"/>';
         // Back left leg (near)
-        s += '<path d="M60,91 L60,92.5" stroke="#5A8A40" stroke-width="1.1" fill="none" stroke-linecap="round"/>';
-        s += '<ellipse cx="60" cy="92.5" rx="0.6" ry="0.3" fill="#5A8A40"/>';
+        s += '<path d="M60,91 L60,92.5" stroke="#3A6A20" stroke-width="1.1" fill="none" stroke-linecap="round"/>';
+        s += '<ellipse cx="60" cy="92.5" rx="0.6" ry="0.3" fill="#3A6A20"/>';
         // Front right leg
-        s += '<path d="M56,91 L56.5,92.5" stroke="#5A8A40" stroke-width="1" fill="none" stroke-linecap="round"/>';
-        s += '<ellipse cx="56.5" cy="92.5" rx="0.6" ry="0.3" fill="#5A8A40"/>';
+        s += '<path d="M56,91 L56.5,92.5" stroke="#3A6A20" stroke-width="1" fill="none" stroke-linecap="round"/>';
+        s += '<ellipse cx="56.5" cy="92.5" rx="0.6" ry="0.3" fill="#3A6A20"/>';
         // Front left leg
-        s += '<path d="M55,90.8 L54.5,92.5" stroke="#5A8A40" stroke-width="1.1" fill="none" stroke-linecap="round"/>';
-        s += '<ellipse cx="54.5" cy="92.5" rx="0.6" ry="0.3" fill="#5A8A40"/>';
+        s += '<path d="M55,90.8 L54.5,92.5" stroke="#3A6A20" stroke-width="1.1" fill="none" stroke-linecap="round"/>';
+        s += '<ellipse cx="54.5" cy="92.5" rx="0.6" ry="0.3" fill="#3A6A20"/>';
         // ── SHELL — one solid piece, domed top + flat bottom, NO gap ──
         // Single combined shell shape — no seam between top and bottom
         s += '<path d="M54,91 Q55,87 58.5,86 Q62,87 63,91 Z" fill="#6BA348"/>';
@@ -21671,8 +21671,8 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M55,89.5 Q56,90 57,89.8 M60,89.8 Q61,90 62,89.5" fill="none" stroke="#4A7A30" stroke-width="0.12" opacity="0.3"/>';
         // Shell highlight
         s += '<path d="M56.5,87 Q58.5,86.5 60.5,87" fill="none" stroke="rgba(200,230,160,0.15)" stroke-width="0.4"/>';
-        // ── NECK — thick, connecting head to shell ──
-        s += '<path d="M54,90 Q53,89.5 52,89 Q51,89 50.5,89.5 Q51,90 52,90.5 Q53,90.5 54,90.5" fill="#5A8A40"/>';
+        // ── NECK — thick, attached to shell, 2 shades darker ──
+        s += '<path d="M55.5,90 Q54,89.5 52.5,89 Q51,89 50.5,89.5 Q51,90 52.5,90.5 Q54,90.8 55.5,91" fill="#3A6A20"/>';
         // ── HEAD ──
         s += '<ellipse cx="50.5" cy="89.5" rx="1.5" ry="1.2" fill="#6BA348"/>';
         // Eyes — 2
@@ -21712,9 +21712,15 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M61,8 L65,7.5" stroke="#6A5A60" stroke-width="0.12" fill="none"/>';
         s += '<path d="M61,8.5 L64.5,9" stroke="#6A5A60" stroke-width="0.1" fill="none" opacity="0.5"/>';
         s += '<path d="M61.5,9 L64,9.5" stroke="#6A5A60" stroke-width="0.08" fill="none" opacity="0.4"/>';
-        // ── WHITE ACTION MARKS on outside of wings ──
-        s += '<path d="M52,8.5 L51,8 M52.5,9.5 L51.5,9.5 M53,10.5 L52,10.8" stroke="rgba(255,255,255,0.3)" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M68,8.5 L69,8 M67.5,9.5 L68.5,9.5 M67,10.5 L68,10.8" stroke="rgba(255,255,255,0.3)" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
+        // ── WHITE ACTION MARKS — curved arcs ((( ))) ──
+        // Left side (((
+        s += '<path d="M52,7.5 Q51,9 52,10.5" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="0.2" stroke-linecap="round"/>';
+        s += '<path d="M51,7 Q49.8,9 51,11" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M50,6.5 Q48.5,9 50,11.5" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="0.15" stroke-linecap="round"/>';
+        // Right side )))
+        s += '<path d="M68,7.5 Q69,9 68,10.5" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="0.2" stroke-linecap="round"/>';
+        s += '<path d="M69,7 Q70.2,9 69,11" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M70,6.5 Q71.5,9 70,11.5" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="0.15" stroke-linecap="round"/>';
         // ── BODY — lightened 3 shades ──
         s += '<ellipse cx="60" cy="8.5" rx="1.5" ry="2.5" fill="#6A5860"/>';
         // Fur texture
