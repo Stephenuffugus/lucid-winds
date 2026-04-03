@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-03v';
+  var _SVG_CACHE_VER = '2026-04-03w';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21129,21 +21129,17 @@ document.addEventListener('keydown', function(e) {
             s += '<path d="M'+(_prx-_prW*0.5).toFixed(1)+','+_prY.toFixed(1)+' L'+_prx.toFixed(1)+','+(_prY+_prH).toFixed(1)+' L'+(_prx+_prW*0.5).toFixed(1)+','+_prY.toFixed(1)+'" fill="none" stroke="#6A5030" stroke-width="0.1" opacity="0.5"/>';
           }
         }
-        // Tail scales — rows along the tail, staying on the tail shape
+        // Tail scales — shorter rows, well within tail bounds
         var _pgTRows = [
-          [88.2, 61, 68, 0.55, 0.4],
-          [88.7, 61.5, 68.5, 0.55, 0.4],
-          [89.1, 62, 68, 0.5, 0.35]
+          [88.3, 61.5, 66, 0.5, 0.35],
+          [88.7, 62, 65, 0.5, 0.35],
+          [89, 62.5, 64.5, 0.45, 0.3]
         ];
         for (var _pgtr = 0; _pgtr < _pgTRows.length; _pgtr++) {
           var _ptY = _pgTRows[_pgtr][0], _ptX0 = _pgTRows[_pgtr][1], _ptX1 = _pgTRows[_pgtr][2];
           var _ptW = _pgTRows[_pgtr][3], _ptH = _pgTRows[_pgtr][4];
           var _ptOff = (_pgtr % 2 === 0) ? 0 : _ptW * 0.5;
           for (var _ptx = _ptX0 + _ptOff; _ptx < _ptX1; _ptx += _ptW) {
-            // Tail narrows toward tip — check rough bounds
-            var _ptFrac = (_ptx - 60) / 9.5;
-            var _ptHalfW = 1.0 - _ptFrac * 0.8;
-            if (Math.abs(_ptY - 88.5) > _ptHalfW) continue;
             s += '<path d="M'+(_ptx-_ptW*0.45).toFixed(1)+','+_ptY.toFixed(1)+' L'+_ptx.toFixed(1)+','+(_ptY+_ptH).toFixed(1)+' L'+(_ptx+_ptW*0.45).toFixed(1)+','+_ptY.toFixed(1)+' Z" fill="#A88858" stroke="none" opacity="0.55"/>';
             s += '<path d="M'+(_ptx-_ptW*0.45).toFixed(1)+','+_ptY.toFixed(1)+' L'+_ptx.toFixed(1)+','+(_ptY+_ptH).toFixed(1)+' L'+(_ptx+_ptW*0.45).toFixed(1)+','+_ptY.toFixed(1)+'" fill="none" stroke="#6A5030" stroke-width="0.08" opacity="0.45"/>';
           }
@@ -21160,11 +21156,11 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M54,87 Q53,86 52,85.5 Q51,85 50.5,85 L50.5,84.5 Q51,84 52,84 Q53,84 53.5,85 Q54,86 54,87 Z" fill="#8A7048"/>';
         // Head — small, elongated cone shape
         s += '<path d="M49.5,86 Q49,85.5 49,85 Q49,84.5 49.5,84 Q50.5,83.3 52,83.5 Q53,84 53,85 Q53,85.5 52.5,86 Q51.5,86.5 49.5,86 Z" fill="#9A8058"/>';
-        // Head scales — smaller filled V shapes
-        s += '<path d="M50,84.5 L50.4,84.9 L50.8,84.5 Z" fill="#A88858" stroke="#6A5030" stroke-width="0.08" opacity="0.5"/>';
-        s += '<path d="M51,84.7 L51.4,85.1 L51.8,84.7 Z" fill="#9A7848" stroke="#6A5030" stroke-width="0.08" opacity="0.45"/>';
-        s += '<path d="M49.8,85.2 L50.2,85.5 L50.6,85.2 Z" fill="#A88858" stroke="#6A5030" stroke-width="0.08" opacity="0.45"/>';
-        s += '<path d="M51.2,85.3 L51.6,85.6 L52,85.3 Z" fill="#9A7848" stroke="#6A5030" stroke-width="0.08" opacity="0.4"/>';
+        // Head scales — on top/back of head, AWAY from eye at (50, 84.8)
+        s += '<path d="M51.2,84 L51.5,84.3 L51.8,84 Z" fill="#A88858" stroke="none" opacity="0.5"/>';
+        s += '<path d="M51.8,84.2 L52.1,84.5 L52.4,84.2 Z" fill="#9A7848" stroke="none" opacity="0.45"/>';
+        s += '<path d="M51,85.5 L51.3,85.8 L51.6,85.5 Z" fill="#A88858" stroke="none" opacity="0.45"/>';
+        s += '<path d="M51.6,85.7 L51.9,86 L52.2,85.7 Z" fill="#9A7848" stroke="none" opacity="0.4"/>';
         // Snout — very long, narrow, conical (ant-eating adaptation)
         s += '<path d="M49.5,85 Q48.5,85 47.5,85 Q47,85 46.5,85.2" fill="none" stroke="#A08858" stroke-width="0.8" stroke-linecap="round"/>';
         // Nostril
