@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-04t';
+  var _SVG_CACHE_VER = '2026-04-04u';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -22729,7 +22729,7 @@ document.addEventListener('keydown', function(e) {
         // Flattened body with distinct tergite plates, each bearing one pair
         // of legs that move in a mesmerizing wave. Long sweeping antennae
         // and venomous forcipules at the head. Ancient, alien, elegant.
-        s += '<g opacity="0.75" transform="translate(30,93) scale(1.6) translate(-30,-93)">';
+        s += '<g opacity="0.75" transform="translate(30,95) scale(1.6) translate(-30,-95)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;3,0;0,0" dur="7s" repeatCount="indefinite"/>';
         // Shadow
         s += '<ellipse cx="30" cy="92.5" rx="10" ry="0.4" fill="#0d100c" opacity="0.06"/>';
@@ -22824,32 +22824,29 @@ document.addEventListener('keydown', function(e) {
       case 79: // Will-o-Wisp — bright blue-green flame with smoky outer fog (Rare)
         // Bright vibrant core like center of fire (blue-green).
         // Outer layers: blue, green, iridescent, see-through fog/smoke shapes.
-        s += '<g opacity="0.85">';
+        s += '<g opacity="1">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;1.2,-1.5;-0.8,0.5;0.5,-0.8;0,0" dur="7s" repeatCount="indefinite"/>';
-        // ── OUTER FOG/SMOKE — irregular see-through shapes, blue-green ──
-        // Smoky blob 1 — large, drifting
-        s += '<ellipse cx="15" cy="35" rx="6" ry="4.5" fill="rgba(40,180,160,0.04)" transform="rotate(15,15,35)"><animate attributeName="rx" values="6;7;5.5;6" dur="4s" repeatCount="indefinite"/></ellipse>';
-        // Smoky blob 2 — offset, different period
-        s += '<ellipse cx="14" cy="36" rx="5" ry="3.5" fill="rgba(60,140,200,0.05)" transform="rotate(-10,14,36)"><animate attributeName="ry" values="3.5;4.5;3;3.5" dur="5s" repeatCount="indefinite"/></ellipse>';
-        // Smoky blob 3 — greenish iridescent
-        s += '<ellipse cx="16" cy="34.5" rx="4" ry="3" fill="rgba(80,220,180,0.04)" transform="rotate(25,16,34.5)"><animate attributeName="rx" values="4;5;3.5;4" dur="3.5s" repeatCount="indefinite"/></ellipse>';
-        // Fog wisps — curving smoke trails, translucent
-        s += '<path d="M12,36 Q10,38 11,40 Q13,42 12,44" fill="none" stroke="rgba(60,180,160,0.08)" stroke-width="1.2" stroke-linecap="round"><animate attributeName="d" values="M12,36 Q10,38 11,40 Q13,42 12,44;M12,36 Q9,38.5 10.5,41 Q13.5,43 11.5,45;M12,36 Q10,38 11,40 Q13,42 12,44" dur="5s" repeatCount="indefinite"/></path>';
-        s += '<path d="M18,36 Q20,38 19,40 Q17,42 18,44" fill="none" stroke="rgba(80,140,220,0.07)" stroke-width="1" stroke-linecap="round"><animate attributeName="d" values="M18,36 Q20,38 19,40 Q17,42 18,44;M18,36 Q21,38.5 19.5,41 Q16.5,43 18.5,45;M18,36 Q20,38 19,40 Q17,42 18,44" dur="6s" repeatCount="indefinite"/></path>';
-        s += '<path d="M15,37 Q13.5,40 15,43 Q16,44 15,45.5" fill="none" stroke="rgba(100,200,180,0.06)" stroke-width="0.8" stroke-linecap="round"><animate attributeName="d" values="M15,37 Q13.5,40 15,43 Q16,44 15,45.5;M15,37 Q12.5,40.5 14.5,43.5 Q16.5,45 14.5,46.5;M15,37 Q13.5,40 15,43 Q16,44 15,45.5" dur="4.5s" repeatCount="indefinite"/></path>';
-        // ── MIDDLE GLOW — brighter blue-green halo ──
-        s += '<circle cx="15" cy="35" r="3" fill="rgba(40,200,180,0.1)"><animate attributeName="opacity" values="0.1;0.18;0.08;0.15;0.1" dur="2.5s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="15" cy="35" r="2" fill="rgba(60,220,200,0.18)"><animate attributeName="opacity" values="0.18;0.3;0.15;0.25;0.18" dur="2s" repeatCount="indefinite"/></circle>';
-        // ── CORE — bright, vibrant blue-green, like center of fire ──
-        s += '<circle cx="15" cy="35" r="1.2" fill="rgba(0,240,210,0.4)"><animate attributeName="opacity" values="0.4;0.6;0.35;0.55;0.4" dur="1.8s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="15" cy="35" r="0.7" fill="rgba(100,255,240,0.6)"><animate attributeName="opacity" values="0.6;0.85;0.5;0.75;0.6" dur="1.5s" repeatCount="indefinite"/></circle>';
-        // Hot center — bright white-cyan pinpoint
-        s += '<circle cx="15" cy="35" r="0.3" fill="rgba(200,255,250,0.9)"><animate attributeName="opacity" values="0.9;1;0.7;0.95;0.9" dur="1.2s" repeatCount="indefinite"/></circle>';
-        // ── SPARKLE MOTES — blue-green bright points ──
-        s += '<circle cx="13.5" cy="33.5" r="0.12" fill="rgba(100,255,240,0.4)"><animate attributeName="opacity" values="0;0.6;0" dur="2.2s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="17" cy="34" r="0.1" fill="rgba(60,220,200,0.35)"><animate attributeName="opacity" values="0.35;0;0.35" dur="1.8s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="13" cy="36" r="0.1" fill="rgba(80,240,220,0.3)"><animate attributeName="opacity" values="0;0.5;0" dur="2.5s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="16.5" cy="36.5" r="0.08" fill="rgba(120,255,240,0.3)"><animate attributeName="opacity" values="0.3;0;0.3" dur="3s" repeatCount="indefinite"/></circle>';
+        // ── OUTER FOG/SMOKE — brighter, more visible ──
+        s += '<ellipse cx="15" cy="35" rx="6" ry="4.5" fill="rgba(40,220,200,0.08)" transform="rotate(15,15,35)"><animate attributeName="rx" values="6;7;5.5;6" dur="4s" repeatCount="indefinite"/></ellipse>';
+        s += '<ellipse cx="14" cy="36" rx="5" ry="3.5" fill="rgba(60,180,240,0.1)" transform="rotate(-10,14,36)"><animate attributeName="ry" values="3.5;4.5;3;3.5" dur="5s" repeatCount="indefinite"/></ellipse>';
+        s += '<ellipse cx="16" cy="34.5" rx="4" ry="3" fill="rgba(80,240,200,0.08)" transform="rotate(25,16,34.5)"><animate attributeName="rx" values="4;5;3.5;4" dur="3.5s" repeatCount="indefinite"/></ellipse>';
+        // Fog wisps — brighter strokes
+        s += '<path d="M12,36 Q10,38 11,40 Q13,42 12,44" fill="none" stroke="rgba(60,220,200,0.15)" stroke-width="1.2" stroke-linecap="round"><animate attributeName="d" values="M12,36 Q10,38 11,40 Q13,42 12,44;M12,36 Q9,38.5 10.5,41 Q13.5,43 11.5,45;M12,36 Q10,38 11,40 Q13,42 12,44" dur="5s" repeatCount="indefinite"/></path>';
+        s += '<path d="M18,36 Q20,38 19,40 Q17,42 18,44" fill="none" stroke="rgba(80,180,255,0.12)" stroke-width="1" stroke-linecap="round"><animate attributeName="d" values="M18,36 Q20,38 19,40 Q17,42 18,44;M18,36 Q21,38.5 19.5,41 Q16.5,43 18.5,45;M18,36 Q20,38 19,40 Q17,42 18,44" dur="6s" repeatCount="indefinite"/></path>';
+        s += '<path d="M15,37 Q13.5,40 15,43 Q16,44 15,45.5" fill="none" stroke="rgba(100,240,220,0.1)" stroke-width="0.8" stroke-linecap="round"><animate attributeName="d" values="M15,37 Q13.5,40 15,43 Q16,44 15,45.5;M15,37 Q12.5,40.5 14.5,43.5 Q16.5,45 14.5,46.5;M15,37 Q13.5,40 15,43 Q16,44 15,45.5" dur="4.5s" repeatCount="indefinite"/></path>';
+        // ── MIDDLE GLOW — much brighter halo ──
+        s += '<circle cx="15" cy="35" r="3.5" fill="rgba(40,220,200,0.18)"><animate attributeName="opacity" values="0.18;0.3;0.15;0.25;0.18" dur="2.5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="15" cy="35" r="2.2" fill="rgba(60,240,220,0.3)"><animate attributeName="opacity" values="0.3;0.5;0.25;0.4;0.3" dur="2s" repeatCount="indefinite"/></circle>';
+        // ── CORE — very bright, vibrant blue-green fire center ──
+        s += '<circle cx="15" cy="35" r="1.5" fill="rgba(0,255,220,0.6)"><animate attributeName="opacity" values="0.6;0.85;0.5;0.75;0.6" dur="1.8s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="15" cy="35" r="0.9" fill="rgba(120,255,245,0.8)"><animate attributeName="opacity" values="0.8;1;0.7;0.9;0.8" dur="1.5s" repeatCount="indefinite"/></circle>';
+        // Hot center — white-cyan blazing pinpoint
+        s += '<circle cx="15" cy="35" r="0.4" fill="rgba(220,255,255,1)"><animate attributeName="opacity" values="1;1;0.8;1;1" dur="1.2s" repeatCount="indefinite"/></circle>';
+        // ── SPARKLE MOTES — brighter, more visible ──
+        s += '<circle cx="13.5" cy="33.5" r="0.15" fill="rgba(120,255,245,0.6)"><animate attributeName="opacity" values="0;0.8;0" dur="2.2s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="17" cy="34" r="0.12" fill="rgba(80,240,220,0.55)"><animate attributeName="opacity" values="0.55;0;0.55" dur="1.8s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="13" cy="36" r="0.12" fill="rgba(100,255,240,0.5)"><animate attributeName="opacity" values="0;0.7;0" dur="2.5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="16.5" cy="36.5" r="0.1" fill="rgba(140,255,245,0.5)"><animate attributeName="opacity" values="0.5;0;0.5" dur="3s" repeatCount="indefinite"/></circle>';
         s += '</g>';
         break;
       case 80: // Paper Butterfly — origami moth drifting near bloom
