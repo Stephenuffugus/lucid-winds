@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-04p';
+  var _SVG_CACHE_VER = '2026-04-04q';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21532,12 +21532,12 @@ document.addEventListener('keydown', function(e) {
       case 51: // Robin — flying upper-left, facing left, larger
         s += '<g opacity="0.85" transform="translate(14,22) scale(1.8) translate(-14,-22)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;-0.3,-0.4;0,0;0.2,0.3;0,0" dur="4.5s" repeatCount="indefinite"/>';
-        // Tail — angled back-right
-        s += '<path d="M18,11 L20,12 L20.5,11.5 L19,10.5 Z" fill="#6A4E38" opacity="0.7"/>';
-        // Body — plump, tilted forward in flight
-        s += '<ellipse cx="14" cy="10.5" rx="3.5" ry="2.8" fill="#7A5C3E" transform="rotate(10,14,10.5)"/>';
+        // Tail — connected to body (starts inside body edge)
+        s += '<path d="M16.5,10.5 L19,11.5 L19.5,11 L18,10 Z" fill="#6A4E38" opacity="0.7"/>';
+        // Body — slightly skinnier, tilted forward
+        s += '<ellipse cx="14" cy="10.5" rx="3" ry="2.2" fill="#7A5C3E" transform="rotate(10,14,10.5)"/>';
         // Red breast — robin's defining feature
-        s += '<ellipse cx="13" cy="11" rx="2.2" ry="1.8" fill="#C96E3A" opacity="0.8"/>';
+        s += '<ellipse cx="13" cy="11" rx="2" ry="1.5" fill="#C96E3A" opacity="0.8"/>';
         // Wing — stretched back in flight
         s += '<path d="M15,9 Q18,8 20.5,9.5 Q19,10 16,10 Z" fill="#6A4E38"/>';
         // Wing bar
@@ -21549,37 +21549,46 @@ document.addEventListener('keydown', function(e) {
         // Eye — dark, alert
         s += '<circle cx="11" cy="9.2" r="0.2" fill="#111"/>';
         s += '<circle cx="11.05" cy="9.12" r="0.06" fill="rgba(240,235,216,0.6)"/>';
-        // Beak — pointed, facing left
-        s += '<path d="M10.3,9.6 L9.2,9.3 L10.2,10 Z" fill="#A87850"/>';
+        // Beak — connected to head, pointing left
+        s += '<path d="M10.8,9.6 L9.2,9.3 L10.8,10.2 Z" fill="#A87850"/>';
         // Belly highlight
         s += '<ellipse cx="13.5" cy="11.5" rx="1.5" ry="1" fill="rgba(255,200,160,0.12)"/>';
         // Legs — tucked in flight
         s += '<path d="M13.5,12.8 L13.2,14 M14.5,12.8 L14.8,14" stroke="#5A3E2B" stroke-width="0.18" fill="none" stroke-linecap="round"/>';
         s += '</g>';
         break;
-      case 52: // Worm — earthworm poking from soil, bottom-left, detailed segments
-        s += '<g opacity="0.85" transform="translate(14,90) scale(1.6) translate(-14,-90)">';
-        s += '<animateTransform attributeName="transform" type="rotate" values="-4 8 89;3 8 89;-2 8 89;1 8 89;-4 8 89" dur="6.3s" repeatCount="indefinite"/>';
-        // Soil mound — worm emerging from ground
-        s += '<ellipse cx="8.5" cy="93.5" rx="3.5" ry="1" fill="#3a3228" opacity="0.4"/>';
-        // Main body — thick, fleshy, S-curve emerging from soil
-        s += '<path d="M8,95 C7.8,93 8,91.5 8.5,90 C9,88.5 9.8,87.5 10.5,86.8 C11.2,86 11.5,85.2 11.2,84.5 C10.9,83.8 10.2,83.5 9.5,83.8 C8.8,84.1 8.3,84.8 8.1,85.8 C7.9,86.8 8,87.5 8.2,88" fill="none" stroke="#D98FA1" stroke-width="2.0" stroke-linecap="round"/>';
-        // Lighter belly side
-        s += '<path d="M8.2,94.5 C8.1,93 8.3,91.5 8.8,90.2 C9.3,88.8 10,87.8 10.7,87" fill="none" stroke="#E8B0C0" stroke-width="0.6" stroke-linecap="round" opacity="0.3"/>';
-        // Segment rings — annuli (earthworm defining feature)
-        s += '<path d="M8.2,91.5 Q8.8,91.2 9.2,91.5" stroke="#C07888" stroke-width="0.2" fill="none" opacity="0.4"/>';
-        s += '<path d="M8.4,90.5 Q9,90.2 9.5,90.5" stroke="#C07888" stroke-width="0.2" fill="none" opacity="0.4"/>';
-        s += '<path d="M8.8,89.5 Q9.4,89.2 9.9,89.5" stroke="#C07888" stroke-width="0.18" fill="none" opacity="0.35"/>';
-        s += '<path d="M9.3,88.5 Q9.8,88.2 10.3,88.5" stroke="#C07888" stroke-width="0.18" fill="none" opacity="0.35"/>';
-        s += '<path d="M9.8,87.5 Q10.3,87.2 10.7,87.5" stroke="#C07888" stroke-width="0.16" fill="none" opacity="0.3"/>';
-        s += '<path d="M10.3,86.5 Q10.7,86.2 11,86.5" stroke="#C07888" stroke-width="0.16" fill="none" opacity="0.3"/>';
-        // Clitellum — the thicker band (saddle) near head, lighter color
-        s += '<path d="M10.5,87 C10.8,86.8 11,86.5 11.2,86" stroke="#E8C0C8" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.4"/>';
-        // Head end — blunt, rounded, slightly pointed (prostomium)
-        s += '<circle cx="9.5" cy="83.8" r="0.4" fill="#D98FA1"/>';
-        // Moisture sheen — worms are always glistening
-        s += '<path d="M8.5,92 Q9,91 9.5,90" fill="none" stroke="rgba(240,235,216,0.15)" stroke-width="0.3" stroke-linecap="round"/>';
-        s += '<path d="M10,88 Q10.5,87 10.8,86.2" fill="none" stroke="rgba(240,235,216,0.12)" stroke-width="0.25" stroke-linecap="round"/>';
+      case 52: // Worm — S-shaped, section lines, rounded ends, 2 eyes
+        s += '<g opacity="0.9" transform="translate(12,88) scale(1.6) translate(-12,-88)">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.2,0;0,0" dur="4s" repeatCount="indefinite"/>';
+        // Shadow
+        s += '<ellipse cx="12" cy="92.5" rx="5" ry="0.4" fill="#0d100c" opacity="0.08"/>';
+        // ── BODY — clear S-shape, thick, pink ──
+        s += '<path d="M7,91 Q8,89 10,88 Q12,87 14,88 Q16,89 17,91 Q18,92 19,92" fill="none" stroke="#D98FA1" stroke-width="2.2" stroke-linecap="round"/>';
+        // Lighter belly highlight along S
+        s += '<path d="M7.5,91 Q8.5,89.2 10.5,88.2 Q12.5,87.3 14.5,88.3" fill="none" stroke="#E8B8C8" stroke-width="0.6" stroke-linecap="round" opacity="0.3"/>';
+        // ── DARKER PINK SECTION LINES — across the body at intervals ──
+        s += '<path d="M7.5,90.5 Q8,90.2 8.5,90.5" stroke="#B06878" stroke-width="0.25" fill="none" opacity="0.5"/>';
+        s += '<path d="M8.2,89.8 Q8.8,89.4 9.3,89.8" stroke="#B06878" stroke-width="0.25" fill="none" opacity="0.5"/>';
+        s += '<path d="M9.2,89 Q9.8,88.6 10.4,89" stroke="#B06878" stroke-width="0.25" fill="none" opacity="0.5"/>';
+        s += '<path d="M10.5,88.2 Q11.2,87.8 11.8,88.2" stroke="#B06878" stroke-width="0.22" fill="none" opacity="0.45"/>';
+        s += '<path d="M12,87.8 Q12.6,87.5 13.2,87.8" stroke="#B06878" stroke-width="0.22" fill="none" opacity="0.45"/>';
+        s += '<path d="M13.5,88 Q14,87.8 14.5,88.2" stroke="#B06878" stroke-width="0.22" fill="none" opacity="0.45"/>';
+        s += '<path d="M14.8,88.5 Q15.3,88.3 15.8,88.7" stroke="#B06878" stroke-width="0.2" fill="none" opacity="0.4"/>';
+        s += '<path d="M15.8,89.2 Q16.3,89 16.7,89.4" stroke="#B06878" stroke-width="0.2" fill="none" opacity="0.4"/>';
+        s += '<path d="M16.5,90 Q17,89.8 17.4,90.2" stroke="#B06878" stroke-width="0.18" fill="none" opacity="0.35"/>';
+        s += '<path d="M17.2,90.8 Q17.6,90.6 18,91" stroke="#B06878" stroke-width="0.18" fill="none" opacity="0.35"/>';
+        s += '<path d="M18,91.5 Q18.3,91.3 18.6,91.6" stroke="#B06878" stroke-width="0.15" fill="none" opacity="0.3"/>';
+        // Clitellum — lighter band near head
+        s += '<path d="M8,90 Q9,89 10,88.5" stroke="#E8C8D0" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.3"/>';
+        // ── HEAD — rounded end (left side) ──
+        s += '<circle cx="7" cy="91" r="1" fill="#D98FA1"/>';
+        // 2 small black eyes
+        s += '<circle cx="6.5" cy="90.7" r="0.18" fill="#111"/>';
+        s += '<circle cx="7.2" cy="90.5" r="0.18" fill="#111"/>';
+        // ── TAIL — rounded end (right side) ──
+        s += '<circle cx="19" cy="92" r="0.7" fill="#D98FA1"/>';
+        // Moisture sheen
+        s += '<path d="M9,89.5 Q12,88 15,89" fill="none" stroke="rgba(255,240,240,0.1)" stroke-width="0.3" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 53: // Turtle — profile facing left, flat-bottom shell, turtle pattern
