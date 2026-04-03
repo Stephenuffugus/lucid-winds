@@ -24769,13 +24769,8 @@ document.addEventListener('keydown', function(e) {
     var name  = typeof getPlantName === 'function' ? getPlantName(plant.hash) : plant.hash.slice(0,8);
     var haiku = typeof getHaiku     === 'function' ? getHaiku(plant.hash)     : { line1:'', line2:'', line3:'' };
     var _seasonColors = ['#E8A0BF','#D4A843','#C4763A','#A0C4E8'];
-    // Carousel SVG cache — avoid regenerating on every swipe
-    var _csSvgKey = 'cs_' + plant.hash;
-    var svgHtml = _svgCacheGet(_csSvgKey);
-    if (!svgHtml) {
-      svgHtml = generatePlantSVG(plant.hash, 200);
-      _svgCacheSet(_csSvgKey, svgHtml);
-    }
+    // Carousel SVG — always generate fresh (companions/auras need live animations)
+    var svgHtml = generatePlantSVG(plant.hash, 200);
     if (plant.mutated) {
       svgHtml = svgHtml.replace('<svg ', '<svg style="filter:drop-shadow(0 0 10px rgba(200,168,75,0.5)) drop-shadow(0 0 20px rgba(200,168,75,0.2));" ');
     }
