@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-03t';
+  var _SVG_CACHE_VER = '2026-04-03u';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21099,29 +21099,28 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M61,92 L60.5,92.5 M61,92 L61,92.5 M61,92 L61.5,92.4" stroke="#5A4028" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
         // Body — elongated, hunched, covered in overlapping scales
         s += '<path d="M52,88 Q52,86.5 54,85.5 Q57,84.5 60,85.5 Q62,86.5 62,88.5 Q62,90.5 60,91.5 Q57,92 54,91.5 Q52,90.5 52,88 Z" fill="#8A7048"/>';
-        // SCALES — V-shaped irregular pattern covering entire body
-        // Uses procedural placement with V chevron marks
+        // SCALES — filled upside-down triangles (V shapes) covering body
         var _pgSeed43 = 43;
-        var _pgSCols = ['#9A8058','#8A7048','#A88A60','#7A6038','#9A7850'];
+        var _pgSCols = ['#B89868','#A88858','#C8A878','#9A7848','#B8A068'];
         for (var _psi = 0; _psi < 80; _psi++) {
           _pgSeed43 = (_pgSeed43 * 1103515245 + 12345) & 0x7FFFFFFF;
-          var _psx = 52.5 + (_pgSeed43 % 1000) / 1000 * 10;
+          var _psx = 53 + (_pgSeed43 % 1000) / 1000 * 9;
           _pgSeed43 = (_pgSeed43 * 1103515245 + 12345) & 0x7FFFFFFF;
-          var _psy = 85.5 + (_pgSeed43 % 1000) / 1000 * 6;
-          // Ellipse body check
-          var _psdx = (_psx - 57) / 5.5, _psdy = (_psy - 88.5) / 3.5;
-          if (_psdx * _psdx + _psdy * _psdy > 1) continue;
+          var _psy = 86 + (_pgSeed43 % 1000) / 1000 * 5.5;
+          // Tight ellipse body check
+          var _psdx = (_psx - 57) / 5, _psdy = (_psy - 88.5) / 3;
+          if (_psdx * _psdx + _psdy * _psdy > 0.85) continue;
           _pgSeed43 = (_pgSeed43 * 1103515245 + 12345) & 0x7FFFFFFF;
-          var _psSize = 0.4 + (_pgSeed43 % 100) / 120;
+          var _psSize = 0.5 + (_pgSeed43 % 100) / 150;
           var _psCol = _pgSCols[_psi % _pgSCols.length];
-          // V-shaped chevron scale mark
-          s += '<path d="M'+(_psx-_psSize*0.5).toFixed(1)+','+_psy.toFixed(1)+' L'+_psx.toFixed(1)+','+(_psy+_psSize*0.7).toFixed(1)+' L'+(_psx+_psSize*0.5).toFixed(1)+','+_psy.toFixed(1)+'" fill="none" stroke="'+_psCol+'" stroke-width="0.15" opacity="0.5" stroke-linejoin="round"/>';
+          // Filled upside-down triangle (V shape, point down)
+          s += '<path d="M'+(_psx-_psSize*0.5).toFixed(1)+','+_psy.toFixed(1)+' L'+_psx.toFixed(1)+','+(_psy+_psSize*0.8).toFixed(1)+' L'+(_psx+_psSize*0.5).toFixed(1)+','+_psy.toFixed(1)+' Z" fill="'+_psCol+'" stroke="#6A5030" stroke-width="0.1" opacity="0.6"/>';
         }
-        // Tail V-scales
+        // Tail scales — filled V shapes
         for (var _pts = 0; _pts < 12; _pts++) {
           var _ptsx = 62 + _pts * 0.6;
-          var _ptsy = 88.2 + Math.sin(_pts * 0.8) * 0.4;
-          s += '<path d="M'+(_ptsx-0.3).toFixed(1)+','+_ptsy.toFixed(1)+' L'+_ptsx.toFixed(1)+','+(_ptsy+0.4).toFixed(1)+' L'+(_ptsx+0.3).toFixed(1)+','+_ptsy.toFixed(1)+'" fill="none" stroke="#7A6038" stroke-width="0.12" opacity="0.45" stroke-linejoin="round"/>';
+          var _ptsy = 88 + Math.sin(_pts * 0.8) * 0.3;
+          s += '<path d="M'+(_ptsx-0.25).toFixed(1)+','+_ptsy.toFixed(1)+' L'+_ptsx.toFixed(1)+','+(_ptsy+0.4).toFixed(1)+' L'+(_ptsx+0.25).toFixed(1)+','+_ptsy.toFixed(1)+' Z" fill="#A88858" stroke="#6A5030" stroke-width="0.08" opacity="0.55"/>';
         }
         // Front legs — positioned forward, thick with big claws
         s += '<path d="M54,90 Q53.5,91 53.5,92" stroke="#7A6038" stroke-width="1" fill="none" stroke-linecap="round"/>';
@@ -21135,10 +21134,11 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M54,87 Q53,86 52,85.5 Q51,85 50.5,85 L50.5,84.5 Q51,84 52,84 Q53,84 53.5,85 Q54,86 54,87 Z" fill="#8A7048"/>';
         // Head — small, elongated cone shape
         s += '<path d="M49.5,86 Q49,85.5 49,85 Q49,84.5 49.5,84 Q50.5,83.3 52,83.5 Q53,84 53,85 Q53,85.5 52.5,86 Q51.5,86.5 49.5,86 Z" fill="#9A8058"/>';
-        // Head V-scales — smaller, tighter chevrons
-        s += '<path d="M50,84.5 L50.5,84.9 L51,84.5" fill="none" stroke="#7A6038" stroke-width="0.1" opacity="0.35" stroke-linejoin="round"/>';
-        s += '<path d="M51,84.8 L51.5,85.2 L52,84.8" fill="none" stroke="#7A6038" stroke-width="0.1" opacity="0.3" stroke-linejoin="round"/>';
-        s += '<path d="M49.5,85.2 L50,85.6 L50.5,85.2" fill="none" stroke="#7A6038" stroke-width="0.1" opacity="0.3" stroke-linejoin="round"/>';
+        // Head scales — smaller filled V shapes
+        s += '<path d="M50,84.5 L50.4,84.9 L50.8,84.5 Z" fill="#A88858" stroke="#6A5030" stroke-width="0.08" opacity="0.5"/>';
+        s += '<path d="M51,84.7 L51.4,85.1 L51.8,84.7 Z" fill="#9A7848" stroke="#6A5030" stroke-width="0.08" opacity="0.45"/>';
+        s += '<path d="M49.8,85.2 L50.2,85.5 L50.6,85.2 Z" fill="#A88858" stroke="#6A5030" stroke-width="0.08" opacity="0.45"/>';
+        s += '<path d="M51.2,85.3 L51.6,85.6 L52,85.3 Z" fill="#9A7848" stroke="#6A5030" stroke-width="0.08" opacity="0.4"/>';
         // Snout — very long, narrow, conical (ant-eating adaptation)
         s += '<path d="M49.5,85 Q48.5,85 47.5,85 Q47,85 46.5,85.2" fill="none" stroke="#A08858" stroke-width="0.8" stroke-linecap="round"/>';
         // Nostril
