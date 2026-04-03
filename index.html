@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-04c';
+  var _SVG_CACHE_VER = '2026-04-04d';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -22000,49 +22000,72 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="10" cy="87" r="0.1" fill="#6A5030" opacity="0.2"/>';
         s += '</g>';
         break;
-      case 68: // Red Fox — curled napping near pot base right
-        // Vulpes vulpes: the quintessential woodland fox. Rich orange-red fur,
-        // white chest, dark legs, and the iconic bushy tail with white tip.
-        // Pose: curled "fox nap" — tail wraps around to cover nose, most
-        // charming and space-efficient position next to a plant pot.
-        s += '<g opacity="0.82" transform="translate(56,89) scale(1.4) translate(-56,-89)">';
-        // Shadow beneath
-        s += '<ellipse cx="56.5" cy="91.5" rx="4" ry="0.6" fill="#0d100c" opacity="0.1"/>';
-        // Tail — bushy, wrapping around body, white tip visible
-        s += '<path d="M52.5,89 Q50,88 49,86.5 Q48.5,85.5 49.5,86 Q51,87 52,88 Q53,89 54,89.5" fill="#C86820" stroke="#B05818" stroke-width="0.15" opacity="0.8"/>';
-        // Tail fluff volume
-        s += '<path d="M49.5,86.5 Q49,85.8 49.5,86" fill="none" stroke="#D88A40" stroke-width="0.6" stroke-linecap="round" opacity="0.3"/>';
+      case 68: // Red Fox — standing, profile facing left, long bushy tail
+        s += '<g opacity="0.88" transform="translate(56,87) scale(1.4) translate(-56,-87)">';
+        // Shadow
+        s += '<ellipse cx="55" cy="93" rx="6" ry="0.6" fill="#0d100c" opacity="0.12"/>';
+        // ── TAIL — bushy, as long as the body, sweeping back-right with white tip ──
+        s += '<path d="M61,87 Q63,86 65,85.5 Q67,85.5 68,86.5 Q68.5,87.5 68,88.5 Q67,89 65.5,88.5 Q63.5,88 62,87.5 Q61,87.5 60.5,88" fill="#D07028"/>';
+        // Tail darker top edge
+        s += '<path d="M61,87 Q63,86 65,85.5 Q67,85.5 68,86.5" fill="none" stroke="#A85818" stroke-width="0.3" opacity="0.25"/>';
         // White tail tip
-        s += '<path d="M48.8,86.2 Q48.2,85.5 48.8,85.8" fill="#F0E8D8" stroke="none" opacity="0.7"/>';
-        s += '<ellipse cx="48.8" cy="86" rx="0.7" ry="0.5" fill="#F0E8D8" opacity="0.6"/>';
-        // Body — curled, rounded
-        s += '<ellipse cx="56" cy="89.5" rx="3.8" ry="2.2" fill="#D07028" transform="rotate(-5,56,89.5)"/>';
-        // Belly/chest — white
-        s += '<ellipse cx="55" cy="90.2" rx="2.2" ry="1.2" fill="#E8DCC8" opacity="0.4"/>';
-        // Fur texture — darker guard hairs on back
-        s += '<path d="M54,88 Q56,87.5 58,88" fill="none" stroke="#A85818" stroke-width="0.3" opacity="0.2"/>';
-        s += '<path d="M53.5,88.5 Q56,88 58.5,88.5" fill="none" stroke="#A85818" stroke-width="0.25" opacity="0.15"/>';
-        // Head — narrow, pointed, resting on curled body
-        s += '<ellipse cx="54" cy="88.2" rx="1.6" ry="1.2" fill="#D07028" transform="rotate(10,54,88.2)"/>';
-        // White muzzle
-        s += '<ellipse cx="53" cy="88.6" rx="0.8" ry="0.55" fill="#E8DCC8" opacity="0.5"/>';
-        // Ears — large triangular, dark-backed (fox signature)
-        s += '<path d="M53.5,87.8 L52.8,85.8 Q52.6,85.3 53.2,86 L53.8,87.3" fill="#D07028"/>';
-        s += '<path d="M53,86.5 L52.9,85.8" fill="none" stroke="#2A1A10" stroke-width="0.3" opacity="0.4"/>';
-        s += '<path d="M54.8,87.5 L55.2,85.5 Q55.3,85 55.8,85.5 L55.2,87.2" fill="#D07028"/>';
-        s += '<path d="M55.3,86.2 L55.3,85.6" fill="none" stroke="#2A1A10" stroke-width="0.3" opacity="0.4"/>';
-        // Ear interiors — lighter
-        s += '<path d="M53.2,87 L52.9,86" fill="none" stroke="#E0A060" stroke-width="0.4" opacity="0.3"/>';
-        s += '<path d="M55,86.8 L55.2,86" fill="none" stroke="#E0A060" stroke-width="0.4" opacity="0.3"/>';
-        // Eye — closed (napping), gentle crescent
-        s += '<path d="M53.8,87.8 Q54.2,87.5 54.5,87.8" fill="none" stroke="#1A1410" stroke-width="0.25" stroke-linecap="round"/>';
-        // Nose — dark, at tip of muzzle
-        s += '<ellipse cx="52.5" cy="88.5" rx="0.25" ry="0.2" fill="#1A1410"/>';
-        // Dark legs tucked under
-        s += '<ellipse cx="55" cy="90.8" rx="0.8" ry="0.4" fill="#3A2A20" opacity="0.5"/>';
-        s += '<ellipse cx="57" cy="90.8" rx="0.7" ry="0.35" fill="#3A2A20" opacity="0.45"/>';
-        // Breathing animation — body gently rises and falls
-        s += '<animate attributeName="opacity" values="0.82;0.84;0.82" dur="4s" repeatCount="indefinite"/>';
+        s += '<path d="M67.5,86.5 Q68.5,86.5 68.5,87.5 Q68,88.5 67,88.5" fill="#F0E8D8" opacity="0.7"/>';
+        // Tail fluff lines
+        s += '<path d="M63,86.5 Q64,86 65,86" fill="none" stroke="#B85818" stroke-width="0.15" opacity="0.2"/>';
+        s += '<path d="M64,87.5 Q65.5,87 66.5,87.5" fill="none" stroke="#B85818" stroke-width="0.12" opacity="0.15"/>';
+        // ── LEGS — dark, slender (fox signature: black stockings) ──
+        // Back legs
+        s += '<path d="M59,90 L59,92.5" stroke="#2A1A10" stroke-width="1" stroke-linecap="round"/>';
+        s += '<path d="M57,90.5 L57,92.5" stroke="#2A1A10" stroke-width="1" stroke-linecap="round"/>';
+        // Front legs
+        s += '<path d="M52,90 L52,92.5" stroke="#2A1A10" stroke-width="1" stroke-linecap="round"/>';
+        s += '<path d="M50,89.5 L50,92.5" stroke="#2A1A10" stroke-width="1" stroke-linecap="round"/>';
+        // Paws
+        s += '<ellipse cx="59" cy="92.5" rx="0.7" ry="0.3" fill="#2A1A10"/>';
+        s += '<ellipse cx="57" cy="92.5" rx="0.7" ry="0.3" fill="#2A1A10"/>';
+        s += '<ellipse cx="52" cy="92.5" rx="0.7" ry="0.3" fill="#2A1A10"/>';
+        s += '<ellipse cx="50" cy="92.5" rx="0.7" ry="0.3" fill="#2A1A10"/>';
+        // ── BODY — slender, athletic, not oval ──
+        s += '<path d="M48,88 Q48,86.5 50,85.5 Q53,85 56,85 Q59,85.5 61,87 Q62,88.5 61.5,90 Q60,91.5 57,92 Q53,92 50,91 Q48,90 48,88 Z" fill="#D07028"/>';
+        // White chest/belly
+        s += '<path d="M49,89.5 Q51,91 54,91.5 Q56,91 57.5,90" fill="#E8DCC8" opacity="0.4"/>';
+        // Darker back line
+        s += '<path d="M50,86 Q54,85 58,86 Q60,87 61,88" fill="none" stroke="#A85818" stroke-width="0.3" opacity="0.2"/>';
+        // Fur marks — sporadic thin lines
+        var _fx68seed = 68;
+        for (var _fx68 = 0; _fx68 < 60; _fx68++) {
+          _fx68seed = (_fx68seed * 1103515245 + 12345) & 0x7FFFFFFF;
+          var _fx68x = 49 + (_fx68seed % 1000) / 1000 * 12;
+          _fx68seed = (_fx68seed * 1103515245 + 12345) & 0x7FFFFFFF;
+          var _fx68y = 86 + (_fx68seed % 1000) / 1000 * 5.5;
+          var _fx68dx = (_fx68x - 55) / 7, _fx68dy = (_fx68y - 88.5) / 3.5;
+          if (_fx68dx * _fx68dx + _fx68dy * _fx68dy > 0.85) continue;
+          s += '<line x1="'+_fx68x.toFixed(1)+'" y1="'+_fx68y.toFixed(1)+'" x2="'+(_fx68x+0.05).toFixed(2)+'" y2="'+(_fx68y+0.5).toFixed(2)+'" stroke="#A85818" stroke-width="0.07" opacity="0.2"/>';
+        }
+        // ── HEAD — pointed, narrow, wedge-shaped (fox profile) ──
+        s += '<path d="M45,88 Q44.5,87 45,86 Q46,85 48,85 Q49.5,85.5 49.5,87 Q49.5,88 49,89 Q48,89.5 46.5,89 Q45,88.5 45,88 Z" fill="#D07028"/>';
+        // White muzzle — pointed
+        s += '<path d="M45,87.5 Q44,87.5 43.5,88 Q44,88.5 45,88.5 Q46,88.5 46.5,88" fill="#E8DCC8" opacity="0.55"/>';
+        // Nose — dark, at tip
+        s += '<ellipse cx="43.8" cy="88" rx="0.3" ry="0.22" fill="#1A1410"/>';
+        // Mouth line
+        s += '<path d="M44,88.2 Q45,88.5 46,88.3" fill="none" stroke="#8A5830" stroke-width="0.15" opacity="0.3"/>';
+        // Eye — alert, amber/golden
+        s += '<circle cx="47" cy="86.8" r="0.5" fill="#C8A040"/>';
+        s += '<ellipse cx="47" cy="86.8" rx="0.2" ry="0.4" fill="#1A1410"/>';
+        s += '<circle cx="47.1" cy="86.6" r="0.1" fill="rgba(240,235,216,0.6)"/>';
+        // ── EARS — tall, triangular, dark-backed (fox signature) ──
+        s += '<path d="M47,85.5 L46.2,83 Q46,82.5 46.8,83.2 L47.5,85" fill="#D07028"/>';
+        s += '<path d="M46.5,84 L46.3,83.2" fill="none" stroke="#2A1A10" stroke-width="0.35" opacity="0.4"/>';
+        s += '<path d="M46.5,84 L46.5,83.5" fill="none" stroke="#E0A060" stroke-width="0.3" opacity="0.3"/>';
+        s += '<path d="M48.5,85.2 L49,83 Q49.1,82.5 49.5,83.2 L49,85" fill="#D07028"/>';
+        s += '<path d="M49.2,84 L49.1,83.2" fill="none" stroke="#2A1A10" stroke-width="0.35" opacity="0.4"/>';
+        s += '<path d="M49,84 L49,83.5" fill="none" stroke="#E0A060" stroke-width="0.3" opacity="0.3"/>';
+        // Whiskers
+        s += '<path d="M44.5,87.8 Q43,87.5 42,87.5" stroke="#D8C0A0" stroke-width="0.06" fill="none" opacity="0.3"/>';
+        s += '<path d="M44.5,88.2 Q43,88.5 42,88.5" stroke="#D8C0A0" stroke-width="0.06" fill="none" opacity="0.25"/>';
+        // Body outline for definition
+        s += '<path d="M48,88 Q48,86.5 50,85.5 Q53,85 56,85 Q59,85.5 61,87 Q62,88.5 61.5,90 Q60,91.5 57,92 Q53,92 50,91 Q48,90 48,88" fill="none" stroke="#6A3010" stroke-width="0.2" opacity="0.25"/>';
         s += '</g>';
         break;
       case 69: // Veiled Chameleon — gripping stem mid-height, profile view
