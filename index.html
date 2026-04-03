@@ -4312,7 +4312,8 @@ window.onerror=function(msg,url,line,col,err){
 
 <div class="game-wrap">
 
-  <!-- Game panel (default) -->
+  <!-- Game panel (default) — hidden until onboarding done to prevent flash -->
+  <script>if(localStorage.getItem('pw_onboarded')!=='1')document.write('<style>#panel-game{opacity:0!important;}</style>');</script>
   <div class="grove-panel active" id="panel-game">
   <div class="game-header">
     <div class="game-title">Lucid <em>Winds</em></div>
@@ -29340,7 +29341,9 @@ function _addSharedMarker(p){
   var info=_buildInfo(p.hash);
   var tagColor=p.own?info.gc:'var(--muted)';
   var seasonEmb='';if(p.own&&info.t&&window.getSeasonInfo){var si=window.getSeasonInfo(info.t);seasonEmb=' <span style="font-size:0.35rem;">'+si.emblem+'</span>';}
-  var tag='<div style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-family:Bebas Neue,sans-serif;font-size:0.35rem;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,0.8);color:'+tagColor+';pointer-events:none;">'+info.nm+seasonEmb+'</div>';
+  // Non-owned plants: hide name, grade, season — mystery until harvest
+  var tagName=p.own?info.nm:'Wild Plant';
+  var tag='<div style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-family:Bebas Neue,sans-serif;font-size:0.35rem;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,0.8);color:'+tagColor+';pointer-events:none;">'+tagName+seasonEmb+'</div>';
   var th=Math.round(sz*40/30)+14;
   var glow=_glowRing(info.grade||p.grade,p.own);
   var shield=_shieldBadge(p);
@@ -30986,6 +30989,8 @@ function _mintGiftPlant(){
 
 function finish(){
   _markOnboarded();
+  // Reveal game panel (hidden during onboarding to prevent flash)
+  var gp=document.getElementById('panel-game');if(gp)gp.style.opacity='';
   var el=document.getElementById('pw-onboard');
   if(el){el.style.display='none';el.style.pointerEvents='none';el.classList.remove('active');}
   var dots=document.getElementById('ob-dots');if(dots)dots.style.display='none';
