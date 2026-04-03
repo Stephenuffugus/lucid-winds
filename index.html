@@ -20492,10 +20492,12 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="49.5" cy="92.8" rx="1.6" ry="0.6" fill="#7A5028"/>';
         // Webbed toes on near front foot
         s += '<path d="M48.4,93.2 L48.1,93.8 M49,93.3 L49,94 M49.8,93.3 L50,93.9 M50.6,93.2 L50.9,93.7" stroke="#6A4018" stroke-width="0.16" fill="none" stroke-linecap="round"/>';
-        // Neck — THICK, back edge curves down smoothly into body shoulder
-        s += '<path d="M48,82 Q46.5,80 46,78 Q45.5,76 46,75 L51,73.5 Q51.5,75 51.5,77 Q51.5,79 50.5,80.5 Q49.5,81.5 48.5,82 Z" fill="#A87848"/>';
-        // Neck fur continuation on back edge
-        s += '<path d="M50.5,77 Q50,79 49.5,80.5" fill="none" stroke="#9A7040" stroke-width="0.3" opacity="0.15"/>';
+        // Neck — THICK, back edge connects to TOP of body at shoulder
+        // Front edge (left/throat): M48,82 up to L51,73.5
+        // Back edge (right/nape): from 51,73.5 curves down to meet body dorsal at ~51,79
+        s += '<path d="M48,82 Q46.5,80 46,78 Q45.5,76 46,75 L51,73.5 Q52,75.5 52,77 Q52,78 51.5,79 Q51,79.5 50,79.5 Q49,80 48,82 Z" fill="#A87848"/>';
+        // Nape highlight
+        s += '<path d="M51.5,75 Q51.5,77 51,78.5" fill="none" stroke="#9A7040" stroke-width="0.3" opacity="0.15"/>';
         s += '<path d="M47,80 Q46.5,78 46.5,76" fill="none" stroke="#B89860" stroke-width="0.6" opacity="0.2" stroke-linecap="round"/>';
         // Head — BOXY, flat-topped rectangle in profile (capybara's defining shape)
         // Wide, blunt, almost squared — NOT round like a bear
