@@ -5916,8 +5916,8 @@ document.addEventListener('keydown', function(e) {
     //   0x00-0xCF  → None               (208/256 = 81.25%)
     var mythName =
       mythByte === 0xFF ? 'The Beholder'          :
-      mythByte >= 0xFE  ? 'Starfall'              :
-      mythByte >= 0xFC  ? 'Storm Wraith'          :
+      mythByte >= 0xFE  ? 'Garden Spider'              :
+      mythByte >= 0xFC  ? 'Great Blue Heron'          :
       mythByte >= 0xF8  ? 'Raccoon'    :
       mythByte >= 0xF4  ? 'Woolly Mammoth'  :
       mythByte >= 0xE0  ? 'The Capybara'          :
@@ -5949,8 +5949,8 @@ document.addEventListener('keydown', function(e) {
       companion:    (function(){
         var _mb = hb(18);
         if (_mb === 0xFF) return 38; // Beholder (0.39%)
-        if (_mb >= 0xFE) return 37;  // Starfall (0.39%)
-        if (_mb >= 0xFC) return 36;  // Storm Wraith (0.78%)
+        if (_mb >= 0xFE) return 37;  // Garden Spider (0.39%)
+        if (_mb >= 0xFC) return 36;  // Great Blue Heron (0.78%)
         if (_mb >= 0xF8) return 35;  // Raccoon (1.56%)
         if (_mb >= 0xF4) return 34;  // Woolly Mammoth (1.56%)
         if (_mb >= 0xE0) return 33;  // Capybara (7.81%)
@@ -8315,7 +8315,7 @@ document.addEventListener('keydown', function(e) {
       d+='<feMerge><feMergeNode in="warped"/><feMergeNode in="SourceGraphic"/></feMerge>';
       d+='</filter>';
     }
-    if(t.mythicName==='Storm Wraith'){
+    if(t.mythicName==='Great Blue Heron'){
       var _swSeed=(parseInt(uid,16)%97)+2;
       d+='<filter id="sw_f_'+uid+'" x="-25%" y="-5%" width="150%" height="110%">';
       d+='<feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="3" seed="'+_swSeed+'" result="noise"/>';
@@ -8564,8 +8564,8 @@ document.addEventListener('keydown', function(e) {
       {name:'Capybara'},    // idx 33 (mythic path)
       {name:'Woolly Mammoth'}, // idx 34
       {name:'Raccoon'},   // idx 35
-      {name:'Storm Wraith'},         // idx 36
-      {name:'Starfall'},             // idx 37
+      {name:'Great Blue Heron'},         // idx 36
+      {name:'Garden Spider'},         // idx 37
       {name:'Beholder',rare:true},   // idx 38
       {name:'Cat'},         // idx 39 — renderer: Kitty
       {name:'Platypus',rare:true},    // idx 40 — renderer: Platypus (Rare)
@@ -19145,14 +19145,19 @@ document.addEventListener('keydown', function(e) {
         }
         s += '</g>';
         break;
-      case 15: // Vortex — spiral arms with centre pulse
-        s += '<g opacity="0.2">';
-        s += '<animateTransform attributeName="transform" type="rotate" values="0 35 40;360 35 40" dur="16s" repeatCount="indefinite"/>';
-        s += '<path d="M35,40 Q40,36 46,38 Q52,40 55,46 Q57,52 53,58" fill="none" stroke="rgba(180,210,230,0.16)" stroke-width="0.8" stroke-linecap="round"/>';
-        s += '<path d="M35,40 Q30,36 24,38 Q18,40 15,46 Q13,52 17,58" fill="none" stroke="rgba(165,195,220,0.14)" stroke-width="0.7" stroke-linecap="round"/>';
-        s += '<path d="M35,40 Q39,43 40,49 Q41,55 37,60 Q33,64 27,65" fill="none" stroke="rgba(205,220,235,0.12)" stroke-width="0.6" stroke-linecap="round"/>';
-        s += '<path d="M35,40 Q31,43 30,49 Q29,55 33,60 Q37,64 43,65" fill="none" stroke="rgba(205,220,235,0.1)" stroke-width="0.55" stroke-linecap="round"/>';
-        s += '<circle cx="35" cy="40" r="2.2" fill="rgba(235,245,255,0.12)"><animate attributeName="opacity" values="0.08;0.14;0.08" dur="9s" repeatCount="indefinite"/></circle>';
+      case 15: // Tempest — driving rain streaks with lightning flash (distinct from Rain aura)
+        s += '<g>';
+        for(var _ti=0;_ti<7;_ti++){
+          var _txs=4+_ti*9, _tys=-14+(_ti%3)*5;
+          var _tdur=(0.72+_ti*0.11)+'s', _tbeg=(_ti*0.21)+'s';
+          s += '<line x1="'+_txs+'" y1="'+_tys+'" x2="'+(_txs+10)+'" y2="'+(_tys+15)+'" stroke="#a8c8e8" stroke-width="0.32" stroke-linecap="round" opacity="0">';
+          s += '<animateTransform attributeName="transform" type="translate" values="0,0;-10,96" dur="'+_tdur+'" begin="'+_tbeg+'" repeatCount="indefinite" calcMode="linear"/>';
+          s += '<animate attributeName="opacity" values="0;0.19;0.19;0" dur="'+_tdur+'" begin="'+_tbeg+'" repeatCount="indefinite"/>';
+          s += '</line>';
+        }
+        s += '<ellipse cx="35" cy="47" rx="28" ry="36" fill="#a8c0ff" opacity="0">';
+        s += '<animate attributeName="opacity" values="0;0;0;0;0;0.08;0;0;0;0;0;0.05;0;0;0;0;0;0.07;0;0" dur="10s" repeatCount="indefinite" calcMode="discrete"/>';
+        s += '</ellipse>';
         s += '</g>';
         break;
       case 16: // Bioluminescent Pulse — teal/cyan pulsing glow with vertical energy lines
@@ -19169,41 +19174,27 @@ document.addEventListener('keydown', function(e) {
           s += '</line>';
         }
         break;
-      case 17: // Spider Web — upper-right corner, spider dangles mid-plant
-        // Hub at upper-right corner (60,8) — web fans down and left
-        // Radial anchor threads from hub
-        s += '<path d="M60,8 L70,0"   stroke="rgba(240,235,216,0.22)" stroke-width="0.6"/>'; // corner
-        s += '<path d="M60,8 L42,0"   stroke="rgba(240,235,216,0.20)" stroke-width="0.6"/>'; // top-left
-        s += '<path d="M60,8 L70,20"  stroke="rgba(240,235,216,0.18)" stroke-width="0.6"/>'; // right-down
-        s += '<path d="M60,8 L70,36"  stroke="rgba(240,235,216,0.16)" stroke-width="0.55"/>'; // far right
-        s += '<path d="M60,8 L28,8"   stroke="rgba(240,235,216,0.14)" stroke-width="0.55"/>'; // left
-        s += '<path d="M60,8 L34,28"  stroke="rgba(240,235,216,0.16)" stroke-width="0.55"/>'; // lower-left
-        s += '<path d="M60,8 L48,38"  stroke="rgba(240,235,216,0.14)" stroke-width="0.5"/>'; // bottom anchor
-        s += '<path d="M60,8 L60,44"  stroke="rgba(240,235,216,0.16)" stroke-width="0.5"/>'; // straight down (spider thread)
-        // Rim-light on 3 primary radials
-        s += '<path d="M60,8 L70,0"   stroke="rgba(240,235,216,0.42)" stroke-width="0.6" stroke-linecap="round"/>';
-        s += '<path d="M60,8 L42,0"   stroke="rgba(240,235,216,0.38)" stroke-width="0.6" stroke-linecap="round"/>';
-        s += '<path d="M60,8 L70,20"  stroke="rgba(240,235,216,0.36)" stroke-width="0.55" stroke-linecap="round"/>';
-        // Concentric arcs — tighter rings near hub, wider as they spread
-        s += '<path d="M66,2 Q60,5 54,2"       fill="none" stroke="rgba(240,235,216,0.22)" stroke-width="0.5"/>';
-        s += '<path d="M68,12 Q58,10 48,4"      fill="none" stroke="rgba(240,235,216,0.20)" stroke-width="0.5"/>';
-        s += '<path d="M70,24 Q56,16 38,10"     fill="none" stroke="rgba(240,235,216,0.16)" stroke-width="0.45"/>';
-        s += '<path d="M70,32 Q54,22 32,18"     fill="none" stroke="rgba(240,235,216,0.13)" stroke-width="0.4"/>';
-        s += '<path d="M64,40 Q52,28 36,26"     fill="none" stroke="rgba(240,235,216,0.10)" stroke-width="0.35"/>';
-        // Dew drops at arc/radial intersections
-        s += '<circle cx="66" cy="2"  r="0.6" fill="rgba(240,235,216,0.35)"/>';
-        s += '<circle cx="54" cy="2"  r="0.5" fill="rgba(240,235,216,0.28)"/>';
-        s += '<circle cx="48" cy="4"  r="0.7" fill="rgba(240,235,216,0.30)"/>';
-        s += '<circle cx="38" cy="10" r="0.5" fill="rgba(240,235,216,0.22)"/>';
-        s += '<circle cx="60" cy="8"  r="0.9" fill="rgba(240,235,216,0.18)"/>'; // hub dot
-        // Spider dangling from hub thread — mid-plant height
-        s += '<ellipse cx="60" cy="41" rx="2.6" ry="2.0" fill="#0d100c" stroke="#8B2E2E" stroke-width="0.4"/>'; // abdomen
-        s += '<ellipse cx="60" cy="38.8" rx="1.5" ry="1.2" fill="#1a1a1a"/>'; // cephalothorax
-        // Legs — 4 pairs, splayed
-        s += '<path d="M57.6,40 L54.8,37.5 M57.6,41 L54.8,43 M62.4,40 L65.2,37.5 M62.4,41 L65.2,43" stroke="#1a1a1a" stroke-width="0.65" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M58.2,39.5 L55.8,36 M58.2,41.5 L55.8,44.5 M61.8,39.5 L64.2,36 M61.8,41.5 L64.2,44.5" stroke="#1a1a1a" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
-        // Red hourglass on abdomen
-        s += '<path d="M59.4,40.8 L60,41.5 L60.6,40.8 L60,41.3 Z" fill="#8B2E2E" opacity="0.7"/>';
+      case 17: // Starfall — meteor shower streaking across the sky above the plant
+        s += '<g opacity="0.65">';
+        var _sf17stars = [[5,4],[15,8],[62,5],[52,15],[8,22],[58,28],[25,3],[45,10],[10,16],[55,20],[38,6],[20,18]];
+        for (var _sf17i = 0; _sf17i < _sf17stars.length; _sf17i++) {
+          var _sfs17 = _sf17stars[_sf17i];
+          s += '<circle cx="'+_sfs17[0]+'" cy="'+_sfs17[1]+'" r="'+(0.15 + (_sf17i%3)*0.1).toFixed(2)+'" fill="#EAE0C8" opacity="'+(0.08 + (_sf17i%4)*0.03).toFixed(2)+'"><animate attributeName="opacity" values="'+(0.08+_sf17i%4*0.03).toFixed(2)+';0.02;'+(0.08+_sf17i%4*0.03).toFixed(2)+'" dur="'+((3+_sf17i%5)*1.1).toFixed(1)+'s" repeatCount="indefinite"/></circle>';
+        }
+        s += '<g><animateTransform attributeName="transform" type="translate" values="0,0;30,20;60,40" dur="3.5s" repeatCount="indefinite"/>';
+        s += '<circle cx="5" cy="5" r="1.2" fill="#EAE0C8" opacity="0"><animate attributeName="opacity" values="0;0;0.8;0.9;0.5;0;0;0" dur="3.5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="5" cy="5" r="0.5" fill="#FFF8E0" opacity="0"><animate attributeName="opacity" values="0;0;1;1;0.6;0;0;0" dur="3.5s" repeatCount="indefinite"/></circle>';
+        s += '<line x1="5" y1="5" x2="-4" y2="-1" stroke="#C8A84B" stroke-width="0.8" opacity="0" stroke-linecap="round"><animate attributeName="opacity" values="0;0;0.5;0.4;0.2;0;0;0" dur="3.5s" repeatCount="indefinite"/></line>';
+        s += '<circle cx="0" cy="3" r="0.2" fill="#E0C060" opacity="0"><animate attributeName="opacity" values="0;0;0.4;0.2;0;0;0;0" dur="3.5s" repeatCount="indefinite"/></circle>';
+        s += '</g>';
+        s += '<g><animateTransform attributeName="transform" type="translate" values="0,0;25,18;50,36" dur="5s" repeatCount="indefinite"/>';
+        s += '<circle cx="55" cy="3" r="0.8" fill="#EAE0C8" opacity="0"><animate attributeName="opacity" values="0;0;0;0.6;0.7;0.3;0;0" dur="5s" repeatCount="indefinite"/></circle>';
+        s += '<line x1="55" y1="3" x2="50" y2="0" stroke="#C8A84B" stroke-width="0.5" opacity="0" stroke-linecap="round"><animate attributeName="opacity" values="0;0;0;0.35;0.25;0.1;0;0" dur="5s" repeatCount="indefinite"/></line>';
+        s += '</g>';
+        s += '<g><animateTransform attributeName="transform" type="translate" values="0,0;20,15;40,30" dur="7s" repeatCount="indefinite"/>';
+        s += '<circle cx="30" cy="2" r="0.5" fill="#EAE0C8" opacity="0"><animate attributeName="opacity" values="0;0;0;0;0.4;0.5;0.2;0" dur="7s" repeatCount="indefinite"/></circle>';
+        s += '</g>';
+        s += '</g>';
         break;
       case 18: // Poison Miasma
         (function(){
@@ -20204,8 +20195,10 @@ document.addEventListener('keydown', function(e) {
         s += '</g>';
         break;
       case 30: // Caterpillar — crawling across bottom, left to right
-        s += '<g opacity="0.76" transform="translate(18,90) scale(1.3) translate(-18,-90)">';
+        s += '<g opacity="1" transform="translate(18,90) scale(1.3) translate(-18,-90)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.6,0;1.2,0;0.6,0;0,0" dur="4.5s" repeatCount="indefinite"/>';
+        // Shadow
+        s += '<ellipse cx="18" cy="92.5" rx="9" ry="0.5" fill="#0d100c" opacity="0.12"/>';
         // Body segments — horizontal across bottom, y=90
         var _cBy = 90, _cBx = 10;
         s += '<circle cx="'+(_cBx)+'" cy="'+_cBy+'" r="1.0" fill="#6DAE52"/>';
@@ -20214,19 +20207,41 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+(_cBx+8.0)+'" cy="'+(_cBy+0.1)+'" r="1.3" fill="#84C96A"/>';
         s += '<circle cx="'+(_cBx+10.8)+'" cy="'+_cBy+'" r="1.25" fill="#7FC463"/>';
         s += '<circle cx="'+(_cBx+13.4)+'" cy="'+(_cBy-0.15)+'" r="1.15" fill="#79B85D"/>';
-        // Head — slightly raised
+        // Segment dividers — subtle dark lines between segments
+        s += '<path d="M'+(_cBx+1.3)+','+(_cBy-0.8)+' Q'+(_cBx+1.3)+','+(_cBy+0.8)+'" stroke="#4A8A3A" stroke-width="0.15" fill="none" opacity="0.3"/>';
+        s += '<path d="M'+(_cBx+3.9)+','+(_cBy-1)+' Q'+(_cBx+3.9)+','+(_cBy+0.9)+'" stroke="#4A8A3A" stroke-width="0.15" fill="none" opacity="0.3"/>';
+        s += '<path d="M'+(_cBx+6.6)+','+(_cBy-1)+' Q'+(_cBx+6.6)+','+(_cBy+1)+'" stroke="#4A8A3A" stroke-width="0.15" fill="none" opacity="0.3"/>';
+        s += '<path d="M'+(_cBx+9.4)+','+(_cBy-0.9)+' Q'+(_cBx+9.4)+','+(_cBy+1)+'" stroke="#4A8A3A" stroke-width="0.15" fill="none" opacity="0.3"/>';
+        s += '<path d="M'+(_cBx+12.1)+','+(_cBy-0.8)+' Q'+(_cBx+12.1)+','+(_cBy+0.9)+'" stroke="#4A8A3A" stroke-width="0.15" fill="none" opacity="0.3"/>';
+        // Light spots on each segment (Monarch caterpillar style)
+        s += '<circle cx="'+(_cBx+2.6)+'" cy="'+(_cBy-0.8)+'" r="0.3" fill="#B8E898" opacity="0.35"/>';
+        s += '<circle cx="'+(_cBx+5.2)+'" cy="'+(_cBy-0.7)+'" r="0.35" fill="#B8E898" opacity="0.35"/>';
+        s += '<circle cx="'+(_cBx+8.0)+'" cy="'+(_cBy-0.6)+'" r="0.35" fill="#B8E898" opacity="0.35"/>';
+        s += '<circle cx="'+(_cBx+10.8)+'" cy="'+(_cBy-0.7)+'" r="0.3" fill="#B8E898" opacity="0.35"/>';
+        s += '<circle cx="'+(_cBx+13.4)+'" cy="'+(_cBy-0.7)+'" r="0.28" fill="#B8E898" opacity="0.35"/>';
+        // Head — slightly raised, darker
         s += '<circle cx="'+(_cBx+15.8)+'" cy="'+(_cBy-0.4)+'" r="1.05" fill="#567B46"/>';
-        s += '<circle cx="'+(_cBx+16.3)+'" cy="'+(_cBy-0.6)+'" r="0.22" fill="#111"/>';
-        // Antennae — forward-facing
-        s += '<path d="M'+(_cBx+16.6)+','+(_cBy-1.2)+' L'+(_cBx+18)+','+(_cBy-2.2)+' M'+(_cBx+16.8)+','+(_cBy-0.8)+' L'+(_cBx+18.4)+','+(_cBy-1.4)+'" fill="none" stroke="#4D6C40" stroke-width="0.12" stroke-linecap="round"/>';
-        // Prolegs — tiny stubs underneath
-        s += '<line x1="'+(_cBx+2.6)+'" y1="'+(_cBy+1)+'" x2="'+(_cBx+2.6)+'" y2="'+(_cBy+1.8)+'" stroke="#4E6F43" stroke-width="0.15"/>';
-        s += '<line x1="'+(_cBx+5.2)+'" y1="'+(_cBy+1.1)+'" x2="'+(_cBx+5.2)+'" y2="'+(_cBy+1.9)+'" stroke="#4E6F43" stroke-width="0.15"/>';
-        s += '<line x1="'+(_cBx+8.0)+'" y1="'+(_cBy+1.2)+'" x2="'+(_cBx+8.0)+'" y2="'+(_cBy+2.0)+'" stroke="#4E6F43" stroke-width="0.15"/>';
-        s += '<line x1="'+(_cBx+10.8)+'" y1="'+(_cBy+1.1)+'" x2="'+(_cBx+10.8)+'" y2="'+(_cBy+1.9)+'" stroke="#4E6F43" stroke-width="0.15"/>';
-        s += '<line x1="'+(_cBx+13.4)+'" y1="'+(_cBy+1)+'" x2="'+(_cBx+13.4)+'" y2="'+(_cBy+1.8)+'" stroke="#4E6F43" stroke-width="0.15"/>';
-        // Dorsal stripe highlight
-        s += '<path d="M'+(_cBx+1)+','+(_cBy-0.6)+' Q'+(_cBx+8)+','+(_cBy-1.4)+' '+(_cBx+15)+','+(_cBy-0.8)+'" fill="none" stroke="#CBE8AF" stroke-width="0.12" opacity="0.38"/>';
+        // Eye
+        s += '<circle cx="'+(_cBx+16.3)+'" cy="'+(_cBy-0.6)+'" r="0.28" fill="#111"/>';
+        s += '<circle cx="'+(_cBx+16.35)+'" cy="'+(_cBy-0.65)+'" r="0.08" fill="rgba(240,235,216,0.4)"/>';
+        // Mandible detail
+        s += '<path d="M'+(_cBx+16.7)+','+(_cBy-0.1)+' L'+(_cBx+17)+','+(_cBy+0.2)+'" stroke="#3A5A30" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        // Antennae — forward-facing, slightly longer
+        s += '<path d="M'+(_cBx+16.6)+','+(_cBy-1.2)+' L'+(_cBx+18.2)+','+(_cBy-2.5)+'" fill="none" stroke="#4D6C40" stroke-width="0.15" stroke-linecap="round"/>';
+        s += '<path d="M'+(_cBx+16.8)+','+(_cBy-0.8)+' L'+(_cBx+18.6)+','+(_cBy-1.6)+'" fill="none" stroke="#4D6C40" stroke-width="0.15" stroke-linecap="round"/>';
+        // Antenna tips — tiny balls
+        s += '<circle cx="'+(_cBx+18.2)+'" cy="'+(_cBy-2.5)+'" r="0.15" fill="#4D6C40"/>';
+        s += '<circle cx="'+(_cBx+18.6)+'" cy="'+(_cBy-1.6)+'" r="0.15" fill="#4D6C40"/>';
+        // Prolegs — visible stubs underneath with tiny feet
+        s += '<line x1="'+(_cBx+2.6)+'" y1="'+(_cBy+1)+'" x2="'+(_cBx+2.6)+'" y2="'+(_cBy+1.8)+'" stroke="#4E6F43" stroke-width="0.2"/>';
+        s += '<line x1="'+(_cBx+5.2)+'" y1="'+(_cBy+1.1)+'" x2="'+(_cBx+5.2)+'" y2="'+(_cBy+1.9)+'" stroke="#4E6F43" stroke-width="0.2"/>';
+        s += '<line x1="'+(_cBx+8.0)+'" y1="'+(_cBy+1.2)+'" x2="'+(_cBx+8.0)+'" y2="'+(_cBy+2.0)+'" stroke="#4E6F43" stroke-width="0.2"/>';
+        s += '<line x1="'+(_cBx+10.8)+'" y1="'+(_cBy+1.1)+'" x2="'+(_cBx+10.8)+'" y2="'+(_cBy+1.9)+'" stroke="#4E6F43" stroke-width="0.2"/>';
+        s += '<line x1="'+(_cBx+13.4)+'" y1="'+(_cBy+1)+'" x2="'+(_cBx+13.4)+'" y2="'+(_cBy+1.8)+'" stroke="#4E6F43" stroke-width="0.2"/>';
+        // Dorsal stripe highlight — brighter
+        s += '<path d="M'+(_cBx+1)+','+(_cBy-0.6)+' Q'+(_cBx+8)+','+(_cBy-1.4)+' '+(_cBx+15)+','+(_cBy-0.8)+'" fill="none" stroke="#CBE8AF" stroke-width="0.18" opacity="0.5"/>';
+        // Ventral stripe — lighter underside
+        s += '<path d="M'+(_cBx+1)+','+(_cBy+0.5)+' Q'+(_cBx+8)+','+(_cBy+0.8)+' '+(_cBx+15)+','+(_cBy+0.3)+'" fill="none" stroke="#A0D880" stroke-width="0.12" opacity="0.2"/>';
         s += '</g>';
         break;
       case 31: // Garden Spider — descending from top-right corner on silk thread
@@ -20523,44 +20538,79 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="22" cy="89.5" rx="1.5" ry="0.6" fill="#4A4A42"/>';
         s += '</g>';
         break;
-      case 36: // Storm Wraith
-        s += renderStormWraith(t, uid);
+      case 36: // Great Blue Heron — tall wading bird, standing still (LEGENDARY)
+        // Ardea herodias: North America's largest heron. Patient, statuesque,
+        // elegant S-curved neck, dagger bill, slate-blue plumage.
+        // Standing motionless on one leg, watching.
+        s += '<g opacity="1" transform="translate(60,68) scale(1.15) translate(-60,-68)">';
+        // Shadow
+        s += '<ellipse cx="60" cy="90" rx="3" ry="0.6" fill="#0d100c" opacity="0.12"/>';
+        // Standing leg — long, thin, slate
+        s += '<line x1="60" y1="82" x2="60" y2="89.5" stroke="#7A8A78" stroke-width="0.6" stroke-linecap="round"/>';
+        // Tucked leg — bent, knee visible
+        s += '<path d="M59,82.5 Q58,84 59,85 Q60,84.5 59.5,83" stroke="#7A8A78" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        // Foot — splayed toes
+        s += '<path d="M59,89.5 L58,90 M60,89.5 L60,90.2 M61,89.5 L62,90" stroke="#7A8A78" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        // Body — compact, angled slightly forward
+        s += '<ellipse cx="59" cy="79" rx="4" ry="3" fill="#6A7A8A" transform="rotate(-10,59,79)"/>';
+        // Wing detail — folded along body
+        s += '<path d="M56,78 Q58,80 62,81 Q64,80 63,78" fill="#5A6A7A" opacity="0.5"/>';
+        // Belly — lighter
+        s += '<ellipse cx="59" cy="80.5" rx="2.5" ry="1.5" fill="#8A9AA8" opacity="0.25"/>';
+        // Neck — long S-curve (heron's signature)
+        s += '<path d="M58,76 Q57,74 57.5,72 Q58,70 59,68 Q60,66 60.5,64" fill="none" stroke="#8A9AA8" stroke-width="1.8" stroke-linecap="round"/>';
+        // Neck front — lighter
+        s += '<path d="M58,76 Q57.2,74 57.7,72 Q58.2,70.2 59.2,68.2" fill="none" stroke="#B0B8C0" stroke-width="0.6" stroke-linecap="round" opacity="0.3"/>';
+        // Head — small, flat-topped
+        s += '<ellipse cx="60.5" cy="63" rx="2" ry="1.5" fill="#8A9AA8"/>';
+        // Crown — dark cap with trailing plume (breeding plumage)
+        s += '<path d="M58.5,62.5 Q60.5,61.5 62.5,62.5" fill="#2A3A4A"/>';
+        s += '<path d="M62.5,62.5 Q64,62 65.5,62.5" stroke="#2A3A4A" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
+        // Eye — fierce, golden
+        s += '<circle cx="59.5" cy="63" r="0.5" fill="#C8A84B"/>';
+        s += '<circle cx="59.5" cy="63" r="0.2" fill="#1A1A10"/>';
+        s += '<circle cx="59.6" cy="62.8" r="0.1" fill="rgba(240,235,216,0.5)"/>';
+        // Bill — long, dagger-like, yellow
+        s += '<path d="M58.5,63.5 L55.5,64 L55.3,63.5 L58.5,62.8 Z" fill="#C8A84B"/>';
+        s += '<line x1="55.5" y1="63.7" x2="58.5" y2="63.1" stroke="#A08830" stroke-width="0.15"/>';
+        // Breast streaks — dark vertical marks
+        s += '<line x1="58" y1="73" x2="58.2" y2="75" stroke="#4A5A6A" stroke-width="0.2" opacity="0.3"/>';
+        s += '<line x1="59" y1="72.5" x2="59.2" y2="74.5" stroke="#4A5A6A" stroke-width="0.2" opacity="0.25"/>';
+        s += '</g>';
         break;
-      case 37: // Starfall — meteor shower with sparking trail (LEGENDARY)
-        // A celestial event made companion. Not one star but a recurring
-        // shower of meteors streaking across the sky above the plant.
-        // Each meteor has a bright head, elongated tail, and trail of
-        // disintegrating sparks. The garden exists under a blessed sky.
-        s += '<g opacity="0.65">';
-        // Background star field — tiny fixed points for depth
-        var _sf37stars = [[5,4],[15,8],[62,5],[52,15],[8,22],[58,28],[25,3],[45,10],[10,16],[55,20],[38,6],[20,18]];
-        for (var _sf37i = 0; _sf37i < _sf37stars.length; _sf37i++) {
-          var _sfs = _sf37stars[_sf37i];
-          s += '<circle cx="'+_sfs[0]+'" cy="'+_sfs[1]+'" r="'+(0.15 + (_sf37i%3)*0.1).toFixed(2)+'" fill="#EAE0C8" opacity="'+(0.08 + (_sf37i%4)*0.03).toFixed(2)+'"><animate attributeName="opacity" values="'+(0.08+_sf37i%4*0.03).toFixed(2)+';'+(0.02).toFixed(2)+';'+(0.08+_sf37i%4*0.03).toFixed(2)+'" dur="'+((3+_sf37i%5)*1.1).toFixed(1)+'s" repeatCount="indefinite"/></circle>';
-        }
-        // Meteor 1 — primary, bright, crossing from upper-left to mid-right
-        s += '<g><animateTransform attributeName="transform" type="translate" values="0,0;30,20;60,40" dur="3.5s" repeatCount="indefinite"/>';
-        // Meteor head — bright white-gold core
-        s += '<circle cx="5" cy="5" r="1.2" fill="#EAE0C8" opacity="0"><animate attributeName="opacity" values="0;0;0.8;0.9;0.5;0;0;0" dur="3.5s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="5" cy="5" r="0.5" fill="#FFF8E0" opacity="0"><animate attributeName="opacity" values="0;0;1;1;0.6;0;0;0" dur="3.5s" repeatCount="indefinite"/></circle>';
-        // Tail — elongated glow trailing behind
-        s += '<line x1="5" y1="5" x2="-4" y2="-1" stroke="#C8A84B" stroke-width="0.8" opacity="0" stroke-linecap="round"><animate attributeName="opacity" values="0;0;0.5;0.4;0.2;0;0;0" dur="3.5s" repeatCount="indefinite"/></line>';
-        s += '<line x1="5" y1="5" x2="-8" y2="-3" stroke="#C8A84B" stroke-width="0.3" opacity="0" stroke-linecap="round"><animate attributeName="opacity" values="0;0;0.3;0.2;0.1;0;0;0" dur="3.5s" repeatCount="indefinite"/></line>';
-        // Spark fragments — tiny dots breaking off the tail
-        s += '<circle cx="0" cy="3" r="0.2" fill="#E0C060" opacity="0"><animate attributeName="opacity" values="0;0;0.4;0.2;0;0;0;0" dur="3.5s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="-3" cy="1" r="0.15" fill="#D8B850" opacity="0"><animate attributeName="opacity" values="0;0;0;0.3;0.15;0;0;0" dur="3.5s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="-6" cy="-1" r="0.12" fill="#C8A84B" opacity="0"><animate attributeName="opacity" values="0;0;0;0;0.25;0.1;0;0" dur="3.5s" repeatCount="indefinite"/></circle>';
-        s += '</g>';
-        // Meteor 2 — secondary, smaller, different timing
-        s += '<g><animateTransform attributeName="transform" type="translate" values="0,0;25,18;50,36" dur="5s" repeatCount="indefinite"/>';
-        s += '<circle cx="55" cy="3" r="0.8" fill="#EAE0C8" opacity="0"><animate attributeName="opacity" values="0;0;0;0.6;0.7;0.3;0;0" dur="5s" repeatCount="indefinite"/></circle>';
-        s += '<line x1="55" y1="3" x2="50" y2="0" stroke="#C8A84B" stroke-width="0.5" opacity="0" stroke-linecap="round"><animate attributeName="opacity" values="0;0;0;0.35;0.25;0.1;0;0" dur="5s" repeatCount="indefinite"/></line>';
-        s += '</g>';
-        // Meteor 3 — faint, distant
-        s += '<g><animateTransform attributeName="transform" type="translate" values="0,0;20,15;40,30" dur="7s" repeatCount="indefinite"/>';
-        s += '<circle cx="30" cy="2" r="0.5" fill="#EAE0C8" opacity="0"><animate attributeName="opacity" values="0;0;0;0;0.4;0.5;0.2;0" dur="7s" repeatCount="indefinite"/></circle>';
-        s += '<line x1="30" y1="2" x2="27" y2="0" stroke="#C8A84B" stroke-width="0.3" opacity="0" stroke-linecap="round"><animate attributeName="opacity" values="0;0;0;0;0.2;0.3;0.1;0" dur="7s" repeatCount="indefinite"/></line>';
-        s += '</g>';
+      case 37: // Garden Spider — web-building orb weaver in upper corner (LEGENDARY)
+        // Argiope aurantia: the writing spider. Dangles from silk thread
+        // with web visible in corner. Moved from aura to companion.
+        s += '<g opacity="1">';
+        // Web in upper-right corner
+        s += '<path d="M60,8 L70,0"  stroke="rgba(240,235,216,0.22)" stroke-width="0.6"/>';
+        s += '<path d="M60,8 L42,0"  stroke="rgba(240,235,216,0.20)" stroke-width="0.6"/>';
+        s += '<path d="M60,8 L70,20" stroke="rgba(240,235,216,0.18)" stroke-width="0.6"/>';
+        s += '<path d="M60,8 L70,36" stroke="rgba(240,235,216,0.16)" stroke-width="0.55"/>';
+        s += '<path d="M60,8 L28,8"  stroke="rgba(240,235,216,0.14)" stroke-width="0.55"/>';
+        s += '<path d="M60,8 L34,28" stroke="rgba(240,235,216,0.16)" stroke-width="0.55"/>';
+        s += '<path d="M60,8 L48,38" stroke="rgba(240,235,216,0.14)" stroke-width="0.5"/>';
+        s += '<path d="M60,8 L60,44" stroke="rgba(240,235,216,0.16)" stroke-width="0.5"/>';
+        // Concentric arcs
+        s += '<path d="M66,2 Q60,5 54,2"     fill="none" stroke="rgba(240,235,216,0.22)" stroke-width="0.5"/>';
+        s += '<path d="M68,12 Q58,10 48,4"    fill="none" stroke="rgba(240,235,216,0.20)" stroke-width="0.5"/>';
+        s += '<path d="M70,24 Q56,16 38,10"   fill="none" stroke="rgba(240,235,216,0.16)" stroke-width="0.45"/>';
+        s += '<path d="M70,32 Q54,22 32,18"   fill="none" stroke="rgba(240,235,216,0.13)" stroke-width="0.4"/>';
+        s += '<path d="M64,40 Q52,28 36,26"   fill="none" stroke="rgba(240,235,216,0.10)" stroke-width="0.35"/>';
+        // Dew drops
+        s += '<circle cx="66" cy="2"  r="0.6" fill="rgba(240,235,216,0.35)"/>';
+        s += '<circle cx="54" cy="2"  r="0.5" fill="rgba(240,235,216,0.28)"/>';
+        s += '<circle cx="48" cy="4"  r="0.7" fill="rgba(240,235,216,0.30)"/>';
+        s += '<circle cx="38" cy="10" r="0.5" fill="rgba(240,235,216,0.22)"/>';
+        s += '<circle cx="60" cy="8"  r="0.9" fill="rgba(240,235,216,0.18)"/>';
+        // Spider dangling from thread
+        s += '<ellipse cx="60" cy="41" rx="2.6" ry="2.0" fill="#0d100c" stroke="#8B2E2E" stroke-width="0.4"/>';
+        s += '<ellipse cx="60" cy="38.8" rx="1.5" ry="1.2" fill="#1a1a1a"/>';
+        // 4 pairs of legs
+        s += '<path d="M57.6,40 L54.8,37.5 M57.6,41 L54.8,43 M62.4,40 L65.2,37.5 M62.4,41 L65.2,43" stroke="#1a1a1a" stroke-width="0.65" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M58.2,39.5 L55.8,36 M58.2,41.5 L55.8,44.5 M61.8,39.5 L64.2,36 M61.8,41.5 L64.2,44.5" stroke="#1a1a1a" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        // Red hourglass
+        s += '<path d="M59.4,40.8 L60,41.5 L60.6,40.8 L60,41.3 Z" fill="#8B2E2E" opacity="0.7"/>';
         s += '</g>';
         break;
       case 38: // The Beholder — floating eye creature (ultra-rare)
@@ -20590,7 +20640,7 @@ document.addEventListener('keydown', function(e) {
         s += '</g>';
         break;
       case 39: // Kitty — standing tail-up on bottom-right soil, classic cat stance
-        s += '<g opacity="0.80" transform="translate(57,89) scale(1.25) translate(-57,-89)">';
+        s += '<g opacity="1" transform="translate(57,89) scale(1.5) translate(-57,-89)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.2,0;0.4,0;0.2,0;0,0" dur="5.8s" repeatCount="indefinite"/>';
         // Body — standing horizontal, facing left
         s += '<ellipse cx="57" cy="89.2" rx="3.8" ry="1.8" fill="#8A6C4E"/>';
@@ -22075,19 +22125,8 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="57.5" cy="88.8" rx="1.3" ry="0.55" fill="#8A5838" opacity="0.55"/>';
         s += '</g>';
         break;
-      case 'Starfall':
-        s += '<g opacity="0.6">';
-        s += '<line x1="8" y1="6" x2="25" y2="20" stroke="#C8A84B" stroke-width="1" opacity="0.4">';
-        s += '<animate attributeName="opacity" values="0;0.5;0" dur="4s" repeatCount="indefinite"/>';
-        s += '</line>';
-        s += '<circle cx="8" cy="6" r="2" fill="#C8A84B" opacity="0.7">';
-        s += '<animate attributeName="opacity" values="0;0.8;0" dur="4s" repeatCount="indefinite"/>';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;-6,-4;0,0" dur="4s" repeatCount="indefinite"/>';
-        s += '</circle>';
-        s += '<circle cx="12" cy="9" r="0.7" fill="#EAE0C8" opacity="0.3"><animate attributeName="opacity" values="0;0.4;0" dur="3.5s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="18" cy="14" r="0.5" fill="#EAE0C8" opacity="0.2"><animate attributeName="opacity" values="0;0.3;0" dur="5s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="55" cy="12" r="1" fill="#EAE0C8" opacity="0.15"><animate attributeName="opacity" values="0.15;0.05;0.15" dur="6s" repeatCount="indefinite"/></circle>';
-        s += '</g>';
+      case 'Garden Spider':
+        // Rendered as normal companion (case 37), not mythic overlay
         break;
       case 'Woolly Mammoth':
         // Rendered as normal companion (case 34), not mythic overlay
@@ -22095,7 +22134,7 @@ document.addEventListener('keydown', function(e) {
       case 'Raccoon':
         // Rendered as normal companion (case 35), not mythic overlay
         break;
-      case 'Storm Wraith':
+      case 'Great Blue Heron':
         s += renderStormWraith(t, uid);
         break;
       case 'The Beholder': // set-103-8: D&D-inspired floating eye creature
@@ -22166,10 +22205,10 @@ document.addEventListener('keydown', function(e) {
     var TITLES_MYTHIC = {
       'The Toad':             'of the Toad',
       'The Capybara':         'of the Capybara',
-      'Starfall':             'of the Starfall',
+      'Garden Spider':        'of the Spider',
       'Woolly Mammoth': 'of the Mammoth',
       'Raccoon':   'of the Raccoon',
-      'Storm Wraith':         'of the Storm',
+      'Great Blue Heron':         'of the Heron',
       'The Beholder':         'of the Beholder'  // set-103-8
     };
 
@@ -22196,8 +22235,8 @@ document.addEventListener('keydown', function(e) {
 
     var TITLES_MYTHIC = {
       'The Toad':'of the Toad','The Capybara':'of the Capybara',
-      'Starfall':'of the Starfall','Woolly Mammoth':'of the Mammoth',
-      'Raccoon':'of the Raccoon','Storm Wraith':'of the Storm',
+      'Garden Spider':'of the Spider','Woolly Mammoth':'of the Mammoth',
+      'Raccoon':'of the Raccoon','Great Blue Heron':'of the Heron',
       'The Beholder':'of the Beholder'
     };
     var title = (t.mythicName !== 'None' && TITLES_MYTHIC[t.mythicName]) ? TITLES_MYTHIC[t.mythicName] : '';
@@ -22218,10 +22257,10 @@ document.addEventListener('keydown', function(e) {
     var TITLES_MYTHIC = {
       'The Toad':             'of the Toad',
       'The Capybara':         'of the Capybara',
-      'Starfall':             'of the Starfall',
+      'Garden Spider':        'of the Spider',
       'Woolly Mammoth': 'of the Mammoth',
       'Raccoon':   'of the Raccoon',
-      'Storm Wraith':         'of the Storm',
+      'Great Blue Heron':         'of the Heron',
       'The Beholder':         'of the Beholder'
     };
     if (t.mythicName !== 'None' && TITLES_MYTHIC[t.mythicName]) {
@@ -22977,7 +23016,7 @@ document.addEventListener('keydown', function(e) {
     if (cat==='MYTHIC') {
       if (t.mythicName==='None') return null;
       if (t.mythicName==='The Beholder') return {tier:'cosmic',color:_TIER_COLORS.cosmic};
-      if (t.mythicName==='Starfall'||t.mythicName==='Storm Wraith') return {tier:'legendary',color:_TIER_COLORS.legendary};
+      if (t.mythicName==='Garden Spider'||t.mythicName==='Great Blue Heron') return {tier:'legendary',color:_TIER_COLORS.legendary};
       if (t.mythicName==='Raccoon'||t.mythicName==='Woolly Mammoth') return {tier:'legendary',color:_TIER_COLORS.legendary};
       return {tier:'mythic',color:_TIER_COLORS.mythic};
     }
@@ -28926,7 +28965,7 @@ function _buildInfo(hash){
       var N=['Wisp','Bloom','Fern','Thorn','Crown','Root','Drift','Spiral','Haze','Phantom','Crest','Veil','Shard','Arch','Spire','Reed'];
       nm=A[parseInt(hash.substring(0,2),16)%A.length]+' '+N[parseInt(hash.substring(2,4),16)%N.length];
       if(t.mutationName&&t.mutationName!=='None') rarities.push(t.mutationName);
-      if(t.mythic>=0xD0){var m=t.mythic===0xFF?'Beholder':t.mythic>=0xFE?'Starfall':t.mythic>=0xFC?'Storm Wraith':t.mythic>=0xF4?'Biolum':t.mythic>=0xE0?'Capybara':'Toad';rarities.push(m);}
+      if(t.mythic>=0xD0){var m=t.mythic===0xFF?'Beholder':t.mythic>=0xFE?'Spider':t.mythic>=0xFC?'Heron':t.mythic>=0xF4?'Mammoth':t.mythic>=0xE0?'Capybara':'Toad';rarities.push(m);}
       if(t.hasFlower&&t.flower===15) rarities.push('Glow Flower');
       if(t.pot===15) rarities.push('Golden Pot');
       if(t.base===15) rarities.push('Crystal Base');
@@ -31471,7 +31510,7 @@ function _revealPlant(){
   // Check for creature
   setTimeout(function(){
     if(_giftTraits&&_giftTraits.companion>=20){
-      var creatures={20:'Droplet',21:'Bee',22:'Pollen',23:'Firefly',24:'Butterfly',25:'Moth',26:'Ladybug',27:'Snail',28:'Hummingbird',29:'Dragonfly',30:'Caterpillar',31:'Spider',32:'Toad',33:'Capybara',34:'Bioluminescent Pulse',35:'Ancient Rune',36:'Storm Wraith',37:'Starfall',38:'Beholder',39:'Cat',40:'Platypus',41:'Praying Mantis',42:'Hedgehog',43:'Pangolin',44:'Luna Moth',45:'Hermit Crab',46:'Glow Snail',47:'Axolotl',48:'Scorpion',49:'Origami Crane',50:'Garden Gnome',51:'Robin',52:'Worm',53:'Turtle',54:'Bat',55:'Mouse',56:'Owl',57:'Silly Goose'};
+      var creatures={20:'Droplet',21:'Bee',22:'Pollen',23:'Firefly',24:'Butterfly',25:'Moth',26:'Ladybug',27:'Snail',28:'Hummingbird',29:'Dragonfly',30:'Caterpillar',31:'Spider',32:'Toad',33:'Capybara',34:'Bioluminescent Pulse',35:'Ancient Rune',36:'Great Blue Heron',37:'Starfall',38:'Beholder',39:'Cat',40:'Platypus',41:'Praying Mantis',42:'Hedgehog',43:'Pangolin',44:'Luna Moth',45:'Hermit Crab',46:'Glow Snail',47:'Axolotl',48:'Scorpion',49:'Origami Crane',50:'Garden Gnome',51:'Robin',52:'Worm',53:'Turtle',54:'Bat',55:'Mouse',56:'Owl',57:'Silly Goose'};
       var cName=creatures[_giftTraits.companion];
       if(cName){
         var cEl=document.getElementById('ob-creature');
@@ -32838,7 +32877,7 @@ function _renderForecast(){
     { name: 'Spectrum Leaf', ok: (function() { var c={}; iA.t.leafColors.forEach(function(x){c[x]=1}); iB.t.leafColors.forEach(function(x){c[x]=1}); return Object.keys(c).length>=4; })(), prob: 0.15, terra: '+2' },
     { name: 'Canopy Weave', ok: iA.t.leafCount >= 4 && iB.t.leafCount >= 4, prob: 0.20, terra: '+1' },
     { name: 'Thorned Crown', ok: ((iA.t.base%30===16)&&iB.t.leafCount>=5)||((iB.t.base%30===16)&&iA.t.leafCount>=5), prob: 0.40, terra: '+2' },
-    { name: 'Biolum Spots', ok: ((iA.t.companion===34)||(iB.t.companion===34))&&Math.abs(iA.t.leafSize-iB.t.leafSize)>3, prob: 0.30, terra: '+2' },
+    { name: 'Mammoth Guard', ok: ((iA.t.companion===34)||(iB.t.companion===34))&&Math.abs(iA.t.leafSize-iB.t.leafSize)>3, prob: 0.30, terra: '+2' },
     { name: 'Aerial Root', ok: ((iA.t.pot===4)&&iB.t.stemHeight>40)||((iB.t.pot===4)&&iA.t.stemHeight>40), prob: 0.15, terra: '+1' }
   ];
 
