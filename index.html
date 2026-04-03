@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-03u';
+  var _SVG_CACHE_VER = '2026-04-03v';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21099,28 +21099,54 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M61,92 L60.5,92.5 M61,92 L61,92.5 M61,92 L61.5,92.4" stroke="#5A4028" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
         // Body — elongated, hunched, covered in overlapping scales
         s += '<path d="M52,88 Q52,86.5 54,85.5 Q57,84.5 60,85.5 Q62,86.5 62,88.5 Q62,90.5 60,91.5 Q57,92 54,91.5 Q52,90.5 52,88 Z" fill="#8A7048"/>';
-        // SCALES — filled upside-down triangles (V shapes) covering body
-        var _pgSeed43 = 43;
+        // SCALES — filled upside-down triangles in ROWS across body
+        // Border only on the two V sides (bottom), NOT on the flat top
         var _pgSCols = ['#B89868','#A88858','#C8A878','#9A7848','#B8A068'];
-        for (var _psi = 0; _psi < 80; _psi++) {
-          _pgSeed43 = (_pgSeed43 * 1103515245 + 12345) & 0x7FFFFFFF;
-          var _psx = 53 + (_pgSeed43 % 1000) / 1000 * 9;
-          _pgSeed43 = (_pgSeed43 * 1103515245 + 12345) & 0x7FFFFFFF;
-          var _psy = 86 + (_pgSeed43 % 1000) / 1000 * 5.5;
-          // Tight ellipse body check
-          var _psdx = (_psx - 57) / 5, _psdy = (_psy - 88.5) / 3;
-          if (_psdx * _psdx + _psdy * _psdy > 0.85) continue;
-          _pgSeed43 = (_pgSeed43 * 1103515245 + 12345) & 0x7FFFFFFF;
-          var _psSize = 0.5 + (_pgSeed43 % 100) / 150;
-          var _psCol = _pgSCols[_psi % _pgSCols.length];
-          // Filled upside-down triangle (V shape, point down)
-          s += '<path d="M'+(_psx-_psSize*0.5).toFixed(1)+','+_psy.toFixed(1)+' L'+_psx.toFixed(1)+','+(_psy+_psSize*0.8).toFixed(1)+' L'+(_psx+_psSize*0.5).toFixed(1)+','+_psy.toFixed(1)+' Z" fill="'+_psCol+'" stroke="#6A5030" stroke-width="0.1" opacity="0.6"/>';
+        // Row definitions: [y, startX, endX, scaleWidth, scaleHeight]
+        var _pgRows = [
+          [86, 54.5, 60, 0.7, 0.55],
+          [86.8, 53.5, 61, 0.7, 0.55],
+          [87.6, 53, 61.5, 0.7, 0.55],
+          [88.4, 53, 61.5, 0.7, 0.55],
+          [89.2, 53.5, 61, 0.7, 0.55],
+          [90, 54.5, 60, 0.7, 0.55],
+          [90.8, 55.5, 59, 0.65, 0.5]
+        ];
+        var _pgSci = 0;
+        for (var _pgr = 0; _pgr < _pgRows.length; _pgr++) {
+          var _prY = _pgRows[_pgr][0], _prX0 = _pgRows[_pgr][1], _prX1 = _pgRows[_pgr][2];
+          var _prW = _pgRows[_pgr][3], _prH = _pgRows[_pgr][4];
+          // Offset every other row by half a scale width
+          var _prOff = (_pgr % 2 === 0) ? 0 : _prW * 0.5;
+          for (var _prx = _prX0 + _prOff; _prx < _prX1; _prx += _prW) {
+            // Ellipse body check — must be inside body
+            var _prdx = (_prx - 57) / 4.8, _prdy = (_prY - 88.5) / 2.8;
+            if (_prdx * _prdx + _prdy * _prdy > 0.82) continue;
+            var _prCol = _pgSCols[_pgSci % _pgSCols.length];
+            _pgSci++;
+            // Filled triangle + border ONLY on the two V sides (not top edge)
+            s += '<path d="M'+(_prx-_prW*0.5).toFixed(1)+','+_prY.toFixed(1)+' L'+_prx.toFixed(1)+','+(_prY+_prH).toFixed(1)+' L'+(_prx+_prW*0.5).toFixed(1)+','+_prY.toFixed(1)+' Z" fill="'+_prCol+'" stroke="none" opacity="0.6"/>';
+            s += '<path d="M'+(_prx-_prW*0.5).toFixed(1)+','+_prY.toFixed(1)+' L'+_prx.toFixed(1)+','+(_prY+_prH).toFixed(1)+' L'+(_prx+_prW*0.5).toFixed(1)+','+_prY.toFixed(1)+'" fill="none" stroke="#6A5030" stroke-width="0.1" opacity="0.5"/>';
+          }
         }
-        // Tail scales — filled V shapes
-        for (var _pts = 0; _pts < 12; _pts++) {
-          var _ptsx = 62 + _pts * 0.6;
-          var _ptsy = 88 + Math.sin(_pts * 0.8) * 0.3;
-          s += '<path d="M'+(_ptsx-0.25).toFixed(1)+','+_ptsy.toFixed(1)+' L'+_ptsx.toFixed(1)+','+(_ptsy+0.4).toFixed(1)+' L'+(_ptsx+0.25).toFixed(1)+','+_ptsy.toFixed(1)+' Z" fill="#A88858" stroke="#6A5030" stroke-width="0.08" opacity="0.55"/>';
+        // Tail scales — rows along the tail, staying on the tail shape
+        var _pgTRows = [
+          [88.2, 61, 68, 0.55, 0.4],
+          [88.7, 61.5, 68.5, 0.55, 0.4],
+          [89.1, 62, 68, 0.5, 0.35]
+        ];
+        for (var _pgtr = 0; _pgtr < _pgTRows.length; _pgtr++) {
+          var _ptY = _pgTRows[_pgtr][0], _ptX0 = _pgTRows[_pgtr][1], _ptX1 = _pgTRows[_pgtr][2];
+          var _ptW = _pgTRows[_pgtr][3], _ptH = _pgTRows[_pgtr][4];
+          var _ptOff = (_pgtr % 2 === 0) ? 0 : _ptW * 0.5;
+          for (var _ptx = _ptX0 + _ptOff; _ptx < _ptX1; _ptx += _ptW) {
+            // Tail narrows toward tip — check rough bounds
+            var _ptFrac = (_ptx - 60) / 9.5;
+            var _ptHalfW = 1.0 - _ptFrac * 0.8;
+            if (Math.abs(_ptY - 88.5) > _ptHalfW) continue;
+            s += '<path d="M'+(_ptx-_ptW*0.45).toFixed(1)+','+_ptY.toFixed(1)+' L'+_ptx.toFixed(1)+','+(_ptY+_ptH).toFixed(1)+' L'+(_ptx+_ptW*0.45).toFixed(1)+','+_ptY.toFixed(1)+' Z" fill="#A88858" stroke="none" opacity="0.55"/>';
+            s += '<path d="M'+(_ptx-_ptW*0.45).toFixed(1)+','+_ptY.toFixed(1)+' L'+_ptx.toFixed(1)+','+(_ptY+_ptH).toFixed(1)+' L'+(_ptx+_ptW*0.45).toFixed(1)+','+_ptY.toFixed(1)+'" fill="none" stroke="#6A5030" stroke-width="0.08" opacity="0.45"/>';
+          }
         }
         // Front legs — positioned forward, thick with big claws
         s += '<path d="M54,90 Q53.5,91 53.5,92" stroke="#7A6038" stroke-width="1" fill="none" stroke-linecap="round"/>';
