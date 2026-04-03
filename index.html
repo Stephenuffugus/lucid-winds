@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-03n';
+  var _SVG_CACHE_VER = '2026-04-03p';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -20771,18 +20771,21 @@ document.addEventListener('keydown', function(e) {
         s += '<g opacity="1" transform="translate(60,68) scale(1.15) translate(-60,-68)">';
         // Shadow
         s += '<ellipse cx="60" cy="90" rx="3" ry="0.6" fill="#0d100c" opacity="0.12"/>';
-        // Standing leg — long, thin, slate
-        s += '<line x1="60" y1="82" x2="60" y2="89.5" stroke="#7A8A78" stroke-width="0.6" stroke-linecap="round"/>';
-        // Tucked leg — bent, knee visible
-        s += '<path d="M59,82.5 Q58,84 59,85 Q60,84.5 59.5,83" stroke="#7A8A78" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
-        // Foot — splayed toes
-        s += '<path d="M59,89.5 L58,90 M60,89.5 L60,90.2 M61,89.5 L62,90" stroke="#7A8A78" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
         // Body — compact, angled slightly forward
         s += '<ellipse cx="59" cy="79" rx="4" ry="3" fill="#6A7A8A" transform="rotate(-10,59,79)"/>';
         // Wing detail — folded along body
         s += '<path d="M56,78 Q58,80 62,81 Q64,80 63,78" fill="#5A6A7A" opacity="0.5"/>';
         // Belly — lighter
         s += '<ellipse cx="59" cy="80.5" rx="2.5" ry="1.5" fill="#8A9AA8" opacity="0.25"/>';
+        // Legs — drawn AFTER body, starting from inside body mass
+        // Standing leg — originates from belly, long and thin
+        s += '<line x1="60" y1="80.5" x2="60" y2="89.5" stroke="#7A8A78" stroke-width="0.6" stroke-linecap="round"/>';
+        // Knee joint
+        s += '<circle cx="60" cy="85" r="0.3" fill="#6A7A68"/>';
+        // Tucked leg — bent, originating from body
+        s += '<path d="M59,80.5 Q58,83 57.5,84.5 Q58,85.5 59,85 Q60,84 59.5,82" stroke="#7A8A78" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        // Foot — splayed toes connected to leg
+        s += '<path d="M59,89.5 L57.5,90.2 M60,89.5 L60,90.5 M60,89.5 L61.5,90.2" stroke="#7A8A78" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
         // Neck — long S-curve (heron's signature)
         s += '<path d="M58,76 Q57,74 57.5,72 Q58,70 59,68 Q60,66 60.5,64" fill="none" stroke="#8A9AA8" stroke-width="1.8" stroke-linecap="round"/>';
         // Neck front — lighter
@@ -20888,27 +20891,31 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M59.5,85 Q60.5,85.5 61,87" fill="#7A5C3E" opacity="0.25"/>';
         // Belly — lighter
         s += '<path d="M55,89.5 Q57,90.2 59,89.5" fill="#B09070" opacity="0.2"/>';
-        // Dense fur texture — 120 procedural thin lines in brown/tan/white/black
+        // Dense fur texture — 120 sporadic thin lines (pseudo-random, not rows)
         var _cat39cols = ['#5A3E2B','#7A5C3E','#8A6C4E','#9A7C5E','#A88A68','#B8A080','#C8B898','#D8C8A8','#E8DCC8','#3A2A1A','#2A1A10','#F0E8D8'];
+        // Pseudo-random seed using large primes for sporadic placement
+        var _cf39seed = 31;
         for (var _cf39 = 0; _cf39 < 120; _cf39++) {
-          // Distribute across body: x=53.5-61, y=84-90
-          var _cf39s = (_cf39 * 11 + 7) % 120;
-          var _cf39x = 53.5 + (_cf39s % 16) * 0.48;
-          var _cf39y = 84 + ((_cf39s * 3 + _cf39 * 7) % 120) / 20;
+          _cf39seed = (_cf39seed * 1103515245 + 12345) & 0x7FFFFFFF;
+          var _cf39x = 53.5 + (_cf39seed % 1000) / 1000 * 7.5;
+          _cf39seed = (_cf39seed * 1103515245 + 12345) & 0x7FFFFFFF;
+          var _cf39y = 84 + (_cf39seed % 1000) / 1000 * 6;
           // Ellipse boundary check for body shape
           var _cf39cx = 57.2, _cf39cy = 87, _cf39rx = 4, _cf39ry = 3.2;
           var _cf39dx = (_cf39x - _cf39cx) / _cf39rx, _cf39dy = (_cf39y - _cf39cy) / _cf39ry;
           if (_cf39dx * _cf39dx + _cf39dy * _cf39dy > 1) continue;
           var _cf39c = _cat39cols[_cf39 % _cat39cols.length];
-          var _cf39len = 0.5 + (_cf39 % 4) * 0.12;
-          var _cf39tilt = ((_cf39 % 5) - 2) * 0.06;
+          _cf39seed = (_cf39seed * 1103515245 + 12345) & 0x7FFFFFFF;
+          var _cf39len = 0.4 + (_cf39seed % 100) / 200;
+          var _cf39tilt = ((_cf39seed % 100) - 50) / 600;
           s += '<line x1="'+_cf39x.toFixed(1)+'" y1="'+_cf39y.toFixed(1)+'" x2="'+(_cf39x+_cf39tilt).toFixed(2)+'" y2="'+(_cf39y+_cf39len).toFixed(2)+'" stroke="'+_cf39c+'" stroke-width="0.07" opacity="0.25"/>';
         }
-        // Head fur — 30 lines on the head
+        // Head fur — 30 sporadic lines on the head
         for (var _ch39 = 0; _ch39 < 30; _ch39++) {
-          var _ch39s = (_ch39 * 13 + 3) % 30;
-          var _ch39x = 51 + (_ch39s % 10) * 0.4;
-          var _ch39y = 80.5 + ((_ch39s * 3 + _ch39 * 5) % 30) / 10;
+          _cf39seed = (_cf39seed * 1103515245 + 12345) & 0x7FFFFFFF;
+          var _ch39x = 51 + (_cf39seed % 1000) / 1000 * 4;
+          _cf39seed = (_cf39seed * 1103515245 + 12345) & 0x7FFFFFFF;
+          var _ch39y = 80 + (_cf39seed % 1000) / 1000 * 3.5;
           var _ch39cx = 53, _ch39cy = 82, _ch39r = 2.3;
           var _ch39d = Math.sqrt((_ch39x-_ch39cx)*(_ch39x-_ch39cx)+(_ch39y-_ch39cy)*(_ch39y-_ch39cy));
           if (_ch39d > _ch39r) continue;
@@ -20981,9 +20988,9 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M49,89.8 L49.5,90.3 M50,89.5 L50.5,90.2 M51,89.3 L51.3,90 M48.5,90.2 L49,90.7 M49.5,90 L50,90.5" stroke="#5A3E28" stroke-width="0.1" fill="none" opacity="0.3"/>';
         // Tail outline
         s += '<path d="M53,89 Q51,89 49.5,89.5 Q48,90 47.5,90.5 Q47,91 48,91 Q49.5,91 51.5,90.5" fill="none" stroke="#5A3E28" stroke-width="0.2" opacity="0.3"/>';
-        // Hind legs — short, tucked, webbed
-        s += '<path d="M53,90 Q52.5,90.5 52.5,91.2" stroke="#7A5C3E" stroke-width="0.8" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M52,91.2 L51.5,91.5 M52.5,91.2 L52.5,91.6 M53,91.2 L53.3,91.5" stroke="#8A6C4E" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        // Hind legs — originating from inside body, short, webbed
+        s += '<path d="M54,89.5 Q53,90 52.5,91" stroke="#7A5C3E" stroke-width="1" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M52,91 L51.2,91.5 M52.5,91 L52.5,91.6 M53,91 L53.5,91.4" stroke="#8A6C4E" stroke-width="0.18" fill="none" stroke-linecap="round"/>';
         // Body — low, streamlined, hydrodynamic
         s += '<path d="M51,88.5 Q51,87 53,86 Q56,85 59,86 Q61,87 61.5,88.5 Q61.5,90 60,91 Q57,91.5 54,91 Q52,90.5 51,89.5 Q51,89 51,88.5 Z" fill="#7A5C3E"/>';
         // Dorsal ridge — darker back
@@ -21005,9 +21012,9 @@ document.addEventListener('keydown', function(e) {
           var _pftilt = ((_pfi % 5) - 2) * 0.05;
           s += '<line x1="'+_pfx.toFixed(1)+'" y1="'+_pfy.toFixed(1)+'" x2="'+(_pfx+_pftilt).toFixed(2)+'" y2="'+(_pfy+_pflen).toFixed(2)+'" stroke="'+_pfc+'" stroke-width="0.07" opacity="0.25"/>';
         }
-        // Front legs — short, strong, webbed (extend beyond toes for swimming)
-        s += '<path d="M59.5,90 Q60,90.8 60,91.2" stroke="#7A5C3E" stroke-width="0.8" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M59.5,91.2 L59,91.5 M60,91.2 L60,91.6 M60.5,91.2 L60.8,91.5" stroke="#8A6C4E" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        // Front legs — originating from inside body, webbed
+        s += '<path d="M59,89.5 Q60,90 60.5,91" stroke="#7A5C3E" stroke-width="1" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M60,91 L59.5,91.5 M60.5,91 L60.5,91.6 M61,91 L61.5,91.4" stroke="#8A6C4E" stroke-width="0.18" fill="none" stroke-linecap="round"/>';
         // Head — connects seamlessly to body (overlapping fill)
         s += '<path d="M60,87.5 Q61,87 62,87 Q63,87.5 63,88.5 Q63,89.5 62,90 Q61,90.5 60,90" fill="#8A6C4E"/>';
         // Eye — small, set high on head (semi-aquatic, can see while swimming)
@@ -21226,8 +21233,11 @@ document.addEventListener('keydown', function(e) {
         // Eye — tiny (pangolins have poor eyesight)
         s += '<circle cx="50" cy="84.8" r="0.3" fill="#1A1008"/>';
         s += '<circle cx="50.1" cy="84.7" r="0.08" fill="rgba(200,180,120,0.5)"/>';
-        // No external ears — just a slight bump
-        s += '<ellipse cx="51.5" cy="84" rx="0.4" ry="0.3" fill="#8A7048" opacity="0.5"/>';
+        // Pointy ears — small triangular
+        s += '<path d="M51,84 L50.5,83 L51.5,83.5 Z" fill="#9A8058"/>';
+        s += '<path d="M52,84 L52.5,83 L51.5,83.5 Z" fill="#9A8058"/>';
+        // Pink tongue — long, thin, sticking out of snout tip
+        s += '<path d="M46.5,85.2 Q45,85.5 43.5,85.3 Q42.5,85 42,85.2" stroke="#D88A8A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 44: // Luna Moth — ethereal, top-left corner, slow moonlike drift
@@ -21324,6 +21334,27 @@ document.addEventListener('keydown', function(e) {
           // Each quill: dark base, white/cream barbed tip
           s += '<line x1="'+_pq[0]+'" y1="'+_pq[1]+'" x2="'+(_pq[0]+_pq[2])+'" y2="'+(_pq[1]+_pq[3])+'" stroke="#3A2818" stroke-width="0.25" stroke-linecap="round"/>';
           s += '<line x1="'+(_pq[0]+_pq[2]*0.6)+'" y1="'+(_pq[1]+_pq[3]*0.6)+'" x2="'+(_pq[0]+_pq[2])+'" y2="'+(_pq[1]+_pq[3])+'" stroke="#E8DCC8" stroke-width="0.2" stroke-linecap="round" opacity="0.7"/>';
+        }
+        // Extra quills — 50 more, all aimed AWAY from head (toward right/back)
+        for (var _pq2 = 0; _pq2 < 50; _pq2++) {
+          // Distribute across body back/top area: x=54-62, y=86-91
+          var _pq2seed = (_pq2 * 1103515245 + 12345) & 0x7FFFFFFF;
+          var _pq2x = 54 + (_pq2seed % 1000) / 1000 * 8;
+          _pq2seed = (_pq2seed * 1103515245 + 12345) & 0x7FFFFFFF;
+          var _pq2y = 86 + (_pq2seed % 1000) / 1000 * 5;
+          // Skip if near face area (x<53.5, y 87-89)
+          if (_pq2x < 53.5 && _pq2y > 86.5 && _pq2y < 89.5) continue;
+          // Ellipse check
+          var _pq2dx = (_pq2x - 57.5) / 5.5, _pq2dy = (_pq2y - 89) / 3;
+          if (_pq2dx * _pq2dx + _pq2dy * _pq2dy > 1) continue;
+          // Direction: always away from head (positive x, slight y variation)
+          _pq2seed = (_pq2seed * 1103515245 + 12345) & 0x7FFFFFFF;
+          var _pq2len = 1.5 + (_pq2seed % 100) / 60;
+          var _pq2angle = -0.3 + (_pq2seed % 100) / 160; // mostly rightward/upward
+          var _pq2ex = _pq2x + _pq2len * 0.7;
+          var _pq2ey = _pq2y - _pq2len * (0.5 + _pq2angle);
+          s += '<line x1="'+_pq2x.toFixed(1)+'" y1="'+_pq2y.toFixed(1)+'" x2="'+_pq2ex.toFixed(1)+'" y2="'+_pq2ey.toFixed(1)+'" stroke="#3A2818" stroke-width="0.15" stroke-linecap="round" opacity="0.35"/>';
+          s += '<line x1="'+((_pq2x+_pq2ex)/2).toFixed(1)+'" y1="'+((_pq2y+_pq2ey)/2).toFixed(1)+'" x2="'+_pq2ex.toFixed(1)+'" y2="'+_pq2ey.toFixed(1)+'" stroke="#E0D4C0" stroke-width="0.1" stroke-linecap="round" opacity="0.4"/>';
         }
         // Head — small relative to body, connected via overlapping fill
         s += '<path d="M53,89 Q52,88.5 51.5,88 Q51,87.5 51.5,87 Q52,86.5 53,87 Q53.5,87.5 53.5,88.5 Q53.5,89 53,89 Z" fill="#6A5040"/>';
