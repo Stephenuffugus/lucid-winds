@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-06i';
+  var _SVG_CACHE_VER = '2026-04-06j';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -22241,23 +22241,11 @@ document.addEventListener('keydown', function(e) {
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.1,-0.06;0,0" dur="4s" repeatCount="indefinite"/>';
         // Shadow
         s += '<ellipse cx="10.5" cy="91.5" rx="3" ry="0.6" fill="#0d100c" opacity="0.1"/>';
-        // Tail — TWICE as thick, enormous bushy plume
-        s += '<path d="M12,88 Q16,85 15,82 Q14.5,80 15.5,79 Q17,78 16.5,80 Q16,82 16.5,84 Q17,86.5 14,89 Q12.5,89.5 11.5,89" fill="#9A7A55" stroke="#8A6A45" stroke-width="0.2"/>';
-        // Tail fluff — lighter edges for volume
-        s += '<path d="M14,82 Q16,80 15.5,79" fill="none" stroke="#B8A078" stroke-width="1" stroke-linecap="round" opacity="0.3"/>';
-        s += '<path d="M15,85 Q16.5,83 16,81" fill="none" stroke="#B8A078" stroke-width="0.8" stroke-linecap="round" opacity="0.25"/>';
-        // Thin fur lines on tail for texture
-        var _sqSeed = 67;
-        var _sqCols = ['#8A6A45','#9A7A55','#A88A65','#7A5A35','#B09A70'];
-        for (var _sqi = 0; _sqi < 25; _sqi++) {
-          _sqSeed = (_sqSeed * 1103515245 + 12345) & 0x7FFFFFFF;
-          var _sqx = 12 + (_sqSeed % 1000) / 1000 * 5;
-          _sqSeed = (_sqSeed * 1103515245 + 12345) & 0x7FFFFFFF;
-          var _sqy = 80 + (_sqSeed % 1000) / 1000 * 8;
-          var _sqdx = (_sqx - 14) / 3, _sqdy = (_sqy - 84) / 5;
-          if (_sqdx * _sqdx + _sqdy * _sqdy > 0.85) continue;
-          s += '<line x1="'+_sqx.toFixed(1)+'" y1="'+_sqy.toFixed(1)+'" x2="'+(_sqx+0.05).toFixed(2)+'" y2="'+(_sqy+0.5).toFixed(2)+'" stroke="'+_sqCols[_sqi%_sqCols.length]+'" stroke-width="0.06" opacity="0.2"/>';
-        }
+        // Tail — bushy plume, stops at top of head height (~y=84)
+        s += '<path d="M12,88 Q15,86 15,84 Q15.5,83 16,84 Q16,85.5 15.5,87 Q15,88.5 13,89 Q12,89 11.5,89" fill="#9A7A55" stroke="#8A6A45" stroke-width="0.2"/>';
+        // Tail fluff — lighter edges
+        s += '<path d="M14.5,84.5 Q15.5,84 15.5,83.5" fill="none" stroke="#B8A078" stroke-width="0.8" stroke-linecap="round" opacity="0.3"/>';
+        s += '<path d="M14.5,86 Q15.5,85 15.5,84" fill="none" stroke="#B8A078" stroke-width="0.6" stroke-linecap="round" opacity="0.25"/>';
         // Body — sitting upright on haunches, round and hunched
         s += '<ellipse cx="10" cy="88.5" rx="2.8" ry="2.2" fill="#8A7050"/>';
         // Belly — lighter cream-gray
