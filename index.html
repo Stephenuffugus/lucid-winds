@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-03e';
+  var _SVG_CACHE_VER = '2026-04-03f';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -20859,10 +20859,33 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M59.5,85 Q60.5,85.5 61,87" fill="#7A5C3E" opacity="0.25"/>';
         // Belly — lighter
         s += '<path d="M55,89.5 Q57,90.2 59,89.5" fill="#B09070" opacity="0.2"/>';
-        // Fur texture — soft strokes along body
-        s += '<path d="M55,84.5 Q56,84 57,84.5" stroke="#9A7C5E" stroke-width="0.12" fill="none" opacity="0.2"/>';
-        s += '<path d="M57.5,84 Q58.5,83.8 59.5,84.5" stroke="#9A7C5E" stroke-width="0.12" fill="none" opacity="0.18"/>';
-        s += '<path d="M55,86 Q56.5,85.5 58,86" stroke="#7A5C3E" stroke-width="0.1" fill="none" opacity="0.15"/>';
+        // Dense fur texture — 120 procedural thin lines in brown/tan/white/black
+        var _cat39cols = ['#5A3E2B','#7A5C3E','#8A6C4E','#9A7C5E','#A88A68','#B8A080','#C8B898','#D8C8A8','#E8DCC8','#3A2A1A','#2A1A10','#F0E8D8'];
+        for (var _cf39 = 0; _cf39 < 120; _cf39++) {
+          // Distribute across body: x=53.5-61, y=84-90
+          var _cf39s = (_cf39 * 11 + 7) % 120;
+          var _cf39x = 53.5 + (_cf39s % 16) * 0.48;
+          var _cf39y = 84 + ((_cf39s * 3 + _cf39 * 7) % 120) / 20;
+          // Ellipse boundary check for body shape
+          var _cf39cx = 57.2, _cf39cy = 87, _cf39rx = 4, _cf39ry = 3.2;
+          var _cf39dx = (_cf39x - _cf39cx) / _cf39rx, _cf39dy = (_cf39y - _cf39cy) / _cf39ry;
+          if (_cf39dx * _cf39dx + _cf39dy * _cf39dy > 1) continue;
+          var _cf39c = _cat39cols[_cf39 % _cat39cols.length];
+          var _cf39len = 0.5 + (_cf39 % 4) * 0.12;
+          var _cf39tilt = ((_cf39 % 5) - 2) * 0.06;
+          s += '<line x1="'+_cf39x.toFixed(1)+'" y1="'+_cf39y.toFixed(1)+'" x2="'+(_cf39x+_cf39tilt).toFixed(2)+'" y2="'+(_cf39y+_cf39len).toFixed(2)+'" stroke="'+_cf39c+'" stroke-width="0.07" opacity="0.25"/>';
+        }
+        // Head fur — 30 lines on the head
+        for (var _ch39 = 0; _ch39 < 30; _ch39++) {
+          var _ch39s = (_ch39 * 13 + 3) % 30;
+          var _ch39x = 51 + (_ch39s % 10) * 0.4;
+          var _ch39y = 80.5 + ((_ch39s * 3 + _ch39 * 5) % 30) / 10;
+          var _ch39cx = 53, _ch39cy = 82, _ch39r = 2.3;
+          var _ch39d = Math.sqrt((_ch39x-_ch39cx)*(_ch39x-_ch39cx)+(_ch39y-_ch39cy)*(_ch39y-_ch39cy));
+          if (_ch39d > _ch39r) continue;
+          var _ch39c = _cat39cols[(_ch39 + 4) % _cat39cols.length];
+          s += '<line x1="'+_ch39x.toFixed(1)+'" y1="'+_ch39y.toFixed(1)+'" x2="'+(_ch39x+0.03).toFixed(2)+'" y2="'+(_ch39y+0.45).toFixed(2)+'" stroke="'+_ch39c+'" stroke-width="0.06" opacity="0.22"/>';
+        }
         // Front legs — proper cat stance, slight bend
         s += '<path d="M54.5,88.5 Q54.2,89.5 54.5,91" stroke="#8A6C4E" stroke-width="1.2" stroke-linecap="round" fill="none"/>';
         s += '<path d="M56,88.8 Q55.8,89.8 56,91" stroke="#8A6C4E" stroke-width="1.2" stroke-linecap="round" fill="none"/>';
