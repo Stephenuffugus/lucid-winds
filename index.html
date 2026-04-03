@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-05b';
+  var _SVG_CACHE_VER = '2026-04-05c';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21752,8 +21752,8 @@ document.addEventListener('keydown', function(e) {
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.1,-0.05;0,0" dur="5s" repeatCount="indefinite"/>';
         // Shadow
         s += '<ellipse cx="8" cy="92" rx="3.5" ry="0.4" fill="#0d100c" opacity="0.1"/>';
-        // Long skinny tail — curving behind
-        s += '<path d="M11.5,90 Q13,89.5 14,90 Q15,91 14.5,92" fill="none" stroke="#C0A088" stroke-width="0.3" stroke-linecap="round"/>';
+        // Long skinny tail — connected to body
+        s += '<path d="M10.5,90 Q12,89.5 13.5,90 Q15,91 14.5,92" fill="none" stroke="#C0A088" stroke-width="0.3" stroke-linecap="round"/>';
         // 4 legs — tiny, visible
         // Back legs
         s += '<path d="M10,91 L10,92" stroke="#8A6C4E" stroke-width="0.5" stroke-linecap="round"/>';
@@ -21782,15 +21782,15 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="4.1" cy="89.1" r="0.1" fill="rgba(240,235,216,0.55)"/>';
         s += '<circle cx="5.2" cy="89.2" r="0.3" fill="#111"/>';
         s += '<circle cx="5.3" cy="89.1" r="0.08" fill="rgba(240,235,216,0.5)"/>';
-        // Pink nose
-        s += '<ellipse cx="3.2" cy="89.8" rx="0.25" ry="0.2" fill="#D98FA1"/>';
+        // Pink nose — centered under eyes
+        s += '<ellipse cx="4.5" cy="90" rx="0.25" ry="0.2" fill="#D98FA1"/>';
         // Whiskers — 3 per side
-        s += '<line x1="3.2" y1="89.6" x2="1.5" y2="89.2" stroke="#C0A088" stroke-width="0.08" opacity="0.4"/>';
-        s += '<line x1="3.2" y1="89.8" x2="1.5" y2="89.8" stroke="#C0A088" stroke-width="0.08" opacity="0.35"/>';
-        s += '<line x1="3.2" y1="90" x2="1.5" y2="90.4" stroke="#C0A088" stroke-width="0.08" opacity="0.3"/>';
-        s += '<line x1="5" y1="89.6" x2="6" y2="89.2" stroke="#C0A088" stroke-width="0.06" opacity="0.3"/>';
-        s += '<line x1="5" y1="89.8" x2="6" y2="89.8" stroke="#C0A088" stroke-width="0.06" opacity="0.25"/>';
-        s += '<line x1="5" y1="90" x2="6" y2="90.3" stroke="#C0A088" stroke-width="0.06" opacity="0.2"/>';
+        s += '<line x1="4.2" y1="89.8" x2="2.5" y2="89.4" stroke="#C0A088" stroke-width="0.08" opacity="0.4"/>';
+        s += '<line x1="4.2" y1="90" x2="2.5" y2="90" stroke="#C0A088" stroke-width="0.08" opacity="0.35"/>';
+        s += '<line x1="4.2" y1="90.2" x2="2.5" y2="90.6" stroke="#C0A088" stroke-width="0.08" opacity="0.3"/>';
+        s += '<line x1="5" y1="89.8" x2="6.5" y2="89.4" stroke="#C0A088" stroke-width="0.06" opacity="0.3"/>';
+        s += '<line x1="5" y1="90" x2="6.5" y2="90" stroke="#C0A088" stroke-width="0.06" opacity="0.25"/>';
+        s += '<line x1="5" y1="90.2" x2="6.5" y2="90.5" stroke="#C0A088" stroke-width="0.06" opacity="0.2"/>';
         s += '</g>';
         break;
       case 56: // Owl — flying, wings spread, brown V feather pattern
