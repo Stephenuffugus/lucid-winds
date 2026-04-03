@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-03z';
+  var _SVG_CACHE_VER = '2026-04-04a';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -22181,44 +22181,49 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="28.5" cy="90" rx="1.5" ry="0.6" fill="rgba(255,240,200,0.06)"><animate attributeName="opacity" values="0.06;0.14;0.06" dur="3s" repeatCount="indefinite"/></ellipse>';
         s += '</g>';
         break;
-      case 72: // Moon Jellyfish — translucent bell drifting in upper area (Rare)
-        // Aurelia aurita: 95% water, almost entirely transparent. The bell
-        // pulses gently for locomotion. Four horseshoe gonads visible through
-        // the glass-clear dome. Trailing tentacles drift in invisible currents.
-        // This should be the most ethereal, ghostly companion in the game.
-        s += '<g opacity="0.65" transform="translate(12,20) scale(1.5) translate(-12,-20)">';
+      case 72: // Jellyfish — aqua-colored bell with wavy tentacles (Rare)
+        s += '<g opacity="0.7" transform="translate(12,20) scale(1.5) translate(-12,-20)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.6,-1.2;0.2,0;-0.4,0.8;0,0" dur="7s" repeatCount="indefinite"/>';
-        // Bell dome — translucent hemisphere, pulsing
-        s += '<ellipse cx="12" cy="19.5" rx="3.5" ry="2.5" fill="rgba(180,170,220,0.12)" stroke="rgba(180,170,220,0.2)" stroke-width="0.35">';
+        // Aqua glow behind bell
+        s += '<ellipse cx="12" cy="20" rx="4" ry="3" fill="rgba(0,200,200,0.04)"><animate attributeName="opacity" values="0.04;0.08;0.04" dur="3.5s" repeatCount="indefinite"/></ellipse>';
+        // Bell dome — aqua, pulsing
+        s += '<ellipse cx="12" cy="19.5" rx="3.5" ry="2.5" fill="rgba(0,200,210,0.2)" stroke="rgba(0,220,220,0.35)" stroke-width="0.35">';
         s += '<animate attributeName="ry" values="2.5;2.2;2.5" dur="3.5s" repeatCount="indefinite"/>';
         s += '<animate attributeName="rx" values="3.5;3.8;3.5" dur="3.5s" repeatCount="indefinite"/>';
         s += '</ellipse>';
-        // Bell edge — slightly more opaque rim (thicker tissue at margin)
-        s += '<path d="M8.5,20.5 Q10,21.5 12,21.8 Q14,21.5 15.5,20.5" fill="none" stroke="rgba(200,190,240,0.25)" stroke-width="0.5" stroke-linecap="round">';
+        // Bell highlight — lighter aqua sheen on top
+        s += '<ellipse cx="11.5" cy="19" rx="2" ry="1.2" fill="rgba(100,240,240,0.1)"/>';
+        s += '<ellipse cx="11" cy="18.5" rx="1" ry="0.6" fill="rgba(180,255,255,0.12)"/>';
+        // Bell rim — thicker aqua edge
+        s += '<path d="M8.5,20.5 Q10,21.5 12,21.8 Q14,21.5 15.5,20.5" fill="none" stroke="rgba(0,200,210,0.35)" stroke-width="0.6" stroke-linecap="round">';
         s += '<animate attributeName="d" values="M8.5,20.5 Q10,21.5 12,21.8 Q14,21.5 15.5,20.5;M8.2,20.8 Q10,21.8 12,22 Q14,21.8 15.8,20.8;M8.5,20.5 Q10,21.5 12,21.8 Q14,21.5 15.5,20.5" dur="3.5s" repeatCount="indefinite"/>';
         s += '</path>';
-        // Inner dome highlight — refraction of light through the bell
-        s += '<ellipse cx="11.5" cy="19" rx="2" ry="1.2" fill="rgba(230,220,255,0.1)"/>';
-        // Four horseshoe gonads — the "four-leaf clover" visible through the bell
-        // These purple-pink loops are the most recognizable feature of Aurelia
+        // Inner organs — aqua loops visible through bell
         var _jg72 = [[11,19.2,-0.3],[13,19.2,0.3],[11,20.2,-0.2],[13,20.2,0.2]];
         for (var _j72i = 0; _j72i < 4; _j72i++) {
           var _j72g = _jg72[_j72i];
-          s += '<path d="M'+_j72g[0]+','+_j72g[1]+' Q'+(_j72g[0]+_j72g[2]*3)+','+(_j72g[1]-0.4)+' '+(_j72g[0]+_j72g[2]*1.5)+','+(_j72g[1]+0.5)+'" fill="none" stroke="rgba(180,120,170,0.2)" stroke-width="0.5" stroke-linecap="round"/>';
+          s += '<path d="M'+_j72g[0]+','+_j72g[1]+' Q'+(_j72g[0]+_j72g[2]*3)+','+(_j72g[1]-0.4)+' '+(_j72g[0]+_j72g[2]*1.5)+','+(_j72g[1]+0.5)+'" fill="none" stroke="rgba(0,180,180,0.2)" stroke-width="0.4" stroke-linecap="round"/>';
         }
-        // Oral arms — 4 short, frilly tendrils from center of bell
-        s += '<path d="M11.5,21.5 Q11,23 10.8,24.5 Q10.5,25 11,24.8" fill="none" stroke="rgba(200,180,230,0.18)" stroke-width="0.5" stroke-linecap="round"/>';
-        s += '<path d="M12,21.5 Q12.2,23.5 12,25 Q11.8,25.5 12.3,25.2" fill="none" stroke="rgba(200,180,230,0.15)" stroke-width="0.45" stroke-linecap="round"/>';
-        s += '<path d="M12.5,21.5 Q13,23 13.2,24.5 Q13.5,25 13,24.8" fill="none" stroke="rgba(200,180,230,0.18)" stroke-width="0.5" stroke-linecap="round"/>';
-        s += '<path d="M12,21.8 Q11.5,24 11.8,26" fill="none" stroke="rgba(190,170,220,0.12)" stroke-width="0.35" stroke-linecap="round"/>';
-        // Trailing tentacles — long, gossamer-thin threads
-        // These drift in invisible currents — slightly different periods for organic feel
-        s += '<path d="M9.5,21 Q9,24 9.5,27 Q10,29 9.8,30" fill="none" stroke="rgba(180,170,220,0.12)" stroke-width="0.2" stroke-linecap="round"><animate attributeName="d" values="M9.5,21 Q9,24 9.5,27 Q10,29 9.8,30;M9.5,21 Q8.5,24 9,27 Q9.5,29.5 9,31;M9.5,21 Q9,24 9.5,27 Q10,29 9.8,30" dur="5s" repeatCount="indefinite"/></path>';
-        s += '<path d="M10.8,21.5 Q10.5,25 11,28 Q11.5,30 11,31.5" fill="none" stroke="rgba(180,170,220,0.1)" stroke-width="0.18" stroke-linecap="round"><animate attributeName="d" values="M10.8,21.5 Q10.5,25 11,28 Q11.5,30 11,31.5;M10.8,21.5 Q10,25 10.5,28.5 Q11,31 10.8,32;M10.8,21.5 Q10.5,25 11,28 Q11.5,30 11,31.5" dur="6s" repeatCount="indefinite"/></path>';
-        s += '<path d="M13,21.5 Q13.5,25 13,28 Q12.5,30.5 13,32" fill="none" stroke="rgba(180,170,220,0.1)" stroke-width="0.18" stroke-linecap="round"><animate attributeName="d" values="M13,21.5 Q13.5,25 13,28 Q12.5,30.5 13,32;M13,21.5 Q14,25 13.5,28.5 Q13,31 13.5,32.5;M13,21.5 Q13.5,25 13,28 Q12.5,30.5 13,32" dur="5.5s" repeatCount="indefinite"/></path>';
-        s += '<path d="M14.5,21 Q15,24 14.5,27 Q14,29.5 14.5,31" fill="none" stroke="rgba(180,170,220,0.08)" stroke-width="0.15" stroke-linecap="round"><animate attributeName="d" values="M14.5,21 Q15,24 14.5,27 Q14,29.5 14.5,31;M14.5,21 Q15.5,24 15,27.5 Q14.5,30 15,31.5;M14.5,21 Q15,24 14.5,27 Q14,29.5 14.5,31" dur="7s" repeatCount="indefinite"/></path>';
-        // Bioluminescent glow — faint pulse from center
-        s += '<ellipse cx="12" cy="20" rx="2" ry="1.5" fill="rgba(200,180,255,0.04)"><animate attributeName="opacity" values="0.04;0.1;0.04" dur="3.5s" repeatCount="indefinite"/></ellipse>';
+        // ── TENTACLES — varying shades of aqua, short/medium/long, ALL wavy ──
+        // SHORT tentacles (3) — lighter aqua
+        s += '<path d="M10,21.5 Q9.5,23 10.2,24 Q10.8,24.5 10.5,25" fill="none" stroke="rgba(80,220,220,0.25)" stroke-width="0.3" stroke-linecap="round"><animate attributeName="d" values="M10,21.5 Q9.5,23 10.2,24 Q10.8,24.5 10.5,25;M10,21.5 Q9.2,23 9.8,24.2 Q10.5,25 10,25.5;M10,21.5 Q9.5,23 10.2,24 Q10.8,24.5 10.5,25" dur="4s" repeatCount="indefinite"/></path>';
+        s += '<path d="M12.5,21.5 Q13,23 12.5,24 Q12,24.5 12.5,25" fill="none" stroke="rgba(60,210,210,0.22)" stroke-width="0.28" stroke-linecap="round"><animate attributeName="d" values="M12.5,21.5 Q13,23 12.5,24 Q12,24.5 12.5,25;M12.5,21.5 Q13.3,23 13,24.2 Q12.3,25 12.8,25.5;M12.5,21.5 Q13,23 12.5,24 Q12,24.5 12.5,25" dur="4.5s" repeatCount="indefinite"/></path>';
+        s += '<path d="M14,21 Q14.5,22.5 14,23.5 Q13.5,24 14,24.5" fill="none" stroke="rgba(100,230,230,0.2)" stroke-width="0.25" stroke-linecap="round"><animate attributeName="d" values="M14,21 Q14.5,22.5 14,23.5 Q13.5,24 14,24.5;M14,21 Q14.8,22.5 14.5,23.8 Q13.8,24.5 14.3,25;M14,21 Q14.5,22.5 14,23.5 Q13.5,24 14,24.5" dur="3.8s" repeatCount="indefinite"/></path>';
+        // MEDIUM tentacles (3) — mid aqua
+        s += '<path d="M9.5,21 Q9,23 9.5,25 Q10,27 9.5,28" fill="none" stroke="rgba(0,190,200,0.2)" stroke-width="0.25" stroke-linecap="round"><animate attributeName="d" values="M9.5,21 Q9,23 9.5,25 Q10,27 9.5,28;M9.5,21 Q8.5,23.5 9,25.5 Q9.8,27.5 9,28.5;M9.5,21 Q9,23 9.5,25 Q10,27 9.5,28" dur="5s" repeatCount="indefinite"/></path>';
+        s += '<path d="M11.5,21.5 Q11,24 11.5,26 Q12,27.5 11.5,28.5" fill="none" stroke="rgba(0,200,190,0.18)" stroke-width="0.22" stroke-linecap="round"><animate attributeName="d" values="M11.5,21.5 Q11,24 11.5,26 Q12,27.5 11.5,28.5;M11.5,21.5 Q10.5,24 11,26.5 Q11.8,28 11,29;M11.5,21.5 Q11,24 11.5,26 Q12,27.5 11.5,28.5" dur="5.5s" repeatCount="indefinite"/></path>';
+        s += '<path d="M14.5,21 Q15,23 14.5,25.5 Q14,27 14.5,28" fill="none" stroke="rgba(40,210,200,0.18)" stroke-width="0.22" stroke-linecap="round"><animate attributeName="d" values="M14.5,21 Q15,23 14.5,25.5 Q14,27 14.5,28;M14.5,21 Q15.5,23 15,26 Q14.3,27.5 15,28.5;M14.5,21 Q15,23 14.5,25.5 Q14,27 14.5,28" dur="6s" repeatCount="indefinite"/></path>';
+        // LONG tentacles (3) — deeper aqua, thinner
+        s += '<path d="M10.5,21.5 Q10,24 10.5,27 Q11,29 10.5,31 Q10,32 10.5,33" fill="none" stroke="rgba(0,170,180,0.15)" stroke-width="0.2" stroke-linecap="round"><animate attributeName="d" values="M10.5,21.5 Q10,24 10.5,27 Q11,29 10.5,31 Q10,32 10.5,33;M10.5,21.5 Q9.5,24.5 10,27.5 Q10.8,30 10,32 Q9.5,33 10,34;M10.5,21.5 Q10,24 10.5,27 Q11,29 10.5,31 Q10,32 10.5,33" dur="6s" repeatCount="indefinite"/></path>';
+        s += '<path d="M12,21.5 Q12.5,25 12,28 Q11.5,30.5 12,32.5 Q12.5,33.5 12,34" fill="none" stroke="rgba(0,180,170,0.12)" stroke-width="0.18" stroke-linecap="round"><animate attributeName="d" values="M12,21.5 Q12.5,25 12,28 Q11.5,30.5 12,32.5 Q12.5,33.5 12,34;M12,21.5 Q12.8,25 12.5,28.5 Q12,31 12.5,33 Q13,34.5 12.5,35;M12,21.5 Q12.5,25 12,28 Q11.5,30.5 12,32.5 Q12.5,33.5 12,34" dur="7s" repeatCount="indefinite"/></path>';
+        s += '<path d="M13.5,21.5 Q14,24 13.5,27 Q13,29.5 13.5,31.5 Q14,33 13.5,34" fill="none" stroke="rgba(20,190,190,0.12)" stroke-width="0.18" stroke-linecap="round"><animate attributeName="d" values="M13.5,21.5 Q14,24 13.5,27 Q13,29.5 13.5,31.5 Q14,33 13.5,34;M13.5,21.5 Q14.5,24 14,27.5 Q13.3,30 14,32 Q14.5,34 14,35;M13.5,21.5 Q14,24 13.5,27 Q13,29.5 13.5,31.5 Q14,33 13.5,34" dur="5.5s" repeatCount="indefinite"/></path>';
+        // Glow around jellyfish — soft aqua aura
+        s += '<ellipse cx="12" cy="22" rx="5" ry="6" fill="rgba(0,210,210,0.03)"><animate attributeName="opacity" values="0.03;0.06;0.03" dur="4s" repeatCount="indefinite"/></ellipse>';
+        // Iridescent water bubbles — rising slowly
+        s += '<circle cx="8" cy="24" r="0.4" fill="rgba(180,240,255,0.15)" stroke="rgba(200,255,255,0.2)" stroke-width="0.1"><animate attributeName="cy" values="24;20;16" dur="6s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.15;0.25;0" dur="6s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="16" cy="26" r="0.3" fill="rgba(200,250,255,0.12)" stroke="rgba(220,255,255,0.18)" stroke-width="0.08"><animate attributeName="cy" values="26;22;18" dur="7s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.12;0.2;0" dur="7s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="10" cy="28" r="0.35" fill="rgba(160,240,250,0.1)" stroke="rgba(200,255,255,0.15)" stroke-width="0.08"><animate attributeName="cy" values="28;23;18" dur="8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.1;0.2;0" dur="8s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="14" cy="22" r="0.25" fill="rgba(220,255,255,0.12)" stroke="rgba(240,255,255,0.2)" stroke-width="0.06"><animate attributeName="cy" values="22;18;14" dur="5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.12;0.22;0" dur="5s" repeatCount="indefinite"/></circle>';
         s += '</g>';
         break;
       case 73: // Mushroom Sprite — tiny Amanita forest spirit on soil
