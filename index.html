@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-04e';
+  var _SVG_CACHE_VER = '2026-04-04f';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21879,13 +21879,14 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="42" cy="90.7" rx="1.2" ry="0.8" fill="rgba(200,168,75,0.08)"><animate attributeName="opacity" values="0.08;0.18;0.08" dur="4s" repeatCount="indefinite"/></ellipse>';
         s += '</g>';
         break;
-      case 65: // Ant Trail — 5 ants marching along pot rim with legs
-        s += '<g opacity="0.72">';
-        // 5 ants, each with head + thorax + abdomen + 6 legs + antennae
+      case 65: // Ant Trail — 5 ants marching below pot rim with glow
+        s += '<g opacity="0.82">';
         for (var _a65i = 0; _a65i < 5; _a65i++) {
           var _a65x = 22 + _a65i * 5.5;
-          var _a65y = 78.5;
+          var _a65y = 82;
           s += '<g><animateTransform attributeName="transform" type="translate" values="0,0;'+(_a65i*2+10)+',0;0,0" dur="'+(10+_a65i)+'" repeatCount="indefinite"/>';
+          // Transparent white glow behind each ant for visibility on dark bg
+          s += '<ellipse cx="'+_a65x+'" cy="'+_a65y+'" rx="1.8" ry="1" fill="rgba(255,255,255,0.04)"/>';
           // Abdomen
           s += '<ellipse cx="'+(_a65x+1.2)+'" cy="'+_a65y+'" rx="0.7" ry="0.45" fill="#2A1A10"/>';
           // Thorax
