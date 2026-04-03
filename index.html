@@ -8591,7 +8591,7 @@ document.addEventListener('keydown', function(e) {
       {name:'Tree Frog'},   // idx 60
       {name:'Rabbit'},      // idx 61
       {name:'Cricket'},     // idx 62
-      {name:'Gecko'},       // idx 63
+      {name:'Puffin'},      // idx 63
       {name:'Scarab Beetle'}, // idx 64
       {name:'Ant Trail'},   // idx 65
       {name:'Red-Crowned Crane'}, // idx 66
@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-04g';
+  var _SVG_CACHE_VER = '2026-04-04h';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21820,31 +21820,53 @@ document.addEventListener('keydown', function(e) {
         s += '<line x1="26.5" y1="89.5" x2="28" y2="88.5" stroke="#3A5A2A" stroke-width="0.2" opacity="0.3"><animate attributeName="opacity" values="0.3;0.5;0.3" dur="2s" repeatCount="indefinite"/></line>';
         s += '</g>';
         break;
-      case 63: // Gecko — clinging to pot side vertical, scaled with adhesive pads
-        s += '<g opacity="0.78" transform="translate(52,80) scale(1.6) translate(-52,-80)">';
-        // Tail — long, curving down
-        s += '<path d="M52,83 Q53.5,85 52.5,87.5 Q52,88.5 51.5,88" stroke="#7AAA5A" stroke-width="0.9" fill="none" stroke-linecap="round"/>';
-        // Body — sinuous S-curve clinging to pot
-        s += '<path d="M52,83 Q53,81 52.5,79 Q52,77.5 51,77.5" fill="none" stroke="#7AAA5A" stroke-width="2.2" stroke-linecap="round"/>';
-        // Belly lighter tone
-        s += '<path d="M52,82.5 Q52.5,81 52,79.5 Q51.8,78 51.2,77.8" fill="none" stroke="#A0D870" stroke-width="0.8" stroke-linecap="round" opacity="0.2"/>';
-        // Head — wide and flat (gecko characteristic)
-        s += '<ellipse cx="51" cy="77" rx="1.3" ry="1.0" fill="#7AAA5A"/>';
-        // Big eyes — gecko defining feature
-        s += '<circle cx="50.3" cy="76.5" r="0.5" fill="#8ACA6A"/>';
-        s += '<circle cx="50.3" cy="76.5" r="0.25" fill="#111"/>';
-        s += '<circle cx="50.4" cy="76.3" r="0.08" fill="rgba(240,235,216,0.5)"/>';
-        s += '<circle cx="51.8" cy="76.5" r="0.45" fill="#8ACA6A"/>';
-        s += '<circle cx="51.8" cy="76.5" r="0.22" fill="#111"/>';
-        // Adhesive toe pads — 4 feet with splayed digits
-        s += '<g fill="#6A9A4A">';
-        s += '<circle cx="53.5" cy="82.8" r="0.3"/><circle cx="54" cy="83" r="0.25"/><circle cx="53.2" cy="83.2" r="0.25"/>';
-        s += '<circle cx="54" cy="80" r="0.3"/><circle cx="54.5" cy="79.8" r="0.25"/>';
-        s += '<circle cx="52.5" cy="78.2" r="0.3"/><circle cx="53" cy="78" r="0.25"/>';
-        s += '<circle cx="49.5" cy="77.8" r="0.3"/><circle cx="49" cy="78" r="0.25"/>';
-        s += '</g>';
-        // Tongue flick
-        s += '<line x1="50.5" y1="77.3" x2="49.2" y2="77.3" stroke="#D06040" stroke-width="0.15"><animate attributeName="x2" values="49.2;48.2;49.2" dur="6s" repeatCount="indefinite"/></line>';
+      case 63: // Puffin — standing on soil, profile facing left
+        // Fratercula arctica: stocky seabird with colorful beak,
+        // white face/belly, black back/head, bright orange webbed feet.
+        s += '<g opacity="0.9" transform="translate(56,86) scale(1.5) translate(-56,-86)">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.1,-0.1;0,0" dur="5s" repeatCount="indefinite"/>';
+        // Shadow
+        s += '<ellipse cx="56" cy="92.5" rx="3" ry="0.4" fill="#0d100c" opacity="0.1"/>';
+        // ── FEET — bright orange, webbed ──
+        s += '<path d="M54.5,92 L53.5,92.5 M54.5,92 L54.5,92.8 M54.5,92 L55.5,92.5" stroke="#E87020" stroke-width="0.35" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M53.8,92.3 Q54.5,92.8 55.2,92.3" fill="none" stroke="#E87020" stroke-width="0.15" opacity="0.4"/>';
+        s += '<path d="M57,92 L56,92.5 M57,92 L57,92.8 M57,92 L58,92.5" stroke="#E87020" stroke-width="0.35" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M56.3,92.3 Q57,92.8 57.7,92.3" fill="none" stroke="#E87020" stroke-width="0.15" opacity="0.4"/>';
+        // ── LEGS — short, orange ──
+        s += '<line x1="54.5" y1="91" x2="54.5" y2="92" stroke="#E87020" stroke-width="0.5"/>';
+        s += '<line x1="57" y1="91" x2="57" y2="92" stroke="#D86818" stroke-width="0.45"/>';
+        // ── BODY — stocky, upright, white belly + black back ──
+        // Black back/wings
+        s += '<path d="M53,86 Q53,84 55,83 Q57,82.5 59,83.5 Q60,85 60,87 Q60,89.5 58.5,91 Q56,91.5 54,91 Q53,90 53,88 Z" fill="#1A1A1A"/>';
+        // White belly — large front area
+        s += '<path d="M53.5,86.5 Q54,88 54.5,90 Q55.5,91.2 57,91 Q57.5,90 57.5,88 Q57,86.5 56,86 Q54.5,86 53.5,86.5 Z" fill="#F0ECE4"/>';
+        // Wing folded — black, slightly visible
+        s += '<path d="M58,84 Q59.5,86 59.5,89 Q59,90 58,90.5" fill="#2A2A2A" opacity="0.5"/>';
+        // Body outline
+        s += '<path d="M53,86 Q53,84 55,83 Q57,82.5 59,83.5 Q60,85 60,87 Q60,89.5 58.5,91 Q56,91.5 54,91 Q53,90 53,88" fill="none" stroke="#0A0A0A" stroke-width="0.2" opacity="0.3"/>';
+        // ── HEAD — white face, black back of head ──
+        // Black crown/back of head
+        s += '<path d="M55.5,82 Q56.5,81 58,81.5 Q59,82 59,83 Q58,83.5 56.5,83 Q55.5,82.5 55.5,82 Z" fill="#1A1A1A"/>';
+        // White face — front/sides
+        s += '<path d="M53.5,83 Q53,82 54,81.5 Q55.5,81 56.5,81.5 Q56,82 55.5,82.5 Q55,83 54,83.5 Q53.5,83.5 53.5,83 Z" fill="#F0ECE4"/>';
+        // ── EYES — dark, set in white face area ──
+        s += '<circle cx="54.8" cy="82" r="0.4" fill="#1A1A18"/>';
+        s += '<circle cx="54.9" cy="81.9" r="0.1" fill="rgba(240,235,216,0.5)"/>';
+        // Dark eye line — runs from eye toward back of head
+        s += '<path d="M55.2,82 Q55.8,82 56.2,82.2" fill="none" stroke="#1A1A18" stroke-width="0.25" opacity="0.5"/>';
+        // ── BEAK — fat, colorful, orange with grey/red stripes ──
+        // Upper beak — orange with darker ridge
+        s += '<path d="M53.5,82.5 Q52,82 51,82.2 Q50.5,82.5 51,82.8 L53.5,83 Z" fill="#E87020"/>';
+        // Lower beak
+        s += '<path d="M53.5,83 L51,83 Q50.5,82.8 51,82.8" fill="#D06018"/>';
+        // Beak tip — slightly darker
+        s += '<path d="M51,82.2 Q50.5,82.5 51,82.8" fill="none" stroke="#C05010" stroke-width="0.2"/>';
+        // Grey beak base — where it meets the face
+        s += '<path d="M53.2,82.5 Q53.5,82.8 53.2,83" fill="none" stroke="#6A6A68" stroke-width="0.3" opacity="0.4"/>';
+        // Beak color stripe — red/yellow detail
+        s += '<line x1="52.5" y1="82.4" x2="51.5" y2="82.5" stroke="#C84020" stroke-width="0.15" opacity="0.5"/>';
+        // Nostril
+        s += '<circle cx="52" cy="82.4" r="0.08" fill="#8A4010" opacity="0.4"/>';
         s += '</g>';
         break;
       case 64: // Scarab Beetle — iridescent jeweled carapace on soil
