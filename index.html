@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-06p';
+  var _SVG_CACHE_VER = '2026-04-06q';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21525,8 +21525,9 @@ document.addEventListener('keydown', function(e) {
       case 50: // Garden Gnome — friendly compact figure on soil (Epic)
         s += '<g opacity="0.85" transform="translate(56,88) scale(1.4) translate(-56,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.08,-0.04;0.16,0;0.08,0.04;0,0" dur="7.0s" repeatCount="indefinite"/>';
-        // Feet — drawn first, behind body
-        s += '<path d="M55.0,92.2 Q54.7,92.8 54.2,92.4 M57.0,92.2 Q57.3,92.8 57.8,92.4" stroke="#5A3E2B" stroke-width="0.28" fill="none" stroke-linecap="round"/>';
+        // Feet — thicker, drawn first behind body
+        s += '<ellipse cx="54.5" cy="92.5" rx="0.8" ry="0.4" fill="#5A3E2B"/>';
+        s += '<ellipse cx="57.5" cy="92.5" rx="0.8" ry="0.4" fill="#5A3E2B"/>';
         // Body — green tunic
         s += '<ellipse cx="56.0" cy="91.0" rx="2.8" ry="2.3" fill="#5C8550"/>';
         // Belt
