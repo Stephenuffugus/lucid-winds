@@ -20037,53 +20037,78 @@ document.addEventListener('keydown', function(e) {
         s += '<line x1="54.5" y1="25.5" x2="55.2" y2="26.3" stroke="#2A2820" stroke-width="0.08"/>';
         s += '</g>';
         break;
-      case 24: // Monarch Butterfly — bold stained-glass wings, drifting near bloom
-        // Danaus plexippus: the world's most recognizable butterfly.
-        // Broad orange wings with black veining, white border spots.
-        s += '<g opacity="0.78" transform="translate(60,22) scale(1.5) translate(-60,-22)">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;1.5,-2;-0.8,1;0.5,-1.5;0,0" dur="6s" repeatCount="indefinite"/>';
-        // Left forewing — wide base where wing meets body
-        s += '<path d="M59.5,21 Q56,17.5 52.5,15.5 Q51,14.5 51.5,17 Q52,19.5 55,21.5 L59.5,23 Z" fill="#E08830" stroke="#1A1A18" stroke-width="0.25"/>';
-        // Right forewing
-        s += '<path d="M60.5,21 Q64,17.5 67.5,15.5 Q69,14.5 68.5,17 Q68,19.5 65,21.5 L60.5,23 Z" fill="#D87828" stroke="#1A1A18" stroke-width="0.25"/>';
-        // Left hindwing — wide base attachment
-        s += '<path d="M59.5,23 Q56,24 53.5,25.5 Q52.5,27 54.5,27 Q56.5,26 59,24 L59.5,24.5 Z" fill="#E08830" stroke="#1A1A18" stroke-width="0.22"/>';
-        // Right hindwing
-        s += '<path d="M60.5,23 Q64,24 66.5,25.5 Q67.5,27 65.5,27 Q63.5,26 61,24 L60.5,24.5 Z" fill="#D87828" stroke="#1A1A18" stroke-width="0.22"/>';
-        // Black vein lines — stained-glass framework radiating from body
-        s += '<path d="M60,22 L55,17.5" stroke="#1A1A18" stroke-width="0.25" opacity="0.55"/>';
-        s += '<path d="M60,22 L54,19" stroke="#1A1A18" stroke-width="0.2" opacity="0.5"/>';
-        s += '<path d="M60,22 L56.5,18" stroke="#1A1A18" stroke-width="0.2" opacity="0.45"/>';
-        s += '<path d="M60,22 L65,17.5" stroke="#1A1A18" stroke-width="0.25" opacity="0.55"/>';
-        s += '<path d="M60,22 L66,19" stroke="#1A1A18" stroke-width="0.2" opacity="0.5"/>';
-        s += '<path d="M60,22 L63.5,18" stroke="#1A1A18" stroke-width="0.2" opacity="0.45"/>';
-        s += '<path d="M60,22.5 L55.5,25" stroke="#1A1A18" stroke-width="0.18" opacity="0.4"/>';
-        s += '<path d="M60,22.5 L64.5,25" stroke="#1A1A18" stroke-width="0.18" opacity="0.4"/>';
-        // Cross veins — connecting main veins
-        s += '<path d="M55,18 Q56,18.5 57,18" stroke="#1A1A18" stroke-width="0.12" opacity="0.3"/>';
-        s += '<path d="M63,18 Q64,18.5 65,18" stroke="#1A1A18" stroke-width="0.12" opacity="0.3"/>';
-        // Black wing borders
-        s += '<path d="M53.5,17 Q54,16.5 55,17" stroke="#1A1A18" stroke-width="0.8" opacity="0.35" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M66.5,17 Q66,16.5 65,17" stroke="#1A1A18" stroke-width="0.8" opacity="0.35" fill="none" stroke-linecap="round"/>';
-        // White border spots — characteristic monarch fringe
-        s += '<circle cx="54" cy="17.5" r="0.25" fill="rgba(240,235,216,0.55)"/>';
-        s += '<circle cx="55" cy="17" r="0.2" fill="rgba(240,235,216,0.5)"/>';
-        s += '<circle cx="56" cy="17.5" r="0.18" fill="rgba(240,235,216,0.45)"/>';
-        s += '<circle cx="64" cy="17.5" r="0.25" fill="rgba(240,235,216,0.55)"/>';
-        s += '<circle cx="65" cy="17" r="0.2" fill="rgba(240,235,216,0.5)"/>';
-        s += '<circle cx="66" cy="17.5" r="0.18" fill="rgba(240,235,216,0.45)"/>';
-        s += '<circle cx="54.5" cy="25.5" r="0.18" fill="rgba(240,235,216,0.4)"/>';
-        s += '<circle cx="65.5" cy="25.5" r="0.18" fill="rgba(240,235,216,0.4)"/>';
-        // Body — black, slender
-        s += '<line x1="60" y1="20" x2="60" y2="24.5" stroke="#1A1A18" stroke-width="0.6" stroke-linecap="round"/>';
+      case 24: // Monarch Butterfly — true Danaus plexippus pattern
+        // Key monarch features: BROAD rounded wings, thick black borders
+        // all around, thick black veins dividing orange into cells,
+        // two rows of white dots in the black border, black body.
+        s += '<g opacity="0.82" transform="translate(60,22) scale(1.6) translate(-60,-22)">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;1.2,-1.5;-0.6,0.8;0.4,-1;0,0" dur="6s" repeatCount="indefinite"/>';
+        // ── LEFT FOREWING — broad, rounded outer edge ──
+        // Black base (the border)
+        s += '<path d="M59.5,21 Q56,17 52,15 Q50,14.5 50.5,16 Q51,18 53,20 Q55,22 59.5,23.5 Z" fill="#1A1A18"/>';
+        // Orange fill — inset from black border
+        s += '<path d="M59,21.5 Q56.5,18 53.5,16 Q52,15.5 52.5,17 Q53.5,19 55.5,21 L59,23 Z" fill="#E87830"/>';
+        // ── RIGHT FOREWING ──
+        s += '<path d="M60.5,21 Q64,17 68,15 Q70,14.5 69.5,16 Q69,18 67,20 Q65,22 60.5,23.5 Z" fill="#1A1A18"/>';
+        s += '<path d="M61,21.5 Q63.5,18 66.5,16 Q68,15.5 67.5,17 Q66.5,19 64.5,21 L61,23 Z" fill="#D87028"/>';
+        // ── LEFT HINDWING — rounded ──
+        s += '<path d="M59.5,23.5 Q56,24.5 53.5,26 Q52,27.5 53,28 Q55,27.5 57.5,26 L59.5,24.5 Z" fill="#1A1A18"/>';
+        s += '<path d="M59,24 Q56.5,25 54.5,26.5 Q53.5,27 54.5,27 Q56,26.5 58,25 L59,24.5 Z" fill="#E87830"/>';
+        // ── RIGHT HINDWING ──
+        s += '<path d="M60.5,23.5 Q64,24.5 66.5,26 Q68,27.5 67,28 Q65,27.5 62.5,26 L60.5,24.5 Z" fill="#1A1A18"/>';
+        s += '<path d="M61,24 Q63.5,25 65.5,26.5 Q66.5,27 65.5,27 Q64,26.5 62,25 L61,24.5 Z" fill="#D87028"/>';
+        // ── BLACK VEINS — thick, dividing orange into cells ──
+        // Forewing veins (left)
+        s += '<path d="M59,22 L54,16.5" stroke="#1A1A18" stroke-width="0.4"/>';
+        s += '<path d="M59,22 L55.5,17.5" stroke="#1A1A18" stroke-width="0.35"/>';
+        s += '<path d="M59,22 L56.5,19" stroke="#1A1A18" stroke-width="0.3"/>';
+        s += '<path d="M59,22 L53.5,19" stroke="#1A1A18" stroke-width="0.3"/>';
+        // Forewing veins (right)
+        s += '<path d="M61,22 L66,16.5" stroke="#1A1A18" stroke-width="0.4"/>';
+        s += '<path d="M61,22 L64.5,17.5" stroke="#1A1A18" stroke-width="0.35"/>';
+        s += '<path d="M61,22 L63.5,19" stroke="#1A1A18" stroke-width="0.3"/>';
+        s += '<path d="M61,22 L66.5,19" stroke="#1A1A18" stroke-width="0.3"/>';
+        // Hindwing veins
+        s += '<path d="M59.5,24 L55.5,26" stroke="#1A1A18" stroke-width="0.25"/>';
+        s += '<path d="M59.5,24 L57,26.5" stroke="#1A1A18" stroke-width="0.25"/>';
+        s += '<path d="M60.5,24 L64.5,26" stroke="#1A1A18" stroke-width="0.25"/>';
+        s += '<path d="M60.5,24 L63,26.5" stroke="#1A1A18" stroke-width="0.25"/>';
+        // ── WHITE DOTS — two rows in the black border (monarch signature) ──
+        // Outer row — forewing tips
+        var _mwL = [[51.5,15.5],[52,16.5],[52.5,17.5],[53,18.5],[53.5,19.5]];
+        var _mwR = [[68.5,15.5],[68,16.5],[67.5,17.5],[67,18.5],[66.5,19.5]];
+        for (var _mwi = 0; _mwi < _mwL.length; _mwi++) {
+          s += '<circle cx="'+_mwL[_mwi][0]+'" cy="'+_mwL[_mwi][1]+'" r="0.25" fill="rgba(240,240,240,0.7)"/>';
+          s += '<circle cx="'+_mwR[_mwi][0]+'" cy="'+_mwR[_mwi][1]+'" r="0.25" fill="rgba(240,240,240,0.7)"/>';
+        }
+        // Inner row — slightly inset
+        var _mwL2 = [[52.5,16],[53,17],[53.5,18],[54,19]];
+        var _mwR2 = [[67.5,16],[67,17],[66.5,18],[66,19]];
+        for (var _mw2i = 0; _mw2i < _mwL2.length; _mw2i++) {
+          s += '<circle cx="'+_mwL2[_mw2i][0]+'" cy="'+_mwL2[_mw2i][1]+'" r="0.18" fill="rgba(240,240,240,0.5)"/>';
+          s += '<circle cx="'+_mwR2[_mw2i][0]+'" cy="'+_mwR2[_mw2i][1]+'" r="0.18" fill="rgba(240,240,240,0.5)"/>';
+        }
+        // Hindwing border dots
+        s += '<circle cx="53.5" cy="27" r="0.2" fill="rgba(240,240,240,0.55)"/>';
+        s += '<circle cx="54.5" cy="27.2" r="0.18" fill="rgba(240,240,240,0.5)"/>';
+        s += '<circle cx="66.5" cy="27" r="0.2" fill="rgba(240,240,240,0.55)"/>';
+        s += '<circle cx="65.5" cy="27.2" r="0.18" fill="rgba(240,240,240,0.5)"/>';
+        // ── BODY — black, segmented ──
+        s += '<line x1="60" y1="20" x2="60" y2="25" stroke="#1A1A18" stroke-width="0.8" stroke-linecap="round"/>';
+        // White body dots (monarch has white spots on thorax)
+        s += '<circle cx="60" cy="21" r="0.12" fill="rgba(240,240,240,0.4)"/>';
+        s += '<circle cx="60" cy="22" r="0.12" fill="rgba(240,240,240,0.35)"/>';
         // Head
-        s += '<circle cx="60" cy="19.8" r="0.45" fill="#1A1A18"/>';
-        // Clubbed antennae
-        s += '<path d="M59.7,19.5 Q58.8,18.5 58,18" stroke="#1A1A18" stroke-width="0.12" fill="none" stroke-linecap="round"/>';
-        s += '<circle cx="58" cy="18" r="0.15" fill="#1A1A18"/>';
-        s += '<path d="M60.3,19.5 Q61.2,18.5 62,18" stroke="#1A1A18" stroke-width="0.12" fill="none" stroke-linecap="round"/>';
-        s += '<circle cx="62" cy="18" r="0.15" fill="#1A1A18"/>';
-        // Wing flutter animation
+        s += '<circle cx="60" cy="19.7" r="0.5" fill="#1A1A18"/>';
+        // Eyes — tiny white
+        s += '<circle cx="59.7" cy="19.6" r="0.1" fill="rgba(240,240,240,0.4)"/>';
+        s += '<circle cx="60.3" cy="19.6" r="0.1" fill="rgba(240,240,240,0.4)"/>';
+        // Clubbed antennae — black with club tips
+        s += '<path d="M59.6,19.3 Q58.5,18 57.5,17.5" stroke="#1A1A18" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        s += '<circle cx="57.5" cy="17.5" r="0.2" fill="#1A1A18"/>';
+        s += '<path d="M60.4,19.3 Q61.5,18 62.5,17.5" stroke="#1A1A18" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        s += '<circle cx="62.5" cy="17.5" r="0.2" fill="#1A1A18"/>';
+        // Wing flutter
         s += '<animateTransform attributeName="transform" type="rotate" values="-3,60,22;5,60,22;-3,60,22" dur="2s" repeatCount="indefinite" additive="sum"/>';
         s += '</g>';
         break;
