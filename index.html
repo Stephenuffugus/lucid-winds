@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-05d';
+  var _SVG_CACHE_VER = '2026-04-05e';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21597,31 +21597,30 @@ document.addEventListener('keydown', function(e) {
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.2,0;0,0" dur="4s" repeatCount="indefinite"/>';
         // Shadow
         s += '<ellipse cx="12" cy="92.5" rx="5" ry="0.4" fill="#0d100c" opacity="0.08"/>';
-        // ── BODY — clear S-shape, thick, pink ──
-        s += '<path d="M7,91 Q8,89 10,88 Q12,87 14,88 Q16,89 17,91 Q18,92 19,92" fill="none" stroke="#D98FA1" stroke-width="2.2" stroke-linecap="round"/>';
+        // ── BODY — true letter S shape, vertical orientation ──
+        s += '<path d="M10,84 Q13,84 14,86 Q15,88 12,89 Q9,90 10,92 Q11,93 14,93" fill="none" stroke="#D98FA1" stroke-width="2.2" stroke-linecap="round"/>';
         // Lighter belly highlight along S
-        s += '<path d="M7.5,91 Q8.5,89.2 10.5,88.2 Q12.5,87.3 14.5,88.3" fill="none" stroke="#E8B8C8" stroke-width="0.6" stroke-linecap="round" opacity="0.3"/>';
-        // ── DARKER PINK SECTION LINES — across the body at intervals ──
-        s += '<path d="M7.5,90.5 Q8,90.2 8.5,90.5" stroke="#B06878" stroke-width="0.25" fill="none" opacity="0.5"/>';
-        s += '<path d="M8.2,89.8 Q8.8,89.4 9.3,89.8" stroke="#B06878" stroke-width="0.25" fill="none" opacity="0.5"/>';
-        s += '<path d="M9.2,89 Q9.8,88.6 10.4,89" stroke="#B06878" stroke-width="0.25" fill="none" opacity="0.5"/>';
-        s += '<path d="M10.5,88.2 Q11.2,87.8 11.8,88.2" stroke="#B06878" stroke-width="0.22" fill="none" opacity="0.45"/>';
-        s += '<path d="M12,87.8 Q12.6,87.5 13.2,87.8" stroke="#B06878" stroke-width="0.22" fill="none" opacity="0.45"/>';
-        s += '<path d="M13.5,88 Q14,87.8 14.5,88.2" stroke="#B06878" stroke-width="0.22" fill="none" opacity="0.45"/>';
-        s += '<path d="M14.8,88.5 Q15.3,88.3 15.8,88.7" stroke="#B06878" stroke-width="0.2" fill="none" opacity="0.4"/>';
-        s += '<path d="M15.8,89.2 Q16.3,89 16.7,89.4" stroke="#B06878" stroke-width="0.2" fill="none" opacity="0.4"/>';
-        s += '<path d="M16.5,90 Q17,89.8 17.4,90.2" stroke="#B06878" stroke-width="0.18" fill="none" opacity="0.35"/>';
-        s += '<path d="M17.2,90.8 Q17.6,90.6 18,91" stroke="#B06878" stroke-width="0.18" fill="none" opacity="0.35"/>';
-        s += '<path d="M18,91.5 Q18.3,91.3 18.6,91.6" stroke="#B06878" stroke-width="0.15" fill="none" opacity="0.3"/>';
+        s += '<path d="M10.5,84.5 Q13,84.5 13.5,86.5 Q14,88 12,89" fill="none" stroke="#E8B8C8" stroke-width="0.6" stroke-linecap="round" opacity="0.3"/>';
+        // ── DARKER PINK SECTION LINES — across the S body ──
+        s += '<path d="M10.5,84.8 Q11.5,84.5 12.5,84.8" stroke="#B06878" stroke-width="0.25" fill="none" opacity="0.5"/>';
+        s += '<path d="M12,85.5 Q13,85.2 14,85.5" stroke="#B06878" stroke-width="0.25" fill="none" opacity="0.5"/>';
+        s += '<path d="M13,86.5 Q14,86.2 14.5,86.8" stroke="#B06878" stroke-width="0.22" fill="none" opacity="0.45"/>';
+        s += '<path d="M13.5,87.5 Q14,87.2 14.5,87.8" stroke="#B06878" stroke-width="0.22" fill="none" opacity="0.45"/>';
+        s += '<path d="M12.5,88.5 Q13,88.2 13.5,88.8" stroke="#B06878" stroke-width="0.2" fill="none" opacity="0.4"/>';
+        s += '<path d="M10.5,89.5 Q11.5,89.2 12,89.5" stroke="#B06878" stroke-width="0.2" fill="none" opacity="0.4"/>';
+        s += '<path d="M9.5,90.2 Q10.5,89.8 11,90.2" stroke="#B06878" stroke-width="0.18" fill="none" opacity="0.35"/>';
+        s += '<path d="M10,91 Q11,90.8 11.5,91.2" stroke="#B06878" stroke-width="0.18" fill="none" opacity="0.35"/>';
+        s += '<path d="M10.5,92 Q11.5,91.8 12.5,92.2" stroke="#B06878" stroke-width="0.15" fill="none" opacity="0.3"/>';
+        s += '<path d="M12,92.5 Q13,92.3 13.5,92.8" stroke="#B06878" stroke-width="0.15" fill="none" opacity="0.3"/>';
         // Clitellum — lighter band near head
-        s += '<path d="M8,90 Q9,89 10,88.5" stroke="#E8C8D0" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.3"/>';
-        // ── HEAD — rounded end (left side) ──
-        s += '<circle cx="7" cy="91" r="1" fill="#D98FA1"/>';
+        s += '<path d="M10.5,85 Q12,84.5 13,85.5" stroke="#E8C8D0" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.3"/>';
+        // ── HEAD — rounded, at top-left of the S ──
+        s += '<circle cx="10" cy="84" r="1" fill="#D98FA1"/>';
         // 2 small black eyes
-        s += '<circle cx="6.5" cy="90.7" r="0.18" fill="#111"/>';
-        s += '<circle cx="7.2" cy="90.5" r="0.18" fill="#111"/>';
-        // ── TAIL — rounded end (right side) ──
-        s += '<circle cx="19" cy="92" r="0.7" fill="#D98FA1"/>';
+        s += '<circle cx="9.5" cy="83.7" r="0.18" fill="#111"/>';
+        s += '<circle cx="10.3" cy="83.6" r="0.18" fill="#111"/>';
+        // ── TAIL — rounded, at bottom-right of the S ──
+        s += '<circle cx="14" cy="93" r="0.7" fill="#D98FA1"/>';
         // Moisture sheen
         s += '<path d="M9,89.5 Q12,88 15,89" fill="none" stroke="rgba(255,240,240,0.1)" stroke-width="0.3" stroke-linecap="round"/>';
         s += '</g>';
