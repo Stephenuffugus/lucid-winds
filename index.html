@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-06u';
+  var _SVG_CACHE_VER = '2026-04-06v';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21531,9 +21531,9 @@ document.addEventListener('keydown', function(e) {
       case 50: // Garden Gnome — friendly compact figure on soil (Epic)
         s += '<g opacity="0.85" transform="translate(56,88) scale(1.4) translate(-56,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.08,-0.04;0.16,0;0.08,0.04;0,0" dur="7.0s" repeatCount="indefinite"/>';
-        // Feet — thicker, drawn first behind body
-        s += '<ellipse cx="54.5" cy="92.5" rx="0.8" ry="0.4" fill="#5A3E2B"/>';
-        s += '<ellipse cx="57.5" cy="92.5" rx="0.8" ry="0.4" fill="#5A3E2B"/>';
+        // Feet — large, thick, visible below body
+        s += '<ellipse cx="54.5" cy="93" rx="1.2" ry="0.5" fill="#5A3E2B"/>';
+        s += '<ellipse cx="57.5" cy="93" rx="1.2" ry="0.5" fill="#5A3E2B"/>';
         // Body — green tunic
         s += '<ellipse cx="56.0" cy="91.0" rx="2.8" ry="2.3" fill="#5C8550"/>';
         // Belt
@@ -21632,7 +21632,9 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M9.5,84.2 Q10,84.5 10.5,84.2" fill="none" stroke="#8A5060" stroke-width="0.15" stroke-linecap="round"/>';
         // ── TAIL — rounded, at bottom-right of the S ──
         s += '<circle cx="14" cy="93" r="0.7" fill="#D98FA1"/>';
-        // (moisture sheen removed)
+        // Action marks (( )) near the head
+        s += '<path d="M8.5,83 Q8,84 8.5,85" fill="none" stroke="rgba(180,120,140,0.3)" stroke-width="0.15" stroke-linecap="round"/>';
+        s += '<path d="M7.8,82.5 Q7,84 7.8,85.5" fill="none" stroke="rgba(180,120,140,0.22)" stroke-width="0.12" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 53: // Turtle — profile facing left, flat-bottom shell, turtle pattern
@@ -21712,12 +21714,18 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M59,8 L55,7.5" stroke="#6A5A60" stroke-width="0.12" fill="none"/>';
         s += '<path d="M59,8.5 L55.5,9" stroke="#6A5A60" stroke-width="0.1" fill="none" opacity="0.5"/>';
         s += '<path d="M58.5,9 L56,9.5" stroke="#6A5A60" stroke-width="0.08" fill="none" opacity="0.4"/>';
+        // Left hand + claws — at top of wing (closer to sky)
+        s += '<path d="M55.5,7.5 L55,7 L54.5,6.5" stroke="#7A6A70" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M54.5,6.5 L54,6 M54.5,6.5 L54.2,5.8 M54.5,6.5 L55,6" stroke="#7A6A70" stroke-width="0.12" fill="none"/>';
         // Right wing
         s += '<path d="M61,8 Q64,7 67,8 Q68,9 67,10 Q65,10 63,9.5 Q62,9 61,8.5" fill="#5B4D54"/>';
         // Wing finger bones (right)
         s += '<path d="M61,8 L65,7.5" stroke="#6A5A60" stroke-width="0.12" fill="none"/>';
         s += '<path d="M61,8.5 L64.5,9" stroke="#6A5A60" stroke-width="0.1" fill="none" opacity="0.5"/>';
         s += '<path d="M61.5,9 L64,9.5" stroke="#6A5A60" stroke-width="0.08" fill="none" opacity="0.4"/>';
+        // Right hand + claws — at top of wing (closer to sky)
+        s += '<path d="M64.5,7.5 L65,7 L65.5,6.5" stroke="#7A6A70" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M65.5,6.5 L66,6 M65.5,6.5 L65.8,5.8 M65.5,6.5 L65,6" stroke="#7A6A70" stroke-width="0.12" fill="none"/>';
         // ── WHITE ACTION MARKS — curved arcs ((( ))) ──
         // Left side (((
         s += '<path d="M52,7.5 Q51,9 52,10.5" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="0.2" stroke-linecap="round"/>';
