@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-06e';
+  var _SVG_CACHE_VER = '2026-04-06f';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -22502,16 +22502,20 @@ document.addEventListener('keydown', function(e) {
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;1.2,0.15;0,0;-1,-.15;0,0" dur="6s" repeatCount="indefinite"/>';
         // Shadow
         s += '<ellipse cx="28" cy="92.5" rx="5" ry="0.4" fill="#0d100c" opacity="0.08"/>';
-        // ── FLOWING TAIL — longer, thicker near body, pointy ends ──
-        // Upper lobe — thick at base, flows to sharp point
-        s += '<path d="M34,89.5 Q35,88 37,86 Q38,85.5 38,86.5 Q37.5,87.5 36,88.5 Q35,89.2 34,89.5" fill="#E87838"/>';
-        // Lower lobe — thick at base, flows to sharp point
-        s += '<path d="M34,90.2 Q35,92 37,94 Q38,94.5 38,93.5 Q37.5,92.5 36,91.5 Q35,90.5 34,90.2" fill="#D86828"/>';
-        // Fin rays
-        s += '<path d="M34.5,89 Q36,87 37.5,86" fill="none" stroke="rgba(200,100,40,0.15)" stroke-width="0.08"/>';
-        s += '<path d="M35,89.2 Q36.5,87.5 37.5,87" fill="none" stroke="rgba(200,100,40,0.1)" stroke-width="0.06"/>';
-        s += '<path d="M34.5,91 Q36,93 37.5,94" fill="none" stroke="rgba(200,100,40,0.15)" stroke-width="0.08"/>';
-        s += '<path d="M35,90.8 Q36.5,92.5 37.5,93" fill="none" stroke="rgba(200,100,40,0.1)" stroke-width="0.06"/>';
+        // ── FLOWING TAIL — long & flowy like axolotl, translucent ──
+        // Upper lobe — wide at base, long flowing curve to point
+        s += '<path d="M33.5,89 Q35,87 37,85 Q39,84 40,84.5 Q40,85.5 39,87 Q37,88.5 35,89.5 Q34,90 33.5,90" fill="rgba(232,120,56,0.5)"/>';
+        // Lower lobe — wide at base, long flowing curve to point
+        s += '<path d="M33.5,90.5 Q35,92.5 37,95 Q39,96 40,95.5 Q40,94.5 39,93 Q37,91.5 35,90.5 Q34,90.2 33.5,90.2" fill="rgba(216,104,40,0.45)"/>';
+        // Translucent dorsal fin on tail
+        s += '<path d="M34,89 Q36,87 38,85.5 Q39,85 39.5,85.5" fill="rgba(240,200,160,0.2)" stroke="rgba(200,140,80,0.12)" stroke-width="0.08"/>';
+        // Translucent ventral fin on tail
+        s += '<path d="M34,91 Q36,93.5 38,95 Q39,95.5 39.5,95" fill="rgba(240,200,160,0.15)" stroke="rgba(200,140,80,0.1)" stroke-width="0.08"/>';
+        // Fin rays — through both lobes
+        s += '<path d="M34,89 Q36.5,86.5 39,85" fill="none" stroke="rgba(200,100,40,0.12)" stroke-width="0.08"/>';
+        s += '<path d="M35,89.5 Q37,87 39,85.5" fill="none" stroke="rgba(200,100,40,0.08)" stroke-width="0.06"/>';
+        s += '<path d="M34,91 Q36.5,93.5 39,95" fill="none" stroke="rgba(200,100,40,0.12)" stroke-width="0.08"/>';
+        s += '<path d="M35,90.5 Q37,93 39,94.5" fill="none" stroke="rgba(200,100,40,0.08)" stroke-width="0.06"/>';
         // ── BODY — LONGER, more SLENDER ──
         s += '<path d="M22,89.8 Q22,88.8 24,88.2 Q27,87.5 30,88 Q33,88.5 34,89.5 Q34.5,90 34,90.5 Q33,91.5 30,92 Q27,92.2 24,91.5 Q22,91 22,89.8 Z" fill="#F0E8D8"/>';
         // Kohaku red-orange patches
@@ -22532,8 +22536,8 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M24.5,89.8 Q28,89.5 32,89.8" fill="none" stroke="rgba(200,180,140,0.1)" stroke-width="0.1"/>';
         // Body outline
         s += '<path d="M23.5,89.5 Q23,88 25,87 Q27,86.5 29,87 Q31,87.5 32.5,89 Q33,89.5 33,90 Q32.5,90.5 31,92 Q29,92.5 27,92.5 Q25,92 23.5,91 Q23,90.5 23.5,89.5" fill="none" stroke="#C8B8A0" stroke-width="0.15" opacity="0.25"/>';
-        // Dorsal fin — tall, elegant
-        s += '<path d="M27,87 Q28.5,85.5 30,86.5 Q31,87 31,87.5" fill="rgba(240,200,160,0.35)" stroke="rgba(200,140,80,0.2)" stroke-width="0.1"/>';
+        // Dorsal fin — attached to body, starts inside body top
+        s += '<path d="M27,88.5 Q27.5,87 28.5,85.5 Q30,85 31,86 Q31.5,87 31,88.5" fill="rgba(240,200,160,0.35)" stroke="rgba(200,140,80,0.2)" stroke-width="0.1"/>';
         // Pectoral fin — flowing
         s += '<path d="M25.5,91 Q24.5,92 24,93 Q24.5,92.5 25.5,91.5" fill="rgba(240,200,160,0.3)" stroke="rgba(200,140,80,0.15)" stroke-width="0.08"/>';
         // Anal fin
