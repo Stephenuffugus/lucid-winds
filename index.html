@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-03r';
+  var _SVG_CACHE_VER = '2026-04-03s';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21235,13 +21235,13 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M52,89 Q52,87 54,86 Q57.5,85 61,86 Q63,87 63,89 Q63,91 61,92 Q57.5,93 54,92 Q52,91 52,89 Z" fill="#5A4030"/>';
         // Underfur — darker, visible between quills
         s += '<ellipse cx="57.5" cy="89.5" rx="4" ry="2.5" fill="#3A2818" opacity="0.3"/>';
-        // QUILLS — the defining feature, long sharp spines radiating outward
+        // QUILLS — all angled BACKWARD (away from head, toward right/up-right)
         var _pqQuills = [
-          [54,87,-1.5,-2.5],[55,86.5,-0.8,-2.8],[56,86,-0.3,-3.0],[57,85.8,0,-3.1],
-          [58,85.8,0.2,-3.0],[59,86,0.6,-2.8],[60,86.5,1.0,-2.5],[61,87,1.5,-2.2],[62,87.5,1.8,-1.8],
-          [53,88,-2.0,-1.5],[54.5,87.5,-1.2,-2.2],[59.5,87.5,1.2,-2.0],[61.5,88,2.0,-1.2],
-          [53.5,89.5,-2.0,-0.5],[62,89,2.0,-0.3],
-          [54,90.5,-1.5,0.8],[55,91,-0.8,1.0],[59,91,0.5,1.0],[60.5,90.5,1.5,0.8]
+          [54,87,1.2,-2.5],[55,86.5,1.0,-2.8],[56,86,0.8,-3.0],[57,85.8,0.7,-3.1],
+          [58,85.8,0.9,-3.0],[59,86,1.2,-2.8],[60,86.5,1.5,-2.5],[61,87,1.8,-2.2],[62,87.5,2.0,-1.8],
+          [54.5,87.5,1.0,-2.2],[55.5,87,0.9,-2.5],[59.5,87.5,1.5,-2.0],[61.5,88,2.0,-1.2],
+          [55,89,1.5,-1.5],[62,89,2.2,-0.5],
+          [55,90.5,1.5,-0.5],[56,91,1.2,-0.3],[59,91,1.8,-0.4],[60.5,90.5,2.0,-0.3]
         ];
         for (var _pqi = 0; _pqi < _pqQuills.length; _pqi++) {
           var _pq = _pqQuills[_pqi];
