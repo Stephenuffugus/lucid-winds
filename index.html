@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-05q';
+  var _SVG_CACHE_VER = '2026-04-05r';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21548,8 +21548,9 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="54.8" cy="89.5" rx="0.3" ry="0.2" fill="rgba(220,120,100,0.15)"/>';
         s += '<ellipse cx="57.2" cy="89.5" rx="0.3" ry="0.2" fill="rgba(220,120,100,0.15)"/>';
         // Mustache — between nose and mouth, connected to beard
-        s += '<path d="M54.5,89.7 Q55.2,89.5 56,89.65 Q56.8,89.5 57.5,89.7" fill="none" stroke="#E8E0D4" stroke-width="0.35" stroke-linecap="round"/>';
-        s += '<path d="M54.8,89.75 Q55.5,89.6 56,89.7 Q56.5,89.6 57.2,89.75" fill="none" stroke="#F2EFE8" stroke-width="0.2" stroke-linecap="round" opacity="0.6"/>';
+        // Mustache — ends touch beard sides at x=54.2 and x=57.8
+        s += '<path d="M54.2,89.8 Q55,89.5 56,89.65 Q57,89.5 57.8,89.8" fill="none" stroke="#E8E0D4" stroke-width="0.4" stroke-linecap="round"/>';
+        s += '<path d="M54.5,89.8 Q55.5,89.6 56,89.7 Q56.5,89.6 57.5,89.8" fill="none" stroke="#F2EFE8" stroke-width="0.2" stroke-linecap="round" opacity="0.6"/>';
         // Mouth — happy smile (below mustache)
         s += '<path d="M55.5,89.95 Q56.0,90.2 56.5,89.95" stroke="#7A5C3E" stroke-width="0.16" fill="none" stroke-linecap="round"/>';
         // White beard — drawn AFTER face, hangs below chin, doesn't cover features
@@ -21633,30 +21634,28 @@ document.addEventListener('keydown', function(e) {
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.15,0;0.3,0.02;0.15,0;0,0" dur="7.1s" repeatCount="indefinite"/>';
         // Shadow
         s += '<ellipse cx="58" cy="92" rx="5" ry="0.6" fill="#0d100c" opacity="0.1"/>';
-        // ── POINTY TAIL — sticking out back of shell ──
-        s += '<path d="M62.5,90.5 L64,91 L63.8,91.5 L62.5,91" fill="#5A8A40"/>';
-        s += '<path d="M63,91 L64,91" fill="none" stroke="#4A7A38" stroke-width="0.1"/>';
-        // ── 4 LEGS — all connected to body under shell ──
-        // Back left leg
-        s += '<path d="M60.5,91 L61,92" stroke="#5A8A40" stroke-width="1.2" fill="none" stroke-linecap="round"/>';
-        s += '<ellipse cx="61" cy="92" rx="0.6" ry="0.3" fill="#5A8A40"/>';
-        // Back right leg
-        s += '<path d="M57,91.2 L56.5,92" stroke="#5A8A40" stroke-width="1.1" fill="none" stroke-linecap="round"/>';
-        s += '<ellipse cx="56.5" cy="92" rx="0.6" ry="0.3" fill="#5A8A40"/>';
-        // Front left leg
-        s += '<path d="M55.5,90.5 L55,91.8" stroke="#5A8A40" stroke-width="1.2" fill="none" stroke-linecap="round"/>';
-        s += '<ellipse cx="55" cy="91.8" rx="0.6" ry="0.3" fill="#5A8A40"/>';
+        // ── POINTY TAIL — sharp pointed triangle ──
+        s += '<path d="M62.5,90.5 L64.5,90.8 L62.5,91.2" fill="#5A8A40"/>';
+        // ── 4 LEGS — all BELOW shell, connected to body ──
+        // Back right leg (far)
+        s += '<path d="M61,91 L61.5,92.5" stroke="#5A8A40" stroke-width="1" fill="none" stroke-linecap="round"/>';
+        s += '<ellipse cx="61.5" cy="92.5" rx="0.6" ry="0.3" fill="#5A8A40"/>';
+        // Back left leg (near)
+        s += '<path d="M60,91 L60,92.5" stroke="#5A8A40" stroke-width="1.1" fill="none" stroke-linecap="round"/>';
+        s += '<ellipse cx="60" cy="92.5" rx="0.6" ry="0.3" fill="#5A8A40"/>';
         // Front right leg
-        s += '<path d="M53.5,90 L52.5,91.5" stroke="#5A8A40" stroke-width="1.1" fill="none" stroke-linecap="round"/>';
-        s += '<ellipse cx="52.5" cy="91.5" rx="0.6" ry="0.3" fill="#5A8A40"/>';
-        // ── SHELL — domed top, FLAT bottom ──
-        // Flat bottom (plastron)
-        s += '<path d="M54,91 L63,91" stroke="#8AB060" stroke-width="0.8" fill="none"/>';
-        s += '<path d="M54.5,91 L62.5,91 L62.5,90.5 Q58.5,91 54.5,90.5 Z" fill="#8AB060"/>';
-        // Domed top (carapace)
-        s += '<path d="M54,90.5 Q55,87 58.5,86 Q62,87 63,90.5 Z" fill="#6BA348"/>';
-        // Shell outline
-        s += '<path d="M54,90.5 Q55,87 58.5,86 Q62,87 63,90.5" fill="none" stroke="#4A7A30" stroke-width="0.25"/>';
+        s += '<path d="M56,91 L56.5,92.5" stroke="#5A8A40" stroke-width="1" fill="none" stroke-linecap="round"/>';
+        s += '<ellipse cx="56.5" cy="92.5" rx="0.6" ry="0.3" fill="#5A8A40"/>';
+        // Front left leg
+        s += '<path d="M55,90.8 L54.5,92.5" stroke="#5A8A40" stroke-width="1.1" fill="none" stroke-linecap="round"/>';
+        s += '<ellipse cx="54.5" cy="92.5" rx="0.6" ry="0.3" fill="#5A8A40"/>';
+        // ── SHELL — one solid piece, domed top + flat bottom, NO gap ──
+        // Single combined shell shape — no seam between top and bottom
+        s += '<path d="M54,91 Q55,87 58.5,86 Q62,87 63,91 Z" fill="#6BA348"/>';
+        // Flat bottom fill — same color, covers any gap
+        s += '<path d="M54,91 L63,91" stroke="#6BA348" stroke-width="1" fill="none"/>';
+        // Shell outline — matches the combined shape
+        s += '<path d="M54,91 Q55,87 58.5,86 Q62,87 63,91" fill="none" stroke="#4A7A30" stroke-width="0.2"/>';
         // ── TURTLE PATTERN — hexagonal scute plates ──
         // Central vertebral scutes (row down the spine)
         s += '<path d="M57.5,87 L58.5,86.8 L59.5,87 L59.5,87.8 L58.5,88 L57.5,87.8 Z" fill="none" stroke="#4A7A30" stroke-width="0.2" opacity="0.5"/>';
@@ -21690,11 +21689,11 @@ document.addEventListener('keydown', function(e) {
       case 54: // Bat — hanging upside down, head at bottom, wings out
         s += '<g opacity="0.9" transform="translate(60,14) scale(1.5) translate(-60,-14)">';
         s += '<animateTransform attributeName="transform" type="rotate" values="-3 60 8;3 60 8;-3 60 8" dur="5s" repeatCount="indefinite"/>';
-        // White see-through highlight around body shape
-        s += '<ellipse cx="60" cy="8.5" rx="2" ry="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>';
-        s += '<circle cx="60" cy="11.5" r="1.8" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.4"/>';
-        s += '<path d="M59,8 Q56,7 53,8 Q52,9 53,10" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="0.4"/>';
-        s += '<path d="M61,8 Q64,7 67,8 Q68,9 67,10" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="0.4"/>';
+        // Glow ON the edge of entire body — follows body/head/wing outlines
+        s += '<ellipse cx="60" cy="8.5" rx="1.8" ry="2.8" fill="none" stroke="rgba(200,180,220,0.1)" stroke-width="0.4"/>';
+        s += '<circle cx="60" cy="11.5" r="1.6" fill="none" stroke="rgba(200,180,220,0.08)" stroke-width="0.35"/>';
+        s += '<path d="M59,8 Q56,7 53,8 Q52,9 53,10 Q55,10 57,9.5" fill="none" stroke="rgba(200,180,220,0.07)" stroke-width="0.3"/>';
+        s += '<path d="M61,8 Q64,7 67,8 Q68,9 67,10 Q65,10 63,9.5" fill="none" stroke="rgba(200,180,220,0.07)" stroke-width="0.3"/>';
         // ── LEGS gripping stick at TOP ──
         s += '<line x1="60" y1="2" x2="60" y2="5" stroke="#5A4A40" stroke-width="0.3"/>';
         // Claws gripping
@@ -21733,13 +21732,13 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M60.5,10.5 L60.3,10 L60.7,10.5 Z" fill="#F0ECE4"/>';
         // Mouth line above fangs
         s += '<path d="M59.3,10.5 Q60,10.3 60.7,10.5" fill="none" stroke="#1A0A0A" stroke-width="0.15"/>';
-        // ── EYES — center of face ──
-        s += '<circle cx="59.3" cy="11.3" r="0.4" fill="#5A2020"/>';
-        s += '<circle cx="60.7" cy="11.3" r="0.4" fill="#5A2020"/>';
-        s += '<circle cx="59.3" cy="11.3" r="0.2" fill="#111"/>';
-        s += '<circle cx="60.7" cy="11.3" r="0.2" fill="#111"/>';
-        s += '<circle cx="59.4" cy="11.2" r="0.08" fill="rgba(255,200,200,0.5)"/>';
-        s += '<circle cx="60.8" cy="11.2" r="0.08" fill="rgba(255,200,200,0.5)"/>';
+        // ── EYES — ABOVE nose, closer to ears (lower on upside-down face) ──
+        s += '<circle cx="59.3" cy="12.2" r="0.4" fill="#5A2020"/>';
+        s += '<circle cx="60.7" cy="12.2" r="0.4" fill="#5A2020"/>';
+        s += '<circle cx="59.3" cy="12.2" r="0.2" fill="#111"/>';
+        s += '<circle cx="60.7" cy="12.2" r="0.2" fill="#111"/>';
+        s += '<circle cx="59.4" cy="12.1" r="0.08" fill="rgba(255,200,200,0.5)"/>';
+        s += '<circle cx="60.8" cy="12.1" r="0.08" fill="rgba(255,200,200,0.5)"/>';
         // ── EARS at BOTTOM of head (closest to ground) — pointing down ──
         s += '<path d="M58.8,12.5 L58,13.8 L59.2,12.8 Z" fill="#3A2830"/>';
         s += '<path d="M58.8,12.5 L58,13.8" fill="none" stroke="rgba(160,130,140,0.25)" stroke-width="0.15"/>';
@@ -22555,6 +22554,22 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M13.5,21.5 Q14,24 13.5,27 Q13,29.5 13.5,31.5 Q14,33 13.5,34" fill="none" stroke="rgba(20,190,190,0.12)" stroke-width="0.18" stroke-linecap="round"><animate attributeName="d" values="M13.5,21.5 Q14,24 13.5,27 Q13,29.5 13.5,31.5 Q14,33 13.5,34;M13.5,21.5 Q14.5,24 14,27.5 Q13.3,30 14,32 Q14.5,34 14,35;M13.5,21.5 Q14,24 13.5,27 Q13,29.5 13.5,31.5 Q14,33 13.5,34" dur="5.5s" repeatCount="indefinite"/></path>';
         // Glow around jellyfish — soft aqua aura
         s += '<ellipse cx="12" cy="22" rx="5" ry="6" fill="rgba(0,210,210,0.03)"><animate attributeName="opacity" values="0.03;0.06;0.03" dur="4s" repeatCount="indefinite"/></ellipse>';
+        // ── WHITE HIGHLIGHTS on bell and tentacles ──
+        // Bell dome highlight — translucent white
+        s += '<ellipse cx="11.5" cy="19" rx="1.5" ry="1" fill="rgba(255,255,255,0.12)"/>';
+        s += '<ellipse cx="11" cy="18.5" rx="0.8" ry="0.5" fill="rgba(255,255,255,0.15)"/>';
+        // Bell rim white highlight
+        s += '<path d="M9,20.5 Q12,21 15,20.5" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.3"/>';
+        // ── 3 LIGHTER AQUA SHADES on tentacles ──
+        // Light aqua highlights on short tentacles
+        s += '<path d="M10.2,22 Q10,23 10.3,24" fill="none" stroke="rgba(150,255,255,0.2)" stroke-width="0.15" stroke-linecap="round"/>';
+        s += '<path d="M12.8,22 Q13,23 12.7,24" fill="none" stroke="rgba(130,250,250,0.18)" stroke-width="0.12" stroke-linecap="round"/>';
+        // Medium aqua highlights on medium tentacles
+        s += '<path d="M9.8,22 Q9.5,24 10,26" fill="none" stroke="rgba(160,255,255,0.15)" stroke-width="0.12" stroke-linecap="round"/>';
+        s += '<path d="M14.2,22 Q14.5,24 14,26" fill="none" stroke="rgba(140,250,250,0.12)" stroke-width="0.1" stroke-linecap="round"/>';
+        // Pale aqua highlights on long tentacles
+        s += '<path d="M10.8,22.5 Q10.5,26 11,30" fill="none" stroke="rgba(180,255,255,0.1)" stroke-width="0.1" stroke-linecap="round"/>';
+        s += '<path d="M13.2,22.5 Q13.5,26 13,30" fill="none" stroke="rgba(170,255,255,0.08)" stroke-width="0.08" stroke-linecap="round"/>';
         // Iridescent water bubbles — rising slowly
         s += '<circle cx="8" cy="24" r="0.4" fill="rgba(180,240,255,0.15)" stroke="rgba(200,255,255,0.2)" stroke-width="0.1"><animate attributeName="cy" values="24;20;16" dur="6s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.15;0.25;0" dur="6s" repeatCount="indefinite"/></circle>';
         s += '<circle cx="16" cy="26" r="0.3" fill="rgba(200,250,255,0.12)" stroke="rgba(220,255,255,0.18)" stroke-width="0.08"><animate attributeName="cy" values="26;22;18" dur="7s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.12;0.2;0" dur="7s" repeatCount="indefinite"/></circle>';
