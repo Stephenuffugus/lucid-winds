@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-03h';
+  var _SVG_CACHE_VER = '2026-04-03i';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -20541,7 +20541,7 @@ document.addEventListener('keydown', function(e) {
         // Mammuthus primigenius. Profile facing left. Thick connected anatomy.
         // Massive fluffy body, high shoulder hump, domed skull, small furry ears,
         // thick neck, columnar legs with fur fringe, curved tusks, long trunk.
-        s += '<g opacity="1" transform="translate(12,0) translate(55,82) scale(1.35) translate(-55,-82)">';
+        s += '<g opacity="1" transform="translate(12,0) translate(55,82) scale(1.15) translate(-55,-82)">';
         // Shadow
         s += '<ellipse cx="56" cy="92.5" rx="10" ry="1.2" fill="#0d100c" opacity="0.18"/>';
         // Tail — short rope with tuft at butt
@@ -20570,8 +20570,9 @@ document.addEventListener('keydown', function(e) {
         for (var _mfi = 0; _mfi < _mmF.length; _mfi++) {
           var _mfx = _mmF[_mfi][0], _mfy = _mmF[_mfi][1];
           var _mfc = _mmCols[_mfi % _mmCols.length];
-          s += '<path d="M'+_mfx+','+(_mfy-0.8)+' Q'+(_mfx+0.15)+','+(_mfy+0.3)+' '+(_mfx-0.2)+','+(_mfy+1.3)+'" stroke="'+_mfc+'" stroke-width="0.18" fill="none" opacity="0.4"/>';
-          s += '<path d="M'+(_mfx+0.5)+','+(_mfy-0.4)+' Q'+(_mfx+0.6)+','+(_mfy+0.4)+' '+(_mfx+0.35)+','+(_mfy+1)+'" stroke="'+_mmCols[(_mfi+2)%_mmCols.length]+'" stroke-width="0.12" fill="none" opacity="0.3"/>';
+          var _mfDx = ((_mfi % 3) - 1) * 0.1;
+          s += '<path d="M'+_mfx+','+_mfy+' Q'+(_mfx+_mfDx)+','+(_mfy+0.8)+' '+(_mfx+_mfDx-0.1)+','+(_mfy+1.6)+'" stroke="'+_mfc+'" stroke-width="0.18" fill="none" opacity="0.4"/>';
+          s += '<path d="M'+(_mfx+0.4)+','+_mfy+' Q'+(_mfx+0.4+_mfDx)+','+(_mfy+0.6)+' '+(_mfx+0.3+_mfDx)+','+(_mfy+1.2)+'" stroke="'+_mmCols[(_mfi+2)%_mmCols.length]+'" stroke-width="0.12" fill="none" opacity="0.3"/>';
         }
         // Belly fur skirt — long hanging fringe under belly
         var _mmBelly = [[48,89],[50,89.5],[52,90],[54,90],[56,89.5],[58,89]];
@@ -20607,12 +20608,13 @@ document.addEventListener('keydown', function(e) {
         // Domed forehead — mammoth's high skull with fur tufts
         s += '<path d="M41.5,64 Q44,61.5 47.5,63.5" fill="#8A7A6A"/>';
         s += '<path d="M42,63.5 Q44.5,61.5 47,63.5" fill="none" stroke="#9A8A7A" stroke-width="0.35" opacity="0.25"/>';
-        // Fluffy head fur — tufts on top and sides
-        var _mmHF = [[41,63],[42.5,62],[44,61.5],[45.5,61.5],[47,62],[48.5,63],[40.5,65],[49.5,65]];
+        // Fluffy head fur — hanging DOWN, not standing up
+        var _mmHF = [[41,63],[42.5,62.5],[44,62],[45.5,62],[47,62.5],[48.5,63.5],[40.5,65],[49.5,65.5],[41.5,64],[43,63],[45,62.5],[46.5,63],[48,64]];
         for (var _mhfi = 0; _mhfi < _mmHF.length; _mhfi++) {
           var _mhfx = _mmHF[_mhfi][0], _mhfy = _mmHF[_mhfi][1];
-          s += '<path d="M'+_mhfx+','+_mhfy+' Q'+(_mhfx+0.3)+','+(_mhfy-1)+' '+(_mhfx-0.2)+','+(_mhfy-1.5)+'" stroke="#7A6A58" stroke-width="0.35" fill="none" opacity="0.4"/>';
-          s += '<path d="M'+(_mhfx+0.5)+','+_mhfy+' Q'+(_mhfx+0.7)+','+(_mhfy-0.8)+' '+(_mhfx+0.4)+','+(_mhfy-1.2)+'" stroke="#6A5A48" stroke-width="0.25" fill="none" opacity="0.3"/>';
+          var _mhfDx = ((_mhfi % 3) - 1) * 0.15;
+          s += '<path d="M'+_mhfx+','+_mhfy+' Q'+(_mhfx+_mhfDx)+','+(_mhfy+0.8)+' '+(_mhfx+_mhfDx-0.1)+','+(_mhfy+1.5)+'" stroke="#7A6A58" stroke-width="0.2" fill="none" opacity="0.4"/>';
+          s += '<path d="M'+(_mhfx+0.4)+','+_mhfy+' Q'+(_mhfx+0.4+_mhfDx)+','+(_mhfy+0.6)+' '+(_mhfx+0.3+_mhfDx)+','+(_mhfy+1.2)+'" stroke="#6A5A48" stroke-width="0.14" fill="none" opacity="0.3"/>';
         }
         // Far ear — peeking above skull line (small, cold-adapted)
         s += '<path d="M46.5,63.5 Q47,62 47.8,62.5 Q48,63.5 47,64.5" fill="#6A5A4A"/>';
@@ -20643,12 +20645,12 @@ document.addEventListener('keydown', function(e) {
         // Trunk tip — twin finger-like projections
         s += '<path d="M39,85.5 Q38.5,86.2 38.8,87" stroke="#7A6A5A" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
         s += '<path d="M39.5,85.5 Q40,86.5 39.5,87.2" stroke="#7A6A5A" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
-        // TUSKS — massive curved ivory
-        s += '<path d="M42,70 Q40,73 38,77 Q36,81 35.5,85 Q35,87.5 36,88.5 Q37,89 38,88" fill="none" stroke="#E8DCC8" stroke-width="1.6" stroke-linecap="round"/>';
+        // TUSKS — short curved ivory, less than half original size
+        s += '<path d="M42,70 Q41,72 40,74 Q39.5,75.5 40,76.5 Q40.5,77 41,76.5" fill="none" stroke="#E8DCC8" stroke-width="1.2" stroke-linecap="round"/>';
         // Tusk sheen
-        s += '<path d="M41,72 Q39.5,75 38,79 Q37,83 36.5,86" fill="none" stroke="rgba(255,250,235,0.35)" stroke-width="0.5" stroke-linecap="round"/>';
+        s += '<path d="M41.5,71 Q40.5,73 40,75" fill="none" stroke="rgba(255,250,235,0.35)" stroke-width="0.4" stroke-linecap="round"/>';
         // Tusk shadow
-        s += '<path d="M41.5,71.5 Q39.5,75 37.5,79.5 Q36,83.5 35.8,86.5" fill="none" stroke="rgba(160,140,110,0.2)" stroke-width="0.3" stroke-linecap="round"/>';
+        s += '<path d="M42,70.5 Q41,72.5 40.2,74.5" fill="none" stroke="rgba(160,140,110,0.2)" stroke-width="0.25" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 35: // Raccoon — clever nocturnal bandit (LEGENDARY)
@@ -21524,8 +21526,6 @@ document.addEventListener('keydown', function(e) {
         // Arms — outstretched slightly
         s += '<path d="M54.3,90.5 Q53.5,91 53.0,90.5" stroke="#E6C7A8" stroke-width="0.28" fill="none" stroke-linecap="round"/>';
         s += '<path d="M57.7,90.5 Q58.5,91 59.0,90.5" stroke="#E6C7A8" stroke-width="0.28" fill="none" stroke-linecap="round"/>';
-        // Beard — big white fluffy beard (drawn before face so face sits on top)
-        s += '<path d="M54.5,89.8 Q56.0,91.8 57.5,89.8 Q56.9,91.2 56.0,91.8 Q55.1,91.2 54.5,89.8 Z" fill="#F2EFE8"/>';
         // Face — skin colored oval
         s += '<ellipse cx="56.0" cy="89.0" rx="2.0" ry="1.8" fill="#E6C7A8"/>';
         // Eyes — beady and cheerful
@@ -21540,6 +21540,10 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="57.2" cy="89.5" rx="0.3" ry="0.2" fill="rgba(220,120,100,0.15)"/>';
         // Mouth — happy smile
         s += '<path d="M55.5,89.9 Q56.0,90.2 56.5,89.9" stroke="#7A5C3E" stroke-width="0.16" fill="none" stroke-linecap="round"/>';
+        // White beard — drawn AFTER face, hangs below chin, doesn't cover features
+        s += '<path d="M54.2,90 Q54,91 54.5,92 Q55.5,92.8 56,93 Q56.5,92.8 57.5,92 Q58,91 57.8,90 Q57,90.5 56,90.8 Q55,90.5 54.2,90 Z" fill="#F2EFE8"/>';
+        s += '<path d="M54.8,90.5 Q55.5,91.5 56,92 Q56.5,91.5 57.2,90.5" fill="none" stroke="#E0D8CC" stroke-width="0.15" opacity="0.4"/>';
+        s += '<path d="M55.2,91 Q56,92.2 56.8,91" fill="none" stroke="#E8E0D4" stroke-width="0.12" opacity="0.3"/>';
         // Hat — red pointy gnome cap (on top of everything)
         s += '<path d="M56.0,84.5 L58.4,88.2 L53.6,88.2 Z" fill="#B4433D"/>';
         s += '<path d="M56.0,84.5 L58.4,88.2 L53.6,88.2 Z" fill="none" stroke="#8A2A28" stroke-width="0.2"/>';
