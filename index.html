@@ -31688,7 +31688,7 @@ function checkMidnightDeliver(){
 }
 
 // ═══ CLOUD SYNC ═══
-function getState(){return{plants:st.plants,seeds:st.seeds,unlocks:st.unlocks,daily:st.daily,pollen:st.pollen,hashes:st.hashes,steps:st.steps,drops:st.drops,ph:st.ph,gp:st.gp,fc:st.fc,wd:st.wd,lastRTB:_rtbGetLast()};}
+function getState(){return{plants:st.plants,seeds:st.seeds,unlocks:st.unlocks,daily:st.daily,pollen:st.pollen,hashes:st.hashes,steps:st.steps,drops:st.drops,ph:st.ph,gp:st.gp,fc:st.fc,wd:st.wd,lastRTB:_rtbLoadState()};}
 function loadFromCloud(data){if(!data)return;if(data.plants)st.plants=data.plants;if(data.seeds)st.seeds=data.seeds;if(data.unlocks){for(var k in data.unlocks)st.unlocks[k]=data.unlocks[k];}if(typeof data.pollen==='number')st.pollen=data.pollen;if(typeof data.hashes==='number')st.hashes=data.hashes;if(typeof data.steps==='number')st.steps=data.steps;if(typeof data.ph==='number')st.ph=data.ph;if(typeof data.gp==='number')st.gp=data.gp;if(typeof data.fc==='number')st.fc=data.fc;if(typeof data.wd==='number')st.wd=data.wd;if(data.lastRTB)localStorage.setItem(RTB_KEY,String(data.lastRTB));render();_rtbRender();_rtbStartTimer();}
 return{init:init,toggle:toggle,open:open,close:close,render:render,tp:tp,ts:ts,s2n:s2n,sns:sns,sne:sne,hts:hts,hte:hte,ap:ap,as:as,cu:cu,cpi:cpi,csi:csi,getState:getState,loadFromCloud:loadFromCloud,returnToBase:returnToBase,_rtbRender:_rtbRender,_rtbStartTimer:_rtbStartTimer,checkMidnightDeliver:checkMidnightDeliver};
 })();
