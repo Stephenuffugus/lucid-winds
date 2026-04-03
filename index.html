@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-04y';
+  var _SVG_CACHE_VER = '2026-04-04z';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -22119,13 +22119,13 @@ document.addEventListener('keydown', function(e) {
         // Mandibles
         s += '<path d="M41.7,88.8 L41.3,88.5" stroke="#1A4A3A" stroke-width="0.15" stroke-linecap="round"/>';
         s += '<path d="M42.3,88.8 L42.7,88.5" stroke="#1A4A3A" stroke-width="0.15" stroke-linecap="round"/>';
-        // 3 pairs of legs — darker
-        s += '<line x1="41" y1="90.5" x2="40" y2="91.3" stroke="#1A3A2A" stroke-width="0.18"/>';
-        s += '<line x1="41" y1="91" x2="39.8" y2="91.6" stroke="#1A3A2A" stroke-width="0.18"/>';
-        s += '<line x1="41.5" y1="91.5" x2="40.5" y2="92" stroke="#1A3A2A" stroke-width="0.15"/>';
-        s += '<line x1="43" y1="90.5" x2="44" y2="91.3" stroke="#1A3A2A" stroke-width="0.18"/>';
-        s += '<line x1="43" y1="91" x2="44.2" y2="91.6" stroke="#1A3A2A" stroke-width="0.18"/>';
-        s += '<line x1="42.5" y1="91.5" x2="43.5" y2="92" stroke="#1A3A2A" stroke-width="0.15"/>';
+        // 3 pairs of legs — curved
+        s += '<path d="M41,90.5 Q40.2,90.8 40,91.3" stroke="#1A3A2A" stroke-width="0.18" fill="none"/>';
+        s += '<path d="M41,91 Q40,91.2 39.8,91.6" stroke="#1A3A2A" stroke-width="0.18" fill="none"/>';
+        s += '<path d="M41.5,91.5 Q40.8,91.6 40.5,92" stroke="#1A3A2A" stroke-width="0.15" fill="none"/>';
+        s += '<path d="M43,90.5 Q43.8,90.8 44,91.3" stroke="#1A3A2A" stroke-width="0.18" fill="none"/>';
+        s += '<path d="M43,91 Q44,91.2 44.2,91.6" stroke="#1A3A2A" stroke-width="0.18" fill="none"/>';
+        s += '<path d="M42.5,91.5 Q43.2,91.6 43.5,92" stroke="#1A3A2A" stroke-width="0.15" fill="none"/>';
         s += '</g>';
         break;
       case 65: // Ant Trail — 5 ants marching below pot rim with glow
@@ -22134,8 +22134,10 @@ document.addEventListener('keydown', function(e) {
           var _a65x = 22 + _a65i * 5.5;
           var _a65y = 82;
           s += '<g><animateTransform attributeName="transform" type="translate" values="0,0;'+(_a65i*2+10)+',0;0,0" dur="'+(10+_a65i)+'" repeatCount="indefinite"/>';
-          // Transparent white glow behind each ant for visibility on dark bg
-          s += '<ellipse cx="'+_a65x+'" cy="'+_a65y+'" rx="1.8" ry="1" fill="rgba(255,255,255,0.04)"/>';
+          // Body-shaped glow — follows ant shape, not an oval
+          s += '<ellipse cx="'+(_a65x+1.2)+'" cy="'+_a65y+'" rx="0.85" ry="0.6" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.3"/>';
+          s += '<ellipse cx="'+_a65x+'" cy="'+_a65y+'" rx="0.6" ry="0.5" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.25"/>';
+          s += '<circle cx="'+(_a65x-0.7)+'" cy="'+_a65y+'" r="0.5" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.2"/>';
           // Abdomen
           s += '<ellipse cx="'+(_a65x+1.2)+'" cy="'+_a65y+'" rx="0.7" ry="0.45" fill="#2A1A10"/>';
           // Thorax
@@ -22165,15 +22167,16 @@ document.addEventListener('keydown', function(e) {
         s += '<line x1="57" y1="78" x2="57" y2="83" stroke="#4A4A48" stroke-width="0.5"/>';
         s += '<circle cx="57" cy="83" r="0.4" fill="#4A4A48"/>';
         s += '<line x1="57" y1="83" x2="57" y2="89.5" stroke="#4A4A48" stroke-width="0.4"/>';
-        // Left foot — black, webbed
-        s += '<path d="M57,89.5 L55.5,90.2 M57,89.5 L57,90.5 M57,89.5 L58.5,90.2" stroke="#1A1A18" stroke-width="0.35" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M55.8,90 Q57,90.5 58.2,90" fill="none" stroke="#1A1A18" stroke-width="0.15" opacity="0.3"/>';
+        // Left foot — same grey as legs, webbed
+        s += '<path d="M57,89.5 L55.5,90.2 M57,89.5 L57,90.5 M57,89.5 L58.5,90.2" stroke="#4A4A48" stroke-width="0.35" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M55.8,90 Q57,90.5 58.2,90" fill="none" stroke="#4A4A48" stroke-width="0.15" opacity="0.4"/>';
         // Right leg (slightly behind)
         s += '<line x1="59" y1="78" x2="59.5" y2="83.5" stroke="#3A3A38" stroke-width="0.45"/>';
         s += '<circle cx="59.5" cy="83.5" r="0.35" fill="#3A3A38"/>';
         s += '<line x1="59.5" y1="83.5" x2="59.5" y2="89.5" stroke="#3A3A38" stroke-width="0.35"/>';
-        // Right foot
-        s += '<path d="M59.5,89.5 L58.2,90.2 M59.5,89.5 L59.5,90.5 M59.5,89.5 L60.8,90.2" stroke="#1A1A18" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        // Right foot — same grey as legs, webbed
+        s += '<path d="M59.5,89.5 L58.2,90.2 M59.5,89.5 L59.5,90.5 M59.5,89.5 L60.8,90.2" stroke="#3A3A38" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M58.5,90 Q59.5,90.5 60.5,90" fill="none" stroke="#3A3A38" stroke-width="0.15" opacity="0.4"/>';
         // ── TAIL FEATHERS — grey/dark, drooping behind body ──
         s += '<path d="M62,76 Q64,77 65,78 Q65.5,79 65,79.5 Q64,79 63,78 Q62,77 61.5,76.5" fill="#5A5A58"/>';
         s += '<path d="M61.5,76.5 Q63,78 64.5,79.5 Q65,80 64,80 Q62.5,79 61,77.5" fill="#6A6A68" opacity="0.6"/>';
@@ -22193,20 +22196,19 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M56,73 Q55,71 55.5,68 Q56,65 57,63 Q58,61 58.5,59" fill="none" stroke="#F0ECE4" stroke-width="2" stroke-linecap="round"/>';
         // Neck front edge — white
         s += '<path d="M56,73 Q55.2,71 55.8,68 Q56.3,65.5 57.3,63.5" fill="none" stroke="#E8E4DC" stroke-width="0.5" opacity="0.3" stroke-linecap="round"/>';
-        // Black neck stripe — runs down front of neck (crane field mark)
-        s += '<path d="M57,63 Q56.5,65 56.2,67 Q56,69 56.2,71" fill="none" stroke="#1A1A18" stroke-width="0.4" opacity="0.3"/>';
+        // (neck stripe removed — was creating stray line)
         // ── HEAD — white, with red crown and black beak ──
         s += '<ellipse cx="58.5" cy="58" rx="1.8" ry="1.5" fill="#F0ECE4"/>';
-        // Red crown patch — on top of head, above eyes, touching beak area
-        s += '<path d="M57.5,57.2 Q58.5,56 59.5,57.2 Q59,57.5 58.5,57.5 Q58,57.5 57.5,57.2 Z" fill="#D02020"/>';
-        // Black patch around eye and down to beak
-        s += '<path d="M57,58 Q57.5,57.5 58,58 Q58,58.5 57.5,58.5 Q57,58.5 57,58 Z" fill="#1A1A18" opacity="0.6"/>';
-        // Eye — dark, set in black patch
-        s += '<circle cx="57.5" cy="58" r="0.35" fill="#1A1A18"/>';
-        s += '<circle cx="57.6" cy="57.9" r="0.1" fill="rgba(240,235,216,0.5)"/>';
-        // Black beak — long, straight, pointed
-        s += '<path d="M56.8,58.5 L54.5,58.8 L54.5,58.3 L56.8,58" fill="#1A1A18"/>';
-        s += '<line x1="54.5" y1="58.55" x2="56.8" y2="58.25" stroke="#2A2A28" stroke-width="0.1"/>';
+        // Red crown patch — BIG, covers top of white head
+        s += '<path d="M57,57 Q58.5,55.5 60,57 Q59.5,57.8 58.5,58 Q57.5,57.8 57,57 Z" fill="#D02020"/>';
+        // Black face patch — around eye area
+        s += '<path d="M57,58.2 Q57.5,57.8 58.2,58.2 Q58.2,58.8 57.5,58.8 Q57,58.8 57,58.2 Z" fill="#1A1A18" opacity="0.5"/>';
+        // Eye — dark
+        s += '<circle cx="57.5" cy="58.2" r="0.35" fill="#1A1A18"/>';
+        s += '<circle cx="57.6" cy="58.1" r="0.1" fill="rgba(240,235,216,0.5)"/>';
+        // Beak — light grey, long, straight, pointy
+        s += '<path d="M56.8,58.8 L54,59 L54,58.5 L56.8,58.3" fill="#8A8A88"/>';
+        s += '<path d="M54,58.75 L56.8,58.55" fill="none" stroke="#6A6A68" stroke-width="0.1"/>';
         // Head outline
         s += '<ellipse cx="58.5" cy="58" rx="1.8" ry="1.5" fill="none" stroke="#C8C4BC" stroke-width="0.15" opacity="0.3"/>';
         s += '</g>';
