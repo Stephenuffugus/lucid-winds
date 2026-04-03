@@ -24879,18 +24879,28 @@ document.addEventListener('keydown', function(e) {
       if(keeperBar)keeperBar.style.display='flex';
       if(wildNav)wildNav.style.display='none';
     }
-    // Switch panel
+    // Switch panel — render content BEFORE showing to prevent ghost text flash
     document.querySelectorAll('.grove-panel').forEach(function(p) { p.classList.remove('active'); });
-    document.getElementById('panel-' + tab).classList.add('active');
-    // Update dew balance on every tab switch
+    // Pre-render content while panel is still display:none (invisible)
+    var _targetPanel = document.getElementById('panel-' + tab);
+    if (_targetPanel) {
+      _targetPanel.style.display = 'block';
+      _targetPanel.style.opacity = '0';
+      _targetPanel.style.animation = 'none';
+    }
     if(window._updateGameDew)_updateGameDew();
-    // set-104: ALWAYS scroll to top on tab switch — prevents seeing bottom
-    // of a short panel while the header is off-screen above
     window.scrollTo(0, 0);
     if (tab === 'greenhouse') renderGreenhouse();
     if (tab === 'dashboard') updateDashboard();
     if (tab === 'nursery') renderNursery();
     if (tab === 'binder') renderBinder();
+    // Content is now fully rendered — activate panel with animation
+    if (_targetPanel) {
+      _targetPanel.style.display = '';
+      _targetPanel.style.opacity = '';
+      _targetPanel.style.animation = '';
+      _targetPanel.classList.add('active');
+    }
     if (tab === 'wild' && window.FG_Wild) FG_Wild.activate();
     if (tab === 'wild') { console.log('[switchTab] wild — FG_Backpack:', !!window.FG_Backpack, 'FG_Wild:', !!window.FG_Wild); if(window.FG_Wild&&FG_Wild._afMarkWildEntry)FG_Wild._afMarkWildEntry(); }
     // Map overlays — show on Wild tab regardless of backpack state
