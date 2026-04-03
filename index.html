@@ -20340,202 +20340,246 @@ document.addEventListener('keydown', function(e) {
       case 33: // The Capybara — world's chillest MYTHIC rodent, bottom-right
         // Hydrochoerus hydrochaeris: the world's largest living rodent.
         // Barrel-shaped, blunt rectangular head, tiny eyes set high,
-        // coarse bristly fur. Famously calm — other animals sit on them.
-        // A MYTHIC companion that radiates zen patience and belonging.
-        s += '<g opacity="1" transform="translate(6,0) translate(56,89) scale(1.1) rotate(-8) translate(-56,-89)">';
-        // Shadow
-        s += '<ellipse cx="56.5" cy="92.5" rx="6" ry="0.8" fill="#0d100c" opacity="0.1"/>';
-        // Hind legs — short, tucked under barrel body
-        s += '<ellipse cx="52" cy="91.5" rx="1.5" ry="0.7" fill="#8A6038" opacity="0.5"/>';
-        s += '<ellipse cx="60" cy="91.5" rx="1.5" ry="0.7" fill="#8A6038" opacity="0.5"/>';
-        // Body — massive barrel shape (THE capybara silhouette)
-        s += '<ellipse cx="56" cy="89.5" rx="6" ry="3.2" fill="#A87848"/>';
-        // Coarse fur texture — bristly lines across back
-        for (var _cp33i = 0; _cp33i < 8; _cp33i++) {
-          var _cp33x = 51 + _cp33i * 1.3;
-          s += '<line x1="'+_cp33x+'" y1="'+(87.5+Math.sin(_cp33i*0.8)*0.3).toFixed(1)+'" x2="'+(_cp33x+0.5)+'" y2="'+(88.5+Math.sin(_cp33i*0.8)*0.3).toFixed(1)+'" stroke="#8A6038" stroke-width="0.12" opacity="0.2"/>';
+        // coarse bristly fur. Famously calm. Sitting with head slightly turned.
+        s += '<g opacity="1" transform="translate(6,0) translate(56,88) scale(1.25) translate(-56,-88)">';
+        // Mythic glow — warm golden underlayer
+        s += '<ellipse cx="56" cy="89" rx="9" ry="6" fill="rgba(200,168,75,0.025)"><animate attributeName="opacity" values="0.025;0.05;0.025" dur="5s" repeatCount="indefinite"/></ellipse>';
+        // Shadow — large, grounding
+        s += '<ellipse cx="56.5" cy="93" rx="7" ry="1" fill="#0d100c" opacity="0.15"/>';
+        // Hind legs — thick, columnar, tucked under barrel
+        s += '<ellipse cx="51.5" cy="91.5" rx="2" ry="1.2" fill="#8A6038"/>';
+        s += '<ellipse cx="51.5" cy="91.5" rx="1.2" ry="0.7" fill="#7A5028" opacity="0.3"/>';
+        s += '<ellipse cx="60.5" cy="91.5" rx="2" ry="1.2" fill="#8A6038"/>';
+        s += '<ellipse cx="60.5" cy="91.5" rx="1.2" ry="0.7" fill="#7A5028" opacity="0.3"/>';
+        // Hind feet — partially webbed (semi-aquatic)
+        s += '<path d="M50,92.5 L49.5,93 M51,92.5 L51,93.2 M52,92.5 L52.5,93" stroke="#7A5028" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M59.5,92.5 L59,93 M60.5,92.5 L60.5,93.2 M61.5,92.5 L62,93" stroke="#7A5028" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
+        // Body — massive barrel shape, the defining capybara silhouette
+        s += '<ellipse cx="56" cy="89" rx="7" ry="3.8" fill="#A87848"/>';
+        // Body highlight — dorsal ridge
+        s += '<path d="M50,87.5 Q56,86 62,87.5" fill="none" stroke="#C09868" stroke-width="0.4" opacity="0.2"/>';
+        // Belly — lighter underside
+        s += '<ellipse cx="56" cy="90.5" rx="5" ry="2" fill="#C09868" opacity="0.25"/>';
+        // Coarse fur texture — bristly lines across back (procedural)
+        var _cp33fur = [[50,87.5],[51.5,87],[53,86.8],[54.5,87],[56,86.5],[57.5,87],[59,86.8],[60.5,87],[62,87.5]];
+        for (var _cp33i = 0; _cp33i < _cp33fur.length; _cp33i++) {
+          var _cfx = _cp33fur[_cp33i][0], _cfy = _cp33fur[_cp33i][1];
+          s += '<line x1="'+_cfx+'" y1="'+_cfy+'" x2="'+(_cfx+0.4)+'" y2="'+(_cfy+1.2)+'" stroke="#8A6038" stroke-width="0.15" opacity="0.25"/>';
+          s += '<line x1="'+(_cfx+0.6)+'" y1="'+(_cfy+0.2)+'" x2="'+(_cfx+0.9)+'" y2="'+(_cfy+1)+'" stroke="#9A7048" stroke-width="0.1" opacity="0.18"/>';
         }
-        // Belly — lighter
-        s += '<ellipse cx="56" cy="90.8" rx="4" ry="1.5" fill="#C09868" opacity="0.3"/>';
-        // Front legs — short, stubby, visible
-        s += '<path d="M52.5,91 L52,92 L52.5,92.2" fill="#8A6038" stroke="#7A5028" stroke-width="0.15"/>';
-        s += '<path d="M59.5,91 L60,92 L59.5,92.2" fill="#8A6038" stroke="#7A5028" stroke-width="0.15"/>';
-        // Partially webbed front feet — capybaras are semi-aquatic
-        s += '<path d="M52,92.2 L51.5,92.5 M52.5,92.2 L52.5,92.6 M53,92.2 L53.2,92.5" stroke="#7A5028" stroke-width="0.12" fill="none"/>';
-        s += '<path d="M59.5,92.2 L59,92.5 M59.5,92.2 L59.5,92.6 M60,92.2 L60.2,92.5" stroke="#7A5028" stroke-width="0.12" fill="none"/>';
-        // Neck — thick, merging head into barrel
-        s += '<path d="M53,88 Q54,86.5 56,86 Q58,86.5 59,88" fill="#A87848"/>';
-        // Head — RECTANGULAR / BOXY (the capybara's defining head shape)
-        // Not round like most rodents — flat on top, blunt at front
-        s += '<path d="M53,86 Q53,84 54,83.5 Q56,83 58,83.5 Q59,84 59,86 Q58,87 56,87.5 Q54,87 53,86 Z" fill="#B88858"/>';
-        // Flat-top skull line — the distinctive flat crown
-        s += '<path d="M54,83.8 Q56,83.3 58,83.8" fill="none" stroke="#9A7048" stroke-width="0.3" opacity="0.3"/>';
-        // Fur texture on head
-        s += '<line x1="54.5" y1="84.5" x2="55" y2="85" stroke="#9A7048" stroke-width="0.1" opacity="0.2"/>';
-        s += '<line x1="57" y1="84.5" x2="57.5" y2="85" stroke="#9A7048" stroke-width="0.1" opacity="0.2"/>';
-        // Ears — TINY rounded bumps set high on flat skull
-        s += '<ellipse cx="54" cy="83.5" rx="0.7" ry="0.5" fill="#9A6840"/>';
-        s += '<ellipse cx="54" cy="83.5" rx="0.4" ry="0.3" fill="#B08858" opacity="0.3"/>';
-        s += '<ellipse cx="58" cy="83.5" rx="0.7" ry="0.5" fill="#9A6840"/>';
-        s += '<ellipse cx="58" cy="83.5" rx="0.4" ry="0.3" fill="#B08858" opacity="0.3"/>';
-        // Eyes — SMALL, set HIGH on head (semi-aquatic adaptation — eyes
-        // sit on top of skull so they can see while mostly submerged)
-        s += '<circle cx="54.5" cy="84.8" r="0.45" fill="#2D1810"/>';
-        s += '<circle cx="57.5" cy="84.8" r="0.45" fill="#2D1810"/>';
-        s += '<circle cx="54.6" cy="84.7" r="0.12" fill="rgba(200,180,120,0.4)"/>';
-        s += '<circle cx="57.6" cy="84.7" r="0.12" fill="rgba(200,180,120,0.4)"/>';
-        // Snout — large, squared-off, blunt (rodent incisors behind here)
-        s += '<ellipse cx="56" cy="86.5" rx="2" ry="1.2" fill="#C09868"/>';
-        // Large nostrils — prominent on the flat snout face
-        s += '<ellipse cx="55.2" cy="87" rx="0.3" ry="0.22" fill="#3A2A18"/>';
-        s += '<ellipse cx="56.8" cy="87" rx="0.3" ry="0.22" fill="#3A2A18"/>';
-        // Mouth line — serene, content
-        s += '<path d="M55,87.5 Q56,87.8 57,87.5" fill="none" stroke="#7A5838" stroke-width="0.2" opacity="0.3"/>';
-        // Whiskers — short, coarse
-        s += '<line x1="54.5" y1="86.8" x2="53" y2="86.5" stroke="#C0A878" stroke-width="0.06" opacity="0.3"/>';
-        s += '<line x1="54.5" y1="87" x2="53" y2="87.2" stroke="#C0A878" stroke-width="0.06" opacity="0.25"/>';
-        s += '<line x1="57.5" y1="86.8" x2="59" y2="86.5" stroke="#C0A878" stroke-width="0.06" opacity="0.3"/>';
-        s += '<line x1="57.5" y1="87" x2="59" y2="87.2" stroke="#C0A878" stroke-width="0.06" opacity="0.25"/>';
-        // Mythic aura — warm golden glow (MYTHIC indicator)
-        s += '<ellipse cx="56" cy="89" rx="7" ry="5" fill="rgba(200,168,75,0.02)"><animate attributeName="opacity" values="0.02;0.04;0.02" dur="5s" repeatCount="indefinite"/></ellipse>';
+        // Front legs — short, thick, visible
+        s += '<path d="M52,90.5 Q51.5,91.5 51.5,92.5" fill="none" stroke="#8A6038" stroke-width="1.8" stroke-linecap="round"/>';
+        s += '<path d="M60,90.5 Q60.5,91.5 60.5,92.5" fill="none" stroke="#7A5028" stroke-width="1.8" stroke-linecap="round"/>';
+        // Front feet
+        s += '<ellipse cx="51.5" cy="92.5" rx="1.3" ry="0.5" fill="#7A5028"/>';
+        s += '<ellipse cx="60.5" cy="92.5" rx="1.3" ry="0.5" fill="#6A4018"/>';
+        // Neck — thick, merging smoothly into barrel body (overlapping fill)
+        s += '<path d="M52,88 Q53,86 55,85 Q57,84.5 59,85.5 Q60,87 60,88" fill="#A87848"/>';
+        s += '<path d="M53,87 Q55,85.5 58,86" fill="none" stroke="#B89868" stroke-width="0.3" opacity="0.2"/>';
+        // Head — BOXY / RECTANGULAR (capybara's defining feature)
+        s += '<path d="M52,85.5 Q52,83 53.5,82 Q55.5,81 57.5,82 Q59,83 59,85.5 Q58,86.5 55.5,87 Q53,86.5 52,85.5 Z" fill="#B88858"/>';
+        // Head highlight — lighter top
+        s += '<path d="M53.5,82.5 Q55.5,81.5 57.5,82.5" fill="none" stroke="#C8A878" stroke-width="0.4" opacity="0.2"/>';
+        // Flat-top skull — distinctive capybara profile
+        s += '<path d="M53.5,82.2 Q55.5,81.5 57.5,82.2" fill="none" stroke="#9A7048" stroke-width="0.35" opacity="0.3"/>';
+        // Ears — TINY rounded bumps high on skull (cold/water adaptation)
+        s += '<ellipse cx="53.2" cy="82" rx="0.9" ry="0.65" fill="#9A6840"/>';
+        s += '<ellipse cx="53.2" cy="82" rx="0.5" ry="0.35" fill="#B08858" opacity="0.3"/>';
+        s += '<ellipse cx="57.8" cy="82" rx="0.9" ry="0.65" fill="#9A6840"/>';
+        s += '<ellipse cx="57.8" cy="82" rx="0.5" ry="0.35" fill="#B08858" opacity="0.3"/>';
+        // Eyes — small, set HIGH on head (semi-aquatic: see while submerged)
+        s += '<circle cx="54" cy="83.5" r="0.55" fill="#2D1810"/>';
+        s += '<circle cx="57" cy="83.5" r="0.55" fill="#2D1810"/>';
+        s += '<circle cx="54.1" cy="83.35" r="0.15" fill="rgba(200,180,120,0.5)"/>';
+        s += '<circle cx="57.1" cy="83.35" r="0.15" fill="rgba(200,180,120,0.5)"/>';
+        // Snout — large, squared-off, blunt
+        s += '<ellipse cx="55.5" cy="85.5" rx="2.2" ry="1.4" fill="#C09868"/>';
+        s += '<ellipse cx="55.5" cy="85.5" rx="1.5" ry="0.8" fill="#D0A878" opacity="0.15"/>';
+        // Nostrils — large, prominent on snout face
+        s += '<ellipse cx="54.8" cy="86.2" rx="0.35" ry="0.25" fill="#3A2A18"/>';
+        s += '<ellipse cx="56.2" cy="86.2" rx="0.35" ry="0.25" fill="#3A2A18"/>';
+        // Mouth — serene, content smile
+        s += '<path d="M54.5,86.8 Q55.5,87.2 56.5,86.8" fill="none" stroke="#7A5838" stroke-width="0.25" opacity="0.35"/>';
+        // Whiskers — short, coarse, sparse
+        s += '<line x1="54" y1="85.8" x2="52.2" y2="85.4" stroke="#C0A878" stroke-width="0.08" opacity="0.3"/>';
+        s += '<line x1="54" y1="86" x2="52.2" y2="86.3" stroke="#C0A878" stroke-width="0.08" opacity="0.25"/>';
+        s += '<line x1="57" y1="85.8" x2="58.8" y2="85.4" stroke="#C0A878" stroke-width="0.08" opacity="0.3"/>';
+        s += '<line x1="57" y1="86" x2="58.8" y2="86.3" stroke="#C0A878" stroke-width="0.08" opacity="0.25"/>';
+        // Fur clumps on cheeks — coarse wiry texture
+        s += '<path d="M52.5,85 Q52,85.5 52.3,86" stroke="#9A7048" stroke-width="0.12" fill="none" opacity="0.2"/>';
+        s += '<path d="M58.5,85 Q59,85.5 58.7,86" stroke="#9A7048" stroke-width="0.12" fill="none" opacity="0.2"/>';
         // Zen breathing — subtle body swell
         s += '<animate attributeName="opacity" values="1;0.97;1" dur="4s" repeatCount="indefinite"/>';
         s += '</g>';
         break;
       case 34: // Woolly Mammoth — ancient ice-age guardian (LEGENDARY)
-        // Mammuthus primigenius: the iconic Pleistocene megafauna.
-        // Long shaggy fur, domed skull, curved tusks, small ears,
-        // trunk raised in greeting. A living fossil companion.
-        s += '<g opacity="1" transform="translate(4,0) translate(56,82) scale(1.2) translate(-56,-82)">';
-        // Shadow beneath
-        s += '<ellipse cx="56" cy="90" rx="8" ry="1.2" fill="#0d100c" opacity="0.18"/>';
-        // Hind legs — thick, columnar, elephant-style
-        s += '<rect x="50" y="85" width="2.8" height="5" rx="1" fill="#5A4A3A"/>';
-        s += '<rect x="58" y="85" width="2.8" height="5" rx="1" fill="#4A3A2A"/>';
-        // Hind feet
-        s += '<ellipse cx="51.4" cy="90" rx="1.8" ry="0.7" fill="#4A3A2A"/>';
-        s += '<ellipse cx="59.4" cy="90" rx="1.8" ry="0.7" fill="#3A2A1A"/>';
-        // Body — massive barrel shape with shaggy outline
-        s += '<ellipse cx="56" cy="83" rx="7.5" ry="5" fill="#6A5A4A"/>';
-        // Shaggy fur underside — long hanging strands
-        var _mmFur = [[49,85],[50.5,86.5],[52,87],[54,87.5],[56,87],[58,86.5],[60,86],[61.5,85],[63,84]];
-        for (var _mf = 0; _mf < _mmFur.length; _mf++) {
-          var _fx = _mmFur[_mf][0], _fy = _mmFur[_mf][1];
-          s += '<path d="M'+_fx+','+(_fy-2)+' Q'+(_fx+0.3)+','+_fy+' '+(_fx-0.2)+','+(_fy+0.8)+'" stroke="#5A4A38" stroke-width="0.3" fill="none" opacity="0.5"/>';
-          s += '<path d="M'+(_fx+0.8)+','+(_fy-1.8)+' Q'+(_fx+1.1)+','+_fy+' '+(_fx+0.6)+','+(_fy+0.6)+'" stroke="#6A5A48" stroke-width="0.25" fill="none" opacity="0.4"/>';
+        // Mammuthus primigenius. Facing left, butt near right edge.
+        // Connected anatomy: body→shoulder hump→neck→head as one mass.
+        s += '<g opacity="1" transform="translate(8,0) translate(55,82) scale(1.35) translate(-55,-82)">';
+        // Shadow
+        s += '<ellipse cx="56" cy="92" rx="9" ry="1.2" fill="#0d100c" opacity="0.18"/>';
+        // Tail — short, tufted, at far right (butt near edge)
+        s += '<path d="M65,81 Q67,80 68,81.5 Q68.5,83 67.5,83.5" stroke="#5A4A3A" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M67.5,83.5 Q68,84 67.5,84.5 L67,84" stroke="#6A5A48" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
+        // Hind legs — thick columnar pillars
+        s += '<path d="M58,87 L58,91.5" stroke="#5A4A3A" stroke-width="3" stroke-linecap="round"/>';
+        s += '<path d="M62,86.5 L62,91.5" stroke="#4A3A2A" stroke-width="3" stroke-linecap="round"/>';
+        s += '<ellipse cx="58" cy="91.5" rx="2" ry="0.7" fill="#4A3A2A"/>';
+        s += '<ellipse cx="62" cy="91.5" rx="2" ry="0.7" fill="#3A2A1A"/>';
+        // Body — massive barrel, single connected shape from rump to shoulder
+        s += '<path d="M45,82 Q45,78 48,76 Q52,74 56,75 Q60,74 64,76 Q66,78 66,82 Q66,87 64,89 Q60,91 56,90 Q50,91 47,89 Q45,87 45,82 Z" fill="#6A5A4A"/>';
+        // Shoulder hump — high dorsal fat deposit (overlapping fill for connection)
+        s += '<path d="M48,76 Q50,72 53,71 Q56,72 57,75" fill="#7A6A5A"/>';
+        s += '<path d="M49,73 Q52,71.5 55,73" fill="none" stroke="#8A7A6A" stroke-width="0.4" opacity="0.25"/>';
+        // Body fur texture — procedural shaggy strands
+        var _mmF = [[47,84],[49,85.5],[51,86.5],[53,87],[55,87],[57,86.5],[59,86],[61,85],[63,84],[65,82.5]];
+        for (var _mfi = 0; _mfi < _mmF.length; _mfi++) {
+          var _mfx = _mmF[_mfi][0], _mfy = _mmF[_mfi][1];
+          s += '<path d="M'+_mfx+','+(_mfy-1.5)+' Q'+(_mfx+0.3)+','+_mfy+' '+(_mfx-0.3)+','+(_mfy+1.2)+'" stroke="#5A4A38" stroke-width="0.35" fill="none" opacity="0.45"/>';
+          s += '<path d="M'+(_mfx+1)+','+(_mfy-1.2)+' Q'+(_mfx+1.2)+','+(_mfy+0.3)+' '+(_mfx+0.7)+','+(_mfy+0.8)+'" stroke="#6A5A48" stroke-width="0.25" fill="none" opacity="0.35"/>';
         }
-        // Front legs — slightly forward
-        s += '<rect x="49" y="84" width="2.8" height="5.5" rx="1" fill="#5A4A3A"/>';
-        s += '<rect x="55" y="84.5" width="2.8" height="5" rx="1" fill="#4A3A2A"/>';
-        // Front feet
-        s += '<ellipse cx="50.4" cy="89.5" rx="1.8" ry="0.7" fill="#4A3A2A"/>';
-        s += '<ellipse cx="56.4" cy="89.5" rx="1.8" ry="0.7" fill="#3A2A1A"/>';
-        // Fur texture on body — shaggy horizontal strokes
-        for (var _mt = 0; _mt < 6; _mt++) {
-          var _mtx = 50 + _mt * 2.2;
-          var _mty = 80 + (_mt % 3) * 1.5;
-          s += '<path d="M'+_mtx+','+_mty+' Q'+(_mtx+1.5)+','+(_mty+0.5)+' '+(_mtx+2.5)+','+_mty+'" stroke="#7A6A58" stroke-width="0.15" fill="none" opacity="0.25"/>';
+        // Dorsal fur — long strands on back
+        for (var _mdi = 0; _mdi < 6; _mdi++) {
+          var _mdx = 49 + _mdi * 2.8;
+          var _mdy = 76 + Math.sin(_mdi * 0.9) * 1;
+          s += '<path d="M'+_mdx+','+_mdy+' Q'+(_mdx+1)+','+(_mdy-0.5)+' '+(_mdx+2)+','+_mdy+'" stroke="#7A6A58" stroke-width="0.18" fill="none" opacity="0.3"/>';
         }
-        // Hump — mammoth's distinctive fat hump above shoulders
-        s += '<ellipse cx="53" cy="78.5" rx="4" ry="2.5" fill="#7A6A5A"/>';
-        // Neck
-        s += '<path d="M51,80 Q49,78 48,76 Q47,74 48,72" fill="#6A5A4A" stroke="#5A4A3A" stroke-width="0.3"/>';
-        // Head — domed skull (mammoth's distinctive high forehead)
-        s += '<ellipse cx="47" cy="73" rx="4" ry="3.5" fill="#7A6A5A"/>';
-        // Domed forehead — the mammoth's signature feature
-        s += '<path d="M44,71 Q47,68.5 50,71" fill="#8A7A6A" stroke="none"/>';
-        // Eye — small, dark, intelligent
-        s += '<circle cx="45.5" cy="72.5" r="0.6" fill="#1A1008"/>';
-        s += '<circle cx="45.6" cy="72.3" r="0.15" fill="rgba(200,180,120,0.5)"/>';
-        // Ear — tiny compared to African elephant (cold adaptation)
-        s += '<ellipse cx="44" cy="73" rx="1" ry="1.5" fill="#8A7A6A"/>';
-        s += '<ellipse cx="44" cy="73" rx="0.5" ry="1" fill="#6A5A4A" opacity="0.4"/>';
-        // Trunk — long, raised slightly, showing the twin-fingered tip
-        s += '<path d="M45,74.5 Q44,76 43,78 Q42,80 41.5,82 Q41,83 41.5,84 Q42,84.5 42.5,84" fill="none" stroke="#7A6A5A" stroke-width="1.8" stroke-linecap="round"/>';
-        // Trunk ridges
-        s += '<path d="M44.5,75.5 Q44,75.8 43.5,76" stroke="#5A4A3A" stroke-width="0.15" fill="none" opacity="0.3"/>';
-        s += '<path d="M43.8,77.5 Q43.3,77.8 42.8,78.2" stroke="#5A4A3A" stroke-width="0.15" fill="none" opacity="0.3"/>';
-        s += '<path d="M43,79.5 Q42.5,80 42,80.5" stroke="#5A4A3A" stroke-width="0.15" fill="none" opacity="0.3"/>';
-        // Trunk tip — twin finger-like projections (mammoth-specific)
-        s += '<path d="M42,84 Q41.5,84.5 41.8,85" stroke="#7A6A5A" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M42.5,84 Q42.8,84.8 42.5,85.2" stroke="#7A6A5A" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
-        // TUSKS — massive curved ivory, the mammoth's glory
-        s += '<path d="M46,74 Q44,76 42,79 Q40,82 39,85 Q38.5,87 39.5,88 Q40.5,88.5 41.5,87.5" fill="none" stroke="#E8DCC8" stroke-width="1.2" stroke-linecap="round"/>';
-        // Tusk sheen
-        s += '<path d="M45,75 Q43.5,77 42,79.5 Q40.5,82.5 40,85" fill="none" stroke="rgba(240,235,216,0.35)" stroke-width="0.4" stroke-linecap="round"/>';
-        // Long shaggy head fur — hanging from chin and sides
-        s += '<path d="M44.5,74.5 Q44,76 43.5,77" stroke="#6A5A48" stroke-width="0.3" fill="none" opacity="0.4"/>';
-        s += '<path d="M46,75 Q45.5,76.5 45,77.5" stroke="#5A4A38" stroke-width="0.25" fill="none" opacity="0.35"/>';
-        s += '<path d="M48,75.5 Q47.5,77 47,78" stroke="#6A5A48" stroke-width="0.25" fill="none" opacity="0.35"/>';
-        // Tail — short, tufted
-        s += '<path d="M63.5,82 Q65,81 66,82.5" stroke="#5A4A3A" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M66,82.5 Q66.5,83.5 66,84" stroke="#6A5A48" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        // Front legs — slightly forward of body center
+        s += '<path d="M50,87 L49.5,91.5" stroke="#5A4A3A" stroke-width="3" stroke-linecap="round"/>';
+        s += '<path d="M54,87.5 L54,91.5" stroke="#4A3A2A" stroke-width="3" stroke-linecap="round"/>';
+        s += '<ellipse cx="49.5" cy="91.5" rx="2" ry="0.7" fill="#4A3A2A"/>';
+        s += '<ellipse cx="54" cy="91.5" rx="2" ry="0.7" fill="#3A2A1A"/>';
+        // Neck — thick, merging from shoulder hump into head (CONNECTED)
+        s += '<path d="M48,76 Q46,75 45,73 Q44,71 44.5,69" fill="#6A5A4A"/>';
+        s += '<path d="M50,75 Q48,74 47,72 Q46,70 46.5,68" fill="#7A6A5A" opacity="0.6"/>';
+        // Head — domed skull, directly connected to neck
+        s += '<path d="M42,71 Q42,68 43.5,66.5 Q45.5,65 48,65.5 Q50,66 50.5,68 Q51,70 50,72 Q48,73.5 45.5,73.5 Q43,73 42,71 Z" fill="#7A6A5A"/>';
+        // Domed forehead — mammoth's signature high skull
+        s += '<path d="M43.5,67 Q46,64.5 49,67" fill="#8A7A6A"/>';
+        s += '<path d="M44,66.5 Q46.5,64.8 48.5,66.8" fill="none" stroke="#9A8A7A" stroke-width="0.3" opacity="0.25"/>';
+        // Ear — SMALL rounded flap behind eye (cold adaptation, unlike African elephant)
+        s += '<ellipse cx="49" cy="68.5" rx="1.2" ry="1.8" fill="#7A6A5A"/>';
+        s += '<ellipse cx="49" cy="68.5" rx="0.7" ry="1.2" fill="#6A5A4A" opacity="0.4"/>';
+        s += '<path d="M48.3,67.5 Q49,67 49.7,67.5" fill="none" stroke="#8A7A6A" stroke-width="0.2" opacity="0.3"/>';
+        // Eye — small, dark, ancient intelligence
+        s += '<circle cx="44.5" cy="69.5" r="0.7" fill="#1A1008"/>';
+        s += '<circle cx="44.6" cy="69.3" r="0.18" fill="rgba(200,180,120,0.55)"/>';
+        // Brow ridge — heavy, protective
+        s += '<path d="M43.5,68.8 Q44.5,68.3 45.5,68.8" fill="none" stroke="#5A4A3A" stroke-width="0.35" opacity="0.35"/>';
+        // Trunk — long, curving down and slightly up at tip
+        s += '<path d="M44,72 Q43,74 42,76.5 Q41,79 40.5,81.5 Q40,83.5 40.5,85 Q41,86 41.8,85.5" fill="none" stroke="#7A6A5A" stroke-width="2.2" stroke-linecap="round"/>';
+        // Trunk highlight — lighter edge
+        s += '<path d="M44.2,72.5 Q43.2,74.5 42.3,77 Q41.3,79.5 41,82" fill="none" stroke="#8A7A6A" stroke-width="0.5" opacity="0.25" stroke-linecap="round"/>';
+        // Trunk ridges — segmented wrinkles
+        s += '<path d="M43.5,74 Q43,74.3 42.5,74.5" stroke="#5A4A3A" stroke-width="0.2" fill="none" opacity="0.35"/>';
+        s += '<path d="M42.8,76 Q42.3,76.3 41.8,76.5" stroke="#5A4A3A" stroke-width="0.2" fill="none" opacity="0.35"/>';
+        s += '<path d="M42,78.5 Q41.5,78.8 41,79" stroke="#5A4A3A" stroke-width="0.2" fill="none" opacity="0.35"/>';
+        s += '<path d="M41.3,81 Q40.8,81.3 40.5,81.5" stroke="#5A4A3A" stroke-width="0.2" fill="none" opacity="0.3"/>';
+        s += '<path d="M40.8,83 Q40.5,83.3 40.3,83.5" stroke="#5A4A3A" stroke-width="0.18" fill="none" opacity="0.3"/>';
+        // Trunk tip — twin finger-like projections
+        s += '<path d="M41.5,85.5 Q41,86.2 41.3,87" stroke="#7A6A5A" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M42,85.5 Q42.5,86.5 42,87.2" stroke="#7A6A5A" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
+        // TUSKS — massive curved ivory sweeping outward then back
+        s += '<path d="M44.5,72 Q42.5,75 40.5,78.5 Q38.5,82 37.5,85.5 Q37,87.5 38,88.5 Q39,89 40,88" fill="none" stroke="#E8DCC8" stroke-width="1.4" stroke-linecap="round"/>';
+        // Tusk sheen — specular highlight
+        s += '<path d="M43.5,74 Q42,76.5 40.5,79.5 Q39,83 38.5,86" fill="none" stroke="rgba(255,250,235,0.35)" stroke-width="0.5" stroke-linecap="round"/>';
+        // Tusk shadow — darker inner edge
+        s += '<path d="M44,73 Q42,76 40,80 Q38.5,83.5 38,86.5" fill="none" stroke="rgba(160,140,110,0.2)" stroke-width="0.3" stroke-linecap="round"/>';
+        // Shaggy chin/neck fur — long hanging strands
+        var _mmChin = [[44,73],[45,74],[46.5,74.5],[44.5,75],[46,76]];
+        for (var _mci = 0; _mci < _mmChin.length; _mci++) {
+          var _mcx = _mmChin[_mci][0], _mcy = _mmChin[_mci][1];
+          s += '<path d="M'+_mcx+','+_mcy+' Q'+(_mcx-0.3)+','+(_mcy+2)+' '+(_mcx+0.2)+','+(_mcy+3)+'" stroke="#5A4A38" stroke-width="0.3" fill="none" opacity="0.4"/>';
+        }
+        // Belly fur — long hanging skirt
+        s += '<path d="M48,88 Q48.2,90 47.8,91" stroke="#5A4A38" stroke-width="0.3" fill="none" opacity="0.35"/>';
+        s += '<path d="M52,89 Q52.3,90.5 51.8,91.5" stroke="#5A4A38" stroke-width="0.25" fill="none" opacity="0.3"/>';
         s += '</g>';
         break;
       case 35: // Raccoon — clever nocturnal bandit (LEGENDARY)
-        // Procyon lotor: the common raccoon. Masked face, ringed tail,
-        // dexterous paws, hunched posture. Intelligent, curious, mischievous.
-        // Sitting upright holding something, looking at the plant.
-        s += '<g opacity="1" transform="translate(-4,0) translate(18,82) scale(1.15) translate(-18,-82)">';
+        // Procyon lotor. Sitting upright, tail wrapping from body, head on shoulders.
+        // Key fix: connected anatomy — body→tail as one flow, neck→head overlapping.
+        s += '<g opacity="1" transform="translate(-4,0) translate(18,84) scale(1.2) translate(-18,-84)">';
         // Shadow
-        s += '<ellipse cx="18" cy="90" rx="5.5" ry="0.8" fill="#0d100c" opacity="0.15"/>';
-        // Tail — thick, ringed (the raccoon's signature)
-        s += '<path d="M12,86 Q8,84 6,82 Q4,80 5,78" fill="none" stroke="#7A7A72" stroke-width="2.8" stroke-linecap="round"/>';
-        // Tail rings — dark bands
-        s += '<path d="M11,85.5 Q9,84 8,83" stroke="#3A3A32" stroke-width="2.8" stroke-linecap="butt" opacity="0.5"/>';
-        s += '<path d="M7,82 Q5.5,80.5 5.5,79.5" stroke="#3A3A32" stroke-width="2.8" stroke-linecap="butt" opacity="0.5"/>';
-        // Tail tip dark
-        s += '<circle cx="5" cy="78" r="1.4" fill="#3A3A32" opacity="0.5"/>';
-        // Hind legs — sitting position, tucked
-        s += '<ellipse cx="14" cy="88.5" rx="2.2" ry="1.2" fill="#6A6A62"/>';
-        s += '<ellipse cx="22" cy="88.5" rx="2.2" ry="1.2" fill="#5A5A52"/>';
-        // Body — hunched, sitting upright
-        s += '<ellipse cx="18" cy="84" rx="5" ry="4.5" fill="#7A7A72"/>';
-        // Belly — lighter grey
-        s += '<ellipse cx="18" cy="85.5" rx="3" ry="2.5" fill="#9A9A92" opacity="0.35"/>';
-        // Fur texture
-        s += '<path d="M14,82 Q15,81.5 16,82" stroke="#6A6A60" stroke-width="0.15" fill="none" opacity="0.3"/>';
-        s += '<path d="M19,81 Q20,80.5 21,81" stroke="#6A6A60" stroke-width="0.15" fill="none" opacity="0.3"/>';
-        // Front paws — the raccoon's famously dexterous hands, held up
-        s += '<path d="M14.5,84 Q13,82.5 12.5,81" fill="none" stroke="#7A7A72" stroke-width="1.5" stroke-linecap="round"/>';
-        s += '<path d="M21.5,84 Q23,82.5 23.5,81" fill="none" stroke="#6A6A62" stroke-width="1.5" stroke-linecap="round"/>';
-        // Tiny fingers on paws
-        s += '<circle cx="12.2" cy="80.8" r="0.8" fill="#5A5A52"/>';
-        s += '<path d="M11.5,80.5 L11.3,80 M12,80.2 L12,79.6 M12.7,80.5 L13,80" stroke="#5A5A52" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
-        s += '<circle cx="23.8" cy="80.8" r="0.8" fill="#4A4A42"/>';
-        s += '<path d="M23.2,80.5 L23,80 M23.8,80.2 L23.8,79.6 M24.4,80.5 L24.7,80" stroke="#4A4A42" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
-        // Neck
-        s += '<path d="M16,80 Q18,79 20,80" fill="#7A7A72"/>';
-        // Head — round, slightly pointed snout
-        s += '<ellipse cx="18" cy="76.5" rx="3.8" ry="3" fill="#8A8A82"/>';
-        // MASK — the raccoon's iconic dark eye mask
-        s += '<path d="M14.5,76 Q16,74.8 18,75.5 Q20,74.8 21.5,76 Q20,77 18,76.5 Q16,77 14.5,76 Z" fill="#2A2A22" opacity="0.75"/>';
-        // White fur above and below mask
-        s += '<path d="M15,74.8 Q18,73.5 21,74.8" fill="none" stroke="#C0C0B8" stroke-width="0.5" opacity="0.35"/>';
-        s += '<path d="M15.5,77.2 Q18,78 20.5,77.2" fill="none" stroke="#B0B0A8" stroke-width="0.4" opacity="0.3"/>';
-        // Eyes — bright, beady, within the mask
-        s += '<circle cx="16.2" cy="75.8" r="0.65" fill="#1A1A12"/>';
-        s += '<circle cx="19.8" cy="75.8" r="0.65" fill="#1A1A12"/>';
-        // Eye shine
-        s += '<circle cx="16.4" cy="75.6" r="0.18" fill="rgba(240,235,216,0.55)"/>';
-        s += '<circle cx="20" cy="75.6" r="0.18" fill="rgba(240,235,216,0.55)"/>';
-        // Ears — rounded, dark-tipped
-        s += '<ellipse cx="15.2" cy="73.8" rx="1.2" ry="1.5" fill="#8A8A82"/>';
-        s += '<ellipse cx="15.2" cy="73.3" rx="0.7" ry="0.8" fill="#3A3A32" opacity="0.4"/>';
-        s += '<ellipse cx="20.8" cy="73.8" rx="1.2" ry="1.5" fill="#8A8A82"/>';
-        s += '<ellipse cx="20.8" cy="73.3" rx="0.7" ry="0.8" fill="#3A3A32" opacity="0.4"/>';
+        s += '<ellipse cx="18" cy="91" rx="6" ry="0.9" fill="#0d100c" opacity="0.15"/>';
+        // Tail — thick, curving from body's left hip (CONNECTED to body mass)
+        s += '<path d="M13,87 Q10,86 8,84.5 Q5.5,82.5 5,80 Q4.5,78 5.5,77" fill="#7A7A72" stroke="#6A6A62" stroke-width="0.3"/>';
+        // Tail rings — dark bands overlaid on filled tail
+        s += '<path d="M10.5,85.5 Q9,84.5 8,83.5" stroke="#3A3A32" stroke-width="2.5" stroke-linecap="butt" opacity="0.45"/>';
+        s += '<path d="M7,82 Q6,80.5 5.8,79" stroke="#3A3A32" stroke-width="2.5" stroke-linecap="butt" opacity="0.45"/>';
+        // Tail tip — dark
+        s += '<ellipse cx="5.5" cy="77" rx="1.2" ry="1.5" fill="#3A3A32" opacity="0.5"/>';
+        // Tail light rings (between dark)
+        s += '<path d="M9.5,84.8 Q8.5,83.8 7.5,83" stroke="#8A8A82" stroke-width="0.4" opacity="0.2" fill="none"/>';
+        // Hind legs — sitting, tucked under round body
+        s += '<ellipse cx="14" cy="89" rx="2.5" ry="1.3" fill="#6A6A62"/>';
+        s += '<ellipse cx="14" cy="89" rx="1.5" ry="0.7" fill="#5A5A52" opacity="0.3"/>';
+        s += '<ellipse cx="22" cy="89" rx="2.5" ry="1.3" fill="#5A5A52"/>';
+        s += '<ellipse cx="22" cy="89" rx="1.5" ry="0.7" fill="#4A4A42" opacity="0.3"/>';
+        // Hind feet
+        s += '<ellipse cx="14" cy="90.2" rx="1.5" ry="0.6" fill="#5A5A52"/>';
+        s += '<ellipse cx="22" cy="90.2" rx="1.5" ry="0.6" fill="#4A4A42"/>';
+        // Body — round, hunched, sitting upright (overlaps tail base for connection)
+        s += '<path d="M12,85 Q12,80 14,78 Q18,76.5 22,78 Q24,80 24,85 Q24,88 22,89.5 Q18,91 14,89.5 Q12,88 12,85 Z" fill="#7A7A72"/>';
+        // Belly — lighter grizzled grey
+        s += '<ellipse cx="18" cy="86.5" rx="3.5" ry="3" fill="#9A9A92" opacity="0.3"/>';
+        // Fur texture — grizzled agouti pattern (procedural)
+        var _rcFur = [[14,80],[15.5,79],[17,78.5],[19,78.5],[20.5,79],[22,80],[15,82],[17,81.5],[19,81.5],[21,82]];
+        for (var _rfi = 0; _rfi < _rcFur.length; _rfi++) {
+          var _rfx = _rcFur[_rfi][0], _rfy = _rcFur[_rfi][1];
+          s += '<path d="M'+_rfx+','+_rfy+' Q'+(_rfx+0.5)+','+(_rfy+0.8)+' '+(_rfx+1)+','+_rfy+'" stroke="#6A6A60" stroke-width="0.12" fill="none" opacity="0.25"/>';
+        }
+        // Front arms — reaching forward, dexterous paws held up
+        s += '<path d="M15,83 Q13.5,81.5 13,80" fill="none" stroke="#7A7A72" stroke-width="1.8" stroke-linecap="round"/>';
+        s += '<path d="M21,83 Q22.5,81.5 23,80" fill="none" stroke="#6A6A62" stroke-width="1.8" stroke-linecap="round"/>';
+        // Paws — tiny human-like hands (raccoon's defining feature)
+        s += '<circle cx="12.8" cy="79.8" r="1" fill="#5A5A52"/>';
+        s += '<path d="M12,79.3 L11.7,78.8 M12.5,79 L12.5,78.3 M13,79 L13.3,78.5 M13.5,79.3 L13.8,78.8" stroke="#4A4A42" stroke-width="0.22" fill="none" stroke-linecap="round"/>';
+        s += '<circle cx="23.2" cy="79.8" r="1" fill="#4A4A42"/>';
+        s += '<path d="M22.5,79.3 L22.2,78.8 M23,79 L23,78.3 M23.5,79 L23.8,78.5 M24,79.3 L24.2,78.8" stroke="#3A3A32" stroke-width="0.22" fill="none" stroke-linecap="round"/>';
+        // Neck/shoulders — overlapping fill connects body to head
+        s += '<path d="M15,79 Q16,77 18,76.5 Q20,77 21,79" fill="#7A7A72"/>';
+        s += '<path d="M16,78 Q18,77 20,78" fill="#8A8A82" opacity="0.3"/>';
+        // Head — round, DIRECTLY overlapping neck (connected)
+        s += '<ellipse cx="18" cy="75" rx="4" ry="3.2" fill="#8A8A82"/>';
+        // Forehead — lighter central stripe
+        s += '<path d="M16.5,73 Q18,72.2 19.5,73" fill="none" stroke="#B0B0A8" stroke-width="0.6" opacity="0.25"/>';
+        // MASK — the iconic dark raccoon eye band
+        s += '<path d="M14.2,75 Q16,73.5 18,74.5 Q20,73.5 21.8,75 Q20,76.2 18,75.5 Q16,76.2 14.2,75 Z" fill="#2A2A22" opacity="0.75"/>';
+        // Mask extends to cheeks
+        s += '<path d="M14.2,75 Q13.5,75.5 13.5,76" stroke="#2A2A22" stroke-width="0.8" opacity="0.4" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M21.8,75 Q22.5,75.5 22.5,76" stroke="#2A2A22" stroke-width="0.8" opacity="0.4" fill="none" stroke-linecap="round"/>';
+        // White fur borders — above and below mask
+        s += '<path d="M15,73.5 Q18,72 21,73.5" fill="none" stroke="#C8C8C0" stroke-width="0.5" opacity="0.35"/>';
+        s += '<path d="M15.5,76.5 Q18,77.5 20.5,76.5" fill="none" stroke="#B0B0A8" stroke-width="0.4" opacity="0.3"/>';
+        // Eyes — bright, intelligent, within the mask
+        s += '<circle cx="16.2" cy="74.8" r="0.7" fill="#1A1A12"/>';
+        s += '<circle cx="19.8" cy="74.8" r="0.7" fill="#1A1A12"/>';
+        // Eye shine — double specular (Beholder technique)
+        s += '<circle cx="16.4" cy="74.6" r="0.2" fill="rgba(240,235,216,0.6)"/>';
+        s += '<circle cx="16.1" cy="75" r="0.08" fill="rgba(240,235,216,0.35)"/>';
+        s += '<circle cx="20" cy="74.6" r="0.2" fill="rgba(240,235,216,0.6)"/>';
+        s += '<circle cx="19.7" cy="75" r="0.08" fill="rgba(240,235,216,0.35)"/>';
+        // Ears — rounded, dark-tipped, prominent
+        s += '<ellipse cx="15" cy="72.5" rx="1.4" ry="1.8" fill="#8A8A82"/>';
+        s += '<ellipse cx="15" cy="72" rx="0.8" ry="1" fill="#3A3A32" opacity="0.4"/>';
+        s += '<ellipse cx="15" cy="72.5" rx="0.6" ry="0.8" fill="#A0A098" opacity="0.15"/>';
+        s += '<ellipse cx="21" cy="72.5" rx="1.4" ry="1.8" fill="#8A8A82"/>';
+        s += '<ellipse cx="21" cy="72" rx="0.8" ry="1" fill="#3A3A32" opacity="0.4"/>';
+        s += '<ellipse cx="21" cy="72.5" rx="0.6" ry="0.8" fill="#A0A098" opacity="0.15"/>';
         // Snout — pointed, lighter
-        s += '<ellipse cx="18" cy="77.8" rx="1.5" ry="1" fill="#A0A098"/>';
+        s += '<ellipse cx="18" cy="76.8" rx="1.6" ry="1.1" fill="#A0A098"/>';
+        s += '<ellipse cx="18" cy="76.8" rx="1" ry="0.6" fill="#B0B0A8" opacity="0.15"/>';
         // Nose — small, dark, rounded
-        s += '<ellipse cx="18" cy="77.3" rx="0.5" ry="0.35" fill="#2A2A22"/>';
-        // Whiskers
-        s += '<line x1="16.5" y1="77.8" x2="14" y2="77.3" stroke="#B0B0A0" stroke-width="0.06" opacity="0.3"/>';
-        s += '<line x1="16.5" y1="78" x2="14" y2="78.3" stroke="#B0B0A0" stroke-width="0.06" opacity="0.25"/>';
-        s += '<line x1="19.5" y1="77.8" x2="22" y2="77.3" stroke="#B0B0A0" stroke-width="0.06" opacity="0.3"/>';
-        s += '<line x1="19.5" y1="78" x2="22" y2="78.3" stroke="#B0B0A0" stroke-width="0.06" opacity="0.25"/>';
-        // Hind feet visible
-        s += '<ellipse cx="14" cy="89.5" rx="1.5" ry="0.6" fill="#5A5A52"/>';
-        s += '<ellipse cx="22" cy="89.5" rx="1.5" ry="0.6" fill="#4A4A42"/>';
+        s += '<ellipse cx="18" cy="76.2" rx="0.55" ry="0.38" fill="#2A2A22"/>';
+        s += '<circle cx="18.1" cy="76.1" r="0.08" fill="rgba(200,200,190,0.3)"/>';
+        // Whiskers — longer, more visible
+        s += '<line x1="16.5" y1="76.8" x2="13.5" y2="76.2" stroke="#B0B0A0" stroke-width="0.08" opacity="0.35"/>';
+        s += '<line x1="16.5" y1="77" x2="13.5" y2="77.5" stroke="#B0B0A0" stroke-width="0.08" opacity="0.3"/>';
+        s += '<line x1="16.5" y1="77.3" x2="14" y2="78" stroke="#B0B0A0" stroke-width="0.06" opacity="0.25"/>';
+        s += '<line x1="19.5" y1="76.8" x2="22.5" y2="76.2" stroke="#B0B0A0" stroke-width="0.08" opacity="0.35"/>';
+        s += '<line x1="19.5" y1="77" x2="22.5" y2="77.5" stroke="#B0B0A0" stroke-width="0.08" opacity="0.3"/>';
+        s += '<line x1="19.5" y1="77.3" x2="22" y2="78" stroke="#B0B0A0" stroke-width="0.06" opacity="0.25"/>';
         s += '</g>';
         break;
       case 36: // Great Blue Heron — tall wading bird, standing still (LEGENDARY)
