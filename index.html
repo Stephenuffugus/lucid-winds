@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-05t';
+  var _SVG_CACHE_VER = '2026-04-05u';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -22693,7 +22693,7 @@ document.addEventListener('keydown', function(e) {
         // Jet black with iridescent purple-blue sheen, massive curved beak,
         // shaggy throat hackles, intelligent aware eye. Perched with head tilted
         // in the characteristic "What have we here?" curiosity pose.
-        s += '<g opacity="0.9" transform="translate(52,77) scale(1.35) translate(-52,-77)">';
+        s += '<g opacity="1" transform="translate(52,77) scale(1.35) translate(-52,-77)">';
         s += '<animateTransform attributeName="transform" type="rotate" values="-1 52 78;2 52 78;-1 52 78" dur="6s" repeatCount="indefinite"/>';
         // (raven highlight removed)
         // Shadow on rim
@@ -22710,9 +22710,13 @@ document.addEventListener('keydown', function(e) {
         // Wing coverts — subtle feather layering
         s += '<path d="M50.5,77.5 Q52,77 53.5,77.5" fill="none" stroke="rgba(100,90,140,0.12)" stroke-width="0.3"/>';
         s += '<path d="M50.5,78 Q52,77.5 53.5,78" fill="none" stroke="rgba(100,90,140,0.1)" stroke-width="0.25"/>';
-        // Iridescent sheen — the purple-blue catch-light that distinguishes raven plumage
-        s += '<ellipse cx="51.5" cy="77.5" rx="1.5" ry="1" fill="rgba(70,60,120,0.06)"/>';
-        s += '<ellipse cx="52.5" cy="78.5" rx="1.2" ry="0.7" fill="rgba(40,80,70,0.04)"/>';
+        // Bright translucent purple highlights — raven iridescence
+        s += '<ellipse cx="51.5" cy="77.5" rx="1.8" ry="1.2" fill="rgba(120,80,200,0.12)"/>';
+        s += '<ellipse cx="53" cy="78.5" rx="1.5" ry="0.8" fill="rgba(100,60,180,0.1)"/>';
+        s += '<ellipse cx="51" cy="76.5" rx="1" ry="0.6" fill="rgba(140,100,220,0.08)"/>';
+        // Purple sheen on wing
+        s += '<path d="M50.5,77.5 Q52,77 53.5,77.5" fill="none" stroke="rgba(130,80,200,0.15)" stroke-width="0.4"/>';
+        s += '<path d="M50.5,78 Q52,77.5 53.5,78" fill="none" stroke="rgba(110,70,180,0.12)" stroke-width="0.3"/>';
         // Breast
         s += '<ellipse cx="51" cy="79" rx="1.5" ry="1" fill="#1A1A1A"/>';
         // Throat hackles — shaggy, scraggly feathers (raven's "beard")
