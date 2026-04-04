@@ -21283,39 +21283,30 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="61.5" cy="74.8" rx="1.3" ry="0.7" fill="#5C9A3C"/>';
         // Prothorax highlight
         s += '<path d="M61,75 Q61.5,76.5 61.5,78" fill="none" stroke="#7AB858" stroke-width="0.2" opacity="0.2"/>';
-        // RAPTORIAL FORELEGS — the defining mantis feature, prayer pose
-        // Arms originate from prothorax coxa plate (y:74.5), splay OUT
-        // to the sides of the head, NOT on top of it.
-        // LEFT ARM: coxa (short vertical) → femur (angled out-left) → tibia (folded back)
-        // Coxa — short vertical from prothorax
-        s += '<path d="M60.5,74.5 L60.2,73.5 L59.8,73 L60.4,73 L60.8,73.5 L61,74.5 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
-        // Femur — angles OUT to the LEFT, away from head
-        s += '<path d="M59.8,73 L58.5,72 L57.5,71 L58,70.8 L59,71.8 L60.2,73 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
-        // Tibia — folds back UP toward body (prayer fold), with spines
-        s += '<path d="M57.5,71 L57.2,70 L57.5,69.2 L58,68.8 L58.5,69.2 L58.2,70 L57.8,70.8 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
-        // Spines along inner edge of left tibia
-        s += '<path d="M58.2,70.5 L58.7,70.3 L58.2,70.1" fill="#3A7A20"/>';
-        s += '<path d="M58.3,69.8 L58.7,69.6 L58.3,69.4" fill="#3A7A20"/>';
-        s += '<path d="M58.4,69.2 L58.7,69 L58.5,68.8" fill="#3A7A20" opacity="0.8"/>';
-        // Tarsal hook
-        s += '<path d="M58,68.8 L58.3,68.4 L58.1,68.1" fill="none" stroke="#3A6A28" stroke-width="0.15" stroke-linecap="round"/>';
-        // RIGHT ARM: mirrored — splays OUT to the RIGHT
-        // Coxa
-        s += '<path d="M62.5,74.5 L62.8,73.5 L63.2,73 L62.6,73 L62.2,73.5 L62,74.5 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
-        // Femur — angles OUT to the RIGHT
-        s += '<path d="M63.2,73 L64.5,72 L65.5,71 L65,70.8 L64,71.8 L62.8,73 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
-        // Tibia — folds back UP
-        s += '<path d="M65.5,71 L65.8,70 L65.5,69.2 L65,68.8 L64.5,69.2 L64.8,70 L65.2,70.8 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
-        // Spines along inner edge of right tibia
-        s += '<path d="M64.8,70.5 L64.3,70.3 L64.8,70.1" fill="#3A7A20"/>';
-        s += '<path d="M64.7,69.8 L64.3,69.6 L64.7,69.4" fill="#3A7A20"/>';
-        s += '<path d="M64.6,69.2 L64.3,69 L64.5,68.8" fill="#3A7A20" opacity="0.8"/>';
-        // Tarsal hook
-        s += '<path d="M65,68.8 L64.7,68.4 L64.9,68.1" fill="none" stroke="#3A6A28" stroke-width="0.15" stroke-linecap="round"/>';
-        // HEAD — large, triangular, the "alien" face
+        // HEAD — drawn FIRST so arms render ON TOP of it
         s += '<path d="M59.8,73.2 Q59.3,72 59.8,70.8 Q60.8,69.8 62,69.8 Q63.2,69.8 64.2,70.8 Q64.7,72 64.2,73.2 Q63,74.2 62,74.2 Q61,74.2 59.8,73.2 Z" fill="#6BA348"/>';
         // Head vertex ridge
         s += '<path d="M60.5,71 Q62,70 63.5,71" fill="none" stroke="#7AB858" stroke-width="0.2" opacity="0.25"/>';
+        // RAPTORIAL FORELEGS — drawn AFTER head so they're visible
+        // Arms originate from prothorax coxa plate (y:74.5), splay OUT
+        // LEFT ARM: coxa → femur (out-left) → tibia (folded back, spined)
+        s += '<path d="M60.5,74.5 L60.2,73.5 L59.8,73 L60.4,73 L60.8,73.5 L61,74.5 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
+        s += '<path d="M59.8,73 L58.5,72 L57.5,71 L58,70.8 L59,71.8 L60.2,73 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
+        s += '<path d="M57.5,71 L57.2,70 L57.5,69.2 L58,68.8 L58.5,69.2 L58.2,70 L57.8,70.8 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
+        // Left tibia spines
+        s += '<path d="M58.2,70.5 L58.7,70.3 L58.2,70.1" fill="#3A7A20"/>';
+        s += '<path d="M58.3,69.8 L58.7,69.6 L58.3,69.4" fill="#3A7A20"/>';
+        s += '<path d="M58.4,69.2 L58.7,69 L58.5,68.8" fill="#3A7A20" opacity="0.8"/>';
+        s += '<path d="M58,68.8 L58.3,68.4 L58.1,68.1" fill="none" stroke="#3A6A28" stroke-width="0.15" stroke-linecap="round"/>';
+        // RIGHT ARM: mirrored
+        s += '<path d="M62.5,74.5 L62.8,73.5 L63.2,73 L62.6,73 L62.2,73.5 L62,74.5 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
+        s += '<path d="M63.2,73 L64.5,72 L65.5,71 L65,70.8 L64,71.8 L62.8,73 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
+        s += '<path d="M65.5,71 L65.8,70 L65.5,69.2 L65,68.8 L64.5,69.2 L64.8,70 L65.2,70.8 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
+        // Right tibia spines
+        s += '<path d="M64.8,70.5 L64.3,70.3 L64.8,70.1" fill="#3A7A20"/>';
+        s += '<path d="M64.7,69.8 L64.3,69.6 L64.7,69.4" fill="#3A7A20"/>';
+        s += '<path d="M64.6,69.2 L64.3,69 L64.5,68.8" fill="#3A7A20" opacity="0.8"/>';
+        s += '<path d="M65,68.8 L64.7,68.4 L64.9,68.1" fill="none" stroke="#3A6A28" stroke-width="0.15" stroke-linecap="round"/>';
         // Compound eyes — HUGE, bulging hemispheres (mantis signature)
         s += '<circle cx="60" cy="71.5" r="1.1" fill="#C8D89A"/>';
         s += '<circle cx="64" cy="71.5" r="1.1" fill="#C8D89A"/>';
@@ -21858,11 +21849,11 @@ document.addEventListener('keydown', function(e) {
         s += '<polygon points="57.2,25.3 62.5,18.3 62.1,18.0 59.2,22.9" fill="#CCC4B8" opacity="0.3"/>';
         // Neck background
         s += '<polygon points="58.0,25.2 63.1,19.2 62.5,18.4 57.4,24.6" fill="#D8D0C4" opacity="0.4"/>';
-        // ── HEAD — two triangles forming the beak/head ──
+        // ── HEAD — two triangles forming the beak/head, touching neck ──
         // Head left
-        s += '<polygon points="66.2,21.8 64.8,18.1 63.2,17.9 63.1,18.3" fill="#E8E2D8" stroke="#A8A090" stroke-width="0.12"/>';
+        s += '<polygon points="65.5,21.8 63.8,18.1 62.3,17.9 62.2,18.3" fill="#E8E2D8" stroke="#A8A090" stroke-width="0.12"/>';
         // Head right
-        s += '<polygon points="66.2,21.9 63.2,18.7 63.6,18.3 63.7,18.4" fill="#DDD6CC" stroke="#A8A090" stroke-width="0.12"/>';
+        s += '<polygon points="65.5,21.9 62.3,18.7 62.6,18.3 62.7,18.4" fill="#DDD6CC" stroke="#A8A090" stroke-width="0.12"/>';
         // ── LEG/FOOT ──
         s += '<polygon points="57.2,25.4 55.0,22.5 57.5,22.7 57.7,22.9" fill="#D4CEC2" stroke="#A8A090" stroke-width="0.1"/>';
         s += '</g>';
