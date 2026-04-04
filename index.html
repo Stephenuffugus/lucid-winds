@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-07a';
+  var _SVG_CACHE_VER = '2026-04-07b';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -23008,24 +23008,28 @@ document.addEventListener('keydown', function(e) {
         // Shadow
         s += '<ellipse cx="48" cy="92" rx="3.5" ry="0.5" fill="#0d100c" opacity="0.1"/>';
         // ── 8 LEGS — from ABDOMEN (body), NOT head ──
-        // 4 legs per side, originating from abdomen at cx=49
-        // Left side — 2 forward, 2 backward
-        s += '<path d="M48,90.5 L45.5,89 L44,88.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
-        s += '<path d="M48,91 L45,90 L43.5,89.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
-        s += '<path d="M48.5,91.5 L46,92.5 L44.5,93" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
-        s += '<path d="M49,91.8 L47,93 L45.5,93.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
-        // Right side — 2 forward, 2 backward
-        s += '<path d="M50,90.5 L52.5,89 L54,88.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
-        s += '<path d="M50,91 L53,90 L54.5,89.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
-        s += '<path d="M49.5,91.5 L52,92.5 L53.5,93" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
-        s += '<path d="M49,91.8 L51,93 L52.5,93.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
-        // ── ABDOMEN — oval, opaque, with chevrons ──
+        // 8 LEGS — BENT like real spider legs (up to knee, down to foot)
+        // Left side — 2 forward
+        s += '<path d="M48,90.5 Q45,88 44,87.5 Q43.5,88.5 44.5,89.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M48,91 Q44.5,89 43.5,88.5 Q43,89.5 44,90.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        // Left side — 2 backward
+        s += '<path d="M48.5,91.5 Q46,93 44.5,93.5 Q44,92.5 45,92" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M49,91.8 Q47,93.5 45.5,94 Q45,93 46,92.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        // Right side — 2 forward
+        s += '<path d="M50,90.5 Q53,88 54,87.5 Q54.5,88.5 53.5,89.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M50,91 Q53.5,89 54.5,88.5 Q55,89.5 54,90.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        // Right side — 2 backward
+        s += '<path d="M49.5,91.5 Q52,93 53.5,93.5 Q54,92.5 53,92" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M49,91.8 Q51,93.5 52.5,94 Q53,93 52,92.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        // ── ABDOMEN — with light brown outline ──
         s += '<ellipse cx="49" cy="91" rx="2.2" ry="1.4" fill="#3A2A1A"/>';
+        s += '<ellipse cx="49" cy="91" rx="2.2" ry="1.4" fill="none" stroke="#7A6A58" stroke-width="0.2"/>';
         s += '<path d="M48,90.3 L49,90 L50,90.3" fill="none" stroke="#5A4A38" stroke-width="0.25" opacity="0.4"/>';
         s += '<path d="M48.2,90.8 L49,90.5 L49.8,90.8" fill="none" stroke="#5A4A38" stroke-width="0.2" opacity="0.35"/>';
         s += '<path d="M48.5,91.3 L49,91.1 L49.5,91.3" fill="none" stroke="#5A4A38" stroke-width="0.18" opacity="0.3"/>';
-        // ── CEPHALOTHORAX (head) — no legs here ──
+        // ── CEPHALOTHORAX — with light brown outline ──
         s += '<ellipse cx="47" cy="90.3" rx="1.4" ry="1.0" fill="#3A2A1A"/>';
+        s += '<ellipse cx="47" cy="90.3" rx="1.4" ry="1.0" fill="none" stroke="#7A6A58" stroke-width="0.18"/>';
         s += '<line x1="46.2" y1="90.3" x2="47.8" y2="90.3" stroke="#5A4A38" stroke-width="0.3" opacity="0.2"/>';
         // ── EYES — same dots and blue/green eyes ──
         // Row 3: 2 LARGE eyes with blue-green shine
