@@ -8609,7 +8609,7 @@ document.addEventListener('keydown', function(e) {
       {name:'Crystal Beetle',rare:true}, // idx 78
       {name:'Will-o-Wisp',rare:true}, // idx 79
       {name:'Paper Butterfly'}, // idx 80
-      {name:'Wolf Spider'}  // idx 81
+      {name:'Panda'}  // idx 81
     ],
     mutations: [
       {name:'None',tier:0}, {name:'Wireframe',tier:1},
@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-07f';
+  var _SVG_CACHE_VER = '2026-04-07g';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -23003,58 +23003,50 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="57.2" cy="25.8" r="0.1" fill="rgba(180,170,150,0.3)"/>';
         s += '</g>';
         break;
-      case 81: // Wolf Spider — top-down view, long legs from reference
-        s += '<g opacity="1" transform="translate(48,88) scale(1.4) translate(-48,-88)">';
-        // ── 8 LEGS — 7 segments each, 2D (filled shapes tapering to tip) ──
-        // Each leg: top edge path + bottom edge path forming a filled shape
-        // Thick at body (~0.5), thin at tip (~0.1)
-        // Left leg 1
-        s += '<path d="M45.5,86.8 L44.3,86.2 L42.8,85.2 L41.3,83.8 L39.8,82.8 L38.8,82.3 L37.3,83.3 L37.7,83.7 L39.2,82.8 L40.2,83.3 L41.7,84.3 L43.2,85.8 L44.7,86.8 L45.5,87.2 Z" fill="#3A2A1A" stroke="#4A3A2A" stroke-width="0.08"/>';
-        // Left leg 2
-        s += '<path d="M45.5,87.6 L43.8,86.9 L42.3,85.9 L40.8,84.8 L39.3,84.3 L38.3,84.3 L36.8,85.3 L37.2,85.7 L38.7,84.8 L39.7,84.8 L41.2,85.3 L42.7,86.5 L44.2,87.5 L45.5,88 Z" fill="#3A2A1A" stroke="#4A3A2A" stroke-width="0.08"/>';
-        // Left leg 3
-        s += '<path d="M45.5,88.8 L44.3,89.3 L42.8,90 L41.3,90.8 L39.8,91.6 L38.8,92 L37.3,91.3 L37.7,91.7 L39.2,92.5 L40.2,92 L41.7,91.2 L43.2,90.5 L44.7,89.7 L45.5,89.2 Z" fill="#3A2A1A" stroke="#4A3A2A" stroke-width="0.08"/>';
-        // Left leg 4
-        s += '<path d="M46,89.3 L44.8,90 L43.3,91 L41.8,92 L40.8,92.8 L39.8,93.3 L38.3,92.8 L38.7,93.2 L40.2,93.7 L41.2,93.2 L42.2,92.5 L43.7,91.5 L45.2,90.5 L46,89.7 Z" fill="#3A2A1A" stroke="#4A3A2A" stroke-width="0.08"/>';
-        // Right leg 1
-        s += '<path d="M48.5,86.8 L49.7,86.2 L51.2,85.2 L52.7,83.8 L54.2,82.8 L55.2,82.3 L56.7,83.3 L56.3,83.7 L54.8,82.8 L53.8,83.3 L52.3,84.3 L50.8,85.8 L49.3,86.8 L48.5,87.2 Z" fill="#3A2A1A" stroke="#4A3A2A" stroke-width="0.08"/>';
-        // Right leg 2
-        s += '<path d="M48.5,87.6 L50.2,86.9 L51.7,85.9 L53.2,84.8 L54.7,84.3 L55.7,84.3 L57.2,85.3 L56.8,85.7 L55.3,84.8 L54.3,84.8 L52.8,85.3 L51.3,86.5 L49.8,87.5 L48.5,88 Z" fill="#3A2A1A" stroke="#4A3A2A" stroke-width="0.08"/>';
-        // Right leg 3
-        s += '<path d="M48.5,88.8 L49.7,89.3 L51.2,90 L52.7,90.8 L54.2,91.6 L55.2,92 L56.7,91.3 L56.3,91.7 L54.8,92.5 L53.8,92 L52.3,91.2 L50.8,90.5 L49.3,89.7 L48.5,89.2 Z" fill="#3A2A1A" stroke="#4A3A2A" stroke-width="0.08"/>';
-        // Right leg 4
-        s += '<path d="M48,89.3 L49.2,90 L50.7,91 L52.2,92 L53.2,92.8 L54.2,93.3 L55.7,92.8 L55.3,93.2 L53.8,93.7 L52.8,93.2 L51.8,92.5 L50.3,91.5 L48.8,90.5 L48,89.7 Z" fill="#3A2A1A" stroke="#4A3A2A" stroke-width="0.08"/>';
-        // ── ABDOMEN — round circle (like reference), light brown outline ──
-        s += '<circle cx="50" cy="89" r="2" fill="#3A2A1A"/>';
-        s += '<circle cx="50" cy="89" r="2" fill="none" stroke="#7A6A58" stroke-width="0.2"/>';
-        // Chevron pattern on abdomen
-        s += '<path d="M49.2,88.3 L50,88 L50.8,88.3" fill="none" stroke="#5A4A38" stroke-width="0.2" opacity="0.4"/>';
-        s += '<path d="M49.4,88.8 L50,88.6 L50.6,88.8" fill="none" stroke="#5A4A38" stroke-width="0.18" opacity="0.35"/>';
-        s += '<path d="M49.5,89.3 L50,89.1 L50.5,89.3" fill="none" stroke="#5A4A38" stroke-width="0.15" opacity="0.3"/>';
-        // ── CEPHALOTHORAX — LARGER (almost same size as abdomen) ──
-        s += '<ellipse cx="47" cy="88" rx="2" ry="1.8" fill="#3A2A1A"/>';
-        s += '<ellipse cx="47" cy="88" rx="2" ry="1.8" fill="none" stroke="#7A6A58" stroke-width="0.18"/>';
-        // Center stripe
-        s += '<line x1="45.5" y1="88" x2="48.5" y2="88" stroke="#5A4A38" stroke-width="0.25" opacity="0.2"/>';
-        // ── FANGS — curved, pointy, at front of head ──
-        s += '<path d="M46.5,86.5 Q45.5,85.5 45.8,85" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M47.5,86.5 Q48.5,85.5 48.2,85" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
-        s += '<circle cx="45.8" cy="85" r="0.1" fill="#3A2A1A"/>';
-        s += '<circle cx="48.2" cy="85" r="0.1" fill="#3A2A1A"/>';
-        // ── EYES — same blue-green dots ──
-        s += '<circle cx="46.5" cy="87" r="0.25" fill="#2A4A3A"/>';
-        s += '<circle cx="47.5" cy="87" r="0.25" fill="#2A4A3A"/>';
-        s += '<circle cx="46.5" cy="87" r="0.12" fill="#111"/>';
-        s += '<circle cx="47.5" cy="87" r="0.12" fill="#111"/>';
-        s += '<circle cx="46.55" cy="86.95" r="0.05" fill="rgba(160,220,180,0.5)"/>';
-        s += '<circle cx="47.55" cy="86.95" r="0.05" fill="rgba(160,220,180,0.5)"/>';
-        // Small eye dots
-        s += '<circle cx="46.2" cy="87.3" r="0.1" fill="#111"/>';
-        s += '<circle cx="47.8" cy="87.3" r="0.1" fill="#111"/>';
-        s += '<circle cx="46" cy="87.6" r="0.06" fill="#111"/>';
-        s += '<circle cx="46.4" cy="87.7" r="0.06" fill="#111"/>';
-        s += '<circle cx="47.6" cy="87.7" r="0.06" fill="#111"/>';
-        s += '<circle cx="48" cy="87.6" r="0.06" fill="#111"/>';
+      case 81: // Panda — sitting, facing forward, black and white
+        s += '<g opacity="1" transform="translate(56,86) scale(1.5) translate(-56,-86)">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.08,-0.05;0,0" dur="5s" repeatCount="indefinite"/>';
+        // Shadow
+        s += '<ellipse cx="56" cy="93" rx="4" ry="0.5" fill="#0d100c" opacity="0.1"/>';
+        // ── HIND LEGS — black, visible below body ──
+        s += '<ellipse cx="53.5" cy="91.5" rx="2" ry="1" fill="#1A1A1A"/>';
+        s += '<ellipse cx="58.5" cy="91.5" rx="2" ry="1" fill="#1A1A1A"/>';
+        // ── BODY — white, round, chunky ──
+        s += '<ellipse cx="56" cy="89" rx="4" ry="3.5" fill="#F0ECE4"/>';
+        s += '<ellipse cx="56" cy="89" rx="4" ry="3.5" fill="none" stroke="#D0CCC4" stroke-width="0.15"/>';
+        // Belly — slightly warmer white
+        s += '<ellipse cx="56" cy="90" rx="2.5" ry="2" fill="#F8F4EC" opacity="0.4"/>';
+        // ── ARMS — black, reaching forward ──
+        s += '<path d="M52.5,88 Q51,89 50.5,90.5" stroke="#1A1A1A" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M59.5,88 Q61,89 61.5,90.5" stroke="#1A1A1A" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
+        // Paw pads
+        s += '<circle cx="50.5" cy="90.5" r="0.6" fill="#2A2A2A"/>';
+        s += '<circle cx="61.5" cy="90.5" r="0.6" fill="#2A2A2A"/>';
+        // ── HEAD — white, round, sitting on body ──
+        s += '<circle cx="56" cy="84.5" r="3" fill="#F0ECE4"/>';
+        s += '<circle cx="56" cy="84.5" r="3" fill="none" stroke="#D0CCC4" stroke-width="0.12"/>';
+        // ── EARS — black, round, on top of head ──
+        s += '<circle cx="53.5" cy="82.2" r="1" fill="#1A1A1A"/>';
+        s += '<circle cx="58.5" cy="82.2" r="1" fill="#1A1A1A"/>';
+        // ── EYE PATCHES — black ovals around eyes (panda signature) ──
+        s += '<ellipse cx="54.5" cy="84.5" rx="1.2" ry="1" fill="#1A1A1A" transform="rotate(-10,54.5,84.5)"/>';
+        s += '<ellipse cx="57.5" cy="84.5" rx="1.2" ry="1" fill="#1A1A1A" transform="rotate(10,57.5,84.5)"/>';
+        // ── EYES — dark with white highlight inside black patches ──
+        s += '<circle cx="54.5" cy="84.5" r="0.5" fill="#111"/>';
+        s += '<circle cx="57.5" cy="84.5" r="0.5" fill="#111"/>';
+        s += '<circle cx="54.6" cy="84.3" r="0.15" fill="rgba(240,235,216,0.6)"/>';
+        s += '<circle cx="57.6" cy="84.3" r="0.15" fill="rgba(240,235,216,0.6)"/>';
+        // ── NOSE — black oval ──
+        s += '<ellipse cx="56" cy="85.8" rx="0.5" ry="0.35" fill="#1A1A1A"/>';
+        // Mouth — W shape below nose
+        s += '<path d="M55.5,86.2 Q56,86.6 56.5,86.2" fill="none" stroke="#1A1A1A" stroke-width="0.12" stroke-linecap="round"/>';
+        s += '<line x1="56" y1="86" x2="56" y2="86.3" stroke="#1A1A1A" stroke-width="0.1"/>';
+        // ── BLACK SHOULDER PATCHES — across upper body ──
+        s += '<path d="M52,87 Q53,86 54,86.5" fill="#1A1A1A" opacity="0.6"/>';
+        s += '<path d="M60,87 Q59,86 58,86.5" fill="#1A1A1A" opacity="0.6"/>';
+        // Hind feet — black, peeking below
+        s += '<ellipse cx="53.5" cy="92.2" rx="1" ry="0.4" fill="#1A1A1A"/>';
+        s += '<ellipse cx="58.5" cy="92.2" rx="1" ry="0.4" fill="#1A1A1A"/>';
         s += '</g>';
         break;
     }
