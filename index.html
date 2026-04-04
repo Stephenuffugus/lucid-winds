@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-06z';
+  var _SVG_CACHE_VER = '2026-04-07a';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -23003,78 +23003,55 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="57.2" cy="25.8" r="0.1" fill="rgba(180,170,150,0.3)"/>';
         s += '</g>';
         break;
-      case 81: // Wolf Spider — large ground hunter, spread legs on soil
-        // Lycosidae: a robust, fast ground-dwelling spider that hunts without
-        // a web. Distinctive 3-row eye arrangement (two large + six small),
-        // thick hairy legs spread in hunting-ready splay, and a chevron
-        // pattern on the abdomen. Surprisingly good mothers — carry egg sacs.
+      case 81: // Wolf Spider — opaque, legs on BODY not head
         s += '<g opacity="1" transform="translate(48,90.5) scale(1.6) translate(-48,-90.5)">';
         // Shadow
         s += '<ellipse cx="48" cy="92" rx="3.5" ry="0.5" fill="#0d100c" opacity="0.1"/>';
-        // Abdomen — oval, with chevron/herringbone pattern
+        // ── 8 LEGS — from ABDOMEN (body), NOT head ──
+        // 4 legs per side, originating from abdomen at cx=49
+        // Left side — 2 forward, 2 backward
+        s += '<path d="M48,90.5 L45.5,89 L44,88.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M48,91 L45,90 L43.5,89.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M48.5,91.5 L46,92.5 L44.5,93" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M49,91.8 L47,93 L45.5,93.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        // Right side — 2 forward, 2 backward
+        s += '<path d="M50,90.5 L52.5,89 L54,88.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M50,91 L53,90 L54.5,89.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M49.5,91.5 L52,92.5 L53.5,93" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M49,91.8 L51,93 L52.5,93.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        // ── ABDOMEN — oval, opaque, with chevrons ──
         s += '<ellipse cx="49" cy="91" rx="2.2" ry="1.4" fill="#3A2A1A"/>';
-        // Chevron pattern — lighter V-shapes on abdomen (wolf spider field mark)
         s += '<path d="M48,90.3 L49,90 L50,90.3" fill="none" stroke="#5A4A38" stroke-width="0.25" opacity="0.4"/>';
         s += '<path d="M48.2,90.8 L49,90.5 L49.8,90.8" fill="none" stroke="#5A4A38" stroke-width="0.2" opacity="0.35"/>';
         s += '<path d="M48.5,91.3 L49,91.1 L49.5,91.3" fill="none" stroke="#5A4A38" stroke-width="0.18" opacity="0.3"/>';
-        // Cephalothorax — front body segment
+        // ── CEPHALOTHORAX (head) — no legs here ──
         s += '<ellipse cx="47" cy="90.3" rx="1.4" ry="1.0" fill="#3A2A1A"/>';
-        // Cephalothorax lighter center stripe
         s += '<line x1="46.2" y1="90.3" x2="47.8" y2="90.3" stroke="#5A4A38" stroke-width="0.3" opacity="0.2"/>';
-        // THE EYES — 3-row arrangement (wolf spider signature)
-        // Row 3 (rear): 2 LARGE posterior median eyes
+        // ── EYES — same dots and blue/green eyes ──
+        // Row 3: 2 LARGE eyes with blue-green shine
         s += '<circle cx="46.8" cy="89.7" r="0.22" fill="#2A4A3A"/>';
         s += '<circle cx="47.4" cy="89.7" r="0.22" fill="#2A4A3A"/>';
         s += '<circle cx="46.8" cy="89.7" r="0.1" fill="#111"/>';
         s += '<circle cx="47.4" cy="89.7" r="0.1" fill="#111"/>';
-        // Eyeshine — wolf spiders' eyes reflect light (tapetum)
         s += '<circle cx="46.85" cy="89.65" r="0.05" fill="rgba(160,220,180,0.5)"/>';
         s += '<circle cx="47.45" cy="89.65" r="0.05" fill="rgba(160,220,180,0.5)"/>';
-        // Row 2 (middle): 2 large anterior median eyes
+        // Row 2: 2 medium eyes
         s += '<circle cx="46.6" cy="90" r="0.15" fill="#111"/>';
         s += '<circle cx="47.5" cy="90" r="0.15" fill="#111"/>';
-        // Row 1 (front): 4 small anterior lateral eyes
+        // Row 1: 4 small dots
         s += '<circle cx="46.4" cy="90.2" r="0.08" fill="#111"/>';
         s += '<circle cx="46.7" cy="90.3" r="0.08" fill="#111"/>';
         s += '<circle cx="47.4" cy="90.3" r="0.08" fill="#111"/>';
         s += '<circle cx="47.7" cy="90.2" r="0.08" fill="#111"/>';
-        // Chelicerae — front fangs
+        // Chelicerae
         s += '<path d="M46.8,90.5 L46.5,91 Q46.4,91.2 46.6,91" fill="#4A3A2A" stroke="#3A2A1A" stroke-width="0.08"/>';
         s += '<path d="M47.3,90.5 L47.6,91 Q47.7,91.2 47.5,91" fill="#4A3A2A" stroke="#3A2A1A" stroke-width="0.08"/>';
-        // Pedipalps — small arm-like appendages
+        // Pedipalps
         s += '<path d="M46.5,90.4 Q46,90.8 45.8,90.5" stroke="#3A2A1A" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
         s += '<path d="M47.6,90.4 Q48.1,90.8 48.3,90.5" stroke="#3A2A1A" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
-        // 8 LEGS — thick, hairy, spread in hunting splay
-        // Legs have two segments (femur + tibia) with a joint bend
-        var _ws81legs = [
-          // [start offset from ceph center, joint angle, end angle]
-          {dx:-0.8,dy:-0.2,jx:-2.5,jy:-1.5,ex:-3.5,ey:-0.5},
-          {dx:-0.5,dy:-0.5,jx:-2.2,jy:-2.5,ex:-3.2,ey:-1.8},
-          {dx:-0.2,dy:-0.7,jx:-1.5,jy:-3.0,ex:-2.5,ey:-2.5},
-          {dx:0.2,dy:-0.7,jx:1.5,jy:-3.0,ex:2.5,ey:-2.5},
-          {dx:0.5,dy:-0.5,jx:2.2,jy:-2.5,ex:3.2,ey:-1.8},
-          {dx:0.8,dy:-0.2,jx:2.5,jy:-1.5,ex:3.5,ey:-0.5},
-          {dx:-0.5,dy:0.3,jx:-2,jy:0.8,ex:-3,ey:1.2},
-          {dx:0.5,dy:0.3,jx:2,jy:0.8,ex:3,ey:1.2}
-        ];
-        for (var _ws81i = 0; _ws81i < _ws81legs.length; _ws81i++) {
-          var _wl = _ws81legs[_ws81i];
-          var _wlx = 47 + _wl.dx;
-          var _wly = 90.3 + _wl.dy;
-          s += '<path d="M'+_wlx.toFixed(1)+','+_wly.toFixed(1)+' L'+(47+_wl.jx).toFixed(1)+','+(90.3+_wl.jy).toFixed(1)+' L'+(47+_wl.ex).toFixed(1)+','+(90.3+_wl.ey).toFixed(1)+'" fill="none" stroke="#3A2A1A" stroke-width="0.25" stroke-linecap="round" stroke-linejoin="round"/>';
-          // Tiny hair detail on longest segment
-          if (_ws81i < 6) s += '<line x1="'+(47+_wl.jx*0.7).toFixed(1)+'" y1="'+(90.3+_wl.jy*0.7).toFixed(1)+'" x2="'+(47+_wl.jx*0.7+0.2).toFixed(1)+'" y2="'+(90.3+_wl.jy*0.7-0.3).toFixed(1)+'" stroke="#3A2A1A" stroke-width="0.06" opacity="0.3"/>';
-        }
-        // Spinnerets — tiny at rear of abdomen
+        // Spinnerets
         s += '<circle cx="50.8" cy="91.2" r="0.1" fill="#4A3A2A"/>';
         s += '<circle cx="51" cy="91" r="0.08" fill="#4A3A2A"/>';
-        // Edge highlights — separation from dark backgrounds
-        s += '<path d="M49,89.5 Q48,90 47,90.3 Q48,90.3 49,89.5" fill="none" stroke="rgba(180,160,120,0.15)" stroke-width="0.3"/>';
-        s += '<ellipse cx="49" cy="91" rx="2.2" ry="1.4" fill="none" stroke="rgba(160,140,100,0.1)" stroke-width="0.3"/>';
-        s += '<ellipse cx="47" cy="90.3" rx="1.4" ry="1.0" fill="none" stroke="rgba(160,140,100,0.1)" stroke-width="0.25"/>';
-        // Eyeshine glow — wolf spiders have reflective tapetum
-        s += '<circle cx="46.8" cy="89.7" r="0.35" fill="rgba(160,220,180,0.06)"/>';
-        s += '<circle cx="47.4" cy="89.7" r="0.35" fill="rgba(160,220,180,0.06)"/>';
         s += '</g>';
         break;
     }
