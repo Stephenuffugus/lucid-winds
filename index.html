@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-07k';
+  var _SVG_CACHE_VER = '2026-04-07t';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -8913,7 +8913,7 @@ document.addEventListener('keydown', function(e) {
     var _safeBloomY = visibleTop;
     if (t.hasFlower && prog >= 0.8) {
       var _bCase = t.flower % 71;
-      var _bReach = 1.5;
+      var _bReach = 1.5; // default: cases 0-9
       if (_bCase >= 10 && _bCase <= 14) _bReach = 2.0;
       if (_bCase >= 15 && _bCase <= 17) _bReach = 2.2;
       if (_bCase >= 18 && _bCase <= 33) _bReach = 2.5;
@@ -8921,6 +8921,32 @@ document.addEventListener('keydown', function(e) {
       if (_bCase >= 38 && _bCase <= 43) _bReach = 3.2;
       if (_bCase === 44) _bReach = 2.5;
       if (_bCase === 45) _bReach = 2.8;
+      // cases 46-70 — synced with renderBloom _reach table
+      if (_bCase === 46) _bReach = 2.0;
+      if (_bCase === 47) _bReach = 2.8;
+      if (_bCase === 48) _bReach = 2.8;
+      if (_bCase === 49) _bReach = 2.0;
+      if (_bCase === 50) _bReach = 2.0;
+      if (_bCase === 51) _bReach = 2.5;
+      if (_bCase === 52) _bReach = 1.5;
+      if (_bCase === 53) _bReach = 2.0;
+      if (_bCase === 54) _bReach = 2.0;
+      if (_bCase === 55) _bReach = 3.5;
+      if (_bCase === 56) _bReach = 2.0;
+      if (_bCase === 57) _bReach = 2.5;
+      if (_bCase === 58) _bReach = 2.0;
+      if (_bCase === 59) _bReach = 1.5;
+      if (_bCase === 60) _bReach = 1.8;
+      if (_bCase === 61) _bReach = 2.0;
+      if (_bCase === 62) _bReach = 2.0;
+      if (_bCase === 63) _bReach = 2.0;
+      if (_bCase === 64) _bReach = 1.5;
+      if (_bCase === 65) _bReach = 2.0;
+      if (_bCase === 66) _bReach = 2.8;
+      if (_bCase === 67) _bReach = 2.0;
+      if (_bCase === 68) _bReach = 2.0;
+      if (_bCase === 69) _bReach = 2.0;
+      if (_bCase === 70) _bReach = 2.0;
       var _minBloomY = t.flowerSize * _bReach + 5; // 5px top buffer
       _safeBloomY = Math.max(_minBloomY, visibleTop);
     }
@@ -12658,6 +12684,7 @@ document.addEventListener('keydown', function(e) {
           var _dlWid = ls * 0.75;
           var _dlTipX = ox + side * _dlLen * 0.55;
           var _dlTipY = ly - _dlLen * 0.85;
+          tip = _dlTipX; tipY = _dlTipY;
           // Broad body with pointed drip tip
           bodyD = 'M'+ox+','+ly
              + ' C'+(ox+side*_dlWid*1.1).toFixed(1)+','+(ly+_dlLen*0.02).toFixed(1)
@@ -14275,6 +14302,7 @@ document.addEventListener('keydown', function(e) {
           var _csAng = -0.3 - leafFrac * 0.4;
           var _csTx = ox + Math.cos(_csAng) * _csLen * 0.8 * side;
           var _csTy = ly + Math.sin(_csAng) * _csLen * 0.8;
+          tip = _csTx; tipY = _csTy;
           var _csMx = ox + Math.cos(_csAng) * _csLen * 0.45 * side;
           var _csMy = ly + Math.sin(_csAng) * _csLen * 0.45;
           var _csW = ls * 0.7;
@@ -14294,6 +14322,7 @@ document.addEventListener('keydown', function(e) {
           var _elAng = -0.25 - leafFrac * 0.35;
           var _elTx = ox + Math.cos(_elAng) * _elLen * 0.85 * side;
           var _elTy = ly + Math.sin(_elAng) * _elLen * 0.85;
+          tip = _elTx; tipY = _elTy;
           var _elW = ls * 0.5;
           var _elPa = _elAng + Math.PI * 0.5;
           bodyD = 'M'+ox+','+ly+' Q'+(ox+Math.cos(_elPa)*_elW*1.2*side).toFixed(1)+','+(ly+Math.sin(_elPa)*_elW*1.2-_elLen*0.2).toFixed(1)+' '+_elTx.toFixed(1)+','+_elTy.toFixed(1)+' Q'+(ox-Math.cos(_elPa)*_elW*0.8*side).toFixed(1)+','+(ly-Math.sin(_elPa)*_elW*0.8-_elLen*0.15).toFixed(1)+' '+ox+','+ly+' Z';
@@ -14306,6 +14335,7 @@ document.addEventListener('keydown', function(e) {
           var _ffAng = -0.2 - leafFrac * 0.3;
           var _ffTx = ox + Math.cos(_ffAng) * _ffLen * 0.9 * side;
           var _ffTy = ly + Math.sin(_ffAng) * _ffLen * 0.9;
+          tip = _ffTx; tipY = _ffTy;
           var _ffW = ls * 0.35;
           var _ffPa = _ffAng + Math.PI * 0.5;
           bodyD = 'M'+ox+','+ly+' C'+(ox+Math.cos(_ffPa)*_ffW*side).toFixed(1)+','+(ly+Math.sin(_ffPa)*_ffW-_ffLen*0.15).toFixed(1)+' '+(_ffTx+Math.cos(_ffPa)*_ffW*0.3*side).toFixed(1)+','+(_ffTy+Math.sin(_ffPa)*_ffW*0.3).toFixed(1)+' '+_ffTx.toFixed(1)+','+_ffTy.toFixed(1)+' C'+(_ffTx-Math.cos(_ffPa)*_ffW*0.2*side).toFixed(1)+','+(_ffTy-Math.sin(_ffPa)*_ffW*0.2).toFixed(1)+' '+(ox-Math.cos(_ffPa)*_ffW*0.6*side).toFixed(1)+','+(ly-Math.sin(_ffPa)*_ffW*0.6-_ffLen*0.1).toFixed(1)+' '+ox+','+ly+' Z';
@@ -14326,6 +14356,7 @@ document.addEventListener('keydown', function(e) {
           var _ldAng = -0.35 - leafFrac * 0.3;
           var _ldCx = ox + Math.cos(_ldAng) * _ldR * 1.8 * side;
           var _ldCy = ly + Math.sin(_ldAng) * _ldR * 1.8;
+          tip = _ldCx; tipY = _ldCy; // center of disc
           bodyD = 'M'+(_ldCx-_ldR).toFixed(1)+','+_ldCy.toFixed(1)+' A'+_ldR.toFixed(1)+','+_ldR.toFixed(1)+' 0 1,1 '+(_ldCx+_ldR).toFixed(1)+','+_ldCy.toFixed(1)+' A'+_ldR.toFixed(1)+','+_ldR.toFixed(1)+' 0 1,1 '+(_ldCx-_ldR).toFixed(1)+','+_ldCy.toFixed(1)+' Z';
           s += '<circle cx="'+_ldCx.toFixed(1)+'" cy="'+_ldCy.toFixed(1)+'" r="'+_ldR.toFixed(1)+'" fill="'+baseColor+'" opacity="'+(op*0.75).toFixed(2)+'"/>';
           s += '<circle cx="'+_ldCx.toFixed(1)+'" cy="'+_ldCy.toFixed(1)+'" r="'+(_ldR*0.65).toFixed(1)+'" fill="none" stroke="'+shiftedLight+'" stroke-width="0.25" opacity="'+(op*0.2).toFixed(2)+'"/>';
@@ -14337,6 +14368,7 @@ document.addEventListener('keydown', function(e) {
           var _snAng = -0.15 - leafFrac * 0.4;
           var _snTx = ox + Math.cos(_snAng) * _snLen * side;
           var _snTy = ly + Math.sin(_snAng) * _snLen;
+          tip = _snTx; tipY = _snTy;
           var _snW = ls * 0.12;
           var _snPa = _snAng + Math.PI * 0.5;
           bodyD = 'M'+ox+','+ly+' L'+(ox+Math.cos(_snPa)*_snW*side).toFixed(1)+','+(ly+Math.sin(_snPa)*_snW).toFixed(1)+' L'+_snTx.toFixed(1)+','+_snTy.toFixed(1)+' L'+(ox-Math.cos(_snPa)*_snW*side).toFixed(1)+','+(ly-Math.sin(_snPa)*_snW).toFixed(1)+' Z';
@@ -14368,6 +14400,7 @@ document.addEventListener('keydown', function(e) {
           var _pbAng = -0.3 - leafFrac * 0.35;
           var _pbTx = ox + Math.cos(_pbAng) * _pbLen * 0.85 * side;
           var _pbTy = ly + Math.sin(_pbAng) * _pbLen * 0.85;
+          tip = _pbTx; tipY = _pbTy;
           var _pbW = ls * 0.65;
           var _pbPa = _pbAng + Math.PI * 0.5;
           bodyD = 'M'+ox+','+ly+' C'+(ox+Math.cos(_pbPa)*_pbW*side).toFixed(1)+','+(ly+Math.sin(_pbPa)*_pbW-_pbLen*0.2).toFixed(1)+' '+(_pbTx+Math.cos(_pbPa)*_pbW*0.5*side).toFixed(1)+','+(_pbTy+Math.sin(_pbPa)*_pbW*0.5).toFixed(1)+' '+_pbTx.toFixed(1)+','+_pbTy.toFixed(1)+' C'+(_pbTx-Math.cos(_pbPa)*_pbW*0.4*side).toFixed(1)+','+(_pbTy-Math.sin(_pbPa)*_pbW*0.4).toFixed(1)+' '+(ox-Math.cos(_pbPa)*_pbW*0.7*side).toFixed(1)+','+(ly-Math.sin(_pbPa)*_pbW*0.7-_pbLen*0.15).toFixed(1)+' '+ox+','+ly+' Z';
@@ -14380,6 +14413,7 @@ document.addEventListener('keydown', function(e) {
           var _fpAng = -0.35 - leafFrac * 0.3;
           var _fpTx = ox + Math.cos(_fpAng) * _fpLen * 0.8 * side;
           var _fpTy = ly + Math.sin(_fpAng) * _fpLen * 0.8;
+          tip = _fpTx; tipY = _fpTy;
           var _fpW = ls * 0.75;
           var _fpPa = _fpAng + Math.PI * 0.5;
           bodyD = 'M'+ox+','+ly+' C'+(ox+Math.cos(_fpPa)*_fpW*side).toFixed(1)+','+(ly+Math.sin(_fpPa)*_fpW-_fpLen*0.15).toFixed(1)+' '+(_fpTx+Math.cos(_fpPa)*_fpW*0.4*side).toFixed(1)+','+(_fpTy+Math.sin(_fpPa)*_fpW*0.4).toFixed(1)+' '+_fpTx.toFixed(1)+','+_fpTy.toFixed(1)+' C'+(_fpTx-Math.cos(_fpPa)*_fpW*0.35*side).toFixed(1)+','+(_fpTy-Math.sin(_fpPa)*_fpW*0.35).toFixed(1)+' '+(ox-Math.cos(_fpPa)*_fpW*0.6*side).toFixed(1)+','+(ly-Math.sin(_fpPa)*_fpW*0.6-_fpLen*0.1).toFixed(1)+' '+ox+','+ly+' Z';
@@ -14400,6 +14434,7 @@ document.addEventListener('keydown', function(e) {
           var _vpAng = -0.3 - leafFrac * 0.35;
           var _vpTx = ox + Math.cos(_vpAng) * _vpLen * 0.85 * side;
           var _vpTy = ly + Math.sin(_vpAng) * _vpLen * 0.85;
+          tip = _vpTx; tipY = _vpTy;
           var _vpW = ls * 0.55;
           var _vpPa = _vpAng + Math.PI * 0.5;
           bodyD = 'M'+ox+','+ly+' Q'+(ox+Math.cos(_vpPa)*_vpW*1.3*side).toFixed(1)+','+(ly+Math.sin(_vpPa)*_vpW*1.3-_vpLen*0.25).toFixed(1)+' '+_vpTx.toFixed(1)+','+_vpTy.toFixed(1)+' Q'+(ox-Math.cos(_vpPa)*_vpW*0.9*side).toFixed(1)+','+(ly-Math.sin(_vpPa)*_vpW*0.9-_vpLen*0.18).toFixed(1)+' '+ox+','+ly+' Z';
@@ -14429,6 +14464,7 @@ document.addEventListener('keydown', function(e) {
           var _lpAng = -0.35 - leafFrac * 0.3;
           var _lpCx = ox + Math.cos(_lpAng) * _lpR * 2.2 * side;
           var _lpCy = ly + Math.sin(_lpAng) * _lpR * 2.2;
+          tip = _lpCx; tipY = _lpCy; // center of pod
           bodyD = 'M'+ox+','+ly+' Q'+(ox+(_lpCx-ox)*0.3+Math.cos(_lpAng+Math.PI*0.5)*_lpR*0.5*side).toFixed(1)+','+(ly+(_lpCy-ly)*0.3).toFixed(1)+' '+_lpCx.toFixed(1)+','+_lpCy.toFixed(1)+' Q'+(ox+(_lpCx-ox)*0.3-Math.cos(_lpAng+Math.PI*0.5)*_lpR*0.3*side).toFixed(1)+','+(ly+(_lpCy-ly)*0.3).toFixed(1)+' '+ox+','+ly+' Z';
           s += '<ellipse cx="'+_lpCx.toFixed(1)+'" cy="'+_lpCy.toFixed(1)+'" rx="'+_lpR.toFixed(1)+'" ry="'+(_lpR*1.3).toFixed(1)+'" fill="'+baseColor+'" opacity="'+(op*0.5).toFixed(2)+'"/>';
           s += '<ellipse cx="'+_lpCx.toFixed(1)+'" cy="'+_lpCy.toFixed(1)+'" rx="'+_lpR.toFixed(1)+'" ry="'+(_lpR*1.3).toFixed(1)+'" fill="none" stroke="'+shiftedLight+'" stroke-width="0.3" opacity="'+(op*0.35).toFixed(2)+'"/>';
@@ -14554,7 +14590,29 @@ document.addEventListener('keydown', function(e) {
           case 5: // Monstera — SPECIAL: handled inside Monstera loop
           case 6: // Fern — SPECIAL: handled inside Fern loop
           case 9: // Needle — SPECIAL: handled inside Needle loop
-            chiVeinD = ''; // rendered in their respective loops below
+          case 10: // Monstera 2 — inline chimera vein
+          case 11: // Compound Fern — inline chimera vein
+          case 12: // Succulent Rosette — inline chimera vein
+          case 13: // Carnivorous Tube — inline chimera vein
+          case 14: // Cactus Pad — inline chimera vein
+          case 15: // Aloe Fan — inline chimera vein
+          case 16: // Berry Cluster — inline chimera vein
+          case 17: // Filange — inline chimera vein (bone line)
+          case 18: // Serrated Fern — inline chimera vein
+          case 19: // Fiddle Leaf — inline chimera vein
+          case 20: // Palmate Fan — inline chimera vein (per-finger)
+          case 23: // inline chimera vein
+          case 24: // inline chimera vein
+          case 27: // inline chimera vein
+          case 28: // inline chimera vein
+          case 21: case 22: case 23: case 24: case 25: case 26:
+          case 27: case 28: case 29: case 30: case 31: case 32:
+          case 33: case 34: case 35: case 36: case 37: case 38:
+          case 39: case 40: case 41: case 42: case 43: case 44:
+          case 45: case 46: case 47: case 48: case 49: case 50:
+          case 51: case 52: case 53: case 54: case 55: case 56:
+          case 57: case 58: case 59:
+            chiVeinD = ''; // all have inline chimera vein rendering
             break;
           case 7: // Maple — palmate radiating to lobe tips
             if (chiVar === 0) {
@@ -14922,9 +14980,10 @@ document.addEventListener('keydown', function(e) {
     if (_bc === 69) _reach = 2.0; // Clock Flower
     if (_bc === 70) _reach = 2.0; // Prism Bloom
 
-    // Safe bloom zone: bloom top must stay at y >= 3 (3px viewBox buffer)
-    var _minFy = fs * _reach + 3;
-    var fy = Math.max(_minFy, visibleTop - 2);
+    // fy anchors directly to visibleTop (= _safeBloomY from calyx).
+    // The outer code already computed a safe Y that keeps all petal art
+    // inside the viewBox, so no secondary clamping needed here.
+    var fy = visibleTop;
 
     var _rawBloomOp = Math.min(1, (prog - 0.8) * 5);
     var bloomOp = Math.min(1, _rawBloomOp * 1.45); // boost toward full opacity
@@ -19419,7 +19478,7 @@ document.addEventListener('keydown', function(e) {
       case 27: // Candlelight — warm uplighting from below
         s += '<defs><radialGradient id="auraCndl'+uid+'" cx="0.5" cy="0.85" r="0.7"><stop offset="0%" stop-color="rgba(240,180,80,0.10)"/><stop offset="60%" stop-color="rgba(240,180,80,0.04)"/><stop offset="100%" stop-color="rgba(240,180,80,0)"/></radialGradient></defs>';
         s += '<rect x="0" y="0" width="70" height="95" fill="url(#auraCndl'+uid+')">';
-        s += '<animate attributeName="opacity" values="0.75;0.95;0.80;1.0;0.75" dur="3s" repeatCount="indefinite"/>';
+        s += '<animate attributeName="opacity" values="0.75;0.92;0.80;0.95;0.75" dur="3s" repeatCount="indefinite"/>';
         s += '</rect>';
         s += '<circle cx="35" cy="85" r="0.8" fill="#F0A030" opacity="0.15">';
         s += '<animate attributeName="cy" values="85;78;72" dur="5s" repeatCount="indefinite"/>';
@@ -19452,7 +19511,7 @@ document.addEventListener('keydown', function(e) {
       case 29: // Void Eclipse — inverted vignette + stars + corona
         s += '<defs><radialGradient id="auraVoid'+uid+'" cx="0.5" cy="0.5" r="0.5"><stop offset="0%" stop-color="rgba(0,0,0,0)"/><stop offset="60%" stop-color="rgba(0,0,0,0)"/><stop offset="100%" stop-color="rgba(0,0,0,0.12)"/></radialGradient></defs>';
         s += '<rect x="0" y="0" width="70" height="95" fill="url(#auraVoid'+uid+')">';
-        s += '<animate attributeName="opacity" values="0.7;1.0;0.7" dur="8s" repeatCount="indefinite"/>';
+        s += '<animate attributeName="opacity" values="0.7;0.92;0.7" dur="8s" repeatCount="indefinite"/>';
         s += '</rect>';
         s += '<circle cx="8" cy="12" r="0.15" fill="#EAE0C8" opacity="0.20"><animate attributeName="opacity" values="0.20;0.05;0.20" dur="3.2s" repeatCount="indefinite"/></circle>';
         s += '<circle cx="62" cy="8" r="0.12" fill="#EAE0C8" opacity="0.15"><animate attributeName="opacity" values="0.15;0.04;0.15" dur="4.1s" repeatCount="indefinite"/></circle>';
@@ -19895,6 +19954,9 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="51" cy="27" r="0.15" fill="rgba(200,240,255,0.3)"><animate attributeName="opacity" values="0.3;0.05;0.3" dur="1.8s" repeatCount="indefinite"/></circle>';
         // Ground illumination — soft pool of light beneath
         s += '<ellipse cx="55" cy="30" rx="4" ry="0.8" fill="rgba(140,200,255,0.04)"><animate attributeName="rx" values="4;5;4" dur="2s" repeatCount="indefinite"/></ellipse>';
+        // Action marks (( )) near wings
+        s += '<path d="M47,21 Q46.5,22.5 47,24" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M46.2,20.5 Q45.5,22.5 46.2,24.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 21: // Honeybee — hovering near the bloom
@@ -19947,6 +20009,9 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="10" cy="32.5" r="0.3" fill="#D8B840" opacity="0.5"/>';
         s += '<line x1="12.8" y1="31.5" x2="14" y2="32.5" stroke="#3A3018" stroke-width="0.15"/>';
         s += '<circle cx="14" cy="32.5" r="0.25" fill="#D8B840" opacity="0.45"/>';
+        // Action marks (( )) near wings
+        s += '<path d="M9,27 Q8.5,28.5 9,30" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M8.2,26.5 Q7.5,28.5 8.2,30.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 22: // Pill Bug (Armadillidium vulgare) — nature's soil purifier
@@ -19997,6 +20062,9 @@ document.addEventListener('keydown', function(e) {
         }
         // Subtle sheen — iridescent highlight on center plates
         s += '<ellipse cx="'+(_pbx+0.5)+'" cy="'+(_pby-1)+'" rx="3" ry="1" fill="rgba(160,150,200,0.06)"/>';
+        // Action marks (( near antennae
+        s += '<path d="M'+(_pbx-12.5)+','+(_pby-2)+' Q'+(_pbx-13)+','+_pby+' '+(_pbx-12.5)+','+(_pby+2)+'" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M'+(_pbx-13.5)+','+(_pby-2.5)+' Q'+(_pbx-14)+','+_pby+' '+(_pbx-13.5)+','+(_pby+2.5)+'" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 23: // Firefly — beetle with bioluminescent lantern
@@ -20119,6 +20187,9 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="62.5" cy="17.5" r="0.2" fill="#1A1A18"/>';
         // Wing flutter
         s += '<animateTransform attributeName="transform" type="rotate" values="-3,60,22;5,60,22;-3,60,22" dur="2s" repeatCount="indefinite" additive="sum"/>';
+        // Action marks (( )) near wings
+        s += '<path d="M50.5,19 Q50,20.5 50.5,22" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M49.8,18.5 Q49,20.5 49.8,22.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 25: // Luna Moth — ghostly pale-green with trailing tails
@@ -20171,6 +20242,9 @@ document.addEventListener('keydown', function(e) {
         s += '<line x1="12.8" y1="15.5" x2="13.2" y2="15.2" stroke="#C0B8A0" stroke-width="0.06"/>';
         // Moonlight glow — luna moths are associated with the moon
         s += '<ellipse cx="12" cy="18" rx="3" ry="3.5" fill="rgba(160,220,130,0.03)"><animate attributeName="opacity" values="0.03;0.06;0.03" dur="4s" repeatCount="indefinite"/></ellipse>';
+        // Action marks (( )) near wings
+        s += '<path d="M5.5,17 Q5,18.5 5.5,20" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M4.8,16.5 Q4,18.5 4.8,20.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       // ── set-103-8-14: NEW COMPANIONS (ChatGPT Art Round) ───────────────
@@ -20218,10 +20292,13 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M57.5,91 L58,91.8 L58.5,91.6" stroke="#1A1A1A" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
         s += '<path d="M54.5,88 L54,87.3" stroke="#1A1A1A" stroke-width="0.12" fill="none"/>';
         s += '<path d="M57.5,88 L58,87.3" stroke="#1A1A1A" stroke-width="0.12" fill="none"/>';
+        // Action marks (( near head
+        s += '<path d="M51,88.5 Q50.5,89.5 51,90.5" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M50.3,88 Q49.5,89.5 50.3,91" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 27: // Garden Snail — simple, recognizable, bottom-left
-        s += '<g opacity="0.85" transform="translate(10,89) scale(1.5) translate(-10,-89)">';
+        s += '<g opacity="0.85" transform="translate(8,0) translate(10,89) scale(1.5) translate(-10,-89)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.4,0;0.8,0;0.4,0;0,0" dur="7s" repeatCount="indefinite"/>';
         // ── SLIME TRAIL — MUCH LONGER, wavy, to the left ──
         s += '<path d="M-15,91.5 Q-12,90.5 -9,91.5 Q-6,92.5 -3,91 Q0,89.5 3,91 Q5,92 7,91 Q9,92 10,91" fill="none" stroke="rgba(200,215,190,0.22)" stroke-width="1.5" stroke-linecap="round"/>';
@@ -20264,6 +20341,9 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="18.2" cy="84.3" r="0.15" fill="#F0FFF0"/>';
         // Mouth — tiny smile
         s += '<path d="M17,88 Q17.5,88.3 18,88" fill="none" stroke="#6A7A5A" stroke-width="0.15" opacity="0.4" stroke-linecap="round"/>';
+        // Action marks (( near eyes/antennae
+        s += '<path d="M15.5,83.5 Q15,84.5 15.5,85.5" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M14.8,83 Q14,84.5 14.8,86" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 28: // Ruby-throated Hummingbird — hovering left side, facing bloom
@@ -20303,6 +20383,9 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+(_hbx+5)+','+(_hby-0.7)+' L'+(_hbx+7.5)+','+(_hby-0.6)+'" stroke="#3E3A34" stroke-width="0.25" stroke-linecap="round" opacity="0.6"/>';
         // Feet — tiny, tucked up in flight
         s += '<path d="M'+(_hbx+2.5)+','+(_hby+0.3)+' L'+(_hbx+2.5)+','+(_hby+0.8)+'" stroke="#5A5040" stroke-width="0.1"/>';
+        // Action marks (( )) near beak
+        s += '<path d="M'+(_hbx+8)+','+(_hby-2)+' Q'+(_hbx+8.5)+','+(_hby-0.5)+' '+(_hbx+8)+','+(_hby+1)+'" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M'+(_hbx+8.8)+','+(_hby-2.5)+' Q'+(_hbx+9.5)+','+(_hby-0.5)+' '+(_hbx+8.8)+','+(_hby+1.5)+'" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 29: // Dragonfly — upper-left corner, figure-8 hover
@@ -20322,6 +20405,9 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M19,10 Q20.5,10.3 21.5,11" fill="none" stroke="#6A8792" stroke-width="0.12" stroke-linecap="round" opacity="0.5"/>';
         // Antennae
         s += '<path d="M6.8,9.5 L5.5,8.2 M6.6,9.6 L5.2,10" fill="none" stroke="#4B646E" stroke-width="0.08" stroke-linecap="round" opacity="0.7"/>';
+        // Action marks (( near head
+        s += '<path d="M4.5,9 Q4,10 4.5,11" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M3.8,8.5 Q3,10 3.8,11.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 30: // Caterpillar — crawling across bottom, left to right
@@ -20370,6 +20456,9 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+(_cBx+1)+','+(_cBy-0.6)+' Q'+(_cBx+6)+','+(_cBy-1.4)+' '+(_cBx+12)+','+(_cBy-0.8)+'" fill="none" stroke="#CBE8AF" stroke-width="0.18" opacity="0.5"/>';
         // Ventral stripe
         s += '<path d="M'+(_cBx+1)+','+(_cBy+0.5)+' Q'+(_cBx+6)+','+(_cBy+0.8)+' '+(_cBx+12)+','+(_cBy+0.3)+'" fill="none" stroke="#A0D880" stroke-width="0.12" opacity="0.2"/>';
+        // Action marks )) near head
+        s += '<path d="M'+(_cBx+14)+','+(_cBy-2)+' Q'+(_cBx+14.5)+','+(_cBy-0.5)+' '+(_cBx+14)+','+(_cBy+1)+'" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M'+(_cBx+14.8)+','+(_cBy-2.5)+' Q'+(_cBx+15.5)+','+(_cBy-0.5)+' '+(_cBx+14.8)+','+(_cBy+1.5)+'" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 31: // Garden Spider — descending on silk, vivid brown-red
@@ -20411,6 +20500,9 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="61.5" cy="18.6" r="0.2" fill="#C8B880" opacity="0.5"/>';
         // Fangs — chelicerae
         s += '<path d="M59.4,19.8 L59,20.8 M60.6,19.8 L61,20.8" stroke="#8A4020" stroke-width="0.25" stroke-linecap="round"/>';
+        // Action marks (( )) near legs
+        s += '<path d="M53,18 Q52.5,19.5 53,21" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M52.2,17.5 Q51.5,19.5 52.2,21.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 32: // The Toad — patient guardian at pot base (MYTHIC)
@@ -20475,133 +20567,180 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="48" cy="72.5" rx="2" ry="1" fill="#6A8A50" opacity="0.12"><animate attributeName="ry" values="1;1.3;1" dur="3s" repeatCount="indefinite"/></ellipse>';
         // Mythic glow — subtle golden aura (this is a MYTHIC creature)
         s += '<ellipse cx="48" cy="74" rx="7" ry="5" fill="rgba(200,168,75,0.02)"><animate attributeName="opacity" values="0.02;0.05;0.02" dur="4s" repeatCount="indefinite"/></ellipse>';
+        // Action marks (( )) near eyes
+        s += '<path d="M43,68 Q42.5,69.5 43,71" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M42.2,67.5 Q41.5,69.5 42.2,71.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 33: // The Capybara — MYTHIC, sitting upright 3/4 view, facing left
-        // Based on reference: pear-shaped body wider at bottom, round head,
-        // small round ear, dark eye high up, nose bump, tiny front paws,
-        // lighter belly. Cute cartoon style matching reference image.
+        // Rebuilt from reference: boxy head, massive blunt nose, barrel body
+        // wider at rump, small eyes HIGH on head, bold cartoon outline.
         s += '<g opacity="1" transform="translate(56,85) scale(1.3) translate(-56,-85)">';
         // Mythic glow
-        s += '<ellipse cx="56" cy="88" rx="9" ry="6" fill="rgba(200,168,75,0.03)"><animate attributeName="opacity" values="0.03;0.06;0.03" dur="5s" repeatCount="indefinite"/></ellipse>';
+        s += '<ellipse cx="55" cy="88" rx="10" ry="6" fill="rgba(200,168,75,0.03)"><animate attributeName="opacity" values="0.03;0.06;0.03" dur="5s" repeatCount="indefinite"/></ellipse>';
         // Shadow
-        s += '<ellipse cx="55" cy="93" rx="7" ry="0.8" fill="#0d100c" opacity="0.15"/>';
-        // Front paws — tiny, visible below body
-        s += '<path d="M51,91.5 Q50.5,92 50,92.5" stroke="#7A5028" stroke-width="1.2" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M53,92 Q52.5,92.5 52,92.8" stroke="#7A5028" stroke-width="1.2" fill="none" stroke-linecap="round"/>';
-        // Hind leg — just a round haunch peeking out right side
-        s += '<ellipse cx="60" cy="91" rx="2.5" ry="1.8" fill="#96663C"/>';
-        // ── BODY — pear/teardrop shape, wider at bottom (like reference) ──
-        s += '<path d="M48,85 Q47,82 48,79 Q49,77 51,76 Q53,75.5 55,76 Q57,76 58,77 Q59,78 59.5,80 Q60,82 61,84 Q62,87 62,89.5 Q62,91.5 60,92.5 Q57,93 54,92.5 Q51,92 49.5,90.5 Q48,89 48,86 Z" fill="#B08050"/>';
-        // Lighter belly/chest — front area
-        s += '<path d="M49,87 Q51,89 53,90 Q55,91 57,90.5 Q58,90 58.5,88" fill="#C8A070" opacity="0.35"/>';
-        // Darker back
-        s += '<path d="M52,76.5 Q55,76 58,77 Q59,78 59.5,80" fill="none" stroke="#8A5830" stroke-width="0.4" opacity="0.2"/>';
-        // ── FUR — 120 sporadic thin lines ──
+        s += '<ellipse cx="55" cy="93" rx="8" ry="0.8" fill="#0d100c" opacity="0.15"/>';
+        // ── HIND LEGS — thick, visible behind body, rump is higher ──
+        s += '<path d="M60,89 L60,92 Q60,92.5 59.5,92.5 L61,92.5 Q61.5,92.5 61.5,92 L61.5,89" fill="#96663C" stroke="#6A4018" stroke-width="0.3"/>';
+        s += '<path d="M58,90 L57.5,92 Q57.5,92.5 57,92.5 L59,92.5 Q59.5,92.5 59.5,92 L59.5,90" fill="#A07040" stroke="#6A4018" stroke-width="0.3"/>';
+        // Hind feet
+        s += '<ellipse cx="60.2" cy="92.5" rx="1.5" ry="0.5" fill="#96663C" stroke="#6A4018" stroke-width="0.25"/>';
+        s += '<ellipse cx="58.2" cy="92.5" rx="1.5" ry="0.5" fill="#A07040" stroke="#6A4018" stroke-width="0.25"/>';
+        // ── BODY — barrel/potato shape, ELONGATED, wider at rump ──
+        // Back slopes UP from shoulders to rump (signature capybara silhouette)
+        s += '<path d="M47,83 Q46,80 47.5,78 Q49,76.5 52,76 L58,76.5 Q61,77 62.5,79 Q64,81 64,84 Q64,87 63,89 Q62,91 60,92 Q57,93 53,92.5 Q50,92 48.5,90.5 Q47,89 46.5,86.5 Q46.5,84.5 47,83 Z" fill="#B08050"/>';
+        // Lighter belly/chest
+        s += '<path d="M49,88 Q52,91 56,91.5 Q59,91.5 61,90 Q62,89 62.5,87" fill="#C8A878" opacity="0.3"/>';
+        // Darker back ridge
+        s += '<path d="M49,77.5 Q53,76 58,76.5 Q61,77 63,79" fill="none" stroke="#8A5830" stroke-width="0.5" opacity="0.25"/>';
+        // ── FUR — sporadic short strokes ──
         var _cp33cols = ['#8A5830','#9A6840','#A87848','#B08050','#7A4820','#8A6038','#6A4018','#A07040','#90603A','#B89060'];
         var _cp33seed = 47;
-        for (var _cp33i = 0; _cp33i < 120; _cp33i++) {
+        for (var _cp33i = 0; _cp33i < 100; _cp33i++) {
           _cp33seed = (_cp33seed * 1103515245 + 12345) & 0x7FFFFFFF;
-          var _cfx = 48 + (_cp33seed % 1000) / 1000 * 14;
+          var _cfx = 46.5 + (_cp33seed % 1000) / 1000 * 18;
           _cp33seed = (_cp33seed * 1103515245 + 12345) & 0x7FFFFFFF;
           var _cfy = 76 + (_cp33seed % 1000) / 1000 * 16;
-          var _cfdx = (_cfx - 55) / 7.5, _cfdy = (_cfy - 85) / 8.5;
+          var _cfdx = (_cfx - 55) / 9, _cfdy = (_cfy - 84) / 8.5;
           if (_cfdx * _cfdx + _cfdy * _cfdy > 0.85) continue;
           var _cfc = _cp33cols[_cp33i % _cp33cols.length];
           _cp33seed = (_cp33seed * 1103515245 + 12345) & 0x7FFFFFFF;
-          var _cfLen = 0.4 + (_cp33seed % 100) / 200;
+          var _cfLen = 0.3 + (_cp33seed % 100) / 250;
           var _cfTilt = ((_cp33seed % 100) - 50) / 700;
-          s += '<line x1="'+_cfx.toFixed(1)+'" y1="'+_cfy.toFixed(1)+'" x2="'+(_cfx+_cfTilt).toFixed(2)+'" y2="'+(_cfy+_cfLen).toFixed(2)+'" stroke="'+_cfc+'" stroke-width="0.07" opacity="0.25"/>';
+          s += '<line x1="'+_cfx.toFixed(1)+'" y1="'+_cfy.toFixed(1)+'" x2="'+(_cfx+_cfTilt).toFixed(2)+'" y2="'+(_cfy+_cfLen).toFixed(2)+'" stroke="'+_cfc+'" stroke-width="0.08" opacity="0.2"/>';
         }
-        // ── HEAD — round, sitting on top of body, slight overlap ──
-        s += '<path d="M47,80 Q46.5,77 48,75 Q50,73.5 53,73.5 Q56,74 57,76 Q57.5,78 57,80 Q56,81.5 53,82 Q50,82 48,81 Z" fill="#B08050"/>';
-        // Head lighter cheek area
-        s += '<path d="M48,79 Q50,80 52,80.5 Q54,80 55.5,79" fill="#C0A068" opacity="0.25"/>';
-        // Round ear — on top right of head (like reference, brown oval)
-        s += '<ellipse cx="55.5" cy="74.5" rx="1.5" ry="1.2" fill="#96663C"/>';
-        s += '<ellipse cx="55.5" cy="74.5" rx="0.9" ry="0.7" fill="#B08050" opacity="0.4"/>';
-        // Eye — large, dark brown, set high on head (like reference)
-        s += '<circle cx="50.5" cy="76.5" r="1" fill="#2D1810"/>';
-        s += '<circle cx="50.8" cy="76.2" r="0.3" fill="rgba(240,235,216,0.6)"/>';
-        // Nose — small dark bump at front of face
-        s += '<ellipse cx="47.5" cy="79" rx="0.6" ry="0.45" fill="#3A2A18"/>';
-        s += '<circle cx="47.6" cy="78.9" r="0.12" fill="rgba(200,180,160,0.3)"/>';
-        // Mouth — subtle smile line below nose
-        s += '<path d="M47.8,79.8 Q49,80.3 50,80" fill="none" stroke="#6A4828" stroke-width="0.2" opacity="0.3"/>';
-        // Body outline — dark stroke for definition (like reference)
-        s += '<path d="M48,85 Q47,82 48,79 Q49,77 51,76 Q53,75.5 55,76 Q57,76 58,77 Q59,78 59.5,80 Q60,82 61,84 Q62,87 62,89.5 Q62,91.5 60,92.5 Q57,93 54,92.5 Q51,92 49.5,90.5 Q48,89 48,86" fill="none" stroke="#4A2A10" stroke-width="0.3" opacity="0.4"/>';
+        // Body outline — bold dark stroke (cartoon style like reference)
+        s += '<path d="M47,83 Q46,80 47.5,78 Q49,76.5 52,76 L58,76.5 Q61,77 62.5,79 Q64,81 64,84 Q64,87 63,89 Q62,91 60,92 Q57,93 53,92.5 Q50,92 48.5,90.5 Q47,89 46.5,86.5 Q46.5,84.5 47,83" fill="none" stroke="#3A2010" stroke-width="0.6" opacity="0.7"/>';
+        // ── FRONT LEGS — short, stubby, visible below body ──
+        s += '<path d="M49,89 L49,92 Q49,92.5 48.5,92.5 L50.5,92.5 Q51,92.5 51,92 L51,89" fill="#B08050" stroke="#6A4018" stroke-width="0.3"/>';
+        s += '<path d="M51.5,89.5 L51.5,92 Q51.5,92.5 51,92.5 L53,92.5 Q53.5,92.5 53.5,92 L53.5,89.5" fill="#B08050" stroke="#6A4018" stroke-width="0.3"/>';
+        // Front feet
+        s += '<ellipse cx="49.7" cy="92.5" rx="1.5" ry="0.5" fill="#B08050" stroke="#6A4018" stroke-width="0.25"/>';
+        s += '<ellipse cx="52.2" cy="92.5" rx="1.5" ry="0.5" fill="#B08050" stroke="#6A4018" stroke-width="0.25"/>';
+        // ── HEAD — BOXY/RECTANGULAR, NOT round — the key capybara identifier ──
+        // Flat top, blunt vertical front, wider than tall
+        s += '<path d="M46,79.5 C46,76.5 46.5,74.5 48,73.5 C49.5,72.5 52,72 54.5,72.5 C56.5,73 57.5,74 57.5,76 C57.5,78 57,79.5 56,80.5 Q53,82 49,81.5 Q47,81 46,79.5 Z" fill="#B08050"/>';
+        // Head lighter cheek/jaw area
+        s += '<path d="M47.5,79 Q49,80 51,80.5 Q53,80.5 55,80" fill="#C0A068" opacity="0.2"/>';
+        // Head outline — bold
+        s += '<path d="M46,79.5 C46,76.5 46.5,74.5 48,73.5 C49.5,72.5 52,72 54.5,72.5 C56.5,73 57.5,74 57.5,76 C57.5,78 57,79.5 56,80.5 Q53,82 49,81.5 Q47,81 46,79.5" fill="none" stroke="#3A2010" stroke-width="0.55" opacity="0.7"/>';
+        // ── SNOUT — blunt, squared-off front, extends forward from head ──
+        s += '<path d="M44.5,77 Q44,75.5 44.5,74.5 Q45.5,73.5 47,73.5 Q48,73.5 48,75 Q48,76.5 47.5,78 Q46.5,78.5 45,78 Z" fill="#B88858"/>';
+        s += '<path d="M44.5,77 Q44,75.5 44.5,74.5 Q45.5,73.5 47,73.5 Q48,73.5 48,75 Q48,76.5 47.5,78 Q46.5,78.5 45,78" fill="none" stroke="#3A2010" stroke-width="0.45" opacity="0.65"/>';
+        // ── NOSE — MASSIVE, wide, flat, the signature capybara feature ──
+        s += '<path d="M44,75 Q43.5,74.5 44,74 Q44.5,73.5 46,73.5 Q47,73.5 47.5,74 Q48,74.5 47.5,75 Q47,75.5 46,75.5 Q44.5,75.5 44,75 Z" fill="#3A2A18"/>';
+        // Nostrils — two visible dots
+        s += '<circle cx="45" cy="74.5" r="0.3" fill="#1A1008"/>';
+        s += '<circle cx="46.5" cy="74.5" r="0.3" fill="#1A1008"/>';
+        // Nose highlight
+        s += '<ellipse cx="45.8" cy="74.2" rx="0.6" ry="0.2" fill="rgba(180,140,100,0.2)"/>';
+        // ── EARS — tiny, set HIGH and far BACK on head ──
+        s += '<ellipse cx="55.5" cy="73" rx="1.3" ry="1" fill="#96663C" stroke="#6A4018" stroke-width="0.2"/>';
+        s += '<ellipse cx="55.5" cy="73" rx="0.7" ry="0.5" fill="#B08050" opacity="0.3"/>';
+        // Second ear (behind, peeking)
+        s += '<ellipse cx="54" cy="72.5" rx="1" ry="0.8" fill="#8A5830" stroke="#6A4018" stroke-width="0.2"/>';
+        // ── EYE — SMALL, set HIGH on the head (aquatic adaptation) ──
+        s += '<circle cx="47.5" cy="74.8" r="0.65" fill="#2D1810"/>';
+        s += '<circle cx="47.7" cy="74.6" r="0.2" fill="rgba(240,235,216,0.6)"/>';
+        // Subtle brow line above eye
+        s += '<path d="M47,74 Q47.5,73.8 48.2,74" fill="none" stroke="#6A4018" stroke-width="0.2" opacity="0.3"/>';
+        // ── MOUTH — subtle line below snout ──
+        s += '<path d="M45,77.5 Q46,78 47,77.5" fill="none" stroke="#6A4828" stroke-width="0.25" opacity="0.35"/>';
+        // Head fur strokes
+        var _chfPts = [[48,73],[50,72.5],[52,72.5],[54,73],[56,74],[49,74],[51,73.5],[53,73]];
+        for (var _chfi = 0; _chfi < _chfPts.length; _chfi++) {
+          s += '<line x1="'+_chfPts[_chfi][0]+'" y1="'+_chfPts[_chfi][1]+'" x2="'+(_chfPts[_chfi][0]+0.05)+'" y2="'+(_chfPts[_chfi][1]+0.5)+'" stroke="#8A5830" stroke-width="0.1" opacity="0.2"/>';
+        }
         // Zen breathing
         s += '<animate attributeName="opacity" values="1;0.97;1" dur="4s" repeatCount="indefinite"/>';
         s += '</g>';
         break;
       case 34: // Woolly Mammoth — LEGENDARY, profile facing left
-        // Based on reference: chunky round dark brown body, shaggy outline,
-        // high domed head, tusks curving out (cream S-shape), thick pillar
-        // legs with grey toenails, short trunk curling up, small ear.
+        // Rebuilt: one continuous shaggy body path, head blends into body,
+        // SHORT cute tusks, short stubby trunk, thick pillar legs.
         s += '<g opacity="1" transform="translate(10,0) translate(55,80) scale(1.2) translate(-55,-80)">';
         // Shadow
-        s += '<ellipse cx="55" cy="93" rx="10" ry="1" fill="#0d100c" opacity="0.18"/>';
-        // Legs — 4 thick dark pillars with grey toenails (like reference)
-        // Back legs
-        s += '<path d="M60,88 L60,92.5" stroke="#4A3428" stroke-width="4" stroke-linecap="round"/>';
-        s += '<path d="M58.5,92 L59.5,92.5 M60,92.2 L60,92.8 M60.5,92 L61.5,92.5" stroke="#9A9A90" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M56,88.5 L56,92.5" stroke="#5A4438" stroke-width="4.5" stroke-linecap="round"/>';
-        s += '<path d="M54.5,92 L55.5,92.5 M56,92.2 L56,92.8 M56.5,92 L57.5,92.5" stroke="#9A9A90" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
-        // Front legs
-        s += '<path d="M49,87 L49,92.5" stroke="#4A3428" stroke-width="4" stroke-linecap="round"/>';
-        s += '<path d="M47.5,92 L48.5,92.5 M49,92.2 L49,92.8 M49.5,92 L50.5,92.5" stroke="#9A9A90" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M45.5,86 L45.5,92.5" stroke="#5A4438" stroke-width="4.5" stroke-linecap="round"/>';
-        s += '<path d="M44,92 L45,92.5 M45.5,92.2 L45.5,92.8 M46,92 L47,92.5" stroke="#9A9A90" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
-        // ── BODY — massive round shape (like reference: very round, chunky) ──
-        s += '<path d="M43,82 Q42.5,78 44,75 Q46,72.5 49,71 Q52,70 55,70 Q58,70 61,72 Q63.5,74 65,77 Q66,80 66,84 Q66,87.5 64,89.5 Q62,91 58,91.5 Q54,92 50,91 Q47,90 45,88 Q43,86 43,82 Z" fill="#5A4438"/>';
-        // Shoulder hump — darker ridge at top (same fill, just darker overlay)
-        s += '<path d="M49,72 Q52,70 55,70 Q58,70 61,72 Q63,74 64,77" fill="none" stroke="#4A3428" stroke-width="0.5" opacity="0.3"/>';
+        s += '<ellipse cx="54" cy="93" rx="11" ry="1" fill="#0d100c" opacity="0.18"/>';
+        // ── BACK LEGS (behind body, slightly darker) ──
+        s += '<rect x="58" y="87" width="5" height="6" rx="1" fill="#3A2418"/>';
+        s += '<rect x="54" y="87.5" width="5.5" height="5.5" rx="1" fill="#4A3020"/>';
+        // Back toenails
+        s += '<ellipse cx="59" cy="92.8" rx="0.8" ry="0.6" fill="#9A9A90"/>';
+        s += '<ellipse cx="60.5" cy="92.8" rx="0.8" ry="0.6" fill="#9A9A90"/>';
+        s += '<ellipse cx="62" cy="92.8" rx="0.7" ry="0.55" fill="#9A9A90"/>';
+        s += '<ellipse cx="55.5" cy="92.8" rx="0.8" ry="0.6" fill="#9A9A90"/>';
+        s += '<ellipse cx="57" cy="92.8" rx="0.8" ry="0.6" fill="#9A9A90"/>';
+        s += '<ellipse cx="58.5" cy="92.7" rx="0.7" ry="0.55" fill="#9A9A90"/>';
+        // ── BODY + HEAD — one continuous SHAGGY path (wavy outline) ──
+        // Flows: belly → chest → face → forehead dome → shoulder hump → back → rump → under belly
+        s += '<path d="M44,88 Q43,86 42.5,83 Q42,80 43,77.5 Q43.5,76 44,75 Q44.5,74 45.5,73 Q47,71.5 49,71 Q50.5,70.5 52,71 q2,-1.5 4,-1 q2,0.5 4,0 q2.5,0 4,1 q1.5,1 2.5,2.5 q1,1.5 1,3.5 q0.5,2 0,4 q-0.5,2.5 -1,4 q-1,2 -2.5,3.5 Q62,91 59,92 Q55,93 51,92 Q48,91 46,89 Z" fill="#5A4438"/>';
+        // Shoulder hump emphasis — darker ridge
+        s += '<path d="M52,71 Q55,69.5 58,70 Q61,71 63,73" fill="none" stroke="#3A2418" stroke-width="0.6" opacity="0.3"/>';
         // Belly — slightly lighter
-        s += '<path d="M47,90 Q53,92 60,90" fill="#6A5448" opacity="0.3"/>';
-        // ── SHAGGY FUR — dense hanging strands (dark browns) ──
-        var _mmCols34 = ['#3A2818','#4A3428','#5A4438','#4A3020','#3A2418','#4A3830','#5A4030','#3A2A18'];
+        s += '<path d="M47,90 Q53,92 59,90" fill="#6A5448" opacity="0.25"/>';
+        // ── SHAGGY FUR FRINGE — hanging strands along belly and chest ──
+        var _mmFr = [[44,87,1.8],[44.5,85,1.5],[43.5,83,1.2],[43,81,1],[44,79,0.8],[46,89.5,2],[48,90.5,2.2],[50,91.2,2],[52,91.5,2.2],[54,91.5,2],[56,91.2,1.8],[58,90.5,1.5],[60,89,1.2],[62,87,1]];
+        for (var _mfr = 0; _mfr < _mmFr.length; _mfr++) {
+          var _fx = _mmFr[_mfr][0], _fy = _mmFr[_mfr][1], _fl = _mmFr[_mfr][2];
+          s += '<path d="M'+_fx+','+_fy+' q-0.5,'+(_fl*0.5)+' 0,'+_fl+' q0.5,'+(_fl*0.3)+' 1,0" fill="none" stroke="#3A2418" stroke-width="0.3" opacity="0.4"/>';
+          s += '<path d="M'+(_fx+1.5)+','+_fy+' q0.3,'+(_fl*0.6)+' -0.2,'+(_fl*0.9)+'" fill="none" stroke="#4A3020" stroke-width="0.25" opacity="0.3"/>';
+        }
+        // ── FUR TEXTURE — procedural short strokes on body ──
+        var _mmCols34 = ['#3A2818','#4A3428','#5A4438','#4A3020','#3A2418'];
         var _mm34seed = 71;
-        for (var _mf34 = 0; _mf34 < 160; _mf34++) {
+        for (var _mf34 = 0; _mf34 < 80; _mf34++) {
           _mm34seed = (_mm34seed * 1103515245 + 12345) & 0x7FFFFFFF;
-          var _mfx34 = 43 + (_mm34seed % 1000) / 1000 * 23;
+          var _mfx34 = 44 + (_mm34seed % 1000) / 1000 * 22;
           _mm34seed = (_mm34seed * 1103515245 + 12345) & 0x7FFFFFFF;
-          var _mfy34 = 71 + (_mm34seed % 1000) / 1000 * 20;
-          var _mfd34x = (_mfx34 - 54.5) / 12, _mfd34y = (_mfy34 - 81) / 10.5;
-          if (_mfd34x * _mfd34x + _mfd34y * _mfd34y > 0.85) continue;
+          var _mfy34 = 71 + (_mm34seed % 1000) / 1000 * 19;
+          var _mfd34x = (_mfx34 - 53) / 12, _mfd34y = (_mfy34 - 81) / 10;
+          if (_mfd34x * _mfd34x + _mfd34y * _mfd34y > 0.8) continue;
           var _mfc34 = _mmCols34[_mf34 % _mmCols34.length];
           _mm34seed = (_mm34seed * 1103515245 + 12345) & 0x7FFFFFFF;
-          var _mfLen34 = 0.8 + (_mm34seed % 100) / 70;
-          var _mfTilt34 = ((_mm34seed % 100) - 50) / 500;
-          s += '<line x1="'+_mfx34.toFixed(1)+'" y1="'+_mfy34.toFixed(1)+'" x2="'+(_mfx34+_mfTilt34).toFixed(2)+'" y2="'+(_mfy34+_mfLen34).toFixed(2)+'" stroke="'+_mfc34+'" stroke-width="0.15" opacity="0.4"/>';
+          var _mfLen34 = 0.5 + (_mm34seed % 100) / 100;
+          s += '<line x1="'+_mfx34.toFixed(1)+'" y1="'+_mfy34.toFixed(1)+'" x2="'+(_mfx34+0.05).toFixed(2)+'" y2="'+(_mfy34+_mfLen34).toFixed(2)+'" stroke="'+_mfc34+'" stroke-width="0.12" opacity="0.3"/>';
         }
-        // Body outline — dark stroke for definition (like reference cartoon style)
-        s += '<path d="M43,82 Q42.5,78 44,75 Q46,72.5 49,71 Q52,70 55,70 Q58,70 61,72 Q63.5,74 65,77 Q66,80 66,84 Q66,87.5 64,89.5 Q62,91 58,91.5 Q54,92 50,91 Q47,90 45,88 Q43,86 43,82" fill="none" stroke="#2A1A10" stroke-width="0.4" opacity="0.5"/>';
-        // ── HEAD — high dome flowing from body, facing left ──
-        s += '<path d="M43,77 Q42,74 43,72 Q44,70 46,69 Q48,68.5 50,69.5 Q51,71 50.5,73 Q50,75 48.5,76 Q46.5,77 44,77 Z" fill="#5A4438"/>';
-        s += '<path d="M43,77 Q42,74 43,72 Q44,70 46,69 Q48,68.5 50,69.5 Q51,71 50.5,73 Q50,75 48.5,76 Q46.5,77 44,77" fill="none" stroke="#2A1A10" stroke-width="0.3" opacity="0.4"/>';
-        // Head fur
-        var _mmHF34 = [[44,72],[45,71],[46.5,70],[48,69.5],[49.5,70],[44.5,73],[46,72],[48,71],[49,72],[43.5,75],[45,74],[47,73.5]];
-        for (var _mhf34 = 0; _mhf34 < _mmHF34.length; _mhf34++) {
-          var _mhx = _mmHF34[_mhf34][0], _mhy = _mmHF34[_mhf34][1];
-          s += '<line x1="'+_mhx+'" y1="'+_mhy+'" x2="'+(_mhx+0.05)+'" y2="'+(_mhy+1)+'" stroke="#3A2818" stroke-width="0.12" opacity="0.35"/>';
-        }
-        // Small ear — behind dome (like reference)
-        s += '<path d="M49,70 Q50,69 50.5,70 Q50.2,71 49.5,71" fill="#4A3428"/>';
-        // Eye — small, dark, with wrinkle line (like reference)
-        s += '<circle cx="44.5" cy="73.5" r="0.6" fill="#1A1008"/>';
-        s += '<circle cx="44.6" cy="73.3" r="0.16" fill="rgba(200,180,120,0.5)"/>';
-        s += '<path d="M44,73 Q44.5,72.5 45.5,73" fill="none" stroke="#2A1A10" stroke-width="0.2" opacity="0.3"/>';
-        // Trunk — short, curving down then tip curls up (like reference)
-        s += '<path d="M43.5,76 Q42.5,78 42,80 Q41.5,82 42,83.5 Q42.5,84 43,83.5" fill="none" stroke="#5A4438" stroke-width="2.2" stroke-linecap="round"/>';
-        s += '<path d="M43.5,76 Q42.5,78 42,80 Q41.5,82 42,83.5" fill="none" stroke="#4A3428" stroke-width="0.8" opacity="0.3" stroke-linecap="round"/>';
-        // Trunk ridges
-        s += '<path d="M43,78 Q42.5,78.3 42.2,78.5" stroke="#3A2818" stroke-width="0.2" fill="none" opacity="0.3"/>';
-        s += '<path d="M42.5,80 Q42,80.3 41.8,80.5" stroke="#3A2818" stroke-width="0.18" fill="none" opacity="0.25"/>';
-        // TUSKS — cream/white S-curve from face (like reference)
-        s += '<path d="M44,75 Q42.5,77 41,79 Q40,81 40.5,82.5 Q41.5,83.5 42.5,83" fill="none" stroke="#E8DCC8" stroke-width="1.3" stroke-linecap="round"/>';
-        s += '<path d="M43.5,76 Q42,78 41,80 Q40.5,81.5 41,82.5" fill="none" stroke="rgba(255,250,235,0.35)" stroke-width="0.4" stroke-linecap="round"/>';
-        // Tail — small tuft at rump
-        s += '<path d="M65,82 Q66.5,81 67,82 Q67,83 66,83.5" stroke="#4A3428" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        // Body outline — bold shaggy stroke
+        s += '<path d="M44,88 Q43,86 42.5,83 Q42,80 43,77.5 Q43.5,76 44,75 Q44.5,74 45.5,73 Q47,71.5 49,71 Q50.5,70.5 52,71 q2,-1.5 4,-1 q2,0.5 4,0 q2.5,0 4,1 q1.5,1 2.5,2.5 q1,1.5 1,3.5 q0.5,2 0,4 q-0.5,2.5 -1,4 q-1,2 -2.5,3.5 Q62,91 59,92 Q55,93 51,92 Q48,91 46,89" fill="none" stroke="#2A1A10" stroke-width="0.5" opacity="0.6"/>';
+        // ── FRONT LEGS (in front of body) ──
+        s += '<rect x="47" y="86" width="5" height="7" rx="1" fill="#5A4438"/>';
+        s += '<rect x="43" y="85" width="5.5" height="8" rx="1" fill="#5A4438"/>';
+        // Front leg outlines
+        s += '<rect x="47" y="86" width="5" height="7" rx="1" fill="none" stroke="#2A1A10" stroke-width="0.3" opacity="0.4"/>';
+        s += '<rect x="43" y="85" width="5.5" height="8" rx="1" fill="none" stroke="#2A1A10" stroke-width="0.3" opacity="0.4"/>';
+        // Front toenails
+        s += '<ellipse cx="44.5" cy="92.8" rx="0.8" ry="0.6" fill="#9A9A90"/>';
+        s += '<ellipse cx="46" cy="92.8" rx="0.8" ry="0.6" fill="#9A9A90"/>';
+        s += '<ellipse cx="47.5" cy="92.8" rx="0.7" ry="0.55" fill="#9A9A90"/>';
+        s += '<ellipse cx="48.5" cy="92.8" rx="0.8" ry="0.6" fill="#9A9A90"/>';
+        s += '<ellipse cx="50" cy="92.8" rx="0.8" ry="0.6" fill="#9A9A90"/>';
+        s += '<ellipse cx="51.5" cy="92.7" rx="0.7" ry="0.55" fill="#9A9A90"/>';
+        // Leg fur fringe at top where legs meet body
+        s += '<path d="M43,85 q-0.5,1 0,2 M44.5,85 q0.3,1.2 -0.2,2" stroke="#3A2418" stroke-width="0.25" fill="none" opacity="0.35"/>';
+        s += '<path d="M47,86 q-0.5,1 0,1.8 M49,86 q0.3,1 -0.2,1.8" stroke="#3A2418" stroke-width="0.25" fill="none" opacity="0.35"/>';
+        // ── TUSKS — SHORT cute crescents (not long dramatic curves) ──
+        // Right tusk (closer to viewer)
+        s += '<path d="M44,77.5 Q42.5,78.5 42,79.5 Q41.5,80.5 42,80.8" fill="#F0E4C8" stroke="#C4A46A" stroke-width="0.4"/>';
+        // Left tusk (behind trunk, peeking)
+        s += '<path d="M44.5,77 Q43.5,78 43,78.8 Q42.8,79.5 43.2,79.8" fill="#E8DCC0" stroke="#B8986A" stroke-width="0.35"/>';
+        // Tusk highlights
+        s += '<path d="M43,78.5 Q42.5,79 42.2,79.8" fill="none" stroke="rgba(255,250,240,0.3)" stroke-width="0.3"/>';
+        // ── TRUNK — short, stubby, curling slightly at tip ──
+        s += '<path d="M44,76 Q43,77.5 42.5,79 Q42.2,80 42.8,80.5" fill="none" stroke="#5A4438" stroke-width="2.5" stroke-linecap="round"/>';
+        // Trunk darker center line
+        s += '<path d="M44,76 Q43,77.5 42.5,79 Q42.2,80 42.8,80.5" fill="none" stroke="#3A2418" stroke-width="0.6" opacity="0.3" stroke-linecap="round"/>';
+        // Trunk ridges (horizontal wrinkles)
+        s += '<path d="M43.5,77.5 Q43,77.7 42.8,77.8" stroke="#3A2818" stroke-width="0.2" fill="none" opacity="0.3"/>';
+        s += '<path d="M43,78.5 Q42.6,78.7 42.4,78.8" stroke="#3A2818" stroke-width="0.18" fill="none" opacity="0.25"/>';
+        // ── SMALL EAR — behind the dome ──
+        s += '<path d="M49.5,71 Q50.5,70 51,71 Q50.7,72 50,72" fill="#4A3428" stroke="#2A1A10" stroke-width="0.2"/>';
+        // ── EYE — small, dark, with wrinkle ──
+        s += '<circle cx="45" cy="74.5" r="0.55" fill="#1A1008"/>';
+        s += '<circle cx="45.1" cy="74.3" r="0.15" fill="rgba(200,180,120,0.5)"/>';
+        s += '<path d="M44.5,74 Q45,73.7 45.8,74" fill="none" stroke="#2A1A10" stroke-width="0.2" opacity="0.3"/>';
+        // ── TAIL — small shaggy tuft at rump ──
+        s += '<path d="M65,81 Q66.5,80 67,81 Q67,82 66,82.5 Q65.5,83 65,82" stroke="#3A2418" stroke-width="0.5" fill="#4A3428"/>';
+        s += '<path d="M66,80.5 q0.3,0.5 0,1 M66.8,81 q0.2,0.5 -0.1,0.8" stroke="#2A1A10" stroke-width="0.2" fill="none" opacity="0.3"/>';
         s += '</g>';
         break;
       case 35: // Raccoon — clever nocturnal bandit (LEGENDARY)
@@ -20688,6 +20827,9 @@ document.addEventListener('keydown', function(e) {
         s += '<line x1="19.5" y1="76.8" x2="22.5" y2="76.2" stroke="#B0B0A0" stroke-width="0.08" opacity="0.35"/>';
         s += '<line x1="19.5" y1="77" x2="22.5" y2="77.5" stroke="#B0B0A0" stroke-width="0.08" opacity="0.3"/>';
         s += '<line x1="19.5" y1="77.3" x2="22" y2="78" stroke="#B0B0A0" stroke-width="0.06" opacity="0.25"/>';
+        // Action marks (( near paws
+        s += '<path d="M11,79 Q10.5,80 11,81" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M10.2,78.5 Q9.5,80 10.2,81.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 36: // Great Blue Heron — tall wading bird, standing still (LEGENDARY)
@@ -20731,6 +20873,9 @@ document.addEventListener('keydown', function(e) {
         // Breast streaks — dark vertical marks
         s += '<line x1="58" y1="73" x2="58.2" y2="75" stroke="#4A5A6A" stroke-width="0.2" opacity="0.3"/>';
         s += '<line x1="59" y1="72.5" x2="59.2" y2="74.5" stroke="#4A5A6A" stroke-width="0.2" opacity="0.25"/>';
+        // Action marks (( near bill
+        s += '<path d="M54,62.5 Q53.5,63.5 54,64.5" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M53.2,62 Q52.5,63.5 53.2,65" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 37: // Garden Spider — web-building orb weaver in upper corner (LEGENDARY)
@@ -20792,10 +20937,13 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M53.6,24.3 L54.0,25.0 L54.4,24.3 Z" fill="#B0A890"/>';
         s += '<path d="M55.6,24.7 L56.0,25.5 L56.5,24.6 Z" fill="#B0A890"/>';
         s += '<path d="M57.7,24.2 L58.1,24.9 L58.5,24.2 Z" fill="#B0A890"/>';
+        // Action marks (( )) near eye stalks
+        s += '<path d="M42,10 Q41.5,11.5 42,13" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M41.2,9.5 Q40.5,11.5 41.2,13.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 39: // Kitty — standing tail-up, classic cat stance, facing left
-        s += '<g opacity="1" transform="translate(57,84) scale(1.8) translate(-57,-84)">';
+        s += '<g opacity="1" transform="translate(57,84) scale(1.65) translate(-57,-84)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.15,0;0.3,0;0.15,0;0,0" dur="5.8s" repeatCount="indefinite"/>';
         // Shadow
         s += '<ellipse cx="57" cy="91.5" rx="5" ry="0.6" fill="#0d100c" opacity="0.12"/>';
@@ -20885,9 +21033,9 @@ document.addEventListener('keydown', function(e) {
         // Eye liner — dark rim around each eye
         s += '<ellipse cx="52" cy="82" rx="0.65" ry="0.55" fill="none" stroke="#4A3828" stroke-width="0.12" opacity="0.4"/>';
         s += '<ellipse cx="54" cy="82" rx="0.65" ry="0.55" fill="none" stroke="#4A3828" stroke-width="0.12" opacity="0.4"/>';
-        // Nose — small inverted triangle, pink
-        s += '<path d="M52.85,83 L53,83.3 L53.15,83 Z" fill="#D4908A"/>';
-        s += '<circle cx="53" cy="83.1" r="0.06" fill="#B07068" opacity="0.4"/>';
+        // Nose — inverted triangle, pink
+        s += '<path d="M52.6,82.8 L53,83.4 L53.4,82.8 Z" fill="#D4908A"/>';
+        s += '<circle cx="53" cy="83.1" r="0.1" fill="#B07068" opacity="0.4"/>';
         // Mouth — upside down V touching bottom of nose, dark brown
         s += '<path d="M53,83.3 L52.6,83.8 M53,83.3 L53.4,83.8" stroke="#5A3828" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
         // Whiskers — long, flowing, 3 per side
@@ -21028,6 +21176,9 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M63,70.2 Q64,69 65.5,68 Q66.5,67.5 67,68" fill="none" stroke="#6BA348" stroke-width="0.18" stroke-linecap="round"/>';
         // Mandibles — small, at bottom of face triangle
         s += '<path d="M61.5,73.8 L61.2,74.2 M62.5,73.8 L62.8,74.2" stroke="#3A6A28" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        // Action marks (( )) near forelegs
+        s += '<path d="M57.5,69.5 Q57,70.5 57.5,71.5" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M56.8,69 Q56,70.5 56.8,72" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 42: // Hedgehog — curled on bottom-right soil, nose peeking out
@@ -21037,8 +21188,8 @@ document.addEventListener('keydown', function(e) {
         s += '<animateTransform attributeName="transform" type="scale" values="1,1;1.015,0.988;1,1;0.99,1.008;1,1" dur="5.6s" repeatCount="indefinite"/>';
         // Shadow
         s += '<ellipse cx="57" cy="92.5" rx="5.5" ry="0.7" fill="#0d100c" opacity="0.12"/>';
-        // Body — round, slightly taller than wide (semi-curled)
-        s += '<path d="M52,90 Q52,87.5 54,86.5 Q57,85.5 60,86.5 Q62,87.5 62,90 Q62,92 60,93 Q57,93.5 54,93 Q52,92 52,90 Z" fill="#6A4E38"/>';
+        // Body — elongated oval, wider than tall (natural hedgehog shape)
+        s += '<path d="M51,90 Q51,88 53,87 Q57,85.5 61,87 Q63,88 63,90 Q63,91.5 61,92.5 Q57,93.5 53,92.5 Q51,91.5 51,90 Z" fill="#6A4E38"/>';
         // SPINES — procedural, radiating from back in rows (the defining feature)
         var _hgSpines = [
           [53.5,87.5,-0.8,-1.5],[54.5,87,-0.5,-1.8],[55.5,86.5,-0.2,-2.0],[56.5,86.3,0,-2.1],
@@ -21070,7 +21221,7 @@ document.addEventListener('keydown', function(e) {
         // Spine highlight band — lighter tips catch the light
         s += '<path d="M54,85 Q57,84 60,85" fill="none" stroke="#D8C8B0" stroke-width="0.2" opacity="0.15"/>';
         // Belly/face area — soft, furry, lighter (exposed from semi-curl)
-        s += '<path d="M53,90.5 Q54,91.5 57,92 Q59,91.5 60,90.5" fill="#A87850" opacity="0.5"/>';
+        s += '<path d="M52,90.5 Q54,91.5 57,92 Q60,91.5 61,90.5" fill="#A87850" opacity="0.5"/>';
         // Face — peeking out from left side of spine ball
         s += '<path d="M52,90 Q51.5,89.5 52,88.5 Q52.5,87.5 53.5,87.5 Q54.5,88 54.5,89 Q54.5,90 54,90.5 Q53,91 52,90 Z" fill="#B89068"/>';
         // Snout — connected to face, pointed
@@ -21244,6 +21395,9 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M10.6,9.3 L11,9 M10.8,9.5 L11.2,9.2 M10.4,9.1 L10.8,8.8" stroke="#A0C890" stroke-width="0.08" fill="none"/>';
         // Legs — tiny, tucked (moths barely use them)
         s += '<path d="M9.5,13 L9,13.5 M10.5,13 L11,13.5" stroke="#82A36D" stroke-width="0.1" fill="none" opacity="0.3"/>';
+        // Action marks (( )) near wings
+        s += '<path d="M2.5,13 Q2,14.5 2.5,16" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M1.8,12.5 Q1,14.5 1.8,16.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 45: // Porcupine — waddling on bottom-right, quills raised
@@ -21308,6 +21462,9 @@ document.addEventListener('keydown', function(e) {
         s += '<line x1="50.5" y1="88.3" x2="49" y2="87.8" stroke="#B0A090" stroke-width="0.08" fill="none" opacity="0.4"/>';
         s += '<line x1="50.5" y1="88.5" x2="49" y2="88.5" stroke="#B0A090" stroke-width="0.08" fill="none" opacity="0.35"/>';
         s += '<line x1="50.5" y1="88.7" x2="49" y2="89.2" stroke="#B0A090" stroke-width="0.06" fill="none" opacity="0.3"/>';
+        // Action marks (( near snout
+        s += '<path d="M49.5,87.5 Q49,88.5 49.5,89.5" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M48.8,87 Q48,88.5 48.8,90" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 46: // Glow Snail — luminous shell, gliding on bottom-right soil (Rare)
@@ -21348,6 +21505,9 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M50,90 L49,89.5 M50.5,90 L50.2,89.2" stroke="#8A6838" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
         // Shadow under shell
         s += '<ellipse cx="55" cy="92" rx="3.5" ry="0.5" fill="#0d100c" opacity="0.1"/>';
+        // Action marks (( near tentacles
+        s += '<path d="M47.5,88 Q47,89 47.5,90" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M46.8,87.5 Q46,89 46.8,90.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 47: // Axolotl — neotenic salamander, bottom-right, magical vibes (Rare)
@@ -21415,6 +21575,9 @@ document.addEventListener('keydown', function(e) {
         // Nostrils
         s += '<circle cx="50.8" cy="88.8" r="0.1" fill="#A08070" opacity="0.4"/>';
         s += '<circle cx="52.2" cy="88.8" r="0.1" fill="#A08070" opacity="0.4"/>';
+        // Action marks (( near gills
+        s += '<path d="M46.5,84.5 Q46,85.5 46.5,86.5" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M45.8,84 Q45,85.5 45.8,87" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 48: // Scorpion — brown, shiny, big claws, curving tail (Rare)
@@ -21426,15 +21589,15 @@ document.addEventListener('keydown', function(e) {
         // Left side — 2 FRONT legs (near head, angled forward)
         s += '<path d="M55,88 L53,87 L52,86.5" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
         s += '<path d="M55.5,88.2 L53.5,87.5 L52.5,87" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
-        // Left side — 2 BACK legs (near tail, angled backward/outward)
-        s += '<path d="M59,88 L57,87 L56,86.5" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
-        s += '<path d="M59.5,88.2 L57.5,87.5 L56.5,87" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
+        // Left side — 2 BACK legs (near tail, angled backward toward tail)
+        s += '<path d="M59,88 L61,87 L62,86.5" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
+        s += '<path d="M59.5,88.2 L61.5,87.5 L62.5,87" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
         // Right side — 2 FRONT legs (near head, angled forward)
         s += '<path d="M55,90 L53,91 L52,91.5" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
         s += '<path d="M55.5,89.8 L53.5,90.5 L52.5,91" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
-        // Right side — 2 BACK legs (near tail, angled backward/outward)
-        s += '<path d="M59,90 L57,91 L56,91.5" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
-        s += '<path d="M59.5,89.8 L57.5,90.5 L56.5,91" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
+        // Right side — 2 BACK legs (near tail, angled backward toward tail)
+        s += '<path d="M59,90 L61,91 L62,91.5" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
+        s += '<path d="M59.5,89.8 L61.5,90.5 L62.5,91" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
         // ── BODY — round at front, tapering to skinny tail sections ──
         // Main body — MUCH SKINNIER, elongated oval
         s += '<ellipse cx="57" cy="89" rx="4" ry="1.5" fill="#7A4828"/>';
@@ -21493,6 +21656,9 @@ document.addEventListener('keydown', function(e) {
         // STINGER — sharp point curving up
         s += '<path d="M62,81 L61.5,80 L62.2,80.5" fill="#4A2810"/>';
         s += '<circle cx="61.6" cy="80" r="0.12" fill="rgba(180,220,140,0.4)"/>';
+        // Action marks (( near claws
+        s += '<path d="M46.5,86 Q46,87 46.5,88" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M45.8,85.5 Q45,87 45.8,88.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 49: // Origami Crane — thick folded paper, distinct creases, triangle head
@@ -21547,6 +21713,9 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M56.5,22.5 L59.5,25 L61,27" fill="none" stroke="#B0A898" stroke-width="0.18"/>';
         // Fold crease on tail
         s += '<path d="M57,22.5 L60,26" stroke="#B8B0A0" stroke-width="0.12" fill="none" opacity="0.5"/>';
+        // Action marks (( near head
+        s += '<path d="M47,13 Q46.5,14 47,15" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M46.2,12.5 Q45.5,14 46.2,15.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 50: // Garden Gnome — friendly compact figure on soil (Epic)
@@ -21594,10 +21763,13 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="56.0" cy="84.6" r="0.25" fill="rgba(240,235,216,0.4)"/>';
         // Ground shadow line
         // (ground shadow line removed)
+        // Action marks (( near hat
+        s += '<path d="M52.5,84 Q52,85 52.5,86" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M51.8,83.5 Q51,85 51.8,86.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 51: // Robin — flying upper-left, facing left, larger
-        s += '<g opacity="0.85" transform="translate(14,22) scale(1.8) translate(-14,-22)">';
+        s += '<g opacity="0.85" transform="translate(14,22) scale(1.6) translate(-14,-22)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;-0.3,-0.4;0,0;0.2,0.3;0,0" dur="4.5s" repeatCount="indefinite"/>';
         // Tail — connected to body (starts inside body edge)
         s += '<path d="M16.5,10.5 L19,11.5 L19.5,11 L18,10 Z" fill="#6A4E38" opacity="0.7"/>';
@@ -21622,6 +21794,9 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="13.5" cy="11.5" rx="1.5" ry="1" fill="rgba(255,200,160,0.12)"/>';
         // Legs — tucked in flight
         s += '<path d="M13.5,12.8 L13.2,14 M14.5,12.8 L14.8,14" stroke="#5A3E2B" stroke-width="0.18" fill="none" stroke-linecap="round"/>';
+        // Action marks (( near beak
+        s += '<path d="M8.5,8.5 Q8,9.5 8.5,10.5" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M7.8,8 Q7,9.5 7.8,11" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 52: // Worm — S-shaped, section lines, rounded ends, 2 eyes
@@ -21653,16 +21828,16 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M9.5,84.2 Q10,84.5 10.5,84.2" fill="none" stroke="#8A5060" stroke-width="0.15" stroke-linecap="round"/>';
         // ── TAIL — rounded, at bottom-right of the S ──
         s += '<circle cx="14" cy="93" r="0.7" fill="#D98FA1"/>';
-        // Action marks (( near head — brighter
-        s += '<path d="M8.5,83 Q8,84 8.5,85" fill="none" stroke="rgba(200,100,120,0.5)" stroke-width="0.2" stroke-linecap="round"/>';
-        s += '<path d="M7.8,82.5 Q7,84 7.8,85.5" fill="none" stroke="rgba(200,100,120,0.4)" stroke-width="0.18" stroke-linecap="round"/>';
+        // Action marks (( near head — light grey
+        s += '<path d="M8.5,83 Q8,84 8.5,85" fill="none" stroke="rgba(200,200,200,0.3)" stroke-width="0.2" stroke-linecap="round"/>';
+        s += '<path d="M7.8,82.5 Q7,84 7.8,85.5" fill="none" stroke="rgba(200,200,200,0.22)" stroke-width="0.18" stroke-linecap="round"/>';
         // Action marks )) near tail
-        s += '<path d="M15.5,92 Q16,93 15.5,94" fill="none" stroke="rgba(200,100,120,0.5)" stroke-width="0.2" stroke-linecap="round"/>';
-        s += '<path d="M16.2,91.5 Q17,93 16.2,94.5" fill="none" stroke="rgba(200,100,120,0.4)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M15.5,92 Q16,93 15.5,94" fill="none" stroke="rgba(200,200,200,0.3)" stroke-width="0.2" stroke-linecap="round"/>';
+        s += '<path d="M16.2,91.5 Q17,93 16.2,94.5" fill="none" stroke="rgba(200,200,200,0.22)" stroke-width="0.18" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 53: // Turtle — profile facing left, flat-bottom shell, turtle pattern
-        s += '<g opacity="0.88" transform="translate(58,88) scale(1.7) translate(-58,-88)">';
+        s += '<g opacity="0.88" transform="translate(58,88) scale(1.55) translate(-58,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.15,0;0.3,0.02;0.15,0;0,0" dur="7.1s" repeatCount="indefinite"/>';
         // Shadow
         s += '<ellipse cx="58" cy="92" rx="5" ry="0.6" fill="#0d100c" opacity="0.1"/>';
@@ -21718,6 +21893,9 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M49.5,89.8 Q50.2,90.2 50.8,89.8" stroke="#4A6741" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
         // Nostril
         s += '<circle cx="51.3" cy="89.8" r="0.06" fill="#3A5A30" opacity="0.4"/>';
+        // Action marks (( near head
+        s += '<path d="M48,88.5 Q47.5,89.5 48,90.5" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M47.2,88 Q46.5,89.5 47.2,91" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 54: // Bat — hanging upside down, head at bottom, wings out
@@ -21835,10 +22013,13 @@ document.addEventListener('keydown', function(e) {
         s += '<line x1="5" y1="89.8" x2="6.5" y2="89.4" stroke="#C0A088" stroke-width="0.06" opacity="0.3"/>';
         s += '<line x1="5" y1="90" x2="6.5" y2="90" stroke="#C0A088" stroke-width="0.06" opacity="0.25"/>';
         s += '<line x1="5" y1="90.2" x2="6.5" y2="90.5" stroke="#C0A088" stroke-width="0.06" opacity="0.2"/>';
+        // Action marks (( near ears
+        s += '<path d="M2.5,87.5 Q2,88.5 2.5,89.5" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M1.8,87 Q1,88.5 1.8,90" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 56: // Owl — flying, wings spread, brown V feather pattern
-        s += '<g opacity="0.88" transform="translate(45,22) scale(1.3) translate(-45,-22)">';
+        s += '<g opacity="0.88" transform="translate(-8,0) translate(45,22) scale(1.3) translate(-45,-22)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.5,-0.5;0,0;-0.3,0.3;0,0" dur="4s" repeatCount="indefinite"/>';
         // ── WINGS — semicircle shape: flat top, rounded bottom ──
         // Left wing — semicircle arc, flat edge at top
@@ -22568,8 +22749,8 @@ document.addEventListener('keydown', function(e) {
         }
         // Lateral line
         s += '<path d="M24.5,89.8 Q28,89.5 32,89.8" fill="none" stroke="rgba(200,180,140,0.1)" stroke-width="0.1"/>';
-        // Body outline
-        s += '<path d="M23.5,89.5 Q23,88 25,87 Q27,86.5 29,87 Q31,87.5 32.5,89 Q33,89.5 33,90 Q32.5,90.5 31,92 Q29,92.5 27,92.5 Q25,92 23.5,91 Q23,90.5 23.5,89.5" fill="none" stroke="#C8B8A0" stroke-width="0.15" opacity="0.25"/>';
+        // Body outline (no visible stroke — blends naturally)
+        s += '<path d="M23.5,89.5 Q23,88 25,87 Q27,86.5 29,87 Q31,87.5 32.5,89 Q33,89.5 33,90 Q32.5,90.5 31,92 Q29,92.5 27,92.5 Q25,92 23.5,91 Q23,90.5 23.5,89.5" fill="none" stroke="none"/>';
         // Dorsal fin — attached to body, starts inside body top
         s += '<path d="M27,88.5 Q27.5,87 28.5,85.5 Q30,85 31,86 Q31.5,87 31,88.5" fill="rgba(240,200,160,0.35)" stroke="rgba(200,140,80,0.2)" stroke-width="0.1"/>';
         // Pectoral fin — flowing
@@ -22588,6 +22769,12 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M25,88.8 Q24.8,89.5 25,90.5" fill="none" stroke="rgba(200,100,80,0.12)" stroke-width="0.2"/>';
         // Metallic shimmer
         s += '<ellipse cx="28" cy="89.5" rx="2.5" ry="1" fill="rgba(255,245,210,0.05)"><animate attributeName="opacity" values="0.05;0.12;0.05" dur="3s" repeatCount="indefinite"/></ellipse>';
+        // ── TRANSLUCENT BUBBLES — varying sizes, floating above ──
+        s += '<circle cx="25" cy="87" r="0.5" fill="rgba(180,230,255,0.12)" stroke="rgba(220,245,255,0.2)" stroke-width="0.06"><animate attributeName="cy" values="87;84;81" dur="5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.12;0.2;0" dur="5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="29" cy="86" r="0.3" fill="rgba(200,240,255,0.1)" stroke="rgba(230,250,255,0.18)" stroke-width="0.05"><animate attributeName="cy" values="86;83;80" dur="6.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.1;0.18;0" dur="6.5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="27" cy="85.5" r="0.65" fill="rgba(170,225,250,0.08)" stroke="rgba(210,240,255,0.15)" stroke-width="0.07"><animate attributeName="cy" values="85.5;82;78" dur="7s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.08;0.16;0" dur="7s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="32" cy="87.5" r="0.2" fill="rgba(190,235,255,0.1)" stroke="rgba(225,248,255,0.16)" stroke-width="0.04"><animate attributeName="cy" values="87.5;85;82" dur="4.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.1;0.16;0" dur="4.5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="24" cy="88" r="0.4" fill="rgba(185,235,255,0.09)" stroke="rgba(215,245,255,0.14)" stroke-width="0.05"><animate attributeName="cy" values="88;85;82" dur="8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.09;0.15;0" dur="8s" repeatCount="indefinite"/></circle>';
         s += '</g>';
         break;
       case 72: // Jellyfish — aqua-colored bell with wavy tentacles (Rare)
@@ -22644,11 +22831,17 @@ document.addEventListener('keydown', function(e) {
         // Pale aqua highlights on long tentacles
         s += '<path d="M10.8,22.5 Q10.5,26 11,30" fill="none" stroke="rgba(180,255,255,0.1)" stroke-width="0.1" stroke-linecap="round"/>';
         s += '<path d="M13.2,22.5 Q13.5,26 13,30" fill="none" stroke="rgba(170,255,255,0.08)" stroke-width="0.08" stroke-linecap="round"/>';
-        // Iridescent water bubbles — rising slowly
+        // Iridescent water bubbles — rising slowly, scattered around
         s += '<circle cx="8" cy="24" r="0.4" fill="rgba(180,240,255,0.15)" stroke="rgba(200,255,255,0.2)" stroke-width="0.1"><animate attributeName="cy" values="24;20;16" dur="6s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.15;0.25;0" dur="6s" repeatCount="indefinite"/></circle>';
         s += '<circle cx="16" cy="26" r="0.3" fill="rgba(200,250,255,0.12)" stroke="rgba(220,255,255,0.18)" stroke-width="0.08"><animate attributeName="cy" values="26;22;18" dur="7s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.12;0.2;0" dur="7s" repeatCount="indefinite"/></circle>';
         s += '<circle cx="10" cy="28" r="0.35" fill="rgba(160,240,250,0.1)" stroke="rgba(200,255,255,0.15)" stroke-width="0.08"><animate attributeName="cy" values="28;23;18" dur="8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.1;0.2;0" dur="8s" repeatCount="indefinite"/></circle>';
         s += '<circle cx="14" cy="22" r="0.25" fill="rgba(220,255,255,0.12)" stroke="rgba(240,255,255,0.2)" stroke-width="0.06"><animate attributeName="cy" values="22;18;14" dur="5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.12;0.22;0" dur="5s" repeatCount="indefinite"/></circle>';
+        // Additional bubbles — around the bell and tentacles
+        s += '<circle cx="7" cy="20" r="0.55" fill="rgba(170,235,255,0.1)" stroke="rgba(200,250,255,0.18)" stroke-width="0.08"><animate attributeName="cy" values="20;16;12" dur="7.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.1;0.2;0" dur="7.5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="16.5" cy="21" r="0.2" fill="rgba(210,248,255,0.12)" stroke="rgba(235,255,255,0.2)" stroke-width="0.05"><animate attributeName="cy" values="21;17;13" dur="5.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.12;0.2;0" dur="5.5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="9" cy="18" r="0.45" fill="rgba(180,240,255,0.08)" stroke="rgba(210,250,255,0.14)" stroke-width="0.07"><animate attributeName="cy" values="18;14;10" dur="6.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.08;0.18;0" dur="6.5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="15" cy="30" r="0.3" fill="rgba(190,242,255,0.09)" stroke="rgba(215,252,255,0.15)" stroke-width="0.06"><animate attributeName="cy" values="30;25;20" dur="9s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.09;0.16;0" dur="9s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="11" cy="16" r="0.35" fill="rgba(200,245,255,0.1)" stroke="rgba(225,255,255,0.17)" stroke-width="0.06"><animate attributeName="cy" values="16;12;8" dur="5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.1;0.18;0" dur="5s" repeatCount="indefinite"/></circle>';
         s += '</g>';
         break;
       case 73: // Mushroom Sprite — tiny Amanita forest spirit on soil
@@ -22793,14 +22986,20 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M49,76.5 Q49,75.5 51,75.5 Q53,75.5 55,77 Q56,78 55.5,79 Q54,80 52,80.5 Q50,80 49,79 Q48.5,78 49,76.5" fill="none" stroke="#1A1A1A" stroke-width="0.3"/>';
         // Breast — lighter grey
         s += '<path d="M50,79 Q51,80 52.5,79.8" fill="#585858" opacity="0.4"/>';
-        // ── WING — darker grey, ends in a POINT at back ──
-        s += '<path d="M50,77 Q49.5,78 50,79 Q52,79.5 56,78 L55,77 Z" fill="#353535"/>';
-        s += '<path d="M50,77 Q49.5,78 50,79 Q52,79.5 56,78 L55,77" fill="none" stroke="#1A1A1A" stroke-width="0.2"/>';
-        // Feather edge curves — layered like reference
-        s += '<path d="M50.5,77.5 Q52.5,77 54.5,77.5" fill="none" stroke="#1A1A1A" stroke-width="0.18"/>';
-        s += '<path d="M50.5,78 Q52.5,77.5 54.5,78" fill="none" stroke="#1A1A1A" stroke-width="0.15"/>';
-        s += '<path d="M50.8,78.5 Q52.5,78 54,78.5" fill="none" stroke="#1A1A1A" stroke-width="0.12"/>';
-        s += '<path d="M51,79 Q52.5,78.5 53.5,79" fill="none" stroke="#2A2A2A" stroke-width="0.1"/>';
+        // ── LEFT WING (upper) — spread out, angled up-left for flying ──
+        s += '<path d="M50,77 Q48,75 45,73.5 Q43,73 41.5,73.5 L42,74.5 Q44,74.5 46,75.5 Q48,76.5 49.5,77.5 Z" fill="#3A3A3A"/>';
+        s += '<path d="M50,77 Q48,75 45,73.5 Q43,73 41.5,73.5 L42,74.5 Q44,74.5 46,75.5 Q48,76.5 49.5,77.5" fill="none" stroke="#1A1A1A" stroke-width="0.2"/>';
+        // Left wing feather edges
+        s += '<path d="M47,74 Q45,73.5 43,73.8" fill="none" stroke="#1A1A1A" stroke-width="0.15"/>';
+        s += '<path d="M48,75 Q46,74.5 44,74.8" fill="none" stroke="#1A1A1A" stroke-width="0.12"/>';
+        s += '<path d="M49,76 Q47,75.5 45.5,76" fill="none" stroke="#2A2A2A" stroke-width="0.1"/>';
+        // ── RIGHT WING (lower) — spread out, angled down-right for flying ──
+        s += '<path d="M52,79 Q54,80.5 57,81.5 Q59,82 60.5,81.5 L60,80.5 Q58,80.5 56,79.5 Q54,78.5 52.5,78 Z" fill="#353535"/>';
+        s += '<path d="M52,79 Q54,80.5 57,81.5 Q59,82 60.5,81.5 L60,80.5 Q58,80.5 56,79.5 Q54,78.5 52.5,78" fill="none" stroke="#1A1A1A" stroke-width="0.2"/>';
+        // Right wing feather edges
+        s += '<path d="M55,81 Q57,81.5 59,81.2" fill="none" stroke="#1A1A1A" stroke-width="0.15"/>';
+        s += '<path d="M54,80 Q56,80.5 58,80.2" fill="none" stroke="#1A1A1A" stroke-width="0.12"/>';
+        s += '<path d="M53.5,79.5 Q55,79.8 56.5,79.5" fill="none" stroke="#2A2A2A" stroke-width="0.1"/>';
         // Throat hackles — scruffy feathers
         s += '<path d="M50,77.5 Q49.5,78.2 49.8,79" stroke="#3A3A3A" stroke-width="0.25" fill="none"/>';
         s += '<path d="M50.3,77.8 Q50,78.5 50,79.2" stroke="#3A3A3A" stroke-width="0.2" fill="none"/>';
@@ -22856,10 +23055,13 @@ document.addEventListener('keydown', function(e) {
         s += '<line x1="40.2" y1="83.8" x2="39.5" y2="84.2" stroke="#D03030" stroke-width="0.12" stroke-linecap="round"><animate attributeName="x2" values="39.5;38.8;39.5" dur="3s" repeatCount="indefinite"/><animate attributeName="y2" values="84.2;84.4;84.2" dur="3s" repeatCount="indefinite"/></line>';
         // Neck connecting head to body
         s += '<path d="M42.5,84.2 Q43,84 43,84" fill="none" stroke="#4A7A30" stroke-width="1.8" stroke-linecap="round"/>';
-        // Action marks (( )) — near head and tail
-        s += '<path d="M39.5,83 Q39,84 39.5,85" fill="none" stroke="rgba(80,140,50,0.25)" stroke-width="0.15" stroke-linecap="round"/>';
-        s += '<path d="M38.8,82.5 Q38,84 38.8,85.5" fill="none" stroke="rgba(80,140,50,0.18)" stroke-width="0.12" stroke-linecap="round"/>';
-        s += '<path d="M15,92 Q15.5,93 15,94" fill="none" stroke="rgba(80,140,50,0.2)" stroke-width="0.12" stroke-linecap="round"/>';
+        // Action marks (( )) — WHITE, near head (left of tongue) and tail
+        // Near tongue — moved further left so they don't touch the tongue
+        s += '<path d="M37,82.5 Q36.5,83.8 37,85" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="0.15" stroke-linecap="round"/>';
+        s += '<path d="M36.2,82 Q35.5,83.8 36.2,85.5" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="0.12" stroke-linecap="round"/>';
+        // At tail bottom
+        s += '<path d="M51,92.5 Q51.5,93.2 51,94" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="0.13" stroke-linecap="round"/>';
+        s += '<path d="M52,92 Q52.5,93 52,94" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="0.1" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 77: // Garden Centipede — crawling across soil, segmented body
@@ -26443,15 +26645,29 @@ document.addEventListener('keydown', function(e) {
     }
     // Switch panel — render content BEFORE showing to prevent ghost text flash
     document.querySelectorAll('.grove-panel').forEach(function(p) { p.classList.remove('active'); });
-    // Pre-render content while panel is still display:none (invisible)
+    // Pre-render content while panel is invisible (visibility:hidden prevents flash)
     var _targetPanel = document.getElementById('panel-' + tab);
     if (_targetPanel) {
       _targetPanel.style.display = 'block';
-      _targetPanel.style.opacity = '0';
+      _targetPanel.style.visibility = 'hidden';
       _targetPanel.style.animation = 'none';
     }
     if(window._updateGameDew)_updateGameDew();
     window.scrollTo(0, 0);
+    // Game tab: restore #sw / #fg-ag state based on active game
+    if (tab === 'game') {
+      var _swEl = document.getElementById('sw');
+      var _agEl = document.getElementById('fg-ag');
+      if (window._a && window._a !== 'set') {
+        // Non-SET game active: keep sw hidden, ensure game area shows
+        if (_swEl) _swEl.style.display = 'none';
+        if (_agEl) _agEl.classList.add('on');
+      } else {
+        // SET game or no game: show SET header
+        if (_swEl) _swEl.style.display = '';
+        if (_agEl) { _agEl.classList.remove('on'); }
+      }
+    }
     if (tab === 'greenhouse') renderGreenhouse();
     if (tab === 'dashboard') updateDashboard();
     if (tab === 'nursery') renderNursery();
@@ -26459,7 +26675,7 @@ document.addEventListener('keydown', function(e) {
     // Content is now fully rendered — activate panel with animation
     if (_targetPanel) {
       _targetPanel.style.display = '';
-      _targetPanel.style.opacity = '';
+      _targetPanel.style.visibility = '';
       _targetPanel.style.animation = '';
       _targetPanel.classList.add('active');
     }
