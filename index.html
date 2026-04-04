@@ -8502,7 +8502,7 @@ document.addEventListener('keydown', function(e) {
       {name:'Arch'},      // B
       {name:'Moon'},      // C
       {name:'Rings'},     // D
-      {name:'Halo'},      // E
+      {name:'Elder Runes'},// E
       {name:'Vortex'},    // F
       {name:'Shimmer'},             // idx 16
       {name:'Spider Web',rare:true}, // idx 17
@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-07t';
+  var _SVG_CACHE_VER = '2026-04-07u';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -19191,74 +19191,103 @@ document.addEventListener('keydown', function(e) {
         s += '</path></g>';
         s += '</g>';
         break;
-      case 9: // Seed of Life — bottom-left, 1/4 size, breathing
-        s += '<g transform="translate(10,82) scale(0.25)">';
-        s += '<animateTransform attributeName="transform" type="scale" values="0.25;0.28;0.25" dur="6s" repeatCount="indefinite" additive="sum"/>';
+      case 9: // Seed of Life — sacred geometry mandala, centered, breathing
+        s += '<g transform="translate(35,42)">';
+        // Slow breathe — the whole mandala pulses in and out
+        s += '<animateTransform attributeName="transform" type="scale" values="1;1.08;1" dur="6s" repeatCount="indefinite" additive="sum"/>';
+        s += '<animate attributeName="opacity" values="0.28;0.40;0.28" dur="6s" repeatCount="indefinite"/>';
+        // Outer bounding circle
+        s += '<circle cx="0" cy="0" r="22" fill="none" stroke="#D4B455" stroke-width="0.6" opacity="0.20"/>';
+        // 6 petal circles — the classic Seed of Life pattern
         for(var sol=0; sol<6; sol++){
-          var scx = 0 + Math.cos(sol*Math.PI/3)*14;
-          var scy = 0 + Math.sin(sol*Math.PI/3)*14;
-          s += '<circle cx="'+scx.toFixed(1)+'" cy="'+scy.toFixed(1)+'" r="14" fill="none" stroke="#D4B455" stroke-width="1.2" opacity="0.22"/>';
+          var scx = Math.cos(sol*Math.PI/3)*11;
+          var scy = Math.sin(sol*Math.PI/3)*11;
+          s += '<circle cx="'+scx.toFixed(1)+'" cy="'+scy.toFixed(1)+'" r="11" fill="none" stroke="#D4B455" stroke-width="0.5" opacity="0.25"/>';
         }
-        s += '<circle cx="0" cy="0" r="14" fill="none" stroke="#D4B455" stroke-width="1.2" opacity="0.22"/>';
+        // Center circle
+        s += '<circle cx="0" cy="0" r="11" fill="none" stroke="#D4B455" stroke-width="0.5" opacity="0.25"/>';
+        // Inner ring of intersections — smaller petal circles for depth
+        for(var sol2=0; sol2<6; sol2++){
+          var scx2 = Math.cos((sol2+0.5)*Math.PI/3)*6.3;
+          var scy2 = Math.sin((sol2+0.5)*Math.PI/3)*6.3;
+          s += '<circle cx="'+scx2.toFixed(1)+'" cy="'+scy2.toFixed(1)+'" r="3.5" fill="none" stroke="#D4B455" stroke-width="0.3" opacity="0.15"/>';
+        }
+        // Center dot — the seed
+        s += '<circle cx="0" cy="0" r="1.2" fill="rgba(212,180,85,0.15)"/>';
         s += '</g>';
         break;
       case 10: // Sun — radiating warm rays with pulse
-        s += '<g opacity="0.24">';
+        s += '<g opacity="0.40">';
         s += '<animateTransform attributeName="transform" type="scale" values="1;1.03;1" dur="9s" repeatCount="indefinite"/>';
-        s += '<path d="M35,40 L33.8,20 Q35,15 36.2,20 Z" fill="rgba(255,210,90,0.18)"/>';
-        s += '<path d="M35,40 L43,22 Q45.5,18 46,23 Z" fill="rgba(255,200,80,0.16)"/>';
-        s += '<path d="M35,40 L50,27 Q54,25 52,30 Z" fill="rgba(255,196,76,0.14)"/>';
-        s += '<path d="M35,40 L53,36 Q58,36 53.5,40 Z" fill="rgba(255,205,95,0.13)"/>';
-        s += '<path d="M35,40 L50,50 Q53,54 48,52 Z" fill="rgba(255,190,70,0.12)"/>';
-        s += '<path d="M35,40 L42,58 Q43.5,63 39.5,59 Z" fill="rgba(255,200,90,0.11)"/>';
-        s += '<path d="M35,40 L28,58 Q26.5,63 30.5,59 Z" fill="rgba(255,200,90,0.11)"/>';
-        s += '<path d="M35,40 L20,50 Q17,54 22,52 Z" fill="rgba(255,190,70,0.12)"/>';
-        s += '<path d="M35,40 L17,36 Q12,36 16.5,40 Z" fill="rgba(255,205,95,0.13)"/>';
-        s += '<path d="M35,40 L20,27 Q16,25 18,30 Z" fill="rgba(255,196,76,0.14)"/>';
-        s += '<path d="M35,40 L27,22 Q24.5,18 24,23 Z" fill="rgba(255,200,80,0.16)"/>';
-        s += '<circle cx="35" cy="40" r="11.5" fill="rgba(255,210,110,0.12)"/>';
-        s += '<circle cx="35" cy="40" r="7.5" fill="rgba(255,235,170,0.18)"/>';
-        s += '<circle cx="35" cy="40" r="4.2" fill="rgba(255,245,210,0.26)"><animate attributeName="opacity" values="0.18;0.26;0.18" dur="7s" repeatCount="indefinite"/></circle>';
+        s += '<path d="M35,40 L33.8,20 Q35,15 36.2,20 Z" fill="rgba(255,210,90,0.28)"/>';
+        s += '<path d="M35,40 L43,22 Q45.5,18 46,23 Z" fill="rgba(255,200,80,0.25)"/>';
+        s += '<path d="M35,40 L50,27 Q54,25 52,30 Z" fill="rgba(255,196,76,0.22)"/>';
+        s += '<path d="M35,40 L53,36 Q58,36 53.5,40 Z" fill="rgba(255,205,95,0.20)"/>';
+        s += '<path d="M35,40 L50,50 Q53,54 48,52 Z" fill="rgba(255,190,70,0.19)"/>';
+        s += '<path d="M35,40 L42,58 Q43.5,63 39.5,59 Z" fill="rgba(255,200,90,0.18)"/>';
+        s += '<path d="M35,40 L28,58 Q26.5,63 30.5,59 Z" fill="rgba(255,200,90,0.18)"/>';
+        s += '<path d="M35,40 L20,50 Q17,54 22,52 Z" fill="rgba(255,190,70,0.19)"/>';
+        s += '<path d="M35,40 L17,36 Q12,36 16.5,40 Z" fill="rgba(255,205,95,0.20)"/>';
+        s += '<path d="M35,40 L20,27 Q16,25 18,30 Z" fill="rgba(255,196,76,0.22)"/>';
+        s += '<path d="M35,40 L27,22 Q24.5,18 24,23 Z" fill="rgba(255,200,80,0.25)"/>';
+        s += '<circle cx="35" cy="40" r="11.5" fill="rgba(255,210,110,0.18)"/>';
+        s += '<circle cx="35" cy="40" r="7.5" fill="rgba(255,235,170,0.26)"/>';
+        s += '<circle cx="35" cy="40" r="4.2" fill="rgba(255,245,210,0.35)"><animate attributeName="opacity" values="0.28;0.40;0.28" dur="7s" repeatCount="indefinite"/></circle>';
         s += '</g>';
         break;
-      case 11: // Arch — stone archway framing the plant
-        s += '<g opacity="0.26">';
-        s += '<path d="M8,95 L8,46 Q8,42 12,42 L16,42 Q20,42 20,46 L20,95" fill="rgba(126,116,96,0.12)" stroke="rgba(156,146,124,0.24)" stroke-width="0.8" stroke-linecap="round" stroke-dasharray="1.2 1.4"/>';
-        s += '<path d="M50,95 L50,46 Q50,42 54,42 L58,42 Q62,42 62,46 L62,95" fill="rgba(126,116,96,0.12)" stroke="rgba(156,146,124,0.24)" stroke-width="0.8" stroke-linecap="round" stroke-dasharray="1.2 1.4"/>';
-        s += '<path d="M20,46 Q20,18 35,18 Q50,18 50,46" fill="none" stroke="rgba(162,150,128,0.26)" stroke-width="2.2" stroke-linecap="round"/>';
-        s += '<path d="M22,46 Q22,21 35,21 Q48,21 48,46" fill="none" stroke="rgba(112,102,86,0.16)" stroke-width="0.9" stroke-linecap="round" stroke-dasharray="1 1.8"/>';
-        // Column mortar lines
-        s += '<path d="M10,49 L18,49 M10,56 L18,56 M10,63 L18,63 M10,70 L18,70 M10,77 L18,77 M10,84 L18,84" fill="none" stroke="rgba(98,90,76,0.14)" stroke-width="0.55" stroke-linecap="round"/>';
-        s += '<path d="M52,49 L60,49 M52,56 L60,56 M52,63 L60,63 M52,70 L60,70 M52,77 L60,77 M52,84 L60,84" fill="none" stroke="rgba(98,90,76,0.14)" stroke-width="0.55" stroke-linecap="round"/>';
-        s += '<path d="M20,46 L50,46" fill="none" stroke="rgba(168,156,132,0.18)" stroke-width="0.7" stroke-linecap="round"/>';
-        // Inner arch detail
-        s += '<path d="M24,33 Q35,30 46,33 M23,38 Q35,35 47,38" fill="none" stroke="rgba(120,110,92,0.12)" stroke-width="0.5" stroke-linecap="round" stroke-dasharray="0.9 1.6"/>';
-        s += '<path d="M14,42 L14,95 M56,42 L56,95" fill="none" stroke="rgba(184,172,148,0.12)" stroke-width="0.45" stroke-linecap="round"><animate attributeName="opacity" values="0.08;0.16;0.08" dur="12s" repeatCount="indefinite"/></path>';
+      case 11: // Arch — castle/dungeon stone gate framing the plant
+        s += '<g opacity="0.38">';
+        // ── THICK STONE COLUMNS — heavy, fortress-like ──
+        // Left column
+        s += '<rect x="4" y="38" width="14" height="57" fill="rgba(90,82,70,0.18)" stroke="rgba(140,130,110,0.30)" stroke-width="0.6"/>';
+        // Right column
+        s += '<rect x="52" y="38" width="14" height="57" fill="rgba(90,82,70,0.18)" stroke="rgba(140,130,110,0.30)" stroke-width="0.6"/>';
+        // Column caps — wider stone blocks at top
+        s += '<rect x="2" y="35" width="18" height="4" rx="0.5" fill="rgba(100,92,78,0.22)" stroke="rgba(150,140,118,0.28)" stroke-width="0.5"/>';
+        s += '<rect x="50" y="35" width="18" height="4" rx="0.5" fill="rgba(100,92,78,0.22)" stroke="rgba(150,140,118,0.28)" stroke-width="0.5"/>';
+        // ── POINTED GOTHIC ARCH — the castle gate ──
+        s += '<path d="M18,38 Q18,12 35,6 Q52,12 52,38" fill="none" stroke="rgba(160,148,126,0.35)" stroke-width="2.5" stroke-linecap="round"/>';
+        // Inner arch — slightly narrower, gives depth
+        s += '<path d="M20,38 Q20,15 35,9 Q50,15 50,38" fill="none" stroke="rgba(120,110,92,0.22)" stroke-width="1.2" stroke-linecap="round"/>';
+        // Keystone at apex
+        s += '<path d="M33,6 L35,4 L37,6 L36,8 L34,8 Z" fill="rgba(140,130,110,0.25)" stroke="rgba(160,148,126,0.30)" stroke-width="0.4"/>';
+        // ── STONE BLOCK MORTAR LINES — left column ──
+        s += '<path d="M5,43 L17,43 M5,50 L17,50 M5,57 L17,57 M5,64 L17,64 M5,71 L17,71 M5,78 L17,78 M5,85 L17,85" fill="none" stroke="rgba(70,64,54,0.18)" stroke-width="0.5"/>';
+        // Vertical mortar split (staggered brickwork)
+        s += '<path d="M11,38 L11,43 M8,43 L8,50 M11,50 L11,57 M8,57 L8,64 M11,64 L11,71 M8,71 L8,78 M11,78 L11,85" fill="none" stroke="rgba(70,64,54,0.12)" stroke-width="0.4"/>';
+        // ── STONE BLOCK MORTAR LINES — right column ──
+        s += '<path d="M53,43 L65,43 M53,50 L65,50 M53,57 L65,57 M53,64 L65,64 M53,71 L65,71 M53,78 L65,78 M53,85 L65,85" fill="none" stroke="rgba(70,64,54,0.18)" stroke-width="0.5"/>';
+        s += '<path d="M59,38 L59,43 M56,43 L56,50 M59,50 L59,57 M56,57 L56,64 M59,64 L59,71 M56,71 L56,78 M59,78 L59,85" fill="none" stroke="rgba(70,64,54,0.12)" stroke-width="0.4"/>';
+        // ── ARCH VOUSSOIR LINES — wedge-shaped stones in the arch ──
+        s += '<path d="M22,34 L24,16 M27,12 L29,28 M33,9 L34,24 M37,9 L36,24 M41,12 L39,28 M46,16 L44,32 M48,34 L50,20" fill="none" stroke="rgba(80,72,60,0.14)" stroke-width="0.35"/>';
+        // Torch-like glow on inner column edges
+        s += '<line x1="18" y1="50" x2="18" y2="90" stroke="rgba(255,200,100,0.06)" stroke-width="1.5"><animate attributeName="opacity" values="0.04;0.10;0.04" dur="4s" repeatCount="indefinite"/></line>';
+        s += '<line x1="52" y1="50" x2="52" y2="90" stroke="rgba(255,200,100,0.06)" stroke-width="1.5"><animate attributeName="opacity" values="0.04;0.10;0.04" dur="4s" begin="2s" repeatCount="indefinite"/></line>';
         s += '</g>';
         break;
       case 12: // Moon — crescent glow upper-right with stars
-        s += '<g opacity="0.24">';
-        s += '<circle cx="55" cy="12" r="10" fill="rgba(210,220,235,0.10)"><animate attributeName="opacity" values="0.08;0.14;0.08" dur="10s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="55" cy="12" r="6.4" fill="rgba(232,238,245,0.14)"/>';
-        s += '<path d="M55,4.8 A7.2,7.2 0 1,0 55,19.2 A5.2,7.2 0 1,1 55,4.8 Z" fill="rgba(242,246,252,0.24)"/>';
-        s += '<path d="M56.2,6.2 A5.8,5.8 0 1,0 56.2,17.8 A4.0,5.8 0 1,1 56.2,6.2 Z" fill="rgba(255,255,255,0.12)"/>';
+        s += '<g opacity="0.38">';
+        s += '<circle cx="55" cy="12" r="10" fill="rgba(210,220,235,0.14)"><animate attributeName="opacity" values="0.10;0.20;0.10" dur="10s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="55" cy="12" r="6.4" fill="rgba(232,238,245,0.20)"/>';
+        s += '<path d="M55,4.8 A7.2,7.2 0 1,0 55,19.2 A5.2,7.2 0 1,1 55,4.8 Z" fill="rgba(242,246,252,0.35)"/>';
+        s += '<path d="M56.2,6.2 A5.8,5.8 0 1,0 56.2,17.8 A4.0,5.8 0 1,1 56.2,6.2 Z" fill="rgba(255,255,255,0.18)"/>';
         // Star 1
-        s += '<circle cx="44" cy="10" r="0.7" fill="rgba(245,248,255,0.24)"><animate attributeName="opacity" values="0.12;0.24;0.12" dur="8s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="44" cy="10" r="0.7" fill="rgba(245,248,255,0.35)"><animate attributeName="opacity" values="0.18;0.38;0.18" dur="8s" repeatCount="indefinite"/></circle>';
         // Star 2 — diamond
-        s += '<path d="M61.5,6.5 L61.9,7.4 L62.8,7.8 L61.9,8.2 L61.5,9.1 L61.1,8.2 L60.2,7.8 L61.1,7.4 Z" fill="rgba(245,248,255,0.20)"><animateTransform attributeName="transform" type="rotate" values="0 61.5 7.8;8 61.5 7.8;0 61.5 7.8" dur="14s" repeatCount="indefinite"/></path>';
+        s += '<path d="M61.5,6.5 L61.9,7.4 L62.8,7.8 L61.9,8.2 L61.5,9.1 L61.1,8.2 L60.2,7.8 L61.1,7.4 Z" fill="rgba(245,248,255,0.30)"><animateTransform attributeName="transform" type="rotate" values="0 61.5 7.8;8 61.5 7.8;0 61.5 7.8" dur="14s" repeatCount="indefinite"/></path>';
         // Star 3 — diamond
-        s += '<path d="M48.5,18.5 L48.8,19.2 L49.5,19.5 L48.8,19.8 L48.5,20.5 L48.2,19.8 L47.5,19.5 L48.2,19.2 Z" fill="rgba(245,248,255,0.16)"><animate attributeName="opacity" values="0.08;0.18;0.08" dur="9s" repeatCount="indefinite"/></path>';
+        s += '<path d="M48.5,18.5 L48.8,19.2 L49.5,19.5 L48.8,19.8 L48.5,20.5 L48.2,19.8 L47.5,19.5 L48.2,19.2 Z" fill="rgba(245,248,255,0.25)"><animate attributeName="opacity" values="0.12;0.28;0.12" dur="9s" repeatCount="indefinite"/></path>';
         s += '</g>';
         break;
       case 13: // Rings — planetary ellipses orbiting plant
-        s += '<g opacity="0.22">';
+        s += '<g opacity="0.38">';
         s += '<animateTransform attributeName="transform" type="rotate" values="0 35 40;360 35 40" dur="18s" repeatCount="indefinite"/>';
-        s += '<ellipse cx="35" cy="40" rx="24" ry="8.5" fill="none" stroke="rgba(188,196,210,0.22)" stroke-width="0.7" stroke-linecap="round"/>';
-        s += '<ellipse cx="35" cy="40" rx="19" ry="6.2" fill="none" stroke="rgba(214,188,150,0.18)" stroke-width="0.55" stroke-linecap="round" transform="rotate(-14 35 40)"/>';
-        s += '<ellipse cx="35" cy="40" rx="27" ry="10.5" fill="none" stroke="rgba(160,176,194,0.14)" stroke-width="0.5" stroke-linecap="round" transform="rotate(11 35 40)"/>';
-        s += '<path d="M11,40 Q35,31.5 59,40" fill="none" stroke="rgba(245,248,255,0.10)" stroke-width="0.4" stroke-linecap="round"/>';
-        s += '<path d="M16,42 Q35,35.8 54,42" fill="none" stroke="rgba(255,233,200,0.08)" stroke-width="0.32" stroke-linecap="round"/>';
-        s += '<path d="M22,46 Q35,42.8 48,46" fill="none" stroke="rgba(220,230,242,0.07)" stroke-width="0.28" stroke-linecap="round"/>';
+        s += '<ellipse cx="35" cy="40" rx="24" ry="8.5" fill="none" stroke="rgba(188,196,210,0.35)" stroke-width="0.8" stroke-linecap="round"/>';
+        s += '<ellipse cx="35" cy="40" rx="19" ry="6.2" fill="none" stroke="rgba(214,188,150,0.30)" stroke-width="0.65" stroke-linecap="round" transform="rotate(-14 35 40)"/>';
+        s += '<ellipse cx="35" cy="40" rx="27" ry="10.5" fill="none" stroke="rgba(160,176,194,0.25)" stroke-width="0.6" stroke-linecap="round" transform="rotate(11 35 40)"/>';
+        s += '<path d="M11,40 Q35,31.5 59,40" fill="none" stroke="rgba(245,248,255,0.16)" stroke-width="0.5" stroke-linecap="round"/>';
+        s += '<path d="M16,42 Q35,35.8 54,42" fill="none" stroke="rgba(255,233,200,0.14)" stroke-width="0.4" stroke-linecap="round"/>';
+        s += '<path d="M22,46 Q35,42.8 48,46" fill="none" stroke="rgba(220,230,242,0.12)" stroke-width="0.35" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 14: // Nordic Runes — Elder Futhark glyphs rising from soil, ancient and mystical
