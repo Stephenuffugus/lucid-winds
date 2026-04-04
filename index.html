@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-07h';
+  var _SVG_CACHE_VER = '2026-04-07i';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -20877,8 +20877,8 @@ document.addEventListener('keydown', function(e) {
         // Nose — small inverted triangle, pink
         s += '<path d="M52.85,83 L53,83.3 L53.15,83 Z" fill="#D4908A"/>';
         s += '<circle cx="53" cy="83.1" r="0.06" fill="#B07068" opacity="0.4"/>';
-        // Mouth lines — from nose down
-        s += '<path d="M53,83.3 L52.7,83.7 M53,83.3 L53.3,83.7" stroke="#8A6848" stroke-width="0.1" fill="none" opacity="0.25"/>';
+        // Mouth — upside down V touching bottom of nose, dark brown
+        s += '<path d="M53,83.3 L52.6,83.8 M53,83.3 L53.4,83.8" stroke="#5A3828" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
         // Whiskers — long, flowing, 3 per side
         s += '<path d="M51.5,83 Q49.5,82.3 48,82.5" stroke="#C8B8A8" stroke-width="0.1" fill="none" stroke-linecap="round" opacity="0.4"/>';
         s += '<path d="M51.5,83.3 Q49.5,83.2 47.8,83.5" stroke="#C8B8A8" stroke-width="0.1" fill="none" stroke-linecap="round" opacity="0.35"/>';
@@ -21062,11 +21062,11 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M53,90.5 Q54,91.5 57,92 Q59,91.5 60,90.5" fill="#A87850" opacity="0.5"/>';
         // Face — peeking out from left side of spine ball
         s += '<path d="M52,90 Q51.5,89.5 52,88.5 Q52.5,87.5 53.5,87.5 Q54.5,88 54.5,89 Q54.5,90 54,90.5 Q53,91 52,90 Z" fill="#B89068"/>';
-        // Snout — pointed, darker tip
-        s += '<path d="M51.5,89.5 Q51,89.2 50.5,89.5 Q51,89.8 51.5,89.5 Z" fill="#8A6C4E"/>';
-        // Nose — prominent, dark, wet-looking
-        s += '<ellipse cx="50.5" cy="89.5" rx="0.35" ry="0.28" fill="#2A1A10"/>';
-        s += '<circle cx="50.6" cy="89.4" r="0.08" fill="rgba(240,235,216,0.45)"/>';
+        // Snout — connected to face, pointed
+        s += '<path d="M52,89.5 Q51.5,89 51,89.5 Q51.5,90 52,89.5 Z" fill="#9A7858"/>';
+        // Nose — on snout tip, dark
+        s += '<ellipse cx="51" cy="89.5" rx="0.3" ry="0.22" fill="#2A1A10"/>';
+        s += '<circle cx="51.1" cy="89.4" r="0.07" fill="rgba(240,235,216,0.45)"/>';
         // Eye — small, dark, beady, set in face
         s += '<circle cx="52.5" cy="89" r="0.4" fill="#1A1008"/>';
         s += '<circle cx="52.6" cy="88.85" r="0.12" fill="rgba(200,180,120,0.5)"/>';
@@ -21075,11 +21075,15 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="53" cy="87.8" rx="0.4" ry="0.6" fill="#C09868" opacity="0.3"/>';
         s += '<ellipse cx="54" cy="87.5" rx="0.7" ry="0.9" fill="#A87850"/>';
         s += '<ellipse cx="54" cy="87.5" rx="0.4" ry="0.6" fill="#C09868" opacity="0.3"/>';
-        // Whiskers
-        s += '<path d="M51,89.3 L49.5,88.8 M51,89.5 L49.3,89.5 M51,89.7 L49.5,90.2" stroke="#C0A888" stroke-width="0.06" fill="none" opacity="0.3"/>';
-        // Tiny feet visible below — 2 pairs
-        s += '<path d="M54.5,92.8 Q55,93.2 55.5,92.8" stroke="#8A6C4E" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M58,92.8 Q58.5,93.2 59,92.8" stroke="#8A6C4E" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        // Whiskers — attached to snout
+        s += '<line x1="51.2" y1="89.3" x2="49.5" y2="88.8" stroke="#C0A888" stroke-width="0.08" opacity="0.4"/>';
+        s += '<line x1="51.2" y1="89.5" x2="49.3" y2="89.5" stroke="#C0A888" stroke-width="0.08" opacity="0.35"/>';
+        s += '<line x1="51.2" y1="89.7" x2="49.5" y2="90.2" stroke="#C0A888" stroke-width="0.06" opacity="0.3"/>';
+        // Feet with claws — visible below body
+        s += '<ellipse cx="54.5" cy="92.8" rx="0.7" ry="0.35" fill="#8A6C4E"/>';
+        s += '<path d="M54,92.8 L53.7,93.2 M54.5,92.8 L54.5,93.3 M55,92.8 L55.3,93.2" stroke="#5A4A38" stroke-width="0.1" fill="none"/>';
+        s += '<ellipse cx="58" cy="92.8" rx="0.7" ry="0.35" fill="#8A6C4E"/>';
+        s += '<path d="M57.5,92.8 L57.2,93.2 M58,92.8 L58,93.3 M58.5,92.8 L58.8,93.2" stroke="#5A4A38" stroke-width="0.1" fill="none"/>';
         s += '</g>';
         break;
       case 43: // Pangolin — walking on bottom-right, facing left, scales visible
