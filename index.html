@@ -22605,64 +22605,72 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="58.5" cy="58" rx="1.8" ry="1.5" fill="none" stroke="#C8C4BC" stroke-width="0.15" opacity="0.3"/>';
         s += '</g>';
         break;
-      case 67: // Grey Squirrel — sitting upright beside pot left side
-        // Sciurus carolinensis: the iconic bushy-tailed rodent. Defining feature
-        // is the enormous plume tail curving up over the body. Sitting on haunches
-        // with front paws held near chest. Grizzled grey-brown fur, lighter belly.
-        s += '<g opacity="0.82" transform="translate(10,87) scale(1.5) translate(-10,-87)">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.1,-0.06;0,0" dur="4s" repeatCount="indefinite"/>';
+      case 67: // Grey Squirrel — side profile facing left, holding acorn
+        // Sciurus carolinensis. Sitting upright on haunches, bushy tail
+        // curling up behind, clutching an acorn in tiny paws. Side view.
+        s += '<g opacity="0.88" transform="translate(12,86) scale(1.5) translate(-12,-86)">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.08,-0.05;0,0" dur="4s" repeatCount="indefinite"/>';
         // Shadow
-        s += '<ellipse cx="10.5" cy="91.5" rx="3" ry="0.6" fill="#0d100c" opacity="0.1"/>';
-        // Tail — ENORMOUS bushy plume curving up and over (THE signature)
-        s += '<path d="M12,88 Q14,86 15,83 Q15.5,81 15.8,80 Q16.5,79 16.5,80 Q16.5,82 16,84 Q15.5,86 15,88 Q14.5,89.5 13,89.5 Q12,89 11.5,89" fill="#9A7A55" stroke="#8A6A45" stroke-width="0.25"/>';
-        // Tail fluff — lighter feathery edges
-        s += '<path d="M15,82 Q16,81 16.2,80.5" fill="none" stroke="#B8A078" stroke-width="1" stroke-linecap="round" opacity="0.3"/>';
-        s += '<path d="M15,84 Q16,83 16.2,82" fill="none" stroke="#B8A078" stroke-width="0.8" stroke-linecap="round" opacity="0.25"/>';
-        s += '<path d="M14.5,86 Q15.5,85 16,84" fill="none" stroke="#B8A078" stroke-width="0.6" stroke-linecap="round" opacity="0.2"/>';
-        // Body — sitting upright on haunches, round and hunched
-        s += '<ellipse cx="10" cy="88.5" rx="2.8" ry="2.2" fill="#8A7050"/>';
-        // Belly — lighter cream-gray
-        s += '<ellipse cx="10.2" cy="89" rx="1.8" ry="1.5" fill="#C8B898" opacity="0.45"/>';
-        // Haunches — rounded thigh bulk visible at sides
-        s += '<ellipse cx="11.5" cy="89.5" rx="1.5" ry="1.0" fill="#8A7050" opacity="0.5"/>';
-        // Head — blunt, rounded, facing slightly right
-        s += '<circle cx="9.5" cy="86" r="1.5" fill="#8A7050"/>';
-        // Cheek fluff
-        s += '<ellipse cx="10" cy="86.5" rx="0.8" ry="0.6" fill="#B09A78" opacity="0.3"/>';
-        // Ears — small and rounded (grey squirrel, not red — no tufts)
-        s += '<ellipse cx="8.8" cy="84.8" rx="0.5" ry="0.7" fill="#8A7050"/>';
-        s += '<ellipse cx="8.8" cy="84.8" rx="0.3" ry="0.45" fill="#C0A880" opacity="0.3"/>';
-        s += '<ellipse cx="10.2" cy="84.8" rx="0.5" ry="0.65" fill="#8A7050"/>';
-        s += '<ellipse cx="10.2" cy="84.8" rx="0.3" ry="0.4" fill="#C0A880" opacity="0.3"/>';
-        // Eyes — 2 visible, large, dark, alert
-        s += '<circle cx="9.2" cy="85.8" r="0.45" fill="#1A1410"/>';
-        s += '<circle cx="9.3" cy="85.6" r="0.13" fill="rgba(240,235,216,0.55)"/>';
-        s += '<circle cx="10.2" cy="85.8" r="0.45" fill="#1A1410"/>';
-        s += '<circle cx="10.3" cy="85.6" r="0.13" fill="rgba(240,235,216,0.55)"/>';
-        // Nose — dark, between eyes
-        s += '<ellipse cx="9.7" cy="86.5" rx="0.25" ry="0.18" fill="#3A2A20"/>';
+        s += '<ellipse cx="12" cy="92" rx="4" ry="0.5" fill="#0d100c" opacity="0.1"/>';
+        // ── TAIL — massive bushy S-curve behind body, THE defining feature ──
+        s += '<path d="M14,88 C15,86 16,83 16,81 C16,79.5 16.5,78.5 17,79 C17.5,79.5 17.5,81 17,83 C16.5,85 16,87 15.5,89 C15,90 14,90.5 13,90" fill="#8A7050"/>';
+        // Tail fur texture — wispy lighter strands
+        s += '<path d="M16,81 C16.8,80 17,79.5 17.2,80" fill="none" stroke="#B8A078" stroke-width="0.8" stroke-linecap="round" opacity="0.3"/>';
+        s += '<path d="M16.2,83 C17,82 17.2,81 17.3,81.5" fill="none" stroke="#B8A078" stroke-width="0.6" stroke-linecap="round" opacity="0.25"/>';
+        s += '<path d="M15.8,85 C16.5,84 16.8,83 17,83.5" fill="none" stroke="#B8A078" stroke-width="0.5" stroke-linecap="round" opacity="0.2"/>';
+        s += '<path d="M15.2,87 C16,86 16.5,85 16.5,85.5" fill="none" stroke="#B8A078" stroke-width="0.4" stroke-linecap="round" opacity="0.18"/>';
+        // Tail outline
+        s += '<path d="M14,88 C15,86 16,83 16,81 C16,79.5 16.5,78.5 17,79" fill="none" stroke="#6A5030" stroke-width="0.2" opacity="0.25"/>';
+        // ── HIND LEG — tucked under body ──
+        s += '<path d="M13,90 Q14,90.5 14,91.5" stroke="#7A6040" stroke-width="0.9" fill="none" stroke-linecap="round"/>';
+        s += '<ellipse cx="14" cy="91.5" rx="0.9" ry="0.35" fill="#8A7050"/>';
+        // ── BODY — sitting upright, pear-shaped, wider at hips ──
+        s += '<path d="M9,86 C8.5,84.5 9,83 10,82.5 C11,82 12.5,82 13.5,83 C14.5,84 14.5,86 14,88 C13.5,90 12.5,91.5 11,91.5 C9.5,91.5 8.5,90.5 8.5,89 C8.5,87.5 9,86.5 9,86 Z" fill="#8A7050"/>';
+        // Belly — lighter cream
+        s += '<path d="M9.5,87 C10,88 10.5,89.5 11,90.5 C11.5,91 12,91 12.5,90" fill="#C8B898" opacity="0.4"/>';
+        // Back fur grizzle
+        s += '<path d="M10,83 C11.5,82.5 13,83 14,84" fill="none" stroke="#6A5030" stroke-width="0.2" opacity="0.15"/>';
+        s += '<path d="M9,85 C10.5,84.5 12,85 13.5,86" fill="none" stroke="#6A5030" stroke-width="0.2" opacity="0.12"/>';
+        // ── FRONT LEG — reaching down to hold acorn ──
+        s += '<path d="M10,86.5 L9.5,87.5 L9,88" stroke="#8A7050" stroke-width="0.7" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M10.5,86.5 L10,87.5 L9.5,88.2" stroke="#7A6040" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
+        // ── ACORN — held in both paws! ──
+        // Acorn cap
+        s += '<path d="M8.5,87.8 C8.5,87.3 9,87 9.5,87 C10,87 10.5,87.3 10.5,87.8" fill="#6A5030" stroke="#4A3020" stroke-width="0.12"/>';
+        // Cap texture — crosshatch
+        s += '<path d="M8.8,87.5 L9.2,87.7 M9.5,87.3 L9.5,87.7 M10,87.5 L9.8,87.7" fill="none" stroke="#4A3020" stroke-width="0.08" opacity="0.4"/>';
+        // Acorn body — smooth oval nut
+        s += '<ellipse cx="9.5" cy="88.5" rx="1" ry="0.8" fill="#B89060" stroke="#8A6838" stroke-width="0.12"/>';
+        // Acorn highlight
+        s += '<ellipse cx="9.3" cy="88.3" rx="0.4" ry="0.3" fill="rgba(220,200,160,0.25)"/>';
+        // Acorn tip
+        s += '<circle cx="9.5" cy="89.2" r="0.12" fill="#6A4828"/>';
+        // Paws clutching acorn
+        s += '<path d="M8.8,88 C8.5,88.3 8.5,88.8 8.8,89" stroke="#9A8060" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M10.2,88 C10.5,88.3 10.5,88.8 10.2,89" stroke="#9A8060" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
+        // Tiny fingers gripping
+        s += '<circle cx="8.8" cy="88.2" r="0.15" fill="#9A8060"/>';
+        s += '<circle cx="10.2" cy="88.2" r="0.15" fill="#9A8060"/>';
+        // ── HEAD — round, side profile facing left ──
+        s += '<circle cx="9.5" cy="84.5" r="1.8" fill="#8A7050"/>';
+        // Cheek — lighter puff
+        s += '<ellipse cx="9" cy="85" rx="0.8" ry="0.6" fill="#B09A78" opacity="0.3"/>';
+        // ── EARS — small rounded, on top of head ──
+        s += '<ellipse cx="9" cy="83" rx="0.5" ry="0.8" fill="#8A7050"/>';
+        s += '<ellipse cx="9" cy="83" rx="0.25" ry="0.5" fill="#C0A880" opacity="0.3"/>';
+        s += '<ellipse cx="10.2" cy="82.8" rx="0.5" ry="0.75" fill="#7A6040"/>';
+        s += '<ellipse cx="10.2" cy="82.8" rx="0.25" ry="0.45" fill="#B09870" opacity="0.3"/>';
+        // ── EYE — large, dark, alert (side profile = 1 eye) ──
+        s += '<circle cx="8.5" cy="84.5" r="0.55" fill="#1A1410"/>';
+        s += '<circle cx="8.65" cy="84.3" r="0.15" fill="rgba(240,235,216,0.55)"/>';
+        // ── NOSE — dark point ──
+        s += '<ellipse cx="8" cy="85.2" rx="0.2" ry="0.15" fill="#3A2A20"/>';
         // Whiskers
-        s += '<line x1="8.3" y1="86.3" x2="7" y2="85.8" stroke="#B09A78" stroke-width="0.06" opacity="0.35"/>';
-        s += '<line x1="8.3" y1="86.4" x2="7" y2="86.6" stroke="#B09A78" stroke-width="0.06" opacity="0.35"/>';
-        // Front arms — visible, held up near chest
-        s += '<path d="M9.5,87.5 Q8.5,87 8,87.5" stroke="#8A7050" stroke-width="0.8" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M10.5,87.5 Q9.5,87.2 9,87.8" stroke="#7A6040" stroke-width="0.7" fill="none" stroke-linecap="round"/>';
-        // Front paws — clutching
-        s += '<ellipse cx="8" cy="87.5" rx="0.5" ry="0.4" fill="#9A8060"/>';
-        s += '<ellipse cx="9" cy="87.8" rx="0.45" ry="0.35" fill="#9A8060"/>';
-        // Tiny fingers
-        s += '<line x1="7.7" y1="87.5" x2="7.4" y2="87.7" stroke="#7A6040" stroke-width="0.08"/>';
-        s += '<line x1="8" y1="87.6" x2="7.8" y2="87.9" stroke="#7A6040" stroke-width="0.08"/>';
-        // Hind legs — visible, tucked under body
-        s += '<path d="M11,89.5 Q11.5,90 11.5,90.8" stroke="#7A6040" stroke-width="0.8" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M9.5,89.5 Q9,90 9.2,90.8" stroke="#7A6040" stroke-width="0.7" fill="none" stroke-linecap="round"/>';
-        // Hind feet
-        s += '<ellipse cx="11.5" cy="90.8" rx="0.8" ry="0.35" fill="#8A7050"/>';
-        s += '<ellipse cx="9.2" cy="90.8" rx="0.7" ry="0.3" fill="#8A7050"/>';
-        // Fur grizzle texture — subtle dark flecks on back
-        s += '<circle cx="10.5" cy="87.5" r="0.15" fill="#6A5030" opacity="0.2"/>';
-        s += '<circle cx="11" cy="88" r="0.12" fill="#6A5030" opacity="0.15"/>';
-        s += '<circle cx="10" cy="87" r="0.1" fill="#6A5030" opacity="0.2"/>';
+        s += '<line x1="8" y1="85" x2="6.5" y2="84.5" stroke="#B09A78" stroke-width="0.06" opacity="0.35"/>';
+        s += '<line x1="8" y1="85.3" x2="6.5" y2="85.5" stroke="#B09A78" stroke-width="0.06" opacity="0.3"/>';
+        s += '<line x1="8" y1="85.5" x2="6.8" y2="86" stroke="#B09A78" stroke-width="0.05" opacity="0.25"/>';
+        // Hind foot
+        s += '<ellipse cx="10" cy="91.5" rx="0.8" ry="0.3" fill="#8A7050"/>';
         s += '</g>';
         break;
       case 68: // Fennec Fox — tiny desert fox, ENORMOUS ears, sitting, facing left
