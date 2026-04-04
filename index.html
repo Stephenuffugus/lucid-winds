@@ -21283,30 +21283,31 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="61.5" cy="74.8" rx="1.3" ry="0.7" fill="#5C9A3C"/>';
         // Prothorax highlight
         s += '<path d="M61,75 Q61.5,76.5 61.5,78" fill="none" stroke="#7AB858" stroke-width="0.2" opacity="0.2"/>';
-        // HEAD — drawn FIRST so arms render ON TOP of it
+        // HEAD — triangular, the "alien" face
         s += '<path d="M59.8,73.2 Q59.3,72 59.8,70.8 Q60.8,69.8 62,69.8 Q63.2,69.8 64.2,70.8 Q64.7,72 64.2,73.2 Q63,74.2 62,74.2 Q61,74.2 59.8,73.2 Z" fill="#6BA348"/>';
         // Head vertex ridge
         s += '<path d="M60.5,71 Q62,70 63.5,71" fill="none" stroke="#7AB858" stroke-width="0.2" opacity="0.25"/>';
-        // RAPTORIAL FORELEGS — drawn AFTER head so they're visible
-        // Arms originate from prothorax coxa plate (y:74.5), splay OUT
-        // LEFT ARM: coxa → femur (out-left) → tibia (folded back, spined)
-        s += '<path d="M60.5,74.5 L60.2,73.5 L59.8,73 L60.4,73 L60.8,73.5 L61,74.5 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
-        s += '<path d="M59.8,73 L58.5,72 L57.5,71 L58,70.8 L59,71.8 L60.2,73 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
-        s += '<path d="M57.5,71 L57.2,70 L57.5,69.2 L58,68.8 L58.5,69.2 L58.2,70 L57.8,70.8 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
-        // Left tibia spines
-        s += '<path d="M58.2,70.5 L58.7,70.3 L58.2,70.1" fill="#3A7A20"/>';
-        s += '<path d="M58.3,69.8 L58.7,69.6 L58.3,69.4" fill="#3A7A20"/>';
-        s += '<path d="M58.4,69.2 L58.7,69 L58.5,68.8" fill="#3A7A20" opacity="0.8"/>';
-        s += '<path d="M58,68.8 L58.3,68.4 L58.1,68.1" fill="none" stroke="#3A6A28" stroke-width="0.15" stroke-linecap="round"/>';
-        // RIGHT ARM: mirrored
-        s += '<path d="M62.5,74.5 L62.8,73.5 L63.2,73 L62.6,73 L62.2,73.5 L62,74.5 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
-        s += '<path d="M63.2,73 L64.5,72 L65.5,71 L65,70.8 L64,71.8 L62.8,73 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
-        s += '<path d="M65.5,71 L65.8,70 L65.5,69.2 L65,68.8 L64.5,69.2 L64.8,70 L65.2,70.8 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
-        // Right tibia spines
-        s += '<path d="M64.8,70.5 L64.3,70.3 L64.8,70.1" fill="#3A7A20"/>';
-        s += '<path d="M64.7,69.8 L64.3,69.6 L64.7,69.4" fill="#3A7A20"/>';
-        s += '<path d="M64.6,69.2 L64.3,69 L64.5,68.8" fill="#3A7A20" opacity="0.8"/>';
-        s += '<path d="M65,68.8 L64.7,68.4 L64.9,68.1" fill="none" stroke="#3A6A28" stroke-width="0.15" stroke-linecap="round"/>';
+        // RAPTORIAL FORELEGS — prayer pose AT PROTHORAX LEVEL
+        // Arms fold in front of the prothorax/chest area (y:74-76),
+        // NOT near the head. Coxa attaches at prothorax, femur angles
+        // DOWN-outward, tibia folds back UP against femur.
+        // LEFT ARM — hangs from prothorax, folds at chest level
+        // Coxa — short, from prothorax plate downward-left
+        s += '<path d="M60.5,74.8 L59.5,75.5 L59,76 L59.5,76.2 L60,75.8 L60.8,75 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
+        // Femur — angles down-left from coxa
+        s += '<path d="M59,76 L58,76.8 L57,77.5 L57.5,77.7 L58.5,77 L59.5,76.2 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
+        // Tibia — folds back UP against femur (the prayer fold)
+        s += '<path d="M57,77.5 L56.8,76.5 L57,75.8 L57.5,75.5 L58,75.8 L57.8,76.5 L57.5,77.3 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
+        // Left spines
+        s += '<path d="M57.8,76.8 L58.3,76.6 L57.8,76.4" fill="#3A7A20"/>';
+        s += '<path d="M57.9,76.2 L58.3,76 L57.9,75.8" fill="#3A7A20"/>';
+        // RIGHT ARM — mirrored
+        s += '<path d="M62.5,74.8 L63.5,75.5 L64,76 L63.5,76.2 L63,75.8 L62.2,75 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
+        s += '<path d="M64,76 L65,76.8 L66,77.5 L65.5,77.7 L64.5,77 L63.5,76.2 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
+        s += '<path d="M66,77.5 L66.2,76.5 L66,75.8 L65.5,75.5 L65,75.8 L65.2,76.5 L65.5,77.3 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
+        // Right spines
+        s += '<path d="M65.2,76.8 L64.7,76.6 L65.2,76.4" fill="#3A7A20"/>';
+        s += '<path d="M65.1,76.2 L64.7,76 L65.1,75.8" fill="#3A7A20"/>';
         // Compound eyes — HUGE, bulging hemispheres (mantis signature)
         s += '<circle cx="60" cy="71.5" r="1.1" fill="#C8D89A"/>';
         s += '<circle cx="64" cy="71.5" r="1.1" fill="#C8D89A"/>';
