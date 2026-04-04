@@ -20044,20 +20044,46 @@ document.addEventListener('keydown', function(e) {
           var _x2 = Math.cos(_pbAng2) * _pbR;
           // Each segment is a curved band
           s += '<path d="M'+(-_x1).toFixed(1)+','+_y1.toFixed(1)+' A'+_pbR+','+_pbR+' 0 0,1 '+_x1.toFixed(1)+','+_y1.toFixed(1)+' L'+_x2.toFixed(1)+','+_y2.toFixed(1)+' A'+_pbR+','+_pbR+' 0 0,0 '+(-_x2).toFixed(1)+','+_y2.toFixed(1)+' Z" fill="'+_pbCols[_pbi]+'" stroke="rgba(90,90,100,0.3)" stroke-width="0.15"/>';
-          // Ridge highlight on each plate
-          var _yMid = (_y1 + _y2) * 0.45;
+          // Dark groove line at bottom edge of each plate (overlapping armor look)
+          s += '<path d="M'+(-_x2*0.95).toFixed(1)+','+_y2.toFixed(1)+' Q0,'+(_y2+0.15).toFixed(1)+' '+(_x2*0.95).toFixed(1)+','+_y2.toFixed(1)+'" fill="none" stroke="rgba(40,40,50,0.25)" stroke-width="0.2"/>';
+          // Ridge highlight on each plate — lighter line near top edge
+          var _yMid = (_y1 + _y2) * 0.35;
           var _xMid = Math.sqrt(Math.max(0, _pbR * _pbR - _yMid * _yMid));
-          s += '<path d="M'+(-_xMid*0.9).toFixed(1)+','+_yMid.toFixed(1)+' Q0,'+(_yMid-0.6).toFixed(1)+' '+(_xMid*0.9).toFixed(1)+','+_yMid.toFixed(1)+'" fill="none" stroke="rgba(200,200,215,0.12)" stroke-width="0.2"/>';
+          s += '<path d="M'+(-_xMid*0.85).toFixed(1)+','+_yMid.toFixed(1)+' Q0,'+(_yMid-0.5).toFixed(1)+' '+(_xMid*0.85).toFixed(1)+','+_yMid.toFixed(1)+'" fill="none" stroke="rgba(200,200,215,0.15)" stroke-width="0.18"/>';
+          // Secondary inner ridge — gives each plate a raised center feel
+          var _yIn = (_y1 + _y2) * 0.5;
+          var _xIn = Math.sqrt(Math.max(0, _pbR * _pbR - _yIn * _yIn));
+          s += '<path d="M'+(-_xIn*0.7).toFixed(1)+','+_yIn.toFixed(1)+' Q0,'+(_yIn-0.3).toFixed(1)+' '+(_xIn*0.7).toFixed(1)+','+_yIn.toFixed(1)+'" fill="none" stroke="rgba(180,180,195,0.08)" stroke-width="0.15"/>';
+          // Pitting texture — 2-3 tiny dimples per plate
+          var _yPit = (_y1 + _y2) * 0.45;
+          s += '<circle cx="'+(-_xMid*0.4).toFixed(1)+'" cy="'+_yPit.toFixed(1)+'" r="0.12" fill="rgba(50,50,60,0.12)"/>';
+          s += '<circle cx="'+(_xMid*0.25).toFixed(1)+'" cy="'+(_yPit+0.2).toFixed(1)+'" r="0.1" fill="rgba(50,50,60,0.1)"/>';
+          s += '<circle cx="'+(_xMid*0.55).toFixed(1)+'" cy="'+(_yPit-0.1).toFixed(1)+'" r="0.08" fill="rgba(50,50,60,0.08)"/>';
+          // Tiny leg tips poking out between plates on each side
+          if (_pbi > 0 && _pbi < 6) {
+            s += '<line x1="'+(-_x1*0.98).toFixed(1)+'" y1="'+_y1.toFixed(1)+'" x2="'+(-_x1*1.12).toFixed(1)+'" y2="'+(_y1+0.4).toFixed(1)+'" stroke="#5A5A68" stroke-width="0.15" stroke-linecap="round" opacity="0.4"/>';
+            s += '<line x1="'+(_x1*0.98).toFixed(1)+'" y1="'+_y1.toFixed(1)+'" x2="'+(_x1*1.12).toFixed(1)+'" y2="'+(_y1+0.4).toFixed(1)+'" stroke="#5A5A68" stroke-width="0.15" stroke-linecap="round" opacity="0.4"/>';
+          }
         }
-        // Dorsal ridge — faint center line pole to pole
-        s += '<path d="M0,'+(-_pbR)+' Q'+(_pbR*0.15)+',0 0,'+_pbR+'" fill="none" stroke="rgba(180,180,195,0.1)" stroke-width="0.25"/>';
-        // Head tucked in at top — just barely visible, darker crescent
+        // Dorsal ridge — center line pole to pole, slightly more visible
+        s += '<path d="M0,'+(-_pbR)+' Q'+(_pbR*0.15)+',0 0,'+_pbR+'" fill="none" stroke="rgba(180,180,195,0.14)" stroke-width="0.3"/>';
+        // Secondary dorsal lines — faint parallels flanking the ridge
+        s += '<path d="M-0.6,'+(-_pbR*0.9)+' Q'+(_pbR*0.1-0.6)+',0 -0.6,'+(_pbR*0.9)+'" fill="none" stroke="rgba(180,180,195,0.06)" stroke-width="0.15"/>';
+        s += '<path d="M0.6,'+(-_pbR*0.9)+' Q'+(_pbR*0.1+0.6)+',0 0.6,'+(_pbR*0.9)+'" fill="none" stroke="rgba(180,180,195,0.06)" stroke-width="0.15"/>';
+        // Head tucked in at top — darker crescent with plate texture
         s += '<path d="M-1.8,'+(-_pbR*0.88)+' Q0,'+(-_pbR*1.05)+' 1.8,'+(-_pbR*0.88)+'" fill="#5A5A68" stroke="rgba(80,80,90,0.3)" stroke-width="0.15"/>';
+        // Head plate line
+        s += '<path d="M-1.2,'+(-_pbR*0.9)+' Q0,'+(-_pbR*0.98)+' 1.2,'+(-_pbR*0.9)+'" fill="none" stroke="rgba(60,60,70,0.2)" stroke-width="0.12"/>';
+        // Tiny antennae stubs poking out
+        s += '<line x1="-1.2" y1="'+(-_pbR*0.95)+'" x2="-1.6" y2="'+(-_pbR*1.08)+'" stroke="#5A5A68" stroke-width="0.12" stroke-linecap="round" opacity="0.5"/>';
+        s += '<line x1="1.2" y1="'+(-_pbR*0.95)+'" x2="1.6" y2="'+(-_pbR*1.08)+'" stroke="#5A5A68" stroke-width="0.12" stroke-linecap="round" opacity="0.5"/>';
         // Tiny eye dots peeking out
         s += '<circle cx="-0.6" cy="'+(-_pbR*0.92)+'" r="0.2" fill="#222"/>';
         s += '<circle cx="0.6" cy="'+(-_pbR*0.92)+'" r="0.2" fill="#222"/>';
         // Tail plate tucked at bottom — last segment wraps under
         s += '<path d="M-1.5,'+(_pbR*0.85)+' Q0,'+(_pbR*1.02)+' 1.5,'+(_pbR*0.85)+'" fill="#5E5E6C" stroke="rgba(80,80,90,0.25)" stroke-width="0.15"/>';
+        // Tail plate inner line
+        s += '<path d="M-1.0,'+(_pbR*0.88)+' Q0,'+(_pbR*0.97)+' 1.0,'+(_pbR*0.88)+'" fill="none" stroke="rgba(60,60,70,0.15)" stroke-width="0.1"/>';
         // Specular highlight — top-left sheen
         s += '<ellipse cx="'+(-_pbR*0.3)+'" cy="'+(-_pbR*0.35)+'" rx="'+(_pbR*0.45)+'" ry="'+(_pbR*0.3)+'" fill="rgba(200,200,220,0.08)" transform="rotate(-20)"/>';
         // Iridescent purple sheen on center plates
