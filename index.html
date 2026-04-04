@@ -8519,9 +8519,9 @@ document.addEventListener('keydown', function(e) {
       {name:'Deep Sea'},      // idx 28
       {name:'Void Eclipse',rare:true}, // idx 29
       {name:'Pollen Drift'},  // idx 30
-      {name:'Northern Lights V2',rare:true}, // idx 31
+      {name:'Ethereal Veil',rare:true}, // idx 31
       {name:'Dandelion Seeds'}, // idx 32
-      {name:'Lightning Bugs',rare:true}, // idx 33
+      {name:'Chain Lightning',rare:true}, // idx 33
       {name:'Tidal Pool'},    // idx 34
       {name:'Stained Glass Light',rare:true} // idx 35
     ],
@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-07w';
+  var _SVG_CACHE_VER = '2026-04-07x';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -19593,19 +19593,17 @@ document.addEventListener('keydown', function(e) {
         s += '</g>';
         break;
 
-      case 27: // Candlelight — warm uplighting from below
-        s += '<defs><radialGradient id="auraCndl'+uid+'" cx="0.5" cy="0.85" r="0.7"><stop offset="0%" stop-color="rgba(240,180,80,0.10)"/><stop offset="60%" stop-color="rgba(240,180,80,0.04)"/><stop offset="100%" stop-color="rgba(240,180,80,0)"/></radialGradient></defs>';
+      case 27: // Candlelight — warm uplighting from below, flickering
+        s += '<defs><radialGradient id="auraCndl'+uid+'" cx="0.5" cy="0.85" r="0.65"><stop offset="0%" stop-color="rgba(240,180,80,0.22)"/><stop offset="40%" stop-color="rgba(240,160,60,0.12)"/><stop offset="100%" stop-color="rgba(240,140,40,0)"/></radialGradient></defs>';
         s += '<rect x="0" y="0" width="70" height="95" fill="url(#auraCndl'+uid+')">';
-        s += '<animate attributeName="opacity" values="0.75;0.92;0.80;0.95;0.75" dur="3s" repeatCount="indefinite"/>';
+        s += '<animate attributeName="opacity" values="0.7;1.0;0.75;0.95;0.7" dur="2.5s" repeatCount="indefinite"/>';
         s += '</rect>';
-        s += '<circle cx="35" cy="85" r="0.8" fill="#F0A030" opacity="0.15">';
-        s += '<animate attributeName="cy" values="85;78;72" dur="5s" repeatCount="indefinite"/>';
-        s += '<animate attributeName="opacity" values="0.15;0.06;0" dur="5s" repeatCount="indefinite"/>';
-        s += '</circle>';
-        s += '<circle cx="38" cy="87" r="0.5" fill="#E09030" opacity="0.10">';
-        s += '<animate attributeName="cy" values="87;80;74" dur="6.5s" repeatCount="indefinite"/>';
-        s += '<animate attributeName="opacity" values="0.10;0.04;0" dur="6.5s" repeatCount="indefinite"/>';
-        s += '</circle>';
+        // Warm wash on the lower half
+        s += '<rect x="0" y="50" width="70" height="45" fill="rgba(240,180,80,0.06)"><animate attributeName="opacity" values="0.04;0.10;0.04" dur="3s" repeatCount="indefinite"/></rect>';
+        // Rising flame wisps
+        s += '<circle cx="35" cy="85" r="1.0" fill="#F0A030" opacity="0.25"><animate attributeName="cy" values="85;74;64" dur="4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.25;0.10;0" dur="4s" repeatCount="indefinite"/><animate attributeName="r" values="1.0;0.6;0.2" dur="4s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="32" cy="88" r="0.7" fill="#E09030" opacity="0.20"><animate attributeName="cy" values="88;76;66" dur="5s" begin="1s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.20;0.08;0" dur="5s" begin="1s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="38" cy="87" r="0.8" fill="#F0B040" opacity="0.18"><animate attributeName="cy" values="87;78;68" dur="4.5s" begin="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.18;0.06;0" dur="4.5s" begin="2s" repeatCount="indefinite"/></circle>';
         break;
 
       case 28: // Deep Sea — teal wash + rising bubbles + caustics
@@ -19626,29 +19624,42 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M-2,14 C12,11 28,15 42,12 C56,9 66,14 72,11" fill="none" stroke="rgba(180,220,240,0.04)" stroke-width="0.6"/>';
         break;
 
-      case 29: // Void Eclipse — inverted vignette + stars + corona
-        s += '<defs><radialGradient id="auraVoid'+uid+'" cx="0.5" cy="0.5" r="0.5"><stop offset="0%" stop-color="rgba(0,0,0,0)"/><stop offset="60%" stop-color="rgba(0,0,0,0)"/><stop offset="100%" stop-color="rgba(0,0,0,0.12)"/></radialGradient></defs>';
+      case 29: // Void Eclipse — dark vignette + corona ring + dying stars
+        s += '<defs><radialGradient id="auraVoid'+uid+'" cx="0.5" cy="0.45" r="0.5"><stop offset="0%" stop-color="rgba(0,0,0,0)"/><stop offset="45%" stop-color="rgba(0,0,0,0)"/><stop offset="75%" stop-color="rgba(0,0,0,0.10)"/><stop offset="100%" stop-color="rgba(0,0,0,0.22)"/></radialGradient></defs>';
         s += '<rect x="0" y="0" width="70" height="95" fill="url(#auraVoid'+uid+')">';
-        s += '<animate attributeName="opacity" values="0.7;0.92;0.7" dur="8s" repeatCount="indefinite"/>';
+        s += '<animate attributeName="opacity" values="0.7;1.0;0.7" dur="8s" repeatCount="indefinite"/>';
         s += '</rect>';
-        s += '<circle cx="8" cy="12" r="0.15" fill="#EAE0C8" opacity="0.20"><animate attributeName="opacity" values="0.20;0.05;0.20" dur="3.2s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="62" cy="8" r="0.12" fill="#EAE0C8" opacity="0.15"><animate attributeName="opacity" values="0.15;0.04;0.15" dur="4.1s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="55" cy="88" r="0.12" fill="#EAE0C8" opacity="0.12"><animate attributeName="opacity" values="0.12;0.03;0.12" dur="2.8s" repeatCount="indefinite"/></circle>';
-        s += '<path d="M20,6 Q35,3 50,6" fill="none" stroke="rgba(240,220,160,0.06)" stroke-width="0.5" stroke-linecap="round"/>';
+        // Corona ring — faint circle of light around center
+        s += '<circle cx="35" cy="42" r="18" fill="none" stroke="rgba(200,168,120,0.08)" stroke-width="1.5"><animate attributeName="r" values="18;20;18" dur="6s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.06;0.12;0.06" dur="6s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="35" cy="42" r="22" fill="none" stroke="rgba(160,130,90,0.04)" stroke-width="0.8"><animate attributeName="r" values="22;25;22" dur="8s" repeatCount="indefinite"/></circle>';
+        // Stars dying and flickering
+        s += '<circle cx="8" cy="12" r="0.3" fill="#EAE0C8" opacity="0.30"><animate attributeName="opacity" values="0.30;0.05;0.30" dur="3.2s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="62" cy="8" r="0.25" fill="#EAE0C8" opacity="0.25"><animate attributeName="opacity" values="0.25;0.04;0.25" dur="4.1s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="55" cy="88" r="0.2" fill="#EAE0C8" opacity="0.20"><animate attributeName="opacity" values="0.20;0.03;0.20" dur="2.8s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="12" cy="80" r="0.2" fill="#EAE0C8" opacity="0.18"><animate attributeName="opacity" values="0.18;0.03;0.18" dur="3.6s" begin="1s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="58" cy="45" r="0.15" fill="#EAE0C8" opacity="0.15"><animate attributeName="opacity" values="0.15;0.02;0.15" dur="5s" begin="2s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="10" cy="40" r="0.18" fill="#EAE0C8" opacity="0.20"><animate attributeName="opacity" values="0.20;0.04;0.20" dur="4.5s" begin="0.5s" repeatCount="indefinite"/></circle>';
+        // Eclipse corona wisps
+        s += '<path d="M18,30 Q35,26 52,30" fill="none" stroke="rgba(200,168,120,0.06)" stroke-width="0.5"><animate attributeName="opacity" values="0.04;0.10;0.04" dur="7s" repeatCount="indefinite"/></path>';
+        s += '<path d="M20,55 Q35,58 50,55" fill="none" stroke="rgba(200,168,120,0.05)" stroke-width="0.4"><animate attributeName="opacity" values="0.03;0.08;0.03" dur="9s" begin="3s" repeatCount="indefinite"/></path>';
         break;
 
-      case 30: // Pollen Drift — gold particles rising from canopy
+      case 30: // Pollen Drift — golden cloud of pollen rising and swirling
         s += '<g>';
-        for (var _pi = 0; _pi < 10; _pi++) {
-          var _px = 25 + (_pi % 5) * 4 + (_pi % 3);
-          var _py = 55 - (_pi % 4) * 3;
-          var _pdur = (6 + _pi * 0.4).toFixed(1);
-          var _pdelay = (_pi * 0.7).toFixed(1);
-          var _pxEnd = _px + (_pi % 2 === 0 ? 6 : -6);
-          s += '<circle cx="'+_px+'" cy="'+_py+'" r="0.35" fill="#C8A84B" opacity="0.15">';
-          s += '<animate attributeName="cy" values="'+_py+';-5" dur="'+_pdur+'s" begin="'+_pdelay+'s" repeatCount="indefinite"/>';
-          s += '<animate attributeName="cx" values="'+_px+';'+_pxEnd+'" dur="'+_pdur+'s" begin="'+_pdelay+'s" repeatCount="indefinite"/>';
-          s += '<animate attributeName="opacity" values="0.15;0.10;0" dur="'+_pdur+'s" begin="'+_pdelay+'s" repeatCount="indefinite"/>';
+        // Ambient golden haze
+        s += '<ellipse cx="35" cy="45" rx="20" ry="25" fill="rgba(200,168,75,0.04)"><animate attributeName="opacity" values="0.03;0.08;0.03" dur="5s" repeatCount="indefinite"/></ellipse>';
+        // 16 pollen grains — bigger, brighter, more spread out, swirling paths
+        for (var _pi = 0; _pi < 16; _pi++) {
+          var _px = 8 + (_pi * 4.2) % 54;
+          var _py = 70 - (_pi % 6) * 8;
+          var _pdur = (5 + _pi * 0.35).toFixed(1);
+          var _pdelay = (_pi * 0.5).toFixed(1);
+          var _pxMid = _px + (_pi % 2 === 0 ? 8 : -8);
+          var _pxEnd = _px + (_pi % 3 === 0 ? 4 : -4);
+          s += '<circle cx="'+_px+'" cy="'+_py+'" r="0.5" fill="#C8A84B" opacity="0">';
+          s += '<animate attributeName="cy" values="'+_py+';'+(_py-30)+';-5" dur="'+_pdur+'s" begin="'+_pdelay+'s" repeatCount="indefinite"/>';
+          s += '<animate attributeName="cx" values="'+_px+';'+_pxMid+';'+_pxEnd+'" dur="'+_pdur+'s" begin="'+_pdelay+'s" repeatCount="indefinite"/>';
+          s += '<animate attributeName="opacity" values="0;0.40;0.30;0" keyTimes="0;0.15;0.75;1" dur="'+_pdur+'s" begin="'+_pdelay+'s" repeatCount="indefinite"/>';
           s += '</circle>';
         }
         s += '</g>';
@@ -19666,54 +19677,89 @@ document.addEventListener('keydown', function(e) {
         s += '</g>';
         break;
 
-      case 32: // Dandelion Seeds — floating upward with rotation
+      case 32: // Dandelion Seeds — 12 fluffy puffs floating upward with spin
         s += '<g>';
-        for (var _di = 0; _di < 5; _di++) {
-          var _dx = 20 + _di * 8;
-          var _dy = 50 + (_di % 3) * 5;
-          var _ddur = (8 + _di * 1.2).toFixed(1);
-          var _ddelay = (_di * 1.5).toFixed(1);
-          var _dxEnd = _dx + (_di % 2 === 0 ? 10 : -8);
-          s += '<g transform="translate('+_dx+','+_dy+')">';
-          s += '<circle r="0.3" fill="rgba(240,235,216,0.30)"/>';
-          s += '<line x1="0" y1="0" x2="0" y2="-1.5" stroke="rgba(240,235,216,0.20)" stroke-width="0.15"/>';
-          s += '<line x1="0" y1="0" x2="1.2" y2="-0.8" stroke="rgba(240,235,216,0.18)" stroke-width="0.12"/>';
-          s += '<line x1="0" y1="0" x2="-1.2" y2="-0.8" stroke="rgba(240,235,216,0.18)" stroke-width="0.12"/>';
-          s += '<animateTransform attributeName="transform" type="translate" values="'+_dx+','+_dy+';'+_dxEnd+',-10" dur="'+_ddur+'s" begin="'+_ddelay+'s" repeatCount="indefinite"/>';
+        var _dSeeds = [[10,65],[18,55],[25,70],[32,48],[40,62],[48,72],[55,52],[62,60],[15,42],[35,75],[50,45],[58,68]];
+        for (var _di = 0; _di < 12; _di++) {
+          var _dx = _dSeeds[_di][0];
+          var _dy = _dSeeds[_di][1];
+          var _ddur = (7 + _di * 0.8).toFixed(1);
+          var _ddelay = (_di * 0.7).toFixed(1);
+          var _dxMid = _dx + (_di % 2 === 0 ? 8 : -6);
+          var _dxEnd = _dx + (_di % 3 === 0 ? 5 : -4);
+          s += '<g opacity="0">';
+          // Seed body
+          s += '<circle cx="0" cy="0" r="0.4" fill="rgba(240,235,216,0.50)"/>';
+          // Pappus (the fluffy part) — 6 filaments radiating out
+          for (var _df = 0; _df < 6; _df++) {
+            var _fAng = _df * Math.PI / 3 - Math.PI / 2;
+            var _fx = (Math.cos(_fAng) * 2).toFixed(1);
+            var _fy = (Math.sin(_fAng) * 2).toFixed(1);
+            s += '<line x1="0" y1="0" x2="'+_fx+'" y2="'+_fy+'" stroke="rgba(240,235,216,0.35)" stroke-width="0.1"/>';
+            s += '<circle cx="'+_fx+'" cy="'+_fy+'" r="0.15" fill="rgba(240,235,216,0.25)"/>';
+          }
+          // Stem — tiny line hanging below
+          s += '<line x1="0" y1="0.4" x2="0" y2="1.5" stroke="rgba(200,190,170,0.25)" stroke-width="0.08"/>';
+          // Float + drift + spin
+          s += '<animateTransform attributeName="transform" type="translate" values="'+_dx+','+_dy+';'+_dxMid+','+(_dy-35)+';'+_dxEnd+',-10" dur="'+_ddur+'s" begin="'+_ddelay+'s" repeatCount="indefinite"/>';
+          s += '<animateTransform attributeName="transform" type="rotate" values="0;180;360" dur="'+_ddur+'s" begin="'+_ddelay+'s" repeatCount="indefinite" additive="sum"/>';
+          s += '<animate attributeName="opacity" values="0;0.55;0.45;0" keyTimes="0;0.1;0.8;1" dur="'+_ddur+'s" begin="'+_ddelay+'s" repeatCount="indefinite"/>';
           s += '</g>';
         }
         s += '</g>';
         break;
 
-      case 33: // Lightning Bugs in a Jar — contained pulsing dots
-        s += '<ellipse cx="35" cy="45" rx="14" ry="20" fill="none" stroke="rgba(240,235,216,0.03)" stroke-width="0.3"/>';
+      case 33: // Chain Lightning — electric bolts arcing across the frame
         s += '<g>';
-        var _lbPos = [[30,35],[40,38],[33,50],[38,55],[28,45],[42,42],[35,30]];
-        for (var _li = 0; _li < 7; _li++) {
-          var _ldur = (3 + _li * 0.8).toFixed(1);
-          var _ldelay = (_li * 0.6).toFixed(1);
-          var _lfilt = (_li < 2) ? ' filter="url(#gw'+uid+')"' : '';
-          s += '<circle cx="'+_lbPos[_li][0]+'" cy="'+_lbPos[_li][1]+'" r="0.5" fill="#D4D070" opacity="0.04"'+_lfilt+'>';
-          s += '<animate attributeName="opacity" values="0.04;0.22;0.04" dur="'+_ldur+'s" begin="'+_ldelay+'s" repeatCount="indefinite"/>';
-          s += '</circle>';
-        }
+        // Background charge field — faint purple wash
+        s += '<rect x="0" y="0" width="70" height="95" fill="rgba(100,80,180,0.03)"><animate attributeName="opacity" values="0.02;0.06;0.02" dur="4s" repeatCount="indefinite"/></rect>';
+        // Lightning bolt 1 — main strike, left side
+        s += '<path d="M15,5 L20,22 L14,24 L22,42 L16,44 L25,65" fill="none" stroke="rgba(180,200,255,0.45)" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round" opacity="0">';
+        s += '<animate attributeName="opacity" values="0;0;0.55;0.45;0;0;0;0;0.50;0" keyTimes="0;0.18;0.19;0.22;0.24;0.55;0.56;0.57;0.58;0.60" dur="5s" repeatCount="indefinite"/>';
+        s += '</path>';
+        // Bolt 1 glow
+        s += '<path d="M15,5 L20,22 L14,24 L22,42 L16,44 L25,65" fill="none" stroke="rgba(140,160,255,0.15)" stroke-width="3" stroke-linecap="round" opacity="0">';
+        s += '<animate attributeName="opacity" values="0;0;0.20;0.15;0;0;0;0;0.18;0" keyTimes="0;0.18;0.19;0.22;0.24;0.55;0.56;0.57;0.58;0.60" dur="5s" repeatCount="indefinite"/>';
+        s += '</path>';
+        // Lightning bolt 2 — right side, offset timing
+        s += '<path d="M55,10 L50,28 L56,30 L48,48 L54,50 L46,72" fill="none" stroke="rgba(180,200,255,0.40)" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round" opacity="0">';
+        s += '<animate attributeName="opacity" values="0;0;0.50;0.40;0;0;0;0.45;0" keyTimes="0;0.35;0.36;0.39;0.41;0.72;0.73;0.75;0.77" dur="6s" repeatCount="indefinite"/>';
+        s += '</path>';
+        s += '<path d="M55,10 L50,28 L56,30 L48,48 L54,50 L46,72" fill="none" stroke="rgba(140,160,255,0.12)" stroke-width="2.5" stroke-linecap="round" opacity="0">';
+        s += '<animate attributeName="opacity" values="0;0;0.16;0.12;0;0;0;0.14;0" keyTimes="0;0.35;0.36;0.39;0.41;0.72;0.73;0.75;0.77" dur="6s" repeatCount="indefinite"/>';
+        s += '</path>';
+        // Small branch bolts
+        s += '<path d="M20,22 L28,18 L32,22" fill="none" stroke="rgba(200,210,255,0.35)" stroke-width="0.4" opacity="0"><animate attributeName="opacity" values="0;0;0.40;0;0" keyTimes="0;0.18;0.20;0.23;1" dur="5s" repeatCount="indefinite"/></path>';
+        s += '<path d="M48,48 L42,44 L38,48" fill="none" stroke="rgba(200,210,255,0.30)" stroke-width="0.4" opacity="0"><animate attributeName="opacity" values="0;0;0.35;0;0" keyTimes="0;0.36;0.38;0.41;1" dur="6s" repeatCount="indefinite"/></path>';
+        // Static charge dots — tiny sparks at tips
+        s += '<circle cx="25" cy="65" r="0.6" fill="rgba(200,210,255,0.50)" opacity="0"><animate attributeName="opacity" values="0;0;0.50;0;0" keyTimes="0;0.18;0.20;0.25;1" dur="5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="46" cy="72" r="0.5" fill="rgba(200,210,255,0.45)" opacity="0"><animate attributeName="opacity" values="0;0;0.45;0;0" keyTimes="0;0.35;0.37;0.42;1" dur="6s" repeatCount="indefinite"/></circle>';
         s += '</g>';
         break;
 
-      case 34: // Tidal Pool — expanding ripple rings
-        s += '<rect x="0" y="55" width="70" height="40" fill="rgba(60,140,130,0.04)"/>';
+      case 34: // Tidal Pool — water surface at bottom with ripples, caustics, and life
         s += '<g>';
-        var _tpPos = [[25,72],[45,78],[35,68]];
-        for (var _ti = 0; _ti < 3; _ti++) {
-          var _tdur = (4 + _ti * 1.5).toFixed(1);
-          var _tdelay = (_ti * 2).toFixed(1);
-          s += '<circle cx="'+_tpPos[_ti][0]+'" cy="'+_tpPos[_ti][1]+'" r="0" fill="none" stroke="rgba(180,220,220,0.08)" stroke-width="0.3">';
-          s += '<animate attributeName="r" values="0;8" dur="'+_tdur+'s" begin="'+_tdelay+'s" repeatCount="indefinite"/>';
-          s += '<animate attributeName="opacity" values="0.08;0" dur="'+_tdur+'s" begin="'+_tdelay+'s" repeatCount="indefinite"/>';
+        // Water body — translucent teal fill across lower third
+        s += '<path d="M0,68 C10,66 25,70 35,67 C45,64 60,69 70,66 L70,95 L0,95 Z" fill="rgba(50,130,120,0.10)"><animate attributeName="d" values="M0,68 C10,66 25,70 35,67 C45,64 60,69 70,66 L70,95 L0,95 Z;M0,67 C10,69 25,66 35,69 C45,72 60,67 70,69 L70,95 L0,95 Z;M0,68 C10,66 25,70 35,67 C45,64 60,69 70,66 L70,95 L0,95 Z" dur="4s" repeatCount="indefinite"/></path>';
+        // Surface shimmer line
+        s += '<path d="M0,68 C10,66 25,70 35,67 C45,64 60,69 70,66" fill="none" stroke="rgba(180,230,220,0.20)" stroke-width="0.5"><animate attributeName="d" values="M0,68 C10,66 25,70 35,67 C45,64 60,69 70,66;M0,67 C10,69 25,66 35,69 C45,72 60,67 70,69;M0,68 C10,66 25,70 35,67 C45,64 60,69 70,66" dur="4s" repeatCount="indefinite"/></path>';
+        // Ripple rings — 5 expanding rings
+        var _tpPos = [[15,78],[35,82],[55,76],[25,88],[48,85]];
+        for (var _ti = 0; _ti < 5; _ti++) {
+          var _tdur = (3.5 + _ti * 1.2).toFixed(1);
+          var _tdelay = (_ti * 1.5).toFixed(1);
+          s += '<circle cx="'+_tpPos[_ti][0]+'" cy="'+_tpPos[_ti][1]+'" r="0" fill="none" stroke="rgba(180,230,220,0.18)" stroke-width="0.35">';
+          s += '<animate attributeName="r" values="0;10" dur="'+_tdur+'s" begin="'+_tdelay+'s" repeatCount="indefinite"/>';
+          s += '<animate attributeName="opacity" values="0.18;0" dur="'+_tdur+'s" begin="'+_tdelay+'s" repeatCount="indefinite"/>';
           s += '</circle>';
         }
-        s += '<circle cx="40" cy="65" r="0.3" fill="rgba(240,235,216,0.12)"><animate attributeName="opacity" values="0.12;0.04;0.12" dur="2.5s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="20" cy="70" r="0.25" fill="rgba(240,235,216,0.10)"><animate attributeName="opacity" values="0.10;0.03;0.10" dur="3.2s" repeatCount="indefinite"/></circle>';
+        // Caustic light patterns on the water
+        s += '<path d="M8,75 C12,73 16,77 20,74 C24,71 28,76 32,73" fill="none" stroke="rgba(200,240,230,0.12)" stroke-width="0.4"><animate attributeName="opacity" values="0.08;0.18;0.08" dur="3s" repeatCount="indefinite"/></path>';
+        s += '<path d="M40,80 C44,78 48,82 52,79 C56,76 60,81 64,78" fill="none" stroke="rgba(200,240,230,0.10)" stroke-width="0.4"><animate attributeName="opacity" values="0.06;0.15;0.06" dur="3.5s" begin="1s" repeatCount="indefinite"/></path>';
+        // Tiny creatures — a starfish shape and small dots
+        s += '<path d="M20,85 L21,83 L20,81 L19,83 Z M20,83 L22,83 M20,83 L18,83" fill="none" stroke="rgba(200,150,100,0.18)" stroke-width="0.3" stroke-linecap="round"/>';
+        s += '<circle cx="50" cy="88" r="0.4" fill="rgba(160,200,180,0.20)"/>';
+        s += '<circle cx="12" cy="82" r="0.3" fill="rgba(180,160,140,0.15)"/>';
         s += '</g>';
         break;
 
