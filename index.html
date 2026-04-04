@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-08c';
+  var _SVG_CACHE_VER = '2026-04-08d';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -20759,65 +20759,36 @@ document.addEventListener('keydown', function(e) {
         s += '</g>';
         break;
       case 33: // The Capybara — MYTHIC, side profile facing LEFT
-        // From reference image: smooth dome body (back is highest point),
-        // long flat head extending forward, dark muzzle block, small ears,
-        // visible front legs and hind foot. Sitting pose.
-        s += '<g opacity="0.90">';
+        // BOLD SIMPLE SHAPES. Body = one big dome. Head = one long rectangle.
+        // Muzzle = one dark block. Fewer parts, bigger, clearer.
+        s += '<g opacity="0.92">';
         // Shadow
-        s += '<ellipse cx="55" cy="92.5" rx="8" ry="0.6" fill="#000" opacity="0.08"/>';
-        // ── HIND FOOT — visible behind body, darker ──
-        s += '<rect x="59" y="91" width="3" height="2" rx="0.8" fill="#8A6038"/>';
-        // ── BODY — smooth dome, back peaks high, slopes down to front ──
-        // Like a hill: rump (right) is highest, slopes down left to neck
-        s += '<path d="M47,87 C46.5,85 48,82 51,80.5 C54,79 57,79 60,80 C62,81 63,83 63,86 C63,89 61.5,91 59,92 C56,93 52,92.5 49.5,91.5 C47.5,90.5 46.5,89 47,87 Z" fill="#A87848"/>';
-        // Darker back contour
-        s += '<path d="M49,81.5 C52,80 56,79.5 59,80 C61.5,81 62.5,82.5 63,84" fill="none" stroke="#8A5830" stroke-width="0.4" opacity="0.2"/>';
-        // Belly — lighter underside
-        s += '<path d="M49,91 C53,92.5 57,92.5 60,91" fill="none" stroke="#C09868" stroke-width="0.8" opacity="0.2"/>';
-        // Fur texture arcs
-        s += '<path d="M49,82.5 C52,81.5 56,81.5 59.5,82.5" fill="none" stroke="#8A5830" stroke-width="0.25" opacity="0.15"/>';
-        s += '<path d="M48,85 C51,84 55,84 58.5,85.5" fill="none" stroke="#8A5830" stroke-width="0.25" opacity="0.12"/>';
-        s += '<path d="M48,87.5 C51,87 55,87 58,88" fill="none" stroke="#8A5830" stroke-width="0.2" opacity="0.10"/>';
-        s += '<path d="M49,89.5 C52,89 55.5,89 58,90" fill="none" stroke="#8A5830" stroke-width="0.2" opacity="0.08"/>';
-        // ── FRONT LEGS — two visible, short, stubby ──
-        s += '<rect x="49" y="91" width="2.5" height="2" rx="0.8" fill="#8A6038"/>';
-        s += '<rect x="52.5" y="91.2" width="2.5" height="1.8" rx="0.8" fill="#9A7048"/>';
-        // Hooves — darker tips
-        s += '<rect x="49" y="92.5" width="2.5" height="0.8" rx="0.4" fill="#6A4828"/>';
-        s += '<rect x="52.5" y="92.5" width="2.5" height="0.7" rx="0.4" fill="#6A4828"/>';
-        s += '<rect x="59" y="92.5" width="3" height="0.7" rx="0.4" fill="#6A4828"/>';
-        // ── NECK — thick, angled forward ──
-        s += '<path d="M47.5,84 C47,83 46.5,82 46,81 L48.5,80.5 C48.5,81.5 48,83 47.5,84 Z" fill="#A87848"/>';
-        // ── HEAD — LONG, flat on top, boxy — THE capybara signature ──
-        // Extends far to the left, clearly longer than tall
-        s += '<path d="M40,83 C39.5,81.5 40,80 41.5,79.5 L46,79 C47.5,79 48.5,79.5 48.5,81 C48.5,82.5 48,84 47,85 C45.5,86 42.5,86 41,85 C40,84.5 39.5,84 40,83 Z" fill="#B08050"/>';
-        // Flat skull top
-        s += '<path d="M41,80 L45.5,79.5 L47,79.5" fill="none" stroke="#9A7048" stroke-width="0.3" opacity="0.2"/>';
-        // Jaw/chin line
-        s += '<path d="M41,85 C43,86 45.5,85.5 47,84.5" fill="none" stroke="#9A7048" stroke-width="0.25" opacity="0.15"/>';
-        // Head-body transition
-        s += '<path d="M47.5,81 C48,80.5 48.5,81 48.5,82" fill="none" stroke="#9A7048" stroke-width="0.2" opacity="0.1"/>';
-        // ── MUZZLE — dark rectangular block, the signature feature ──
-        s += '<path d="M39,82 C38.5,81.5 39,80.5 40,80.5 L41.5,80.5 C42,80.5 42,81.5 41.5,82.5 C41,83.5 40,84 39.5,83.5 C39,83 38.5,82.5 39,82 Z" fill="#8A6038"/>';
-        // Nose pad — dark
-        s += '<ellipse cx="39" cy="82" rx="0.5" ry="0.6" fill="#3A2A18"/>';
-        // Nostril
-        s += '<circle cx="39" cy="82.2" r="0.2" fill="#1A1008"/>';
-        // ── EYE — small, dark, set high on head ──
-        s += '<circle cx="43.5" cy="81" r="0.55" fill="#2D1810"/>';
-        s += '<circle cx="43.7" cy="80.8" r="0.15" fill="#F4EDDA" opacity="0.5"/>';
-        // ── EARS — small round bumps, high and back ──
-        s += '<ellipse cx="46" cy="79" rx="0.8" ry="0.6" fill="#9A6840"/>';
-        s += '<ellipse cx="46" cy="79" rx="0.4" ry="0.3" fill="#B08858" opacity="0.3"/>';
-        s += '<ellipse cx="47.5" cy="79" rx="0.7" ry="0.55" fill="#8A5830"/>';
-        // ── WHISKERS ──
-        s += '<line x1="39.5" y1="83" x2="37.5" y2="82.5" stroke="#C0A878" stroke-width="0.1" opacity="0.3"/>';
-        s += '<line x1="39.5" y1="83.5" x2="37.5" y2="84" stroke="#C0A878" stroke-width="0.1" opacity="0.25"/>';
-        // Mouth
-        s += '<path d="M40,84 C40.5,84.3 41,84.2 41.5,84" fill="none" stroke="#7A5838" stroke-width="0.15" opacity="0.25"/>';
+        s += '<ellipse cx="54" cy="92.8" rx="8.5" ry="0.6" fill="#000" opacity="0.08"/>';
+        // ── LEGS — drawn first, behind body ──
+        s += '<rect x="49" y="90.5" width="2.8" height="2.5" rx="0.8" fill="#8A6038"/>';
+        s += '<rect x="53" y="90.5" width="2.8" height="2.5" rx="0.8" fill="#8A6038"/>';
+        s += '<rect x="59" y="90.5" width="2.8" height="2.5" rx="0.8" fill="#7A5028"/>';
+        // ── BODY — ONE big dome path, rump highest on right ──
+        s += '<path d="M46,88 C45,85 47,81 52,80 C56,79 60,79.5 62,81 C63.5,83 64,86 63,89 C62,91 59,92 55,92 C51,92 47.5,91 46,88 Z" fill="#A87848"/>';
+        // ── HEAD — ONE long flat rectangle, the capybara ID ──
+        // Clearly LONGER than tall. Flat top, flat bottom.
+        s += '<path d="M38,83.5 L38,81 L46.5,80 L47,80 L47,84.5 L45,85.5 L40,85.5 L38,84.5 Z" fill="#B08050"/>';
+        // ── MUZZLE — dark block on front of head ──
+        s += '<rect x="36.5" y="81" width="2.5" height="3.5" rx="0.8" fill="#8A6038"/>';
+        // Nose
+        s += '<ellipse cx="37" cy="82.5" rx="0.6" ry="0.7" fill="#3A2A18"/>';
+        s += '<circle cx="37" cy="82.8" r="0.22" fill="#1A1008"/>';
+        // ── EYE ──
+        s += '<circle cx="42" cy="82" r="0.6" fill="#2D1810"/>';
+        s += '<circle cx="42.2" cy="81.8" r="0.15" fill="#F4EDDA" opacity="0.5"/>';
+        // ── EAR — tiny bump, high and back ──
+        s += '<ellipse cx="45.5" cy="80" rx="0.8" ry="0.6" fill="#9A6840"/>';
+        // Whiskers
+        s += '<line x1="37.5" y1="83.5" x2="35.5" y2="83" stroke="#C0A878" stroke-width="0.1" opacity="0.3"/>';
+        s += '<line x1="37.5" y1="84" x2="35.5" y2="84.5" stroke="#C0A878" stroke-width="0.1" opacity="0.25"/>';
         // Mythic glow
         s += '<ellipse cx="52" cy="85" rx="9" ry="5" fill="rgba(200,168,75,0.03)"><animate attributeName="opacity" values="0.02;0.05;0.02" dur="5s" repeatCount="indefinite"/></ellipse>';
-        s += '<animate attributeName="opacity" values="0.90;0.92;0.90" dur="4s" repeatCount="indefinite"/>';
+        s += '<animate attributeName="opacity" values="0.92;0.94;0.92" dur="4s" repeatCount="indefinite"/>';
         s += '</g>';
         break;
       case 34: // Baby Mammoth — LEGENDARY, side profile facing left
@@ -22674,53 +22645,41 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="10" cy="91.5" rx="0.8" ry="0.3" fill="#8A7050"/>';
         s += '</g>';
         break;
-      case 68: // Fennec Fox — tiny desert fox, WIDE fan ears, side profile right
-        // Vulpes zerda. The key: ears are WIDE triangles fanning OUT to
-        // the sides, not narrow vertical rabbit ears. Pointed foxy snout.
-        s += '<g opacity="0.90" transform="translate(56,88) scale(1.5) translate(-56,-88)">';
+      case 68: // Fennec Fox — BOLD simple shapes, facing right
+        // Vulpes zerda. Three-shape read: body oval + head triangle + 2 HUGE ears.
+        s += '<g opacity="0.92" transform="translate(56,88) scale(1.5) translate(-56,-88)">';
         // Shadow
-        s += '<ellipse cx="56" cy="92" rx="5" ry="0.5" fill="#0d100c" opacity="0.10"/>';
-        // Tail — fluffy, wraps right, dark tip
-        s += '<path d="M52,88.5 Q50,88 49,87.5 Q48,87 47.5,87.5 Q47.5,88.5 48.5,89 Q50,89.5 51.5,89.5 Q52.5,89 52.5,88.5" fill="#E8D0A0"/>';
-        s += '<path d="M48,87.5 Q47.5,87.8 47.5,88.3 Q48,89 49,89" fill="#7A5830" opacity="0.45"/>';
-        // Hind leg
-        s += '<rect x="53" y="91" width="2" height="1.5" rx="0.6" fill="#D0B880"/>';
-        // ── BODY — small, compact ──
-        s += '<path d="M52,87 Q51.5,85.5 53,85 Q55,84.5 58,85 Q59.5,85.5 60,87 Q60,89 59,90.5 Q57,91.5 55,91.5 Q53,91.5 52,90.5 Q51.5,89 52,87 Z" fill="#E8D0A0"/>';
-        // Belly
-        s += '<path d="M53.5,90.5 Q56,91.5 58.5,90.5" fill="#F4ECD8" opacity="0.35"/>';
-        // Front leg
-        s += '<rect x="57" y="91" width="2" height="1.5" rx="0.6" fill="#D8C090"/>';
-        // ── HEAD — pointed foxy triangle, NOT round like a rabbit ──
-        s += '<path d="M59,86 Q59.5,84.5 60.5,84 Q61.5,83.5 62.5,84 Q63.5,84.5 63.5,85.5 Q63.5,87 62.5,87.5 Q61,88 60,87.5 Q59,87 59,86 Z" fill="#E8D0A0"/>';
-        // ── SNOUT — pointed, extends right, foxy NOT blunt ──
-        s += '<path d="M63,85 Q64,84.8 64.8,85.2 Q65,85.8 64.5,86 Q63.5,86.5 63,86 Z" fill="#D8C090"/>';
-        // Nose — dark triangle at tip
-        s += '<path d="M64.6,85.2 L65,85.5 L64.6,85.7 Z" fill="#2A1A10"/>';
-        // Mouth line
-        s += '<path d="M64,86 Q64.3,86.3 64.6,86" fill="none" stroke="#A88860" stroke-width="0.1" opacity="0.25"/>';
-        // White cheek/chin
-        s += '<path d="M60,87 Q61.5,87.5 63,86.5" fill="#F4ECD8" opacity="0.3"/>';
-        // ── EARS — ENORMOUS WIDE TRIANGLES fanning OUT, not vertical ──
-        // The fennec's ears are wider than the head. They fan outward.
-        // Back ear — fans up-left
-        s += '<path d="M60.5,84 L57.5,79 L59,78.5 L61.5,83.5 Z" fill="#D8C090" stroke="#B8A068" stroke-width="0.12"/>';
-        // Back ear inner pink
-        s += '<path d="M60,83.5 L58.2,79.8 L59.2,79.5 L61,83 Z" fill="#E8A890" opacity="0.35"/>';
-        // Front ear — fans up-right, wider
-        s += '<path d="M62,83.5 L64,78 L65.5,78.5 L63,83.5 Z" fill="#E8D0A0" stroke="#B8A068" stroke-width="0.12"/>';
-        // Front ear inner pink
-        s += '<path d="M62.3,83 L64.2,78.8 L65,79.2 L63,83 Z" fill="#E8A890" opacity="0.4"/>';
-        // ── EYES — large, dark, nocturnal ──
-        s += '<circle cx="61.5" cy="85" r="0.65" fill="#1A1008"/>';
-        s += '<circle cx="61.7" cy="84.8" r="0.2" fill="rgba(240,235,216,0.6)"/>';
-        // Brow line
-        s += '<path d="M61,84.3 Q61.5,84 62.2,84.3" fill="none" stroke="#C8A870" stroke-width="0.15" opacity="0.2"/>';
+        s += '<ellipse cx="56" cy="92.2" rx="5.5" ry="0.5" fill="#0d100c" opacity="0.10"/>';
+        // Tail — behind body, fluffy with dark tip
+        s += '<path d="M51,88 Q49,87 48,87 Q47,87.5 47.5,88.5 Q48.5,89.5 50,89.5 Q51.5,89 52,88.5" fill="#E8D0A0"/>';
+        s += '<path d="M47.5,87.5 Q47,88 47.5,88.8 Q48,89 48.5,88.8" fill="#6A4828" opacity="0.5"/>';
+        // Legs
+        s += '<rect x="53.5" y="91" width="1.8" height="1.5" rx="0.5" fill="#D0B880"/>';
+        s += '<rect x="57.5" y="91" width="1.8" height="1.5" rx="0.5" fill="#D8C090"/>';
+        // ── BODY — simple oval ──
+        s += '<ellipse cx="56" cy="88.5" rx="5" ry="3" fill="#E8D0A0"/>';
+        // ── EARS — THE defining feature, drawn BEFORE head ──
+        // Two HUGE rounded triangles, wider than the head, pointing UP
+        // Back ear
+        s += '<path d="M60,84 L58,78 L61,78 Z" fill="#D0B880" stroke="#B8A068" stroke-width="0.15"/>';
+        s += '<path d="M60,83 L58.8,79 L60.5,79 Z" fill="#E8A890" opacity="0.4"/>';
+        // Front ear — slightly in front
+        s += '<path d="M62,84 L61,78 L64,78 Z" fill="#E8D0A0" stroke="#B8A068" stroke-width="0.15"/>';
+        s += '<path d="M62,83 L61.5,79 L63.5,79 Z" fill="#E8A890" opacity="0.45"/>';
+        // ── HEAD — wedge/triangle pointing right ──
+        s += '<path d="M59,85.5 Q59,83.5 61,83 Q63,83 64,84 Q64.5,85 64,86 Q63,87.5 61,87.5 Q59.5,87 59,85.5 Z" fill="#E8D0A0"/>';
+        // ── SNOUT — pointed, foxy ──
+        s += '<path d="M63.5,84.5 L65.5,85.5 L63.5,86.2 Z" fill="#D8C090"/>';
+        // Nose — black dot at tip
+        s += '<circle cx="65.3" cy="85.5" r="0.35" fill="#2A1A10"/>';
+        // White muzzle
+        s += '<path d="M63,86 Q64,86.5 65,86" fill="#F4ECD8" opacity="0.35"/>';
+        // ── EYE — large, dark ──
+        s += '<circle cx="61.5" cy="84.8" r="0.7" fill="#1A1008"/>';
+        s += '<circle cx="61.7" cy="84.6" r="0.2" fill="rgba(240,235,216,0.6)"/>';
         // Whiskers
-        s += '<line x1="64.2" y1="85.8" x2="65.8" y2="85.5" stroke="#D8C8B0" stroke-width="0.06" opacity="0.3"/>';
-        s += '<line x1="64.2" y1="86.2" x2="65.8" y2="86.5" stroke="#D8C8B0" stroke-width="0.06" opacity="0.25"/>';
-        // Fur texture
-        s += '<path d="M53,86 Q55.5,85 58,85.5" fill="none" stroke="#C8A870" stroke-width="0.2" opacity="0.15"/>';
+        s += '<line x1="64.5" y1="85.8" x2="66" y2="85.5" stroke="#D8C8B0" stroke-width="0.08" opacity="0.3"/>';
+        s += '<line x1="64.5" y1="86.3" x2="66" y2="86.6" stroke="#D8C8B0" stroke-width="0.08" opacity="0.25"/>';
         s += '</g>';
         break;
       case 69: // Veiled Chameleon — gripping stem mid-height, profile view
@@ -23086,7 +23045,7 @@ document.addEventListener('keydown', function(e) {
       case 75: // Common Raven — realistic, grey body, black outline (Rare)
         // Reference: grey body, darker wing, lighter legs, white eye,
         // curved pointed beak, segmented legs with knobby knees, pointy claws.
-        s += '<g opacity="1" transform="translate(46,30) scale(1.35) translate(-46,-77)">';
+        s += '<g opacity="1" transform="translate(46,15) scale(1.35) translate(-46,-77)">';
         s += '<animateTransform attributeName="transform" type="rotate" values="-1 46 78;2 46 78;-1 46 78" dur="6s" repeatCount="indefinite"/>';
         // Shadow
         s += '<ellipse cx="52" cy="81.5" rx="3.5" ry="0.4" fill="#0d100c" opacity="0.15"/>';
@@ -23606,39 +23565,24 @@ document.addEventListener('keydown', function(e) {
         s += '</g>';
         break;
       case 'The Capybara':
-        // Identical to renderCompanion case 33 — facing LEFT
-        s += '<g opacity="0.90">';
-        s += '<ellipse cx="55" cy="92.5" rx="8" ry="0.6" fill="#000" opacity="0.08"/>';
-        s += '<rect x="59" y="91" width="3" height="2" rx="0.8" fill="#8A6038"/>';
-        s += '<path d="M47,87 C46.5,85 48,82 51,80.5 C54,79 57,79 60,80 C62,81 63,83 63,86 C63,89 61.5,91 59,92 C56,93 52,92.5 49.5,91.5 C47.5,90.5 46.5,89 47,87 Z" fill="#A87848"/>';
-        s += '<path d="M49,81.5 C52,80 56,79.5 59,80 C61.5,81 62.5,82.5 63,84" fill="none" stroke="#8A5830" stroke-width="0.4" opacity="0.2"/>';
-        s += '<path d="M49,91 C53,92.5 57,92.5 60,91" fill="none" stroke="#C09868" stroke-width="0.8" opacity="0.2"/>';
-        s += '<path d="M49,82.5 C52,81.5 56,81.5 59.5,82.5" fill="none" stroke="#8A5830" stroke-width="0.25" opacity="0.15"/>';
-        s += '<path d="M48,85 C51,84 55,84 58.5,85.5" fill="none" stroke="#8A5830" stroke-width="0.25" opacity="0.12"/>';
-        s += '<path d="M48,87.5 C51,87 55,87 58,88" fill="none" stroke="#8A5830" stroke-width="0.2" opacity="0.10"/>';
-        s += '<path d="M49,89.5 C52,89 55.5,89 58,90" fill="none" stroke="#8A5830" stroke-width="0.2" opacity="0.08"/>';
-        s += '<rect x="49" y="91" width="2.5" height="2" rx="0.8" fill="#8A6038"/>';
-        s += '<rect x="52.5" y="91.2" width="2.5" height="1.8" rx="0.8" fill="#9A7048"/>';
-        s += '<rect x="49" y="92.5" width="2.5" height="0.8" rx="0.4" fill="#6A4828"/>';
-        s += '<rect x="52.5" y="92.5" width="2.5" height="0.7" rx="0.4" fill="#6A4828"/>';
-        s += '<rect x="59" y="92.5" width="3" height="0.7" rx="0.4" fill="#6A4828"/>';
-        s += '<path d="M47.5,84 C47,83 46.5,82 46,81 L48.5,80.5 C48.5,81.5 48,83 47.5,84 Z" fill="#A87848"/>';
-        s += '<path d="M40,83 C39.5,81.5 40,80 41.5,79.5 L46,79 C47.5,79 48.5,79.5 48.5,81 C48.5,82.5 48,84 47,85 C45.5,86 42.5,86 41,85 C40,84.5 39.5,84 40,83 Z" fill="#B08050"/>';
-        s += '<path d="M41,80 L45.5,79.5 L47,79.5" fill="none" stroke="#9A7048" stroke-width="0.3" opacity="0.2"/>';
-        s += '<path d="M41,85 C43,86 45.5,85.5 47,84.5" fill="none" stroke="#9A7048" stroke-width="0.25" opacity="0.15"/>';
-        s += '<path d="M39,82 C38.5,81.5 39,80.5 40,80.5 L41.5,80.5 C42,80.5 42,81.5 41.5,82.5 C41,83.5 40,84 39.5,83.5 C39,83 38.5,82.5 39,82 Z" fill="#8A6038"/>';
-        s += '<ellipse cx="39" cy="82" rx="0.5" ry="0.6" fill="#3A2A18"/>';
-        s += '<circle cx="39" cy="82.2" r="0.2" fill="#1A1008"/>';
-        s += '<circle cx="43.5" cy="81" r="0.55" fill="#2D1810"/>';
-        s += '<circle cx="43.7" cy="80.8" r="0.15" fill="#F4EDDA" opacity="0.5"/>';
-        s += '<ellipse cx="46" cy="79" rx="0.8" ry="0.6" fill="#9A6840"/>';
-        s += '<ellipse cx="46" cy="79" rx="0.4" ry="0.3" fill="#B08858" opacity="0.3"/>';
-        s += '<ellipse cx="47.5" cy="79" rx="0.7" ry="0.55" fill="#8A5830"/>';
-        s += '<line x1="39.5" y1="83" x2="37.5" y2="82.5" stroke="#C0A878" stroke-width="0.1" opacity="0.3"/>';
-        s += '<line x1="39.5" y1="83.5" x2="37.5" y2="84" stroke="#C0A878" stroke-width="0.1" opacity="0.25"/>';
-        s += '<path d="M40,84 C40.5,84.3 41,84.2 41.5,84" fill="none" stroke="#7A5838" stroke-width="0.15" opacity="0.25"/>';
+        // Identical to renderCompanion case 33
+        s += '<g opacity="0.92">';
+        s += '<ellipse cx="54" cy="92.8" rx="8.5" ry="0.6" fill="#000" opacity="0.08"/>';
+        s += '<rect x="49" y="90.5" width="2.8" height="2.5" rx="0.8" fill="#8A6038"/>';
+        s += '<rect x="53" y="90.5" width="2.8" height="2.5" rx="0.8" fill="#8A6038"/>';
+        s += '<rect x="59" y="90.5" width="2.8" height="2.5" rx="0.8" fill="#7A5028"/>';
+        s += '<path d="M46,88 C45,85 47,81 52,80 C56,79 60,79.5 62,81 C63.5,83 64,86 63,89 C62,91 59,92 55,92 C51,92 47.5,91 46,88 Z" fill="#A87848"/>';
+        s += '<path d="M38,83.5 L38,81 L46.5,80 L47,80 L47,84.5 L45,85.5 L40,85.5 L38,84.5 Z" fill="#B08050"/>';
+        s += '<rect x="36.5" y="81" width="2.5" height="3.5" rx="0.8" fill="#8A6038"/>';
+        s += '<ellipse cx="37" cy="82.5" rx="0.6" ry="0.7" fill="#3A2A18"/>';
+        s += '<circle cx="37" cy="82.8" r="0.22" fill="#1A1008"/>';
+        s += '<circle cx="42" cy="82" r="0.6" fill="#2D1810"/>';
+        s += '<circle cx="42.2" cy="81.8" r="0.15" fill="#F4EDDA" opacity="0.5"/>';
+        s += '<ellipse cx="45.5" cy="80" rx="0.8" ry="0.6" fill="#9A6840"/>';
+        s += '<line x1="37.5" y1="83.5" x2="35.5" y2="83" stroke="#C0A878" stroke-width="0.1" opacity="0.3"/>';
+        s += '<line x1="37.5" y1="84" x2="35.5" y2="84.5" stroke="#C0A878" stroke-width="0.1" opacity="0.25"/>';
         s += '<ellipse cx="52" cy="85" rx="9" ry="5" fill="rgba(200,168,75,0.03)"><animate attributeName="opacity" values="0.02;0.05;0.02" dur="5s" repeatCount="indefinite"/></ellipse>';
-        s += '<animate attributeName="opacity" values="0.90;0.92;0.90" dur="4s" repeatCount="indefinite"/>';
+        s += '<animate attributeName="opacity" values="0.92;0.94;0.92" dur="4s" repeatCount="indefinite"/>';
         s += '</g>';
         break;
       case 'Garden Spider':
