@@ -1139,9 +1139,10 @@
     .cs-card-back[data-tier="cosmic"]{background-image:url('assets/cards/backs/back-cosmic.png');background-size:146% 110%;}
     /* Card back nameplate positions from alignment tool (set-39) */
     .cs-card-back[data-tier="common"] .cb-nameplate{left:28.3%!important;top:83%!important;width:44%!important;height:8.9%!important;}
-    .cs-card-back[data-tier="uncommon"] .cb-nameplate{left:34.7%!important;top:81.3%!important;width:31%!important;height:6.3%!important;}
-    .cs-card-back[data-tier="rare"] .cb-nameplate{left:27.7%!important;top:78.3%!important;width:45.7%!important;height:9.3%!important;}
-    .cs-card-back[data-tier="epic"] .cb-nameplate{left:34.3%!important;top:83%!important;width:30.7%!important;height:8%!important;}
+    .cs-card-back[data-tier="uncommon"] .cb-nameplate{left:34.7%!important;top:85%!important;width:31%!important;height:6.3%!important;}
+    .cs-card-back[data-tier="rare"] .cb-nameplate{left:27.7%!important;top:79.5%!important;width:45.7%!important;height:9.3%!important;}
+    .cs-card-back[data-tier="rare"] .cb-name{font-size:0.82rem!important;}
+    .cs-card-back[data-tier="epic"] .cb-nameplate{left:34.3%!important;top:85%!important;width:30.7%!important;height:8%!important;}
     .cs-card-back[data-tier="legendary"] .cb-nameplate{left:27.7%!important;top:83.3%!important;width:44.3%!important;height:7.7%!important;}
     .cs-card-back[data-tier="common"] .dna-ledger{margin-top:15%;}
     .cs-card-back[data-tier="common"] .dna-ledger-grid{padding-left:15%;}
@@ -1156,14 +1157,14 @@
     .cs-card-back[data-tier="legendary"] .dna-ledger-grid{padding-left:12%;}
     .cs-card-back[data-tier="mythic"] .dna-ledger{margin-top:12%;}
     .cs-card-back[data-tier="mythic"] .dna-ledger-grid{padding-left:8%;}
-    .cs-card-back[data-tier="mythic"] .cb-nameplate{left:27.3%!important;top:87%!important;width:45.7%!important;height:8%!important;}
+    .cs-card-back[data-tier="mythic"] .cb-nameplate{left:27.3%!important;top:84.5%!important;width:45.7%!important;height:8%!important;}
     .cs-card-back[data-tier="mythic"] .cb-name{color:#A87285;animation:mythicNamePulse 2.5s ease-in-out infinite;text-shadow:0 0 12px rgba(168,114,133,0.6),0 0 24px rgba(168,114,133,0.3) !important;}
     .cs-card-back[data-tier="mythic"]{box-shadow:inset 0 0 20px rgba(168,114,133,0.15),0 0 12px rgba(168,114,133,0.2),0 0 30px rgba(168,114,133,0.1);}
     @keyframes mythicNamePulse{0%,100%{opacity:1;text-shadow:0 0 12px rgba(168,114,133,0.6),0 0 24px rgba(168,114,133,0.3);}50%{opacity:0.85;text-shadow:0 0 20px rgba(168,114,133,0.9),0 0 40px rgba(168,114,133,0.5);}}
     .cs-card-back[data-tier="cosmic"] .dna-ledger{margin-top:16%;}
     .cs-card-back[data-tier="cosmic"] .dna-ledger-grid{padding-left:18%;}
     .cs-card-back[data-tier="cosmic"] .dna-cat{background-size:6px 6px;}
-    .cs-card-back[data-tier="cosmic"] .cb-nameplate{left:33.3%!important;top:84.3%!important;width:33.7%!important;height:8%!important;}
+    .cs-card-back[data-tier="cosmic"] .cb-nameplate{left:33.3%!important;top:86%!important;width:33.7%!important;height:8%!important;}
     .cs-card-back[data-tier="cosmic"] .cb-name{background:linear-gradient(90deg,#ff6b6b,#ffd93d,#6bff6b,#6bb5ff,#d46bff,#ff6b6b);background-size:200% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:cosmicNameShimmer 3s linear infinite;text-shadow:none !important;}
     @keyframes cosmicNameShimmer{0%{background-position:0% 71%;}100%{background-position:200% 71%;}}
     .cs-card-back .dna-ledger-eyebrow{font-size:0.68rem;}
@@ -5226,6 +5227,8 @@ window.onerror=function(msg,url,line,col,err){
     // ═══ CARD BACK NAMEPLATE VIEWER ═══
     cardBackViewer:function(){
       try{
+      // Close dev panel so tool is visible
+      var dp=document.getElementById('pw-dev-admin');if(dp)dp.classList.remove('open');
       var ov=document.getElementById('cbv-tool');
       if(ov){ov.remove();return;}
       var tiers=['common','uncommon','rare','epic','legendary','mythic','cosmic'];
@@ -5265,6 +5268,8 @@ window.onerror=function(msg,url,line,col,err){
     cardFrontAligner:function(){
       var ov=document.getElementById('cfa-tool');
       if(ov){ov.remove();}
+      // Close dev panel so tool is visible
+      var dp=document.getElementById('pw-dev-admin');if(dp)dp.classList.remove('open');
 
       // Get a sample plant (first in greenhouse or generate one)
       var gh=window.loadGreenhouse?loadGreenhouse():[];
