@@ -2048,8 +2048,8 @@
       border-bottom:2px solid var(--sage);color:var(--cream);
       box-shadow:0 0 16px rgba(122,179,86,0.2);
     }
-    .grove-panel{display:none;overflow-y:visible;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(44px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);}
-    .grove-panel.active{display:block;animation:_tabIn 0.25s ease;}
+    .grove-panel{display:none;overflow-y:visible;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(44px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);opacity:0;}
+    .grove-panel.active{display:block;opacity:1;animation:_tabIn 0.25s ease;}
     @keyframes _tabIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
     @keyframes panelFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
     /* Botanical loading spinner — three rotating leaves */
@@ -26865,17 +26865,15 @@ document.addEventListener('keydown', function(e) {
     if(window._updateGameDew)_updateGameDew();
     window.scrollTo(0, 0);
     // Game tab: restore #sw / #fg-ag state based on active game
-    if (tab === 'game') {
-      var _swEl = document.getElementById('sw');
-      var _agEl = document.getElementById('fg-ag');
+    // Hide SET topbar on non-game tabs to prevent flash
+    var _swEl = document.getElementById('sw');
+    var _agEl = document.getElementById('fg-ag');
+    if (tab !== 'game') {
+      if (_swEl) _swEl.style.display = 'none';
+    } else {
       if (window._a && window._a !== 'set') {
-        // Non-SET game active: keep sw hidden, ensure game area shows
         if (_swEl) _swEl.style.display = 'none';
         if (_agEl) _agEl.classList.add('on');
-      } else {
-        // SET game or no game: show SET header
-        if (_swEl) _swEl.style.display = '';
-        if (_agEl) { _agEl.classList.remove('on'); }
       }
     }
     if (tab === 'greenhouse') renderGreenhouse();
