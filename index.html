@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-07y';
+  var _SVG_CACHE_VER = '2026-04-07z';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21789,61 +21789,46 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M45.8,85.5 Q45,87 45.8,88.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
-      case 49: // Origami Crane — thick folded paper, distinct creases, triangle head
-        s += '<g opacity="0.85" transform="translate(56,20) scale(1.9) translate(-56,-20)">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.2,-0.4;0,0;-0.15,0.3;0,0" dur="6.9s" repeatCount="indefinite"/>';
-        // ── LEFT WING — thick, bold triangular shape ──
-        s += '<path d="M55,20 L49,16 L46,14 L48,17.5 L52,20 Z" fill="#F1ECE2"/>';
-        // Shadow on underside of left wing
-        s += '<path d="M55,20 L49,16 L48,17.5 L52,20 Z" fill="#D8D0C0" opacity="0.4"/>';
-        // Fold crease lines — distinct
-        s += '<path d="M55,20 L47.5,15" stroke="#B8B0A0" stroke-width="0.2" fill="none"/>';
-        s += '<path d="M52,20 L48,17" stroke="#C8C0B0" stroke-width="0.15" fill="none" opacity="0.5"/>';
-        // Wing outline — bold
-        s += '<path d="M55,20 L49,16 L46,14 L48,17.5 L52,20" fill="none" stroke="#A8A090" stroke-width="0.25"/>';
-        // ── RIGHT WING — mirrored, thick ──
-        s += '<path d="M57,20 L63,16 L66,14 L64,17.5 L60,20 Z" fill="#E8E2D6"/>';
-        // Shadow on underside
-        s += '<path d="M57,20 L63,16 L64,17.5 L60,20 Z" fill="#CCC4B4" opacity="0.4"/>';
-        // Fold crease lines
-        s += '<path d="M57,20 L64.5,15" stroke="#B8B0A0" stroke-width="0.2" fill="none"/>';
-        s += '<path d="M60,20 L64,17" stroke="#C8C0B0" stroke-width="0.15" fill="none" opacity="0.5"/>';
-        // Wing outline
-        s += '<path d="M57,20 L63,16 L66,14 L64,17.5 L60,20" fill="none" stroke="#A8A090" stroke-width="0.25"/>';
-        // ── BODY — thick central diamond, the folded core ──
-        s += '<path d="M54.5,19.5 L56,17.5 L57.5,19.5 L56,23 Z" fill="#DDD6C8"/>';
-        // Body fold lines — center crease + diagonal
-        s += '<path d="M56,17.5 L56,23" stroke="#B0A898" stroke-width="0.2" fill="none"/>';
-        s += '<path d="M54.5,19.5 L57.5,19.5" stroke="#C0B8A8" stroke-width="0.15" fill="none" opacity="0.5"/>';
-        // Body outline
-        s += '<path d="M54.5,19.5 L56,17.5 L57.5,19.5 L56,23 Z" fill="none" stroke="#A8A090" stroke-width="0.2"/>';
-        // Body shadow — lower half darker
-        s += '<path d="M54.5,19.5 L56,23 L57.5,19.5" fill="#C8C0B0" opacity="0.25"/>';
-        // ── NECK — WIDE fold, angled forward-left ──
-        s += '<path d="M55.5,19 L54,17 L52,14.5 L51,15.5 L53,17.5 L54.5,19.5 Z" fill="#E8E2D8"/>';
-        s += '<path d="M55,19 L51.5,15" stroke="#B0A898" stroke-width="0.2" fill="none"/>';
-        s += '<path d="M55.5,19 L52,14.5 M54.5,19.5 L51,15.5" fill="none" stroke="#A8A090" stroke-width="0.2"/>';
-        // Shadow on neck
-        s += '<path d="M53,17.5 L51,15.5 L54.5,19.5" fill="#C8C0B0" opacity="0.2"/>';
-        // ── HEAD — turned LEFT, wider triangle, easier to see ──
-        s += '<path d="M52,14.5 L48,13.5 L51,16 Z" fill="#F0EBE0"/>';
-        s += '<path d="M52,14.5 L48,13.5 L51,16 Z" fill="none" stroke="#A8A090" stroke-width="0.2"/>';
-        // Fold crease on head
-        s += '<path d="M51.5,14.8 L49,14" stroke="#B8B0A0" stroke-width="0.15" fill="none"/>';
-        // Shadow on head
-        s += '<path d="M51,16 L48,13.5 L49.5,14.5" fill="#D0C8B8" opacity="0.2"/>';
-        // Eye
-        s += '<circle cx="49.5" cy="14.2" r="0.12" fill="#2D1810"/>';
-        // ── TAIL — WIDER, forked, pointing back-right ──
-        s += '<path d="M56.5,22 L59,24 L60.5,26 L58.5,24.5 Z" fill="#D8D0C0"/>';
-        s += '<path d="M56.5,22.5 L59.5,25 L61,27 L59,25 Z" fill="#DDD6C8"/>';
-        s += '<path d="M56.5,22 L59,24 L60.5,26" fill="none" stroke="#A8A090" stroke-width="0.2"/>';
-        s += '<path d="M56.5,22.5 L59.5,25 L61,27" fill="none" stroke="#B0A898" stroke-width="0.18"/>';
-        // Fold crease on tail
-        s += '<path d="M57,22.5 L60,26" stroke="#B8B0A0" stroke-width="0.12" fill="none" opacity="0.5"/>';
-        // Action marks (( near head
-        s += '<path d="M47,13 Q46.5,14 47,15" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
-        s += '<path d="M46.2,12.5 Q45.5,14 46.2,15.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
+      case 49: // Origami Crane — clean geometric orizuru, floating
+        // Traditional Japanese paper crane. All straight edges, angular folds.
+        // Diamond body, spread wings, long neck with reverse-fold head, tail.
+        s += '<g opacity="0.88" transform="translate(56,18) scale(1.8) translate(-56,-18)">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.2,-0.5;0,0;-0.2,0.4;0,0" dur="7s" repeatCount="indefinite"/>';
+        // ── LEFT WING — angular, two-tone fold panels ──
+        s += '<polygon points="55,18 50,16 44,13.5 46,17 51,19" fill="#E8E2D6" stroke="#A8A090" stroke-width="0.18" stroke-linejoin="miter"/>';
+        s += '<polygon points="55,18 50,16 46,17 51,19" fill="#D4CEC0" opacity="0.4"/>';
+        // Wing tip detail — small secondary fold
+        s += '<polygon points="44,13.5 42,12.5 44,14.5" fill="#F0EBE0" stroke="#A8A090" stroke-width="0.15" stroke-linejoin="miter"/>';
+        // ── RIGHT WING — mirrored ──
+        s += '<polygon points="57,18 62,16 68,13.5 66,17 61,19" fill="#DDD6C8" stroke="#A8A090" stroke-width="0.18" stroke-linejoin="miter"/>';
+        s += '<polygon points="57,18 62,16 66,17 61,19" fill="#C8C0B0" opacity="0.4"/>';
+        // Wing tip detail
+        s += '<polygon points="68,13.5 70,12.5 68,14.5" fill="#E8E2D6" stroke="#A8A090" stroke-width="0.15" stroke-linejoin="miter"/>';
+        // ── BODY — central diamond ──
+        s += '<polygon points="55,18 56,16 57,18 56,22" fill="#E8E2D6" stroke="#A8A090" stroke-width="0.18" stroke-linejoin="miter"/>';
+        // Body center crease
+        s += '<line x1="56" y1="16" x2="56" y2="22" stroke="#B0A898" stroke-width="0.15" opacity="0.5"/>';
+        // Body shadow — lower half
+        s += '<polygon points="55,18 56,22 57,18" fill="#C8C0B0" opacity="0.2"/>';
+        // ── NECK — long angled fold, forward-left ──
+        s += '<polygon points="55.5,17.5 54,16 51,12 50,13 52.5,16.5 54.5,18.5" fill="#E8E2D8" stroke="#A8A090" stroke-width="0.18" stroke-linejoin="miter"/>';
+        // Neck crease
+        s += '<line x1="55" y1="17.5" x2="50.5" y2="12.5" stroke="#B0A898" stroke-width="0.15" opacity="0.4"/>';
+        // Neck shadow
+        s += '<polygon points="52.5,16.5 50,13 54.5,18.5" fill="#C8C0B0" opacity="0.15"/>';
+        // ── HEAD — reverse fold, pointing left ──
+        s += '<polygon points="51,12 47,11 49.5,13.5" fill="#F0EBE0" stroke="#A8A090" stroke-width="0.18" stroke-linejoin="miter"/>';
+        // Head crease
+        s += '<line x1="50.5" y1="11.8" x2="48" y2="11.5" stroke="#B8B0A0" stroke-width="0.12" opacity="0.4"/>';
+        // Beak tip
+        s += '<polygon points="47,11 45.5,10.8 47.5,12" fill="#DDD6C8" stroke="#A8A090" stroke-width="0.15"/>';
+        // Eye — tiny dot
+        s += '<circle cx="48" cy="11.5" r="0.12" fill="#2D1810"/>';
+        // ── TAIL — angled back-right, forked ──
+        s += '<polygon points="56.5,21.5 59,24 61,26.5 59.5,24" fill="#D8D0C0" stroke="#A8A090" stroke-width="0.15" stroke-linejoin="miter"/>';
+        s += '<polygon points="56.5,22 60,25.5 62,27.5 60,25" fill="#E0D8C8" stroke="#B0A898" stroke-width="0.12" stroke-linejoin="miter"/>';
+        // Tail crease
+        s += '<line x1="57" y1="22" x2="61" y2="27" stroke="#B8B0A0" stroke-width="0.1" opacity="0.4"/>';
         s += '</g>';
         break;
       case 50: // Garden Gnome — friendly compact figure on soil (Epic)
@@ -22146,62 +22131,57 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M1.8,87 Q1,88.5 1.8,90" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
-      case 56: // Owl — flying, wings spread, brown V feather pattern
-        s += '<g opacity="0.88" transform="translate(-8,0) translate(45,22) scale(1.3) translate(-45,-22)">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.5,-0.5;0,0;-0.3,0.3;0,0" dur="4s" repeatCount="indefinite"/>';
-        // ── WINGS — semicircle shape: flat top, rounded bottom ──
-        // Left wing — semicircle arc, flat edge at top
-        s += '<path d="M60,11.5 L54,11.5 Q52,11.5 52,13 Q52,15 54,15.5 Q57,15 60,13" fill="#7A5C3E"/>';
-        s += '<path d="M60,11.5 L54,11.5 Q52,11.5 52,13 Q52,15 54,15.5 Q57,15 60,13" fill="none" stroke="#5A3E28" stroke-width="0.15" opacity="0.3"/>';
-        // Left wing V feather marks
-        s += '<path d="M55,12 L56,12.5 L57,12" fill="none" stroke="#3A2818" stroke-width="0.2" opacity="0.4"/>';
-        s += '<path d="M54,13 L55,13.5 L56,13" fill="none" stroke="#3A2818" stroke-width="0.18" opacity="0.35"/>';
-        s += '<path d="M53.5,14 L54.5,14.5 L55.5,14" fill="none" stroke="#3A2818" stroke-width="0.15" opacity="0.3"/>';
-        s += '<path d="M57,12.5 L58,13 L59,12.5" fill="none" stroke="#3A2818" stroke-width="0.15" opacity="0.3"/>';
-        // Right wing — semicircle arc, flat edge at top
-        s += '<path d="M64,11.5 L70,11.5 Q72,11.5 72,13 Q72,15 70,15.5 Q67,15 64,13" fill="#6A4E30"/>';
-        s += '<path d="M64,11.5 L70,11.5 Q72,11.5 72,13 Q72,15 70,15.5 Q67,15 64,13" fill="none" stroke="#5A3E28" stroke-width="0.15" opacity="0.3"/>';
-        // Right wing V feather marks
-        s += '<path d="M67,12 L68,12.5 L69,12" fill="none" stroke="#3A2818" stroke-width="0.2" opacity="0.4"/>';
-        s += '<path d="M68,13 L69,13.5 L70,13" fill="none" stroke="#3A2818" stroke-width="0.18" opacity="0.35"/>';
-        s += '<path d="M68.5,14 L69.5,14.5 L70.5,14" fill="none" stroke="#3A2818" stroke-width="0.15" opacity="0.3"/>';
-        s += '<path d="M65,12.5 L66,13 L67,12.5" fill="none" stroke="#3A2818" stroke-width="0.15" opacity="0.3"/>';
-        // ── BODY ──
-        s += '<ellipse cx="62" cy="13" rx="2.5" ry="3.2" fill="#7A5C3E"/>';
-        // Dark brown V feather marks on body
-        s += '<path d="M61,11.5 L62,12 L63,11.5" fill="none" stroke="#3A2818" stroke-width="0.22" opacity="0.45"/>';
-        s += '<path d="M60.8,12.5 L62,13 L63.2,12.5" fill="none" stroke="#3A2818" stroke-width="0.22" opacity="0.4"/>';
-        s += '<path d="M61,13.5 L62,14 L63,13.5" fill="none" stroke="#3A2818" stroke-width="0.2" opacity="0.35"/>';
-        s += '<path d="M61.2,14.5 L62,15 L62.8,14.5" fill="none" stroke="#3A2818" stroke-width="0.18" opacity="0.3"/>';
-        s += '<path d="M61.5,15.2 L62,15.6 L62.5,15.2" fill="none" stroke="#3A2818" stroke-width="0.15" opacity="0.25"/>';
+      case 56: // Owl — perched on branch, no wings, bigger, facing left
+        s += '<g opacity="0.90" transform="translate(58,18) scale(1.6) translate(-58,-18)">';
+        // ── BRANCH — enters from right edge, slight downward angle ──
+        s += '<path d="M70,22 C66,22.5 62,22 58,22.5 C55,23 53,23 51,22.5" fill="none" stroke="#5A3E28" stroke-width="1.2" stroke-linecap="round"/>';
+        // Branch bark texture
+        s += '<path d="M68,22.2 L65,22.4 M63,22.2 L60,22.6 M57,22.8 L54,22.6" fill="none" stroke="#4A3020" stroke-width="0.2" opacity="0.3"/>';
+        // Branch underside shadow
+        s += '<path d="M70,22.5 C66,23 62,22.5 58,23 C55,23.5 53,23.5 51,23" fill="none" stroke="#3A2418" stroke-width="0.4" opacity="0.2"/>';
+        // Small twig
+        s += '<path d="M63,22.3 L64,20.5 L64.5,19.5" fill="none" stroke="#5A3E28" stroke-width="0.4" stroke-linecap="round"/>';
+        // ── TAIL — hangs behind, below branch ──
+        s += '<path d="M55,20 L54,23 L53,25 L55,24 L56,23 Z" fill="#6A4E38"/>';
+        s += '<path d="M55.5,20.5 L55,24 L54,25.5 L55.5,24.5 L56.5,23.5 Z" fill="#5A3E28" opacity="0.5"/>';
+        // ── BODY — plump oval, sitting upright on branch ──
+        s += '<ellipse cx="58" cy="18" rx="3" ry="4.5" fill="#7A5C3E"/>';
+        // V feather marks on body
+        s += '<path d="M56.8,16 L58,16.5 L59.2,16" fill="none" stroke="#3A2818" stroke-width="0.25" opacity="0.45"/>';
+        s += '<path d="M56.5,17.2 L58,17.8 L59.5,17.2" fill="none" stroke="#3A2818" stroke-width="0.22" opacity="0.4"/>';
+        s += '<path d="M56.8,18.4 L58,19 L59.2,18.4" fill="none" stroke="#3A2818" stroke-width="0.2" opacity="0.35"/>';
+        s += '<path d="M57,19.5 L58,20 L59,19.5" fill="none" stroke="#3A2818" stroke-width="0.18" opacity="0.3"/>';
+        s += '<path d="M57.3,20.5 L58,20.8 L58.7,20.5" fill="none" stroke="#3A2818" stroke-width="0.15" opacity="0.25"/>';
         // Belly — lighter
-        s += '<ellipse cx="62" cy="14" rx="1.5" ry="1.5" fill="#B8A888" opacity="0.3"/>';
-        // ── HEAD — round, with ear tufts connected to body top ──
-        s += '<circle cx="62" cy="10.5" r="1.8" fill="#7A5C3E"/>';
-        // Ear tufts — connected to top of head, not floating
-        s += '<path d="M60.5,10 L60,8.5 L61,9.5 Z" fill="#7A5C3E"/>';
-        s += '<path d="M60.5,10 L60,8.5" fill="none" stroke="#6A4E38" stroke-width="0.15"/>';
-        s += '<path d="M63.5,10 L64,8.5 L63,9.5 Z" fill="#7A5C3E"/>';
-        s += '<path d="M63.5,10 L64,8.5" fill="none" stroke="#6A4E38" stroke-width="0.15"/>';
-        // Facial disc — lighter circle around eyes
-        s += '<circle cx="62" cy="10.8" r="1.3" fill="#9A7C5E" opacity="0.4"/>';
-        // Eyes — large, golden, wise
-        s += '<circle cx="61.2" cy="10.8" r="0.7" fill="#D4A83D"/>';
-        s += '<circle cx="62.8" cy="10.8" r="0.7" fill="#D4A83D"/>';
-        s += '<circle cx="61.2" cy="10.8" r="0.3" fill="#111"/>';
-        s += '<circle cx="62.8" cy="10.8" r="0.3" fill="#111"/>';
-        s += '<circle cx="61.3" cy="10.65" r="0.1" fill="rgba(240,235,216,0.6)"/>';
-        s += '<circle cx="62.9" cy="10.65" r="0.1" fill="rgba(240,235,216,0.6)"/>';
-        // Beak — small, curved
-        s += '<path d="M61.7,11.5 L62,12 L62.3,11.5 Z" fill="#A87850"/>';
-        // Legs — dangling, same shade as beak
-        s += '<path d="M61.5,15.5 L61.2,17" stroke="#A87850" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M62.5,15.5 L62.8,17" stroke="#A87850" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
-        // Talons
-        s += '<path d="M61.2,17 L60.8,17.3 M61.2,17 L61.2,17.4 M61.2,17 L61.5,17.3" stroke="#A87850" stroke-width="0.12" fill="none"/>';
-        s += '<path d="M62.8,17 L62.5,17.3 M62.8,17 L62.8,17.4 M62.8,17 L63.2,17.3" stroke="#A87850" stroke-width="0.12" fill="none"/>';
-        // Tail
-        s += '<path d="M61,15.8 Q62,16.5 63,15.8" fill="#6A4E38" opacity="0.6"/>';
+        s += '<ellipse cx="58" cy="19" rx="1.8" ry="2" fill="#B8A888" opacity="0.25"/>';
+        // ── HEAD — round, larger, with ear tufts ──
+        s += '<circle cx="58" cy="13.5" r="2.5" fill="#7A5C3E"/>';
+        // Ear tufts — prominent
+        s += '<path d="M56,12.5 L55.3,10.5 L56.8,12 Z" fill="#7A5C3E"/>';
+        s += '<path d="M56,12.5 L55.3,10.5" fill="none" stroke="#6A4E38" stroke-width="0.2"/>';
+        s += '<path d="M60,12.5 L60.7,10.5 L59.2,12 Z" fill="#7A5C3E"/>';
+        s += '<path d="M60,12.5 L60.7,10.5" fill="none" stroke="#6A4E38" stroke-width="0.2"/>';
+        // Facial disc — lighter area around eyes
+        s += '<circle cx="58" cy="13.8" r="1.8" fill="#9A7C5E" opacity="0.4"/>';
+        // ── EYES — large, golden, wise ──
+        s += '<circle cx="57" cy="13.6" r="0.9" fill="#D4A83D"/>';
+        s += '<circle cx="59" cy="13.6" r="0.9" fill="#D4A83D"/>';
+        s += '<circle cx="57" cy="13.6" r="0.4" fill="#111"/>';
+        s += '<circle cx="59" cy="13.6" r="0.4" fill="#111"/>';
+        s += '<circle cx="57.1" cy="13.4" r="0.15" fill="rgba(240,235,216,0.6)"/>';
+        s += '<circle cx="59.1" cy="13.4" r="0.15" fill="rgba(240,235,216,0.6)"/>';
+        // Brow lines — wise expression
+        s += '<path d="M56,12.8 C56.5,12.5 57.5,12.5 57.8,12.8" fill="none" stroke="#5A3E28" stroke-width="0.2" opacity="0.3"/>';
+        s += '<path d="M58.2,12.8 C58.5,12.5 59.5,12.5 60,12.8" fill="none" stroke="#5A3E28" stroke-width="0.2" opacity="0.3"/>';
+        // Beak — small, hooked
+        s += '<path d="M57.6,14.5 L58,15.2 L58.4,14.5 Z" fill="#A87850"/>';
+        s += '<path d="M58,15.2 L58,15.5" stroke="#8A6040" stroke-width="0.15" fill="none"/>';
+        // ── FEET — gripping branch ──
+        s += '<path d="M56.8,22 L56.2,22.5 M56.8,22 L57,22.6 M56.8,22 L57.4,22.4" stroke="#A87850" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M59.2,22 L58.8,22.5 M59.2,22 L59.4,22.6 M59.2,22 L59.8,22.4" stroke="#A87850" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
+        // Legs connecting body to branch
+        s += '<line x1="57" y1="21.5" x2="56.8" y2="22" stroke="#A87850" stroke-width="0.3" stroke-linecap="round"/>';
+        s += '<line x1="59" y1="21.5" x2="59.2" y2="22" stroke="#A87850" stroke-width="0.3" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 57: // Silly Goose — bottom-left, head tilted, iconic troublemaker energy
