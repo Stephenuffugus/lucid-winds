@@ -20570,87 +20570,69 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M42.2,67.5 Q41.5,69.5 42.2,71.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
-      case 33: // The Capybara — MYTHIC, sitting upright 3/4 view, facing left
-        // Rebuilt from reference: boxy head, massive blunt nose, barrel body
-        // wider at rump, small eyes HIGH on head, bold cartoon outline.
-        s += '<g opacity="1" transform="translate(56,85) scale(1.3) translate(-56,-85)">';
-        // Mythic glow
-        s += '<ellipse cx="55" cy="88" rx="10" ry="6" fill="rgba(200,168,75,0.03)"><animate attributeName="opacity" values="0.03;0.06;0.03" dur="5s" repeatCount="indefinite"/></ellipse>';
+      case 33: // The Capybara — world's chillest MYTHIC rodent, bottom-right
+        // Hydrochoerus hydrochaeris: the world's largest living rodent.
+        // Barrel-shaped, blunt rectangular head, tiny eyes set high,
+        // coarse bristly fur. Famously calm — other animals sit on them.
+        // A MYTHIC companion that radiates zen patience and belonging.
+        s += '<g opacity="0.84" transform="translate(56,89) scale(1.1) translate(-56,-89)">';
         // Shadow
-        s += '<ellipse cx="55" cy="93" rx="8" ry="0.8" fill="#0d100c" opacity="0.15"/>';
-        // ── HIND LEGS — thick, visible behind body, rump is higher ──
-        s += '<path d="M60,89 L60,92 Q60,92.5 59.5,92.5 L61,92.5 Q61.5,92.5 61.5,92 L61.5,89" fill="#96663C" stroke="#6A4018" stroke-width="0.3"/>';
-        s += '<path d="M58,90 L57.5,92 Q57.5,92.5 57,92.5 L59,92.5 Q59.5,92.5 59.5,92 L59.5,90" fill="#A07040" stroke="#6A4018" stroke-width="0.3"/>';
-        // Hind feet
-        s += '<ellipse cx="60.2" cy="92.5" rx="1.5" ry="0.5" fill="#96663C" stroke="#6A4018" stroke-width="0.25"/>';
-        s += '<ellipse cx="58.2" cy="92.5" rx="1.5" ry="0.5" fill="#A07040" stroke="#6A4018" stroke-width="0.25"/>';
-        // ── BODY — barrel/potato shape, ELONGATED, wider at rump ──
-        // Back slopes UP from shoulders to rump (signature capybara silhouette)
-        s += '<path d="M47,83 Q46,80 47.5,78 Q49,76.5 52,76 L58,76.5 Q61,77 62.5,79 Q64,81 64,84 Q64,87 63,89 Q62,91 60,92 Q57,93 53,92.5 Q50,92 48.5,90.5 Q47,89 46.5,86.5 Q46.5,84.5 47,83 Z" fill="#B08050"/>';
-        // Lighter belly/chest
-        s += '<path d="M49,88 Q52,91 56,91.5 Q59,91.5 61,90 Q62,89 62.5,87" fill="#C8A878" opacity="0.3"/>';
-        // Darker back ridge
-        s += '<path d="M49,77.5 Q53,76 58,76.5 Q61,77 63,79" fill="none" stroke="#8A5830" stroke-width="0.5" opacity="0.25"/>';
-        // ── FUR — sporadic short strokes ──
-        var _cp33cols = ['#8A5830','#9A6840','#A87848','#B08050','#7A4820','#8A6038','#6A4018','#A07040','#90603A','#B89060'];
-        var _cp33seed = 47;
-        for (var _cp33i = 0; _cp33i < 100; _cp33i++) {
-          _cp33seed = (_cp33seed * 1103515245 + 12345) & 0x7FFFFFFF;
-          var _cfx = 46.5 + (_cp33seed % 1000) / 1000 * 18;
-          _cp33seed = (_cp33seed * 1103515245 + 12345) & 0x7FFFFFFF;
-          var _cfy = 76 + (_cp33seed % 1000) / 1000 * 16;
-          var _cfdx = (_cfx - 55) / 9, _cfdy = (_cfy - 84) / 8.5;
-          if (_cfdx * _cfdx + _cfdy * _cfdy > 0.85) continue;
-          var _cfc = _cp33cols[_cp33i % _cp33cols.length];
-          _cp33seed = (_cp33seed * 1103515245 + 12345) & 0x7FFFFFFF;
-          var _cfLen = 0.3 + (_cp33seed % 100) / 250;
-          var _cfTilt = ((_cp33seed % 100) - 50) / 700;
-          s += '<line x1="'+_cfx.toFixed(1)+'" y1="'+_cfy.toFixed(1)+'" x2="'+(_cfx+_cfTilt).toFixed(2)+'" y2="'+(_cfy+_cfLen).toFixed(2)+'" stroke="'+_cfc+'" stroke-width="0.08" opacity="0.2"/>';
+        s += '<ellipse cx="56.5" cy="92.5" rx="6" ry="0.8" fill="#0d100c" opacity="0.1"/>';
+        // Hind legs — short, tucked under barrel body
+        s += '<ellipse cx="52" cy="91.5" rx="1.5" ry="0.7" fill="#8A6038" opacity="0.5"/>';
+        s += '<ellipse cx="60" cy="91.5" rx="1.5" ry="0.7" fill="#8A6038" opacity="0.5"/>';
+        // Body — massive barrel shape (THE capybara silhouette)
+        s += '<ellipse cx="56" cy="89.5" rx="6" ry="3.2" fill="#A87848"/>';
+        // Coarse fur texture — bristly lines across back
+        for (var _cp33i = 0; _cp33i < 8; _cp33i++) {
+          var _cp33x = 51 + _cp33i * 1.3;
+          s += '<line x1="'+_cp33x+'" y1="'+(87.5+Math.sin(_cp33i*0.8)*0.3).toFixed(1)+'" x2="'+(_cp33x+0.5)+'" y2="'+(88.5+Math.sin(_cp33i*0.8)*0.3).toFixed(1)+'" stroke="#8A6038" stroke-width="0.12" opacity="0.2"/>';
         }
-        // Body outline — bold dark stroke (cartoon style like reference)
-        s += '<path d="M47,83 Q46,80 47.5,78 Q49,76.5 52,76 L58,76.5 Q61,77 62.5,79 Q64,81 64,84 Q64,87 63,89 Q62,91 60,92 Q57,93 53,92.5 Q50,92 48.5,90.5 Q47,89 46.5,86.5 Q46.5,84.5 47,83" fill="none" stroke="#3A2010" stroke-width="0.6" opacity="0.7"/>';
-        // ── FRONT LEGS — short, stubby, visible below body ──
-        s += '<path d="M49,89 L49,92 Q49,92.5 48.5,92.5 L50.5,92.5 Q51,92.5 51,92 L51,89" fill="#B08050" stroke="#6A4018" stroke-width="0.3"/>';
-        s += '<path d="M51.5,89.5 L51.5,92 Q51.5,92.5 51,92.5 L53,92.5 Q53.5,92.5 53.5,92 L53.5,89.5" fill="#B08050" stroke="#6A4018" stroke-width="0.3"/>';
-        // Front feet
-        s += '<ellipse cx="49.7" cy="92.5" rx="1.5" ry="0.5" fill="#B08050" stroke="#6A4018" stroke-width="0.25"/>';
-        s += '<ellipse cx="52.2" cy="92.5" rx="1.5" ry="0.5" fill="#B08050" stroke="#6A4018" stroke-width="0.25"/>';
-        // ── HEAD — BOXY/RECTANGULAR, NOT round — the key capybara identifier ──
-        // Flat top, blunt vertical front, wider than tall
-        s += '<path d="M46,79.5 C46,76.5 46.5,74.5 48,73.5 C49.5,72.5 52,72 54.5,72.5 C56.5,73 57.5,74 57.5,76 C57.5,78 57,79.5 56,80.5 Q53,82 49,81.5 Q47,81 46,79.5 Z" fill="#B08050"/>';
-        // Head lighter cheek/jaw area
-        s += '<path d="M47.5,79 Q49,80 51,80.5 Q53,80.5 55,80" fill="#C0A068" opacity="0.2"/>';
-        // Head outline — bold
-        s += '<path d="M46,79.5 C46,76.5 46.5,74.5 48,73.5 C49.5,72.5 52,72 54.5,72.5 C56.5,73 57.5,74 57.5,76 C57.5,78 57,79.5 56,80.5 Q53,82 49,81.5 Q47,81 46,79.5" fill="none" stroke="#3A2010" stroke-width="0.55" opacity="0.7"/>';
-        // ── SNOUT — blunt, squared-off front, extends forward from head ──
-        s += '<path d="M44.5,77 Q44,75.5 44.5,74.5 Q45.5,73.5 47,73.5 Q48,73.5 48,75 Q48,76.5 47.5,78 Q46.5,78.5 45,78 Z" fill="#B88858"/>';
-        s += '<path d="M44.5,77 Q44,75.5 44.5,74.5 Q45.5,73.5 47,73.5 Q48,73.5 48,75 Q48,76.5 47.5,78 Q46.5,78.5 45,78" fill="none" stroke="#3A2010" stroke-width="0.45" opacity="0.65"/>';
-        // ── NOSE — MASSIVE, wide, flat, the signature capybara feature ──
-        s += '<path d="M44,75 Q43.5,74.5 44,74 Q44.5,73.5 46,73.5 Q47,73.5 47.5,74 Q48,74.5 47.5,75 Q47,75.5 46,75.5 Q44.5,75.5 44,75 Z" fill="#3A2A18"/>';
-        // Nostrils — two visible dots
-        s += '<circle cx="45" cy="74.5" r="0.3" fill="#1A1008"/>';
-        s += '<circle cx="46.5" cy="74.5" r="0.3" fill="#1A1008"/>';
-        // Nose highlight
-        s += '<ellipse cx="45.8" cy="74.2" rx="0.6" ry="0.2" fill="rgba(180,140,100,0.2)"/>';
-        // ── EARS — tiny, set HIGH and far BACK on head ──
-        s += '<ellipse cx="55.5" cy="73" rx="1.3" ry="1" fill="#96663C" stroke="#6A4018" stroke-width="0.2"/>';
-        s += '<ellipse cx="55.5" cy="73" rx="0.7" ry="0.5" fill="#B08050" opacity="0.3"/>';
-        // Second ear (behind, peeking)
-        s += '<ellipse cx="54" cy="72.5" rx="1" ry="0.8" fill="#8A5830" stroke="#6A4018" stroke-width="0.2"/>';
-        // ── EYE — SMALL, set HIGH on the head (aquatic adaptation) ──
-        s += '<circle cx="47.5" cy="74.8" r="0.65" fill="#2D1810"/>';
-        s += '<circle cx="47.7" cy="74.6" r="0.2" fill="rgba(240,235,216,0.6)"/>';
-        // Subtle brow line above eye
-        s += '<path d="M47,74 Q47.5,73.8 48.2,74" fill="none" stroke="#6A4018" stroke-width="0.2" opacity="0.3"/>';
-        // ── MOUTH — subtle line below snout ──
-        s += '<path d="M45,77.5 Q46,78 47,77.5" fill="none" stroke="#6A4828" stroke-width="0.25" opacity="0.35"/>';
-        // Head fur strokes
-        var _chfPts = [[48,73],[50,72.5],[52,72.5],[54,73],[56,74],[49,74],[51,73.5],[53,73]];
-        for (var _chfi = 0; _chfi < _chfPts.length; _chfi++) {
-          s += '<line x1="'+_chfPts[_chfi][0]+'" y1="'+_chfPts[_chfi][1]+'" x2="'+(_chfPts[_chfi][0]+0.05)+'" y2="'+(_chfPts[_chfi][1]+0.5)+'" stroke="#8A5830" stroke-width="0.1" opacity="0.2"/>';
-        }
-        // Zen breathing
-        s += '<animate attributeName="opacity" values="1;0.97;1" dur="4s" repeatCount="indefinite"/>';
+        // Belly — lighter
+        s += '<ellipse cx="56" cy="90.8" rx="4" ry="1.5" fill="#C09868" opacity="0.3"/>';
+        // Front legs — short, stubby, visible
+        s += '<path d="M52.5,91 L52,92 L52.5,92.2" fill="#8A6038" stroke="#7A5028" stroke-width="0.15"/>';
+        s += '<path d="M59.5,91 L60,92 L59.5,92.2" fill="#8A6038" stroke="#7A5028" stroke-width="0.15"/>';
+        // Partially webbed front feet — capybaras are semi-aquatic
+        s += '<path d="M52,92.2 L51.5,92.5 M52.5,92.2 L52.5,92.6 M53,92.2 L53.2,92.5" stroke="#7A5028" stroke-width="0.12" fill="none"/>';
+        s += '<path d="M59.5,92.2 L59,92.5 M59.5,92.2 L59.5,92.6 M60,92.2 L60.2,92.5" stroke="#7A5028" stroke-width="0.12" fill="none"/>';
+        // Neck — thick, merging head into barrel
+        s += '<path d="M53,88 Q54,86.5 56,86 Q58,86.5 59,88" fill="#A87848"/>';
+        // Head — RECTANGULAR / BOXY (the capybara's defining head shape)
+        // Not round like most rodents — flat on top, blunt at front
+        s += '<path d="M53,86 Q53,84 54,83.5 Q56,83 58,83.5 Q59,84 59,86 Q58,87 56,87.5 Q54,87 53,86 Z" fill="#B88858"/>';
+        // Flat-top skull line — the distinctive flat crown
+        s += '<path d="M54,83.8 Q56,83.3 58,83.8" fill="none" stroke="#9A7048" stroke-width="0.3" opacity="0.3"/>';
+        // Fur texture on head
+        s += '<line x1="54.5" y1="84.5" x2="55" y2="85" stroke="#9A7048" stroke-width="0.1" opacity="0.2"/>';
+        s += '<line x1="57" y1="84.5" x2="57.5" y2="85" stroke="#9A7048" stroke-width="0.1" opacity="0.2"/>';
+        // Ears — TINY rounded bumps set high on flat skull
+        s += '<ellipse cx="54" cy="83.5" rx="0.7" ry="0.5" fill="#9A6840"/>';
+        s += '<ellipse cx="54" cy="83.5" rx="0.4" ry="0.3" fill="#B08858" opacity="0.3"/>';
+        s += '<ellipse cx="58" cy="83.5" rx="0.7" ry="0.5" fill="#9A6840"/>';
+        s += '<ellipse cx="58" cy="83.5" rx="0.4" ry="0.3" fill="#B08858" opacity="0.3"/>';
+        // Eyes — SMALL, set HIGH on head (semi-aquatic adaptation — eyes
+        // sit on top of skull so they can see while mostly submerged)
+        s += '<circle cx="54.5" cy="84.8" r="0.45" fill="#2D1810"/>';
+        s += '<circle cx="57.5" cy="84.8" r="0.45" fill="#2D1810"/>';
+        s += '<circle cx="54.6" cy="84.7" r="0.12" fill="rgba(200,180,120,0.4)"/>';
+        s += '<circle cx="57.6" cy="84.7" r="0.12" fill="rgba(200,180,120,0.4)"/>';
+        // Snout — large, squared-off, blunt (rodent incisors behind here)
+        s += '<ellipse cx="56" cy="86.5" rx="2" ry="1.2" fill="#C09868"/>';
+        // Large nostrils — prominent on the flat snout face
+        s += '<ellipse cx="55.2" cy="87" rx="0.3" ry="0.22" fill="#3A2A18"/>';
+        s += '<ellipse cx="56.8" cy="87" rx="0.3" ry="0.22" fill="#3A2A18"/>';
+        // Mouth line — serene, content
+        s += '<path d="M55,87.5 Q56,87.8 57,87.5" fill="none" stroke="#7A5838" stroke-width="0.2" opacity="0.3"/>';
+        // Whiskers — short, coarse
+        s += '<line x1="54.5" y1="86.8" x2="53" y2="86.5" stroke="#C0A878" stroke-width="0.06" opacity="0.3"/>';
+        s += '<line x1="54.5" y1="87" x2="53" y2="87.2" stroke="#C0A878" stroke-width="0.06" opacity="0.25"/>';
+        s += '<line x1="57.5" y1="86.8" x2="59" y2="86.5" stroke="#C0A878" stroke-width="0.06" opacity="0.3"/>';
+        s += '<line x1="57.5" y1="87" x2="59" y2="87.2" stroke="#C0A878" stroke-width="0.06" opacity="0.25"/>';
+        // Mythic aura — warm golden glow (MYTHIC indicator)
+        s += '<ellipse cx="56" cy="89" rx="7" ry="5" fill="rgba(200,168,75,0.02)"><animate attributeName="opacity" values="0.02;0.04;0.02" dur="5s" repeatCount="indefinite"/></ellipse>';
+        // Zen breathing — the capybara's famous calm
+        s += '<animate attributeName="opacity" values="0.84;0.86;0.84" dur="4s" repeatCount="indefinite"/>';
         s += '</g>';
         break;
       case 34: // Woolly Mammoth — LEGENDARY, profile facing left
