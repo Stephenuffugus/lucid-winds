@@ -2049,8 +2049,8 @@
       border-bottom:2px solid var(--sage);color:var(--cream);
       box-shadow:0 0 16px rgba(122,179,86,0.2);
     }
-    .grove-panel{display:none;overflow-y:visible;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(44px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);opacity:0;}
-    .grove-panel.active{display:block;opacity:1;animation:_tabIn 0.25s ease;}
+    .grove-panel{display:none;overflow-y:visible;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(44px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);visibility:hidden;}
+    .grove-panel.active{display:block;visibility:visible;}
     @keyframes _tabIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
     @keyframes panelFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
     /* Botanical loading spinner — three rotating leaves */
@@ -26902,18 +26902,16 @@ document.addEventListener('keydown', function(e) {
       if(wildNav)wildNav.style.display='none';
     }
     // Switch panel — render content BEFORE showing to prevent ghost text flash
-    // Force ALL panels hidden immediately before any rendering
+    // Force ALL panels hidden immediately
     document.querySelectorAll('.grove-panel').forEach(function(p) {
       p.classList.remove('active');
       p.style.display = 'none';
-      p.style.opacity = '0';
+      p.style.visibility = 'hidden';
     });
-    // Pre-render content while panel is invisible
+    // Pre-render target panel content while invisible
     var _targetPanel = document.getElementById('panel-' + tab);
     if (_targetPanel) {
       _targetPanel.style.display = 'block';
-      _targetPanel.style.visibility = 'hidden';
-      _targetPanel.style.animation = 'none';
     }
     if(window._updateGameDew)_updateGameDew();
     window.scrollTo(0, 0);
@@ -26933,12 +26931,10 @@ document.addEventListener('keydown', function(e) {
     if (tab === 'dashboard') updateDashboard();
     if (tab === 'nursery') renderNursery();
     if (tab === 'binder') renderBinder();
-    // Content is now fully rendered — activate panel with animation
+    // Content is now fully rendered — show panel
     if (_targetPanel) {
       _targetPanel.style.display = '';
       _targetPanel.style.visibility = '';
-      _targetPanel.style.animation = '';
-      _targetPanel.style.opacity = '';
       _targetPanel.classList.add('active');
     }
     if (tab === 'wild' && window.FG_Wild) FG_Wild.activate();
