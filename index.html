@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-07d';
+  var _SVG_CACHE_VER = '2026-04-07e';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -23005,18 +23005,24 @@ document.addEventListener('keydown', function(e) {
         break;
       case 81: // Wolf Spider — top-down view, long legs from reference
         s += '<g opacity="1" transform="translate(48,88) scale(1.4) translate(-48,-88)">';
-        // ── 8 LONG LEGS — last section at 120° angle outward, not folded ──
-        // Each leg: base→knee (up/out), knee→foot (angled out at ~120°)
-        // Left side — 4 legs
-        s += '<path d="M45,87 Q41,84 39,82 L37,84" stroke="#3A2A1A" stroke-width="0.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
-        s += '<path d="M45,88 Q40,86 38,84.5 L36,86.5" stroke="#3A2A1A" stroke-width="0.28" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
-        s += '<path d="M45,89 Q40,90.5 38,92 L36,91" stroke="#3A2A1A" stroke-width="0.28" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
-        s += '<path d="M45.5,89.5 Q41,92 39,94 L37,93" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
-        // Right side — 4 legs
-        s += '<path d="M49,87 Q53,84 55,82 L57,84" stroke="#3A2A1A" stroke-width="0.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
-        s += '<path d="M49,88 Q54,86 56,84.5 L58,86.5" stroke="#3A2A1A" stroke-width="0.28" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
-        s += '<path d="M49,89 Q54,90.5 56,92 L58,91" stroke="#3A2A1A" stroke-width="0.28" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
-        s += '<path d="M48.5,89.5 Q53,92 55,94 L57,93" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        // ── 8 LEGS — each with 7 segments, last at 120° angle ──
+        // coxa→trochanter→femur→patella→tibia→metatarsus→tarsus
+        // Left leg 1 (front-forward)
+        s += '<path d="M45.5,87 L44.5,86.5 L43,85.5 L41.5,84 L40,83 L39,82.5 L37.5,83.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        // Left leg 2
+        s += '<path d="M45.5,87.8 L44,87.2 L42.5,86.2 L41,85 L39.5,84.5 L38.5,84.5 L37,85.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        // Left leg 3 (rear-backward)
+        s += '<path d="M45.5,89 L44.5,89.5 L43,90.2 L41.5,91 L40,91.8 L39,92.2 L37.5,91.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        // Left leg 4
+        s += '<path d="M46,89.5 L45,90.2 L43.5,91.2 L42,92.2 L41,93 L40,93.5 L38.5,93" stroke="#3A2A1A" stroke-width="0.22" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        // Right leg 1 (front-forward)
+        s += '<path d="M48.5,87 L49.5,86.5 L51,85.5 L52.5,84 L54,83 L55,82.5 L56.5,83.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        // Right leg 2
+        s += '<path d="M48.5,87.8 L50,87.2 L51.5,86.2 L53,85 L54.5,84.5 L55.5,84.5 L57,85.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        // Right leg 3 (rear-backward)
+        s += '<path d="M48.5,89 L49.5,89.5 L51,90.2 L52.5,91 L54,91.8 L55,92.2 L56.5,91.5" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        // Right leg 4
+        s += '<path d="M48,89.5 L49,90.2 L50.5,91.2 L52,92.2 L53,93 L54,93.5 L55.5,93" stroke="#3A2A1A" stroke-width="0.22" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
         // ── ABDOMEN — round circle (like reference), light brown outline ──
         s += '<circle cx="50" cy="89" r="2" fill="#3A2A1A"/>';
         s += '<circle cx="50" cy="89" r="2" fill="none" stroke="#7A6A58" stroke-width="0.2"/>';
