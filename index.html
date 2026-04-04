@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-07g';
+  var _SVG_CACHE_VER = '2026-04-07h';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21145,8 +21145,8 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M53.5,92 L53.5,92.8" stroke="#5A4028" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
         s += '<path d="M55.5,92 Q55,92.8 54.5,93" stroke="#5A4028" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
         s += '<path d="M55.5,92 L55.5,92.8" stroke="#5A4028" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
-        // Neck — THICK, same width as head, connecting body to head
-        s += '<path d="M54,87 Q53,86 52,85.5 Q51,85 50.5,85 L50.5,84.5 Q51,84 52,84 Q53,84 53.5,85 Q54,86 54,87 Z" fill="#8A7048"/>';
+        // Neck — THICKER, wider connection
+        s += '<path d="M54.5,87.5 Q53,86 51.5,85 Q50.5,84.5 50,84.5 L49.5,84 Q50.5,83.5 52,83.5 Q53.5,84 54.5,85.5 Q55,86.5 54.5,87.5 Z" fill="#8A7048"/>';
         // Head — small, elongated cone shape
         s += '<path d="M49.5,86 Q49,85.5 49,85 Q49,84.5 49.5,84 Q50.5,83.3 52,83.5 Q53,84 53,85 Q53,85.5 52.5,86 Q51.5,86.5 49.5,86 Z" fill="#9A8058"/>';
         // Head scales — on top/back of head, AWAY from eye at (50, 84.8)
@@ -21166,6 +21166,9 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M51.5,83.8 L52.2,82.6 L52.5,83.8 Z" fill="#9A8058"/>';
         // Pink tongue — long, thin, sticking out of snout tip
         s += '<path d="M46.5,85.2 Q45,85.5 43.5,85.3 Q42.5,85 42,85.2" stroke="#D88A8A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        // Action marks (( past the tongue tip
+        s += '<path d="M41,84.5 Q40.5,85.2 41,86" fill="none" stroke="rgba(180,120,80,0.3)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M40.2,84.2 Q39.5,85.2 40.2,86.3" fill="none" stroke="rgba(180,120,80,0.22)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 44: // Luna Moth — ethereal, top-left corner, slow moonlike drift
@@ -21271,21 +21274,25 @@ document.addEventListener('keydown', function(e) {
           // Cream barbed tip — top 40%
           s += '<line x1="'+(_pqx+(_pqEx-_pqx)*0.6).toFixed(1)+'" y1="'+(_pqy+(_pqEy-_pqy)*0.6).toFixed(1)+'" x2="'+_pqEx.toFixed(1)+'" y2="'+_pqEy.toFixed(1)+'" stroke="#E8DCC8" stroke-width="0.15" stroke-linecap="round" opacity="0.6"/>';
         }
-        // Head — small relative to body, connected via overlapping fill
-        s += '<path d="M53,89 Q52,88.5 51.5,88 Q51,87.5 51.5,87 Q52,86.5 53,87 Q53.5,87.5 53.5,88.5 Q53.5,89 53,89 Z" fill="#6A5040"/>';
-        // Snout — blunt, rounded
-        s += '<ellipse cx="51.5" cy="87.8" rx="1" ry="0.7" fill="#7A6050"/>';
-        // Nose — dark
-        s += '<ellipse cx="51" cy="87.8" rx="0.3" ry="0.22" fill="#1A1008"/>';
-        s += '<circle cx="51.1" cy="87.7" r="0.06" fill="rgba(240,235,216,0.4)"/>';
-        // Eye — small, beady
-        s += '<circle cx="52" cy="87.5" r="0.35" fill="#1A1008"/>';
-        s += '<circle cx="52.1" cy="87.4" r="0.1" fill="rgba(200,180,120,0.5)"/>';
-        // Ears — small, round, partially hidden in quills
-        s += '<ellipse cx="52.5" cy="86.8" rx="0.5" ry="0.6" fill="#6A5040"/>';
-        s += '<ellipse cx="53.2" cy="86.5" rx="0.5" ry="0.6" fill="#6A5040"/>';
-        // Whiskers
-        s += '<path d="M51,88 L49.5,87.5 M51,88.2 L49.5,88.5" stroke="#B0A090" stroke-width="0.06" fill="none" opacity="0.3"/>';
+        // ── HEAD — clean, distinct features ──
+        s += '<ellipse cx="52" cy="88" rx="1.5" ry="1.2" fill="#6A5040"/>';
+        // 2 distinct round ears — on top of head
+        s += '<ellipse cx="51.5" cy="86.8" rx="0.6" ry="0.7" fill="#7A6050"/>';
+        s += '<ellipse cx="51.5" cy="86.8" rx="0.35" ry="0.45" fill="#8A7060" opacity="0.4"/>';
+        s += '<ellipse cx="53" cy="86.8" rx="0.6" ry="0.7" fill="#7A6050"/>';
+        s += '<ellipse cx="53" cy="86.8" rx="0.35" ry="0.45" fill="#8A7060" opacity="0.4"/>';
+        // Eye — beady, dark
+        s += '<circle cx="51.5" cy="87.8" r="0.35" fill="#1A1008"/>';
+        s += '<circle cx="51.6" cy="87.7" r="0.1" fill="rgba(200,180,120,0.5)"/>';
+        // Snout — blunt
+        s += '<ellipse cx="51" cy="88.5" rx="0.7" ry="0.5" fill="#7A6050"/>';
+        // Nose — dark, prominent
+        s += '<ellipse cx="50.5" cy="88.5" rx="0.3" ry="0.22" fill="#1A1008"/>';
+        s += '<circle cx="50.6" cy="88.4" r="0.06" fill="rgba(240,235,216,0.4)"/>';
+        // Whiskers — 3 per side, visible
+        s += '<line x1="50.5" y1="88.3" x2="49" y2="87.8" stroke="#B0A090" stroke-width="0.08" fill="none" opacity="0.4"/>';
+        s += '<line x1="50.5" y1="88.5" x2="49" y2="88.5" stroke="#B0A090" stroke-width="0.08" fill="none" opacity="0.35"/>';
+        s += '<line x1="50.5" y1="88.7" x2="49" y2="89.2" stroke="#B0A090" stroke-width="0.06" fill="none" opacity="0.3"/>';
         s += '</g>';
         break;
       case 46: // Glow Snail — luminous shell, gliding on bottom-right soil (Rare)
@@ -21293,9 +21300,9 @@ document.addEventListener('keydown', function(e) {
         // from shell to head/tentacles as one continuous mass.
         s += '<g opacity="1" transform="translate(55,88) scale(1.5) translate(-55,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.16,0;0.3,0.03;0.16,0;0,0" dur="7.2s" repeatCount="indefinite"/>';
-        // Glow snail trail — long, wavy, glowing
-        s += '<path d="M42,92 Q44,91 46,92 Q48,93 50,91.5 Q52,90.5 54,91.5 Q56,92.5 58,92" fill="none" stroke="rgba(160,230,120,0.15)" stroke-width="1.2" stroke-linecap="round"/>';
-        s += '<path d="M42,92 Q44,91.2 46,92 Q48,92.8 50,91.8 Q52,90.8 54,91.8 Q56,92.5 58,92" fill="none" stroke="rgba(200,255,160,0.06)" stroke-width="2.5"/>';
+        // Glow snail trail — BEHIND the snail (to the RIGHT)
+        s += '<path d="M58,92 Q60,91 62,92 Q64,93 66,91.5 Q68,90.5 70,91.5" fill="none" stroke="rgba(160,230,120,0.15)" stroke-width="1.2" stroke-linecap="round"/>';
+        s += '<path d="M58,92 Q60,91.2 62,92 Q64,92.8 66,91.8 Q68,90.8 70,91.5" fill="none" stroke="rgba(200,255,160,0.06)" stroke-width="2.5"/>';
         // Body/foot — muscular base, extends from shell forward (CONNECTED)
         s += '<path d="M51,91.5 Q53,92.2 55.5,92 Q58,91.5 59,90.5 Q58.5,90 57,90 Q55,90.5 53,91 Q51.5,91.2 51,91.5 Z" fill="#A87850"/>';
         // Body texture — muscle ripples on foot
@@ -21400,19 +21407,19 @@ document.addEventListener('keydown', function(e) {
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.12,0;0.24,0.02;0.12,0;0,0" dur="6.6s" repeatCount="indefinite"/>';
         // Shadow
         s += '<ellipse cx="57" cy="92.5" rx="6" ry="0.5" fill="#0d100c" opacity="0.12"/>';
-        // ── 8 LEGS — 2 forward + 2 backward per side ──
-        // Left side — 2 angled FORWARD (toward head)
+        // ── 8 LEGS — front 2 pairs near head, back 2 pairs near tail ──
+        // Left side — 2 FRONT legs (near head, angled forward)
         s += '<path d="M55,88 L53,87 L52,86.5" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
         s += '<path d="M55.5,88.2 L53.5,87.5 L52.5,87" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
-        // Left side — 2 angled BACKWARD (toward tail)
-        s += '<path d="M56.5,88 L54.5,89 L54,90" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
-        s += '<path d="M57.5,88.2 L55.5,89.5 L55,90.5" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
-        // Right side — 2 angled FORWARD
+        // Left side — 2 BACK legs (near tail, angled backward/outward)
+        s += '<path d="M59,88 L57,87 L56,86.5" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
+        s += '<path d="M59.5,88.2 L57.5,87.5 L56.5,87" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
+        // Right side — 2 FRONT legs (near head, angled forward)
         s += '<path d="M55,90 L53,91 L52,91.5" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
         s += '<path d="M55.5,89.8 L53.5,90.5 L52.5,91" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
-        // Right side — 2 angled BACKWARD
-        s += '<path d="M56.5,90 L54.5,91 L54,92" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
-        s += '<path d="M57.5,89.8 L55.5,90.5 L55,91.5" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
+        // Right side — 2 BACK legs (near tail, angled backward/outward)
+        s += '<path d="M59,90 L57,91 L56,91.5" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
+        s += '<path d="M59.5,89.8 L57.5,90.5 L56.5,91" stroke="#5A3818" stroke-width="0.18" fill="none"/>';
         // ── BODY — round at front, tapering to skinny tail sections ──
         // Main body — MUCH SKINNIER, elongated oval
         s += '<ellipse cx="57" cy="89" rx="4" ry="1.5" fill="#7A4828"/>';
@@ -21438,17 +21445,17 @@ document.addEventListener('keydown', function(e) {
         // ── 2 LARGE CLAWS — each with 2-segment pincer ──
         // Left claw arm
         s += '<path d="M53.5,88 Q52,87.5 50.5,86.5" stroke="#7A4828" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
-        // Left claw — larger teardrop (bottom), pointy tip
-        s += '<path d="M50.5,86.8 Q49,86.5 48,87 Q47.5,87.5 48.5,87.8 Q49.5,87.8 50.5,87.2 Z" fill="#8A5830" stroke="#5A3018" stroke-width="0.12"/>';
-        // Left claw — smaller teardrop (top), pointy tip
-        s += '<path d="M50.5,86.2 Q49.5,85.5 48.5,85.5 Q48,86 48.8,86.3 Q49.5,86.4 50.5,86.2 Z" fill="#9A6838" stroke="#5A3018" stroke-width="0.1"/>';
+        // Left claw — larger segment, SHARP pointy tip
+        s += '<path d="M50.5,86.8 Q49,86.5 47.5,87 L48.5,87.5 Q49.5,87.5 50.5,87.2 Z" fill="#8A5830" stroke="#5A3018" stroke-width="0.12"/>';
+        // Left claw — smaller segment, SHARP pointy tip
+        s += '<path d="M50.5,86.2 Q49.5,85.5 48,85.5 L48.8,86.2 Q49.5,86.3 50.5,86.2 Z" fill="#9A6838" stroke="#5A3018" stroke-width="0.1"/>';
         s += '<ellipse cx="49" cy="87" rx="0.35" ry="0.25" fill="rgba(220,160,80,0.15)"/>';
         // Right claw arm
         s += '<path d="M53.5,90 Q52,90.5 50.5,91.5" stroke="#7A4828" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
-        // Right claw — larger teardrop (top), pointy tip
-        s += '<path d="M50.5,91.2 Q49,91.5 48,91 Q47.5,90.5 48.5,90.2 Q49.5,90.2 50.5,90.8 Z" fill="#8A5830" stroke="#5A3018" stroke-width="0.12"/>';
-        // Right claw — smaller teardrop (bottom), pointy tip
-        s += '<path d="M50.5,91.8 Q49.5,92.5 48.5,92.5 Q48,92 48.8,91.7 Q49.5,91.6 50.5,91.8 Z" fill="#9A6838" stroke="#5A3018" stroke-width="0.1"/>';
+        // Right claw — larger segment, SHARP pointy tip
+        s += '<path d="M50.5,91.2 Q49,91.5 47.5,91 L48.5,90.5 Q49.5,90.5 50.5,90.8 Z" fill="#8A5830" stroke="#5A3018" stroke-width="0.12"/>';
+        // Right claw — smaller segment, SHARP pointy tip
+        s += '<path d="M50.5,91.8 Q49.5,92.5 48,92.5 L48.8,91.8 Q49.5,91.7 50.5,91.8 Z" fill="#9A6838" stroke="#5A3018" stroke-width="0.1"/>';
         s += '<ellipse cx="49" cy="91" rx="0.35" ry="0.25" fill="rgba(220,160,80,0.15)"/>';
         // ── TAIL — segments getting skinnier, curving up to a point ──
         // Segment 1 (thickest, at body)
