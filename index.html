@@ -14986,7 +14986,9 @@ document.addEventListener('keydown', function(e) {
     var fy = visibleTop;
 
     var _rawBloomOp = Math.min(1, (prog - 0.8) * 5);
-    var bloomOp = Math.min(1, _rawBloomOp * 1.45); // boost toward full opacity
+    // bloomOp goes UP TO 1.8 so petal fills coded at 0.5*bloomOp reach 0.9.
+    // SVG clamps opacity >1 to 1, so exceeding 1 is safe.
+    var bloomOp = Math.min(1.8, _rawBloomOp * 1.8);
     var fc = PALETTE[BLOOM_PALS[t.flower % BLOOM_PALS.length]] || PALETTE.gold;
     var bg = 'url(#bg'+uid+')';
     var s = '';
