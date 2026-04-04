@@ -5230,7 +5230,12 @@ window.onerror=function(msg,url,line,col,err){
 
       // Get a sample plant (first in greenhouse or generate one)
       var gh=window.loadGreenhouse?loadGreenhouse():[];
-      if(!gh.length){alert('Need at least 1 plant in greenhouse');return;}
+      if(!gh.length){
+        // Generate a test plant so tool works without greenhouse data
+        var _testHash = '';
+        for(var _ti=0;_ti<64;_ti++) _testHash += '0123456789abcdef'[Math.floor(Math.random()*16)];
+        gh = [{hash:_testHash,mintedAt:Date.now(),generation:1}];
+      }
 
       // Current CSS values
       var _vals={
