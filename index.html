@@ -20791,10 +20791,10 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M42.2,67.5 Q41.5,69.5 42.2,71.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
-      case 33: // The Phoenix — MYTHIC, angular fire bird rising
+      case 33: // The Phoenix — MYTHIC, angular fire bird rising in the sky
         // NOT a round bird. Sharp V-wings, narrow body, flame shapes.
         // Think origami + fire. Angular, majestic, mythic.
-        s += '<g opacity="0.92">';
+        s += '<g opacity="0.95" transform="translate(0,-45)">';
         // Mythic fire glow
         s += '<ellipse cx="55" cy="80" rx="12" ry="10" fill="rgba(255,140,40,0.04)"><animate attributeName="opacity" values="0.03;0.08;0.03" dur="3s" repeatCount="indefinite"/></ellipse>';
         // ── FLAME TAIL — long, flowing downward, 3 tongues ──
@@ -20828,13 +20828,35 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="55.5" cy="74.5" rx="0.12" ry="0.3" fill="#1A0A00"/>';
         // Beak — sharp, angled
         s += '<path d="M55.8,75.5 L57.2,75.2 L56,76 Z" fill="#A82810"/>';
-        // ── RISING EMBERS ──
-        s += '<circle cx="48" cy="80" r="0.4" fill="#FF8030" opacity="0"><animate attributeName="cy" values="80;70;60" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.7;0" dur="3s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="63" cy="78" r="0.35" fill="#FFA040" opacity="0"><animate attributeName="cy" values="78;68;58" dur="3.5s" begin="1s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.6;0" dur="3.5s" begin="1s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="55" cy="74" r="0.3" fill="#FFD060" opacity="0"><animate attributeName="cy" values="74;64;54" dur="2.8s" begin="0.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.5;0" dur="2.8s" begin="0.5s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="44" cy="76" r="0.25" fill="#FF6030" opacity="0"><animate attributeName="cy" values="76;66;56" dur="4s" begin="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.55;0" dur="4s" begin="2s" repeatCount="indefinite"/></circle>';
+        // ── WING FEATHER STRUCTURE — angular lines radiating from body ──
+        // Left wing feathers
+        s += '<path d="M52,79 L46,74" fill="none" stroke="#FF4020" stroke-width="0.3" opacity="0.4"/>';
+        s += '<path d="M51,78 L44,72" fill="none" stroke="#FF5030" stroke-width="0.25" opacity="0.35"/>';
+        s += '<path d="M50,77 L43,70" fill="none" stroke="#FF6040" stroke-width="0.2" opacity="0.3"/>';
+        // Right wing feathers
+        s += '<path d="M58,79 L64,74" fill="none" stroke="#FF3818" stroke-width="0.3" opacity="0.4"/>';
+        s += '<path d="M59,78 L66,72" fill="none" stroke="#FF4828" stroke-width="0.25" opacity="0.35"/>';
+        s += '<path d="M60,77 L67,70" fill="none" stroke="#FF5838" stroke-width="0.2" opacity="0.3"/>';
+        // ── BODY FIRE TEXTURE — flickering inner flames ──
+        s += '<path d="M54.5,80 Q55,78.5 55.5,80" fill="none" stroke="#FFD060" stroke-width="0.3" opacity="0.4"><animate attributeName="opacity" values="0.3;0.5;0.3" dur="1.5s" repeatCount="indefinite"/></path>';
+        s += '<path d="M54.2,82 Q55,80.5 55.8,82" fill="none" stroke="#FFA040" stroke-width="0.25" opacity="0.3"><animate attributeName="opacity" values="0.2;0.4;0.2" dur="1.8s" begin="0.3s" repeatCount="indefinite"/></path>';
+        // ── HEAT SHIMMER — wavy distortion lines above ──
+        s += '<path d="M50,67 Q52,66 54,67 Q56,68 58,67 Q60,66 62,67" fill="none" stroke="rgba(255,200,100,0.08)" stroke-width="0.4"><animate attributeName="d" values="M50,67 Q52,66 54,67 Q56,68 58,67 Q60,66 62,67;M50,66 Q52,67 54,66 Q56,65 58,66 Q60,67 62,66;M50,67 Q52,66 54,67 Q56,68 58,67 Q60,66 62,67" dur="2s" repeatCount="indefinite"/></path>';
+        s += '<path d="M48,64 Q51,63 54,64 Q57,65 60,64 Q63,63 66,64" fill="none" stroke="rgba(255,180,80,0.06)" stroke-width="0.35"><animate attributeName="d" values="M48,64 Q51,63 54,64 Q57,65 60,64 Q63,63 66,64;M48,63 Q51,64 54,63 Q57,62 60,63 Q63,64 66,63;M48,64 Q51,63 54,64 Q57,65 60,64 Q63,63 66,64" dur="2.5s" repeatCount="indefinite"/></path>';
+        // ── SECONDARY FLAME COLORS — blue/white hot core on body ──
+        s += '<path d="M54.8,78 L55,76.5 L55.2,78" fill="rgba(200,220,255,0.15)"/>';
+        // ── RISING EMBERS — more, varied sizes and speeds ──
+        s += '<circle cx="48" cy="80" r="0.5" fill="#FF8030" opacity="0"><animate attributeName="cy" values="80;68;56" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.8;0" dur="3s" repeatCount="indefinite"/><animate attributeName="r" values="0.5;0.3;0.1" dur="3s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="63" cy="78" r="0.4" fill="#FFA040" opacity="0"><animate attributeName="cy" values="78;66;54" dur="3.5s" begin="1s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.7;0" dur="3.5s" begin="1s" repeatCount="indefinite"/><animate attributeName="r" values="0.4;0.25;0.08" dur="3.5s" begin="1s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="55" cy="74" r="0.35" fill="#FFD060" opacity="0"><animate attributeName="cy" values="74;62;50" dur="2.8s" begin="0.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.6;0" dur="2.8s" begin="0.5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="44" cy="76" r="0.3" fill="#FF6030" opacity="0"><animate attributeName="cy" values="76;64;52" dur="4s" begin="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.6;0" dur="4s" begin="2s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="66" cy="74" r="0.25" fill="#FFD040" opacity="0"><animate attributeName="cy" values="74;62;50" dur="3.2s" begin="1.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.5;0" dur="3.2s" begin="1.5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="42" cy="72" r="0.2" fill="#FF4020" opacity="0"><animate attributeName="cy" values="72;60;48" dur="4.5s" begin="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.45;0" dur="4.5s" begin="3s" repeatCount="indefinite"/></circle>';
+        // ── TAIL FLAME ANIMATION — tail tongues flicker ──
+        s += '<path d="M46,92 Q44,93 43,92.5" fill="none" stroke="#FF4020" stroke-width="0.3" opacity="0"><animate attributeName="opacity" values="0;0.5;0" dur="2s" repeatCount="indefinite"/></path>';
+        s += '<path d="M48,93 Q46,94 45,93.5" fill="none" stroke="#FFA040" stroke-width="0.25" opacity="0"><animate attributeName="opacity" values="0;0.4;0" dur="2.5s" begin="0.8s" repeatCount="indefinite"/></path>';
         // Mythic glow pulse
-        s += '<animate attributeName="opacity" values="0.92;0.96;0.92" dur="3s" repeatCount="indefinite"/>';
+        s += '<animate attributeName="opacity" values="0.95;1;0.95" dur="3s" repeatCount="indefinite"/>';
         s += '</g>';
         break;
       case 34: // Baby Mammoth — LEGENDARY, side profile facing left
@@ -22773,6 +22795,20 @@ document.addEventListener('keydown', function(e) {
         // Action marks near face
         s += '<path d="M52,84 Q51.5,85 52,86" fill="none" stroke="rgba(200,200,200,0.2)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '<path d="M51.3,83.5 Q50.5,85 51.3,86.5" fill="none" stroke="rgba(200,200,200,0.15)" stroke-width="0.12" stroke-linecap="round"/>';
+        // Mouth line — gentle content expression
+        s += '<path d="M56,86.5 Q57,86.8 58,86.5" fill="none" stroke="#4A4040" stroke-width="0.15" opacity="0.25"/>';
+        // Brow lines — sleepy expression
+        s += '<path d="M55,83.8 Q55.5,83.5 56,83.8" fill="none" stroke="#6A6A62" stroke-width="0.15" opacity="0.2"/>';
+        s += '<path d="M58,83.8 Q58.5,83.5 59,83.8" fill="none" stroke="#6A6A62" stroke-width="0.15" opacity="0.2"/>';
+        // Claws on feet
+        s += '<path d="M55,92.3 L54.7,92.6 M55.5,92.3 L55.5,92.6 M56,92.3 L56.3,92.6" stroke="#5A5A52" stroke-width="0.1" fill="none"/>';
+        s += '<path d="M58,92.3 L57.7,92.6 M58.5,92.3 L58.5,92.6 M59,92.3 L59.3,92.6" stroke="#5A5A52" stroke-width="0.1" fill="none"/>';
+        // Head fur texture
+        s += '<path d="M55.5,83 Q56,82.5 56.5,83" fill="none" stroke="#7A7A72" stroke-width="0.1" opacity="0.2"/>';
+        s += '<path d="M57,83 Q57.5,82.5 58,83" fill="none" stroke="#7A7A72" stroke-width="0.1" opacity="0.18"/>';
+        // Arm stubs visible at sides
+        s += '<ellipse cx="54.5" cy="88" rx="0.8" ry="0.5" fill="#7A7A72" opacity="0.5"/>';
+        s += '<ellipse cx="59.5" cy="88" rx="0.8" ry="0.5" fill="#7A7A72" opacity="0.5"/>';
         s += '</g>';
         break;
       case 69: // Flamingo — standing on one leg, long S-curved neck, pink
@@ -22781,16 +22817,24 @@ document.addEventListener('keydown', function(e) {
         s += '<g opacity="0.90" transform="translate(12,50) scale(1.6) translate(-12,-50)">';
         // Shadow
         s += '<ellipse cx="12" cy="69" rx="2" ry="0.4" fill="#0d100c" opacity="0.08"/>';
-        // ── STANDING LEG — connects to body bottom, straight down ──
-        s += '<line x1="12" y1="61" x2="12.3" y2="68.5" stroke="#D06070" stroke-width="0.5" stroke-linecap="round"/>';
-        // Backward knee joint
-        s += '<path d="M12.2,65 L12.5,65.5 L12.3,66" fill="none" stroke="#D06070" stroke-width="0.3"/>';
-        // Foot — spread toes
-        s += '<path d="M12.3,68.5 L11.3,69 M12.3,68.5 L12.3,69 M12.3,68.5 L13.3,69" stroke="#C05060" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
-        // ── TUCKED LEG — bent at sharp angle, knee visible ──
-        // Thigh goes down-back from body, then shin folds UP tight
-        s += '<path d="M12.5,61 L13.5,63" stroke="#D06070" stroke-width="0.45" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M13.5,63 L13,61.5" stroke="#D06070" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
+        // ── STANDING LEG — two segments with backward knee ──
+        // Upper leg (thigh) — from body down to backward knee
+        s += '<line x1="12" y1="61" x2="12.5" y2="64.5" stroke="#D06070" stroke-width="0.5" stroke-linecap="round"/>';
+        // Lower leg (shin) — from knee down to foot
+        s += '<line x1="12.5" y1="64.5" x2="12" y2="68.5" stroke="#D06070" stroke-width="0.45" stroke-linecap="round"/>';
+        // Knee joint dot
+        s += '<circle cx="12.5" cy="64.5" r="0.25" fill="#C05060"/>';
+        // Foot — spread webbed toes
+        s += '<path d="M12,68.5 L11,69.2 M12,68.5 L12,69.2 M12,68.5 L13,69.2" stroke="#C05060" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
+        // ── TUCKED LEG — thigh visible, shin folded up against body ──
+        // Thigh angles down and back from body
+        s += '<path d="M12.5,61 L14,63.5" stroke="#D06070" stroke-width="0.45" fill="none" stroke-linecap="round"/>';
+        // Knee joint
+        s += '<circle cx="14" cy="63.5" r="0.2" fill="#C05060"/>';
+        // Shin folds back UP toward body
+        s += '<path d="M14,63.5 L13.5,61.5" stroke="#D06070" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
+        // Tucked foot
+        s += '<path d="M13.5,61.5 L14,61 M13.5,61.5 L13,61" stroke="#C05060" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
         // ── BODY — round/oval, bright pink ──
         s += '<ellipse cx="12" cy="59" rx="3" ry="2.5" fill="#E87088"/>';
         // Wing — darker pink, folded against body
@@ -23140,7 +23184,7 @@ document.addEventListener('keydown', function(e) {
       case 75: // Common Raven — realistic, grey body, black outline (Rare)
         // Reference: grey body, darker wing, lighter legs, white eye,
         // curved pointed beak, segmented legs with knobby knees, pointy claws.
-        s += '<g opacity="1" transform="translate(46,15) scale(1.35) translate(-46,-77)">';
+        s += '<g opacity="1" transform="translate(46,8) scale(1.35) translate(-46,-77)">';
         s += '<animateTransform attributeName="transform" type="rotate" values="-1 46 78;2 46 78;-1 46 78" dur="6s" repeatCount="indefinite"/>';
         // Shadow
         s += '<ellipse cx="52" cy="81.5" rx="3.5" ry="0.4" fill="#0d100c" opacity="0.15"/>';
