@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-08b';
+  var _SVG_CACHE_VER = '2026-04-08c';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21284,33 +21284,35 @@ document.addEventListener('keydown', function(e) {
         // Prothorax highlight
         s += '<path d="M61,75 Q61.5,76.5 61.5,78" fill="none" stroke="#7AB858" stroke-width="0.2" opacity="0.2"/>';
         // RAPTORIAL FORELEGS — the defining mantis feature, prayer pose
-        // LEFT ARM: coxa → femur (upper, thick with ridge) → tibia (folded back, spined)
-        // Femur — filled wedge shape, wider at base
-        s += '<path d="M60.5,74.5 L59.8,73.5 L59.2,72.2 L59.8,72 L60.4,73 L61,74.3 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
+        // LEFT ARM: coxa (vertical) → femur (angled out) → tibia (folded back, spined)
+        // Coxa — vertical segment rising UP from prothorax (the "prayer" part)
+        s += '<path d="M60.8,74.5 L60.5,73 L60.2,71.5 L60.8,71.5 L61,73 L61.2,74.5 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
+        // Femur — angles outward from top of coxa
+        s += '<path d="M60.3,71.5 L59.8,70.8 L59.2,69.8 L59.8,69.6 L60.4,70.5 L60.8,71.5 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
         // Femur inner groove
         s += '<path d="M60.2,74 L59.6,72.8" fill="none" stroke="#4A8030" stroke-width="0.15" opacity="0.3"/>';
-        // Tibia — folded back against femur, with spines along inner edge
-        s += '<path d="M59.2,72.2 L58.8,71.2 L59,70.3 L59.5,69.8 L60.2,70.2 L60,70.8 L59.6,71.5 L59.8,72 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
-        // Spines — triangular teeth along inner (right) edge of left tibia
-        s += '<path d="M59.8,71.8 L60.3,71.6 L59.8,71.4" fill="#3A7A20"/>';
-        s += '<path d="M59.9,71.1 L60.4,70.9 L59.9,70.7" fill="#3A7A20"/>';
-        s += '<path d="M60,70.5 L60.4,70.3 L60.1,70.1" fill="#3A7A20"/>';
-        s += '<path d="M60.1,69.9 L60.4,69.8 L60.2,69.6" fill="#3A7A20" opacity="0.8"/>';
-        // Tarsal hook (claw at tip)
-        s += '<path d="M60.2,70.2 L60.5,69.8 L60.3,69.5" fill="none" stroke="#3A6A28" stroke-width="0.15" stroke-linecap="round"/>';
+        // Tibia — folded back against femur, with spines
+        s += '<path d="M59.2,69.8 L58.8,69 L59,68.2 L59.5,67.8 L60,68.2 L59.8,69 L59.6,69.5 L59.8,69.6 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
+        // Spines — triangular teeth along inner edge
+        s += '<path d="M59.8,69.4 L60.3,69.2 L59.8,69" fill="#3A7A20"/>';
+        s += '<path d="M59.9,68.7 L60.3,68.5 L59.9,68.3" fill="#3A7A20"/>';
+        s += '<path d="M60,68.1 L60.3,67.9 L60,67.7" fill="#3A7A20" opacity="0.8"/>';
+        // Tarsal hook
+        s += '<path d="M60,68.2 L60.3,67.7 L60.1,67.4" fill="none" stroke="#3A6A28" stroke-width="0.15" stroke-linecap="round"/>';
         // RIGHT ARM: mirrored
-        // Femur
-        s += '<path d="M62.5,74.5 L63.2,73.5 L63.8,72.2 L63.2,72 L62.6,73 L62,74.3 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
+        // Coxa — vertical segment rising UP
+        s += '<path d="M62.2,74.5 L62.5,73 L62.8,71.5 L62.2,71.5 L62,73 L61.8,74.5 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
+        // Femur — angles outward
+        s += '<path d="M62.7,71.5 L63.2,70.8 L63.8,69.8 L63.2,69.6 L62.6,70.5 L62.2,71.5 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
         s += '<path d="M62.8,74 L63.4,72.8" fill="none" stroke="#4A8030" stroke-width="0.15" opacity="0.3"/>';
         // Tibia
-        s += '<path d="M63.8,72.2 L64.2,71.2 L64,70.3 L63.5,69.8 L62.8,70.2 L63,70.8 L63.4,71.5 L63.2,72 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
-        // Spines — triangular teeth along inner (left) edge of right tibia
-        s += '<path d="M63.2,71.8 L62.7,71.6 L63.2,71.4" fill="#3A7A20"/>';
-        s += '<path d="M63.1,71.1 L62.6,70.9 L63.1,70.7" fill="#3A7A20"/>';
-        s += '<path d="M63,70.5 L62.6,70.3 L62.9,70.1" fill="#3A7A20"/>';
-        s += '<path d="M62.9,69.9 L62.6,69.8 L62.8,69.6" fill="#3A7A20" opacity="0.8"/>';
+        s += '<path d="M63.8,69.8 L64.2,69 L64,68.2 L63.5,67.8 L63,68.2 L63.2,69 L63.4,69.5 L63.2,69.6 Z" fill="#5A9A3C" stroke="#4A8A2C" stroke-width="0.12"/>';
+        // Spines — triangular teeth along inner edge
+        s += '<path d="M63.2,69.4 L62.7,69.2 L63.2,69" fill="#3A7A20"/>';
+        s += '<path d="M63.1,68.7 L62.7,68.5 L63.1,68.3" fill="#3A7A20"/>';
+        s += '<path d="M63,68.1 L62.7,67.9 L63,67.7" fill="#3A7A20" opacity="0.8"/>';
         // Tarsal hook
-        s += '<path d="M62.8,70.2 L62.5,69.8 L62.7,69.5" fill="none" stroke="#3A6A28" stroke-width="0.15" stroke-linecap="round"/>';
+        s += '<path d="M63,68.2 L62.7,67.7 L62.9,67.4" fill="none" stroke="#3A6A28" stroke-width="0.15" stroke-linecap="round"/>';
         // HEAD — large, triangular, the "alien" face
         s += '<path d="M59.8,73.2 Q59.3,72 59.8,70.8 Q60.8,69.8 62,69.8 Q63.2,69.8 64.2,70.8 Q64.7,72 64.2,73.2 Q63,74.2 62,74.2 Q61,74.2 59.8,73.2 Z" fill="#6BA348"/>';
         // Head vertex ridge
@@ -21388,11 +21390,11 @@ document.addEventListener('keydown', function(e) {
         // Eye — small, dark, beady
         s += '<circle cx="51.5" cy="88.8" r="0.45" fill="#1A1008"/>';
         s += '<circle cx="51.6" cy="88.65" r="0.13" fill="rgba(200,180,120,0.5)"/>';
-        // Ears — small rounded, ABOVE the face, clearly visible over spines
-        s += '<ellipse cx="52" cy="86.8" rx="0.8" ry="1.0" fill="#A87850"/>';
-        s += '<ellipse cx="52" cy="86.8" rx="0.45" ry="0.6" fill="#C09868" opacity="0.35"/>';
+        // Ears — small rounded, ABOVE the face (back ear first, front ear second)
         s += '<ellipse cx="53.2" cy="86.5" rx="0.8" ry="1.0" fill="#A87850"/>';
         s += '<ellipse cx="53.2" cy="86.5" rx="0.45" ry="0.6" fill="#C09868" opacity="0.35"/>';
+        s += '<ellipse cx="52" cy="86.8" rx="0.8" ry="1.0" fill="#A87850"/>';
+        s += '<ellipse cx="52" cy="86.8" rx="0.45" ry="0.6" fill="#C09868" opacity="0.35"/>';
         // Whiskers — attached to snout
         s += '<line x1="51.2" y1="89.3" x2="49.5" y2="88.8" stroke="#C0A888" stroke-width="0.08" opacity="0.4"/>';
         s += '<line x1="51.2" y1="89.5" x2="49.3" y2="89.5" stroke="#C0A888" stroke-width="0.08" opacity="0.35"/>';
@@ -21599,28 +21601,35 @@ document.addEventListener('keydown', function(e) {
           // Cream barbed tip — top 40%
           s += '<line x1="'+(_pqx+(_pqEx-_pqx)*0.6).toFixed(1)+'" y1="'+(_pqy+(_pqEy-_pqy)*0.6).toFixed(1)+'" x2="'+_pqEx.toFixed(1)+'" y2="'+_pqEy.toFixed(1)+'" stroke="#E8DCC8" stroke-width="0.15" stroke-linecap="round" opacity="0.6"/>';
         }
-        // ── HEAD — blends into body, NOT mouse-like ──
-        // Porcupine heads are round, blunt, small relative to body
-        // Head connects smoothly into body (no distinct neck)
-        s += '<path d="M52.5,89 Q51.5,88.5 51,87.5 Q50.5,86.5 51,86 Q51.5,85.5 52.5,86 Q53.5,86.5 53.5,87.5 Q53.5,88.5 52.5,89 Z" fill="#6A5040"/>';
-        // Transition fur between head and body — blending zone
-        s += '<path d="M53,87 Q54,86.5 55,86.5" fill="none" stroke="#5A4030" stroke-width="0.5" opacity="0.3"/>';
-        // Small round ears — barely visible, partially hidden in quills
-        s += '<ellipse cx="52" cy="85.8" rx="0.55" ry="0.65" fill="#7A6050"/>';
-        s += '<ellipse cx="52" cy="85.8" rx="0.3" ry="0.4" fill="#8A7060" opacity="0.4"/>';
-        s += '<ellipse cx="53" cy="85.6" rx="0.55" ry="0.65" fill="#7A6050"/>';
-        s += '<ellipse cx="53" cy="85.6" rx="0.3" ry="0.4" fill="#8A7060" opacity="0.4"/>';
-        // Eye — small, beady
-        s += '<circle cx="51.5" cy="87" r="0.35" fill="#1A1008"/>';
-        s += '<circle cx="51.6" cy="86.9" r="0.1" fill="rgba(200,180,120,0.5)"/>';
-        // Snout — blunt, rounded (porcupine, not mouse — no pointed tip)
-        s += '<path d="M51,88 Q50.2,87.8 50,87.5 Q50,87 50.5,87 Q51,87 51.5,87.5 Z" fill="#7A6050"/>';
-        // Nose — dark, prominent
-        s += '<ellipse cx="50.2" cy="87.8" rx="0.3" ry="0.22" fill="#1A1008"/>';
-        s += '<circle cx="50.3" cy="87.7" r="0.06" fill="rgba(240,235,216,0.4)"/>';
-        // Whiskers — 3 per side
-        s += '<line x1="50.2" y1="87.5" x2="48.8" y2="87" stroke="#B0A090" stroke-width="0.08" fill="none" opacity="0.4"/>';
-        s += '<line x1="50" y1="87.8" x2="48.5" y2="87.8" stroke="#B0A090" stroke-width="0.08" fill="none" opacity="0.35"/>';
+        // ── HEAD — angled DOWN, blends into body, spines on head ──
+        // Porcupine head points slightly downward (grazing/sniffing pose)
+        s += '<path d="M52,89.5 Q51,89 50.5,88 Q50,87 50.5,86.5 Q51.5,86 52.5,86.5 Q53.5,87 53.5,88 Q53.5,89 52.5,89.5 Z" fill="#6A5040"/>';
+        // Transition fur blending into body
+        s += '<path d="M53,87.5 Q54,87 55,87" fill="none" stroke="#5A4030" stroke-width="0.5" opacity="0.3"/>';
+        // Head spines — shorter quills radiating from the crown
+        s += '<line x1="51.5" y1="86.5" x2="51" y2="85" stroke="#7A5C3E" stroke-width="0.2" stroke-linecap="round"/>';
+        s += '<line x1="51.5" y1="85" x2="51.8" y2="85.3" stroke="#C8B8A0" stroke-width="0.12" opacity="0.5"/>';
+        s += '<line x1="52" y1="86.3" x2="52" y2="84.8" stroke="#7A5C3E" stroke-width="0.2" stroke-linecap="round"/>';
+        s += '<line x1="52" y1="84.8" x2="52.2" y2="85.2" stroke="#C8B8A0" stroke-width="0.12" opacity="0.5"/>';
+        s += '<line x1="52.8" y1="86.3" x2="53.2" y2="84.8" stroke="#7A5C3E" stroke-width="0.2" stroke-linecap="round"/>';
+        s += '<line x1="53.2" y1="84.8" x2="53.3" y2="85.2" stroke="#C8B8A0" stroke-width="0.12" opacity="0.5"/>';
+        s += '<line x1="53.3" y1="86.5" x2="54" y2="85.2" stroke="#7A5C3E" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<line x1="54" y1="85.2" x2="54" y2="85.5" stroke="#C8B8A0" stroke-width="0.1" opacity="0.5"/>';
+        // Small round ears — partially hidden
+        s += '<ellipse cx="51.5" cy="86.2" rx="0.5" ry="0.55" fill="#7A6050"/>';
+        s += '<ellipse cx="51.5" cy="86.2" rx="0.25" ry="0.3" fill="#8A7060" opacity="0.4"/>';
+        s += '<ellipse cx="53" cy="86" rx="0.5" ry="0.55" fill="#7A6050"/>';
+        // Eye — small, beady, lower position (head angled down)
+        s += '<circle cx="51" cy="87.5" r="0.35" fill="#1A1008"/>';
+        s += '<circle cx="51.1" cy="87.4" r="0.1" fill="rgba(200,180,120,0.5)"/>';
+        // Snout — blunt, pointing down
+        s += '<path d="M50.5,88.5 Q49.8,88.5 49.5,88 Q49.5,87.5 50,87.5 Q50.5,87.5 51,88 Z" fill="#7A6050"/>';
+        // Nose — dark, prominent, lower
+        s += '<ellipse cx="49.7" cy="88.3" rx="0.3" ry="0.22" fill="#1A1008"/>';
+        s += '<circle cx="49.8" cy="88.2" r="0.06" fill="rgba(240,235,216,0.4)"/>';
+        // Whiskers
+        s += '<line x1="49.8" y1="88" x2="48.3" y2="87.5" stroke="#B0A090" stroke-width="0.08" fill="none" opacity="0.4"/>';
+        s += '<line x1="49.5" y1="88.3" x2="48" y2="88.3" stroke="#B0A090" stroke-width="0.08" fill="none" opacity="0.35"/>';
         s += '<line x1="50.2" y1="88" x2="48.8" y2="88.5" stroke="#B0A090" stroke-width="0.06" fill="none" opacity="0.3"/>';
         // Action marks (( near snout
         s += '<path d="M49.5,87.5 Q49,88.5 49.5,89.5" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
@@ -21821,46 +21830,42 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M45.8,85.5 Q45,87 45.8,88.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
-      case 49: // Origami Crane — clean geometric orizuru, floating
-        // Traditional Japanese paper crane. All straight edges, angular folds.
-        // Diamond body, spread wings, long neck with reverse-fold head, tail.
-        s += '<g opacity="0.88" transform="translate(56,18) scale(1.8) translate(-56,-18)">';
+      case 49: // Origami Crane — from Wikimedia Commons orizuru geometry
+        // 15-layer polygon crane scaled from 1752x1334 source to game space.
+        // Center mapped from (1080,750) to (56,16). Scale 0.014.
+        s += '<g opacity="0.88" transform="translate(56,16) scale(1.8) translate(-56,-16)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.2,-0.5;0,0;-0.2,0.4;0,0" dur="7s" repeatCount="indefinite"/>';
-        // ── LEFT WING — angular, two-tone fold panels ──
-        s += '<polygon points="55,18 50,16 44,13.5 46,17 51,19" fill="#E8E2D6" stroke="#A8A090" stroke-width="0.18" stroke-linejoin="miter"/>';
-        s += '<polygon points="55,18 50,16 46,17 51,19" fill="#D4CEC0" opacity="0.4"/>';
-        // Wing tip detail — small secondary fold
-        s += '<polygon points="44,13.5 42,12.5 44,14.5" fill="#F0EBE0" stroke="#A8A090" stroke-width="0.15" stroke-linejoin="miter"/>';
-        // ── RIGHT WING — mirrored ──
-        s += '<polygon points="57,18 62,16 68,13.5 66,17 61,19" fill="#DDD6C8" stroke="#A8A090" stroke-width="0.18" stroke-linejoin="miter"/>';
-        s += '<polygon points="57,18 62,16 66,17 61,19" fill="#C8C0B0" opacity="0.4"/>';
-        // Wing tip detail
-        s += '<polygon points="68,13.5 70,12.5 68,14.5" fill="#E8E2D6" stroke="#A8A090" stroke-width="0.15" stroke-linejoin="miter"/>';
-        // ── BODY — central diamond ──
-        s += '<polygon points="55,18 56,16 57,18 56,22" fill="#E8E2D6" stroke="#A8A090" stroke-width="0.18" stroke-linejoin="miter"/>';
-        // Body center crease
-        s += '<line x1="56" y1="16" x2="56" y2="22" stroke="#B0A898" stroke-width="0.15" opacity="0.5"/>';
-        // Body shadow — lower half
-        s += '<polygon points="55,18 56,22 57,18" fill="#C8C0B0" opacity="0.2"/>';
-        // ── NECK — long angled fold, forward-left ──
-        s += '<polygon points="55.5,17.5 54,16 51,12 50,13 52.5,16.5 54.5,18.5" fill="#E8E2D8" stroke="#A8A090" stroke-width="0.18" stroke-linejoin="miter"/>';
-        // Neck crease
-        s += '<line x1="55" y1="17.5" x2="50.5" y2="12.5" stroke="#B0A898" stroke-width="0.15" opacity="0.4"/>';
-        // Neck shadow
-        s += '<polygon points="52.5,16.5 50,13 54.5,18.5" fill="#C8C0B0" opacity="0.15"/>';
-        // ── HEAD — reverse fold, pointing left ──
-        s += '<polygon points="51,12 47,11 49.5,13.5" fill="#F0EBE0" stroke="#A8A090" stroke-width="0.18" stroke-linejoin="miter"/>';
-        // Head crease
-        s += '<line x1="50.5" y1="11.8" x2="48" y2="11.5" stroke="#B8B0A0" stroke-width="0.12" opacity="0.4"/>';
-        // Beak tip
-        s += '<polygon points="47,11 45.5,10.8 47.5,12" fill="#DDD6C8" stroke="#A8A090" stroke-width="0.15"/>';
-        // Eye — tiny dot
-        s += '<circle cx="48" cy="11.5" r="0.12" fill="#2D1810"/>';
-        // ── TAIL — angled back-right, forked ──
-        s += '<polygon points="56.5,21.5 59,24 61,26.5 59.5,24" fill="#D8D0C0" stroke="#A8A090" stroke-width="0.15" stroke-linejoin="miter"/>';
-        s += '<polygon points="56.5,22 60,25.5 62,27.5 60,25" fill="#E0D8C8" stroke="#B0A898" stroke-width="0.12" stroke-linejoin="miter"/>';
-        // Tail crease
-        s += '<line x1="57" y1="22" x2="61" y2="27" stroke="#B8B0A0" stroke-width="0.1" opacity="0.4"/>';
+        // ── TAIL — narrow triangle, upper-left ──
+        s += '<polygon points="45.7,7.5 51.2,19.8 53.4,19.9" fill="#DDD6C8" stroke="#A8A090" stroke-width="0.15"/>';
+        // ── RIGHT WING bottom (aile droite dessous) ──
+        s += '<polygon points="46.6,16.5 49.1,15.8 42.3,20.2 57.9,23.1 59.4,22.6 56.6,20.5 46.6,16.5" fill="#D8D0C0" stroke="#A8A090" stroke-width="0.12"/>';
+        // ── RIGHT WING top surface ──
+        s += '<polygon points="42.3,20.2 57.9,23.1 59.4,22.6 56.6,20.5" fill="#C8C0B0" stroke="#A8A090" stroke-width="0.12"/>';
+        // ── BACK panels (dos) ──
+        s += '<polygon points="55.2,15.1 58.2,19.6 56.0,20.4" fill="#D4CEC0" stroke="#A8A090" stroke-width="0.1"/>';
+        s += '<polygon points="46.4,16.7 55.2,15.2 58.9,21.7 58.3,21.7" fill="#DDD6CA" stroke="#A8A090" stroke-width="0.1"/>';
+        s += '<polygon points="54.2,20.5 55.2,15.2 58.9,21.7 58.3,21.7" fill="#C8C0B4" stroke="#A8A090" stroke-width="0.1"/>';
+        // ── BACK rear ──
+        s += '<polygon points="53.7,17.0 53.7,17.4 55.2,15.2" fill="#CCC4B6" opacity="0.5"/>';
+        // ── LEFT WING (aile gauche) — large triangle, upper-right ──
+        s += '<polygon points="67.1,9.3 55.3,13.9 53.9,16.8 58.8,21.6 62.3,19.5 67.1,9.3" fill="#E8E2D6" stroke="#A8A090" stroke-width="0.15"/>';
+        // Left wing highlight — lighter panel
+        s += '<polygon points="67.0,9.4 55.3,14.9 54.0,17.8 54.4,18.1 56.2,18.3 58.4,18.8 67.0,9.4" fill="#F0EBE0" opacity="0.35"/>';
+        // Wing fold crease
+        s += '<line x1="65.3" y1="10.3" x2="55.6" y2="16.8" stroke="#B0A898" stroke-width="0.12" opacity="0.35"/>';
+        // ── NECK (cou) — narrow quad pointing lower-right toward head ──
+        s += '<polygon points="57.2,25.4 62.6,18.3 62.2,18.0 58.0,21.9" fill="#E0D8CA" stroke="#A8A090" stroke-width="0.12"/>';
+        // Neck shadow panel
+        s += '<polygon points="57.2,25.3 62.5,18.3 62.1,18.0 59.2,22.9" fill="#CCC4B8" opacity="0.3"/>';
+        // Neck background
+        s += '<polygon points="58.0,25.2 63.1,19.2 62.5,18.4 57.4,24.6" fill="#D8D0C4" opacity="0.4"/>';
+        // ── HEAD — two triangles forming the beak/head ──
+        // Head left
+        s += '<polygon points="66.2,21.8 64.8,18.1 63.2,17.9 63.1,18.3" fill="#E8E2D8" stroke="#A8A090" stroke-width="0.12"/>';
+        // Head right
+        s += '<polygon points="66.2,21.9 63.2,18.7 63.6,18.3 63.7,18.4" fill="#DDD6CC" stroke="#A8A090" stroke-width="0.12"/>';
+        // ── LEG/FOOT ──
+        s += '<polygon points="57.2,25.4 55.0,22.5 57.5,22.7 57.7,22.9" fill="#D4CEC2" stroke="#A8A090" stroke-width="0.1"/>';
         s += '</g>';
         break;
       case 50: // Garden Gnome — friendly compact figure on soil (Epic)
