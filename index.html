@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-07c';
+  var _SVG_CACHE_VER = '2026-04-07d';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -23005,18 +23005,18 @@ document.addEventListener('keydown', function(e) {
         break;
       case 81: // Wolf Spider — top-down view, long legs from reference
         s += '<g opacity="1" transform="translate(48,88) scale(1.4) translate(-48,-88)">';
-        // ── 8 LONG LEGS — from CEPHALOTHORAX sides, long S-curves ──
-        // Thick at base, taper to thin points. Like reference image.
-        // Left side — 4 legs sweeping left
-        s += '<path d="M45,87 Q41,84 38,82 Q37,82.5 39,85" stroke="#3A2A1A" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M45,88 Q40,86 37,85 Q36,85.5 38,87" stroke="#3A2A1A" stroke-width="0.28" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M45,89 Q40,90 37,92 Q36.5,93 38,92.5" stroke="#3A2A1A" stroke-width="0.28" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M45.5,89.5 Q41,92 39,94 Q38.5,95 40,94" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
-        // Right side — 4 legs sweeping right
-        s += '<path d="M49,87 Q53,84 56,82 Q57,82.5 55,85" stroke="#3A2A1A" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M49,88 Q54,86 57,85 Q58,85.5 56,87" stroke="#3A2A1A" stroke-width="0.28" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M49,89 Q54,90 57,92 Q57.5,93 56,92.5" stroke="#3A2A1A" stroke-width="0.28" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M48.5,89.5 Q53,92 55,94 Q55.5,95 54,94" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        // ── 8 LONG LEGS — last section at 120° angle outward, not folded ──
+        // Each leg: base→knee (up/out), knee→foot (angled out at ~120°)
+        // Left side — 4 legs
+        s += '<path d="M45,87 Q41,84 39,82 L37,84" stroke="#3A2A1A" stroke-width="0.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M45,88 Q40,86 38,84.5 L36,86.5" stroke="#3A2A1A" stroke-width="0.28" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M45,89 Q40,90.5 38,92 L36,91" stroke="#3A2A1A" stroke-width="0.28" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M45.5,89.5 Q41,92 39,94 L37,93" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        // Right side — 4 legs
+        s += '<path d="M49,87 Q53,84 55,82 L57,84" stroke="#3A2A1A" stroke-width="0.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M49,88 Q54,86 56,84.5 L58,86.5" stroke="#3A2A1A" stroke-width="0.28" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M49,89 Q54,90.5 56,92 L58,91" stroke="#3A2A1A" stroke-width="0.28" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M48.5,89.5 Q53,92 55,94 L57,93" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
         // ── ABDOMEN — round circle (like reference), light brown outline ──
         s += '<circle cx="50" cy="89" r="2" fill="#3A2A1A"/>';
         s += '<circle cx="50" cy="89" r="2" fill="none" stroke="#7A6A58" stroke-width="0.2"/>';
@@ -23029,12 +23029,11 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="47" cy="88" rx="2" ry="1.8" fill="none" stroke="#7A6A58" stroke-width="0.18"/>';
         // Center stripe
         s += '<line x1="45.5" y1="88" x2="48.5" y2="88" stroke="#5A4A38" stroke-width="0.25" opacity="0.2"/>';
-        // ── CHELICERAE — prominent curved pincers at front ──
-        s += '<path d="M46,86.5 Q45,86 44.5,86.5 Q45,87 45.5,86.8" fill="#4A3A2A" stroke="#3A2A1A" stroke-width="0.12"/>';
-        s += '<path d="M48,86.5 Q49,86 49.5,86.5 Q49,87 48.5,86.8" fill="#4A3A2A" stroke="#3A2A1A" stroke-width="0.12"/>';
-        // ── 2 SHORT ANTENNAE sticking up from head top ──
-        s += '<path d="M46.5,86.5 Q46,85.5 46.2,85" stroke="#3A2A1A" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M47.5,86.5 Q48,85.5 47.8,85" stroke="#3A2A1A" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        // ── FANGS — curved, pointy, at front of head ──
+        s += '<path d="M46.5,86.5 Q45.5,85.5 45.8,85" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M47.5,86.5 Q48.5,85.5 48.2,85" stroke="#3A2A1A" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        s += '<circle cx="45.8" cy="85" r="0.1" fill="#3A2A1A"/>';
+        s += '<circle cx="48.2" cy="85" r="0.1" fill="#3A2A1A"/>';
         // ── EYES — same blue-green dots ──
         s += '<circle cx="46.5" cy="87" r="0.25" fill="#2A4A3A"/>';
         s += '<circle cx="47.5" cy="87" r="0.25" fill="#2A4A3A"/>';
