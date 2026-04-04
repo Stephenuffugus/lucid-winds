@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-07i';
+  var _SVG_CACHE_VER = '2026-04-07j';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -20214,9 +20214,9 @@ document.addEventListener('keydown', function(e) {
       case 27: // Garden Snail — simple, recognizable, bottom-left
         s += '<g opacity="0.85" transform="translate(10,89) scale(1.5) translate(-10,-89)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.4,0;0.8,0;0.4,0;0,0" dur="7s" repeatCount="indefinite"/>';
-        // ── SLIME TRAIL — thick, long, wavy line behind snail ──
-        s += '<path d="M-6,91.5 Q-3,90.5 -1,91.5 Q1,92.5 3,91 Q5,89.5 7,91 Q9,92 10,91" fill="none" stroke="rgba(200,215,190,0.22)" stroke-width="1.5" stroke-linecap="round"/>';
-        s += '<path d="M-6,91.5 Q-3,90.8 -1,91.6 Q1,92.4 3,91.1 Q5,89.8 7,91.1 Q9,92 10,91" fill="none" stroke="rgba(255,255,240,0.06)" stroke-width="3"/>';
+        // ── SLIME TRAIL — MUCH LONGER, wavy, to the left ──
+        s += '<path d="M-15,91.5 Q-12,90.5 -9,91.5 Q-6,92.5 -3,91 Q0,89.5 3,91 Q5,92 7,91 Q9,92 10,91" fill="none" stroke="rgba(200,215,190,0.22)" stroke-width="1.5" stroke-linecap="round"/>';
+        s += '<path d="M-15,91.5 Q-12,90.8 -9,91.6 Q-6,92.4 -3,91.1 Q0,89.8 3,91.1 Q5,92 7,91.1 Q9,92 10,91" fill="none" stroke="rgba(255,255,240,0.06)" stroke-width="3"/>';
         // Shadow
         s += '<ellipse cx="11" cy="92" rx="6" ry="0.6" fill="#0d100c" opacity="0.1"/>';
         // ── BODY — one continuous piece: foot → neck → head ──
@@ -20245,12 +20245,14 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M17,87 Q16.5,85.5 16.8,84.5" stroke="#8E9780" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
         // Right antenna
         s += '<path d="M18,87 Q18.5,85.5 18.2,84.5" stroke="#8E9780" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
-        // Left eyeball
-        s += '<circle cx="16.8" cy="84.3" r="0.3" fill="#1A1A18"/>';
-        s += '<circle cx="16.85" cy="84.2" r="0.08" fill="rgba(240,235,216,0.5)"/>';
-        // Right eyeball
-        s += '<circle cx="18.2" cy="84.3" r="0.3" fill="#1A1A18"/>';
-        s += '<circle cx="18.25" cy="84.2" r="0.08" fill="rgba(240,235,216,0.5)"/>';
+        // Left eyeball — glowing
+        s += '<circle cx="16.8" cy="84.3" r="0.5" fill="rgba(200,255,200,0.15)"/>';
+        s += '<circle cx="16.8" cy="84.3" r="0.3" fill="#90E890"/>';
+        s += '<circle cx="16.8" cy="84.3" r="0.15" fill="#F0FFF0"/>';
+        // Right eyeball — glowing
+        s += '<circle cx="18.2" cy="84.3" r="0.5" fill="rgba(200,255,200,0.15)"/>';
+        s += '<circle cx="18.2" cy="84.3" r="0.3" fill="#90E890"/>';
+        s += '<circle cx="18.2" cy="84.3" r="0.15" fill="#F0FFF0"/>';
         // Mouth — tiny smile
         s += '<path d="M17,88 Q17.5,88.3 18,88" fill="none" stroke="#6A7A5A" stroke-width="0.15" opacity="0.4" stroke-linecap="round"/>';
         s += '</g>';
