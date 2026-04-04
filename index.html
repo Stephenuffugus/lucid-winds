@@ -20625,38 +20625,44 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M42.2,67.5 Q41.5,69.5 42.2,71.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
-      case 33: // The Capybara — MYTHIC, from Stephen's reference SVG
-        // Big D-shaped rump on right, boxy head on left, sleepy line eyes,
-        // simple nose with two nostrils, belly flap, stubby rounded legs.
-        // Faithful to the original — clean, simple, charming.
-        s += '<g opacity="0.88" transform="translate(53,85) scale(1.25) translate(-53,-85)">';
-        // Mythic glow — warm golden
-        s += '<ellipse cx="53" cy="86" rx="12" ry="7" fill="rgba(200,168,75,0.03)"><animate attributeName="opacity" values="0.03;0.06;0.03" dur="5s" repeatCount="indefinite"/></ellipse>';
-        // Shadow
-        s += '<ellipse cx="53" cy="93.5" rx="10" ry="0.6" fill="#0d100c" opacity="0.12"/>';
-        // ── LEGS (behind body, drawn first) ──
-        // Front leg
-        s += '<rect x="47" y="91" width="2.5" height="3" rx="0.8" fill="#A07040"/>';
-        // Hind leg
-        s += '<rect x="57" y="91" width="2.5" height="3" rx="0.8" fill="#A07040"/>';
-        // ── BODY — big D-shaped rump, curves up high on right ──
-        // Rump peak is ABOVE the head — the signature capybara silhouette
-        s += '<path d="M51,77 C58,77 62,79 62,83 C62,88 60,91.5 51,91.5 Z" fill="#A07040"/>';
-        // ── HEAD — boxy rectangle, left of body ──
-        // Flat top, flat bottom, slightly rounded corners
-        s += '<path d="M42,79 C42,77.5 51,77.5 51,79 C51,80.5 51,84 51,85 C51,86.5 42,86.5 42,85 Z" fill="#C09060"/>';
-        // ── EARS — small ovals on top of head ──
-        s += '<ellipse cx="43" cy="77.5" rx="1" ry="1.3" fill="#A07040"/>';
-        s += '<ellipse cx="50" cy="77.5" rx="1" ry="1.3" fill="#A07040"/>';
-        // ── EYES — closed/sleepy horizontal lines (THE personality) ──
-        s += '<line x1="44.5" y1="80.5" x2="46" y2="80.5" stroke="#222" stroke-width="0.45" stroke-linecap="round"/>';
-        s += '<line x1="47.5" y1="80.5" x2="49" y2="80.5" stroke="#222" stroke-width="0.45" stroke-linecap="round"/>';
-        // ── NOSE — rectangle on left side of head with two nostrils ──
-        s += '<rect x="41" y="80.5" width="1.5" height="4.5" rx="0.4" fill="#A07040"/>';
-        s += '<circle cx="41.7" cy="82" r="0.22" fill="#222"/>';
-        s += '<circle cx="41.7" cy="84" r="0.22" fill="#222"/>';
-        // ── BELLY FLAP — lighter area under chin ──
-        s += '<path d="M51,83 C51,85.5 49.5,86.5 48,86.5 L48,88.5 Z" fill="#D2A679" opacity="0.6"/>';
+      case 33: // The Capybara — MYTHIC, from reference image
+        // Sitting, facing left. Body curves up to high back/rump on right,
+        // boxy snout extends left, small ears, one visible eye (profile).
+        // Reference SVG (100x80) mapped into game space via transform.
+        s += '<g opacity="0.88">';
+        // Mythic glow (game coords)
+        s += '<ellipse cx="53" cy="86" rx="13" ry="8" fill="rgba(200,168,75,0.03)"><animate attributeName="opacity" values="0.03;0.06;0.03" dur="5s" repeatCount="indefinite"/></ellipse>';
+        // Shadow (game coords)
+        s += '<ellipse cx="53" cy="93.5" rx="11" ry="0.6" fill="#0d100c" opacity="0.12"/>';
+        // Capybara — reference coords scaled into game space
+        s += '<g transform="translate(53,86) scale(0.32) translate(-50,-53)">';
+        // Body — big curve, high on left (head end), slopes down right (sitting)
+        s += '<path d="M20,70 C15,60 15,45 25,35 L50,35 C70,35 85,45 85,60 C85,70 70,70 60,70 Z" fill="#A87848"/>';
+        // Neck/head connector — extends upward from body
+        s += '<path d="M45,35 L50,35 L50,30 C50,28 45,28 45,30 Z" fill="#A87848"/>';
+        // Snout highlight — lighter polygon on the muzzle face
+        s += '<polygon points="45,35 50,35 48,40 46,40" fill="#B88858"/>';
+        // Snout/muzzle — dark rectangular block
+        s += '<rect x="42" y="32" width="6" height="10" rx="1" fill="#8A6038"/>';
+        // Eye — small dark dot, set high
+        s += '<circle cx="43.5" cy="38" r="1.2" fill="#3A2A18"/>';
+        // Eye glint
+        s += '<circle cx="43.8" cy="37.7" r="0.3" fill="rgba(240,235,216,0.4)"/>';
+        // Nostril — small triangle on snout
+        s += '<polygon points="48.5,33 49.5,33 49,34" fill="#3A2A18"/>';
+        // Ears — two small leaf-shaped bumps on top of head
+        s += '<path d="M49,30 C48.5,28 47.5,28 47,30 C47.5,31 48.5,31 49,30 Z" fill="#8A6038"/>';
+        s += '<path d="M47,30 C46.5,28.5 45.5,28.5 45,30 C45.5,31.5 46.5,31.5 47,30 Z" fill="#8A6038"/>';
+        // Belly/chest — lighter area where front meets ground
+        s += '<path d="M25,60 Q35,70 50,70 L50,65 Q38,62 28,55 Z" fill="#C09868" opacity="0.3"/>';
+        // Front legs — short, stubby
+        s += '<rect x="52" y="65" width="4" height="6" rx="0.5" fill="#8A6038"/>';
+        s += '<rect x="62" y="65" width="4" height="6" rx="0.5" fill="#8A6038"/>';
+        // Hind foot — wider, visible behind
+        s += '<rect x="62" y="69" width="6" height="3" rx="0.5" fill="#8A6038"/>';
+        // Front foot
+        s += '<rect x="51" y="69" width="6" height="3" rx="0.5" fill="#8A6038"/>';
+        s += '</g>';
         // Zen breathing
         s += '<animate attributeName="opacity" values="0.88;0.90;0.88" dur="4s" repeatCount="indefinite"/>';
         s += '</g>';
