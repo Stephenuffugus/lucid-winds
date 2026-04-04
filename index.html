@@ -8503,9 +8503,9 @@ document.addEventListener('keydown', function(e) {
       {name:'Moon'},      // C
       {name:'Rings'},     // D
       {name:'Elder Runes'},// E
-      {name:'Vortex'},    // F
+      {name:'Storm Wraith'},// F
       {name:'Shimmer'},             // idx 16
-      {name:'Spider Web',rare:true}, // idx 17
+      {name:'Shooting Star',rare:true}, // idx 17
       {name:'Poison Miasma',rare:true},// idx 18
       {name:'Frost Crystal'}, // idx 19
       {name:'Ember Glow'},   // idx 20
@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-07u';
+  var _SVG_CACHE_VER = '2026-04-07v';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -19191,78 +19191,101 @@ document.addEventListener('keydown', function(e) {
         s += '</path></g>';
         s += '</g>';
         break;
-      case 9: // Seed of Life — sacred geometry mandala, centered, breathing
+      case 9: // Seed of Life — sacred geometry mandala, centered, spinning + breathing
         s += '<g transform="translate(35,42)">';
-        // Slow breathe — the whole mandala pulses in and out
+        // Slow spin — the whole mandala rotates
+        s += '<animateTransform attributeName="transform" type="rotate" values="0,0,0;360,0,0" dur="30s" repeatCount="indefinite" additive="sum"/>';
+        // Breathe — scale pulses in and out
         s += '<animateTransform attributeName="transform" type="scale" values="1;1.08;1" dur="6s" repeatCount="indefinite" additive="sum"/>';
-        s += '<animate attributeName="opacity" values="0.28;0.40;0.28" dur="6s" repeatCount="indefinite"/>';
+        s += '<animate attributeName="opacity" values="0.55;0.75;0.55" dur="6s" repeatCount="indefinite"/>';
         // Outer bounding circle
-        s += '<circle cx="0" cy="0" r="22" fill="none" stroke="#D4B455" stroke-width="0.6" opacity="0.20"/>';
+        s += '<circle cx="0" cy="0" r="22" fill="none" stroke="#D4B455" stroke-width="0.7" opacity="0.45"/>';
         // 6 petal circles — the classic Seed of Life pattern
         for(var sol=0; sol<6; sol++){
           var scx = Math.cos(sol*Math.PI/3)*11;
           var scy = Math.sin(sol*Math.PI/3)*11;
-          s += '<circle cx="'+scx.toFixed(1)+'" cy="'+scy.toFixed(1)+'" r="11" fill="none" stroke="#D4B455" stroke-width="0.5" opacity="0.25"/>';
+          s += '<circle cx="'+scx.toFixed(1)+'" cy="'+scy.toFixed(1)+'" r="11" fill="none" stroke="#D4B455" stroke-width="0.55" opacity="0.50"/>';
         }
         // Center circle
-        s += '<circle cx="0" cy="0" r="11" fill="none" stroke="#D4B455" stroke-width="0.5" opacity="0.25"/>';
+        s += '<circle cx="0" cy="0" r="11" fill="none" stroke="#D4B455" stroke-width="0.55" opacity="0.50"/>';
         // Inner ring of intersections — smaller petal circles for depth
         for(var sol2=0; sol2<6; sol2++){
           var scx2 = Math.cos((sol2+0.5)*Math.PI/3)*6.3;
           var scy2 = Math.sin((sol2+0.5)*Math.PI/3)*6.3;
-          s += '<circle cx="'+scx2.toFixed(1)+'" cy="'+scy2.toFixed(1)+'" r="3.5" fill="none" stroke="#D4B455" stroke-width="0.3" opacity="0.15"/>';
+          s += '<circle cx="'+scx2.toFixed(1)+'" cy="'+scy2.toFixed(1)+'" r="3.5" fill="none" stroke="#D4B455" stroke-width="0.35" opacity="0.35"/>';
         }
-        // Center dot — the seed
-        s += '<circle cx="0" cy="0" r="1.2" fill="rgba(212,180,85,0.15)"/>';
+        // Center dot — the seed, glowing
+        s += '<circle cx="0" cy="0" r="1.5" fill="rgba(212,180,85,0.40)"/>';
+        s += '<circle cx="0" cy="0" r="3" fill="rgba(212,180,85,0.12)"/>';
         s += '</g>';
         break;
       case 10: // Sun — radiating warm rays with pulse
-        s += '<g opacity="0.40">';
+        s += '<g opacity="0.60">';
         s += '<animateTransform attributeName="transform" type="scale" values="1;1.03;1" dur="9s" repeatCount="indefinite"/>';
-        s += '<path d="M35,40 L33.8,20 Q35,15 36.2,20 Z" fill="rgba(255,210,90,0.28)"/>';
-        s += '<path d="M35,40 L43,22 Q45.5,18 46,23 Z" fill="rgba(255,200,80,0.25)"/>';
-        s += '<path d="M35,40 L50,27 Q54,25 52,30 Z" fill="rgba(255,196,76,0.22)"/>';
-        s += '<path d="M35,40 L53,36 Q58,36 53.5,40 Z" fill="rgba(255,205,95,0.20)"/>';
-        s += '<path d="M35,40 L50,50 Q53,54 48,52 Z" fill="rgba(255,190,70,0.19)"/>';
-        s += '<path d="M35,40 L42,58 Q43.5,63 39.5,59 Z" fill="rgba(255,200,90,0.18)"/>';
-        s += '<path d="M35,40 L28,58 Q26.5,63 30.5,59 Z" fill="rgba(255,200,90,0.18)"/>';
-        s += '<path d="M35,40 L20,50 Q17,54 22,52 Z" fill="rgba(255,190,70,0.19)"/>';
-        s += '<path d="M35,40 L17,36 Q12,36 16.5,40 Z" fill="rgba(255,205,95,0.20)"/>';
-        s += '<path d="M35,40 L20,27 Q16,25 18,30 Z" fill="rgba(255,196,76,0.22)"/>';
-        s += '<path d="M35,40 L27,22 Q24.5,18 24,23 Z" fill="rgba(255,200,80,0.25)"/>';
-        s += '<circle cx="35" cy="40" r="11.5" fill="rgba(255,210,110,0.18)"/>';
-        s += '<circle cx="35" cy="40" r="7.5" fill="rgba(255,235,170,0.26)"/>';
-        s += '<circle cx="35" cy="40" r="4.2" fill="rgba(255,245,210,0.35)"><animate attributeName="opacity" values="0.28;0.40;0.28" dur="7s" repeatCount="indefinite"/></circle>';
+        s += '<path d="M35,40 L33.8,20 Q35,15 36.2,20 Z" fill="rgba(255,210,90,0.38)"/>';
+        s += '<path d="M35,40 L43,22 Q45.5,18 46,23 Z" fill="rgba(255,200,80,0.35)"/>';
+        s += '<path d="M35,40 L50,27 Q54,25 52,30 Z" fill="rgba(255,196,76,0.32)"/>';
+        s += '<path d="M35,40 L53,36 Q58,36 53.5,40 Z" fill="rgba(255,205,95,0.30)"/>';
+        s += '<path d="M35,40 L50,50 Q53,54 48,52 Z" fill="rgba(255,190,70,0.28)"/>';
+        s += '<path d="M35,40 L42,58 Q43.5,63 39.5,59 Z" fill="rgba(255,200,90,0.26)"/>';
+        s += '<path d="M35,40 L28,58 Q26.5,63 30.5,59 Z" fill="rgba(255,200,90,0.26)"/>';
+        s += '<path d="M35,40 L20,50 Q17,54 22,52 Z" fill="rgba(255,190,70,0.28)"/>';
+        s += '<path d="M35,40 L17,36 Q12,36 16.5,40 Z" fill="rgba(255,205,95,0.30)"/>';
+        s += '<path d="M35,40 L20,27 Q16,25 18,30 Z" fill="rgba(255,196,76,0.32)"/>';
+        s += '<path d="M35,40 L27,22 Q24.5,18 24,23 Z" fill="rgba(255,200,80,0.35)"/>';
+        s += '<circle cx="35" cy="40" r="11.5" fill="rgba(255,210,110,0.25)"/>';
+        s += '<circle cx="35" cy="40" r="7.5" fill="rgba(255,235,170,0.35)"/>';
+        s += '<circle cx="35" cy="40" r="4.2" fill="rgba(255,245,210,0.50)"><animate attributeName="opacity" values="0.40;0.55;0.40" dur="7s" repeatCount="indefinite"/></circle>';
         s += '</g>';
         break;
       case 11: // Arch — castle/dungeon stone gate framing the plant
-        s += '<g opacity="0.38">';
+        s += '<g opacity="0.42">';
         // ── THICK STONE COLUMNS — heavy, fortress-like ──
         // Left column
-        s += '<rect x="4" y="38" width="14" height="57" fill="rgba(90,82,70,0.18)" stroke="rgba(140,130,110,0.30)" stroke-width="0.6"/>';
+        s += '<rect x="4" y="38" width="14" height="57" fill="rgba(90,82,70,0.20)" stroke="rgba(140,130,110,0.32)" stroke-width="0.6"/>';
         // Right column
-        s += '<rect x="52" y="38" width="14" height="57" fill="rgba(90,82,70,0.18)" stroke="rgba(140,130,110,0.30)" stroke-width="0.6"/>';
-        // Column caps — wider stone blocks at top
-        s += '<rect x="2" y="35" width="18" height="4" rx="0.5" fill="rgba(100,92,78,0.22)" stroke="rgba(150,140,118,0.28)" stroke-width="0.5"/>';
-        s += '<rect x="50" y="35" width="18" height="4" rx="0.5" fill="rgba(100,92,78,0.22)" stroke="rgba(150,140,118,0.28)" stroke-width="0.5"/>';
+        s += '<rect x="52" y="38" width="14" height="57" fill="rgba(90,82,70,0.20)" stroke="rgba(140,130,110,0.32)" stroke-width="0.6"/>';
+        // Column base blocks — wider at the bottom
+        s += '<rect x="2" y="88" width="18" height="7" rx="0.5" fill="rgba(80,74,62,0.18)" stroke="rgba(130,120,100,0.22)" stroke-width="0.4"/>';
+        s += '<rect x="50" y="88" width="18" height="7" rx="0.5" fill="rgba(80,74,62,0.18)" stroke="rgba(130,120,100,0.22)" stroke-width="0.4"/>';
+        // Column caps — wider stone blocks at top (imposts)
+        s += '<rect x="2" y="35" width="18" height="4" rx="0.5" fill="rgba(100,92,78,0.24)" stroke="rgba(150,140,118,0.30)" stroke-width="0.5"/>';
+        s += '<rect x="50" y="35" width="18" height="4" rx="0.5" fill="rgba(100,92,78,0.24)" stroke="rgba(150,140,118,0.30)" stroke-width="0.5"/>';
         // ── POINTED GOTHIC ARCH — the castle gate ──
-        s += '<path d="M18,38 Q18,12 35,6 Q52,12 52,38" fill="none" stroke="rgba(160,148,126,0.35)" stroke-width="2.5" stroke-linecap="round"/>';
+        s += '<path d="M18,38 Q18,12 35,6 Q52,12 52,38" fill="none" stroke="rgba(160,148,126,0.38)" stroke-width="2.8" stroke-linecap="round"/>';
         // Inner arch — slightly narrower, gives depth
-        s += '<path d="M20,38 Q20,15 35,9 Q50,15 50,38" fill="none" stroke="rgba(120,110,92,0.22)" stroke-width="1.2" stroke-linecap="round"/>';
-        // Keystone at apex
-        s += '<path d="M33,6 L35,4 L37,6 L36,8 L34,8 Z" fill="rgba(140,130,110,0.25)" stroke="rgba(160,148,126,0.30)" stroke-width="0.4"/>';
+        s += '<path d="M20,38 Q20,15 35,9 Q50,15 50,38" fill="none" stroke="rgba(120,110,92,0.24)" stroke-width="1.2" stroke-linecap="round"/>';
+        // Keystone at apex — trapezoidal
+        s += '<path d="M33,6 L35,3.5 L37,6 L36.5,9 L33.5,9 Z" fill="rgba(140,130,110,0.28)" stroke="rgba(160,148,126,0.32)" stroke-width="0.4"/>';
+        // Keystone face detail
+        s += '<path d="M34.5,5 L35.5,5 M34.2,7 L35.8,7" fill="none" stroke="rgba(90,82,70,0.18)" stroke-width="0.3"/>';
         // ── STONE BLOCK MORTAR LINES — left column ──
-        s += '<path d="M5,43 L17,43 M5,50 L17,50 M5,57 L17,57 M5,64 L17,64 M5,71 L17,71 M5,78 L17,78 M5,85 L17,85" fill="none" stroke="rgba(70,64,54,0.18)" stroke-width="0.5"/>';
-        // Vertical mortar split (staggered brickwork)
-        s += '<path d="M11,38 L11,43 M8,43 L8,50 M11,50 L11,57 M8,57 L8,64 M11,64 L11,71 M8,71 L8,78 M11,78 L11,85" fill="none" stroke="rgba(70,64,54,0.12)" stroke-width="0.4"/>';
+        s += '<path d="M5,42 L17,42 M5,48 L17,48 M5,54 L17,54 M5,60 L17,60 M5,66 L17,66 M5,72 L17,72 M5,78 L17,78 M5,84 L17,84" fill="none" stroke="rgba(60,54,44,0.20)" stroke-width="0.45"/>';
+        // Vertical mortar — staggered brickwork
+        s += '<path d="M11,38 L11,42 M7,42 L7,48 M12,48 L12,54 M8,54 L8,60 M11,60 L11,66 M7,66 L7,72 M12,72 L12,78 M8,78 L8,84 M11,84 L11,88" fill="none" stroke="rgba(60,54,44,0.14)" stroke-width="0.35"/>';
+        // Stone surface texture — subtle scratch marks on left column
+        s += '<path d="M6,45 L9,44.5 M13,51 L15,52 M7,58 L10,57.5 M14,65 L16,64.5 M6,74 L8,73.5 M12,81 L15,81.5" fill="none" stroke="rgba(130,120,100,0.08)" stroke-width="0.25"/>';
         // ── STONE BLOCK MORTAR LINES — right column ──
-        s += '<path d="M53,43 L65,43 M53,50 L65,50 M53,57 L65,57 M53,64 L65,64 M53,71 L65,71 M53,78 L65,78 M53,85 L65,85" fill="none" stroke="rgba(70,64,54,0.18)" stroke-width="0.5"/>';
-        s += '<path d="M59,38 L59,43 M56,43 L56,50 M59,50 L59,57 M56,57 L56,64 M59,64 L59,71 M56,71 L56,78 M59,78 L59,85" fill="none" stroke="rgba(70,64,54,0.12)" stroke-width="0.4"/>';
+        s += '<path d="M53,42 L65,42 M53,48 L65,48 M53,54 L65,54 M53,60 L65,60 M53,66 L65,66 M53,72 L65,72 M53,78 L65,78 M53,84 L65,84" fill="none" stroke="rgba(60,54,44,0.20)" stroke-width="0.45"/>';
+        s += '<path d="M59,38 L59,42 M55,42 L55,48 M60,48 L60,54 M56,54 L56,60 M59,60 L59,66 M55,66 L55,72 M60,72 L60,78 M56,78 L56,84 M59,84 L59,88" fill="none" stroke="rgba(60,54,44,0.14)" stroke-width="0.35"/>';
+        // Stone surface texture — right column
+        s += '<path d="M54,44 L57,44.5 M61,52 L63,51 M55,59 L57,58.5 M62,67 L64,66.5 M54,75 L56,74.5 M61,82 L63,82.5" fill="none" stroke="rgba(130,120,100,0.08)" stroke-width="0.25"/>';
         // ── ARCH VOUSSOIR LINES — wedge-shaped stones in the arch ──
-        s += '<path d="M22,34 L24,16 M27,12 L29,28 M33,9 L34,24 M37,9 L36,24 M41,12 L39,28 M46,16 L44,32 M48,34 L50,20" fill="none" stroke="rgba(80,72,60,0.14)" stroke-width="0.35"/>';
-        // Torch-like glow on inner column edges
-        s += '<line x1="18" y1="50" x2="18" y2="90" stroke="rgba(255,200,100,0.06)" stroke-width="1.5"><animate attributeName="opacity" values="0.04;0.10;0.04" dur="4s" repeatCount="indefinite"/></line>';
-        s += '<line x1="52" y1="50" x2="52" y2="90" stroke="rgba(255,200,100,0.06)" stroke-width="1.5"><animate attributeName="opacity" values="0.04;0.10;0.04" dur="4s" begin="2s" repeatCount="indefinite"/></line>';
+        s += '<path d="M21,35 L23,17 M26,13 L28,29 M30,10 L31,25 M35,8 L35,22 M39,10 L38,25 M43,13 L41,29 M47,17 L45,33 M49,35 L50,22" fill="none" stroke="rgba(70,64,54,0.16)" stroke-width="0.4"/>';
+        // Arch stone surface texture
+        s += '<path d="M24,20 L26,19 M32,12 L34,13 M38,12 L40,11 M44,19 L46,20" fill="none" stroke="rgba(130,120,100,0.07)" stroke-width="0.2"/>';
+        // ── IRON HINGES — two on each side ──
+        s += '<rect x="17" y="52" width="2.5" height="1" rx="0.2" fill="rgba(50,45,40,0.25)"/>';
+        s += '<circle cx="18" cy="52.5" r="0.4" fill="rgba(40,35,30,0.30)"/>';
+        s += '<rect x="17" y="75" width="2.5" height="1" rx="0.2" fill="rgba(50,45,40,0.25)"/>';
+        s += '<circle cx="18" cy="75.5" r="0.4" fill="rgba(40,35,30,0.30)"/>';
+        s += '<rect x="50.5" y="52" width="2.5" height="1" rx="0.2" fill="rgba(50,45,40,0.25)"/>';
+        s += '<circle cx="52" cy="52.5" r="0.4" fill="rgba(40,35,30,0.30)"/>';
+        s += '<rect x="50.5" y="75" width="2.5" height="1" rx="0.2" fill="rgba(50,45,40,0.25)"/>';
+        s += '<circle cx="52" cy="75.5" r="0.4" fill="rgba(40,35,30,0.30)"/>';
+        // Torch glow on inner column edges
+        s += '<line x1="18" y1="48" x2="18" y2="92" stroke="rgba(255,200,100,0.06)" stroke-width="1.8"><animate attributeName="opacity" values="0.04;0.12;0.04" dur="4s" repeatCount="indefinite"/></line>';
+        s += '<line x1="52" y1="48" x2="52" y2="92" stroke="rgba(255,200,100,0.06)" stroke-width="1.8"><animate attributeName="opacity" values="0.04;0.12;0.04" dur="4s" begin="2s" repeatCount="indefinite"/></line>';
         s += '</g>';
         break;
       case 12: // Moon — crescent glow upper-right with stars
@@ -19367,7 +19390,7 @@ document.addEventListener('keydown', function(e) {
         s += '</g>';
         s += '</g>';
         break;
-      case 18: // Poison Miasma
+      case 18: // Poison Miasma — drifting toxic clouds
         (function(){
           var miasmaSeeds=[0.21,0.55,0.38,0.72,0.14,0.87];
           var miasmaSeeds2=[0.44,0.66,0.29,0.81,0.52,0.37];
@@ -19375,8 +19398,20 @@ document.addEventListener('keydown', function(e) {
             var ppx=(20+miasmaSeeds[ppp]*60).toFixed(1);
             var ppy=(20+miasmaSeeds2[ppp]*70).toFixed(1);
             var ppr=(3+miasmaSeeds[ppp]*6).toFixed(1);
-            s += '<circle cx="'+ppx+'" cy="'+ppy+'" r="'+ppr+'" fill="#7ab356" opacity="0.25"/>';
-            s += '<circle cx="'+(parseFloat(ppx)+1)+'" cy="'+(parseFloat(ppy)-1)+'" r="'+(parseFloat(ppr)*0.3).toFixed(1)+'" fill="#F0EBD8" opacity="0.5"/>';
+            var pdur=(5+ppp*1.3).toFixed(1);
+            var pdx=(miasmaSeeds[(ppp+2)%6]*6-3).toFixed(1);
+            var pdy=(miasmaSeeds2[(ppp+1)%6]*4-2).toFixed(1);
+            // Main cloud — drifts and pulses
+            s += '<circle cx="'+ppx+'" cy="'+ppy+'" r="'+ppr+'" fill="#7ab356" opacity="0.25">';
+            s += '<animate attributeName="cx" values="'+ppx+';'+(parseFloat(ppx)+parseFloat(pdx)).toFixed(1)+';'+ppx+'" dur="'+pdur+'s" repeatCount="indefinite"/>';
+            s += '<animate attributeName="cy" values="'+ppy+';'+(parseFloat(ppy)+parseFloat(pdy)).toFixed(1)+';'+ppy+'" dur="'+pdur+'s" repeatCount="indefinite"/>';
+            s += '<animate attributeName="r" values="'+ppr+';'+(parseFloat(ppr)*1.3).toFixed(1)+';'+ppr+'" dur="'+(parseFloat(pdur)*0.7).toFixed(1)+'s" repeatCount="indefinite"/>';
+            s += '<animate attributeName="opacity" values="0.25;0.35;0.25" dur="'+(parseFloat(pdur)*0.8).toFixed(1)+'s" repeatCount="indefinite"/>';
+            s += '</circle>';
+            // Inner bright core
+            s += '<circle cx="'+(parseFloat(ppx)+1)+'" cy="'+(parseFloat(ppy)-1)+'" r="'+(parseFloat(ppr)*0.3).toFixed(1)+'" fill="#F0EBD8" opacity="0.5">';
+            s += '<animate attributeName="opacity" values="0.5;0.2;0.5" dur="'+(parseFloat(pdur)*0.6).toFixed(1)+'s" repeatCount="indefinite"/>';
+            s += '</circle>';
           }
         })();
         break;
@@ -19384,16 +19419,36 @@ document.addEventListener('keydown', function(e) {
         s += '<g>';
         s += '<radialGradient id="auraFrost'+uid+'" cx="0.5" cy="0.5" r="0.9">';
         s += '<stop offset="68%" stop-color="rgba(200,230,250,0)"/>';
-        s += '<stop offset="100%" stop-color="rgba(180,220,240,0.10)"/>';
+        s += '<stop offset="100%" stop-color="rgba(180,220,240,0.12)"/>';
         s += '</radialGradient>';
         s += '<rect x="0" y="0" width="70" height="95" fill="url(#auraFrost'+uid+')" opacity="0.9">';
         s += '<animate attributeName="opacity" values="0.7;0.95;0.7" dur="7s" repeatCount="indefinite"/>';
         s += '</rect>';
-        s += '<path d="M0,18 L8,23 L13,18 M8,23 L12,29 L17,27 M8,23 L11,16 L16,13 M0,44 L10,47 L15,42 M10,47 L14,54 L20,57 M10,47 L14,39 L19,35 M0,72 L9,70 L14,75 M9,70 L14,64 L19,62 M9,70 L13,77 L18,81" fill="none" stroke="rgba(180,220,240,0.22)" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>';
-        s += '<path d="M70,21 L61,25 L56,20 M61,25 L57,31 L51,33 M61,25 L58,18 L53,15 M70,50 L60,52 L55,47 M60,52 L56,59 L50,63 M60,52 L56,45 L50,41 M70,77 L62,74 L57,79 M62,74 L58,68 L53,66 M62,74 L58,81 L52,84" fill="none" stroke="rgba(200,230,250,0.20)" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>';
-        s += '<path d="M21,24 L23,22 L25,24 L23,26 Z" fill="rgba(200,230,250,0.22)" stroke="rgba(180,220,240,0.22)" stroke-width="0.4"/>';
-        s += '<path d="M47,36 L49.5,33.5 L52,36 L49.5,38.5 Z" fill="rgba(200,230,250,0.18)" stroke="rgba(180,220,240,0.20)" stroke-width="0.4"/>';
-        s += '<path d="M33,69 L35.5,66.5 L38,69 L35.5,71.5 Z" fill="rgba(200,230,250,0.20)" stroke="rgba(180,220,240,0.20)" stroke-width="0.4"/>';
+        // Left-side frost branches — more detailed with sub-branches
+        s += '<path d="M0,18 L8,23 L13,18 M8,23 L12,29 L17,27 M8,23 L11,16 L16,13 M13,18 L16,15 M12,29 L15,32" fill="none" stroke="rgba(180,220,240,0.24)" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M0,36 L6,34 L10,37 M6,34 L8,29 L12,27 M6,34 L4,30" fill="none" stroke="rgba(180,220,240,0.18)" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M0,44 L10,47 L15,42 M10,47 L14,54 L20,57 M10,47 L14,39 L19,35 M15,42 L19,39 M14,54 L18,57" fill="none" stroke="rgba(180,220,240,0.22)" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M0,60 L7,58 L11,62 M7,58 L9,53 M7,58 L5,55" fill="none" stroke="rgba(180,220,240,0.16)" stroke-width="0.65" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M0,72 L9,70 L14,75 M9,70 L14,64 L19,62 M9,70 L13,77 L18,81 M14,75 L17,78 M14,64 L18,61" fill="none" stroke="rgba(180,220,240,0.22)" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>';
+        // Right-side frost branches — more detailed
+        s += '<path d="M70,15 L64,18 L60,14 M64,18 L62,23 L57,25 M64,18 L66,22" fill="none" stroke="rgba(200,230,250,0.18)" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M70,21 L61,25 L56,20 M61,25 L57,31 L51,33 M61,25 L58,18 L53,15 M56,20 L53,17 M57,31 L54,34" fill="none" stroke="rgba(200,230,250,0.22)" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M70,38 L63,40 L59,36 M63,40 L65,45 M63,40 L60,43" fill="none" stroke="rgba(200,230,250,0.16)" stroke-width="0.65" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M70,50 L60,52 L55,47 M60,52 L56,59 L50,63 M60,52 L56,45 L50,41 M55,47 L52,44 M56,59 L53,62" fill="none" stroke="rgba(200,230,250,0.22)" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M70,65 L64,63 L61,67 M64,63 L62,58 M64,63 L67,60" fill="none" stroke="rgba(200,230,250,0.16)" stroke-width="0.65" stroke-linecap="round" stroke-linejoin="round"/>';
+        s += '<path d="M70,77 L62,74 L57,79 M62,74 L58,68 L53,66 M62,74 L58,81 L52,84 M57,79 L54,82 M58,68 L55,65" fill="none" stroke="rgba(200,230,250,0.20)" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>';
+        // Diamond crystals — scattered, with shimmer
+        s += '<path d="M21,24 L23,21 L25,24 L23,27 Z" fill="rgba(200,230,250,0.24)" stroke="rgba(180,220,240,0.24)" stroke-width="0.4"><animate attributeName="opacity" values="0.20;0.35;0.20" dur="5s" repeatCount="indefinite"/></path>';
+        s += '<path d="M47,36 L49.5,33 L52,36 L49.5,39 Z" fill="rgba(200,230,250,0.20)" stroke="rgba(180,220,240,0.22)" stroke-width="0.4"><animate attributeName="opacity" values="0.18;0.30;0.18" dur="6s" begin="1s" repeatCount="indefinite"/></path>';
+        s += '<path d="M33,69 L35.5,66 L38,69 L35.5,72 Z" fill="rgba(200,230,250,0.22)" stroke="rgba(180,220,240,0.22)" stroke-width="0.4"><animate attributeName="opacity" values="0.18;0.32;0.18" dur="5.5s" begin="2s" repeatCount="indefinite"/></path>';
+        // Extra small crystals
+        s += '<path d="M15,55 L16.5,53 L18,55 L16.5,57 Z" fill="rgba(200,230,250,0.15)" stroke="rgba(180,220,240,0.16)" stroke-width="0.3"><animate attributeName="opacity" values="0.12;0.25;0.12" dur="7s" begin="0.5s" repeatCount="indefinite"/></path>';
+        s += '<path d="M55,70 L56.5,68 L58,70 L56.5,72 Z" fill="rgba(200,230,250,0.15)" stroke="rgba(180,220,240,0.16)" stroke-width="0.3"><animate attributeName="opacity" values="0.12;0.25;0.12" dur="6.5s" begin="3s" repeatCount="indefinite"/></path>';
+        // Tiny ice sparkle dots
+        s += '<circle cx="18" cy="30" r="0.3" fill="rgba(230,245,255,0.35)"><animate attributeName="opacity" values="0.15;0.40;0.15" dur="3s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="52" cy="55" r="0.3" fill="rgba(230,245,255,0.35)"><animate attributeName="opacity" values="0.15;0.40;0.15" dur="3.5s" begin="1.5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="12" cy="65" r="0.25" fill="rgba(230,245,255,0.30)"><animate attributeName="opacity" values="0.10;0.35;0.10" dur="4s" begin="0.8s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="58" cy="28" r="0.25" fill="rgba(230,245,255,0.30)"><animate attributeName="opacity" values="0.10;0.35;0.10" dur="3.8s" begin="2.2s" repeatCount="indefinite"/></circle>';
         s += '</g>';
         break;
       case 20: // Ember Glow — rising fire particles and animated heat shimmer
