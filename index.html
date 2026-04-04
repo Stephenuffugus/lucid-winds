@@ -8688,7 +8688,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-04-06w';
+  var _SVG_CACHE_VER = '2026-04-06x';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -21632,9 +21632,12 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M9.5,84.2 Q10,84.5 10.5,84.2" fill="none" stroke="#8A5060" stroke-width="0.15" stroke-linecap="round"/>';
         // ── TAIL — rounded, at bottom-right of the S ──
         s += '<circle cx="14" cy="93" r="0.7" fill="#D98FA1"/>';
-        // Action marks (( )) near the head
-        s += '<path d="M8.5,83 Q8,84 8.5,85" fill="none" stroke="rgba(180,120,140,0.3)" stroke-width="0.15" stroke-linecap="round"/>';
-        s += '<path d="M7.8,82.5 Q7,84 7.8,85.5" fill="none" stroke="rgba(180,120,140,0.22)" stroke-width="0.12" stroke-linecap="round"/>';
+        // Action marks (( near head — brighter
+        s += '<path d="M8.5,83 Q8,84 8.5,85" fill="none" stroke="rgba(200,100,120,0.5)" stroke-width="0.2" stroke-linecap="round"/>';
+        s += '<path d="M7.8,82.5 Q7,84 7.8,85.5" fill="none" stroke="rgba(200,100,120,0.4)" stroke-width="0.18" stroke-linecap="round"/>';
+        // Action marks )) near tail
+        s += '<path d="M15.5,92 Q16,93 15.5,94" fill="none" stroke="rgba(200,100,120,0.5)" stroke-width="0.2" stroke-linecap="round"/>';
+        s += '<path d="M16.2,91.5 Q17,93 16.2,94.5" fill="none" stroke="rgba(200,100,120,0.4)" stroke-width="0.18" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 53: // Turtle — profile facing left, flat-bottom shell, turtle pattern
