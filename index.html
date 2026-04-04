@@ -4855,7 +4855,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
     <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button></div>
     <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button></div>
-    <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button><button class="dev-btn" onclick="PW_Dev.cardFrontAligner()">🃏 CARD FRONT ALIGNMENT</button></div>
+    <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button><button class="dev-btn" onclick="PW_Dev.cardFrontAligner()">🃏 CARD FRONT ALIGNMENT</button><button class="dev-btn" onclick="PW_Dev.cardBackViewer()">🔙 CARD BACK NAMEPLATES</button></div>
     <div class="dev-section"><div class="dev-section-title">NUCLEAR</div><button class="dev-btn danger" onclick="PW_Dev.fullReset()">☢ WIPE EVERYTHING</button></div>
     <div class="dev-log" id="dev-log">Ready.\n</div>
   </div>
@@ -5222,6 +5222,61 @@ window.onerror=function(msg,url,line,col,err){
 
       // Initial render
       setTimeout(_render,100);
+    },
+    // ═══ CARD BACK NAMEPLATE VIEWER ═══
+    cardBackViewer:function(){
+      var ov=document.getElementById('cbv-tool');
+      if(ov){ov.remove();return;}
+      var tiers=['common','uncommon','rare','epic','legendary','mythic','cosmic'];
+      var tierColors={common:'#A0A090',uncommon:'#7AB856',rare:'#5B8FB9',epic:'#B070D0',legendary:'#C8A84B',mythic:'#A87285',cosmic:'#FF6B6B'};
+      var _idx=0;
+      // Generate a test hash
+      var _testHash='';
+      for(var i=0;i<64;i++)_testHash+='0123456789abcdef'[Math.floor(Math.random()*16)];
+      var _testName=window.getPlantName?getPlantName(_testHash):'Test Plant Name';
+
+      function _render(){
+        var tier=tiers[_idx];
+        var color=tierColors[tier]||'#E8DCC8';
+        var card=document.getElementById('cbv-card');
+        if(!card)return;
+        // Build card back HTML matching the real carousel structure
+        var h='<div style="position:absolute;inset:0;border-radius:12px;overflow:hidden;background-color:#050505;">';
+        h+='<div class="cs-card-back" data-tier="'+tier+'" style="position:absolute;inset:0;transform:none;padding:10% 8% 6%;">';
+        // Small plant thumbnail at top
+        if(window._generatePlantSVG){
+          var t=window.hashToTraits(_testHash);
+          h+='<div style="width:60px;height:60px;margin:0 auto 4px;">';
+          h+=window._generatePlantSVG(_testHash,{thumb:true});
+          h+='</div>';
+        }
+        h+='<div style="font-family:Playfair Display,serif;font-size:0.5rem;color:'+color+';text-align:center;font-weight:700;margin-bottom:4px;">'+_testName+'</div>';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);text-align:center;">TERRA GRADE: '+tier.toUpperCase()+'</div>';
+        // The nameplate — this is what we're testing
+        h+='<div class="cb-nameplate"><span class="cb-name" style="color:'+color+';">'+_testName+'</span></div>';
+        h+='</div></div>';
+        card.innerHTML=h;
+        document.getElementById('cbv-tier').textContent=tier.toUpperCase();
+        document.getElementById('cbv-counter').textContent=(_idx+1)+'/'+tiers.length;
+      }
+
+      ov=document.createElement('div');
+      ov.id='cbv-tool';
+      ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(8,10,6,0.97);display:flex;flex-direction:column;align-items:center;padding:12px;';
+      var h='<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;width:100%;max-width:400px;justify-content:space-between;">';
+      h+='<button id="cbv-prev" style="width:40px;height:40px;border-radius:50%;border:1px solid rgba(122,179,86,0.3);background:none;color:var(--sage);font-size:1rem;cursor:pointer;">◀</button>';
+      h+='<div style="text-align:center;"><div id="cbv-tier" style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:var(--gold);letter-spacing:0.1em;">COMMON</div><div id="cbv-counter" style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);">1/7</div></div>';
+      h+='<button id="cbv-next" style="width:40px;height:40px;border-radius:50%;border:1px solid rgba(122,179,86,0.3);background:none;color:var(--sage);font-size:1rem;cursor:pointer;">▶</button>';
+      h+='<button id="cbv-close" style="width:40px;height:40px;border-radius:50%;border:1px solid rgba(192,80,80,0.3);background:none;color:#c07070;font-size:1rem;cursor:pointer;">✕</button>';
+      h+='</div>';
+      h+='<div id="cbv-card" style="width:92vw;max-width:380px;height:calc(100vh - 100px);max-height:580px;position:relative;border-radius:12px;overflow:hidden;background:#050505;"></div>';
+      ov.innerHTML=h;
+      document.body.appendChild(ov);
+
+      document.getElementById('cbv-prev').onclick=function(){_idx=(_idx-1+tiers.length)%tiers.length;_render();};
+      document.getElementById('cbv-next').onclick=function(){_idx=(_idx+1)%tiers.length;_render();};
+      document.getElementById('cbv-close').onclick=function(){ov.remove();};
+      _render();
     },
     // ═══ CARD FRONT ALIGNMENT TOOL ═══
     cardFrontAligner:function(){
