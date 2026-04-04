@@ -9007,7 +9007,8 @@ document.addEventListener('keydown', function(e) {
         // Stipe bridge from right branch tip to second bloom
         var _s18col = _hueShift(PALETTE.moss, parseInt(uid.slice(4,6),16), 6);
         svg += '<line x1="'+_db18x.toFixed(1)+'" y1="'+_fd.topY+'" x2="'+_db18x.toFixed(1)+'" y2="'+_db18y+'" stroke="'+_s18col+'" stroke-width="0.8" opacity="0.4" stroke-linecap="round"/>';
-        svg += '<g transform="translate(' + (_db18x - 35).toFixed(1) + ',' + (_db18y - _safeBloomY).toFixed(1) + ') scale(0.6)">';
+        // Scale around the bloom center point, not (0,0)
+        svg += '<g transform="translate('+_db18x.toFixed(1)+','+_db18y.toFixed(1)+') scale(0.6) translate(-35,-'+_safeBloomY+')">';
         svg += renderBloom(t, uid + 'b', _safeBloomY, prog);
         svg += '</g>';
       }
