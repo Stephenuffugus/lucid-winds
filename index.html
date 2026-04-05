@@ -30580,7 +30580,8 @@ function _collectFeral(f,mk){
   if(!_uLat){_toast('Need location.');return;}
   var d=_dist(_uLat,_uLng,f.lat,f.lng);
   if(d>COLLECT_RANGE){_toast('Walk closer! '+Math.round(d*3.281)+' ft away. Need within '+Math.round(COLLECT_RANGE*3.281)+' ft.');return;}
-  // Check cooldown
+  // Check cooldown (restore from localStorage if lost on reload)
+  if(!f._cooldown){try{var _fc=JSON.parse(localStorage.getItem('fg_feral_cd')||'{}');if(_fc[f.hash.slice(0,8)])f._cooldown=_fc[f.hash.slice(0,8)];}catch(e){}}
   if(f._cooldown&&Date.now()<f._cooldown){
     var secs=Math.ceil((f._cooldown-Date.now())/1000);
     _toast('Cooldown! Try again in '+secs+'s');return;
@@ -30594,6 +30595,7 @@ function _collectFeral(f,mk){
         _play('match');
       } else {
         f._cooldown=Date.now()+120000; // 2 minute cooldown
+        try{var _fc=JSON.parse(localStorage.getItem('fg_feral_cd')||'{}');_fc[f.hash.slice(0,8)]=f._cooldown;localStorage.setItem('fg_feral_cd',JSON.stringify(_fc));}catch(e){}
         _play('buzz');
         _toast('Almost! Try again in 2 minutes.');
       }
@@ -31212,7 +31214,8 @@ function _doCrossPollination(wildPlant,matePlant){
       _cpReward(offGen);
     });
   } else {
-    _toast('Breeding engine not loaded. Try again.');
+    _toast('Breeding engine loading... trying again.');
+    setTimeout(function(){if(window.FG_Data&&FG_Data.crossPollinateHashes)window._doCrossPollination(wildPlant,matePlant);else _toast('Breeding engine not available.');},1500);
   }
 }
 window._doCrossPollination=_doCrossPollination;
