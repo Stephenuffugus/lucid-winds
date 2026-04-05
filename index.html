@@ -3092,8 +3092,21 @@
     .kcard-stack{height:clamp(22px,5.5vw,32px);border-radius:5px;display:flex;align-items:flex-start;justify-content:center;padding-top:2px;font-size:clamp(.7rem,2vw,.95rem);cursor:pointer}
 
     /* Yahtzee */
-    .ysc{width:100%;font-size:clamp(.6rem,1.8vw,.8rem);border-collapse:collapse;background:rgba(16,20,14,.25);border-radius:clamp(6px,2vw,10px);overflow:hidden;animation:boardFadeIn .4s ease}
-    .ysc td,.ysc th{padding:clamp(10px,3vw,16px) clamp(10px,3vw,14px);border-bottom:1px solid rgba(74,124,53,.06);text-align:left;transition:background .15s;min-height:48px}
+    .ysc{width:100%;font-size:clamp(.72rem,2.1vw,.9rem);border-collapse:collapse;background:rgba(16,20,14,.35);border-radius:clamp(8px,2vw,12px);overflow:hidden;animation:boardFadeIn .4s ease;max-width:460px;margin:0 auto}
+    .ysc td,.ysc th{padding:clamp(8px,2.4vw,12px) clamp(10px,3vw,14px);border-bottom:1px solid rgba(74,124,53,.08);text-align:left;transition:background .15s;min-height:48px}
+    .ysc .yscHdr{color:var(--sage);font-size:clamp(.55rem,1.5vw,.65rem);letter-spacing:.15em;padding:10px 14px;background:rgba(74,124,53,.08);font-weight:600}
+    .ysc .yscName{display:flex;align-items:center;gap:10px}
+    .ysc .yscIcon{font-size:clamp(1rem,3vw,1.3rem);flex-shrink:0;width:1.5em;text-align:center}
+    .ysc .yscNames{display:flex;flex-direction:column;gap:2px}
+    .ysc .yscMain{font-size:clamp(.78rem,2.2vw,.92rem);font-weight:600;color:var(--cream);line-height:1.2}
+    .ysc .yscSub{font-size:clamp(.56rem,1.6vw,.68rem);color:var(--muted);line-height:1.2;opacity:.85}
+    .ysc .yscBtn{display:inline-block;min-width:48px;padding:8px 14px;border-radius:10px;border:2px solid rgba(122,179,86,.3);background:rgba(74,124,53,.12);color:var(--muted);font-weight:700;font-size:clamp(.8rem,2.4vw,1rem);transition:all .15s}
+    .ysc .yscBtn.yscBtnOn{border-color:var(--gold);background:rgba(200,168,78,.18);color:var(--gold);box-shadow:0 0 12px rgba(200,168,78,.25)}
+    .ysc tr:not(.yd):not(.yscTotal):not(.yscBonus) .yscBtn:active{transform:scale(.92);background:rgba(200,168,78,.32)}
+    .ysc .yscBonus td{background:rgba(200,168,78,.04);border-top:1.5px solid rgba(200,168,75,.2)}
+    .ysc .yscTotal td{background:rgba(200,168,78,.08);border-top:2px solid rgba(200,168,75,.3);padding-top:14px;padding-bottom:14px}
+    @keyframes yscFlash{0%{background:rgba(200,168,78,.4)}100%{background:transparent}}
+    .ysc tr.yscJustScored td{animation:yscFlash .9s ease-out}
     .ysc th{color:rgba(122,179,86,.55);font-size:clamp(.52rem,1.5vw,.68rem);letter-spacing:.04em}
     .ysc td:last-child{text-align:right;color:var(--gold);cursor:pointer;font-size:clamp(.65rem,2vw,.85rem);font-weight:700}
     .ysc tr.yd td{color:var(--muted);cursor:default}
@@ -35174,19 +35187,19 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
     return '<img src="assets/dice/dice-'+n+'.png" alt="'+n+'" style="width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;-webkit-user-drag:none" draggable="false"/>';
   }
   var CATS=[
-    {name:'Sprouts',icon:'&#x1F331;',desc:'Count 1s'},
-    {name:'Twin Leaf',icon:'&#x1F33F;',desc:'Count 2s'},
-    {name:'Trillium',icon:'&#x2618;',desc:'Count 3s'},
-    {name:'Clover',icon:'&#x1F340;',desc:'Count 4s'},
-    {name:'Star Bloom',icon:'&#x2B50;',desc:'Count 5s'},
-    {name:'Hex Petal',icon:'&#x1F33A;',desc:'Count 6s'},
-    {name:'Cluster',icon:'&#x1F33E;',desc:'3 of a kind'},
-    {name:'Grove',icon:'&#x1F332;',desc:'4 of a kind'},
-    {name:'Full Canopy',icon:'&#x1F333;',desc:'3+2 pair'},
-    {name:'Trail',icon:'&#x1F6A4;',desc:'4 in sequence'},
-    {name:'River',icon:'&#x1F30A;',desc:'5 in sequence'},
-    {name:'Yahtzee',icon:'&#x2728;',desc:'All 5 match!'},
-    {name:'Wild Growth',icon:'&#x1F3B2;',desc:'Sum of all'}
+    {name:'Ones',sub:'Sprouts',icon:'&#x1F331;',desc:'Sum of 1s'},
+    {name:'Twos',sub:'Twin Leaf',icon:'&#x1F33F;',desc:'Sum of 2s'},
+    {name:'Threes',sub:'Trillium',icon:'&#x2618;',desc:'Sum of 3s'},
+    {name:'Fours',sub:'Clover',icon:'&#x1F340;',desc:'Sum of 4s'},
+    {name:'Fives',sub:'Star Bloom',icon:'&#x2B50;',desc:'Sum of 5s'},
+    {name:'Sixes',sub:'Hex Petal',icon:'&#x1F33A;',desc:'Sum of 6s'},
+    {name:'3 of a Kind',sub:'Cluster',icon:'&#x1F33E;',desc:'Sum of all dice'},
+    {name:'4 of a Kind',sub:'Grove',icon:'&#x1F332;',desc:'Sum of all dice'},
+    {name:'Full House',sub:'Full Canopy',icon:'&#x1F333;',desc:'Three + a pair = 25'},
+    {name:'Small Straight',sub:'Trail',icon:'&#x1F6A4;',desc:'4 in a row = 30'},
+    {name:'Large Straight',sub:'River',icon:'&#x1F30A;',desc:'5 in a row = 40'},
+    {name:'Yahtzee',sub:'Bloom',icon:'&#x2728;',desc:'All 5 match = 50'},
+    {name:'Chance',sub:'Wild Growth',icon:'&#x1F3B2;',desc:'Sum of all dice'}
   ];
   ms(a,'Turn: <strong id="Yt">1</strong>/13 &middot; Rolls: <strong id="Yr">0</strong>/3');mm(a);
   // Directions
@@ -35227,29 +35240,28 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
   }
   function rnS(){
     var h='<table class="ysc">';
-    // Upper section
-    h+='<tr><th colspan="3" style="color:var(--sage);font-size:clamp(.45rem,1.3vw,.55rem);letter-spacing:0.1em;padding:6px 10px">UPPER</th></tr>';
-    for(var i=0;i<6;i++){
+    function row(i){
       var done=scores[i]!==undefined;
-      var pts=done?scores[i]:(rolls>0?cs(i):'\u2014');
+      var val=done?scores[i]:(rolls>0?cs(i):null);
       var canScore=!done&&rolls>0;
-      h+='<tr class="'+(done?'yd':'')+'"><td>'+CATS[i].icon+' '+CATS[i].name+'</td><td style="font-size:clamp(.4rem,1.1vw,.48rem);color:var(--muted)">'+CATS[i].desc+'</td><td '+(canScore?'onclick="_YS('+i+')" style="cursor:pointer"':'')+'>'+pts+'</td></tr>';
+      var ptsCell;
+      if(done){ptsCell='<td style="color:var(--muted);font-weight:700;text-align:right">'+val+'</td>';}
+      else if(canScore){
+        var good=val>0;
+        ptsCell='<td onclick="_YS('+i+')" style="text-align:right;cursor:pointer;padding:0 8px"><span class="yscBtn'+(good?' yscBtnOn':'')+'">'+(good?val:'0')+'</span></td>';
+      }
+      else{ptsCell='<td style="color:var(--muted);text-align:right">&mdash;</td>';}
+      return '<tr class="'+(done?'yd':'')+'"><td class="yscName"><span class="yscIcon">'+CATS[i].icon+'</span><div class="yscNames"><div class="yscMain">'+CATS[i].name+'</div><div class="yscSub">'+CATS[i].sub+' &middot; '+CATS[i].desc+'</div></div></td>'+ptsCell+'</tr>';
     }
-    // Upper bonus
+    h+='<tr><th colspan="2" class="yscHdr">UPPER SECTION</th></tr>';
+    for(var i=0;i<6;i++)h+=row(i);
     var upperSum=0;for(var i=0;i<6;i++)if(scores[i]!==undefined)upperSum+=scores[i];
     var bonus=upperSum>=63?35:0;
-    h+='<tr style="border-top:1.5px solid rgba(200,168,75,.15)"><td colspan="2" style="color:var(--gold);font-size:clamp(.45rem,1.3vw,.55rem)">Bonus (63+ upper)</td><td style="color:var(--gold)">'+(upperSum>=63?'35':''+upperSum+'/63')+'</td></tr>';
-    // Lower section
-    h+='<tr><th colspan="3" style="color:var(--sage);font-size:clamp(.45rem,1.3vw,.55rem);letter-spacing:0.1em;padding:6px 10px">LOWER</th></tr>';
-    for(var i=6;i<13;i++){
-      var done=scores[i]!==undefined;
-      var pts=done?scores[i]:(rolls>0?cs(i):'\u2014');
-      var canScore=!done&&rolls>0;
-      h+='<tr class="'+(done?'yd':'')+(i===11&&!done?' yh':'')+'"><td>'+CATS[i].icon+' '+CATS[i].name+'</td><td style="font-size:clamp(.4rem,1.1vw,.48rem);color:var(--muted)">'+CATS[i].desc+'</td><td '+(canScore?'onclick="_YS('+i+')" style="cursor:pointer"':'')+'>'+pts+'</td></tr>';
-    }
-    // Total
+    h+='<tr class="yscBonus"><td><div class="yscMain" style="color:var(--gold)">Upper Bonus</div><div class="yscSub">Reach 63 for +35</div></td><td style="text-align:right;color:var(--gold);font-weight:700">'+(upperSum>=63?'+35':upperSum+' / 63')+'</td></tr>';
+    h+='<tr><th colspan="2" class="yscHdr">LOWER SECTION</th></tr>';
+    for(var i=6;i<13;i++)h+=row(i);
     var total=bonus;for(var k in scores)total+=scores[k];
-    h+='<tr style="border-top:2px solid rgba(200,168,75,.2)"><td colspan="2"><strong style="color:var(--cream)">TOTAL</strong></td><td><strong style="color:var(--gold);font-size:clamp(.75rem,2.2vw,.95rem)">'+total+'</strong></td></tr>';
+    h+='<tr class="yscTotal"><td><strong>TOTAL</strong></td><td style="text-align:right"><strong style="color:var(--gold);font-size:clamp(1.1rem,3.2vw,1.4rem)">'+total+'</strong></td></tr>';
     h+='</table>';
     document.getElementById('Ysc').innerHTML=h;
   }
@@ -35265,8 +35277,9 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
   };
   window._YS=function(cat){
     if(!rolls||scores[cat]!==undefined)return;
-    _play('snap');scores[cat]=cs(cat);
-    if(cs(cat)>=25)_e('progress');
+    _play('snap');var v=cs(cat);scores[cat]=v;
+    sm(CATS[cat].name+': +'+v+' pts');
+    if(v>=25)_e('progress');
     turn++;document.getElementById('Yt').textContent=Math.min(turn,13);
     rolls=0;kept=new Array(5).fill(false);
     for(var _i=0;_i<5;_i++)dice[_i]=Math.floor(Math.random()*6)+1;
