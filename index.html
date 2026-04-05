@@ -35218,6 +35218,11 @@ function GMM(a){var code=[],guesses=[],cur=[];
   ];
   function pegSvg(idx){var p=PEGS[idx];return p.svg.replace(/PAL/g,p.fill).replace(/ACC/g,p.accent)}
   ms(a,'Guesses: <strong id="MMg">0</strong>/10');mm(a);
+  // Directions
+  var dir=document.createElement('div');
+  dir.style.cssText='text-align:center;padding:0.5rem 0.8rem;margin:0.3rem auto;max-width:380px;font-family:DM Sans,sans-serif;font-size:clamp(0.65rem,2vw,0.8rem);color:var(--cream);line-height:1.5;opacity:0.85';
+  dir.innerHTML='Crack the hidden <strong style="color:var(--gold)">4-seed code</strong>. Pick seeds below, then tap <strong>GUESS</strong>.<br><span style="display:inline-flex;align-items:center;gap:4px;margin-top:4px"><span class="mm-fb-dot exact" style="display:inline-block;width:12px;height:12px"></span> = right seed, right spot</span> &nbsp; <span style="display:inline-flex;align-items:center;gap:4px"><span class="mm-fb-dot close" style="display:inline-block;width:12px;height:12px"></span> = right seed, wrong spot</span>';
+  a.appendChild(dir);
   var bd=document.createElement('div');bd.className='mm-board';bd.id='MMb';a.appendChild(bd);
   var cur_d=document.createElement('div');cur_d.className='mm-cur';cur_d.id='MMc';a.appendChild(cur_d);
   var pal=document.createElement('div');pal.className='mm-pal';
@@ -38692,6 +38697,9 @@ function returnToBase(){
 
 function _rtbRender(){
   var btn=document.getElementById('bp-rtb');if(!btn)return;
+  // Only show on Wild tab
+  var wp=document.getElementById('panel-wild');
+  if(!wp||!wp.classList.contains('active')){btn.style.display='none';return}
   btn.style.display='block';
   var left=_rtbReturnsLeft();
   if(left>0){
