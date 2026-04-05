@@ -32195,8 +32195,9 @@ function _restartCurrentGame(){
   ag.classList.toggle('sol',!!_solG2[_a]);
   var gi=null;for(var i=0;i<G.length;i++)if(G[i].id===_a){gi=G[i];break}
   if(gi){var r=document.createElement('div');r.className='gr';r.textContent='📖 '+gi.r;ag.appendChild(r)}
-  var fn={memory:GM,merge:GR,simon:GS,lights:GL,mines:GN,sudoku:GU,wordsearch:GW,hanoi:GH,flood:GFL,pipe:GPP,chess:GCH,c4:GC4,song:GSG,golf:GGF,klondike:GKL,spider:GSP,freecell:GFC,pyramid:GPY,tripeaks:GTP};
-  try{if(fn[_a])fn[_a](ag)}catch(e){console.error('[Game '+_a+']',e);ag.innerHTML+='<div style="padding:2rem;text-align:center;color:#c75050">Game error — tap 🔄 New to retry</div>'}
+  var fn={};
+  try{fn.memory=GM}catch(e){}try{fn.merge=GR}catch(e){}try{fn.simon=GS}catch(e){}try{fn.lights=GL}catch(e){}try{fn.mines=GN}catch(e){}try{fn.sudoku=GU}catch(e){}try{fn.wordsearch=GW}catch(e){}try{fn.hanoi=GH}catch(e){}try{fn.flood=GFL}catch(e){}try{fn.pipe=GPP}catch(e){}try{fn.chess=GCH}catch(e){}try{fn.c4=GC4}catch(e){}try{fn.song=GSG}catch(e){}try{fn.golf=GGF}catch(e){}try{fn.klondike=GKL}catch(e){}try{fn.spider=GSP}catch(e){}try{fn.freecell=GFC}catch(e){}try{fn.pyramid=GPY}catch(e){}try{fn.tripeaks=GTP}catch(e){}
+  try{if(fn[_a])fn[_a](ag);else{ag.innerHTML='<div style="padding:2rem;text-align:center;color:var(--muted);font-family:DM Mono,monospace;font-size:0.5rem;">Game not loaded yet. Tap another game.</div>';}}catch(e){console.error('[Game '+_a+']',e);ag.innerHTML+='<div style="padding:2rem;text-align:center;color:#c75050">Game error — tap 🔄 New to retry</div>'}
   var gps=document.getElementById('gp-strip');if(gps&&gps.classList.contains('on')){try{_updateGP()}catch(e){}}
   _st();
 }
