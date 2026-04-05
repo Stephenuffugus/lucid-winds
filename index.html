@@ -31941,7 +31941,8 @@ var G=[
 {id:'tripeaks',n:'TriPeaks',i:'\u26f0',r:'Build up or down on the waste pile to clear three peaks.',cat:'card',thumb:'assets/games/thumbs/tripeaks.png'},
 {id:'mastermind',n:'Seed Code',i:'\ud83c\udf31',r:'Crack the hidden 4-seed code. Green = right seed, right spot. Gold = right seed, wrong spot.',cat:'puzzle',thumb:'assets/games/thumbs/mastermind.png'},
 {id:'checkers',n:'Grove Checkers',i:'\u265f',r:'Jump over opponent pieces to capture. Reach the far side to crown a King.',cat:'board',thumb:'assets/games/thumbs/checkers.png'},
-{id:'reversi',n:'Moss & Lichen',i:'\u25cf',r:'Place moss to surround and flip lichen. Control the most territory to win.',cat:'board',thumb:'assets/games/thumbs/reversi.png'}
+{id:'reversi',n:'Moss & Lichen',i:'\u25cf',r:'Place moss to surround and flip lichen. Control the most territory to win.',cat:'board',thumb:'assets/games/thumbs/reversi.png'},
+{id:'yahtzee',n:'Seed Toss',i:'\ud83c\udfb2',r:'Roll 5 seed dice up to 3 times. Hold keepers, score in 13 categories. Aim high!',cat:'puzzle',thumb:'assets/games/thumbs/yahtzee.png'}
 ];
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
 // ═══ HASH ACCUMULATION BUFFER ═══
@@ -32017,7 +32018,8 @@ var _afGameClass={
   golf:'standard',klondike:'marathon',spider:'marathon',freecell:'marathon',pyramid:'standard',tripeaks:'standard',
   mastermind:'standard',
   checkers:'standard',
-  reversi:'standard'
+  reversi:'standard',
+  yahtzee:'marathon'
 };
 // Reset guards on game switch (called from _sg)
 function _afReset(){_afSessionProg=0;}
@@ -32050,7 +32052,8 @@ var _aw={
   tripeaks:  {progress:1,game_win:4,game_loss:1,default:0},
   mastermind:{progress:1,game_win:5,game_loss:1,default:0},
   checkers:{capture:1,game_win:5,game_loss:1,default:0},
-  reversi:{flip:1,game_win:5,game_loss:1,default:0}
+  reversi:{flip:1,game_win:5,game_loss:1,default:0},
+  yahtzee:{progress:1,milestone:1,game_win:5,default:0}
 };
 function _setDiff(lv){switch(lv){case 'easy':_dm=1.0;break;case 'medium':_dm=1.5;break;case 'hard':_dm=2.0;break;case 'expert':_dm=2.5;break;default:_dm=1.0}}
 function _gr(){try{return JSON.parse(localStorage.getItem(RK))||{}}catch(e){return{}}}
@@ -35162,17 +35165,131 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),sc=0,turn=0,
   window._FB=function(){if(busted){sm('Busted! Tap 🔄 New');return}var ts=score();if(ts<=0){sm('Keep scoring dice first!');return}banked+=ts;turn=0;sc=banked;document.getElementById('Fs').textContent=sc;_e('progress');if(sc>=1000)_e('milestone');kept=new Array(6).fill(false);dice=new Array(6).fill(0);rn();sm('Banked! '+sc)};
   window._FN=function(){dice=new Array(6).fill(0);kept=new Array(6).fill(false);sc=0;turn=0;banked=0;rolling=false;busted=false;document.getElementById('Fs').textContent='0';sm('Roll!');rn()};_FN();}
 // ═══ TRIPEAKS ═══
-function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1,scores={};var FC='⚀⚁⚂⚃⚄⚅'.split('');
-  var CATS=['Ones','Twos','Threes','Fours','Fives','Sixes','3ofKind','4ofKind','FullHouse','SmStr','LgStr','Yahtzee','Chance'];
-  ms(a,'Turn:<strong id="Yt">1</strong>/13 · Rolls:<strong id="Yr">0</strong>/3');mm(a);
+function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1,scores={};
+  // SVG seed dice — each face is a seed arrangement
+  function seedDie(n){
+    var s='<svg viewBox="0 0 60 60">';
+    // Seed dot positions for each face value
+    var pos={
+      1:[[30,30]],
+      2:[[18,18],[42,42]],
+      3:[[18,18],[30,30],[42,42]],
+      4:[[18,18],[42,18],[18,42],[42,42]],
+      5:[[18,18],[42,18],[30,30],[18,42],[42,42]],
+      6:[[18,16],[42,16],[18,30],[42,30],[18,44],[42,44]]
+    };
+    var dots=pos[n]||[];
+    dots.forEach(function(p){
+      // Each seed is a tiny botanical element
+      s+='<ellipse cx="'+p[0]+'" cy="'+p[1]+'" rx="5" ry="6.5" fill="#7ab356" opacity="0.9" transform="rotate('+(Math.floor(p[0]*7+p[1]*3)%40-20)+' '+p[0]+' '+p[1]+')"/>';
+      s+='<ellipse cx="'+p[0]+'" cy="'+(p[1]-1)+'" rx="3" ry="4" fill="#9ad070" opacity="0.5" transform="rotate('+(Math.floor(p[0]*7+p[1]*3)%40-20)+' '+p[0]+' '+(p[1]-1)+')"/>';
+      s+='<line x1="'+p[0]+'" y1="'+(p[1]-6)+'" x2="'+p[0]+'" y2="'+(p[1]-9)+'" stroke="#5a8a3a" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>';
+    });
+    s+='</svg>';
+    return s;
+  }
+  var CATS=[
+    {name:'Sprouts',icon:'&#x1F331;',desc:'Count 1s'},
+    {name:'Twin Leaf',icon:'&#x1F33F;',desc:'Count 2s'},
+    {name:'Trillium',icon:'&#x2618;',desc:'Count 3s'},
+    {name:'Clover',icon:'&#x1F340;',desc:'Count 4s'},
+    {name:'Star Bloom',icon:'&#x2B50;',desc:'Count 5s'},
+    {name:'Hex Petal',icon:'&#x1F33A;',desc:'Count 6s'},
+    {name:'Cluster',icon:'&#x1F33E;',desc:'3 of a kind'},
+    {name:'Grove',icon:'&#x1F332;',desc:'4 of a kind'},
+    {name:'Full Canopy',icon:'&#x1F333;',desc:'3+2 pair'},
+    {name:'Trail',icon:'&#x1F6A4;',desc:'4 in sequence'},
+    {name:'River',icon:'&#x1F30A;',desc:'5 in sequence'},
+    {name:'Yahtzee',icon:'&#x2728;',desc:'All 5 match!'},
+    {name:'Wild Growth',icon:'&#x1F3B2;',desc:'Sum of all'}
+  ];
+  ms(a,'Turn: <strong id="Yt">1</strong>/13 &middot; Rolls: <strong id="Yr">0</strong>/3');mm(a);
+  // Directions
+  var dir=document.createElement('div');
+  dir.style.cssText='text-align:center;padding:0.4rem 0.8rem;margin:0.2rem auto;max-width:400px;font-family:DM Sans,sans-serif;font-size:clamp(0.6rem,1.8vw,0.75rem);color:var(--cream);line-height:1.4;opacity:0.8';
+  dir.innerHTML='<strong style="color:var(--gold)">Roll</strong> up to 3 times. <strong>Tap dice</strong> to hold. Then <strong>score</strong> in a category.';
+  a.appendChild(dir);
   var dd=document.createElement('div');dd.className='fd';dd.id='Yd';a.appendChild(dd);
-  var sc=document.createElement('div');sc.id='Ysc';sc.style.cssText='padding:6px';a.appendChild(sc);mc(a).innerHTML='<button class="gb" onclick="_YR()">🎲 Roll</button><button class="gb" onclick="_YN()">🔄 New</button>';
-  function cs(cat){var c=new Array(7).fill(0);dice.forEach(function(d){c[d]++});var sum=dice.reduce(function(a,b){return a+b},0);if(cat<6)return c[cat+1]*(cat+1);if(cat===6){for(var v=1;v<=6;v++)if(c[v]>=3)return sum;return 0}if(cat===7){for(var v=1;v<=6;v++)if(c[v]>=4)return sum;return 0}if(cat===8){var h3=false,h2=false;for(var v=1;v<=6;v++){if(c[v]===3)h3=true;if(c[v]===2)h2=true}return h3&&h2?25:0}if(cat===9){var s=[];for(var v=1;v<=6;v++)if(c[v])s.push(v);s.sort(function(a,b){return a-b});var str=s.join('');return str.indexOf('1234')>-1||str.indexOf('2345')>-1||str.indexOf('3456')>-1?30:0}if(cat===10){var s=[];for(var v=1;v<=6;v++)if(c[v])s.push(v);return s.length===5&&s[4]-s[0]===4?40:0}if(cat===11){for(var v=1;v<=6;v++)if(c[v]===5)return 50;return 0}return sum}
-  function rn(){dd.innerHTML='';for(var i=0;i<5;i++){var d=document.createElement('div');d.className='fdie'+(kept[i]?' fk':'');d.textContent=dice[i]?FC[dice[i]-1]:'·';d.setAttribute('data-i',i);d.onclick=function(){var x=parseInt(this.getAttribute('data-i'));if(dice[x])kept[x]=!kept[x];rn()};dd.appendChild(d)}rnS()}
-  function rnS(){var h='<table class="ysc">';CATS.forEach(function(cat,i){var done=scores[i]!==undefined;var pts=done?scores[i]:(rolls>0?cs(i):'—');h+='<tr class="'+(done?'yd':'')+'"><td>'+cat+'</td><td onclick="'+(done?'':'_YS('+i+')')+'">'+pts+'</td></tr>'});var total=0;for(var k in scores)total+=scores[k];h+='<tr><td><strong>Total</strong></td><td><strong>'+total+'</strong></td></tr></table>';document.getElementById('Ysc').innerHTML=h}
-  window._YR=function(){if(rolls>=3)return;rolls++;document.getElementById('Yr').textContent=rolls;for(var i=0;i<5;i++)if(!kept[i])dice[i]=Math.floor(Math.random()*6)+1;rn()};
-  window._YS=function(cat){if(!rolls||scores[cat]!==undefined)return;scores[cat]=cs(cat);_e('progress');turn++;document.getElementById('Yt').textContent=Math.min(turn,13);rolls=0;kept=new Array(5).fill(false);dice=new Array(5).fill(0);document.getElementById('Yr').textContent='0';if(turn>13){var tot=0;for(var k in scores)tot+=scores[k];_e('game_win');_playWin();sm('🌿 Score: '+tot);_sr('yahtzee',{w:true,s:tot})}else if(turn%3===0)_e('milestone');rn()};
-  window._YN=function(){dice=new Array(5).fill(0);kept=new Array(5).fill(false);rolls=0;turn=1;scores={};document.getElementById('Yt').textContent='1';document.getElementById('Yr').textContent='0';sm('Roll!');rn()};_YN();}
+  // Buttons
+  var _bbs='min-height:52px;padding:0.5rem 1.2rem;font-size:clamp(.6rem,1.8vw,.75rem);flex:1';
+  mc(a).innerHTML='<div style="display:flex;gap:8px;padding:4px 0"><button class="gb" style="'+_bbs+';background:rgba(74,124,53,.2);border-color:rgba(122,179,86,.35);color:var(--sage)" onclick="_YR()">&#127922; ROLL</button><button class="gb" style="'+_bbs+'" onclick="_YN()">&#128260; NEW</button></div>';
+  // Scorecard
+  var sc=document.createElement('div');sc.id='Ysc';sc.style.cssText='padding:4px 0';a.appendChild(sc);
+  // Scoring logic
+  function cs(cat){
+    var c=new Array(7).fill(0);dice.forEach(function(d){c[d]++});
+    var sum=dice.reduce(function(a,b){return a+b},0);
+    if(cat<6)return c[cat+1]*(cat+1);
+    if(cat===6){for(var v=1;v<=6;v++)if(c[v]>=3)return sum;return 0}
+    if(cat===7){for(var v=1;v<=6;v++)if(c[v]>=4)return sum;return 0}
+    if(cat===8){var h3=false,h2=false;for(var v=1;v<=6;v++){if(c[v]===3)h3=true;if(c[v]===2)h2=true}return h3&&h2?25:0}
+    if(cat===9){var s=[];for(var v=1;v<=6;v++)if(c[v])s.push(v);s.sort(function(a,b){return a-b});var str=s.join('');return str.indexOf('1234')>-1||str.indexOf('2345')>-1||str.indexOf('3456')>-1?30:0}
+    if(cat===10){var s=[];for(var v=1;v<=6;v++)if(c[v])s.push(v);return s.length===5&&s[4]-s[0]===4?40:0}
+    if(cat===11){for(var v=1;v<=6;v++)if(c[v]===5)return 50;return 0}
+    return sum;
+  }
+  function rn(){
+    dd.innerHTML='';
+    for(var i=0;i<5;i++){
+      var d=document.createElement('div');d.className='fdie'+(kept[i]?' fk':'');
+      if(dice[i]){d.innerHTML=seedDie(dice[i])}else{d.innerHTML='<span style="font-size:1.5rem;color:var(--muted);opacity:0.3">&middot;</span>'}
+      d.setAttribute('data-i',i);
+      d.addEventListener('click',function(){var x=parseInt(this.getAttribute('data-i'));if(dice[x]){_play('tap');kept[x]=!kept[x];rn()}});
+      dd.appendChild(d);
+    }
+    rnS();
+  }
+  function rnS(){
+    var h='<table class="ysc">';
+    // Upper section
+    h+='<tr><th colspan="3" style="color:var(--sage);font-size:clamp(.45rem,1.3vw,.55rem);letter-spacing:0.1em;padding:6px 10px">UPPER</th></tr>';
+    for(var i=0;i<6;i++){
+      var done=scores[i]!==undefined;
+      var pts=done?scores[i]:(rolls>0?cs(i):'\u2014');
+      var canScore=!done&&rolls>0;
+      h+='<tr class="'+(done?'yd':'')+'"><td>'+CATS[i].icon+' '+CATS[i].name+'</td><td style="font-size:clamp(.4rem,1.1vw,.48rem);color:var(--muted)">'+CATS[i].desc+'</td><td '+(canScore?'onclick="_YS('+i+')" style="cursor:pointer"':'')+'>'+pts+'</td></tr>';
+    }
+    // Upper bonus
+    var upperSum=0;for(var i=0;i<6;i++)if(scores[i]!==undefined)upperSum+=scores[i];
+    var bonus=upperSum>=63?35:0;
+    h+='<tr style="border-top:1.5px solid rgba(200,168,75,.15)"><td colspan="2" style="color:var(--gold);font-size:clamp(.45rem,1.3vw,.55rem)">Bonus (63+ upper)</td><td style="color:var(--gold)">'+(upperSum>=63?'35':''+upperSum+'/63')+'</td></tr>';
+    // Lower section
+    h+='<tr><th colspan="3" style="color:var(--sage);font-size:clamp(.45rem,1.3vw,.55rem);letter-spacing:0.1em;padding:6px 10px">LOWER</th></tr>';
+    for(var i=6;i<13;i++){
+      var done=scores[i]!==undefined;
+      var pts=done?scores[i]:(rolls>0?cs(i):'\u2014');
+      var canScore=!done&&rolls>0;
+      h+='<tr class="'+(done?'yd':'')+(i===11&&!done?' yh':'')+'"><td>'+CATS[i].icon+' '+CATS[i].name+'</td><td style="font-size:clamp(.4rem,1.1vw,.48rem);color:var(--muted)">'+CATS[i].desc+'</td><td '+(canScore?'onclick="_YS('+i+')" style="cursor:pointer"':'')+'>'+pts+'</td></tr>';
+    }
+    // Total
+    var total=bonus;for(var k in scores)total+=scores[k];
+    h+='<tr style="border-top:2px solid rgba(200,168,75,.2)"><td colspan="2"><strong style="color:var(--cream)">TOTAL</strong></td><td><strong style="color:var(--gold);font-size:clamp(.75rem,2.2vw,.95rem)">'+total+'</strong></td></tr>';
+    h+='</table>';
+    document.getElementById('Ysc').innerHTML=h;
+  }
+  window._YR=function(){
+    if(rolls>=3){sm('Pick a category to score');return}
+    _play('dice');rolls++;document.getElementById('Yr').textContent=rolls;
+    for(var i=0;i<5;i++)if(!kept[i])dice[i]=Math.floor(Math.random()*6)+1;
+    rn();
+  };
+  window._YS=function(cat){
+    if(!rolls||scores[cat]!==undefined)return;
+    _play('snap');scores[cat]=cs(cat);
+    if(cs(cat)>=25)_e('progress');
+    turn++;document.getElementById('Yt').textContent=Math.min(turn,13);
+    rolls=0;kept=new Array(5).fill(false);dice=new Array(5).fill(0);
+    document.getElementById('Yr').textContent='0';
+    if(turn>13){
+      var tot=0;for(var k in scores)tot+=scores[k];
+      var upperSum=0;for(var i=0;i<6;i++)if(scores[i]!==undefined)upperSum+=scores[i];
+      if(upperSum>=63)tot+=35;
+      _e('game_win');_playWin();sm('Final score: '+tot);_sr('yahtzee',{w:true,s:tot});
+    }else if(turn%3===0)_e('milestone');
+    rn();
+  };
+  window._YN=function(){dice=new Array(5).fill(0);kept=new Array(5).fill(false);rolls=0;turn=1;scores={};document.getElementById('Yt').textContent='1';document.getElementById('Yr').textContent='0';sm('Roll!');rn()};_YN();
+}
 // ═══ HANOI ═══
 function GX(a){var SZ=5,sol=[],bd=[],rowC=[],colC=[];ms(a);mm(a);
   var w=document.createElement('div');w.id='Xw';w.style.cssText='padding:8px';a.appendChild(w);mc(a).innerHTML='<select class="gsl" id="Xd" onchange="_XN()"><option value="5" selected>5×5</option><option value="7">7×7</option><option value="10">10×10</option></select> <button class="gb" onclick="_XN()">🔄 New</button>';
