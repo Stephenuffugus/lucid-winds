@@ -35254,7 +35254,9 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
   window._YR=function(){
     if(rolls>=3){sm('Pick a category to score');return}
     _play('dice');rolls++;document.getElementById('Yr').textContent=rolls;
-    for(var i=0;i<5;i++)if(!kept[i])dice[i]=Math.floor(Math.random()*6)+1;
+    // On first roll, always re-roll all dice (ignore any pre-holds on the display dice)
+    if(rolls===1){kept=new Array(5).fill(false);for(var i=0;i<5;i++)dice[i]=Math.floor(Math.random()*6)+1}
+    else{for(var i=0;i<5;i++)if(!kept[i])dice[i]=Math.floor(Math.random()*6)+1}
     rn();
   };
   window._YS=function(cat){
@@ -35262,7 +35264,8 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
     _play('snap');scores[cat]=cs(cat);
     if(cs(cat)>=25)_e('progress');
     turn++;document.getElementById('Yt').textContent=Math.min(turn,13);
-    rolls=0;kept=new Array(5).fill(false);dice=new Array(5).fill(0);
+    rolls=0;kept=new Array(5).fill(false);
+    for(var _i=0;_i<5;_i++)dice[_i]=Math.floor(Math.random()*6)+1;
     document.getElementById('Yr').textContent='0';
     if(turn>13){
       var tot=0;for(var k in scores)tot+=scores[k];
@@ -35272,7 +35275,7 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
     }else if(turn%3===0)_e('milestone');
     rn();
   };
-  window._YN=function(){dice=new Array(5).fill(0);kept=new Array(5).fill(false);rolls=0;turn=1;scores={};document.getElementById('Yt').textContent='1';document.getElementById('Yr').textContent='0';sm('Roll!');rn()};_YN();
+  window._YN=function(){dice=[];for(var _i=0;_i<5;_i++)dice.push(Math.floor(Math.random()*6)+1);kept=new Array(5).fill(false);rolls=0;turn=1;scores={};document.getElementById('Yt').textContent='1';document.getElementById('Yr').textContent='0';sm('Tap ROLL to begin!');rn()};_YN();
 }
 // ═══ HANOI ═══
 function GX(a){var SZ=5,sol=[],bd=[],rowC=[],colC=[];ms(a);mm(a);
