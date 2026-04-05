@@ -31916,6 +31916,7 @@ var G_CATS=[
   {key:'puzzle',  label:'PUZZLES',        icon:'\ud83e\udde9'},
   {key:'board',   label:'BOARD GAMES',    icon:'\u265f'},
   {key:'pattern', label:'PATTERN & MEMORY',icon:'\ud83e\udde0'},
+  {key:'dice',    label:'DICE GAMES',     icon:'\ud83c\udfb2'},
   {key:'creative',label:'CREATIVE',       icon:'\ud83c\udfb5'}
 ];
 var G=[
@@ -31942,7 +31943,7 @@ var G=[
 {id:'mastermind',n:'Seed Code',i:'\ud83c\udf31',r:'Crack the hidden 4-seed code. Green = right seed, right spot. Gold = right seed, wrong spot.',cat:'puzzle',thumb:'assets/games/thumbs/mastermind.png'},
 {id:'checkers',n:'Grove Checkers',i:'\u265f',r:'Jump over opponent pieces to capture. Reach the far side to crown a King.',cat:'board',thumb:'assets/games/thumbs/checkers.png'},
 {id:'reversi',n:'Moss & Lichen',i:'\u25cf',r:'Place moss to surround and flip lichen. Control the most territory to win.',cat:'board',thumb:'assets/games/thumbs/reversi.png'},
-{id:'yahtzee',n:'Seed Toss',i:'\ud83c\udfb2',r:'Roll 5 seed dice up to 3 times. Hold keepers, score in 13 categories. Aim high!',cat:'puzzle',thumb:'assets/games/thumbs/yahtzee.png'}
+{id:'yahtzee',n:'Seed Toss',i:'\ud83c\udfb2',r:'Roll 5 seed dice up to 3 times. Hold keepers, score in 13 categories. Aim high!',cat:'dice',thumb:'assets/games/thumbs/yahtzee.png'}
 ];
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
 // ═══ HASH ACCUMULATION BUFFER ═══
@@ -35166,27 +35167,9 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),sc=0,turn=0,
   window._FN=function(){dice=new Array(6).fill(0);kept=new Array(6).fill(false);sc=0;turn=0;banked=0;rolling=false;busted=false;document.getElementById('Fs').textContent='0';sm('Roll!');rn()};_FN();}
 // ═══ TRIPEAKS ═══
 function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1,scores={};
-  // SVG seed dice — each face is a seed arrangement
+  // Botanical dice — paper-card PNGs (seed/dew/clover/sun/flower/moon)
   function seedDie(n){
-    var s='<svg viewBox="0 0 60 60">';
-    // Seed dot positions for each face value
-    var pos={
-      1:[[30,30]],
-      2:[[18,18],[42,42]],
-      3:[[18,18],[30,30],[42,42]],
-      4:[[18,18],[42,18],[18,42],[42,42]],
-      5:[[18,18],[42,18],[30,30],[18,42],[42,42]],
-      6:[[18,16],[42,16],[18,30],[42,30],[18,44],[42,44]]
-    };
-    var dots=pos[n]||[];
-    dots.forEach(function(p){
-      // Each seed is a tiny botanical element
-      s+='<ellipse cx="'+p[0]+'" cy="'+p[1]+'" rx="5" ry="6.5" fill="#7ab356" opacity="0.9" transform="rotate('+(Math.floor(p[0]*7+p[1]*3)%40-20)+' '+p[0]+' '+p[1]+')"/>';
-      s+='<ellipse cx="'+p[0]+'" cy="'+(p[1]-1)+'" rx="3" ry="4" fill="#9ad070" opacity="0.5" transform="rotate('+(Math.floor(p[0]*7+p[1]*3)%40-20)+' '+p[0]+' '+(p[1]-1)+')"/>';
-      s+='<line x1="'+p[0]+'" y1="'+(p[1]-6)+'" x2="'+p[0]+'" y2="'+(p[1]-9)+'" stroke="#5a8a3a" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>';
-    });
-    s+='</svg>';
-    return s;
+    return '<img src="assets/dice/dice-'+n+'.png" alt="'+n+'" style="width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;-webkit-user-drag:none" draggable="false"/>';
   }
   var CATS=[
     {name:'Sprouts',icon:'&#x1F331;',desc:'Count 1s'},
