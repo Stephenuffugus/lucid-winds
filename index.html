@@ -26989,7 +26989,7 @@ document.addEventListener('keydown', function(e) {
     if(window._updateGameDew)_updateGameDew();
     window.scrollTo(0, 0);
     // Game tab: restore #sw / #fg-ag state based on active game
-    // Hide SET topbar on non-game tabs to prevent flash
+    // Hide SET topbar on non-game tabs, show on game tab
     var _swEl = document.getElementById('sw');
     var _agEl = document.getElementById('fg-ag');
     if (tab !== 'game') {
@@ -26998,6 +26998,9 @@ document.addEventListener('keydown', function(e) {
       if (window._a && window._a !== 'set') {
         if (_swEl) _swEl.style.display = 'none';
         if (_agEl) _agEl.classList.add('on');
+      } else {
+        // SET game or no game — show topbar with pheno/deck counts
+        if (_swEl) _swEl.style.display = '';
       }
     }
     if (tab === 'greenhouse') renderGreenhouse();
