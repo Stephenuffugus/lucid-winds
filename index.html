@@ -3126,10 +3126,23 @@
     .rvc{aspect-ratio:1;border-radius:clamp(3px,1vw,6px);display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(34,48,28,.38);border:1px solid rgba(74,124,53,.1);font-size:clamp(1rem,3vw,1.4rem);-webkit-tap-highlight-color:transparent;transition:background .18s,border-color .18s;min-height:36px}
     .rvc.rvv{background:rgba(74,124,53,.08);border-color:rgba(200,168,78,.18)}
 
-    /* Mastermind */
-    .mmr{display:flex;gap:clamp(6px,2vw,10px);align-items:center;padding:clamp(4px,1.5vw,8px) clamp(8px,2.5vw,12px);animation:boardFadeIn .3s ease}
-    .mmp{width:clamp(36px,10vw,48px);height:clamp(36px,10vw,48px);border-radius:50%;border:2px solid rgba(74,124,53,.22);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .18s cubic-bezier(.25,.46,.45,.94);box-shadow:0 2px 6px rgba(0,0,0,.18)}
+    /* Mastermind — Seed Code */
+    .mm-board{max-width:400px;margin:0 auto;padding:clamp(6px,2vw,10px);background:rgba(16,20,14,.5);border-radius:12px;border:1px solid rgba(74,124,53,.1);max-height:45vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+    .mmr{display:flex;gap:clamp(4px,1.5vw,8px);align-items:center;padding:clamp(4px,1.2vw,6px) clamp(6px,2vw,10px);margin-bottom:2px;border-radius:8px;background:rgba(26,36,22,.35);animation:boardFadeIn .3s ease}
+    .mmr:last-child{background:rgba(200,168,75,.06);border:1px solid rgba(200,168,75,.12)}
+    .mmp{width:clamp(36px,10vw,46px);height:clamp(36px,10vw,46px);border-radius:50%;border:2px solid rgba(74,124,53,.22);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .18s cubic-bezier(.25,.46,.45,.94);box-shadow:0 2px 6px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;overflow:hidden}
     .mmp:active{transform:scale(.88);transition-duration:.06s}
+    .mmp svg{width:80%;height:80%}
+    .mm-cur{display:flex;gap:clamp(6px,2vw,10px);justify-content:center;padding:clamp(8px,2.5vw,12px);background:rgba(26,36,22,.4);border-radius:10px;border:1.5px solid rgba(200,168,75,.15);margin:8px auto;max-width:280px}
+    .mm-cur .mmp{border-color:rgba(200,168,75,.35);box-shadow:0 0 10px rgba(200,168,75,.08),0 2px 6px rgba(0,0,0,.2)}
+    .mm-pal{display:flex;gap:clamp(6px,2vw,10px);justify-content:center;padding:clamp(6px,2vw,10px);flex-wrap:wrap}
+    .mm-pal .mmp{width:clamp(44px,12vw,52px);height:clamp(44px,12vw,52px);border-width:2.5px;min-height:44px}
+    .mm-pal .mmp:hover{border-color:rgba(200,168,75,.4);box-shadow:0 0 14px rgba(200,168,75,.12)}
+    .mm-fb{display:flex;gap:3px;flex-wrap:wrap;width:28px;margin-left:auto}
+    .mm-fb-dot{width:10px;height:10px;border-radius:50%;border:1px solid rgba(74,124,53,.3)}
+    .mm-fb-dot.exact{background:var(--sage);border-color:var(--sage);box-shadow:0 0 6px rgba(122,179,86,.4)}
+    .mm-fb-dot.close{background:var(--gold);border-color:var(--gold);box-shadow:0 0 6px rgba(200,168,75,.3)}
+    .mm-fb-dot.miss{background:rgba(74,124,53,.1)}
 
     /* Pipe Connect */
     .ppg{display:grid;gap:clamp(1px,.4vw,3px);width:clamp(280px,88vw,380px);margin:0 auto;padding:clamp(4px,1.5vw,8px);animation:boardFadeIn .4s ease}
@@ -31915,7 +31928,8 @@ var G=[
 {id:'spider',n:'Spider',i:'\ud83d\udd77',r:'Build complete King-to-Ace runs by suit. 1, 2, or 4 suit variants.',cat:'card',thumb:'assets/games/thumbs/spider.png'},
 {id:'freecell',n:'FreeCell',i:'\ud83c\udfd7',r:'All cards visible. Use 4 free cells to maneuver. Pure strategy!',cat:'card',thumb:'assets/games/thumbs/freecell.png'},
 {id:'pyramid',n:'Pyramid',i:'\ud83d\udd3a',r:'Remove pairs that sum to 13. Kings remove alone. Clear the pyramid!',cat:'card',thumb:'assets/games/thumbs/pyramid.png'},
-{id:'tripeaks',n:'TriPeaks',i:'\u26f0',r:'Build up or down on the waste pile to clear three peaks.',cat:'card',thumb:'assets/games/thumbs/tripeaks.png'}
+{id:'tripeaks',n:'TriPeaks',i:'\u26f0',r:'Build up or down on the waste pile to clear three peaks.',cat:'card',thumb:'assets/games/thumbs/tripeaks.png'},
+{id:'mastermind',n:'Seed Code',i:'\ud83c\udf31',r:'Crack the hidden 4-seed code. Green = right seed, right spot. Gold = right seed, wrong spot.',cat:'puzzle',thumb:'assets/games/thumbs/mastermind.png'}
 ];
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
 // ═══ HASH ACCUMULATION BUFFER ═══
@@ -35190,22 +35204,83 @@ function GRV(a){var bd=new Array(64).fill(0),tn=1,ov=false;ms(a,'⚫ You · ⚪ 
   function checkEnd(){if(valid(1).length||valid(2).length)return;ov=true;var b=0,w=0;bd.forEach(function(v){if(v===1)b++;if(v===2)w++});_e(b>w?'game_win':'game_loss');sm(b>w?'🌿 You win! '+b+'-'+w:b<w?'AI wins '+w+'-'+b:'Draw!');_sr('reversi',{w:b>w,s:b})}
   window._RVN=function(){setup();sm('');rn()};_RVN();}
 // ═══ MASTERMIND ═══
-function GMM(a){var code=[],guesses=[],colors=['🔴','🟢','🔵','🟡','🟣','🟠'],cur=[];ms(a,'Guesses: <strong id="MMg">0</strong>/10');mm(a);
-  var bd=document.createElement('div');bd.id='MMb';bd.style.cssText='padding:8px;max-height:300px;overflow-y:auto';a.appendChild(bd);
-  var cur_d=document.createElement('div');cur_d.id='MMc';cur_d.style.cssText='display:flex;gap:6px;justify-content:center;padding:8px';a.appendChild(cur_d);
-  var pal=document.createElement('div');pal.style.cssText='display:flex;gap:8px;justify-content:center;padding:6px';colors.forEach(function(c,i){pal.innerHTML+='<div style="font-size:1.4rem;cursor:pointer;-webkit-tap-highlight-color:transparent" onclick="_MMA('+i+')">'+c+'</div>'});a.appendChild(pal);
-  mc(a).innerHTML='<button class="gb" onclick="_MMG()">✓ Guess</button><button class="gb" onclick="_MMN()">🔄 New</button>';
-  function rn(){bd.innerHTML='';guesses.forEach(function(g){var h='<div class="mmr">';g.guess.forEach(function(c){h+='<div class="mmp" style="background:none;border:none;font-size:1.2rem">'+colors[c]+'</div>'});h+='<div style="display:flex;gap:2px;margin-left:8px">';for(var i=0;i<g.exact;i++)h+='<span style="font-size:.7rem">🟢</span>';for(var i=0;i<g.close;i++)h+='<span style="font-size:.7rem">⚪</span>';h+='</div></div>';bd.innerHTML+=h});rnC()}
-  function rnC(){cur_d.innerHTML='';for(var i=0;i<4;i++){var ci=i;cur_d.innerHTML+='<div class="mmp" style="font-size:1.3rem;display:flex;align-items:center;justify-content:center;width:44px;height:44px;background:rgba(26,31,23,.8);border:2px solid '+(cur[i]!==undefined?'rgba(200,168,78,.4)':'rgba(74,124,53,.3)')+';cursor:pointer" onclick="_MMT('+i+')">'+(cur[i]!==undefined?colors[cur[i]]:'?')+'</div>'}}
-  window._MMA=function(c){_play('tap');if(cur.length<4)cur.push(c);else{for(var i=0;i<4;i++){if(cur[i]===undefined){cur[i]=c;break}}}rnC()};
+function GMM(a){var code=[],guesses=[],cur=[];
+  // 6 botanical pegs — each a unique plant element
+  var PEGS=[
+    {name:'Rose',fill:'#c07070',accent:'#e8a0a0',svg:'<svg viewBox="0 0 40 40"><circle cx="20" cy="18" r="11" fill="PAL" opacity="0.9"/><circle cx="20" cy="18" r="7" fill="ACC"/><circle cx="20" cy="18" r="3.5" fill="PAL"/><path d="M20 29 L20 36" stroke="#5a8a3a" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="24" cy="32" rx="4" ry="2.5" fill="#5a8a3a" opacity="0.7" transform="rotate(-20 24 32)"/></svg>'},
+    {name:'Fern',fill:'#4a7c35',accent:'#7ab356',svg:'<svg viewBox="0 0 40 40"><path d="M20 36 L20 8" stroke="PAL" stroke-width="2.5" stroke-linecap="round"/><path d="M20 12 Q12 14 10 10" stroke="ACC" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M20 12 Q28 14 30 10" stroke="ACC" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M20 18 Q13 20 11 16" stroke="ACC" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M20 18 Q27 20 29 16" stroke="ACC" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M20 24 Q14 26 12 22" stroke="ACC" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M20 24 Q26 26 28 22" stroke="ACC" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M20 29 Q16 31 14 28" stroke="ACC" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M20 29 Q24 31 26 28" stroke="ACC" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>'},
+    {name:'Sunflower',fill:'#C8A84B',accent:'#e8d080',svg:'<svg viewBox="0 0 40 40"><g transform="translate(20,17)"><ellipse rx="5" ry="10" fill="ACC" opacity="0.8" transform="rotate(0)"/><ellipse rx="5" ry="10" fill="ACC" opacity="0.8" transform="rotate(45)"/><ellipse rx="5" ry="10" fill="ACC" opacity="0.8" transform="rotate(90)"/><ellipse rx="5" ry="10" fill="ACC" opacity="0.8" transform="rotate(135)"/></g><circle cx="20" cy="17" r="6" fill="#6B4F2D"/><circle cx="20" cy="17" r="4" fill="PAL"/><path d="M20 27 L20 36" stroke="#5a8a3a" stroke-width="2.5" stroke-linecap="round"/></svg>'},
+    {name:'Bluebell',fill:'#4a7aaa',accent:'#80b8e0',svg:'<svg viewBox="0 0 40 40"><path d="M20 8 L20 36" stroke="#5a8a3a" stroke-width="2" stroke-linecap="round"/><path d="M14 12 Q14 18 20 18" fill="PAL" opacity="0.85"/><path d="M26 12 Q26 18 20 18" fill="ACC" opacity="0.85"/><path d="M12 19 Q12 25 20 25" fill="PAL" opacity="0.7"/><path d="M28 19 Q28 25 20 25" fill="ACC" opacity="0.7"/><path d="M14 26 Q14 31 20 31" fill="PAL" opacity="0.55"/><path d="M26 26 Q26 31 20 31" fill="ACC" opacity="0.55"/></svg>'},
+    {name:'Mushroom',fill:'#9b59b6',accent:'#c48de0',svg:'<svg viewBox="0 0 40 40"><rect x="16" y="22" width="8" height="14" rx="3" fill="#e8dcc8" opacity="0.8"/><ellipse cx="20" cy="22" rx="14" ry="10" fill="PAL"/><ellipse cx="20" cy="22" rx="14" ry="10" fill="ACC" opacity="0.3"/><circle cx="14" cy="18" r="2.5" fill="#e8dcc8" opacity="0.4"/><circle cx="24" cy="16" r="3" fill="#e8dcc8" opacity="0.35"/><circle cx="19" cy="14" r="1.5" fill="#e8dcc8" opacity="0.3"/></svg>'},
+    {name:'Ember',fill:'#c76a30',accent:'#e8a060',svg:'<svg viewBox="0 0 40 40"><path d="M20 6 Q28 16 24 24 Q28 20 26 14 Q30 22 24 30 Q22 34 20 36 Q18 34 16 30 Q10 22 14 14 Q12 20 16 24 Q12 16 20 6Z" fill="PAL" opacity="0.9"/><path d="M20 14 Q24 20 22 26 Q20 30 20 32 Q20 30 18 26 Q16 20 20 14Z" fill="ACC" opacity="0.8"/><circle cx="20" cy="24" r="3" fill="#e8dcc8" opacity="0.5"/></svg>'}
+  ];
+  function pegSvg(idx){var p=PEGS[idx];return p.svg.replace(/PAL/g,p.fill).replace(/ACC/g,p.accent)}
+  ms(a,'Guesses: <strong id="MMg">0</strong>/10');mm(a);
+  var bd=document.createElement('div');bd.className='mm-board';bd.id='MMb';a.appendChild(bd);
+  var cur_d=document.createElement('div');cur_d.className='mm-cur';cur_d.id='MMc';a.appendChild(cur_d);
+  var pal=document.createElement('div');pal.className='mm-pal';
+  PEGS.forEach(function(p,i){
+    var d=document.createElement('div');d.className='mmp';
+    d.style.cssText='background:rgba(26,36,22,.8);border-color:'+p.fill;
+    d.innerHTML=pegSvg(i);
+    d.addEventListener('click',function(){_MMA(i)});
+    pal.appendChild(d);
+  });
+  a.appendChild(pal);
+  mc(a).innerHTML='<button class="gb" onclick="_MMG()">&#10003; GUESS</button><button class="gb" onclick="_MMU()">&#9003; UNDO</button><button class="gb" onclick="_MMN()">&#128260; NEW</button>';
+  function rn(){
+    bd.innerHTML='';
+    guesses.forEach(function(g){
+      var row=document.createElement('div');row.className='mmr';
+      g.guess.forEach(function(c){
+        var d=document.createElement('div');d.className='mmp';
+        d.style.cssText='background:rgba(26,36,22,.8);border-color:'+PEGS[c].fill;
+        d.innerHTML=pegSvg(c);row.appendChild(d);
+      });
+      // Feedback dots
+      var fb=document.createElement('div');fb.className='mm-fb';
+      for(var i=0;i<g.exact;i++){var dot=document.createElement('div');dot.className='mm-fb-dot exact';fb.appendChild(dot)}
+      for(var i=0;i<g.close;i++){var dot=document.createElement('div');dot.className='mm-fb-dot close';fb.appendChild(dot)}
+      for(var i=0;i<4-g.exact-g.close;i++){var dot=document.createElement('div');dot.className='mm-fb-dot miss';fb.appendChild(dot)}
+      row.appendChild(fb);
+      bd.appendChild(row);
+    });
+    bd.scrollTop=bd.scrollHeight;
+    rnC();
+  }
+  function rnC(){
+    cur_d.innerHTML='';
+    for(var i=0;i<4;i++){
+      var d=document.createElement('div');d.className='mmp';
+      if(cur[i]!==undefined){
+        d.style.cssText='background:rgba(26,36,22,.8);border-color:'+PEGS[cur[i]].fill+';cursor:pointer';
+        d.innerHTML=pegSvg(cur[i]);
+      }else{
+        d.style.cssText='background:rgba(26,36,22,.6);border-color:rgba(74,124,53,.2);cursor:pointer';
+        d.innerHTML='<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="4" fill="rgba(200,188,160,.15)"/></svg>';
+      }
+      d.setAttribute('data-i',i);
+      d.addEventListener('click',function(){_MMT(parseInt(this.getAttribute('data-i')))});
+      cur_d.appendChild(d);
+    }
+  }
+  window._MMA=function(c){_play('tap');if(cur.length<4)cur.push(c);rnC()};
   window._MMT=function(i){if(cur[i]!==undefined){_play('tap');cur[i]=(cur[i]+1)%6;rnC()}};
-  window._MMG=function(){if(cur.length!==4)return;var exact=0,close=0,cc=code.slice(),gc=cur.slice();
+  window._MMU=function(){if(cur.length>0){_play('tap');cur.pop();rnC()}};
+  window._MMG=function(){if(cur.length!==4){sm('Place 4 seeds first');return}
+    _play('snap');
+    var exact=0,close=0,cc=code.slice(),gc=cur.slice();
     for(var i=0;i<4;i++)if(gc[i]===cc[i]){exact++;cc[i]=-1;gc[i]=-2}
     for(var i=0;i<4;i++){if(gc[i]<0)continue;var j=cc.indexOf(gc[i]);if(j>-1){close++;cc[j]=-1}}
-    guesses.push({guess:cur.slice(),exact:exact,close:close});cur=[];document.getElementById('MMg').textContent=guesses.length;_e('progress');
-    if(exact===4){_e('game_win');_playWin();sm('🌿 Cracked in '+guesses.length+'!');_sr('mastermind',{w:true,s:guesses.length})}
-    else if(guesses.length>=10){_e('game_loss');sm('Code: '+code.map(function(c){return colors[c]}).join(''));_sr('mastermind',{w:false,s:0})}rn()};
-  window._MMN=function(){code=[];for(var i=0;i<4;i++)code.push(Math.floor(Math.random()*6));guesses=[];cur=[];document.getElementById('MMg').textContent='0';sm('');rn()};_MMN();}
+    guesses.push({guess:cur.slice(),exact:exact,close:close});cur=[];
+    document.getElementById('MMg').textContent=guesses.length;
+    if(exact>0)_e('progress');
+    if(exact===4){_e('game_win');_playWin();sm('Cracked in '+guesses.length+'!');_sr('mastermind',{w:true,s:guesses.length})}
+    else if(guesses.length>=10){_e('game_loss');sm('The code was: '+code.map(function(c){return PEGS[c].name}).join(' \u2022 '));_sr('mastermind',{w:false,s:0})}
+    rn();
+  };
+  window._MMN=function(){code=[];for(var i=0;i<4;i++)code.push(Math.floor(Math.random()*6));guesses=[];cur=[];document.getElementById('MMg').textContent='0';sm('');rn()};_MMN();
+}
 // ═══ FLOOD FILL ═══
 function GCS(a){var tubes=[],numT=7,cap=4,sel=-1;var COLS=['#4a7c35','#C8A84B','#4a7aaa','#c76a30','#9b59b6'];
   ms(a,'');mm(a);var tw=document.createElement('div');tw.className='csw';tw.id='CS';a.appendChild(tw);mc(a).innerHTML='<button class="gb" onclick="_CSN()">🔄 New</button>';
