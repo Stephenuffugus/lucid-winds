@@ -31944,6 +31944,7 @@ var G=[
 {id:'sudoku',n:'Soil Grid',i:'\ud83d\udd22',r:'Fill every row, column and 3\u00d73 box with digits 1-9.',cat:'puzzle',thumb:'assets/games/thumbs/sudoku.png'},
 {id:'wordsearch',n:'Root Words',i:'\ud83d\udd24',r:'Tap letters in sequence to find hidden botanical words.',cat:'puzzle',thumb:'assets/games/thumbs/wordsearch.png'},
 {id:'hanoi',n:'Root Stack',i:'\ud83d\uddfc',r:'Move all discs to the right peg. Never place big on small.',cat:'puzzle',thumb:'assets/games/thumbs/hanoi.png'},
+{id:'dots',n:'Trellis',i:'\ud83e\udde9',r:'Slide tiles into the empty space. Arrange them 1-15 in order.',cat:'puzzle',thumb:'assets/games/thumbs/dots.png'},
 {id:'flood',n:'Autumn Leaves',i:'\ud83c\udf42',r:'Tap a leaf to flood from the top-left. Cover the forest floor in one color!',cat:'puzzle',thumb:'assets/games/thumbs/flood.png'},
 {id:'pipe',n:'Vine Flow',i:'\ud83c\udf3f',r:'Rotate vine tiles to connect all vines back to the root!',cat:'puzzle',thumb:'assets/games/thumbs/pipe.png'},
 {id:'chess',n:'Grove Chess',i:'\u265f',r:'Classic chess against AI. Tap a piece, tap where to move.',cat:'board',thumb:'assets/games/thumbs/chess.png'},
@@ -31958,7 +31959,8 @@ var G=[
 {id:'mastermind',n:'Seed Code',i:'\ud83c\udf31',r:'Crack the hidden 4-seed code. Green = right seed, right spot. Gold = right seed, wrong spot.',cat:'puzzle',thumb:'assets/games/thumbs/mastermind.png'},
 {id:'checkers',n:'Grove Checkers',i:'\u265f',r:'Jump over opponent pieces to capture. Reach the far side to crown a King.',cat:'board',thumb:'assets/games/thumbs/checkers.png'},
 {id:'reversi',n:'Moss & Lichen',i:'\u25cf',r:'Place moss to surround and flip lichen. Control the most territory to win.',cat:'board',thumb:'assets/games/thumbs/reversi.png'},
-{id:'yahtzee',n:'Seed Toss',i:'\ud83c\udfb2',r:'Roll 5 seed dice up to 3 times. Hold keepers, score in 13 categories. Aim high!',cat:'dice',thumb:'assets/games/thumbs/yahtzee.png'}
+{id:'yahtzee',n:'Seed Toss',i:'\ud83c\udfb2',r:'Roll 5 seed dice up to 3 times. Hold keepers, score in 13 categories. Aim high!',cat:'dice',thumb:'assets/games/thumbs/yahtzee.png'},
+{id:'farkle',n:'Farkle',i:'\ud83c\udfb2',r:'Roll 6 dice. Keep 1s, 5s, and three-of-a-kinds. Roll again or bank — zero scorers and you bust!',cat:'dice',thumb:'assets/games/thumbs/farkle.png'}
 ];
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
 // ═══ HASH ACCUMULATION BUFFER ═══
@@ -35175,7 +35177,7 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),sc=0,turn=0,
   ms(a,'🏆<strong id="Fs">0</strong>');mm(a);var dd=document.createElement('div');dd.className='fd';dd.id='Fd';a.appendChild(dd);
   var si=document.createElement('div');si.style.cssText='text-align:center;font-size:.5rem;color:var(--muted);padding:5px';si.id='Fi';a.appendChild(si);
   mc(a).innerHTML='<button class="gb" onclick="_FR()">🎲 Roll</button><button class="gb" onclick="_FB()">💰 Bank</button><button class="gb" onclick="_FN()">🔄 New</button>';
-  function rn(){dd.innerHTML='';for(var i=0;i<6;i++){var d=document.createElement('div');d.className='fdie'+(kept[i]?' fk':'');d.textContent=dice[i]?FC[dice[i]-1]:'·';d.setAttribute('data-i',i);d.onclick=function(){var x=parseInt(this.getAttribute('data-i'));if(dice[x])kept[x]=!kept[x];rn()};dd.appendChild(d)}document.getElementById('Fi').textContent='Turn: '+turn+' · Banked: '+banked}
+  function rn(){dd.innerHTML='';for(var i=0;i<6;i++){var d=document.createElement('div');d.className='fdie'+(kept[i]?' fk':'');if(dice[i])d.innerHTML='<img src="assets/dice/dice-'+dice[i]+'.png" alt="'+dice[i]+'" style="width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;-webkit-user-drag:none" draggable="false"/>';else d.textContent='·';d.setAttribute('data-i',i);d.onclick=function(){var x=parseInt(this.getAttribute('data-i'));if(dice[x])kept[x]=!kept[x];rn()};dd.appendChild(d)}document.getElementById('Fi').textContent='Turn: '+turn+' · Banked: '+banked}
   function score(){var ct=new Array(7).fill(0);for(var i=0;i<6;i++)if(kept[i])ct[dice[i]]++;var s=0;for(var v=1;v<=6;v++){if(ct[v]>=3){s+=(v===1)?1000:v*100;var extra=ct[v]-3;s+=extra*100;ct[v]=0}else{if(v===1)s+=ct[v]*100;if(v===5)s+=ct[v]*50}}return s}
   window._FR=function(){if(rolling||busted)return;rolling=true;var any=false;for(var i=0;i<6;i++)if(!kept[i]){_play('dice');dice[i]=Math.floor(Math.random()*6)+1;any=true}if(!any){kept=new Array(6).fill(false);for(var i=0;i<6;i++)dice[i]=Math.floor(Math.random()*6)+1}var ct=new Array(7).fill(0);for(var i=0;i<6;i++)if(!kept[i])ct[dice[i]]++;var has=ct[1]>0||ct[5]>0;for(var v=1;v<=6;v++)if(ct[v]>=3)has=true;if(!has){turn=0;busted=true;_play('lose');sm('🍂 Farkle! Tap 🔄 New to continue');rn();setTimeout(function(){rolling=false},500);return}rn();rolling=false;sm('Keep scorers, Roll or Bank')};
   window._FB=function(){if(busted){sm('Busted! Tap 🔄 New');return}var ts=score();if(ts<=0){sm('Keep scoring dice first!');return}banked+=ts;turn=0;sc=banked;document.getElementById('Fs').textContent=sc;_e('progress');if(sc>=1000)_e('milestone');kept=new Array(6).fill(false);dice=new Array(6).fill(0);rn();sm('Banked! '+sc)};
