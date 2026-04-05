@@ -35192,7 +35192,7 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
   dir.style.cssText='text-align:center;padding:0.4rem 0.8rem;margin:0.2rem auto;max-width:400px;font-family:DM Sans,sans-serif;font-size:clamp(0.6rem,1.8vw,0.75rem);color:var(--cream);line-height:1.4;opacity:0.8';
   dir.innerHTML='<strong style="color:var(--gold)">Roll</strong> up to 3 times. <strong>Tap dice</strong> to hold. Then <strong>score</strong> in a category.';
   a.appendChild(dir);
-  var dd=document.createElement('div');dd.className='fd';dd.id='Yd';a.appendChild(dd);
+  var dd=document.createElement('div');dd.className='fd';dd.id='Yd';dd.style.cssText='display:flex;gap:clamp(10px,3vw,18px);justify-content:center;flex-wrap:wrap;max-width:clamp(340px,92vw,460px);margin:0 auto;padding:clamp(10px,3vw,16px)';a.appendChild(dd);
   // Buttons
   var _bbs='min-height:52px;padding:0.5rem 1.2rem;font-size:clamp(.6rem,1.8vw,.75rem);flex:1';
   mc(a).innerHTML='<div style="display:flex;gap:8px;padding:4px 0"><button class="gb" style="'+_bbs+';background:rgba(74,124,53,.2);border-color:rgba(122,179,86,.35);color:var(--sage)" onclick="_YR()">&#127922; ROLL</button><button class="gb" style="'+_bbs+'" onclick="_YN()">&#128260; NEW</button></div>';
@@ -35215,7 +35215,8 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
     dd.innerHTML='';
     for(var i=0;i<5;i++){
       var d=document.createElement('div');d.className='fdie'+(kept[i]?' fk':'');
-      if(dice[i]){d.innerHTML=seedDie(dice[i])}else{d.innerHTML='<span style="font-size:1.5rem;color:var(--muted);opacity:0.3">&middot;</span>'}
+      d.style.cssText='width:clamp(100px,28vw,140px);height:clamp(100px,28vw,140px);border-radius:clamp(14px,4vw,20px);background:transparent;border:3px solid transparent;box-shadow:none;padding:4px'+(kept[i]?';border-color:var(--gold);box-shadow:0 0 20px rgba(200,168,78,0.3),inset 0 0 12px rgba(200,168,78,0.08);background:rgba(200,168,78,0.05)':'');
+      if(dice[i]){d.innerHTML=seedDie(dice[i])}else{d.innerHTML='<span style="font-size:2.5rem;color:var(--muted);opacity:0.3">&middot;</span>'}
       d.setAttribute('data-i',i);
       d.addEventListener('click',function(){var x=parseInt(this.getAttribute('data-i'));if(dice[x]){_play('tap');kept[x]=!kept[x];rn()}});
       dd.appendChild(d);
