@@ -46,7 +46,7 @@
   ║  • EA badge visible in trait panel with color coding                    ║
   ║                                                                          ║
   ║  STEP 4 — FERAL CHALLENGE (Quick SET):                                  ║
-  ║  • Tap feral seed → 3×3 card grid, find 1 valid SET                    ║
+  ║  • Tap feral seed → 3×3 card grid, find 1 valid Trio                   ║
   ║  • Timer: 12s Common → 7s Cosmic (difficulty scales with rarity)       ║
   ║  • Success: seed collected + Dew Drop reward (1-20 by rarity)          ║
   ║  • Failure: 2-minute cooldown, seed stays on map                        ║
@@ -1586,16 +1586,16 @@
     @keyframes tooltipIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
     /* ── TABS ── */
-    /* ═══ SET STATUS BAR — deck + phenos + gear ═══ */
+    /* ═══ TRIOS STATUS BAR (legacy CSS, counters now in fg-topbar) ═══ */
     .set-status{
-      display:flex;align-items:center;gap:0.6rem;
-      padding:0.35rem 0.6rem;margin:0.3rem 0;
+      display:flex;align-items:center;gap:1rem;
+      padding:0.55rem 0.85rem;margin:0.35rem 0;
       background:linear-gradient(180deg,rgba(26,36,22,0.7) 0%,rgba(18,24,16,0.5) 100%);
-      border:1px solid rgba(122,179,86,0.12);border-radius:8px;
+      border:1px solid rgba(122,179,86,0.12);border-radius:10px;
     }
-    .set-status-item{display:flex;align-items:center;gap:0.25rem;}
-    .set-status-val{font-family:'Bebas Neue',sans-serif;font-size:0.9rem;color:var(--cream);letter-spacing:0.04em;}
-    .set-status-lbl{font-family:'DM Mono',monospace;font-size:0.35rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;}
+    .set-status-item{display:flex;align-items:baseline;gap:0.4rem;}
+    .set-status-val{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;font-weight:700;color:var(--cream);letter-spacing:0.04em;line-height:1;}
+    .set-status-lbl{font-family:'DM Mono',monospace;font-size:0.6rem;font-weight:600;color:rgba(122,179,86,0.9);letter-spacing:0.1em;text-transform:uppercase;}
     .set-status-gear{
       width:40px;height:40px;border-radius:8px;border:1px solid rgba(200,188,160,0.15);
       background:linear-gradient(180deg,rgba(46,40,32,0.6) 0%,rgba(32,30,24,0.7) 100%);
@@ -1606,16 +1606,16 @@
     .set-status-gear:hover{background:rgba(240,235,216,0.08);color:var(--cream);border-color:rgba(200,188,160,0.25);}
     /* ═══ FOCUS GROVE — Warm Botanical UI ═══ */
     .fg-topbar{
-      display:flex;align-items:center;gap:0.4rem;
-      padding:0.3rem 0.5rem;margin-bottom:0.3rem;
-      background:linear-gradient(180deg,rgba(42,36,28,0.6) 0%,rgba(26,36,22,0.4) 100%);
-      border:1px solid rgba(122,119,86,0.12);
-      border-radius:6px;
-      box-shadow:inset 0 1px 0 rgba(240,235,216,0.04), 0 2px 8px rgba(0,0,0,0.2);
+      display:flex;align-items:center;gap:1rem;
+      padding:0.6rem 0.85rem;margin-bottom:0.4rem;
+      background:linear-gradient(180deg,rgba(26,36,22,0.75) 0%,rgba(18,24,16,0.55) 100%);
+      border:1.5px solid rgba(122,179,86,0.18);
+      border-radius:10px;
+      box-shadow:inset 0 1px 0 rgba(240,235,216,0.04), 0 2px 8px rgba(0,0,0,0.25);
     }
-    .fg-topbar-stat{display:flex;flex-direction:column;align-items:center;min-width:2.2rem;}
-    .fg-topbar-val{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.1rem;color:var(--cream);line-height:1;letter-spacing:0.04em;}
-    .fg-topbar-label{font-family:'DM Mono',monospace;font-size:0.42rem;color:rgba(200,188,160,0.5);letter-spacing:0.1em;margin-top:0.08rem;}
+    .fg-topbar-stat{display:flex;align-items:baseline;gap:0.4rem;min-width:2.8rem;}
+    .fg-topbar-val{font-family:'Bebas Neue',sans-serif;font-weight:700;font-size:1.5rem;color:var(--cream);line-height:1;letter-spacing:0.04em;}
+    .fg-topbar-label{font-family:'DM Mono',monospace;font-size:0.6rem;font-weight:600;color:rgba(122,179,86,0.9);letter-spacing:0.1em;text-transform:uppercase;}
     .fg-topbar-btn{
       background:linear-gradient(180deg,rgba(46,40,32,0.6) 0%,rgba(32,30,24,0.7) 100%);border:1px solid rgba(200,188,160,0.15);
       color:rgba(240,235,216,0.6);font-size:0.8rem;
@@ -2880,7 +2880,10 @@
     @keyframes pickerStagger{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
 
     /* ── UNIVERSAL GROWTH STRIP — shows plant growing across all games ── */
-    .gp-strip{display:none;align-items:center;padding:6px clamp(12px,3.5vw,18px);background:linear-gradient(180deg,rgba(13,16,12,.3) 0%,rgba(13,16,12,.1) 100%);border-bottom:1px solid rgba(74,124,53,.06);flex-shrink:0;position:relative;overflow:hidden;min-height:0}
+    .gp-strip{display:none;align-items:center;gap:clamp(8px,2.4vw,14px);padding:10px clamp(12px,3.5vw,18px);background:linear-gradient(180deg,rgba(13,16,12,.3) 0%,rgba(13,16,12,.1) 100%);border-bottom:1px solid rgba(74,124,53,.06);flex-shrink:0;position:relative;overflow:hidden;min-height:0}
+    .gp-lbl{font-family:'DM Mono',monospace;font-size:0.68rem;font-weight:600;color:rgba(122,179,86,0.95);letter-spacing:0.08em;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
+    .gp-lbl .gp-count{color:var(--cream);font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:0.04em;margin-right:0.25rem}
+    .gp-lbl .gp-stage{color:var(--gold);font-size:0.56rem;margin-left:0.3rem;opacity:0.85}
     .gp-strip.on{display:flex}
     .gp-plant{flex-shrink:0;width:52px;height:52px;display:flex;align-items:flex-end;justify-content:center}
     .gp-plant svg{filter:drop-shadow(0 2px 6px rgba(0,0,0,.2));transition:all .8s ease}
@@ -2927,20 +2930,25 @@
     .gcr{display:flex;gap:clamp(4px,1.2vw,6px);padding:clamp(2px,1vw,4px) clamp(8px,2vw,12px);flex-wrap:wrap;justify-content:center;flex-shrink:0}
 
     /* Game buttons — organic pill, scaled text, 48px min */
-    .gb{background:rgba(26,31,23,.82);border:1.5px solid rgba(74,124,53,.22);color:rgba(122,179,86,.85);font-size:clamp(.5rem,1.3vw,.6rem);padding:clamp(6px,1.8vw,8px) clamp(10px,3vw,16px);border-radius:20px;cursor:pointer;font-family:'DM Mono',monospace;-webkit-tap-highlight-color:transparent;min-height:36px;min-width:36px;display:inline-flex;align-items:center;justify-content:center;gap:4px;transition:all .2s cubic-bezier(.25,.46,.45,.94);box-shadow:0 2px 6px rgba(0,0,0,.2),inset 0 1px 0 rgba(122,179,86,.03);letter-spacing:.03em;position:relative;overflow:hidden}
+    .gb{background:rgba(26,31,23,.82);border:1.5px solid rgba(74,124,53,.22);color:rgba(122,179,86,.95);font-size:clamp(.72rem,2vw,.88rem);padding:clamp(10px,2.6vw,14px) clamp(16px,4vw,24px);border-radius:24px;cursor:pointer;font-family:'DM Mono',monospace;-webkit-tap-highlight-color:transparent;min-height:48px;min-width:48px;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all .2s cubic-bezier(.25,.46,.45,.94);box-shadow:0 2px 6px rgba(0,0,0,.2),inset 0 1px 0 rgba(122,179,86,.03);letter-spacing:.04em;position:relative;overflow:hidden;font-weight:600}
     .gb::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(74,124,53,.05) 0%,transparent 65%);pointer-events:none;transition:opacity .3s}
     .gb:hover::before{opacity:.8}
     .gb:active{background:rgba(74,124,53,.18);transform:scale(.95);box-shadow:0 0 10px rgba(74,124,53,.12);transition-duration:.08s}
     .gb.gon{background:rgba(200,168,78,.08);border-color:rgba(200,168,78,.35);color:var(--gold);box-shadow:0 0 14px rgba(200,168,78,.06),inset 0 1px 0 rgba(200,168,78,.05)}
+    /* New Game image button — carved wood */
+    .gb-new{background:none;border:none;padding:0;box-shadow:none;min-height:0;min-width:0;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s,filter .15s;display:inline-block}
+    .gb-new::before{display:none}
+    .gb-new:active{transform:scale(.92);filter:brightness(1.2)}
+    .gb-new img{width:clamp(72px,20vw,100px);height:auto;display:block;pointer-events:none;-webkit-user-drag:none}
 
     /* Select dropdowns — matching pills */
-    .gsl{background:rgba(20,24,18,.88);color:rgba(122,179,86,.85);border:1.5px solid rgba(74,124,53,.18);border-radius:20px;padding:clamp(6px,1.8vw,8px) clamp(10px,3vw,16px);font-size:clamp(.5rem,1.3vw,.6rem);font-family:'DM Mono',monospace;min-height:36px;box-shadow:inset 0 2px 8px rgba(0,0,0,.12);-webkit-appearance:none;appearance:none;transition:border-color .2s}
+    .gsl{background:rgba(20,24,18,.88);color:rgba(122,179,86,.95);border:1.5px solid rgba(74,124,53,.22);border-radius:24px;padding:clamp(10px,2.6vw,14px) clamp(16px,4vw,24px);font-size:clamp(.72rem,2vw,.88rem);font-family:'DM Mono',monospace;min-height:48px;box-shadow:inset 0 2px 8px rgba(0,0,0,.12);-webkit-appearance:none;appearance:none;transition:border-color .2s;font-weight:600;letter-spacing:.04em}
     .gsl:focus{border-color:rgba(74,124,53,.4);outline:none}
 
     /* Rules / How to Play — prominent instructional card */
     .gr{font-size:clamp(.48rem,1.3vw,.58rem);color:rgba(200,195,178,.5);text-align:center;padding:clamp(4px,1.5vw,6px) clamp(10px,3vw,16px);line-height:1.5;flex-shrink:0;background:rgba(26,31,23,.3);border:1px solid rgba(74,124,53,.06);border-radius:clamp(6px,2vw,10px);margin:clamp(2px,1vw,4px) clamp(6px,2vw,10px);font-style:normal;letter-spacing:.015em;animation:boardFadeIn .5s ease .1s both}
     /* ══════════════════════════════════════════════════════════════════════
-       PRIORITY 1: SET — The Core Pattern Matcher
+       PRIORITY 1: TRIOS — The Core Pattern Matcher
        ══════════════════════════════════════════════════════════════════════ */
 
     .grove-card{box-shadow:inset 0 0 14px rgba(122,179,86,.03),0 2px 10px rgba(0,0,0,.22);transition:border-color .3s cubic-bezier(.25,.46,.45,.94),box-shadow .3s cubic-bezier(.25,.46,.45,.94),transform .25s cubic-bezier(.25,.46,.45,.94),background .3s ease,opacity .6s ease}
@@ -2952,10 +2960,10 @@
        ══════════════════════════════════════════════════════════════════════ */
 
     .ug{display:grid;grid-template-columns:repeat(9,1fr);gap:0;width:clamp(300px,95vw,440px);margin:0 auto;border:2px solid rgba(74,124,53,.3);border-radius:clamp(6px,1.5vw,10px);background:rgba(13,16,12,.35);box-shadow:0 4px 24px rgba(0,0,0,.28),inset 0 0 40px rgba(74,124,53,.015);overflow:hidden;animation:boardFadeIn .4s cubic-bezier(.25,.46,.45,.94)}
-    .uc{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:clamp(1rem,2.8vw,1.3rem);cursor:pointer;border:.5px solid rgba(74,124,53,.08);color:var(--cream);-webkit-tap-highlight-color:transparent;background:rgba(26,31,23,.45);transition:background .2s ease,color .2s ease,box-shadow .2s ease;position:relative}
+    .uc{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:clamp(1.65rem,5vw,2.3rem);font-weight:700;letter-spacing:.02em;cursor:pointer;border:.5px solid rgba(74,124,53,.08);color:var(--cream);-webkit-tap-highlight-color:transparent;background:rgba(26,31,23,.45);transition:background .2s ease,color .2s ease,box-shadow .2s ease;position:relative}
     .uc::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 35%,rgba(122,179,86,.025) 0%,transparent 65%);pointer-events:none}
     .uc:active{background:rgba(74,124,53,.12)}
-    .uc.uf{color:rgba(122,179,86,.75);cursor:default;text-shadow:0 0 8px rgba(122,179,86,.08)}
+    .uc.uf{color:rgba(140,199,96,.98);cursor:default;text-shadow:0 0 10px rgba(122,179,86,.15)}
     .uc.us{background:rgba(74,124,53,.15);border-color:rgba(74,124,53,.3);box-shadow:inset 0 0 8px rgba(74,124,53,.06)}
     .uc.ue{color:rgba(199,80,80,.9);text-shadow:0 0 10px rgba(199,80,80,.15)}
     .uc:nth-child(3n){border-right:2px solid rgba(74,124,53,.25)}
@@ -4374,20 +4382,14 @@ window.onerror=function(msg,url,line,col,err){
     </div>
   </div>
   <div class="fg-pk" id="fg-pk"></div>
-  <!-- SET status bar — deck count, phenos, settings -->
-  <div id="set-status" class="set-status">
-    <div class="set-status-item"><span class="set-status-val" id="ss-deck">—</span><span class="set-status-lbl">DECK</span></div>
-    <div class="set-status-item"><span class="set-status-val" id="ss-phenos">0</span><span class="set-status-lbl">PHENOS</span></div>
-    <div style="flex:1"></div>
-    <button class="set-status-gear" onclick="toggleSettingsMenu()">&#9881;</button>
-  </div>
+  <!-- Trios status bar removed — counters live inside #sw .fg-topbar now -->
   <div id="gp-strip" class="gp-strip"></div>
   <div id="fg-ag"></div>
   <div id="sw">
 
   <!-- Compact top bar: essential info only -->
   <div class="fg-topbar">
-    <div class="fg-topbar-stat"><span class="fg-topbar-val" id="s-found">0</span><span class="fg-topbar-label">PHENOS</span></div>
+    <div class="fg-topbar-stat"><span class="fg-topbar-val" id="s-found">0</span><span class="fg-topbar-label">TRIOS</span></div>
     <div class="fg-topbar-stat"><span class="fg-topbar-val" id="s-remain">—</span><span class="fg-topbar-label">DECK</span></div>
     <div style="flex:1;"></div>
     <button class="fg-topbar-btn" onclick="triggerTutorialDemo()">❓</button>
@@ -4451,7 +4453,7 @@ window.onerror=function(msg,url,line,col,err){
       <div class="attn-dot"></div>
       <span style="letter-spacing:0.1em;font-size:0.38rem;">ATTENTION</span>
     </div>
-    <div style="font-size:0.4rem;">⬡ <span id="attn-phenos">0</span> phenos · <span id="attn-time">0s</span></div>
+    <div style="font-size:0.4rem;">⬡ <span id="attn-phenos">0</span> trios · <span id="attn-time">0s</span></div>
   </div>
 
   <!-- Card Grid -->
@@ -4818,7 +4820,7 @@ window.onerror=function(msg,url,line,col,err){
   <div id="fc-modal">
     <button onclick="if(window.FG_Challenge)FG_Challenge._close();" style="position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;border:1px solid rgba(122,179,86,0.1);background:rgba(13,16,12,0.6);color:var(--muted);font-size:0.7rem;cursor:pointer;z-index:1;display:flex;align-items:center;justify-content:center;">✕</button>
     <div id="fc-title">FERAL SEED CHALLENGE</div>
-    <div id="fc-subtitle">Find 1 valid SET — 3 cards where each trait is all same or all different</div>
+    <div id="fc-subtitle">Find 1 valid Trio — 3 cards where each trait is all same or all different</div>
     <div id="fc-board"></div>
     <div id="fc-timer-wrap"><div id="fc-timer-fill" style="width:100%;"></div></div>
     <div id="fc-timer-text">10s remaining</div>
@@ -4863,6 +4865,10 @@ window.onerror=function(msg,url,line,col,err){
   </div>
   <!-- ═══ ONBOARDING ═══ -->
   <div id="pw-onboard">
+    <!-- Splash: seed + root, "lucid winds" (shown before story beats, new users only) -->
+    <div id="pw-splash">
+      <div class="splash-title">lucid <em>winds</em></div>
+    </div>
     <!-- Beat 1: Rain figure + "We lost something" -->
     <!-- Beat 1: Zoomed out, rain, figure -->
     <div class="ob-beat show" id="ob-beat1">
@@ -7024,8 +7030,8 @@ document.addEventListener('keydown', function(e) {
     if(document.hidden) _ctx.suspend(); else _ctx.resume();
   });
 
-  // ── Pheno Match Chimes — C-E-G ascending triad ──
-  // ── Pheno Match — Zen singing-bowl chord swell ──
+  // ── Trios Chimes — C-E-G ascending triad ──
+  // ── Trios — Zen singing-bowl chord swell ──
   // Pure sine triad C-E-G, slow attack (0.35s), long sustain, gentle 2.5s release.
   // Max gain capped at 0.15 — extremely calm, meditative.
   // Phase 14 verified: pure-sine singing-bowl · 0.35s attack · 2.8s release · maxGain=0.15
@@ -7422,7 +7428,7 @@ document.addEventListener('keydown', function(e) {
     // Daily
     if (r.daily && r.daily.date === today) {
       document.getElementById('rec-daily').textContent = fmtRecord(r.daily.time);
-      document.getElementById('rec-daily-phenos').textContent = r.daily.sets + ' phenos';
+      document.getElementById('rec-daily-phenos').textContent = r.daily.sets + ' trios';
       document.getElementById('rec-games').textContent = r.daily.games || 0;
     } else {
       document.getElementById('rec-daily').textContent = '—:——';
@@ -7634,8 +7640,7 @@ document.addEventListener('keydown', function(e) {
     });
 
     document.getElementById('s-remain').textContent = deck.length;
-    var _ssd=document.getElementById('ss-deck');if(_ssd)_ssd.textContent=deck.length;
-
+    
     // Check if any sets exist
     if (!findPheno() && deck.length === 0) {
       var finalTime = getTimeSec();
@@ -7643,9 +7648,9 @@ document.addEventListener('keydown', function(e) {
       var result = checkAndSaveRecord(finalTime, phenosFound);
       checkParBeat(finalTime);
 
-      // ═══ SET CELEBRATION — with progress context ═══
+      // ═══ TRIOS CELEBRATION — with progress context ═══
       if(typeof gtag!=='undefined') gtag('event','game_complete',{phenos:phenosFound,time:getTimeSec(),new_record:result.newAllTime||false,new_daily:result.newDaily||false,ref_code:window._swsRef||''});
-      var celebMsg = phenosFound + ' PHENOS IN ' + getTimeStr();
+      var celebMsg = phenosFound + ' TRIOS IN ' + getTimeStr();
       var celebSub = '';
       if (result.newAllTime) celebSub = '🏆 NEW ALL-TIME RECORD!';
       else if (result.newDaily) celebSub = '⭐ NEW DAILY BEST!';
@@ -7709,8 +7714,7 @@ document.addEventListener('keydown', function(e) {
         if (navigator.vibrate) try { navigator.vibrate([30,50,30]); } catch(e){}
         phenosFound++;
         document.getElementById('s-found').textContent = phenosFound;
-        var _ssp=document.getElementById('ss-phenos');if(_ssp)_ssp.textContent=phenosFound;
-        // P2 — Chimes
+                // P2 — Chimes
         if (window.FG_Audio && FG_Audio.enabled) {
           FG_Audio.playChime(0);
           FG_Audio.playChime(1);
@@ -7784,8 +7788,7 @@ document.addEventListener('keydown', function(e) {
     selected = [];
     phenosFound = 0;
     document.getElementById('s-found').textContent = '0';
-    var _ssp2=document.getElementById('ss-phenos');if(_ssp2)_ssp2.textContent='0';
-    for (var i = 0; i < 12; i++) board.push(deck.pop());
+        for (var i = 0; i < 12; i++) board.push(deck.pop());
     startTime = Date.now();
     startTimer();
     renderBoard();
@@ -7817,7 +7820,7 @@ document.addEventListener('keydown', function(e) {
     if (hintActive) { clearHint(); return; }
 
     var s = findPheno();
-    if (!s) { setMsg('No phenos on the board! Add cards.', 'hint'); return; }
+    if (!s) { setMsg('No trios on the board! Add cards.', 'hint'); return; }
     var cards = document.querySelectorAll('.grove-card');
 
     hintActive = true;
@@ -7926,7 +7929,7 @@ document.addEventListener('keydown', function(e) {
           tRenderGrid();
         }, 800);
       } else if (!tFindPheno() && tDeck.length === 0) {
-        document.getElementById('tut-msg').innerHTML = '<span style="color:var(--sage);font-size:0.7rem;">Practice complete! You found '+tScore+' phenos. Ready to play for real?</span>';
+        document.getElementById('tut-msg').innerHTML = '<span style="color:var(--sage);font-size:0.7rem;">Practice complete! You found '+tScore+' trios. Ready to play for real?</span>';
       }
     }
 
@@ -7978,7 +7981,7 @@ document.addEventListener('keydown', function(e) {
     h += '</div>';
     // Stats bar
     h += '<div style="display:flex;gap:0.5rem;margin-bottom:0.35rem;font-family:Bebas Neue,sans-serif;font-size:clamp(0.75rem,2.2vw,0.9rem);color:var(--muted);">';
-    h += '<span>PHENOS: <span id="tut-score" style="color:var(--sage);">0</span></span>';
+    h += '<span>TRIOS: <span id="tut-score" style="color:var(--sage);">0</span></span>';
     h += '<span>DECK: <span id="tut-deck" style="color:var(--cream);">'+tDeck.length+'</span></span>';
     h += '</div>';
     // Grid
@@ -8269,7 +8272,7 @@ document.addEventListener('keydown', function(e) {
 
     el.innerHTML = generatePlantSVG(hash, 70, prog) +
       '<div class="focus-plant-label">' + label + '</div>' +
-      '<div class="focus-plant-stage">' + phenosFound + ' phenos</div>';
+      '<div class="focus-plant-stage">' + phenosFound + ' trios</div>';
 
     // Milestone at full bloom
     if (prog >= 1.0 && !milestoneShown) {
@@ -27055,7 +27058,7 @@ document.addEventListener('keydown', function(e) {
     if(window._updateGameDew)_updateGameDew();
     window.scrollTo(0, 0);
     // Game tab: restore #sw / #fg-ag state based on active game
-    // Hide SET topbar on non-game tabs, show on game tab
+    // Hide Trios topbar on non-game tabs, show on game tab
     var _swEl = document.getElementById('sw');
     var _agEl = document.getElementById('fg-ag');
     var _ssbEl = document.getElementById('set-status');
@@ -27068,7 +27071,7 @@ document.addEventListener('keydown', function(e) {
         if (_ssbEl) _ssbEl.style.display = 'none';
         if (_agEl) _agEl.classList.add('on');
       } else {
-        // SET game or no game — show topbar with pheno/deck counts
+        // Trios game or no game — show topbar with trio/deck counts
         if (_swEl) _swEl.style.display = '';
         if (_ssbEl) _ssbEl.style.display = '';
       }
@@ -30922,7 +30925,7 @@ function showTP(p,mk){
   var st=document.getElementById('wtp-status');
   if(st){
     if(!p.own&&p.defenderGame&&p.defenderGame!=='none'){
-      var _gNames={set:'SET',memory:'Memory',growth:'Growth',color:'Color',math:'Math',word:'Word'};
+      var _gNames={set:'Trios',memory:'Memory',growth:'Growth',color:'Color',math:'Math',word:'Word'};
       st.textContent=_gNames[p.defenderGame]||p.defenderGame;
       st.style.color='var(--gold)';
       st.parentNode.querySelector('.wtp2-stat-lbl').textContent='Challenge';
@@ -30973,8 +30976,8 @@ function showTP(p,mk){
     // Defense change button — show current game, tap to change
     var defBtn=document.getElementById('wtp-defense');
     if(defBtn){
-      var _gNames={set:'SET',memory:'Memory',growth:'Growth',color:'Color',math:'Math',word:'Word'};
-      var _curDef=_gNames[p.defenderGame]||'SET';
+      var _gNames={set:'Trios',memory:'Memory',growth:'Growth',color:'Color',math:'Math',word:'Word'};
+      var _curDef=_gNames[p.defenderGame]||'Trios';
       defBtn.querySelector('.wtp2-btn-lbl').textContent=_curDef;
       defBtn.onclick=function(){_changeDefense(p);};
     }
@@ -31385,7 +31388,7 @@ function _showDefenderPicker(){
   if(sub)sub.textContent='Pick the challenge that protects your plant';
 
   var games=[
-    {id:'set',name:'Quick SET',icon:'\ud83c\udccf',desc:'Find 3 matching cards',diff:'Easy'},
+    {id:'set',name:'Quick Trios',icon:'\ud83c\udccf',desc:'Find 3 matching cards',diff:'Easy'},
     {id:'memory',name:'Memory',icon:'\ud83e\udde0',desc:'Remember the pattern',diff:'Medium'},
     {id:'growth',name:'Growth',icon:'\ud83c\udf31',desc:'Order the stages',diff:'Medium'},
     {id:'color',name:'Color',icon:'\ud83c\udfa8',desc:'Match the target hue',diff:'Easy'},
@@ -31819,7 +31822,7 @@ function _changeDefense(p){
   if(title)title.textContent='CHANGE DEFENSE';
   if(sub)sub.textContent='Pick the challenge harvesters must beat';
   var games=[
-    {id:'set',name:'Quick SET',icon:'\ud83c\udccf',desc:'Find 3 matching cards',diff:'Easy'},
+    {id:'set',name:'Quick Trios',icon:'\ud83c\udccf',desc:'Find 3 matching cards',diff:'Easy'},
     {id:'memory',name:'Memory',icon:'\ud83e\udde0',desc:'Remember the pattern',diff:'Medium'},
     {id:'growth',name:'Growth',icon:'\ud83c\udf31',desc:'Order the stages',diff:'Medium'},
     {id:'color',name:'Color',icon:'\ud83c\udfa8',desc:'Match the target hue',diff:'Easy'},
@@ -31859,7 +31862,7 @@ window._applyDefenseChange=function(hash,gameId){
       window.db.collection('wildDrops').doc(docId).update({defenderGame:gameId}).catch(function(){});
     }
   }catch(e){}
-  var _gNames={set:'SET',memory:'Memory',growth:'Growth',color:'Color',math:'Math',word:'Word'};
+  var _gNames={set:'Trios',memory:'Memory',growth:'Growth',color:'Color',math:'Math',word:'Word'};
   _toast('\ud83d\udee1 Defense changed to '+(_gNames[gameId]||gameId));
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
 };
@@ -31935,7 +31938,7 @@ var G_CATS=[
   {key:'creative',label:'CREATIVE',       icon:'\ud83c\udfb5'}
 ];
 var G=[
-{id:'set',n:'Pheno Match',i:'\ud83c\udccf',r:'Tap 3 cards where each trait is ALL same or ALL different.',cat:'card',thumb:'assets/games/thumbs/set.png'},
+{id:'set',n:'Trios',i:'\ud83c\udccf',r:'Tap 3 cards where each trait is ALL same or ALL different.',cat:'card',thumb:'assets/games/thumbs/set.png'},
 {id:'memory',n:'Memory Garden',i:'\ud83e\udde0',r:'Flip 2 cards per turn. Match all pairs to clear the board.',cat:'pattern',thumb:'assets/games/thumbs/memory.png'},
 {id:'merge',n:'Merge Garden',i:'\ud83c\udf3f',r:'Swipe or tap arrows to merge same-number tiles. Reach 2048!',cat:'puzzle',thumb:'assets/games/thumbs/merge.png'},
 {id:'simon',n:'Seasonal Cycle',i:'\ud83d\udd04',r:'Watch the seasonal pattern flash, then repeat it in order.',cat:'pattern',thumb:'assets/games/thumbs/simon.png'},
@@ -31944,7 +31947,10 @@ var G=[
 {id:'sudoku',n:'Soil Grid',i:'\ud83d\udd22',r:'Fill every row, column and 3\u00d73 box with digits 1-9.',cat:'puzzle',thumb:'assets/games/thumbs/sudoku.png'},
 {id:'wordsearch',n:'Root Words',i:'\ud83d\udd24',r:'Tap letters in sequence to find hidden botanical words.',cat:'puzzle',thumb:'assets/games/thumbs/wordsearch.png'},
 {id:'hanoi',n:'Root Stack',i:'\ud83d\uddfc',r:'Move all discs to the right peg. Never place big on small.',cat:'puzzle',thumb:'assets/games/thumbs/hanoi.png'},
-{id:'dots',n:'15 Puzzle',i:'\ud83e\udde9',r:'Slide tiles into the empty space. Arrange them 1-15 in order.',cat:'puzzle',thumb:'assets/games/thumbs/dots.png'},
+{id:'slider',n:'15 Puzzle',i:'\ud83e\udde9',r:'Slide tiles into the empty space. Arrange them 1-15 in order.',cat:'puzzle',thumb:'assets/games/thumbs/slider.png'},
+{id:'picross',n:'Seed Grid',i:'\ud83d\udd33',r:'Fill or cross squares from row/column clues to reveal a hidden picture.',cat:'puzzle',thumb:'assets/games/thumbs/picross.png'},
+{id:'colorsort',n:'Petal Sort',i:'\ud83e\uddea',r:'Pour colors between tubes until each holds a single color. Match tops to pour.',cat:'puzzle',thumb:'assets/games/thumbs/colorsort.png'},
+{id:'battleship',n:'Deep Water',i:'\ud83c\udf0a',r:'Hunt hidden vessels on a 10\u00d710 grid. Sink them all in as few shots as you can.',cat:'board',thumb:'assets/games/thumbs/battleship.png'},
 {id:'flood',n:'Autumn Leaves',i:'\ud83c\udf42',r:'Tap a leaf to flood from the top-left. Cover the forest floor in one color!',cat:'puzzle',thumb:'assets/games/thumbs/flood.png'},
 {id:'pipe',n:'Vine Flow',i:'\ud83c\udf3f',r:'Rotate vine tiles to connect all vines back to the root!',cat:'puzzle',thumb:'assets/games/thumbs/pipe.png'},
 {id:'chess',n:'Grove Chess',i:'\u265f',r:'Classic chess against AI. Tap a piece, tap where to move.',cat:'board',thumb:'assets/games/thumbs/chess.png'},
@@ -31956,7 +31962,7 @@ var G=[
 {id:'freecell',n:'FreeCell',i:'\ud83c\udfd7',r:'All cards visible. Use 4 free cells to maneuver. Pure strategy!',cat:'card',thumb:'assets/games/thumbs/freecell.png'},
 {id:'pyramid',n:'Pyramid',i:'\ud83d\udd3a',r:'Remove pairs that sum to 13. Kings remove alone. Clear the pyramid!',cat:'card',thumb:'assets/games/thumbs/pyramid.png'},
 {id:'tripeaks',n:'TriPeaks',i:'\u26f0',r:'Build up or down on the waste pile to clear three peaks.',cat:'card',thumb:'assets/games/thumbs/tripeaks.png'},
-{id:'mastermind',n:'Seed Code',i:'\ud83c\udf31',r:'Crack the hidden 4-seed code. Green = right seed, right spot. Gold = right seed, wrong spot.',cat:'puzzle',thumb:'assets/games/thumbs/mastermind.png'},
+{id:'mastermind',n:'Seed Code',i:'\ud83c\udf31',r:'Crack the hidden 4-seed code. Green = right seed, right spot. Gold = right seed, wrong spot.',cat:'board',thumb:'assets/games/thumbs/mastermind.png'},
 {id:'checkers',n:'Grove Checkers',i:'\u265f',r:'Jump over opponent pieces to capture. Reach the far side to crown a King.',cat:'board',thumb:'assets/games/thumbs/checkers.png'},
 {id:'reversi',n:'Moss & Lichen',i:'\u25cf',r:'Place moss to surround and flip lichen. Control the most territory to win.',cat:'board',thumb:'assets/games/thumbs/reversi.png'},
 {id:'yahtzee',n:'Seed Toss',i:'\ud83c\udfb2',r:'Roll 5 seed dice up to 3 times. Hold keepers, score in 13 categories. Aim high!',cat:'dice',thumb:'assets/games/thumbs/yahtzee.png'},
@@ -32361,7 +32367,8 @@ function _updateGP(){
   var remain=30-inPlant;
   var _nearCls=prog>=0.83&&prog<1?' near-bloom':'';
   var _urgentLabel=prog>=0.83&&prog<1?' \u2014 <span style="color:var(--gold);">'+remain+' to bloom!</span>':'';
-  el.innerHTML='<div style="flex:1;min-width:0"><div class="gp-bar"><div class="gp-fill'+_nearCls+'" style="width:'+pct+'%;transition:none"></div></div></div>';
+  var _gpTxt='<span class="gp-count">'+inPlant+'/30</span>HASHES<span class="gp-stage">· '+lbl+(prog>=0.83&&prog<1?' · '+remain+' TO BLOOM':'')+'</span>';
+  el.innerHTML='<div class="gp-lbl">'+_gpTxt+'</div><div style="flex:1;min-width:0"><div class="gp-bar"><div class="gp-fill'+_nearCls+'" style="width:'+pct+'%;transition:none"></div></div></div>';
   setTimeout(function(){var f=el.querySelector('.gp-fill');if(f)f.style.transition='';},60);
 }
 // ═══ GAME SOUND SYSTEM — botanical synth, premium feel ═══
@@ -32633,7 +32640,7 @@ function GM(a){var IC=[
 ];var pr=8,cd=[],fl=[],mt=0,mv=0,lk=false;
   ms(a,'🎴 <strong id="Mm">0</strong>/<strong id="Mt">8</strong> · 👆 <strong id="Mv">0</strong>');mm(a);
   var g=document.createElement('div');g.className='mg';g.id='Mg';g.style.gridTemplateColumns='repeat(4,1fr)';a.appendChild(g);
-  mc(a).innerHTML='<select class="gsl" id="Md" onchange="_MN()"><option value="6">Easy 3×4</option><option value="8" selected>Medium 4×4</option><option value="10">Hard 5×4</option><option value="12">Expert 6×4</option></select> <button class="gb" onclick="_MN()">🔄 New</button>';
+  mc(a).innerHTML='<select class="gsl" id="Md" onchange="_MN()"><option value="6">Easy 3×4</option><option value="8" selected>Medium 4×4</option><option value="10">Hard 5×4</option><option value="12">Expert 6×4</option></select> <button class="gb-new" onclick="_MN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   window._MN=function(){pr=parseInt(document.getElementById('Md').value);_setDiff(pr<=6?'easy':pr<=8?'medium':pr<=10?'hard':'expert');var p=sh(IC.slice()).slice(0,pr);cd=sh(p.concat(p.slice()));fl=[];mt=0;mv=0;lk=false;document.getElementById('Mm').textContent='0';document.getElementById('Mt').textContent=pr;document.getElementById('Mv').textContent='0';g.style.gridTemplateColumns='repeat('+(pr<=6?3:pr<=8?4:pr<=10?5:6)+',1fr)';sm('');rn()};
   function rn(){g.innerHTML='';cd.forEach(function(ic,i){var e=document.createElement('div');e.className='mw';e.innerHTML='<div class="mi" id="M'+i+'"><div class="mx mb"></div><div class="mx mf"><div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">'+ic+'</div></div></div>';e.onclick=function(){if(lk)return;var n=document.getElementById('M'+i);if(!n||n.classList.contains('fl')||n.classList.contains('mt'))return;if(fl.length>=2)return;n.classList.add('fl');_play('flip');fl.push(i);if(fl.length===2){mv++;document.getElementById('Mv').textContent=mv;lk=true;if(cd[fl[0]]===cd[fl[1]]){setTimeout(function(){_play('match');document.getElementById('M'+fl[0]).classList.add('mt');document.getElementById('M'+fl[1]).classList.add('mt');mt++;_e('progress');document.getElementById('Mm').textContent=mt;if(mt%Math.max(2,Math.floor(pr/3))===0&&mt<pr)_e('milestone');if(mt>=pr){_e('game_win');_playWin();sm('🌿 Complete! '+mv+' moves');_sr('memory',{w:true,s:mt})}else sm((pr-mt)+' left');fl=[];lk=false},350)}else{setTimeout(function(){var x=document.getElementById('M'+fl[0]),y=document.getElementById('M'+fl[1]);if(x)x.classList.add('wr');if(y)y.classList.add('wr');_play('buzz');setTimeout(function(){if(x)x.classList.remove('fl','wr');if(y)y.classList.remove('fl','wr');fl=[];lk=false},400)},550);sm('Not a match')}}};g.appendChild(e)})}_MN();}
 
@@ -32682,7 +32689,7 @@ function GR(a){
   db.style.cssText='display:flex;justify-content:center;gap:clamp(8px,3vw,14px);padding:clamp(10px,3vw,16px)';
   db.innerHTML='<button class="gb" style="min-width:64px;min-height:64px;font-size:1.5rem;padding:12px 18px" onclick="_Rm(\'left\')">⬅</button><button class="gb" style="min-width:64px;min-height:64px;font-size:1.5rem;padding:12px 18px" onclick="_Rm(\'up\')">⬆</button><button class="gb" style="min-width:64px;min-height:64px;font-size:1.5rem;padding:12px 18px" onclick="_Rm(\'down\')">⬇</button><button class="gb" style="min-width:64px;min-height:64px;font-size:1.5rem;padding:12px 18px" onclick="_Rm(\'right\')">➡</button>';
   a.appendChild(db);
-  mc(a).innerHTML='<button class="gb" onclick="_RN()">🔄 New</button>';
+  mc(a).innerHTML='<button class="gb-new" onclick="_RN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   // Tile tracking — each active tile is an object {el, val, idx}
   var tiles=[];
@@ -32951,7 +32958,7 @@ function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null;
     +'<div id="Soc" onclick="_SOC()" class="gb" style="min-width:90px;text-align:center"><span style="font-size:11px;color:#C8A84B;letter-spacing:.06em;font-family:Bebas Neue,sans-serif">OCTAVE ▾</span><br><span style="color:#fff;font-family:DM Mono,monospace;font-size:14px">'+ocKeys[_ocIdx]+'</span></div>'
     +'<div id="SocDD" style="display:none;position:absolute;bottom:100%;left:0;right:0;min-width:130px;background:#1a1f17;border:2px solid #7ab356;border-radius:10px;margin-bottom:6px;z-index:999;max-height:260px;overflow-y:auto;box-shadow:0 -4px 20px rgba(0,0,0,.5)">'+ocOpts+'</div>'
     +'</div>'
-    +'<button class="gb" onclick="_SN()">🔄 New</button>';
+    +'<button class="gb-new" onclick="_SN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function _updSchDD(){var h='';for(var ci=0;ci<chKeys.length;ci++)h+='<div onclick="_SPC('+ci+')" style="padding:10px 16px;cursor:pointer;font-family:DM Mono,monospace;font-size:14px;color:'+(ci===_chIdx?'var(--gold)':'#fff')+';border-bottom:1px solid rgba(122,179,86,.12);min-height:44px;display:flex;align-items:center;background:'+(ci===_chIdx?'rgba(122,179,86,.15)':'transparent')+'">'+chKeys[ci]+'</div>';document.getElementById('SchDD').innerHTML=h}
   function _updSocDD(){var h='';for(var oi=0;oi<ocKeys.length;oi++)h+='<div onclick="_SPO('+oi+')" style="padding:10px 16px;cursor:pointer;font-family:DM Mono,monospace;font-size:14px;color:'+(oi===_ocIdx?'var(--gold)':'#fff')+';border-bottom:1px solid rgba(122,179,86,.12);min-height:44px;display:flex;align-items:center;background:'+(oi===_ocIdx?'rgba(122,179,86,.15)':'transparent')+'">'+ocKeys[oi]+'</div>';document.getElementById('SocDD').innerHTML=h}
   // Toggle chord dropdown
@@ -32989,7 +32996,7 @@ function GL(a){var SZ=5,gr=[],ini=[],mv=0,sl=0,pz=0;
   ms(a,'#<strong id="Lp">1</strong> · 👆<strong id="Lm">0</strong> · ✅<strong id="Ls">0</strong>');mm(a);
   var bw=document.createElement('div');bw.style.cssText='position:relative;width:clamp(300px,92vw,420px);margin:0 auto';
   var bg=document.createElement('img');bg.src='assets/games/lights/grid.png';bg.style.cssText='width:100%;display:block;border-radius:8px';bw.appendChild(bg);
-  var gd=document.createElement('div');gd.className='lg';gd.id='Lg';gd.style.cssText='position:absolute;top:7%;left:7%;right:7%;bottom:7%;grid-template-columns:repeat(5,1fr);gap:clamp(2px,1vw,5px)';bw.appendChild(gd);a.appendChild(bw);mc(a).innerHTML='<button class="gb" onclick="_LN()">🔄 New</button><button class="gb" onclick="_LR()">↩️ Reset</button>';
+  var gd=document.createElement('div');gd.className='lg';gd.id='Lg';gd.style.cssText='position:absolute;top:7%;left:7%;right:7%;bottom:7%;grid-template-columns:repeat(5,1fr);gap:clamp(2px,1vw,5px)';bw.appendChild(gd);a.appendChild(bw);mc(a).innerHTML='<button class="gb-new" onclick="_LN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button><button class="gb" onclick="_LR()">↩️ Reset</button>';
   function tg(r,c){if(r>=0&&r<SZ&&c>=0&&c<SZ)gr[r*SZ+c]=gr[r*SZ+c]?0:1}function ok(){for(var i=0;i<SZ*SZ;i++)if(gr[i])return false;return true}
   var _lampOn='assets/games/lights/shroom-on.png';
   var _lampOff='assets/games/lights/shroom-off.png';
@@ -33002,7 +33009,7 @@ function GL(a){var SZ=5,gr=[],ini=[],mv=0,sl=0,pz=0;
 function GN(a){var rw=10,cl=10,mn=15,bd=[],ov=false,fi=true,fm=false,rv=0,fg=0,sf=0;
   ms(a,'🦠<strong id="Nn">15</strong> · 🚩<strong id="Nf">0</strong> · 🌿<strong id="Nr">0</strong>/<strong id="Ns">85</strong>');mm(a);
   var gd=document.createElement('div');gd.className='ng';gd.id='Ng';gd.style.gridTemplateColumns='repeat('+cl+',1fr)';a.appendChild(gd);
-  mc(a).innerHTML='<select class="gsl" id="Nd" onchange="_NN()"><option value="8-10">Easy</option><option value="10-15" selected>Medium</option><option value="12-25">Hard</option></select> <button class="gb" id="Nfb" onclick="_NF()">🚩 Flag</button> <button class="gb" onclick="_NN()">🔄 New</button>';
+  mc(a).innerHTML='<select class="gsl" id="Nd" onchange="_NN()"><option value="8-10">Easy</option><option value="10-15" selected>Medium</option><option value="12-25">Hard</option></select> <button class="gb" id="Nfb" onclick="_NF()">🚩 Flag</button> <button class="gb-new" onclick="_NN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function ix(r,c){return r*cl+c}function pl(sr,sc){var p=0;while(p<mn){var r=Math.floor(Math.random()*rw),c=Math.floor(Math.random()*cl);if(Math.abs(r-sr)<=1&&Math.abs(c-sc)<=1||bd[ix(r,c)].m)continue;bd[ix(r,c)].m=true;p++}for(var r=0;r<rw;r++)for(var c=0;c<cl;c++){if(bd[ix(r,c)].m)continue;var n=0;for(var dr=-1;dr<=1;dr++)for(var dc=-1;dc<=1;dc++){var nr=r+dr,nc=c+dc;if(nr>=0&&nr<rw&&nc>=0&&nc<cl&&bd[ix(nr,nc)].m)n++}bd[ix(r,c)].a=n}}
   function re(r,c){if(r<0||r>=rw||c<0||c>=cl)return;var x=bd[ix(r,c)];if(x.rv||x.fl)return;_play('dig');x.rv=true;rv++;if(x.m){ov=true;bd.forEach(function(c){if(c.m)c.sm=true});x.ht=true;_e('game_loss');_play('lose');sm('🦠 Root rot!');_sr('mines',{w:false,s:rv});rn();return}if(rv%Math.max(8,Math.floor(sf/5))===0)_e('cleared');if(x.a===0)for(var dr=-1;dr<=1;dr++)for(var dc=-1;dc<=1;dc++)re(r+dr,c+dc)}
   function cw(){document.getElementById('Nr').textContent=rv;if(rv===sf&&!ov){ov=true;_e('game_win');sm('🌿 Clean!');_sr('mines',{w:true,s:rv})}}
@@ -33013,7 +33020,7 @@ function GN(a){var rw=10,cl=10,mn=15,bd=[],ov=false,fi=true,fm=false,rv=0,fg=0,s
 // ═══ SUDOKU ═══
 function GU(a){var bd=new Array(81).fill(0),sol=new Array(81).fill(0),fix=new Array(81).fill(false),sel=-1,_fc=0;_setDiff('medium');ms(a);mm(a);
   var gd=document.createElement('div');gd.className='ug';gd.id='Ug';a.appendChild(gd);
-  var pd=document.createElement('div');pd.className='up';for(var n=1;n<=9;n++)pd.innerHTML+='<div class="upb" onclick="_UN('+n+')">'+n+'</div>';pd.innerHTML+='<div class="upb" onclick="_UN(0)" style="color:var(--muted)">✕</div>';a.appendChild(pd);mc(a).innerHTML='<select class="gsl" id="Ud" onchange="_UG()"><option value="35">Easy</option><option value="45" selected>Medium</option><option value="52">Hard</option></select> <button class="gb" onclick="_UG()">🔄 New</button>';
+  var pd=document.createElement('div');pd.className='up';for(var n=1;n<=9;n++)pd.innerHTML+='<div class="upb" onclick="_UN('+n+')">'+n+'</div>';pd.innerHTML+='<div class="upb" onclick="_UN(0)" style="color:var(--muted)">✕</div>';a.appendChild(pd);mc(a).innerHTML='<select class="gsl" id="Ud" onchange="_UG()"><option value="35">Easy</option><option value="45" selected>Medium</option><option value="52">Hard</option></select> <button class="gb-new" onclick="_UG()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function gen(){var b=new Array(81).fill(0);function vl(p,n){var r=Math.floor(p/9),c=p%9,br=Math.floor(r/3)*3,bc=Math.floor(c/3)*3;for(var i=0;i<9;i++)if(b[r*9+i]===n||b[i*9+c]===n)return false;for(var dr=0;dr<3;dr++)for(var dc=0;dc<3;dc++)if(b[(br+dr)*9+(bc+dc)]===n)return false;return true}function s(p){if(p>=81)return true;var nums=sh([1,2,3,4,5,6,7,8,9]);for(var i=0;i<9;i++){if(vl(p,nums[i])){b[p]=nums[i];if(s(p+1))return true;b[p]=0}}return false}s(0);sol=b.slice();bd=b.slice();var rm=parseInt((document.getElementById('Ud')||{}).value)||45;_setDiff(rm<=35?'easy':rm<=45?'medium':'hard');while(rm>0){var i=Math.floor(Math.random()*81);if(bd[i]){bd[i]=0;rm--}}for(var i=0;i<81;i++)fix[i]=bd[i]!==0;_fc=0}
   function rn(){gd.innerHTML='';for(var i=0;i<81;i++){var d=document.createElement('div');d.className='uc'+(fix[i]?' uf':'')+(i===sel?' us':'')+(bd[i]&&!fix[i]&&bd[i]!==sol[i]?' ue':'');d.textContent=bd[i]||'';d.setAttribute('data-i',i);if(!fix[i])d.onclick=function(){sel=parseInt(this.getAttribute('data-i'));rn()};gd.appendChild(d)}var done=true;for(var i=0;i<81;i++)if(bd[i]!==sol[i]){done=false;break}if(done&&bd[0]){_e('game_win');_playWin();sm('🌿 Complete!');_sr('sudoku',{w:true,s:81})}}
   window._UN=function(n){if(sel<0||fix[sel])return;_play('tap');var prev=bd[sel];bd[sel]=n;if(n&&n===sol[sel]&&prev!==sol[sel]){_fc++;if(_fc%9===0)_e('progress')}rn()};window._UG=function(){sel=-1;_fc=0;gen();sm('');rn()};_UG();}
@@ -33023,7 +33030,7 @@ function GW(a){var SZ=10,grid=[],words=[],found=[],sel=[];
   var BANK=[['FERN','MOSS','SAGE','BLOOM','PETAL','ROOT'],['LEAF','THORN','MAPLE','TULIP','DAISY','CEDAR'],['SOIL','WATER','MULCH','PRUNE','SPORE','FLORA']];
   ms(a,'Found: <strong id="Wf">0</strong>/<strong id="Wt">6</strong>');mm(a);
   var gd=document.createElement('div');gd.className='wg';gd.id='Wg';gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';a.appendChild(gd);
-  var wl=document.createElement('div');wl.id='Wl';wl.style.cssText='display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:8px;font-size:.55rem';a.appendChild(wl);mc(a).innerHTML='<select class="gsl" id="Wd" onchange="_WN()"><option value="8-5">Easy</option><option value="10-6" selected>Medium</option><option value="13-8">Hard</option></select> <button class="gb" onclick="_WN()">🔄 New</button>';
+  var wl=document.createElement('div');wl.id='Wl';wl.style.cssText='display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:8px;font-size:.55rem';a.appendChild(wl);mc(a).innerHTML='<select class="gsl" id="Wd" onchange="_WN()"><option value="8-5">Easy</option><option value="10-6" selected>Medium</option><option value="13-8">Hard</option></select> <button class="gb-new" onclick="_WN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function gen(){var dv=((document.getElementById('Wd')||{}).value||'10-6').split('-');SZ=parseInt(dv[0])||10;var wc=parseInt(dv[1])||6;gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';grid=[];for(var i=0;i<SZ*SZ;i++)grid.push('');var pool=[];BANK.forEach(function(b){b.forEach(function(w){if(w.length<=SZ)pool.push(w)})});words=sh(pool).slice(0,wc);found=[];
     words.forEach(function(w){for(var att=0;att<60;att++){var dir=Math.random()<.5?'h':'v';var r=Math.floor(Math.random()*(dir==='v'?SZ-w.length:SZ));var c=Math.floor(Math.random()*(dir==='h'?SZ-w.length:SZ));var ok=true;for(var k=0;k<w.length;k++){var gi=dir==='h'?r*SZ+c+k:(r+k)*SZ+c;if(grid[gi]&&grid[gi]!==w[k]){ok=false;break}}if(ok){for(var k=0;k<w.length;k++){var gi=dir==='h'?r*SZ+c+k:(r+k)*SZ+c;grid[gi]=w[k]}break}}});
     var A='ABCDEFGHIJKLMNOPQRSTUVWXYZ';for(var i=0;i<SZ*SZ;i++)if(!grid[i])grid[i]=A[Math.floor(Math.random()*26)]}
@@ -33035,7 +33042,7 @@ function GW(a){var SZ=10,grid=[],words=[],found=[],sel=[];
 // ═══ HANOI ═══
 function GH(a){var pegs=[[],[],[]],discs=5,moves=0,sp=-1;var COLS=['#4a7c35','#7ab356','#C8A84B','#c76a30','#4a7aaa','#9b59b6','#c75050'];
   ms(a,'👆<strong id="Hm">0</strong> · Opt:<strong id="Ho">31</strong>');mm(a);
-  var pd=document.createElement('div');pd.className='hp';pd.id='Hp';a.appendChild(pd);mc(a).innerHTML='<select class="gsl" id="Hd" onchange="_HN()"><option value="4">4</option><option value="5" selected>5</option><option value="6">6</option><option value="7">7</option></select> discs <button class="gb" onclick="_HN()">🔄 New</button>';
+  var pd=document.createElement('div');pd.className='hp';pd.id='Hp';a.appendChild(pd);mc(a).innerHTML='<select class="gsl" id="Hd" onchange="_HN()"><option value="4">4</option><option value="5" selected>5</option><option value="6">6</option><option value="7">7</option></select> discs <button class="gb-new" onclick="_HN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function rn(){pd.innerHTML='';for(var p=0;p<3;p++){var pg=document.createElement('div');pg.className='hpeg';pg.setAttribute('data-p',p);pg.onclick=function(){var pi=parseInt(this.getAttribute('data-p'));if(sp<0){if(pegs[pi].length)sp=pi;rn()}else{if(sp===pi){sp=-1;rn();return}if(pegs[pi].length&&pegs[pi][pegs[pi].length-1]<pegs[sp][pegs[sp].length-1]){sm('Too big!');sp=-1;rn();return}_play('snap');pegs[pi].push(pegs[sp].pop());moves++;if(moves%(discs*2)===0&&pegs[2].length<discs)_e('milestone');document.getElementById('Hm').textContent=moves;sp=-1;if(pegs[2].length===discs){_e('game_win');sm('🌿 '+moves+' moves!');_sr('hanoi',{w:true,s:moves})}rn()}};
     if(sp===p)pg.style.background='rgba(200,168,78,.08)';
     var rod=document.createElement('div');rod.style.cssText='width:4px;height:'+(discs*16+20)+'px;background:rgba(74,124,53,.3);border-radius:2px;position:absolute;bottom:0;left:50%;transform:translateX(-50%)';pg.appendChild(rod);
@@ -33049,7 +33056,7 @@ function GFL(a){var SZ=8,grid=[],moves=0,maxMoves=22;
   ms(a,'Moves: <strong id="FFm">0</strong>/'+maxMoves);mm(a);
   var gd=document.createElement('div');gd.className='lg';gd.id='FFg';gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';gd.style.gap='2px';gd.style.width='clamp(300px,92vw,420px)';a.appendChild(gd);
   var pb=document.createElement('div');pb.className='lg';pb.style.gridTemplateColumns='repeat(6,1fr)';pb.style.gap='8px';pb.style.padding='12px';pb.style.width='clamp(300px,92vw,420px)';a.appendChild(pb);
-  mc(a).innerHTML='<button class="gb" onclick="_FFN()">🔄 New</button>';
+  mc(a).innerHTML='<button class="gb-new" onclick="_FFN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function gen(){grid=[];for(var i=0;i<SZ*SZ;i++)grid.push(Math.floor(Math.random()*6));moves=0}
   function flood(oc,nc){if(oc===nc)return;var vis=[];for(var x=0;x<SZ*SZ;x++)vis.push(false);var q=[0];while(q.length){var i=q.shift();if(i<0||i>=SZ*SZ||vis[i])continue;if(grid[i]!==oc&&grid[i]!==nc)continue;vis[i]=true;if(grid[i]===oc)grid[i]=nc;var r=Math.floor(i/SZ),c=i%SZ;if(r>0)q.push(i-SZ);if(r<SZ-1)q.push(i+SZ);if(c>0)q.push(i-1);if(c<SZ-1)q.push(i+1)}}
   function rn(){gd.innerHTML='';for(var i=0;i<SZ*SZ;i++){var d=document.createElement('div');d.className='lc';d.style.background='url('+LF[grid[i]]+') center/cover '+CC[grid[i]];d.setAttribute('data-i',i);gd.appendChild(d)}
@@ -33064,7 +33071,7 @@ function GPP(a){var SZ=6,grid=[],_rc=0,srcI=0,endI=0;
   var EX_ST=[1,0,1,0],EX_CR=[1,1,0,0],EX_EN=[0,0,0,1];
   ms(a,'<span id="PPc">0</span>/'+SZ*SZ+' vines');mm(a);
   var gd=document.createElement('div');gd.className='lg';gd.id='PP';gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';gd.style.gap='2px';gd.style.width='clamp(300px,92vw,420px)';a.appendChild(gd);
-  mc(a).innerHTML='<button class="gb" onclick="_PPN()">🔄 New</button>';
+  mc(a).innerHTML='<button class="gb-new" onclick="_PPN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function dirOf(f,t){var d=t-f;return d===-SZ?0:d===1?1:d===SZ?2:d===-1?3:-1}
   function adjCnt(ci,vis){var cy=Math.floor(ci/SZ),cx=ci%SZ,c=0;if(cy>0&&!vis[ci-SZ])c++;if(cx<SZ-1&&!vis[ci+1])c++;if(cy<SZ-1&&!vis[ci+SZ])c++;if(cx>0&&!vis[ci-1])c++;return c}
   function makePath(){
@@ -33940,7 +33947,7 @@ function GCH(a){
   mm(a,'Your move');
   boardEl=document.createElement('div');boardEl.id='CHboard';
   boardEl.style.cssText='padding:4px 0';a.appendChild(boardEl);
-  mc(a).innerHTML='<select class="gsl" id="CHd" style="max-width:130px" onchange="var v=this.value;_setDiff(v===\'1\'?\'easy\':v===\'2\'?\'medium\':v===\'3\'?\'hard\':\'expert\')"><option value="1">Seedling</option><option value="2" selected>Sapling</option><option value="3">Old Growth</option><option value="4">Ancient</option></select><button class="gb" onclick="_CHNew()">🔄 New</button><button class="gb" onclick="_CHUndo()">↩ Undo</button>';
+  mc(a).innerHTML='<select class="gsl" id="CHd" style="max-width:130px" onchange="var v=this.value;_setDiff(v===\'1\'?\'easy\':v===\'2\'?\'medium\':v===\'3\'?\'hard\':\'expert\')"><option value="1">Seedling</option><option value="2" selected>Sapling</option><option value="3">Old Growth</option><option value="4">Ancient</option></select><button class="gb-new" onclick="_CHNew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button><button class="gb" onclick="_CHUndo()">↩ Undo</button>';
   _setDiff('medium');
   initBoard();render();
 }
@@ -33954,7 +33961,7 @@ function G4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0;
   gd.style.cssText='display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(6,1fr);gap:clamp(3px,1vw,6px);width:clamp(280px,88vw,420px);margin:0 auto;padding:clamp(6px,2vw,10px);background:linear-gradient(180deg,rgba(48,36,20,.95),rgba(32,24,14,.98));border-radius:clamp(8px,2.5vw,14px);border:2px solid rgba(80,60,30,.4);box-shadow:0 4px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(120,90,40,.15)';
   a.appendChild(gd);
   var obDiv=document.createElement('div');obDiv.id='C4ob';obDiv.style.cssText='text-align:center;min-height:40px;padding:4px 0';a.appendChild(obDiv);
-  mc(a).innerHTML='<select class="gsl" id="C4d"><option value="1">Seedling</option><option value="2" selected>Sapling</option><option value="3">Old Growth</option></select><button class="gb" onclick="_C4N()">🔄 New</button>';
+  mc(a).innerHTML='<select class="gsl" id="C4d"><option value="1">Seedling</option><option value="2" selected>Sapling</option><option value="3">Old Growth</option></select><button class="gb-new" onclick="_C4N()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function init(){bd=[];for(var i=0;i<ROWS*COLS;i++)bd.push(0);turn=1;over=false;mv=0;var _cm=document.getElementById('C4m');if(_cm)_cm.textContent='0'}
   function drop(col){for(var r=ROWS-1;r>=0;r--){if(bd[r*COLS+col]===0){bd[r*COLS+col]=turn;return r;}}}
   function check(p){
@@ -34115,7 +34122,7 @@ function GGO(a){
   var cols=[],stock=[],waste=[],deck,gameOver=false,score=35;
   ms(a,'Left: <strong id="GFsc">35</strong>');mm(a);
   var gd=document.createElement('div');gd.id='GFgd';a.appendChild(gd);
-  mc(a).innerHTML='<button class="gb" onclick="_GFN()">🔄 New</button>';
+  mc(a).innerHTML='<button class="gb-new" onclick="_GFN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   function init(){
     deck=_cdSh(_cdMk());
@@ -34281,7 +34288,7 @@ function GK(a){
   // sel = {src:'tab'|'waste', col:N, idx:N} or null
   ms(a,'Moves: <strong id="KLmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='KLgd';a.appendChild(gd);
-  mc(a).innerHTML='<select class="gsl" id="KLdraw" onchange="_KLDraw(this.value)"><option value="1" selected>Draw 1</option><option value="3">Draw 3</option></select> <button class="gb" onclick="_KLN()">🔄 New</button>';
+  mc(a).innerHTML='<select class="gsl" id="KLdraw" onchange="_KLDraw(this.value)"><option value="1" selected>Draw 1</option><option value="3">Draw 3</option></select> <button class="gb-new" onclick="_KLN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   function init(){
     var deck=_cdSh(_cdMk());
@@ -34622,7 +34629,7 @@ function GSP(a){
   var tab=[],stock=[],completed=0,sel=null,gameOver=false,moves=0,suits=1;
   ms(a,'Runs: <strong id="SPrn">0</strong>/8 · Moves: <strong id="SPmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='SPgd';a.appendChild(gd);
-  mc(a).innerHTML='<select class="gsl" id="SPsuit" onchange="_SPS(this.value)"><option value="1" selected>1 Suit</option><option value="2">2 Suits</option><option value="4">4 Suits</option></select> <button class="gb" onclick="_SPN()">🔄 New</button>';
+  mc(a).innerHTML='<select class="gsl" id="SPsuit" onchange="_SPS(this.value)"><option value="1" selected>1 Suit</option><option value="2">2 Suits</option><option value="4">4 Suits</option></select> <button class="gb-new" onclick="_SPN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   function mkDeck(){
     var d=[];
@@ -34745,7 +34752,7 @@ function GFC(a){
   var tab=[],free=[null,null,null,null],fnd=[[],[],[],[]],sel=null,gameOver=false,moves=0;
   ms(a,'Moves: <strong id="FCmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='FCgd';a.appendChild(gd);
-  mc(a).innerHTML='<button class="gb" onclick="_FCN()">🔄 New</button>';
+  mc(a).innerHTML='<button class="gb-new" onclick="_FCN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   function init(){
     var deck=_cdSh(_cdMk());
@@ -34893,7 +34900,7 @@ function GP(a){
   var pyr=[],stock=[],waste=[],sel=null,gameOver=false,moves=0,removed={};
   ms(a,'Cleared: <strong id="PYcl">0</strong>/28 · Moves: <strong id="PYmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='PYgd';a.appendChild(gd);
-  mc(a).innerHTML='<button class="gb" onclick="_PYN()">🔄 New</button>';
+  mc(a).innerHTML='<button class="gb-new" onclick="_PYN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   function init(){
     var deck=_cdSh(_cdMk());
@@ -35035,7 +35042,7 @@ function GT(a){
   // Layout: 3 mini-pyramids of 3 rows each (1+2+3=6 cards each = 18), plus 10 base cards
   ms(a,'Streak: <strong id="TPst">0</strong> · Left: <strong id="TPlf">28</strong>');mm(a);
   var gd=document.createElement('div');gd.id='TPgd';a.appendChild(gd);
-  mc(a).innerHTML='<button class="gb" onclick="_TPN()">🔄 New</button>';
+  mc(a).innerHTML='<button class="gb-new" onclick="_TPN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   // Peak structure: 3 peaks, each has rows of 1,2,3 cards
   // Peak 0: indices 0, 1,2, 3,4,5
@@ -35169,7 +35176,7 @@ function GT(a){
   init();
 }
 
-function GD(a){var tl=[],mv=0;ms(a,'👆<strong id="Dm">0</strong>');mm(a);var gd=document.createElement('div');gd.className='dg';gd.id='Dg';a.appendChild(gd);mc(a).innerHTML='<button class="gb" onclick="_DN()">🔄 Shuffle</button>';
+function GD(a){var tl=[],mv=0;ms(a,'👆<strong id="Dm">0</strong>');mm(a);var gd=document.createElement('div');gd.className='dg';gd.id='Dg';a.appendChild(gd);mc(a).innerHTML='<button class="gb-new" onclick="_DN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function sv(ar){var inv=0;for(var i=0;i<ar.length;i++)for(var j=i+1;j<ar.length;j++)if(ar[i]&&ar[j]&&ar[i]>ar[j])inv++;return(Math.floor(ar.indexOf(0)/4)%2===0)!==(inv%2===0)}function wn(){for(var i=0;i<15;i++)if(tl[i]!==i+1)return false;return true}
   function rn(){gd.innerHTML='';tl.forEach(function(v,i){var d=document.createElement('div');if(!v){d.className='dc de'}else{d.className='dc df'+(v===i+1?' dk':'');d.textContent=v;d.onclick=function(){var vi=tl.indexOf(v),ei=tl.indexOf(0);if((Math.abs(Math.floor(vi/4)-Math.floor(ei/4))+Math.abs(vi%4-ei%4))!==1)return;_play('slide');tl[ei]=v;tl[vi]=0;mv++;document.getElementById('Dm').textContent=mv;if(mv%20===0)_e('milestone');if(wn()){_e('game_win');sm('🌿 '+mv+' moves!');_sr('slider',{w:true,s:mv})}rn()}}gd.appendChild(d)})}
   window._DN=function(){mv=0;document.getElementById('Dm').textContent='0';sm('');tl=[];for(var i=1;i<=15;i++)tl.push(i);tl.push(0);do{sh(tl)}while(!sv(tl)||wn());rn()};_DN();}
@@ -35183,13 +35190,13 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolli
   a.appendChild(pp);
   var dd=document.createElement('div');dd.id='Fd';dd.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(10px,3vw,16px);max-width:clamp(280px,84vw,420px);margin:0 auto;padding:clamp(10px,3vw,16px);animation:boardFadeIn .4s ease';a.appendChild(dd);
   var si=document.createElement('div');si.style.cssText='text-align:center;font-size:.62rem;color:var(--muted);padding:5px 8px;line-height:1.7';si.id='Fi';a.appendChild(si);
-  mc(a).innerHTML='<button class="gb" onclick="_FR()">🎲 Roll</button><button class="gb" onclick="_FB()">💰 Bank</button><button class="gb" onclick="_FN()">🔄 New</button>';
+  mc(a).innerHTML='<button class="gb" onclick="_FR()">🎲 Roll</button><button class="gb" onclick="_FB()">💰 Bank</button><button class="gb-new" onclick="_FN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function highlightPick(){var bs=pp.querySelectorAll('.fppb');for(var i=0;i<bs.length;i++){var on=parseInt(bs[i].getAttribute('data-n'))===numPlayers;bs[i].style.borderColor=on?'var(--gold)':'rgba(74,124,53,.3)';bs[i].style.background=on?'rgba(200,168,78,.15)':'rgba(18,24,16,.6)';bs[i].style.color=on?'var(--gold)':'var(--cream)'}}
   function rn(){dd.innerHTML='';for(var i=0;i<6;i++){var d=document.createElement('div');d.className='fdie'+(kept[i]?' fk':'');d.style.cssText='width:100%;aspect-ratio:1;min-height:88px';if(dice[i])d.innerHTML='<img src="assets/dice/dice-'+dice[i]+'.png" alt="'+dice[i]+'" style="width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;-webkit-user-drag:none" draggable="false"/>';else d.innerHTML='<span style="font-size:2rem;color:var(--muted);opacity:.3">·</span>';d.setAttribute('data-i',i);d.onclick=function(){var x=parseInt(this.getAttribute('data-i'));if(dice[x]&&!gameOver&&!busted){_play('tap');kept[x]=!kept[x];rn()}};dd.appendChild(d)}updInfo()}
   function updInfo(){var parts=[];for(var p=0;p<players.length;p++){var on=p===curP&&!gameOver;parts.push('<span style="'+(on?'color:var(--gold);font-weight:700':'')+'">P'+(p+1)+': '+players[p].banked+'</span>')}var live=turn+score();document.getElementById('Fi').innerHTML=parts.join(' · ')+'<br/>This turn: '+live;document.getElementById('Fp').textContent='P'+(curP+1);document.getElementById('Fs').textContent=players[curP].banked;highlightPick()}
   function score(){var ct=new Array(7).fill(0);for(var i=0;i<6;i++)if(kept[i])ct[dice[i]]++;var s=0;for(var v=1;v<=6;v++){if(ct[v]>=3){s+=(v===1)?1000:v*100;var extra=ct[v]-3;s+=extra*100;ct[v]=0}else{if(v===1)s+=ct[v]*100;if(v===5)s+=ct[v]*50}}return s}
   function nextPlayer(){turn=0;kept=new Array(6).fill(false);dice=new Array(6).fill(0);busted=false;rolling=false;if(finalRound){curP=(curP+1)%players.length;if(curP===finalStart){endGame();return}}else{curP=(curP+1)%players.length}rn();sm('P'+(curP+1)+"'s turn — 🎲 Roll!")}
-  function endGame(){gameOver=true;var best=-1,winner=0;for(var i=0;i<players.length;i++)if(players[i].banked>best){best=players[i].banked;winner=i}sm('🏆 P'+(winner+1)+' wins with '+best+'! Tap 🔄 New');_play('win');try{_playWin()}catch(e){}rn()}
+  function endGame(){gameOver=true;var best=-1,winner=0;for(var i=0;i<players.length;i++)if(players[i].banked>best){best=players[i].banked;winner=i}sm('🏆 P'+(winner+1)+' wins with '+best+'! Tap 🔄 New');_play('win');try{_playWin()}catch(e){}if(winner===0){_e('game_win');_sr('farkle',{w:true,s:best})}else{_e('game_loss');_sr('farkle',{w:false,s:players[0].banked})}rn()}
   window._FR=function(){if(rolling||busted||gameOver)return;rolling=true;var any=false;for(var i=0;i<6;i++)if(!kept[i]){_play('dice');dice[i]=Math.floor(Math.random()*6)+1;any=true}if(!any){turn+=score();kept=new Array(6).fill(false);for(var i=0;i<6;i++)dice[i]=Math.floor(Math.random()*6)+1;sm('🔥 Hot dice! +'+turn+' locked — rolling all 6')}var ct=new Array(7).fill(0);for(var i=0;i<6;i++)if(!kept[i])ct[dice[i]]++;var has=ct[1]>0||ct[5]>0;for(var v=1;v<=6;v++)if(ct[v]>=3)has=true;if(!has){busted=true;_play('lose');sm('🍂 Farkle! P'+(curP+1)+' loses '+turn+' — passing…');rn();setTimeout(function(){if(players.length>1)nextPlayer();else{turn=0;rolling=false;rn()}},1400);return}rn();rolling=false;if(any)sm('P'+(curP+1)+': keep scorers, Roll or Bank')};
   window._FB=function(){if(busted||gameOver)return;var ts=score();if(ts+turn<=0){sm('Keep scoring dice first!');return}var gained=ts+turn;players[curP].banked+=gained;_e('progress');if(players[curP].banked>=1000)_e('milestone');document.getElementById('Fs').textContent=players[curP].banked;sm('P'+(curP+1)+' banked '+gained+' (total '+players[curP].banked+')');if(players[curP].banked>=target&&!finalRound){finalRound=true;finalStart=curP;if(players.length===1){endGame();return}sm('P'+(curP+1)+' hit '+target+'! Final round — others get one more turn');_play('win')}if(players.length>1)setTimeout(function(){nextPlayer()},900);else{turn=0;kept=new Array(6).fill(false);dice=new Array(6).fill(0);if(players[curP].banked>=target)endGame();else rn()}};
   window._FN=function(){dice=new Array(6).fill(0);kept=new Array(6).fill(false);turn=0;rolling=false;busted=false;curP=0;gameOver=false;finalRound=false;finalStart=-1;players=[];for(var i=0;i<numPlayers;i++)players.push({banked:0});document.getElementById('Fs').textContent='0';sm(numPlayers>1?('P1 starts — 🎲 Roll! (First to '+target+')'):'🎲 Roll!');rn()};_FN();}
@@ -35223,7 +35230,7 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
   var dd=document.createElement('div');dd.className='fd';dd.id='Yd';dd.style.cssText='display:flex;gap:clamp(10px,3vw,18px);justify-content:center;flex-wrap:wrap;max-width:clamp(340px,92vw,460px);margin:0 auto;padding:clamp(10px,3vw,16px)';a.appendChild(dd);
   // Buttons
   var _bbs='min-height:52px;padding:0.5rem 1.2rem;font-size:clamp(.6rem,1.8vw,.75rem);flex:1';
-  mc(a).innerHTML='<div style="display:flex;gap:8px;padding:4px 0"><button class="gb" style="'+_bbs+';background:rgba(74,124,53,.2);border-color:rgba(122,179,86,.35);color:var(--sage)" onclick="_YR()">&#127922; ROLL</button><button class="gb" style="'+_bbs+'" onclick="_YN()">&#128260; NEW</button></div>';
+  mc(a).innerHTML='<div style="display:flex;gap:8px;padding:4px 0"><button class="gb" style="'+_bbs+';background:rgba(74,124,53,.2);border-color:rgba(122,179,86,.35);color:var(--sage)" onclick="_YR()">&#127922; ROLL</button><button class="gb-new" onclick="_YN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button></div>';
   // Scorecard
   var sc=document.createElement('div');sc.id='Ysc';sc.style.cssText='padding:4px 0';a.appendChild(sc);
   // Scoring logic
@@ -35309,7 +35316,7 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
 }
 // ═══ HANOI ═══
 function GX(a){var SZ=5,sol=[],bd=[],rowC=[],colC=[];ms(a);mm(a);
-  var w=document.createElement('div');w.id='Xw';w.style.cssText='padding:8px';a.appendChild(w);mc(a).innerHTML='<select class="gsl" id="Xd" onchange="_XN()"><option value="5" selected>5×5</option><option value="7">7×7</option><option value="10">10×10</option></select> <button class="gb" onclick="_XN()">🔄 New</button>';
+  var w=document.createElement('div');w.id='Xw';w.style.cssText='padding:8px';a.appendChild(w);mc(a).innerHTML='<select class="gsl" id="Xd" onchange="_XN()"><option value="5" selected>5×5</option><option value="7">7×7</option><option value="10">10×10</option></select> <button class="gb-new" onclick="_XN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function gen(){sol=[];for(var i=0;i<SZ*SZ;i++)sol.push(Math.random()<.55?1:0);bd=new Array(SZ*SZ).fill(0);
     rowC=[];for(var r=0;r<SZ;r++){var s=[],c=0;for(var j=0;j<SZ;j++){if(sol[r*SZ+j])c++;else{if(c)s.push(c);c=0}}if(c)s.push(c);if(!s.length)s=[0];rowC.push(s)}
     colC=[];for(var c=0;c<SZ;c++){var s=[],n=0;for(var r=0;r<SZ;r++){if(sol[r*SZ+c])n++;else{if(n)s.push(n);n=0}}if(n)s.push(n);if(!s.length)s=[0];colC.push(s)}}
@@ -35336,7 +35343,7 @@ function GCK(a){var bd=new Array(64).fill(0),sel=-1,tn=1,mv=0,lastFrom=-1,lastTo
   a.appendChild(dir);
   var gd=document.createElement('div');gd.className='ckb';gd.id='CK';a.appendChild(gd);
   var _bbs='min-height:52px;padding:0.5rem 1.2rem;font-size:clamp(.6rem,1.8vw,.75rem);flex:1';
-  mc(a).innerHTML='<div style="display:flex;gap:8px;padding:4px 0"><button class="gb" style="'+_bbs+'" onclick="_CKN()">&#128260; NEW GAME</button></div>';
+  mc(a).innerHTML='<div style="display:flex;gap:8px;padding:4px 0"><button class="gb-new" onclick="_CKN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button></div>';
   function setup(){bd=new Array(64).fill(0);for(var r=0;r<3;r++)for(var c=0;c<8;c++)if((r+c)%2===1)bd[r*8+c]=2;for(var r=5;r<8;r++)for(var c=0;c<8;c++)if((r+c)%2===1)bd[r*8+c]=1;sel=-1;tn=1;mv=0;lastFrom=-1;lastTo=-1;mustJump=-1;gameOver=false}
   // Get valid moves for a piece
   function getMoves(pos,player){
@@ -35466,7 +35473,7 @@ function GRV(a){var bd=new Array(64).fill(0),tn=1,ov=false,lastMove=-1,flipCells
   a.appendChild(dir);
   var gd=document.createElement('div');gd.className='rvb';gd.id='RV';a.appendChild(gd);
   var _bbs='min-height:52px;padding:0.5rem 1.2rem;font-size:clamp(.6rem,1.8vw,.75rem);flex:1';
-  mc(a).innerHTML='<div style="display:flex;gap:8px;padding:4px 0"><button class="gb" style="'+_bbs+'" onclick="_RVN()">&#128260; NEW GAME</button></div>';
+  mc(a).innerHTML='<div style="display:flex;gap:8px;padding:4px 0"><button class="gb-new" onclick="_RVN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button></div>';
   function setup(){bd=new Array(64).fill(0);bd[27]=2;bd[28]=1;bd[35]=1;bd[36]=2;tn=1;ov=false;lastMove=-1;flipCells=[]}
   function flips(p,pos){
     var r=Math.floor(pos/8),c=pos%8,o=p===1?2:1,all=[];
@@ -35575,7 +35582,7 @@ function GMM(a){var code=[],guesses=[],cur=[];
   });
   a.appendChild(pal);
   var _bbs='min-height:52px;padding:0.5rem 1.2rem;font-size:clamp(.6rem,1.8vw,.75rem);flex:1';
-  mc(a).innerHTML='<div style="display:flex;gap:8px;padding:4px 0"><button class="gb" style="'+_bbs+';background:rgba(74,124,53,.2);border-color:rgba(122,179,86,.35);color:var(--sage)" onclick="_MMG()">&#10003; GUESS</button><button class="gb" style="'+_bbs+'" onclick="_MMU()">&#9003; UNDO</button><button class="gb" style="'+_bbs+'" onclick="_MMN()">&#128260; NEW</button></div>';
+  mc(a).innerHTML='<div style="display:flex;gap:8px;padding:4px 0"><button class="gb" style="'+_bbs+';background:rgba(74,124,53,.2);border-color:rgba(122,179,86,.35);color:var(--sage)" onclick="_MMG()">&#10003; GUESS</button><button class="gb" style="'+_bbs+'" onclick="_MMU()">&#9003; UNDO</button><button class="gb-new" onclick="_MMN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button></div>';
   function rn(){
     bd.innerHTML='';
     guesses.forEach(function(g){
@@ -35631,7 +35638,7 @@ function GMM(a){var code=[],guesses=[],cur=[];
 }
 // ═══ FLOOD FILL ═══
 function GCS(a){var tubes=[],numT=7,cap=4,sel=-1;var COLS=['#4a7c35','#C8A84B','#4a7aaa','#c76a30','#9b59b6'];
-  ms(a,'');mm(a);var tw=document.createElement('div');tw.className='csw';tw.id='CS';a.appendChild(tw);mc(a).innerHTML='<button class="gb" onclick="_CSN()">🔄 New</button>';
+  ms(a,'');mm(a);var tw=document.createElement('div');tw.className='csw';tw.id='CS';a.appendChild(tw);mc(a).innerHTML='<button class="gb-new" onclick="_CSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function gen(){var colors=[];for(var c=0;c<5;c++)for(var i=0;i<cap;i++)colors.push(c);sh(colors);tubes=[];for(var t=0;t<5;t++){tubes[t]=[];for(var i=0;i<cap;i++)tubes[t].push(colors[t*cap+i])}tubes.push([]);tubes.push([]);sel=-1}
   function rn(){tw.innerHTML='';tubes.forEach(function(tube,ti){var t=document.createElement('div');t.className='cst'+(ti===sel?' cssel':'');t.setAttribute('data-t',ti);t.onclick=function(){var idx=parseInt(this.getAttribute('data-t'));
     if(sel<0){if(tubes[idx].length)sel=idx;rn()}else{if(sel===idx){sel=-1;rn();return}if(tubes[idx].length>=cap){sel=-1;rn();return}if(tubes[idx].length&&tubes[idx][tubes[idx].length-1]!==tubes[sel][tubes[sel].length-1]){sel=-1;rn();return}tubes[idx].push(tubes[sel].pop());sel=-1;rn();chk()}};
@@ -35641,7 +35648,7 @@ function GCS(a){var tubes=[],numT=7,cap=4,sel=-1;var COLS=['#4a7c35','#C8A84B','
 // ═══ BATTLESHIP ═══
 function GBS(a){var SZ=10,ships=[5,4,3,3,2],grid=new Array(SZ*SZ).fill(0),shots=0,hits=0,totalHP=0;
   ms(a,'Shots:<strong id="BSs">0</strong> · Hits:<strong id="BSh">0</strong>');mm(a);
-  var gd=document.createElement('div');gd.className='bsg';gd.id='BS';a.appendChild(gd);mc(a).innerHTML='<button class="gb" onclick="_BSN()">🔄 New</button>';
+  var gd=document.createElement('div');gd.className='bsg';gd.id='BS';a.appendChild(gd);mc(a).innerHTML='<button class="gb-new" onclick="_BSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function place(){grid=new Array(SZ*SZ).fill(0);totalHP=0;ships.forEach(function(len){for(var att=0;att<100;att++){var dir=Math.random()<.5?'h':'v';var r=Math.floor(Math.random()*(dir==='v'?SZ-len:SZ));var c=Math.floor(Math.random()*(dir==='h'?SZ-len:SZ));var ok=true;for(var k=0;k<len;k++){var i=dir==='h'?r*SZ+c+k:(r+k)*SZ+c;if(grid[i]){ok=false;break}}if(ok){for(var k=0;k<len;k++){var i=dir==='h'?r*SZ+c+k:(r+k)*SZ+c;grid[i]=1;totalHP++}break}}})}
   function rn(){gd.innerHTML='';for(var i=0;i<SZ*SZ;i++){var d=document.createElement('div');d.className='bsc'+(grid[i]===2?' bsh':grid[i]===3?' bsm':grid[i]===4?' bss':'');d.setAttribute('data-i',i);d.textContent=grid[i]===2?'💥':grid[i]===3?'~':grid[i]===4?'🌊':'';
     if(grid[i]<=1)d.onclick=function(){var idx=parseInt(this.getAttribute('data-i'));if(grid[idx]>1)return;shots++;document.getElementById('BSs').textContent=shots;if(grid[idx]===1){grid[idx]=2;hits++;document.getElementById('BSh').textContent=hits;if(hits%3===0)_e('hit');sm('💥 Hit!');if(hits>=totalHP){_e('game_win');sm('🌿 All sunk in '+shots+'!');_sr('battleship',{w:true,s:shots})}}else{grid[idx]=3;sm('~ Miss')}rn()};gd.appendChild(d)}}
@@ -35732,7 +35739,7 @@ try{window._gameFns.pipe=GPP}catch(e){}     // Vine Flow
 try{window._gameFns.chess=GCH}catch(e){}    // Grove Chess
 try{window._gameFns.c4=G4}catch(e){}        // Connect Fleur
 try{window._gameFns.song=GSG}catch(e){}     // Seed Song
-try{window._gameFns.dots=GD}catch(e){}      // Dot Weaver
+try{window._gameFns.slider=GD}catch(e){}    // 15 Puzzle
 try{window._gameFns.farkle=GF}catch(e){}    // Farkle
 try{window._gameFns.golf=GGO}catch(e){}     // Golf Solitaire
 try{window._gameFns.klondike=GK}catch(e){}  // Klondike
@@ -36697,7 +36704,7 @@ function _close(){
   _solved=false;
 }
 
-// ═══ TYPE 1: QUICK SET ═══
+// ═══ TYPE 1: QUICK TRIOS ═══
 var SET_SHAPES=['circle','diamond','wave'];
 var SET_COLORS=['#7ab356','#C8A84B','#c07070'];
 function _shapeSVG(s,c,sz){sz=sz||16;if(s==='circle')return'<svg viewBox="0 0 20 20" width="'+sz+'" height="'+sz+'"><circle cx="10" cy="10" r="8" fill="'+c+'" opacity="0.85"/></svg>';if(s==='diamond')return'<svg viewBox="0 0 20 20" width="'+sz+'" height="'+sz+'"><polygon points="10,2 18,10 10,18 2,10" fill="'+c+'" opacity="0.85"/></svg>';return'<svg viewBox="0 0 20 20" width="'+sz+'" height="'+sz+'"><path d="M2,14 Q6,6 10,10 Q14,14 18,6" stroke="'+c+'" stroke-width="3" fill="none" stroke-linecap="round"/></svg>';}
@@ -36947,8 +36954,8 @@ function _setupChallenge(diff, grade) {
   // Type-specific setup
   if(_type==='set'){
     _state={cards:_genSetBoard(),sel:[]};
-    if(title)title.textContent='QUICK SET';
-    if(sub)sub.textContent=(grade||'Common')+' — Find 1 valid SET (same or all-different on each trait)';
+    if(title)title.textContent='QUICK TRIOS';
+    if(sub)sub.textContent=(grade||'Common')+' — Find 1 valid Trio (same or all-different on each trait)';
     _renderSet();
   }else if(_type==='memory'){
     var seq=_genMemory(diff);
@@ -38536,7 +38543,7 @@ function _close(){
   _solved=false;
 }
 
-// ═══ TYPE 1: QUICK SET ═══
+// ═══ TYPE 1: QUICK TRIOS ═══
 var SET_SHAPES=['circle','diamond','wave'];
 var SET_COLORS=['#7ab356','#C8A84B','#c07070'];
 function _shapeSVG(s,c,sz){sz=sz||16;if(s==='circle')return'<svg viewBox="0 0 20 20" width="'+sz+'" height="'+sz+'"><circle cx="10" cy="10" r="8" fill="'+c+'" opacity="0.85"/></svg>';if(s==='diamond')return'<svg viewBox="0 0 20 20" width="'+sz+'" height="'+sz+'"><polygon points="10,2 18,10 10,18 2,10" fill="'+c+'" opacity="0.85"/></svg>';return'<svg viewBox="0 0 20 20" width="'+sz+'" height="'+sz+'"><path d="M2,14 Q6,6 10,10 Q14,14 18,6" stroke="'+c+'" stroke-width="3" fill="none" stroke-linecap="round"/></svg>';}
@@ -38789,8 +38796,8 @@ function _setupChallenge(diff, grade) {
   // Type-specific setup
   if(_type==='set'){
     _state={cards:_genSetBoard(),sel:[]};
-    if(title)title.textContent='QUICK SET';
-    if(sub)sub.textContent=(grade||'Common')+' — Find 1 valid SET (same or all-different on each trait)';
+    if(title)title.textContent='QUICK TRIOS';
+    if(sub)sub.textContent=(grade||'Common')+' — Find 1 valid Trio (same or all-different on each trait)';
     _renderSet();
   }else if(_type==='memory'){
     var seq=_genMemory(diff);
