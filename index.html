@@ -35846,7 +35846,7 @@ function _opCat(catKey){
     });
   },50);
 }
-function _op(){var o=document.getElementById('fg-ov'),rc=_gr();
+function _op(){var _bnav2=document.querySelector('.fg-bottomnav');if(_bnav2)_bnav2.style.display='flex';var o=document.getElementById('fg-ov'),rc=_gr();
   // Build categorized accordion picker with thumbnails
   var h='<div style="max-width:460px;margin:0 auto;padding:0.5rem">';
   h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
@@ -35907,8 +35907,10 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;_m=Math.m
   var sw=document.getElementById('sw'),ag=document.getElementById('fg-ag'),gps=document.getElementById('gp-strip');
   var _solGames={golf:1,klondike:1,spider:1,freecell:1,pyramid:1,tripeaks:1};
   _solClearFS();
-  if(id==='set'){sw.style.display='';ag.classList.remove('on');ag.classList.remove('sol');ag.innerHTML='';if(gps){gps.classList.add('on');try{_updateGP()}catch(e){}}return}
+  var _bnav=document.querySelector('.fg-bottomnav');
+  if(id==='set'){sw.style.display='';ag.classList.remove('on');ag.classList.remove('sol');ag.innerHTML='';if(_bnav)_bnav.style.display='flex';if(gps){gps.classList.add('on');try{_updateGP()}catch(e){}}return}
   sw.style.display='none';ag.classList.add('on');ag.classList.toggle('sol',!!_solGames[id]);ag.innerHTML='';
+  if(_bnav)_bnav.style.display='none';
   if(_solGames[id]){_solEnterFS()}
   if(gps){gps.classList.add('on');try{_updateGP()}catch(e){console.warn('[GP]',e)}}
   var gi=null;for(var i=0;i<G.length;i++)if(G[i].id===id){gi=G[i];break}
