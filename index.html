@@ -4858,7 +4858,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
     <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button></div>
     <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button></div>
-    <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button><button class="dev-btn" onclick="try{PW_Dev.cardFrontAligner()}catch(e){alert(e.message)}">🃏 CARD FRONT ALIGNMENT</button><button class="dev-btn" onclick="try{PW_Dev.cardBackViewer()}catch(e){alert(e.message)}">🔙 CARD BACK NAMEPLATES</button></div>
+    <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button><button class="dev-btn" onclick="try{PW_Dev.cardFrontAligner()}catch(e){alert(e.message)}">🃏 CARD FRONT ALIGNMENT</button><button class="dev-btn" onclick="try{PW_Dev.cardBackViewer()}catch(e){alert(e.message)}">🔙 CARD BACK NAMEPLATES</button><button class="dev-btn" onclick="try{PW_Dev.leafBloomEditor()}catch(e){alert(e.message)}">🌿 LEAF & BLOOM EDITOR</button></div>
     <div class="dev-section"><div class="dev-section-title">NUCLEAR</div><button class="dev-btn danger" onclick="PW_Dev.fullReset()">☢ WIPE EVERYTHING</button></div>
     <div class="dev-log" id="dev-log">Ready.\n</div>
   </div>
@@ -5225,6 +5225,96 @@ window.onerror=function(msg,url,line,col,err){
 
       // Initial render
       setTimeout(_render,100);
+    },
+    // ═══ LEAF & BLOOM EDITOR ═══
+    leafBloomEditor:function(){
+      try{
+      var dp=document.getElementById('pw-dev-admin');if(dp)dp.classList.remove('open');
+      var ov=document.getElementById('lbe-tool');
+      if(ov){ov.remove();return;}
+      var _mode='leaf'; // 'leaf' or 'bloom'
+      var _idx=0;
+      var _maxLeaf=59; // leaf types 0-59
+      var _maxBloom=70; // bloom types 0-70
+      // Base hash — we'll override specific bytes to force leaf/bloom type
+      var _baseHash='5a8f3c2d1e7b4a9063d5f8c2a1b47e9053c6d8f2a4b71e8039d5c7f1a2b64e80';
+
+      function _render(){
+        var card=document.getElementById('lbe-card');
+        if(!card)return;
+        var max=_mode==='leaf'?_maxLeaf:_maxBloom;
+        if(_idx<0)_idx=max;
+        if(_idx>max)_idx=0;
+        // Build a hash that forces the desired leaf or bloom type
+        var h=_baseHash.split('');
+        if(_mode==='leaf'){
+          // leafType = hb(4), hb reads 2 hex chars at position n*2
+          var leafHex=(_idx).toString(16).padStart(2,'0');
+          h[8]=leafHex[0];h[9]=leafHex[1];
+        } else {
+          // flower = hb(11), hasFlower = hc(10) > 4 so force hc(10)=f
+          h[20]='f'; // force hasFlower
+          var bloomHex=(_idx).toString(16).padStart(2,'0');
+          h[22]=bloomHex[0];h[23]=bloomHex[1];
+        }
+        var hash=h.join('');
+        var svg='';
+        try{svg=window._generatePlantSVG(hash,{});}catch(e){svg='<text x="35" y="50" fill="red" font-size="3">'+e.message+'</text>';}
+        card.innerHTML='<svg viewBox="0 0 70 95" style="width:100%;height:100%;background:rgba(13,16,12,0.95);border-radius:8px;">'+svg+'</svg>';
+        document.getElementById('lbe-label').textContent=_mode.toUpperCase()+' #'+_idx;
+        document.getElementById('lbe-counter').textContent=(_idx)+' / '+max;
+        // Get trait name
+        var nameEl=document.getElementById('lbe-name');
+        if(nameEl){
+          try{
+            var t=window.hashToTraits(hash);
+            var banks=window.FG_Data?FG_Data.traitBanks:null;
+            if(banks&&_mode==='leaf'&&banks.leaves&&banks.leaves[_idx]){
+              nameEl.textContent=banks.leaves[_idx].name||'';
+            }else if(banks&&_mode==='bloom'&&banks.flowers&&banks.flowers[_idx]){
+              nameEl.textContent=banks.flowers[_idx].name||'';
+            }else{nameEl.textContent='';}
+          }catch(e){nameEl.textContent='';}
+        }
+      }
+
+      ov=document.createElement('div');
+      ov.id='lbe-tool';
+      ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(8,10,6,0.97);display:flex;flex-direction:column;align-items:center;padding:12px;';
+      ov.innerHTML='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;width:100%;max-width:400px;justify-content:space-between;">'+
+        '<button id="lbe-prev" style="width:48px;height:48px;border-radius:50%;border:1px solid rgba(122,179,86,0.3);background:none;color:var(--sage);font-size:1.2rem;cursor:pointer;">&#9664;</button>'+
+        '<div style="text-align:center;">'+
+        '<div id="lbe-label" style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:var(--gold);letter-spacing:0.1em;">LEAF #0</div>'+
+        '<div id="lbe-name" style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--cream);"></div>'+
+        '<div id="lbe-counter" style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);">0 / 59</div>'+
+        '</div>'+
+        '<button id="lbe-next" style="width:48px;height:48px;border-radius:50%;border:1px solid rgba(122,179,86,0.3);background:none;color:var(--sage);font-size:1.2rem;cursor:pointer;">&#9654;</button>'+
+        '<button id="lbe-close" style="width:48px;height:48px;border-radius:50%;border:1px solid rgba(192,80,80,0.3);background:none;color:#c07070;font-size:1.2rem;cursor:pointer;">&#10005;</button>'+
+        '</div>'+
+        '<div style="display:flex;gap:8px;margin-bottom:8px;">'+
+        '<button id="lbe-mode-leaf" style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;padding:6px 16px;border-radius:4px;border:1px solid var(--sage);background:rgba(122,179,86,0.15);color:var(--sage);cursor:pointer;min-height:36px;">LEAVES</button>'+
+        '<button id="lbe-mode-bloom" style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;padding:6px 16px;border-radius:4px;border:1px solid var(--gold);background:none;color:var(--gold);cursor:pointer;min-height:36px;">BLOOMS</button>'+
+        '</div>'+
+        '<div id="lbe-card" style="width:70vw;max-width:300px;height:calc(100vh - 140px);max-height:500px;position:relative;border-radius:8px;overflow:hidden;"></div>';
+      document.body.appendChild(ov);
+
+      document.getElementById('lbe-prev').onclick=function(){_idx--;_render();};
+      document.getElementById('lbe-next').onclick=function(){_idx++;_render();};
+      document.getElementById('lbe-close').onclick=function(){ov.remove();};
+      document.getElementById('lbe-mode-leaf').onclick=function(){
+        _mode='leaf';_idx=0;
+        document.getElementById('lbe-mode-leaf').style.background='rgba(122,179,86,0.15)';
+        document.getElementById('lbe-mode-bloom').style.background='none';
+        _render();
+      };
+      document.getElementById('lbe-mode-bloom').onclick=function(){
+        _mode='bloom';_idx=0;
+        document.getElementById('lbe-mode-bloom').style.background='rgba(200,168,75,0.15)';
+        document.getElementById('lbe-mode-leaf').style.background='none';
+        _render();
+      };
+      _render();
+      }catch(e){alert('Leaf/Bloom Editor error: '+e.message);}
     },
     // ═══ CARD BACK NAMEPLATE VIEWER ═══
     cardBackViewer:function(){
