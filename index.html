@@ -35215,7 +35215,7 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
     dd.innerHTML='';
     for(var i=0;i<5;i++){
       var d=document.createElement('div');d.className='fdie'+(kept[i]?' fk':'');
-      d.style.cssText='width:clamp(100px,28vw,140px);height:clamp(100px,28vw,140px);border-radius:clamp(14px,4vw,20px);background:transparent;border:3px solid transparent;box-shadow:none;padding:4px'+(kept[i]?';border-color:var(--gold);box-shadow:0 0 20px rgba(200,168,78,0.3),inset 0 0 12px rgba(200,168,78,0.08);background:rgba(200,168,78,0.05)':'');
+      d.style.cssText='width:clamp(100px,28vw,140px);height:clamp(100px,28vw,140px);display:flex;align-items:center;justify-content:center;border-radius:clamp(14px,4vw,20px);background:transparent;border:3px solid transparent;box-shadow:none;box-sizing:border-box;cursor:pointer'+(kept[i]?';border-color:var(--gold);box-shadow:0 0 20px rgba(200,168,78,0.3),inset 0 0 12px rgba(200,168,78,0.08);background:rgba(200,168,78,0.05)':'');
       if(dice[i]){d.innerHTML=seedDie(dice[i])}else{d.innerHTML='<span style="font-size:2.5rem;color:var(--muted);opacity:0.3">&middot;</span>'}
       d.setAttribute('data-i',i);
       d.addEventListener('click',function(){var x=parseInt(this.getAttribute('data-i'));if(dice[x]){_play('tap');kept[x]=!kept[x];rn()}});
