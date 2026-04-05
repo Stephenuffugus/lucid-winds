@@ -4391,22 +4391,6 @@ window.onerror=function(msg,url,line,col,err){
   <div id="fg-ag"></div>
   <div id="sw">
 
-  <!-- Trios dashboard — deck, trios found, hash progress, settings -->
-  <div class="trios-dash">
-    <div class="trios-dash-stats">
-      <div class="trios-dash-stat"><span class="trios-dash-val" id="s-found">0</span><span class="trios-dash-lbl">TRIOS</span></div>
-      <div class="trios-dash-stat"><span class="trios-dash-val" id="s-remain">—</span><span class="trios-dash-lbl">DECK</span></div>
-    </div>
-    <div class="trios-dash-hash" id="trios-hash-bar">
-      <div class="trios-dash-hash-lbl"><span id="th-count">0</span>/30</div>
-      <div class="trios-dash-hash-track"><div class="trios-dash-hash-fill" id="th-fill" style="width:0%"></div></div>
-      <div class="trios-dash-hash-stage" id="th-stage">Seed</div>
-    </div>
-    <div class="trios-dash-btns">
-      <button class="fg-topbar-btn" onclick="triggerTutorialDemo()">❓</button>
-      <button class="fg-topbar-btn" id="settings-gear" onclick="toggleSettingsMenu()">⚙</button>
-    </div>
-  </div>
 
   <!-- SETTINGS — Full screen overlay -->
   <div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(8,10,6,0.96);z-index:99998;overflow-y:auto;padding:1.2rem;backdrop-filter:blur(10px);animation:panelFadeIn 0.25s ease;">
@@ -4465,6 +4449,23 @@ window.onerror=function(msg,url,line,col,err){
       <span style="letter-spacing:0.1em;font-size:0.38rem;">ATTENTION</span>
     </div>
     <div style="font-size:0.4rem;">⬡ <span id="attn-phenos">0</span> trios · <span id="attn-time">0s</span></div>
+  </div>
+
+  <!-- Trios dashboard — deck, trios found, hash progress, settings -->
+  <div class="trios-dash" id="trios-dash">
+    <div class="trios-dash-stats">
+      <div class="trios-dash-stat"><span class="trios-dash-val" id="s-found">0</span><span class="trios-dash-lbl">TRIOS</span></div>
+      <div class="trios-dash-stat"><span class="trios-dash-val" id="s-remain">—</span><span class="trios-dash-lbl">DECK</span></div>
+    </div>
+    <div class="trios-dash-hash" id="trios-hash-bar">
+      <div class="trios-dash-hash-lbl"><span id="th-count">0</span>/30</div>
+      <div class="trios-dash-hash-track"><div class="trios-dash-hash-fill" id="th-fill" style="width:0%"></div></div>
+      <div class="trios-dash-hash-stage" id="th-stage">Seed</div>
+    </div>
+    <div class="trios-dash-btns">
+      <button class="fg-topbar-btn" onclick="triggerTutorialDemo()">❓</button>
+      <button class="fg-topbar-btn" onclick="toggleSettingsMenu()">⚙</button>
+    </div>
   </div>
 
   <!-- Card Grid -->
@@ -27073,17 +27074,21 @@ document.addEventListener('keydown', function(e) {
     var _swEl = document.getElementById('sw');
     var _agEl = document.getElementById('fg-ag');
     var _ssbEl = document.getElementById('set-status');
+    var _tdEl = document.getElementById('trios-dash');
     if (tab !== 'game') {
       if (_swEl) _swEl.style.display = 'none';
+      if (_tdEl) _tdEl.style.display = 'none';
       if (_ssbEl) _ssbEl.style.display = 'none';
     } else {
       if (window._a && window._a !== 'set') {
         if (_swEl) _swEl.style.display = 'none';
+        if (_tdEl) _tdEl.style.display = 'none';
         if (_ssbEl) _ssbEl.style.display = 'none';
         if (_agEl) _agEl.classList.add('on');
       } else {
         // Trios game or no game — show topbar with trio/deck counts
         if (_swEl) _swEl.style.display = '';
+        if (_tdEl) _tdEl.style.display = '';
         if (_ssbEl) _ssbEl.style.display = '';
       }
     }
@@ -32580,8 +32585,9 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;_m=Math.m
   var _solGames={golf:1,klondike:1,spider:1,freecell:1,pyramid:1,tripeaks:1};
   _solClearFS();
   var _bnav=document.querySelector('.fg-bottomnav');
-  if(id==='set'){sw.style.display='';if(ssb)ssb.style.display='';ag.classList.remove('on');ag.classList.remove('sol');ag.innerHTML='';if(_bnav)_bnav.style.display='flex';if(gps){gps.classList.add('on');try{_updateGP()}catch(e){}}return}
-  sw.style.display='none';if(ssb)ssb.style.display='none';ag.classList.add('on');ag.classList.toggle('sol',!!_solGames[id]);ag.innerHTML='';
+  var _td=document.getElementById('trios-dash');
+  if(id==='set'){sw.style.display='';if(_td)_td.style.display='';if(ssb)ssb.style.display='';ag.classList.remove('on');ag.classList.remove('sol');ag.innerHTML='';if(_bnav)_bnav.style.display='flex';if(gps){gps.classList.add('on');try{_updateGP()}catch(e){}}return}
+  sw.style.display='none';if(_td)_td.style.display='none';if(ssb)ssb.style.display='none';ag.classList.add('on');ag.classList.toggle('sol',!!_solGames[id]);ag.innerHTML='';
   if(_bnav)_bnav.style.display='none';
   if(_solGames[id]){_solEnterFS()}
   if(gps){gps.classList.add('on');try{_updateGP()}catch(e){console.warn('[GP]',e)}}
