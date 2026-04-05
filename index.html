@@ -4452,19 +4452,19 @@ window.onerror=function(msg,url,line,col,err){
   </div>
 
   <!-- Trios dashboard — deck, trios found, hash progress, settings -->
-  <div class="trios-dash" id="trios-dash">
-    <div class="trios-dash-stats">
-      <div class="trios-dash-stat"><span class="trios-dash-val" id="s-found">0</span><span class="trios-dash-lbl">TRIOS</span></div>
-      <div class="trios-dash-stat"><span class="trios-dash-val" id="s-remain">—</span><span class="trios-dash-lbl">DECK</span></div>
+  <div id="trios-dash" style="display:flex;align-items:center;gap:14px;padding:12px 14px;margin:4px 0 8px;background:linear-gradient(180deg,rgba(26,36,22,0.85),rgba(18,24,16,0.65));border:1.5px solid rgba(122,179,86,0.22);border-radius:12px;box-shadow:0 3px 12px rgba(0,0,0,0.3);">
+    <div style="display:flex;gap:18px;flex-shrink:0;">
+      <div style="display:flex;align-items:baseline;gap:5px;"><span id="s-found" style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;font-weight:700;color:#e8dcc8;line-height:1;">0</span><span style="font-family:'DM Mono',monospace;font-size:0.6rem;font-weight:600;color:rgba(122,179,86,0.9);letter-spacing:0.1em;">TRIOS</span></div>
+      <div style="display:flex;align-items:baseline;gap:5px;"><span id="s-remain" style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;font-weight:700;color:#e8dcc8;line-height:1;">—</span><span style="font-family:'DM Mono',monospace;font-size:0.6rem;font-weight:600;color:rgba(122,179,86,0.9);letter-spacing:0.1em;">DECK</span></div>
     </div>
-    <div class="trios-dash-hash" id="trios-hash-bar">
-      <div class="trios-dash-hash-lbl"><span id="th-count">0</span>/30</div>
-      <div class="trios-dash-hash-track"><div class="trios-dash-hash-fill" id="th-fill" style="width:0%"></div></div>
-      <div class="trios-dash-hash-stage" id="th-stage">Seed</div>
+    <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+      <span id="th-count" style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:#e8dcc8;white-space:nowrap;">0</span><span style="font-family:'DM Mono',monospace;font-size:0.5rem;color:rgba(122,179,86,0.8);">/30</span>
+      <div style="flex:1;height:6px;background:rgba(26,31,23,.6);border-radius:3px;overflow:hidden;border:1px solid rgba(74,124,53,.12);min-width:30px;"><div id="th-fill" style="height:100%;width:0%;background:linear-gradient(90deg,rgba(74,124,53,.6),rgba(122,179,86,.7),rgba(200,168,78,.6));border-radius:3px;transition:width .6s ease;"></div></div>
+      <span id="th-stage" style="font-family:'DM Mono',monospace;font-size:0.45rem;color:#c8a84b;white-space:nowrap;">Seed</span>
     </div>
-    <div class="trios-dash-btns">
-      <button class="fg-topbar-btn" onclick="triggerTutorialDemo()">❓</button>
-      <button class="fg-topbar-btn" onclick="toggleSettingsMenu()">⚙</button>
+    <div style="display:flex;gap:6px;flex-shrink:0;">
+      <button onclick="triggerTutorialDemo()" style="width:40px;height:40px;border-radius:8px;border:1px solid rgba(200,188,160,0.15);background:rgba(46,40,32,0.6);color:rgba(240,235,216,0.6);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">❓</button>
+      <button onclick="toggleSettingsMenu()" style="width:40px;height:40px;border-radius:8px;border:1px solid rgba(200,188,160,0.15);background:rgba(46,40,32,0.6);color:rgba(240,235,216,0.6);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">⚙</button>
     </div>
   </div>
 
