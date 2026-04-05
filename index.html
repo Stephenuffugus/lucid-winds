@@ -4266,23 +4266,7 @@ window.onerror=function(msg,url,line,col,err){
   d.style.display='block';
   d.innerHTML+='<div>L'+line+': '+msg+'</div>';
 };
-// DEBUG: visible build version + panel state monitor
-(function(){
-  var dbg=document.createElement('div');
-  dbg.id='_dbg';
-  dbg.style.cssText='position:fixed;bottom:70px;right:4px;z-index:99999999;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:9px;padding:3px 6px;border-radius:4px;pointer-events:none;';
-  dbg.textContent='v30b';
-  document.body.appendChild(dbg);
-  setInterval(function(){
-    var panels=document.querySelectorAll('.grove-panel');
-    var active=[];
-    panels.forEach(function(p){if(p.classList.contains('active'))active.push(p.id.replace('panel-',''))});
-    var ag=document.getElementById('fg-ag');
-    var agOn=ag&&ag.classList.contains('on');
-    var agKids=ag?ag.children.length:0;
-    dbg.textContent='v30b|'+active.join(',')+' ag:'+(agOn?'ON':'off')+'/'+agKids;
-  },500);
-})();
+// DEBUG: build overlay disabled for production
 </script>
 
 <!-- ═══ VAULT HYDRATION OVERLAY (set-93) ═══════════════════════════════════
