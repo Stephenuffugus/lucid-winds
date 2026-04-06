@@ -45,7 +45,9 @@ h1{font-size:18px;color:#c8a84b;margin-bottom:10px}
 <button onclick="move(0,1)">⬇ DOWN</button>
 <button onclick="move(-1,0)">⬅ LEFT</button>
 <button onclick="move(1,0)">➡ RIGHT</button>
-<button onclick="ox=0;oy=0;render()" style="border-color:#c8a84b;color:#c8a84b">RESET</button>
+<button onclick="zoom(1)">🔍+ BIGGER</button>
+<button onclick="zoom(-1)">🔍− SMALLER</button>
+<button onclick="ox=30;oy=-30;oz=0;render()" style="border-color:#c8a84b;color:#c8a84b">RESET</button>
 </div>
 
 <div class="preview" id="preview"></div>
@@ -54,7 +56,8 @@ h1{font-size:18px;color:#c8a84b;margin-bottom:10px}
 
 <script>
 var BASE_L=107,BASE_T=107,BASE_R=403,BASE_B=403;
-var ox=0,oy=0;
+var ox=30,oy=-30;
+var oz=0;
 var imgs={};
 var SIZE=296;
 
@@ -77,8 +80,15 @@ function move(dx,dy){
   render();
 }
 
+function zoom(dir){
+  var step=parseInt(document.getElementById('step').value)||10;
+  oz+=dir*step;
+  render();
+}
+
 function render(){
-  document.getElementById('info').textContent='Offset: X='+ox+' Y='+oy+' | Crop: ('+(BASE_L+ox)+','+(BASE_T+oy)+')-('+(BASE_R+ox)+','+(BASE_B+oy)+')';
+  var cropSize=SIZE+oz*2;
+  document.getElementById('info').textContent='Offset: X='+ox+' Y='+oy+' Size:'+cropSize+'x'+cropSize+' | Crop: ('+(BASE_L+ox-oz)+','+(BASE_T+oy-oz)+')-('+(BASE_R+ox+oz)+','+(BASE_B+oy+oz)+')';
   var wrap=document.getElementById('preview');
   wrap.innerHTML='';
   [1,5,6].forEach(function(n){
@@ -91,7 +101,8 @@ function render(){
     if(n===1){
       ctx.drawImage(imgs[1],BASE_L,BASE_T,SIZE,SIZE,0,0,SIZE,SIZE);
     }else{
-      ctx.drawImage(imgs[n],BASE_L+ox,BASE_T+oy,SIZE,SIZE,0,0,SIZE,SIZE);
+      var sL=BASE_L+ox-oz,sT=BASE_T+oy-oz,sW=cropSize,sH=cropSize;
+      ctx.drawImage(imgs[n],sL,sT,sW,sH,0,0,SIZE,SIZE);
     }
     box.appendChild(c);
     var lbl=document.createElement('div');
@@ -109,7 +120,8 @@ function save(){
   .then(function(r){return r.text()})
   .then(function(t){status.textContent=t})
   .catch(function(){
-    status.textContent='Copy this to Claude: OFFSET X='+ox+' Y='+oy+' | Crop: ('+(BASE_L+ox)+','+(BASE_T+oy)+')-('+(BASE_R+ox)+','+(BASE_B+oy)+')';
+    var cropSize=SIZE+oz*2;
+    status.textContent='Copy this to Claude: OFFSET X='+ox+' Y='+oy+' ZOOM='+oz+' | Crop: ('+(BASE_L+ox-oz)+','+(BASE_T+oy-oz)+')-('+(BASE_R+ox+oz)+','+(BASE_B+oy+oz)+')';
   });
 }
 </script>
