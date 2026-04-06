@@ -4,9 +4,9 @@
 // Version tag drives cache busting on deploy
 // ═══════════════════════════════════════════════════════════════════
 
-var CACHE_VERSION = 'lw-v1';
-var ASSET_CACHE = 'lw-assets-v1';
-var GAME_CACHE = 'lw-games-v1';
+var CACHE_VERSION = 'lw-v2';
+var ASSET_CACHE = 'lw-assets-v2';
+var GAME_CACHE = 'lw-games-v2';
 
 // Assets to precache on install (critical path only)
 var PRECACHE = [
