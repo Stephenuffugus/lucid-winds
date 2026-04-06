@@ -55,8 +55,8 @@ h1{font-size:18px;color:#c8a84b;margin-bottom:10px}
 </div>
 
 <div class="preview" id="preview"></div>
-<button class="save-btn" onclick="save()">APPLY & DEPLOY</button>
-<div id="status" style="margin-top:8px;font-size:12px;color:#c8a84b"></div>
+<button class="save-btn" onclick="save()">SAVE POSITION</button>
+<div id="status" style="margin-top:12px;font-size:16px;color:#c8a84b;font-weight:700;padding:12px;border:2px solid #c8a84b;border-radius:8px;display:none;word-break:break-all;user-select:all;-webkit-user-select:all"></div>
 
 <script>
 var BASE_L=107,BASE_T=107,BASE_R=403,BASE_B=403;
@@ -72,6 +72,7 @@ function loadImg(n,cb){
   img.src='assets/dice/dice-'+n+'.png?t='+Date.now();
 }
 
+try{var saved=JSON.parse(localStorage.getItem('dice_crop'));if(saved){ox=saved.ox;oy=saved.oy;oz=saved.oz||0;}}catch(e){}
 var loaded=0;
 [1,5,6].forEach(function(n){
   loadImg(n,function(){loaded++;if(loaded===3)render()});
@@ -118,15 +119,14 @@ function render(){
 
 function save(){
   var status=document.getElementById('status');
-  status.textContent='Saving...';
-  var data=JSON.stringify({ox:ox,oy:oy});
-  fetch('/apply-dice-crop',{method:'POST',headers:{'Content-Type':'application/json'},body:data})
-  .then(function(r){return r.text()})
-  .then(function(t){status.textContent=t})
-  .catch(function(){
-    var cropSize=SIZE+oz*2;
-    status.textContent='Copy this to Claude: OFFSET X='+ox+' Y='+oy+' ZOOM='+oz+' | Crop: ('+(BASE_L+ox-oz)+','+(BASE_T+oy-oz)+')-('+(BASE_R+ox+oz)+','+(BASE_B+oy+oz)+')';
-  });
+  var cropSize=SIZE+oz*2;
+  var L=BASE_L+ox-oz,T=BASE_T+oy-oz,R=BASE_R+ox+oz,B=BASE_B+oy+oz;
+  localStorage.setItem('dice_crop',JSON.stringify({ox:ox,oy:oy,oz:oz}));
+  window.location.hash='x='+ox+'&y='+oy+'&z='+oz;
+  var msg='CROP: ('+L+','+T+')-('+R+','+B+')';
+  status.style.display='block';
+  status.textContent=msg;
+  document.title=msg;
 }
 </script>
 </body>
