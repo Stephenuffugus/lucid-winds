@@ -2959,7 +2959,7 @@
     .gb-new{background:none;border:none;padding:0;box-shadow:none;min-height:0;min-width:0;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s,filter .15s;display:inline-block}
     .gb-new::before{display:none}
     .gb-new:active{transform:scale(.92);filter:brightness(1.2)}
-    .gb-new img{width:clamp(72px,20vw,100px);height:auto;display:block;pointer-events:none;-webkit-user-drag:none}
+    .gb-new img{width:clamp(120px,35vw,180px);height:auto;display:block;pointer-events:none;-webkit-user-drag:none}
 
     /* Select dropdowns — matching pills */
     .gsl{background:rgba(20,24,18,.88);color:rgba(122,179,86,.95);border:1.5px solid rgba(74,124,53,.22);border-radius:24px;padding:clamp(10px,2.6vw,14px) clamp(16px,4vw,24px);font-size:clamp(.72rem,2vw,.88rem);font-family:'DM Mono',monospace;min-height:48px;box-shadow:inset 0 2px 8px rgba(0,0,0,.12);-webkit-appearance:none;appearance:none;transition:border-color .2s;font-weight:600;letter-spacing:.04em}
@@ -31983,7 +31983,7 @@ var G=[
 {id:'reversi',n:'Moss & Lichen',i:'\u25cf',r:'Place moss to surround and flip lichen. Control the most territory to win.',cat:'board',thumb:'assets/games/thumbs/reversi.png'},
 {id:'yahtzee',n:'Seed Toss',i:'\ud83c\udfb2',r:'Roll 5 seed dice up to 3 times. Hold keepers, score in 13 categories. Aim high!',cat:'dice',thumb:'assets/games/thumbs/yahtzee.png'},
 {id:'farkle',n:'Farkle',i:'\ud83c\udfb2',r:'Roll 6 dice. Keep 1s, 5s, and three-of-a-kinds. Roll again or bank — zero scorers and you bust!',cat:'dice',thumb:'assets/games/thumbs/farkle.png'},
-{id:'sokoban',n:'Garden Path',i:'\ud83c\udf3f',r:'Push crates onto target squares to plant them. Watch your step — crates only push, never pull.',cat:'puzzle',thumb:'assets/games/thumbs/sokoban.png'}
+{id:'sokoban',n:'Catnip Chaos',i:'\ud83d\udc31',r:'Push catnip toys onto the cat beds. Watch your step — toys only push, never pull!',cat:'puzzle',thumb:'assets/games/thumbs/sokoban.png'}
 ];
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
 // ═══ HASH ACCUMULATION BUFFER ═══
@@ -35781,13 +35781,13 @@ function GSK(a){
   // ── TILE ART (PNG preferred, SVG fallback) ──
   // Drop PNGs in assets/games/sokoban/ to auto-reskin. See README.txt in that folder.
   var SVG={
-    player:'<svg viewBox="0 0 48 48"><rect x="6" y="6" width="36" height="36" rx="4" fill="#3a5a2a"/><circle cx="24" cy="18" r="7" fill="#7ab356"/><circle cx="24" cy="16" r="4" fill="#e8dcc8"/><rect x="18" y="25" width="12" height="14" rx="3" fill="#5a8a3a"/><circle cx="22" cy="15" r="1" fill="#3a5a2a"/><circle cx="26" cy="15" r="1" fill="#3a5a2a"/></svg>',
-    crate:'<svg viewBox="0 0 48 48"><rect x="6" y="6" width="36" height="36" rx="4" fill="#3a2a1a"/><rect x="12" y="18" width="24" height="22" rx="3" fill="#C4714A"/><rect x="10" y="16" width="28" height="5" rx="2" fill="#e8dcc8"/><polygon points="24,8 29,16 19,16" fill="#7ab356"/></svg>',
-    planted:'<svg viewBox="0 0 48 48"><rect x="6" y="6" width="36" height="36" rx="4" fill="#2A2018"/><rect x="6" y="6" width="36" height="36" rx="4" fill="none" stroke="#c8a84b" stroke-width="2.5"/><rect x="12" y="18" width="24" height="22" rx="3" fill="#C4714A"/><rect x="10" y="16" width="28" height="5" rx="2" fill="#e8dcc8"/><polygon points="24,8 29,16 19,16" fill="#7ab356"/><circle cx="24" cy="24" r="14" fill="#c8a84b" opacity="0.12"/></svg>',
-    target:'<svg viewBox="0 0 48 48"><rect x="6" y="6" width="36" height="36" rx="4" fill="#2A2018"/><rect x="9" y="9" width="30" height="30" rx="3" fill="none" stroke="#c8a84b" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.7"/><circle cx="24" cy="24" r="5" fill="#7ab356" opacity="0.2"/></svg>',
+    player:'<svg viewBox="0 0 48 48"><rect x="4" y="4" width="40" height="40" rx="4" fill="#8B6B3D"/><ellipse cx="24" cy="22" rx="10" ry="9" fill="#e8a050"/><ellipse cx="24" cy="30" rx="8" ry="7" fill="#d4903a"/><polygon points="15,16 12,6 18,13" fill="#e8a050"/><polygon points="33,16 36,6 30,13" fill="#e8a050"/><polygon points="15,16 13,8 17,14" fill="#f0b870" opacity="0.6"/><polygon points="33,16 35,8 31,14" fill="#f0b870" opacity="0.6"/><circle cx="20" cy="20" r="2.5" fill="#2a1a0a"/><circle cx="28" cy="20" r="2.5" fill="#2a1a0a"/><circle cx="21" cy="19.5" r="0.8" fill="#fff"/><circle cx="29" cy="19.5" r="0.8" fill="#fff"/><ellipse cx="24" cy="24" rx="2" ry="1.2" fill="#d47a7a"/><line x1="10" y1="22" x2="4" y2="20" stroke="#e8a050" stroke-width="1" opacity="0.6"/><line x1="10" y1="24" x2="4" y2="25" stroke="#e8a050" stroke-width="1" opacity="0.6"/><line x1="38" y1="22" x2="44" y2="20" stroke="#e8a050" stroke-width="1" opacity="0.6"/><line x1="38" y1="24" x2="44" y2="25" stroke="#e8a050" stroke-width="1" opacity="0.6"/><ellipse cx="24" cy="40" rx="6" ry="2" fill="rgba(0,0,0,0.15)"/></svg>',
+    crate:'<svg viewBox="0 0 48 48"><rect x="4" y="4" width="40" height="40" rx="4" fill="#8B6B3D"/><circle cx="24" cy="24" r="12" fill="#7ab356"/><circle cx="24" cy="24" r="9" fill="#5a9a36"/><path d="M24 15 Q20 20 24 24 Q28 20 24 15Z" fill="#4a8a26"/><path d="M24 24 Q18 22 15 24 Q18 26 24 24Z" fill="#4a8a26"/><path d="M24 24 Q30 22 33 24 Q30 26 24 24Z" fill="#4a8a26"/><circle cx="24" cy="24" r="3" fill="#8BC34A" opacity="0.5"/></svg>',
+    planted:'<svg viewBox="0 0 48 48"><rect x="4" y="4" width="40" height="40" rx="4" fill="#c8a84b" opacity="0.25"/><rect x="4" y="4" width="40" height="40" rx="4" fill="none" stroke="#c8a84b" stroke-width="2.5"/><circle cx="24" cy="24" r="12" fill="#7ab356"/><circle cx="24" cy="24" r="9" fill="#5a9a36"/><path d="M24 15 Q20 20 24 24 Q28 20 24 15Z" fill="#4a8a26"/><circle cx="24" cy="24" r="3" fill="#c8a84b"/><circle cx="24" cy="24" r="14" fill="#c8a84b" opacity="0.08"/></svg>',
+    target:'<svg viewBox="0 0 48 48"><rect x="4" y="4" width="40" height="40" rx="4" fill="#2A2018"/><ellipse cx="24" cy="26" rx="14" ry="10" fill="#3a2a1a"/><ellipse cx="24" cy="25" rx="12" ry="8" fill="#5C4033"/><ellipse cx="24" cy="24" rx="8" ry="5" fill="#6B4F2D"/><ellipse cx="24" cy="23.5" rx="4" ry="2.5" fill="#8B6B3D" opacity="0.5"/></svg>',
     wall:'<svg viewBox="0 0 48 48"><rect x="4" y="4" width="40" height="40" rx="4" fill="#2f4a24"/><rect x="6" y="6" width="36" height="36" rx="3" fill="#4a7c35" stroke="#5a8a3a" stroke-width="2"/></svg>',
-    floor:'<svg viewBox="0 0 48 48"><rect x="6" y="6" width="36" height="36" rx="4" fill="#6B4F2D"/><rect x="8" y="8" width="32" height="32" rx="3" fill="#8B6B3D"/></svg>',
-    playerOnTarget:'<svg viewBox="0 0 48 48"><rect x="6" y="6" width="36" height="36" rx="4" fill="#2A2018"/><rect x="9" y="9" width="30" height="30" rx="3" fill="none" stroke="#c8a84b" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.5"/><circle cx="24" cy="18" r="6" fill="#7ab356"/><circle cx="24" cy="16" r="3.5" fill="#e8dcc8"/><rect x="19" y="24" width="10" height="12" rx="2.5" fill="#5a8a3a"/></svg>'
+    floor:'<svg viewBox="0 0 48 48"><rect x="4" y="4" width="40" height="40" rx="4" fill="#6B4F2D"/><rect x="6" y="6" width="36" height="36" rx="3" fill="#8B6B3D"/></svg>',
+    playerOnTarget:'<svg viewBox="0 0 48 48"><rect x="4" y="4" width="40" height="40" rx="4" fill="#2A2018"/><ellipse cx="24" cy="26" rx="14" ry="10" fill="#3a2a1a"/><ellipse cx="24" cy="25" rx="12" ry="8" fill="#5C4033"/><ellipse cx="24" cy="22" rx="10" ry="9" fill="#e8a050"/><ellipse cx="24" cy="30" rx="8" ry="7" fill="#d4903a"/><polygon points="15,16 12,6 18,13" fill="#e8a050"/><polygon points="33,16 36,6 30,13" fill="#e8a050"/><circle cx="20" cy="20" r="2.5" fill="#2a1a0a"/><circle cx="28" cy="20" r="2.5" fill="#2a1a0a"/><ellipse cx="24" cy="24" rx="2" ry="1.2" fill="#d47a7a"/></svg>'
   };
   window._SKSVG=SVG;
   // Map logical tile key → PNG filename (kebab-case)
@@ -35802,13 +35802,38 @@ function GSK(a){
     target:tile('target'),wall:tile('wall'),floor:tile('floor'),
     playerOnTarget:tile('playerOnTarget')
   };
-  // ── 5 LEVELS ──
+  // ── 25 LEVELS — progressive difficulty ──
   var LEVELS=[
+    // 1-5: Tutorial (1 box)
+    {w:5,h:3,map:'#####'+'#@OX#'+'#####'},
+    {w:5,h:4,map:'#####'+'#...#'+'#@OX#'+'#####'},
+    {w:5,h:5,map:'#####'+'#..X#'+'#.O.#'+'#@..#'+'#####'},
+    {w:6,h:5,map:'######'+'#....#'+'#.@O.#'+'#...X#'+'######'},
+    {w:6,h:5,map:'######'+'#..#X#'+'#..O.#'+'#@...#'+'######'},
+    // 6-10: Two boxes
+    {w:6,h:5,map:'######'+'#.@..#'+'#.OO.#'+'#.XX.#'+'######'},
+    {w:7,h:5,map:'#######'+'#@..X.#'+'#.O.O.#'+'#..X..#'+'#######'},
     {w:7,h:5,map:'#######'+'#..@..#'+'#.O.X.#'+'#..O.X#'+'#######'},
+    {w:6,h:6,map:'######'+'#..X.#'+'#....#'+'#.OO.#'+'#@.X.#'+'######'},
+    {w:7,h:6,map:'#######'+'##.X.##'+'#..O..#'+'#.O.X.#'+'#..@..#'+'#######'},
+    // 11-15: Three boxes
     {w:7,h:6,map:'#######'+'#.....#'+'#.O.O.#'+'#.X@X.#'+'#..O..#'+'#..X.##'},
+    {w:7,h:6,map:'#######'+'#X.X.X#'+'#.....#'+'#O.O.O#'+'#..@..#'+'#######'},
+    {w:7,h:7,map:'#######'+'#..#..#'+'#.O.X.#'+'#..@..#'+'#.O.X.#'+'#..OX.#'+'#######'},
     {w:8,h:6,map:'########'+'#......#'+'#.OO.X.#'+'#.@..X.#'+'#....X.#'+'####.O##'},
-    {w:8,h:7,map:'########'+'#..#...#'+'#.O..O.#'+'#..X.X.#'+'##.@.###'+'#.O..X.#'+'########'},
-    {w:9,h:7,map:'#########'+'#...#...#'+'#.O...O.#'+'#..X.X..#'+'#.O.@.O.#'+'#..X.X..#'+'#########'}
+    {w:7,h:7,map:'#######'+'#.....#'+'#.O.#.#'+'#X@X..#'+'#.O.#.#'+'#..X..#'+'#######'},
+    // 16-20: Four boxes + obstacles
+    {w:8,h:7,map:'########'+'#..#...#'+'#.O..O.#'+'#..X.X.#'+'##.@.###'+'#.O..X.#'+'####X###'},
+    {w:8,h:7,map:'########'+'#.X..X.#'+'#......#'+'#.OO@..#'+'#......#'+'#.X..X.#'+'########'},
+    {w:8,h:7,map:'########'+'##....##'+'#..OO..#'+'#.X@@X.#'+'#..OO..#'+'##.XX.##'+'########'.replace('@@','@.')},
+    {w:9,h:7,map:'#########'+'#...#...#'+'#.O...O.#'+'#..X.X..#'+'#.O.@.O.#'+'#..X.X..#'+'#########'},
+    {w:8,h:8,map:'########'+'#......#'+'#.#OO#.#'+'#..XX..#'+'#..@...#'+'#.#OO#.#'+'#..XX..#'+'########'},
+    // 21-25: Expert
+    {w:9,h:7,map:'#########'+'##..#..##'+'#.O.X.O.#'+'#..O@O..#'+'#.X.#.X.#'+'##..X..##'+'#########'},
+    {w:8,h:8,map:'########'+'#..X...#'+'#.O..#.#'+'##.O.X.#'+'#..@...#'+'#.O..#.#'+'#..X.X.#'+'########'},
+    {w:9,h:8,map:'#########'+'#.......#'+'#.O.#.O.#'+'#..X.X..#'+'##.O@O.##'+'#..X.X..#'+'#.......#'+'#########'},
+    {w:9,h:8,map:'#########'+'##.....##'+'#..OOO..#'+'#.X.@.X.#'+'#..#.#..#'+'#.X.O.X.#'+'##..X..##'+'#########'},
+    {w:9,h:9,map:'#########'+'#...#...#'+'#.O.O.O.#'+'#.X.X.X.#'+'##..@..##'+'#.X.X.X.#'+'#.O.O.O.#'+'#...#...#'+'#########'}
   ];
   var grid=[],origGrid=[],w=7,h=5,px=0,py=0,moves=0,lvl=0;
   ms(a,'Level <strong id="SKl">1</strong> · Moves <strong id="SKm">0</strong>');mm(a);
