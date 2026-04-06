@@ -36194,12 +36194,8 @@ function GBW(a){
       var speed=(Math.PI*2)/(beatInt*16);
       var mode=_bwPaths[_bwPathIdx];
       _bwPathT+=dt*speed;
-      if(mode==='circle'){rotAngle+=speed*dt}
-      else if(mode==='wave'){rotAngle=Math.sin(_bwPathT*0.5)*1.5}
-      else if(mode==='figure8'){rotAngle=Math.sin(_bwPathT*0.3)*Math.PI*0.8}
-      else if(mode==='breathe'){rotAngle+=speed*dt*(0.5+Math.sin(_bwPathT*0.2)*0.5);cx=W/2+Math.sin(_bwPathT*0.15)*radius*0.1;cy=H/2+Math.cos(_bwPathT*0.15)*radius*0.1}
-      else if(mode==='custom'&&_bwCustomPath.length>2){var ci=(_bwPathT*2)%_bwCustomPath.length;var fi=Math.floor(ci);var ff=ci-fi;var p0=_bwCustomPath[fi%_bwCustomPath.length];var p1=_bwCustomPath[(fi+1)%_bwCustomPath.length];cx=W*(p0.x+(p1.x-p0.x)*ff);cy=H*(p0.y+(p1.y-p0.y)*ff);rotAngle+=speed*dt}
-      else{rotAngle+=speed*dt}
+      rotAngle+=speed*dt;
+      if(mode==='custom'&&_bwCustomPath.length>2){var ci=(_bwPathT*2)%_bwCustomPath.length;var fi=Math.floor(ci);var ff=ci-fi;var p0=_bwCustomPath[fi%_bwCustomPath.length];var p1=_bwCustomPath[(fi+1)%_bwCustomPath.length];cx=W*(p0.x+(p1.x-p0.x)*ff);cy=H*(p0.y+(p1.y-p0.y)*ff)}
     }
     colorPh+=dt*0.02;if(colorPh>1)colorPh-=1;
     ctx.fillStyle='#0d100c';ctx.fillRect(0,0,W,H);
@@ -36215,29 +36211,44 @@ function GBW(a){
   }
 
   // Controls
-  // Movement patterns
-  var _bwPaths=['circle','wave','figure8','breathe','custom'];
+  // Movement patterns — circle + custom path only
+  var _bwPaths=['circle','custom'];
   var _bwPathIdx=0,_bwCustomPath=[],_bwDrawingPath=false,_bwPathT=0;
   var _bwUserColor=null; // null = auto palette
   // Mirror modes
   var _bwMirrors=['mandala','radial','kaleidoscope','horizontal','quad'];
   var _bwMirrorIdx=0;
 
-  var _bbs='min-height:48px;padding:0.4rem 0.6rem;font-size:clamp(.5rem,1.4vw,.65rem)';
+  var _bbs='min-height:52px;padding:0.5rem 0.8rem;font-size:clamp(.6rem,1.8vw,.75rem)';
+  // Color palette
+  var _bwPalette=['#7ab356','#4a7c35','#c8a84b','#e8dcc8','#c07070','#5bafd4','#9b59b6','#c76a30','#e8a050','#3B5323','#D4A843','#fff'];
+  var palDiv=document.createElement('div');palDiv.style.cssText='display:flex;gap:4px;justify-content:center;flex-wrap:wrap;padding:6px 4px';
+  _bwPalette.forEach(function(c){
+    var sw=document.createElement('div');
+    sw.style.cssText='width:clamp(28px,8vw,36px);height:clamp(28px,8vw,36px);border-radius:50%;background:'+c+';cursor:pointer;border:3px solid rgba(0,0,0,0.3);box-shadow:0 1px 4px rgba(0,0,0,0.3);transition:transform .12s,border-color .12s';
+    sw.onclick=function(){_BWColor(c);palDiv.querySelectorAll('div').forEach(function(d){d.style.borderColor='rgba(0,0,0,0.3)';d.style.transform='scale(1)'});sw.style.borderColor='var(--gold)';sw.style.transform='scale(1.2)'};
+    palDiv.appendChild(sw);
+  });
+  // Auto color rainbow button
+  var autoSw=document.createElement('div');
+  autoSw.id='BWautoSw';
+  autoSw.style.cssText='width:clamp(28px,8vw,36px);height:clamp(28px,8vw,36px);border-radius:50%;background:conic-gradient(#c07070,#e8a050,#c8a84b,#7ab356,#5bafd4,#9b59b6,#c07070);cursor:pointer;border:3px solid var(--gold);box-shadow:0 1px 4px rgba(0,0,0,0.3);transition:transform .12s;transform:scale(1.2)';
+  autoSw.onclick=function(){_bwUserColor=null;palDiv.querySelectorAll('div').forEach(function(d){d.style.borderColor='rgba(0,0,0,0.3)';d.style.transform='scale(1)'});autoSw.style.borderColor='var(--gold)';autoSw.style.transform='scale(1.2)'};
+  palDiv.appendChild(autoSw);
+  a.appendChild(palDiv);
+
   var ctrlDiv=mc(a);
-  ctrlDiv.innerHTML='<div style="display:flex;gap:5px;padding:4px 0;flex-wrap:wrap;justify-content:center">'
+  ctrlDiv.innerHTML='<div style="display:flex;gap:6px;padding:6px 0;flex-wrap:wrap;justify-content:center">'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWS(4)" id="BWs4">4</button>'
     +'<button class="gb gon" style="'+_bbs+'" onclick="_BWS(8)" id="BWs8">8</button>'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWS(12)" id="BWs12">12</button>'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWMirror()" id="BWmir">✿ MANDALA</button>'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWBrush()" id="BWbr">● 3</button>'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWPath()" id="BWpath">◯ SPIN</button>'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWBpm(-10)">BPM−</button>'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWBpm(10)">BPM+</button>'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWMusic()" id="BWmus">♫ OFF</button>'
-    +'<button class="gb" style="'+_bbs+'" onclick="_BWBrush()" id="BWbr">● 3</button>'
-    +'<button class="gb" style="'+_bbs+'" onclick="_BWMirror()" id="BWmir">✿ MANDALA</button>'
-    +'<button class="gb" style="'+_bbs+'" onclick="_BWPath()" id="BWpath">◯ CIRCLE</button>'
-    +'<input type="color" id="BWcolor" value="#7ab356" style="width:36px;height:36px;border:2px solid rgba(74,124,53,.3);border-radius:8px;background:none;cursor:pointer;padding:0" onchange="_BWColor(this.value)" title="Pick color">'
-    +'<button class="gb" style="'+_bbs+'" onclick="_BWAutoColor()" id="BWac">🎨 AUTO</button>'
-    +'<button class="gb" style="'+_bbs+'" onclick="_BWClear()">✕ CLR</button>'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWClear()">✕ CLEAR</button>'
     +'<button class="gb" style="'+_bbs+';border-color:rgba(200,168,75,0.3);color:var(--gold)" onclick="_BWSave()">💾 SAVE</button>'
     +'</div>';
 
@@ -36250,8 +36261,7 @@ function GBW(a){
     if(musicOn){if(!aCtx)initAudio();else{nextBT=aCtx.currentTime+0.1;scheduleBeat()}}
     if(!musicOn&&schTimer)clearTimeout(schTimer);if(mGain)mGain.gain.value=musicOn?0.3:0};
   window._BWBrush=function(){brushIdx=(brushIdx+1)%brushSizes.length;brushSize=brushSizes[brushIdx];document.getElementById('BWbr').textContent='● '+Math.round(brushSize)};
-  window._BWColor=function(c){_bwUserColor=c;var acBtn=document.getElementById('BWac');if(acBtn){acBtn.className='gb';acBtn.textContent='🎨 FIXED'}};
-  window._BWAutoColor=function(){_bwUserColor=_bwUserColor?null:document.getElementById('BWcolor').value;var acBtn=document.getElementById('BWac');if(acBtn){acBtn.className='gb'+(_bwUserColor?'':' gon');acBtn.textContent=_bwUserColor?'🎨 FIXED':'🎨 AUTO'}};
+  window._BWColor=function(c){_bwUserColor=c;var as=document.getElementById('BWautoSw');if(as){as.style.borderColor='rgba(0,0,0,0.3)';as.style.transform='scale(1)'}};
   window._BWMirror=function(){
     _bwMirrorIdx=(_bwMirrorIdx+1)%_bwMirrors.length;
     var names={mandala:'✿ MANDALA',radial:'❋ RADIAL',kaleidoscope:'◆ KALEIDOSCOPE',horizontal:'↔ MIRROR',quad:'✦ QUAD'};
@@ -36259,10 +36269,10 @@ function GBW(a){
   };
   window._BWPath=function(){
     _bwPathIdx=(_bwPathIdx+1)%_bwPaths.length;_bwPathT=0;
-    var names={circle:'◯ CIRCLE',wave:'〰 WAVE',figure8:'∞ FIGURE 8',breathe:'◈ BREATHE',custom:'✏ DRAW PATH'};
-    document.getElementById('BWpath').textContent=names[_bwPaths[_bwPathIdx]];
-    if(_bwPaths[_bwPathIdx]==='custom'){_bwCustomPath=[];_bwDrawingPath=true;sm('Draw a path on the canvas, then tap DRAW PATH again')}
-    else{_bwDrawingPath=false}
+    var p=_bwPaths[_bwPathIdx];
+    document.getElementById('BWpath').textContent=p==='circle'?'◯ SPIN':'✏ DRAW PATH';
+    if(p==='custom'){_bwCustomPath=[];_bwDrawingPath=true;sm('Draw a path on canvas, then tap DRAW PATH again')}
+    else{_bwDrawingPath=false;cx=W/2;cy=H/2}
   };
   window._BWClear=function(){bufX.clearRect(0,0,bufC.width,bufC.height);rotAngle=0;strokes=0;sm('Canvas cleared')};
   window._BWSave=function(){
