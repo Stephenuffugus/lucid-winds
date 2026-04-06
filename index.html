@@ -30761,7 +30761,128 @@ function _spawnFerals() {
 // Debounced re-check after shared markers arrive
 function _feralRespawnDebounced() {
   if (_feralRespawnTimer) clearTimeout(_feralRespawnTimer);
-  _feralRespawnTimer = setTimeout(function() { _spawnFerals(); }, 2000);
+  _feralRespawnTimer = setTimeout(function() { _spawnFerals(); _wildReproduction(); }, 2000);
+}
+
+// ═══ WILD PLANT REPRODUCTION ═══
+// Breeding pairs in a zone have a chance to spawn a NEW wild plant in an
+// adjacent zone. This is a shared Firestore event visible to all players.
+// Uses deterministic doc ID (parent hashes + date) so multiple players
+// triggering the same check produce the same write → idempotent.
+var REPRO_CHANCE = 0.20; // 20% per breeding pair per day (tune for beta)
+var REPRO_KEY = 'fg_repro_zones'; // localStorage: { zoneKey: lastCheckDate }
+var _reproTimer = null;
+
+function _wildReproduction() {
+  if (!_uLat || !_map) return;
+  var user = window.firebase && firebase.auth() && firebase.auth().currentUser;
+  if (!user || !user.uid || !window.db) return;
+
+  var td = new Date().toISOString().slice(0, 10);
+  var checked = {}; try { checked = JSON.parse(localStorage.getItem(REPRO_KEY) || '{}'); } catch (e) {}
+
+  // Build zone map from all sources
+  var zones = _getAllZonePlants();
+  var zoneKeys = Object.keys(zones);
+  var births = 0;
+
+  for (var z = 0; z < zoneKeys.length; z++) {
+    var zk = zoneKeys[z];
+    var plants = zones[zk];
+    if (plants.length < 2) continue; // need 2+ for breeding pair
+    if (checked[zk] === td) continue; // already checked today
+
+    checked[zk] = td;
+
+    // Build pairs (max 6 per zone, same logic as old feral system)
+    var pairCount = Math.min(6, Math.floor(plants.length * (plants.length - 1) / 2));
+    for (var pp = 0; pp < pairCount; pp++) {
+      if (Math.random() >= REPRO_CHANCE) continue;
+
+      // Pick random pair
+      var idxA = Math.floor(Math.random() * plants.length);
+      var idxB = (idxA + 1 + Math.floor(Math.random() * (plants.length - 1))) % plants.length;
+      var parentA = plants[idxA], parentB = plants[idxB];
+
+      // Generate offspring hash
+      var offHash = _breedHash(parentA.hash, parentB.hash);
+      var gradeA = 'Common', gradeB = 'Common';
+      try {
+        if (window.hashToTraits && window.getTerraGrade) {
+          gradeA = window.getTerraGrade(window.hashToTraits(parentA.hash)).name || 'Common';
+          gradeB = window.getTerraGrade(window.hashToTraits(parentB.hash)).name || 'Common';
+        }
+      } catch (e) {}
+      offHash = _adjustOffspringRarity(offHash, gradeA, gradeB);
+
+      // Pick adjacent zone with wind influence
+      var parts = zk.split(',');
+      var baseLat = parseFloat(parts[0]), baseLng = parseFloat(parts[1]);
+      var windRad = ((_wd || 0) + Math.random() * 180 - 90) * Math.PI / 180;
+      var windStr = 0.2 + Math.random() * 0.3;
+      var randStr = 1 - windStr;
+      // Place in adjacent zone (1-2 zone widths away)
+      var dist = ZONE_SIZE * (1 + Math.random());
+      var targetLat = baseLat + Math.cos(windRad) * dist * windStr + (Math.random() - 0.5) * dist * randStr;
+      var targetLng = baseLng + Math.sin(windRad) * dist * windStr + (Math.random() - 0.5) * dist * randStr;
+
+      // Compute traits for the offspring
+      var offTraits = null, offEA = 0, offGrade = 'Common';
+      try {
+        offTraits = window.hashToTraits(offHash);
+        offEA = window.computeEA ? window.computeEA(offTraits, 0) : 0;
+        var otg = window.getTerraGrade ? window.getTerraGrade(offTraits) : null;
+        offGrade = otg ? otg.name : 'Common';
+      } catch (e) {}
+
+      // Deterministic doc ID: prevents duplicates across players
+      // Same parents + same date = same doc ID regardless of who triggers
+      var pairKey = [parentA.hash.slice(0, 8), parentB.hash.slice(0, 8)].sort().join('');
+      var docId = 'wild_' + pairKey + '_' + td.replace(/-/g, '');
+
+      var dropData = {
+        lat: targetLat, lng: targetLng, hash: offHash,
+        ownerUid: user.uid,
+        ownerName: localStorage.getItem('pw_keeper_name') || 'Keeper',
+        ea: offEA, defenderGame: 'set',
+        season: (offTraits && offTraits.season) || 0,
+        status: 'alive', grade: offGrade,
+        zone: _zoneKey(targetLat, targetLng),
+        droppedAt: new Date().toISOString(),
+        wildBorn: true, // marks this as nature-spawned
+        parentA: parentA.hash.slice(0, 8),
+        parentB: parentB.hash.slice(0, 8)
+      };
+
+      // Write to Firestore — idempotent via deterministic doc ID
+      // If another player already triggered this pair today, .set() overwrites harmlessly
+      (function(did, dd) {
+        window.db.collection('wildDrops').doc(did).set(dd)
+          .then(function() {
+            if (window._swsLog) _swsLog('Wild birth! ' + did + ' grade:' + dd.grade, 'ok');
+          })
+          .catch(function(e) {
+            // Permission denied or already exists — fine either way
+            if (window._swsLog) _swsLog('Wild birth write: ' + (e.code || e.message), 'warn');
+          });
+      })(docId, dropData);
+
+      births++;
+      break; // max 1 birth per zone per day
+    }
+  }
+
+  // Prune old zone checks (keep 7 days)
+  var ckeys = Object.keys(checked);
+  var weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+  for (var ck = 0; ck < ckeys.length; ck++) {
+    if (checked[ckeys[ck]] < weekAgo) delete checked[ckeys[ck]];
+  }
+  localStorage.setItem(REPRO_KEY, JSON.stringify(checked));
+
+  if (births > 0) {
+    _toast('\ud83c\udf31 ' + births + ' new plant' + (births > 1 ? 's' : '') + ' sprouted in the wild!');
+  }
 }
 
 function _addFeral(f){
