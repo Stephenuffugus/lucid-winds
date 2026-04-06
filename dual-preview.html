@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dual Immune Card Preview — Lucid Winds</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0d100c;
+    color: #e8dcc8;
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    padding: 24px;
+  }
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    color: #c8a84b;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 12px;
+    color: #8a9178;
+    margin-bottom: 28px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    max-width: 600px;
+    margin: 0 auto 40px;
+  }
+  .card-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+  }
+  .card-slot:hover .card { transform: scale(1.04); }
+  .card {
+    position: relative;
+    width: 120px;
+    height: 160px;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.15s ease;
+  }
+  /* Season B background (full card) */
+  .card-bg-b {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    border-radius: 8px;
+  }
+  /* Season A background (clipped top-left triangle) */
+  .card-bg-a {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    border-radius: 8px;
+    clip-path: polygon(0 0, 100% 0, 100% 55px, 0 calc(100% - 55px));
+    z-index: 1;
+  }
+  /* Split border overlay */
+  .card-border {
+    position: absolute;
+    inset: 0;
+    border-radius: 8px;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #8a9178;
+    margin-top: 6px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .label .sym { font-size: 12px; }
+
+  /* Selected highlight ring */
+  .card-slot.selected .card {
+    box-shadow: 0 0 0 2px #c8a84b, 0 0 12px rgba(200,168,75,0.4);
+    transform: scale(1.04);
+  }
+
+  /* Carousel preview section */
+  .carousel-section {
+    text-align: center;
+    margin-top: 12px;
+  }
+  .carousel-section h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1.5px;
+    color: #c8a84b;
+    margin-bottom: 12px;
+  }
+  .carousel-card {
+    position: relative;
+    width: 200px;
+    height: 300px;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 0 auto;
+  }
+  .carousel-card .card-bg-b,
+  .carousel-card .card-bg-a {
+    border-radius: 10px;
+  }
+  .carousel-card .card-bg-a {
+    /* Scale the 55px proportionally: 300/160 = 1.875, 55*1.875 ~ 103 */
+    clip-path: polygon(0 0, 100% 0, 100% 103px, 0 calc(100% - 103px));
+  }
+  .carousel-card .card-border {
+    border-radius: 10px;
+  }
+  .carousel-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: #e8dcc8;
+    margin-top: 10px;
+  }
+  .divider {
+    width: 80px;
+    height: 1px;
+    background: #8a9178;
+    margin: 32px auto 20px;
+    opacity: 0.4;
+  }
+</style>
+</head>
+<body>
+
+<h1>DUAL IMMUNE CARD PREVIEW</h1>
+<p class="subtitle">Tap any card to see carousel size</p>
+
+<div class="grid" id="grid"></div>
+
+<div class="divider"></div>
+
+<div class="carousel-section">
+  <h2>CAROUSEL SIZE</h2>
+  <div id="carousel-wrap">
+    <div class="carousel-card" id="carousel-card"></div>
+    <p class="carousel-label" id="carousel-label"></p>
+  </div>
+</div>
+
+<script>
+(function() {
+  var seasons = [
+    { id: 'spring', name: 'Spring', color: '#E8A0BF', img: 'assets/cards/fronts/card-front-spring.png' },
+    { id: 'summer', name: 'Summer', color: '#D4A843', img: 'assets/cards/fronts/card-front-summer.png' },
+    { id: 'autumn', name: 'Autumn', color: '#D4842A', img: 'assets/cards/fronts/card-front-autumn.png' },
+    { id: 'winter', name: 'Winter', color: '#A0C4E8', img: 'assets/cards/fronts/card-front-winter.png' }
+  ];
+
+  var combos = [];
+  for (var i = 0; i < seasons.length; i++) {
+    for (var j = 0; j < seasons.length; j++) {
+      if (i !== j) combos.push({ a: seasons[i], b: seasons[j] });
+    }
+  }
+
+  var grid = document.getElementById('grid');
+  var carouselCard = document.getElementById('carousel-card');
+  var carouselLabel = document.getElementById('carousel-label');
+  var slots = [];
+
+  function buildCardHTML(a, b) {
+    var borderStyle = 'border-top: 3px solid ' + a.color + ';'
+      + 'border-left: 3px solid ' + a.color + ';'
+      + 'border-right: 3px solid ' + b.color + ';'
+      + 'border-bottom: 3px solid ' + b.color + ';';
+
+    return '<div class="card-bg-b" style="background-image:url(' + b.img + ')"></div>'
+      + '<div class="card-bg-a" style="background-image:url(' + a.img + ')"></div>'
+      + '<div class="card-border" style="' + borderStyle + 'border-radius:inherit"></div>';
+  }
+
+  function selectCombo(idx) {
+    var c = combos[idx];
+    for (var k = 0; k < slots.length; k++) {
+      slots[k].className = 'card-slot' + (k === idx ? ' selected' : '');
+    }
+
+    carouselCard.innerHTML = buildCardHTML(c.a, c.b);
+    // re-apply carousel clip-path on the ::after-equivalent element
+    var bgA = carouselCard.querySelector('.card-bg-a');
+    if (bgA) bgA.style.clipPath = 'polygon(0 0, 100% 0, 100% 103px, 0 calc(100% - 103px))';
+
+    carouselLabel.textContent = c.a.name + ' \u00D7 ' + c.b.name;
+  }
+
+  for (var idx = 0; idx < combos.length; idx++) {
+    var c = combos[idx];
+    var slot = document.createElement('div');
+    slot.className = 'card-slot';
+    slot.setAttribute('data-idx', idx);
+
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = buildCardHTML(c.a, c.b);
+
+    var label = document.createElement('div');
+    label.className = 'label';
+    label.innerHTML = c.a.name + ' <span class="sym">\u00D7</span> ' + c.b.name;
+
+    slot.appendChild(card);
+    slot.appendChild(label);
+    grid.appendChild(slot);
+    slots.push(slot);
+
+    slot.addEventListener('click', (function(i) {
+      return function() { selectCombo(i); };
+    })(idx));
+  }
+
+  // Default selection: first combo
+  selectCombo(0);
+})();
+</script>
+</body>
+</html>
