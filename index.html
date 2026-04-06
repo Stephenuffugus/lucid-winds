@@ -4456,6 +4456,8 @@ window.onerror=function(msg,url,line,col,err){
   </div>
   </div>
 
+  <!-- Trios-only content wrapper — hidden when playing other games -->
+  <div id="trios-wrap">
   <!-- Rules strip — always visible above cards -->
   <div class="rules-strip" id="rules-strip">
     <span class="rules-text">Tap 3 cards that share a pattern. Each feature — <strong>color</strong>, <strong>shape</strong>, <strong>count</strong>, <strong>shading</strong> — must be all same or all different.</span>
@@ -4518,6 +4520,7 @@ window.onerror=function(msg,url,line,col,err){
     </div>
   </div>
 
+  </div><!-- end trios-wrap -->
   </div><!-- end sw -->
   </div><!-- end panel-game -->
   <div id="fg-ov" onclick="if(event.target===this)_cp()"></div>
@@ -27094,20 +27097,24 @@ document.addEventListener('keydown', function(e) {
     var _agEl = document.getElementById('fg-ag');
     var _ssbEl = document.getElementById('set-status');
     var _tdEl = document.getElementById('trios-dash');
+    var _twEl = document.getElementById('trios-wrap');
     if (tab !== 'game') {
       if (_swEl) _swEl.style.display = 'none';
       if (_tdEl) _tdEl.style.display = 'none';
+      if (_twEl) _twEl.style.display = 'none';
       if (_ssbEl) _ssbEl.style.display = 'none';
     } else {
       if (window._a && window._a !== 'set') {
         if (_swEl) _swEl.style.display = 'none';
         if (_tdEl) _tdEl.style.display = 'none';
+        if (_twEl) _twEl.style.display = 'none';
         if (_ssbEl) _ssbEl.style.display = 'none';
         if (_agEl) _agEl.classList.add('on');
       } else {
         // Trios game or no game — show topbar with trio/deck counts
         if (_swEl) _swEl.style.display = '';
         if (_tdEl) _tdEl.style.display = '';
+        if (_twEl) _twEl.style.display = '';
         if (_ssbEl) _ssbEl.style.display = '';
       }
     }
@@ -32608,9 +32615,9 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;_m=Math.m
   var _solGames={golf:1,klondike:1,spider:1,freecell:1,pyramid:1,tripeaks:1};
   _solClearFS();
   var _bnav=document.querySelector('.fg-bottomnav');
-  var _td=document.getElementById('trios-dash');
-  if(id==='set'){sw.style.display='';if(_td)_td.style.display='';if(ssb)ssb.style.display='';ag.classList.remove('on');ag.classList.remove('sol');ag.innerHTML='';if(_bnav)_bnav.style.display='flex';if(gps){gps.classList.remove('on');}try{_updateGP()}catch(e){}return}
-  sw.style.display='none';if(_td)_td.style.display='none';if(ssb)ssb.style.display='none';ag.classList.add('on');ag.classList.toggle('sol',!!_solGames[id]);ag.innerHTML='';
+  var _td=document.getElementById('trios-dash');var _tw=document.getElementById('trios-wrap');
+  if(id==='set'){sw.style.display='';if(_td)_td.style.display='';if(_tw)_tw.style.display='';if(ssb)ssb.style.display='';ag.classList.remove('on');ag.classList.remove('sol');ag.innerHTML='';if(_bnav)_bnav.style.display='flex';if(gps){gps.classList.remove('on');}try{_updateGP()}catch(e){}return}
+  sw.style.display='none';if(_td)_td.style.display='none';if(_tw)_tw.style.display='none';if(ssb)ssb.style.display='none';ag.classList.add('on');ag.classList.toggle('sol',!!_solGames[id]);ag.innerHTML='';
   if(_bnav)_bnav.style.display='none';
   if(_solGames[id]){_solEnterFS()}
   if(gps){gps.classList.add('on');try{_updateGP()}catch(e){console.warn('[GP]',e)}}
@@ -35241,7 +35248,7 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolli
   function score(){var ct=new Array(7).fill(0);for(var i=0;i<6;i++)if(kept[i])ct[dice[i]]++;var s=0;for(var v=1;v<=6;v++){if(ct[v]>=3){s+=(v===1)?1000:v*100;var extra=ct[v]-3;s+=extra*100;ct[v]=0}else{if(v===1)s+=ct[v]*100;if(v===5)s+=ct[v]*50}}return s}
   function nextPlayer(){turn=0;kept=new Array(6).fill(false);dice=new Array(6).fill(0);busted=false;rolling=false;if(finalRound){curP=(curP+1)%players.length;if(curP===finalStart){endGame();return}}else{curP=(curP+1)%players.length}rn();sm('P'+(curP+1)+"'s turn — 🎲 Roll!")}
   function endGame(){gameOver=true;var best=-1,winner=0;for(var i=0;i<players.length;i++)if(players[i].banked>best){best=players[i].banked;winner=i}sm('🏆 P'+(winner+1)+' wins with '+best+'! Tap 🔄 New');_play('win');try{_playWin()}catch(e){}if(winner===0){_e('game_win');_sr('farkle',{w:true,s:best})}else{_e('game_loss');_sr('farkle',{w:false,s:players[0].banked})}rn()}
-  window._FR=function(){if(rolling||busted||gameOver)return;rolling=true;var any=false;for(var i=0;i<6;i++)if(!kept[i]){_play('dice');dice[i]=Math.floor(Math.random()*6)+1;any=true}if(!any){turn+=score();kept=new Array(6).fill(false);for(var i=0;i<6;i++)dice[i]=Math.floor(Math.random()*6)+1;sm('🔥 Hot dice! +'+turn+' locked — rolling all 6')}var ct=new Array(7).fill(0);for(var i=0;i<6;i++)if(!kept[i])ct[dice[i]]++;var has=ct[1]>0||ct[5]>0;for(var v=1;v<=6;v++)if(ct[v]>=3)has=true;if(!has){busted=true;_play('lose');sm('🍂 Farkle! P'+(curP+1)+' loses '+turn+' — passing…');rn();setTimeout(function(){if(players.length>1)nextPlayer();else{turn=0;rolling=false;rn()}},1400);return}rn();rolling=false;if(any)sm('P'+(curP+1)+': keep scorers, Roll or Bank')};
+  window._FR=function(){if(rolling||busted||gameOver)return;rolling=true;var any=false;for(var i=0;i<6;i++)if(!kept[i]){_play('dice');dice[i]=Math.floor(Math.random()*6)+1;any=true}if(!any){turn+=score();kept=new Array(6).fill(false);for(var i=0;i<6;i++)dice[i]=Math.floor(Math.random()*6)+1;sm('🔥 Hot dice! +'+turn+' locked — rolling all 6')}var ct=new Array(7).fill(0);for(var i=0;i<6;i++)if(!kept[i])ct[dice[i]]++;var hct=new Array(7).fill(0);for(var i=0;i<6;i++)if(kept[i])hct[dice[i]]++;var has=ct[1]>0||ct[5]>0;for(var v=1;v<=6;v++){if(ct[v]>=3)has=true;if(ct[v]>0&&hct[v]>=3)has=true;}if(!has){busted=true;_play('lose');sm('🍂 Farkle! P'+(curP+1)+' loses '+turn+' — passing…');rn();setTimeout(function(){if(players.length>1)nextPlayer();else{turn=0;rolling=false;rn()}},1400);return}rn();rolling=false;if(any)sm('P'+(curP+1)+': keep scorers, Roll or Bank')};
   window._FB=function(){if(busted||gameOver)return;var ts=score();if(ts+turn<=0){sm('Keep scoring dice first!');return}var gained=ts+turn;players[curP].banked+=gained;_e('progress');if(players[curP].banked>=1000)_e('milestone');document.getElementById('Fs').textContent=players[curP].banked;sm('P'+(curP+1)+' banked '+gained+' (total '+players[curP].banked+')');if(players[curP].banked>=target&&!finalRound){finalRound=true;finalStart=curP;if(players.length===1){endGame();return}sm('P'+(curP+1)+' hit '+target+'! Final round — others get one more turn');_play('win')}if(players.length>1)setTimeout(function(){nextPlayer()},900);else{turn=0;kept=new Array(6).fill(false);dice=new Array(6).fill(0);if(players[curP].banked>=target)endGame();else rn()}};
   window._FN=function(){dice=new Array(6).fill(0);kept=new Array(6).fill(false);turn=0;rolling=false;busted=false;curP=0;gameOver=false;finalRound=false;finalStart=-1;players=[];for(var i=0;i<numPlayers;i++)players.push({banked:0});document.getElementById('Fs').textContent='0';sm(numPlayers>1?('P1 starts — 🎲 Roll! (First to '+target+')'):'🎲 Roll!');rn()};_FN();}
 // ═══ TRIPEAKS ═══
