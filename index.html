@@ -35666,14 +35666,116 @@ function GCS(a){var tubes=[],numT=7,cap=4,sel=-1;var COLS=['#4a7c35','#C8A84B','
     for(var i=0;i<tube.length;i++){var l=document.createElement('div');l.className='csl';l.style.background=COLS[tube[i]];t.appendChild(l)}tw.appendChild(t)})}
   function chk(){var complete=0;tubes.forEach(function(t){if(t.length===cap&&t.every(function(c){return c===t[0]}))complete++;});var done=tubes.every(function(t){return t.length===0||t.length===cap&&t.every(function(c){return c===t[0]})});if(complete>0&&!done)_e('progress');if(done){_e('game_win');_playWin();sm('🌿 Sorted!');_sr('colorsort',{w:true,s:1})}}
   window._CSN=function(){gen();sm('');rn()};_CSN();}
-// ═══ BATTLESHIP ═══
-function GBS(a){var SZ=10,ships=[5,4,3,3,2],grid=new Array(SZ*SZ).fill(0),shots=0,hits=0,totalHP=0;
-  ms(a,'Shots:<strong id="BSs">0</strong> · Hits:<strong id="BSh">0</strong>');mm(a);
-  var gd=document.createElement('div');gd.className='bsg';gd.id='BS';a.appendChild(gd);mc(a).innerHTML='<button class="gb-new" onclick="_BSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
-  function place(){grid=new Array(SZ*SZ).fill(0);totalHP=0;ships.forEach(function(len){for(var att=0;att<100;att++){var dir=Math.random()<.5?'h':'v';var r=Math.floor(Math.random()*(dir==='v'?SZ-len:SZ));var c=Math.floor(Math.random()*(dir==='h'?SZ-len:SZ));var ok=true;for(var k=0;k<len;k++){var i=dir==='h'?r*SZ+c+k:(r+k)*SZ+c;if(grid[i]){ok=false;break}}if(ok){for(var k=0;k<len;k++){var i=dir==='h'?r*SZ+c+k:(r+k)*SZ+c;grid[i]=1;totalHP++}break}}})}
-  function rn(){gd.innerHTML='';for(var i=0;i<SZ*SZ;i++){var d=document.createElement('div');d.className='bsc'+(grid[i]===2?' bsh':grid[i]===3?' bsm':grid[i]===4?' bss':'');d.setAttribute('data-i',i);d.textContent=grid[i]===2?'💥':grid[i]===3?'~':grid[i]===4?'🌊':'';
-    if(grid[i]<=1)d.onclick=function(){var idx=parseInt(this.getAttribute('data-i'));if(grid[idx]>1)return;shots++;document.getElementById('BSs').textContent=shots;if(grid[idx]===1){grid[idx]=2;hits++;document.getElementById('BSh').textContent=hits;if(hits%3===0)_e('hit');sm('💥 Hit!');if(hits>=totalHP){_e('game_win');sm('🌿 All sunk in '+shots+'!');_sr('battleship',{w:true,s:shots})}}else{grid[idx]=3;sm('~ Miss')}rn()};gd.appendChild(d)}}
-  window._BSN=function(){place();shots=0;hits=0;document.getElementById('BSs').textContent='0';document.getElementById('BSh').textContent='0';sm('');rn()};_BSN();}
+// ═══ BATTLESHIP — Deep Water ═══
+function GBS(a){
+  var SZ=8,SHIPS=[4,3,3,2,2],SHIP_NAMES=['Vine','Root','Branch','Sprout','Seed'];
+  var pGrid,eGrid,pShips,eShips,phase,curShip,curDir,gameOver,turn,aiStack,aiHits;
+  ms(a,'<span id="BSph">Place your fleet</span>');mm(a);
+  var wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px';a.appendChild(wrap);
+  var lbl=document.createElement('div');lbl.id='BSlbl';lbl.style.cssText='font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;min-height:1.2em';wrap.appendChild(lbl);
+  var grids=document.createElement('div');grids.style.cssText='display:flex;gap:clamp(8px,3vw,16px);justify-content:center;flex-wrap:wrap';wrap.appendChild(grids);
+  mc(a).innerHTML='<button class="gb" id="BSdir" onclick="_BSR()" style="min-width:100px;">↻ Rotate</button> <button class="gb-new" onclick="_BSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+
+  function mkGrid(){return new Array(SZ*SZ).fill(0)}
+  function idx(r,c){return r*SZ+c}
+  function canPlace(grid,r,c,len,dir){
+    for(var k=0;k<len;k++){var cr=dir==='h'?r:r+k;var cc=dir==='h'?c+k:c;if(cr>=SZ||cc>=SZ||grid[idx(cr,cc)]!==0)return false}return true
+  }
+  function placeShip(grid,r,c,len,dir,id){
+    for(var k=0;k<len;k++){var cr=dir==='h'?r:r+k;var cc=dir==='h'?c+k:c;grid[idx(cr,cc)]=id}
+  }
+  function autoPlace(grid){
+    for(var si=0;si<SHIPS.length;si++){
+      for(var att=0;att<200;att++){var dir=Math.random()<.5?'h':'v';var r=Math.floor(Math.random()*SZ);var c=Math.floor(Math.random()*SZ);
+        if(canPlace(grid,r,c,SHIPS[si],dir)){placeShip(grid,r,c,SHIPS[si],dir,si+1);break}}
+    }
+  }
+  function countAlive(grid,id){var n=0;for(var i=0;i<SZ*SZ;i++)if(grid[i]===id)n++;return n}
+  function allSunk(grid,shipList){for(var si=0;si<shipList.length;si++)if(countAlive(grid,si+1)>0)return false;return true}
+
+  function renderGrid(grid,target,isEnemy,onClick){
+    var g=document.createElement('div');
+    g.style.cssText='display:inline-block;text-align:center';
+    var title=document.createElement('div');title.style.cssText='font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:'+(isEnemy?'var(--gold)':'var(--sage)')+';letter-spacing:0.1em;margin-bottom:4px';
+    title.textContent=isEnemy?'ENEMY WATERS':'YOUR FLEET';g.appendChild(title);
+    var tbl=document.createElement('div');tbl.style.cssText='display:grid;grid-template-columns:repeat('+SZ+',1fr);gap:1px;background:rgba(74,124,53,0.08);border:1.5px solid rgba(74,124,53,0.15);border-radius:6px;overflow:hidden;width:clamp(160px,42vw,220px)';
+    for(var i=0;i<SZ*SZ;i++){
+      var d=document.createElement('div');var v=grid[i];
+      d.style.cssText='aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:clamp(0.55rem,1.6vw,0.75rem);cursor:'+(onClick?'pointer':'default')+';transition:background 0.15s;';
+      if(v===-2){d.style.background='rgba(199,80,80,0.5)';d.textContent='💥';}
+      else if(v===-1){d.style.background='rgba(40,50,38,0.6)';d.textContent='·';d.style.color='rgba(122,179,86,0.3)';}
+      else if(!isEnemy&&v>0){d.style.background='rgba(74,124,53,0.25)';d.style.borderRadius='2px';}
+      else{d.style.background='rgba(18,24,16,0.7)';}
+      if(onClick&&v===0){d.setAttribute('data-i',String(i));d.onclick=onClick;}
+      else if(onClick&&v>0&&isEnemy){d.setAttribute('data-i',String(i));d.onclick=onClick;}
+      tbl.appendChild(d);
+    }
+    g.appendChild(tbl);target.appendChild(g);
+  }
+
+  function rn(){
+    grids.innerHTML='';
+    var dirBtn=document.getElementById('BSdir');
+    if(phase==='place'){
+      if(dirBtn)dirBtn.style.display='';
+      lbl.textContent=curShip<SHIPS.length?'Place '+SHIP_NAMES[curShip]+' ('+SHIPS[curShip]+' cells) — tap grid':'';
+      renderGrid(pGrid,grids,false,function(){
+        if(curShip>=SHIPS.length)return;
+        var i=parseInt(this.getAttribute('data-i'));var r=Math.floor(i/SZ),c=i%SZ;
+        if(!canPlace(pGrid,r,c,SHIPS[curShip],curDir)){sm('No room — try rotating');return}
+        placeShip(pGrid,r,c,SHIPS[curShip],curDir,curShip+1);_play('tap');curShip++;
+        if(curShip>=SHIPS.length){phase='battle';turn='player';document.getElementById('BSph').innerHTML='Your turn — tap enemy grid';if(dirBtn)dirBtn.style.display='none';}
+        rn();
+      });
+    }else{
+      if(dirBtn)dirBtn.style.display='none';
+      // Enemy grid — player shoots here
+      renderGrid(eGrid,grids,true,turn==='player'&&!gameOver?function(){
+        var i=parseInt(this.getAttribute('data-i'));if(eGrid[i]<0)return;
+        if(eGrid[i]>0){eGrid[i]=-2;_play('snap');sm('💥 Hit!');
+          if(allSunk(eGrid,SHIPS)){gameOver=true;sm('🌿 All sunk! You win!');_e('game_win');_playWin();_sr('battleship',{w:true,s:1});rn();return}
+        }else{eGrid[i]=-1;_play('tap');sm('· Miss');}
+        turn='ai';rn();setTimeout(aiTurn,600);
+      }:null);
+      // Player grid — shows AI shots
+      renderGrid(pGrid,grids,false,null);
+    }
+  }
+
+  function aiTurn(){
+    if(gameOver)return;
+    var target=-1;
+    // Hunt mode — follow up on hits
+    if(aiStack.length>0){
+      while(aiStack.length>0){var t=aiStack.pop();if(pGrid[t]>=0){target=t;break}}
+    }
+    if(target<0){
+      var open=[];for(var i=0;i<SZ*SZ;i++)if(pGrid[i]>=0)open.push(i);
+      if(!open.length){turn='player';rn();return}
+      // Checkerboard pattern for smarter random shots
+      var checks=open.filter(function(i){return(Math.floor(i/SZ)+i%SZ)%2===0});
+      var pool=checks.length>0?checks:open;
+      target=pool[Math.floor(Math.random()*pool.length)];
+    }
+    var r=Math.floor(target/SZ),c=target%SZ;
+    if(pGrid[target]>0){
+      pGrid[target]=-2;sm('💥 Enemy hit your '+SHIP_NAMES[0]+'!');
+      aiHits.push(target);
+      // Add adjacent cells to hunt stack
+      var adj=[[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+      for(var j=0;j<adj.length;j++){var ar=adj[j][0],ac=adj[j][1];if(ar>=0&&ar<SZ&&ac>=0&&ac<SZ){var ai=idx(ar,ac);if(pGrid[ai]>=0)aiStack.push(ai)}}
+      if(allSunk(pGrid,SHIPS)){gameOver=true;sm('🍂 Fleet sunk — you lose');_e('game_loss');_sr('battleship',{w:false,s:0});rn();return}
+    }else{pGrid[target]=-1;}
+    turn='player';document.getElementById('BSph').innerHTML='Your turn';rn();
+  }
+
+  window._BSR=function(){curDir=curDir==='h'?'v':'h';sm('Direction: '+(curDir==='h'?'Horizontal →':'Vertical ↓'));};
+  window._BSN=function(){
+    pGrid=mkGrid();eGrid=mkGrid();phase='place';curShip=0;curDir='h';gameOver=false;turn='player';aiStack=[];aiHits=[];
+    autoPlace(eGrid);
+    document.getElementById('BSph').innerHTML='Place your fleet';sm('');rn();
+  };_BSN();
+}
 // ═══ SOKOBAN — GARDEN PATH ═══
 function GSK(a){
   // ── TILE ART (PNG preferred, SVG fallback) ──
