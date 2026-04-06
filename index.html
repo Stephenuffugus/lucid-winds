@@ -3221,7 +3221,7 @@
     /* Sokoban */
     .skg{display:grid;gap:clamp(1px,.4vw,3px);width:clamp(320px,96vw,480px);margin:0 auto;padding:clamp(4px,1.5vw,8px);background:rgba(13,16,12,.25);border-radius:clamp(6px,2vw,10px);animation:boardFadeIn .4s ease}
     /* ═══ BACKGAMMON — Garden Gate board CSS ═══ */
-    .bg-board{position:relative;width:100%;max-width:420px;margin:0 auto 6px;aspect-ratio:12/16;background:linear-gradient(180deg,#2C1810,#241408);border:3px solid #5C4033;border-radius:10px;overflow:hidden;box-shadow:inset 0 0 30px rgba(0,0,0,0.4),0 4px 16px rgba(0,0,0,0.5)}
+    .bg-board{position:relative;width:100%;max-width:96vw;margin:0 auto 6px;aspect-ratio:12/16;background:linear-gradient(180deg,#2C1810,#241408);border:3px solid #5C4033;border-radius:10px;overflow:hidden;box-shadow:inset 0 0 30px rgba(0,0,0,0.4),0 4px 16px rgba(0,0,0,0.5)}
     .bg-inner{position:absolute;inset:3px;display:flex;flex-direction:column}
     .bg-half{display:flex;flex:1;position:relative}
     .bg-quad{display:flex;flex:1}
@@ -36169,7 +36169,7 @@ function GBW(a){
 function GBG(a){
   var B,DICE,DICE_USED,TURN,SEL,VALID_DESTS,PHASE,MOVES_LEFT,BO_H,BO_A;
   ms(a,'<span class="gp-you" style="color:#7AB956">You: <strong id="BGh">0</strong></span> · <span class="gp-ai" style="color:#C47A7A">AI: <strong id="BGa">0</strong></span>');mm(a);
-  var wrap=document.createElement('div');wrap.id='BGwrap';wrap.style.cssText='max-width:420px;margin:0 auto;user-select:none;-webkit-user-select:none';a.appendChild(wrap);
+  var wrap=document.createElement('div');wrap.id='BGwrap';wrap.style.cssText='max-width:96vw;margin:0 auto;user-select:none;-webkit-user-select:none';a.appendChild(wrap);
   mc(a).innerHTML='<button class="gb-new" onclick="_BGN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   function init(){
@@ -36240,11 +36240,47 @@ function GBG(a){
   function endTurn(){TURN=TURN==='human'?'ai':'human';PHASE='roll';SEL=-1;VALID_DESTS=[];rn();
     if(TURN==='ai')setTimeout(function(){rollDice();rn();setTimeout(aiPlay,500)},400);
   }
+  // ═══ GNUBG-INSPIRED POSITION EVALUATION ═══
+  function evalPos(board,boH,boA){
+    var s=0;
+    // 1. Pip count (race) — lower is better for AI
+    var aiPips=0,huPips=0;
+    for(var i=1;i<=24;i++){if(board[i]<0)aiPips+=Math.abs(board[i])*(25-i);if(board[i]>0)huPips+=board[i]*i}
+    aiPips+=Math.abs(board[0]||0)*25;huPips+=(board[25]||0)*25;
+    s+=(huPips-aiPips)*0.5;
+    // 2. Blot exposure — penalize AI blots
+    for(var i=1;i<=24;i++){if(board[i]===-1){s-=12;if(i<=6)s-=8;}}// extra penalty in human home
+    // 3. Prime detection — reward consecutive AI-held points
+    var run=0,bestRun=0;
+    for(var i=1;i<=24;i++){if(board[i]<=-2){run++;if(run>bestRun)bestRun=run}else run=0}
+    s+=bestRun*bestRun*6;
+    // 4. Anchors in human home (points 1-6 held by AI)
+    for(var i=1;i<=6;i++)if(board[i]<=-2){s+=10;if(i>=4)s+=5}
+    // 5. Home board strength (AI home = 19-24)
+    for(var i=19;i<=24;i++)if(board[i]<=-2)s+=8;
+    // 6. Stack penalty
+    for(var i=1;i<=24;i++)if(board[i]<-5)s-=(Math.abs(board[i])-5)*4;
+    // 7. Bar penalty
+    s-=(board[25]||0)*(-8);// human on bar is good for AI
+    s-=Math.abs(board[0]||0)*35;// AI on bar is terrible
+    // 8. Bearing off progress
+    s+=boA*18;s-=boH*18;
+    return s;
+  }
   function aiPlay(){
     if(MOVES_LEFT.length===0){endTurn();return}
     var moves=getValidMoves('ai');if(moves.length===0){MOVES_LEFT=[];endTurn();return}
-    var best=null,bs=-9999;
-    moves.forEach(function(mv){var s=0;if(mv.to==='off')s+=50;if(mv.to!=='off'&&mv.to>=1&&mv.to<=24&&B[mv.to]===1)s+=30;if(mv.to!=='off'&&mv.to>=1&&mv.to<=24&&B[mv.to]===-1)s+=20;if(mv.to!=='off')s+=mv.to;if(mv.from==='bar')s+=40;if(s>bs){bs=s;best=mv}});
+    // Evaluate full position after each candidate move
+    var best=null,bs=-999999;
+    moves.forEach(function(mv){
+      // Save state
+      var savedB=B.slice(),savedML=MOVES_LEFT.slice(),savedBoH=BO_H,savedBoA=BO_A;
+      applyMove(mv,'ai');
+      var sc=evalPos(B,BO_H,BO_A);
+      // Restore state
+      B=savedB;MOVES_LEFT=savedML;BO_H=savedBoH;BO_A=savedBoA;
+      if(sc>bs){bs=sc;best=mv}
+    });
     if(best){applyMove(best,'ai');if(BO_A>=15){_e('game_loss');sm('AI wins!');_sr('backgammon',{w:false,s:0});rn();return}}
     if(MOVES_LEFT.length>0)setTimeout(aiPlay,250);else setTimeout(endTurn,250);rn();
   }
