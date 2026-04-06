@@ -3220,6 +3220,24 @@
 
     /* Sokoban */
     .skg{display:grid;gap:clamp(1px,.4vw,3px);width:clamp(320px,96vw,480px);margin:0 auto;padding:clamp(4px,1.5vw,8px);background:rgba(13,16,12,.25);border-radius:clamp(6px,2vw,10px);animation:boardFadeIn .4s ease}
+    /* ═══ BACKGAMMON — Garden Gate board CSS ═══ */
+    .point{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;cursor:pointer;padding-top:2px;padding-bottom:2px;min-width:0}
+    .point.top .tri{width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;position:absolute;top:0}
+    .point.top .tri.dark{border-top:100px solid #5C4033}
+    .point.top .tri.light{border-top:100px solid #3B5323}
+    .point.bot .tri{width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;position:absolute;bottom:0}
+    .point.bot .tri.dark{border-bottom:100px solid #5C4033}
+    .point.bot .tri.light{border-bottom:100px solid #3B5323}
+    .point .checkers{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:1px}
+    .point.top .checkers{padding-top:4px}
+    .point.bot .checkers{padding-bottom:4px;flex-direction:column-reverse}
+    .checker{width:24px;height:24px;border-radius:50%;border:2px solid rgba(0,0,0,.3);cursor:pointer;transition:transform .15s,box-shadow .15s;position:relative;flex-shrink:0}
+    .checker.human{background:radial-gradient(circle at 40% 35%,#8BC34A,#4A7C35);border-color:#3a6028}
+    .checker.ai{background:radial-gradient(circle at 40% 35%,#E8A0A0,#C47A7A);border-color:#a05555}
+    .checker.selected{transform:scale(1.15);box-shadow:0 0 10px rgba(122,185,86,.6);z-index:10}
+    .checker-count{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:10px;font-weight:800;color:#fff;text-shadow:0 0 3px rgba(0,0,0,.8)}
+    .point.valid-dest::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;border-radius:50%;background:rgba(122,185,86,.3);border:2px solid rgba(122,185,86,.5);z-index:5;animation:bgPulse .8s ease infinite}
+    @keyframes bgPulse{0%,100%{opacity:.5;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}}
     .skc{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:clamp(2px,.6vw,4px);min-height:32px;transition:background .2s ease,transform .15s ease;overflow:hidden;position:relative}
     .skc img{transition:transform .15s ease}
     .skc svg{width:100%;height:100%;display:block}
