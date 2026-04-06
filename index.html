@@ -32095,7 +32095,13 @@ var _aw={
   mastermind:{progress:1,game_win:5,game_loss:1,default:0},
   checkers:{capture:1,game_win:5,game_loss:1,default:0},
   reversi:{flip:1,game_win:5,game_loss:1,default:0},
-  yahtzee:{progress:1,milestone:1,game_win:5,default:0}
+  yahtzee:{progress:1,milestone:1,game_win:5,default:0},
+  sokoban:{progress:1,game_win:3,default:0},
+  colorsort:{progress:1,game_win:4,default:0},
+  battleship:{hit:1,game_win:5,game_loss:1,default:0},
+  picross:{progress:1,game_win:4,default:0},
+  slider:{milestone:1,game_win:3,default:0},
+  farkle:{progress:1,milestone:1,game_win:5,game_loss:0,default:0}
 };
 function _setDiff(lv){switch(lv){case 'easy':_dm=1.0;break;case 'medium':_dm=1.5;break;case 'hard':_dm=2.0;break;case 'expert':_dm=2.5;break;default:_dm=1.0}}
 function _gr(){try{return JSON.parse(localStorage.getItem(RK))||{}}catch(e){return{}}}
@@ -32493,11 +32499,6 @@ function mc(a){var d=document.createElement('div');d.className='gcr';a.appendChi
 
 // ═══ PICKER ═══
 function _bp(){var p=document.getElementById('fg-pk');if(!p)return;p.innerHTML='';
-  // Current game chip — FIRST so active game is always visible
-  var cur=null;for(var i=0;i<G.length;i++)if(G[i].id===_a){cur=G[i];break}
-  if(cur){var cc=document.createElement('div');cc.className='fg-c on';cc.setAttribute('data-g',cur.id);
-    cc.innerHTML='<span class="fi">'+cur.i+'</span><span class="fn">'+cur.n.toUpperCase()+'</span>';
-    cc.addEventListener('click',function(){_sg(cur.id)});p.appendChild(cc);}
   // ALL GAMES button
   var allBtn=document.createElement('div');allBtn.className='fg-c';allBtn.style.cssText='background:linear-gradient(145deg,rgba(200,168,75,0.12),rgba(200,168,75,0.04));border-color:rgba(200,168,75,0.2);';
   allBtn.innerHTML='<span class="fi">\ud83c\udfae</span><span class="fn" style="color:var(--gold);">ALL GAMES</span>';
@@ -35814,7 +35815,7 @@ function GSK(a){
     {w:7,h:6,map:'#######'+'#X.#..#'+'#.O..O#'+'#..#.X#'+'#..@..#'+'#######'},
     {w:7,h:6,map:'#######'+'#.....#'+'#.O.X.#'+'#.....#'+'#X.O@.#'+'#######'},
     {w:6,h:6,map:'######'+'#X...#'+'#.O..#'+'#..O.#'+'#...X#'+'#@..##'},
-    {w:7,h:5,map:'#######'+'#@O.X.#'+'##.#..#'+'#.O..X#'+'#######'},
+    {w:7,h:6,map:'#######'+'#..X..#'+'#.O...#'+'#...O.#'+'#@.X..#'+'#######'},
     {w:7,h:7,map:'#######'+'#.....#'+'#.O.X.#'+'#.#.#.#'+'#.X.O.#'+'#..@..#'+'#######'},
     // === TIER 3: MEDIUM (2-3 crates, order matters) ===
     {w:7,h:7,map:'#######'+'#.....#'+'#.OXO.#'+'#..@..#'+'#.OX..#'+'#...X.#'+'#######'},
