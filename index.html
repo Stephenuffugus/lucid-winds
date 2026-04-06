@@ -1126,11 +1126,11 @@
     .cs-card-front{position:absolute;inset:0;border-radius:12px;display:grid;grid-template-rows:18.4% 1fr 20%;box-sizing:border-box;padding:8% 8% 15%;background-color:#050505;background-size:96%;background-position:center;background-repeat:no-repeat;overflow:hidden;}
     .cs-card-back{transform:rotateY(180deg);padding:10% 8% 6%;overflow-y:auto;-webkit-overflow-scrolling:touch;background-color:#050505;background-size:174%;background-position:center;background-repeat:no-repeat;}
     .cs-flip-hint{font-family:'DM Mono',monospace;font-size:0.35rem;color:rgba(122,179,86,0.35);text-align:center;position:absolute;bottom:4%;left:0;right:0;}
-    .cs-card-front[data-season="spring"]{background-image:url('assets/cards/fronts/front-spring.png');}
-    .cs-card-front[data-season="summer"]{background-image:url('assets/cards/fronts/front-summer.png');}
+    .cs-card-front[data-season="spring"]{background-image:url('assets/cards/fronts/card-front-spring-same.png');}
+    .cs-card-front[data-season="summer"]{background-image:url('assets/cards/fronts/card-front-summer-same.png');}
     .cs-card-front[data-season="summer"] .cf-haiku-zone{padding-top:0;}
-    .cs-card-front[data-season="autumn"]{background-image:url('assets/cards/fronts/front-autumn.png');}
-    .cs-card-front[data-season="winter"]{background-image:url('assets/cards/fronts/front-winter.png');}
+    .cs-card-front[data-season="autumn"]{background-image:url('assets/cards/fronts/card-front-autumn-same.png');}
+    .cs-card-front[data-season="winter"]{background-image:url('assets/cards/fronts/card-front-winter-same.png');}
     .cs-card-back[data-tier="common"]{background-image:url('assets/cards/backs/back-common.png');background-size:112% 101%;}
     .cs-card-back[data-tier="uncommon"]{background-image:url('assets/cards/backs/back-uncommon.png');}
     .cs-card-back[data-tier="rare"]{background-image:url('assets/cards/backs/back-rare.png');background-size:103% 99%;}
@@ -2125,62 +2125,47 @@
     .greenhouse-plant:hover{transform:translateY(-2px);filter:brightness(1.2);box-shadow:0 0 24px rgba(180,140,60,0.15),0 4px 12px rgba(0,0,0,0.3);}
     .greenhouse-plant.gh-new{box-shadow:0 0 16px rgba(200,168,75,0.25),0 0 4px rgba(200,168,75,0.15),0 2px 6px rgba(0,0,0,0.4);animation:_ghNewPulse 3s ease-in-out infinite;}
     .greenhouse-plant.gh-new::after{content:'NEW';position:absolute;top:4px;left:4px;font-family:'Bebas Neue',sans-serif;font-size:0.25rem;letter-spacing:0.06em;color:#0d100c;background:var(--gold);padding:1px 4px;border-radius:3px;z-index:5;}
-    .greenhouse-plant.season-spring{background-image:url('assets/cards/fronts/card-front-spring.png');}
-    .greenhouse-plant.season-summer{background-image:url('assets/cards/fronts/card-front-summer.png');}
-    .greenhouse-plant.season-autumn{background-image:url('assets/cards/fronts/card-front-autumn.png');}
-    .greenhouse-plant.season-winter{background-image:url('assets/cards/fronts/card-front-winter.png');}
+    .greenhouse-plant.season-spring{background-image:url('assets/cards/fronts/card-front-spring-same.png');}
+    .greenhouse-plant.season-summer{background-image:url('assets/cards/fronts/card-front-summer-same.png');}
+    .greenhouse-plant.season-autumn{background-image:url('assets/cards/fronts/card-front-autumn-same.png');}
+    .greenhouse-plant.season-winter{background-image:url('assets/cards/fronts/card-front-winter-same.png');}
     /* ═══ CHIMERA DUAL-SEASON CARDS ═══
-       Diagonal cut: season A (top-left) / season B (bottom-right)
-       Cut line: 55px below top-right → 55px above bottom-left */
-    .greenhouse-plant.chimera-dual{border:3px solid;border-image:none;position:relative;}
-    /* Season A overlay: top-left half of the card, clipped diagonally */
+       Organic torn-edge compositing: season A top-half over season B bottom-half
+       Half images have alpha transparency along the organic torn edge */
+    .greenhouse-plant.chimera-dual{border:none;position:relative;overflow:hidden;}
+    /* Season A overlay: top-half image with organic torn edge (alpha-transparent) */
     .greenhouse-plant.chimera-dual::after{
       content:'';position:absolute;inset:0;border-radius:6px;pointer-events:none;z-index:1;
       background-size:cover;background-position:center;background-repeat:no-repeat;
-      clip-path:polygon(0 0, 100% 0, 100% 55px, 0 calc(100% - 55px));
     }
-    /* Border colors: top+left = season A, right+bottom = season B */
-    .chimera-dual.dual-sp-su{border-color:#E8A0BF;border-right-color:#D4A843;border-bottom-color:#D4A843;}
-    .chimera-dual.dual-sp-au{border-color:#E8A0BF;border-right-color:#D4842A;border-bottom-color:#D4842A;}
-    .chimera-dual.dual-sp-wi{border-color:#E8A0BF;border-right-color:#A0C4E8;border-bottom-color:#A0C4E8;}
-    .chimera-dual.dual-su-sp{border-color:#D4A843;border-right-color:#E8A0BF;border-bottom-color:#E8A0BF;}
-    .chimera-dual.dual-su-au{border-color:#D4A843;border-right-color:#D4842A;border-bottom-color:#D4842A;}
-    .chimera-dual.dual-su-wi{border-color:#D4A843;border-right-color:#A0C4E8;border-bottom-color:#A0C4E8;}
-    .chimera-dual.dual-au-sp{border-color:#D4842A;border-right-color:#E8A0BF;border-bottom-color:#E8A0BF;}
-    .chimera-dual.dual-au-su{border-color:#D4842A;border-right-color:#D4A843;border-bottom-color:#D4A843;}
-    .chimera-dual.dual-au-wi{border-color:#D4842A;border-right-color:#A0C4E8;border-bottom-color:#A0C4E8;}
-    .chimera-dual.dual-wi-sp{border-color:#A0C4E8;border-right-color:#E8A0BF;border-bottom-color:#E8A0BF;}
-    .chimera-dual.dual-wi-su{border-color:#A0C4E8;border-right-color:#D4A843;border-bottom-color:#D4A843;}
-    .chimera-dual.dual-wi-au{border-color:#A0C4E8;border-right-color:#D4842A;border-bottom-color:#D4842A;}
-    /* Season A background overlay per combo — top-left diagonal half */
-    .chimera-dual.dual-sp-su::after,.chimera-dual.dual-sp-au::after,.chimera-dual.dual-sp-wi::after{background-image:url('assets/cards/fronts/card-front-spring.png');}
-    .chimera-dual.dual-su-sp::after,.chimera-dual.dual-su-au::after,.chimera-dual.dual-su-wi::after{background-image:url('assets/cards/fronts/card-front-summer.png');}
-    .chimera-dual.dual-au-sp::after,.chimera-dual.dual-au-su::after,.chimera-dual.dual-au-wi::after{background-image:url('assets/cards/fronts/card-front-autumn.png');}
-    .chimera-dual.dual-wi-sp::after,.chimera-dual.dual-wi-su::after,.chimera-dual.dual-wi-au::after{background-image:url('assets/cards/fronts/card-front-winter.png');}
-    /* Season B background on the base element — bottom-right half shows through */
-    .chimera-dual.dual-sp-su,.chimera-dual.dual-au-su,.chimera-dual.dual-wi-su{background-image:url('assets/cards/fronts/card-front-summer.png')!important;}
-    .chimera-dual.dual-sp-au,.chimera-dual.dual-su-au,.chimera-dual.dual-wi-au{background-image:url('assets/cards/fronts/card-front-autumn.png')!important;}
-    .chimera-dual.dual-sp-wi,.chimera-dual.dual-su-wi,.chimera-dual.dual-au-wi{background-image:url('assets/cards/fronts/card-front-winter.png')!important;}
-    .chimera-dual.dual-su-sp,.chimera-dual.dual-au-sp,.chimera-dual.dual-wi-sp{background-image:url('assets/cards/fronts/card-front-spring.png')!important;}
-    /* Carousel chimera dual borders + diagonal cut */
-    .cs-flip-wrap.chimera-dual{border:3px solid;border-radius:12px;}
+    /* Season A top-half overlay per combo */
+    .chimera-dual.dual-sp-su::after,.chimera-dual.dual-sp-au::after,.chimera-dual.dual-sp-wi::after{background-image:url('assets/cards/fronts/card-front-spring-top-half.png');}
+    .chimera-dual.dual-su-sp::after,.chimera-dual.dual-su-au::after,.chimera-dual.dual-su-wi::after{background-image:url('assets/cards/fronts/card-front-summer-top-half.png');}
+    .chimera-dual.dual-au-sp::after,.chimera-dual.dual-au-su::after,.chimera-dual.dual-au-wi::after{background-image:url('assets/cards/fronts/card-front-autumn-top-half.png');}
+    .chimera-dual.dual-wi-sp::after,.chimera-dual.dual-wi-su::after,.chimera-dual.dual-wi-au::after{background-image:url('assets/cards/fronts/card-front-winter-top-half.png');}
+    /* Season B bottom-half on the base element */
+    .chimera-dual.dual-sp-su,.chimera-dual.dual-au-su,.chimera-dual.dual-wi-su{background-image:url('assets/cards/fronts/card-front-summer-bottom-half.png')!important;}
+    .chimera-dual.dual-sp-au,.chimera-dual.dual-su-au,.chimera-dual.dual-wi-au{background-image:url('assets/cards/fronts/card-front-autumn-bottom-half.png')!important;}
+    .chimera-dual.dual-sp-wi,.chimera-dual.dual-su-wi,.chimera-dual.dual-au-wi{background-image:url('assets/cards/fronts/card-front-winter-bottom-half.png')!important;}
+    .chimera-dual.dual-su-sp,.chimera-dual.dual-au-sp,.chimera-dual.dual-wi-sp{background-image:url('assets/cards/fronts/card-front-spring-bottom-half.png')!important;}
+    /* Carousel chimera dual borders */
+    .cs-flip-wrap.chimera-dual{border:none;border-radius:12px;overflow:hidden;}
     .cs-flip-wrap.chimera-dual .cs-card-face{border:none;}
-    /* Carousel dual fronts: season A clipped on top, season B base */
+    /* Carousel dual fronts: season A top-half over season B bottom-half */
     .cs-card-front[data-dual]::after{
       content:'';position:absolute;inset:0;border-radius:10px;pointer-events:none;z-index:1;
       background-size:cover;background-position:center;background-repeat:no-repeat;
-      clip-path:polygon(0 0, 100% 0, 100% 55px, 0 calc(100% - 55px));
     }
-    /* Season A overlay (top-left diagonal) */
-    .cs-card-front[data-dual^="dual-sp"]::after{background-image:url('assets/cards/fronts/front-spring.png');}
-    .cs-card-front[data-dual^="dual-su"]::after{background-image:url('assets/cards/fronts/front-summer.png');}
-    .cs-card-front[data-dual^="dual-au"]::after{background-image:url('assets/cards/fronts/front-autumn.png');}
-    .cs-card-front[data-dual^="dual-wi"]::after{background-image:url('assets/cards/fronts/front-winter.png');}
-    /* Season B base (bottom-right — override the single-season background) */
-    .cs-card-front[data-dual$="-su"]{background-image:url('assets/cards/fronts/front-summer.png')!important;}
-    .cs-card-front[data-dual$="-au"]{background-image:url('assets/cards/fronts/front-autumn.png')!important;}
-    .cs-card-front[data-dual$="-wi"]{background-image:url('assets/cards/fronts/front-winter.png')!important;}
-    .cs-card-front[data-dual$="-sp"]{background-image:url('assets/cards/fronts/front-spring.png')!important;}
+    /* Season A top-half overlay (carousel) */
+    .cs-card-front[data-dual^="dual-sp"]::after{background-image:url('assets/cards/fronts/card-front-spring-top-half.png');}
+    .cs-card-front[data-dual^="dual-su"]::after{background-image:url('assets/cards/fronts/card-front-summer-top-half.png');}
+    .cs-card-front[data-dual^="dual-au"]::after{background-image:url('assets/cards/fronts/card-front-autumn-top-half.png');}
+    .cs-card-front[data-dual^="dual-wi"]::after{background-image:url('assets/cards/fronts/card-front-winter-top-half.png');}
+    /* Season B bottom-half base (carousel) */
+    .cs-card-front[data-dual$="-su"]{background-image:url('assets/cards/fronts/card-front-summer-bottom-half.png')!important;}
+    .cs-card-front[data-dual$="-au"]{background-image:url('assets/cards/fronts/card-front-autumn-bottom-half.png')!important;}
+    .cs-card-front[data-dual$="-wi"]{background-image:url('assets/cards/fronts/card-front-winter-bottom-half.png')!important;}
+    .cs-card-front[data-dual$="-sp"]{background-image:url('assets/cards/fronts/card-front-spring-bottom-half.png')!important;}
     /* ═══ CARD BACK: Rarity frames (used in carousel flip) ═══ */
     .card-back-common{background-image:url('assets/cards/backs/back-common.png');}
     .card-back-uncommon{background-image:url('assets/cards/backs/back-uncommon.png');}
@@ -5017,7 +5002,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
     <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button></div>
     <div class="dev-section"><div class="dev-section-title">ACCELERATE (BETA TEST)</div><button class="dev-btn" onclick="PW_Dev.accelFerals()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⚡ FORCE FERAL SPAWN</button><button class="dev-btn" onclick="PW_Dev.accelRepro()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🌱 FORCE WILD REPRODUCTION</button><button class="dev-btn" onclick="PW_Dev.accelNursery()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💧 INSTANT BLOOM ALL SEEDS</button><button class="dev-btn" onclick="PW_Dev.accelBackpack()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🎒 CLEAR BP COOLDOWNS</button><button class="dev-btn" onclick="PW_Dev.grantHashes(100)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💎 +100 HASHES</button><button class="dev-btn" onclick="PW_Dev.accelAll()" style="border-color:rgba(255,110,199,0.4);color:#ff6ec7;">🚀 ACCELERATE EVERYTHING</button></div>
-    <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button></div>
+    <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button><button class="dev-btn" onclick="PW_Dev.spawnChimeras()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🧬 SPAWN 4 CHIMERAS (dual borders)</button><button class="dev-btn" onclick="PW_Dev.grantDew(500)" style="border-color:rgba(91,175,220,0.4);color:rgba(91,175,220,0.9);">💧 +500 DEW DROPS</button></div>
     <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button><button class="dev-btn" onclick="try{PW_Dev.cardFrontAligner()}catch(e){alert(e.message)}">🃏 CARD FRONT ALIGNMENT</button><button class="dev-btn" onclick="try{PW_Dev.cardBackViewer()}catch(e){alert(e.message)}">🔙 CARD BACK NAMEPLATES</button><button class="dev-btn" onclick="try{PW_Dev.leafBloomEditor()}catch(e){alert(e.message)}">🌿 LEAF & BLOOM EDITOR</button></div>
     <div class="dev-section"><div class="dev-section-title">NUCLEAR</div><button class="dev-btn danger" onclick="PW_Dev.fullReset()">☢ WIPE EVERYTHING</button></div>
     <div class="dev-log" id="dev-log">Ready.\n</div>
@@ -5803,6 +5788,72 @@ window.onerror=function(msg,url,line,col,err){
       if(window.updateDashboard)updateDashboard();
       if(window.renderNursery)renderNursery();
       alert('EVERYTHING ACCELERATED!\n\n- Feral timers reset\n- Reproduction timers reset\n- Backpack cooldowns cleared\n- Nursery seeds bloom-ready\n- +100 hashes granted\n\nSwitch to Wild tab to trigger spawns.');
+    },
+    grantDew:function(n){
+      n=n||500;
+      try{
+        var raw=localStorage.getItem('sws_hash_ledger');
+        if(window._secureGet)raw=window._secureGet('sws_hash_ledger')||raw;
+        var ledger=JSON.parse(raw||'{}');
+        ledger.earned=(ledger.earned||0)+n;
+        var s=JSON.stringify(ledger);
+        if(window._secureSet)window._secureSet('sws_hash_ledger',s);
+        else localStorage.setItem('sws_hash_ledger',s);
+        if(window.updateDashboard)updateDashboard();
+        alert('+'+n+' Dew Drops granted! Total: '+ledger.earned);
+      }catch(e){alert('Error: '+e.message);}
+    },
+    spawnChimeras:function(){
+      // Spawn 4 chimera plants with different parent season combos for testing dual borders
+      try{
+        var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+        var combos=[
+          {sA:0,sB:1,label:'Spring x Summer'},
+          {sA:1,sB:2,label:'Summer x Autumn'},
+          {sA:2,sB:3,label:'Autumn x Winter'},
+          {sA:3,sB:0,label:'Winter x Spring'}
+        ];
+        var added=0;
+        combos.forEach(function(c){
+          // Generate hashes that produce specific seasons: season = hb(22) % 4
+          // byte 22 = chars at positions 44-45 in hex hash
+          // For season N, we need byte 22 where byte%4 === N
+          var makeHash=function(season){
+            var h='';
+            for(var i=0;i<64;i++){h+=Math.floor(Math.random()*16).toString(16);}
+            // Force season: hb(22) = h[22]+h[23], season = hb(22)%4
+            var seasonByte=season;// 0,1,2,3 all have %4 = themselves
+            var hexB=('0'+seasonByte.toString(16)).slice(-2);
+            h=h.substring(0,22)+hexB+h.substring(24);
+            return h;
+          };
+          var parentAHash=makeHash(c.sA);
+          var parentBHash=makeHash(c.sB);
+          // Child hash: combine parents
+          var childHash='';
+          for(var i=0;i<64;i++){
+            var a=parseInt(parentAHash[i],16);
+            var b=parseInt(parentBHash[i],16);
+            childHash+=((a+b+i)%16).toString(16);
+          }
+          // Force child season to parentA's season
+          var sByte=('0'+c.sA.toString(16)).slice(-2);
+          childHash=childHash.substring(0,22)+sByte+childHash.substring(24);
+          var plant={
+            hash:childHash,date:new Date().toISOString(),born:Date.now(),
+            origin:'dev-chimera',rare:true,traits:null,breedCount:0,
+            generation:2,parentAHash:parentAHash,parentBHash:parentBHash
+          };
+          // Check for duplicate
+          var exists=false;
+          gh.forEach(function(p){if(p.hash===plant.hash)exists=true;});
+          if(!exists){gh.push(plant);added++;}
+        });
+        if(window.saveGreenhouse)saveGreenhouse(gh);
+        else localStorage.setItem('sws_greenhouse',JSON.stringify(gh));
+        if(window.renderGreenhouse)renderGreenhouse();
+        alert(added+' chimera plants spawned!\n\nSpring×Summer, Summer×Autumn, Autumn×Winter, Winter×Spring\n\nCheck your Greenhouse for dual-border cards.');
+      }catch(e){alert('Error: '+e.message);}
     }
   };
 })();
@@ -27535,6 +27586,45 @@ document.addEventListener('keydown', function(e) {
 
     var _fertInfo = (seed.fertApplied || 0) > 0 ? '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--gold);margin-top:2px;">🌿 ' + (seed.fertApplied || 0) + '/25 fertilizer (+' + (seed.fertApplied || 0) + '% rarity)</div>' : '';
 
+    // ── Offspring forecast preview ──
+    var _offPreview = '';
+    try {
+      var _ot = window.hashToTraits ? hashToTraits(seed.seedHash) : null;
+      if (_ot) {
+        var _oName = typeof getPlantName === 'function' ? getPlantName(seed.seedHash) : '???';
+        var _oGrade = window.getTerraGrade ? getTerraGrade(_ot) : null;
+        var _oSeason = ['Spring','Summer','Autumn','Winter'][_ot.season || 0];
+        var _oSColor = ['#E8A0BF','#D4A843','#D4842A','#A0C4E8'][_ot.season || 0];
+        var _oEa = window.computeEA ? computeEA(_ot) : '?';
+        var _oGen = _ot.chimerGen || 1;
+        var _oDual = _oGen > 1 && seed.parentAHash && seed.parentBHash;
+        var _dualTag = '';
+        if (_oDual) {
+          var _psA = (parseInt(seed.parentAHash[22] + seed.parentAHash[23], 16) || 0) % 4;
+          var _psB = (parseInt(seed.parentBHash[22] + seed.parentBHash[23], 16) || 0) % 4;
+          if (_psA !== _psB) {
+            var _sNames = ['Spring','Summer','Autumn','Winter'];
+            var _sCols = ['#E8A0BF','#D4A843','#D4842A','#A0C4E8'];
+            _dualTag = ' <span style="font-size:0.28rem;color:' + _sCols[_psA] + ';">●</span>/<span style="font-size:0.28rem;color:' + _sCols[_psB] + ';">●</span> Dual';
+          }
+        }
+        var _hasMut = _ot.mutationName && _ot.mutationName !== 'None';
+        var _hasComp = _ot.companion >= 20;
+        _offPreview = '<div style="margin-top:0.2rem;padding:0.25rem 0.35rem;background:rgba(13,16,12,0.4);border:1px solid rgba(74,124,53,0.12);border-radius:6px;">' +
+          '<div style="font-family:Bebas Neue,sans-serif;font-size:0.34rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.1rem;">OFFSPRING PREVIEW</div>' +
+          '<div style="font-family:DM Mono,monospace;font-size:0.36rem;color:var(--cream);font-weight:600;">' + _oName + '</div>' +
+          '<div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:2px;">' +
+            '<span style="font-size:0.3rem;color:' + _oSColor + ';">' + _oSeason + (_dualTag ? _dualTag : '') + '</span>' +
+            (_oGrade ? '<span style="font-size:0.3rem;color:' + (_oGrade.color || 'var(--muted)') + ';">' + _oGrade.name + '</span>' : '') +
+            '<span style="font-size:0.3rem;color:var(--sage);">EA ' + _oEa + '</span>' +
+            (_oGen > 1 ? '<span style="font-size:0.3rem;color:var(--gold);">Gen ' + _oGen + '</span>' : '') +
+            (_hasMut ? '<span style="font-size:0.3rem;color:#d8a0a0;">' + _ot.mutationName + '</span>' : '') +
+            (_hasComp ? '<span style="font-size:0.3rem;color:var(--sage);">+ Companion</span>' : '') +
+          '</div>' +
+        '</div>';
+      }
+    } catch(e) {}
+
     // Growth stage label for header
     var _stageName = bloomReady ? 'FULL BLOOM' : days === 0 ? 'PLANTED' : days === 1 ? 'SPROUTING' : 'GROWING';
     var _stageIcon = bloomReady ? '\u2727' : days === 0 ? '\u25cb' : days === 1 ? '\u25d4' : '\u25d1';
@@ -27548,6 +27638,7 @@ document.addEventListener('keydown', function(e) {
         '<div class="nur-slot-label">Seed ' + (idx + 1) + '</div>' +
         '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:' + stateColor + ';margin:2px 0;font-weight:600;">' + stateLabel + '</div>' +
         '<div class="nur-parents-line">⊕ ' + (typeof getPlantName === 'function' ? getPlantName(seed.parentAHash) : seed.parentAHash.substring(0,6)) + ' × ' + (typeof getPlantName === 'function' ? getPlantName(seed.parentBHash) : seed.parentBHash.substring(0,6)) + '</div>' +
+        _offPreview +
         '<div class="nur-pips">' + pips + '<span class="nur-pip-label">' + dayLabel + '</span></div>' +
         _fertInfo +
         '<div class="nur-actions">' + actionBtns +
