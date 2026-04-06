@@ -12,11 +12,11 @@
     color: #e8dcc8;
     font-family: 'DM Mono', monospace;
     min-height: 100vh;
-    padding: 24px;
+    padding: 16px;
   }
   h1 {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px;
+    font-size: 24px;
     letter-spacing: 2px;
     color: #c8a84b;
     text-align: center;
@@ -24,16 +24,53 @@
   }
   .subtitle {
     text-align: center;
-    font-size: 12px;
+    font-size: 11px;
     color: #8a9178;
-    margin-bottom: 28px;
+    margin-bottom: 16px;
   }
+
+  /* ── CONTROLS ── */
+  .controls {
+    max-width: 500px;
+    margin: 0 auto 20px;
+    background: rgba(26,36,22,0.6);
+    border: 1px solid rgba(122,179,86,0.15);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .ctrl-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .ctrl-row:last-child { margin-bottom: 0; }
+  .ctrl-label {
+    font-size: 11px;
+    color: #8a9178;
+    min-width: 100px;
+  }
+  .ctrl-val {
+    font-size: 12px;
+    color: var(--gold, #c8a84b);
+    min-width: 40px;
+    text-align: right;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 1px;
+  }
+  input[type="range"] {
+    flex: 1;
+    accent-color: #7ab356;
+    height: 4px;
+  }
+
+  /* ── GRID ── */
   .grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 18px;
-    max-width: 600px;
-    margin: 0 auto 40px;
+    gap: 12px;
+    max-width: 520px;
+    margin: 0 auto 24px;
   }
   .card-slot {
     display: flex;
@@ -41,192 +78,307 @@
     align-items: center;
     cursor: pointer;
   }
-  .card-slot:hover .card { transform: scale(1.04); }
+  .card-slot:hover .card { transform: scale(1.03); }
+  .card-slot.selected .card {
+    box-shadow: 0 0 0 2px #c8a84b, 0 0 14px rgba(200,168,75,0.4);
+  }
   .card {
     position: relative;
-    width: 120px;
-    height: 160px;
+    width: 110px;
+    height: 146px;
     border-radius: 8px;
     overflow: hidden;
     transition: transform 0.15s ease;
   }
-  /* Season B background (full card) */
-  .card-bg-b {
+  .card-bg-b, .card-bg-a {
     position: absolute;
     inset: 0;
     background-size: cover;
     background-position: center;
-    border-radius: 8px;
+    border-radius: 6px;
   }
-  /* Season A background (clipped top-left triangle) */
-  .card-bg-a {
-    position: absolute;
-    inset: 0;
-    background-size: cover;
-    background-position: center;
-    border-radius: 8px;
-    clip-path: polygon(0 0, 100% 0, 100% 55px, 0 calc(100% - 55px));
-    z-index: 1;
-  }
-  /* Split border overlay */
+  .card-bg-a { z-index: 1; }
   .card-border {
     position: absolute;
     inset: 0;
-    border-radius: 8px;
+    border-radius: 6px;
     pointer-events: none;
     z-index: 2;
   }
   .label {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
+    font-size: 9px;
     color: #8a9178;
-    margin-top: 6px;
+    margin-top: 4px;
     text-align: center;
     white-space: nowrap;
   }
-  .label .sym { font-size: 12px; }
 
-  /* Selected highlight ring */
-  .card-slot.selected .card {
-    box-shadow: 0 0 0 2px #c8a84b, 0 0 12px rgba(200,168,75,0.4);
-    transform: scale(1.04);
-  }
-
-  /* Carousel preview section */
-  .carousel-section {
+  /* ── ZOOM PREVIEW ── */
+  .preview-section {
     text-align: center;
-    margin-top: 12px;
+    margin-top: 8px;
   }
-  .carousel-section h2 {
+  .preview-section h2 {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px;
+    font-size: 20px;
     letter-spacing: 1.5px;
     color: #c8a84b;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
-  .carousel-card {
+  .zoom-wrap {
+    display: inline-block;
     position: relative;
-    width: 200px;
-    height: 300px;
+    border: 1px solid rgba(200,168,75,0.15);
+    border-radius: 12px;
+    overflow: hidden;
+    touch-action: none;
+  }
+  .zoom-card {
+    position: relative;
     border-radius: 10px;
     overflow: hidden;
-    margin: 0 auto;
+    transform-origin: center center;
+    transition: width 0.2s, height 0.2s;
   }
-  .carousel-card .card-bg-b,
-  .carousel-card .card-bg-a {
+  .zoom-card .card-bg-b, .zoom-card .card-bg-a {
     border-radius: 10px;
   }
-  .carousel-card .card-bg-a {
-    /* Scale the 55px proportionally: 300/160 = 1.875, 55*1.875 ~ 103 */
-    clip-path: polygon(0 0, 100% 0, 100% 103px, 0 calc(100% - 103px));
-  }
-  .carousel-card .card-border {
+  .zoom-card .card-border {
     border-radius: 10px;
   }
-  .carousel-label {
-    font-family: 'DM Mono', monospace;
+  .preview-label {
     font-size: 13px;
     color: #e8dcc8;
-    margin-top: 10px;
+    margin-top: 8px;
   }
+  .preview-note {
+    font-size: 10px;
+    color: #8a9178;
+    margin-top: 4px;
+  }
+
+  /* ── CUT LINE INDICATOR ── */
+  .cut-line {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .cut-line line {
+    stroke: rgba(255,255,255,0.5);
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+  }
+
   .divider {
-    width: 80px;
+    width: 60px;
     height: 1px;
     background: #8a9178;
-    margin: 32px auto 20px;
-    opacity: 0.4;
+    margin: 20px auto 16px;
+    opacity: 0.3;
+  }
+
+  /* ── CSS OUTPUT ── */
+  .css-output {
+    max-width: 500px;
+    margin: 20px auto 0;
+    background: rgba(13,16,12,0.9);
+    border: 1px solid rgba(122,179,86,0.15);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 10px;
+    color: #7ab356;
+    line-height: 1.6;
+    word-break: break-all;
+    white-space: pre-wrap;
   }
 </style>
 </head>
 <body>
 
 <h1>DUAL IMMUNE CARD PREVIEW</h1>
-<p class="subtitle">Tap any card to see carousel size</p>
+<p class="subtitle">Adjust the cut, zoom in, make sure borders line up</p>
 
+<!-- CONTROLS -->
+<div class="controls">
+  <div class="ctrl-row">
+    <span class="ctrl-label">Top-right cut</span>
+    <input type="range" id="cut-tr" min="20" max="120" value="55">
+    <span class="ctrl-val" id="val-tr">55px</span>
+  </div>
+  <div class="ctrl-row">
+    <span class="ctrl-label">Bottom-left cut</span>
+    <input type="range" id="cut-bl" min="20" max="120" value="55">
+    <span class="ctrl-val" id="val-bl">55px</span>
+  </div>
+  <div class="ctrl-row">
+    <span class="ctrl-label">Border width</span>
+    <input type="range" id="bdr-w" min="1" max="6" value="3">
+    <span class="ctrl-val" id="val-bdr">3px</span>
+  </div>
+  <div class="ctrl-row">
+    <span class="ctrl-label">Zoom</span>
+    <input type="range" id="zoom" min="100" max="400" value="200">
+    <span class="ctrl-val" id="val-zoom">200%</span>
+  </div>
+</div>
+
+<!-- GRID -->
 <div class="grid" id="grid"></div>
 
 <div class="divider"></div>
 
-<div class="carousel-section">
-  <h2>CAROUSEL SIZE</h2>
-  <div id="carousel-wrap">
-    <div class="carousel-card" id="carousel-card"></div>
-    <p class="carousel-label" id="carousel-label"></p>
+<!-- ZOOM PREVIEW -->
+<div class="preview-section">
+  <h2>ZOOM PREVIEW</h2>
+  <div class="zoom-wrap">
+    <div class="zoom-card" id="zoom-card"></div>
   </div>
+  <p class="preview-label" id="preview-label">Spring × Summer</p>
+  <p class="preview-note">Dashed line = cut edge. Drag zoom slider to inspect border alignment.</p>
 </div>
+
+<!-- CSS OUTPUT -->
+<div class="divider"></div>
+<div class="css-output" id="css-out"></div>
 
 <script>
 (function() {
   var seasons = [
-    { id: 'spring', name: 'Spring', color: '#E8A0BF', img: 'assets/cards/fronts/card-front-spring.png' },
-    { id: 'summer', name: 'Summer', color: '#D4A843', img: 'assets/cards/fronts/card-front-summer.png' },
-    { id: 'autumn', name: 'Autumn', color: '#D4842A', img: 'assets/cards/fronts/card-front-autumn.png' },
-    { id: 'winter', name: 'Winter', color: '#A0C4E8', img: 'assets/cards/fronts/card-front-winter.png' }
+    { id: 'sp', name: 'Spring', color: '#E8A0BF', emblm: '\u{1F338}',
+      gridImg: 'assets/cards/fronts/card-front-spring.png',
+      carImg: 'assets/cards/fronts/front-spring.png' },
+    { id: 'su', name: 'Summer', color: '#D4A843', emblm: '\u2600\uFE0F',
+      gridImg: 'assets/cards/fronts/card-front-summer.png',
+      carImg: 'assets/cards/fronts/front-summer.png' },
+    { id: 'au', name: 'Autumn', color: '#D4842A', emblm: '\u{1F342}',
+      gridImg: 'assets/cards/fronts/card-front-autumn.png',
+      carImg: 'assets/cards/fronts/front-autumn.png' },
+    { id: 'wi', name: 'Winter', color: '#A0C4E8', emblm: '\u2744\uFE0F',
+      gridImg: 'assets/cards/fronts/card-front-winter.png',
+      carImg: 'assets/cards/fronts/front-winter.png' }
   ];
 
   var combos = [];
-  for (var i = 0; i < seasons.length; i++) {
-    for (var j = 0; j < seasons.length; j++) {
+  for (var i = 0; i < seasons.length; i++)
+    for (var j = 0; j < seasons.length; j++)
       if (i !== j) combos.push({ a: seasons[i], b: seasons[j] });
-    }
-  }
 
   var grid = document.getElementById('grid');
-  var carouselCard = document.getElementById('carousel-card');
-  var carouselLabel = document.getElementById('carousel-label');
+  var zoomCard = document.getElementById('zoom-card');
+  var previewLabel = document.getElementById('preview-label');
+  var cssOut = document.getElementById('css-out');
   var slots = [];
+  var selectedIdx = 0;
 
-  function buildCardHTML(a, b) {
-    var borderStyle = 'border-top: 3px solid ' + a.color + ';'
-      + 'border-left: 3px solid ' + a.color + ';'
-      + 'border-right: 3px solid ' + b.color + ';'
-      + 'border-bottom: 3px solid ' + b.color + ';';
+  // Controls
+  var cutTR = document.getElementById('cut-tr');
+  var cutBL = document.getElementById('cut-bl');
+  var bdrW = document.getElementById('bdr-w');
+  var zoomSlider = document.getElementById('zoom');
 
-    return '<div class="card-bg-b" style="background-image:url(' + b.img + ')"></div>'
-      + '<div class="card-bg-a" style="background-image:url(' + a.img + ')"></div>'
-      + '<div class="card-border" style="' + borderStyle + 'border-radius:inherit"></div>';
+  function getClip(h, tr, bl) {
+    return 'polygon(0 0, 100% 0, 100% ' + tr + 'px, 0 calc(' + h + ' - ' + bl + 'px))';
   }
 
-  function selectCombo(idx) {
-    var c = combos[idx];
-    for (var k = 0; k < slots.length; k++) {
-      slots[k].className = 'card-slot' + (k === idx ? ' selected' : '');
+  function buildCardHTML(a, b, tr, bl, bw, isGrid) {
+    var img = isGrid ? 'gridImg' : 'carImg';
+    var borderStyle = 'border:' + bw + 'px solid;'
+      + 'border-top-color:' + a.color + ';border-left-color:' + a.color + ';'
+      + 'border-right-color:' + b.color + ';border-bottom-color:' + b.color + ';';
+    var clip = getClip('100%', tr, bl);
+
+    return '<div class="card-bg-b" style="background-image:url(' + b[img] + ')"></div>'
+      + '<div class="card-bg-a" style="background-image:url(' + a[img] + ');clip-path:' + clip + '"></div>'
+      + '<div class="card-border" style="' + borderStyle + 'border-radius:inherit"></div>'
+      + '<svg class="cut-line" viewBox="0 0 100 100" preserveAspectRatio="none" style="width:100%;height:100%">'
+      + '<line x1="100" y1="' + (tr / 1.6) + '" x2="0" y2="' + (100 - bl / 1.6) + '"/></svg>';
+  }
+
+  function renderGrid() {
+    var tr = parseInt(cutTR.value);
+    var bl = parseInt(cutBL.value);
+    var bw = parseInt(bdrW.value);
+    grid.innerHTML = '';
+    slots = [];
+    for (var idx = 0; idx < combos.length; idx++) {
+      var c = combos[idx];
+      var slot = document.createElement('div');
+      slot.className = 'card-slot' + (idx === selectedIdx ? ' selected' : '');
+      slot.setAttribute('data-idx', idx);
+
+      var card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = buildCardHTML(c.a, c.b, tr, bl, bw, true);
+
+      var label = document.createElement('div');
+      label.className = 'label';
+      label.innerHTML = c.a.emblm + ' \u00D7 ' + c.b.emblm;
+
+      slot.appendChild(card);
+      slot.appendChild(label);
+      grid.appendChild(slot);
+      slots.push(slot);
+
+      slot.addEventListener('click', (function(i) {
+        return function() { selectedIdx = i; renderAll(); };
+      })(idx));
+    }
+  }
+
+  function renderZoom() {
+    var tr = parseInt(cutTR.value);
+    var bl = parseInt(cutBL.value);
+    var bw = parseInt(bdrW.value);
+    var zoom = parseInt(zoomSlider.value);
+    var c = combos[selectedIdx];
+
+    var w = Math.round(200 * zoom / 100);
+    var h = Math.round(300 * zoom / 100);
+    var scaledTR = Math.round(tr * h / 160);
+    var scaledBL = Math.round(bl * h / 160);
+
+    zoomCard.style.width = w + 'px';
+    zoomCard.style.height = h + 'px';
+    zoomCard.innerHTML = buildCardHTML(c.a, c.b, scaledTR, scaledBL, bw, false);
+    // Fix SVG cut line for zoom proportions
+    var svg = zoomCard.querySelector('.cut-line');
+    if (svg) {
+      svg.innerHTML = '<line x1="100" y1="' + (scaledTR * 100 / h) + '" x2="0" y2="' + ((h - scaledBL) * 100 / h) + '" stroke="rgba(255,255,255,0.5)" stroke-width="1" stroke-dasharray="4 3"/>';
     }
 
-    carouselCard.innerHTML = buildCardHTML(c.a, c.b);
-    // re-apply carousel clip-path on the ::after-equivalent element
-    var bgA = carouselCard.querySelector('.card-bg-a');
-    if (bgA) bgA.style.clipPath = 'polygon(0 0, 100% 0, 100% 103px, 0 calc(100% - 103px))';
-
-    carouselLabel.textContent = c.a.name + ' \u00D7 ' + c.b.name;
+    previewLabel.textContent = c.a.name + ' \u00D7 ' + c.b.name + ' (' + zoom + '%)';
   }
 
-  for (var idx = 0; idx < combos.length; idx++) {
-    var c = combos[idx];
-    var slot = document.createElement('div');
-    slot.className = 'card-slot';
-    slot.setAttribute('data-idx', idx);
-
-    var card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = buildCardHTML(c.a, c.b);
-
-    var label = document.createElement('div');
-    label.className = 'label';
-    label.innerHTML = c.a.name + ' <span class="sym">\u00D7</span> ' + c.b.name;
-
-    slot.appendChild(card);
-    slot.appendChild(label);
-    grid.appendChild(slot);
-    slots.push(slot);
-
-    slot.addEventListener('click', (function(i) {
-      return function() { selectCombo(i); };
-    })(idx));
+  function renderCSS() {
+    var tr = parseInt(cutTR.value);
+    var bl = parseInt(cutBL.value);
+    var bw = parseInt(bdrW.value);
+    var clip = 'polygon(0 0, 100% 0, 100% ' + tr + 'px, 0 calc(100% - ' + bl + 'px))';
+    cssOut.textContent = '/* GREENHOUSE GRID */\n'
+      + '.greenhouse-plant.chimera-dual { border: ' + bw + 'px solid; }\n'
+      + '.greenhouse-plant.chimera-dual::after { clip-path: ' + clip + '; }\n\n'
+      + '/* CAROUSEL — scale proportionally */\n'
+      + 'Carousel TR: ' + Math.round(tr * 300 / 160) + 'px\n'
+      + 'Carousel BL: ' + Math.round(bl * 300 / 160) + 'px';
   }
 
-  // Default selection: first combo
-  selectCombo(0);
+  function renderAll() {
+    renderGrid();
+    renderZoom();
+    renderCSS();
+    document.getElementById('val-tr').textContent = cutTR.value + 'px';
+    document.getElementById('val-bl').textContent = cutBL.value + 'px';
+    document.getElementById('val-bdr').textContent = bdrW.value + 'px';
+    document.getElementById('val-zoom').textContent = zoomSlider.value + '%';
+  }
+
+  cutTR.addEventListener('input', renderAll);
+  cutBL.addEventListener('input', renderAll);
+  bdrW.addEventListener('input', renderAll);
+  zoomSlider.addEventListener('input', renderAll);
+
+  renderAll();
 })();
 </script>
 </body>
