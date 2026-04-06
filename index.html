@@ -26331,12 +26331,18 @@ document.addEventListener('keydown', function(e) {
 
   // ── Carousel action wrappers (greenhouse mechanics fix) ──────────────
   window.carouselCompost = function() {
-    if (!galleryPlant) return;
+    if (!galleryPlant) { showHexMsg('No plant selected.'); return; }
     var idx = galleryPlant.collectionIndex;
-    if (typeof idx !== 'number' || idx < 0) return;
+    // Fallback: if collectionIndex missing, find by hash in greenhouse
+    if (typeof idx !== 'number' || idx < 0) {
+      var gh2 = loadGreenhouse();
+      for (var fi = 0; fi < gh2.length; fi++) {
+        if (gh2[fi].hash === galleryPlant.hash) { idx = fi; break; }
+      }
+    }
+    if (typeof idx !== 'number' || idx < 0) { showHexMsg('Could not find plant in greenhouse.'); return; }
     var gh = loadGreenhouse();
-    if (idx >= gh.length) return;
-    var name = typeof getPlantName === 'function' ? getPlantName(gh[idx].hash) : 'this plant';
+    if (idx >= gh.length) { showHexMsg('Plant index out of range.'); return; }
     confirmCompost(idx);
   };
 
