@@ -32034,7 +32034,8 @@ var G=[
 {id:'farkle',n:'Farkle',i:'\ud83c\udfb2',r:'Roll 6 dice. Keep 1s, 5s, and three-of-a-kinds. Roll again or bank — zero scorers and you bust!',cat:'dice',thumb:'assets/games/thumbs/farkle.png'},
 {id:'sokoban',n:'Catnip Chaos',i:'\ud83d\udc31',r:'Push catnip toys onto the cat beds. Watch your step — toys only push, never pull!',cat:'puzzle',thumb:'assets/games/thumbs/sokoban.png'},
 {id:'backgammon',n:'Garden Gate',i:'\ud83c\udfb2',r:'Roll dice, move seeds around the garden. Bear off all 15 first to win!',cat:'board',thumb:'assets/games/thumbs/backgammon.png'},
-{id:'bloomwheel',n:'Bloom Wheel',i:'\ud83c\udf38',r:'Draw botanical mandalas on a spinning canvas synced to a generative beat.',cat:'creative',thumb:'assets/games/thumbs/bloomwheel.png'}
+{id:'bloomwheel',n:'Bloom Wheel',i:'\ud83c\udf38',r:'Draw botanical mandalas on a spinning canvas synced to a generative beat.',cat:'creative',thumb:'assets/games/thumbs/bloomwheel.png'},
+{id:'petalfall',n:'Petal Fall',i:'\ud83c\udf38',r:'Arrange falling petals to clear garden rows. Speed increases every 10 lines!',cat:'puzzle',thumb:'assets/games/thumbs/petalfall.png'}
 ];
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
 // ═══ HASH ACCUMULATION BUFFER ═══
@@ -32153,7 +32154,8 @@ var _aw={
   slider:{milestone:1,game_win:3,default:0},
   farkle:{progress:1,milestone:1,game_win:5,game_loss:0,default:0},
   backgammon:{progress:1,milestone:1,game_win:6,game_loss:1,default:0},
-  bloomwheel:{progress:1,milestone:2,default:0}
+  bloomwheel:{progress:1,milestone:2,default:0},
+  petalfall:{milestone:2,game_win:3,game_loss:0,default:0}
 };
 function _setDiff(lv){switch(lv){case 'easy':_dm=1.0;break;case 'medium':_dm=1.5;break;case 'hard':_dm=2.0;break;case 'expert':_dm=2.5;break;default:_dm=1.0}}
 function _gr(){try{return JSON.parse(localStorage.getItem(RK))||{}}catch(e){return{}}}
@@ -36071,6 +36073,120 @@ function GSK(a){
   window._SKN=function(){lvl=(lvl+1)%LEVELS.length;load();sm('Level '+(lvl+1));rn()};
   document.addEventListener('keydown',function(e){var m={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};if(m[e.key]&&_a==='sokoban'){e.preventDefault();_SKM(m[e.key][0],m[e.key][1])}});
   load();rn()}
+// ═══ PETAL FALL — Falling Block Puzzle ═══
+function GPF(a){
+  var COLS=10,ROWS=20,CELL,boardCanvas,boardCtx,nextCanvas,nextCtx,dpr;
+  var PIECES=[
+    {shape:[[1,1,1,1]],color:'#5BAFD4',name:'I'},
+    {shape:[[1,1],[1,1]],color:'#D4A843',name:'O'},
+    {shape:[[0,1,0],[1,1,1]],color:'#9B6BA3',name:'T'},
+    {shape:[[0,1,1],[1,1,0]],color:'#4A7C35',name:'S'},
+    {shape:[[1,1,0],[0,1,1]],color:'#C47A7A',name:'Z'},
+    {shape:[[1,0,0],[1,1,1]],color:'#5B8FB9',name:'J'},
+    {shape:[[0,0,1],[1,1,1]],color:'#C76A30',name:'L'}
+  ];
+  var grid=[],current=null,nextPc=null,holdPc=null,canHold=true;
+  var score=0,lines=0,level=1,dropTimer=0,dropInterval=1000;
+  var pfOver=false,lastTime=0,particles=[],bag=[];
+
+  ms(a,'Score <strong id="PFs">0</strong> · Lines <strong id="PFl">0</strong> · Level <strong id="PFlv">1</strong>');mm(a);
+
+  // Canvas setup
+  var row=document.createElement('div');row.style.cssText='display:flex;align-items:flex-start;gap:10px;justify-content:center;padding:4px';
+  boardCanvas=document.createElement('canvas');boardCanvas.style.cssText='display:block;border-radius:8px;border:2px solid rgba(74,124,53,0.2);box-shadow:0 4px 16px rgba(0,0,0,0.4)';
+  boardCtx=boardCanvas.getContext('2d');
+  var side=document.createElement('div');side.style.cssText='display:flex;flex-direction:column;gap:8px;align-items:center';
+  side.innerHTML='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:#4A7C35;letter-spacing:1px;opacity:0.5">NEXT</div>';
+  nextCanvas=document.createElement('canvas');nextCanvas.style.cssText='border-radius:4px;border:1px solid rgba(74,124,53,0.1)';
+  nextCtx=nextCanvas.getContext('2d');
+  side.appendChild(nextCanvas);
+  side.innerHTML+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:#D4A843;letter-spacing:1px" id="PFspd">SPEED 1</div>';
+  row.appendChild(boardCanvas);row.appendChild(side);a.appendChild(row);
+
+  // Controls
+  var _cbs='min-height:56px;min-width:56px;padding:0.4rem;font-size:1.3rem;border-radius:12px;background:rgba(26,36,22,0.85);border:1.5px solid rgba(74,124,53,0.25);box-shadow:0 2px 8px rgba(0,0,0,0.3)';
+  var cDiv=document.createElement('div');cDiv.style.cssText='display:flex;gap:8px;padding:8px 12px;justify-content:center';
+  cDiv.innerHTML='<button class="gb" style="'+_cbs+'" ontouchstart="_PFM(-1);event.preventDefault()" onclick="_PFM(-1)">←</button>'
+    +'<button class="gb" style="'+_cbs+'" ontouchstart="_PFRot();event.preventDefault()" onclick="_PFRot()">↻</button>'
+    +'<button class="gb" style="'+_cbs+'" ontouchstart="_PFSoft();event.preventDefault()" onclick="_PFSoft()">↓</button>'
+    +'<button class="gb" style="'+_cbs+';border-color:rgba(200,168,75,0.3);color:var(--gold)" ontouchstart="_PFHard();event.preventDefault()" onclick="_PFHard()">⏬</button>'
+    +'<button class="gb" style="'+_cbs+';min-width:70px;font-size:0.7rem" ontouchstart="_PFHold();event.preventDefault()" onclick="_PFHold()">HOLD</button>'
+    +'<button class="gb" style="'+_cbs+'" ontouchstart="_PFM(1);event.preventDefault()" onclick="_PFM(1)">→</button>';
+  a.appendChild(cDiv);
+  mc(a).innerHTML='<button class="gb-new" onclick="_PFN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+
+  function initCanvas(){
+    dpr=window.devicePixelRatio||1;
+    var maxH=window.innerHeight-220;var maxW=window.innerWidth-90;
+    CELL=Math.floor(Math.min(maxW/COLS,maxH/ROWS));CELL=Math.max(18,Math.min(CELL,30));
+    boardCanvas.width=COLS*CELL*dpr;boardCanvas.height=ROWS*CELL*dpr;
+    boardCanvas.style.width=(COLS*CELL)+'px';boardCanvas.style.height=(ROWS*CELL)+'px';
+    boardCtx.setTransform(dpr,0,0,dpr,0,0);
+    nextCanvas.width=4*CELL*dpr;nextCanvas.height=4*CELL*dpr;
+    nextCanvas.style.width=(4*CELL)+'px';nextCanvas.style.height=(4*CELL)+'px';
+    nextCtx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  function initGrid(){grid=[];for(var r=0;r<ROWS;r++){grid[r]=[];for(var c=0;c<COLS;c++)grid[r][c]=null}}
+  function fillBag(){bag=[];for(var i=0;i<PIECES.length;i++)bag.push(i);for(var j=bag.length-1;j>0;j--){var k=Math.floor(Math.random()*(j+1));var t=bag[j];bag[j]=bag[k];bag[k]=t}}
+  function getNext(){if(!bag.length)fillBag();return bag.pop()}
+  function getShape(piece,rot){var s=piece.shape;for(var r=0;r<rot;r++){var rows=s.length,cols=s[0].length;var ns=[];for(var c=0;c<cols;c++){ns[c]=[];for(var rr=rows-1;rr>=0;rr--)ns[c].push(s[rr][c])}s=ns}return s}
+  function spawn(idx){var p=PIECES[idx];var shape=p.shape;var x=Math.floor((COLS-shape[0].length)/2);current={pieceIdx:idx,piece:p,rotation:0,x:x,y:0,shape:shape};canHold=true;if(collides(current.shape,current.x,current.y)){pfOver=true;_e('game_loss');sm('Garden Full! Score: '+score);_sr('petalfall',{w:false,s:score})}}
+  function collides(shape,px,py){for(var r=0;r<shape.length;r++)for(var c=0;c<shape[r].length;c++){if(!shape[r][c])continue;var gx=px+c,gy=py+r;if(gx<0||gx>=COLS||gy>=ROWS)return true;if(gy>=0&&grid[gy][gx])return true}return false}
+  function lock(){var s=current.shape;for(var r=0;r<s.length;r++)for(var c=0;c<s[r].length;c++){if(!s[r][c])continue;var gy=current.y+r,gx=current.x+c;if(gy<0){pfOver=true;_e('game_loss');sm('Garden Full!');_sr('petalfall',{w:false,s:score});return}grid[gy][gx]=current.piece.color}_play('tap');clearLines();var ni=nextPc;nextPc=getNext();spawn(ni)}
+  function clearLines(){
+    var cleared=[];for(var r=ROWS-1;r>=0;r--){var full=true;for(var c=0;c<COLS;c++)if(!grid[r][c]){full=false;break}if(full)cleared.push(r)}
+    if(!cleared.length)return;
+    // Particles
+    for(var i=0;i<cleared.length;i++)for(var c=0;c<COLS;c++){var col=grid[cleared[i]][c]||'#4A7C35';for(var p=0;p<3;p++)particles.push({x:c*CELL+CELL/2,y:cleared[i]*CELL+CELL/2,vx:(Math.random()-0.5)*120,vy:-40-Math.random()*80,life:0.5+Math.random()*0.4,maxLife:0.5+Math.random()*0.4,size:2+Math.random()*3,color:col})}
+    for(i=0;i<cleared.length;i++){grid.splice(cleared[i],1);grid.unshift(new Array(COLS).fill(null))}
+    var pts=[0,100,300,500,800];score+=pts[cleared.length]*level;lines+=cleared.length;
+    var nl=Math.floor(lines/10)+1;if(nl>level){level=nl;dropInterval=Math.max(50,1000-((level-1)*80));var sp=document.getElementById('PFspd');if(sp)sp.textContent='SPEED '+level}
+    _e('milestone');if(cleared.length>=4)_e('game_win');
+    _play('snap');updHUD();
+  }
+  function updHUD(){var s=document.getElementById('PFs');if(s)s.textContent=score;var l=document.getElementById('PFl');if(l)l.textContent=lines;var v=document.getElementById('PFlv');if(v)v.textContent=level}
+  function drawCell(ctx,x,y,sz,color){var p=1;ctx.fillStyle=color;ctx.fillRect(x+p,y+p,sz-p*2,sz-p*2);ctx.fillStyle='rgba(255,255,255,0.15)';ctx.fillRect(x+p,y+p,sz-p*2,3);ctx.fillRect(x+p,y+p,3,sz-p*2);ctx.fillStyle='rgba(0,0,0,0.2)';ctx.fillRect(x+p,y+sz-p-2,sz-p*2,2)}
+  function render(){
+    var w=COLS*CELL,h=ROWS*CELL;boardCtx.fillStyle='#0d100c';boardCtx.fillRect(0,0,w,h);
+    boardCtx.strokeStyle='rgba(74,124,53,0.05)';boardCtx.lineWidth=0.5;
+    for(var r=0;r<ROWS;r++){boardCtx.beginPath();boardCtx.moveTo(0,r*CELL);boardCtx.lineTo(w,r*CELL);boardCtx.stroke()}
+    for(var c=0;c<=COLS;c++){boardCtx.beginPath();boardCtx.moveTo(c*CELL,0);boardCtx.lineTo(c*CELL,h);boardCtx.stroke()}
+    for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++)if(grid[r][c])drawCell(boardCtx,c*CELL,r*CELL,CELL,grid[r][c]);
+    // Ghost + current
+    if(current&&!pfOver){
+      var gy=current.y;while(!collides(current.shape,current.x,gy+1))gy++;
+      if(gy!==current.y){boardCtx.globalAlpha=0.15;var s=current.shape;for(r=0;r<s.length;r++)for(c=0;c<s[r].length;c++)if(s[r][c])drawCell(boardCtx,(current.x+c)*CELL,(gy+r)*CELL,CELL,current.piece.color);boardCtx.globalAlpha=1}
+      s=current.shape;for(r=0;r<s.length;r++)for(c=0;c<s[r].length;c++)if(s[r][c])drawCell(boardCtx,(current.x+c)*CELL,(current.y+r)*CELL,CELL,current.piece.color);
+    }
+    // Particles
+    for(var i=0;i<particles.length;i++){var pp=particles[i];var al=pp.life/pp.maxLife;boardCtx.globalAlpha=al;boardCtx.fillStyle=pp.color;boardCtx.beginPath();boardCtx.arc(pp.x,pp.y,pp.size*al,0,Math.PI*2);boardCtx.fill()}
+    boardCtx.globalAlpha=1;
+    // Next preview
+    var nw=4*CELL;nextCtx.fillStyle='#0d100c';nextCtx.fillRect(0,0,nw,nw);
+    if(nextPc!==null){var np=PIECES[nextPc];var ns=np.shape;var ox=Math.floor((4-ns[0].length)/2);var oy=Math.floor((4-ns.length)/2);for(r=0;r<ns.length;r++)for(c=0;c<ns[r].length;c++)if(ns[r][c])drawCell(nextCtx,(ox+c)*CELL,(oy+r)*CELL,CELL,np.color)}
+  }
+  function gameLoop(ts){
+    if(pfOver||_a!=='petalfall')return;
+    var dt=lastTime?(ts-lastTime)/1000:0.016;lastTime=ts;
+    dropTimer+=dt*1000;
+    if(dropTimer>=dropInterval){dropTimer=0;if(current&&!collides(current.shape,current.x,current.y+1))current.y++;else if(current)lock()}
+    for(var i=particles.length-1;i>=0;i--){var pp=particles[i];pp.x+=pp.vx*dt;pp.y+=pp.vy*dt;pp.vy+=200*dt;pp.life-=dt;if(pp.life<=0)particles.splice(i,1)}
+    render();updHUD();requestAnimationFrame(gameLoop);
+  }
+
+  // Controls
+  window._PFM=function(dir){if(pfOver||!current)return;if(!collides(current.shape,current.x+dir,current.y)){current.x+=dir;_play('tap');render()}};
+  window._PFRot=function(){if(pfOver||!current)return;var nr=(current.rotation+1)%4;var ns=getShape(current.piece,nr);var kicks=[0,-1,1,-2,2];for(var i=0;i<kicks.length;i++){if(!collides(ns,current.x+kicks[i],current.y)){current.rotation=nr;current.shape=ns;current.x+=kicks[i];_play('tap');render();return}}};
+  window._PFSoft=function(){if(pfOver||!current)return;if(!collides(current.shape,current.x,current.y+1)){current.y++;score++;dropTimer=0;render()}};
+  window._PFHard=function(){if(pfOver||!current)return;var dy=0;while(!collides(current.shape,current.x,current.y+dy+1))dy++;current.y+=dy;score+=dy*2;_play('drop');lock();dropTimer=0;render()};
+  window._PFHold=function(){if(pfOver||!current||!canHold)return;canHold=false;if(holdPc===null){holdPc=current.pieceIdx;var ni=nextPc;nextPc=getNext();spawn(ni)}else{var tmp=holdPc;holdPc=current.pieceIdx;spawn(tmp)}_play('tap');render()};
+  window._PFN=function(){initCanvas();initGrid();score=0;lines=0;level=1;dropInterval=1000;dropTimer=0;pfOver=false;holdPc=null;particles=[];bag=[];fillBag();nextPc=getNext();spawn(getNext());updHUD();var sp=document.getElementById('PFspd');if(sp)sp.textContent='SPEED 1';lastTime=0;requestAnimationFrame(gameLoop)};
+
+  // Keyboard
+  document.addEventListener('keydown',function(e){if(_a!=='petalfall')return;var m={ArrowLeft:function(){_PFM(-1)},ArrowRight:function(){_PFM(1)},ArrowDown:function(){_PFSoft()},ArrowUp:function(){_PFRot()},' ':function(){_PFHard()}};if(m[e.key]){e.preventDefault();m[e.key]()}});
+
+  _PFN();
+}
 // ═══ BLOOM WHEEL — Spinning Mandala Drawing Tool ═══
 function GBW(a){
   var canvas,ctx,bufC,bufX,W,H,cx,cy,radius,dpr;
@@ -36517,6 +36633,7 @@ try{window._gameFns.battleship=GBS}catch(e){}// Battleship
 try{window._gameFns.sokoban=GSK}catch(e){}  // Sokoban
 try{window._gameFns.backgammon=GBG}catch(e){} // Backgammon
 try{window._gameFns.bloomwheel=GBW}catch(e){} // Bloom Wheel
+try{window._gameFns.petalfall=GPF}catch(e){} // Petal Fall
 
 
 _bp();console.log('[FG] Hub v4 — '+G.length+' games');
