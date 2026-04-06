@@ -31984,7 +31984,8 @@ var G=[
 {id:'reversi',n:'Moss & Lichen',i:'\u25cf',r:'Place moss to surround and flip lichen. Control the most territory to win.',cat:'board',thumb:'assets/games/thumbs/reversi.png'},
 {id:'yahtzee',n:'Seed Toss',i:'\ud83c\udfb2',r:'Roll 5 seed dice up to 3 times. Hold keepers, score in 13 categories. Aim high!',cat:'dice',thumb:'assets/games/thumbs/yahtzee.png'},
 {id:'farkle',n:'Farkle',i:'\ud83c\udfb2',r:'Roll 6 dice. Keep 1s, 5s, and three-of-a-kinds. Roll again or bank — zero scorers and you bust!',cat:'dice',thumb:'assets/games/thumbs/farkle.png'},
-{id:'sokoban',n:'Catnip Chaos',i:'\ud83d\udc31',r:'Push catnip toys onto the cat beds. Watch your step — toys only push, never pull!',cat:'puzzle',thumb:'assets/games/thumbs/sokoban.png'}
+{id:'sokoban',n:'Catnip Chaos',i:'\ud83d\udc31',r:'Push catnip toys onto the cat beds. Watch your step — toys only push, never pull!',cat:'puzzle',thumb:'assets/games/thumbs/sokoban.png'},
+{id:'backgammon',n:'Garden Gate',i:'\ud83c\udfb2',r:'Roll dice, move seeds around the garden. Bear off all 15 first to win!',cat:'board',thumb:'assets/games/thumbs/backgammon.png'}
 ];
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
 // ═══ HASH ACCUMULATION BUFFER ═══
@@ -32101,7 +32102,8 @@ var _aw={
   battleship:{hit:1,game_win:5,game_loss:1,default:0},
   picross:{progress:1,game_win:4,default:0},
   slider:{milestone:1,game_win:3,default:0},
-  farkle:{progress:1,milestone:1,game_win:5,game_loss:0,default:0}
+  farkle:{progress:1,milestone:1,game_win:5,game_loss:0,default:0},
+  backgammon:{progress:1,milestone:1,game_win:6,game_loss:1,default:0}
 };
 function _setDiff(lv){switch(lv){case 'easy':_dm=1.0;break;case 'medium':_dm=1.5;break;case 'hard':_dm=2.0;break;case 'expert':_dm=2.5;break;default:_dm=1.0}}
 function _gr(){try{return JSON.parse(localStorage.getItem(RK))||{}}catch(e){return{}}}
@@ -35889,6 +35891,153 @@ function GSK(a){
   window._SKN=function(){lvl=(lvl+1)%LEVELS.length;load();sm('Level '+(lvl+1));rn()};
   document.addEventListener('keydown',function(e){var m={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};if(m[e.key]&&_a==='sokoban'){e.preventDefault();_SKM(m[e.key][0],m[e.key][1])}});
   load();rn()}
+// ═══ BACKGAMMON — Garden Gate ═══
+function GBG(a){
+  var B,DICE,DICE_USED,TURN,SEL,VALID_DESTS,PHASE,MOVES_LEFT,BO_H,BO_A;
+  ms(a,'<span class="gp-you" style="color:#7AB956">You: <strong id="BGh">0</strong></span> · <span class="gp-ai" style="color:#C47A7A">AI: <strong id="BGa">0</strong></span>');mm(a);
+  var wrap=document.createElement('div');wrap.id='BGwrap';wrap.style.cssText='max-width:420px;margin:0 auto;user-select:none;-webkit-user-select:none';a.appendChild(wrap);
+  mc(a).innerHTML='<button class="gb-new" onclick="_BGN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+
+  function init(){
+    B=new Array(26);for(var i=0;i<26;i++)B[i]=0;
+    B[24]=2;B[13]=5;B[8]=3;B[6]=5;
+    B[1]=-2;B[12]=-5;B[17]=-3;B[19]=-5;
+    DICE=[0,0];DICE_USED=[false,false];TURN='human';SEL=-1;VALID_DESTS=[];
+    PHASE='roll';MOVES_LEFT=[];BO_H=0;BO_A=0;rn();
+  }
+  function rollDice(){
+    var d1=Math.floor(Math.random()*6)+1,d2=Math.floor(Math.random()*6)+1;
+    DICE=[d1,d2];MOVES_LEFT=d1===d2?[d1,d1,d1,d1]:[d1,d2];DICE_USED=[false,false];PHASE='move';SEL=-1;VALID_DESTS=[];
+  }
+  function getBar(w){return w==='human'?B[25]:B[0]}
+  function setBar(w,v){if(w==='human')B[25]=v;else B[0]=v}
+  function myCheckers(p,w){return w==='human'?Math.max(0,B[p]):Math.max(0,-B[p])}
+  function canLand(p,w){if(p<1||p>24)return false;return w==='human'?B[p]>=-1:B[p]<=1}
+  function allInHome(w){
+    if(getBar(w)>0)return false;
+    if(w==='human'){for(var i=7;i<=25;i++)if(B[i]>0)return false;return true}
+    for(var i=0;i<=18;i++)if(B[i]<0)return false;if(B[0]<0)return false;return true;
+  }
+  function getValidMoves(w){
+    var moves=[],bar=getBar(w);
+    if(bar>0){MOVES_LEFT.forEach(function(d,idx){var dest=w==='human'?(25-d):d;if(dest>=1&&dest<=24&&canLand(dest,w))moves.push({from:'bar',to:dest,die:d,dieIdx:idx})});return moves}
+    var bo=allInHome(w);
+    MOVES_LEFT.forEach(function(d,idx){
+      var dir=w==='human'?-1:1;
+      for(var p=w==='human'?24:1;w==='human'?p>=1:p<=24;p+=dir){
+        if(myCheckers(p,w)<=0)continue;var dest=p+(d*dir);
+        if(dest>=1&&dest<=24&&canLand(dest,w)){moves.push({from:p,to:dest,die:d,dieIdx:idx})}
+        else if(bo){
+          if(w==='human'&&dest<=0){if(dest===0)moves.push({from:p,to:'off',die:d,dieIdx:idx});else{var hx=false;for(var h=p+1;h<=6;h++)if(B[h]>0){hx=true;break}if(!hx)moves.push({from:p,to:'off',die:d,dieIdx:idx})}}
+          else if(w==='ai'&&dest>=25){if(dest===25)moves.push({from:p,to:'off',die:d,dieIdx:idx});else{var hx2=false;for(var h2=p-1;h2>=19;h2--)if(B[h2]<0){hx2=true;break}if(!hx2)moves.push({from:p,to:'off',die:d,dieIdx:idx})}}
+        }
+      }
+    });return moves;
+  }
+  function applyMove(mv,w){
+    if(mv.from==='bar'){setBar(w,getBar(w)-1)}else{B[mv.from]+=(w==='human'?-1:1)}
+    if(mv.to==='off'){if(w==='human')BO_H++;else BO_A++}
+    else{
+      if(w==='human'&&B[mv.to]===-1){B[mv.to]=0;B[0]=(B[0]||0)-1;sm('Hit! Sent to bar')}
+      else if(w==='ai'&&B[mv.to]===1){B[mv.to]=0;B[25]=(B[25]||0)+1;sm('AI hits your seed!')}
+      B[mv.to]+=(w==='human'?1:-1);
+    }
+    for(var i=0;i<MOVES_LEFT.length;i++){if(MOVES_LEFT[i]===mv.die){MOVES_LEFT.splice(i,1);break}}
+  }
+  function selectPt(p){
+    if(PHASE!=='move'||TURN!=='human')return;
+    if(SEL===-1){
+      var bar=getBar('human');
+      if(bar>0){if(p!=='bar'){sm('Must enter from bar first');return}SEL='bar'}
+      else{if(p==='bar'||B[p]<=0)return;SEL=p}
+      var moves=getValidMoves('human');VALID_DESTS=[];
+      moves.forEach(function(mv){if(mv.from===SEL)VALID_DESTS.push(mv)});
+      if(VALID_DESTS.length===0){SEL=-1;sm('No moves from here');return}
+      rn();
+    }else{
+      var chosen=null;VALID_DESTS.forEach(function(mv){if(mv.to===p||(mv.to==='off'&&p==='off'))chosen=mv});
+      if(!chosen){SEL=-1;VALID_DESTS=[];selectPt(p);return}
+      applyMove(chosen,'human');_play('tap');SEL=-1;VALID_DESTS=[];
+      if(BO_H>=15){_e('game_win');_playWin();sm('All seeds home!');_sr('backgammon',{w:true,s:1});rn();return}
+      if(MOVES_LEFT.length>0){var rem=getValidMoves('human');if(rem.length===0){sm('No more moves');MOVES_LEFT=[];endTurn()}else rn()}
+      else endTurn();
+    }
+  }
+  function endTurn(){TURN=TURN==='human'?'ai':'human';PHASE='roll';SEL=-1;VALID_DESTS=[];rn();
+    if(TURN==='ai')setTimeout(function(){rollDice();rn();setTimeout(aiPlay,500)},400);
+  }
+  function aiPlay(){
+    if(MOVES_LEFT.length===0){endTurn();return}
+    var moves=getValidMoves('ai');if(moves.length===0){MOVES_LEFT=[];endTurn();return}
+    var best=null,bs=-9999;
+    moves.forEach(function(mv){var s=0;if(mv.to==='off')s+=50;if(mv.to!=='off'&&mv.to>=1&&mv.to<=24&&B[mv.to]===1)s+=30;if(mv.to!=='off'&&mv.to>=1&&mv.to<=24&&B[mv.to]===-1)s+=20;if(mv.to!=='off')s+=mv.to;if(mv.from==='bar')s+=40;if(s>bs){bs=s;best=mv}});
+    if(best){applyMove(best,'ai');if(BO_A>=15){_e('game_loss');sm('AI wins!');_sr('backgammon',{w:false,s:0});rn();return}}
+    if(MOVES_LEFT.length>0)setTimeout(aiPlay,250);else setTimeout(endTurn,250);rn();
+  }
+  function rPt(p,side){
+    var count=B[p],who=count>0?'human':count<0?'ai':'',abs=Math.abs(count);
+    var isVD=false;VALID_DESTS.forEach(function(mv){if(mv.to===p)isVD=true});
+    var isSel=SEL===p,triCls=p%2===0?'dark':'light';
+    var h='<div class="point '+side+(isVD?' valid-dest':'')+'" onclick="_BGS('+p+')" style="cursor:pointer">';
+    h+='<div class="tri '+triCls+'"></div><div class="checkers">';
+    var show=Math.min(abs,5);
+    for(var i=0;i<show;i++){var sc=who&&isSel&&i===show-1?' selected':'';h+='<div class="checker '+who+sc+'">';if(i===show-1&&abs>5)h+='<span class="checker-count">'+abs+'</span>';h+='</div>'}
+    h+='</div><div style="position:absolute;'+(side==='top'?'bottom:1px':'top:1px')+';font-size:7px;color:rgba(232,220,200,.2)">'+p+'</div></div>';
+    return h;
+  }
+  function rn(){
+    var h='';
+    // Status
+    document.getElementById('BGh').textContent=BO_H;document.getElementById('BGa').textContent=BO_A;
+    var st=PHASE==='roll'?(TURN==='human'?'Tap Roll':'AI rolling...'):PHASE==='move'?(TURN==='human'?(SEL!==-1?'Tap destination':'Tap a seed'):'AI thinking...'):'Game Over';
+    sm(st);
+    // Board
+    h+='<div style="position:relative;width:100%;aspect-ratio:1/1.3;background:#2C1810;border:3px solid #5C4033;border-radius:8px;overflow:hidden;margin-bottom:4px"><div style="position:absolute;inset:3px;display:flex;flex-direction:column">';
+    // Top half
+    h+='<div style="display:flex;flex:1;position:relative"><div style="display:flex;flex:1">';
+    for(var p=13;p<=18;p++)h+=rPt(p,'top');
+    h+='</div><div style="width:28px;background:#1a1510;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-left:2px solid #3B2414;border-right:2px solid #3B2414">';
+    if(B[0]<0){var ab=Math.abs(B[0]);for(var i=0;i<Math.min(ab,3);i++)h+='<div class="checker ai" style="width:22px;height:22px"></div>';if(ab>3)h+='<div style="font-size:9px;color:#C47A7A">+'+(ab-3)+'</div>'}
+    h+='</div><div style="display:flex;flex:1">';
+    for(var p2=19;p2<=24;p2++)h+=rPt(p2,'top');
+    h+='</div></div>';
+    // Sep
+    h+='<div style="height:2px;background:rgba(232,220,200,.1)"></div>';
+    // Bottom half
+    h+='<div style="display:flex;flex:1;position:relative"><div style="display:flex;flex:1">';
+    for(var p3=12;p3>=7;p3--)h+=rPt(p3,'bot');
+    h+='</div><div style="width:28px;background:#1a1510;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-left:2px solid #3B2414;border-right:2px solid #3B2414">';
+    if(B[25]>0){for(var i2=0;i2<Math.min(B[25],3);i2++)h+='<div class="checker human" style="width:22px;height:22px"></div>';if(B[25]>3)h+='<div style="font-size:9px;color:#7AB956">+'+(B[25]-3)+'</div>'}
+    h+='</div><div style="display:flex;flex:1">';
+    for(var p4=6;p4>=1;p4--)h+=rPt(p4,'bot');
+    h+='</div></div>';
+    h+='</div></div>';
+    // Dice
+    h+='<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 0">';
+    if(PHASE==='roll'&&TURN==='human'){
+      h+='<button class="gb" onclick="_BGR()" style="min-width:100px;min-height:52px;font-size:1rem">🎲 ROLL</button>';
+    }else if(PHASE==='move'||PHASE==='gameover'){
+      DICE.forEach(function(d){var used=MOVES_LEFT.indexOf(d)===-1;h+='<div style="width:44px;height:44px;background:#F5F0E1;border:2px solid #C4B998;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#1a1f17;box-shadow:2px 2px 4px rgba(0,0,0,.3);'+(used?'opacity:0.3':'')+'">'+d+'</div>'});
+      if(DICE[0]===DICE[1])h+='<span style="font-size:11px;color:#D4A843;margin-left:6px">Doubles! ('+MOVES_LEFT.length+' left)</span>';
+    }
+    h+='</div>';
+    // Bar/bearing info
+    if(B[25]>0||B[0]<0){h+='<div style="text-align:center;font-size:0.5rem;color:var(--gold);padding:2px">';if(B[25]>0)h+='You: '+B[25]+' on bar. ';if(B[0]<0)h+='AI: '+Math.abs(B[0])+' on bar.';h+='</div>'}
+    // Bar entry button
+    if(PHASE==='move'&&TURN==='human'&&getBar('human')>0){h+='<div style="text-align:center;padding:4px"><button class="gb" onclick="_BGS(\'bar\')" style="min-height:48px">Enter from Bar</button></div>'}
+    // Bear off buttons
+    if(PHASE==='move'&&TURN==='human'&&allInHome('human')&&MOVES_LEFT.length>0){
+      var bom=getValidMoves('human').filter(function(m){return m.to==='off'});
+      if(bom.length>0){h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;padding:4px">';bom.forEach(function(m){h+='<button class="gb" onclick="_BGB('+m.from+','+m.die+')" style="min-height:48px">Bear off '+m.from+'</button>'});h+='</div>'}
+    }
+    wrap.innerHTML=h;
+  }
+  window._BGR=function(){if(PHASE!=='roll'||TURN!=='human')return;rollDice();_play('dice');var moves=getValidMoves('human');if(moves.length===0){sm('No valid moves — turn forfeited');MOVES_LEFT=[];rn();setTimeout(endTurn,1000);return}rn()};
+  window._BGS=function(p){selectPt(p)};
+  window._BGB=function(from,die){var moves=getValidMoves('human');var mv=null;moves.forEach(function(m){if(m.from===from&&m.die===die&&m.to==='off')mv=m});if(!mv)return;applyMove(mv,'human');_play('tap');SEL=-1;VALID_DESTS=[];if(BO_H>=15){_e('game_win');_playWin();sm('All seeds home!');_sr('backgammon',{w:true,s:1});rn();return}if(MOVES_LEFT.length>0){var rem=getValidMoves('human');if(rem.length===0){MOVES_LEFT=[];endTurn()}else rn()}else endTurn()};
+  window._BGN=function(){init()};
+  init();
+}
 // ═══ PIPE CONNECT ═══
 
 try{window._gameFns.memory=GM}catch(e){}    // Memory Garden
@@ -35920,6 +36069,7 @@ try{window._gameFns.mastermind=GMM}catch(e){}// Mastermind
 try{window._gameFns.colorsort=GCS}catch(e){}// Color Sort
 try{window._gameFns.battleship=GBS}catch(e){}// Battleship
 try{window._gameFns.sokoban=GSK}catch(e){}  // Sokoban
+try{window._gameFns.backgammon=GBG}catch(e){} // Backgammon
 
 
 _bp();console.log('[FG] Hub v4 — '+G.length+' games');
