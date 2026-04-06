@@ -32539,12 +32539,13 @@ function _op(){var _bnav2=document.querySelector('.fg-bottomnav');if(_bnav2)_bna
     var games=G.filter(function(g){return g.cat===cat.key});
     if(!games.length)return;
     var catId='gcat-'+cat.key;
-    h+='<div class="gp-cat" data-cat="'+cat.key+'">';
+    var curCat=false;for(var ci=0;ci<games.length;ci++)if(games[ci].id===_a){curCat=true;break}
+    h+='<div class="gp-cat'+(curCat?' open':'')+'" data-cat="'+cat.key+'">';
     h+='<button class="gp-cat-hdr" onclick="this.parentElement.classList.toggle(\'open\');this.querySelector(\'.gp-chev\').classList.toggle(\'open\')">';
     h+='<span class="gp-cat-icon">'+cat.icon+'</span>';
     h+='<span class="gp-cat-label">'+cat.label+'</span>';
     h+='<span class="gp-cat-count">'+games.length+'</span>';
-    h+='<span class="gp-chev open">\u25bc</span>';
+    h+='<span class="gp-chev'+(curCat?' open':'')+'">\u25bc</span>';
     h+='</button>';
     h+='<div class="gp-cat-body"><div class="fk2-grid">';
     games.forEach(function(g){
