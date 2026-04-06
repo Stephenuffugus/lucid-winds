@@ -4967,7 +4967,7 @@ window.onerror=function(msg,url,line,col,err){
       <div id="ob-haiku" class="ob-haiku"></div>
       <div id="ob-creature" class="ob-creature-text"></div>
       <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:rgba(240,235,216,0.7);line-height:1.8;margin-top:0.6rem;max-width:300px;opacity:0;transition:opacity 1.5s ease 0.3s;" id="ob-manifesto">Every plant here is born from attention.<br>No two are the same.<br>Care for yours, and it will shape the world around you.</div>
-      <div class="ob-auth" id="ob-auth"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.5rem;">CLAIM YOUR FIRST PLANT</div><input type="text" id="ob-name-input" placeholder="What should we call you, Keeper?" maxlength="24" autocomplete="off" /><input type="email" id="ob-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-pass" placeholder="Password (6+ characters)" autocomplete="new-password" /><div class="ob-auth-err" id="ob-auth-err"></div><button class="ob-auth-btn" id="ob-auth-btn" onclick="PW_Onboard.submitAuth()">🌱 CLAIM THIS PLANT</button></div>
+      <div class="ob-auth" id="ob-auth"><div id="ob-auth-new"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.5rem;">CLAIM YOUR FIRST PLANT</div><input type="text" id="ob-name-input" placeholder="What should we call you, Keeper?" maxlength="24" autocomplete="off" /><input type="email" id="ob-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-pass" placeholder="Password (6+ characters)" autocomplete="new-password" /><div class="ob-auth-err" id="ob-auth-err"></div><button class="ob-auth-btn" id="ob-auth-btn" onclick="PW_Onboard.submitAuth()">🌱 CLAIM THIS PLANT</button><div style="margin-top:0.8rem;font-family:'DM Mono',monospace;font-size:0.45rem;color:var(--muted);"><span onclick="PW_Onboard.showLogin()" style="color:var(--gold);cursor:pointer;text-decoration:underline;min-height:48px;display:inline-block;padding:8px 0;">Already have an account? Sign in</span></div></div><div id="ob-auth-login" style="display:none;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.5rem;">WELCOME BACK, KEEPER</div><input type="email" id="ob-login-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-login-pass" placeholder="Password" autocomplete="current-password" /><div class="ob-auth-err" id="ob-login-err"></div><button class="ob-auth-btn" id="ob-login-btn" onclick="PW_Onboard.submitLogin()" style="background:linear-gradient(145deg,var(--gold),#8a6e2f);">SIGN IN</button><div style="margin-top:0.8rem;font-family:'DM Mono',monospace;font-size:0.45rem;color:var(--muted);"><span onclick="PW_Onboard.showSignup()" style="color:var(--sage);cursor:pointer;text-decoration:underline;min-height:48px;display:inline-block;padding:8px 0;">New here? Create an account</span></div></div></div>
       <button class="ob-continue" id="ob-continue" onclick="PW_Onboard.finish()">ENTER YOUR GREENHOUSE →</button>
     </div>
     <div class="ob-skip" id="ob-skip" onclick="PW_Onboard.skip()">skip →</div>
@@ -6239,28 +6239,51 @@ document.addEventListener('keydown', function(e) {
   ];
   window.SEASON_DATA = SEASON_DATA;
 
-  window.getSeasonInfo = function(traits) {
-    var s = (traits && typeof traits.season === 'number') ? traits.season % 4 : 0;
-    var sd = SEASON_DATA[s];
-    var currentMonth = new Date().getMonth(); // 0-11
+  // Internal helper: season info for a single season index
+  function _seasonInfoForIdx(sIdx) {
+    var sd = SEASON_DATA[sIdx % 4];
+    var currentMonth = new Date().getMonth();
     var inPeak = sd.months.indexOf(currentMonth) >= 0;
-    // Adjacent season check: ±1 from peak
     var adjMonths = [];
     for (var i = 0; i < sd.months.length; i++) {
-      adjMonths.push((sd.months[i] + 11) % 12); // month before
-      adjMonths.push((sd.months[i] + 1) % 12);  // month after
+      adjMonths.push((sd.months[i] + 11) % 12);
+      adjMonths.push((sd.months[i] + 1) % 12);
     }
     var isAdjacent = !inPeak && adjMonths.indexOf(currentMonth) >= 0;
     return {
-      name: sd.name,
-      emblem: sd.emblem,
-      color: sd.color,
-      inPeak: inPeak,
-      isAdjacent: isAdjacent,
+      name: sd.name, emblem: sd.emblem, color: sd.color,
+      inPeak: inPeak, isAdjacent: isAdjacent,
       eaBonus: inPeak ? 2 : (isAdjacent ? 1 : 0),
       stressMod: inPeak ? 0.5 : (isAdjacent ? 1.0 : 1.5),
       pollenMod: inPeak ? 1.5 : (isAdjacent ? 1.0 : 0.5)
     };
+  }
+
+  // plant param is optional — when provided AND chimera gen 2+, grants
+  // dual-season immunity: best bonus from own season + both parent seasons
+  window.getSeasonInfo = function(traits, plant) {
+    var s = (traits && typeof traits.season === 'number') ? traits.season % 4 : 0;
+    var best = _seasonInfoForIdx(s);
+
+    // Dual immunity for chimeras with two different-season parents
+    if (plant && plant.parentAHash && plant.parentBHash && (plant.generation || 1) > 1) {
+      try {
+        var sA = (parseInt(plant.parentAHash[22] + plant.parentAHash[23], 16) || 0) % 4;
+        var sB = (parseInt(plant.parentBHash[22] + plant.parentBHash[23], 16) || 0) % 4;
+        var parentSeasons = [];
+        if (sA !== s) parentSeasons.push(sA);
+        if (sB !== s && sB !== sA) parentSeasons.push(sB);
+        for (var p = 0; p < parentSeasons.length; p++) {
+          var pi = _seasonInfoForIdx(parentSeasons[p]);
+          if (pi.eaBonus > best.eaBonus) best.eaBonus = pi.eaBonus;
+          if (pi.stressMod < best.stressMod) best.stressMod = pi.stressMod;
+          if (pi.pollenMod > best.pollenMod) best.pollenMod = pi.pollenMod;
+          if (pi.inPeak) best.inPeak = true;
+          if (pi.isAdjacent && !best.inPeak) best.isAdjacent = true;
+        }
+      } catch (e) { /* fall through to own-season only */ }
+    }
+    return best;
   };
 
   // HTML badge for any card/panel
@@ -6272,7 +6295,7 @@ document.addEventListener('keydown', function(e) {
   // ═══ EVOLUTIONARY ADVANTAGE (EA) SCORE ═══
   // Every trait layer contributes logically: rarity ≠ power
   // Director: "Glass stem would actually be -1 even though it's rare because glass is weak"
-  window.computeEA = function(traits, days) {
+  window.computeEA = function(traits, days, plant) {
     if (!traits) return 0;
     var ea = 0;
     // LEAF TYPE (0-3)
@@ -6304,8 +6327,8 @@ document.addEventListener('keydown', function(e) {
     // SUBSTRATE (0-2)
     var base = traits.base % 30;
     if (base === 15 || base >= 25) ea += 2; else if (base >= 15) ea += 1;
-    // SEASON (0-2)
-    if (window.getSeasonInfo) { ea += window.getSeasonInfo(traits).eaBonus; }
+    // SEASON (0-2) — chimeras get dual immunity via plant param
+    if (window.getSeasonInfo) { ea += window.getSeasonInfo(traits, plant).eaBonus; }
     // AGE (0-3)
     var d = days || 0;
     if (d >= 90) ea += 3; else if (d >= 30) ea += 2; else if (d >= 7) ea += 1;
@@ -25339,7 +25362,7 @@ document.addEventListener('keydown', function(e) {
           if (plant.breedLayers) _ghTraits.breedLayers = plant.breedLayers;
           if (plant.compostLayers) _ghTraits.compostLayers = plant.compostLayers;
           _ghSeason = (_ghTraits && typeof _ghTraits.season === 'number') ? _ghTraits.season % 4 : 0;
-          _ghEA = window.computeEA ? window.computeEA(_ghTraits, 0) : 0;
+          _ghEA = window.computeEA ? window.computeEA(_ghTraits, 0, plant) : 0;
           _ghTG = getTerraGrade(_ghTraits);
         } catch(e) {}
         var _seasonCls = ['season-spring','season-summer','season-autumn','season-winter'][_ghSeason] || 'season-spring';
@@ -25887,9 +25910,9 @@ document.addEventListener('keydown', function(e) {
       if (plant.breedLayers) _t.breedLayers = plant.breedLayers;
       if (plant.compostLayers) _t.compostLayers = plant.compostLayers;
       _season = (_t && typeof _t.season === 'number') ? _t.season % 4 : 0;
-      _ea = window.computeEA ? window.computeEA(_t, 0) : 0;
+      _ea = window.computeEA ? window.computeEA(_t, 0, plant) : 0;
       _tg = getTerraGrade(_t);
-      _sea = window.getSeasonInfo ? window.getSeasonInfo(_t) : null;
+      _sea = window.getSeasonInfo ? window.getSeasonInfo(_t, plant) : null;
     } catch(e) {}
 
     var seasonKeys = ['spring','summer','autumn','winter'];
@@ -26202,7 +26225,7 @@ document.addEventListener('keydown', function(e) {
       if (plant.breedLayers) _t.breedLayers = plant.breedLayers;
       if (plant.compostLayers) _t.compostLayers = plant.compostLayers;
       _season = (_t && typeof _t.season === 'number') ? _t.season % 4 : 0;
-      _ea = window.computeEA ? window.computeEA(_t, 0) : 0;
+      _ea = window.computeEA ? window.computeEA(_t, 0, plant) : 0;
       _tg = getTerraGrade(_t);
     } catch(e) {}
 
@@ -27159,9 +27182,10 @@ document.addEventListener('keydown', function(e) {
     var wframe=document.getElementById('wild-frame');
     if(tab==='wild'){if(vig)vig.style.display='block';if(glass)glass.style.display='block';if(wframe)wframe.style.display='block';_startPollenParticles();if(window.FG_Audio&&FG_Audio.enabled)try{FG_Audio.startWildAmbient();}catch(e){}}
     else{if(vig)vig.style.display='none';if(glass)glass.style.display='none';if(wframe)wframe.style.display='none';_stopPollenParticles();if(window.FG_Wild&&FG_Wild._unsubShared)FG_Wild._unsubShared();if(window.FG_Audio)try{FG_Audio.stopWildAmbient();}catch(e){}}
-    // Show/hide backpack + drop FAB on Wild tab
+    // Show/hide backpack — full on Wild, compact on greenhouse/nursery
     if (window.FG_Backpack) {
       if (tab === 'wild') { FG_Backpack.show(); FG_Backpack.init(); }
+      else if (tab === 'greenhouse' || tab === 'nursery') { FG_Backpack.showCompact(tab); }
       else { FG_Backpack.hide(); }
     } else if (tab === 'wild') {
       // Backpack module not loaded — still show FAB
@@ -28652,7 +28676,7 @@ document.addEventListener('keydown', function(e) {
         svgHtml +
         '<div class="binder-name">'+name+'</div>' +
         '<div class="binder-haiku">'+haiku.line1+'<br>'+haiku.line2+'</div>' +
-        (function(){try{var _t=hashToTraits(plant.hash);var _sea=window.getSeasonInfo?window.getSeasonInfo(_t):null;var _ea=window.computeEA?window.computeEA(_t,0):0;var _tg=getTerraGrade(_t);return'<div style="display:flex;justify-content:center;gap:6px;margin:3px 0;font-size:0.35rem;"><span>'+(_sea?_sea.emblem:'')+'</span><span style="color:'+_tg.color+';opacity:0.7;">EA '+_ea+'</span></div>';}catch(e){return'';}})() +
+        (function(){try{var _t=hashToTraits(plant.hash);var _sea=window.getSeasonInfo?window.getSeasonInfo(_t,plant):null;var _ea=window.computeEA?window.computeEA(_t,0,plant):0;var _tg=getTerraGrade(_t);return'<div style="display:flex;justify-content:center;gap:6px;margin:3px 0;font-size:0.35rem;"><span>'+(_sea?_sea.emblem:'')+'</span><span style="color:'+_tg.color+';opacity:0.7;">EA '+_ea+'</span></div>';}catch(e){return'';}})() +
         renderDNALedger(plant) +
         renderSubstrateBadge(plant) +
         '</div>';
@@ -30570,19 +30594,20 @@ function _loadAll(){
   if(!document.getElementById('_fA')){var s=document.createElement('style');s.id='_fA';s.textContent='@keyframes _fP{0%,100%{transform:translate(-50%,-50%) scale(1);box-shadow:0 0 10px rgba(200,168,75,0.5);}50%{transform:translate(-50%,-50%) scale(1.25);box-shadow:0 0 18px rgba(200,168,75,0.7);}}@keyframes _fR{0%{width:14px;height:14px;opacity:0.5;}100%{width:36px;height:36px;opacity:0;}}';document.head.appendChild(s);}
 }
 
-// ═══ FERAL SPAWNING — Breeding Pair System ═══
-// Ferals only spawn when 2+ plants exist in same/adjacent zones.
-// 8% daily chance per breeding pair. Offspring rarity from parents.
-// Wind-directed placement. Natural selection in full zones.
-var FERAL_SPAWN_RATE = 0.08;
+// ═══ FERAL SPAWNING — Zone-Based Ecosystem ═══
+// Every zone with 1+ wild plant (local OR shared) generates 1 feral seed
+// every 18-36 hours for each player. Hash is rolled at collection time
+// from plants currently in that zone, so every player gets different combos.
 var FERAL_ZONE_CAP = 2;
+var FERAL_SPAWN_MIN_MS = 18 * 3600000; // 18 hours
+var FERAL_SPAWN_MAX_MS = 36 * 3600000; // 36 hours
+var _feralRespawnTimer = null;
 
 // Breed hash — crypto.getRandomValues with parent byte mixing
 function _breedHash(hashA, hashB) {
   var _rb = new Uint8Array(32);
   crypto.getRandomValues(_rb);
   var offspring = Array.from(_rb).map(function(b){return b.toString(16).padStart(2,'0');}).join('').split('');
-  // 70% parent fidelity: copy bytes from parents
   for (var b = 0; b < 64; b++) {
     var roll = _rb[b % 32] / 255;
     if (roll < 0.35 && hashA && hashA.charAt(b)) {
@@ -30613,101 +30638,124 @@ function _adjustOffspringRarity(hash, gradeA, gradeB) {
   return chars.join('');
 }
 
-function _spawnFerals(){
-  if(!_uLat||!_map)return;
-  var td=new Date().toISOString().slice(0,10);
-  var data=[];try{data=JSON.parse(localStorage.getItem('fg_ferals')||'[]');}catch(e){}
-  var todayFerals=data.filter(function(f){return f.date===td&&!f.collected;});
-  for(var i=0;i<todayFerals.length;i++){
-    if(_dist(_uLat,_uLng,todayFerals[i].lat,todayFerals[i].lng)<500){_addFeral(todayFerals[i]);}
+// Deterministic spawn interval per zone (18-36h) seeded from zone key
+function _zoneSpawnInterval(zk) {
+  var h = 0;
+  for (var i = 0; i < zk.length; i++) h = ((h << 5) - h + zk.charCodeAt(i)) | 0;
+  var ratio = Math.abs(h % 1000) / 1000; // 0.0 - 1.0
+  return FERAL_SPAWN_MIN_MS + ratio * (FERAL_SPAWN_MAX_MS - FERAL_SPAWN_MIN_MS);
+}
+
+// Build unified zone map from local wild + shared markers
+function _getAllZonePlants() {
+  var zones = {};
+  // Local wild plants
+  var local = _getWild();
+  for (var i = 0; i < local.length; i++) {
+    var w = local[i]; if (!w || !w.lat || !w.lng || !w.hash) continue;
+    var zk = _zoneKey(w.lat, w.lng);
+    if (!zones[zk]) zones[zk] = [];
+    zones[zk].push({hash: w.hash, lat: w.lat, lng: w.lng});
   }
-  var lastBreed='';try{lastBreed=localStorage.getItem('fg_feral_breed_date')||'';}catch(e){}
-  if(lastBreed===td)return;
-  localStorage.setItem('fg_feral_breed_date',td);
-  var allPlants=_getWild().slice();
-  if(allPlants.length<2)return;
-  var zones={};
-  for(var p=0;p<allPlants.length;p++){
-    var pl=allPlants[p];if(!pl||!pl.lat||!pl.lng)continue;
-    var zk=_zoneKey(pl.lat,pl.lng);if(!zones[zk])zones[zk]=[];zones[zk].push(pl);
+  // Shared markers from Firestore subscription
+  var keys = Object.keys(_sharedMarkers);
+  for (var j = 0; j < keys.length; j++) {
+    var sm = _sharedMarkers[keys[j]];
+    if (!sm || !sm.data || !sm.data.lat || !sm.data.hash) continue;
+    var szk = _zoneKey(sm.data.lat, sm.data.lng);
+    if (!zones[szk]) zones[szk] = [];
+    // Avoid duplicates (own plants already in local)
+    var dup = false;
+    for (var d = 0; d < zones[szk].length; d++) {
+      if (zones[szk][d].hash === sm.data.hash) { dup = true; break; }
+    }
+    if (!dup) zones[szk].push({hash: sm.data.hash, lat: sm.data.lat, lng: sm.data.lng});
   }
-  var pairs=[];var zoneKeys=Object.keys(zones);
-  for(var z=0;z<zoneKeys.length;z++){
-    var plantsHere=zones[zoneKeys[z]];
-    if(plantsHere.length>=2){
-      var pairCount=Math.min(6,Math.floor(plantsHere.length*(plantsHere.length-1)/2));
-      for(var pp=0;pp<pairCount;pp++){
-        var idxA=Math.floor(Math.random()*plantsHere.length);
-        var idxB=(idxA+1+Math.floor(Math.random()*(plantsHere.length-1)))%plantsHere.length;
-        pairs.push({a:plantsHere[idxA],b:plantsHere[idxB],zone:zoneKeys[z]});
-      }
+  return zones;
+}
+
+function _spawnFerals() {
+  if (!_uLat || !_map) return;
+  var now = Date.now();
+
+  // Load existing ferals and zone timers
+  var data = []; try { data = JSON.parse(localStorage.getItem('fg_ferals') || '[]'); } catch (e) {}
+  var zoneTimers = {}; try { zoneTimers = JSON.parse(localStorage.getItem('fg_feral_zones') || '{}'); } catch (e) {}
+
+  // Prune ferals older than 3 days
+  var cutoff = now - 3 * 86400000;
+  data = data.filter(function(f) { return new Date(f.date).getTime() > cutoff; });
+
+  // Re-render existing uncollected ferals within 500m
+  for (var i = 0; i < data.length; i++) {
+    if (!data[i].collected && _dist(_uLat, _uLng, data[i].lat, data[i].lng) < 500) {
+      _addFeral(data[i]);
     }
   }
-  for(var z1=0;z1<zoneKeys.length;z1++){
-    var parts1=zoneKeys[z1].split(',');var lat1=parseFloat(parts1[0]),lng1=parseFloat(parts1[1]);
-    for(var z2=z1+1;z2<zoneKeys.length;z2++){
-      var parts2=zoneKeys[z2].split(',');var lat2=parseFloat(parts2[0]),lng2=parseFloat(parts2[1]);
-      if(Math.abs(lat1-lat2)<=ZONE_SIZE*1.5&&Math.abs(lng1-lng2)<=ZONE_SIZE*1.5){
-        var pA=zones[zoneKeys[z1]][Math.floor(Math.random()*zones[zoneKeys[z1]].length)];
-        var pB=zones[zoneKeys[z2]][Math.floor(Math.random()*zones[zoneKeys[z2]].length)];
-        pairs.push({a:pA,b:pB,zone:zoneKeys[z1]});
-      }
+
+  // Build unified zone map (local + shared)
+  var zones = _getAllZonePlants();
+  var zoneKeys = Object.keys(zones);
+  var newFerals = [];
+
+  for (var z = 0; z < zoneKeys.length; z++) {
+    var zk = zoneKeys[z];
+    if (zones[zk].length < 1) continue;
+
+    // Check zone timer — each zone spawns 1 feral per interval
+    var lastSpawn = zoneTimers[zk] || 0;
+    var interval = _zoneSpawnInterval(zk);
+    if (now - lastSpawn < interval) continue;
+
+    // Check cap: max FERAL_ZONE_CAP uncollected ferals per zone
+    var feralsInZone = 0;
+    for (var fc = 0; fc < data.length; fc++) {
+      if (!data[fc].collected && data[fc].zone === zk) feralsInZone++;
     }
+    if (feralsInZone >= FERAL_ZONE_CAP) continue;
+
+    // Place feral with wind influence within zone
+    var parts = zk.split(',');
+    var baseLat = parseFloat(parts[0]), baseLng = parseFloat(parts[1]);
+    var windRad = ((_wd || 0) + Math.random() * 180 - 90) * Math.PI / 180;
+    var windStr = 0.2 + Math.random() * 0.3;
+    var randStr = 1 - windStr;
+    var fLat = baseLat + Math.cos(windRad) * ZONE_SIZE * windStr + (Math.random() - 0.5) * ZONE_SIZE * randStr;
+    var fLng = baseLng + Math.sin(windRad) * ZONE_SIZE * windStr + (Math.random() - 0.5) * ZONE_SIZE * randStr;
+
+    // Feral object — NO hash yet. Hash rolled at collection time from zone plants.
+    var feral = {
+      lat: fLat, lng: fLng, zone: zk,
+      date: new Date().toISOString(),
+      collected: false
+    };
+    newFerals.push(feral);
+    data.push(feral);
+    zoneTimers[zk] = now;
+
+    if (_dist(_uLat, _uLng, fLat, fLng) < 500) _addFeral(feral);
   }
-  if(pairs.length===0)return;
-  var newFerals=[];
-  for(var pr=0;pr<pairs.length;pr++){
-    if(Math.random()>=FERAL_SPAWN_RATE)continue;
-    var parentA=pairs[pr].a,parentB=pairs[pr].b;
-    var offspringHash=_breedHash(parentA.hash,parentB.hash);
-    var gradeA='Common',gradeB='Common';
-    try{if(window.hashToTraits&&window.getTerraGrade){
-      var tA=window.hashToTraits(parentA.hash);gradeA=window.getTerraGrade(tA).name||'Common';
-      var tB=window.hashToTraits(parentB.hash);gradeB=window.getTerraGrade(tB).name||'Common';
-    }}catch(e){}
-    offspringHash=_adjustOffspringRarity(offspringHash,gradeA,gradeB);
-    // Feral placement: mostly random scatter around parents with gentle wind nudge
-    // Wind influence is ~20% direction, 80% random — prevents hard regional locks
-    var windRad=((_wd||0)+Math.random()*180-90)*Math.PI/180; // wind ± 90° scatter
-    var baseLat=parseFloat(pairs[pr].zone.split(',')[0]);
-    var baseLng=parseFloat(pairs[pr].zone.split(',')[1]);
-    var windStr=0.2+Math.random()*0.3; // 20-50% wind influence
-    var randStr=1-windStr; // rest is pure random
-    var targetLat=baseLat+Math.cos(windRad)*ZONE_SIZE*windStr+(Math.random()-0.5)*ZONE_SIZE*randStr;
-    var targetLng=baseLng+Math.sin(windRad)*ZONE_SIZE*windStr+(Math.random()-0.5)*ZONE_SIZE*randStr;
-    var targetZone=_zoneKey(targetLat,targetLng);
-    var feralsInZone=0;
-    for(var fc=0;fc<todayFerals.length;fc++){if(_zoneKey(todayFerals[fc].lat,todayFerals[fc].lng)===targetZone)feralsInZone++;}
-    for(var fc2=0;fc2<newFerals.length;fc2++){if(_zoneKey(newFerals[fc2].lat,newFerals[fc2].lng)===targetZone)feralsInZone++;}
-    if(feralsInZone>=FERAL_ZONE_CAP){
-      var feralInfo=_buildInfo(offspringHash);var feralTraits=feralInfo.t;
-      var feralEA=window.computeEA?window.computeEA(feralTraits,0):0;
-      var weakest=null,weakestEA=999;var wildPlants=_getWild();
-      for(var wp=0;wp<wildPlants.length;wp++){
-        if(_zoneKey(wildPlants[wp].lat,wildPlants[wp].lng)===targetZone){
-          var wpTraits=null;try{wpTraits=window.hashToTraits(wildPlants[wp].hash);}catch(e){}
-          var wpDays=wildPlants[wp].date?Math.floor((Date.now()-new Date(wildPlants[wp].date).getTime())/86400000):0;
-          var wpEA=window.computeEA?window.computeEA(wpTraits,wpDays):0;
-          if(wpEA<weakestEA){weakestEA=wpEA;weakest=wildPlants[wp];}
-        }
-      }
-      if(weakest&&feralEA>weakestEA){
-        var displaced=_getWild().filter(function(w){return w.hash!==weakest.hash;});_saveWild(displaced);
-        _toast('\ud83c\udf31 Natural selection! A feral (EA '+feralEA+') displaced a weaker plant (EA '+weakestEA+').');
-      } else {continue;}
-    }
-    var feralSeed={lat:targetLat,lng:targetLng,hash:offspringHash,date:td,collected:false,parentA:parentA.hash.slice(0,8),parentB:parentB.hash.slice(0,8)};
-    newFerals.push(feralSeed);todayFerals.push(feralSeed);
-    if(_dist(_uLat,_uLng,targetLat,targetLng)<500){_addFeral(feralSeed);}
+
+  // Prune stale zone timers (zones with no plants anymore)
+  var timerKeys = Object.keys(zoneTimers);
+  for (var tk = 0; tk < timerKeys.length; tk++) {
+    if (!zones[timerKeys[tk]]) delete zoneTimers[timerKeys[tk]];
   }
-  var threeDaysAgo=new Date(Date.now()-3*86400000).toISOString().slice(0,10);
-  var allFerals=data.filter(function(f){return f.date>=threeDaysAgo;});
-  allFerals=allFerals.concat(newFerals);
-  localStorage.setItem('fg_ferals',JSON.stringify(allFerals));
-  if(newFerals.length>0){
-    _toast('\ud83c\udf43 '+newFerals.length+' feral seed'+(newFerals.length>1?'s':'')+' blew in on the wind!');
-    if(window._swsLog)_swsLog('Bred '+newFerals.length+' ferals from '+pairs.length+' pairs ('+Math.round(FERAL_SPAWN_RATE*100)+'% rate)','ok');
+
+  // Persist
+  localStorage.setItem('fg_ferals', JSON.stringify(data));
+  localStorage.setItem('fg_feral_zones', JSON.stringify(zoneTimers));
+
+  if (newFerals.length > 0) {
+    _toast('\ud83c\udf43 ' + newFerals.length + ' feral seed' + (newFerals.length > 1 ? 's' : '') + ' appeared nearby!');
+    if (window._swsLog) _swsLog('Spawned ' + newFerals.length + ' ferals from ' + zoneKeys.length + ' occupied zones', 'ok');
   }
+}
+
+// Debounced re-check after shared markers arrive
+function _feralRespawnDebounced() {
+  if (_feralRespawnTimer) clearTimeout(_feralRespawnTimer);
+  _feralRespawnTimer = setTimeout(function() { _spawnFerals(); }, 2000);
 }
 
 function _addFeral(f){
@@ -30721,13 +30769,18 @@ function _collectFeral(f,mk){
   if(!_uLat){_toast('Need location.');return;}
   var d=_dist(_uLat,_uLng,f.lat,f.lng);
   if(d>COLLECT_RANGE){_toast('Walk closer! '+Math.round(d*3.281)+' ft away. Need within '+Math.round(COLLECT_RANGE*3.281)+' ft.');return;}
-  // Check cooldown (restore from localStorage if lost on reload)
-  if(!f._cooldown){try{var _fc=JSON.parse(localStorage.getItem('fg_feral_cd')||'{}');if(_fc[f.hash.slice(0,8)])f._cooldown=_fc[f.hash.slice(0,8)];}catch(e){}}
+  // Check cooldown (keyed by zone+date since hash doesn't exist yet)
+  var cdKey=(f.zone||'x')+'_'+((f.date||'').slice(0,10));
+  if(!f._cooldown){try{var _fc=JSON.parse(localStorage.getItem('fg_feral_cd')||'{}');if(_fc[cdKey])f._cooldown=_fc[cdKey];}catch(e){}}
   if(f._cooldown&&Date.now()<f._cooldown){
     var secs=Math.ceil((f._cooldown-Date.now())/1000);
     _toast('Cooldown! Try again in '+secs+'s');return;
   }
-  // Launch challenge
+
+  // Roll hash NOW from plants currently in this zone
+  _rollFeralHash(f);
+
+  // Launch challenge (grade based on rolled hash)
   if(window.FG_Challenge){
     var info=_buildInfo(f.hash);
     FG_Challenge.start(info.grade,function(success){
@@ -30735,16 +30788,52 @@ function _collectFeral(f,mk){
         _doCollectFeral(f,mk);
         _play('match');
       } else {
-        f._cooldown=Date.now()+120000; // 2 minute cooldown
-        try{var _fc=JSON.parse(localStorage.getItem('fg_feral_cd')||'{}');_fc[f.hash.slice(0,8)]=f._cooldown;localStorage.setItem('fg_feral_cd',JSON.stringify(_fc));}catch(e){}
+        f._cooldown=Date.now()+120000;
+        try{var _fc=JSON.parse(localStorage.getItem('fg_feral_cd')||'{}');_fc[cdKey]=f._cooldown;localStorage.setItem('fg_feral_cd',JSON.stringify(_fc));}catch(e){}
         _play('buzz');
         _toast('Almost! Try again in 2 minutes.');
+        // Re-roll hash on next attempt so player gets a different combo
+        f.hash=null;f.parentA=null;f.parentB=null;
       }
     });
   } else {
-    // Fallback if challenge system not loaded
     _doCollectFeral(f,mk);
   }
+}
+
+// Roll hash at collection time from plants in the feral's zone
+function _rollFeralHash(f){
+  if(f.hash)return; // already rolled (shouldn't happen but guard)
+  var zones=_getAllZonePlants();
+  var plants=zones[f.zone]||[];
+  var hashA=null,hashB=null;
+  if(plants.length>=2){
+    // Random pair from zone
+    var idxA=Math.floor(Math.random()*plants.length);
+    var idxB=(idxA+1+Math.floor(Math.random()*(plants.length-1)))%plants.length;
+    hashA=plants[idxA].hash;hashB=plants[idxB].hash;
+  } else if(plants.length===1){
+    // Single plant + random nonce
+    hashA=plants[0].hash;
+    var rb=new Uint8Array(32);crypto.getRandomValues(rb);
+    hashB=Array.from(rb).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+  } else {
+    // No plants left — pure random
+    var rb2=new Uint8Array(32);crypto.getRandomValues(rb2);
+    hashA=Array.from(rb2).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+    rb2=new Uint8Array(32);crypto.getRandomValues(rb2);
+    hashB=Array.from(rb2).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+  }
+  f.hash=_breedHash(hashA,hashB);
+  // Adjust rarity based on parents
+  var gradeA='Common',gradeB='Common';
+  try{if(window.hashToTraits&&window.getTerraGrade){
+    gradeA=window.getTerraGrade(window.hashToTraits(hashA)).name||'Common';
+    gradeB=window.getTerraGrade(window.hashToTraits(hashB)).name||'Common';
+  }}catch(e){}
+  f.hash=_adjustOffspringRarity(f.hash,gradeA,gradeB);
+  f.parentA=hashA?hashA.slice(0,8):null;
+  f.parentB=hashB?hashB.slice(0,8):null;
 }
 
 function _doCollectFeral(f,mk){
@@ -31339,19 +31428,21 @@ function _doCrossPollination(wildPlant,matePlant){
   if(window.FG_Data&&FG_Data.crossPollinateHashes){
     FG_Data.crossPollinateHashes(wildPlant.hash,matePlant.hash).then(function(result){
       var offHash=result.childHash;
-      var offGen=result.nonce;
       if(window.FG_Data&&FG_Data.addSeed){
-        var addResult=FG_Data.addSeed({seedHash:offHash,parentAHash:wildPlant.hash,parentBHash:matePlant.hash,nonce:offGen});
+        var addResult=FG_Data.addSeed({seedHash:offHash,parentAHash:wildPlant.hash,parentBHash:matePlant.hash,nonce:result.nonce});
         if(!addResult.ok){_toast('Nursery full. Bloom or abandon a seed first.');return;}
       }
-      // Increment breedCount on both parents
+      // Compute actual chimera generation from parent plants
+      var _wpGen=1,_mpGen=1;
       var _bcGh3=[];try{_bcGh3=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
       var _bcDirty3=false;
       _bcGh3.forEach(function(p){
-        if(p.hash===wildPlant.hash||p.hash===matePlant.hash){p.breedCount=(p.breedCount||0)+1;_bcDirty3=true;}
+        if(p.hash===wildPlant.hash){_wpGen=p.generation||1;p.breedCount=(p.breedCount||0)+1;_bcDirty3=true;}
+        if(p.hash===matePlant.hash){_mpGen=p.generation||1;p.breedCount=(p.breedCount||0)+1;_bcDirty3=true;}
       });
       if(_bcDirty3&&window.saveGreenhouse)saveGreenhouse(_bcGh3);
       if(window.renderNursery)renderNursery();
+      var offGen=Math.max(_wpGen,_mpGen)+1;
       _cpReward(offGen);
     });
   } else {
@@ -31799,6 +31890,8 @@ function _subscribeSharedDrops(){
           if(window._swsLog)_swsLog('Zone query empty — trying distance fallback','warn');
           _loadSharedDropsFallback(user);
         }
+        // Re-check feral spawns now that shared markers are updated
+        _feralRespawnDebounced();
       },function(e){
         if(window._swsLog)_swsLog('Snapshot err: '+(e.message||e)+' — using fallback','warn');
         _loadSharedDropsFallback(user);
@@ -37408,19 +37501,27 @@ function submitAuth(){
       if(btn){btn.disabled=false;btn.textContent='\uD83C\uDF31 CLAIM THIS PLANT';}
       var msg=err.message||'Something went wrong.';
       if(err.code==='auth/email-already-in-use'){
-        // Try signing in instead
+        // Account exists — try signing in (returning player used signup form)
         firebase.auth().signInWithEmailAndPassword(email,pass).then(function(){
           clearTimeout(_authTimeout);
-          console.log('[LW] Auth success (sign-in), calling _mintGiftPlant + _revealPlant');
-          _mintGiftPlant();
-          var auth=document.getElementById('ob-auth');if(auth)auth.style.display='none';
-          _revealPlant();
-          if(window.PW_grantXP)PW_grantXP(10,'first_plant');
+          console.log('[LW] Auth success (sign-in) — returning player via signup form');
+          // Do NOT mint gift plant — they already have an account
+          _markOnboarded();
+          var authEl=document.getElementById('ob-auth');if(authEl)authEl.style.display='none';
+          var el=document.getElementById('pw-onboard');
+          if(el){el.style.display='none';el.style.pointerEvents='none';el.classList.remove('active');}
+          var kb=document.getElementById('pw-keeper-bar');if(kb)kb.style.display='flex';
+          if(window.PW_UI)PW_UI.updateKeeperBar();
+          setTimeout(function(){
+            if(window.renderGreenhouse)renderGreenhouse();
+            if(window.updateDashboard)updateDashboard();
+            if(window.switchTab)switchTab('greenhouse');
+          },1500);
         }).catch(function(e2){
           clearTimeout(_authTimeout);
           console.error('[LW] Auth error:',e2.code,e2.message);
           if(btn){btn.disabled=false;btn.textContent='\uD83C\uDF31 CLAIM THIS PLANT';}
-          if(errEl)errEl.textContent=e2.message||'Wrong password for existing account.';
+          if(errEl)errEl.textContent='Account exists. Wrong password? Use "Sign in" below.';
         });
         return;
       }
@@ -37537,7 +37638,93 @@ function goToBeat(n){
   },{passive:true});
 })();
 
-return{start:start,submitAuth:submitAuth,finish:finish,skip:skip,goToBeat:goToBeat};
+// ═══ RETURNING PLAYER LOGIN ═══
+function showLogin(){
+  var newForm=document.getElementById('ob-auth-new');
+  var loginForm=document.getElementById('ob-auth-login');
+  if(newForm)newForm.style.display='none';
+  if(loginForm)loginForm.style.display='block';
+  // Hide gift plant preview since they already have plants
+  var render=document.getElementById('ob-plant-render');if(render)render.style.opacity='0.3';
+  var nameEl=document.getElementById('ob-name');if(nameEl)nameEl.style.display='none';
+  var gradeEl=document.getElementById('ob-grade');if(gradeEl)gradeEl.style.display='none';
+  var haikuEl=document.getElementById('ob-haiku');if(haikuEl)haikuEl.style.display='none';
+  var manifesto=document.getElementById('ob-manifesto');if(manifesto)manifesto.style.display='none';
+}
+
+function showSignup(){
+  var newForm=document.getElementById('ob-auth-new');
+  var loginForm=document.getElementById('ob-auth-login');
+  if(newForm)newForm.style.display='block';
+  if(loginForm)loginForm.style.display='none';
+  // Restore gift plant preview
+  var render=document.getElementById('ob-plant-render');if(render)render.style.opacity='1';
+  var nameEl=document.getElementById('ob-name');if(nameEl)nameEl.style.display='';
+  var gradeEl=document.getElementById('ob-grade');if(gradeEl)gradeEl.style.display='';
+  var haikuEl=document.getElementById('ob-haiku');if(haikuEl)haikuEl.style.display='';
+  var manifesto=document.getElementById('ob-manifesto');if(manifesto)manifesto.style.display='';
+}
+
+function submitLogin(){
+  var email=(document.getElementById('ob-login-email').value||'').trim();
+  var pass=document.getElementById('ob-login-pass').value||'';
+  var errEl=document.getElementById('ob-login-err');
+  var btn=document.getElementById('ob-login-btn');
+
+  if(!email){if(errEl)errEl.textContent='Enter your email.';return;}
+  if(!pass){if(errEl)errEl.textContent='Enter your password.';return;}
+
+  if(btn){btn.disabled=true;btn.textContent='Signing in...';}
+  if(errEl)errEl.textContent='';
+
+  var _loginTimeout=setTimeout(function(){
+    if(btn){btn.disabled=false;btn.textContent='SIGN IN';}
+    if(errEl)errEl.textContent='Connection timed out. Try again.';
+  },10000);
+
+  if(window.firebase&&firebase.auth){
+    firebase.auth().signInWithEmailAndPassword(email,pass).then(function(){
+      clearTimeout(_loginTimeout);
+      console.log('[LW] Login success — returning player');
+      if(typeof gtag!=='undefined')gtag('event','login',{method:'email'});
+      // Do NOT mint gift plant — this is a returning player
+      _markOnboarded();
+      // Hide onboarding
+      var el=document.getElementById('pw-onboard');
+      if(el){el.style.display='none';el.style.pointerEvents='none';el.classList.remove('active');}
+      var dots=document.getElementById('ob-dots');if(dots)dots.style.display='none';
+      var kb=document.getElementById('pw-keeper-bar');if(kb)kb.style.display='flex';
+      if(window.PW_UI)PW_UI.updateKeeperBar();
+      // Vault hydration happens via onAuthStateChanged → _loadVaultForUser
+      // Just switch to greenhouse after a brief delay for hydration
+      setTimeout(function(){
+        if(window.renderGreenhouse)renderGreenhouse();
+        if(window.updateDashboard)updateDashboard();
+        if(window.switchTab)switchTab('greenhouse');
+      },1500);
+    }).catch(function(err){
+      clearTimeout(_loginTimeout);
+      if(btn){btn.disabled=false;btn.textContent='SIGN IN';}
+      var msg='Something went wrong.';
+      if(err.code==='auth/wrong-password'||err.code==='auth/invalid-credential'||err.code==='auth/invalid-login-credentials'){
+        msg='Incorrect password. Try again.';
+      } else if(err.code==='auth/user-not-found'){
+        msg='No account with that email. Create one instead?';
+      } else if(err.code==='auth/too-many-requests'){
+        msg='Too many attempts. Wait a moment and try again.';
+      } else {
+        msg=err.message||msg;
+      }
+      if(errEl)errEl.textContent=msg;
+    });
+  } else {
+    clearTimeout(_loginTimeout);
+    if(errEl)errEl.textContent='Connection unavailable. Try again later.';
+    if(btn){btn.disabled=false;btn.textContent='SIGN IN';}
+  }
+}
+
+return{start:start,submitAuth:submitAuth,finish:finish,skip:skip,goToBeat:goToBeat,showLogin:showLogin,showSignup:showSignup,submitLogin:submitLogin};
 })();
 </script>
 <script>console.log('[LW-DIAG] Post-onboard block. PW_Onboard defined:',!!window.PW_Onboard,'type:',typeof window.PW_Onboard);</script>
@@ -38174,6 +38361,7 @@ window.FG_Backpack = window.BP;
 
 // Wire show/hide to be called externally
 window.FG_Backpack.show = function() {
+  _bpContext = 'wild';
   try{console.log('[BP.show] called');}catch(e){}
   var el = document.getElementById('bpi');
   var fab = document.getElementById('dfb');
@@ -38215,6 +38403,188 @@ window.FG_Backpack.hide = function() {
   var glass = document.querySelector('.map-glass-highlight');
   if (vig) vig.style.display = 'none';
   if (glass) glass.style.display = 'none';
+};
+
+// ═══ COMPACT MODE — backpack visible on greenhouse/nursery tabs ═══
+var _bpContext = 'wild'; // 'wild' | 'greenhouse' | 'nursery'
+var BP_SLOT_CD_KEY = 'fg_bp_slot_cd';
+var BP_SLOT_CD_MS = 6 * 3600000; // 6 hours
+
+window.FG_Backpack.showCompact = function(tab) {
+  _bpContext = tab || 'greenhouse';
+  if (window.BP) BP.close(); // close expanded panel if open
+  var el = document.getElementById('bpi');
+  if (el) el.style.display = 'block';
+  // Hide wild-specific UI
+  var fab = document.getElementById('dfb'); if (fab) fab.style.display = 'none';
+  var rtb = document.getElementById('bp-rtb'); if (rtb) rtb.style.display = 'none';
+  var rc = document.getElementById('w-recenter'); if (rc) rc.style.display = 'none';
+  var stp = document.getElementById('stp'); if (stp) stp.style.display = 'none';
+  // Check midnight auto-deliver
+  if (BP && BP.checkMidnightDeliver) BP.checkMidnightDeliver();
+  if (BP) BP.render();
+};
+
+// Override toggle/open to be context-aware
+var _origOpen = window.FG_Backpack.open || (BP ? BP.open : null);
+var _origTp = BP ? BP.tp : null;
+var _origTs = BP ? BP.ts : null;
+
+// Per-slot cooldown helpers
+function _bpGetCooldowns() {
+  try { return JSON.parse(localStorage.getItem(BP_SLOT_CD_KEY) || '{}'); } catch (e) { return {}; }
+}
+function _bpSetCooldown(key) {
+  var cd = _bpGetCooldowns();
+  cd[key] = Date.now();
+  try { localStorage.setItem(BP_SLOT_CD_KEY, JSON.stringify(cd)); } catch (e) {}
+}
+function _bpCooldownRemaining(key) {
+  var cd = _bpGetCooldowns();
+  if (!cd[key]) return 0;
+  var elapsed = Date.now() - cd[key];
+  return Math.max(0, BP_SLOT_CD_MS - elapsed);
+}
+function _bpFormatTime(ms) {
+  var h = Math.floor(ms / 3600000);
+  var m = Math.ceil((ms % 3600000) / 60000);
+  return h > 0 ? (h + 'h ' + m + 'm') : (m + 'm');
+}
+
+// Send plant from backpack to greenhouse (with 6h cooldown)
+window.FG_Backpack.sendPlantHome = function(idx) {
+  if (!BP || !BP.getState) return;
+  var state = BP.getState();
+  if (idx >= state.plants.length) return;
+  var cdKey = 'p' + idx;
+  var remaining = _bpCooldownRemaining(cdKey);
+  if (remaining > 0) {
+    if (BP.toast) BP.toast('Cooldown: ' + _bpFormatTime(remaining) + ' remaining');
+    else if (window._toast) window._toast('Cooldown: ' + _bpFormatTime(remaining) + ' remaining');
+    return;
+  }
+  var plant = state.plants.splice(idx, 1)[0];
+  if (!plant) return;
+  // Add to greenhouse
+  var gh = [];
+  try { gh = JSON.parse((window._secureGet ? window._secureGet('sws_greenhouse') : localStorage.getItem('sws_greenhouse')) || '[]'); } catch (e) {}
+  gh.push({
+    hash: plant.hash,
+    date: new Date().toISOString().split('T')[0],
+    born: Date.now(),
+    origin: plant.origin || 'wild',
+    rare: plant.rare || false,
+    traits: null,
+    breedCount: 0,
+    generation: plant.generation || 1
+  });
+  if (window.saveGreenhouse) window.saveGreenhouse(gh);
+  else {
+    if (window._secureSet) window._secureSet('sws_greenhouse', gh);
+    else localStorage.setItem('sws_greenhouse', JSON.stringify(gh));
+  }
+  _bpSetCooldown(cdKey);
+  BP.render();
+  if (window.renderGreenhouse) window.renderGreenhouse();
+  if (window.syncVaultToCloud) setTimeout(window.syncVaultToCloud, 500);
+  var name = plant.name || 'Plant';
+  if (BP.toast) BP.toast(name + ' sent to Greenhouse!');
+  else if (window._toast) window._toast(name + ' sent to Greenhouse!');
+};
+
+// Send seed from backpack to nursery (with 6h cooldown)
+window.FG_Backpack.sendSeedToNursery = function(idx) {
+  if (!BP || !BP.getState) return;
+  var state = BP.getState();
+  if (idx >= state.seeds.length) return;
+  var cdKey = 's' + idx;
+  var remaining = _bpCooldownRemaining(cdKey);
+  if (remaining > 0) {
+    if (BP.toast) BP.toast('Cooldown: ' + _bpFormatTime(remaining) + ' remaining');
+    else if (window._toast) window._toast('Cooldown: ' + _bpFormatTime(remaining) + ' remaining');
+    return;
+  }
+  var seed = state.seeds.splice(idx, 1)[0];
+  if (!seed) return;
+  _bpSetCooldown(cdKey);
+  window.dispatchEvent(new CustomEvent('bp-seed-to-nursery', {detail: seed}));
+  BP.render();
+  if (window.renderNursery) setTimeout(window.renderNursery, 200);
+  if (window.syncVaultToCloud) setTimeout(window.syncVaultToCloud, 500);
+  if (BP.toast) BP.toast('Seed sent to Nursery!');
+  else if (window._toast) window._toast('Seed sent to Nursery!');
+};
+
+// Context-aware plant tap — show "Send Home" button on greenhouse tab
+var _origTpFn = BP ? BP.tp : function(){};
+BP.tp = function(i) {
+  _origTpFn(i);
+  if (_bpContext === 'greenhouse') {
+    // Replace hold-to-release with Send Home button
+    var relBtn = document.getElementById('htc-rel');
+    if (relBtn) relBtn.style.display = 'none';
+    var pic = document.getElementById('pic');
+    if (pic) {
+      var existing = document.getElementById('bp-send-home');
+      if (existing) existing.remove();
+      var cdKey = 'p' + i;
+      var remaining = _bpCooldownRemaining(cdKey);
+      var btn = document.createElement('button');
+      btn.id = 'bp-send-home';
+      btn.style.cssText = 'display:block;width:100%;margin-top:8px;padding:12px;min-height:48px;border:1px solid var(--sage);background:rgba(122,179,86,0.15);color:var(--sage);border-radius:8px;font-family:DM Mono,monospace;font-size:0.4rem;cursor:pointer;';
+      if (remaining > 0) {
+        btn.textContent = 'COOLDOWN: ' + _bpFormatTime(remaining);
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+      } else {
+        btn.textContent = 'SEND TO GREENHOUSE';
+        btn.onclick = function() { window.FG_Backpack.sendPlantHome(i); pic.classList.remove('show'); };
+      }
+      pic.appendChild(btn);
+    }
+  } else {
+    // Wild tab — restore hold-to-release
+    var relBtn2 = document.getElementById('htc-rel');
+    if (relBtn2) relBtn2.style.display = '';
+    var old = document.getElementById('bp-send-home');
+    if (old) old.remove();
+  }
+};
+
+// Context-aware seed tap — show "Plant Seed" button on nursery tab
+var _origTsFn = BP ? BP.ts : function(){};
+BP.ts = function(i) {
+  _origTsFn(i);
+  if (_bpContext === 'nursery') {
+    // Replace hold-to-send with Plant Seed button
+    var nurBtn = document.getElementById('htc-nur');
+    if (nurBtn) nurBtn.style.display = 'none';
+    var sdi = document.getElementById('sdi');
+    if (sdi) {
+      var existing = document.getElementById('bp-plant-seed');
+      if (existing) existing.remove();
+      var cdKey = 's' + i;
+      var remaining = _bpCooldownRemaining(cdKey);
+      var btn = document.createElement('button');
+      btn.id = 'bp-plant-seed';
+      btn.style.cssText = 'display:block;width:100%;margin-top:8px;padding:12px;min-height:48px;border:1px solid var(--gold);background:rgba(200,168,75,0.15);color:var(--gold);border-radius:8px;font-family:DM Mono,monospace;font-size:0.4rem;cursor:pointer;';
+      if (remaining > 0) {
+        btn.textContent = 'COOLDOWN: ' + _bpFormatTime(remaining);
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+      } else {
+        btn.textContent = 'PLANT IN NURSERY';
+        btn.onclick = function() { window.FG_Backpack.sendSeedToNursery(i); sdi.classList.remove('show'); };
+      }
+      sdi.appendChild(btn);
+    }
+  } else {
+    // Wild tab — restore hold-to-send
+    var nurBtn2 = document.getElementById('htc-nur');
+    if (nurBtn2) nurBtn2.style.display = '';
+    var old = document.getElementById('bp-plant-seed');
+    if (old) old.remove();
+  }
 };
 
 // Wire seed-to-nursery event listener
