@@ -35976,18 +35976,18 @@ function GSK(a){
       var angle=Math.random()*Math.PI*2,dist=40+Math.random()*80,sz=4+Math.random()*6;
       var dx=Math.cos(angle)*dist,dy=Math.sin(angle)*dist;
       sp.style.cssText='position:fixed;left:'+(cx-sz/2)+'px;top:'+(cy-sz/2)+'px;width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+colors[i%colors.length]+';pointer-events:none;z-index:9999;opacity:1;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);box-shadow:0 0 6px '+colors[i%colors.length];
-      document.body.appendChild(sp);
+      sp.setAttribute('data-sk-fx','1');document.body.appendChild(sp);
       setTimeout(function(s,x,y){s.style.transform='translate('+x+'px,'+y+'px) scale(0)';s.style.opacity='0'}.bind(null,sp,dx,dy),20);
       setTimeout(function(s){if(s.parentNode)s.remove()}.bind(null,sp),900);
     }
     var cat=document.createElement('div');
     cat.style.cssText='position:fixed;left:50%;top:'+cy+'px;transform:translate(-50%,-50%) scale(0);width:clamp(160px,45vw,220px);height:clamp(160px,45vw,220px);z-index:9998;pointer-events:none;transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1),opacity 0.4s;opacity:0';
     cat.innerHTML='<img src="assets/games/sokoban/player-on-target.png" style="width:100%;height:100%;object-fit:contain" alt="">';
-    document.body.appendChild(cat);
+    cat.setAttribute('data-sk-fx','1');document.body.appendChild(cat);
     setTimeout(function(){cat.style.transform='translate(-50%,-50%) scale(1)';cat.style.opacity='1'},30);
     // Second sparkle burst around the cat
     setTimeout(function(){
-      for(var j=0;j<16;j++){var sp2=document.createElement('div');var a2=Math.random()*Math.PI*2,d2=60+Math.random()*100,sz2=3+Math.random()*5;sp2.style.cssText='position:fixed;left:'+((window.innerWidth/2)-sz2/2)+'px;top:'+(cy-sz2/2)+'px;width:'+sz2+'px;height:'+sz2+'px;border-radius:50%;background:'+colors[j%colors.length]+';pointer-events:none;z-index:9999;opacity:1;transition:all 1s ease-out;box-shadow:0 0 8px '+colors[j%colors.length];document.body.appendChild(sp2);setTimeout(function(s,x,y){s.style.transform='translate('+x+'px,'+y+'px) scale(0)';s.style.opacity='0'}.bind(null,sp2,Math.cos(a2)*d2,Math.sin(a2)*d2),20);setTimeout(function(s){if(s.parentNode)s.remove()}.bind(null,sp2),1100)}
+      for(var j=0;j<16;j++){var sp2=document.createElement('div');var a2=Math.random()*Math.PI*2,d2=60+Math.random()*100,sz2=3+Math.random()*5;sp2.style.cssText='position:fixed;left:'+((window.innerWidth/2)-sz2/2)+'px;top:'+(cy-sz2/2)+'px;width:'+sz2+'px;height:'+sz2+'px;border-radius:50%;background:'+colors[j%colors.length]+';pointer-events:none;z-index:9999;opacity:1;transition:all 1s ease-out;box-shadow:0 0 8px '+colors[j%colors.length];sp2.setAttribute('data-sk-fx','1');document.body.appendChild(sp2);setTimeout(function(s,x,y){s.style.transform='translate('+x+'px,'+y+'px) scale(0)';s.style.opacity='0'}.bind(null,sp2,Math.cos(a2)*d2,Math.sin(a2)*d2),20);setTimeout(function(s){if(s.parentNode)s.remove()}.bind(null,sp2),1100)}
     },400);
     setTimeout(function(){cat.style.transform='translate(-50%,-50%) scale(1.1) rotate(3deg)';},800);
     setTimeout(function(){cat.style.transform='translate(-50%,-50%) scale(0)';cat.style.opacity='0'},3600);
@@ -36018,13 +36018,13 @@ function GSK(a){
     nextBtn.className='gb';
     nextBtn.style.cssText='min-height:52px;min-width:140px;font-size:0.85rem;background:rgba(74,124,53,0.25);border-color:rgba(122,179,86,0.4);color:var(--sage)';
     nextBtn.textContent=levelNum==='ALL'?'⟳ PLAY AGAIN':'⏭️ NEXT LEVEL';
-    nextBtn.onclick=function(){ov.remove();if(levelNum==='ALL'){lvl=0;localStorage.setItem('sk_lvl','0')}load();rn()};
+    nextBtn.onclick=function(){ov.remove();document.querySelectorAll('[data-sk-fx]').forEach(function(el){el.remove()});if(levelNum==='ALL'){lvl=0;localStorage.setItem('sk_lvl','0')}load();rn()};
     btns.appendChild(nextBtn);
     var pickBtn=document.createElement('button');
     pickBtn.className='gb';
     pickBtn.style.cssText='min-height:52px;min-width:140px;font-size:0.85rem';
     pickBtn.textContent='🎮 DIFFERENT GAME';
-    pickBtn.onclick=function(){ov.remove();_openGamePicker()};
+    pickBtn.onclick=function(){ov.remove();document.querySelectorAll('[data-sk-fx]').forEach(function(el){el.remove()});_openGamePicker()};
     btns.appendChild(pickBtn);
     ov.appendChild(btns);
     document.body.appendChild(ov);
