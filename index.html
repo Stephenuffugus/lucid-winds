@@ -31979,7 +31979,7 @@ var G=[
 {id:'freecell',n:'FreeCell',i:'\ud83c\udfd7',r:'All cards visible. Use 4 free cells to maneuver. Pure strategy!',cat:'card',thumb:'assets/games/thumbs/freecell.png'},
 {id:'pyramid',n:'Pyramid',i:'\ud83d\udd3a',r:'Remove pairs that sum to 13. Kings remove alone. Clear the pyramid!',cat:'card',thumb:'assets/games/thumbs/pyramid.png'},
 {id:'tripeaks',n:'TriPeaks',i:'\u26f0',r:'Build up or down on the waste pile to clear three peaks.',cat:'card',thumb:'assets/games/thumbs/tripeaks.png'},
-{id:'mastermind',n:'Seed Code',i:'\ud83c\udf31',r:'Crack the hidden 4-seed code. Green = right seed, right spot. Gold = right seed, wrong spot.',cat:'board',thumb:'assets/games/thumbs/mastermind.png'},
+{id:'mastermind',n:'Code Sprout',i:'\ud83c\udf31',r:'Crack the hidden 4-element code. Green = right pick, right spot. Gold = right pick, wrong spot.',cat:'board',thumb:'assets/games/thumbs/mastermind.png'},
 {id:'checkers',n:'Grove Checkers',i:'\u265f',r:'Jump over opponent pieces to capture. Reach the far side to crown a King.',cat:'board',thumb:'assets/games/thumbs/checkers.png'},
 {id:'reversi',n:'Moss & Lichen',i:'\u25cf',r:'Place moss to surround and flip lichen. Control the most territory to win.',cat:'board',thumb:'assets/games/thumbs/reversi.png'},
 {id:'yahtzee',n:'Seed Toss',i:'\ud83c\udfb2',r:'Roll 5 seed dice up to 3 times. Hold keepers, score in 13 categories. Aim high!',cat:'dice',thumb:'assets/games/thumbs/yahtzee.png'},
@@ -35578,7 +35578,9 @@ function GRV(a){var bd=new Array(64).fill(0),tn=1,ov=false,lastMove=-1,flipCells
   window._RVN=function(){setup();sm('');rn()};_RVN();
 }
 // ═══ MASTERMIND ═══
-function GMM(a){var code=[],guesses=[],cur=[];
+function GMM(a){var code=[],guesses=[],cur=[],_mmMode='color';
+  var LETTERS=['A','B','C','D','E','F'];
+  var NUMBERS=['1','2','3','4','5','6'];
   // 6 botanical pegs — each a unique plant element
   var PEGS=[
     {name:'Rose',fill:'#c07070',accent:'#e8a0a0',svg:'<svg viewBox="0 0 40 40"><circle cx="20" cy="18" r="11" fill="PAL" opacity="0.9"/><circle cx="20" cy="18" r="7" fill="ACC"/><circle cx="20" cy="18" r="3.5" fill="PAL"/><path d="M20 29 L20 36" stroke="#5a8a3a" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="24" cy="32" rx="4" ry="2.5" fill="#5a8a3a" opacity="0.7" transform="rotate(-20 24 32)"/></svg>'},
@@ -35588,7 +35590,10 @@ function GMM(a){var code=[],guesses=[],cur=[];
     {name:'Mushroom',fill:'#9b59b6',accent:'#c48de0',svg:'<svg viewBox="0 0 40 40"><rect x="16" y="22" width="8" height="14" rx="3" fill="#e8dcc8" opacity="0.8"/><ellipse cx="20" cy="22" rx="14" ry="10" fill="PAL"/><ellipse cx="20" cy="22" rx="14" ry="10" fill="ACC" opacity="0.3"/><circle cx="14" cy="18" r="2.5" fill="#e8dcc8" opacity="0.4"/><circle cx="24" cy="16" r="3" fill="#e8dcc8" opacity="0.35"/><circle cx="19" cy="14" r="1.5" fill="#e8dcc8" opacity="0.3"/></svg>'},
     {name:'Ember',fill:'#c76a30',accent:'#e8a060',svg:'<svg viewBox="0 0 40 40"><path d="M20 6 Q28 16 24 24 Q28 20 26 14 Q30 22 24 30 Q22 34 20 36 Q18 34 16 30 Q10 22 14 14 Q12 20 16 24 Q12 16 20 6Z" fill="PAL" opacity="0.9"/><path d="M20 14 Q24 20 22 26 Q20 30 20 32 Q20 30 18 26 Q16 20 20 14Z" fill="ACC" opacity="0.8"/><circle cx="20" cy="24" r="3" fill="#e8dcc8" opacity="0.5"/></svg>'}
   ];
-  function pegSvg(idx){var p=PEGS[idx];return p.svg.replace(/PAL/g,p.fill).replace(/ACC/g,p.accent)}
+  function pegSvg(idx){var p=PEGS[idx];
+    if(_mmMode==='letter')return '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:clamp(1.2rem,4vw,1.6rem);font-weight:700;color:'+p.fill+';text-shadow:0 1px 3px rgba(0,0,0,0.5)">'+LETTERS[idx]+'</div>';
+    if(_mmMode==='number')return '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:clamp(1.2rem,4vw,1.6rem);font-weight:700;color:'+p.fill+';text-shadow:0 1px 3px rgba(0,0,0,0.5)">'+NUMBERS[idx]+'</div>';
+    return p.svg.replace(/PAL/g,p.fill).replace(/ACC/g,p.accent)}
   ms(a,'Guesses: <strong id="MMg">0</strong>/10');mm(a);
   // Directions
   var dir=document.createElement('div');
@@ -35607,7 +35612,7 @@ function GMM(a){var code=[],guesses=[],cur=[];
   });
   a.appendChild(pal);
   var _bbs='min-height:52px;padding:0.5rem 1.2rem;font-size:clamp(.6rem,1.8vw,.75rem);flex:1';
-  mc(a).innerHTML='<div style="display:flex;gap:8px;padding:4px 0"><button class="gb" style="'+_bbs+';background:rgba(74,124,53,.2);border-color:rgba(122,179,86,.35);color:var(--sage)" onclick="_MMG()">&#10003; GUESS</button><button class="gb" style="'+_bbs+'" onclick="_MMU()">&#9003; UNDO</button><button class="gb-new" onclick="_MMN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button></div>';
+  mc(a).innerHTML='<div style="display:flex;gap:8px;padding:4px 0;flex-wrap:wrap;justify-content:center"><button class="gb" style="'+_bbs+';background:rgba(74,124,53,.2);border-color:rgba(122,179,86,.35);color:var(--sage)" onclick="_MMG()">&#10003; GUESS</button><button class="gb" style="'+_bbs+'" onclick="_MMU()">&#9003; UNDO</button><button class="gb" style="'+_bbs+'" onclick="_MMMode()" id="MMmode">MODE: COLOR</button><button class="gb-new" onclick="_MMN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button></div>';
   function rn(){
     bd.innerHTML='';
     guesses.forEach(function(g){
@@ -35659,6 +35664,7 @@ function GMM(a){var code=[],guesses=[],cur=[];
     else if(guesses.length>=10){_e('game_loss');sm('The code was: '+code.map(function(c){return PEGS[c].name}).join(' \u2022 '));_sr('mastermind',{w:false,s:0})}
     rn();
   };
+  window._MMMode=function(){_mmMode=_mmMode==='color'?'letter':_mmMode==='letter'?'number':'color';var btn=document.getElementById('MMmode');if(btn)btn.textContent='MODE: '+_mmMode.toUpperCase();_play('tap');pal.innerHTML='';PEGS.forEach(function(p,i){var d=document.createElement('div');d.className='mmp';d.style.cssText='background:rgba(26,36,22,.8);border-color:'+p.fill;d.innerHTML=pegSvg(i);d.addEventListener('click',function(){_MMA(i)});pal.appendChild(d)});rn()};
   window._MMN=function(){code=[];for(var i=0;i<4;i++)code.push(Math.floor(Math.random()*6));guesses=[];cur=[];document.getElementById('MMg').textContent='0';sm('');rn()};_MMN();
 }
 // ═══ FLOOD FILL ═══
@@ -35806,53 +35812,129 @@ function GSK(a){
     target:tile('target'),wall:tile('wall'),floor:tile('floor'),
     playerOnTarget:tile('playerOnTarget')
   };
-  // ── 65 LEVELS — starts at 2 crates, progressive difficulty ──
+  // ── 100 LEVELS — procedurally generated, BFS-verified solvable ──
   var LEVELS=[
-    // === TIER 1: WARMUP (2 crates) ===
-    {w:6,h:6,map:'######'+'#.X..#'+'#.O..#'+'#..O.#'+'#@.X.#'+'######'},
-    {w:7,h:5,map:'#######'+'#X.@.X#'+'#.O.O.#'+'#.....#'+'#######'},
-    {w:6,h:6,map:'######'+'#..X.#'+'#..O.#'+'#.O..#'+'#@X..#'+'######'},
-    {w:7,h:6,map:'#######'+'#..X..#'+'#.O#..#'+'#..#O.#'+'#@.X..#'+'#######'},
-    {w:6,h:6,map:'######'+'##.X##'+'#..O.#'+'#.O..#'+'#@.X.#'+'######'},
-    {w:7,h:6,map:'#######'+'#X.#..#'+'#.O..O#'+'#..#.X#'+'#..@..#'+'#######'},
-    {w:7,h:6,map:'#######'+'#.....#'+'#.O.X.#'+'#.....#'+'#X.O@.#'+'#######'},
-    {w:6,h:6,map:'######'+'#X...#'+'#.O..#'+'#..O.#'+'#...X#'+'#@..##'},
-    {w:7,h:6,map:'#######'+'#..X..#'+'#.O...#'+'#...O.#'+'#@.X..#'+'#######'},
-    {w:7,h:7,map:'#######'+'#.....#'+'#.O.X.#'+'#.#.#.#'+'#.X.O.#'+'#..@..#'+'#######'},
-    // === TIER 3: MEDIUM (2-3 crates, order matters) ===
-    {w:7,h:7,map:'#######'+'#.....#'+'#.OXO.#'+'#..@..#'+'#.OX..#'+'#...X.#'+'#######'},
-    {w:7,h:7,map:'#######'+'##.X.##'+'#..O..#'+'#.#.#.#'+'#..O..#'+'##.X@##'+'#######'},
-    {w:8,h:7,map:'########'+'#......#'+'#.O.X..#'+'#.#.##.#'+'#.O..O.#'+'#@X..X.#'+'########'},
-    {w:7,h:7,map:'#######'+'#X..###'+'#.O...#'+'##.##.#'+'#...O.#'+'#@..X.#'+'#######'},
-    {w:7,h:7,map:'#######'+'##.X.##'+'#..O..#'+'#XO@OX#'+'#..O..#'+'##...##'+'#######'},
-    {w:8,h:7,map:'########'+'#..#X..#'+'#.O....#'+'##..##.#'+'#.O....#'+'#@.#X..#'+'########'},
-    {w:8,h:7,map:'########'+'#X....X#'+'#.O..O.#'+'#..##..#'+'#..O...#'+'#.X..@.#'+'########'},
-    {w:7,h:7,map:'#######'+'#.....#'+'#.###.#'+'#.#X..#'+'#.O.O.#'+'#@..X.#'+'#######'},
-    {w:8,h:8,map:'########'+'#......#'+'#.X.O..#'+'#..##..#'+'#.O..O.#'+'#..##..#'+'#@.X.X.#'+'########'},
-    {w:7,h:7,map:'#######'+'#X....#'+'#.O.#.#'+'#...O.#'+'#.#.O.#'+'#@..XX#'+'#######'},
-    // === TIER 4: HARD (3-4 crates, tight corridors) ===
-    {w:8,h:8,map:'########'+'##X..###'+'#.O....#'+'#.##.#.#'+'#....O.#'+'#.#.##.#'+'#@..OX.#'+'####X###'},
-    {w:8,h:8,map:'########'+'#......#'+'#.O..O.#'+'#..XX..#'+'#..XX..#'+'#.O..O.#'+'#..@...#'+'########'},
-    {w:9,h:8,map:'#########'+'#..X..X.#'+'#.O..O..#'+'#.#..#..#'+'#.......#'+'#..#..#.#'+'#@.O..X.#'+'#########'},
-    {w:8,h:8,map:'########'+'#X....X#'+'#.O..O.#'+'#..##..#'+'#..##..#'+'#.O..O.#'+'#X.@..X#'+'########'},
-    {w:9,h:8,map:'#########'+'##...X..#'+'#.O..#..#'+'#.##....#'+'#....##.#'+'#..#..O.#'+'#@.O.X.X#'+'#########'},
-    {w:9,h:8,map:'#########'+'#X.#...X#'+'#.O..#O.#'+'#...#...#'+'#.#...#.#'+'#.O#..O.#'+'#X..@..X#'+'#########'},
-    {w:8,h:8,map:'########'+'#.X....#'+'#.O.##.#'+'#..#...#'+'#.O..#.#'+'#...O..#'+'#X@..X.#'+'########'},
-    {w:9,h:9,map:'#########'+'###.X.###'+'##..O..##'+'#.X.#.X.#'+'#..O.O..#'+'#...#...#'+'##..O..##'+'###@X.###'+'#########'},
-    {w:8,h:8,map:'########'+'#X.X...#'+'#.OO.#.#'+'#....#.#'+'####...#'+'#...O..#'+'#@...X.#'+'########'},
-    {w:9,h:9,map:'#########'+'#X..X...#'+'#.O..O..#'+'##..#..##'+'###...###'+'##..#..##'+'#.O..O..#'+'#X@.X...#'+'#########'},
-    // === TIER 5: EXPERT (4-5 crates) ===
-    {w:9,h:9,map:'#########'+'#.......#'+'#.O.X.O.#'+'#.#.#.#.#'+'#.X...X.#'+'#.#.#.#.#'+'#.O.X.O.#'+'#...@...#'+'#########'},
-    {w:10,h:8,map:'##########'+'#........#'+'#.O.X.O..#'+'#..#..#..#'+'#..O.X.O.#'+'#.X....X.#'+'#..@.X...#'+'##########'},
-    {w:9,h:9,map:'#########'+'#X.#..X.#'+'#.O....O#'+'#...##..#'+'##.....##'+'#..##...#'+'#O....O.#'+'#X.#@.X.#'+'#########'},
-    {w:10,h:9,map:'##########'+'#.X......#'+'#.O..#.X.#'+'#..#..O..#'+'#.O....O.#'+'#..#..#..#'+'#.X..O.X.#'+'#...@....#'+'##########'},
-    {w:9,h:9,map:'#########'+'#..X.X..#'+'#.O...O.#'+'#.#.#.#.#'+'#...@...#'+'#.#.#.#.#'+'#.O...O.#'+'#..X.X..#'+'#########'},
-    {w:9,h:7,map:'#########'+'##..#..##'+'#.O.X.O.#'+'#..O@O..#'+'#.X.#.X.#'+'##..X..##'+'#########'},
-    {w:8,h:8,map:'########'+'#..X...#'+'#.O..#.#'+'##.O.X.#'+'#..@...#'+'#.O..#.#'+'#..X.X.#'+'########'},
-    {w:9,h:8,map:'#########'+'#.......#'+'#.O.#.O.#'+'#..X.X..#'+'##.O@O.##'+'#..X.X..#'+'#.......#'+'#########'},
-    {w:9,h:8,map:'#########'+'##.....##'+'#..OOO..#'+'#.X.@.X.#'+'#..#.#..#'+'#.X.O.X.#'+'##..X..##'+'#########'},
-    {w:9,h:9,map:'#########'+'#...#...#'+'#.O.O.O.#'+'#.X.X.X.#'+'##..@..##'+'#.X.X.X.#'+'#.O.O.O.#'+'#...#...#'+'#########'}
+    {w:6,h:7,map:'######'+'#.XO.#'+'#@.#.#'+'#O...#'+'#X.#.#'+'#....#'+'######'},
+    {w:7,h:6,map:'#######'+'#..X..#'+'#.X#O.#'+'#.O...#'+'#.@...#'+'#######'},
+    {w:6,h:6,map:'######'+'#@...#'+'#XO.X#'+'#.#.O#'+'#....#'+'######'},
+    {w:7,h:7,map:'#######'+'#.@.X.#'+'#..#..#'+'#OO...#'+'#X#...#'+'#.....#'+'#######'},
+    {w:7,h:6,map:'#######'+'#.....#'+'#..XO.#'+'#@.#O.#'+'#...X.#'+'#######'},
+    {w:6,h:6,map:'######'+'#....#'+'#X..O#'+'#O#@X#'+'#....#'+'######'},
+    {w:7,h:7,map:'#######'+'#.....#'+'#.OX..#'+'#@##..#'+'#XO.#.#'+'#.....#'+'#######'},
+    {w:6,h:6,map:'######'+'#.XO.#'+'#X.#.#'+'#O.#@#'+'#....#'+'######'},
+    {w:6,h:6,map:'######'+'#....#'+'#O#@.#'+'#XO.X#'+'#....#'+'######'},
+    {w:6,h:7,map:'######'+'#....#'+'#X.O.#'+'#...O#'+'#.#.X#'+'#@...#'+'######'},
+    {w:7,h:6,map:'#######'+'#.X.O.#'+'#.#O..#'+'#...#.#'+'#..@X.#'+'#######'},
+    {w:6,h:6,map:'######'+'#@...#'+'#XO#.#'+'#OX..#'+'#....#'+'######'},
+    {w:6,h:7,map:'######'+'#...@#'+'#.O.X#'+'#X...#'+'#O##.#'+'#....#'+'######'},
+    {w:6,h:6,map:'######'+'#....#'+'#X#..#'+'#O#O.#'+'#.X@.#'+'######'},
+    {w:6,h:7,map:'######'+'#...@#'+'#..#X#'+'#.X.O#'+'#.O#.#'+'#....#'+'######'},
+    {w:7,h:7,map:'#######'+'#...X.#'+'#O..#.#'+'#X#@O.#'+'#.....#'+'#.....#'+'#######'},
+    {w:7,h:7,map:'#######'+'#.OX..#'+'#..#..#'+'#.O..X#'+'#..#..#'+'#....@#'+'#######'},
+    {w:7,h:6,map:'#######'+'#.X...#'+'#.OO#.#'+'#...X.#'+'#....@#'+'#######'},
+    {w:6,h:7,map:'######'+'#....#'+'#@#O.#'+'#.O..#'+'#.#.X#'+'#..X.#'+'######'},
+    {w:7,h:7,map:'#######'+'#.....#'+'#..##X#'+'#....@#'+'#X.#OO#'+'#.....#'+'#######'},
+    {w:7,h:8,map:'#######'+'#.....#'+'#X..#.#'+'#O##.@#'+'#.OX..#'+'#...#.#'+'#.....#'+'#######'},
+    {w:7,h:7,map:'#######'+'#@O.X.#'+'#....X#'+'#..##.#'+'#....O#'+'#.....#'+'#######'},
+    {w:8,h:8,map:'########'+'#......#'+'#.#....#'+'#...O..#'+'#..#..X#'+'#.#....#'+'#.@.OX.#'+'########'},
+    {w:8,h:7,map:'########'+'#..@...#'+'#.OO...#'+'#...##.#'+'#X....X#'+'#......#'+'########'},
+    {w:7,h:7,map:'#######'+'#.....#'+'#.@.#X#'+'#.O...#'+'#X#.#O#'+'#.....#'+'#######'},
+    {w:8,h:8,map:'########'+'#.X....#'+'#.#OO..#'+'#..X.#.#'+'#.O.#..#'+'#.@X.#.#'+'#......#'+'########'},
+    {w:8,h:8,map:'########'+'#......#'+'#@..O..#'+'#.#X...#'+'#.O....#'+'#..#...#'+'#...X..#'+'########'},
+    {w:8,h:7,map:'########'+'#...OX.#'+'#..OX.X#'+'#@O....#'+'#.###..#'+'#......#'+'########'},
+    {w:8,h:8,map:'########'+'#....@.#'+'#..#...#'+'#O..#..#'+'#X..X..#'+'#....O.#'+'#......#'+'########'},
+    {w:7,h:7,map:'#######'+'#.....#'+'#.O.#.#'+'#.X@X.#'+'#.#O#.#'+'#.....#'+'#######'},
+    {w:8,h:8,map:'########'+'#......#'+'#O@.#O.#'+'#X#...X#'+'#..#...#'+'#...#..#'+'#...XO.#'+'########'},
+    {w:8,h:8,map:'########'+'#.X..O.#'+'#..#...#'+'#.#.#..#'+'#......#'+'#...O@X#'+'#.O.X..#'+'########'},
+    {w:8,h:8,map:'########'+'#......#'+'#.....O#'+'#X....@#'+'#..#.#.#'+'#...O.X#'+'#......#'+'########'},
+    {w:7,h:7,map:'#######'+'#..X..#'+'#.@O..#'+'#O.#..#'+'#X#.#.#'+'#.X.O.#'+'#######'},
+    {w:7,h:8,map:'#######'+'#.....#'+'#O....#'+'#X..#.#'+'#OX@..#'+'#XO##.#'+'#.....#'+'#######'},
+    {w:7,h:8,map:'#######'+'#.....#'+'#@#.O.#'+'#..X..#'+'#.O...#'+'#.#.#.#'+'#.X...#'+'#######'},
+    {w:7,h:7,map:'#######'+'#.....#'+'#OO...#'+'#XO.X.#'+'#@##..#'+'#..X..#'+'#######'},
+    {w:8,h:8,map:'########'+'#..X.O.#'+'#X.O...#'+'#..X#..#'+'#...#O.#'+'#......#'+'#..@...#'+'########'},
+    {w:7,h:8,map:'#######'+'#..XO.#'+'#O.#..#'+'#..O..#'+'#..@..#'+'#XX#..#'+'#.....#'+'#######'},
+    {w:8,h:8,map:'########'+'#.X....#'+'#..#.#.#'+'#.OO..X#'+'#.....O#'+'#...#..#'+'#...X.@#'+'########'},
+    {w:7,h:7,map:'#######'+'#.X...#'+'#XO#.@#'+'#...#.#'+'#OO.X.#'+'#.....#'+'#######'},
+    {w:8,h:7,map:'########'+'#..X.O@#'+'#......#'+'#.O#.#.#'+'#.XOX..#'+'#......#'+'########'},
+    {w:7,h:8,map:'#######'+'#.X@..#'+'#..#O.#'+'#.O...#'+'#O#...#'+'#X...X#'+'#.....#'+'#######'},
+    {w:8,h:8,map:'########'+'#..@...#'+'#.X#..O#'+'#..OO..#'+'#.....X#'+'#.....X#'+'#......#'+'########'},
+    {w:8,h:7,map:'########'+'#......#'+'#.OX#.@#'+'#XO...X#'+'#..#.#O#'+'#......#'+'########'},
+    {w:8,h:8,map:'########'+'#......#'+'#...#..#'+'#XO.#..#'+'#.#X#.O#'+'#O#...X#'+'#.@....#'+'########'},
+    {w:7,h:7,map:'#######'+'#...X.#'+'#@O.X.#'+'#...O.#'+'#...#.#'+'#..OX.#'+'#######'},
+    {w:7,h:7,map:'#######'+'#.....#'+'#O.#.@#'+'#.##.O#'+'#X##OX#'+'#.X...#'+'#######'},
+    {w:8,h:7,map:'########'+'#......#'+'#@O###X#'+'#.X.#.O#'+'#..O...#'+'#.X....#'+'########'},
+    {w:7,h:7,map:'#######'+'#..X..#'+'#O....#'+'#X..#.#'+'#.#.O.#'+'#.OX@.#'+'#######'},
+    {w:7,h:7,map:'#######'+'#.XXO.#'+'#O.O..#'+'#.@.#.#'+'#X##..#'+'#.....#'+'#######'},
+    {w:8,h:7,map:'########'+'#.....@#'+'#.O....#'+'#X#.#..#'+'#..O..X#'+'#..OX..#'+'########'},
+    {w:8,h:7,map:'########'+'#...@X.#'+'#.O#.#.#'+'#...O#.#'+'#.#.XO.#'+'#.X....#'+'########'},
+    {w:7,h:7,map:'#######'+'#.O@X.#'+'#XX#..#'+'#...#.#'+'#OO...#'+'#.....#'+'#######'},
+    {w:7,h:7,map:'#######'+'#..XO.#'+'#O..#.#'+'#X.##.#'+'#@..O.#'+'#.X...#'+'#######'},
+    {w:7,h:8,map:'#######'+'#.....#'+'#.#...#'+'#XOO..#'+'#O..#X#'+'#..@X.#'+'#.....#'+'#######'},
+    {w:7,h:7,map:'#######'+'#..XX.#'+'#X.O#.#'+'#.#.O.#'+'#...O.#'+'#@....#'+'#######'},
+    {w:8,h:7,map:'########'+'#.OX...#'+'#.##..X#'+'#X#..O.#'+'#...@.O#'+'#......#'+'########'},
+    {w:8,h:8,map:'########'+'#......#'+'#X#X#O.#'+'#@#....#'+'#...O..#'+'#.#....#'+'#..XO..#'+'########'},
+    {w:7,h:7,map:'#######'+'#.XO..#'+'#X###.#'+'#....@#'+'#.#O..#'+'#.X.O.#'+'#######'},
+    {w:8,h:8,map:'########'+'#..X...#'+'#....#@#'+'#X....O#'+'#O..O.X#'+'#...#..#'+'#......#'+'########'},
+    {w:9,h:8,map:'#########'+'#..X....#'+'#..O.#..#'+'#@...OXX#'+'#.......#'+'#.##..O.#'+'#.X...O.#'+'#########'},
+    {w:8,h:8,map:'########'+'#...X..#'+'#.##O..#'+'#.##@..#'+'#....O.#'+'#.X.O.X#'+'#..X.O.#'+'########'},
+    {w:8,h:9,map:'########'+'#...X@.#'+'#..O.O.#'+'#.#....#'+'#..#.X.#'+'#.#....#'+'#..###.#'+'#..X.O.#'+'########'},
+    {w:9,h:8,map:'#########'+'#.@...X.#'+'#O..XO..#'+'#......X#'+'#X#..#O.#'+'#...#..O#'+'#.......#'+'#########'},
+    {w:8,h:9,map:'########'+'#..X...#'+'#.O.X.X#'+'#......#'+'#..OO#.#'+'#.##.@.#'+'#...#..#'+'#......#'+'########'},
+    {w:8,h:9,map:'########'+'#......#'+'#.#O.O.#'+'#X...X.#'+'#..##..#'+'#...#O.#'+'#....X.#'+'#..@OX.#'+'########'},
+    {w:9,h:8,map:'#########'+'#.X...@.#'+'#OO..#..#'+'#..#.OO.#'+'#X...X..#'+'#.#.....#'+'#...X...#'+'#########'},
+    {w:8,h:9,map:'########'+'#......#'+'#.O@.#O#'+'#XX...X#'+'#O.X#..#'+'#...#..#'+'#.O#.#.#'+'#......#'+'########'},
+    {w:8,h:8,map:'########'+'#..O.X.#'+'#..#X#.#'+'#@.....#'+'#..O...#'+'#X##.O.#'+'#..X.O.#'+'########'},
+    {w:9,h:8,map:'#########'+'#.XO....#'+'#.X#..O.#'+'#...X##.#'+'#.O...#.#'+'#.......#'+'#...OX@.#'+'#########'},
+    {w:8,h:9,map:'########'+'#..OX..#'+'#.X....#'+'#......#'+'#.OX.#.#'+'#.##...#'+'#..O.#.#'+'#.....@#'+'########'},
+    {w:9,h:8,map:'#########'+'#......@#'+'#O..#.#.#'+'#X....#X#'+'#.X...#O#'+'#....O..#'+'#.......#'+'#########'},
+    {w:8,h:8,map:'########'+'#......#'+'#...XO.#'+'#..O#..#'+'#O..#..#'+'#X###..#'+'#..X@..#'+'########'},
+    {w:8,h:9,map:'########'+'#..X...#'+'#....O.#'+'#..###.#'+'#....@.#'+'#..O#.X#'+'#..O...#'+'#.X....#'+'########'},
+    {w:8,h:8,map:'########'+'#......#'+'#XO..#.#'+'#X.#.#.#'+'#...O#.#'+'#O##...#'+'#.X.@..#'+'########'},
+    {w:8,h:8,map:'########'+'#......#'+'#...#..#'+'#.X..#.#'+'#.O....#'+'#XO#...#'+'#.X.O.@#'+'########'},
+    {w:8,h:8,map:'########'+'#......#'+'#@..#OO#'+'#X#.#..#'+'#.#..O.#'+'#.....X#'+'#....X.#'+'########'},
+    {w:8,h:8,map:'########'+'#...OX.#'+'#....OX#'+'#.##.O.#'+'#...#..#'+'#X.#.#.#'+'#.O.X@.#'+'########'},
+    {w:8,h:8,map:'########'+'#...XO.#'+'#.#.X#X#'+'#.O....#'+'#.O#.#.#'+'#.@#.#.#'+'#.X.O..#'+'########'},
+    {w:8,h:7,map:'########'+'#.XO...#'+'#.#X.O.#'+'#@#.##O#'+'#.#.#.X#'+'#.O.X..#'+'########'},
+    {w:8,h:8,map:'########'+'#@.....#'+'#.#O...#'+'#.#X##.#'+'#.#X.#.#'+'#.#O.OX#'+'#..O.X.#'+'########'},
+    {w:8,h:7,map:'########'+'#.@X...#'+'#.O.##O#'+'#XO.OXX#'+'#..#.#.#'+'#.OX...#'+'########'},
+    {w:9,h:8,map:'#########'+'#....X..#'+'#X.O...X#'+'#.#.OOO.#'+'#.@##.X.#'+'#...###.#'+'#.......#'+'#########'},
+    {w:8,h:7,map:'########'+'#.@XXO.#'+'#.###O.#'+'#OOXXO.#'+'#X.###.#'+'#......#'+'########'},
+    {w:9,h:8,map:'#########'+'#...@...#'+'#.##X...#'+'#.#...OX#'+'#..OX.#.#'+'#.#.#.O.#'+'#.XO....#'+'#########'},
+    {w:8,h:8,map:'########'+'#...X..#'+'#.#X#..#'+'#.#.#O.#'+'#.#O@O.#'+'#.#.O..#'+'#..X.X.#'+'########'},
+    {w:8,h:8,map:'########'+'#......#'+'#O#@.#O#'+'#..###X#'+'#.O#..X#'+'#X..OO.#'+'#.X..X.#'+'########'},
+    {w:8,h:7,map:'########'+'#.@..X.#'+'#..##O.#'+'#O#..O.#'+'#X##XOX#'+'#.XO...#'+'########'},
+    {w:8,h:8,map:'########'+'#.XOX..#'+'#..#@..#'+'#..O.O.#'+'#X.##..#'+'#.####.#'+'#.X.O..#'+'########'},
+    {w:8,h:8,map:'########'+'#.X....#'+'#.###XX#'+'#.###..#'+'#.#@OO.#'+'#.#.O..#'+'#.X.O..#'+'########'},
+    {w:8,h:7,map:'########'+'#.XO.X.#'+'#XO##.X#'+'#@O.##O#'+'#.O.##.#'+'#...X..#'+'########'},
+    {w:8,h:8,map:'########'+'#..X...#'+'#..OO.O#'+'#.#...X#'+'#.####.#'+'#X####.#'+'#..@XO.#'+'########'},
+    {w:9,h:8,map:'#########'+'#..XX.O.#'+'#.#.#..X#'+'#@#.#...#'+'#.###O..#'+'#...#..O#'+'#.XO....#'+'#########'},
+    {w:9,h:8,map:'#########'+'#....XO.#'+'#OXO..#.#'+'#X.###..#'+'#.#.@#O.#'+'#..O#...#'+'#.X...X.#'+'#########'},
+    {w:8,h:7,map:'########'+'#.OX.X.#'+'#.O..#O#'+'#..###.#'+'#@O.##X#'+'#.XOX..#'+'########'},
+    {w:8,h:7,map:'########'+'#..X...#'+'#O.#O#.#'+'#X.XO..#'+'#.####.#'+'#.O..X@#'+'########'},
+    {w:8,h:8,map:'########'+'#.XO...#'+'#X##O#.#'+'#.X...X#'+'#.#.##.#'+'#.OO.#O#'+'#.@..X.#'+'########'},
+    {w:9,h:8,map:'#########'+'#@..XXO.#'+'#.#....X#'+'#...##O.#'+'#..#...O#'+'#.O#.##.#'+'#.....X.#'+'#########'},
+    {w:8,h:7,map:'########'+'#.X...@#'+'#O..##.#'+'#.OO.XO#'+'#X#.#.X#'+'#.X..O.#'+'########'}
   ];
+  function _skSparkle(){
+    var rect=gd.getBoundingClientRect();var cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+    var colors=['#c8a84b','#7ab356','#e8a050','#f0b870','#fff','#d4903a'];
+    for(var i=0;i<24;i++){
+      var sp=document.createElement('div');
+      var angle=Math.random()*Math.PI*2,dist=40+Math.random()*80,sz=4+Math.random()*6;
+      var dx=Math.cos(angle)*dist,dy=Math.sin(angle)*dist;
+      sp.style.cssText='position:fixed;left:'+(cx-sz/2)+'px;top:'+(cy-sz/2)+'px;width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+colors[i%colors.length]+';pointer-events:none;z-index:9999;opacity:1;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);box-shadow:0 0 6px '+colors[i%colors.length];
+      document.body.appendChild(sp);
+      setTimeout(function(s,x,y){s.style.transform='translate('+x+'px,'+y+'px) scale(0)';s.style.opacity='0'}.bind(null,sp,dx,dy),20);
+      setTimeout(function(s){if(s.parentNode)s.remove()}.bind(null,sp),900);
+    }
+    var cat=document.createElement('div');
+    cat.style.cssText='position:fixed;left:50%;top:'+cy+'px;transform:translate(-50%,-50%) scale(0);width:120px;height:120px;z-index:9998;pointer-events:none;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),opacity 0.3s;opacity:0';
+    cat.innerHTML='<img src="assets/games/sokoban/player-on-target.png" style="width:100%;height:100%;object-fit:contain" alt="">';
+    document.body.appendChild(cat);
+    setTimeout(function(){cat.style.transform='translate(-50%,-50%) scale(1)';cat.style.opacity='1'},30);
+    setTimeout(function(){cat.style.transform='translate(-50%,-50%) scale(0)';cat.style.opacity='0'},1200);
+    setTimeout(function(){if(cat.parentNode)cat.remove()},1600);
+  }
   var grid=[],origGrid=[],w=7,h=5,px=0,py=0,moves=0,lvl=parseInt(localStorage.getItem('sk_lvl')||'0',10);
   ms(a,'Level <strong id="SKl">1</strong> · Moves <strong id="SKm">0</strong>');mm(a);
   var gd=document.createElement('div');gd.className='skg';gd.id='SK';a.appendChild(gd);
@@ -35881,7 +35963,7 @@ function GSK(a){
     var won=true;for(var i=0;i<grid.length;i++)if(grid[i]===3)won=false;
     if(won&&grid.some(function(v){return v===4})){
       _e('game_win');_sr('sokoban',{w:true,s:moves});
-      if(lvl<LEVELS.length-1){_play('win');sm('🐱 Level '+(lvl+1)+' complete! '+moves+' moves');lvl++;localStorage.setItem('sk_lvl',String(lvl));setTimeout(function(){load();rn()},1500)}
+      if(lvl<LEVELS.length-1){_play('win');sm('🐱 Level '+(lvl+1)+' complete! '+moves+' moves');_skSparkle();lvl++;localStorage.setItem('sk_lvl',String(lvl));setTimeout(function(){load();rn()},2000)}
       else{_playWin();sm('🐱 All '+LEVELS.length+' levels complete! '+moves+' moves')}}}
   window._SKM=function(dx,dy){var nx=px+dx,ny=py+dy;if(nx<0||nx>=w||ny<0||ny>=h)return;var ni=ny*w+nx,nv=grid[ni];if(nv===1)return;
     if(nv===2||nv===4){var bx=nx+dx,by=ny+dy;if(bx<0||bx>=w||by<0||by>=h)return;var bi=by*w+bx,bv=grid[bi];if(bv===1||bv===2||bv===4)return;
