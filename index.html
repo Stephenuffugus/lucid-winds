@@ -36092,8 +36092,8 @@ function GPF(a){
   ms(a,'Score <strong id="PFs">0</strong> · Lines <strong id="PFl">0</strong> · Level <strong id="PFlv">1</strong>');mm(a);
 
   // Canvas setup
-  var row=document.createElement('div');row.style.cssText='display:flex;align-items:flex-start;gap:10px;justify-content:center;padding:4px';
-  boardCanvas=document.createElement('canvas');boardCanvas.style.cssText='display:block;border-radius:8px;border:2px solid rgba(74,124,53,0.2);box-shadow:0 4px 16px rgba(0,0,0,0.4)';
+  var row=document.createElement('div');row.style.cssText='display:flex;align-items:flex-start;gap:8px;justify-content:center;padding:4px;width:100%;overflow:hidden';
+  boardCanvas=document.createElement('canvas');boardCanvas.style.cssText='display:block;border-radius:8px;border:2px solid rgba(74,124,53,0.2);box-shadow:0 4px 16px rgba(0,0,0,0.4);flex-shrink:0';
   boardCtx=boardCanvas.getContext('2d');
   var side=document.createElement('div');side.style.cssText='display:flex;flex-direction:column;gap:8px;align-items:center';
   side.innerHTML='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:#4A7C35;letter-spacing:1px;opacity:0.5">NEXT</div>';
@@ -36117,8 +36117,10 @@ function GPF(a){
 
   function initCanvas(){
     dpr=window.devicePixelRatio||1;
-    var maxH=window.innerHeight-280;var maxW=window.innerWidth-20;
-    CELL=Math.floor(Math.min(maxW/(COLS+5),maxH/ROWS));CELL=Math.max(14,Math.min(CELL,26));
+    var maxH=window.innerHeight-300;
+    var rowRect=row.getBoundingClientRect();
+    var maxW=Math.min(rowRect.width||window.innerWidth,window.innerWidth)-16;
+    CELL=Math.floor(Math.min(maxW/(COLS+5),maxH/ROWS));CELL=Math.max(12,Math.min(CELL,24));
     boardCanvas.width=COLS*CELL*dpr;boardCanvas.height=ROWS*CELL*dpr;
     boardCanvas.style.width=(COLS*CELL)+'px';boardCanvas.style.height=(ROWS*CELL)+'px';
     boardCtx.setTransform(dpr,0,0,dpr,0,0);
