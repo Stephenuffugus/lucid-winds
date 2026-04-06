@@ -36139,15 +36139,34 @@ function GBW(a){
 
   // Drawing
   function toLocal(px2,py2){var r=canvas.getBoundingClientRect();var x=px2-r.left,y=py2-r.top;var dx=x-cx,dy=y-cy;var c=Math.cos(-rotAngle),s=Math.sin(-rotAngle);return{x:dx*c-dy*s+cx,y:dx*s+dy*c+cy}}
+  function _drawLine(ax,ay,bx,by){bufX.beginPath();bufX.moveTo(ax,ay);bufX.lineTo(bx,by);bufX.stroke()}
+  function _rot(px2,py2,a){var co=Math.cos(a),sn=Math.sin(a);return{x:(px2-cx)*co-(py2-cy)*sn+cx,y:(px2-cx)*sn+(py2-cy)*co+cy}}
+  function _mirX(px2,py2){return{x:-(px2-cx)+cx,y:py2}}
+  function _mirY(px2,py2){return{x:px2,y:-(py2-cy)+cy}}
   function drawSym(x1,y1,x2,y2){
     var dist=Math.sqrt((x1-cx)*(x1-cx)+(y1-cy)*(y1-cy));var color=getColor(colorPh,dist);var sz=brushSize*(0.5+dist/radius*0.8);
     bufX.lineWidth=sz;bufX.lineCap='round';bufX.lineJoin='round';bufX.strokeStyle=color;
+    var mode=_bwMirrors[_bwMirrorIdx];
     var step=(Math.PI*2)/symmetry;
-    for(var i=0;i<symmetry;i++){var aa=step*i,co=Math.cos(aa),sn=Math.sin(aa);
-      var rx1=(x1-cx)*co-(y1-cy)*sn+cx,ry1=(x1-cx)*sn+(y1-cy)*co+cy;
-      var rx2=(x2-cx)*co-(y2-cy)*sn+cx,ry2=(x2-cx)*sn+(y2-cy)*co+cy;
-      bufX.beginPath();bufX.moveTo(rx1,ry1);bufX.lineTo(rx2,ry2);bufX.stroke();
-      if(i%2===0){var mx1=-(x1-cx)*co-(y1-cy)*sn+cx,my1=-(x1-cx)*sn+(y1-cy)*co+cy;var mx2=-(x2-cx)*co-(y2-cy)*sn+cx,my2=-(x2-cx)*sn+(y2-cy)*co+cy;bufX.beginPath();bufX.moveTo(mx1,my1);bufX.lineTo(mx2,my2);bufX.stroke()}
+    if(mode==='radial'){
+      for(var i=0;i<symmetry;i++){var r1=_rot(x1,y1,step*i),r2=_rot(x2,y2,step*i);_drawLine(r1.x,r1.y,r2.x,r2.y)}
+    }else if(mode==='kaleidoscope'){
+      for(var i=0;i<symmetry;i++){var r1=_rot(x1,y1,step*i),r2=_rot(x2,y2,step*i);_drawLine(r1.x,r1.y,r2.x,r2.y);
+        var m1=_mirX(x1,y1),m2=_mirX(x2,y2);var rm1=_rot(m1.x,m1.y,step*i),rm2=_rot(m2.x,m2.y,step*i);_drawLine(rm1.x,rm1.y,rm2.x,rm2.y)}
+    }else if(mode==='horizontal'){
+      _drawLine(x1,y1,x2,y2);var m1=_mirX(x1,y1),m2=_mirX(x2,y2);_drawLine(m1.x,m1.y,m2.x,m2.y);
+    }else if(mode==='quad'){
+      _drawLine(x1,y1,x2,y2);
+      var mx1=_mirX(x1,y1),mx2=_mirX(x2,y2);_drawLine(mx1.x,mx1.y,mx2.x,mx2.y);
+      var my1=_mirY(x1,y1),my2=_mirY(x2,y2);_drawLine(my1.x,my1.y,my2.x,my2.y);
+      var mb1=_mirY(mx1.x,mx1.y),mb2=_mirY(mx2.x,mx2.y);_drawLine(mb1.x,mb1.y,mb2.x,mb2.y);
+    }else{
+      // mandala — radial + alternating reflection (original)
+      for(var i=0;i<symmetry;i++){var aa=step*i,co=Math.cos(aa),sn=Math.sin(aa);
+        var rx1=(x1-cx)*co-(y1-cy)*sn+cx,ry1=(x1-cx)*sn+(y1-cy)*co+cy;
+        var rx2=(x2-cx)*co-(y2-cy)*sn+cx,ry2=(x2-cx)*sn+(y2-cy)*co+cy;
+        _drawLine(rx1,ry1,rx2,ry2);
+        if(i%2===0){var mmx1=-(x1-cx)*co-(y1-cy)*sn+cx,mmy1=-(x1-cx)*sn+(y1-cy)*co+cy;var mmx2=-(x2-cx)*co-(y2-cy)*sn+cx,mmy2=-(x2-cx)*sn+(y2-cy)*co+cy;_drawLine(mmx1,mmy1,mmx2,mmy2)}}
     }
   }
   function gtp(e){return e.touches&&e.touches.length?{x:e.touches[0].clientX,y:e.touches[0].clientY}:{x:e.clientX,y:e.clientY}}
@@ -36200,6 +36219,9 @@ function GBW(a){
   var _bwPaths=['circle','wave','figure8','breathe','custom'];
   var _bwPathIdx=0,_bwCustomPath=[],_bwDrawingPath=false,_bwPathT=0;
   var _bwUserColor=null; // null = auto palette
+  // Mirror modes
+  var _bwMirrors=['mandala','radial','kaleidoscope','horizontal','quad'];
+  var _bwMirrorIdx=0;
 
   var _bbs='min-height:48px;padding:0.4rem 0.6rem;font-size:clamp(.5rem,1.4vw,.65rem)';
   var ctrlDiv=mc(a);
@@ -36211,6 +36233,7 @@ function GBW(a){
     +'<button class="gb" style="'+_bbs+'" onclick="_BWBpm(10)">BPM+</button>'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWMusic()" id="BWmus">♫ OFF</button>'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWBrush()" id="BWbr">● 3</button>'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWMirror()" id="BWmir">✿ MANDALA</button>'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWPath()" id="BWpath">◯ CIRCLE</button>'
     +'<input type="color" id="BWcolor" value="#7ab356" style="width:36px;height:36px;border:2px solid rgba(74,124,53,.3);border-radius:8px;background:none;cursor:pointer;padding:0" onchange="_BWColor(this.value)" title="Pick color">'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWAutoColor()" id="BWac">🎨 AUTO</button>'
@@ -36229,6 +36252,11 @@ function GBW(a){
   window._BWBrush=function(){brushIdx=(brushIdx+1)%brushSizes.length;brushSize=brushSizes[brushIdx];document.getElementById('BWbr').textContent='● '+Math.round(brushSize)};
   window._BWColor=function(c){_bwUserColor=c;var acBtn=document.getElementById('BWac');if(acBtn){acBtn.className='gb';acBtn.textContent='🎨 FIXED'}};
   window._BWAutoColor=function(){_bwUserColor=_bwUserColor?null:document.getElementById('BWcolor').value;var acBtn=document.getElementById('BWac');if(acBtn){acBtn.className='gb'+(_bwUserColor?'':' gon');acBtn.textContent=_bwUserColor?'🎨 FIXED':'🎨 AUTO'}};
+  window._BWMirror=function(){
+    _bwMirrorIdx=(_bwMirrorIdx+1)%_bwMirrors.length;
+    var names={mandala:'✿ MANDALA',radial:'❋ RADIAL',kaleidoscope:'◆ KALEIDOSCOPE',horizontal:'↔ MIRROR',quad:'✦ QUAD'};
+    document.getElementById('BWmir').textContent=names[_bwMirrors[_bwMirrorIdx]];
+  };
   window._BWPath=function(){
     _bwPathIdx=(_bwPathIdx+1)%_bwPaths.length;_bwPathT=0;
     var names={circle:'◯ CIRCLE',wave:'〰 WAVE',figure8:'∞ FIGURE 8',breathe:'◈ BREATHE',custom:'✏ DRAW PATH'};
