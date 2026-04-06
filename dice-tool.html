@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dice Crop Tool</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#111;color:#e8dcc8;font-family:system-ui;padding:20px}
+h1{font-size:18px;color:#c8a84b;margin-bottom:10px}
+.ref{display:flex;gap:8px;margin-bottom:16px;align-items:center}
+.ref img{width:80px;height:80px;border-radius:10px;border:2px solid #4a7c35;object-fit:cover}
+.ref span{font-size:12px;color:#7ab356}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.controls button{padding:10px 16px;background:#1a1f17;border:1.5px solid #4a7c35;color:#e8dcc8;border-radius:8px;font-size:14px;cursor:pointer;min-width:48px;min-height:48px}
+.controls button:active{background:#2a3a22}
+.controls input{width:60px;padding:8px;background:#1a1f17;border:1px solid #4a7c35;color:#e8dcc8;border-radius:6px;font-size:14px;text-align:center}
+.preview{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.die-box{text-align:center}
+.die-box canvas{border:2px solid #4a7c35;border-radius:10px;background:#0d100c}
+.die-box div{font-size:11px;color:#8a9178;margin-top:4px}
+.info{font-family:monospace;font-size:12px;color:#7ab356;margin-bottom:12px}
+.save-btn{padding:12px 24px;background:#4a7c35;border:none;color:#fff;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;margin-top:8px}
+.save-btn:active{background:#5a8a3a}
+.step-label{font-size:12px;color:#8a9178;align-self:center}
+</style>
+</head>
+<body>
+<h1>Dice 5 & 6 Crop Tool</h1>
+<p style="font-size:12px;color:#8a9178;margin-bottom:12px">Reference — dice 1 (the good one):</p>
+<div class="ref">
+<img src="assets/dice/d1.png" alt="dice 1 reference">
+<span>Target: match this framing</span>
+</div>
+
+<div class="info" id="info">Offset: X=0 Y=0 (from base 107,107-403,403)</div>
+
+<div class="controls">
+<span class="step-label">Step:</span>
+<input type="number" id="step" value="10" min="1" max="50">
+<span class="step-label">px</span>
+</div>
+<div class="controls">
+<button onclick="move(0,-1)">⬆ UP</button>
+<button onclick="move(0,1)">⬇ DOWN</button>
+<button onclick="move(-1,0)">⬅ LEFT</button>
+<button onclick="move(1,0)">➡ RIGHT</button>
+<button onclick="ox=0;oy=0;render()" style="border-color:#c8a84b;color:#c8a84b">RESET</button>
+</div>
+
+<div class="preview" id="preview"></div>
+<button class="save-btn" onclick="save()">APPLY & DEPLOY</button>
+<div id="status" style="margin-top:8px;font-size:12px;color:#c8a84b"></div>
+
+<script>
+var BASE_L=107,BASE_T=107,BASE_R=403,BASE_B=403;
+var ox=0,oy=0;
+var imgs={};
+var SIZE=296;
+
+function loadImg(n,cb){
+  var img=new Image();
+  img.crossOrigin='anonymous';
+  img.onload=function(){imgs[n]=img;cb()};
+  img.src='assets/dice/dice-'+n+'.png?t='+Date.now();
+}
+
+var loaded=0;
+[1,5,6].forEach(function(n){
+  loadImg(n,function(){loaded++;if(loaded===3)render()});
+});
+
+function move(dx,dy){
+  var step=parseInt(document.getElementById('step').value)||10;
+  ox+=dx*step;
+  oy+=dy*step;
+  render();
+}
+
+function render(){
+  document.getElementById('info').textContent='Offset: X='+ox+' Y='+oy+' | Crop: ('+(BASE_L+ox)+','+(BASE_T+oy)+')-('+(BASE_R+ox)+','+(BASE_B+oy)+')';
+  var wrap=document.getElementById('preview');
+  wrap.innerHTML='';
+  [1,5,6].forEach(function(n){
+    var box=document.createElement('div');
+    box.className='die-box';
+    var c=document.createElement('canvas');
+    c.width=SIZE;c.height=SIZE;
+    c.style.width='120px';c.style.height='120px';
+    var ctx=c.getContext('2d');
+    if(n===1){
+      ctx.drawImage(imgs[1],BASE_L,BASE_T,SIZE,SIZE,0,0,SIZE,SIZE);
+    }else{
+      ctx.drawImage(imgs[n],BASE_L+ox,BASE_T+oy,SIZE,SIZE,0,0,SIZE,SIZE);
+    }
+    box.appendChild(c);
+    var lbl=document.createElement('div');
+    lbl.textContent=n===1?'Dice 1 (reference)':'Dice '+n+' (adjusting)';
+    box.appendChild(lbl);
+    wrap.appendChild(box);
+  });
+}
+
+function save(){
+  var status=document.getElementById('status');
+  status.textContent='Saving...';
+  var data=JSON.stringify({ox:ox,oy:oy});
+  fetch('/apply-dice-crop',{method:'POST',headers:{'Content-Type':'application/json'},body:data})
+  .then(function(r){return r.text()})
+  .then(function(t){status.textContent=t})
+  .catch(function(){
+    status.textContent='Copy this to Claude: OFFSET X='+ox+' Y='+oy+' | Crop: ('+(BASE_L+ox)+','+(BASE_T+oy)+')-('+(BASE_R+ox)+','+(BASE_B+oy)+')';
+  });
+}
+</script>
+</body>
+</html>
