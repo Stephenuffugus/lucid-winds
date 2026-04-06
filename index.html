@@ -1124,14 +1124,13 @@
     .cs-flip-wrap.flipped .cs-flip-inner{transform:rotateY(180deg);}
     .cs-card-face{backface-visibility:hidden;-webkit-backface-visibility:hidden;position:absolute;inset:0;display:flex;flex-direction:column;box-sizing:border-box;border-radius:12px;overflow:hidden;will-change:transform;transform:translateZ(0);}
     .cs-card-front{position:absolute;inset:0;border-radius:12px;display:grid;grid-template-rows:18.4% 1fr 20%;box-sizing:border-box;padding:8% 8% 15%;background-color:#050505;background-size:96%;background-position:center;background-repeat:no-repeat;overflow:hidden;}
-    .cs-card-front>*{position:relative;z-index:2;}
     .cs-card-back{transform:rotateY(180deg);padding:10% 8% 6%;overflow-y:auto;-webkit-overflow-scrolling:touch;background-color:#050505;background-size:174%;background-position:center;background-repeat:no-repeat;}
     .cs-flip-hint{font-family:'DM Mono',monospace;font-size:0.35rem;color:rgba(122,179,86,0.35);text-align:center;position:absolute;bottom:4%;left:0;right:0;}
-    .cs-card-front[data-season="spring"]{background-image:url('assets/cards/fronts/card-front-spring-same.png');}
-    .cs-card-front[data-season="summer"]{background-image:url('assets/cards/fronts/card-front-summer-same.png');}
+    .cs-card-front[data-season="spring"]{background-image:url('assets/cards/fronts/front-spring.png');}
+    .cs-card-front[data-season="summer"]{background-image:url('assets/cards/fronts/front-summer.png');}
     .cs-card-front[data-season="summer"] .cf-haiku-zone{padding-top:0;}
-    .cs-card-front[data-season="autumn"]{background-image:url('assets/cards/fronts/card-front-autumn-same.png');}
-    .cs-card-front[data-season="winter"]{background-image:url('assets/cards/fronts/card-front-winter-same.png');}
+    .cs-card-front[data-season="autumn"]{background-image:url('assets/cards/fronts/front-autumn.png');}
+    .cs-card-front[data-season="winter"]{background-image:url('assets/cards/fronts/front-winter.png');}
     .cs-card-back[data-tier="common"]{background-image:url('assets/cards/backs/back-common.png');background-size:112% 101%;}
     .cs-card-back[data-tier="uncommon"]{background-image:url('assets/cards/backs/back-uncommon.png');}
     .cs-card-back[data-tier="rare"]{background-image:url('assets/cards/backs/back-rare.png');background-size:103% 99%;}
@@ -2126,18 +2125,19 @@
     .greenhouse-plant:hover{transform:translateY(-2px);filter:brightness(1.2);box-shadow:0 0 24px rgba(180,140,60,0.15),0 4px 12px rgba(0,0,0,0.3);}
     .greenhouse-plant.gh-new{box-shadow:0 0 16px rgba(200,168,75,0.25),0 0 4px rgba(200,168,75,0.15),0 2px 6px rgba(0,0,0,0.4);animation:_ghNewPulse 3s ease-in-out infinite;}
     .greenhouse-plant.gh-new::after{content:'NEW';position:absolute;top:4px;left:4px;font-family:'Bebas Neue',sans-serif;font-size:0.25rem;letter-spacing:0.06em;color:#0d100c;background:var(--gold);padding:1px 4px;border-radius:3px;z-index:5;}
-    .greenhouse-plant.season-spring{background-image:url('assets/cards/fronts/card-front-spring-same.png');}
-    .greenhouse-plant.season-summer{background-image:url('assets/cards/fronts/card-front-summer-same.png');}
-    .greenhouse-plant.season-autumn{background-image:url('assets/cards/fronts/card-front-autumn-same.png');}
-    .greenhouse-plant.season-winter{background-image:url('assets/cards/fronts/card-front-winter-same.png');}
+    .greenhouse-plant.season-spring{background-image:url('assets/cards/fronts/card-front-spring.png');}
+    .greenhouse-plant.season-summer{background-image:url('assets/cards/fronts/card-front-summer.png');}
+    .greenhouse-plant.season-autumn{background-image:url('assets/cards/fronts/card-front-autumn.png');}
+    .greenhouse-plant.season-winter{background-image:url('assets/cards/fronts/card-front-winter.png');}
     /* ═══ CHIMERA DUAL-SEASON CARDS ═══
-       Layer stack: season B full border (base) → season A top-half (::after) → card content
-       Top-half PNGs have alpha transparency — the cutout IS the mask, no clip-path needed */
+       Diagonal cut: season A (top-left) / season B (bottom-right)
+       Cut line: 55px below top-right → 55px above bottom-left */
     .greenhouse-plant.chimera-dual{border:3px solid;border-image:none;position:relative;}
-    /* Season A top-half overlay — alpha-transparent cutout sits on top of full season B border */
+    /* Season A overlay: top-left half of the card, clipped diagonally */
     .greenhouse-plant.chimera-dual::after{
       content:'';position:absolute;inset:0;border-radius:6px;pointer-events:none;z-index:1;
       background-size:cover;background-position:center;background-repeat:no-repeat;
+      clip-path:polygon(0 0, 100% 0, 100% 55px, 0 calc(100% - 55px));
     }
     /* Border colors: top+left = season A, right+bottom = season B */
     .chimera-dual.dual-sp-su{border-color:#E8A0BF;border-right-color:#D4A843;border-bottom-color:#D4A843;}
@@ -2152,34 +2152,35 @@
     .chimera-dual.dual-wi-sp{border-color:#A0C4E8;border-right-color:#E8A0BF;border-bottom-color:#E8A0BF;}
     .chimera-dual.dual-wi-su{border-color:#A0C4E8;border-right-color:#D4A843;border-bottom-color:#D4A843;}
     .chimera-dual.dual-wi-au{border-color:#A0C4E8;border-right-color:#D4842A;border-bottom-color:#D4842A;}
-    /* Season A top-half overlay (alpha cutout) — greenhouse grid */
-    .chimera-dual.dual-sp-su::after,.chimera-dual.dual-sp-au::after,.chimera-dual.dual-sp-wi::after{background-image:url('assets/cards/fronts/card-front-spring-top-half.png');}
-    .chimera-dual.dual-su-sp::after,.chimera-dual.dual-su-au::after,.chimera-dual.dual-su-wi::after{background-image:url('assets/cards/fronts/card-front-summer-top-half.png');}
-    .chimera-dual.dual-au-sp::after,.chimera-dual.dual-au-su::after,.chimera-dual.dual-au-wi::after{background-image:url('assets/cards/fronts/card-front-autumn-top-half.png');}
-    .chimera-dual.dual-wi-sp::after,.chimera-dual.dual-wi-su::after,.chimera-dual.dual-wi-au::after{background-image:url('assets/cards/fronts/card-front-winter-top-half.png');}
-    /* Season B full border on the base element — shows through the alpha cutout */
-    .chimera-dual.dual-sp-su,.chimera-dual.dual-au-su,.chimera-dual.dual-wi-su{background-image:url('assets/cards/fronts/card-front-summer-same.png')!important;}
-    .chimera-dual.dual-sp-au,.chimera-dual.dual-su-au,.chimera-dual.dual-wi-au{background-image:url('assets/cards/fronts/card-front-autumn-same.png')!important;}
-    .chimera-dual.dual-sp-wi,.chimera-dual.dual-su-wi,.chimera-dual.dual-au-wi{background-image:url('assets/cards/fronts/card-front-winter-same.png')!important;}
-    .chimera-dual.dual-su-sp,.chimera-dual.dual-au-sp,.chimera-dual.dual-wi-sp{background-image:url('assets/cards/fronts/card-front-spring-same.png')!important;}
-    /* Carousel chimera dual borders */
+    /* Season A background overlay per combo — top-left diagonal half */
+    .chimera-dual.dual-sp-su::after,.chimera-dual.dual-sp-au::after,.chimera-dual.dual-sp-wi::after{background-image:url('assets/cards/fronts/card-front-spring.png');}
+    .chimera-dual.dual-su-sp::after,.chimera-dual.dual-su-au::after,.chimera-dual.dual-su-wi::after{background-image:url('assets/cards/fronts/card-front-summer.png');}
+    .chimera-dual.dual-au-sp::after,.chimera-dual.dual-au-su::after,.chimera-dual.dual-au-wi::after{background-image:url('assets/cards/fronts/card-front-autumn.png');}
+    .chimera-dual.dual-wi-sp::after,.chimera-dual.dual-wi-su::after,.chimera-dual.dual-wi-au::after{background-image:url('assets/cards/fronts/card-front-winter.png');}
+    /* Season B background on the base element — bottom-right half shows through */
+    .chimera-dual.dual-sp-su,.chimera-dual.dual-au-su,.chimera-dual.dual-wi-su{background-image:url('assets/cards/fronts/card-front-summer.png')!important;}
+    .chimera-dual.dual-sp-au,.chimera-dual.dual-su-au,.chimera-dual.dual-wi-au{background-image:url('assets/cards/fronts/card-front-autumn.png')!important;}
+    .chimera-dual.dual-sp-wi,.chimera-dual.dual-su-wi,.chimera-dual.dual-au-wi{background-image:url('assets/cards/fronts/card-front-winter.png')!important;}
+    .chimera-dual.dual-su-sp,.chimera-dual.dual-au-sp,.chimera-dual.dual-wi-sp{background-image:url('assets/cards/fronts/card-front-spring.png')!important;}
+    /* Carousel chimera dual borders + diagonal cut */
     .cs-flip-wrap.chimera-dual{border:3px solid;border-radius:12px;}
     .cs-flip-wrap.chimera-dual .cs-card-face{border:none;}
-    /* Carousel dual fronts: season A top-half over season B full border */
+    /* Carousel dual fronts: season A clipped on top, season B base */
     .cs-card-front[data-dual]::after{
       content:'';position:absolute;inset:0;border-radius:10px;pointer-events:none;z-index:1;
       background-size:cover;background-position:center;background-repeat:no-repeat;
+      clip-path:polygon(0 0, 100% 0, 100% 55px, 0 calc(100% - 55px));
     }
-    /* Season A top-half overlay — carousel */
-    .cs-card-front[data-dual^="dual-sp"]::after{background-image:url('assets/cards/fronts/card-front-spring-top-half.png');}
-    .cs-card-front[data-dual^="dual-su"]::after{background-image:url('assets/cards/fronts/card-front-summer-top-half.png');}
-    .cs-card-front[data-dual^="dual-au"]::after{background-image:url('assets/cards/fronts/card-front-autumn-top-half.png');}
-    .cs-card-front[data-dual^="dual-wi"]::after{background-image:url('assets/cards/fronts/card-front-winter-top-half.png');}
-    /* Season B full border base — carousel */
-    .cs-card-front[data-dual$="-su"]{background-image:url('assets/cards/fronts/card-front-summer-same.png')!important;}
-    .cs-card-front[data-dual$="-au"]{background-image:url('assets/cards/fronts/card-front-autumn-same.png')!important;}
-    .cs-card-front[data-dual$="-wi"]{background-image:url('assets/cards/fronts/card-front-winter-same.png')!important;}
-    .cs-card-front[data-dual$="-sp"]{background-image:url('assets/cards/fronts/card-front-spring-same.png')!important;}
+    /* Season A overlay (top-left diagonal) */
+    .cs-card-front[data-dual^="dual-sp"]::after{background-image:url('assets/cards/fronts/front-spring.png');}
+    .cs-card-front[data-dual^="dual-su"]::after{background-image:url('assets/cards/fronts/front-summer.png');}
+    .cs-card-front[data-dual^="dual-au"]::after{background-image:url('assets/cards/fronts/front-autumn.png');}
+    .cs-card-front[data-dual^="dual-wi"]::after{background-image:url('assets/cards/fronts/front-winter.png');}
+    /* Season B base (bottom-right — override the single-season background) */
+    .cs-card-front[data-dual$="-su"]{background-image:url('assets/cards/fronts/front-summer.png')!important;}
+    .cs-card-front[data-dual$="-au"]{background-image:url('assets/cards/fronts/front-autumn.png')!important;}
+    .cs-card-front[data-dual$="-wi"]{background-image:url('assets/cards/fronts/front-winter.png')!important;}
+    .cs-card-front[data-dual$="-sp"]{background-image:url('assets/cards/fronts/front-spring.png')!important;}
     /* ═══ CARD BACK: Rarity frames (used in carousel flip) ═══ */
     .card-back-common{background-image:url('assets/cards/backs/back-common.png');}
     .card-back-uncommon{background-image:url('assets/cards/backs/back-uncommon.png');}
@@ -2189,9 +2190,9 @@
     .card-back-mythic{background-image:url('assets/cards/backs/back-mythic.png');}
     .card-back-cosmic{background-image:url('assets/cards/backs/back-cosmic.png');}
     .card-back-common,.card-back-uncommon,.card-back-rare,.card-back-epic,.card-back-legendary,.card-back-mythic,.card-back-cosmic{background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#050505;}
-    .greenhouse-plant svg{margin:0 auto;display:block;position:relative;z-index:2;}
-    .greenhouse-plant .gh-hash{font-family:'DM Mono',monospace;font-size:0.38rem;color:var(--muted);margin-top:0.1rem;opacity:0.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;position:relative;z-index:2;}
-    .greenhouse-plant .gh-name{font-family:'Playfair Display',serif;font-size:0.48rem;font-weight:700;letter-spacing:0.02em;margin-top:0.15rem;line-height:1.15;text-align:center;max-height:2.2em;overflow:hidden;position:relative;z-index:2;}
+    .greenhouse-plant svg{margin:0 auto;display:block;}
+    .greenhouse-plant .gh-hash{font-family:'DM Mono',monospace;font-size:0.38rem;color:var(--muted);margin-top:0.1rem;opacity:0.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .greenhouse-plant .gh-name{font-family:'Playfair Display',serif;font-size:0.48rem;font-weight:700;letter-spacing:0.02em;margin-top:0.15rem;line-height:1.15;text-align:center;max-height:2.2em;overflow:hidden;}
     .greenhouse-plant .gh-name .np-top{display:none;}
     .greenhouse-plant .gh-name .np-title{display:none;}
     .gh-grid-selector{display:flex;gap:0.25rem;margin-bottom:0.3rem;}
