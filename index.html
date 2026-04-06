@@ -36258,20 +36258,20 @@ function GBW(a){
     document.getElementById('BWs8').className='gb'+(n===8?' gon':'');
     document.getElementById('BWs12').className='gb'+(n===12?' gon':'')};
   window._BWBpm=function(d){bpm=Math.max(50,Math.min(160,bpm+d));beatInt=60/bpm;document.getElementById('BWbpm').textContent=bpm+' BPM'};
-  window._BWMusic=function(){musicOn=!musicOn;document.getElementById('BWmus').textContent=musicOn?'♫ ON':'♫ OFF';
+  window._BWMusic=function(){musicOn=!musicOn;var btn=document.getElementById('BWmus');if(btn){btn.textContent=musicOn?'♫ ON':'♫ OFF';btn.className='gb'+(musicOn?' gon':'')}
     if(musicOn){if(!aCtx)initAudio();else{nextBT=aCtx.currentTime+0.1;scheduleBeat()}}
     if(!musicOn&&schTimer)clearTimeout(schTimer);if(mGain)mGain.gain.value=musicOn?0.3:0};
-  window._BWBrush=function(){brushIdx=(brushIdx+1)%brushSizes.length;brushSize=brushSizes[brushIdx];document.getElementById('BWbr').textContent='● '+Math.round(brushSize)};
+  window._BWBrush=function(){brushIdx=(brushIdx+1)%brushSizes.length;brushSize=brushSizes[brushIdx];var btn=document.getElementById('BWbr');if(btn)btn.textContent='● '+Math.round(brushSize)};
   window._BWColor=function(c){_bwUserColor=c;var as=document.getElementById('BWautoSw');if(as){as.style.borderColor='rgba(0,0,0,0.3)';as.style.transform='scale(1)'}};
   window._BWMirror=function(){
     _bwMirrorIdx=(_bwMirrorIdx+1)%_bwMirrors.length;
     var names={mandala:'✿ MANDALA',radial:'❋ RADIAL',kaleidoscope:'◆ KALEIDOSCOPE',horizontal:'↔ MIRROR',quad:'✦ QUAD'};
-    document.getElementById('BWmir').textContent=names[_bwMirrors[_bwMirrorIdx]];
+    var btn=document.getElementById('BWmir');if(btn){btn.textContent=names[_bwMirrors[_bwMirrorIdx]];btn.className='gb gon'}
   };
   window._BWPath=function(){
     _bwPathIdx=(_bwPathIdx+1)%_bwPaths.length;_bwPathT=0;
     var p=_bwPaths[_bwPathIdx];
-    document.getElementById('BWpath').textContent=p==='circle'?'◯ SPIN':'✏ DRAW PATH';
+    var btn=document.getElementById('BWpath');if(btn){btn.textContent=p==='circle'?'◯ SPIN':'✏ DRAW PATH';btn.className='gb'+(p==='custom'?' gon':'')}
     if(p==='custom'){_bwCustomPath=[];_bwDrawingPath=true;sm('Draw a path on canvas, then tap DRAW PATH again')}
     else{_bwDrawingPath=false;cx=W/2;cy=H/2}
   };
