@@ -32492,6 +32492,11 @@ function mc(a){var d=document.createElement('div');d.className='gcr';a.appendChi
 
 // ═══ PICKER ═══
 function _bp(){var p=document.getElementById('fg-pk');if(!p)return;p.innerHTML='';
+  // Current game chip — FIRST so active game is always visible
+  var cur=null;for(var i=0;i<G.length;i++)if(G[i].id===_a){cur=G[i];break}
+  if(cur){var cc=document.createElement('div');cc.className='fg-c on';cc.setAttribute('data-g',cur.id);
+    cc.innerHTML='<span class="fi">'+cur.i+'</span><span class="fn">'+cur.n.toUpperCase()+'</span>';
+    cc.addEventListener('click',function(){_sg(cur.id)});p.appendChild(cc);}
   // ALL GAMES button
   var allBtn=document.createElement('div');allBtn.className='fg-c';allBtn.style.cssText='background:linear-gradient(145deg,rgba(200,168,75,0.12),rgba(200,168,75,0.04));border-color:rgba(200,168,75,0.2);';
   allBtn.innerHTML='<span class="fi">\ud83c\udfae</span><span class="fn" style="color:var(--gold);">ALL GAMES</span>';
@@ -32504,11 +32509,6 @@ function _bp(){var p=document.getElementById('fg-pk');if(!p)return;p.innerHTML='
     c.innerHTML='<span class="fi">'+cat.icon+'</span><span class="fn">'+cat.label+'</span>';
     c.addEventListener('click',function(){_opCat(cat.key)});p.appendChild(c);
   });
-  // Current game chip
-  var cur=null;for(var i=0;i<G.length;i++)if(G[i].id===_a){cur=G[i];break}
-  if(cur){var cc=document.createElement('div');cc.className='fg-c on';cc.setAttribute('data-g',cur.id);
-    cc.innerHTML='<span class="fi">'+cur.i+'</span><span class="fn">'+cur.n.toUpperCase()+'</span>';
-    cc.addEventListener('click',function(){_sg(cur.id)});p.appendChild(cc);}
   // Science button
   var sciBtn=document.createElement('div');sciBtn.className='fg-c';sciBtn.innerHTML='<span class="fi">\ud83d\udd2c</span><span class="fn">SCIENCE</span>';
   sciBtn.addEventListener('click',_os);p.appendChild(sciBtn);}
@@ -34650,7 +34650,7 @@ function GSP(a){
   var tab=[],stock=[],completed=0,sel=null,gameOver=false,moves=0,suits=1;
   ms(a,'Runs: <strong id="SPrn">0</strong>/8 · Moves: <strong id="SPmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='SPgd';a.appendChild(gd);
-  mc(a).innerHTML='<select class="gsl" id="SPsuit" onchange="_SPS(this.value)"><option value="1" selected>1 Suit</option><option value="2">2 Suits</option><option value="4">4 Suits</option></select> <button class="gb-new" onclick="_SPN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  mc(a).innerHTML='<div style="display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;"><div style="position:relative;display:inline-block;" id="sp-suit-wrap"><button onclick="var m=document.getElementById(\'sp-suit-menu\');m.style.display=m.style.display===\'flex\'?\'none\':\'flex\'" style="width:clamp(56px,16vw,72px);height:clamp(72px,20vw,92px);border-radius:8px;border:2px solid rgba(200,168,75,0.3);cursor:pointer;background:url(\'assets/games/cards/playing-card-backs.png\') center/cover;box-shadow:0 3px 12px rgba(0,0,0,0.4);position:relative;overflow:hidden;"><span style="position:absolute;bottom:3px;left:0;right:0;font-family:Bebas Neue,sans-serif;font-size:clamp(0.5rem,1.5vw,0.65rem);color:var(--gold);text-shadow:0 1px 4px #000,0 0 8px #000;letter-spacing:0.08em;">SUITS</span></button><div id="sp-suit-menu" style="display:none;flex-direction:column;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:rgba(18,24,16,0.95);border:1.5px solid rgba(200,168,75,0.25);border-radius:10px;padding:6px;gap:4px;z-index:200;box-shadow:0 4px 20px rgba(0,0,0,0.5);backdrop-filter:blur(8px);min-width:120px;"><button onclick="_SPS(1);document.getElementById(\'sp-suit-menu\').style.display=\'none\'" style="padding:10px 16px;border:none;border-radius:6px;background:rgba(74,124,53,0.15);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.75rem;cursor:pointer;text-align:left;min-height:44px;">🍄 1 Suit</button><button onclick="_SPS(2);document.getElementById(\'sp-suit-menu\').style.display=\'none\'" style="padding:10px 16px;border:none;border-radius:6px;background:rgba(74,124,53,0.15);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.75rem;cursor:pointer;text-align:left;min-height:44px;">🍄🌸 2 Suits</button><button onclick="_SPS(4);document.getElementById(\'sp-suit-menu\').style.display=\'none\'" style="padding:10px 16px;border:none;border-radius:6px;background:rgba(74,124,53,0.15);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.75rem;cursor:pointer;text-align:left;min-height:44px;">🍄🌸🐝🐦 4 Suits</button></div></div><button class="gb-new" onclick="_SPN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button></div>';
 
   function mkDeck(){
     var d=[];
