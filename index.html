@@ -35886,9 +35886,10 @@ function GSK(a){
       gd.appendChild(d)}
     document.getElementById('SKm').textContent=moves;
     var won=true;for(var i=0;i<grid.length;i++)if(grid[i]===3)won=false;
-    if(won&&grid.some(function(v){return v===4})){_e('game_win');_playWin();
-      if(lvl<LEVELS.length-1){sm('🌿 Garden '+(lvl+1)+' complete! '+moves+' moves');_sr('sokoban',{w:true,s:moves});lvl++;setTimeout(function(){load();rn()},1500)}
-      else{sm('🌿 All gardens complete! '+moves+' moves');_sr('sokoban',{w:true,s:moves})}}}
+    if(won&&grid.some(function(v){return v===4})){
+      _e('game_win');_sr('sokoban',{w:true,s:moves});
+      if(lvl<LEVELS.length-1){_play('win');sm('🐱 Level '+(lvl+1)+' complete! '+moves+' moves');lvl++;setTimeout(function(){load();rn()},1500)}
+      else{_playWin();sm('🐱 All 75 levels complete! '+moves+' moves')}}}
   window._SKM=function(dx,dy){var nx=px+dx,ny=py+dy;if(nx<0||nx>=w||ny<0||ny>=h)return;var ni=ny*w+nx,nv=grid[ni];if(nv===1)return;
     if(nv===2||nv===4){var bx=nx+dx,by=ny+dy;if(bx<0||bx>=w||by<0||by>=h)return;var bi=by*w+bx,bv=grid[bi];if(bv===1||bv===2||bv===4)return;
       _play('drop');grid[ni]=(nv===4)?3:0;grid[bi]=(bv===3)?4:2;if(bv===3)_e('progress')}else{_play('tap')}
