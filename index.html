@@ -35802,20 +35802,9 @@ function GSK(a){
     target:tile('target'),wall:tile('wall'),floor:tile('floor'),
     playerOnTarget:tile('playerOnTarget')
   };
-  // ── 75 LEVELS — 5 tiers of progressive difficulty ──
+  // ── 65 LEVELS — starts at 2 crates, progressive difficulty ──
   var LEVELS=[
-    // === TIER 1: BEGINNER (1-2 crates) ===
-    {w:5,h:5,map:'#####'+'#...#'+'#@OX#'+'#...#'+'#####'},
-    {w:5,h:5,map:'#####'+'#.X.#'+'#.O.#'+'#.@.#'+'#####'},
-    {w:5,h:5,map:'#####'+'#...#'+'#XO@#'+'#...#'+'#####'},
-    {w:5,h:5,map:'#####'+'#.X.#'+'#.O.#'+'#@..#'+'#####'},
-    {w:5,h:5,map:'#####'+'#..X#'+'#.O.#'+'#.@.#'+'#####'},
-    {w:6,h:5,map:'######'+'#....#'+'#@OX.#'+'#.OX.#'+'######'},
-    {w:5,h:6,map:'#####'+'#.X.#'+'#.O.#'+'#X..#'+'#O@.#'+'#####'},
-    {w:5,h:5,map:'#####'+'#X..#'+'##O.#'+'#@..#'+'#####'},
-    {w:6,h:5,map:'######'+'#X..X#'+'#.OO.#'+'#..@.#'+'######'},
-    {w:6,h:6,map:'######'+'#....#'+'#.##X#'+'#.O..#'+'#@...#'+'######'},
-    // === TIER 2: EASY (2 crates, L-paths) ===
+    // === TIER 1: WARMUP (2 crates) ===
     {w:6,h:6,map:'######'+'#.X..#'+'#.O..#'+'#..O.#'+'#@.X.#'+'######'},
     {w:7,h:5,map:'#######'+'#X.@.X#'+'#.O.O.#'+'#.....#'+'#######'},
     {w:6,h:6,map:'######'+'#..X.#'+'#..O.#'+'#.O..#'+'#@X..#'+'######'},
@@ -35860,7 +35849,7 @@ function GSK(a){
     {w:9,h:8,map:'#########'+'##.....##'+'#..OOO..#'+'#.X.@.X.#'+'#..#.#..#'+'#.X.O.X.#'+'##..X..##'+'#########'},
     {w:9,h:9,map:'#########'+'#...#...#'+'#.O.O.O.#'+'#.X.X.X.#'+'##..@..##'+'#.X.X.X.#'+'#.O.O.O.#'+'#...#...#'+'#########'}
   ];
-  var grid=[],origGrid=[],w=7,h=5,px=0,py=0,moves=0,lvl=0;
+  var grid=[],origGrid=[],w=7,h=5,px=0,py=0,moves=0,lvl=parseInt(localStorage.getItem('sk_lvl')||'0',10);
   ms(a,'Level <strong id="SKl">1</strong> · Moves <strong id="SKm">0</strong>');mm(a);
   var gd=document.createElement('div');gd.className='skg';gd.id='SK';a.appendChild(gd);
   var db=document.createElement('div');db.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:220px;margin:8px auto;padding:8px';
@@ -35888,8 +35877,8 @@ function GSK(a){
     var won=true;for(var i=0;i<grid.length;i++)if(grid[i]===3)won=false;
     if(won&&grid.some(function(v){return v===4})){
       _e('game_win');_sr('sokoban',{w:true,s:moves});
-      if(lvl<LEVELS.length-1){_play('win');sm('🐱 Level '+(lvl+1)+' complete! '+moves+' moves');lvl++;setTimeout(function(){load();rn()},1500)}
-      else{_playWin();sm('🐱 All 75 levels complete! '+moves+' moves')}}}
+      if(lvl<LEVELS.length-1){_play('win');sm('🐱 Level '+(lvl+1)+' complete! '+moves+' moves');lvl++;localStorage.setItem('sk_lvl',String(lvl));setTimeout(function(){load();rn()},1500)}
+      else{_playWin();sm('🐱 All '+LEVELS.length+' levels complete! '+moves+' moves')}}}
   window._SKM=function(dx,dy){var nx=px+dx,ny=py+dy;if(nx<0||nx>=w||ny<0||ny>=h)return;var ni=ny*w+nx,nv=grid[ni];if(nv===1)return;
     if(nv===2||nv===4){var bx=nx+dx,by=ny+dy;if(bx<0||bx>=w||by<0||by>=h)return;var bi=by*w+bx,bv=grid[bi];if(bv===1||bv===2||bv===4)return;
       _play('drop');grid[ni]=(nv===4)?3:0;grid[bi]=(bv===3)?4:2;if(bv===3)_e('progress')}else{_play('tap')}
