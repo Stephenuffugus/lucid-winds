@@ -32010,7 +32010,8 @@ var G=[
 {id:'yahtzee',n:'Seed Toss',i:'\ud83c\udfb2',r:'Roll 5 seed dice up to 3 times. Hold keepers, score in 13 categories. Aim high!',cat:'dice',thumb:'assets/games/thumbs/yahtzee.png'},
 {id:'farkle',n:'Farkle',i:'\ud83c\udfb2',r:'Roll 6 dice. Keep 1s, 5s, and three-of-a-kinds. Roll again or bank — zero scorers and you bust!',cat:'dice',thumb:'assets/games/thumbs/farkle.png'},
 {id:'sokoban',n:'Catnip Chaos',i:'\ud83d\udc31',r:'Push catnip toys onto the cat beds. Watch your step — toys only push, never pull!',cat:'puzzle',thumb:'assets/games/thumbs/sokoban.png'},
-{id:'backgammon',n:'Garden Gate',i:'\ud83c\udfb2',r:'Roll dice, move seeds around the garden. Bear off all 15 first to win!',cat:'board',thumb:'assets/games/thumbs/backgammon.png'}
+{id:'backgammon',n:'Garden Gate',i:'\ud83c\udfb2',r:'Roll dice, move seeds around the garden. Bear off all 15 first to win!',cat:'board',thumb:'assets/games/thumbs/backgammon.png'},
+{id:'bloomwheel',n:'Bloom Wheel',i:'\ud83c\udf38',r:'Draw botanical mandalas on a spinning canvas synced to a generative beat.',cat:'creative',thumb:'assets/games/thumbs/bloomwheel.png'}
 ];
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
 // ═══ HASH ACCUMULATION BUFFER ═══
@@ -32128,7 +32129,8 @@ var _aw={
   picross:{progress:1,game_win:4,default:0},
   slider:{milestone:1,game_win:3,default:0},
   farkle:{progress:1,milestone:1,game_win:5,game_loss:0,default:0},
-  backgammon:{progress:1,milestone:1,game_win:6,game_loss:1,default:0}
+  backgammon:{progress:1,milestone:1,game_win:6,game_loss:1,default:0},
+  bloomwheel:{progress:1,milestone:2,default:0}
 };
 function _setDiff(lv){switch(lv){case 'easy':_dm=1.0;break;case 'medium':_dm=1.5;break;case 'hard':_dm=2.0;break;case 'expert':_dm=2.5;break;default:_dm=1.0}}
 function _gr(){try{return JSON.parse(localStorage.getItem(RK))||{}}catch(e){return{}}}
@@ -36007,6 +36009,142 @@ function GSK(a){
   window._SKN=function(){lvl=(lvl+1)%LEVELS.length;load();sm('Level '+(lvl+1));rn()};
   document.addEventListener('keydown',function(e){var m={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};if(m[e.key]&&_a==='sokoban'){e.preventDefault();_SKM(m[e.key][0],m[e.key][1])}});
   load();rn()}
+// ═══ BLOOM WHEEL — Spinning Mandala Drawing Tool ═══
+function GBW(a){
+  var canvas,ctx,bufC,bufX,W,H,cx,cy,radius,dpr;
+  var symmetry=8,bpm=90,spinOn=true,musicOn=false;
+  var rotAngle=0,brushSize=3,brushSizes=[1.5,3,5,8,12],brushIdx=1;
+  var drawing=false,lastX=0,lastY=0,strokes=0,startT=Date.now(),colorPh=0;
+  var beatCount=0,activeBeat=0,aCtx=null,mGain=null,nextBT=0,beatInt=60/bpm,schTimer=null;
+  var PAL=[{r:74,g:124,b:53},{r:122,g:179,b:86},{r:212,g:168,b:67},{r:232,g:220,b:200},{r:196,g:122,b:122},{r:91,g:155,b:213},{r:160,g:120,b:180},{r:74,g:124,b:53}];
+
+  ms(a,'<span id="BWbpm">90 BPM</span> · <span id="BWsym">8</span>-fold');mm(a);
+
+  // Canvas
+  canvas=document.createElement('canvas');canvas.style.cssText='display:block;width:100%;aspect-ratio:1;max-width:420px;margin:0 auto;border-radius:12px;touch-action:none;background:#0d100c';
+  a.appendChild(canvas);ctx=canvas.getContext('2d');
+  bufC=document.createElement('canvas');bufX=bufC.getContext('2d');
+
+  function resize(){
+    dpr=window.devicePixelRatio||1;var r=canvas.getBoundingClientRect();W=r.width;H=r.height;
+    canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+    var old=null;if(bufC.width>0&&bufC.height>0){try{old=bufX.getImageData(0,0,bufC.width,bufC.height)}catch(e){}}
+    bufC.width=W*dpr;bufC.height=H*dpr;bufX.setTransform(dpr,0,0,dpr,0,0);
+    if(old){try{bufX.putImageData(old,0,0)}catch(e){}}
+    cx=W/2;cy=H/2;radius=Math.min(cx,cy)-10;
+  }
+
+  function getColor(ph,dist){
+    var t=(ph+dist*0.003)%1;if(t<0)t+=1;var idx=t*(PAL.length-1),i=Math.floor(idx),f=idx-i;
+    var aa=PAL[i],b=PAL[Math.min(i+1,PAL.length-1)];
+    return 'rgba('+Math.round(aa.r+(b.r-aa.r)*f)+','+Math.round(aa.g+(b.g-aa.g)*f)+','+Math.round(aa.b+(b.b-aa.b)*f)+',0.7)';
+  }
+
+  // Audio
+  function initAudio(){
+    aCtx=new(window.AudioContext||window.webkitAudioContext)();
+    mGain=aCtx.createGain();mGain.gain.value=0.3;mGain.connect(aCtx.destination);
+    var p1=aCtx.createOscillator();p1.type='sine';p1.frequency.value=110;
+    var p2=aCtx.createOscillator();p2.type='sine';p2.frequency.value=165;
+    var p3=aCtx.createOscillator();p3.type='triangle';p3.frequency.value=220;
+    var pG=aCtx.createGain();pG.gain.value=0.04;
+    p1.connect(pG);p2.connect(pG);p3.connect(pG);pG.connect(mGain);
+    var lfo=aCtx.createOscillator();lfo.type='sine';lfo.frequency.value=0.15;
+    var lfG=aCtx.createGain();lfG.gain.value=0.02;lfo.connect(lfG);lfG.connect(pG.gain);
+    lfo.start();p1.start();p2.start();p3.start();
+    beatInt=60/bpm;nextBT=aCtx.currentTime+0.1;scheduleBeat();
+  }
+  function scheduleBeat(){
+    if(!aCtx||!musicOn)return;var now=aCtx.currentTime;
+    while(nextBT<now+0.1){
+      var bib=beatCount%4;
+      if(bib===0||bib===2)playKick(nextBT);
+      playHH(nextBT,bib===0?0.15:0.08);
+      if(bib===0&&(beatCount%8)<4)playNote(nextBT);
+      beatCount++;nextBT+=beatInt;
+    }
+    schTimer=setTimeout(scheduleBeat,25);
+  }
+  function playKick(t){var o=aCtx.createOscillator();o.type='sine';o.frequency.setValueAtTime(120,t);o.frequency.exponentialRampToValueAtTime(40,t+0.12);var g=aCtx.createGain();g.gain.setValueAtTime(0.5,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.25);o.connect(g);g.connect(mGain);o.start(t);o.stop(t+0.3)}
+  function playHH(t,v){var bs=aCtx.sampleRate*0.05,buf=aCtx.createBuffer(1,bs,aCtx.sampleRate),d=buf.getChannelData(0);for(var i=0;i<bs;i++)d[i]=Math.random()*2-1;var s=aCtx.createBufferSource();s.buffer=buf;var hp=aCtx.createBiquadFilter();hp.type='highpass';hp.frequency.value=7000;var g=aCtx.createGain();g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.06);s.connect(hp);hp.connect(g);g.connect(mGain);s.start(t);s.stop(t+0.08)}
+  function playNote(t){var notes=[220,261.6,293.7,329.6,392];var o=aCtx.createOscillator();o.type='triangle';o.frequency.value=notes[Math.floor(Math.random()*notes.length)];var g=aCtx.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.1,t+0.05);g.gain.exponentialRampToValueAtTime(0.001,t+0.6);o.connect(g);g.connect(mGain);o.start(t);o.stop(t+0.7)}
+
+  // Drawing
+  function toLocal(px2,py2){var r=canvas.getBoundingClientRect();var x=px2-r.left,y=py2-r.top;var dx=x-cx,dy=y-cy;var c=Math.cos(-rotAngle),s=Math.sin(-rotAngle);return{x:dx*c-dy*s+cx,y:dx*s+dy*c+cy}}
+  function drawSym(x1,y1,x2,y2){
+    var dist=Math.sqrt((x1-cx)*(x1-cx)+(y1-cy)*(y1-cy));var color=getColor(colorPh,dist);var sz=brushSize*(0.5+dist/radius*0.8);
+    bufX.lineWidth=sz;bufX.lineCap='round';bufX.lineJoin='round';bufX.strokeStyle=color;
+    var step=(Math.PI*2)/symmetry;
+    for(var i=0;i<symmetry;i++){var aa=step*i,co=Math.cos(aa),sn=Math.sin(aa);
+      var rx1=(x1-cx)*co-(y1-cy)*sn+cx,ry1=(x1-cx)*sn+(y1-cy)*co+cy;
+      var rx2=(x2-cx)*co-(y2-cy)*sn+cx,ry2=(x2-cx)*sn+(y2-cy)*co+cy;
+      bufX.beginPath();bufX.moveTo(rx1,ry1);bufX.lineTo(rx2,ry2);bufX.stroke();
+      if(i%2===0){var mx1=-(x1-cx)*co-(y1-cy)*sn+cx,my1=-(x1-cx)*sn+(y1-cy)*co+cy;var mx2=-(x2-cx)*co-(y2-cy)*sn+cx,my2=-(x2-cx)*sn+(y2-cy)*co+cy;bufX.beginPath();bufX.moveTo(mx1,my1);bufX.lineTo(mx2,my2);bufX.stroke()}
+    }
+  }
+  function gtp(e){return e.touches&&e.touches.length?{x:e.touches[0].clientX,y:e.touches[0].clientY}:{x:e.clientX,y:e.clientY}}
+  function onD(e){e.preventDefault();var p=gtp(e),l=toLocal(p.x,p.y);drawing=true;lastX=l.x;lastY=l.y;strokes++;if(!aCtx)initAudio()}
+  function onM(e){e.preventDefault();if(!drawing)return;var p=gtp(e),l=toLocal(p.x,p.y);drawSym(lastX,lastY,l.x,l.y);lastX=l.x;lastY=l.y}
+  function onU(e){e.preventDefault();drawing=false}
+  canvas.addEventListener('mousedown',onD);canvas.addEventListener('mousemove',onM);
+  canvas.addEventListener('mouseup',onU);canvas.addEventListener('mouseleave',onU);
+  canvas.addEventListener('touchstart',onD,{passive:false});
+  canvas.addEventListener('touchmove',onM,{passive:false});
+  canvas.addEventListener('touchend',onU,{passive:false});
+
+  // Render loop
+  var lt=0,_bwRaf=0;
+  function render(ts){
+    if(_a!=='bloomwheel'){return}
+    var dt=lt?(ts-lt)/1000:0.016;lt=ts;
+    if(spinOn)rotAngle+=(Math.PI*2)/(beatInt*16)*dt;
+    colorPh+=dt*0.02;if(colorPh>1)colorPh-=1;
+    ctx.fillStyle='#0d100c';ctx.fillRect(0,0,W,H);
+    ctx.beginPath();ctx.arc(cx,cy,radius,0,Math.PI*2);ctx.strokeStyle='rgba(74,124,53,0.06)';ctx.lineWidth=1;ctx.stroke();
+    ctx.strokeStyle='rgba(74,124,53,0.03)';ctx.lineWidth=0.5;
+    var step=(Math.PI*2)/symmetry;
+    for(var i=0;i<symmetry;i++){var ga=step*i+rotAngle;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(ga)*radius,cy+Math.sin(ga)*radius);ctx.stroke()}
+    ctx.beginPath();ctx.arc(cx,cy,3,0,Math.PI*2);ctx.fillStyle='rgba(212,168,67,0.15)';ctx.fill();
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(rotAngle);ctx.translate(-cx,-cy);ctx.drawImage(bufC,0,0,W,H);ctx.restore();
+    _bwRaf=requestAnimationFrame(render);
+  }
+
+  // Controls
+  var _bbs='min-height:48px;padding:0.4rem 0.8rem;font-size:clamp(.55rem,1.6vw,.7rem)';
+  mc(a).innerHTML='<div style="display:flex;gap:6px;padding:4px 0;flex-wrap:wrap;justify-content:center">'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWS(4)">4</button>'
+    +'<button class="gb gon" style="'+_bbs+'" onclick="_BWS(8)" id="BWs8">8</button>'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWS(12)">12</button>'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWBpm(-10)">BPM−</button>'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWBpm(10)">BPM+</button>'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWMusic()" id="BWmus">♫ OFF</button>'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWBrush()" id="BWbr">● 3</button>'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWClear()">✕ CLR</button>'
+    +'<button class="gb" style="'+_bbs+';border-color:rgba(200,168,75,0.3);color:var(--gold)" onclick="_BWSave()">💾 SAVE</button>'
+    +'</div>';
+
+  window._BWS=function(n){symmetry=n;document.getElementById('BWsym').textContent=n;
+    var btns=mc(a).querySelectorAll('.gb');btns[0].className='gb'+(n===4?' gon':'');btns[1].className='gb'+(n===8?' gon':'');btns[2].className='gb'+(n===12?' gon':'')};
+  window._BWBpm=function(d){bpm=Math.max(50,Math.min(160,bpm+d));beatInt=60/bpm;document.getElementById('BWbpm').textContent=bpm+' BPM'};
+  window._BWMusic=function(){musicOn=!musicOn;document.getElementById('BWmus').textContent=musicOn?'♫ ON':'♫ OFF';
+    if(musicOn){if(!aCtx)initAudio();else{nextBT=aCtx.currentTime+0.1;scheduleBeat()}}
+    if(!musicOn&&schTimer)clearTimeout(schTimer);if(mGain)mGain.gain.value=musicOn?0.3:0};
+  window._BWBrush=function(){brushIdx=(brushIdx+1)%brushSizes.length;brushSize=brushSizes[brushIdx];document.getElementById('BWbr').textContent='● '+Math.round(brushSize)};
+  window._BWClear=function(){bufX.clearRect(0,0,bufC.width,bufC.height);rotAngle=0;strokes=0;sm('Canvas cleared')};
+  window._BWSave=function(){
+    var sc=document.createElement('canvas');sc.width=W*dpr;sc.height=H*dpr;var sx=sc.getContext('2d');sx.setTransform(dpr,0,0,dpr,0,0);
+    sx.fillStyle='#0d100c';sx.fillRect(0,0,W,H);sx.save();sx.beginPath();sx.arc(cx,cy,radius,0,Math.PI*2);sx.clip();sx.drawImage(bufC,0,0,W,H);sx.restore();
+    sx.beginPath();sx.arc(cx,cy,radius,0,Math.PI*2);sx.strokeStyle='rgba(74,124,53,0.3)';sx.lineWidth=2;sx.stroke();
+    sx.fillStyle='rgba(232,220,200,0.2)';sx.font='10px Bebas Neue,sans-serif';sx.textAlign='center';sx.fillText('BLOOM WHEEL — LUCID WINDS',cx,H-10);
+    var lk=document.createElement('a');lk.download='bloom-wheel-'+Date.now()+'.png';lk.href=sc.toDataURL('image/png');lk.click();
+    _e('milestone');_sr('bloomwheel',{w:true,s:Math.round((Date.now()-startT)/1000)});sm('Mandala saved!')};
+
+  // Hash earning — 1 per 60 seconds of active drawing
+  setInterval(function(){if(_a==='bloomwheel'&&strokes>0)_e('progress')},60000);
+
+  resize();window.addEventListener('resize',resize);
+  requestAnimationFrame(render);
+}
 // ═══ BACKGAMMON — Garden Gate ═══
 function GBG(a){
   var B,DICE,DICE_USED,TURN,SEL,VALID_DESTS,PHASE,MOVES_LEFT,BO_H,BO_A;
@@ -36186,6 +36324,7 @@ try{window._gameFns.colorsort=GCS}catch(e){}// Color Sort
 try{window._gameFns.battleship=GBS}catch(e){}// Battleship
 try{window._gameFns.sokoban=GSK}catch(e){}  // Sokoban
 try{window._gameFns.backgammon=GBG}catch(e){} // Backgammon
+try{window._gameFns.bloomwheel=GBW}catch(e){} // Bloom Wheel
 
 
 _bp();console.log('[FG] Hub v4 — '+G.length+' games');
