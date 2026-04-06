@@ -36248,6 +36248,7 @@ function GBW(a){
     +'<button class="gb" style="'+_bbs+'" onclick="_BWBpm(-10)">BPM−</button>'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWBpm(10)">BPM+</button>'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWMusic()" id="BWmus">♫ OFF</button>'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWFreeze()" id="BWfrz">❄ FREEZE</button>'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWClear()">✕ CLEAR</button>'
     +'<button class="gb" style="'+_bbs+';border-color:rgba(200,168,75,0.3);color:var(--gold)" onclick="_BWSave()">💾 SAVE</button>'
     +'</div>';
@@ -36274,6 +36275,7 @@ function GBW(a){
     if(p==='custom'){_bwCustomPath=[];_bwDrawingPath=true;sm('Draw a path on canvas, then tap DRAW PATH again')}
     else{_bwDrawingPath=false;cx=W/2;cy=H/2}
   };
+  window._BWFreeze=function(){spinOn=!spinOn;var btn=document.getElementById('BWfrz');if(btn){btn.textContent=spinOn?'❄ FREEZE':'▶ RESUME';btn.className='gb'+(spinOn?'':' gon')}sm(spinOn?'Spinning':'Frozen — screenshot or save!')};
   window._BWClear=function(){bufX.clearRect(0,0,bufC.width,bufC.height);rotAngle=0;strokes=0;_bwCustomPath=[];_bwDrawingPath=false;_bwPathIdx=0;_bwPathT=0;cx=W/2;cy=H/2;var pb=document.getElementById('BWpath');if(pb)pb.textContent='◯ SPIN';sm('Canvas cleared')};
   window._BWSave=function(){
     var sc=document.createElement('canvas');sc.width=W*dpr;sc.height=H*dpr;var sx=sc.getContext('2d');sx.setTransform(dpr,0,0,dpr,0,0);
