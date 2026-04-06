@@ -37369,13 +37369,21 @@ window.addEventListener('bp-seed-to-nursery', function(e) {
 });
 </script>
 
-<!-- Service Worker Registration -->
+<!-- Service Worker — unregister old, register fresh -->
 <script>
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').then(function(reg) {
-    console.log('[SW] Registered. Scope:', reg.scope);
+  navigator.serviceWorker.getRegistrations().then(function(regs) {
+    regs.forEach(function(r) { r.unregister(); });
+  }).then(function() {
+    return caches.keys();
+  }).then(function(names) {
+    return Promise.all(names.map(function(n) { return caches.delete(n); }));
+  }).then(function() {
+    navigator.serviceWorker.register('/sw.js').then(function(reg) {
+      console.log('[SW] Fresh register. Scope:', reg.scope);
+    });
   }).catch(function(err) {
-    console.warn('[SW] Registration failed:', err);
+    console.warn('[SW] Reset failed:', err);
   });
 }
 </script>
@@ -39591,20 +39599,7 @@ _initPi();
 })();
 </script>
 
-<!-- Service Worker Registration -->
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/sw.js').then(function(reg) {
-      console.log('[SW] Registered, scope:', reg.scope);
-      // Check for updates every 30 minutes
-      setInterval(function() { reg.update(); }, 1800000);
-    }).catch(function(err) {
-      console.warn('[SW] Registration failed:', err);
-    });
-  });
-}
-</script>
+<!-- Service Worker duplicate removed — handled above -->
 
 <!-- ═══ set-51: BREEDING COMPARISON OVERLAY ═══ -->
 <div id="breed-screen">
