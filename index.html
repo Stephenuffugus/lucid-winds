@@ -5016,6 +5016,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="dev-section"><div class="dev-section-title">LOCAL STORAGE</div><button class="dev-btn" onclick="PW_Dev.clearLocal()">🧹 CLEAR ALL</button></div>
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
     <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button></div>
+    <div class="dev-section"><div class="dev-section-title">ACCELERATE (BETA TEST)</div><button class="dev-btn" onclick="PW_Dev.accelFerals()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⚡ FORCE FERAL SPAWN</button><button class="dev-btn" onclick="PW_Dev.accelRepro()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🌱 FORCE WILD REPRODUCTION</button><button class="dev-btn" onclick="PW_Dev.accelNursery()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💧 INSTANT BLOOM ALL SEEDS</button><button class="dev-btn" onclick="PW_Dev.accelBackpack()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🎒 CLEAR BP COOLDOWNS</button><button class="dev-btn" onclick="PW_Dev.grantHashes(100)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💎 +100 HASHES</button><button class="dev-btn" onclick="PW_Dev.accelAll()" style="border-color:rgba(255,110,199,0.4);color:#ff6ec7;">🚀 ACCELERATE EVERYTHING</button></div>
     <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button></div>
     <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button><button class="dev-btn" onclick="try{PW_Dev.cardFrontAligner()}catch(e){alert(e.message)}">🃏 CARD FRONT ALIGNMENT</button><button class="dev-btn" onclick="try{PW_Dev.cardBackViewer()}catch(e){alert(e.message)}">🔙 CARD BACK NAMEPLATES</button><button class="dev-btn" onclick="try{PW_Dev.leafBloomEditor()}catch(e){alert(e.message)}">🌿 LEAF & BLOOM EDITOR</button></div>
     <div class="dev-section"><div class="dev-section-title">NUCLEAR</div><button class="dev-btn danger" onclick="PW_Dev.fullReset()">☢ WIPE EVERYTHING</button></div>
@@ -5722,6 +5723,86 @@ window.onerror=function(msg,url,line,col,err){
       document.getElementById('cfa-close').onclick=function(){window.removeEventListener('resize',_fitCard);ov.remove();};
 
       _renderCard();
+    },
+    // ═══ BETA TEST ACCELERATION ═══
+    accelFerals:function(){
+      // Clear all feral zone timers so they respawn immediately
+      localStorage.removeItem('fg_feral_zones');
+      localStorage.removeItem('fg_feral_cd');
+      var data=[];try{data=JSON.parse(localStorage.getItem('fg_ferals')||'[]');}catch(e){}
+      // Mark all as uncollected
+      for(var i=0;i<data.length;i++)data[i].collected=false;
+      localStorage.setItem('fg_ferals',JSON.stringify(data));
+      alert('Feral timers reset! Switch to Wild tab — ferals will spawn from all occupied zones.');
+    },
+    accelRepro:function(){
+      // Clear reproduction zone checks so it runs immediately
+      localStorage.removeItem('fg_repro_zones');
+      alert('Reproduction timers reset! Switch to Wild tab — breeding pairs will attempt reproduction.');
+    },
+    accelNursery:function(){
+      // Set all nursery seeds to 3 unique water days so they can bloom instantly
+      try{
+        var nur=JSON.parse((window._secureGet?window._secureGet('sws_nursery'):localStorage.getItem('sws_nursery'))||'[]');
+        if(nur.length===0){alert('No seeds in nursery.');return;}
+        var bloomed=0;
+        for(var i=0;i<nur.length;i++){
+          if(nur[i].status==='growing'){
+            nur[i].waterLog=['2026-01-01','2026-01-02','2026-01-03'];
+            bloomed++;
+          }
+        }
+        if(window._secureSet)window._secureSet('sws_nursery',nur);
+        else localStorage.setItem('sws_nursery',JSON.stringify(nur));
+        if(window.renderNursery)renderNursery();
+        alert(bloomed+' seed(s) ready to bloom! Go to Nursery and tap BLOOM.');
+      }catch(e){alert('Error: '+e.message);}
+    },
+    accelBackpack:function(){
+      localStorage.removeItem('fg_bp_slot_cd');
+      alert('Backpack cooldowns cleared!');
+    },
+    grantHashes:function(n){
+      n=n||100;
+      try{
+        var raw=localStorage.getItem('sws_hash_ledger');
+        if(window._secureGet)raw=window._secureGet('sws_hash_ledger')||raw;
+        var ledger=JSON.parse(raw||'{}');
+        ledger.earned=(ledger.earned||0)+n;
+        var s=JSON.stringify(ledger);
+        if(window._secureSet)window._secureSet('sws_hash_ledger',s);
+        else localStorage.setItem('sws_hash_ledger',s);
+        if(window.updateDashboard)updateDashboard();
+        alert('+'+n+' hashes granted! Total earned: '+ledger.earned);
+      }catch(e){alert('Error: '+e.message);}
+    },
+    accelAll:function(){
+      // One button to reset everything for immediate testing
+      localStorage.removeItem('fg_feral_zones');
+      localStorage.removeItem('fg_feral_cd');
+      localStorage.removeItem('fg_repro_zones');
+      localStorage.removeItem('fg_bp_slot_cd');
+      localStorage.removeItem('fg_bp_midnight');
+      // Bloom all nursery seeds
+      try{
+        var nur=JSON.parse((window._secureGet?window._secureGet('sws_nursery'):localStorage.getItem('sws_nursery'))||'[]');
+        for(var i=0;i<nur.length;i++){if(nur[i].status==='growing')nur[i].waterLog=['2026-01-01','2026-01-02','2026-01-03'];}
+        if(window._secureSet)window._secureSet('sws_nursery',nur);
+        else localStorage.setItem('sws_nursery',JSON.stringify(nur));
+      }catch(e){}
+      // Grant 100 hashes
+      try{
+        var raw=localStorage.getItem('sws_hash_ledger');
+        if(window._secureGet)raw=window._secureGet('sws_hash_ledger')||raw;
+        var ledger=JSON.parse(raw||'{}');
+        ledger.earned=(ledger.earned||0)+100;
+        var s=JSON.stringify(ledger);
+        if(window._secureSet)window._secureSet('sws_hash_ledger',s);
+        else localStorage.setItem('sws_hash_ledger',s);
+      }catch(e){}
+      if(window.updateDashboard)updateDashboard();
+      if(window.renderNursery)renderNursery();
+      alert('EVERYTHING ACCELERATED!\n\n- Feral timers reset\n- Reproduction timers reset\n- Backpack cooldowns cleared\n- Nursery seeds bloom-ready\n- +100 hashes granted\n\nSwitch to Wild tab to trigger spawns.');
     }
   };
 })();
