@@ -2131,12 +2131,13 @@
     .greenhouse-plant.season-winter{background-image:url('assets/cards/fronts/card-front-winter-same.png');}
     /* ═══ CHIMERA DUAL-SEASON CARDS ═══
        Diagonal cut: season A (top-left) / season B (bottom-right)
-       Top-half/bottom-half images with organic torn alpha edge */
+       Cut line: 55px below top-right → 55px above bottom-left */
     .greenhouse-plant.chimera-dual{border:3px solid;border-image:none;position:relative;}
-    /* Season A overlay: top-half of the card with organic torn edge */
+    /* Season A overlay: top-left half of the card, clipped diagonally */
     .greenhouse-plant.chimera-dual::after{
       content:'';position:absolute;inset:0;border-radius:6px;pointer-events:none;z-index:1;
       background-size:cover;background-position:center;background-repeat:no-repeat;
+      clip-path:polygon(0 0, 100% 0, 100% 55px, 0 calc(100% - 55px));
     }
     /* Border colors: top+left = season A, right+bottom = season B */
     .chimera-dual.dual-sp-su{border-color:#E8A0BF;border-right-color:#D4A843;border-bottom-color:#D4A843;}
@@ -2151,34 +2152,35 @@
     .chimera-dual.dual-wi-sp{border-color:#A0C4E8;border-right-color:#E8A0BF;border-bottom-color:#E8A0BF;}
     .chimera-dual.dual-wi-su{border-color:#A0C4E8;border-right-color:#D4A843;border-bottom-color:#D4A843;}
     .chimera-dual.dual-wi-au{border-color:#A0C4E8;border-right-color:#D4842A;border-bottom-color:#D4842A;}
-    /* Season A top-half overlay per combo */
-    .chimera-dual.dual-sp-su::after,.chimera-dual.dual-sp-au::after,.chimera-dual.dual-sp-wi::after{background-image:url('assets/cards/fronts/card-front-spring-top-half.png');}
-    .chimera-dual.dual-su-sp::after,.chimera-dual.dual-su-au::after,.chimera-dual.dual-su-wi::after{background-image:url('assets/cards/fronts/card-front-summer-top-half.png');}
-    .chimera-dual.dual-au-sp::after,.chimera-dual.dual-au-su::after,.chimera-dual.dual-au-wi::after{background-image:url('assets/cards/fronts/card-front-autumn-top-half.png');}
-    .chimera-dual.dual-wi-sp::after,.chimera-dual.dual-wi-su::after,.chimera-dual.dual-wi-au::after{background-image:url('assets/cards/fronts/card-front-winter-top-half.png');}
-    /* Season B bottom-half on the base element */
-    .chimera-dual.dual-sp-su,.chimera-dual.dual-au-su,.chimera-dual.dual-wi-su{background-image:url('assets/cards/fronts/card-front-summer-bottom-half.png')!important;}
-    .chimera-dual.dual-sp-au,.chimera-dual.dual-su-au,.chimera-dual.dual-wi-au{background-image:url('assets/cards/fronts/card-front-autumn-bottom-half.png')!important;}
-    .chimera-dual.dual-sp-wi,.chimera-dual.dual-su-wi,.chimera-dual.dual-au-wi{background-image:url('assets/cards/fronts/card-front-winter-bottom-half.png')!important;}
-    .chimera-dual.dual-su-sp,.chimera-dual.dual-au-sp,.chimera-dual.dual-wi-sp{background-image:url('assets/cards/fronts/card-front-spring-bottom-half.png')!important;}
+    /* Season A background overlay per combo — top-left diagonal half */
+    .chimera-dual.dual-sp-su::after,.chimera-dual.dual-sp-au::after,.chimera-dual.dual-sp-wi::after{background-image:url('assets/cards/fronts/card-front-spring-same.png');}
+    .chimera-dual.dual-su-sp::after,.chimera-dual.dual-su-au::after,.chimera-dual.dual-su-wi::after{background-image:url('assets/cards/fronts/card-front-summer-same.png');}
+    .chimera-dual.dual-au-sp::after,.chimera-dual.dual-au-su::after,.chimera-dual.dual-au-wi::after{background-image:url('assets/cards/fronts/card-front-autumn-same.png');}
+    .chimera-dual.dual-wi-sp::after,.chimera-dual.dual-wi-su::after,.chimera-dual.dual-wi-au::after{background-image:url('assets/cards/fronts/card-front-winter-same.png');}
+    /* Season B background on the base element — bottom-right half shows through */
+    .chimera-dual.dual-sp-su,.chimera-dual.dual-au-su,.chimera-dual.dual-wi-su{background-image:url('assets/cards/fronts/card-front-summer-same.png')!important;}
+    .chimera-dual.dual-sp-au,.chimera-dual.dual-su-au,.chimera-dual.dual-wi-au{background-image:url('assets/cards/fronts/card-front-autumn-same.png')!important;}
+    .chimera-dual.dual-sp-wi,.chimera-dual.dual-su-wi,.chimera-dual.dual-au-wi{background-image:url('assets/cards/fronts/card-front-winter-same.png')!important;}
+    .chimera-dual.dual-su-sp,.chimera-dual.dual-au-sp,.chimera-dual.dual-wi-sp{background-image:url('assets/cards/fronts/card-front-spring-same.png')!important;}
     /* Carousel chimera dual borders + diagonal cut */
     .cs-flip-wrap.chimera-dual{border:3px solid;border-radius:12px;}
     .cs-flip-wrap.chimera-dual .cs-card-face{border:none;}
-    /* Carousel dual fronts: season A top-half over season B bottom-half */
+    /* Carousel dual fronts: season A clipped on top, season B base */
     .cs-card-front[data-dual]::after{
       content:'';position:absolute;inset:0;border-radius:10px;pointer-events:none;z-index:1;
       background-size:cover;background-position:center;background-repeat:no-repeat;
+      clip-path:polygon(0 0, 100% 0, 100% 55px, 0 calc(100% - 55px));
     }
-    /* Season A top-half overlay (carousel) */
-    .cs-card-front[data-dual^="dual-sp"]::after{background-image:url('assets/cards/fronts/card-front-spring-top-half.png');}
-    .cs-card-front[data-dual^="dual-su"]::after{background-image:url('assets/cards/fronts/card-front-summer-top-half.png');}
-    .cs-card-front[data-dual^="dual-au"]::after{background-image:url('assets/cards/fronts/card-front-autumn-top-half.png');}
-    .cs-card-front[data-dual^="dual-wi"]::after{background-image:url('assets/cards/fronts/card-front-winter-top-half.png');}
-    /* Season B bottom-half base (carousel) */
-    .cs-card-front[data-dual$="-su"]{background-image:url('assets/cards/fronts/card-front-summer-bottom-half.png')!important;}
-    .cs-card-front[data-dual$="-au"]{background-image:url('assets/cards/fronts/card-front-autumn-bottom-half.png')!important;}
-    .cs-card-front[data-dual$="-wi"]{background-image:url('assets/cards/fronts/card-front-winter-bottom-half.png')!important;}
-    .cs-card-front[data-dual$="-sp"]{background-image:url('assets/cards/fronts/card-front-spring-bottom-half.png')!important;}
+    /* Season A overlay (top-left diagonal) — carousel */
+    .cs-card-front[data-dual^="dual-sp"]::after{background-image:url('assets/cards/fronts/card-front-spring-same.png');}
+    .cs-card-front[data-dual^="dual-su"]::after{background-image:url('assets/cards/fronts/card-front-summer-same.png');}
+    .cs-card-front[data-dual^="dual-au"]::after{background-image:url('assets/cards/fronts/card-front-autumn-same.png');}
+    .cs-card-front[data-dual^="dual-wi"]::after{background-image:url('assets/cards/fronts/card-front-winter-same.png');}
+    /* Season B base (bottom-right) — carousel */
+    .cs-card-front[data-dual$="-su"]{background-image:url('assets/cards/fronts/card-front-summer-same.png')!important;}
+    .cs-card-front[data-dual$="-au"]{background-image:url('assets/cards/fronts/card-front-autumn-same.png')!important;}
+    .cs-card-front[data-dual$="-wi"]{background-image:url('assets/cards/fronts/card-front-winter-same.png')!important;}
+    .cs-card-front[data-dual$="-sp"]{background-image:url('assets/cards/fronts/card-front-spring-same.png')!important;}
     /* ═══ CARD BACK: Rarity frames (used in carousel flip) ═══ */
     .card-back-common{background-image:url('assets/cards/backs/back-common.png');}
     .card-back-uncommon{background-image:url('assets/cards/backs/back-uncommon.png');}
