@@ -30193,15 +30193,36 @@ function _saveWild(a){if(window._secureSet){window._secureSet('fg_wild_plants',a
 function _pruneWild(){
   var wild=_getWild();if(!wild.length)return wild;
   var now=Date.now(),cutoff=WILD_MAX_AGE_DAYS*86400000;
+  var died=[];
   var fresh=wild.filter(function(w){
     if(!w||!w.hash)return false;
-    if(!w.date)return false; // no date = stale data, remove
+    if(!w.date)return false;
     var age=now-new Date(w.date).getTime();
-    return age<cutoff&&age>-86400000; // keep if <14 days and not future-dated
+    if(age>=cutoff||age<=-86400000){died.push(w);return false;}
+    return true;
   });
-  if(fresh.length!==wild.length){
-    if(window._swsLog)_swsLog('Pruned '+(wild.length-fresh.length)+' expired wild plants','ok');
+  if(died.length>0){
+    if(window._swsLog)_swsLog('Pruned '+died.length+' expired wild plants','ok');
     _saveWild(fresh);
+    // Delete expired plants from Firestore so other players stop seeing them
+    var user=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
+    if(user&&user.uid&&window.db){
+      for(var i=0;i<died.length;i++){
+        if(died[i].own!==false&&died[i].hash){
+          var docId=user.uid+'_'+died[i].hash.slice(0,16);
+          window.db.collection('wildDrops').doc(docId).delete().catch(function(){});
+        }
+      }
+    }
+    // Notify player
+    var names=[];
+    for(var j=0;j<died.length&&j<3;j++){
+      try{names.push(window.getPlantName?window.getPlantName(died[j].hash):died[j].hash.slice(0,6));}catch(e){names.push(died[j].hash.slice(0,6));}
+    }
+    var msg=died.length===1
+      ?'\ud83c\udf42 '+names[0]+' withered in the wild after '+WILD_MAX_AGE_DAYS+' days.'
+      :'\ud83c\udf42 '+died.length+' plants withered: '+names.join(', ')+(died.length>3?'...':'');
+    setTimeout(function(){_toast(msg);},1000);
   }
   return fresh;
 }
