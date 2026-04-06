@@ -26,14 +26,19 @@ h1{font-size:18px;color:#c8a84b;margin-bottom:10px}
 </style>
 </head>
 <body>
-<h1>Dice 5 & 6 Crop Tool</h1>
-<p style="font-size:12px;color:#8a9178;margin-bottom:12px">Reference — dice 1 (the good one):</p>
+<h1>Dice Crop Tool</h1>
+<p style="font-size:12px;color:#8a9178;margin-bottom:12px">Reference — dice 1 (locked). Adjust 5 and 6 independently.</p>
 <div class="ref">
 <img src="assets/dice/d1.png" alt="dice 1 reference">
 <span>Target: match this framing</span>
 </div>
 
-<div class="info" id="info">Offset: X=0 Y=0 (from base 107,107-403,403)</div>
+<div style="display:flex;gap:12px;margin-bottom:8px">
+<button id="sel5" onclick="selDie=5;updSel()" style="padding:8px 16px;background:#4a7c35;border:2px solid #7ab356;color:#fff;border-radius:8px;font-size:14px;cursor:pointer;font-weight:700">EDITING: DICE 5</button>
+<button id="sel6" onclick="selDie=6;updSel()" style="padding:8px 16px;background:#1a1f17;border:2px solid #4a7c35;color:#8a9178;border-radius:8px;font-size:14px;cursor:pointer">DICE 6</button>
+</div>
+
+<div class="info" id="info"></div>
 
 <div class="controls">
 <span class="step-label">Step:</span>
@@ -51,19 +56,19 @@ h1{font-size:18px;color:#c8a84b;margin-bottom:10px}
 <button onclick="move(1,0)">➡ RIGHT</button>
 <button onclick="zoom(1)">🔍+ BIGGER</button>
 <button onclick="zoom(-1)">🔍− SMALLER</button>
-<button onclick="ox=30;oy=-30;oz=0;render()" style="border-color:#c8a84b;color:#c8a84b">RESET</button>
 </div>
 
 <div class="preview" id="preview"></div>
 <button class="save-btn" onclick="save()">SAVE POSITION</button>
-<div id="status" style="margin-top:12px;font-size:16px;color:#c8a84b;font-weight:700;padding:12px;border:2px solid #c8a84b;border-radius:8px;display:none;word-break:break-all;user-select:all;-webkit-user-select:all"></div>
+<div id="status" style="margin-top:12px;font-size:14px;color:#c8a84b;font-weight:700;padding:12px;border:2px solid #c8a84b;border-radius:8px;display:none;word-break:break-all;user-select:all;-webkit-user-select:all"></div>
 
 <script>
 var BASE_L=107,BASE_T=107,BASE_R=403,BASE_B=403;
-var ox=30,oy=-30;
-var oz=0;
-var imgs={};
 var SIZE=296;
+var d5={ox:0,oy:0,oz:0};
+var d6={ox:0,oy:0,oz:0};
+var selDie=5;
+var imgs={};
 
 function loadImg(n,cb){
   var img=new Image();
@@ -72,46 +77,49 @@ function loadImg(n,cb){
   img.src='assets/dice/dice-'+n+'.png?t='+Date.now();
 }
 
-try{var saved=JSON.parse(localStorage.getItem('dice_crop'));if(saved){ox=saved.ox;oy=saved.oy;oz=saved.oz||0;}}catch(e){}
+try{var s5=JSON.parse(localStorage.getItem('dice5_crop'));if(s5){d5=s5;}}catch(e){}
+try{var s6=JSON.parse(localStorage.getItem('dice6_crop'));if(s6){d6=s6;}}catch(e){}
+function updSel(){document.getElementById('sel5').style.background=selDie===5?'#4a7c35':'#1a1f17';document.getElementById('sel5').style.color=selDie===5?'#fff':'#8a9178';document.getElementById('sel5').textContent=selDie===5?'EDITING: DICE 5':'DICE 5';document.getElementById('sel6').style.background=selDie===6?'#4a7c35':'#1a1f17';document.getElementById('sel6').style.color=selDie===6?'#fff':'#8a9178';document.getElementById('sel6').textContent=selDie===6?'EDITING: DICE 6':'DICE 6';render();}
 var loaded=0;
 [1,5,6].forEach(function(n){
   loadImg(n,function(){loaded++;if(loaded===3)render()});
 });
 
+function cur(){return selDie===5?d5:d6}
 function move(dx,dy){
   var step=parseInt(document.getElementById('step').value)||10;
-  ox+=dx*step;
-  oy+=dy*step;
-  render();
+  var c=cur();c.ox+=dx*step;c.oy+=dy*step;render();
 }
-
 function zoom(dir){
   var step=parseInt(document.getElementById('step').value)||10;
-  oz+=dir*step;
-  render();
+  cur().oz+=dir*step;render();
 }
 
 function render(){
-  var cropSize=SIZE+oz*2;
-  document.getElementById('info').textContent='Offset: X='+ox+' Y='+oy+' Size:'+cropSize+'x'+cropSize+' | Crop: ('+(BASE_L+ox-oz)+','+(BASE_T+oy-oz)+')-('+(BASE_R+ox+oz)+','+(BASE_B+oy+oz)+')';
+  var c=cur();var cropSize=SIZE+c.oz*2;
+  var L5=BASE_L+d5.ox-d5.oz,T5=BASE_T+d5.oy-d5.oz,S5=SIZE+d5.oz*2;
+  var L6=BASE_L+d6.ox-d6.oz,T6=BASE_T+d6.oy-d6.oz,S6=SIZE+d6.oz*2;
+  document.getElementById('info').textContent='Editing D'+selDie+': X='+c.ox+' Y='+c.oy+' Size:'+(SIZE+c.oz*2)+'  |  D5: ('+(L5)+','+(T5)+')-('+(L5+S5)+','+(T5+S5)+')  D6: ('+(L6)+','+(T6)+')-('+(L6+S6)+','+(T6+S6)+')';
   var wrap=document.getElementById('preview');
   wrap.innerHTML='';
   [1,5,6].forEach(function(n){
     var box=document.createElement('div');
     box.className='die-box';
-    var c=document.createElement('canvas');
-    c.width=SIZE;c.height=SIZE;
-    c.style.width='120px';c.style.height='120px';
-    var ctx=c.getContext('2d');
+    var c2=document.createElement('canvas');
+    c2.width=SIZE;c2.height=SIZE;
+    c2.style.width='120px';c2.style.height='120px';
+    c2.style.border=n===selDie?'3px solid #c8a84b':'2px solid #4a7c35';
+    var ctx=c2.getContext('2d');
     if(n===1){
       ctx.drawImage(imgs[1],BASE_L,BASE_T,SIZE,SIZE,0,0,SIZE,SIZE);
     }else{
-      var sL=BASE_L+ox-oz,sT=BASE_T+oy-oz,sW=cropSize,sH=cropSize;
-      ctx.drawImage(imgs[n],sL,sT,sW,sH,0,0,SIZE,SIZE);
+      var dd=n===5?d5:d6;var cs=SIZE+dd.oz*2;
+      ctx.drawImage(imgs[n],BASE_L+dd.ox-dd.oz,BASE_T+dd.oy-dd.oz,cs,cs,0,0,SIZE,SIZE);
     }
-    box.appendChild(c);
+    box.appendChild(c2);
     var lbl=document.createElement('div');
-    lbl.textContent=n===1?'Dice 1 (reference)':'Dice '+n+' (adjusting)';
+    lbl.textContent=n===1?'Dice 1 (ref)':'Dice '+n+(n===selDie?' ← editing':'');
+    if(n===selDie)lbl.style.color='#c8a84b';
     box.appendChild(lbl);
     wrap.appendChild(box);
   });
@@ -119,11 +127,12 @@ function render(){
 
 function save(){
   var status=document.getElementById('status');
-  var cropSize=SIZE+oz*2;
-  var L=BASE_L+ox-oz,T=BASE_T+oy-oz,R=BASE_R+ox+oz,B=BASE_B+oy+oz;
-  localStorage.setItem('dice_crop',JSON.stringify({ox:ox,oy:oy,oz:oz}));
-  window.location.hash='x='+ox+'&y='+oy+'&z='+oz;
-  var msg='CROP: ('+L+','+T+')-('+R+','+B+')';
+  localStorage.setItem('dice5_crop',JSON.stringify(d5));
+  localStorage.setItem('dice6_crop',JSON.stringify(d6));
+  var S5=SIZE+d5.oz*2,S6=SIZE+d6.oz*2;
+  var L5=BASE_L+d5.ox-d5.oz,T5=BASE_T+d5.oy-d5.oz;
+  var L6=BASE_L+d6.ox-d6.oz,T6=BASE_T+d6.oy-d6.oz;
+  var msg='D5: ('+L5+','+T5+')-('+( L5+S5)+','+(T5+S5)+') | D6: ('+L6+','+T6+')-('+( L6+S6)+','+(T6+S6)+')';
   status.style.display='block';
   status.textContent=msg;
   document.title=msg;
