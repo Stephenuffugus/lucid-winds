@@ -3220,7 +3220,8 @@
 
     /* Sokoban */
     .skg{display:grid;gap:clamp(1px,.3vw,2px);width:clamp(260px,82vw,360px);margin:0 auto;padding:clamp(4px,1.5vw,8px);background:rgba(13,16,12,.25);border-radius:clamp(6px,2vw,10px);animation:boardFadeIn .4s ease}
-    .skc{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:clamp(2px,.6vw,4px);min-height:32px;transition:all .15s;overflow:hidden}
+    .skc{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:clamp(2px,.6vw,4px);min-height:32px;transition:background .2s ease,transform .15s ease;overflow:hidden;position:relative}
+    .skc img{transition:transform .15s ease}
     .skc svg{width:100%;height:100%;display:block}
 
     /* Battleship */
@@ -35811,7 +35812,7 @@ function GSK(a){
     {w:7,h:6,map:'#######'+'#..X..#'+'#.O#..#'+'#..#O.#'+'#@.X..#'+'#######'},
     {w:6,h:6,map:'######'+'##.X##'+'#..O.#'+'#.O..#'+'#@.X.#'+'######'},
     {w:7,h:6,map:'#######'+'#X.#..#'+'#.O..O#'+'#..#.X#'+'#..@..#'+'#######'},
-    {w:7,h:6,map:'#######'+'#.....#'+'#.O#X.#'+'#.....#'+'#X#O@.#'+'#######'},
+    {w:7,h:6,map:'#######'+'#.....#'+'#.O.X.#'+'#.....#'+'#X.O@.#'+'#######'},
     {w:6,h:6,map:'######'+'#X...#'+'#.O..#'+'#..O.#'+'#...X#'+'#@..##'},
     {w:7,h:5,map:'#######'+'#@O.X.#'+'##.#..#'+'#.O..X#'+'#######'},
     {w:7,h:7,map:'#######'+'#.....#'+'#.O.X.#'+'#.#.#.#'+'#.X.O.#'+'#..@..#'+'#######'},
@@ -35866,7 +35867,7 @@ function GSK(a){
     for(var y=0;y<h;y++)for(var x=0;x<w;x++){var d=document.createElement('div');d.className='skc';d.style.overflow='hidden';
       var v=grid[y*w+x],isTarget=(v===3||v===4),isCrate=(v===2||v===4),isPlayer=(x===px&&y===py);
       if(v===1){d.innerHTML=ART.wall}
-      else if(isPlayer&&isTarget){d.innerHTML=ART.playerOnTarget}
+      else if(isPlayer&&isTarget){d.innerHTML=ART.target+ART.player;d.style.position='relative';d.querySelectorAll('img').forEach(function(im,idx){if(idx===0)im.style.cssText+='position:absolute;inset:0;opacity:0.4;';if(idx===1)im.style.cssText+='position:relative;z-index:2;'})}
       else if(isPlayer){d.style.background='rgba(26,31,23,.4)';d.innerHTML=ART.player}
       else if(isCrate&&isTarget){d.innerHTML=ART.planted}
       else if(isCrate){d.style.background='rgba(26,31,23,.4)';d.innerHTML=ART.crate}
