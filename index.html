@@ -25580,7 +25580,8 @@ document.addEventListener('keydown', function(e) {
           grid.appendChild(el);
           continue;
         }
-        var plantSvg = generatePlantSVG(plant.hash, 65);
+        var _ghOv = (plant.generation && plant.generation > 1) ? {chimerGen: plant.generation} : null;
+        var plantSvg = generatePlantSVG(plant.hash, 65, 1, _ghOv);
         if (plant.mutated) {
           plantSvg = plantSvg.replace('<svg ', '<svg style="filter:drop-shadow(0 0 6px rgba(200,168,75,0.5)) drop-shadow(0 0 12px rgba(200,168,75,0.2));" ');
         }
@@ -26115,7 +26116,8 @@ document.addEventListener('keydown', function(e) {
     var haiku = typeof getHaiku     === 'function' ? getHaiku(plant.hash)     : { line1:'', line2:'', line3:'' };
     var _seasonColors = ['#E8A0BF','#D4A843','#C4763A','#A0C4E8'];
     // Carousel SVG — always generate fresh (companions/auras need live animations)
-    var svgHtml = generatePlantSVG(plant.hash, 200);
+    var _csOv = (plant.generation && plant.generation > 1) ? {chimerGen: plant.generation} : null;
+    var svgHtml = generatePlantSVG(plant.hash, 200, 1, _csOv);
     if (plant.mutated) {
       svgHtml = svgHtml.replace('<svg ', '<svg style="filter:drop-shadow(0 0 10px rgba(200,168,75,0.5)) drop-shadow(0 0 20px rgba(200,168,75,0.2));" ');
     }
@@ -28083,16 +28085,14 @@ document.addEventListener('keydown', function(e) {
       }
       var _revGrade = window.getTerraGrade(_revTraits);
 
-      // Grade reveal line
-      var gradeHtml = '<div class="cr-grade-reveal" style="margin:0.3rem 0;font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;color:' + _revGrade.color + ';text-shadow:0 0 10px ' + _revGrade.color + '44;text-align:center;opacity:0;">'
-        + _revGrade.icon + ' ' + _revGrade.name.toUpperCase() + ' ' + _revGrade.icon
-        + '</div>';
+      // Grade hidden — revealed on first card flip in greenhouse
+      var gradeHtml = '';
 
       ov.innerHTML = particles
         + '<div class="cr-banner' + (mutated ? ' mutated' : '') + '">' + banner + '</div>'
         + mutLabel
         + '<div class="cr-plant-wrap' + (mutated ? ' mutated' : '') + '">' + plantSVG + '</div>'
-        + (plantName ? '<div class="cr-plant-name" style="color:'+_revGrade.color+';text-shadow:0 0 12px '+_revGrade.color+'44;">'   + plantName + '</div>' : '')
+        + (plantName ? '<div class="cr-plant-name" style="color:var(--cream);text-shadow:0 0 12px rgba(200,188,160,0.3);">'   + plantName + '</div>' : '')
         + cascadeHtml
         + gradeHtml
         + '<div class="cr-plant-hash">'                + hs        + '</div>'
