@@ -40195,7 +40195,6 @@ var _ov=null,_dlg=null,_spot=null;
 
 function _getStep(){var s=localStorage.getItem(TK);if(s==='done')return -1;return parseInt(s,10)||0;}
 function _setStep(n){localStorage.setItem(TK,String(n));}
-function _done(){localStorage.setItem(TK,'done');}
 
 function _clear(){
   if(_ov&&_ov.parentNode)_ov.remove();_ov=null;
@@ -40204,14 +40203,15 @@ function _clear(){
 }
 
 function _dialog(text,btnLabel,btnCb,pos){
+  if(_dlg&&_dlg.parentNode)_dlg.remove();
   _dlg=document.createElement('div');
-  _dlg.style.cssText='position:fixed;z-index:99998;background:rgba(18,24,16,0.97);border:1.5px solid rgba(200,168,75,0.3);border-radius:14px;padding:1rem 1.2rem;max-width:min(320px,88vw);font-family:Playfair Display,serif;font-size:0.65rem;color:var(--cream);line-height:1.7;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.6);animation:panelFadeIn 0.35s ease;';
-  if(pos==='top'){_dlg.style.top='15%';_dlg.style.left='50%';_dlg.style.transform='translateX(-50%)';}
-  else if(pos==='bottom'){_dlg.style.bottom='calc(80px + env(safe-area-inset-bottom,0px))';_dlg.style.left='50%';_dlg.style.transform='translateX(-50%)';}
-  else{_dlg.style.top='50%';_dlg.style.left='50%';_dlg.style.transform='translate(-50%,-50%)';}
-  var h='<div style="margin-bottom:0.5rem;">'+text+'</div>';
+  _dlg.style.cssText='position:fixed;z-index:99998;background:rgba(18,24,16,0.97);border:1.5px solid rgba(200,168,75,0.3);border-radius:16px;padding:1.2rem 1.4rem;max-width:min(340px,90vw);font-family:Playfair Display,serif;font-size:clamp(0.85rem,2.8vw,1.05rem);color:var(--cream);line-height:1.8;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.6);animation:panelFadeIn 0.35s ease;';
+  if(pos==='top'){_dlg.style.top='12%';_dlg.style.left='50%';_dlg.style.transform='translateX(-50%)';}
+  else if(pos==='bottom'){_dlg.style.bottom='calc(90px + env(safe-area-inset-bottom,0px))';_dlg.style.left='50%';_dlg.style.transform='translateX(-50%)';}
+  else{_dlg.style.top='40%';_dlg.style.left='50%';_dlg.style.transform='translate(-50%,-50%)';}
+  var h='<div style="margin-bottom:0.6rem;">'+text+'</div>';
   if(btnLabel){
-    h+='<button onclick="void(0)" style="min-height:48px;min-width:120px;padding:0.4rem 1.2rem;border-radius:8px;border:1.5px solid rgba(200,168,75,0.35);background:rgba(200,168,75,0.1);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;">'+btnLabel+'</button>';
+    h+='<button onclick="void(0)" style="min-height:52px;min-width:140px;padding:0.5rem 1.4rem;border-radius:10px;border:1.5px solid rgba(200,168,75,0.35);background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(200,168,75,0.05));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;">'+btnLabel+'</button>';
   }
   _dlg.innerHTML=h;
   if(btnCb){var btn=_dlg.querySelector('button');if(btn)btn.onclick=function(e){e.stopPropagation();btnCb();};}
@@ -40220,6 +40220,7 @@ function _dialog(text,btnLabel,btnCb,pos){
 }
 
 function _overlay(tapCb){
+  if(_ov&&_ov.parentNode)_ov.remove();
   _ov=document.createElement('div');
   _ov.style.cssText='position:fixed;inset:0;z-index:99996;background:rgba(0,0,0,0.72);animation:panelFadeIn 0.3s ease;';
   if(tapCb)_ov.onclick=tapCb;
@@ -40228,103 +40229,108 @@ function _overlay(tapCb){
 
 function _spotlight(el){
   if(!el)return;
+  if(_spot&&_spot.parentNode)_spot.remove();
   var r=el.getBoundingClientRect();
   _spot=document.createElement('div');
   _spot.style.cssText='position:fixed;z-index:99997;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,0.72);pointer-events:none;transition:all 0.3s ease;';
-  _spot.style.top=(r.top-6)+'px';_spot.style.left=(r.left-6)+'px';
-  _spot.style.width=(r.width+12)+'px';_spot.style.height=(r.height+12)+'px';
+  _spot.style.top=(r.top-8)+'px';_spot.style.left=(r.left-8)+'px';
+  _spot.style.width=(r.width+16)+'px';_spot.style.height=(r.height+16)+'px';
   document.body.appendChild(_spot);
-  // Ensure target is clickable above overlay
   el.style.position=el.style.position||'relative';
   el.style.zIndex='99997';
 }
 
 // ═══ STEP 1: "This is your first plant. Tap to view it." ═══
 function _step1(){
-  if(_getStep()>=1&&_getStep()<5)return; // already past this
+  var s=_getStep();
+  if(s>=1&&s<5)return;
   _setStep(1);
-  // Wait for greenhouse to render
   setTimeout(function(){
     var cards=document.querySelectorAll('.greenhouse-plant');
     if(!cards.length){setTimeout(_step1,500);return;}
     var firstCard=cards[0];
     _overlay();
     _spotlight(firstCard);
-    _dialog('This is your first plant.<br><span style="color:var(--gold);">Tap it to take a closer look.</span>',null,null,'bottom');
-    // Intercept tap on the card
+    _dialog('This is your first plant.<br><br><span style="color:var(--gold);font-size:1.1em;">Tap it to take a closer look.</span><br><div style="font-size:1.8rem;margin-top:0.3rem;animation:_whPulse 1.5s ease infinite;">\u2193</div>',null,null,'top');
     var origClick=firstCard.onclick;
     firstCard.onclick=function(e){
       _clear();
       firstCard.style.zIndex='';
+      firstCard.onclick=origClick;
       if(origClick)origClick.call(firstCard,e);
-      // openCarousel should fire — wait for it then show step 2
-      setTimeout(_step2,600);
+      _setStep(2);
+      // Wait for carousel to open, then show step 2
+      _waitForCarousel(0);
     };
-  },400);
+  },600);
 }
 
-// ═══ STEP 2: Carousel front — uniqueness ═══
+// Wait for carousel to open before showing step 2
+function _waitForCarousel(attempts){
+  var gallery=document.getElementById('plant-gallery-modal');
+  if(gallery&&gallery.classList.contains('open')){
+    setTimeout(_step2,300);
+  } else if(attempts<20){
+    setTimeout(function(){_waitForCarousel(attempts+1);},200);
+  }
+}
+
+// ═══ STEP 2: Carousel front — uniqueness + flip prompt ═══
 function _step2(){
   _setStep(2);
-  setTimeout(function(){
-    var gallery=document.getElementById('plant-gallery-modal');
-    if(!gallery||!gallery.classList.contains('open')){setTimeout(_step2,300);return;}
-    _dialog('Every plant is completely unique \u2014 created through your own interactions.<br><br>The <span style="color:var(--gold);">name</span> and <span style="color:var(--gold);">haiku</span> are generated just for you. This card is one-of-a-kind.<br><br><span style="color:var(--sage);">Tap the card to flip it \u2192</span>',null,null,'bottom');
-    // Watch for flip
-    var flipWrap=document.querySelector('.cs-flip-wrap');
-    if(flipWrap){
-      var _watchFlip=function(){
-        if(flipWrap.classList.contains('flipped')){
-          _clear();
-          setTimeout(_step3,400);
-        } else {
-          setTimeout(_watchFlip,200);
-        }
-      };
-      setTimeout(_watchFlip,300);
-    }
-  },400);
+  _dialog('Every plant is completely unique \u2014 created through your own interactions.<br><br>The <span style="color:var(--gold);">name</span> and <span style="color:var(--gold);">haiku</span> are generated just for you.<br><br><span style="color:var(--sage);font-size:1.1em;">Tap the card to flip it and see the layers \u2192</span>','',null,'bottom');
+  // Remove empty button
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  // Watch for flip
+  var flipWrap=document.querySelector('.cs-flip-wrap');
+  if(flipWrap){
+    var _polls=0;
+    var _watchFlip=function(){
+      if(flipWrap.classList.contains('flipped')){
+        _clear();
+        setTimeout(_step3,500);
+      } else if(_polls<150){ // 30 seconds max
+        _polls++;
+        setTimeout(_watchFlip,200);
+      }
+    };
+    setTimeout(_watchFlip,500);
+  }
 }
 
 // ═══ STEP 3: Carousel back — DNA ledger ═══
 function _step3(){
   _setStep(3);
-  setTimeout(function(){
-    _dialog('These are the <span style="color:var(--gold);">genetic layers</span> that make up your unique piece of art.<br><br>Each trait was determined by the hash of your attention \u2014 your focus literally shaped this plant.','GOT IT',function(){
-      _clear();
-      // Close carousel
-      if(window.closePlantGallery)closePlantGallery();
-      setTimeout(_step4,400);
-    },'top');
-  },300);
+  _dialog('These are the <span style="color:var(--gold);">genetic layers</span> that make up your unique piece of art.<br><br>Each trait was shaped by the hash of your attention.','GOT IT',function(){
+    _clear();
+    if(window.closePlantGallery)closePlantGallery();
+    setTimeout(_step4,500);
+  },'top');
 }
 
 // ═══ STEP 4: Direct to Game tab ═══
 function _step4(){
   _setStep(4);
   setTimeout(function(){
-    _overlay();
-    // Find game nav button
+    _overlay(function(){_clear();_setStep(5);}); // tap overlay to dismiss (escape hatch)
     var navBtns=document.querySelectorAll('.fg-nav-btn');
     var gameBtn=null;
     for(var i=0;i<navBtns.length;i++){
-      if(navBtns[i].querySelector('img')&&navBtns[i].querySelector('img').alt==='Game'){gameBtn=navBtns[i];break;}
+      var img=navBtns[i].querySelector('img');
+      if(img&&img.alt==='Game'){gameBtn=navBtns[i];break;}
     }
     if(gameBtn){
       _spotlight(gameBtn);
-      _dialog('You can earn more plants by <span style="color:var(--sage);">playing games</span>, <span style="color:var(--sage);">making art</span>, and <span style="color:var(--sage);">solving puzzles</span>.<br><br>There are all kinds of ways \u2014 explore and find what you like!<br><br><span style="color:var(--gold);">Tap the Game tab below \u2193</span>',null,null,'center');
-      var origGameClick=gameBtn.onclick;
-      gameBtn.onclick=function(e){
+      _dialog('Earn more plants by <span style="color:var(--sage);">playing games</span>, <span style="color:var(--sage);">making art</span>, and <span style="color:var(--sage);">solving puzzles</span>.<br><br>Explore and find what you like!','TAP GAME TO START',function(){
         _clear();
         gameBtn.style.zIndex='';
-        gameBtn.onclick=origGameClick;
-        if(origGameClick)origGameClick.call(gameBtn,e);
-        _setStep(5); // immediate tutorial done, deferred steps remain
-      };
+        _setStep(5);
+        if(window.switchTab)switchTab('game');
+      },'center');
     } else {
-      _dialog('Earn more plants by playing games, making art, and solving puzzles. Explore the tabs!','GOT IT',function(){_clear();_setStep(5);},'center');
+      _dialog('Earn more plants by playing games, making art, and solving puzzles!','GOT IT',function(){_clear();_setStep(5);},'center');
     }
-  },300);
+  },400);
 }
 
 // ═══ DEFERRED: Nursery check ═══
@@ -40334,11 +40340,11 @@ function checkNursery(){
   localStorage.setItem('lw_tut_nursery','1');
   if(gh.length<2){
     setTimeout(function(){
-      _dialog('You need at least <span style="color:var(--gold);">2 plants</span> to breed.<br><br>Play some games to earn more, then come back here to cross-pollinate!','GOT IT',function(){_clear();},'center');
+      _dialog('You need at least <span style="color:var(--gold);">2 plants</span> to breed.<br><br>Play some games to earn more, then come back!','GOT IT',function(){_clear();},'center');
     },400);
   } else {
     setTimeout(function(){
-      _dialog('You have enough plants to breed!<br><br><span style="color:var(--sage);">Cross-pollination</span> combines traits from two plants to create something entirely new. The offspring goes to your nursery \u2014 water it for 3 days and it blooms.','GOT IT',function(){_clear();},'center');
+      _dialog('You have enough plants to breed!<br><br><span style="color:var(--sage);">Cross-pollination</span> combines two plants into something new. Water the seed for 3 days and it blooms.','GOT IT',function(){_clear();},'center');
     },400);
   }
 }
@@ -40348,7 +40354,7 @@ function checkBreed(){
   if(localStorage.getItem('lw_tut_breed'))return;
   localStorage.setItem('lw_tut_breed','1');
   setTimeout(function(){
-    _dialog('These are the <span style="color:var(--gold);">genetic layers</span> of each plant side by side.<br><br><span style="color:var(--sage);">DOMINANT</span> traits are likely to pass down. <span style="color:var(--gold);">BLENDS</span> mix from both parents. <span style="color:#d8a0a0;">RISKY</span> traits may mutate or vanish.<br><br>The forecast shows what your offspring might inherit.','GOT IT',function(){_clear();},'top');
+    _dialog('These are the <span style="color:var(--gold);">genetic layers</span> side by side.<br><br><span style="color:var(--sage);">DOMINANT</span> traits pass down. <span style="color:var(--gold);">BLENDS</span> mix. <span style="color:#d8a0a0;">RISKY</span> ones may mutate.','GOT IT',function(){_clear();},'top');
   },600);
 }
 
