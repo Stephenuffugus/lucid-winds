@@ -3540,6 +3540,8 @@
 /* ── SCANNER RANGE RING ── */
 .scanner-ring{border:2px solid rgba(122,179,86,0.25)!important;background:radial-gradient(circle,rgba(122,179,86,0.03) 0%,rgba(122,179,86,0.01) 60%,transparent 100%)!important;box-shadow:0 0 20px rgba(122,179,86,0.1);animation:scannerPulse 4s ease-in-out infinite;}
 @keyframes scannerPulse{0%,100%{border-color:rgba(122,179,86,0.2);box-shadow:0 0 15px rgba(122,179,86,0.08);}50%{border-color:rgba(122,179,86,0.35);box-shadow:0 0 25px rgba(122,179,86,0.15);}}
+.feral-zone-hex{animation:feralHexPulse 3s ease-in-out infinite;cursor:pointer;}
+@keyframes feralHexPulse{0%,100%{stroke:rgba(200,168,75,0.4);fill:rgba(200,168,75,0.06);}50%{stroke:rgba(200,168,75,0.7);fill:rgba(200,168,75,0.14);}}
 
 /* ── BOTANICAL VIEWPORT FRAME ── ready for Gemini image */
 /* ═══ INTEGRATED WILD FRAME — pure CSS, no generated image ═══
@@ -30943,14 +30945,16 @@ function _loadAll(){
   if(!document.getElementById('_fA')){var s=document.createElement('style');s.id='_fA';s.textContent='@keyframes _fP{0%,100%{transform:translate(-50%,-50%) scale(1);box-shadow:0 0 10px rgba(200,168,75,0.5);}50%{transform:translate(-50%,-50%) scale(1.25);box-shadow:0 0 18px rgba(200,168,75,0.7);}}@keyframes _fR{0%{width:14px;height:14px;opacity:0.5;}100%{width:36px;height:36px;opacity:0;}}';document.head.appendChild(s);}
 }
 
-// ═══ FERAL SPAWNING — Zone-Based Ecosystem ═══
-// Every zone with 1+ wild plant (local OR shared) generates 1 feral seed
-// every 18-36 hours for each player. Hash is rolled at collection time
-// from plants currently in that zone, so every player gets different combos.
+// ═══ FERAL SPAWNING — Zone-Based Ecosystem (v2) ═══
+// Zones with plants show tappable hexes. Each zone gets 1 feral slot.
+// When a player taps a zone hex, the hash rolls from zone plants.
+// 18-36 hour cooldown per zone per player before next feral.
+// NO feral markers on the map — the zone hex IS the indicator.
 var FERAL_ZONE_CAP = 2;
 var FERAL_SPAWN_MIN_MS = 18 * 3600000; // 18 hours
 var FERAL_SPAWN_MAX_MS = 36 * 3600000; // 36 hours
 var _feralRespawnTimer = null;
+var _feralZoneHexes = []; // Leaflet layers for tappable feral zones
 
 // Breed hash — crypto.getRandomValues with parent byte mixing
 function _breedHash(hashA, hashB) {
@@ -31024,100 +31028,158 @@ function _getAllZonePlants() {
 }
 
 function _spawnFerals() {
+  // v2: No markers spawned. Just draw tappable zone hexes for zones with available ferals.
   if (!_uLat || !_map) return;
+  _drawFeralZones();
+}
+
+function _drawFeralZones() {
+  // Clear old feral hexes
+  for (var fh = 0; fh < _feralZoneHexes.length; fh++) {
+    if (_map) _map.removeLayer(_feralZoneHexes[fh]);
+  }
+  _feralZoneHexes = [];
+  if (!_map || !_uLat) return;
+
   var now = Date.now();
-
-  // Load existing ferals and zone timers
-  var data = []; try { data = JSON.parse(localStorage.getItem('fg_ferals') || '[]'); } catch (e) {}
   var zoneTimers = {}; try { zoneTimers = JSON.parse(localStorage.getItem('fg_feral_zones') || '{}'); } catch (e) {}
-
-  // Prune ferals older than 3 days
-  var cutoff = now - 3 * 86400000;
-  data = data.filter(function(f) { return new Date(f.date).getTime() > cutoff; });
-
-  // Backfill zone on old ferals that never had one assigned
-  for (var bz = 0; bz < data.length; bz++) {
-    if (!data[bz].zone && data[bz].lat && data[bz].lng) {
-      data[bz].zone = _zoneKey(data[bz].lat, data[bz].lng);
-    }
-  }
-
-  // Re-render nearest uncollected ferals (cap at 8 markers to prevent lag)
-  var _visibleFerals = [];
-  for (var i = 0; i < data.length; i++) {
-    if (!data[i].collected && data[i].lat && data[i].lng) {
-      var fd = _dist(_uLat, _uLng, data[i].lat, data[i].lng);
-      if (fd < 500) _visibleFerals.push({idx: i, dist: fd});
-    }
-  }
-  _visibleFerals.sort(function(a, b) { return a.dist - b.dist; });
-  for (var vi = 0; vi < Math.min(_visibleFerals.length, 8); vi++) {
-    _addFeral(data[_visibleFerals[vi].idx]);
-  }
-
-  // Build unified zone map (local + shared)
   var zones = _getAllZonePlants();
   var zoneKeys = Object.keys(zones);
-  var newFerals = [];
+  var half = ZONE_SIZE / 2;
+  var availCount = 0;
 
   for (var z = 0; z < zoneKeys.length; z++) {
     var zk = zoneKeys[z];
     if (zones[zk].length < 1) continue;
 
-    // Check zone timer — each zone spawns 1 feral per interval
-    var lastSpawn = zoneTimers[zk] || 0;
+    // Check zone timer — is a feral available?
+    var lastCollect = zoneTimers[zk] || 0;
     var interval = _zoneSpawnInterval(zk);
-    if (now - lastSpawn < interval) continue;
+    var available = (now - lastCollect >= interval);
 
-    // Check cap: max FERAL_ZONE_CAP uncollected ferals per zone
-    var feralsInZone = 0;
-    for (var fc = 0; fc < data.length; fc++) {
-      if (!data[fc].collected && data[fc].zone === zk) feralsInZone++;
-    }
-    if (feralsInZone >= FERAL_ZONE_CAP) continue;
-
-    // Place feral with wind influence within zone
+    // Parse zone center
     var parts = zk.split(',');
-    var baseLat = parseFloat(parts[0]), baseLng = parseFloat(parts[1]);
-    var windRad = ((_wd || 0) + Math.random() * 180 - 90) * Math.PI / 180;
-    var windStr = 0.2 + Math.random() * 0.3;
-    var randStr = 1 - windStr;
-    var fLat = baseLat + Math.cos(windRad) * ZONE_SIZE * windStr + (Math.random() - 0.5) * ZONE_SIZE * randStr;
-    var fLng = baseLng + Math.sin(windRad) * ZONE_SIZE * windStr + (Math.random() - 0.5) * ZONE_SIZE * randStr;
+    var cLat = parseFloat(parts[0]);
+    var cLng = parseFloat(parts[1]);
 
-    // Feral object — NO hash yet. Hash rolled at collection time from zone plants.
-    var feral = {
-      lat: fLat, lng: fLng, zone: zk,
-      date: new Date().toISOString(),
-      collected: false
-    };
-    newFerals.push(feral);
-    data.push(feral);
-    zoneTimers[zk] = now;
+    // Only show zones within ~500m
+    if (_dist(_uLat, _uLng, cLat, cLng) > 600) continue;
 
-    if (_dist(_uLat, _uLng, fLat, fLng) < 500) _addFeral(feral);
+    // Build hex points
+    var pts = [];
+    for (var a = 0; a < 6; a++) {
+      var angle = (a * 60 - 30) * Math.PI / 180;
+      pts.push([cLat + half * Math.sin(angle), cLng + half * 1.15 * Math.cos(angle)]);
+    }
+
+    if (available) {
+      // Feral available — glowing tappable hex
+      var hex = L.polygon(pts, {
+        color: 'rgba(200,168,75,0.5)', weight: 2,
+        fillColor: 'rgba(200,168,75,0.1)', fillOpacity: 1,
+        dashArray: '', interactive: true, className: 'feral-zone-hex'
+      }).addTo(_map);
+      hex._feralZoneKey = zk;
+      hex._feralPlants = zones[zk];
+      hex.on('click', function(e) {
+        L.DomEvent.stopPropagation(e);
+        _collectFeralFromZone(this._feralZoneKey, this._feralPlants);
+      });
+      _feralZoneHexes.push(hex);
+      availCount++;
+    }
   }
 
-  // Prune stale zone timers (zones with no plants anymore)
-  var timerKeys = Object.keys(zoneTimers);
-  for (var tk = 0; tk < timerKeys.length; tk++) {
-    if (!zones[timerKeys[tk]]) delete zoneTimers[timerKeys[tk]];
+  if (availCount > 0 && !_feralRespawnTimer) {
+    // Re-check periodically for new feral availability
+    _feralRespawnTimer = setTimeout(function() { _feralRespawnTimer = null; _drawFeralZones(); }, 60000);
+  }
+}
+
+function _collectFeralFromZone(zk, zonePlants) {
+  if (!_uLat) { _toast('Need location.'); return; }
+  var parts = zk.split(',');
+  var cLat = parseFloat(parts[0]), cLng = parseFloat(parts[1]);
+  var d = _dist(_uLat, _uLng, cLat, cLng);
+  if (d > COLLECT_RANGE) {
+    _toast('Walk closer! ' + Math.round(d * 3.281) + ' ft away. Need within ' + Math.round(COLLECT_RANGE * 3.281) + ' ft.');
+    return;
   }
 
-  // Persist
-  localStorage.setItem('fg_ferals', JSON.stringify(data));
+  // Check zone cooldown
+  var zoneTimers = {}; try { zoneTimers = JSON.parse(localStorage.getItem('fg_feral_zones') || '{}'); } catch (e) {}
+  var now = Date.now();
+  var lastCollect = zoneTimers[zk] || 0;
+  var interval = _zoneSpawnInterval(zk);
+  if (now - lastCollect < interval) {
+    var hrs = Math.ceil((interval - (now - lastCollect)) / 3600000);
+    _toast('This zone was recently collected. Try again in ~' + hrs + 'h.');
+    return;
+  }
+
+  // Roll hash from zone plants
+  if (!zonePlants || zonePlants.length === 0) { _toast('No plants in this zone.'); return; }
+  var parentA = zonePlants[Math.floor(Math.random() * zonePlants.length)];
+  var parentB = zonePlants.length > 1 ? zonePlants[Math.floor(Math.random() * zonePlants.length)] : parentA;
+  // Avoid same parent
+  if (parentB.hash === parentA.hash && zonePlants.length > 1) {
+    for (var pi = 0; pi < zonePlants.length; pi++) { if (zonePlants[pi].hash !== parentA.hash) { parentB = zonePlants[pi]; break; } }
+  }
+  var feralHash = _breedHash(parentA.hash, parentB.hash);
+
+  // Determine grade for challenge difficulty
+  var info = {};
+  try {
+    var t = window.hashToTraits ? hashToTraits(feralHash) : null;
+    var tg = t && window.getTerraGrade ? getTerraGrade(t) : null;
+    info = { nm: typeof getPlantName === 'function' ? getPlantName(feralHash) : feralHash.slice(0, 8), grade: tg ? tg.name : 'Common' };
+  } catch (e) { info = { nm: feralHash.slice(0, 8), grade: 'Common' }; }
+
+  // Challenge gate
+  if (window.FG_Challenge) {
+    FG_Challenge.start(info.grade, function(success) {
+      if (success) {
+        _awardFeral(feralHash, parentA.hash, parentB.hash, zk, info);
+      } else {
+        _toast('Challenge failed. Try again when the zone refreshes.');
+      }
+    });
+  } else {
+    _awardFeral(feralHash, parentA.hash, parentB.hash, zk, info);
+  }
+}
+
+function _awardFeral(hash, parentA, parentB, zk, info) {
+  // Mark zone as collected
+  var zoneTimers = {}; try { zoneTimers = JSON.parse(localStorage.getItem('fg_feral_zones') || '{}'); } catch (e) {}
+  zoneTimers[zk] = Date.now();
   localStorage.setItem('fg_feral_zones', JSON.stringify(zoneTimers));
 
-  if (newFerals.length > 0) {
-    _toast('\ud83c\udf43 ' + newFerals.length + ' feral seed' + (newFerals.length > 1 ? 's' : '') + ' appeared nearby!');
-    if (window._swsLog) _swsLog('Spawned ' + newFerals.length + ' ferals from ' + zoneKeys.length + ' occupied zones', 'ok');
+  // Add to backpack or pouch
+  var feralObj = { hash: hash, name: info.nm, type: 'feral', grade: info.grade, parentA: parentA, parentB: parentB, zone: zk, date: new Date().toISOString() };
+  if (window.FG_Backpack && FG_Backpack.as) {
+    var added = FG_Backpack.as(feralObj);
+    if (!added) { _toast('Seed pouch full!'); return; }
   }
+
+  // Dew reward by grade
+  var dewTable = { Common: 1, Uncommon: 3, Rare: 5, Epic: 8, Legendary: 12, Mythic: 18, Cosmic: 25 };
+  var dewReward = dewTable[info.grade] || 1;
+  if (window.earnHashes) earnHashes(dewReward);
+
+  _toast('🌰 Feral seed collected! +' + dewReward + ' dew · ' + info.grade);
+  try { navigator.vibrate && navigator.vibrate([15, 30, 15]); } catch (e) {}
+  if (typeof gtag !== 'undefined') gtag('event', 'feral_collected', { grade: info.grade, zone: zk.slice(0, 10) });
+
+  // Refresh zone hexes to remove the glow
+  _drawFeralZones();
+  if (window.FG_Backpack) FG_Backpack.render();
 }
 
 // Debounced re-check after shared markers arrive
 function _feralRespawnDebounced() {
   if (_feralRespawnTimer) clearTimeout(_feralRespawnTimer);
-  _feralRespawnTimer = setTimeout(function() { _spawnFerals(); _wildReproduction(); }, 2000);
+  _feralRespawnTimer = setTimeout(function() { _feralRespawnTimer = null; _drawFeralZones(); _wildReproduction(); }, 2000);
 }
 
 // ═══ WILD PLANT REPRODUCTION ═══
