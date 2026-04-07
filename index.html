@@ -5119,7 +5119,7 @@ window.onerror=function(msg,url,line,col,err){
       var uid='';try{var u=firebase.auth().currentUser;if(u)uid=u.uid;}catch(e){}
       var db=null;try{db=firebase.firestore();}catch(e){}
       var ZONE=0.001;var count=0;
-      var defGames=['set','memory','growth','color','math','word'];
+      var defGames=['set','memory','growth','color','math','word','chess'];
       for(var dx=-2;dx<=2;dx++){
         for(var dy=-2;dy<=2;dy++){
           var zoneLat=cLat+dx*ZONE;
@@ -31916,7 +31916,8 @@ function _showDefenderPicker(){
     {id:'growth',name:'Growth',icon:'\ud83c\udf31',desc:'Order the stages',diff:'Medium'},
     {id:'color',name:'Color',icon:'\ud83c\udfa8',desc:'Match the target hue',diff:'Easy'},
     {id:'math',name:'Math',icon:'\ud83d\udd22',desc:'Solve the equation',diff:'Hard'},
-    {id:'word',name:'Word',icon:'\ud83d\udcdd',desc:'Unscramble letters',diff:'Hard'}
+    {id:'word',name:'Word',icon:'\ud83d\udcdd',desc:'Unscramble letters',diff:'Hard'},
+    {id:'chess',name:'Chess',icon:'\u265a',desc:'Find the checkmate',diff:'Hard'}
   ];
 
   var h='<div style="font-family:DM Mono,monospace;font-size:0.3rem;color:var(--muted);text-align:center;margin-bottom:6px;">Harder games are tougher for harvesters to beat</div>';
@@ -38380,6 +38381,176 @@ function _tapWord(idx){
 }
 
 // ═══ UNIFIED TAP DISPATCHER ═══
+// ═══ TYPE 7: CHESS PUZZLE (mate-in-1 / mate-in-2) ═══
+var _chessPuzzles=null,_chBoard=null,_chTurn='',_chSel=null,_chSolution=[],_chSolIdx=0,_chFlip=false;
+function _chParseFEN(fen){
+  var parts=fen.split(' ');
+  var rows=parts[0].split('/');
+  var board=[];
+  for(var r=0;r<8;r++){
+    board[r]=[];
+    var col=0;
+    for(var ci=0;ci<rows[r].length;ci++){
+      var ch=rows[r][ci];
+      if(ch>='1'&&ch<='8'){for(var e=0;e<parseInt(ch);e++){board[r][col++]=null;}}
+      else{board[r][col++]={type:ch.toUpperCase(),color:ch===ch.toUpperCase()?'w':'b'};}}
+  }
+  return{board:board,turn:parts[1]||'w'};
+}
+function _chUCI(m){return{fr:8-parseInt(m[1]),fc:m.charCodeAt(0)-97,tr:8-parseInt(m[3]),tc:m.charCodeAt(2)-97,promo:m[4]||null};}
+function _chApply(b,m){
+  var p=b[m.fr][m.fc];b[m.tr][m.tc]=m.promo?{type:m.promo.toUpperCase(),color:p.color}:p;b[m.fr][m.fc]=null;
+  // Castling
+  if(p&&p.type==='K'&&Math.abs(m.fc-m.tc)===2){
+    if(m.tc===6){b[m.tr][5]=b[m.tr][7];b[m.tr][7]=null;}
+    if(m.tc===2){b[m.tr][3]=b[m.tr][0];b[m.tr][0]=null;}
+  }
+}
+function _chIsLegal(b,fr,fc,tr,tc,turn){
+  var p=b[fr][fc];if(!p||p.color!==turn)return false;
+  var t=b[tr][tc];if(t&&t.color===turn)return false;
+  var dr=tr-fr,dc=tc-fc,adr=Math.abs(dr),adc=Math.abs(dc);
+  var ty=p.type;
+  if(ty==='P'){
+    var dir=p.color==='w'?-1:1;var start=p.color==='w'?6:1;
+    if(dc===0&&!t){if(dr===dir)return true;if(fr===start&&dr===2*dir&&!b[fr+dir][fc])return true;}
+    if(adc===1&&dr===dir&&t)return true;
+    return false;
+  }
+  if(ty==='N')return(adr===2&&adc===1)||(adr===1&&adc===2);
+  if(ty==='K'){
+    if(adr<=1&&adc<=1)return true;
+    // Castling (simplified — no full check validation)
+    if(adr===0&&adc===2&&!t){
+      if(dc===2&&b[fr][7]&&b[fr][7].type==='R'&&!b[fr][5]&&!b[fr][6])return true;
+      if(dc===-2&&b[fr][0]&&b[fr][0].type==='R'&&!b[fr][1]&&!b[fr][2]&&!b[fr][3])return true;
+    }
+    return false;
+  }
+  // Sliding pieces
+  var dirs=[];
+  if(ty==='R'||ty==='Q')dirs.push([0,1],[0,-1],[1,0],[-1,0]);
+  if(ty==='B'||ty==='Q')dirs.push([1,1],[1,-1],[-1,1],[-1,-1]);
+  for(var di=0;di<dirs.length;di++){
+    var dd=dirs[di];
+    for(var s=1;s<8;s++){
+      var nr=fr+dd[0]*s,nc=fc+dd[1]*s;
+      if(nr<0||nr>7||nc<0||nc>7)break;
+      if(nr===tr&&nc===tc)return true;
+      if(b[nr][nc])break;
+    }
+  }
+  return false;
+}
+function _chPieceHTML(p){
+  if(!p)return'';
+  var art='assets/games/chess/';
+  var col=p.color==='w'?'green':'gold';
+  var map={K:'king',Q:'queen',R:'rook',B:'bishop',N:'knight',P:'pawn'};
+  return'<img src="'+art+'p-'+map[p.type]+'-'+col+'.png" style="width:85%;height:85%;object-fit:contain;pointer-events:none;">';
+}
+function _renderChess(){
+  var b=document.getElementById('fc-board');if(!b)return;
+  b.style.gridTemplateColumns='repeat(8,1fr)';
+  b.style.gap='0';
+  b.style.maxWidth='320px';
+  b.style.margin='0 auto';
+  var h='';
+  for(var r=0;r<8;r++){
+    var dr=_chFlip?7-r:r;
+    for(var c=0;c<8;c++){
+      var dc=_chFlip?7-c:c;
+      var light=(dr+dc)%2===0;
+      var bg=light?'rgba(42,48,37,.5)':'rgba(74,124,53,.25)';
+      var sel=_chSel&&_chSel[0]===dr&&_chSel[1]===dc;
+      if(sel)bg='rgba(200,168,75,.5)';
+      var pc=_chBoard[dr][dc];
+      h+='<div onclick="FG_Challenge._tap('+(dr*8+dc)+')" style="aspect-ratio:1;background:'+bg+';display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;border:1px solid rgba(0,0,0,0.15);">';
+      if(pc)h+=_chPieceHTML(pc);
+      // Legal move indicator
+      if(_chSel&&_chIsLegal(_chBoard,_chSel[0],_chSel[1],dr,dc,_chTurn)){
+        h+='<div style="position:absolute;width:30%;height:30%;border-radius:50%;background:rgba(122,179,86,.45);pointer-events:none;"></div>';
+      }
+      h+='</div>';
+    }
+  }
+  b.innerHTML=h;
+}
+function _setupChess(diff){
+  // Load puzzles (lazy fetch)
+  if(!_chessPuzzles){
+    try{
+      var xhr=new XMLHttpRequest();
+      xhr.open('GET','assets/games/chess-puzzles.json',false);// sync for simplicity
+      xhr.send();
+      if(xhr.status===200)_chessPuzzles=JSON.parse(xhr.responseText);
+    }catch(e){}
+  }
+  if(!_chessPuzzles){_lose();return;}
+  // Pick puzzle: diff 0 = mate-in-1, diff 1-2 = mate-in-2
+  var pool=diff>=1?_chessPuzzles.m2:_chessPuzzles.m1;
+  var pz=pool[Math.floor(Math.random()*pool.length)];
+  // Parse FEN and apply opponent's last move (first move in solution)
+  var moves=pz.m.split(' ');
+  var parsed=_chParseFEN(pz.f);
+  _chBoard=parsed.board;
+  _chTurn=parsed.turn;
+  // Apply opponent's last move to get puzzle position
+  var opp=_chUCI(moves[0]);
+  _chApply(_chBoard,opp);
+  _chTurn=_chTurn==='w'?'b':'w';
+  // Solution is the remaining moves (player's moves)
+  _chSolution=[];
+  for(var i=1;i<moves.length;i++)_chSolution.push(_chUCI(moves[i]));
+  _chSolIdx=0;
+  _chSel=null;
+  _chFlip=_chTurn==='b';// flip board if playing as black
+  _renderChess();
+}
+function _tapChess(v){
+  var r=Math.floor(v/8),c=v%8;
+  var pc=_chBoard[r][c];
+  // If no piece selected, select player's piece
+  if(!_chSel){
+    if(pc&&pc.color===_chTurn){_chSel=[r,c];_renderChess();}
+    return;
+  }
+  // If tapping own piece, reselect
+  if(pc&&pc.color===_chTurn){_chSel=[r,c];_renderChess();return;}
+  // Check if this move matches the solution
+  var expected=_chSolution[_chSolIdx];
+  if(!expected){return;}
+  if(_chSel[0]===expected.fr&&_chSel[1]===expected.fc&&r===expected.tr&&c===expected.tc){
+    // Correct move
+    _chApply(_chBoard,expected);
+    _chSolIdx++;
+    _chSel=null;
+    try{navigator.vibrate&&navigator.vibrate(15);}catch(e){}
+    // Check if puzzle complete
+    if(_chSolIdx>=_chSolution.length){
+      _renderChess();_win();return;
+    }
+    // Apply opponent's response (next move in solution)
+    var opp=_chSolution[_chSolIdx];
+    _chApply(_chBoard,opp);
+    _chTurn=_chTurn==='w'?'b':'w';
+    _chSolIdx++;
+    _chTurn=_chTurn==='w'?'b':'w';
+    // Check if more player moves needed
+    if(_chSolIdx>=_chSolution.length){
+      _renderChess();_win();return;
+    }
+    _renderChess();
+  } else {
+    // Wrong move — flash red, deselect
+    _chSel=null;
+    _renderChess();
+    var bd=document.getElementById('fc-board');
+    if(bd){bd.style.boxShadow='inset 0 0 30px rgba(180,60,60,0.4)';setTimeout(function(){bd.style.boxShadow='none';},400);}
+    try{navigator.vibrate&&navigator.vibrate(100);}catch(e){}
+  }
+}
+
 function _tap(v){
   if(_type==='set')_tapSet(v);
   else if(_type==='memory')_tapMemory(v);
@@ -38387,6 +38558,7 @@ function _tap(v){
   else if(_type==='color')_tapColor(v);
   else if(_type==='math')_tapMath(v);
   else if(_type==='word')_tapWord(v);
+  else if(_type==='chess')_tapChess(v);
 }
 
 // ═══ START — picks random type ═══
@@ -38429,6 +38601,21 @@ function _setupChallenge(diff, grade) {
     if(title)title.textContent='WORD UNSCRAMBLE';
     if(sub)sub.textContent=(grade||'Common')+' — Spell the botanical word';
     _renderWord();
+  }else if(_type==='chess'){
+    var isM2=diff>=1;
+    if(title)title.textContent=isM2?'CHECKMATE IN 2':'CHECKMATE IN 1';
+    if(sub)sub.textContent=(grade||'Common')+' — Find the '+(isM2?'mate in 2 moves':'checkmate');
+    _setupChess(diff);
+    // Chess gets a timer — 90s for mate-in-1, 120s for mate-in-2
+    _timeMax=isM2?120000:90000;_timeLeft=_timeMax;
+    var fill=document.getElementById('fc-timer-fill');
+    if(fill){fill.parentNode.style.display='block';fill.style.width='100%';fill.classList.remove('urgent');}
+    var text=document.getElementById('fc-timer-text');
+    if(text){text.style.display='block';text.textContent=Math.ceil(_timeLeft/1000)+'s';}
+    var modal=document.getElementById('fc-modal');
+    if(modal)modal.classList.add('open');
+    _startTimer();
+    return;
   }
 
   // Hide timer — no time pressure, just solve it
@@ -38454,7 +38641,7 @@ function start(grade, callback) {
   if(grade==='Legendary'||grade==='Mythic'||grade==='Cosmic')diff=2;
 
   // Pick random challenge type
-  var types=['set','memory','spot','color','math','word'];
+  var types=['set','memory','spot','color','math','word','chess'];
   _type=types[Math.floor(Math.random()*types.length)];
 
   _setupChallenge(diff, grade);
@@ -38467,7 +38654,7 @@ function startSpecific(type, grade, callback) {
   var diff=0;
   if(grade==='Rare'||grade==='Epic')diff=1;
   if(grade==='Legendary'||grade==='Mythic'||grade==='Cosmic')diff=2;
-  var validTypes=['set','memory','spot','color','math','word'];
+  var validTypes=['set','memory','spot','color','math','word','chess'];
   _type=(validTypes.indexOf(type)>=0)?type:'set';
   _setupChallenge(diff, grade);
 }
