@@ -26405,6 +26405,18 @@ document.addEventListener('keydown', function(e) {
       vp.addEventListener('touchend',   _onTouchEnd,   { passive: true });
     }
 
+    // Hide compost/breed for wild-inspect (can't compost or breed wild plants)
+    var _actRow = document.querySelector('.pgm-actions .pgm-btn-row');
+    if (_actRow) {
+      var _actBtns = _actRow.querySelectorAll('.pgm-act-btn');
+      for (var _ab = 0; _ab < _actBtns.length; _ab++) {
+        var _btnText = _actBtns[_ab].textContent || '';
+        if (_btnText.indexOf('BREED') >= 0 || _btnText.indexOf('COMPOST') >= 0) {
+          _actBtns[_ab].style.display = (source === 'wild-inspect') ? 'none' : '';
+        }
+      }
+    }
+
     _pushModal('plant-gallery-modal');
     document.getElementById('plant-gallery-modal').classList.add('open');
     if (typeof gtag !== 'undefined') gtag('event', 'carousel_open', { idx: _carousel.idx, src: source, total: arr.length });
@@ -30730,22 +30742,8 @@ function _updateProximity(){
   }
   // Passive pollen from nearby plants (every 10min per plant)
   _fjPassivePollen();
-  // Feral proximity alert — pulse when a feral enters collection range
-  try{
-    var ferals=JSON.parse(localStorage.getItem('fg_ferals')||'[]');
-    for(var fi=0;fi<ferals.length;fi++){
-      var f=ferals[fi];
-      if(!f||f.collected||!f.lat)continue;
-      var fd=_dist(_uLat,_uLng,f.lat,f.lng);
-      if(fd<=COLLECT_RANGE&&!f._alerted){
-        f._alerted=true;
-        _toast('\ud83c\udf30 Feral seed nearby! Tap it to collect.');
-        try{navigator.vibrate&&navigator.vibrate([15,30,15]);}catch(e){}
-      } else if(fd>COLLECT_RANGE*1.2){
-        f._alerted=false; // reset when just outside range (90m)
-      }
-    }
-  }catch(e){}
+  // Feral zone refresh — update hex availability as player moves
+  _drawFeralZones();
 }
 
 // ═══ STEP COUNTER MILESTONES ═══
