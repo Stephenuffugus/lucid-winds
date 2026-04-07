@@ -5983,17 +5983,16 @@ window.onerror=function(msg,url,line,col,err){
       <div class="pgm-btn-row">
         <button class="pgm-dl-btn" id="gallery-download-btn" onclick="downloadPlantCard()">⬡ DOWNLOAD</button>
         <button class="pgm-act-btn" onclick="shareGalleryPlant()">↗ SHARE</button>
-        <button class="pgm-act-btn" onclick="copyGalleryHash()">⧉ HASH</button>
-        <button class="pgm-act-btn" onclick="openVerifyLink()">🔍 VERIFY</button>
-      </div>
-      <div class="pgm-btn-row">
-        <button class="pgm-act-btn gold" onclick="openSWSIdModal()">⬡ SYNC</button>
-        <button class="pgm-act-btn gold" onclick="openMarketModal()">🌐 TRADE</button>
-        <button class="pgm-act-btn gold" onclick="openPrintModal()">🖨 PRINT</button>
-      </div>
-      <div class="pgm-btn-row">
         <button class="pgm-act-btn" onclick="carouselBreed()" style="border-color:rgba(200,168,75,0.3);color:var(--gold);">🧬 BREED</button>
         <button class="pgm-act-btn" onclick="carouselCompost()" style="border-color:rgba(139,46,46,0.3);color:rgba(192,112,112,0.9);">🧪 COMPOST</button>
+      </div>
+      <div class="pgm-btn-row pgm-more-row" id="pgm-more-row" style="display:none;">
+        <button class="pgm-act-btn" onclick="copyGalleryHash()">⧉ HASH</button>
+        <button class="pgm-act-btn" onclick="openVerifyLink()">🔍 VERIFY</button>
+        <button class="pgm-act-btn gold" onclick="openSWSIdModal()">⬡ SYNC</button>
+      </div>
+      <div style="text-align:center;margin-top:0.2rem;">
+        <button onclick="var r=document.getElementById('pgm-more-row');if(r){var v=r.style.display==='none';r.style.display=v?'flex':'none';this.textContent=v?'▲ LESS':'▼ MORE';}" style="background:none;border:none;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.4rem;cursor:pointer;padding:4px 12px;min-height:32px;">▼ MORE</button>
       </div>
     </div>
 
@@ -27106,16 +27105,12 @@ document.addEventListener('keydown', function(e) {
     } else {
       // greenhouse context
       var idx = (typeof plantIndex === 'number') ? plantIndex : -1;
-      btns += '<button class="pad-btn download" onclick="triggerCinematicDownload('+idx+')">' +
-              '<span class="pad-btn-icon">⬡</span><span class="pad-btn-label">DOWNLOAD</span></button>';
       btns += '<button class="pad-btn" onclick="viewPlantDetails('+idx+')" style="border-color:rgba(122,179,86,0.25);">' +
               '<span class="pad-btn-icon">🔍</span><span class="pad-btn-label">INSPECT</span></button>';
-      btns += '<button class="pad-btn" onclick="shareDrawerPlant('+idx+')">' +
-              '<span class="pad-btn-icon">↗</span><span class="pad-btn-label">SHARE</span></button>';
-      btns += '<button class="pad-btn compost" onclick="confirmCompost('+idx+')">' +
-              '<span class="pad-btn-icon">🧪</span><span class="pad-btn-label">COMPOST</span></button>';
       btns += '<button class="pad-btn" onclick="var _bp=_padDrawerPlant;closePlantActionDrawer();if(window.openBreedScreen&&_bp)openBreedScreen(_bp,\'greenhouse\');" style="border-color:rgba(200,168,75,0.25);">' +
               '<span class="pad-btn-icon">🧬</span><span class="pad-btn-label">BREED</span></button>';
+      btns += '<button class="pad-btn compost" onclick="confirmCompost('+idx+')">' +
+              '<span class="pad-btn-icon">🧪</span><span class="pad-btn-label">COMPOST</span></button>';
     }
     rowEl.innerHTML = btns;
     _haptic('tab');
