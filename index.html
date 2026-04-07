@@ -5033,7 +5033,7 @@ window.onerror=function(msg,url,line,col,err){
       <div id="ob-haiku" class="ob-haiku"></div>
       <div id="ob-creature" class="ob-creature-text"></div>
       <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:rgba(240,235,216,0.7);line-height:1.8;margin-top:0.6rem;max-width:300px;opacity:0;transition:opacity 1.5s ease 0.3s;" id="ob-manifesto">Every plant here is born from attention.<br>No two are the same.<br>Care for yours, and it will shape the world around you.</div>
-      <div class="ob-auth" id="ob-auth"><div id="ob-auth-new"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.5rem;">CLAIM YOUR FIRST PLANT</div><input type="text" id="ob-name-input" placeholder="What should we call you, Keeper?" maxlength="24" autocomplete="off" /><input type="email" id="ob-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-pass" placeholder="Password (6+ characters)" autocomplete="new-password" /><div class="ob-auth-err" id="ob-auth-err"></div><button class="ob-auth-btn" id="ob-auth-btn" onclick="PW_Onboard.submitAuth()">🌱 CLAIM THIS PLANT</button><div style="margin-top:0.8rem;font-family:'DM Mono',monospace;font-size:0.45rem;color:var(--muted);"><span onclick="PW_Onboard.showLogin()" style="color:var(--gold);cursor:pointer;text-decoration:underline;min-height:48px;display:inline-block;padding:8px 0;">Already have an account? Sign in</span></div></div><div id="ob-auth-login" style="display:none;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.5rem;">WELCOME BACK, KEEPER</div><input type="email" id="ob-login-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-login-pass" placeholder="Password" autocomplete="current-password" /><div class="ob-auth-err" id="ob-login-err"></div><button class="ob-auth-btn" id="ob-login-btn" onclick="PW_Onboard.submitLogin()" style="background:linear-gradient(145deg,var(--gold),#8a6e2f);">SIGN IN</button><div style="margin-top:0.8rem;font-family:'DM Mono',monospace;font-size:0.45rem;color:var(--muted);"><span onclick="PW_Onboard.showSignup()" style="color:var(--sage);cursor:pointer;text-decoration:underline;min-height:48px;display:inline-block;padding:8px 0;">New here? Create an account</span></div></div></div>
+      <div class="ob-auth" id="ob-auth"><div id="ob-auth-new"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.5rem;">CLAIM YOUR FIRST PLANT</div><input type="text" id="ob-name-input" placeholder="What should we call you, Keeper?" maxlength="24" autocomplete="off" /><input type="email" id="ob-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-pass" placeholder="Password (6+ characters)" autocomplete="new-password" /><div class="ob-auth-err" id="ob-auth-err"></div><button class="ob-auth-btn" id="ob-auth-btn" onclick="PW_Onboard.submitAuth()">🌱 CLAIM THIS PLANT</button><div style="margin-top:0.8rem;font-family:'DM Mono',monospace;font-size:0.45rem;color:var(--muted);"><span onclick="PW_Onboard.showLogin()" style="color:var(--gold);cursor:pointer;text-decoration:underline;min-height:48px;display:inline-block;padding:8px 0;">Already have an account? Sign in</span></div></div><div id="ob-auth-login" style="display:none;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.5rem;">WELCOME BACK, KEEPER</div><input type="email" id="ob-login-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-login-pass" placeholder="Password" autocomplete="current-password" /><div class="ob-auth-err" id="ob-login-err"></div><button class="ob-auth-btn" id="ob-login-btn" onclick="PW_Onboard.submitLogin()" style="background:linear-gradient(145deg,var(--gold),#8a6e2f);">SIGN IN</button><div style="margin-top:0.5rem;text-align:center;"><span onclick="PW_Onboard.forgotPassword()" style="font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--muted);cursor:pointer;text-decoration:underline;min-height:48px;display:inline-block;padding:8px 0;">Forgot password?</span></div><div style="margin-top:0.4rem;font-family:'DM Mono',monospace;font-size:0.45rem;color:var(--muted);"><span onclick="PW_Onboard.showSignup()" style="color:var(--sage);cursor:pointer;text-decoration:underline;min-height:48px;display:inline-block;padding:8px 0;">New here? Create an account</span></div></div></div>
       <button class="ob-continue" id="ob-continue" onclick="PW_Onboard.finish()">ENTER YOUR GREENHOUSE →</button>
     </div>
     <div class="ob-skip" id="ob-skip" onclick="PW_Onboard.skip()">skip →</div>
@@ -30626,6 +30626,9 @@ function activate(){
   _afHydrate(function(){_loadState();_updateUI();});
   _loadState(); // also load immediately from cache for fast UI
   _updateUI();
+  // Fallback: load plants even if GPS is slow — uses last known position or fallback
+  if(_map&&_uLat)_loadAll();
+  else setTimeout(function(){if(_map&&_uLat)_loadAll();},3000);
   // Check for pending harvest/takeover rewards from other players
   _checkPendingRewards();
   // First-visit onboarding
@@ -31819,7 +31822,7 @@ function showTP(p,mk){
 
   tp.classList.add('open');
 }
-function closeTP(){var tp=document.getElementById('w-tp');if(tp)tp.classList.remove('open');var oa=document.getElementById('wtp-own-actions');if(oa)oa.style.display='none';var ot=document.getElementById('wtp-other-actions');if(ot)ot.style.display='flex';var ab=document.getElementById('wtp-act');if(ab){ab.style.opacity='1';ab.style.pointerEvents='auto';var _abl=ab.querySelector('.wtp2-btn-lbl');if(_abl)_abl.textContent='Harvest';}var os=document.getElementById('wtp-own-status');if(os){os.style.display='none';os.textContent='';}var sl=document.getElementById('wtp-status');if(sl){var lb=sl.parentNode.querySelector('.wtp2-stat-lbl');if(lb)lb.textContent='Status';}_sel=null;_selMk=null;}
+function closeTP(){var tp=document.getElementById('w-tp');if(tp)tp.classList.remove('open');var oa=document.getElementById('wtp-own-actions');if(oa)oa.style.display='none';var ot=document.getElementById('wtp-other-actions');if(ot)ot.style.display='flex';var ab=document.getElementById('wtp-act');if(ab){ab.style.opacity='1';ab.style.pointerEvents='auto';var _abl=ab.querySelector('.wtp2-btn-lbl');if(_abl)_abl.textContent='Harvest';}var wb=document.getElementById('wtp-wild-breed');if(wb){wb.style.opacity='1';wb.style.pointerEvents='auto';var _wbl=wb.querySelector('.wtp2-btn-lbl');if(_wbl)_wbl.textContent='Breed';}var os=document.getElementById('wtp-own-status');if(os){os.style.display='none';os.textContent='';}var sl=document.getElementById('wtp-status');if(sl){var lb=sl.parentNode.querySelector('.wtp2-stat-lbl');if(lb)lb.textContent='Status';}_sel=null;_selMk=null;}
 
 // ═══ HARVEST TO BACKPACK (other players' plants only) ═══
 function _harvestToPouch(p){
@@ -31864,13 +31867,14 @@ function _harvestToPouch(p){
   }
 }
 function _doHarvest(p){
-  // Pre-check: backpack has room (don't start transaction if we can't hold the plant)
+  // Pre-check: backpack has room (fresh state check before starting transaction)
   var plantObj={hash:p.hash,name:p.name,grade:p.grade||'Common',origin:'wild',hp:'h',pi:parseInt(p.hash.charAt(0),16)%5};
-  if(window.FG_Backpack){
-    // ap() returns false if full — dry-check via getState
-    var _bpSt=FG_Backpack.getState?FG_Backpack.getState():null;
-    if(_bpSt&&_bpSt.plants&&_bpSt.plants.length>=(_bpSt.cap||3)){_toast('Plant slots full!');return;}
-  } else {
+  if(window.FG_Backpack&&FG_Backpack.getState){
+    var _bpSt=FG_Backpack.getState();
+    if(_bpSt&&_bpSt.plants&&_bpSt.plants.length>=(_bpSt.cap||3)){
+      _toast('Backpack full! Return to Base first.');return;
+    }
+  } else if(!window.FG_Backpack){
     if(_pouch.length>=MAX_POUCH){_toast('Pouch full!');return;}
   }
 
@@ -38615,7 +38619,29 @@ function submitLogin(){
   }
 }
 
-return{start:start,submitAuth:submitAuth,finish:finish,skip:skip,goToBeat:goToBeat,showLogin:showLogin,showSignup:showSignup,submitLogin:submitLogin};
+function forgotPassword(){
+  var email=(document.getElementById('ob-login-email').value||'').trim();
+  var errEl=document.getElementById('ob-login-err');
+  if(!email){if(errEl)errEl.textContent='Enter your email first, then tap Forgot Password.';return;}
+  if(errEl)errEl.textContent='';
+  if(window.firebase&&firebase.auth){
+    firebase.auth().sendPasswordResetEmail(email).then(function(){
+      if(errEl){errEl.style.color='var(--sage)';errEl.textContent='Reset link sent to '+email+'. Check your inbox (and spam folder).';}
+      if(typeof gtag!=='undefined')gtag('event','password_reset_sent',{method:'email'});
+    }).catch(function(e){
+      if(errEl){errEl.style.color='#c07070';
+        if(e.code==='auth/user-not-found')errEl.textContent='No account found with that email.';
+        else if(e.code==='auth/invalid-email')errEl.textContent='Invalid email address.';
+        else if(e.code==='auth/too-many-requests')errEl.textContent='Too many attempts. Try again later.';
+        else errEl.textContent='Error: '+(e.message||'Unknown error');
+      }
+    });
+  } else {
+    if(errEl)errEl.textContent='Auth system not loaded. Refresh and try again.';
+  }
+}
+
+return{start:start,submitAuth:submitAuth,finish:finish,skip:skip,goToBeat:goToBeat,showLogin:showLogin,showSignup:showSignup,submitLogin:submitLogin,forgotPassword:forgotPassword};
 })();
 </script>
 <script>console.log('[LW-DIAG] Post-onboard block. PW_Onboard defined:',!!window.PW_Onboard,'type:',typeof window.PW_Onboard);</script>
