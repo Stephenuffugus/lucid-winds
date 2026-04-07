@@ -3458,18 +3458,18 @@
    Apply to the Leaflet tile pane. One line, massive impact.
    ═══════════════════════════════════════════════════════════════ */
 .leaflet-tile-pane {
-  filter: brightness(0.65) saturate(0.25) sepia(0.45) hue-rotate(75deg) contrast(1.15);
+  filter: brightness(0.85) saturate(0.35) sepia(0.3) hue-rotate(70deg) contrast(1.1);
   transition: filter 0.8s ease;
 }
 
 /* Slightly brighter + richer when zoomed in (closer = more detail) */
 .leaflet-container[data-zoom="16"] .leaflet-tile-pane,
 .leaflet-container[data-zoom="17"] .leaflet-tile-pane {
-  filter: brightness(0.72) saturate(0.32) sepia(0.4) hue-rotate(72deg) contrast(1.12);
+  filter: brightness(0.9) saturate(0.4) sepia(0.25) hue-rotate(68deg) contrast(1.08);
 }
 .leaflet-container[data-zoom="18"] .leaflet-tile-pane,
 .leaflet-container[data-zoom="19"] .leaflet-tile-pane {
-  filter: brightness(0.78) saturate(0.38) sepia(0.35) hue-rotate(70deg) contrast(1.1);
+  filter: brightness(0.95) saturate(0.45) sepia(0.2) hue-rotate(65deg) contrast(1.05);
 }
 
 /* ── TIME-OF-DAY MAP TINT ──
@@ -5023,7 +5023,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="dev-section"><div class="dev-section-title">ACCOUNT COUNTER</div><div style="font-size:0.42rem;color:var(--muted);margin-bottom:0.3rem;">Next: <span id="dev-counter-val">?</span></div><button class="dev-btn" onclick="PW_Dev.resetCounter()">↩ RESET TO 1</button></div>
     <div class="dev-section"><div class="dev-section-title">LOCAL STORAGE</div><button class="dev-btn" onclick="PW_Dev.clearLocal()">🧹 CLEAR ALL</button></div>
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
-    <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button></div>
+    <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="localStorage.removeItem('fg_ferals');localStorage.removeItem('fg_feral_zones');alert('Ferals cleared! Switch tabs to refresh.');">🧹 CLEAR FERALS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button></div>
     <div class="dev-section"><div class="dev-section-title">ACCELERATE (BETA TEST)</div><button class="dev-btn" onclick="PW_Dev.accelFerals()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⚡ FORCE FERAL SPAWN</button><button class="dev-btn" onclick="PW_Dev.accelRepro()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🌱 FORCE WILD REPRODUCTION</button><button class="dev-btn" onclick="PW_Dev.accelNursery()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💧 INSTANT BLOOM ALL SEEDS</button><button class="dev-btn" onclick="PW_Dev.accelBackpack()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🎒 CLEAR BP COOLDOWNS</button><button class="dev-btn" onclick="PW_Dev.grantHashes(100)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💎 +100 DEW DROPS</button><button class="dev-btn" onclick="PW_Dev.accelAll()" style="border-color:rgba(255,110,199,0.4);color:#ff6ec7;">🚀 ACCELERATE EVERYTHING</button></div>
     <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button><button class="dev-btn" onclick="PW_Dev.spawnChimeras()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🧬 SPAWN 4 CHIMERAS (dual borders)</button><button class="dev-btn" onclick="PW_Dev.grantDew(500)" style="border-color:rgba(91,175,220,0.4);color:rgba(91,175,220,0.9);">💧 +500 DEW DROPS</button></div>
     <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button><button class="dev-btn" onclick="try{PW_Dev.cardFrontAligner()}catch(e){alert(e.message)}">🃏 CARD FRONT ALIGNMENT</button><button class="dev-btn" onclick="try{PW_Dev.cardBackViewer()}catch(e){alert(e.message)}">🔙 CARD BACK NAMEPLATES</button><button class="dev-btn" onclick="try{PW_Dev.leafBloomEditor()}catch(e){alert(e.message)}">🌿 LEAF & BLOOM EDITOR</button></div>
@@ -31042,11 +31042,17 @@ function _spawnFerals() {
     }
   }
 
-  // Re-render existing uncollected ferals within 500m
+  // Re-render nearest uncollected ferals (cap at 8 markers to prevent lag)
+  var _visibleFerals = [];
   for (var i = 0; i < data.length; i++) {
-    if (!data[i].collected && _dist(_uLat, _uLng, data[i].lat, data[i].lng) < 500) {
-      _addFeral(data[i]);
+    if (!data[i].collected && data[i].lat && data[i].lng) {
+      var fd = _dist(_uLat, _uLng, data[i].lat, data[i].lng);
+      if (fd < 500) _visibleFerals.push({idx: i, dist: fd});
     }
+  }
+  _visibleFerals.sort(function(a, b) { return a.dist - b.dist; });
+  for (var vi = 0; vi < Math.min(_visibleFerals.length, 8); vi++) {
+    _addFeral(data[_visibleFerals[vi].idx]);
   }
 
   // Build unified zone map (local + shared)
@@ -32337,6 +32343,7 @@ function _subscribeSharedDrops(){
       .onSnapshot(function(snap){
         var seenHashes={};
         var now=Date.now();
+        var _sharedCount=Object.keys(_sharedMarkers).length;
         snap.forEach(function(doc){
           var d=doc.data();if(!d.lat||!d.lng||!d.hash)return;
           // Skip drops older than 14 days (stale Firestore data)
@@ -32345,6 +32352,9 @@ function _subscribeSharedDrops(){
 
           // Skip if we already have this marker
           if(_sharedMarkers[d.hash])return;
+          // Cap total shared markers to prevent map lag
+          if(_sharedCount>=30)return;
+          _sharedCount++;
 
           var isOwn=(d.ownerUid===user.uid);
           // Skip if in local wild (own plants already rendered by _loadAll)
