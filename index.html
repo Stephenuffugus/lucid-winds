@@ -2180,6 +2180,18 @@
     .gh-grid-btn{background:linear-gradient(180deg,rgba(46,40,32,0.5) 0%,rgba(32,30,24,0.6) 100%);border:1px solid rgba(200,188,160,0.12);color:rgba(200,188,160,0.5);font-family:'DM Mono',monospace;font-size:0.45rem;padding:0.25rem 0.5rem;border-radius:5px;cursor:pointer;min-height:34px;transition:all 0.15s;}
     .gh-grid-btn.active{border-color:rgba(122,179,86,0.3);color:var(--sage);background:rgba(74,124,53,0.1);}
     .gh-grid-btn:hover{border-color:rgba(200,188,160,0.25);}
+    /* Recent Blooms strip */
+    .gh-recent-strip{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;display:flex;gap:8px;padding:0.3rem 0.1rem 0.2rem;margin-bottom:0.2rem;}
+    .gh-recent-strip::-webkit-scrollbar{display:none;}
+    .gh-recent-label{font-family:'Bebas Neue',sans-serif;font-size:0.38rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.1rem;padding-left:0.1rem;}
+    .gh-recent-card{flex:0 0 60px;width:60px;min-height:48px;background:rgba(13,16,12,0.6);border:1px solid rgba(122,179,86,0.15);border-radius:6px;padding:4px 3px;text-align:center;cursor:pointer;transition:border-color 0.2s;}
+    .gh-recent-card:hover{border-color:rgba(122,179,86,0.4);}
+    .gh-recent-card .rc-svg{width:28px;height:28px;margin:0 auto 2px;}
+    .gh-recent-card .rc-svg svg{width:28px;height:28px;}
+    .gh-recent-card .rc-name{font-family:'Playfair Display',serif;font-size:0.28rem;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
+    .gh-recent-card .rc-meta{display:flex;align-items:center;justify-content:center;gap:3px;margin-top:1px;}
+    .gh-recent-card .rc-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+    .gh-recent-card .rc-time{font-family:'DM Mono',monospace;font-size:0.22rem;color:var(--muted);}
     .greenhouse-plant .gh-date{font-size:0.38rem;color:var(--muted);opacity:0.3;}
     .lt-tree{margin-top:0.35rem;padding:0.3rem;background:rgba(13,16,12,0.3);border-radius:6px;border:1px solid rgba(74,124,53,0.06);}
     .lt-section-title{font-family:'Bebas Neue',sans-serif;font-size:0.38rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.2rem;}
@@ -4631,6 +4643,10 @@ window.onerror=function(msg,url,line,col,err){
     </div>
     <div id="gh-next-bloom" style="display:flex;align-items:center;gap:0.4rem;padding:0.2rem 0.5rem;"></div>
     <div id="gh-spotlight" style="font-family:'DM Mono',monospace;font-size:0.33rem;color:var(--muted);text-align:center;padding:0.15rem 0;min-height:1em;"></div>
+    <div id="gh-recent-wrap" style="display:none;">
+      <div class="gh-recent-label">RECENT BLOOMS</div>
+      <div class="gh-recent-strip" id="gh-recent-strip"></div>
+    </div>
     <div class="gh-grid-selector" style="display:flex;justify-content:space-between;align-items:center;">
       <div style="display:flex;gap:0.2rem;" id="gh-grid-btns">
         <button class="gh-grid-btn" onclick="setGHGrid(1)">1×1</button>
@@ -25482,6 +25498,64 @@ document.addEventListener('keydown', function(e) {
       } catch(e) { _spotEl.textContent = ''; }
     } else if (_spotEl) { _spotEl.textContent = ''; }
 
+    // ── Recent Blooms strip ──────────────────────────────────────────
+    var _rbWrap = document.getElementById('gh-recent-wrap');
+    var _rbStrip = document.getElementById('gh-recent-strip');
+    if (_rbWrap && _rbStrip) {
+      if (gh.length < 2) {
+        _rbWrap.style.display = 'none';
+      } else {
+        _rbWrap.style.display = '';
+        // Sort by born/date descending, take up to 8
+        var _rbSorted = gh.slice().sort(function(a, b) {
+          var aT = a.born || (a.date ? new Date(a.date).getTime() : 0);
+          var bT = b.born || (b.date ? new Date(b.date).getTime() : 0);
+          return bT - aT;
+        });
+        var _rbMax = Math.min(8, _rbSorted.length);
+        _rbStrip.innerHTML = '';
+        for (var _ri = 0; _ri < _rbMax; _ri++) {
+          (function(_ri) {
+            var _rp = _rbSorted[_ri];
+            var _rIdx = gh.indexOf(_rp);
+            var _rCard = document.createElement('div');
+            _rCard.className = 'gh-recent-card';
+            _rCard.onclick = function() { openCarousel(loadGreenhouse(), _rIdx, 'greenhouse'); };
+            // Grade color
+            var _rColor = '#959588';
+            try {
+              var _rt = hashToTraits(_rp.hash);
+              if (_rp.generation) _rt.chimerGen = _rp.generation;
+              if (_rp.breedLayers) _rt.breedLayers = _rp.breedLayers;
+              if (_rp.compostLayers) _rt.compostLayers = _rp.compostLayers;
+              var _rg = getTerraGrade(_rt);
+              _rColor = _rg.color;
+            } catch(e) {}
+            // Plant name
+            var _rName = '';
+            try { _rName = typeof getPlantName === 'function' ? getPlantName(_rp.hash) : _rp.hash.slice(0,8); } catch(e) { _rName = _rp.hash.slice(0,8); }
+            // Time ago
+            var _rBorn = _rp.born || (_rp.date ? new Date(_rp.date).getTime() : 0);
+            var _rAgo = '';
+            if (_rBorn) {
+              var _rDiff = Math.max(0, Date.now() - _rBorn);
+              var _rHrs = Math.floor(_rDiff / 3600000);
+              if (_rHrs < 1) _rAgo = 'now';
+              else if (_rHrs < 24) _rAgo = _rHrs + 'h ago';
+              else _rAgo = Math.floor(_rHrs / 24) + 'd ago';
+            }
+            // SVG
+            var _rSvg = '';
+            try { _rSvg = generatePlantSVG(_rp.hash, 28, 1, (_rp.generation && _rp.generation > 1) ? {chimerGen: _rp.generation} : null); } catch(e) {}
+            _rCard.innerHTML = '<div class="rc-svg">' + _rSvg + '</div>' +
+              '<div class="rc-name">' + _rName + '</div>' +
+              '<div class="rc-meta"><span class="rc-dot" style="background:' + _rColor + ';"></span><span class="rc-time">' + _rAgo + '</span></div>';
+            _rbStrip.appendChild(_rCard);
+          })(_ri);
+        }
+      }
+    }
+
     // Sort plants based on current mode
     var sorted = gh.slice(); // copy so we don't mutate localStorage order
     if (_ghSortMode === 'rarest') {
@@ -28399,6 +28473,8 @@ document.addEventListener('keydown', function(e) {
       _throttledSave('sws_nursery', JSON.stringify(nur), true); // Phase 27: force-flush before _executeBloom re-read
       renderNursery();
       _haptic('tab');
+      // Notify bloom-ready
+      if (window._scheduleNurNotif) window._scheduleNurNotif(seed, true);
       // Confirmation modal — lets player add fertilizer before blooming
       window._lwConfirm({
         title: 'READY TO BLOOM',
@@ -28423,6 +28499,8 @@ document.addEventListener('keydown', function(e) {
       _setNurMsg('💧 Watered. ' + seed.waterLog.length + '/3 days done.');
       _haptic('tab');
       _nurPulse(seedIndex, 'water');
+      // Schedule nursery notification for next watering window
+      if (window._scheduleNurNotif) window._scheduleNurNotif(seed);
     }
   };
 
@@ -39922,7 +40000,7 @@ function _showDailyReward() {
   } catch(e) {}
   h += nurReminder;
 
-  h += '<button onclick="this.parentNode.parentNode.remove();" style="margin-top:0.6rem;width:100%;padding:0.5rem;border:1.5px solid rgba(122,179,86,0.3);border-radius:8px;background:linear-gradient(180deg,rgba(74,124,53,0.25),rgba(46,80,36,0.35));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">COLLECT</button>';
+  h += '<button onclick="this.parentNode.parentNode.remove();if(window._lwNotifPrompt)window._lwNotifPrompt();" style="margin-top:0.6rem;width:100%;padding:0.5rem;border:1.5px solid rgba(122,179,86,0.3);border-radius:8px;background:linear-gradient(180deg,rgba(74,124,53,0.25),rgba(46,80,36,0.35));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">COLLECT</button>';
   h += '</div>';
 
   ov.innerHTML = h;
