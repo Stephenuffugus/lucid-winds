@@ -5868,7 +5868,7 @@ window.onerror=function(msg,url,line,col,err){
           var plant={
             hash:childHash,date:new Date().toISOString(),born:Date.now(),
             origin:'dev-chimera',rare:true,traits:null,breedCount:0,
-            generation:2,parentAHash:parentAHash,parentBHash:parentBHash
+            generation:1,parentAHash:parentAHash,parentBHash:parentBHash
           };
           // Check for duplicate
           var exists=false;
@@ -24951,6 +24951,8 @@ document.addEventListener('keydown', function(e) {
         return { name: b.name, rare: !!b.rare };
     }},
     { key: 'COMPANION',   get: function(t) {
+        // Skip if this is a mythic creature — shown in MYTHIC row instead
+        if (t.mythicName && t.mythicName !== 'None') return null;
         var c = TRAIT_BANK.companions[t.companion];
         if (!c || c.name === 'None') return null;
         return { name: c.name, rare: !!c.rare };
@@ -24962,10 +24964,6 @@ document.addEventListener('keydown', function(e) {
     { key: 'MYTHIC',      get: function(t) {
         if (t.mythicName === 'None') return null;
         return { name: t.mythicName, rare: false, tier: 'mythic' };
-    }}
-    ,{ key: 'HERITAGE', get: function(t) {
-        if (!t.mycelialCrown) return null;
-        return { name: 'Mycelial Crown', rare: true };
     }}
     ,{ key: 'COMPOST', get: function(t) {
         if (!t.compostLayers) return null;
@@ -28075,7 +28073,15 @@ document.addEventListener('keydown', function(e) {
         cascadeHtml += '</div>';
       }
 
-      var _revGrade = window.getTerraGrade(window.hashToTraits(newHash));
+      // Compute grade with full plant context (generation, compost, breed layers)
+      var _revTraits = window.hashToTraits(newHash);
+      if (window._lastBloomPlant) {
+        if (window._lastBloomPlant.generation) _revTraits.chimerGen = window._lastBloomPlant.generation;
+        if (window._lastBloomPlant.mycelialCrown) _revTraits.mycelialCrown = true;
+        if (window._lastBloomPlant.breedLayers) _revTraits.breedLayers = window._lastBloomPlant.breedLayers;
+        if (window._lastBloomPlant.compostLayers) _revTraits.compostLayers = window._lastBloomPlant.compostLayers;
+      }
+      var _revGrade = window.getTerraGrade(_revTraits);
 
       // Grade reveal line
       var gradeHtml = '<div class="cr-grade-reveal" style="margin:0.3rem 0;font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;color:' + _revGrade.color + ';text-shadow:0 0 10px ' + _revGrade.color + '44;text-align:center;opacity:0;">'
@@ -28328,6 +28334,7 @@ document.addEventListener('keydown', function(e) {
     // Pass parent context to cinematic reveal for inheritance cascade
     window._lastBloomParentA = parentA;
     window._lastBloomParentB = parentB;
+    window._lastBloomPlant = newPlant;
     triggerCinematicReveal(newHash, mut.mutated, mut.count);
   }
 
