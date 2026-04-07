@@ -1706,7 +1706,7 @@
       background:none;border:none;
       cursor:pointer;
       transition:all 0.15s;position:relative;
-      padding:0;min-height:auto;
+      padding:0;min-height:44px;
       display:flex;align-items:center;justify-content:center;
       -webkit-tap-highlight-color:transparent;
     }
@@ -2132,8 +2132,8 @@
     /* ═══ CHIMERA DUAL-SEASON CARDS ═══
        Diagonal cut: season A (top-left) / season B (bottom-right)
        Cut line: 55px below top-right → 55px above bottom-left */
-    .greenhouse-plant.chimera-dual{position:relative;padding-top:0.55rem;}
-    .cs-card-front[data-dual]{padding-top:10%;}
+    .greenhouse-plant.chimera-dual{position:relative;padding-top:0.55rem;background-size:108% 108%!important;background-position:center!important;}
+    .cs-card-front[data-dual]{padding-top:10%;background-size:102%!important;background-position:center!important;}
     /* Pre-composited dual border images — greenhouse grid only */
     .greenhouse-plant.dual-sp-su{background-image:url('assets/cards/fronts/card-front-spring-top-summer-bottom.png')!important;}
     .greenhouse-plant.dual-sp-au{background-image:url('assets/cards/fronts/card-front-spring-top-autumn-bottom.png')!important;}
@@ -2188,10 +2188,10 @@
     .gh-recent-card:hover{border-color:rgba(122,179,86,0.4);}
     .gh-recent-card .rc-svg{width:28px;height:28px;margin:0 auto 2px;}
     .gh-recent-card .rc-svg svg{width:28px;height:28px;}
-    .gh-recent-card .rc-name{font-family:'Playfair Display',serif;font-size:0.28rem;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
+    .gh-recent-card .rc-name{font-family:'Playfair Display',serif;font-size:0.36rem;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
     .gh-recent-card .rc-meta{display:flex;align-items:center;justify-content:center;gap:3px;margin-top:1px;}
     .gh-recent-card .rc-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
-    .gh-recent-card .rc-time{font-family:'DM Mono',monospace;font-size:0.22rem;color:var(--muted);}
+    .gh-recent-card .rc-time{font-family:'DM Mono',monospace;font-size:0.32rem;color:var(--muted);}
     .greenhouse-plant .gh-date{font-size:0.38rem;color:var(--muted);opacity:0.3;}
     .lt-tree{margin-top:0.35rem;padding:0.3rem;background:rgba(13,16,12,0.3);border-radius:6px;border:1px solid rgba(74,124,53,0.06);}
     .lt-section-title{font-family:'Bebas Neue',sans-serif;font-size:0.38rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.2rem;}
@@ -2734,7 +2734,7 @@
     .rp-stat{display:flex;flex-direction:column;align-items:center;min-width:0;}
     .rp-sv{font-family:'Bebas Neue',sans-serif;font-size:0.72rem;color:var(--cream);line-height:1;white-space:nowrap;}
     .rp-gold{color:var(--gold);}
-    .rp-sl{font-family:'DM Mono',monospace;font-size:0.26rem;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase;}
+    .rp-sl{font-family:'DM Mono',monospace;font-size:0.35rem;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase;}
     /* Mini record cards */
     .rp-records{display:flex;gap:0.18rem;}
     .rp-rec{flex:1;background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.1);border-radius:4px;padding:0.12rem 0.18rem;text-align:center;}
@@ -2742,7 +2742,7 @@
     .rp-rec .rec-label{font-family:'Bebas Neue',sans-serif;font-size:0.28rem;letter-spacing:0.08em;color:var(--muted);}
     .rp-rec .rec-val{font-family:'Bebas Neue',sans-serif;font-size:0.52rem;color:var(--cream);line-height:1.1;}
     .rp-rec.gold .rec-val{color:var(--gold);}
-    .rp-rec .rec-sub{font-size:0.25rem;color:var(--muted);}
+    .rp-rec .rec-sub{font-size:0.34rem;color:var(--muted);}
     .rp-rec.new-record .rec-val{animation:newRecPulse 1s ease-in-out 3;}
     /* Buttons row */
     .rp-btns{display:flex;gap:0.22rem;flex-wrap:wrap;padding-top:0.12rem;border-top:1px solid rgba(74,124,53,0.07);}
@@ -4096,7 +4096,7 @@
 #fc-modal.open{display:flex;animation:panelFadeIn 0.3s ease;}
 #fc-title{font-family:'Bebas Neue',sans-serif;font-size:0.8rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.3rem;}
 #fc-subtitle{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);margin-bottom:0.6rem;}
-#fc-board{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:260px;width:100%;margin-bottom:0.6rem;}
+#fc-board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:min(300px,85vw);width:100%;margin-bottom:0.6rem;}
 .fc-card{width:100%;aspect-ratio:2/3;border-radius:8px;border:2px solid rgba(74,124,53,0.15);background:rgba(26,36,22,0.4);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;transition:border-color 0.15s,background 0.15s;min-height:64px;-webkit-tap-highlight-color:transparent;}
 .fc-card.selected{border-color:var(--gold);background:rgba(200,168,75,0.08);}
 .fc-card.correct{border-color:var(--sage);background:rgba(74,124,53,0.15);animation:panelFadeIn 0.2s ease;}
@@ -4892,8 +4892,8 @@ window.onerror=function(msg,url,line,col,err){
       <!-- Action buttons — other player's plant -->
       <div class="wtp2-actions" id="wtp-other-actions">
         <button class="wtp2-btn" onclick="FG_Wild.closeTP()"><div class="wtp2-btn-icon">✕</div><div class="wtp2-btn-lbl">Close</div></button>
-        <button class="wtp2-btn" id="wtp-inspect"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-inspect-btn-v4.png" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Inspect</div></button>
-        <button class="wtp2-btn gold" id="wtp-act" style="display:none"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-harvest-btn-v4.png" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Harvest</div></button>
+        <button class="wtp2-btn" id="wtp-wild-breed"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-breed-btn-v4.png" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Breed</div></button>
+        <button class="wtp2-btn gold" id="wtp-act"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-harvest-btn-v4.png" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Harvest</div></button>
       </div>
       <!-- Action buttons — your own plant -->
       <div class="wtp2-actions" id="wtp-own-actions" style="display:none">
@@ -4939,7 +4939,7 @@ window.onerror=function(msg,url,line,col,err){
   <!-- Old drop picker removed — replaced by w-picker.dpk2 above -->
   <!-- ═══ FERAL CHALLENGE MODAL ═══ -->
   <div id="fc-modal">
-    <button onclick="if(window.FG_Challenge)FG_Challenge._close();" style="position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;border:1px solid rgba(122,179,86,0.1);background:rgba(13,16,12,0.6);color:var(--muted);font-size:0.7rem;cursor:pointer;z-index:1;display:flex;align-items:center;justify-content:center;">✕</button>
+    <button onclick="if(window.FG_Challenge)FG_Challenge._close();" style="position:absolute;top:12px;right:12px;width:48px;height:48px;border-radius:50%;border:1px solid rgba(122,179,86,0.1);background:rgba(13,16,12,0.6);color:var(--muted);font-size:0.85rem;cursor:pointer;z-index:1;display:flex;align-items:center;justify-content:center;">✕</button>
     <div id="fc-title">FERAL SEED CHALLENGE</div>
     <div id="fc-subtitle">Find 1 valid Trio — 3 cards where each trait is all same or all different</div>
     <div id="fc-board"></div>
@@ -24972,8 +24972,6 @@ document.addEventListener('keydown', function(e) {
         return { name: b.name, rare: !!b.rare };
     }},
     { key: 'COMPANION',   get: function(t) {
-        // Skip if this is a mythic creature — shown in MYTHIC row instead
-        if (t.mythicName && t.mythicName !== 'None') return null;
         var c = TRAIT_BANK.companions[t.companion];
         if (!c || c.name === 'None') return null;
         return { name: c.name, rare: !!c.rare };
@@ -24981,10 +24979,6 @@ document.addEventListener('keydown', function(e) {
     { key: 'MUTATION',    get: function(t) {
         if (t.mutationName === 'None') return null;
         return { name: t.mutationName, rare: false, tier: 'mutation' };
-    }},
-    { key: 'MYTHIC',      get: function(t) {
-        if (t.mythicName === 'None') return null;
-        return { name: t.mythicName, rare: false, tier: 'mythic' };
     }}
     ,{ key: 'COMPOST', get: function(t) {
         if (!t.compostLayers) return null;
@@ -25025,6 +25019,12 @@ document.addEventListener('keydown', function(e) {
       var sA = (parseInt(hA[22]+hA[23],16)||0) % 4;
       var sB = (parseInt(hB[22]+hB[23],16)||0) % 4;
       if (sA === sB) return ''; // same season — no dual border
+      // Probability gate: ~25% chance using plant's own hash bytes 16-17
+      var h = plant.hash || '';
+      if (h.length >= 18) {
+        var roll = parseInt(h[16] + h[17], 16);
+        if (roll >= 0x40) return ''; // 75% no dual border, 25% get it
+      }
       return 'chimera-dual dual-' + _SEASON_KEYS[sA] + '-' + _SEASON_KEYS[sB];
     } catch(e) { return ''; }
   }
@@ -25095,13 +25095,7 @@ document.addEventListener('keydown', function(e) {
       if (_mn==='Fossil'||_mn==='Glass Stem'||_mn==='Neon'||_mn==='Bioluminescent') return {tier:'rare',color:_TIER_COLORS.rare};
       return {tier:'uncommon',color:_TIER_COLORS.uncommon};
     }
-    if (cat==='MYTHIC') {
-      if (t.mythicName==='None') return null;
-      if (t.mythicName==='The Beholder') return {tier:'cosmic',color:_TIER_COLORS.cosmic};
-      if (t.mythicName==='Garden Spider'||t.mythicName==='Great Blue Heron') return {tier:'legendary',color:_TIER_COLORS.legendary};
-      if (t.mythicName==='Raccoon'||t.mythicName==='Woolly Mammoth') return {tier:'legendary',color:_TIER_COLORS.legendary};
-      return {tier:'mythic',color:_TIER_COLORS.mythic};
-    }
+    // MYTHIC row removed — mythic creatures now render via COMPANION with tier from idx 32-38
     if (cat==='GROWTH PATH'||cat==='STRUCTURE') {
       var _st=t.stem%24;
       if (_st===22||_st===23) return {tier:'epic',color:_TIER_COLORS.epic};
@@ -27461,9 +27455,9 @@ document.addEventListener('keydown', function(e) {
         setTimeout(function() { if (window.triggerTutorialDemo) triggerTutorialDemo(); }, 600);
       }
     }
-    if (tab === 'greenhouse') renderGreenhouse();
+    if (tab === 'greenhouse') { renderGreenhouse(); if(window.PW_Tutorial)setTimeout(function(){PW_Tutorial.start();},600); }
     if (tab === 'dashboard') updateDashboard();
-    if (tab === 'nursery') renderNursery();
+    if (tab === 'nursery') { renderNursery(); if(window.PW_Tutorial)PW_Tutorial.checkNursery(); }
     if (tab === 'binder') renderBinder();
     // Content is now fully rendered — show panel
     if (_targetPanel) {
@@ -30563,7 +30557,7 @@ function _afRecordDrop(){
 }
 var _map=null,_uM=null,_uLat=null,_uLng=null,_trail=[],_tLine=null,_tGlow=null,_inited=false;
 var _drops=0,_pouch=[],_sel=null,_selMk=null,_menuOpen=false,_tt=null;
-var _gpsDenied=false; // tracks if GPS was denied/unavailable
+var _gpsDenied=false,_gpsFallbackTimer=null; // tracks if GPS was denied/unavailable
 var _lastGeoTime=0,_lastGeoLat=0,_lastGeoLng=0,_speedKmh=0;
 // ── Shared drop real-time listener state ──
 var _sharedMarkers={}; // hash → {marker, data} for live shared drops
@@ -30632,6 +30626,8 @@ function activate(){
   _afHydrate(function(){_loadState();_updateUI();});
   _loadState(); // also load immediately from cache for fast UI
   _updateUI();
+  // Check for pending harvest/takeover rewards from other players
+  _checkPendingRewards();
   // First-visit onboarding
   if(!localStorage.getItem('lw_wild_onboarded')){
     localStorage.setItem('lw_wild_onboarded','1');
@@ -30654,7 +30650,7 @@ function activate(){
   setTimeout(function(){if(_map)_map.invalidateSize();},100);
   setTimeout(function(){if(_map)_map.invalidateSize();},500);
   setTimeout(function(){if(_map)_map.invalidateSize();},1500);
-  setTimeout(function(){if(!_uLat&&_map){_uLat=FALLBACK[0];_uLng=FALLBACK[1];_map.setView(FALLBACK,16);_placeUser();_loadAll();_showGpsBanner();}},5000);
+  _gpsFallbackTimer=setTimeout(function(){if(!_uLat&&_map){_uLat=FALLBACK[0];_uLng=FALLBACK[1];_map.setView(FALLBACK,16);_placeUser();_loadAll();_showGpsBanner();}},5000);
   // Init backpack display
   if(window.FG_Backpack){FG_Backpack.init();FG_Backpack.render();}
 }
@@ -30896,6 +30892,7 @@ window._retryGps=function(){
 function _initGeo(){
   if(!navigator.geolocation){_uLat=FALLBACK[0];_uLng=FALLBACK[1];_showGpsBanner();setTimeout(function(){if(_map){_map.setView(FALLBACK,16);_placeUser();_loadAll();}},500);return;}
   navigator.geolocation.getCurrentPosition(function(p){
+    if(_gpsFallbackTimer){clearTimeout(_gpsFallbackTimer);_gpsFallbackTimer=null;}
     _uLat=p.coords.latitude;_uLng=p.coords.longitude;
     _map.setView([_uLat,_uLng],16);_placeUser();_loadAll();
     _toast('Location locked! Tap \ud83c\udf31 to plant.');
@@ -30916,6 +30913,7 @@ function _initGeo(){
     if(_scanRing)_scanRing.setLatLng([_uLat,_uLng]);
     _updateProximity();
     _trail.push([_uLat,_uLng]);
+    if(_trail.length>500)_trail.splice(0,_trail.length-500);
     if(_tLine){_tLine.setLatLngs(_trail);if(_tGlow)_tGlow.setLatLngs(_trail);}
     else if(_map){
       // Bioluminescent trail — outer glow + inner bright line
@@ -31024,7 +31022,7 @@ function _loadAll(){
       var existing=document.getElementById('w-empty-hint');if(existing)return;
       var hint=document.createElement('div');hint.id='w-empty-hint';
       hint.style.cssText='position:fixed;bottom:calc(100px + env(safe-area-inset-bottom,0px));right:12px;z-index:998;display:flex;align-items:center;gap:6px;background:rgba(17,22,17,0.95);border:1px solid rgba(200,168,75,0.25);border-radius:10px;padding:8px 12px;animation:tierFadeIn 0.4s ease,_whPulse 2s ease 1s 2;box-shadow:0 4px 16px rgba(0,0,0,0.5);max-width:200px;';
-      hint.innerHTML='<span style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--cream);line-height:1.4;">Tap the <span style="color:var(--sage);font-weight:bold;">green button</span> below to drop your first plant!</span><span style="font-size:0.7rem;">&#8595;</span>';
+      hint.innerHTML='<span style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);line-height:1.5;">Tap the <span style="color:var(--sage);font-weight:bold;">green button</span> below to drop your first plant!</span><span style="font-size:0.8rem;">&#8595;</span>';
       hint.onclick=function(){hint.remove();};
       document.body.appendChild(hint);
       // Auto-dismiss after 8 seconds
@@ -31585,7 +31583,8 @@ function _addPlant(p){
   // Wild plants: show name in muted neutral — rarity is a mystery until harvest
   var tagColor=p.own?info.gc:'var(--muted)';
   var seasonEmb='';if(p.own&&info.t&&window.getSeasonInfo){var si=window.getSeasonInfo(info.t);seasonEmb=' <span style="font-size:0.35rem;">'+si.emblem+'</span>';}
-  var tag='<div style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-family:Bebas Neue,sans-serif;font-size:0.35rem;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,0.8);color:'+tagColor+';pointer-events:none;">'+info.nm+seasonEmb+'</div>';
+  var tagName=p.own?info.nm:'Wild Plant';
+  var tag='<div style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-family:Bebas Neue,sans-serif;font-size:0.35rem;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,0.8);color:'+tagColor+';pointer-events:none;">'+tagName+seasonEmb+'</div>';
   var th=Math.round(sz*40/30)+14;
   var glow=_glowRing(info.grade,p.own);
   var shield=_shieldBadge(p);
@@ -31728,7 +31727,7 @@ function showTP(p,mk){
     var _wildPlant={hash:p.hash,date:p.date||'',born:Date.now(),origin:'wild',rare:false,traits:''};
     if(window.openCarousel){closeTP();openCarousel([_wildPlant],0,'wild-inspect');}
   };
-  var inspBtn=document.getElementById('wtp-inspect');if(inspBtn)inspBtn.onclick=inspFn;
+  // Inspect only for own plants (wtp-inspect2 is in own-actions panel)
   var inspBtn2=document.getElementById('wtp-inspect2');if(inspBtn2)inspBtn2.onclick=inspFn;
 
   // === OWNERSHIP DETECTION ===
@@ -31779,7 +31778,6 @@ function showTP(p,mk){
     var _distOther=0;
     if(_uLat&&p.lat){_distOther=_dist(_uLat,_uLng,p.lat,p.lng);_tooFar=_distOther>COLLECT_RANGE;}
     if(ab){
-      ab.style.display='flex';
       if(_tooFar){
         ab.style.opacity='0.35';ab.style.pointerEvents='none';
         var _abLbl=ab.querySelector('.wtp2-btn-lbl');
@@ -31799,11 +31797,29 @@ function showTP(p,mk){
       }
       ownStatus.style.display='block';
     }
+    // Wild breed button — breed with this wild plant using your greenhouse plants
+    var wildBreedBtn=document.getElementById('wtp-wild-breed');
+    if(wildBreedBtn){
+      var _ghForBreed=[];try{_ghForBreed=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+      if(_ghForBreed.length<1){
+        wildBreedBtn.style.opacity='0.35';wildBreedBtn.style.pointerEvents='none';
+        var _wbLbl=wildBreedBtn.querySelector('.wtp2-btn-lbl');if(_wbLbl)_wbLbl.textContent='Need plants';
+      } else {
+        wildBreedBtn.style.opacity='1';wildBreedBtn.style.pointerEvents='auto';
+        wildBreedBtn.onclick=function(){
+          closeTP();
+          // Build a minimal plant object for breed screen — mask hidden stats
+          var _wildForBreed={hash:p.hash,name:'Wild Specimen',grade:p.grade||'Common',gc:p.gc||'var(--muted)',days:p.days||0,ownerUid:p.ownerUid||'',generation:1,breedCount:0,_wildMasked:true};
+          if(window.openBreedScreen)openBreedScreen(_wildForBreed,'wild-other');
+          else _toast('Breeding screen not loaded.');
+        };
+      }
+    }
   }
 
   tp.classList.add('open');
 }
-function closeTP(){var tp=document.getElementById('w-tp');if(tp)tp.classList.remove('open');var oa=document.getElementById('wtp-own-actions');if(oa)oa.style.display='none';var ot=document.getElementById('wtp-other-actions');if(ot)ot.style.display='flex';var ab=document.getElementById('wtp-act');if(ab){ab.style.display='none';ab.style.opacity='1';ab.style.pointerEvents='auto';var _abl=ab.querySelector('.wtp2-btn-lbl');if(_abl)_abl.textContent='Harvest';}var os=document.getElementById('wtp-own-status');if(os){os.style.display='none';os.textContent='';}var sl=document.getElementById('wtp-status');if(sl){var lb=sl.parentNode.querySelector('.wtp2-stat-lbl');if(lb)lb.textContent='Status';}_sel=null;_selMk=null;}
+function closeTP(){var tp=document.getElementById('w-tp');if(tp)tp.classList.remove('open');var oa=document.getElementById('wtp-own-actions');if(oa)oa.style.display='none';var ot=document.getElementById('wtp-other-actions');if(ot)ot.style.display='flex';var ab=document.getElementById('wtp-act');if(ab){ab.style.opacity='1';ab.style.pointerEvents='auto';var _abl=ab.querySelector('.wtp2-btn-lbl');if(_abl)_abl.textContent='Harvest';}var os=document.getElementById('wtp-own-status');if(os){os.style.display='none';os.textContent='';}var sl=document.getElementById('wtp-status');if(sl){var lb=sl.parentNode.querySelector('.wtp2-stat-lbl');if(lb)lb.textContent='Status';}_sel=null;_selMk=null;}
 
 // ═══ HARVEST TO BACKPACK (other players' plants only) ═══
 function _harvestToPouch(p){
@@ -31868,7 +31884,8 @@ function _doHarvest(p){
 
   // ── Firestore transaction: atomic harvest ──
   // Prevents double-harvest race condition between two players
-  if(window.db&&p.ownerUid&&p.hash){
+  var _isDemo=p.ownerUid&&p.ownerUid.indexOf('demo_')===0;
+  if(window.db&&p.ownerUid&&p.hash&&!_isDemo){
     var docId=p.ownerUid+'_'+p.hash.slice(0,16);
     var dropRef=window.db.collection('wildDrops').doc(docId);
     window.db.runTransaction(function(tx){
@@ -31921,6 +31938,11 @@ function _harvestApplyLocal(p,plantObj,reward){
   var wild=_getWild().filter(function(w){return w.hash!==p.hash;});
   _saveWild(wild);
   if(_selMk&&_map)_map.removeLayer(_selMk);
+  // Also clean shared marker entry (for demo and real shared plants)
+  if(p.hash&&_sharedMarkers[p.hash]){
+    if(_sharedMarkers[p.hash].marker&&_map)_map.removeLayer(_sharedMarkers[p.hash].marker);
+    delete _sharedMarkers[p.hash];
+  }
   closeTP();
   if(window.FG_Backpack)FG_Backpack.render();
   _updateCounts();
@@ -32064,11 +32086,7 @@ function _doCrossPollination(wildPlant,matePlant){
   if(window.FG_Data&&FG_Data.crossPollinateHashes){
     FG_Data.crossPollinateHashes(wildPlant.hash,matePlant.hash).then(function(result){
       var offHash=result.childHash;
-      if(window.FG_Data&&FG_Data.addSeed){
-        var addResult=FG_Data.addSeed({seedHash:offHash,parentAHash:wildPlant.hash,parentBHash:matePlant.hash,nonce:result.nonce});
-        if(!addResult.ok){_toast('Nursery full. Bloom or abandon a seed first.');return;}
-      }
-      // Compute actual chimera generation from parent plants
+      // Compute generation BEFORE addSeed so seed stores correct value
       var _wpGen=1,_mpGen=1;
       var _bcGh3=[];try{_bcGh3=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
       var _bcDirty3=false;
@@ -32076,9 +32094,13 @@ function _doCrossPollination(wildPlant,matePlant){
         if(p.hash===wildPlant.hash){_wpGen=p.generation||1;p.breedCount=(p.breedCount||0)+1;_bcDirty3=true;}
         if(p.hash===matePlant.hash){_mpGen=p.generation||1;p.breedCount=(p.breedCount||0)+1;_bcDirty3=true;}
       });
+      var offGen=Math.max(_wpGen,_mpGen)+1;
+      if(window.FG_Data&&FG_Data.addSeed){
+        var addResult=FG_Data.addSeed({seedHash:offHash,parentAHash:wildPlant.hash,parentBHash:matePlant.hash,nonce:offGen});
+        if(!addResult.ok){_toast('Nursery full. Bloom or abandon a seed first.');return;}
+      }
       if(_bcDirty3&&window.saveGreenhouse)saveGreenhouse(_bcGh3);
       if(window.renderNursery)renderNursery();
-      var offGen=Math.max(_wpGen,_mpGen)+1;
       _cpReward(offGen);
     });
   } else {
@@ -32190,15 +32212,15 @@ function _showDefenderPicker(){
     {id:'sliding',name:'Slide',icon:'\ud83e\udde9',desc:'Arrange the tiles',diff:'Medium'}
   ];
 
-  var h='<div style="font-family:DM Mono,monospace;font-size:0.3rem;color:var(--muted);text-align:center;margin-bottom:6px;">Harder games are tougher for harvesters to beat</div>';
+  var h='<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);text-align:center;margin-bottom:10px;">Harder games are tougher for harvesters to beat</div>';
   for(var i=0;i<games.length;i++){
     var g=games[i];
     var dc=g.diff==='Easy'?'var(--sage)':g.diff==='Medium'?'var(--gold)':'#c07070';
-    h+='<div class="fc-card" onclick="FG_Wild._pickDefense(\''+g.id+'\')" style="flex-direction:column;gap:6px;padding:10px 8px;">';
-    h+='<div style="font-size:1.4rem;">'+g.icon+'</div>';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--cream);letter-spacing:0.06em;">'+g.name+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:var(--muted);line-height:1.3;">'+g.desc+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.25rem;color:'+dc+';letter-spacing:0.06em;margin-top:auto;">'+g.diff+'</div>';
+    h+='<div class="fc-card" onclick="FG_Wild._pickDefense(\''+g.id+'\')" style="flex-direction:column;gap:6px;padding:12px 10px;min-height:90px;">';
+    h+='<div style="font-size:1.6rem;">'+g.icon+'</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--cream);letter-spacing:0.06em;">'+g.name+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);line-height:1.3;">'+g.desc+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:'+dc+';letter-spacing:0.06em;margin-top:auto;">'+g.diff+'</div>';
     h+='</div>';
   }
   if(board)board.innerHTML=h;
@@ -32301,7 +32323,28 @@ function _saveState(){var val=JSON.stringify({d:_afGetToday(),c:_drops});if(wind
 function _savePouch(){localStorage.setItem('fg_pouch',JSON.stringify(_pouch));}
 
 // ═══ UI ═══
-function _updateUI(){var rem=Math.max(0,MAX_DROPS-_drops);var b=document.getElementById('dbb');if(b){b.textContent=rem;b.classList.toggle('lo',rem<=1);}var f=document.getElementById('dfb');if(f)f.style.opacity=rem<=0?'0.4':'1';var dl=document.getElementById('w-drops-left');if(dl){dl.textContent=rem;dl.style.color=rem<=0?'var(--muted)':rem<=1?'var(--gold)':'var(--cream)';}}
+function _updateUI(){
+  var rem=Math.max(0,MAX_DROPS-_drops);
+  var b=document.getElementById('dbb');if(b){b.textContent=rem;b.classList.toggle('lo',rem<=1);}
+  var f=document.getElementById('dfb');if(f)f.style.opacity=rem<=0?'0.4':'1';
+  var dl=document.getElementById('w-drops-left');if(dl){dl.textContent=rem;dl.style.color=rem<=0?'var(--muted)':rem<=1?'var(--gold)':'var(--cream)';}
+  // Empty state nudge for first-time players
+  var nudge=document.getElementById('w-empty-nudge');
+  var wild=_getWild();
+  if(wild.length===0&&_drops===0){
+    if(!nudge){
+      nudge=document.createElement('div');nudge.id='w-empty-nudge';
+      nudge.style.cssText='position:fixed;bottom:calc(90px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:9990;text-align:center;pointer-events:none;animation:panelFadeIn 0.5s ease;';
+      nudge.innerHTML='<div style="background:rgba(13,16,12,0.92);border:1.5px solid rgba(122,179,86,0.2);border-radius:14px;padding:14px 22px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);max-width:280px;">'
+        +'<div style="font-family:Playfair Display,serif;font-size:0.8rem;color:var(--cream);margin-bottom:6px;">Plant your first specimen</div>'
+        +'<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.5;">Tap the \ud83c\udf31 button to drop a plant from your greenhouse onto the real-world map. Other players can see it!</div>'
+        +'<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--sage);margin-top:8px;">'+rem+' drops remaining today</div>'
+        +'</div>';
+      var mapWrap=document.getElementById('wild-tab');
+      if(mapWrap)mapWrap.appendChild(nudge);
+    }
+  } else if(nudge){nudge.remove();}
+}
 function _getPollen(){try{var j=window._secureGet?window._secureGet('fg_pollen'):localStorage.getItem('fg_pollen');return parseInt(j||'0');}catch(e){return 0;}}
 function _savePollen(v){if(window._secureSet){window._secureSet('fg_pollen',String(v));}else{localStorage.setItem('fg_pollen',String(v));}}
 function _updateCounts(){
@@ -32338,6 +32381,58 @@ function _updateCounts(){
 }
 function toggleMenu(){}
 function useFC(){}
+// ═══ PENDING REWARDS — check for harvest/takeover notifications ═══
+function _checkPendingRewards(){
+  try{
+    var user=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
+    if(!user||!user.uid||!window.db)return;
+    var rewardsRef=window.db.collection('vaults').doc(user.uid).collection('pendingRewards')
+      .orderBy('timestamp','desc').limit(10);
+    rewardsRef.get().then(function(snap){
+      if(snap.empty)return;
+      var msgs=[];var totalDew=0;
+      snap.forEach(function(doc){
+        var r=doc.data();
+        if(r.type==='harvest_reward'){
+          msgs.push(r.plantName+' was harvested! +'+r.amount+' Dew');
+          totalDew+=r.amount;
+        } else if(r.type==='takeover_reward'){
+          msgs.push(r.plantName+' was displaced! +'+r.amount+' Dew');
+          totalDew+=r.amount;
+        }
+        doc.ref.delete().catch(function(){});
+      });
+      if(totalDew>0){
+        // Credit Dew to player
+        try{
+          var raw=window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger');
+          var ledger=JSON.parse(raw||'{}');
+          ledger.earned=(ledger.earned||0)+totalDew;
+          var val=JSON.stringify(ledger);
+          if(window._secureSet)window._secureSet('sws_hash_ledger',val);
+          else localStorage.setItem('sws_hash_ledger',val);
+        }catch(e){}
+        _updateCounts();
+      }
+      if(msgs.length>0){
+        // Show notification overlay
+        var ov=document.createElement('div');
+        ov.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99998;background:rgba(13,16,12,0.95);border-bottom:1.5px solid var(--gold);padding:16px;font-family:DM Mono,monospace;backdrop-filter:blur(8px);animation:panelFadeIn 0.35s ease;cursor:pointer;';
+        var h='<div style="max-width:500px;margin:0 auto;">';
+        h+='<div style="color:var(--gold);font-size:0.75rem;font-weight:700;letter-spacing:0.06em;margin-bottom:8px;">WILD ACTIVITY</div>';
+        for(var i=0;i<msgs.length;i++){
+          h+='<div style="color:var(--cream);font-size:0.6rem;line-height:1.6;opacity:0.9;">'+msgs[i]+'</div>';
+        }
+        h+='<div style="color:var(--sage);font-size:0.5rem;margin-top:8px;">+'+totalDew+' Dew credited</div>';
+        h+='</div>';
+        ov.innerHTML=h;
+        ov.onclick=function(){ov.style.opacity='0';ov.style.transition='opacity 0.25s';setTimeout(function(){if(ov.parentNode)ov.remove();},300);};
+        document.body.appendChild(ov);
+        setTimeout(function(){if(ov.parentNode){ov.style.opacity='0';ov.style.transition='opacity 0.25s';setTimeout(function(){if(ov.parentNode)ov.remove();},300);}},6000);
+      }
+    }).catch(function(e){if(window._swsLog)_swsLog('Pending rewards err: '+e.message,'warn');});
+  }catch(e){}
+}
 function _toast(m){var e=document.getElementById('w-toast');if(!e)return;e.textContent=m;e.style.opacity='1';e.style.transform='translate(-50%,-50%) scale(1)';clearTimeout(_tt);_tt=setTimeout(function(){e.style.opacity='0';e.style.transform='translate(-50%,-50%) scale(0.95)';},3500);}
 
 var _wd=45;setInterval(function(){_wd=(_wd+(Math.random()>0.5?12:-8)+360)%360;var w=document.getElementById('w-wind');if(w){var ds=['N','NE','E','SE','S','SW','W','NW'];w.textContent=ds[Math.round(_wd/45)%8]+' '+(5+Math.round(Math.random()*10))+'mph';}},8000);
@@ -32368,11 +32463,34 @@ function _dropFromBP(p){
   var wild=_getWild();
   var la=_uLat+(Math.random()-0.5)*0.0005,lo=_uLng+(Math.random()-0.5)*0.0005;
   var zone=_zoneKey(la,lo);
-  if(wild.some(function(w){return _zoneKey(w.lat,w.lng)===zone;})){
-    la=_uLat+(Math.random()-0.5)*0.0008;lo=_uLng+(Math.random()-0.5)*0.0008;
+  // Territory check — same logic as _drop() so BP drops can takeover
+  var existing=null;
+  for(var i=0;i<wild.length;i++){
+    if(_zoneKey(wild[i].lat,wild[i].lng)===zone){existing=wild[i];break;}
   }
-  // Route through defender picker
-  _pendingDrop={plant:p,lat:la,lng:lo,wild:wild,fromBP:true};
+  if(existing){
+    if(!existing.ownerUid||existing.own){
+      la=_uLat+(Math.random()-0.5)*0.001;lo=_uLng+(Math.random()-0.5)*0.001;
+      var z2=_zoneKey(la,lo);
+      if(wild.some(function(w){return _zoneKey(w.lat,w.lng)===z2;})){
+        _toast('You already have a plant in this zone.');return;
+      }
+      existing=null;
+    } else {
+      var myInfo=_buildInfo(p.hash);
+      var myEA=window.computeEA?window.computeEA(myInfo.t,0):0;
+      var theirTraits=null;try{theirTraits=window.hashToTraits(existing.hash);}catch(e){}
+      var theirDays=existing.date?Math.floor((Date.now()-new Date(existing.date).getTime())/86400000):0;
+      var theirEA=window.computeEA?window.computeEA(theirTraits,theirDays):0;
+      if(myEA<=theirEA){
+        _toast('Defended! Zone EA '+theirEA+' vs yours '+myEA+'. Grow stronger.');return;
+      }
+      wild=wild.filter(function(w){return w.hash!==existing.hash;});
+      _toast('\ud83c\udf3f Takeover! Your EA '+myEA+' displaced EA '+theirEA+'!');
+    }
+  }
+
+  _pendingDrop={plant:p,lat:la,lng:lo,wild:wild,displaced:existing||null,fromBP:true};
   _showDefenderPicker();
 }
 // ═══ SHARED WILD DROPS — visible to all players ═══
@@ -32474,7 +32592,11 @@ function _scheduleResubscribe(){
 // Main subscription — real-time listener for shared drops
 function _subscribeSharedDrops(){
   var user=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
-  if(!user||!window.db||!_map)return;
+  if(!user||!window.db||!_map){
+    // No auth/Firestore — seed demo plants so player can still experience Wild
+    setTimeout(function(){_seedDemoPlants();},2000);
+    return;
+  }
 
   var zones=_getVisibleZones();
   if(zones.length===0)return;
@@ -32536,12 +32658,15 @@ function _subscribeSharedDrops(){
         if(Object.keys(seenHashes).length===0){
           if(window._swsLog)_swsLog('Zone query empty — trying distance fallback','warn');
           _loadSharedDropsFallback(user);
+          // If still nothing, seed demo plants so player can experience harvest
+          setTimeout(function(){if(Object.keys(_sharedMarkers).length===0)_seedDemoPlants();},3000);
         }
         // Re-check feral spawns now that shared markers are updated
         _feralRespawnDebounced();
       },function(e){
         if(window._swsLog)_swsLog('Snapshot err: '+(e.message||e)+' — using fallback','warn');
         _loadSharedDropsFallback(user);
+        setTimeout(function(){if(Object.keys(_sharedMarkers).length===0)_seedDemoPlants();},3000);
       });
   }catch(e){if(window._swsLog)_swsLog('Subscribe err: '+e,'err');}
 }
@@ -32607,6 +32732,43 @@ function _loadSharedDropsFallback(user){
   }catch(e){}
 }
 
+// ═══ DEMO PLANTS — seed harvestable plants when nobody else is nearby ═══
+function _seedDemoPlants(){
+  if(!_map||!_uLat)return;
+  // Only seed once per session
+  if(_demoSeeded)return;
+  // Don't seed if real shared plants exist
+  if(Object.keys(_sharedMarkers).length>0)return;
+  _demoSeeded=true;
+  var demoNames=['Wild Sage','Forest Bloom','Dew Fern','Moss Heart','Thorn Ivy'];
+  var demoGrades=['Common','Uncommon','Rare','Common','Uncommon'];
+  var demoGames=['set','memory','color','math','word'];
+  var count=3+Math.floor(Math.random()*3); // 3-5 plants
+  for(var i=0;i<count;i++){
+    // Scatter within ~40-70m of player (within COLLECT_RANGE)
+    var angle=Math.random()*Math.PI*2;
+    var dist=0.0003+Math.random()*0.0003; // ~30-60m in lat/lng
+    var la=_uLat+Math.sin(angle)*dist;
+    var lo=_uLng+Math.cos(angle)*dist;
+    // Generate a deterministic demo hash
+    var seed=Math.floor(Math.random()*0xFFFFFFFF).toString(16);
+    var demoHash='';for(var j=0;j<8;j++)demoHash+=seed;demoHash=demoHash.slice(0,64);
+    var pd={lat:la,lng:lo,hash:demoHash,own:false,
+      days:Math.floor(Math.random()*10),pollen:0,
+      status:'Wild',name:demoNames[i%demoNames.length],
+      ownerName:'Wanderer',ownerUid:'demo_'+i,
+      ea:Math.floor(Math.random()*8)+2,
+      defenderGame:demoGames[i%demoGames.length],
+      season:Math.floor(Math.random()*4),
+      grade:demoGrades[i%demoGrades.length],
+      _demo:true};
+    var mk=_addSharedMarker(pd);
+    _sharedMarkers[demoHash]={marker:mk,data:pd,demo:true};
+  }
+  _toast('Wild plants detected nearby! Tap one to harvest.');
+}
+var _demoSeeded=false;
+
 function _recenter(){
   if(_map&&_uLat){_map.setView([_uLat,_uLng],17,{animate:true,duration:0.6});_toast('Recentered on your location.');}
   else{_toast('Waiting for GPS...');}
@@ -32640,10 +32802,10 @@ function _changeDefense(p){
     var dc=g.diff==='Easy'?'var(--sage)':g.diff==='Medium'?'var(--gold)':'#c07070';
     var sel=g.id===p.defenderGame?' border-color:var(--gold);background:rgba(200,168,75,0.1);':'';
     h+='<div class="fc-card" onclick="_applyDefenseChange(\''+p.hash+'\',\''+g.id+'\')" style="flex-direction:column;gap:6px;padding:10px 8px;'+sel+'">';
-    h+='<div style="font-size:1.4rem;">'+g.icon+'</div>';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--cream);letter-spacing:0.06em;">'+g.name+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:var(--muted);line-height:1.3;">'+g.desc+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.25rem;color:'+dc+';letter-spacing:0.06em;margin-top:auto;">'+g.diff+(g.id===p.defenderGame?' \u2713':'')+'</div>';
+    h+='<div style="font-size:1.6rem;">'+g.icon+'</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--cream);letter-spacing:0.06em;">'+g.name+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);line-height:1.3;">'+g.desc+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:'+dc+';letter-spacing:0.06em;margin-top:auto;">'+g.diff+(g.id===p.defenderGame?' \u2713':'')+'</div>';
     h+='</div>';
   }
   if(board){board.innerHTML=h;board.style.gridTemplateColumns='repeat(3,1fr)';}
@@ -38283,6 +38445,8 @@ function finish(){
   if(window.renderGreenhouse)renderGreenhouse();
   if(window.updateDashboard)updateDashboard();
   if(window.switchTab)switchTab('greenhouse');
+  // Trigger guided tutorial for new players
+  if(window.PW_Tutorial)setTimeout(function(){PW_Tutorial.start();},800);
 }
 
 function skip(){
@@ -39030,35 +39194,35 @@ function _setupChallenge(diff, grade) {
   if(_type==='set'){
     _state={cards:_genSetBoard(),sel:[]};
     if(title)title.textContent='QUICK TRIOS';
-    if(sub)sub.textContent=(grade||'Common')+' — Find 1 valid Trio (same or all-different on each trait)';
+    if(sub)sub.textContent=(grade||'Common')+' — Pick 3 cards where shape, color & count are each ALL SAME or ALL DIFFERENT';
     _renderSet();
   }else if(_type==='memory'){
     var seq=_genMemory(diff);
     var order=[];for(var i=0;i<seq.length;i++)order.push(i);
     _state={seq:seq,order:order,revealed:{},inputIdx:0,phase:'show'};
     if(title)title.textContent='PATTERN MEMORY';
-    if(sub)sub.textContent=(grade||'Common')+' — Memorize, then tap in order';
+    if(sub)sub.textContent=(grade||'Common')+' — Watch the numbered dots, then tap them back in the same order';
     _renderMemory();
     setTimeout(function(){if(!_solved){_state.phase='input';_renderMemory();}},2500);
   }else if(_type==='spot'){
     _state=_genGrowth(diff);
     if(title)title.textContent='GROWTH SEQUENCE';
-    if(sub)sub.textContent=(grade||'Common')+' — Tap stages in growth order';
+    if(sub)sub.textContent=(grade||'Common')+' — Tap the growth stages from smallest to largest';
     _renderGrowth();
   }else if(_type==='color'){
     _state=_genColor(diff);
     if(title)title.textContent='COLOR MATCH';
-    if(sub)sub.textContent=(grade||'Common')+' — Tap the matching color';
+    if(sub)sub.textContent=(grade||'Common')+' — Tap the swatch that matches the target color above';
     _renderColor();
   }else if(_type==='math'){
     _state=_genMath(diff);
     if(title)title.textContent='MATH SPROUT';
-    if(sub)sub.textContent=(grade||'Common')+' — Solve it';
+    if(sub)sub.textContent=(grade||'Common')+' — Tap the correct answer to the equation';
     _renderMath();
   }else if(_type==='word'){
     _state=_genWord(diff);
     if(title)title.textContent='WORD UNSCRAMBLE';
-    if(sub)sub.textContent=(grade||'Common')+' — Spell the botanical word';
+    if(sub)sub.textContent=(grade||'Common')+' — Drag or tap the scrambled letters to spell the word';
     _renderWord();
   }else if(_type==='chess'){
     var isM2=diff>=1;
@@ -40022,6 +40186,181 @@ window._checkDailyLogin = function() {
 })();
 </script>
 
+<!-- ═══ GUIDED ONBOARDING TUTORIAL ═══ -->
+<script>
+(function(){
+'use strict';
+var TK='lw_tut';
+var _ov=null,_dlg=null,_spot=null;
+
+function _getStep(){var s=localStorage.getItem(TK);if(s==='done')return -1;return parseInt(s,10)||0;}
+function _setStep(n){localStorage.setItem(TK,String(n));}
+function _done(){localStorage.setItem(TK,'done');}
+
+function _clear(){
+  if(_ov&&_ov.parentNode)_ov.remove();_ov=null;
+  if(_dlg&&_dlg.parentNode)_dlg.remove();_dlg=null;
+  if(_spot&&_spot.parentNode)_spot.remove();_spot=null;
+}
+
+function _dialog(text,btnLabel,btnCb,pos){
+  _dlg=document.createElement('div');
+  _dlg.style.cssText='position:fixed;z-index:99998;background:rgba(18,24,16,0.97);border:1.5px solid rgba(200,168,75,0.3);border-radius:14px;padding:1rem 1.2rem;max-width:min(320px,88vw);font-family:Playfair Display,serif;font-size:0.65rem;color:var(--cream);line-height:1.7;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.6);animation:panelFadeIn 0.35s ease;';
+  if(pos==='top'){_dlg.style.top='15%';_dlg.style.left='50%';_dlg.style.transform='translateX(-50%)';}
+  else if(pos==='bottom'){_dlg.style.bottom='calc(80px + env(safe-area-inset-bottom,0px))';_dlg.style.left='50%';_dlg.style.transform='translateX(-50%)';}
+  else{_dlg.style.top='50%';_dlg.style.left='50%';_dlg.style.transform='translate(-50%,-50%)';}
+  var h='<div style="margin-bottom:0.5rem;">'+text+'</div>';
+  if(btnLabel){
+    h+='<button onclick="void(0)" style="min-height:48px;min-width:120px;padding:0.4rem 1.2rem;border-radius:8px;border:1.5px solid rgba(200,168,75,0.35);background:rgba(200,168,75,0.1);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;">'+btnLabel+'</button>';
+  }
+  _dlg.innerHTML=h;
+  if(btnCb){var btn=_dlg.querySelector('button');if(btn)btn.onclick=function(e){e.stopPropagation();btnCb();};}
+  document.body.appendChild(_dlg);
+  return _dlg;
+}
+
+function _overlay(tapCb){
+  _ov=document.createElement('div');
+  _ov.style.cssText='position:fixed;inset:0;z-index:99996;background:rgba(0,0,0,0.72);animation:panelFadeIn 0.3s ease;';
+  if(tapCb)_ov.onclick=tapCb;
+  document.body.appendChild(_ov);
+}
+
+function _spotlight(el){
+  if(!el)return;
+  var r=el.getBoundingClientRect();
+  _spot=document.createElement('div');
+  _spot.style.cssText='position:fixed;z-index:99997;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,0.72);pointer-events:none;transition:all 0.3s ease;';
+  _spot.style.top=(r.top-6)+'px';_spot.style.left=(r.left-6)+'px';
+  _spot.style.width=(r.width+12)+'px';_spot.style.height=(r.height+12)+'px';
+  document.body.appendChild(_spot);
+  // Ensure target is clickable above overlay
+  el.style.position=el.style.position||'relative';
+  el.style.zIndex='99997';
+}
+
+// ═══ STEP 1: "This is your first plant. Tap to view it." ═══
+function _step1(){
+  if(_getStep()>=1&&_getStep()<5)return; // already past this
+  _setStep(1);
+  // Wait for greenhouse to render
+  setTimeout(function(){
+    var cards=document.querySelectorAll('.greenhouse-plant');
+    if(!cards.length){setTimeout(_step1,500);return;}
+    var firstCard=cards[0];
+    _overlay();
+    _spotlight(firstCard);
+    _dialog('This is your first plant.<br><span style="color:var(--gold);">Tap it to take a closer look.</span>',null,null,'bottom');
+    // Intercept tap on the card
+    var origClick=firstCard.onclick;
+    firstCard.onclick=function(e){
+      _clear();
+      firstCard.style.zIndex='';
+      if(origClick)origClick.call(firstCard,e);
+      // openCarousel should fire — wait for it then show step 2
+      setTimeout(_step2,600);
+    };
+  },400);
+}
+
+// ═══ STEP 2: Carousel front — uniqueness ═══
+function _step2(){
+  _setStep(2);
+  setTimeout(function(){
+    var gallery=document.getElementById('plant-gallery-modal');
+    if(!gallery||!gallery.classList.contains('open')){setTimeout(_step2,300);return;}
+    _dialog('Every plant is completely unique \u2014 created through your own interactions.<br><br>The <span style="color:var(--gold);">name</span> and <span style="color:var(--gold);">haiku</span> are generated just for you. This card is one-of-a-kind.<br><br><span style="color:var(--sage);">Tap the card to flip it \u2192</span>',null,null,'bottom');
+    // Watch for flip
+    var flipWrap=document.querySelector('.cs-flip-wrap');
+    if(flipWrap){
+      var _watchFlip=function(){
+        if(flipWrap.classList.contains('flipped')){
+          _clear();
+          setTimeout(_step3,400);
+        } else {
+          setTimeout(_watchFlip,200);
+        }
+      };
+      setTimeout(_watchFlip,300);
+    }
+  },400);
+}
+
+// ═══ STEP 3: Carousel back — DNA ledger ═══
+function _step3(){
+  _setStep(3);
+  setTimeout(function(){
+    _dialog('These are the <span style="color:var(--gold);">genetic layers</span> that make up your unique piece of art.<br><br>Each trait was determined by the hash of your attention \u2014 your focus literally shaped this plant.','GOT IT',function(){
+      _clear();
+      // Close carousel
+      if(window.closePlantGallery)closePlantGallery();
+      setTimeout(_step4,400);
+    },'top');
+  },300);
+}
+
+// ═══ STEP 4: Direct to Game tab ═══
+function _step4(){
+  _setStep(4);
+  setTimeout(function(){
+    _overlay();
+    // Find game nav button
+    var navBtns=document.querySelectorAll('.fg-nav-btn');
+    var gameBtn=null;
+    for(var i=0;i<navBtns.length;i++){
+      if(navBtns[i].querySelector('img')&&navBtns[i].querySelector('img').alt==='Game'){gameBtn=navBtns[i];break;}
+    }
+    if(gameBtn){
+      _spotlight(gameBtn);
+      _dialog('You can earn more plants by <span style="color:var(--sage);">playing games</span>, <span style="color:var(--sage);">making art</span>, and <span style="color:var(--sage);">solving puzzles</span>.<br><br>There are all kinds of ways \u2014 explore and find what you like!<br><br><span style="color:var(--gold);">Tap the Game tab below \u2193</span>',null,null,'center');
+      var origGameClick=gameBtn.onclick;
+      gameBtn.onclick=function(e){
+        _clear();
+        gameBtn.style.zIndex='';
+        gameBtn.onclick=origGameClick;
+        if(origGameClick)origGameClick.call(gameBtn,e);
+        _setStep(5); // immediate tutorial done, deferred steps remain
+      };
+    } else {
+      _dialog('Earn more plants by playing games, making art, and solving puzzles. Explore the tabs!','GOT IT',function(){_clear();_setStep(5);},'center');
+    }
+  },300);
+}
+
+// ═══ DEFERRED: Nursery check ═══
+function checkNursery(){
+  if(localStorage.getItem('lw_tut_nursery'))return;
+  var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+  localStorage.setItem('lw_tut_nursery','1');
+  if(gh.length<2){
+    setTimeout(function(){
+      _dialog('You need at least <span style="color:var(--gold);">2 plants</span> to breed.<br><br>Play some games to earn more, then come back here to cross-pollinate!','GOT IT',function(){_clear();},'center');
+    },400);
+  } else {
+    setTimeout(function(){
+      _dialog('You have enough plants to breed!<br><br><span style="color:var(--sage);">Cross-pollination</span> combines traits from two plants to create something entirely new. The offspring goes to your nursery \u2014 water it for 3 days and it blooms.','GOT IT',function(){_clear();},'center');
+    },400);
+  }
+}
+
+// ═══ DEFERRED: Breed screen ═══
+function checkBreed(){
+  if(localStorage.getItem('lw_tut_breed'))return;
+  localStorage.setItem('lw_tut_breed','1');
+  setTimeout(function(){
+    _dialog('These are the <span style="color:var(--gold);">genetic layers</span> of each plant side by side.<br><br><span style="color:var(--sage);">DOMINANT</span> traits are likely to pass down. <span style="color:var(--gold);">BLENDS</span> mix from both parents. <span style="color:#d8a0a0;">RISKY</span> traits may mutate or vanish.<br><br>The forecast shows what your offspring might inherit.','GOT IT',function(){_clear();},'top');
+  },600);
+}
+
+function start(){
+  if(_getStep()!==0)return;
+  _step1();
+}
+
+window.PW_Tutorial={start:start,checkNursery:checkNursery,checkBreed:checkBreed};
+})();
+</script>
+
 <div id="breed-screen">
   <div class="bs-topbar">
     <div class="bs-title">🧬 CROSS-POLLINATE</div>
@@ -40084,19 +40423,28 @@ function _info(hash){
 function _renderCard(el,plant,role){
   if(!el||!plant)return;
   var i=_info(plant.hash);
-  var s=_seasonKeys[i.season];
+  var masked=plant._wildMasked;
+  var s=masked?'':_seasonKeys[i.season];
   el.className='bs-cb '+s;
   var svg='';try{if(window._generatePlantSVG)svg=window._generatePlantSVG(plant.hash,26);}catch(e){}
   var h='<div class="bs-role">'+role+'</div>';
   h+='<div class="bs-head"><div class="bs-thumb">'+svg+'</div><div style="flex:1;min-width:0;">';
-  var _bsNp = typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : i.nm;
-  h+='<div class="bs-name" style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">'+_bsNp+'</div>';
-  var _bc = plant.breedCount || 0;
-  var _bcColor = _bc >= 3 ? 'rgba(192,112,112,0.9)' : _bc >= 2 ? 'rgba(200,168,75,0.9)' : 'var(--muted)';
-  h+='<div class="bs-meta"><span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">'+(i.tg?i.tg.icon:'')+' '+(i.tg?i.tg.name:'')+'</span>';
-  h+='<span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">EA '+i.ea+'</span>';
-  h+='<span style="color:var(--muted);">'+_seasonEmblems[i.season]+' G'+(i.t?i.t.chimerGen||1:1)+'</span>';
-  h+='<span style="color:'+_bcColor+';">'+(_bc>=3?'⚡ SPENT':'🧬 '+_bc+'/3')+'</span></div>';
+  if(masked){
+    h+='<div class="bs-name" style="color:var(--muted);">Wild Specimen</div>';
+    h+='<div class="bs-meta"><span style="color:var(--muted);">??? Grade</span>';
+    h+='<span style="color:var(--muted);">EA ???</span>';
+    h+='<span style="color:var(--muted);">Season ???</span>';
+    h+='<span style="color:var(--muted);">\ud83e\udde0 Mystery</span></div>';
+  } else {
+    var _bsNp = typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : i.nm;
+    h+='<div class="bs-name" style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">'+_bsNp+'</div>';
+    var _bc = plant.breedCount || 0;
+    var _bcColor = _bc >= 3 ? 'rgba(192,112,112,0.9)' : _bc >= 2 ? 'rgba(200,168,75,0.9)' : 'var(--muted)';
+    h+='<div class="bs-meta"><span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">'+(i.tg?i.tg.icon:'')+' '+(i.tg?i.tg.name:'')+'</span>';
+    h+='<span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">EA '+i.ea+'</span>';
+    h+='<span style="color:var(--muted);">'+_seasonEmblems[i.season]+' G'+(i.t?i.t.chimerGen||1:1)+'</span>';
+    h+='<span style="color:'+_bcColor+';">'+(_bc>=3?'\u26a1 SPENT':'\ud83e\uddec '+_bc+'/3')+'</span></div>';
+  }
   h+='</div></div>';
   // Layers
   if(i.t){
@@ -40270,6 +40618,7 @@ function _renderForecast(){
 window.openBreedScreen=function(plantA,context){
   _plantA=plantA;
   _plantACtx=context||'greenhouse';
+  if(window.PW_Tutorial)PW_Tutorial.checkBreed();
   // Build partner list from greenhouse excluding plantA
   var gh=[];
   try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
@@ -40283,7 +40632,7 @@ window.openBreedScreen=function(plantA,context){
     return;
   }
   _pIdx=0;
-  _renderCard(document.getElementById('bs-card-a'),_plantA,'YOUR PLANT');
+  _renderCard(document.getElementById('bs-card-a'),_plantA,_plantACtx==='wild-other'?'WILD PLANT':'YOUR PLANT');
   _renderCard(document.getElementById('bs-card-b'),_partners[0],'PARTNER \u00b7 1/'+_partners.length);
   _renderForecast();
   document.getElementById('bs-count').textContent='1 / '+_partners.length;
@@ -40329,7 +40678,8 @@ window.bsExecuteBreed=function(){
   if(!_plantA||!_partners[_pIdx])return;
   var mate=_partners[_pIdx];
 
-  // Use the existing Wild _doCrossPollination if context is wild
+  // Use Wild IIFE _doCrossPollination only for own wild plants
+  // wild-other (non-owned) uses greenhouse path since the plant isn't in user's collection
   if(_plantACtx==='wild'&&typeof _doCrossPollination==='function'){
     _doCrossPollination(_plantA,mate);
   } else {
@@ -40340,7 +40690,12 @@ window.bsExecuteBreed=function(){
       if(window._toast)window._toast('🧬 Cross-pollinating…');
       FG_Data.crossPollinateHashes(_bsA.hash,_bsM.hash).then(function(result){
         var offHash=result.childHash;
-        var offGen=result.nonce;
+        // Compute generation from parent plants (not from nonce which is pollination counter)
+        var _genA=1,_genB=1;
+        try{var _genGh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+          _genGh.forEach(function(p){if(p.hash===_bsA.hash)_genA=p.generation||1;if(p.hash===_bsM.hash)_genB=p.generation||1;});
+        }catch(e){}
+        var offGen=Math.max(_genA,_genB)+1;
         if(window.FG_Data&&window.FG_Data.addSeed){
           var res=window.FG_Data.addSeed({seedHash:offHash,parentAHash:_bsA.hash,parentBHash:_bsM.hash,nonce:offGen});
           if(!res.ok){if(window._toast)window._toast('Nursery full. Bloom or abandon a seed first.');return;}
