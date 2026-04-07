@@ -40411,5 +40411,203 @@ window.addEventListener('load',function(){
   },8000);
 });
 </script>
+
+<!-- ═══ PWA NURSERY NOTIFICATION SYSTEM ═══ -->
+<script>
+(function(){
+'use strict';
+
+// ── Permission prompt banner (shown after daily login dismiss) ──
+window._lwNotifPrompt = function() {
+  if (localStorage.getItem('lw_notif_asked')) return;
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'granted') {
+    localStorage.setItem('lw_notif_asked', '1');
+    return;
+  }
+  if (Notification.permission === 'denied') {
+    localStorage.setItem('lw_notif_asked', '1');
+    return;
+  }
+
+  var _autoTimer = null;
+
+  var bar = document.createElement('div');
+  bar.id = 'lw-notif-bar';
+  bar.style.cssText = 'position:fixed;bottom:calc(var(--nav-h,58px) + var(--sb,0px) + 6px);left:8px;right:8px;z-index:99990;' +
+    'background:rgba(13,16,12,0.96);border:1.5px solid rgba(122,179,86,0.3);border-radius:12px;' +
+    'padding:0.7rem 0.8rem;display:flex;align-items:center;gap:0.6rem;' +
+    'box-shadow:0 8px 28px rgba(0,0,0,0.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);' +
+    'animation:panelFadeIn 0.3s ease;';
+
+  var txt = document.createElement('span');
+  txt.style.cssText = 'flex:1;font-family:DM Mono,monospace;font-size:0.42rem;color:var(--cream,#e8dcc8);line-height:1.3;';
+  txt.textContent = 'Get notified when seeds are ready?';
+
+  var btnYes = document.createElement('button');
+  btnYes.textContent = 'YES';
+  btnYes.style.cssText = 'min-width:54px;min-height:48px;padding:0.35rem 0.6rem;border:1.5px solid rgba(122,179,86,0.4);' +
+    'border-radius:8px;background:linear-gradient(180deg,rgba(74,124,53,0.35),rgba(46,80,36,0.45));' +
+    'color:var(--sage,#7ab356);font-family:DM Mono,monospace;font-size:0.42rem;font-weight:700;' +
+    'letter-spacing:0.08em;cursor:pointer;';
+
+  var btnNo = document.createElement('button');
+  btnNo.textContent = 'NOT NOW';
+  btnNo.style.cssText = 'min-width:54px;min-height:48px;padding:0.35rem 0.6rem;border:1px solid rgba(138,145,120,0.25);' +
+    'border-radius:8px;background:transparent;color:var(--muted,#8a9178);' +
+    'font-family:DM Mono,monospace;font-size:0.38rem;letter-spacing:0.05em;cursor:pointer;';
+
+  function dismiss() {
+    localStorage.setItem('lw_notif_asked', '1');
+    if (bar.parentNode) bar.parentNode.removeChild(bar);
+    if (_autoTimer) clearTimeout(_autoTimer);
+  }
+
+  btnYes.onclick = function() {
+    Notification.requestPermission().then(function(perm) {
+      if (perm === 'granted') {
+        _checkNurSeedsOnLoad();
+      }
+    });
+    dismiss();
+  };
+
+  btnNo.onclick = function() {
+    dismiss();
+  };
+
+  bar.appendChild(txt);
+  bar.appendChild(btnYes);
+  bar.appendChild(btnNo);
+  document.body.appendChild(bar);
+
+  _autoTimer = setTimeout(function() {
+    if (bar.parentNode) {
+      bar.style.transition = 'opacity 0.4s ease';
+      bar.style.opacity = '0';
+      setTimeout(function() {
+        if (bar.parentNode) bar.parentNode.removeChild(bar);
+      }, 450);
+    }
+    localStorage.setItem('lw_notif_asked', '1');
+  }, 10000);
+};
+
+// ── Schedule nursery notification ──
+var _nurTimers = {};
+
+window._scheduleNurNotif = function(seed, bloomReady) {
+  if (Notification.permission !== 'granted') return;
+  if (!('serviceWorker' in navigator)) return;
+
+  if (bloomReady) {
+    _fireNurNotif('Your seed is ready to bloom!', 'Tap to open the Nursery and bloom your plant.');
+    return;
+  }
+
+  var now = new Date();
+  var midnight = new Date(now);
+  midnight.setDate(midnight.getDate() + 1);
+  midnight.setHours(0, 0, 5, 0);
+  var msUntil = midnight.getTime() - now.getTime();
+
+  var sid = seed.id || seed.seedHash || 'default';
+  if (_nurTimers[sid]) clearTimeout(_nurTimers[sid]);
+
+  _nurTimers[sid] = setTimeout(function() {
+    var daysLeft = 3 - (seed.waterLog ? seed.waterLog.length : 0);
+    if (daysLeft > 0) {
+      _fireNurNotif(
+        'Time to water your seed!',
+        daysLeft + ' watering' + (daysLeft > 1 ? 's' : '') + ' left until bloom.'
+      );
+    }
+    delete _nurTimers[sid];
+  }, msUntil);
+};
+
+function _fireNurNotif(title, body) {
+  if (Notification.permission !== 'granted') return;
+  if (!('serviceWorker' in navigator)) return;
+
+  navigator.serviceWorker.ready.then(function(reg) {
+    reg.showNotification(title, {
+      body: body,
+      icon: 'assets/backpack-64x64-2.png',
+      badge: 'assets/backpack-64x64-2.png',
+      tag: 'lw-nursery',
+      renotify: true,
+      vibrate: [100, 50, 100]
+    });
+  });
+}
+
+// ── Page load: check if seeds need watering (for backgrounded returns) ──
+function _checkNurSeedsOnLoad() {
+  if (Notification.permission !== 'granted') return;
+
+  var nur;
+  try {
+    nur = JSON.parse(localStorage.getItem('sws_nursery') || '[]');
+  } catch(e) { return; }
+  if (!nur || !nur.length) return;
+
+  var today = new Date().toISOString().split('T')[0];
+  var needWater = 0;
+  var bloomReady = 0;
+
+  for (var i = 0; i < nur.length; i++) {
+    var s = nur[i];
+    if (s.status !== 'growing') continue;
+    var wl = s.waterLog || [];
+    if (wl.length >= 3) {
+      bloomReady++;
+    } else if (wl.indexOf(today) === -1) {
+      needWater++;
+    }
+  }
+
+  if (bloomReady > 0) {
+    _fireNurNotif(
+      bloomReady + ' seed' + (bloomReady > 1 ? 's are' : ' is') + ' ready to bloom!',
+      'Tap to open Lucid Winds and bloom.'
+    );
+  } else if (needWater > 0) {
+    _fireNurNotif(
+      needWater + ' seed' + (needWater > 1 ? 's need' : ' needs') + ' watering today',
+      'Open the Nursery to water your seeds.'
+    );
+  }
+}
+
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible') {
+    setTimeout(_checkNurSeedsOnLoad, 2000);
+  }
+});
+
+window.addEventListener('load', function() {
+  if (Notification.permission !== 'granted') return;
+  setTimeout(function() {
+    var nur;
+    try {
+      nur = JSON.parse(localStorage.getItem('sws_nursery') || '[]');
+    } catch(e) { return; }
+    if (!nur || !nur.length) return;
+    var today = new Date().toISOString().split('T')[0];
+    for (var i = 0; i < nur.length; i++) {
+      var s = nur[i];
+      if (s.status !== 'growing') continue;
+      var wl = s.waterLog || [];
+      if (wl.length < 3 && wl.indexOf(today) !== -1) {
+        window._scheduleNurNotif(s);
+      }
+    }
+  }, 3000);
+});
+
+})();
+</script>
+
 </body>
 </html>
