@@ -29634,6 +29634,7 @@ document.addEventListener('keydown', function(e) {
         if (window.updateDashboard)  updateDashboard();
         if (window.renderRecords)    renderRecords();
         if (window.PW_Social) PW_Social.ensureProfile(user);
+        if (window._checkDailyLogin) _checkDailyLogin();
         // Force save to cloud after successful auth
         setTimeout(function() {
           if (_vaultHydrated) {
@@ -39812,6 +39813,137 @@ _initPi();
 <!-- Service Worker duplicate removed — handled above -->
 
 <!-- ═══ set-51: BREEDING COMPARISON OVERLAY ═══ -->
+<!-- ═══ DAILY LOGIN REWARD SYSTEM ═══ -->
+<script>
+(function(){
+'use strict';
+var DLK = 'lw_daily_login';
+
+function _today() { return new Date().toISOString().split('T')[0]; }
+
+function _yesterday() {
+  var d = new Date(); d.setDate(d.getDate() - 1);
+  return d.toISOString().split('T')[0];
+}
+
+function _loadDaily() {
+  try { return JSON.parse(localStorage.getItem(DLK) || 'null') || { lastClaim: null, streak: 0 }; }
+  catch(e) { return { lastClaim: null, streak: 0 }; }
+}
+
+function _saveDaily(d) {
+  try { localStorage.setItem(DLK, JSON.stringify(d)); } catch(e) {}
+}
+
+// Reward table: base dew per day + streak milestones
+function _dailyReward(streak) {
+  var base = Math.min(5 + Math.floor(streak / 3), 15); // 5 dew, +1 per 3 days, cap 15
+  var bonus = 0;
+  var bonusLabel = '';
+  if (streak === 7) { bonus = 25; bonusLabel = '7-DAY STREAK BONUS'; }
+  else if (streak === 14) { bonus = 50; bonusLabel = '14-DAY STREAK BONUS'; }
+  else if (streak === 30) { bonus = 100; bonusLabel = '30-DAY STREAK BONUS'; }
+  else if (streak > 0 && streak % 30 === 0) { bonus = 100; bonusLabel = streak + '-DAY STREAK BONUS'; }
+  return { base: base, bonus: bonus, bonusLabel: bonusLabel, total: base + bonus };
+}
+
+function _showDailyReward() {
+  var daily = _loadDaily();
+  var today = _today();
+
+  // Already claimed today
+  if (daily.lastClaim === today) return;
+
+  // Streak logic
+  if (daily.lastClaim === _yesterday()) {
+    daily.streak = (daily.streak || 0) + 1;
+  } else if (daily.lastClaim !== today) {
+    daily.streak = 1; // reset — missed a day or first login
+  }
+
+  var reward = _dailyReward(daily.streak);
+
+  // Grant dew
+  if (window.earnHashes) earnHashes(reward.total);
+
+  // Save claim
+  daily.lastClaim = today;
+  _saveDaily(daily);
+
+  // Build modal
+  var ov = document.createElement('div');
+  ov.id = 'daily-reward-modal';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99997;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
+
+  var h = '<div style="text-align:center;max-width:300px;background:rgba(18,22,16,0.95);border:1.5px solid rgba(200,168,75,0.3);border-radius:16px;padding:1.4rem 1.2rem;box-shadow:0 12px 40px rgba(0,0,0,0.6);">';
+
+  // Streak fire
+  var fireCount = Math.min(daily.streak, 7);
+  var fires = '';
+  for (var f = 0; f < fireCount; f++) fires += '\ud83d\udd25';
+  if (daily.streak > 7) fires += ' +' + (daily.streak - 7);
+
+  h += '<div style="font-size:2rem;margin-bottom:0.3rem;">\ud83c\udf3f</div>';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.15em;margin-bottom:0.15rem;">DAILY DEW</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);margin-bottom:0.5rem;">Day ' + daily.streak + ' ' + fires + '</div>';
+
+  // Dew reward
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:1.8rem;color:rgba(91,175,220,0.95);text-shadow:0 0 15px rgba(91,175,220,0.3);margin:0.3rem 0;">+' + reward.base + '</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);margin-bottom:0.3rem;">Dew Drops</div>';
+
+  // Streak bonus
+  if (reward.bonus > 0) {
+    h += '<div style="margin:0.3rem 0;padding:0.4rem;background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.3);border-radius:8px;">';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--gold);letter-spacing:0.1em;">' + reward.bonusLabel + '</div>';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:var(--gold);text-shadow:0 0 10px rgba(200,168,75,0.3);">+' + reward.bonus + ' BONUS DEW</div>';
+    h += '</div>';
+  }
+
+  // Next milestone preview
+  var nextMilestone = daily.streak < 7 ? 7 : daily.streak < 14 ? 14 : daily.streak < 30 ? 30 : (Math.ceil(daily.streak / 30) * 30);
+  var daysUntil = nextMilestone - daily.streak;
+  if (daysUntil > 0 && daysUntil <= 30) {
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);margin-top:0.3rem;">' + daysUntil + ' day' + (daysUntil > 1 ? 's' : '') + ' until next streak bonus</div>';
+  }
+
+  // Nursery reminder
+  var nurReminder = '';
+  try {
+    if (window.FG_Data) {
+      var nur = FG_Data.getNursery();
+      var waterCount = 0;
+      for (var ni = 0; ni < nur.length; ni++) {
+        if (FG_Data.canWaterToday && FG_Data.canWaterToday(nur[ni])) waterCount++;
+      }
+      if (waterCount > 0) {
+        nurReminder = '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--sage);margin-top:0.4rem;">\ud83d\udca7 ' + waterCount + ' seed' + (waterCount > 1 ? 's' : '') + ' need watering today</div>';
+      }
+    }
+  } catch(e) {}
+  h += nurReminder;
+
+  h += '<button onclick="this.parentNode.parentNode.remove();" style="margin-top:0.6rem;width:100%;padding:0.5rem;border:1.5px solid rgba(122,179,86,0.3);border-radius:8px;background:linear-gradient(180deg,rgba(74,124,53,0.25),rgba(46,80,36,0.35));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">COLLECT</button>';
+  h += '</div>';
+
+  ov.innerHTML = h;
+  document.body.appendChild(ov);
+
+  // Haptic + sound
+  try { if (window._haptic) _haptic('sync'); } catch(e) {}
+  if (typeof gtag !== 'undefined') gtag('event', 'daily_login', { streak: daily.streak, reward: reward.total });
+
+  // Update dashboard
+  if (window.updateDashboard) setTimeout(updateDashboard, 300);
+}
+
+// Expose for triggering after vault loads
+window._checkDailyLogin = function() {
+  // Delay so the game finishes rendering before modal pops
+  setTimeout(_showDailyReward, 1200);
+};
+})();
+</script>
+
 <div id="breed-screen">
   <div class="bs-topbar">
     <div class="bs-title">🧬 CROSS-POLLINATE</div>
