@@ -4310,9 +4310,15 @@
       backdrop-filter: none !important;
       background: rgba(13,16,12,0.97) !important;
     }
+    /* ── Offline warning banner ────────────────────────────────────── */
+    #lw-offline-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:9998;background:rgba(30,24,12,0.94);border-bottom:1px solid rgba(200,168,75,0.2);padding:6px 36px 6px 12px;font-family:inherit;font-size:0.58rem;color:var(--muted);text-align:center;letter-spacing:0.03em;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+    #lw-offline-banner .lw-ob-x{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;border:none;background:transparent;color:var(--muted);font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;-webkit-tap-highlight-color:transparent;}
+    #lw-offline-banner .lw-ob-x:active{background:rgba(200,168,75,0.12);}
   </style>
 </head>
 <body>
+  <!-- ═══ OFFLINE WARNING BANNER ═══ -->
+  <div id="lw-offline-banner"><span>Offline &#8212; progress saves locally only</span><button class="lw-ob-x" onclick="document.getElementById('lw-offline-banner').style.display='none';">&times;</button></div>
 
   <!-- ═══ FLUX TAB BACKGROUNDS (set-38) ═══ -->
   <div class="tab-bg active" id="tab-bg-game"></div>
@@ -4341,6 +4347,28 @@ window.onerror=function(msg,url,line,col,err){
   d.innerHTML+='<div>L'+line+': '+msg+'</div>';
 };
 // DEBUG: build overlay disabled for production
+</script>
+
+<script>
+// ── OFFLINE WARNING BANNER — detect Firebase unavailability ──────────────
+(function(){
+  window._showOfflineBanner = function() {
+    var b = document.getElementById('lw-offline-banner');
+    if (b) b.style.display = 'block';
+  };
+  window._hideOfflineBanner = function() {
+    var b = document.getElementById('lw-offline-banner');
+    if (b) b.style.display = 'none';
+  };
+  // After page loads, check if Firebase SDK loaded at all
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      if (!window.firebase || !window.firebase.auth) {
+        window._showOfflineBanner();
+      }
+    }, 4000);
+  });
+})();
 </script>
 
 <!-- ═══ VAULT HYDRATION OVERLAY (set-93) ═══════════════════════════════════
@@ -27339,6 +27367,11 @@ document.addEventListener('keydown', function(e) {
       }
       // Open game picker when entering game tab
       if (window._openGamePicker) setTimeout(_openGamePicker, 100);
+      // First-time tutorial — show on first game tab visit after onboarding
+      if (!localStorage.getItem('lw_tutorial_shown') && window.triggerTutorialDemo) {
+        localStorage.setItem('lw_tutorial_shown', '1');
+        setTimeout(function() { if (window.triggerTutorialDemo) triggerTutorialDemo(); }, 600);
+      }
     }
     if (tab === 'greenhouse') renderGreenhouse();
     if (tab === 'dashboard') updateDashboard();
@@ -28318,21 +28351,30 @@ document.addEventListener('keydown', function(e) {
 
     if (typeof gtag !== 'undefined') gtag('event', 'nursery_water', { id: seedId, days: seed.waterLog.length });
 
-    // BLOOM TRIGGER — fires immediately on 3rd water, no extra tap required
+    // BLOOM TRIGGER — 3rd water makes bloom-ready; confirm before executing
     if (seed.waterLog.length >= 3) {
-      _setNurMsg('🌸 Three waterings complete! Cross-pollinating…');
+      _setNurMsg('🌸 Three waterings complete! Ready to bloom.');
       // Save nursery state first so _executeBloom reads the correct index
       _throttledSave('sws_nursery', JSON.stringify(nur), true); // Phase 27: force-flush before _executeBloom re-read
-      // Re-read to ensure seedIndex is still valid after save
-      var nur2;
-      try { nur2 = JSON.parse(_secureGet('sws_nursery') || localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur2 = nur; }
-      var idx2 = nur2.findIndex(function(s) { return s.id === seedId; });
-      if (idx2 >= 0) {
-        // Small delay for the message to render before overlay
-        setTimeout(function() { _executeBloom(nur2, idx2, nur2[idx2]); }, 300);
-      } else {
-        _setNurMsg('Error: seed not found after save.');
-      }
+      renderNursery();
+      _haptic('tab');
+      // Confirmation modal — lets player add fertilizer before blooming
+      window._lwConfirm({
+        title: 'READY TO BLOOM',
+        body: 'Your seed has 3 waterings and is ready to bloom into a plant! You can add fertilizer first for a stat boost, or bloom now.',
+        yes: 'BLOOM NOW',
+        no: 'ADD FERTILIZER FIRST'
+      }, function() {
+        // Re-read nursery fresh at confirm time
+        var nur2;
+        try { nur2 = JSON.parse(_secureGet('sws_nursery') || localStorage.getItem('sws_nursery') || '[]'); } catch(e2) { nur2 = []; }
+        var idx2 = nur2.findIndex(function(s) { return s.id === seedId; });
+        if (idx2 >= 0) {
+          setTimeout(function() { _executeBloom(nur2, idx2, nur2[idx2]); }, 300);
+        } else {
+          _setNurMsg('Error: seed not found after save.');
+        }
+      });
     } else {
       // Save progress only — throttled (Phase 27: 2s debounce, low urgency)
       _throttledSave('sws_nursery', JSON.stringify(nur));
@@ -28391,16 +28433,27 @@ document.addEventListener('keydown', function(e) {
     }
     nur[seedIndex] = seed;
 
-    // BLOOM TRIGGER — same immediate pattern
+    // BLOOM TRIGGER — fertilize makes bloom-ready; confirm before executing
     if (seed.waterLog.length >= 3) {
-      _setNurMsg('⚡ 21 Dew Drops spent — third watering unlocked! Cross-pollinating…');
+      _setNurMsg('⚡ 21 Dew Drops spent — third watering unlocked! Ready to bloom.');
       _throttledSave('sws_nursery', JSON.stringify(nur), true); // force-flush
-      var nur3;
-      try { nur3 = JSON.parse(_secureGet('sws_nursery') || localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur3 = nur; }
-      var idx3 = nur3.findIndex(function(s) { return s.id === seedId; });
-      if (idx3 >= 0) {
-        setTimeout(function() { _executeBloom(nur3, idx3, nur3[idx3]); }, 300);
-      }
+      renderNursery();
+      _haptic('sync');
+      // Confirmation modal — lets player add more fertilizer before blooming
+      window._lwConfirm({
+        title: 'READY TO BLOOM',
+        body: 'Your seed has 3 waterings and is ready to bloom into a plant! You can add fertilizer first for a stat boost, or bloom now.',
+        yes: 'BLOOM NOW',
+        no: 'ADD FERTILIZER FIRST'
+      }, function() {
+        // Re-read nursery fresh at confirm time
+        var nur3;
+        try { nur3 = JSON.parse(_secureGet('sws_nursery') || localStorage.getItem('sws_nursery') || '[]'); } catch(e3) { nur3 = []; }
+        var idx3 = nur3.findIndex(function(s) { return s.id === seedId; });
+        if (idx3 >= 0) {
+          setTimeout(function() { _executeBloom(nur3, idx3, nur3[idx3]); }, 300);
+        }
+      });
     } else {
       _throttledSave('sws_nursery', JSON.stringify(nur)); // throttled (Phase 27)
       renderNursery();
@@ -29421,10 +29474,12 @@ document.addEventListener('keydown', function(e) {
     db.collection('vaults').doc(uid).set(p, {merge:true})
       .then(function(){
         if (window._swsLog) _swsLog('✓ SAVED to Firestore: ' + p.sws_greenhouse.length + ' plants', 'ok');
+        if (window._hideOfflineBanner) window._hideOfflineBanner();
       })
       .catch(function(e){
         if (window._swsLog) _swsLog('✗ WRITE FAILED: ' + e.code + ' — ' + e.message, 'err');
         if (window.showHexMsg) showHexMsg('⚠ Cloud save failed: ' + (e.code||e.message));
+        if (window._showOfflineBanner) window._showOfflineBanner();
       });
     // ── Meta state sync (Spec: slots, inventory, hashLedger, streak) ──
     var metaRef = db.collection('vaults').doc(uid).collection('meta').doc('state');
@@ -29495,6 +29550,7 @@ document.addEventListener('keydown', function(e) {
         // Allow local play
         _vaultHydrated = true;
         _hideOverlay('');
+        if (window._showOfflineBanner) window._showOfflineBanner();
         if (window.renderGreenhouse) renderGreenhouse();
         if (window.updateDashboard)  updateDashboard();
         if (onComplete) onComplete({source:'offline', plantCount:localGH.length});
@@ -30387,6 +30443,7 @@ function _afRecordDrop(){
 }
 var _map=null,_uM=null,_uLat=null,_uLng=null,_trail=[],_tLine=null,_tGlow=null,_inited=false;
 var _drops=0,_pouch=[],_sel=null,_selMk=null,_menuOpen=false,_tt=null;
+var _gpsDenied=false; // tracks if GPS was denied/unavailable
 var _lastGeoTime=0,_lastGeoLat=0,_lastGeoLng=0,_speedKmh=0;
 // ── Shared drop real-time listener state ──
 var _sharedMarkers={}; // hash → {marker, data} for live shared drops
@@ -30477,7 +30534,7 @@ function activate(){
   setTimeout(function(){if(_map)_map.invalidateSize();},100);
   setTimeout(function(){if(_map)_map.invalidateSize();},500);
   setTimeout(function(){if(_map)_map.invalidateSize();},1500);
-  setTimeout(function(){if(!_uLat&&_map){_uLat=FALLBACK[0];_uLng=FALLBACK[1];_map.setView(FALLBACK,16);_placeUser();_loadAll();_toast('Demo mode. Enable GPS for real planting.');}},5000);
+  setTimeout(function(){if(!_uLat&&_map){_uLat=FALLBACK[0];_uLng=FALLBACK[1];_map.setView(FALLBACK,16);_placeUser();_loadAll();_showGpsBanner();}},5000);
   // Init backpack display
   if(window.FG_Backpack){FG_Backpack.init();FG_Backpack.render();}
 }
@@ -30690,8 +30747,48 @@ function _checkStepMilestone(){
   }
 }
 
+// ═══ GPS RECOVERY BANNER ═══
+function _showGpsBanner(){
+  if(document.getElementById('gps-recovery-banner'))return;
+  _gpsDenied=true;
+  var b=document.createElement('div');
+  b.id='gps-recovery-banner';
+  b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:rgba(13,16,12,0.95);border-bottom:1.5px solid var(--sage,#7ab356);padding:14px 16px;font-family:DM Mono,monospace;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:panelFadeIn 0.35s ease;';
+  var inner='<div style="max-width:500px;margin:0 auto;">';
+  inner+='<div style="color:var(--gold,#c8a84b);font-size:0.78rem;font-weight:700;letter-spacing:0.06em;margin-bottom:6px;">\u26A0 GPS UNAVAILABLE</div>';
+  inner+='<div style="color:var(--cream,#e8dcc8);font-size:0.65rem;line-height:1.5;margin-bottom:12px;opacity:0.85;">Location is needed to plant, harvest, and collect feral seeds in the Wild. You are currently in demo mode.</div>';
+  inner+='<div style="display:flex;gap:10px;">';
+  inner+='<button onclick="window._retryGps()" style="flex:1;min-height:48px;background:var(--sage,#7ab356);color:#0d100c;border:none;border-radius:6px;font-family:DM Mono,monospace;font-size:0.75rem;font-weight:700;letter-spacing:0.08em;cursor:pointer;">ENABLE GPS</button>';
+  inner+='<button onclick="window._dismissGpsBanner()" style="flex:1;min-height:48px;background:transparent;color:var(--muted,#8a9178);border:1.5px solid var(--muted,#8a9178);border-radius:6px;font-family:DM Mono,monospace;font-size:0.75rem;font-weight:700;letter-spacing:0.08em;cursor:pointer;">STAY IN DEMO</button>';
+  inner+='</div></div>';
+  b.innerHTML=inner;
+  document.body.appendChild(b);
+}
+function _hideGpsBanner(){
+  var b=document.getElementById('gps-recovery-banner');
+  if(b)b.remove();
+}
+window._dismissGpsBanner=function(){
+  _hideGpsBanner();
+};
+window._retryGps=function(){
+  if(!navigator.geolocation){_toast('This device does not support GPS.');return;}
+  _hideGpsBanner();
+  _toast('Requesting GPS...');
+  navigator.geolocation.getCurrentPosition(function(p){
+    _gpsDenied=false;
+    _uLat=p.coords.latitude;_uLng=p.coords.longitude;
+    if(_map)_map.setView([_uLat,_uLng],16);
+    _placeUser();_loadAll();
+    _toast('Location locked! Tap \ud83c\udf31 to plant.');
+  },function(err){
+    _toast('GPS still unavailable. Check device settings.');
+    _showGpsBanner();
+  },{enableHighAccuracy:true,timeout:10000,maximumAge:0});
+};
+
 function _initGeo(){
-  if(!navigator.geolocation){_uLat=FALLBACK[0];_uLng=FALLBACK[1];setTimeout(function(){if(_map){_map.setView(FALLBACK,16);_placeUser();_loadAll();}},500);return;}
+  if(!navigator.geolocation){_uLat=FALLBACK[0];_uLng=FALLBACK[1];_showGpsBanner();setTimeout(function(){if(_map){_map.setView(FALLBACK,16);_placeUser();_loadAll();}},500);return;}
   navigator.geolocation.getCurrentPosition(function(p){
     _uLat=p.coords.latitude;_uLng=p.coords.longitude;
     _map.setView([_uLat,_uLng],16);_placeUser();_loadAll();
@@ -30699,7 +30796,7 @@ function _initGeo(){
   },function(){
     _uLat=FALLBACK[0];_uLng=FALLBACK[1];
     _map.setView(FALLBACK,16);_placeUser();_loadAll();
-    _toast('GPS unavailable — demo mode.');
+    _showGpsBanner();
   },{enableHighAccuracy:true,timeout:8000,maximumAge:30000});
   try{navigator.geolocation.watchPosition(function(p){
     var nL=p.coords.latitude,nN=p.coords.longitude;
@@ -38759,8 +38856,8 @@ if(window.FG_Wild&&window.FG_Wild._dropFromBP){
   toast(p.name+' released — open the map to see it!');
 }}},300);}
 function hte(){clearTimeout(_ht);document.getElementById('htc-rel').classList.remove('holding');document.getElementById('htcf').style.transition='none';document.getElementById('htcf').style.width='0';}
-function ap(o){if(st.plants.length>=xp()){toast('Backpack full!');return false;}st.plants.push(o);st.ph++;render();hap();cu();return true;}
-function as(o){if(st.seeds.length>=xc()){toast('Seed pouch full!');return false;}st.seeds.push(o);st.fc++;render();hap();cu();return true;}
+function ap(o){if(st.plants.length>=xp()){toast('Backpack full!');return false;}st.plants.push(o);st.ph++;render();_rtbRender();hap();cu();return true;}
+function as(o){if(st.seeds.length>=xc()){toast('Seed pouch full!');return false;}st.seeds.push(o);st.fc++;render();_rtbRender();hap();cu();return true;}
 function ul(k,m,s){if(st.unlocks[k])return;st.unlocks[k]=true;render();celeb(m,s);}
 function cu(){if(!st.unlocks.slot2&&st.ph>=1)ul('slot2','Second plant slot unlocked!','Harvest plants to fill it.');if(!st.unlocks.slot3&&st.pollen>=100)ul('slot3','Third slot unlocked!','100 pollen reached.');if(!st.unlocks.slot4&&st.gp>=10)ul('slot4','Bonus slot earned!','10 games played.');if(!st.unlocks.slot5&&st.wd>=5)ul('slot5','Fifth slot unlocked!','5 plants in the Wild.');if(!st.unlocks.seed5&&st.fc>=1)ul('seed5','Seed pouch expands to 5!','Find ferals as you walk.');if(!st.unlocks.seed10&&st.fc>=5)ul('seed10','Pouch holds 10!','Your eye sharpens.');}
 // ═══ RETURN TO BASE — unload backpack to greenhouse ═══
