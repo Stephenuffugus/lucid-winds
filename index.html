@@ -32564,17 +32564,28 @@ function _writeSharedDrop(lat,lng,hash,ea,defGame,traits,displaced){
 // Compute zone keys visible on current map bounds (capped at 9 for Firestore 'in' query)
 function _getVisibleZones(){
   if(!_map)return[];
-  var b=_map.getBounds();
-  var sLat=b.getSouth(),nLat=b.getNorth(),wLng=b.getWest(),eLng=b.getEast();
-  // Clamp to reasonable area — max ~9 zones (3x3 grid at ZONE_SIZE)
-  var cLat=(_uLat||(sLat+nLat)/2),cLng=(_uLng||(wLng+eLng)/2);
+  // 5x5 grid = 25 zones but Firestore 'in' caps at 10, so use map bounds to pick best 10
+  var cLat=_uLat||_map.getCenter().lat;
+  var cLng=_uLng||_map.getCenter().lng;
   var zones=[];
-  for(var dLat=-1;dLat<=1;dLat++){
-    for(var dLng=-1;dLng<=1;dLng++){
+  var seen={};
+  for(var dLat=-2;dLat<=2;dLat++){
+    for(var dLng=-2;dLng<=2;dLng++){
       var zLat=Math.round(cLat/ZONE_SIZE)*ZONE_SIZE+dLat*ZONE_SIZE;
       var zLng=Math.round(cLng/ZONE_SIZE)*ZONE_SIZE+dLng*ZONE_SIZE;
-      zones.push(zLat.toFixed(4)+','+zLng.toFixed(4));
+      var k=zLat.toFixed(4)+','+zLng.toFixed(4);
+      if(!seen[k]){seen[k]=true;zones.push(k);}
     }
+  }
+  // Firestore 'in' max is 10 — take closest to center
+  if(zones.length>10){
+    zones.sort(function(a,b){
+      var pa=a.split(','),pb=b.split(',');
+      var da=Math.abs(parseFloat(pa[0])-cLat)+Math.abs(parseFloat(pa[1])-cLng);
+      var db=Math.abs(parseFloat(pb[0])-cLat)+Math.abs(parseFloat(pb[1])-cLng);
+      return da-db;
+    });
+    zones=zones.slice(0,10);
   }
   return zones;
 }
@@ -32653,12 +32664,10 @@ function _subscribeSharedDrops(){
             delete _sharedMarkers[hashes[i]];
           }
         }
-        // If zone query returned 0 shared plants, also try distance fallback
-        // This catches cases where index works but zones don't match
+        // Always run distance fallback as supplement — catches plants outside zone grid
+        _loadSharedDropsFallback(user);
+        // If still nothing after fallback, seed demo plants so player can experience harvest
         if(Object.keys(seenHashes).length===0){
-          if(window._swsLog)_swsLog('Zone query empty — trying distance fallback','warn');
-          _loadSharedDropsFallback(user);
-          // If still nothing, seed demo plants so player can experience harvest
           setTimeout(function(){if(Object.keys(_sharedMarkers).length===0)_seedDemoPlants();},3000);
         }
         // Re-check feral spawns now that shared markers are updated
@@ -32705,7 +32714,7 @@ function _addSharedMarker(p){
   return mk;
 }
 
-// One-shot fallback when zone index isn't ready
+// Broad fallback — loads all alive drops within range (no zone filter)
 function _loadSharedDropsFallback(user){
   try{
     window.db.collection('wildDrops').where('status','==','alive').limit(50).get()
@@ -32715,7 +32724,8 @@ function _loadSharedDropsFallback(user){
         snap.forEach(function(doc){
           var d=doc.data();if(!d.lat||!d.lng||!d.hash)return;
           if(d.droppedAt){var age=now-new Date(d.droppedAt).getTime();if(age>WILD_MAX_AGE_DAYS*86400000)return;}
-          if(_uLat&&d.lat){var dist=_dist(_uLat,_uLng,d.lat,d.lng);if(dist>5000)return;}
+          // Skip distance filter if in GPS fallback mode — show all drops for testing/demo
+          if(_uLat&&d.lat&&!_gpsDenied){var dist=_dist(_uLat,_uLng,d.lat,d.lng);if(dist>50000)return;}
           if(_sharedMarkers[d.hash])return;
           var isOwn=(d.ownerUid===user.uid);
           var pd={lat:d.lat,lng:d.lng,hash:d.hash,own:isOwn,
