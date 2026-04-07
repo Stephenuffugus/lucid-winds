@@ -5024,7 +5024,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="dev-section"><div class="dev-section-title">LOCAL STORAGE</div><button class="dev-btn" onclick="PW_Dev.clearLocal()">🧹 CLEAR ALL</button></div>
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
     <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button></div>
-    <div class="dev-section"><div class="dev-section-title">ACCELERATE (BETA TEST)</div><button class="dev-btn" onclick="PW_Dev.accelFerals()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⚡ FORCE FERAL SPAWN</button><button class="dev-btn" onclick="PW_Dev.accelRepro()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🌱 FORCE WILD REPRODUCTION</button><button class="dev-btn" onclick="PW_Dev.accelNursery()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💧 INSTANT BLOOM ALL SEEDS</button><button class="dev-btn" onclick="PW_Dev.accelBackpack()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🎒 CLEAR BP COOLDOWNS</button><button class="dev-btn" onclick="PW_Dev.grantHashes(100)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💎 +100 HASHES</button><button class="dev-btn" onclick="PW_Dev.accelAll()" style="border-color:rgba(255,110,199,0.4);color:#ff6ec7;">🚀 ACCELERATE EVERYTHING</button></div>
+    <div class="dev-section"><div class="dev-section-title">ACCELERATE (BETA TEST)</div><button class="dev-btn" onclick="PW_Dev.accelFerals()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⚡ FORCE FERAL SPAWN</button><button class="dev-btn" onclick="PW_Dev.accelRepro()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🌱 FORCE WILD REPRODUCTION</button><button class="dev-btn" onclick="PW_Dev.accelNursery()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💧 INSTANT BLOOM ALL SEEDS</button><button class="dev-btn" onclick="PW_Dev.accelBackpack()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🎒 CLEAR BP COOLDOWNS</button><button class="dev-btn" onclick="PW_Dev.grantHashes(100)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💎 +100 DEW DROPS</button><button class="dev-btn" onclick="PW_Dev.accelAll()" style="border-color:rgba(255,110,199,0.4);color:#ff6ec7;">🚀 ACCELERATE EVERYTHING</button></div>
     <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button><button class="dev-btn" onclick="PW_Dev.spawnChimeras()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🧬 SPAWN 4 CHIMERAS (dual borders)</button><button class="dev-btn" onclick="PW_Dev.grantDew(500)" style="border-color:rgba(91,175,220,0.4);color:rgba(91,175,220,0.9);">💧 +500 DEW DROPS</button></div>
     <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button><button class="dev-btn" onclick="try{PW_Dev.cardFrontAligner()}catch(e){alert(e.message)}">🃏 CARD FRONT ALIGNMENT</button><button class="dev-btn" onclick="try{PW_Dev.cardBackViewer()}catch(e){alert(e.message)}">🔙 CARD BACK NAMEPLATES</button><button class="dev-btn" onclick="try{PW_Dev.leafBloomEditor()}catch(e){alert(e.message)}">🌿 LEAF & BLOOM EDITOR</button></div>
     <div class="dev-section"><div class="dev-section-title">NUCLEAR</div><button class="dev-btn danger" onclick="PW_Dev.fullReset()">☢ WIPE EVERYTHING</button></div>
@@ -5147,7 +5147,7 @@ window.onerror=function(msg,url,line,col,err){
       var uid='';try{var u=firebase.auth().currentUser;if(u)uid=u.uid;}catch(e){}
       var db=null;try{db=firebase.firestore();}catch(e){}
       var ZONE=0.001;var count=0;
-      var defGames=['set','memory','growth','color','math','word','chess'];
+      var defGames=['set','memory','growth','color','math','word','chess','sliding'];
       for(var dx=-2;dx<=2;dx++){
         for(var dy=-2;dy<=2;dy++){
           var zoneLat=cLat+dx*ZONE;
@@ -5781,7 +5781,7 @@ window.onerror=function(msg,url,line,col,err){
         if(window._secureSet)window._secureSet('sws_hash_ledger',s);
         else localStorage.setItem('sws_hash_ledger',s);
         if(window.updateDashboard)updateDashboard();
-        alert('+'+n+' hashes granted! Total earned: '+ledger.earned);
+        alert('+'+n+' Dew Drops granted! Total earned: '+ledger.earned);
       }catch(e){alert('Error: '+e.message);}
     },
     accelAll:function(){
@@ -5810,7 +5810,7 @@ window.onerror=function(msg,url,line,col,err){
       }catch(e){}
       if(window.updateDashboard)updateDashboard();
       if(window.renderNursery)renderNursery();
-      alert('EVERYTHING ACCELERATED!\n\n- Feral timers reset\n- Reproduction timers reset\n- Backpack cooldowns cleared\n- Nursery seeds bloom-ready\n- +100 hashes granted\n\nSwitch to Wild tab to trigger spawns.');
+      alert('EVERYTHING ACCELERATED!\n\n- Feral timers reset\n- Reproduction timers reset\n- Backpack cooldowns cleared\n- Nursery seeds bloom-ready\n- +100 Dew Drops granted\n\nSwitch to Wild tab to trigger spawns.');
     },
     grantDew:function(n){
       n=n||500;
@@ -27438,7 +27438,7 @@ document.addEventListener('keydown', function(e) {
     }
     updateDashboard();
     renderGreenhouse();
-    alert('DEV: +5 hashes, +3 plants. Balance: ' + getTotalHashes() + ' hashes, ' + loadGreenhouse().length + ' plants.');
+    alert('DEV: +5 Dew Drops, +3 plants. Balance: ' + getTotalHashes() + ' dew, ' + loadGreenhouse().length + ' plants.');
     if (window.syncVaultToCloud) syncVaultToCloud();
   };
   // ═══════════════════════════════════════════════════════════════
@@ -29220,7 +29220,7 @@ document.addEventListener('keydown', function(e) {
   // ── Factory Reset — atomic 4-step wipe ──────────────────────────────
   window.initiateFactoryReset = function(fromRecoveryScreen) {
     var confirmed = fromRecoveryScreen
-      ? window.confirm('⚠ FACTORY RESET\n\nThis will permanently delete:\n• All Plants\n• All Nursery Seeds\n• Attention Hash balance\n• Cloud Vault document\n\nThis cannot be undone. Proceed?')
+      ? window.confirm('⚠ FACTORY RESET\n\nThis will permanently delete:\n• All Plants\n• All Nursery Seeds\n• Dew Drop balance\n• Cloud Vault document\n\nThis cannot be undone. Proceed?')
       : true; // hold-button already confirmed via 3s hold
     if (!confirmed) return;
 
@@ -31892,7 +31892,7 @@ function _doCrossPollination(wildPlant,matePlant){
     } else {
       var hashBonus=3+Math.floor(Math.random()*5);
       if(window.earnHashes)window.earnHashes(hashBonus);
-      rewardMsg='+'+hashBonus+' hashes toward a new plant!';
+      rewardMsg='+'+hashBonus+' Dew Drops toward a new plant!';
     }
     _play('match');
     var parentInfo=_buildInfo(wildPlant.hash);
@@ -32029,7 +32029,8 @@ function _showDefenderPicker(){
     {id:'color',name:'Color',icon:'\ud83c\udfa8',desc:'Match the target hue',diff:'Easy'},
     {id:'math',name:'Math',icon:'\ud83d\udd22',desc:'Solve the equation',diff:'Hard'},
     {id:'word',name:'Word',icon:'\ud83d\udcdd',desc:'Unscramble letters',diff:'Hard'},
-    {id:'chess',name:'Chess',icon:'\u265a',desc:'Find the checkmate',diff:'Hard'}
+    {id:'chess',name:'Chess',icon:'\u265a',desc:'Find the checkmate',diff:'Hard'},
+    {id:'sliding',name:'Slide',icon:'\ud83e\udde9',desc:'Arrange the tiles',diff:'Medium'}
   ];
 
   var h='<div style="font-family:DM Mono,monospace;font-size:0.3rem;color:var(--muted);text-align:center;margin-bottom:6px;">Harder games are tougher for harvesters to beat</div>';
@@ -32598,7 +32599,7 @@ var G=[
 {id:'pipe',n:'Vine Flow',i:'\ud83c\udf3f',r:'Rotate vine tiles to connect all vines back to the root!',cat:'puzzle',thumb:'assets/games/thumbs/pipe.png'},
 {id:'chess',n:'Grove Chess',i:'\u265f',r:'Classic chess against AI. Tap a piece, tap where to move.',cat:'board',thumb:'assets/games/thumbs/chess.png'},
 {id:'c4',n:'Connect Fleur',i:'\ud83c\udf38',r:'Drop flowers to connect 4 in a row \u2014 horizontal, vertical, or diagonal!',cat:'board',thumb:'assets/games/thumbs/c4.png'},
-{id:'song',n:'Grove Studio',i:'\ud83c\udfb5',r:'Full music production studio. Layer drums, bass, keys and leads \u2014 make beats, earn hashes.',cat:'creative',thumb:'assets/games/thumbs/song.png'},
+{id:'song',n:'Grove Studio',i:'\ud83c\udfb5',r:'Full music production studio. Layer drums, bass, keys and leads \u2014 make beats, earn dew.',cat:'creative',thumb:'assets/games/thumbs/song.png'},
 {id:'golf',n:'Fairway Solitaire',i:'\u26f3',r:'Move cards one rank up or down to the waste pile. Clear the tableau!',cat:'card',thumb:'assets/games/thumbs/golf.png'},
 {id:'klondike',n:'Klondike',i:'\ud83c\udca1',r:'The classic. Build 4 foundation piles Ace to King by suit.',cat:'card',thumb:'assets/games/thumbs/klondike.png'},
 {id:'spider',n:'Spider',i:'\ud83d\udd77',r:'Build complete King-to-Ace runs by suit. 1, 2, or 4 suit variants.',cat:'card',thumb:'assets/games/thumbs/spider.png'},
@@ -33022,7 +33023,7 @@ function _updateGP(){
   var remain=30-inPlant;
   var _nearCls=prog>=0.83&&prog<1?' near-bloom':'';
   var _urgentLabel=prog>=0.83&&prog<1?' \u2014 <span style="color:var(--gold);">'+remain+' to bloom!</span>':'';
-  var _gpTxt='<span class="gp-count">'+inPlant+'/30</span>HASHES<span class="gp-stage">· '+lbl+(prog>=0.83&&prog<1?' · '+remain+' TO BLOOM':'')+'</span>';
+  var _gpTxt='<span class="gp-count">'+inPlant+'/30</span>DEW<span class="gp-stage">· '+lbl+(prog>=0.83&&prog<1?' · '+remain+' TO BLOOM':'')+'</span>';
   el.innerHTML='<div class="gp-lbl">'+_gpTxt+'</div><div style="flex:1;min-width:0"><div class="gp-bar"><div class="gp-fill'+_nearCls+'" style="width:'+pct+'%;transition:none"></div></div></div>';
   setTimeout(function(){var f=el.querySelector('.gp-fill');if(f)f.style.transition='';},60);
   // Sync Trios dashboard hash bar
@@ -38733,6 +38734,120 @@ function _tapChess(v){
   }
 }
 
+// ═══ SLIDING PUZZLE ═══
+var _slTiles=[];
+var _slSize=3;
+var _slEmpty=0;
+var _slMoveCount=0;
+
+function _isSolvable(tiles, size) {
+  var inv=0;
+  for(var i=0;i<tiles.length;i++){
+    if(tiles[i]===0)continue;
+    for(var j=i+1;j<tiles.length;j++){
+      if(tiles[j]===0)continue;
+      if(tiles[i]>tiles[j])inv++;
+    }
+  }
+  if(size%2===1){
+    // Odd grid: solvable if inversions even
+    return inv%2===0;
+  } else {
+    // Even grid: solvable if (inversions + row of blank from bottom) is odd
+    var blankRow=Math.floor(tiles.indexOf(0)/size);
+    var fromBottom=size-blankRow;
+    return (inv+fromBottom)%2===1;
+  }
+}
+
+function _genSliding(size){
+  var n=size*size;
+  var tiles=[];
+  for(var i=1;i<n;i++)tiles.push(i);
+  tiles.push(0);
+  // Shuffle until solvable
+  var attempts=0;
+  do {
+    for(var i=tiles.length-1;i>0;i--){
+      var j=Math.floor(Math.random()*(i+1));
+      var tmp=tiles[i];tiles[i]=tiles[j];tiles[j]=tmp;
+    }
+    attempts++;
+    if(attempts>500)break;
+  } while(!_isSolvable(tiles,size)||_isSlSolved(tiles));
+  return tiles;
+}
+
+function _isSlSolved(tiles){
+  for(var i=0;i<tiles.length-1;i++){
+    if(tiles[i]!==i+1)return false;
+  }
+  return tiles[tiles.length-1]===0;
+}
+
+function _setupSliding(diff){
+  _slSize=diff===0?3:4;
+  _slTiles=_genSliding(_slSize);
+  _slEmpty=_slTiles.indexOf(0);
+  _slMoveCount=0;
+  _renderSliding();
+}
+
+function _renderSliding(){
+  var b=document.getElementById('fc-board');
+  if(!b)return;
+  var n=_slSize;
+  var gap=4;
+  b.style.cssText='display:grid;grid-template-columns:repeat('+n+',1fr);grid-template-rows:repeat('+n+',1fr);gap:'+gap+'px;max-width:280px;margin:0 auto;aspect-ratio:1;';
+  var h='';
+  for(var i=0;i<_slTiles.length;i++){
+    var v=_slTiles[i];
+    if(v===0){
+      h+='<div data-idx="'+i+'" style="aspect-ratio:1;background:transparent;border-radius:6px;"></div>';
+    } else {
+      var fs=n===3?'1.5rem':'1.1rem';
+      h+='<div data-idx="'+i+'" onclick="FG_Challenge._tap('+i+')" style="aspect-ratio:1;background:rgba(26,36,22,0.7);border:1px solid rgba(122,179,86,0.25);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:'+fs+';color:var(--cream);cursor:pointer;min-height:48px;min-width:48px;transition:transform 0.18s ease;">';
+      h+=v;
+      h+='</div>';
+    }
+  }
+  b.innerHTML=h;
+}
+
+function _tapSliding(idx){
+  if(_solved)return;
+  var v=_slTiles[idx];
+  if(v===0)return;
+  var n=_slSize;
+  var row=Math.floor(idx/n),col=idx%n;
+  var eRow=Math.floor(_slEmpty/n),eCol=_slEmpty%n;
+  // Check adjacency (Manhattan distance = 1)
+  var dist=Math.abs(row-eRow)+Math.abs(col-eCol);
+  if(dist!==1)return;
+
+  // Animate the slide
+  var tileEl=document.querySelector('[data-idx="'+idx+'"]');
+  if(tileEl){
+    var dx=(eCol-col)*((tileEl.offsetWidth||60)+4);
+    var dy=(eRow-row)*((tileEl.offsetHeight||60)+4);
+    tileEl.style.transform='translate('+dx+'px,'+dy+'px)';
+  }
+
+  // Swap after animation
+  var oldEmpty=_slEmpty;
+  setTimeout(function(){
+    _slTiles[oldEmpty]=v;
+    _slTiles[idx]=0;
+    _slEmpty=idx;
+    _slMoveCount++;
+    try{navigator.vibrate&&navigator.vibrate(10);}catch(e){}
+    _renderSliding();
+    if(_isSlSolved(_slTiles)){
+      _win();
+    }
+  },160);
+}
+
 function _tap(v){
   if(_type==='set')_tapSet(v);
   else if(_type==='memory')_tapMemory(v);
@@ -38741,6 +38856,7 @@ function _tap(v){
   else if(_type==='math')_tapMath(v);
   else if(_type==='word')_tapWord(v);
   else if(_type==='chess')_tapChess(v);
+  else if(_type==='sliding')_tapSliding(v);
 }
 
 // ═══ START — picks random type ═══
@@ -38798,6 +38914,20 @@ function _setupChallenge(diff, grade) {
     if(modal)modal.classList.add('open');
     _startTimer();
     return;
+  }else if(_type==='sliding'){
+    var is4=diff>=1;
+    if(title)title.textContent='SLIDE PUZZLE';
+    if(sub)sub.textContent=(grade||'Common')+' — Arrange tiles in order';
+    _setupSliding(diff);
+    _timeMax=is4?90000:60000;_timeLeft=_timeMax;
+    var fill=document.getElementById('fc-timer-fill');
+    if(fill){fill.parentNode.style.display='block';fill.style.width='100%';fill.classList.remove('urgent');}
+    var text=document.getElementById('fc-timer-text');
+    if(text){text.style.display='block';text.textContent=Math.ceil(_timeLeft/1000)+'s';}
+    var modal=document.getElementById('fc-modal');
+    if(modal)modal.classList.add('open');
+    _startTimer();
+    return;
   }
 
   // Hide timer — no time pressure, just solve it
@@ -38823,7 +38953,7 @@ function start(grade, callback) {
   if(grade==='Legendary'||grade==='Mythic'||grade==='Cosmic')diff=2;
 
   // Pick random challenge type
-  var types=['set','memory','spot','color','math','word','chess'];
+  var types=['set','memory','spot','color','math','word','chess','sliding'];
   _type=types[Math.floor(Math.random()*types.length)];
 
   _setupChallenge(diff, grade);
@@ -38836,7 +38966,7 @@ function startSpecific(type, grade, callback) {
   var diff=0;
   if(grade==='Rare'||grade==='Epic')diff=1;
   if(grade==='Legendary'||grade==='Mythic'||grade==='Cosmic')diff=2;
-  var validTypes=['set','memory','spot','color','math','word','chess'];
+  var validTypes=['set','memory','spot','color','math','word','chess','sliding'];
   _type=(validTypes.indexOf(type)>=0)?type:'set';
   _setupChallenge(diff, grade);
 }
