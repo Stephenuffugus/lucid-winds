@@ -30667,8 +30667,8 @@ function _updateProximity(){
         f._alerted=true;
         _toast('\ud83c\udf30 Feral seed nearby! Tap it to collect.');
         try{navigator.vibrate&&navigator.vibrate([15,30,15]);}catch(e){}
-      } else if(fd>COLLECT_RANGE*2){
-        f._alerted=false; // reset when far enough away
+      } else if(fd>COLLECT_RANGE*1.2){
+        f._alerted=false; // reset when just outside range (90m)
       }
     }
   }catch(e){}
@@ -30922,6 +30922,13 @@ function _spawnFerals() {
   // Prune ferals older than 3 days
   var cutoff = now - 3 * 86400000;
   data = data.filter(function(f) { return new Date(f.date).getTime() > cutoff; });
+
+  // Backfill zone on old ferals that never had one assigned
+  for (var bz = 0; bz < data.length; bz++) {
+    if (!data[bz].zone && data[bz].lat && data[bz].lng) {
+      data[bz].zone = _zoneKey(data[bz].lat, data[bz].lng);
+    }
+  }
 
   // Re-render existing uncollected ferals within 500m
   for (var i = 0; i < data.length; i++) {
@@ -31566,7 +31573,9 @@ function _harvestToPouch(p){
       else{p._harvestCooldown=Date.now()+10000;_play('buzz');_toast('Defended! Try again in 10 seconds.');}
     });
   } else {
-    _doHarvest(p);
+    // FG_Challenge not loaded — block harvest to protect economy
+    _toast('Challenge system loading. Try again in a moment.');
+    return;
   }
 }
 function _doHarvest(p){
@@ -31926,7 +31935,10 @@ function _showDefenderPicker(){
   modal.classList.add('open');
 }
 
+var _pickingDefense=false;
 function _pickDefense(gameId){
+  if(_pickingDefense)return;
+  _pickingDefense=true;
   var modal=document.getElementById('fc-modal');
   if(modal)modal.classList.remove('open');
   // Reset modal for future challenge use
@@ -31937,6 +31949,7 @@ function _pickDefense(gameId){
   var board=document.getElementById('fc-board');
   if(board)board.style.gridTemplateColumns='repeat(3,1fr)';
   _finishDrop(gameId);
+  setTimeout(function(){_pickingDefense=false;},500);
 }
 
 function _finishDrop(defenderGame){
@@ -32077,6 +32090,7 @@ setInterval(function(){var w=_getWild();if(w.length>0){
 
 // ═══ DROP FROM BACKPACK — place a plant from BP onto the map ═══
 function _dropFromBP(p){
+  if(_pendingDrop){_toast('Drop in progress…');return;}
   if(_speedKmh>25){_toast('\ud83c\udf3f Slow down to plant! Moving too fast.');return;}
   if(!_uLat||!_uLng){_toast('Need GPS location to drop.');return;}
   if(typeof gtag!=='undefined') gtag('event','wild_plant_drop',{lat:_uLat.toFixed(3),lng:_uLng.toFixed(3)});
