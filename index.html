@@ -1068,7 +1068,7 @@
       padding: 0.55rem 0.85rem 0.3rem;
       flex-shrink: 0;
       position: sticky; top: 0; z-index: 10;
-      background: rgba(8,10,6,0.95); backdrop-filter: blur(8px);
+      background: rgba(8,10,6,0.97);
     }
     .pgm-counter {
       font-family: 'DM Mono', monospace; font-size: 0.5rem;
@@ -2089,8 +2089,8 @@
       border-bottom:2px solid var(--sage);color:var(--cream);
       box-shadow:0 0 16px rgba(122,179,86,0.2);
     }
-    .grove-panel{display:none;overflow-y:visible;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(44px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);visibility:hidden;}
-    .grove-panel.active{display:block;visibility:visible;}
+    .grove-panel{display:none;overflow-y:visible;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(44px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);visibility:hidden;opacity:0;transition:opacity 0.18s ease;}
+    .grove-panel.active{display:block;visibility:visible;opacity:1;}
     @keyframes _tabIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
     @keyframes panelFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
     /* Botanical loading spinner — three rotating leaves */
@@ -2525,7 +2525,7 @@
     #cp-msg{font-family:'DM Mono',monospace;font-size:0.48rem;color:rgba(192,112,112,0.7);text-align:center;min-height:0.75rem;margin-top:0.28rem;}
 
     /* ══ set-51: BREEDING COMPARISON SCREEN ══ */
-    #breed-screen{display:none;position:fixed;inset:0;z-index:99998;background:linear-gradient(180deg,rgba(13,16,12,0.98),rgba(8,10,6,1));overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.4rem 0.35rem 1.2rem;}
+    #breed-screen{display:none;position:fixed;inset:0;z-index:99998;background:url('assets/breed-screen-bg.png') center/cover no-repeat,linear-gradient(180deg,rgba(13,16,12,0.98),rgba(8,10,6,1));overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.4rem 0.35rem 1.2rem;}
     #breed-screen.open{display:block;animation:panelFadeIn 0.25s ease;}
     .bs-topbar{display:flex;align-items:center;justify-content:space-between;padding:0.3rem 0.1rem 0.4rem;border-bottom:1px solid rgba(74,124,53,0.08);margin-bottom:0.35rem;}
     .bs-title{font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.15em;color:var(--sage);}
@@ -4092,7 +4092,7 @@
 #px{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:50;pointer-events:none;display:none;text-align:center;}
 #px.show{display:block;animation:panelFadeIn 0.2s ease;}
 /* ═══ FERAL CHALLENGE MODAL ═══ */
-#fc-modal{display:none;position:fixed;inset:0;z-index:99999;background:rgba(5,8,4,0.92);backdrop-filter:blur(12px);flex-direction:column;align-items:center;justify-content:center;padding:1rem;}
+#fc-modal{display:none;position:fixed;inset:0;z-index:99999;background:rgba(5,8,4,0.92) url('assets/feral-challenge-bg.png') center/cover no-repeat;backdrop-filter:blur(12px);flex-direction:column;align-items:center;justify-content:center;padding:1rem;}
 #fc-modal.open{display:flex;animation:panelFadeIn 0.3s ease;}
 #fc-title{font-family:'Bebas Neue',sans-serif;font-size:0.8rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.3rem;}
 #fc-subtitle{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);margin-bottom:0.6rem;}
@@ -4191,7 +4191,7 @@
     #tab-bg-binder{background-image:url('assets/backgrounds/bg-greenhouse-540x960.jpg');}
 
     /* Menu frame border-image for modals/panels */
-    .pw-framed{border:16px solid transparent;border-image:url('assets/ui/menu-frame-540x540.jpg') 80 fill;border-image-outset:0;border-radius:0;}
+    .pw-framed{border:16px solid transparent;border-image:url('assets/menu-frame-v2.png') 80 fill;border-image-outset:0;border-radius:0;}
 
     /* Corner ornaments */
     .pw-corner{position:absolute;width:48px;height:48px;background:url('assets/ui/corner-ornament-128x128.png') center/contain no-repeat;pointer-events:none;z-index:2;opacity:0.7;}
@@ -4201,7 +4201,7 @@
     .pw-corner.br{bottom:-4px;right:-4px;transform:scale(-1,-1);}
 
     /* Splash screen */
-    #pw-splash{position:fixed;inset:0;z-index:2147483647;background:#050505 url('assets/onboarding/splash-seed-540x960.jpg') center 35%/cover no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:calc(100px + env(safe-area-inset-bottom, 0px));transition:opacity 2s ease;}
+    #pw-splash{position:fixed;inset:0;z-index:2147483647;background:#050505 url('assets/splash-seed-v2.png') center 35%/cover no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:calc(100px + env(safe-area-inset-bottom, 0px));transition:opacity 2s ease;}
     #pw-splash.fade-out{opacity:0;pointer-events:none;}
     #pw-splash .splash-title{font-family:'Cormorant Garamond',serif;font-size:clamp(2.8rem,11vw,4.2rem);font-weight:700;color:#d4a843;text-shadow:0 2px 30px rgba(0,0,0,0.9),0 0 60px rgba(212,168,67,0.15);letter-spacing:0.06em;opacity:0;animation:splashFadeIn 2.5s ease 0.8s forwards,splashFloat 6s ease-in-out 3s infinite;}
     @keyframes splashFadeIn{to{opacity:1;}}
@@ -4217,7 +4217,7 @@
     @keyframes _ghNewPulse{0%,100%{box-shadow:0 0 12px rgba(200,168,75,0.15),0 2px 6px rgba(0,0,0,0.4);}50%{box-shadow:0 0 22px rgba(200,168,75,0.3),0 0 6px rgba(200,168,75,0.15),0 2px 6px rgba(0,0,0,0.4);}}
     @keyframes petalDrift{0%{opacity:0;transform:translateY(0) rotate(0deg);}10%{opacity:0.7;}50%{opacity:0.5;transform:translateY(50vh) rotate(120deg);}100%{opacity:0;transform:translateY(110vh) rotate(240deg);}}
     /* Beat 4 (auth) keeps column layout */
-    #ob-beat4{justify-content:flex-start;align-items:center;padding:1rem 1.5rem;overflow-y:auto;text-align:center;-webkit-overflow-scrolling:touch;background:#050505 url('assets/onboarding/splash-seed-540x960.jpg') center 30%/cover no-repeat;position:relative;}
+    #ob-beat4{justify-content:flex-start;align-items:center;padding:1rem 1.5rem;overflow-y:auto;text-align:center;-webkit-overflow-scrolling:touch;background:#050505 url('assets/splash-seed-v2.png') center 30%/cover no-repeat;position:relative;}
     #ob-beat4::before{content:'';position:absolute;inset:0;background:rgba(5,5,5,0.7);z-index:0;pointer-events:none;}
     #ob-beat4 .ob-text,#ob-beat4 .ob-plant-wrap,#ob-beat4 .ob-name,#ob-beat4 .ob-grade,#ob-beat4 .ob-haiku,#ob-beat4 .ob-creature-text,#ob-beat4 .ob-auth,#ob-beat4 .ob-continue,#ob-beat4 #ob-manifesto{position:relative;z-index:2;}
     #ob-beat4 .ob-text{padding:0;padding-bottom:0.5rem;font-size:1.1rem;color:var(--cream);}
@@ -4858,7 +4858,7 @@ window.onerror=function(msg,url,line,col,err){
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Dew Drops \u2014 earned by harvesting. Use to water plants or skip nursery days.')"><div class="wild-log-val" style="color:rgba(91,175,220,0.9)" id="w-dew">0</div><div class="wild-log-lbl">dew</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Pollen \u2014 earned passively from planted wild plants. Rarer plants earn faster.')"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl">pollen</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Meters walked. Keep moving to find feral seeds!')"><div class="wild-log-val" style="color:var(--sage)" id="w-steps">0</div><div class="wild-log-lbl">meters</div></div>
-      <div class="wild-log-wind" id="w-wind"><img src="assets/games/wild/wild-compass-v4.png" style="width:44px;height:44px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));" alt=""><span></span></div>
+      <div class="wild-log-wind" id="w-wind"><img src="assets/games/wild/wild-compass-v4.png" loading="lazy" style="width:44px;height:44px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));" alt=""><span></span></div>
     </div>
     <!-- RECENTER BUTTON -->
     <button id="w-recenter" onclick="if(window.FG_Wild&&window.FG_Wild._recenter)FG_Wild._recenter();" style="display:none;position:fixed;bottom:calc(140px + env(safe-area-inset-bottom,0px));left:12px;z-index:999;width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(74,144,217,0.3);background:rgba(13,16,12,0.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,0.4);-webkit-tap-highlight-color:transparent;color:rgba(74,144,217,0.8);font-size:0.7rem;">&#8982;</button>
@@ -4867,7 +4867,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="map-hex-overlay"></div>
     <div id="wild-map-tod"></div>
     <div class="map-fog"><div class="fog-wisp"></div><div class="fog-wisp"></div><div class="fog-wisp"></div></div>
-    <div id="wild-frame"><img src="assets/games/wild/viewport-frame-v2.png" alt=""></div>
+    <div id="wild-frame"><img src="assets/games/wild/viewport-frame-v2.png" loading="lazy" alt=""></div>
     <!-- TOAST -->
     <div id="w-toast" style="position:fixed;top:40%;left:50%;transform:translate(-50%,-50%) scale(0.95);background:rgba(17,22,17,0.96);border:1px solid rgba(74,124,53,0.15);border-radius:10px;padding:0.6rem 1rem;z-index:99999;max-width:82%;font-size:0.65rem;color:var(--cream);text-align:center;line-height:1.5;opacity:0;transition:opacity 0.25s,transform 0.25s;pointer-events:none;box-shadow:0 8px 28px rgba(0,0,0,0.5);"></div>
     <!-- TRAIT PANEL v2 — premium bottom sheet -->
@@ -4892,16 +4892,16 @@ window.onerror=function(msg,url,line,col,err){
       <!-- Action buttons — other player's plant -->
       <div class="wtp2-actions" id="wtp-other-actions">
         <button class="wtp2-btn" onclick="FG_Wild.closeTP()"><div class="wtp2-btn-icon">✕</div><div class="wtp2-btn-lbl">Close</div></button>
-        <button class="wtp2-btn" id="wtp-wild-breed"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-breed-btn-v4.png" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Breed</div></button>
-        <button class="wtp2-btn gold" id="wtp-act"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-harvest-btn-v4.png" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Harvest</div></button>
+        <button class="wtp2-btn" id="wtp-wild-breed"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-breed-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Breed</div></button>
+        <button class="wtp2-btn gold" id="wtp-act"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-harvest-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Harvest</div></button>
       </div>
       <!-- Action buttons — your own plant -->
       <div class="wtp2-actions" id="wtp-own-actions" style="display:none">
         <button class="wtp2-btn" onclick="FG_Wild.closeTP()"><div class="wtp2-btn-icon">✕</div><div class="wtp2-btn-lbl">Close</div></button>
-        <button class="wtp2-btn" id="wtp-inspect2"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-inspect-btn-v4.png" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Inspect</div></button>
-        <button class="wtp2-btn" id="wtp-water"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-water-btn-v4.png" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Water</div></button>
-        <button class="wtp2-btn" id="wtp-defense"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-territory-shield-v4.png" style="width:36px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Defense</div></button>
-        <button class="wtp2-btn gold" id="wtp-cross"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-breed-btn-v4.png" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Breed</div></button>
+        <button class="wtp2-btn" id="wtp-inspect2"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-inspect-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Inspect</div></button>
+        <button class="wtp2-btn" id="wtp-water"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-water-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Water</div></button>
+        <button class="wtp2-btn" id="wtp-defense"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-territory-shield-v4.png" loading="lazy" style="width:36px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Defense</div></button>
+        <button class="wtp2-btn gold" id="wtp-cross"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-breed-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Breed</div></button>
       </div>
     </div>
     <!-- PICKER -->
@@ -27228,7 +27228,7 @@ document.addEventListener('keydown', function(e) {
     // In-game compost confirmation modal
     var modal = document.createElement('div');
     modal.id = 'compost-confirm-modal';
-    modal.style.cssText = 'position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88) url(assets/compost-confirm.png) center/cover no-repeat;backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
     var h = '<div style="text-align:center;max-width:320px;background:rgba(18,22,16,0.95);border:1.5px solid rgba(200,168,75,0.25);border-radius:14px;padding:1.2rem 1rem;box-shadow:0 12px 40px rgba(0,0,0,0.6);">';
     h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);letter-spacing:0.15em;margin-bottom:0.4rem;">RETURN TO EARTH</div>';
     h += '<div style="margin:0 auto 0.3rem;opacity:0.7;">'+svg+'</div>';
@@ -27455,16 +27455,19 @@ document.addEventListener('keydown', function(e) {
         setTimeout(function() { if (window.triggerTutorialDemo) triggerTutorialDemo(); }, 600);
       }
     }
-    if (tab === 'greenhouse') { renderGreenhouse(); if(window.PW_Tutorial)setTimeout(function(){PW_Tutorial.start();},600); }
-    if (tab === 'dashboard') updateDashboard();
-    if (tab === 'nursery') { renderNursery(); if(window.PW_Tutorial)PW_Tutorial.checkNursery(); }
-    if (tab === 'binder') renderBinder();
-    // Content is now fully rendered — show panel
+    // Show panel immediately with opacity fade, then render content
     if (_targetPanel) {
       _targetPanel.style.display = '';
       _targetPanel.style.visibility = '';
       _targetPanel.classList.add('active');
     }
+    // Defer heavy renders to next frame so tab transition animates smoothly
+    requestAnimationFrame(function(){
+      if (tab === 'greenhouse') { renderGreenhouse(); if(window.PW_Tutorial&&!localStorage.getItem('lw_tut'))setTimeout(function(){PW_Tutorial.start();},600); }
+      if (tab === 'dashboard') updateDashboard();
+      if (tab === 'nursery') { renderNursery(); if(window.PW_Tutorial)PW_Tutorial.checkNursery(); }
+      if (tab === 'binder') renderBinder();
+    });
     if (tab === 'wild' && window.FG_Wild) FG_Wild.activate();
     if (tab === 'wild') { console.log('[switchTab] wild — FG_Backpack:', !!window.FG_Backpack, 'FG_Wild:', !!window.FG_Wild); if(window.FG_Wild&&FG_Wild._afMarkWildEntry)FG_Wild._afMarkWildEntry(); }
     // Map overlays — show on Wild tab regardless of backpack state
@@ -40151,7 +40154,7 @@ function _showDailyReward() {
   // Build modal
   var ov = document.createElement('div');
   ov.id = 'daily-reward-modal';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:99997;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99997;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88) url(assets/daily-login-bg.png) center/cover no-repeat;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
 
   var h = '<div style="text-align:center;max-width:300px;background:rgba(18,22,16,0.95);border:1.5px solid rgba(200,168,75,0.3);border-radius:16px;padding:1.4rem 1.2rem;box-shadow:0 12px 40px rgba(0,0,0,0.6);">';
 
@@ -40241,7 +40244,7 @@ function _clear(){
 function _dialog(text,btnLabel,btnCb,pos){
   if(_dlg&&_dlg.parentNode)_dlg.remove();
   _dlg=document.createElement('div');
-  _dlg.style.cssText='position:fixed;z-index:99998;background:rgba(18,24,16,0.97);border:1.5px solid rgba(200,168,75,0.3);border-radius:16px;padding:1.2rem 1.4rem;max-width:min(340px,90vw);font-family:Playfair Display,serif;font-size:clamp(0.85rem,2.8vw,1.05rem);color:var(--cream);line-height:1.8;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.6);animation:panelFadeIn 0.35s ease;';
+  _dlg.style.cssText='position:fixed;z-index:1000012;background:rgba(18,24,16,0.97);border:1.5px solid rgba(200,168,75,0.3);border-radius:16px;padding:1.2rem 1.4rem;max-width:min(340px,90vw);font-family:Playfair Display,serif;font-size:clamp(0.85rem,2.8vw,1.05rem);color:var(--cream);line-height:1.8;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.6);animation:panelFadeIn 0.35s ease;';
   if(pos==='top'){_dlg.style.top='12%';_dlg.style.left='50%';_dlg.style.transform='translateX(-50%)';}
   else if(pos==='bottom'){_dlg.style.bottom='calc(90px + env(safe-area-inset-bottom,0px))';_dlg.style.left='50%';_dlg.style.transform='translateX(-50%)';}
   else{_dlg.style.top='40%';_dlg.style.left='50%';_dlg.style.transform='translate(-50%,-50%)';}
@@ -40258,7 +40261,7 @@ function _dialog(text,btnLabel,btnCb,pos){
 function _overlay(tapCb){
   if(_ov&&_ov.parentNode)_ov.remove();
   _ov=document.createElement('div');
-  _ov.style.cssText='position:fixed;inset:0;z-index:99996;background:rgba(0,0,0,0.72);animation:panelFadeIn 0.3s ease;';
+  _ov.style.cssText='position:fixed;inset:0;z-index:1000010;background:rgba(0,0,0,0.72);animation:panelFadeIn 0.3s ease;';
   if(tapCb)_ov.onclick=tapCb;
   document.body.appendChild(_ov);
 }
@@ -40268,12 +40271,12 @@ function _spotlight(el){
   if(_spot&&_spot.parentNode)_spot.remove();
   var r=el.getBoundingClientRect();
   _spot=document.createElement('div');
-  _spot.style.cssText='position:fixed;z-index:99997;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,0.72);pointer-events:none;transition:all 0.3s ease;';
+  _spot.style.cssText='position:fixed;z-index:1000011;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,0.72);pointer-events:none;transition:all 0.3s ease;';
   _spot.style.top=(r.top-8)+'px';_spot.style.left=(r.left-8)+'px';
   _spot.style.width=(r.width+16)+'px';_spot.style.height=(r.height+16)+'px';
   document.body.appendChild(_spot);
   el.style.position=el.style.position||'relative';
-  el.style.zIndex='99997';
+  el.style.zIndex='1000011';
 }
 
 // ═══ STEP 1: "This is your first plant. Tap to view it." ═══
@@ -40328,9 +40331,19 @@ function _step2(){
       } else if(_polls<150){ // 30 seconds max
         _polls++;
         setTimeout(_watchFlip,200);
+      } else {
+        // Timed out waiting for flip — skip ahead gracefully
+        _clear();
+        _setStep(3);
+        setTimeout(_step3,300);
       }
     };
     setTimeout(_watchFlip,500);
+  } else {
+    // No flip card found — skip ahead
+    _clear();
+    _setStep(3);
+    setTimeout(_step3,300);
   }
 }
 
@@ -40395,7 +40408,13 @@ function checkBreed(){
 }
 
 function start(){
+  // Already completed or in-progress — bail
   if(_getStep()!==0)return;
+  // Returning player detection: if they have >1 plant or any vault data, skip tutorial entirely
+  var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+  if(gh.length>1){_setStep('done');return;}
+  // If they have cloud sync data, they're returning
+  if(localStorage.getItem('lw_vault_uid')||localStorage.getItem('sws_totalHashes')){_setStep('done');return;}
   _step1();
 }
 
@@ -40930,8 +40949,8 @@ function _fireNurNotif(title, body) {
   navigator.serviceWorker.ready.then(function(reg) {
     reg.showNotification(title, {
       body: body,
-      icon: 'assets/backpack-64x64-2.png',
-      badge: 'assets/backpack-64x64-2.png',
+      icon: 'assets/notification-icon-192.png',
+      badge: 'assets/notification-icon-192.png',
       tag: 'lw-nursery',
       renotify: true,
       vibrate: [100, 50, 100]
