@@ -25089,15 +25089,19 @@ document.addEventListener('keydown', function(e) {
     var isEnhance = existingIdx >= 0 && gh[existingIdx].traits === '';
     if (existingIdx >= 0 && !isEnhance) { console.log('[mintPlant] duplicate hash, skipping'); return false; }
     if (existingIdx < 0 && gh.length >= MAX_COLLECTION_SIZE) {
-      // Don't silently lose the plant — warn the player
-      if (window._toast) window._toast('Greenhouse full! (' + gh.length + '/' + MAX_COLLECTION_SIZE + ') Compost a plant or expand slots to make room.');
-      // Save the lost hash so it can be recovered
+      // Greenhouse full — send to reserve instead of losing the plant
       try {
-        var lost = JSON.parse(localStorage.getItem('lw_lost_plants') || '[]');
-        lost.push({ hash: hash, date: new Date().toISOString(), reason: 'greenhouse_full' });
-        if (lost.length > 10) lost = lost.slice(lost.length - 10);
-        localStorage.setItem('lw_lost_plants', JSON.stringify(lost));
-      } catch(e) {}
+        var reserve = JSON.parse(localStorage.getItem('lw_reserve') || '[]');
+        var reservePlant = {
+          hash: hash, date: new Date().toISOString(), born: Date.now(),
+          origin: opts && opts.origin || 'mint', rare: false, breedCount: 0, generation: 1
+        };
+        reserve.push(reservePlant);
+        localStorage.setItem('lw_reserve', JSON.stringify(reserve));
+        if (window._toast) window._toast('Greenhouse full! Plant sent to Reserve (' + reserve.length + ' waiting). Expand slots or compost to make room.');
+      } catch(e) {
+        if (window._toast) window._toast('Greenhouse full! Expand slots or compost to make room.');
+      }
       return false;
     }
     var traits = hashToTraits(hash);
@@ -25650,8 +25654,26 @@ document.addEventListener('keydown', function(e) {
       renderGreenhouse();
       showHexMsg('Greenhouse expanded to ' + newSlots + ' slots.');
       if (typeof gtag !== 'undefined') gtag('event', 'gh_slot_expanded', { slots: newSlots });
+      // Auto-claim from reserve if plants are waiting
+      _claimFromReserve();
     });
   };
+
+  // Claim one plant from reserve into greenhouse
+  function _claimFromReserve() {
+    var reserve = [];
+    try { reserve = JSON.parse(localStorage.getItem('lw_reserve') || '[]'); } catch(e) {}
+    if (reserve.length === 0) return;
+    var gh = loadGreenhouse();
+    if (gh.length >= MAX_COLLECTION_SIZE) return;
+    var plant = reserve.shift();
+    localStorage.setItem('lw_reserve', JSON.stringify(reserve));
+    gh.push(plant);
+    saveGreenhouse(gh);
+    renderGreenhouse();
+    if (window._toast) window._toast('🌱 Plant claimed from Reserve! ' + reserve.length + ' remaining.');
+  }
+  window._claimFromReserve = _claimFromReserve;
 
   // ── ONE GAME PER DEVICE — device fingerprint lock ──
   (function() {
@@ -25688,6 +25710,25 @@ document.addEventListener('keydown', function(e) {
     if (fillEl) fillEl.style.width = pct + '%';
     var expandBtn = document.getElementById('gh-expand-btn');
     if (expandBtn) expandBtn.style.display = (MAX_COLLECTION_SIZE >= GH_SLOTS_MAX) ? 'none' : '';
+
+    // Reserve indicator — show if plants are waiting
+    var _reserveEl = document.getElementById('gh-reserve-indicator');
+    var _reserve = [];try{_reserve=JSON.parse(localStorage.getItem('lw_reserve')||'[]');}catch(e){}
+    if (_reserve.length > 0) {
+      if (!_reserveEl) {
+        _reserveEl = document.createElement('div');
+        _reserveEl.id = 'gh-reserve-indicator';
+        _reserveEl.style.cssText = 'padding:0.3rem 0.5rem;margin:0.2rem 0;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.2);border-radius:8px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;';
+        _reserveEl.onclick = function(){ if(window._claimFromReserve)_claimFromReserve(); };
+        var panel = document.getElementById('panel-greenhouse');
+        if (panel) panel.insertBefore(_reserveEl, panel.querySelector('.greenhouse-grid') || panel.firstChild);
+      }
+      _reserveEl.innerHTML = '<span style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--gold);">📦 ' + _reserve.length + ' plant' + (_reserve.length > 1 ? 's' : '') + ' in Reserve</span>' +
+        (gh.length < MAX_COLLECTION_SIZE ? '<span style="font-family:Bebas Neue,sans-serif;font-size:0.4rem;color:var(--sage);">TAP TO CLAIM</span>' : '<span style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);">Expand slots first</span>');
+      _reserveEl.style.display = 'flex';
+    } else if (_reserveEl) {
+      _reserveEl.style.display = 'none';
+    }
 
     // Next bloom progress — shows hash accumulation toward next plant
     var _nbEl = document.getElementById('gh-next-bloom');
