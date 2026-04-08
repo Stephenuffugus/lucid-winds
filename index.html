@@ -5129,8 +5129,29 @@ window.onerror=function(msg,url,line,col,err){
     forceHydrate:function(){
       try{window._vaultHydrated=true;}catch(e){}
       if(window.loadVaultFromCloud){
-        loadVaultFromCloud(function(r){alert('Hydration result: '+JSON.stringify(r));});
-      }else{alert('loadVaultFromCloud not defined. _vaultHydrated forced to true.');}
+        loadVaultFromCloud(function(r){
+          alert('Hydration result: '+JSON.stringify(r));
+          if(window.renderGreenhouse)renderGreenhouse();
+        });
+      }else{
+        // Direct Firestore read fallback
+        try{
+          var user=firebase.auth().currentUser;
+          if(!user){alert('Not logged in. Log in first.');return;}
+          firebase.firestore().collection('vaults').doc(user.uid).get().then(function(doc){
+            if(doc.exists){
+              var data=doc.data();
+              var cloudGH=data.sws_greenhouse||[];
+              alert('Cloud has '+cloudGH.length+' plants. Restoring...');
+              if(cloudGH.length>0){
+                localStorage.setItem('sws_greenhouse',JSON.stringify(cloudGH));
+                if(window.renderGreenhouse)renderGreenhouse();
+                alert('Restored '+cloudGH.length+' plants from cloud!');
+              }else{alert('Cloud vault is empty too.');}
+            }else{alert('No vault found in Firestore for this account.');}
+          }).catch(function(e){alert('Firestore error: '+e.message);});
+        }catch(e){alert('Error: '+e.message);}
+      }
     },
     resetWild:function(){
       if(!confirm('Reset all Wild tab data? (plants, ferals, backpack, anti-farming)'))return;
@@ -25067,7 +25088,18 @@ document.addEventListener('keydown', function(e) {
     }
     var isEnhance = existingIdx >= 0 && gh[existingIdx].traits === '';
     if (existingIdx >= 0 && !isEnhance) { console.log('[mintPlant] duplicate hash, skipping'); return false; }
-    if (existingIdx < 0 && gh.length >= MAX_COLLECTION_SIZE) { console.log('[mintPlant] collection full'); return false; }
+    if (existingIdx < 0 && gh.length >= MAX_COLLECTION_SIZE) {
+      // Don't silently lose the plant — warn the player
+      if (window._toast) window._toast('Greenhouse full! (' + gh.length + '/' + MAX_COLLECTION_SIZE + ') Compost a plant or expand slots to make room.');
+      // Save the lost hash so it can be recovered
+      try {
+        var lost = JSON.parse(localStorage.getItem('lw_lost_plants') || '[]');
+        lost.push({ hash: hash, date: new Date().toISOString(), reason: 'greenhouse_full' });
+        if (lost.length > 10) lost = lost.slice(lost.length - 10);
+        localStorage.setItem('lw_lost_plants', JSON.stringify(lost));
+      } catch(e) {}
+      return false;
+    }
     var traits = hashToTraits(hash);
     // Pity timer: Model H — reset on Uncommon+ (score >= 2), not just isRare
     var _pityGrade = window.getTerraGrade ? getTerraGrade(traits) : null;
