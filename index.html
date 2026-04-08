@@ -43538,6 +43538,28 @@ window._openCompendiumUI=function(){
   }
   h+='</div></div>';
 
+  // Biomes section
+  if(window.BIOMES){
+    var biomeCache={};try{biomeCache=JSON.parse(localStorage.getItem('lw_biome_cache')||'{}');}catch(e){}
+    var discoveredBiomes={};
+    var bKeys=Object.keys(biomeCache);
+    for(var bk=0;bk<bKeys.length;bk++){if(bKeys[bk]!=='_lastBiome'&&biomeCache[bKeys[bk]].biome)discoveredBiomes[biomeCache[bKeys[bk]].biome]=true;}
+    var biomeKeys=Object.keys(BIOMES);
+    var biomeFound=Object.keys(discoveredBiomes).length;
+    h+='<div style="margin-bottom:0.8rem;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.4rem;">🌍 BIOMES <span style="color:var(--muted);font-size:0.4rem;">'+biomeFound+' / '+biomeKeys.length+'</span></div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;">';
+    for(var bi2=0;bi2<biomeKeys.length;bi2++){
+      var bm=BIOMES[biomeKeys[bi2]];
+      var discovered=discoveredBiomes[biomeKeys[bi2]];
+      h+='<div style="padding:4px;background:'+(discovered?'rgba(122,179,86,0.08)':'rgba(26,36,22,0.3)')+';border:1px solid '+(discovered?bm.color+'33':'rgba(74,124,53,0.06)')+';border-radius:6px;text-align:center;min-height:36px;display:flex;flex-direction:column;align-items:center;justify-content:center;'+(discovered?'':'opacity:0.4;')+'">';
+      h+='<div style="font-size:0.5rem;">'+(discovered?bm.icon:'?')+'</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.22rem;color:'+(discovered?bm.color:'var(--muted)')+';">'+(discovered?bm.name:'???')+'</div>';
+      h+='</div>';
+    }
+    h+='</div></div>';
+  }
+
   // Triggers section by category
   for(var ci=0;ci<CATEGORIES.length;ci++){
     var cat=CATEGORIES[ci];
