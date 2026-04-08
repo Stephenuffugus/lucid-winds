@@ -31815,6 +31815,11 @@ function _doReproduction(weather, simMode) {
     break; // max 1 birth per zone per day
   }
 
+  // ── MESH EVALUATION (update connections daily) ──
+  if (!simMode && window.evaluateMesh) {
+    try { evaluateMesh(); } catch (e) {}
+  }
+
   // ── NATURAL EVENTS (weather-driven, per-plant, max 1/day) ──
   if (!simMode) {
     var _myWildForEvents = [];
@@ -41839,6 +41844,158 @@ window.bsExecuteBreed=function(){
 })();
 </script>
 
+<!-- ═══ MYCELIAL MESH SYSTEM ═══ -->
+<script>
+(function(){
+'use strict';
+var MESH_KEY='lw_mesh_links';
+// Mesh stages: days of sustained connection required
+var STAGES=[
+  {id:0,name:'None',        days:0,  pollenMod:0,   waterShare:0,   feralRate:0},
+  {id:1,name:'Root Contact', days:3,  pollenMod:0.05,waterShare:0,   feralRate:0},
+  {id:2,name:'Nutrient Bridge',days:7, pollenMod:0.15,waterShare:0.25,feralRate:1},
+  {id:3,name:'Deep Network', days:14, pollenMod:0.25,waterShare:0.50,feralRate:2},
+  {id:4,name:'Old Growth',   days:30, pollenMod:0.40,waterShare:0.75,feralRate:3,eaBonus:1}
+];
+var ZONE_ADJACENT_DIST=0.002; // ~200m in degrees, close enough for hex adjacency
+
+function _loadMesh(){try{return JSON.parse(localStorage.getItem(MESH_KEY)||'[]');}catch(e){return[];}}
+function _saveMesh(m){localStorage.setItem(MESH_KEY,JSON.stringify(m));}
+
+// Get mesh stage from days connected
+function _getStage(days){
+  var stage=STAGES[0];
+  for(var i=STAGES.length-1;i>=0;i--){if(days>=STAGES[i].days){stage=STAGES[i];break;}}
+  return stage;
+}
+
+// Evaluate all mesh connections for the current player's wild plants
+// Called during reproduction cycle or tab switch
+function evaluateMesh(){
+  var myWild=[];try{myWild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+  if(myWild.length<1)return[];
+
+  // Get all visible shared plants (other players)
+  var sharedPlants=[];
+  if(window._sharedMarkers){
+    var keys=Object.keys(window._sharedMarkers);
+    for(var i=0;i<keys.length;i++){
+      var entry=window._sharedMarkers[keys[i]];
+      if(entry&&entry.data)sharedPlants.push(entry.data);
+    }
+  }
+
+  var allPlants=myWild.concat(sharedPlants);
+  var meshLinks=_loadMesh();
+  var today=new Date().toISOString().split('T')[0];
+  var updated=false;
+
+  // Check each of my plants against all nearby plants
+  for(var mi=0;mi<myWild.length;mi++){
+    var mp=myWild[mi];
+    if(!mp.lat||!mp.lng)continue;
+
+    for(var ai=0;ai<allPlants.length;ai++){
+      var ap=allPlants[ai];
+      if(!ap.lat||!ap.lng||ap.hash===mp.hash)continue;
+      // Must be different owner
+      if(ap.ownerUid===mp.ownerUid&&ap.own)continue;
+
+      // Check adjacency (~200m)
+      var dlat=Math.abs(mp.lat-ap.lat),dlng=Math.abs(mp.lng-ap.lng);
+      if(dlat>ZONE_ADJACENT_DIST||dlng>ZONE_ADJACENT_DIST)continue;
+
+      // Both must be 3+ days old
+      var mpAge=Math.floor((Date.now()-new Date(mp.date||Date.now()).getTime())/86400000);
+      var apAge=Math.floor((Date.now()-new Date(ap.droppedAt||ap.date||Date.now()).getTime())/86400000);
+      if(mpAge<3||apAge<3)continue;
+
+      // Find or create link
+      var linkKey=[mp.hash.slice(0,8),ap.hash.slice(0,8)].sort().join('_');
+      var existing=null;
+      for(var li=0;li<meshLinks.length;li++){if(meshLinks[li].key===linkKey){existing=meshLinks[li];break;}}
+
+      if(!existing){
+        // New link — start germination
+        meshLinks.push({key:linkKey,hashA:mp.hash.slice(0,8),hashB:ap.hash.slice(0,8),
+          startDate:today,lastHealthy:today,daysConnected:0,stage:0,
+          latA:mp.lat,lngA:mp.lng,latB:ap.lat,lngB:ap.lng});
+        updated=true;
+        if(window._logWildEvent)window._logWildEvent({type:'mesh',event:'germination',
+          hashA:mp.hash.slice(0,8),hashB:ap.hash.slice(0,8)});
+      }else{
+        // Update existing link
+        if(existing.lastHealthy!==today){
+          // Check health: both must be watered recently (simplified — check lastWatered within 48h)
+          var mpHealthy=mp.lastWatered&&(Date.now()-new Date(mp.lastWatered).getTime())<172800000;
+          var apHealthy=true; // assume shared plants are healthy (can't check their watering)
+          if(mpHealthy||mpAge<7){
+            // Healthy — advance connection
+            existing.daysConnected++;
+            existing.lastHealthy=today;
+            var newStage=_getStage(existing.daysConnected);
+            if(newStage.id>existing.stage){
+              existing.stage=newStage.id;
+              updated=true;
+              var _meshPlantName='';try{_meshPlantName=window.getPlantName?window.getPlantName(mp.hash):'';}catch(e){}
+              if(window._logWildEvent)window._logWildEvent({type:'mesh',event:'stage_up',
+                stage:newStage.name,hashA:existing.hashA,hashB:existing.hashB,plantName:_meshPlantName});
+              if(window._toast&&newStage.id>=2)window._toast('🍄 Mesh upgraded to '+newStage.name+'!');
+            }
+          }else{
+            // Unhealthy — degrade
+            existing.daysConnected=Math.max(0,existing.daysConnected-1);
+            var degradeStage=_getStage(existing.daysConnected);
+            if(degradeStage.id<existing.stage){existing.stage=degradeStage.id;updated=true;}
+          }
+        }
+      }
+    }
+  }
+
+  // Prune dead links (stage 0 and not checked in 14 days)
+  var cutoff=new Date(Date.now()-14*86400000).toISOString().split('T')[0];
+  meshLinks=meshLinks.filter(function(l){return l.stage>0||l.lastHealthy>cutoff;});
+
+  if(updated)_saveMesh(meshLinks);
+  return meshLinks;
+}
+
+// Get mesh bonuses for a specific plant
+function getMeshBonus(plantHash){
+  var meshLinks=_loadMesh();
+  var hash8=plantHash.slice(0,8);
+  var bonus={pollenMod:0,waterShare:0,feralRate:0,eaBonus:0,connections:0,highestStage:0,stageName:'None'};
+  // Diversity tracking
+  var seasons={};
+  for(var i=0;i<meshLinks.length;i++){
+    var l=meshLinks[i];
+    if(l.hashA===hash8||l.hashB===hash8){
+      var stage=STAGES[l.stage]||STAGES[0];
+      bonus.connections++;
+      if(stage.id>bonus.highestStage){bonus.highestStage=stage.id;bonus.stageName=stage.name;}
+      bonus.pollenMod=Math.max(bonus.pollenMod,stage.pollenMod);
+      bonus.waterShare=Math.max(bonus.waterShare,stage.waterShare);
+      bonus.feralRate+=stage.feralRate;
+      bonus.eaBonus+=(stage.eaBonus||0);
+    }
+  }
+  // Cap EA bonus from mesh at +3
+  bonus.eaBonus=Math.min(3,bonus.eaBonus);
+  return bonus;
+}
+
+// Get all mesh links for map rendering
+function getMeshLinks(){return _loadMesh();}
+
+// Expose
+window.evaluateMesh=evaluateMesh;
+window.getMeshBonus=getMeshBonus;
+window.getMeshLinks=getMeshLinks;
+window.MESH_STAGES=STAGES;
+})();
+</script>
+
 <!-- ═══ INTERACTION TRIGGER ENGINE ═══ -->
 <script>
 (function(){
@@ -42480,6 +42637,17 @@ function _generateReport(){
   if(triggerEvts.length>0){
     var te=triggerEvts[0];
     lines.push({icon:'🔮',text:'Secret discovered: '+te.name+'. Your '+te.plantName+' revealed something hidden.',color:'rgba(255,110,199,0.9)'});
+  }
+
+  // Mesh stories
+  var meshEvts=recent.filter(function(e){return e.type==='mesh';});
+  if(meshEvts.length>0){
+    var me=meshEvts[meshEvts.length-1];
+    if(me.event==='stage_up'){
+      lines.push({icon:'🍄',text:'Your underground network grew to '+me.stage+'. The roots go deeper.',color:'var(--sage)'});
+    }else if(me.event==='germination'){
+      lines.push({icon:'🌱',text:'A new mycelial connection is forming underground between your plants.',color:'var(--muted)'});
+    }
   }
 
   // Natural event stories
