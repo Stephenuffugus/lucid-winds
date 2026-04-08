@@ -44202,11 +44202,29 @@ function _generateReport(){
     }
   }
 
-  // If nothing happened
+  // If nothing happened — seasonal idle messages
   if(lines.length===0){
     var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+    var _month=new Date().getMonth();
+    var _idleMessages=[
+      // Spring (Mar-May)
+      ['🌸','The spring air hums with possibility. Your plants are dreaming of new growth.'],
+      ['🌱','Roots stretch deeper in the warming soil. Something is preparing to bloom.'],
+      // Summer (Jun-Aug)
+      ['☀️','Long days and warm nights. Your plants soak in every hour of light.'],
+      ['🌻','The heat brings out the strongest. Your garden stands tall.'],
+      // Autumn (Sep-Nov)
+      ['🍂','Leaves are turning. The garden settles into a golden pause.'],
+      ['🍁','Seeds are scattering on the autumn wind. Someone will find them.'],
+      // Winter (Dec-Feb)
+      ['❄️','The quiet season. Beneath the frost, roots are still reaching.'],
+      ['🌙','A cold clear night. Your plants rest under starlight.']
+    ];
+    var _seasonIdx=_month<3?6:_month<6?0:_month<9?2:4; // map month to season pair
+    var _dayPick=new Date().getDate()%2; // alternate daily
+    var _idle=_idleMessages[_seasonIdx+_dayPick];
     if(wild.length>0){
-      lines.push({icon:'🌿',text:'Your '+wild.length+' wild plant'+(wild.length>1?'s are':' is')+' quietly growing. All is well.',color:'var(--muted)'});
+      lines.push({icon:_idle[0],text:_idle[1],color:'var(--muted)'});
     }else{
       lines.push({icon:'🗺️',text:'No plants in the wild yet. Drop one on the map to start your legacy.',color:'var(--muted)'});
     }
