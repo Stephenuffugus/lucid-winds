@@ -30890,6 +30890,19 @@ function activate(){
   else setTimeout(function(){if(_map&&_uLat)_loadAll();},3000);
   // Check for pending harvest/takeover rewards from other players
   _checkPendingRewards();
+  // Detect biome from real GPS + OSM for reproduction modifiers
+  if(window.detectBiome&&_uLat){
+    detectBiome(_uLat,_uLng,function(b){
+      window._lastDetectedBiome=b;
+      // Show biome on map if first detection
+      var _biShow=localStorage.getItem('lw_biome_shown');
+      if(_biShow!==b&&window.getBiomeInfo){
+        var _bInfo=getBiomeInfo(b);
+        if(window._toast)_toast(_bInfo.icon+' Biome: '+_bInfo.name+(_bInfo.mutation?' — '+_bInfo.mutation+' possible':''));
+        localStorage.setItem('lw_biome_shown',b);
+      }
+    });
+  }
   // Daily ecosystem check: reproduction + mesh + soil + chorus + phenotype
   // Runs once per day on Wild tab entry
   var _reproToday=localStorage.getItem('lw_repro_today');
@@ -31677,7 +31690,13 @@ function _doReproduction(weather, simMode) {
       if (_pBT) compMod = Math.max(compMod, getCompanionReproMod(_pBT, weather));
     }
     // Final reproduction chance
-    var finalChance = REPRO_CHANCE * weatherMod * densityMod * seasonMod * popMod * meshMod * soilMod * compMod;
+    // Biome modifier (detected from real GPS + OSM data)
+    var biomeMod = 1.0;
+    if (window.getBiomeInfo && window._lastDetectedBiome) {
+      var _bi = getBiomeInfo(window._lastDetectedBiome);
+      if (_bi && _bi.spawnMod) biomeMod = _bi.spawnMod;
+    }
+    var finalChance = REPRO_CHANCE * weatherMod * densityMod * seasonMod * popMod * meshMod * soilMod * compMod * biomeMod;
     if (Math.random() >= finalChance) {
       if (simMode) simLog.push({ zone: zk, chance: Math.round(finalChance * 100) + '%', result: 'no breed' });
       continue;
@@ -32485,6 +32504,8 @@ function showTP(p,mk){
         if(window.getMeshBonus){var _mb=getMeshBonus(p.hash);if(_mb.connections>0)_statusExtra+='<br><span style="color:var(--sage);">\ud83c\udf44 Mesh: '+_mb.stageName+' ('+_mb.connections+' link'+ (_mb.connections>1?'s':'')+')</span>';}
         // Add soil info
         if(window.getSoilInfo&&p.lat){var _si=getSoilInfo(p.lat,p.lng);if(_si.maturity>0)_statusExtra+='<br><span style="color:rgba(200,168,75,0.7);">\ud83c\udf3f Soil: '+_si.name+' ('+_si.maturity+'/100)</span>';}
+        // Biome info
+        if(window._lastDetectedBiome&&window.getBiomeInfo){var _bInfo=getBiomeInfo(window._lastDetectedBiome);_statusExtra+='<br><span style="color:'+_bInfo.color+';">'+_bInfo.icon+' '+_bInfo.name+(_bInfo.rarityBoost>0?' (+'+Math.round(_bInfo.rarityBoost*100)+'% rare)':'')+'</span>';}
         if(ownStatus){ownStatus.innerHTML='<span style="color:var(--gold);">Earning '+_polRate+' pollen/hr</span>'+_statusExtra;ownStatus.style.display='block';}
       }
     }
@@ -42002,6 +42023,105 @@ window.bsExecuteBreed=function(){
   }
   // closeBreedScreen called above before async — don't call again here
 };
+})();
+</script>
+
+<!-- ═══ BIOME DETECTION (real-world geography) ═══ -->
+<script>
+(function(){
+'use strict';
+var BIOME_KEY='lw_biome_cache';
+var BIOMES={
+  wetland:  {name:'Wetland',   icon:'🌊', color:'#5BA0C4', rarityBoost:0.08, spawnMod:1.0, mutation:'Root Rot Resistance'},
+  riverside:{name:'Riverside', icon:'🏞️', color:'#6BAFB2', rarityBoost:0.04, spawnMod:1.3, mutation:'Driftwood Stem'},
+  coastal:  {name:'Coastal',   icon:'🏖️', color:'#A0C4E8', rarityBoost:0.03, spawnMod:0.8, mutation:'Salt Crystal'},
+  forest:   {name:'Forest',    icon:'🌲', color:'#4A7C35', rarityBoost:0.05, spawnMod:1.2, mutation:'Moss Veil'},
+  mountain: {name:'Mountain',  icon:'⛰️', color:'#8A9178', rarityBoost:0.10, spawnMod:0.6, mutation:'Alpine Frost'},
+  desert:   {name:'Desert',    icon:'🏜️', color:'#D4A843', rarityBoost:0.12, spawnMod:0.4, mutation:'Thorn Crown'},
+  farmland: {name:'Farmland',  icon:'🌾', color:'#A0A060', rarityBoost:0,    spawnMod:1.5, mutation:null},
+  garden:   {name:'Garden',    icon:'🌷', color:'#E8A0BF', rarityBoost:0.02, spawnMod:1.4, mutation:'Cultivar Bloom'},
+  park:     {name:'Urban Park',icon:'🌳', color:'#7AB356', rarityBoost:0.01, spawnMod:1.0, mutation:null},
+  suburban: {name:'Suburban',  icon:'🏡', color:'#8A9178', rarityBoost:0,    spawnMod:0.8, mutation:null}
+};
+
+function _loadCache(){try{return JSON.parse(localStorage.getItem(BIOME_KEY)||'{}');}catch(e){return{};}}
+function _saveCache(c){localStorage.setItem(BIOME_KEY,JSON.stringify(c));}
+
+// Detect biome from OSM Overpass API
+function detectBiome(lat,lng,callback){
+  // Check cache first (keyed by ~1km grid)
+  var cacheKey=Math.round(lat*100)/100+','+Math.round(lng*100)/100;
+  var cache=_loadCache();
+  if(cache[cacheKey]&&(Date.now()-cache[cacheKey].ts)<2592000000){// 30 day TTL
+    callback(cache[cacheKey].biome);return;
+  }
+
+  // Query Overpass API for nearby features
+  var query='[out:json][timeout:10];(node["natural"](around:500,'+lat+','+lng+');node["leisure"](around:500,'+lat+','+lng+');node["landuse"](around:500,'+lat+','+lng+');way["natural"](around:500,'+lat+','+lng+');way["leisure"](around:500,'+lat+','+lng+');way["landuse"](around:500,'+lat+','+lng+'););out tags;';
+
+  fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(query)})
+  .then(function(r){return r.json();})
+  .then(function(data){
+    var tags={water:0,wetland:0,wood:0,park:0,garden:0,farmland:0,beach:0};
+    var elements=data.elements||[];
+    for(var i=0;i<elements.length;i++){
+      var t=elements[i].tags||{};
+      if(t.natural==='water'||t.natural==='wetland')tags.water++;
+      if(t.natural==='wetland')tags.wetland++;
+      if(t.natural==='wood'||t.landuse==='forest')tags.wood++;
+      if(t.leisure==='park')tags.park++;
+      if(t.leisure==='garden')tags.garden++;
+      if(t.landuse==='farmland')tags.farmland++;
+      if(t.natural==='beach'||t.natural==='coastline')tags.beach++;
+    }
+
+    // Priority classification
+    var biome='suburban';
+    if(tags.wetland>0)biome='wetland';
+    else if(tags.water>0&&tags.beach>0)biome='coastal';
+    else if(tags.water>1)biome='riverside';
+    else if(tags.wood>2)biome='forest';
+    else if(tags.farmland>0)biome='farmland';
+    else if(tags.garden>0)biome='garden';
+    else if(tags.park>0)biome='park';
+
+    // Cache result
+    cache[cacheKey]={biome:biome,ts:Date.now()};
+    _saveCache(cache);
+    callback(biome);
+  })
+  .catch(function(){
+    // Offline fallback — use weather to guess
+    callback('suburban');
+  });
+}
+
+// Get biome info object
+function getBiomeInfo(biomeKey){
+  return BIOMES[biomeKey]||BIOMES.suburban;
+}
+
+// Get current player biome (cached)
+function getCurrentBiome(callback){
+  var cache=_loadCache();
+  var lastKey=cache._lastBiome;
+  if(lastKey&&BIOMES[lastKey]){callback(lastKey);return;}
+  // Need GPS
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(function(pos){
+      detectBiome(pos.coords.latitude,pos.coords.longitude,function(b){
+        cache._lastBiome=b;_saveCache(cache);
+        callback(b);
+      });
+    },function(){callback('suburban');});
+  }else{callback('suburban');}
+}
+
+// Expose
+window.detectBiome=detectBiome;
+window.getBiomeInfo=getBiomeInfo;
+window.getCurrentBiome=getCurrentBiome;
+window.BIOMES=BIOMES;
 })();
 </script>
 
