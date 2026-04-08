@@ -31436,9 +31436,12 @@ function _feralRespawnDebounced() {
 // adjacent zone. This is a shared Firestore event visible to all players.
 // Uses deterministic doc ID (parent hashes + date) so multiple players
 // triggering the same check produce the same write → idempotent.
-var REPRO_CHANCE = 0.15; // 15% base per breeding pair per day
+var REPRO_CHANCE = 0.30; // 30% base per breeding pair per day
 var REPRO_KEY = 'fg_repro_zones'; // localStorage: { zoneKey: lastCheckDate }
 var REPRO_LINEAGE_CAP = 12; // max hexes per genetic line
+// Population scaling: more plants = higher reproduction (ecological resilience)
+// 2 plants = 0.7x, 4 plants = 1.0x, 8+ plants = 1.4x
+function _popScale(count) { return Math.min(1.4, 0.5 + count * 0.125); }
 var _reproTimer = null;
 var _reproWeather = null; // cached weather data {temp, rain, fetched}
 
@@ -31491,8 +31494,10 @@ function _doReproduction(weather, simMode) {
 
     if (!simMode) checked[zk] = td;
 
-    // Density pressure: halve chance if 4+ plants in adjacent hexes
-    var densityMod = plants.length >= 4 ? 0.5 : 1.0;
+    // Population scaling: larger populations reproduce faster (ecological resilience)
+    var popMod = _popScale(plants.length);
+    // Density pressure: cap at 6+ plants per zone (overcrowding)
+    var densityMod = plants.length >= 6 ? 0.5 : 1.0;
 
     // Pick best complementary pair (prefer opposite seasons)
     var bestPair = null, bestScore = -1;
@@ -31514,7 +31519,7 @@ function _doReproduction(weather, simMode) {
     if ((parentA.season || 0) === curSeason || (parentB.season || 0) === curSeason) seasonMod = 1.3;
 
     // Final reproduction chance
-    var finalChance = REPRO_CHANCE * weatherMod * densityMod * seasonMod;
+    var finalChance = REPRO_CHANCE * weatherMod * densityMod * seasonMod * popMod;
     if (Math.random() >= finalChance) {
       if (simMode) simLog.push({ zone: zk, chance: Math.round(finalChance * 100) + '%', result: 'no breed' });
       continue;
@@ -31628,6 +31633,46 @@ function _doReproduction(weather, simMode) {
 
     births++;
     break; // max 1 birth per zone per day
+  }
+
+  // ── SPONTANEOUS SPAWNING (depleted area recovery) ──
+  // If player is in an area with very few plants, nature reclaims
+  if (!simMode && _uLat) {
+    var playerZone = _zoneKey(_uLat, _uLng);
+    var nearbyCount = 0;
+    for (var nz = 0; nz < zoneKeys.length; nz++) {
+      var nzParts = zoneKeys[nz].split(',');
+      var nzDist = Math.abs(parseFloat(nzParts[0]) - _uLat) + Math.abs(parseFloat(nzParts[1]) - _uLng);
+      if (nzDist < ZONE_SIZE * 5) nearbyCount += zones[zoneKeys[nz]].length;
+    }
+    // If fewer than 3 plants within ~500m of player, spawn a wild feral
+    if (nearbyCount < 3 && Math.random() < 0.5) {
+      var spontHash = '';
+      for (var sh = 0; sh < 64; sh++) spontHash += '0123456789abcdef'[Math.floor(Math.random() * 16)];
+      var spontLat = _uLat + (Math.random() - 0.5) * 0.004; // ~200m radius
+      var spontLng = _uLng + (Math.random() - 0.5) * 0.004;
+      var spontTraits = null, spontEA = 0, spontGrade = 'Common';
+      try {
+        spontTraits = window.hashToTraits(spontHash);
+        spontEA = window.computeEA ? window.computeEA(spontTraits, 0) : 3;
+        var stg = window.getTerraGrade ? window.getTerraGrade(spontTraits) : null;
+        spontGrade = stg ? stg.name : 'Common';
+      } catch (e) {}
+      var spontDoc = 'spont_' + playerZone.replace(/[^a-z0-9]/gi, '') + '_' + td.replace(/-/g, '');
+      var spontData = {
+        lat: spontLat, lng: spontLng, hash: spontHash,
+        ownerUid: 'wild', ownerName: 'Wild',
+        ea: spontEA, defenderGame: 'set',
+        season: (spontTraits && spontTraits.season) || 0,
+        status: 'alive', grade: spontGrade, generation: 1,
+        zone: _zoneKey(spontLat, spontLng),
+        droppedAt: new Date().toISOString(),
+        wildBorn: true, spontaneous: true,
+        parentA: 'nature', parentB: 'nature'
+      };
+      window.db.collection('wildDrops').doc(spontDoc).set(spontData).catch(function() {});
+      births++;
+    }
   }
 
   // Prune old zone checks (keep 7 days)
