@@ -31855,11 +31855,13 @@ function _doReproduction(weather, simMode) {
     break; // max 1 birth per zone per day
   }
 
-  // ── MESH + SOIL + COMMONS EVALUATION (update daily) ──
+  // ── DAILY ECOSYSTEM EVALUATION ──
   if (!simMode) {
     if (window.evaluateMesh) try { evaluateMesh(); } catch (e) {}
     if (window.updateSoilMaturity) try { updateSoilMaturity(); } catch (e) {}
     if (window.evaluateCommons) try { evaluateCommons(); } catch (e) {}
+    if (window.evaluateBloomChorus) try { evaluateBloomChorus(); } catch (e) {}
+    if (window.checkPhenotypeReveal) try { checkPhenotypeReveal(); } catch (e) {}
   }
 
   // ── NATURAL EVENTS (weather-driven, per-plant, max 1/day) ──
@@ -41891,6 +41893,164 @@ window.bsExecuteBreed=function(){
 })();
 </script>
 
+<!-- ═══ BLOOM CHORUS (color harmony) ═══ -->
+<script>
+(function(){
+'use strict';
+var CHORUS_KEY='lw_chorus_data';
+var CLUSTER_DIST=0.002; // ~200m
+
+// Extract hue (0-360) from hex color string
+function _hexToHue(hex){
+  if(!hex||hex.length<6)return 0;
+  hex=hex.replace('#','');
+  var r=parseInt(hex.slice(0,2),16)/255,g=parseInt(hex.slice(2,4),16)/255,b=parseInt(hex.slice(4,6),16)/255;
+  var max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min,h=0;
+  if(d===0)return 0;
+  if(max===r)h=((g-b)/d)%6;
+  else if(max===g)h=(b-r)/d+2;
+  else h=(r-g)/d+4;
+  h=Math.round(h*60);if(h<0)h+=360;
+  return h;
+}
+
+function _hueDiff(h1,h2){var d=Math.abs(h1-h2);return d>180?360-d:d;}
+
+function evaluateBloomChorus(){
+  var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+  var shared=[];
+  if(window._sharedMarkers){var keys=Object.keys(window._sharedMarkers);for(var i=0;i<keys.length;i++){var e=window._sharedMarkers[keys[i]];if(e&&e.data)shared.push(e.data);}}
+  var allPlants=wild.concat(shared);
+
+  // Filter to blooming plants only
+  var blooming=[];
+  for(var bi=0;bi<allPlants.length;bi++){
+    var p=allPlants[bi];if(!p.lat||!p.hash)continue;
+    var t=null;try{t=window.hashToTraits?window.hashToTraits(p.hash):null;}catch(e){}
+    if(t&&t.hasFlower){blooming.push({lat:p.lat,lng:p.lng,hash:p.hash,hue:_hexToHue(t.flowerColor),color:t.flowerColor});}
+  }
+
+  // Cluster blooming plants
+  var visited={};var choruses=[];
+  for(var ci=0;ci<blooming.length;ci++){
+    if(visited[ci])continue;
+    var cluster=[ci];visited[ci]=true;var queue=[ci];
+    while(queue.length>0){
+      var cur=queue.shift();
+      for(var ni=0;ni<blooming.length;ni++){
+        if(visited[ni])continue;
+        if(Math.abs(blooming[cur].lat-blooming[ni].lat)<CLUSTER_DIST&&Math.abs(blooming[cur].lng-blooming[ni].lng)<CLUSTER_DIST){
+          visited[ni]=true;cluster.push(ni);queue.push(ni);
+        }
+      }
+    }
+    if(cluster.length>=3){
+      var plants=cluster.map(function(idx){return blooming[idx];});
+      // Calculate harmony score
+      var score=0;
+      for(var pa=0;pa<plants.length;pa++){
+        for(var pb=pa+1;pb<plants.length;pb++){
+          var diff=_hueDiff(plants[pa].hue,plants[pb].hue);
+          if(diff>=150&&diff<=210)score+=3; // complementary
+          else if(diff>=15&&diff<=60)score+=1; // analogous
+          // identical = +0
+        }
+      }
+      var cLat=0,cLng=0;
+      for(var cc=0;cc<plants.length;cc++){cLat+=plants[cc].lat;cLng+=plants[cc].lng;}
+      choruses.push({plants:plants.length,score:score,centerLat:cLat/plants.length,centerLng:cLng/plants.length,
+        colors:plants.map(function(p){return p.color;}),hashes:plants.map(function(p){return p.hash.slice(0,8);})});
+    }
+  }
+
+  // Log new choruses
+  var existing=[];try{existing=JSON.parse(localStorage.getItem(CHORUS_KEY)||'[]');}catch(e){}
+  if(choruses.length>existing.length&&choruses.length>0){
+    if(window._logWildEvent)window._logWildEvent({type:'chorus',event:'formed',score:choruses[0].score,plants:choruses[0].plants});
+  }
+  localStorage.setItem(CHORUS_KEY,JSON.stringify(choruses));
+  return choruses;
+}
+
+function getChorusBonus(plantHash){
+  var choruses=[];try{choruses=JSON.parse(localStorage.getItem(CHORUS_KEY)||'[]');}catch(e){}
+  var h8=plantHash.slice(0,8);
+  for(var i=0;i<choruses.length;i++){
+    if(choruses[i].hashes&&choruses[i].hashes.indexOf(h8)>=0){
+      return{inChorus:true,score:choruses[i].score,pollenBonus:Math.min(0.5,choruses[i].score*0.05)};
+    }
+  }
+  return{inChorus:false,score:0,pollenBonus:0};
+}
+
+window.evaluateBloomChorus=evaluateBloomChorus;
+window.getChorusBonus=getChorusBonus;
+})();
+</script>
+
+<!-- ═══ PHENOTYPE REVELATION ═══ -->
+<script>
+(function(){
+'use strict';
+var PHENOTYPES=['Luminous Veins','Deep Roots','Whispering Bloom','Ancient Bark','Crystal Dew','Shadow Twin','Spirit Companion','Golden Hour'];
+var ADJACENT_DIST=0.002;
+
+// Get hidden phenotype from hash byte 23
+function getPhenotype(hash){
+  if(!hash||hash.length<48)return PHENOTYPES[0];
+  var byte23=parseInt(hash.slice(46,48),16)||0;
+  return PHENOTYPES[Math.floor(byte23/32)];
+}
+
+// Check if conditions met to reveal phenotype on player's wild plants
+function checkPhenotypeReveal(){
+  var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+  if(wild.length===0)return;
+  var shared=[];
+  if(window._sharedMarkers){var keys=Object.keys(window._sharedMarkers);for(var i=0;i<keys.length;i++){var e=window._sharedMarkers[keys[i]];if(e&&e.data)shared.push(e.data);}}
+
+  var changed=false;
+  for(var wi=0;wi<wild.length;wi++){
+    var wp=wild[wi];
+    if(wp.phenotypeRevealed||!wp.lat||!wp.hash)continue;
+    var wt=null;try{wt=window.hashToTraits?window.hashToTraits(wp.hash):null;}catch(e){}
+    if(!wt)continue;
+
+    // Check nearby shared plants for trigger conditions
+    for(var si=0;si<shared.length;si++){
+      var sp=shared[si];
+      if(!sp.lat||!sp.hash)continue;
+      if(Math.abs(wp.lat-sp.lat)>ADJACENT_DIST||Math.abs(wp.lng-sp.lng)>ADJACENT_DIST)continue;
+
+      var st=null;try{st=window.hashToTraits?window.hashToTraits(sp.hash):null;}catch(e){}
+      if(!st)continue;
+
+      // Trigger: opposite season nearby
+      var isOppositeSeason=(wt.season===0&&st.season===2)||(wt.season===2&&st.season===0)||
+                          (wt.season===1&&st.season===3)||(wt.season===3&&st.season===1);
+      // Trigger: same companion from different owner
+      var sameCompanion=wt.companion>=20&&wt.companion===st.companion;
+
+      if(isOppositeSeason||sameCompanion){
+        var pheno=getPhenotype(wp.hash);
+        wp.phenotypeRevealed=true;
+        wp.phenotype=pheno;
+        changed=true;
+        var _pName='';try{_pName=window.getPlantName?window.getPlantName(wp.hash):'';}catch(e){}
+        if(window._logWildEvent)window._logWildEvent({type:'phenotype',event:'revealed',hash:wp.hash,plantName:_pName,phenotype:pheno});
+        if(window._toast)window._toast('✨ Hidden phenotype revealed: '+pheno+'!');
+        break;
+      }
+    }
+  }
+  if(changed)localStorage.setItem('fg_wild_plants',JSON.stringify(wild));
+}
+
+window.getPhenotype=getPhenotype;
+window.checkPhenotypeReveal=checkPhenotypeReveal;
+})();
+</script>
+
 <!-- ═══ THE COMMONS (named ecosystems) ═══ -->
 <script>
 (function(){
@@ -42954,6 +43114,20 @@ function _generateReport(){
   if(triggerEvts.length>0){
     var te=triggerEvts[0];
     lines.push({icon:'🔮',text:'Secret discovered: '+te.name+'. Your '+te.plantName+' revealed something hidden.',color:'rgba(255,110,199,0.9)'});
+  }
+
+  // Phenotype revelation stories
+  var phenoEvts=recent.filter(function(e){return e.type==='phenotype';});
+  if(phenoEvts.length>0){
+    var pe=phenoEvts[0];
+    lines.push({icon:'✨',text:'Hidden trait revealed on your '+pe.plantName+': '+pe.phenotype+'.',color:'rgba(200,168,75,0.9)'});
+  }
+
+  // Chorus stories
+  var chorusEvts=recent.filter(function(e){return e.type==='chorus';});
+  if(chorusEvts.length>0){
+    var ch=chorusEvts[0];
+    lines.push({icon:'🎵',text:'A Bloom Chorus formed — '+ch.plants+' flowers in harmony. Score: '+ch.score+'.',color:'rgba(232,160,191,0.9)'});
   }
 
   // Commons stories
