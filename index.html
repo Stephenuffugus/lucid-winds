@@ -41735,6 +41735,176 @@ window.bsExecuteBreed=function(){
 })();
 </script>
 
+<!-- ═══ INTERACTION TRIGGER ENGINE ═══ -->
+<script>
+(function(){
+'use strict';
+var TRIGGER_KEY='lw_triggers_found';
+var TRIGGER_LOG_KEY='lw_trigger_log';
+
+// ── TRIGGER DEFINITIONS ──
+// Each trigger: {id, name, riddle, category, check(ctx), effect, rarity}
+// ctx = {plant, nearbyPlants, weather, hour, month, realSeason, moonPhase, playerStats}
+var TRIGGERS=[
+  // ── TRAIT COMBOS ──
+  {id:'prism',name:'Prism',riddle:'Fragile light bends where rain meets glass.',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Glass Stem'&&c.weather&&c.weather.rain>1;},
+    effect:'+1 EA temporary, rainbow particle',reward:{ea:1,pollen:5}},
+  {id:'moonstone',name:'Moonstone',riddle:'Crystal roots drink silver light.',category:'trait',
+    check:function(c){if(!c.plant)return false;var b=c.plant.base%71;return b===15&&c.moonPhase==='full';},
+    effect:'Silver glow, 2x pollen until dawn',reward:{pollen:15}},
+  {id:'canopy_crown',name:'Canopy Crown',riddle:'The tallest braids reach sunlight first.',category:'trait',
+    check:function(c){if(!c.plant||!c.nearbyPlants)return false;var isBraided=(c.plant.stem%24)>12;if(!isBraided||c.plant.stemHeight<40)return false;
+      return c.nearbyPlants.some(function(p){var t=p.traits;return t&&(t.stem%24)>12&&t.stemHeight>=40;});},
+    effect:'+1 EA permanent for both',reward:{ea:1}},
+  {id:'thornwall',name:'Thornwall',riddle:'Two barbed sentinels share a border.',category:'trait',
+    check:function(c){if(!c.plant||!c.nearbyPlants)return false;var lt=c.plant.leafType%71;var thorns=[5,12,18,25,33];
+      if(thorns.indexOf(lt)<0)return false;return c.nearbyPlants.some(function(p){return p.traits&&thorns.indexOf(p.traits.leafType%71)>=0;});},
+    effect:'Both hexes defended — Hard difficulty minimum',reward:{pollen:3}},
+  {id:'bloom_mirror',name:'Bloom Mirror',riddle:'Twin flowers face each other and forget which is which.',category:'trait',
+    check:function(c){if(!c.plant||!c.plant.hasFlower||!c.nearbyPlants)return false;
+      return c.nearbyPlants.some(function(p){return p.traits&&p.traits.hasFlower&&(p.traits.flower%71)===(c.plant.flower%71)&&p.traits.flowerColor===c.plant.flowerColor;});},
+    effect:'Cross-pollinate reward doubled',reward:{pollen:10}},
+
+  // ── COMPANION INTERACTIONS ──
+  {id:'swamp_lantern',name:'Swamp Lantern',riddle:'The toad waits. The firefly answers.',category:'companion',
+    check:function(c){if(!c.plant||!c.nearbyPlants)return false;var isT=c.plant.companion===32;var isF=c.plant.companion===23;
+      if(!isT&&!isF)return false;var need=isT?23:32;return c.hour>=20&&c.nearbyPlants.some(function(p){return p.traits&&p.traits.companion===need;});},
+    effect:'Both plants glow on map',reward:{pollen:8}},
+  {id:'pollinator_hwy',name:'Pollinator Highway',riddle:'The bee and the bird share the road.',category:'companion',
+    check:function(c){if(!c.plant||!c.nearbyPlants)return false;var isB=c.plant.companion===21;var isH=c.plant.companion===28;
+      if(!isB&&!isH)return false;var need=isB?28:21;return c.hour>=6&&c.hour<20&&c.nearbyPlants.some(function(p){return p.traits&&p.traits.companion===need;});},
+    effect:'Cross-pollinate rewards tripled',reward:{pollen:12}},
+  {id:'symbiont',name:'Symbiont',riddle:'Mushroom and root share a secret language.',category:'companion',
+    check:function(c){if(!c.plant||!c.nearbyPlants)return false;return c.plant.companion===73&&c.nearbyPlants.some(function(p){return p.traits&&[9,10,18,29].indexOf(p.traits.base%71)>=0;});},
+    effect:'EA shared with nearby plants',reward:{ea:1,pollen:5}},
+
+  // ── WEATHER + TRAIT ──
+  {id:'lightning_scar',name:'Lightning Scar',riddle:'The sky writes on the living wood.',category:'weather',
+    check:function(c){return c.weather&&c.weather.weathercode&&[95,96,99].indexOf(c.weather.weathercode)>=0&&Math.random()<0.3;},
+    effect:'+3 EA or death (50/50)',reward:{ea:3}},
+  {id:'wind_seed',name:'Wind Seed',riddle:'Strong gusts carry what roots cannot hold.',category:'weather',
+    check:function(c){if(!c.plant||!c.weather)return false;var lt=c.plant.leafType%71;return c.weather.windspeed>30&&[2,7,14,22,35].indexOf(lt)>=0;},
+    effect:'Free feral spawns 200-500m downwind',reward:{pollen:3}},
+  {id:'frost_glass',name:'Frost Glass',riddle:'Cold makes crystal of the morning dew.',category:'weather',
+    check:function(c){return c.plant&&c.plant.mutationName==='Glass Stem'&&c.weather&&c.weather.temp<0;},
+    effect:'Permanent seasonal stress immunity',reward:{ea:1}},
+  {id:'heat_bloom',name:'Heat Bloom',riddle:'Desert flowers wait for exactly this.',category:'weather',
+    check:function(c){if(!c.plant||!c.weather)return false;var b=c.plant.base%71;return c.weather.temp>35&&([11,12].indexOf(b)>=0||c.plant.hasFlower&&(c.plant.flower%71)>=30);},
+    effect:'3x pollen for duration',reward:{pollen:20}},
+
+  // ── SEASONAL ──
+  {id:'vernal_bloom',name:'Vernal Bloom',riddle:'The equinox rewards those who arrived prepared.',category:'season',
+    check:function(c){if(!c.plant)return false;var d=new Date();return d.getMonth()===2&&d.getDate()>=19&&d.getDate()<=21&&c.plant.season===0&&c.ea>=15;},
+    effect:'Guaranteed free seed, no partner needed',reward:{pollen:25}},
+  {id:'evergreen',name:'Evergreen',riddle:'What survives the coldest night earns the title.',category:'season',
+    check:function(c){if(!c.plant)return false;var d=new Date();return d.getMonth()===11&&d.getDate()>=21&&d.getDate()<=22&&c.plant.season===3&&c.plantAge>=90;},
+    effect:'Plant can never die from seasonal mortality',reward:{ea:2,pollen:15}},
+
+  // ── PLAYER ACTION ──
+  {id:'rainfall',name:'Rainfall',riddle:'Ten gardens tended by a stranger\'s hand.',category:'action',
+    check:function(c){return c.playerStats&&c.playerStats.watersToday>=10;},
+    effect:'Your wild plants auto-watered 3 days',reward:{pollen:20}},
+  {id:'midnight_gardener',name:'Midnight Gardener',riddle:'Who waters between the hours of twelve and four?',category:'action',
+    check:function(c){return c.playerStats&&c.playerStats.midnightWaters>=3;},
+    effect:'Plants generate pollen at night',reward:{pollen:10}},
+  {id:'the_graft',name:'The Graft',riddle:'Breed the same pair twice and see what the second child knows.',category:'action',
+    check:function(c){return c.playerStats&&c.playerStats.samePairBreeds>=2;},
+    effect:'Offspring +2 EA over RNG',reward:{ea:2}}
+];
+
+// ── MOON PHASE CALCULATOR (client-side) ──
+function _getMoonPhase(){
+  var now=new Date();
+  var year=now.getFullYear(),month=now.getMonth()+1,day=now.getDate();
+  if(month<=2){year--;month+=12;}
+  var A=Math.floor(year/100),B=2-A+Math.floor(A/4);
+  var JD=Math.floor(365.25*(year+4716))+Math.floor(30.6001*(month+1))+day+B-1524.5;
+  var daysSinceNew=JD-2451550.1;
+  var cycle=daysSinceNew/29.530588853;
+  var phase=(cycle-Math.floor(cycle))*29.53;
+  if(phase>=13.5&&phase<15.5)return'full';
+  if(phase>=0&&phase<1.5)return'new';
+  if(phase>=6.5&&phase<8.5)return'first_quarter';
+  if(phase>=20.5&&phase<22.5)return'last_quarter';
+  return phase<14.75?'waxing':'waning';
+}
+window._getMoonPhase=_getMoonPhase;
+
+// ── CHECK TRIGGERS ──
+// Called with a plant + context, returns array of fired triggers
+function checkTriggers(plant, nearbyPlants, weather, playerStats){
+  if(!plant)return[];
+  var traits=null;
+  try{traits=window.hashToTraits?window.hashToTraits(plant.hash):null;}catch(e){}
+  if(!traits)return[];
+
+  var now=new Date();
+  var ea=window.computeEA?window.computeEA(traits,0,plant):0;
+  var ctx={
+    plant:traits, plantObj:plant, nearbyPlants:nearbyPlants||[],
+    weather:weather||{}, hour:now.getHours(), month:now.getMonth(),
+    realSeason:now.getMonth()<3?3:now.getMonth()<6?0:now.getMonth()<9?1:2,
+    moonPhase:_getMoonPhase(), playerStats:playerStats||{},
+    ea:ea, plantAge:Math.floor((Date.now()-(plant.born||plant.mintedAt||Date.now()))/86400000)
+  };
+
+  // Enrich nearby plants with traits
+  for(var i=0;i<ctx.nearbyPlants.length;i++){
+    if(!ctx.nearbyPlants[i].traits){
+      try{ctx.nearbyPlants[i].traits=window.hashToTraits?window.hashToTraits(ctx.nearbyPlants[i].hash):null;}catch(e){}
+    }
+  }
+
+  var found=[];
+  var discovered=_getDiscovered();
+  for(var t=0;t<TRIGGERS.length;t++){
+    try{
+      if(TRIGGERS[t].check(ctx)){
+        found.push(TRIGGERS[t]);
+        // Mark as discovered
+        if(discovered.indexOf(TRIGGERS[t].id)<0){
+          discovered.push(TRIGGERS[t].id);
+          _saveDiscovered(discovered);
+          // Log event for morning report
+          if(window._logWildEvent)window._logWildEvent({
+            type:'trigger',triggerId:TRIGGERS[t].id,name:TRIGGERS[t].name,
+            category:TRIGGERS[t].category,hash:plant.hash,
+            plantName:window.getPlantName?window.getPlantName(plant.hash):''
+          });
+        }
+      }
+    }catch(e){}
+  }
+  return found;
+}
+
+// ── COMPENDIUM DATA ──
+function _getDiscovered(){try{return JSON.parse(localStorage.getItem(TRIGGER_KEY)||'[]');}catch(e){return[];}}
+function _saveDiscovered(arr){localStorage.setItem(TRIGGER_KEY,JSON.stringify(arr));}
+
+function getCompendium(){
+  var disc=_getDiscovered();
+  return TRIGGERS.map(function(t){
+    var unlocked=disc.indexOf(t.id)>=0;
+    return{id:t.id,name:unlocked?t.name:'???',riddle:t.riddle,category:t.category,
+      effect:unlocked?t.effect:'???',unlocked:unlocked,reward:unlocked?t.reward:null};
+  });
+}
+
+function getCompendiumProgress(){
+  var disc=_getDiscovered();
+  return{found:disc.length,total:TRIGGERS.length,pct:Math.round(disc.length/TRIGGERS.length*100)};
+}
+
+// Expose
+window.checkTriggers=checkTriggers;
+window.getCompendium=getCompendium;
+window.getCompendiumProgress=getCompendiumProgress;
+window.INTERACTION_TRIGGERS=TRIGGERS;
+})();
+</script>
+
 <!-- ═══ COMPANION ABILITY ENGINE ═══ -->
 <script>
 (function(){
@@ -42159,6 +42329,13 @@ function _generateReport(){
   var spreads=recent.filter(function(e){return e.type==='spread';});
   var invasions=recent.filter(function(e){return e.type==='invaded';});
   var rareEvts=recent.filter(function(e){return e.type==='rare';});
+  var triggerEvts=recent.filter(function(e){return e.type==='trigger';});
+
+  // Trigger discoveries (compendium unlocks — the riddle moments)
+  if(triggerEvts.length>0){
+    var te=triggerEvts[0];
+    lines.push({icon:'🔮',text:'Secret discovered: '+te.name+'. Your '+te.plantName+' revealed something hidden.',color:'rgba(255,110,199,0.9)'});
+  }
 
   // Rare event stories (priority — these are the screenshot moments)
   if(rareEvts.length>0){
