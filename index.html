@@ -25793,6 +25793,26 @@ document.addEventListener('keydown', function(e) {
         var _compCount = 0;
         gh.forEach(function(p) { try { var t = hashToTraits(p.hash); if(t.companion >= 20) _compCount++; } catch(e){} });
         if (_compCount > 0) _spotFacts.push(_compCount + ' companion' + (_compCount>1?'s':'') + ' discovered');
+        // Synergy count
+        var _synCount = 0;
+        gh.forEach(function(p) { try { var t = hashToTraits(p.hash); var s = window.getSynergy ? getSynergy(t) : null; if(s) _synCount++; } catch(e){} });
+        if (_synCount > 0) _spotFacts.push(_synCount + ' synerg' + (_synCount>1?'ies':'y') + ' active');
+        // Season diversity
+        var _seasons = {}; gh.forEach(function(p) { try { var t = hashToTraits(p.hash); _seasons[t.season] = true; } catch(e){} });
+        var _sCount = Object.keys(_seasons).length;
+        if (_sCount === 4) _spotFacts.push('All 4 seasons represented — perfect diversity');
+        else if (_sCount >= 2) _spotFacts.push(_sCount + '/4 seasons collected');
+        // Musical diversity
+        if (window.getPlantSong) {
+          var _modes = {}; gh.forEach(function(p) { try { var s = getPlantSong(p.hash); if(s) _modes[s.mode] = true; } catch(e){} });
+          var _mCount = Object.keys(_modes).length;
+          if (_mCount >= 3) _spotFacts.push(_mCount + ' musical modes — your greenhouse is an orchestra');
+        }
+        // Compendium progress
+        if (window.getCompendiumProgress) {
+          var _cp = getCompendiumProgress();
+          if (_cp.found > 0) _spotFacts.push('Book of Secrets: ' + _cp.found + ' discovered');
+        }
         // Wild tab nudge for players who haven't tried it
         if(!localStorage.getItem('lw_first_drop')&&gh.length>=2) _spotFacts.push('Ready for the Wild? Drop plants on the map to claim territory.');
         if (_spotFacts.length > 0) {
