@@ -6670,7 +6670,28 @@ document.addEventListener('keydown', function(e) {
     {id:37,name:"Alchemist's Rose",  a:function(t){return t.pot%71===15;},        b:function(t){return t.flower%71===1;},     ea:1, theme:'mythical', fx:'rose petals shift to metallic gold at tips'},
     {id:38,name:"Beholder's Gaze",   a:function(t){return t.companion===38;},     b:function(t){return t.leafType%71===62;},  ea:2, theme:'mythical', fx:'beholder eye tracks largest frond with green scan'},
     {id:39,name:'Phoenix Pyre',      a:function(t){return t.companion===33;},     b:function(t){return t.stem%24===10;},      ea:2, theme:'mythical', fx:'phoenix perches on succulent, embers drift upward'},
-    {id:40,name:'Wise Owl Roost',    a:function(t){return t.companion===57;},     b:function(t){return t.stem%24===5;},       ea:1, theme:'mythical', fx:'owl perches in braid junction, golden eye blink'}
+    {id:40,name:'Wise Owl Roost',    a:function(t){return t.companion===57;},     b:function(t){return t.stem%24===5;},       ea:1, theme:'mythical', fx:'owl perches in braid junction, golden eye blink'},
+    // ── BOTANICAL (set-apr8) — based on real plant biology ──
+    {id:41,name:'Mycorrhizal Web',   a:function(t){return t.base%71===29;},       b:function(t){return t.leafType%71>=60;},   ea:2, theme:'nature', fx:'fungal threads connect mycelium to crystal roots'},
+    {id:42,name:'Carnivore Bog',     a:function(t){return t.base%71===18;},       b:function(t){return t.flower%71===34;},    ea:2, theme:'nature', fx:'pitcher bloom drips into mushroom compost below'},
+    {id:43,name:'Dew Collector',     a:function(t){return t.base%71===9;},        b:function(t){return t.leafType%71===22;},  ea:1, theme:'nature', fx:'morning fog pools on elephant ears above living moss'},
+    {id:44,name:'Sun Carpet',        a:function(t){return t.base%71===11;},       b:function(t){return t.season===1;},        ea:1, theme:'nature', fx:'desert sand shimmers in summer heat'},
+    {id:45,name:'Fern Hollow',       a:function(t){return t.leafType%71===6;},    b:function(t){return t.companion===73;},    ea:1, theme:'nature', fx:'fern fronds shelter mushroom sprite in dappled shade'},
+    {id:46,name:'Volcanic Orchid',   a:function(t){return t.base%71===10;},       b:function(t){return t.flower%71===10;},    ea:2, theme:'nature', fx:'orchid roots grip volcanic rock, steam wisps rise'},
+    {id:47,name:'Moonlit Lotus',     a:function(t){return t.flower%71===3;},      b:function(t){return t.base%71===59;},      ea:2, theme:'cosmic', fx:'lotus glows silver on moonstone dust, water rings expand'},
+    {id:48,name:'Frost Fern',        a:function(t){return t.leafType%71===6;},    b:function(t){return t.season===3;},        ea:1, theme:'elemental', fx:'ice crystals trace fern fractal pattern on fronds'},
+    {id:49,name:'Obsidian Mirror',   a:function(t){return t.base%71===17;},       b:function(t){return t.mutationName==='Glass Stem';}, ea:2, theme:'dark', fx:'glass stem reflects in obsidian surface, doubled silhouette'},
+    {id:50,name:'Butterfly Garden',  a:function(t){return t.companion===24;},     b:function(t){return t.flower%71===2;},     ea:1, theme:'nature', fx:'butterfly circles hibiscus bloom in lazy spiral'},
+    {id:51,name:'Toad Stool',        a:function(t){return t.companion===32;},     b:function(t){return t.base%71===18;},      ea:2, theme:'nature', fx:'toad sits in mushroom compost, content and mossy'},
+    {id:52,name:'Terrarium World',   a:function(t){return t.pot%60===7;},         b:function(t){return t.companion>=20&&t.companion<=31;}, ea:1, theme:'nature', fx:'glass terrarium frames tiny companion in miniature world'},
+    {id:53,name:'Meteor Orchid',     a:function(t){return t.base%71===28;},       b:function(t){return t.flower%71===10;},    ea:2, theme:'cosmic', fx:'orchid roots weave through meteorite, stardust on petals'},
+    {id:54,name:'Phoenix Ash Bed',   a:function(t){return t.base%71===57;},       b:function(t){return t.companion===33;},    ea:3, theme:'mythical', fx:'phoenix nests in its own ash, renewal cycle complete'},
+    {id:55,name:'Crystal Beetle',    a:function(t){return t.companion===78;},     b:function(t){return t.base%71===15;},      ea:2, theme:'cosmic', fx:'beetle carapace refracts crystal matrix light'},
+    {id:56,name:'Lantern Firefly',   a:function(t){return t.pot%60===21;},        b:function(t){return t.companion===23;},    ea:1, theme:'nature', fx:'firefly drifts into lantern pot, warm glow intensifies'},
+    {id:57,name:'Needle Rain',       a:function(t){return t.leafType%71===9;},    b:function(t){return t.season===2;},        ea:1, theme:'nature', fx:'autumn needles drift down like copper rain'},
+    {id:58,name:'Dragon Egg Hatch',  a:function(t){return t.pot%60===51;},        b:function(t){return t.flower%71===35;},    ea:2, theme:'mythical', fx:'dragon arum unfurls from cracked egg, steam and spice'},
+    {id:59,name:'Jellyfish Drift',   a:function(t){return t.companion===72;},     b:function(t){return t.aura%36>=5&&t.aura%36<=10;}, ea:2, theme:'cosmic', fx:'jellyfish trails bioluminescent tendrils through aurora aura'},
+    {id:60,name:'Will-o-Wisp Trail', a:function(t){return t.companion===79;},     b:function(t){return t.base%71===29;},      ea:2, theme:'dark', fx:'wisp drifts along mycelium network lines, eerie green glow'}
   ];
 
   // Get ALL synergies for a plant (capped at 3 displayed, +4 EA max)
@@ -31793,6 +31814,74 @@ function _doReproduction(weather, simMode) {
     break; // max 1 birth per zone per day
   }
 
+  // ── NATURAL EVENTS (weather-driven, per-plant, max 1/day) ──
+  if (!simMode) {
+    var _myWildForEvents = [];
+    try { _myWildForEvents = JSON.parse(localStorage.getItem('fg_wild_plants') || '[]'); } catch (e) {}
+    var _evtToday = new Date().toISOString().split('T')[0];
+    for (var ei = 0; ei < _myWildForEvents.length; ei++) {
+      var ep = _myWildForEvents[ei];
+      if (ep.lastEventDate === _evtToday) continue; // already had event today
+      var epAge = Math.floor((Date.now() - new Date(ep.date || Date.now()).getTime()) / 86400000);
+      if (epAge < 1) continue; // min 24h age
+
+      var evtFired = null;
+      var _rng = Math.random();
+
+      // Dew Crown — sunrise + humidity high (12% chance)
+      if (!evtFired && weather.rain > 0 && weather.temp > 5 && weather.temp < 25 && _rng < 0.12) {
+        evtFired = { event: 'dew_crown', name: 'Dew Crown', text: 'First light kissed your plant with dew', reward: { ea: 1 } };
+      }
+      // Sun Flare — hot clear day (10% chance)
+      if (!evtFired && weather.temp > 30 && weather.rain === 0 && Math.random() < 0.10) {
+        evtFired = { event: 'sun_flare', name: 'Sun Flare', text: 'Noon painted your plant in gold', reward: { hashes: 3 } };
+      }
+      // Companion Nap — nice day, has companion (15% chance)
+      if (!evtFired && ep.ea && ep.ea > 0 && weather.temp >= 20 && weather.temp <= 28 && Math.random() < 0.15) {
+        var _epTraits = null;
+        try { _epTraits = window.hashToTraits ? window.hashToTraits(ep.hash) : null; } catch (e) {}
+        if (_epTraits && _epTraits.companion >= 20) {
+          var cName = '';
+          try { cName = window.TRAIT_BANK.companions[_epTraits.companion].name; } catch (e) {}
+          evtFired = { event: 'companion_nap', name: 'Companion Nap', text: 'Your ' + cName + ' curled up for a nap in the shade' };
+        }
+      }
+      // Root Hum — old plant, mature soil (8% chance)
+      if (!evtFired && epAge > 30 && Math.random() < 0.08) {
+        evtFired = { event: 'root_hum', name: 'Root Hum', text: 'Old ground remembers. Your plant drew from deep earth.', reward: { hashes: 2 } };
+      }
+      // Starfall Dust — clear night, new moon (3% chance)
+      if (!evtFired && weather.rain === 0 && new Date().getHours() >= 22 && Math.random() < 0.03) {
+        var _moon = window._getMoonPhase ? window._getMoonPhase() : '';
+        if (_moon === 'new') {
+          evtFired = { event: 'starfall_dust', name: 'Starfall Dust', text: 'The sky shed what it cannot keep. Faint sparkle on your leaves.', reward: { ea: 1 } };
+        }
+      }
+      // Frost Nip — freezing, calm wind (5% chance, negative)
+      if (!evtFired && weather.temp < -2 && Math.random() < 0.05) {
+        evtFired = { event: 'frost_nip', name: 'Frost Nip', text: 'The cold bit your plant\'s smallest leaves.', reward: { ea: -1 } };
+      }
+
+      if (evtFired) {
+        ep.lastEventDate = _evtToday;
+        var _epName = '';
+        try { _epName = window.getPlantName ? window.getPlantName(ep.hash) : ''; } catch (e) {}
+        if (window._logWildEvent) window._logWildEvent({
+          type: 'natural', event: evtFired.event, name: evtFired.name,
+          hash: ep.hash, plantName: _epName, text: evtFired.text
+        });
+        // Apply rewards
+        if (evtFired.reward) {
+          if (evtFired.reward.hashes) {
+            try { var _hl = JSON.parse(localStorage.getItem('sws_hash_ledger') || '{}'); _hl.earned = (_hl.earned || 0) + evtFired.reward.hashes; localStorage.setItem('sws_hash_ledger', JSON.stringify(_hl)); } catch (e) {}
+          }
+          if (evtFired.reward.ea) { ep.ea = (ep.ea || 0) + evtFired.reward.ea; }
+        }
+      }
+    }
+    localStorage.setItem('fg_wild_plants', JSON.stringify(_myWildForEvents));
+  }
+
   // ── NEGLECT DECAY (plants that nobody tends decline) ──
   if (!simMode) {
     var _myWild = [];
@@ -42390,6 +42479,15 @@ function _generateReport(){
   if(triggerEvts.length>0){
     var te=triggerEvts[0];
     lines.push({icon:'🔮',text:'Secret discovered: '+te.name+'. Your '+te.plantName+' revealed something hidden.',color:'rgba(255,110,199,0.9)'});
+  }
+
+  // Natural event stories
+  var naturalEvts=recent.filter(function(e){return e.type==='natural';});
+  if(naturalEvts.length>0){
+    var ne=naturalEvts[naturalEvts.length-1]; // most recent
+    lines.push({icon:ne.event==='frost_nip'?'🥶':ne.event==='companion_nap'?'😴':ne.event==='starfall_dust'?'✨':'🌿',
+      text:ne.text||(ne.name+' happened to your '+ne.plantName+'.'),
+      color:ne.event==='frost_nip'?'rgba(160,196,232,0.9)':'var(--sage)'});
   }
 
   // Rare event stories (priority — these are the screenshot moments)
