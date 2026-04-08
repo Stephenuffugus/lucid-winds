@@ -32116,6 +32116,19 @@ function _doReproduction(weather, simMode) {
       }
     } catch (e) {}
     if (window.evaluateBloomChorus) try { evaluateBloomChorus(); } catch (e) {}
+    // Render home zone circle on map (owner only)
+    if (window._isInHomeZone && _map) {
+      if (window._homeZoneCircle) _map.removeLayer(window._homeZoneCircle);
+      try {
+        var _hz = JSON.parse(localStorage.getItem('lw_home_zone') || '{}');
+        if (_hz.enabled && _hz.lat && _hz.lng) {
+          window._homeZoneCircle = L.circle([_hz.lat, _hz.lng], {
+            radius: 200, color: 'rgba(232,220,200,0.15)', fillColor: 'rgba(232,220,200,0.03)',
+            weight: 1, dashArray: '8,12', fillOpacity: 0.03, interactive: false
+          }).addTo(_map);
+        }
+      } catch(e) {}
+    }
     // Render mesh connections on map
     if (window.getMeshLinks && _map) {
       if (window._meshLines) { for (var mli = 0; mli < window._meshLines.length; mli++) _map.removeLayer(window._meshLines[mli]); }
