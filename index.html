@@ -31140,6 +31140,8 @@ function activate(){
       }
     });
   }
+  // Beholder Omnisight — extended vision check
+  if(window._checkBeholderOmnisight)setTimeout(_checkBeholderOmnisight,3000);
   // Daily ecosystem check: reproduction + mesh + soil + chorus + phenotype
   // Runs once per day on Wild tab entry
   var _reproToday=localStorage.getItem('lw_repro_today');
@@ -42608,6 +42610,10 @@ function _populateTerritory(){
     _stat(Object.keys(wildSeasons).length+'/4','','seasons','rgba(200,168,75,0.8)')+
     _stat('🌸',pollen,'pollen','var(--gold)')+
     _stat(biomeInfo.icon,biomeInfo.name,'biome',biomeInfo.color||'var(--muted)');
+  // Territory influence
+  var _ti=window.getTerritoryInfluence?getTerritoryInfluence():{score:0,tier:'Seedling'};
+  el.innerHTML+=_stat('🏆',_ti.score,'influence','var(--gold)')+
+    _stat('📜',_ti.tier,'rank','var(--cream)');
 }
 })();
 </script>
@@ -44835,6 +44841,78 @@ window.addEventListener('load', function() {
   }, 3000);
 });
 
+})();
+</script>
+
+<!-- ═══ BEHOLDER OMNISIGHT (reveal ferals 1km) ═══ -->
+<script>
+(function(){
+'use strict';
+// Beholder companion reveals feral seed locations within 1km (normally 500m/75m)
+// Checks once per Wild tab visit
+window._checkBeholderOmnisight=function(){
+  // Does the player own a Beholder?
+  var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+  var hasBeholder=false;
+  for(var i=0;i<gh.length;i++){
+    try{var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;if(t&&t.companion===38)hasBeholder=true;}catch(e){}
+  }
+  if(!hasBeholder)return;
+
+  // Show extended feral info toast
+  var ferals=[];try{ferals=JSON.parse(localStorage.getItem('fg_ferals')||'[]');}catch(e){}
+  var feralCount=ferals.filter(function(f){return!f.collected;}).length;
+
+  // Count plants in extended range
+  var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+  var shared=0;
+  if(window._sharedMarkers){shared=Object.keys(window._sharedMarkers).length;}
+
+  if(feralCount>0||shared>0){
+    if(window._toast)window._toast('👁️ Beholder sees: '+feralCount+' feral seed'+(feralCount!==1?'s':'')+' · '+shared+' wild plant'+(shared!==1?'s':'')+' nearby');
+  }
+
+  // Log to compendium if first time
+  var _bSeen=localStorage.getItem('lw_beholder_seen');
+  if(!_bSeen){
+    localStorage.setItem('lw_beholder_seen','1');
+    if(window._logWildEvent)window._logWildEvent({type:'companion',event:'omnisight',companion:'Beholder',
+      text:'The Beholder\'s eye opened. It sees everything within 1km.'});
+  }
+};
+})();
+</script>
+
+<!-- ═══ TERRITORY INFLUENCE SCORE ═══ -->
+<script>
+(function(){
+'use strict';
+// Calculate your overall territory influence — how much of the local ecosystem you shape
+window.getTerritoryInfluence=function(){
+  var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+  var events=[];try{events=JSON.parse(localStorage.getItem('lw_wild_events')||'[]');}catch(e){}
+  var meshLinks=[];try{meshLinks=JSON.parse(localStorage.getItem('lw_mesh_links')||'[]');}catch(e){}
+  var commons=[];try{commons=JSON.parse(localStorage.getItem('lw_commons')||'[]');}catch(e){}
+
+  var score=0;
+  score+=wild.length*10; // 10 pts per wild plant
+  score+=events.filter(function(e){return e.type==='birth';}).length*5; // 5 pts per offspring
+  score+=events.filter(function(e){return e.type==='spread';}).length*8; // 8 pts per lineage spread
+  score+=meshLinks.filter(function(l){return l.stage>=1;}).length*15; // 15 pts per mesh link
+  score+=commons.length*50; // 50 pts per commons
+  // Bonus for diversity
+  var seasons={};wild.forEach(function(p){try{var t=window.hashToTraits?window.hashToTraits(p.hash):null;if(t)seasons[t.season]=true;}catch(e){}});
+  score+=Object.keys(seasons).length*20; // 20 pts per season represented
+
+  var tier='Seedling';
+  if(score>=500)tier='Gardener';
+  if(score>=1000)tier='Cultivator';
+  if(score>=2500)tier='Grove Keeper';
+  if(score>=5000)tier='Forest Warden';
+  if(score>=10000)tier='Ecosystem Architect';
+
+  return{score:score,tier:tier};
+};
 })();
 </script>
 
