@@ -31600,6 +31600,31 @@ function _collectFeralFromZone(zk, zonePlants) {
   }
   var feralHash = _breedHash(parentA.hash, parentB.hash);
 
+  // Biome-specific mutation chance
+  if (window._lastDetectedBiome && window.getBiomeInfo) {
+    var _fBiome = getBiomeInfo(window._lastDetectedBiome);
+    if (_fBiome.mutation && Math.random() < 0.08) { // 8% chance of biome mutation
+      // Inject mutation marker into hash byte 32-33
+      var _fhArr = feralHash.split('');
+      _fhArr[32] = 'f'; _fhArr[33] = '0'; // triggers mutation in hashToTraits
+      feralHash = _fhArr.join('');
+      if (window._logWildEvent) window._logWildEvent({type:'rare', event:'biome_mutation', biome:_fBiome.name, mutation:_fBiome.mutation});
+    }
+  }
+
+  // Biodiversity rarity boost
+  if (window._lastBiodiversity && window._lastBiodiversity.tier !== 'barren') {
+    var _bdBoost = {moderate:0.02, fertile:0.05, hotspot:0.10};
+    var _bdChance = _bdBoost[window._lastBiodiversity.tier] || 0;
+    if (_bdChance > 0 && Math.random() < _bdChance) {
+      // Boost hash to produce rarer traits by setting key bytes higher
+      var _bhArr = feralHash.split('');
+      _bhArr[8] = 'e'; // higher leaf rarity
+      _bhArr[22] = 'c'; // higher bloom rarity
+      feralHash = _bhArr.join('');
+    }
+  }
+
   // Determine grade for challenge difficulty
   var info = {};
   try {
@@ -43517,6 +43542,8 @@ function _generateReport(){
       lines.push({icon:'🌬️',text:'The wind carried a seed far from its parents. It landed somewhere unexpected.',color:'rgba(200,168,75,0.8)'});
     }else if(re.event==='albino_seedling'){
       lines.push({icon:'🤍',text:'A pale seedling appeared nearby. It won\'t last long without help.',color:'rgba(232,220,200,0.9)'});
+    }else if(re.event==='biome_mutation'){
+      lines.push({icon:'🧬',text:'Your '+re.biome+' biome produced a '+re.mutation+' mutation on a feral!',color:'rgba(255,110,199,0.9)'});
     }
   }
 
