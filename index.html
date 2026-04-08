@@ -42236,6 +42236,34 @@ function _renderForecast(){
   }
   h+='</div>';
   h+='<div class="bs-chimera">\ud83e\uddec <span>Gen '+offGen+' Chimera — <b>-'+(offGen-1)*2+' EA</b> but <b>2× climate immunity</b>.</span></div>';
+  // Monte Carlo simulation forecast
+  if(window.breedingForecast&&_plantA&&_partners[_pIdx]){
+    var _fc=breedingForecast(_plantA.hash,_partners[_pIdx].hash);
+    if(_fc){
+      h+='<div style="margin-top:0.4rem;padding:0.4rem;background:rgba(18,22,16,0.5);border:1px solid rgba(200,168,75,0.1);border-radius:6px;">';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;color:var(--gold);letter-spacing:0.08em;margin-bottom:0.2rem;">SIMULATION (20 offspring)</div>';
+      // Grade breakdown bar
+      h+='<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;margin-bottom:0.2rem;">';
+      var _gcColors={Common:'rgba(138,145,120,0.6)',Uncommon:'rgba(122,179,86,0.7)',Rare:'rgba(91,175,220,0.8)',Epic:'rgba(153,89,182,0.8)',Legendary:'rgba(200,168,75,0.8)',Mythic:'rgba(232,160,191,0.8)',Cosmic:'rgba(255,110,199,0.9)'};
+      var _gOrder=['Common','Uncommon','Rare','Epic','Legendary','Mythic','Cosmic'];
+      for(var _gi=0;_gi<_gOrder.length;_gi++){
+        var _gPct=_fc.grades[_gOrder[_gi]]||0;
+        if(_gPct>0)h+='<div style="width:'+_gPct+'%;background:'+_gcColors[_gOrder[_gi]]+';"></div>';
+      }
+      h+='</div>';
+      // Grade labels
+      h+='<div style="display:flex;flex-wrap:wrap;gap:4px;font-family:DM Mono,monospace;font-size:0.28rem;">';
+      for(var _gl=0;_gl<_gOrder.length;_gl++){
+        var _glPct=_fc.grades[_gOrder[_gl]]||0;
+        if(_glPct>0)h+='<span style="color:'+_gcColors[_gOrder[_gl]]+';">'+_gOrder[_gl]+' '+_glPct+'%</span>';
+      }
+      h+='</div>';
+      // EA + mutation + flower
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.3rem;color:var(--muted);margin-top:0.15rem;">';
+      h+='EA '+_fc.eaRange[0]+'-'+_fc.eaRange[1]+' · '+_fc.mutationChance+'% mutation · '+_fc.flowerChance+'% bloom';
+      h+='</div></div>';
+    }
+  }
 
   // Inbreeding depression warning
   var _mutA = iA.t.mutationName || 'None';
