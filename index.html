@@ -31578,8 +31578,29 @@ function _doReproduction(weather, simMode) {
     var seasonMod = 1.0;
     if ((parentA.season || 0) === curSeason || (parentB.season || 0) === curSeason) seasonMod = 1.3;
 
+    // Mesh bonus: plants in mesh reproduce faster
+    var meshMod = 1.0;
+    if (window.getMeshBonus) {
+      var _mA = getMeshBonus(parentA.hash || ''); var _mB = getMeshBonus(parentB.hash || '');
+      var _meshStage = Math.max(_mA.highestStage || 0, _mB.highestStage || 0);
+      if (_meshStage >= 3) meshMod = 1.3; else if (_meshStage >= 2) meshMod = 1.15;
+    }
+    // Soil bonus: mature soil boosts reproduction
+    var soilMod = 1.0;
+    if (window.getSoilInfo && baseLat) {
+      var _soilInfo = getSoilInfo(baseLat, baseLng);
+      if (_soilInfo.maturity >= 60) soilMod = 1.3; else if (_soilInfo.maturity >= 30) soilMod = 1.15;
+    }
+    // Companion ability modifier
+    var compMod = 1.0;
+    if (window.getCompanionReproMod) {
+      var _pAT = null; try { _pAT = window.hashToTraits(parentA.hash || ''); } catch (e) {}
+      var _pBT = null; try { _pBT = window.hashToTraits(parentB.hash || ''); } catch (e) {}
+      if (_pAT) compMod = Math.max(compMod, getCompanionReproMod(_pAT, weather));
+      if (_pBT) compMod = Math.max(compMod, getCompanionReproMod(_pBT, weather));
+    }
     // Final reproduction chance
-    var finalChance = REPRO_CHANCE * weatherMod * densityMod * seasonMod * popMod;
+    var finalChance = REPRO_CHANCE * weatherMod * densityMod * seasonMod * popMod * meshMod * soilMod * compMod;
     if (Math.random() >= finalChance) {
       if (simMode) simLog.push({ zone: zk, chance: Math.round(finalChance * 100) + '%', result: 'no breed' });
       continue;
