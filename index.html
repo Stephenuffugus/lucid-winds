@@ -4494,7 +4494,7 @@ window.onerror=function(msg,url,line,col,err){
       <div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;position:relative;"><div id="game-dew-fill" style="height:100%;background:linear-gradient(90deg,rgba(91,175,220,0.6),rgba(122,179,86,0.7));border-radius:2px;width:0%;transition:width 0.4s ease;"></div></div>
       <div style="font-family:DM Mono,monospace;font-size:clamp(.28rem,.8vw,.35rem);color:var(--muted);white-space:nowrap;"><span id="game-dew-progress">0</span>/30</div>
       <div id="game-streak" style="font-family:DM Mono,monospace;font-size:clamp(.28rem,.8vw,.35rem);color:var(--gold);white-space:nowrap;opacity:0.7;"></div>
-      <button id="daily-quest-btn" onclick="if(window._openDailyQuests)_openDailyQuests();" style="font-family:DM Mono,monospace;font-size:clamp(.28rem,.8vw,.35rem);color:var(--sage);background:rgba(122,179,86,0.08);border:1px solid rgba(122,179,86,0.15);border-radius:4px;padding:2px 6px;cursor:pointer;white-space:nowrap;min-height:28px;">QUESTS</button>
+      <button id="daily-quest-btn" onclick="if(window._openDailyQuests)_openDailyQuests();" style="display:none;font-family:DM Mono,monospace;font-size:clamp(.28rem,.8vw,.35rem);color:var(--sage);background:rgba(122,179,86,0.08);border:1px solid rgba(122,179,86,0.15);border-radius:4px;padding:2px 6px;cursor:pointer;white-space:nowrap;min-height:28px;">QUESTS</button>
     </div>
   </div>
   <div class="fg-pk" id="fg-pk"></div>
@@ -4986,7 +4986,7 @@ window.onerror=function(msg,url,line,col,err){
       <div class="kb-rank" id="kb-rank">Lvl 1 · Seedling · 0 / 25 XP</div>
     </div>
     <div id="kb-dew" style="font-family:DM Mono,monospace;font-size:0.35rem;color:rgba(91,175,220,0.85);padding:3px 7px;background:rgba(91,175,220,0.06);border:1px solid rgba(91,175,220,0.1);border-radius:4px;white-space:nowrap;cursor:pointer;" onclick="if(window.openEconModal)openEconModal();">0 dew</div>
-    <div id="kb-compendium" onclick="if(window._openCompendiumUI)_openCompendiumUI();" style="font-family:DM Mono,monospace;font-size:0.35rem;color:rgba(200,168,75,0.85);padding:3px 7px;background:rgba(200,168,75,0.06);border:1px solid rgba(200,168,75,0.1);border-radius:4px;white-space:nowrap;cursor:pointer;">📖 <span id="kb-comp-count">0</span></div>
+    <div id="kb-compendium" onclick="if(window._openCompendiumUI)_openCompendiumUI();" style="display:none;font-family:DM Mono,monospace;font-size:0.35rem;color:rgba(200,168,75,0.85);padding:3px 7px;background:rgba(200,168,75,0.06);border:1px solid rgba(200,168,75,0.1);border-radius:4px;white-space:nowrap;cursor:pointer;">📖 <span id="kb-comp-count">0</span></div>
     <div id="pw-lb-toggle" onclick="PW_UI.toggleLeaderboard()"><span id="lb-my-rank">#—</span> <span style="font-size:0.4rem;">▼</span></div>
   </div>
   <div id="pw-lb-dropdown">
@@ -43910,6 +43910,8 @@ function _claimStreak(){
 
 function _updateQuestBadge(){
   var btn=document.getElementById('daily-quest-btn');if(!btn)return;
+  // Progressive disclosure: show after first plant
+  btn.style.display=(window.canSee&&window.canSee.questPanel())?'':'none';
   var d=_getQuests();
   var done=d.quests.filter(function(q){return q.done;}).length;
   if(d.claimed){btn.textContent='✅ '+done+'/3';btn.style.borderColor='rgba(122,179,86,0.4)';}
@@ -44389,6 +44391,9 @@ window._openCompendiumUI=function(){
 // Update compendium count in keeper bar
 function _updateCompCount(){
   var el=document.getElementById('kb-comp-count');if(!el)return;
+  // Progressive disclosure: only show compendium button when earned
+  var compBtn=document.getElementById('kb-compendium');
+  if(compBtn){compBtn.style.display=(window.canSee&&window.canSee.compendium())?'':'none';}
   var progress=window.getCompendiumProgress?window.getCompendiumProgress():{found:0};
   // Count synergies from greenhouse
   var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
@@ -44863,6 +44868,60 @@ window.addEventListener('load', function() {
   }, 3000);
 });
 
+})();
+</script>
+
+<!-- ═══ PROGRESSIVE DISCLOSURE (hide complexity from new players) ═══ -->
+<script>
+(function(){
+'use strict';
+// Gate advanced features based on player progress
+// Each returns true if the feature should be VISIBLE
+window.canSee = {
+  compendium: function() {
+    // Show after first synergy or 5+ plants
+    var gh=[]; try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+    if(gh.length>=5)return true;
+    var disc=[];try{disc=JSON.parse(localStorage.getItem('lw_triggers_found')||'[]');}catch(e){}
+    return disc.length>0;
+  },
+  breeding: function() {
+    // Show after 2+ plants
+    var gh=[]; try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+    return gh.length>=2;
+  },
+  wildTab: function() {
+    // Always visible but prompt changes
+    var gh=[]; try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+    return gh.length>=2;
+  },
+  meshInfo: function() {
+    // Show after first wild drop
+    return !!localStorage.getItem('lw_first_drop');
+  },
+  soilInfo: function() {
+    return !!localStorage.getItem('lw_first_drop');
+  },
+  biomeInfo: function() {
+    return !!localStorage.getItem('lw_first_drop');
+  },
+  territory: function() {
+    var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+    return wild.length>=3;
+  },
+  constellation: function() {
+    var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+    return wild.length>=3;
+  },
+  breedForecast: function() {
+    return !!localStorage.getItem('lw_first_breed');
+  },
+  questPanel: function() {
+    // Show after first game win
+    var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+    return gh.length>=1;
+  }
+};
 })();
 </script>
 
