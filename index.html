@@ -4867,13 +4867,21 @@ window.onerror=function(msg,url,line,col,err){
   <div class="grove-panel" id="panel-wild" style="padding:0!important;padding-bottom:0!important;">
     <!-- WILD LOG BAR -->
     <div class="wild-log">
-      <div class="wild-log-stat" onclick="FG_Wild._logTip('Your plants on the map. Drop up to 3 per day.')"><div class="wild-log-val" id="w-count">0</div><div class="wild-log-lbl">planted</div></div>
+      <div class="wild-log-stat" onclick="if(window._toggleTerritory)_toggleTerritory();"><div class="wild-log-val" id="w-count">0</div><div class="wild-log-lbl">planted</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Daily drops remaining. Resets at midnight.')"><div class="wild-log-val" id="w-drops-left">3</div><div class="wild-log-lbl">drops</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Dew Drops \u2014 earned by harvesting. Use to water plants or skip nursery days.')"><div class="wild-log-val" style="color:rgba(91,175,220,0.9)" id="w-dew">0</div><div class="wild-log-lbl">dew</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Pollen \u2014 earned passively from planted wild plants. Rarer plants earn faster.')"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl">pollen</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Meters walked. Keep moving to find feral seeds!')"><div class="wild-log-val" style="color:var(--sage)" id="w-steps">0</div><div class="wild-log-lbl">meters</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Your biome — detected from real geography. Affects feral rarity and mutations.')"><div class="wild-log-val" style="font-size:0.7rem;" id="w-biome">🏡</div><div class="wild-log-lbl" id="w-biome-name">scanning</div></div>
       <div class="wild-log-wind" id="w-wind"><img src="assets/games/wild/wild-compass-v4.png" loading="lazy" style="width:44px;height:44px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));" alt=""><span></span></div>
+    </div>
+    <!-- TERRITORY OVERVIEW (tap planted count to expand) -->
+    <div id="w-territory" style="display:none;position:fixed;top:60px;left:8px;right:8px;z-index:998;background:rgba(13,16,12,0.94);border:1px solid rgba(122,179,86,0.12);border-radius:10px;padding:0.5rem;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:panelFadeIn 0.2s ease;max-width:360px;margin:0 auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
+        <div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--gold);letter-spacing:0.1em;">YOUR TERRITORY</div>
+        <button onclick="document.getElementById('w-territory').style.display='none';" style="background:none;border:none;color:var(--muted);font-size:0.5rem;cursor:pointer;min-height:36px;min-width:36px;">✕</button>
+      </div>
+      <div id="w-territory-stats" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;font-family:DM Mono,monospace;font-size:0.32rem;text-align:center;"></div>
     </div>
     <!-- RECENTER BUTTON -->
     <button id="w-recenter" onclick="if(window.FG_Wild&&window.FG_Wild._recenter)FG_Wild._recenter();" style="display:none;position:fixed;bottom:calc(140px + env(safe-area-inset-bottom,0px));left:12px;z-index:999;width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(74,144,217,0.3);background:rgba(13,16,12,0.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,0.4);-webkit-tap-highlight-color:transparent;color:rgba(74,144,217,0.8);font-size:0.7rem;">&#8982;</button>
@@ -42363,6 +42371,62 @@ window.bsExecuteBreed=function(){
   }
   // closeBreedScreen called above before async — don't call again here
 };
+})();
+</script>
+
+<!-- ═══ TERRITORY OVERVIEW PANEL ═══ -->
+<script>
+(function(){
+'use strict';
+window._toggleTerritory=function(){
+  var panel=document.getElementById('w-territory');
+  if(!panel)return;
+  if(panel.style.display==='none'||!panel.style.display){
+    _populateTerritory();
+    panel.style.display='block';
+  }else{panel.style.display='none';}
+};
+
+function _populateTerritory(){
+  var el=document.getElementById('w-territory-stats');if(!el)return;
+  var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+  var events=[];try{events=JSON.parse(localStorage.getItem('lw_wild_events')||'[]');}catch(e){}
+  var meshLinks=[];try{meshLinks=JSON.parse(localStorage.getItem('lw_mesh_links')||'[]');}catch(e){}
+  var commons=[];try{commons=JSON.parse(localStorage.getItem('lw_commons')||'[]');}catch(e){}
+  var pollen=0;try{pollen=parseInt(localStorage.getItem('fg_pollen')||'0');}catch(e){}
+
+  // Count offspring from events
+  var birthCount=events.filter(function(e){return e.type==='birth';}).length;
+  var spreadCount=events.filter(function(e){return e.type==='spread';}).length;
+  // Seasons in wild
+  var wildSeasons={};
+  wild.forEach(function(p){try{var t=window.hashToTraits?window.hashToTraits(p.hash):null;if(t)wildSeasons[t.season]=true;}catch(e){}});
+  // Highest EA in wild
+  var maxEA=0;wild.forEach(function(p){if((p.ea||0)>maxEA)maxEA=p.ea||0;});
+  // Active mesh links
+  var activeMesh=meshLinks.filter(function(l){return l.stage>=1;}).length;
+  // Biome
+  var biome=window._lastDetectedBiome||'unknown';
+  var biomeInfo=window.getBiomeInfo?window.getBiomeInfo(biome):{icon:'?',name:'Scanning'};
+
+  function _stat(icon,val,label,color){
+    return'<div style="padding:4px;background:rgba(18,22,16,0.5);border:1px solid rgba(74,124,53,0.08);border-radius:6px;">'
+      +'<div style="font-size:0.55rem;">'+icon+'</div>'
+      +'<div style="font-size:0.45rem;color:'+(color||'var(--cream)')+';font-weight:700;">'+val+'</div>'
+      +'<div style="font-size:0.25rem;color:var(--muted);">'+label+'</div></div>';
+  }
+
+  el.innerHTML=
+    _stat('🌱',wild.length,'planted','var(--sage)')+
+    _stat('🧬',birthCount,'offspring','var(--gold)')+
+    _stat('🌿',spreadCount,'spread','rgba(122,179,86,0.9)')+
+    _stat('⚡',maxEA,'peak EA','var(--cream)')+
+    _stat('🍄',activeMesh,'mesh links','var(--sage)')+
+    _stat('🌳',commons.length,'commons','var(--gold)')+
+    _stat(Object.keys(wildSeasons).length+'/4','','seasons','rgba(200,168,75,0.8)')+
+    _stat('🌸',pollen,'pollen','var(--gold)')+
+    _stat(biomeInfo.icon,biomeInfo.name,'biome',biomeInfo.color||'var(--muted)');
+}
 })();
 </script>
 
