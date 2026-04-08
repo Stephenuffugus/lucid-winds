@@ -41214,10 +41214,9 @@ function _showDailyReward() {
   var today = _today();
 
   // Already claimed today — triple guard
-  if (daily.lastClaim === today) { console.log('[Daily] Already claimed (JSON)'); return; }
-  if (localStorage.getItem('lw_daily_claimed') === today) { console.log('[Daily] Already claimed (flag)'); return; }
-  // Guard 3: session flag (survives nothing clearing localStorage mid-session)
-  if (window._dailyClaimedThisSession) { console.log('[Daily] Already claimed (session)'); return; }
+  if (daily.lastClaim === today) return;
+  if (localStorage.getItem('lw_daily_claimed') === today) return;
+  if (window._dailyClaimedThisSession) return;
 
   // Streak logic
   if (daily.lastClaim === _yesterday()) {
@@ -41235,7 +41234,6 @@ function _showDailyReward() {
   _saveDaily(daily);
   localStorage.setItem('lw_daily_claimed', today);
   window._dailyClaimedThisSession = true;
-  console.log('[Daily] Claimed and saved. today='+today+' stored='+JSON.stringify(daily));
 
   // ── MONTHLY CALENDAR MODAL ──
   var now = new Date();
