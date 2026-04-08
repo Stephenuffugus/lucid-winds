@@ -31615,7 +31615,7 @@ function _doReproduction(weather, simMode) {
     for (var _adx = -1; _adx <= 1; _adx++) {
       for (var _ady = -1; _ady <= 1; _ady++) {
         if (_adx === 0 && _ady === 0) continue; // skip self
-        var _adjKey = (_zkLat + _adx * _adjStep).toFixed(3) + ',' + (_zkLng + _ady * _adjStep).toFixed(3);
+        var _adjKey = (Math.round((_zkLat + _adx * _adjStep) / _adjStep) * _adjStep).toFixed(4) + ',' + (Math.round((_zkLng + _ady * _adjStep) / _adjStep) * _adjStep).toFixed(4);
         if (zones[_adjKey]) {
           for (var _ap = 0; _ap < zones[_adjKey].length; _ap++) {
             var _isDup = false;
