@@ -32302,8 +32302,8 @@ function _doReproduction(weather, simMode) {
       }
     } catch (e) {}
     if (window.evaluateBloomChorus) try { evaluateBloomChorus(); } catch (e) {}
-    // Render constellation lines (connect your wild plants)
-    if (_map) {
+    // Render constellation lines (connect your wild plants — gated by progressive disclosure)
+    if (_map && (!window.canSee || window.canSee.constellation())) {
       if (window._constellationLines) { for (var _cli = 0; _cli < window._constellationLines.length; _cli++) _map.removeLayer(window._constellationLines[_cli]); }
       window._constellationLines = [];
       var _myWildPlants = [];
@@ -32344,8 +32344,8 @@ function _doReproduction(weather, simMode) {
         }
       } catch(e) {}
     }
-    // Render mesh connections on map
-    if (window.getMeshLinks && _map) {
+    // Render mesh connections on map (gated by progressive disclosure)
+    if (window.getMeshLinks && _map && (!window.canSee || window.canSee.meshInfo())) {
       if (window._meshLines) { for (var mli = 0; mli < window._meshLines.length; mli++) _map.removeLayer(window._meshLines[mli]); }
       window._meshLines = [];
       var meshLinks = getMeshLinks();
@@ -43964,14 +43964,10 @@ if(_origE){
     return result;
   };
 }
-// Hook into switchTab for wild visit tracking
-var _origST2=window.switchTab;
-if(_origST2){
-  window.switchTab=function(tab){
-    _origST2(tab);
-    if(tab==='wild')_trackQuest('wildVisited',1);
-  };
-}
+// Hook into switchTab for wild visit tracking (uses hook system)
+if(window._addSwitchTabHook)_addSwitchTabHook(function(tab){
+  if(tab==='wild')_trackQuest('wildVisited',1);
+});
 // Hook into carousel view for plant inspection
 var _origOC=window.openCarousel;
 if(_origOC){
@@ -44611,14 +44607,10 @@ function _updateNextStep(){
   _nsVisible=true;
 }
 
-// Update on tab switch
-var _origST=window.switchTab;
-if(_origST){
-  window.switchTab=function(tab){
-    _origST(tab);
-    setTimeout(_updateNextStep,200);
-  };
-}
+// Update on tab switch (uses hook system)
+if(window._addSwitchTabHook)_addSwitchTabHook(function(){
+  setTimeout(_updateNextStep,200);
+});
 
 // Update on key events
 window.addEventListener('lw-hash-earned',function(){setTimeout(_updateNextStep,500);});
@@ -44871,6 +44863,64 @@ window.addEventListener('load', function() {
 })();
 </script>
 
+<!-- ═══ SWITCH TAB HOOK SYSTEM (replaces fragile monkey-patch chain) ═══ -->
+<script>
+(function(){
+'use strict';
+// Register hooks instead of wrapping switchTab repeatedly
+// Hooks fire AFTER the original switchTab completes
+window._switchTabHooks=[];
+window._addSwitchTabHook=function(fn){
+  if(typeof fn==='function')window._switchTabHooks.push(fn);
+};
+// Applied at end of file as the FINAL wrapper
+})();
+</script>
+
+<!-- ═══ IN-MEMORY PLANT CACHE (avoid 138 redundant JSON.parse calls) ═══ -->
+<script>
+(function(){
+'use strict';
+// Shared in-memory cache for greenhouse and wild plants
+// Invalidated on every write — reads are instant
+var _ghCache=null, _ghCacheTick=0;
+var _wildCache=null, _wildCacheTick=0;
+var _nurCache=null, _nurCacheTick=0;
+
+window._plantCache={
+  greenhouse:function(){
+    var raw=localStorage.getItem('sws_greenhouse');
+    var tick=raw?raw.length:0; // cheap change detection
+    if(_ghCache&&_ghCacheTick===tick)return _ghCache;
+    try{_ghCache=JSON.parse(raw||'[]');}catch(e){_ghCache=[];}
+    _ghCacheTick=tick;
+    return _ghCache;
+  },
+  wild:function(){
+    var raw=localStorage.getItem('fg_wild_plants');
+    var tick=raw?raw.length:0;
+    if(_wildCache&&_wildCacheTick===tick)return _wildCache;
+    try{_wildCache=JSON.parse(raw||'[]');}catch(e){_wildCache=[];}
+    _wildCacheTick=tick;
+    return _wildCache;
+  },
+  nursery:function(){
+    var raw=localStorage.getItem('sws_nursery');
+    var tick=raw?raw.length:0;
+    if(_nurCache&&_nurCacheTick===tick)return _nurCache;
+    try{_nurCache=JSON.parse(raw||'[]');}catch(e){_nurCache=[];}
+    _nurCacheTick=tick;
+    return _nurCache;
+  },
+  invalidate:function(which){
+    if(!which||which==='greenhouse'){_ghCache=null;_ghCacheTick=0;}
+    if(!which||which==='wild'){_wildCache=null;_wildCacheTick=0;}
+    if(!which||which==='nursery'){_nurCache=null;_nurCacheTick=0;}
+  }
+};
+})();
+</script>
+
 <!-- ═══ PROGRESSIVE DISCLOSURE (hide complexity from new players) ═══ -->
 <script>
 (function(){
@@ -44997,17 +45047,28 @@ window.getTerritoryInfluence=function(){
 })();
 </script>
 
-<!-- ═══ VIEW TRANSITIONS (cinematic tab switching — must be LAST wrapper) ═══ -->
+<!-- ═══ FINAL SWITCH TAB WRAPPER (View Transitions + hook dispatch) ═══ -->
 <script>
 (function(){
 'use strict';
-if (typeof document.startViewTransition !== 'function') return;
-var _vtOrig = window.switchTab;
-if (!_vtOrig) return;
+var _finalOrig = window.switchTab;
+if (!_finalOrig) return;
+var _hasVT = typeof document.startViewTransition === 'function';
 window.switchTab = function(tab) {
-  try {
-    document.startViewTransition(function() { _vtOrig(tab); });
-  } catch(e) { _vtOrig(tab); }
+  // Core switch with optional View Transition
+  function _doSwitch() {
+    _finalOrig(tab);
+    // Dispatch all registered hooks
+    var hooks = window._switchTabHooks || [];
+    for (var i = 0; i < hooks.length; i++) {
+      try { hooks[i](tab); } catch(e) {}
+    }
+  }
+  if (_hasVT) {
+    try { document.startViewTransition(_doSwitch); } catch(e) { _doSwitch(); }
+  } else {
+    _doSwitch();
+  }
 };
 })();
 </script>
