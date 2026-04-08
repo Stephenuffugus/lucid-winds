@@ -27372,6 +27372,7 @@ document.addEventListener('keydown', function(e) {
 
   window.openPlantActionDrawer = function(plant, context, plantIndex) {
     _padDrawerPlant  = plant;
+    window._padBreedPlant = plant; // Expose for inline onclick in breed button
     _padDrawerCtx    = context || 'greenhouse';
     var titleEl = document.getElementById('pad-drawer-title');
     var rowEl   = document.getElementById('pad-btn-row');
@@ -27398,10 +27399,10 @@ document.addEventListener('keydown', function(e) {
       var idx = (typeof plantIndex === 'number') ? plantIndex : -1;
       btns += '<button class="pad-btn" onclick="viewPlantDetails('+idx+')" style="border-color:rgba(122,179,86,0.25);">' +
               '<span class="pad-btn-icon">🔍</span><span class="pad-btn-label">INSPECT</span></button>';
-      btns += '<button class="pad-btn" onclick="var _bp=_padDrawerPlant;closePlantActionDrawer();if(window.openBreedScreen&&_bp)openBreedScreen(_bp,\'greenhouse\');" style="border-color:rgba(200,168,75,0.25);">' +
+      btns += '<button class="pad-btn" onclick="var _bp=window._padBreedPlant;closePlantActionDrawer();if(window.openBreedScreen&&_bp)openBreedScreen(_bp,\'greenhouse\');" style="border-color:rgba(200,168,75,0.25);">' +
               '<span class="pad-btn-icon">🧬</span><span class="pad-btn-label">BREED</span></button>';
       if(plant.parentAHash||plant.parentBHash||(plant.generation&&plant.generation>1)){
-        btns += '<button class="pad-btn" onclick="if(window.openAncestryViewer)openAncestryViewer(_padDrawerPlant);" style="border-color:rgba(200,168,75,0.15);">' +
+        btns += '<button class="pad-btn" onclick="if(window.openAncestryViewer)openAncestryViewer(window._padBreedPlant);" style="border-color:rgba(200,168,75,0.15);">' +
                 '<span class="pad-btn-icon">🌳</span><span class="pad-btn-label">ANCESTRY</span></button>';
       }
       btns += '<button class="pad-btn compost" onclick="confirmCompost('+idx+')">' +
