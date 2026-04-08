@@ -33119,14 +33119,11 @@ function _doHarvest(p){
 
   var dewReward={Common:3,Uncommon:5,Rare:8,Epic:12,Legendary:18,Mythic:25,Cosmic:40};
   var baseReward=dewReward[p.grade]||3;
-  // Heron Precision Strike: 2x harvest reward
+  // Heron Precision Strike: 2x harvest IF the plant being harvested HAS a Heron
+  // (was incorrectly applied globally — fixed to check the target plant only)
   try {
-    var _gh4H=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
-    // Check if ANY greenhouse plant has Heron companion (active hunter bonus)
-    for (var _h4i=0;_h4i<_gh4H.length;_h4i++){
-      var _h4t=window.hashToTraits?window.hashToTraits(_gh4H[_h4i].hash):null;
-      if (_h4t&&_h4t.companion===36){baseReward*=2;break;} // Great Blue Heron idx 36
-    }
+    var _harvestTraits=window.hashToTraits?window.hashToTraits(p.hash):null;
+    if(_harvestTraits&&_harvestTraits.companion===36)baseReward*=2; // Great Blue Heron on THIS plant
   } catch(e){}
   // Forager temperament: +10% harvest bonus
   try {
