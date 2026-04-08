@@ -43378,6 +43378,14 @@ function _generateReport(){
     lines.push({icon:'💀',text:'Your '+(fe.name||'plant')+' went feral from neglect. Its genetics live on in the wild.',color:'rgba(192,112,112,0.7)'});
   }
 
+  // Biome-related stories
+  if(lines.length<3&&window._lastDetectedBiome&&window.getBiomeInfo){
+    var _bReport=getBiomeInfo(window._lastDetectedBiome);
+    if(_bReport.mutation){
+      lines.push({icon:_bReport.icon,text:'Your '+_bReport.name+' biome has a chance of producing '+_bReport.mutation+' mutations.',color:_bReport.color});
+    }
+  }
+
   // If nothing happened
   if(lines.length===0){
     var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
