@@ -31620,7 +31620,8 @@ function _doReproduction(weather, simMode) {
       parentB: parentB.hash.slice(0, 8),
       originDropperUid: parentA.originDropperUid || parentB.originDropperUid || parentA.ownerUid || parentB.ownerUid || 'wild',
       originDropperName: parentA.originDropperName || parentB.originDropperName || parentA.ownerName || parentB.ownerName || 'Wild',
-      weatherAtBirth: { rain: weather.rain, temp: weather.temp }
+      weatherAtBirth: { rain: weather.rain, temp: weather.temp },
+      geohash: window._geoHash ? window._geoHash(targetLat, targetLng) : ''
     };
 
     if (simMode) {
@@ -31744,7 +31745,8 @@ function _doReproduction(weather, simMode) {
         zone: _zoneKey(spontLat, spontLng),
         droppedAt: new Date().toISOString(),
         wildBorn: true, spontaneous: true,
-        parentA: 'nature', parentB: 'nature'
+        parentA: 'nature', parentB: 'nature',
+        geohash: window._geoHash ? window._geoHash(spontLat, spontLng) : ''
       };
       window.db.collection('wildDrops').doc(spontDoc).set(spontData).catch(function() {});
       births++;
@@ -41623,6 +41625,24 @@ window.bsExecuteBreed=function(){
 })();
 </script>
 
+<!-- ═══ GEOHASH UTILITY (for Firestore geo-queries at scale) ═══ -->
+<script>
+// Simple geohash encoder — precision 7 (~150m cells), good enough for geo-range queries
+window._geoHash=function(lat,lng,precision){
+  precision=precision||7;
+  var CHARS='0123456789bcdefghjkmnpqrstuvwxyz';
+  var minLat=-90,maxLat=90,minLng=-180,maxLng=180;
+  var isLng=true,bit=0,ch=0,hash='';
+  while(hash.length<precision){
+    if(isLng){var mid=(minLng+maxLng)/2;if(lng>=mid){ch|=(1<<(4-bit));minLng=mid;}else{maxLng=mid;}}
+    else{var mid2=(minLat+maxLat)/2;if(lat>=mid2){ch|=(1<<(4-bit));minLat=mid2;}else{maxLat=mid2;}}
+    isLng=!isLng;bit++;
+    if(bit===5){hash+=CHARS[ch];bit=0;ch=0;}
+  }
+  return hash;
+};
+</script>
+
 <!-- ═══ HOME ZONE PRIVACY ═══ -->
 <script>
 (function(){
@@ -41881,7 +41901,7 @@ window._trackQuest=_trackQuest;
 'use strict';
 var EVT_KEY='lw_wild_events';
 var REPORT_KEY='lw_morning_report';
-var MAX_EVENTS=100;
+var MAX_EVENTS=500; // Capped for localStorage safety — FIFO eviction
 
 // ── EVENT TYPES ──
 // birth: { type:'birth', hash, parentA, parentB, grade, ea, zone, date }
