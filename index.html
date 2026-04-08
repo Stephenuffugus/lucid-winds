@@ -32193,6 +32193,55 @@ function _doReproduction(weather, simMode) {
     break; // max 1 birth per zone per day
   }
 
+  // ── COMPANION ABILITY CHECKS (daily) ──
+  if (!simMode) {
+    var _myWildComp = [];
+    try { _myWildComp = JSON.parse(localStorage.getItem('fg_wild_plants') || '[]'); } catch(e) {}
+    for (var _ci = 0; _ci < _myWildComp.length; _ci++) {
+      var _cp = _myWildComp[_ci];
+      if (!_cp.hash || !_cp.lat) continue;
+      var _ct = null;
+      try { _ct = window.hashToTraits ? window.hashToTraits(_cp.hash) : null; } catch(e) {}
+      if (!_ct) continue;
+      var _cInfo = window.getCompanionInfo ? getCompanionInfo(_ct) : null;
+      if (!_cInfo || !_cInfo.abilityKey) continue;
+
+      // Toad Rain Caller — 30% auto-water chance
+      if (_cInfo.abilityKey === 'rainCaller' && Math.random() < 0.3) {
+        _cp.lastWatered = new Date().toISOString();
+        _cp.neglectDecay = 0;
+        if (window._logWildEvent) window._logWildEvent({type:'companion',event:'rain_caller',
+          hash:_cp.hash,companion:_cInfo.name,text:_cInfo.name+' called rain — your plant was watered'});
+      }
+
+      // Butterfly Drift Pollination — 20% free cross-pollinate to random ally
+      if (_cInfo.abilityKey === 'driftPollen' && Math.random() < 0.2 && _myWildComp.length > 1) {
+        var _dTarget = _myWildComp[Math.floor(Math.random() * _myWildComp.length)];
+        if (_dTarget.hash !== _cp.hash) {
+          var _polReward = 3 + Math.floor(Math.random() * 8);
+          try { var _pol = parseInt(localStorage.getItem('fg_pollen') || '0'); localStorage.setItem('fg_pollen', String(_pol + _polReward)); } catch(e) {}
+          if (window._logWildEvent) window._logWildEvent({type:'companion',event:'drift_pollen',
+            hash:_cp.hash,companion:_cInfo.name,text:'Butterfly carried pollen to a distant ally — +'+_polReward+' pollen'});
+        }
+      }
+
+      // Raccoon Scavenger — check if any nearby plants were displaced, bank fertilizer
+      if (_cInfo.abilityKey === 'scavenger') {
+        var _recentInvasions = [];
+        try { var _evts = JSON.parse(localStorage.getItem('lw_wild_events') || '[]'); _recentInvasions = _evts.filter(function(e) { return e.type === 'invaded' && Date.now() - (e.ts || 0) < 86400000; }); } catch(e) {}
+        if (_recentInvasions.length > 0) {
+          var _fertBank = parseInt(localStorage.getItem('lw_raccoon_fert') || '0');
+          if (_fertBank < 3) {
+            localStorage.setItem('lw_raccoon_fert', String(_fertBank + 1));
+            if (window._logWildEvent) window._logWildEvent({type:'companion',event:'scavenger',
+              hash:_cp.hash,companion:_cInfo.name,text:'Raccoon scavenged 1 fertilizer from a displaced plant'});
+          }
+        }
+      }
+    }
+    localStorage.setItem('fg_wild_plants', JSON.stringify(_myWildComp));
+  }
+
   // ── DAILY ECOSYSTEM EVALUATION ──
   if (!simMode) {
     if (window.evaluateMesh) try { evaluateMesh(); } catch (e) {}
@@ -43842,6 +43891,13 @@ function _generateReport(){
   if(triggerEvts.length>0){
     var te=triggerEvts[0];
     lines.push({icon:'🔮',text:'Secret discovered: '+te.name+'. Your '+te.plantName+' revealed something hidden.',color:'rgba(255,110,199,0.9)'});
+  }
+
+  // Companion ability stories
+  var compEvts=recent.filter(function(e){return e.type==='companion';});
+  if(compEvts.length>0){
+    var ce2=compEvts[compEvts.length-1];
+    lines.push({icon:'🐾',text:ce2.text||ce2.companion+' did something helpful.',color:'var(--sage)'});
   }
 
   // Phenotype revelation stories
