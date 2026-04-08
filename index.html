@@ -30887,6 +30887,20 @@ function _e(v){if(window._e)window._e(v);}
 function _play(id){if(window._play)window._play(id);}
 var TILES='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 var MAX_DROPS=3,MAX_POUCH=3,COLLECT_RANGE=75,ZONE_SIZE=0.001;
+// Dynamic collect range — Wanderer temperament adds 50m
+function _getCollectRange(){
+  var range=COLLECT_RANGE;
+  try{
+    var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+    for(var i=0;i<gh.length;i++){
+      var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;
+      if(!t)continue;
+      var ci=window.getCompanionInfo?getCompanionInfo(t):null;
+      if(ci&&ci.temperament&&ci.temperament.feralRange){range+=ci.temperament.feralRange;break;}
+    }
+  }catch(e){}
+  return range;
+}
 // ═══ ANTI-FARMING: server-side economy protection ═══
 // Source of truth: Firestore vaults/{uid}/meta/dailyStats
 // localStorage is a read cache only — never trusted for enforcement
@@ -31694,8 +31708,9 @@ function _collectFeralFromZone(zk, zonePlants) {
   var parts = zk.split(',');
   var cLat = parseFloat(parts[0]), cLng = parseFloat(parts[1]);
   var d = _dist(_uLat, _uLng, cLat, cLng);
-  if (d > COLLECT_RANGE) {
-    _toast('Walk closer! ' + Math.round(d * 3.281) + ' ft away. Need within ' + Math.round(COLLECT_RANGE * 3.281) + ' ft.');
+  var _dynRange = typeof _getCollectRange === 'function' ? _getCollectRange() : COLLECT_RANGE;
+  if (d > _dynRange) {
+    _toast('Walk closer! ' + Math.round(d * 3.281) + ' ft away. Need within ' + Math.round(_dynRange * 3.281) + ' ft.');
     return;
   }
 
@@ -42458,6 +42473,57 @@ window.bsExecuteBreed=function(){
     }
   }
   // closeBreedScreen called above before async — don't call again here
+};
+})();
+</script>
+
+<!-- ═══ BREEDING FORECAST (what could this pair produce?) ═══ -->
+<script>
+(function(){
+'use strict';
+// Predict offspring trait ranges from two parent hashes
+window.breedingForecast=function(hashA,hashB){
+  if(!hashA||!hashB||!window.hashToTraits)return null;
+  var tA=hashToTraits(hashA),tB=hashToTraits(hashB);
+  if(!tA||!tB)return null;
+
+  // Simulate 20 potential offspring to build probability ranges
+  var results={grades:{},seasons:{},companions:{},mutations:0,eaRange:[99,0],hasFlower:0};
+  for(var sim=0;sim<20;sim++){
+    // Quick offspring hash simulation
+    var offHash='';
+    for(var i=0;i<64;i++){
+      var a=parseInt(hashA[i]||'0',16),b=parseInt(hashB[i]||'0',16);
+      var seed=(a^b^(sim*13+i*7))%16;
+      offHash+=seed.toString(16);
+    }
+    var ot=hashToTraits(offHash);
+    var og=window.getTerraGrade?getTerraGrade(ot):{name:'Common'};
+    var oea=window.computeEA?computeEA(ot,0):0;
+    results.grades[og.name]=(results.grades[og.name]||0)+1;
+    results.seasons[ot.season]=(results.seasons[ot.season]||0)+1;
+    if(ot.companion>=20)results.companions[ot.companion]=(results.companions[ot.companion]||0)+1;
+    if(ot.mutationName&&ot.mutationName!=='None')results.mutations++;
+    if(ot.hasFlower)results.hasFlower++;
+    if(oea<results.eaRange[0])results.eaRange[0]=oea;
+    if(oea>results.eaRange[1])results.eaRange[1]=oea;
+  }
+
+  // Convert to percentages
+  var gradesPct={};
+  var gradeOrder=['Common','Uncommon','Rare','Epic','Legendary','Mythic','Cosmic'];
+  for(var g=0;g<gradeOrder.length;g++){
+    if(results.grades[gradeOrder[g]])gradesPct[gradeOrder[g]]=Math.round(results.grades[gradeOrder[g]]/20*100);
+  }
+
+  return{
+    grades:gradesPct,
+    eaRange:results.eaRange,
+    mutationChance:Math.round(results.mutations/20*100),
+    flowerChance:Math.round(results.hasFlower/20*100),
+    seasonSpread:results.seasons,
+    companionChance:Object.keys(results.companions).length>0?Math.round(Object.keys(results.companions).length/20*100):0
+  };
 };
 })();
 </script>
