@@ -6692,7 +6692,13 @@ document.addEventListener('keydown', function(e) {
     // Legendary+ substrates (56-61): +2 EA
     if (base >= 56) ea += 2; else if (base === 15 || base === 28 || base === 29 || (base >= 52 && base <= 55)) ea += 1;
     // SEASON (0-2) — chimeras get dual immunity via plant param
-    if (window.getSeasonInfo) { ea += window.getSeasonInfo(traits, plant).eaBonus; }
+    // Mammoth Permafrost: ignore seasonal stress, +2 in off-season
+    var _compInfoEA = window.getCompanionInfo ? getCompanionInfo(traits) : null;
+    if (_compInfoEA && _compInfoEA.abilityKey === 'permafrost') {
+      ea += 2; // Always +2 regardless of season (normally 0 in off-season)
+    } else if (window.getSeasonInfo) {
+      ea += window.getSeasonInfo(traits, plant).eaBonus;
+    }
     // AGE (0-3)
     var d = days || 0;
     if (d >= 90) ea += 3; else if (d >= 30) ea += 2; else if (d >= 7) ea += 1;
