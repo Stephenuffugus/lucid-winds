@@ -32360,7 +32360,12 @@ function showTP(p,mk){
           if(ownStatus){ownStatus.innerHTML='Close enough to tend this plant<br><span style="color:var(--gold);">Earning '+_polRate+' pollen/hr</span>';ownStatus.style.display='block';}
         }
       } else {
-        if(ownStatus){ownStatus.innerHTML='<span style="color:var(--gold);">Earning '+_polRate+' pollen/hr</span>';ownStatus.style.display='block';}
+        var _statusExtra='';
+        // Add mesh info
+        if(window.getMeshBonus){var _mb=getMeshBonus(p.hash);if(_mb.connections>0)_statusExtra+='<br><span style="color:var(--sage);">\ud83c\udf44 Mesh: '+_mb.stageName+' ('+_mb.connections+' link'+ (_mb.connections>1?'s':'')+')</span>';}
+        // Add soil info
+        if(window.getSoilInfo&&p.lat){var _si=getSoilInfo(p.lat,p.lng);if(_si.maturity>0)_statusExtra+='<br><span style="color:rgba(200,168,75,0.7);">\ud83c\udf3f Soil: '+_si.name+' ('+_si.maturity+'/100)</span>';}
+        if(ownStatus){ownStatus.innerHTML='<span style="color:var(--gold);">Earning '+_polRate+' pollen/hr</span>'+_statusExtra;ownStatus.style.display='block';}
       }
     }
     var crossBtn=document.getElementById('wtp-cross');
@@ -41945,6 +41950,78 @@ window.updateSoilMaturity=updateSoilMaturity;
 window.getSoilInfo=getSoilInfo;
 window.getSoilStage=getSoilStage;
 window.SOIL_STAGES=SOIL_STAGES;
+})();
+</script>
+
+<!-- ═══ BLOOM CHORUS SYSTEM ═══ -->
+<script>
+(function(){
+'use strict';
+var CHORUS_RANGE=200; // meters
+var _chorusCache=null;var _chorusTick=0;
+
+function _haversine(a,b){
+  var R=6371000,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180;
+  var sa=Math.sin(dLat/2),sb=Math.sin(dLng/2);
+  var h=sa*sa+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*sb*sb;
+  return R*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
+}
+
+function _hexToHue(hex){
+  if(!hex||hex.length<7)return 0;
+  var r=parseInt(hex.substr(1,2),16)/255,g=parseInt(hex.substr(3,2),16)/255,b=parseInt(hex.substr(5,2),16)/255;
+  var mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn,h=0;
+  if(d===0)return 0;
+  if(mx===r)h=((g-b)/d)%6;
+  else if(mx===g)h=(b-r)/d+2;
+  else h=(r-g)/d+4;
+  h=Math.round(h*60);if(h<0)h+=360;
+  return h;
+}
+
+function _hueDiff(a,b){var d=Math.abs(a-b);return d>180?360-d:d;}
+
+function _gatherBloomers(){
+  var all=[];
+  var own=[];try{var j=window._secureGet?window._secureGet('fg_wild_plants'):localStorage.getItem('fg_wild_plants');own=JSON.parse(j||'[]');}catch(e){}
+  for(var i=0;i<own.length;i++){var p=own[i];if(p&&p.hash&&p.lat)all.push(p);}
+  if(window._sharedMarkers){var ks=Object.keys(window._sharedMarkers);for(var k=0;k<ks.length;k++){var s=window._sharedMarkers[ks[k]];if(s&&s.data&&s.data.lat)all.push(s.data);}}
+  var bloomers=[];
+  for(var m=0;m<all.length;m++){
+    var t=window.hashToTraits?window.hashToTraits(all[m].hash):null;
+    if(t&&t.hasFlower)bloomers.push({lat:all[m].lat,lng:all[m].lng,hash:all[m].hash,color:t.flowerColor,hue:_hexToHue(t.flowerColor)});
+  }
+  return bloomers;
+}
+
+function evaluateBloomChorus(){
+  var now=Date.now();if(_chorusCache&&now-_chorusTick<30000)return _chorusCache;
+  var bl=_gatherBloomers(),used={},choruses=[];
+  for(var i=0;i<bl.length;i++){
+    if(used[bl[i].hash])continue;
+    var cluster=[bl[i]];
+    for(var j=0;j<bl.length;j++){if(i===j||used[bl[j].hash])continue;if(_haversine(bl[i],bl[j])<=CHORUS_RANGE)cluster.push(bl[j]);}
+    if(cluster.length<3)continue;
+    var score=0,cLat=0,cLng=0,cols=[];
+    for(var a=0;a<cluster.length;a++){cLat+=cluster[a].lat;cLng+=cluster[a].lng;cols.push(cluster[a].color);used[cluster[a].hash]=true;
+      for(var b=a+1;b<cluster.length;b++){var hd=_hueDiff(cluster[a].hue,cluster[b].hue);if(hd>=150&&hd<=210)score+=3;else if(hd>=15&&hd<=60)score+=1;}
+    }
+    cLat/=cluster.length;cLng/=cluster.length;
+    choruses.push({plants:cluster,harmonyScore:score,centerLat:cLat,centerLng:cLng,colors:cols});
+    if(window._logWildEvent)window._logWildEvent({type:'chorus',event:'formed',score:score,plantCount:cluster.length});
+  }
+  _chorusCache=choruses;_chorusTick=now;
+  return choruses;
+}
+
+function getChorusBonus(plantHash){
+  var ch=evaluateBloomChorus();
+  for(var i=0;i<ch.length;i++){for(var j=0;j<ch[i].plants.length;j++){if(ch[i].plants[j].hash===plantHash)return Math.min(ch[i].harmonyScore,10);}}
+  return 0;
+}
+
+window.evaluateBloomChorus=evaluateBloomChorus;
+window.getChorusBonus=getChorusBonus;
 })();
 </script>
 
