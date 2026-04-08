@@ -32411,9 +32411,17 @@ function _addPlant(p){
     if(d<=2)ageFilter='filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7)) drop-shadow(0 0 6px rgba(122,179,86,0.4));'; // young — bright green aura
     else if(d>=7)ageFilter='filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7)) drop-shadow(0 0 5px rgba(200,168,75,0.25));'; // established — warm gold
   }
+  // Wilting visual — neglected plants desaturate + brown ring
+  var wiltStyle='';var wiltRing='';
+  var nd=p.neglectDecay||0;var isWilt=(nd>0||p.status==='Wilting');
+  if(isWilt){
+    wiltStyle='filter:saturate(0.4) brightness(0.7);';
+    wiltRing='<div style="position:absolute;inset:-4px;border:2px solid rgba(139,90,43,0.6);border-radius:50%;pointer-events:none;z-index:0;"></div>';
+    if(nd>10)wiltStyle+='opacity:0.5;';
+  }
   var html='<div style="position:relative;width:'+(sz+6)+'px;height:'+th+'px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;'+ageFilter+'">'
-    +glow+shield+svg+tag+'</div>';
-  var pd={lat:p.lat,lng:p.lng,hash:p.hash,own:p.own,name:info.nm,grade:info.grade,gc:info.gc,days:p.days||0,pollen:p.pollen||0,status:p.status||'Growing',traits:info.t,rarities:info.rarities,defenderGame:p.defenderGame||'set',ownerUid:p.ownerUid||'',ownerName:p.ownerName||'Keeper'};
+    +glow+shield+wiltRing+'<div style="'+wiltStyle+'">'+svg+'</div>'+tag+'</div>';
+  var pd={lat:p.lat,lng:p.lng,hash:p.hash,own:p.own,name:info.nm,grade:info.grade,gc:info.gc,days:p.days||0,pollen:p.pollen||0,status:p.status||'Growing',neglectDecay:nd,traits:info.t,rarities:info.rarities,defenderGame:p.defenderGame||'set',ownerUid:p.ownerUid||'',ownerName:p.ownerName||'Keeper'};
   var mk=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:html,iconSize:[sz+6,th],iconAnchor:[(sz+6)/2,th-6]}),zIndexOffset:p.own?500:100}).addTo(_map).on('click',function(){showTP(pd,mk);});
 }
 
@@ -33605,9 +33613,17 @@ function _addSharedMarker(p){
   var th=Math.round(sz*40/30)+14;
   var glow=_glowRing(info.grade||p.grade,p.own);
   var shield=_shieldBadge(p);
+  // Wilting visual — neglected plants desaturate + brown ring
+  var wiltStyle2='';var wiltRing2='';
+  var nd2=p.neglectDecay||0;var isWilt2=(nd2>0||p.status==='Wilting');
+  if(isWilt2){
+    wiltStyle2='filter:saturate(0.4) brightness(0.7);';
+    wiltRing2='<div style="position:absolute;inset:-4px;border:2px solid rgba(139,90,43,0.6);border-radius:50%;pointer-events:none;z-index:0;"></div>';
+    if(nd2>10)wiltStyle2+='opacity:0.5;';
+  }
   var html='<div style="position:relative;width:'+(sz+6)+'px;height:'+th+'px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7));">'
-    +glow+shield+svg+tag+'</div>';
-  var pd={lat:p.lat,lng:p.lng,hash:p.hash,own:p.own,name:info.nm,grade:info.grade||p.grade,gc:info.gc,days:p.days||0,pollen:p.pollen||0,status:p.status||'Growing',traits:info.t,rarities:info.rarities,defenderGame:p.defenderGame||'set',ownerUid:p.ownerUid||'',ownerName:p.ownerName||'Keeper'};
+    +glow+shield+wiltRing2+'<div style="'+wiltStyle2+'">'+svg+'</div>'+tag+'</div>';
+  var pd={lat:p.lat,lng:p.lng,hash:p.hash,own:p.own,name:info.nm,grade:info.grade||p.grade,gc:info.gc,days:p.days||0,pollen:p.pollen||0,status:p.status||'Growing',neglectDecay:nd2,traits:info.t,rarities:info.rarities,defenderGame:p.defenderGame||'set',ownerUid:p.ownerUid||'',ownerName:p.ownerName||'Keeper'};
   var mk=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:html,iconSize:[sz+6,th],iconAnchor:[(sz+6)/2,th-6]}),zIndexOffset:p.own?500:100}).addTo(_map).on('click',function(){showTP(pd,mk);});
   return mk;
 }
