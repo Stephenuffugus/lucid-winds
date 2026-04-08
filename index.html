@@ -31648,10 +31648,29 @@ function _doReproduction(weather, simMode) {
         var wpEA = targetPlants[wp].ea || 0;
         // Player drops get +3 defense bonus
         if (!targetPlants[wp].wildBorn) wpEA += 3;
+        // Companion temperament defense bonus (Guardian: +1)
+        if (window.getCompanionDefenseEA && targetPlants[wp].hash) {
+          try { var _wpT = window.hashToTraits(targetPlants[wp].hash); wpEA += getCompanionDefenseEA(_wpT); } catch (e) {}
+        }
+        // Mesh defense bonus (+1 per connection, max +3)
+        if (window.getMeshBonus) { var _wpMesh = getMeshBonus(targetPlants[wp].hash || ''); wpEA += _wpMesh.eaBonus; }
         if (wpEA < weakestEA) { weakest = targetPlants[wp]; weakestEA = wpEA; }
       }
       // Offspring must exceed defender by 2+
       if (offEA > weakestEA + 2) {
+        // Shell Shift check — Hermit Crab companion has 25% relocate chance
+        if (window.checkShellShift && weakest.hash) {
+          try {
+            var _ssT = window.hashToTraits(weakest.hash);
+            if (checkShellShift(_ssT)) {
+              // Plant relocates instead of dying
+              if (window._logWildEvent) window._logWildEvent({type:'rare',event:'shell_shift',hash:weakest.hash,
+                name:window.getPlantName?window.getPlantName(weakest.hash):''});
+              if (simMode) simLog.push({zone:zk,result:'Shell Shift! Defender relocated instead of dying'});
+              continue; // skip this invasion — defender survived
+            }
+          } catch (e) {}
+        }
         invaded = true;
         displacedPlant = weakest;
       } else {
