@@ -31855,10 +31855,11 @@ function _doReproduction(weather, simMode) {
     break; // max 1 birth per zone per day
   }
 
-  // ── MESH + SOIL EVALUATION (update daily) ──
+  // ── MESH + SOIL + COMMONS EVALUATION (update daily) ──
   if (!simMode) {
     if (window.evaluateMesh) try { evaluateMesh(); } catch (e) {}
     if (window.updateSoilMaturity) try { updateSoilMaturity(); } catch (e) {}
+    if (window.evaluateCommons) try { evaluateCommons(); } catch (e) {}
   }
 
   // ── NATURAL EVENTS (weather-driven, per-plant, max 1/day) ──
@@ -41890,6 +41891,101 @@ window.bsExecuteBreed=function(){
 })();
 </script>
 
+<!-- ═══ THE COMMONS (named ecosystems) ═══ -->
+<script>
+(function(){
+'use strict';
+var COMMONS_KEY='lw_commons';
+var MIN_PLANTS=7;
+var MIN_PLAYERS=2; // lowered from 3 for testing — raise for launch
+
+// Name generation from dominant traits
+var PREFIXES=['Silver','Golden','Ember','Frost','Moss','Shadow','Crystal','Ancient','Verdant','Lunar','Storm','Deep','Wild','Quiet','Iron'];
+var SUFFIXES=['Hollow','Clearing','Grove','Thicket','Garden','Refuge','Stand','Bower','Copse','Dell','Glade','Haven','Meadow','Patch','Ring'];
+
+function _genCommonsName(plants){
+  // Deterministic name from combined hashes
+  var seed=0;
+  for(var i=0;i<plants.length;i++){
+    for(var j=0;j<8&&j<(plants[i].hash||'').length;j++)seed=(seed*31+plants[i].hash.charCodeAt(j))&0x7FFFFFFF;
+  }
+  return PREFIXES[seed%PREFIXES.length]+' '+SUFFIXES[(seed>>8)%SUFFIXES.length];
+}
+
+function evaluateCommons(){
+  var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+  var shared=[];
+  if(window._sharedMarkers){
+    var keys=Object.keys(window._sharedMarkers);
+    for(var i=0;i<keys.length;i++){var e=window._sharedMarkers[keys[i]];if(e&&e.data)shared.push(e.data);}
+  }
+  var allPlants=wild.concat(shared);
+  if(allPlants.length<MIN_PLANTS)return[];
+
+  // Cluster plants by proximity (~300m zones)
+  var CLUSTER_DIST=0.003;
+  var visited={};
+  var clusters=[];
+
+  for(var pi=0;pi<allPlants.length;pi++){
+    var p=allPlants[pi];
+    if(!p.lat||!p.lng||visited[pi])continue;
+    // BFS to find cluster
+    var cluster=[pi];visited[pi]=true;
+    var queue=[pi];
+    while(queue.length>0){
+      var cur=queue.shift();
+      var cp=allPlants[cur];
+      for(var ni=0;ni<allPlants.length;ni++){
+        if(visited[ni]||!allPlants[ni].lat)continue;
+        if(Math.abs(cp.lat-allPlants[ni].lat)<CLUSTER_DIST&&Math.abs(cp.lng-allPlants[ni].lng)<CLUSTER_DIST){
+          visited[ni]=true;cluster.push(ni);queue.push(ni);
+        }
+      }
+    }
+    if(cluster.length>=MIN_PLANTS){
+      var clusterPlants=cluster.map(function(idx){return allPlants[idx];});
+      // Count unique owners
+      var owners={};
+      for(var ci=0;ci<clusterPlants.length;ci++){owners[clusterPlants[ci].ownerUid||'wild']=true;}
+      var ownerCount=Object.keys(owners).length;
+      if(ownerCount>=MIN_PLAYERS){
+        // Calculate center
+        var cLat=0,cLng=0;
+        for(var cl=0;cl<clusterPlants.length;cl++){cLat+=clusterPlants[cl].lat;cLng+=clusterPlants[cl].lng;}
+        cLat/=clusterPlants.length;cLng/=clusterPlants.length;
+        clusters.push({
+          name:_genCommonsName(clusterPlants),
+          plants:clusterPlants.length, owners:ownerCount,
+          centerLat:cLat, centerLng:cLng,
+          hashes:clusterPlants.map(function(p){return(p.hash||'').slice(0,8);})
+        });
+      }
+    }
+  }
+
+  // Save and notify on new commons
+  var existing=[];try{existing=JSON.parse(localStorage.getItem(COMMONS_KEY)||'[]');}catch(e){}
+  var existingNames=existing.map(function(c){return c.name;});
+  for(var nc=0;nc<clusters.length;nc++){
+    if(existingNames.indexOf(clusters[nc].name)<0){
+      // New commons formed!
+      if(window._logWildEvent)window._logWildEvent({type:'commons',event:'formed',
+        name:clusters[nc].name,plants:clusters[nc].plants,owners:clusters[nc].owners});
+      if(window._toast)window._toast('🌳 A Commons has formed: '+clusters[nc].name+'!');
+    }
+  }
+  localStorage.setItem(COMMONS_KEY,JSON.stringify(clusters));
+  return clusters;
+}
+
+function getCommons(){try{return JSON.parse(localStorage.getItem(COMMONS_KEY)||'[]');}catch(e){return[];}}
+
+window.evaluateCommons=evaluateCommons;
+window.getCommons=getCommons;
+})();
+</script>
+
 <!-- ═══ SUCCESSION ECOLOGY (hex soil maturity) ═══ -->
 <script>
 (function(){
@@ -42858,6 +42954,13 @@ function _generateReport(){
   if(triggerEvts.length>0){
     var te=triggerEvts[0];
     lines.push({icon:'🔮',text:'Secret discovered: '+te.name+'. Your '+te.plantName+' revealed something hidden.',color:'rgba(255,110,199,0.9)'});
+  }
+
+  // Commons stories
+  var commonsEvts=recent.filter(function(e){return e.type==='commons';});
+  if(commonsEvts.length>0){
+    var ce=commonsEvts[0];
+    lines.push({icon:'🌳',text:ce.name+' emerged — '+ce.plants+' plants from '+ce.owners+' keepers formed an ecosystem.',color:'var(--gold)'});
   }
 
   // Mesh stories
