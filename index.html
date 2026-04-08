@@ -892,6 +892,11 @@
       --set-c1:#5b8fb9;--set-c2:#C8A84B;--set-c3:#c07070;
     }
     *{margin:0;padding:0;box-sizing:border-box;}
+    /* View Transition — botanical fade */
+    ::view-transition-old(root){animation:vtFadeOut 0.2s ease-in both;}
+    ::view-transition-new(root){animation:vtFadeIn 0.25s ease-out 0.1s both;}
+    @keyframes vtFadeOut{from{opacity:1;filter:none;}to{opacity:0;filter:blur(2px);}}
+    @keyframes vtFadeIn{from{opacity:0;filter:blur(2px);}to{opacity:1;filter:none;}}
     html{background:var(--black);color:var(--cream);scroll-behavior:smooth;overflow-x:hidden;font-size:clamp(18px,4.5vw,22px);}
     body{font-family:'DM Mono',monospace;font-size:1rem;line-height:1.6;min-height:100vh;overflow-x:hidden;}
 
@@ -42136,6 +42141,30 @@ window.bsExecuteBreed=function(){
 })();
 </script>
 
+<!-- ═══ PWA BADGE (unwatered seeds on app icon) ═══ -->
+<script>
+(function(){
+'use strict';
+function _updateBadge() {
+  if (!navigator.setAppBadge) return;
+  try {
+    var nur = JSON.parse(localStorage.getItem('sws_nursery') || '[]');
+    var today = new Date().toISOString().split('T')[0];
+    var needsWater = 0;
+    for (var i = 0; i < nur.length; i++) {
+      if (nur[i].status === 'growing' && nur[i].waterLog && nur[i].waterLog.indexOf(today) === -1) needsWater++;
+    }
+    if (needsWater > 0) navigator.setAppBadge(needsWater);
+    else navigator.clearAppBadge();
+  } catch(e) {}
+}
+// Update on load and every 30 minutes
+setTimeout(_updateBadge, 5000);
+setInterval(_updateBadge, 1800000);
+window._updateBadge = _updateBadge;
+})();
+</script>
+
 <!-- ═══ SCREEN WAKE LOCK (prevent dim on Wild tab) ═══ -->
 <script>
 (function(){
@@ -44232,6 +44261,21 @@ window.addEventListener('load', function() {
   }, 3000);
 });
 
+})();
+</script>
+
+<!-- ═══ VIEW TRANSITIONS (cinematic tab switching — must be LAST wrapper) ═══ -->
+<script>
+(function(){
+'use strict';
+if (typeof document.startViewTransition !== 'function') return;
+var _vtOrig = window.switchTab;
+if (!_vtOrig) return;
+window.switchTab = function(tab) {
+  try {
+    document.startViewTransition(function() { _vtOrig(tab); });
+  } catch(e) { _vtOrig(tab); }
+};
 })();
 </script>
 
