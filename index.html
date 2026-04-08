@@ -31815,9 +31815,10 @@ function _doReproduction(weather, simMode) {
     break; // max 1 birth per zone per day
   }
 
-  // ── MESH EVALUATION (update connections daily) ──
-  if (!simMode && window.evaluateMesh) {
-    try { evaluateMesh(); } catch (e) {}
+  // ── MESH + SOIL EVALUATION (update daily) ──
+  if (!simMode) {
+    if (window.evaluateMesh) try { evaluateMesh(); } catch (e) {}
+    if (window.updateSoilMaturity) try { updateSoilMaturity(); } catch (e) {}
   }
 
   // ── NATURAL EVENTS (weather-driven, per-plant, max 1/day) ──
@@ -41841,6 +41842,109 @@ window.bsExecuteBreed=function(){
   }
   // closeBreedScreen called above before async — don't call again here
 };
+})();
+</script>
+
+<!-- ═══ SUCCESSION ECOLOGY (hex soil maturity) ═══ -->
+<script>
+(function(){
+'use strict';
+var SOIL_KEY='lw_soil_maturity';
+// Soil stages — higher maturity = better ferals, more bonuses
+var SOIL_STAGES=[
+  {id:0,name:'Bare',       min:0,  eaBonus:0, feralTier:'Common'},
+  {id:1,name:'Pioneer',    min:20, eaBonus:1, feralTier:'Uncommon'},
+  {id:2,name:'Understory', min:40, eaBonus:2, feralTier:'Rare'},
+  {id:3,name:'Canopy',     min:60, eaBonus:3, feralTier:'Epic'},
+  {id:4,name:'Old Growth', min:80, eaBonus:4, feralTier:'Legendary'}
+];
+
+function _loadSoil(){try{return JSON.parse(localStorage.getItem(SOIL_KEY)||'{}');}catch(e){return{};}}
+function _saveSoil(s){
+  // Prune zones not updated in 60 days
+  var cutoff=Date.now()-60*86400000;
+  var keys=Object.keys(s);
+  for(var i=0;i<keys.length;i++){if(s[keys[i]].lastUpdate&&s[keys[i]].lastUpdate<cutoff)delete s[keys[i]];}
+  localStorage.setItem(SOIL_KEY,JSON.stringify(s));
+}
+
+function getSoilStage(maturity){
+  var stage=SOIL_STAGES[0];
+  for(var i=SOIL_STAGES.length-1;i>=0;i--){if(maturity>=SOIL_STAGES[i].min){stage=SOIL_STAGES[i];break;}}
+  return stage;
+}
+
+// Update soil maturity for hexes with plants — called during reproduction cycle
+function updateSoilMaturity(){
+  var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+  var soil=_loadSoil();
+  var today=new Date().toISOString().split('T')[0];
+
+  // Occupied hexes gain +1 maturity per day (max 100)
+  var occupiedZones={};
+  for(var i=0;i<wild.length;i++){
+    if(!wild[i].lat)continue;
+    // Use simple zone key (rounded to ~100m)
+    var zk=Math.round(wild[i].lat*1000)/1000+','+Math.round(wild[i].lng*1000)/1000;
+    occupiedZones[zk]=(occupiedZones[zk]||0)+1;
+  }
+
+  // Also count shared markers
+  if(window._sharedMarkers){
+    var keys=Object.keys(window._sharedMarkers);
+    for(var j=0;j<keys.length;j++){
+      var entry=window._sharedMarkers[keys[j]];
+      if(entry&&entry.data&&entry.data.lat){
+        var szk=Math.round(entry.data.lat*1000)/1000+','+Math.round(entry.data.lng*1000)/1000;
+        occupiedZones[szk]=(occupiedZones[szk]||0)+1;
+      }
+    }
+  }
+
+  var zoneKeys=Object.keys(occupiedZones);
+  for(var z=0;z<zoneKeys.length;z++){
+    var zk2=zoneKeys[z];
+    if(!soil[zk2])soil[zk2]={maturity:0,lastUpdate:Date.now()};
+    if(soil[zk2].lastDate===today)continue; // already updated today
+    // More plants = slightly faster maturity (cap at +3/day)
+    var gain=Math.min(3,occupiedZones[zk2]);
+    soil[zk2].maturity=Math.min(100,soil[zk2].maturity+gain);
+    soil[zk2].lastDate=today;
+    soil[zk2].lastUpdate=Date.now();
+  }
+
+  // Empty zones decay -1/week
+  var allSoilKeys=Object.keys(soil);
+  for(var sk=0;sk<allSoilKeys.length;sk++){
+    if(!occupiedZones[allSoilKeys[sk]]){
+      // Check if it's been a week since last update
+      var daysSince=Math.floor((Date.now()-(soil[allSoilKeys[sk]].lastUpdate||Date.now()))/86400000);
+      var decay=Math.floor(daysSince/7);
+      if(decay>0){
+        soil[allSoilKeys[sk]].maturity=Math.max(0,soil[allSoilKeys[sk]].maturity-decay);
+        soil[allSoilKeys[sk]].lastUpdate=Date.now();
+      }
+    }
+  }
+
+  _saveSoil(soil);
+  return soil;
+}
+
+// Get soil info for a specific location
+function getSoilInfo(lat,lng){
+  var soil=_loadSoil();
+  var zk=Math.round(lat*1000)/1000+','+Math.round(lng*1000)/1000;
+  var entry=soil[zk]||{maturity:0};
+  var stage=getSoilStage(entry.maturity);
+  return{maturity:entry.maturity,stage:stage,name:stage.name,eaBonus:stage.eaBonus,feralTier:stage.feralTier};
+}
+
+// Expose
+window.updateSoilMaturity=updateSoilMaturity;
+window.getSoilInfo=getSoilInfo;
+window.getSoilStage=getSoilStage;
+window.SOIL_STAGES=SOIL_STAGES;
 })();
 </script>
 
