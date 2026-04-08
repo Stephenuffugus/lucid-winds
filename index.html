@@ -27766,7 +27766,12 @@ document.addEventListener('keydown', function(e) {
     if (_targetPanel) {
       _targetPanel.classList.add('active');
     }
-    if (tab === 'wild' && window.FG_Wild) FG_Wild.activate();
+    if (tab === 'wild') {
+      if (window.FG_Wild) FG_Wild.activate();
+      if (window._requestWakeLock) _requestWakeLock(); // Keep screen on while exploring
+    } else {
+      if (window._releaseWakeLock) _releaseWakeLock();
+    }
     if (tab === 'wild') { if(window.FG_Wild&&FG_Wild._afMarkWildEntry)FG_Wild._afMarkWildEntry(); }
     // Map overlays — show on Wild tab regardless of backpack state
     var vig=document.querySelector('.map-vignette');
@@ -42128,6 +42133,29 @@ window.bsExecuteBreed=function(){
   }
   // closeBreedScreen called above before async — don't call again here
 };
+})();
+</script>
+
+<!-- ═══ SCREEN WAKE LOCK (prevent dim on Wild tab) ═══ -->
+<script>
+(function(){
+'use strict';
+var _wakeLock=null;
+window._requestWakeLock=function(){
+  if(!('wakeLock' in navigator))return;
+  navigator.wakeLock.request('screen').then(function(wl){_wakeLock=wl;}).catch(function(){});
+};
+window._releaseWakeLock=function(){
+  if(_wakeLock){_wakeLock.release().catch(function(){});_wakeLock=null;}
+};
+// Re-acquire on page visibility change (browser releases on tab switch)
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='visible'&&_wakeLock===null){
+    // Only re-acquire if we're on wild tab
+    var wildPanel=document.getElementById('panel-wild');
+    if(wildPanel&&wildPanel.classList.contains('active'))window._requestWakeLock();
+  }
+});
 })();
 </script>
 
