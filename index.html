@@ -27195,6 +27195,20 @@ document.addEventListener('keydown', function(e) {
         ctx.fillText('#' + (plant.collectionIndex + 1), cardW - 40, cardH - 36);
       }
 
+      // Hash fingerprint for scanning/sharing (bottom-left)
+      ctx.fillStyle = 'rgba(122,179,86,0.25)';
+      ctx.font = '400 9px DM Mono, monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText('lucidwinds.com/plant/' + plant.hash.slice(0,16), 36, cardH - 24);
+      // Plant song key signature
+      if (window.getPlantSong) {
+        var _cardSong = getPlantSong(plant.hash);
+        if (_cardSong) {
+          ctx.fillStyle = 'rgba(200,168,75,0.2)';
+          ctx.fillText(_cardSong.root + ' ' + _cardSong.mode + ' · ' + _cardSong.tempo + 'bpm', 36, cardH - 12);
+        }
+      }
+
       // Trigger download
       try {
         canvas.toBlob(function(blob) {
