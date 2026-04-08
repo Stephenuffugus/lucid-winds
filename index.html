@@ -25814,6 +25814,34 @@ document.addEventListener('keydown', function(e) {
           var _cp = getCompendiumProgress();
           if (_cp.found > 0) _spotFacts.push('Book of Secrets: ' + _cp.found + ' discovered');
         }
+        // Daily plant horoscope — unique each day from first plant hash
+        var _horoscopes=[
+          'Your garden whispers of hidden connections today.',
+          'A rare trait stirs beneath the soil. Water carefully.',
+          'The wind carries seeds from far away. Stay alert.',
+          'An old root remembers something new.',
+          'Two leaves in your collection are closer than they know.',
+          'Today favors the patient grower.',
+          'Something underground is waking up.',
+          'A stranger\'s plant may hold the key to your next bloom.',
+          'The moon pulls sap upward tonight. Watch for changes.',
+          'Your oldest plant is dreaming of offspring.',
+          'A mutation waits in the wings. Keep minting.',
+          'The mycelium hums with distant news.',
+          'Cross-pollinate today. The stars align for rare traits.',
+          'A companion creature is restless. It senses something.',
+          'One of your plants carries a secret it hasn\'t shown you yet.',
+          'The soil remembers every plant that ever grew here.',
+          'Wild seeds are scattered on the path you walk tomorrow.',
+          'A feral is growing stronger near you. Can you find it?',
+          'Your greenhouse harmonic is shifting. New modes are possible.',
+          'Something beautiful is about to bloom. Don\'t look away.'
+        ];
+        var _hDay=new Date().toISOString().split('T')[0];
+        var _hSeed=0;for(var _hi=0;_hi<_hDay.length;_hi++)_hSeed=(_hSeed*31+_hDay.charCodeAt(_hi))&0x7FFFFFFF;
+        if(gh[0]&&gh[0].hash)for(var _hj=0;_hj<8;_hj++)_hSeed=(_hSeed*17+gh[0].hash.charCodeAt(_hj))&0x7FFFFFFF;
+        _spotFacts.push('\u2728 '+_horoscopes[_hSeed%_horoscopes.length]);
+
         // Wild tab nudge for players who haven't tried it
         if(!localStorage.getItem('lw_first_drop')&&gh.length>=2) _spotFacts.push('Ready for the Wild? Drop plants on the map to claim territory.');
         if (_spotFacts.length > 0) {
