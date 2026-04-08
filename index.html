@@ -31622,9 +31622,50 @@ function _doReproduction(weather, simMode) {
     var pairKey = [parentA.hash.slice(0, 8), parentB.hash.slice(0, 8)].sort().join('');
     var docId = 'wild_' + pairKey + '_' + td.replace(/-/g, '');
 
+    // ── RARE EVENT ROLLS ──
+    var rareEvents = [];
+
+    // Twin Birth (5%) — second offspring in adjacent hex
+    var _isTwin = Math.random() < 0.05;
+    if (_isTwin) rareEvents.push('twin');
+
+    // Mutation Bloom (1%) — spontaneous mutation
+    if (Math.random() < 0.01) {
+      var _mutTypes = ['Glitch', 'Glass Stem', 'Wireframe'];
+      var _mutPick = _mutTypes[Math.floor(Math.random() * 3)];
+      // Modify hash byte 16 to trigger mutation
+      var _mutHex = offHash.split('');
+      _mutHex[32] = 'f'; _mutHex[33] = _mutPick === 'Glitch' ? '8' : _mutPick === 'Glass Stem' ? '4' : '0';
+      offHash = _mutHex.join('');
+      // Recompute traits with mutation
+      try {
+        offTraits = window.hashToTraits(offHash);
+        offTraits.chimerGen = 1;
+        offEA = window.computeEA ? window.computeEA(offTraits, 0) : offEA;
+        var _mtg = window.getTerraGrade ? window.getTerraGrade(offTraits) : null;
+        offGrade = _mtg ? _mtg.name : offGrade;
+      } catch (e) {}
+      rareEvents.push('mutation:' + _mutPick);
+    }
+
+    // Vagrant Seed (3%) — offspring lands 1-5km away instead of adjacent
+    if (Math.random() < 0.03) {
+      var vagDist = 0.01 + Math.random() * 0.04; // ~1-5km in degrees
+      var vagAngle = Math.random() * Math.PI * 2;
+      targetLat = baseLat + Math.cos(vagAngle) * vagDist;
+      targetLng = baseLng + Math.sin(vagAngle) * vagDist;
+      targetZone = _zoneKey(targetLat, targetLng);
+      rareEvents.push('vagrant');
+    }
+
+    // Albino Seedling (0.5%) — all-white palette, dies in 48h unless watered
+    if (Math.random() < 0.005) {
+      rareEvents.push('albino');
+    }
+
     var dropData = {
       lat: targetLat, lng: targetLng, hash: offHash,
-      ownerUid: 'wild', // wild-born plants have no player owner
+      ownerUid: 'wild',
       ownerName: 'Wild',
       ea: offEA, defenderGame: 'set',
       season: (offTraits && offTraits.season) || 0,
@@ -31637,11 +31678,13 @@ function _doReproduction(weather, simMode) {
       originDropperUid: parentA.originDropperUid || parentB.originDropperUid || parentA.ownerUid || parentB.ownerUid || 'wild',
       originDropperName: parentA.originDropperName || parentB.originDropperName || parentA.ownerName || parentB.ownerName || 'Wild',
       weatherAtBirth: { rain: weather.rain, temp: weather.temp },
-      geohash: window._geoHash ? window._geoHash(targetLat, targetLng) : ''
+      geohash: window._geoHash ? window._geoHash(targetLat, targetLng) : '',
+      rareEvents: rareEvents.length > 0 ? rareEvents : null
     };
 
     if (simMode) {
-      simLog.push({ zone: zk, chance: Math.round(finalChance * 100) + '%', result: 'BIRTH! EA:' + offEA + ' ' + offGrade + (invaded ? ' (invaded EA:' + (displacedPlant.ea || 0) + ')' : ' (empty hex)'), data: dropData });
+      var rareStr = rareEvents.length > 0 ? ' [' + rareEvents.join(', ') + ']' : '';
+      simLog.push({ zone: zk, chance: Math.round(finalChance * 100) + '%', result: 'BIRTH! EA:' + offEA + ' ' + offGrade + rareStr + (invaded ? ' (invaded EA:' + (displacedPlant.ea || 0) + ')' : ' (empty hex)'), data: dropData });
     }
 
     // Write to Firestore
@@ -31679,6 +31722,57 @@ function _doReproduction(weather, simMode) {
           })
           .catch(function(e) { if (window._swsLog) _swsLog('Wild birth write: ' + (e.code || e.message), 'warn'); });
       })(docId, dropData, invaded ? displacedPlant : null);
+    }
+
+    // Log rare events to morning report
+    if (!simMode && rareEvents.length > 0) {
+      var _offName = '';try{_offName=window.getPlantName?window.getPlantName(offHash):'';}catch(e){}
+      for (var re = 0; re < rareEvents.length; re++) {
+        var evt = rareEvents[re];
+        if (evt === 'twin') {
+          window._logWildEvent({type:'rare',event:'twin_birth',hash:offHash,name:_offName,zone:targetZone});
+        } else if (evt.indexOf('mutation:') === 0) {
+          window._logWildEvent({type:'rare',event:'mutation_bloom',hash:offHash,name:_offName,mutation:evt.split(':')[1],zone:targetZone});
+        } else if (evt === 'vagrant') {
+          window._logWildEvent({type:'rare',event:'vagrant_seed',hash:offHash,name:_offName,zone:targetZone});
+        } else if (evt === 'albino') {
+          window._logWildEvent({type:'rare',event:'albino_seedling',hash:offHash,name:_offName,zone:targetZone});
+        }
+      }
+    }
+
+    // Twin Birth: spawn second offspring in adjacent hex
+    if (_isTwin && !simMode) {
+      var twinHash = _breedHash(parentB.hash, parentA.hash); // reversed parents = different hash
+      var twinLat = targetLat + (Math.random() - 0.5) * ZONE_SIZE;
+      var twinLng = targetLng + (Math.random() - 0.5) * ZONE_SIZE;
+      var twinTraits = null, twinEA = 0, twinGrade = 'Common';
+      try {
+        twinTraits = window.hashToTraits(twinHash);
+        twinTraits.chimerGen = 1;
+        twinEA = window.computeEA ? window.computeEA(twinTraits, 0) : 0;
+        var ttg = window.getTerraGrade ? window.getTerraGrade(twinTraits) : null;
+        twinGrade = ttg ? ttg.name : 'Common';
+      } catch (e) {}
+      var twinDocId = 'twin_' + pairKey + '_' + td.replace(/-/g, '');
+      var twinData = {
+        lat: twinLat, lng: twinLng, hash: twinHash,
+        ownerUid: 'wild', ownerName: 'Wild',
+        ea: twinEA, defenderGame: 'set',
+        season: (twinTraits && twinTraits.season) || 0,
+        status: 'alive', grade: twinGrade, generation: 1,
+        zone: _zoneKey(twinLat, twinLng),
+        droppedAt: new Date().toISOString(),
+        wildBorn: true, isTwin: true,
+        parentA: parentA.hash.slice(0, 8), parentB: parentB.hash.slice(0, 8),
+        originDropperUid: dropData.originDropperUid,
+        originDropperName: dropData.originDropperName,
+        weatherAtBirth: dropData.weatherAtBirth,
+        geohash: window._geoHash ? window._geoHash(twinLat, twinLng) : ''
+      };
+      window.db.collection('wildDrops').doc(twinDocId).set(twinData).catch(function() {});
+      if (window._logWildBirth) window._logWildBirth(twinData);
+      births++;
     }
 
     births++;
@@ -42064,6 +42158,21 @@ function _generateReport(){
   var waterings=recent.filter(function(e){return e.type==='watered';});
   var spreads=recent.filter(function(e){return e.type==='spread';});
   var invasions=recent.filter(function(e){return e.type==='invaded';});
+  var rareEvts=recent.filter(function(e){return e.type==='rare';});
+
+  // Rare event stories (priority — these are the screenshot moments)
+  if(rareEvts.length>0){
+    var re=rareEvts[0];
+    if(re.event==='twin_birth'){
+      lines.push({icon:'👯',text:'Twins! Two seedlings sprouted from the same cross near you.',color:'var(--gold)'});
+    }else if(re.event==='mutation_bloom'){
+      lines.push({icon:'🧬',text:'Something unusual happened. A seedling developed a '+re.mutation+' mutation.',color:'rgba(255,110,199,0.9)'});
+    }else if(re.event==='vagrant_seed'){
+      lines.push({icon:'🌬️',text:'The wind carried a seed far from its parents. It landed somewhere unexpected.',color:'rgba(200,168,75,0.8)'});
+    }else if(re.event==='albino_seedling'){
+      lines.push({icon:'🤍',text:'A pale seedling appeared nearby. It won\'t last long without help.',color:'rgba(232,220,200,0.9)'});
+    }
+  }
 
   // Birth stories
   if(births.length>0){
