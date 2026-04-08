@@ -41151,8 +41151,10 @@ function _showDailyReward() {
   var daily = _loadDaily();
   var today = _today();
 
-  // Already claimed today
+  // Already claimed today — double check with a separate flag
   if (daily.lastClaim === today) return;
+  // Belt-and-suspenders: also check a simple flag
+  if (localStorage.getItem('lw_daily_claimed') === today) return;
 
   // Streak logic
   if (daily.lastClaim === _yesterday()) {
@@ -41166,9 +41168,10 @@ function _showDailyReward() {
   // Grant dew
   if (window.earnHashes) earnHashes(reward.total);
 
-  // Save claim
+  // Save claim (two places for redundancy)
   daily.lastClaim = today;
   _saveDaily(daily);
+  localStorage.setItem('lw_daily_claimed', today);
 
   // Build modal
   var ov = document.createElement('div');
