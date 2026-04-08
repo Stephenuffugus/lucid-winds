@@ -1127,7 +1127,7 @@
     .cs-card-back{transform:rotateY(180deg);padding:10% 8% 6%;overflow-y:auto;-webkit-overflow-scrolling:touch;background-color:#050505;background-size:174%;background-position:center;background-repeat:no-repeat;}
     .cs-flip-hint{font-family:'DM Mono',monospace;font-size:0.35rem;color:rgba(122,179,86,0.35);text-align:center;position:absolute;bottom:4%;left:0;right:0;}
     .cs-card-front[data-season="spring"]{background-image:url('assets/cards/fronts/front-spring.png');}
-    .cs-card-front[data-season="summer"]{background-image:url('assets/cards/fronts/front-summer.png');background-size:103% 103%;}
+    .cs-card-front[data-season="summer"]{background-image:url('assets/cards/fronts/front-summer.png');background-size:101.5% 101.5%;}
     .cs-card-front[data-season="summer"] .cf-haiku-zone{padding-top:0;}
     .cs-card-front[data-season="autumn"]{background-image:url('assets/cards/fronts/front-autumn.png');}
     .cs-card-front[data-season="winter"]{background-image:url('assets/cards/fronts/front-winter.png');}
@@ -4202,7 +4202,7 @@
     .pw-corner.br{bottom:-4px;right:-4px;transform:scale(-1,-1);}
 
     /* Splash screen */
-    #pw-splash{position:fixed;inset:0;z-index:2147483647;background:#050505 url('assets/splash-seed-v2.png') top center/110% auto no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:calc(100px + env(safe-area-inset-bottom, 0px));transition:opacity 2s ease;}
+    #pw-splash{position:fixed;inset:0;z-index:2147483647;background:#050505 url('assets/splash-seed-v2.png') center 35%/cover no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:calc(100px + env(safe-area-inset-bottom, 0px));transition:opacity 2s ease;}
     #pw-splash.fade-out{opacity:0;pointer-events:none;}
     #pw-splash .splash-title{font-family:'Cormorant Garamond',serif;font-size:clamp(2.8rem,11vw,4.2rem);font-weight:700;color:#d4a843;text-shadow:0 2px 30px rgba(0,0,0,0.9),0 0 60px rgba(212,168,67,0.15);letter-spacing:0.06em;opacity:0;animation:splashFadeIn 2.5s ease 0.8s forwards,splashFloat 6s ease-in-out 3s infinite;}
     @keyframes splashFadeIn{to{opacity:1;}}
@@ -4218,7 +4218,7 @@
     @keyframes _ghNewPulse{0%,100%{box-shadow:0 0 12px rgba(200,168,75,0.15),0 2px 6px rgba(0,0,0,0.4);}50%{box-shadow:0 0 22px rgba(200,168,75,0.3),0 0 6px rgba(200,168,75,0.15),0 2px 6px rgba(0,0,0,0.4);}}
     @keyframes petalDrift{0%{opacity:0;transform:translateY(0) rotate(0deg);}10%{opacity:0.7;}50%{opacity:0.5;transform:translateY(50vh) rotate(120deg);}100%{opacity:0;transform:translateY(110vh) rotate(240deg);}}
     /* Beat 4 (auth) keeps column layout */
-    #ob-beat4{justify-content:flex-start;align-items:center;padding:1rem 1.5rem;overflow-y:auto;text-align:center;-webkit-overflow-scrolling:touch;background:#050505 url('assets/splash-seed-v2.png') top center/110% auto no-repeat;position:relative;}
+    #ob-beat4{justify-content:flex-start;align-items:center;padding:1rem 1.5rem;overflow-y:auto;text-align:center;-webkit-overflow-scrolling:touch;background:#050505 url('assets/splash-seed-v2.png') center 30%/cover no-repeat;position:relative;}
     #ob-beat4::before{content:'';position:absolute;inset:0;background:rgba(5,5,5,0.7);z-index:0;pointer-events:none;}
     #ob-beat4 .ob-text,#ob-beat4 .ob-plant-wrap,#ob-beat4 .ob-name,#ob-beat4 .ob-grade,#ob-beat4 .ob-haiku,#ob-beat4 .ob-creature-text,#ob-beat4 .ob-auth,#ob-beat4 .ob-continue,#ob-beat4 #ob-manifesto{position:relative;z-index:2;}
     #ob-beat4 .ob-text{padding:0;padding-bottom:0.5rem;font-size:1.1rem;color:var(--cream);}
@@ -4485,6 +4485,7 @@ window.onerror=function(msg,url,line,col,err){
       <div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;position:relative;"><div id="game-dew-fill" style="height:100%;background:linear-gradient(90deg,rgba(91,175,220,0.6),rgba(122,179,86,0.7));border-radius:2px;width:0%;transition:width 0.4s ease;"></div></div>
       <div style="font-family:DM Mono,monospace;font-size:clamp(.28rem,.8vw,.35rem);color:var(--muted);white-space:nowrap;"><span id="game-dew-progress">0</span>/30</div>
       <div id="game-streak" style="font-family:DM Mono,monospace;font-size:clamp(.28rem,.8vw,.35rem);color:var(--gold);white-space:nowrap;opacity:0.7;"></div>
+      <button id="daily-quest-btn" onclick="if(window._openDailyQuests)_openDailyQuests();" style="font-family:DM Mono,monospace;font-size:clamp(.28rem,.8vw,.35rem);color:var(--sage);background:rgba(122,179,86,0.08);border:1px solid rgba(122,179,86,0.15);border-radius:4px;padding:2px 6px;cursor:pointer;white-space:nowrap;min-height:28px;">QUESTS</button>
     </div>
   </div>
   <div class="fg-pk" id="fg-pk"></div>
@@ -4946,6 +4947,9 @@ window.onerror=function(msg,url,line,col,err){
   <!-- Toast container -->
   <div id="tc"></div>
 
+  <!-- ═══ NEXT STEP PROMPT ═══ -->
+  <div id="lw-next-step" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9990;padding:6px 12px;background:linear-gradient(180deg,rgba(13,16,12,0.97),rgba(13,16,12,0.85));border-bottom:1px solid rgba(122,179,86,0.12);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--cream,#e8dcc8);text-align:center;cursor:pointer;min-height:28px;display:flex;align-items:center;justify-content:center;gap:6px;"></div>
+
   <!-- ═══ KEEPER IDENTITY BAR ═══ -->
   <div id="pw-keeper-bar">
     <div class="kb-avatar" onclick="PW_UI.openCharacter()">🌱</div>
@@ -4971,8 +4975,8 @@ window.onerror=function(msg,url,line,col,err){
   <!-- ═══ CHARACTER SHEET ═══ -->
   <div id="pw-character">
     <button class="cs-close" onclick="PW_UI.closeCharacter()">✕</button>
-    <div class="cs-header"><div class="cs-avatar" id="cs-avatar">🌱</div><div style="flex:1;min-width:0;"><div class="cs-name" id="cs-name">Keeper</div><div class="cs-title" id="cs-title">◈ Seedling · Level 1</div><div class="cs-xp-bar"><div class="cs-xp-fill" id="cs-xp-fill" style="width:0%;"></div></div><div class="cs-xp-text" id="cs-xp-text">0 / 25 XP → Level 2</div></div></div>
-    <div class="cs-section"><div class="cs-section-title">ACTIVE COMPANION</div><div class="cs-companion-card"><div class="cs-companion-icon" id="cs-companion-icon">❓</div><div><div style="font-family:'Bebas Neue',sans-serif;font-size:0.6rem;color:var(--cream);" id="cs-companion-name">None Equipped</div><div style="font-size:0.38rem;color:var(--muted);" id="cs-companion-buff">Bloom a plant with a creature to unlock</div></div></div></div>
+    <div class="cs-header"><div class="cs-avatar" id="cs-avatar">🌱</div><div style="flex:1;min-width:0;"><div class="cs-name" id="cs-name" onclick="PW_UI.editName()" style="cursor:pointer;" title="Tap to edit">Keeper</div><div class="cs-title" id="cs-title">◈ Seedling · Level 1</div><div class="cs-xp-bar"><div class="cs-xp-fill" id="cs-xp-fill" style="width:0%;"></div></div><div class="cs-xp-text" id="cs-xp-text">0 / 25 XP → Level 2</div></div></div>
+    <div class="cs-section"><div class="cs-section-title">ACTIVE COMPANION</div><div class="cs-companion-card" onclick="PW_UI.equipCompanion()" style="cursor:pointer;" title="Tap to change"><div class="cs-companion-icon" id="cs-companion-icon">❓</div><div><div style="font-family:'Bebas Neue',sans-serif;font-size:0.6rem;color:var(--cream);" id="cs-companion-name">None Equipped</div><div style="font-size:0.38rem;color:var(--muted);" id="cs-companion-buff">Tap to equip a companion</div></div></div></div>
     <div class="cs-section"><div class="cs-section-title">SHOWCASE</div><div class="cs-showcase-grid"><div class="cs-showcase-slot empty" onclick="PW_UI.editShowcase(0)"><div>+ Add Plant</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div></div></div>
     <div class="cs-section"><div class="cs-section-title">FEATURED HAIKU</div><div class="cs-haiku" id="cs-haiku"><em style="color:var(--muted);">Bloom your first plant to feature its haiku here</em></div></div>
     <div class="cs-section"><div class="cs-section-title">KEEPER STATS</div><div class="cs-stats" id="cs-stats"><div>Plants Grown <b id="cs-s-plants">0</b></div><div>Pollen <b id="cs-s-pollen" style="color:var(--gold);">0</b></div><div>Seeds Found <b id="cs-s-seeds">0</b></div><div>Wild Active <b id="cs-s-wild">0</b></div><div>Games Played <b id="cs-s-games">0</b></div><div>Groves <b id="cs-s-groves">0</b></div><div>Compost Made <b id="cs-s-compost">0</b></div><div>Dew Drops <b id="cs-s-dew" style="color:var(--sage);">0</b></div><div>Rarest Grade <b id="cs-s-rarest">—</b></div><div>Creatures <b id="cs-s-creatures">0</b></div><div>Days Active <b id="cs-s-days">1</b></div><div>Friends <b id="cs-s-friends">0</b></div></div></div>
@@ -6401,17 +6405,17 @@ document.addEventListener('keydown', function(e) {
     var crystalBase = hc(20) === 15;
 
     return {
-      pot:          goldenPot  ? 15 : hb(0) % 71, // 60 pot types (0-59)
+      pot:          goldenPot  ? 15 : hb(0) % 60, // 60 pot types (0-59)
       potColor:     _PAL[hc(1)],
       stem:         (mythByte >= 0xD0) ? 9 : ((hb(2) % 24) === 9 ? 0 : hb(2) % 24),
       stemColor:    hb(5) % 12,
       stemHeight:   22 + hc(3) * 2.5,
-      leafType:     hb(4),
+      leafType:     hb(4) % 71, // 71 leaf types (0-70)
       leafCount:    5 + (hc(5) % 6),
       leafSize:     8 + (hc(6) % 7),
       leafColors:   [_PAL[hc(7)],_PAL[hc(8)],_PAL[hc(9)]],
       hasFlower:    hc(10) > 4,
-      flower:       glowFlower ? 15 : hb(11),
+      flower:       glowFlower ? 15 : hb(11) % 71, // 71 flower types (0-70)
       flowerColor:  _PAL[hc(12)],
       flowerSize:   6 + (hc(13) % 7),
       chimerGen:    1, // default gen 1; breeding sets this to parent max + 1
@@ -6534,8 +6538,10 @@ document.addEventListener('keydown', function(e) {
     else if (mut === 'Glass Stem') ea -= 1;
     else if (mut === 'Glitch') ea -= 1;
     // SUBSTRATE (0-2)
-    var base = traits.base % 30;
-    if (base === 15 || base >= 25) ea += 2; else if (base >= 15) ea += 1;
+    var base = traits.base % 71;
+    // Rare substrates (Crystal=15, Meteorite=28, Mycelium=29): +1 EA
+    // Legendary+ substrates (56-61): +2 EA
+    if (base >= 56) ea += 2; else if (base === 15 || base === 28 || base === 29 || (base >= 52 && base <= 55)) ea += 1;
     // SEASON (0-2) — chimeras get dual immunity via plant param
     if (window.getSeasonInfo) { ea += window.getSeasonInfo(traits, plant).eaBonus; }
     // AGE (0-3)
@@ -6699,7 +6705,7 @@ document.addEventListener('keydown', function(e) {
     var potS = 0;
     if (t.pot === 15) potS = 2;  // Golden Pot (Legendary)
     else {
-      var _p = t.pot % 71;
+      var _p = t.pot % 60;
       // Rare pots: Terrarium(7), Amphora(21), Cauldron(22), Urn(23), Bonsai(27), Stone(28)
       if (_p===7||_p===21||_p===22||_p===23||_p===27||_p===28) potS = 1;
       // Epic pots (expanded): Cauldron(50), Geode(51), Fossil Bowl(52), Obsidian Crucible(53), Glass Orb(54)
@@ -7181,6 +7187,101 @@ document.addEventListener('keydown', function(e) {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  // BREEDING LIFECYCLE (set-apr8)
+  // ─────────────────────────────────────────────────────────────────────────
+  var BREED_COOLDOWNS = {
+    Common:3, Uncommon:5, Rare:7, Epic:10, Legendary:14, Mythic:21, Cosmic:28
+  };
+  var MATURITY_DAYS = 7;
+  var MAX_CHARGES = 3;
+  var CHARGE_RECOVERY_DAYS = 14;
+
+  // Get a plant's current breed status
+  function getBreedStatus(plant){
+    if(!plant)return{canBreed:false,reason:'NO_PLANT'};
+    var now=Date.now();
+    var born=plant.born||plant.mintedAt||now;
+    var ageDays=Math.floor((now-born)/86400000);
+
+    // Maturity check
+    if(ageDays<MATURITY_DAYS){
+      return{canBreed:false,reason:'IMMATURE',daysLeft:MATURITY_DAYS-ageDays,ageDays:ageDays,charges:MAX_CHARGES};
+    }
+
+    // Compute current charges (recoverable system)
+    var charges=plant.breedCharges;
+    if(typeof charges==='undefined'||charges===null){
+      // Legacy plant: convert from old breedCount system
+      var used=plant.breedCount||0;
+      charges=Math.max(0,MAX_CHARGES-used);
+    }
+    // Recover charges over time
+    var lastRecovery=plant.breedChargeLastRecovery||plant.lastBreedDate||born;
+    var daysSinceRecovery=Math.floor((now-lastRecovery)/86400000);
+    var recovered=Math.floor(daysSinceRecovery/CHARGE_RECOVERY_DAYS);
+    if(recovered>0&&charges<MAX_CHARGES){
+      charges=Math.min(MAX_CHARGES,charges+recovered);
+    }
+
+    if(charges<=0){
+      // Calculate next recovery
+      var nextRecoveryDays=CHARGE_RECOVERY_DAYS-(daysSinceRecovery%CHARGE_RECOVERY_DAYS);
+      return{canBreed:false,reason:'NO_CHARGES',charges:0,nextRecoveryDays:nextRecoveryDays,ageDays:ageDays};
+    }
+
+    // Cooldown check
+    var lastBreed=plant.lastBreedDate||0;
+    if(lastBreed){
+      var t=window.hashToTraits?window.hashToTraits(plant.hash):null;
+      var tg=window.getTerraGrade&&t?window.getTerraGrade(t):{name:'Common'};
+      var baseCooldown=BREED_COOLDOWNS[tg.name]||3;
+      // Season modifier
+      var seasonMod=1;
+      if(t&&window.getSeasonInfo){
+        var si=window.getSeasonInfo(t,plant);
+        if(si.isPeak)seasonMod=0.5;
+        else if(si.isOpposite)seasonMod=2;
+      }
+      var cooldownMs=baseCooldown*seasonMod*86400000;
+      var elapsed=now-lastBreed;
+      if(elapsed<cooldownMs){
+        var hoursLeft=Math.ceil((cooldownMs-elapsed)/3600000);
+        return{canBreed:false,reason:'COOLDOWN',hoursLeft:hoursLeft,charges:charges,ageDays:ageDays,cooldownDays:Math.ceil(hoursLeft/24)};
+      }
+    }
+
+    return{canBreed:true,charges:charges,ageDays:ageDays};
+  }
+
+  // Use a breed charge (call after successful breed)
+  function useBreedCharge(plantHash){
+    var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){return;}
+    var found=false;
+    gh.forEach(function(p){
+      if(p.hash===plantHash){
+        // Compute current charges first
+        var status=getBreedStatus(p);
+        p.breedCharges=Math.max(0,(status.charges||0)-1);
+        p.lastBreedDate=Date.now();
+        p.breedChargeLastRecovery=Date.now();
+        p.breedCount=(p.breedCount||0)+1;
+        found=true;
+      }
+    });
+    if(found&&window.saveGreenhouse)saveGreenhouse(gh);
+  }
+
+  // Format breed status for UI display
+  function formatBreedStatus(status){
+    if(!status)return'Unknown';
+    if(status.reason==='IMMATURE')return'Seedling — '+status.daysLeft+' day'+(status.daysLeft!==1?'s':'')+' to maturity';
+    if(status.reason==='NO_CHARGES')return'Resting — charge recovers in '+status.nextRecoveryDays+' day'+(status.nextRecoveryDays!==1?'s':'');
+    if(status.reason==='COOLDOWN')return'Cooldown — '+status.cooldownDays+' day'+(status.cooldownDays!==1?'s':'')+' remaining';
+    if(status.canBreed)return status.charges+'/'+MAX_CHARGES+' charges available';
+    return'Cannot breed';
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
   // Public API
   // ─────────────────────────────────────────────────────────────────────────
   window.FG_Data = {
@@ -7198,7 +7299,12 @@ document.addEventListener('keydown', function(e) {
     getStreak: getStreak,
     useMercySeed: useMercySeed,
     getNurSlots: getNurSlots,
-    setNurSlots: setNurSlots
+    setNurSlots: setNurSlots,
+    getBreedStatus: getBreedStatus,
+    useBreedCharge: useBreedCharge,
+    formatBreedStatus: formatBreedStatus,
+    MATURITY_DAYS: MATURITY_DAYS,
+    MAX_CHARGES: MAX_CHARGES
   };
 
 }());
@@ -25686,7 +25792,7 @@ document.addEventListener('keydown', function(e) {
           '<div class="gh-slot">#' + (realIdx + 1) + '</div>' +
           plantSvg +
           '<div class="gh-name" style="color:var(--cream);">' + (typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : _pName) + '</div>' +
-          (plant.breedCount >= 3 ? '<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(192,112,112,0.7);margin-top:1px;">⚡ SPENT 3/3</div>' : '') +
+          (function(){var _gbs=window.FG_Data&&FG_Data.getBreedStatus?FG_Data.getBreedStatus(plant):null;if(!_gbs)return plant.breedCount>=3?'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(192,112,112,0.7);margin-top:1px;">\u26a1 SPENT 3/3</div>':'';if(_gbs.reason==='IMMATURE')return'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(91,175,220,0.7);margin-top:1px;">\ud83c\udf31 '+_gbs.daysLeft+'d to mature</div>';if(_gbs.reason==='COOLDOWN')return'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(200,168,75,0.7);margin-top:1px;">\u23f3 '+_gbs.cooldownDays+'d cooldown</div>';if(_gbs.reason==='NO_CHARGES')return'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(192,112,112,0.7);margin-top:1px;">\ud83d\udca4 Resting</div>';return'';})() +
           (_sea ? '<div style="display:flex;justify-content:center;gap:3px;margin-top:1px;font-size:0.3rem;align-items:center;"><span>' + _sea.emblem + '</span>' + (function(){ try { var _synIcons = checkSynergies(_ghTraits); if (!_synIcons || _synIcons.length === 0) return ''; var _si = ''; for (var _sj = 0; _sj < Math.min(_synIcons.length, 3); _sj++) _si += '<span title="' + _synIcons[_sj].name + '">' + _synIcons[_sj].emoji + '</span>'; return _si; } catch(e) { return ''; } })() + '</div>' : '') +
           _ghSymbol;
         _ghCardCache[_cacheKey] = el.innerHTML;
@@ -25733,8 +25839,12 @@ document.addEventListener('keydown', function(e) {
     var dv = document.getElementById('game-dew-val'); if (dv) dv.textContent = balance;
     // Mint progress: hashes toward next plant (0-30)
     var mintProg = typeof window._getHashProgress === 'function' ? window._getHashProgress() : 0;
-    var fill = document.getElementById('game-dew-fill'); if (fill) fill.style.width = Math.round(Math.min(mintProg, 30) / 30 * 100) + '%';
+    var _dewCost = window._getMintCost ? window._getMintCost() : 30;
+    var fill = document.getElementById('game-dew-fill'); if (fill) fill.style.width = Math.round(Math.min(mintProg, _dewCost) / _dewCost * 100) + '%';
     var pg = document.getElementById('game-dew-progress'); if (pg) pg.textContent = mintProg;
+    // Update the /30 label dynamically
+    var pgParent = pg ? pg.parentNode : null;
+    if (pgParent) { var spans = pgParent.querySelectorAll('span'); if (spans.length >= 2) { var last = spans[spans.length - 1]; if (last && last.textContent.indexOf('/') === 0) last.textContent = '/' + _dewCost; } }
     // Keeper bar dew badge (visible on all non-wild tabs)
     var kbd = document.getElementById('kb-dew'); if (kbd) kbd.textContent = balance + ' dew';
     // Streak display on game tab
@@ -26175,9 +26285,18 @@ document.addEventListener('keydown', function(e) {
     var name  = typeof getPlantName === 'function' ? getPlantName(plant.hash) : plant.hash.slice(0,8);
     var haiku = typeof getHaiku     === 'function' ? getHaiku(plant.hash)     : { line1:'', line2:'', line3:'' };
     var _seasonColors = ['#E8A0BF','#D4A843','#C4763A','#A0C4E8'];
-    // Carousel SVG — always generate fresh (companions/auras need live animations)
+    // Carousel SVG — cached by hash+generation to avoid expensive re-renders on swipe
     var _csOv = (plant.generation && plant.generation > 1) ? {chimerGen: plant.generation} : null;
-    var svgHtml = generatePlantSVG(plant.hash, 200, 1, _csOv);
+    var _csCacheKey = plant.hash + '|' + (plant.generation||1);
+    if (!window._csPlantSvgCache) window._csPlantSvgCache = {};
+    var svgHtml = window._csPlantSvgCache[_csCacheKey];
+    if (!svgHtml) {
+      svgHtml = generatePlantSVG(plant.hash, 200, 1, _csOv);
+      window._csPlantSvgCache[_csCacheKey] = svgHtml;
+      // Cap cache at 30 entries to prevent memory bloat
+      var _cacheKeys = Object.keys(window._csPlantSvgCache);
+      if (_cacheKeys.length > 30) delete window._csPlantSvgCache[_cacheKeys[0]];
+    }
     if (plant.mutated) {
       svgHtml = svgHtml.replace('<svg ', '<svg style="filter:drop-shadow(0 0 10px rgba(200,168,75,0.5)) drop-shadow(0 0 20px rgba(200,168,75,0.2));" ');
     }
@@ -27123,6 +27242,7 @@ document.addEventListener('keydown', function(e) {
       localStorage.setItem('sws_compost_log', JSON.stringify(_cLog));
     } catch(e) {}
     if (typeof gtag !== 'undefined') gtag('event', 'plant_composted', { hash: plant.hash.slice(0,8), dna: dnaReward });
+    if (window._trackQuest) window._trackQuest('composted', 1);
   };
 
   // ── Recover any interrupted compost transaction on init ──────────────
@@ -27183,6 +27303,10 @@ document.addEventListener('keydown', function(e) {
               '<span class="pad-btn-icon">🔍</span><span class="pad-btn-label">INSPECT</span></button>';
       btns += '<button class="pad-btn" onclick="var _bp=_padDrawerPlant;closePlantActionDrawer();if(window.openBreedScreen&&_bp)openBreedScreen(_bp,\'greenhouse\');" style="border-color:rgba(200,168,75,0.25);">' +
               '<span class="pad-btn-icon">🧬</span><span class="pad-btn-label">BREED</span></button>';
+      if(plant.parentAHash||plant.parentBHash||(plant.generation&&plant.generation>1)){
+        btns += '<button class="pad-btn" onclick="if(window.openAncestryViewer)openAncestryViewer(_padDrawerPlant);" style="border-color:rgba(200,168,75,0.15);">' +
+                '<span class="pad-btn-icon">🌳</span><span class="pad-btn-label">ANCESTRY</span></button>';
+      }
       btns += '<button class="pad-btn compost" onclick="confirmCompost('+idx+')">' +
               '<span class="pad-btn-icon">🧪</span><span class="pad-btn-label">COMPOST</span></button>';
     }
@@ -27445,7 +27569,7 @@ document.addEventListener('keydown', function(e) {
       _targetPanel.classList.add('active');
     }
     if (tab === 'wild' && window.FG_Wild) FG_Wild.activate();
-    if (tab === 'wild') { console.log('[switchTab] wild — FG_Backpack:', !!window.FG_Backpack, 'FG_Wild:', !!window.FG_Wild); if(window.FG_Wild&&FG_Wild._afMarkWildEntry)FG_Wild._afMarkWildEntry(); }
+    if (tab === 'wild') { if(window.FG_Wild&&FG_Wild._afMarkWildEntry)FG_Wild._afMarkWildEntry(); }
     // Map overlays — show on Wild tab regardless of backpack state
     var vig=document.querySelector('.map-vignette');
     var glass=document.querySelector('.map-glass-highlight');
@@ -27674,7 +27798,7 @@ document.addEventListener('keydown', function(e) {
     }
     actionBtns += '<button class="nur-btn" data-sid="' + sid + '" onclick="handleApplyFertilizer(this.dataset.sid)" style="background:rgba(200,168,75,0.06);border-color:rgba(200,168,75,0.2);color:var(--gold);font-size:0.42rem;"' + (_canFert ? '' : ' disabled') + ' title="Apply 1 fertilizer for +1% rarity boost">🌿 FERT ' + _seedFert + '/' + _fertMax + '</button>';
 
-    var _fertInfo = (seed.fertApplied || 0) > 0 ? '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--gold);margin-top:2px;">🌿 ' + (seed.fertApplied || 0) + '/25 fertilizer (+' + (seed.fertApplied || 0) + '% rarity)</div>' : '';
+    var _fertInfo = (seed.fertApplied || 0) > 0 ? '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--gold);margin-top:2px;">🌿 ' + (seed.fertApplied || 0) + '/15 fertilizer (+' + (seed.fertApplied || 0) + '% rarity)</div>' : '';
 
     // ── Offspring forecast preview ──
     var _offPreview = '';
@@ -28326,7 +28450,7 @@ document.addEventListener('keydown', function(e) {
       timestamp: Date.now(),
       date:      today,
       rare:      mut.mutated,
-      generation: Math.max(_parentAGen, _parentBGen) + 1,
+      generation: Math.min(6, Math.max(_parentAGen, _parentBGen) + 1), // Gen = max(parents) + 1, capped at 6
       breedLayers: _breedLayers,
       breedCount: 0,
       mycelialCrown: _hasCrown,
@@ -28383,6 +28507,9 @@ document.addEventListener('keydown', function(e) {
 
     // 8. UI refresh then cinematic reveal
     renderNursery();
+    renderGreenhouse();
+    if(window._updateGameDew)_updateGameDew();
+    if(window._updateNextStep)_updateNextStep();
     // Pass parent context to cinematic reveal for inheritance cascade
     window._lastBloomParentA = parentA;
     window._lastBloomParentB = parentB;
@@ -28438,6 +28565,7 @@ document.addEventListener('keydown', function(e) {
     nur[seedIndex] = seed;
 
     if (typeof gtag !== 'undefined') gtag('event', 'nursery_water', { id: seedId, days: seed.waterLog.length });
+    if (window._trackQuest) window._trackQuest('seedsWatered', 1);
 
     // BLOOM TRIGGER — 3rd water makes bloom-ready; confirm before executing
     if (seed.waterLog.length >= 3) {
@@ -28568,8 +28696,8 @@ document.addEventListener('keydown', function(e) {
     if (seedIndex < 0) { _setNurMsg('Seed not found.'); return; }
     var seed = nur[seedIndex];
     var applied = seed.fertApplied || 0;
-    if (applied >= 25) {
-      _setNurMsg('Max fertilizer reached (25/25).');
+    if (applied >= 15) {
+      _setNurMsg('Max fertilizer reached (15/15).');
       return;
     }
     // Apply 1 unit
@@ -28591,7 +28719,7 @@ document.addEventListener('keydown', function(e) {
     _haptic('tab');
     renderNursery();
     updateDashboard();
-    _setNurMsg('🌿 Fertilizer applied. ' + seed.fertApplied + '/25 (+' + seed.fertApplied + '% rarity boost).');
+    _setNurMsg('🌿 Fertilizer applied. ' + seed.fertApplied + '/15 (+' + seed.fertApplied + '% rarity boost).');
   };
 
   // ── Bloom Reveal (legacy flip-card — kept for non-nursery hash reveals) ──
@@ -32941,6 +33069,14 @@ var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
 // At 30 filled blocks, buffer converts to plant hash → mint → reseed.
 var _hashBuf=new Uint8Array(32);
 var _hashFilled=0;
+// First mint costs 10 hashes, all subsequent mints cost 30
+function _getMintCost(){
+  var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+  // Gift plant doesn't count — check for player-earned mints
+  var earned=gh.filter(function(p){return p.origin!=='gift'&&p.origin!=='onboarding';});
+  return earned.length===0?10:30;
+}
+window._getMintCost=_getMintCost;
 function _seedHashBuf(){_hashBuf=new Uint8Array(32);crypto.getRandomValues(_hashBuf);_hashFilled=0;_persistHashBuf();}
 // Restore state from localStorage
 try{
@@ -33106,16 +33242,19 @@ function _e(v){
     _checkDailyWelcome();
     // Milestone pings
     if(prevFilled<10&&_hashFilled>=10&&_hashFilled<30){
-      _milestoneToast('Sprout','10/30 \u2014 your seed is growing');
-    }else if(prevFilled<20&&_hashFilled>=20&&_hashFilled<30){
-      _milestoneToast('Growing','20/30 \u2014 leaves are forming');
-    }else if(prevFilled<25&&_hashFilled>=25&&_hashFilled<30){
-      _milestoneToast('Almost!',(30-_hashFilled)+' more to Full Bloom');
-      if(window._haptic)_haptic('tab');
+      var _mc=(_getMintCost?_getMintCost():30);
+      _milestoneToast('Sprout','10/'+_mc+' \u2014 your seed is growing');
+    }else if(prevFilled<20&&_hashFilled>=20){
+      var _mc2=(_getMintCost?_getMintCost():30);
+      if(_hashFilled<_mc2)_milestoneToast('Growing','20/'+_mc2+' \u2014 leaves are forming');
+    }else if(prevFilled<25&&_hashFilled>=25){
+      var _mc3=(_getMintCost?_getMintCost():30);
+      if(_hashFilled<_mc3){_milestoneToast('Almost!',(_mc3-_hashFilled)+' more to Full Bloom');if(window._haptic)_haptic('tab');}
     }
-    // MINT when buffer reaches 30 blocks
-    if(_hashFilled>=30){
-      var overflow=_hashFilled-30;
+    // MINT when buffer reaches target (10 for first plant, 30 thereafter)
+    var _mintCost=(_getMintCost?_getMintCost():30);
+    if(_hashFilled>=_mintCost){
+      var overflow=_hashFilled-_mintCost;
       // Extract the accumulated hash
       var hex='';for(var bi=0;bi<32;bi++)hex+=('0'+_hashBuf[bi].toString(16)).slice(-2);
       // Save pending mint for crash recovery
@@ -37731,13 +37870,71 @@ function setLBTab(el,tab){
 function openCharacter(){
   _csOpen=true;
   updateKeeperBar();updateStats();loadFriendsUI();
+  _loadCompanion();_renderShowcase();_loadFeaturedHaiku();
   document.getElementById('pw-character').classList.add('open');
 }
 function closeCharacter(){
   _csOpen=false;
   document.getElementById('pw-character').classList.remove('open');
 }
-function editShowcase(slot){console.log('[PW] Edit showcase slot',slot);/* placeholder */}
+function editShowcase(slot){
+  var gh=[];try{gh=JSON.parse((window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse'))||'[]');}catch(e){}
+  if(!gh.length){if(window._toast)window._toast('Bloom a plant first!');return;}
+  // Build picker overlay
+  var ov=document.createElement('div');
+  ov.id='cs-showcase-picker';
+  ov.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(5,8,4,0.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:panelFadeIn 0.3s ease;';
+  var h='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.6rem;">CHOOSE A PLANT</div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:340px;">';
+  for(var i=0;i<gh.length;i++){
+    var p=gh[i];
+    var svg='';try{if(window._generatePlantSVG)svg=window._generatePlantSVG(p.hash,28);}catch(e){}
+    var t=window.hashToTraits?window.hashToTraits(p.hash):null;
+    var nm=window.getPlantName?window.getPlantName(p.hash):'Plant';
+    var tg=window.getTerraGrade&&t?window.getTerraGrade(t):{name:'Common',color:'var(--cream)'};
+    h+='<div onclick="PW_UI._pickShowcase('+slot+','+i+')" style="cursor:pointer;background:rgba(18,22,16,0.7);border:1.5px solid rgba(122,179,86,0.15);border-radius:8px;padding:6px;text-align:center;min-height:48px;">';
+    h+='<div style="width:56px;height:56px;margin:0 auto;">'+svg+'</div>';
+    h+='<div style="font-size:0.38rem;color:'+tg.color+';margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+nm+'</div>';
+    h+='</div>';
+  }
+  h+='</div>';
+  h+='<button onclick="var pk=document.getElementById(\'cs-showcase-picker\');if(pk)pk.remove();" style="margin-top:0.8rem;padding:0.5rem 1.5rem;border:1.5px solid rgba(138,145,120,0.25);border-radius:8px;background:transparent;color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.55rem;cursor:pointer;min-height:48px;">CANCEL</button>';
+  ov.innerHTML=h;
+  document.body.appendChild(ov);
+}
+function _pickShowcase(slot,ghIdx){
+  var gh=[];try{gh=JSON.parse((window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse'))||'[]');}catch(e){}
+  var p=gh[ghIdx];if(!p)return;
+  var showcase=[];try{showcase=JSON.parse(localStorage.getItem('pw_showcase')||'[]');}catch(e){}
+  showcase[slot]={hash:p.hash};
+  localStorage.setItem('pw_showcase',JSON.stringify(showcase));
+  var pk=document.getElementById('cs-showcase-picker');if(pk)pk.remove();
+  _renderShowcase();
+  if(window._toast)window._toast('Showcase updated!');
+  // Sync to Firestore profile
+  _syncProfileField('showcase',showcase.map(function(s){return s?s.hash:null;}));
+}
+function _renderShowcase(){
+  var showcase=[];try{showcase=JSON.parse(localStorage.getItem('pw_showcase')||'[]');}catch(e){}
+  var grid=document.querySelector('.cs-showcase-grid');if(!grid)return;
+  var r=_getRank(_getXP());
+  var slots=r.level>=10?3:1;
+  var h='';
+  for(var i=0;i<3;i++){
+    if(i>=slots){
+      h+='<div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div>';
+    }else if(showcase[i]&&showcase[i].hash){
+      var svg='';try{if(window._generatePlantSVG)svg=window._generatePlantSVG(showcase[i].hash,32);}catch(e){}
+      var nm=window.getPlantName?window.getPlantName(showcase[i].hash):'Plant';
+      h+='<div class="cs-showcase-slot" onclick="PW_UI.editShowcase('+i+')" style="cursor:pointer;background:rgba(18,22,16,0.5);border-color:rgba(200,168,75,0.25);">';
+      h+='<div style="width:64px;height:64px;margin:0 auto;">'+svg+'</div>';
+      h+='<div style="font-size:0.38rem;color:var(--gold);margin-top:2px;">'+nm+'</div></div>';
+    }else{
+      h+='<div class="cs-showcase-slot empty" onclick="PW_UI.editShowcase('+i+')" style="cursor:pointer;"><div>+ Add Plant</div></div>';
+    }
+  }
+  grid.innerHTML=h;
+}
 function copyFriendCode(){
   var code=_getFriendCode();
   if(navigator.clipboard){navigator.clipboard.writeText(code).then(function(){
@@ -37807,6 +38004,174 @@ function loadFriendsUI(){
 function acceptReq(uid){if(window.PW_Social)PW_Social.acceptFriend(uid,function(){loadFriendsUI();});}
 function declineReq(uid){if(window.PW_Social)PW_Social.declineFriend(uid,function(){loadFriendsUI();});}
 
+// ═══ EDIT KEEPER NAME ═══
+function editName(){
+  var cur=_getName();
+  var ov=document.createElement('div');
+  ov.id='cs-name-editor';
+  ov.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(5,8,4,0.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;animation:panelFadeIn 0.3s ease;';
+  ov.innerHTML='<div style="text-align:center;max-width:280px;background:rgba(18,22,16,0.95);border:1.5px solid rgba(200,168,75,0.3);border-radius:16px;padding:1.2rem;box-shadow:0 12px 40px rgba(0,0,0,0.6);">'
+    +'<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.6rem;">EDIT KEEPER NAME</div>'
+    +'<input type="text" id="cs-name-input" value="'+cur.replace(/"/g,'&quot;')+'" maxlength="20" style="width:100%;padding:0.5rem;background:rgba(26,36,22,0.4);border:1.5px solid rgba(122,179,86,0.2);border-radius:8px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.55rem;text-align:center;outline:none;margin-bottom:0.6rem;" />'
+    +'<div style="display:flex;gap:0.4rem;">'
+    +'<button onclick="var ne=document.getElementById(\'cs-name-editor\');if(ne)ne.remove();" style="flex:1;padding:0.5rem;border:1.5px solid rgba(138,145,120,0.25);border-radius:8px;background:transparent;color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.55rem;cursor:pointer;min-height:48px;">CANCEL</button>'
+    +'<button onclick="PW_UI._saveName()" style="flex:1;padding:0.5rem;border:1.5px solid rgba(122,179,86,0.3);border-radius:8px;background:rgba(74,124,53,0.15);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.55rem;cursor:pointer;min-height:48px;">SAVE</button>'
+    +'</div></div>';
+  document.body.appendChild(ov);
+  setTimeout(function(){var inp=document.getElementById('cs-name-input');if(inp)inp.focus();},100);
+}
+function _saveName(){
+  var inp=document.getElementById('cs-name-input');if(!inp)return;
+  var name=inp.value.trim();
+  if(!name||name.length<1){if(window._toast)window._toast('Name cannot be empty.');return;}
+  if(name.length>20)name=name.substring(0,20);
+  localStorage.setItem('pw_keeper_name',name);
+  updateKeeperBar();
+  var ne=document.getElementById('cs-name-editor');if(ne)ne.remove();
+  if(window._toast)window._toast('Name updated!');
+  _syncProfileField('displayName',name);
+}
+
+// ═══ COMPANION EQUIPPING ═══
+function _loadCompanion(){
+  var activeComp=localStorage.getItem('pw_active_companion');
+  if(!activeComp)return;
+  try{
+    var comp=JSON.parse(activeComp);
+    var icon=document.getElementById('cs-companion-icon');
+    var name=document.getElementById('cs-companion-name');
+    var buff=document.getElementById('cs-companion-buff');
+    if(icon)icon.textContent=comp.icon||'🐾';
+    if(name)name.textContent=comp.name||'Unknown';
+    if(buff)buff.textContent=comp.buff||'Passive bonus active';
+  }catch(e){}
+}
+function equipCompanion(){
+  // Scan greenhouse for plants with companions
+  var gh=[];try{gh=JSON.parse((window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse'))||'[]');}catch(e){}
+  var found=[];
+  var seen={};
+  for(var i=0;i<gh.length;i++){
+    var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;
+    if(!t)continue;
+    var cIdx=t.companion;
+    var tb=window.TRAIT_BANK;
+    if(!tb||!tb.companions||!tb.companions[cIdx])continue;
+    var c=tb.companions[cIdx];
+    if(c.name==='None'||seen[cIdx])continue;
+    seen[cIdx]=true;
+    found.push({idx:cIdx,name:c.name,icon:c.icon||'🐾',buff:c.buff||c.temperament||'Passive bonus',hash:gh[i].hash});
+  }
+  if(!found.length){if(window._toast)window._toast('Bloom a plant with a companion creature first!');return;}
+  // Build picker
+  var ov=document.createElement('div');
+  ov.id='cs-comp-picker';
+  ov.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(5,8,4,0.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:panelFadeIn 0.3s ease;';
+  var h='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.6rem;">EQUIP COMPANION</div>';
+  h+='<div style="width:100%;max-width:340px;">';
+  var cur=localStorage.getItem('pw_active_companion');
+  var curIdx=-1;try{if(cur)curIdx=JSON.parse(cur).idx;}catch(e){}
+  for(var j=0;j<found.length;j++){
+    var f=found[j];
+    var active=f.idx===curIdx;
+    h+='<div onclick="PW_UI._pickCompanion('+j+')" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;padding:0.5rem;margin-bottom:4px;background:rgba(18,22,16,'+(active?'0.8':'0.5')+');border:1.5px solid '+(active?'rgba(200,168,75,0.4)':'rgba(122,179,86,0.12)')+';border-radius:8px;min-height:48px;">';
+    h+='<div style="font-size:1.2rem;width:32px;text-align:center;">'+f.icon+'</div>';
+    h+='<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--cream);">'+f.name+(active?' <span style="color:var(--gold);">★ EQUIPPED</span>':'')+'</div>';
+    h+='<div style="font-size:0.38rem;color:var(--muted);">'+f.buff+'</div></div></div>';
+  }
+  h+='</div>';
+  h+='<button onclick="var pk=document.getElementById(\'cs-comp-picker\');if(pk)pk.remove();" style="margin-top:0.8rem;padding:0.5rem 1.5rem;border:1.5px solid rgba(138,145,120,0.25);border-radius:8px;background:transparent;color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.55rem;cursor:pointer;min-height:48px;">CLOSE</button>';
+  ov.innerHTML=h;
+  // Store found list for click handler
+  window._csCompFound=found;
+  document.body.appendChild(ov);
+}
+function _pickCompanion(idx){
+  var f=window._csCompFound?window._csCompFound[idx]:null;if(!f)return;
+  localStorage.setItem('pw_active_companion',JSON.stringify({idx:f.idx,name:f.name,icon:f.icon,buff:f.buff}));
+  _loadCompanion();
+  var pk=document.getElementById('cs-comp-picker');if(pk)pk.remove();
+  if(window._toast)window._toast(f.name+' equipped!');
+  _syncProfileField('activeCompanion',{idx:f.idx,name:f.name});
+}
+
+// ═══ SYNC SINGLE PROFILE FIELD TO FIRESTORE ═══
+function _syncProfileField(field,value){
+  try{
+    if(!window.firebase||!firebase.auth||!firebase.auth().currentUser)return;
+    var uid=firebase.auth().currentUser.uid;
+    var update={};update[field]=value;
+    firebase.firestore().collection('profiles').doc(uid).update(update).catch(function(e){
+      console.warn('[PW] Profile field sync failed:',field,e.message);
+    });
+  }catch(e){}
+}
+
+// ═══ FEATURED HAIKU ═══
+function _loadFeaturedHaiku(){
+  var showcase=[];try{showcase=JSON.parse(localStorage.getItem('pw_showcase')||'[]');}catch(e){}
+  var haikuEl=document.getElementById('cs-haiku');if(!haikuEl)return;
+  // Use first showcase plant, or first greenhouse plant
+  var hash=null;
+  if(showcase[0]&&showcase[0].hash)hash=showcase[0].hash;
+  if(!hash){
+    var gh=[];try{gh=JSON.parse((window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse'))||'[]');}catch(e){}
+    if(gh.length)hash=gh[0].hash;
+  }
+  if(!hash){haikuEl.innerHTML='<em style="color:var(--muted);">Bloom your first plant to feature its haiku here</em>';return;}
+  if(window.getHaiku){
+    var hk=window.getHaiku(hash);
+    haikuEl.innerHTML='<div style="color:var(--cream);font-style:italic;line-height:1.8;font-size:0.48rem;">'+hk.line1+'<br>'+hk.line2+'<br>'+hk.line3+'</div>';
+  }
+}
+
+// ═══ FULL STATS UPDATE ═══
+// Overwrite the basic updateStats with comprehensive version
+function updateStats(){
+  var gh=[];try{gh=JSON.parse((window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse'))||'[]');}catch(e){}
+  var wild=[];try{wild=JSON.parse((window._secureGet?window._secureGet('fg_wild_plants'):localStorage.getItem('fg_wild_plants'))||'[]');}catch(e){}
+  var pollen=0;try{pollen=parseInt((window._secureGet?window._secureGet('fg_pollen'):localStorage.getItem('fg_pollen'))||'0');}catch(e){}
+  var dew=0;try{var hl=JSON.parse((window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger'))||'{}');dew=(hl.earned||0)-(hl.spent||0);}catch(e){}
+  // Games played — count from hash ledger sources
+  var gamesPlayed=0;try{var hl2=JSON.parse((window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger'))||'{}');gamesPlayed=hl2.sources?hl2.sources.games||0:0;}catch(e){}
+  // Seeds found (ferals)
+  var ferals=[];try{ferals=JSON.parse(localStorage.getItem('fg_feral_collected')||'[]');}catch(e){}
+  // Compost count
+  var compostLog=[];try{compostLog=JSON.parse(localStorage.getItem('sws_compost_log')||'[]');}catch(e){}
+  // Rarest grade
+  var rarestIdx=0;
+  var gradeOrder=['Common','Uncommon','Rare','Epic','Legendary','Mythic','Cosmic'];
+  for(var i=0;i<gh.length;i++){
+    var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;
+    var tg=window.getTerraGrade&&t?window.getTerraGrade(t):{name:'Common'};
+    var gi=gradeOrder.indexOf(tg.name);
+    if(gi>rarestIdx)rarestIdx=gi;
+  }
+  // Creatures discovered
+  var bestiary=[];try{bestiary=JSON.parse(localStorage.getItem('pw_bestiary')||'[]');}catch(e){}
+  // Friends count
+  var friendCount=0;
+  var fcEl=document.getElementById('cs-friend-count');
+  if(fcEl){var m=fcEl.textContent.match(/\d+/);if(m)friendCount=parseInt(m[0]);}
+  // Days active
+  var daysActive=Math.max(1,Math.floor((Date.now()-(parseInt(localStorage.getItem('pw_start')||Date.now())))/86400000)+1);
+
+  var e=function(id,v){var el=document.getElementById(id);if(el)el.textContent=v;};
+  e('cs-s-plants',gh.length);
+  e('cs-s-pollen',pollen);
+  e('cs-s-seeds',ferals.length);
+  e('cs-s-wild',wild.length);
+  e('cs-s-games',gamesPlayed);
+  e('cs-s-groves',0); // Will be populated when Root Networks are built
+  e('cs-s-compost',compostLog.length);
+  e('cs-s-dew',dew);
+  e('cs-s-rarest',gradeOrder[rarestIdx]);
+  e('cs-s-creatures',bestiary.length);
+  e('cs-s-days',daysActive);
+  e('cs-s-friends',friendCount);
+  e('lb-my-pollen',pollen);e('lb-footer-pollen',pollen);
+}
+
 // ═══ WILD TAB SHOW/HIDE ═══
 function showWildUI(){
   var bp=document.getElementById('pw-backpack');if(bp)bp.style.display='block';
@@ -37833,7 +38198,9 @@ setTimeout(init,200);
 return{toggleBP:toggleBP,closeBP:closeBP,toggleLeaderboard:toggleLeaderboard,setLBTab:setLBTab,
   openCharacter:openCharacter,closeCharacter:closeCharacter,editShowcase:editShowcase,copyFriendCode:copyFriendCode,
   addFriend:addFriend,loadFriendsUI:loadFriendsUI,acceptReq:acceptReq,declineReq:declineReq,
-  showWildUI:showWildUI,hideWildUI:hideWildUI,updateKeeperBar:updateKeeperBar,updateStats:updateStats};
+  showWildUI:showWildUI,hideWildUI:hideWildUI,updateKeeperBar:updateKeeperBar,updateStats:updateStats,
+  editName:editName,_saveName:_saveName,equipCompanion:equipCompanion,_pickCompanion:_pickCompanion,
+  _pickShowcase:_pickShowcase};
 })();
 </script>
 
@@ -40187,7 +40554,7 @@ function _showDailyReward() {
   // Build modal
   var ov = document.createElement('div');
   ov.id = 'daily-reward-modal';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:99997;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88) url(assets/daily-login-bg.png) top center/110% auto no-repeat;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99997;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88) url(assets/daily-login-bg.png) center/cover no-repeat;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
 
   var h = '<div style="text-align:center;max-width:300px;background:rgba(18,22,16,0.95);border:1.5px solid rgba(200,168,75,0.3);border-radius:16px;padding:1.4rem 1.2rem;box-shadow:0 12px 40px rgba(0,0,0,0.6);">';
 
@@ -40556,12 +40923,22 @@ function _renderCard(el,plant,role,side){
   } else {
     var _bsNp = typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : i.nm;
     h+='<div class="bs-name" style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">'+_bsNp+'</div>';
-    var _bc = plant.breedCount || 0;
-    var _bcColor = _bc >= 3 ? 'rgba(192,112,112,0.9)' : _bc >= 2 ? 'rgba(200,168,75,0.9)' : 'var(--muted)';
+    var _bs=window.FG_Data&&FG_Data.getBreedStatus?FG_Data.getBreedStatus(plant):null;
+    var _bcLabel='',_bcColor='var(--muted)';
+    if(_bs){
+      if(_bs.reason==='IMMATURE'){_bcLabel='\ud83c\udf31 '+_bs.daysLeft+'d to mature';_bcColor='rgba(91,175,220,0.8)';}
+      else if(_bs.reason==='COOLDOWN'){_bcLabel='\u23f3 '+_bs.cooldownDays+'d cooldown';_bcColor='rgba(200,168,75,0.8)';}
+      else if(_bs.reason==='NO_CHARGES'){_bcLabel='\ud83d\udca4 Resting';_bcColor='rgba(192,112,112,0.8)';}
+      else if(_bs.canBreed){_bcLabel='\ud83e\uddec '+_bs.charges+'/3';_bcColor='var(--sage)';}
+    } else {
+      var _bc=plant.breedCount||0;
+      _bcLabel=_bc>=3?'\u26a1 SPENT':'\ud83e\uddec '+_bc+'/3';
+      _bcColor=_bc>=3?'rgba(192,112,112,0.9)':'var(--muted)';
+    }
     h+='<div class="bs-meta"><span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">'+(i.tg?i.tg.icon:'')+' '+(i.tg?i.tg.name:'')+'</span>';
     h+='<span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">EA '+i.ea+'</span>';
     h+='<span style="color:var(--muted);">'+_seasonEmblems[i.season]+' G'+(i.t?i.t.chimerGen||1:1)+'</span>';
-    h+='<span style="color:'+_bcColor+';">'+(_bc>=3?'\u26a1 SPENT':'\ud83e\uddec '+_bc+'/3')+'</span></div>';
+    h+='<span style="color:'+_bcColor+';">'+_bcLabel+'</span></div>';
   }
   h+='</div></div>';
   // Layers
@@ -40746,9 +41123,40 @@ window.openBreedScreen=function(plantA,context){
   // Build full eligible list from greenhouse
   var gh=[];
   try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
-  _allEligible=gh.filter(function(p){return (p.breedCount||0)<3;});
+  // Filter eligible: must have charges AND pass cooldown/maturity
+  _allEligible=gh.filter(function(p){
+    if(window.FG_Data&&FG_Data.getBreedStatus){
+      var bs=FG_Data.getBreedStatus(p);
+      return bs.canBreed;
+    }
+    return (p.breedCount||0)<3; // Legacy fallback
+  });
+
+  // Wild-other: wild plant is locked on side A, greenhouse plants are partners
+  if(_plantACtx==='wild-other'){
+    if(_allEligible.length<1){
+      if(window._toast)window._toast('No plants ready to breed. Check cooldowns and maturity.');
+      return;
+    }
+    _plantA=plantA; // wild plant object (has _wildMasked flag)
+    _partners=_allEligible;
+    _pIdx=0;
+    _aIdx=-1; // not in eligible list
+    _renderBreedCards();
+    document.getElementById('breed-screen').classList.add('open');
+    return;
+  }
+
   if(_allEligible.length<2){
-    if(window._toast)window._toast('Need at least 2 plants with breeds remaining.');
+    // Give helpful message about WHY
+    var immature=gh.filter(function(p){if(!FG_Data||!FG_Data.getBreedStatus)return false;var bs=FG_Data.getBreedStatus(p);return bs.reason==='IMMATURE';});
+    var cooling=gh.filter(function(p){if(!FG_Data||!FG_Data.getBreedStatus)return false;var bs=FG_Data.getBreedStatus(p);return bs.reason==='COOLDOWN';});
+    var resting=gh.filter(function(p){if(!FG_Data||!FG_Data.getBreedStatus)return false;var bs=FG_Data.getBreedStatus(p);return bs.reason==='NO_CHARGES';});
+    var msg='Need 2 plants ready to breed.';
+    if(immature.length)msg+=' '+immature.length+' still maturing.';
+    if(cooling.length)msg+=' '+cooling.length+' on cooldown.';
+    if(resting.length)msg+=' '+resting.length+' recovering charges.';
+    if(window._toast)window._toast(msg);
     return;
   }
   // Find plantA in eligible list, default to first
@@ -40764,8 +41172,8 @@ window.openBreedScreen=function(plantA,context){
 
 function _renderBreedCards(){
   var isWild=_plantACtx==='wild-other';
-  _renderCard(document.getElementById('bs-card-a'),_plantA,isWild?'WILD PLANT':'PLANT A','a');
-  _renderCard(document.getElementById('bs-card-b'),_partners[_pIdx],'PLANT B','b');
+  _renderCard(document.getElementById('bs-card-a'),_plantA,isWild?'WILD SPECIMEN (LOCKED)':'PLANT A','a');
+  _renderCard(document.getElementById('bs-card-b'),_partners[_pIdx],isWild?'YOUR PLANT':'PLANT B','b');
   _renderForecast();
 }
 
@@ -40846,14 +41254,20 @@ window.bsExecuteBreed=function(){
           var res=window.FG_Data.addSeed({seedHash:offHash,parentAHash:_bsA.hash,parentBHash:_bsM.hash,nonce:offGen});
           if(!res.ok){if(window._toast)window._toast('Nursery full. Bloom or abandon a seed first.');return;}
         }
-        // Increment breedCount on both parents
-        var _raw=window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse');
-        var _bcGh2=[];try{_bcGh2=JSON.parse(_raw||'[]');}catch(e){}
-        var _bcDirty=false;
-        _bcGh2.forEach(function(p){
-          if(p.hash===_bsA.hash||p.hash===_bsM.hash){p.breedCount=(p.breedCount||0)+1;_bcDirty=true;}
-        });
-        if(_bcDirty&&window.saveGreenhouse)saveGreenhouse(_bcGh2);
+        // Use breed charges on both parents (handles cooldown, charges, breedCount)
+        if(window.FG_Data&&FG_Data.useBreedCharge){
+          FG_Data.useBreedCharge(_bsA.hash);
+          FG_Data.useBreedCharge(_bsM.hash);
+        } else {
+          // Legacy fallback
+          var _raw=window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse');
+          var _bcGh2=[];try{_bcGh2=JSON.parse(_raw||'[]');}catch(e){}
+          _bcGh2.forEach(function(p){
+            if(p.hash===_bsA.hash||p.hash===_bsM.hash){p.breedCount=(p.breedCount||0)+1;}
+          });
+          if(window.saveGreenhouse)saveGreenhouse(_bcGh2);
+        }
+        localStorage.setItem('lw_first_breed','1');
         if(window.renderNursery)renderNursery();
         if(window.switchTab)switchTab('nursery');
         if(window._toast)window._toast('🌱 Seed planted! Water 3 days to bloom.');
@@ -40871,6 +41285,407 @@ window.bsExecuteBreed=function(){
   }
   // closeBreedScreen called above before async — don't call again here
 };
+})();
+</script>
+
+<!-- ═══ DAILY QUEST SYSTEM ═══ -->
+<script>
+(function(){
+'use strict';
+var QUEST_KEY='lw_daily_quests';
+var STREAK_KEY='lw_quest_streak';
+
+// Quest templates — pick 3 per day
+var TEMPLATES=[
+  {id:'win_game',text:'Win a mini-game',icon:'🎮',check:function(s){return(s.gamesWon||0)>=1;}},
+  {id:'win_3',text:'Win 3 mini-games',icon:'🎯',check:function(s){return(s.gamesWon||0)>=3;}},
+  {id:'earn_10',text:'Earn 10 dew drops',icon:'💧',check:function(s){return(s.dewEarned||0)>=10;}},
+  {id:'water_seed',text:'Water a nursery seed',icon:'🌱',check:function(s){return(s.seedsWatered||0)>=1;}},
+  {id:'view_plants',text:'Inspect 3 plants',icon:'🔍',check:function(s){return(s.plantsViewed||0)>=3;}},
+  {id:'play_5min',text:'Play for 5 minutes',icon:'⏱️',check:function(s){return(s.playTimeMin||0)>=5;}},
+  {id:'compost',text:'Compost a plant',icon:'🧪',check:function(s){return(s.composted||0)>=1;}},
+  {id:'open_wild',text:'Visit the Wild tab',icon:'🗺️',check:function(s){return(s.wildVisited||0)>=1;}}
+];
+
+function _today(){return new Date().toISOString().split('T')[0];}
+
+function _loadQuests(){
+  try{var d=JSON.parse(localStorage.getItem(QUEST_KEY)||'{}');if(d.date===_today())return d;return null;}catch(e){return null;}
+}
+
+function _generateQuests(){
+  // Deterministic daily selection using date as seed
+  var day=_today();
+  var seed=0;for(var i=0;i<day.length;i++)seed=(seed*31+day.charCodeAt(i))&0x7FFFFFFF;
+  var pool=TEMPLATES.slice();
+  var picked=[];
+  for(var j=0;j<3&&pool.length>0;j++){
+    var idx=seed%(pool.length);seed=Math.floor(seed/pool.length)+j*7;
+    picked.push({id:pool[idx].id,text:pool[idx].text,icon:pool[idx].icon,done:false});
+    pool.splice(idx,1);
+  }
+  var data={date:day,quests:picked,progress:{},claimed:false};
+  localStorage.setItem(QUEST_KEY,JSON.stringify(data));
+  return data;
+}
+
+function _getQuests(){
+  var d=_loadQuests();
+  if(!d)d=_generateQuests();
+  // Re-check completion
+  for(var i=0;i<d.quests.length;i++){
+    var q=d.quests[i];
+    var tmpl=TEMPLATES.filter(function(t){return t.id===q.id;})[0];
+    if(tmpl&&tmpl.check(d.progress))q.done=true;
+  }
+  localStorage.setItem(QUEST_KEY,JSON.stringify(d));
+  return d;
+}
+
+// Track quest progress
+function _trackQuest(key,val){
+  var d=_getQuests();
+  d.progress[key]=(d.progress[key]||0)+(val||1);
+  localStorage.setItem(QUEST_KEY,JSON.stringify(d));
+  // Check if all 3 complete
+  var allDone=d.quests.every(function(q){
+    var tmpl=TEMPLATES.filter(function(t){return t.id===q.id;})[0];
+    return tmpl&&tmpl.check(d.progress);
+  });
+  if(allDone&&!d.claimed){
+    d.claimed=true;
+    localStorage.setItem(QUEST_KEY,JSON.stringify(d));
+    _claimStreak();
+  }
+  // Update quest button badge
+  _updateQuestBadge();
+}
+
+function _claimStreak(){
+  var streak={};try{streak=JSON.parse(localStorage.getItem(STREAK_KEY)||'{}');}catch(e){}
+  var today=_today();
+  var yesterday=new Date(Date.now()-86400000).toISOString().split('T')[0];
+  if(streak.lastDate===yesterday){
+    streak.count=(streak.count||0)+1;
+  }else if(streak.lastDate===today){
+    // Already claimed today
+    return;
+  }else{
+    streak.count=1; // Reset
+  }
+  streak.lastDate=today;
+  streak.count=Math.min(streak.count,7); // Cap at 7
+  localStorage.setItem(STREAK_KEY,JSON.stringify(streak));
+  // Award streak bonus hashes
+  var bonus=streak.count;
+  if(window.earnHashes)earnHashes(bonus);
+  if(window._toast)window._toast('🔥 Daily quests complete! Streak: '+streak.count+' (+'+bonus+' dew)');
+}
+
+function _updateQuestBadge(){
+  var btn=document.getElementById('daily-quest-btn');if(!btn)return;
+  var d=_getQuests();
+  var done=d.quests.filter(function(q){return q.done;}).length;
+  if(d.claimed){btn.textContent='✅ '+done+'/3';btn.style.borderColor='rgba(122,179,86,0.4)';}
+  else{btn.textContent=done+'/3 QUESTS';btn.style.borderColor=done>0?'rgba(200,168,75,0.3)':'rgba(122,179,86,0.15)';}
+}
+
+// Quest panel overlay
+window._openDailyQuests=function(){
+  var d=_getQuests();
+  var streak={};try{streak=JSON.parse(localStorage.getItem(STREAK_KEY)||'{}');}catch(e){}
+  var ov=document.createElement('div');
+  ov.id='quest-panel';
+  ov.style.cssText='position:fixed;inset:0;z-index:99997;background:rgba(5,8,4,0.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;animation:panelFadeIn 0.3s ease;';
+  var h='<div style="width:90%;max-width:320px;background:rgba(18,22,16,0.95);border:1.5px solid rgba(200,168,75,0.2);border-radius:16px;padding:1.2rem;box-shadow:0 12px 40px rgba(0,0,0,0.6);">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem;">';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.1em;">DAILY QUESTS</div>';
+  h+='<button onclick="var qp=document.getElementById(\'quest-panel\');if(qp)qp.remove();" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(138,145,120,0.2);background:transparent;color:var(--cream);font-size:0.5rem;cursor:pointer;min-height:48px;min-width:48px;">✕</button>';
+  h+='</div>';
+  // Streak display
+  var sc=streak.count||0;
+  h+='<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.6rem;padding:0.35rem 0.5rem;background:rgba(200,168,75,0.06);border:1px solid rgba(200,168,75,0.15);border-radius:8px;">';
+  h+='<span style="font-size:0.7rem;">🔥</span>';
+  h+='<div><div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;color:var(--gold);">STREAK: '+sc+' DAY'+(sc!==1?'S':'')+'</div>';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--muted);">Complete all 3 for +'+Math.min(sc+1,7)+' dew bonus</div></div></div>';
+  // Quests
+  for(var i=0;i<d.quests.length;i++){
+    var q=d.quests[i];
+    var tmpl=TEMPLATES.filter(function(t){return t.id===q.id;})[0];
+    var done=tmpl&&tmpl.check(d.progress);
+    h+='<div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem;margin-bottom:4px;background:rgba(26,36,22,'+(done?'0.6':'0.3')+');border:1px solid '+(done?'rgba(122,179,86,0.3)':'rgba(74,124,53,0.1)')+';border-radius:8px;min-height:48px;">';
+    h+='<span style="font-size:0.7rem;width:28px;text-align:center;">'+(done?'✅':q.icon)+'</span>';
+    h+='<div style="flex:1;font-family:DM Mono,monospace;font-size:0.42rem;color:'+(done?'var(--sage)':'var(--cream)')+';'+(done?'text-decoration:line-through;opacity:0.7;':'')+'">'+q.text+'</div>';
+    h+='</div>';
+  }
+  if(d.claimed){
+    h+='<div style="text-align:center;margin-top:0.5rem;font-family:DM Mono,monospace;font-size:0.4rem;color:var(--sage);">✨ All quests complete! Come back tomorrow.</div>';
+  }
+  h+='</div>';
+  ov.innerHTML=h;
+  document.body.appendChild(ov);
+};
+
+// Hook into game events to track progress
+var _origE=window._e;
+if(_origE){
+  window._e=function(){
+    var result=_origE.apply(this,arguments);
+    _trackQuest('gamesWon',1);
+    _trackQuest('dewEarned',1);
+    return result;
+  };
+}
+// Hook into switchTab for wild visit tracking
+var _origST2=window.switchTab;
+if(_origST2){
+  window.switchTab=function(tab){
+    _origST2(tab);
+    if(tab==='wild')_trackQuest('wildVisited',1);
+  };
+}
+// Hook into carousel view for plant inspection
+var _origOC=window.openCarousel;
+if(_origOC){
+  window.openCarousel=function(){
+    _origOC.apply(this,arguments);
+    _trackQuest('plantsViewed',1);
+  };
+}
+
+// Init on load
+setTimeout(function(){
+  _getQuests(); // Generate if needed
+  _updateQuestBadge();
+  // Track play time
+  var _ptStart=Date.now();
+  setInterval(function(){
+    var mins=Math.floor((Date.now()-_ptStart)/60000);
+    if(mins>0){var d=_loadQuests();if(d){d.progress.playTimeMin=mins;localStorage.setItem(QUEST_KEY,JSON.stringify(d));}}
+  },60000);
+},1500);
+
+window._trackQuest=_trackQuest;
+})();
+</script>
+
+<!-- ═══ ANCESTRY VIEWER ═══ -->
+<script>
+(function(){
+'use strict';
+
+window.openAncestryViewer=function(plant){
+  if(!plant)return;
+  closePlantActionDrawer();
+  var ov=document.createElement('div');
+  ov.id='ancestry-viewer';
+  ov.style.cssText='position:fixed;inset:0;z-index:99996;background:rgba(5,8,4,0.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:flex;flex-direction:column;align-items:center;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:panelFadeIn 0.3s ease;';
+
+  var nm=window.getPlantName?window.getPlantName(plant.hash):'Plant';
+  var gen=plant.generation||1;
+  var h='<div style="width:100%;max-width:380px;">';
+  // Header
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;">ANCESTRY</div>';
+  h+='<button onclick="var av=document.getElementById(\'ancestry-viewer\');if(av)av.remove();" style="width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:0.6rem;cursor:pointer;min-height:48px;min-width:48px;display:flex;align-items:center;justify-content:center;">✕</button>';
+  h+='</div>';
+
+  // Current plant (center)
+  var svg='';try{if(window._generatePlantSVG)svg=window._generatePlantSVG(plant.hash,44);}catch(e){}
+  var t=window.hashToTraits?window.hashToTraits(plant.hash):null;
+  var tg=window.getTerraGrade&&t?window.getTerraGrade(t):{name:'Common',color:'var(--cream)',icon:''};
+  h+='<div style="text-align:center;padding:0.6rem;background:rgba(18,22,16,0.7);border:2px solid rgba(200,168,75,0.3);border-radius:12px;margin-bottom:0.6rem;">';
+  h+='<div style="width:88px;height:88px;margin:0 auto;">'+svg+'</div>';
+  h+='<div style="font-family:Cormorant Garamond,serif;font-size:0.6rem;color:var(--cream);margin-top:0.3rem;">'+nm+'</div>';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:'+tg.color+';">'+tg.icon+' '+tg.name+' · Gen '+gen+'</div>';
+  h+='</div>';
+
+  // Parents
+  if(plant.parentAHash||plant.parentBHash){
+    h+='<div style="text-align:center;margin-bottom:0.4rem;">';
+    h+='<div style="width:1px;height:20px;background:rgba(200,168,75,0.3);margin:0 auto;"></div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);margin:0.2rem 0;">PARENTS</div>';
+    h+='</div>';
+    h+='<div style="display:flex;gap:8px;margin-bottom:0.6rem;">';
+    h+=_renderAncestorCard(plant.parentAHash,'Parent A');
+    h+=_renderAncestorCard(plant.parentBHash,'Parent B');
+    h+='</div>';
+
+    // Grandparents (if we can find them)
+    var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+    var ancestry=[];try{ancestry=JSON.parse(localStorage.getItem('sws_ancestry')||'[]');}catch(e){}
+    var parentAPlant=_findPlant(plant.parentAHash,gh);
+    var parentBPlant=_findPlant(plant.parentBHash,gh);
+    var hasGP=false;
+    if((parentAPlant&&parentAPlant.parentAHash)||(parentBPlant&&parentBPlant.parentAHash)){
+      hasGP=true;
+      h+='<div style="text-align:center;margin-bottom:0.4rem;">';
+      h+='<div style="width:1px;height:16px;background:rgba(122,179,86,0.2);margin:0 auto;"></div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--muted);margin:0.15rem 0;">GRANDPARENTS</div>';
+      h+='</div>';
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin-bottom:0.6rem;">';
+      if(parentAPlant){
+        h+=_renderAncestorMini(parentAPlant.parentAHash);
+        h+=_renderAncestorMini(parentAPlant.parentBHash);
+      }else{h+=_renderAncestorMini(null);h+=_renderAncestorMini(null);}
+      if(parentBPlant){
+        h+=_renderAncestorMini(parentBPlant.parentAHash);
+        h+=_renderAncestorMini(parentBPlant.parentBHash);
+      }else{h+=_renderAncestorMini(null);h+=_renderAncestorMini(null);}
+      h+='</div>';
+    }
+  }else{
+    h+='<div style="text-align:center;padding:0.6rem;color:var(--muted);font-family:DM Mono,monospace;font-size:0.42rem;">';
+    h+='Gen 1 — Original mint, no parents.</div>';
+  }
+
+  // Haiku
+  if(window.getHaiku){
+    var hk=window.getHaiku(plant.hash);
+    h+='<div style="text-align:center;padding:0.6rem;margin-top:0.4rem;border-top:1px solid rgba(122,179,86,0.1);">';
+    h+='<div style="font-family:Cormorant Garamond,serif;font-style:italic;font-size:0.45rem;color:var(--cream);line-height:1.8;">'+hk.line1+'<br>'+hk.line2+'<br>'+hk.line3+'</div>';
+    h+='</div>';
+  }
+
+  // Hash
+  h+='<div style="text-align:center;margin-top:0.3rem;font-family:DM Mono,monospace;font-size:0.3rem;color:rgba(138,145,120,0.4);word-break:break-all;">'+plant.hash+'</div>';
+
+  h+='</div>';
+  ov.innerHTML=h;
+  document.body.appendChild(ov);
+};
+
+function _findPlant(hash,gh){
+  if(!hash)return null;
+  for(var i=0;i<gh.length;i++){if(gh[i].hash===hash)return gh[i];}
+  return null;
+}
+
+function _renderAncestorCard(hash,label){
+  if(!hash)return'<div style="flex:1;padding:0.4rem;background:rgba(26,36,22,0.4);border:1px dashed rgba(138,145,120,0.2);border-radius:8px;text-align:center;min-height:80px;display:flex;align-items:center;justify-content:center;"><div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);">Unknown</div></div>';
+  var svg='';try{if(window._generatePlantSVG)svg=window._generatePlantSVG(hash,28);}catch(e){}
+  var nm=window.getPlantName?window.getPlantName(hash):'???';
+  var t=window.hashToTraits?window.hashToTraits(hash):null;
+  var tg=window.getTerraGrade&&t?window.getTerraGrade(t):{name:'Common',color:'var(--cream)'};
+  var h='<div style="flex:1;padding:0.4rem;background:rgba(18,22,16,0.5);border:1.5px solid rgba(122,179,86,0.12);border-radius:8px;text-align:center;">';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:var(--muted);margin-bottom:0.2rem;">'+label+'</div>';
+  h+='<div style="width:56px;height:56px;margin:0 auto;">'+svg+'</div>';
+  h+='<div style="font-family:Cormorant Garamond,serif;font-size:0.42rem;color:var(--cream);margin-top:0.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+nm+'</div>';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:'+tg.color+';">'+tg.name+'</div>';
+  h+='</div>';
+  return h;
+}
+
+function _renderAncestorMini(hash){
+  if(!hash)return'<div style="padding:0.25rem;background:rgba(26,36,22,0.3);border:1px dashed rgba(138,145,120,0.15);border-radius:6px;text-align:center;min-height:44px;display:flex;align-items:center;justify-content:center;"><div style="font-size:0.25rem;color:var(--muted);">?</div></div>';
+  var svg='';try{if(window._generatePlantSVG)svg=window._generatePlantSVG(hash,18);}catch(e){}
+  var nm=window.getPlantName?window.getPlantName(hash):'???';
+  var h='<div style="padding:0.25rem;background:rgba(18,22,16,0.4);border:1px solid rgba(122,179,86,0.08);border-radius:6px;text-align:center;">';
+  h+='<div style="width:36px;height:36px;margin:0 auto;">'+svg+'</div>';
+  h+='<div style="font-size:0.25rem;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+nm+'</div>';
+  h+='</div>';
+  return h;
+}
+
+})();
+</script>
+
+<!-- ═══ NEXT STEP PROMPT ENGINE ═══ -->
+<script>
+(function(){
+'use strict';
+var _nsEl=null;
+var _nsVisible=false;
+
+function _getNextStep(){
+  // Priority-ordered checks — return first match
+  var gh=[];try{gh=JSON.parse((window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse'))||'[]');}catch(e){}
+  var nur=[];try{nur=JSON.parse(localStorage.getItem('sws_nursery')||'[]');}catch(e){}
+  var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+  var hl={};try{hl=JSON.parse((window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger'))||'{}');}catch(e){}
+  var dew=(hl.earned||0)-(hl.spent||0);
+  var today=new Date().toISOString().split('T')[0];
+
+  // 1. Nursery seed needs watering today
+  for(var i=0;i<nur.length;i++){
+    var s=nur[i];
+    if(s.status==='growing'&&s.waterLog&&s.waterLog.indexOf(today)===-1){
+      var left=3-s.waterLog.length;
+      return{icon:'💧',text:'Your seed needs water! '+left+' day'+(left!==1?'s':'')+' until bloom.',action:'nursery',color:'rgba(91,175,220,0.9)'};
+    }
+  }
+  // 2. Nursery seed ready to bloom
+  for(var j=0;j<nur.length;j++){
+    var s2=nur[j];
+    if(s2.status==='growing'&&s2.waterLog&&s2.waterLog.length>=3){
+      return{icon:'🌸',text:'A seed is ready to bloom! Tap to reveal your new plant.',action:'nursery',color:'var(--gold)'};
+    }
+  }
+  var _nsCost=window._getMintCost?window._getMintCost():30;
+  // 3. Close to minting (>= 2/3 of cost)
+  if(dew>=Math.floor(_nsCost*0.66)&&dew<_nsCost){
+    return{icon:'🌱',text:'Almost there! '+(_nsCost-dew)+' more dew to mint a new plant.',action:'game',color:'var(--sage)'};
+  }
+  // 4. No plants yet (besides gift)
+  if(gh.length<=1){
+    return{icon:'🎮',text:'Play a game to earn dew drops. '+_nsCost+' dew = your next plant!',action:'game',color:'var(--sage)'};
+  }
+  // 5. Haven't dropped anything in wild yet
+  if(gh.length>=3&&wild.length===0){
+    return{icon:'🗺️',text:'Try the Wild tab! Drop a plant on the map near you.',action:'wild',color:'rgba(122,179,86,0.8)'};
+  }
+  // 6. Have plants but haven't bred
+  if(gh.length>=2&&!localStorage.getItem('lw_first_breed')){
+    var eligible=gh.filter(function(p){return(p.breedCount||0)<3;});
+    if(eligible.length>=2){
+      return{icon:'🧬',text:'You can breed! Open a plant and tap BREED to create offspring.',action:'greenhouse',color:'var(--gold)'};
+    }
+  }
+  // 7. Greenhouse getting full
+  if(gh.length>=8&&gh.length<=10){
+    return{icon:'📦',text:gh.length+'/10 slots used. Compost a plant for fertilizer or expand storage.',action:'greenhouse',color:'rgba(200,168,75,0.8)'};
+  }
+  // 8. Default: earn more
+  if(dew<Math.floor(_nsCost*0.33)){
+    return{icon:'🎯',text:'Play games to earn dew. '+dew+'/'+_nsCost+' toward your next plant.',action:'game',color:'var(--muted)'};
+  }
+  // 9. Mid-progress
+  return{icon:'🌿',text:dew+'/'+_nsCost+' dew collected. Keep playing to mint your next plant!',action:'game',color:'var(--sage)'};
+}
+
+function _updateNextStep(){
+  if(!_nsEl)_nsEl=document.getElementById('lw-next-step');
+  if(!_nsEl)return;
+  // Don't show during onboarding
+  if(localStorage.getItem('pw_onboarded')!=='1'){_nsEl.style.display='none';return;}
+  var step=_getNextStep();
+  _nsEl.innerHTML='<span style="font-size:0.55rem;">'+step.icon+'</span> <span style="color:'+step.color+';">'+step.text+'</span>';
+  _nsEl.onclick=function(){if(window.switchTab)switchTab(step.action);};
+  _nsEl.style.display='flex';
+  _nsVisible=true;
+}
+
+// Update on tab switch
+var _origST=window.switchTab;
+if(_origST){
+  window.switchTab=function(tab){
+    _origST(tab);
+    setTimeout(_updateNextStep,200);
+  };
+}
+
+// Update on key events
+window.addEventListener('lw-hash-earned',function(){setTimeout(_updateNextStep,500);});
+window.addEventListener('lw-plant-minted',function(){setTimeout(_updateNextStep,500);});
+
+// Initial update after load
+setTimeout(function(){
+  _updateNextStep();
+  // Re-check every 30 seconds for nursery watering
+  setInterval(_updateNextStep,30000);
+},2000);
+
+window._updateNextStep=_updateNextStep;
 })();
 </script>
 
