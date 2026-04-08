@@ -42231,6 +42231,100 @@ window.bsExecuteBreed=function(){
 })();
 </script>
 
+<!-- ═══ PLANT SONG PARAMETERS (hash → music) ═══ -->
+<script>
+(function(){
+'use strict';
+// Scale definitions — each mode has a character
+var SCALES={
+  lydian:    [0,2,4,6,7,9,11],  // bright, dreamy (Spring)
+  ionian:    [0,2,4,5,7,9,11],  // happy, stable
+  mixolydian:[0,2,4,5,7,9,10],  // warm, bluesy (Summer)
+  dorian:    [0,2,3,5,7,9,10],  // mellow, sophisticated (Autumn)
+  aeolian:   [0,2,3,5,7,8,10],  // dark, natural minor (Winter)
+  phrygian:  [0,1,3,5,7,8,10],  // exotic, tense
+  pentatonic:[0,2,4,7,9]         // universal, always sounds good
+};
+
+var ROOT_NOTES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+var SEASON_MODES=['lydian','mixolydian','dorian','aeolian'];
+var ARPEGGIO_PATTERNS=[
+  [0,2,4],      // triad up
+  [4,2,0],      // triad down
+  [0,2,4,2],    // triad bounce
+  [0,4,2,4],    // skip pattern
+  [0,2,4,7],    // extended
+  [0,1,2,4],    // chromatic approach
+  [0,4,7,4],    // wide bounce
+  [0,2,4,5,7]   // scalar run
+];
+
+window.getPlantSong=function(hash){
+  if(!hash||hash.length<32)return null;
+  // Helper: get byte value from hash position
+  function hb(pos){return parseInt(hash.slice(pos*2,pos*2+2),16)||0;}
+
+  var traits=window.hashToTraits?window.hashToTraits(hash):null;
+  var season=traits?traits.season:0;
+  var ea=0;try{ea=window.computeEA?window.computeEA(traits,0):0;}catch(e){}
+
+  // Root note from byte 0 (12 options)
+  var rootIdx=hb(0)%12;
+  var root=ROOT_NOTES[rootIdx];
+  var rootMidi=48+rootIdx; // Middle C octave
+
+  // Mode from season (primary) + byte 1 (variation)
+  var modeKey=SEASON_MODES[season];
+  // 20% chance of modal interchange based on byte 1
+  if(hb(1)%5===0){
+    var altModes=['pentatonic','phrygian','ionian'];
+    modeKey=altModes[hb(1)%3];
+  }
+  var scale=SCALES[modeKey];
+
+  // Tempo from byte 2 (60-140 BPM range)
+  var tempo=60+Math.round(hb(2)/255*80);
+  // Swing from byte 3 (0-0.3)
+  var swing=Math.round((hb(3)/255)*30)/100;
+
+  // Arpeggio pattern from byte 4
+  var arpPattern=ARPEGGIO_PATTERNS[hb(4)%ARPEGGIO_PATTERNS.length];
+
+  // Note density from EA (higher EA = more embellishment)
+  var density=Math.min(1,ea/20); // 0-1 range
+
+  // Filter settings from mutation
+  var filterCutoff=2000+hb(5)*20; // 2000-7100 Hz
+  var filterResonance=0.5+hb(6)/255*4; // 0.5-4.5 Q
+  var mutName=traits?traits.mutationName:'None';
+  if(mutName==='Glitch'){filterCutoff=800;filterResonance=8;} // bitcrushed
+  if(mutName==='Glass Stem'){filterCutoff=6000;filterResonance=6;} // high resonance
+  if(mutName==='Wireframe'){filterCutoff=1200;filterResonance=1;} // dark
+
+  // LFO from byte 7
+  var lfoRate=0.5+hb(7)/255*4; // 0.5-4.5 Hz
+  var lfoDepth=hb(8)/255*0.4; // 0-0.4
+
+  // Octave range from stem height
+  var octave=traits&&traits.stemHeight>35?5:traits&&traits.stemHeight>25?4:3;
+
+  // Companion percussion
+  var hasPercussion=traits&&traits.companion>=20;
+  var percPattern=hasPercussion?hb(9)%8:0;
+
+  return{
+    root:root, rootMidi:rootMidi, mode:modeKey, scale:scale,
+    tempo:tempo, swing:swing, octave:octave,
+    arpPattern:arpPattern, density:density,
+    filter:{cutoff:filterCutoff,resonance:filterResonance},
+    lfo:{rate:lfoRate,depth:lfoDepth},
+    percussion:{active:hasPercussion,pattern:percPattern},
+    season:season, ea:ea, mutation:mutName
+  };
+};
+})();
+</script>
+
 <!-- ═══ PWA BADGE (unwatered seeds on app icon) ═══ -->
 <script>
 (function(){
