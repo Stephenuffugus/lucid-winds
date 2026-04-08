@@ -32116,6 +32116,23 @@ function _doReproduction(weather, simMode) {
       }
     } catch (e) {}
     if (window.evaluateBloomChorus) try { evaluateBloomChorus(); } catch (e) {}
+    // Render mesh connections on map
+    if (window.getMeshLinks && _map) {
+      if (window._meshLines) { for (var mli = 0; mli < window._meshLines.length; mli++) _map.removeLayer(window._meshLines[mli]); }
+      window._meshLines = [];
+      var meshLinks = getMeshLinks();
+      for (var ml = 0; ml < meshLinks.length; ml++) {
+        var link = meshLinks[ml];
+        if (!link.latA || !link.latB || link.stage < 1) continue;
+        var meshOpacity = link.stage === 1 ? 0.12 : link.stage === 2 ? 0.2 : link.stage === 3 ? 0.3 : 0.4;
+        var meshWeight = link.stage >= 3 ? 1.5 : 1;
+        var meshLine = L.polyline([[link.latA, link.lngA], [link.latB, link.lngB]], {
+          color: '#7ab356', weight: meshWeight, opacity: meshOpacity,
+          dashArray: link.stage >= 3 ? null : '4,6', interactive: false
+        }).addTo(_map);
+        window._meshLines.push(meshLine);
+      }
+    }
     if (window.checkPhenotypeReveal) try { checkPhenotypeReveal(); } catch (e) {}
   }
 
