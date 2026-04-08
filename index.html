@@ -4889,6 +4889,7 @@ window.onerror=function(msg,url,line,col,err){
       <!-- Action buttons — other player's plant -->
       <div class="wtp2-actions" id="wtp-other-actions">
         <button class="wtp2-btn" onclick="FG_Wild.closeTP()"><div class="wtp2-btn-icon">✕</div><div class="wtp2-btn-lbl">Close</div></button>
+        <button class="wtp2-btn" id="wtp-water-other"><div class="wtp2-btn-icon" style="font-size:1.4rem;">💧</div><div class="wtp2-btn-lbl">Water</div></button>
         <button class="wtp2-btn" id="wtp-wild-breed"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-breed-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Breed</div></button>
         <button class="wtp2-btn gold" id="wtp-act"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-harvest-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Harvest</div></button>
       </div>
@@ -31621,18 +31622,68 @@ function _doReproduction(weather, simMode) {
     // Write to Firestore
     if (!simMode) {
       (function(did, dd, dp) {
-        // If invading, delete the displaced plant first
-        if (dp && dp.docId) {
-          window.db.collection('wildDrops').doc(dp.docId).delete().catch(function() {});
+        // If invading, log the invasion and delete the displaced plant
+        if (dp) {
+          if (window._logWildEvent) {
+            var dpName = '';try{dpName=window.getPlantName?window.getPlantName(dp.hash||''):'Unknown';}catch(e){}
+            window._logWildEvent({type:'invaded',defenderHash:dp.hash||'',defenderName:dpName,invaderHash:dd.hash,invaderEA:dd.ea});
+          }
+          if (dp.docId) window.db.collection('wildDrops').doc(dp.docId).delete().catch(function() {});
         }
         window.db.collection('wildDrops').doc(did).set(dd)
-          .then(function() { if (window._swsLog) _swsLog('Wild birth! ' + did + ' grade:' + dd.grade + ' EA:' + dd.ea, 'ok'); })
+          .then(function() {
+            if (window._swsLog) _swsLog('Wild birth! ' + did + ' grade:' + dd.grade + ' EA:' + dd.ea, 'ok');
+            if (window._logWildBirth) window._logWildBirth(dd);
+          })
           .catch(function(e) { if (window._swsLog) _swsLog('Wild birth write: ' + (e.code || e.message), 'warn'); });
       })(docId, dropData, invaded ? displacedPlant : null);
     }
 
     births++;
     break; // max 1 birth per zone per day
+  }
+
+  // ── NEGLECT DECAY (plants that nobody tends decline) ──
+  if (!simMode) {
+    var _myWild = [];
+    try { _myWild = JSON.parse(localStorage.getItem('fg_wild_plants') || '[]'); } catch (e) {}
+    var _decayDirty = false;
+    var _today = new Date().toISOString().split('T')[0];
+    for (var di = 0; di < _myWild.length; di++) {
+      var wp = _myWild[di];
+      var lastTended = wp.lastWatered || wp.date || '';
+      var daysSinceTend = 0;
+      if (lastTended) {
+        try { daysSinceTend = Math.floor((Date.now() - new Date(lastTended).getTime()) / 86400000); } catch (e) {}
+      }
+      // 7+ days: wilting (-1 EA/day, visual flag)
+      if (daysSinceTend >= 7 && daysSinceTend < 21) {
+        var decay = daysSinceTend - 6; // 1 EA lost per day past day 7
+        wp.neglectDecay = decay;
+        wp.status = 'Wilting';
+        _decayDirty = true;
+      }
+      // 21+ days: goes feral — owner loses the plant
+      if (daysSinceTend >= 21) {
+        var feralName = '';
+        try { feralName = window.getPlantName ? window.getPlantName(wp.hash) : ''; } catch (e) {}
+        if (window._logWildEvent) {
+          window._logWildEvent({ type: 'feral', hash: wp.hash, name: feralName, reason: 'neglect' });
+        }
+        if (window._toast) _toast('💀 Your ' + (feralName || 'plant') + ' went feral from neglect.');
+        // Convert to wild-owned
+        wp.ownerUid = 'wild';
+        wp.ownerName = 'Feral';
+        wp.own = false;
+        wp.wildBorn = true;
+        _decayDirty = true;
+      }
+    }
+    if (_decayDirty) {
+      // Remove fully feral plants from local wild array
+      _myWild = _myWild.filter(function (wp) { return wp.own !== false; });
+      localStorage.setItem('fg_wild_plants', JSON.stringify(_myWild));
+    }
   }
 
   // ── SPONTANEOUS SPAWNING (depleted area recovery) ──
@@ -32094,6 +32145,68 @@ function showTP(p,mk){
         ownStatus.innerHTML='Beat their challenge to harvest <span style="color:rgba(91,175,220,0.9);">\u2b50 '+_reward+' Dew</span>';
       }
       ownStatus.style.display='block';
+    }
+    // Water other player's plant button
+    var waterOtherBtn=document.getElementById('wtp-water-other');
+    if(waterOtherBtn){
+      var _waterKey='lw_water_budget';
+      var _wBudget={};try{_wBudget=JSON.parse(localStorage.getItem(_waterKey)||'{}');}catch(e){}
+      var _wToday=new Date().toISOString().split('T')[0];
+      if(_wBudget.date!==_wToday){_wBudget={date:_wToday,count:0};}
+      var _wLeft=5-(_wBudget.count||0);
+      if(_tooFar){
+        waterOtherBtn.style.opacity='0.35';waterOtherBtn.style.pointerEvents='none';
+        waterOtherBtn.querySelector('.wtp2-btn-lbl').textContent=Math.round(_distOther)+'m';
+      }else if(_wLeft<=0){
+        waterOtherBtn.style.opacity='0.35';waterOtherBtn.style.pointerEvents='none';
+        waterOtherBtn.querySelector('.wtp2-btn-lbl').textContent='0 left';
+      }else{
+        waterOtherBtn.style.opacity='1';waterOtherBtn.style.pointerEvents='auto';
+        waterOtherBtn.querySelector('.wtp2-btn-lbl').textContent='Water ('+_wLeft+')';
+        waterOtherBtn.onclick=function(){
+          // 10-second hold timer
+          var _wHold=null;
+          waterOtherBtn.querySelector('.wtp2-btn-lbl').textContent='Hold...';
+          waterOtherBtn.style.background='rgba(91,175,220,0.15)';
+          var _wStart=Date.now();
+          var _wInterval=setInterval(function(){
+            var elapsed=((Date.now()-_wStart)/1000).toFixed(0);
+            waterOtherBtn.querySelector('.wtp2-btn-lbl').textContent=elapsed+'s / 10s';
+            if(elapsed>=10){
+              clearInterval(_wInterval);
+              // Water complete!
+              _wBudget.count=(_wBudget.count||0)+1;
+              localStorage.setItem(_waterKey,JSON.stringify(_wBudget));
+              waterOtherBtn.querySelector('.wtp2-btn-lbl').textContent='Watered!';
+              waterOtherBtn.style.opacity='0.5';waterOtherBtn.style.pointerEvents='none';
+              // Log event
+              var _pName='';try{_pName=window.getPlantName?window.getPlantName(p.hash):'';}catch(e){}
+              var _myName=localStorage.getItem('pw_keeper_name')||'A stranger';
+              if(window._logWildEvent)window._logWildEvent({type:'watered',hash:p.hash,name:_pName,by:_myName});
+              // Award pollen to waterer
+              try{var _pol=parseInt(localStorage.getItem('fg_pollen')||'0');localStorage.setItem('fg_pollen',String(_pol+2));}catch(e){}
+              if(window._toast)_toast('💧 Watered! +2 pollen. '+(4-_wBudget.count)+' waters left today.');
+              if(window._haptic)_haptic('bloom');
+              if(window._trackQuest)_trackQuest('plantsWatered',1);
+            }
+          },1000);
+          // Cancel on touchend/mouseup
+          var _cancelWater=function(){
+            clearInterval(_wInterval);
+            waterOtherBtn.querySelector('.wtp2-btn-lbl').textContent='Water ('+Math.max(0,5-(_wBudget.count||0))+')';
+            waterOtherBtn.style.background='';
+            waterOtherBtn.removeEventListener('touchend',_cancelWater);
+            waterOtherBtn.removeEventListener('mouseup',_cancelWater);
+            waterOtherBtn.removeEventListener('mouseleave',_cancelWater);
+          };
+          // Only cancel if released BEFORE 10s
+          setTimeout(function(){
+            waterOtherBtn.addEventListener('touchend',_cancelWater);
+            waterOtherBtn.addEventListener('mouseup',_cancelWater);
+            waterOtherBtn.addEventListener('mouseleave',_cancelWater);
+          },100);
+        };
+      }
     }
     // Wild breed button — breed with this wild plant using your greenhouse plants
     var wildBreedBtn=document.getElementById('wtp-wild-breed');
@@ -41654,6 +41767,178 @@ setTimeout(function(){
 },1500);
 
 window._trackQuest=_trackQuest;
+})();
+</script>
+
+<!-- ═══ WILD EVENT LOG + MORNING REPORT ═══ -->
+<script>
+(function(){
+'use strict';
+var EVT_KEY='lw_wild_events';
+var REPORT_KEY='lw_morning_report';
+var MAX_EVENTS=100;
+
+// ── EVENT TYPES ──
+// birth: { type:'birth', hash, parentA, parentB, grade, ea, zone, date }
+// weather: { type:'weather', hash, name, event:'frost'|'rain'|'drought', survived:bool, date }
+// watered: { type:'watered', hash, name, by:'stranger'|keeperName, date }
+// spread: { type:'spread', originHash, originName, descendantHash, distance, date }
+// invaded: { type:'invaded', defenderHash, defenderName, invaderHash, invaderEA, date }
+// feral: { type:'feral', hash, name, collectedBy, date }
+
+function _loadEvents(){
+  try{return JSON.parse(localStorage.getItem(EVT_KEY)||'[]');}catch(e){return[];}
+}
+function _saveEvents(evts){
+  if(evts.length>MAX_EVENTS)evts=evts.slice(evts.length-MAX_EVENTS);
+  localStorage.setItem(EVT_KEY,JSON.stringify(evts));
+}
+
+// Log a new event
+window._logWildEvent=function(evt){
+  if(!evt||!evt.type)return;
+  evt.date=evt.date||new Date().toISOString();
+  evt.ts=Date.now();
+  var evts=_loadEvents();
+  evts.push(evt);
+  _saveEvents(evts);
+};
+
+// ── MORNING REPORT ──
+// Generates 2-3 narrative lines from recent events
+
+function _generateReport(){
+  var evts=_loadEvents();
+  var now=Date.now();
+  var dayAgo=now-86400000;
+  var recent=evts.filter(function(e){return(e.ts||0)>dayAgo;});
+  var lines=[];
+
+  // Count event types
+  var births=recent.filter(function(e){return e.type==='birth';});
+  var weatherEvents=recent.filter(function(e){return e.type==='weather';});
+  var waterings=recent.filter(function(e){return e.type==='watered';});
+  var spreads=recent.filter(function(e){return e.type==='spread';});
+  var invasions=recent.filter(function(e){return e.type==='invaded';});
+
+  // Birth stories
+  if(births.length>0){
+    var b=births[births.length-1]; // most recent
+    var nm=b.name||window.getPlantName&&window.getPlantName(b.hash)||'A wild seedling';
+    if(births.length===1){
+      lines.push({icon:'🌱',text:nm+' sprouted from a cross near you. '+b.grade+', EA '+b.ea+'.',color:'var(--sage)'});
+    }else{
+      lines.push({icon:'🌱',text:births.length+' new plants sprouted overnight. Strongest: '+nm+' ('+b.grade+', EA '+b.ea+').',color:'var(--sage)'});
+    }
+  }
+
+  // Weather stories
+  var survived=weatherEvents.filter(function(e){return e.survived;});
+  var died=weatherEvents.filter(function(e){return!e.survived;});
+  if(survived.length>0&&died.length>0){
+    lines.push({icon:'🌧️',text:'Your '+survived[0].name+' survived last night\'s '+survived[0].event+'. '+died.length+' nearby plant'+(died.length>1?'s':'')+' didn\'t.',color:'rgba(91,175,220,0.9)'});
+  }else if(survived.length>0){
+    lines.push({icon:'☀️',text:'Your plants weathered the '+(survived[0].event||'conditions')+'. All healthy.',color:'var(--sage)'});
+  }
+
+  // Watering stories
+  var strangerWaters=waterings.filter(function(e){return e.by&&e.by!=='self';});
+  if(strangerWaters.length>0){
+    var uniqueWaterers={};strangerWaters.forEach(function(w){uniqueWaterers[w.by]=true;});
+    var wCount=Object.keys(uniqueWaterers).length;
+    lines.push({icon:'💧',text:wCount+' stranger'+(wCount>1?'s':'')+' watered your plants overnight.',color:'rgba(91,175,220,0.9)'});
+  }
+
+  // Spread stories
+  if(spreads.length>0){
+    var s=spreads[spreads.length-1];
+    lines.push({icon:'🌿',text:'A descendant of your '+s.originName+' was found '+Math.round(s.distance||0)+'m away.',color:'var(--gold)'});
+  }
+
+  // Invasion stories
+  if(invasions.length>0){
+    var inv=invasions[0];
+    lines.push({icon:'⚔️',text:'Your '+inv.defenderName+' was outcompeted by a wild seedling (EA '+inv.invaderEA+').',color:'rgba(192,112,112,0.8)'});
+  }
+
+  // If nothing happened
+  if(lines.length===0){
+    var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+    if(wild.length>0){
+      lines.push({icon:'🌿',text:'Your '+wild.length+' wild plant'+(wild.length>1?'s are':' is')+' quietly growing. All is well.',color:'var(--muted)'});
+    }else{
+      lines.push({icon:'🗺️',text:'No plants in the wild yet. Drop one on the map to start your legacy.',color:'var(--muted)'});
+    }
+  }
+
+  return lines.slice(0,3); // max 3 lines
+}
+
+// ── MORNING REPORT UI ──
+function _showMorningReport(){
+  // Don't show if already shown today
+  var lastShown=localStorage.getItem(REPORT_KEY);
+  var today=new Date().toISOString().split('T')[0];
+  if(lastShown===today)return;
+  if(localStorage.getItem('pw_onboarded')!=='1')return;
+
+  var lines=_generateReport();
+  if(lines.length===0)return;
+
+  // Delay to let app settle
+  setTimeout(function(){
+    var ov=document.createElement('div');
+    ov.id='morning-report';
+    ov.style.cssText='position:fixed;inset:0;z-index:99995;background:rgba(5,8,4,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;animation:panelFadeIn 0.4s ease;';
+
+    var h='<div style="width:88%;max-width:340px;text-align:center;">';
+    // Header
+    h+='<div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--gold);margin-bottom:0.3rem;opacity:0.7;">overnight</div>';
+    h+='<div style="width:40px;height:1px;background:rgba(200,168,75,0.3);margin:0 auto 0.8rem;"></div>';
+
+    // Lines — staggered fade in
+    for(var i=0;i<lines.length;i++){
+      var l=lines[i];
+      h+='<div style="margin-bottom:0.6rem;opacity:0;animation:tierFadeIn 0.6s ease '+(0.3+i*0.4)+'s forwards;">';
+      h+='<span style="font-size:0.65rem;">'+l.icon+'</span>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:'+l.color+';line-height:1.6;margin-top:0.15rem;">'+l.text+'</div>';
+      h+='</div>';
+    }
+
+    // Dismiss
+    h+='<button onclick="var mr=document.getElementById(\'morning-report\');if(mr)mr.remove();" style="margin-top:0.6rem;padding:0.5rem 2rem;border:1.5px solid rgba(122,179,86,0.2);border-radius:8px;background:rgba(26,36,22,0.3);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;opacity:0;animation:tierFadeIn 0.5s ease '+(0.3+lines.length*0.4+0.2)+'s forwards;">TEND YOUR GARDEN</button>';
+    h+='</div>';
+
+    ov.innerHTML=h;
+    document.body.appendChild(ov);
+    localStorage.setItem(REPORT_KEY,today);
+
+    // Auto-dismiss after 12 seconds
+    setTimeout(function(){var mr=document.getElementById('morning-report');if(mr){mr.style.transition='opacity 0.5s ease';mr.style.opacity='0';setTimeout(function(){if(mr.parentNode)mr.parentNode.removeChild(mr);},500);}},12000);
+  },2500);
+}
+
+// Wire reproduction events into the log
+var _origLogBirth=window._swsLog;
+// Hook: log births from reproduction engine
+window._logWildBirth=function(data){
+  if(!data)return;
+  var nm='';try{nm=window.getPlantName?window.getPlantName(data.hash):'';}catch(e){}
+  window._logWildEvent({
+    type:'birth',hash:data.hash,name:nm,
+    parentA:data.parentA,parentB:data.parentB,
+    grade:data.grade||'Common',ea:data.ea||0,
+    zone:data.zone||'',weather:data.weatherAtBirth||null
+  });
+};
+
+// Show report on app load
+setTimeout(_showMorningReport,3500);
+
+// Expose for testing
+window._showMorningReport=_showMorningReport;
+window._generateReport=_generateReport;
+window._getWildEvents=_loadEvents;
 })();
 </script>
 
