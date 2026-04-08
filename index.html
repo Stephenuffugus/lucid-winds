@@ -29930,6 +29930,16 @@ document.addEventListener('keydown', function(e) {
         if (window.renderRecords)    renderRecords();
         if (window.PW_Social) PW_Social.ensureProfile(user);
         if (window._checkDailyLogin) _checkDailyLogin();
+        // Daily ecosystem reproduction (runs once per day on any app load)
+        setTimeout(function(){
+          var _rToday=localStorage.getItem('lw_repro_today');
+          var _rNow=new Date().toISOString().split('T')[0];
+          if(_rToday!==_rNow){
+            localStorage.setItem('lw_repro_today',_rNow);
+            if(window.FG_Wild&&FG_Wild._wildReproduction)FG_Wild._wildReproduction();
+            else if(window._wildReproduction)_wildReproduction();
+          }
+        },5000); // 5s delay to let everything load
         // Force save to cloud after successful auth
         setTimeout(function() {
           if (_vaultHydrated) {
@@ -30854,6 +30864,14 @@ function activate(){
   else setTimeout(function(){if(_map&&_uLat)_loadAll();},3000);
   // Check for pending harvest/takeover rewards from other players
   _checkPendingRewards();
+  // Daily ecosystem check: reproduction + mesh + soil + chorus + phenotype
+  // Runs once per day on Wild tab entry
+  var _reproToday=localStorage.getItem('lw_repro_today');
+  var _todayStr=new Date().toISOString().split('T')[0];
+  if(_reproToday!==_todayStr){
+    localStorage.setItem('lw_repro_today',_todayStr);
+    setTimeout(function(){if(window._wildReproduction)_wildReproduction();},2000);
+  }
   // First-visit onboarding
   if(!localStorage.getItem('lw_wild_onboarded')){
     localStorage.setItem('lw_wild_onboarded','1');
