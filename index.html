@@ -26071,11 +26071,27 @@ document.addEventListener('keydown', function(e) {
           _ghSymbol;
         _ghCardCache[_cacheKey] = el.innerHTML;
       } else {
-        // Undiscovered slot
-        el.className = 'greenhouse-plant undiscovered';
-        el.innerHTML =
-          '<div class="gh-slot">#' + (i + 1) + '</div>' +
-          '<div class="gh-mystery">' + UNDISCOVERED_SVG + '<div class="gh-question">?</div></div>';
+        // Check for compost ghost in this slot
+        var _ghosts = [];
+        try { _ghosts = JSON.parse(localStorage.getItem('lw_compost_ghosts') || '[]').filter(function(g) { return Date.now() - g.ts < 86400000; }); } catch(e) {}
+        var _ghostIdx = i - sorted.length;
+        if (_ghostIdx < _ghosts.length) {
+          var _ghost = _ghosts[_ghostIdx];
+          var _ghostSvg = '';
+          try { if (typeof generatePlantSVG === 'function') _ghostSvg = generatePlantSVG(_ghost.hash, 55); } catch(e) {}
+          el.className = 'greenhouse-plant';
+          el.style.cssText = 'opacity:0.12;filter:grayscale(1);pointer-events:none;';
+          el.innerHTML =
+            '<div class="gh-slot" style="color:rgba(138,145,120,0.3);">#' + (i + 1) + '</div>' +
+            _ghostSvg +
+            '<div class="gh-name" style="color:rgba(138,145,120,0.3);font-style:italic;">' + (_ghost.name || 'composted') + '</div>';
+        } else {
+          // Undiscovered slot
+          el.className = 'greenhouse-plant undiscovered';
+          el.innerHTML =
+            '<div class="gh-slot">#' + (i + 1) + '</div>' +
+            '<div class="gh-mystery">' + UNDISCOVERED_SVG + '<div class="gh-question">?</div></div>';
+        }
       }
 
       grid.appendChild(el);
@@ -27531,6 +27547,14 @@ document.addEventListener('keydown', function(e) {
     } catch(e) {}
     if (typeof gtag !== 'undefined') gtag('event', 'plant_composted', { hash: plant.hash.slice(0,8), dna: dnaReward });
     if (window._trackQuest) window._trackQuest('composted', 1);
+    // Compost ghost — remember the fallen for 24 hours
+    try {
+      var _ghosts = JSON.parse(localStorage.getItem('lw_compost_ghosts') || '[]');
+      _ghosts.push({ hash: plant.hash, name: typeof getPlantName === 'function' ? getPlantName(plant.hash) : '', ts: Date.now() });
+      // Prune ghosts older than 24h
+      _ghosts = _ghosts.filter(function(g) { return Date.now() - g.ts < 86400000; });
+      localStorage.setItem('lw_compost_ghosts', JSON.stringify(_ghosts));
+    } catch(e) {}
   };
 
   // ── Recover any interrupted compost transaction on init ──────────────
