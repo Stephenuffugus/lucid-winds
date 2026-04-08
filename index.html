@@ -4862,6 +4862,7 @@ window.onerror=function(msg,url,line,col,err){
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Dew Drops \u2014 earned by harvesting. Use to water plants or skip nursery days.')"><div class="wild-log-val" style="color:rgba(91,175,220,0.9)" id="w-dew">0</div><div class="wild-log-lbl">dew</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Pollen \u2014 earned passively from planted wild plants. Rarer plants earn faster.')"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl">pollen</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Meters walked. Keep moving to find feral seeds!')"><div class="wild-log-val" style="color:var(--sage)" id="w-steps">0</div><div class="wild-log-lbl">meters</div></div>
+      <div class="wild-log-stat" onclick="FG_Wild._logTip('Your biome — detected from real geography. Affects feral rarity and mutations.')"><div class="wild-log-val" style="font-size:0.7rem;" id="w-biome">🏡</div><div class="wild-log-lbl" id="w-biome-name">scanning</div></div>
       <div class="wild-log-wind" id="w-wind"><img src="assets/games/wild/wild-compass-v4.png" loading="lazy" style="width:44px;height:44px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));" alt=""><span></span></div>
     </div>
     <!-- RECENTER BUTTON -->
@@ -30975,7 +30976,14 @@ function activate(){
   }
   if(window.detectBiome&&_uLat){
     detectBiome(_uLat,_uLng,function(b){
-      // Show biome on map if first detection
+      window._lastDetectedBiome=b;
+      // Update biome indicator in wild log bar
+      if(window.getBiomeInfo){
+        var _bInf=getBiomeInfo(b);
+        var _bIc=document.getElementById('w-biome');if(_bIc)_bIc.textContent=_bInf.icon;
+        var _bNm=document.getElementById('w-biome-name');if(_bNm)_bNm.textContent=_bInf.name;
+      }
+      // Show biome toast on first detection
       var _biShow=localStorage.getItem('lw_biome_shown');
       if(_biShow!==b&&window.getBiomeInfo){
         var _bInfo=getBiomeInfo(b);
