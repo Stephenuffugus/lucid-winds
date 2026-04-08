@@ -30890,10 +30890,18 @@ function activate(){
   else setTimeout(function(){if(_map&&_uLat)_loadAll();},3000);
   // Check for pending harvest/takeover rewards from other players
   _checkPendingRewards();
-  // Detect biome from real GPS + OSM for reproduction modifiers
+  // Detect biome + biodiversity from real GPS
+  if(window.checkBiodiversity&&_uLat){
+    checkBiodiversity(_uLat,_uLng,function(bd){
+      window._lastBiodiversity=bd;
+      if(bd.tier==='hotspot'&&!localStorage.getItem('lw_hotspot_seen')){
+        localStorage.setItem('lw_hotspot_seen','1');
+        if(window._toast)_toast('🔬 Biodiversity Hotspot! '+bd.species+' real plant species observed here. Rare ferals possible!');
+      }
+    });
+  }
   if(window.detectBiome&&_uLat){
     detectBiome(_uLat,_uLng,function(b){
-      window._lastDetectedBiome=b;
       // Show biome on map if first detection
       var _biShow=localStorage.getItem('lw_biome_shown');
       if(_biShow!==b&&window.getBiomeInfo){
@@ -42117,10 +42125,33 @@ function getCurrentBiome(callback){
   }else{callback('suburban');}
 }
 
+// ── iNATURALIST BIODIVERSITY SCORING ──
+// Real plant observations near player affect feral rarity
+var FERTILITY_KEY='lw_fertility_cache';
+function checkBiodiversity(lat,lng,callback){
+  var fCache={};try{fCache=JSON.parse(localStorage.getItem(FERTILITY_KEY)||'{}');}catch(e){}
+  var fKey=Math.round(lat*100)/100+','+Math.round(lng*100)/100;
+  if(fCache[fKey]&&(Date.now()-fCache[fKey].ts)<604800000){callback(fCache[fKey]);return;} // 7 day TTL
+
+  var url='https://api.inaturalist.org/v1/observations/species_counts?lat='+lat.toFixed(4)+'&lng='+lng.toFixed(4)+'&radius=1&taxon_id=47126&quality_grade=research&per_page=1';
+  fetch(url).then(function(r){return r.json();}).then(function(data){
+    var count=data.total_results||0;
+    var tier='barren';
+    if(count>=61)tier='hotspot';
+    else if(count>=31)tier='fertile';
+    else if(count>=11)tier='moderate';
+    var result={species:count,tier:tier,ts:Date.now()};
+    fCache[fKey]=result;
+    localStorage.setItem(FERTILITY_KEY,JSON.stringify(fCache));
+    callback(result);
+  }).catch(function(){callback({species:0,tier:'barren',ts:Date.now()});});
+}
+
 // Expose
 window.detectBiome=detectBiome;
 window.getBiomeInfo=getBiomeInfo;
 window.getCurrentBiome=getCurrentBiome;
+window.checkBiodiversity=checkBiodiversity;
 window.BIOMES=BIOMES;
 })();
 </script>
