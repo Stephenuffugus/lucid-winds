@@ -7296,10 +7296,11 @@ document.addEventListener('keydown', function(e) {
   function getBreedStatus(plant){
     if(!plant)return{canBreed:false,reason:'NO_PLANT'};
     var now=Date.now();
-    var born=plant.born||plant.mintedAt||now;
-    var ageDays=Math.floor((now-born)/86400000);
+    var born=plant.born||plant.mintedAt||0;
+    // If no born timestamp, plant predates the maturity system — treat as mature
+    var ageDays=born?Math.floor((now-born)/86400000):999;
 
-    // Maturity check
+    // Maturity check (only for plants with known birth date)
     if(ageDays<MATURITY_DAYS){
       return{canBreed:false,reason:'IMMATURE',daysLeft:MATURITY_DAYS-ageDays,ageDays:ageDays,charges:MAX_CHARGES};
     }
@@ -43607,9 +43608,12 @@ function _getNextStep(){
   if(gh.length>=3&&wild.length===0){
     return{icon:'🗺️',text:'Try the Wild tab! Drop a plant on the map near you.',action:'wild',color:'rgba(122,179,86,0.8)'};
   }
-  // 6. Have plants but haven't bred
+  // 6. Have plants but haven't bred — only show if plants are actually ready
   if(gh.length>=2&&!localStorage.getItem('lw_first_breed')){
-    var eligible=gh.filter(function(p){return(p.breedCount||0)<3;});
+    var eligible=gh.filter(function(p){
+      if(window.FG_Data&&FG_Data.getBreedStatus){return FG_Data.getBreedStatus(p).canBreed;}
+      return(p.breedCount||0)<3;
+    });
     if(eligible.length>=2){
       return{icon:'🧬',text:'You can breed! Open a plant and tap BREED to create offspring.',action:'greenhouse',color:'var(--gold)'};
     }
