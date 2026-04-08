@@ -4660,6 +4660,7 @@ window.onerror=function(msg,url,line,col,err){
       <div class="gh-progress-bar"><div class="gh-progress-fill" id="gh-progress-fill" style="width:0%"></div></div>
     </div>
     <div id="gh-next-bloom" style="display:flex;align-items:center;gap:0.4rem;padding:0.2rem 0.5rem;"></div>
+    <div id="gh-season-strip" style="display:flex;justify-content:center;gap:0.5rem;padding:0.15rem 0.5rem;font-family:DM Mono,monospace;font-size:0.3rem;"></div>
     <div id="gh-spotlight" style="font-family:'DM Mono',monospace;font-size:0.33rem;color:var(--muted);text-align:center;padding:0.15rem 0;min-height:1em;"></div>
     <div id="gh-recent-wrap" style="display:none;">
       <div class="gh-recent-label">RECENT BLOOMS</div>
@@ -25822,6 +25823,25 @@ document.addEventListener('keydown', function(e) {
       } catch(e) { _spotEl.textContent = ''; }
     } else if (_spotEl) { _spotEl.textContent = ''; }
 
+    // ── Seasonal Status Strip ──
+    var _ssStrip = document.getElementById('gh-season-strip');
+    if (_ssStrip && gh.length >= 2) {
+      var _ssEmblems = ['\ud83c\udf38','\u2600\ufe0f','\ud83c\udf42','\u2744\ufe0f'];
+      var _ssNames = ['Spring','Summer','Autumn','Winter'];
+      var _ssColors = ['#E8A0BF','#D4A843','#C4763A','#A0C4E8'];
+      var _ssCounts = [0,0,0,0];
+      var _curMonth = new Date().getMonth();
+      var _curSeason = _curMonth < 3 ? 3 : _curMonth < 6 ? 0 : _curMonth < 9 ? 1 : 2;
+      gh.forEach(function(p) { try { var t = hashToTraits(p.hash); _ssCounts[t.season]++; } catch(e){} });
+      var _ssH = '';
+      for (var _ssi = 0; _ssi < 4; _ssi++) {
+        var _isPeak = _ssi === _curSeason;
+        _ssH += '<span style="color:' + _ssColors[_ssi] + ';opacity:' + (_ssCounts[_ssi] > 0 ? '1' : '0.3') + ';">' + _ssEmblems[_ssi] + ' ' + _ssCounts[_ssi] + (_isPeak ? ' \u2605' : '') + '</span>';
+      }
+      _ssStrip.innerHTML = _ssH;
+      _ssStrip.style.display = 'flex';
+    } else if (_ssStrip) { _ssStrip.style.display = 'none'; }
+
     // ── Recent Blooms strip ──────────────────────────────────────────
     var _rbWrap = document.getElementById('gh-recent-wrap');
     var _rbStrip = document.getElementById('gh-recent-strip');
@@ -32150,6 +32170,35 @@ function _doReproduction(weather, simMode) {
       }
     } catch (e) {}
     if (window.evaluateBloomChorus) try { evaluateBloomChorus(); } catch (e) {}
+    // Render constellation lines (connect your wild plants)
+    if (_map) {
+      if (window._constellationLines) { for (var _cli = 0; _cli < window._constellationLines.length; _cli++) _map.removeLayer(window._constellationLines[_cli]); }
+      window._constellationLines = [];
+      var _myWildPlants = [];
+      try { _myWildPlants = JSON.parse(localStorage.getItem('fg_wild_plants') || '[]'); } catch(e) {}
+      if (_myWildPlants.length >= 2) {
+        // Sort by distance from center for a cleaner shape
+        var _cLat2 = 0, _cLng2 = 0;
+        for (var _ci2 = 0; _ci2 < _myWildPlants.length; _ci2++) { if(_myWildPlants[_ci2].lat){_cLat2 += _myWildPlants[_ci2].lat; _cLng2 += _myWildPlants[_ci2].lng;} }
+        _cLat2 /= _myWildPlants.length; _cLng2 /= _myWildPlants.length;
+        // Draw lines from each plant to its nearest neighbor
+        for (var _pi2 = 0; _pi2 < _myWildPlants.length; _pi2++) {
+          var _pA2 = _myWildPlants[_pi2]; if (!_pA2.lat) continue;
+          var _nearDist = 999999, _nearIdx = -1;
+          for (var _pj2 = 0; _pj2 < _myWildPlants.length; _pj2++) {
+            if (_pi2 === _pj2 || !_myWildPlants[_pj2].lat) continue;
+            var _d2 = Math.abs(_pA2.lat - _myWildPlants[_pj2].lat) + Math.abs(_pA2.lng - _myWildPlants[_pj2].lng);
+            if (_d2 < _nearDist) { _nearDist = _d2; _nearIdx = _pj2; }
+          }
+          if (_nearIdx >= 0) {
+            var _cLine = L.polyline([[_pA2.lat, _pA2.lng], [_myWildPlants[_nearIdx].lat, _myWildPlants[_nearIdx].lng]], {
+              color: 'rgba(200,168,75,0.12)', weight: 0.8, dashArray: '3,8', interactive: false
+            }).addTo(_map);
+            window._constellationLines.push(_cLine);
+          }
+        }
+      }
+    }
     // Render home zone circle on map (owner only)
     if (window._isInHomeZone && _map) {
       if (window._homeZoneCircle) _map.removeLayer(window._homeZoneCircle);
