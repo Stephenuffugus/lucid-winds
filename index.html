@@ -4526,6 +4526,13 @@ window.onerror=function(msg,url,line,col,err){
       </div>
 
       <div class="settings-group">
+        <div class="settings-group-label">PRIVACY</div>
+        <div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);margin-bottom:0.3rem;line-height:1.5;">Hide your wild plants from other players within 200m of your home location. Your plants still grow and breed — they're just invisible to others.</div>
+        <button class="settings-big-btn" id="home-zone-btn" onclick="window._toggleHomeZone();">Home Zone: OFF</button>
+        <button class="settings-big-btn" id="home-zone-set-btn" onclick="window._setHomeZone();" style="display:none;">Set Current Location as Home</button>
+      </div>
+
+      <div class="settings-group">
         <div class="settings-group-label">LEARN</div>
         <button class="settings-big-btn" onclick="triggerTutorialDemo();toggleSettingsMenu();">How to Play</button>
         <button class="settings-big-btn" onclick="openGameGuide();toggleSettingsMenu();">Full Game Guide</button>
@@ -31611,7 +31618,8 @@ function _doReproduction(weather, simMode) {
       wildBorn: true,
       parentA: parentA.hash.slice(0, 8),
       parentB: parentB.hash.slice(0, 8),
-      originDropperUid: parentA.ownerUid || parentB.ownerUid || 'wild',
+      originDropperUid: parentA.originDropperUid || parentB.originDropperUid || parentA.ownerUid || parentB.ownerUid || 'wild',
+      originDropperName: parentA.originDropperName || parentB.originDropperName || parentA.ownerName || parentB.ownerName || 'Wild',
       weatherAtBirth: { rain: weather.rain, temp: weather.temp }
     };
 
@@ -31634,6 +31642,23 @@ function _doReproduction(weather, simMode) {
           .then(function() {
             if (window._swsLog) _swsLog('Wild birth! ' + did + ' grade:' + dd.grade + ' EA:' + dd.ea, 'ok');
             if (window._logWildBirth) window._logWildBirth(dd);
+            // Dynasty reward: origin dropper earns pollen when their genetics spread
+            if (dd.originDropperUid && dd.originDropperUid !== 'wild') {
+              try {
+                var _myUid = firebase.auth().currentUser ? firebase.auth().currentUser.uid : '';
+                if (dd.originDropperUid === _myUid) {
+                  // It's MY lineage spreading — earn pollen!
+                  var _dynPollen = {Common:1, Uncommon:2, Rare:3, Epic:5, Legendary:8, Mythic:12, Cosmic:20};
+                  var _reward = _dynPollen[dd.grade] || 1;
+                  var _curPol = parseInt(localStorage.getItem('fg_pollen') || '0');
+                  localStorage.setItem('fg_pollen', String(_curPol + _reward));
+                  if (window._logWildEvent) window._logWildEvent({
+                    type: 'spread', originHash: dd.parentA || '', originName: dd.originDropperName || 'Your plant',
+                    descendantHash: dd.hash, distance: 0, pollenEarned: _reward
+                  });
+                }
+              } catch (e) {}
+            }
           })
           .catch(function(e) { if (window._swsLog) _swsLog('Wild birth write: ' + (e.code || e.message), 'warn'); });
       })(docId, dropData, invaded ? displacedPlant : null);
@@ -32044,7 +32069,16 @@ function showTP(p,mk){
     if(p.own){g.textContent=(p.grade||'COMMON').toUpperCase();g.style.color=p.gc;}
     else{g.textContent='UNKNOWN';g.style.color='var(--muted)';}
   }
-  var ow=document.getElementById('wtp-owner');if(ow){ow.textContent=p.own?'Your plant':(p.ownerName||'Wild specimen');}
+  var ow=document.getElementById('wtp-owner');if(ow){
+    var ownerTxt=p.own?'Your plant':(p.ownerName||'Wild specimen');
+    if(p.wildBorn&&p.originDropperUid&&p.originDropperUid!=='wild'){
+      ownerTxt+=' · Lineage of '+(p.originDropperName||'a keeper');
+    }
+    if(p.wildBorn&&p.generation){
+      ownerTxt+=' · Gen '+p.generation+' wild';
+    }
+    ow.textContent=ownerTxt;
+  }
   // Rarest traits — hidden for non-owned plants (mystery until harvest)
   var re=document.getElementById('wtp-rarest');
   if(re){
@@ -41585,6 +41619,77 @@ window.bsExecuteBreed=function(){
     }
   }
   // closeBreedScreen called above before async — don't call again here
+};
+})();
+</script>
+
+<!-- ═══ HOME ZONE PRIVACY ═══ -->
+<script>
+(function(){
+'use strict';
+var HZ_KEY='lw_home_zone'; // {lat, lng, enabled}
+var HZ_RADIUS=0.0018; // ~200m in degrees
+
+window._toggleHomeZone=function(){
+  var hz={};try{hz=JSON.parse(localStorage.getItem(HZ_KEY)||'{}');}catch(e){}
+  if(hz.enabled){
+    hz.enabled=false;
+    localStorage.setItem(HZ_KEY,JSON.stringify(hz));
+    _updateHZButtons();
+    if(window._toast)_toast('Home zone OFF. Your plants are visible to all.');
+  }else{
+    if(hz.lat&&hz.lng){
+      hz.enabled=true;
+      localStorage.setItem(HZ_KEY,JSON.stringify(hz));
+      _updateHZButtons();
+      if(window._toast)_toast('Home zone ON. Plants within 200m of home hidden from others.');
+    }else{
+      // No home set yet — prompt to set
+      window._setHomeZone();
+    }
+  }
+};
+
+window._setHomeZone=function(){
+  if(!navigator.geolocation){if(window._toast)_toast('GPS not available.');return;}
+  if(window._toast)_toast('Getting your location...');
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var hz={lat:pos.coords.latitude,lng:pos.coords.longitude,enabled:true};
+    localStorage.setItem(HZ_KEY,JSON.stringify(hz));
+    _updateHZButtons();
+    if(window._toast)_toast('Home zone set! Plants within 200m of here are hidden from other players.');
+  },function(){
+    if(window._toast)_toast('Could not get location. Try again outside.');
+  },{enableHighAccuracy:true,timeout:10000});
+};
+
+// Check if a lat/lng is inside someone's home zone
+window._isInHomeZone=function(lat,lng){
+  var hz={};try{hz=JSON.parse(localStorage.getItem(HZ_KEY)||'{}');}catch(e){}
+  if(!hz.enabled||!hz.lat||!hz.lng)return false;
+  var dlat=Math.abs(lat-hz.lat),dlng=Math.abs(lng-hz.lng);
+  return(dlat<HZ_RADIUS&&dlng<HZ_RADIUS);
+};
+
+function _updateHZButtons(){
+  var hz={};try{hz=JSON.parse(localStorage.getItem(HZ_KEY)||'{}');}catch(e){}
+  var btn=document.getElementById('home-zone-btn');
+  var setBtn=document.getElementById('home-zone-set-btn');
+  if(btn){
+    btn.textContent=hz.enabled?'Home Zone: ON ✓':'Home Zone: OFF';
+    btn.style.borderColor=hz.enabled?'rgba(122,179,86,0.4)':'';
+  }
+  if(setBtn){
+    setBtn.style.display=(hz.lat&&hz.lng)?'block':'none';
+    if(hz.lat)setBtn.textContent='Update Home Location (currently '+hz.lat.toFixed(3)+', '+hz.lng.toFixed(3)+')';
+  }
+}
+
+// Init buttons on settings open
+var _origToggleSettings=window.toggleSettingsMenu;
+window.toggleSettingsMenu=function(){
+  if(_origToggleSettings)_origToggleSettings();
+  setTimeout(_updateHZButtons,50);
 };
 })();
 </script>
