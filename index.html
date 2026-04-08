@@ -5331,7 +5331,7 @@ window.onerror=function(msg,url,line,col,err){
       if(!window.mintPlant){alert('mintPlant not available');return;}
       var hashes=[
         {tier:'Mythic',hash:'0717c6d1139407e768d2041ac0dd26dd275f2b83a3fad5fb792316a35ba217d8'},  // Toad (mythByte=0xD2)
-        {tier:'Mythic',hash:'b5de4f83f6ad365885ecc07018e30a1964742e55de539af5a5f650ce5cd4e629'},  // Capybara (mythByte=0xEC)
+        {tier:'Mythic',hash:'b5de4f83f6ad365885ecc07018e30a1964742e55de539af5a5f650ce5cd4e629'},  // Phoenix (mythByte=0xEC)
         {tier:'Cosmic',hash:'98e42ce4fae1a70ea0ff1665ea7e7573e98e6d2c377d16bb893220754a579a4b'},  // Beholder (mythByte=0xFF)
         {tier:'Cosmic',hash:'8c63fd69b9e4dcb5d3ff68bee8d21947af80ae28947b697c3c2469f3f7a01108'}   // Beholder + Albino mutation
       ];
@@ -6448,7 +6448,7 @@ document.addEventListener('keydown', function(e) {
     //   0xFC-0xFD  → Storm Wraith       (2/256 = 0.78%)   LEGENDARY
     //   0xF8-0xFB  → Raccoon (4/256 = 1.56%)   LEGENDARY
     //   0xF4-0xF7  → Biolum Pulse       (4/256 = 1.56%)   LEGENDARY
-    //   0xE0-0xF3  → The Capybara       (20/256 = 7.81%)  MYTHIC
+    //   0xE0-0xF3  → The Phoenix         (20/256 = 7.81%)  MYTHIC
     //   0xD0-0xDF  → The Toad           (16/256 = 6.25%)  MYTHIC
     //   0x00-0xCF  → None               (208/256 = 81.25%)
     var mythName =
@@ -6490,7 +6490,7 @@ document.addEventListener('keydown', function(e) {
         if (_mb >= 0xFC) return 36;  // Great Blue Heron (0.78%)
         if (_mb >= 0xF8) return 35;  // Raccoon (1.56%)
         if (_mb >= 0xF4) return 34;  // Woolly Mammoth (1.56%)
-        if (_mb >= 0xE0) return 33;  // Capybara (7.81%)
+        if (_mb >= 0xE0) return 33;  // Phoenix (7.81%)
         if (_mb >= 0xD0) return 32;  // Toad (6.25%)
         return hb(21) % 82;          // 82 slots: 48 None + 34 creatures = ~41% base rate
       })(),
@@ -6669,7 +6669,7 @@ document.addEventListener('keydown', function(e) {
     {id:36,name:'Dragon Keep',       a:function(t){return t.flower%71===35;},     b:function(t){return t.pot%71===56;},       ea:2, theme:'mythical', fx:'amphora glows with firelight, dragon casts shadows'},
     {id:37,name:"Alchemist's Rose",  a:function(t){return t.pot%71===15;},        b:function(t){return t.flower%71===1;},     ea:1, theme:'mythical', fx:'rose petals shift to metallic gold at tips'},
     {id:38,name:"Beholder's Gaze",   a:function(t){return t.companion===38;},     b:function(t){return t.leafType%71===62;},  ea:2, theme:'mythical', fx:'beholder eye tracks largest frond with green scan'},
-    {id:39,name:'Capybara Oasis',    a:function(t){return t.companion===33;},     b:function(t){return t.stem%24===10;},      ea:2, theme:'mythical', fx:'capybara rests against succulent, water beads both'},
+    {id:39,name:'Phoenix Pyre',      a:function(t){return t.companion===33;},     b:function(t){return t.stem%24===10;},      ea:2, theme:'mythical', fx:'phoenix perches on succulent, embers drift upward'},
     {id:40,name:'Wise Owl Roost',    a:function(t){return t.companion===57;},     b:function(t){return t.stem%24===5;},       ea:1, theme:'mythical', fx:'owl perches in braid junction, golden eye blink'}
   ];
 
@@ -6851,7 +6851,7 @@ document.addEventListener('keydown', function(e) {
     else if (_mb>=0xFE) score += 7;                      // Starfall
     else if (_mb>=0xFC) score += 6;                      // Storm Wraith
     else if (_mb>=0xF4&&_mb<0xFC) score += 5;            // Biolum Pulse + Ancient Rune
-    else if (_mb>=0xD0&&_mb<0xF4) score += 4;            // Toad + Capybara
+    else if (_mb>=0xD0&&_mb<0xF4) score += 4;            // Toad + Phoenix
 
     // ── EARNED LAYERS (breeding, composting, synergies) ──
 
@@ -9225,7 +9225,7 @@ document.addEventListener('keydown', function(e) {
       {name:'Caterpillar',temp:'symbiote'}, // idx 30
       {name:'Spider',temp:'guardian'},      // idx 31
       {name:'Toad',temp:'guardian',ability:'rainCaller'},        // idx 32 (mythic path)
-      {name:'Phoenix',temp:'symbiote',ability:'herdImmunity'},  // idx 33 (mythic path — renders as Capybara via override, art TBD)
+      {name:'Phoenix',temp:'symbiote',ability:'herdImmunity'},  // idx 33 (mythic path — Phoenix, art needs polish)
       {name:'Baby Mammoth',temp:'guardian',ability:'permafrost'}, // idx 34
       {name:'Raccoon',temp:'forager',ability:'scavenger'},   // idx 35
       {name:'Great Blue Heron',temp:'wanderer',ability:'precisionStrike'},         // idx 36
@@ -29137,7 +29137,7 @@ document.addEventListener('keydown', function(e) {
     { id:'all_seasons',   icon:'🌍', name:'Four Seasons',        desc:'Own plants from all 4 seasons',        check: function(gh){ var s={};gh.forEach(function(p){try{var t=hashToTraits(p.hash);s[t.season%4]=true;}catch(e){}});return Object.keys(s).length>=4; } },
     // ── Companions ──
     { id:'first_companion',icon:'🐾', name:'Animal Friend',      desc:'Own a Plant with a companion',         check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);return t.companion<60&&(t.companion%5===0);}catch(e){return false;} }); } },
-    { id:'first_mythic_c', icon:'🐸', name:'Mythic Bond',        desc:'Own a Toad or Capybara companion',     check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18>=0xD0;}catch(e){return false;} }); } },
+    { id:'first_mythic_c', icon:'🔥', name:'Mythic Bond',        desc:'Own a Toad or Phoenix companion',      check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18>=0xD0;}catch(e){return false;} }); } },
     { id:'beholder',       icon:'👁', name:'The Beholder',       desc:'Own The Beholder companion (0.39%)',   check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18===0xFF;}catch(e){return false;} }); } },
     // ── Mutations ──
     { id:'first_mutation', icon:'⚡', name:'Mutant',              desc:'Own a mutated Plant',                  check: function(gh){ return gh.some(function(p){ try{var hb16=parseInt(p.hash.slice(32,34),16);return hb16>=0xD0;}catch(e){return false;} }); } },
@@ -32025,7 +32025,7 @@ function _buildInfo(hash){
       var N=['Wisp','Bloom','Fern','Thorn','Crown','Root','Drift','Spiral','Haze','Phantom','Crest','Veil','Shard','Arch','Spire','Reed'];
       nm=A[parseInt(hash.substring(0,2),16)%A.length]+' '+N[parseInt(hash.substring(2,4),16)%N.length];
       if(t.mutationName&&t.mutationName!=='None') rarities.push(t.mutationName);
-      if(t.mythic>=0xD0){var m=t.mythic===0xFF?'Beholder':t.mythic>=0xFE?'Spider':t.mythic>=0xFC?'Heron':t.mythic>=0xF4?'Mammoth':t.mythic>=0xE0?'Capybara':'Toad';rarities.push(m);}
+      if(t.mythic>=0xD0){var m=t.mythic===0xFF?'Beholder':t.mythic>=0xFE?'Spider':t.mythic>=0xFC?'Heron':t.mythic>=0xF4?'Mammoth':t.mythic>=0xE0?'Phoenix':'Toad';rarities.push(m);}
       if(t.hasFlower&&t.flower===15) rarities.push('Glow Flower');
       if(t.pot===15) rarities.push('Golden Pot');
       if(t.base===15) rarities.push('Crystal Base');
@@ -39152,7 +39152,7 @@ function _revealPlant(){
   // Check for creature
   setTimeout(function(){
     if(_giftTraits&&_giftTraits.companion>=20){
-      var creatures={20:'Droplet',21:'Bee',22:'Pollen',23:'Firefly',24:'Butterfly',25:'Moth',26:'Ladybug',27:'Snail',28:'Hummingbird',29:'Dragonfly',30:'Caterpillar',31:'Spider',32:'Toad',33:'Capybara',34:'Bioluminescent Pulse',35:'Ancient Rune',36:'Great Blue Heron',37:'Starfall',38:'Beholder',39:'Cat',40:'Platypus',41:'Praying Mantis',42:'Hedgehog',43:'Pangolin',44:'Luna Moth',45:'Hermit Crab',46:'Glow Snail',47:'Axolotl',48:'Scorpion',49:'Origami Crane',50:'Garden Gnome',51:'Robin',52:'Worm',53:'Turtle',54:'Bat',55:'Mouse',56:'Owl',57:'Silly Goose'};
+      var creatures={20:'Droplet',21:'Bee',22:'Pollen',23:'Firefly',24:'Butterfly',25:'Moth',26:'Ladybug',27:'Snail',28:'Hummingbird',29:'Dragonfly',30:'Caterpillar',31:'Spider',32:'Toad',33:'Phoenix',34:'Bioluminescent Pulse',35:'Ancient Rune',36:'Great Blue Heron',37:'Starfall',38:'Beholder',39:'Cat',40:'Platypus',41:'Praying Mantis',42:'Hedgehog',43:'Pangolin',44:'Luna Moth',45:'Hermit Crab',46:'Glow Snail',47:'Axolotl',48:'Scorpion',49:'Origami Crane',50:'Garden Gnome',51:'Robin',52:'Worm',53:'Turtle',54:'Bat',55:'Mouse',56:'Owl',57:'Silly Goose'};
       var cName=creatures[_giftTraits.companion];
       if(cName){
         var cEl=document.getElementById('ob-creature');
