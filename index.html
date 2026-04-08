@@ -5046,7 +5046,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="dev-section"><div class="dev-section-title">ACCOUNT COUNTER</div><div style="font-size:0.42rem;color:var(--muted);margin-bottom:0.3rem;">Next: <span id="dev-counter-val">?</span></div><button class="dev-btn" onclick="PW_Dev.resetCounter()">↩ RESET TO 1</button></div>
     <div class="dev-section"><div class="dev-section-title">LOCAL STORAGE</div><button class="dev-btn" onclick="PW_Dev.clearLocal()">🧹 CLEAR ALL</button></div>
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
-    <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="localStorage.removeItem('fg_ferals');localStorage.removeItem('fg_feral_zones');alert('Ferals cleared! Switch tabs to refresh.');">🧹 CLEAR FERALS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button></div>
+    <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="localStorage.removeItem('fg_ferals');localStorage.removeItem('fg_feral_zones');alert('Ferals cleared! Switch tabs to refresh.');">🧹 CLEAR FERALS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button><button class="dev-btn" onclick="PW_Dev.dropTestPair()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🧬 DROP BREEDING PAIR</button><button class="dev-btn" onclick="PW_Dev.simulateSpread()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌿 SIMULATE SPREAD</button></div>
     <div class="dev-section"><div class="dev-section-title">ACCELERATE (BETA TEST)</div><button class="dev-btn" onclick="PW_Dev.accelFerals()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⚡ FORCE FERAL SPAWN</button><button class="dev-btn" onclick="PW_Dev.accelRepro()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🌱 FORCE WILD REPRODUCTION</button><button class="dev-btn" onclick="PW_Dev.accelNursery()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💧 INSTANT BLOOM ALL SEEDS</button><button class="dev-btn" onclick="PW_Dev.accelBackpack()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🎒 CLEAR BP COOLDOWNS</button><button class="dev-btn" onclick="PW_Dev.grantHashes(100)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💎 +100 DEW DROPS</button><button class="dev-btn" onclick="PW_Dev.accelAll()" style="border-color:rgba(255,110,199,0.4);color:#ff6ec7;">🚀 ACCELERATE EVERYTHING</button></div>
     <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button><button class="dev-btn" onclick="PW_Dev.spawnChimeras()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🧬 SPAWN 4 CHIMERAS (dual borders)</button><button class="dev-btn" onclick="PW_Dev.grantDew(500)" style="border-color:rgba(91,175,220,0.4);color:rgba(91,175,220,0.9);">💧 +500 DEW DROPS</button></div>
     <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button><button class="dev-btn" onclick="try{PW_Dev.cardFrontAligner()}catch(e){alert(e.message)}">🃏 CARD FRONT ALIGNMENT</button><button class="dev-btn" onclick="try{PW_Dev.cardBackViewer()}catch(e){alert(e.message)}">🔙 CARD BACK NAMEPLATES</button><button class="dev-btn" onclick="try{PW_Dev.leafBloomEditor()}catch(e){alert(e.message)}">🌿 LEAF & BLOOM EDITOR</button></div>
@@ -5203,6 +5203,58 @@ window.onerror=function(msg,url,line,col,err){
       }
       localStorage.setItem('fg_wild_plants',JSON.stringify(wild));
       alert('Seeded '+count+' plants across 25 zones (500m radius)!\nSwitch to Wild tab. Ferals will spawn within days.');
+    },
+    simulateSpread:function(){
+      // Simulate X days of wild reproduction from current plants
+      var days=parseInt(prompt('Simulate how many days of spread?','30'))||30;
+      if(!window.FG_Wild||!window.FG_Wild._doReproduction){alert('Wild module not loaded. Switch to Wild tab first.');return;}
+      var lat=30.0444,lng=31.2357; // Cairo default
+      try{var w=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');if(w.length>0&&w[0].lat){lat=w[0].lat;lng=w[0].lng;}}catch(e){}
+      // Fetch real weather for the location
+      fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat.toFixed(4)+'&longitude='+lng.toFixed(4)+'&current_weather=true&daily=precipitation_sum&timezone=auto&forecast_days=1')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var rain=0;try{rain=d.daily.precipitation_sum[0]||0;}catch(e){}
+        var temp=20;try{temp=d.current_weather.temperature||20;}catch(e){}
+        var weather={rain:rain,temp:temp,fetched:Date.now()};
+        var log=[];
+        var startDate=new Date();
+        for(var day=0;day<days;day++){
+          var simDate=new Date(startDate.getTime()+day*86400000).toISOString().split('T')[0];
+          // Vary weather slightly each day for realism
+          var dayWeather={rain:Math.max(0,rain+(Math.random()-0.5)*rain*0.4),temp:temp+(Math.random()-0.5)*5,fetched:Date.now()};
+          FG_Wild._doReproduction(dayWeather,{date:simDate});
+        }
+        alert('Simulated '+days+' days of spread at '+lat.toFixed(2)+','+lng.toFixed(2)+'.\nWeather: '+temp+'°C, '+rain+'mm rain.\nCheck console for details. Switch to Wild tab to see results.');
+      })
+      .catch(function(e){alert('Weather fetch failed: '+e.message+'. Running with default weather.');
+        for(var day=0;day<days;day++){
+          var simDate=new Date(Date.now()+day*86400000).toISOString().split('T')[0];
+          FG_Wild._doReproduction({rain:0,temp:30,fetched:Date.now()},{date:simDate});
+        }
+        alert('Simulated '+days+' days (dry conditions).');
+      });
+    },
+    dropTestPair:function(){
+      // Drop 2 plants in adjacent hexes for reproduction testing
+      var lat=30.0444,lng=31.2357; // Cairo default — change via prompt
+      var loc=prompt('Enter lat,lng for test plants (or leave blank for Cairo):','');
+      if(loc){var parts=loc.split(',');if(parts.length===2){lat=parseFloat(parts[0]);lng=parseFloat(parts[1]);}}
+      var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+      var uid='';try{var u=firebase.auth().currentUser;if(u)uid=u.uid;}catch(e){}
+      for(var i=0;i<2;i++){
+        var h='';for(var j=0;j<64;j++)h+='0123456789abcdef'[Math.floor(Math.random()*16)];
+        var t=window.hashToTraits?window.hashToTraits(h):null;
+        var ea=window.computeEA&&t?window.computeEA(t,0):5;
+        var season=t?t.season:0;
+        var tg=window.getTerraGrade&&t?window.getTerraGrade(t):{name:'Common'};
+        // Place adjacent — offset second plant by ~100m
+        var pLat=lat+(i===0?0:0.0009);
+        var pLng=lng+(i===0?0:0.0009);
+        wild.push({lat:pLat,lng:pLng,hash:h,date:new Date().toISOString(),own:true,ownerUid:uid,ownerName:'Stephen',ea:ea,defenderGame:'set',season:season,grade:tg.name,generation:1});
+      }
+      localStorage.setItem('fg_wild_plants',JSON.stringify(wild));
+      alert('Dropped 2 test plants at '+lat.toFixed(4)+','+lng.toFixed(4)+'!\nEA: '+wild[wild.length-2].ea+' & '+wild[wild.length-1].ea+'\nSwitch to Wild tab, then use Simulate Spread.');
     },
     purgeFirestoreDrops:function(){
       if(!confirm('DELETE all wildDrops docs from Firestore? This removes every plant on the global map.'))return;
@@ -31384,107 +31436,198 @@ function _feralRespawnDebounced() {
 // adjacent zone. This is a shared Firestore event visible to all players.
 // Uses deterministic doc ID (parent hashes + date) so multiple players
 // triggering the same check produce the same write → idempotent.
-var REPRO_CHANCE = 0.35; // 35% per breeding pair per day
+var REPRO_CHANCE = 0.15; // 15% base per breeding pair per day
 var REPRO_KEY = 'fg_repro_zones'; // localStorage: { zoneKey: lastCheckDate }
+var REPRO_LINEAGE_CAP = 12; // max hexes per genetic line
 var _reproTimer = null;
+var _reproWeather = null; // cached weather data {temp, rain, fetched}
 
-function _wildReproduction() {
+// Fetch real weather from Open-Meteo (free, no API key)
+function _fetchReproWeather(lat, lng, cb) {
+  if (_reproWeather && (Date.now() - _reproWeather.fetched) < 3600000) { cb(_reproWeather); return; }
+  var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat.toFixed(4) + '&longitude=' + lng.toFixed(4) + '&current_weather=true&daily=precipitation_sum&timezone=auto&forecast_days=1';
+  fetch(url).then(function(r) { return r.json(); }).then(function(d) {
+    var rain = 0; try { rain = d.daily.precipitation_sum[0] || 0; } catch (e) {}
+    var temp = 20; try { temp = d.current_weather.temperature || 20; } catch (e) {}
+    _reproWeather = { rain: rain, temp: temp, fetched: Date.now() };
+    cb(_reproWeather);
+  }).catch(function() { cb({ rain: 0, temp: 20, fetched: Date.now() }); });
+}
+
+function _wildReproduction(simMode) {
   if (!_uLat || !_map) return;
   var user = window.firebase && firebase.auth() && firebase.auth().currentUser;
   if (!user || !user.uid || !window.db) return;
 
-  var td = new Date().toISOString().slice(0, 10);
+  // Fetch weather then proceed
+  _fetchReproWeather(_uLat, _uLng, function(weather) {
+    _doReproduction(weather, simMode);
+  });
+}
+
+function _doReproduction(weather, simMode) {
+  var user = firebase.auth().currentUser;
+  var td = simMode ? simMode.date : new Date().toISOString().slice(0, 10);
   var checked = {}; try { checked = JSON.parse(localStorage.getItem(REPRO_KEY) || '{}'); } catch (e) {}
+
+  // Weather modifiers
+  var weatherMod = 1.0;
+  if (weather.rain > 5) weatherMod = 2.0;       // Heavy rain doubles reproduction
+  else if (weather.rain > 1) weatherMod = 1.5;   // Light rain boosts
+  else if (weather.rain === 0 && weather.temp > 35) weatherMod = 0.3; // Hot + dry = drought
+  else if (weather.rain === 0 && weather.temp < 0) weatherMod = 0.5;  // Freezing slows
 
   // Build zone map from all sources
   var zones = _getAllZonePlants();
   var zoneKeys = Object.keys(zones);
   var births = 0;
+  var simLog = [];
 
   for (var z = 0; z < zoneKeys.length; z++) {
     var zk = zoneKeys[z];
     var plants = zones[zk];
     if (plants.length < 2) continue; // need 2+ for breeding pair
-    if (checked[zk] === td) continue; // already checked today
+    if (!simMode && checked[zk] === td) continue; // already checked today
 
-    checked[zk] = td;
+    if (!simMode) checked[zk] = td;
 
-    // Build pairs (max 6 per zone, same logic as old feral system)
-    var pairCount = Math.min(6, Math.floor(plants.length * (plants.length - 1) / 2));
-    for (var pp = 0; pp < pairCount; pp++) {
-      if (Math.random() >= REPRO_CHANCE) continue;
+    // Density pressure: halve chance if 4+ plants in adjacent hexes
+    var densityMod = plants.length >= 4 ? 0.5 : 1.0;
 
-      // Pick random pair
-      var idxA = Math.floor(Math.random() * plants.length);
-      var idxB = (idxA + 1 + Math.floor(Math.random() * (plants.length - 1))) % plants.length;
-      var parentA = plants[idxA], parentB = plants[idxB];
-
-      // Generate offspring hash
-      var offHash = _breedHash(parentA.hash, parentB.hash);
-      var gradeA = 'Common', gradeB = 'Common';
-      try {
-        if (window.hashToTraits && window.getTerraGrade) {
-          gradeA = window.getTerraGrade(window.hashToTraits(parentA.hash)).name || 'Common';
-          gradeB = window.getTerraGrade(window.hashToTraits(parentB.hash)).name || 'Common';
-        }
-      } catch (e) {}
-      offHash = _adjustOffspringRarity(offHash, gradeA, gradeB);
-
-      // Pick adjacent zone with wind influence
-      var parts = zk.split(',');
-      var baseLat = parseFloat(parts[0]), baseLng = parseFloat(parts[1]);
-      var windRad = ((_wd || 0) + Math.random() * 180 - 90) * Math.PI / 180;
-      var windStr = 0.2 + Math.random() * 0.3;
-      var randStr = 1 - windStr;
-      // Place in adjacent zone (1-2 zone widths away)
-      var dist = ZONE_SIZE * (1 + Math.random());
-      var targetLat = baseLat + Math.cos(windRad) * dist * windStr + (Math.random() - 0.5) * dist * randStr;
-      var targetLng = baseLng + Math.sin(windRad) * dist * windStr + (Math.random() - 0.5) * dist * randStr;
-
-      // Compute traits for the offspring
-      var offTraits = null, offEA = 0, offGrade = 'Common';
-      try {
-        offTraits = window.hashToTraits(offHash);
-        offEA = window.computeEA ? window.computeEA(offTraits, 0) : 0;
-        var otg = window.getTerraGrade ? window.getTerraGrade(offTraits) : null;
-        offGrade = otg ? otg.name : 'Common';
-      } catch (e) {}
-
-      // Deterministic doc ID: prevents duplicates across players
-      // Same parents + same date = same doc ID regardless of who triggers
-      var pairKey = [parentA.hash.slice(0, 8), parentB.hash.slice(0, 8)].sort().join('');
-      var docId = 'wild_' + pairKey + '_' + td.replace(/-/g, '');
-
-      var dropData = {
-        lat: targetLat, lng: targetLng, hash: offHash,
-        ownerUid: user.uid,
-        ownerName: localStorage.getItem('pw_keeper_name') || 'Keeper',
-        ea: offEA, defenderGame: 'set',
-        season: (offTraits && offTraits.season) || 0,
-        status: 'alive', grade: offGrade,
-        zone: _zoneKey(targetLat, targetLng),
-        droppedAt: new Date().toISOString(),
-        wildBorn: true, // marks this as nature-spawned
-        parentA: parentA.hash.slice(0, 8),
-        parentB: parentB.hash.slice(0, 8)
-      };
-
-      // Write to Firestore — idempotent via deterministic doc ID
-      // If another player already triggered this pair today, .set() overwrites harmlessly
-      (function(did, dd) {
-        window.db.collection('wildDrops').doc(did).set(dd)
-          .then(function() {
-            if (window._swsLog) _swsLog('Wild birth! ' + did + ' grade:' + dd.grade, 'ok');
-          })
-          .catch(function(e) {
-            // Permission denied or already exists — fine either way
-            if (window._swsLog) _swsLog('Wild birth write: ' + (e.code || e.message), 'warn');
-          });
-      })(docId, dropData);
-
-      births++;
-      break; // max 1 birth per zone per day
+    // Pick best complementary pair (prefer opposite seasons)
+    var bestPair = null, bestScore = -1;
+    for (var pi = 0; pi < plants.length && pi < 6; pi++) {
+      for (var pj = pi + 1; pj < plants.length && pj < 6; pj++) {
+        var sA = plants[pi].season || 0, sB = plants[pj].season || 0;
+        var score = (Math.abs(sA - sB) === 2) ? 3 : (sA !== sB ? 2 : 1); // opposite > different > same
+        score += Math.random(); // tie-break
+        if (score > bestScore) { bestScore = score; bestPair = [pi, pj]; }
+      }
     }
+    if (!bestPair) continue;
+
+    // Season modifier: peak season plants reproduce more
+    var month = new Date().getMonth();
+    var curSeason = month < 3 ? 3 : month < 6 ? 0 : month < 9 ? 1 : 2; // W,Sp,Su,Au
+    var parentA = plants[bestPair[0]], parentB = plants[bestPair[1]];
+    var seasonMod = 1.0;
+    if ((parentA.season || 0) === curSeason || (parentB.season || 0) === curSeason) seasonMod = 1.3;
+
+    // Final reproduction chance
+    var finalChance = REPRO_CHANCE * weatherMod * densityMod * seasonMod;
+    if (Math.random() >= finalChance) {
+      if (simMode) simLog.push({ zone: zk, chance: Math.round(finalChance * 100) + '%', result: 'no breed' });
+      continue;
+    }
+
+    // Generate offspring hash — always Gen 1 (wild resets chimera generation)
+    var offHash = _breedHash(parentA.hash, parentB.hash);
+    var gradeA = 'Common', gradeB = 'Common';
+    try {
+      if (window.hashToTraits && window.getTerraGrade) {
+        gradeA = window.getTerraGrade(window.hashToTraits(parentA.hash)).name || 'Common';
+        gradeB = window.getTerraGrade(window.hashToTraits(parentB.hash)).name || 'Common';
+      }
+    } catch (e) {}
+    offHash = _adjustOffspringRarity(offHash, gradeA, gradeB);
+
+    // Compute offspring traits — Gen 1 always
+    var offTraits = null, offEA = 0, offGrade = 'Common';
+    try {
+      offTraits = window.hashToTraits(offHash);
+      offTraits.chimerGen = 1; // ALWAYS Gen 1 in the wild
+      offEA = window.computeEA ? window.computeEA(offTraits, 0) : 0;
+      var otg = window.getTerraGrade ? window.getTerraGrade(offTraits) : null;
+      offGrade = otg ? otg.name : 'Common';
+    } catch (e) {}
+
+    // Pick target hex — wind-influenced dispersal
+    var parts = zk.split(',');
+    var baseLat = parseFloat(parts[0]), baseLng = parseFloat(parts[1]);
+    var windRad = ((_wd || 0) + Math.random() * 180 - 90) * Math.PI / 180;
+    var windStr = 0.2 + Math.random() * 0.3;
+    var randStr = 1 - windStr;
+    var dist = ZONE_SIZE * (1 + Math.random());
+    var targetLat = baseLat + Math.cos(windRad) * dist * windStr + (Math.random() - 0.5) * dist * randStr;
+    var targetLng = baseLng + Math.sin(windRad) * dist * windStr + (Math.random() - 0.5) * dist * randStr;
+    var targetZone = _zoneKey(targetLat, targetLng);
+
+    // EA-based invasion check
+    var targetPlants = zones[targetZone] || [];
+    var invaded = false, displacedPlant = null;
+    if (targetPlants.length > 0) {
+      // Find weakest plant in target zone
+      var weakest = targetPlants[0], weakestEA = targetPlants[0].ea || 0;
+      for (var wp = 1; wp < targetPlants.length; wp++) {
+        var wpEA = targetPlants[wp].ea || 0;
+        // Player drops get +3 defense bonus
+        if (!targetPlants[wp].wildBorn) wpEA += 3;
+        if (wpEA < weakestEA) { weakest = targetPlants[wp]; weakestEA = wpEA; }
+      }
+      // Offspring must exceed defender by 2+
+      if (offEA > weakestEA + 2) {
+        invaded = true;
+        displacedPlant = weakest;
+      } else {
+        if (simMode) simLog.push({ zone: zk, chance: Math.round(finalChance * 100) + '%', result: 'blocked by EA ' + weakestEA + ' (offspring EA ' + offEA + ')' });
+        continue; // can't invade, offspring dies
+      }
+    }
+
+    // Lineage cap: count how many plants share these parent genes
+    var lineageKey = [parentA.hash.slice(0, 4), parentB.hash.slice(0, 4)].sort().join('');
+    var lineageCount = 0;
+    for (var lz = 0; lz < zoneKeys.length; lz++) {
+      var lPlants = zones[zoneKeys[lz]];
+      for (var lp = 0; lp < lPlants.length; lp++) {
+        var lk = [(lPlants[lp].parentA || '').slice(0, 4), (lPlants[lp].parentB || '').slice(0, 4)].sort().join('');
+        if (lk === lineageKey) lineageCount++;
+      }
+    }
+    if (lineageCount >= REPRO_LINEAGE_CAP) {
+      if (simMode) simLog.push({ zone: zk, result: 'lineage cap reached (' + lineageCount + '/' + REPRO_LINEAGE_CAP + ')' });
+      continue;
+    }
+
+    // Build offspring drop data
+    var pairKey = [parentA.hash.slice(0, 8), parentB.hash.slice(0, 8)].sort().join('');
+    var docId = 'wild_' + pairKey + '_' + td.replace(/-/g, '');
+
+    var dropData = {
+      lat: targetLat, lng: targetLng, hash: offHash,
+      ownerUid: 'wild', // wild-born plants have no player owner
+      ownerName: 'Wild',
+      ea: offEA, defenderGame: 'set',
+      season: (offTraits && offTraits.season) || 0,
+      status: 'alive', grade: offGrade, generation: 1,
+      zone: targetZone,
+      droppedAt: simMode ? simMode.date + 'T12:00:00Z' : new Date().toISOString(),
+      wildBorn: true,
+      parentA: parentA.hash.slice(0, 8),
+      parentB: parentB.hash.slice(0, 8),
+      originDropperUid: parentA.ownerUid || parentB.ownerUid || 'wild',
+      weatherAtBirth: { rain: weather.rain, temp: weather.temp }
+    };
+
+    if (simMode) {
+      simLog.push({ zone: zk, chance: Math.round(finalChance * 100) + '%', result: 'BIRTH! EA:' + offEA + ' ' + offGrade + (invaded ? ' (invaded EA:' + (displacedPlant.ea || 0) + ')' : ' (empty hex)'), data: dropData });
+    }
+
+    // Write to Firestore
+    if (!simMode) {
+      (function(did, dd, dp) {
+        // If invading, delete the displaced plant first
+        if (dp && dp.docId) {
+          window.db.collection('wildDrops').doc(dp.docId).delete().catch(function() {});
+        }
+        window.db.collection('wildDrops').doc(did).set(dd)
+          .then(function() { if (window._swsLog) _swsLog('Wild birth! ' + did + ' grade:' + dd.grade + ' EA:' + dd.ea, 'ok'); })
+          .catch(function(e) { if (window._swsLog) _swsLog('Wild birth write: ' + (e.code || e.message), 'warn'); });
+      })(docId, dropData, invaded ? displacedPlant : null);
+    }
+
+    births++;
+    break; // max 1 birth per zone per day
   }
 
   // Prune old zone checks (keep 7 days)
@@ -32958,7 +33101,7 @@ window._applyDefenseChange=function(hash,gameId){
 };
 function _logTip(msg){_toast(msg);}
 
-return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip};
+return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather};
 })();
 </script>
 <!-- DEV: Spawn Mythic+Cosmic (hidden — requires dev panel password) -->
