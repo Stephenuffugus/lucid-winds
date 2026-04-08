@@ -32083,7 +32083,38 @@ function _doReproduction(weather, simMode) {
   if (!simMode) {
     if (window.evaluateMesh) try { evaluateMesh(); } catch (e) {}
     if (window.updateSoilMaturity) try { updateSoilMaturity(); } catch (e) {}
-    if (window.evaluateCommons) try { evaluateCommons(); } catch (e) {}
+    if (window.evaluateCommons) try {
+      evaluateCommons();
+      // Render Commons boundaries on map
+      if (window.getCommons && _map) {
+        // Clear old commons circles
+        if (window._commonsCircles) {
+          for (var cci = 0; cci < window._commonsCircles.length; cci++) {
+            _map.removeLayer(window._commonsCircles[cci]);
+          }
+        }
+        window._commonsCircles = [];
+        var commons = getCommons();
+        for (var cmi = 0; cmi < commons.length; cmi++) {
+          var cm = commons[cmi];
+          var cmCircle = L.circle([cm.centerLat, cm.centerLng], {
+            radius: 150, color: 'rgba(200,168,75,0.3)', fillColor: 'rgba(200,168,75,0.05)',
+            weight: 1, dashArray: '8,6', fillOpacity: 0.05, interactive: false
+          }).addTo(_map);
+          // Add label
+          var cmLabel = L.marker([cm.centerLat, cm.centerLng], {
+            icon: L.divIcon({
+              className: '',
+              html: '<div style="font-family:Cormorant Garamond,serif;font-size:0.4rem;color:rgba(200,168,75,0.6);text-align:center;white-space:nowrap;text-shadow:0 1px 4px rgba(0,0,0,0.8);pointer-events:none;">' + cm.name + '<br><span style="font-family:DM Mono,monospace;font-size:0.25rem;color:var(--muted);">' + cm.plants + ' plants · ' + cm.owners + ' keepers</span></div>',
+              iconSize: [120, 30], iconAnchor: [60, 15]
+            }),
+            interactive: false
+          }).addTo(_map);
+          window._commonsCircles.push(cmCircle);
+          window._commonsCircles.push(cmLabel);
+        }
+      }
+    } catch (e) {}
     if (window.evaluateBloomChorus) try { evaluateBloomChorus(); } catch (e) {}
     if (window.checkPhenotypeReveal) try { checkPhenotypeReveal(); } catch (e) {}
   }
