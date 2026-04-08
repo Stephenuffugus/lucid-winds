@@ -4672,7 +4672,7 @@ window.onerror=function(msg,url,line,col,err){
       <div class="panel-header-title">NURSERY</div>
       <div style="display:flex;gap:0.3rem;align-items:center;">
         <button id="nur-expand-btn" onclick="expandNurSlot()" style="font-family:'Bebas Neue',sans-serif;font-size:0.38rem;letter-spacing:0.06em;background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.3);color:var(--gold);border-radius:5px;padding:0.15rem 0.35rem;cursor:pointer;min-height:28px;white-space:nowrap;">+ SLOT</button>
-        <button class="game-btn" onclick="openCrossPollinateFlow()" style="font-size:0.5rem;padding:0.2rem 0.5rem;">🧬 BREED</button>
+        <button class="game-btn" onclick="if(window._nurStartBreed)_nurStartBreed();else openCrossPollinateFlow();" style="font-size:0.5rem;padding:0.2rem 0.5rem;">🧬 BREED</button>
       </div>
     </div>
     <div id="nur-wallet-balance" class="wallet-balance">Balance: — ⚡</div>
@@ -9212,68 +9212,68 @@ document.addEventListener('keydown', function(e) {
       {name:'None'},{name:'None'},{name:'None'},{name:'None'},
       {name:'None'},{name:'None'},{name:'None'},{name:'None'},
       // 12 creature slots → ~37.5% total (3.125% each)
-      {name:'Navi'},         // idx 20
-      {name:'Bee'},         // idx 21
-      {name:'Pill Bug'},     // idx 22
-      {name:'Firefly'},     // idx 23
-      {name:'Butterfly'},   // idx 24
-      {name:'Moth'},        // idx 25
-      {name:'Ladybug'},     // idx 26
-      {name:'Snail'},       // idx 27
-      {name:'Hummingbird'}, // idx 28
-      {name:'Dragonfly'},   // idx 29
-      {name:'Caterpillar'}, // idx 30
-      {name:'Spider'},      // idx 31
-      {name:'Toad'},        // idx 32 (mythic path)
-      {name:'Phoenix'},     // idx 33 (mythic path)
-      {name:'Baby Mammoth'}, // idx 34
-      {name:'Raccoon'},   // idx 35
-      {name:'Great Blue Heron'},         // idx 36
-      {name:'Garden Spider'},         // idx 37
-      {name:'Beholder',rare:true},   // idx 38
-      {name:'Cat'},         // idx 39 — renderer: Kitty
-      {name:'Platypus',rare:true},    // idx 40 — renderer: Platypus (Rare)
-      {name:'Praying Mantis'}, // idx 41 — renderer: Mantis
-      {name:'Hedgehog'},    // idx 42 — renderer: Hedgehog
-      {name:'Pangolin',rare:true},    // idx 43 — renderer: Pangolin (Rare)
-      {name:'Luna Moth',rare:true},   // idx 44 — renderer: Luna Moth (Rare)
-      {name:'Porcupine'}, // idx 45 — renderer: Hermit Crab
-      {name:'Glow Snail',rare:true},  // idx 46 — renderer: Glow Snail (Rare)
-      {name:'Axolotl',rare:true}, // idx 47
-      {name:'Scorpion',rare:true},// idx 48
-      {name:'Origami Crane',rare:true}, // idx 49
-      {name:'Garden Gnome',rare:true},  // idx 50
-      {name:'Robin'},       // idx 51
-      {name:'Worm'},        // idx 52
-      {name:'Turtle'},      // idx 53
-      {name:'Bat'},         // idx 54
-      {name:'Mouse'},       // idx 55
-      {name:'Owl'},         // idx 56
-      {name:'Silly Goose'}, // idx 57
+      {name:'Navi',temp:'mystic'},         // idx 20
+      {name:'Bee',temp:'symbiote'},         // idx 21
+      {name:'Pill Bug',temp:'guardian'},     // idx 22
+      {name:'Firefly',temp:'mystic',ability:'nightBloom'},     // idx 23
+      {name:'Butterfly',temp:'wanderer',ability:'driftPollen'},   // idx 24
+      {name:'Moth',temp:'mystic'},        // idx 25
+      {name:'Ladybug',temp:'guardian'},     // idx 26
+      {name:'Snail',temp:'guardian'},       // idx 27
+      {name:'Hummingbird',temp:'wanderer'}, // idx 28
+      {name:'Dragonfly',temp:'wanderer'},   // idx 29
+      {name:'Caterpillar',temp:'symbiote'}, // idx 30
+      {name:'Spider',temp:'guardian'},      // idx 31
+      {name:'Toad',temp:'guardian',ability:'rainCaller'},        // idx 32 (mythic path)
+      {name:'Phoenix',temp:'symbiote',ability:'herdImmunity'},  // idx 33 (mythic path — renders as Capybara via override, art TBD)
+      {name:'Baby Mammoth',temp:'guardian',ability:'permafrost'}, // idx 34
+      {name:'Raccoon',temp:'forager',ability:'scavenger'},   // idx 35
+      {name:'Great Blue Heron',temp:'wanderer',ability:'precisionStrike'},         // idx 36
+      {name:'Garden Spider',temp:'guardian',ability:'silkTrap'},         // idx 37
+      {name:'Beholder',rare:true,temp:'mystic',ability:'omnisight'},   // idx 38
+      {name:'Cat',temp:'wanderer'},         // idx 39
+      {name:'Platypus',rare:true,temp:'forager'},    // idx 40
+      {name:'Praying Mantis',temp:'guardian'}, // idx 41
+      {name:'Hedgehog',temp:'guardian'},    // idx 42
+      {name:'Pangolin',rare:true,temp:'guardian'},    // idx 43
+      {name:'Luna Moth',rare:true,temp:'mystic'},   // idx 44
+      {name:'Porcupine',temp:'guardian',ability:'shellShift'}, // idx 45 — renderer: Hermit Crab
+      {name:'Glow Snail',rare:true,temp:'mystic'},  // idx 46
+      {name:'Axolotl',rare:true,temp:'symbiote'}, // idx 47
+      {name:'Scorpion',rare:true,temp:'guardian'},// idx 48
+      {name:'Origami Crane',rare:true,temp:'wanderer'}, // idx 49
+      {name:'Garden Gnome',rare:true,temp:'guardian'},  // idx 50
+      {name:'Robin',temp:'wanderer'},       // idx 51
+      {name:'Worm',temp:'symbiote'},        // idx 52
+      {name:'Turtle',temp:'guardian'},      // idx 53
+      {name:'Bat',temp:'mystic'},         // idx 54
+      {name:'Mouse',temp:'forager'},       // idx 55
+      {name:'Owl',temp:'mystic'},         // idx 56
+      {name:'Silly Goose',temp:'wanderer'}, // idx 57
       {name:'None'},        // idx 58
       {name:'None'},        // idx 59
-      {name:'Dart Frog'},   // idx 60
-      {name:'Rabbit'},      // idx 61
-      {name:'Cricket'},     // idx 62
-      {name:'Puffin'},      // idx 63
-      {name:'Scarab Beetle'}, // idx 64
-      {name:'Ant Trail'},   // idx 65
-      {name:'Red-Crowned Crane'}, // idx 66
-      {name:'Squirrel'},    // idx 67
-      {name:'Koala'},        // idx 68
-      {name:'Flamingo',rare:true},  // idx 69
-      {name:'Seahorse'},    // idx 70
-      {name:'Koi Fish'},    // idx 71
-      {name:'Jellyfish',rare:true}, // idx 72
-      {name:'Mushroom Sprite'}, // idx 73
-      {name:'Deer Fawn'},   // idx 74
-      {name:'Raven',rare:true}, // idx 75
-      {name:'Garden Snake'}, // idx 76
-      {name:'Centipede'},   // idx 77
-      {name:'Crystal Beetle',rare:true}, // idx 78
-      {name:'Will-o-Wisp',rare:true}, // idx 79
-      {name:'Paper Butterfly'}, // idx 80
-      {name:'Panda'}  // idx 81
+      {name:'Dart Frog',temp:'forager'},   // idx 60
+      {name:'Rabbit',temp:'wanderer'},      // idx 61
+      {name:'Cricket',temp:'symbiote'},     // idx 62
+      {name:'Puffin',temp:'wanderer'},      // idx 63
+      {name:'Scarab Beetle',temp:'forager'}, // idx 64
+      {name:'Ant Trail',temp:'symbiote'},   // idx 65
+      {name:'Red-Crowned Crane',temp:'mystic'}, // idx 66
+      {name:'Squirrel',temp:'forager'},    // idx 67
+      {name:'Koala',temp:'guardian'},        // idx 68
+      {name:'Flamingo',rare:true,temp:'wanderer'},  // idx 69
+      {name:'Seahorse',temp:'mystic'},    // idx 70
+      {name:'Koi Fish',temp:'symbiote'},    // idx 71
+      {name:'Jellyfish',rare:true,temp:'mystic'}, // idx 72
+      {name:'Mushroom Sprite',temp:'symbiote'}, // idx 73
+      {name:'Deer Fawn',temp:'wanderer'},   // idx 74
+      {name:'Raven',rare:true,temp:'forager'}, // idx 75
+      {name:'Garden Snake',temp:'guardian'}, // idx 76
+      {name:'Centipede',temp:'forager'},   // idx 77
+      {name:'Crystal Beetle',rare:true,temp:'mystic'}, // idx 78
+      {name:'Will-o-Wisp',rare:true,temp:'mystic'}, // idx 79
+      {name:'Paper Butterfly',temp:'wanderer'}, // idx 80
+      {name:'Panda',temp:'guardian'}  // idx 81
     ],
     mutations: [
       {name:'None',tier:0}, {name:'Wireframe',tier:1},
@@ -27941,10 +27941,26 @@ document.addEventListener('keydown', function(e) {
       return;
     }
     var gh = loadGreenhouse();
-    var eligible = gh.filter(function(p) { return (p.breedCount || 0) < 3; });
-    if (eligible.length < 2) {
-      _setNurMsg('Need at least 2 plants with breeds remaining.');
-      return;
+    // Use breed status if available, fall back to breedCount
+    var eligible;
+    if (window.FG_Data && FG_Data.getBreedStatus) {
+      eligible = gh.filter(function(p) { var bs = FG_Data.getBreedStatus(p); return bs.canBreed; });
+      // If maturity gate blocks all, show helpful message
+      if (eligible.length < 2) {
+        var immature = gh.filter(function(p) { var bs = FG_Data.getBreedStatus(p); return bs.reason === 'IMMATURE'; });
+        if (immature.length > 0) {
+          _setNurMsg('Plants need ' + (FG_Data.MATURITY_DAYS || 7) + ' days to mature before breeding. ' + immature.length + ' still growing.');
+        } else {
+          _setNurMsg('Need at least 2 plants ready to breed.');
+        }
+        return;
+      }
+    } else {
+      eligible = gh.filter(function(p) { return (p.breedCount || 0) < 3; });
+      if (eligible.length < 2) {
+        _setNurMsg('Need at least 2 plants with breeds remaining.');
+        return;
+      }
     }
     if (window.openBreedScreen) {
       openBreedScreen(eligible[0], 'greenhouse');
@@ -41622,6 +41638,109 @@ window.bsExecuteBreed=function(){
   }
   // closeBreedScreen called above before async — don't call again here
 };
+})();
+</script>
+
+<!-- ═══ COMPANION ABILITY ENGINE ═══ -->
+<script>
+(function(){
+'use strict';
+
+// Companion ability effects — keyed by ability ID from TRAIT_BANK
+var ABILITIES = {
+  rainCaller:    {name:'Rain Caller',    desc:'Reduces water decay 50%, 30% auto-water chance'},
+  herdImmunity:  {name:'Herd Immunity',  desc:'+1 EA per ally within 500m (max +4)'},
+  omnisight:     {name:'Omnisight',      desc:'Reveals ferals 1km, takeover alerts'},
+  permafrost:    {name:'Permafrost',     desc:'Ignores seasonal stress, +2 off-season EA'},
+  scavenger:     {name:'Scavenger',      desc:'Banks fertilizer from displaced plants'},
+  silkTrap:      {name:'Silk Trap',      desc:'Takeover requires beating defense 2x'},
+  precisionStrike:{name:'Precision Strike',desc:'2x harvest reward, +1 offensive EA'},
+  shellShift:    {name:'Shell Shift',    desc:'25% chance to relocate on takeover'},
+  nightBloom:    {name:'Night Bloom',    desc:'2x pollen 8PM-6AM, glow marker at night'},
+  driftPollen:   {name:'Drift Pollination',desc:'20% daily free cross-pollination to ally 1km'}
+};
+
+// Temperament bonuses
+var TEMPERAMENTS = {
+  guardian: {name:'Guardian', icon:'🛡️', desc:'+1 defense EA',     defenseEA:1},
+  forager:  {name:'Forager',  icon:'🍂', desc:'+10% harvest hashes', harvestBonus:0.10},
+  wanderer: {name:'Wanderer', icon:'🦋', desc:'+50m feral range',   feralRange:50},
+  mystic:   {name:'Mystic',   icon:'✨', desc:'+15% pollen yield',  pollenBonus:0.15},
+  symbiote: {name:'Symbiote', icon:'🌿', desc:'25% shared watering', sharedWater:0.25}
+};
+
+// Get companion info for a plant
+window.getCompanionInfo = function(traits) {
+  if (!traits || !window.TRAIT_BANK) return null;
+  var idx = traits.companion;
+  var tb = window.TRAIT_BANK;
+  if (!tb.companions || !tb.companions[idx]) return null;
+  var c = tb.companions[idx];
+  if (c.name === 'None') return null;
+  return {
+    idx: idx, name: c.name, rare: c.rare || false,
+    temperament: c.temp ? TEMPERAMENTS[c.temp] : null,
+    tempKey: c.temp || null,
+    ability: c.ability ? ABILITIES[c.ability] : null,
+    abilityKey: c.ability || null
+  };
+};
+
+// Apply companion defense bonus to EA
+window.getCompanionDefenseEA = function(traits) {
+  var info = getCompanionInfo(traits);
+  if (!info) return 0;
+  var bonus = 0;
+  // Temperament defense bonus (Guardian)
+  if (info.temperament && info.temperament.defenseEA) bonus += info.temperament.defenseEA;
+  // Permafrost — ignore seasonal stress (handled in computeEA)
+  return bonus;
+};
+
+// Apply companion reproduction modifier
+window.getCompanionReproMod = function(traits, weather) {
+  var info = getCompanionInfo(traits);
+  if (!info || !info.abilityKey) return 1.0;
+  // Rain Caller: 30% auto-water, reduced decay
+  if (info.abilityKey === 'rainCaller') return weather && weather.rain < 1 ? 1.3 : 1.0;
+  // Night Bloom: 2x reproduction at night
+  if (info.abilityKey === 'nightBloom') {
+    var hr = new Date().getHours();
+    return (hr >= 20 || hr < 6) ? 2.0 : 1.0;
+  }
+  return 1.0;
+};
+
+// Check if shell shift saves a plant from displacement (25% chance)
+window.checkShellShift = function(traits) {
+  var info = getCompanionInfo(traits);
+  if (!info || info.abilityKey !== 'shellShift') return false;
+  return Math.random() < 0.25;
+};
+
+// Check if silk trap doubles defense (requires beating game 2x)
+window.checkSilkTrap = function(traits) {
+  var info = getCompanionInfo(traits);
+  return info && info.abilityKey === 'silkTrap';
+};
+
+// Get harvest bonus from companion temperament
+window.getCompanionHarvestBonus = function(traits) {
+  var info = getCompanionInfo(traits);
+  if (!info || !info.temperament) return 0;
+  return info.temperament.harvestBonus || 0;
+};
+
+// Get pollen bonus from companion temperament
+window.getCompanionPollenBonus = function(traits) {
+  var info = getCompanionInfo(traits);
+  if (!info || !info.temperament) return 0;
+  return info.temperament.pollenBonus || 0;
+};
+
+// Expose for dev panel and card display
+window.COMPANION_ABILITIES = ABILITIES;
+window.COMPANION_TEMPERAMENTS = TEMPERAMENTS;
 })();
 </script>
 
