@@ -892,7 +892,7 @@
       --set-c1:#5b8fb9;--set-c2:#C8A84B;--set-c3:#c07070;
     }
     *{margin:0;padding:0;box-sizing:border-box;}
-    html{background:var(--black);color:var(--cream);scroll-behavior:smooth;overflow-x:hidden;}
+    html{background:var(--black);color:var(--cream);scroll-behavior:smooth;overflow-x:hidden;font-size:clamp(18px,4.5vw,22px);}
     body{font-family:'DM Mono',monospace;font-size:1rem;line-height:1.6;min-height:100vh;overflow-x:hidden;}
 
     /* ── NAV ── */
@@ -1127,7 +1127,7 @@
     .cs-card-back{transform:rotateY(180deg);padding:10% 8% 6%;overflow-y:auto;-webkit-overflow-scrolling:touch;background-color:#050505;background-size:174%;background-position:center;background-repeat:no-repeat;}
     .cs-flip-hint{font-family:'DM Mono',monospace;font-size:0.35rem;color:rgba(122,179,86,0.35);text-align:center;position:absolute;bottom:4%;left:0;right:0;}
     .cs-card-front[data-season="spring"]{background-image:url('assets/cards/fronts/front-spring.png');}
-    .cs-card-front[data-season="summer"]{background-image:url('assets/cards/fronts/front-summer.png');}
+    .cs-card-front[data-season="summer"]{background-image:url('assets/cards/fronts/front-summer.png');background-size:103% 103%;}
     .cs-card-front[data-season="summer"] .cf-haiku-zone{padding-top:0;}
     .cs-card-front[data-season="autumn"]{background-image:url('assets/cards/fronts/front-autumn.png');}
     .cs-card-front[data-season="winter"]{background-image:url('assets/cards/fronts/front-winter.png');}
@@ -2089,8 +2089,8 @@
       border-bottom:2px solid var(--sage);color:var(--cream);
       box-shadow:0 0 16px rgba(122,179,86,0.2);
     }
-    .grove-panel{display:none;overflow-y:visible;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(44px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);visibility:hidden;opacity:0;transition:opacity 0.18s ease;}
-    .grove-panel.active{display:block;visibility:visible;opacity:1;}
+    .grove-panel{display:none;overflow-y:visible;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(44px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);}
+    .grove-panel.active{display:block;}
     @keyframes _tabIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
     @keyframes panelFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
     /* Botanical loading spinner — three rotating leaves */
@@ -2121,12 +2121,12 @@
     /* ── GREENHOUSE ── */
     .greenhouse-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0.4rem;}
     /* ═══ CARD FRONT: Seasonal frames ═══ */
-    .greenhouse-plant{border:none;border-radius:8px;padding:0.4rem 0.3rem;text-align:center;transition:all 0.3s ease;position:relative;overflow:visible;background-color:#050505;background-size:cover;background-position:center;background-repeat:no-repeat;box-shadow:0 0 18px rgba(180,140,60,0.08),0 2px 6px rgba(0,0,0,0.4);}
+    .greenhouse-plant{border:none;border-radius:8px;padding:0.4rem 0.3rem;text-align:center;transition:all 0.3s ease;position:relative;overflow:visible;background-color:#050505;background-size:100% 100%;background-position:center;background-repeat:no-repeat;box-shadow:0 0 18px rgba(180,140,60,0.08),0 2px 6px rgba(0,0,0,0.4);aspect-ratio:544/736;display:flex;flex-direction:column;align-items:center;justify-content:center;}
     .greenhouse-plant:hover{transform:translateY(-2px);filter:brightness(1.2);box-shadow:0 0 24px rgba(180,140,60,0.15),0 4px 12px rgba(0,0,0,0.3);}
     .greenhouse-plant.gh-new{box-shadow:0 0 16px rgba(200,168,75,0.25),0 0 4px rgba(200,168,75,0.15),0 2px 6px rgba(0,0,0,0.4);animation:_ghNewPulse 3s ease-in-out infinite;}
     .greenhouse-plant.gh-new::after{content:'NEW';position:absolute;top:4px;left:4px;font-family:'Bebas Neue',sans-serif;font-size:0.25rem;letter-spacing:0.06em;color:#0d100c;background:var(--gold);padding:1px 4px;border-radius:3px;z-index:5;}
     .greenhouse-plant.season-spring{background-image:url('assets/cards/fronts/card-front-spring.png');}
-    .greenhouse-plant.season-summer{background-image:url('assets/cards/fronts/card-front-summer.png');}
+    .greenhouse-plant.season-summer{background-image:url('assets/cards/fronts/card-front-summer.png');background-size:103% 103%;}
     .greenhouse-plant.season-autumn{background-image:url('assets/cards/fronts/card-front-autumn.png');}
     .greenhouse-plant.season-winter{background-image:url('assets/cards/fronts/card-front-winter.png');}
     /* ═══ CHIMERA DUAL-SEASON CARDS ═══
@@ -2525,76 +2525,77 @@
     #cp-msg{font-family:'DM Mono',monospace;font-size:0.48rem;color:rgba(192,112,112,0.7);text-align:center;min-height:0.75rem;margin-top:0.28rem;}
 
     /* ══ set-51: BREEDING COMPARISON SCREEN ══ */
-    #breed-screen{display:none;position:fixed;inset:0;z-index:99998;background:url('assets/breed-screen-bg.png') center/cover no-repeat,linear-gradient(180deg,rgba(13,16,12,0.98),rgba(8,10,6,1));overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.4rem 0.35rem 1.2rem;}
+    #breed-screen{display:none;position:fixed;inset:0;z-index:99998;background:url('assets/breed-screen-bg.png') top center/110% auto no-repeat,linear-gradient(180deg,rgba(13,16,12,0.98),rgba(8,10,6,1));overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.6rem 0.5rem 1.5rem;}
     #breed-screen.open{display:block;animation:panelFadeIn 0.25s ease;}
-    .bs-topbar{display:flex;align-items:center;justify-content:space-between;padding:0.3rem 0.1rem 0.4rem;border-bottom:1px solid rgba(74,124,53,0.08);margin-bottom:0.35rem;}
-    .bs-title{font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.15em;color:var(--sage);}
-    .bs-close{font-family:'Bebas Neue',sans-serif;font-size:0.6rem;color:var(--cream);background:rgba(46,40,32,0.5);border:1px solid rgba(200,188,160,0.12);border-radius:5px;padding:0.2rem 0.55rem;cursor:pointer;min-height:36px;}
-    .bs-nav{display:flex;justify-content:center;align-items:center;gap:0.5rem;margin-bottom:0.4rem;}
-    .bs-nav-btn{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:0.9rem;color:var(--sage);background:rgba(26,36,22,0.5);border:1.5px solid rgba(122,179,86,0.2);cursor:pointer;min-height:44px;}
-    .bs-nav-btn:active{background:rgba(74,124,53,0.15);transform:scale(0.95);}
-    .bs-nav-count{font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--muted);}
-    .bs-pair{display:flex;gap:0.3rem;margin-bottom:0.3rem;position:relative;align-items:flex-start;}
-    .bs-x{position:absolute;top:42px;left:50%;transform:translateX(-50%);z-index:10;width:24px;height:24px;border-radius:50%;background:rgba(13,16,12,0.95);border:1.5px solid rgba(200,168,75,0.25);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:0.6rem;color:var(--gold);}
-    .bs-cb{flex:1;min-width:0;border-radius:9px;padding:0.35rem 0.3rem 0.3rem;display:flex;flex-direction:column;position:relative;overflow:hidden;}
+    .bs-topbar{display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0.2rem 0.5rem;border-bottom:1px solid rgba(74,124,53,0.08);margin-bottom:0.4rem;}
+    .bs-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.15em;color:var(--sage);}
+    .bs-close{font-family:'Bebas Neue',sans-serif;font-size:0.85rem;color:var(--cream);background:rgba(46,40,32,0.5);border:1px solid rgba(200,188,160,0.12);border-radius:5px;padding:0.3rem 0.7rem;cursor:pointer;min-height:48px;}
+    .bs-nav{display:none;}
+    .bs-card-nav{display:flex;justify-content:center;align-items:center;gap:0.3rem;margin-top:0.25rem;}
+    .bs-card-nav-btn{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:0.8rem;color:var(--sage);background:rgba(26,36,22,0.5);border:1.5px solid rgba(122,179,86,0.2);cursor:pointer;min-height:36px;}
+    .bs-card-nav-btn:active{background:rgba(74,124,53,0.15);transform:scale(0.95);}
+    .bs-card-nav-count{font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--muted);}
+    .bs-pair{display:flex;gap:0.4rem;margin-bottom:0.4rem;position:relative;align-items:flex-start;}
+    .bs-x{position:absolute;top:52px;left:50%;transform:translateX(-50%);z-index:10;width:28px;height:28px;border-radius:50%;background:rgba(13,16,12,0.95);border:1.5px solid rgba(200,168,75,0.25);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:0.75rem;color:var(--gold);}
+    .bs-cb{flex:1;min-width:0;border-radius:9px;padding:0.45rem 0.4rem 0.4rem;display:flex;flex-direction:column;position:relative;overflow:hidden;transition:opacity 0.14s ease,transform 0.14s ease;}
     .bs-cb.spring{background:rgba(26,36,22,0.4);border:2px solid rgba(232,160,191,0.35);box-shadow:0 0 0 2px rgba(13,16,12,0.9),0 0 0 4px rgba(232,160,191,0.3),inset 0 0 14px rgba(232,160,191,0.05),0 3px 12px rgba(0,0,0,0.3);}
     .bs-cb.summer{background:rgba(26,36,22,0.4);border:2px solid rgba(212,168,67,0.35);box-shadow:0 0 0 2px rgba(13,16,12,0.9),0 0 0 4px rgba(212,168,67,0.35),inset 0 0 14px rgba(212,168,67,0.05),0 3px 12px rgba(0,0,0,0.3);}
     .bs-cb.autumn{background:rgba(26,36,22,0.4);border:2px solid rgba(212,132,42,0.3);box-shadow:0 0 0 2px rgba(13,16,12,0.9),0 0 0 4px rgba(212,132,42,0.3),inset 0 0 14px rgba(212,132,42,0.05),0 3px 12px rgba(0,0,0,0.3);}
     .bs-cb.winter{background:rgba(26,36,22,0.4);border:2px solid rgba(160,196,232,0.3);box-shadow:0 0 0 2px rgba(13,16,12,0.9),0 0 0 4px rgba(160,196,232,0.3),inset 0 0 14px rgba(160,196,232,0.05),0 3px 12px rgba(0,0,0,0.3);}
-    .bs-role{font-family:'Bebas Neue',sans-serif;font-size:0.5rem;letter-spacing:0.12em;color:var(--muted);opacity:0.5;margin-bottom:0.15rem;}
-    .bs-head{display:flex;align-items:center;gap:0.3rem;padding-bottom:0.25rem;border-bottom:1px solid rgba(74,124,53,0.06);margin-bottom:0.2rem;}
-    .bs-thumb{width:42px;height:54px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(13,16,12,0.3);border:1px solid rgba(74,124,53,0.08);border-radius:4px;}
-    .bs-name{font-family:'Playfair Display',serif;font-size:0.7rem;font-weight:900;line-height:1.15;overflow:hidden;}
-    .bs-name .np-top{display:inline;font-size:0.4rem;font-style:italic;opacity:0.7;font-weight:400;margin-right:0.15rem;}
-    .bs-name .np-main{font-size:0.65rem;}
-    .bs-name .np-title{display:block;font-size:0.35rem;font-style:italic;opacity:0.6;font-weight:400;}
-    .bs-meta{font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.05em;display:flex;gap:0.25rem;margin-top:0.05rem;}
-    .bs-row{display:flex;justify-content:space-between;align-items:baseline;padding:0.14rem 0;border-bottom:1px dotted rgba(74,124,53,0.04);}
-    .bs-cat{font-size:0.48rem;color:var(--cream);opacity:0.4;letter-spacing:0.04em;flex-shrink:0;}
-    .bs-val{font-size:0.55rem;color:var(--cream);opacity:0.85;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .bs-role{font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.12em;color:var(--muted);opacity:0.5;margin-bottom:0.2rem;}
+    .bs-head{display:flex;align-items:center;gap:0.35rem;padding-bottom:0.3rem;border-bottom:1px solid rgba(74,124,53,0.06);margin-bottom:0.25rem;}
+    .bs-thumb{width:56px;height:72px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(13,16,12,0.3);border:1px solid rgba(74,124,53,0.08);border-radius:4px;}
+    .bs-name{font-family:'Playfair Display',serif;font-size:0.85rem;font-weight:900;line-height:1.15;overflow:hidden;}
+    .bs-name .np-top{display:inline;font-size:0.5rem;font-style:italic;opacity:0.7;font-weight:400;margin-right:0.15rem;}
+    .bs-name .np-main{font-size:0.8rem;}
+    .bs-name .np-title{display:block;font-size:0.45rem;font-style:italic;opacity:0.6;font-weight:400;}
+    .bs-meta{font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.05em;display:flex;gap:0.3rem;margin-top:0.08rem;flex-wrap:wrap;}
+    .bs-row{display:flex;justify-content:space-between;align-items:baseline;padding:0.18rem 0;border-bottom:1px dotted rgba(74,124,53,0.04);}
+    .bs-cat{font-size:0.6rem;color:var(--cream);opacity:0.4;letter-spacing:0.04em;flex-shrink:0;}
+    .bs-val{font-size:0.65rem;color:var(--cream);opacity:0.85;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .bs-val.rare{color:var(--gold)!important;opacity:1!important;}
     .bs-val.mythic{color:var(--cream)!important;text-shadow:0 0 4px rgba(240,235,216,0.3);opacity:1!important;}
     .bs-val.mutation{color:#d4956a!important;opacity:1!important;}
     .bs-val.none{opacity:0.2!important;}
-    .bs-row.heritable{background:linear-gradient(90deg,rgba(200,168,75,0.04),rgba(200,168,75,0.02));border-radius:3px;margin:0 -0.1rem;padding:0.1rem;}
+    .bs-row.heritable{background:linear-gradient(90deg,rgba(200,168,75,0.04),rgba(200,168,75,0.02));border-radius:3px;margin:0 -0.1rem;padding:0.12rem;}
     .bs-row.heritable .bs-val{animation:bsGenePulse 3s ease-in-out infinite;}
     @keyframes bsGenePulse{0%,100%{text-shadow:none;}50%{text-shadow:0 0 6px rgba(200,168,75,0.25);}}
-    .bs-tag{font-family:'Bebas Neue',sans-serif;font-size:0.38rem;letter-spacing:0.06em;padding:0.04rem 0.12rem;border-radius:3px;margin-left:0.1rem;display:inline-block;line-height:1;}
+    .bs-tag{font-family:'Bebas Neue',sans-serif;font-size:0.5rem;letter-spacing:0.06em;padding:0.06rem 0.16rem;border-radius:3px;margin-left:0.12rem;display:inline-block;line-height:1;}
     .bs-tag.tag-dom{background:rgba(122,179,86,0.15);color:var(--sage);border:1px solid rgba(122,179,86,0.2);}
     .bs-tag.tag-mix{background:rgba(200,168,75,0.12);color:var(--gold);border:1px solid rgba(200,168,75,0.18);}
     .bs-tag.tag-risk{background:rgba(200,80,60,0.12);color:#d8a0a0;border:1px solid rgba(200,80,60,0.18);}
-    .bs-compat{text-align:center;padding:0.3rem;margin-bottom:0.25rem;border-radius:8px;background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.12);}
-    .bs-compat-score{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.08em;}
-    .bs-compat-label{font-family:'DM Mono',monospace;font-size:0.33rem;color:var(--muted);margin-top:0.08rem;}
-    .bs-row.match .bs-cat::after{content:' ═';font-size:0.28rem;color:var(--sage);opacity:0.5;}
-    .bs-forecast{background:rgba(26,36,22,0.3);border:1.5px solid rgba(200,168,75,0.15);border-radius:9px;padding:0.5rem 0.55rem 0.45rem;margin-top:0.1rem;}
-    .bs-fc-title{font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.14em;color:var(--gold);opacity:0.85;margin-bottom:0.35rem;display:flex;align-items:center;gap:0.3rem;}
+    .bs-compat{text-align:center;padding:0.4rem;margin-bottom:0.3rem;border-radius:8px;background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.12);}
+    .bs-compat-score{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:0.08em;}
+    .bs-compat-label{font-family:'DM Mono',monospace;font-size:0.45rem;color:var(--muted);margin-top:0.08rem;}
+    .bs-row.match .bs-cat::after{content:' ═';font-size:0.35rem;color:var(--sage);opacity:0.5;}
+    .bs-forecast{background:rgba(26,36,22,0.3);border:1.5px solid rgba(200,168,75,0.15);border-radius:9px;padding:0.6rem 0.65rem 0.55rem;margin-top:0.15rem;}
+    .bs-fc-title{font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:0.14em;color:var(--gold);opacity:0.85;margin-bottom:0.4rem;display:flex;align-items:center;gap:0.3rem;}
     .bs-fc-title::after{content:'';flex:1;height:1px;background:rgba(200,168,75,0.1);}
-    .bs-meter{display:flex;align-items:center;gap:0.3rem;padding:0.16rem 0;}
-    .bs-ml{font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--muted);opacity:0.7;width:68px;flex-shrink:0;}
-    .bs-mt{flex:1;height:8px;background:rgba(74,124,53,0.08);border-radius:4px;overflow:hidden;position:relative;}
-    .bs-mf{height:100%;border-radius:4px;transition:width 0.4s ease;}
+    .bs-meter{display:flex;align-items:center;gap:0.35rem;padding:0.2rem 0;}
+    .bs-ml{font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--muted);opacity:0.7;width:80px;flex-shrink:0;}
+    .bs-mt{flex:1;height:10px;background:rgba(74,124,53,0.08);border-radius:5px;overflow:hidden;position:relative;}
+    .bs-mf{height:100%;border-radius:5px;transition:width 0.4s ease;}
     .bs-mf.gold{background:linear-gradient(90deg,rgba(200,168,75,0.6),rgba(200,168,75,0.85));}
     .bs-mf.warn{background:linear-gradient(90deg,rgba(212,149,106,0.5),rgba(212,149,106,0.8));}
-    .bs-mv{font-family:'Bebas Neue',sans-serif;font-size:0.65rem;min-width:50px;text-align:right;color:var(--cream);opacity:0.85;}
+    .bs-mv{font-family:'Bebas Neue',sans-serif;font-size:0.8rem;min-width:50px;text-align:right;color:var(--cream);opacity:0.85;}
     .bs-mv.gold{color:var(--gold);}
     .bs-mv.warn{color:#d4956a;}
-    .bs-seasons{display:flex;align-items:center;gap:0.25rem;padding:0.16rem 0;flex-wrap:wrap;}
-    .bs-sc{font-family:'Bebas Neue',sans-serif;font-size:0.5rem;padding:0.08rem 0.3rem;border-radius:4px;border:1px solid rgba(74,124,53,0.1);color:var(--muted);background:rgba(13,16,12,0.2);}
+    .bs-seasons{display:flex;align-items:center;gap:0.3rem;padding:0.2rem 0;flex-wrap:wrap;}
+    .bs-sc{font-family:'Bebas Neue',sans-serif;font-size:0.6rem;padding:0.1rem 0.35rem;border-radius:4px;border:1px solid rgba(74,124,53,0.1);color:var(--muted);background:rgba(13,16,12,0.2);}
     .bs-sc.hot{border-color:rgba(200,168,75,0.25);color:var(--gold);background:rgba(200,168,75,0.04);}
-    .bs-chimera{display:flex;align-items:flex-start;gap:0.2rem;margin-top:0.3rem;font-size:0.5rem;color:#d4956a;opacity:0.8;line-height:1.5;}
+    .bs-chimera{display:flex;align-items:flex-start;gap:0.25rem;margin-top:0.35rem;font-size:0.6rem;color:#d4956a;opacity:0.8;line-height:1.5;}
     .bs-chimera b{color:var(--cream);}
-    .bs-breed-btn{display:block;width:100%;margin-top:0.4rem;padding:0.6rem 1rem;border:2px solid rgba(200,168,75,0.3);border-radius:9px;background:linear-gradient(180deg,rgba(200,168,75,0.07),rgba(200,168,75,0.02));color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:0.15em;cursor:pointer;min-height:52px;box-shadow:0 3px 12px rgba(200,168,75,0.06);}
+    .bs-breed-btn{display:block;width:100%;margin-top:0.5rem;padding:0.7rem 1rem;border:2px solid rgba(200,168,75,0.3);border-radius:9px;background:linear-gradient(180deg,rgba(200,168,75,0.07),rgba(200,168,75,0.02));color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.15em;cursor:pointer;min-height:56px;box-shadow:0 3px 12px rgba(200,168,75,0.06);}
     .bs-breed-btn:active{transform:scale(0.98);}
     /* Confirm overlay */
     .bs-confirm{display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);align-items:center;justify-content:center;flex-direction:column;gap:0.6rem;padding:1.5rem;}
     .bs-confirm.open{display:flex;}
-    .bs-confirm-card{background:rgba(26,36,22,0.95);border:1.5px solid rgba(200,168,75,0.25);border-radius:12px;padding:1.2rem 1.5rem;text-align:center;max-width:300px;width:100%;}
-    .bs-confirm-title{font-family:'Playfair Display',serif;font-size:0.85rem;font-weight:900;color:var(--cream);margin-bottom:0.4rem;}
-    .bs-confirm-text{font-size:0.45rem;color:var(--muted);line-height:1.6;margin-bottom:0.6rem;}
+    .bs-confirm-card{background:rgba(26,36,22,0.95);border:1.5px solid rgba(200,168,75,0.25);border-radius:12px;padding:1.4rem 1.6rem;text-align:center;max-width:340px;width:100%;}
+    .bs-confirm-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:var(--cream);margin-bottom:0.5rem;}
+    .bs-confirm-text{font-size:0.65rem;color:var(--muted);line-height:1.6;margin-bottom:0.7rem;}
     .bs-confirm-text b{color:var(--cream);}
-    .bs-confirm-btns{display:flex;gap:0.4rem;}
-    .bs-confirm-btns button{flex:1;min-height:44px;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;}
+    .bs-confirm-btns{display:flex;gap:0.5rem;}
+    .bs-confirm-btns button{flex:1;min-height:52px;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;}
     .bs-cancel{background:rgba(46,40,32,0.6);border:1px solid rgba(200,188,160,0.15);color:var(--cream);}
     .bs-go{background:linear-gradient(180deg,rgba(200,168,75,0.12),rgba(200,168,75,0.04));border:2px solid rgba(200,168,75,0.35);color:var(--gold);}
 
@@ -3294,13 +3295,13 @@
     .skc img{transition:transform .15s ease}
     .skc svg{width:100%;height:100%;display:block}
 
-    /* Battleship */
+    /* Battleship — Deep Water */
     .bsg{display:grid;grid-template-columns:repeat(10,1fr);gap:clamp(1px,.4vw,3px);width:clamp(280px,92vw,420px);margin:0 auto;padding:clamp(4px,1.5vw,8px);background:rgba(14,18,20,.25);border-radius:clamp(6px,2vw,10px);animation:boardFadeIn .4s ease}
     .bsc{aspect-ratio:1;border-radius:clamp(2px,.6vw,5px);display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(18,26,34,.6);border:1px solid rgba(74,122,170,.1);font-size:clamp(.55rem,1.5vw,.7rem);-webkit-tap-highlight-color:transparent;transition:all .18s cubic-bezier(.25,.46,.45,.94)}
     .bsc:active{transform:scale(.9);transition-duration:.06s}
-    .bsc.bsh{background:rgba(199,80,80,.16);border-color:rgba(199,80,80,.28);box-shadow:0 0 8px rgba(199,80,80,.08);animation:cellReveal .25s ease}
-    .bsc.bsm{background:rgba(74,122,170,.1);border-color:rgba(74,122,170,.22);color:rgba(74,122,170,.4);animation:cellReveal .2s ease}
-    .bsc.bss{background:rgba(74,124,53,.18);border-color:rgba(122,179,86,.35)}
+    .bsc.bsh{background:rgba(199,80,80,.2);border-color:rgba(199,80,80,.35);box-shadow:0 0 10px rgba(199,80,80,.15);animation:cellReveal .25s ease}
+    .bsc.bsm{background:rgba(40,60,50,.25);border-color:rgba(74,122,170,.18);color:rgba(122,179,86,.4);animation:cellReveal .2s ease}
+    .bsc.bss{background:rgba(74,124,53,.22);border-color:rgba(122,179,86,.4);box-shadow:inset 0 0 6px rgba(122,179,86,.1)}
 
     /* Chess */
     .ch-wrap{position:relative;width:clamp(300px,92vw,420px);margin:0 auto}
@@ -4092,7 +4093,7 @@
 #px{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:50;pointer-events:none;display:none;text-align:center;}
 #px.show{display:block;animation:panelFadeIn 0.2s ease;}
 /* ═══ FERAL CHALLENGE MODAL ═══ */
-#fc-modal{display:none;position:fixed;inset:0;z-index:99999;background:rgba(5,8,4,0.92) url('assets/feral-challenge-bg.png') center/cover no-repeat;backdrop-filter:blur(12px);flex-direction:column;align-items:center;justify-content:center;padding:1rem;}
+#fc-modal{display:none;position:fixed;inset:0;z-index:99999;background:rgba(5,8,4,0.95);backdrop-filter:blur(12px);flex-direction:column;align-items:center;justify-content:center;padding:1rem;}
 #fc-modal.open{display:flex;animation:panelFadeIn 0.3s ease;}
 #fc-title{font-family:'Bebas Neue',sans-serif;font-size:0.8rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.3rem;}
 #fc-subtitle{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);margin-bottom:0.6rem;}
@@ -4201,7 +4202,7 @@
     .pw-corner.br{bottom:-4px;right:-4px;transform:scale(-1,-1);}
 
     /* Splash screen */
-    #pw-splash{position:fixed;inset:0;z-index:2147483647;background:#050505 url('assets/splash-seed-v2.png') center 35%/cover no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:calc(100px + env(safe-area-inset-bottom, 0px));transition:opacity 2s ease;}
+    #pw-splash{position:fixed;inset:0;z-index:2147483647;background:#050505 url('assets/splash-seed-v2.png') top center/110% auto no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:calc(100px + env(safe-area-inset-bottom, 0px));transition:opacity 2s ease;}
     #pw-splash.fade-out{opacity:0;pointer-events:none;}
     #pw-splash .splash-title{font-family:'Cormorant Garamond',serif;font-size:clamp(2.8rem,11vw,4.2rem);font-weight:700;color:#d4a843;text-shadow:0 2px 30px rgba(0,0,0,0.9),0 0 60px rgba(212,168,67,0.15);letter-spacing:0.06em;opacity:0;animation:splashFadeIn 2.5s ease 0.8s forwards,splashFloat 6s ease-in-out 3s infinite;}
     @keyframes splashFadeIn{to{opacity:1;}}
@@ -4217,7 +4218,7 @@
     @keyframes _ghNewPulse{0%,100%{box-shadow:0 0 12px rgba(200,168,75,0.15),0 2px 6px rgba(0,0,0,0.4);}50%{box-shadow:0 0 22px rgba(200,168,75,0.3),0 0 6px rgba(200,168,75,0.15),0 2px 6px rgba(0,0,0,0.4);}}
     @keyframes petalDrift{0%{opacity:0;transform:translateY(0) rotate(0deg);}10%{opacity:0.7;}50%{opacity:0.5;transform:translateY(50vh) rotate(120deg);}100%{opacity:0;transform:translateY(110vh) rotate(240deg);}}
     /* Beat 4 (auth) keeps column layout */
-    #ob-beat4{justify-content:flex-start;align-items:center;padding:1rem 1.5rem;overflow-y:auto;text-align:center;-webkit-overflow-scrolling:touch;background:#050505 url('assets/splash-seed-v2.png') center 30%/cover no-repeat;position:relative;}
+    #ob-beat4{justify-content:flex-start;align-items:center;padding:1rem 1.5rem;overflow-y:auto;text-align:center;-webkit-overflow-scrolling:touch;background:#050505 url('assets/splash-seed-v2.png') top center/110% auto no-repeat;position:relative;}
     #ob-beat4::before{content:'';position:absolute;inset:0;background:rgba(5,5,5,0.7);z-index:0;pointer-events:none;}
     #ob-beat4 .ob-text,#ob-beat4 .ob-plant-wrap,#ob-beat4 .ob-name,#ob-beat4 .ob-grade,#ob-beat4 .ob-haiku,#ob-beat4 .ob-creature-text,#ob-beat4 .ob-auth,#ob-beat4 .ob-continue,#ob-beat4 #ob-manifesto{position:relative;z-index:2;}
     #ob-beat4 .ob-text{padding:0;padding-bottom:0.5rem;font-size:1.1rem;color:var(--cream);}
@@ -4647,12 +4648,7 @@ window.onerror=function(msg,url,line,col,err){
       <div class="gh-recent-label">RECENT BLOOMS</div>
       <div class="gh-recent-strip" id="gh-recent-strip"></div>
     </div>
-    <div class="gh-grid-selector" style="display:flex;justify-content:space-between;align-items:center;">
-      <div style="display:flex;gap:0.2rem;" id="gh-grid-btns">
-        <button class="gh-grid-btn" onclick="setGHGrid(1)">1×1</button>
-        <button class="gh-grid-btn" onclick="setGHGrid(2)">2×2</button>
-        <button class="gh-grid-btn active" onclick="setGHGrid(5)">Grid</button>
-      </div>
+    <div class="gh-grid-selector" style="display:flex;justify-content:flex-end;align-items:center;">
       <div style="display:flex;gap:0.2rem;" id="gh-sort-btns">
         <button class="gh-grid-btn active" onclick="setGHSort('newest')">New</button>
         <button class="gh-grid-btn" onclick="setGHSort('rarest')">Rare</button>
@@ -8201,7 +8197,9 @@ document.addEventListener('keydown', function(e) {
         if (tSelected.indexOf(idx) >= 0) el.classList.add('tut-selected');
         el.onclick = function() { tSelectCard(idx); };
         var shapes = '';
-        try { for(var n=0;n<card.number;n++) shapes += renderShape(card.shape, colors[card.color], card.shading); }
+        var _tutShapes = SHAPE_SETS[activeShapeSet] || ['clover','pot','droplet'];
+        var _tutShade = ['solid','striped','empty'];
+        try { for(var n=0;n<card.number;n++) shapes += renderShape(_tutShapes[card.shape], colors[card.color], _tutShade[card.shading]); }
         catch(e) { shapes = '?'; }
         el.innerHTML = '<div class="shape-row">'+shapes+'</div>';
         grid.appendChild(el);
@@ -24013,13 +24011,13 @@ document.addEventListener('keydown', function(e) {
         // Wireframe mode was already applied in leaf rendering (isWire flag)
         // Add scan overlay
         s += '<rect x="0" y="0" width="70" height="95" fill="none" stroke="#6B8F5B" stroke-width="0.3" opacity="0.08" rx="4"/>';
-        s += '<text x="3" y="8" font-family="DM Mono,monospace" font-size="3.5" fill="#6B8F5B" opacity="0.25">WIREFRAME</text>';
+        // mutation label removed (was visible on carousel cards)
         break;
       case 'Glass Stem':
         // Glass was applied in stem rendering (isGlass flag)
         // Add refraction highlight
         s += '<line x1="34" y1="76" x2="36" y2="'+(78-t.stemHeight*0.8)+'" stroke="#EAE0C8" stroke-width="0.3" opacity="0.1"/>';
-        s += '<text x="3" y="8" font-family="DM Mono,monospace" font-size="3.5" fill="#5b8fb9" opacity="0.25">GLASS</text>';
+        // mutation label removed
         break;
       case 'Glitch':
         // Digital glitch — displaced scanlines
@@ -24031,14 +24029,14 @@ document.addEventListener('keydown', function(e) {
           s += '<animate attributeName="x" values="'+gx+';'+(gx+8)+';'+gx+'" dur="'+(2+gi*0.3)+'s" repeatCount="indefinite"/>';
           s += '</rect>';
         }
-        s += '<text x="3" y="8" font-family="DM Mono,monospace" font-size="3.5" fill="#C8A84B" opacity="0.25">GLITCH</text>';
+        // mutation label removed
         break;
       case 'Albino':
-        s += '<text x="3" y="8" font-family="DM Mono,monospace" font-size="3.5" fill="#B0B0A0" opacity="0.25">ALBINO</text>';
+        // mutation label removed
         break;
       case 'Silhouette':
         s += '<rect x="0" y="0" width="70" height="95" fill="none" stroke="rgba(240,235,216,0.06)" stroke-width="0.3" rx="4"/>';
-        s += '<text x="3" y="8" font-family="DM Mono,monospace" font-size="3.5" fill="#555555" opacity="0.25">SHADOW</text>';
+        // mutation label removed
         break;
       case 'Golden':
         // Kintsugi gold crack lines on pot
@@ -24046,7 +24044,7 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M40,83 Q42,77 41,71" stroke="#C8A84B" stroke-width="0.3" fill="none" opacity="0.25" filter="url(#gw'+uid+')"/>';
         // Gold vein on stem
         s += '<line x1="35" y1="76" x2="35" y2="'+(78-t.stemHeight*0.8)+'" stroke="#C8A84B" stroke-width="0.3" opacity="0.2" filter="url(#gw'+uid+')"/>';
-        s += '<text x="3" y="8" font-family="DM Mono,monospace" font-size="3.5" fill="#C8A84B" opacity="0.25">GOLDEN</text>';
+        // mutation label removed
         break;
       case 'Neon':
         // Faint neon grid
@@ -24054,13 +24052,13 @@ document.addEventListener('keydown', function(e) {
         s += '<line x1="0" y1="60" x2="70" y2="60" stroke="#00E5FF" stroke-width="0.15" opacity="0.03"/>';
         s += '<line x1="20" y1="0" x2="20" y2="95" stroke="#00E5FF" stroke-width="0.15" opacity="0.03"/>';
         s += '<line x1="50" y1="0" x2="50" y2="95" stroke="#00E5FF" stroke-width="0.15" opacity="0.03"/>';
-        s += '<text x="3" y="8" font-family="DM Mono,monospace" font-size="3.5" fill="#00E5FF" opacity="0.25">NEON</text>';
+        // mutation label removed
         break;
       case 'Ink Wash':
         // Red seal/chop mark
         s += '<rect x="60" y="86" width="4" height="4" rx="0.3" fill="#C03030" opacity="0.6"/>';
         s += '<text x="62" y="89.5" font-size="2.5" fill="#F0EBD8" text-anchor="middle" opacity="0.7">\u5370</text>';
-        s += '<text x="3" y="8" font-family="DM Mono,monospace" font-size="3.5" fill="#6A6A6A" opacity="0.25">INK</text>';
+        // mutation label removed
         break;
       case 'Fossil':
         // Mineral grain lines
@@ -24072,14 +24070,14 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="22" cy="38" r="0.5" fill="#D4C8A8" opacity="0.2"/>';
         s += '<circle cx="45" cy="44" r="0.4" fill="#D4C8A8" opacity="0.18"/>';
         s += '<circle cx="30" cy="55" r="0.35" fill="#D4C8A8" opacity="0.15"/>';
-        s += '<text x="3" y="8" font-family="DM Mono,monospace" font-size="3.5" fill="#8A8A7A" opacity="0.25">FOSSIL</text>';
+        // mutation label removed
         break;
       case 'Porcelain':
         // Craquelure hairlines
         s += '<path d="M15,30 Q25,35 20,50 Q18,60 25,70" stroke="#8A8A7A" stroke-width="0.15" fill="none" opacity="0.06"/>';
         s += '<path d="M50,25 Q45,40 52,55 Q48,65 55,75" stroke="#8A8A7A" stroke-width="0.15" fill="none" opacity="0.07"/>';
         s += '<path d="M30,20 Q35,30 32,45" stroke="#8A8A7A" stroke-width="0.12" fill="none" opacity="0.05"/>';
-        s += '<text x="3" y="8" font-family="DM Mono,monospace" font-size="3.5" fill="#234B8A" opacity="0.25">PORCELAIN</text>';
+        // mutation label removed
         break;
       case 'Bioluminescent':
         // Luminous stem veins
@@ -24099,7 +24097,7 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="25" cy="35" r="0.6" fill="#00E5CC" opacity="0"><animate attributeName="opacity" values="0.05;0.15;0.05" dur="2.8s" begin="0.3s" repeatCount="indefinite"/></circle>';
         s += '<circle cx="42" cy="30" r="0.5" fill="#4dd0e1" opacity="0"><animate attributeName="opacity" values="0.04;0.12;0.04" dur="3.5s" begin="1.2s" repeatCount="indefinite"/></circle>';
         s += '<circle cx="32" cy="42" r="0.45" fill="#00E5CC" opacity="0"><animate attributeName="opacity" values="0.06;0.14;0.06" dur="2.5s" begin="0.6s" repeatCount="indefinite"/></circle>';
-        s += '<text x="3" y="8" font-family="DM Mono,monospace" font-size="3.5" fill="#00E5CC" opacity="0.25">BIOLUM</text>';
+        // mutation label removed
         break;
       case 'Holographic':
         // Animated rainbow gradient overlay
@@ -24118,7 +24116,7 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="20" cy="28" r="0.4" fill="#fff" opacity="0"><animate attributeName="opacity" values="0;0.3;0" dur="2.2s" begin="0.5s" repeatCount="indefinite"/></circle>';
         s += '<circle cx="48" cy="45" r="0.35" fill="#fff" opacity="0"><animate attributeName="opacity" values="0;0.25;0" dur="2.8s" begin="1.3s" repeatCount="indefinite"/></circle>';
         s += '<circle cx="33" cy="60" r="0.3" fill="#fff" opacity="0"><animate attributeName="opacity" values="0;0.2;0" dur="3.1s" begin="0.1s" repeatCount="indefinite"/></circle>';
-        s += '<text x="3" y="8" font-family="DM Mono,monospace" font-size="3.5" fill="#D4A0E0" opacity="0.25">HOLO</text>';
+        // mutation label removed
         break;
       case 'Pixel Art':
         // Faint pixel grid overlay
@@ -24128,7 +24126,7 @@ document.addEventListener('keydown', function(e) {
         for (var pj = 0; pj < 14; pj++) {
           s += '<line x1="'+(pj*5)+'" y1="0" x2="'+(pj*5)+'" y2="95" stroke="#5E8550" stroke-width="0.1" opacity="0.04"/>';
         }
-        s += '<text x="3" y="8" font-family="DM Mono,monospace" font-size="3.5" fill="#5E8550" opacity="0.25">PIXEL</text>';
+        // mutation label removed
         break;
     }
     return s;
@@ -25538,9 +25536,11 @@ document.addEventListener('keydown', function(e) {
               else if (_rHrs < 24) _rAgo = _rHrs + 'h ago';
               else _rAgo = Math.floor(_rHrs / 24) + 'd ago';
             }
-            // SVG
+            // SVG (use cache to avoid expensive regen)
             var _rSvg = '';
-            try { _rSvg = generatePlantSVG(_rp.hash, 28, 1, (_rp.generation && _rp.generation > 1) ? {chimerGen: _rp.generation} : null); } catch(e) {}
+            var _rbCacheKey = 'rb|' + _rp.hash;
+            if (_ghCardCache[_rbCacheKey]) { _rSvg = _ghCardCache[_rbCacheKey]; }
+            else { try { _rSvg = generatePlantSVG(_rp.hash, 28, 1, (_rp.generation && _rp.generation > 1) ? {chimerGen: _rp.generation} : null); _ghCardCache[_rbCacheKey] = _rSvg; } catch(e) {} }
             _rCard.innerHTML = '<div class="rc-svg">' + _rSvg + '</div>' +
               '<div class="rc-name">' + _rName + '</div>' +
               '<div class="rc-meta"><span class="rc-dot" style="background:' + _rColor + ';"></span><span class="rc-time">' + _rAgo + '</span></div>';
@@ -25698,20 +25698,7 @@ document.addEventListener('keydown', function(e) {
           '<div class="gh-mystery">' + UNDISCOVERED_SVG + '<div class="gh-question">?</div></div>';
       }
 
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(6px)';
       grid.appendChild(el);
-    }
-    // Staggered reveal — cards cascade in
-    var _ghCards = grid.children;
-    for (var _si = 0; _si < _ghCards.length; _si++) {
-      (function(card, delay) {
-        setTimeout(function() {
-          card.style.transition = 'opacity 0.28s ease, transform 0.28s ease';
-          card.style.opacity = '1';
-          card.style.transform = 'translateY(0)';
-        }, delay);
-      })(_ghCards[_si], 20 + _si * 25);
     }
   }
 
@@ -26434,7 +26421,7 @@ document.addEventListener('keydown', function(e) {
 
     // Intentional swipe
     if (Math.abs(dx) >= _SWIPE_THRESHOLD) {
-      _carouselCommit(dx > 0 ? 1 : -1); // dx>0 = swipe right = show prev
+      _carouselCommit(dx > 0 ? -1 : 1); // dx>0 = swipe right = show next
       return;
     }
 
@@ -27228,7 +27215,7 @@ document.addEventListener('keydown', function(e) {
     // In-game compost confirmation modal
     var modal = document.createElement('div');
     modal.id = 'compost-confirm-modal';
-    modal.style.cssText = 'position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88) url(assets/compost-confirm.png) center/cover no-repeat;backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88) url(assets/compost-confirm.png) top center/110% auto no-repeat;backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
     var h = '<div style="text-align:center;max-width:320px;background:rgba(18,22,16,0.95);border:1.5px solid rgba(200,168,75,0.25);border-radius:14px;padding:1.2rem 1rem;box-shadow:0 12px 40px rgba(0,0,0,0.6);">';
     h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);letter-spacing:0.15em;margin-bottom:0.4rem;">RETURN TO EARTH</div>';
     h += '<div style="margin:0 auto 0.3rem;opacity:0.7;">'+svg+'</div>';
@@ -27407,18 +27394,11 @@ document.addEventListener('keydown', function(e) {
       if(keeperBar)keeperBar.style.display='flex';
       if(wildNav)wildNav.style.display='none';
     }
-    // Switch panel — render content BEFORE showing to prevent ghost text flash
-    // Force ALL panels hidden immediately
+    // Switch panel — hide all, then render + show target synchronously
     document.querySelectorAll('.grove-panel').forEach(function(p) {
       p.classList.remove('active');
-      p.style.display = 'none';
-      p.style.visibility = 'hidden';
     });
-    // Pre-render target panel content while invisible
     var _targetPanel = document.getElementById('panel-' + tab);
-    if (_targetPanel) {
-      _targetPanel.style.display = 'block';
-    }
     if(window._updateGameDew)_updateGameDew();
     window.scrollTo(0, 0);
     // Game tab: restore #sw / #fg-ag state based on active game
@@ -27455,19 +27435,15 @@ document.addEventListener('keydown', function(e) {
         setTimeout(function() { if (window.triggerTutorialDemo) triggerTutorialDemo(); }, 600);
       }
     }
-    // Show panel immediately with opacity fade, then render content
+    // Render content synchronously BEFORE showing panel (prevents empty flash)
+    if (tab === 'greenhouse') { renderGreenhouse(); if(window.PW_Tutorial&&!localStorage.getItem('lw_tut'))setTimeout(function(){PW_Tutorial.start();},600); }
+    if (tab === 'dashboard') updateDashboard();
+    if (tab === 'nursery') { renderNursery(); if(window.PW_Tutorial)PW_Tutorial.checkNursery(); }
+    if (tab === 'binder') renderBinder();
+    // Now show the panel with content already populated
     if (_targetPanel) {
-      _targetPanel.style.display = '';
-      _targetPanel.style.visibility = '';
       _targetPanel.classList.add('active');
     }
-    // Defer heavy renders to next frame so tab transition animates smoothly
-    requestAnimationFrame(function(){
-      if (tab === 'greenhouse') { renderGreenhouse(); if(window.PW_Tutorial&&!localStorage.getItem('lw_tut'))setTimeout(function(){PW_Tutorial.start();},600); }
-      if (tab === 'dashboard') updateDashboard();
-      if (tab === 'nursery') { renderNursery(); if(window.PW_Tutorial)PW_Tutorial.checkNursery(); }
-      if (tab === 'binder') renderBinder();
-    });
     if (tab === 'wild' && window.FG_Wild) FG_Wild.activate();
     if (tab === 'wild') { console.log('[switchTab] wild — FG_Backpack:', !!window.FG_Backpack, 'FG_Wild:', !!window.FG_Wild); if(window.FG_Wild&&FG_Wild._afMarkWildEntry)FG_Wild._afMarkWildEntry(); }
     // Map overlays — show on Wild tab regardless of backpack state
@@ -30646,8 +30622,8 @@ function activate(){
     if (!_nb) {
       _nb = document.createElement('div');
       _nb.id = 'w-night-banner';
-      _nb.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(180,130,40,0.92);color:#fff;text-align:center;padding:10px 16px;font-size:0.7rem;font-family:inherit;letter-spacing:0.02em;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);';
-      _nb.textContent = '\u26A0 Late hours. Stay safe and aware of your surroundings.';
+      _nb.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(180,130,40,0.92);color:#fff;text-align:center;padding:10px 16px;font-size:0.7rem;font-family:inherit;letter-spacing:0.02em;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;gap:12px;';
+      _nb.innerHTML = '<span>\u26A0 Late hours. Stay safe and aware of your surroundings.</span><button onclick="this.parentNode.remove()" style="background:none;border:none;color:#fff;font-size:1.1rem;cursor:pointer;padding:4px 8px;min-height:48px;min-width:48px;flex-shrink:0;">\u2715</button>';
       document.body.appendChild(_nb);
     }
   } else {
@@ -31813,8 +31789,12 @@ function showTP(p,mk){
       } else {
         wildBreedBtn.style.opacity='1';wildBreedBtn.style.pointerEvents='auto';
         wildBreedBtn.onclick=function(){
+          // Must be within COLLECT_RANGE to breed
+          if(_uLat&&p.lat){
+            var _bDist=_dist(_uLat,_uLng,p.lat,p.lng);
+            if(_bDist>COLLECT_RANGE){_toast('Walk closer to breed! '+Math.round(_bDist)+'m away. Need within '+Math.round(COLLECT_RANGE)+'m.');return;}
+          }
           closeTP();
-          // Build a minimal plant object for breed screen — mask hidden stats
           var _wildForBreed={hash:p.hash,name:'Wild Specimen',grade:p.grade||'Common',gc:p.gc||'var(--muted)',days:p.days||0,ownerUid:p.ownerUid||'',generation:1,breedCount:0,_wildMasked:true};
           if(window.openBreedScreen)openBreedScreen(_wildForBreed,'wild-other');
           else _toast('Breeding screen not loaded.');
@@ -32209,24 +32189,23 @@ function _showDefenderPicker(){
   if(sub)sub.textContent='Pick the challenge that protects your plant';
 
   var games=[
-    {id:'set',name:'Quick Trios',icon:'\ud83c\udccf',desc:'Find 3 matching cards',diff:'Easy'},
-    {id:'memory',name:'Memory',icon:'\ud83e\udde0',desc:'Remember the pattern',diff:'Medium'},
-    {id:'growth',name:'Growth',icon:'\ud83c\udf31',desc:'Order the stages',diff:'Medium'},
-    {id:'color',name:'Color',icon:'\ud83c\udfa8',desc:'Match the target hue',diff:'Easy'},
-    {id:'math',name:'Math',icon:'\ud83d\udd22',desc:'Solve the equation',diff:'Hard'},
-    {id:'word',name:'Word',icon:'\ud83d\udcdd',desc:'Unscramble letters',diff:'Hard'},
-    {id:'chess',name:'Chess',icon:'\u265a',desc:'Find the checkmate',diff:'Hard'},
-    {id:'sliding',name:'Slide',icon:'\ud83e\udde9',desc:'Arrange the tiles',diff:'Medium'}
+    {id:'set',name:'Quick Trios',img:'assets/games/cards/card-front.png',desc:'Find 3 matching cards',diff:'Easy'},
+    {id:'memory',name:'Memory',img:'assets/games/memory/00-card-back.png',desc:'Remember the pattern',diff:'Medium'},
+    {id:'growth',name:'Growth',img:'assets/games/flood/leaf-gold.png',desc:'Order the stages',diff:'Medium'},
+    {id:'color',name:'Color',img:'assets/games/simon/spring-btn.png',desc:'Match the target hue',diff:'Easy'},
+    {id:'math',name:'Math',img:'assets/games/flood/grid.png',desc:'Solve the equation',diff:'Hard'},
+    {id:'word',name:'Word',img:'assets/games/memory/01-moonflower.png',desc:'Unscramble letters',diff:'Hard'},
+    {id:'chess',name:'Chess',img:'assets/chess-defense-64.png',desc:'Find the checkmate',diff:'Hard'},
+    {id:'sliding',name:'Slide',img:'assets/slide-puzzle-64.png',desc:'Arrange the tiles',diff:'Medium'}
   ];
 
   var h='<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);text-align:center;margin-bottom:10px;">Harder games are tougher for harvesters to beat</div>';
   for(var i=0;i<games.length;i++){
     var g=games[i];
     var dc=g.diff==='Easy'?'var(--sage)':g.diff==='Medium'?'var(--gold)':'#c07070';
-    h+='<div class="fc-card" onclick="FG_Wild._pickDefense(\''+g.id+'\')" style="flex-direction:column;gap:6px;padding:12px 10px;min-height:90px;">';
-    h+='<div style="font-size:1.6rem;">'+g.icon+'</div>';
+    h+='<div class="fc-card" onclick="FG_Wild._pickDefense(\''+g.id+'\')" style="flex-direction:column;gap:6px;padding:10px 8px;min-height:90px;">';
+    h+='<img src="'+g.img+'" alt="'+g.name+'" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid rgba(122,179,86,0.15);">';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--cream);letter-spacing:0.06em;">'+g.name+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);line-height:1.3;">'+g.desc+'</div>';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:'+dc+';letter-spacing:0.06em;margin-top:auto;">'+g.diff+'</div>';
     h+='</div>';
   }
@@ -32806,12 +32785,12 @@ function _changeDefense(p){
   if(title)title.textContent='CHANGE DEFENSE';
   if(sub)sub.textContent='Pick the challenge harvesters must beat';
   var games=[
-    {id:'set',name:'Quick Trios',icon:'\ud83c\udccf',desc:'Find 3 matching cards',diff:'Easy'},
-    {id:'memory',name:'Memory',icon:'\ud83e\udde0',desc:'Remember the pattern',diff:'Medium'},
-    {id:'growth',name:'Growth',icon:'\ud83c\udf31',desc:'Order the stages',diff:'Medium'},
-    {id:'color',name:'Color',icon:'\ud83c\udfa8',desc:'Match the target hue',diff:'Easy'},
-    {id:'math',name:'Math',icon:'\ud83d\udd22',desc:'Solve the equation',diff:'Hard'},
-    {id:'word',name:'Word',icon:'\ud83d\udcdd',desc:'Unscramble letters',diff:'Hard'}
+    {id:'set',name:'Quick Trios',img:'assets/games/cards/card-front.png',diff:'Easy'},
+    {id:'memory',name:'Memory',img:'assets/games/memory/00-card-back.png',diff:'Medium'},
+    {id:'growth',name:'Growth',img:'assets/games/flood/leaf-gold.png',diff:'Medium'},
+    {id:'color',name:'Color',img:'assets/games/simon/spring-btn.png',diff:'Easy'},
+    {id:'math',name:'Math',img:'assets/games/flood/grid.png',diff:'Hard'},
+    {id:'word',name:'Word',img:'assets/games/memory/01-moonflower.png',diff:'Hard'}
   ];
   var h='';
   for(var i=0;i<games.length;i++){
@@ -32819,9 +32798,8 @@ function _changeDefense(p){
     var dc=g.diff==='Easy'?'var(--sage)':g.diff==='Medium'?'var(--gold)':'#c07070';
     var sel=g.id===p.defenderGame?' border-color:var(--gold);background:rgba(200,168,75,0.1);':'';
     h+='<div class="fc-card" onclick="_applyDefenseChange(\''+p.hash+'\',\''+g.id+'\')" style="flex-direction:column;gap:6px;padding:10px 8px;'+sel+'">';
-    h+='<div style="font-size:1.6rem;">'+g.icon+'</div>';
+    h+='<img src="'+g.img+'" alt="'+g.name+'" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid rgba(122,179,86,0.15);">';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--cream);letter-spacing:0.06em;">'+g.name+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);line-height:1.3;">'+g.desc+'</div>';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:'+dc+';letter-spacing:0.06em;margin-top:auto;">'+g.diff+(g.id===p.defenderGame?' \u2713':'')+'</div>';
     h+='</div>';
   }
@@ -36181,12 +36159,12 @@ function GD(a){var tl=[],mv=0;ms(a,'👆<strong id="Dm">0</strong>');mm(a);var g
 function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolling=false,busted=false;
   var numPlayers=1,curP=0,players=[{banked:0}],target=10000,gameOver=false,finalRound=false,finalStart=-1;
   ms(a,'<span id="Fp">P1</span> · <strong id="Fs">0</strong> / '+target);mm(a);
-  var pp=document.createElement('div');pp.id='Fpp';pp.style.cssText='display:flex;gap:8px;justify-content:center;align-items:center;padding:6px 8px;font-size:.62rem;color:var(--muted);flex-wrap:wrap';
+  var pp=document.createElement('div');pp.id='Fpp';pp.style.cssText='display:flex;gap:8px;justify-content:center;align-items:center;padding:8px 10px;font-size:.8rem;color:var(--muted);flex-wrap:wrap';
   pp.innerHTML='<span>Players:</span>';
   for(var _n=1;_n<=4;_n++){var _b=document.createElement('button');_b.textContent=_n;_b.setAttribute('data-n',_n);_b.className='fppb';_b.style.cssText='min-width:38px;min-height:38px;border-radius:8px;border:1.5px solid rgba(74,124,53,.3);background:rgba(18,24,16,.6);color:var(--cream);font-weight:700;font-size:.85rem;cursor:pointer;transition:all .15s';_b.onclick=function(){numPlayers=parseInt(this.getAttribute('data-n'));_play('tap');_FN()};pp.appendChild(_b)}
   a.appendChild(pp);
   var dd=document.createElement('div');dd.id='Fd';dd.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(10px,3vw,16px);max-width:clamp(280px,84vw,420px);margin:0 auto;padding:clamp(10px,3vw,16px);animation:boardFadeIn .4s ease';a.appendChild(dd);
-  var si=document.createElement('div');si.style.cssText='text-align:center;font-size:.62rem;color:var(--muted);padding:5px 8px;line-height:1.7';si.id='Fi';a.appendChild(si);
+  var si=document.createElement('div');si.style.cssText='text-align:center;font-size:.85rem;color:var(--muted);padding:8px 10px;line-height:1.7;font-weight:500';si.id='Fi';a.appendChild(si);
   mc(a).innerHTML='<button class="gb-new" onclick="_FR()"><img src="assets/games/roll-btn.png" alt="Roll"></button><button class="gb-new" onclick="_FB()"><img src="assets/games/bank-points-btn.png" alt="Bank Points"></button><button class="gb-new" onclick="_FN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function highlightPick(){var bs=pp.querySelectorAll('.fppb');for(var i=0;i<bs.length;i++){var on=parseInt(bs[i].getAttribute('data-n'))===numPlayers;bs[i].style.borderColor=on?'var(--gold)':'rgba(74,124,53,.3)';bs[i].style.background=on?'rgba(200,168,78,.15)':'rgba(18,24,16,.6)';bs[i].style.color=on?'var(--gold)':'var(--cream)'}}
   function rn(){dd.innerHTML='';for(var i=0;i<6;i++){var d=document.createElement('div');d.className='fdie'+(kept[i]?' fk':'');d.style.cssText='width:100%;aspect-ratio:1;min-height:88px';if(dice[i])d.innerHTML='<img src="assets/dice/d'+dice[i]+'.png" alt="'+dice[i]+'" style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;-webkit-user-drag:none;border-radius:clamp(6px,2vw,12px)" draggable="false"/>';else d.innerHTML='<span style="font-size:2rem;color:var(--muted);opacity:.3">·</span>';d.setAttribute('data-i',i);d.onclick=function(){var x=parseInt(this.getAttribute('data-i'));if(dice[x]&&!gameOver&&!busted){_play('tap');kept[x]=!kept[x];rn()}};dd.appendChild(d)}updInfo()}
@@ -36194,8 +36172,8 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolli
   function score(){var ct=new Array(7).fill(0);for(var i=0;i<6;i++)if(kept[i])ct[dice[i]]++;var s=0;for(var v=1;v<=6;v++){if(ct[v]>=3){s+=(v===1)?1000:v*100;var extra=ct[v]-3;s+=extra*100;ct[v]=0}else{if(v===1)s+=ct[v]*100;if(v===5)s+=ct[v]*50}}return s}
   function nextPlayer(){turn=0;kept=new Array(6).fill(false);dice=new Array(6).fill(0);busted=false;rolling=false;if(finalRound){curP=(curP+1)%players.length;if(curP===finalStart){endGame();return}}else{curP=(curP+1)%players.length}rn();sm('P'+(curP+1)+"'s turn — 🎲 Roll!")}
   function endGame(){gameOver=true;var best=-1,winner=0;for(var i=0;i<players.length;i++)if(players[i].banked>best){best=players[i].banked;winner=i}sm('🏆 P'+(winner+1)+' wins with '+best+'! Tap 🔄 New');_play('win');try{_playWin()}catch(e){}if(winner===0){_e('game_win');_sr('farkle',{w:true,s:best})}else{_e('game_loss');_sr('farkle',{w:false,s:players[0].banked})}rn()}
-  window._FR=function(){if(rolling||busted||gameOver)return;rolling=true;var any=false;for(var i=0;i<6;i++)if(!kept[i]){_play('dice');dice[i]=Math.floor(Math.random()*6)+1;any=true}if(!any){turn+=score();kept=new Array(6).fill(false);for(var i=0;i<6;i++)dice[i]=Math.floor(Math.random()*6)+1;sm('🔥 Hot dice! +'+turn+' locked — rolling all 6')}var ct=new Array(7).fill(0);for(var i=0;i<6;i++)if(!kept[i])ct[dice[i]]++;var hct=new Array(7).fill(0);for(var i=0;i<6;i++)if(kept[i])hct[dice[i]]++;var has=ct[1]>0||ct[5]>0;for(var v=1;v<=6;v++){if(ct[v]>=3)has=true;if(ct[v]>0&&hct[v]>=3)has=true;}if(!has){busted=true;_play('lose');sm('🍂 Farkle! P'+(curP+1)+' loses '+turn+' — passing…');rn();setTimeout(function(){if(players.length>1)nextPlayer();else{turn=0;rolling=false;rn()}},1400);return}rn();rolling=false;if(any)sm('P'+(curP+1)+': keep scorers, Roll or Bank')};
-  window._FB=function(){if(busted||gameOver)return;var ts=score();if(ts+turn<=0){sm('Keep scoring dice first!');return}var gained=ts+turn;players[curP].banked+=gained;_e('progress');if(players[curP].banked>=1000)_e('milestone');document.getElementById('Fs').textContent=players[curP].banked;sm('P'+(curP+1)+' banked '+gained+' (total '+players[curP].banked+')');if(players[curP].banked>=target&&!finalRound){finalRound=true;finalStart=curP;if(players.length===1){endGame();return}sm('P'+(curP+1)+' hit '+target+'! Final round — others get one more turn');_play('win')}if(players.length>1)setTimeout(function(){nextPlayer()},900);else{turn=0;kept=new Array(6).fill(false);dice=new Array(6).fill(0);if(players[curP].banked>=target)endGame();else rn()}};
+  window._FR=function(){if(rolling||busted||gameOver)return;rolling=true;var any=false;for(var i=0;i<6;i++)if(!kept[i]){_play('dice');dice[i]=Math.floor(Math.random()*6)+1;any=true}if(!any){turn+=score();kept=new Array(6).fill(false);for(var i=0;i<6;i++)dice[i]=Math.floor(Math.random()*6)+1;sm('🔥 Hot dice! +'+turn+' locked — rolling all 6')}var ct=new Array(7).fill(0);for(var i=0;i<6;i++)if(!kept[i])ct[dice[i]]++;var hct=new Array(7).fill(0);for(var i=0;i<6;i++)if(kept[i])hct[dice[i]]++;var has=ct[1]>0||ct[5]>0;for(var v=1;v<=6;v++){if(ct[v]>=3)has=true;if(ct[v]>0&&hct[v]>=3)has=true;}if(!has){busted=true;_play('lose');sm('🍂 Farkle! P'+(curP+1)+' loses '+turn+' — passing…');rn();setTimeout(function(){if(players.length>1)nextPlayer();else{turn=0;rolling=false;rn()}},1400);return}rn();rolling=false;if(any)sm('Keep Dice, Roll, or Bank')};
+  window._FB=function(){if(busted||gameOver)return;var ts=score();if(ts+turn<=0){sm('Tap dice to keep them first!');return}var gained=ts+turn;players[curP].banked+=gained;_e('progress');if(players[curP].banked>=1000)_e('milestone');document.getElementById('Fs').textContent=players[curP].banked;sm('P'+(curP+1)+' banked '+gained+' (total '+players[curP].banked+')');if(players[curP].banked>=target&&!finalRound){finalRound=true;finalStart=curP;if(players.length===1){endGame();return}sm('P'+(curP+1)+' hit '+target+'! Final round — others get one more turn');_play('win')}if(players.length>1)setTimeout(function(){nextPlayer()},900);else{turn=0;kept=new Array(6).fill(false);dice=new Array(6).fill(0);if(players[curP].banked>=target)endGame();else rn()}};
   window._FN=function(){dice=new Array(6).fill(0);kept=new Array(6).fill(false);turn=0;rolling=false;busted=false;curP=0;gameOver=false;finalRound=false;finalStart=-1;players=[];for(var i=0;i<numPlayers;i++)players.push({banked:0});document.getElementById('Fs').textContent='0';sm(numPlayers>1?('P1 starts — 🎲 Roll! (First to '+target+')'):'🎲 Roll!');rn()};_FN();}
 // ═══ TRIPEAKS ═══
 function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1,scores={},justRolled=new Array(5).fill(false);
@@ -36654,7 +36632,7 @@ function GBS(a){
   var pGrid,eGrid,pShips,eShips,phase,curShip,curDir,gameOver,turn,aiStack,aiHits;
   ms(a,'<span id="BSph">Place your fleet</span>');mm(a);
   var wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px';a.appendChild(wrap);
-  var lbl=document.createElement('div');lbl.id='BSlbl';lbl.style.cssText='font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;min-height:1.2em';wrap.appendChild(lbl);
+  var lbl=document.createElement('div');lbl.id='BSlbl';lbl.style.cssText='font-family:DM Mono,monospace;font-size:0.75rem;color:var(--muted);text-align:center;min-height:1.4em';wrap.appendChild(lbl);
   var grids=document.createElement('div');grids.style.cssText='display:flex;gap:clamp(8px,3vw,16px);justify-content:center;flex-wrap:wrap';wrap.appendChild(grids);
   mc(a).innerHTML='<button class="gb" id="BSdir" onclick="_BSR()" style="min-width:100px;">↻ Rotate</button> <button class="gb-new" onclick="_BSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
@@ -37183,7 +37161,7 @@ function GPF(a){
 function GBW(a){
   var canvas,ctx,bufC,bufX,W,H,cx,cy,radius,dpr;
   var symmetry=8,bpm=90,spinOn=true,musicOn=false;
-  var rotAngle=0,brushSize=3,brushSizes=[1.5,3,5,8,12],brushIdx=1;
+  var rotAngle=0,brushSize=3,brushSizes=[1,2,3,5,8,12,18,25],brushIdx=2;
   var drawing=false,lastX=0,lastY=0,strokes=0,startT=Date.now(),colorPh=0;
   var beatCount=0,activeBeat=0,aCtx=null,mGain=null,nextBT=0,beatInt=60/bpm,schTimer=null;
   var PAL=[{r:74,g:124,b:53},{r:122,g:179,b:86},{r:212,g:168,b:67},{r:232,g:220,b:200},{r:196,g:122,b:122},{r:91,g:155,b:213},{r:160,g:120,b:180},{r:74,g:124,b:53}];
@@ -37256,7 +37234,9 @@ function GBW(a){
     bufX.lineWidth=sz;bufX.lineCap='round';bufX.lineJoin='round';bufX.strokeStyle=color;
     var mode=_bwMirrors[_bwMirrorIdx];
     var step=(Math.PI*2)/symmetry;
-    if(mode==='radial'){
+    if(mode==='freehand'){
+      _drawLine(x1,y1,x2,y2);
+    }else if(mode==='radial'){
       for(var i=0;i<symmetry;i++){var r1=_rot(x1,y1,step*i),r2=_rot(x2,y2,step*i);_drawLine(r1.x,r1.y,r2.x,r2.y)}
     }else if(mode==='kaleidoscope'){
       for(var i=0;i<symmetry;i++){var r1=_rot(x1,y1,step*i),r2=_rot(x2,y2,step*i);_drawLine(r1.x,r1.y,r2.x,r2.y);
@@ -37295,8 +37275,18 @@ function GBW(a){
 
   // Render loop
   var lt=0,_bwRaf=0;
+  function _bwKillAudio(){
+    if(schTimer){clearTimeout(schTimer);schTimer=null;}
+    if(aCtx){try{aCtx.close();}catch(e){}aCtx=null;mGain=null;}
+    musicOn=false;
+  }
+  // Kill audio when browser tab is hidden/minimized
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden&&aCtx&&_a==='bloomwheel'){aCtx.suspend();}
+    else if(!document.hidden&&aCtx&&_a==='bloomwheel'){aCtx.resume();}
+  });
   function render(ts){
-    if(_a!=='bloomwheel'){return}
+    if(_a!=='bloomwheel'){_bwKillAudio();return}
     var dt=lt?(ts-lt)/1000:0.016;lt=ts;
     if(spinOn){
       var speed=(Math.PI*2)/(beatInt*16);
@@ -37324,7 +37314,7 @@ function GBW(a){
   var _bwPathIdx=0,_bwCustomPath=[],_bwDrawingPath=false,_bwPathT=0;
   var _bwUserColor=null; // null = auto palette
   // Mirror modes
-  var _bwMirrors=['mandala','radial','kaleidoscope','horizontal','quad'];
+  var _bwMirrors=['freehand','mandala','radial','kaleidoscope','horizontal','quad'];
   var _bwMirrorIdx=0;
 
   var _bbs='min-height:56px;min-width:clamp(72px,20vw,96px);padding:0.5rem 0.4rem;font-size:clamp(.55rem,1.6vw,.7rem);background:rgba(26,31,23,.9);border:1.5px solid rgba(74,124,53,.25);border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.03);text-align:center';
@@ -37350,7 +37340,7 @@ function GBW(a){
     +'<button class="gb" style="'+_bbs+'" onclick="_BWS(4)" id="BWs4">4</button>'
     +'<button class="gb gon" style="'+_bbs+'" onclick="_BWS(8)" id="BWs8">8</button>'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWS(12)" id="BWs12">12</button>'
-    +'<button class="gb" style="'+_bbs+';min-width:clamp(100px,28vw,130px)" onclick="_BWMirror()" id="BWmir">✿ MANDALA</button>'
+    +'<button class="gb" style="'+_bbs+';min-width:clamp(100px,28vw,130px)" onclick="_BWMirror()" id="BWmir">✎ FREEHAND</button>'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWBrush()" id="BWbr">● 3</button>'
     +'<button class="gb" style="'+_bbs+';min-width:clamp(88px,24vw,110px)" onclick="_BWPath()" id="BWpath">◯ SPIN</button>'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWBpm(-10)">BPM−</button>'
@@ -37373,7 +37363,7 @@ function GBW(a){
   window._BWColor=function(c){_bwUserColor=c;var as=document.getElementById('BWautoSw');if(as){as.style.borderColor='rgba(0,0,0,0.3)';as.style.transform='scale(1)'}};
   window._BWMirror=function(){
     _bwMirrorIdx=(_bwMirrorIdx+1)%_bwMirrors.length;
-    var names={mandala:'✿ MANDALA',radial:'❋ RADIAL',kaleidoscope:'◆ KALEIDOSCOPE',horizontal:'↔ MIRROR',quad:'✦ QUAD'};
+    var names={freehand:'✎ FREEHAND',mandala:'✿ MANDALA',radial:'❋ RADIAL',kaleidoscope:'◆ KALEIDOSCOPE',horizontal:'↔ MIRROR',quad:'✦ QUAD'};
     var btn=document.getElementById('BWmir');if(btn){btn.textContent=names[_bwMirrors[_bwMirrorIdx]];btn.className='gb gon'}
   };
   window._BWPath=function(){
@@ -38105,7 +38095,21 @@ window.PW_Onboard=(function(){
 'use strict';
 var _giftHash=null,_giftTraits=null,_beat=0;
 
-function _isOnboarded(){return localStorage.getItem('pw_onboarded')==='1';}
+function _isOnboarded(){
+  // Primary check
+  if(localStorage.getItem('pw_onboarded')==='1')return true;
+  // Robust fallback: if player has ANY sign of prior activity, they're returning
+  try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');if(gh.length>0){_markOnboarded();return true;}}catch(e){}
+  if(localStorage.getItem('lw_vault_uid')){_markOnboarded();return true;}
+  if(localStorage.getItem('sws_totalHashes')){_markOnboarded();return true;}
+  if(localStorage.getItem('pw_keeper_name')){_markOnboarded();return true;}
+  if(localStorage.getItem('sws_user_email')){_markOnboarded();return true;}
+  if(localStorage.getItem('sws_user_session')){_markOnboarded();return true;}
+  if(localStorage.getItem('lw_tut')){_markOnboarded();return true;}
+  // Check if Firebase has an active session (survives localStorage clear)
+  try{if(window.firebase&&firebase.auth&&firebase.auth().currentUser){_markOnboarded();return true;}}catch(e){}
+  return false;
+}
 function _markOnboarded(){localStorage.setItem('pw_onboarded','1');}
 
 // Generate a gift plant hash guaranteed Uncommon+ (min score 3)
@@ -38434,7 +38438,16 @@ function submitAuth(){
 }
 
 function _mintGiftPlant(){
-  if(!_giftHash)return;
+  // If hash generation failed, generate one now — NEVER silently skip
+  if(!_giftHash){
+    console.warn('[LW] _mintGiftPlant: _giftHash was null, generating fallback');
+    try{_genGiftHash();}catch(e){}
+  }
+  if(!_giftHash){
+    _giftHash='';
+    for(var fi=0;fi<64;fi++)_giftHash+='0123456789abcdef'[Math.floor(Math.random()*16)];
+    console.warn('[LW] _mintGiftPlant: using random fallback hash');
+  }
   var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){gh=[];}
   if(gh.some(function(p){return p.hash===_giftHash;}))return;
   gh.push({
@@ -38448,6 +38461,7 @@ function _mintGiftPlant(){
     generation:1
   });
   if(window.saveGreenhouse){saveGreenhouse(gh);}else{localStorage.setItem('sws_greenhouse',JSON.stringify(gh));}
+  console.log('[LW] Gift plant minted: '+_giftHash.slice(0,8));
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
 }
 
@@ -38503,11 +38517,30 @@ window.PW_creatureDiscovery=function(companionName,companionIdx){
 };
 
 // ═══ INIT ═══
-setTimeout(function(){
+// Wait for Firebase auth to settle before deciding whether to show onboarding.
+// onAuthStateChanged fires null first, then fires again with user if session exists.
+// We need to wait for the real auth state before checking _isOnboarded.
+var _obInitDone=false;
+function _obInit(){
+  if(_obInitDone)return;_obInitDone=true;
   if(!_isOnboarded()){start();}else{
     var kb=document.getElementById('pw-keeper-bar');if(kb)kb.style.display='flex';
   }
-},800);
+}
+// If Firebase auth resolves a user, we know they're returning — skip onboarding
+try{
+  if(window.firebase&&firebase.auth){
+    var _obUnsub=firebase.auth().onAuthStateChanged(function(user){
+      _obUnsub(); // one-shot listener
+      if(user){_markOnboarded();_obInit();}
+      else{setTimeout(_obInit,200);} // no user — tiny delay then check localStorage
+    });
+  } else {
+    setTimeout(_obInit,800);
+  }
+}catch(e){setTimeout(_obInit,800);}
+// Safety net: if auth never fires, start after 2.5s
+setTimeout(_obInit,2500);
 
 // Go to specific beat (from dot taps or swipe)
 function goToBeat(n){
@@ -40154,7 +40187,7 @@ function _showDailyReward() {
   // Build modal
   var ov = document.createElement('div');
   ov.id = 'daily-reward-modal';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:99997;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88) url(assets/daily-login-bg.png) center/cover no-repeat;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99997;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88) url(assets/daily-login-bg.png) top center/110% auto no-repeat;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
 
   var h = '<div style="text-align:center;max-width:300px;background:rgba(18,22,16,0.95);border:1.5px solid rgba(200,168,75,0.3);border-radius:16px;padding:1.4rem 1.2rem;box-shadow:0 12px 40px rgba(0,0,0,0.6);">';
 
@@ -40234,6 +40267,7 @@ var _ov=null,_dlg=null,_spot=null;
 
 function _getStep(){var s=localStorage.getItem(TK);if(s==='done')return -1;return parseInt(s,10)||0;}
 function _setStep(n){localStorage.setItem(TK,String(n));}
+function _done(){_setStep('done');_clear();}
 
 function _clear(){
   if(_ov&&_ov.parentNode)_ov.remove();_ov=null;
@@ -40279,16 +40313,46 @@ function _spotlight(el){
   el.style.zIndex='1000011';
 }
 
+// ═══ Find the Game nav button (used by multiple steps) ═══
+function _findGameBtn(){
+  var navBtns=document.querySelectorAll('.fg-nav-btn');
+  for(var i=0;i<navBtns.length;i++){
+    var img=navBtns[i].querySelector('img');
+    if(img&&img.alt==='Game')return navBtns[i];
+  }
+  return null;
+}
+
+// ═══ EMPTY GREENHOUSE PATH ═══
+// Player has no plants — skip collection tutorial, guide them to earn their first
+function _stepEmpty(){
+  _overlay(function(){_done();});
+  _dialog(
+    'Welcome to <span style="color:var(--gold);">Lucid Winds</span>!<br><br>' +
+    'Your greenhouse is where your <span style="color:var(--sage);">one-of-a-kind plants</span> live.<br><br>' +
+    'Each one is a unique piece of art \u2014 grown from your attention.<br><br>' +
+    '<span style="color:var(--muted);font-size:0.85em;">Play games to earn Dew. Collect 30 Dew to bloom your first plant.</span>',
+    'START PLAYING', function(){
+      _done();
+      if(window.switchTab)switchTab('game');
+    },'center');
+}
+
 // ═══ STEP 1: "This is your first plant. Tap to view it." ═══
-function _step1(){
-  var s=_getStep();
-  if(s>=1&&s<5)return;
+function _step1(retries){
+  if(typeof retries==='undefined')retries=0;
   _setStep(1);
   setTimeout(function(){
-    var cards=document.querySelectorAll('.greenhouse-plant');
-    if(!cards.length){setTimeout(_step1,500);return;}
+    var cards=document.querySelectorAll('.greenhouse-plant:not(.undiscovered)');
+    if(!cards.length){
+      if(retries<6){setTimeout(function(){_step1(retries+1);},500);return;}
+      console.warn('[LW Tutorial] No plants found after retries, switching to empty path');
+      _stepEmpty();
+      return;
+    }
     var firstCard=cards[0];
-    _overlay();
+    // Overlay dismisses tutorial if tapped (escape hatch for stuck states)
+    _overlay(function(){_done();firstCard.style.zIndex='';});
     _spotlight(firstCard);
     _dialog('This is your first plant.<br><br><span style="color:var(--gold);font-size:1.1em;">Tap it to take a closer look.</span><br><div style="font-size:1.8rem;margin-top:0.3rem;animation:_whPulse 1.5s ease infinite;">\u2193</div>',null,null,'top');
     var origClick=firstCard.onclick;
@@ -40298,7 +40362,6 @@ function _step1(){
       firstCard.onclick=origClick;
       if(origClick)origClick.call(firstCard,e);
       _setStep(2);
-      // Wait for carousel to open, then show step 2
       _waitForCarousel(0);
     };
   },600);
@@ -40311,6 +40374,10 @@ function _waitForCarousel(attempts){
     setTimeout(_step2,300);
   } else if(attempts<20){
     setTimeout(function(){_waitForCarousel(attempts+1);},200);
+  } else {
+    // Carousel never opened — skip to game step
+    console.warn('[LW Tutorial] Carousel did not open, skipping to step 4');
+    _stepGame();
   }
 }
 
@@ -40318,9 +40385,7 @@ function _waitForCarousel(attempts){
 function _step2(){
   _setStep(2);
   _dialog('Every plant is completely unique \u2014 created through your own interactions.<br><br>The <span style="color:var(--gold);">name</span> and <span style="color:var(--gold);">haiku</span> are generated just for you.<br><br><span style="color:var(--sage);font-size:1.1em;">Tap the card to flip it and see the layers \u2192</span>','',null,'bottom');
-  // Remove empty button
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
-  // Watch for flip
   var flipWrap=document.querySelector('.cs-flip-wrap');
   if(flipWrap){
     var _polls=0;
@@ -40328,21 +40393,17 @@ function _step2(){
       if(flipWrap.classList.contains('flipped')){
         _clear();
         setTimeout(_step3,500);
-      } else if(_polls<150){ // 30 seconds max
+      } else if(_polls<150){
         _polls++;
         setTimeout(_watchFlip,200);
       } else {
-        // Timed out waiting for flip — skip ahead gracefully
         _clear();
-        _setStep(3);
         setTimeout(_step3,300);
       }
     };
     setTimeout(_watchFlip,500);
   } else {
-    // No flip card found — skip ahead
     _clear();
-    _setStep(3);
     setTimeout(_step3,300);
   }
 }
@@ -40353,31 +40414,25 @@ function _step3(){
   _dialog('These are the <span style="color:var(--gold);">genetic layers</span> that make up your unique piece of art.<br><br>Each trait was shaped by the hash of your attention.','GOT IT',function(){
     _clear();
     if(window.closePlantGallery)closePlantGallery();
-    setTimeout(_step4,500);
+    setTimeout(_stepGame,500);
   },'top');
 }
 
-// ═══ STEP 4: Direct to Game tab ═══
-function _step4(){
+// ═══ FINAL STEP: Direct to Game tab ═══
+function _stepGame(){
   _setStep(4);
   setTimeout(function(){
-    _overlay(function(){_clear();_setStep(5);}); // tap overlay to dismiss (escape hatch)
-    var navBtns=document.querySelectorAll('.fg-nav-btn');
-    var gameBtn=null;
-    for(var i=0;i<navBtns.length;i++){
-      var img=navBtns[i].querySelector('img');
-      if(img&&img.alt==='Game'){gameBtn=navBtns[i];break;}
-    }
+    _overlay(function(){_done();}); // tap overlay to dismiss
+    var gameBtn=_findGameBtn();
     if(gameBtn){
       _spotlight(gameBtn);
       _dialog('Earn more plants by <span style="color:var(--sage);">playing games</span>, <span style="color:var(--sage);">making art</span>, and <span style="color:var(--sage);">solving puzzles</span>.<br><br>Explore and find what you like!','TAP GAME TO START',function(){
-        _clear();
+        _done();
         gameBtn.style.zIndex='';
-        _setStep(5);
         if(window.switchTab)switchTab('game');
       },'center');
     } else {
-      _dialog('Earn more plants by playing games, making art, and solving puzzles!','GOT IT',function(){_clear();_setStep(5);},'center');
+      _dialog('Earn more plants by playing games, making art, and solving puzzles!','GOT IT',function(){_done();},'center');
     }
   },400);
 }
@@ -40410,11 +40465,12 @@ function checkBreed(){
 function start(){
   // Already completed or in-progress — bail
   if(_getStep()!==0)return;
-  // Returning player detection: if they have >1 plant or any vault data, skip tutorial entirely
+  // Returning player detection: >1 plant means they've been playing
   var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
-  if(gh.length>1){_setStep('done');return;}
-  // If they have cloud sync data, they're returning
-  if(localStorage.getItem('lw_vault_uid')||localStorage.getItem('sws_totalHashes')){_setStep('done');return;}
+  if(gh.length>1){_done();return;}
+  // Cloud sync markers mean returning player
+  if(localStorage.getItem('lw_vault_uid')||localStorage.getItem('sws_totalHashes')){_done();return;}
+  // Start tutorial — _step1 handles both "has plants" and "no plants" paths
   _step1();
 }
 
@@ -40456,6 +40512,7 @@ window.PW_Tutorial={start:start,checkNursery:checkNursery,checkBreed:checkBreed}
 (function(){
 'use strict';
 var _plantA=null,_plantACtx=null,_partners=[],_pIdx=0;
+var _allEligible=[],_aIdx=0;
 var _seasonKeys=['spring','summer','autumn','winter'];
 var _seasonEmblems=['\ud83c\udf38','\u2600\ufe0f','\ud83c\udf42','\u2744\ufe0f'];
 var _seasonNames=['Spring','Summer','Autumn','Winter'];
@@ -40481,13 +40538,13 @@ function _info(hash){
   return {t:t,tg:tg,sea:sea,ea:ea,nm:nm,season:t?t.season%4:0};
 }
 
-function _renderCard(el,plant,role){
+function _renderCard(el,plant,role,side){
   if(!el||!plant)return;
   var i=_info(plant.hash);
   var masked=plant._wildMasked;
   var s=masked?'':_seasonKeys[i.season];
   el.className='bs-cb '+s;
-  var svg='';try{if(window._generatePlantSVG)svg=window._generatePlantSVG(plant.hash,26);}catch(e){}
+  var svg='';try{if(window._generatePlantSVG)svg=window._generatePlantSVG(plant.hash,36);}catch(e){}
   var h='<div class="bs-role">'+role+'</div>';
   h+='<div class="bs-head"><div class="bs-thumb">'+svg+'</div><div style="flex:1;min-width:0;">';
   if(masked){
@@ -40525,6 +40582,13 @@ function _renderCard(el,plant,role){
       var tagH=tag?'<span class="bs-tag'+tagCls+'">'+tagLabel+'</span>':'';
       h+='<div class="bs-row'+rowCls+'"><span class="bs-cat">'+L.key+'</span><span class="bs-val'+valCls+'">'+star+val+tagH+'</span></div>';
     });
+  }
+  // Add inline nav arrows below each card
+  if(side==='a'&&_allEligible.length>2&&_plantACtx!=='wild-other'){
+    h+='<div class="bs-card-nav"><button class="bs-card-nav-btn" onclick="window.bsSwipeA(-1)">\u2039</button><span class="bs-card-nav-count">'+(_aIdx+1)+' / '+_allEligible.length+'</span><button class="bs-card-nav-btn" onclick="window.bsSwipeA(1)">\u203a</button></div>';
+  }
+  if(side==='b'&&_partners.length>1){
+    h+='<div class="bs-card-nav"><button class="bs-card-nav-btn" onclick="window.bsSwipe(-1)">\u2039</button><span class="bs-card-nav-count">'+(_pIdx+1)+' / '+_partners.length+'</span><button class="bs-card-nav-btn" onclick="window.bsSwipe(1)">\u203a</button></div>';
   }
   el.innerHTML=h;
 }
@@ -40677,28 +40741,33 @@ function _renderForecast(){
 }
 
 window.openBreedScreen=function(plantA,context){
-  _plantA=plantA;
   _plantACtx=context||'greenhouse';
   if(window.PW_Tutorial)PW_Tutorial.checkBreed();
-  // Build partner list from greenhouse excluding plantA
+  // Build full eligible list from greenhouse
   var gh=[];
   try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
-  _partners=gh.filter(function(p){return p.hash!==plantA.hash && (p.breedCount||0)<3;});
-  if((plantA.breedCount||0)>=3){
-    if(window._toast)window._toast('Genetics Exhausted — this plant has been bred 3 times.');
+  _allEligible=gh.filter(function(p){return (p.breedCount||0)<3;});
+  if(_allEligible.length<2){
+    if(window._toast)window._toast('Need at least 2 plants with breeds remaining.');
     return;
   }
-  if(!_partners.length){
-    if(window._toast)window._toast('No eligible partners. Need plants with under 3 breeds.');
-    return;
-  }
+  // Find plantA in eligible list, default to first
+  _aIdx=0;
+  for(var i=0;i<_allEligible.length;i++){if(_allEligible[i].hash===plantA.hash){_aIdx=i;break;}}
+  _plantA=_allEligible[_aIdx];
+  // Build partner list excluding plantA
+  _partners=_allEligible.filter(function(p){return p.hash!==_plantA.hash;});
   _pIdx=0;
-  _renderCard(document.getElementById('bs-card-a'),_plantA,_plantACtx==='wild-other'?'WILD PLANT':'YOUR PLANT');
-  _renderCard(document.getElementById('bs-card-b'),_partners[0],'PARTNER \u00b7 1/'+_partners.length);
-  _renderForecast();
-  document.getElementById('bs-count').textContent='1 / '+_partners.length;
+  _renderBreedCards();
   document.getElementById('breed-screen').classList.add('open');
 };
+
+function _renderBreedCards(){
+  var isWild=_plantACtx==='wild-other';
+  _renderCard(document.getElementById('bs-card-a'),_plantA,isWild?'WILD PLANT':'PLANT A','a');
+  _renderCard(document.getElementById('bs-card-b'),_partners[_pIdx],'PLANT B','b');
+  _renderForecast();
+}
 
 window.closeBreedScreen=function(){
   document.getElementById('breed-screen').classList.remove('open');
@@ -40712,11 +40781,27 @@ window.bsSwipe=function(dir){
   cardB.style.opacity='0';
   cardB.style.transform=dir>0?'translateX(10px)':'translateX(-10px)';
   setTimeout(function(){
-    _renderCard(cardB,_partners[_pIdx],'PARTNER \u00b7 '+(_pIdx+1)+'/'+_partners.length);
+    _renderCard(cardB,_partners[_pIdx],'PLANT B','b');
     _renderForecast();
-    document.getElementById('bs-count').textContent=(_pIdx+1)+' / '+_partners.length;
     cardB.style.opacity='1';
     cardB.style.transform='translateX(0)';
+  },140);
+};
+
+window.bsSwipeA=function(dir){
+  if(_allEligible.length<3)return; // need at least 3 so both sides have options
+  _aIdx=(_aIdx+dir+_allEligible.length)%_allEligible.length;
+  _plantA=_allEligible[_aIdx];
+  // Rebuild partner list excluding new plantA
+  _partners=_allEligible.filter(function(p){return p.hash!==_plantA.hash;});
+  if(_pIdx>=_partners.length)_pIdx=0;
+  var cardA=document.getElementById('bs-card-a');
+  cardA.style.opacity='0';
+  cardA.style.transform=dir>0?'translateX(10px)':'translateX(-10px)';
+  setTimeout(function(){
+    _renderBreedCards();
+    cardA.style.opacity='1';
+    cardA.style.transform='translateX(0)';
   },140);
 };
 
