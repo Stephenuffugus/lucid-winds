@@ -5238,16 +5238,31 @@ window.onerror=function(msg,url,line,col,err){
             if(!zones[zk])zones[zk]=[];
             zones[zk].push(p);
           }
-          // Check each zone for breeding pairs
+          // Check each zone + adjacent zones for breeding pairs
           var zoneKeys=Object.keys(zones);
+          var ZONE_STEP=0.001; // ~100m zone size
           for(var z=0;z<zoneKeys.length;z++){
-            var plants=zones[zoneKeys[z]];
+            // Gather plants from this zone AND all 8 neighbors
+            var zParts=zoneKeys[z].split(',');
+            var zLat=parseFloat(zParts[0]),zLng=parseFloat(zParts[1]);
+            var plants=[];
+            for(var dx=-1;dx<=1;dx++){
+              for(var dy=-1;dy<=1;dy++){
+                var nk=Math.round((zLat+dx*ZONE_STEP)*1000)/1000+','+Math.round((zLng+dy*ZONE_STEP)*1000)/1000;
+                if(zones[nk]){for(var np=0;np<zones[nk].length;np++)plants.push(zones[nk][np]);}
+              }
+            }
+            if(plants.length<2)continue;
+            // Deduplicate (same plant might appear from multiple zones)
+            var seen={};var uniq=[];
+            for(var up=0;up<plants.length;up++){if(!seen[plants[up].hash]){seen[plants[up].hash]=true;uniq.push(plants[up]);}}
+            plants=uniq;
             if(plants.length<2)continue;
             // Reproduction chance
             var chance=0.30*((dayWeather.rain>5)?2.0:(dayWeather.rain>1)?1.5:(dayWeather.rain===0&&dayWeather.temp>35)?0.3:1.0);
             chance*=Math.min(1.4,0.5+plants.length*0.125); // population scaling
             if(Math.random()>=chance)continue;
-            // Pick parents
+            // Pick parents (prefer from different zones for genetic diversity)
             var pA=plants[0],pB=plants[1];
             // Generate offspring
             var offHash='';
@@ -21525,74 +21540,52 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M42.2,67.5 Q41.5,69.5 42.2,71.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
-      case 33: // The Phoenix — MYTHIC, angular fire bird rising in the sky
-        // NOT a round bird. Sharp V-wings, narrow body, flame shapes.
-        // Think origami + fire. Angular, majestic, mythic.
-        s += '<g opacity="0.95" transform="translate(0,-45)">';
-        // Mythic fire glow
-        s += '<ellipse cx="55" cy="80" rx="12" ry="10" fill="rgba(255,140,40,0.04)"><animate attributeName="opacity" values="0.03;0.08;0.03" dur="3s" repeatCount="indefinite"/></ellipse>';
-        // ── FLAME TAIL — long, flowing downward, 3 tongues ──
-        s += '<path d="M54,84 Q50,88 48,91 Q47,93 46,92 Q47,90 49,87 Q51,85 53,83" fill="#E84020" opacity="0.7"/>';
-        s += '<path d="M55,85 Q52,89 50,92 Q49,94 48,93 Q49,91 51,88" fill="#FF6030" opacity="0.5"/>';
-        s += '<path d="M56,85 Q54,89 53,92 Q52.5,93.5 52,93 Q52.5,91 54,88" fill="#FFA040" opacity="0.35"/>';
-        // ── WINGS — BROAD filled surfaces, majestic spread ──
-        // Left wing — wide, layered feathers
-        s += '<path d="M53,79 L49,76 L44,73 L39,69 L38,71 L41,74 L44,76 L48,78 L52,80 Z" fill="#D84020"/>';
-        s += '<path d="M52,78 L47,75 L42,72 L37,68 L36,70 L40,73 L44,75 L48,77 Z" fill="#C03818" opacity="0.7"/>';
-        // Left wing highlight edge
-        s += '<path d="M53,79 L44,73 L39,69" fill="none" stroke="#FF8040" stroke-width="0.5" opacity="0.4"/>';
-        // Left flame feather tips
-        s += '<path d="M39,69 L37,67 L38,68 M42,72 L40,70 L41,71 M37,68 L35,66 L37,67" fill="#FFA030" opacity="0.6"/>';
-        // Right wing — mirrored, broad
-        s += '<path d="M57,79 L61,76 L66,73 L71,69 L72,71 L69,74 L66,76 L62,78 L58,80 Z" fill="#C83818"/>';
-        s += '<path d="M58,78 L63,75 L68,72 L73,68 L74,70 L70,73 L66,75 L62,77 Z" fill="#B03010" opacity="0.7"/>';
-        // Right wing highlight edge
-        s += '<path d="M57,79 L66,73 L71,69" fill="none" stroke="#FF7030" stroke-width="0.5" opacity="0.4"/>';
-        // Right flame feather tips
-        s += '<path d="M71,69 L73,67 L72,68 M68,72 L70,70 L69,71 M73,68 L75,66 L73,67" fill="#FFA030" opacity="0.6"/>';
-        // ── BODY — flame-shaped but with more substance ──
-        s += '<path d="M52,79 L55,74 L58,79 L57,84 L55,87 L53,84 Z" fill="#D85020"/>';
-        // Body golden center
-        s += '<path d="M53.5,77 L55,75 L56.5,77 L56,83 L55,85 L54,83 Z" fill="#F0A030" opacity="0.45"/>';
-        // ── HEAD — connected to body, not floating ──
-        s += '<path d="M53.5,74.5 L55,72 L56.5,74.5 L56,76 L54,76 Z" fill="#E86030"/>';
-        // Crown crest — 5 flame spikes
-        s += '<path d="M54,73.5 L53.5,70.5 L54.5,72 L55,69 L55.5,72 L56.5,70.5 L56,73.5" fill="#FFA030"/>';
-        s += '<path d="M54.5,71.5 L55,69 L55.5,71.5" fill="#FFD060" opacity="0.5"/>';
-        // Eye — fierce, golden
-        s += '<circle cx="55.5" cy="74" r="0.45" fill="#FFD040"/>';
-        s += '<ellipse cx="55.5" cy="74" rx="0.15" ry="0.35" fill="#1A0A00"/>';
-        // Beak — attached to head, sharp, hooked
-        s += '<path d="M56.2,75 L57.8,74.5 L57,75.5 L56.2,75.5 Z" fill="#A82810"/>';
-        // ── WING FEATHER STRUCTURE — angular lines radiating from body ──
-        // Left wing feathers
-        s += '<path d="M52,79 L46,74" fill="none" stroke="#FF4020" stroke-width="0.3" opacity="0.4"/>';
-        s += '<path d="M51,78 L44,72" fill="none" stroke="#FF5030" stroke-width="0.25" opacity="0.35"/>';
-        s += '<path d="M50,77 L43,70" fill="none" stroke="#FF6040" stroke-width="0.2" opacity="0.3"/>';
-        // Right wing feathers
-        s += '<path d="M58,79 L64,74" fill="none" stroke="#FF3818" stroke-width="0.3" opacity="0.4"/>';
-        s += '<path d="M59,78 L66,72" fill="none" stroke="#FF4828" stroke-width="0.25" opacity="0.35"/>';
-        s += '<path d="M60,77 L67,70" fill="none" stroke="#FF5838" stroke-width="0.2" opacity="0.3"/>';
-        // ── BODY FIRE TEXTURE — flickering inner flames ──
-        s += '<path d="M54.5,80 Q55,78.5 55.5,80" fill="none" stroke="#FFD060" stroke-width="0.3" opacity="0.4"><animate attributeName="opacity" values="0.3;0.5;0.3" dur="1.5s" repeatCount="indefinite"/></path>';
-        s += '<path d="M54.2,82 Q55,80.5 55.8,82" fill="none" stroke="#FFA040" stroke-width="0.25" opacity="0.3"><animate attributeName="opacity" values="0.2;0.4;0.2" dur="1.8s" begin="0.3s" repeatCount="indefinite"/></path>';
-        // ── HEAT SHIMMER — wavy distortion lines above ──
-        s += '<path d="M50,67 Q52,66 54,67 Q56,68 58,67 Q60,66 62,67" fill="none" stroke="rgba(255,200,100,0.08)" stroke-width="0.4"><animate attributeName="d" values="M50,67 Q52,66 54,67 Q56,68 58,67 Q60,66 62,67;M50,66 Q52,67 54,66 Q56,65 58,66 Q60,67 62,66;M50,67 Q52,66 54,67 Q56,68 58,67 Q60,66 62,67" dur="2s" repeatCount="indefinite"/></path>';
-        s += '<path d="M48,64 Q51,63 54,64 Q57,65 60,64 Q63,63 66,64" fill="none" stroke="rgba(255,180,80,0.06)" stroke-width="0.35"><animate attributeName="d" values="M48,64 Q51,63 54,64 Q57,65 60,64 Q63,63 66,64;M48,63 Q51,64 54,63 Q57,62 60,63 Q63,64 66,63;M48,64 Q51,63 54,64 Q57,65 60,64 Q63,63 66,64" dur="2.5s" repeatCount="indefinite"/></path>';
-        // ── SECONDARY FLAME COLORS — blue/white hot core on body ──
-        s += '<path d="M54.8,78 L55,76.5 L55.2,78" fill="rgba(200,220,255,0.15)"/>';
-        // ── RISING EMBERS — more, varied sizes and speeds ──
-        s += '<circle cx="48" cy="80" r="0.5" fill="#FF8030" opacity="0"><animate attributeName="cy" values="80;68;56" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.8;0" dur="3s" repeatCount="indefinite"/><animate attributeName="r" values="0.5;0.3;0.1" dur="3s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="63" cy="78" r="0.4" fill="#FFA040" opacity="0"><animate attributeName="cy" values="78;66;54" dur="3.5s" begin="1s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.7;0" dur="3.5s" begin="1s" repeatCount="indefinite"/><animate attributeName="r" values="0.4;0.25;0.08" dur="3.5s" begin="1s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="55" cy="74" r="0.35" fill="#FFD060" opacity="0"><animate attributeName="cy" values="74;62;50" dur="2.8s" begin="0.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.6;0" dur="2.8s" begin="0.5s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="44" cy="76" r="0.3" fill="#FF6030" opacity="0"><animate attributeName="cy" values="76;64;52" dur="4s" begin="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.6;0" dur="4s" begin="2s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="66" cy="74" r="0.25" fill="#FFD040" opacity="0"><animate attributeName="cy" values="74;62;50" dur="3.2s" begin="1.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.5;0" dur="3.2s" begin="1.5s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="42" cy="72" r="0.2" fill="#FF4020" opacity="0"><animate attributeName="cy" values="72;60;48" dur="4.5s" begin="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.45;0" dur="4.5s" begin="3s" repeatCount="indefinite"/></circle>';
-        // ── TAIL FLAME ANIMATION — tail tongues flicker ──
-        s += '<path d="M46,92 Q44,93 43,92.5" fill="none" stroke="#FF4020" stroke-width="0.3" opacity="0"><animate attributeName="opacity" values="0;0.5;0" dur="2s" repeatCount="indefinite"/></path>';
-        s += '<path d="M48,93 Q46,94 45,93.5" fill="none" stroke="#FFA040" stroke-width="0.25" opacity="0"><animate attributeName="opacity" values="0;0.4;0" dur="2.5s" begin="0.8s" repeatCount="indefinite"/></path>';
-        // Mythic glow pulse
-        s += '<animate attributeName="opacity" values="0.95;1;0.95" dur="3s" repeatCount="indefinite"/>';
+      case 33: // The Phoenix — MYTHIC, noble perched bird with flowing plumes
+        // Noble proportions: elongated neck, slim body, flowing tail, swept-back crown
+        // Perched on pot rim, three-quarter view, head tilted upward
+        s += '<g opacity="0.95" transform="translate(0,-42)">';
+        // Inner warmth glow
+        s += '<radialGradient id="phxGlow"><stop offset="0%" stop-color="#E8922A" stop-opacity="0.15"/><stop offset="100%" stop-color="#E8922A" stop-opacity="0"/></radialGradient>';
+        s += '<ellipse cx="55" cy="82" rx="10" ry="8" fill="url(#phxGlow)"><animate attributeName="opacity" values="0.6;1;0.6" dur="4s" repeatCount="indefinite"/></ellipse>';
+        // ── TAIL PLUMES — 4 flowing calligraphy strokes cascading down ──
+        s += '<path d="M53,86 C50,89 48,93 46,97 C45,99 44,98 45,96 C46,93 49,89 52,86" fill="none" stroke="#8B1A1A" stroke-width="1.8" stroke-linecap="round" opacity="0.8"/>';
+        s += '<path d="M54,87 C52,91 50,95 49,99 C48.5,100 48,99 49,97 C50,94 52,90 54,87" fill="none" stroke="#D4541A" stroke-width="1.4" stroke-linecap="round" opacity="0.65">';
+        s += '<animate attributeName="d" values="M54,87 C52,91 50,95 49,99 C48.5,100 48,99 49,97;M54,87 C51,91 49,95 48,99 C47.5,100 47,99 48,97;M54,87 C52,91 50,95 49,99 C48.5,100 48,99 49,97" dur="3s" repeatCount="indefinite"/></path>';
+        s += '<path d="M54.5,87 C53,90 52,93 51,96 C50.5,97 50.5,96 51.5,94 C52,92 53,89 54,87" fill="none" stroke="#C8A84B" stroke-width="1" stroke-linecap="round" opacity="0.5"/>';
+        s += '<path d="M55,86 C54,89 53.5,91 53,93 C52.8,93.5 53,93 53.5,91.5" fill="none" stroke="#C8A84B" stroke-width="0.7" opacity="0.35"/>';
+        // ── BODY — slim teardrop, crimson with gradient ──
+        s += '<path d="M52,82 C52,79 54,77 55,77 C56,77 58,79 58,82 C58,85 56.5,87 55,87 C53.5,87 52,85 52,82 Z" fill="#8B1A1A"/>';
+        s += '<path d="M53,81 C53,79.5 54.5,78 55,78 C55.5,78 57,79.5 57,81 C57,83 56,84.5 55,84.5 C54,84.5 53,83 53,81 Z" fill="#D4541A" opacity="0.5"/>';
+        // Chest warmth — breathing glow
+        s += '<ellipse cx="55" cy="81" rx="2" ry="2.5" fill="#E8922A" opacity="0.12"><animate attributeName="opacity" values="0.1;0.25;0.1" dur="4s" repeatCount="indefinite"/></ellipse>';
+        // ── NECK — elegant S-curve rising from body ──
+        s += '<path d="M54.5,78 C54,76 53.5,74 54,72 C54.3,71 55,70.5 55.5,71 C56,72 55.5,74 55.5,76 C55.5,77 55.5,78 55.5,78" fill="#8B1A1A"/>';
+        s += '<path d="M54.8,77 C54.5,75.5 54.2,74 54.5,72.5 C54.7,71.5 55.2,71.5 55.3,72.5 C55.4,74 55.2,75.5 55.2,77" fill="#D4541A" opacity="0.4"/>';
+        // ── HEAD — small, dignified, tilted upward ──
+        s += '<ellipse cx="54.5" cy="70.5" rx="2" ry="1.8" fill="#8B1A1A" transform="rotate(-10,54.5,70.5)"/>';
+        s += '<ellipse cx="54.5" cy="70.5" rx="1.5" ry="1.3" fill="#D4541A" opacity="0.3" transform="rotate(-10,54.5,70.5)"/>';
+        // Eye — golden ring, calm and knowing
+        s += '<circle cx="53.8" cy="70" r="0.55" fill="#C8A84B"/>';
+        s += '<circle cx="53.8" cy="70" r="0.2" fill="#1A0A00"/>';
+        // Beak — slender, curved, not hooked like a rooster
+        s += '<path d="M52.8,70.5 C52,70.2 51.5,70.5 52,70.8" fill="none" stroke="#A82810" stroke-width="0.6" stroke-linecap="round"/>';
+        // ── CROWN — 4 swept-back plumes (NOT upright like a comb) ──
+        s += '<path d="M55,69.5 C55.5,67.5 56,66 57,65" fill="none" stroke="#C8A84B" stroke-width="0.9" stroke-linecap="round" opacity="0.85"/>';
+        s += '<path d="M55.5,69 C56.5,67 57.5,65.5 58.5,65" fill="none" stroke="#E8922A" stroke-width="0.7" stroke-linecap="round" opacity="0.7"/>';
+        s += '<path d="M55.8,69.5 C57,68 58,67 59,66.5" fill="none" stroke="#D4541A" stroke-width="0.5" stroke-linecap="round" opacity="0.55"/>';
+        s += '<path d="M54.5,69.5 C55,68 55.5,67 56,66" fill="none" stroke="#C8A84B" stroke-width="0.6" stroke-linecap="round" opacity="0.4"/>';
+        // ── WING (folded against body) — layered leaf shapes ──
+        s += '<path d="M56,80 C58,79 60,78 61,77 C60,79 58,81 56,82 Z" fill="#8B1A1A" opacity="0.8"/>';
+        s += '<path d="M56.5,80.5 C58,80 59.5,79 60,78 C59,80 57.5,81.5 56.5,82 Z" fill="#D4541A" opacity="0.5"/>';
+        s += '<path d="M57,81 C58.5,80.5 59,80 59.5,79.5" fill="none" stroke="#C8A84B" stroke-width="0.3" opacity="0.4"/>';
+        // ── TALON — gripping pot rim ──
+        s += '<path d="M54,87 L53,88.5 L52.5,87.5 M55,87 L55.5,88.5 L56,87.5" fill="none" stroke="#3A1A0A" stroke-width="0.6" stroke-linecap="round"/>';
+        // ── RISING EMBERS — gentle, sparse ──
+        s += '<circle cx="50" cy="78" r="0.4" fill="#E8922A" opacity="0"><animate attributeName="cy" values="78;68;58" dur="4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.6;0" dur="4s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="60" cy="80" r="0.3" fill="#C8A84B" opacity="0"><animate attributeName="cy" values="80;70;60" dur="5s" begin="1.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.5;0" dur="5s" begin="1.5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="55" cy="76" r="0.25" fill="#D4541A" opacity="0"><animate attributeName="cy" values="76;66;56" dur="3.5s" begin="0.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.4;0" dur="3.5s" begin="0.8s" repeatCount="indefinite"/></circle>';
+        // Overall breathing pulse
+        s += '<animate attributeName="opacity" values="0.93;1;0.93" dur="4s" repeatCount="indefinite"/>';
         s += '</g>';
         break;
       case 34: // Baby Mammoth — LEGENDARY, side profile facing left
@@ -31614,8 +31607,25 @@ function _doReproduction(weather, simMode) {
 
   for (var z = 0; z < zoneKeys.length; z++) {
     var zk = zoneKeys[z];
-    var plants = zones[zk];
-    if (plants.length < 2) continue; // need 2+ for breeding pair
+    // Gather plants from this zone AND adjacent zones (plants in neighboring tiles can breed)
+    var _zkParts = zk.split(',');
+    var _zkLat = parseFloat(_zkParts[0]), _zkLng = parseFloat(_zkParts[1]);
+    var plants = (zones[zk] || []).slice(); // copy this zone's plants
+    var _adjStep = ZONE_SIZE || 0.001;
+    for (var _adx = -1; _adx <= 1; _adx++) {
+      for (var _ady = -1; _ady <= 1; _ady++) {
+        if (_adx === 0 && _ady === 0) continue; // skip self
+        var _adjKey = (_zkLat + _adx * _adjStep).toFixed(3) + ',' + (_zkLng + _ady * _adjStep).toFixed(3);
+        if (zones[_adjKey]) {
+          for (var _ap = 0; _ap < zones[_adjKey].length; _ap++) {
+            var _isDup = false;
+            for (var _dp = 0; _dp < plants.length; _dp++) { if (plants[_dp].hash === zones[_adjKey][_ap].hash) { _isDup = true; break; } }
+            if (!_isDup) plants.push(zones[_adjKey][_ap]);
+          }
+        }
+      }
+    }
+    if (plants.length < 2) continue; // need 2+ for breeding pair (including adjacent)
     if (!simMode && checked[zk] === td) continue; // already checked today
 
     if (!simMode) checked[zk] = td;
