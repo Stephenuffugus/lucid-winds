@@ -41171,10 +41171,11 @@ function _showDailyReward() {
   var daily = _loadDaily();
   var today = _today();
 
-  // Already claimed today — double check with a separate flag
-  if (daily.lastClaim === today) return;
-  // Belt-and-suspenders: also check a simple flag
-  if (localStorage.getItem('lw_daily_claimed') === today) return;
+  // Already claimed today — triple guard
+  if (daily.lastClaim === today) { console.log('[Daily] Already claimed (JSON)'); return; }
+  if (localStorage.getItem('lw_daily_claimed') === today) { console.log('[Daily] Already claimed (flag)'); return; }
+  // Guard 3: session flag (survives nothing clearing localStorage mid-session)
+  if (window._dailyClaimedThisSession) { console.log('[Daily] Already claimed (session)'); return; }
 
   // Streak logic
   if (daily.lastClaim === _yesterday()) {
@@ -41188,10 +41189,12 @@ function _showDailyReward() {
   // Grant dew
   if (window.earnHashes) earnHashes(reward.total);
 
-  // Save claim (two places for redundancy)
+  // Save claim (three places for redundancy)
   daily.lastClaim = today;
   _saveDaily(daily);
   localStorage.setItem('lw_daily_claimed', today);
+  window._dailyClaimedThisSession = true;
+  console.log('[Daily] Claimed and saved. today='+today+' stored='+JSON.stringify(daily));
 
   // Build modal
   var ov = document.createElement('div');
@@ -41260,8 +41263,10 @@ function _showDailyReward() {
 }
 
 // Expose for triggering after vault loads
+var _dailyLoginChecked = false;
 window._checkDailyLogin = function() {
-  // Delay so the game finishes rendering before modal pops
+  if (_dailyLoginChecked) return; // Only check once per session
+  _dailyLoginChecked = true;
   setTimeout(_showDailyReward, 1200);
 };
 })();
