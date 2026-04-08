@@ -41741,14 +41741,17 @@ window.openBreedScreen=function(plantA,context){
   // Build full eligible list from greenhouse
   var gh=[];
   try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+  console.log('[Breed] GH plants:', gh.length, 'plantA:', plantA ? plantA.hash.slice(0,8) : 'null', 'context:', context);
   // Filter eligible: must have charges AND pass cooldown/maturity
   _allEligible=gh.filter(function(p){
     if(window.FG_Data&&FG_Data.getBreedStatus){
       var bs=FG_Data.getBreedStatus(p);
+      console.log('[Breed] Plant', p.hash.slice(0,8), 'born:', p.born, 'mintedAt:', p.mintedAt, 'canBreed:', bs.canBreed, 'reason:', bs.reason);
       return bs.canBreed;
     }
     return (p.breedCount||0)<3; // Legacy fallback
   });
+  console.log('[Breed] Eligible:', _allEligible.length);
 
   // Wild-other: wild plant is locked on side A, greenhouse plants are partners
   if(_plantACtx==='wild-other'){
