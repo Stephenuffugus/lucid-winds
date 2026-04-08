@@ -33263,11 +33263,36 @@ function _waterOwnPlant(p,mk){
 
   // Update wild plant stress
   var wild=_getWild();
+  var _wateredHash=null;
   for(var i=0;i<wild.length;i++){
     if(wild[i].hash===p.hash){
       wild[i].stress=Math.max(0,(wild[i].stress||0)-2);
       wild[i].lastWatered=new Date().toISOString();
+      wild[i].neglectDecay=0;
+      _wateredHash=wild[i].hash;
       break;
+    }
+  }
+  // Symbiote temperament: 25% shared watering to mesh-connected plants
+  if(_wateredHash&&window.getMeshLinks){
+    var _meshLinks=getMeshLinks();
+    var _wh8=_wateredHash.slice(0,8);
+    for(var _mi=0;_mi<_meshLinks.length;_mi++){
+      var _ml=_meshLinks[_mi];
+      if(_ml.stage<2)continue; // Need at least Nutrient Bridge for water sharing
+      var _linkedHash=null;
+      if(_ml.hashA===_wh8)_linkedHash=_ml.hashB;
+      else if(_ml.hashB===_wh8)_linkedHash=_ml.hashA;
+      if(!_linkedHash)continue;
+      // Check if linked plant has Symbiote companion
+      for(var _wi=0;_wi<wild.length;_wi++){
+        if(wild[_wi].hash&&wild[_wi].hash.slice(0,8)===_linkedHash){
+          var _shareAmt=_ml.stage>=3?0.5:0.25;
+          wild[_wi].stress=Math.max(0,(wild[_wi].stress||0)-Math.ceil(2*_shareAmt));
+          wild[_wi].lastWatered=new Date().toISOString();
+          break;
+        }
+      }
     }
   }
   _saveWild(wild);
