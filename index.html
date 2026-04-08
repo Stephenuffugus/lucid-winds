@@ -31535,10 +31535,22 @@ function _doReproduction(weather, simMode) {
 
   // Weather modifiers
   var weatherMod = 1.0;
-  if (weather.rain > 5) weatherMod = 2.0;       // Heavy rain doubles reproduction
-  else if (weather.rain > 1) weatherMod = 1.5;   // Light rain boosts
-  else if (weather.rain === 0 && weather.temp > 35) weatherMod = 0.3; // Hot + dry = drought
-  else if (weather.rain === 0 && weather.temp < 0) weatherMod = 0.5;  // Freezing slows
+  var _weatherEvent = null;
+  if (weather.rain > 5) { weatherMod = 2.0; _weatherEvent = 'heavy_rain'; }
+  else if (weather.rain > 1) { weatherMod = 1.5; _weatherEvent = 'rain'; }
+  else if (weather.rain === 0 && weather.temp > 35) { weatherMod = 0.3; _weatherEvent = 'drought'; }
+  else if (weather.rain === 0 && weather.temp < 0) { weatherMod = 0.5; _weatherEvent = 'frost'; }
+
+  // Log weather event once per day for morning report
+  if (!simMode && _weatherEvent && window._logWildEvent) {
+    var _wEvtKey = 'lw_weather_logged';
+    var _wToday = new Date().toISOString().split('T')[0];
+    if (localStorage.getItem(_wEvtKey) !== _wToday) {
+      localStorage.setItem(_wEvtKey, _wToday);
+      var _wNames = { heavy_rain: 'heavy rain', rain: 'rain', drought: 'drought', frost: 'frost' };
+      window._logWildEvent({ type: 'weather', event: _weatherEvent, name: _wNames[_weatherEvent], temp: weather.temp, rain: weather.rain });
+    }
+  }
 
   // Build zone map from all sources
   var zones = _getAllZonePlants();
@@ -43183,12 +43195,12 @@ function _generateReport(){
   }
 
   // Weather stories
-  var survived=weatherEvents.filter(function(e){return e.survived;});
-  var died=weatherEvents.filter(function(e){return!e.survived;});
-  if(survived.length>0&&died.length>0){
-    lines.push({icon:'🌧️',text:'Your '+survived[0].name+' survived last night\'s '+survived[0].event+'. '+died.length+' nearby plant'+(died.length>1?'s':'')+' didn\'t.',color:'rgba(91,175,220,0.9)'});
-  }else if(survived.length>0){
-    lines.push({icon:'☀️',text:'Your plants weathered the '+(survived[0].event||'conditions')+'. All healthy.',color:'var(--sage)'});
+  if(weatherEvents.length>0){
+    var we=weatherEvents[0];
+    var wIcons={heavy_rain:'🌧️',rain:'🌦️',drought:'🏜️',frost:'🥶'};
+    var wTexts={heavy_rain:'Heavy rain soaked the area. Your plants are thriving.',rain:'Light rain nourished the soil overnight.',drought:'Hot and dry. Your plants are stressed but holding.',frost:'A cold front passed through. Frost-sensitive plants are struggling.'};
+    lines.push({icon:wIcons[we.event]||'⛅',text:wTexts[we.event]||'Weather passed through your area.',
+      color:we.event==='drought'||we.event==='frost'?'rgba(192,112,112,0.7)':'rgba(91,175,220,0.9)'});
   }
 
   // Watering stories
@@ -43209,6 +43221,13 @@ function _generateReport(){
   if(invasions.length>0){
     var inv=invasions[0];
     lines.push({icon:'⚔️',text:'Your '+inv.defenderName+' was outcompeted by a wild seedling (EA '+inv.invaderEA+').',color:'rgba(192,112,112,0.8)'});
+  }
+
+  // Feral decay stories (plant went feral from neglect)
+  var feralEvts=recent.filter(function(e){return e.type==='feral';});
+  if(feralEvts.length>0){
+    var fe=feralEvts[0];
+    lines.push({icon:'💀',text:'Your '+(fe.name||'plant')+' went feral from neglect. Its genetics live on in the wild.',color:'rgba(192,112,112,0.7)'});
   }
 
   // If nothing happened
