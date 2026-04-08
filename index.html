@@ -6673,18 +6673,32 @@ document.addEventListener('keydown', function(e) {
     {id:40,name:'Wise Owl Roost',    a:function(t){return t.companion===57;},     b:function(t){return t.stem%24===5;},       ea:1, theme:'mythical', fx:'owl perches in braid junction, golden eye blink'}
   ];
 
-  // Get the synergy for a plant (or null if none)
+  // Get ALL synergies for a plant (capped at 3 displayed, +4 EA max)
   window.getSynergy = function(traits) {
     if (!traits) return null;
+    var all = [];
     for (var i = 0; i < _SYNERGIES.length; i++) {
       var s = _SYNERGIES[i];
-      try {
-        if (s.a(traits) && s.b(traits)) {
-          return { id:s.id, name:s.name, ea:s.ea, theme:s.theme, fx:s.fx };
-        }
-      } catch(e) {}
+      try { if (s.a(traits) && s.b(traits)) all.push({ id:s.id, name:s.name, ea:s.ea, theme:s.theme, fx:s.fx, emoji:s.emoji||'' }); } catch(e) {}
     }
-    return null;
+    if (all.length === 0) return null;
+    // Sort by EA descending, cap at 3 displayed
+    all.sort(function(a,b){ return b.ea - a.ea; });
+    var displayed = all.slice(0, 3);
+    // Cap total EA at +4
+    var totalEA = 0;
+    for (var j = 0; j < displayed.length; j++) {
+      totalEA += displayed[j].ea;
+      if (totalEA > 4) { displayed[j].ea = Math.max(0, displayed[j].ea - (totalEA - 4)); totalEA = 4; }
+    }
+    // Return first for backward compatibility (EA calc uses .ea)
+    // but attach .all for display purposes
+    var result = displayed[0];
+    result.ea = 0;
+    for (var k = 0; k < displayed.length; k++) result.ea += displayed[k].ea;
+    result.all = displayed;
+    result.totalFound = all.length;
+    return result;
   };
 
   // ═══ HARDINESS SCORE ═══════════════════════════════════════════════════
@@ -41831,8 +41845,19 @@ function _getMoonPhase(){
 }
 window._getMoonPhase=_getMoonPhase;
 
-// ── CHECK TRIGGERS ──
-// Called with a plant + context, returns array of fired triggers
+// ── CHECK TRIGGERS (with balance rules) ──
+// Max 1 event/plant/day, max 3/player/day, 7-day per-trigger cooldown, 24h min age
+var COOLDOWN_KEY='lw_trigger_cooldowns';
+function _getCooldowns(){try{return JSON.parse(localStorage.getItem(COOLDOWN_KEY)||'{}');}catch(e){return{};}}
+function _saveCooldowns(cd){
+  // Prune entries older than 7 days
+  var now=new Date().toISOString().split('T')[0];
+  var cutoff=new Date(Date.now()-7*86400000).toISOString().split('T')[0];
+  var keys=Object.keys(cd);
+  for(var i=0;i<keys.length;i++){if(typeof cd[keys[i]]==='string'&&cd[keys[i]]<cutoff)delete cd[keys[i]];}
+  localStorage.setItem(COOLDOWN_KEY,JSON.stringify(cd));
+}
+
 function checkTriggers(plant, nearbyPlants, weather, playerStats){
   if(!plant)return[];
   var traits=null;
@@ -41840,13 +41865,30 @@ function checkTriggers(plant, nearbyPlants, weather, playerStats){
   if(!traits)return[];
 
   var now=new Date();
+  var today=now.toISOString().split('T')[0];
+  var plantAge=Math.floor((Date.now()-(plant.born||plant.mintedAt||Date.now()))/86400000);
+
+  // Balance rule: min 24h plant age
+  if(plantAge<1)return[];
+
+  // Balance rule: max 1 event per plant per day
+  var cd=_getCooldowns();
+  var plantKey=plant.hash.slice(0,8)+'_day';
+  if(cd[plantKey]===today)return[];
+
+  // Balance rule: max 3 events per player per day
+  var dayCount=cd._dayCount||0;
+  var dayDate=cd._dayDate||'';
+  if(dayDate!==today){dayCount=0;dayDate=today;}
+  if(dayCount>=3)return[];
+
   var ea=window.computeEA?window.computeEA(traits,0,plant):0;
   var ctx={
     plant:traits, plantObj:plant, nearbyPlants:nearbyPlants||[],
     weather:weather||{}, hour:now.getHours(), month:now.getMonth(),
     realSeason:now.getMonth()<3?3:now.getMonth()<6?0:now.getMonth()<9?1:2,
     moonPhase:_getMoonPhase(), playerStats:playerStats||{},
-    ea:ea, plantAge:Math.floor((Date.now()-(plant.born||plant.mintedAt||Date.now()))/86400000)
+    ea:ea, plantAge:plantAge
   };
 
   // Enrich nearby plants with traits
@@ -41859,20 +41901,33 @@ function checkTriggers(plant, nearbyPlants, weather, playerStats){
   var found=[];
   var discovered=_getDiscovered();
   for(var t=0;t<TRIGGERS.length;t++){
+    // Balance rule: 7-day per-trigger per-plant cooldown
+    var trigPlantKey=plant.hash.slice(0,8)+'_'+TRIGGERS[t].id;
+    if(cd[trigPlantKey]&&cd[trigPlantKey]>new Date(Date.now()-7*86400000).toISOString().split('T')[0])continue;
+
     try{
       if(TRIGGERS[t].check(ctx)){
         found.push(TRIGGERS[t]);
-        // Mark as discovered
+        // Set cooldowns
+        cd[plantKey]=today;
+        cd[trigPlantKey]=today;
+        dayCount++;
+        cd._dayCount=dayCount;
+        cd._dayDate=dayDate;
+        _saveCooldowns(cd);
+        // Mark as discovered (first time only)
         if(discovered.indexOf(TRIGGERS[t].id)<0){
           discovered.push(TRIGGERS[t].id);
           _saveDiscovered(discovered);
-          // Log event for morning report
+          // Log discovery for morning report
           if(window._logWildEvent)window._logWildEvent({
             type:'trigger',triggerId:TRIGGERS[t].id,name:TRIGGERS[t].name,
             category:TRIGGERS[t].category,hash:plant.hash,
-            plantName:window.getPlantName?window.getPlantName(plant.hash):''
+            plantName:window.getPlantName?window.getPlantName(plant.hash):'',
+            firstDiscovery:true
           });
         }
+        break; // max 1 event per plant per check (priority order)
       }
     }catch(e){}
   }
