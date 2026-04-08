@@ -32881,6 +32881,19 @@ function showTP(p,mk){
     // Pollen rate info
     var _polRates={Common:1,Uncommon:2,Rare:4,Epic:6,Legendary:9,Mythic:12,Cosmic:15};
     var _polRate=_polRates[p.grade]||1;
+    // Firefly Night Bloom: 2x pollen 8PM-6AM
+    try{var _pTraits=window.hashToTraits?window.hashToTraits(p.hash):null;
+      if(_pTraits){
+        var _pComp=window.getCompanionInfo?getCompanionInfo(_pTraits):null;
+        if(_pComp&&_pComp.abilityKey==='nightBloom'){var _hr=new Date().getHours();if(_hr>=20||_hr<6)_polRate*=2;}
+        // Mystic temperament: +15% pollen
+        var _pPolBonus=window.getCompanionPollenBonus?getCompanionPollenBonus(_pTraits):0;
+        if(_pPolBonus>0)_polRate=Math.round(_polRate*(1+_pPolBonus));
+        // Bloom chorus bonus
+        var _chBonus=window.getChorusBonus?getChorusBonus(p.hash):null;
+        if(_chBonus&&_chBonus.inChorus)_polRate=Math.round(_polRate*(1+_chBonus.pollenBonus));
+      }
+    }catch(e){}
     var waterBtn=document.getElementById('wtp-water');
     if(waterBtn){
       waterBtn.onclick=function(){_waterOwnPlant(p,mk);};
