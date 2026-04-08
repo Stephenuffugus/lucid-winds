@@ -4967,6 +4967,7 @@ window.onerror=function(msg,url,line,col,err){
       <div class="kb-rank" id="kb-rank">Lvl 1 · Seedling · 0 / 25 XP</div>
     </div>
     <div id="kb-dew" style="font-family:DM Mono,monospace;font-size:0.35rem;color:rgba(91,175,220,0.85);padding:3px 7px;background:rgba(91,175,220,0.06);border:1px solid rgba(91,175,220,0.1);border-radius:4px;white-space:nowrap;cursor:pointer;" onclick="if(window.openEconModal)openEconModal();">0 dew</div>
+    <div id="kb-compendium" onclick="if(window._openCompendiumUI)_openCompendiumUI();" style="font-family:DM Mono,monospace;font-size:0.35rem;color:rgba(200,168,75,0.85);padding:3px 7px;background:rgba(200,168,75,0.06);border:1px solid rgba(200,168,75,0.1);border-radius:4px;white-space:nowrap;cursor:pointer;">📖 <span id="kb-comp-count">0</span></div>
     <div id="pw-lb-toggle" onclick="PW_UI.toggleLeaderboard()"><span id="lb-my-rank">#—</span> <span style="font-size:0.4rem;">▼</span></div>
   </div>
   <div id="pw-lb-dropdown">
@@ -42622,6 +42623,137 @@ setTimeout(_showMorningReport,3500);
 window._showMorningReport=_showMorningReport;
 window._generateReport=_generateReport;
 window._getWildEvents=_loadEvents;
+})();
+</script>
+
+<!-- ═══ COMPENDIUM UI (Book of Secrets) ═══ -->
+<script>
+(function(){
+'use strict';
+
+var CATEGORIES=[
+  {key:'trait',    label:'SYNERGIES',    icon:'✦', color:'var(--sage)'},
+  {key:'companion',label:'COMPANIONS',  icon:'🐾', color:'var(--gold)'},
+  {key:'weather',  label:'WEATHER',     icon:'⛅', color:'rgba(91,175,220,0.9)'},
+  {key:'season',   label:'SEASONS',     icon:'🌸', color:'rgba(232,160,191,0.9)'},
+  {key:'action',   label:'ACTIONS',     icon:'👤', color:'var(--cream)'},
+  {key:'natural',  label:'EVENTS',      icon:'🌿', color:'var(--sage)'}
+];
+
+window._openCompendiumUI=function(){
+  var triggers=window.getCompendium?window.getCompendium():[];
+  var progress=window.getCompendiumProgress?window.getCompendiumProgress():{found:0,total:0,pct:0};
+
+  // Also get synergy discoveries from plants
+  var gh=[];try{gh=JSON.parse((window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse'))||'[]');}catch(e){}
+  var foundSynergies={};
+  for(var si=0;si<gh.length;si++){
+    try{
+      var t=window.hashToTraits?window.hashToTraits(gh[si].hash):null;
+      if(!t)continue;
+      var syn=window.getSynergy?window.getSynergy(t):null;
+      if(syn&&syn.all){
+        for(var sj=0;sj<syn.all.length;sj++)foundSynergies[syn.all[sj].name]=syn.all[sj];
+      }else if(syn){foundSynergies[syn.name]=syn;}
+    }catch(e){}
+  }
+  var synCount=Object.keys(foundSynergies).length;
+  var totalDiscovered=progress.found+synCount;
+
+  var ov=document.createElement('div');
+  ov.id='compendium-overlay';
+  ov.style.cssText='position:fixed;inset:0;z-index:99996;background:rgba(5,8,4,0.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:panelFadeIn 0.3s ease;';
+
+  var h='<div style="padding:1rem;max-width:400px;margin:0 auto;width:100%;">';
+  // Header
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem;">';
+  h+='<div><div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--gold);">Book of Secrets</div>';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);">'+totalDiscovered+' discovered</div></div>';
+  h+='<button onclick="var co=document.getElementById(\'compendium-overlay\');if(co)co.remove();" style="width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:0.6rem;cursor:pointer;min-height:48px;min-width:48px;">✕</button>';
+  h+='</div>';
+
+  // Progress bar
+  var totalAll=60+progress.total; // synergies + triggers
+  var pctAll=Math.round(totalDiscovered/totalAll*100);
+  h+='<div style="margin-bottom:0.8rem;">';
+  h+='<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);margin-bottom:3px;"><span>'+totalDiscovered+' / '+totalAll+'</span><span>'+pctAll+'%</span></div>';
+  h+='<div style="height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;"><div style="height:100%;width:'+pctAll+'%;background:linear-gradient(90deg,rgba(122,179,86,0.6),rgba(200,168,75,0.7));border-radius:2px;transition:width 0.4s;"></div></div>';
+  h+='</div>';
+
+  // Synergies section
+  h+='<div style="margin-bottom:0.8rem;">';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.4rem;">✦ SYNERGIES <span style="color:var(--muted);font-size:0.4rem;">'+synCount+' / 60</span></div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">';
+  // Build synergy grid from _SYNERGIES
+  if(window._SYNERGIES){
+    // Can't access _SYNERGIES directly (inside IIFE), use getSynergy approach
+    // Instead show discovered synergies
+    var synKeys=Object.keys(foundSynergies);
+    for(var sk=0;sk<Math.min(synKeys.length,60);sk++){
+      var s=foundSynergies[synKeys[sk]];
+      h+='<div style="padding:4px;background:rgba(122,179,86,0.08);border:1px solid rgba(122,179,86,0.15);border-radius:6px;text-align:center;min-height:36px;display:flex;flex-direction:column;align-items:center;justify-content:center;" title="'+s.name+': '+s.fx+'">';
+      h+='<div style="font-size:0.5rem;">✦</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.25rem;color:var(--sage);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">'+s.name+'</div>';
+      h+='</div>';
+    }
+    // Fill remaining as locked
+    for(var sl=synKeys.length;sl<60;sl++){
+      h+='<div style="padding:4px;background:rgba(26,36,22,0.3);border:1px solid rgba(74,124,53,0.06);border-radius:6px;text-align:center;min-height:36px;display:flex;align-items:center;justify-content:center;opacity:0.4;">';
+      h+='<div style="font-size:0.4rem;color:var(--muted);">?</div>';
+      h+='</div>';
+    }
+  }
+  h+='</div></div>';
+
+  // Triggers section by category
+  for(var ci=0;ci<CATEGORIES.length;ci++){
+    var cat=CATEGORIES[ci];
+    var catTriggers=triggers.filter(function(t){return t.category===cat.key;});
+    if(catTriggers.length===0)continue;
+    var catFound=catTriggers.filter(function(t){return t.unlocked;}).length;
+
+    h+='<div style="margin-bottom:0.8rem;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:'+cat.color+';letter-spacing:0.1em;margin-bottom:0.4rem;">'+cat.icon+' '+cat.label+' <span style="color:var(--muted);font-size:0.4rem;">'+catFound+' / '+catTriggers.length+'</span></div>';
+
+    for(var ti=0;ti<catTriggers.length;ti++){
+      var tr=catTriggers[ti];
+      if(tr.unlocked){
+        h+='<div style="padding:0.4rem;margin-bottom:4px;background:rgba(18,22,16,0.6);border:1px solid '+cat.color+'33;border-left:3px solid '+cat.color+';border-radius:6px;">';
+        h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;color:'+cat.color+';">'+tr.name+'</div>';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--cream);margin-top:2px;">'+tr.effect+'</div>';
+        h+='</div>';
+      }else{
+        h+='<div style="padding:0.4rem;margin-bottom:4px;background:rgba(13,16,12,0.4);border:1px solid rgba(74,124,53,0.06);border-left:3px solid rgba(138,145,120,0.15);border-radius:6px;">';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);font-style:italic;">\"'+tr.riddle+'\"</div>';
+        h+='</div>';
+      }
+    }
+    h+='</div>';
+  }
+
+  h+='</div>';
+  ov.innerHTML=h;
+  document.body.appendChild(ov);
+};
+
+// Update compendium count in keeper bar
+function _updateCompCount(){
+  var el=document.getElementById('kb-comp-count');if(!el)return;
+  var progress=window.getCompendiumProgress?window.getCompendiumProgress():{found:0};
+  // Count synergies from greenhouse
+  var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+  var synSet={};
+  for(var i=0;i<gh.length;i++){
+    try{var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;if(!t)continue;
+      var syn=window.getSynergy?window.getSynergy(t):null;
+      if(syn&&syn.all)syn.all.forEach(function(s){synSet[s.name]=1;});
+      else if(syn)synSet[syn.name]=1;
+    }catch(e){}
+  }
+  el.textContent=(progress.found+Object.keys(synSet).length);
+}
+setTimeout(_updateCompCount,3000);
+window._updateCompCount=_updateCompCount;
 })();
 </script>
 
