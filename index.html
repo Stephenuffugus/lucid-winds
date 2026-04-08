@@ -28111,7 +28111,9 @@ document.addEventListener('keydown', function(e) {
           }
         });
         if (_bcChanged) saveGreenhouse(_bcGh);
+        localStorage.setItem('lw_first_breed','1');
         if (typeof gtag!=='undefined') gtag('event','pollination_event',{ nonce:result.nonce, parentA:selA.hash.slice(0,8), parentB:selB.hash.slice(0,8) });
+        if(window._updateNextStep)_updateNextStep();
         renderNursery();
         switchTab('nursery');
         _setNurMsg('🌱 Seed planted! Water once a day for 3 days to bloom.');
