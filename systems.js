@@ -145,13 +145,26 @@ function _pickShowcase(slot,ghIdx){
   var gh=[];try{gh=JSON.parse((window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse'))||'[]');}catch(e){}
   var p=gh[ghIdx];if(!p)return;
   var showcase=[];try{showcase=JSON.parse(localStorage.getItem('pw_showcase')||'[]');}catch(e){}
-  showcase[slot]={hash:p.hash};
+  // Return old showcase plant to greenhouse if replacing
+  if(showcase[slot]&&showcase[slot].hash){
+    var oldHash=showcase[slot].hash;
+    var alreadyInGH=gh.some(function(g){return g.hash===oldHash;});
+    if(!alreadyInGH){
+      gh.push({hash:oldHash,date:showcase[slot].date||new Date().toISOString().split('T')[0],born:showcase[slot].born||Date.now(),origin:'showcase-return'});
+    }
+  }
+  showcase[slot]={hash:p.hash,date:p.date,born:p.born};
+  // Remove from greenhouse — frees the slot
+  gh.splice(ghIdx,1);
+  if(window._secureSet)window._secureSet('sws_greenhouse',gh);
+  else localStorage.setItem('sws_greenhouse',JSON.stringify(gh));
   localStorage.setItem('pw_showcase',JSON.stringify(showcase));
   var pk=document.getElementById('cs-showcase-picker');if(pk)pk.remove();
   _renderShowcase();
-  if(window._toast)window._toast('Showcase updated!');
-  // Sync to Firestore profile
+  if(window.renderGreenhouse)renderGreenhouse();
+  if(window._toast)window._toast('Plant showcased! Greenhouse slot freed.');
   _syncProfileField('showcase',showcase.map(function(s){return s?s.hash:null;}));
+  if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
 }
 function _renderShowcase(){
   var showcase=[];try{showcase=JSON.parse(localStorage.getItem('pw_showcase')||'[]');}catch(e){}
@@ -282,7 +295,11 @@ function _loadCompanion(){
     var buff=document.getElementById('cs-companion-buff');
     if(icon)icon.textContent=comp.icon||'🐾';
     if(name)name.textContent=comp.name||'Unknown';
-    if(buff)buff.textContent=comp.buff||'Passive bonus active';
+    var _buffText='';
+    if(comp.ability)_buffText=comp.ability;
+    if(comp.temperament)_buffText+=(_buffText?' · ':'')+comp.tempIcon+' '+comp.temperament;
+    if(!_buffText)_buffText='Passive companion';
+    if(buff)buff.innerHTML=_buffText;
   }catch(e){}
 }
 function equipCompanion(){
@@ -299,7 +316,13 @@ function equipCompanion(){
     var c=tb.companions[cIdx];
     if(c.name==='None'||seen[cIdx])continue;
     seen[cIdx]=true;
-    found.push({idx:cIdx,name:c.name,icon:c.icon||'🐾',buff:c.buff||c.temperament||'Passive bonus',hash:gh[i].hash});
+    var _compAbility='',_compTemp='',_compTempIcon='';
+    if(window.getCompanionInfo){
+      var _ci=getCompanionInfo(t);
+      if(_ci&&_ci.ability){_compAbility=_ci.ability.name+': '+_ci.ability.desc;}
+      if(_ci&&_ci.temperament){_compTemp=_ci.temperament.name+' — '+_ci.temperament.desc;_compTempIcon=_ci.temperament.icon||'';}
+    }
+    found.push({idx:cIdx,name:c.name,icon:c.icon||'🐾',ability:_compAbility,temperament:_compTemp,tempIcon:_compTempIcon,hash:gh[i].hash});
   }
   if(!found.length){if(window._toast)window._toast('Bloom a plant with a companion creature first!');return;}
   // Build picker
@@ -315,8 +338,11 @@ function equipCompanion(){
     var active=f.idx===curIdx;
     h+='<div onclick="PW_UI._pickCompanion('+j+')" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;padding:0.5rem;margin-bottom:4px;background:rgba(18,22,16,'+(active?'0.8':'0.5')+');border:1.5px solid '+(active?'rgba(200,168,75,0.4)':'rgba(122,179,86,0.12)')+';border-radius:8px;min-height:48px;">';
     h+='<div style="font-size:1.2rem;width:32px;text-align:center;">'+f.icon+'</div>';
-    h+='<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--cream);">'+f.name+(active?' <span style="color:var(--gold);">★ EQUIPPED</span>':'')+'</div>';
-    h+='<div style="font-size:0.38rem;color:var(--muted);">'+f.buff+'</div></div></div>';
+    h+='<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--cream);">'+f.name+(active?' <span style="color:var(--gold);">★ ACTIVE</span>':'')+'</div>';
+    if(f.ability)h+='<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--sage);margin-top:2px;">'+f.ability+'</div>';
+    if(f.temperament)h+='<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);margin-top:1px;">'+f.tempIcon+' '+f.temperament+'</div>';
+    if(!f.ability&&!f.temperament)h+='<div style="font-size:0.35rem;color:var(--muted);">Passive companion</div>';
+    h+='</div></div>';
   }
   h+='</div>';
   h+='<button onclick="var pk=document.getElementById(\'cs-comp-picker\');if(pk)pk.remove();" style="margin-top:0.8rem;padding:0.5rem 1.5rem;border:1.5px solid rgba(138,145,120,0.25);border-radius:8px;background:transparent;color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.55rem;cursor:pointer;min-height:48px;">CLOSE</button>';
@@ -327,7 +353,7 @@ function equipCompanion(){
 }
 function _pickCompanion(idx){
   var f=window._csCompFound?window._csCompFound[idx]:null;if(!f)return;
-  localStorage.setItem('pw_active_companion',JSON.stringify({idx:f.idx,name:f.name,icon:f.icon,buff:f.buff}));
+  localStorage.setItem('pw_active_companion',JSON.stringify({idx:f.idx,name:f.name,icon:f.icon,ability:f.ability,temperament:f.temperament,tempIcon:f.tempIcon}));
   _loadCompanion();
   var pk=document.getElementById('cs-comp-picker');if(pk)pk.remove();
   if(window._toast)window._toast(f.name+' equipped!');

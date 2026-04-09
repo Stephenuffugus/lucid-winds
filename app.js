@@ -17379,7 +17379,11 @@
     { key: 'COMPANION',   get: function(t) {
         var c = TRAIT_BANK.companions[t.companion];
         if (!c || c.name === 'None') return null;
-        return { name: c.name, rare: !!c.rare };
+        var _cInfo = window.getCompanionInfo ? window.getCompanionInfo(t) : null;
+        var _desc = c.name;
+        if (_cInfo && _cInfo.ability) _desc += ' — ' + _cInfo.ability.name;
+        if (_cInfo && _cInfo.temperament) _desc += ' (' + _cInfo.temperament.name + ')';
+        return { name: _desc, rare: !!c.rare };
     }},
     { key: 'MUTATION',    get: function(t) {
         if (t.mutationName === 'None') return null;
