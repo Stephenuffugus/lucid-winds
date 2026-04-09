@@ -30825,10 +30825,10 @@ document.addEventListener('keydown', function(e) {
 
     var _initDataClean = _runValidatedLoad(); // Phase 30.5: validate before first render
     if (_initDataClean) {
-      renderRecords();
-      renderGreenhouse();
-      updateDashboard();
-      newGame();
+      try { renderRecords(); } catch(e2) { console.warn('[Init] renderRecords:', e2.message); }
+      try { renderGreenhouse(); } catch(e2) { console.warn('[Init] renderGreenhouse:', e2.message); }
+      try { updateDashboard(); } catch(e2) { console.warn('[Init] updateDashboard:', e2.message); }
+      try { newGame(); } catch(e2) { console.warn('[Init] newGame:', e2.message); }
       // PLANT SEAL: async verification pass — quarantines injected fakes
       _verifyGreenhouse().catch(function(e) { console.warn('[PlantSeal] Verification error:', e); });
     } else {
