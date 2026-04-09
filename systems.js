@@ -1946,7 +1946,7 @@ function start(grade, callback) {
   if(grade==='Legendary'||grade==='Mythic'||grade==='Cosmic')diff=2;
 
   // Pick random challenge type
-  var types=['set','memory','spot','color','math','word','chess','sliding'];
+  var types=['set','chess'];
   _type=types[Math.floor(Math.random()*types.length)];
 
   _setupChallenge(diff, grade);
@@ -1959,7 +1959,7 @@ function startSpecific(type, grade, callback) {
   var diff=0;
   if(grade==='Rare'||grade==='Epic')diff=1;
   if(grade==='Legendary'||grade==='Mythic'||grade==='Cosmic')diff=2;
-  var validTypes=['set','memory','spot','color','math','word','chess','sliding'];
+  var validTypes=['set','chess'];
   _type=(validTypes.indexOf(type)>=0)?type:'set';
   _setupChallenge(diff, grade);
 }

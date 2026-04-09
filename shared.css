@@ -3479,7 +3479,7 @@
 
   .hex-insp {
     display: none; position: fixed; bottom: 0; left: 0; right: 0;
-    z-index: 99998; max-height: 65vh; overflow-y: auto;
+    z-index: 99998; max-height: 82vh; overflow-y: auto;
     background: linear-gradient(180deg, rgba(13,16,12,0.97), rgba(8,10,6,0.99));
     border-top: 1.5px solid rgba(122,179,86,0.15);
     border-radius: 16px 16px 0 0;
@@ -3502,7 +3502,7 @@
   }
   .hi-zone-name {
     flex: 1; font-family: 'Bebas Neue', sans-serif;
-    font-size: 0.7rem; color: var(--gold); letter-spacing: 0.1em;
+    font-size: 0.9rem; color: var(--gold); letter-spacing: 0.1em;
   }
   .hi-zone-dist {
     font-family: 'DM Mono', monospace; font-size: 0.38rem;
@@ -3537,38 +3537,36 @@
     padding: 0.3rem 0.75rem 0.15rem;
   }
 
-  /* Horizontal plant card scroll */
+  /* Vertical plant list */
   .hi-plants {
-    display: flex; gap: 10px; padding: 0.2rem 0.75rem 0.3rem;
-    overflow-x: auto; -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x mandatory;
+    display: flex; flex-direction: column; gap: 6px;
+    padding: 0.2rem 0.75rem 0.3rem;
+    max-height: 40vh; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
-  .hi-plant-card {
-    flex-shrink: 0; width: 96px; scroll-snap-align: start;
+  .hi-plant-row {
+    display: flex; align-items: center; gap: 12px;
     background: rgba(26,36,22,0.4); border: 1.5px solid rgba(74,124,53,0.12);
-    border-radius: 10px; padding: 6px; cursor: pointer;
-    text-align: center; transition: border-color 0.2s, background 0.2s;
+    border-radius: 12px; padding: 12px; cursor: pointer;
+    transition: border-color 0.2s, background 0.2s; min-height: 68px;
   }
-  .hi-plant-card.selected {
+  .hi-plant-row.selected {
     border-color: rgba(200,168,75,0.5);
     background: rgba(200,168,75,0.06);
   }
-  .hi-plant-card .hi-pc-svg {
-    width: 72px; height: 72px; margin: 0 auto 4px;
+  .hi-plant-row .hi-pr-svg {
+    width: 48px; height: 48px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
   }
-  .hi-plant-card .hi-pc-name {
-    font-family: 'DM Mono', monospace; font-size: 0.32rem;
+  .hi-plant-row .hi-pr-info { flex: 1; min-width: 0; }
+  .hi-plant-row .hi-pr-name {
+    font-family: 'Playfair Display', serif; font-size: 0.55rem;
     color: var(--cream); white-space: nowrap; overflow: hidden;
     text-overflow: ellipsis;
   }
-  .hi-plant-card .hi-pc-grade {
-    font-family: 'Bebas Neue', sans-serif; font-size: 0.35rem;
-    letter-spacing: 0.08em; margin-top: 2px;
-  }
-  .hi-plant-card .hi-pc-origin {
-    font-family: 'DM Mono', monospace; font-size: 0.28rem;
-    color: var(--muted); margin-top: 2px;
+  .hi-plant-row .hi-pr-meta {
+    font-family: 'DM Mono', monospace; font-size: 0.38rem;
+    color: var(--muted); margin-top: 3px;
   }
 
   /* Selected plant detail panel */
@@ -3593,12 +3591,12 @@
     display: flex; gap: 6px; flex-wrap: wrap;
   }
   .hi-action-btn {
-    flex: 1; min-width: 70px; min-height: 44px;
-    padding: 0.3rem 0.4rem; border-radius: 8px;
+    flex: 1; min-width: 80px; min-height: 52px;
+    padding: 0.4rem 0.5rem; border-radius: 10px;
     border: 1.5px solid rgba(122,179,86,0.2);
     background: rgba(26,36,22,0.4);
     color: var(--sage); font-family: 'Bebas Neue', sans-serif;
-    font-size: 0.45rem; letter-spacing: 0.08em;
+    font-size: 0.55rem; letter-spacing: 0.08em;
     cursor: pointer; text-align: center;
     transition: background 0.15s, border-color 0.15s;
   }
