@@ -8,7 +8,7 @@ window.FG_Wild=(function(){
 function _e(v){if(window._e)window._e(v);}
 function _play(id){if(window._play)window._play(id);}
 var TILES='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-var MAX_DROPS=3,MAX_POUCH=3,COLLECT_RANGE=75,ZONE_SIZE=0.001;
+var MAX_DROPS=3,MAX_POUCH=5,COLLECT_RANGE=75,ZONE_SIZE=0.001;
 // Dynamic collect range — Wanderer temperament adds 50m
 function _getCollectRange(){
   var range=COLLECT_RANGE;
@@ -685,8 +685,8 @@ function _loadAll(){
 // 18-36 hour cooldown per zone per player before next feral.
 // NO feral markers on the map — the zone hex IS the indicator.
 var FERAL_ZONE_CAP = 2;
-var FERAL_SPAWN_MIN_MS = 18 * 3600000; // 18 hours
-var FERAL_SPAWN_MAX_MS = 36 * 3600000; // 36 hours
+var FERAL_SPAWN_MIN_MS = 18 * 3600000; // legacy — now using daily reset
+var FERAL_SPAWN_MAX_MS = 36 * 3600000; // legacy — now using daily reset
 var _feralRespawnTimer = null;
 var _feralZoneHexes = []; // Leaflet layers for tappable feral zones
 
@@ -725,12 +725,21 @@ function _adjustOffspringRarity(hash, gradeA, gradeB) {
   return chars.join('');
 }
 
-// Deterministic spawn interval per zone (18-36h) seeded from zone key
+// Seed search: 1 per hex per day, resets at midnight UTC
+// Returns true if seed is available in this zone today
 function _zoneSpawnInterval(zk) {
-  var h = 0;
-  for (var i = 0; i < zk.length; i++) h = ((h << 5) - h + zk.charCodeAt(i)) | 0;
-  var ratio = Math.abs(h % 1000) / 1000; // 0.0 - 1.0
-  return FERAL_SPAWN_MIN_MS + ratio * (FERAL_SPAWN_MAX_MS - FERAL_SPAWN_MIN_MS);
+  // Legacy compat — returns a large number so old checks still work
+  return 86400000; // 24h
+}
+function _isSeedAvailable(zk) {
+  var zoneTimers = {};
+  try { zoneTimers = JSON.parse(localStorage.getItem('fg_feral_zones') || '{}'); } catch (e) {}
+  var lastCollect = zoneTimers[zk] || 0;
+  if (lastCollect === 0) return true;
+  // Check if last collection was before today midnight UTC
+  var lastDate = new Date(lastCollect).toISOString().split('T')[0];
+  var today = new Date().toISOString().split('T')[0];
+  return lastDate !== today;
 }
 
 // Build unified zone map from local wild + shared markers
@@ -841,18 +850,16 @@ function _collectFeralFromZone(zk, zonePlants) {
     return;
   }
 
-  // Check zone cooldown
-  var zoneTimers = {}; try { zoneTimers = JSON.parse(localStorage.getItem('fg_feral_zones') || '{}'); } catch (e) {}
-  var now = Date.now();
-  var lastCollect = zoneTimers[zk] || 0;
-  var interval = _zoneSpawnInterval(zk);
-  if (now - lastCollect < interval) {
-    var hrs = Math.ceil((interval - (now - lastCollect)) / 3600000);
-    _toast('This zone was recently collected. Try again in ~' + hrs + 'h.');
+  // Check zone cooldown — 1 seed per hex per day
+  if (!_isSeedAvailable(zk)) {
+    _toast('Already searched this hex today. Resets at midnight.');
     return;
   }
 
-  // Roll hash from zone plants
+  // ── WILD SEED ROLL — environment-influenced, random parents ──
+  // Key difference from greenhouse breeding:
+  //   Wild: random parents, biome mutations (12%), soil rarity boost, biodiversity bonus
+  //   Greenhouse: player-chosen parents, no environment, predictable forecast
   if (!zonePlants || zonePlants.length === 0) { _toast('No plants in this zone.'); return; }
   var parentA = zonePlants[Math.floor(Math.random() * zonePlants.length)];
   var parentB = zonePlants.length > 1 ? zonePlants[Math.floor(Math.random() * zonePlants.length)] : parentA;
@@ -862,10 +869,25 @@ function _collectFeralFromZone(zk, zonePlants) {
   }
   var feralHash = _breedHash(parentA.hash, parentB.hash);
 
-  // Biome-specific mutation chance
+  // ── ENVIRONMENT MODIFIERS (wild-only advantage) ──
+
+  // Soil maturity boosts base rarity
+  if (window.getSoilInfo) {
+    var parts2 = zk.split(',');
+    var _soilInfo = getSoilInfo(parseFloat(parts2[0]), parseFloat(parts2[1]));
+    if (_soilInfo && _soilInfo.maturity >= 40) {
+      // Mature soil nudges offspring rarity up
+      var _sArr = feralHash.split('');
+      var _sBoost = Math.floor(_soilInfo.maturity / 30); // 1-3 boost levels
+      _sArr[0] = Math.min(15, parseInt(_sArr[0], 16) + _sBoost).toString(16);
+      feralHash = _sArr.join('');
+    }
+  }
+
+  // Biome-specific mutation chance (12% in wild vs 0% in greenhouse)
   if (window._lastDetectedBiome && window.getBiomeInfo) {
     var _fBiome = getBiomeInfo(window._lastDetectedBiome);
-    if (_fBiome.mutation && Math.random() < 0.08) { // 8% chance of biome mutation
+    if (_fBiome.mutation && Math.random() < 0.12) { // 12% chance of biome mutation
       // Inject mutation marker into hash byte 32-33
       var _fhArr = feralHash.split('');
       _fhArr[32] = 'f'; _fhArr[33] = '0'; // triggers mutation in hashToTraits
@@ -3312,10 +3334,8 @@ function _drawZoneHexes() {
     var plantCount = zone.count;
     if (plantCount < 1) continue;
 
-    // Check if seed is available in this zone
-    var lastCollect = zoneTimers[zone.key] || 0;
-    var interval = _zoneSpawnInterval(zone.key);
-    var seedAvailable = (now - lastCollect >= interval) && plantCount >= 1;
+    // Check if seed is available in this zone (1 per hex per day)
+    var seedAvailable = _isSeedAvailable(zone.key) && plantCount >= 1;
 
     // Determine hex class based on activity
     var inRange = zone.dist <= _getCollectRange();
@@ -3403,13 +3423,7 @@ function _showLockedPreview(zk, dist, count, seedAvail) {
       seedEl.textContent = 'Seed ready to find';
       seedEl.style.color = 'var(--sage)';
     } else {
-      var zoneTimers = {};
-      try { zoneTimers = JSON.parse(localStorage.getItem('fg_feral_zones') || '{}'); } catch (e) {}
-      var last = zoneTimers[zk] || 0;
-      var interval = _zoneSpawnInterval(zk);
-      var remaining = Math.max(0, interval - (Date.now() - last));
-      var hrs = Math.ceil(remaining / 3600000);
-      seedEl.textContent = hrs > 0 ? 'Seed in ~' + hrs + 'h' : '';
+      seedEl.textContent = 'Searched today';
       seedEl.style.color = 'var(--muted)';
     }
   }
@@ -3690,12 +3704,7 @@ function _renderSeedSearch(zk, plants) {
   var timerEl = document.getElementById('hi-search-timer');
   if (!btn) return;
 
-  var zoneTimers = {};
-  try { zoneTimers = JSON.parse(localStorage.getItem('fg_feral_zones') || '{}'); } catch (e) {}
-  var now = Date.now();
-  var lastCollect = zoneTimers[zk] || 0;
-  var interval = _zoneSpawnInterval(zk);
-  var available = (now - lastCollect >= interval);
+  var available = _isSeedAvailable(zk) && plants.length >= 1;
 
   if (plants.length < 1) {
     btn.disabled = true;
@@ -3707,12 +3716,9 @@ function _renderSeedSearch(zk, plants) {
     if (timerEl) timerEl.style.display = 'none';
   } else {
     btn.disabled = true;
-    var remaining = Math.max(0, interval - (now - lastCollect));
-    var hrs = Math.floor(remaining / 3600000);
-    var mins = Math.ceil((remaining % 3600000) / 60000);
-    btn.innerHTML = '<span class="hi-search-icon">&#127793;</span> SEARCHED RECENTLY';
+    btn.innerHTML = '<span class="hi-search-icon">&#127793;</span> SEARCHED TODAY';
     if (timerEl) {
-      timerEl.textContent = 'Available in ' + (hrs > 0 ? hrs + 'h ' : '') + mins + 'm';
+      timerEl.textContent = 'Resets at midnight';
       timerEl.style.display = 'block';
     }
   }
