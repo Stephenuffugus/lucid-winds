@@ -19783,7 +19783,7 @@
     // In-game compost confirmation modal
     var modal = document.createElement('div');
     modal.id = 'compost-confirm-modal';
-    modal.style.cssText = 'position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88) url(assets/compost-confirm.png) top center/110% auto no-repeat;backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88) url(assets/compost-confirm.png) top center/110% auto no-repeat;backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
     var h = '<div style="text-align:center;max-width:320px;background:rgba(18,22,16,0.95);border:1.5px solid rgba(200,168,75,0.25);border-radius:14px;padding:1.2rem 1rem;box-shadow:0 12px 40px rgba(0,0,0,0.6);">';
     h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);letter-spacing:0.15em;margin-bottom:0.4rem;">RETURN TO EARTH</div>';
     h += '<div style="margin:0 auto 0.3rem;opacity:0.7;">'+svg+'</div>';
@@ -19818,7 +19818,7 @@
     var danger = opts.danger || false;
     var m = document.createElement('div');
     m.id = 'lw-confirm-modal';
-    m.style.cssText = 'position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
+    m.style.cssText = 'position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
     var h = '<div style="text-align:center;max-width:320px;background:rgba(18,22,16,0.95);border:1.5px solid rgba(200,168,75,0.25);border-radius:14px;padding:1.2rem 1rem;box-shadow:0 12px 40px rgba(0,0,0,0.6);">';
     h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);letter-spacing:0.15em;margin-bottom:0.3rem;">' + title + '</div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--cream);line-height:1.6;margin-bottom:0.6rem;">' + body + '</div>';
