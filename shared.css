@@ -3467,16 +3467,8 @@
   #vault-hydration-overlay.no-session { display: none; }
 
   /* ═══ HEX ZONE GLOW — Leaflet polygon overrides ═══ */
-  .zone-hex-dim path { fill-opacity: 0.06 !important; stroke-opacity: 0.3 !important; }
-  .zone-hex-mod path { fill-opacity: 0.1 !important; stroke-opacity: 0.5 !important; }
-  .zone-hex-hot path { fill-opacity: 0.14 !important; stroke-opacity: 0.65 !important; animation: hexPulse 3s ease-in-out infinite; }
-  .zone-hex-seed path { stroke: rgba(122,179,86,0.6) !important; stroke-dasharray: 6,3 !important; }
-  .zone-hex-locked path { fill-opacity: 0.04 !important; stroke-opacity: 0.2 !important; }
-  .perf-lite .zone-hex-hot path { animation: none; }
-  @keyframes hexPulse {
-    0%,100% { fill-opacity: 0.10; stroke-opacity: 0.5; }
-    50% { fill-opacity: 0.20; stroke-opacity: 0.8; }
-  }
+  /* Zone hex — flat static fills, zero animation, zero GPU churn */
+  .zone-hex-dim path,.zone-hex-mod path,.zone-hex-hot path,.zone-hex-seed path,.zone-hex-locked path{animation:none!important;}
 
   /* ═══ HEX INSPECTOR PANEL ═══ */
   #hex-insp-scrim {

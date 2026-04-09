@@ -616,8 +616,8 @@ function _initCompass(){
 var _lantern=null,_scanRing=null;
 function _placeUser(){
   if(!_map||!_uLat)return;
-  // Player marker with lantern glow
-  _uM=L.marker([_uLat,_uLng],{icon:L.divIcon({className:'',html:'<div style="width:20px;height:20px;position:relative;"><div style="width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(200,168,75,0.08) 0%,rgba(122,179,86,0.04) 30%,transparent 70%);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;"></div><div style="width:50px;height:50px;border-radius:50%;background:radial-gradient(circle,rgba(200,168,75,0.06),transparent 70%);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div><div style="width:14px;height:14px;background:linear-gradient(135deg,#5a9ed9,#3878b8);border-radius:50%;border:2.5px solid rgba(74,144,217,0.25);box-shadow:0 0 12px rgba(74,144,217,0.5),0 0 24px rgba(200,168,75,0.15);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div></div>',iconSize:[20,20],iconAnchor:[10,10]}),zIndexOffset:1000}).addTo(_map);
+  // Player marker — direction arrow (will become chosen avatar later)
+  _uM=L.marker([_uLat,_uLng],{icon:L.divIcon({className:'',html:'<div id="lw-player-arrow" style="width:28px;height:28px;position:relative;"><svg viewBox="0 0 28 28" width="28" height="28" xmlns="http://www.w3.org/2000/svg"><defs><filter id="pag"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="rgba(74,144,217,0.6)"/></filter></defs><polygon points="14,2 24,22 14,17 4,22" fill="rgba(74,144,217,0.9)" stroke="rgba(200,220,255,0.4)" stroke-width="1" filter="url(#pag)"/></svg></div>',iconSize:[28,28],iconAnchor:[14,14]}),zIndexOffset:1000}).addTo(_map);
   // Scanner range ring (75m collection radius)
   _scanRing=L.circle([_uLat,_uLng],{radius:COLLECT_RANGE,className:'scanner-ring',fill:true,stroke:true,weight:2}).addTo(_map);
 }
@@ -3583,41 +3583,29 @@ function _renderHexPlants(plants) {
   for (var j = 0; j < augmented.length; j++) {
     var ap = augmented[j];
     var card = document.createElement('div');
-    card.className = 'hi-plant-card';
+    card.className = 'hi-plant-row';
     card.setAttribute('data-idx', j);
 
-    // Plant SVG thumbnail — only show for YOUR plants. Others get a mystery silhouette.
+    // Plant SVG — only show for YOUR plants
     var svgHtml = '';
     if (ap.own && window._generatePlantSVG) {
-      try { svgHtml = window._generatePlantSVG(ap.hash, 64, 1); } catch (e) { svgHtml = ''; }
+      try { svgHtml = window._generatePlantSVG(ap.hash, 40, 1); } catch (e) { svgHtml = ''; }
     }
     if (!svgHtml || !ap.own) {
-      svgHtml = '<svg viewBox="0 0 64 80" width="64" height="80" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="60" width="28" height="18" rx="4" fill="rgba(90,112,80,0.2)"/><line x1="32" y1="60" x2="32" y2="24" stroke="rgba(90,112,80,0.25)" stroke-width="4" stroke-linecap="round"/><ellipse cx="20" cy="32" rx="14" ry="10" fill="rgba(90,112,80,0.15)" transform="rotate(-20 20 32)"/><ellipse cx="44" cy="28" rx="14" ry="10" fill="rgba(90,112,80,0.12)" transform="rotate(15 44 28)"/><text x="32" y="50" text-anchor="middle" font-size="16" fill="rgba(200,168,75,0.4)">?</text></svg>';
+      svgHtml = '<svg viewBox="0 0 40 50" width="40" height="50" xmlns="http://www.w3.org/2000/svg"><rect x="11" y="38" width="18" height="12" rx="3" fill="rgba(90,112,80,0.2)"/><line x1="20" y1="38" x2="20" y2="15" stroke="rgba(90,112,80,0.25)" stroke-width="3" stroke-linecap="round"/><ellipse cx="12" cy="20" rx="9" ry="6" fill="rgba(90,112,80,0.15)" transform="rotate(-20 12 20)"/><ellipse cx="28" cy="17" rx="9" ry="6" fill="rgba(90,112,80,0.12)" transform="rotate(15 28 17)"/><text x="20" y="32" text-anchor="middle" font-size="12" fill="rgba(200,168,75,0.4)">?</text></svg>';
     }
 
-    // Name + grade
-    var name = '???';
-    var grade = '?';
-    var gradeColor = 'var(--muted)';
-    if (ap.own && window.getPlantName) {
-      try { name = getPlantName(ap.hash); } catch (e) {}
+    var name = ap.own && window.getPlantName ? getPlantName(ap.hash) : '???';
+    var grade = '?', gradeColor = 'var(--muted)';
+    if (ap.own && window.hashToTraits && window.getTerraGrade) {
+      try { var tr = hashToTraits(ap.hash); var tg = getTerraGrade(tr); grade = tg.label || tg.name || '?'; gradeColor = tg.color || 'var(--muted)'; } catch (e) {}
     }
-    if (window.hashToTraits && window.getTerraGrade) {
-      try {
-        var tr = hashToTraits(ap.hash);
-        var tg = getTerraGrade(tr);
-        if (ap.own) { grade = tg.label || tg.name || '?'; gradeColor = tg.color || 'var(--muted)'; }
-      } catch (e) {}
-    }
-
-    // Origin
     var origin = ap.own ? 'Planted' : (ap.wildBorn ? 'Wild Born' : ap.ownerName);
 
     card.innerHTML =
-      '<div class="hi-pc-svg">' + svgHtml + '</div>' +
-      '<div class="hi-pc-name">' + (ap.own ? name : '???') + '</div>' +
-      '<div class="hi-pc-grade" style="color:' + gradeColor + ';">' + grade + '</div>' +
-      '<div class="hi-pc-origin">' + origin + '</div>';
+      '<div class="hi-pr-svg">' + svgHtml + '</div>' +
+      '<div class="hi-pr-info"><div class="hi-pr-name">' + name + '</div>' +
+      '<div class="hi-pr-meta" style="color:' + gradeColor + ';">' + grade + ' · ' + origin + '</div></div>';
 
     // Tap to select
     (function(idx, plantData) {
@@ -3638,9 +3626,9 @@ function _selectHexPlant(idx, plantData) {
   _hexSelPlant = plantData;
 
   // Highlight selected card
-  var cards = document.querySelectorAll('.hi-plant-card');
+  var cards = document.querySelectorAll('.hi-plant-row');
   for (var c = 0; c < cards.length; c++) cards[c].classList.remove('selected');
-  var sel = document.querySelector('.hi-plant-card[data-idx="' + idx + '"]');
+  var sel = document.querySelector('.hi-plant-row[data-idx="' + idx + '"]');
   if (sel) sel.classList.add('selected');
 
   // Build detail panel

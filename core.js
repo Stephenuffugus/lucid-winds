@@ -94,7 +94,7 @@ window.onerror=function(msg,url,line,col,err){
     window._perfLite = dominated;
 
 // ── VERSION CHECK — force reload on deploy ──
-var LW_VERSION='2026.04.01.29';
+var LW_VERSION='2026.04.09.1';
 (function(){
   var stored=localStorage.getItem('lw_version');
   if(stored&&stored!==LW_VERSION){
