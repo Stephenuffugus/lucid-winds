@@ -1857,6 +1857,10 @@ function _shieldBadge(p){
 
 function _addPlant(p){
   if(!_map)return;
+  // ── HEX MODE: skip individual markers — only hex polygons render on map ──
+  // Plant data is still stored in _getWild()/_sharedMarkers for hex inspector.
+  // This eliminates ALL marker SVG rendering on load = massive perf win.
+  return null;
   var sz=p.own?40:26,svg='';
   if(p.own){
     if(window._generatePlantSVG&&p.hash){try{svg=window._generatePlantSVG(p.hash,sz);}catch(e){}}
@@ -3127,6 +3131,9 @@ function _unsubscribeSharedDrops(){
 // Add a single shared drop marker to the map (returns the Leaflet marker)
 function _addSharedMarker(p){
   if(!_map)return null;
+  // ── HEX MODE: skip individual markers — hex inspector handles display ──
+  // Still store data in _sharedMarkers so hex inspector can read it.
+  return null;
   var sz=p.own?40:26,svg='';
   if(p.own){
     // Own plants: show the actual procedural SVG
@@ -3579,10 +3586,13 @@ function _renderHexPlants(plants) {
     card.className = 'hi-plant-card';
     card.setAttribute('data-idx', j);
 
-    // Plant SVG thumbnail (lazy — only when inspector opens)
+    // Plant SVG thumbnail — only show for YOUR plants. Others get a mystery silhouette.
     var svgHtml = '';
-    if (window._generatePlantSVG) {
+    if (ap.own && window._generatePlantSVG) {
       try { svgHtml = window._generatePlantSVG(ap.hash, 64, 1); } catch (e) { svgHtml = ''; }
+    }
+    if (!svgHtml || !ap.own) {
+      svgHtml = '<svg viewBox="0 0 64 80" width="64" height="80" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="60" width="28" height="18" rx="4" fill="rgba(90,112,80,0.2)"/><line x1="32" y1="60" x2="32" y2="24" stroke="rgba(90,112,80,0.25)" stroke-width="4" stroke-linecap="round"/><ellipse cx="20" cy="32" rx="14" ry="10" fill="rgba(90,112,80,0.15)" transform="rotate(-20 20 32)"/><ellipse cx="44" cy="28" rx="14" ry="10" fill="rgba(90,112,80,0.12)" transform="rotate(15 44 28)"/><text x="32" y="50" text-anchor="middle" font-size="16" fill="rgba(200,168,75,0.4)">?</text></svg>';
     }
 
     // Name + grade
@@ -3647,7 +3657,7 @@ function _selectHexPlant(idx, plantData) {
   if (window.hashToTraits) {
     try { traits = hashToTraits(p.hash); } catch (e) {}
   }
-  if (traits && window.getTerraGrade) {
+  if (traits && window.getTerraGrade && p.own) {
     try { tg = getTerraGrade(traits); grade = tg.label || tg.name || '?'; gradeColor = tg.color || 'var(--muted)'; } catch (e) {}
   }
   if (p.own && window.getPlantName) {
