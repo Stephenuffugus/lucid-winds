@@ -42107,10 +42107,12 @@ var _dailyLoginChecked = false;
 window._checkDailyLogin = function() {
   if (_dailyLoginChecked) return;
   _dailyLoginChecked = true;
-  // Extra guard: check localStorage before even calling show
   var _dlToday = new Date().toISOString().split('T')[0];
   if (localStorage.getItem('lw_daily_claimed') === _dlToday) return;
-  if (document.getElementById('daily-reward-modal')) return; // already showing
+  if (document.getElementById('daily-reward-modal')) return;
+  // Claim IMMEDIATELY to prevent any race condition on reload
+  localStorage.setItem('lw_daily_claimed', _dlToday);
+  window._dailyClaimedThisSession = true;
   setTimeout(_showDailyReward, 1200);
 };
 })();
