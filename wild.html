@@ -225,6 +225,44 @@
     <div class="cs-section"><div class="cs-section-title">FRIENDS <span id="cs-friend-count" style="color:var(--muted);">(0)</span></div><div id="cs-pending-list"></div><div id="cs-friends-list" style="font-size:0.42rem;color:var(--muted);">No friends yet. Share your code!</div></div>
     <div style="display:flex;gap:0.4rem;margin-top:0.3rem;"><button onclick="PW_UI.closeCharacter()" style="flex:1;padding:0.5rem;border-radius:8px;border:2px solid rgba(74,124,53,0.15);background:rgba(26,36,22,0.3);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;cursor:pointer;min-height:48px;">CLOSE</button></div>
   </div>
+  <!-- ═══ HEX INSPECTOR — opens on zone hex tap ═══ -->
+  <div id="hex-inspector" class="hex-insp">
+    <div class="hi-handle" onclick="window._closeHexInspector()"></div>
+    <div class="hi-header">
+      <div class="hi-zone-name" id="hi-zone-name">Zone</div>
+      <div class="hi-zone-dist" id="hi-zone-dist"></div>
+      <button class="hi-close" onclick="window._closeHexInspector()">&#10005;</button>
+    </div>
+    <div class="hi-habitat" id="hi-habitat">
+      <!-- Biome, soil, mesh, chorus status injected by JS -->
+    </div>
+    <div class="hi-plants-label">PLANTS IN THIS HEX</div>
+    <div class="hi-plants" id="hi-plant-scroll">
+      <!-- Horizontal scrolling plant card thumbnails -->
+    </div>
+    <div class="hi-detail" id="hi-detail" style="display:none;">
+      <!-- Expands when a plant card is tapped — traits + actions -->
+    </div>
+    <div class="hi-search" id="hi-search">
+      <button class="hi-search-btn" id="hi-search-btn" onclick="window._hexSeedSearch()">
+        <span class="hi-search-icon">&#127793;</span> SEARCH FOR SEEDS
+      </button>
+      <div class="hi-search-timer" id="hi-search-timer" style="display:none;"></div>
+    </div>
+  </div>
+  <div id="hex-insp-scrim" onclick="window._closeHexInspector()"></div>
+
+  <!-- ═══ LOCKED HEX PREVIEW — tap hex >75m away ═══ -->
+  <div id="hex-locked" style="display:none;">
+    <div id="hex-locked-inner">
+      <div id="hl-count">? plants</div>
+      <div id="hl-soil">Bare soil</div>
+      <div id="hl-seed"></div>
+      <div id="hl-dist">— away</div>
+      <div class="hl-msg">Move closer to interact</div>
+    </div>
+  </div>
+
   <!-- ═══ ONBOARDING ═══ -->
 
   <div class="fg-bottomnav" style="display:none;"></div>

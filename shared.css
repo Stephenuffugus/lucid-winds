@@ -3465,3 +3465,224 @@
   }
   /* Shown only when user is NOT logged in — skip the wait */
   #vault-hydration-overlay.no-session { display: none; }
+
+  /* ═══ HEX ZONE GLOW — Leaflet polygon overrides ═══ */
+  .zone-hex-dim path { fill-opacity: 0.06 !important; stroke-opacity: 0.3 !important; }
+  .zone-hex-mod path { fill-opacity: 0.1 !important; stroke-opacity: 0.5 !important; }
+  .zone-hex-hot path { fill-opacity: 0.14 !important; stroke-opacity: 0.65 !important; animation: hexPulse 3s ease-in-out infinite; }
+  .zone-hex-seed path { stroke: rgba(122,179,86,0.6) !important; stroke-dasharray: 6,3 !important; }
+  .zone-hex-locked path { fill-opacity: 0.04 !important; stroke-opacity: 0.2 !important; }
+  .perf-lite .zone-hex-hot path { animation: none; }
+  @keyframes hexPulse {
+    0%,100% { fill-opacity: 0.10; stroke-opacity: 0.5; }
+    50% { fill-opacity: 0.20; stroke-opacity: 0.8; }
+  }
+
+  /* ═══ HEX INSPECTOR PANEL ═══ */
+  #hex-insp-scrim {
+    display: none; position: fixed; inset: 0; z-index: 99997;
+    background: rgba(0,0,0,0.3);
+  }
+  #hex-insp-scrim.open { display: block; }
+
+  .hex-insp {
+    display: none; position: fixed; bottom: 0; left: 0; right: 0;
+    z-index: 99998; max-height: 65vh; overflow-y: auto;
+    background: linear-gradient(180deg, rgba(13,16,12,0.97), rgba(8,10,6,0.99));
+    border-top: 1.5px solid rgba(122,179,86,0.15);
+    border-radius: 16px 16px 0 0;
+    padding: 0 0 calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    transform: translateY(100%);
+    transition: transform 0.32s cubic-bezier(0.16,1,0.3,1);
+    will-change: transform;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.6);
+  }
+  .hex-insp.open { display: block; transform: translateY(0); }
+
+  .hi-handle {
+    width: 36px; height: 4px; margin: 8px auto 4px;
+    background: rgba(122,179,86,0.25); border-radius: 2px; cursor: pointer;
+  }
+  .hi-header {
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.3rem 0.75rem 0.2rem;
+  }
+  .hi-zone-name {
+    flex: 1; font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.7rem; color: var(--gold); letter-spacing: 0.1em;
+  }
+  .hi-zone-dist {
+    font-family: 'DM Mono', monospace; font-size: 0.38rem;
+    color: var(--muted); white-space: nowrap;
+  }
+  .hi-close {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 1px solid rgba(122,179,86,0.12); background: rgba(26,36,22,0.4);
+    color: var(--muted); font-size: 0.6rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Habitat strip */
+  .hi-habitat {
+    display: flex; gap: 0.4rem; padding: 0.2rem 0.75rem;
+    overflow-x: auto; white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .hi-hab-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(26,36,22,0.5); border: 1px solid rgba(74,124,53,0.1);
+    border-radius: 6px; padding: 3px 8px;
+    font-family: 'DM Mono', monospace; font-size: 0.34rem; color: var(--muted);
+    flex-shrink: 0;
+  }
+  .hi-hab-chip b { color: var(--cream); font-weight: 500; }
+
+  /* Plant cards label */
+  .hi-plants-label {
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.42rem;
+    color: var(--muted); letter-spacing: 0.12em;
+    padding: 0.3rem 0.75rem 0.15rem;
+  }
+
+  /* Horizontal plant card scroll */
+  .hi-plants {
+    display: flex; gap: 10px; padding: 0.2rem 0.75rem 0.3rem;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+  }
+  .hi-plant-card {
+    flex-shrink: 0; width: 96px; scroll-snap-align: start;
+    background: rgba(26,36,22,0.4); border: 1.5px solid rgba(74,124,53,0.12);
+    border-radius: 10px; padding: 6px; cursor: pointer;
+    text-align: center; transition: border-color 0.2s, background 0.2s;
+  }
+  .hi-plant-card.selected {
+    border-color: rgba(200,168,75,0.5);
+    background: rgba(200,168,75,0.06);
+  }
+  .hi-plant-card .hi-pc-svg {
+    width: 72px; height: 72px; margin: 0 auto 4px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .hi-plant-card .hi-pc-name {
+    font-family: 'DM Mono', monospace; font-size: 0.32rem;
+    color: var(--cream); white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .hi-plant-card .hi-pc-grade {
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.35rem;
+    letter-spacing: 0.08em; margin-top: 2px;
+  }
+  .hi-plant-card .hi-pc-origin {
+    font-family: 'DM Mono', monospace; font-size: 0.28rem;
+    color: var(--muted); margin-top: 2px;
+  }
+
+  /* Selected plant detail panel */
+  .hi-detail {
+    padding: 0.4rem 0.75rem;
+    border-top: 1px solid rgba(74,124,53,0.08);
+    animation: panelFadeIn 0.2s ease;
+  }
+  .hi-detail-name {
+    font-family: 'Playfair Display', serif; font-size: 0.7rem;
+    color: var(--cream); margin-bottom: 0.15rem;
+  }
+  .hi-detail-grade {
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.45rem;
+    letter-spacing: 0.1em; margin-bottom: 0.3rem;
+  }
+  .hi-detail-traits {
+    font-family: 'DM Mono', monospace; font-size: 0.35rem;
+    color: var(--muted); line-height: 1.6; margin-bottom: 0.4rem;
+  }
+  .hi-actions {
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .hi-action-btn {
+    flex: 1; min-width: 70px; min-height: 44px;
+    padding: 0.3rem 0.4rem; border-radius: 8px;
+    border: 1.5px solid rgba(122,179,86,0.2);
+    background: rgba(26,36,22,0.4);
+    color: var(--sage); font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.45rem; letter-spacing: 0.08em;
+    cursor: pointer; text-align: center;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .hi-action-btn:active {
+    background: rgba(74,124,53,0.2);
+    border-color: rgba(122,179,86,0.4);
+  }
+  .hi-action-btn.danger {
+    border-color: rgba(200,80,60,0.2); color: rgba(200,120,100,0.9);
+  }
+  .hi-action-btn.gold {
+    border-color: rgba(200,168,75,0.25); color: var(--gold);
+  }
+
+  /* Seed search section */
+  .hi-search {
+    padding: 0.3rem 0.75rem 0.2rem;
+    border-top: 1px solid rgba(74,124,53,0.08);
+  }
+  .hi-search-btn {
+    width: 100%; min-height: 48px; padding: 0.4rem;
+    border-radius: 10px; cursor: pointer;
+    border: 1.5px solid rgba(122,179,86,0.3);
+    background: linear-gradient(180deg, rgba(74,124,53,0.15), rgba(26,60,22,0.25));
+    color: var(--sage); font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.6rem; letter-spacing: 0.1em;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background 0.2s;
+  }
+  .hi-search-btn:active { background: rgba(74,124,53,0.3); }
+  .hi-search-btn:disabled {
+    opacity: 0.4; cursor: default;
+    border-color: rgba(122,179,86,0.1);
+  }
+  .hi-search-icon { font-size: 0.8rem; }
+  .hi-search-timer {
+    font-family: 'DM Mono', monospace; font-size: 0.38rem;
+    color: var(--muted); text-align: center; padding-top: 4px;
+  }
+
+  /* Locked hex preview */
+  #hex-locked {
+    position: fixed; top: 40%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    z-index: 99998; pointer-events: none;
+    opacity: 0; transition: opacity 0.25s, transform 0.25s;
+  }
+  #hex-locked.show {
+    opacity: 1; pointer-events: auto;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  #hex-locked-inner {
+    background: rgba(17,22,17,0.96); border: 1px solid rgba(200,168,75,0.15);
+    border-radius: 12px; padding: 0.6rem 0.9rem;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+    text-align: center; min-width: 160px;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  #hl-count {
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.65rem;
+    color: var(--cream); letter-spacing: 0.08em;
+  }
+  #hl-soil {
+    font-family: 'DM Mono', monospace; font-size: 0.38rem;
+    color: var(--sage); margin-top: 2px;
+  }
+  #hl-seed {
+    font-family: 'DM Mono', monospace; font-size: 0.35rem;
+    color: var(--gold); margin-top: 4px;
+  }
+  #hl-dist {
+    font-family: 'DM Mono', monospace; font-size: 0.35rem;
+    color: var(--muted); margin-top: 4px;
+  }
+  .hl-msg {
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.42rem;
+    color: var(--muted); letter-spacing: 0.08em; margin-top: 6px;
+    opacity: 0.7;
+  }

@@ -661,7 +661,7 @@ function _loadAll(){
   if(!_map||!_uLat)return;
   var saved=_pruneWild();
   for(var i=0;i<saved.length;i++){var w=saved[i];if(!w||!w.hash)continue;var d=w.date?Math.floor((Date.now()-new Date(w.date).getTime())/86400000):0;_addPlant({lat:w.lat,lng:w.lng,hash:w.hash,own:w.own!==false,days:d,pollen:d*3,status:d>7?'Thriving':d>2?'Growing':'Young',ownerUid:w.ownerUid||'',ownerName:w.ownerName||'Keeper',defenderGame:w.defenderGame||'set'});}
-  _spawnFerals();_updateCounts();_drawTerritory();
+  _drawZoneHexes();_updateCounts();
   _subscribeSharedDrops();
   // Empty-state: if no local wild plants, show drop hint after brief delay
   if(saved.length===0&&!localStorage.getItem('lw_first_drop')){
@@ -939,7 +939,7 @@ function _awardFeral(hash, parentA, parentB, zk, info) {
 // Debounced re-check after shared markers arrive
 function _feralRespawnDebounced() {
   if (_feralRespawnTimer) clearTimeout(_feralRespawnTimer);
-  _feralRespawnTimer = setTimeout(function() { _feralRespawnTimer = null; _drawFeralZones(); _wildReproduction(); }, 2000);
+  _feralRespawnTimer = setTimeout(function() { _feralRespawnTimer = null; _drawZoneHexes(); _wildReproduction(); }, 2000);
 }
 
 // ═══ WILD PLANT REPRODUCTION ═══
@@ -3268,5 +3268,558 @@ window._applyDefenseChange=function(hash,gameId){
 };
 function _logTip(msg){_toast(msg);}
 
-return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather};
+// ═══ HEX INSPECTOR SYSTEM — Zone-based interaction (replaces individual markers) ═══
+var _zoneHexLayers = [];
+var _hexInspOpen = false;
+var _hexInspZone = null; // current zone key
+var _hexInspPlants = []; // plants in current zone
+var _hexSelPlant = null; // selected plant in inspector
+var _hexLockedTimer = null;
+
+// ── Unified zone hex drawing ──
+// Replaces both _drawTerritory() and _drawFeralZones() with one system
+function _drawZoneHexes() {
+  // Clear old hex layers
+  for (var i = 0; i < _zoneHexLayers.length; i++) {
+    if (_map) _map.removeLayer(_zoneHexLayers[i]);
+  }
+  _zoneHexLayers = [];
+  if (!_map || !_uLat) return;
+
+  var zones = _getAllZonePlants();
+  var zoneKeys = Object.keys(zones);
+  var half = ZONE_SIZE / 2;
+  var now = Date.now();
+  var zoneTimers = {};
+  try { zoneTimers = JSON.parse(localStorage.getItem('fg_feral_zones') || '{}'); } catch (e) {}
+
+  // Sort by distance — closest hexes first
+  var zoneArr = [];
+  for (var z = 0; z < zoneKeys.length; z++) {
+    var zk = zoneKeys[z];
+    var parts = zk.split(',');
+    var cLat = parseFloat(parts[0]);
+    var cLng = parseFloat(parts[1]);
+    var d = _dist(_uLat, _uLng, cLat, cLng);
+    zoneArr.push({ key: zk, lat: cLat, lng: cLng, dist: d, count: zones[zk].length });
+  }
+  zoneArr.sort(function(a, b) { return a.dist - b.dist; });
+
+  // Cap at 50 hexes for performance
+  var cap = Math.min(zoneArr.length, 50);
+  for (var h = 0; h < cap; h++) {
+    var zone = zoneArr[h];
+    var plantCount = zone.count;
+    if (plantCount < 1) continue;
+
+    // Check if seed is available in this zone
+    var lastCollect = zoneTimers[zone.key] || 0;
+    var interval = _zoneSpawnInterval(zone.key);
+    var seedAvailable = (now - lastCollect >= interval) && plantCount >= 1;
+
+    // Determine hex class based on activity
+    var inRange = zone.dist <= _getCollectRange();
+    var hexClass = 'zone-hex-dim';
+    if (!inRange) {
+      hexClass = 'zone-hex-locked';
+    } else if (plantCount >= 4) {
+      hexClass = 'zone-hex-hot';
+    } else if (plantCount >= 2) {
+      hexClass = 'zone-hex-mod';
+    }
+    if (seedAvailable && inRange) hexClass += ' zone-hex-seed';
+
+    // Determine color — own plants sage, shared plants gold
+    var wild = _getWild();
+    var hasOwn = false;
+    for (var ow = 0; ow < wild.length; ow++) {
+      if (wild[ow] && _zoneKey(wild[ow].lat, wild[ow].lng) === zone.key) { hasOwn = true; break; }
+    }
+    var baseColor = hasOwn ? 'rgba(122,179,86,' : 'rgba(200,168,75,';
+    var strokeAlpha = inRange ? '0.5)' : '0.15)';
+    var fillAlpha = inRange ? '0.08)' : '0.03)';
+
+    // Build hex points
+    var pts = [];
+    for (var a = 0; a < 6; a++) {
+      var angle = (a * 60 - 30) * Math.PI / 180;
+      pts.push([zone.lat + half * Math.sin(angle), zone.lng + half * 1.15 * Math.cos(angle)]);
+    }
+
+    var hex = L.polygon(pts, {
+      color: baseColor + strokeAlpha,
+      weight: 1.5,
+      fillColor: baseColor + fillAlpha,
+      fillOpacity: 1,
+      interactive: true,
+      className: hexClass
+    }).addTo(_map);
+
+    // Store zone data on the hex
+    hex._zoneKey = zone.key;
+    hex._zoneDist = zone.dist;
+    hex._zonePlantCount = plantCount;
+    hex._zoneSeedAvailable = seedAvailable;
+
+    // Tap handler — inspector or locked preview
+    hex.on('click', function(e) {
+      L.DomEvent.stopPropagation(e);
+      var zk = this._zoneKey;
+      var d = this._zoneDist;
+      var dynRange = typeof _getCollectRange === 'function' ? _getCollectRange() : COLLECT_RANGE;
+      if (d <= dynRange) {
+        _openHexInspector(zk);
+      } else {
+        _showLockedPreview(zk, d, this._zonePlantCount, this._zoneSeedAvailable);
+      }
+    });
+
+    _zoneHexLayers.push(hex);
+  }
+}
+
+// ── Locked hex preview (>75m) ──
+function _showLockedPreview(zk, dist, count, seedAvail) {
+  var el = document.getElementById('hex-locked');
+  if (!el) return;
+  var countEl = document.getElementById('hl-count');
+  var soilEl = document.getElementById('hl-soil');
+  var seedEl = document.getElementById('hl-seed');
+  var distEl = document.getElementById('hl-dist');
+
+  if (countEl) countEl.textContent = count + ' plant' + (count !== 1 ? 's' : '');
+  if (distEl) distEl.textContent = Math.round(dist) + 'm away';
+
+  // Soil info
+  if (soilEl && window.getSoilInfo) {
+    var parts = zk.split(',');
+    var si = getSoilInfo(parseFloat(parts[0]), parseFloat(parts[1]));
+    soilEl.textContent = (si && si.name ? si.name : 'Bare') + ' soil';
+  }
+
+  // Seed status
+  if (seedEl) {
+    if (seedAvail) {
+      seedEl.textContent = 'Seed ready to find';
+      seedEl.style.color = 'var(--sage)';
+    } else {
+      var zoneTimers = {};
+      try { zoneTimers = JSON.parse(localStorage.getItem('fg_feral_zones') || '{}'); } catch (e) {}
+      var last = zoneTimers[zk] || 0;
+      var interval = _zoneSpawnInterval(zk);
+      var remaining = Math.max(0, interval - (Date.now() - last));
+      var hrs = Math.ceil(remaining / 3600000);
+      seedEl.textContent = hrs > 0 ? 'Seed in ~' + hrs + 'h' : '';
+      seedEl.style.color = 'var(--muted)';
+    }
+  }
+
+  el.classList.add('show');
+  clearTimeout(_hexLockedTimer);
+  _hexLockedTimer = setTimeout(function() { el.classList.remove('show'); }, 3000);
+}
+
+// ── Open hex inspector (<=75m) ──
+function _openHexInspector(zk) {
+  var zones = _getAllZonePlants();
+  var plants = zones[zk] || [];
+  if (plants.length === 0) { _toast('No plants in this zone.'); return; }
+
+  _hexInspZone = zk;
+  _hexInspPlants = plants;
+  _hexInspOpen = true;
+  _hexSelPlant = null;
+
+  var panel = document.getElementById('hex-inspector');
+  var scrim = document.getElementById('hex-insp-scrim');
+  if (!panel) return;
+
+  // Zone name — auto-generated from coordinates
+  var parts = zk.split(',');
+  var lat = parseFloat(parts[0]), lng = parseFloat(parts[1]);
+  var nameEl = document.getElementById('hi-zone-name');
+  if (nameEl) {
+    // Generate a deterministic zone name
+    var seed = 0;
+    for (var si = 0; si < zk.length; si++) seed = ((seed << 5) - seed + zk.charCodeAt(si)) | 0;
+    var prefixes = ['Mossy','Quiet','Ancient','Sunlit','Shaded','Misty','Wild','Deep','Silver','Golden'];
+    var suffixes = ['Hollow','Glen','Patch','Ring','Dell','Copse','Clearing','Thicket','Bed','Stand'];
+    nameEl.textContent = prefixes[Math.abs(seed) % prefixes.length] + ' ' + suffixes[Math.abs(seed >> 8) % suffixes.length];
+  }
+
+  // Distance
+  var distEl = document.getElementById('hi-zone-dist');
+  if (distEl) {
+    var d = _dist(_uLat, _uLng, lat, lng);
+    distEl.textContent = Math.round(d) + 'm';
+  }
+
+  // Habitat info
+  _renderHabitatInfo(zk, lat, lng);
+
+  // Plant cards
+  _renderHexPlants(plants);
+
+  // Seed search button state
+  _renderSeedSearch(zk, plants);
+
+  // Hide detail section
+  var detailEl = document.getElementById('hi-detail');
+  if (detailEl) detailEl.style.display = 'none';
+
+  // Open panel
+  panel.classList.add('open');
+  if (scrim) scrim.classList.add('open');
+}
+
+// ── Close hex inspector ──
+window._closeHexInspector = function() {
+  _hexInspOpen = false;
+  _hexInspZone = null;
+  _hexSelPlant = null;
+  var panel = document.getElementById('hex-inspector');
+  var scrim = document.getElementById('hex-insp-scrim');
+  if (panel) panel.classList.remove('open');
+  if (scrim) scrim.classList.remove('open');
+};
+
+// ── Render habitat info chips ──
+function _renderHabitatInfo(zk, lat, lng) {
+  var el = document.getElementById('hi-habitat');
+  if (!el) return;
+  var chips = '';
+
+  // Biome
+  if (window._lastDetectedBiome && window.getBiomeInfo) {
+    var bi = getBiomeInfo(window._lastDetectedBiome);
+    chips += '<div class="hi-hab-chip">' + (bi.icon || '') + ' <b>' + (bi.name || 'Unknown') + '</b></div>';
+  }
+
+  // Soil
+  if (window.getSoilInfo) {
+    var si = getSoilInfo(lat, lng);
+    if (si) chips += '<div class="hi-hab-chip">Soil: <b>' + si.name + '</b> (' + si.maturity + '%)</div>';
+  }
+
+  // Mesh
+  if (window.getMeshBonus) {
+    // Check if any plant in zone has mesh connections
+    for (var mp = 0; mp < _hexInspPlants.length; mp++) {
+      var mb = getMeshBonus(_hexInspPlants[mp].hash);
+      if (mb && mb.connections > 0) {
+        chips += '<div class="hi-hab-chip">Mesh: <b>' + mb.stageName + '</b> (' + mb.connections + ' links)</div>';
+        break;
+      }
+    }
+  }
+
+  // Bloom chorus
+  if (window.getChorusBonus) {
+    for (var cp = 0; cp < _hexInspPlants.length; cp++) {
+      var cb = getChorusBonus(_hexInspPlants[cp].hash);
+      if (cb && cb.inChorus) {
+        chips += '<div class="hi-hab-chip">Chorus: <b>+' + Math.round(cb.pollenBonus * 100) + '% pollen</b></div>';
+        break;
+      }
+    }
+  }
+
+  el.innerHTML = chips || '<div class="hi-hab-chip">No habitat data yet</div>';
+}
+
+// ── Render plant card thumbnails ──
+function _renderHexPlants(plants) {
+  var el = document.getElementById('hi-plant-scroll');
+  if (!el) return;
+  el.innerHTML = '';
+
+  // Augment plants with full data from local wild + shared
+  var wild = _getWild();
+  var augmented = [];
+  for (var i = 0; i < plants.length; i++) {
+    var p = plants[i];
+    var full = null;
+    // Check local wild
+    for (var w = 0; w < wild.length; w++) {
+      if (wild[w].hash === p.hash) { full = wild[w]; break; }
+    }
+    // Check shared markers
+    if (!full && _sharedMarkers[p.hash]) {
+      full = _sharedMarkers[p.hash].data || null;
+    }
+    augmented.push({
+      hash: p.hash, lat: p.lat, lng: p.lng,
+      own: full ? (full.own !== false) : false,
+      wildBorn: full ? !!full.wildBorn : false,
+      ownerName: full ? (full.ownerName || 'Keeper') : 'Unknown',
+      ownerUid: full ? (full.ownerUid || '') : '',
+      defenderGame: full ? (full.defenderGame || 'set') : 'set',
+      date: full ? full.date : null,
+      days: full && full.date ? Math.floor((Date.now() - new Date(full.date).getTime()) / 86400000) : 0
+    });
+  }
+
+  for (var j = 0; j < augmented.length; j++) {
+    var ap = augmented[j];
+    var card = document.createElement('div');
+    card.className = 'hi-plant-card';
+    card.setAttribute('data-idx', j);
+
+    // Plant SVG thumbnail (lazy — only when inspector opens)
+    var svgHtml = '';
+    if (window._generatePlantSVG) {
+      try { svgHtml = window._generatePlantSVG(ap.hash, 64, 1); } catch (e) { svgHtml = ''; }
+    }
+
+    // Name + grade
+    var name = '???';
+    var grade = '?';
+    var gradeColor = 'var(--muted)';
+    if (ap.own && window.getPlantName) {
+      try { name = getPlantName(ap.hash); } catch (e) {}
+    }
+    if (window.hashToTraits && window.getTerraGrade) {
+      try {
+        var tr = hashToTraits(ap.hash);
+        var tg = getTerraGrade(tr);
+        if (ap.own) { grade = tg.label || tg.name || '?'; gradeColor = tg.color || 'var(--muted)'; }
+      } catch (e) {}
+    }
+
+    // Origin
+    var origin = ap.own ? 'Planted' : (ap.wildBorn ? 'Wild Born' : ap.ownerName);
+
+    card.innerHTML =
+      '<div class="hi-pc-svg">' + svgHtml + '</div>' +
+      '<div class="hi-pc-name">' + (ap.own ? name : '???') + '</div>' +
+      '<div class="hi-pc-grade" style="color:' + gradeColor + ';">' + grade + '</div>' +
+      '<div class="hi-pc-origin">' + origin + '</div>';
+
+    // Tap to select
+    (function(idx, plantData) {
+      card.addEventListener('click', function() {
+        _selectHexPlant(idx, plantData);
+      });
+    })(j, ap);
+
+    el.appendChild(card);
+  }
+
+  // Store augmented for action handlers
+  _hexInspPlants = augmented;
+}
+
+// ── Select a plant in the inspector ──
+function _selectHexPlant(idx, plantData) {
+  _hexSelPlant = plantData;
+
+  // Highlight selected card
+  var cards = document.querySelectorAll('.hi-plant-card');
+  for (var c = 0; c < cards.length; c++) cards[c].classList.remove('selected');
+  var sel = document.querySelector('.hi-plant-card[data-idx="' + idx + '"]');
+  if (sel) sel.classList.add('selected');
+
+  // Build detail panel
+  var el = document.getElementById('hi-detail');
+  if (!el) return;
+
+  var p = plantData;
+  var name = '???';
+  var grade = '?';
+  var gradeColor = 'var(--muted)';
+  var traits = null;
+  var tg = null;
+
+  if (window.hashToTraits) {
+    try { traits = hashToTraits(p.hash); } catch (e) {}
+  }
+  if (traits && window.getTerraGrade) {
+    try { tg = getTerraGrade(traits); grade = tg.label || tg.name || '?'; gradeColor = tg.color || 'var(--muted)'; } catch (e) {}
+  }
+  if (p.own && window.getPlantName) {
+    try { name = getPlantName(p.hash); } catch (e) {}
+  }
+
+  // Trait summary
+  var traitHtml = '';
+  if (traits && p.own) {
+    traitHtml += '<div class="hi-detail-traits">';
+    traitHtml += 'Pot: ' + (traits.pot || '?') + ' &middot; Stem: ' + (traits.stem || '?') + '<br>';
+    traitHtml += 'Leaves: ' + (traits.leafCount || '?') + 'x ' + (traits.leafType || '?') + '<br>';
+    if (traits.hasFlower) traitHtml += 'Bloom: ' + (traits.flower || '?') + '<br>';
+    if (traits.companion && traits.companion !== 'None') traitHtml += 'Companion: ' + traits.companion + '<br>';
+    if (traits.mutation && traits.mutation !== 'None') traitHtml += 'Mutation: <span style="color:var(--gold);">' + traits.mutation + '</span><br>';
+    traitHtml += 'Age: ' + p.days + ' days';
+    traitHtml += '</div>';
+  } else if (!p.own) {
+    traitHtml = '<div class="hi-detail-traits">Traits hidden until collected</div>';
+  }
+
+  // Action buttons
+  var actions = '';
+  var user = window.firebase && firebase.auth() && firebase.auth().currentUser;
+  var isOwn = p.own || (user && user.uid && p.ownerUid === user.uid);
+
+  if (isOwn) {
+    actions += '<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
+    actions += '<button class="hi-action-btn gold" onclick="window._hexAction(\'breed\')">&#129516; BREED</button>';
+    actions += '<button class="hi-action-btn" onclick="window._hexAction(\'inspect\')">&#128269; INSPECT</button>';
+    actions += '<button class="hi-action-btn" onclick="window._hexAction(\'defense\')">&#128737; DEFENSE</button>';
+  } else if (p.wildBorn) {
+    actions += '<button class="hi-action-btn" onclick="window._hexAction(\'collect\')">&#127793; COLLECT</button>';
+    actions += '<button class="hi-action-btn gold" onclick="window._hexAction(\'breed\')">&#129516; BREED</button>';
+    actions += '<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
+  } else {
+    actions += '<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
+    actions += '<button class="hi-action-btn gold" onclick="window._hexAction(\'breed\')">&#129516; BREED</button>';
+    actions += '<button class="hi-action-btn danger" onclick="window._hexAction(\'harvest\')">&#127806; HARVEST</button>';
+  }
+
+  el.innerHTML =
+    '<div class="hi-detail-name">' + (p.own ? name : '???') + '</div>' +
+    '<div class="hi-detail-grade" style="color:' + gradeColor + ';">' + grade + '</div>' +
+    traitHtml +
+    '<div class="hi-actions">' + actions + '</div>';
+
+  el.style.display = 'block';
+}
+
+// ── Render seed search button ──
+function _renderSeedSearch(zk, plants) {
+  var btn = document.getElementById('hi-search-btn');
+  var timerEl = document.getElementById('hi-search-timer');
+  if (!btn) return;
+
+  var zoneTimers = {};
+  try { zoneTimers = JSON.parse(localStorage.getItem('fg_feral_zones') || '{}'); } catch (e) {}
+  var now = Date.now();
+  var lastCollect = zoneTimers[zk] || 0;
+  var interval = _zoneSpawnInterval(zk);
+  var available = (now - lastCollect >= interval);
+
+  if (plants.length < 1) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="hi-search-icon">&#127793;</span> NO PLANTS TO SEARCH';
+    if (timerEl) timerEl.style.display = 'none';
+  } else if (available) {
+    btn.disabled = false;
+    btn.innerHTML = '<span class="hi-search-icon">&#127793;</span> SEARCH FOR SEEDS';
+    if (timerEl) timerEl.style.display = 'none';
+  } else {
+    btn.disabled = true;
+    var remaining = Math.max(0, interval - (now - lastCollect));
+    var hrs = Math.floor(remaining / 3600000);
+    var mins = Math.ceil((remaining % 3600000) / 60000);
+    btn.innerHTML = '<span class="hi-search-icon">&#127793;</span> SEARCHED RECENTLY';
+    if (timerEl) {
+      timerEl.textContent = 'Available in ' + (hrs > 0 ? hrs + 'h ' : '') + mins + 'm';
+      timerEl.style.display = 'block';
+    }
+  }
+}
+
+// ── Seed search action (replaces feral collection) ──
+window._hexSeedSearch = function() {
+  if (!_hexInspZone || !_hexInspPlants || _hexInspPlants.length < 1) return;
+  _collectFeralFromZone(_hexInspZone, _hexInspPlants);
+  // After collection, refresh the search button state
+  setTimeout(function() {
+    if (_hexInspOpen && _hexInspZone) _renderSeedSearch(_hexInspZone, _hexInspPlants);
+  }, 500);
+};
+
+// ── Plant action dispatcher ──
+window._hexAction = function(action) {
+  if (!_hexSelPlant) { _toast('Select a plant first.'); return; }
+  var p = _hexSelPlant;
+
+  switch (action) {
+    case 'water':
+      if (p.own) {
+        // Water own plant — costs 5 dew, reduces stress
+        var _ownDew = 0;
+        try { _ownDew = parseInt(localStorage.getItem('fg_pollen') || '0'); } catch (e) {}
+        if (_ownDew < 5) { _toast('Need 5 dew to water.'); break; }
+        localStorage.setItem('fg_pollen', String(_ownDew - 5));
+        _toast('Watered your plant! -5 dew, +3 pollen');
+        try { var _wp = parseInt(localStorage.getItem('fg_pollen') || '0'); localStorage.setItem('fg_pollen', String(_wp + 3)); } catch (e) {}
+        if (window._haptic) _haptic('bloom');
+        if (window._trackQuest) _trackQuest('plantsWatered', 1);
+      } else {
+        // Water other player's plant — budget system
+        var _waterKey = 'lw_water_budget';
+        var _wBudget = {}; try { _wBudget = JSON.parse(localStorage.getItem(_waterKey) || '{}'); } catch (e) {}
+        var _wToday = new Date().toISOString().split('T')[0];
+        if (_wBudget.date !== _wToday) _wBudget = { date: _wToday, count: 0 };
+        if (_wBudget.count >= 5) { _toast('No waters left today (5/day).'); break; }
+        _wBudget.count = (_wBudget.count || 0) + 1;
+        localStorage.setItem(_waterKey, JSON.stringify(_wBudget));
+        try { var _pol = parseInt(localStorage.getItem('fg_pollen') || '0'); localStorage.setItem('fg_pollen', String(_pol + 2)); } catch (e) {}
+        _toast('Watered! +2 pollen. ' + (5 - _wBudget.count) + ' left today.');
+        if (window._haptic) _haptic('bloom');
+        if (window._trackQuest) _trackQuest('plantsWatered', 1);
+      }
+      break;
+
+    case 'breed':
+      if (window.openBreedScreen) {
+        _closeHexInspector();
+        openBreedScreen(p, 'wild');
+      } else { _toast('Breed system loading...'); }
+      break;
+
+    case 'harvest':
+      if (typeof _harvestToPouch === 'function') {
+        _closeHexInspector();
+        _harvestToPouch(p);
+      } else { _toast('Harvest system loading...'); }
+      break;
+
+    case 'collect':
+      // Uproot wild-born plant to greenhouse
+      if (window.mintPlant) {
+        window._lwConfirm({
+          title: 'COLLECT PLANT',
+          body: 'Uproot this wild plant and add it to your greenhouse? It will be permanently removed from the wild.',
+          yes: 'COLLECT',
+          no: 'LEAVE IT',
+          danger: false
+        }, function() {
+          mintPlant(p.hash).then(function(ok) {
+            if (ok !== false) {
+              // Remove from wild
+              var wild = _getWild();
+              for (var ri = wild.length - 1; ri >= 0; ri--) {
+                if (wild[ri] && wild[ri].hash === p.hash) { wild.splice(ri, 1); break; }
+              }
+              _saveWild(wild);
+              _toast('Plant collected to greenhouse!');
+              _closeHexInspector();
+              _drawZoneHexes();
+              if (window.syncVaultToCloud) setTimeout(syncVaultToCloud, 500);
+            }
+          });
+        });
+      } else { _toast('Collect system loading...'); }
+      break;
+
+    case 'inspect':
+      if (window.openCarousel) {
+        _closeHexInspector();
+        var gh = _getGH();
+        var idx = -1;
+        for (var gi = 0; gi < gh.length; gi++) { if (gh[gi].hash === p.hash) { idx = gi; break; } }
+        if (idx >= 0) openCarousel(gh, idx, 'greenhouse');
+        else _toast('Plant not found in greenhouse.');
+      }
+      break;
+
+    case 'defense':
+      if (typeof _pickDefense === 'function') _pickDefense(p.hash);
+      else _toast('Defense picker loading...');
+      break;
+  }
+};
+
+return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_drawZoneHexes:_drawZoneHexes,_openHexInspector:_openHexInspector};
 })();
