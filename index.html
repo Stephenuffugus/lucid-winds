@@ -3569,6 +3569,13 @@
 @keyframes scannerPulse{0%,100%{border-color:rgba(122,179,86,0.2);box-shadow:0 0 15px rgba(122,179,86,0.08);}50%{border-color:rgba(122,179,86,0.35);box-shadow:0 0 25px rgba(122,179,86,0.15);}}
 .feral-zone-hex{animation:feralHexPulse 3s ease-in-out infinite;cursor:pointer;}
 @keyframes feralHexPulse{0%,100%{stroke:rgba(200,168,75,0.4);fill:rgba(200,168,75,0.06);}50%{stroke:rgba(200,168,75,0.7);fill:rgba(200,168,75,0.14);}}
+.zone-hex-dim path{fill-opacity:0.06!important;stroke-opacity:0.3!important;}
+.zone-hex-mod path{fill-opacity:0.1!important;stroke-opacity:0.5!important;}
+.zone-hex-hot path{fill-opacity:0.14!important;stroke-opacity:0.65!important;animation:hexPulse 3s ease-in-out infinite;}
+.zone-hex-seed path{stroke:rgba(122,179,86,0.6)!important;stroke-dasharray:6,3!important;}
+.zone-hex-locked path{fill-opacity:0.04!important;stroke-opacity:0.2!important;}
+.perf-lite .zone-hex-hot path{animation:none;}
+@keyframes hexPulse{0%,100%{fill-opacity:0.10;stroke-opacity:0.5;}50%{fill-opacity:0.20;stroke-opacity:0.8;}}
 
 /* ── BOTANICAL VIEWPORT FRAME ── ready for Gemini image */
 /* ═══ INTEGRATED WILD FRAME — pure CSS, no generated image ═══
@@ -31357,7 +31364,7 @@ function _updateProximity(){
   // Passive pollen from nearby plants (every 10min per plant)
   _fjPassivePollen();
   // Feral zone refresh — update hex availability as player moves
-  _drawFeralZones();
+  _drawZoneHexes();
 }
 
 // ═══ STEP COUNTER MILESTONES ═══
@@ -31537,11 +31544,53 @@ function _drawTerritory(){
   }
 }
 
+// ═══ UNIFIED ZONE HEXES — lightweight hex polygons replace individual markers ═══
+var _zoneHexLayers=[];
+function _isSeedAvailable(zk){
+  var zt={};try{zt=JSON.parse(localStorage.getItem('fg_feral_zones')||'{}');}catch(e){}
+  var lc=zt[zk]||0;if(lc===0)return true;
+  return new Date(lc).toISOString().split('T')[0]!==new Date().toISOString().split('T')[0];
+}
+function _drawZoneHexes(){
+  for(var i=0;i<_zoneHexLayers.length;i++){if(_map)_map.removeLayer(_zoneHexLayers[i]);}
+  _zoneHexLayers=[];
+  if(!_map||!_uLat)return;
+  var zones=_getAllZonePlants(),zkeys=Object.keys(zones),half=ZONE_SIZE/2;
+  var dynRange=typeof _getCollectRange==='function'?_getCollectRange():COLLECT_RANGE;
+  var arr=[];
+  for(var z=0;z<zkeys.length;z++){
+    var zk=zkeys[z],pts=zk.split(','),cLat=parseFloat(pts[0]),cLng=parseFloat(pts[1]);
+    arr.push({key:zk,lat:cLat,lng:cLng,dist:_dist(_uLat,_uLng,cLat,cLng),count:zones[zk].length});
+  }
+  arr.sort(function(a,b){return a.dist-b.dist;});
+  var cap=Math.min(arr.length,50);
+  for(var h=0;h<cap;h++){
+    var zone=arr[h];if(zone.count<1)continue;
+    var inRange=zone.dist<=dynRange;
+    var seedAvail=_isSeedAvailable(zone.key)&&zone.count>=1;
+    var wild=_getWild(),hasOwn=false;
+    for(var ow=0;ow<wild.length;ow++){if(wild[ow]&&_zoneKey(wild[ow].lat,wild[ow].lng)===zone.key){hasOwn=true;break;}}
+    var base=hasOwn?'rgba(122,179,86,':'rgba(200,168,75,';
+    var sa=inRange?'0.45)':'0.15)',fa=inRange?'0.07)':'0.03)';
+    var cls=inRange?(zone.count>=4?'zone-hex-hot':zone.count>=2?'zone-hex-mod':'zone-hex-dim'):'zone-hex-locked';
+    if(seedAvail&&inRange)cls+=' zone-hex-seed';
+    var hexPts=[];
+    for(var a=0;a<6;a++){var angle=(a*60-30)*Math.PI/180;hexPts.push([zone.lat+half*Math.sin(angle),zone.lng+half*1.15*Math.cos(angle)]);}
+    var hex=L.polygon(hexPts,{color:base+sa,weight:1.5,fillColor:base+fa,fillOpacity:1,interactive:true,className:cls}).addTo(_map);
+    hex._zoneKey=zone.key;hex._zoneDist=zone.dist;hex._zonePlantCount=zone.count;
+    hex.on('click',function(e){L.DomEvent.stopPropagation(e);
+      if(window.FG_Wild&&FG_Wild._openHexInspector&&this._zoneDist<=dynRange){FG_Wild._openHexInspector(this._zoneKey);}
+      else{_toast(this._zonePlantCount+' plant'+(this._zonePlantCount!==1?'s':'')+' · '+Math.round(this._zoneDist)+'m away');}
+    });
+    _zoneHexLayers.push(hex);
+  }
+}
+
 function _loadAll(){
   if(!_map||!_uLat)return;
   var saved=_pruneWild();
   for(var i=0;i<saved.length;i++){var w=saved[i];if(!w||!w.hash)continue;var d=w.date?Math.floor((Date.now()-new Date(w.date).getTime())/86400000):0;_addPlant({lat:w.lat,lng:w.lng,hash:w.hash,own:w.own!==false,days:d,pollen:d*3,status:d>7?'Thriving':d>2?'Growing':'Young',ownerUid:w.ownerUid||'',ownerName:w.ownerName||'Keeper',defenderGame:w.defenderGame||'set'});}
-  _spawnFerals();_updateCounts();_drawTerritory();
+  _drawZoneHexes();_updateCounts();
   _subscribeSharedDrops();
   // Empty-state: if no local wild plants, show drop hint after brief delay
   if(saved.length===0&&!localStorage.getItem('lw_first_drop')){
@@ -31644,10 +31693,10 @@ function _getAllZonePlants() {
 function _spawnFerals() {
   // v2: No markers spawned. Just draw tappable zone hexes for zones with available ferals.
   if (!_uLat || !_map) return;
-  _drawFeralZones();
+  _drawZoneHexes();
 }
 
-function _drawFeralZones() {
+function _drawZoneHexes() {
   // Clear old feral hexes
   for (var fh = 0; fh < _feralZoneHexes.length; fh++) {
     if (_map) _map.removeLayer(_feralZoneHexes[fh]);
@@ -31706,7 +31755,7 @@ function _drawFeralZones() {
 
   if (availCount > 0 && !_feralRespawnTimer) {
     // Re-check periodically for new feral availability
-    _feralRespawnTimer = setTimeout(function() { _feralRespawnTimer = null; _drawFeralZones(); }, 60000);
+    _feralRespawnTimer = setTimeout(function() { _feralRespawnTimer = null; _drawZoneHexes(); }, 60000);
   }
 }
 
@@ -31812,14 +31861,14 @@ function _awardFeral(hash, parentA, parentB, zk, info) {
   if (typeof gtag !== 'undefined') gtag('event', 'feral_collected', { grade: info.grade, zone: zk.slice(0, 10) });
 
   // Refresh zone hexes to remove the glow
-  _drawFeralZones();
+  _drawZoneHexes();
   if (window.FG_Backpack) FG_Backpack.render();
 }
 
 // Debounced re-check after shared markers arrive
 function _feralRespawnDebounced() {
   if (_feralRespawnTimer) clearTimeout(_feralRespawnTimer);
-  _feralRespawnTimer = setTimeout(function() { _feralRespawnTimer = null; _drawFeralZones(); _wildReproduction(); }, 2000);
+  _feralRespawnTimer = setTimeout(function() { _feralRespawnTimer = null; _drawZoneHexes(); _wildReproduction(); }, 2000);
 }
 
 // ═══ WILD PLANT REPRODUCTION ═══
@@ -32715,6 +32764,8 @@ function _shieldBadge(p){
 
 function _addPlant(p){
   if(!_map)return;
+  // HEX MODE: skip individual markers — only hex polygons render on map
+  return null;
   var sz=p.own?40:26,svg='';
   if(p.own){
     if(window._generatePlantSVG&&p.hash){try{svg=window._generatePlantSVG(p.hash,sz);}catch(e){}}
@@ -33985,6 +34036,8 @@ function _unsubscribeSharedDrops(){
 // Add a single shared drop marker to the map (returns the Leaflet marker)
 function _addSharedMarker(p){
   if(!_map)return null;
+  // HEX MODE: skip individual markers — hex inspector handles display
+  return null;
   var sz=p.own?40:26,svg='';
   if(p.own){
     // Own plants: show the actual procedural SVG
@@ -42399,15 +42452,21 @@ window.openBreedScreen=function(plantA,context){
   }
 
   if(_allEligible.length<2){
-    // Give helpful message about WHY
+    // Give helpful message about WHY — use _lwConfirm so it's visible on any tab
     var immature=gh.filter(function(p){if(!FG_Data||!FG_Data.getBreedStatus)return false;var bs=FG_Data.getBreedStatus(p);return bs.reason==='IMMATURE';});
     var cooling=gh.filter(function(p){if(!FG_Data||!FG_Data.getBreedStatus)return false;var bs=FG_Data.getBreedStatus(p);return bs.reason==='COOLDOWN';});
     var resting=gh.filter(function(p){if(!FG_Data||!FG_Data.getBreedStatus)return false;var bs=FG_Data.getBreedStatus(p);return bs.reason==='NO_CHARGES';});
-    var msg='Need 2 plants ready to breed.';
-    if(immature.length)msg+=' '+immature.length+' still maturing.';
-    if(cooling.length)msg+=' '+cooling.length+' on cooldown.';
-    if(resting.length)msg+=' '+resting.length+' recovering charges.';
-    if(window._toast)window._toast(msg);
+    var msg='You have '+gh.length+' plant'+(gh.length!==1?'s':'')+' but need 2 with available breed charges.';
+    if(immature.length)msg+='<br>'+immature.length+' still maturing.';
+    if(cooling.length)msg+='<br>'+cooling.length+' on breed cooldown.';
+    if(resting.length)msg+='<br>'+resting.length+' out of charges (recover in 14 days).';
+    if(_allEligible.length===1)msg+='<br><br>1 plant is ready — you need at least 1 more.';
+    if(_allEligible.length===0)msg+='<br><br>No plants are currently breedable.';
+    if(window._lwConfirm){
+      window._lwConfirm({title:'CANNOT BREED',body:msg,yes:'OK',no:''},function(){});
+    } else if(window._toast){
+      window._toast(msg.replace(/<br>/g,' '));
+    }
     return;
   }
   // Find plantA in eligible list, default to first
