@@ -41874,28 +41874,26 @@ function _showDailyReward() {
   h += '</div>';
 
   // Collect button
-  h += '<button onclick="this.parentNode.parentNode.remove();if(window._lwNotifPrompt)window._lwNotifPrompt();" style="margin-top:0.5rem;width:100%;padding:0.5rem;border:1.5px solid rgba(122,179,86,0.3);border-radius:8px;background:linear-gradient(180deg,rgba(74,124,53,0.25),rgba(46,80,36,0.35));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">COLLECT +' + dayReward + ' DEW</button>';
+  h += '<button onclick="if(window.earnHashes)earnHashes(' + dayReward + ');if(window.updateDashboard)setTimeout(updateDashboard,300);this.textContent=\'COLLECTED!\';this.disabled=true;this.style.opacity=\'0.5\';var _m=this.parentNode.parentNode;setTimeout(function(){if(_m&&_m.parentNode)_m.remove();if(window._lwNotifPrompt)window._lwNotifPrompt();},800);" style="margin-top:0.5rem;width:100%;padding:0.5rem;border:1.5px solid rgba(122,179,86,0.3);border-radius:8px;background:linear-gradient(180deg,rgba(74,124,53,0.25),rgba(46,80,36,0.35));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">COLLECT +' + dayReward + ' DEW</button>';
   h += '</div>';
 
   ov.innerHTML = h;
   document.body.appendChild(ov);
 
-  // Grant today's reward (use tier-based amount instead of old formula)
-  if (window.earnHashes) earnHashes(dayReward);
-
   // Haptic + analytics
   try { if (window._haptic) _haptic('sync'); } catch(e) {}
   if (typeof gtag !== 'undefined') gtag('event', 'daily_login', { streak: daily.streak, reward: dayReward, day: dayOfMonth, logged: loggedDays });
-
-  // Update dashboard
-  if (window.updateDashboard) setTimeout(updateDashboard, 300);
 }
 
 // Expose for triggering after vault loads
 var _dailyLoginChecked = false;
 window._checkDailyLogin = function() {
-  if (_dailyLoginChecked) return; // Only check once per session
+  if (_dailyLoginChecked) return;
   _dailyLoginChecked = true;
+  // Extra guard: check localStorage before even calling show
+  var _dlToday = new Date().toISOString().split('T')[0];
+  if (localStorage.getItem('lw_daily_claimed') === _dlToday) return;
+  if (document.getElementById('daily-reward-modal')) return; // already showing
   setTimeout(_showDailyReward, 1200);
 };
 })();
