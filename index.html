@@ -801,7 +801,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.09.1';
+  var LW_VERSION='2026.04.09.2';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -31779,68 +31779,7 @@ function _spawnFerals() {
   _drawZoneHexes();
 }
 
-function _drawZoneHexes() {
-  // Clear old feral hexes
-  for (var fh = 0; fh < _feralZoneHexes.length; fh++) {
-    if (_map) _map.removeLayer(_feralZoneHexes[fh]);
-  }
-  _feralZoneHexes = [];
-  if (!_map || !_uLat) return;
-
-  var now = Date.now();
-  var zoneTimers = {}; try { zoneTimers = JSON.parse(localStorage.getItem('fg_feral_zones') || '{}'); } catch (e) {}
-  var zones = _getAllZonePlants();
-  var zoneKeys = Object.keys(zones);
-  var half = ZONE_SIZE / 2;
-  var availCount = 0;
-
-  for (var z = 0; z < zoneKeys.length; z++) {
-    var zk = zoneKeys[z];
-    if (zones[zk].length < 1) continue;
-
-    // Check zone timer — is a feral available?
-    var lastCollect = zoneTimers[zk] || 0;
-    var interval = _zoneSpawnInterval(zk);
-    var available = (now - lastCollect >= interval);
-
-    // Parse zone center
-    var parts = zk.split(',');
-    var cLat = parseFloat(parts[0]);
-    var cLng = parseFloat(parts[1]);
-
-    // Only show zones within ~500m
-    if (_dist(_uLat, _uLng, cLat, cLng) > 600) continue;
-
-    // Build hex points
-    var pts = [];
-    for (var a = 0; a < 6; a++) {
-      var angle = (a * 60 - 30) * Math.PI / 180;
-      pts.push([cLat + half * Math.sin(angle), cLng + half * 1.15 * Math.cos(angle)]);
-    }
-
-    if (available) {
-      // Feral available — glowing tappable hex
-      var hex = L.polygon(pts, {
-        color: 'rgba(200,168,75,0.5)', weight: 2,
-        fillColor: 'rgba(200,168,75,0.1)', fillOpacity: 1,
-        dashArray: '', interactive: true, className: 'feral-zone-hex'
-      }).addTo(_map);
-      hex._feralZoneKey = zk;
-      hex._feralPlants = zones[zk];
-      hex.on('click', function(e) {
-        L.DomEvent.stopPropagation(e);
-        _collectFeralFromZone(this._feralZoneKey, this._feralPlants);
-      });
-      _feralZoneHexes.push(hex);
-      availCount++;
-    }
-  }
-
-  if (availCount > 0 && !_feralRespawnTimer) {
-    // Re-check periodically for new feral availability
-    _feralRespawnTimer = setTimeout(function() { _feralRespawnTimer = null; _drawZoneHexes(); }, 60000);
-  }
-}
+// OLD _drawFeralZones REMOVED — replaced by unified _drawZoneHexes above
 
 function _collectFeralFromZone(zk, zonePlants) {
   if (!_uLat) { _toast('Need location.'); return; }
