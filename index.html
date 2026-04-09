@@ -5030,7 +5030,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="hi-detail" id="hi-detail" style="display:none;"></div>
     <div class="hi-search" id="hi-search">
       <button class="hi-search-btn" id="hi-search-btn" onclick="window._hexSeedSearch()">
-        <span class="hi-search-icon">&#127793;</span> SEARCH FOR SEEDS
+        <img src="assets/splash-seed-v2.png" style="width:32px;height:32px;border-radius:6px;object-fit:cover;filter:brightness(1.2);" alt=""> SEARCH FOR SEEDS
       </button>
       <div class="hi-search-timer" id="hi-search-timer" style="display:none;"></div>
     </div>
@@ -32956,10 +32956,9 @@ function showTP(p,mk){
   var st=document.getElementById('wtp-status');
   if(st){
     if(!p.own&&p.defenderGame&&p.defenderGame!=='none'){
-      var _gNames={set:'Trios',memory:'Memory',growth:'Growth',color:'Color',math:'Math',word:'Word'};
-      st.textContent=_gNames[p.defenderGame]||p.defenderGame;
+      st.textContent='Protected';
       st.style.color='var(--gold)';
-      st.parentNode.querySelector('.wtp2-stat-lbl').textContent='Challenge';
+      st.parentNode.querySelector('.wtp2-stat-lbl').textContent='Defense';
     } else {
       st.textContent=p.status||'\u2014';st.style.color=p.status==='Thriving'?'var(--sage)':'var(--cream)';
       st.parentNode.querySelector('.wtp2-stat-lbl').textContent='Status';
@@ -33575,14 +33574,8 @@ function _showDefenderPicker(){
   if(sub)sub.textContent='Pick the challenge that protects your plant';
 
   var games=[
-    {id:'set',name:'Quick Trios',img:'assets/games/cards/card-front.png',desc:'Find 3 matching cards',diff:'Easy'},
-    {id:'memory',name:'Memory',img:'assets/games/memory/00-card-back.png',desc:'Remember the pattern',diff:'Medium'},
-    {id:'growth',name:'Growth',img:'assets/games/flood/leaf-gold.png',desc:'Order the stages',diff:'Medium'},
-    {id:'color',name:'Color',img:'assets/games/simon/spring-btn.png',desc:'Match the target hue',diff:'Easy'},
-    {id:'math',name:'Math',img:'assets/games/flood/grid.png',desc:'Solve the equation',diff:'Hard'},
-    {id:'word',name:'Word',img:'assets/games/memory/01-moonflower.png',desc:'Unscramble letters',diff:'Hard'},
-    {id:'chess',name:'Chess',img:'assets/chess-defense-64.png',desc:'Find the checkmate',diff:'Hard'},
-    {id:'sliding',name:'Slide',img:'assets/slide-puzzle-64.png',desc:'Arrange the tiles',diff:'Medium'}
+    {id:'set',name:'Trios',img:'assets/games/cards/card-front.png',desc:'Find 3 matching cards',diff:'Easy'},
+    {id:'chess',name:'Chess',img:'assets/chess-defense-64.png',desc:'Find the checkmate',diff:'Hard'}
   ];
 
   var h='<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);text-align:center;margin-bottom:10px;">Harder games are tougher for harvesters to beat</div>';
