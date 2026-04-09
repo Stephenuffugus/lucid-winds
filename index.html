@@ -801,7 +801,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.01.29';
+  var LW_VERSION='2026.04.09.1';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3569,13 +3569,8 @@
 @keyframes scannerPulse{0%,100%{border-color:rgba(122,179,86,0.2);box-shadow:0 0 15px rgba(122,179,86,0.08);}50%{border-color:rgba(122,179,86,0.35);box-shadow:0 0 25px rgba(122,179,86,0.15);}}
 .feral-zone-hex{animation:feralHexPulse 3s ease-in-out infinite;cursor:pointer;}
 @keyframes feralHexPulse{0%,100%{stroke:rgba(200,168,75,0.4);fill:rgba(200,168,75,0.06);}50%{stroke:rgba(200,168,75,0.7);fill:rgba(200,168,75,0.14);}}
-.zone-hex-dim path{fill-opacity:0.06!important;stroke-opacity:0.3!important;}
-.zone-hex-mod path{fill-opacity:0.1!important;stroke-opacity:0.5!important;}
-.zone-hex-hot path{fill-opacity:0.14!important;stroke-opacity:0.65!important;animation:hexPulse 3s ease-in-out infinite;}
-.zone-hex-seed path{stroke:rgba(122,179,86,0.6)!important;stroke-dasharray:6,3!important;}
-.zone-hex-locked path{fill-opacity:0.04!important;stroke-opacity:0.2!important;}
-.perf-lite .zone-hex-hot path{animation:none;}
-@keyframes hexPulse{0%,100%{fill-opacity:0.10;stroke-opacity:0.5;}50%{fill-opacity:0.20;stroke-opacity:0.8;}}
+/* Zone hex — flat static fills, zero animation, zero GPU churn */
+.zone-hex-dim path,.zone-hex-mod path,.zone-hex-hot path,.zone-hex-seed path,.zone-hex-locked path{animation:none!important;}
 
 /* ═══ HEX INSPECTOR ═══ */
 #hex-insp-scrim{display:none;position:fixed;inset:0;z-index:99997;background:rgba(0,0,0,0.3);}
@@ -31652,8 +31647,23 @@ function _drawZoneHexes(){
     var hex=L.polygon(hexPts,{color:base+sa,weight:1.5,fillColor:base+fa,fillOpacity:1,interactive:true,className:cls}).addTo(_map);
     hex._zoneKey=zone.key;hex._zoneDist=zone.dist;hex._zonePlantCount=zone.count;
     hex.on('click',function(e){L.DomEvent.stopPropagation(e);
-      if(window.FG_Wild&&FG_Wild._openHexInspector&&this._zoneDist<=dynRange){FG_Wild._openHexInspector(this._zoneKey);}
-      else{_toast(this._zonePlantCount+' plant'+(this._zonePlantCount!==1?'s':'')+' · '+Math.round(this._zoneDist)+'m away');}
+      console.log('[HEX TAP] zone='+this._zoneKey+' dist='+Math.round(this._zoneDist)+'m plants='+this._zonePlantCount+' FG_Wild.inspector='+(!!window.FG_Wild&&!!FG_Wild._openHexInspector));
+      var _dynR=typeof _getCollectRange==='function'?_getCollectRange():COLLECT_RANGE;
+      if(window.FG_Wild&&FG_Wild._openHexInspector&&this._zoneDist<=_dynR){
+        FG_Wild._openHexInspector(this._zoneKey);
+      }else if(this._zoneDist>_dynR){
+        // Out of range — show locked preview
+        var _hlEl=document.getElementById('hex-locked');
+        if(_hlEl){
+          var cEl=document.getElementById('hl-count');if(cEl)cEl.textContent=this._zonePlantCount+' plant'+(this._zonePlantCount!==1?'s':'');
+          var dEl=document.getElementById('hl-dist');if(dEl)dEl.textContent=Math.round(this._zoneDist)+'m away';
+          _hlEl.classList.add('show');
+          clearTimeout(_hexLockedTimer);_hexLockedTimer=setTimeout(function(){_hlEl.classList.remove('show');},3000);
+        }
+      }else{
+        _toast('Loading inspector...');
+        console.warn('[HEX] FG_Wild._openHexInspector not available yet');
+      }
     });
     _zoneHexLayers.push(hex);
   }
