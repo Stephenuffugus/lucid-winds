@@ -4979,7 +4979,8 @@ window.onerror=function(msg,url,line,col,err){
   <div id="tc"></div>
 
   <!-- ═══ NEXT STEP PROMPT ═══ -->
-  <div id="lw-next-step" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9990;padding:6px 12px;background:linear-gradient(180deg,rgba(13,16,12,0.97),rgba(13,16,12,0.85));border-bottom:1px solid rgba(122,179,86,0.12);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--cream,#e8dcc8);text-align:center;cursor:pointer;min-height:28px;display:flex;align-items:center;justify-content:center;gap:6px;"></div>
+  <!-- Next-step banner disabled — will be replaced by quest log menu -->
+  <div id="lw-next-step" style="display:none!important;"></div>
 
   <!-- ═══ KEEPER IDENTITY BAR ═══ -->
   <div id="pw-keeper-bar">
@@ -27888,7 +27889,7 @@ document.addEventListener('keydown', function(e) {
       // First-time tutorial removed — tutorial only via ? button in game header
     }
     // Render content synchronously BEFORE showing panel (prevents empty flash)
-    if (tab === 'greenhouse') { renderGreenhouse(); if(window.PW_Tutorial&&!localStorage.getItem('lw_tut'))setTimeout(function(){PW_Tutorial.start();},600); }
+    if (tab === 'greenhouse') { renderGreenhouse(); }
     if (tab === 'dashboard') updateDashboard();
     if (tab === 'nursery') { renderNursery(); if(window.PW_Tutorial)PW_Tutorial.checkNursery(); }
     if (tab === 'binder') renderBinder();
@@ -40032,8 +40033,6 @@ function finish(){
   if(window.renderGreenhouse)renderGreenhouse();
   if(window.updateDashboard)updateDashboard();
   if(window.switchTab)switchTab('greenhouse');
-  // Trigger guided tutorial for new players
-  if(window.PW_Tutorial)setTimeout(function(){PW_Tutorial.start();},800);
 }
 
 function skip(){

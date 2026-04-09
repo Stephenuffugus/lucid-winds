@@ -1076,8 +1076,6 @@ function finish(){
   if(window.renderGreenhouse)renderGreenhouse();
   if(window.updateDashboard)updateDashboard();
   if(window.switchTab)switchTab('greenhouse');
-  // Trigger guided tutorial for new players
-  if(window.PW_Tutorial)setTimeout(function(){PW_Tutorial.start();},800);
 }
 
 function skip(){

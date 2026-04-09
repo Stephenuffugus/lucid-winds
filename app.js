@@ -20013,7 +20013,7 @@
       // First-time tutorial removed — tutorial only via ? button in game header
     }
     // Render content synchronously BEFORE showing panel (prevents empty flash)
-    if (tab === 'greenhouse') { renderGreenhouse(); if(window.PW_Tutorial&&!localStorage.getItem('lw_tut'))setTimeout(function(){PW_Tutorial.start();},600); }
+    if (tab === 'greenhouse') { renderGreenhouse(); }
     if (tab === 'dashboard') updateDashboard();
     if (tab === 'nursery') { renderNursery(); if(window.PW_Tutorial)PW_Tutorial.checkNursery(); }
     if (tab === 'binder') renderBinder();
