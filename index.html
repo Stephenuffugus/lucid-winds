@@ -4353,9 +4353,20 @@
     .perf-lite *,
     .perf-lite *::before,
     .perf-lite *::after {
-      -webkit-backdrop-filter: blur(4px) !important;
-      backdrop-filter: blur(4px) !important;
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
     }
+    /* Kill tile pane GPU filters on old devices — causes blur/render failure */
+    .perf-lite .leaflet-tile-pane {
+      filter: brightness(0.85) contrast(1.05) !important;
+      transition: none !important;
+    }
+    .perf-lite .tod-dawn .leaflet-tile-pane,
+    .perf-lite .tod-dusk .leaflet-tile-pane,
+    .perf-lite .tod-night .leaflet-tile-pane {
+      filter: brightness(0.7) contrast(1.05) !important;
+    }
+    .perf-lite #wild-map-tod { display: none !important; }
 
     /* — Kill infinite box-shadow/filter animations — */
     .perf-lite .attn-dot,
