@@ -34307,11 +34307,21 @@ function _openHexInspector(zk){
   if(el){
     el.innerHTML='';
     var wild=_getWild();var augmented=[];
+    var _curUid='';try{var _cu=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_cu)_curUid=_cu.uid;}catch(e){}
     for(var i=0;i<plants.length;i++){
       var p=plants[i],full=null;
+      // Check local wild plants first (these are always yours)
       for(var w=0;w<wild.length;w++){if(wild[w].hash===p.hash){full=wild[w];break;}}
-      if(!full&&_sharedMarkers[p.hash])full=_sharedMarkers[p.hash].data||null;
-      augmented.push({hash:p.hash,lat:p.lat,lng:p.lng,own:full?(full.own!==false):false,wildBorn:full?!!full.wildBorn:false,ownerName:full?(full.ownerName||'Keeper'):'Unknown',ownerUid:full?(full.ownerUid||''):'',defenderGame:full?(full.defenderGame||'set'):'set',date:full?full.date:null,days:full&&full.date?Math.floor((Date.now()-new Date(full.date).getTime())/86400000):0});
+      var isOwn=false;
+      if(full){
+        // Found in local wild = it's yours (local wild only stores your plants)
+        isOwn=true;
+      } else if(_sharedMarkers[p.hash]){
+        full=_sharedMarkers[p.hash].data||null;
+        // Shared marker: check ownerUid against current user
+        isOwn=full&&_curUid&&full.ownerUid===_curUid;
+      }
+      augmented.push({hash:p.hash,lat:p.lat,lng:p.lng,own:isOwn,wildBorn:full?!!full.wildBorn:false,ownerName:full?(full.ownerName||'Keeper'):'Unknown',ownerUid:full?(full.ownerUid||''):'',defenderGame:full?(full.defenderGame||'set'):'set',date:full?full.date:null,days:full&&full.date?Math.floor((Date.now()-new Date(full.date).getTime())/86400000):0});
     }
     for(var j=0;j<augmented.length;j++){
       var ap=augmented[j];
