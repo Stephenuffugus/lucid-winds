@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lucid Winds — Wild</title>
+  <meta name="description" content="Lucid Winds. Explore the real-world map, drop plants, collect ferals.">
+  <meta name="theme-color" content="#0d100c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/icon-48x48.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Mono:wght@300;400;500&family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=Cinzel:wght@700;900&family=Outfit:wght@400;600&family=Cormorant+Garamond:wght@600;700&display=swap" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Mono:wght@300;400;500&family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=Cinzel:wght@700;900&family=Outfit:wght@400;600&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XE58S4X6RX"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-XE58S4X6RX');</script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <!-- Leaflet — ONLY on wild page -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+  <link rel="stylesheet" href="shared.css" />
+  <script>window._lwPage='wild';</script>
+</head>
+<body>
+<div id="vault-hydration-overlay" class="no-session">
+  <div class="lw-spinner"><div class="lw-spinner-leaf"></div><div class="lw-spinner-leaf"></div><div class="lw-spinner-leaf"></div></div>
+  <div class="vho-label">RECOVERING VAULT</div>
+  <div class="vho-sub" id="vho-status">Connecting to cloud…</div>
+</div>
+<!-- ═══ PHASE 25: UNIVERSAL AUTH HEADER ═══ -->
+<div id="sws-auth-header">
+  <div id="sws-auth-badge" class="unverified" onclick="swsHandleBadgeClick()" title="SWS Identity">
+    <span class="ab-dot"></span>
+    <span id="sws-badge-label">⬡ UNVERIFIED</span>
+  </div>
+</div>
+
+<!-- Phase 30.5: Recovery Screen — shown when init detects corrupt data -->
+<div id="recovery-screen">
+  <div class="rec-icon">⚠</div>
+  <div class="rec-title">DATA SYNC ERROR</div>
+  <div class="rec-sub">Lucid Winds encountered corrupted or malformed plant data during initialization. Your session has been safely suspended.</div>
+  <div class="rec-detail" id="rec-detail-msg">Error details not available.</div>
+  <div class="rec-btn-row">
+    <button class="rec-btn recover" onclick="attemptDataRecovery()">⟳ ATTEMPT RECOVERY</button>
+    <button class="rec-btn reset"   onclick="initiateFactoryReset(true)">⚠ FACTORY RESET</button>
+  </div>
+</div>
+
+<!-- Mini-menu (logged-in state only) -->
+<div id="sws-mini-menu">
+  <div class="smm-eyebrow">⬡ SWS IDENTITY</div>
+  <button class="smm-item" onclick="swsMiniProfile()">⊞ VIEW PROFILE</button>
+  <div class="smm-divider"></div>
+  <button class="smm-item danger" onclick="swsDisconnect()">⊗ DISCONNECT</button>
+  <button class="smm-item wipe" id="smm-reset-btn"
+    onmousedown="startResetHold(event)" ontouchstart="startResetHold(event)"
+    onmouseup="cancelResetHold()"       ontouchend="cancelResetHold()"
+    onmouseleave="cancelResetHold()">⚠ RESET TERMINAL — HOLD 3s TO WIPE</button>
+</div>
+
+<!-- Assets Recovered Toast -->
+<div id="sws-recovery-toast">
+  <div class="srt-title">⬡ ASSETS RECOVERED</div>
+  <div class="srt-count" id="sws-toast-count"></div>
+</div>
+<!-- ═══ THE CURTAIN — Auto-dismisses, no hard gate ═══ -->
+<div id="landing-splash" class="hidden">
+</div>
+
+
+<div class="game-wrap">
+  <div class="grove-panel" id="panel-wild" style="padding:0!important;padding-bottom:0!important;">
+    <!-- WILD LOG BAR -->
+    <div class="wild-log">
+      <div class="wild-log-stat" onclick="if(window._toggleTerritory)_toggleTerritory();"><div class="wild-log-val" id="w-count">0</div><div class="wild-log-lbl">planted</div></div>
+      <div class="wild-log-stat" onclick="FG_Wild._logTip('Daily drops remaining. Resets at midnight.')"><div class="wild-log-val" id="w-drops-left">3</div><div class="wild-log-lbl">drops</div></div>
+      <div class="wild-log-stat" onclick="FG_Wild._logTip('Dew Drops \u2014 earned by harvesting. Use to water plants or skip nursery days.')"><div class="wild-log-val" style="color:rgba(91,175,220,0.9)" id="w-dew">0</div><div class="wild-log-lbl">dew</div></div>
+      <div class="wild-log-stat" onclick="FG_Wild._logTip('Pollen \u2014 earned passively from planted wild plants. Rarer plants earn faster.')"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl">pollen</div></div>
+      <div class="wild-log-stat" onclick="FG_Wild._logTip('Meters walked. Keep moving to find feral seeds!')"><div class="wild-log-val" style="color:var(--sage)" id="w-steps">0</div><div class="wild-log-lbl">meters</div></div>
+      <div class="wild-log-stat" onclick="FG_Wild._logTip('Your biome — detected from real geography. Affects feral rarity and mutations.')"><div class="wild-log-val" style="font-size:0.7rem;" id="w-biome">🏡</div><div class="wild-log-lbl" id="w-biome-name">scanning</div></div>
+      <div class="wild-log-wind" id="w-wind"><img src="assets/games/wild/wild-compass-v4.png" loading="lazy" style="width:44px;height:44px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));" alt=""><span></span></div>
+    </div>
+    <!-- TERRITORY OVERVIEW (tap planted count to expand) -->
+    <div id="w-territory" style="display:none;position:fixed;top:60px;left:8px;right:8px;z-index:998;background:rgba(13,16,12,0.94);border:1px solid rgba(122,179,86,0.12);border-radius:10px;padding:0.5rem;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:panelFadeIn 0.2s ease;max-width:360px;margin:0 auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
+        <div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--gold);letter-spacing:0.1em;">YOUR TERRITORY</div>
+        <button onclick="document.getElementById('w-territory').style.display='none';" style="background:none;border:none;color:var(--muted);font-size:0.5rem;cursor:pointer;min-height:36px;min-width:36px;">✕</button>
+      </div>
+      <div id="w-territory-stats" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;font-family:DM Mono,monospace;font-size:0.32rem;text-align:center;"></div>
+    </div>
+    <!-- RECENTER BUTTON -->
+    <button id="w-recenter" onclick="if(window.FG_Wild&&window.FG_Wild._recenter)FG_Wild._recenter();" style="display:none;position:fixed;bottom:calc(140px + env(safe-area-inset-bottom,0px));left:12px;z-index:999;width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(74,144,217,0.3);background:rgba(13,16,12,0.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,0.4);-webkit-tap-highlight-color:transparent;color:rgba(74,144,217,0.8);font-size:0.7rem;">&#8982;</button>
+    <!-- MAP -->
+    <div id="wild-map" style="width:100%;height:100vh;height:100dvh;min-height:250px;"></div>
+    <div class="map-hex-overlay"></div>
+    <div id="wild-map-tod"></div>
+    <div class="map-fog"><div class="fog-wisp"></div><div class="fog-wisp"></div><div class="fog-wisp"></div></div>
+    <div id="wild-frame"><img src="assets/games/wild/viewport-frame-v2.png" loading="lazy" alt=""></div>
+    <!-- TOAST -->
+    <div id="w-toast" style="position:fixed;top:40%;left:50%;transform:translate(-50%,-50%) scale(0.95);background:rgba(17,22,17,0.96);border:1px solid rgba(74,124,53,0.15);border-radius:10px;padding:0.6rem 1rem;z-index:99999;max-width:82%;font-size:0.65rem;color:var(--cream);text-align:center;line-height:1.5;opacity:0;transition:opacity 0.25s,transform 0.25s;pointer-events:none;box-shadow:0 8px 28px rgba(0,0,0,0.5);"></div>
+    <!-- TRAIT PANEL v2 — premium bottom sheet -->
+    <div id="w-tp" class="wtp2">
+      <div class="wtp2-handle"></div>
+      <div class="wtp2-hero">
+        <div class="wtp2-svg" id="wtp-svg"></div>
+        <div class="wtp2-info">
+          <div class="wtp2-name" id="wtp-name">—</div>
+          <div class="wtp2-grade" id="wtp-grade">—</div>
+          <div class="wtp2-owner" id="wtp-owner"></div>
+          <div id="wtp-rarest" style="display:none;margin-top:3px;"></div>
+        </div>
+      </div>
+      <div class="wtp2-stats" id="wtp-grid">
+        <div class="wtp2-stat"><div class="wtp2-stat-val" id="wtp-ea">—</div><div class="wtp2-stat-lbl">EA</div></div>
+        <div class="wtp2-stat"><div class="wtp2-stat-val" id="wtp-season">—</div><div class="wtp2-stat-lbl">Season</div></div>
+        <div class="wtp2-stat"><div class="wtp2-stat-val" id="wtp-days">—</div><div class="wtp2-stat-lbl">Days</div></div>
+        <div class="wtp2-stat"><div class="wtp2-stat-val" id="wtp-status">—</div><div class="wtp2-stat-lbl">Status</div></div>
+      </div>
+      <div class="wtp2-prox" id="wtp-own-status"></div>
+      <!-- Action buttons — other player's plant -->
+      <div class="wtp2-actions" id="wtp-other-actions">
+        <button class="wtp2-btn" onclick="FG_Wild.closeTP()"><div class="wtp2-btn-icon">✕</div><div class="wtp2-btn-lbl">Close</div></button>
+        <button class="wtp2-btn" id="wtp-water-other"><div class="wtp2-btn-icon" style="font-size:1.4rem;">💧</div><div class="wtp2-btn-lbl">Water</div></button>
+        <button class="wtp2-btn" id="wtp-wild-breed"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-breed-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Breed</div></button>
+        <button class="wtp2-btn gold" id="wtp-act"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-harvest-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Harvest</div></button>
+      </div>
+      <!-- Action buttons — your own plant -->
+      <div class="wtp2-actions" id="wtp-own-actions" style="display:none">
+        <button class="wtp2-btn" onclick="FG_Wild.closeTP()"><div class="wtp2-btn-icon">✕</div><div class="wtp2-btn-lbl">Close</div></button>
+        <button class="wtp2-btn" id="wtp-inspect2"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-inspect-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Inspect</div></button>
+        <button class="wtp2-btn" id="wtp-water"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-water-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Water</div></button>
+        <button class="wtp2-btn" id="wtp-defense"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-territory-shield-v4.png" loading="lazy" style="width:36px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Defense</div></button>
+        <button class="wtp2-btn gold" id="wtp-cross"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-breed-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Breed</div></button>
+      </div>
+    </div>
+    <!-- PICKER -->
+    <div id="w-picker" class="dpk2">
+      <div class="dpk2-handle"></div>
+      <div class="dpk2-head"><div><div class="dpk2-title" id="wpk-title">DROP A SPECIMEN</div><div class="dpk2-lim" id="wpk-lim">3 remaining</div></div><button class="dpk2-close" onclick="FG_Wild.closePicker()">&#10005;</button></div>
+      <div class="dpk2-grid" id="wpk-grid"></div>
+    </div>
+  </div>
+
+  <!-- ═══ MAP OVERLAYS (terrarium effect) — hidden until Wild tab ═══ -->
+  <div class="map-vignette" style="display:none;"></div>
+  <div class="map-glass-highlight" style="display:none;"></div>
+
+  <!-- ═══ NEW BACKPACK SYSTEM ═══ -->
+  <!-- Proximity indicator -->
+  <div id="px"><div id="pxd" style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);text-shadow:0 2px 12px rgba(200,168,75,0.4);">47m</div><div id="pxl" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--sage);">getting closer</div><div id="pxb" style="width:120px;height:4px;border-radius:2px;background:rgba(74,124,53,0.15);margin:6px auto 0;overflow:hidden;"><div id="pxf" style="height:100%;border-radius:2px;background:linear-gradient(90deg,var(--sage),var(--gold));width:0%;transition:width 0.5s;"></div></div></div>
+  <!-- Step tracker -->
+  <div id="stp" style="display:none;"><div class="stp-num" id="snv">0</div><div class="stp-lbl">steps</div><div class="stp-bar"><div class="stp-fill" id="sfv"></div></div><div class="stp-lbl" style="margin-top:2px;font-size:7px;">200 for gift</div></div>
+  <!-- Achievement bar -->
+  <div id="ab"><div class="abt"><span class="abv" id="abp">0/1</span> — harvest a plant to unlock slot 2</div><div class="abk"><div class="abf" id="abf" style="width:0%"></div></div></div>
+  <!-- Backpack icon + badge -->
+  <div id="bpi" onclick="BP.toggle()" style="display:none;"><div id="bpb" class="e">0</div></div>
+  <!-- Backpack expanded L-shape -->
+  <div id="bpe"><div id="bpbk" onclick="BP.close()"></div><div id="bpp"></div><div id="bps"></div></div>
+  <div id="bp-rtb" onclick="BP.returnToBase()" style="display:none;"></div>
+  <!-- Plant info card with hold-to-release -->
+  <div id="pic"><div class="pic-top"><div class="pic-plant" id="pic-pl"></div><div class="pic-info"><div class="pic-name" id="pic-nm">—</div><div class="pic-grade" id="pic-gr">—</div><div class="pic-origin" id="pic-or">—</div></div><button class="pic-close" onclick="BP.cpi()">✕</button></div><div class="htc" id="htc-rel" onmousedown="BP.hts()" ontouchstart="BP.hts()" onmouseup="BP.hte()" ontouchend="BP.hte()" onmouseleave="BP.hte()"><div class="htc-fill" id="htcf"></div><span class="htc-label">HOLD TO RELEASE TO WILD</span></div></div>
+  <!-- Seed info card with hold-to-send-to-nursery -->
+  <div id="sdi"><div class="sir"><span>📍</span><span class="sv" id="sdl">—</span></div><div class="sir"><span>🌡</span><span class="sv" id="sdc">—</span></div><div class="sir"><span id="sdhi"></span><span class="sv" id="sdh">—</span></div><div class="htc" id="htc-nur" onmousedown="BP.sns()" ontouchstart="BP.sns()" onmouseup="BP.sne()" ontouchend="BP.sne()" onmouseleave="BP.sne()" style="border-color:rgba(74,124,53,0.2);background:rgba(74,124,53,0.06);color:var(--sage);"><div class="htc-fill" id="htcn" style="background:rgba(74,124,53,0.15);"></div><span class="htc-label">HOLD TO SEND TO NURSERY</span></div><button class="sia" onclick="BP.csi()" style="margin-top:4px;font-size:10px;border-color:rgba(74,124,53,0.1);color:var(--muted);">CANCEL</button></div>
+  <!-- Harvest Reveal Overlay -->
+  <div id="reveal-overlay"><div class="reveal-count" id="rev-count"></div><div class="reveal-card" id="rev-card"><div class="reveal-inner"><div class="reveal-front"></div><div class="reveal-back"><div class="reveal-glow" id="rev-glow"></div><div class="reveal-svg" id="rev-svg"></div><div class="reveal-name" id="rev-name"></div><div class="reveal-grade" id="rev-grade"></div><div class="reveal-haiku" id="rev-haiku"></div></div></div></div><div class="reveal-tap" id="rev-tap">tap to reveal</div></div>
+  <!-- Drop FAB -->
+  <button id="dfb" onclick="FG_Wild.openPicker()" style="display:none;"><span id="dfi"></span><div id="dbb">3</div></button>
+  <!-- Old drop picker removed — replaced by w-picker.dpk2 above -->
+  <!-- ═══ FERAL CHALLENGE MODAL ═══ -->
+  <div id="fc-modal">
+    <button onclick="if(window.FG_Challenge)FG_Challenge._close();" style="position:absolute;top:12px;right:12px;width:48px;height:48px;border-radius:50%;border:1px solid rgba(122,179,86,0.1);background:rgba(13,16,12,0.6);color:var(--muted);font-size:0.85rem;cursor:pointer;z-index:1;display:flex;align-items:center;justify-content:center;">✕</button>
+    <div id="fc-title">FERAL SEED CHALLENGE</div>
+    <div id="fc-subtitle">Find 1 valid Trio — 3 cards where each trait is all same or all different</div>
+    <div id="fc-board"></div>
+    <div id="fc-timer-wrap"><div id="fc-timer-fill" style="width:100%;"></div></div>
+    <div id="fc-timer-text">10s remaining</div>
+    <div id="fc-result"></div>
+  </div>
+  <!-- Toast container -->
+  <div id="tc"></div>
+
+  <!-- ═══ NEXT STEP PROMPT ═══ -->
+  <div id="lw-next-step" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9990;padding:6px 12px;background:linear-gradient(180deg,rgba(13,16,12,0.97),rgba(13,16,12,0.85));border-bottom:1px solid rgba(122,179,86,0.12);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--cream,#e8dcc8);text-align:center;cursor:pointer;min-height:28px;display:flex;align-items:center;justify-content:center;gap:6px;"></div>
+
+  <!-- ═══ KEEPER IDENTITY BAR ═══ -->
+  <div id="pw-keeper-bar">
+    <div class="kb-avatar" onclick="PW_UI.openCharacter()">🌱</div>
+    <div class="kb-info">
+      <div class="kb-name" onclick="PW_UI.openCharacter()" id="kb-name">Keeper</div>
+      <div class="kb-xp-wrap" onclick="PW_UI.openCharacter()"><div class="kb-xp-fill" id="kb-xp-fill" style="width:0%;"></div></div>
+      <div class="kb-rank" id="kb-rank">Lvl 1 · Seedling · 0 / 25 XP</div>
+    </div>
+    <div id="kb-dew" style="font-family:DM Mono,monospace;font-size:0.35rem;color:rgba(91,175,220,0.85);padding:3px 7px;background:rgba(91,175,220,0.06);border:1px solid rgba(91,175,220,0.1);border-radius:4px;white-space:nowrap;cursor:pointer;" onclick="if(window.openEconModal)openEconModal();">0 dew</div>
+    <div id="kb-compendium" onclick="if(window._openCompendiumUI)_openCompendiumUI();" style="display:none;font-family:DM Mono,monospace;font-size:0.35rem;color:rgba(200,168,75,0.85);padding:3px 7px;background:rgba(200,168,75,0.06);border:1px solid rgba(200,168,75,0.1);border-radius:4px;white-space:nowrap;cursor:pointer;">📖 <span id="kb-comp-count">0</span></div>
+    <div id="pw-lb-toggle" onclick="PW_UI.toggleLeaderboard()"><span id="lb-my-rank">#—</span> <span style="font-size:0.4rem;">▼</span></div>
+  </div>
+  <div id="pw-lb-dropdown">
+    <div class="lb-tabs"><div class="lb-tab active" onclick="PW_UI.setLBTab(this,'global')">GLOBAL</div><div class="lb-tab" onclick="PW_UI.setLBTab(this,'friends')">FRIENDS</div><div class="lb-tab" onclick="PW_UI.setLBTab(this,'region')">REGION</div></div>
+    <div class="lb-list" id="lb-list">
+      <div class="lb-row"><div class="lb-rank">#1</div><div class="lb-name" style="color:var(--sage);">CosmicGardener</div><div class="lb-score">12,450</div></div>
+      <div class="lb-row"><div class="lb-rank">#2</div><div class="lb-name">FernWhisperer</div><div class="lb-score">9,820</div></div>
+      <div class="lb-row"><div class="lb-rank">#3</div><div class="lb-name">MossCollector</div><div class="lb-score">8,100</div></div>
+      <div class="lb-row" style="padding:0.2rem;text-align:center;color:var(--muted);font-size:0.38rem;">· · ·</div>
+      <div class="lb-row you"><div class="lb-rank">#—</div><div class="lb-name">You ★</div><div class="lb-score" id="lb-my-pollen">0</div></div>
+    </div>
+    <div class="lb-footer">Your Pollen: <span id="lb-footer-pollen">0</span></div>
+  </div>
+  <!-- ═══ CHARACTER SHEET ═══ -->
+  <div id="pw-character">
+    <button class="cs-close" onclick="PW_UI.closeCharacter()">✕</button>
+    <div class="cs-header"><div class="cs-avatar" id="cs-avatar">🌱</div><div style="flex:1;min-width:0;"><div class="cs-name" id="cs-name" onclick="PW_UI.editName()" style="cursor:pointer;" title="Tap to edit">Keeper</div><div class="cs-title" id="cs-title">◈ Seedling · Level 1</div><div class="cs-xp-bar"><div class="cs-xp-fill" id="cs-xp-fill" style="width:0%;"></div></div><div class="cs-xp-text" id="cs-xp-text">0 / 25 XP → Level 2</div></div></div>
+    <div class="cs-section"><div class="cs-section-title">ACTIVE COMPANION</div><div class="cs-companion-card" onclick="PW_UI.equipCompanion()" style="cursor:pointer;" title="Tap to change"><div class="cs-companion-icon" id="cs-companion-icon">❓</div><div><div style="font-family:'Bebas Neue',sans-serif;font-size:0.6rem;color:var(--cream);" id="cs-companion-name">None Equipped</div><div style="font-size:0.38rem;color:var(--muted);" id="cs-companion-buff">Tap to equip a companion</div></div></div></div>
+    <div class="cs-section"><div class="cs-section-title">SHOWCASE</div><div class="cs-showcase-grid"><div class="cs-showcase-slot empty" onclick="PW_UI.editShowcase(0)"><div>+ Add Plant</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div></div></div>
+    <div class="cs-section"><div class="cs-section-title">FEATURED HAIKU</div><div class="cs-haiku" id="cs-haiku"><em style="color:var(--muted);">Bloom your first plant to feature its haiku here</em></div></div>
+    <div class="cs-section"><div class="cs-section-title">KEEPER STATS</div><div class="cs-stats" id="cs-stats"><div>Plants Grown <b id="cs-s-plants">0</b></div><div>Pollen <b id="cs-s-pollen" style="color:var(--gold);">0</b></div><div>Seeds Found <b id="cs-s-seeds">0</b></div><div>Wild Active <b id="cs-s-wild">0</b></div><div>Games Played <b id="cs-s-games">0</b></div><div>Groves <b id="cs-s-groves">0</b></div><div>Compost Made <b id="cs-s-compost">0</b></div><div>Dew Drops <b id="cs-s-dew" style="color:var(--sage);">0</b></div><div>Rarest Grade <b id="cs-s-rarest">—</b></div><div>Creatures <b id="cs-s-creatures">0</b></div><div>Days Active <b id="cs-s-days">1</b></div><div>Friends <b id="cs-s-friends">0</b></div></div></div>
+    <div class="cs-section"><div class="cs-section-title">FRIEND CODE</div><div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;"><div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--gold);letter-spacing:0.15em;" id="cs-friend-code">????-????</div><button onclick="PW_UI.copyFriendCode()" style="background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.2);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.5rem;padding:0.2rem 0.6rem;border-radius:4px;cursor:pointer;">COPY</button></div><div style="display:flex;gap:0.3rem;align-items:center;"><input type="text" id="cs-add-friend" placeholder="Enter friend code" maxlength="9" style="flex:1;padding:0.4rem;background:rgba(26,36,22,0.4);border:1.5px solid rgba(122,179,86,0.15);border-radius:6px;color:var(--cream);font-family:'DM Mono',monospace;font-size:0.5rem;outline:none;" /><button onclick="PW_UI.addFriend()" style="padding:0.4rem 0.6rem;border:1.5px solid rgba(122,179,86,0.2);border-radius:6px;background:rgba(26,36,22,0.3);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.5rem;cursor:pointer;min-height:36px;">ADD</button></div><div id="cs-friend-err" style="font-size:0.38rem;color:var(--muted);margin-top:0.25rem;min-height:0.8rem;"></div></div>
+    <div class="cs-section"><div class="cs-section-title">FRIENDS <span id="cs-friend-count" style="color:var(--muted);">(0)</span></div><div id="cs-pending-list"></div><div id="cs-friends-list" style="font-size:0.42rem;color:var(--muted);">No friends yet. Share your code!</div></div>
+    <div style="display:flex;gap:0.4rem;margin-top:0.3rem;"><button onclick="PW_UI.closeCharacter()" style="flex:1;padding:0.5rem;border-radius:8px;border:2px solid rgba(74,124,53,0.15);background:rgba(26,36,22,0.3);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;cursor:pointer;min-height:48px;">CLOSE</button></div>
+  </div>
+  <!-- ═══ ONBOARDING ═══ -->
+
+  <div class="fg-bottomnav" style="display:none;"></div>
+  <div id="wild-nav" style="display:flex;">
+    <div class="wn-row">
+      <button class="wn-btn" onclick="location.href='game.html'" title="Game">
+        <img src="assets/games/wild/nav-game-v5.png" alt="Game"><span class="wn-lbl">GAME</span>
+      </button>
+      <button class="wn-btn" onclick="location.href='greenhouse.html'" title="Greenhouse">
+        <img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse"><span class="wn-lbl">GREENHOUSE</span>
+      </button>
+      <button class="wn-btn" onclick="location.href='greenhouse.html#nursery'" title="Nursery">
+        <img src="assets/games/wild/nav-nursery-v5.png" alt="Nursery"><span class="wn-lbl">NURSERY</span>
+      </button>
+      <button class="wn-btn active" title="Wild">
+        <img src="assets/games/wild/nav-wild-v5.png" alt="Wild"><span class="wn-lbl">WILD</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Login Modal -->
+  <div class="login-overlay" id="login-overlay">
+    <div class="login-card">
+      <h3>Sync Your <em style="color:var(--sage);">Cloud Vault</em></h3>
+      <p>Save your Plants and Dew Drops across all devices. Play as guest anytime — log in to keep your collection forever.</p>
+      <div id="login-error" style="color:#8B2E2E;font-size:0.6rem;margin-bottom:0.5rem;min-height:1rem;text-align:center;"></div>
+      <input class="login-field" type="email" placeholder="Email" id="login-email" />
+      <input class="login-field" type="password" placeholder="Password" id="login-pass" />
+      <button class="login-submit" onclick="handleLogin()">🌱 CREATE ACCOUNT</button>
+      <button class="login-close" onclick="closeLogin()">Not now — keep playing</button>
+    </div>
+  </div>
+
+  <!-- PWA Install Modal -->
+  <div id="pwa-install-modal">
+    <div class="pwa-card">
+      <div class="pwa-icon">🚨</div>
+      <h3>Unsecured Greenhouse</h3>
+      <p>Your <strong><span id="pwa-plant-count">0</span> Plants</strong> are stored in temporary browser memory. Clearing your cache or switching browsers will erase your entire collection permanently.</p>
+      <div class="pwa-stats">
+        <div class="pwa-stat"><div class="pwa-stat-val" id="pwa-stat-plants">0</div><div class="pwa-stat-label">PLANTS AT RISK</div></div>
+        <div class="pwa-stat"><div class="pwa-stat-val" id="pwa-stat-hashes">0</div><div class="pwa-stat-label">DEW DROPS AT RISK</div></div>
+        <div class="pwa-stat"><div class="pwa-stat-val" id="pwa-stat-rare">0</div><div class="pwa-stat-label">RARE FINDS</div></div>
+      </div>
+      <p style="font-size:0.6rem;margin-bottom:0.75rem;">Add Lucid Winds to your Home Screen to secure your collection and unlock the full Grow Log.</p>
+      <button class="pwa-secure-btn" id="pwa-install-btn" onclick="executePWAInstall()">🔒 SECURE MY GREENHOUSE</button>
+      <button class="pwa-dismiss" onclick="dismissPWA()">Risk it — I'll take my chances</button>
+    </div>
+  </div>
+<!-- SWS ID Modal — Phase 25: INITIALIZE ID / RECOVER CONNECTION -->
+<div id="sws-id-modal" onclick="if(event.target===this)closeSWSIdModal()">
+  <div class="sws-id-card">
+
+    <!-- Asset count — always visible before auth, trust signal -->
+    <div class="sws-id-eyebrow">⬡ SWS CLOUD PROTOCOL</div>
+    <h2 class="sws-id-title">Identity<br><em style="font-style:italic;color:var(--gold);">Terminal</em></h2>
+    <div class="sws-id-asset-count" id="sws-id-asset-count">⬡ 0 BOTANICAL ASSETS DETECTED</div>
+
+    <!-- INPUT STATE -->
+    <div id="sws-id-input-state">
+      <!-- Tab row: INITIALIZE ID / RECOVER CONNECTION -->
+      <div class="sws-id-tab-row">
+        <button type="button" class="sws-id-tab active" id="sws-tab-register" onclick="swsShowTab('register')">⊕ INITIALIZE ID</button>
+        <button type="button" class="sws-id-tab" id="sws-tab-login" onclick="swsShowTab('login')">↺ RECOVER</button>
+      </div>
+
+      <!-- AUTH FORM — e.preventDefault() guards all paths -->
+      <form class="sws-id-form" id="sws-id-form" novalidate>
+
+        <!-- INITIALIZE ID fields -->
+        <div id="sws-register-fields" class="sws-id-fields">
+          <p class="sws-id-subtitle">Create your SWS Identity to anchor your Plant collection across all devices.</p>
+          <div class="sws-id-label">ACCOUNT NAME</div>
+          <input class="sws-id-input" type="text" id="sws-reg-name" placeholder="YourGroveName" autocomplete="username" style="margin-bottom:0.55rem;"/>
+          <div class="sws-id-label">EMAIL ADDRESS</div>
+          <input class="sws-id-input" type="email" id="sws-reg-email" placeholder="your@identity.com" autocomplete="email" style="margin-bottom:0.55rem;"/>
+          <div class="sws-id-label">PASSWORD</div>
+          <input class="sws-id-input" type="password" id="sws-reg-pass" placeholder="Min. 8 characters" autocomplete="new-password" style="margin-bottom:0.2rem;"/>
+        </div>
+
+        <!-- RECOVER CONNECTION fields -->
+        <div id="sws-login-fields" class="sws-id-fields" style="display:none;">
+          <p class="sws-id-subtitle">Re-establish your connection. Your local collection is always safe — this confirms your identity.</p>
+          <div class="sws-id-label">EMAIL ADDRESS</div>
+          <input class="sws-id-input" type="email" id="sws-log-email" placeholder="your@identity.com" autocomplete="email" style="margin-bottom:0.55rem;"/>
+          <div class="sws-id-label">PASSWORD</div>
+          <input class="sws-id-input" type="password" id="sws-log-pass" placeholder="Your password" autocomplete="current-password" style="margin-bottom:0.2rem;"/>
+        </div>
+
+        <div id="sws-id-error" style="font-family:'DM Mono',monospace;font-size:0.48rem;color:rgba(180,80,80,0.9);margin-bottom:0.4rem;min-height:0.8rem;margin-top:0.3rem;"></div>
+        <button type="button" class="sws-id-submit" id="sws-id-submit-btn" onclick="submitSWSId(event)">⬡ INITIALIZE IDENTITY</button>
+      </form>
+
+      <!-- SOCIAL LOGIN — disabled for now -->
+      <div style="display:none;">
+      <div class="sws-social-divider"><span>OR CONTINUE WITH</span></div>
+      <div class="sws-social-btns">
+        <button type="button" class="sws-social-btn sws-social-btn-google" id="sws-google-btn" onclick="submitSocialLogin('google')" title="Sign in with Google">
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+            <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/>
+            <path d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
+          </svg>
+          Continue with Google
+        </button>
+        <button type="button" class="sws-social-btn sws-social-btn-facebook" id="sws-facebook-btn" onclick="submitSocialLogin('facebook')" title="Sign in with Facebook">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047v-2.66c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.971H15.83c-1.491 0-1.956.93-1.956 1.886v2.264h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+          </svg>
+          Continue with Facebook
+        </button>
+      </div>
+      </div>
+
+      <button type="button" class="sws-id-dismiss" onclick="closeSWSIdModal()">dismiss — I'll sync later</button>
+    </div>
+
+    <!-- SUCCESS STATE -->
+    <div class="sws-id-success" id="sws-id-success-state">
+      <div class="sws-id-checkmark">✓</div>
+      <div class="sws-id-secured-title">IDENTITY SECURED</div>
+      <div class="sws-id-secured-sub" id="sws-id-secured-sub">Your SWS ID has been registered.<br>Your collection is now anchored.</div>
+    </div>
+
+  </div>
+</div>
+<div class="game-footer">
+    Lucid Winds — botanical collectibles.<br>
+    © 2026 Lucid Winds LLC<br>
+    Lucid Winds is a digital botanical game. All plants are procedurally generated artworks.
+  </div>
+
+</div>
+</div>
+  <div id="pw-onboard">
+    <!-- Splash: seed + root, "lucid winds" (shown before story beats, new users only) -->
+    <div id="pw-splash">
+      <div class="splash-title">lucid <em>winds</em></div>
+      <div style="position:absolute;bottom:0;right:0;width:120px;height:40px;background:linear-gradient(135deg,transparent 30%,#050505 70%);pointer-events:none;z-index:1;"></div>
+    </div>
+    <!-- Beat 1: Rain figure + "We lost something" -->
+    <!-- Beat 1: Zoomed out, rain, figure -->
+    <div class="ob-beat show" id="ob-beat1">
+      <div class="ob-img-area"><img src="assets/onboarding/cinema-beat1-weight-540x960.jpg" alt="" loading="eager" /></div>
+      <div class="ob-text-area">
+        <div class="ob-line" data-beat="1" data-i="0">We lost something.</div>
+        <div class="ob-line" data-beat="1" data-i="1">Not all at once,</div>
+        <div class="ob-line" data-beat="1" data-i="2">but piece by piece.</div>
+      </div>
+    </div>
+
+    <!-- Beat 2: Moon, head bowed, breathing -->
+    <div class="ob-beat" id="ob-beat2">
+      <div class="ob-img-area"><img src="assets/onboarding/cinema-beat2-glint-540x960.jpg" alt="" loading="eager" /></div>
+      <div class="ob-text-area">
+        <div class="ob-line" data-beat="2" data-i="0">Our focus was scattered,</div>
+        <div class="ob-line" data-beat="2" data-i="1">pulled apart,</div>
+        <div class="ob-line" data-beat="2" data-i="2">and the living world grew <em>quiet</em>.</div>
+      </div>
+    </div>
+
+    <!-- Beat 3: Noir eyes, crack, tendril -->
+    <div class="ob-beat" id="ob-beat3">
+      <div class="ob-img-area"><img src="assets/onboarding/cinema-beat3-tendril-540x960.jpg" alt="" loading="eager" /></div>
+      <div class="ob-text-area">
+        <div class="ob-line" data-beat="3" data-i="0">But attention still leaves a trace.</div>
+        <div class="ob-line" data-beat="3" data-i="1"><em>Stay.</em></div>
+        <div class="ob-line" data-beat="3" data-i="2">Look closely enough…</div>
+        <div class="ob-line" data-beat="3" data-i="3">and something begins.</div>
+      </div>
+    </div>
+
+    <div class="ob-dots" id="ob-dots"><div class="ob-dot on" onclick="PW_Onboard.goToBeat(1)"></div><div class="ob-dot" onclick="PW_Onboard.goToBeat(2)"></div><div class="ob-dot" onclick="PW_Onboard.goToBeat(3)"></div><div class="ob-dot" onclick="PW_Onboard.goToBeat(4)"></div></div>
+
+    <!-- Beat 4: Gift plant + auth -->
+    <div class="ob-beat" id="ob-beat4">
+      <div class="ob-text" style="font-size:0.75rem;margin-bottom:0.3rem;">This one began with you.</div>
+      <div class="ob-plant-wrap"><div id="ob-plant-render" class="ob-plant-svg" style="display:flex;align-items:center;justify-content:center;"></div></div>
+      <div id="ob-plant-name" class="ob-name" style="opacity:0;transition:opacity 1s ease;"></div>
+      <div id="ob-plant-grade" class="ob-grade" style="opacity:0;transition:opacity 1s ease;"></div>
+      <div id="ob-haiku" class="ob-haiku"></div>
+      <div id="ob-creature" class="ob-creature-text"></div>
+      <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:rgba(240,235,216,0.7);line-height:1.8;margin-top:0.6rem;max-width:300px;opacity:0;transition:opacity 1.5s ease 0.3s;" id="ob-manifesto">Every plant here is born from attention.<br>No two are the same.<br>Care for yours, and it will shape the world around you.</div>
+      <div class="ob-auth" id="ob-auth"><div id="ob-auth-new"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.5rem;">CLAIM YOUR FIRST PLANT</div><input type="text" id="ob-name-input" placeholder="What should we call you, Keeper?" maxlength="24" autocomplete="off" /><input type="email" id="ob-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-pass" placeholder="Password (6+ characters)" autocomplete="new-password" /><div class="ob-auth-err" id="ob-auth-err"></div><button class="ob-auth-btn" id="ob-auth-btn" onclick="PW_Onboard.submitAuth()">🌱 CLAIM THIS PLANT</button><div style="margin-top:0.8rem;font-family:'DM Mono',monospace;font-size:0.45rem;color:var(--muted);"><span onclick="PW_Onboard.showLogin()" style="color:var(--gold);cursor:pointer;text-decoration:underline;min-height:48px;display:inline-block;padding:8px 0;">Already have an account? Sign in</span></div></div><div id="ob-auth-login" style="display:none;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.5rem;">WELCOME BACK, KEEPER</div><input type="email" id="ob-login-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-login-pass" placeholder="Password" autocomplete="current-password" /><div class="ob-auth-err" id="ob-login-err"></div><button class="ob-auth-btn" id="ob-login-btn" onclick="PW_Onboard.submitLogin()" style="background:linear-gradient(145deg,var(--gold),#8a6e2f);">SIGN IN</button><div style="margin-top:0.5rem;text-align:center;"><span onclick="PW_Onboard.forgotPassword()" style="font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--muted);cursor:pointer;text-decoration:underline;min-height:48px;display:inline-block;padding:8px 0;">Forgot password?</span></div><div style="margin-top:0.4rem;font-family:'DM Mono',monospace;font-size:0.45rem;color:var(--muted);"><span onclick="PW_Onboard.showSignup()" style="color:var(--sage);cursor:pointer;text-decoration:underline;min-height:48px;display:inline-block;padding:8px 0;">New here? Create an account</span></div></div></div>
+      <button class="ob-continue" id="ob-continue" onclick="PW_Onboard.finish()">ENTER YOUR GREENHOUSE →</button>
+    </div>
+    <div class="ob-skip" id="ob-skip" onclick="PW_Onboard.skip()">skip →</div>
+  </div>
+
+    <!-- ═══ DEV ADMIN ═══ -->
+  <div id="pw-dev-admin">
+    <div style="display:flex;justify-content:space-between;align-items:center;"><div class="dev-title">⚠ DEV ADMIN</div><button onclick="document.getElementById('pw-dev-admin').classList.remove('open')" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(192,80,80,0.3);background:none;color:#c07070;font-size:0.75rem;cursor:pointer;">✕</button></div>
+    <div class="dev-section"><div class="dev-section-title">CURRENT ACCOUNT</div><div id="dev-account-info" style="font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);line-height:1.8;margin-bottom:0.3rem;">Not logged in</div><button class="dev-btn danger" onclick="PW_Dev.nukeAccount()">🗑 WIPE CURRENT ACCOUNT</button></div>
+    <div class="dev-section"><div class="dev-section-title">ACCOUNT COUNTER</div><div style="font-size:0.42rem;color:var(--muted);margin-bottom:0.3rem;">Next: <span id="dev-counter-val">?</span></div><button class="dev-btn" onclick="PW_Dev.resetCounter()">↩ RESET TO 1</button></div>
+    <div class="dev-section"><div class="dev-section-title">LOCAL STORAGE</div><button class="dev-btn" onclick="PW_Dev.clearLocal()">🧹 CLEAR ALL</button></div>
+    <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
+    <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="localStorage.removeItem('fg_ferals');localStorage.removeItem('fg_feral_zones');alert('Ferals cleared! Switch tabs to refresh.');">🧹 CLEAR FERALS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button><button class="dev-btn" onclick="PW_Dev.dropTestPair()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🧬 DROP BREEDING PAIR</button><button class="dev-btn" onclick="PW_Dev.simulateSpread()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌿 SIMULATE SPREAD</button></div>
+    <div class="dev-section"><div class="dev-section-title">ACCELERATE (BETA TEST)</div><button class="dev-btn" onclick="PW_Dev.accelFerals()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⚡ FORCE FERAL SPAWN</button><button class="dev-btn" onclick="PW_Dev.accelRepro()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🌱 FORCE WILD REPRODUCTION</button><button class="dev-btn" onclick="PW_Dev.accelNursery()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💧 INSTANT BLOOM ALL SEEDS</button><button class="dev-btn" onclick="PW_Dev.accelBackpack()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🎒 CLEAR BP COOLDOWNS</button><button class="dev-btn" onclick="PW_Dev.grantHashes(100)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💎 +100 DEW DROPS</button><button class="dev-btn" onclick="PW_Dev.accelAll()" style="border-color:rgba(255,110,199,0.4);color:#ff6ec7;">🚀 ACCELERATE EVERYTHING</button></div>
+    <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button><button class="dev-btn" onclick="PW_Dev.spawnChimeras()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🧬 SPAWN 4 CHIMERAS (dual borders)</button><button class="dev-btn" onclick="PW_Dev.grantDew(500)" style="border-color:rgba(91,175,220,0.4);color:rgba(91,175,220,0.9);">💧 +500 DEW DROPS</button></div>
+    <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button><button class="dev-btn" onclick="try{PW_Dev.cardFrontAligner()}catch(e){alert(e.message)}">🃏 CARD FRONT ALIGNMENT</button><button class="dev-btn" onclick="try{PW_Dev.cardBackViewer()}catch(e){alert(e.message)}">🔙 CARD BACK NAMEPLATES</button><button class="dev-btn" onclick="try{PW_Dev.leafBloomEditor()}catch(e){alert(e.message)}">🌿 LEAF & BLOOM EDITOR</button></div>
+    <div class="dev-section"><div class="dev-section-title">NUCLEAR</div><button class="dev-btn danger" onclick="PW_Dev.fullReset()">☢ WIPE EVERYTHING</button></div>
+    <div class="dev-log" id="dev-log">Ready.\n</div>
+  </div>
+<!-- DEV BUTTON — remove before production -->
+<!-- set-102: Firebase diagnostic log — shows EVERY auth + Firestore operation -->
+<div id="sws-debug-log"></div>
+<button id="sws-debug-toggle" onclick="(function(){var el=document.getElementById('sws-debug-log');el.classList.toggle('visible');this.textContent=el.classList.contains('visible')?'[×] Hide Log':'[🔍] Firebase Log';}).call(this)">[🔍] Firebase Log</button>
+
+<!-- JS: Core + App + Wild (no Games) -->
+<script src="core.js"></script>
+<script src="word-banks.js"></script>
+<script src="app.js"></script>
+<script src="wild.js"></script>
+<script src="init.js"></script>
+<script src="dev.js"></script>
+<script src="systems.js"></script>
+
+<script>
+// Auto-activate Wild tab on load
+window.addEventListener('load',function(){
+  // Show wild panel
+  var wp=document.getElementById('panel-wild');
+  if(wp){wp.classList.add('active');wp.style.display='block';}
+  // Activate FG_Wild after a short delay to let scripts initialize
+  setTimeout(function(){
+    if(window.FG_Wild&&window.FG_Wild.activate)FG_Wild.activate();
+  },500);
+});
+</script>
+</body>
+</html>

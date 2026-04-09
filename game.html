@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lucid Winds — Game</title>
+  <meta name="description" content="Lucid Winds. Earn unique procedural plants by playing pattern-matching games.">
+  <meta name="theme-color" content="#0d100c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/icon-48x48.png" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Mono:wght@300;400;500&family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=Cinzel:wght@700;900&family=Outfit:wght@400;600&family=Cormorant+Garamond:wght@600;700&display=swap" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Mono:wght@300;400;500&family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=Cinzel:wght@700;900&family=Outfit:wght@400;600&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+
+  <!-- GA4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XE58S4X6RX"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-XE58S4X6RX');</script>
+
+  <!-- Firebase (NO Leaflet on game page) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <link rel="stylesheet" href="shared.css" />
+
+  <!-- Multi-page nav: tell JS which page we are -->
+  <script>window._lwPage='game';</script>
+</head>
+<body>
+<div id="vault-hydration-overlay" class="no-session">
+  <div class="lw-spinner"><div class="lw-spinner-leaf"></div><div class="lw-spinner-leaf"></div><div class="lw-spinner-leaf"></div></div>
+  <div class="vho-label">RECOVERING VAULT</div>
+  <div class="vho-sub" id="vho-status">Connecting to cloud…</div>
+</div>
+<div id="sws-auth-header">
+  <div id="sws-auth-badge" class="unverified" onclick="swsHandleBadgeClick()" title="SWS Identity">
+    <span class="ab-dot"></span>
+    <span id="sws-badge-label">⬡ UNVERIFIED</span>
+  </div>
+</div>
+
+<!-- Phase 30.5: Recovery Screen — shown when init detects corrupt data -->
+<div id="recovery-screen">
+  <div class="rec-icon">⚠</div>
+  <div class="rec-title">DATA SYNC ERROR</div>
+  <div class="rec-sub">Lucid Winds encountered corrupted or malformed plant data during initialization. Your session has been safely suspended.</div>
+  <div class="rec-detail" id="rec-detail-msg">Error details not available.</div>
+  <div class="rec-btn-row">
+    <button class="rec-btn recover" onclick="attemptDataRecovery()">⟳ ATTEMPT RECOVERY</button>
+    <button class="rec-btn reset"   onclick="initiateFactoryReset(true)">⚠ FACTORY RESET</button>
+  </div>
+</div>
+
+<!-- Mini-menu (logged-in state only) -->
+<div id="sws-mini-menu">
+  <div class="smm-eyebrow">⬡ SWS IDENTITY</div>
+  <button class="smm-item" onclick="swsMiniProfile()">⊞ VIEW PROFILE</button>
+  <div class="smm-divider"></div>
+  <button class="smm-item danger" onclick="swsDisconnect()">⊗ DISCONNECT</button>
+  <button class="smm-item wipe" id="smm-reset-btn"
+    onmousedown="startResetHold(event)" ontouchstart="startResetHold(event)"
+    onmouseup="cancelResetHold()"       ontouchend="cancelResetHold()"
+    onmouseleave="cancelResetHold()">⚠ RESET TERMINAL — HOLD 3s TO WIPE</button>
+</div>
+<div id="sws-recovery-toast">
+  <div class="srt-title">⬡ ASSETS RECOVERED</div>
+  <div class="srt-count" id="sws-toast-count"></div>
+</div>
+<!-- ═══ THE CURTAIN — Auto-dismisses, no hard gate ═══ -->
+<div id="landing-splash" class="hidden">
+</div>
+
+
+<div class="game-wrap">
+  <div class="grove-panel active" id="panel-game">
+  <div class="game-header">
+    <div class="game-title">Lucid <em>Winds</em></div>
+    <!-- Dew Drop progress bar — shows balance + progress to next plant -->
+    <div id="game-dew-bar" style="display:flex;align-items:center;gap:8px;padding:4px 12px;margin-top:2px;">
+      <div style="font-family:DM Mono,monospace;font-size:clamp(.32rem,.9vw,.4rem);color:rgba(91,175,220,0.9);white-space:nowrap;"><span id="game-dew-val">0</span> dew</div>
+      <div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;position:relative;"><div id="game-dew-fill" style="height:100%;background:linear-gradient(90deg,rgba(91,175,220,0.6),rgba(122,179,86,0.7));border-radius:2px;width:0%;transition:width 0.4s ease;"></div></div>
+      <div style="font-family:DM Mono,monospace;font-size:clamp(.28rem,.8vw,.35rem);color:var(--muted);white-space:nowrap;"><span id="game-dew-progress">0</span>/30</div>
+      <div id="game-streak" style="font-family:DM Mono,monospace;font-size:clamp(.28rem,.8vw,.35rem);color:var(--gold);white-space:nowrap;opacity:0.7;"></div>
+      <button id="daily-quest-btn" onclick="if(window._openDailyQuests)_openDailyQuests();" style="display:none;font-family:DM Mono,monospace;font-size:clamp(.28rem,.8vw,.35rem);color:var(--sage);background:rgba(122,179,86,0.08);border:1px solid rgba(122,179,86,0.15);border-radius:4px;padding:2px 6px;cursor:pointer;white-space:nowrap;min-height:28px;">QUESTS</button>
+    </div>
+  </div>
+  <div class="fg-pk" id="fg-pk"></div>
+  <!-- Trios status bar removed — counters live inside #sw .fg-topbar now -->
+  <div id="gp-strip" class="gp-strip"></div>
+  <div id="fg-ag"></div>
+  <div id="sw">
+
+
+  <!-- SETTINGS — Full screen overlay -->
+  <div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(8,10,6,0.96);z-index:99998;overflow-y:auto;padding:1.2rem;backdrop-filter:blur(10px);animation:panelFadeIn 0.25s ease;">
+    <div style="max-width:400px;margin:0 auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">
+        <div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:var(--gold);letter-spacing:0.1em;">SETTINGS</div>
+        <button onclick="toggleSettingsMenu()" style="background:linear-gradient(180deg,rgba(46,40,32,0.7) 0%,rgba(32,30,24,0.8) 100%);border:1px solid rgba(200,188,160,0.2);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.7rem;padding:0.4rem 0.8rem;border-radius:6px;cursor:pointer;min-height:40px;">CLOSE</button>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-label">GAME</div>
+        <button class="settings-big-btn" onclick="newGame();toggleSettingsMenu();">New Game</button>
+        <button class="settings-big-btn" onclick="addCards();toggleSettingsMenu();">Add 3 Cards</button>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-label">YOUR RECORDS</div>
+        <div class="settings-stat-row"><span>Current Time</span><span id="s-time" style="color:var(--cream);font-size:0.85rem;">0:00</span></div>
+        <div class="settings-stat-row"><span>Today's Best</span><span id="rec-daily" style="color:var(--gold);font-size:0.85rem;">—:——</span></div>
+        <div class="settings-stat-row"><span>Games Today</span><span id="rec-games" style="color:var(--cream);font-size:0.85rem;">0</span></div>
+        <div class="settings-stat-row"><span>All-Time Best</span><span id="rec-alltime" style="color:var(--gold);font-size:0.85rem;">—:——</span></div>
+        <div style="display:none;"><span id="rec-daily-phenos">—</span><span id="rec-streak">—</span><span id="rec-alltime-date">—</span><span id="rec-date">—</span></div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-label">DISPLAY</div>
+        <button class="settings-big-btn" onclick="toggleColorblind();toggleSettingsMenu();">Colorblind Mode</button>
+        <button class="settings-big-btn" onclick="toggleCustomize();toggleSettingsMenu();">Change Card Shapes</button>
+        <button class="settings-big-btn" onclick="toggleAudio();toggleSettingsMenu();" id="audio-settings-btn">Sound: Off</button>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-label">PRIVACY</div>
+        <div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);margin-bottom:0.3rem;line-height:1.5;">Hide your wild plants from other players within 200m of your home location. Your plants still grow and breed — they're just invisible to others.</div>
+        <button class="settings-big-btn" id="home-zone-btn" onclick="window._toggleHomeZone();">Home Zone: OFF</button>
+        <button class="settings-big-btn" id="home-zone-set-btn" onclick="window._setHomeZone();" style="display:none;">Set Current Location as Home</button>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-label">LEARN</div>
+        <button class="settings-big-btn" onclick="triggerTutorialDemo();toggleSettingsMenu();">How to Play</button>
+        <button class="settings-big-btn" onclick="openGameGuide();toggleSettingsMenu();">Full Game Guide</button>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-label">MORE</div>
+        <button class="settings-big-btn" onclick="switchTab('dashboard');toggleSettingsMenu();">Shop</button>
+        <button class="settings-big-btn" onclick="switchTab('binder');toggleSettingsMenu();">Collection Binder</button>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- Trios-only content wrapper — hidden when playing other games -->
+  <div id="trios-wrap">
+  <!-- Rules strip — always visible above cards -->
+  <div class="rules-strip" id="rules-strip">
+    <span class="rules-text">Tap 3 cards that share a pattern. Each feature — <strong>color</strong>, <strong>shape</strong>, <strong>count</strong>, <strong>shading</strong> — must be all same or all different.</span>
+  </div>
+
+  <!-- Proof of Attention — compact ticker -->
+  <div class="attn-strip">
+    <div style="display:flex;align-items:center;gap:0.25rem;">
+      <div class="attn-dot"></div>
+      <span style="letter-spacing:0.1em;font-size:0.38rem;">ATTENTION</span>
+    </div>
+    <div style="font-size:0.4rem;">⬡ <span id="attn-phenos">0</span> trios · <span id="attn-time">0s</span></div>
+  </div>
+
+  <!-- Trios dashboard — deck, trios found, hash progress, settings -->
+  <div id="trios-dash" style="display:flex;align-items:center;gap:14px;padding:12px 14px;margin:4px 0 8px;background:linear-gradient(180deg,rgba(26,36,22,0.95),rgba(18,24,16,0.92));border:1.5px solid rgba(122,179,86,0.22);border-radius:0 0 12px 12px;box-shadow:0 3px 12px rgba(0,0,0,0.4);position:sticky;top:0;z-index:100;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">
+    <div style="display:flex;gap:18px;flex-shrink:0;">
+      <div style="display:flex;align-items:baseline;gap:5px;"><span id="s-found" style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;font-weight:700;color:#e8dcc8;line-height:1;">0</span><span style="font-family:'DM Mono',monospace;font-size:0.6rem;font-weight:600;color:rgba(122,179,86,0.9);letter-spacing:0.1em;">TRIOS</span></div>
+      <div style="display:flex;align-items:baseline;gap:5px;"><span id="s-remain" style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;font-weight:700;color:#e8dcc8;line-height:1;">—</span><span style="font-family:'DM Mono',monospace;font-size:0.6rem;font-weight:600;color:rgba(122,179,86,0.9);letter-spacing:0.1em;">DECK</span></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+      <span id="th-count" style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:#e8dcc8;white-space:nowrap;">0</span><span style="font-family:'DM Mono',monospace;font-size:0.5rem;color:rgba(122,179,86,0.8);">/30</span>
+      <div style="flex:1;height:6px;background:rgba(26,31,23,.6);border-radius:3px;overflow:hidden;border:1px solid rgba(74,124,53,.12);min-width:30px;"><div id="th-fill" style="height:100%;width:0%;background:linear-gradient(90deg,rgba(74,124,53,.6),rgba(122,179,86,.7),rgba(200,168,78,.6));border-radius:3px;transition:width .6s ease;"></div></div>
+      <span id="th-stage" style="font-family:'DM Mono',monospace;font-size:0.45rem;color:#c8a84b;white-space:nowrap;">Seed</span>
+    </div>
+    <div style="display:flex;gap:6px;flex-shrink:0;">
+      <button onclick="triggerTutorialDemo()" style="width:40px;height:40px;border-radius:8px;border:1px solid rgba(200,188,160,0.15);background:rgba(46,40,32,0.6);color:rgba(240,235,216,0.6);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">❓</button>
+      <button onclick="toggleSettingsMenu()" style="width:40px;height:40px;border-radius:8px;border:1px solid rgba(200,188,160,0.15);background:rgba(46,40,32,0.6);color:rgba(240,235,216,0.6);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">⚙</button>
+    </div>
+  </div>
+
+  <!-- Card Grid -->
+  <div class="card-grid" id="card-grid"></div>
+
+  <!-- Milestone Drop -->
+  <div class="milestone-drop" id="milestone-drop">
+    <p>Deep focus achieved. Cultivate your real-world environment.</p>
+  </div>
+
+  <!-- Message -->
+  <div class="game-msg" id="game-msg"></div>
+
+  <!-- Customize Panel -->
+  <div class="customize-panel" id="cust-panel">
+    <div class="cust-title">CUSTOMIZE YOUR CARDS</div>
+    <div class="cust-row">
+      <span class="cust-label">COLOR 1</span>
+      <input type="color" class="cust-color" id="cc1" value="#5b8fb9" onchange="updateTheme()" />
+      <span class="cust-label">COLOR 2</span>
+      <input type="color" class="cust-color" id="cc2" value="#C8A84B" onchange="updateTheme()" />
+      <span class="cust-label">COLOR 3</span>
+      <input type="color" class="cust-color" id="cc3" value="#c07070" onchange="updateTheme()" />
+    </div>
+    <div class="cust-row">
+      <span class="cust-label">SHAPES</span>
+      <div class="shape-option active" data-set="grow" onclick="setShapes(this,'grow')">🌱 Grow (Clover · Pot · Droplet)</div>
+      <div class="shape-option" data-set="classic" onclick="setShapes(this,'classic')">♦ Classic (Diamond · Oval · Squiggle)</div>
+      <div class="shape-option" data-set="geo" onclick="setShapes(this,'geo')">▲ Geo (Triangle · Circle · Square)</div>
+      <div class="shape-option" data-set="arcane" onclick="setShapes(this,'arcane')">✦ Arcane (Crescent · Rune · Star)</div>
+    </div>
+  </div>
+
+  </div><!-- end trios-wrap -->
+  </div><!-- end sw -->
+  </div><!-- end panel-game -->
+  <div id="fg-ov" onclick="if(event.target===this)_cp()"></div>
+  <div id="fg-sc" onclick="if(event.target===this)_cs()"></div>
+  <!-- Market Coming-Soon Modal -->
+  <div class="mini-modal" id="market-modal" onclick="if(event.target===this)closeMarketModal()">
+    <div class="mini-card">
+      <h3>🌐 Lucid Winds Marketplace</h3>
+      <p>Peer-to-peer trading of Plants is coming in a future update. Each trade will carry a 1% marketplace fee, funding ongoing development and real-world seed grants.</p>
+      <p style="font-size:0.45rem;color:var(--muted);">Hash: <span id="market-hash-display" style="color:var(--sage);word-break:break-all;"></span></p>
+      <button class="mini-submit" onclick="closeMarketModal()">GOT IT — I'LL WAIT</button><br>
+      <button class="mini-close" onclick="closeMarketModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- Print Upsell Modal -->
+  <div class="mini-modal" id="print-modal" onclick="if(event.target===this)closePrintModal()">
+    <div class="mini-card">
+      <h3>🖨 Holographic Foil Print</h3>
+      <p>We're launching premium foil trading card prints — your Plant, physically pressed in metallic ink on card stock. Enter your email to get notified at launch.</p>
+      <input type="email" id="print-email-input" placeholder="your@email.com" />
+      <button class="mini-submit" onclick="submitPrintInterest()">NOTIFY ME AT LAUNCH</button><br>
+      <button class="mini-close" onclick="closePrintModal()">Not now</button>
+    </div>
+  </div>
+
+
+  <!-- BOTTOM NAV — cross-page navigation -->
+  <div class="fg-bottomnav">
+    <button class="fg-nav-btn active"><img src="assets/games/wild/nav-game-v5.png" alt="Game"><span class="fg-nav-label">GAME</span></button>
+    <button class="fg-nav-btn" onclick="location.href='greenhouse.html'"><img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse"><span class="fg-nav-label">GREENHOUSE</span></button>
+    <button class="fg-nav-btn" onclick="location.href='greenhouse.html#nursery'"><img src="assets/games/wild/nav-nursery-v5.png" alt="Nursery"><span class="fg-nav-label">NURSERY</span></button>
+    <button class="fg-nav-btn" onclick="location.href='wild.html'"><img src="assets/games/wild/nav-wild-v5.png" alt="Wild"><span class="fg-nav-label">WILD</span></button>
+  </div>
+
+  <!-- Hash Economy Primer Modal -->
+  <div id="hash-economy-modal" onclick="if(event.target===this)closeEconModal();">
+    <div class="econ-card" style="max-height:80vh;overflow-y:auto;">
+      <h3>How Lucid Winds Works</h3>
+      <div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--cream);line-height:1.7;">
+        <div style="margin-bottom:0.4rem;"><span style="color:var(--sage);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;">1. PLAY</span><br>Find patterns in card games. Each match earns Dew Drops.</div>
+        <div style="margin-bottom:0.4rem;"><span style="color:rgba(91,175,220,0.9);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;">2. BLOOM</span><br>Every 30 Dew Drops grows a unique plant. No two are alike — yours is one-of-one.</div>
+        <div style="margin-bottom:0.4rem;"><span style="color:var(--gold);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;">3. COLLECT</span><br>Plants live in your Greenhouse. Sort by rarity. Flip cards to see DNA + haiku.</div>
+        <div style="margin-bottom:0.4rem;"><span style="color:#E8A0BF;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;">4. BREED</span><br>Cross two plants to create a seed. Water it 3 days in the Nursery to bloom.</div>
+        <div style="margin-bottom:0.4rem;"><span style="color:#D4842A;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;">5. EXPLORE</span><br>Drop plants on a real-world map. Others can see and try to harvest them.</div>
+        <div style="margin-bottom:0.4rem;"><span style="color:var(--muted);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;">6. DEFEND</span><br>Choose a challenge game. Harvesters must beat it to claim your plant.</div>
+      </div>
+      <div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--muted);margin-top:0.3rem;border-top:1px solid rgba(74,124,53,0.1);padding-top:0.3rem;">Every plant is a mathematically unique SVG artwork generated from your gameplay. No AI. No copies. Pure math + attention.</div>
+      <button class="econ-close" onclick="closeEconModal()">GOT IT</button>
+    </div>
+  </div>
+  <!-- Login Modal -->
+  <div class="login-overlay" id="login-overlay">
+    <div class="login-card">
+      <h3>Sync Your <em style="color:var(--sage);">Cloud Vault</em></h3>
+      <p>Save your Plants and Dew Drops across all devices. Play as guest anytime — log in to keep your collection forever.</p>
+      <div id="login-error" style="color:#8B2E2E;font-size:0.6rem;margin-bottom:0.5rem;min-height:1rem;text-align:center;"></div>
+      <input class="login-field" type="email" placeholder="Email" id="login-email" />
+      <input class="login-field" type="password" placeholder="Password" id="login-pass" />
+      <button class="login-submit" onclick="handleLogin()">🌱 CREATE ACCOUNT</button>
+      <button class="login-close" onclick="closeLogin()">Not now — keep playing</button>
+    </div>
+  </div>
+  <!-- PWA Install Modal -->
+  <div id="pwa-install-modal">
+    <div class="pwa-card">
+      <div class="pwa-icon">🚨</div>
+      <h3>Unsecured Greenhouse</h3>
+      <p>Your <strong><span id="pwa-plant-count">0</span> Plants</strong> are stored in temporary browser memory. Clearing your cache or switching browsers will erase your entire collection permanently.</p>
+      <div class="pwa-stats">
+        <div class="pwa-stat"><div class="pwa-stat-val" id="pwa-stat-plants">0</div><div class="pwa-stat-label">PLANTS AT RISK</div></div>
+        <div class="pwa-stat"><div class="pwa-stat-val" id="pwa-stat-hashes">0</div><div class="pwa-stat-label">DEW DROPS AT RISK</div></div>
+        <div class="pwa-stat"><div class="pwa-stat-val" id="pwa-stat-rare">0</div><div class="pwa-stat-label">RARE FINDS</div></div>
+      </div>
+      <p style="font-size:0.6rem;margin-bottom:0.75rem;">Add Lucid Winds to your Home Screen to secure your collection and unlock the full Grow Log.</p>
+      <button class="pwa-secure-btn" id="pwa-install-btn" onclick="executePWAInstall()">🔒 SECURE MY GREENHOUSE</button>
+      <button class="pwa-dismiss" onclick="dismissPWA()">Risk it — I'll take my chances</button>
+    </div>
+  </div>
+<!-- SWS ID Modal — Phase 25: INITIALIZE ID / RECOVER CONNECTION -->
+<div id="sws-id-modal" onclick="if(event.target===this)closeSWSIdModal()">
+  <div class="sws-id-card">
+
+    <!-- Asset count — always visible before auth, trust signal -->
+    <div class="sws-id-eyebrow">⬡ SWS CLOUD PROTOCOL</div>
+    <h2 class="sws-id-title">Identity<br><em style="font-style:italic;color:var(--gold);">Terminal</em></h2>
+    <div class="sws-id-asset-count" id="sws-id-asset-count">⬡ 0 BOTANICAL ASSETS DETECTED</div>
+
+    <!-- INPUT STATE -->
+    <div id="sws-id-input-state">
+      <!-- Tab row: INITIALIZE ID / RECOVER CONNECTION -->
+      <div class="sws-id-tab-row">
+        <button type="button" class="sws-id-tab active" id="sws-tab-register" onclick="swsShowTab('register')">⊕ INITIALIZE ID</button>
+        <button type="button" class="sws-id-tab" id="sws-tab-login" onclick="swsShowTab('login')">↺ RECOVER</button>
+      </div>
+
+      <!-- AUTH FORM — e.preventDefault() guards all paths -->
+      <form class="sws-id-form" id="sws-id-form" novalidate>
+
+        <!-- INITIALIZE ID fields -->
+        <div id="sws-register-fields" class="sws-id-fields">
+          <p class="sws-id-subtitle">Create your SWS Identity to anchor your Plant collection across all devices.</p>
+          <div class="sws-id-label">ACCOUNT NAME</div>
+          <input class="sws-id-input" type="text" id="sws-reg-name" placeholder="YourGroveName" autocomplete="username" style="margin-bottom:0.55rem;"/>
+          <div class="sws-id-label">EMAIL ADDRESS</div>
+          <input class="sws-id-input" type="email" id="sws-reg-email" placeholder="your@identity.com" autocomplete="email" style="margin-bottom:0.55rem;"/>
+          <div class="sws-id-label">PASSWORD</div>
+          <input class="sws-id-input" type="password" id="sws-reg-pass" placeholder="Min. 8 characters" autocomplete="new-password" style="margin-bottom:0.2rem;"/>
+        </div>
+
+        <!-- RECOVER CONNECTION fields -->
+        <div id="sws-login-fields" class="sws-id-fields" style="display:none;">
+          <p class="sws-id-subtitle">Re-establish your connection. Your local collection is always safe — this confirms your identity.</p>
+          <div class="sws-id-label">EMAIL ADDRESS</div>
+          <input class="sws-id-input" type="email" id="sws-log-email" placeholder="your@identity.com" autocomplete="email" style="margin-bottom:0.55rem;"/>
+          <div class="sws-id-label">PASSWORD</div>
+          <input class="sws-id-input" type="password" id="sws-log-pass" placeholder="Your password" autocomplete="current-password" style="margin-bottom:0.2rem;"/>
+        </div>
+
+        <div id="sws-id-error" style="font-family:'DM Mono',monospace;font-size:0.48rem;color:rgba(180,80,80,0.9);margin-bottom:0.4rem;min-height:0.8rem;margin-top:0.3rem;"></div>
+        <button type="button" class="sws-id-submit" id="sws-id-submit-btn" onclick="submitSWSId(event)">⬡ INITIALIZE IDENTITY</button>
+      </form>
+
+      <!-- SOCIAL LOGIN — disabled for now -->
+      <div style="display:none;">
+      <div class="sws-social-divider"><span>OR CONTINUE WITH</span></div>
+      <div class="sws-social-btns">
+        <button type="button" class="sws-social-btn sws-social-btn-google" id="sws-google-btn" onclick="submitSocialLogin('google')" title="Sign in with Google">
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+            <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/>
+            <path d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
+          </svg>
+          Continue with Google
+        </button>
+        <button type="button" class="sws-social-btn sws-social-btn-facebook" id="sws-facebook-btn" onclick="submitSocialLogin('facebook')" title="Sign in with Facebook">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047v-2.66c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.971H15.83c-1.491 0-1.956.93-1.956 1.886v2.264h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+          </svg>
+          Continue with Facebook
+        </button>
+      </div>
+      </div>
+
+      <button type="button" class="sws-id-dismiss" onclick="closeSWSIdModal()">dismiss — I'll sync later</button>
+    </div>
+
+    <!-- SUCCESS STATE -->
+    <div class="sws-id-success" id="sws-id-success-state">
+      <div class="sws-id-checkmark">✓</div>
+      <div class="sws-id-secured-title">IDENTITY SECURED</div>
+      <div class="sws-id-secured-sub" id="sws-id-secured-sub">Your SWS ID has been registered.<br>Your collection is now anchored.</div>
+    </div>
+
+  </div>
+</div>
+<div class="game-footer">
+    Lucid Winds — botanical collectibles.<br>
+    © 2026 Lucid Winds LLC<br>
+    Lucid Winds is a digital botanical game. All plants are procedurally generated artworks.
+  </div>
+
+</div>
+</div>
+  <div id="pw-onboard">
+    <!-- Splash: seed + root, "lucid winds" (shown before story beats, new users only) -->
+    <div id="pw-splash">
+      <div class="splash-title">lucid <em>winds</em></div>
+      <div style="position:absolute;bottom:0;right:0;width:120px;height:40px;background:linear-gradient(135deg,transparent 30%,#050505 70%);pointer-events:none;z-index:1;"></div>
+    </div>
+    <!-- Beat 1: Rain figure + "We lost something" -->
+    <!-- Beat 1: Zoomed out, rain, figure -->
+    <div class="ob-beat show" id="ob-beat1">
+      <div class="ob-img-area"><img src="assets/onboarding/cinema-beat1-weight-540x960.jpg" alt="" loading="eager" /></div>
+      <div class="ob-text-area">
+        <div class="ob-line" data-beat="1" data-i="0">We lost something.</div>
+        <div class="ob-line" data-beat="1" data-i="1">Not all at once,</div>
+        <div class="ob-line" data-beat="1" data-i="2">but piece by piece.</div>
+      </div>
+    </div>
+
+    <!-- Beat 2: Moon, head bowed, breathing -->
+    <div class="ob-beat" id="ob-beat2">
+      <div class="ob-img-area"><img src="assets/onboarding/cinema-beat2-glint-540x960.jpg" alt="" loading="eager" /></div>
+      <div class="ob-text-area">
+        <div class="ob-line" data-beat="2" data-i="0">Our focus was scattered,</div>
+        <div class="ob-line" data-beat="2" data-i="1">pulled apart,</div>
+        <div class="ob-line" data-beat="2" data-i="2">and the living world grew <em>quiet</em>.</div>
+      </div>
+    </div>
+
+    <!-- Beat 3: Noir eyes, crack, tendril -->
+    <div class="ob-beat" id="ob-beat3">
+      <div class="ob-img-area"><img src="assets/onboarding/cinema-beat3-tendril-540x960.jpg" alt="" loading="eager" /></div>
+      <div class="ob-text-area">
+        <div class="ob-line" data-beat="3" data-i="0">But attention still leaves a trace.</div>
+        <div class="ob-line" data-beat="3" data-i="1"><em>Stay.</em></div>
+        <div class="ob-line" data-beat="3" data-i="2">Look closely enough…</div>
+        <div class="ob-line" data-beat="3" data-i="3">and something begins.</div>
+      </div>
+    </div>
+
+    <div class="ob-dots" id="ob-dots"><div class="ob-dot on" onclick="PW_Onboard.goToBeat(1)"></div><div class="ob-dot" onclick="PW_Onboard.goToBeat(2)"></div><div class="ob-dot" onclick="PW_Onboard.goToBeat(3)"></div><div class="ob-dot" onclick="PW_Onboard.goToBeat(4)"></div></div>
+
+    <!-- Beat 4: Gift plant + auth -->
+    <div class="ob-beat" id="ob-beat4">
+      <div class="ob-text" style="font-size:0.75rem;margin-bottom:0.3rem;">This one began with you.</div>
+      <div class="ob-plant-wrap"><div id="ob-plant-render" class="ob-plant-svg" style="display:flex;align-items:center;justify-content:center;"></div></div>
+      <div id="ob-plant-name" class="ob-name" style="opacity:0;transition:opacity 1s ease;"></div>
+      <div id="ob-plant-grade" class="ob-grade" style="opacity:0;transition:opacity 1s ease;"></div>
+      <div id="ob-haiku" class="ob-haiku"></div>
+      <div id="ob-creature" class="ob-creature-text"></div>
+      <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:rgba(240,235,216,0.7);line-height:1.8;margin-top:0.6rem;max-width:300px;opacity:0;transition:opacity 1.5s ease 0.3s;" id="ob-manifesto">Every plant here is born from attention.<br>No two are the same.<br>Care for yours, and it will shape the world around you.</div>
+      <div class="ob-auth" id="ob-auth"><div id="ob-auth-new"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.5rem;">CLAIM YOUR FIRST PLANT</div><input type="text" id="ob-name-input" placeholder="What should we call you, Keeper?" maxlength="24" autocomplete="off" /><input type="email" id="ob-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-pass" placeholder="Password (6+ characters)" autocomplete="new-password" /><div class="ob-auth-err" id="ob-auth-err"></div><button class="ob-auth-btn" id="ob-auth-btn" onclick="PW_Onboard.submitAuth()">🌱 CLAIM THIS PLANT</button><div style="margin-top:0.8rem;font-family:'DM Mono',monospace;font-size:0.45rem;color:var(--muted);"><span onclick="PW_Onboard.showLogin()" style="color:var(--gold);cursor:pointer;text-decoration:underline;min-height:48px;display:inline-block;padding:8px 0;">Already have an account? Sign in</span></div></div><div id="ob-auth-login" style="display:none;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.5rem;">WELCOME BACK, KEEPER</div><input type="email" id="ob-login-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-login-pass" placeholder="Password" autocomplete="current-password" /><div class="ob-auth-err" id="ob-login-err"></div><button class="ob-auth-btn" id="ob-login-btn" onclick="PW_Onboard.submitLogin()" style="background:linear-gradient(145deg,var(--gold),#8a6e2f);">SIGN IN</button><div style="margin-top:0.5rem;text-align:center;"><span onclick="PW_Onboard.forgotPassword()" style="font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--muted);cursor:pointer;text-decoration:underline;min-height:48px;display:inline-block;padding:8px 0;">Forgot password?</span></div><div style="margin-top:0.4rem;font-family:'DM Mono',monospace;font-size:0.45rem;color:var(--muted);"><span onclick="PW_Onboard.showSignup()" style="color:var(--sage);cursor:pointer;text-decoration:underline;min-height:48px;display:inline-block;padding:8px 0;">New here? Create an account</span></div></div></div>
+      <button class="ob-continue" id="ob-continue" onclick="PW_Onboard.finish()">ENTER YOUR GREENHOUSE →</button>
+    </div>
+    <div class="ob-skip" id="ob-skip" onclick="PW_Onboard.skip()">skip →</div>
+  </div>
+
+    <!-- ═══ DEV ADMIN ═══ -->
+  <div id="pw-dev-admin">
+    <div style="display:flex;justify-content:space-between;align-items:center;"><div class="dev-title">⚠ DEV ADMIN</div><button onclick="document.getElementById('pw-dev-admin').classList.remove('open')" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(192,80,80,0.3);background:none;color:#c07070;font-size:0.75rem;cursor:pointer;">✕</button></div>
+    <div class="dev-section"><div class="dev-section-title">CURRENT ACCOUNT</div><div id="dev-account-info" style="font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);line-height:1.8;margin-bottom:0.3rem;">Not logged in</div><button class="dev-btn danger" onclick="PW_Dev.nukeAccount()">🗑 WIPE CURRENT ACCOUNT</button></div>
+    <div class="dev-section"><div class="dev-section-title">ACCOUNT COUNTER</div><div style="font-size:0.42rem;color:var(--muted);margin-bottom:0.3rem;">Next: <span id="dev-counter-val">?</span></div><button class="dev-btn" onclick="PW_Dev.resetCounter()">↩ RESET TO 1</button></div>
+    <div class="dev-section"><div class="dev-section-title">LOCAL STORAGE</div><button class="dev-btn" onclick="PW_Dev.clearLocal()">🧹 CLEAR ALL</button></div>
+    <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
+    <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="localStorage.removeItem('fg_ferals');localStorage.removeItem('fg_feral_zones');alert('Ferals cleared! Switch tabs to refresh.');">🧹 CLEAR FERALS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button><button class="dev-btn" onclick="PW_Dev.dropTestPair()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🧬 DROP BREEDING PAIR</button><button class="dev-btn" onclick="PW_Dev.simulateSpread()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌿 SIMULATE SPREAD</button></div>
+    <div class="dev-section"><div class="dev-section-title">ACCELERATE (BETA TEST)</div><button class="dev-btn" onclick="PW_Dev.accelFerals()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⚡ FORCE FERAL SPAWN</button><button class="dev-btn" onclick="PW_Dev.accelRepro()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🌱 FORCE WILD REPRODUCTION</button><button class="dev-btn" onclick="PW_Dev.accelNursery()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💧 INSTANT BLOOM ALL SEEDS</button><button class="dev-btn" onclick="PW_Dev.accelBackpack()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🎒 CLEAR BP COOLDOWNS</button><button class="dev-btn" onclick="PW_Dev.grantHashes(100)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💎 +100 DEW DROPS</button><button class="dev-btn" onclick="PW_Dev.accelAll()" style="border-color:rgba(255,110,199,0.4);color:#ff6ec7;">🚀 ACCELERATE EVERYTHING</button></div>
+    <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button><button class="dev-btn" onclick="PW_Dev.spawnChimeras()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🧬 SPAWN 4 CHIMERAS (dual borders)</button><button class="dev-btn" onclick="PW_Dev.grantDew(500)" style="border-color:rgba(91,175,220,0.4);color:rgba(91,175,220,0.9);">💧 +500 DEW DROPS</button></div>
+    <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button><button class="dev-btn" onclick="try{PW_Dev.cardFrontAligner()}catch(e){alert(e.message)}">🃏 CARD FRONT ALIGNMENT</button><button class="dev-btn" onclick="try{PW_Dev.cardBackViewer()}catch(e){alert(e.message)}">🔙 CARD BACK NAMEPLATES</button><button class="dev-btn" onclick="try{PW_Dev.leafBloomEditor()}catch(e){alert(e.message)}">🌿 LEAF & BLOOM EDITOR</button></div>
+    <div class="dev-section"><div class="dev-section-title">NUCLEAR</div><button class="dev-btn danger" onclick="PW_Dev.fullReset()">☢ WIPE EVERYTHING</button></div>
+    <div class="dev-log" id="dev-log">Ready.\n</div>
+  </div>
+<!-- DEV BUTTON — remove before production -->
+<!-- set-102: Firebase diagnostic log — shows EVERY auth + Firestore operation -->
+<div id="sws-debug-log"></div>
+<button id="sws-debug-toggle" onclick="(function(){var el=document.getElementById('sws-debug-log');el.classList.toggle('visible');this.textContent=el.classList.contains('visible')?'[×] Hide Log':'[🔍] Firebase Log';}).call(this)">[🔍] Firebase Log</button>
+
+<!-- JS: Core + App + Games (no Wild, no Leaflet) -->
+<script src="core.js"></script>
+<script src="word-banks.js"></script>
+<script src="app.js"></script>
+<script src="games.js"></script>
+<script src="init.js"></script>
+<script src="dev.js"></script>
+<script src="systems.js"></script>
+</body>
+</html>

@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lucid Winds — Greenhouse</title>
+  <meta name="description" content="Lucid Winds. Your botanical collection — greenhouse, nursery, and breeding.">
+  <meta name="theme-color" content="#0d100c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/icon-48x48.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Mono:wght@300;400;500&family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=Cinzel:wght@700;900&family=Outfit:wght@400;600&family=Cormorant+Garamond:wght@600;700&display=swap" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Mono:wght@300;400;500&family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=Cinzel:wght@700;900&family=Outfit:wght@400;600&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XE58S4X6RX"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-XE58S4X6RX');</script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <link rel="stylesheet" href="shared.css" />
+  <script>window._lwPage='greenhouse';</script>
+</head>
+<body>
+<div id="vault-hydration-overlay" class="no-session">
+  <div class="lw-spinner"><div class="lw-spinner-leaf"></div><div class="lw-spinner-leaf"></div><div class="lw-spinner-leaf"></div></div>
+  <div class="vho-label">RECOVERING VAULT</div>
+  <div class="vho-sub" id="vho-status">Connecting to cloud…</div>
+</div>
+<!-- ═══ PHASE 25: UNIVERSAL AUTH HEADER ═══ -->
+<div id="sws-auth-header">
+  <div id="sws-auth-badge" class="unverified" onclick="swsHandleBadgeClick()" title="SWS Identity">
+    <span class="ab-dot"></span>
+    <span id="sws-badge-label">⬡ UNVERIFIED</span>
+  </div>
+</div>
+
+<!-- Phase 30.5: Recovery Screen — shown when init detects corrupt data -->
+<div id="recovery-screen">
+  <div class="rec-icon">⚠</div>
+  <div class="rec-title">DATA SYNC ERROR</div>
+  <div class="rec-sub">Lucid Winds encountered corrupted or malformed plant data during initialization. Your session has been safely suspended.</div>
+  <div class="rec-detail" id="rec-detail-msg">Error details not available.</div>
+  <div class="rec-btn-row">
+    <button class="rec-btn recover" onclick="attemptDataRecovery()">⟳ ATTEMPT RECOVERY</button>
+    <button class="rec-btn reset"   onclick="initiateFactoryReset(true)">⚠ FACTORY RESET</button>
+  </div>
+</div>
+
+<!-- Mini-menu (logged-in state only) -->
+<div id="sws-mini-menu">
+  <div class="smm-eyebrow">⬡ SWS IDENTITY</div>
+  <button class="smm-item" onclick="swsMiniProfile()">⊞ VIEW PROFILE</button>
+  <div class="smm-divider"></div>
+  <button class="smm-item danger" onclick="swsDisconnect()">⊗ DISCONNECT</button>
+  <button class="smm-item wipe" id="smm-reset-btn"
+    onmousedown="startResetHold(event)" ontouchstart="startResetHold(event)"
+    onmouseup="cancelResetHold()"       ontouchend="cancelResetHold()"
+    onmouseleave="cancelResetHold()">⚠ RESET TERMINAL — HOLD 3s TO WIPE</button>
+</div>
+
+<!-- Assets Recovered Toast -->
+<div id="sws-recovery-toast">
+  <div class="srt-title">⬡ ASSETS RECOVERED</div>
+  <div class="srt-count" id="sws-toast-count"></div>
+</div>
+<!-- ═══ THE CURTAIN — Auto-dismisses, no hard gate ═══ -->
+<div id="landing-splash" class="hidden">
+</div>
+
+
+<div class="game-wrap">
+  <div class="grove-panel" id="panel-greenhouse">
+    <div class="panel-header">
+      <div class="panel-header-title">PLANTS</div>
+      <div style="display:flex;align-items:center;gap:0.4rem;">
+        <div class="greenhouse-count" id="gh-count">0 / 10</div>
+        <button id="gh-expand-btn" onclick="expandGHSlot()" style="font-family:'Bebas Neue',sans-serif;font-size:0.4rem;letter-spacing:0.06em;background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.3);color:var(--gold);border-radius:5px;padding:0.15rem 0.4rem;cursor:pointer;min-height:28px;white-space:nowrap;">+ SLOT (1 π)</button>
+      </div>
+    </div>
+    <div class="gh-progress">
+      <div class="gh-progress-bar"><div class="gh-progress-fill" id="gh-progress-fill" style="width:0%"></div></div>
+    </div>
+    <div id="gh-next-bloom" style="display:flex;align-items:center;gap:0.4rem;padding:0.2rem 0.5rem;"></div>
+    <div id="gh-season-strip" style="display:flex;justify-content:center;gap:0.5rem;padding:0.15rem 0.5rem;font-family:DM Mono,monospace;font-size:0.3rem;"></div>
+    <div id="gh-spotlight" style="font-family:'DM Mono',monospace;font-size:0.33rem;color:var(--muted);text-align:center;padding:0.15rem 0;min-height:1em;"></div>
+    <div id="gh-recent-wrap" style="display:none;">
+      <div class="gh-recent-label">RECENT BLOOMS</div>
+      <div class="gh-recent-strip" id="gh-recent-strip"></div>
+    </div>
+    <div class="gh-grid-selector" style="display:flex;justify-content:flex-end;align-items:center;">
+      <div style="display:flex;gap:0.2rem;" id="gh-sort-btns">
+        <button class="gh-grid-btn active" onclick="setGHSort('newest')">New</button>
+        <button class="gh-grid-btn" onclick="setGHSort('rarest')">Rare</button>
+        <button class="gh-grid-btn" onclick="setGHSort('name')">A-Z</button>
+      </div>
+    </div>
+    <div class="greenhouse-grid" id="greenhouse-grid">
+      <div class="greenhouse-empty">No Plants yet. Complete a game to mint your first one.</div>
+    </div>
+  </div>
+  <div class="grove-panel" id="panel-nursery">
+    <div class="panel-header">
+      <div class="panel-header-title">NURSERY</div>
+      <div style="display:flex;gap:0.3rem;align-items:center;">
+        <button id="nur-expand-btn" onclick="expandNurSlot()" style="font-family:'Bebas Neue',sans-serif;font-size:0.38rem;letter-spacing:0.06em;background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.3);color:var(--gold);border-radius:5px;padding:0.15rem 0.35rem;cursor:pointer;min-height:28px;white-space:nowrap;">+ SLOT</button>
+        <!-- Breed button removed from header per director — breed from greenhouse action drawer instead -->
+      </div>
+    </div>
+    <div id="nur-wallet-balance" class="wallet-balance">Balance: — ⚡</div>
+    <div class="nur-streak-strip">
+      <span class="nur-streak-fire">🔥</span>
+      <span id="nur-streak-count" class="nur-streak-count">0 day streak</span>
+      <span class="nur-streak-sep">·</span>
+      <span id="nur-mercy-status" class="nur-mercy">🌱 Mercy Seed ready</span>
+      <span id="nur-next-milestone" class="nur-milestone-next"></span>
+    </div>
+    <div id="nur-msg"></div>
+    <div class="nur-grid" id="nur-grid"></div>
+    <div style="margin-top:0.6rem;padding:0.5rem 0.6rem;background:rgba(13,16,12,0.35);border-radius:6px;border:1px solid rgba(74,124,53,0.08);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:0.44rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.15rem;">HOW CROSS-POLLINATION WORKS</div>
+      <p style="font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);line-height:1.6;opacity:0.7;">Select two Plants to mix their DNA. The child inherits traits from both parents — rare traits are recessive and only pass under the right genetic conditions. Water your seed once per day for 3 days, then bloom it into your Greenhouse.</p>
+    </div>
+  </div><!-- end panel-nursery -->
+  <div class="grove-panel" id="panel-dashboard">
+    <!-- Wallet -->
+    <div class="dash-section">
+      <div class="panel-header">
+        <div class="panel-header-title">ATTENTION WALLET</div>
+        <button onclick="openEconModal()" style="background:none;border:none;color:var(--gold);font-size:0.55rem;cursor:pointer;padding:0;" title="How Dew Drops work">ℹ️</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem;padding:0.25rem 0;">
+        <div class="dash-wallet">
+          <div class="dash-wallet-icon">⚡</div>
+          <div>
+            <div class="dash-wallet-count" id="dash-hashes">0</div>
+            <div class="dash-wallet-label">DEW DROPS</div>
+          </div>
+        </div>
+        <div style="flex:1;text-align:right;">
+          <div class="dash-wallet-count" id="dash-plants" style="font-size:0.85rem;">0</div>
+          <div class="dash-wallet-label">PLANTS<span class="badge-display" id="badge-display"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 28: sws_inventory wallet display row -->
+    <div class="inventory-row" id="dash-inventory-row">
+      <div class="inventory-label">⬡ INVENTORY</div>
+      <div class="inventory-val" id="dash-inv-dna">0 DNA</div>
+      <div class="inventory-val" style="color:var(--muted);font-size:0.55rem;" id="dash-inv-sub">· 0 SUBSTRATE</div>
+    </div>
+
+    <!-- Hash Storefront -->
+    <div class="dash-section">
+      <div class="dash-title">THE SHOP</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
+        <p style="font-size:0.45rem;color:var(--muted);margin:0;">Spend your Dew Drops on cosmetics. Flex on your collection.</p>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:0.7rem;color:var(--gold);background:rgba(200,168,75,0.07);border:1px solid rgba(200,168,75,0.2);border-radius:5px;padding:0.15rem 0.5rem;white-space:nowrap;letter-spacing:0.06em;">Balance: <span id="shop-balance-display">0</span> ⚡</div>
+      </div>
+      <div class="hex-grid">
+        <div class="hex-item" id="hex-planter">
+          <div class="hex-icon">🪴</div>
+          <div class="hex-info">
+            <div class="hex-name">Earthy Planter</div>
+            <div class="hex-desc">Warm terracotta background for your Active Plant display.</div>
+          </div>
+          <button class="hex-btn" id="hex-planter-btn" onclick="purchaseItem(3,'earthy_planter')">3 ⚡</button>
+        </div>
+        <div class="hex-item" id="hex-midnight">
+          <div class="hex-icon">🌙</div>
+          <div class="hex-info">
+            <div class="hex-name">Midnight Tent Mode</div>
+            <div class="hex-desc">Sleek dark-blue theme. Changes the entire app.</div>
+          </div>
+          <button class="hex-btn" id="hex-midnight-btn" onclick="purchaseItem(10,'midnight_mode')">10 ⚡</button>
+        </div>
+        <div class="hex-item" id="hex-apprentice">
+          <div class="hex-icon">🥉</div>
+          <div class="hex-info">
+            <div class="hex-name">Explorer Badge</div>
+            <div class="hex-desc">Bronze badge next to your stats. You earned it.</div>
+          </div>
+          <button class="hex-btn" id="hex-apprentice-btn" onclick="purchaseItem(25,'apprentice_badge')">25 ⚡</button>
+        </div>
+        <div class="hex-item" id="hex-shears">
+          <div class="hex-icon">✂️</div>
+          <div class="hex-info">
+            <div class="hex-name">Golden Shears Badge</div>
+            <div class="hex-desc">Gold badge. The mark of a dedicated grower.</div>
+          </div>
+          <button class="hex-btn" id="hex-shears-btn" onclick="purchaseItem(50,'golden_shears')">50 ⚡</button>
+        </div>
+        <div class="hex-item" id="hex-mutate">
+          <div class="hex-icon">🧬</div>
+          <div class="hex-info">
+            <div class="hex-name">Mutate a Plant</div>
+            <div class="hex-desc">Apply a rare glow mutation to any plant in your gallery.</div>
+          </div>
+          <button class="hex-btn" id="hex-mutate-btn" onclick="startMutation()">15 ⚡</button>
+        </div>
+        <div class="hex-item" id="hex-neon">
+          <div class="hex-icon">⚡</div>
+          <div class="hex-info">
+            <div class="hex-name">Neon Genesis Theme</div>
+            <div class="hex-desc">Electric cyan-on-black. The game board goes full synthwave rave.</div>
+          </div>
+          <button class="hex-btn" id="hex-neon-btn" onclick="purchaseItem(35,'neon_genesis')">35 ⚡</button>
+        </div>
+        <div class="hex-item" id="hex-vapor">
+          <div class="hex-icon">🌸</div>
+          <div class="hex-info">
+            <div class="hex-name">Vaporwave Theme</div>
+            <div class="hex-desc">Purple-pink grid aesthetic. Retrowave palette for the whole UI.</div>
+          </div>
+          <button class="hex-btn" id="hex-vapor-btn" onclick="purchaseItem(45,'vaporwave')">45 ⚡</button>
+        </div>
+        <div class="hex-item" id="hex-holo">
+          <div class="hex-icon">🌈</div>
+          <div class="hex-info">
+            <div class="hex-name">Holographic Foil</div>
+            <div class="hex-desc">Rainbow prismatic shimmer on every game card. Pure premium.</div>
+          </div>
+          <button class="hex-btn" id="hex-holo-btn" onclick="purchaseItem(75,'holo_foil')">75 ⚡</button>
+        </div>
+        <div class="hex-item" id="hex-rain">
+          <div class="hex-icon">🌧</div>
+          <div class="hex-info">
+            <div class="hex-name">Ambient Rainstorm</div>
+            <div class="hex-desc">Gentle particle rain drifts across the board while you play.</div>
+          </div>
+          <button class="hex-btn" id="hex-rain-btn" onclick="purchaseItem(20,'ambient_rain')">20 ⚡</button>
+        </div>
+        <div class="hex-item" id="hex-phosphor">
+          <div class="hex-icon">🖥</div>
+          <div class="hex-info">
+            <div class="hex-name">Phosphor Display</div>
+            <div class="hex-desc">Classic green-on-black CRT glow for the game board. Retro maximalism.</div>
+          </div>
+          <button class="hex-btn" id="hex-phosphor-btn" onclick="purchaseItem(30,'phosphor_display')">30 ⚡</button>
+        </div>
+        <div class="hex-item" id="hex-master">
+          <div class="hex-icon">🏆</div>
+          <div class="hex-info">
+            <div class="hex-name">Master Grower Badge</div>
+            <div class="hex-desc">The rarest badge. Platinum crown next to your stats. Flex it.</div>
+          </div>
+          <button class="hex-btn" id="hex-master-btn" onclick="purchaseItem(100,'master_grower')">100 ⚡</button>
+        </div>
+      </div>
+      <div class="hex-msg" id="hex-msg"></div>
+    </div>
+    <!-- Achievements -->
+    <div class="dash-section" id="ach-section">
+      <div class="dash-title">🏅 ACHIEVEMENTS</div>
+      <p style="font-size:0.42rem;color:var(--muted);margin-bottom:0.4rem;">Unlock badges by reaching milestones. Each grants +25 Dew Drops.</p>
+      <div class="ach-grid" id="ach-grid"></div>
+    </div>
+    <!-- Auth sign-out row (hidden until logged in) -->
+    <div id="dash-signout-row" style="display:none;align-items:center;justify-content:space-between;padding:0.3rem 0.6rem;background:rgba(13,16,12,0.3);border:1px solid rgba(74,124,53,0.1);border-radius:6px;margin-bottom:0.4rem;">
+      <span style="font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);">🔒 Vault secured · <span id="dash-auth-email" style="color:var(--sage);"></span></span>
+      <button onclick="signOutVault()" style="background:none;border:1px solid rgba(139,46,46,0.25);color:rgba(192,112,112,0.5);font-family:'DM Mono',monospace;font-size:0.38rem;padding:0.12rem 0.4rem;border-radius:3px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.color='rgba(192,112,112,0.85)'" onmouseout="this.style.color='rgba(192,112,112,0.5)'">Sign Out</button>
+    </div>
+
+    <!-- Partner Rewards -->
+    <div class="dash-section pr-section">
+      <div class="dash-title">🤝 PARTNER REWARDS</div>
+      <p style="font-size:0.45rem;color:var(--muted);margin-bottom:0.5rem;">Your Plants act as your digital loyalty card. Grow your collection to unlock exclusive discounts from Lucid Winds partner brands.</p>
+      <div id="partner-rewards-container"></div>
+    </div>
+  </div>
+  <div class="grove-panel" id="panel-binder">
+    <div class="panel-header">
+      <div class="panel-header-title">COLLECTION BINDER</div>
+    </div>
+    <div class="binder-sort">
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:0.5rem;color:var(--muted);letter-spacing:0.08em;">SORT</span>
+      <select id="binder-sort-sel" onchange="renderBinder()">
+        <option value="newest">Newest First</option>
+        <option value="rarest">Rarest First</option>
+        <option value="az">A → Z</option>
+      </select>
+    </div>
+    <div id="binder-grid-container"></div>
+  </div>
+
+  <div class="fg-bottomnav">
+    <button class="fg-nav-btn" onclick="location.href='game.html'"><img src="assets/games/wild/nav-game-v5.png" alt="Game"><span class="fg-nav-label">GAME</span></button>
+    <button class="fg-nav-btn active" id="nav-gh-btn"><img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse"><span class="fg-nav-label">GREENHOUSE</span></button>
+    <button class="fg-nav-btn" id="nav-nur-btn" onclick="_ghShowPanel('nursery')"><img src="assets/games/wild/nav-nursery-v5.png" alt="Nursery"><span class="fg-nav-label">NURSERY</span></button>
+    <button class="fg-nav-btn" onclick="location.href='wild.html'"><img src="assets/games/wild/nav-wild-v5.png" alt="Wild"><span class="fg-nav-label">WILD</span></button>
+  </div>
+
+  <!-- Plant Gallery Modal -->
+  <!-- Phase 30: Haptic Carousel — 3-slot virtual track -->
+  <div id="plant-gallery-modal">
+
+    <!-- Top bar: plant name (updates per slot), counter, close -->
+    <div class="pgm-topbar">
+      <div class="pgm-counter" id="pgm-counter">1 / 1</div>
+      <div class="gallery-name" id="gallery-name" style="font-size:0.9rem;padding:0;flex:1;text-align:center;"></div>
+      <button class="pgm-close-btn" onclick="closePlantGallery()">✕</button>
+    </div>
+
+    <!-- Carousel viewport — clips overflow, touch events bound here -->
+    <div class="pgm-viewport" id="pgm-viewport">
+      <div class="pgm-track" id="pgm-track">
+
+        <!-- Slot 0: prev -->
+        <div class="cs-slot" id="cs-slot-0" data-role="prev">
+          <div class="cs-slot-name"></div>
+          <div class="cs-slot-haiku"></div>
+          <div class="cs-slot-svg"></div>
+          <div class="cs-slot-ledger"></div>
+          <div class="cs-slot-hash"></div>
+          <div class="cs-slot-date"></div>
+        </div>
+
+        <!-- Slot 1: active (center) -->
+        <div class="cs-slot" id="cs-slot-1" data-role="active">
+          <div class="cs-slot-name"></div>
+          <div class="cs-slot-haiku"></div>
+          <div class="cs-slot-svg"></div>
+          <div class="cs-slot-ledger"></div>
+          <div class="cs-slot-hash"></div>
+          <div class="cs-slot-date"></div>
+        </div>
+
+        <!-- Slot 2: next -->
+        <div class="cs-slot" id="cs-slot-2" data-role="next">
+          <div class="cs-slot-name"></div>
+          <div class="cs-slot-haiku"></div>
+          <div class="cs-slot-svg"></div>
+          <div class="cs-slot-ledger"></div>
+          <div class="cs-slot-hash"></div>
+          <div class="cs-slot-date"></div>
+        </div>
+
+      </div>
+
+      <!-- Nav hints — fade after first swipe -->
+      <div class="pgm-nav-hint left"  id="pgm-hint-left">‹</div>
+      <div class="pgm-nav-hint right" id="pgm-hint-right">›</div>
+    </div>
+
+    <!-- Actions — always visible, outside the swipe track -->
+    <div class="pgm-actions">
+      <div class="pgm-btn-row">
+        <button class="pgm-dl-btn" id="gallery-download-btn" onclick="downloadPlantCard()">⬡ DOWNLOAD</button>
+        <button class="pgm-act-btn" onclick="shareGalleryPlant()">↗ SHARE</button>
+        <button class="pgm-act-btn" onclick="carouselBreed()" style="border-color:rgba(200,168,75,0.3);color:var(--gold);">🧬 BREED</button>
+        <button class="pgm-act-btn" onclick="carouselCompost()" style="border-color:rgba(139,46,46,0.3);color:rgba(192,112,112,0.9);">🧪 COMPOST</button>
+      </div>
+      <div class="pgm-btn-row pgm-more-row" id="pgm-more-row" style="display:none;">
+        <button class="pgm-act-btn" onclick="copyGalleryHash()">⧉ HASH</button>
+        <button class="pgm-act-btn" onclick="openVerifyLink()">🔍 VERIFY</button>
+        <button class="pgm-act-btn gold" onclick="openSWSIdModal()">⬡ SYNC</button>
+      </div>
+      <div style="text-align:center;margin-top:0.2rem;">
+        <button onclick="var r=document.getElementById('pgm-more-row');if(r){var v=r.style.display==='none';r.style.display=v?'flex':'none';this.textContent=v?'▲ LESS':'▼ MORE';}" style="background:none;border:none;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.4rem;cursor:pointer;padding:4px 12px;min-height:32px;">▼ MORE</button>
+      </div>
+    </div>
+
+  </div>
+  <!-- Phase 28: Cinematic Download Scrim + Stage (z-index:MAX, above all layers) -->
+  <div id="cinematic-scrim"></div>
+  <div id="cinematic-download-stage">
+    <div class="cdn-eyebrow">⬡ BOTANICAL ARCHIVE — MINTING RECORD</div>
+    <div class="cdn-plant-wrap" id="cdn-plant-wrap"></div>
+    <div id="cdn-badge-wrap"></div>
+    <div class="cdn-status" id="cdn-status">Rendering specimen…</div>
+    <div class="cdn-vault-icon" id="cdn-vault-icon">🔒</div>
+    <button class="cdn-dismiss" id="cdn-dismiss-btn" onclick="closeCinematicDownload()">✕ CLOSE</button>
+  </div>
+  <!-- Phase 28: Action Drawer — 48px touch targets, GPU-composited slide -->
+  <div id="pad-drawer-scrim" onclick="closePlantActionDrawer()"></div>
+  <div id="plant-action-drawer">
+    <div class="pad-drawer-inner">
+      <div class="pad-drawer-title" id="pad-drawer-title">⬡ SELECT ACTION</div>
+      <div class="pad-btn-row" id="pad-btn-row">
+        <!-- Buttons injected by openPlantActionDrawer(plant, context) -->
+      </div>
+      <div class="pad-dismiss-row">
+        <button class="pad-dismiss" onclick="closePlantActionDrawer()">dismiss</button>
+      </div>
+    </div>
+  </div>
+  <!-- Login Modal -->
+  <div class="login-overlay" id="login-overlay">
+    <div class="login-card">
+      <h3>Sync Your <em style="color:var(--sage);">Cloud Vault</em></h3>
+      <p>Save your Plants and Dew Drops across all devices. Play as guest anytime — log in to keep your collection forever.</p>
+      <div id="login-error" style="color:#8B2E2E;font-size:0.6rem;margin-bottom:0.5rem;min-height:1rem;text-align:center;"></div>
+      <input class="login-field" type="email" placeholder="Email" id="login-email" />
+      <input class="login-field" type="password" placeholder="Password" id="login-pass" />
+      <button class="login-submit" onclick="handleLogin()">🌱 CREATE ACCOUNT</button>
+      <button class="login-close" onclick="closeLogin()">Not now — keep playing</button>
+    </div>
+  </div>
+
+  <!-- PWA Install Modal -->
+  <div id="pwa-install-modal">
+    <div class="pwa-card">
+      <div class="pwa-icon">🚨</div>
+      <h3>Unsecured Greenhouse</h3>
+      <p>Your <strong><span id="pwa-plant-count">0</span> Plants</strong> are stored in temporary browser memory. Clearing your cache or switching browsers will erase your entire collection permanently.</p>
+      <div class="pwa-stats">
+        <div class="pwa-stat"><div class="pwa-stat-val" id="pwa-stat-plants">0</div><div class="pwa-stat-label">PLANTS AT RISK</div></div>
+        <div class="pwa-stat"><div class="pwa-stat-val" id="pwa-stat-hashes">0</div><div class="pwa-stat-label">DEW DROPS AT RISK</div></div>
+        <div class="pwa-stat"><div class="pwa-stat-val" id="pwa-stat-rare">0</div><div class="pwa-stat-label">RARE FINDS</div></div>
+      </div>
+      <p style="font-size:0.6rem;margin-bottom:0.75rem;">Add Lucid Winds to your Home Screen to secure your collection and unlock the full Grow Log.</p>
+      <button class="pwa-secure-btn" id="pwa-install-btn" onclick="executePWAInstall()">🔒 SECURE MY GREENHOUSE</button>
+      <button class="pwa-dismiss" onclick="dismissPWA()">Risk it — I'll take my chances</button>
+    </div>
+  </div>
+<!-- SWS ID Modal — Phase 25: INITIALIZE ID / RECOVER CONNECTION -->
+<div id="sws-id-modal" onclick="if(event.target===this)closeSWSIdModal()">
+  <div class="sws-id-card">
+
+    <!-- Asset count — always visible before auth, trust signal -->
+    <div class="sws-id-eyebrow">⬡ SWS CLOUD PROTOCOL</div>
+    <h2 class="sws-id-title">Identity<br><em style="font-style:italic;color:var(--gold);">Terminal</em></h2>
+    <div class="sws-id-asset-count" id="sws-id-asset-count">⬡ 0 BOTANICAL ASSETS DETECTED</div>
+
+    <!-- INPUT STATE -->
+    <div id="sws-id-input-state">
+      <!-- Tab row: INITIALIZE ID / RECOVER CONNECTION -->
+      <div class="sws-id-tab-row">
+        <button type="button" class="sws-id-tab active" id="sws-tab-register" onclick="swsShowTab('register')">⊕ INITIALIZE ID</button>
+        <button type="button" class="sws-id-tab" id="sws-tab-login" onclick="swsShowTab('login')">↺ RECOVER</button>
+      </div>
+
+      <!-- AUTH FORM — e.preventDefault() guards all paths -->
+      <form class="sws-id-form" id="sws-id-form" novalidate>
+
+        <!-- INITIALIZE ID fields -->
+        <div id="sws-register-fields" class="sws-id-fields">
+          <p class="sws-id-subtitle">Create your SWS Identity to anchor your Plant collection across all devices.</p>
+          <div class="sws-id-label">ACCOUNT NAME</div>
+          <input class="sws-id-input" type="text" id="sws-reg-name" placeholder="YourGroveName" autocomplete="username" style="margin-bottom:0.55rem;"/>
+          <div class="sws-id-label">EMAIL ADDRESS</div>
+          <input class="sws-id-input" type="email" id="sws-reg-email" placeholder="your@identity.com" autocomplete="email" style="margin-bottom:0.55rem;"/>
+          <div class="sws-id-label">PASSWORD</div>
+          <input class="sws-id-input" type="password" id="sws-reg-pass" placeholder="Min. 8 characters" autocomplete="new-password" style="margin-bottom:0.2rem;"/>
+        </div>
+
+        <!-- RECOVER CONNECTION fields -->
+        <div id="sws-login-fields" class="sws-id-fields" style="display:none;">
+          <p class="sws-id-subtitle">Re-establish your connection. Your local collection is always safe — this confirms your identity.</p>
+          <div class="sws-id-label">EMAIL ADDRESS</div>
+          <input class="sws-id-input" type="email" id="sws-log-email" placeholder="your@identity.com" autocomplete="email" style="margin-bottom:0.55rem;"/>
+          <div class="sws-id-label">PASSWORD</div>
+          <input class="sws-id-input" type="password" id="sws-log-pass" placeholder="Your password" autocomplete="current-password" style="margin-bottom:0.2rem;"/>
+        </div>
+
+        <div id="sws-id-error" style="font-family:'DM Mono',monospace;font-size:0.48rem;color:rgba(180,80,80,0.9);margin-bottom:0.4rem;min-height:0.8rem;margin-top:0.3rem;"></div>
+        <button type="button" class="sws-id-submit" id="sws-id-submit-btn" onclick="submitSWSId(event)">⬡ INITIALIZE IDENTITY</button>
+      </form>
+
+      <!-- SOCIAL LOGIN — disabled for now -->
+      <div style="display:none;">
+      <div class="sws-social-divider"><span>OR CONTINUE WITH</span></div>
+      <div class="sws-social-btns">
+        <button type="button" class="sws-social-btn sws-social-btn-google" id="sws-google-btn" onclick="submitSocialLogin('google')" title="Sign in with Google">
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+            <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/>
+            <path d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
+          </svg>
+          Continue with Google
+        </button>
+        <button type="button" class="sws-social-btn sws-social-btn-facebook" id="sws-facebook-btn" onclick="submitSocialLogin('facebook')" title="Sign in with Facebook">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047v-2.66c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.971H15.83c-1.491 0-1.956.93-1.956 1.886v2.264h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+          </svg>
+          Continue with Facebook
+        </button>
+      </div>
+      </div>
+
+      <button type="button" class="sws-id-dismiss" onclick="closeSWSIdModal()">dismiss — I'll sync later</button>
+    </div>
+
+    <!-- SUCCESS STATE -->
+    <div class="sws-id-success" id="sws-id-success-state">
+      <div class="sws-id-checkmark">✓</div>
+      <div class="sws-id-secured-title">IDENTITY SECURED</div>
+      <div class="sws-id-secured-sub" id="sws-id-secured-sub">Your SWS ID has been registered.<br>Your collection is now anchored.</div>
+    </div>
+
+  </div>
+</div>
+<!-- Cross-Pollinate Modal -->
+<div id="cp-modal">
+  <div class="cp-card drawer-panel">
+    <div class="cp-header">
+      <h3>Cross-Pollinate</h3>
+      <button class="cp-close-btn" onclick="closeCPModal()">✕</button>
+    </div>
+    <div class="cp-parents-display">
+      <div class="cp-parent-slot">
+        <span class="cp-parent-label">PARENT A</span>
+        <div class="cp-parent-svg" id="cp-svg-a"></div>
+        <div class="cp-parent-hash" id="cp-hash-a">—</div>
+      </div>
+      <div class="cp-x-symbol">×</div>
+      <div class="cp-parent-slot">
+        <span class="cp-parent-label">PARENT B</span>
+        <div class="cp-parent-svg" id="cp-svg-b"></div>
+        <div class="cp-parent-hash" id="cp-hash-b">—</div>
+      </div>
+    </div>
+    <div class="cp-grid-label">TAP A PLANT TO SELECT · TAP AGAIN TO DESELECT</div>
+    <div class="cp-plant-grid" id="cp-plant-grid">
+      <div style="grid-column:1/-1;text-align:center;font-size:0.55rem;color:var(--muted);padding:1rem;">Loading plants…</div>
+    </div>
+    <button class="cp-confirm-btn" id="cp-confirm-btn" onclick="confirmCrossPollinateSelection()" disabled>🧬 BEGIN CROSS-POLLINATION</button>
+    <div id="cp-msg"></div>
+  </div>
+</div>
+<!-- Bloom Reveal Modal -->
+<div id="bloom-modal">
+  <div class="blm-eyebrow">✦ BLOOM REVEAL ✦</div>
+  <div class="flip-container">
+    <div class="flip-card" id="bloom-flip-card">
+      <div class="flip-card-front" id="bloom-front"></div>
+      <div class="flip-card-back"  id="bloom-back"></div>
+    </div>
+  </div>
+  <div id="bloom-plant-name"></div>
+  <div id="bloom-plant-traits"></div>
+  <div id="bloom-ancestry-line"></div>
+  <div id="bloom-hint">Revealing your plant…</div>
+  <button class="blm-confirm" id="bloom-confirm-btn" onclick="confirmBloom()" style="display:none;">🌿 ADD TO GREENHOUSE</button>
+  <button class="blm-dismiss" id="bloom-dismiss-btn" onclick="closeBloomModal()" style="display:none;">close without minting</button>
+</div>
+<div id="breed-screen">
+  <div class="bs-topbar">
+    <div class="bs-title">🧬 CROSS-POLLINATE</div>
+    <button class="bs-close" onclick="window.closeBreedScreen()">✕</button>
+  </div>
+  <div class="bs-nav">
+    <button class="bs-nav-btn" onclick="window.bsSwipe(-1)">‹</button>
+    <span class="bs-nav-count" id="bs-count">1 / 1</span>
+    <button class="bs-nav-btn" onclick="window.bsSwipe(1)">›</button>
+  </div>
+  <div class="bs-pair">
+    <div class="bs-cb" id="bs-card-a"></div>
+    <div class="bs-x">×</div>
+    <div class="bs-cb" id="bs-card-b"></div>
+  </div>
+  <div class="bs-forecast" id="bs-forecast"></div>
+  <button class="bs-breed-btn" id="bs-breed-btn" onclick="window.bsConfirmBreed()">🧬 CROSS-POLLINATE → NURSERY</button>
+</div>
+<div class="bs-confirm" id="bs-confirm">
+  <div class="bs-confirm-card">
+    <div class="bs-confirm-title">🧬 Cross-Pollinate?</div>
+    <div class="bs-confirm-text" id="bs-confirm-text"></div>
+    <div class="bs-confirm-btns">
+      <button class="bs-cancel" onclick="document.getElementById('bs-confirm').classList.remove('open')">CANCEL</button>
+      <button class="bs-go" id="bs-go-btn" onclick="window.bsExecuteBreed()">BREED</button>
+    </div>
+  </div>
+</div>
+
+<div class="game-footer">
+    Lucid Winds — botanical collectibles.<br>
+    © 2026 Lucid Winds LLC<br>
+    Lucid Winds is a digital botanical game. All plants are procedurally generated artworks.
+  </div>
+
+</div>
+</div>
+  <div id="pw-onboard">
+    <!-- Splash: seed + root, "lucid winds" (shown before story beats, new users only) -->
+    <div id="pw-splash">
+      <div class="splash-title">lucid <em>winds</em></div>
+      <div style="position:absolute;bottom:0;right:0;width:120px;height:40px;background:linear-gradient(135deg,transparent 30%,#050505 70%);pointer-events:none;z-index:1;"></div>
+    </div>
+    <!-- Beat 1: Rain figure + "We lost something" -->
+    <!-- Beat 1: Zoomed out, rain, figure -->
+    <div class="ob-beat show" id="ob-beat1">
+      <div class="ob-img-area"><img src="assets/onboarding/cinema-beat1-weight-540x960.jpg" alt="" loading="eager" /></div>
+      <div class="ob-text-area">
+        <div class="ob-line" data-beat="1" data-i="0">We lost something.</div>
+        <div class="ob-line" data-beat="1" data-i="1">Not all at once,</div>
+        <div class="ob-line" data-beat="1" data-i="2">but piece by piece.</div>
+      </div>
+    </div>
+
+    <!-- Beat 2: Moon, head bowed, breathing -->
+    <div class="ob-beat" id="ob-beat2">
+      <div class="ob-img-area"><img src="assets/onboarding/cinema-beat2-glint-540x960.jpg" alt="" loading="eager" /></div>
+      <div class="ob-text-area">
+        <div class="ob-line" data-beat="2" data-i="0">Our focus was scattered,</div>
+        <div class="ob-line" data-beat="2" data-i="1">pulled apart,</div>
+        <div class="ob-line" data-beat="2" data-i="2">and the living world grew <em>quiet</em>.</div>
+      </div>
+    </div>
+
+    <!-- Beat 3: Noir eyes, crack, tendril -->
+    <div class="ob-beat" id="ob-beat3">
+      <div class="ob-img-area"><img src="assets/onboarding/cinema-beat3-tendril-540x960.jpg" alt="" loading="eager" /></div>
+      <div class="ob-text-area">
+        <div class="ob-line" data-beat="3" data-i="0">But attention still leaves a trace.</div>
+        <div class="ob-line" data-beat="3" data-i="1"><em>Stay.</em></div>
+        <div class="ob-line" data-beat="3" data-i="2">Look closely enough…</div>
+        <div class="ob-line" data-beat="3" data-i="3">and something begins.</div>
+      </div>
+    </div>
+
+    <div class="ob-dots" id="ob-dots"><div class="ob-dot on" onclick="PW_Onboard.goToBeat(1)"></div><div class="ob-dot" onclick="PW_Onboard.goToBeat(2)"></div><div class="ob-dot" onclick="PW_Onboard.goToBeat(3)"></div><div class="ob-dot" onclick="PW_Onboard.goToBeat(4)"></div></div>
+
+    <!-- Beat 4: Gift plant + auth -->
+    <div class="ob-beat" id="ob-beat4">
+      <div class="ob-text" style="font-size:0.75rem;margin-bottom:0.3rem;">This one began with you.</div>
+      <div class="ob-plant-wrap"><div id="ob-plant-render" class="ob-plant-svg" style="display:flex;align-items:center;justify-content:center;"></div></div>
+      <div id="ob-plant-name" class="ob-name" style="opacity:0;transition:opacity 1s ease;"></div>
+      <div id="ob-plant-grade" class="ob-grade" style="opacity:0;transition:opacity 1s ease;"></div>
+      <div id="ob-haiku" class="ob-haiku"></div>
+      <div id="ob-creature" class="ob-creature-text"></div>
+      <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:rgba(240,235,216,0.7);line-height:1.8;margin-top:0.6rem;max-width:300px;opacity:0;transition:opacity 1.5s ease 0.3s;" id="ob-manifesto">Every plant here is born from attention.<br>No two are the same.<br>Care for yours, and it will shape the world around you.</div>
+      <div class="ob-auth" id="ob-auth"><div id="ob-auth-new"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.5rem;">CLAIM YOUR FIRST PLANT</div><input type="text" id="ob-name-input" placeholder="What should we call you, Keeper?" maxlength="24" autocomplete="off" /><input type="email" id="ob-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-pass" placeholder="Password (6+ characters)" autocomplete="new-password" /><div class="ob-auth-err" id="ob-auth-err"></div><button class="ob-auth-btn" id="ob-auth-btn" onclick="PW_Onboard.submitAuth()">🌱 CLAIM THIS PLANT</button><div style="margin-top:0.8rem;font-family:'DM Mono',monospace;font-size:0.45rem;color:var(--muted);"><span onclick="PW_Onboard.showLogin()" style="color:var(--gold);cursor:pointer;text-decoration:underline;min-height:48px;display:inline-block;padding:8px 0;">Already have an account? Sign in</span></div></div><div id="ob-auth-login" style="display:none;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.5rem;">WELCOME BACK, KEEPER</div><input type="email" id="ob-login-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-login-pass" placeholder="Password" autocomplete="current-password" /><div class="ob-auth-err" id="ob-login-err"></div><button class="ob-auth-btn" id="ob-login-btn" onclick="PW_Onboard.submitLogin()" style="background:linear-gradient(145deg,var(--gold),#8a6e2f);">SIGN IN</button><div style="margin-top:0.5rem;text-align:center;"><span onclick="PW_Onboard.forgotPassword()" style="font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--muted);cursor:pointer;text-decoration:underline;min-height:48px;display:inline-block;padding:8px 0;">Forgot password?</span></div><div style="margin-top:0.4rem;font-family:'DM Mono',monospace;font-size:0.45rem;color:var(--muted);"><span onclick="PW_Onboard.showSignup()" style="color:var(--sage);cursor:pointer;text-decoration:underline;min-height:48px;display:inline-block;padding:8px 0;">New here? Create an account</span></div></div></div>
+      <button class="ob-continue" id="ob-continue" onclick="PW_Onboard.finish()">ENTER YOUR GREENHOUSE →</button>
+    </div>
+    <div class="ob-skip" id="ob-skip" onclick="PW_Onboard.skip()">skip →</div>
+  </div>
+
+    <!-- ═══ DEV ADMIN ═══ -->
+  <div id="pw-dev-admin">
+    <div style="display:flex;justify-content:space-between;align-items:center;"><div class="dev-title">⚠ DEV ADMIN</div><button onclick="document.getElementById('pw-dev-admin').classList.remove('open')" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(192,80,80,0.3);background:none;color:#c07070;font-size:0.75rem;cursor:pointer;">✕</button></div>
+    <div class="dev-section"><div class="dev-section-title">CURRENT ACCOUNT</div><div id="dev-account-info" style="font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);line-height:1.8;margin-bottom:0.3rem;">Not logged in</div><button class="dev-btn danger" onclick="PW_Dev.nukeAccount()">🗑 WIPE CURRENT ACCOUNT</button></div>
+    <div class="dev-section"><div class="dev-section-title">ACCOUNT COUNTER</div><div style="font-size:0.42rem;color:var(--muted);margin-bottom:0.3rem;">Next: <span id="dev-counter-val">?</span></div><button class="dev-btn" onclick="PW_Dev.resetCounter()">↩ RESET TO 1</button></div>
+    <div class="dev-section"><div class="dev-section-title">LOCAL STORAGE</div><button class="dev-btn" onclick="PW_Dev.clearLocal()">🧹 CLEAR ALL</button></div>
+    <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
+    <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="localStorage.removeItem('fg_ferals');localStorage.removeItem('fg_feral_zones');alert('Ferals cleared! Switch tabs to refresh.');">🧹 CLEAR FERALS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button><button class="dev-btn" onclick="PW_Dev.dropTestPair()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🧬 DROP BREEDING PAIR</button><button class="dev-btn" onclick="PW_Dev.simulateSpread()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌿 SIMULATE SPREAD</button></div>
+    <div class="dev-section"><div class="dev-section-title">ACCELERATE (BETA TEST)</div><button class="dev-btn" onclick="PW_Dev.accelFerals()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⚡ FORCE FERAL SPAWN</button><button class="dev-btn" onclick="PW_Dev.accelRepro()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🌱 FORCE WILD REPRODUCTION</button><button class="dev-btn" onclick="PW_Dev.accelNursery()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💧 INSTANT BLOOM ALL SEEDS</button><button class="dev-btn" onclick="PW_Dev.accelBackpack()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🎒 CLEAR BP COOLDOWNS</button><button class="dev-btn" onclick="PW_Dev.grantHashes(100)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💎 +100 DEW DROPS</button><button class="dev-btn" onclick="PW_Dev.accelAll()" style="border-color:rgba(255,110,199,0.4);color:#ff6ec7;">🚀 ACCELERATE EVERYTHING</button></div>
+    <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button><button class="dev-btn" onclick="PW_Dev.spawnChimeras()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🧬 SPAWN 4 CHIMERAS (dual borders)</button><button class="dev-btn" onclick="PW_Dev.grantDew(500)" style="border-color:rgba(91,175,220,0.4);color:rgba(91,175,220,0.9);">💧 +500 DEW DROPS</button></div>
+    <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button><button class="dev-btn" onclick="try{PW_Dev.cardFrontAligner()}catch(e){alert(e.message)}">🃏 CARD FRONT ALIGNMENT</button><button class="dev-btn" onclick="try{PW_Dev.cardBackViewer()}catch(e){alert(e.message)}">🔙 CARD BACK NAMEPLATES</button><button class="dev-btn" onclick="try{PW_Dev.leafBloomEditor()}catch(e){alert(e.message)}">🌿 LEAF & BLOOM EDITOR</button></div>
+    <div class="dev-section"><div class="dev-section-title">NUCLEAR</div><button class="dev-btn danger" onclick="PW_Dev.fullReset()">☢ WIPE EVERYTHING</button></div>
+    <div class="dev-log" id="dev-log">Ready.\n</div>
+  </div>
+<!-- DEV BUTTON — remove before production -->
+<!-- set-102: Firebase diagnostic log — shows EVERY auth + Firestore operation -->
+<div id="sws-debug-log"></div>
+<button id="sws-debug-toggle" onclick="(function(){var el=document.getElementById('sws-debug-log');el.classList.toggle('visible');this.textContent=el.classList.contains('visible')?'[×] Hide Log':'[🔍] Firebase Log';}).call(this)">[🔍] Firebase Log</button>
+
+<!-- Greenhouse panel switcher (greenhouse/nursery/dashboard/binder within this page) -->
+<script>
+(function(){
+  var panels=['greenhouse','nursery','dashboard','binder'];
+  var activePanel='greenhouse';
+  window._ghShowPanel=function(p){
+    if(panels.indexOf(p)<0)return;
+    panels.forEach(function(id){
+      var el=document.getElementById('panel-'+id);
+      if(el)el.style.display=(id===p)?'block':'none';
+    });
+    // Update nav button active states
+    var ghBtn=document.getElementById('nav-gh-btn');
+    var nurBtn=document.getElementById('nav-nur-btn');
+    if(ghBtn)ghBtn.classList.toggle('active',p==='greenhouse'||p==='dashboard'||p==='binder');
+    if(nurBtn)nurBtn.classList.toggle('active',p==='nursery');
+    activePanel=p;
+    // Trigger renders
+    if(p==='greenhouse'&&window.renderGreenhouse)renderGreenhouse();
+    if(p==='nursery'&&window.renderNursery)renderNursery();
+    if(p==='binder'&&window.renderBinder)renderBinder();
+    if(p==='dashboard'&&window.updateDashboard)updateDashboard();
+  };
+  // Handle #nursery hash on load
+  if(location.hash==='#nursery')setTimeout(function(){_ghShowPanel('nursery');},100);
+  // Hide non-default panels on load
+  panels.forEach(function(id){
+    if(id==='greenhouse')return;
+    var el=document.getElementById('panel-'+id);
+    if(el)el.style.display='none';
+  });
+})();
+</script>
+
+<script src="core.js"></script>
+<script src="word-banks.js"></script>
+<script src="app.js"></script>
+<script src="init.js"></script>
+<script src="dev.js"></script>
+<script src="systems.js"></script>
+
+<script>
+// Auto-render greenhouse on load
+window.addEventListener('load',function(){
+  if(window.renderGreenhouse)setTimeout(renderGreenhouse,200);
+});
+</script>
+</body>
+</html>
