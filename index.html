@@ -8091,34 +8091,39 @@ document.addEventListener('keydown', function(e) {
   function renderRecords() {
     var r = loadRecords();
     var today = getToday();
+    // All DOM refs guarded — renderRecords runs on init before DOM may be ready
+    var _rdEl=document.getElementById('rec-date');
+    var _rrEl=document.getElementById('rec-daily');
+    var _rpEl=document.getElementById('rec-daily-phenos');
+    var _rgEl=document.getElementById('rec-games');
+    var _raEl=document.getElementById('rec-alltime');
+    var _radEl=document.getElementById('rec-alltime-date');
+    var _rsEl=document.getElementById('rec-streak');
 
-    document.getElementById('rec-date').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if(_rdEl) _rdEl.textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-    // Daily
     if (r.daily && r.daily.date === today) {
-      document.getElementById('rec-daily').textContent = fmtRecord(r.daily.time);
-      document.getElementById('rec-daily-phenos').textContent = r.daily.sets + ' trios';
-      document.getElementById('rec-games').textContent = r.daily.games || 0;
+      if(_rrEl) _rrEl.textContent = fmtRecord(r.daily.time);
+      if(_rpEl) _rpEl.textContent = r.daily.sets + ' trios';
+      if(_rgEl) _rgEl.textContent = r.daily.games || 0;
     } else {
-      document.getElementById('rec-daily').textContent = '—:——';
-      document.getElementById('rec-daily-phenos').textContent = 'No games yet';
-      document.getElementById('rec-games').textContent = '0';
+      if(_rrEl) _rrEl.textContent = '—:——';
+      if(_rpEl) _rpEl.textContent = 'No games yet';
+      if(_rgEl) _rgEl.textContent = '0';
     }
 
-    // All-time
     if (r.alltime) {
-      document.getElementById('rec-alltime').textContent = fmtRecord(r.alltime.time);
-      document.getElementById('rec-alltime-date').textContent = r.alltime.date;
+      if(_raEl) _raEl.textContent = fmtRecord(r.alltime.time);
+      if(_radEl) _radEl.textContent = r.alltime.date;
     }
 
-    // Streak
     if (r.streak) {
       var streakActive = r.streak.last === today || (function() {
         var d = new Date(r.streak.last);
         var n = new Date(today);
         return Math.floor((n - d) / 86400000) <= 1;
       })();
-      document.getElementById('rec-streak').textContent = (streakActive ? r.streak.count : 0) + ' day streak';
+      if(_rsEl) _rsEl.textContent = (streakActive ? r.streak.count : 0) + ' day streak';
     }
   }
 
@@ -8829,14 +8834,14 @@ document.addEventListener('keydown', function(e) {
     stopTimer();
     timerInterval = setInterval(function() {
       var t = getTimeSec();
-      document.getElementById('s-time').textContent = getTimeStr();
-      document.getElementById('attn-time').textContent = t + 's';
-      // Pace indicator vs Par
-      var timeEl = document.getElementById('s-time');
-      if (parTarget > 0) {
-        if (t > parTarget) timeEl.style.color = '#c07070';
-        else if (t > parTarget - 15) timeEl.style.color = '#C8A84B';
-        else timeEl.style.color = '';
+      var _stEl = document.getElementById('s-time');
+      var _atEl = document.getElementById('attn-time');
+      if (_stEl) _stEl.textContent = getTimeStr();
+      if (_atEl) _atEl.textContent = t + 's';
+      if (_stEl && parTarget > 0) {
+        if (t > parTarget) _stEl.style.color = '#c07070';
+        else if (t > parTarget - 15) _stEl.style.color = '#C8A84B';
+        else _stEl.style.color = '';
       }
     }, 1000);
   }
