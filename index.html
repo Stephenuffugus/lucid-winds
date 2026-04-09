@@ -3577,6 +3577,50 @@
 .perf-lite .zone-hex-hot path{animation:none;}
 @keyframes hexPulse{0%,100%{fill-opacity:0.10;stroke-opacity:0.5;}50%{fill-opacity:0.20;stroke-opacity:0.8;}}
 
+/* ═══ HEX INSPECTOR ═══ */
+#hex-insp-scrim{display:none;position:fixed;inset:0;z-index:99997;background:rgba(0,0,0,0.3);}
+#hex-insp-scrim.open{display:block;}
+.hex-insp{display:none;position:fixed;bottom:0;left:0;right:0;z-index:99998;max-height:65vh;overflow-y:auto;background:linear-gradient(180deg,rgba(13,16,12,0.97),rgba(8,10,6,0.99));border-top:1.5px solid rgba(122,179,86,0.15);border-radius:16px 16px 0 0;padding:0 0 calc(0.5rem + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform 0.32s cubic-bezier(0.16,1,0.3,1);will-change:transform;-webkit-overflow-scrolling:touch;box-shadow:0 -8px 40px rgba(0,0,0,0.6);}
+.hex-insp.open{display:block;transform:translateY(0);}
+.hi-handle{width:36px;height:4px;margin:8px auto 4px;background:rgba(122,179,86,0.25);border-radius:2px;cursor:pointer;}
+.hi-header{display:flex;align-items:center;gap:0.4rem;padding:0.3rem 0.75rem 0.2rem;}
+.hi-zone-name{flex:1;font-family:'Bebas Neue',sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.1em;}
+.hi-zone-dist{font-family:'DM Mono',monospace;font-size:0.38rem;color:var(--muted);white-space:nowrap;}
+.hi-close{width:36px;height:36px;border-radius:50%;border:1px solid rgba(122,179,86,0.12);background:rgba(26,36,22,0.4);color:var(--muted);font-size:0.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.hi-habitat{display:flex;gap:0.4rem;padding:0.2rem 0.75rem;overflow-x:auto;white-space:nowrap;}
+.hi-hab-chip{display:inline-flex;align-items:center;gap:4px;background:rgba(26,36,22,0.5);border:1px solid rgba(74,124,53,0.1);border-radius:6px;padding:3px 8px;font-family:'DM Mono',monospace;font-size:0.34rem;color:var(--muted);flex-shrink:0;}
+.hi-hab-chip b{color:var(--cream);font-weight:500;}
+.hi-plants-label{font-family:'Bebas Neue',sans-serif;font-size:0.42rem;color:var(--muted);letter-spacing:0.12em;padding:0.3rem 0.75rem 0.15rem;}
+.hi-plants{display:flex;flex-direction:column;gap:6px;padding:0.2rem 0.75rem 0.3rem;max-height:40vh;overflow-y:auto;}
+.hi-plant-row{display:flex;align-items:center;gap:10px;background:rgba(26,36,22,0.4);border:1.5px solid rgba(74,124,53,0.12);border-radius:10px;padding:8px;cursor:pointer;transition:border-color 0.2s,background 0.2s;min-height:56px;}
+.hi-plant-row.selected{border-color:rgba(200,168,75,0.5);background:rgba(200,168,75,0.06);}
+.hi-plant-row .hi-pr-svg{width:48px;height:48px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.hi-plant-row .hi-pr-info{flex:1;min-width:0;}
+.hi-plant-row .hi-pr-name{font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hi-plant-row .hi-pr-meta{font-family:'DM Mono',monospace;font-size:0.3rem;color:var(--muted);margin-top:2px;}
+.hi-detail{padding:0.4rem 0.75rem;border-top:1px solid rgba(74,124,53,0.08);animation:panelFadeIn 0.2s ease;}
+.hi-detail-name{font-family:'Playfair Display',serif;font-size:0.7rem;color:var(--cream);margin-bottom:0.15rem;}
+.hi-detail-grade{font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.1em;margin-bottom:0.3rem;}
+.hi-detail-traits{font-family:'DM Mono',monospace;font-size:0.35rem;color:var(--muted);line-height:1.6;margin-bottom:0.4rem;}
+.hi-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.hi-action-btn{flex:1;min-width:70px;min-height:44px;padding:0.3rem 0.4rem;border-radius:8px;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.08em;cursor:pointer;text-align:center;}
+.hi-action-btn:active{background:rgba(74,124,53,0.2);border-color:rgba(122,179,86,0.4);}
+.hi-action-btn.danger{border-color:rgba(200,80,60,0.2);color:rgba(200,120,100,0.9);}
+.hi-action-btn.gold{border-color:rgba(200,168,75,0.25);color:var(--gold);}
+.hi-search{padding:0.3rem 0.75rem 0.2rem;border-top:1px solid rgba(74,124,53,0.08);}
+.hi-search-btn{width:100%;min-height:48px;padding:0.4rem;border-radius:10px;cursor:pointer;border:1.5px solid rgba(122,179,86,0.3);background:linear-gradient(180deg,rgba(74,124,53,0.15),rgba(26,60,22,0.25));color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;letter-spacing:0.1em;display:flex;align-items:center;justify-content:center;gap:8px;}
+.hi-search-btn:active{background:rgba(74,124,53,0.3);}
+.hi-search-btn:disabled{opacity:0.4;cursor:default;}
+.hi-search-timer{font-family:'DM Mono',monospace;font-size:0.38rem;color:var(--muted);text-align:center;padding-top:4px;}
+#hex-locked{position:fixed;top:40%;left:50%;transform:translate(-50%,-50%) scale(0.95);z-index:99998;pointer-events:none;opacity:0;transition:opacity 0.25s,transform 0.25s;}
+#hex-locked.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);}
+#hex-locked-inner{background:rgba(17,22,17,0.96);border:1px solid rgba(200,168,75,0.15);border-radius:12px;padding:0.6rem 0.9rem;box-shadow:0 8px 28px rgba(0,0,0,0.5);text-align:center;min-width:160px;backdrop-filter:blur(8px);}
+#hl-count{font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--cream);letter-spacing:0.08em;}
+#hl-soil{font-family:'DM Mono',monospace;font-size:0.38rem;color:var(--sage);margin-top:2px;}
+#hl-seed{font-family:'DM Mono',monospace;font-size:0.35rem;color:var(--gold);margin-top:4px;}
+#hl-dist{font-family:'DM Mono',monospace;font-size:0.35rem;color:var(--muted);margin-top:4px;}
+.hl-msg{font-family:'Bebas Neue',sans-serif;font-size:0.42rem;color:var(--muted);letter-spacing:0.08em;margin-top:6px;opacity:0.7;}
+
 /* ── BOTANICAL VIEWPORT FRAME ── ready for Gemini image */
 /* ═══ INTEGRATED WILD FRAME — pure CSS, no generated image ═══
    Top bar: log bar with mossy wood texture (already built)
@@ -4972,6 +5016,35 @@ window.onerror=function(msg,url,line,col,err){
   <!-- Drop FAB -->
   <button id="dfb" onclick="FG_Wild.openPicker()" style="display:none;"><span id="dfi"></span><div id="dbb">3</div></button>
   <!-- Old drop picker removed — replaced by w-picker.dpk2 above -->
+  <!-- ═══ HEX INSPECTOR — opens on zone hex tap ═══ -->
+  <div id="hex-inspector" class="hex-insp">
+    <div class="hi-handle" onclick="window._closeHexInspector()"></div>
+    <div class="hi-header">
+      <div class="hi-zone-name" id="hi-zone-name">Zone</div>
+      <div class="hi-zone-dist" id="hi-zone-dist"></div>
+      <button class="hi-close" onclick="window._closeHexInspector()">&#10005;</button>
+    </div>
+    <div class="hi-habitat" id="hi-habitat"></div>
+    <div class="hi-plants-label">PLANTS IN THIS HEX</div>
+    <div class="hi-plants" id="hi-plant-scroll"></div>
+    <div class="hi-detail" id="hi-detail" style="display:none;"></div>
+    <div class="hi-search" id="hi-search">
+      <button class="hi-search-btn" id="hi-search-btn" onclick="window._hexSeedSearch()">
+        <span class="hi-search-icon">&#127793;</span> SEARCH FOR SEEDS
+      </button>
+      <div class="hi-search-timer" id="hi-search-timer" style="display:none;"></div>
+    </div>
+  </div>
+  <div id="hex-insp-scrim" onclick="window._closeHexInspector()"></div>
+  <div id="hex-locked" style="display:none;">
+    <div id="hex-locked-inner">
+      <div id="hl-count">? plants</div>
+      <div id="hl-soil">Bare soil</div>
+      <div id="hl-seed"></div>
+      <div id="hl-dist">— away</div>
+      <div class="hl-msg">Move closer to interact</div>
+    </div>
+  </div>
   <!-- ═══ FERAL CHALLENGE MODAL ═══ -->
   <div id="fc-modal">
     <button onclick="if(window.FG_Challenge)FG_Challenge._close();" style="position:absolute;top:12px;right:12px;width:48px;height:48px;border-radius:50%;border:1px solid rgba(122,179,86,0.1);background:rgba(13,16,12,0.6);color:var(--muted);font-size:0.85rem;cursor:pointer;z-index:1;display:flex;align-items:center;justify-content:center;">✕</button>
@@ -31503,8 +31576,8 @@ function _initCompass(){
 var _lantern=null,_scanRing=null;
 function _placeUser(){
   if(!_map||!_uLat)return;
-  // Player marker with lantern glow
-  _uM=L.marker([_uLat,_uLng],{icon:L.divIcon({className:'',html:'<div style="width:20px;height:20px;position:relative;"><div style="width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(200,168,75,0.08) 0%,rgba(122,179,86,0.04) 30%,transparent 70%);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;"></div><div style="width:50px;height:50px;border-radius:50%;background:radial-gradient(circle,rgba(200,168,75,0.06),transparent 70%);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div><div style="width:14px;height:14px;background:linear-gradient(135deg,#5a9ed9,#3878b8);border-radius:50%;border:2.5px solid rgba(74,144,217,0.25);box-shadow:0 0 12px rgba(74,144,217,0.5),0 0 24px rgba(200,168,75,0.15);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div></div>',iconSize:[20,20],iconAnchor:[10,10]}),zIndexOffset:1000}).addTo(_map);
+  // Player marker — direction arrow (will become chosen avatar later)
+  _uM=L.marker([_uLat,_uLng],{icon:L.divIcon({className:'',html:'<div id="lw-player-arrow" style="width:28px;height:28px;position:relative;"><svg viewBox="0 0 28 28" width="28" height="28" xmlns="http://www.w3.org/2000/svg"><defs><filter id="pag"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="rgba(74,144,217,0.6)"/></filter></defs><polygon points="14,2 24,22 14,17 4,22" fill="rgba(74,144,217,0.9)" stroke="rgba(200,220,255,0.4)" stroke-width="1" filter="url(#pag)"/></svg></div>',iconSize:[28,28],iconAnchor:[14,14]}),zIndexOffset:1000}).addTo(_map);
   // Scanner range ring (75m collection radius)
   _scanRing=L.circle([_uLat,_uLng],{radius:COLLECT_RANGE,className:'scanner-ring',fill:true,stroke:true,weight:2}).addTo(_map);
 }
@@ -34201,7 +34274,157 @@ window._applyDefenseChange=function(hash,gameId){
 };
 function _logTip(msg){_toast(msg);}
 
-return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather};
+// ═══ HEX INSPECTOR (monolith version) ═══
+var _hexInspOpen=false,_hexInspZone=null,_hexInspPlants=[],_hexSelPlant=null,_hexLockedTimer=null;
+
+window._closeHexInspector=function(){
+  _hexInspOpen=false;_hexInspZone=null;_hexSelPlant=null;
+  var p=document.getElementById('hex-inspector'),s=document.getElementById('hex-insp-scrim');
+  if(p)p.classList.remove('open');if(s)s.classList.remove('open');
+};
+
+function _openHexInspector(zk){
+  var zones=_getAllZonePlants();var plants=zones[zk]||[];
+  if(plants.length===0){_toast('No plants in this zone.');return;}
+  _hexInspZone=zk;_hexInspPlants=plants;_hexInspOpen=true;_hexSelPlant=null;
+
+  var panel=document.getElementById('hex-inspector'),scrim=document.getElementById('hex-insp-scrim');
+  if(!panel)return;
+
+  // Zone name
+  var parts=zk.split(','),lat=parseFloat(parts[0]),lng=parseFloat(parts[1]);
+  var nameEl=document.getElementById('hi-zone-name');
+  if(nameEl){
+    var seed=0;for(var si=0;si<zk.length;si++)seed=((seed<<5)-seed+zk.charCodeAt(si))|0;
+    var pf=['Mossy','Quiet','Ancient','Sunlit','Shaded','Misty','Wild','Deep','Silver','Golden'];
+    var sf=['Hollow','Glen','Patch','Ring','Dell','Copse','Clearing','Thicket','Bed','Stand'];
+    nameEl.textContent=pf[Math.abs(seed)%pf.length]+' '+sf[Math.abs(seed>>8)%sf.length];
+  }
+  var distEl=document.getElementById('hi-zone-dist');
+  if(distEl)distEl.textContent=Math.round(_dist(_uLat,_uLng,lat,lng))+'m';
+
+  // Habitat chips
+  var habEl=document.getElementById('hi-habitat');
+  if(habEl){
+    var chips='';
+    if(window._lastDetectedBiome&&window.getBiomeInfo){var bi=getBiomeInfo(window._lastDetectedBiome);chips+='<div class="hi-hab-chip">'+(bi.icon||'')+' <b>'+(bi.name||'Unknown')+'</b></div>';}
+    if(window.getSoilInfo){var soi=getSoilInfo(lat,lng);if(soi)chips+='<div class="hi-hab-chip">Soil: <b>'+soi.name+'</b> ('+soi.maturity+'%)</div>';}
+    habEl.innerHTML=chips||'<div class="hi-hab-chip">Scanning habitat...</div>';
+  }
+
+  // Plant list (vertical rows, not horizontal cards)
+  var el=document.getElementById('hi-plant-scroll');
+  if(el){
+    el.innerHTML='';
+    var wild=_getWild();var augmented=[];
+    for(var i=0;i<plants.length;i++){
+      var p=plants[i],full=null;
+      for(var w=0;w<wild.length;w++){if(wild[w].hash===p.hash){full=wild[w];break;}}
+      if(!full&&_sharedMarkers[p.hash])full=_sharedMarkers[p.hash].data||null;
+      augmented.push({hash:p.hash,lat:p.lat,lng:p.lng,own:full?(full.own!==false):false,wildBorn:full?!!full.wildBorn:false,ownerName:full?(full.ownerName||'Keeper'):'Unknown',ownerUid:full?(full.ownerUid||''):'',defenderGame:full?(full.defenderGame||'set'):'set',date:full?full.date:null,days:full&&full.date?Math.floor((Date.now()-new Date(full.date).getTime())/86400000):0});
+    }
+    for(var j=0;j<augmented.length;j++){
+      var ap=augmented[j];
+      var row=document.createElement('div');row.className='hi-plant-row';row.setAttribute('data-idx',j);
+      // SVG: only show for own plants
+      var svgHtml='';
+      if(ap.own&&window._generatePlantSVG){try{svgHtml=window._generatePlantSVG(ap.hash,40,1);}catch(e){}}
+      if(!svgHtml||!ap.own)svgHtml='<svg viewBox="0 0 40 50" width="40" height="50" xmlns="http://www.w3.org/2000/svg"><rect x="11" y="38" width="18" height="12" rx="3" fill="rgba(90,112,80,0.2)"/><line x1="20" y1="38" x2="20" y2="15" stroke="rgba(90,112,80,0.25)" stroke-width="3" stroke-linecap="round"/><ellipse cx="12" cy="20" rx="9" ry="6" fill="rgba(90,112,80,0.15)" transform="rotate(-20 12 20)"/><ellipse cx="28" cy="17" rx="9" ry="6" fill="rgba(90,112,80,0.12)" transform="rotate(15 28 17)"/><text x="20" y="32" text-anchor="middle" font-size="12" fill="rgba(200,168,75,0.4)">?</text></svg>';
+      var name=ap.own&&window.getPlantName?getPlantName(ap.hash):'???';
+      var grade='?',gc='var(--muted)';
+      if(ap.own&&window.hashToTraits&&window.getTerraGrade){try{var tr=hashToTraits(ap.hash);var tg=getTerraGrade(tr);grade=tg.label||tg.name||'?';gc=tg.color||'var(--muted)';}catch(e){}}
+      var origin=ap.own?'Planted':(ap.wildBorn?'Wild Born':ap.ownerName);
+      row.innerHTML='<div class="hi-pr-svg">'+svgHtml+'</div><div class="hi-pr-info"><div class="hi-pr-name">'+name+'</div><div class="hi-pr-meta" style="color:'+gc+';">'+grade+' · '+origin+'</div></div>';
+      (function(idx,pd){row.addEventListener('click',function(){_selectHexPlant(idx,pd);});})(j,ap);
+      el.appendChild(row);
+    }
+    _hexInspPlants=augmented;
+  }
+
+  // Seed search
+  var btn=document.getElementById('hi-search-btn'),timerEl=document.getElementById('hi-search-timer');
+  if(btn){
+    var avail=_isSeedAvailable(zk)&&plants.length>=1;
+    if(avail){btn.disabled=false;btn.innerHTML='<span class="hi-search-icon">&#127793;</span> SEARCH FOR SEEDS';if(timerEl)timerEl.style.display='none';}
+    else{btn.disabled=true;btn.innerHTML='<span class="hi-search-icon">&#127793;</span> SEARCHED TODAY';if(timerEl){timerEl.textContent='Resets at midnight';timerEl.style.display='block';}}
+  }
+
+  // Hide detail
+  var det=document.getElementById('hi-detail');if(det)det.style.display='none';
+
+  panel.classList.add('open');if(scrim)scrim.classList.add('open');
+}
+
+function _selectHexPlant(idx,p){
+  _hexSelPlant=p;
+  var rows=document.querySelectorAll('.hi-plant-row');
+  for(var c=0;c<rows.length;c++)rows[c].classList.remove('selected');
+  var sel=document.querySelector('.hi-plant-row[data-idx="'+idx+'"]');if(sel)sel.classList.add('selected');
+  var el=document.getElementById('hi-detail');if(!el)return;
+  var name=p.own&&window.getPlantName?getPlantName(p.hash):'???';
+  var grade='?',gc='var(--muted)',traits=null;
+  if(window.hashToTraits){try{traits=hashToTraits(p.hash);}catch(e){}}
+  if(traits&&window.getTerraGrade&&p.own){try{var tg=getTerraGrade(traits);grade=tg.label||tg.name||'?';gc=tg.color||'var(--muted)';}catch(e){}}
+  var traitHtml='';
+  if(traits&&p.own){
+    traitHtml='<div class="hi-detail-traits">';
+    traitHtml+='Stem: '+(traits.stem||'?')+' · Leaves: '+(traits.leafCount||'?')+'x '+(traits.leafType||'?');
+    if(traits.hasFlower)traitHtml+=' · Bloom: '+(traits.flower||'?');
+    if(traits.companion&&traits.companion!=='None')traitHtml+='<br>Companion: '+traits.companion;
+    traitHtml+=' · Age: '+p.days+' days</div>';
+  }else if(!p.own){traitHtml='<div class="hi-detail-traits">Unknown species — collect to study</div>';}
+  var actions='';
+  var user=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
+  var isOwn=p.own||(user&&user.uid&&p.ownerUid===user.uid);
+  if(isOwn){
+    actions+='<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
+    actions+='<button class="hi-action-btn" onclick="window._hexAction(\'inspect\')">&#128269; INSPECT</button>';
+    actions+='<button class="hi-action-btn" onclick="window._hexAction(\'defense\')">&#128737; DEFENSE</button>';
+  }else{
+    actions+='<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
+    actions+='<button class="hi-action-btn danger" onclick="window._hexAction(\'harvest\')">&#127806; HARVEST</button>';
+  }
+  el.innerHTML='<div class="hi-detail-name">'+name+'</div><div class="hi-detail-grade" style="color:'+gc+';">'+grade+'</div>'+traitHtml+'<div class="hi-actions">'+actions+'</div>';
+  el.style.display='block';
+}
+
+window._hexSeedSearch=function(){
+  if(!_hexInspZone||!_hexInspPlants||_hexInspPlants.length<1)return;
+  _collectFeralFromZone(_hexInspZone,_hexInspPlants);
+  setTimeout(function(){
+    var btn=document.getElementById('hi-search-btn'),timerEl=document.getElementById('hi-search-timer');
+    if(btn){btn.disabled=true;btn.innerHTML='<span class="hi-search-icon">&#127793;</span> SEARCHED TODAY';if(timerEl){timerEl.textContent='Resets at midnight';timerEl.style.display='block';}}
+  },500);
+};
+
+window._hexAction=function(action){
+  if(!_hexSelPlant){_toast('Select a plant first.');return;}
+  var p=_hexSelPlant;
+  if(action==='water'){
+    if(p.own){
+      var dew=0;try{dew=parseInt(localStorage.getItem('fg_pollen')||'0');}catch(e){}
+      if(dew<5){_toast('Need 5 dew to water.');return;}
+      localStorage.setItem('fg_pollen',String(dew-5));
+      try{var wp=parseInt(localStorage.getItem('fg_pollen')||'0');localStorage.setItem('fg_pollen',String(wp+3));}catch(e){}
+      _toast('Watered! -5 dew, +3 pollen');if(window._haptic)_haptic('bloom');
+    }else{
+      var wk='lw_water_budget',wb={};try{wb=JSON.parse(localStorage.getItem(wk)||'{}');}catch(e){}
+      var wt=new Date().toISOString().split('T')[0];if(wb.date!==wt)wb={date:wt,count:0};
+      if(wb.count>=5){_toast('No waters left today.');return;}
+      wb.count++;localStorage.setItem(wk,JSON.stringify(wb));
+      try{var pol=parseInt(localStorage.getItem('fg_pollen')||'0');localStorage.setItem('fg_pollen',String(pol+2));}catch(e){}
+      _toast('Watered! +2 pollen. '+(5-wb.count)+' left.');if(window._haptic)_haptic('bloom');
+    }
+  }else if(action==='harvest'){
+    if(typeof _harvestToPouch==='function'){window._closeHexInspector();_harvestToPouch(p);}
+  }else if(action==='inspect'){
+    if(window.openCarousel){window._closeHexInspector();var gh=_getGH();var idx=-1;for(var gi=0;gi<gh.length;gi++){if(gh[gi].hash===p.hash){idx=gi;break;}}if(idx>=0)openCarousel(gh,idx,'greenhouse');}
+  }else if(action==='defense'){
+    if(typeof _pickDefense==='function')_pickDefense(p.hash);
+  }
+};
+
+return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_openHexInspector:_openHexInspector,_drawZoneHexes:_drawZoneHexes};
 })();
 </script>
 <!-- DEV: Spawn Mythic+Cosmic (hidden — requires dev panel password) -->
