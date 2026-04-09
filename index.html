@@ -2965,7 +2965,10 @@
     @keyframes hashFloat{0%{opacity:0;transform:translateY(0) scale(.8)}15%{opacity:1;transform:translateY(-4px) scale(1.1)}100%{opacity:0;transform:translateY(-28px) scale(.7)}}
 
     /* ── GAME AREA CONTAINER ── */
-    #fg-ag{display:none;flex-direction:column;padding:0 0 calc(var(--nav-h,58px) + var(--sb,0px)) 0;touch-action:pan-y;position:relative;z-index:1}
+    #fg-ag{display:none;flex-direction:column;padding:0 0 calc(var(--nav-h,58px) + var(--sb,0px)) 0;touch-action:pan-y;position:relative;z-index:1;background-size:cover;background-position:center;background-repeat:no-repeat;}
+    #fg-ag[data-game="chess"]{background-image:url('assets/mj-chess-bg-moon-cliff.png');}
+    #fg-ag[data-game="chess"]::before{content:'';position:absolute;inset:0;background:rgba(8,10,6,0.55);z-index:0;pointer-events:none;}
+    #fg-ag[data-game="chess"]>*{position:relative;z-index:1;}
     #fg-ag.on{display:flex}
     #fg-ag.sol{background:radial-gradient(ellipse at 50% 30%,rgba(18,32,14,.95) 0%,rgba(8,14,6,.98) 60%,rgba(4,8,3,1) 100%)}
     #fg-ag.sol-fs{padding-bottom:0;position:fixed;inset:0;z-index:1000;overflow-y:auto}
@@ -35135,7 +35138,7 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;_m=Math.m
   var _bnav=document.querySelector('.fg-bottomnav');
   var _td=document.getElementById('trios-dash');var _tw=document.getElementById('trios-wrap');
   if(id==='set'){sw.style.display='';if(_td)_td.style.display='';if(_tw)_tw.style.display='';if(ssb)ssb.style.display='';ag.classList.remove('on');ag.classList.remove('sol');ag.innerHTML='';if(_bnav)_bnav.style.display='flex';if(gps){gps.classList.remove('on');}try{_updateGP()}catch(e){}return}
-  sw.style.display='none';if(_td)_td.style.display='none';if(_tw)_tw.style.display='none';if(ssb)ssb.style.display='none';ag.classList.add('on');ag.classList.toggle('sol',!!_solGames[id]);ag.innerHTML='';
+  sw.style.display='none';if(_td)_td.style.display='none';if(_tw)_tw.style.display='none';if(ssb)ssb.style.display='none';ag.classList.add('on');ag.classList.toggle('sol',!!_solGames[id]);ag.innerHTML='';ag.setAttribute('data-game',id);
   if(_bnav)_bnav.style.display='none';
   if(_solGames[id]){_solEnterFS()}
   if(gps){gps.classList.add('on');try{_updateGP()}catch(e){console.warn('[GP]',e)}}
