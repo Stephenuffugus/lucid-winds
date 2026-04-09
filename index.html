@@ -7360,7 +7360,7 @@ document.addEventListener('keydown', function(e) {
       id:'nur_'+Date.now()+'_'+Math.floor(Math.random()*1000),
       seedHash:opts.seedHash, parentAHash:opts.parentAHash,
       parentBHash:opts.parentBHash, nonce:opts.nonce||0,
-      plantedAt:today, waterLog:[today], status:'growing', nickname:null
+      plantedAt:today, waterLog:[], status:'growing', nickname:null
     };
     nursery.push(seed);
     _saveNursery(nursery);
@@ -29042,6 +29042,7 @@ document.addEventListener('keydown', function(e) {
       _setNurMsg('🌸 Three waterings complete! Ready to bloom.');
       // Save nursery state first so _executeBloom reads the correct index
       _throttledSave('sws_nursery', JSON.stringify(nur), true); // Phase 27: force-flush before _executeBloom re-read
+      if (window.syncVaultToCloud) setTimeout(syncVaultToCloud, 500);
       renderNursery();
       _haptic('tab');
       // Notify bloom-ready
@@ -29070,6 +29071,8 @@ document.addEventListener('keydown', function(e) {
       _setNurMsg('💧 Watered. ' + seed.waterLog.length + '/3 days done.');
       _haptic('tab');
       _nurPulse(seedIndex, 'water');
+      // Sync to cloud so nursery persists across sessions
+      if (window.syncVaultToCloud) setTimeout(syncVaultToCloud, 1000);
       // Schedule nursery notification for next watering window
       if (window._scheduleNurNotif) window._scheduleNurNotif(seed);
     }
