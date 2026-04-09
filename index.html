@@ -8451,7 +8451,7 @@ document.addEventListener('keydown', function(e) {
     board = [];
     selected = [];
     phenosFound = 0;
-    document.getElementById('s-found').textContent = '0';
+    var _sfEl=document.getElementById('s-found');if(_sfEl)_sfEl.textContent='0';
         for (var i = 0; i < 12; i++) board.push(deck.pop());
     startTime = Date.now();
     startTimer();
@@ -8460,7 +8460,7 @@ document.addEventListener('keydown', function(e) {
     attentionPayloads = [];
     // Remove any new-record flash
     document.querySelectorAll('.new-record').forEach(function(el){el.classList.remove('new-record');});
-    document.getElementById('milestone-drop').classList.remove('visible');
+    var _mdEl=document.getElementById('milestone-drop');if(_mdEl)_mdEl.classList.remove('visible');
     milestoneShown = false;
     if (hintActive) clearHint();
     updateFocusPlant();
@@ -25811,7 +25811,7 @@ document.addEventListener('keydown', function(e) {
 
     // Progress header
     var pct = Math.round((gh.length / MAX_COLLECTION_SIZE) * 100);
-    countEl.textContent = gh.length + ' / ' + MAX_COLLECTION_SIZE;
+    if (countEl) countEl.textContent = gh.length + ' / ' + MAX_COLLECTION_SIZE;
     if (fillEl) fillEl.style.width = pct + '%';
     var expandBtn = document.getElementById('gh-expand-btn');
     if (expandBtn) expandBtn.style.display = (MAX_COLLECTION_SIZE >= GH_SLOTS_MAX) ? 'none' : '';
