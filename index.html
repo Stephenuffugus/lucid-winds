@@ -27885,10 +27885,7 @@ document.addEventListener('keydown', function(e) {
       // Open game picker when entering game tab
       if (window._openGamePicker) setTimeout(_openGamePicker, 100);
       // First-time tutorial — show on first game tab visit after onboarding
-      if (!localStorage.getItem('lw_tutorial_shown') && window.triggerTutorialDemo) {
-        localStorage.setItem('lw_tutorial_shown', '1');
-        setTimeout(function() { if (window.triggerTutorialDemo) triggerTutorialDemo(); }, 600);
-      }
+      // First-time tutorial removed — tutorial only via ? button in game header
     }
     // Render content synchronously BEFORE showing panel (prevents empty flash)
     if (tab === 'greenhouse') { renderGreenhouse(); if(window.PW_Tutorial&&!localStorage.getItem('lw_tut'))setTimeout(function(){PW_Tutorial.start();},600); }
