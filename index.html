@@ -4272,13 +4272,17 @@
        Must run before first paint so CSS overrides apply immediately. -->
   <script>(function(){
     var dominated = false;
-    var cores = navigator.hardwareConcurrency || 8;
-    var mem = navigator.deviceMemory || 8;
-    if (cores <= 4 || mem <= 4) dominated = true;
+    var cores = navigator.hardwareConcurrency || 2;
+    var mem = navigator.deviceMemory || 0;
+    if (cores <= 4) dominated = true;
+    if (mem > 0 && mem <= 4) dominated = true;
     var ua = navigator.userAgent || '';
-    if (/iPad/.test(ua)) {
+    // Old iPhones/iPads — deviceMemory not available in Safari so detect by OS version
+    if (/iPhone|iPad|iPod/.test(ua)) {
       var m = ua.match(/OS (\d+)/);
       if (m && parseInt(m[1], 10) < 16) dominated = true;
+      // iPhone with 2 cores = iPhone 5S/6/6S era
+      if (cores <= 2) dominated = true;
     }
     if (/Android/.test(ua) && cores <= 4) dominated = true;
     if (dominated) {
@@ -27792,10 +27796,10 @@ document.addEventListener('keydown', function(e) {
   var _pollenInterval = null;
   function _startPollenParticles() {
     if (_pollenInterval) return;
+    // Perf-lite: skip pollen particles entirely — DOM churn kills old devices
+    if (window._perfLite) return;
     // Lighter base pollen (fewer, smaller — seasonal particles carry the theme)
     _pollenInterval = setInterval(function() {
-      // Perf-lite: cap at 5 simultaneous particles
-      if (window._perfLite && document.querySelectorAll('.pollen-particle').length >= 5) return;
       var p = document.createElement('div');
       p.className = 'pollen-particle';
       var x = 10 + Math.random() * 80;
@@ -31103,52 +31107,55 @@ function activate(){
   if(!_inited){_initMap();_initGeo();_inited=true;}
   // Prune expired wild plants before loading
   _pruneWild();
-  // Hydrate anti-farming state from Firestore, then reload local state
-  _afHydrate(function(){_loadState();_updateUI();});
-  _loadState(); // also load immediately from cache for fast UI
+  // Load immediately from cache for fast UI
+  _loadState();
   _updateUI();
+  // Hydrate anti-farming state from Firestore (background)
+  _afHydrate(function(){_loadState();_updateUI();});
   // Fallback: load plants even if GPS is slow — uses last known position or fallback
   if(_map&&_uLat)_loadAll();
   else setTimeout(function(){if(_map&&_uLat)_loadAll();},3000);
   // Check for pending harvest/takeover rewards from other players
   _checkPendingRewards();
-  // Detect biome + biodiversity from real GPS
-  if(window.checkBiodiversity&&_uLat){
-    checkBiodiversity(_uLat,_uLng,function(bd){
-      window._lastBiodiversity=bd;
-      if(bd.tier==='hotspot'&&!localStorage.getItem('lw_hotspot_seen')){
-        localStorage.setItem('lw_hotspot_seen','1');
-        if(window._toast)_toast('🔬 Biodiversity Hotspot! '+bd.species+' real plant species observed here. Rare ferals possible!');
-      }
-    });
-  }
-  if(window.detectBiome&&_uLat){
-    detectBiome(_uLat,_uLng,function(b){
-      window._lastDetectedBiome=b;
-      // Update biome indicator in wild log bar
-      if(window.getBiomeInfo){
-        var _bInf=getBiomeInfo(b);
-        var _bIc=document.getElementById('w-biome');if(_bIc)_bIc.textContent=_bInf.icon;
-        var _bNm=document.getElementById('w-biome-name');if(_bNm)_bNm.textContent=_bInf.name;
-      }
-      // Show biome toast on first detection
-      var _biShow=localStorage.getItem('lw_biome_shown');
-      if(_biShow!==b&&window.getBiomeInfo){
-        var _bInfo=getBiomeInfo(b);
-        if(window._toast)_toast(_bInfo.icon+' Biome: '+_bInfo.name+(_bInfo.mutation?' — '+_bInfo.mutation+' possible':''));
-        localStorage.setItem('lw_biome_shown',b);
-      }
-    });
-  }
-  // Beholder Omnisight — extended vision check
-  if(window._checkBeholderOmnisight)setTimeout(_checkBeholderOmnisight,3000);
+  // ── Defer heavy network + compute ops so map renders first ──
+  var _heavyDelay=window._perfLite?4000:1500;
+  setTimeout(function(){
+    // Detect biome + biodiversity from real GPS
+    if(window.checkBiodiversity&&_uLat){
+      checkBiodiversity(_uLat,_uLng,function(bd){
+        window._lastBiodiversity=bd;
+        if(bd.tier==='hotspot'&&!localStorage.getItem('lw_hotspot_seen')){
+          localStorage.setItem('lw_hotspot_seen','1');
+          if(window._toast)_toast('Biodiversity Hotspot! '+bd.species+' real plant species observed here. Rare ferals possible!');
+        }
+      });
+    }
+    if(window.detectBiome&&_uLat){
+      detectBiome(_uLat,_uLng,function(b){
+        window._lastDetectedBiome=b;
+        if(window.getBiomeInfo){
+          var _bInf=getBiomeInfo(b);
+          var _bIc=document.getElementById('w-biome');if(_bIc)_bIc.textContent=_bInf.icon;
+          var _bNm=document.getElementById('w-biome-name');if(_bNm)_bNm.textContent=_bInf.name;
+        }
+        var _biShow=localStorage.getItem('lw_biome_shown');
+        if(_biShow!==b&&window.getBiomeInfo){
+          var _bInfo=getBiomeInfo(b);
+          if(window._toast)_toast(_bInfo.icon+' Biome: '+_bInfo.name+(_bInfo.mutation?' — '+_bInfo.mutation+' possible':''));
+          localStorage.setItem('lw_biome_shown',b);
+        }
+      });
+    }
+  },_heavyDelay);
+  // Beholder Omnisight — extended vision check (deferred further)
+  if(window._checkBeholderOmnisight)setTimeout(_checkBeholderOmnisight,window._perfLite?6000:3000);
   // Daily ecosystem check: reproduction + mesh + soil + chorus + phenotype
-  // Runs once per day on Wild tab entry
+  // Runs once per day on Wild tab entry — heavily deferred on slow devices
   var _reproToday=localStorage.getItem('lw_repro_today');
   var _todayStr=new Date().toISOString().split('T')[0];
   if(_reproToday!==_todayStr){
     localStorage.setItem('lw_repro_today',_todayStr);
-    setTimeout(function(){if(window._wildReproduction)_wildReproduction();},2000);
+    setTimeout(function(){if(window._wildReproduction)_wildReproduction();},window._perfLite?8000:2000);
   }
   // First-visit onboarding
   if(!localStorage.getItem('lw_wild_onboarded')){
@@ -31280,11 +31287,11 @@ function _updateTimeOfDay(){
 var _fireflyTimer=null;
 function _spawnFireflies(){
   if(_fireflyTimer)return;
+  // Perf-lite: skip fireflies entirely — DOM churn kills old devices
+  if(window._perfLite)return;
   _fireflyTimer=setInterval(function(){
     var panel=document.getElementById('panel-wild');if(!panel)return;
     if(!panel.classList.contains('tod-night')){clearInterval(_fireflyTimer);_fireflyTimer=null;return;}
-    // Perf-lite: cap at 3 fireflies
-    if(window._perfLite&&panel.querySelectorAll('.firefly').length>=3)return;
     var f=document.createElement('div');f.className='firefly';
     f.style.cssText='left:'+(10+Math.random()*80)+'%;top:'+(10+Math.random()*70)+'%;--fx:'+(Math.random()*60-30)+'px;--fy:'+(Math.random()*-60-10)+'px;--fx2:'+(Math.random()*40-20)+'px;--fy2:'+(Math.random()*40-20)+'px;animation:fireflyFloat '+(5+Math.random()*8)+'s ease-in-out forwards;';
     panel.appendChild(f);
@@ -31296,6 +31303,8 @@ function _spawnFireflies(){
 var _seasonParticleTimer=null;
 function _startSeasonalParticles(){
   if(_seasonParticleTimer)return;
+  // Perf-lite: skip seasonal particles entirely — DOM churn kills old devices
+  if(window._perfLite)return;
   // Determine current season from real-world month
   var month=new Date().getMonth(); // 0-11
   var season;
@@ -31306,8 +31315,6 @@ function _startSeasonalParticles(){
   var interval=season==='autumn'?900:season==='spring'?1100:season==='winter'?1400:1300;
   _seasonParticleTimer=setInterval(function(){
     var panel=document.getElementById('panel-wild');if(!panel||panel.style.display==='none')return;
-    // Perf-lite: cap at 4 seasonal particles
-    if(window._perfLite&&panel.querySelectorAll('.season-particle').length>=4)return;
     var p=document.createElement('div');
     p.className='season-particle sp-'+season;
     var spin=Math.random()*360;
@@ -33720,15 +33727,22 @@ function _checkPendingRewards(){
 function _toast(m){var e=document.getElementById('w-toast');if(!e)return;e.textContent=m;e.style.opacity='1';e.style.transform='translate(-50%,-50%) scale(1)';clearTimeout(_tt);_tt=setTimeout(function(){e.style.opacity='0';e.style.transform='translate(-50%,-50%) scale(0.95)';},3500);}
 
 var _wd=45;setInterval(function(){_wd=(_wd+(Math.random()>0.5?12:-8)+360)%360;var w=document.getElementById('w-wind');if(w){var ds=['N','NE','E','SE','S','SW','W','NW'];w.textContent=ds[Math.round(_wd/45)%8]+' '+(5+Math.round(Math.random()*10))+'mph';}},8000);
+// Cache grade lookups so we don't call hashToTraits every 60s
+var _wildGradeCache={};
+function _getWildGrade(hash){
+  if(_wildGradeCache[hash])return _wildGradeCache[hash];
+  var grade='Common';
+  try{if(window.hashToTraits&&window.getTerraGrade&&hash){
+    var tr=window.hashToTraits(hash);grade=window.getTerraGrade(tr).label||'Common';
+  }}catch(e){}
+  _wildGradeCache[hash]=grade;
+  return grade;
+}
 setInterval(function(){var w=_getWild();if(w.length>0){
   var pollenRates={Common:1,Uncommon:2,Rare:4,Epic:6,Legendary:9,Mythic:12,Cosmic:15};
   var hourlyTotal=0;
   for(var i=0;i<w.length;i++){
-    var grade='Common';
-    try{if(window.hashToTraits&&window.getTerraGrade&&w[i].hash){
-      var tr=window.hashToTraits(w[i].hash);grade=window.getTerraGrade(tr).label||'Common';
-    }}catch(e){}
-    hourlyTotal+=(pollenRates[grade]||1);
+    hourlyTotal+=(pollenRates[_getWildGrade(w[i].hash)]||1);
   }
   var remainder=0;try{remainder=parseFloat(localStorage.getItem('fg_pollen_rem')||'0');}catch(e){}
   var minuteEarned=hourlyTotal/60+remainder;
@@ -44800,7 +44814,7 @@ window._lwNotifPrompt = function() {
 var _nurTimers = {};
 
 window._scheduleNurNotif = function(seed, bloomReady) {
-  if (Notification.permission !== 'granted') return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
   if (!('serviceWorker' in navigator)) return;
 
   if (bloomReady) {
@@ -44830,7 +44844,7 @@ window._scheduleNurNotif = function(seed, bloomReady) {
 };
 
 function _fireNurNotif(title, body) {
-  if (Notification.permission !== 'granted') return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
   if (!('serviceWorker' in navigator)) return;
 
   navigator.serviceWorker.ready.then(function(reg) {
@@ -44847,7 +44861,7 @@ function _fireNurNotif(title, body) {
 
 // ── Page load: check if seeds need watering (for backgrounded returns) ──
 function _checkNurSeedsOnLoad() {
-  if (Notification.permission !== 'granted') return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
   var nur;
   try {
@@ -44890,7 +44904,7 @@ document.addEventListener('visibilitychange', function() {
 });
 
 window.addEventListener('load', function() {
-  if (Notification.permission !== 'granted') return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
   setTimeout(function() {
     var nur;
     try {

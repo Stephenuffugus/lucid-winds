@@ -199,14 +199,20 @@
 <h1>DUAL IMMUNE CARD PREVIEW</h1>
 <p class="subtitle">Adjust the cut, zoom in, make sure borders line up</p>
 
+<!-- MODE TOGGLE -->
+<div class="controls" style="text-align:center;padding:10px 16px;">
+  <button id="mode-clip" onclick="setMode('clip')" style="padding:8px 16px;border:1px solid rgba(200,168,75,0.3);border-radius:4px 0 0 4px;background:rgba(200,168,75,0.15);color:#c8a84b;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;cursor:pointer;">CLIP-PATH (current)</button>
+  <button id="mode-halves" onclick="setMode('halves')" style="padding:8px 16px;border:1px solid rgba(122,179,86,0.3);border-radius:0 4px 4px 0;background:none;color:#8a9178;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;cursor:pointer;">HALVES (new art)</button>
+</div>
+
 <!-- CONTROLS -->
 <div class="controls">
-  <div class="ctrl-row">
+  <div class="ctrl-row" id="ctrl-tr">
     <span class="ctrl-label">Top-right cut</span>
     <input type="range" id="cut-tr" min="20" max="120" value="55">
     <span class="ctrl-val" id="val-tr">55px</span>
   </div>
-  <div class="ctrl-row">
+  <div class="ctrl-row" id="ctrl-bl">
     <span class="ctrl-label">Bottom-left cut</span>
     <input type="range" id="cut-bl" min="20" max="120" value="55">
     <span class="ctrl-val" id="val-bl">55px</span>
@@ -220,6 +226,11 @@
     <span class="ctrl-label">Zoom</span>
     <input type="range" id="zoom" min="100" max="400" value="200">
     <span class="ctrl-val" id="val-zoom">200%</span>
+  </div>
+  <div class="ctrl-row" id="ctrl-split" style="display:none;">
+    <span class="ctrl-label">Split point %</span>
+    <input type="range" id="split-pct" min="30" max="70" value="50">
+    <span class="ctrl-val" id="val-split">50%</span>
   </div>
 </div>
 
