@@ -2131,9 +2131,9 @@
     /* ── GREENHOUSE ── */
     .greenhouse-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0.4rem;}
     /* ═══ CARD FRONT: Seasonal frames ═══ */
-    .greenhouse-plant{border:none;border-radius:8px;padding:0.4rem 0.3rem;text-align:center;transition:all 0.3s ease;position:relative;overflow:visible;background-color:#050505;background-size:100% 100%;background-position:center;background-repeat:no-repeat;box-shadow:0 0 18px rgba(180,140,60,0.08),0 2px 6px rgba(0,0,0,0.4);aspect-ratio:544/736;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-    .greenhouse-plant:hover{transform:translateY(-2px);filter:brightness(1.2);box-shadow:0 0 24px rgba(180,140,60,0.15),0 4px 12px rgba(0,0,0,0.3);}
-    .greenhouse-plant.gh-new{box-shadow:0 0 16px rgba(200,168,75,0.25),0 0 4px rgba(200,168,75,0.15),0 2px 6px rgba(0,0,0,0.4);animation:_ghNewPulse 3s ease-in-out infinite;}
+    .greenhouse-plant{border:none;border-radius:8px;padding:0.4rem 0.3rem;text-align:center;position:relative;overflow:visible;background-color:#050505;background-size:100% 100%;background-position:center;background-repeat:no-repeat;box-shadow:0 2px 6px rgba(0,0,0,0.4);aspect-ratio:544/736;display:flex;flex-direction:column;align-items:center;justify-content:center;contain:layout style paint;}
+    .greenhouse-plant:active{transform:scale(0.97);}
+    .greenhouse-plant.gh-new{box-shadow:0 0 12px rgba(200,168,75,0.2),0 2px 6px rgba(0,0,0,0.4);}
     .greenhouse-plant.gh-new::after{content:'NEW';position:absolute;top:4px;left:4px;font-family:'Bebas Neue',sans-serif;font-size:0.25rem;letter-spacing:0.06em;color:#0d100c;background:var(--gold);padding:1px 4px;border-radius:3px;z-index:5;}
     .greenhouse-plant.season-spring{background-image:url('assets/cards/fronts/card-front-spring.png');}
     .greenhouse-plant.season-summer{background-image:url('assets/cards/fronts/card-front-summer.png');background-size:103% 103%;}
@@ -26143,7 +26143,14 @@ document.addEventListener('keydown', function(e) {
           continue;
         }
         var _ghOv = (plant.generation && plant.generation > 1) ? {chimerGen: plant.generation} : null;
-        var plantSvg = generatePlantSVG(plant.hash, 65, 1, _ghOv);
+        // Lazy SVG: only render if card is in first 10 (visible), defer rest
+        var plantSvg;
+        if (i < 10) {
+          plantSvg = generatePlantSVG(plant.hash, 65, 1, _ghOv);
+        } else {
+          // Placeholder — IntersectionObserver will fill this in
+          plantSvg = '<div class="gh-svg-lazy" data-hash="' + plant.hash + '" data-gen="' + (plant.generation || 1) + '" style="width:65px;height:82px;margin:0 auto;background:rgba(122,179,86,0.04);border-radius:6px;"></div>';
+        }
         if (plant.mutated) {
           plantSvg = plantSvg.replace('<svg ', '<svg style="filter:drop-shadow(0 0 6px rgba(200,168,75,0.5)) drop-shadow(0 0 12px rgba(200,168,75,0.2));" ');
         }
@@ -26204,6 +26211,26 @@ document.addEventListener('keydown', function(e) {
       }
 
       grid.appendChild(el);
+    }
+    // Lazy SVG rendering — IntersectionObserver fills in off-screen cards
+    if ('IntersectionObserver' in window) {
+      var _lazyObs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (!entry.isIntersecting) return;
+          var lazy = entry.target.querySelector('.gh-svg-lazy');
+          if (!lazy) return;
+          var h = lazy.getAttribute('data-hash');
+          var g = parseInt(lazy.getAttribute('data-gen')) || 1;
+          if (h && window._generatePlantSVG) {
+            var ov = g > 1 ? {chimerGen: g} : null;
+            try { lazy.outerHTML = generatePlantSVG(h, 65, 1, ov); } catch(e) {}
+          }
+          _lazyObs.unobserve(entry.target);
+        });
+      }, {rootMargin: '200px'});
+      grid.querySelectorAll('.greenhouse-plant').forEach(function(card) {
+        if (card.querySelector('.gh-svg-lazy')) _lazyObs.observe(card);
+      });
     }
   }
 
