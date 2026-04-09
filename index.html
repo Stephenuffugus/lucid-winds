@@ -762,6 +762,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Lucid Winds — Botanical Collectible Game</title>
   <meta name="description" content="Lucid Winds. Earn unique procedural plants by playing pattern-matching games. Every plant is a one-of-one SVG artwork. Collect, breed, and grow your botanical garden.">
   <meta name="keywords" content="Lucid Winds, botanical game, plant collecting, procedural art, Pi Network, puzzle games, collectible plants">
@@ -828,7 +831,9 @@
       }
       localStorage.setItem('lw_version',LW_VERSION);
       console.log('[LW] Version changed: '+stored+' → '+LW_VERSION+'. Reloading.');
-      location.reload(true);
+      // Cache-bust: append version to URL to bypass CDN/browser cache
+      var _cbUrl=location.href.split('?')[0]+'?v='+LW_VERSION;
+      location.replace(_cbUrl);
       return;
     }
     localStorage.setItem('lw_version',LW_VERSION);
