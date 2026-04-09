@@ -26157,17 +26157,14 @@ document.addEventListener('keydown', function(e) {
           continue;
         }
         var _ghOv = (plant.generation && plant.generation > 1) ? {chimerGen: plant.generation} : null;
-        // Lazy SVG: only render if card is in first 10 (visible), defer rest
+        // Lazy SVG: first 5 immediate (one screen), rest via IntersectionObserver
         var plantSvg;
-        if (i < 10) {
+        if (i < 5) {
           plantSvg = generatePlantSVG(plant.hash, 65, 1, _ghOv);
         } else {
-          // Placeholder — IntersectionObserver will fill this in
           plantSvg = '<div class="gh-svg-lazy" data-hash="' + plant.hash + '" data-gen="' + (plant.generation || 1) + '" style="width:65px;height:82px;margin:0 auto;background:rgba(122,179,86,0.04);border-radius:6px;"></div>';
         }
-        if (plant.mutated) {
-          plantSvg = plantSvg.replace('<svg ', '<svg style="filter:drop-shadow(0 0 6px rgba(200,168,75,0.5)) drop-shadow(0 0 12px rgba(200,168,75,0.2));" ');
-        }
+        // No drop-shadow filters on grid — too GPU-heavy at scale
         // set-51: EA knot badge SVGs by season
         var _eaKnotSvgs = [
           '<svg viewBox="0 0 48 48"><g transform="translate(24,24)"><path d="M0,-8 C-5,-12 -12,-8 -10,-2 C-8,4 -3,5 0,2" fill="none" stroke="#E8A0BF" stroke-width="1.5" opacity="0.85"/><path d="M0,2 C3,5 8,4 10,-2 C12,-8 5,-12 0,-8" fill="none" stroke="#E8A0BF" stroke-width="1.5" opacity="0.85"/><path d="M0,2 C-4,6 -3,12 3,12 C8,12 9,6 5,3" fill="none" stroke="#E8A0BF" stroke-width="1.5" opacity="0.85"/></g></svg>',
@@ -26189,16 +26186,22 @@ document.addEventListener('keydown', function(e) {
         var _sColor = _ghTG ? _ghTG.color : 'var(--cream)';
 
         // Grid card: art front only (flip lives in carousel)
-        var _ghTierName = (_ghTG && _ghTG.name) ? _ghTG.name.toLowerCase() : 'common';
-        var _ghSymbol = plant.revealed ? '<img class="cf-rarity-symbol cf-rarity-symbol--grid" src="assets/symbols/symbol-' + _ghTierName + '.png" alt="' + _ghTierName + '">' : '';
-        el.innerHTML =
-          _eaKnotHtml +
-          '<div class="gh-slot">#' + (realIdx + 1) + '</div>' +
-          plantSvg +
-          '<div class="gh-name" style="color:var(--cream);">' + (typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : _pName) + '</div>' +
-          (function(){var _gbs=window.FG_Data&&FG_Data.getBreedStatus?FG_Data.getBreedStatus(plant):null;if(!_gbs)return plant.breedCount>=3?'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(192,112,112,0.7);margin-top:1px;">\u26a1 SPENT 3/3</div>':'';if(_gbs.reason==='IMMATURE')return'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(91,175,220,0.7);margin-top:1px;">\ud83c\udf31 '+_gbs.daysLeft+'d to mature</div>';if(_gbs.reason==='COOLDOWN')return'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(200,168,75,0.7);margin-top:1px;">\u23f3 '+_gbs.cooldownDays+'d cooldown</div>';if(_gbs.reason==='NO_CHARGES')return'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(192,112,112,0.7);margin-top:1px;">\ud83d\udca4 Resting</div>';return'';})() +
-          (_sea ? '<div style="display:flex;justify-content:center;gap:3px;margin-top:1px;font-size:0.3rem;align-items:center;"><span>' + _sea.emblem + '</span>' + (function(){ try { var _synIcons = checkSynergies(_ghTraits); if (!_synIcons || _synIcons.length === 0) return ''; var _si = ''; for (var _sj = 0; _sj < Math.min(_synIcons.length, 3); _sj++) _si += '<span title="' + _synIcons[_sj].name + '">' + _synIcons[_sj].emoji + '</span>'; return _si; } catch(e) { return ''; } })() + '</div>' : '') +
-          _ghSymbol;
+        // perfLite: simplified card — just SVG + name, skip EA knots/synergies/breed status
+        if (window._perfLite) {
+          el.innerHTML = plantSvg +
+            '<div class="gh-name" style="color:var(--cream);">' + _pName + '</div>';
+        } else {
+          var _ghTierName = (_ghTG && _ghTG.name) ? _ghTG.name.toLowerCase() : 'common';
+          var _ghSymbol = plant.revealed ? '<img class="cf-rarity-symbol cf-rarity-symbol--grid" src="assets/symbols/symbol-' + _ghTierName + '.png" alt="' + _ghTierName + '">' : '';
+          el.innerHTML =
+            _eaKnotHtml +
+            '<div class="gh-slot">#' + (realIdx + 1) + '</div>' +
+            plantSvg +
+            '<div class="gh-name" style="color:var(--cream);">' + (typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : _pName) + '</div>' +
+            (function(){var _gbs=window.FG_Data&&FG_Data.getBreedStatus?FG_Data.getBreedStatus(plant):null;if(!_gbs)return plant.breedCount>=3?'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(192,112,112,0.7);margin-top:1px;">\u26a1 SPENT 3/3</div>':'';if(_gbs.reason==='IMMATURE')return'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(91,175,220,0.7);margin-top:1px;">\ud83c\udf31 '+_gbs.daysLeft+'d to mature</div>';if(_gbs.reason==='COOLDOWN')return'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(200,168,75,0.7);margin-top:1px;">\u23f3 '+_gbs.cooldownDays+'d cooldown</div>';if(_gbs.reason==='NO_CHARGES')return'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(192,112,112,0.7);margin-top:1px;">\ud83d\udca4 Resting</div>';return'';})() +
+            (_sea ? '<div style="display:flex;justify-content:center;gap:3px;margin-top:1px;font-size:0.3rem;align-items:center;"><span>' + _sea.emblem + '</span>' + (function(){ try { var _synIcons = checkSynergies(_ghTraits); if (!_synIcons || _synIcons.length === 0) return ''; var _si = ''; for (var _sj = 0; _sj < Math.min(_synIcons.length, 3); _sj++) _si += '<span title="' + _synIcons[_sj].name + '">' + _synIcons[_sj].emoji + '</span>'; return _si; } catch(e) { return ''; } })() + '</div>' : '') +
+            _ghSymbol;
+        }
         _ghCardCache[_cacheKey] = el.innerHTML;
       } else {
         // Check for compost ghost in this slot
