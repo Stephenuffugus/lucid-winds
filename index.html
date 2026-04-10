@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.33';
+  var LW_VERSION='2026.04.10.34';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -31966,9 +31966,22 @@ function _ensureVitality(plant){
   plant.rarity=rarity;
   var lifeMs=_lifespanMsFor(rarity);
   plant.lifespanMs=lifeMs;
-  if(!plant.droppedAt&&plant.date){plant.droppedAt=new Date(plant.date).getTime();}
-  else if(!plant.droppedAt){plant.droppedAt=Date.now();}
-  if(!plant.decayAt){plant.decayAt=plant.droppedAt+lifeMs;}
+  // Normalize droppedAt to a numeric ms timestamp. Firestore writes
+  // ISO strings via new Date().toISOString(); older code used Date.now().
+  if(typeof plant.droppedAt==='string'){
+    var _parsed=new Date(plant.droppedAt).getTime();
+    plant.droppedAt=isNaN(_parsed)?Date.now():_parsed;
+  } else if(!plant.droppedAt&&plant.date){
+    plant.droppedAt=new Date(plant.date).getTime();
+  } else if(!plant.droppedAt){
+    plant.droppedAt=Date.now();
+  }
+  if(typeof plant.decayAt==='string'){
+    var _dp=new Date(plant.decayAt).getTime();
+    plant.decayAt=isNaN(_dp)?(plant.droppedAt+lifeMs):_dp;
+  } else if(!plant.decayAt){
+    plant.decayAt=plant.droppedAt+lifeMs;
+  }
   if(!plant.strangerTendAddMs)plant.strangerTendAddMs=0;
   return plant;
 }

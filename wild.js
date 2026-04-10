@@ -203,12 +203,20 @@ function _ensureVitality(plant){
   plant.rarity = rarity;
   var lifeMs = _lifespanMsFor(rarity);
   plant.lifespanMs = lifeMs;
-  if(!plant.droppedAt && plant.date){
+  // Normalize droppedAt to a numeric ms timestamp. Firestore writes
+  // ISO strings via new Date().toISOString(); older code used Date.now().
+  if (typeof plant.droppedAt === 'string') {
+    var _parsed = new Date(plant.droppedAt).getTime();
+    plant.droppedAt = isNaN(_parsed) ? Date.now() : _parsed;
+  } else if(!plant.droppedAt && plant.date){
     plant.droppedAt = new Date(plant.date).getTime();
   } else if(!plant.droppedAt){
     plant.droppedAt = Date.now();
   }
-  if(!plant.decayAt){
+  if (typeof plant.decayAt === 'string') {
+    var _dp = new Date(plant.decayAt).getTime();
+    plant.decayAt = isNaN(_dp) ? (plant.droppedAt + lifeMs) : _dp;
+  } else if(!plant.decayAt){
     // Legacy plants get lifespan counting from their original drop date.
     plant.decayAt = plant.droppedAt + lifeMs;
   }
