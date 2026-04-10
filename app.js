@@ -18260,6 +18260,7 @@
   window.getTraitSummary = getTraitSummary;
   window._haptic = _haptic;
   window.showHexMsg = showHexMsg;
+  window.renderRecords = renderRecords;
 
   // ═══ EVENT LOG — foundation for Root Report, memorials, achievements ═══
   // Ring buffer of notable gameplay events persisted to localStorage.
