@@ -208,12 +208,79 @@ function _pruneWild(){
       :'\ud83c\udf42 '+died.length+' plants withered: '+names.join(', ')+(died.length>3?'...':'');
     setTimeout(function(){_toast(msg);},1000);
   }
+  // ── ENFORCE 3-PER-ZONE CAP — keep top 3 EA, evict rest ──
+  // (Migrates legacy zones that pre-date the cap)
+  if(typeof MAX_PER_ZONE!=='undefined'){
+    var byZone={};
+    for(var z=0;z<fresh.length;z++){
+      var k=_zoneKey(fresh[z].lat,fresh[z].lng);
+      if(!byZone[k])byZone[k]=[];
+      byZone[k].push(fresh[z]);
+    }
+    var pruned=[],evictCount=0;
+    for(var zk in byZone){
+      var grp=byZone[zk];
+      if(grp.length<=MAX_PER_ZONE){
+        for(var g=0;g<grp.length;g++)pruned.push(grp[g]);
+      } else {
+        grp.sort(function(a,b){return _wildEA(b)-_wildEA(a);});
+        for(var g2=0;g2<MAX_PER_ZONE;g2++)pruned.push(grp[g2]);
+        evictCount+=(grp.length-MAX_PER_ZONE);
+      }
+    }
+    if(evictCount>0){
+      _saveWild(pruned);
+      if(window._swsLog)_swsLog('Evicted '+evictCount+' over-cap plants from '+Object.keys(byZone).length+' zones','warn');
+      fresh=pruned;
+    }
+  }
   return fresh;
 }
 function _getGH(){try{return JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){return[];}}
 function _saveGH(a){localStorage.setItem('sws_greenhouse',JSON.stringify(a));}
 function _zoneKey(a,b){return(Math.round(a/ZONE_SIZE)*ZONE_SIZE).toFixed(4)+','+(Math.round(b/ZONE_SIZE)*ZONE_SIZE).toFixed(4);}
 function _dist(a,b,c,d){var x=(c-a)*Math.PI/180,y=(d-b)*Math.PI/180;var z=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(y/2)*Math.sin(y/2);return 6371000*2*Math.atan2(Math.sqrt(z),Math.sqrt(1-z));}
+
+// ═══ 3-PER-ZONE CAP + EVICTION ═══
+var MAX_PER_ZONE=3;
+// Prefers stored .ea (from Firestore/shared markers), falls back to trait compute.
+function _wildEA(w){
+  if(w&&typeof w.ea==='number'&&w.ea>0)return w.ea;
+  try{
+    var t=window.hashToTraits(w.hash);
+    var days=w.date?Math.floor((Date.now()-new Date(w.date).getTime())/86400000):0;
+    return window.computeEA?window.computeEA(t,days):0;
+  }catch(e){return 0;}
+}
+function _weakestInZone(plants){
+  if(!plants.length)return null;
+  var weakest=plants[0],wEA=_wildEA(plants[0]);
+  for(var i=1;i<plants.length;i++){
+    var ea=_wildEA(plants[i]);
+    if(ea<wEA){weakest=plants[i];wEA=ea;}
+  }
+  return {plant:weakest,ea:wEA};
+}
+// Combined zone occupancy — merges local wild + shared Firestore markers.
+// Returns a deduped array; local entries preferred over shared on hash collision.
+function _allPlantsInZone(zoneKey){
+  var out=[],seen={};
+  var local=_getWild();
+  for(var i=0;i<local.length;i++){
+    var w=local[i];if(!w||!w.lat||!w.lng||!w.hash)continue;
+    if(_zoneKey(w.lat,w.lng)!==zoneKey)continue;
+    out.push(w);seen[w.hash]=true;
+  }
+  var keys=Object.keys(_sharedMarkers||{});
+  for(var j=0;j<keys.length;j++){
+    var sm=_sharedMarkers[keys[j]];if(!sm||!sm.data)continue;
+    var d=sm.data;if(!d.lat||!d.lng||!d.hash)continue;
+    if(seen[d.hash])continue;
+    if(_zoneKey(d.lat,d.lng)!==zoneKey)continue;
+    out.push(d);
+  }
+  return out;
+}
 
 function activate(){
   // Diagnostic: show system status on first Wild visit
@@ -2585,40 +2652,36 @@ function _drop(pl){
   if(!_uLat||!_uLng){_toast('No location.');return;}
   if((MAX_DROPS-_drops)<=0)return;
   var wild=_getWild();
+  var myUid='';try{var _cu=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_cu)myUid=_cu.uid;}catch(e){}
   var la=_uLat+(Math.random()-0.5)*0.0005,lo=_uLng+(Math.random()-0.5)*0.0005;
   var zone=_zoneKey(la,lo);
 
-  // Territory check
-  var existing=null;
-  for(var i=0;i<wild.length;i++){
-    if(_zoneKey(wild[i].lat,wild[i].lng)===zone){existing=wild[i];break;}
+  // Combined occupancy: local wild + shared remote markers in this zone
+  var inZone=_allPlantsInZone(zone);
+  // Already have your own plant in this zone? Refuse (one self per zone).
+  for(var io=0;io<inZone.length;io++){
+    var iz=inZone[io];
+    var mine=(iz.own===true)||(myUid&&iz.ownerUid===myUid);
+    if(mine){_toast('You already have a plant in this zone.');return;}
   }
-
-  if(existing){
-    // Own plant already here
-    if(!existing.ownerUid||existing.own){
-      _toast('You already have a plant in this zone.');return;
-    }
-    // Other player's plant — EA comparison (multiplayer future)
+  var displaced=null;
+  if(inZone.length>=MAX_PER_ZONE){
+    // Zone is full — try to evict the weakest if your plant is stronger
     var myInfo=_buildInfo(pl.hash);
-    var myTraits=myInfo.t;
-    var myEA=window.computeEA?window.computeEA(myTraits,0):0;
-    var theirTraits=null;
-    try{theirTraits=window.hashToTraits(existing.hash);}catch(e){}
-    var theirDays=existing.date?Math.floor((Date.now()-new Date(existing.date).getTime())/86400000):0;
-    var theirEA=window.computeEA?window.computeEA(theirTraits,theirDays):0;
-
-    if(myEA<=theirEA){
-      _toast('Defended! This zone has a plant with EA '+theirEA+'. Yours is EA '+myEA+'. Grow stronger.');
+    var myEA=window.computeEA?window.computeEA(myInfo.t,0):0;
+    var w=_weakestInZone(inZone);
+    if(myEA<=w.ea){
+      _toast('Zone full ('+MAX_PER_ZONE+' plants). Weakest is EA '+w.ea+'. Yours is EA '+myEA+'. Grow stronger.');
       return;
     }
-    // TAKEOVER — your plant is stronger (local check passed, server TX in _finishDrop)
-    wild=wild.filter(function(w){return w.hash!==existing.hash;});
-    _toast('\ud83c\udf3f Takeover! Your EA '+myEA+' displaced EA '+theirEA+'!');
+    // Weakest must be a remote plant (own-in-zone was blocked above).
+    // _writeSharedDrop needs {ownerUid, hash, grade} to run the takeover TX.
+    displaced={ownerUid:w.plant.ownerUid,hash:w.plant.hash,grade:w.plant.grade||'Common',name:w.plant.name||'Plant'};
+    _toast('\ud83c\udf3f Eviction! Your EA '+myEA+' displaced the zone\u2019s weakest (EA '+w.ea+').');
   }
 
   // Show defender game picker — pass displaced plant info for server-side TX
-  _pendingDrop={plant:pl,lat:la,lng:lo,wild:wild,displaced:existing||null};
+  _pendingDrop={plant:pl,lat:la,lng:lo,wild:wild,displaced:displaced};
   _showDefenderPicker();
 }
 
@@ -2903,36 +2966,29 @@ function _dropFromBP(p){
   if(!_uLat||!_uLng){_toast('Need GPS location to drop.');return;}
   if(typeof gtag!=='undefined') gtag('event','wild_plant_drop',{lat:_uLat.toFixed(3),lng:_uLng.toFixed(3)});
   var wild=_getWild();
+  var myUid='';try{var _cu=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_cu)myUid=_cu.uid;}catch(e){}
   var la=_uLat+(Math.random()-0.5)*0.0005,lo=_uLng+(Math.random()-0.5)*0.0005;
   var zone=_zoneKey(la,lo);
-  // Territory check — same logic as _drop() so BP drops can takeover
-  var existing=null;
-  for(var i=0;i<wild.length;i++){
-    if(_zoneKey(wild[i].lat,wild[i].lng)===zone){existing=wild[i];break;}
+  // 3-per-zone cap with weakest-eviction (combined local + shared markers)
+  var inZone=_allPlantsInZone(zone);
+  for(var io=0;io<inZone.length;io++){
+    var iz=inZone[io];
+    var mine=(iz.own===true)||(myUid&&iz.ownerUid===myUid);
+    if(mine){_toast('You already have a plant in this zone.');return;}
   }
-  if(existing){
-    if(!existing.ownerUid||existing.own){
-      la=_uLat+(Math.random()-0.5)*0.001;lo=_uLng+(Math.random()-0.5)*0.001;
-      var z2=_zoneKey(la,lo);
-      if(wild.some(function(w){return _zoneKey(w.lat,w.lng)===z2;})){
-        _toast('You already have a plant in this zone.');return;
-      }
-      existing=null;
-    } else {
-      var myInfo=_buildInfo(p.hash);
-      var myEA=window.computeEA?window.computeEA(myInfo.t,0):0;
-      var theirTraits=null;try{theirTraits=window.hashToTraits(existing.hash);}catch(e){}
-      var theirDays=existing.date?Math.floor((Date.now()-new Date(existing.date).getTime())/86400000):0;
-      var theirEA=window.computeEA?window.computeEA(theirTraits,theirDays):0;
-      if(myEA<=theirEA){
-        _toast('Defended! Zone EA '+theirEA+' vs yours '+myEA+'. Grow stronger.');return;
-      }
-      wild=wild.filter(function(w){return w.hash!==existing.hash;});
-      _toast('\ud83c\udf3f Takeover! Your EA '+myEA+' displaced EA '+theirEA+'!');
+  var displaced=null;
+  if(inZone.length>=MAX_PER_ZONE){
+    var myInfo=_buildInfo(p.hash);
+    var myEA=window.computeEA?window.computeEA(myInfo.t,0):0;
+    var w=_weakestInZone(inZone);
+    if(myEA<=w.ea){
+      _toast('Zone full ('+MAX_PER_ZONE+' plants). Weakest is EA '+w.ea+'. Yours is EA '+myEA+'. Grow stronger.');return;
     }
+    displaced={ownerUid:w.plant.ownerUid,hash:w.plant.hash,grade:w.plant.grade||'Common',name:w.plant.name||'Plant'};
+    _toast('\ud83c\udf3f Eviction! Your EA '+myEA+' displaced the zone\u2019s weakest (EA '+w.ea+').');
   }
 
-  _pendingDrop={plant:p,lat:la,lng:lo,wild:wild,displaced:existing||null,fromBP:true};
+  _pendingDrop={plant:p,lat:la,lng:lo,wild:wild,displaced:displaced,fromBP:true};
   _showDefenderPicker();
 }
 // ═══ SHARED WILD DROPS — visible to all players ═══
