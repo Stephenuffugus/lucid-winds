@@ -5713,8 +5713,10 @@ function _getNextStep(){
   var gh=[];try{gh=JSON.parse((window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse'))||'[]');}catch(e){}
   var nur=[];try{nur=JSON.parse(localStorage.getItem('sws_nursery')||'[]');}catch(e){}
   var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+  // Sunbeams drive mint progress (games earn them). Variable name kept
+  // as "sunbeams" — the old "dew" label was a rename-miss from the split.
   var hl={};try{hl=JSON.parse((window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger'))||'{}');}catch(e){}
-  var dew=(hl.earned||0)-(hl.spent||0);
+  var sunbeams=(hl.earned||0)-(hl.spent||0);
   var today=new Date().toISOString().split('T')[0];
 
   // 1. Nursery seed needs watering today
@@ -5734,12 +5736,12 @@ function _getNextStep(){
   }
   var _nsCost=window._getMintCost?window._getMintCost():30;
   // 3. Close to minting (>= 2/3 of cost)
-  if(dew>=Math.floor(_nsCost*0.66)&&dew<_nsCost){
-    return{icon:'🌱',text:'Almost there! '+(_nsCost-dew)+' more dew to mint a new plant.',action:'game',color:'var(--sage)'};
+  if(sunbeams>=Math.floor(_nsCost*0.66)&&sunbeams<_nsCost){
+    return{icon:'☀️',text:'Almost there! '+(_nsCost-sunbeams)+' more sunbeams to mint a new plant.',action:'game',color:'var(--sage)'};
   }
   // 4. No plants yet (besides gift)
   if(gh.length<=1){
-    return{icon:'🎮',text:'Play a game to earn dew drops. '+_nsCost+' dew = your next plant!',action:'game',color:'var(--sage)'};
+    return{icon:'🎮',text:'Play a game to earn sunbeams. '+_nsCost+' sunbeams = your next plant!',action:'game',color:'var(--sage)'};
   }
   // 5. Haven't dropped anything in wild yet
   if(gh.length>=3&&wild.length===0){
@@ -5760,11 +5762,11 @@ function _getNextStep(){
     return{icon:'📦',text:gh.length+'/10 slots used. Compost a plant for fertilizer or expand storage.',action:'greenhouse',color:'rgba(200,168,75,0.8)'};
   }
   // 8. Default: earn more
-  if(dew<Math.floor(_nsCost*0.33)){
-    return{icon:'🎯',text:'Play games to earn dew. '+dew+'/'+_nsCost+' toward your next plant.',action:'game',color:'var(--muted)'};
+  if(sunbeams<Math.floor(_nsCost*0.33)){
+    return{icon:'🎯',text:'Play games to earn sunbeams. '+sunbeams+'/'+_nsCost+' toward your next plant.',action:'game',color:'var(--muted)'};
   }
   // 9. Mid-progress
-  return{icon:'🌿',text:dew+'/'+_nsCost+' dew collected. Keep playing to mint your next plant!',action:'game',color:'var(--sage)'};
+  return{icon:'☀️',text:sunbeams+'/'+_nsCost+' sunbeams collected. Keep playing to mint your next plant!',action:'game',color:'var(--sage)'};
 }
 
 function _updateNextStep(){
