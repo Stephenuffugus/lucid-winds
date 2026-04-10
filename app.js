@@ -17308,6 +17308,10 @@
       if(tg&&tg.name==='Cosmic')xpAmt=100;
       PW_grantXP(xpAmt,'bloom_'+(tg?tg.name:'Common'));
     }
+    // Photosynthesis residue: every mint drips 10 Dew into the keeper's
+    // pouch. Gives early-game a quick way to build Dew for nursery
+    // acceleration before the wild tick accumulator has had time to work.
+    if(typeof earnDew==='function')earnDew(10,'plant_mint');
     return true;
   }
 
@@ -18241,8 +18245,19 @@
   window.saveGreenhouse = saveGreenhouse;
 
   // ═══ HASH LEDGER — tracks earned and spent ═══
+  // Internally "hashes" remain the cryptographic buffer that mints plants.
+  // Player-facing UI calls this balance "Sunbeams" — sunlight gathered from
+  // focused attention that photosynthesizes into plant life.
   var HASH_LEDGER_KEY = 'sws_hash_ledger';
   var SHOP_KEY = 'sws_shop_unlocks';
+
+  // ═══ DEW LEDGER — separate spendable currency ═══
+  // Dew is earned broadly from participation (wild plant passive ticks, plant
+  // mint bonuses, future daily quests and gifts) and spent specifically on
+  // nursery acceleration and wild plant cuttings. Parallel to hash ledger but
+  // completely independent — you cannot mint plants with Dew, you cannot
+  // accelerate a seed with Sunbeams.
+  var DEW_LEDGER_KEY = 'sws_dew_ledger';
 
   function getHashLedger() {
     try { return JSON.parse(_secureGet(HASH_LEDGER_KEY) || localStorage.getItem(HASH_LEDGER_KEY)) || { spent: 0, earned: 0 }; } catch(e) { return { spent: 0, earned: 0 }; }
@@ -18270,8 +18285,12 @@
     // Update the /30 label dynamically
     var pgParent = pg ? pg.parentNode : null;
     if (pgParent) { var spans = pgParent.querySelectorAll('span'); if (spans.length >= 2) { var last = spans[spans.length - 1]; if (last && last.textContent.indexOf('/') === 0) last.textContent = '/' + _dewCost; } }
-    // Keeper bar dew badge (visible on all non-wild tabs)
-    var kbd = document.getElementById('kb-dew'); if (kbd) kbd.textContent = balance + ' dew';
+    // Keeper bar SUNBEAMS badge (the old "kb-dew" element was renamed to
+    // kb-sunbeams because it reads from the hash ledger, which is now labelled
+    // Sunbeams in UI. A separate kb-dew element shows the real Dew balance.)
+    var kbs = document.getElementById('kb-sunbeams'); if (kbs) kbs.textContent = balance + ' sunbeams';
+    // Refresh the new Dew display whenever game currency updates
+    if (typeof _updateDewDisplay === 'function') _updateDewDisplay();
     // Streak display on game tab
     var gs = document.getElementById('game-streak');
     if (gs) {
@@ -18296,6 +18315,52 @@
     var earned = (ledger.earned || 0) + (gh.length * 3);
     return Math.max(0, earned - (ledger.spent || 0));
   }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // DEW LEDGER ACCESSORS — parallel to hash ledger but fully independent.
+  // Dew is EARNED via: wild plant passive ticks, plant mint photosynthesis
+  // bonus (+10/mint), future daily quests, gifts, achievements.
+  // Dew is SPENT on: nursery acceleration (21 Dew per day skipped), future
+  // wild plant cuttings (rarity-scaled cost).
+  // Every earnDew() call also grants matching XP via PW_grantXP so pollen
+  // progression still accumulates from all dew-earning actions.
+  // ─────────────────────────────────────────────────────────────────────────
+  function getDewLedger() {
+    try { return JSON.parse(_secureGet(DEW_LEDGER_KEY) || localStorage.getItem(DEW_LEDGER_KEY)) || { spent: 0, earned: 0 }; } catch(e) { return { spent: 0, earned: 0 }; }
+  }
+  function earnDew(amount, source) {
+    if (!amount || amount < 0) return;
+    var ledger = getDewLedger();
+    ledger.earned = (ledger.earned || 0) + amount;
+    _secureSet(DEW_LEDGER_KEY, ledger);
+    if (window.PW_grantXP) PW_grantXP(amount, source || 'dew_earn');
+    _updateDewDisplay();
+  }
+  function spendDew(amount) {
+    if (!amount || amount < 0) return false;
+    var ledger = getDewLedger();
+    var balance = Math.max(0, (ledger.earned || 0) - (ledger.spent || 0));
+    if (balance < amount) return false;
+    ledger.spent = (ledger.spent || 0) + amount;
+    _secureSet(DEW_LEDGER_KEY, ledger);
+    _updateDewDisplay();
+    return true;
+  }
+  function getTotalDew() {
+    var ledger = getDewLedger();
+    return Math.max(0, (ledger.earned || 0) - (ledger.spent || 0));
+  }
+  function _updateDewDisplay() {
+    var bal = getTotalDew();
+    // Keeper bar dew badge (the NEW element, not the renamed sunbeams one)
+    var kbd = document.getElementById('kb-dew'); if (kbd) kbd.textContent = bal + ' dew';
+    // Wild tab dew counter
+    var wd = document.getElementById('w-dew'); if (wd) wd.textContent = bal;
+  }
+  window.earnDew = earnDew;
+  window.spendDew = spendDew;
+  window.getTotalDew = getTotalDew;
+  window._updateDewDisplay = _updateDewDisplay;
   function getShopUnlocks() {
     try { return JSON.parse(localStorage.getItem(SHOP_KEY)) || {}; } catch(e) { return {}; }
   }
@@ -21112,9 +21177,10 @@
   // --------------------------------------------------------------------------
   window.handleFertilize = function(seedId) {
     var cost = 21;
-    var balance = typeof getTotalHashes === 'function' ? getTotalHashes() : 0;
+    // Dew is now the spendable currency for nursery acceleration (was hashes).
+    var balance = typeof getTotalDew === 'function' ? getTotalDew() : 0;
     if (balance < cost) {
-      _setNurMsg('Need 21 Dew Drops to fertilize. You have ' + balance + '.');
+      _setNurMsg('Need 21 Dew to skip a day. You have ' + balance + '. Earn Dew from your wild plants.');
       return;
     }
 
@@ -21125,7 +21191,7 @@
     var seed = nur[seedIndex];
 
     if (!seed.waterLog || seed.waterLog.length === 0) {
-      _setNurMsg('💧 Water your seed once today first, then spend 21 Dew Drops to skip a day.');
+      _setNurMsg('💧 Water your seed once today first, then spend 21 Dew to skip a day.');
       return;
     }
     if (seed.waterLog.length >= 3) {
@@ -21133,8 +21199,10 @@
       return;
     }
 
-    // Deduct hash cost
-    if (typeof spendHashes === 'function') spendHashes(cost);
+    // Deduct Dew cost
+    if (typeof spendDew === 'function') {
+      if (!spendDew(cost)) { _setNurMsg('Not enough Dew. Need ' + cost + ', have ' + balance + '.'); return; }
+    }
     updateDashboard();
     if (typeof gtag !== 'undefined') gtag('event', 'nursery_fertilize', { id: seedId, cost: cost });
 
@@ -21151,7 +21219,7 @@
 
     // BLOOM TRIGGER — fertilize makes bloom-ready; confirm before executing
     if (seed.waterLog.length >= 3) {
-      _setNurMsg('⚡ 21 Dew Drops spent — third watering unlocked! Ready to bloom.');
+      _setNurMsg('⚡ 21 Dew spent — third watering unlocked! Ready to bloom.');
       _throttledSave('sws_nursery', JSON.stringify(nur), true); // force-flush
       renderNursery();
       _haptic('sync');
@@ -21173,7 +21241,7 @@
     } else {
       _throttledSave('sws_nursery', JSON.stringify(nur)); // throttled (Phase 27)
       renderNursery();
-      _setNurMsg('⚡ 21 Dew Drops spent. Cooldown bypassed — ' + seed.waterLog.length + '/3 days done.');
+      _setNurMsg('⚡ 21 Dew spent. Cooldown bypassed — ' + seed.waterLog.length + '/3 days done.');
       _haptic('sync');
       _nurPulse(seedIndex, 'fertilize');
     }

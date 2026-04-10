@@ -2037,8 +2037,8 @@ function _fjPassivePollen(){
     }
   }
   if(earned>0){
-    var currentPollen=_getPollen();
-    _savePollen(currentPollen+earned);
+    // Proximity "passing-by" reward — now earns Dew instead of pollen
+    if(typeof window.earnDew==='function')window.earnDew(earned,'wild_pass_by');
     _fjSave(j);
   }
 }
@@ -2467,14 +2467,16 @@ function _waterOwnPlant(p,mk){
     return;
   }
 
-  // Check Dew Drop cost (5 hashes)
-  var ledger={};try{var _hlRaw=window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger');ledger=JSON.parse(_hlRaw||'{}');}catch(e){}
-  var balance=(ledger.earned||0)-(ledger.spent||0);
-  if(balance<5){_toast('Need 5 Dew Drops to water. You have '+balance+'.');return;}
+  // Check Dew cost (5 Dew to water — now spends from the real Dew ledger,
+  // not the hash ledger. Hash/Sunbeams are for plant minting only.)
+  var _waterCost=5;
+  var balance=(typeof window.getTotalDew==='function')?window.getTotalDew():0;
+  if(balance<_waterCost){_toast('Need '+_waterCost+' Dew to water. You have '+balance+'. Earn Dew from your wild plants.');return;}
 
-  // Spend 5 hashes
-  ledger.spent=(ledger.spent||0)+5;
-  if(window._secureSet){window._secureSet('sws_hash_ledger',ledger);}else{localStorage.setItem('sws_hash_ledger',JSON.stringify(ledger));}
+  // Spend 5 Dew
+  if(typeof window.spendDew==='function'){
+    if(!window.spendDew(_waterCost)){_toast('Not enough Dew to water.');return;}
+  }
 
   // Update wild plant stress
   var wild=_getWild();
@@ -2514,10 +2516,10 @@ function _waterOwnPlant(p,mk){
 
   // Visual feedback — sound + toast + water particle burst on marker
   _play('match');
-  // Watering earns pollen as a caretaker reward
-  var _waterPollen=3;var _curPol=_getPollen();_savePollen(_curPol+_waterPollen);
+  // Watering grants pollen XP as a caretaker reward (direct XP, no Dew earn)
+  var _waterXP=3;if(window.PW_grantXP)PW_grantXP(_waterXP,'water_care');
   _play('water');
-  _toast('\ud83d\udca7 Watered! Stress reduced. (-5 Dew, +'+_waterPollen+' Pollen)');
+  _toast('\ud83d\udca7 Watered! Stress reduced. (-5 Dew, +'+_waterXP+' XP)');
   if(mk&&mk._icon){
     var mEl=mk._icon;
     // Brief glow pulse
@@ -2563,18 +2565,20 @@ function _doCrossPollination(wildPlant,matePlant){
     var roll=Math.random();
     var rewardMsg='';
     if(roll<0.6){
-      var pollenBonus=5+Math.floor(Math.random()*10);
-      var currentPollen=_getPollen();
-      _savePollen(currentPollen+pollenBonus);
-      rewardMsg='+'+pollenBonus+' pollen!';
+      // 60% — XP reward (monotonic pollen, no spend)
+      var xpBonus=5+Math.floor(Math.random()*10);
+      if(window.PW_grantXP)PW_grantXP(xpBonus,'cross_pollinate');
+      rewardMsg='+'+xpBonus+' XP!';
     } else if(roll<0.9){
+      // 30% — Dew reward (spendable on acceleration + cuttings)
       var dewBonus=2+Math.floor(Math.random()*4);
-      if(window.earnHashes)window.earnHashes(dewBonus);
-      rewardMsg='+'+dewBonus+' Dew Drops!';
+      if(window.earnDew)window.earnDew(dewBonus,'cross_pollinate');
+      rewardMsg='+'+dewBonus+' Dew!';
     } else {
-      var hashBonus=3+Math.floor(Math.random()*5);
-      if(window.earnHashes)window.earnHashes(hashBonus);
-      rewardMsg='+'+hashBonus+' Dew Drops toward a new plant!';
+      // 10% — Sunbeams reward (toward next plant mint)
+      var sbBonus=3+Math.floor(Math.random()*5);
+      if(window.earnHashes)window.earnHashes(sbBonus);
+      rewardMsg='+'+sbBonus+' Sunbeams toward a new plant!';
     }
     _play('match');
     var parentInfo=_buildInfo(wildPlant.hash);
@@ -2946,17 +2950,30 @@ function _getWildGrade(hash){
   return grade;
 }
 setInterval(function(){var w=_getWild();if(w.length>0){
-  var pollenRates={Common:1,Uncommon:2,Rare:4,Epic:6,Legendary:9,Mythic:12,Cosmic:15};
+  // Hourly Dew production per wild plant, scaled by rarity.
+  // Each wild plant drips Dew into the keeper's pouch at this rate —
+  // Dew is spent on nursery acceleration and future wild plant cuttings.
+  // The ledger key is kept as fg_dew_rem for the fractional remainder
+  // accumulator; historic fg_pollen_rem is retained for backward compat.
+  var dewRates={Common:1,Uncommon:2,Rare:4,Epic:6,Legendary:9,Mythic:12,Cosmic:15};
   var hourlyTotal=0;
   for(var i=0;i<w.length;i++){
-    hourlyTotal+=(pollenRates[_getWildGrade(w[i].hash)]||1);
+    hourlyTotal+=(dewRates[_getWildGrade(w[i].hash)]||1);
   }
-  var remainder=0;try{remainder=parseFloat(localStorage.getItem('fg_pollen_rem')||'0');}catch(e){}
+  var remainder=0;try{remainder=parseFloat(localStorage.getItem('fg_dew_rem')||localStorage.getItem('fg_pollen_rem')||'0');}catch(e){}
   var minuteEarned=hourlyTotal/60+remainder;
   var wholeEarned=Math.floor(minuteEarned);
-  localStorage.setItem('fg_pollen_rem',String(minuteEarned-wholeEarned));
-  if(wholeEarned>0){var total=_getPollen()+wholeEarned;_savePollen(total);var p=document.getElementById('w-pollen');if(p)p.textContent=total;}
-  localStorage.setItem('fg_pollen_tick',String(Date.now()));
+  localStorage.setItem('fg_dew_rem',String(minuteEarned-wholeEarned));
+  if(wholeEarned>0){
+    // Route to the real Dew ledger in app.js. Also grants matching XP.
+    if(typeof window.earnDew==='function')window.earnDew(wholeEarned,'wild_tick');
+    // Update the wild tab's visible Dew counter (renamed from w-pollen)
+    var wd=document.getElementById('w-dew');
+    if(wd&&typeof window.getTotalDew==='function')wd.textContent=window.getTotalDew();
+    var p=document.getElementById('w-pollen');
+    if(p&&typeof window.getTotalDew==='function')p.textContent=window.getTotalDew();
+  }
+  localStorage.setItem('fg_dew_tick',String(Date.now()));
 }},60000);
 
 // ═══ DROP FROM BACKPACK — place a plant from BP onto the map ═══
