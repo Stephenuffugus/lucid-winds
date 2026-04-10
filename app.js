@@ -17313,6 +17313,17 @@
     // pouch. Gives early-game a quick way to build Dew for nursery
     // acceleration before the wild tick accumulator has had time to work.
     if(typeof earnDew==='function')earnDew(10,'plant_mint');
+    // Event log: record the birth for Root Report / memorial / achievements
+    if(window.LW_Log){
+      var _tgName = (_tg && _tg.name) || 'Common';
+      LW_Log.write('plant_mint', {
+        hash: hash,
+        rarity: _tgName,
+        isRare: !!traits.isRare,
+        mutated: !!plant.mutated,
+        origin: (opts && opts.origin) || 'mint'
+      });
+    }
     return true;
   }
 
@@ -18244,6 +18255,58 @@
   window._chimeraDualClass = _chimeraDualClass;
   window.loadGreenhouse = loadGreenhouse;
   window.saveGreenhouse = saveGreenhouse;
+
+  // ═══ EVENT LOG — foundation for Root Report, memorials, achievements ═══
+  // Ring buffer of notable gameplay events persisted to localStorage.
+  // Later features read from this log to build the "while you were away"
+  // feed, memorial records, achievement triggers, Dawn Round recaps, and
+  // player stats. Firestore mirror comes in a later pass — local only for
+  // now. Capped at 200 entries with FIFO eviction to keep localStorage thin.
+  var _LW_LOG_KEY = 'lw_event_log';
+  var _LW_LOG_CAP = 200;
+  var LW_Log = {
+    write: function(type, data) {
+      if (!type) return;
+      try {
+        var log = this.all();
+        var entry = {
+          id: 'evt_' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 1000).toString(36),
+          type: type,
+          ts: Date.now(),
+          data: data || {}
+        };
+        log.push(entry);
+        if (log.length > _LW_LOG_CAP) log = log.slice(log.length - _LW_LOG_CAP);
+        localStorage.setItem(_LW_LOG_KEY, JSON.stringify(log));
+        return entry.id;
+      } catch(e) {
+        if (console && console.warn) console.warn('[LW_Log] write failed:', e.message);
+      }
+    },
+    all: function() {
+      try { return JSON.parse(localStorage.getItem(_LW_LOG_KEY) || '[]'); } catch(e) { return []; }
+    },
+    recent: function(n) {
+      var log = this.all();
+      n = n || 10;
+      return log.slice(Math.max(0, log.length - n)).reverse(); // newest first
+    },
+    byType: function(types, n) {
+      if (typeof types === 'string') types = [types];
+      var log = this.all();
+      var filtered = log.filter(function(e) { return types.indexOf(e.type) >= 0; });
+      n = n || 20;
+      return filtered.slice(Math.max(0, filtered.length - n)).reverse();
+    },
+    since: function(timestamp) {
+      var log = this.all();
+      return log.filter(function(e) { return e.ts >= timestamp; });
+    },
+    size: function() { return this.all().length; },
+    clear: function() { localStorage.removeItem(_LW_LOG_KEY); }
+  };
+  window.LW_Log = LW_Log;
+  window._logEvent = function(type, data) { return LW_Log.write(type, data); };
 
   // ═══ HASH LEDGER — tracks earned and spent ═══
   // Internally "hashes" remain the cryptographic buffer that mints plants.

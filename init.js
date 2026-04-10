@@ -995,6 +995,34 @@
         alert(added+' chimera plants spawned!\n\nSpring×Summer, Summer×Autumn, Autumn×Winter, Winter×Spring\n\nCheck your Greenhouse for dual-border cards.');
       }catch(e){alert('Error: '+e.message);}
     },
+    // ═══ EVENT LOG VIEWER ═══
+    // Read-only inspector for the LW_Log ring buffer. Shows total count,
+    // type histogram, and the 20 most recent entries. Useful for verifying
+    // new event types are firing correctly as they get wired in.
+    showEventLog:function(){
+      if(!window.LW_Log){alert('LW_Log not loaded yet. Wait for the main app IIFE.');return;}
+      var log=window.LW_Log.all();
+      var counts={};
+      log.forEach(function(e){counts[e.type]=(counts[e.type]||0)+1;});
+      var summary='LW Event Log — '+log.length+' entries (cap 200)\n\n';
+      summary+='BY TYPE:\n';
+      Object.keys(counts).sort().forEach(function(k){summary+='  '+k+': '+counts[k]+'\n';});
+      summary+='\nMOST RECENT 20:\n';
+      window.LW_Log.recent(20).forEach(function(e){
+        var ago=Math.round((Date.now()-e.ts)/1000);
+        var agoStr=ago<60?(ago+'s'):ago<3600?(Math.floor(ago/60)+'m'):(Math.floor(ago/3600)+'h');
+        var d=JSON.stringify(e.data);
+        if(d.length>80)d=d.slice(0,77)+'...';
+        summary+='  ['+agoStr+' ago] '+e.type+' '+d+'\n';
+      });
+      alert(summary);
+    },
+    clearEventLog:function(){
+      if(!window.LW_Log){alert('LW_Log not loaded yet.');return;}
+      if(!confirm('Clear all LW_Log entries? This cannot be undone.'))return;
+      window.LW_Log.clear();
+      alert('Event log cleared.');
+    },
     // ═══ TRAIT PREVIEW SHEET ═══
     // Samples N random hashes and renders them in a grid so Stephen can
     // eyeball whether all 71 leaves, 71 flowers, 82 companions are actually

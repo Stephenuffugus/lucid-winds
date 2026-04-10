@@ -6243,6 +6243,33 @@ window.onerror=function(msg,url,line,col,err){
         alert(added+' chimera plants spawned!\n\nSpring×Summer, Summer×Autumn, Autumn×Winter, Winter×Spring\n\nCheck your Greenhouse for dual-border cards.');
       }catch(e){alert('Error: '+e.message);}
     },
+    // ═══ EVENT LOG VIEWER ═══
+    // Read-only inspector for the LW_Log ring buffer. Shows total count,
+    // type histogram, and the 20 most recent entries.
+    showEventLog:function(){
+      if(!window.LW_Log){alert('LW_Log not loaded yet. Wait for the main app IIFE.');return;}
+      var log=window.LW_Log.all();
+      var counts={};
+      log.forEach(function(e){counts[e.type]=(counts[e.type]||0)+1;});
+      var summary='LW Event Log — '+log.length+' entries (cap 200)\n\n';
+      summary+='BY TYPE:\n';
+      Object.keys(counts).sort().forEach(function(k){summary+='  '+k+': '+counts[k]+'\n';});
+      summary+='\nMOST RECENT 20:\n';
+      window.LW_Log.recent(20).forEach(function(e){
+        var ago=Math.round((Date.now()-e.ts)/1000);
+        var agoStr=ago<60?(ago+'s'):ago<3600?(Math.floor(ago/60)+'m'):(Math.floor(ago/3600)+'h');
+        var d=JSON.stringify(e.data);
+        if(d.length>80)d=d.slice(0,77)+'...';
+        summary+='  ['+agoStr+' ago] '+e.type+' '+d+'\n';
+      });
+      alert(summary);
+    },
+    clearEventLog:function(){
+      if(!window.LW_Log){alert('LW_Log not loaded yet.');return;}
+      if(!confirm('Clear all LW_Log entries? This cannot be undone.'))return;
+      window.LW_Log.clear();
+      alert('Event log cleared.');
+    },
     // ═══ TRAIT PREVIEW SHEET ═══
     // Samples N random hashes and renders them in a grid so Stephen can
     // eyeball whether all 71 leaves, 71 flowers, 82 companions are actually
@@ -25474,6 +25501,17 @@ document.addEventListener('keydown', function(e) {
     // pouch. Gives early-game a quick way to build Dew for nursery
     // acceleration before the wild tick accumulator has had time to work.
     if(typeof earnDew==='function')earnDew(10,'plant_mint');
+    // Event log: record the birth for Root Report / memorial / achievements
+    if(window.LW_Log){
+      var _tgName = (_tg && _tg.name) || 'Common';
+      LW_Log.write('plant_mint', {
+        hash: hash,
+        rarity: _tgName,
+        isRare: !!traits.isRare,
+        mutated: !!plant.mutated,
+        origin: (opts && opts.origin) || 'mint'
+      });
+    }
     return true;
   }
 
@@ -26436,6 +26474,58 @@ document.addEventListener('keydown', function(e) {
   window._chimeraDualClass = _chimeraDualClass;
   window.loadGreenhouse = loadGreenhouse;
   window.saveGreenhouse = saveGreenhouse;
+
+  // ═══ EVENT LOG — foundation for Root Report, memorials, achievements ═══
+  // Ring buffer of notable gameplay events persisted to localStorage.
+  // Later features read from this log to build the "while you were away"
+  // feed, memorial records, achievement triggers, Dawn Round recaps, and
+  // player stats. Firestore mirror comes in a later pass — local only for
+  // now. Capped at 200 entries with FIFO eviction to keep localStorage thin.
+  var _LW_LOG_KEY = 'lw_event_log';
+  var _LW_LOG_CAP = 200;
+  var LW_Log = {
+    write: function(type, data) {
+      if (!type) return;
+      try {
+        var log = this.all();
+        var entry = {
+          id: 'evt_' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 1000).toString(36),
+          type: type,
+          ts: Date.now(),
+          data: data || {}
+        };
+        log.push(entry);
+        if (log.length > _LW_LOG_CAP) log = log.slice(log.length - _LW_LOG_CAP);
+        localStorage.setItem(_LW_LOG_KEY, JSON.stringify(log));
+        return entry.id;
+      } catch(e) {
+        if (console && console.warn) console.warn('[LW_Log] write failed:', e.message);
+      }
+    },
+    all: function() {
+      try { return JSON.parse(localStorage.getItem(_LW_LOG_KEY) || '[]'); } catch(e) { return []; }
+    },
+    recent: function(n) {
+      var log = this.all();
+      n = n || 10;
+      return log.slice(Math.max(0, log.length - n)).reverse();
+    },
+    byType: function(types, n) {
+      if (typeof types === 'string') types = [types];
+      var log = this.all();
+      var filtered = log.filter(function(e) { return types.indexOf(e.type) >= 0; });
+      n = n || 20;
+      return filtered.slice(Math.max(0, filtered.length - n)).reverse();
+    },
+    since: function(timestamp) {
+      var log = this.all();
+      return log.filter(function(e) { return e.ts >= timestamp; });
+    },
+    size: function() { return this.all().length; },
+    clear: function() { localStorage.removeItem(_LW_LOG_KEY); }
+  };
+  window.LW_Log = LW_Log;
+  window._logEvent = function(type, data) { return LW_Log.write(type, data); };
 
   // ═══ HASH LEDGER — tracks earned and spent ═══
   // Internally "hashes" remain the cryptographic buffer that mints plants.
@@ -33150,6 +33240,15 @@ function _doCollectFeral(f,mk){
   var dewReward={Common:1,Uncommon:2,Rare:3,Epic:5,Legendary:8,Mythic:12,Cosmic:20};
   var reward=dewReward[info.grade]||1;
   if(window.earnDew)window.earnDew(reward,'feral_collect');
+  // Event log: record feral collection for Root Report / discovery stats
+  if(window.LW_Log){
+    window.LW_Log.write('feral_collected',{
+      hash:f.hash,
+      grade:info.grade,
+      name:info.nm,
+      reward:reward
+    });
+  }
   _e('progress');
   // Feral collection animation — seed crack burst
   _feralBurst(info.grade,info.gc,info.nm,reward);
@@ -33915,6 +34014,16 @@ function _doCrossPollination(wildPlant,matePlant){
       }
       if(_bcDirty3&&window.saveGreenhouse)saveGreenhouse(_bcGh3);
       if(window.renderNursery)renderNursery();
+      // Event log: record the cross-pollinate for Root Report / lineage trace
+      if(window.LW_Log){
+        window.LW_Log.write('cross_pollinate',{
+          parentA:wildPlant.hash,
+          parentB:matePlant.hash,
+          child:offHash,
+          gen:offGen,
+          context:'wild'
+        });
+      }
       _cpReward(offGen);
     });
   } else {
@@ -34150,6 +34259,18 @@ function _finishDrop(defenderGame){
   }
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
   _writeSharedDrop(la,lo,pl.hash,dropEA,defenderGame,dropTraits,pd.displaced);
+  // Event log: record the wild drop for Root Report / memorial / achievements
+  if(window.LW_Log){
+    window.LW_Log.write('wild_drop',{
+      hash:pl.hash,
+      lat:la,
+      lng:lo,
+      zone:_zoneKey(la,lo),
+      ea:dropEA,
+      defenderGame:defenderGame||'set',
+      displaced:pd.displaced?pd.displaced.hash:null
+    });
+  }
 }
 
 // ═══ STATE ═══

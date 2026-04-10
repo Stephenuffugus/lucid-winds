@@ -1840,6 +1840,15 @@ function _doCollectFeral(f,mk){
   var dewReward={Common:1,Uncommon:2,Rare:3,Epic:5,Legendary:8,Mythic:12,Cosmic:20};
   var reward=dewReward[info.grade]||1;
   if(window.earnDew)window.earnDew(reward,'feral_collect');
+  // Event log: record feral collection for Root Report / discovery stats
+  if(window.LW_Log){
+    window.LW_Log.write('feral_collected',{
+      hash:f.hash,
+      grade:info.grade,
+      name:info.nm,
+      reward:reward
+    });
+  }
   _e('progress');
   // Feral collection animation — seed crack burst
   _feralBurst(info.grade,info.gc,info.nm,reward);
@@ -2608,6 +2617,16 @@ function _doCrossPollination(wildPlant,matePlant){
       }
       if(_bcDirty3&&window.saveGreenhouse)saveGreenhouse(_bcGh3);
       if(window.renderNursery)renderNursery();
+      // Event log: record the cross-pollinate for Root Report / lineage trace
+      if(window.LW_Log){
+        window.LW_Log.write('cross_pollinate',{
+          parentA:wildPlant.hash,
+          parentB:matePlant.hash,
+          child:offHash,
+          gen:offGen,
+          context:'wild'
+        });
+      }
       _cpReward(offGen);
     });
   } else {
@@ -2807,6 +2826,18 @@ function _finishDrop(defenderGame){
   }
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
   _writeSharedDrop(la,lo,pl.hash,dropEA,defenderGame,dropTraits,pd.displaced);
+  // Event log: record the wild drop for Root Report / memorial / achievements
+  if(window.LW_Log){
+    window.LW_Log.write('wild_drop',{
+      hash:pl.hash,
+      lat:la,
+      lng:lo,
+      zone:_zoneKey(la,lo),
+      ea:dropEA,
+      defenderGame:defenderGame||'set',
+      displaced:pd.displaced?pd.displaced.hash:null
+    });
+  }
 }
 
 // ═══ STATE ═══
