@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.35';
+  var LW_VERSION='2026.04.10.36';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -34590,9 +34590,20 @@ function _finishDrop(defenderGame){
   var dropEA=window.computeEA?window.computeEA(dropTraits,0):0;
 
   var _dropUid='';try{var _du=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_du)_dropUid=_du.uid;}catch(e){}
+  var _dropGrade=_plantRarity(pl.hash);
+  var _dropNow=Date.now();
+  var _dropLife=_lifespanMsFor(_dropGrade);
   wild.push({
     lat:la,lng:lo,hash:pl.hash,
-    date:new Date().toISOString(),
+    date:new Date(_dropNow).toISOString(),
+    droppedAt:_dropNow,
+    droppedAtMs:_dropNow,
+    lifespanMs:_dropLife,
+    decayAt:_dropNow+_dropLife,
+    decayAtMs:_dropNow+_dropLife,
+    rarity:_dropGrade,
+    grade:_dropGrade,
+    strangerTendAddMs:0,
     own:true,
     ownerUid:_dropUid,
     ownerName:localStorage.getItem('pw_keeper_name')||'Keeper',
