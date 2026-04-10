@@ -3758,12 +3758,12 @@ function GCS(a){var tubes=[],numT=7,cap=4,sel=-1;var COLS=['#4a7c35','#C8A84B','
 // ═══ BATTLESHIP — Deep Water ═══
 function GBS(a){
   var SZ=8,SHIPS=[4,3,3,2,2],SHIP_NAMES=['Vine','Root','Branch','Sprout','Seed'];
-  var pGrid,eGrid,pShips,eShips,phase,curShip,curDir,gameOver,turn,aiStack,aiHits;
+  var pGrid,eGrid,phase,selShip,placements,shipDirs,gameOver,turn,aiStack,aiHits;
   ms(a,'<span id="BSph">Place your fleet</span>');mm(a);
   var wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px';a.appendChild(wrap);
-  var lbl=document.createElement('div');lbl.id='BSlbl';lbl.style.cssText='font-family:DM Mono,monospace;font-size:0.75rem;color:var(--muted);text-align:center;min-height:1.4em';wrap.appendChild(lbl);
+  var lbl=document.createElement('div');lbl.id='BSlbl';lbl.style.cssText='font-family:DM Mono,monospace;font-size:0.75rem;color:var(--muted);text-align:center;min-height:1.4em;width:100%';wrap.appendChild(lbl);
   var grids=document.createElement('div');grids.style.cssText='display:flex;gap:clamp(8px,3vw,16px);justify-content:center;flex-wrap:wrap';wrap.appendChild(grids);
-  mc(a).innerHTML='<button class="gb" id="BSdir" onclick="_BSR()" style="min-width:100px;">↻ Rotate</button> <button class="gb-new" onclick="_BSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  mc(a).innerHTML='<button class="gb" id="BSdir" onclick="_BSR()" style="min-width:86px">↻ Rotate</button> <button class="gb" id="BSready" onclick="_BSready()" style="min-width:104px;background:rgba(74,124,53,0.28);opacity:0.4" disabled>✓ I\'M READY</button> <button class="gb-new" onclick="_BSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   function mkGrid(){return new Array(SZ*SZ).fill(0)}
   function idx(r,c){return r*SZ+c}
@@ -3773,6 +3773,9 @@ function GBS(a){
   function placeShip(grid,r,c,len,dir,id){
     for(var k=0;k<len;k++){var cr=dir==='h'?r:r+k;var cc=dir==='h'?c+k:c;grid[idx(cr,cc)]=id}
   }
+  function clearShip(grid,r,c,len,dir){
+    for(var k=0;k<len;k++){var cr=dir==='h'?r:r+k;var cc=dir==='h'?c+k:c;grid[idx(cr,cc)]=0}
+  }
   function autoPlace(grid){
     for(var si=0;si<SHIPS.length;si++){
       for(var att=0;att<200;att++){var dir=Math.random()<.5?'h':'v';var r=Math.floor(Math.random()*SZ);var c=Math.floor(Math.random()*SZ);
@@ -3781,43 +3784,112 @@ function GBS(a){
   }
   function countAlive(grid,id){var n=0;for(var i=0;i<SZ*SZ;i++)if(grid[i]===id)n++;return n}
   function allSunk(grid,shipList){for(var si=0;si<shipList.length;si++)if(countAlive(grid,si+1)>0)return false;return true}
+  function allPlaced(){for(var si=0;si<SHIPS.length;si++)if(!placements[si])return false;return true}
 
   function renderGrid(grid,target,isEnemy,onClick){
     var g=document.createElement('div');
     g.style.cssText='display:inline-block;text-align:center';
     var title=document.createElement('div');title.style.cssText='font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:'+(isEnemy?'var(--gold)':'var(--sage)')+';letter-spacing:0.1em;margin-bottom:4px';
     title.textContent=isEnemy?'ENEMY WATERS':'YOUR FLEET';g.appendChild(title);
-    var tbl=document.createElement('div');tbl.style.cssText='display:grid;grid-template-columns:repeat('+SZ+',1fr);gap:1px;background:rgba(74,124,53,0.08);border:1.5px solid rgba(74,124,53,0.15);border-radius:6px;overflow:hidden;width:clamp(160px,42vw,220px)';
+    var gridW=phase==='place'?'clamp(260px,80vw,360px)':'clamp(160px,42vw,220px)';
+    var tbl=document.createElement('div');tbl.style.cssText='display:grid;grid-template-columns:repeat('+SZ+',1fr);gap:1px;background:rgba(74,124,53,0.08);border:1.5px solid rgba(74,124,53,0.15);border-radius:6px;overflow:hidden;width:'+gridW;
     for(var i=0;i<SZ*SZ;i++){
       var d=document.createElement('div');var v=grid[i];
       d.style.cssText='aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:clamp(0.55rem,1.6vw,0.75rem);cursor:'+(onClick?'pointer':'default')+';transition:background 0.15s;';
       if(v===-2){d.style.background='rgba(199,80,80,0.5)';d.textContent='💥';}
       else if(v===-1){d.style.background='rgba(40,50,38,0.6)';d.textContent='·';d.style.color='rgba(122,179,86,0.3)';}
-      else if(!isEnemy&&v>0){d.style.background='rgba(74,124,53,0.25)';d.style.borderRadius='2px';}
+      else if(!isEnemy&&v>0){d.style.background='rgba(74,124,53,0.45)';d.style.borderRadius='2px';d.style.border='1px solid rgba(122,179,86,0.5)';d.textContent='■';d.style.color='rgba(122,179,86,0.7)';d.style.fontSize='clamp(0.4rem,1.2vw,0.55rem)';}
       else{d.style.background='rgba(18,24,16,0.7)';}
-      if(onClick&&v===0){d.setAttribute('data-i',String(i));d.onclick=onClick;}
-      else if(onClick&&v>0&&isEnemy){d.setAttribute('data-i',String(i));d.onclick=onClick;}
+      if(onClick){d.setAttribute('data-i',String(i));d.onclick=onClick;}
       tbl.appendChild(d);
     }
     g.appendChild(tbl);target.appendChild(g);
   }
 
+  // Pick a placed ship back up (remove from grid, set as selected)
+  function pickUp(si){
+    var pl=placements[si];if(!pl)return;
+    clearShip(pGrid,pl.r,pl.c,SHIPS[si],pl.dir);
+    delete placements[si];
+    selShip=si;
+  }
+
+  function renderFleetTray(){
+    var h='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:6px;text-align:center">FLEET</div>';
+    h+='<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:6px">';
+    for(var si=0;si<SHIPS.length;si++){
+      var isPlaced=!!placements[si];
+      var isSel=selShip===si;
+      var dir=shipDirs[si];
+      var len=SHIPS[si];
+      var bg=isSel?'rgba(200,168,75,0.28)':isPlaced?'rgba(74,124,53,0.12)':'rgba(122,179,86,0.18)';
+      var border=isSel?'2px solid #c8a84b':isPlaced?'1.5px solid rgba(74,124,53,0.4)':'1.5px solid rgba(122,179,86,0.5)';
+      var op=(isPlaced&&!isSel)?'0.6':'1';
+      h+='<div onclick="_BSsel('+si+')" style="background:'+bg+';border:'+border+';border-radius:8px;padding:5px 8px;opacity:'+op+';cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:50px;-webkit-tap-highlight-color:transparent">';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;color:var(--cream);letter-spacing:0.05em">'+SHIP_NAMES[si]+'</div>';
+      h+='<div style="display:flex;'+(dir==='v'?'flex-direction:column;':'')+'gap:1px">';
+      for(var k=0;k<len;k++)h+='<div style="width:9px;height:9px;background:'+(isPlaced&&!isSel?'rgba(74,124,53,0.45)':'rgba(122,179,86,0.7)')+';border:1px solid rgba(122,179,86,0.85);border-radius:1px"></div>';
+      h+='</div>';
+      h+='<div style="font-size:0.42rem;color:'+(isPlaced?'var(--sage)':'var(--muted)')+';letter-spacing:0.04em">'+(isPlaced?'✓ placed':isSel?'selected':'tap')+'</div>';
+      h+='</div>';
+    }
+    h+='</div>';
+    return h;
+  }
+
   function rn(){
     grids.innerHTML='';
     var dirBtn=document.getElementById('BSdir');
+    var readyBtn=document.getElementById('BSready');
     if(phase==='place'){
       if(dirBtn)dirBtn.style.display='';
-      lbl.textContent=curShip<SHIPS.length?'Place '+SHIP_NAMES[curShip]+' ('+SHIPS[curShip]+' cells) — tap grid':'';
+      if(readyBtn)readyBtn.style.display='';
+      var tray=renderFleetTray();
+      var instr='';
+      if(selShip>=0){
+        instr='<div style="font-family:DM Sans,sans-serif;font-size:0.6rem;color:var(--cream);line-height:1.4">Tap the grid to place <strong style="color:var(--gold)">'+SHIP_NAMES[selShip]+'</strong> — direction <strong style="color:var(--sage)">'+(shipDirs[selShip]==='h'?'→ Horizontal':'↓ Vertical')+'</strong></div>';
+      } else if(allPlaced()){
+        instr='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--sage);letter-spacing:0.08em">ALL PLACED — TAP "I\'M READY" TO BATTLE</div>';
+      } else {
+        instr='<div style="font-family:DM Sans,sans-serif;font-size:0.55rem;color:var(--muted);line-height:1.4">Tap a ship above to pick it up, then tap the grid. Tap a placed ship to move it.</div>';
+      }
+      lbl.innerHTML=tray+instr;
+      lbl.style.minHeight='';
+      if(readyBtn){
+        if(allPlaced()){readyBtn.disabled=false;readyBtn.style.opacity='1';}
+        else{readyBtn.disabled=true;readyBtn.style.opacity='0.4';}
+      }
       renderGrid(pGrid,grids,false,function(){
-        if(curShip>=SHIPS.length)return;
-        var i=parseInt(this.getAttribute('data-i'));var r=Math.floor(i/SZ),c=i%SZ;
-        if(!canPlace(pGrid,r,c,SHIPS[curShip],curDir)){sm('No room — try rotating');return}
-        placeShip(pGrid,r,c,SHIPS[curShip],curDir,curShip+1);_play('tap');curShip++;
-        if(curShip>=SHIPS.length){phase='battle';turn='player';document.getElementById('BSph').innerHTML='Your turn — tap enemy grid';if(dirBtn)dirBtn.style.display='none';}
-        rn();
+        var i=parseInt(this.getAttribute('data-i'));
+        var r=Math.floor(i/SZ),c=i%SZ;
+        var cellVal=pGrid[i];
+        // Clicked a placed ship cell → pick it up
+        if(cellVal>0){
+          pickUp(cellVal-1);
+          _play('tap');
+          rn();
+          return;
+        }
+        // Empty cell + a ship selected → place there
+        if(selShip>=0){
+          var len=SHIPS[selShip];
+          var dir=shipDirs[selShip];
+          if(!canPlace(pGrid,r,c,len,dir)){sm('No room — rotate or pick another spot');return;}
+          placeShip(pGrid,r,c,len,dir,selShip+1);
+          placements[selShip]={r:r,c:c,dir:dir};
+          _play('tap');
+          selShip=-1;
+          rn();
+          return;
+        }
+        // Empty cell, nothing selected
+        sm('Pick a ship from the fleet first');
       });
     }else{
       if(dirBtn)dirBtn.style.display='none';
+      if(readyBtn)readyBtn.style.display='none';
+      lbl.innerHTML='';
+      lbl.style.minHeight='';
       // Enemy grid — player shoots here
       renderGrid(eGrid,grids,true,turn==='player'&&!gameOver?function(){
         var i=parseInt(this.getAttribute('data-i'));if(eGrid[i]<0)return;
@@ -3858,9 +3930,32 @@ function GBS(a){
     turn='player';document.getElementById('BSph').innerHTML='Your turn';rn();
   }
 
-  window._BSR=function(){curDir=curDir==='h'?'v':'h';sm('Direction: '+(curDir==='h'?'Horizontal →':'Vertical ↓'));};
+  window._BSR=function(){
+    if(selShip<0){sm('Pick a ship to rotate');return;}
+    var newDir=shipDirs[selShip]==='h'?'v':'h';
+    shipDirs[selShip]=newDir;
+    sm('Rotated: '+(newDir==='h'?'Horizontal →':'Vertical ↓'));
+    rn();
+  };
+  window._BSsel=function(si){
+    if(phase!=='place')return;
+    if(placements[si]){pickUp(si);_play('tap');rn();return;}
+    selShip=(selShip===si)?-1:si;
+    _play('tap');
+    rn();
+  };
+  window._BSready=function(){
+    if(phase!=='place')return;
+    if(!allPlaced()){sm('Place all ships first');return;}
+    phase='battle';turn='player';selShip=-1;
+    document.getElementById('BSph').innerHTML='Your turn — tap enemy grid';
+    _play('win');
+    rn();
+  };
   window._BSN=function(){
-    pGrid=mkGrid();eGrid=mkGrid();phase='place';curShip=0;curDir='h';gameOver=false;turn='player';aiStack=[];aiHits=[];
+    pGrid=mkGrid();eGrid=mkGrid();phase='place';
+    selShip=-1;placements={};shipDirs=['h','h','h','h','h'];
+    gameOver=false;turn='player';aiStack=[];aiHits=[];
     autoPlace(eGrid);
     document.getElementById('BSph').innerHTML='Place your fleet';sm('');rn();
   };_BSN();
