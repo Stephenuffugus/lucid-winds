@@ -2395,12 +2395,23 @@
     .ds-die img{width:100%;height:100%;object-fit:cover;display:block}
     .ds-info{font-family:DM Mono,monospace;font-size:clamp(0.55rem,1.6vw,0.7rem);color:var(--gold);text-align:center;padding:4px 0;min-height:1.2em}
     /* ═══ BACKGAMMON — Garden Gate board CSS ═══ */
+    .bg-outer{width:min(98vw,640px);margin:0 auto}
     .bg-wrap{width:100%;margin:0 auto}
-    .bg-board{position:relative;width:100%;height:clamp(220px,58vw,340px);background:#2C1810;border:4px solid #6B4F2D;border-radius:12px;overflow:hidden;box-shadow:inset 0 0 40px rgba(0,0,0,0.5),0 6px 24px rgba(0,0,0,0.6)}
+    .bg-board{position:relative;width:100%;max-width:none;aspect-ratio:11/9;background:#2C1810;border:4px solid #6B4F2D;border-radius:12px;overflow:hidden;box-shadow:inset 0 0 40px rgba(0,0,0,0.5),0 6px 24px rgba(0,0,0,0.6)}
     .bg-inner{position:absolute;inset:4px;display:flex;flex-direction:column}
-    .bg-half{display:flex;flex:1;position:relative;overflow:hidden}
-    .bg-quad{display:flex;flex:1}
-    .bg-bar{width:clamp(28px,8vw,40px);background:linear-gradient(180deg,#1a1510,#0e0a06);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;z-index:3;border-left:3px solid #3B2414;border-right:3px solid #3B2414;box-shadow:inset 0 0 10px rgba(0,0,0,0.4)}
+    /* Landscape: size board by height so it snaps to fill available vertical space */
+    @media (orientation:landscape) and (max-height:600px){
+      .bg-outer{width:auto;max-width:none;height:calc(100svh - var(--nav-h,58px) - env(safe-area-inset-bottom,0px) - 40px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+      .bg-outer .bg-wrap{width:auto;height:100%;display:flex;flex-direction:column;align-items:center;gap:2px}
+      .bg-outer .bg-board{flex:0 1 auto;height:100%;width:auto;max-width:98vw;max-height:100%}
+      .bg-outer .bg-bo{padding:2px 8px;gap:4px}
+      .bg-outer .bg-bo-pip{width:6px;height:6px}
+      .bg-outer .bg-bo-lbl{font-size:0.5rem}
+      .bg-outer .bg-info{padding:1px 0;font-size:0.5rem}
+    }
+    .bg-half{display:flex;flex:1;position:relative;overflow:hidden;min-height:0}
+    .bg-quad{display:flex;flex:1;min-width:0}
+    .bg-bar{width:clamp(22px,6vw,32px);background:linear-gradient(180deg,#1a1510,#0e0a06);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;z-index:3;border-left:3px solid #3B2414;border-right:3px solid #3B2414;box-shadow:inset 0 0 10px rgba(0,0,0,0.4);flex-shrink:0}
     .bg-sep{height:3px;background:linear-gradient(90deg,#3B2414,#6B4F2D,#3B2414);margin:0}
     .point{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;cursor:pointer;min-width:0;-webkit-tap-highlight-color:transparent}
     .point.top{justify-content:flex-start}
@@ -2416,7 +2427,7 @@
     .point.top .pnum{bottom:2px}
     .point.bot .pnum{top:2px}
     .point.home{background:rgba(200,168,75,0.04)}
-    .checker{width:clamp(18px,4.5vw,26px);height:clamp(18px,4.5vw,26px);border-radius:50%;border:1.5px solid rgba(0,0,0,.4);cursor:pointer;transition:transform .12s,box-shadow .12s;position:relative;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,0.15)}
+    .checker{width:clamp(14px,3.6vw,22px);height:clamp(14px,3.6vw,22px);border-radius:50%;border:1.5px solid rgba(0,0,0,.4);cursor:pointer;transition:transform .12s,box-shadow .12s;position:relative;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,0.15)}
     .checker.human{background:radial-gradient(circle at 36% 30%,#B8E86A,#4A7C35 65%);border-color:#2e5020}
     .checker.ai{background:radial-gradient(circle at 36% 30%,#F4C0C0,#C47A7A 65%);border-color:#8a4545}
     .checker.selected{transform:scale(1.25);box-shadow:0 0 16px rgba(122,185,86,.8),0 0 6px rgba(122,185,86,.5);z-index:10}
@@ -2429,9 +2440,13 @@
     .bg-bo-pip.human{background:#4A7C35}
     .bg-bo-pip.ai{background:#C47A7A}
     .bg-bo-lbl{font-family:'Bebas Neue',sans-serif;font-size:clamp(0.5rem,1.5vw,0.7rem);letter-spacing:0.08em}
-    .bg-dice{display:flex;align-items:center;justify-content:center;gap:clamp(10px,4vw,18px);padding:clamp(8px,2.5vw,14px) 0}
-    .bg-die{width:clamp(44px,12vw,56px);height:clamp(44px,12vw,56px);background:linear-gradient(145deg,#FAF5E8,#E8DCC8);border:2px solid #C4B998;border-radius:clamp(6px,2vw,10px);display:flex;align-items:center;justify-content:center;font-size:clamp(22px,6vw,30px);font-weight:800;color:#2C1810;box-shadow:3px 3px 8px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,0.5);transition:opacity .2s}
-    .bg-die.used{opacity:.2}
+    /* Dice overlay floats over the center bar of the board */
+    .bg-dice{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:15;display:flex;align-items:center;justify-content:center;gap:clamp(10px,3vw,18px);pointer-events:none}
+    .bg-dice > *{pointer-events:auto}
+    .bg-die{width:clamp(40px,9vw,54px);height:clamp(40px,9vw,54px);background:linear-gradient(145deg,#FAF5E8,#E8DCC8);border:2px solid #C4B998;border-radius:clamp(6px,2vw,10px);display:flex;align-items:center;justify-content:center;font-size:clamp(22px,5vw,30px);font-weight:800;color:#2C1810;box-shadow:3px 4px 10px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,0.5),0 0 24px rgba(0,0,0,0.35);transition:opacity .2s}
+    .bg-die.used{opacity:.25}
+    .bg-roll-btn{min-width:clamp(120px,34vw,180px);min-height:56px;font-size:1.1rem;font-family:'Bebas Neue',sans-serif;letter-spacing:0.12em;box-shadow:0 6px 20px rgba(0,0,0,0.6),0 0 30px rgba(200,168,75,0.25)}
+    .bg-doubles{font-family:'Bebas Neue',sans-serif;font-size:clamp(0.7rem,2vw,0.9rem);color:#F4D97A;background:rgba(0,0,0,0.6);padding:4px 8px;border-radius:6px;letter-spacing:0.08em;text-shadow:0 1px 3px rgba(0,0,0,0.8)}
     .bg-info{text-align:center;font-family:'DM Mono',monospace;font-size:clamp(0.45rem,1.4vw,0.6rem);color:var(--gold);padding:3px 0}
     .skc{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:clamp(2px,.6vw,4px);min-height:32px;transition:background .2s ease,transform .15s ease;overflow:hidden;position:relative}
     .skc img{transition:transform .15s ease}

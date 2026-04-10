@@ -4522,7 +4522,7 @@ function GBW(a){
 function GBG(a){
   var B,DICE,DICE_USED,TURN,SEL,VALID_DESTS,PHASE,MOVES_LEFT,BO_H,BO_A;
   ms(a,'<span class="gp-you" style="color:#7AB956">You: <strong id="BGh">0</strong></span> · <span class="gp-ai" style="color:#C47A7A">AI: <strong id="BGa">0</strong></span>');mm(a);
-  var wrap=document.createElement('div');wrap.id='BGwrap';wrap.style.cssText='max-width:96vw;margin:0 auto;user-select:none;-webkit-user-select:none';a.appendChild(wrap);
+  var wrap=document.createElement('div');wrap.id='BGwrap';wrap.className='bg-outer';wrap.style.cssText='user-select:none;-webkit-user-select:none';a.appendChild(wrap);
   mc(a).innerHTML='<button class="gb-new" onclick="_BGN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   function init(){
@@ -4665,7 +4665,6 @@ function GBG(a){
     h+='</div><div class="bg-quad">';
     for(var p2=19;p2<=24;p2++)h+=rPt(p2,'top');
     h+='</div></div>';
-    // Center bar with dice
     h+='<div class="bg-sep"></div>';
     // Bottom half: 12-7, bar, 6-1 (Player home on right)
     h+='<div class="bg-half"><div class="bg-quad">';
@@ -4675,6 +4674,15 @@ function GBG(a){
     h+='</div><div class="bg-quad">';
     for(var p4=6;p4>=1;p4--)h+=rPt(p4,'bot');
     h+='</div></div>';
+    // Dice overlay (floats over the center bar)
+    h+='<div class="bg-dice">';
+    if(PHASE==='roll'&&TURN==='human'){
+      h+='<button class="gb bg-roll-btn" onclick="_BGR()">🎲 ROLL</button>';
+    }else if(PHASE==='move'||PHASE==='gameover'){
+      DICE.forEach(function(d){var used=MOVES_LEFT.indexOf(d)===-1;h+='<div class="bg-die'+(used?' used':'')+'">'+d+'</div>'});
+      if(DICE[0]===DICE[1])h+='<span class="bg-doubles">×'+MOVES_LEFT.length+'</span>';
+    }
+    h+='</div>';
     h+='</div></div>';
     // Bearing off display
     h+='<div class="bg-bo">';
@@ -4684,15 +4692,6 @@ function GBG(a){
     h+='<div class="bg-bo-sec"><span class="bg-bo-lbl" style="color:#C47A7A">AI: '+BO_A+'/15</span>';
     for(var bi=0;bi<Math.min(BO_A,15);bi++)h+='<div class="bg-bo-pip ai"></div>';
     h+='</div></div>';
-    // Dice area
-    h+='<div class="bg-dice">';
-    if(PHASE==='roll'&&TURN==='human'){
-      h+='<button class="gb" onclick="_BGR()" style="min-width:clamp(120px,35vw,180px);min-height:56px;font-size:1.1rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.12em">🎲 ROLL</button>';
-    }else if(PHASE==='move'||PHASE==='gameover'){
-      DICE.forEach(function(d){var used=MOVES_LEFT.indexOf(d)===-1;h+='<div class="bg-die'+(used?' used':'')+'">'+d+'</div>'});
-      if(DICE[0]===DICE[1])h+='<span style="font-size:clamp(0.5rem,1.6vw,0.7rem);color:#D4A843;margin-left:8px;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em">DOUBLES! ('+MOVES_LEFT.length+' left)</span>';
-    }
-    h+='</div>';
     // Bar info
     if(B[25]>0||B[0]<0){h+='<div class="bg-info">';if(B[25]>0)h+='🌿 You: '+B[25]+' on bar ';if(B[0]<0)h+='🌸 AI: '+Math.abs(B[0])+' on bar';h+='</div>'}
     // Bar entry button
