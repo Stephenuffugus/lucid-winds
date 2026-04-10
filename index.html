@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.28';
+  var LW_VERSION='2026.04.10.29';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -33109,11 +33109,10 @@ function _doReproduction(weather, simMode) {
               try {
                 var _myUid = firebase.auth().currentUser ? firebase.auth().currentUser.uid : '';
                 if (dd.originDropperUid === _myUid) {
-                  // It's MY lineage spreading — earn pollen!
+                  // It's MY lineage spreading — grant Keeper XP
                   var _dynPollen = {Common:1, Uncommon:2, Rare:3, Epic:5, Legendary:8, Mythic:12, Cosmic:20};
                   var _reward = _dynPollen[dd.grade] || 1;
-                  var _curPol = parseInt(localStorage.getItem('fg_pollen') || '0');
-                  localStorage.setItem('fg_pollen', String(_curPol + _reward));
+                  if (window.PW_grantXP) PW_grantXP(_reward, 'lineage_spread');
                   if (window._logWildEvent) window._logWildEvent({
                     type: 'spread', originHash: dd.parentA || '', originName: dd.originDropperName || 'Your plant',
                     descendantHash: dd.hash, distance: 0, pollenEarned: _reward
@@ -33207,9 +33206,9 @@ function _doReproduction(weather, simMode) {
         var _dTarget = _myWildComp[Math.floor(Math.random() * _myWildComp.length)];
         if (_dTarget.hash !== _cp.hash) {
           var _polReward = 3 + Math.floor(Math.random() * 8);
-          try { var _pol = parseInt(localStorage.getItem('fg_pollen') || '0'); localStorage.setItem('fg_pollen', String(_pol + _polReward)); } catch(e) {}
+          if (window.PW_grantXP) PW_grantXP(_polReward, 'butterfly_drift');
           if (window._logWildEvent) window._logWildEvent({type:'companion',event:'drift_pollen',
-            hash:_cp.hash,companion:_cInfo.name,text:'Butterfly carried pollen to a distant ally — +'+_polReward+' pollen'});
+            hash:_cp.hash,companion:_cInfo.name,text:'Butterfly carried pollen to a distant ally — +'+_polReward+' XP'});
         }
       }
 
@@ -33985,9 +33984,9 @@ function showTP(p,mk){
               var _pName='';try{_pName=window.getPlantName?window.getPlantName(p.hash):'';}catch(e){}
               var _myName=localStorage.getItem('pw_keeper_name')||'A stranger';
               if(window._logWildEvent)window._logWildEvent({type:'watered',hash:p.hash,name:_pName,by:_myName});
-              // Award pollen to waterer
-              try{var _pol=parseInt(localStorage.getItem('fg_pollen')||'0');localStorage.setItem('fg_pollen',String(_pol+2));}catch(e){}
-              if(window._toast)_toast('💧 Watered! +2 pollen. '+(4-_wBudget.count)+' waters left today.');
+              // Grant Keeper XP to the waterer (was: fg_pollen dead counter)
+              if(window.PW_grantXP)PW_grantXP(2,'water_other_button');
+              if(window._toast)_toast('💧 Watered! +2 XP. '+(5-_wBudget.count)+' waters left today.');
               if(window._haptic)_haptic('bloom');
               if(window._trackQuest)_trackQuest('plantsWatered',1);
             }
@@ -34780,12 +34779,20 @@ setInterval(function(){var w=_getWild();if(w.length>0){
   for(var i=0;i<w.length;i++){
     hourlyTotal+=(pollenRates[_getWildGrade(w[i].hash)]||1);
   }
-  var remainder=0;try{remainder=parseFloat(localStorage.getItem('fg_pollen_rem')||'0');}catch(e){}
+  // Fractional accumulator — keep leftover under a minute until it rounds
+  var remainder=0;try{remainder=parseFloat(localStorage.getItem('fg_dew_rem')||localStorage.getItem('fg_pollen_rem')||'0');}catch(e){}
   var minuteEarned=hourlyTotal/60+remainder;
   var wholeEarned=Math.floor(minuteEarned);
-  localStorage.setItem('fg_pollen_rem',String(minuteEarned-wholeEarned));
-  if(wholeEarned>0){var total=_getPollen()+wholeEarned;_savePollen(total);var p=document.getElementById('w-pollen');if(p)p.textContent=total;}
-  localStorage.setItem('fg_pollen_tick',String(Date.now()));
+  localStorage.setItem('fg_dew_rem',String(minuteEarned-wholeEarned));
+  if(wholeEarned>0){
+    // Route to the real Dew ledger — earnDew also grants matching XP
+    if(typeof earnDew==='function')earnDew(wholeEarned,'wild_tick');
+    var wd=document.getElementById('w-dew');
+    if(wd&&typeof getTotalDew==='function')wd.textContent=getTotalDew();
+    var p=document.getElementById('w-pollen');
+    if(p){try{p.textContent=parseInt(localStorage.getItem('pw_xp')||'0');}catch(e){}}
+  }
+  localStorage.setItem('fg_dew_tick',String(Date.now()));
 }},60000);
 
 // ═══ DROP FROM BACKPACK — place a plant from BP onto the map ═══
