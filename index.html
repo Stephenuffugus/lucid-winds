@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.23';
+  var LW_VERSION='2026.04.10.24';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -32753,9 +32753,21 @@ function _awardFeral(hash, parentA, parentB, zk, info) {
 
   // Flat 1-Dew reward at collection; rarity surprise is unlocked at bloom.
   var dewReward = 1;
-  if (window.earnHashes) earnHashes(dewReward);
+  if (window.earnDew) earnDew(dewReward, 'feral_collect');
 
-  _toast('\ud83c\udf30 Mystery seed pocketed. +' + dewReward + ' dew \u00b7 sprout it to see what it is');
+  // Event log: a mystery seed joining the pouch is a Root Report entry.
+  // The bloom moment reveals it — both beats show up in the journal.
+  if (window.LW_Log) {
+    window.LW_Log.write('feral_collected', {
+      hash: hash,
+      grade: '???',
+      name: 'Mystery Seed',
+      mystery: true,
+      reward: dewReward
+    });
+  }
+
+  _toast('\ud83c\udf30 Mystery seed pocketed. +' + dewReward + ' Dew \u00b7 sprout it to see what it is');
   try { navigator.vibrate && navigator.vibrate([15, 30, 15]); } catch (e) {}
   if (typeof gtag !== 'undefined') gtag('event', 'feral_collected', { mystery: 1, zone: zk.slice(0, 10) });
 
