@@ -1105,9 +1105,20 @@ function _awardFeral(hash, parentA, parentB, zk, info) {
   // dew payout is always Common-tier until sprouted. Rarer seeds reward the
   // player with rarity reveal + stat bonuses at bloom time, not collection.
   var dewReward = 1;
-  if (window.earnHashes) earnHashes(dewReward);
+  if (window.earnDew) earnDew(dewReward, 'feral_collect');
 
-  _toast('\ud83c\udf30 Mystery seed pocketed. +' + dewReward + ' dew \u00b7 sprout it to see what it is');
+  // Event log: mystery seeds deserve a journal entry even before reveal.
+  if (window.LW_Log) {
+    window.LW_Log.write('feral_collected', {
+      hash: hash,
+      grade: '???',
+      name: 'Mystery Seed',
+      mystery: true,
+      reward: dewReward
+    });
+  }
+
+  _toast('\ud83c\udf30 Mystery seed pocketed. +' + dewReward + ' Dew \u00b7 sprout it to see what it is');
   try { navigator.vibrate && navigator.vibrate([15, 30, 15]); } catch (e) {}
   if (typeof gtag !== 'undefined') gtag('event', 'feral_collected', { mystery: 1, zone: zk.slice(0, 10) });
 
@@ -2097,7 +2108,7 @@ function _fjInteract(p){
   _fjSave(j);
 
   if(reward>0){
-    if(window.earnHashes)window.earnHashes(reward);
+    if(window.earnDew)window.earnDew(reward,'field_journal');
     _play(reward>=2?'discover':'tap'); // discovery sparkle vs scout tap
     _toast(rewardType+(j._count?' \u00b7 '+j._count+' species found':''));
     if(window._updateGameDew)_updateGameDew();

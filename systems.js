@@ -3021,8 +3021,8 @@ function _showDailyReward() {
   ov.innerHTML = h;
   document.body.appendChild(ov);
 
-  // Grant today's reward (use tier-based amount instead of old formula)
-  if (window.earnHashes) earnHashes(dayReward);
+  // Grant today's reward in Dew (daily login = spendable Dew, not mint Sunbeams)
+  if (window.earnDew) earnDew(dayReward, 'daily_login');
 
   // Haptic + analytics
   try { if (window._haptic) _haptic('sync'); } catch(e) {}
@@ -5062,10 +5062,10 @@ function _claimStreak(){
   streak.lastDate=today;
   streak.count=Math.min(streak.count,7); // Cap at 7
   localStorage.setItem(STREAK_KEY,JSON.stringify(streak));
-  // Award streak bonus hashes
+  // Award streak bonus Dew
   var bonus=streak.count;
-  if(window.earnHashes)earnHashes(bonus);
-  if(window._toast)window._toast('🔥 Daily quests complete! Streak: '+streak.count+' (+'+bonus+' dew)');
+  if(window.earnDew)earnDew(bonus,'daily_streak');
+  if(window._toast)window._toast('🔥 Daily quests complete! Streak: '+streak.count+' (+'+bonus+' Dew)');
 }
 
 function _updateQuestBadge(){
