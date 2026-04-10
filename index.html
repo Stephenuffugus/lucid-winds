@@ -6242,6 +6242,86 @@ window.onerror=function(msg,url,line,col,err){
         if(window.renderGreenhouse)renderGreenhouse();
         alert(added+' chimera plants spawned!\n\nSpring×Summer, Summer×Autumn, Autumn×Winter, Winter×Spring\n\nCheck your Greenhouse for dual-border cards.');
       }catch(e){alert('Error: '+e.message);}
+    },
+    // ═══ TRAIT PREVIEW SHEET ═══
+    // Samples N random hashes and renders them in a grid so Stephen can
+    // eyeball whether all 71 leaves, 71 flowers, 82 companions are actually
+    // getting picked by the renderer. Hidden dev tool, not a player feature.
+    traitPreview:function(count){
+      count=count||100;
+      if(!window.hashToTraits||!window._generatePlantSVG||!window.TRAIT_BANK){
+        alert('Trait Preview needs hashToTraits, _generatePlantSVG, and TRAIT_BANK. Reload once the main app IIFE has loaded.');
+        return;
+      }
+      var modal=document.getElementById('trait-preview-modal');
+      if(!modal){
+        modal=document.createElement('div');
+        modal.id='trait-preview-modal';
+        modal.style.cssText='position:fixed;inset:0;z-index:99997;display:none;background:rgba(8,10,6,0.96);backdrop-filter:blur(6px);';
+        modal.innerHTML=
+          '<div style="position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:0.9rem 1rem;background:linear-gradient(180deg,rgba(13,16,12,0.98),rgba(13,16,12,0.9));border-bottom:1px solid rgba(74,124,53,0.2);">'+
+            '<div style="font-family:Bebas Neue,sans-serif;font-size:1.05rem;color:var(--gold);letter-spacing:0.08em;">⬡ TRAIT PREVIEW SHEET</div>'+
+            '<div style="display:flex;gap:0.5rem;">'+
+              '<button id="tp-resample" style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--sage);background:rgba(122,179,86,0.1);border:1px solid rgba(122,179,86,0.3);border-radius:6px;padding:0.4rem 0.7rem;cursor:pointer;min-height:32px;">↻ NEW SAMPLE</button>'+
+              '<button id="tp-close" style="font-family:DM Mono,monospace;font-size:0.85rem;color:var(--muted);background:none;border:1px solid rgba(74,124,53,0.25);border-radius:50%;width:34px;height:34px;cursor:pointer;">✕</button>'+
+            '</div>'+
+          '</div>'+
+          '<div id="tp-stats" style="position:absolute;top:62px;left:0;right:0;padding:0.6rem 1rem;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.6;border-bottom:1px solid rgba(74,124,53,0.08);"></div>'+
+          '<div id="tp-grid" style="position:absolute;top:130px;left:0;right:0;bottom:0;overflow-y:auto;padding:1rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:0.6rem;-webkit-overflow-scrolling:touch;"></div>';
+        document.body.appendChild(modal);
+        document.getElementById('tp-close').onclick=function(){modal.style.display='none';};
+        document.getElementById('tp-resample').onclick=function(){window.PW_Dev.traitPreview(count);};
+      }
+      function randomHash(){
+        var h='';
+        for(var i=0;i<64;i++)h+=Math.floor(Math.random()*16).toString(16);
+        return h;
+      }
+      var leafSet={},flowerSet={},companionSet={},potSet={},stemSet={},baseSet={},auraSet={};
+      var hashes=[];
+      for(var i=0;i<count;i++)hashes.push(randomHash());
+      var grid=document.getElementById('tp-grid');
+      grid.innerHTML='';
+      hashes.forEach(function(h){
+        try{
+          var t=window.hashToTraits(h);
+          leafSet[t.leafType%71]=1;
+          if(t.hasFlower)flowerSet[t.flower%71]=1;
+          companionSet[t.companion]=1;
+          potSet[t.pot]=1;
+          stemSet[t.stem%24]=1;
+          baseSet[t.base]=1;
+          auraSet[t.aura]=1;
+          var svg=window._generatePlantSVG(h,80);
+          var cell=document.createElement('div');
+          cell.style.cssText='background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.15);border-radius:8px;padding:0.5rem;display:flex;flex-direction:column;align-items:center;gap:0.2rem;';
+          var leafName=(window.TRAIT_BANK.leaves[t.leafType%71]||{}).name||'?';
+          var flowerName=t.hasFlower?((window.TRAIT_BANK.flowers[t.flower%71]||{}).name||'?'):'—';
+          var compName=(window.TRAIT_BANK.companions[t.companion]||{}).name||'—';
+          cell.innerHTML=
+            '<div style="width:80px;height:96px;display:flex;align-items:center;justify-content:center;">'+svg+'</div>'+
+            '<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--sage);text-align:center;line-height:1.3;"><div>L'+(t.leafType%71)+': '+leafName+'</div><div>F'+(t.hasFlower?(t.flower%71):'-')+': '+flowerName+'</div><div style="color:var(--muted);">'+compName+'</div></div>';
+          grid.appendChild(cell);
+        }catch(e){
+          var err=document.createElement('div');
+          err.style.cssText='background:rgba(199,80,80,0.1);border:1px solid rgba(199,80,80,0.3);border-radius:6px;padding:0.5rem;font-size:0.4rem;color:#c07070;';
+          err.textContent='ERROR: '+e.message;
+          grid.appendChild(err);
+        }
+      });
+      var statsEl=document.getElementById('tp-stats');
+      statsEl.innerHTML=
+        '<div><strong style="color:var(--sage);">'+count+' random plants</strong> · '+
+        'Leaves: <strong style="color:'+(Object.keys(leafSet).length>=60?'var(--sage)':'var(--gold)')+';">'+Object.keys(leafSet).length+'/71</strong> · '+
+        'Flowers: <strong style="color:'+(Object.keys(flowerSet).length>=40?'var(--sage)':'var(--gold)')+';">'+Object.keys(flowerSet).length+'/71</strong> · '+
+        'Companions: <strong style="color:'+(Object.keys(companionSet).length>=40?'var(--sage)':'var(--gold)')+';">'+Object.keys(companionSet).length+'/82</strong> · '+
+        'Pots: <strong>'+Object.keys(potSet).length+'/60</strong> · '+
+        'Stems: <strong>'+Object.keys(stemSet).length+'/24</strong> · '+
+        'Substrates: <strong>'+Object.keys(baseSet).length+'/71</strong> · '+
+        'Auras: <strong>'+Object.keys(auraSet).length+'/36</strong>'+
+        '</div>'+
+        '<div style="margin-top:0.3rem;opacity:0.6;">Tip: resample a few times to verify rare trait indices are reachable.</div>';
+      modal.style.display='block';
     }
   };
 })();
