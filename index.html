@@ -27787,11 +27787,20 @@ document.addEventListener('keydown', function(e) {
     // Build action buttons — structural min 48px (padding + min-height, not scale)
     var btns = '';
     if (_padDrawerCtx === 'nursery') {
-      btns += '<button class="pad-btn water" onclick="handleWaterSeed(\''+plant.id+'\')">' +
-              '<span class="pad-btn-icon">💧</span><span class="pad-btn-label">WATER</span></button>';
-      if (plant.waterLog && plant.waterLog.length >= 3) {
+      // Mirror the merged primary-action logic from the inline seed card:
+      // bloom-ready → BLOOM; else not-watered-today → WATER; else → +1 DAY (21 Dew).
+      var _padToday       = new Date().toISOString().split('T')[0];
+      var _padWateredTdy  = !!(plant.waterLog && plant.waterLog.indexOf(_padToday) > -1);
+      var _padBloomReady  = !!(plant.waterLog && plant.waterLog.length >= 3);
+      if (_padBloomReady) {
         btns += '<button class="pad-btn bloom" onclick="handleBloomBtn(\''+plant.id+'\')">' +
                 '<span class="pad-btn-icon">🌸</span><span class="pad-btn-label">BLOOM</span></button>';
+      } else if (!_padWateredTdy) {
+        btns += '<button class="pad-btn water" onclick="handleWaterSeed(\''+plant.id+'\')">' +
+                '<span class="pad-btn-icon">💧</span><span class="pad-btn-label">WATER</span></button>';
+      } else {
+        btns += '<button class="pad-btn water" onclick="handleFertilize(\''+plant.id+'\')" title="Spend 21 Dew to advance one day">' +
+                '<span class="pad-btn-icon">⚡</span><span class="pad-btn-label">+1 DAY (21)</span></button>';
       }
       btns += '<button class="pad-btn abandon" onclick="handleRemoveSeed(\''+plant.id+'\')">' +
               '<span class="pad-btn-icon">✕</span><span class="pad-btn-label">ABANDON</span></button>';
@@ -28291,13 +28300,21 @@ document.addEventListener('keydown', function(e) {
     var _fertMax = 25;
     var _canFert = _invFert > 0 && _seedFert < _fertMax && !bloomReady;
 
+    // Merged primary action button: one slot, three states.
+    //   bloomReady         → 🌸 BLOOM  (open bloom confirmation)
+    //   !bloomReady && !wateredToday → 💧 WATER  (free daily water)
+    //   !bloomReady && wateredToday  → ⚡ +1 DAY (21)  (spend 21 Dew to advance)
+    // Eliminates the 4-button row that was wrapping unpredictably on narrow cards.
     var actionBtns;
     if (bloomReady) {
       actionBtns = '<button class="nur-btn bloom" data-sid="' + sid + '" onclick="handleBloomBtn(this.dataset.sid)">🌸 BLOOM</button>';
+    } else if (!wateredToday) {
+      actionBtns = '<button class="nur-btn water" data-sid="' + sid + '" onclick="handleWaterSeed(this.dataset.sid)">💧 WATER</button>';
     } else {
-      actionBtns = '<button class="nur-btn water" data-sid="' + sid + '" onclick="handleWaterSeed(this.dataset.sid)" ' + waterDisabled + '>' + waterLabel + '</button>';
+      actionBtns = '<button class="nur-btn skipday" data-sid="' + sid + '" onclick="handleFertilize(this.dataset.sid)" style="background:rgba(200,168,75,0.12);border-color:rgba(200,168,75,0.4);color:var(--gold);" title="Spend 21 Dew to advance one day">⚡ +1 DAY (21)</button>';
     }
-    actionBtns += '<button class="nur-btn" data-sid="' + sid + '" onclick="handleApplyFertilizer(this.dataset.sid)" style="background:rgba(200,168,75,0.06);border-color:rgba(200,168,75,0.2);color:var(--gold);font-size:0.42rem;"' + (_canFert ? '' : ' disabled') + ' title="Apply 1 fertilizer for +1% rarity boost">🌿 FERT ' + _seedFert + '/' + _fertMax + '</button>';
+    // BOOST (renamed from FERT) — compost → rarity boost, independent of time/skip
+    actionBtns += '<button class="nur-btn boost" data-sid="' + sid + '" onclick="handleApplyFertilizer(this.dataset.sid)" style="background:rgba(200,168,75,0.06);border-color:rgba(200,168,75,0.2);color:var(--gold);font-size:0.42rem;"' + (_canFert ? '' : ' disabled') + ' title="Apply 1 compost for +1% rarity boost on bloom">🌿 BOOST ' + _seedFert + '/' + _fertMax + '</button>';
 
     var _fertInfo = (seed.fertApplied || 0) > 0 ? '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--gold);margin-top:2px;">🌿 ' + (seed.fertApplied || 0) + '/15 fertilizer (+' + (seed.fertApplied || 0) + '% rarity)</div>' : '';
 
@@ -28357,7 +28374,6 @@ document.addEventListener('keydown', function(e) {
         '<div class="nur-pips">' + pips + '<span class="nur-pip-label">' + dayLabel + '</span></div>' +
         _fertInfo +
         '<div class="nur-actions">' + actionBtns +
-          (!bloomReady ? '<button class="nur-btn" data-sid="' + sid + '" onclick="handleFertilize(this.dataset.sid)" style="background:rgba(200,168,75,0.08);border-color:rgba(200,168,75,0.28);color:var(--gold);font-size:0.44rem;" title="Spend 21 Dew Drops to skip a day (water today first)">⚡ 21 SKIP DAY</button>' : '') +
           '<button class="nur-btn abandon" data-sid="' + sid + '" onclick="handleRemoveSeed(this.dataset.sid)" title="Abandon">✕</button>' +
         '</div>' +
       '</div>' +
