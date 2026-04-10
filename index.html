@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.38';
+  var LW_VERSION='2026.04.10.39';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -35567,6 +35567,8 @@ window._hexAction=function(action){
         name:typeof getPlantName==='function'?getPlantName(p.hash):'',
         ownerName:p.ownerName||'Keeper'
       });
+      if(window.renderNursery)renderNursery();
+      if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
       _toast('\u2702\ufe0f Clone seed added to the nursery. The parent weakened.');
       if(window._haptic)_haptic('error');
     });
