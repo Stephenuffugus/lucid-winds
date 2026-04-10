@@ -22648,6 +22648,7 @@
       sws_nursery:     _ls('sws_nursery')     || [],
       sws_inventory:   _ls('sws_inventory')   || {dnaFragments:0,substrate:{}},
       hashLedger:      _ls('sws_hash_ledger') || {},
+      dewLedger:       _ls('sws_dew_ledger')  || {},
       records:         _ls('sws_set_records') || {},
       shopUnlocks:     _ls('sws_shop_unlocks')|| {},
       achievements:    _ls('sws_achievements')|| {},
@@ -22676,6 +22677,7 @@
     _ss('sws_nursery',    mNur);
     if (data.sws_inventory  || data.inventory)   _ss('sws_inventory',       data.sws_inventory  || data.inventory);
     if (data.hashLedger)     _ss('sws_hash_ledger',   data.hashLedger);
+    if (data.dewLedger)      _ss('sws_dew_ledger',     data.dewLedger);
     if (data.records)        _ss('sws_set_records',    data.records);
     if (data.shopUnlocks)    _ss('sws_shop_unlocks',   data.shopUnlocks);
     if (data.achievements)   _ss('sws_achievements',   data.achievements);
@@ -22724,16 +22726,19 @@
         count++;
       });
       if (totalDew <= 0) return;
-      // Apply rewards: add hashes to player's ledger
+      // Apply rewards: credit Dew to player's ledger (harvest rewards are Dew)
       batch.commit().then(function() {
-        // Credit hashes to player (earned, not balance — system uses earned-spent)
         try {
-          var ledgerRaw = _secureGet('sws_hash_ledger') || localStorage.getItem('sws_hash_ledger');
-          var ledger = JSON.parse(ledgerRaw || '{}');
-          ledger.earned = (ledger.earned || 0) + totalDew;
-          var ledgerStr = JSON.stringify(ledger);
-          if (window._secureSet) _secureSet('sws_hash_ledger', ledgerStr);
-          else localStorage.setItem('sws_hash_ledger', ledgerStr);
+          if (typeof earnDew === 'function') {
+            earnDew(totalDew, 'wild_harvest_reward');
+          } else {
+            var ledgerRaw = _secureGet('sws_dew_ledger') || localStorage.getItem('sws_dew_ledger');
+            var ledger = JSON.parse(ledgerRaw || '{}');
+            ledger.earned = (ledger.earned || 0) + totalDew;
+            var ledgerStr = JSON.stringify(ledger);
+            if (window._secureSet) _secureSet('sws_dew_ledger', ledgerStr);
+            else localStorage.setItem('sws_dew_ledger', ledgerStr);
+          }
           if (window.updateDashboard) updateDashboard();
         } catch(e) {}
         if (window._swsLog) _swsLog('Claimed ' + count + ' rewards: +' + totalDew + ' Dew', 'ok');
@@ -22772,6 +22777,7 @@
       slots: parseInt(localStorage.getItem('sws_greenhouse_slots')) || 10,
       inventory: JSON.parse(localStorage.getItem('sws_inventory') || 'null'),
       hashLedger: JSON.parse(localStorage.getItem('sws_hash_ledger') || 'null'),
+      dewLedger: JSON.parse(localStorage.getItem('sws_dew_ledger') || 'null'),
       streak: JSON.parse(localStorage.getItem('sws_streak') || 'null'),
       lastSync: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
