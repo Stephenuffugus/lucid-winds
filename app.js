@@ -19132,7 +19132,11 @@
     html += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.54rem;letter-spacing:0.06em;display:flex;gap:0.3rem;"><span style="color:' + sColor + ';">EA ' + _ea + '</span><span style="color:var(--muted);">' + seasonEmblems[_season] + '</span><span style="color:var(--muted);">Gen ' + (_t ? _t.chimerGen || 1 : 1) + '</span></div>';
     html += '</div>';
     html += '<div class="cb-rarity" style="color:' + sColor + ';">' + (_tg ? _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon : 'COMMON') + '</div>';
-    if (plant.parentAHash) html += renderLineageTree(plant);
+    // Lineage moved to the Extra Details modal — button replaces the inline tree.
+    // Only show the button if this plant has parents to show OR has interesting metadata.
+    if (plant.parentAHash || plant.generation > 1 || plant.mutated || plant.compostLayers) {
+      html += '<button class="cb-details-btn" onclick="event.stopPropagation();window._openPlantDetails(\'' + plant.hash + '\');">⬡ LINEAGE & DETAILS</button>';
+    }
     html += '<div class="cb-hash" style="margin-top:0.4rem;padding-top:0.3rem;border-top:1px solid rgba(74,124,53,0.06);">' + plant.hash + '</div>';
     html += '<div class="cb-date" style="margin-top:0.1rem;">Minted ' + (plant.date || '') + dateSuffix + '</div>';
     html += '<div class="cb-nameplate" style="position:absolute;bottom:8%;left:10%;right:10%;"><span class="cb-name" style="color:' + sColor + ';">' + name + '</span></div>';
@@ -19855,6 +19859,101 @@
     if (drawer) drawer.classList.remove('open');
     if (scrim)  scrim.classList.remove('open');
     _padDrawerPlant = null;
+  };
+
+  // ═══ PLANT EXTRA DETAILS MODAL ═══
+  // Replaces the cramped lineage tree that was stuffed onto the card back.
+  // Shows lineage + breeding history + trait deep-dive + mutation details.
+  // Built dynamically on first open, reused thereafter.
+  window._openPlantDetails = function(plantHash) {
+    var gh = loadGreenhouse();
+    var plant = null;
+    for (var i = 0; i < gh.length; i++) { if (gh[i].hash === plantHash) { plant = gh[i]; break; } }
+    if (!plant) { if (window._toast) _toast('Plant not found.'); return; }
+
+    var modal = document.getElementById('plant-details-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'plant-details-modal';
+      modal.className = 'plant-details-modal';
+      modal.innerHTML = '<div class="pdm-scrim" onclick="window._closePlantDetails()"></div>'
+        + '<div class="pdm-panel">'
+        + '  <div class="pdm-header">'
+        + '    <div class="pdm-title" id="pdm-title">⬡ DETAILS</div>'
+        + '    <button class="pdm-close" onclick="window._closePlantDetails()" aria-label="Close">✕</button>'
+        + '  </div>'
+        + '  <div class="pdm-body" id="pdm-body"></div>'
+        + '</div>';
+      document.body.appendChild(modal);
+    }
+
+    var name = typeof getPlantName === 'function' ? getPlantName(plant.hash) : plant.hash.slice(0, 8);
+    var _t = null, _tg = null;
+    try { _t = hashToTraits(plant.hash); _tg = getTerraGrade(_t); } catch(e) {}
+    var tgColor = _tg ? _tg.color : 'var(--cream)';
+
+    var title = document.getElementById('pdm-title');
+    if (title) title.innerHTML = '<span style="color:' + tgColor + ';">' + name + '</span>';
+
+    var body = document.getElementById('pdm-body');
+    if (!body) return;
+
+    var html = '';
+
+    // Lineage section (the reason this modal exists)
+    if (plant.parentAHash && plant.parentBHash) {
+      html += '<div class="pdm-section">';
+      html += renderLineageTree(plant);
+      html += '</div>';
+    } else {
+      html += '<div class="pdm-section pdm-empty">';
+      html += '<div class="pdm-empty-label">LINEAGE</div>';
+      html += '<div class="pdm-empty-body">Born from focused attention, not bred from parents. This plant has no ancestry.</div>';
+      html += '</div>';
+    }
+
+    // Generation / chimera details
+    if (plant.generation && plant.generation > 1) {
+      html += '<div class="pdm-section">';
+      html += '<div class="pdm-section-title">CHIMERA GENERATION</div>';
+      html += '<div class="pdm-row"><span class="pdm-k">Gen</span><span class="pdm-v">' + plant.generation + '</span></div>';
+      var eaP = (plant.generation - 1) * 2;
+      html += '<div class="pdm-row"><span class="pdm-k">EA penalty</span><span class="pdm-v" style="color:#c07070;">−' + eaP + '</span></div>';
+      html += '<div class="pdm-row"><span class="pdm-k">Climate immunity</span><span class="pdm-v" style="color:var(--sage);">2× (hardy hybrid)</span></div>';
+      html += '</div>';
+    }
+
+    // Mutation details
+    if (plant.mutated || (_t && _t.mutationName && _t.mutationName !== 'None')) {
+      html += '<div class="pdm-section">';
+      html += '<div class="pdm-section-title">MUTATION</div>';
+      html += '<div class="pdm-row"><span class="pdm-k">Name</span><span class="pdm-v" style="color:#d8a0a0;">' + ((_t && _t.mutationName) || 'Unknown') + '</span></div>';
+      html += '</div>';
+    }
+
+    // Compost / breed layers
+    if (plant.compostLayers || plant.breedLayers) {
+      html += '<div class="pdm-section">';
+      html += '<div class="pdm-section-title">ENRICHMENT HISTORY</div>';
+      if (plant.compostLayers) html += '<div class="pdm-row"><span class="pdm-k">Compost layers</span><span class="pdm-v">' + plant.compostLayers + '</span></div>';
+      if (plant.breedLayers) html += '<div class="pdm-row"><span class="pdm-k">Breed layers</span><span class="pdm-v">' + plant.breedLayers + '</span></div>';
+      html += '</div>';
+    }
+
+    // Hash / mint metadata
+    html += '<div class="pdm-section pdm-meta">';
+    html += '<div class="pdm-section-title">MINT RECORD</div>';
+    html += '<div class="pdm-row"><span class="pdm-k">Minted</span><span class="pdm-v">' + (plant.date || 'unknown') + '</span></div>';
+    html += '<div class="pdm-row"><span class="pdm-k">Origin</span><span class="pdm-v">' + (plant.origin || 'mint') + '</span></div>';
+    html += '<div class="pdm-row pdm-hash-row"><span class="pdm-k">Hash</span><span class="pdm-v pdm-hash-val">' + plant.hash + '</span></div>';
+    html += '</div>';
+
+    body.innerHTML = html;
+    modal.classList.add('open');
+  };
+  window._closePlantDetails = function() {
+    var modal = document.getElementById('plant-details-modal');
+    if (modal) modal.classList.remove('open');
   };
 
   window.confirmCompost = function(plantIndex) {

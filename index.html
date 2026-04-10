@@ -2223,6 +2223,40 @@
     .cs-card-back .lt-name{font-size:0.52rem;}
     .cs-card-back .lt-meta{font-size:0.42rem;}
     .lt-grandparents{padding-left:0.5rem;opacity:0.7;}
+    /* Inside the extra-details modal, lineage tree gets bigger readable text */
+    .plant-details-modal .lt-tree{padding:0.7rem;margin-top:0;background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.18);}
+    .plant-details-modal .lt-section-title{display:none;}
+    .plant-details-modal .lt-branch{padding-left:0.6rem;margin-bottom:0.5rem;border-left:2px solid rgba(122,179,86,0.25);}
+    .plant-details-modal .lt-parent{font-size:0.75rem;margin:4px 0;gap:0.4rem;}
+    .plant-details-modal .lt-label{font-size:0.7rem;width:1.3rem;}
+    .plant-details-modal .lt-name{font-size:0.82rem;max-width:60%;}
+    .plant-details-modal .lt-meta{font-size:0.62rem;}
+    .plant-details-modal .lt-grandparents{padding-left:1rem;margin-top:0.3rem;}
+    /* Card back LINEAGE & DETAILS button — replaces inline lineage tree */
+    .cb-details-btn{display:block;margin:0.5rem auto 0.3rem;font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.08em;color:var(--gold);background:rgba(200,168,75,0.08);border:1.5px solid rgba(200,168,75,0.35);border-radius:8px;padding:0.45rem 0.9rem;cursor:pointer;min-height:36px;box-shadow:inset 0 1px 0 rgba(255,220,140,0.1);}
+    .cb-details-btn:active{transform:translateY(1px);}
+    .cb-details-btn:hover{background:rgba(200,168,75,0.14);}
+    /* Extra Details modal — lineage, chimera history, mutation, mint record */
+    .plant-details-modal{position:fixed;inset:0;z-index:99996;display:none;}
+    .plant-details-modal.open{display:block;animation:panelFadeIn 0.25s ease;}
+    .plant-details-modal .pdm-scrim{position:absolute;inset:0;background:rgba(8,10,6,0.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+    .plant-details-modal .pdm-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(92vw,460px);max-height:85vh;background:linear-gradient(180deg,#121812,#0d100c);border:1.5px solid rgba(122,179,86,0.25);border-radius:14px;box-shadow:0 12px 48px rgba(0,0,0,0.8),0 0 0 1px rgba(200,168,75,0.08);display:flex;flex-direction:column;overflow:hidden;}
+    .plant-details-modal .pdm-header{display:flex;align-items:center;justify-content:space-between;padding:0.9rem 1rem 0.7rem;border-bottom:1px solid rgba(74,124,53,0.12);flex-shrink:0;}
+    .plant-details-modal .pdm-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-style:italic;color:var(--cream);line-height:1.1;}
+    .plant-details-modal .pdm-close{background:none;border:1px solid rgba(74,124,53,0.2);color:var(--muted);font-size:1rem;width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .plant-details-modal .pdm-close:hover{color:var(--cream);border-color:rgba(122,179,86,0.4);}
+    .plant-details-modal .pdm-body{flex:1;overflow-y:auto;padding:0.9rem 1rem 1.1rem;-webkit-overflow-scrolling:touch;}
+    .plant-details-modal .pdm-section{margin-bottom:1rem;padding-bottom:0.8rem;border-bottom:1px solid rgba(74,124,53,0.08);}
+    .plant-details-modal .pdm-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+    .plant-details-modal .pdm-section-title{font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.14em;color:var(--gold);margin-bottom:0.45rem;}
+    .plant-details-modal .pdm-row{display:flex;justify-content:space-between;align-items:center;padding:0.3rem 0;font-size:0.72rem;}
+    .plant-details-modal .pdm-k{font-family:'DM Mono',monospace;font-size:0.58rem;color:var(--muted);letter-spacing:0.03em;}
+    .plant-details-modal .pdm-v{font-family:'DM Sans',sans-serif;font-size:0.7rem;color:var(--cream);}
+    .plant-details-modal .pdm-hash-row{flex-direction:column;align-items:flex-start;gap:0.2rem;}
+    .plant-details-modal .pdm-hash-val{font-family:'DM Mono',monospace;font-size:0.42rem;color:rgba(122,179,86,0.6);word-break:break-all;line-height:1.4;}
+    .plant-details-modal .pdm-empty{opacity:0.75;}
+    .plant-details-modal .pdm-empty-label{font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.14em;color:var(--gold);margin-bottom:0.35rem;}
+    .plant-details-modal .pdm-empty-body{font-family:'Playfair Display',serif;font-size:0.72rem;font-style:italic;color:var(--muted);line-height:1.45;}
     .greenhouse-plant .gh-traits{font-family:'DM Mono',monospace;font-size:0.35rem;color:var(--sage);margin-top:0.1rem;opacity:0.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .greenhouse-plant .gh-slot{position:absolute;top:3px;left:5px;font-family:'Bebas Neue',sans-serif;font-size:0.55rem;color:rgba(122,179,86,0.35);text-shadow:0 0 6px rgba(122,179,86,0.15);letter-spacing:0.02em;}
     .cross-badge{display:inline-block;font-family:'DM Mono',monospace;font-size:0.28rem;letter-spacing:0.06em;color:#8BBFE0;background:rgba(91,143,185,0.12);border:1px solid rgba(91,143,185,0.3);border-radius:3px;padding:0.06rem 0.25rem;margin-top:0.1rem;vertical-align:middle;}
@@ -27205,7 +27239,10 @@ document.addEventListener('keydown', function(e) {
     html += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.54rem;letter-spacing:0.06em;display:flex;gap:0.3rem;"><span style="color:' + sColor + ';">EA ' + _ea + '</span><span style="color:var(--muted);">' + seasonEmblems[_season] + '</span><span style="color:var(--muted);">Gen ' + (_t ? _t.chimerGen || 1 : 1) + '</span></div>';
     html += '</div>';
     html += '<div class="cb-rarity" style="color:' + sColor + ';">' + (_tg ? _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon : 'COMMON') + '</div>';
-    if (plant.parentAHash) html += renderLineageTree(plant);
+    // Lineage moved to the Extra Details modal — button replaces the inline tree.
+    if (plant.parentAHash || plant.generation > 1 || plant.mutated || plant.compostLayers) {
+      html += '<button class="cb-details-btn" onclick="event.stopPropagation();window._openPlantDetails(\'' + plant.hash + '\');">⬡ LINEAGE & DETAILS</button>';
+    }
     html += '<div class="cb-hash" style="margin-top:0.4rem;padding-top:0.3rem;border-top:1px solid rgba(74,124,53,0.06);">' + plant.hash + '</div>';
     html += '<div class="cb-date" style="margin-top:0.1rem;">Minted ' + (plant.date || '') + dateSuffix + '</div>';
     html += '<div class="cb-nameplate" style="position:absolute;bottom:8%;left:10%;right:10%;"><span class="cb-name" style="color:' + sColor + ';">' + name + '</span></div>';
@@ -27928,6 +27965,96 @@ document.addEventListener('keydown', function(e) {
     if (drawer) drawer.classList.remove('open');
     if (scrim)  scrim.classList.remove('open');
     _padDrawerPlant = null;
+  };
+
+  // ═══ PLANT EXTRA DETAILS MODAL ═══
+  // Replaces the cramped lineage tree that was stuffed onto the card back.
+  // Shows lineage + breeding history + trait deep-dive + mutation details.
+  // Built dynamically on first open, reused thereafter.
+  window._openPlantDetails = function(plantHash) {
+    var gh = loadGreenhouse();
+    var plant = null;
+    for (var i = 0; i < gh.length; i++) { if (gh[i].hash === plantHash) { plant = gh[i]; break; } }
+    if (!plant) { if (window._toast) _toast('Plant not found.'); return; }
+
+    var modal = document.getElementById('plant-details-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'plant-details-modal';
+      modal.className = 'plant-details-modal';
+      modal.innerHTML = '<div class="pdm-scrim" onclick="window._closePlantDetails()"></div>'
+        + '<div class="pdm-panel">'
+        + '  <div class="pdm-header">'
+        + '    <div class="pdm-title" id="pdm-title">⬡ DETAILS</div>'
+        + '    <button class="pdm-close" onclick="window._closePlantDetails()" aria-label="Close">✕</button>'
+        + '  </div>'
+        + '  <div class="pdm-body" id="pdm-body"></div>'
+        + '</div>';
+      document.body.appendChild(modal);
+    }
+
+    var name = typeof getPlantName === 'function' ? getPlantName(plant.hash) : plant.hash.slice(0, 8);
+    var _t = null, _tg = null;
+    try { _t = hashToTraits(plant.hash); _tg = getTerraGrade(_t); } catch(e) {}
+    var tgColor = _tg ? _tg.color : 'var(--cream)';
+
+    var title = document.getElementById('pdm-title');
+    if (title) title.innerHTML = '<span style="color:' + tgColor + ';">' + name + '</span>';
+
+    var body = document.getElementById('pdm-body');
+    if (!body) return;
+
+    var html = '';
+
+    if (plant.parentAHash && plant.parentBHash) {
+      html += '<div class="pdm-section">';
+      html += renderLineageTree(plant);
+      html += '</div>';
+    } else {
+      html += '<div class="pdm-section pdm-empty">';
+      html += '<div class="pdm-empty-label">LINEAGE</div>';
+      html += '<div class="pdm-empty-body">Born from focused attention, not bred from parents. This plant has no ancestry.</div>';
+      html += '</div>';
+    }
+
+    if (plant.generation && plant.generation > 1) {
+      html += '<div class="pdm-section">';
+      html += '<div class="pdm-section-title">CHIMERA GENERATION</div>';
+      html += '<div class="pdm-row"><span class="pdm-k">Gen</span><span class="pdm-v">' + plant.generation + '</span></div>';
+      var eaP = (plant.generation - 1) * 2;
+      html += '<div class="pdm-row"><span class="pdm-k">EA penalty</span><span class="pdm-v" style="color:#c07070;">−' + eaP + '</span></div>';
+      html += '<div class="pdm-row"><span class="pdm-k">Climate immunity</span><span class="pdm-v" style="color:var(--sage);">2× (hardy hybrid)</span></div>';
+      html += '</div>';
+    }
+
+    if (plant.mutated || (_t && _t.mutationName && _t.mutationName !== 'None')) {
+      html += '<div class="pdm-section">';
+      html += '<div class="pdm-section-title">MUTATION</div>';
+      html += '<div class="pdm-row"><span class="pdm-k">Name</span><span class="pdm-v" style="color:#d8a0a0;">' + ((_t && _t.mutationName) || 'Unknown') + '</span></div>';
+      html += '</div>';
+    }
+
+    if (plant.compostLayers || plant.breedLayers) {
+      html += '<div class="pdm-section">';
+      html += '<div class="pdm-section-title">ENRICHMENT HISTORY</div>';
+      if (plant.compostLayers) html += '<div class="pdm-row"><span class="pdm-k">Compost layers</span><span class="pdm-v">' + plant.compostLayers + '</span></div>';
+      if (plant.breedLayers) html += '<div class="pdm-row"><span class="pdm-k">Breed layers</span><span class="pdm-v">' + plant.breedLayers + '</span></div>';
+      html += '</div>';
+    }
+
+    html += '<div class="pdm-section pdm-meta">';
+    html += '<div class="pdm-section-title">MINT RECORD</div>';
+    html += '<div class="pdm-row"><span class="pdm-k">Minted</span><span class="pdm-v">' + (plant.date || 'unknown') + '</span></div>';
+    html += '<div class="pdm-row"><span class="pdm-k">Origin</span><span class="pdm-v">' + (plant.origin || 'mint') + '</span></div>';
+    html += '<div class="pdm-row pdm-hash-row"><span class="pdm-k">Hash</span><span class="pdm-v pdm-hash-val">' + plant.hash + '</span></div>';
+    html += '</div>';
+
+    body.innerHTML = html;
+    modal.classList.add('open');
+  };
+  window._closePlantDetails = function() {
+    var modal = document.getElementById('plant-details-modal');
+    if (modal) modal.classList.remove('open');
   };
 
   window.confirmCompost = function(plantIndex) {
