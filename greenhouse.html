@@ -23,7 +23,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <link rel="stylesheet" href="shared.css?v=20260410_14" />
+  <link rel="stylesheet" href="shared.css?v=20260410_15" />
   <script>window._lwPage='greenhouse';</script>
 </head>
 <body>
@@ -287,6 +287,36 @@
       </select>
     </div>
     <div id="binder-grid-container"></div>
+  </div>
+
+  <!-- ═══ KEEPER IDENTITY BAR — two rows, currency badges, install button ═══ -->
+  <div id="pw-keeper-bar">
+    <div class="kb-row1">
+      <div class="kb-avatar" onclick="PW_UI.openCharacter()">🌱</div>
+      <div class="kb-info">
+        <div class="kb-name" onclick="PW_UI.openCharacter()" id="kb-name">Keeper</div>
+        <div class="kb-xp-wrap" onclick="PW_UI.openCharacter()"><div class="kb-xp-fill" id="kb-xp-fill" style="width:0%;"></div></div>
+        <div class="kb-rank" id="kb-rank">Lvl 1 · Seedling · 0 / 25 Pollen</div>
+      </div>
+      <div id="pw-lb-toggle" onclick="PW_UI.toggleLeaderboard()"><span id="lb-my-rank">#—</span> <span style="font-size:0.55rem;">▼</span></div>
+    </div>
+    <div class="kb-row2">
+      <div id="kb-sunbeams" title="Sunbeams — focused attention that photosynthesizes into plants (30 = 1 plant)" onclick="if(window.openEconModal)openEconModal();"><span class="kb-icon">☀️</span><span class="kb-val">0</span></div>
+      <div id="kb-dew" title="Dew — earned from wild plants, daily quests, and gifts. Spent on nursery acceleration and cuttings."><span class="kb-icon">💧</span><span class="kb-val">0</span></div>
+      <div id="kb-compendium" onclick="if(window._openCompendiumUI)_openCompendiumUI();" title="Book of Secrets entries discovered">📖 <span id="kb-comp-count">0</span></div>
+      <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install Lucid Winds as an app on your device">📲 <span class="kb-install-label">INSTALL</span></div>
+    </div>
+  </div>
+  <div id="pw-lb-dropdown">
+    <div class="lb-tabs"><div class="lb-tab active" onclick="PW_UI.setLBTab(this,'global')">GLOBAL</div><div class="lb-tab" onclick="PW_UI.setLBTab(this,'friends')">FRIENDS</div><div class="lb-tab" onclick="PW_UI.setLBTab(this,'region')">REGION</div></div>
+    <div class="lb-list" id="lb-list">
+      <div class="lb-row"><div class="lb-rank">#1</div><div class="lb-name" style="color:var(--sage);">CosmicGardener</div><div class="lb-score">12,450</div></div>
+      <div class="lb-row"><div class="lb-rank">#2</div><div class="lb-name">FernWhisperer</div><div class="lb-score">9,820</div></div>
+      <div class="lb-row"><div class="lb-rank">#3</div><div class="lb-name">MossCollector</div><div class="lb-score">8,100</div></div>
+      <div class="lb-row" style="padding:0.2rem;text-align:center;color:var(--muted);font-size:0.38rem;">· · ·</div>
+      <div class="lb-row you"><div class="lb-rank">#—</div><div class="lb-name">You ★</div><div class="lb-score" id="lb-my-pollen">0</div></div>
+    </div>
+    <div class="lb-footer">Your Pollen: <span id="lb-footer-pollen">0</span></div>
   </div>
 
   <div class="fg-bottomnav">
@@ -686,12 +716,12 @@
 })();
 </script>
 
-<script src="core.js?v=20260410_14"></script>
+<script src="core.js?v=20260410_15"></script>
 <script src="word-banks.js"></script>
-<script src="app.js?v=20260410_14"></script>
-<script src="init.js?v=20260410_14"></script>
-<script src="dev.js?v=20260410_14"></script>
-<script src="systems.js?v=20260410_14"></script>
+<script src="app.js?v=20260410_15"></script>
+<script src="init.js?v=20260410_15"></script>
+<script src="dev.js?v=20260410_15"></script>
+<script src="systems.js?v=20260410_15"></script>
 
 <script>
 // Auto-render greenhouse on load

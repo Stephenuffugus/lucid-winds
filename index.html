@@ -4018,6 +4018,14 @@
     #kb-dew .kb-icon{font-size:1.15rem;filter:drop-shadow(0 0 4px rgba(91,175,220,0.4));}
     #kb-compendium{font-family:'Bebas Neue',sans-serif;font-size:0.8rem;color:rgba(200,168,75,0.95);padding:0.4rem 0.6rem;background:rgba(200,168,75,0.08);border:1.5px solid rgba(200,168,75,0.25);border-radius:10px;white-space:nowrap;cursor:pointer;display:none;align-items:center;gap:0.3rem;min-height:40px;flex-shrink:0;}
     #kb-compendium.has-entries{display:flex;}
+    /* INSTALL APP button — visible when running in browser, hidden when
+       running as an installed PWA (display-mode:standalone). Compact to
+       avoid crowding the currency badges. */
+    #kb-install{font-family:'Bebas Neue',sans-serif;font-size:0.75rem;color:rgba(122,200,240,0.95);padding:0.4rem 0.6rem;background:linear-gradient(180deg,rgba(91,175,220,0.15),rgba(91,175,220,0.04));border:1.5px solid rgba(91,175,220,0.35);border-radius:10px;white-space:nowrap;cursor:pointer;display:flex;align-items:center;gap:0.35rem;min-height:40px;flex-shrink:0;letter-spacing:0.06em;box-shadow:0 2px 8px rgba(91,175,220,0.1);}
+    #kb-install:hover{background:linear-gradient(180deg,rgba(91,175,220,0.22),rgba(91,175,220,0.08));}
+    #kb-install .kb-install-label{font-size:0.6rem;}
+    @media (display-mode: standalone) { #kb-install { display: none !important; } }
+    @media all and (display-mode: fullscreen) { #kb-install { display: none !important; } }
     #pw-lb-toggle{font-family:'Bebas Neue',sans-serif;font-size:0.7rem;color:var(--gold);cursor:pointer;display:flex;align-items:center;gap:0.25rem;padding:0.35rem 0.55rem;border:1px solid rgba(200,168,75,0.25);border-radius:8px;background:rgba(200,168,75,0.05);flex-shrink:0;min-height:32px;}
     #pw-lb-dropdown{display:none;position:fixed;top:calc(44px + env(safe-area-inset-top, 0px));right:8px;z-index:9990;width:260px;max-height:50vh;background:rgba(17,22,17,0.98);border:1px solid rgba(200,168,75,0.12);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.6);overflow:hidden;}
     #pw-lb-dropdown.open{display:block;animation:panelFadeIn 0.2s ease;}
@@ -5181,11 +5189,12 @@ window.onerror=function(msg,url,line,col,err){
       </div>
       <div id="pw-lb-toggle" onclick="PW_UI.toggleLeaderboard()"><span id="lb-my-rank">#—</span> <span style="font-size:0.55rem;">▼</span></div>
     </div>
-    <!-- Row 2: currency badges (Sunbeams + Dew + optional Compendium) -->
+    <!-- Row 2: currency badges (Sunbeams + Dew + optional Compendium + Install) -->
     <div class="kb-row2">
       <div id="kb-sunbeams" title="Sunbeams — focused attention that photosynthesizes into plants (30 = 1 plant)" onclick="if(window.openEconModal)openEconModal();"><span class="kb-icon">☀️</span><span class="kb-val">0</span></div>
       <div id="kb-dew" title="Dew — earned from wild plants, daily quests, and gifts. Spent on nursery acceleration and cuttings."><span class="kb-icon">💧</span><span class="kb-val">0</span></div>
       <div id="kb-compendium" onclick="if(window._openCompendiumUI)_openCompendiumUI();" title="Book of Secrets entries discovered">📖 <span id="kb-comp-count">0</span></div>
+      <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install Lucid Winds as an app on your device">📲 <span class="kb-install-label">INSTALL</span></div>
     </div>
   </div>
   <div id="pw-lb-dropdown">
@@ -6686,20 +6695,24 @@ window.addEventListener('beforeinstallprompt', function(e) {
   console.log('[PWA] Install prompt captured and deferred.');
 });
 
-// Execute install when user clicks "Secure My Greenhouse"
+// Execute install when user taps the INSTALL button in the keeper bar
+// (or any other call site that routes here). Safely handles both the
+// legacy branded modal (pwa-install-modal) and the split build case.
 window.executePWAInstall = function() {
+  var legacyModal = document.getElementById('pwa-install-modal');
   if (!deferredPrompt) {
-    // Fallback for browsers without beforeinstallprompt (iOS Safari)
-    document.getElementById('pwa-install-modal').classList.remove('open');
-    alert('To add Lucid Winds to your Home Screen:\n\niPhone/iPad: Tap the Share button (↑) then "Add to Home Screen"\n\nAndroid: Tap the ⋮ menu then "Add to Home Screen"');
+    if (legacyModal) legacyModal.classList.remove('open');
+    alert('To add Lucid Winds to your Home Screen:\n\niPhone/iPad: Tap the Share button (\u2191) then "Add to Home Screen"\n\nAndroid: Tap the \u22ee menu then "Add to Home Screen"\n\nDesktop: Look for the install icon in your address bar, or use browser menu \u2192 Install Lucid Winds.');
     return;
   }
   deferredPrompt.prompt();
   deferredPrompt.userChoice.then(function(result) {
-    document.getElementById('pwa-install-modal').classList.remove('open');
+    if (legacyModal) legacyModal.classList.remove('open');
     if (result.outcome === 'accepted') {
       console.log('[PWA] User accepted install.');
       if (typeof gtag !== 'undefined') gtag('event', 'pwa_install', { outcome: 'accepted' });
+      var kbInstall = document.getElementById('kb-install');
+      if (kbInstall) kbInstall.style.display = 'none';
     } else {
       console.log('[PWA] User dismissed install.');
       if (typeof gtag !== 'undefined') gtag('event', 'pwa_install', { outcome: 'dismissed' });
@@ -6707,6 +6720,26 @@ window.executePWAInstall = function() {
     deferredPrompt = null;
   });
 };
+
+// Hide the keeper bar install button if we're already running as a
+// standalone PWA (some browsers don't report display-mode via CSS media).
+(function(){
+  try {
+    var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+                       (window.navigator && window.navigator.standalone === true);
+    if (isStandalone) {
+      var _hideKbInstall = function(){
+        var el = document.getElementById('kb-install');
+        if (el) el.style.display = 'none';
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', _hideKbInstall);
+      } else {
+        _hideKbInstall();
+      }
+    }
+  } catch(e) {}
+})();
 
 // Dismiss with muted warning
 window.dismissPWA = function() {

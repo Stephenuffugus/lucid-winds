@@ -1129,20 +1129,28 @@ window.addEventListener('beforeinstallprompt', function(e) {
   console.log('[PWA] Install prompt captured and deferred.');
 });
 
-// Execute install when user clicks "Secure My Greenhouse"
+// Execute install when user taps the INSTALL button in the keeper bar
+// (or any other call site that routes here). Safely handles both the
+// legacy branded modal (pwa-install-modal, only in index.html) and the
+// split build case where no modal exists.
 window.executePWAInstall = function() {
+  var legacyModal = document.getElementById('pwa-install-modal');
   if (!deferredPrompt) {
-    // Fallback for browsers without beforeinstallprompt (iOS Safari)
-    document.getElementById('pwa-install-modal').classList.remove('open');
-    alert('To add Lucid Winds to your Home Screen:\n\niPhone/iPad: Tap the Share button (↑) then "Add to Home Screen"\n\nAndroid: Tap the ⋮ menu then "Add to Home Screen"');
+    // Fallback for browsers without beforeinstallprompt (iOS Safari,
+    // Chrome after prompt dismissed, etc). Show manual instructions.
+    if (legacyModal) legacyModal.classList.remove('open');
+    alert('To add Lucid Winds to your Home Screen:\n\niPhone/iPad: Tap the Share button (\u2191) then "Add to Home Screen"\n\nAndroid: Tap the \u22ee menu then "Add to Home Screen"\n\nDesktop: Look for the install icon in your address bar, or use browser menu \u2192 Install Lucid Winds.');
     return;
   }
   deferredPrompt.prompt();
   deferredPrompt.userChoice.then(function(result) {
-    document.getElementById('pwa-install-modal').classList.remove('open');
+    if (legacyModal) legacyModal.classList.remove('open');
     if (result.outcome === 'accepted') {
       console.log('[PWA] User accepted install.');
       if (typeof gtag !== 'undefined') gtag('event', 'pwa_install', { outcome: 'accepted' });
+      // Hide the keeper bar install button — they just installed
+      var kbInstall = document.getElementById('kb-install');
+      if (kbInstall) kbInstall.style.display = 'none';
     } else {
       console.log('[PWA] User dismissed install.');
       if (typeof gtag !== 'undefined') gtag('event', 'pwa_install', { outcome: 'dismissed' });
@@ -1150,6 +1158,28 @@ window.executePWAInstall = function() {
     deferredPrompt = null;
   });
 };
+
+// Hide the keeper bar install button if we're already running as a
+// standalone PWA, because the CSS media query may not catch every case
+// (some browsers don't report standalone via CSS).
+(function(){
+  try {
+    var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+                       (window.navigator && window.navigator.standalone === true);
+    if (isStandalone) {
+      // Wait for DOM so the element exists
+      var _hideKbInstall = function(){
+        var el = document.getElementById('kb-install');
+        if (el) el.style.display = 'none';
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', _hideKbInstall);
+      } else {
+        _hideKbInstall();
+      }
+    }
+  } catch(e) {}
+})();
 
 // Dismiss with muted warning
 window.dismissPWA = function() {
