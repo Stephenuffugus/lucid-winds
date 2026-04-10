@@ -18394,6 +18394,11 @@
         var wName = d.hash && window.getPlantName ? getPlantName(d.hash) : 'a wild plant';
         body = 'You watered <b>' + wName + '</b>. Lifespan reset.';
         break;
+      case 'wild_watered_stranger':
+        icon = '\ud83d\udca7';
+        color = '#7ab8c8';
+        body = 'You watered <b>' + (d.ownerName || 'a keeper') + '\u2019s</b> wild plant. +2h lifespan.';
+        break;
       case 'wild_cutting_taken':
         icon = '\u2702\ufe0f';
         color = '#c88a4a';

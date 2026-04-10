@@ -181,6 +181,7 @@ var WILD_LIFESPAN_DAYS = {
 };
 var WILD_TEND_BONUS_MS = 6 * 3600000;     // +6h per tend
 var WILD_TEND_BONUS_CAP = 5 * 86400000;   // at most +5 days lifetime
+var WILD_WATER_BONUS_MS = 2 * 3600000;    // +2h per stranger water
 var WILD_MAX_AGE_DAYS = 14; // legacy fallback only
 
 function _plantRarity(hash){
@@ -4036,17 +4037,35 @@ window._hexAction = function(action) {
         // Refresh inspector detail if open
         if (typeof _selectHexPlant === 'function') _selectHexPlant(0, p);
       } else {
-        // Water a stranger's plant — budgeted kindness. Adds to their
-        // lifespan indirectly through the shared marker, grants pollen XP.
+        // Water a stranger's plant — budgeted kindness. Adds +2h to
+        // their lifespan via the shared marker, grants pollen XP.
         var _waterKey = 'lw_water_budget';
         var _wBudget = {}; try { _wBudget = JSON.parse(localStorage.getItem(_waterKey) || '{}'); } catch (e) {}
         var _wToday = new Date().toISOString().split('T')[0];
         if (_wBudget.date !== _wToday) _wBudget = { date: _wToday, count: 0 };
         if (_wBudget.count >= 5) { _toast('No waters left today (5/day).'); break; }
+        if (_uLat && p.lat) {
+          var _wDist = _dist(_uLat, _uLng, p.lat, p.lng);
+          if (_wDist > COLLECT_RANGE) { _toast('Walk closer! ' + Math.round(_wDist) + 'm away.'); break; }
+        }
         _wBudget.count = (_wBudget.count || 0) + 1;
         localStorage.setItem(_waterKey, JSON.stringify(_wBudget));
+        // Bump shared marker so the +2h actually lands on the plant.
+        // Uses the same strangerTendAddMs bucket so the 5-day cap is
+        // shared with TEND — one kindness budget per plant, total.
+        try {
+          if (_sharedMarkers && _sharedMarkers[p.hash] && _sharedMarkers[p.hash].data) {
+            var _wSmd = _sharedMarkers[p.hash].data;
+            _ensureVitality(_wSmd);
+            if ((_wSmd.strangerTendAddMs || 0) < WILD_TEND_BONUS_CAP) {
+              _wSmd.strangerTendAddMs = (_wSmd.strangerTendAddMs || 0) + WILD_WATER_BONUS_MS;
+              _wSmd.decayAt = (_wSmd.decayAt || Date.now()) + WILD_WATER_BONUS_MS;
+            }
+          }
+        } catch(e) {}
         if (window.PW_grantXP) PW_grantXP(5, 'wild_water_stranger');
-        _toast('\ud83d\udca7 Watered a keeper\u2019s plant. +5 XP. ' + (5 - _wBudget.count) + ' left today.');
+        if (window.LW_Log) window.LW_Log.write('wild_watered_stranger', { hash: p.hash, ownerName: p.ownerName || 'Keeper' });
+        _toast('\ud83d\udca7 Watered a keeper\u2019s plant. +2h \u00b7 +5 XP. ' + (5 - _wBudget.count) + ' left today.');
         if (window._haptic) _haptic('bloom');
         if (window._trackQuest) _trackQuest('plantsWatered', 1);
       }
