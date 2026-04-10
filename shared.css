@@ -2381,6 +2381,19 @@
 
     /* Sokoban */
     .skg{display:grid;gap:clamp(1px,.4vw,3px);width:clamp(320px,96vw,480px);margin:0 auto;padding:clamp(4px,1.5vw,8px);background:rgba(13,16,12,.25);border-radius:clamp(6px,2vw,10px);animation:boardFadeIn .4s ease}
+    /* ═══ DOUBLE SHUTTER — Strategy Shut the Box ═══ */
+    .ds-wrap{display:flex;flex-direction:column;align-items:center;gap:clamp(8px,2vw,14px);padding:clamp(8px,2vw,14px);max-width:min(96vw,460px);margin:0 auto}
+    .ds-row{display:grid;grid-template-columns:repeat(9,1fr);gap:clamp(3px,1vw,6px);width:100%}
+    .ds-tile{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#FAF5E8,#E8DCC8);border:2px solid #C4B998;border-radius:clamp(4px,1.5vw,8px);font-family:'Bebas Neue',sans-serif;font-size:clamp(1.1rem,4vw,1.6rem);color:#2C1810;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 2px 6px rgba(0,0,0,0.3);transition:transform .12s,background .15s,opacity .25s;position:relative}
+    .ds-tile.shut{background:linear-gradient(180deg,#3a2818,#2a1810);border-color:#5a4530;color:#5a4530;text-shadow:0 1px 0 rgba(0,0,0,0.5);box-shadow:inset 0 2px 6px rgba(0,0,0,0.5),0 1px 2px rgba(0,0,0,0.4);cursor:default;opacity:0.55}
+    .ds-tile.shut::after{content:'×';position:absolute;font-size:1.6em;color:rgba(200,168,75,0.35);font-weight:800;pointer-events:none}
+    .ds-tile.sel{background:linear-gradient(180deg,#FFE89A,#D4A843);border-color:var(--gold);transform:translateY(-2px);box-shadow:0 0 14px rgba(200,168,75,0.5),inset 0 1px 0 rgba(255,255,255,0.5)}
+    .ds-tile:active:not(.shut){transform:scale(0.94)}
+    .ds-rowlbl{font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.12em;color:var(--muted);text-align:center;margin-top:2px}
+    .ds-dice{display:flex;gap:clamp(10px,3vw,16px);justify-content:center;align-items:center;padding:clamp(6px,2vw,10px) 0}
+    .ds-die{width:clamp(48px,13vw,64px);height:clamp(48px,13vw,64px);border-radius:clamp(6px,2vw,10px);overflow:hidden;background:rgba(0,0,0,0.2);box-shadow:0 3px 8px rgba(0,0,0,0.4)}
+    .ds-die img{width:100%;height:100%;object-fit:cover;display:block}
+    .ds-info{font-family:DM Mono,monospace;font-size:clamp(0.55rem,1.6vw,0.7rem);color:var(--gold);text-align:center;padding:4px 0;min-height:1.2em}
     /* ═══ BACKGAMMON — Garden Gate board CSS ═══ */
     .bg-wrap{width:100%;margin:0 auto}
     .bg-board{position:relative;width:100%;height:clamp(220px,58vw,340px);background:#2C1810;border:4px solid #6B4F2D;border-radius:12px;overflow:hidden;box-shadow:inset 0 0 40px rgba(0,0,0,0.5),0 6px 24px rgba(0,0,0,0.6)}

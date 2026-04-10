@@ -17,39 +17,40 @@ var G_CATS=[
   {key:'creative',label:'CREATIVE',       icon:'\ud83c\udfb5'}
 ];
 var G=[
-{id:'set',n:'Trios',i:'\ud83c\udccf',r:'Tap 3 cards where each trait is ALL same or ALL different.',cat:'card',thumb:'assets/games/thumbs/set.png'},
-{id:'memory',n:'Memory Garden',i:'\ud83e\udde0',r:'Flip 2 cards per turn. Match all pairs to clear the board.',cat:'pattern',thumb:'assets/games/thumbs/memory.png'},
-{id:'merge',n:'Merge Garden',i:'\ud83c\udf3f',r:'Swipe or tap arrows to merge same-number tiles. Reach 2048!',cat:'puzzle',thumb:'assets/games/thumbs/merge.png'},
-{id:'simon',n:'Seasonal Cycle',i:'\ud83d\udd04',r:'Watch the seasonal pattern flash, then repeat it in order.',cat:'pattern',thumb:'assets/games/thumbs/simon.png'},
-{id:'lights',n:'Glow Shrooms',i:'\ud83c\udf44',r:'Tap a mushroom to toggle it AND its 4 neighbors. Turn all dark!',cat:'puzzle',thumb:'assets/games/thumbs/lights.png'},
-{id:'mines',n:'Root Rot',i:'\ud83e\udda0',r:'Tap to dig. Numbers show adjacent rot. Flag with \ud83d\udea9 mode.',cat:'board',thumb:'assets/games/thumbs/mines.png'},
-{id:'sudoku',n:'Soil Grid',i:'\ud83d\udd22',r:'Fill every row, column and 3\u00d73 box with digits 1-9.',cat:'puzzle',thumb:'assets/games/thumbs/sudoku.png'},
-{id:'wordsearch',n:'Root Words',i:'\ud83d\udd24',r:'Tap letters in sequence to find hidden botanical words.',cat:'puzzle',thumb:'assets/games/thumbs/wordsearch.png'},
-{id:'hanoi',n:'Root Stack',i:'\ud83d\uddfc',r:'Move all discs to the right peg. Never place big on small.',cat:'puzzle',thumb:'assets/games/thumbs/hanoi.png'},
+{id:'set',n:'SET Match',i:'\ud83c\udccf',r:'Tap 3 cards where each trait is ALL same or ALL different.',cat:'card',thumb:'assets/games/thumbs/set.png'},
+{id:'memory',n:'Memory',i:'\ud83e\udde0',r:'Flip 2 cards per turn. Match all pairs to clear the board.',cat:'pattern',thumb:'assets/games/thumbs/memory.png'},
+{id:'merge',n:'2048',i:'\ud83c\udf3f',r:'Swipe or tap arrows to merge same-number tiles. Reach 2048!',cat:'puzzle',thumb:'assets/games/thumbs/merge.png'},
+{id:'simon',n:'Echo',i:'\ud83d\udd04',r:'Watch the pattern flash, then repeat it in order. How far can you go?',cat:'pattern',thumb:'assets/games/thumbs/simon.png'},
+{id:'lights',n:'Lights Out',i:'\ud83c\udf44',r:'Tap a light to toggle it AND its 4 neighbors. Turn all dark!',cat:'puzzle',thumb:'assets/games/thumbs/lights.png'},
+{id:'mines',n:'Minesweeper',i:'\ud83e\udda0',r:'Tap to dig. Numbers show adjacent mines. Flag with \ud83d\udea9 mode.',cat:'board',thumb:'assets/games/thumbs/mines.png'},
+{id:'sudoku',n:'Sudoku',i:'\ud83d\udd22',r:'Fill every row, column and 3\u00d73 box with digits 1-9.',cat:'puzzle',thumb:'assets/games/thumbs/sudoku.png'},
+{id:'wordsearch',n:'Word Search',i:'\ud83d\udd24',r:'Tap letters in sequence to find hidden botanical words.',cat:'puzzle',thumb:'assets/games/thumbs/wordsearch.png'},
+{id:'hanoi',n:'Tower of Hanoi',i:'\ud83d\uddfc',r:'Move all discs to the right peg. Never place big on small.',cat:'puzzle',thumb:'assets/games/thumbs/hanoi.png'},
 {id:'slider',n:'15 Puzzle',i:'\ud83e\udde9',r:'Slide tiles into the empty space. Arrange them 1-15 in order.',cat:'puzzle',thumb:'assets/games/thumbs/slider.png'},
-{id:'picross',n:'Seed Grid',i:'\ud83d\udd33',r:'Fill or cross squares from row/column clues to reveal a hidden picture.',cat:'puzzle',thumb:'assets/games/thumbs/picross.png'},
-{id:'colorsort',n:'Petal Sort',i:'\ud83e\uddea',r:'Pour colors between tubes until each holds a single color. Match tops to pour.',cat:'puzzle',thumb:'assets/games/thumbs/colorsort.png'},
-{id:'battleship',n:'Deep Water',i:'\ud83c\udf0a',r:'Hunt hidden vessels on a 10\u00d710 grid. Sink them all in as few shots as you can.',cat:'board',thumb:'assets/games/thumbs/battleship.png'},
-{id:'flood',n:'Autumn Leaves',i:'\ud83c\udf42',r:'Tap a leaf to flood from the top-left. Cover the forest floor in one color!',cat:'puzzle',thumb:'assets/games/thumbs/flood.png'},
-{id:'pipe',n:'Vine Flow',i:'\ud83c\udf3f',r:'Rotate vine tiles to connect all vines back to the root!',cat:'puzzle',thumb:'assets/games/thumbs/pipe.png'},
-{id:'chess',n:'Grove Chess',i:'\u265f',r:'Classic chess against AI. Tap a piece, tap where to move.',cat:'board',thumb:'assets/games/thumbs/chess.png'},
-{id:'c4',n:'Connect Fleur',i:'\ud83c\udf38',r:'Drop flowers to connect 4 in a row \u2014 horizontal, vertical, or diagonal!',cat:'board',thumb:'assets/games/thumbs/c4.png'},
-{id:'song',n:'Grove Studio',i:'\ud83c\udfb5',r:'Full music production studio. Layer drums, bass, keys and leads \u2014 make beats, earn dew.',cat:'creative',thumb:'assets/games/thumbs/song.png'},
-{id:'golf',n:'Fairway Solitaire',i:'\u26f3',r:'Move cards one rank up or down to the waste pile. Clear the tableau!',cat:'card',thumb:'assets/games/thumbs/golf.png'},
+{id:'picross',n:'Picross',i:'\ud83d\udd33',r:'Fill or cross squares from row/column clues to reveal a hidden picture.',cat:'puzzle',thumb:'assets/games/thumbs/picross.png'},
+{id:'colorsort',n:'Color Sort',i:'\ud83e\uddea',r:'Pour colors between tubes until each holds a single color. Match tops to pour.',cat:'puzzle',thumb:'assets/games/thumbs/colorsort.png'},
+{id:'battleship',n:'Battleship',i:'\ud83c\udf0a',r:'Hunt hidden vessels on a 10\u00d710 grid. Sink them all in as few shots as you can.',cat:'board',thumb:'assets/games/thumbs/battleship.png'},
+{id:'flood',n:'Flood Fill',i:'\ud83c\udf42',r:'Tap a color to flood from the top-left. Fill the whole board in one color!',cat:'puzzle',thumb:'assets/games/flood/leaf-crimson.png'},
+{id:'pipe',n:'Pipe Puzzle',i:'\ud83c\udf3f',r:'Rotate pipe tiles to connect the flow from source to end!',cat:'puzzle',thumb:'assets/games/thumbs/pipe.png'},
+{id:'chess',n:'Chess',i:'\u265f',r:'Classic chess against AI. Tap a piece, tap where to move.',cat:'board',thumb:'assets/games/thumbs/chess.png'},
+{id:'c4',n:'Connect Four',i:'\ud83c\udf38',r:'Drop pieces to connect 4 in a row \u2014 horizontal, vertical, or diagonal!',cat:'board',thumb:'assets/games/thumbs/c4.png'},
+{id:'song',n:'Music Studio',i:'\ud83c\udfb5',r:'Full music production studio. Layer drums, bass, keys and leads \u2014 make beats, earn dew.',cat:'creative',thumb:'assets/games/thumbs/song.png'},
+{id:'golf',n:'Golf Solitaire',i:'\u26f3',r:'Move cards one rank up or down to the waste pile. Clear the tableau!',cat:'card',thumb:'assets/games/thumbs/golf.png'},
 {id:'klondike',n:'Klondike',i:'\ud83c\udca1',r:'The classic. Build 4 foundation piles Ace to King by suit.',cat:'card',thumb:'assets/games/thumbs/klondike.png'},
 {id:'spider',n:'Spider',i:'\ud83d\udd77',r:'Build complete King-to-Ace runs by suit. 1, 2, or 4 suit variants.',cat:'card',thumb:'assets/games/thumbs/spider.png'},
 {id:'freecell',n:'FreeCell',i:'\ud83c\udfd7',r:'All cards visible. Use 4 free cells to maneuver. Pure strategy!',cat:'card',thumb:'assets/games/thumbs/freecell.png'},
 {id:'pyramid',n:'Pyramid',i:'\ud83d\udd3a',r:'Remove pairs that sum to 13. Kings remove alone. Clear the pyramid!',cat:'card',thumb:'assets/games/thumbs/pyramid.png'},
 {id:'tripeaks',n:'TriPeaks',i:'\u26f0',r:'Build up or down on the waste pile to clear three peaks.',cat:'card',thumb:'assets/games/thumbs/tripeaks.png'},
-{id:'mastermind',n:'Code Sprout',i:'\ud83c\udf31',r:'Crack the hidden 4-element code. Green = right pick, right spot. Gold = right pick, wrong spot.',cat:'board',thumb:'assets/games/thumbs/mastermind.png'},
-{id:'checkers',n:'Grove Checkers',i:'\u265f',r:'Jump over opponent pieces to capture. Reach the far side to crown a King.',cat:'board',thumb:'assets/games/thumbs/checkers.png'},
-{id:'reversi',n:'Moss & Lichen',i:'\u25cf',r:'Place moss to surround and flip lichen. Control the most territory to win.',cat:'board',thumb:'assets/games/thumbs/reversi.png'},
+{id:'mastermind',n:'Mastermind',i:'\ud83c\udf31',r:'Crack the hidden 4-element code. Green = right pick, right spot. Gold = right pick, wrong spot.',cat:'board',thumb:'assets/games/thumbs/mastermind.png'},
+{id:'checkers',n:'Checkers',i:'\u265f',r:'Jump over opponent pieces to capture. Reach the far side to crown a King.',cat:'board',thumb:'assets/games/thumbs/checkers.png'},
+{id:'reversi',n:'Reversi',i:'\u25cf',r:'Place your moss to surround and flip lichen. Control the most territory to win.',cat:'board',thumb:'assets/games/thumbs/reversi.png'},
 {id:'yahtzee',n:'Seed Toss',i:'\ud83c\udfb2',r:'Roll 5 seed dice up to 3 times. Hold keepers, score in 13 categories. Aim high!',cat:'dice',thumb:'assets/games/thumbs/yahtzee.png'},
 {id:'farkle',n:'Farkle',i:'\ud83c\udfb2',r:'Roll 6 dice. Keep 1s, 5s, and three-of-a-kinds. Roll again or bank — zero scorers and you bust!',cat:'dice',thumb:'assets/games/thumbs/farkle.png'},
-{id:'sokoban',n:'Catnip Chaos',i:'\ud83d\udc31',r:'Push catnip toys onto the cat beds. Watch your step — toys only push, never pull!',cat:'puzzle',thumb:'assets/games/thumbs/sokoban.png'},
-{id:'backgammon',n:'Garden Gate',i:'\ud83c\udfb2',r:'Roll dice, move seeds around the garden. Bear off all 15 first to win!',cat:'board',thumb:'assets/games/thumbs/backgammon.png'},
+{id:'doubleshutter',n:'Double Shutter',i:'\ud83c\udfb2',r:'Shut the box twice! Roll 2 dice and flip any open tiles that sum to your roll. Both rows shut = perfect game.',cat:'dice',thumb:'assets/dice/d6.png'},
+{id:'sokoban',n:'Sokoban',i:'\ud83d\udc31',r:'Push boxes onto the targets. Watch your step — boxes only push, never pull!',cat:'puzzle',thumb:'assets/games/thumbs/sokoban.png'},
+{id:'backgammon',n:'Backgammon',i:'\ud83c\udfb2',r:'Roll dice, move pieces around the board. Bear off all 15 first to win!',cat:'board',thumb:'assets/games/thumbs/backgammon.png'},
 {id:'bloomwheel',n:'Bloom Wheel',i:'\ud83c\udf38',r:'Draw botanical mandalas on a spinning canvas synced to a generative beat.',cat:'creative',thumb:'assets/games/thumbs/bloomwheel.png'},
-{id:'petalfall',n:'Petal Fall',i:'\ud83c\udf38',r:'Arrange falling petals to clear garden rows. Speed increases every 10 lines!',cat:'puzzle',thumb:'assets/games/thumbs/petalfall.png'}
+{id:'petalfall',n:'Block Drop',i:'\ud83c\udf38',r:'Arrange falling blocks to clear rows. Speed increases every 10 lines!',cat:'puzzle',thumb:'assets/games/thumbs/petalfall.png'}
 ];
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
 // ═══ HASH ACCUMULATION BUFFER ═══
@@ -4710,7 +4711,124 @@ function GBG(a){
   window._BGN=function(){init()};
   init();
 }
-// ═══ PIPE CONNECT ═══
+// ═══ DOUBLE SHUTTER — Strategy Shut the Box (two rows) ═══
+function GDS(a){
+  var rows,sel,d1,d2,phase,rolls,gameOver,_row1Celebrated;
+  ms(a,'Rolls: <strong id="DSr">0</strong> · Open: <strong id="DSo">90</strong>');mm(a);
+  var dir=document.createElement('div');
+  dir.style.cssText='text-align:center;padding:0.4rem 0.8rem;margin:0.2rem auto;max-width:400px;font-family:DM Sans,sans-serif;font-size:clamp(0.6rem,1.7vw,0.75rem);color:var(--cream);line-height:1.5;opacity:0.85';
+  dir.innerHTML='Shut <strong style="color:var(--gold)">Row 1 first</strong>, then Row 2 unlocks. Roll <strong>2 dice</strong>, tap any open tiles that <strong>add up to your roll</strong>.<br>If your remaining tiles total <strong>6 or less</strong>, you can roll just <strong>1 die</strong>. Shut both rows = perfect game!';
+  a.appendChild(dir);
+  var wrap=document.createElement('div');wrap.className='ds-wrap';a.appendChild(wrap);
+  var r1Lbl=document.createElement('div');r1Lbl.className='ds-rowlbl';r1Lbl.textContent='ROW 1';wrap.appendChild(r1Lbl);
+  var r1=document.createElement('div');r1.className='ds-row';r1.id='DSr1';wrap.appendChild(r1);
+  var r2Lbl=document.createElement('div');r2Lbl.className='ds-rowlbl';r2Lbl.textContent='ROW 2';wrap.appendChild(r2Lbl);
+  var r2=document.createElement('div');r2.className='ds-row';r2.id='DSr2';wrap.appendChild(r2);
+  var dz=document.createElement('div');dz.className='ds-dice';dz.id='DSdz';wrap.appendChild(dz);
+  var info=document.createElement('div');info.className='ds-info';info.id='DSinfo';wrap.appendChild(info);
+  mc(a).innerHTML='<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:6px"><button class="gb" id="DSroll2" style="min-height:52px;min-width:120px;font-size:0.85rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em" onclick="_DSRoll(2)">🎲 ROLL 2</button><button class="gb" id="DSroll1" style="min-height:52px;min-width:120px;font-size:0.85rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;display:none" onclick="_DSRoll(1)">🎲 ROLL 1</button><button class="gb" id="DSshut" style="min-height:52px;min-width:120px;font-size:0.85rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;background:rgba(200,168,75,0.15);border-color:var(--gold);color:var(--gold);display:none" onclick="_DSShut()">✓ SHUT</button><button class="gb-new" onclick="_DSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button></div>';
+  function row1Done(){for(var i=0;i<9;i++)if(!rows[0][i])return false;return true}
+  function row2Done(){for(var i=0;i<9;i++)if(!rows[1][i])return false;return true}
+  function bothDone(){return row1Done()&&row2Done()}
+  function activeRow(){return row1Done()?1:0}
+  function openSum(){var ar=activeRow(),s=0;for(var i=0;i<9;i++)if(!rows[ar][i])s+=(i+1);return s}
+  function openCount(){var ar=activeRow(),n=0;for(var i=0;i<9;i++)if(!rows[ar][i])n++;return n}
+  function selSum(){var s=0;sel.forEach(function(t){s+=(t.n)});return s}
+  function canMakeSum(target){
+    var ar=activeRow();
+    var open=[];for(var i=0;i<9;i++)if(!rows[ar][i])open.push(i+1);
+    function find(idx,rem){if(rem===0)return true;if(rem<0||idx>=open.length)return false;return find(idx+1,rem-open[idx])||find(idx+1,rem)}
+    return find(0,target);
+  }
+  function rn(){
+    var ar=activeRow();
+    r2Lbl.textContent=ar===1?'ROW 2 — UNLOCKED':'ROW 2 — locked until Row 1 is shut';
+    r2Lbl.style.color=ar===1?'var(--gold)':'var(--muted)';
+    r2.style.opacity=ar===1?'1':'0.4';
+    r2.style.filter=ar===1?'none':'grayscale(0.6)';
+    [r1,r2].forEach(function(rowEl,ri){
+      rowEl.innerHTML='';
+      for(var i=0;i<9;i++){
+        var t=document.createElement('div');t.className='ds-tile';
+        if(rows[ri][i])t.className+=' shut';
+        var isSel=sel.some(function(s){return s.row===ri&&s.idx===i});
+        if(isSel)t.className+=' sel';
+        t.textContent=(i+1);
+        t.setAttribute('data-r',ri);t.setAttribute('data-i',i);
+        if(!rows[ri][i]&&phase==='select'&&!gameOver&&ri===ar){
+          t.onclick=function(){
+            var r=parseInt(this.getAttribute('data-r')),idx=parseInt(this.getAttribute('data-i'));
+            var existing=sel.findIndex(function(s){return s.row===r&&s.idx===idx});
+            if(existing>=0)sel.splice(existing,1);
+            else sel.push({row:r,idx:idx,n:idx+1});
+            _play('tap');rn();
+          };
+        }
+        rowEl.appendChild(t);
+      }
+    });
+    dz.innerHTML='';
+    if(d1){var dd1=document.createElement('div');dd1.className='ds-die';dd1.innerHTML='<img src="assets/dice/d'+d1+'.png" alt="'+d1+'"/>';dz.appendChild(dd1);}
+    if(d2){var dd2=document.createElement('div');dd2.className='ds-die';dd2.innerHTML='<img src="assets/dice/d'+d2+'.png" alt="'+d2+'"/>';dz.appendChild(dd2);}
+    var target=(d1||0)+(d2||0);
+    var ss=selSum();
+    if(phase==='roll'){info.textContent='Open: '+openSum()+' — tap ROLL to play';}
+    else if(phase==='select'){info.innerHTML='Roll: <strong>'+target+'</strong> · Selected: <strong>'+ss+'</strong> / '+target;}
+    var b2=document.getElementById('DSroll2'),b1=document.getElementById('DSroll1'),bs=document.getElementById('DSshut');
+    if(phase==='roll'&&!gameOver){
+      b2.style.display='';
+      b1.style.display=openSum()<=6?'':'none';
+      bs.style.display='none';
+    }else if(phase==='select'){
+      b2.style.display='none';b1.style.display='none';
+      bs.style.display=(ss===target&&ss>0)?'':'none';
+    }else{b2.style.display='none';b1.style.display='none';bs.style.display='none';}
+    document.getElementById('DSr').textContent=rolls;
+    document.getElementById('DSo').textContent=openSum();
+  }
+  window._DSRoll=function(n){
+    if(phase!=='roll'||gameOver)return;
+    if(n===1&&openSum()>6){sm('Need ≤6 remaining to roll 1');return}
+    _play('snap');
+    d1=Math.floor(Math.random()*6)+1;
+    d2=n===2?Math.floor(Math.random()*6)+1:0;
+    rolls++;phase='select';sel=[];
+    var target=d1+d2;
+    rn();
+    if(!canMakeSum(target)){
+      gameOver=true;
+      var finalScore=openSum();
+      sm('🍂 Stuck on '+target+'! Score: '+finalScore+' (lower is better)');
+      _play('lose');_e('game_loss');_sr('doubleshutter',{w:false,s:finalScore});
+      rn();
+    }
+  };
+  window._DSShut=function(){
+    if(phase!=='select')return;
+    var target=d1+d2,ss=selSum();
+    if(ss!==target){sm('Selected sum must equal '+target);return}
+    _play('drop');
+    sel.forEach(function(s){rows[s.row][s.idx]=true});
+    sel=[];_e('progress');
+    if(bothDone()){
+      gameOver=true;
+      sm('🌿 PERFECT! Both rows shut!');_e('game_win');_playWin();_sr('doubleshutter',{w:true,s:0});
+      phase='done';rn();return;
+    }
+    if(row1Done()&&!_row1Celebrated){
+      _row1Celebrated=true;
+      sm('🌿 Row 1 shut! Row 2 unlocked.');_e('milestone');
+    }
+    if(openCount()%6===0)_e('milestone');
+    phase='roll';rn();
+  };
+  window._DSN=function(){
+    rows=[new Array(9).fill(false),new Array(9).fill(false)];
+    sel=[];d1=0;d2=0;phase='roll';rolls=0;gameOver=false;_row1Celebrated=false;
+    sm('Tap ROLL to begin! Shut Row 1 first.');rn();
+  };
+  _DSN();
+}
 
 try{window._gameFns.memory=GM}catch(e){}    // Memory Garden
 try{window._gameFns.merge=GR}catch(e){}     // Merge 2048
@@ -4744,6 +4862,7 @@ try{window._gameFns.sokoban=GSK}catch(e){}  // Sokoban
 try{window._gameFns.backgammon=GBG}catch(e){} // Backgammon
 try{window._gameFns.bloomwheel=GBW}catch(e){} // Bloom Wheel
 try{window._gameFns.petalfall=GPF}catch(e){} // Petal Fall
+try{window._gameFns.doubleshutter=GDS}catch(e){} // Double Shutter
 
 
 _bp();console.log('[FG] Hub v4 — '+G.length+' games');
