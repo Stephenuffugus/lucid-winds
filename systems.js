@@ -3770,7 +3770,8 @@ function _populateTerritory(){
   var events=[];try{events=JSON.parse(localStorage.getItem('lw_wild_events')||'[]');}catch(e){}
   var meshLinks=[];try{meshLinks=JSON.parse(localStorage.getItem('lw_mesh_links')||'[]');}catch(e){}
   var commons=[];try{commons=JSON.parse(localStorage.getItem('lw_commons')||'[]');}catch(e){}
-  var pollen=0;try{pollen=parseInt(localStorage.getItem('fg_pollen')||'0');}catch(e){}
+  // Territory pollen stat = lifetime Keeper XP (pw_xp); fg_pollen is dead
+  var pollen=0;try{pollen=parseInt(localStorage.getItem('pw_xp')||'0');}catch(e){}
 
   // Count offspring from events
   var birthCount=events.filter(function(e){return e.type==='birth';}).length;
