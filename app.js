@@ -18369,6 +18369,14 @@
         color = '#E8A0BF';
         body = 'Two plants crossed. A seed is resting in the nursery.';
         break;
+      case 'plant_bred':
+        icon = '\ud83e\uddec';
+        color = '#E8A0BF';
+        var brA = d.parentAName || (d.parentAHash && window.getPlantName ? getPlantName(d.parentAHash) : 'a plant');
+        var brB = d.parentBName || (d.parentBHash && window.getPlantName ? getPlantName(d.parentBHash) : 'a plant');
+        body = '<b>' + brA + '</b> crossed with <b>' + brB + '</b>. A seed is in the nursery.';
+        if (d.generation) body += ' <span style="color:var(--muted);">gen ' + d.generation + '</span>';
+        break;
       case 'plant_composted':
         icon = '\u267b\ufe0f';
         color = 'var(--muted)';

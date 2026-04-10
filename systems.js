@@ -3684,6 +3684,12 @@ window.bsExecuteBreed=function(){
         if(window.switchTab)switchTab('nursery');
         if(window._toast)window._toast('🌱 Seed planted! Water 3 days to bloom.');
         if(window.PW_grantXP)PW_grantXP(5,'cross_pollinate');
+        if(window.LW_Log)window.LW_Log.write('plant_bred',{
+          parentAHash:_bsA.hash,parentBHash:_bsM.hash,seedHash:offHash,
+          parentAName:(window.getPlantName?getPlantName(_bsA.hash):''),
+          parentBName:(window.getPlantName?getPlantName(_bsM.hash):''),
+          generation:offGen
+        });
         if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
       }).catch(function(e){
         console.error('[Breed] crossPollinateHashes failed:', e);

@@ -26655,6 +26655,17 @@ document.addEventListener('keydown', function(e) {
         icon = '\ud83e\uddec'; color = '#E8A0BF';
         body = 'Two plants crossed. A seed is resting in the nursery.';
         break;
+      case 'plant_bred':
+        icon = '\ud83e\uddec'; color = '#E8A0BF';
+        var brA = d.parentAName || (d.parentAHash && window.getPlantName ? getPlantName(d.parentAHash) : 'a plant');
+        var brB = d.parentBName || (d.parentBHash && window.getPlantName ? getPlantName(d.parentBHash) : 'a plant');
+        body = '<b>' + brA + '</b> crossed with <b>' + brB + '</b>. A seed is in the nursery.';
+        if (d.generation) body += ' <span style="color:var(--muted);">gen ' + d.generation + '</span>';
+        break;
+      case 'wild_watered_stranger':
+        icon = '\ud83d\udca7'; color = '#7ab8c8';
+        body = 'You watered <b>' + (d.ownerName || 'a keeper') + '\u2019s</b> wild plant. +2h lifespan.';
+        break;
       case 'wild_drop':
         icon = '\ud83c\udf3f'; color = 'var(--sage)';
         var dropName = d.name || (d.hash && window.getPlantName ? getPlantName(d.hash) : 'A plant');
@@ -44077,6 +44088,12 @@ window.bsExecuteBreed=function(){
         if(window.switchTab)switchTab('nursery');
         if(window._toast)window._toast('🌱 Seed planted! Water 3 days to bloom.');
         if(window.PW_grantXP)PW_grantXP(5,'cross_pollinate');
+        if(window.LW_Log)window.LW_Log.write('plant_bred',{
+          parentAHash:_bsA.hash,parentBHash:_bsM.hash,seedHash:offHash,
+          parentAName:(window.getPlantName?getPlantName(_bsA.hash):''),
+          parentBName:(window.getPlantName?getPlantName(_bsM.hash):''),
+          generation:offGen
+        });
         if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
       }).catch(function(e){
         console.error('[Breed] crossPollinateHashes failed:', e);
