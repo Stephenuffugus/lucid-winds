@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.41';
+  var LW_VERSION='2026.04.10.42';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -34277,7 +34277,7 @@ function _waterOwnPlant(p,mk){
     if(!window.spendDew(_waterCost)){_toast('Not enough Dew to water.');return;}
   }
 
-  // Update wild plant stress
+  // Update wild plant stress + Wild v3 vitality reset
   var wild=_getWild();
   var _wateredHash=null;
   for(var i=0;i<wild.length;i++){
@@ -34285,6 +34285,10 @@ function _waterOwnPlant(p,mk){
       wild[i].stress=Math.max(0,(wild[i].stress||0)-2);
       wild[i].lastWatered=new Date().toISOString();
       wild[i].neglectDecay=0;
+      // Wild v3: reset decayAt to full lifespan like the hex inspector path
+      _ensureVitality(wild[i]);
+      wild[i].lastWateredAt=Date.now();
+      wild[i].decayAt=Date.now()+wild[i].lifespanMs;
       _wateredHash=wild[i].hash;
       break;
     }
@@ -34317,8 +34321,9 @@ function _waterOwnPlant(p,mk){
   _play('match');
   // Watering grants pollen XP as a caretaker reward (direct XP, no Dew earn)
   var _waterXP=3;if(window.PW_grantXP)PW_grantXP(_waterXP,'water_care');
+  if(window.LW_Log)window.LW_Log.write('wild_watered',{hash:p.hash});
   _play('water');
-  _toast('\ud83d\udca7 Watered! Stress reduced. (-5 Dew, +'+_waterXP+' XP)');
+  _toast('\ud83d\udca7 Watered! Lifespan reset. (-5 Dew, +'+_waterXP+' XP)');
   if(mk&&mk._icon){
     var mEl=mk._icon;
     // Brief glow pulse
