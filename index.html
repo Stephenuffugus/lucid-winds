@@ -3289,9 +3289,20 @@
     .ds-die img{width:100%;height:100%;object-fit:cover;display:block}
     .ds-info{font-family:DM Mono,monospace;font-size:clamp(0.55rem,1.6vw,0.7rem);color:var(--gold);text-align:center;padding:4px 0;min-height:1.2em}
     /* ═══ BACKGAMMON — Garden Gate board CSS ═══ */
+    .bg-outer{width:min(98vw,640px);margin:0 auto}
     .bg-wrap{width:100%;margin:0 auto}
     .bg-board{position:relative;width:100%;max-width:none;aspect-ratio:11/9;background:#2C1810;border:4px solid #6B4F2D;border-radius:12px;overflow:hidden;box-shadow:inset 0 0 40px rgba(0,0,0,0.5),0 6px 24px rgba(0,0,0,0.6)}
     .bg-inner{position:absolute;inset:4px;display:flex;flex-direction:column}
+    /* Landscape: size board by height so it snaps to fill available vertical space */
+    @media (orientation:landscape) and (max-height:600px){
+      .bg-outer{width:auto;max-width:none;height:calc(100svh - var(--nav-h,58px) - env(safe-area-inset-bottom,0px) - 40px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+      .bg-outer .bg-wrap{width:auto;height:100%;display:flex;flex-direction:column;align-items:center;gap:2px}
+      .bg-outer .bg-board{flex:0 1 auto;height:100%;width:auto;max-width:98vw;max-height:100%}
+      .bg-outer .bg-bo{padding:2px 8px;gap:4px}
+      .bg-outer .bg-bo-pip{width:6px;height:6px}
+      .bg-outer .bg-bo-lbl{font-size:0.5rem}
+      .bg-outer .bg-info{padding:1px 0;font-size:0.5rem}
+    }
     .bg-half{display:flex;flex:1;position:relative;overflow:hidden;min-height:0}
     .bg-quad{display:flex;flex:1;min-width:0}
     .bg-bar{width:clamp(22px,6vw,32px);background:linear-gradient(180deg,#1a1510,#0e0a06);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;z-index:3;border-left:3px solid #3B2414;border-right:3px solid #3B2414;box-shadow:inset 0 0 10px rgba(0,0,0,0.4);flex-shrink:0}
@@ -3323,9 +3334,13 @@
     .bg-bo-pip.human{background:#4A7C35}
     .bg-bo-pip.ai{background:#C47A7A}
     .bg-bo-lbl{font-family:'Bebas Neue',sans-serif;font-size:clamp(0.5rem,1.5vw,0.7rem);letter-spacing:0.08em}
-    .bg-dice{display:flex;align-items:center;justify-content:center;gap:clamp(10px,4vw,18px);padding:clamp(8px,2.5vw,14px) 0}
-    .bg-die{width:clamp(44px,12vw,56px);height:clamp(44px,12vw,56px);background:linear-gradient(145deg,#FAF5E8,#E8DCC8);border:2px solid #C4B998;border-radius:clamp(6px,2vw,10px);display:flex;align-items:center;justify-content:center;font-size:clamp(22px,6vw,30px);font-weight:800;color:#2C1810;box-shadow:3px 3px 8px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,0.5);transition:opacity .2s}
-    .bg-die.used{opacity:.2}
+    /* Dice overlay floats over the center bar of the board */
+    .bg-dice{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:15;display:flex;align-items:center;justify-content:center;gap:clamp(10px,3vw,18px);pointer-events:none}
+    .bg-dice > *{pointer-events:auto}
+    .bg-die{width:clamp(40px,9vw,54px);height:clamp(40px,9vw,54px);background:linear-gradient(145deg,#FAF5E8,#E8DCC8);border:2px solid #C4B998;border-radius:clamp(6px,2vw,10px);display:flex;align-items:center;justify-content:center;font-size:clamp(22px,5vw,30px);font-weight:800;color:#2C1810;box-shadow:3px 4px 10px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,0.5),0 0 24px rgba(0,0,0,0.35);transition:opacity .2s}
+    .bg-die.used{opacity:.25}
+    .bg-roll-btn{min-width:clamp(120px,34vw,180px);min-height:56px;font-size:1.1rem;font-family:'Bebas Neue',sans-serif;letter-spacing:0.12em;box-shadow:0 6px 20px rgba(0,0,0,0.6),0 0 30px rgba(200,168,75,0.25)}
+    .bg-doubles{font-family:'Bebas Neue',sans-serif;font-size:clamp(0.7rem,2vw,0.9rem);color:#F4D97A;background:rgba(0,0,0,0.6);padding:4px 8px;border-radius:6px;letter-spacing:0.08em;text-shadow:0 1px 3px rgba(0,0,0,0.8)}
     .bg-info{text-align:center;font-family:'DM Mono',monospace;font-size:clamp(0.45rem,1.4vw,0.6rem);color:var(--gold);padding:3px 0}
     .skc{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:clamp(2px,.6vw,4px);min-height:32px;transition:background .2s ease,transform .15s ease;overflow:hidden;position:relative}
     .skc img{transition:transform .15s ease}
@@ -3474,11 +3489,7 @@
       100%{opacity:0;background-position:-150% 0;}}
 
     /* ── Rarity symbol badge (bottom-left of card front) ── */
-    .cf-rarity-symbol{position:absolute;bottom:11%;left:8px;width:32px;height:32px;object-fit:cover;opacity:0.95;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.7));pointer-events:none;z-index:5;background:#050505;border-radius:50%;border:1.5px solid rgba(0,0,0,0.85);box-shadow:0 0 0 1px rgba(0,0,0,0.6),inset 0 0 0 1px rgba(0,0,0,0.4);}
-    .cs-card-front[data-season="spring"] .cf-rarity-symbol:not(.cf-rarity-symbol--grid){left:calc(8px + 1%);}
-    .cs-card-front[data-season="winter"] .cf-rarity-symbol:not(.cf-rarity-symbol--grid){left:calc(8px + 2%);}
-    .cs-card-front[data-season="summer"] .cf-rarity-symbol:not(.cf-rarity-symbol--grid){left:calc(8px + 4%);}
-    .cs-card-front[data-season="autumn"] .cf-rarity-symbol:not(.cf-rarity-symbol--grid){bottom:9.5%;}
+    .cf-rarity-symbol{position:absolute;bottom:3%;left:4%;width:32px;height:32px;object-fit:cover;opacity:0.95;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.7));pointer-events:none;z-index:5;background:#050505;border-radius:50%;border:1.5px solid rgba(0,0,0,0.85);box-shadow:0 0 0 1px rgba(0,0,0,0.6),inset 0 0 0 1px rgba(0,0,0,0.4);}
     .cf-rarity-symbol--grid{bottom:4px;left:3px;width:18px;height:18px;}
   </style>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -33620,8 +33631,10 @@ function openPicker(){
 function closePicker(){var pk=document.getElementById('w-picker');if(pk)pk.classList.remove('open');}
 
 var MAX_PER_ZONE=3;
-// Compute EA for any wild plant entry, used for zone eviction comparisons
+// Compute EA for any wild plant entry, used for zone eviction comparisons.
+// Prefers stored .ea (from Firestore/shared markers), falls back to trait compute.
 function _wildEA(w){
+  if(w&&typeof w.ea==='number'&&w.ea>0)return w.ea;
   try{
     var t=window.hashToTraits(w.hash);
     var days=w.date?Math.floor((Date.now()-new Date(w.date).getTime())/86400000):0;
@@ -33638,25 +33651,43 @@ function _weakestInZone(plants){
   }
   return {plant:weakest,ea:wEA};
 }
+// Combined zone occupancy — merges local wild + shared Firestore markers.
+// Returns a deduped array; local entries preferred over shared on hash collision.
+function _allPlantsInZone(zoneKey){
+  var out=[],seen={};
+  var local=_getWild();
+  for(var i=0;i<local.length;i++){
+    var w=local[i];if(!w||!w.lat||!w.lng||!w.hash)continue;
+    if(_zoneKey(w.lat,w.lng)!==zoneKey)continue;
+    out.push(w);seen[w.hash]=true;
+  }
+  var keys=Object.keys(_sharedMarkers||{});
+  for(var j=0;j<keys.length;j++){
+    var sm=_sharedMarkers[keys[j]];if(!sm||!sm.data)continue;
+    var d=sm.data;if(!d.lat||!d.lng||!d.hash)continue;
+    if(seen[d.hash])continue;
+    if(_zoneKey(d.lat,d.lng)!==zoneKey)continue;
+    out.push(d);
+  }
+  return out;
+}
 
 function _drop(pl){
   closePicker();
   if(!_uLat||!_uLng){_toast('No location.');return;}
   if((MAX_DROPS-_drops)<=0)return;
   var wild=_getWild();
+  var myUid='';try{var _cu=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_cu)myUid=_cu.uid;}catch(e){}
   var la=_uLat+(Math.random()-0.5)*0.0005,lo=_uLng+(Math.random()-0.5)*0.0005;
   var zone=_zoneKey(la,lo);
 
-  // Get ALL plants in the zone (3-per-zone cap)
-  var inZone=[];
-  for(var i=0;i<wild.length;i++){
-    if(_zoneKey(wild[i].lat,wild[i].lng)===zone)inZone.push(wild[i]);
-  }
+  // Combined occupancy: local wild + shared remote markers in this zone
+  var inZone=_allPlantsInZone(zone);
   // Already have your own plant in this zone? Refuse (one self per zone).
   for(var io=0;io<inZone.length;io++){
-    if(!inZone[io].ownerUid||inZone[io].own){
-      _toast('You already have a plant in this zone.');return;
-    }
+    var iz=inZone[io];
+    var mine=(iz.own===true)||(myUid&&iz.ownerUid===myUid);
+    if(mine){_toast('You already have a plant in this zone.');return;}
   }
   var displaced=null;
   if(inZone.length>=MAX_PER_ZONE){
@@ -33668,8 +33699,9 @@ function _drop(pl){
       _toast('Zone full ('+MAX_PER_ZONE+' plants). Weakest is EA '+w.ea+'. Yours is EA '+myEA+'. Grow stronger.');
       return;
     }
-    wild=wild.filter(function(p){return p.hash!==w.plant.hash;});
-    displaced=w.plant;
+    // Weakest must be a remote plant (own-in-zone was blocked above).
+    // _writeSharedDrop needs {ownerUid, hash, grade} to run the takeover TX.
+    displaced={ownerUid:w.plant.ownerUid,hash:w.plant.hash,grade:w.plant.grade||'Common',name:w.plant.name||'Plant'};
     _toast('\ud83c\udf3f Eviction! Your EA '+myEA+' displaced the zone\u2019s weakest (EA '+w.ea+').');
   }
 
@@ -33953,17 +33985,15 @@ function _dropFromBP(p){
   if(!_uLat||!_uLng){_toast('Need GPS location to drop.');return;}
   if(typeof gtag!=='undefined') gtag('event','wild_plant_drop',{lat:_uLat.toFixed(3),lng:_uLng.toFixed(3)});
   var wild=_getWild();
+  var myUid='';try{var _cu=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_cu)myUid=_cu.uid;}catch(e){}
   var la=_uLat+(Math.random()-0.5)*0.0005,lo=_uLng+(Math.random()-0.5)*0.0005;
   var zone=_zoneKey(la,lo);
-  // 3-per-zone cap with weakest-eviction (same logic as _drop)
-  var inZone=[];
-  for(var i=0;i<wild.length;i++){
-    if(_zoneKey(wild[i].lat,wild[i].lng)===zone)inZone.push(wild[i]);
-  }
+  // 3-per-zone cap with weakest-eviction (combined local + shared markers)
+  var inZone=_allPlantsInZone(zone);
   for(var io=0;io<inZone.length;io++){
-    if(!inZone[io].ownerUid||inZone[io].own){
-      _toast('You already have a plant in this zone.');return;
-    }
+    var iz=inZone[io];
+    var mine=(iz.own===true)||(myUid&&iz.ownerUid===myUid);
+    if(mine){_toast('You already have a plant in this zone.');return;}
   }
   var displaced=null;
   if(inZone.length>=MAX_PER_ZONE){
@@ -33973,8 +34003,7 @@ function _dropFromBP(p){
     if(myEA<=w.ea){
       _toast('Zone full ('+MAX_PER_ZONE+' plants). Weakest is EA '+w.ea+'. Yours is EA '+myEA+'. Grow stronger.');return;
     }
-    wild=wild.filter(function(pl){return pl.hash!==w.plant.hash;});
-    displaced=w.plant;
+    displaced={ownerUid:w.plant.ownerUid,hash:w.plant.hash,grade:w.plant.grade||'Common',name:w.plant.name||'Plant'};
     _toast('\ud83c\udf3f Eviction! Your EA '+myEA+' displaced the zone\u2019s weakest (EA '+w.ea+').');
   }
 
@@ -38450,12 +38479,12 @@ function GCS(a){var tubes=[],numT=7,cap=4,sel=-1;var COLS=['#4a7c35','#C8A84B','
 // ═══ BATTLESHIP — Deep Water ═══
 function GBS(a){
   var SZ=8,SHIPS=[4,3,3,2,2],SHIP_NAMES=['Vine','Root','Branch','Sprout','Seed'];
-  var pGrid,eGrid,pShips,eShips,phase,curShip,curDir,gameOver,turn,aiStack,aiHits;
+  var pGrid,eGrid,phase,selShip,placements,shipDirs,gameOver,turn,aiStack,aiHits;
   ms(a,'<span id="BSph">Place your fleet</span>');mm(a);
   var wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px';a.appendChild(wrap);
-  var lbl=document.createElement('div');lbl.id='BSlbl';lbl.style.cssText='font-family:DM Mono,monospace;font-size:0.75rem;color:var(--muted);text-align:center;min-height:1.4em';wrap.appendChild(lbl);
+  var lbl=document.createElement('div');lbl.id='BSlbl';lbl.style.cssText='font-family:DM Mono,monospace;font-size:0.75rem;color:var(--muted);text-align:center;min-height:1.4em;width:100%';wrap.appendChild(lbl);
   var grids=document.createElement('div');grids.style.cssText='display:flex;gap:clamp(8px,3vw,16px);justify-content:center;flex-wrap:wrap';wrap.appendChild(grids);
-  mc(a).innerHTML='<button class="gb" id="BSdir" onclick="_BSR()" style="min-width:100px;">↻ Rotate</button> <button class="gb-new" onclick="_BSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  mc(a).innerHTML='<button class="gb" id="BSdir" onclick="_BSR()" style="min-width:86px">↻ Rotate</button> <button class="gb" id="BSready" onclick="_BSready()" style="min-width:104px;background:rgba(74,124,53,0.28);opacity:0.4" disabled>✓ I\'M READY</button> <button class="gb-new" onclick="_BSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   function mkGrid(){return new Array(SZ*SZ).fill(0)}
   function idx(r,c){return r*SZ+c}
@@ -38465,6 +38494,9 @@ function GBS(a){
   function placeShip(grid,r,c,len,dir,id){
     for(var k=0;k<len;k++){var cr=dir==='h'?r:r+k;var cc=dir==='h'?c+k:c;grid[idx(cr,cc)]=id}
   }
+  function clearShip(grid,r,c,len,dir){
+    for(var k=0;k<len;k++){var cr=dir==='h'?r:r+k;var cc=dir==='h'?c+k:c;grid[idx(cr,cc)]=0}
+  }
   function autoPlace(grid){
     for(var si=0;si<SHIPS.length;si++){
       for(var att=0;att<200;att++){var dir=Math.random()<.5?'h':'v';var r=Math.floor(Math.random()*SZ);var c=Math.floor(Math.random()*SZ);
@@ -38473,6 +38505,7 @@ function GBS(a){
   }
   function countAlive(grid,id){var n=0;for(var i=0;i<SZ*SZ;i++)if(grid[i]===id)n++;return n}
   function allSunk(grid,shipList){for(var si=0;si<shipList.length;si++)if(countAlive(grid,si+1)>0)return false;return true}
+  function allPlaced(){for(var si=0;si<SHIPS.length;si++)if(!placements[si])return false;return true}
 
   function renderGrid(grid,target,isEnemy,onClick){
     var g=document.createElement('div');
@@ -38488,43 +38521,96 @@ function GBS(a){
       else if(v===-1){d.style.background='rgba(40,50,38,0.6)';d.textContent='·';d.style.color='rgba(122,179,86,0.3)';}
       else if(!isEnemy&&v>0){d.style.background='rgba(74,124,53,0.45)';d.style.borderRadius='2px';d.style.border='1px solid rgba(122,179,86,0.5)';d.textContent='■';d.style.color='rgba(122,179,86,0.7)';d.style.fontSize='clamp(0.4rem,1.2vw,0.55rem)';}
       else{d.style.background='rgba(18,24,16,0.7)';}
-      if(onClick&&v===0){d.setAttribute('data-i',String(i));d.onclick=onClick;}
-      else if(onClick&&v>0&&isEnemy){d.setAttribute('data-i',String(i));d.onclick=onClick;}
+      if(onClick){d.setAttribute('data-i',String(i));d.onclick=onClick;}
       tbl.appendChild(d);
     }
     g.appendChild(tbl);target.appendChild(g);
   }
 
+  // Pick a placed ship back up (remove from grid, set as selected)
+  function pickUp(si){
+    var pl=placements[si];if(!pl)return;
+    clearShip(pGrid,pl.r,pl.c,SHIPS[si],pl.dir);
+    delete placements[si];
+    selShip=si;
+  }
+
+  function renderFleetTray(){
+    var h='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:6px;text-align:center">FLEET</div>';
+    h+='<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:6px">';
+    for(var si=0;si<SHIPS.length;si++){
+      var isPlaced=!!placements[si];
+      var isSel=selShip===si;
+      var dir=shipDirs[si];
+      var len=SHIPS[si];
+      var bg=isSel?'rgba(200,168,75,0.28)':isPlaced?'rgba(74,124,53,0.12)':'rgba(122,179,86,0.18)';
+      var border=isSel?'2px solid #c8a84b':isPlaced?'1.5px solid rgba(74,124,53,0.4)':'1.5px solid rgba(122,179,86,0.5)';
+      var op=(isPlaced&&!isSel)?'0.6':'1';
+      h+='<div onclick="_BSsel('+si+')" style="background:'+bg+';border:'+border+';border-radius:8px;padding:5px 8px;opacity:'+op+';cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:50px;-webkit-tap-highlight-color:transparent">';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;color:var(--cream);letter-spacing:0.05em">'+SHIP_NAMES[si]+'</div>';
+      h+='<div style="display:flex;'+(dir==='v'?'flex-direction:column;':'')+'gap:1px">';
+      for(var k=0;k<len;k++)h+='<div style="width:9px;height:9px;background:'+(isPlaced&&!isSel?'rgba(74,124,53,0.45)':'rgba(122,179,86,0.7)')+';border:1px solid rgba(122,179,86,0.85);border-radius:1px"></div>';
+      h+='</div>';
+      h+='<div style="font-size:0.42rem;color:'+(isPlaced?'var(--sage)':'var(--muted)')+';letter-spacing:0.04em">'+(isPlaced?'✓ placed':isSel?'selected':'tap')+'</div>';
+      h+='</div>';
+    }
+    h+='</div>';
+    return h;
+  }
+
   function rn(){
     grids.innerHTML='';
     var dirBtn=document.getElementById('BSdir');
+    var readyBtn=document.getElementById('BSready');
     if(phase==='place'){
       if(dirBtn)dirBtn.style.display='';
-      // BIG visual ship indicator: name + cells preview + remaining queue
-      if(curShip<SHIPS.length){
-        var preview='';
-        for(var pi=0;pi<SHIPS[curShip];pi++)preview+='<div style="width:18px;height:18px;background:rgba(122,179,86,0.55);border:1.5px solid rgba(122,179,86,0.8);border-radius:3px;display:inline-block;margin:0 1px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.2);"></div>';
-        var queue='';
-        for(var qi=curShip+1;qi<SHIPS.length;qi++){queue+='<span style="font-size:0.55rem;color:var(--muted);margin:0 4px">'+SHIP_NAMES[qi]+' ('+SHIPS[qi]+')</span>';}
-        if(!queue)queue='<span style="font-size:0.55rem;color:var(--gold)">last ship!</span>';
-        lbl.innerHTML='<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:var(--gold);letter-spacing:0.08em;margin-bottom:4px">PLACING: '+SHIP_NAMES[curShip].toUpperCase()+'</div>'
-          +'<div style="display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:4px;'+(curDir==='v'?'flex-direction:column;':'')+'">'+preview+'</div>'
-          +'<div style="font-family:DM Sans,sans-serif;font-size:0.6rem;color:var(--cream);opacity:0.85;margin-bottom:3px">Direction: <strong style="color:var(--sage)">'+(curDir==='h'?'Horizontal →':'Vertical ↓')+'</strong> — tap any cell to place</div>'
-          +'<div style="font-family:DM Sans,sans-serif;font-size:0.5rem;color:var(--muted)">Up next: '+queue+'</div>';
-        lbl.style.minHeight='5em';
+      if(readyBtn)readyBtn.style.display='';
+      var tray=renderFleetTray();
+      var instr='';
+      if(selShip>=0){
+        instr='<div style="font-family:DM Sans,sans-serif;font-size:0.6rem;color:var(--cream);line-height:1.4">Tap the grid to place <strong style="color:var(--gold)">'+SHIP_NAMES[selShip]+'</strong> — direction <strong style="color:var(--sage)">'+(shipDirs[selShip]==='h'?'→ Horizontal':'↓ Vertical')+'</strong></div>';
+      } else if(allPlaced()){
+        instr='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--sage);letter-spacing:0.08em">ALL PLACED — TAP "I\'M READY" TO BATTLE</div>';
       } else {
-        lbl.textContent='';
+        instr='<div style="font-family:DM Sans,sans-serif;font-size:0.55rem;color:var(--muted);line-height:1.4">Tap a ship above to pick it up, then tap the grid. Tap a placed ship to move it.</div>';
+      }
+      lbl.innerHTML=tray+instr;
+      lbl.style.minHeight='';
+      if(readyBtn){
+        if(allPlaced()){readyBtn.disabled=false;readyBtn.style.opacity='1';}
+        else{readyBtn.disabled=true;readyBtn.style.opacity='0.4';}
       }
       renderGrid(pGrid,grids,false,function(){
-        if(curShip>=SHIPS.length)return;
-        var i=parseInt(this.getAttribute('data-i'));var r=Math.floor(i/SZ),c=i%SZ;
-        if(!canPlace(pGrid,r,c,SHIPS[curShip],curDir)){sm('No room — try rotating');return}
-        placeShip(pGrid,r,c,SHIPS[curShip],curDir,curShip+1);_play('tap');curShip++;
-        if(curShip>=SHIPS.length){phase='battle';turn='player';document.getElementById('BSph').innerHTML='Your turn — tap enemy grid';if(dirBtn)dirBtn.style.display='none';}
-        rn();
+        var i=parseInt(this.getAttribute('data-i'));
+        var r=Math.floor(i/SZ),c=i%SZ;
+        var cellVal=pGrid[i];
+        // Clicked a placed ship cell → pick it up
+        if(cellVal>0){
+          pickUp(cellVal-1);
+          _play('tap');
+          rn();
+          return;
+        }
+        // Empty cell + a ship selected → place there
+        if(selShip>=0){
+          var len=SHIPS[selShip];
+          var dir=shipDirs[selShip];
+          if(!canPlace(pGrid,r,c,len,dir)){sm('No room — rotate or pick another spot');return;}
+          placeShip(pGrid,r,c,len,dir,selShip+1);
+          placements[selShip]={r:r,c:c,dir:dir};
+          _play('tap');
+          selShip=-1;
+          rn();
+          return;
+        }
+        // Empty cell, nothing selected
+        sm('Pick a ship from the fleet first');
       });
     }else{
       if(dirBtn)dirBtn.style.display='none';
+      if(readyBtn)readyBtn.style.display='none';
+      lbl.innerHTML='';
+      lbl.style.minHeight='';
       // Enemy grid — player shoots here
       renderGrid(eGrid,grids,true,turn==='player'&&!gameOver?function(){
         var i=parseInt(this.getAttribute('data-i'));if(eGrid[i]<0)return;
@@ -38565,9 +38651,34 @@ function GBS(a){
     turn='player';document.getElementById('BSph').innerHTML='Your turn';rn();
   }
 
-  window._BSR=function(){curDir=curDir==='h'?'v':'h';sm('Direction: '+(curDir==='h'?'Horizontal →':'Vertical ↓'));};
+  window._BSR=function(){
+    if(selShip<0){sm('Pick a ship to rotate');return;}
+    var newDir=shipDirs[selShip]==='h'?'v':'h';
+    shipDirs[selShip]=newDir;
+    sm('Rotated: '+(newDir==='h'?'Horizontal →':'Vertical ↓'));
+    rn();
+  };
+  window._BSsel=function(si){
+    if(phase!=='place')return;
+    // If already placed, pick it back up (removes from grid, marks selected)
+    if(placements[si]){pickUp(si);_play('tap');rn();return;}
+    // Toggle selection
+    selShip=(selShip===si)?-1:si;
+    _play('tap');
+    rn();
+  };
+  window._BSready=function(){
+    if(phase!=='place')return;
+    if(!allPlaced()){sm('Place all ships first');return;}
+    phase='battle';turn='player';selShip=-1;
+    document.getElementById('BSph').innerHTML='Your turn — tap enemy grid';
+    _play('win');
+    rn();
+  };
   window._BSN=function(){
-    pGrid=mkGrid();eGrid=mkGrid();phase='place';curShip=0;curDir='h';gameOver=false;turn='player';aiStack=[];aiHits=[];
+    pGrid=mkGrid();eGrid=mkGrid();phase='place';
+    selShip=-1;placements={};shipDirs=['h','h','h','h','h'];
+    gameOver=false;turn='player';aiStack=[];aiHits=[];
     autoPlace(eGrid);
     document.getElementById('BSph').innerHTML='Place your fleet';sm('');rn();
   };_BSN();
@@ -39232,7 +39343,7 @@ function GBW(a){
 function GBG(a){
   var B,DICE,DICE_USED,TURN,SEL,VALID_DESTS,PHASE,MOVES_LEFT,BO_H,BO_A;
   ms(a,'<span class="gp-you" style="color:#7AB956">You: <strong id="BGh">0</strong></span> · <span class="gp-ai" style="color:#C47A7A">AI: <strong id="BGa">0</strong></span>');mm(a);
-  var wrap=document.createElement('div');wrap.id='BGwrap';wrap.style.cssText='width:min(98vw,640px);margin:0 auto;user-select:none;-webkit-user-select:none';a.appendChild(wrap);
+  var wrap=document.createElement('div');wrap.id='BGwrap';wrap.className='bg-outer';wrap.style.cssText='user-select:none;-webkit-user-select:none';a.appendChild(wrap);
   mc(a).innerHTML='<button class="gb-new" onclick="_BGN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   function init(){
@@ -39375,7 +39486,6 @@ function GBG(a){
     h+='</div><div class="bg-quad">';
     for(var p2=19;p2<=24;p2++)h+=rPt(p2,'top');
     h+='</div></div>';
-    // Center bar with dice
     h+='<div class="bg-sep"></div>';
     // Bottom half: 12-7, bar, 6-1 (Player home on right)
     h+='<div class="bg-half"><div class="bg-quad">';
@@ -39385,6 +39495,15 @@ function GBG(a){
     h+='</div><div class="bg-quad">';
     for(var p4=6;p4>=1;p4--)h+=rPt(p4,'bot');
     h+='</div></div>';
+    // Dice overlay (floats over the center bar)
+    h+='<div class="bg-dice">';
+    if(PHASE==='roll'&&TURN==='human'){
+      h+='<button class="gb bg-roll-btn" onclick="_BGR()">🎲 ROLL</button>';
+    }else if(PHASE==='move'||PHASE==='gameover'){
+      DICE.forEach(function(d){var used=MOVES_LEFT.indexOf(d)===-1;h+='<div class="bg-die'+(used?' used':'')+'">'+d+'</div>'});
+      if(DICE[0]===DICE[1])h+='<span class="bg-doubles">×'+MOVES_LEFT.length+'</span>';
+    }
+    h+='</div>';
     h+='</div></div>';
     // Bearing off display
     h+='<div class="bg-bo">';
@@ -39394,15 +39513,6 @@ function GBG(a){
     h+='<div class="bg-bo-sec"><span class="bg-bo-lbl" style="color:#C47A7A">AI: '+BO_A+'/15</span>';
     for(var bi=0;bi<Math.min(BO_A,15);bi++)h+='<div class="bg-bo-pip ai"></div>';
     h+='</div></div>';
-    // Dice area
-    h+='<div class="bg-dice">';
-    if(PHASE==='roll'&&TURN==='human'){
-      h+='<button class="gb" onclick="_BGR()" style="min-width:clamp(120px,35vw,180px);min-height:56px;font-size:1.1rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.12em">🎲 ROLL</button>';
-    }else if(PHASE==='move'||PHASE==='gameover'){
-      DICE.forEach(function(d){var used=MOVES_LEFT.indexOf(d)===-1;h+='<div class="bg-die'+(used?' used':'')+'">'+d+'</div>'});
-      if(DICE[0]===DICE[1])h+='<span style="font-size:clamp(0.5rem,1.6vw,0.7rem);color:#D4A843;margin-left:8px;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em">DOUBLES! ('+MOVES_LEFT.length+' left)</span>';
-    }
-    h+='</div>';
     // Bar info
     if(B[25]>0||B[0]<0){h+='<div class="bg-info">';if(B[25]>0)h+='🌿 You: '+B[25]+' on bar ';if(B[0]<0)h+='🌸 AI: '+Math.abs(B[0])+' on bar';h+='</div>'}
     // Bar entry button
