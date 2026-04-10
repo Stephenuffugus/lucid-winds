@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.5';
+  var LW_VERSION='2026.04.10.22';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -31927,25 +31927,62 @@ var _snapDebounce=null; // debounce timer for moveend re-subscription
 var GC={Common:'#8a9a7a',Uncommon:'#5a9e3f',Rare:'#4a90d9',Epic:'#9b59b6',Legendary:'#C8A84B',Mythic:'#e74c3c',Cosmic:'#ff6ec7'};
 var FALLBACK=[40.758,-73.9855];
 
-var WILD_MAX_AGE_DAYS=14; // wild plants expire after 14 days
+// ── WILD v3: rarity-scaled vitality ──
+// Each wild plant has a lifespan based on rarity. decayAt is the
+// timestamp at which vitality hits 0. Owner water resets it to full.
+// Stranger tend adds 6h, stranger water adds 2h, shared +5d hard cap.
+var WILD_LIFESPAN_DAYS={Common:7,Uncommon:10,Rare:14,Epic:21,Legendary:30,Mythic:45,Cosmic:60};
+var WILD_TEND_BONUS_MS=6*3600000;
+var WILD_TEND_BONUS_CAP=5*86400000;
+var WILD_WATER_BONUS_MS=2*3600000;
+var WILD_MAX_AGE_DAYS=14; // legacy fallback only — pre-vitality plants
+function _plantRarity(hash){
+  try{
+    var t=window.hashToTraits?window.hashToTraits(hash):null;
+    if(!t||!window.getTerraGrade)return 'Common';
+    var tg=window.getTerraGrade(t);
+    return (tg&&(tg.name||tg.label))||'Common';
+  }catch(e){return 'Common';}
+}
+function _lifespanMsFor(rarityName){var d=WILD_LIFESPAN_DAYS[rarityName]||7;return d*86400000;}
+function _ensureVitality(plant){
+  if(!plant||!plant.hash)return plant;
+  var rarity=plant.rarity||_plantRarity(plant.hash);
+  plant.rarity=rarity;
+  var lifeMs=_lifespanMsFor(rarity);
+  plant.lifespanMs=lifeMs;
+  if(!plant.droppedAt&&plant.date){plant.droppedAt=new Date(plant.date).getTime();}
+  else if(!plant.droppedAt){plant.droppedAt=Date.now();}
+  if(!plant.decayAt){plant.decayAt=plant.droppedAt+lifeMs;}
+  if(!plant.strangerTendAddMs)plant.strangerTendAddMs=0;
+  return plant;
+}
+function _getWildVitality(plant){
+  if(!plant||!plant.hash)return {pct:0,daysLeft:0,dead:true,lifeMs:0};
+  _ensureVitality(plant);
+  var now=Date.now();
+  var remaining=plant.decayAt-now;
+  var life=plant.lifespanMs||_lifespanMsFor(plant.rarity||'Common');
+  var pct=Math.max(0,Math.min(1,remaining/life));
+  return {pct:pct,daysLeft:Math.max(0,remaining/86400000),dead:remaining<=0,lifeMs:life,remainingMs:Math.max(0,remaining)};
+}
+window._getWildVitality=_getWildVitality;
 function _getWild(){try{var j=window._secureGet?window._secureGet('fg_wild_plants'):localStorage.getItem('fg_wild_plants');return JSON.parse(j||'[]');}catch(e){return[];}}
 function _saveWild(a){if(window._secureSet){window._secureSet('fg_wild_plants',a);}else{localStorage.setItem('fg_wild_plants',JSON.stringify(a));}}
-// Prune expired wild plants from localStorage (14-day max age)
+// Prune withered wild plants using rarity-scaled vitality.
 function _pruneWild(){
   var wild=_getWild();if(!wild.length)return wild;
-  var now=Date.now(),cutoff=WILD_MAX_AGE_DAYS*86400000;
+  for(var i0=0;i0<wild.length;i0++)_ensureVitality(wild[i0]);
   var died=[];
   var fresh=wild.filter(function(w){
     if(!w||!w.hash)return false;
-    if(!w.date)return false;
-    var age=now-new Date(w.date).getTime();
-    if(age>=cutoff||age<=-86400000){died.push(w);return false;}
+    var v=_getWildVitality(w);
+    if(v.dead){died.push(w);return false;}
     return true;
   });
   if(died.length>0){
-    if(window._swsLog)_swsLog('Pruned '+died.length+' expired wild plants','ok');
+    if(window._swsLog)_swsLog('Pruned '+died.length+' withered wild plants','ok');
     _saveWild(fresh);
-    // Delete expired plants from Firestore so other players stop seeing them
     var user=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
     if(user&&user.uid&&window.db){
       for(var i=0;i<died.length;i++){
@@ -31955,13 +31992,18 @@ function _pruneWild(){
         }
       }
     }
-    // Notify player
     var names=[];
-    for(var j=0;j<died.length&&j<3;j++){
-      try{names.push(window.getPlantName?window.getPlantName(died[j].hash):died[j].hash.slice(0,6));}catch(e){names.push(died[j].hash.slice(0,6));}
+    for(var j=0;j<died.length;j++){
+      var dp=died[j];
+      var nm='';
+      try{nm=window.getPlantName?window.getPlantName(dp.hash):dp.hash.slice(0,6);}catch(e){nm=dp.hash.slice(0,6);}
+      if(j<3)names.push(nm);
+      if(window.LW_Log){
+        window.LW_Log.write('wild_withered',{hash:dp.hash,name:nm,rarity:dp.rarity||'Common',droppedAt:dp.droppedAt||null,lifespanDays:Math.round((dp.lifespanMs||0)/86400000)});
+      }
     }
     var msg=died.length===1
-      ?'\ud83c\udf42 '+names[0]+' withered in the wild after '+WILD_MAX_AGE_DAYS+' days.'
+      ?'\ud83c\udf42 '+names[0]+' withered in the wild.'
       :'\ud83c\udf42 '+died.length+' plants withered: '+names.join(', ')+(died.length>3?'...':'');
     setTimeout(function(){_toast(msg);},1000);
   }
@@ -34889,8 +34931,9 @@ function _subscribeSharedDrops(){
         var _sharedCount=Object.keys(_sharedMarkers).length;
         snap.forEach(function(doc){
           var d=doc.data();if(!d.lat||!d.lng||!d.hash)return;
-          // Skip drops older than 14 days (stale Firestore data)
-          if(d.droppedAt){var age=now-new Date(d.droppedAt).getTime();if(age>WILD_MAX_AGE_DAYS*86400000)return;}
+          // Skip withered drops using rarity-scaled vitality
+          _ensureVitality(d);
+          if(_getWildVitality(d).dead)return;
           seenHashes[d.hash]=true;
 
           // Skip if we already have this marker
@@ -34992,7 +35035,8 @@ function _loadSharedDropsFallback(user){
         var now=Date.now();
         snap.forEach(function(doc){
           var d=doc.data();if(!d.lat||!d.lng||!d.hash)return;
-          if(d.droppedAt){var age=now-new Date(d.droppedAt).getTime();if(age>WILD_MAX_AGE_DAYS*86400000)return;}
+          _ensureVitality(d);
+          if(_getWildVitality(d).dead)return;
           // Skip distance filter if in GPS fallback mode — show all drops for testing/demo
           if(_uLat&&d.lat&&!_gpsDenied){var dist=_dist(_uLat,_uLng,d.lat,d.lng);if(dist>50000)return;}
           if(_sharedMarkers[d.hash])return;
@@ -35256,9 +35300,11 @@ function _selectHexPlant(idx,p){
     // INSPECT is always available — seeing is free, acting has gates.
     // TEND is the non-destructive replacement — gated at Keeper Lv 5.
     var _canTend=(window.canSee&&window.canSee.strangerTend&&window.canSee.strangerTend());
+    var _canCut=(window.canSee&&window.canSee.wildCutting&&window.canSee.wildCutting());
     actions+=_inspectBtn;
     actions+='<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
-    actions+='<button class="hi-action-btn'+(_canTend?'':' locked')+'" onclick="window._hexAction(\'tend\')" title="'+(_canTend?'Tend this plant — gives it +life and grants you Dew':'Unlocks at Keeper Level 5')+'">&#127807; TEND'+(_canTend?'':' &#128274;')+'</button>';
+    actions+='<button class="hi-action-btn'+(_canTend?'':' locked')+'"'+(_canTend?' onclick="window._hexAction(\'tend\')"':'')+' title="'+(_canTend?'Tend this plant — gives it +6h and grants you Dew':'Unlocks at Keeper Level 5')+'">&#127807; TEND'+(_canTend?'':' &#128274;')+'</button>';
+    actions+='<button class="hi-action-btn gold'+(_canCut?'':' locked')+'"'+(_canCut?' onclick="window._hexAction(\'cutting\')"':'')+' title="'+(_canCut?'Take a cutting — clone seed, parent loses 10% lifespan. One-time per plant':'Unlocks at Keeper Level 15')+'">&#9986; CUTTING'+(_canCut?'':' &#128274;')+'</button>';
   }
   el.innerHTML='<div class="hi-detail-name">'+name+'</div><div class="hi-detail-grade" style="color:'+gc+';">'+grade+'</div>'+traitHtml+'<div class="hi-actions">'+actions+'</div>';
   el.style.display='block';
@@ -35278,36 +35324,138 @@ window._hexAction=function(action){
   var p=_hexSelPlant;
   if(action==='water'){
     if(p.own){
-      var dew=0;try{dew=parseInt(localStorage.getItem('fg_pollen')||'0');}catch(e){}
-      if(dew<5){_toast('Need 5 dew to water.');return;}
-      localStorage.setItem('fg_pollen',String(dew-5));
-      try{var wp=parseInt(localStorage.getItem('fg_pollen')||'0');localStorage.setItem('fg_pollen',String(wp+3));}catch(e){}
-      _toast('Watered! -5 dew, +3 pollen');if(window._haptic)_haptic('bloom');
+      // Water own plant — once per 24h, resets decayAt to full lifespan.
+      var _wild=_getWild();
+      var _hit=null,_hitIdx=-1;
+      for(var _wi=0;_wi<_wild.length;_wi++){
+        if(_wild[_wi].hash===p.hash){_hit=_wild[_wi];_hitIdx=_wi;break;}
+      }
+      if(!_hit){_toast('Plant not found in your local wild cache.');return;}
+      _ensureVitality(_hit);
+      var _lastWater=_hit.lastWateredAt||0;
+      if(Date.now()-_lastWater<24*3600000){
+        var _hrs=Math.ceil(24-(Date.now()-_lastWater)/3600000);
+        _toast('Already watered. Back in '+_hrs+'h.');return;
+      }
+      _hit.lastWateredAt=Date.now();
+      _hit.decayAt=Date.now()+_hit.lifespanMs;
+      _wild[_hitIdx]=_hit;
+      _saveWild(_wild);
+      _toast('\ud83d\udca7 Watered! Lifespan reset to full.');
+      if(window._haptic)_haptic('bloom');
+      if(window._trackQuest)_trackQuest('plantsWatered',1);
+      if(window.LW_Log)window.LW_Log.write('wild_watered',{hash:p.hash});
     }else{
+      // Water a stranger's plant — budgeted kindness, +2h via shared marker.
       var wk='lw_water_budget',wb={};try{wb=JSON.parse(localStorage.getItem(wk)||'{}');}catch(e){}
       var wt=new Date().toISOString().split('T')[0];if(wb.date!==wt)wb={date:wt,count:0};
-      if(wb.count>=5){_toast('No waters left today.');return;}
-      wb.count++;localStorage.setItem(wk,JSON.stringify(wb));
-      try{var pol=parseInt(localStorage.getItem('fg_pollen')||'0');localStorage.setItem('fg_pollen',String(pol+2));}catch(e){}
-      _toast('Watered! +2 pollen. '+(5-wb.count)+' left.');if(window._haptic)_haptic('bloom');
+      if(wb.count>=5){_toast('No waters left today (5/day).');return;}
+      if(_uLat&&p.lat){
+        var _wDist=_dist(_uLat,_uLng,p.lat,p.lng);
+        if(_wDist>COLLECT_RANGE){_toast('Walk closer! '+Math.round(_wDist)+'m away.');return;}
+      }
+      wb.count=(wb.count||0)+1;localStorage.setItem(wk,JSON.stringify(wb));
+      try{
+        if(_sharedMarkers&&_sharedMarkers[p.hash]&&_sharedMarkers[p.hash].data){
+          var _wSmd=_sharedMarkers[p.hash].data;
+          _ensureVitality(_wSmd);
+          if((_wSmd.strangerTendAddMs||0)<WILD_TEND_BONUS_CAP){
+            _wSmd.strangerTendAddMs=(_wSmd.strangerTendAddMs||0)+WILD_WATER_BONUS_MS;
+            _wSmd.decayAt=(_wSmd.decayAt||Date.now())+WILD_WATER_BONUS_MS;
+          }
+        }
+      }catch(e){}
+      if(window.PW_grantXP)PW_grantXP(5,'wild_water_stranger');
+      if(window.LW_Log)window.LW_Log.write('wild_watered_stranger',{hash:p.hash,ownerName:p.ownerName||'Keeper'});
+      _toast('\ud83d\udca7 Watered a keeper\u2019s plant. +2h \u00b7 +5 XP. '+(5-wb.count)+' left today.');
+      if(window._haptic)_haptic('bloom');
+      if(window._trackQuest)_trackQuest('plantsWatered',1);
     }
   }else if(action==='harvest'){
-    // DEAD CODE — harvest was removed in Wild v3 Phase 1. Kept as a safety
-    // net in case any stale cached UI still calls it.
     _toast('Harvest has been retired. Try TEND instead (unlocks at Lv 5).');
   }else if(action==='tend'){
-    // Wild v3 Phase 2 stub — non-destructive stranger tend, grants Dew.
+    // Wild v3 Phase 2: non-destructive stranger tend. +6h, 6h cooldown per plant.
     if(!window.canSee||!window.canSee.strangerTend||!window.canSee.strangerTend()){_toast('Tending unlocks at Keeper Level 5.');return;}
     if(_uLat&&p.lat){var _tendDist=_dist(_uLat,_uLng,p.lat,p.lng);if(_tendDist>COLLECT_RANGE){_toast('Walk closer! '+Math.round(_tendDist)+'m away.');return;}}
     if(p.own){_toast('That\u2019s your own plant — water it instead.');return;}
+    var _tendKey='lw_tend_cd',_tendCd={};try{_tendCd=JSON.parse(localStorage.getItem(_tendKey)||'{}');}catch(e){}
+    if(_tendCd[p.hash]&&Date.now()-_tendCd[p.hash]<6*3600000){
+      var _tendHrs=Math.ceil(6-(Date.now()-_tendCd[p.hash])/3600000);
+      _toast('Already tended this plant. Back in '+_tendHrs+'h.');return;
+    }
+    _tendCd[p.hash]=Date.now();
+    localStorage.setItem(_tendKey,JSON.stringify(_tendCd));
+    try{
+      if(_sharedMarkers&&_sharedMarkers[p.hash]&&_sharedMarkers[p.hash].data){
+        var _smd=_sharedMarkers[p.hash].data;
+        _ensureVitality(_smd);
+        if((_smd.strangerTendAddMs||0)<WILD_TEND_BONUS_CAP){
+          _smd.strangerTendAddMs=(_smd.strangerTendAddMs||0)+WILD_TEND_BONUS_MS;
+          _smd.decayAt=(_smd.decayAt||Date.now())+WILD_TEND_BONUS_MS;
+        }
+      }
+    }catch(e){}
     if(window.earnDew)window.earnDew(2,'wild_tend_stranger');
     if(window.PW_grantXP)PW_grantXP(10,'wild_tend_stranger');
     if(window.LW_Log)window.LW_Log.write('wild_tended_stranger',{hash:p.hash,ownerName:p.ownerName||'Keeper'});
-    _toast('\ud83c\udf3f Tended '+(p.ownerName||'a keeper')+'\u2019s plant. +2 Dew \u00b7 +10 XP');
+    _toast('\ud83c\udf3f Tended '+(p.ownerName||'a keeper')+'\u2019s plant. +6h lifespan \u00b7 +2 Dew \u00b7 +10 XP');
     if(window._play)_play('match');
+  }else if(action==='cutting'){
+    // Wild v3 Phase 2 — destructive stranger interaction.
+    // Creates a clone seed in the nursery, wounds parent by 10% remaining lifespan.
+    // Once per player per plant, ever.
+    if(!window.canSee||!window.canSee.wildCutting||!window.canSee.wildCutting()){_toast('Cuttings unlock at Keeper Level 15.');return;}
+    if(_uLat&&p.lat){var _cutDist=_dist(_uLat,_uLng,p.lat,p.lng);if(_cutDist>COLLECT_RANGE){_toast('Walk closer! '+Math.round(_cutDist)+'m away.');return;}}
+    if(p.own){_toast('Cuttings from your own plants don\u2019t wound — just breed them normally.');return;}
+    var _cutKey='lw_cuttings_taken',_cutLog={};try{_cutLog=JSON.parse(localStorage.getItem(_cutKey)||'{}');}catch(e){}
+    if(_cutLog[p.hash]){_toast('You\u2019ve already taken a cutting from this plant. Each is a lifetime one-shot.');return;}
+    var _nurMax=(window.FG_Data&&window.FG_Data.getNurSlots)?window.FG_Data.getNurSlots():3;
+    var _nurNow=(window.FG_Data&&window.FG_Data.getNursery)?window.FG_Data.getNursery().length:0;
+    if(_nurNow>=_nurMax){_toast('Nursery full ('+_nurNow+'/'+_nurMax+'). Bloom or abandon a seed first.');return;}
+    window._lwConfirm&&window._lwConfirm({
+      title:'TAKE A CUTTING',
+      body:'You\u2019ll gain a clone seed (Gen 2, \u22122 EA from the wound). The parent plant loses <b>10%</b> of its remaining lifespan. This cannot be undone. Tend other plants instead to be kind.',
+      yes:'TAKE CUTTING',
+      no:'LEAVE IT ALONE',
+      danger:true
+    },function(){
+      try{
+        if(_sharedMarkers&&_sharedMarkers[p.hash]&&_sharedMarkers[p.hash].data){
+          var _cSmd=_sharedMarkers[p.hash].data;
+          _ensureVitality(_cSmd);
+          var _rem=Math.max(0,(_cSmd.decayAt||Date.now())-Date.now());
+          var _wound=Math.round(_rem*0.10);
+          _cSmd.decayAt=(_cSmd.decayAt||Date.now())-_wound;
+          _cSmd.cuttingWounds=(_cSmd.cuttingWounds||0)+1;
+        }
+      }catch(e){}
+      _cutLog[p.hash]=Date.now();
+      try{localStorage.setItem(_cutKey,JSON.stringify(_cutLog));}catch(e){}
+      if(window.FG_Data&&window.FG_Data.addSeed){
+        var _addResult=window.FG_Data.addSeed({
+          seedHash:p.hash,
+          parentAHash:p.hash,
+          parentBHash:p.hash,
+          nonce:0,
+          mystery:false
+        });
+        if(!_addResult||!_addResult.ok){
+          _toast('Cutting failed to land in nursery. Parent plant was spared.');
+          delete _cutLog[p.hash];
+          try{localStorage.setItem(_cutKey,JSON.stringify(_cutLog));}catch(e){}
+          return;
+        }
+      }
+      if(window.PW_grantXP)PW_grantXP(15,'wild_cutting');
+      if(window.LW_Log)window.LW_Log.write('wild_cutting_taken',{
+        hash:p.hash,
+        name:typeof getPlantName==='function'?getPlantName(p.hash):'',
+        ownerName:p.ownerName||'Keeper'
+      });
+      _toast('\u2702\ufe0f Clone seed added to the nursery. The parent weakened.');
+      if(window._haptic)_haptic('error');
+    });
   }else if(action==='inspect'){
-    // Wild v3: open Extra Details modal for ANY plant. Works for own,
-    // stranger, greenhouse, wild — reconstructs from hash when needed.
     if(window._openPlantDetails){window._closeHexInspector();window._openPlantDetails(p.hash);}
     else{_toast('Details view loading...');}
   }else if(action==='defense'){
