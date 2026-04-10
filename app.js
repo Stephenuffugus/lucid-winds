@@ -21066,6 +21066,16 @@
         localStorage.setItem('lw_first_breed','1');
         if (typeof gtag!=='undefined') gtag('event','pollination_event',{ nonce:result.nonce, parentA:selA.hash.slice(0,8), parentB:selB.hash.slice(0,8) });
         if(window._updateNextStep)_updateNextStep();
+        if(window.PW_grantXP) PW_grantXP(5,'cross_pollinate');
+        if(window.LW_Log) window.LW_Log.write('plant_bred', {
+          parentAHash: selA.hash,
+          parentBHash: selB.hash,
+          seedHash: result.childHash,
+          parentAName: (window.getPlantName ? getPlantName(selA.hash) : ''),
+          parentBName: (window.getPlantName ? getPlantName(selB.hash) : ''),
+          generation: result.nonce || 1
+        });
+        if(window.syncVaultToCloud) setTimeout(syncVaultToCloud, 500);
         renderNursery();
         switchTab('nursery');
         _setNurMsg('🌱 Seed planted! Water once a day for 3 days to bloom.');
