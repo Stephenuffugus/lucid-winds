@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.3';
+  var LW_VERSION='2026.04.10.4';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -33918,12 +33918,7 @@ function _dropFromBP(p){
   }
   if(existing){
     if(!existing.ownerUid||existing.own){
-      la=_uLat+(Math.random()-0.5)*0.001;lo=_uLng+(Math.random()-0.5)*0.001;
-      var z2=_zoneKey(la,lo);
-      if(wild.some(function(w){return _zoneKey(w.lat,w.lng)===z2;})){
-        _toast('You already have a plant in this zone.');return;
-      }
-      existing=null;
+      _toast('You already have a plant in this zone.');return;
     } else {
       var myInfo=_buildInfo(p.hash);
       var myEA=window.computeEA?window.computeEA(myInfo.t,0):0;
@@ -37940,12 +37935,12 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
 }
 // ═══ DOUBLE SHUTTER — Strategy Shut the Box (two rows) ═══
 function GDS(a){
-  var rows,sel,d1,d2,phase,rolls,gameOver;
+  var rows,sel,d1,d2,phase,rolls,gameOver,_row1Celebrated;
   ms(a,'Rolls: <strong id="DSr">0</strong> · Open: <strong id="DSo">90</strong>');mm(a);
   // Directions
   var dir=document.createElement('div');
   dir.style.cssText='text-align:center;padding:0.4rem 0.8rem;margin:0.2rem auto;max-width:400px;font-family:DM Sans,sans-serif;font-size:clamp(0.6rem,1.7vw,0.75rem);color:var(--cream);line-height:1.5;opacity:0.85';
-  dir.innerHTML='Roll <strong style="color:var(--gold)">2 dice</strong>, then tap any open tiles that <strong>add up to your roll</strong>. Shut both rows to win!<br>If your remaining tiles total <strong>6 or less</strong>, you can roll just <strong>1 die</strong>.';
+  dir.innerHTML='Shut <strong style="color:var(--gold)">Row 1 first</strong>, then Row 2 unlocks. Roll <strong>2 dice</strong>, tap any open tiles that <strong>add up to your roll</strong>.<br>If your remaining tiles total <strong>6 or less</strong>, you can roll just <strong>1 die</strong>. Shut both rows = perfect game!';
   a.appendChild(dir);
   var wrap=document.createElement('div');wrap.className='ds-wrap';a.appendChild(wrap);
   // Row 1
@@ -37958,16 +37953,28 @@ function GDS(a){
   var dz=document.createElement('div');dz.className='ds-dice';dz.id='DSdz';wrap.appendChild(dz);
   var info=document.createElement('div');info.className='ds-info';info.id='DSinfo';wrap.appendChild(info);
   mc(a).innerHTML='<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:6px"><button class="gb" id="DSroll2" style="min-height:52px;min-width:120px;font-size:0.85rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em" onclick="_DSRoll(2)">🎲 ROLL 2</button><button class="gb" id="DSroll1" style="min-height:52px;min-width:120px;font-size:0.85rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;display:none" onclick="_DSRoll(1)">🎲 ROLL 1</button><button class="gb" id="DSshut" style="min-height:52px;min-width:120px;font-size:0.85rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;background:rgba(200,168,75,0.15);border-color:var(--gold);color:var(--gold);display:none" onclick="_DSShut()">✓ SHUT</button><button class="gb-new" onclick="_DSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button></div>';
-  function openSum(){var s=0;for(var ri=0;ri<2;ri++)for(var i=0;i<9;i++)if(!rows[ri][i])s+=(i+1);return s}
-  function openCount(){var n=0;for(var ri=0;ri<2;ri++)for(var i=0;i<9;i++)if(!rows[ri][i])n++;return n}
+  // Row 1 must be fully shut before Row 2 unlocks (proper Double Shutter rules)
+  function row1Done(){for(var i=0;i<9;i++)if(!rows[0][i])return false;return true}
+  function row2Done(){for(var i=0;i<9;i++)if(!rows[1][i])return false;return true}
+  function bothDone(){return row1Done()&&row2Done()}
+  function activeRow(){return row1Done()?1:0}
+  function openSum(){var ar=activeRow(),s=0;for(var i=0;i<9;i++)if(!rows[ar][i])s+=(i+1);return s}
+  function openCount(){var ar=activeRow(),n=0;for(var i=0;i<9;i++)if(!rows[ar][i])n++;return n}
   function selSum(){var s=0;sel.forEach(function(t){s+=(t.n)});return s}
   function canMakeSum(target){
-    // Check if any combination of open tiles equals target
-    var open=[];for(var ri=0;ri<2;ri++)for(var i=0;i<9;i++)if(!rows[ri][i])open.push(i+1);
+    // Only consider tiles in the active row
+    var ar=activeRow();
+    var open=[];for(var i=0;i<9;i++)if(!rows[ar][i])open.push(i+1);
     function find(idx,rem){if(rem===0)return true;if(rem<0||idx>=open.length)return false;return find(idx+1,rem-open[idx])||find(idx+1,rem)}
     return find(0,target);
   }
   function rn(){
+    var ar=activeRow();
+    // Row 2 stays visually locked until Row 1 is shut
+    r2Lbl.textContent=ar===1?'ROW 2 — UNLOCKED':'ROW 2 — locked until Row 1 is shut';
+    r2Lbl.style.color=ar===1?'var(--gold)':'var(--muted)';
+    r2.style.opacity=ar===1?'1':'0.4';
+    r2.style.filter=ar===1?'none':'grayscale(0.6)';
     // Render rows
     [r1,r2].forEach(function(rowEl,ri){
       rowEl.innerHTML='';
@@ -37978,7 +37985,8 @@ function GDS(a){
         if(isSel)t.className+=' sel';
         t.textContent=(i+1);
         t.setAttribute('data-r',ri);t.setAttribute('data-i',i);
-        if(!rows[ri][i]&&phase==='select'&&!gameOver){
+        // Only allow taps on the active row
+        if(!rows[ri][i]&&phase==='select'&&!gameOver&&ri===ar){
           t.onclick=function(){
             var r=parseInt(this.getAttribute('data-r')),idx=parseInt(this.getAttribute('data-i'));
             var existing=sel.findIndex(function(s){return s.row===r&&s.idx===idx});
@@ -38037,18 +38045,23 @@ function GDS(a){
     _play('drop');
     sel.forEach(function(s){rows[s.row][s.idx]=true});
     sel=[];_e('progress');
-    if(openSum()===0){
+    if(bothDone()){
       gameOver=true;
       sm('🌿 PERFECT! Both rows shut!');_e('game_win');_playWin();_sr('doubleshutter',{w:true,s:0});
       phase='done';rn();return;
+    }
+    // Row 1 just completed → celebrate and unlock Row 2
+    if(row1Done()&&!_row1Celebrated){
+      _row1Celebrated=true;
+      sm('🌿 Row 1 shut! Row 2 unlocked.');_e('milestone');
     }
     if(openCount()%6===0)_e('milestone');
     phase='roll';rn();
   };
   window._DSN=function(){
     rows=[new Array(9).fill(false),new Array(9).fill(false)];
-    sel=[];d1=0;d2=0;phase='roll';rolls=0;gameOver=false;
-    sm('Tap ROLL to begin!');rn();
+    sel=[];d1=0;d2=0;phase='roll';rolls=0;gameOver=false;_row1Celebrated=false;
+    sm('Tap ROLL to begin! Shut Row 1 first.');rn();
   };
   _DSN();
 }
@@ -39766,11 +39779,12 @@ function equipCompanion(){
 }
 function _pickCompanion(idx){
   var f=window._csCompFound?window._csCompFound[idx]:null;if(!f)return;
-  localStorage.setItem('pw_active_companion',JSON.stringify({idx:f.idx,name:f.name,icon:f.icon,ability:f.ability,temperament:f.temperament,tempIcon:f.tempIcon}));
+  var compData={idx:f.idx,name:f.name,icon:f.icon,ability:f.ability,temperament:f.temperament,tempIcon:f.tempIcon};
+  localStorage.setItem('pw_active_companion',JSON.stringify(compData));
   _loadCompanion();
   var pk=document.getElementById('cs-comp-picker');if(pk)pk.remove();
   if(window._toast)window._toast(f.name+' equipped!');
-  _syncProfileField('activeCompanion',{idx:f.idx,name:f.name});
+  _syncProfileField('activeCompanion',compData);
 }
 
 // ═══ SYNC SINGLE PROFILE FIELD TO FIRESTORE ═══
@@ -39907,6 +39921,10 @@ function ensureProfile(user){
       if(d.friendCode)localStorage.setItem('pw_friend_code',_formatCode(d.friendCode));
       if(d.displayName)localStorage.setItem('pw_keeper_name',d.displayName);
       if(d.accountNumber)localStorage.setItem('pw_account_number',String(d.accountNumber));
+      // Restore equipped companion if local lost it (e.g. fresh device, cleared cache)
+      if(d.activeCompanion&&d.activeCompanion.name&&!localStorage.getItem('pw_active_companion')){
+        try{localStorage.setItem('pw_active_companion',JSON.stringify(d.activeCompanion));}catch(e){}
+      }
       if(window.PW_UI)PW_UI.updateKeeperBar();
       console.log('[PW_Social] Profile loaded: '+d.displayName+' #'+d.accountNumber);
       return;
