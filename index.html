@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.4';
+  var LW_VERSION='2026.04.10.5';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3290,7 +3290,7 @@
     .ds-info{font-family:DM Mono,monospace;font-size:clamp(0.55rem,1.6vw,0.7rem);color:var(--gold);text-align:center;padding:4px 0;min-height:1.2em}
     /* ═══ BACKGAMMON — Garden Gate board CSS ═══ */
     .bg-wrap{width:100%;margin:0 auto}
-    .bg-board{position:relative;width:100%;aspect-ratio:13/9;background:#2C1810;border:4px solid #6B4F2D;border-radius:12px;overflow:hidden;box-shadow:inset 0 0 40px rgba(0,0,0,0.5),0 6px 24px rgba(0,0,0,0.6)}
+    .bg-board{position:relative;width:100%;max-width:none;aspect-ratio:11/9;background:#2C1810;border:4px solid #6B4F2D;border-radius:12px;overflow:hidden;box-shadow:inset 0 0 40px rgba(0,0,0,0.5),0 6px 24px rgba(0,0,0,0.6)}
     .bg-inner{position:absolute;inset:4px;display:flex;flex-direction:column}
     .bg-half{display:flex;flex:1;position:relative;overflow:hidden;min-height:0}
     .bg-quad{display:flex;flex:1;min-width:0}
@@ -3474,7 +3474,7 @@
       100%{opacity:0;background-position:-150% 0;}}
 
     /* ── Rarity symbol badge (bottom-left of card front) ── */
-    .cf-rarity-symbol{position:absolute;bottom:11%;left:8px;width:32px;height:32px;object-fit:contain;opacity:0.9;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.5));pointer-events:none;z-index:5;}
+    .cf-rarity-symbol{position:absolute;bottom:11%;left:8px;width:32px;height:32px;object-fit:cover;opacity:0.95;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.7));pointer-events:none;z-index:5;background:#050505;border-radius:50%;border:1.5px solid rgba(0,0,0,0.85);box-shadow:0 0 0 1px rgba(0,0,0,0.6),inset 0 0 0 1px rgba(0,0,0,0.4);}
     .cs-card-front[data-season="spring"] .cf-rarity-symbol:not(.cf-rarity-symbol--grid){left:calc(8px + 1%);}
     .cs-card-front[data-season="winter"] .cf-rarity-symbol:not(.cf-rarity-symbol--grid){left:calc(8px + 2%);}
     .cs-card-front[data-season="summer"] .cf-rarity-symbol:not(.cf-rarity-symbol--grid){left:calc(8px + 4%);}
@@ -31249,6 +31249,33 @@ function _pruneWild(){
       :'\ud83c\udf42 '+died.length+' plants withered: '+names.join(', ')+(died.length>3?'...':'');
     setTimeout(function(){_toast(msg);},1000);
   }
+  // ── ENFORCE 3-PER-ZONE CAP — keep top 3 EA, evict rest ──
+  // (Migrates legacy zones that pre-date the cap)
+  if(typeof MAX_PER_ZONE!=='undefined'){
+    var byZone={};
+    for(var z=0;z<fresh.length;z++){
+      var k=_zoneKey(fresh[z].lat,fresh[z].lng);
+      if(!byZone[k])byZone[k]=[];
+      byZone[k].push(fresh[z]);
+    }
+    var pruned=[],evictCount=0;
+    for(var zk in byZone){
+      var grp=byZone[zk];
+      if(grp.length<=MAX_PER_ZONE){
+        for(var g=0;g<grp.length;g++)pruned.push(grp[g]);
+      } else {
+        // Sort by EA descending, keep top MAX_PER_ZONE
+        grp.sort(function(a,b){return _wildEA(b)-_wildEA(a);});
+        for(var g2=0;g2<MAX_PER_ZONE;g2++)pruned.push(grp[g2]);
+        evictCount+=(grp.length-MAX_PER_ZONE);
+      }
+    }
+    if(evictCount>0){
+      _saveWild(pruned);
+      if(window._swsLog)_swsLog('Evicted '+evictCount+' over-cap plants from '+Object.keys(byZone).length+' zones','warn');
+      fresh=pruned;
+    }
+  }
   return fresh;
 }
 function _getGH(){try{return JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){return[];}}
@@ -33592,6 +33619,26 @@ function openPicker(){
 }
 function closePicker(){var pk=document.getElementById('w-picker');if(pk)pk.classList.remove('open');}
 
+var MAX_PER_ZONE=3;
+// Compute EA for any wild plant entry, used for zone eviction comparisons
+function _wildEA(w){
+  try{
+    var t=window.hashToTraits(w.hash);
+    var days=w.date?Math.floor((Date.now()-new Date(w.date).getTime())/86400000):0;
+    return window.computeEA?window.computeEA(t,days):0;
+  }catch(e){return 0;}
+}
+// Pick the weakest plant in a zone (lowest EA, ties broken by oldest)
+function _weakestInZone(plants){
+  if(!plants.length)return null;
+  var weakest=plants[0],wEA=_wildEA(plants[0]);
+  for(var i=1;i<plants.length;i++){
+    var ea=_wildEA(plants[i]);
+    if(ea<wEA){weakest=plants[i];wEA=ea;}
+  }
+  return {plant:weakest,ea:wEA};
+}
+
 function _drop(pl){
   closePicker();
   if(!_uLat||!_uLng){_toast('No location.');return;}
@@ -33600,37 +33647,34 @@ function _drop(pl){
   var la=_uLat+(Math.random()-0.5)*0.0005,lo=_uLng+(Math.random()-0.5)*0.0005;
   var zone=_zoneKey(la,lo);
 
-  // Territory check
-  var existing=null;
+  // Get ALL plants in the zone (3-per-zone cap)
+  var inZone=[];
   for(var i=0;i<wild.length;i++){
-    if(_zoneKey(wild[i].lat,wild[i].lng)===zone){existing=wild[i];break;}
+    if(_zoneKey(wild[i].lat,wild[i].lng)===zone)inZone.push(wild[i]);
   }
-
-  if(existing){
-    // Own plant already here
-    if(!existing.ownerUid||existing.own){
+  // Already have your own plant in this zone? Refuse (one self per zone).
+  for(var io=0;io<inZone.length;io++){
+    if(!inZone[io].ownerUid||inZone[io].own){
       _toast('You already have a plant in this zone.');return;
     }
-    // Other player's plant — EA comparison (multiplayer future)
+  }
+  var displaced=null;
+  if(inZone.length>=MAX_PER_ZONE){
+    // Zone is full — try to evict the weakest if your plant is stronger
     var myInfo=_buildInfo(pl.hash);
-    var myTraits=myInfo.t;
-    var myEA=window.computeEA?window.computeEA(myTraits,0):0;
-    var theirTraits=null;
-    try{theirTraits=window.hashToTraits(existing.hash);}catch(e){}
-    var theirDays=existing.date?Math.floor((Date.now()-new Date(existing.date).getTime())/86400000):0;
-    var theirEA=window.computeEA?window.computeEA(theirTraits,theirDays):0;
-
-    if(myEA<=theirEA){
-      _toast('Defended! This zone has a plant with EA '+theirEA+'. Yours is EA '+myEA+'. Grow stronger.');
+    var myEA=window.computeEA?window.computeEA(myInfo.t,0):0;
+    var w=_weakestInZone(inZone);
+    if(myEA<=w.ea){
+      _toast('Zone full ('+MAX_PER_ZONE+' plants). Weakest is EA '+w.ea+'. Yours is EA '+myEA+'. Grow stronger.');
       return;
     }
-    // TAKEOVER — your plant is stronger (local check passed, server TX in _finishDrop)
-    wild=wild.filter(function(w){return w.hash!==existing.hash;});
-    _toast('\ud83c\udf3f Takeover! Your EA '+myEA+' displaced EA '+theirEA+'!');
+    wild=wild.filter(function(p){return p.hash!==w.plant.hash;});
+    displaced=w.plant;
+    _toast('\ud83c\udf3f Eviction! Your EA '+myEA+' displaced the zone\u2019s weakest (EA '+w.ea+').');
   }
 
   // Show defender game picker — pass displaced plant info for server-side TX
-  _pendingDrop={plant:pl,lat:la,lng:lo,wild:wild,displaced:existing||null};
+  _pendingDrop={plant:pl,lat:la,lng:lo,wild:wild,displaced:displaced};
   _showDefenderPicker();
 }
 
@@ -33911,29 +33955,30 @@ function _dropFromBP(p){
   var wild=_getWild();
   var la=_uLat+(Math.random()-0.5)*0.0005,lo=_uLng+(Math.random()-0.5)*0.0005;
   var zone=_zoneKey(la,lo);
-  // Territory check — same logic as _drop() so BP drops can takeover
-  var existing=null;
+  // 3-per-zone cap with weakest-eviction (same logic as _drop)
+  var inZone=[];
   for(var i=0;i<wild.length;i++){
-    if(_zoneKey(wild[i].lat,wild[i].lng)===zone){existing=wild[i];break;}
+    if(_zoneKey(wild[i].lat,wild[i].lng)===zone)inZone.push(wild[i]);
   }
-  if(existing){
-    if(!existing.ownerUid||existing.own){
+  for(var io=0;io<inZone.length;io++){
+    if(!inZone[io].ownerUid||inZone[io].own){
       _toast('You already have a plant in this zone.');return;
-    } else {
-      var myInfo=_buildInfo(p.hash);
-      var myEA=window.computeEA?window.computeEA(myInfo.t,0):0;
-      var theirTraits=null;try{theirTraits=window.hashToTraits(existing.hash);}catch(e){}
-      var theirDays=existing.date?Math.floor((Date.now()-new Date(existing.date).getTime())/86400000):0;
-      var theirEA=window.computeEA?window.computeEA(theirTraits,theirDays):0;
-      if(myEA<=theirEA){
-        _toast('Defended! Zone EA '+theirEA+' vs yours '+myEA+'. Grow stronger.');return;
-      }
-      wild=wild.filter(function(w){return w.hash!==existing.hash;});
-      _toast('\ud83c\udf3f Takeover! Your EA '+myEA+' displaced EA '+theirEA+'!');
     }
   }
+  var displaced=null;
+  if(inZone.length>=MAX_PER_ZONE){
+    var myInfo=_buildInfo(p.hash);
+    var myEA=window.computeEA?window.computeEA(myInfo.t,0):0;
+    var w=_weakestInZone(inZone);
+    if(myEA<=w.ea){
+      _toast('Zone full ('+MAX_PER_ZONE+' plants). Weakest is EA '+w.ea+'. Yours is EA '+myEA+'. Grow stronger.');return;
+    }
+    wild=wild.filter(function(pl){return pl.hash!==w.plant.hash;});
+    displaced=w.plant;
+    _toast('\ud83c\udf3f Eviction! Your EA '+myEA+' displaced the zone\u2019s weakest (EA '+w.ea+').');
+  }
 
-  _pendingDrop={plant:p,lat:la,lng:lo,wild:wild,displaced:existing||null,fromBP:true};
+  _pendingDrop={plant:p,lat:la,lng:lo,wild:wild,displaced:displaced,fromBP:true};
   _showDefenderPicker();
 }
 // ═══ SHARED WILD DROPS — visible to all players ═══
@@ -38455,7 +38500,21 @@ function GBS(a){
     var dirBtn=document.getElementById('BSdir');
     if(phase==='place'){
       if(dirBtn)dirBtn.style.display='';
-      lbl.textContent=curShip<SHIPS.length?'Tap to place '+SHIP_NAMES[curShip]+' ('+SHIPS[curShip]+' cells) — use Rotate to change direction':'';
+      // BIG visual ship indicator: name + cells preview + remaining queue
+      if(curShip<SHIPS.length){
+        var preview='';
+        for(var pi=0;pi<SHIPS[curShip];pi++)preview+='<div style="width:18px;height:18px;background:rgba(122,179,86,0.55);border:1.5px solid rgba(122,179,86,0.8);border-radius:3px;display:inline-block;margin:0 1px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.2);"></div>';
+        var queue='';
+        for(var qi=curShip+1;qi<SHIPS.length;qi++){queue+='<span style="font-size:0.55rem;color:var(--muted);margin:0 4px">'+SHIP_NAMES[qi]+' ('+SHIPS[qi]+')</span>';}
+        if(!queue)queue='<span style="font-size:0.55rem;color:var(--gold)">last ship!</span>';
+        lbl.innerHTML='<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:var(--gold);letter-spacing:0.08em;margin-bottom:4px">PLACING: '+SHIP_NAMES[curShip].toUpperCase()+'</div>'
+          +'<div style="display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:4px;'+(curDir==='v'?'flex-direction:column;':'')+'">'+preview+'</div>'
+          +'<div style="font-family:DM Sans,sans-serif;font-size:0.6rem;color:var(--cream);opacity:0.85;margin-bottom:3px">Direction: <strong style="color:var(--sage)">'+(curDir==='h'?'Horizontal →':'Vertical ↓')+'</strong> — tap any cell to place</div>'
+          +'<div style="font-family:DM Sans,sans-serif;font-size:0.5rem;color:var(--muted)">Up next: '+queue+'</div>';
+        lbl.style.minHeight='5em';
+      } else {
+        lbl.textContent='';
+      }
       renderGrid(pGrid,grids,false,function(){
         if(curShip>=SHIPS.length)return;
         var i=parseInt(this.getAttribute('data-i'));var r=Math.floor(i/SZ),c=i%SZ;
@@ -39173,7 +39232,7 @@ function GBW(a){
 function GBG(a){
   var B,DICE,DICE_USED,TURN,SEL,VALID_DESTS,PHASE,MOVES_LEFT,BO_H,BO_A;
   ms(a,'<span class="gp-you" style="color:#7AB956">You: <strong id="BGh">0</strong></span> · <span class="gp-ai" style="color:#C47A7A">AI: <strong id="BGa">0</strong></span>');mm(a);
-  var wrap=document.createElement('div');wrap.id='BGwrap';wrap.style.cssText='max-width:96vw;margin:0 auto;user-select:none;-webkit-user-select:none';a.appendChild(wrap);
+  var wrap=document.createElement('div');wrap.id='BGwrap';wrap.style.cssText='width:min(98vw,640px);margin:0 auto;user-select:none;-webkit-user-select:none';a.appendChild(wrap);
   mc(a).innerHTML='<button class="gb-new" onclick="_BGN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   function init(){
