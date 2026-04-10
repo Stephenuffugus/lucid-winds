@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.45';
+  var LW_VERSION='2026.04.10.46';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -32153,7 +32153,11 @@ function activate(){
   var _todayStr=new Date().toISOString().split('T')[0];
   if(_reproToday!==_todayStr){
     localStorage.setItem('lw_repro_today',_todayStr);
-    setTimeout(function(){if(window._wildReproduction)_wildReproduction();},window._perfLite?8000:2000);
+    // _wildReproduction lives inside the FG_Wild IIFE — prefer the
+    // module export, fall back to direct closure call if called from inside.
+    setTimeout(function(){
+      if(window.FG_Wild&&FG_Wild._wildReproduction)FG_Wild._wildReproduction();
+    },window._perfLite?8000:2000);
   }
   // First-visit onboarding
   if(!localStorage.getItem('lw_wild_onboarded')){
