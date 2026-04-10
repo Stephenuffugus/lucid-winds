@@ -18377,6 +18377,12 @@
         body = '<b>' + brA + '</b> crossed with <b>' + brB + '</b>. A seed is in the nursery.';
         if (d.generation) body += ' <span style="color:var(--muted);">gen ' + d.generation + '</span>';
         break;
+      case 'achievement_unlock':
+        icon = '\ud83c\udfc6';
+        color = 'var(--gold)';
+        body = 'Achievement unlocked: <b>' + (d.name || 'Unknown') + '</b>';
+        if (d.reward) body += ' <span style="color:var(--gold);">+' + d.reward + ' Sunbeams</span>';
+        break;
       case 'plant_composted':
         icon = '\u267b\ufe0f';
         color = 'var(--muted)';
@@ -22175,12 +22181,13 @@
     });
     if (newlyUnlocked.length > 0){
       saveAchievements(unlocked);
-      // Grant +25 hashes per unlock via negative spend trick
       newlyUnlocked.forEach(function(ach){
-        var ledger2 = getHashLedger ? getHashLedger() : { spent: 0 };
-        ledger2.spent = Math.max(0, (ledger2.spent||0) - 25);
-        try{ _secureSet('sws_hash_ledger', ledger2); }catch(e){}
+        // Grant +25 Sunbeams via the proper earnHashes path
+        if (typeof earnHashes === 'function') earnHashes(25);
         _showAchToast(ach);
+        if (window.LW_Log) window.LW_Log.write('achievement_unlock', {
+          id: ach.id, name: ach.name, icon: ach.icon, reward: 25
+        });
         if(typeof gtag!=='undefined') gtag('event','achievement_unlock',{id:ach.id});
       });
       updateDashboard();
