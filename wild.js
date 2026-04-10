@@ -3946,15 +3946,15 @@ function _selectHexPlant(idx, plantData) {
     actions += '<button class="hi-action-btn gold" onclick="window._hexAction(\'breed\')">&#129516; BREED</button>';
     actions += '<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
   } else {
-    // Wild v3: stranger plants no longer have HARVEST.
-    // INSPECT is always available so everyone can see any plant regardless
-    // of level — the design rule is: seeing is free, acting has gates.
-    // TEND is the non-destructive interaction, gated at Keeper Lv 5.
-    // FRUIT (Lv 10) and CUTTING (Lv 15) come in Phase 2.
+    // Wild v3: stranger plants get INSPECT (always), WATER (budgeted),
+    // TEND (Lv 5, restorative), and CUTTING (Lv 15, destructive).
+    // Seeing is free, tending is kind, cutting wounds.
     var _canTend = (window.canSee && window.canSee.strangerTend && window.canSee.strangerTend());
+    var _canCut  = (window.canSee && window.canSee.wildCutting && window.canSee.wildCutting());
     actions += inspectBtn;
     actions += '<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
     actions += '<button class="hi-action-btn' + (_canTend ? '' : ' locked') + '" onclick="window._hexAction(\'tend\')" title="' + (_canTend ? 'Tend this plant — gives it +life and grants you Dew' : 'Unlocks at Keeper Level 5') + '">&#127807; TEND' + (_canTend ? '' : ' &#128274;') + '</button>';
+    actions += '<button class="hi-action-btn' + (_canCut ? ' gold' : ' locked') + '" onclick="window._hexAction(\'cutting\')" title="' + (_canCut ? 'Take a clone seed — WOUNDS the parent plant' : 'Unlocks at Keeper Level 15') + '">\u2702\ufe0f CUTTING' + (_canCut ? '' : ' &#128274;') + '</button>';
   }
 
   el.innerHTML =
@@ -4118,6 +4118,91 @@ window._hexAction = function(action) {
       if (window.LW_Log) window.LW_Log.write('wild_tended_stranger', { hash: p.hash, ownerName: p.ownerName || 'Keeper' });
       _toast('\ud83c\udf3f Tended ' + (p.ownerName || 'a keeper') + '\u2019s plant. +6h lifespan \u00b7 +2 Dew \u00b7 +10 XP');
       _play('match');
+      break;
+
+    case 'cutting':
+      // Wild v3 Phase 2 — destructive stranger interaction. Creates a
+      // clone seed in the nursery and WOUNDS the parent by removing
+      // 10% of its remaining lifespan. Once per player per plant, ever.
+      if (!window.canSee || !window.canSee.wildCutting || !window.canSee.wildCutting()) {
+        _toast('Cuttings unlock at Keeper Level 15.');
+        break;
+      }
+      if (_uLat && p.lat) {
+        var _cutDist = _dist(_uLat, _uLng, p.lat, p.lng);
+        if (_cutDist > COLLECT_RANGE) { _toast('Walk closer! ' + Math.round(_cutDist) + 'm away.'); break; }
+      }
+      if (p.own) { _toast('Cuttings from your own plants don\u2019t wound — just breed them normally.'); break; }
+      // Per-player lifetime gate — hash keys a seen set so a player can
+      // only take one cutting from any given plant, ever.
+      var _cutKey = 'lw_cuttings_taken';
+      var _cutLog = {}; try { _cutLog = JSON.parse(localStorage.getItem(_cutKey) || '{}'); } catch (e) {}
+      if (_cutLog[p.hash]) {
+        _toast('You\u2019ve already taken a cutting from this plant. Each is a lifetime one-shot.');
+        break;
+      }
+      // Nursery capacity check — don't wound the plant if we can't
+      // deposit the clone (would be pure grief).
+      var _nurMax = (window.FG_Data && window.FG_Data.getNurSlots) ? window.FG_Data.getNurSlots() : 3;
+      var _nurNow = (window.FG_Data && window.FG_Data.getNursery) ? window.FG_Data.getNursery().length : 0;
+      if (_nurNow >= _nurMax) {
+        _toast('Nursery full (' + _nurNow + '/' + _nurMax + '). Bloom or abandon a seed first.');
+        break;
+      }
+      // Confirmation: cutting is destructive and irreversible, spell it out.
+      window._lwConfirm && window._lwConfirm({
+        title: 'TAKE A CUTTING',
+        body: 'You\u2019ll gain a clone seed (Gen 2, \u22122 EA from the wound). The parent plant loses <b>10%</b> of its remaining lifespan. This cannot be undone. Tend other plants instead to be kind.',
+        yes: 'TAKE CUTTING',
+        no: 'LEAVE IT ALONE',
+        danger: true
+      }, function() {
+        // Wound the cached plant (source of truth for the live view).
+        try {
+          if (_sharedMarkers && _sharedMarkers[p.hash] && _sharedMarkers[p.hash].data) {
+            var _smd = _sharedMarkers[p.hash].data;
+            _ensureVitality(_smd);
+            var _rem = Math.max(0, (_smd.decayAt || Date.now()) - Date.now());
+            var _wound = Math.round(_rem * 0.10);
+            _smd.decayAt = (_smd.decayAt || Date.now()) - _wound;
+            _smd.cuttingWounds = (_smd.cuttingWounds || 0) + 1;
+          }
+        } catch(e) {}
+        // Record cutting so this plant can never be cut again by us.
+        _cutLog[p.hash] = Date.now();
+        try { localStorage.setItem(_cutKey, JSON.stringify(_cutLog)); } catch(e) {}
+        // Deposit a clone seed in the nursery — both parents = the cut
+        // plant's hash so the spliced bloom reproduces the same plant,
+        // gen defaults to 2 (neither parent in greenhouse), which means
+        // the natural -2 EA chimera penalty already applies.
+        if (window.FG_Data && window.FG_Data.addSeed) {
+          var _addResult = window.FG_Data.addSeed({
+            seedHash: p.hash,
+            parentAHash: p.hash,
+            parentBHash: p.hash,
+            nonce: 0,
+            mystery: false
+          });
+          if (!_addResult || !_addResult.ok) {
+            _toast('Cutting failed to land in nursery. Parent plant was spared.');
+            // Undo the cutting record so the player can try again later
+            delete _cutLog[p.hash];
+            try { localStorage.setItem(_cutKey, JSON.stringify(_cutLog)); } catch(e) {}
+            return;
+          }
+        }
+        // Rewards: Dew + pollen XP for the cutter. The XP is smaller
+        // than tend because the action is extractive.
+        if (window.PW_grantXP) PW_grantXP(15, 'wild_cutting');
+        if (window.LW_Log) window.LW_Log.write('wild_cutting_taken', {
+          hash: p.hash,
+          name: typeof getPlantName === 'function' ? getPlantName(p.hash) : '',
+          ownerName: p.ownerName || 'Keeper'
+        });
+        _toast('\u2702\ufe0f Clone seed added to the nursery. The parent weakened.');
+        if (window._haptic) _haptic('error');
+        if (typeof _selectHexPlant === 'function') _selectHexPlant(0, p);
+      });
       break;
 
     case 'collect':

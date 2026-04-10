@@ -18394,6 +18394,12 @@
         var wName = d.hash && window.getPlantName ? getPlantName(d.hash) : 'a wild plant';
         body = 'You watered <b>' + wName + '</b>. Lifespan reset.';
         break;
+      case 'wild_cutting_taken':
+        icon = '\u2702\ufe0f';
+        color = '#c88a4a';
+        var cutName = d.name || (d.hash && window.getPlantName ? getPlantName(d.hash) : 'a wild plant');
+        body = 'You took a cutting from <b>' + cutName + '</b>' + (d.ownerName ? ' (' + d.ownerName + ')' : '') + '. A clone seed is in the nursery; the parent weakened.';
+        break;
       case 'wild_tended_stranger':
         icon = '\ud83c\udf3f';
         color = 'var(--sage)';
