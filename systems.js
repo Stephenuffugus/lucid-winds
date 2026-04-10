@@ -4814,7 +4814,7 @@ var ABILITIES = {
 // Temperament bonuses
 var TEMPERAMENTS = {
   guardian: {name:'Guardian', icon:'🛡️', desc:'+1 defense EA',     defenseEA:1},
-  forager:  {name:'Forager',  icon:'🍂', desc:'+10% harvest hashes', harvestBonus:0.10},
+  forager:  {name:'Forager',  icon:'🍂', desc:'+10% harvest Dew',    harvestBonus:0.10},
   wanderer: {name:'Wanderer', icon:'🦋', desc:'+50m feral range',   feralRange:50},
   mystic:   {name:'Mystic',   icon:'✨', desc:'+15% pollen yield',  pollenBonus:0.15},
   symbiote: {name:'Symbiote', icon:'🌿', desc:'25% shared watering', sharedWater:0.25}
@@ -4986,7 +4986,7 @@ var STREAK_KEY='lw_quest_streak';
 var TEMPLATES=[
   {id:'win_game',text:'Win a mini-game',icon:'🎮',check:function(s){return(s.gamesWon||0)>=1;}},
   {id:'win_3',text:'Win 3 mini-games',icon:'🎯',check:function(s){return(s.gamesWon||0)>=3;}},
-  {id:'earn_10',text:'Earn 10 dew drops',icon:'💧',check:function(s){return(s.dewEarned||0)>=10;}},
+  {id:'earn_10',text:'Earn sunbeams from 10 games',icon:'☀️',check:function(s){return(s.dewEarned||0)>=10;}},
   {id:'water_seed',text:'Water a nursery seed',icon:'🌱',check:function(s){return(s.seedsWatered||0)>=1;}},
   {id:'view_plants',text:'Inspect 3 plants',icon:'🔍',check:function(s){return(s.plantsViewed||0)>=3;}},
   {id:'play_5min',text:'Play for 5 minutes',icon:'⏱️',check:function(s){return(s.playTimeMin||0)>=5;}},
