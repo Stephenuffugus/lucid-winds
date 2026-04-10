@@ -28357,7 +28357,7 @@ document.addEventListener('keydown', function(e) {
         '<div class="nur-pips">' + pips + '<span class="nur-pip-label">' + dayLabel + '</span></div>' +
         _fertInfo +
         '<div class="nur-actions">' + actionBtns +
-          (!bloomReady && wateredToday ? '<button class="nur-btn" data-sid="' + sid + '" onclick="handleFertilize(this.dataset.sid)" style="background:rgba(200,168,75,0.08);border-color:rgba(200,168,75,0.28);color:var(--gold);font-size:0.44rem;" title="Spend 21 Dew Drops to skip cooldown">⚡ 21 SKIP DAY</button>' : '') +
+          (!bloomReady ? '<button class="nur-btn" data-sid="' + sid + '" onclick="handleFertilize(this.dataset.sid)" style="background:rgba(200,168,75,0.08);border-color:rgba(200,168,75,0.28);color:var(--gold);font-size:0.44rem;" title="Spend 21 Dew Drops to skip a day (water today first)">⚡ 21 SKIP DAY</button>' : '') +
           '<button class="nur-btn abandon" data-sid="' + sid + '" onclick="handleRemoveSeed(this.dataset.sid)" title="Abandon">✕</button>' +
         '</div>' +
       '</div>' +
@@ -29151,7 +29151,7 @@ document.addEventListener('keydown', function(e) {
     var seed = nur[seedIndex];
 
     if (!seed.waterLog || seed.waterLog.length === 0) {
-      _setNurMsg('Water the seed at least once before fertilizing.');
+      _setNurMsg('💧 Water your seed once today first, then spend 21 Dew Drops to skip a day.');
       return;
     }
     if (seed.waterLog.length >= 3) {
