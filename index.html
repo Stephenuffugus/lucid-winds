@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.42';
+  var LW_VERSION='2026.04.10.43';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -35374,6 +35374,8 @@ function _selectHexPlant(idx,p){
   var rows=document.querySelectorAll('.hi-plant-row');
   for(var c=0;c<rows.length;c++)rows[c].classList.remove('selected');
   var sel=document.querySelector('.hi-plant-row[data-idx="'+idx+'"]');if(sel)sel.classList.add('selected');
+  // Field Journal: first-tap discovery + daily scout Dew rewards
+  if(typeof _fjInteract==='function')_fjInteract(p);
   var el=document.getElementById('hi-detail');if(!el)return;
   var name=window.getPlantName?getPlantName(p.hash):p.hash.slice(0,8);
   var grade='?',gc='var(--muted)',traits=null;

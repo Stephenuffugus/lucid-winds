@@ -3901,6 +3901,9 @@ function _selectHexPlant(idx, plantData) {
   var sel = document.querySelector('.hi-plant-row[data-idx="' + idx + '"]');
   if (sel) sel.classList.add('selected');
 
+  // Field Journal: first-tap discovery + daily scout Dew rewards
+  if (typeof _fjInteract === 'function') _fjInteract(plantData);
+
   // Build detail panel
   var el = document.getElementById('hi-detail');
   if (!el) return;
