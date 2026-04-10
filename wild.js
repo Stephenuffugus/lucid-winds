@@ -3782,9 +3782,11 @@ function _selectHexPlant(idx, plantData) {
     try { name = getPlantName(p.hash); } catch (e) {}
   }
 
-  // Trait summary
+  // Trait summary — visible for ALL plants in Wild v3 (the old hide-rarity
+  // rule was reversed now that harvest/theft is gone — strangers' plants
+  // become social landmarks players can aspire to tend, not targets).
   var traitHtml = '';
-  if (traits && p.own) {
+  if (traits) {
     traitHtml += '<div class="hi-detail-traits">';
     traitHtml += 'Pot: ' + (traits.pot || '?') + ' &middot; Stem: ' + (traits.stem || '?') + '<br>';
     traitHtml += 'Leaves: ' + (traits.leafCount || '?') + 'x ' + (traits.leafType || '?') + '<br>';
@@ -3793,8 +3795,6 @@ function _selectHexPlant(idx, plantData) {
     if (traits.mutation && traits.mutation !== 'None') traitHtml += 'Mutation: <span style="color:var(--gold);">' + traits.mutation + '</span><br>';
     traitHtml += 'Age: ' + p.days + ' days';
     traitHtml += '</div>';
-  } else if (!p.own) {
-    traitHtml = '<div class="hi-detail-traits">Traits hidden until collected</div>';
   }
 
   // Action buttons
@@ -3802,10 +3802,14 @@ function _selectHexPlant(idx, plantData) {
   var user = window.firebase && firebase.auth() && firebase.auth().currentUser;
   var isOwn = p.own || (user && user.uid && p.ownerUid === user.uid);
 
+  // INSPECT is always available — everyone can see any plant in the wild
+  // regardless of resources or level (per Stephen's design).
+  var inspectBtn = '<button class="hi-action-btn" onclick="window._hexAction(\'inspect\')">&#128269; INSPECT</button>';
+
   if (isOwn) {
     actions += '<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
     actions += '<button class="hi-action-btn gold" onclick="window._hexAction(\'breed\')">&#129516; BREED</button>';
-    actions += '<button class="hi-action-btn" onclick="window._hexAction(\'inspect\')">&#128269; INSPECT</button>';
+    actions += inspectBtn;
     actions += '<button class="hi-action-btn" onclick="window._hexAction(\'defense\')">&#128737; DEFENSE</button>';
   } else if (p.wildBorn) {
     actions += '<button class="hi-action-btn" onclick="window._hexAction(\'collect\')">&#127793; COLLECT</button>';
@@ -3813,11 +3817,13 @@ function _selectHexPlant(idx, plantData) {
     actions += '<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
   } else {
     // Wild v3: stranger plants no longer have HARVEST.
-    // TEND is the non-destructive replacement — gated at Keeper Lv 5.
-    // FRUIT (Lv 10) and CUTTING (Lv 15) will be added in Phase 2.
+    // INSPECT is always available so everyone can see any plant regardless
+    // of level — the design rule is: seeing is free, acting has gates.
+    // TEND is the non-destructive interaction, gated at Keeper Lv 5.
+    // FRUIT (Lv 10) and CUTTING (Lv 15) come in Phase 2.
     var _canTend = (window.canSee && window.canSee.strangerTend && window.canSee.strangerTend());
+    actions += inspectBtn;
     actions += '<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
-    actions += '<button class="hi-action-btn gold" onclick="window._hexAction(\'breed\')">&#129516; BREED</button>';
     actions += '<button class="hi-action-btn' + (_canTend ? '' : ' locked') + '" onclick="window._hexAction(\'tend\')" title="' + (_canTend ? 'Tend this plant — gives it +life and grants you Dew' : 'Unlocks at Keeper Level 5') + '">&#127807; TEND' + (_canTend ? '' : ' &#128274;') + '</button>';
   }
 
@@ -3906,6 +3912,16 @@ window._hexAction = function(action) {
       } else { _toast('Breed system loading...'); }
       break;
 
+    case 'inspect':
+      // Open the Extra Details modal for ANY plant — own, stranger, wild,
+      // or greenhouse. The modal reconstructs from hash if the plant isn't
+      // in any local store, so stranger wild plants still render fully.
+      if (window._openPlantDetails) {
+        _closeHexInspector();
+        window._openPlantDetails(p.hash);
+      } else { _toast('Details view loading...'); }
+      break;
+
     case 'harvest':
       // DEAD CODE — harvest was removed in Wild v3 Phase 1. Kept as a safety
       // net in case any stale cached UI still calls it. Will be deleted in
@@ -3962,16 +3978,9 @@ window._hexAction = function(action) {
       } else { _toast('Collect system loading...'); }
       break;
 
-    case 'inspect':
-      if (window.openCarousel) {
-        _closeHexInspector();
-        var gh = _getGH();
-        var idx = -1;
-        for (var gi = 0; gi < gh.length; gi++) { if (gh[gi].hash === p.hash) { idx = gi; break; } }
-        if (idx >= 0) openCarousel(gh, idx, 'greenhouse');
-        else _toast('Plant not found in greenhouse.');
-      }
-      break;
+    // NOTE: old 'inspect' case (greenhouse carousel lookup) removed —
+    // superseded by the new case 'inspect' earlier in this switch that
+    // uses _openPlantDetails and works for any plant regardless of store.
 
     case 'defense':
       if (typeof _pickDefense === 'function') _pickDefense(p.hash);
@@ -3980,5 +3989,8 @@ window._hexAction = function(action) {
   }
 };
 
-return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_drawZoneHexes:_drawZoneHexes,_openHexInspector:_openHexInspector};
+// Expose a getter for shared markers so _openPlantDetails (and other
+// cross-module code) can look up stranger wild plants by hash.
+function _getSharedMarker(hash){try{return (_sharedMarkers&&_sharedMarkers[hash])?_sharedMarkers[hash]:null;}catch(e){return null;}}
+return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_drawZoneHexes:_drawZoneHexes,_openHexInspector:_openHexInspector,_getSharedMarker:_getSharedMarker};
 })();

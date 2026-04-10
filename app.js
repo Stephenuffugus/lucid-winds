@@ -19929,10 +19929,44 @@
   // Shows lineage + breeding history + trait deep-dive + mutation details.
   // Built dynamically on first open, reused thereafter.
   window._openPlantDetails = function(plantHash) {
-    var gh = loadGreenhouse();
+    if (!plantHash) { if (window._toast) _toast('No plant hash provided.'); return; }
+
+    // Find the plant's full data wherever it lives:
+    //   1) Greenhouse collection (your own greenhouse plants)
+    //   2) Local wild store (your own plants dropped in the Wild)
+    //   3) Shared markers (other players' wild plants from Firestore)
+    //   4) Fallback: minimal reconstruction from the hash alone.
+    // The hash IS the plant's identity — SVG, name, haiku, and all
+    // deterministic traits can always be regenerated from it, even
+    // without any stored metadata.
     var plant = null;
-    for (var i = 0; i < gh.length; i++) { if (gh[i].hash === plantHash) { plant = gh[i]; break; } }
-    if (!plant) { if (window._toast) _toast('Plant not found.'); return; }
+    var source = 'unknown';
+    try {
+      var gh = loadGreenhouse();
+      for (var i = 0; i < gh.length; i++) { if (gh[i].hash === plantHash) { plant = gh[i]; source = 'greenhouse'; break; } }
+    } catch(e) {}
+    if (!plant) {
+      try {
+        var wildRaw = (window._secureGet ? window._secureGet('fg_wild_plants') : localStorage.getItem('fg_wild_plants')) || '[]';
+        var wild = JSON.parse(wildRaw);
+        for (var j = 0; j < wild.length; j++) { if (wild[j].hash === plantHash) { plant = wild[j]; source = 'wild'; break; } }
+      } catch(e) {}
+    }
+    if (!plant && window.FG_Wild && typeof window.FG_Wild._getSharedMarker === 'function') {
+      // Try shared markers (stranger plants from Firestore subscription).
+      try {
+        var sm = window.FG_Wild._getSharedMarker(plantHash);
+        if (sm && sm.data) { plant = sm.data; source = 'shared'; }
+      } catch(e) {}
+    }
+    if (!plant) {
+      // Fallback: reconstruct a minimal plant object from the hash alone.
+      // Date, origin, lineage, and breed history are unknown, but every
+      // deterministic trait (SVG, name, haiku, traits, companion) will
+      // still render correctly.
+      plant = { hash: plantHash, date: null, origin: 'wild' };
+      source = 'reconstructed';
+    }
 
     var modal = document.getElementById('plant-details-modal');
     if (!modal) {

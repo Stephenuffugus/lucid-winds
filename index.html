@@ -34955,13 +34955,15 @@ function _openHexInspector(zk){
     for(var j=0;j<augmented.length;j++){
       var ap=augmented[j];
       var row=document.createElement('div');row.className='hi-plant-row';row.setAttribute('data-idx',j);
-      // SVG: only show for own plants
+      // SVG, name, and grade are visible for ALL plants in Wild v3 — the
+      // old hide-for-strangers rule was reversed now that harvest/theft is
+      // gone. Seeing any plant is free; interacting with it has gates.
       var svgHtml='';
-      if(ap.own&&window._generatePlantSVG){try{svgHtml=window._generatePlantSVG(ap.hash,40,1);}catch(e){}}
-      if(!svgHtml||!ap.own)svgHtml='<svg viewBox="0 0 40 50" width="40" height="50" xmlns="http://www.w3.org/2000/svg"><rect x="11" y="38" width="18" height="12" rx="3" fill="rgba(90,112,80,0.2)"/><line x1="20" y1="38" x2="20" y2="15" stroke="rgba(90,112,80,0.25)" stroke-width="3" stroke-linecap="round"/><ellipse cx="12" cy="20" rx="9" ry="6" fill="rgba(90,112,80,0.15)" transform="rotate(-20 12 20)"/><ellipse cx="28" cy="17" rx="9" ry="6" fill="rgba(90,112,80,0.12)" transform="rotate(15 28 17)"/><text x="20" y="32" text-anchor="middle" font-size="12" fill="rgba(200,168,75,0.4)">?</text></svg>';
-      var name=ap.own&&window.getPlantName?getPlantName(ap.hash):'???';
+      if(window._generatePlantSVG){try{svgHtml=window._generatePlantSVG(ap.hash,40,1);}catch(e){}}
+      if(!svgHtml)svgHtml='<svg viewBox="0 0 40 50" width="40" height="50" xmlns="http://www.w3.org/2000/svg"><rect x="11" y="38" width="18" height="12" rx="3" fill="rgba(90,112,80,0.2)"/><line x1="20" y1="38" x2="20" y2="15" stroke="rgba(90,112,80,0.25)" stroke-width="3" stroke-linecap="round"/><ellipse cx="12" cy="20" rx="9" ry="6" fill="rgba(90,112,80,0.15)" transform="rotate(-20 12 20)"/><ellipse cx="28" cy="17" rx="9" ry="6" fill="rgba(90,112,80,0.12)" transform="rotate(15 28 17)"/></svg>';
+      var name=window.getPlantName?getPlantName(ap.hash):ap.hash.slice(0,8);
       var grade='?',gc='var(--muted)';
-      if(ap.own&&window.hashToTraits&&window.getTerraGrade){try{var tr=hashToTraits(ap.hash);var tg=getTerraGrade(tr);grade=tg.label||tg.name||'?';gc=tg.color||'var(--muted)';}catch(e){}}
+      if(window.hashToTraits&&window.getTerraGrade){try{var tr=hashToTraits(ap.hash);var tg=getTerraGrade(tr);grade=tg.label||tg.name||'?';gc=tg.color||'var(--muted)';}catch(e){}}
       var origin=ap.own?'Planted':(ap.wildBorn?'Wild Born':ap.ownerName);
       row.innerHTML='<div class="hi-pr-svg">'+svgHtml+'</div><div class="hi-pr-info"><div class="hi-pr-name">'+name+'</div><div class="hi-pr-meta" style="color:'+gc+';">'+grade+' · '+origin+'</div></div>';
       (function(idx,pd){row.addEventListener('click',function(){_selectHexPlant(idx,pd);});})(j,ap);
@@ -35062,7 +35064,10 @@ window._hexAction=function(action){
     _toast('\ud83c\udf3f Tended '+(p.ownerName||'a keeper')+'\u2019s plant. +2 Dew \u00b7 +10 XP');
     if(window._play)_play('match');
   }else if(action==='inspect'){
-    if(window.openCarousel){window._closeHexInspector();var gh=_getGH();var idx=-1;for(var gi=0;gi<gh.length;gi++){if(gh[gi].hash===p.hash){idx=gi;break;}}if(idx>=0)openCarousel(gh,idx,'greenhouse');}
+    // Wild v3: open Extra Details modal for ANY plant. Works for own,
+    // stranger, greenhouse, wild — reconstructs from hash when needed.
+    if(window._openPlantDetails){window._closeHexInspector();window._openPlantDetails(p.hash);}
+    else{_toast('Details view loading...');}
   }else if(action==='defense'){
     if(typeof _pickDefense==='function')_pickDefense(p.hash);
   }
