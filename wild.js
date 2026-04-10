@@ -3673,6 +3673,13 @@ function _renderHexPlants(plants) {
     if (!full && _sharedMarkers[p.hash]) {
       full = _sharedMarkers[p.hash].data || null;
     }
+    // Compute EA for sorting — prefer stored, fallback to trait recompute
+    var _eaVal = 0;
+    if (full && typeof full.ea === 'number' && full.ea > 0) {
+      _eaVal = full.ea;
+    } else if (typeof _wildEA === 'function') {
+      try { _eaVal = _wildEA({hash: p.hash, ea: full && full.ea, date: full && full.date}); } catch (e) { _eaVal = 0; }
+    }
     augmented.push({
       hash: p.hash, lat: p.lat, lng: p.lng,
       own: full ? (full.own !== false) : false,
@@ -3681,8 +3688,26 @@ function _renderHexPlants(plants) {
       ownerUid: full ? (full.ownerUid || '') : '',
       defenderGame: full ? (full.defenderGame || 'set') : 'set',
       date: full ? full.date : null,
-      days: full && full.date ? Math.floor((Date.now() - new Date(full.date).getTime()) / 86400000) : 0
+      days: full && full.date ? Math.floor((Date.now() - new Date(full.date).getTime()) / 86400000) : 0,
+      ea: _eaVal
     });
+  }
+
+  // Display-level 3-per-zone cap — legacy drops from before the cap landed
+  // can leave >3 plants in a zone, and we can't delete other players' remote
+  // plants from Firestore (no auth). Sort by EA desc, show the top 3, note
+  // the hidden count so the keeper knows about the excess.
+  var _overCapExcess = 0;
+  if (augmented.length > MAX_PER_ZONE) {
+    augmented.sort(function(a, b) { return (b.ea || 0) - (a.ea || 0); });
+    _overCapExcess = augmented.length - MAX_PER_ZONE;
+    augmented = augmented.slice(0, MAX_PER_ZONE);
+  }
+  if (_overCapExcess > 0) {
+    var note = document.createElement('div');
+    note.style.cssText = 'padding:0.5rem 0.75rem;margin-bottom:0.4rem;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.2);border-radius:6px;font-family:DM Mono,monospace;font-size:0.48rem;color:var(--gold);line-height:1.4;';
+    note.innerHTML = '\u26a0 Zone has ' + (augmented.length + _overCapExcess) + ' plants total \u2014 showing strongest 3 by EA (' + _overCapExcess + ' legacy weaker plant' + (_overCapExcess === 1 ? '' : 's') + ' hidden).';
+    el.appendChild(note);
   }
 
   for (var j = 0; j < augmented.length; j++) {
