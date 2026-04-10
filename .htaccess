@@ -35,8 +35,21 @@
     Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
 
-  # Game scripts (games/*.js) — versioned via ?v= query string, cache 1 year
-  <FilesMatch "\.js$">
+  # Core split-build scripts — must revalidate on every load so deploys
+  # go live instantly. The old 1-year immutable rule applied to every .js
+  # file and trapped users on stale core.js / app.js / systems.js / etc.
+  # The LW_VERSION check inside core.js could never fire because the
+  # browser never re-fetched core.js to see the new version number.
+  <FilesMatch "^(core|app|systems|init|games|wild|dev|shared)\.(js|css)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+
+  # Game-specific scripts and word banks (games/*.js, word-banks.js) —
+  # these genuinely don't change often and can stay aggressively cached.
+  <FilesMatch "^(word-banks)\.js$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "^games/.*\.js$">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
 
