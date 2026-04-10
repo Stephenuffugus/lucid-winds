@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.22';
+  var LW_VERSION='2026.04.10.23';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3718,6 +3718,13 @@
 .hi-detail-traits{font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--muted);line-height:1.7;margin-bottom:0.5rem;}
 .hi-actions{display:flex;gap:8px;flex-wrap:wrap;}
 .hi-action-btn{flex:1;min-width:90px;min-height:56px;padding:0.45rem 0.5rem;border-radius:12px;border:1.5px solid rgba(122,179,86,0.2);background:linear-gradient(180deg,rgba(26,36,22,0.5),rgba(18,24,16,0.6));color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;letter-spacing:0.1em;cursor:pointer;text-align:center;}
+.hi-vitality{margin:0.5rem 0;padding:0.5rem 0.65rem;background:rgba(13,16,12,0.55);border:1px solid rgba(74,124,53,0.2);border-radius:8px;}
+.hi-vitality-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;}
+.hi-vitality-label{font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.12em;color:var(--muted);}
+.hi-vitality-val{font-family:'DM Mono',monospace;font-size:0.65rem;font-weight:600;}
+.hi-vitality-bar{height:6px;background:rgba(42,48,37,0.7);border-radius:3px;overflow:hidden;border:1px solid rgba(74,124,53,0.15);}
+.hi-vitality-fill{height:100%;border-radius:3px;transition:width 0.5s ease;}
+.hi-vitality-caption{font-family:'DM Mono',monospace;font-size:0.52rem;color:var(--muted);margin-top:0.3rem;font-weight:500;}
 .hi-action-btn:active{background:rgba(74,124,53,0.25);border-color:rgba(122,179,86,0.4);}
 .hi-action-btn.danger{border-color:rgba(200,80,60,0.2);color:rgba(200,120,100,0.9);}
 .hi-action-btn.gold{border-color:rgba(200,168,75,0.25);color:var(--gold);}
@@ -35287,6 +35294,36 @@ function _selectHexPlant(idx,p){
     if(traits.companion&&traits.companion!=='None')traitHtml+='<br>Companion: '+traits.companion;
     traitHtml+=' · Age: '+p.days+' days</div>';
   }
+  // Vitality bar — rarity-scaled lifespan readout.
+  // Pulls the source plant from local wild cache or shared markers so
+  // own + stranger plants both show a working bar.
+  var vitalityHtml='';
+  try{
+    var _sourcePlant=null;
+    var _localWild=_getWild();
+    for(var _lw=0;_lw<_localWild.length;_lw++){
+      if(_localWild[_lw].hash===p.hash){_sourcePlant=_localWild[_lw];break;}
+    }
+    if(!_sourcePlant&&_sharedMarkers&&_sharedMarkers[p.hash]){
+      _sourcePlant=_sharedMarkers[p.hash].data||null;
+    }
+    if(_sourcePlant){
+      _ensureVitality(_sourcePlant);
+      var _vit=_getWildVitality(_sourcePlant);
+      var _vPct=Math.round(_vit.pct*100);
+      var _vDays=_vit.daysLeft;
+      var _vLabel=_vDays>=1?Math.round(_vDays)+' days left':Math.round(_vDays*24)+'h left';
+      var _vColor=_vPct>66?'var(--sage)':_vPct>33?'#c8a84b':'#c07060';
+      vitalityHtml='<div class="hi-vitality">'+
+        '<div class="hi-vitality-row"><span class="hi-vitality-label">VITALITY</span>'+
+          '<span class="hi-vitality-val" style="color:'+_vColor+';">'+_vPct+'% \u00b7 '+_vLabel+'</span>'+
+        '</div>'+
+        '<div class="hi-vitality-bar"><div class="hi-vitality-fill" style="width:'+_vPct+'%;background:'+_vColor+';"></div></div>'+
+        '<div class="hi-vitality-caption">Lifespan '+Math.round((_sourcePlant.lifespanMs||0)/86400000)+'d \u00b7 '+(_sourcePlant.rarity||'Common')+(p.own?' \u00b7 Water to reset':' \u00b7 Tend to extend')+'</div>'+
+      '</div>';
+    }
+  }catch(e){}
+
   var actions='';
   var user=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
   var isOwn=p.own||(user&&user.uid&&p.ownerUid===user.uid);
@@ -35306,7 +35343,7 @@ function _selectHexPlant(idx,p){
     actions+='<button class="hi-action-btn'+(_canTend?'':' locked')+'"'+(_canTend?' onclick="window._hexAction(\'tend\')"':'')+' title="'+(_canTend?'Tend this plant — gives it +6h and grants you Dew':'Unlocks at Keeper Level 5')+'">&#127807; TEND'+(_canTend?'':' &#128274;')+'</button>';
     actions+='<button class="hi-action-btn gold'+(_canCut?'':' locked')+'"'+(_canCut?' onclick="window._hexAction(\'cutting\')"':'')+' title="'+(_canCut?'Take a cutting — clone seed, parent loses 10% lifespan. One-time per plant':'Unlocks at Keeper Level 15')+'">&#9986; CUTTING'+(_canCut?'':' &#128274;')+'</button>';
   }
-  el.innerHTML='<div class="hi-detail-name">'+name+'</div><div class="hi-detail-grade" style="color:'+gc+';">'+grade+'</div>'+traitHtml+'<div class="hi-actions">'+actions+'</div>';
+  el.innerHTML='<div class="hi-detail-name">'+name+'</div><div class="hi-detail-grade" style="color:'+gc+';">'+grade+'</div>'+traitHtml+vitalityHtml+'<div class="hi-actions">'+actions+'</div>';
   el.style.display='block';
 }
 
