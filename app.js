@@ -19985,9 +19985,15 @@
     }
 
     var name = typeof getPlantName === 'function' ? getPlantName(plant.hash) : plant.hash.slice(0, 8);
-    var _t = null, _tg = null;
+    var _t = null, _tg = null, _ea = null, _haiku = null;
     try { _t = hashToTraits(plant.hash); _tg = getTerraGrade(_t); } catch(e) {}
+    try { _ea = window.computeEA ? computeEA(_t) : null; } catch(e) {}
+    try { _haiku = window.getHaiku ? getHaiku(plant.hash) : null; } catch(e) {}
     var tgColor = _tg ? _tg.color : 'var(--cream)';
+    var _seasonIdx = _t && typeof _t.season === 'number' ? _t.season : 0;
+    var _seasonName = ['Spring','Summer','Autumn','Winter'][_seasonIdx] || '';
+    var _seasonColor = ['#E8A0BF','#D4A843','#D4842A','#A0C4E8'][_seasonIdx] || 'var(--sage)';
+    var _seasonIcon = ['\ud83c\udf38','\u2600\ufe0f','\ud83c\udf42','\u2744\ufe0f'][_seasonIdx] || '';
 
     var title = document.getElementById('pdm-title');
     if (title) title.innerHTML = '<span style="color:' + tgColor + ';">' + name + '</span>';
@@ -19997,15 +20003,48 @@
 
     var html = '';
 
-    // Lineage section (the reason this modal exists)
+    // Plant portrait — the actual art, always visible no matter the source
+    var _portraitSvg = '';
+    try { if (window._generatePlantSVG) _portraitSvg = _generatePlantSVG(plant.hash, 140, 1); } catch(e) {}
+    html += '<div class="pdm-portrait" style="display:flex;flex-direction:column;align-items:center;gap:0.4rem;margin-bottom:0.8rem;padding-bottom:0.8rem;border-bottom:1px solid rgba(74,124,53,0.12);">';
+    html += '<div style="width:160px;height:160px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(74,124,53,0.08) 0%,transparent 70%);border-radius:12px;">' + _portraitSvg + '</div>';
+    html += '<div style="font-family:Playfair Display,serif;font-size:1rem;font-style:italic;color:var(--cream);text-align:center;line-height:1.25;">' + name + '</div>';
+    html += '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center;font-family:DM Mono,monospace;font-size:0.55rem;">';
+    if (_tg) html += '<span style="color:' + tgColor + ';padding:0.15rem 0.45rem;border:1px solid ' + tgColor + ';border-radius:4px;">' + (_tg.name || _tg.label) + '</span>';
+    if (_seasonName) html += '<span style="color:' + _seasonColor + ';padding:0.15rem 0.45rem;border:1px solid ' + _seasonColor + ';border-radius:4px;">' + _seasonIcon + ' ' + _seasonName + '</span>';
+    if (_ea !== null) html += '<span style="color:var(--sage);padding:0.15rem 0.45rem;border:1px solid rgba(122,179,86,0.4);border-radius:4px;">EA ' + _ea + '</span>';
+    html += '</div>';
+    if (_haiku) {
+      html += '<div style="font-family:Playfair Display,serif;font-size:0.58rem;font-style:italic;color:var(--muted);text-align:center;line-height:1.55;margin-top:0.25rem;">';
+      html += (_haiku.line1 || '') + '<br>' + (_haiku.line2 || '') + '<br>' + (_haiku.line3 || '');
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // Trait layers — inheritable DNA players use to decide what to breed
+    if (_t) {
+      html += '<div class="pdm-section">';
+      html += '<div class="pdm-section-title">DNA LAYERS</div>';
+      var _rows = [
+        ['Pot', _t.pot != null ? String(_t.pot) : '?'],
+        ['Stem', _t.stem || '?'],
+        ['Leaves', (_t.leafCount != null ? _t.leafCount + 'x ' : '') + (_t.leafType || '?')],
+        ['Bloom', _t.hasFlower ? (_t.flower || 'Yes') : 'None'],
+        ['Base', _t.base != null ? String(_t.base) : '?'],
+        ['Aura', _t.aura != null ? String(_t.aura) : '?'],
+        ['Companion', (_t.companion && _t.companion !== 'None') ? _t.companion : 'None'],
+        ['Mutation', (_t.mutationName && _t.mutationName !== 'None') ? _t.mutationName : 'None']
+      ];
+      for (var _ri = 0; _ri < _rows.length; _ri++) {
+        html += '<div class="pdm-row"><span class="pdm-k">' + _rows[_ri][0] + '</span><span class="pdm-v">' + _rows[_ri][1] + '</span></div>';
+      }
+      html += '</div>';
+    }
+
+    // Lineage section — only if parents are known
     if (plant.parentAHash && plant.parentBHash) {
       html += '<div class="pdm-section">';
-      html += renderLineageTree(plant);
-      html += '</div>';
-    } else {
-      html += '<div class="pdm-section pdm-empty">';
-      html += '<div class="pdm-empty-label">LINEAGE</div>';
-      html += '<div class="pdm-empty-body">Born from focused attention, not bred from parents. This plant has no ancestry.</div>';
+      try { html += renderLineageTree(plant); } catch(e) { html += '<div class="pdm-empty-body">Lineage unavailable.</div>'; }
       html += '</div>';
     }
 
@@ -20517,11 +20556,33 @@
         '</svg>';
     } else if (days === 2) {
       // Small seedling — taller, two real leaves
-      svgHtml = typeof generatePlantSVG === 'function' ? generatePlantSVG(seed.seedHash, 48, 0.45) : '';
+      if (seed.mystery) {
+        svgHtml = '<svg viewBox="0 0 70 95" width="48" height="65" xmlns="http://www.w3.org/2000/svg">' +
+          '<ellipse cx="35" cy="85" rx="18" ry="3" fill="#3A5C2A" opacity="0.2"/>' +
+          '<line x1="35" y1="85" x2="35" y2="48" stroke="#5E8550" stroke-width="2" stroke-linecap="round"/>' +
+          '<ellipse cx="25" cy="55" rx="10" ry="5" fill="#8CB86E" opacity="0.7" transform="rotate(-22 25 55)"/>' +
+          '<ellipse cx="45" cy="52" rx="10" ry="5" fill="#8CB86E" opacity="0.7" transform="rotate(22 45 52)"/>' +
+          '<circle cx="35" cy="50" r="16" fill="none" stroke="#c8a84b" stroke-width="0.5" stroke-dasharray="1.5,2.5" opacity="0.5"/>' +
+          '</svg>';
+      } else {
+        svgHtml = typeof generatePlantSVG === 'function' ? generatePlantSVG(seed.seedHash, 48, 0.45) : '';
+      }
     } else {
       // Day 3+ / bloom-ready — full progress plant with golden glow
-      var baseSvg = typeof generatePlantSVG === 'function' ? generatePlantSVG(seed.seedHash, 48, 0.85) : '';
-      svgHtml = baseSvg.replace('<svg ', '<svg style="filter:drop-shadow(0 0 6px rgba(200,168,75,0.4));" ');
+      if (seed.mystery) {
+        // Glowing silhouette — the reveal happens at the bloom button press,
+        // not in the card, so the player gets the payoff at the right moment.
+        svgHtml = '<svg viewBox="0 0 70 95" width="48" height="65" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 8px rgba(200,168,75,0.55));">' +
+          '<ellipse cx="35" cy="85" rx="18" ry="3" fill="#3A5C2A" opacity="0.25"/>' +
+          '<circle cx="35" cy="42" r="22" fill="rgba(200,168,75,0.18)"/>' +
+          '<circle cx="35" cy="42" r="15" fill="rgba(200,168,75,0.28)"/>' +
+          '<text x="35" y="50" text-anchor="middle" font-family="Bebas Neue,sans-serif" font-size="20" fill="#c8a84b" opacity="0.9">?</text>' +
+          '<circle cx="35" cy="42" r="24" fill="none" stroke="#c8a84b" stroke-width="0.6" stroke-dasharray="2,2.5" opacity="0.55"/>' +
+          '</svg>';
+      } else {
+        var baseSvg = typeof generatePlantSVG === 'function' ? generatePlantSVG(seed.seedHash, 48, 0.85) : '';
+        svgHtml = baseSvg.replace('<svg ', '<svg style="filter:drop-shadow(0 0 6px rgba(200,168,75,0.4));" ');
+      }
     }
     var sid = seed.id;
     var waterLabel    = wateredToday ? '✓ WATERED' : '💧 WATER';
@@ -20533,18 +20594,17 @@
     var _fertMax = 25;
     var _canFert = _invFert > 0 && _seedFert < _fertMax && !bloomReady;
 
-    // Merged primary action button: one slot, three states.
-    //   bloomReady         → 🌸 BLOOM  (open bloom confirmation)
-    //   !bloomReady && !wateredToday → 💧 WATER  (free daily water)
-    //   !bloomReady && wateredToday  → ⚡ +1 DAY (21)  (spend 21 Dew to advance)
-    // Eliminates the 4-button row that was wrapping unpredictably on narrow cards.
+    // Action buttons: BLOOM stands alone when ready, otherwise WATER and
+    // ACCELERATE sit side by side so both are always visible. WATER is
+    // disabled once watered today; ACCELERATE is the paid-Dew alternative
+    // for skipping the 24h wait and is always visible pre-bloom.
     var actionBtns;
     if (bloomReady) {
-      actionBtns = '<button class="nur-btn bloom" data-sid="' + sid + '" onclick="handleBloomBtn(this.dataset.sid)">🌸 BLOOM</button>';
-    } else if (!wateredToday) {
-      actionBtns = '<button class="nur-btn water" data-sid="' + sid + '" onclick="handleWaterSeed(this.dataset.sid)">💧 WATER</button>';
+      actionBtns = '<button class="nur-btn bloom" data-sid="' + sid + '" onclick="handleBloomBtn(this.dataset.sid)">\ud83c\udf38 BLOOM</button>';
     } else {
-      actionBtns = '<button class="nur-btn skipday" data-sid="' + sid + '" onclick="handleFertilize(this.dataset.sid)" style="background:rgba(200,168,75,0.12);border-color:rgba(200,168,75,0.4);color:var(--gold);" title="Spend 21 Dew to advance one day">⚡ +1 DAY (21)</button>';
+      var waterBtn = '<button class="nur-btn water" data-sid="' + sid + '" onclick="handleWaterSeed(this.dataset.sid)"' + (wateredToday ? ' disabled style="opacity:0.5;"' : '') + '>' + (wateredToday ? '\u2713 WATERED' : '\ud83d\udca7 WATER') + '</button>';
+      var accelBtn = '<button class="nur-btn skipday" data-sid="' + sid + '" onclick="handleFertilize(this.dataset.sid)" style="background:rgba(200,168,75,0.12);border-color:rgba(200,168,75,0.4);color:var(--gold);" title="Spend 21 Dew to advance one day">\u26a1 ACCELERATE (21\ud83d\udca7)</button>';
+      actionBtns = waterBtn + accelBtn;
     }
     // BOOST (renamed from FERT) — compost → rarity boost, independent of time/skip
     actionBtns += '<button class="nur-btn boost" data-sid="' + sid + '" onclick="handleApplyFertilizer(this.dataset.sid)" style="background:rgba(200,168,75,0.06);border-color:rgba(200,168,75,0.2);color:var(--gold);font-size:0.42rem;"' + (_canFert ? '' : ' disabled') + ' title="Apply 1 compost for +1% rarity boost on bloom">🌿 BOOST ' + _seedFert + '/' + _fertMax + '</button>';
@@ -20552,9 +20612,14 @@
     var _fertInfo = (seed.fertApplied || 0) > 0 ? '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--gold);margin-top:2px;">🌿 ' + (seed.fertApplied || 0) + '/15 fertilizer (+' + (seed.fertApplied || 0) + '% rarity)</div>' : '';
 
     // ── Offspring forecast preview ──
+    // Mystery seeds (feral drops collected from the wild) keep their name,
+    // rarity, and trait preview SEALED until they bloom. The payoff of
+    // collecting a wild seed is the reveal at sprout — spoiling it here
+    // kills the surprise and the "what could this be?" pull.
     var _offPreview = '';
+    var _isMystery = !!seed.mystery;
     try {
-      var _ot = window.hashToTraits ? hashToTraits(seed.seedHash) : null;
+      var _ot = (!_isMystery && window.hashToTraits) ? hashToTraits(seed.seedHash) : null;
       if (_ot) {
         var _oName = typeof getPlantName === 'function' ? getPlantName(seed.seedHash) : '???';
         var _oGrade = window.getTerraGrade ? getTerraGrade(_ot) : null;
@@ -20590,6 +20655,14 @@
       }
     } catch(e) {}
 
+    // Mystery seed preview — sealed rarity, encourages watering to reveal.
+    if (_isMystery) {
+      _offPreview = '<div style="margin-top:0.2rem;padding:0.35rem 0.4rem;background:rgba(200,168,75,0.06);border:1px dashed rgba(200,168,75,0.35);border-radius:6px;">' +
+        '<div style="font-family:Bebas Neue,sans-serif;font-size:0.38rem;letter-spacing:0.1em;color:var(--gold);margin-bottom:0.15rem;">\u2753 MYSTERY SEED</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:0.36rem;color:var(--muted);line-height:1.4;">Pulled from a feral zone. Water it for three days to see what you\u2019ve got.</div>' +
+      '</div>';
+    }
+
     // Growth stage label for header
     var _stageName = bloomReady ? 'FULL BLOOM' : days === 0 ? 'PLANTED' : days === 1 ? 'SPROUTING' : 'GROWING';
     var _stageIcon = bloomReady ? '\u2727' : days === 0 ? '\u25cb' : days === 1 ? '\u25d4' : '\u25d1';
@@ -20602,7 +20675,7 @@
       '<div class="nur-info-col">' +
         '<div class="nur-slot-label">Seed ' + (idx + 1) + '</div>' +
         '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:' + stateColor + ';margin:2px 0;font-weight:600;">' + stateLabel + '</div>' +
-        '<div class="nur-parents-line">⊕ ' + (typeof getPlantName === 'function' ? getPlantName(seed.parentAHash) : seed.parentAHash.substring(0,6)) + ' × ' + (typeof getPlantName === 'function' ? getPlantName(seed.parentBHash) : seed.parentBHash.substring(0,6)) + '</div>' +
+        (_isMystery ? '<div class="nur-parents-line" style="color:var(--muted);font-style:italic;">\u2295 Unknown lineage</div>' : '<div class="nur-parents-line">\u2295 ' + (typeof getPlantName === 'function' ? getPlantName(seed.parentAHash) : seed.parentAHash.substring(0,6)) + ' \u00d7 ' + (typeof getPlantName === 'function' ? getPlantName(seed.parentBHash) : seed.parentBHash.substring(0,6)) + '</div>') +
         _offPreview +
         '<div class="nur-pips">' + pips + '<span class="nur-pip-label">' + dayLabel + '</span></div>' +
         _fertInfo +
@@ -21397,10 +21470,7 @@
     if (seedIndex < 0) { _setNurMsg('Seed not found.'); return; }
     var seed = nur[seedIndex];
 
-    if (!seed.waterLog || seed.waterLog.length === 0) {
-      _setNurMsg('💧 Water your seed once today first, then spend 21 Dew to skip a day.');
-      return;
-    }
+    if (!seed.waterLog) seed.waterLog = [];
     if (seed.waterLog.length >= 3) {
       _setNurMsg('Seed is already bloom-ready. Tap BLOOM.');
       return;
@@ -21416,7 +21486,8 @@
     // Calculate the sequential next day from the LAST entry in waterLog —
     // NOT from Date.now(). This guarantees a unique date string each call,
     // so repeated fertilize clicks always advance the log toward length 3.
-    var lastDateStr = seed.waterLog[seed.waterLog.length - 1];
+    // When the log is empty (fresh seed, never watered), start from today.
+    var lastDateStr = seed.waterLog.length > 0 ? seed.waterLog[seed.waterLog.length - 1] : new Date(Date.now() - 86400000).toISOString().split('T')[0];
     var lastDate    = new Date(lastDateStr);
     var nextDate    = new Date(lastDate.getTime() + 86400000).toISOString().split('T')[0];
     if (seed.waterLog.indexOf(nextDate) < 0) {

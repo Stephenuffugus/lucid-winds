@@ -94,7 +94,7 @@ window.onerror=function(msg,url,line,col,err){
     window._perfLite = dominated;
 
 // ── VERSION CHECK — force reload on deploy ──
-var LW_VERSION='2026.04.10.16';
+var LW_VERSION='2026.04.10.17';
 (function(){
   var stored=localStorage.getItem('lw_version');
   if(stored&&stored!==LW_VERSION){
@@ -992,7 +992,8 @@ var LW_VERSION='2026.04.10.16';
       id:'nur_'+Date.now()+'_'+Math.floor(Math.random()*1000),
       seedHash:opts.seedHash, parentAHash:opts.parentAHash,
       parentBHash:opts.parentBHash, nonce:opts.nonce||0,
-      plantedAt:today, waterLog:[today], status:'growing', nickname:null
+      plantedAt:today, waterLog:[], status:'growing', nickname:null,
+      mystery:!!opts.mystery
     };
     nursery.push(seed);
     _saveNursery(nursery);

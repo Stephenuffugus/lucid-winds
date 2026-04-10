@@ -1004,21 +1004,36 @@ function _awardFeral(hash, parentA, parentB, zk, info) {
   zoneTimers[zk] = Date.now();
   localStorage.setItem('fg_feral_zones', JSON.stringify(zoneTimers));
 
-  // Add to backpack or pouch
-  var feralObj = { hash: hash, name: info.nm, type: 'feral', grade: info.grade, parentA: parentA, parentB: parentB, zone: zk, date: new Date().toISOString() };
+  // ── Mystery seed: name/grade stay sealed until the seed blooms in nursery.
+  // We still compute the true grade so Dew reward can scale, but the player
+  // sees "Mystery Seed" everywhere until they water it and get the bloom.
+  var mysteryName = 'Mystery Seed';
+  var mysteryGrade = '???';
+  var feralObj = {
+    hash: hash,
+    name: mysteryName,
+    type: 'feral',
+    grade: mysteryGrade,
+    mystery: true,
+    parentA: parentA,
+    parentB: parentB,
+    zone: zk,
+    date: new Date().toISOString()
+  };
   if (window.FG_Backpack && FG_Backpack.as) {
     var added = FG_Backpack.as(feralObj);
     if (!added) { _toast('Seed pouch full!'); return; }
   }
 
-  // Dew reward by grade
-  var dewTable = { Common: 1, Uncommon: 3, Rare: 5, Epic: 8, Legendary: 12, Mythic: 18, Cosmic: 25 };
-  var dewReward = dewTable[info.grade] || 1;
+  // Dew reward by grade — grade itself stays hidden, but a mystery seed's
+  // dew payout is always Common-tier until sprouted. Rarer seeds reward the
+  // player with rarity reveal + stat bonuses at bloom time, not collection.
+  var dewReward = 1;
   if (window.earnHashes) earnHashes(dewReward);
 
-  _toast('🌰 Feral seed collected! +' + dewReward + ' dew · ' + info.grade);
+  _toast('\ud83c\udf30 Mystery seed pocketed. +' + dewReward + ' dew \u00b7 sprout it to see what it is');
   try { navigator.vibrate && navigator.vibrate([15, 30, 15]); } catch (e) {}
-  if (typeof gtag !== 'undefined') gtag('event', 'feral_collected', { grade: info.grade, zone: zk.slice(0, 10) });
+  if (typeof gtag !== 'undefined') gtag('event', 'feral_collected', { mystery: 1, zone: zk.slice(0, 10) });
 
   // Refresh zone hexes to remove the glow
   _drawFeralZones();
@@ -3716,18 +3731,19 @@ function _renderHexPlants(plants) {
     card.className = 'hi-plant-row';
     card.setAttribute('data-idx', j);
 
-    // Plant SVG — only show for YOUR plants
+    // Plant SVG — show for ALL plants (Wild v3: keepers need to see
+    // everyone's art to decide which plants to tend and breed with).
     var svgHtml = '';
-    if (ap.own && window._generatePlantSVG) {
+    if (window._generatePlantSVG) {
       try { svgHtml = window._generatePlantSVG(ap.hash, 40, 1); } catch (e) { svgHtml = ''; }
     }
-    if (!svgHtml || !ap.own) {
-      svgHtml = '<svg viewBox="0 0 40 50" width="40" height="50" xmlns="http://www.w3.org/2000/svg"><rect x="11" y="38" width="18" height="12" rx="3" fill="rgba(90,112,80,0.2)"/><line x1="20" y1="38" x2="20" y2="15" stroke="rgba(90,112,80,0.25)" stroke-width="3" stroke-linecap="round"/><ellipse cx="12" cy="20" rx="9" ry="6" fill="rgba(90,112,80,0.15)" transform="rotate(-20 12 20)"/><ellipse cx="28" cy="17" rx="9" ry="6" fill="rgba(90,112,80,0.12)" transform="rotate(15 28 17)"/><text x="20" y="32" text-anchor="middle" font-size="12" fill="rgba(200,168,75,0.4)">?</text></svg>';
+    if (!svgHtml) {
+      svgHtml = '<svg viewBox="0 0 40 50" width="40" height="50" xmlns="http://www.w3.org/2000/svg"><rect x="11" y="38" width="18" height="12" rx="3" fill="rgba(90,112,80,0.2)"/><line x1="20" y1="38" x2="20" y2="15" stroke="rgba(90,112,80,0.25)" stroke-width="3" stroke-linecap="round"/><ellipse cx="12" cy="20" rx="9" ry="6" fill="rgba(90,112,80,0.15)" transform="rotate(-20 12 20)"/><ellipse cx="28" cy="17" rx="9" ry="6" fill="rgba(90,112,80,0.12)" transform="rotate(15 28 17)"/></svg>';
     }
 
-    var name = ap.own && window.getPlantName ? getPlantName(ap.hash) : '???';
+    var name = window.getPlantName ? getPlantName(ap.hash) : ap.hash.slice(0, 8);
     var grade = '?', gradeColor = 'var(--muted)';
-    if (ap.own && window.hashToTraits && window.getTerraGrade) {
+    if (window.hashToTraits && window.getTerraGrade) {
       try { var tr = hashToTraits(ap.hash); var tg = getTerraGrade(tr); grade = tg.label || tg.name || '?'; gradeColor = tg.color || 'var(--muted)'; } catch (e) {}
     }
     var origin = ap.own ? 'Planted' : (ap.wildBorn ? 'Wild Born' : ap.ownerName);
@@ -3775,10 +3791,10 @@ function _selectHexPlant(idx, plantData) {
   if (window.hashToTraits) {
     try { traits = hashToTraits(p.hash); } catch (e) {}
   }
-  if (traits && window.getTerraGrade && p.own) {
+  if (traits && window.getTerraGrade) {
     try { tg = getTerraGrade(traits); grade = tg.label || tg.name || '?'; gradeColor = tg.color || 'var(--muted)'; } catch (e) {}
   }
-  if (p.own && window.getPlantName) {
+  if (window.getPlantName) {
     try { name = getPlantName(p.hash); } catch (e) {}
   }
 
@@ -3828,7 +3844,7 @@ function _selectHexPlant(idx, plantData) {
   }
 
   el.innerHTML =
-    '<div class="hi-detail-name">' + (p.own ? name : '???') + '</div>' +
+    '<div class="hi-detail-name">' + name + '</div>' +
     '<div class="hi-detail-grade" style="color:' + gradeColor + ';">' + grade + '</div>' +
     traitHtml +
     '<div class="hi-actions">' + actions + '</div>';

@@ -2617,17 +2617,19 @@ BP.ts = function(i) {
 window.addEventListener('bp-seed-to-nursery', function(e) {
   if (!e.detail) return;
   var seed = e.detail;
+  var isMystery = !!seed.mystery || seed.type === 'feral';
   // Use FG_Data.addSeed for correct nursery format
   if (window.FG_Data && FG_Data.addSeed) {
     var result = FG_Data.addSeed({
       seedHash: seed.hash || '',
       parentAHash: seed.hash || '',
       parentBHash: 'feral_' + Date.now(),
-      nonce: 0
+      nonce: 0,
+      mystery: isMystery
     });
     if (result.ok) {
       if (window.renderNursery) renderNursery();
-      if (window._toast) _toast('\ud83c\udf31 Feral seed added to nursery! Water it daily.');
+      if (window._toast) _toast(isMystery ? '\ud83c\udf31 Mystery seed planted! Water it daily to see what it becomes.' : '\ud83c\udf31 Seed added to nursery! Water it daily.');
     } else {
       if (window._toast) _toast('Nursery full. Bloom or abandon a seed first.');
     }
@@ -2644,9 +2646,10 @@ window.addEventListener('bp-seed-to-nursery', function(e) {
       parentBHash: 'feral_wild',
       nonce: 0,
       plantedAt: today,
-      waterLog: [today],
+      waterLog: [],
       status: 'growing',
-      nickname: null
+      nickname: null,
+      mystery: isMystery
     });
     if (window._secureSet) { window._secureSet('sws_nursery', nursery); } else { localStorage.setItem('sws_nursery', JSON.stringify(nursery)); }
     if (window.renderNursery) renderNursery();
