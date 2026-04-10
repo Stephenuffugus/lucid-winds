@@ -18256,6 +18256,8 @@
   window._chimeraDualClass = _chimeraDualClass;
   window.loadGreenhouse = loadGreenhouse;
   window.saveGreenhouse = saveGreenhouse;
+  window.getPlantName = getPlantName;
+  window.getTraitSummary = getTraitSummary;
 
   // ═══ EVENT LOG — foundation for Root Report, memorials, achievements ═══
   // Ring buffer of notable gameplay events persisted to localStorage.
