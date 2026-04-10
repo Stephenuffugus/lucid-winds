@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.09.3';
+  var LW_VERSION='2026.04.10.1';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -1710,7 +1710,15 @@
       background:rgba(10,12,8,0.98);
       border-top:none;
       max-width:680px;margin:0 auto;
+      transition:transform 0.3s cubic-bezier(.25,.46,.45,.94);
     }
+    .fg-bottomnav.minimized{transform:translateY(calc(100% - 18px));}
+    .fg-bottomnav.minimized .fg-nav-btn{pointer-events:none;}
+    .fg-nav-min{position:absolute;top:-22px;right:50%;transform:translateX(50%);width:64px;height:22px;background:rgba(10,12,8,0.95);border:1px solid rgba(74,124,53,0.25);border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.08em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;-webkit-tap-highlight-color:transparent;z-index:2;}
+    .fg-nav-min:active{background:rgba(20,24,16,0.95);}
+    .fg-bottomnav.minimized .fg-nav-min{color:var(--gold);}
+    .fg-bottomnav.minimized .fg-nav-min .nm-chev{transform:rotate(180deg);}
+    .nm-chev{display:inline-block;transition:transform 0.3s;font-size:0.7rem;line-height:1;}
     .fg-nav-btn{
       flex:1;
       background:none;border:none;
@@ -2142,8 +2150,8 @@
     /* ═══ CHIMERA DUAL-SEASON CARDS ═══
        Diagonal cut: season A (top-left) / season B (bottom-right)
        Cut line: 55px below top-right → 55px above bottom-left */
-    .greenhouse-plant.chimera-dual{position:relative;background-size:100% 100%!important;background-position:center!important;}
-    .cs-card-front[data-dual]{padding-top:10%;background-size:102%!important;background-position:center!important;}
+    .greenhouse-plant.chimera-dual{position:relative;background-size:108% 108%!important;background-position:center!important;}
+    .cs-card-front[data-dual]{padding-top:10%;background-size:108% 108%!important;background-position:center!important;}
     /* Pre-composited dual border images — greenhouse grid only */
     .greenhouse-plant.dual-sp-su{background-image:url('assets/cards/fronts/card-front-spring-top-summer-bottom.png')!important;}
     .greenhouse-plant.dual-sp-au{background-image:url('assets/cards/fronts/card-front-spring-top-autumn-bottom.png')!important;}
@@ -2991,7 +2999,7 @@
     .gu-btn:active{transform:scale(.9);background:rgba(74,124,53,.1);opacity:1}
 
     /* Message line — centered, legible, transitions smoothly */
-    .gm{font-size:clamp(.5rem,1.3vw,.6rem);color:var(--muted);text-align:center;padding:1px clamp(8px,2vw,12px);min-height:0;flex-shrink:0;letter-spacing:.015em;transition:color .4s ease,opacity .4s ease}
+    .gm{font-size:clamp(.65rem,1.6vw,.8rem);font-family:'DM Sans',sans-serif;font-weight:500;color:var(--cream);text-align:center;padding:6px clamp(10px,3vw,16px);min-height:0;flex-shrink:0;letter-spacing:.02em;line-height:1.4;transition:color .4s ease,opacity .4s ease;opacity:0.85}
 
     /* Controls bar */
     .gcr{display:flex;gap:clamp(4px,1.2vw,6px);padding:clamp(2px,1vw,4px) clamp(8px,2vw,12px);flex-wrap:wrap;justify-content:center;flex-shrink:0}
@@ -3267,13 +3275,26 @@
 
     /* Sokoban */
     .skg{display:grid;gap:clamp(1px,.4vw,3px);width:clamp(320px,96vw,480px);margin:0 auto;padding:clamp(4px,1.5vw,8px);background:rgba(13,16,12,.25);border-radius:clamp(6px,2vw,10px);animation:boardFadeIn .4s ease}
+    /* ═══ DOUBLE SHUTTER ═══ */
+    .ds-wrap{display:flex;flex-direction:column;align-items:center;gap:clamp(8px,2vw,14px);padding:clamp(8px,2vw,14px);max-width:min(96vw,460px);margin:0 auto}
+    .ds-row{display:grid;grid-template-columns:repeat(9,1fr);gap:clamp(3px,1vw,6px);width:100%}
+    .ds-tile{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#FAF5E8,#E8DCC8);border:2px solid #C4B998;border-radius:clamp(4px,1.5vw,8px);font-family:'Bebas Neue',sans-serif;font-size:clamp(1.1rem,4vw,1.6rem);color:#2C1810;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 2px 6px rgba(0,0,0,0.3);transition:transform .12s,background .15s,opacity .25s;position:relative}
+    .ds-tile.shut{background:linear-gradient(180deg,#3a2818,#2a1810);border-color:#5a4530;color:#5a4530;text-shadow:0 1px 0 rgba(0,0,0,0.5);box-shadow:inset 0 2px 6px rgba(0,0,0,0.5),0 1px 2px rgba(0,0,0,0.4);cursor:default;opacity:0.55}
+    .ds-tile.shut::after{content:'×';position:absolute;font-size:1.6em;color:rgba(200,168,75,0.35);font-weight:800;pointer-events:none}
+    .ds-tile.sel{background:linear-gradient(180deg,#FFE89A,#D4A843);border-color:var(--gold);transform:translateY(-2px);box-shadow:0 0 14px rgba(200,168,75,0.5),inset 0 1px 0 rgba(255,255,255,0.5)}
+    .ds-tile:active:not(.shut){transform:scale(0.94)}
+    .ds-rowlbl{font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.12em;color:var(--muted);text-align:center;margin-top:2px}
+    .ds-dice{display:flex;gap:clamp(10px,3vw,16px);justify-content:center;align-items:center;padding:clamp(6px,2vw,10px) 0}
+    .ds-die{width:clamp(48px,13vw,64px);height:clamp(48px,13vw,64px);border-radius:clamp(6px,2vw,10px);overflow:hidden;background:rgba(0,0,0,0.2);box-shadow:0 3px 8px rgba(0,0,0,0.4)}
+    .ds-die img{width:100%;height:100%;object-fit:cover;display:block}
+    .ds-info{font-family:DM Mono,monospace;font-size:clamp(0.55rem,1.6vw,0.7rem);color:var(--gold);text-align:center;padding:4px 0;min-height:1.2em}
     /* ═══ BACKGAMMON — Garden Gate board CSS ═══ */
     .bg-wrap{width:100%;margin:0 auto}
-    .bg-board{position:relative;width:100%;height:clamp(220px,58vw,340px);background:#2C1810;border:4px solid #6B4F2D;border-radius:12px;overflow:hidden;box-shadow:inset 0 0 40px rgba(0,0,0,0.5),0 6px 24px rgba(0,0,0,0.6)}
+    .bg-board{position:relative;width:100%;aspect-ratio:13/9;background:#2C1810;border:4px solid #6B4F2D;border-radius:12px;overflow:hidden;box-shadow:inset 0 0 40px rgba(0,0,0,0.5),0 6px 24px rgba(0,0,0,0.6)}
     .bg-inner{position:absolute;inset:4px;display:flex;flex-direction:column}
-    .bg-half{display:flex;flex:1;position:relative;overflow:hidden}
-    .bg-quad{display:flex;flex:1}
-    .bg-bar{width:clamp(28px,8vw,40px);background:linear-gradient(180deg,#1a1510,#0e0a06);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;z-index:3;border-left:3px solid #3B2414;border-right:3px solid #3B2414;box-shadow:inset 0 0 10px rgba(0,0,0,0.4)}
+    .bg-half{display:flex;flex:1;position:relative;overflow:hidden;min-height:0}
+    .bg-quad{display:flex;flex:1;min-width:0}
+    .bg-bar{width:clamp(22px,6vw,32px);background:linear-gradient(180deg,#1a1510,#0e0a06);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;z-index:3;border-left:3px solid #3B2414;border-right:3px solid #3B2414;box-shadow:inset 0 0 10px rgba(0,0,0,0.4);flex-shrink:0}
     .bg-sep{height:3px;background:linear-gradient(90deg,#3B2414,#6B4F2D,#3B2414);margin:0}
     .point{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;cursor:pointer;min-width:0;-webkit-tap-highlight-color:transparent}
     .point.top{justify-content:flex-start}
@@ -3289,7 +3310,7 @@
     .point.top .pnum{bottom:2px}
     .point.bot .pnum{top:2px}
     .point.home{background:rgba(200,168,75,0.04)}
-    .checker{width:clamp(18px,4.5vw,26px);height:clamp(18px,4.5vw,26px);border-radius:50%;border:1.5px solid rgba(0,0,0,.4);cursor:pointer;transition:transform .12s,box-shadow .12s;position:relative;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,0.15)}
+    .checker{width:clamp(14px,3.6vw,22px);height:clamp(14px,3.6vw,22px);border-radius:50%;border:1.5px solid rgba(0,0,0,.4);cursor:pointer;transition:transform .12s,box-shadow .12s;position:relative;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,0.15)}
     .checker.human{background:radial-gradient(circle at 36% 30%,#B8E86A,#4A7C35 65%);border-color:#2e5020}
     .checker.ai{background:radial-gradient(circle at 36% 30%,#F4C0C0,#C47A7A 65%);border-color:#8a4545}
     .checker.selected{transform:scale(1.25);box-shadow:0 0 16px rgba(122,185,86,.8),0 0 6px rgba(122,185,86,.5);z-index:10}
@@ -3365,12 +3386,12 @@
 
     /* ── Game Picker: Thumbnail Grid ── */
     .fk2-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-    .fk2{background:rgba(18,24,16,.78);border:1px solid rgba(74,124,53,.1);border-radius:clamp(10px,3vw,14px);padding:clamp(8px,2vw,12px);cursor:pointer;transition:all .22s cubic-bezier(.25,.46,.45,.94);-webkit-tap-highlight-color:transparent;box-shadow:0 2px 10px rgba(0,0,0,.12);position:relative;overflow:hidden;animation:pickerStagger .35s cubic-bezier(.25,.46,.45,.94) both;display:flex;flex-direction:column;align-items:center;text-align:center;min-height:100px;justify-content:center;}
+    .fk2{background:rgba(18,24,16,.78);border:1px solid rgba(74,124,53,.1);border-radius:clamp(10px,3vw,14px);padding:0;cursor:pointer;transition:all .22s cubic-bezier(.25,.46,.45,.94);-webkit-tap-highlight-color:transparent;box-shadow:0 2px 10px rgba(0,0,0,.12);position:relative;overflow:hidden;animation:pickerStagger .35s cubic-bezier(.25,.46,.45,.94) both;display:flex;flex-direction:column;align-items:center;text-align:center;aspect-ratio:1;justify-content:center;}
     .fk2:nth-child(1){animation-delay:.02s}.fk2:nth-child(2){animation-delay:.04s}.fk2:nth-child(3){animation-delay:.06s}.fk2:nth-child(4){animation-delay:.08s}.fk2:nth-child(5){animation-delay:.1s}.fk2:nth-child(6){animation-delay:.12s}.fk2:nth-child(7){animation-delay:.14s}.fk2:nth-child(8){animation-delay:.16s}.fk2:nth-child(9){animation-delay:.18s}.fk2:nth-child(10){animation-delay:.2s}
     .fk2::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 15% 71%,rgba(74,124,53,.04) 0%,transparent 55%);pointer-events:none;opacity:0;transition:opacity .3s}
     .fk2:hover::before,.fk2:focus::before{opacity:1}
     .fk2:active{transform:scale(.98);background:rgba(24,30,20,.82);transition-duration:.06s}
-    .fk2-thumb{width:56px;height:56px;margin-bottom:6px;border-radius:8px;overflow:hidden;background:rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .fk2-thumb{width:82%;height:82%;margin:0;border-radius:10px;overflow:hidden;background:rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:absolute;top:4%;left:9%;}
     .fk2-thumb img{width:100%;height:100%;object-fit:cover;border-radius:8px;}
     .fk2-new{position:absolute;top:6px;right:6px;font-size:0.25rem;background:var(--gold);color:#0d100c;padding:1px 4px;border-radius:3px;font-family:'Bebas Neue',sans-serif;letter-spacing:0.06em;z-index:2;}
 
@@ -6156,6 +6177,7 @@ window.onerror=function(msg,url,line,col,err){
 
   <!-- PERSISTENT BOTTOM NAV — stone tablet v5 buttons -->
   <div class="fg-bottomnav">
+    <button class="fg-nav-min" onclick="this.parentElement.classList.toggle('minimized')" title="Hide nav"><span class="nm-chev">▾</span><span>HIDE</span></button>
     <button class="fg-nav-btn active" onclick="switchTab('game')"><img src="assets/games/wild/nav-game-v5.png" alt="Game"><span class="fg-nav-label">GAME</span></button>
     <button class="fg-nav-btn" onclick="switchTab('greenhouse')"><img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse"><span class="fg-nav-label">GREENHOUSE</span></button>
     <button class="fg-nav-btn" onclick="switchTab('nursery')"><img src="assets/games/wild/nav-nursery-v5.png" alt="Nursery"><span class="fg-nav-label">NURSERY</span></button>
@@ -34508,39 +34530,40 @@ var G_CATS=[
   {key:'creative',label:'CREATIVE',       icon:'\ud83c\udfb5'}
 ];
 var G=[
-{id:'set',n:'Trios',i:'\ud83c\udccf',r:'Tap 3 cards where each trait is ALL same or ALL different.',cat:'card',thumb:'assets/games/thumbs/set.png'},
-{id:'memory',n:'Memory Garden',i:'\ud83e\udde0',r:'Flip 2 cards per turn. Match all pairs to clear the board.',cat:'pattern',thumb:'assets/games/thumbs/memory.png'},
-{id:'merge',n:'Merge Garden',i:'\ud83c\udf3f',r:'Swipe or tap arrows to merge same-number tiles. Reach 2048!',cat:'puzzle',thumb:'assets/games/thumbs/merge.png'},
-{id:'simon',n:'Seasonal Cycle',i:'\ud83d\udd04',r:'Watch the seasonal pattern flash, then repeat it in order.',cat:'pattern',thumb:'assets/games/thumbs/simon.png'},
-{id:'lights',n:'Glow Shrooms',i:'\ud83c\udf44',r:'Tap a mushroom to toggle it AND its 4 neighbors. Turn all dark!',cat:'puzzle',thumb:'assets/games/thumbs/lights.png'},
-{id:'mines',n:'Root Rot',i:'\ud83e\udda0',r:'Tap to dig. Numbers show adjacent rot. Flag with \ud83d\udea9 mode.',cat:'board',thumb:'assets/games/thumbs/mines.png'},
-{id:'sudoku',n:'Soil Grid',i:'\ud83d\udd22',r:'Fill every row, column and 3\u00d73 box with digits 1-9.',cat:'puzzle',thumb:'assets/games/thumbs/sudoku.png'},
-{id:'wordsearch',n:'Root Words',i:'\ud83d\udd24',r:'Tap letters in sequence to find hidden botanical words.',cat:'puzzle',thumb:'assets/games/thumbs/wordsearch.png'},
-{id:'hanoi',n:'Root Stack',i:'\ud83d\uddfc',r:'Move all discs to the right peg. Never place big on small.',cat:'puzzle',thumb:'assets/games/thumbs/hanoi.png'},
+{id:'set',n:'SET Match',i:'\ud83c\udccf',r:'Tap 3 cards where each trait is ALL same or ALL different.',cat:'card',thumb:'assets/games/thumbs/set.png'},
+{id:'memory',n:'Memory',i:'\ud83e\udde0',r:'Flip 2 cards per turn. Match all pairs to clear the board.',cat:'pattern',thumb:'assets/games/thumbs/memory.png'},
+{id:'merge',n:'2048',i:'\ud83c\udf3f',r:'Swipe or tap arrows to merge same-number tiles. Reach 2048!',cat:'puzzle',thumb:'assets/games/thumbs/merge.png'},
+{id:'simon',n:'Echo',i:'\ud83d\udd04',r:'Watch the pattern flash, then repeat it in order. How far can you go?',cat:'pattern',thumb:'assets/games/thumbs/simon.png'},
+{id:'lights',n:'Lights Out',i:'\ud83c\udf44',r:'Tap a light to toggle it AND its 4 neighbors. Turn all dark!',cat:'puzzle',thumb:'assets/games/thumbs/lights.png'},
+{id:'mines',n:'Minesweeper',i:'\ud83e\udda0',r:'Tap to dig. Numbers show adjacent mines. Flag with \ud83d\udea9 mode.',cat:'board',thumb:'assets/games/thumbs/mines.png'},
+{id:'sudoku',n:'Sudoku',i:'\ud83d\udd22',r:'Fill every row, column and 3\u00d73 box with digits 1-9.',cat:'puzzle',thumb:'assets/games/thumbs/sudoku.png'},
+{id:'wordsearch',n:'Word Search',i:'\ud83d\udd24',r:'Tap letters in sequence to find hidden botanical words.',cat:'puzzle',thumb:'assets/games/thumbs/wordsearch.png'},
+{id:'hanoi',n:'Tower of Hanoi',i:'\ud83d\uddfc',r:'Move all discs to the right peg. Never place big on small.',cat:'puzzle',thumb:'assets/games/thumbs/hanoi.png'},
 {id:'slider',n:'15 Puzzle',i:'\ud83e\udde9',r:'Slide tiles into the empty space. Arrange them 1-15 in order.',cat:'puzzle',thumb:'assets/games/thumbs/slider.png'},
-{id:'picross',n:'Seed Grid',i:'\ud83d\udd33',r:'Fill or cross squares from row/column clues to reveal a hidden picture.',cat:'puzzle',thumb:'assets/games/thumbs/picross.png'},
-{id:'colorsort',n:'Petal Sort',i:'\ud83e\uddea',r:'Pour colors between tubes until each holds a single color. Match tops to pour.',cat:'puzzle',thumb:'assets/games/thumbs/colorsort.png'},
-{id:'battleship',n:'Deep Water',i:'\ud83c\udf0a',r:'Hunt hidden vessels on a 10\u00d710 grid. Sink them all in as few shots as you can.',cat:'board',thumb:'assets/games/thumbs/battleship.png'},
-{id:'flood',n:'Autumn Leaves',i:'\ud83c\udf42',r:'Tap a leaf to flood from the top-left. Cover the forest floor in one color!',cat:'puzzle',thumb:'assets/games/thumbs/flood.png'},
-{id:'pipe',n:'Vine Flow',i:'\ud83c\udf3f',r:'Rotate vine tiles to connect all vines back to the root!',cat:'puzzle',thumb:'assets/games/thumbs/pipe.png'},
-{id:'chess',n:'Grove Chess',i:'\u265f',r:'Classic chess against AI. Tap a piece, tap where to move.',cat:'board',thumb:'assets/games/thumbs/chess.png'},
-{id:'c4',n:'Connect Fleur',i:'\ud83c\udf38',r:'Drop flowers to connect 4 in a row \u2014 horizontal, vertical, or diagonal!',cat:'board',thumb:'assets/games/thumbs/c4.png'},
-{id:'song',n:'Grove Studio',i:'\ud83c\udfb5',r:'Full music production studio. Layer drums, bass, keys and leads \u2014 make beats, earn dew.',cat:'creative',thumb:'assets/games/thumbs/song.png'},
-{id:'golf',n:'Fairway Solitaire',i:'\u26f3',r:'Move cards one rank up or down to the waste pile. Clear the tableau!',cat:'card',thumb:'assets/games/thumbs/golf.png'},
+{id:'picross',n:'Picross',i:'\ud83d\udd33',r:'Fill or cross squares from row/column clues to reveal a hidden picture.',cat:'puzzle',thumb:'assets/games/thumbs/picross.png'},
+{id:'colorsort',n:'Color Sort',i:'\ud83e\uddea',r:'Pour colors between tubes until each holds a single color. Match tops to pour.',cat:'puzzle',thumb:'assets/games/thumbs/colorsort.png'},
+{id:'battleship',n:'Battleship',i:'\ud83c\udf0a',r:'Hunt hidden vessels on a 10\u00d710 grid. Sink them all in as few shots as you can.',cat:'board',thumb:'assets/games/thumbs/battleship.png'},
+{id:'flood',n:'Flood Fill',i:'\ud83c\udf42',r:'Tap a color to flood from the top-left. Fill the whole board in one color!',cat:'puzzle',thumb:'assets/games/flood/leaf-crimson.png'},
+{id:'pipe',n:'Pipe Puzzle',i:'\ud83c\udf3f',r:'Rotate pipe tiles to connect the flow from source to end!',cat:'puzzle',thumb:'assets/games/thumbs/pipe.png'},
+{id:'chess',n:'Chess',i:'\u265f',r:'Classic chess against AI. Tap a piece, tap where to move.',cat:'board',thumb:'assets/games/thumbs/chess.png'},
+{id:'c4',n:'Connect Four',i:'\ud83c\udf38',r:'Drop pieces to connect 4 in a row \u2014 horizontal, vertical, or diagonal!',cat:'board',thumb:'assets/games/thumbs/c4.png'},
+{id:'song',n:'Music Studio',i:'\ud83c\udfb5',r:'Full music production studio. Layer drums, bass, keys and leads \u2014 make beats, earn dew.',cat:'creative',thumb:'assets/games/thumbs/song.png'},
+{id:'golf',n:'Golf Solitaire',i:'\u26f3',r:'Move cards one rank up or down to the waste pile. Clear the tableau!',cat:'card',thumb:'assets/games/thumbs/golf.png'},
 {id:'klondike',n:'Klondike',i:'\ud83c\udca1',r:'The classic. Build 4 foundation piles Ace to King by suit.',cat:'card',thumb:'assets/games/thumbs/klondike.png'},
 {id:'spider',n:'Spider',i:'\ud83d\udd77',r:'Build complete King-to-Ace runs by suit. 1, 2, or 4 suit variants.',cat:'card',thumb:'assets/games/thumbs/spider.png'},
 {id:'freecell',n:'FreeCell',i:'\ud83c\udfd7',r:'All cards visible. Use 4 free cells to maneuver. Pure strategy!',cat:'card',thumb:'assets/games/thumbs/freecell.png'},
 {id:'pyramid',n:'Pyramid',i:'\ud83d\udd3a',r:'Remove pairs that sum to 13. Kings remove alone. Clear the pyramid!',cat:'card',thumb:'assets/games/thumbs/pyramid.png'},
 {id:'tripeaks',n:'TriPeaks',i:'\u26f0',r:'Build up or down on the waste pile to clear three peaks.',cat:'card',thumb:'assets/games/thumbs/tripeaks.png'},
-{id:'mastermind',n:'Code Sprout',i:'\ud83c\udf31',r:'Crack the hidden 4-element code. Green = right pick, right spot. Gold = right pick, wrong spot.',cat:'board',thumb:'assets/games/thumbs/mastermind.png'},
-{id:'checkers',n:'Grove Checkers',i:'\u265f',r:'Jump over opponent pieces to capture. Reach the far side to crown a King.',cat:'board',thumb:'assets/games/thumbs/checkers.png'},
-{id:'reversi',n:'Moss & Lichen',i:'\u25cf',r:'Place moss to surround and flip lichen. Control the most territory to win.',cat:'board',thumb:'assets/games/thumbs/reversi.png'},
-{id:'yahtzee',n:'Seed Toss',i:'\ud83c\udfb2',r:'Roll 5 seed dice up to 3 times. Hold keepers, score in 13 categories. Aim high!',cat:'dice',thumb:'assets/games/thumbs/yahtzee.png'},
-{id:'farkle',n:'Farkle',i:'\ud83c\udfb2',r:'Roll 6 dice. Keep 1s, 5s, and three-of-a-kinds. Roll again or bank — zero scorers and you bust!',cat:'dice',thumb:'assets/games/thumbs/farkle.png'},
-{id:'sokoban',n:'Catnip Chaos',i:'\ud83d\udc31',r:'Push catnip toys onto the cat beds. Watch your step — toys only push, never pull!',cat:'puzzle',thumb:'assets/games/thumbs/sokoban.png'},
-{id:'backgammon',n:'Garden Gate',i:'\ud83c\udfb2',r:'Roll dice, move seeds around the garden. Bear off all 15 first to win!',cat:'board',thumb:'assets/games/thumbs/backgammon.png'},
+{id:'mastermind',n:'Mastermind',i:'\ud83c\udf31',r:'Crack the hidden 4-color code. Green = right pick, right spot. Gold = right pick, wrong spot.',cat:'board',thumb:'assets/games/thumbs/mastermind.png'},
+{id:'checkers',n:'Checkers',i:'\u265f',r:'Jump over opponent pieces to capture. Reach the far side to crown a King.',cat:'board',thumb:'assets/games/thumbs/checkers.png'},
+{id:'reversi',n:'Reversi',i:'\u25cf',r:'Place pieces to surround and flip your opponent. Control the most territory to win.',cat:'board',thumb:'assets/games/thumbs/reversi.png'},
+{id:'yahtzee',n:'Seed Toss',i:'\ud83c\udfb2',r:'Yahtzee-style dice game. Roll 5 dice up to 3 times. Hold keepers, score in 13 categories!',cat:'dice',thumb:'assets/games/thumbs/yahtzee.png'},
+{id:'farkle',n:'Farkle',i:'\ud83c\udfb2',r:'Roll 6 dice. Keep 1s, 5s, and three-of-a-kinds. Roll again or bank \u2014 zero scorers and you bust!',cat:'dice',thumb:'assets/games/thumbs/farkle.png'},
+{id:'doubleshutter',n:'Double Shutter',i:'\ud83c\udfb2',r:'Shut the box twice! Roll 2 dice and flip any open tiles that sum to your roll. Both rows shut = perfect game.',cat:'dice',thumb:'assets/dice/d6.png'},
+{id:'sokoban',n:'Sokoban',i:'\ud83d\udc31',r:'Push crates onto targets. Plan ahead \u2014 crates only push, never pull!',cat:'puzzle',thumb:'assets/games/thumbs/sokoban.png'},
+{id:'backgammon',n:'Backgammon',i:'\ud83c\udfb2',r:'Roll dice, move pieces around the board. Bear off all 15 first to win!',cat:'board',thumb:'assets/games/thumbs/backgammon.png'},
 {id:'bloomwheel',n:'Bloom Wheel',i:'\ud83c\udf38',r:'Draw botanical mandalas on a spinning canvas synced to a generative beat.',cat:'creative',thumb:'assets/games/thumbs/bloomwheel.png'},
-{id:'petalfall',n:'Petal Fall',i:'\ud83c\udf38',r:'Arrange falling petals to clear garden rows. Speed increases every 10 lines!',cat:'puzzle',thumb:'assets/games/thumbs/petalfall.png'}
+{id:'petalfall',n:'Block Drop',i:'\ud83c\udf38',r:'Arrange falling blocks to clear rows. Speed increases every 10 lines!',cat:'puzzle',thumb:'assets/games/thumbs/petalfall.png'}
 ];
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
 // ═══ HASH ACCUMULATION BUFFER ═══
@@ -34625,7 +34648,8 @@ var _afGameClass={
   mastermind:'standard',
   checkers:'standard',
   reversi:'standard',
-  yahtzee:'marathon'
+  yahtzee:'marathon',
+  doubleshutter:'standard'
 };
 // Reset guards on game switch (called from _sg)
 function _afReset(){_afSessionProg=0;}
@@ -34666,6 +34690,7 @@ var _aw={
   picross:{progress:1,game_win:4,default:0},
   slider:{milestone:1,game_win:3,default:0},
   farkle:{progress:1,milestone:1,game_win:5,game_loss:0,default:0},
+  doubleshutter:{progress:1,milestone:1,game_win:5,game_loss:0,default:0},
   backgammon:{progress:1,milestone:1,game_win:6,game_loss:1,default:0},
   bloomwheel:{progress:1,milestone:2,default:0},
   petalfall:{milestone:2,game_win:3,game_loss:0,default:0}
@@ -34854,18 +34879,20 @@ function _showWinCelebration(){
   _playWin();
   var inPlant=Math.min(_hashFilled,30);
   var ov=document.createElement('div');ov.id='pw-win-overlay';
-  ov.style.cssText='position:fixed;inset:0;z-index:99997;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,8,4,0.92);backdrop-filter:blur(14px);animation:panelFadeIn 0.4s ease;padding:1.5rem;';
+  ov.style.cssText='position:fixed;inset:0;z-index:999990;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,8,4,0.92);backdrop-filter:blur(14px);animation:panelFadeIn 0.4s ease;padding:1.5rem;';
+  _spawnLeafParticles(ov);
   var h='<div style="text-align:center;max-width:340px;">';
   var pct=Math.round((inPlant/30)*100);
   var _winNear=inPlant>=25;var _winRemain=30-inPlant;
-  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:0.15rem;">WELL PLAYED</div>';
-  h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--gold);margin-bottom:0.4rem;">'+inPlant+' / 30 Dew Drops</div>';
+  h+='<div style="font-size:2.5rem;margin-bottom:0.3rem;animation:nearBloomPulse 2s ease infinite;">🌿</div>';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.6rem;color:var(--cream);letter-spacing:0.12em;margin-bottom:0.15rem;">WELL PLAYED!</div>';
+  h+='<div style="font-family:DM Sans,sans-serif;font-size:0.6rem;color:var(--gold);margin-bottom:0.5rem;font-weight:500;">'+inPlant+' / 30 Dew Drops</div>';
   h+='<div style="width:100%;height:10px;background:rgba(42,48,37,0.6);border-radius:5px;overflow:hidden;margin-bottom:0.15rem;"><div class="'+(_winNear?'near-bloom':'')+'" style="width:'+pct+'%;height:100%;background:linear-gradient(90deg,var(--leaf),var(--sage)'+(_winNear?',var(--gold)':'')+');border-radius:5px;transition:width 0.8s ease;"></div></div>';
   if(_winNear){h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);margin-bottom:0.4rem;animation:nearBloomPulse 1.5s ease infinite;">'+_winRemain+' MORE TO FULL BLOOM</div>';}
   else{h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);margin-bottom:0.5rem;">'+inPlant+' / 30 to next plant</div>';}
   h+='<button onclick="_dismissWin();_restartCurrentGame();" style="width:100%;padding:'+(_winNear?'0.65rem':'0.55rem')+';margin-bottom:0.3rem;border:1.5px solid '+(_winNear?'rgba(200,168,75,0.5)':'rgba(122,179,86,0.35)')+';border-radius:8px;background:linear-gradient(180deg,'+(_winNear?'rgba(200,168,75,0.25),rgba(120,100,40,0.35)':'rgba(74,124,53,0.3),rgba(26,60,22,0.4)')+');color:'+(_winNear?'var(--gold)':'var(--sage)')+';font-family:Bebas Neue,sans-serif;font-size:'+(_winNear?'0.95rem':'0.85rem')+';letter-spacing:0.1em;cursor:pointer;min-height:48px;">'+(_winNear?'ONE MORE GAME':'PLAY AGAIN')+'</button>';
-  h+='<button onclick="_dismissWin();_openGamePicker();" style="width:100%;padding:0.45rem;margin-bottom:0.3rem;border:1px solid rgba(200,188,160,0.12);border-radius:8px;background:rgba(46,40,32,0.3);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.06em;cursor:pointer;min-height:44px;">TRY ANOTHER GAME</button>';
-  h+='<button onclick="_dismissWin();switchTab(\'greenhouse\');" style="width:100%;padding:0.35rem;border:none;border-radius:8px;background:none;color:var(--muted);font-family:DM Mono,monospace;font-size:0.4rem;cursor:pointer;min-height:38px;">view greenhouse →</button>';
+  h+='<button onclick="_dismissWin();_openGamePicker();" style="width:100%;padding:0.55rem;margin-bottom:0.3rem;border:1.5px solid rgba(200,168,75,0.2);border-radius:8px;background:rgba(46,40,32,0.4);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.08em;cursor:pointer;min-height:48px;">🎮 TRY ANOTHER GAME</button>';
+  h+='<button onclick="_dismissWin();switchTab(\'greenhouse\');" style="width:100%;padding:0.4rem;border:1px solid rgba(200,188,160,0.08);border-radius:8px;background:none;color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.06em;cursor:pointer;min-height:44px;">🌿 VIEW GREENHOUSE</button>';
   h+='</div>';ov.innerHTML=h;document.body.appendChild(ov);
   setTimeout(function(){if(document.getElementById('pw-win-overlay'))_dismissWin();},15000);
 }
@@ -35031,7 +35058,7 @@ function _playWin(){
 }
 window._playWin=_playWin;
 function _st(){_s=Date.now();if(_t)clearInterval(_t);_t=setInterval(function(){var e=document.getElementById('_tt');if(!e)return;var s=Math.floor((Date.now()-_s)/1000);e.textContent=Math.floor(s/60)+':'+(s%60<10?'0':'')+(s%60)},500)}
-function _xt(){if(_t){clearInterval(_t);_t=null}}
+function _xt(){if(_t){clearInterval(_t);_t=null}if(window._bwKillAudio)_bwKillAudio()}
 function sm(t){var m=document.getElementById('_gm');if(m)m.textContent=t}
 function _solEnterFS(){
   var ag=document.getElementById('fg-ag');
@@ -35045,7 +35072,7 @@ function _solClearFS(){
 }
 function _solExitFS(){
   _solClearFS();
-  window._sg('set');
+  _openGamePicker();
 }
 window._solExitFS=_solExitFS;
 function ms(a,x){
@@ -35095,7 +35122,7 @@ function _opCat(catKey){
     });
   },50);
 }
-function _op(){var _bnav2=document.querySelector('.fg-bottomnav');if(_bnav2)_bnav2.style.display='flex';var o=document.getElementById('fg-ov'),rc=_gr();
+function _op(){var o=document.getElementById('fg-ov'),rc=_gr();
   // Build categorized accordion picker with thumbnails
   var h='<div style="max-width:460px;margin:0 auto;padding:0.5rem">';
   h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
@@ -35106,14 +35133,12 @@ function _op(){var _bnav2=document.querySelector('.fg-bottomnav');if(_bnav2)_bna
   G_CATS.forEach(function(cat){
     var games=G.filter(function(g){return g.cat===cat.key});
     if(!games.length)return;
-    var catId='gcat-'+cat.key;
-    var curCat=false;for(var ci=0;ci<games.length;ci++)if(games[ci].id===_a){curCat=true;break}
-    h+='<div class="gp-cat'+(curCat?' open':'')+'" data-cat="'+cat.key+'">';
+    h+='<div class="gp-cat" data-cat="'+cat.key+'">';
     h+='<button class="gp-cat-hdr" onclick="this.parentElement.classList.toggle(\'open\');this.querySelector(\'.gp-chev\').classList.toggle(\'open\')">';
     h+='<span class="gp-cat-icon">'+cat.icon+'</span>';
     h+='<span class="gp-cat-label">'+cat.label+'</span>';
     h+='<span class="gp-cat-count">'+games.length+'</span>';
-    h+='<span class="gp-chev'+(curCat?' open':'')+'">\u25bc</span>';
+    h+='<span class="gp-chev">\u25bc</span>';
     h+='</button>';
     h+='<div class="gp-cat-body"><div class="fk2-grid">';
     games.forEach(function(g){
@@ -35126,8 +35151,10 @@ function _op(){var _bnav2=document.querySelector('.fg-bottomnav');if(_bnav2)_bna
         h+='<div style="font-size:1.6rem;margin-bottom:4px;position:relative;">'+g.i+'</div>';
       }
       if(isNew)h+='<span class="fk2-new">NEW</span>';
-      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);letter-spacing:0.06em;line-height:1.2;">'+g.n+'</div>';
-      h+=(r.p?'<div style="font-size:0.3rem;color:var(--muted);margin-top:3px;">'+r.p+' played'+(r.w?' \u00b7 '+r.w+' won':'')+'</div>':'<div style="font-size:0.28rem;color:var(--gold);margin-top:3px;opacity:0.6;">Try it!</div>');
+      h+='<div style="position:absolute;bottom:0;left:0;right:0;padding:6px 4px 5px;background:linear-gradient(transparent,rgba(8,10,6,0.85) 30%,rgba(8,10,6,0.95));border-radius:0 0 clamp(9px,2.8vw,13px) clamp(9px,2.8vw,13px);">';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.06em;line-height:1.1;text-shadow:0 1px 4px rgba(0,0,0,0.8);">'+g.n+'</div>';
+      h+=(r.p?'<div style="font-size:0.3rem;color:var(--muted);margin-top:1px;text-shadow:0 1px 3px rgba(0,0,0,0.8);">'+r.p+' played'+(r.w?' \u00b7 '+r.w+' won':'')+'</div>':'<div style="font-size:0.28rem;color:var(--gold);margin-top:1px;opacity:0.6;">Try it!</div>');
+      h+='</div>';
       h+='</div>';
       gi++;
     });
@@ -35528,10 +35555,10 @@ function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null;
   // ── Season tiles with artwork ──
   var bd=document.createElement('div');bd.className='sb';
   bd.innerHTML=''
-    +'<div class="st" id="s0" onclick="_SP(0)"><span class="sl">SPRING</span></div>'
-    +'<div class="st" id="s1" onclick="_SP(1)"><span class="sl">SUMMER</span></div>'
-    +'<div class="st" id="s2" onclick="_SP(2)"><span class="sl">AUTUMN</span></div>'
-    +'<div class="st" id="s3" onclick="_SP(3)"><span class="sl">WINTER</span></div>';
+    +'<div class="st" id="s0" onclick="_SP(0)"></div>'
+    +'<div class="st" id="s1" onclick="_SP(1)"></div>'
+    +'<div class="st" id="s2" onclick="_SP(2)"></div>'
+    +'<div class="st" id="s3" onclick="_SP(3)"></div>';
   a.appendChild(bd);
 
   // ── Chord & octave: compact tap-to-cycle below tiles ──
@@ -35649,7 +35676,8 @@ function GFL(a){var SZ=8,grid=[],moves=0,maxMoves=22;
   var CC=['#4a7c35','#C8A84B','#4a7aaa','#c76a30','#9b59b6','#c75050'];
   ms(a,'Moves: <strong id="FFm">0</strong>/'+maxMoves);mm(a);
   var gd=document.createElement('div');gd.className='lg';gd.id='FFg';gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';gd.style.gap='2px';gd.style.width='clamp(300px,92vw,420px)';a.appendChild(gd);
-  var pb=document.createElement('div');pb.className='lg';pb.style.gridTemplateColumns='repeat(6,1fr)';pb.style.gap='8px';pb.style.padding='12px';pb.style.width='clamp(300px,92vw,420px)';a.appendChild(pb);
+  var pl=document.createElement('div');pl.style.cssText='text-align:center;font-family:DM Sans,sans-serif;font-size:clamp(.55rem,1.4vw,.7rem);color:var(--cream);opacity:0.7;margin-top:10px;margin-bottom:4px';pl.textContent='Tap a leaf below to flood the board';a.appendChild(pl);
+  var pb=document.createElement('div');pb.className='lg';pb.style.gridTemplateColumns='repeat(6,1fr)';pb.style.gap='8px';pb.style.padding='12px';pb.style.width='clamp(300px,92vw,420px)';pb.style.border='1.5px solid rgba(200,168,75,0.25)';pb.style.borderRadius='12px';pb.style.background='rgba(13,16,12,0.4)';a.appendChild(pb);
   mc(a).innerHTML='<button class="gb-new" onclick="_FFN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function gen(){grid=[];for(var i=0;i<SZ*SZ;i++)grid.push(Math.floor(Math.random()*6));moves=0}
   function flood(oc,nc){if(oc===nc)return;var vis=[];for(var x=0;x<SZ*SZ;x++)vis.push(false);var q=[0];while(q.length){var i=q.shift();if(i<0||i>=SZ*SZ||vis[i])continue;if(grid[i]!==oc&&grid[i]!==nc)continue;vis[i]=true;if(grid[i]===oc)grid[i]=nc;var r=Math.floor(i/SZ),c=i%SZ;if(r>0)q.push(i-SZ);if(r<SZ-1)q.push(i+SZ);if(c>0)q.push(i-1);if(c<SZ-1)q.push(i+1)}}
@@ -36541,7 +36569,7 @@ function GCH(a){
   mm(a,'Your move');
   boardEl=document.createElement('div');boardEl.id='CHboard';
   boardEl.style.cssText='padding:4px 0';a.appendChild(boardEl);
-  mc(a).innerHTML='<select class="gsl" id="CHd" style="max-width:130px" onchange="var v=this.value;_setDiff(v===\'1\'?\'easy\':v===\'2\'?\'medium\':v===\'3\'?\'hard\':\'expert\')"><option value="1">Seedling</option><option value="2" selected>Sapling</option><option value="3">Old Growth</option><option value="4">Ancient</option></select><button class="gb-new" onclick="_CHNew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button><button class="gb" onclick="_CHUndo()">↩ Undo</button>';
+  mc(a).innerHTML='<select class="gsl" id="CHd" style="max-width:130px" onchange="var v=this.value;_setDiff(v===\'1\'?\'easy\':v===\'2\'?\'medium\':v===\'3\'?\'hard\':\'expert\')"><option value="1">Easy</option><option value="2" selected>Medium</option><option value="3">Hard</option><option value="4">Expert</option></select><button class="gb-new" onclick="_CHNew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button><button class="gb" onclick="_CHUndo()">↩ Undo</button>';
   _setDiff('medium');
   initBoard();render();
 }
@@ -36555,7 +36583,7 @@ function G4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0;
   gd.style.cssText='display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(6,1fr);gap:clamp(3px,1vw,6px);width:clamp(280px,88vw,420px);margin:0 auto;padding:clamp(6px,2vw,10px);background:linear-gradient(180deg,rgba(48,36,20,.95),rgba(32,24,14,.98));border-radius:clamp(8px,2.5vw,14px);border:2px solid rgba(80,60,30,.4);box-shadow:0 4px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(120,90,40,.15)';
   a.appendChild(gd);
   var obDiv=document.createElement('div');obDiv.id='C4ob';obDiv.style.cssText='text-align:center;min-height:40px;padding:4px 0';a.appendChild(obDiv);
-  mc(a).innerHTML='<select class="gsl" id="C4d"><option value="1">Seedling</option><option value="2" selected>Sapling</option><option value="3">Old Growth</option></select><button class="gb-new" onclick="_C4N()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  mc(a).innerHTML='<select class="gsl" id="C4d"><option value="1">Easy</option><option value="2" selected>Medium</option><option value="3">Hard</option></select><button class="gb-new" onclick="_C4N()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function init(){bd=[];for(var i=0;i<ROWS*COLS;i++)bd.push(0);turn=1;over=false;mv=0;var _cm=document.getElementById('C4m');if(_cm)_cm.textContent='0'}
   function drop(col){for(var r=ROWS-1;r>=0;r--){if(bd[r*COLS+col]===0){bd[r*COLS+col]=turn;return r;}}}
   function check(p){
@@ -37819,7 +37847,7 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
   // Directions
   var dir=document.createElement('div');
   dir.style.cssText='text-align:center;padding:0.4rem 0.8rem;margin:0.2rem auto;max-width:400px;font-family:DM Sans,sans-serif;font-size:clamp(0.6rem,1.8vw,0.75rem);color:var(--cream);line-height:1.4;opacity:0.8';
-  dir.innerHTML='<strong style="color:var(--gold)">Roll</strong> up to 3 times. <strong>Tap dice</strong> to hold. Then <strong>score</strong> in a category.';
+  dir.innerHTML='Roll <strong style="color:var(--gold)">5 dice</strong> up to <strong>3 times</strong> per turn.<br>Tap dice to <strong>keep</strong> them between rolls.<br>When done, <strong>score</strong> your roll in any open category below — pairs, three of a kind, straights, or full house.<br>You get <strong>13 turns</strong> — fill every category for the highest total!';
   a.appendChild(dir);
   var dd=document.createElement('div');dd.className='fd';dd.id='Yd';dd.style.cssText='display:flex;gap:clamp(10px,3vw,18px);justify-content:center;flex-wrap:wrap;max-width:clamp(340px,92vw,460px);margin:0 auto;padding:clamp(10px,3vw,16px)';a.appendChild(dd);
   // Buttons
@@ -37907,6 +37935,120 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
     rn();
   };
   window._YN=function(){dice=[];for(var _i=0;_i<5;_i++)dice.push(Math.floor(Math.random()*6)+1);kept=new Array(5).fill(false);rolls=0;turn=1;scores={};document.getElementById('Yt').textContent='1';document.getElementById('Yr').textContent='0';sm('Tap ROLL to begin!');rn()};_YN();
+}
+// ═══ DOUBLE SHUTTER — Strategy Shut the Box (two rows) ═══
+function GDS(a){
+  var rows,sel,d1,d2,phase,rolls,gameOver;
+  ms(a,'Rolls: <strong id="DSr">0</strong> · Open: <strong id="DSo">90</strong>');mm(a);
+  // Directions
+  var dir=document.createElement('div');
+  dir.style.cssText='text-align:center;padding:0.4rem 0.8rem;margin:0.2rem auto;max-width:400px;font-family:DM Sans,sans-serif;font-size:clamp(0.6rem,1.7vw,0.75rem);color:var(--cream);line-height:1.5;opacity:0.85';
+  dir.innerHTML='Roll <strong style="color:var(--gold)">2 dice</strong>, then tap any open tiles that <strong>add up to your roll</strong>. Shut both rows to win!<br>If your remaining tiles total <strong>6 or less</strong>, you can roll just <strong>1 die</strong>.';
+  a.appendChild(dir);
+  var wrap=document.createElement('div');wrap.className='ds-wrap';a.appendChild(wrap);
+  // Row 1
+  var r1Lbl=document.createElement('div');r1Lbl.className='ds-rowlbl';r1Lbl.textContent='ROW 1';wrap.appendChild(r1Lbl);
+  var r1=document.createElement('div');r1.className='ds-row';r1.id='DSr1';wrap.appendChild(r1);
+  // Row 2
+  var r2Lbl=document.createElement('div');r2Lbl.className='ds-rowlbl';r2Lbl.textContent='ROW 2';wrap.appendChild(r2Lbl);
+  var r2=document.createElement('div');r2.className='ds-row';r2.id='DSr2';wrap.appendChild(r2);
+  // Dice + info
+  var dz=document.createElement('div');dz.className='ds-dice';dz.id='DSdz';wrap.appendChild(dz);
+  var info=document.createElement('div');info.className='ds-info';info.id='DSinfo';wrap.appendChild(info);
+  mc(a).innerHTML='<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:6px"><button class="gb" id="DSroll2" style="min-height:52px;min-width:120px;font-size:0.85rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em" onclick="_DSRoll(2)">🎲 ROLL 2</button><button class="gb" id="DSroll1" style="min-height:52px;min-width:120px;font-size:0.85rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;display:none" onclick="_DSRoll(1)">🎲 ROLL 1</button><button class="gb" id="DSshut" style="min-height:52px;min-width:120px;font-size:0.85rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;background:rgba(200,168,75,0.15);border-color:var(--gold);color:var(--gold);display:none" onclick="_DSShut()">✓ SHUT</button><button class="gb-new" onclick="_DSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button></div>';
+  function openSum(){var s=0;for(var ri=0;ri<2;ri++)for(var i=0;i<9;i++)if(!rows[ri][i])s+=(i+1);return s}
+  function openCount(){var n=0;for(var ri=0;ri<2;ri++)for(var i=0;i<9;i++)if(!rows[ri][i])n++;return n}
+  function selSum(){var s=0;sel.forEach(function(t){s+=(t.n)});return s}
+  function canMakeSum(target){
+    // Check if any combination of open tiles equals target
+    var open=[];for(var ri=0;ri<2;ri++)for(var i=0;i<9;i++)if(!rows[ri][i])open.push(i+1);
+    function find(idx,rem){if(rem===0)return true;if(rem<0||idx>=open.length)return false;return find(idx+1,rem-open[idx])||find(idx+1,rem)}
+    return find(0,target);
+  }
+  function rn(){
+    // Render rows
+    [r1,r2].forEach(function(rowEl,ri){
+      rowEl.innerHTML='';
+      for(var i=0;i<9;i++){
+        var t=document.createElement('div');t.className='ds-tile';
+        if(rows[ri][i])t.className+=' shut';
+        var isSel=sel.some(function(s){return s.row===ri&&s.idx===i});
+        if(isSel)t.className+=' sel';
+        t.textContent=(i+1);
+        t.setAttribute('data-r',ri);t.setAttribute('data-i',i);
+        if(!rows[ri][i]&&phase==='select'&&!gameOver){
+          t.onclick=function(){
+            var r=parseInt(this.getAttribute('data-r')),idx=parseInt(this.getAttribute('data-i'));
+            var existing=sel.findIndex(function(s){return s.row===r&&s.idx===idx});
+            if(existing>=0)sel.splice(existing,1);
+            else sel.push({row:r,idx:idx,n:idx+1});
+            _play('tap');rn();
+          };
+        }
+        rowEl.appendChild(t);
+      }
+    });
+    // Render dice
+    dz.innerHTML='';
+    if(d1){var dd1=document.createElement('div');dd1.className='ds-die';dd1.innerHTML='<img src="assets/dice/d'+d1+'.png" alt="'+d1+'"/>';dz.appendChild(dd1);}
+    if(d2){var dd2=document.createElement('div');dd2.className='ds-die';dd2.innerHTML='<img src="assets/dice/d'+d2+'.png" alt="'+d2+'"/>';dz.appendChild(dd2);}
+    // Info
+    var target=(d1||0)+(d2||0);
+    var ss=selSum();
+    if(phase==='roll'){info.textContent='Open: '+openSum()+' — tap ROLL to play';}
+    else if(phase==='select'){info.innerHTML='Roll: <strong>'+target+'</strong> · Selected: <strong>'+ss+'</strong> / '+target;}
+    // Buttons
+    var b2=document.getElementById('DSroll2'),b1=document.getElementById('DSroll1'),bs=document.getElementById('DSshut');
+    if(phase==='roll'&&!gameOver){
+      b2.style.display='';
+      b1.style.display=openSum()<=6?'':'none';
+      bs.style.display='none';
+    }else if(phase==='select'){
+      b2.style.display='none';b1.style.display='none';
+      bs.style.display=(ss===target&&ss>0)?'':'none';
+    }else{b2.style.display='none';b1.style.display='none';bs.style.display='none';}
+    document.getElementById('DSr').textContent=rolls;
+    document.getElementById('DSo').textContent=openSum();
+  }
+  window._DSRoll=function(n){
+    if(phase!=='roll'||gameOver)return;
+    if(n===1&&openSum()>6){sm('Need ≤6 remaining to roll 1');return}
+    _play('snap');
+    d1=Math.floor(Math.random()*6)+1;
+    d2=n===2?Math.floor(Math.random()*6)+1:0;
+    rolls++;phase='select';sel=[];
+    var target=d1+d2;
+    rn();
+    // Check if any combination works
+    if(!canMakeSum(target)){
+      gameOver=true;
+      var finalScore=openSum();
+      sm('🍂 Stuck on '+target+'! Score: '+finalScore+' (lower is better)');
+      _play('lose');_e('game_loss');_sr('doubleshutter',{w:false,s:finalScore});
+      rn();
+    }
+  };
+  window._DSShut=function(){
+    if(phase!=='select')return;
+    var target=d1+d2,ss=selSum();
+    if(ss!==target){sm('Selected sum must equal '+target);return}
+    _play('drop');
+    sel.forEach(function(s){rows[s.row][s.idx]=true});
+    sel=[];_e('progress');
+    if(openSum()===0){
+      gameOver=true;
+      sm('🌿 PERFECT! Both rows shut!');_e('game_win');_playWin();_sr('doubleshutter',{w:true,s:0});
+      phase='done';rn();return;
+    }
+    if(openCount()%6===0)_e('milestone');
+    phase='roll';rn();
+  };
+  window._DSN=function(){
+    rows=[new Array(9).fill(false),new Array(9).fill(false)];
+    sel=[];d1=0;d2=0;phase='roll';rolls=0;gameOver=false;
+    sm('Tap ROLL to begin!');rn();
+  };
+  _DSN();
 }
 // ═══ HANOI ═══
 function GX(a){var SZ=5,sol=[],bd=[],rowC=[],colC=[];ms(a);mm(a);
@@ -38063,7 +38205,7 @@ function GRV(a){var bd=new Array(64).fill(0),tn=1,ov=false,lastMove=-1,flipCells
   // Directions
   var dir=document.createElement('div');
   dir.style.cssText='text-align:center;padding:0.4rem 0.8rem;margin:0.2rem auto;max-width:400px;font-family:DM Sans,sans-serif;font-size:clamp(0.6rem,1.8vw,0.75rem);color:var(--cream);line-height:1.4;opacity:0.8';
-  dir.innerHTML='Place <strong style="color:#7ab356">moss</strong> to surround and flip <strong style="color:#C8A84B">lichen</strong>. Outgrow the board to win.';
+  dir.innerHTML='Place your <strong style="color:#7ab356">moss</strong> to surround and flip <strong style="color:#C8A84B">lichen</strong>. Outgrow the board to win.';
   a.appendChild(dir);
   var gd=document.createElement('div');gd.className='rvb';gd.id='RV';a.appendChild(gd);
   var _bbs='min-height:52px;padding:0.5rem 1.2rem;font-size:clamp(.6rem,1.8vw,.75rem);flex:1';
@@ -38277,13 +38419,14 @@ function GBS(a){
     g.style.cssText='display:inline-block;text-align:center';
     var title=document.createElement('div');title.style.cssText='font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:'+(isEnemy?'var(--gold)':'var(--sage)')+';letter-spacing:0.1em;margin-bottom:4px';
     title.textContent=isEnemy?'ENEMY WATERS':'YOUR FLEET';g.appendChild(title);
-    var tbl=document.createElement('div');tbl.style.cssText='display:grid;grid-template-columns:repeat('+SZ+',1fr);gap:1px;background:rgba(74,124,53,0.08);border:1.5px solid rgba(74,124,53,0.15);border-radius:6px;overflow:hidden;width:clamp(160px,42vw,220px)';
+    var gridW=phase==='place'?'clamp(260px,80vw,360px)':'clamp(160px,42vw,220px)';
+    var tbl=document.createElement('div');tbl.style.cssText='display:grid;grid-template-columns:repeat('+SZ+',1fr);gap:1px;background:rgba(74,124,53,0.08);border:1.5px solid rgba(74,124,53,0.15);border-radius:6px;overflow:hidden;width:'+gridW;
     for(var i=0;i<SZ*SZ;i++){
       var d=document.createElement('div');var v=grid[i];
       d.style.cssText='aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:clamp(0.55rem,1.6vw,0.75rem);cursor:'+(onClick?'pointer':'default')+';transition:background 0.15s;';
       if(v===-2){d.style.background='rgba(199,80,80,0.5)';d.textContent='💥';}
       else if(v===-1){d.style.background='rgba(40,50,38,0.6)';d.textContent='·';d.style.color='rgba(122,179,86,0.3)';}
-      else if(!isEnemy&&v>0){d.style.background='rgba(74,124,53,0.25)';d.style.borderRadius='2px';}
+      else if(!isEnemy&&v>0){d.style.background='rgba(74,124,53,0.45)';d.style.borderRadius='2px';d.style.border='1px solid rgba(122,179,86,0.5)';d.textContent='■';d.style.color='rgba(122,179,86,0.7)';d.style.fontSize='clamp(0.4rem,1.2vw,0.55rem)';}
       else{d.style.background='rgba(18,24,16,0.7)';}
       if(onClick&&v===0){d.setAttribute('data-i',String(i));d.onclick=onClick;}
       else if(onClick&&v>0&&isEnemy){d.setAttribute('data-i',String(i));d.onclick=onClick;}
@@ -38297,7 +38440,7 @@ function GBS(a){
     var dirBtn=document.getElementById('BSdir');
     if(phase==='place'){
       if(dirBtn)dirBtn.style.display='';
-      lbl.textContent=curShip<SHIPS.length?'Place '+SHIP_NAMES[curShip]+' ('+SHIPS[curShip]+' cells) — tap grid':'';
+      lbl.textContent=curShip<SHIPS.length?'Tap to place '+SHIP_NAMES[curShip]+' ('+SHIPS[curShip]+' cells) — use Rotate to change direction':'';
       renderGrid(pGrid,grids,false,function(){
         if(curShip>=SHIPS.length)return;
         var i=parseInt(this.getAttribute('data-i'));var r=Math.floor(i/SZ),c=i%SZ;
@@ -38798,7 +38941,7 @@ function GBW(a){
     var old=null;if(bufC.width>0&&bufC.height>0){try{old=bufX.getImageData(0,0,bufC.width,bufC.height)}catch(e){}}
     bufC.width=W*dpr;bufC.height=H*dpr;bufX.setTransform(dpr,0,0,dpr,0,0);
     if(old){try{bufX.putImageData(old,0,0)}catch(e){}}
-    cx=W/2;cy=H/2;radius=Math.min(cx,cy)-10;
+    cx=W/2;cy=H/2;radius=Math.max(1,Math.min(cx,cy)-10);
   }
 
   function getColor(ph,dist){
@@ -38898,7 +39041,9 @@ function GBW(a){
     if(schTimer){clearTimeout(schTimer);schTimer=null;}
     if(aCtx){try{aCtx.close();}catch(e){}aCtx=null;mGain=null;}
     musicOn=false;
+    if(_bwRaf){cancelAnimationFrame(_bwRaf);_bwRaf=0;}
   }
+  window._bwKillAudio=_bwKillAudio;
   // Kill audio when browser tab is hidden/minimized
   document.addEventListener('visibilitychange',function(){
     if(document.hidden&&aCtx&&_a==='bloomwheel'){aCtx.suspend();}
@@ -38955,19 +39100,20 @@ function GBW(a){
   a.appendChild(palDiv);
 
   var ctrlDiv=mc(a);
+  var _bls='display:block;font-size:clamp(0.32rem,0.9vw,0.38rem);color:var(--muted);margin-top:2px;letter-spacing:0.04em';
   ctrlDiv.innerHTML='<div style="display:flex;gap:6px;padding:6px 0;flex-wrap:wrap;justify-content:center">'
-    +'<button class="gb" style="'+_bbs+'" onclick="_BWS(4)" id="BWs4">4</button>'
-    +'<button class="gb gon" style="'+_bbs+'" onclick="_BWS(8)" id="BWs8">8</button>'
-    +'<button class="gb" style="'+_bbs+'" onclick="_BWS(12)" id="BWs12">12</button>'
-    +'<button class="gb" style="'+_bbs+';min-width:clamp(100px,28vw,130px)" onclick="_BWMirror()" id="BWmir">✎ FREEHAND</button>'
-    +'<button class="gb" style="'+_bbs+'" onclick="_BWBrush()" id="BWbr">● 3</button>'
-    +'<button class="gb" style="'+_bbs+';min-width:clamp(88px,24vw,110px)" onclick="_BWPath()" id="BWpath">◯ SPIN</button>'
-    +'<button class="gb" style="'+_bbs+'" onclick="_BWBpm(-10)">BPM−</button>'
-    +'<button class="gb" style="'+_bbs+'" onclick="_BWBpm(10)">BPM+</button>'
-    +'<button class="gb" style="'+_bbs+'" onclick="_BWMusic()" id="BWmus">♫ OFF</button>'
-    +'<button class="gb" style="'+_bbs+';min-width:clamp(88px,24vw,110px)" onclick="_BWFreeze()" id="BWfrz">❄ FREEZE</button>'
-    +'<button class="gb" style="'+_bbs+'" onclick="_BWClear()">✕ CLEAR</button>'
-    +'<button class="gb" style="'+_bbs+';border-color:rgba(200,168,75,0.3);color:var(--gold)" onclick="_BWSave()">💾 SAVE</button>'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWS(4)" id="BWs4">4<span style="'+_bls+'">PETALS</span></button>'
+    +'<button class="gb gon" style="'+_bbs+'" onclick="_BWS(8)" id="BWs8">8<span style="'+_bls+'">PETALS</span></button>'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWS(12)" id="BWs12">12<span style="'+_bls+'">PETALS</span></button>'
+    +'<button class="gb" style="'+_bbs+';min-width:clamp(100px,28vw,130px)" onclick="_BWMirror()" id="BWmir">✎ FREEHAND<span style="'+_bls+'">DRAW MODE</span></button>'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWBrush()" id="BWbr">● 3<span style="'+_bls+'">BRUSH</span></button>'
+    +'<button class="gb" style="'+_bbs+';min-width:clamp(88px,24vw,110px)" onclick="_BWPath()" id="BWpath">◯ SPIN<span style="'+_bls+'">PATH</span></button>'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWBpm(-10)">◀ SLOWER<span style="'+_bls+'">BPM</span></button>'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWBpm(10)">FASTER ▶<span style="'+_bls+'">BPM</span></button>'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWMusic()" id="BWmus">♫ OFF<span style="'+_bls+'">MUSIC</span></button>'
+    +'<button class="gb" style="'+_bbs+';min-width:clamp(88px,24vw,110px)" onclick="_BWFreeze()" id="BWfrz">❄ FREEZE<span style="'+_bls+'">ROTATION</span></button>'
+    +'<button class="gb" style="'+_bbs+'" onclick="_BWClear()">✕ CLEAR<span style="'+_bls+'">CANVAS</span></button>'
+    +'<button class="gb" style="'+_bbs+';border-color:rgba(200,168,75,0.3);color:var(--gold)" onclick="_BWSave()">💾 SAVE<span style="'+_bls+'">IMAGE</span></button>'
     +'</div>';
 
   window._BWS=function(n){symmetry=n;document.getElementById('BWsym').textContent=n;
@@ -39235,9 +39381,22 @@ try{window._gameFns.sokoban=GSK}catch(e){}  // Sokoban
 try{window._gameFns.backgammon=GBG}catch(e){} // Backgammon
 try{window._gameFns.bloomwheel=GBW}catch(e){} // Bloom Wheel
 try{window._gameFns.petalfall=GPF}catch(e){} // Petal Fall
+try{window._gameFns.doubleshutter=GDS}catch(e){} // Double Shutter
 
 
-_bp();console.log('[FG] Hub v4 — '+G.length+' games');
+_bp();
+// Auto-open picker on initial load — only if user has completed onboarding (not first-time)
+function _autoOpenPicker(){
+  try{
+    var done=localStorage.getItem('pw_onboardComplete')||localStorage.getItem('sws_fg_onb');
+    if(!done)return; // skip during onboarding
+    var ov=document.getElementById('fg-ov');
+    if(ov&&!ov.classList.contains('open'))_op();
+  }catch(e){console.warn('[autoOpenPicker]',e);}
+}
+setTimeout(_autoOpenPicker,400);
+setTimeout(_autoOpenPicker,1200); // safety retry after onboarding/splash
+console.log('[FG] Hub v4 — '+G.length+' games');
 })();
 </script>
 
@@ -42356,27 +42515,14 @@ function _stepGame(){
 
 // ═══ DEFERRED: Nursery check ═══
 function checkNursery(){
-  if(localStorage.getItem('lw_tut_nursery'))return;
-  var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
-  localStorage.setItem('lw_tut_nursery','1');
-  if(gh.length<2){
-    setTimeout(function(){
-      _dialog('You need at least <span style="color:var(--gold);">2 plants</span> to breed.<br><br>Play some games to earn more, then come back!','GOT IT',function(){_clear();},'center');
-    },400);
-  } else {
-    setTimeout(function(){
-      _dialog('You have enough plants to breed!<br><br><span style="color:var(--sage);">Cross-pollination</span> combines two plants into something new. Water the seed for 3 days and it blooms.','GOT IT',function(){_clear();},'center');
-    },400);
-  }
+  // Disabled — too intrusive on every visit
+  return;
 }
 
 // ═══ DEFERRED: Breed screen ═══
 function checkBreed(){
-  if(localStorage.getItem('lw_tut_breed'))return;
-  localStorage.setItem('lw_tut_breed','1');
-  setTimeout(function(){
-    _dialog('These are the <span style="color:var(--gold);">genetic layers</span> side by side.<br><br><span style="color:var(--sage);">DOMINANT</span> traits pass down. <span style="color:var(--gold);">BLENDS</span> mix. <span style="color:#d8a0a0;">RISKY</span> ones may mutate.','GOT IT',function(){_clear();},'top');
-  },600);
+  // Disabled — too intrusive on every visit
+  return;
 }
 
 function start(){
@@ -43316,9 +43462,9 @@ function evaluateBloomChorus(){
     }
   }
 
-  // Log new choruses
+  // Log new choruses (only if scored — zero-score choruses aren't musically meaningful)
   var existing=[];try{existing=JSON.parse(localStorage.getItem(CHORUS_KEY)||'[]');}catch(e){}
-  if(choruses.length>existing.length&&choruses.length>0){
+  if(choruses.length>existing.length&&choruses.length>0&&choruses[0].score>0){
     if(window._logWildEvent)window._logWildEvent({type:'chorus',event:'formed',score:choruses[0].score,plants:choruses[0].plants});
   }
   localStorage.setItem(CHORUS_KEY,JSON.stringify(choruses));
