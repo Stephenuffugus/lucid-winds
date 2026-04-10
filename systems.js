@@ -353,11 +353,12 @@ function equipCompanion(){
 }
 function _pickCompanion(idx){
   var f=window._csCompFound?window._csCompFound[idx]:null;if(!f)return;
-  localStorage.setItem('pw_active_companion',JSON.stringify({idx:f.idx,name:f.name,icon:f.icon,ability:f.ability,temperament:f.temperament,tempIcon:f.tempIcon}));
+  var compData={idx:f.idx,name:f.name,icon:f.icon,ability:f.ability,temperament:f.temperament,tempIcon:f.tempIcon};
+  localStorage.setItem('pw_active_companion',JSON.stringify(compData));
   _loadCompanion();
   var pk=document.getElementById('cs-comp-picker');if(pk)pk.remove();
   if(window._toast)window._toast(f.name+' equipped!');
-  _syncProfileField('activeCompanion',{idx:f.idx,name:f.name});
+  _syncProfileField('activeCompanion',compData);
 }
 
 // ═══ SYNC SINGLE PROFILE FIELD TO FIRESTORE ═══
@@ -491,6 +492,10 @@ function ensureProfile(user){
       if(d.friendCode)localStorage.setItem('pw_friend_code',_formatCode(d.friendCode));
       if(d.displayName)localStorage.setItem('pw_keeper_name',d.displayName);
       if(d.accountNumber)localStorage.setItem('pw_account_number',String(d.accountNumber));
+      // Restore equipped companion if local lost it (e.g. fresh device, cleared cache)
+      if(d.activeCompanion&&d.activeCompanion.name&&!localStorage.getItem('pw_active_companion')){
+        try{localStorage.setItem('pw_active_companion',JSON.stringify(d.activeCompanion));}catch(e){}
+      }
       if(window.PW_UI)PW_UI.updateKeeperBar();
       console.log('[PW_Social] Profile loaded: '+d.displayName+' #'+d.accountNumber);
       return;
