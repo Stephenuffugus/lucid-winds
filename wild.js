@@ -3017,7 +3017,9 @@ function _updateCounts(){
     }
   }
   localStorage.setItem('fg_pollen_tick',String(now));
-  var p=document.getElementById('w-pollen');if(p)p.textContent=total;
+  // w-pollen shows Keeper XP (Pollen = XP rework); fg_pollen is dead
+  var p=document.getElementById('w-pollen');
+  if(p){try{p.textContent=parseInt(localStorage.getItem('pw_xp')||'0');}catch(e){p.textContent=total;}}
   // Update Dew balance display (real Dew ledger, not the hash ledger)
   try{
     var dewBal=typeof window.getTotalDew==='function'?window.getTotalDew():0;
@@ -3114,11 +3116,12 @@ setInterval(function(){var w=_getWild();if(w.length>0){
   if(wholeEarned>0){
     // Route to the real Dew ledger in app.js. Also grants matching XP.
     if(typeof window.earnDew==='function')window.earnDew(wholeEarned,'wild_tick');
-    // Update the wild tab's visible Dew counter (renamed from w-pollen)
+    // Update the wild tab's visible counters.
+    // w-dew = real Dew balance, w-pollen = Keeper XP (Pollen = XP rework).
     var wd=document.getElementById('w-dew');
     if(wd&&typeof window.getTotalDew==='function')wd.textContent=window.getTotalDew();
     var p=document.getElementById('w-pollen');
-    if(p&&typeof window.getTotalDew==='function')p.textContent=window.getTotalDew();
+    if(p){try{p.textContent=parseInt(localStorage.getItem('pw_xp')||'0');}catch(e){}}
   }
   localStorage.setItem('fg_dew_tick',String(Date.now()));
 }},60000);
