@@ -7,7 +7,7 @@ window.FG_Wild=(function(){
 // Safe stubs for functions defined in later script blocks
 function _e(v){if(window._e)window._e(v);}
 function _play(id){if(window._play)window._play(id);}
-var TILES='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+var TILES='https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 var MAX_DROPS=3,MAX_POUCH=5,COLLECT_RANGE=75,ZONE_SIZE=0.001;
 // Dynamic collect range — Wanderer temperament adds 50m
 function _getCollectRange(){
