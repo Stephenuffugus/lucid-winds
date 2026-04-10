@@ -18346,6 +18346,19 @@
         body = '<b>' + mintName + '</b> joined your greenhouse.';
         if (d.grade) body += ' <span style="color:var(--gold);">' + d.grade + '</span>';
         break;
+      case 'seed_bloomed':
+        icon = '\ud83c\udf38';
+        color = 'var(--gold)';
+        var bloomName = d.name || (d.hash && window.getPlantName ? getPlantName(d.hash) : 'A seed');
+        if (d.mystery) {
+          body = 'Your mystery seed revealed itself: <b>' + bloomName + '</b>';
+          if (d.tier) body += ' <span style="color:var(--gold);">' + d.tier + '</span>';
+        } else {
+          body = '<b>' + bloomName + '</b> bloomed in the nursery.';
+          if (d.tier) body += ' <span style="color:var(--gold);">' + d.tier + '</span>';
+        }
+        if (d.mutated) body += ' <span style="color:#d8a0a0;">\u2726 mutation</span>';
+        break;
       case 'feral_collected':
         icon = '\ud83c\udf30';
         color = 'var(--gold)';
@@ -18355,6 +18368,13 @@
         icon = '\ud83e\uddec';
         color = '#E8A0BF';
         body = 'Two plants crossed. A seed is resting in the nursery.';
+        break;
+      case 'plant_composted':
+        icon = '\u267b\ufe0f';
+        color = 'var(--muted)';
+        var compName = d.name || (d.hash && window.getPlantName ? getPlantName(d.hash) : 'A plant');
+        body = '<b>' + compName + '</b> returned to the earth.';
+        if (d.fertilizer) body += ' <span style="color:var(--gold);">+' + d.fertilizer + ' fertilizer</span>';
         break;
       case 'wild_drop':
         icon = '\ud83c\udf3f';
@@ -19985,6 +20005,12 @@
     } catch(e) {}
     if (typeof gtag !== 'undefined') gtag('event', 'plant_composted', { hash: plant.hash.slice(0,8), dna: dnaReward });
     if (window._trackQuest) window._trackQuest('composted', 1);
+    if (window.LW_Log) window.LW_Log.write('plant_composted', {
+      hash: plant.hash,
+      name: typeof getPlantName === 'function' ? getPlantName(plant.hash) : '',
+      tier: _tg.name,
+      fertilizer: fertReward
+    });
     // Compost ghost — remember the fallen for 24 hours
     try {
       var _ghosts = JSON.parse(localStorage.getItem('lw_compost_ghosts') || '[]');
@@ -21504,6 +21530,23 @@
     // Analytics
     if (typeof gtag !== 'undefined') {
       if(typeof gtag!=='undefined') gtag('event', 'nursery_bloom', { hash: newHash.slice(0, 8), mutated: mut.mutated, mutCount: mut.count });
+    }
+
+    // Event log: bloom is the moment the mystery resolves — feral seeds finally
+    // reveal their true identity here, so the journal entry carries the payoff.
+    if (window.LW_Log) {
+      var _bloomTier = '';
+      try {
+        var _bT = hashToTraits(newHash);
+        if (_bT && window.getTerraGrade) _bloomTier = (getTerraGrade(_bT) || {}).name || '';
+      } catch(e) {}
+      window.LW_Log.write('seed_bloomed', {
+        hash: newHash,
+        name: typeof getPlantName === 'function' ? getPlantName(newHash) : '',
+        tier: _bloomTier,
+        mystery: !!seed.mystery,
+        mutated: !!mut.mutated
+      });
     }
 
     // 8. UI refresh then cinematic reveal

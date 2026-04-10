@@ -2273,15 +2273,15 @@
     .root-report-modal .rr-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.14em;color:var(--gold);}
     .root-report-modal .rr-close{background:none;border:1px solid rgba(74,124,53,0.2);color:var(--muted);font-size:0.9rem;width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;}
     .root-report-modal .rr-tabs{display:flex;gap:0.4rem;padding:0.6rem 0.9rem 0.4rem;border-bottom:1px solid rgba(74,124,53,0.08);flex-shrink:0;}
-    .root-report-modal .rr-tab{flex:1;padding:0.45rem 0.3rem;border:1px solid rgba(74,124,53,0.18);background:rgba(26,36,22,0.4);color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:0.58rem;letter-spacing:0.12em;border-radius:8px;cursor:pointer;min-height:36px;}
+    .root-report-modal .rr-tab{flex:1;padding:0.55rem 0.3rem;border:1px solid rgba(74,124,53,0.18);background:rgba(26,36,22,0.4);color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:0.78rem;letter-spacing:0.12em;border-radius:8px;cursor:pointer;min-height:44px;font-weight:500;}
     .root-report-modal .rr-tab.active{border-color:rgba(200,168,75,0.5);background:rgba(200,168,75,0.1);color:var(--gold);}
     .root-report-modal .rr-body{flex:1;overflow-y:auto;padding:0.6rem 0.9rem 1rem;-webkit-overflow-scrolling:touch;}
     .root-report-modal .rr-entry{display:flex;align-items:flex-start;gap:0.6rem;padding:0.55rem 0.5rem;border-bottom:1px solid rgba(74,124,53,0.08);}
     .root-report-modal .rr-entry:last-child{border-bottom:none;}
     .root-report-modal .rr-icon{font-size:1rem;line-height:1.2;flex-shrink:0;width:28px;text-align:center;}
-    .root-report-modal .rr-entry .rr-body{font-family:'DM Sans',sans-serif;font-size:0.68rem;color:var(--cream);line-height:1.5;flex:1;min-width:0;}
-    .root-report-modal .rr-entry .rr-body b{color:var(--sage);font-weight:600;}
-    .root-report-modal .rr-entry .rr-time{font-family:'DM Mono',monospace;font-size:0.48rem;color:var(--muted);margin-top:0.15rem;}
+    .root-report-modal .rr-entry .rr-body{font-family:'DM Sans',sans-serif;font-size:0.78rem;color:var(--cream);line-height:1.5;flex:1;min-width:0;font-weight:500;}
+    .root-report-modal .rr-entry .rr-body b{color:var(--sage);font-weight:700;}
+    .root-report-modal .rr-entry .rr-time{font-family:'DM Mono',monospace;font-size:0.58rem;color:var(--muted);margin-top:0.2rem;}
     .root-report-modal .rr-empty{text-align:center;padding:2rem 1rem 2.5rem;color:var(--muted);}
     .root-report-modal .rr-empty-icon{font-size:2.2rem;margin-bottom:0.5rem;opacity:0.7;}
     .root-report-modal .rr-empty-title{font-family:'Playfair Display',serif;font-size:0.85rem;font-style:italic;color:var(--cream);margin-bottom:0.35rem;}
@@ -26634,6 +26634,19 @@ document.addEventListener('keydown', function(e) {
         body = '<b>' + mintName + '</b> joined your greenhouse.';
         if (d.grade) body += ' <span style="color:var(--gold);">' + d.grade + '</span>';
         break;
+      case 'seed_bloomed':
+        icon = '\ud83c\udf38'; color = 'var(--gold)';
+        var bloomName = d.name || (d.hash && window.getPlantName ? getPlantName(d.hash) : 'A seed');
+        body = d.mystery ? ('Your mystery seed revealed itself: <b>' + bloomName + '</b>') : ('<b>' + bloomName + '</b> bloomed in the nursery.');
+        if (d.tier) body += ' <span style="color:var(--gold);">' + d.tier + '</span>';
+        if (d.mutated) body += ' <span style="color:#d8a0a0;">\u2726 mutation</span>';
+        break;
+      case 'plant_composted':
+        icon = '\u267b\ufe0f'; color = 'var(--muted)';
+        var compName = d.name || (d.hash && window.getPlantName ? getPlantName(d.hash) : 'A plant');
+        body = '<b>' + compName + '</b> returned to the earth.';
+        if (d.fertilizer) body += ' <span style="color:var(--gold);">+' + d.fertilizer + ' fertilizer</span>';
+        break;
       case 'feral_collected':
         icon = '\ud83c\udf30'; color = 'var(--gold)';
         body = 'You pocketed a <b>mystery seed</b> from the wild. Water it in the nursery to see what it is.';
@@ -28231,6 +28244,7 @@ document.addEventListener('keydown', function(e) {
     } catch(e) {}
     if (typeof gtag !== 'undefined') gtag('event', 'plant_composted', { hash: plant.hash.slice(0,8), dna: dnaReward });
     if (window._trackQuest) window._trackQuest('composted', 1);
+    if (window.LW_Log) window.LW_Log.write('plant_composted', { hash: plant.hash, name: typeof getPlantName === 'function' ? getPlantName(plant.hash) : '', tier: _tg.name, fertilizer: fertReward });
     // Compost ghost — remember the fallen for 24 hours
     try {
       var _ghosts = JSON.parse(localStorage.getItem('lw_compost_ghosts') || '[]');
@@ -29674,6 +29688,13 @@ document.addEventListener('keydown', function(e) {
     // Analytics
     if (typeof gtag !== 'undefined') {
       if(typeof gtag!=='undefined') gtag('event', 'nursery_bloom', { hash: newHash.slice(0, 8), mutated: mut.mutated, mutCount: mut.count });
+    }
+
+    // Event log: bloom is the reveal moment for mystery seeds.
+    if (window.LW_Log) {
+      var _bloomTier = '';
+      try { var _bT = hashToTraits(newHash); if (_bT && window.getTerraGrade) _bloomTier = (getTerraGrade(_bT) || {}).name || ''; } catch(e) {}
+      window.LW_Log.write('seed_bloomed', { hash: newHash, name: typeof getPlantName === 'function' ? getPlantName(newHash) : '', tier: _bloomTier, mystery: !!seed.mystery, mutated: !!mut.mutated });
     }
 
     // 8. UI refresh then cinematic reveal
