@@ -4309,5 +4309,10 @@ window._hexAction = function(action) {
 // Expose a getter for shared markers so _openPlantDetails (and other
 // cross-module code) can look up stranger wild plants by hash.
 function _getSharedMarker(hash){try{return (_sharedMarkers&&_sharedMarkers[hash])?_sharedMarkers[hash]:null;}catch(e){return null;}}
+// Expose the toast helper globally so non-Wild tabs can surface
+// status messages without silently falling through their window._toast
+// nullability checks (the #w-toast element is position:fixed, so it
+// works from any tab).
+window._toast = _toast;
 return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_drawZoneHexes:_drawZoneHexes,_openHexInspector:_openHexInspector,_getSharedMarker:_getSharedMarker};
 })();

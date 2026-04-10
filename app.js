@@ -18258,6 +18258,8 @@
   window.saveGreenhouse = saveGreenhouse;
   window.getPlantName = getPlantName;
   window.getTraitSummary = getTraitSummary;
+  window._haptic = _haptic;
+  window.showHexMsg = showHexMsg;
 
   // ═══ EVENT LOG — foundation for Root Report, memorials, achievements ═══
   // Ring buffer of notable gameplay events persisted to localStorage.

@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.44';
+  var LW_VERSION='2026.04.10.45';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -26571,6 +26571,8 @@ document.addEventListener('keydown', function(e) {
   window.saveGreenhouse = saveGreenhouse;
   window.getPlantName = getPlantName;
   window.getTraitSummary = getTraitSummary;
+  window._haptic = _haptic;
+  window.showHexMsg = showHexMsg;
 
   // ═══ EVENT LOG — foundation for Root Report, memorials, achievements ═══
   // Ring buffer of notable gameplay events persisted to localStorage.
@@ -35599,6 +35601,11 @@ window._hexAction=function(action){
   }
 };
 
+// Expose the toast helper globally so non-Wild tabs can surface
+// status messages without silently falling through their window._toast
+// nullability checks (the #w-toast element is position:fixed and
+// layered above everything, so it works from any tab).
+window._toast = _toast;
 return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_openHexInspector:_openHexInspector,_drawZoneHexes:_drawZoneHexes};
 })();
 </script>
