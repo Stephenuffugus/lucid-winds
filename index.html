@@ -4588,7 +4588,7 @@ window.onerror=function(msg,url,line,col,err){
   <div class="grove-panel active" id="panel-game">
   <div class="game-header">
     <div class="game-title">Lucid <em>Winds</em></div>
-    <!-- Dew Drop progress bar — shows balance + progress to next plant -->
+    <!-- Sunbeams progress bar — shows balance + progress to next plant -->
     <div id="game-dew-bar" style="display:flex;align-items:center;gap:8px;padding:4px 12px;margin-top:2px;">
       <div style="font-family:DM Mono,monospace;font-size:clamp(.32rem,.9vw,.4rem);color:rgba(91,175,220,0.9);white-space:nowrap;"><span id="game-dew-val">0</span> dew</div>
       <div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;position:relative;"><div id="game-dew-fill" style="height:100%;background:linear-gradient(90deg,rgba(91,175,220,0.6),rgba(122,179,86,0.7));border-radius:2px;width:0%;transition:width 0.4s ease;"></div></div>
@@ -4806,7 +4806,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="dash-section">
       <div class="panel-header">
         <div class="panel-header-title">ATTENTION WALLET</div>
-        <button onclick="openEconModal()" style="background:none;border:none;color:var(--gold);font-size:0.55rem;cursor:pointer;padding:0;" title="How Dew Drops work">ℹ️</button>
+        <button onclick="openEconModal()" style="background:none;border:none;color:var(--gold);font-size:0.55rem;cursor:pointer;padding:0;" title="How Sunbeams and Dew work">ℹ️</button>
       </div>
       <div style="display:flex;align-items:center;gap:0.75rem;padding:0.25rem 0;">
         <div class="dash-wallet">
@@ -4834,7 +4834,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="dash-section">
       <div class="dash-title">THE SHOP</div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
-        <p style="font-size:0.45rem;color:var(--muted);margin:0;">Spend your Dew Drops on cosmetics. Flex on your collection.</p>
+        <p style="font-size:0.45rem;color:var(--muted);margin:0;">Spend your Sunbeams on cosmetics. Flex on your collection.</p>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:0.7rem;color:var(--gold);background:rgba(200,168,75,0.07);border:1px solid rgba(200,168,75,0.2);border-radius:5px;padding:0.15rem 0.5rem;white-space:nowrap;letter-spacing:0.06em;">Balance: <span id="shop-balance-display">0</span> ⚡</div>
       </div>
       <div class="hex-grid">
@@ -4932,7 +4932,7 @@ window.onerror=function(msg,url,line,col,err){
     <!-- Achievements -->
     <div class="dash-section" id="ach-section">
       <div class="dash-title">🏅 ACHIEVEMENTS</div>
-      <p style="font-size:0.42rem;color:var(--muted);margin-bottom:0.4rem;">Unlock badges by reaching milestones. Each grants +25 Dew Drops.</p>
+      <p style="font-size:0.42rem;color:var(--muted);margin-bottom:0.4rem;">Unlock badges by reaching milestones. Each grants +25 Sunbeams.</p>
       <div class="ach-grid" id="ach-grid"></div>
     </div>
     <!-- Auth sign-out row (hidden until logged in) -->
@@ -4969,7 +4969,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="wild-log">
       <div class="wild-log-stat" onclick="if(window._toggleTerritory)_toggleTerritory();"><div class="wild-log-val" id="w-count">0</div><div class="wild-log-lbl">planted</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Daily drops remaining. Resets at midnight.')"><div class="wild-log-val" id="w-drops-left">3</div><div class="wild-log-lbl">drops</div></div>
-      <div class="wild-log-stat" onclick="FG_Wild._logTip('Dew Drops \u2014 earned by harvesting. Use to water plants or skip nursery days.')"><div class="wild-log-val" style="color:rgba(91,175,220,0.9)" id="w-dew">0</div><div class="wild-log-lbl">dew</div></div>
+      <div class="wild-log-stat" onclick="FG_Wild._logTip('Dew \u2014 produced by your wild plants and earned from participation. Spend on nursery acceleration and wild plant cuttings.')"><div class="wild-log-val" style="color:rgba(91,175,220,0.9)" id="w-dew">0</div><div class="wild-log-lbl">dew</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Pollen \u2014 earned passively from planted wild plants. Rarer plants earn faster.')"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl">pollen</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Meters walked. Keep moving to find feral seeds!')"><div class="wild-log-val" style="color:var(--sage)" id="w-steps">0</div><div class="wild-log-lbl">meters</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Your biome — detected from real geography. Affects feral rarity and mutations.')"><div class="wild-log-val" style="font-size:0.7rem;" id="w-biome">🏡</div><div class="wild-log-lbl" id="w-biome-name">scanning</div></div>
@@ -5138,7 +5138,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="cs-section"><div class="cs-section-title">ACTIVE COMPANION</div><div class="cs-companion-card" onclick="PW_UI.equipCompanion()" style="cursor:pointer;min-height:64px;" title="Tap to change"><div class="cs-companion-icon" id="cs-companion-icon">❓</div><div style="flex:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--cream);letter-spacing:0.04em;" id="cs-companion-name">None Equipped</div><div style="font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--sage);line-height:1.5;margin-top:2px;" id="cs-companion-buff">Tap to equip a companion</div></div></div></div>
     <div class="cs-section"><div class="cs-section-title">SHOWCASE</div><div class="cs-showcase-grid"><div class="cs-showcase-slot empty" onclick="PW_UI.editShowcase(0)"><div>+ Add Plant</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div></div></div>
     <div class="cs-section"><div class="cs-section-title">FEATURED HAIKU</div><div class="cs-haiku" id="cs-haiku"><em style="color:var(--muted);">Bloom your first plant to feature its haiku here</em></div></div>
-    <div class="cs-section"><div class="cs-section-title">KEEPER STATS</div><div class="cs-stats" id="cs-stats"><div>Plants Grown <b id="cs-s-plants">0</b></div><div>Pollen <b id="cs-s-pollen" style="color:var(--gold);">0</b></div><div>Seeds Found <b id="cs-s-seeds">0</b></div><div>Wild Active <b id="cs-s-wild">0</b></div><div>Games Played <b id="cs-s-games">0</b></div><div>Groves <b id="cs-s-groves">0</b></div><div>Compost Made <b id="cs-s-compost">0</b></div><div>Dew Drops <b id="cs-s-dew" style="color:var(--sage);">0</b></div><div>Rarest Grade <b id="cs-s-rarest">—</b></div><div>Creatures <b id="cs-s-creatures">0</b></div><div>Days Active <b id="cs-s-days">1</b></div><div>Friends <b id="cs-s-friends">0</b></div></div></div>
+    <div class="cs-section"><div class="cs-section-title">KEEPER STATS</div><div class="cs-stats" id="cs-stats"><div>Plants Grown <b id="cs-s-plants">0</b></div><div>Pollen <b id="cs-s-pollen" style="color:var(--gold);">0</b></div><div>Seeds Found <b id="cs-s-seeds">0</b></div><div>Wild Active <b id="cs-s-wild">0</b></div><div>Games Played <b id="cs-s-games">0</b></div><div>Groves <b id="cs-s-groves">0</b></div><div>Compost Made <b id="cs-s-compost">0</b></div><div>Sunbeams <b id="cs-s-dew" style="color:var(--gold);">0</b></div><div>Rarest Grade <b id="cs-s-rarest">—</b></div><div>Creatures <b id="cs-s-creatures">0</b></div><div>Days Active <b id="cs-s-days">1</b></div><div>Friends <b id="cs-s-friends">0</b></div></div></div>
     <div class="cs-section"><div class="cs-section-title">FRIEND CODE</div><div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;"><div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--gold);letter-spacing:0.15em;" id="cs-friend-code">????-????</div><button onclick="PW_UI.copyFriendCode()" style="background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.2);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.5rem;padding:0.2rem 0.6rem;border-radius:4px;cursor:pointer;">COPY</button></div><div style="display:flex;gap:0.3rem;align-items:center;"><input type="text" id="cs-add-friend" placeholder="Enter friend code" maxlength="9" style="flex:1;padding:0.4rem;background:rgba(26,36,22,0.4);border:1.5px solid rgba(122,179,86,0.15);border-radius:6px;color:var(--cream);font-family:'DM Mono',monospace;font-size:0.5rem;outline:none;" /><button onclick="PW_UI.addFriend()" style="padding:0.4rem 0.6rem;border:1.5px solid rgba(122,179,86,0.2);border-radius:6px;background:rgba(26,36,22,0.3);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.5rem;cursor:pointer;min-height:36px;">ADD</button></div><div id="cs-friend-err" style="font-size:0.38rem;color:var(--muted);margin-top:0.25rem;min-height:0.8rem;"></div></div>
     <div class="cs-section"><div class="cs-section-title">FRIENDS <span id="cs-friend-count" style="color:var(--muted);">(0)</span></div><div id="cs-pending-list"></div><div id="cs-friends-list" style="font-size:0.42rem;color:var(--muted);">No friends yet. Share your code!</div></div>
     <div style="display:flex;gap:0.4rem;margin-top:0.3rem;"><button onclick="PW_UI.closeCharacter()" style="flex:1;padding:0.5rem;border-radius:8px;border:2px solid rgba(74,124,53,0.15);background:rgba(26,36,22,0.3);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;cursor:pointer;min-height:48px;">CLOSE</button></div>
@@ -6085,7 +6085,7 @@ window.onerror=function(msg,url,line,col,err){
         if(window._secureSet)window._secureSet('sws_hash_ledger',s);
         else localStorage.setItem('sws_hash_ledger',s);
         if(window.updateDashboard)updateDashboard();
-        alert('+'+n+' Dew Drops granted! Total earned: '+ledger.earned);
+        alert('+'+n+' Sunbeams granted! Total earned: '+ledger.earned);
       }catch(e){alert('Error: '+e.message);}
     },
     accelAll:function(){
@@ -6114,7 +6114,17 @@ window.onerror=function(msg,url,line,col,err){
       }catch(e){}
       if(window.updateDashboard)updateDashboard();
       if(window.renderNursery)renderNursery();
-      alert('EVERYTHING ACCELERATED!\n\n- Feral timers reset\n- Reproduction timers reset\n- Backpack cooldowns cleared\n- Nursery seeds bloom-ready\n- +100 Dew Drops granted\n\nSwitch to Wild tab to trigger spawns.');
+      alert('EVERYTHING ACCELERATED!\n\n- Feral timers reset\n- Reproduction timers reset\n- Backpack cooldowns cleared\n- Nursery seeds bloom-ready\n- +100 Sunbeams granted\n- +100 Dew granted\n\nSwitch to Wild tab to trigger spawns.');
+      // Also grant Dew for testing the new spendable currency
+      try{
+        var dlRaw=window._secureGet?window._secureGet('sws_dew_ledger'):localStorage.getItem('sws_dew_ledger');
+        var dl=JSON.parse(dlRaw||'{}');
+        dl.earned=(dl.earned||0)+100;
+        var ds=JSON.stringify(dl);
+        if(window._secureSet)window._secureSet('sws_dew_ledger',ds);
+        else localStorage.setItem('sws_dew_ledger',ds);
+        if(window._updateDewDisplay)window._updateDewDisplay();
+      }catch(e){}
     },
     grantDew:function(n){
       n=n||500;
@@ -6127,7 +6137,7 @@ window.onerror=function(msg,url,line,col,err){
         if(window._secureSet)window._secureSet('sws_hash_ledger',s);
         else localStorage.setItem('sws_hash_ledger',s);
         if(window.updateDashboard)updateDashboard();
-        alert('+'+n+' Dew Drops granted! Total: '+ledger.earned);
+        alert('+'+n+' Sunbeams granted! Total: '+ledger.earned);
       }catch(e){alert('Error: '+e.message);}
     },
     spawnChimeras:function(){
@@ -6219,8 +6229,8 @@ window.onerror=function(msg,url,line,col,err){
     <div class="econ-card" style="max-height:80vh;overflow-y:auto;">
       <h3>How Lucid Winds Works</h3>
       <div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--cream);line-height:1.7;">
-        <div style="margin-bottom:0.4rem;"><span style="color:var(--sage);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;">1. PLAY</span><br>Find patterns in card games. Each match earns Dew Drops.</div>
-        <div style="margin-bottom:0.4rem;"><span style="color:rgba(91,175,220,0.9);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;">2. BLOOM</span><br>Every 30 Dew Drops grows a unique plant. No two are alike — yours is one-of-one.</div>
+        <div style="margin-bottom:0.4rem;"><span style="color:var(--sage);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;">1. PLAY</span><br>Find patterns in card games. Each match gathers Sunbeams.</div>
+        <div style="margin-bottom:0.4rem;"><span style="color:rgba(91,175,220,0.9);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;">2. BLOOM</span><br>Every 30 Sunbeams grows a unique plant. No two are alike — yours is one-of-one.</div>
         <div style="margin-bottom:0.4rem;"><span style="color:var(--gold);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;">3. COLLECT</span><br>Plants live in your Greenhouse. Sort by rarity. Flip cards to see DNA + haiku.</div>
         <div style="margin-bottom:0.4rem;"><span style="color:#E8A0BF;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;">4. BREED</span><br>Cross two plants to create a seed. Water it 3 days in the Nursery to bloom.</div>
         <div style="margin-bottom:0.4rem;"><span style="color:#D4842A;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;">5. EXPLORE</span><br>Drop plants on a real-world map. Others can see and try to harvest them.</div>
@@ -6332,7 +6342,7 @@ window.onerror=function(msg,url,line,col,err){
   <div class="login-overlay" id="login-overlay">
     <div class="login-card">
       <h3>Sync Your <em style="color:var(--sage);">Cloud Vault</em></h3>
-      <p>Save your Plants and Dew Drops across all devices. Play as guest anytime — log in to keep your collection forever.</p>
+      <p>Save your Plants, Sunbeams, and Dew across all devices. Play as guest anytime — log in to keep your collection forever.</p>
       <div id="login-error" style="color:#8B2E2E;font-size:0.6rem;margin-bottom:0.5rem;min-height:1rem;text-align:center;"></div>
       <input class="login-field" type="email" placeholder="Email" id="login-email" />
       <input class="login-field" type="password" placeholder="Password" id="login-pass" />
@@ -8744,13 +8754,13 @@ document.addEventListener('keydown', function(e) {
       + '<div class="guide-section">'
       + '<div class="guide-heading">THE GAME</div>'
       + '<p class="guide-text">Lucid Winds is a pattern-recognition card game. Find groups of 3 cards (called <strong>Phenos</strong>) where each feature — color, shape, count, and shading — is either all the same or all different across the three cards.</p>'
-      + '<p class="guide-text">Each correct Pheno earns you <strong>Dew Drops</strong> — the currency that grows your garden.</p>'
+      + '<p class="guide-text">Each correct Pheno earns you <strong>Sunbeams</strong> — focused attention that photosynthesizes into new plants.</p>'
       + '</div>'
 
       // PLANTS
       + '<div class="guide-section">'
       + '<div class="guide-heading">YOUR PLANTS</div>'
-      + '<p class="guide-text">When you earn enough Dew Drops, you bloom a unique plant in the <strong>Nursery</strong>. Every plant is procedurally generated from your gameplay — its leaves, bloom, pot, companion, and poem are all one-of-a-kind.</p>'
+      + '<p class="guide-text">When you gather enough Sunbeams, a unique plant photosynthesizes into your <strong>Greenhouse</strong>. Every plant is procedurally generated from your gameplay — its leaves, bloom, pot, companion, and poem are all one-of-a-kind.</p>'
       + '<p class="guide-text">Plants are stored in your <strong>Greenhouse</strong> (starts at 10 slots, expandable with Pi).</p>'
       + '</div>'
 
@@ -8801,7 +8811,8 @@ document.addEventListener('keydown', function(e) {
       + '<div class="guide-section">'
       + '<div class="guide-heading">ECONOMY</div>'
       + '<div style="font-size:0.42rem;color:var(--cream);line-height:1.8;">'
-      + '<strong style="color:var(--sage);">Dew Drops</strong> — earned by playing. Spent on watering (5 Dew Drops = skip 1 day).<br>'
+      + '<strong style="color:#e8c878;">Sunbeams</strong> — gathered from focused play. 30 = 1 new plant.<br>'
+      + '<strong style="color:#5baddc;">Dew</strong> — produced by your wild plants and earned from participation. Spent on nursery acceleration and wild plant cuttings.<br>'
       + '<strong style="color:var(--sage);">Fertilizer</strong> — earned by composting. Applied to seeds before bloom.<br>'
       + '<strong style="color:var(--sage);">Pollen</strong> — earned passively from wild plants. Never spent. Milestones unlock cosmetics.<br>'
       + '<strong style="color:var(--gold);">Pi</strong> — optional. Buys greenhouse slots, feral pouch upgrades, cryo chambers. Never buys power.'
@@ -8817,7 +8828,7 @@ document.addEventListener('keydown', function(e) {
       // WATERING
       + '<div class="guide-section">'
       + '<div class="guide-heading">WATERING</div>'
-      + '<p class="guide-text">Plants need water to grow. Spend 5 Dew Drops to skip a day of watering. Play 1-2 games and you\'ve earned enough.</p>'
+      + '<p class="guide-text">Plants need water to grow. Water for free once a day, or spend 21 Dew to accelerate a day. Dew is produced by your wild plants and earned from participation.</p>'
       + '</div>'
 
       + '</div>';
@@ -26143,7 +26154,7 @@ document.addEventListener('keydown', function(e) {
         (_prog > 0 ? '<div style="display:flex;align-items:center;gap:6px;max-width:200px;margin:0 auto 0.5rem;">' +
           '<div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;"><div style="width:'+_pct+'%;height:100%;background:linear-gradient(90deg,rgba(91,175,220,0.6),rgba(122,179,86,0.7));border-radius:2px;"></div></div>' +
           '<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--muted);">'+_prog+'/30</div></div>' : '') +
-        '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);line-height:1.6;max-width:240px;margin:0 auto 0.5rem;">Every 30 Dew Drops blooms a unique, one-of-one plant. No two are alike.</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);line-height:1.6;max-width:240px;margin:0 auto 0.5rem;">Every 30 Sunbeams photosynthesize into a unique, one-of-one plant. No two are alike.</div>' +
         '<button onclick="switchTab(\'game\')" style="padding:0.45rem 1.2rem;border:1.5px solid rgba(122,179,86,0.35);border-radius:8px;background:linear-gradient(180deg,rgba(74,124,53,0.2),rgba(26,60,22,0.3));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">START PLAYING</button>';
       grid.appendChild(_welcome);
     }
@@ -26475,14 +26486,14 @@ document.addEventListener('keydown', function(e) {
         btn.className = 'hex-btn';
         btn.textContent = item.cost + ' ⚡';
         btn.style.opacity = balance >= item.cost ? '1' : '0.4';
-        btn.title = balance < item.cost ? ('Need ' + item.cost + ' Dew Drops ('+ balance +' available)') : '';
+        btn.title = balance < item.cost ? ('Need ' + item.cost + ' Sunbeams ('+ balance +' available)') : '';
       }
     });
     // Mutate button
     var mutBtn = document.getElementById('hex-mutate-btn');
     if (mutBtn) {
       mutBtn.style.opacity = balance >= 15 ? '1' : '0.4';
-      mutBtn.title = balance < 15 ? ('Need 15 Dew Drops ('+ balance +' available)') : '';
+      mutBtn.title = balance < 15 ? ('Need 15 Sunbeams ('+ balance +' available)') : '';
     }
   }
 
@@ -26499,7 +26510,7 @@ document.addEventListener('keydown', function(e) {
 
     var balance = getTotalHashes();
     if (balance < cost) {
-      showHexMsg('Not enough Dew Drops. Need ' + cost + ', you have ' + balance + '.');
+      showHexMsg('Not enough Sunbeams. Need ' + cost + ', you have ' + balance + '.');
       return;
     }
 
@@ -26657,7 +26668,7 @@ document.addEventListener('keydown', function(e) {
   window.startMutation = function() {
     var balance = getTotalHashes();
     if (balance < 15) {
-      showHexMsg('Not enough Dew Drops. Need 15, you have ' + balance + '.');
+      showHexMsg('Not enough Sunbeams. Need 15, you have ' + balance + '.');
       return;
     }
     var gh = loadGreenhouse();
@@ -28198,7 +28209,7 @@ document.addEventListener('keydown', function(e) {
     }
     updateDashboard();
     renderGreenhouse();
-    alert('DEV: +5 Dew Drops, +3 plants. Balance: ' + getTotalHashes() + ' dew, ' + loadGreenhouse().length + ' plants.');
+    alert('DEV: +5 Sunbeams, +3 plants. Balance: ' + getTotalHashes() + ' sunbeams, ' + loadGreenhouse().length + ' plants.');
     if (window.syncVaultToCloud) syncVaultToCloud();
   };
   // ═══════════════════════════════════════════════════════════════
@@ -29656,8 +29667,8 @@ document.addEventListener('keydown', function(e) {
     { id:'streak_30',     icon:'🔥', name:'Monthly Devotion',    desc:'30-day streak',                        check: function(gh,r){ return r && r.currentStreak >= 30; } },
     { id:'streak_100',    icon:'🔥', name:'Centurion',           desc:'100-day streak',                       check: function(gh,r){ return r && r.currentStreak >= 100; } },
     // ── Economy ──
-    { id:'spent_100',     icon:'💸', name:'Big Spender',         desc:'Spend 100 Dew Drops',                  check: function(gh,r,ledger){ return (ledger.spent||0) >= 100; } },
-    { id:'spent_1000',    icon:'💰', name:'Whale',               desc:'Spend 1000 Dew Drops',                 check: function(gh,r,ledger){ return (ledger.spent||0) >= 1000; } },
+    { id:'spent_100',     icon:'💸', name:'Big Spender',         desc:'Spend 100 Sunbeams',                   check: function(gh,r,ledger){ return (ledger.spent||0) >= 100; } },
+    { id:'spent_1000',    icon:'💰', name:'Whale',               desc:'Spend 1000 Sunbeams',                  check: function(gh,r,ledger){ return (ledger.spent||0) >= 1000; } },
     // ── Seasons ──
     { id:'all_seasons',   icon:'🌍', name:'Four Seasons',        desc:'Own plants from all 4 seasons',        check: function(gh){ var s={};gh.forEach(function(p){try{var t=hashToTraits(p.hash);s[t.season%4]=true;}catch(e){}});return Object.keys(s).length>=4; } },
     // ── Companions ──
@@ -30026,7 +30037,7 @@ document.addEventListener('keydown', function(e) {
   // ── Factory Reset — atomic 4-step wipe ──────────────────────────────
   window.initiateFactoryReset = function(fromRecoveryScreen) {
     var confirmed = fromRecoveryScreen
-      ? window.confirm('⚠ FACTORY RESET\n\nThis will permanently delete:\n• All Plants\n• All Nursery Seeds\n• Dew Drop balance\n• Cloud Vault document\n\nThis cannot be undone. Proceed?')
+      ? window.confirm('⚠ FACTORY RESET\n\nThis will permanently delete:\n• All Plants\n• All Nursery Seeds\n• Sunbeams and Dew balances\n• Cloud Vault document\n\nThis cannot be undone. Proceed?')
       : true; // hold-button already confirmed via 3s hold
     if (!confirmed) return;
 
@@ -30274,8 +30285,8 @@ document.addEventListener('keydown', function(e) {
           else localStorage.setItem('sws_hash_ledger', ledgerStr);
           if (window.updateDashboard) updateDashboard();
         } catch(e) {}
-        if (window._swsLog) _swsLog('Claimed ' + count + ' rewards: +' + totalDew + ' Dew Drops', 'ok');
-        if (window.showHexMsg) showHexMsg('+' + totalDew + ' Dew Drops from your Wild plants!');
+        if (window._swsLog) _swsLog('Claimed ' + count + ' rewards: +' + totalDew + ' Dew', 'ok');
+        if (window.showHexMsg) showHexMsg('+' + totalDew + ' Dew from your Wild plants!');
       }).catch(function(e) {
         if (window._swsLog) _swsLog('Reward claim batch err: ' + e.message, 'err');
       });
@@ -32901,10 +32912,10 @@ function _doCollectFeral(f,mk){
   localStorage.setItem('fg_ferals',JSON.stringify(data));
   if(_map&&mk)_map.removeLayer(mk);
   if(window.FG_Backpack)FG_Backpack.render();
-  // Award Dew Drops based on rarity
+  // Award Dew based on rarity (feral collection drips dew into the pouch)
   var dewReward={Common:1,Uncommon:2,Rare:3,Epic:5,Legendary:8,Mythic:12,Cosmic:20};
   var reward=dewReward[info.grade]||1;
-  if(window.earnHashes)window.earnHashes(reward);
+  if(window.earnDew)window.earnDew(reward,'feral_collect');
   _e('progress');
   // Feral collection animation — seed crack burst
   _feralBurst(info.grade,info.gc,info.nm,reward);
@@ -33507,7 +33518,7 @@ function _showHarvestReveal(p,reward){
   h+='<div style="width:120px;height:120px;border-radius:16px;background:rgba(26,36,22,0.6);border:2px solid '+gc+';display:flex;align-items:center;justify-content:center;margin:0 auto 0.4rem;box-shadow:0 0 30px rgba(122,179,86,0.15);">'+plantSvg+'</div>';
   h+='<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--cream);margin-bottom:0.15rem;">'+nm+'</div>';
   h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:'+gc+';letter-spacing:0.1em;margin-bottom:0.3rem;">'+grade+'</div>';
-  h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:rgba(91,175,220,0.9);margin-bottom:0.1rem;">+'+reward+' Dew Drops to owner</div>';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:rgba(91,175,220,0.9);margin-bottom:0.1rem;">+'+reward+' Dew to owner</div>';
   h+='<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);margin-top:0.2rem;">\ud83c\udf92 Added to backpack</div>';
   h+='</div>';
   ov.innerHTML=h;
@@ -33529,14 +33540,16 @@ function _waterOwnPlant(p,mk){
     return;
   }
 
-  // Check Dew Drop cost (5 hashes)
-  var ledger={};try{var _hlRaw=window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger');ledger=JSON.parse(_hlRaw||'{}');}catch(e){}
-  var balance=(ledger.earned||0)-(ledger.spent||0);
-  if(balance<5){_toast('Need 5 Dew Drops to water. You have '+balance+'.');return;}
+  // Check Dew cost (5 Dew to water — spends from the real Dew ledger,
+  // not the hash ledger. Sunbeams are for plant minting only.)
+  var _waterCost=5;
+  var balance=(typeof window.getTotalDew==='function')?window.getTotalDew():0;
+  if(balance<_waterCost){_toast('Need '+_waterCost+' Dew to water. You have '+balance+'. Earn Dew from your wild plants.');return;}
 
-  // Spend 5 hashes
-  ledger.spent=(ledger.spent||0)+5;
-  if(window._secureSet){window._secureSet('sws_hash_ledger',ledger);}else{localStorage.setItem('sws_hash_ledger',JSON.stringify(ledger));}
+  // Spend 5 Dew
+  if(typeof window.spendDew==='function'){
+    if(!window.spendDew(_waterCost)){_toast('Not enough Dew to water.');return;}
+  }
 
   // Update wild plant stress
   var wild=_getWild();
@@ -33576,10 +33589,10 @@ function _waterOwnPlant(p,mk){
 
   // Visual feedback — sound + toast + water particle burst on marker
   _play('match');
-  // Watering earns pollen as a caretaker reward
-  var _waterPollen=3;var _curPol=_getPollen();_savePollen(_curPol+_waterPollen);
+  // Watering grants pollen XP as a caretaker reward (direct XP, no Dew earn)
+  var _waterXP=3;if(window.PW_grantXP)PW_grantXP(_waterXP,'water_care');
   _play('water');
-  _toast('\ud83d\udca7 Watered! Stress reduced. (-5 Dew, +'+_waterPollen+' Pollen)');
+  _toast('\ud83d\udca7 Watered! Stress reduced. (-5 Dew, +'+_waterXP+' XP)');
   if(mk&&mk._icon){
     var mEl=mk._icon;
     // Brief glow pulse
@@ -33625,18 +33638,20 @@ function _doCrossPollination(wildPlant,matePlant){
     var roll=Math.random();
     var rewardMsg='';
     if(roll<0.6){
-      var pollenBonus=5+Math.floor(Math.random()*10);
-      var currentPollen=_getPollen();
-      _savePollen(currentPollen+pollenBonus);
-      rewardMsg='+'+pollenBonus+' pollen!';
+      // 60% — XP reward (monotonic pollen, no spend)
+      var xpBonus=5+Math.floor(Math.random()*10);
+      if(window.PW_grantXP)PW_grantXP(xpBonus,'cross_pollinate');
+      rewardMsg='+'+xpBonus+' XP!';
     } else if(roll<0.9){
+      // 30% — Dew reward (spendable on acceleration + cuttings)
       var dewBonus=2+Math.floor(Math.random()*4);
-      if(window.earnHashes)window.earnHashes(dewBonus);
-      rewardMsg='+'+dewBonus+' Dew Drops!';
+      if(window.earnDew)window.earnDew(dewBonus,'cross_pollinate');
+      rewardMsg='+'+dewBonus+' Dew!';
     } else {
-      var hashBonus=3+Math.floor(Math.random()*5);
-      if(window.earnHashes)window.earnHashes(hashBonus);
-      rewardMsg='+'+hashBonus+' Dew Drops toward a new plant!';
+      // 10% — Sunbeams reward (toward next plant mint)
+      var sbBonus=3+Math.floor(Math.random()*5);
+      if(window.earnHashes)window.earnHashes(sbBonus);
+      rewardMsg='+'+sbBonus+' Sunbeams toward a new plant!';
     }
     _play('match');
     var parentInfo=_buildInfo(wildPlant.hash);
@@ -33967,7 +33982,7 @@ function _updateCounts(){
   }
   localStorage.setItem('fg_pollen_tick',String(now));
   var p=document.getElementById('w-pollen');if(p)p.textContent=total;
-  // Update Dew Drops balance display
+  // Update Dew balance display (real Dew ledger)
   try{
     var _dlRaw=window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger');
     var _dl=JSON.parse(_dlRaw||'{}');
@@ -35036,7 +35051,7 @@ function _showWinCelebration(){
   var _winNear=inPlant>=25;var _winRemain=30-inPlant;
   h+='<div style="font-size:2.5rem;margin-bottom:0.3rem;animation:nearBloomPulse 2s ease infinite;">🌿</div>';
   h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.6rem;color:var(--cream);letter-spacing:0.12em;margin-bottom:0.15rem;">WELL PLAYED!</div>';
-  h+='<div style="font-family:DM Sans,sans-serif;font-size:0.6rem;color:var(--gold);margin-bottom:0.5rem;font-weight:500;">'+inPlant+' / 30 Dew Drops</div>';
+  h+='<div style="font-family:DM Sans,sans-serif;font-size:0.6rem;color:var(--gold);margin-bottom:0.5rem;font-weight:500;">'+inPlant+' / 30 Sunbeams</div>';
   h+='<div style="width:100%;height:10px;background:rgba(42,48,37,0.6);border-radius:5px;overflow:hidden;margin-bottom:0.15rem;"><div class="'+(_winNear?'near-bloom':'')+'" style="width:'+pct+'%;height:100%;background:linear-gradient(90deg,var(--leaf),var(--sage)'+(_winNear?',var(--gold)':'')+');border-radius:5px;transition:width 0.8s ease;"></div></div>';
   if(_winNear){h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);margin-bottom:0.4rem;animation:nearBloomPulse 1.5s ease infinite;">'+_winRemain+' MORE TO FULL BLOOM</div>';}
   else{h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);margin-bottom:0.5rem;">'+inPlant+' / 30 to next plant</div>';}
@@ -42559,7 +42574,7 @@ function _showDailyReward() {
 
   // Today's reward
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:rgba(91,175,220,0.95);text-shadow:0 0 15px rgba(91,175,220,0.3);margin:0.2rem 0;">+' + dayReward + '</div>';
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);margin-bottom:0.3rem;">Dew Drops (Week ' + Math.ceil(dayOfMonth / 7) + ' bonus)</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);margin-bottom:0.3rem;">Sunbeams (Week ' + Math.ceil(dayOfMonth / 7) + ' bonus)</div>';
 
   // Streak info
   h += '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);margin-bottom:0.15rem;">\ud83d\udd25 ' + daily.streak + ' day streak</div>';

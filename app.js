@@ -720,13 +720,13 @@
       + '<div class="guide-section">'
       + '<div class="guide-heading">THE GAME</div>'
       + '<p class="guide-text">Lucid Winds is a pattern-recognition card game. Find groups of 3 cards (called <strong>Phenos</strong>) where each feature — color, shape, count, and shading — is either all the same or all different across the three cards.</p>'
-      + '<p class="guide-text">Each correct Pheno earns you <strong>Dew Drops</strong> — the currency that grows your garden.</p>'
+      + '<p class="guide-text">Each correct Pheno earns you <strong>Sunbeams</strong> — focused attention that photosynthesizes into new plants.</p>'
       + '</div>'
 
       // PLANTS
       + '<div class="guide-section">'
       + '<div class="guide-heading">YOUR PLANTS</div>'
-      + '<p class="guide-text">When you earn enough Dew Drops, you bloom a unique plant in the <strong>Nursery</strong>. Every plant is procedurally generated from your gameplay — its leaves, bloom, pot, companion, and poem are all one-of-a-kind.</p>'
+      + '<p class="guide-text">When you gather enough Sunbeams, a unique plant photosynthesizes into your <strong>Greenhouse</strong>. Every plant is procedurally generated from your gameplay — its leaves, bloom, pot, companion, and poem are all one-of-a-kind.</p>'
       + '<p class="guide-text">Plants are stored in your <strong>Greenhouse</strong> (starts at 10 slots, expandable with Pi).</p>'
       + '</div>'
 
@@ -777,9 +777,10 @@
       + '<div class="guide-section">'
       + '<div class="guide-heading">ECONOMY</div>'
       + '<div style="font-size:0.42rem;color:var(--cream);line-height:1.8;">'
-      + '<strong style="color:var(--sage);">Dew Drops</strong> — earned by playing. Spent on watering (5 Dew Drops = skip 1 day).<br>'
-      + '<strong style="color:var(--sage);">Fertilizer</strong> — earned by composting. Applied to seeds before bloom.<br>'
-      + '<strong style="color:var(--sage);">Pollen</strong> — earned passively from wild plants. Never spent. Milestones unlock cosmetics.<br>'
+      + '<strong style="color:#e8c878;">Sunbeams</strong> — gathered from focused play. 30 = 1 new plant.<br>'
+      + '<strong style="color:#5baddc;">Dew</strong> — produced by your wild plants and earned from participation. Spent on nursery acceleration and wild plant cuttings.<br>'
+      + '<strong style="color:var(--sage);">Compost</strong> — earned by composting plants. Applied to nursery seeds for rarity boost.<br>'
+      + '<strong style="color:var(--sage);">Pollen</strong> — Keeper XP. Monotonic. Milestones unlock features and cosmetics.<br>'
       + '<strong style="color:var(--gold);">Pi</strong> — optional. Buys greenhouse slots, feral pouch upgrades, cryo chambers. Never buys power.'
       + '</div></div>'
 
@@ -793,7 +794,7 @@
       // WATERING
       + '<div class="guide-section">'
       + '<div class="guide-heading">WATERING</div>'
-      + '<p class="guide-text">Plants need water to grow. Spend 5 Dew Drops to skip a day of watering. Play 1-2 games and you\'ve earned enough.</p>'
+      + '<p class="guide-text">Plants need water to grow. Water for free once a day, or spend 21 Dew to accelerate a day. Dew is produced by your wild plants and earned from participation.</p>'
       + '</div>'
 
       + '</div>';
@@ -18121,7 +18122,7 @@
         (_prog > 0 ? '<div style="display:flex;align-items:center;gap:6px;max-width:200px;margin:0 auto 0.5rem;">' +
           '<div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;"><div style="width:'+_pct+'%;height:100%;background:linear-gradient(90deg,rgba(91,175,220,0.6),rgba(122,179,86,0.7));border-radius:2px;"></div></div>' +
           '<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--muted);">'+_prog+'/30</div></div>' : '') +
-        '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);line-height:1.6;max-width:240px;margin:0 auto 0.5rem;">Every 30 Dew Drops blooms a unique, one-of-one plant. No two are alike.</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);line-height:1.6;max-width:240px;margin:0 auto 0.5rem;">Every 30 Sunbeams photosynthesize into a unique, one-of-one plant. No two are alike.</div>' +
         '<button onclick="switchTab(\'game\')" style="padding:0.45rem 1.2rem;border:1.5px solid rgba(122,179,86,0.35);border-radius:8px;background:linear-gradient(180deg,rgba(74,124,53,0.2),rgba(26,60,22,0.3));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">START PLAYING</button>';
       grid.appendChild(_welcome);
     }
@@ -18429,14 +18430,14 @@
         btn.className = 'hex-btn';
         btn.textContent = item.cost + ' ⚡';
         btn.style.opacity = balance >= item.cost ? '1' : '0.4';
-        btn.title = balance < item.cost ? ('Need ' + item.cost + ' Dew Drops ('+ balance +' available)') : '';
+        btn.title = balance < item.cost ? ('Need ' + item.cost + ' Sunbeams ('+ balance +' available)') : '';
       }
     });
     // Mutate button
     var mutBtn = document.getElementById('hex-mutate-btn');
     if (mutBtn) {
       mutBtn.style.opacity = balance >= 15 ? '1' : '0.4';
-      mutBtn.title = balance < 15 ? ('Need 15 Dew Drops ('+ balance +' available)') : '';
+      mutBtn.title = balance < 15 ? ('Need 15 Sunbeams ('+ balance +' available)') : '';
     }
   }
 
@@ -18453,7 +18454,7 @@
 
     var balance = getTotalHashes();
     if (balance < cost) {
-      showHexMsg('Not enough Dew Drops. Need ' + cost + ', you have ' + balance + '.');
+      showHexMsg('Not enough Sunbeams. Need ' + cost + ', you have ' + balance + '.');
       return;
     }
 
@@ -18611,7 +18612,7 @@
   window.startMutation = function() {
     var balance = getTotalHashes();
     if (balance < 15) {
-      showHexMsg('Not enough Dew Drops. Need 15, you have ' + balance + '.');
+      showHexMsg('Not enough Sunbeams. Need 15, you have ' + balance + '.');
       return;
     }
     var gh = loadGreenhouse();
@@ -20164,7 +20165,7 @@
     }
     updateDashboard();
     renderGreenhouse();
-    alert('DEV: +5 Dew Drops, +3 plants. Balance: ' + getTotalHashes() + ' dew, ' + loadGreenhouse().length + ' plants.');
+    alert('DEV: +5 Sunbeams, +3 plants. Balance: ' + getTotalHashes() + ' sunbeams, ' + loadGreenhouse().length + ' plants.');
     if (window.syncVaultToCloud) syncVaultToCloud();
   };
   // ═══════════════════════════════════════════════════════════════
@@ -21619,8 +21620,8 @@
     { id:'streak_30',     icon:'🔥', name:'Monthly Devotion',    desc:'30-day streak',                        check: function(gh,r){ return r && r.currentStreak >= 30; } },
     { id:'streak_100',    icon:'🔥', name:'Centurion',           desc:'100-day streak',                       check: function(gh,r){ return r && r.currentStreak >= 100; } },
     // ── Economy ──
-    { id:'spent_100',     icon:'💸', name:'Big Spender',         desc:'Spend 100 Dew Drops',                  check: function(gh,r,ledger){ return (ledger.spent||0) >= 100; } },
-    { id:'spent_1000',    icon:'💰', name:'Whale',               desc:'Spend 1000 Dew Drops',                 check: function(gh,r,ledger){ return (ledger.spent||0) >= 1000; } },
+    { id:'spent_100',     icon:'💸', name:'Big Spender',         desc:'Spend 100 Sunbeams',                   check: function(gh,r,ledger){ return (ledger.spent||0) >= 100; } },
+    { id:'spent_1000',    icon:'💰', name:'Whale',               desc:'Spend 1000 Sunbeams',                  check: function(gh,r,ledger){ return (ledger.spent||0) >= 1000; } },
     // ── Seasons ──
     { id:'all_seasons',   icon:'🌍', name:'Four Seasons',        desc:'Own plants from all 4 seasons',        check: function(gh){ var s={};gh.forEach(function(p){try{var t=hashToTraits(p.hash);s[t.season%4]=true;}catch(e){}});return Object.keys(s).length>=4; } },
     // ── Companions ──
@@ -21989,7 +21990,7 @@
   // ── Factory Reset — atomic 4-step wipe ──────────────────────────────
   window.initiateFactoryReset = function(fromRecoveryScreen) {
     var confirmed = fromRecoveryScreen
-      ? window.confirm('⚠ FACTORY RESET\n\nThis will permanently delete:\n• All Plants\n• All Nursery Seeds\n• Dew Drop balance\n• Cloud Vault document\n\nThis cannot be undone. Proceed?')
+      ? window.confirm('⚠ FACTORY RESET\n\nThis will permanently delete:\n• All Plants\n• All Nursery Seeds\n• Sunbeams and Dew balances\n• Cloud Vault document\n\nThis cannot be undone. Proceed?')
       : true; // hold-button already confirmed via 3s hold
     if (!confirmed) return;
 
@@ -22237,8 +22238,8 @@
           else localStorage.setItem('sws_hash_ledger', ledgerStr);
           if (window.updateDashboard) updateDashboard();
         } catch(e) {}
-        if (window._swsLog) _swsLog('Claimed ' + count + ' rewards: +' + totalDew + ' Dew Drops', 'ok');
-        if (window.showHexMsg) showHexMsg('+' + totalDew + ' Dew Drops from your Wild plants!');
+        if (window._swsLog) _swsLog('Claimed ' + count + ' rewards: +' + totalDew + ' Dew', 'ok');
+        if (window.showHexMsg) showHexMsg('+' + totalDew + ' Dew from your Wild plants!');
       }).catch(function(e) {
         if (window._swsLog) _swsLog('Reward claim batch err: ' + e.message, 'err');
       });

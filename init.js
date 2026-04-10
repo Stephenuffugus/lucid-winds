@@ -872,7 +872,7 @@
         if(window._secureSet)window._secureSet('sws_hash_ledger',s);
         else localStorage.setItem('sws_hash_ledger',s);
         if(window.updateDashboard)updateDashboard();
-        alert('+'+n+' Dew Drops granted! Total earned: '+ledger.earned);
+        alert('+'+n+' Sunbeams granted! Total earned: '+ledger.earned);
       }catch(e){alert('Error: '+e.message);}
     },
     accelAll:function(){
@@ -901,9 +901,34 @@
       }catch(e){}
       if(window.updateDashboard)updateDashboard();
       if(window.renderNursery)renderNursery();
-      alert('EVERYTHING ACCELERATED!\n\n- Feral timers reset\n- Reproduction timers reset\n- Backpack cooldowns cleared\n- Nursery seeds bloom-ready\n- +100 Dew Drops granted\n\nSwitch to Wild tab to trigger spawns.');
+      alert('EVERYTHING ACCELERATED!\n\n- Feral timers reset\n- Reproduction timers reset\n- Backpack cooldowns cleared\n- Nursery seeds bloom-ready\n- +100 Sunbeams granted\n- +100 Dew granted\n\nSwitch to Wild tab to trigger spawns.');
+      // Also grant Dew for testing the new spendable currency
+      try{
+        var dlRaw=window._secureGet?window._secureGet('sws_dew_ledger'):localStorage.getItem('sws_dew_ledger');
+        var dl=JSON.parse(dlRaw||'{}');
+        dl.earned=(dl.earned||0)+100;
+        var ds=JSON.stringify(dl);
+        if(window._secureSet)window._secureSet('sws_dew_ledger',ds);
+        else localStorage.setItem('sws_dew_ledger',ds);
+        if(window._updateDewDisplay)window._updateDewDisplay();
+      }catch(e){}
     },
     grantDew:function(n){
+      // Now grants REAL Dew (new sws_dew_ledger), not the old hash balance
+      n=n||500;
+      try{
+        var raw=localStorage.getItem('sws_dew_ledger');
+        if(window._secureGet)raw=window._secureGet('sws_dew_ledger')||raw;
+        var ledger=JSON.parse(raw||'{}');
+        ledger.earned=(ledger.earned||0)+n;
+        var s=JSON.stringify(ledger);
+        if(window._secureSet)window._secureSet('sws_dew_ledger',s);
+        else localStorage.setItem('sws_dew_ledger',s);
+        if(window._updateDewDisplay)window._updateDewDisplay();
+        alert('+'+n+' Dew granted! Total: '+ledger.earned);
+      }catch(e){alert('Error: '+e.message);}
+    },
+    grantSunbeams:function(n){
       n=n||500;
       try{
         var raw=localStorage.getItem('sws_hash_ledger');
@@ -914,7 +939,7 @@
         if(window._secureSet)window._secureSet('sws_hash_ledger',s);
         else localStorage.setItem('sws_hash_ledger',s);
         if(window.updateDashboard)updateDashboard();
-        alert('+'+n+' Dew Drops granted! Total: '+ledger.earned);
+        alert('+'+n+' Sunbeams granted! Total: '+ledger.earned);
       }catch(e){alert('Error: '+e.message);}
     },
     spawnChimeras:function(){

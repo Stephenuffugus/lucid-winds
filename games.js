@@ -369,7 +369,7 @@ function _showWinCelebration(){
   var pct=Math.round((inPlant/30)*100);
   var _winNear=inPlant>=25;var _winRemain=30-inPlant;
   h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:0.15rem;">WELL PLAYED</div>';
-  h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--gold);margin-bottom:0.4rem;">'+inPlant+' / 30 Dew Drops</div>';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--gold);margin-bottom:0.4rem;">'+inPlant+' / 30 Sunbeams</div>';
   h+='<div style="width:100%;height:10px;background:rgba(42,48,37,0.6);border-radius:5px;overflow:hidden;margin-bottom:0.15rem;"><div class="'+(_winNear?'near-bloom':'')+'" style="width:'+pct+'%;height:100%;background:linear-gradient(90deg,var(--leaf),var(--sage)'+(_winNear?',var(--gold)':'')+');border-radius:5px;transition:width 0.8s ease;"></div></div>';
   if(_winNear){h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);margin-bottom:0.4rem;animation:nearBloomPulse 1.5s ease infinite;">'+_winRemain+' MORE TO FULL BLOOM</div>';}
   else{h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);margin-bottom:0.5rem;">'+inPlant+' / 30 to next plant</div>';}

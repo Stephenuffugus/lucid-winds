@@ -2862,7 +2862,7 @@ function _showDailyReward() {
 
   // Today's reward
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:rgba(91,175,220,0.95);text-shadow:0 0 15px rgba(91,175,220,0.3);margin:0.2rem 0;">+' + dayReward + '</div>';
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);margin-bottom:0.3rem;">Dew Drops (Week ' + Math.ceil(dayOfMonth / 7) + ' bonus)</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);margin-bottom:0.3rem;">Sunbeams (Week ' + Math.ceil(dayOfMonth / 7) + ' bonus)</div>';
 
   // Streak info
   h += '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);margin-bottom:0.15rem;">\ud83d\udd25 ' + daily.streak + ' day streak</div>';

@@ -1836,10 +1836,10 @@ function _doCollectFeral(f,mk){
   localStorage.setItem('fg_ferals',JSON.stringify(data));
   if(_map&&mk)_map.removeLayer(mk);
   if(window.FG_Backpack)FG_Backpack.render();
-  // Award Dew Drops based on rarity
+  // Award Dew based on rarity (feral collection drips dew into the pouch)
   var dewReward={Common:1,Uncommon:2,Rare:3,Epic:5,Legendary:8,Mythic:12,Cosmic:20};
   var reward=dewReward[info.grade]||1;
-  if(window.earnHashes)window.earnHashes(reward);
+  if(window.earnDew)window.earnDew(reward,'feral_collect');
   _e('progress');
   // Feral collection animation — seed crack burst
   _feralBurst(info.grade,info.gc,info.nm,reward);
@@ -2445,7 +2445,7 @@ function _showHarvestReveal(p,reward){
   h+='<div style="width:120px;height:120px;border-radius:16px;background:rgba(26,36,22,0.6);border:2px solid '+gc+';display:flex;align-items:center;justify-content:center;margin:0 auto 0.4rem;box-shadow:0 0 30px rgba(122,179,86,0.15);">'+plantSvg+'</div>';
   h+='<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--cream);margin-bottom:0.15rem;">'+nm+'</div>';
   h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:'+gc+';letter-spacing:0.1em;margin-bottom:0.3rem;">'+grade+'</div>';
-  h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:rgba(91,175,220,0.9);margin-bottom:0.1rem;">+'+reward+' Dew Drops to owner</div>';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:rgba(91,175,220,0.9);margin-bottom:0.1rem;">+'+reward+' Dew to owner</div>';
   h+='<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);margin-top:0.2rem;">\ud83c\udf92 Added to backpack</div>';
   h+='</div>';
   ov.innerHTML=h;
@@ -2873,11 +2873,9 @@ function _updateCounts(){
   }
   localStorage.setItem('fg_pollen_tick',String(now));
   var p=document.getElementById('w-pollen');if(p)p.textContent=total;
-  // Update Dew Drops balance display
+  // Update Dew balance display (real Dew ledger, not the hash ledger)
   try{
-    var _dlRaw=window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger');
-    var _dl=JSON.parse(_dlRaw||'{}');
-    var dewBal=Math.max(0,(_dl.earned||0)-(_dl.spent||0));
+    var dewBal=typeof window.getTotalDew==='function'?window.getTotalDew():0;
     var dEl=document.getElementById('w-dew');if(dEl)dEl.textContent=dewBal;
   }catch(e){}
 }
