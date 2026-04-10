@@ -3048,14 +3048,18 @@ function _checkPendingRewards(){
         doc.ref.delete().catch(function(){});
       });
       if(totalDew>0){
-        // Credit Dew to player
+        // Credit Dew to the real Dew ledger (not the hash ledger — that mints plants)
         try{
-          var raw=window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger');
-          var ledger=JSON.parse(raw||'{}');
-          ledger.earned=(ledger.earned||0)+totalDew;
-          var val=JSON.stringify(ledger);
-          if(window._secureSet)window._secureSet('sws_hash_ledger',val);
-          else localStorage.setItem('sws_hash_ledger',val);
+          if(typeof earnDew==='function'){
+            earnDew(totalDew,'wild_pending_reward');
+          } else {
+            var raw=window._secureGet?window._secureGet('sws_dew_ledger'):localStorage.getItem('sws_dew_ledger');
+            var ledger=JSON.parse(raw||'{}');
+            ledger.earned=(ledger.earned||0)+totalDew;
+            var val=JSON.stringify(ledger);
+            if(window._secureSet)window._secureSet('sws_dew_ledger',val);
+            else localStorage.setItem('sws_dew_ledger',val);
+          }
         }catch(e){}
         _updateCounts();
       }

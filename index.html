@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.26';
+  var LW_VERSION='2026.04.10.27';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -34690,11 +34690,9 @@ function _updateCounts(){
   }
   localStorage.setItem('fg_pollen_tick',String(now));
   var p=document.getElementById('w-pollen');if(p)p.textContent=total;
-  // Update Dew balance display (real Dew ledger)
+  // Update Dew balance display — reads the REAL Dew ledger, not hash
   try{
-    var _dlRaw=window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger');
-    var _dl=JSON.parse(_dlRaw||'{}');
-    var dewBal=Math.max(0,(_dl.earned||0)-(_dl.spent||0));
+    var dewBal=(typeof getTotalDew==='function')?getTotalDew():0;
     var dEl=document.getElementById('w-dew');if(dEl)dEl.textContent=dewBal;
   }catch(e){}
 }
@@ -34722,14 +34720,18 @@ function _checkPendingRewards(){
         doc.ref.delete().catch(function(){});
       });
       if(totalDew>0){
-        // Credit Dew to player
+        // Credit Dew to the real Dew ledger (not the hash ledger — that mints plants)
         try{
-          var raw=window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger');
-          var ledger=JSON.parse(raw||'{}');
-          ledger.earned=(ledger.earned||0)+totalDew;
-          var val=JSON.stringify(ledger);
-          if(window._secureSet)window._secureSet('sws_hash_ledger',val);
-          else localStorage.setItem('sws_hash_ledger',val);
+          if(typeof earnDew==='function'){
+            earnDew(totalDew,'wild_pending_reward');
+          } else {
+            var raw=window._secureGet?window._secureGet('sws_dew_ledger'):localStorage.getItem('sws_dew_ledger');
+            var ledger=JSON.parse(raw||'{}');
+            ledger.earned=(ledger.earned||0)+totalDew;
+            var val=JSON.stringify(ledger);
+            if(window._secureSet)window._secureSet('sws_dew_ledger',val);
+            else localStorage.setItem('sws_dew_ledger',val);
+          }
         }catch(e){}
         _updateCounts();
       }
