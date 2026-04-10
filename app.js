@@ -22047,10 +22047,12 @@
   }
 
   // ── Union-merge plant arrays by hash fingerprint ──────────────────────────
+  // Plants use .hash; nursery seeds use .seedHash or .id. Fall back gracefully.
   function _mergeByHash(a, b) {
     var m = {};
-    (a||[]).forEach(function(p){ if(p&&p.hash) m[p.hash]=p; });
-    (b||[]).forEach(function(p){ if(p&&p.hash) m[p.hash]=p; });
+    function key(p){ return p && (p.hash || p.seedHash || p.id); }
+    (a||[]).forEach(function(p){ var k=key(p); if(k) m[k]=p; });
+    (b||[]).forEach(function(p){ var k=key(p); if(k) m[k]=p; });
     return Object.keys(m).map(function(k){ return m[k]; });
   }
 
