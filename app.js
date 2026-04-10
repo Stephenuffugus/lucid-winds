@@ -17315,12 +17315,13 @@
     if(typeof earnDew==='function')earnDew(10,'plant_mint');
     // Event log: record the birth for Root Report / memorial / achievements
     if(window.LW_Log){
-      var _tgName = (_tg && _tg.name) || 'Common';
+      var _tgName = (_pityGrade && _pityGrade.name) || 'Common';
       LW_Log.write('plant_mint', {
         hash: hash,
+        name: typeof getPlantName === 'function' ? getPlantName(hash) : '',
         rarity: _tgName,
+        grade: _tgName,
         isRare: !!traits.isRare,
-        mutated: !!plant.mutated,
         origin: (opts && opts.origin) || 'mint'
       });
     }
