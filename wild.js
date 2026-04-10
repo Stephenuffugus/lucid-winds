@@ -1324,7 +1324,7 @@ function _doReproduction(weather, simMode) {
       }
       // Offspring must exceed defender by 2+
       if (offEA > weakestEA + 2) {
-        // Shell Shift check — Hermit Crab companion has 25% relocate chance
+        // Shell Shift check — Porcupine companion has 25% relocate chance
         if (window.checkShellShift && weakest.hash) {
           try {
             var _ssT = window.hashToTraits(weakest.hash);

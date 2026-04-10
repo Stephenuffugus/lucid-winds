@@ -1486,7 +1486,7 @@
       {name:'Hedgehog',temp:'guardian'},    // idx 42
       {name:'Pangolin',rare:true,temp:'guardian'},    // idx 43
       {name:'Luna Moth',rare:true,temp:'mystic'},   // idx 44
-      {name:'Porcupine',temp:'guardian',ability:'shellShift'}, // idx 45 — renderer: Hermit Crab
+      {name:'Porcupine',temp:'guardian',ability:'shellShift'}, // idx 45
       {name:'Glow Snail',rare:true,temp:'mystic'},  // idx 46
       {name:'Axolotl',rare:true,temp:'symbiote'}, // idx 47
       {name:'Scorpion',rare:true,temp:'guardian'},// idx 48

@@ -1103,7 +1103,7 @@ function _revealPlant(){
   // Check for creature
   setTimeout(function(){
     if(_giftTraits&&_giftTraits.companion>=20){
-      var creatures={20:'Droplet',21:'Bee',22:'Pollen',23:'Firefly',24:'Butterfly',25:'Moth',26:'Ladybug',27:'Snail',28:'Hummingbird',29:'Dragonfly',30:'Caterpillar',31:'Spider',32:'Toad',33:'Phoenix',34:'Bioluminescent Pulse',35:'Ancient Rune',36:'Great Blue Heron',37:'Starfall',38:'Beholder',39:'Cat',40:'Platypus',41:'Praying Mantis',42:'Hedgehog',43:'Pangolin',44:'Luna Moth',45:'Hermit Crab',46:'Glow Snail',47:'Axolotl',48:'Scorpion',49:'Origami Crane',50:'Garden Gnome',51:'Robin',52:'Worm',53:'Turtle',54:'Bat',55:'Mouse',56:'Owl',57:'Silly Goose'};
+      var creatures={20:'Droplet',21:'Bee',22:'Pollen',23:'Firefly',24:'Butterfly',25:'Moth',26:'Ladybug',27:'Snail',28:'Hummingbird',29:'Dragonfly',30:'Caterpillar',31:'Spider',32:'Toad',33:'Phoenix',34:'Bioluminescent Pulse',35:'Ancient Rune',36:'Great Blue Heron',37:'Starfall',38:'Beholder',39:'Cat',40:'Platypus',41:'Praying Mantis',42:'Hedgehog',43:'Pangolin',44:'Luna Moth',45:'Porcupine',46:'Glow Snail',47:'Axolotl',48:'Scorpion',49:'Origami Crane',50:'Garden Gnome',51:'Robin',52:'Worm',53:'Turtle',54:'Bat',55:'Mouse',56:'Owl',57:'Silly Goose'};
       var cName=creatures[_giftTraits.companion];
       if(cName){
         var cEl=document.getElementById('ob-creature');
