@@ -18308,6 +18308,166 @@
   window.LW_Log = LW_Log;
   window._logEvent = function(type, data) { return LW_Log.write(type, data); };
 
+  // ═══ ROOT REPORT — narrative feed over LW_Log ═══
+  // The report is the payoff for the "plants live their own lives" loop.
+  // Players come back, tap the pulsing leaf, and read a timeline of what
+  // happened since they were last here. Unread pulse is driven by the
+  // last-read timestamp stored in localStorage.
+  var _ROOT_READ_KEY = 'lw_root_last_read';
+  function _getLastRead() {
+    try { return parseInt(localStorage.getItem(_ROOT_READ_KEY) || '0', 10) || 0; } catch(e) { return 0; }
+  }
+  function _setLastRead(ts) {
+    try { localStorage.setItem(_ROOT_READ_KEY, String(ts || Date.now())); } catch(e) {}
+  }
+  function _unreadCount() {
+    if (!window.LW_Log) return 0;
+    var since = _getLastRead();
+    return LW_Log.all().filter(function(e) { return e.ts > since; }).length;
+  }
+  function _formatEventTime(ts) {
+    var delta = Date.now() - ts;
+    if (delta < 60000) return 'just now';
+    if (delta < 3600000) return Math.floor(delta / 60000) + 'm ago';
+    if (delta < 86400000) return Math.floor(delta / 3600000) + 'h ago';
+    var days = Math.floor(delta / 86400000);
+    if (days === 1) return 'yesterday';
+    if (days < 7) return days + 'd ago';
+    return new Date(ts).toLocaleDateString();
+  }
+  function _renderEventEntry(e) {
+    var d = e.data || {};
+    var icon = '\u25cf', body = '', color = 'var(--cream)';
+    switch (e.type) {
+      case 'plant_mint':
+        icon = '\ud83c\udf31';
+        color = 'var(--sage)';
+        var mintName = d.name || (d.hash ? (window.getPlantName ? getPlantName(d.hash) : d.hash.slice(0, 8)) : 'A new plant');
+        body = '<b>' + mintName + '</b> joined your greenhouse.';
+        if (d.grade) body += ' <span style="color:var(--gold);">' + d.grade + '</span>';
+        break;
+      case 'feral_collected':
+        icon = '\ud83c\udf30';
+        color = 'var(--gold)';
+        body = 'You pocketed a <b>mystery seed</b> from the wild. Water it in the nursery to see what it is.';
+        break;
+      case 'cross_pollinate':
+        icon = '\ud83e\uddec';
+        color = '#E8A0BF';
+        body = 'Two plants crossed. A seed is resting in the nursery.';
+        break;
+      case 'wild_drop':
+        icon = '\ud83c\udf3f';
+        color = 'var(--sage)';
+        var dropName = d.name || (d.hash && window.getPlantName ? getPlantName(d.hash) : 'A plant');
+        body = 'You released <b>' + dropName + '</b> into the wild.';
+        break;
+      case 'wild_tended_stranger':
+        icon = '\ud83c\udf3f';
+        color = 'var(--sage)';
+        body = 'You tended <b>' + (d.ownerName || 'a keeper') + '\u2019s</b> plant in the wild.';
+        break;
+      case 'level_up':
+        icon = '\u2728';
+        color = 'var(--gold)';
+        body = '<b>Keeper Level ' + (d.level || '?') + '</b>' + (d.rank ? ' \u2014 ' + d.rank : '') + '.';
+        if (d.unlock) body += '<br><span style="color:var(--muted);font-size:0.55rem;">Unlocked: ' + d.unlock + '</span>';
+        break;
+      default:
+        body = '<span style="color:var(--muted);">' + e.type.replace(/_/g, ' ') + '</span>';
+    }
+    return '<div class="rr-entry">' +
+      '<div class="rr-icon" style="color:' + color + ';">' + icon + '</div>' +
+      '<div class="rr-body">' + body +
+        '<div class="rr-time">' + _formatEventTime(e.ts) + '</div>' +
+      '</div>' +
+    '</div>';
+  }
+  function _buildRootReport(range) {
+    if (!window.LW_Log) return '<div class="rr-empty">Event log unavailable.</div>';
+    var all = LW_Log.all();
+    var cutoff = 0;
+    if (range === 'today') cutoff = Date.now() - 86400000;
+    else if (range === 'week') cutoff = Date.now() - 7 * 86400000;
+    var filtered = all.filter(function(e) { return e.ts >= cutoff; });
+    // Newest first
+    filtered.sort(function(a, b) { return b.ts - a.ts; });
+    if (filtered.length === 0) {
+      var label = range === 'today' ? 'today' : range === 'week' ? 'this week' : 'ever';
+      return '<div class="rr-empty">' +
+        '<div class="rr-empty-icon">\ud83c\udf43</div>' +
+        '<div class="rr-empty-title">Nothing to report ' + label + '.</div>' +
+        '<div class="rr-empty-body">Mint a plant, collect a seed, or tend another keeper\u2019s garden. The journal fills itself.</div>' +
+      '</div>';
+    }
+    var html = '';
+    for (var i = 0; i < filtered.length; i++) html += _renderEventEntry(filtered[i]);
+    return html;
+  }
+  window._openRootReport = function(range) {
+    range = range || 'today';
+    var modal = document.getElementById('root-report-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'root-report-modal';
+      modal.className = 'root-report-modal';
+      modal.innerHTML = '<div class="rr-scrim" onclick="window._closeRootReport()"></div>' +
+        '<div class="rr-panel">' +
+        '  <div class="rr-header">' +
+        '    <div class="rr-title">\ud83c\udf3f ROOT REPORT</div>' +
+        '    <button class="rr-close" onclick="window._closeRootReport()" aria-label="Close">\u2715</button>' +
+        '  </div>' +
+        '  <div class="rr-tabs">' +
+        '    <button class="rr-tab active" data-range="today" onclick="window._rrSetRange(\'today\')">TODAY</button>' +
+        '    <button class="rr-tab" data-range="week" onclick="window._rrSetRange(\'week\')">THIS WEEK</button>' +
+        '    <button class="rr-tab" data-range="all" onclick="window._rrSetRange(\'all\')">ALL TIME</button>' +
+        '  </div>' +
+        '  <div class="rr-body" id="rr-body"></div>' +
+        '</div>';
+      document.body.appendChild(modal);
+    }
+    var body = document.getElementById('rr-body');
+    if (body) body.innerHTML = _buildRootReport(range);
+    var tabs = modal.querySelectorAll('.rr-tab');
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].classList.toggle('active', tabs[i].getAttribute('data-range') === range);
+    }
+    modal.classList.add('open');
+    // Mark everything read the moment the modal opens
+    _setLastRead(Date.now());
+    _updateRootReportBadge();
+  };
+  window._closeRootReport = function() {
+    var modal = document.getElementById('root-report-modal');
+    if (modal) modal.classList.remove('open');
+  };
+  window._rrSetRange = function(range) {
+    var body = document.getElementById('rr-body');
+    if (body) body.innerHTML = _buildRootReport(range);
+    var modal = document.getElementById('root-report-modal');
+    if (!modal) return;
+    var tabs = modal.querySelectorAll('.rr-tab');
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].classList.toggle('active', tabs[i].getAttribute('data-range') === range);
+    }
+  };
+  function _updateRootReportBadge() {
+    var btn = document.getElementById('kb-root-report');
+    if (!btn) return;
+    var count = _unreadCount();
+    if (count > 0) {
+      btn.classList.add('has-unread');
+      var badge = btn.querySelector('.kb-rr-badge');
+      if (badge) badge.textContent = count > 99 ? '99+' : String(count);
+    } else {
+      btn.classList.remove('has-unread');
+    }
+  }
+  window._updateRootReportBadge = _updateRootReportBadge;
+  // Refresh the badge whenever the dashboard paints or on a timer
+  setInterval(_updateRootReportBadge, 30000);
+  setTimeout(_updateRootReportBadge, 500);
+
   // ═══ HASH LEDGER — tracks earned and spent ═══
   // Internally "hashes" remain the cryptographic buffer that mints plants.
   // Player-facing UI calls this balance "Sunbeams" — sunlight gathered from
