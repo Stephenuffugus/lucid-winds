@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.29';
+  var LW_VERSION='2026.04.10.30';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -26910,6 +26910,9 @@ document.addEventListener('keydown', function(e) {
     renderBadges();
     renderPartnerRewards();
     renderAchievements();
+    // Keep keeper bar badges in sync on dashboard refresh
+    if (typeof _updateGameDew === 'function') _updateGameDew();
+    if (typeof _updateDewDisplay === 'function') _updateDewDisplay();
     // Phase 28: render sws_inventory wallet count in dashboard
     var invEl = document.getElementById('dash-inventory-row');
     if (invEl) {

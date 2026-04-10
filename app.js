@@ -18668,6 +18668,9 @@
     renderBadges();
     renderPartnerRewards();
     renderAchievements();
+    // Keep keeper bar badges in sync on dashboard refresh
+    if (typeof _updateGameDew === 'function') _updateGameDew();
+    if (typeof _updateDewDisplay === 'function') _updateDewDisplay();
     // Phase 28: render sws_inventory wallet count in dashboard
     var invEl = document.getElementById('dash-inventory-row');
     if (invEl) {
