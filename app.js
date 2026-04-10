@@ -18382,6 +18382,18 @@
         var dropName = d.name || (d.hash && window.getPlantName ? getPlantName(d.hash) : 'A plant');
         body = 'You released <b>' + dropName + '</b> into the wild.';
         break;
+      case 'wild_withered':
+        icon = '\ud83c\udf42';
+        color = '#a58a6e';
+        var witherName = d.name || (d.hash && window.getPlantName ? getPlantName(d.hash) : 'A wild plant');
+        body = '<b>' + witherName + '</b> withered in the wild after ' + (d.lifespanDays || '?') + ' days.';
+        break;
+      case 'wild_watered':
+        icon = '\ud83d\udca7';
+        color = '#7ab8c8';
+        var wName = d.hash && window.getPlantName ? getPlantName(d.hash) : 'a wild plant';
+        body = 'You watered <b>' + wName + '</b>. Lifespan reset.';
+        break;
       case 'wild_tended_stranger':
         icon = '\ud83c\udf3f';
         color = 'var(--sage)';

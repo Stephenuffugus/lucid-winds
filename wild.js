@@ -170,25 +170,88 @@ var _snapDebounce=null; // debounce timer for moveend re-subscription
 var GC={Common:'#8a9a7a',Uncommon:'#5a9e3f',Rare:'#4a90d9',Epic:'#9b59b6',Legendary:'#C8A84B',Mythic:'#e74c3c',Cosmic:'#ff6ec7'};
 var FALLBACK=[40.758,-73.9855];
 
-var WILD_MAX_AGE_DAYS=14; // wild plants expire after 14 days
+// ── Wild v3 vitality / lifespan ──
+// Every plant has a rarity-scaled lifespan in days. decayAt is the
+// timestamp at which vitality hits 0. Owner water resets it to full.
+// Stranger tend adds 6h to remaining lifespan, capped at +5 days
+// total across the plant's life (plant.strangerTendAddMs, max 5*86400000).
+var WILD_LIFESPAN_DAYS = {
+  Common: 7, Uncommon: 10, Rare: 14, Epic: 21,
+  Legendary: 30, Mythic: 45, Cosmic: 60
+};
+var WILD_TEND_BONUS_MS = 6 * 3600000;     // +6h per tend
+var WILD_TEND_BONUS_CAP = 5 * 86400000;   // at most +5 days lifetime
+var WILD_MAX_AGE_DAYS = 14; // legacy fallback only
+
+function _plantRarity(hash){
+  try{
+    var t=window.hashToTraits?window.hashToTraits(hash):null;
+    if(!t||!window.getTerraGrade)return 'Common';
+    var tg=window.getTerraGrade(t);
+    return (tg&&(tg.name||tg.label))||'Common';
+  }catch(e){return 'Common';}
+}
+function _lifespanMsFor(rarityName){
+  var d = WILD_LIFESPAN_DAYS[rarityName] || 7;
+  return d * 86400000;
+}
+function _ensureVitality(plant){
+  // Backfill lifespan + decayAt on legacy plants that predate vitality.
+  if(!plant||!plant.hash)return plant;
+  var rarity = plant.rarity || _plantRarity(plant.hash);
+  plant.rarity = rarity;
+  var lifeMs = _lifespanMsFor(rarity);
+  plant.lifespanMs = lifeMs;
+  if(!plant.droppedAt && plant.date){
+    plant.droppedAt = new Date(plant.date).getTime();
+  } else if(!plant.droppedAt){
+    plant.droppedAt = Date.now();
+  }
+  if(!plant.decayAt){
+    // Legacy plants get lifespan counting from their original drop date.
+    plant.decayAt = plant.droppedAt + lifeMs;
+  }
+  if(!plant.strangerTendAddMs) plant.strangerTendAddMs = 0;
+  return plant;
+}
+function _getWildVitality(plant){
+  if(!plant||!plant.hash)return {pct:0,daysLeft:0,dead:true,lifeMs:0};
+  _ensureVitality(plant);
+  var now = Date.now();
+  var remaining = plant.decayAt - now;
+  var life = plant.lifespanMs || _lifespanMsFor(plant.rarity || 'Common');
+  var pct = Math.max(0, Math.min(1, remaining / life));
+  return {
+    pct: pct,
+    daysLeft: Math.max(0, remaining / 86400000),
+    dead: remaining <= 0,
+    lifeMs: life,
+    remainingMs: Math.max(0, remaining)
+  };
+}
+window._getWildVitality = _getWildVitality;
+
 function _getWild(){try{var j=window._secureGet?window._secureGet('fg_wild_plants'):localStorage.getItem('fg_wild_plants');return JSON.parse(j||'[]');}catch(e){return[];}}
 function _saveWild(a){if(window._secureSet){window._secureSet('fg_wild_plants',a);}else{localStorage.setItem('fg_wild_plants',JSON.stringify(a));}}
-// Prune expired wild plants from localStorage (14-day max age)
+// Prune withered wild plants using rarity-scaled vitality.
+// Each plant dies when its decayAt timestamp is in the past. Dead plants
+// are removed from localStorage, deleted from Firestore, written to the
+// event log, and toasted to the player on next wild-tab entry.
 function _pruneWild(){
   var wild=_getWild();if(!wild.length)return wild;
-  var now=Date.now(),cutoff=WILD_MAX_AGE_DAYS*86400000;
+  // Ensure every plant has vitality fields before comparing (migrates legacy)
+  for(var i0=0;i0<wild.length;i0++) _ensureVitality(wild[i0]);
   var died=[];
   var fresh=wild.filter(function(w){
     if(!w||!w.hash)return false;
-    if(!w.date)return false;
-    var age=now-new Date(w.date).getTime();
-    if(age>=cutoff||age<=-86400000){died.push(w);return false;}
+    var v=_getWildVitality(w);
+    if(v.dead){died.push(w);return false;}
     return true;
   });
   if(died.length>0){
-    if(window._swsLog)_swsLog('Pruned '+died.length+' expired wild plants','ok');
+    if(window._swsLog)_swsLog('Pruned '+died.length+' withered wild plants','ok');
     _saveWild(fresh);
-    // Delete expired plants from Firestore so other players stop seeing them
+    // Delete withered plants from Firestore so other players stop seeing them
     var user=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
     if(user&&user.uid&&window.db){
       for(var i=0;i<died.length;i++){
@@ -198,13 +261,25 @@ function _pruneWild(){
         }
       }
     }
-    // Notify player
+    // Event log + toast for each wither
     var names=[];
-    for(var j=0;j<died.length&&j<3;j++){
-      try{names.push(window.getPlantName?window.getPlantName(died[j].hash):died[j].hash.slice(0,6));}catch(e){names.push(died[j].hash.slice(0,6));}
+    for(var j=0;j<died.length;j++){
+      var dp=died[j];
+      var nm='';
+      try{nm=window.getPlantName?window.getPlantName(dp.hash):dp.hash.slice(0,6);}catch(e){nm=dp.hash.slice(0,6);}
+      if(j<3)names.push(nm);
+      if(window.LW_Log){
+        window.LW_Log.write('wild_withered',{
+          hash:dp.hash,
+          name:nm,
+          rarity:dp.rarity||'Common',
+          droppedAt:dp.droppedAt||null,
+          lifespanDays:Math.round((dp.lifespanMs||0)/86400000)
+        });
+      }
     }
     var msg=died.length===1
-      ?'\ud83c\udf42 '+names[0]+' withered in the wild after '+WILD_MAX_AGE_DAYS+' days.'
+      ?'\ud83c\udf42 '+names[0]+' withered in the wild.'
       :'\ud83c\udf42 '+died.length+' plants withered: '+names.join(', ')+(died.length>3?'...':'');
     setTimeout(function(){_toast(msg);},1000);
   }
@@ -2796,6 +2871,10 @@ function _finishDrop(defenderGame){
   var dropEA=window.computeEA?window.computeEA(dropTraits,0):0;
 
   var _dropUid='';try{var _du=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_du)_dropUid=_du.uid;}catch(e){}
+  // Wild v3 vitality: compute rarity-scaled lifespan + initial decayAt.
+  var _dropRarity='Common';try{if(dropTraits&&window.getTerraGrade){var _dtg=window.getTerraGrade(dropTraits);_dropRarity=(_dtg&&(_dtg.name||_dtg.label))||'Common';}}catch(e){}
+  var _dropLifeMs=_lifespanMsFor(_dropRarity);
+  var _nowMs=Date.now();
   wild.push({
     lat:la,lng:lo,hash:pl.hash,
     date:new Date().toISOString(),
@@ -2804,7 +2883,13 @@ function _finishDrop(defenderGame){
     ownerName:localStorage.getItem('pw_keeper_name')||'Keeper',
     ea:dropEA,
     defenderGame:defenderGame||'set',
-    season:dropTraits?dropTraits.season:0
+    season:dropTraits?dropTraits.season:0,
+    rarity:_dropRarity,
+    droppedAt:_nowMs,
+    lifespanMs:_dropLifeMs,
+    decayAt:_nowMs+_dropLifeMs,
+    strangerTendAddMs:0,
+    lastWateredAt:0
   });
   _saveWild(wild);
   _addPlant({lat:la,lng:lo,hash:pl.hash,own:true,days:0,pollen:0,status:'Just Planted',defenderGame:defenderGame||'set'});
@@ -3798,6 +3883,35 @@ function _selectHexPlant(idx, plantData) {
     try { name = getPlantName(p.hash); } catch (e) {}
   }
 
+  // Vitality bar — rarity-scaled lifespan readout on every plant.
+  // Works for own + stranger plants. Dead plants show a withered state.
+  var vitalityHtml = '';
+  try {
+    var _sourcePlant = null;
+    var _localWild = _getWild();
+    for (var _lw = 0; _lw < _localWild.length; _lw++) {
+      if (_localWild[_lw].hash === p.hash) { _sourcePlant = _localWild[_lw]; break; }
+    }
+    if (!_sourcePlant && _sharedMarkers && _sharedMarkers[p.hash]) {
+      _sourcePlant = _sharedMarkers[p.hash].data || null;
+    }
+    if (_sourcePlant) {
+      _ensureVitality(_sourcePlant);
+      var _vit = _getWildVitality(_sourcePlant);
+      var _vPct = Math.round(_vit.pct * 100);
+      var _vDays = _vit.daysLeft;
+      var _vLabel = _vDays >= 1 ? Math.round(_vDays) + ' days left' : Math.round(_vDays * 24) + 'h left';
+      var _vColor = _vPct > 66 ? 'var(--sage)' : _vPct > 33 ? '#c8a84b' : '#c07060';
+      vitalityHtml = '<div class="hi-vitality">' +
+        '<div class="hi-vitality-row"><span class="hi-vitality-label">VITALITY</span>' +
+          '<span class="hi-vitality-val" style="color:' + _vColor + ';">' + _vPct + '% \u00b7 ' + _vLabel + '</span>' +
+        '</div>' +
+        '<div class="hi-vitality-bar"><div class="hi-vitality-fill" style="width:' + _vPct + '%;background:' + _vColor + ';"></div></div>' +
+        '<div class="hi-vitality-caption">Lifespan ' + Math.round((_sourcePlant.lifespanMs || 0) / 86400000) + 'd \u00b7 ' + (_sourcePlant.rarity || 'Common') + (p.own ? ' \u00b7 Water to reset' : ' \u00b7 Tend to extend') + '</div>' +
+      '</div>';
+    }
+  } catch(e) {}
+
   // Trait summary — visible for ALL plants in Wild v3 (the old hide-rarity
   // rule was reversed now that harvest/theft is gone — strangers' plants
   // become social landmarks players can aspire to tend, not targets).
@@ -3846,6 +3960,7 @@ function _selectHexPlant(idx, plantData) {
   el.innerHTML =
     '<div class="hi-detail-name">' + name + '</div>' +
     '<div class="hi-detail-grade" style="color:' + gradeColor + ';">' + grade + '</div>' +
+    vitalityHtml +
     traitHtml +
     '<div class="hi-actions">' + actions + '</div>';
 
@@ -3896,17 +4011,33 @@ window._hexAction = function(action) {
   switch (action) {
     case 'water':
       if (p.own) {
-        // Water own plant — costs 5 dew, reduces stress
-        var _ownDew = 0;
-        try { _ownDew = parseInt(localStorage.getItem('fg_pollen') || '0'); } catch (e) {}
-        if (_ownDew < 5) { _toast('Need 5 dew to water.'); break; }
-        localStorage.setItem('fg_pollen', String(_ownDew - 5));
-        _toast('Watered your plant! -5 dew, +3 pollen');
-        try { var _wp = parseInt(localStorage.getItem('fg_pollen') || '0'); localStorage.setItem('fg_pollen', String(_wp + 3)); } catch (e) {}
+        // Water own plant — once per 24h, resets decayAt to full lifespan.
+        var _wild = _getWild();
+        var _hit = null, _hitIdx = -1;
+        for (var _wi = 0; _wi < _wild.length; _wi++) {
+          if (_wild[_wi].hash === p.hash) { _hit = _wild[_wi]; _hitIdx = _wi; break; }
+        }
+        if (!_hit) { _toast('Plant not found in your local wild cache.'); break; }
+        _ensureVitality(_hit);
+        var _lastWater = _hit.lastWateredAt || 0;
+        if (Date.now() - _lastWater < 24 * 3600000) {
+          var _hrs = Math.ceil(24 - (Date.now() - _lastWater) / 3600000);
+          _toast('Already watered. Back in ' + _hrs + 'h.');
+          break;
+        }
+        _hit.lastWateredAt = Date.now();
+        _hit.decayAt = Date.now() + _hit.lifespanMs; // full reset
+        _wild[_hitIdx] = _hit;
+        _saveWild(_wild);
+        _toast('\ud83d\udca7 Watered! Lifespan reset to full.');
         if (window._haptic) _haptic('bloom');
         if (window._trackQuest) _trackQuest('plantsWatered', 1);
+        if (window.LW_Log) window.LW_Log.write('wild_watered', { hash: p.hash });
+        // Refresh inspector detail if open
+        if (typeof _selectHexPlant === 'function') _selectHexPlant(0, p);
       } else {
-        // Water other player's plant — budget system
+        // Water a stranger's plant — budgeted kindness. Adds to their
+        // lifespan indirectly through the shared marker, grants pollen XP.
         var _waterKey = 'lw_water_budget';
         var _wBudget = {}; try { _wBudget = JSON.parse(localStorage.getItem(_waterKey) || '{}'); } catch (e) {}
         var _wToday = new Date().toISOString().split('T')[0];
@@ -3914,8 +4045,8 @@ window._hexAction = function(action) {
         if (_wBudget.count >= 5) { _toast('No waters left today (5/day).'); break; }
         _wBudget.count = (_wBudget.count || 0) + 1;
         localStorage.setItem(_waterKey, JSON.stringify(_wBudget));
-        try { var _pol = parseInt(localStorage.getItem('fg_pollen') || '0'); localStorage.setItem('fg_pollen', String(_pol + 2)); } catch (e) {}
-        _toast('Watered! +2 pollen. ' + (5 - _wBudget.count) + ' left today.');
+        if (window.PW_grantXP) PW_grantXP(5, 'wild_water_stranger');
+        _toast('\ud83d\udca7 Watered a keeper\u2019s plant. +5 XP. ' + (5 - _wBudget.count) + ' left today.');
         if (window._haptic) _haptic('bloom');
         if (window._trackQuest) _trackQuest('plantsWatered', 1);
       }
@@ -3956,13 +4087,36 @@ window._hexAction = function(action) {
         var _tendDist = _dist(_uLat, _uLng, p.lat, p.lng);
         if (_tendDist > COLLECT_RANGE) { _toast('Walk closer! ' + Math.round(_tendDist) + 'm away.'); break; }
       }
-      if (p.own) { _toast('That\u2019s your own plant — water it instead.'); break; }
-      // Placeholder grant — real mechanics (vitality restore, cooldown per
-      // player per plant, journal entry for owner) come with Phase 2.
+      if (p.own) { _toast('That\u2019s your own plant \u2014 water it instead.'); break; }
+      // Wild v3 Phase 2: non-destructive tend. Adds +6h to the target
+      // plant's remaining lifespan (capped at +5 days lifetime per plant),
+      // 6h per-player cooldown to stop spamming the same plant.
+      var _tendKey = 'lw_tend_cd';
+      var _tendCd = {}; try { _tendCd = JSON.parse(localStorage.getItem(_tendKey) || '{}'); } catch (e) {}
+      if (_tendCd[p.hash] && Date.now() - _tendCd[p.hash] < 6 * 3600000) {
+        var _tendHrs = Math.ceil(6 - (Date.now() - _tendCd[p.hash]) / 3600000);
+        _toast('Already tended this plant. Back in ' + _tendHrs + 'h.');
+        break;
+      }
+      _tendCd[p.hash] = Date.now();
+      localStorage.setItem(_tendKey, JSON.stringify(_tendCd));
+      // Bump the locally-cached shared marker so the inspector reflects
+      // the new vitality immediately. Server source-of-truth update will
+      // come with the Firestore transaction landing in Phase 2 finish.
+      try {
+        if (_sharedMarkers && _sharedMarkers[p.hash] && _sharedMarkers[p.hash].data) {
+          var _smd = _sharedMarkers[p.hash].data;
+          _ensureVitality(_smd);
+          if ((_smd.strangerTendAddMs || 0) < WILD_TEND_BONUS_CAP) {
+            _smd.strangerTendAddMs = (_smd.strangerTendAddMs || 0) + WILD_TEND_BONUS_MS;
+            _smd.decayAt = (_smd.decayAt || Date.now()) + WILD_TEND_BONUS_MS;
+          }
+        }
+      } catch(e) {}
       if (window.earnDew) window.earnDew(2, 'wild_tend_stranger');
       if (window.PW_grantXP) PW_grantXP(10, 'wild_tend_stranger');
       if (window.LW_Log) window.LW_Log.write('wild_tended_stranger', { hash: p.hash, ownerName: p.ownerName || 'Keeper' });
-      _toast('\ud83c\udf3f Tended ' + (p.ownerName || 'a keeper') + '\u2019s plant. +2 Dew · +10 XP');
+      _toast('\ud83c\udf3f Tended ' + (p.ownerName || 'a keeper') + '\u2019s plant. +6h lifespan \u00b7 +2 Dew \u00b7 +10 XP');
       _play('match');
       break;
 
