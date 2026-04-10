@@ -18286,10 +18286,15 @@
     // Update the /30 label dynamically
     var pgParent = pg ? pg.parentNode : null;
     if (pgParent) { var spans = pgParent.querySelectorAll('span'); if (spans.length >= 2) { var last = spans[spans.length - 1]; if (last && last.textContent.indexOf('/') === 0) last.textContent = '/' + _dewCost; } }
-    // Keeper bar SUNBEAMS badge (the old "kb-dew" element was renamed to
-    // kb-sunbeams because it reads from the hash ledger, which is now labelled
-    // Sunbeams in UI. A separate kb-dew element shows the real Dew balance.)
-    var kbs = document.getElementById('kb-sunbeams'); if (kbs) kbs.textContent = balance + ' sunbeams';
+    // Keeper bar SUNBEAMS badge — element structure is
+    //   <div id="kb-sunbeams"><span class="kb-icon">☀️</span><span class="kb-val">N</span></div>
+    // so we update the .kb-val child instead of replacing the whole element.
+    var kbs = document.getElementById('kb-sunbeams');
+    if (kbs) {
+      var kbsv = kbs.querySelector('.kb-val');
+      if (kbsv) kbsv.textContent = balance;
+      else kbs.textContent = balance; // fallback if child missing
+    }
     // Refresh the new Dew display whenever game currency updates
     if (typeof _updateDewDisplay === 'function') _updateDewDisplay();
     // Streak display on game tab
@@ -18353,9 +18358,14 @@
   }
   function _updateDewDisplay() {
     var bal = getTotalDew();
-    // Keeper bar dew badge (the NEW element, not the renamed sunbeams one)
-    var kbd = document.getElementById('kb-dew'); if (kbd) kbd.textContent = bal + ' dew';
-    // Wild tab dew counter
+    // Keeper bar Dew badge — has icon + value children, update .kb-val only
+    var kbd = document.getElementById('kb-dew');
+    if (kbd) {
+      var kbdv = kbd.querySelector('.kb-val');
+      if (kbdv) kbdv.textContent = bal;
+      else kbd.textContent = bal; // fallback
+    }
+    // Wild tab dew counter (single text node, no icon nesting)
     var wd = document.getElementById('w-dew'); if (wd) wd.textContent = bal;
   }
   window.earnDew = earnDew;

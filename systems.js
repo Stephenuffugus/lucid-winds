@@ -5416,9 +5416,14 @@ window._openCompendiumUI=function(){
 // Update compendium count in keeper bar
 function _updateCompCount(){
   var el=document.getElementById('kb-comp-count');if(!el)return;
-  // Progressive disclosure: only show compendium button when earned
+  // Progressive disclosure: only show compendium button when earned.
+  // Uses .has-entries class so the CSS flex rules win over display:none.
   var compBtn=document.getElementById('kb-compendium');
-  if(compBtn){compBtn.style.display=(window.canSee&&window.canSee.compendium())?'':'none';}
+  if(compBtn){
+    var show=(window.canSee&&window.canSee.compendium());
+    if(show)compBtn.classList.add('has-entries');
+    else compBtn.classList.remove('has-entries');
+  }
   var progress=window.getCompendiumProgress?window.getCompendiumProgress():{found:0};
   // Count synergies from greenhouse
   var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
