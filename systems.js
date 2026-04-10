@@ -1227,6 +1227,31 @@ function _mintGiftPlant(){
   });
   if(window.saveGreenhouse){saveGreenhouse(gh);}else{localStorage.setItem('sws_greenhouse',JSON.stringify(gh));}
   console.log('[LW] Gift plant minted: '+_giftHash.slice(0,8));
+  // Grant the onboarding gift the same XP + Dew + Root Report entry as
+  // normal mints so day-one players land on a populated journal.
+  var _giftRarity='Uncommon';
+  try{
+    if(window.hashToTraits&&window.getTerraGrade){
+      var _gt=window.hashToTraits(_giftHash);
+      var _gg=window.getTerraGrade(_gt);
+      _giftRarity=(_gg&&(_gg.name||_gg.label))||'Uncommon';
+    }
+  }catch(e){}
+  if(window.PW_grantXP){
+    var _gXp=_giftRarity==='Rare'?12:_giftRarity==='Epic'?25:_giftRarity==='Legendary'?40:10;
+    PW_grantXP(_gXp,'bloom_'+_giftRarity);
+  }
+  if(typeof earnDew==='function')earnDew(10,'plant_mint_gift');
+  if(window.LW_Log){
+    window.LW_Log.write('plant_mint',{
+      hash:_giftHash,
+      name:typeof getPlantName==='function'?getPlantName(_giftHash):'',
+      rarity:_giftRarity,
+      grade:_giftRarity,
+      isRare:true,
+      origin:'gift'
+    });
+  }
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
 }
 
