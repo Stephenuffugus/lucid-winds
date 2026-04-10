@@ -6,18 +6,77 @@ window.PW_UI=(function(){
 'use strict';
 var _bpOpen=false,_lbOpen=false,_csOpen=false;
 
-// ═══ KEEPER RANK DATA ═══
+// ═══ KEEPER RANK DATA — 50 levels, Wild v3 curve ═══
+// Early levels (1-10) are fast to unlock the core loop.
+// Mid levels (11-25) are the real feature gates (Wild v3 phase 2).
+// Prestige levels (26-50) are long-tail cosmetic progression.
+// Thresholds are CUMULATIVE XP — not per-level.
 var RANKS=[
-  {lvl:1,title:'Seedling',xp:0},{lvl:2,title:'Sprout',xp:25},{lvl:3,title:'Young Shoot',xp:60},
-  {lvl:4,title:'Budding',xp:100},{lvl:5,title:'Tender',xp:160},{lvl:6,title:'Grower',xp:240},
-  {lvl:7,title:'Cultivator',xp:340},{lvl:8,title:'Forager',xp:460},{lvl:9,title:'Gardener',xp:600},
-  {lvl:10,title:'Naturalist',xp:780},{lvl:11,title:'Herbalist',xp:1000},{lvl:12,title:'Botanist',xp:1300},
-  {lvl:13,title:'Warden',xp:1650},{lvl:14,title:'Rootwalker',xp:2100},{lvl:15,title:'Grove Tender',xp:2600},
-  {lvl:16,title:'Pathfinder',xp:3200},{lvl:17,title:'Sage',xp:3900},{lvl:18,title:'Archivist',xp:4800},
-  {lvl:19,title:'Curator',xp:5800},{lvl:20,title:'Verdant',xp:7000},{lvl:21,title:'Deeproot',xp:8500},
-  {lvl:22,title:'Thornkeeper',xp:10500},{lvl:23,title:'Mossweaver',xp:13000},{lvl:24,title:'Fernscribe',xp:16000},
-  {lvl:25,title:'Ancient',xp:20000}
+  {lvl:1, title:'Seedling',         xp:0},
+  {lvl:2, title:'Sprout',           xp:25},
+  {lvl:3, title:'Young Shoot',      xp:75},
+  {lvl:4, title:'Budding',          xp:175},
+  {lvl:5, title:'Tender',           xp:350},      // UNLOCK: stranger tend
+  {lvl:6, title:'Grower',           xp:600},
+  {lvl:7, title:'Cultivator',       xp:950},      // UNLOCK: greenhouse breeding
+  {lvl:8, title:'Forager',          xp:1400},
+  {lvl:9, title:'Gardener',         xp:2000},
+  {lvl:10,title:'Naturalist',       xp:2800},     // UNLOCK: fruit harvest
+  {lvl:11,title:'Herbalist',        xp:3800},
+  {lvl:12,title:'Botanist',         xp:5000},     // UNLOCK: nursery merge-breed
+  {lvl:13,title:'Warden',           xp:6500},
+  {lvl:14,title:'Rootwalker',       xp:8500},
+  {lvl:15,title:'Grove Tender',     xp:11000},    // UNLOCK: cuttings from wild
+  {lvl:16,title:'Pathfinder',       xp:14000},
+  {lvl:17,title:'Sage',             xp:17500},
+  {lvl:18,title:'Archivist',        xp:22000},
+  {lvl:19,title:'Curator',          xp:27500},    // UNLOCK: Book of Secrets pages
+  {lvl:20,title:'Verdant',          xp:34000},
+  {lvl:21,title:'Deeproot',         xp:42000},
+  {lvl:22,title:'Thornkeeper',      xp:52000},
+  {lvl:23,title:'Mossweaver',       xp:65000},    // UNLOCK: 4th daily Wild drop
+  {lvl:24,title:'Fernscribe',       xp:80000},
+  {lvl:25,title:'Ancient',          xp:100000},   // UNLOCK: Master Keeper cosmetic
+  {lvl:26,title:'Canopy Walker',    xp:125000},
+  {lvl:27,title:'Bloomweaver',      xp:155000},
+  {lvl:28,title:'Petalsage',        xp:190000},
+  {lvl:29,title:'Moonleaf',         xp:235000},
+  {lvl:30,title:'Rootkeeper',       xp:290000},
+  {lvl:31,title:'Sunseeker',        xp:355000},
+  {lvl:32,title:'Dewspeaker',       xp:435000},
+  {lvl:33,title:'Grove Elder',      xp:530000},
+  {lvl:34,title:'Lucid Dreamer',    xp:640000},
+  {lvl:35,title:'Patternkeeper',    xp:770000},
+  {lvl:36,title:'Hexsage',          xp:920000},
+  {lvl:37,title:'Cycleward',        xp:1100000},
+  {lvl:38,title:'Chorusweaver',     xp:1310000},
+  {lvl:39,title:'Mycelial Tender',  xp:1555000},
+  {lvl:40,title:'Lineage Keeper',   xp:1840000},
+  {lvl:41,title:'Starbloom',        xp:2170000},
+  {lvl:42,title:'Deepvein',         xp:2550000},
+  {lvl:43,title:'Windsinger',       xp:2985000},
+  {lvl:44,title:'Drifttender',      xp:3480000},
+  {lvl:45,title:'Timekeeper',       xp:4040000},
+  {lvl:46,title:'Ancestral',        xp:4675000},
+  {lvl:47,title:'Mythseeker',       xp:5390000},
+  {lvl:48,title:'Starfield',        xp:6195000},
+  {lvl:49,title:'Infinite Bloom',   xp:7100000},
+  {lvl:50,title:'Lucid Keeper',     xp:8115000}
 ];
+
+// Level-gated feature unlocks keyed by rank. Used by window.canSee.* and
+// by the level-up celebration UI to announce "NEW UNLOCK" when crossing
+// one of these thresholds. Keep in sync with WILD_V3_SPEC.md Section 11.
+var LEVEL_UNLOCKS={
+  5:  {key:'strangerTend', title:'Tend stranger plants', desc:'You can now tend other keepers\u2019 wild plants within 75m for +2 Dew each.'},
+  7:  {key:'breed',        title:'Greenhouse breeding',  desc:'Cross-pollinate two of your own plants to grow a chimera seed.'},
+  10: {key:'fruitHarvest', title:'Fruit harvest',        desc:'Take ripe fruit from stranger wild plants for Dew (small bloom delay).'},
+  12: {key:'mergeBreed',   title:'Nursery merge breed',  desc:'Merge two nursery seeds into one for trait selection.'},
+  15: {key:'cutting',      title:'Wild cuttings',        desc:'Take a cutting from a stranger wild plant — sample breeding seed.'},
+  19: {key:'bookSecrets',  title:'Book of Secrets',      desc:'Unlock the Compendium of rare interactions and phenotype lore.'},
+  23: {key:'fourthDrop',   title:'4th daily Wild drop',  desc:'You can now drop 4 plants per day instead of 3.'},
+  25: {key:'masterKeeper', title:'Master Keeper',        desc:'Cosmetic gold border on your keeper bar + profile.'}
+};
 
 function _getXP(){try{return parseInt(localStorage.getItem('pw_xp')||'0');}catch(e){return 0;}}
 function _saveXP(v){localStorage.setItem('pw_xp',String(v));}
@@ -58,23 +117,98 @@ window.PW_grantXP=function(amount,reason){
   var newR=_getRank(xp);
   updateKeeperBar();
   if(newR.level>oldR.level){
-    // Level up celebration
-    var bar=document.getElementById('pw-keeper-bar');
-    if(bar){bar.style.borderBottomColor='rgba(200,168,75,0.5)';setTimeout(function(){bar.style.borderBottomColor='rgba(74,124,53,0.06)';},2000);}
-    console.log('[PW] Level up! '+oldR.title+' → '+newR.title);
+    // Fire the celebration overlay for every level crossed (usually 1, but
+    // huge XP grants can vault across multiple thresholds — show each one).
+    for(var lvl=oldR.level+1;lvl<=newR.level;lvl++){
+      _showLevelUp(lvl,reason);
+    }
+    // Log event for Root Report + achievements
+    if(window.LW_Log)window.LW_Log.write('level_up',{
+      fromLevel:oldR.level,
+      toLevel:newR.level,
+      newTitle:newR.title,
+      reason:reason||'unknown'
+    });
+    console.log('[PW] Level up! '+oldR.title+' \u2192 '+newR.title+' (reason: '+(reason||'?')+')');
   }
 };
 
+// ═══ LEVEL-UP CELEBRATION OVERLAY ═══
+// Builds lazily on first level-up. Shows the new level number, new title,
+// and any Wild v3 unlock that fires at this threshold. Auto-dismisses after
+// ~4.5 seconds or on tap. Queued so multiple level-ups don't overlap.
+var _luQueue=[],_luBusy=false;
+function _showLevelUp(level,reason){
+  var rankEntry=null;
+  for(var i=0;i<RANKS.length;i++){if(RANKS[i].lvl===level){rankEntry=RANKS[i];break;}}
+  if(!rankEntry)return;
+  _luQueue.push({level:level,title:rankEntry.title,unlock:LEVEL_UNLOCKS[level]||null,reason:reason});
+  if(!_luBusy)_luProcessQueue();
+}
+function _luProcessQueue(){
+  if(_luQueue.length===0){_luBusy=false;return;}
+  _luBusy=true;
+  var item=_luQueue.shift();
+  var ov=document.getElementById('lu-overlay');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='lu-overlay';
+    ov.className='lu-overlay';
+    ov.innerHTML=
+      '<div class="lu-scrim"></div>'+
+      '<div class="lu-panel">'+
+        '<div class="lu-label">LEVEL UP</div>'+
+        '<div class="lu-level" id="lu-level-num">1</div>'+
+        '<div class="lu-title" id="lu-title-text">Seedling</div>'+
+        '<div class="lu-unlock" id="lu-unlock-card" style="display:none;">'+
+          '<div class="lu-unlock-label">NEW UNLOCK</div>'+
+          '<div class="lu-unlock-name" id="lu-unlock-name"></div>'+
+          '<div class="lu-unlock-desc" id="lu-unlock-desc"></div>'+
+        '</div>'+
+        '<div class="lu-burst"></div>'+
+      '</div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click',function(){_luDismiss();});
+  }
+  document.getElementById('lu-level-num').textContent=item.level;
+  document.getElementById('lu-title-text').textContent=item.title;
+  var unlockCard=document.getElementById('lu-unlock-card');
+  if(item.unlock){
+    document.getElementById('lu-unlock-name').textContent=item.unlock.title;
+    document.getElementById('lu-unlock-desc').textContent=item.unlock.desc;
+    unlockCard.style.display='block';
+  } else {
+    unlockCard.style.display='none';
+  }
+  ov.classList.add('open');
+  // Haptic + sound pulse
+  try{if(navigator.vibrate)navigator.vibrate([30,55,30]);}catch(e){}
+  if(window._playWin)window._playWin();
+  // Auto-dismiss
+  clearTimeout(_luTimer);
+  _luTimer=setTimeout(function(){_luDismiss();},4500);
+}
+var _luTimer=null;
+function _luDismiss(){
+  clearTimeout(_luTimer);
+  var ov=document.getElementById('lu-overlay');
+  if(ov)ov.classList.remove('open');
+  setTimeout(function(){_luProcessQueue();},350);
+}
+
 // ═══ UPDATE STATS ═══
+// "Pollen" stat now displays the real lifetime XP (pw_xp), not the old
+// fg_pollen dead counter. They're the same thing conceptually — Pollen IS
+// Keeper XP in Wild v3. The cs-s-dew stat shows Sunbeams (hash balance).
 function updateStats(){
   var gh=[];try{gh=JSON.parse((window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse'))||'[]');}catch(e){}
   var wild=[];try{wild=JSON.parse((window._secureGet?window._secureGet('fg_wild_plants'):localStorage.getItem('fg_wild_plants'))||'[]');}catch(e){}
-  var pollen=0;try{pollen=parseInt((window._secureGet?window._secureGet('fg_pollen'):localStorage.getItem('fg_pollen'))||'0');}catch(e){}
-  var dew=0;try{var hl=JSON.parse((window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger'))||'{}');dew=(hl.earned||0)-(hl.spent||0);}catch(e){}
+  var xp=_getXP();
+  var sunbeams=0;try{var hl=JSON.parse((window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger'))||'{}');sunbeams=(hl.earned||0)-(hl.spent||0);}catch(e){}
   var e=function(id,v){var el=document.getElementById(id);if(el)el.textContent=v;};
-  e('cs-s-plants',gh.length);e('cs-s-pollen',pollen);e('cs-s-wild',wild.length);
-  e('cs-s-dew',dew);e('cs-s-days',Math.max(1,Math.floor((Date.now()-(parseInt(localStorage.getItem('pw_start')||Date.now())))/86400000)+1));
-  e('lb-my-pollen',pollen);e('lb-footer-pollen',pollen);
+  e('cs-s-plants',gh.length);e('cs-s-pollen',xp);e('cs-s-wild',wild.length);
+  e('cs-s-dew',sunbeams);e('cs-s-days',Math.max(1,Math.floor((Date.now()-(parseInt(localStorage.getItem('pw_start')||Date.now())))/86400000)+1));
+  e('lb-my-pollen',xp);e('lb-footer-pollen',xp);
 }
 
 // ═══ BACKPACK ═══
@@ -5936,9 +6070,31 @@ window._plantCache={
 
 (function(){
 'use strict';
-// Gate advanced features based on player progress
-// Each returns true if the feature should be VISIBLE
+// Read the current Keeper level without depending on PW_UI closure scope.
+function _lwLevel(){
+  try{
+    var xp=parseInt(localStorage.getItem('pw_xp')||'0');
+    var ranks=[0,25,75,175,350,600,950,1400,2000,2800,3800,5000,6500,8500,11000,14000,17500,22000,27500,34000,42000,52000,65000,80000,100000,125000,155000,190000,235000,290000,355000,435000,530000,640000,770000,920000,1100000,1310000,1555000,1840000,2170000,2550000,2985000,3480000,4040000,4675000,5390000,6195000,7100000,8115000];
+    for(var i=ranks.length-1;i>=0;i--){if(xp>=ranks[i])return i+1;}
+    return 1;
+  }catch(e){return 1;}
+}
+// Gate advanced features based on player progress.
+// Each returns true if the feature should be VISIBLE. Wild v3 level gates
+// are folded in alongside existing activity-based gates.
 window.canSee = {
+  // ── Wild v3 level gates (use Keeper level) ──
+  strangerTend: function(){return _lwLevel()>=5;},
+  greenhouseBreed: function(){return _lwLevel()>=7;},
+  fruitHarvest: function(){return _lwLevel()>=10;},
+  nurseryMergeBreed: function(){return _lwLevel()>=12;},
+  wildCutting: function(){return _lwLevel()>=15;},
+  bookOfSecretsPages: function(){return _lwLevel()>=19;},
+  fourthWildDrop: function(){return _lwLevel()>=23;},
+  masterKeeper: function(){return _lwLevel()>=25;},
+  levelGate: function(n){return _lwLevel()>=(n||0);},
+  currentLevel: function(){return _lwLevel();},
+  // ── Existing activity-based gates (preserved for backwards compat) ──
   compendium: function() {
     // Show after first synergy or 5+ plants
     var gh=[]; try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}

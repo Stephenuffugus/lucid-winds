@@ -2257,6 +2257,23 @@
     .plant-details-modal .pdm-empty{opacity:0.75;}
     .plant-details-modal .pdm-empty-label{font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.14em;color:var(--gold);margin-bottom:0.35rem;}
     .plant-details-modal .pdm-empty-body{font-family:'Playfair Display',serif;font-size:0.72rem;font-style:italic;color:var(--muted);line-height:1.45;}
+    /* ═══ LEVEL UP CELEBRATION OVERLAY ═══ */
+    .lu-overlay{position:fixed;inset:0;z-index:99998;display:none;}
+    .lu-overlay.open{display:block;}
+    .lu-overlay .lu-scrim{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(200,168,75,0.22),rgba(8,10,6,0.92) 70%);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);animation:luScrimIn 0.35s ease;}
+    @keyframes luScrimIn{from{opacity:0;}to{opacity:1;}}
+    .lu-overlay .lu-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;max-width:340px;padding:0 1.2rem;animation:luPanelIn 0.6s cubic-bezier(0.2,0.8,0.3,1.1);}
+    @keyframes luPanelIn{from{opacity:0;transform:translate(-50%,-40%) scale(0.85);}to{opacity:1;transform:translate(-50%,-50%) scale(1);}}
+    .lu-overlay .lu-label{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.22em;color:var(--gold);margin-bottom:0.3rem;text-shadow:0 0 12px rgba(200,168,75,0.5);}
+    .lu-overlay .lu-level{font-family:'Bebas Neue',sans-serif;font-size:5.5rem;line-height:1;color:#f5dc95;margin-bottom:0.3rem;text-shadow:0 0 30px rgba(255,220,140,0.5),0 4px 18px rgba(0,0,0,0.6);letter-spacing:-0.02em;}
+    .lu-overlay .lu-title{font-family:'Playfair Display',serif;font-size:1.3rem;font-style:italic;color:var(--cream);margin-bottom:1rem;letter-spacing:0.04em;}
+    .lu-overlay .lu-unlock{background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(200,168,75,0.04));border:1.5px solid rgba(200,168,75,0.4);border-radius:12px;padding:0.85rem 1.1rem;margin-top:0.8rem;box-shadow:0 4px 20px rgba(200,168,75,0.15),inset 0 1px 0 rgba(255,220,140,0.2);animation:luUnlockIn 0.7s ease 0.3s both;}
+    @keyframes luUnlockIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+    .lu-overlay .lu-unlock-label{font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.18em;color:var(--gold);margin-bottom:0.25rem;}
+    .lu-overlay .lu-unlock-name{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:#f5dc95;letter-spacing:0.06em;margin-bottom:0.3rem;}
+    .lu-overlay .lu-unlock-desc{font-family:'DM Sans',sans-serif;font-size:0.66rem;color:rgba(232,220,200,0.85);line-height:1.4;}
+    .lu-overlay .lu-burst{position:absolute;inset:-50px;pointer-events:none;background:radial-gradient(circle at center,rgba(255,220,140,0.25),transparent 60%);animation:luBurst 1.4s ease-out;}
+    @keyframes luBurst{0%{opacity:0;transform:scale(0.5);}30%{opacity:0.8;}100%{opacity:0;transform:scale(1.4);}}
     .greenhouse-plant .gh-traits{font-family:'DM Mono',monospace;font-size:0.35rem;color:var(--sage);margin-top:0.1rem;opacity:0.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .greenhouse-plant .gh-slot{position:absolute;top:3px;left:5px;font-family:'Bebas Neue',sans-serif;font-size:0.55rem;color:rgba(122,179,86,0.35);text-shadow:0 0 6px rgba(122,179,86,0.15);letter-spacing:0.02em;}
     .cross-badge{display:inline-block;font-family:'DM Mono',monospace;font-size:0.28rem;letter-spacing:0.06em;color:#8BBFE0;background:rgba(91,143,185,0.12);border:1px solid rgba(91,143,185,0.3);border-radius:3px;padding:0.06rem 0.25rem;margin-top:0.1rem;vertical-align:middle;}
@@ -40039,18 +40056,70 @@ window.PW_UI=(function(){
 'use strict';
 var _bpOpen=false,_lbOpen=false,_csOpen=false;
 
-// ═══ KEEPER RANK DATA ═══
+// ═══ KEEPER RANK DATA — 50 levels, Wild v3 curve ═══
 var RANKS=[
-  {lvl:1,title:'Seedling',xp:0},{lvl:2,title:'Sprout',xp:25},{lvl:3,title:'Young Shoot',xp:60},
-  {lvl:4,title:'Budding',xp:100},{lvl:5,title:'Tender',xp:160},{lvl:6,title:'Grower',xp:240},
-  {lvl:7,title:'Cultivator',xp:340},{lvl:8,title:'Forager',xp:460},{lvl:9,title:'Gardener',xp:600},
-  {lvl:10,title:'Naturalist',xp:780},{lvl:11,title:'Herbalist',xp:1000},{lvl:12,title:'Botanist',xp:1300},
-  {lvl:13,title:'Warden',xp:1650},{lvl:14,title:'Rootwalker',xp:2100},{lvl:15,title:'Grove Tender',xp:2600},
-  {lvl:16,title:'Pathfinder',xp:3200},{lvl:17,title:'Sage',xp:3900},{lvl:18,title:'Archivist',xp:4800},
-  {lvl:19,title:'Curator',xp:5800},{lvl:20,title:'Verdant',xp:7000},{lvl:21,title:'Deeproot',xp:8500},
-  {lvl:22,title:'Thornkeeper',xp:10500},{lvl:23,title:'Mossweaver',xp:13000},{lvl:24,title:'Fernscribe',xp:16000},
-  {lvl:25,title:'Ancient',xp:20000}
+  {lvl:1, title:'Seedling',         xp:0},
+  {lvl:2, title:'Sprout',           xp:25},
+  {lvl:3, title:'Young Shoot',      xp:75},
+  {lvl:4, title:'Budding',          xp:175},
+  {lvl:5, title:'Tender',           xp:350},
+  {lvl:6, title:'Grower',           xp:600},
+  {lvl:7, title:'Cultivator',       xp:950},
+  {lvl:8, title:'Forager',          xp:1400},
+  {lvl:9, title:'Gardener',         xp:2000},
+  {lvl:10,title:'Naturalist',       xp:2800},
+  {lvl:11,title:'Herbalist',        xp:3800},
+  {lvl:12,title:'Botanist',         xp:5000},
+  {lvl:13,title:'Warden',           xp:6500},
+  {lvl:14,title:'Rootwalker',       xp:8500},
+  {lvl:15,title:'Grove Tender',     xp:11000},
+  {lvl:16,title:'Pathfinder',       xp:14000},
+  {lvl:17,title:'Sage',             xp:17500},
+  {lvl:18,title:'Archivist',        xp:22000},
+  {lvl:19,title:'Curator',          xp:27500},
+  {lvl:20,title:'Verdant',          xp:34000},
+  {lvl:21,title:'Deeproot',         xp:42000},
+  {lvl:22,title:'Thornkeeper',      xp:52000},
+  {lvl:23,title:'Mossweaver',       xp:65000},
+  {lvl:24,title:'Fernscribe',       xp:80000},
+  {lvl:25,title:'Ancient',          xp:100000},
+  {lvl:26,title:'Canopy Walker',    xp:125000},
+  {lvl:27,title:'Bloomweaver',      xp:155000},
+  {lvl:28,title:'Petalsage',        xp:190000},
+  {lvl:29,title:'Moonleaf',         xp:235000},
+  {lvl:30,title:'Rootkeeper',       xp:290000},
+  {lvl:31,title:'Sunseeker',        xp:355000},
+  {lvl:32,title:'Dewspeaker',       xp:435000},
+  {lvl:33,title:'Grove Elder',      xp:530000},
+  {lvl:34,title:'Lucid Dreamer',    xp:640000},
+  {lvl:35,title:'Patternkeeper',    xp:770000},
+  {lvl:36,title:'Hexsage',          xp:920000},
+  {lvl:37,title:'Cycleward',        xp:1100000},
+  {lvl:38,title:'Chorusweaver',     xp:1310000},
+  {lvl:39,title:'Mycelial Tender',  xp:1555000},
+  {lvl:40,title:'Lineage Keeper',   xp:1840000},
+  {lvl:41,title:'Starbloom',        xp:2170000},
+  {lvl:42,title:'Deepvein',         xp:2550000},
+  {lvl:43,title:'Windsinger',       xp:2985000},
+  {lvl:44,title:'Drifttender',      xp:3480000},
+  {lvl:45,title:'Timekeeper',       xp:4040000},
+  {lvl:46,title:'Ancestral',        xp:4675000},
+  {lvl:47,title:'Mythseeker',       xp:5390000},
+  {lvl:48,title:'Starfield',        xp:6195000},
+  {lvl:49,title:'Infinite Bloom',   xp:7100000},
+  {lvl:50,title:'Lucid Keeper',     xp:8115000}
 ];
+// Level-gated Wild v3 unlocks. Shown in the level-up celebration card.
+var LEVEL_UNLOCKS={
+  5:  {key:'strangerTend', title:'Tend stranger plants', desc:'You can now tend other keepers\u2019 wild plants within 75m for +2 Dew each.'},
+  7:  {key:'breed',        title:'Greenhouse breeding',  desc:'Cross-pollinate two of your own plants to grow a chimera seed.'},
+  10: {key:'fruitHarvest', title:'Fruit harvest',        desc:'Take ripe fruit from stranger wild plants for Dew (small bloom delay).'},
+  12: {key:'mergeBreed',   title:'Nursery merge breed',  desc:'Merge two nursery seeds into one for trait selection.'},
+  15: {key:'cutting',      title:'Wild cuttings',        desc:'Take a cutting from a stranger wild plant — sample breeding seed.'},
+  19: {key:'bookSecrets',  title:'Book of Secrets',      desc:'Unlock the Compendium of rare interactions and phenotype lore.'},
+  23: {key:'fourthDrop',   title:'4th daily Wild drop',  desc:'You can now drop 4 plants per day instead of 3.'},
+  25: {key:'masterKeeper', title:'Master Keeper',        desc:'Cosmetic gold border on your keeper bar + profile.'}
+};
 
 function _getXP(){try{return parseInt(localStorage.getItem('pw_xp')||'0');}catch(e){return 0;}}
 function _saveXP(v){localStorage.setItem('pw_xp',String(v));}
@@ -40091,23 +40160,81 @@ window.PW_grantXP=function(amount,reason){
   var newR=_getRank(xp);
   updateKeeperBar();
   if(newR.level>oldR.level){
-    // Level up celebration
-    var bar=document.getElementById('pw-keeper-bar');
-    if(bar){bar.style.borderBottomColor='rgba(200,168,75,0.5)';setTimeout(function(){bar.style.borderBottomColor='rgba(74,124,53,0.06)';},2000);}
-    console.log('[PW] Level up! '+oldR.title+' → '+newR.title);
+    for(var lvl=oldR.level+1;lvl<=newR.level;lvl++){_showLevelUp(lvl,reason);}
+    if(window.LW_Log)window.LW_Log.write('level_up',{
+      fromLevel:oldR.level,toLevel:newR.level,newTitle:newR.title,reason:reason||'unknown'
+    });
+    console.log('[PW] Level up! '+oldR.title+' \u2192 '+newR.title+' (reason: '+(reason||'?')+')');
   }
 };
+
+// ═══ LEVEL-UP CELEBRATION OVERLAY ═══
+var _luQueue=[],_luBusy=false,_luTimer=null;
+function _showLevelUp(level,reason){
+  var rankEntry=null;
+  for(var i=0;i<RANKS.length;i++){if(RANKS[i].lvl===level){rankEntry=RANKS[i];break;}}
+  if(!rankEntry)return;
+  _luQueue.push({level:level,title:rankEntry.title,unlock:LEVEL_UNLOCKS[level]||null,reason:reason});
+  if(!_luBusy)_luProcessQueue();
+}
+function _luProcessQueue(){
+  if(_luQueue.length===0){_luBusy=false;return;}
+  _luBusy=true;
+  var item=_luQueue.shift();
+  var ov=document.getElementById('lu-overlay');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='lu-overlay';
+    ov.className='lu-overlay';
+    ov.innerHTML=
+      '<div class="lu-scrim"></div>'+
+      '<div class="lu-panel">'+
+        '<div class="lu-label">LEVEL UP</div>'+
+        '<div class="lu-level" id="lu-level-num">1</div>'+
+        '<div class="lu-title" id="lu-title-text">Seedling</div>'+
+        '<div class="lu-unlock" id="lu-unlock-card" style="display:none;">'+
+          '<div class="lu-unlock-label">NEW UNLOCK</div>'+
+          '<div class="lu-unlock-name" id="lu-unlock-name"></div>'+
+          '<div class="lu-unlock-desc" id="lu-unlock-desc"></div>'+
+        '</div>'+
+        '<div class="lu-burst"></div>'+
+      '</div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click',function(){_luDismiss();});
+  }
+  document.getElementById('lu-level-num').textContent=item.level;
+  document.getElementById('lu-title-text').textContent=item.title;
+  var unlockCard=document.getElementById('lu-unlock-card');
+  if(item.unlock){
+    document.getElementById('lu-unlock-name').textContent=item.unlock.title;
+    document.getElementById('lu-unlock-desc').textContent=item.unlock.desc;
+    unlockCard.style.display='block';
+  } else {
+    unlockCard.style.display='none';
+  }
+  ov.classList.add('open');
+  try{if(navigator.vibrate)navigator.vibrate([30,55,30]);}catch(e){}
+  if(window._playWin)window._playWin();
+  clearTimeout(_luTimer);
+  _luTimer=setTimeout(function(){_luDismiss();},4500);
+}
+function _luDismiss(){
+  clearTimeout(_luTimer);
+  var ov=document.getElementById('lu-overlay');
+  if(ov)ov.classList.remove('open');
+  setTimeout(function(){_luProcessQueue();},350);
+}
 
 // ═══ UPDATE STATS ═══
 function updateStats(){
   var gh=[];try{gh=JSON.parse((window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse'))||'[]');}catch(e){}
   var wild=[];try{wild=JSON.parse((window._secureGet?window._secureGet('fg_wild_plants'):localStorage.getItem('fg_wild_plants'))||'[]');}catch(e){}
-  var pollen=0;try{pollen=parseInt((window._secureGet?window._secureGet('fg_pollen'):localStorage.getItem('fg_pollen'))||'0');}catch(e){}
-  var dew=0;try{var hl=JSON.parse((window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger'))||'{}');dew=(hl.earned||0)-(hl.spent||0);}catch(e){}
+  var xp=_getXP();
+  var sunbeams=0;try{var hl=JSON.parse((window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger'))||'{}');sunbeams=(hl.earned||0)-(hl.spent||0);}catch(e){}
   var e=function(id,v){var el=document.getElementById(id);if(el)el.textContent=v;};
-  e('cs-s-plants',gh.length);e('cs-s-pollen',pollen);e('cs-s-wild',wild.length);
-  e('cs-s-dew',dew);e('cs-s-days',Math.max(1,Math.floor((Date.now()-(parseInt(localStorage.getItem('pw_start')||Date.now())))/86400000)+1));
-  e('lb-my-pollen',pollen);e('lb-footer-pollen',pollen);
+  e('cs-s-plants',gh.length);e('cs-s-pollen',xp);e('cs-s-wild',wild.length);
+  e('cs-s-dew',sunbeams);e('cs-s-days',Math.max(1,Math.floor((Date.now()-(parseInt(localStorage.getItem('pw_start')||Date.now())))/86400000)+1));
+  e('lb-my-pollen',xp);e('lb-footer-pollen',xp);
 }
 
 // ═══ BACKPACK ═══
@@ -46106,9 +46233,29 @@ window._plantCache={
 <script>
 (function(){
 'use strict';
-// Gate advanced features based on player progress
-// Each returns true if the feature should be VISIBLE
+// Read the current Keeper level without depending on PW_UI closure scope.
+function _lwLevel(){
+  try{
+    var xp=parseInt(localStorage.getItem('pw_xp')||'0');
+    var ranks=[0,25,75,175,350,600,950,1400,2000,2800,3800,5000,6500,8500,11000,14000,17500,22000,27500,34000,42000,52000,65000,80000,100000,125000,155000,190000,235000,290000,355000,435000,530000,640000,770000,920000,1100000,1310000,1555000,1840000,2170000,2550000,2985000,3480000,4040000,4675000,5390000,6195000,7100000,8115000];
+    for(var i=ranks.length-1;i>=0;i--){if(xp>=ranks[i])return i+1;}
+    return 1;
+  }catch(e){return 1;}
+}
+// Gate advanced features based on player progress.
+// Each returns true if the feature should be VISIBLE. Wild v3 level gates
+// are folded in alongside existing activity-based gates.
 window.canSee = {
+  strangerTend: function(){return _lwLevel()>=5;},
+  greenhouseBreed: function(){return _lwLevel()>=7;},
+  fruitHarvest: function(){return _lwLevel()>=10;},
+  nurseryMergeBreed: function(){return _lwLevel()>=12;},
+  wildCutting: function(){return _lwLevel()>=15;},
+  bookOfSecretsPages: function(){return _lwLevel()>=19;},
+  fourthWildDrop: function(){return _lwLevel()>=23;},
+  masterKeeper: function(){return _lwLevel()>=25;},
+  levelGate: function(n){return _lwLevel()>=(n||0);},
+  currentLevel: function(){return _lwLevel();},
   compendium: function() {
     // Show after first synergy or 5+ plants
     var gh=[]; try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}

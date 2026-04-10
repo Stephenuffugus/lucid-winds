@@ -1362,6 +1362,23 @@
     .plant-details-modal .pdm-empty{opacity:0.75;}
     .plant-details-modal .pdm-empty-label{font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.14em;color:var(--gold);margin-bottom:0.35rem;}
     .plant-details-modal .pdm-empty-body{font-family:'Playfair Display',serif;font-size:0.72rem;font-style:italic;color:var(--muted);line-height:1.45;}
+    /* ═══ LEVEL UP CELEBRATION OVERLAY ═══ */
+    .lu-overlay{position:fixed;inset:0;z-index:99998;display:none;}
+    .lu-overlay.open{display:block;}
+    .lu-overlay .lu-scrim{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(200,168,75,0.22),rgba(8,10,6,0.92) 70%);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);animation:luScrimIn 0.35s ease;}
+    @keyframes luScrimIn{from{opacity:0;}to{opacity:1;}}
+    .lu-overlay .lu-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;max-width:340px;padding:0 1.2rem;animation:luPanelIn 0.6s cubic-bezier(0.2,0.8,0.3,1.1);}
+    @keyframes luPanelIn{from{opacity:0;transform:translate(-50%,-40%) scale(0.85);}to{opacity:1;transform:translate(-50%,-50%) scale(1);}}
+    .lu-overlay .lu-label{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.22em;color:var(--gold);margin-bottom:0.3rem;text-shadow:0 0 12px rgba(200,168,75,0.5);}
+    .lu-overlay .lu-level{font-family:'Bebas Neue',sans-serif;font-size:5.5rem;line-height:1;color:#f5dc95;margin-bottom:0.3rem;text-shadow:0 0 30px rgba(255,220,140,0.5),0 4px 18px rgba(0,0,0,0.6);letter-spacing:-0.02em;}
+    .lu-overlay .lu-title{font-family:'Playfair Display',serif;font-size:1.3rem;font-style:italic;color:var(--cream);margin-bottom:1rem;letter-spacing:0.04em;}
+    .lu-overlay .lu-unlock{background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(200,168,75,0.04));border:1.5px solid rgba(200,168,75,0.4);border-radius:12px;padding:0.85rem 1.1rem;margin-top:0.8rem;box-shadow:0 4px 20px rgba(200,168,75,0.15),inset 0 1px 0 rgba(255,220,140,0.2);animation:luUnlockIn 0.7s ease 0.3s both;}
+    @keyframes luUnlockIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+    .lu-overlay .lu-unlock-label{font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.18em;color:var(--gold);margin-bottom:0.25rem;}
+    .lu-overlay .lu-unlock-name{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:#f5dc95;letter-spacing:0.06em;margin-bottom:0.3rem;}
+    .lu-overlay .lu-unlock-desc{font-family:'DM Sans',sans-serif;font-size:0.66rem;color:rgba(232,220,200,0.85);line-height:1.4;}
+    .lu-overlay .lu-burst{position:absolute;inset:-50px;pointer-events:none;background:radial-gradient(circle at center,rgba(255,220,140,0.25),transparent 60%);animation:luBurst 1.4s ease-out;}
+    @keyframes luBurst{0%{opacity:0;transform:scale(0.5);}30%{opacity:0.8;}100%{opacity:0;transform:scale(1.4);}}
     .greenhouse-plant .gh-traits{font-family:'DM Mono',monospace;font-size:0.35rem;color:var(--sage);margin-top:0.1rem;opacity:0.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .greenhouse-plant .gh-slot{position:absolute;top:3px;left:5px;font-family:'Bebas Neue',sans-serif;font-size:0.55rem;color:rgba(122,179,86,0.35);text-shadow:0 0 6px rgba(122,179,86,0.15);letter-spacing:0.02em;}
     .cross-badge{display:inline-block;font-family:'DM Mono',monospace;font-size:0.28rem;letter-spacing:0.06em;color:#8BBFE0;background:rgba(91,143,185,0.12);border:1px solid rgba(91,143,185,0.3);border-radius:3px;padding:0.06rem 0.25rem;margin-top:0.1rem;vertical-align:middle;}
