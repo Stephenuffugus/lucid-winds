@@ -2703,9 +2703,11 @@ function _drop(pl){
     _toast('\ud83c\udf3f Eviction! Your EA '+myEA+' displaced the zone\u2019s weakest (EA '+w.ea+').');
   }
 
-  // Show defender game picker — pass displaced plant info for server-side TX
+  // Wild v3 Phase 1: harvest is dead, so there's no defender game to pick.
+  // Skip the picker and finish the drop directly. The defenderGame field
+  // is still written for Firestore backward compat but is meaningless now.
   _pendingDrop={plant:pl,lat:la,lng:lo,wild:wild,displaced:displaced};
-  _showDefenderPicker();
+  _finishDrop('none');
 }
 
 var _pendingDrop=null;
@@ -3034,8 +3036,9 @@ function _dropFromBP(p){
     _toast('\ud83c\udf3f Eviction! Your EA '+myEA+' displaced the zone\u2019s weakest (EA '+w.ea+').');
   }
 
+  // Wild v3 Phase 1: skip defender picker (harvest removed), finish drop now.
   _pendingDrop={plant:p,lat:la,lng:lo,wild:wild,displaced:displaced,fromBP:true};
-  _showDefenderPicker();
+  _finishDrop('none');
 }
 // ═══ SHARED WILD DROPS — visible to all players ═══
 function _writeSharedDrop(lat,lng,hash,ea,defGame,traits,displaced){
@@ -3784,9 +3787,13 @@ function _selectHexPlant(idx, plantData) {
     actions += '<button class="hi-action-btn gold" onclick="window._hexAction(\'breed\')">&#129516; BREED</button>';
     actions += '<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
   } else {
+    // Wild v3: stranger plants no longer have HARVEST.
+    // TEND is the non-destructive replacement — gated at Keeper Lv 5.
+    // FRUIT (Lv 10) and CUTTING (Lv 15) will be added in Phase 2.
+    var _canTend = (window.canSee && window.canSee.strangerTend && window.canSee.strangerTend());
     actions += '<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
     actions += '<button class="hi-action-btn gold" onclick="window._hexAction(\'breed\')">&#129516; BREED</button>';
-    actions += '<button class="hi-action-btn danger" onclick="window._hexAction(\'harvest\')">&#127806; HARVEST</button>';
+    actions += '<button class="hi-action-btn' + (_canTend ? '' : ' locked') + '" onclick="window._hexAction(\'tend\')" title="' + (_canTend ? 'Tend this plant — gives it +life and grants you Dew' : 'Unlocks at Keeper Level 5') + '">&#127807; TEND' + (_canTend ? '' : ' &#128274;') + '</button>';
   }
 
   el.innerHTML =
@@ -3875,10 +3882,31 @@ window._hexAction = function(action) {
       break;
 
     case 'harvest':
-      if (typeof _harvestToPouch === 'function') {
-        _closeHexInspector();
-        _harvestToPouch(p);
-      } else { _toast('Harvest system loading...'); }
+      // DEAD CODE — harvest was removed in Wild v3 Phase 1. Kept as a safety
+      // net in case any stale cached UI still calls it. Will be deleted in
+      // a cleanup commit once confirmed there are no call sites left.
+      _toast('Harvest has been retired. Try TEND instead (unlocks at Lv 5).');
+      break;
+
+    case 'tend':
+      // Wild v3 Phase 2 stub — non-destructive stranger tend, grants Dew.
+      // Full implementation comes with the Phase 2 interactions commit.
+      if (!window.canSee || !window.canSee.strangerTend || !window.canSee.strangerTend()) {
+        _toast('Tending unlocks at Keeper Level 5.');
+        break;
+      }
+      if (_uLat && p.lat) {
+        var _tendDist = _dist(_uLat, _uLng, p.lat, p.lng);
+        if (_tendDist > COLLECT_RANGE) { _toast('Walk closer! ' + Math.round(_tendDist) + 'm away.'); break; }
+      }
+      if (p.own) { _toast('That\u2019s your own plant — water it instead.'); break; }
+      // Placeholder grant — real mechanics (vitality restore, cooldown per
+      // player per plant, journal entry for owner) come with Phase 2.
+      if (window.earnDew) window.earnDew(2, 'wild_tend_stranger');
+      if (window.PW_grantXP) PW_grantXP(10, 'wild_tend_stranger');
+      if (window.LW_Log) window.LW_Log.write('wild_tended_stranger', { hash: p.hash, ownerName: p.ownerName || 'Keeper' });
+      _toast('\ud83c\udf3f Tended ' + (p.ownerName || 'a keeper') + '\u2019s plant. +2 Dew · +10 XP');
+      _play('match');
       break;
 
     case 'collect':

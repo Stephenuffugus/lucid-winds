@@ -3692,6 +3692,7 @@
 .hi-action-btn:active{background:rgba(74,124,53,0.25);border-color:rgba(122,179,86,0.4);}
 .hi-action-btn.danger{border-color:rgba(200,80,60,0.2);color:rgba(200,120,100,0.9);}
 .hi-action-btn.gold{border-color:rgba(200,168,75,0.25);color:var(--gold);}
+.hi-action-btn.locked{opacity:0.45;border-style:dashed;cursor:not-allowed;color:rgba(122,179,86,0.5);}
 .hi-search{padding:0.5rem 1rem 0.3rem;border-top:1px solid rgba(200,168,75,0.06);}
 .hi-search-btn{width:100%;min-height:56px;padding:0.5rem;border-radius:14px;cursor:pointer;border:2px solid rgba(122,179,86,0.25);background:linear-gradient(180deg,rgba(74,124,53,0.12),rgba(26,60,22,0.2));color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.12em;display:flex;align-items:center;justify-content:center;gap:10px;}
 .hi-search-btn:active{background:rgba(74,124,53,0.3);}
@@ -34159,9 +34160,11 @@ function _drop(pl){
     _toast('\ud83c\udf3f Eviction! Your EA '+myEA+' displaced the zone\u2019s weakest (EA '+w.ea+').');
   }
 
-  // Show defender game picker — pass displaced plant info for server-side TX
+  // Wild v3 Phase 1: harvest is dead, so there's no defender game to pick.
+  // Skip the picker and finish the drop directly. The defenderGame field
+  // is still written for Firestore backward compat but is meaningless now.
   _pendingDrop={plant:pl,lat:la,lng:lo,wild:wild,displaced:displaced};
-  _showDefenderPicker();
+  _finishDrop('none');
 }
 
 var _pendingDrop=null;
@@ -34473,8 +34476,9 @@ function _dropFromBP(p){
     _toast('\ud83c\udf3f Eviction! Your EA '+myEA+' displaced the zone\u2019s weakest (EA '+w.ea+').');
   }
 
+  // Wild v3 Phase 1: skip defender picker (harvest removed), finish drop now.
   _pendingDrop={plant:p,lat:la,lng:lo,wild:wild,displaced:displaced,fromBP:true};
-  _showDefenderPicker();
+  _finishDrop('none');
 }
 // ═══ SHARED WILD DROPS — visible to all players ═══
 function _writeSharedDrop(lat,lng,hash,ea,defGame,traits,displaced){
@@ -34954,8 +34958,11 @@ function _selectHexPlant(idx,p){
     actions+='<button class="hi-action-btn" onclick="window._hexAction(\'inspect\')">&#128269; INSPECT</button>';
     actions+='<button class="hi-action-btn" onclick="window._hexAction(\'defense\')">&#128737; DEFENSE</button>';
   }else{
+    // Wild v3: stranger plants no longer have HARVEST.
+    // TEND is the non-destructive replacement — gated at Keeper Lv 5.
+    var _canTend=(window.canSee&&window.canSee.strangerTend&&window.canSee.strangerTend());
     actions+='<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
-    actions+='<button class="hi-action-btn danger" onclick="window._hexAction(\'harvest\')">&#127806; HARVEST</button>';
+    actions+='<button class="hi-action-btn'+(_canTend?'':' locked')+'" onclick="window._hexAction(\'tend\')" title="'+(_canTend?'Tend this plant — gives it +life and grants you Dew':'Unlocks at Keeper Level 5')+'">&#127807; TEND'+(_canTend?'':' &#128274;')+'</button>';
   }
   el.innerHTML='<div class="hi-detail-name">'+name+'</div><div class="hi-detail-grade" style="color:'+gc+';">'+grade+'</div>'+traitHtml+'<div class="hi-actions">'+actions+'</div>';
   el.style.display='block';
@@ -34989,7 +34996,19 @@ window._hexAction=function(action){
       _toast('Watered! +2 pollen. '+(5-wb.count)+' left.');if(window._haptic)_haptic('bloom');
     }
   }else if(action==='harvest'){
-    if(typeof _harvestToPouch==='function'){window._closeHexInspector();_harvestToPouch(p);}
+    // DEAD CODE — harvest was removed in Wild v3 Phase 1. Kept as a safety
+    // net in case any stale cached UI still calls it.
+    _toast('Harvest has been retired. Try TEND instead (unlocks at Lv 5).');
+  }else if(action==='tend'){
+    // Wild v3 Phase 2 stub — non-destructive stranger tend, grants Dew.
+    if(!window.canSee||!window.canSee.strangerTend||!window.canSee.strangerTend()){_toast('Tending unlocks at Keeper Level 5.');return;}
+    if(_uLat&&p.lat){var _tendDist=_dist(_uLat,_uLng,p.lat,p.lng);if(_tendDist>COLLECT_RANGE){_toast('Walk closer! '+Math.round(_tendDist)+'m away.');return;}}
+    if(p.own){_toast('That\u2019s your own plant — water it instead.');return;}
+    if(window.earnDew)window.earnDew(2,'wild_tend_stranger');
+    if(window.PW_grantXP)PW_grantXP(10,'wild_tend_stranger');
+    if(window.LW_Log)window.LW_Log.write('wild_tended_stranger',{hash:p.hash,ownerName:p.ownerName||'Keeper'});
+    _toast('\ud83c\udf3f Tended '+(p.ownerName||'a keeper')+'\u2019s plant. +2 Dew \u00b7 +10 XP');
+    if(window._play)_play('match');
   }else if(action==='inspect'){
     if(window.openCarousel){window._closeHexInspector();var gh=_getGH();var idx=-1;for(var gi=0;gi<gh.length;gi++){if(gh[gi].hash===p.hash){idx=gi;break;}}if(idx>=0)openCarousel(gh,idx,'greenhouse');}
   }else if(action==='defense'){
