@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.34';
+  var LW_VERSION='2026.04.10.35';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -31962,13 +31962,16 @@ function _plantRarity(hash){
 function _lifespanMsFor(rarityName){var d=WILD_LIFESPAN_DAYS[rarityName]||7;return d*86400000;}
 function _ensureVitality(plant){
   if(!plant||!plant.hash)return plant;
-  var rarity=plant.rarity||_plantRarity(plant.hash);
+  var rarity=plant.rarity||plant.grade||_plantRarity(plant.hash);
   plant.rarity=rarity;
-  var lifeMs=_lifespanMsFor(rarity);
+  var lifeMs=plant.lifespanMs||_lifespanMsFor(rarity);
   plant.lifespanMs=lifeMs;
-  // Normalize droppedAt to a numeric ms timestamp. Firestore writes
-  // ISO strings via new Date().toISOString(); older code used Date.now().
-  if(typeof plant.droppedAt==='string'){
+  // Prefer the numeric droppedAtMs/decayAtMs fields written by the new
+  // _writeSharedDrop. Fall back to parsing droppedAt/decayAt (which may
+  // be ISO strings from older shared drops, legacy writes, or live Firestore reads).
+  if(typeof plant.droppedAtMs==='number'){
+    plant.droppedAt=plant.droppedAtMs;
+  } else if(typeof plant.droppedAt==='string'){
     var _parsed=new Date(plant.droppedAt).getTime();
     plant.droppedAt=isNaN(_parsed)?Date.now():_parsed;
   } else if(!plant.droppedAt&&plant.date){
@@ -31976,7 +31979,9 @@ function _ensureVitality(plant){
   } else if(!plant.droppedAt){
     plant.droppedAt=Date.now();
   }
-  if(typeof plant.decayAt==='string'){
+  if(typeof plant.decayAtMs==='number'){
+    plant.decayAt=plant.decayAtMs;
+  } else if(typeof plant.decayAt==='string'){
     var _dp=new Date(plant.decayAt).getTime();
     plant.decayAt=isNaN(_dp)?(plant.droppedAt+lifeMs):_dp;
   } else if(!plant.decayAt){
@@ -34856,14 +34861,21 @@ function _writeSharedDrop(lat,lng,hash,ea,defGame,traits,displaced){
     if(!user||!user.uid||!window.db)return;
     var grade='Common';
     try{if(traits&&window.getTerraGrade){var _tg=window.getTerraGrade(traits);grade=(_tg.name||_tg.label||'Common');}}catch(e){}
+    var _nowMs=Date.now();
+    var _lifeMs=_lifespanMsFor(grade);
     var newDropData={
       lat:lat,lng:lng,hash:hash,ownerUid:user.uid,
       ownerName:localStorage.getItem('pw_keeper_name')||'Keeper',
       ea:ea||0,defenderGame:defGame||'set',
       season:(traits&&traits.season)||0,status:'alive',
       grade:grade,
+      rarity:grade,
       zone:_zoneKey(lat,lng),
-      droppedAt:new Date().toISOString()
+      droppedAt:new Date(_nowMs).toISOString(),
+      droppedAtMs:_nowMs,
+      lifespanMs:_lifeMs,
+      decayAtMs:_nowMs+_lifeMs,
+      strangerTendAddMs:0
     };
     var newDocId=user.uid+'_'+hash.slice(0,16);
 

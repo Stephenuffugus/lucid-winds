@@ -199,13 +199,16 @@ function _lifespanMsFor(rarityName){
 function _ensureVitality(plant){
   // Backfill lifespan + decayAt on legacy plants that predate vitality.
   if(!plant||!plant.hash)return plant;
-  var rarity = plant.rarity || _plantRarity(plant.hash);
+  var rarity = plant.rarity || plant.grade || _plantRarity(plant.hash);
   plant.rarity = rarity;
-  var lifeMs = _lifespanMsFor(rarity);
+  var lifeMs = plant.lifespanMs || _lifespanMsFor(rarity);
   plant.lifespanMs = lifeMs;
-  // Normalize droppedAt to a numeric ms timestamp. Firestore writes
-  // ISO strings via new Date().toISOString(); older code used Date.now().
-  if (typeof plant.droppedAt === 'string') {
+  // Prefer numeric droppedAtMs/decayAtMs fields from new drops.
+  // Fall back to parsing string droppedAt (legacy Firestore writes) or
+  // legacy plant.date; last resort Date.now() for very old records.
+  if (typeof plant.droppedAtMs === 'number') {
+    plant.droppedAt = plant.droppedAtMs;
+  } else if (typeof plant.droppedAt === 'string') {
     var _parsed = new Date(plant.droppedAt).getTime();
     plant.droppedAt = isNaN(_parsed) ? Date.now() : _parsed;
   } else if(!plant.droppedAt && plant.date){
@@ -213,7 +216,9 @@ function _ensureVitality(plant){
   } else if(!plant.droppedAt){
     plant.droppedAt = Date.now();
   }
-  if (typeof plant.decayAt === 'string') {
+  if (typeof plant.decayAtMs === 'number') {
+    plant.decayAt = plant.decayAtMs;
+  } else if (typeof plant.decayAt === 'string') {
     var _dp = new Date(plant.decayAt).getTime();
     plant.decayAt = isNaN(_dp) ? (plant.droppedAt + lifeMs) : _dp;
   } else if(!plant.decayAt){
@@ -3174,14 +3179,21 @@ function _writeSharedDrop(lat,lng,hash,ea,defGame,traits,displaced){
     if(!user||!user.uid||!window.db)return;
     var grade='Common';
     try{if(traits&&window.getTerraGrade){var _tg=window.getTerraGrade(traits);grade=(_tg.name||_tg.label||'Common');}}catch(e){}
+    var _nowMs=Date.now();
+    var _lifeMs=_lifespanMsFor(grade);
     var newDropData={
       lat:lat,lng:lng,hash:hash,ownerUid:user.uid,
       ownerName:localStorage.getItem('pw_keeper_name')||'Keeper',
       ea:ea||0,defenderGame:defGame||'set',
       season:(traits&&traits.season)||0,status:'alive',
       grade:grade,
+      rarity:grade,
       zone:_zoneKey(lat,lng),
-      droppedAt:new Date().toISOString()
+      droppedAt:new Date(_nowMs).toISOString(),
+      droppedAtMs:_nowMs,
+      lifespanMs:_lifeMs,
+      decayAtMs:_nowMs+_lifeMs,
+      strangerTendAddMs:0
     };
     var newDocId=user.uid+'_'+hash.slice(0,16);
 
