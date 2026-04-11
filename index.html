@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.64';
+  var LW_VERSION='2026.04.10.65';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -28548,7 +28548,10 @@ document.addEventListener('keydown', function(e) {
     // Compost log for achievements
     try {
       var _cLog = JSON.parse(localStorage.getItem('sws_compost_log') || '[]');
-      _cLog.push({ hash: plant.hash.slice(0, 16), tier: _tg.name, ts: Date.now() });
+      // Full hash stored so Memory Garden can render the real plant silhouette.
+      // Legacy entries have truncated 16-char hash + zero padding, rendering as
+      // a different (fake) plant — accepted for pre-existing composts.
+      _cLog.push({ hash: plant.hash, tier: _tg.name, ts: Date.now() });
       localStorage.setItem('sws_compost_log', JSON.stringify(_cLog));
     } catch(e) {}
     if (typeof gtag !== 'undefined') gtag('event', 'plant_composted', { hash: plant.hash.slice(0,8), dna: dnaReward });

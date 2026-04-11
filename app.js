@@ -20099,7 +20099,8 @@
     // Compost log for achievements
     try {
       var _cLog = JSON.parse(localStorage.getItem('sws_compost_log') || '[]');
-      _cLog.push({ hash: plant.hash.slice(0, 16), tier: _tg.name, ts: Date.now() });
+      // Full hash stored so Memory Garden can render the real plant silhouette.
+      _cLog.push({ hash: plant.hash, tier: _tg.name, ts: Date.now() });
       localStorage.setItem('sws_compost_log', JSON.stringify(_cLog));
     } catch(e) {}
     if (typeof gtag !== 'undefined') gtag('event', 'plant_composted', { hash: plant.hash.slice(0,8), dna: dnaReward });

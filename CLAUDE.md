@@ -96,8 +96,9 @@ corner-ornament-128x128-1.png  — Corner ornament (128px)
 | Emergency pouch slot | 10 Pi, ONE-TIME per day |
 | Fertilizer from composting | Common=1, Uncommon=1, Rare=2, Epic=2, Legendary=3, Mythic=4, Cosmic=5 |
 | Max fertilizer per seed | 25 at 1% each |
-| Watering skip cost | 5 hashes = skip 1 day |
-| Plants per Wild zone | 1 (no stacking) |
+| Nursery skip cost | 21 Dew = skip 1 day (post-Dew-split rework) |
+| Plants per Wild zone | 3 max with EA-weakest eviction via dice roll |
+| Per-player wild radius cap | 3 plants within 700m (Wild v3 spread rule) |
 | Chimera EA penalty | -2 per generation |
 | Chimera immunity bonus | 2x climate |
 | Marketplace fee | 1% to platform, 99% to seller |
@@ -234,7 +235,7 @@ Uncommon
 Rare       — golden pot OR glow flower OR crystal base OR any mutation
 Epic
 Legendary
-Mythic     — The Toad, The Capybara companions
+Mythic     — The Toad, The Phoenix companions
 Cosmic     — The Beholder companion (0.39%)
 ```
 
@@ -252,39 +253,46 @@ Cosmic     — The Beholder companion (0.39%)
 ## TRAIT SYSTEM (hashToTraits)
 Derived deterministically from 64-char hex hash:
 ```
-pot:         hb(0) % 30          — 30 pot types
+pot:         hb(0) % 60          — 60 pot types (TRAIT_BANK.pots)
 potColor:    _PAL[hc(1)]
-stem:        hc(2)               — >12=Braided, >8=Twisted, >4=Curved, else Standard
+stem:        hb(2) % 24           — 24 stem patterns
 stemHeight:  22 + hc(3) * 2.5
-leafType:    hb(4)               — indexes TRAIT_BANK.leaves
-leafCount:   4 + (hc(5) % 5)
-leafSize:    6 + (hc(6) % 5)
+leafType:    hb(4) % 71           — 71 leaf types (TRAIT_BANK.leaves)
+leafCount:   5 + (hc(5) % 6)
+leafSize:    8 + (hc(6) % 7)
 leafColors:  [_PAL[hc(7)], _PAL[hc(8)], _PAL[hc(9)]]
 hasFlower:   hc(10) > 4
-flower:      hb(11)              — indexes TRAIT_BANK.flowers
+flower:      hb(11) % 71          — 71 flower types
 flowerColor: _PAL[hc(12)]
-flowerSize:  4 + (hc(13) % 5)
+flowerSize:  6 + (hc(13) % 7)
 chimerGen:   1 (default; breeding sets to parent max + 1)
 leafSpread:  7 + (hc(14) % 6)
-aura:        hb(15) % 21         — 0-20 aura slots
-base:        hb(20) % 30         — 30 substrate types
-companion:   hb(21) % 60 or mythic override from hb(18)
-mutation:    hb(16)              — >=0xF0 Glitch, >=0xE0 Glass Stem, >=0xD0 Wireframe
-mythic:      hb(18)              — see companion override table
+aura:        hb(15) % 36          — 36 aura slots (0-4 = none)
+base:        hb(20) % 71          — 71 substrate types
+companion:   hb(21) % 82 or mythic override from hb(18)
+mutation:    hb(16)               — mythic byte, see hashToTraits
+mythic:      hb(18)               — see override table below
 season:      hb(22) % 4
 ```
 
 ### Companion/Mythic Override Table
+Source of truth: `hashToTraits` in index.html (search for `mythByte ===`).
+Last verified against code: 2026-04-11.
 ```
-hb(18) === 0xFF  → The Beholder (idx 38)       COSMIC   0.39%
-hb(18) >= 0xFE   → Starfall (idx 37)            LEGENDARY
-hb(18) >= 0xFC   → Storm Wraith (idx 36)        LEGENDARY
-hb(18) >= 0xF8   → Ancient Rune Field (idx 35)  LEGENDARY
-hb(18) >= 0xF4   → Bioluminescent Pulse (idx 34) LEGENDARY
-hb(18) >= 0xE0   → The Capybara (idx 33)        MYTHIC
-hb(18) >= 0xD0   → The Toad (idx 32)            MYTHIC
-else              → hb(21) % 60                   ~20% base creature rate
+hb(18) === 0xFF  → The Beholder       (idx 38)   COSMIC     0.39%
+hb(18) >= 0xFE   → Garden Spider      (idx 37)   LEGENDARY  0.39%
+hb(18) >= 0xFC   → Great Blue Heron   (idx 36)   LEGENDARY  0.78%
+hb(18) >= 0xF8   → Raccoon            (idx 35)   LEGENDARY  1.56%
+hb(18) >= 0xF4   → Baby Mammoth       (idx 34)   LEGENDARY  1.56%
+hb(18) >= 0xE0   → The Phoenix        (idx 33)   MYTHIC     7.81%
+hb(18) >= 0xD0   → The Toad           (idx 32)   MYTHIC     6.25%
+else              → hb(21) % 82                  ~41% base creature rate
 ```
+
+Dead names that used to be in this table but are NOW AURAS, not
+companions (do not put these in mythic hall / showcase UIs):
+Starfall, Storm Wraith, Ancient Rune Field, Bioluminescent Pulse,
+The Capybara.
 
 ---
 
@@ -391,7 +399,7 @@ window._doCrossPollination(wild, mate) — Wild tab breed execution
 - Bloom mints plant into greenhouse
 - Max 3 seeds at once
 - Fertilizer: max 25 per seed at 1% boost each (composting only)
-- Watering skip: 5 hashes = skip 1 day
+- Nursery acceleration skip: 21 Dew = skip 1 day
 
 ---
 
@@ -423,7 +431,7 @@ window._doCrossPollination(wild, mate) — Wild tab breed execution
 - Chimera veins: Gen 1=0.35px, Gen 2=0.55px, capped, glow at gen 5+
 - Stipe bridge for clamped exotic blooms
 - Mandala halo: 6-second breathe cycle
-- 30 substrates, 60+ leaf types, 46+ bloom cases
+- 71 substrates, 71 leaf types, 71 bloom cases (verify via TRAIT_BANK array lengths)
 
 ---
 
