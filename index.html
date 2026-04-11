@@ -31488,6 +31488,8 @@ document.addEventListener('keydown', function(e) {
       // Cosmetic titles owned + currently equipped
       titlesOwned:     _ls('lw_titles_owned') || [],
       activeTitle:     localStorage.getItem('lw_active_title') || '',
+      // Named Conway-derived patterns the player has christened
+      namedPatterns:   _ls('lw_patterns_named') || [],
       lastSync: new Date().toISOString(),
       clientVersion: 'set-40'
     };
@@ -31528,6 +31530,21 @@ document.addEventListener('keydown', function(e) {
     }
     if (typeof data.activeTitle === 'string' && data.activeTitle && !localStorage.getItem('lw_active_title')) {
       try { localStorage.setItem('lw_active_title', data.activeTitle); } catch(e) {}
+    }
+    // Named patterns are append-only — union by pattern key
+    if (data.namedPatterns && data.namedPatterns.length) {
+      try {
+        var localPatRaw = localStorage.getItem('lw_patterns_named');
+        var localPat = localPatRaw ? JSON.parse(localPatRaw) : [];
+        var seen = {};
+        function _patKey(p) { return (p.plantHashes || []).slice().sort().join('+'); }
+        for (var lpi = 0; lpi < localPat.length; lpi++) seen[_patKey(localPat[lpi])] = true;
+        for (var cpi = 0; cpi < data.namedPatterns.length; cpi++) {
+          var k = _patKey(data.namedPatterns[cpi]);
+          if (!seen[k]) { localPat.push(data.namedPatterns[cpi]); seen[k] = true; }
+        }
+        localStorage.setItem('lw_patterns_named', JSON.stringify(localPat));
+      } catch(e) {}
     }
     if (data.phenoRevealed && typeof data.phenoRevealed === 'object') {
       // Merge cloud registry with local — union of keys (reveals are sticky)
@@ -35783,6 +35800,220 @@ function _phenoRetroScan(){
   }catch(e){}
 }
 
+// ═══ PATTERN RECOGNITION + NAMING ═══
+// Detect Conway-derived stable formations among the player's own wild plants.
+// When a new drop completes a known shape, fire the naming UI so the player
+// can christen the formation. The named pattern is then visible to anyone
+// who taps a hex containing one of the constituent plants.
+//
+// Patterns shipped: Trefoil (3-plant triangle), Lining (3 in a straight line)
+// More can be added later (Hex Crown, Knot, Bridge).
+//
+// Adjacency definition: two plants are adjacent if they're within ~1.5
+// zones on each axis (allowing for the slight lat/lng jitter on drop).
+function _isAdjacentPlant(p1, p2){
+  if (!p1 || !p2 || p1.hash === p2.hash) return false;
+  var dLat = Math.abs(p1.lat - p2.lat);
+  var dLng = Math.abs(p1.lng - p2.lng);
+  return dLat <= ZONE_SIZE * 1.5 && dLng <= ZONE_SIZE * 1.5;
+}
+// Three points are collinear if they share roughly the same axis OR
+// the midpoint of the outer two equals the inner one (within zone tolerance)
+function _isLinePlant(a, b, c){
+  // Sort by lat then lng so 'b' is the middle
+  var pts = [a,b,c].slice().sort(function(p,q){return p.lat===q.lat?p.lng-q.lng:p.lat-q.lat;});
+  var p1=pts[0],p2=pts[1],p3=pts[2];
+  var midLat = (p1.lat + p3.lat) / 2;
+  var midLng = (p1.lng + p3.lng) / 2;
+  if (Math.abs(p2.lat - midLat) > ZONE_SIZE * 0.5) return false;
+  if (Math.abs(p2.lng - midLng) > ZONE_SIZE * 0.5) return false;
+  // Outer pair must be within 2-hex spread (so we don't match plants 5km apart)
+  var dLat = Math.abs(p3.lat - p1.lat);
+  var dLng = Math.abs(p3.lng - p1.lng);
+  if (dLat > ZONE_SIZE * 2.5 || dLng > ZONE_SIZE * 2.5) return false;
+  return true;
+}
+function _patternKey(plantHashes){
+  return plantHashes.slice().sort().join('+');
+}
+function _loadNamedPatterns(){
+  try { return JSON.parse(localStorage.getItem('lw_patterns_named') || '[]') || []; }
+  catch(e) { return []; }
+}
+function _saveNamedPatterns(arr){
+  try { localStorage.setItem('lw_patterns_named', JSON.stringify(arr)); } catch(e) {}
+}
+// Look for a NEW pattern formed by the most recently dropped plant.
+// Returns first match: {type, plantHashes} or null if none found.
+function _detectNewPattern(wild, newIdx){
+  var newPlant = wild[newIdx];
+  if (!newPlant) return null;
+  // Build the player's owned plant list (the new drop is included)
+  var owned = [];
+  for (var i = 0; i < wild.length; i++) {
+    if (wild[i] && wild[i].own !== false) owned.push(wild[i]);
+  }
+  if (owned.length < 3) return null;
+  var existing = _loadNamedPatterns();
+  function _alreadyNamed(hashes){
+    var key = _patternKey(hashes);
+    for (var ei = 0; ei < existing.length; ei++) {
+      if (_patternKey(existing[ei].plantHashes) === key) return true;
+    }
+    return false;
+  }
+  // Trefoil: find 2 owned plants both adjacent to newPlant AND to each other
+  for (var a = 0; a < owned.length; a++) {
+    if (owned[a].hash === newPlant.hash) continue;
+    if (!_isAdjacentPlant(newPlant, owned[a])) continue;
+    for (var b = a + 1; b < owned.length; b++) {
+      if (owned[b].hash === newPlant.hash) continue;
+      if (!_isAdjacentPlant(newPlant, owned[b])) continue;
+      if (!_isAdjacentPlant(owned[a], owned[b])) continue;
+      var trio = [newPlant.hash, owned[a].hash, owned[b].hash];
+      if (_alreadyNamed(trio)) continue;
+      return { type: 'trefoil', plantHashes: trio };
+    }
+  }
+  // Lining: find 2 owned plants forming a straight line WITH newPlant
+  for (var c = 0; c < owned.length; c++) {
+    if (owned[c].hash === newPlant.hash) continue;
+    for (var d = c + 1; d < owned.length; d++) {
+      if (owned[d].hash === newPlant.hash) continue;
+      if (_isLinePlant(newPlant, owned[c], owned[d])) {
+        var trio2 = [newPlant.hash, owned[c].hash, owned[d].hash];
+        if (_alreadyNamed(trio2)) continue;
+        return { type: 'lining', plantHashes: trio2 };
+      }
+    }
+  }
+  return null;
+}
+window._lwPatternForHash = function(hash){
+  if (!hash) return null;
+  var named = _loadNamedPatterns();
+  for (var i = 0; i < named.length; i++) {
+    if (named[i].plantHashes && named[i].plantHashes.indexOf(hash) >= 0) return named[i];
+  }
+  return null;
+};
+
+// Curated word lists for the pattern naming UI. Same lists used elsewhere
+// for safety reasons — no free text input, no profanity filter needed.
+var LW_PATTERN_ADJECTIVES = [
+  'Ancient','Brindled','Briar','Crimson','Crowned','Dawnlit','Deep','Dewy',
+  'Drifting','Echoing','Embered','Forgotten','Frosted','Glassy','Golden',
+  'Hallowed','Hidden','Iron','Lantern','Misty','Moonworn','Mossy','Pale',
+  'Patient','Quiet','Restless','Rootbound','Shaded','Silver','Sleeping',
+  'Sovereign','Sunlit','Twilit','Velvet','Verdant','Wakeful','Wandering',
+  'Whispered','Wild','Wreathed'
+];
+var LW_PATTERN_NOUNS = [
+  'Hollow','Glen','Patch','Ring','Dell','Copse','Clearing','Thicket','Bed',
+  'Stand','Grove','Hearth','Cradle','Veil','Spire','Crest','Gate','Shrine',
+  'Sanctum','Refuge','Brook','Cairn','Vale','Knoll','Reach','Bower','Lea',
+  'Heath','Brink','Threshold','Coppice','Hush','Cove','Bough','Field','Loft',
+  'Wood','Mead','Holt','Marsh'
+];
+var _PATTERN_TYPE_LABELS = {
+  trefoil: { icon:'\u269c\ufe0f', name:'TREFOIL', desc:'Three plants in a triangle.' },
+  lining:  { icon:'\u2014',       name:'LINING',  desc:'Three plants in a straight line.' }
+};
+var _patternNamerState = { adj: null, noun: null, payload: null };
+
+window._openPatternNamer = function(payload){
+  if (!payload || !payload.type) return;
+  // Pre-fill with random suggestions
+  _patternNamerState.adj = LW_PATTERN_ADJECTIVES[Math.floor(Math.random()*LW_PATTERN_ADJECTIVES.length)];
+  _patternNamerState.noun = LW_PATTERN_NOUNS[Math.floor(Math.random()*LW_PATTERN_NOUNS.length)];
+  _patternNamerState.payload = payload;
+  _renderPatternNamer();
+};
+
+window._lwPatternPickAdj = function(adj){
+  _patternNamerState.adj = adj;
+  _renderPatternNamer();
+};
+window._lwPatternPickNoun = function(noun){
+  _patternNamerState.noun = noun;
+  _renderPatternNamer();
+};
+window._lwPatternConfirm = function(){
+  var s = _patternNamerState;
+  if (!s.payload || !s.adj || !s.noun) return;
+  var named = _loadNamedPatterns();
+  named.push({
+    type: s.payload.type,
+    plantHashes: s.payload.plantHashes,
+    name: s.adj + ' ' + s.noun,
+    ts: Date.now()
+  });
+  _saveNamedPatterns(named);
+  if (window._toast) _toast('\ud83d\udcd6 \u201c' + s.adj + ' ' + s.noun + '\u201d named. It will appear when keepers visit.');
+  if (window._haptic) _haptic('bloom');
+  if (window.PW_grantXP) PW_grantXP(15, 'pattern_named');
+  if (window.LW_Log) LW_Log.write('pattern_named', { type: s.payload.type, name: s.adj + ' ' + s.noun });
+  _patternNamerState = { adj: null, noun: null, payload: null };
+  var modal = document.getElementById('lw-pattern-namer');
+  if (modal) modal.remove();
+  if (window.syncVaultToCloud) setTimeout(syncVaultToCloud, 500);
+};
+window._lwPatternCancel = function(){
+  // Allow defer — the pattern is detected but not named yet. We DON'T
+  // store it, so the next drop in the same shape will re-fire detection.
+  var modal = document.getElementById('lw-pattern-namer');
+  if (modal) modal.remove();
+  if (window._toast) _toast('Pattern unnamed for now. It\u2019ll come back next time you complete it.');
+  _patternNamerState = { adj: null, noun: null, payload: null };
+};
+
+function _renderPatternNamer(){
+  var existing = document.getElementById('lw-pattern-namer');
+  if (existing) existing.remove();
+  var meta = _PATTERN_TYPE_LABELS[_patternNamerState.payload.type] || { icon:'\u25c8', name:'PATTERN', desc:'A new shape.' };
+  var modal = document.createElement('div');
+  modal.id = 'lw-pattern-namer';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:100004;display:flex;align-items:flex-start;justify-content:center;background:rgba(5,8,4,0.92);backdrop-filter:blur(12px);animation:panelFadeIn 0.35s ease;padding:1rem;overflow-y:auto;';
+  var h = '<div style="max-width:440px;width:100%;margin:1.5rem auto;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.4);border-radius:14px;padding:1.2rem 1.1rem 1rem;box-shadow:0 20px 60px rgba(0,0,0,0.8),0 0 24px rgba(200,168,75,0.15);">';
+  h += '<div style="text-align:center;margin-bottom:0.7rem;">';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.16em;color:var(--gold);">A NEW PATTERN HAS FORMED</div>';
+  h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.1rem;color:var(--cream);margin-top:0.35rem;">' + meta.icon + ' ' + meta.name + '</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:0.2rem;">' + meta.desc + '</div>';
+  h += '</div>';
+  // Live preview of the chosen name
+  h += '<div style="text-align:center;margin:0.7rem 0 0.9rem 0;padding:0.7rem 0.5rem;background:rgba(13,16,12,0.55);border:1px solid rgba(200,168,75,0.25);border-radius:9px;">';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.08em;">YOU\u2019RE NAMING IT</div>';
+  h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.4rem;color:' + (_patternNamerState.adj && _patternNamerState.noun ? 'var(--gold)' : 'var(--muted)') + ';margin-top:0.3rem;">' + (_patternNamerState.adj || '—') + ' ' + (_patternNamerState.noun || '—') + '</div>';
+  h += '</div>';
+  // Adjective grid
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--sage);letter-spacing:0.1em;margin:0.6rem 0 0.3rem 0;">CHOOSE A WORD</div>';
+  h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.3rem;max-height:200px;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.2rem;">';
+  for (var ai = 0; ai < LW_PATTERN_ADJECTIVES.length; ai++) {
+    var w = LW_PATTERN_ADJECTIVES[ai];
+    var sel = (_patternNamerState.adj === w);
+    h += '<button onclick="window._lwPatternPickAdj(\'' + w + '\')" style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;padding:0.5rem 0.3rem;background:' + (sel ? 'rgba(200,168,75,0.25)' : 'rgba(13,16,12,0.45)') + ';border:1.5px solid ' + (sel ? 'rgba(200,168,75,0.7)' : 'rgba(122,179,86,0.2)') + ';color:' + (sel ? 'var(--gold)' : 'var(--cream)') + ';border-radius:6px;cursor:pointer;min-height:36px;letter-spacing:0.04em;">' + w + '</button>';
+  }
+  h += '</div>';
+  // Noun grid
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--sage);letter-spacing:0.1em;margin:0.7rem 0 0.3rem 0;">AND A PLACE</div>';
+  h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.3rem;max-height:200px;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.2rem;">';
+  for (var ni = 0; ni < LW_PATTERN_NOUNS.length; ni++) {
+    var n = LW_PATTERN_NOUNS[ni];
+    var nsel = (_patternNamerState.noun === n);
+    h += '<button onclick="window._lwPatternPickNoun(\'' + n + '\')" style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;padding:0.5rem 0.3rem;background:' + (nsel ? 'rgba(200,168,75,0.25)' : 'rgba(13,16,12,0.45)') + ';border:1.5px solid ' + (nsel ? 'rgba(200,168,75,0.7)' : 'rgba(122,179,86,0.2)') + ';color:' + (nsel ? 'var(--gold)' : 'var(--cream)') + ';border-radius:6px;cursor:pointer;min-height:36px;letter-spacing:0.04em;">' + n + '</button>';
+  }
+  h += '</div>';
+  // Action buttons
+  var canConfirm = _patternNamerState.adj && _patternNamerState.noun;
+  h += '<div style="display:flex;gap:0.5rem;margin-top:1rem;">';
+  h += '<button onclick="window._lwPatternCancel()" style="flex:1;padding:0.7rem;border-radius:8px;border:1.5px solid rgba(122,179,86,0.2);background:rgba(13,16,12,0.45);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;cursor:pointer;min-height:50px;letter-spacing:0.06em;">LATER</button>';
+  h += '<button onclick="window._lwPatternConfirm()" ' + (canConfirm ? '' : 'disabled') + ' style="flex:2;padding:0.7rem;border-radius:8px;border:1.5px solid ' + (canConfirm ? 'rgba(200,168,75,0.55)' : 'rgba(122,122,122,0.3)') + ';background:' + (canConfirm ? 'linear-gradient(180deg,rgba(46,38,18,0.7),rgba(28,24,12,0.85))' : 'rgba(46,46,46,0.3)') + ';color:' + (canConfirm ? 'var(--gold)' : 'rgba(160,160,160,0.5)') + ';font-family:Bebas Neue,sans-serif;font-size:0.75rem;cursor:' + (canConfirm ? 'pointer' : 'not-allowed') + ';min-height:50px;letter-spacing:0.06em;">\u2728 NAME IT</button>';
+  h += '</div>';
+  h += '</div>';
+  modal.innerHTML = h;
+  document.body.appendChild(modal);
+}
+
 function _finishDrop(defenderGame){
   if(!_pendingDrop)return;
   var pd=_pendingDrop;_pendingDrop=null;
@@ -35838,6 +36069,14 @@ function _finishDrop(defenderGame){
     setTimeout(function(){
       _toast('\ud83d\udd2e Phenotype revealed: '+_phn.name+' \u2014 '+_phn.flavor);
     },1800);
+  }
+  // Pattern detection — does this drop complete a Trefoil or Lining?
+  // Fires the naming modal asynchronously so it doesn't block the drop animation.
+  var _newPattern = _detectNewPattern(wild, _newWildIdx);
+  if (_newPattern) {
+    setTimeout(function(){
+      window._openPatternNamer(_newPattern);
+    }, 2400);
   }
   _addPlant({lat:la,lng:lo,hash:pl.hash,own:true,days:0,pollen:0,status:'Just Planted',defenderGame:defenderGame||'set'});
   if(_map)_map.panTo([la,lo],{animate:true,duration:0.5});
@@ -36601,9 +36840,17 @@ function _openHexInspector(zk){
         var _pestCols={1:'#d8a060',2:'#d87060',3:'#c04040'};
         _pestBadge=' \u00b7 <span style="color:'+_pestCols[ap.pestStage]+';font-weight:600;">\ud83e\udda0 '+_pestLabels[ap.pestStage]+'</span>';
       }
+      // Named pattern badge — shows the player-given name if this plant is part of one
+      var _patternBadge='';
+      if(window._lwPatternForHash){
+        var _pat=window._lwPatternForHash(ap.hash);
+        if(_pat&&_pat.name){
+          _patternBadge=' \u00b7 <span style="color:var(--gold);font-style:italic;">\u269c\ufe0f '+_pat.name+'</span>';
+        }
+      }
       var _rowCls=ap.pestStage>0?'hi-plant-row hi-plant-row-pest':'hi-plant-row';
       row.className=_rowCls;
-      row.innerHTML='<div class="hi-pr-svg">'+svgHtml+'</div><div class="hi-pr-info"><div class="hi-pr-name">'+name+'</div><div class="hi-pr-meta" style="color:'+gc+';">'+grade+' \u00b7 '+origin+_phenoBadge+_pestBadge+'</div></div>';
+      row.innerHTML='<div class="hi-pr-svg">'+svgHtml+'</div><div class="hi-pr-info"><div class="hi-pr-name">'+name+'</div><div class="hi-pr-meta" style="color:'+gc+';">'+grade+' \u00b7 '+origin+_phenoBadge+_pestBadge+_patternBadge+'</div></div>';
       (function(idx,pd){row.addEventListener('click',function(){_selectHexPlant(idx,pd);});})(j,ap);
       el.appendChild(row);
     }
