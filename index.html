@@ -32872,6 +32872,8 @@ function activate(){
   _phenoRetroScan();
   // Pest outbreak scan — gated by 12h cooldown so it only runs once a tab visit at most
   _pestScanIfDue();
+  // Drift seed scan — Conway B3 reproduction, 24h cooldown, 1 spawn per scan max
+  _driftSeedScanIfDue();
   // Load immediately from cache for fast UI
   _loadState();
   _updateUI();
@@ -35783,6 +35785,121 @@ function _pestScanIfDue(){
       },1500);
     }
   }catch(e){}
+}
+
+// ═══ DRIFT SEEDS — Conway B3 reproduction ═══
+// When 3+ stable plants form a triangle around an empty hex, the cluster
+// can spawn a feral seed that drifts to a nearby empty hex within 2 steps.
+// The seed inherits one trait from each parent, encoding the lineage.
+// Conditions (refined per spec):
+//   - 3+ adjacent occupied hexes (Conway B3+)
+//   - At least 2 of those plants are 7+ days old (stable cluster)
+//   - At least 2 different seasons in the parent set (forces diversity)
+//   - 25% roll per qualifying empty hex per scan
+// Cap: 1 drift seed per zone tick.
+function _driftSeedScanIfDue(){
+  try {
+    var lastScan = parseInt(localStorage.getItem('lw_drift_last_scan')||'0', 10);
+    // Daily cadence — one chance per day for the entire region
+    if (Date.now() - lastScan < 24*3600000) return;
+    var wild = _getWild();
+    if (!wild || wild.length < 3) return;
+    // Get all sources (own + shared) for adjacency math
+    var allSources = [];
+    for (var w = 0; w < wild.length; w++) {
+      if (wild[w] && wild[w].lat) allSources.push(wild[w]);
+    }
+    if (_sharedMarkers) {
+      for (var sh in _sharedMarkers) {
+        var sd = _sharedMarkers[sh] && _sharedMarkers[sh].data;
+        if (sd && sd.lat) allSources.push(sd);
+      }
+    }
+    if (allSources.length < 3) return;
+    // For each plant, check the 4 cardinal-and-diagonal neighbors of its
+    // zone for empty hexes that have 3+ source plants in their own neighborhood
+    var spawnedAny = false;
+    var checked = {};
+    for (var i = 0; i < wild.length; i++) {
+      var anchor = wild[i];
+      if (!anchor || !anchor.lat) continue;
+      // Try the 8 neighbor zones around the anchor
+      for (var dy = -1; dy <= 1; dy++) {
+        for (var dx = -1; dx <= 1; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          var tLat = anchor.lat + dy * ZONE_SIZE;
+          var tLng = anchor.lng + dx * ZONE_SIZE;
+          var tKey = _zoneKey(tLat, tLng);
+          if (checked[tKey]) continue;
+          checked[tKey] = true;
+          // Skip if zone already has a plant
+          var occupied = false;
+          var parents = [];
+          for (var p = 0; p < allSources.length; p++) {
+            var sp = allSources[p];
+            if (_zoneKey(sp.lat, sp.lng) === tKey) { occupied = true; break; }
+            // Adjacency check — within 1.5 zones on each axis
+            var sdLat = Math.abs(sp.lat - tLat);
+            var sdLng = Math.abs(sp.lng - tLng);
+            if (sdLat <= ZONE_SIZE * 1.5 && sdLng <= ZONE_SIZE * 1.5) parents.push(sp);
+          }
+          if (occupied) continue;
+          if (parents.length < 3) continue;
+          // Stability check: at least 2 parents 7+ days old
+          var stableCount = 0;
+          for (var ps = 0; ps < parents.length; ps++) {
+            var ageMs = Date.now() - (parents[ps].droppedAt || parents[ps].droppedAtMs || Date.now());
+            if (ageMs >= 7*86400000) stableCount++;
+          }
+          if (stableCount < 2) continue;
+          // Diversity check: at least 2 distinct seasons among parents
+          var seasonSet = {};
+          for (var ds = 0; ds < parents.length; ds++) {
+            if (typeof parents[ds].season === 'number') seasonSet[parents[ds].season] = true;
+          }
+          if (Object.keys(seasonSet).length < 2) continue;
+          // Roll
+          if (Math.random() >= 0.25) continue;
+          // Spawn a feral seed at this empty hex with mixed lineage
+          var driftHash = '';
+          // Build a child hash by interleaving bytes from each parent
+          for (var ci = 0; ci < 64; ci++) {
+            var pickP = parents[ci % parents.length];
+            driftHash += (pickP.hash || '0').charAt(ci);
+          }
+          if (!driftHash || driftHash.length !== 64) continue;
+          var feralEntry = {
+            lat: tLat,
+            lng: tLng,
+            hash: driftHash,
+            zone: tKey,
+            date: new Date().toISOString(),
+            origin: 'drift',
+            mystery: true,
+            collected: false,
+            parentHashes: parents.slice(0, 3).map(function(pp){return pp.hash;})
+          };
+          try {
+            var ferals = JSON.parse(localStorage.getItem('fg_ferals') || '[]');
+            ferals.push(feralEntry);
+            localStorage.setItem('fg_ferals', JSON.stringify(ferals));
+            if (window._addFeral) _addFeral(feralEntry);
+          } catch(e) {}
+          spawnedAny = true;
+          break; // One drift seed per anchor at most
+        }
+        if (spawnedAny) break;
+      }
+      if (spawnedAny) break; // One drift seed per scan at most
+    }
+    try { localStorage.setItem('lw_drift_last_scan', String(Date.now())); } catch(e) {}
+    if (spawnedAny) {
+      setTimeout(function(){
+        _toast('\ud83c\udf31 A drift seed has appeared. Three stable plants of different seasons cradled it into being.');
+      }, 2000);
+      if (window.LW_Log) LW_Log.write('drift_seed_spawned', { ts: Date.now() });
+    }
+  } catch(e) {}
 }
 
 // Retroactive sweep: pairs that already sit complementary-adjacent when
