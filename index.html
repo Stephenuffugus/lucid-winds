@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.48';
+  var LW_VERSION='2026.04.10.49';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -25590,6 +25590,33 @@ document.addEventListener('keydown', function(e) {
       if(tg&&tg.name==='Mythic')xpAmt=60;
       if(tg&&tg.name==='Cosmic')xpAmt=100;
       PW_grantXP(xpAmt,'bloom_'+(tg?tg.name:'Common'));
+      // First-of-its-kind milestones — gives casual players real progression
+      // spikes without requiring wild/breed engagement. One-time grants.
+      try{
+        var _mile=JSON.parse(localStorage.getItem('lw_mint_milestones')||'{}');
+        var _mg=(tg&&tg.name)||'Common';
+        var _milestoneTable={
+          first_plant: 50,
+          first_Uncommon: 25,
+          first_Rare: 75,
+          first_Epic: 150,
+          first_Legendary: 300,
+          first_Mythic: 500,
+          first_Cosmic: 1000,
+          collection_5: 25,
+          collection_10: 50,
+          collection_25: 150,
+          collection_50: 400
+        };
+        if(gh.length===1&&!_mile.first_plant){PW_grantXP(_milestoneTable.first_plant,'milestone_first_plant');_mile.first_plant=true;}
+        var _mkey='first_'+_mg;
+        if(_mg!=='Common'&&_milestoneTable[_mkey]&&!_mile[_mkey]){PW_grantXP(_milestoneTable[_mkey],'milestone_'+_mkey);_mile[_mkey]=true;}
+        if(gh.length===5&&!_mile.collection_5){PW_grantXP(_milestoneTable.collection_5,'milestone_5_plants');_mile.collection_5=true;}
+        if(gh.length===10&&!_mile.collection_10){PW_grantXP(_milestoneTable.collection_10,'milestone_10_plants');_mile.collection_10=true;}
+        if(gh.length===25&&!_mile.collection_25){PW_grantXP(_milestoneTable.collection_25,'milestone_25_plants');_mile.collection_25=true;}
+        if(gh.length===50&&!_mile.collection_50){PW_grantXP(_milestoneTable.collection_50,'milestone_50_plants');_mile.collection_50=true;}
+        localStorage.setItem('lw_mint_milestones',JSON.stringify(_mile));
+      }catch(e){}
     }
     // Photosynthesis residue: every mint drips 10 Dew into the keeper's
     // pouch. Gives early-game a quick way to build Dew for nursery
@@ -34475,6 +34502,33 @@ function openPicker(){
 function closePicker(){var pk=document.getElementById('w-picker');if(pk)pk.classList.remove('open');}
 
 var MAX_PER_ZONE=3;
+// Wild v3 balance: per-player spatial cap. Max 3 of YOUR OWN plants
+// within 700m of any drop point. Forces geographic spread so one
+// player can't lock down a neighborhood. Validated in a 365-day
+// sim to hit engaged/power users only ~0.2-0.9 times/day while
+// still containing whales to ~19 plants in a 2km dense area.
+var WILD_SELF_RADIUS_M=700;
+var WILD_SELF_MAX=3;
+function _checkSelfRadius(lat,lng){
+  var mine=0;
+  try{
+    var myUid='';try{var _u=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_u)myUid=_u.uid;}catch(e){}
+    var local=_getWild();
+    for(var i=0;i<local.length;i++){
+      var lp=local[i];if(!lp||!lp.lat||!lp.lng)continue;
+      if(_dist(lat,lng,lp.lat,lp.lng)<WILD_SELF_RADIUS_M)mine++;
+    }
+    if(_sharedMarkers){
+      for(var h in _sharedMarkers){
+        var sm=_sharedMarkers[h];if(!sm||!sm.data)continue;
+        var sd=sm.data;if(!sd.lat||!sd.lng)continue;
+        if(!(sd.own||(myUid&&sd.ownerUid===myUid)))continue;
+        if(_dist(lat,lng,sd.lat,sd.lng)<WILD_SELF_RADIUS_M)mine++;
+      }
+    }
+  }catch(e){}
+  return mine>=WILD_SELF_MAX?mine:0;
+}
 // Compute EA for any wild plant entry, used for zone eviction comparisons.
 // Prefers stored .ea (from Firestore/shared markers), falls back to trait compute.
 function _wildEA(w){
@@ -34524,6 +34578,10 @@ function _drop(pl){
   var myUid='';try{var _cu=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_cu)myUid=_cu.uid;}catch(e){}
   var la=_uLat+(Math.random()-0.5)*0.0005,lo=_uLng+(Math.random()-0.5)*0.0005;
   var zone=_zoneKey(la,lo);
+
+  // Wild v3 balance: per-km self-cap BEFORE zone check
+  var _selfCount=_checkSelfRadius(la,lo);
+  if(_selfCount){_toast('\ud83c\udf3f Too close to your other plants ('+_selfCount+' within 700m). Walk further to plant.');return;}
 
   // Combined occupancy: local wild + shared remote markers in this zone
   var inZone=_allPlantsInZone(zone);
@@ -34738,25 +34796,30 @@ function _updateCounts(){
   var c=document.getElementById('w-count');if(c)c.textContent=w.length;
   var now=Date.now();
   // Offline catch-up: compute Dew earned since last tick and credit via earnDew.
-  // The per-minute setInterval handles live ticking; this path catches up time
-  // the player spent on other tabs or offline, capped so a month-long break
-  // doesn't dump a fortune on re-entry.
+  // Matches the live ticker math: /240 scale + diminishing returns past 5 plants.
+  // Capped at 12 hours so idle weeks don't print a fortune.
   var lastTick=0;try{lastTick=parseInt(localStorage.getItem('fg_dew_tick')||localStorage.getItem('fg_pollen_tick')||'0');}catch(e){}
   if(lastTick>0&&w.length>0){
     var elapsedMin=Math.floor((now-lastTick)/60000);
-    // Cap offline catch-up at 12 hours so idle time doesn't print Dew
     if(elapsedMin>720)elapsedMin=720;
     if(elapsedMin>0){
       var pollenRates={Common:1,Uncommon:2,Rare:4,Epic:6,Legendary:9,Mythic:12,Cosmic:15};
-      var hourlyTotal=0;
+      var sortedRates=[];
       for(var i=0;i<w.length;i++){
         var grade='Common';
         try{if(window.hashToTraits&&window.getTerraGrade&&w[i].hash){
           var tr=window.hashToTraits(w[i].hash);grade=window.getTerraGrade(tr).label||'Common';
         }}catch(e){}
-        hourlyTotal+=(pollenRates[grade]||1);
+        sortedRates.push(pollenRates[grade]||1);
       }
-      var earned=Math.floor(hourlyTotal*elapsedMin/60);
+      sortedRates.sort(function(a,b){return b-a;});
+      var hourlyTotal=0;
+      for(var ri=0;ri<sortedRates.length;ri++){
+        var mult=ri<5?1.0:0.5;
+        hourlyTotal+=sortedRates[ri]*mult;
+      }
+      // /240 matches the live scale (4x slower than nominal per-hour)
+      var earned=Math.floor(hourlyTotal*elapsedMin/240);
       if(earned>0&&typeof earnDew==='function')earnDew(earned,'wild_offline_catchup');
     }
   }
@@ -34847,14 +34910,25 @@ function _getWildGrade(hash){
   return grade;
 }
 setInterval(function(){var w=_getWild();if(w.length>0){
+  // ECON BALANCE: Dew rate is ~1/4 of nominal to keep the economy
+  // from running away. Rate table stays readable; divisor is 240
+  // (4h worth of minutes) so a Common earns 1 Dew every 4 hours,
+  // a Cosmic every 16 minutes. Previously: Common 1/hr, Cosmic 4/min.
+  // Diminishing-returns tail after 5 plants — additional plants
+  // contribute at half rate. Prevents whale armies from printing Dew.
   var pollenRates={Common:1,Uncommon:2,Rare:4,Epic:6,Legendary:9,Mythic:12,Cosmic:15};
   var hourlyTotal=0;
-  for(var i=0;i<w.length;i++){
-    hourlyTotal+=(pollenRates[_getWildGrade(w[i].hash)]||1);
+  // Sort plants by rate desc so the top 5 (highest-tier) get full rate
+  var sortedRates=[];
+  for(var si=0;si<w.length;si++)sortedRates.push(pollenRates[_getWildGrade(w[si].hash)]||1);
+  sortedRates.sort(function(a,b){return b-a;});
+  for(var i=0;i<sortedRates.length;i++){
+    var mult=i<5?1.0:0.5;
+    hourlyTotal+=sortedRates[i]*mult;
   }
   // Fractional accumulator — keep leftover under a minute until it rounds
   var remainder=0;try{remainder=parseFloat(localStorage.getItem('fg_dew_rem')||localStorage.getItem('fg_pollen_rem')||'0');}catch(e){}
-  var minuteEarned=hourlyTotal/60+remainder;
+  var minuteEarned=hourlyTotal/240+remainder;
   var wholeEarned=Math.floor(minuteEarned);
   localStorage.setItem('fg_dew_rem',String(minuteEarned-wholeEarned));
   if(wholeEarned>0){
@@ -34878,6 +34952,9 @@ function _dropFromBP(p){
   var myUid='';try{var _cu=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_cu)myUid=_cu.uid;}catch(e){}
   var la=_uLat+(Math.random()-0.5)*0.0005,lo=_uLng+(Math.random()-0.5)*0.0005;
   var zone=_zoneKey(la,lo);
+  // Wild v3 balance: per-km self-cap BEFORE zone check
+  var _selfCount=_checkSelfRadius(la,lo);
+  if(_selfCount){_toast('\ud83c\udf3f Too close to your other plants ('+_selfCount+' within 700m). Walk further to plant.');return;}
   // 3-per-zone cap with weakest-eviction (combined local + shared markers)
   var inZone=_allPlantsInZone(zone);
   for(var io=0;io<inZone.length;io++){

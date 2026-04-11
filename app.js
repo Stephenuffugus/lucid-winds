@@ -17308,6 +17308,33 @@
       if(tg&&tg.name==='Mythic')xpAmt=60;
       if(tg&&tg.name==='Cosmic')xpAmt=100;
       PW_grantXP(xpAmt,'bloom_'+(tg?tg.name:'Common'));
+      // First-of-its-kind milestones — gives casual players real progression
+      // spikes without requiring wild/breed engagement. One-time grants.
+      try{
+        var _mile=JSON.parse(localStorage.getItem('lw_mint_milestones')||'{}');
+        var _mg=(tg&&tg.name)||'Common';
+        var _milestoneTable={
+          first_plant: 50,
+          first_Uncommon: 25,
+          first_Rare: 75,
+          first_Epic: 150,
+          first_Legendary: 300,
+          first_Mythic: 500,
+          first_Cosmic: 1000,
+          collection_5: 25,
+          collection_10: 50,
+          collection_25: 150,
+          collection_50: 400
+        };
+        if(gh.length===1&&!_mile.first_plant){PW_grantXP(_milestoneTable.first_plant,'milestone_first_plant');_mile.first_plant=true;}
+        var _mkey='first_'+_mg;
+        if(_mg!=='Common'&&_milestoneTable[_mkey]&&!_mile[_mkey]){PW_grantXP(_milestoneTable[_mkey],'milestone_'+_mkey);_mile[_mkey]=true;}
+        if(gh.length===5&&!_mile.collection_5){PW_grantXP(_milestoneTable.collection_5,'milestone_5_plants');_mile.collection_5=true;}
+        if(gh.length===10&&!_mile.collection_10){PW_grantXP(_milestoneTable.collection_10,'milestone_10_plants');_mile.collection_10=true;}
+        if(gh.length===25&&!_mile.collection_25){PW_grantXP(_milestoneTable.collection_25,'milestone_25_plants');_mile.collection_25=true;}
+        if(gh.length===50&&!_mile.collection_50){PW_grantXP(_milestoneTable.collection_50,'milestone_50_plants');_mile.collection_50=true;}
+        localStorage.setItem('lw_mint_milestones',JSON.stringify(_mile));
+      }catch(e){}
     }
     // Photosynthesis residue: every mint drips 10 Dew into the keeper's
     // pouch. Gives early-game a quick way to build Dew for nursery
