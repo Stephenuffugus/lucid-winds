@@ -3830,6 +3830,13 @@
 .hi-action-btn.hi-water-hold.holding .hi-water-fill{width:100%;transition:width 10s linear;}
 .hi-action-btn.hi-water-hold.held{border-color:rgba(122,179,86,0.85);box-shadow:0 0 22px rgba(122,179,86,0.6);}
 .hi-action-btn.hi-water-hold.held .hi-water-fill{background:linear-gradient(90deg,rgba(122,179,86,0.65),rgba(122,179,86,0.4));width:100%;transition:none;}
+.hi-action-btn.hi-prune-hold{position:relative;overflow:hidden;border-color:rgba(216,112,96,0.5);color:#e0a090;touch-action:none;-webkit-user-select:none;user-select:none;}
+.hi-action-btn.hi-prune-hold .hi-water-fill{background:linear-gradient(90deg,rgba(216,112,96,0.45),rgba(216,112,96,0.25));}
+.hi-action-btn.hi-prune-hold.holding{border-color:rgba(216,112,96,0.85);box-shadow:0 0 18px rgba(216,112,96,0.5);}
+.hi-action-btn.hi-prune-hold.holding .hi-water-fill{transition:width 5s linear;}
+.hi-action-btn.hi-prune-hold.held{border-color:rgba(122,179,86,0.85);box-shadow:0 0 22px rgba(122,179,86,0.6);}
+.hi-plant-row.hi-plant-row-pest{border-left:3px solid rgba(216,112,96,0.6);background:linear-gradient(90deg,rgba(216,112,96,0.08),transparent 60%);}
+.hi-plant-row.hi-plant-row-pest .hi-pr-name::after{content:' \01F9A0';font-size:0.8em;}
 .hi-search{padding:0.5rem 1rem 0.3rem;border-top:1px solid rgba(200,168,75,0.06);}
 .hi-search-btn{width:100%;min-height:56px;padding:0.5rem;border-radius:14px;cursor:pointer;border:2px solid rgba(122,179,86,0.25);background:linear-gradient(180deg,rgba(74,124,53,0.12),rgba(26,60,22,0.2));color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.12em;display:flex;align-items:center;justify-content:center;gap:10px;}
 .hi-search-btn:active{background:rgba(74,124,53,0.3);}
@@ -27187,6 +27194,7 @@ document.addEventListener('keydown', function(e) {
   // ═══ EXPOSE HASH FUNCTIONS ON WINDOW ═══
   window.earnHashes = earnHashes;
   window.getTotalHashes = getTotalHashes;
+  window.spendHashes = spendHashes;
   window.updateDashboard = updateDashboard;
 
   // ═══ DASHBOARD ═══
@@ -32520,6 +32528,8 @@ function activate(){
   _pruneWild();
   // Sweep for already-adjacent complementary pairs (one-time-per-activate)
   _phenoRetroScan();
+  // Pest outbreak scan — gated by 12h cooldown so it only runs once a tab visit at most
+  _pestScanIfDue();
   // Load immediately from cache for fast UI
   _loadState();
   _updateUI();
@@ -35236,6 +35246,96 @@ function _phenoRevealScan(wild,newIdx){
 }
 window._phenotypeOf=_phenotypeOf; // exposed so hex inspector + cards can read it
 
+// ═══ PEST OUTBREAK SYSTEM (Wild spec §5) ═══
+// 72hr cycle in dense areas (4+ plants in a zone). Detection runs once
+// per Wild activate (gated by a 12h scan cooldown). Stages derived from
+// pestedAt timestamp on the wild record:
+//   stage 0 = healthy (pestedAt = null)
+//   stage 1 = early    (< 48h)  — visible badge, no spread yet
+//   stage 2 = spreading (48-96h) — can infect same-zone neighbors
+//   stage 3 = critical  (> 96h) — vitality damage on each scan tick
+// Treatment: PRUNE button (5s hold + 3 hashes) clears the pest entirely.
+var PEST_STAGE_1_MS=48*3600000;
+var PEST_STAGE_2_MS=96*3600000;
+var PEST_SCAN_COOLDOWN_MS=12*3600000;
+var PEST_INFECT_PROB=0.30;
+var PEST_SPREAD_PROB=0.25;
+function _pestStageOf(plant){
+  if(!plant||!plant.pestedAt)return 0;
+  var age=Date.now()-(typeof plant.pestedAt==='number'?plant.pestedAt:Date.parse(plant.pestedAt));
+  if(isNaN(age)||age<0)return 1;
+  if(age>=PEST_STAGE_2_MS)return 3;
+  if(age>=PEST_STAGE_1_MS)return 2;
+  return 1;
+}
+window._pestStageOf=_pestStageOf;
+function _pestScanIfDue(){
+  try{
+    var lastScan=parseInt(localStorage.getItem('lw_pest_last_scan')||'0',10);
+    if(Date.now()-lastScan<PEST_SCAN_COOLDOWN_MS)return;
+    var wild=_getWild();
+    if(!wild||!wild.length)return;
+    var changed=false;
+    var newInfections=0;
+    // Build a zone map from local + shared so density counts everyone
+    var zoneCounts={};
+    function _bumpZone(lat,lng){
+      var k=_zoneKey(lat,lng);
+      zoneCounts[k]=(zoneCounts[k]||0)+1;
+    }
+    for(var w=0;w<wild.length;w++){if(wild[w]&&wild[w].lat)_bumpZone(wild[w].lat,wild[w].lng);}
+    if(_sharedMarkers){
+      for(var sh in _sharedMarkers){
+        var sd=_sharedMarkers[sh]&&_sharedMarkers[sh].data;
+        if(sd&&sd.lat)_bumpZone(sd.lat,sd.lng);
+      }
+    }
+    // Pass 1: process spread on already-infected own plants at stage 2
+    for(var i=0;i<wild.length;i++){
+      var p=wild[i];if(!p||!p.lat)continue;
+      var stage=_pestStageOf(p);
+      if(stage===2){
+        // Try to spread to a same-zone same-owner neighbor
+        var pk=_zoneKey(p.lat,p.lng);
+        for(var j=0;j<wild.length;j++){
+          if(j===i)continue;
+          var n=wild[j];if(!n||!n.lat)continue;
+          if(n.pestedAt)continue;
+          if(_zoneKey(n.lat,n.lng)!==pk)continue;
+          if(Math.random()<PEST_SPREAD_PROB){
+            n.pestedAt=Date.now();
+            changed=true;newInfections++;
+            break;
+          }
+        }
+      } else if(stage===3){
+        // Critical pests chew on the lifespan
+        if(p.decayAt){
+          p.decayAt=Math.max(Date.now()+3600000,(p.decayAt||Date.now())-12*3600000);
+          changed=true;
+        }
+      }
+    }
+    // Pass 2: seed new infections in dense zones (4+ plants) for healthy plants
+    for(var k=0;k<wild.length;k++){
+      var pp=wild[k];if(!pp||!pp.lat||pp.pestedAt)continue;
+      var zk=_zoneKey(pp.lat,pp.lng);
+      if((zoneCounts[zk]||0)<4)continue;
+      if(Math.random()<PEST_INFECT_PROB){
+        pp.pestedAt=Date.now();
+        changed=true;newInfections++;
+      }
+    }
+    if(changed)_saveWild(wild);
+    try{localStorage.setItem('lw_pest_last_scan',String(Date.now()));}catch(e){}
+    if(newInfections>0){
+      setTimeout(function(){
+        _toast('\ud83e\udda0 Pest outbreak! '+newInfections+' of your wild plants need attention. PRUNE them in the hex inspector.');
+      },1500);
+    }
+  }catch(e){}
+}
+
 // Retroactive sweep: pairs that already sit complementary-adjacent when
 // you open Wild get revealed immediately so existing storage isn't stuck.
 function _phenoRetroScan(){
@@ -36025,7 +36125,8 @@ function _openHexInspector(zk){
       var _eaVal=0;
       if(full&&typeof full.ea==='number'&&full.ea>0){_eaVal=full.ea;}
       else if(typeof _wildEA==='function'){try{_eaVal=_wildEA({hash:p.hash,ea:full&&full.ea,date:full&&full.date});}catch(e){_eaVal=0;}}
-      augmented.push({hash:p.hash,lat:p.lat,lng:p.lng,own:isOwn,wildBorn:full?!!full.wildBorn:false,ownerName:full?(full.ownerName||'Keeper'):'Unknown',ownerUid:full?(full.ownerUid||''):'',defenderGame:full?(full.defenderGame||'set'):'set',date:full?full.date:null,days:full&&full.date?Math.floor((Date.now()-new Date(full.date).getTime())/86400000):0,ea:_eaVal,phenoRevealed:full?!!full.phenoRevealed:false});
+      var _pestStage=full?_pestStageOf(full):0;
+      augmented.push({hash:p.hash,lat:p.lat,lng:p.lng,own:isOwn,wildBorn:full?!!full.wildBorn:false,ownerName:full?(full.ownerName||'Keeper'):'Unknown',ownerUid:full?(full.ownerUid||''):'',defenderGame:full?(full.defenderGame||'set'):'set',date:full?full.date:null,days:full&&full.date?Math.floor((Date.now()-new Date(full.date).getTime())/86400000):0,ea:_eaVal,phenoRevealed:full?!!full.phenoRevealed:false,pestStage:_pestStage,pestedAt:full?full.pestedAt:null});
     }
     // Display-level 3-per-zone cap — legacy drops from before the cap can
     // leave >3 plants in a zone. Client cannot delete remote plants (auth),
@@ -36061,7 +36162,16 @@ function _openHexInspector(zk){
         var _ph=window._phenotypeOf(ap.hash);
         _phenoBadge=' \u00b7 <span style="color:'+_ph.color+';font-weight:600;">\ud83d\udd2e '+_ph.name+'</span>';
       }
-      row.innerHTML='<div class="hi-pr-svg">'+svgHtml+'</div><div class="hi-pr-info"><div class="hi-pr-name">'+name+'</div><div class="hi-pr-meta" style="color:'+gc+';">'+grade+' \u00b7 '+origin+_phenoBadge+'</div></div>';
+      // Pest infection badge — color shifts with severity
+      var _pestBadge='';
+      if(ap.pestStage>0){
+        var _pestLabels={1:'INFECTED',2:'SPREADING',3:'CRITICAL'};
+        var _pestCols={1:'#d8a060',2:'#d87060',3:'#c04040'};
+        _pestBadge=' \u00b7 <span style="color:'+_pestCols[ap.pestStage]+';font-weight:600;">\ud83e\udda0 '+_pestLabels[ap.pestStage]+'</span>';
+      }
+      var _rowCls=ap.pestStage>0?'hi-plant-row hi-plant-row-pest':'hi-plant-row';
+      row.className=_rowCls;
+      row.innerHTML='<div class="hi-pr-svg">'+svgHtml+'</div><div class="hi-pr-info"><div class="hi-pr-name">'+name+'</div><div class="hi-pr-meta" style="color:'+gc+';">'+grade+' \u00b7 '+origin+_phenoBadge+_pestBadge+'</div></div>';
       (function(idx,pd){row.addEventListener('click',function(){_selectHexPlant(idx,pd);});})(j,ap);
       el.appendChild(row);
     }
@@ -36158,10 +36268,21 @@ function _selectHexPlant(idx,p){
   var _mulchTitle=_mFert>=1?'Spend 1 fertilizer for +24h lifespan + 1 EA':'Need 1 fertilizer (compost a greenhouse plant)';
   var _mulchCls=_mFert>=1?'':' locked';
   var _mulchBtn='<button class="hi-action-btn'+_mulchCls+'"'+(_mFert>=1?' onclick="window._hexAction(\'mulch\')"':'')+' title="'+_mulchTitle+'">&#127807; MULCH ('+_mFert+')</button>';
+  // PRUNE button — only when this plant has an active pest. 5s hold + 3 hashes.
+  var _pruneBtn='';
+  if(p.pestStage>0){
+    var _hashesNow=window.getTotalHashes?window.getTotalHashes():0;
+    if(_hashesNow>=3){
+      _pruneBtn='<button class="hi-action-btn hi-prune-hold" data-hold-action="prune" data-hold-ms="5000" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)" onpointerleave="window._waterHoldEnd(this)" title="Hold 5 seconds, costs 3 hashes"><span class="hi-water-fill"></span><span class="hi-water-label">\u2702 HOLD TO PRUNE (\u22923\u26a1)</span></button>';
+    } else {
+      _pruneBtn='<button class="hi-action-btn locked" title="Need 3 hashes to prune">\u2702 PRUNE (need 3\u26a1)</button>';
+    }
+  }
   if(isOwn){
     actions+='<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
     actions+=_inspectBtn;
     actions+=_mulchBtn;
+    if(_pruneBtn)actions+=_pruneBtn;
     actions+='<button class="hi-action-btn" onclick="window._hexAction(\'defense\')">&#128737; DEFENSE</button>';
   }else{
     // Wild v3: stranger plants no longer have HARVEST.
@@ -36172,8 +36293,9 @@ function _selectHexPlant(idx,p){
     actions+=_inspectBtn;
     // Stranger water requires a 10-second hold (spec §5: "10s hold")
     // — handlers attached to pointerdown/up so it works for touch + mouse.
-    actions+='<button class="hi-action-btn hi-water-hold" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)" onpointerleave="window._waterHoldEnd(this)" title="Hold for 10 seconds to water"><span class="hi-water-fill"></span><span class="hi-water-label">&#128167; HOLD TO WATER</span></button>';
+    actions+='<button class="hi-action-btn hi-water-hold" data-hold-action="water" data-hold-ms="10000" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)" onpointerleave="window._waterHoldEnd(this)" title="Hold for 10 seconds to water"><span class="hi-water-fill"></span><span class="hi-water-label">&#128167; HOLD TO WATER</span></button>';
     actions+=_mulchBtn;
+    if(_pruneBtn)actions+=_pruneBtn;
     actions+='<button class="hi-action-btn'+(_canTend?'':' locked')+'"'+(_canTend?' onclick="window._hexAction(\'tend\')"':'')+' title="'+(_canTend?'Tend this plant — gives it +6h and grants you Dew':'Unlocks at Keeper Level 5')+'">&#127807; TEND'+(_canTend?'':' &#128274;')+'</button>';
     actions+='<button class="hi-action-btn gold'+(_canCut?'':' locked')+'"'+(_canCut?' onclick="window._hexAction(\'cutting\')"':'')+' title="'+(_canCut?'Take a cutting — clone seed, parent loses 10% lifespan. One-time per plant':'Unlocks at Keeper Level 15')+'">&#9986; CUTTING'+(_canCut?'':' &#128274;')+'</button>';
   }
@@ -36190,16 +36312,22 @@ window._hexSeedSearch=function(){
   },500);
 };
 
-// Hold-to-water handlers — required for stranger water per spec §5 ("10s hold").
-// Stores the start timestamp + RAF id on the button itself; the fill bar
-// inside the button animates via CSS class while pressed. Releasing before
-// the threshold cancels with a toast; holding through fires water normally.
-var _WATER_HOLD_MS = 10000;
+// Generic press-and-hold handlers — used for both water (10s) and prune (5s).
+// The button declares which _hexAction to fire and how long via data attrs:
+//   data-hold-action="water"  data-hold-ms="10000"
+//   data-hold-action="prune"  data-hold-ms="5000"
+// CSS handles the fill bar animation tied to .holding class. Releasing
+// before the threshold cancels with a toast; holding through fires the
+// declared action via _hexAction so cooldowns/budgets stay centralized.
 window._waterHoldStart = function(btn, ev){
   if(!btn||btn._holdActive)return;
   if(ev&&ev.preventDefault)ev.preventDefault();
+  var holdMs=parseInt(btn.getAttribute('data-hold-ms')||'10000',10)||10000;
+  var holdAction=btn.getAttribute('data-hold-action')||'water';
   btn._holdActive=true;
   btn._holdStart=Date.now();
+  btn._holdMs=holdMs;
+  btn._holdAction=holdAction;
   btn.classList.add('holding');
   // Capture pointer so leaving the button while still pressed cancels cleanly
   try{if(ev&&ev.pointerId!=null&&btn.setPointerCapture)btn.setPointerCapture(ev.pointerId);}catch(e){}
@@ -36209,19 +36337,19 @@ window._waterHoldStart = function(btn, ev){
     btn.classList.remove('holding');
     btn.classList.add('held');
     setTimeout(function(){btn.classList.remove('held');},800);
-    // Fire the water action — same code path as a tapped own-plant water,
-    // routed through _hexAction so cooldowns + budgets stay in one place.
-    if(window._hexAction)window._hexAction('water');
-  },_WATER_HOLD_MS);
+    if(window._hexAction)window._hexAction(holdAction);
+  },holdMs);
 };
 window._waterHoldEnd = function(btn){
   if(!btn||!btn._holdActive)return;
   var elapsed=Date.now()-(btn._holdStart||0);
+  var holdMs=btn._holdMs||10000;
   btn._holdActive=false;
   if(btn._holdTimer){clearTimeout(btn._holdTimer);btn._holdTimer=null;}
   btn.classList.remove('holding');
-  if(elapsed<_WATER_HOLD_MS){
-    if(window._toast)window._toast('Released too soon — hold for 10 seconds.');
+  if(elapsed<holdMs){
+    var sec=Math.round(holdMs/1000);
+    if(window._toast)window._toast('Released too soon \u2014 hold for '+sec+' seconds.');
   }
 };
 
@@ -36370,6 +36498,37 @@ window._hexAction=function(action){
       setTimeout(function(){_toast('\ud83c\udfc5 STEWARD BADGE EARNED! 50 mulches \u2014 you\u2019re a friend to every garden.');},1800);
     }
     // Re-render the hex inspector so the vitality bar updates
+    if(_hexInspZone&&window.FG_Wild&&FG_Wild._openHexInspector){
+      setTimeout(function(){FG_Wild._openHexInspector(_hexInspZone);},200);
+    }
+  }else if(action==='prune'){
+    // Wild spec §5: "Prune: 5s hold, 3 hashes". Hold gesture is enforced
+    // by the button itself via _waterHoldStart/End — by the time this
+    // action fires, the player has already held for 5 seconds. We just
+    // verify the hash cost, clear the pest, and toast the result.
+    if(_uLat&&p.lat){var _prDist=_dist(_uLat,_uLng,p.lat,p.lng);if(_prDist>COLLECT_RANGE){_toast('Walk closer! '+Math.round(_prDist)+'m away.');return;}}
+    var _hashTotal=window.getTotalHashes?window.getTotalHashes():0;
+    if(_hashTotal<3){_toast('Need 3 hashes to prune. Play a game to earn more.');return;}
+    if(window.spendHashes)window.spendHashes(3);
+    var _pruned=false;
+    try{
+      var _localWild=_getWild();
+      for(var _pwi=0;_pwi<_localWild.length;_pwi++){
+        if(_localWild[_pwi].hash===p.hash){
+          _localWild[_pwi].pestedAt=null;
+          _pruned=true;break;
+        }
+      }
+      if(_pruned)_saveWild(_localWild);
+      if(!_pruned&&_sharedMarkers&&_sharedMarkers[p.hash]&&_sharedMarkers[p.hash].data){
+        _sharedMarkers[p.hash].data.pestedAt=null;
+        _pruned=true;
+      }
+    }catch(e){}
+    if(window.PW_grantXP)PW_grantXP(8,'wild_prune');
+    if(window.LW_Log)window.LW_Log.write('wild_pruned',{hash:p.hash});
+    if(window._haptic)_haptic('bloom');
+    _toast('\u2702\ufe0f Pruned. Pest cleared. \u2796 3 hashes \u00b7 +8 XP');
     if(_hexInspZone&&window.FG_Wild&&FG_Wild._openHexInspector){
       setTimeout(function(){FG_Wild._openHexInspector(_hexInspZone);},200);
     }
