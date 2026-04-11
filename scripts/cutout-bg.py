@@ -30,7 +30,8 @@ def is_bg(p):
         return True
     brightness = (r + g + b) / 3
     chroma = max(r, g, b) - min(r, g, b)
-    return brightness >= 225 and chroma <= 22
+    # Tightened: catch warm cream rims as well as pure white
+    return brightness >= 215 and chroma <= 30
 
 
 def cutout(src_path, dst_path):
@@ -70,23 +71,33 @@ def cutout(src_path, dst_path):
         for x in range(w):
             op[x, y] = (0, 0, 0, 0) if visited[y][x] else px[x, y]
 
-    halo = 0
-    for y in range(h):
-        for x in range(w):
-            if visited[y][x]:
-                continue
-            r, g, b, a = op[x, y]
-            brightness = (r + g + b) / 3
-            if brightness < 215:
-                continue
-            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1),
-                           (1, 1), (-1, -1), (1, -1), (-1, 1)):
-                nx, ny = x + dx, y + dy
-                if 0 <= nx < w and 0 <= ny < h and visited[ny][nx]:
-                    op[x, y] = (r, g, b, a // 2)
-                    halo += 1
-                    break
-    print(f"Halo softened: {halo}")
+    # Two-pass halo cleanup: any pixel adjacent to the cleared region that's
+    # still bright AND low-chroma gets faded out. Repeated once to catch the
+    # second-ring rim that single-pass softening leaves behind.
+    for _pass in range(2):
+        halo = 0
+        for y in range(h):
+            for x in range(w):
+                if visited[y][x]:
+                    continue
+                r, g, b, a = op[x, y]
+                brightness = (r + g + b) / 3
+                chroma = max(r, g, b) - min(r, g, b)
+                if brightness < 200 or chroma > 35:
+                    continue
+                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1),
+                               (1, 1), (-1, -1), (1, -1), (-1, 1)):
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < w and 0 <= ny < h and visited[ny][nx]:
+                        # Drop alpha aggressively and mark this pixel as bg too
+                        # so the next pass treats it as cleared territory
+                        op[x, y] = (r, g, b, a // 4)
+                        if a // 4 < 8:
+                            visited[y][x] = True
+                            op[x, y] = (0, 0, 0, 0)
+                        halo += 1
+                        break
+        print(f"Halo pass {_pass+1} softened: {halo}")
 
     bbox = out.getbbox()
     trimmed = out.crop(bbox) if bbox else out

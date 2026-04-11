@@ -27957,7 +27957,12 @@ document.addEventListener('keydown', function(e) {
     // plant has a path to the deep-dive (DNA, portrait, haiku, mint record).
     var _hasLineage = (plant.parentAHash || plant.generation > 1 || plant.mutated || plant.compostLayers);
     var _detailsLabel = _hasLineage ? '⬡ LINEAGE & DETAILS' : '⬡ DETAILS';
-    html += '<button class="cb-details-btn" onclick="event.stopPropagation();window._openPlantDetails(\'' + plant.hash + '\');return false;">' + _detailsLabel + '</button>';
+    // Inline onclick + stopPropagation has been unreliable on iOS Safari when
+    // the button sits inside a transform:rotateY parent. We attach the click
+    // listener via JS after innerHTML below so stopImmediatePropagation actually
+    // takes effect, and we set a data-hash attribute so the listener can read
+    // the plant hash without inline string concatenation.
+    html += '<button class="cb-details-btn" data-pdh="' + plant.hash + '">' + _detailsLabel + '</button>';
     html += '<div class="cb-hash" style="margin-top:0.4rem;padding-top:0.3rem;border-top:1px solid rgba(74,124,53,0.06);">' + plant.hash + '</div>';
     html += '<div class="cb-date" style="margin-top:0.1rem;">Minted ' + (plant.date || '') + dateSuffix + '</div>';
     html += '<div class="cb-nameplate" style="position:absolute;bottom:8%;left:10%;right:10%;"><span class="cb-name" style="color:' + sColor + ';">' + name + '</span></div>';
@@ -27965,6 +27970,22 @@ document.addEventListener('keydown', function(e) {
 
     backEl.innerHTML = html;
     backEl.classList.remove('cs-back-lazy');
+    // Attach the details-button listener via JS so stopImmediatePropagation
+    // actually fires before the wrap's onclick can trigger a flip. Inline
+    // onclick + stopPropagation has been unreliable across iOS Safari versions.
+    var _detailsBtn = backEl.querySelector('.cb-details-btn');
+    if (_detailsBtn) {
+      _detailsBtn.addEventListener('click', function(ev) {
+        if (ev) {
+          if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+          if (ev.stopPropagation) ev.stopPropagation();
+          if (ev.preventDefault) ev.preventDefault();
+        }
+        var ph = this.getAttribute('data-pdh');
+        if (ph && window._openPlantDetails) window._openPlantDetails(ph);
+        return false;
+      }, true); // capture phase — fires BEFORE bubble-phase parent handlers
+    }
   }
 
   // ── Card flip handler: first-flip rarity reveal ────────────────────
@@ -28569,20 +28590,22 @@ document.addEventListener('keydown', function(e) {
     if (!pot) return false;
     var bal = window.getTotalDew ? window.getTotalDew() : 0;
     if (bal < pot.cost) {
-      if (window._toast) _toast('Need ' + pot.cost + ' Dew (have ' + bal + ').');
+      if (window._toast) window._toast('Need ' + pot.cost + ' Dew (have ' + bal + ').');
       return false;
     }
     if (!window.spendDew(pot.cost)) {
-      if (window._toast) _toast('Could not spend Dew.');
+      if (window._toast) window._toast('Could not spend Dew.');
       return false;
     }
     var inv = loadInventory();
     inv.pots[potId] = (inv.pots[potId] || 0) + 1;
     inv.lastUpdated = new Date().toISOString();
     saveInventory(inv, true);
-    if (window._toast) _toast(pot.icon + ' Bought ' + pot.name + '. \u2796 ' + pot.cost + ' Dew');
-    if (window._haptic) _haptic('bloom');
+    if (window._toast) window._toast(pot.icon + ' Bought ' + pot.name + '. \u2796 ' + pot.cost + ' Dew');
+    if (window._haptic) window._haptic('bloom');
     if (window.renderNursery) renderNursery();
+    // Refresh the pot shop modal so the owned count updates without close/reopen
+    if (document.getElementById('lw-pot-shop')) window._openPotShop();
     return true;
   };
   window.lwApplyPot = function(seedId, potId) {
@@ -28590,15 +28613,15 @@ document.addEventListener('keydown', function(e) {
     if (!pot) return false;
     var inv = loadInventory();
     if ((inv.pots[potId] || 0) <= 0) {
-      if (window._toast) _toast('No ' + pot.name + ' in inventory.');
+      if (window._toast) window._toast('No ' + pot.name + ' in inventory.');
       return false;
     }
     var nur;
     try { nur = JSON.parse(_secureGet('sws_nursery') || localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur = []; }
     var idx = nur.findIndex(function(s){return s.id===seedId;});
-    if (idx < 0) { if (window._toast) _toast('Seed not found.'); return false; }
+    if (idx < 0) { if (window._toast) window._toast('Seed not found.'); return false; }
     if (nur[idx].pot) {
-      if (window._toast) _toast('This seed already has a pot. Pots are single-use.');
+      if (window._toast) window._toast('This seed already has a pot. Pots are single-use.');
       return false;
     }
     nur[idx].pot = potId;
@@ -28606,8 +28629,8 @@ document.addEventListener('keydown', function(e) {
     inv.lastUpdated = new Date().toISOString();
     try { _throttledSave('sws_nursery', JSON.stringify(nur), true); } catch(e) {}
     saveInventory(inv, true);
-    if (window._toast) _toast(pot.icon + ' ' + pot.name + ' applied to seed.');
-    if (window._haptic) _haptic('bloom');
+    if (window._toast) window._toast(pot.icon + ' ' + pot.name + ' applied to seed.');
+    if (window._haptic) window._haptic('bloom');
     if (window.renderNursery) renderNursery();
     if (window.syncVaultToCloud) setTimeout(syncVaultToCloud, 500);
     return true;
@@ -30492,7 +30515,9 @@ document.addEventListener('keydown', function(e) {
         }
       });
     } else {
-      _throttledSave('sws_nursery', JSON.stringify(nur)); // throttled (Phase 27)
+      // Force-flush so renderNursery sees the new waterLog (same fix as
+      // handleWaterSeed). Without it, the pip stays unlit until next render.
+      _throttledSave('sws_nursery', JSON.stringify(nur), true);
       renderNursery();
       _setNurMsg('⚡ 21 Dew spent. Cooldown bypassed — ' + seed.waterLog.length + '/3 days done.');
       _haptic('sync');
@@ -31414,6 +31439,9 @@ document.addEventListener('keydown', function(e) {
       phenoRevealed:   _ls('lw_pheno_revealed') || {},
       ferals:          _ls('fg_ferals')       || [],
       pollen:          parseInt((window._secureGet?window._secureGet('fg_pollen'):localStorage.getItem('fg_pollen'))||'0'),
+      // Keeper XP — the live source of truth for player level. Was missing
+      // from the cloud payload, causing level resets on fresh sessions.
+      keeperXP:        parseInt(localStorage.getItem('pw_xp')||'0'),
       lastSync: new Date().toISOString(),
       clientVersion: 'set-40'
     };
@@ -31467,6 +31495,16 @@ document.addEventListener('keydown', function(e) {
     }
     if (data.ferals && data.ferals.length) _ss('fg_ferals', data.ferals);
     if (typeof data.pollen === 'number') { if(window._secureSet){window._secureSet('fg_pollen',String(data.pollen));}else{localStorage.setItem('fg_pollen', String(data.pollen));} }
+    // Keeper XP — restore from cloud, prefer the higher of cloud vs local so
+    // we never DROP a player's level on hydration.
+    if (typeof data.keeperXP === 'number' && data.keeperXP > 0) {
+      try {
+        var localXP = parseInt(localStorage.getItem('pw_xp')||'0',10);
+        var cloudXP = data.keeperXP;
+        var keepXP = Math.max(localXP, cloudXP);
+        localStorage.setItem('pw_xp', String(keepXP));
+      } catch(e) {}
+    }
     _vaultHydrated = true;
     console.log('[Vault] Hydrated. Cloud:', cGH.length, '| Merged:', mGH.length);
     if (window.renderGreenhouse) renderGreenhouse();
@@ -31475,6 +31513,8 @@ document.addEventListener('keydown', function(e) {
     if (window.renderRecords)    renderRecords();
     // Hydrate backpack from cloud
     if (data.backpack && window.FG_Backpack && FG_Backpack.loadFromCloud) FG_Backpack.loadFromCloud(data.backpack);
+    // Force keeper bar re-render so the just-hydrated XP/level is visible
+    if (window.PW_UI && PW_UI.updateKeeperBar) PW_UI.updateKeeperBar();
     return mGH;
   }
 
