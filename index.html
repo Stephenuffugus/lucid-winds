@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.61';
+  var LW_VERSION='2026.04.10.62';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -47388,13 +47388,15 @@ window._openCompendiumUI=function(){
         } catch(e) {}
       }
       var _tb = window.TRAIT_BANK;
+      // Defaults verified against TRAIT_BANK array sizes at index.html:9622+
+      // (awk count: pots=60, stems=24, leaves=71, flowers=71, auras=36, substrates=71)
       var _rows = [
-        { label: 'LEAF TYPES',     icon: '\ud83c\udf43', seen: Object.keys(_seenT.leaves).length,      total: (_tb.leaves||[]).length || 60 },
+        { label: 'LEAF TYPES',     icon: '\ud83c\udf43', seen: Object.keys(_seenT.leaves).length,      total: (_tb.leaves||[]).length || 71 },
         { label: 'STEM PATTERNS',  icon: '\ud83c\udf3f', seen: Object.keys(_seenT.stems).length,       total: (_tb.stems||[]).length || 24 },
         { label: 'VESSEL TYPES',   icon: '\ud83c\udffa', seen: Object.keys(_seenT.pots).length,        total: (_tb.pots||[]).length || 60 },
         { label: 'BLOOM SHAPES',   icon: '\ud83c\udf38', seen: Object.keys(_seenT.blooms).length,      total: (_tb.flowers||[]).length || 71 },
-        { label: 'AURAS',          icon: '\u2728',       seen: Object.keys(_seenT.auras).length,       total: 21 },
-        { label: 'SUBSTRATES',     icon: '\ud83e\udea8', seen: Object.keys(_seenT.substrates).length,  total: 30 }
+        { label: 'AURAS',          icon: '\u2728',       seen: Object.keys(_seenT.auras).length,       total: (_tb.auras||[]).length || 36 },
+        { label: 'SUBSTRATES',     icon: '\ud83e\udea8', seen: Object.keys(_seenT.substrates).length,  total: (_tb.substrates||[]).length || 71 }
       ];
       h+='<div style="margin-bottom:0.8rem;">';
       h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.4rem;">\ud83c\udf31 TRAIT DIVERSITY</div>';
@@ -47504,13 +47506,18 @@ window._openCompendiumUI=function(){
         var bT = (_unl[b] && _unl[b].unlockedAt) ? new Date(_unl[b].unlockedAt).getTime() : 0;
         return bT - aT;
       });
+      // Verified against ACHIEVEMENTS array in index.html — all 29 IDs
+      // covered. Unknown IDs fall through to the ✨ fallback.
       var _achIcons = {
         first_plant:'\ud83c\udf31', full_row:'\ud83c\udfdb', half_house:'\ud83c\udfe0', full_house:'\ud83c\udff0',
         first_rare:'\u2b50', first_epic:'\ud83d\udc8e', first_legend:'\ud83d\udc51', first_cosmic:'\ud83c\udf0c',
+        beholder:'\ud83d\udc41\ufe0f', first_mythic_c:'\ud83d\udd2e',
         first_cross:'\ud83e\uddec', breed_5:'\ud83e\uddea', breed_20:'\ud83d\udd2c', chimera_gen3:'\ud83d\udc09',
         first_compost:'\ud83c\udf42', compost_10:'\u267b\ufe0f', compost_crown:'\ud83d\udc78', compost_deep:'\ud83c\udf33',
         streak_7:'\ud83d\udd25', streak_30:'\ud83d\udd25', streak_100:'\ud83d\udd25',
-        spent_100:'\ud83d\udcb8', spent_1000:'\ud83d\udcb0', all_seasons:'\ud83c\udf0d'
+        spent_100:'\ud83d\udcb8', spent_1000:'\ud83d\udcb0', all_seasons:'\ud83c\udf0d',
+        first_companion:'\ud83d\udc3e', first_mutation:'\ud83e\uddec', first_synergy:'\u2728', triple_synergy:'\ud83c\udf1f',
+        glitch_owner:'\ud83d\udcfa'
       };
       h+='<div style="display:flex;flex-wrap:wrap;gap:5px;">';
       for (var _ak=0; _ak<Math.min(_unlList.length, 18); _ak++) {
