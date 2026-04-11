@@ -35269,6 +35269,19 @@ function _pestStageOf(plant){
   return 1;
 }
 window._pestStageOf=_pestStageOf;
+// "4+ plants in 3 hexes" per spec — that's a cluster across adjacent
+// hexes, NOT one hex (we cap zones at 3 plants). Helper sums the target
+// zone + its 8 neighbors, returning the cluster density.
+function _zoneClusterCount(lat,lng,zoneCounts){
+  var total=0;
+  for(var dy=-1;dy<=1;dy++){
+    for(var dx=-1;dx<=1;dx++){
+      var k=_zoneKey(lat+dy*ZONE_SIZE,lng+dx*ZONE_SIZE);
+      total+=(zoneCounts[k]||0);
+    }
+  }
+  return total;
+}
 function _pestScanIfDue(){
   try{
     var lastScan=parseInt(localStorage.getItem('lw_pest_last_scan')||'0',10);
@@ -35277,7 +35290,7 @@ function _pestScanIfDue(){
     if(!wild||!wild.length)return;
     var changed=false;
     var newInfections=0;
-    // Build a zone map from local + shared so density counts everyone
+    // Build a per-zone count from local + shared so density covers everyone
     var zoneCounts={};
     function _bumpZone(lat,lng){
       var k=_zoneKey(lat,lng);
@@ -35290,18 +35303,19 @@ function _pestScanIfDue(){
         if(sd&&sd.lat)_bumpZone(sd.lat,sd.lng);
       }
     }
-    // Pass 1: process spread on already-infected own plants at stage 2
+    // Pass 1: process spread on already-infected own plants at stage 2.
+    // Spread now reaches neighbor hexes (not just same zone) since zones
+    // cap at 3 plants and the spec models pests as a cluster phenomenon.
     for(var i=0;i<wild.length;i++){
       var p=wild[i];if(!p||!p.lat)continue;
       var stage=_pestStageOf(p);
       if(stage===2){
-        // Try to spread to a same-zone same-owner neighbor
-        var pk=_zoneKey(p.lat,p.lng);
         for(var j=0;j<wild.length;j++){
           if(j===i)continue;
-          var n=wild[j];if(!n||!n.lat)continue;
-          if(n.pestedAt)continue;
-          if(_zoneKey(n.lat,n.lng)!==pk)continue;
+          var n=wild[j];if(!n||!n.lat||n.pestedAt)continue;
+          // Adjacent = same zone OR within one zone-step on each axis
+          var dLat=Math.abs(n.lat-p.lat),dLng=Math.abs(n.lng-p.lng);
+          if(dLat>ZONE_SIZE*1.5||dLng>ZONE_SIZE*1.5)continue;
           if(Math.random()<PEST_SPREAD_PROB){
             n.pestedAt=Date.now();
             changed=true;newInfections++;
@@ -35309,18 +35323,19 @@ function _pestScanIfDue(){
           }
         }
       } else if(stage===3){
-        // Critical pests chew on the lifespan
         if(p.decayAt){
           p.decayAt=Math.max(Date.now()+3600000,(p.decayAt||Date.now())-12*3600000);
           changed=true;
         }
       }
     }
-    // Pass 2: seed new infections in dense zones (4+ plants) for healthy plants
+    // Pass 2: seed new infections in dense 3-hex CLUSTERS (target zone +
+    // 8 neighbors >= 4 plants total). Capped per scan to avoid runaway.
+    var maxNew=Math.max(1,Math.floor(wild.length*0.2));
     for(var k=0;k<wild.length;k++){
+      if(newInfections>=maxNew)break;
       var pp=wild[k];if(!pp||!pp.lat||pp.pestedAt)continue;
-      var zk=_zoneKey(pp.lat,pp.lng);
-      if((zoneCounts[zk]||0)<4)continue;
+      if(_zoneClusterCount(pp.lat,pp.lng,zoneCounts)<4)continue;
       if(Math.random()<PEST_INFECT_PROB){
         pp.pestedAt=Date.now();
         changed=true;newInfections++;
