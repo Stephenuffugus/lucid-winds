@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.60';
+  var LW_VERSION='2026.04.10.61';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -47244,26 +47244,30 @@ window._openCompendiumUI=function(){
   // that override the normal companion slot via hb(18) in hashToTraits.
   // Discovered ones show full lore; undiscovered are cryptic riddles.
   try {
+    // Verified against hashToTraits mythByte table (index.html:7028+) and
+    // TRAIT_BANK.companions idx 32-38 (index.html:9852+). Prior copy read
+    // stale CLAUDE.md and listed Starfall/Storm Wraith/etc — those names
+    // are now auras, not companions. Real mythic+ creatures at these idx:
     var _mcDefs = [
-      { idx: 32, name: 'The Toad',               tier: 'Mythic',    icon: '\ud83d\udc38', color: '#A87285',
-        lore: 'Croaks beneath three leaves. Remembers every storm.',
-        riddle: 'A keeper wet and slow, who knows the rain before it falls.' },
-      { idx: 33, name: 'The Phoenix',            tier: 'Mythic',    icon: '\ud83d\udd25', color: '#A87285',
-        lore: 'Wings of ember. Returns from its own ashes with every season.',
+      { idx: 32, name: 'The Toad',           tier: 'Mythic',    icon: '\ud83d\udc38', color: '#A87285',
+        lore: 'Croaks beneath three leaves. Calls rain when the plant goes dry.',
+        riddle: 'A keeper wet and slow, who knows the storm before it breaks.' },
+      { idx: 33, name: 'The Phoenix',        tier: 'Mythic',    icon: '\ud83d\udd25', color: '#A87285',
+        lore: 'Wings of ember. Grants herd immunity — one phoenix guards every nearby bloom.',
         riddle: 'Gold feathers burn and fall, yet rise again before the dawn.' },
-      { idx: 34, name: 'Bioluminescent Pulse',   tier: 'Legendary', icon: '\ud83d\udca1', color: '#C8A84B',
-        lore: 'A rhythm inside the stem. Light breathing with the moon.',
-        riddle: 'No creature\u2014 only a glow that pulses like a heart.' },
-      { idx: 35, name: 'Ancient Rune Field',     tier: 'Legendary', icon: '\u03a9',        color: '#C8A84B',
-        lore: 'Stones etched before the first keeper walked the grove.',
-        riddle: 'Marks older than memory, waiting to be read again.' },
-      { idx: 36, name: 'Storm Wraith',           tier: 'Legendary', icon: '\u26c8\ufe0f', color: '#C8A84B',
-        lore: 'A shape in the thunder. Guards the plant when skies break.',
-        riddle: 'You see it only in the lightning, and only for one breath.' },
-      { idx: 37, name: 'Starfall',               tier: 'Legendary', icon: '\u2604\ufe0f', color: '#C8A84B',
-        lore: 'A sliver of a cosmic bloom that fell through the canopy.',
-        riddle: 'It arrived from somewhere higher than any branch.' },
-      { idx: 38, name: 'The Beholder',           tier: 'Cosmic',    icon: '\ud83d\udc41\ufe0f', color: '#D94FFF',
+      { idx: 34, name: 'Baby Mammoth',       tier: 'Legendary', icon: '\ud83e\udd8f', color: '#C8A84B',
+        lore: 'A woolly calf that ignores seasonal stress. Permafrost walks with it.',
+        riddle: 'Small but warm enough to survive every winter it meets.' },
+      { idx: 35, name: 'Raccoon',            tier: 'Legendary', icon: '\ud83e\udd9d', color: '#C8A84B',
+        lore: 'A scavenger of the grove. Banks lost fertilizer after invasions.',
+        riddle: 'Nimble fingers in the dark, finding what others left behind.' },
+      { idx: 36, name: 'Great Blue Heron',   tier: 'Legendary', icon: '\ud83e\udea6', color: '#C8A84B',
+        lore: 'A precision strike from the shallows. Doubles the harvest for the plant it guards.',
+        riddle: 'One step and it has already caught what it came for.' },
+      { idx: 37, name: 'Garden Spider',      tier: 'Legendary', icon: '\ud83d\udd77\ufe0f', color: '#C8A84B',
+        lore: 'A silent weaver of silk traps. Catches wayward pollen in her web.',
+        riddle: 'Patient as dew, she builds a home between the leaves.' },
+      { idx: 38, name: 'The Beholder',       tier: 'Cosmic',    icon: '\ud83d\udc41\ufe0f', color: '#D94FFF',
         lore: 'An eye older than the grove. It sees every plant, present and past.',
         riddle: 'They say it watches, unblinking, from beneath the first stone.' }
     ];
