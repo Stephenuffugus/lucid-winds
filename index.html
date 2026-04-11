@@ -28817,6 +28817,23 @@ document.addEventListener('keydown', function(e) {
       html += '</div>';
     }
 
+    // Phenotype reveal status — pulls from the per-hash registry that
+    // FG_Wild writes to whenever a complementary-season pair is detected
+    if (window.lwPhenoIsRevealed && window._phenotypeOf) {
+      var _isRev = window.lwPhenoIsRevealed(plant.hash);
+      var _phen = window._phenotypeOf(plant.hash);
+      html += '<div class="pdm-section">';
+      html += '<div class="pdm-section-title">PHENOTYPE</div>';
+      if (_isRev) {
+        html += '<div class="pdm-row"><span class="pdm-k" style="color:' + _phen.color + ';">\ud83d\udd2e Revealed</span><span class="pdm-v" style="color:' + _phen.color + ';font-weight:600;">' + _phen.name + '</span></div>';
+        html += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.7rem;color:var(--cream);margin-top:0.3rem;line-height:1.4;">' + _phen.flavor + '</div>';
+      } else {
+        html += '<div class="pdm-row"><span class="pdm-k">Status</span><span class="pdm-v" style="color:var(--gold);">\u2753 Sealed</span></div>';
+        html += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);margin-top:0.3rem;line-height:1.4;">Plant in the Wild within ~200m of a complementary-season plant (Spring\u2194Autumn or Summer\u2194Winter) to reveal.</div>';
+      }
+      html += '</div>';
+    }
+
     html += '<div class="pdm-section pdm-meta">';
     html += '<div class="pdm-section-title">MINT RECORD</div>';
     html += '<div class="pdm-row"><span class="pdm-k">Minted</span><span class="pdm-v">' + (plant.date || 'unknown') + '</span></div>';
@@ -31198,6 +31215,18 @@ document.addEventListener('keydown', function(e) {
     // Restore wild tab state from cloud
     if (data.wildPlants && data.wildPlants.length) { if(window._secureSet){window._secureSet('fg_wild_plants',data.wildPlants);}else{_ss('fg_wild_plants', data.wildPlants);} }
     if (data.wildDropState) { if(window._secureSet){window._secureSet('fg_w_d',data.wildDropState);}else{_ss('fg_w_d', data.wildDropState);} }
+    if (data.phenoRevealed && typeof data.phenoRevealed === 'object') {
+      // Merge cloud registry with local — union of keys (reveals are sticky)
+      try {
+        var localRegRaw = localStorage.getItem('lw_pheno_revealed');
+        var localReg = localRegRaw ? JSON.parse(localRegRaw) : {};
+        var cloudReg = data.phenoRevealed;
+        var merged = {};
+        for (var lk in localReg) if (localReg[lk]) merged[lk] = true;
+        for (var ck in cloudReg) if (cloudReg[ck]) merged[ck] = true;
+        localStorage.setItem('lw_pheno_revealed', JSON.stringify(merged));
+      } catch(e) {}
+    }
     if (data.wildSteps && typeof data.wildSteps === 'object') {
       // Merge: take cloud lifetime if it's higher (resists local-storage clears)
       try {
@@ -45224,7 +45253,10 @@ function _info(plantOrHash){
   var sea=t&&window.getSeasonInfo?window.getSeasonInfo(t,plant):null;
   var ea=t&&window.computeEA?window.computeEA(t,0,plant):0;
   var nm=typeof window.getPlantName==='function'?window.getPlantName(hash):hash.slice(0,8);
-  return {t:t,tg:tg,sea:sea,ea:ea,nm:nm,season:t?t.season%4:0};
+  // Phenotype state from the global registry — reveals follow the hash
+  var phenoRevealed=!!(window.lwPhenoIsRevealed&&window.lwPhenoIsRevealed(hash));
+  var phenotype=phenoRevealed&&window._phenotypeOf?window._phenotypeOf(hash):null;
+  return {t:t,tg:tg,sea:sea,ea:ea,nm:nm,season:t?t.season%4:0,phenoRevealed:phenoRevealed,phenotype:phenotype};
 }
 
 function _renderCard(el,plant,role,side){
@@ -45260,7 +45292,11 @@ function _renderCard(el,plant,role,side){
     h+='<div class="bs-meta"><span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">'+(i.tg?i.tg.icon:'')+' '+(i.tg?i.tg.name:'')+'</span>';
     h+='<span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">EA '+i.ea+'</span>';
     h+='<span style="color:var(--muted);">'+_seasonEmblems[i.season]+' G'+(i.t?i.t.chimerGen||1:1)+'</span>';
-    h+='<span style="color:'+_bcColor+';">'+_bcLabel+'</span></div>';
+    h+='<span style="color:'+_bcColor+';">'+_bcLabel+'</span>';
+    if(i.phenoRevealed&&i.phenotype){
+      h+='<span style="color:'+i.phenotype.color+';font-weight:600;">\ud83d\udd2e '+i.phenotype.name+'</span>';
+    }
+    h+='</div>';
   }
   h+='</div></div>';
   // Layers
