@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.54';
+  var LW_VERSION='2026.04.10.55';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2286,6 +2286,24 @@
     .root-report-modal .rr-empty-icon{font-size:2.2rem;margin-bottom:0.5rem;opacity:0.7;}
     .root-report-modal .rr-empty-title{font-family:'Playfair Display',serif;font-size:0.85rem;font-style:italic;color:var(--cream);margin-bottom:0.35rem;}
     .root-report-modal .rr-empty-body{font-family:'DM Sans',sans-serif;font-size:0.6rem;color:var(--muted);line-height:1.5;max-width:280px;margin:0 auto;}
+    /* Root Report — summary header + filters + day groupings */
+    .root-report-modal .rr-summary{padding:0.7rem 0.8rem 0.6rem;margin-bottom:0.55rem;background:linear-gradient(180deg,rgba(26,36,22,0.55),rgba(13,16,12,0.65));border:1px solid rgba(200,168,75,0.22);border-radius:10px;}
+    .root-report-modal .rr-summary-title{font-family:'Playfair Display',serif;font-style:italic;font-size:0.72rem;color:var(--gold);margin-bottom:0.55rem;text-align:center;letter-spacing:0.04em;}
+    .root-report-modal .rr-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0.35rem;}
+    .root-report-modal .rr-stat{text-align:center;padding:0.3rem 0.15rem;background:rgba(13,16,12,0.4);border:1px solid rgba(74,124,53,0.12);border-radius:6px;}
+    .root-report-modal .rr-stat.gold{border-color:rgba(200,168,75,0.35);background:rgba(200,168,75,0.06);}
+    .root-report-modal .rr-stat.wither{border-color:rgba(165,138,110,0.3);background:rgba(60,45,35,0.3);}
+    .root-report-modal .rr-stat-val{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--cream);line-height:1;}
+    .root-report-modal .rr-stat.gold .rr-stat-val{color:var(--gold);}
+    .root-report-modal .rr-stat.wither .rr-stat-val{color:#a58a6e;}
+    .root-report-modal .rr-stat-lbl{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);margin-top:2px;letter-spacing:0.03em;}
+    .root-report-modal .rr-highlight{margin-top:0.55rem;padding:0.4rem 0.6rem;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.28);border-radius:6px;font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--cream);text-align:center;}
+    .root-report-modal .rr-highlight b{color:var(--gold);font-family:'Bebas Neue',sans-serif;letter-spacing:0.06em;}
+    .root-report-modal .rr-filters{display:flex;gap:0.3rem;padding:0.4rem 0.9rem 0.5rem;border-bottom:1px solid rgba(74,124,53,0.08);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    .root-report-modal .rr-filter{padding:0.4rem 0.65rem;border:1px solid rgba(74,124,53,0.15);background:rgba(13,16,12,0.5);color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:0.58rem;letter-spacing:0.1em;border-radius:16px;cursor:pointer;min-height:34px;white-space:nowrap;flex-shrink:0;}
+    .root-report-modal .rr-filter.active{border-color:rgba(122,179,86,0.5);background:rgba(122,179,86,0.12);color:var(--sage);}
+    .root-report-modal .rr-day-header{font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.18em;color:var(--gold);padding:0.5rem 0.3rem 0.3rem;border-bottom:1px solid rgba(200,168,75,0.15);margin-top:0.4rem;}
+    .root-report-modal .rr-day-header:first-child{margin-top:0;}
     /* ═══ SLOT MACHINE — Dew sink with three-reel gamble ═══ */
     #kb-slots{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:0.3rem;padding:0.55rem 0.75rem;border:1px solid rgba(200,168,75,0.35);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.14),rgba(200,168,75,0.04));color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.72rem;letter-spacing:0.08em;cursor:pointer;min-height:48px;min-width:48px;flex-shrink:0;}
     #kb-slots:hover{background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(200,168,75,0.08));}
@@ -26826,7 +26844,84 @@ document.addEventListener('keydown', function(e) {
     }
     return '<div class="rr-entry"><div class="rr-icon" style="color:' + color + ';">' + icon + '</div><div class="rr-body">' + body + '<div class="rr-time">' + _formatEventTime(e.ts) + '</div></div></div>';
   }
-  function _buildRootReport(range) {
+  // Event category map — groups event types into filter buckets
+  var _RR_CATEGORIES = {
+    all:      function(t) { return true; },
+    plants:   function(t) { return t === 'plant_mint' || t === 'seed_bloomed' || t === 'plant_composted' || t === 'achievement_unlock'; },
+    wild:     function(t) { return t === 'wild_drop' || t === 'wild_watered' || t === 'wild_watered_stranger' || t === 'wild_tended_stranger' || t === 'wild_cutting_taken' || t === 'wild_withered' || t === 'feral_collected' || t === 'weather_cast'; },
+    breeding: function(t) { return t === 'plant_bred' || t === 'cross_pollinate'; },
+    economy:  function(t) { return t === 'slots_win' || t === 'mystery_box_win' || t === 'level_up'; }
+  };
+  // Day-bucket key (local date string)
+  function _rrDayKey(ts) {
+    var d = new Date(ts);
+    return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+  }
+  function _rrDayLabel(ts) {
+    var d = new Date(ts);
+    var today = new Date();
+    var yday = new Date(Date.now() - 86400000);
+    if (_rrDayKey(ts) === _rrDayKey(today.getTime())) return 'TODAY';
+    if (_rrDayKey(ts) === _rrDayKey(yday.getTime())) return 'YESTERDAY';
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[d.getMonth()] + ' ' + d.getDate();
+  }
+  // Summary stat rollup for a range of events
+  function _rrSummarize(events) {
+    var s = {
+      minted: 0, bred: 0, composted: 0, bloomed: 0,
+      wildDrops: 0, wildWithered: 0, wildTended: 0, wildCut: 0,
+      feralsFound: 0, levelsUp: 0, jackpots: 0, achievements: 0,
+      rarestMint: null,
+      _rarityOrder: ['Common','Uncommon','Rare','Epic','Legendary','Mythic','Cosmic']
+    };
+    for (var i = 0; i < events.length; i++) {
+      var e = events[i], d = e.data || {};
+      if (e.type === 'plant_mint') {
+        s.minted++;
+        var r = d.rarity || d.grade || 'Common';
+        if (!s.rarestMint || s._rarityOrder.indexOf(r) > s._rarityOrder.indexOf(s.rarestMint)) s.rarestMint = r;
+      }
+      else if (e.type === 'plant_bred' || e.type === 'cross_pollinate') s.bred++;
+      else if (e.type === 'plant_composted') s.composted++;
+      else if (e.type === 'seed_bloomed') s.bloomed++;
+      else if (e.type === 'wild_drop') s.wildDrops++;
+      else if (e.type === 'wild_withered') s.wildWithered++;
+      else if (e.type === 'wild_tended_stranger' || e.type === 'wild_watered_stranger') s.wildTended++;
+      else if (e.type === 'wild_cutting_taken') s.wildCut++;
+      else if (e.type === 'feral_collected') s.feralsFound++;
+      else if (e.type === 'level_up') s.levelsUp++;
+      else if (e.type === 'slots_win' && d.jackpot) s.jackpots++;
+      else if (e.type === 'mystery_box_win' && d.jackpot) s.jackpots++;
+      else if (e.type === 'achievement_unlock') s.achievements++;
+    }
+    return s;
+  }
+  function _rrRenderSummary(s, range) {
+    if (s.minted + s.bred + s.composted + s.wildDrops + s.feralsFound + s.levelsUp === 0) return '';
+    var html = '<div class="rr-summary">';
+    var label = range === 'today' ? "Today's Grove" : range === 'week' ? "This Week in the Grove" : "Your Grove, All Time";
+    html += '<div class="rr-summary-title">' + label + '</div>';
+    html += '<div class="rr-stat-grid">';
+    if (s.minted) html += '<div class="rr-stat"><div class="rr-stat-val">' + s.minted + '</div><div class="rr-stat-lbl">Minted</div></div>';
+    if (s.bred) html += '<div class="rr-stat"><div class="rr-stat-val">' + s.bred + '</div><div class="rr-stat-lbl">Bred</div></div>';
+    if (s.bloomed) html += '<div class="rr-stat"><div class="rr-stat-val">' + s.bloomed + '</div><div class="rr-stat-lbl">Bloomed</div></div>';
+    if (s.composted) html += '<div class="rr-stat"><div class="rr-stat-val">' + s.composted + '</div><div class="rr-stat-lbl">Composted</div></div>';
+    if (s.wildDrops) html += '<div class="rr-stat"><div class="rr-stat-val">' + s.wildDrops + '</div><div class="rr-stat-lbl">Planted Wild</div></div>';
+    if (s.feralsFound) html += '<div class="rr-stat"><div class="rr-stat-val">' + s.feralsFound + '</div><div class="rr-stat-lbl">Ferals Found</div></div>';
+    if (s.wildTended) html += '<div class="rr-stat"><div class="rr-stat-val">' + s.wildTended + '</div><div class="rr-stat-lbl">Tended</div></div>';
+    if (s.wildWithered) html += '<div class="rr-stat wither"><div class="rr-stat-val">' + s.wildWithered + '</div><div class="rr-stat-lbl">Withered</div></div>';
+    if (s.levelsUp) html += '<div class="rr-stat gold"><div class="rr-stat-val">' + s.levelsUp + '</div><div class="rr-stat-lbl">Levels</div></div>';
+    if (s.jackpots) html += '<div class="rr-stat gold"><div class="rr-stat-val">' + s.jackpots + '</div><div class="rr-stat-lbl">Jackpots</div></div>';
+    if (s.achievements) html += '<div class="rr-stat gold"><div class="rr-stat-val">' + s.achievements + '</div><div class="rr-stat-lbl">Achievements</div></div>';
+    html += '</div>';
+    if (s.rarestMint && s.rarestMint !== 'Common') {
+      html += '<div class="rr-highlight">\u2728 Rarest mint this ' + (range === 'today' ? 'day' : range === 'week' ? 'week' : 'timeframe') + ': <b>' + s.rarestMint + '</b></div>';
+    }
+    html += '</div>';
+    return html;
+  }
+  function _buildRootReport(range, filter) {
     if (!window.LW_Log) return '<div class="rr-empty">Event log unavailable.</div>';
     var all = LW_Log.all();
     var cutoff = 0;
@@ -26834,40 +26929,75 @@ document.addEventListener('keydown', function(e) {
     else if (range === 'week') cutoff = Date.now() - 7 * 86400000;
     var filtered = all.filter(function(e) { return e.ts >= cutoff; });
     filtered.sort(function(a, b) { return b.ts - a.ts; });
-    if (filtered.length === 0) {
+    // Apply category filter if set
+    var filterFn = (filter && _RR_CATEGORIES[filter]) || _RR_CATEGORIES.all;
+    var categorized = filtered.filter(function(e) { return filterFn(e.type); });
+    var summary = _rrSummarize(filtered); // summary from ALL events in range (not filtered)
+    var summaryHtml = _rrRenderSummary(summary, range);
+    if (categorized.length === 0) {
       var label = range === 'today' ? 'today' : range === 'week' ? 'this week' : 'ever';
-      return '<div class="rr-empty"><div class="rr-empty-icon">\ud83c\udf43</div><div class="rr-empty-title">Nothing to report ' + label + '.</div><div class="rr-empty-body">Mint a plant, collect a seed, or tend another keeper\u2019s garden. The journal fills itself.</div></div>';
+      var filterLabel = filter && filter !== 'all' ? ' for ' + filter : '';
+      return summaryHtml + '<div class="rr-empty"><div class="rr-empty-icon">\ud83c\udf43</div><div class="rr-empty-title">Nothing to report ' + label + filterLabel + '.</div><div class="rr-empty-body">Mint a plant, collect a seed, or tend another keeper\u2019s garden. The journal fills itself.</div></div>';
     }
-    var html = '';
-    for (var i = 0; i < filtered.length; i++) html += _renderEventEntry(filtered[i]);
+    // Group by day for week/all tabs
+    var html = summaryHtml;
+    if (range === 'today') {
+      for (var i = 0; i < categorized.length; i++) html += _renderEventEntry(categorized[i]);
+    } else {
+      var lastDay = null;
+      for (var j = 0; j < categorized.length; j++) {
+        var dayKey = _rrDayKey(categorized[j].ts);
+        if (dayKey !== lastDay) {
+          html += '<div class="rr-day-header">' + _rrDayLabel(categorized[j].ts) + '</div>';
+          lastDay = dayKey;
+        }
+        html += _renderEventEntry(categorized[j]);
+      }
+    }
     return html;
   }
+  var _rrCurrentRange = 'today';
+  var _rrCurrentFilter = 'all';
   window._openRootReport = function(range) {
     range = range || 'today';
+    _rrCurrentRange = range;
+    _rrCurrentFilter = 'all';
     var modal = document.getElementById('root-report-modal');
     if (!modal) {
       modal = document.createElement('div');
       modal.id = 'root-report-modal';
       modal.className = 'root-report-modal';
-      modal.innerHTML = '<div class="rr-scrim" onclick="window._closeRootReport()"></div><div class="rr-panel"><div class="rr-header"><div class="rr-title">\ud83c\udf3f ROOT REPORT</div><button class="rr-close" onclick="window._closeRootReport()" aria-label="Close">\u2715</button></div><div class="rr-tabs"><button class="rr-tab active" data-range="today" onclick="window._rrSetRange(\'today\')">TODAY</button><button class="rr-tab" data-range="week" onclick="window._rrSetRange(\'week\')">THIS WEEK</button><button class="rr-tab" data-range="all" onclick="window._rrSetRange(\'all\')">ALL TIME</button></div><div class="rr-body" id="rr-body"></div></div>';
+      modal.innerHTML = '<div class="rr-scrim" onclick="window._closeRootReport()"></div><div class="rr-panel"><div class="rr-header"><div class="rr-title">\ud83c\udf3f ROOT REPORT</div><button class="rr-close" onclick="window._closeRootReport()" aria-label="Close">\u2715</button></div><div class="rr-tabs"><button class="rr-tab active" data-range="today" onclick="window._rrSetRange(\'today\')">TODAY</button><button class="rr-tab" data-range="week" onclick="window._rrSetRange(\'week\')">THIS WEEK</button><button class="rr-tab" data-range="all" onclick="window._rrSetRange(\'all\')">ALL TIME</button></div><div class="rr-filters"><button class="rr-filter active" data-filter="all" onclick="window._rrSetFilter(\'all\')">ALL</button><button class="rr-filter" data-filter="plants" onclick="window._rrSetFilter(\'plants\')">PLANTS</button><button class="rr-filter" data-filter="wild" onclick="window._rrSetFilter(\'wild\')">WILD</button><button class="rr-filter" data-filter="breeding" onclick="window._rrSetFilter(\'breeding\')">BREEDING</button><button class="rr-filter" data-filter="economy" onclick="window._rrSetFilter(\'economy\')">ECONOMY</button></div><div class="rr-body" id="rr-body"></div></div>';
       document.body.appendChild(modal);
     }
     var body = document.getElementById('rr-body');
-    if (body) body.innerHTML = _buildRootReport(range);
+    if (body) body.innerHTML = _buildRootReport(range, _rrCurrentFilter);
     var tabs = modal.querySelectorAll('.rr-tab');
     for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('active', tabs[i].getAttribute('data-range') === range);
+    var filts = modal.querySelectorAll('.rr-filter');
+    for (var f = 0; f < filts.length; f++) filts[f].classList.toggle('active', filts[f].getAttribute('data-filter') === 'all');
     modal.classList.add('open');
     _setLastRead(Date.now());
     _updateRootReportBadge();
   };
   window._closeRootReport = function() { var m = document.getElementById('root-report-modal'); if (m) m.classList.remove('open'); };
   window._rrSetRange = function(range) {
+    _rrCurrentRange = range;
     var body = document.getElementById('rr-body');
-    if (body) body.innerHTML = _buildRootReport(range);
+    if (body) body.innerHTML = _buildRootReport(range, _rrCurrentFilter);
     var modal = document.getElementById('root-report-modal');
     if (!modal) return;
     var tabs = modal.querySelectorAll('.rr-tab');
     for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('active', tabs[i].getAttribute('data-range') === range);
+  };
+  window._rrSetFilter = function(filter) {
+    _rrCurrentFilter = filter;
+    var body = document.getElementById('rr-body');
+    if (body) body.innerHTML = _buildRootReport(_rrCurrentRange, filter);
+    var modal = document.getElementById('root-report-modal');
+    if (!modal) return;
+    var filts = modal.querySelectorAll('.rr-filter');
+    for (var i = 0; i < filts.length; i++) filts[i].classList.toggle('active', filts[i].getAttribute('data-filter') === filter);
   };
   function _updateRootReportBadge() {
     var btn = document.getElementById('kb-root-report');
