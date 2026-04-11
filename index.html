@@ -43532,7 +43532,12 @@ window.FG_Backpack.show = function() {
   try{console.log('[BP.show] called');}catch(e){}
   var el = document.getElementById('bpi');
   var fab = document.getElementById('dfb');
-  if (el) el.style.display = 'block';
+  if (el) {
+    el.style.display = 'block';
+    el.style.top = ''; // clear compact-mode override, fall back to CSS top:80px
+  }
+  var bpp = document.getElementById('bpp');
+  if (bpp) bpp.style.top = '';
   if (fab) fab.style.display = 'flex';
   var stp = document.getElementById('stp');
   if (stp) stp.style.display = 'block';
@@ -43581,7 +43586,16 @@ window.FG_Backpack.showCompact = function(tab) {
   _bpContext = tab || 'greenhouse';
   if (window.BP) BP.close(); // close expanded panel if open
   var el = document.getElementById('bpi');
-  if (el) el.style.display = 'block';
+  if (el) {
+    el.style.display = 'block';
+    // Greenhouse/nursery have the keeper bar (~130px tall) covering the
+    // wild-tab default top:80px slot. Push the backpack below it so it
+    // stops sitting on top of the keeper bar's row 2 buttons.
+    el.style.top = 'calc(150px + env(safe-area-inset-top, 0px))';
+  }
+  // Sync the slot panel anchor too so it doesn't get orphaned
+  var bpp = document.getElementById('bpp');
+  if (bpp) bpp.style.top = 'calc(190px + env(safe-area-inset-top, 0px))';
   // Hide wild-specific UI
   var fab = document.getElementById('dfb'); if (fab) fab.style.display = 'none';
   var rtb = document.getElementById('bp-rtb'); if (rtb) rtb.style.display = 'none';
@@ -45003,18 +45017,29 @@ var _LAYERS=[
   {key:'MUTATION',get:function(t){return t.mutationName||'None';},mutation:function(t){return t.mutationName&&t.mutationName!=='None';},inherit:true,tag:function(t){return(t.mutationName&&t.mutationName!=='None')?'RISK':'';},none:function(t){return !t.mutationName||t.mutationName==='None';}}
 ];
 
-function _info(hash){
+function _info(plantOrHash){
+  // Accept either a plant object or a raw hash. When given a plant, merge its
+  // enrichment layers onto traits BEFORE grading so the breed screen matches
+  // greenhouse rarity (compost/breed/chimera/mycelial tiers were missing).
+  var plant = (plantOrHash && typeof plantOrHash === 'object') ? plantOrHash : null;
+  var hash = plant ? plant.hash : plantOrHash;
   var t=window.hashToTraits?window.hashToTraits(hash):null;
+  if (t && plant) {
+    if (plant.generation) t.chimerGen = plant.generation;
+    if (plant.mycelialCrown) t.mycelialCrown = true;
+    if (plant.breedLayers) t.breedLayers = plant.breedLayers;
+    if (plant.compostLayers) t.compostLayers = plant.compostLayers;
+  }
   var tg=t&&window.getTerraGrade?window.getTerraGrade(t):null;
-  var sea=t&&window.getSeasonInfo?window.getSeasonInfo(t):null;
-  var ea=t&&window.computeEA?window.computeEA(t,0):0;
+  var sea=t&&window.getSeasonInfo?window.getSeasonInfo(t,plant):null;
+  var ea=t&&window.computeEA?window.computeEA(t,0,plant):0;
   var nm=typeof window.getPlantName==='function'?window.getPlantName(hash):hash.slice(0,8);
   return {t:t,tg:tg,sea:sea,ea:ea,nm:nm,season:t?t.season%4:0};
 }
 
 function _renderCard(el,plant,role,side){
   if(!el||!plant)return;
-  var i=_info(plant.hash);
+  var i=_info(plant);
   var masked=plant._wildMasked;
   var s=masked?'':_seasonKeys[i.season];
   el.className='bs-cb '+s;
@@ -45115,8 +45140,8 @@ function _compatLabel(score) {
 function _renderForecast(){
   var fc=document.getElementById('bs-forecast');
   if(!fc||!_plantA||!_partners.length)return;
-  var iA=_info(_plantA.hash);
-  var iB=_info(_partners[_pIdx].hash);
+  var iA=_info(_plantA);
+  var iB=_info(_partners[_pIdx]);
   if(!iA.t||!iB.t){fc.innerHTML='';return;}
 
   // Genetic compatibility score
@@ -45300,9 +45325,26 @@ window.openBreedScreen=function(plantA,context){
     }
     return;
   }
-  // Find plantA in eligible list, default to first
-  _aIdx=0;
+  // Find plantA in eligible list. If the requested plant ISN'T eligible,
+  // surface the reason instead of silently swapping in a different plant —
+  // that's how Epic plants ended up looking Uncommon in the breed screen.
+  _aIdx=-1;
   for(var i=0;i<_allEligible.length;i++){if(_allEligible[i].hash===plantA.hash){_aIdx=i;break;}}
+  if(_aIdx===-1){
+    var _reqStatus = (window.FG_Data && FG_Data.getBreedStatus) ? FG_Data.getBreedStatus(plantA) : null;
+    var _reqMsg = 'This plant is not ready to breed.';
+    if(_reqStatus){
+      if(_reqStatus.reason==='IMMATURE') _reqMsg = 'Not ready: '+_reqStatus.daysLeft+' day'+(_reqStatus.daysLeft===1?'':'s')+' until mature.';
+      else if(_reqStatus.reason==='COOLDOWN') _reqMsg = 'Not ready: '+_reqStatus.cooldownDays+' day'+(_reqStatus.cooldownDays===1?'':'s')+' of breed cooldown remaining.';
+      else if(_reqStatus.reason==='NO_CHARGES') _reqMsg = 'Out of breed charges. Recovers over time (1 charge per 14 days).';
+    }
+    if(window._lwConfirm){
+      window._lwConfirm({title:'CANNOT BREED THIS PLANT',body:_reqMsg,yes:'OK',no:''},function(){});
+    } else if(window._toast){
+      window._toast(_reqMsg);
+    }
+    return;
+  }
   _plantA=_allEligible[_aIdx];
   // Build partner list excluding plantA
   _partners=_allEligible.filter(function(p){return p.hash!==_plantA.hash;});
@@ -45356,8 +45398,8 @@ window.bsSwipeA=function(dir){
 
 window.bsConfirmBreed=function(){
   if(!_plantA||!_partners[_pIdx])return;
-  var iA=_info(_plantA.hash);
-  var iB=_info(_partners[_pIdx].hash);
+  var iA=_info(_plantA);
+  var iB=_info(_partners[_pIdx]);
   var genA=(iA.t?iA.t.chimerGen:1)||1;
   var genB=(iB.t?iB.t.chimerGen:1)||1;
   var offGen=Math.max(genA,genB)+1;
