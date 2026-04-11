@@ -4998,8 +4998,8 @@ window.onerror=function(msg,url,line,col,err){
     <div class="panel-header">
       <div class="panel-header-title">NURSERY</div>
       <div style="display:flex;gap:0.3rem;align-items:center;">
-        <button id="nur-expand-btn" onclick="expandNurSlot()" style="font-family:'Bebas Neue',sans-serif;font-size:0.38rem;letter-spacing:0.06em;background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.3);color:var(--gold);border-radius:5px;padding:0.15rem 0.35rem;cursor:pointer;min-height:28px;white-space:nowrap;">+ SLOT</button>
-        <!-- Breed button removed from header per director — breed from greenhouse action drawer instead -->
+        <button onclick="window._openPotShop()" style="font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.08em;background:linear-gradient(180deg,rgba(46,38,18,0.55),rgba(28,24,12,0.7));border:1.5px solid rgba(200,168,75,0.45);color:var(--gold);border-radius:6px;padding:0.35rem 0.6rem;cursor:pointer;min-height:36px;white-space:nowrap;box-shadow:0 0 10px rgba(200,168,75,0.15);">&#129995; POT SHOP</button>
+        <button id="nur-expand-btn" onclick="expandNurSlot()" style="font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.08em;background:rgba(200,168,75,0.1);border:1.5px solid rgba(200,168,75,0.3);color:var(--gold);border-radius:6px;padding:0.35rem 0.55rem;cursor:pointer;min-height:36px;white-space:nowrap;">+ SLOT</button>
       </div>
     </div>
     <div id="nur-wallet-balance" class="wallet-balance">Balance: — ⚡</div>
@@ -7215,6 +7215,8 @@ document.addEventListener('keydown', function(e) {
     // CHIMERA PENALTY: -2 per gen
     var gen = (traits.chimerGen || 1) - 1;
     if (gen > 0) ea -= gen * 2;
+    // POT BONUS: Moonstone Cradle bakes a permanent +1 EA on the bloomed plant
+    if (plant && plant.eaBonus) ea += plant.eaBonus;
     return Math.max(0, ea);
   };
   window.eaBadge = function(ea, gc) {
@@ -28515,12 +28517,101 @@ document.addEventListener('keydown', function(e) {
 
   function loadInventory() {
     try {
-      var inv = JSON.parse(localStorage.getItem(INV_KEY) || 'null') || { dnaFragments: 0, substrate: {}, fertilizer: 0, lastUpdated: null };
+      var inv = JSON.parse(localStorage.getItem(INV_KEY) || 'null') || { dnaFragments: 0, substrate: {}, fertilizer: 0, pots: {}, lastUpdated: null };
       if (typeof inv.fertilizer !== 'number') inv.fertilizer = 0;
+      if (!inv.pots || typeof inv.pots !== 'object') inv.pots = {};
       return inv;
     }
-    catch(e) { return { dnaFragments: 0, substrate: {}, fertilizer: 0, lastUpdated: null }; }
+    catch(e) { return { dnaFragments: 0, substrate: {}, fertilizer: 0, pots: {}, lastUpdated: null }; }
   }
+
+  // ═══ NURSERY POTS — consumable buff items applied to growing seeds ═══
+  // Each pot is bought once with Dew, applied to a single seed, and consumed
+  // at bloom time. They stack with fertilizer (Phoenix Ash actually doubles
+  // fertilizer effectiveness). Designed as Dew sinks that reward saving up
+  // for high-stakes blooms.
+  window.LW_POTS = {
+    crystal: {
+      id: 'crystal',
+      name: 'Crystal Nursery Pot',
+      icon: '\u2756',
+      cost: 200,
+      blurb: '+5% rarity boost on bloom (stacks with fertilizer)',
+      color: '#a0c4e8'
+    },
+    moonstone: {
+      id: 'moonstone',
+      name: 'Moonstone Cradle',
+      icon: '\ud83c\udf19',
+      cost: 350,
+      blurb: '+1 EA permanent bonus on the bloomed plant',
+      color: '#c0d0e0'
+    },
+    phoenix: {
+      id: 'phoenix',
+      name: 'Phoenix Ash Urn',
+      icon: '\ud83d\udd25',
+      cost: 500,
+      blurb: 'Doubles fertilizer effectiveness for this seed',
+      color: '#d4842a'
+    },
+    worldSeed: {
+      id: 'worldSeed',
+      name: 'World Seed Bowl',
+      icon: '\ud83c\udf0d',
+      cost: 800,
+      blurb: 'Guarantees Uncommon+ (auto-rerolls Common results)',
+      color: '#7ab356'
+    }
+  };
+  window.lwBuyPot = function(potId) {
+    var pot = window.LW_POTS[potId];
+    if (!pot) return false;
+    var bal = window.getTotalDew ? window.getTotalDew() : 0;
+    if (bal < pot.cost) {
+      if (window._toast) _toast('Need ' + pot.cost + ' Dew (have ' + bal + ').');
+      return false;
+    }
+    if (!window.spendDew(pot.cost)) {
+      if (window._toast) _toast('Could not spend Dew.');
+      return false;
+    }
+    var inv = loadInventory();
+    inv.pots[potId] = (inv.pots[potId] || 0) + 1;
+    inv.lastUpdated = new Date().toISOString();
+    saveInventory(inv, true);
+    if (window._toast) _toast(pot.icon + ' Bought ' + pot.name + '. \u2796 ' + pot.cost + ' Dew');
+    if (window._haptic) _haptic('bloom');
+    if (window.renderNursery) renderNursery();
+    return true;
+  };
+  window.lwApplyPot = function(seedId, potId) {
+    var pot = window.LW_POTS[potId];
+    if (!pot) return false;
+    var inv = loadInventory();
+    if ((inv.pots[potId] || 0) <= 0) {
+      if (window._toast) _toast('No ' + pot.name + ' in inventory.');
+      return false;
+    }
+    var nur;
+    try { nur = JSON.parse(_secureGet('sws_nursery') || localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur = []; }
+    var idx = nur.findIndex(function(s){return s.id===seedId;});
+    if (idx < 0) { if (window._toast) _toast('Seed not found.'); return false; }
+    if (nur[idx].pot) {
+      if (window._toast) _toast('This seed already has a pot. Pots are single-use.');
+      return false;
+    }
+    nur[idx].pot = potId;
+    inv.pots[potId] = inv.pots[potId] - 1;
+    inv.lastUpdated = new Date().toISOString();
+    try { _throttledSave('sws_nursery', JSON.stringify(nur), true); } catch(e) {}
+    saveInventory(inv, true);
+    if (window._toast) _toast(pot.icon + ' ' + pot.name + ' applied to seed.');
+    if (window._haptic) _haptic('bloom');
+    if (window.renderNursery) renderNursery();
+    if (window.syncVaultToCloud) setTimeout(syncVaultToCloud, 500);
+    return true;
+  };
 
   function saveInventory(inv, force) {
     _throttledSave(INV_KEY, JSON.stringify(inv), force || false);
@@ -29245,6 +29336,84 @@ document.addEventListener('keydown', function(e) {
     });
   }
 
+  // ═══ POT SHOP UI ═══
+  window._openPotShop = function() {
+    var inv = loadInventory();
+    var dew = window.getTotalDew ? window.getTotalDew() : 0;
+    var existing = document.getElementById('lw-pot-shop');
+    if (existing) existing.remove();
+    var modal = document.createElement('div');
+    modal.id = 'lw-pot-shop';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:100002;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(10px);animation:panelFadeIn 0.3s ease;padding:1rem;overflow-y:auto;';
+    var h = '<div style="max-width:380px;width:100%;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;padding:1.1rem 1rem 1rem;box-shadow:0 16px 50px rgba(0,0,0,0.7);">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.12em;color:var(--gold);">\ud83e\udeb4 NURSERY POT SHOP</div>';
+    h += '<button onclick="document.getElementById(\'lw-pot-shop\').remove()" style="background:none;border:1px solid rgba(122,179,86,0.25);color:var(--muted);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:0.9rem;">\u2715</button>';
+    h += '</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);margin-bottom:0.85rem;line-height:1.5;">Specialty pots are consumable. Apply one to a growing seed and it triggers at bloom — single use.</div>';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--sage);margin-bottom:0.55rem;letter-spacing:0.08em;">Balance: <span style="color:var(--gold);">' + dew + ' \ud83d\udca7 Dew</span></div>';
+    var keys = Object.keys(window.LW_POTS);
+    for (var i = 0; i < keys.length; i++) {
+      var pot = window.LW_POTS[keys[i]];
+      var owned = inv.pots[pot.id] || 0;
+      var canBuy = dew >= pot.cost;
+      h += '<div style="display:flex;gap:0.65rem;padding:0.7rem 0.55rem;margin-bottom:0.45rem;background:rgba(13,16,12,0.55);border:1px solid ' + pot.color + '55;border-radius:9px;align-items:center;">';
+      h += '<div style="font-size:1.6rem;flex-shrink:0;width:42px;text-align:center;">' + pot.icon + '</div>';
+      h += '<div style="flex:1;min-width:0;">';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:' + pot.color + ';letter-spacing:0.06em;">' + pot.name + '</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);line-height:1.35;margin-top:0.18rem;">' + pot.blurb + '</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:0.22rem;">Owned: ' + owned + '</div>';
+      h += '</div>';
+      h += '<button onclick="window.lwBuyPot(\'' + pot.id + '\');" ' + (canBuy ? '' : 'disabled') + ' style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.06em;background:' + (canBuy ? 'linear-gradient(180deg,rgba(74,124,53,0.4),rgba(46,80,34,0.55))' : 'rgba(46,46,46,0.3)') + ';border:1.5px solid ' + (canBuy ? 'rgba(122,179,86,0.5)' : 'rgba(122,122,122,0.3)') + ';color:' + (canBuy ? 'var(--cream)' : 'rgba(160,160,160,0.5)') + ';border-radius:8px;padding:0.5rem 0.65rem;cursor:' + (canBuy ? 'pointer' : 'not-allowed') + ';min-height:48px;min-width:68px;flex-shrink:0;">' + pot.cost + '\ud83d\udca7</button>';
+      h += '</div>';
+    }
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:0.6rem;text-align:center;line-height:1.5;">Apply pots from each seed slot. Tap a seed and pick from your inventory.</div>';
+    h += '</div>';
+    modal.innerHTML = h;
+    document.body.appendChild(modal);
+  };
+
+  // Pot picker on a single seed — opens an inventory selector
+  window._openPotPicker = function(seedId) {
+    var inv = loadInventory();
+    var pots = inv.pots || {};
+    var owned = [];
+    var keys = Object.keys(window.LW_POTS);
+    for (var i = 0; i < keys.length; i++) {
+      if ((pots[keys[i]] || 0) > 0) owned.push(window.LW_POTS[keys[i]]);
+    }
+    if (owned.length === 0) {
+      if (window._toast) _toast('No pots in inventory. Buy some from the Pot Shop.');
+      window._openPotShop();
+      return;
+    }
+    var existing = document.getElementById('lw-pot-picker');
+    if (existing) existing.remove();
+    var modal = document.createElement('div');
+    modal.id = 'lw-pot-picker';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:100003;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.85);backdrop-filter:blur(10px);animation:panelFadeIn 0.25s ease;padding:1rem;';
+    var h = '<div style="max-width:340px;width:100%;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;padding:1rem;">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;color:var(--gold);">CHOOSE A POT</div>';
+    h += '<button onclick="document.getElementById(\'lw-pot-picker\').remove()" style="background:none;border:1px solid rgba(122,179,86,0.25);color:var(--muted);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:0.85rem;">\u2715</button>';
+    h += '</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);margin-bottom:0.7rem;line-height:1.4;">Pots are single-use. Once applied, the buff triggers at bloom and the pot is consumed.</div>';
+    for (var j = 0; j < owned.length; j++) {
+      var pp = owned[j];
+      var ct = pots[pp.id] || 0;
+      h += '<button onclick="window.lwApplyPot(\'' + seedId + '\',\'' + pp.id + '\');document.getElementById(\'lw-pot-picker\').remove();" style="display:flex;width:100%;gap:0.6rem;padding:0.65rem 0.5rem;margin-bottom:0.4rem;background:rgba(13,16,12,0.55);border:1.5px solid ' + pp.color + '55;border-radius:9px;align-items:center;cursor:pointer;text-align:left;">';
+      h += '<div style="font-size:1.4rem;flex-shrink:0;width:38px;text-align:center;">' + pp.icon + '</div>';
+      h += '<div style="flex:1;min-width:0;">';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:' + pp.color + ';letter-spacing:0.06em;">' + pp.name + ' \u00d7' + ct + '</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);line-height:1.35;margin-top:0.15rem;">' + pp.blurb + '</div>';
+      h += '</div>';
+      h += '</button>';
+    }
+    h += '</div>';
+    modal.innerHTML = h;
+    document.body.appendChild(modal);
+  };
+
   window.expandNurSlot = function() {
     if (!window.FG_Data || !FG_Data.getNurSlots) return;
     var current = FG_Data.getNurSlots();
@@ -29387,7 +29556,18 @@ document.addEventListener('keydown', function(e) {
       actionBtns = waterBtn + accelBtn;
     }
     // BOOST (renamed from FERT) — compost → rarity boost, independent of time/skip
-    actionBtns += '<button class="nur-btn boost" data-sid="' + sid + '" onclick="handleApplyFertilizer(this.dataset.sid)" style="background:rgba(200,168,75,0.06);border-color:rgba(200,168,75,0.2);color:var(--gold);font-size:0.42rem;"' + (_canFert ? '' : ' disabled') + ' title="Apply 1 compost for +1% rarity boost on bloom">🌿 BOOST ' + _seedFert + '/' + _fertMax + '</button>';
+    actionBtns += '<button class="nur-btn boost" data-sid="' + sid + '" onclick="handleApplyFertilizer(this.dataset.sid)" style="background:rgba(200,168,75,0.06);border-color:rgba(200,168,75,0.2);color:var(--gold);font-size:0.55rem;"' + (_canFert ? '' : ' disabled') + ' title="Apply 1 compost for +1% rarity boost on bloom">\ud83c\udf3f BOOST ' + _seedFert + '/' + _fertMax + '</button>';
+    // POT button — apply a specialty pot from inventory, or open the shop
+    if (!bloomReady) {
+      var _potOnSeed = seed.pot ? (window.LW_POTS && window.LW_POTS[seed.pot]) : null;
+      if (_potOnSeed) {
+        actionBtns += '<button class="nur-btn boost" disabled style="background:rgba(' +
+          (_potOnSeed.color === '#a0c4e8' ? '160,196,232' : _potOnSeed.color === '#c0d0e0' ? '192,208,224' : _potOnSeed.color === '#d4842a' ? '212,132,42' : '122,179,86') +
+          ',0.18);border-color:' + _potOnSeed.color + '88;color:' + _potOnSeed.color + ';font-size:0.55rem;cursor:default;" title="' + _potOnSeed.name + ' applied. Triggers at bloom.">' + _potOnSeed.icon + ' ' + _potOnSeed.name.split(' ')[0].toUpperCase() + '</button>';
+      } else {
+        actionBtns += '<button class="nur-btn boost" data-sid="' + sid + '" onclick="window._openPotPicker(this.dataset.sid)" style="background:rgba(200,168,75,0.08);border-color:rgba(200,168,75,0.35);color:var(--gold);font-size:0.55rem;" title="Apply a specialty pot from your inventory">\ud83e\udeb4 ADD POT</button>';
+      }
+    }
 
     var _fertInfo = (seed.fertApplied || 0) > 0 ? '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--gold);margin-top:2px;">🌿 ' + (seed.fertApplied || 0) + '/15 fertilizer (+' + (seed.fertApplied || 0) + '% rarity)</div>' : '';
 
@@ -29961,10 +30141,36 @@ document.addEventListener('keydown', function(e) {
     var parentB = seed.parentBHash || seed.seedHash || '';
     var spliced = seed.seedHash || generateSplicedHash(parentA, parentB);
 
-    // 2. Mutation RNG — fertilizer boosts mutation probability
+    // 2. Mutation RNG — fertilizer boosts mutation probability.
+    // Pot effects layer on top:
+    //   crystal   → +5 effective fertilizer (+5% rarity boost)
+    //   phoenix   → doubles existing fertilizer effectiveness
+    //   moonstone → +1 EA bonus (applied to plant object below)
+    //   worldSeed → reroll if Common (applied after grading)
     var _fertCount = seed.fertApplied || 0;
+    var _potId = seed.pot || null;
+    if (_potId === 'crystal') _fertCount = _fertCount + 5;
+    if (_potId === 'phoenix') _fertCount = _fertCount * 2;
     var mut = applyMutationRNG(spliced, _fertCount);
     var newHash = mut.hash;
+    // World Seed Bowl: if the rolled grade is Common, retry with a higher
+    // mutation rate up to 8 attempts. Each attempt is independent randomness,
+    // so the chance of staying Common across 8 attempts at +10 fert is < 1%.
+    if (_potId === 'worldSeed' && window.hashToTraits && window.getTerraGrade) {
+      var _wsAttempts = 0;
+      try {
+        var _wsTraits = window.hashToTraits(newHash);
+        var _wsGrade = window.getTerraGrade(_wsTraits);
+        while (_wsGrade && _wsGrade.name === 'Common' && _wsAttempts < 8) {
+          var _wsMut = applyMutationRNG(spliced, _fertCount + 10);
+          newHash = _wsMut.hash;
+          mut = _wsMut;
+          _wsTraits = window.hashToTraits(newHash);
+          _wsGrade = window.getTerraGrade(_wsTraits);
+          _wsAttempts++;
+        }
+      } catch(e) {}
+    }
 
     // Evaluate breed layers from parent traits
     var _blParentALayers = null, _blParentBLayers = null;
@@ -30052,6 +30258,9 @@ document.addEventListener('keydown', function(e) {
       mycelialCrown: _hasCrown,
       compostLayers: Object.keys(_compostLayers).length > 0 ? _compostLayers : null,
       fertApplied: _fertCount || 0,
+      // Moonstone Cradle pot bakes a permanent +1 EA bonus into the plant
+      eaBonus:   (_potId === 'moonstone') ? 1 : 0,
+      birthPot:  _potId || null,
       traits:    (typeof getTraitSummary === 'function'
                   ? (function(){ try { return getTraitSummary(newHash); } catch(e) { return ''; } })()
                   : '')
