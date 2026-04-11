@@ -31093,6 +31093,7 @@ document.addEventListener('keydown', function(e) {
       rewardsClaimed:  _ls('sws_rewards_claimed') || [],
       wildPlants:      _ls('fg_wild_plants')  || [],
       wildDropState:   _ls('fg_w_d')          || {},
+      wildSteps:       _ls('lw_wild_steps')   || null,
       ferals:          _ls('fg_ferals')       || [],
       pollen:          parseInt((window._secureGet?window._secureGet('fg_pollen'):localStorage.getItem('fg_pollen'))||'0'),
       lastSync: new Date().toISOString(),
@@ -31123,6 +31124,17 @@ document.addEventListener('keydown', function(e) {
     // Restore wild tab state from cloud
     if (data.wildPlants && data.wildPlants.length) { if(window._secureSet){window._secureSet('fg_wild_plants',data.wildPlants);}else{_ss('fg_wild_plants', data.wildPlants);} }
     if (data.wildDropState) { if(window._secureSet){window._secureSet('fg_w_d',data.wildDropState);}else{_ss('fg_w_d', data.wildDropState);} }
+    if (data.wildSteps && typeof data.wildSteps === 'object') {
+      // Merge: take cloud lifetime if it's higher (resists local-storage clears)
+      try {
+        var localStepsRaw = localStorage.getItem('lw_wild_steps');
+        var localSteps = localStepsRaw ? JSON.parse(localStepsRaw) : null;
+        var cloudLifetime = data.wildSteps.lifetime || 0;
+        var localLifetime = (localSteps && localSteps.lifetime) || 0;
+        var merged = (cloudLifetime > localLifetime) ? data.wildSteps : (localSteps || data.wildSteps);
+        localStorage.setItem('lw_wild_steps', JSON.stringify(merged));
+      } catch(e) {}
+    }
     if (data.ferals && data.ferals.length) _ss('fg_ferals', data.ferals);
     if (typeof data.pollen === 'number') { if(window._secureSet){window._secureSet('fg_pollen',String(data.pollen));}else{localStorage.setItem('fg_pollen', String(data.pollen));} }
     _vaultHydrated = true;
@@ -32116,7 +32128,6 @@ function _getCollectRange(){
 // Source of truth: Firestore vaults/{uid}/meta/dailyStats
 // localStorage is a read cache only — never trusted for enforcement
 var AF_HARVEST_KEY='fg_af_harvests';
-var AF_MIN_WILD_MS=0; // DISABLED — minimum wild time removed, daily cap + diminishing returns are sufficient
 var _afCache=null; // in-memory cache of today's stats
 var _serverDayOffset=0; // ms offset: serverTime = Date.now() + _serverDayOffset
 
@@ -32221,10 +32232,6 @@ function _afCanHarvest(planterUid){
   var cap=_afGetCap();
   if(s.count>=cap)return{ok:false,reason:'Daily harvest limit reached ('+cap+'/day). Come back tomorrow!'};
   var serverNow=Date.now()+_serverDayOffset;
-  if(s.firstWild&&(serverNow-s.firstWild)<AF_MIN_WILD_MS){
-    var mins=Math.ceil((AF_MIN_WILD_MS-(serverNow-s.firstWild))/60000);
-    return{ok:false,reason:'Explore the Wild for a bit longer! '+mins+' min remaining.'};
-  }
   if(planterUid&&s.planters[planterUid]>=2)return{ok:false,reason:'You\'ve already harvested from this planter twice today.'};
   return{ok:true};
 }
@@ -32401,9 +32408,13 @@ function activate(){
   if(!_inited){_initMap();_initGeo();_inited=true;}
   // Prune expired wild plants before loading
   _pruneWild();
+  // Sweep for already-adjacent complementary pairs (one-time-per-activate)
+  _phenoRetroScan();
   // Load immediately from cache for fast UI
   _loadState();
   _updateUI();
+  // Hydrate persisted step counter (was DOM-only, lost on reload)
+  _hydrateStepsUI();
   // Hydrate anti-farming state from Firestore (background)
   _afHydrate(function(){_loadState();_updateUI();});
   // Fallback: load plants even if GPS is slow — uses last known position or fallback
@@ -32660,8 +32671,41 @@ function _updateProximity(){
   _drawZoneHexes();
 }
 
-// ═══ STEP COUNTER MILESTONES ═══
+// ═══ STEP COUNTER PERSISTENCE + MILESTONES ═══
+// Steps used to live only in DOM textContent — refresh = lost progress.
+// Now persisted to localStorage and synced via the wildSteps cloud field.
 var _lastStepMilestone=0;
+var LW_STEPS_KEY='lw_wild_steps'; // {lifetime:number, today:number, day:'YYYY-MM-DD'}
+function _loadSteps(){
+  try{
+    var raw=localStorage.getItem(LW_STEPS_KEY);
+    if(!raw)return{lifetime:0,today:0,day:_afGetToday()};
+    var s=JSON.parse(raw);
+    if(s.day!==_afGetToday()){s.today=0;s.day=_afGetToday();}
+    return s;
+  }catch(e){return{lifetime:0,today:0,day:_afGetToday()};}
+}
+function _saveSteps(s){try{localStorage.setItem(LW_STEPS_KEY,JSON.stringify(s));}catch(e){}}
+function _addSteps(meters){
+  if(!meters||meters<=0)return;
+  var s=_loadSteps();
+  s.lifetime=(s.lifetime||0)+meters;
+  s.today=(s.today||0)+meters;
+  _saveSteps(s);
+  var el=document.getElementById('w-steps');
+  if(el)el.textContent=s.today;
+  _checkStepMilestone();
+}
+function _hydrateStepsUI(){
+  var s=_loadSteps();
+  var el=document.getElementById('w-steps');
+  if(el)el.textContent=s.today||0;
+  // Recompute the milestone watermark from lifetime so we don't re-toast
+  var milestones=[500,1000,2500,5000,10000];
+  for(var i=milestones.length-1;i>=0;i--){
+    if((s.today||0)>=milestones[i]){_lastStepMilestone=milestones[i];break;}
+  }
+}
 function _checkStepMilestone(){
   var el=document.getElementById('w-steps');if(!el)return;
   var meters=parseInt(el.textContent||'0');
@@ -32730,7 +32774,7 @@ function _initGeo(){
   },{enableHighAccuracy:true,timeout:8000,maximumAge:30000});
   try{navigator.geolocation.watchPosition(function(p){
     var nL=p.coords.latitude,nN=p.coords.longitude;
-    if(_uLat&&_uLng){var d=_dist(_uLat,_uLng,nL,nN);if(d>0.7&&d<50){var s=document.getElementById('w-steps');if(s){s.textContent=parseInt(s.textContent||'0')+Math.round(d);_checkStepMilestone();}}}
+    if(_uLat&&_uLng){var d=_dist(_uLat,_uLng,nL,nN);if(d>0.7&&d<50){_addSteps(Math.round(d));}}
     _uLat=nL;_uLng=nN;
     // Speed tracking
     var _now=Date.now();
@@ -34737,12 +34781,6 @@ function _doCrossPollination(wildPlant,matePlant){
 }
 window._doCrossPollination=_doCrossPollination;
 
-// ═══ POUCH DELIVERY — DISABLED (backpack system handles delivery) ═══
-function _deliverPouch(){return;}
-
-// ═══ POUCH RENDERING — DISABLED (backpack renders its own UI) ═══
-function _renderPouch(){if(window.FG_Backpack)FG_Backpack.render();}
-
 // ═══ PICKER — drop from greenhouse to wild ═══
 function openPicker(){
   if(_speedKmh>25){_toast('\ud83c\udf3f Slow down to plant! Moving too fast.');return;}
@@ -34997,6 +35035,76 @@ function _pickDefense(gameId){
   setTimeout(function(){_pickingDefense=false;},500);
 }
 
+// ═══ PHENOTYPE REVELATION (Wild v3 spec, Phase 1 MVP) ═══
+// Every plant has a hidden "phenotype" derived from a hash byte that
+// nothing else uses. It stays sealed until the plant is dropped in the
+// Wild adjacent to a complementary-season plant (Spring↔Autumn,
+// Summer↔Winter). On reveal we set a flag on BOTH plants in storage
+// and toast both keepers (well — the local one; the other player's
+// reveal happens client-side next time they open Wild and rescan).
+var _LW_PHENOTYPES=[
+  {key:'verdant',  name:'Verdant',   color:'#7ab356', flavor:'Quick to root in any soil.'},
+  {key:'resilient',name:'Resilient', color:'#c8a84b', flavor:'Bends but does not break.'},
+  {key:'whimsical',name:'Whimsical', color:'#e8a0bf', flavor:'Blooms when no one is watching.'},
+  {key:'etheric',  name:'Etheric',   color:'#a0c4e8', flavor:'Drinks more moonlight than sun.'},
+  {key:'patient',  name:'Patient',   color:'#8a9178', flavor:'Knows the long season.'},
+  {key:'ardent',   name:'Ardent',    color:'#d4842a', flavor:'Burns brighter near kin.'},
+  {key:'wandering',name:'Wandering', color:'#a87850', flavor:'Sends roots toward strangers.'},
+  {key:'crystalline',name:'Crystalline',color:'#c0d0e0',flavor:'Sings to passing wind.'},
+  {key:'feral',    name:'Feral',     color:'#5e8550', flavor:'Refuses to be domesticated.'},
+  {key:'tender',   name:'Tender',    color:'#e8dcc8', flavor:'Lives only in good company.'},
+  {key:'auric',    name:'Auric',     color:'#d4a843', flavor:'Casts a thin gold halo at dusk.'},
+  {key:'briar',    name:'Briar',     color:'#8b2e2e', flavor:'Defends what it loves.'}
+];
+function _phenotypeOf(hash){
+  if(!hash||hash.length<48)return _LW_PHENOTYPES[0];
+  // Use byte 23 (hb(23)) — unused by hashToTraits, plenty of entropy.
+  var b=parseInt(hash.substring(46,48),16);
+  return _LW_PHENOTYPES[(isNaN(b)?0:b)%_LW_PHENOTYPES.length];
+}
+// Two seasons are "complementary" if they sit opposite on the year wheel.
+function _isComplementarySeason(a,b){
+  if(typeof a!=='number'||typeof b!=='number')return false;
+  return (a===0&&b===2)||(a===2&&b===0)||(a===1&&b===3)||(a===3&&b===1);
+}
+// Reveal scan. Called after a new wild plant is pushed. Updates BOTH
+// the new plant and any complementary neighbor in `wild`. Returns the
+// number of plants newly revealed (0 if no triggers found).
+function _phenoRevealScan(wild,newIdx){
+  if(!wild||!wild[newIdx])return 0;
+  var n=wild[newIdx];
+  if(typeof n.season!=='number')return 0;
+  var revealedNow=0;
+  var REVEAL_RADIUS=ZONE_SIZE*2; // ~200m, deliberately tight so it feels earned
+  for(var i=0;i<wild.length;i++){
+    if(i===newIdx)continue;
+    var o=wild[i];
+    if(!o||typeof o.season!=='number')continue;
+    if(!_isComplementarySeason(n.season,o.season))continue;
+    var d=Math.abs(n.lat-o.lat)+Math.abs(n.lng-o.lng);
+    if(d>REVEAL_RADIUS)continue;
+    if(!o.phenoRevealed){o.phenoRevealed=true;revealedNow++;}
+    if(!n.phenoRevealed){n.phenoRevealed=true;revealedNow++;}
+  }
+  return revealedNow;
+}
+window._phenotypeOf=_phenotypeOf; // exposed so hex inspector + cards can read it
+
+// Retroactive sweep: pairs that already sit complementary-adjacent when
+// you open Wild get revealed immediately so existing storage isn't stuck.
+function _phenoRetroScan(){
+  try{
+    var w=_getWild();
+    if(!w||!w.length)return;
+    var changed=false;
+    for(var i=0;i<w.length;i++){
+      if(w[i]&&w[i].phenoRevealed)continue;
+      if(_phenoRevealScan(w,i)>0)changed=true;
+    }
+    if(changed)_saveWild(w);
+  }catch(e){}
+}
+
 function _finishDrop(defenderGame){
   if(!_pendingDrop)return;
   var pd=_pendingDrop;_pendingDrop=null;
@@ -35013,6 +35121,7 @@ function _finishDrop(defenderGame){
   var _dropGrade=_plantRarity(pl.hash);
   var _dropNow=Date.now();
   var _dropLife=_lifespanMsFor(_dropGrade);
+  var _newWildIdx=wild.length;
   wild.push({
     lat:la,lng:lo,hash:pl.hash,
     date:new Date(_dropNow).toISOString(),
@@ -35029,9 +35138,18 @@ function _finishDrop(defenderGame){
     ownerName:localStorage.getItem('pw_keeper_name')||'Keeper',
     ea:dropEA,
     defenderGame:defenderGame||'set',
-    season:dropTraits?dropTraits.season:0
+    season:dropTraits?dropTraits.season:0,
+    phenoRevealed:false
   });
+  // Phenotype reveal scan — looks for opposite-season neighbors within ~200m
+  var _phenoNewlyRevealed=_phenoRevealScan(wild,_newWildIdx);
   _saveWild(wild);
+  if(_phenoNewlyRevealed>0&&wild[_newWildIdx].phenoRevealed){
+    var _phn=_phenotypeOf(pl.hash);
+    setTimeout(function(){
+      _toast('\ud83d\udd2e Phenotype revealed: '+_phn.name+' \u2014 '+_phn.flavor);
+    },1800);
+  }
   _addPlant({lat:la,lng:lo,hash:pl.hash,own:true,days:0,pollen:0,status:'Just Planted',defenderGame:defenderGame||'set'});
   if(_map)_map.panTo([la,lo],{animate:true,duration:0.5});
   _updateCounts();_updateUI();_drawTerritory();
@@ -35750,7 +35868,7 @@ function _openHexInspector(zk){
       var _eaVal=0;
       if(full&&typeof full.ea==='number'&&full.ea>0){_eaVal=full.ea;}
       else if(typeof _wildEA==='function'){try{_eaVal=_wildEA({hash:p.hash,ea:full&&full.ea,date:full&&full.date});}catch(e){_eaVal=0;}}
-      augmented.push({hash:p.hash,lat:p.lat,lng:p.lng,own:isOwn,wildBorn:full?!!full.wildBorn:false,ownerName:full?(full.ownerName||'Keeper'):'Unknown',ownerUid:full?(full.ownerUid||''):'',defenderGame:full?(full.defenderGame||'set'):'set',date:full?full.date:null,days:full&&full.date?Math.floor((Date.now()-new Date(full.date).getTime())/86400000):0,ea:_eaVal});
+      augmented.push({hash:p.hash,lat:p.lat,lng:p.lng,own:isOwn,wildBorn:full?!!full.wildBorn:false,ownerName:full?(full.ownerName||'Keeper'):'Unknown',ownerUid:full?(full.ownerUid||''):'',defenderGame:full?(full.defenderGame||'set'):'set',date:full?full.date:null,days:full&&full.date?Math.floor((Date.now()-new Date(full.date).getTime())/86400000):0,ea:_eaVal,phenoRevealed:full?!!full.phenoRevealed:false});
     }
     // Display-level 3-per-zone cap — legacy drops from before the cap can
     // leave >3 plants in a zone. Client cannot delete remote plants (auth),
@@ -35780,7 +35898,13 @@ function _openHexInspector(zk){
       var grade='?',gc='var(--muted)';
       if(window.hashToTraits&&window.getTerraGrade){try{var tr=hashToTraits(ap.hash);var tg=getTerraGrade(tr);grade=tg.label||tg.name||'?';gc=tg.color||'var(--muted)';}catch(e){}}
       var origin=ap.own?'Planted':(ap.wildBorn?'Wild Born':ap.ownerName);
-      row.innerHTML='<div class="hi-pr-svg">'+svgHtml+'</div><div class="hi-pr-info"><div class="hi-pr-name">'+name+'</div><div class="hi-pr-meta" style="color:'+gc+';">'+grade+' · '+origin+'</div></div>';
+      // Phenotype reveal badge — only after a complementary-season neighbor triggered it
+      var _phenoBadge='';
+      if(ap.phenoRevealed&&window._phenotypeOf){
+        var _ph=window._phenotypeOf(ap.hash);
+        _phenoBadge=' \u00b7 <span style="color:'+_ph.color+';font-weight:600;">\ud83d\udd2e '+_ph.name+'</span>';
+      }
+      row.innerHTML='<div class="hi-pr-svg">'+svgHtml+'</div><div class="hi-pr-info"><div class="hi-pr-name">'+name+'</div><div class="hi-pr-meta" style="color:'+gc+';">'+grade+' \u00b7 '+origin+_phenoBadge+'</div></div>';
       (function(idx,pd){row.addEventListener('click',function(){_selectHexPlant(idx,pd);});})(j,ap);
       el.appendChild(row);
     }
@@ -35820,6 +35944,22 @@ function _selectHexPlant(idx,p){
     if(traits.hasFlower)traitHtml+=' · Bloom: '+(traits.flower||'?');
     if(traits.companion&&traits.companion!=='None')traitHtml+='<br>Companion: '+traits.companion;
     traitHtml+=' · Age: '+p.days+' days</div>';
+  }
+  // Phenotype card — sealed (mystery) until a complementary-season neighbor reveals it
+  var phenoHtml='';
+  if(window._phenotypeOf){
+    if(p.phenoRevealed){
+      var _ph=window._phenotypeOf(p.hash);
+      phenoHtml='<div class="hi-detail-traits" style="margin-top:0.4rem;padding:0.5rem 0.6rem;background:rgba(13,16,12,0.55);border:1px solid '+_ph.color+';border-radius:7px;">'+
+        '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.1em;color:'+_ph.color+';">\ud83d\udd2e PHENOTYPE \u00b7 '+_ph.name.toUpperCase()+'</div>'+
+        '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.6rem;color:var(--cream);margin-top:0.15rem;line-height:1.35;">'+_ph.flavor+'</div>'+
+      '</div>';
+    } else {
+      phenoHtml='<div class="hi-detail-traits" style="margin-top:0.4rem;padding:0.5rem 0.6rem;background:rgba(13,16,12,0.4);border:1px dashed rgba(200,168,75,0.3);border-radius:7px;">'+
+        '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.1em;color:var(--gold);">\u2753 PHENOTYPE SEALED</div>'+
+        '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:0.15rem;line-height:1.35;">Plant a complementary-season plant within ~200m to reveal.</div>'+
+      '</div>';
+    }
   }
   // Vitality bar — rarity-scaled lifespan readout.
   // Pulls the source plant from local wild cache or shared markers so
@@ -35870,7 +36010,7 @@ function _selectHexPlant(idx,p){
     actions+='<button class="hi-action-btn'+(_canTend?'':' locked')+'"'+(_canTend?' onclick="window._hexAction(\'tend\')"':'')+' title="'+(_canTend?'Tend this plant — gives it +6h and grants you Dew':'Unlocks at Keeper Level 5')+'">&#127807; TEND'+(_canTend?'':' &#128274;')+'</button>';
     actions+='<button class="hi-action-btn gold'+(_canCut?'':' locked')+'"'+(_canCut?' onclick="window._hexAction(\'cutting\')"':'')+' title="'+(_canCut?'Take a cutting — clone seed, parent loses 10% lifespan. One-time per plant':'Unlocks at Keeper Level 15')+'">&#9986; CUTTING'+(_canCut?'':' &#128274;')+'</button>';
   }
-  el.innerHTML='<div class="hi-detail-name">'+name+'</div><div class="hi-detail-grade" style="color:'+gc+';">'+grade+'</div>'+traitHtml+vitalityHtml+'<div class="hi-actions">'+actions+'</div>';
+  el.innerHTML='<div class="hi-detail-name">'+name+'</div><div class="hi-detail-grade" style="color:'+gc+';">'+grade+'</div>'+traitHtml+phenoHtml+vitalityHtml+'<div class="hi-actions">'+actions+'</div>';
   el.style.display='block';
 }
 
