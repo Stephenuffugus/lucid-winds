@@ -344,12 +344,14 @@ function _rollTakeover(attackerPlant,defenderPlant){
       if(!t)return 0;
       var info=window.getCompanionInfo?window.getCompanionInfo(t):null;
       if(!info||!info.tempKey)return 0;
+      // All 5 temperaments covered (guardian/forager/wanderer/mystic/symbiote)
       if(side==='attacker'){
         if(info.tempKey==='forager')return 3;
         if(info.tempKey==='wanderer')return 2;
         if(info.tempKey==='mystic')return 1;
       }else{
         if(info.tempKey==='guardian')return 2;
+        if(info.tempKey==='symbiote')return 1;
         if(info.tempKey==='mystic')return 1;
       }
     }catch(e){}
@@ -3111,6 +3113,8 @@ function _updateCounts(){
         var mult=ri<5?1.0:0.5;
         hourlyTotal+=sortedRates[ri]*mult;
       }
+      // Weather: Dawn Mist doubles earnings (match live ticker)
+      try{if(window.isWeatherMist&&window.isWeatherMist())hourlyTotal*=2;}catch(e){}
       var earned=Math.floor(hourlyTotal*elapsedMin/240);
       if(earned>0&&typeof window.earnDew==='function')window.earnDew(earned,'wild_offline_catchup');
     }

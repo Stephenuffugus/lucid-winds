@@ -18463,6 +18463,32 @@
         body = '<b>Keeper Level ' + (d.level || '?') + '</b>' + (d.rank ? ' \u2014 ' + d.rank : '') + '.';
         if (d.unlock) body += '<br><span style="color:var(--muted);font-size:0.55rem;">Unlocked: ' + d.unlock + '</span>';
         break;
+      case 'slots_win':
+        icon = '\ud83c\udfb0';
+        color = 'var(--gold)';
+        if (d.jackpot) {
+          body = '<b style="color:#ff6ec7;">JACKPOT!</b> ' + (d.symbol || '\u2600\ufe0f') + ' trio \u2014 +' + (d.dew || 0) + ' Dew' + (d.fert ? ' +' + d.fert + ' Fert' : '');
+          color = '#ff6ec7';
+        } else {
+          body = '<b>' + (d.tier || 'Sprout') + ' trio</b> on the slots \u2014 +' + (d.dew || 0) + ' Dew' + (d.fert ? ' +' + d.fert + ' Fert' : '');
+        }
+        break;
+      case 'mystery_box_win':
+        icon = '\ud83c\udf81';
+        color = '#E8A0BF';
+        if (d.jackpot) {
+          body = '<b style="color:#ff6ec7;">MYSTERY JACKPOT!</b> ' + (d.name || 'A rare prize') + ' tumbled out.';
+          color = '#ff6ec7';
+        } else {
+          body = 'You opened a mystery box: <b>' + (d.name || 'a rare find') + '</b>';
+        }
+        break;
+      case 'weather_cast':
+        icon = d.icon || '\ud83c\udf26\ufe0f';
+        color = 'rgba(91,175,220,0.9)';
+        body = 'You summoned <b>' + (d.name || 'weather') + '</b> over your wild grove';
+        if (d.cost) body += ' <span style="color:var(--muted);">\u2212' + d.cost + ' Dew</span>';
+        break;
       default:
         body = '<span style="color:var(--muted);">' + e.type.replace(/_/g, ' ') + '</span>';
     }
