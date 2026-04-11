@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.53';
+  var LW_VERSION='2026.04.10.54';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2335,6 +2335,28 @@
     .weather-modal .w-opt-name{font-family:'Bebas Neue',sans-serif;font-size:0.78rem;color:var(--cream);letter-spacing:0.08em;}
     .weather-modal .w-opt-desc{font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--muted);line-height:1.4;}
     .weather-modal .w-opt-cost{font-family:'DM Mono',monospace;font-size:0.58rem;color:#8bd0e8;margin-top:0.2rem;}
+    /* ═══ MYSTERY BOX — Dew sink, random loot reveal ═══ */
+    #kb-mystery{position:relative;display:inline-flex;align-items:center;justify-content:center;padding:0.55rem 0.75rem;border:1px solid rgba(232,160,191,0.35);border-radius:10px;background:linear-gradient(180deg,rgba(232,160,191,0.14),rgba(232,160,191,0.04));color:#E8A0BF;font-family:'Bebas Neue',sans-serif;font-size:0.72rem;cursor:pointer;min-height:48px;min-width:48px;flex-shrink:0;}
+    #kb-mystery:hover{background:linear-gradient(180deg,rgba(232,160,191,0.22),rgba(232,160,191,0.08));}
+    .mystery-modal{position:fixed;inset:0;z-index:100020;display:none;}
+    .mystery-modal.open{display:block;animation:panelFadeIn 0.25s ease;}
+    .mystery-modal .my-scrim{position:absolute;inset:0;background:rgba(8,10,6,0.88);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+    .mystery-modal .my-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(94vw,340px);background:linear-gradient(180deg,#22121a,#0d100c);border:2px solid rgba(232,160,191,0.45);border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,0.85),0 0 0 1px rgba(232,160,191,0.15);padding:1.2rem 1rem;text-align:center;}
+    .mystery-modal .my-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+    .mystery-modal .my-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:#E8A0BF;letter-spacing:0.14em;}
+    .mystery-modal .my-close{background:none;border:1px solid rgba(232,160,191,0.3);color:var(--muted);font-size:1rem;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .mystery-modal .my-balance{font-family:'DM Mono',monospace;font-size:0.7rem;color:#8bd0e8;margin-bottom:1rem;}
+    .mystery-modal .my-box{width:120px;height:120px;margin:0 auto 1rem;font-size:4rem;display:flex;align-items:center;justify-content:center;transition:transform 0.2s ease;filter:drop-shadow(0 4px 12px rgba(232,160,191,0.4));}
+    .mystery-modal .my-box.shaking{animation:myShake 0.08s linear infinite;}
+    @keyframes myShake{0%{transform:translate(-3px,-2px) rotate(-2deg);}25%{transform:translate(3px,2px) rotate(2deg);}50%{transform:translate(-2px,3px) rotate(-1deg);}75%{transform:translate(2px,-3px) rotate(1deg);}100%{transform:translate(-3px,-2px) rotate(-2deg);}}
+    .mystery-modal .my-box.opened{animation:myOpen 0.5s ease forwards;}
+    @keyframes myOpen{0%{transform:scale(1) rotate(0);}50%{transform:scale(1.3) rotate(180deg);filter:drop-shadow(0 8px 24px rgba(240,208,144,0.8));}100%{transform:scale(1) rotate(360deg);filter:drop-shadow(0 8px 24px rgba(240,208,144,0.5));}}
+    .mystery-modal .my-prize{min-height:2.4rem;font-family:'Playfair Display',serif;font-size:0.85rem;font-style:italic;color:var(--cream);margin-bottom:1rem;line-height:1.4;}
+    .mystery-modal .my-prize.win{color:var(--gold);font-family:'Bebas Neue',sans-serif;font-style:normal;letter-spacing:0.08em;font-size:1rem;}
+    .mystery-modal .my-prize.rare{color:#E8A0BF;font-size:1.15rem;animation:myPrizeRare 0.6s ease infinite alternate;}
+    @keyframes myPrizeRare{from{text-shadow:0 0 6px rgba(232,160,191,0.4);}to{text-shadow:0 0 16px rgba(232,160,191,0.8),0 0 24px rgba(240,208,144,0.5);}}
+    .mystery-modal .my-pull{width:100%;padding:0.85rem;border:1.5px solid rgba(232,160,191,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(232,160,191,0.2),rgba(232,160,191,0.08));color:#E8A0BF;font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:0.12em;cursor:pointer;min-height:52px;box-shadow:0 2px 8px rgba(232,160,191,0.15);}
+    .mystery-modal .my-pull:disabled{opacity:0.4;cursor:not-allowed;}
     /* ═══ LEVEL UP CELEBRATION OVERLAY ═══ */
     .lu-overlay{position:fixed;inset:0;z-index:99998;display:none;}
     .lu-overlay.open{display:block;}
@@ -5280,6 +5302,7 @@ window.onerror=function(msg,url,line,col,err){
       <div id="kb-dew" title="Dew — earned from wild plants, daily quests, and gifts. Spent on nursery acceleration and cuttings."><span class="kb-icon">💧</span><span class="kb-val">0</span></div>
       <div id="kb-slots" onclick="if(window._openSlots)_openSlots();" title="Pull the slots — gamble Dew for fertilizer, Sunbeams, and jackpots">🎰</div>
       <div id="kb-weather" onclick="if(window._openWeather)_openWeather();" title="Summon weather over your wild plants — rain, sun flare, dawn mist">🌦️</div>
+      <div id="kb-mystery" onclick="if(window._openMystery)_openMystery();" title="Open a mystery box — random loot for 25 Dew">🎁</div>
       <div id="kb-compendium" onclick="if(window._openCompendiumUI)_openCompendiumUI();" title="Book of Secrets entries discovered">📖 <span id="kb-comp-count">0</span></div>
       <div id="kb-root-report" onclick="if(window._openRootReport)_openRootReport('today');" title="Root Report — your keeper's journal"><span class="kb-rr-icon">🌿</span><span class="kb-rr-label">JOURNAL</span><span class="kb-rr-badge">0</span></div>
       <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install Lucid Winds as an app on your device">📲 <span class="kb-install-label">INSTALL</span></div>
@@ -44231,6 +44254,148 @@ function _tickWeather() {
 }
 setTimeout(_tickWeather, 1000);
 setInterval(_tickWeather, 60000);
+
+})();
+</script>
+
+<!-- ═══ MYSTERY BOX — Dew sink with weighted loot reveal ═══
+     25 Dew per pull. Loot table tuned for 80% RTP (meaningful sink
+     but meaningful wins). Client-side only, no Firestore.
+     Loot pool:
+       30% Seed Shell  — 3 fertilizer
+       25% Fossil Bit  — 8 DNA fragments
+       20% Sun Drop    — 40 Sunbeams
+       15% Dew Pearl   — 20 Dew (consolation)
+        7% Moon Shard  — 80 Sunbeams + 2 fertilizer
+        2% Starstone   — 200 Sunbeams + 5 fertilizer + 5 DNA
+        1% JACKPOT     — 500 Sunbeams + 10 fertilizer + 15 DNA + 50 Dew -->
+<script>
+(function(){
+'use strict';
+
+var MYSTERY_COST = 25;
+// Loot tuned to ~84% RTP with conservative value estimates
+// (1 fert ≈ 5 dew, 1 DNA ≈ 1 dew, 1 Sunbeam ≈ 1 dew).
+var MYSTERY_LOOT = [
+  { weight: 0.30, icon: '\ud83c\udf3e', name: 'Seed Shell',  desc: '+2 Fertilizer',                          fert:  2, rare: false },
+  { weight: 0.25, icon: '\ud83e\udea8', name: 'Fossil Bit',  desc: '+5 DNA fragments',                       dna:   5, rare: false },
+  { weight: 0.20, icon: '\u2728',       name: 'Sun Drop',    desc: '+20 Sunbeams',                           sb:   20, rare: false },
+  { weight: 0.15, icon: '\ud83d\udca7', name: 'Dew Pearl',   desc: '+15 Dew',                                dew:  15, rare: false },
+  { weight: 0.07, icon: '\ud83c\udf19', name: 'Moon Shard',  desc: '+40 Sunbeams +1 Fertilizer',             sb:  40, fert: 1, rare: true },
+  { weight: 0.02, icon: '\ud83c\udf20', name: 'Starstone',   desc: '+100 Sunbeams +3 Fertilizer +3 DNA',     sb: 100, fert: 3, dna: 3, rare: true },
+  { weight: 0.01, icon: '\ud83d\udc8e', name: 'JACKPOT!',    desc: '+250 Sunbeams +5 Fertilizer +10 DNA +30 Dew', sb: 250, fert: 5, dna: 10, dew: 30, rare: true, jackpot: true }
+];
+
+function _pickLoot() {
+  var r = Math.random(), c = 0;
+  for (var i = 0; i < MYSTERY_LOOT.length; i++) {
+    c += MYSTERY_LOOT[i].weight;
+    if (r <= c) return MYSTERY_LOOT[i];
+  }
+  return MYSTERY_LOOT[0];
+}
+
+function _ensureMysteryModal() {
+  var m = document.getElementById('mystery-modal');
+  if (m) return m;
+  m = document.createElement('div');
+  m.id = 'mystery-modal';
+  m.className = 'mystery-modal';
+  m.innerHTML =
+    '<div class="my-scrim" onclick="window._closeMystery()"></div>' +
+    '<div class="my-panel">' +
+      '<div class="my-header">' +
+        '<div class="my-title">\ud83c\udf81 MYSTERY BOX</div>' +
+        '<button class="my-close" onclick="window._closeMystery()">\u2715</button>' +
+      '</div>' +
+      '<div class="my-balance" id="my-balance">Dew: 0</div>' +
+      '<div class="my-box" id="my-box">\ud83c\udf81</div>' +
+      '<div class="my-prize" id="my-prize">Pay ' + MYSTERY_COST + ' Dew to open...</div>' +
+      '<button class="my-pull" id="my-pull" onclick="window._openMysteryBox()">OPEN BOX \u2014 ' + MYSTERY_COST + ' \ud83d\udca7</button>' +
+    '</div>';
+  document.body.appendChild(m);
+  return m;
+}
+
+function _refreshMyBalance() {
+  var el = document.getElementById('my-balance');
+  if (el) el.textContent = 'Dew: ' + (typeof window.getTotalDew === 'function' ? window.getTotalDew() : 0);
+}
+
+window._openMystery = function() {
+  _ensureMysteryModal();
+  _refreshMyBalance();
+  var box = document.getElementById('my-box'); if (box) { box.className = 'my-box'; box.textContent = '\ud83c\udf81'; }
+  var p = document.getElementById('my-prize'); if (p) { p.textContent = 'Pay ' + MYSTERY_COST + ' Dew to open...'; p.className = 'my-prize'; }
+  var btn = document.getElementById('my-pull'); if (btn) { btn.disabled = false; btn.textContent = 'OPEN BOX \u2014 ' + MYSTERY_COST + ' \ud83d\udca7'; }
+  document.getElementById('mystery-modal').classList.add('open');
+  if (typeof gtag !== 'undefined') gtag('event', 'mystery_open');
+};
+
+window._closeMystery = function() {
+  var m = document.getElementById('mystery-modal');
+  if (m) m.classList.remove('open');
+};
+
+var _mySpinning = false;
+
+window._openMysteryBox = function() {
+  if (_mySpinning) return;
+  var balance = typeof window.getTotalDew === 'function' ? window.getTotalDew() : 0;
+  if (balance < MYSTERY_COST) {
+    var p = document.getElementById('my-prize');
+    if (p) { p.textContent = 'Need ' + MYSTERY_COST + ' Dew. Earn more from wild plants.'; p.className = 'my-prize'; }
+    return;
+  }
+  if (typeof window.spendDew === 'function') {
+    if (!window.spendDew(MYSTERY_COST)) return;
+  }
+  _refreshMyBalance();
+  _mySpinning = true;
+  var btn = document.getElementById('my-pull'); if (btn) { btn.disabled = true; btn.textContent = 'OPENING...'; }
+  var box = document.getElementById('my-box');
+  if (box) box.classList.add('shaking');
+  var pEl = document.getElementById('my-prize');
+  if (pEl) { pEl.textContent = '...'; pEl.className = 'my-prize'; }
+  // Shake for 900ms then reveal
+  setTimeout(function() {
+    var loot = _pickLoot();
+    if (box) { box.classList.remove('shaking'); box.classList.add('opened'); box.textContent = loot.icon; }
+    // Apply rewards
+    if (loot.fert) {
+      try {
+        var inv = JSON.parse(localStorage.getItem('sws_inventory') || '{}');
+        inv.fertilizer = (inv.fertilizer || 0) + loot.fert;
+        localStorage.setItem('sws_inventory', JSON.stringify(inv));
+      } catch(e) {}
+    }
+    if (loot.dna) {
+      try {
+        var inv2 = JSON.parse(localStorage.getItem('sws_inventory') || '{}');
+        inv2.dnaFragments = (inv2.dnaFragments || 0) + loot.dna;
+        localStorage.setItem('sws_inventory', JSON.stringify(inv2));
+      } catch(e) {}
+    }
+    if (loot.sb && typeof window.earnHashes === 'function') window.earnHashes(loot.sb);
+    if (loot.dew && typeof window.earnDew === 'function') window.earnDew(loot.dew, 'mystery_box');
+    // Display
+    if (pEl) {
+      pEl.textContent = loot.name + ' \u00b7 ' + loot.desc;
+      pEl.className = 'my-prize ' + (loot.jackpot ? 'rare' : loot.rare ? 'win' : '');
+    }
+    // Event log for rare+ only
+    if (loot.rare && window.LW_Log) {
+      window.LW_Log.write('mystery_box_win', { name: loot.name, icon: loot.icon, jackpot: !!loot.jackpot });
+    }
+    // Haptic on rare
+    if (loot.jackpot && window._haptic) window._haptic('bloom');
+    else if (loot.rare && window._haptic) window._haptic('sync');
+    _refreshMyBalance();
+    if (btn) { btn.disabled = false; btn.textContent = 'OPEN ANOTHER \u2014 ' + MYSTERY_COST + ' \ud83d\udca7'; }
+    _mySpinning = false;
+    if (typeof gtag !== 'undefined') gtag('event', 'mystery_open', { rare: !!loot.rare, jackpot: !!loot.jackpot });
+  }, 900);
+};
 
 })();
 </script>
