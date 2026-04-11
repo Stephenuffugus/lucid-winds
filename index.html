@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.59';
+  var LW_VERSION='2026.04.10.60';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -47238,6 +47238,75 @@ window._openCompendiumUI=function(){
     }
   }
   h+='</div></div>';
+
+  // ─── MYTHIC HALL ──────────────────────────────────────────────
+  // Dedicated showcase for the 7 Legendary/Mythic/Cosmic companions
+  // that override the normal companion slot via hb(18) in hashToTraits.
+  // Discovered ones show full lore; undiscovered are cryptic riddles.
+  try {
+    var _mcDefs = [
+      { idx: 32, name: 'The Toad',               tier: 'Mythic',    icon: '\ud83d\udc38', color: '#A87285',
+        lore: 'Croaks beneath three leaves. Remembers every storm.',
+        riddle: 'A keeper wet and slow, who knows the rain before it falls.' },
+      { idx: 33, name: 'The Phoenix',            tier: 'Mythic',    icon: '\ud83d\udd25', color: '#A87285',
+        lore: 'Wings of ember. Returns from its own ashes with every season.',
+        riddle: 'Gold feathers burn and fall, yet rise again before the dawn.' },
+      { idx: 34, name: 'Bioluminescent Pulse',   tier: 'Legendary', icon: '\ud83d\udca1', color: '#C8A84B',
+        lore: 'A rhythm inside the stem. Light breathing with the moon.',
+        riddle: 'No creature\u2014 only a glow that pulses like a heart.' },
+      { idx: 35, name: 'Ancient Rune Field',     tier: 'Legendary', icon: '\u03a9',        color: '#C8A84B',
+        lore: 'Stones etched before the first keeper walked the grove.',
+        riddle: 'Marks older than memory, waiting to be read again.' },
+      { idx: 36, name: 'Storm Wraith',           tier: 'Legendary', icon: '\u26c8\ufe0f', color: '#C8A84B',
+        lore: 'A shape in the thunder. Guards the plant when skies break.',
+        riddle: 'You see it only in the lightning, and only for one breath.' },
+      { idx: 37, name: 'Starfall',               tier: 'Legendary', icon: '\u2604\ufe0f', color: '#C8A84B',
+        lore: 'A sliver of a cosmic bloom that fell through the canopy.',
+        riddle: 'It arrived from somewhere higher than any branch.' },
+      { idx: 38, name: 'The Beholder',           tier: 'Cosmic',    icon: '\ud83d\udc41\ufe0f', color: '#D94FFF',
+        lore: 'An eye older than the grove. It sees every plant, present and past.',
+        riddle: 'They say it watches, unblinking, from beneath the first stone.' }
+    ];
+    var _mhSeen = {};
+    for (var _mhi=0; _mhi<gh.length; _mhi++) {
+      try {
+        var _mht = hashToTraits(gh[_mhi].hash);
+        if (_mht && _mht.companion >= 32) _mhSeen[_mht.companion] = true;
+      } catch(e) {}
+    }
+    try {
+      var _bestiary = JSON.parse(localStorage.getItem('pw_bestiary')||'[]');
+      for (var _bi2=0; _bi2<_bestiary.length; _bi2++) {
+        if (_bestiary[_bi2] >= 32) _mhSeen[_bestiary[_bi2]] = true;
+      }
+    } catch(e) {}
+    var _mhFound = Object.keys(_mhSeen).length;
+    h+='<div style="margin-bottom:0.8rem;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:#D94FFF;letter-spacing:0.1em;margin-bottom:0.4rem;">\u2728 MYTHIC HALL <span style="color:var(--muted);font-size:0.4rem;">'+_mhFound+' / 7 witnessed</span></div>';
+    for (var _mci=0; _mci<_mcDefs.length; _mci++) {
+      var _mc = _mcDefs[_mci];
+      var _mcFound = !!_mhSeen[_mc.idx];
+      if (_mcFound) {
+        h+='<div style="padding:0.55rem 0.75rem;margin-bottom:4px;background:linear-gradient(180deg,rgba(26,18,22,0.7),rgba(13,10,16,0.8));border:1px solid '+_mc.color+'55;border-left:3px solid '+_mc.color+';border-radius:8px;">';
+        h+='<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;">';
+        h+='<div style="font-size:1.1rem;">'+_mc.icon+'</div>';
+        h+='<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:'+_mc.color+';letter-spacing:0.06em;">'+_mc.name+'</div>';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);letter-spacing:0.05em;">'+_mc.tier+'</div></div>';
+        h+='</div>';
+        h+='<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.6rem;color:var(--cream);line-height:1.4;">"'+_mc.lore+'"</div>';
+        h+='</div>';
+      } else {
+        h+='<div style="padding:0.5rem 0.75rem;margin-bottom:4px;background:rgba(13,16,12,0.4);border:1px solid rgba(74,124,53,0.08);border-left:3px solid rgba(138,145,120,0.2);border-radius:8px;">';
+        h+='<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;">';
+        h+='<div style="font-size:0.9rem;opacity:0.5;">?</div>';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);letter-spacing:0.04em;">??? \u00b7 '+_mc.tier+'</div>';
+        h+='</div>';
+        h+='<div style="font-family:DM Mono,monospace;font-style:italic;font-size:0.48rem;color:var(--muted);line-height:1.4;">"'+_mc.riddle+'"</div>';
+        h+='</div>';
+      }
+    }
+    h+='</div>';
+  } catch(e) {}
 
   // ─── GROVE MILESTONES ────────────────────────────────────────
   // Personal records pulled from greenhouse. "You did these things."
