@@ -33155,12 +33155,15 @@ function _saveSteps(s){try{localStorage.setItem(LW_STEPS_KEY,JSON.stringify(s));
 function _addSteps(meters){
   if(!meters||meters<=0)return;
   var s=_loadSteps();
-  s.lifetime=(s.lifetime||0)+meters;
+  var prevLifetime=s.lifetime||0;
+  s.lifetime=prevLifetime+meters;
   s.today=(s.today||0)+meters;
   _saveSteps(s);
   var el=document.getElementById('w-steps');
   if(el)el.textContent=s.today;
   _checkStepMilestone();
+  // Walker title check — only fire on the milestone crossing
+  if(prevLifetime<10000&&s.lifetime>=10000&&window.lwCheckEarnedTitles)window.lwCheckEarnedTitles();
 }
 function _hydrateStepsUI(){
   var s=_loadSteps();
@@ -35206,6 +35209,12 @@ function _doCrossPollination(wildPlant,matePlant){
     var chimerMsg=offGen>1?' Gen '+offGen+' chimera — 2× climate immunity, -'+(offGen-1)*2+' EA':'';
     _toast('\ud83c\udf31 Cross-pollinated!\n'+parentInfo.nm+' × '+mateInfo.nm+'\nSeed → Nursery.'+chimerMsg+'\n'+rewardMsg);
     if(window.PW_grantXP)PW_grantXP(5,'cross_pollinate');
+    // Pollinator title progress — bump lifetime counter and check
+    try {
+      var _polCt = parseInt(localStorage.getItem('lw_pollinations')||'0',10) + 1;
+      localStorage.setItem('lw_pollinations', String(_polCt));
+    } catch(e) {}
+    if(window.lwCheckEarnedTitles)window.lwCheckEarnedTitles();
     if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
   }
 
@@ -36073,6 +36082,7 @@ window._lwPatternConfirm = function(){
   _patternNamerState = { adj: null, noun: null, payload: null };
   var modal = document.getElementById('lw-pattern-namer');
   if (modal) modal.remove();
+  if (window.lwCheckEarnedTitles) window.lwCheckEarnedTitles();
   if (window.syncVaultToCloud) setTimeout(syncVaultToCloud, 500);
 };
 window._lwPatternCancel = function(){
@@ -37396,6 +37406,7 @@ window._hexAction=function(action){
     if(window.PW_grantXP)PW_grantXP(p.own?5:8,'wild_mulch');
     if(window.LW_Log)window.LW_Log.write('wild_mulched',{hash:p.hash,own:!!p.own,count:_mCount});
     _writeWitnessFee(p,'mulch');
+    if(window.lwCheckEarnedTitles)window.lwCheckEarnedTitles();
     if(window._haptic)_haptic('bloom');
     if(window._play)_play('match');
     var _msg='\ud83c\udf3e Mulched. +24h lifespan \u00b7 +1 EA \u00b7 \u2796 1 fert ('+_inv.fertilizer+' left)';
@@ -42733,7 +42744,58 @@ window.LW_TITLES = {
   moonworn:  { tier:3, cost:1500, word:'Moonworn',  desc:'Polished by countless nights.' },
   sovereign: { tier:3, cost:1500, word:'Sovereign', desc:'Of their own quiet grove.' },
   sunlit:    { tier:3, cost:1500, word:'Sunlit',    desc:'Warmed even at dusk.' },
-  wreathed:  { tier:3, cost:1500, word:'Wreathed',  desc:'Encircled by their own work.' }
+  wreathed:  { tier:3, cost:1500, word:'Wreathed',  desc:'Encircled by their own work.' },
+  // Tier 4 — EARNED, cannot be bought, only granted by milestones
+  steward:   { tier:4, cost:0, word:'Steward',     desc:'Has mulched 50 of any keeper\u2019s plants.', earnedBy:'mulch_50' },
+  hermit:    { tier:4, cost:0, word:'Hermit',      desc:'Kept a wild plant alive 30+ days alone.',     earnedBy:'hermit_30' },
+  pollinator:{ tier:4, cost:0, word:'Pollinator',  desc:'Has cross-pollinated 25 plants in the wild.', earnedBy:'pollinate_25' },
+  walker:    { tier:4, cost:0, word:'Walker',      desc:'Has walked 10 km tending the wild.',         earnedBy:'walk_10km' },
+  nameless:  { tier:4, cost:0, word:'Nameless',    desc:'Named 7 patterns into being.',                earnedBy:'pattern_7' }
+};
+// Earned title unlock check — call after relevant gameplay events
+window.lwCheckEarnedTitles = function(){
+  try {
+    var owned = _ownedTitles();
+    var add = function(key) {
+      if (owned.indexOf(key) >= 0) return false;
+      owned.push(key);
+      try { localStorage.setItem('lw_titles_owned', JSON.stringify(owned)); } catch(e) {}
+      var t = window.LW_TITLES[key];
+      if (t && window._toast) {
+        setTimeout(function(){
+          window._toast('\u2728 EARNED TITLE: \u201c' + _getName() + ' the ' + t.word + '\u201d \u2014 ' + t.desc);
+        }, 1000);
+      }
+      if (window.LW_Log) window.LW_Log.write('title_earned', { key: key });
+      return true;
+    };
+    // mulch_50: 50 lifetime mulches
+    var mulchCount = parseInt(localStorage.getItem('lw_mulches_applied') || '0', 10);
+    if (mulchCount >= 50) add('steward');
+    // hermit_30: at least one wild plant survived 30+ consecutive days alone
+    // Tracked via lw_hermit_progress object (computed elsewhere when applicable)
+    var hermitDone = localStorage.getItem('lw_hermit_30_done') === '1';
+    if (hermitDone) add('hermit');
+    // pollinate_25: 25 lifetime cross-pollinations
+    var polCount = parseInt(localStorage.getItem('lw_pollinations') || '0', 10);
+    if (polCount >= 25) add('pollinator');
+    // walk_10km: lifetime steps >= 10000m
+    try {
+      var stepsRaw = localStorage.getItem('lw_wild_steps');
+      if (stepsRaw) {
+        var steps = JSON.parse(stepsRaw);
+        if ((steps.lifetime || 0) >= 10000) add('walker');
+      }
+    } catch(e) {}
+    // pattern_7: 7 named patterns
+    try {
+      var patRaw = localStorage.getItem('lw_patterns_named');
+      if (patRaw) {
+        var pats = JSON.parse(patRaw);
+        if (pats.length >= 7) add('nameless');
+      }
+    } catch(e) {}
+  } catch(e) {}
 };
 function _getActiveTitle(){
   try {
