@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.58';
+  var LW_VERSION='2026.04.10.59';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -47238,6 +47238,107 @@ window._openCompendiumUI=function(){
     }
   }
   h+='</div></div>';
+
+  // ─── GROVE MILESTONES ────────────────────────────────────────
+  // Personal records pulled from greenhouse. "You did these things."
+  try {
+    var _milestones = [];
+    var _gms = gh.slice();
+    if (_gms.length > 0) {
+      var _first = _gms.slice().sort(function(a,b){ return (a.born||0)-(b.born||0); })[0];
+      if (_first && _first.born) {
+        var _daysKeeping = Math.max(0, Math.floor((Date.now()-_first.born)/86400000));
+        _milestones.push({ label: 'TENDING SINCE', value: new Date(_first.born).toLocaleDateString() + ' \u00b7 ' + _daysKeeping + ' days' });
+      }
+      _milestones.push({ label: 'GROVE SIZE', value: _gms.length + ' plants' });
+      var _roMap = { Common:0,Uncommon:1,Rare:2,Epic:3,Legendary:4,Mythic:5,Cosmic:6 };
+      var _rarestName = 'Common', _rarestPlant = null;
+      for (var _gmi=0; _gmi<_gms.length; _gmi++) {
+        try {
+          var _tt = hashToTraits(_gms[_gmi].hash);
+          var _tg3 = getTerraGrade(_tt);
+          if (_tg3 && _tg3.name && (_roMap[_tg3.name] || 0) > (_roMap[_rarestName] || 0)) {
+            _rarestName = _tg3.name;
+            _rarestPlant = _gms[_gmi];
+          }
+        } catch(e) {}
+      }
+      if (_rarestPlant) {
+        var _rpname = window.getPlantName?getPlantName(_rarestPlant.hash):'Plant';
+        _milestones.push({ label: 'RAREST MINT', value: _rpname + ' \u00b7 ' + _rarestName, color: '#C8A84B' });
+      }
+      var _deepest = 0;
+      for (var _gci=0; _gci<_gms.length; _gci++) {
+        var _gen = _gms[_gci].generation || 1;
+        if (_gen > _deepest) _deepest = _gen;
+      }
+      if (_deepest >= 2) _milestones.push({ label: 'DEEPEST CHIMERA', value: 'Gen ' + _deepest, color: '#E8A0BF' });
+      var _breeds = 0;
+      for (var _bci=0; _bci<_gms.length; _bci++) if (_gms[_bci].isCross) _breeds++;
+      if (_breeds > 0) _milestones.push({ label: 'BRED OFFSPRING', value: _breeds + ' plants' });
+      try {
+        var _cl2 = JSON.parse(localStorage.getItem('sws_compost_log') || '[]');
+        if (_cl2.length > 0) _milestones.push({ label: 'RETURNED TO EARTH', value: _cl2.length + ' plants' });
+      } catch(e) {}
+    }
+    if (_milestones.length > 0) {
+      h+='<div style="margin-bottom:0.8rem;">';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:0.4rem;">\ud83c\udf7e GROVE MILESTONES</div>';
+      for (var _msi=0; _msi<_milestones.length; _msi++) {
+        var _ms = _milestones[_msi];
+        var _mcol = _ms.color || 'var(--cream)';
+        h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0.7rem;margin-bottom:3px;background:rgba(18,22,16,0.55);border:1px solid rgba(74,124,53,0.15);border-radius:6px;">';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);letter-spacing:0.05em;">'+_ms.label+'</div>';
+        h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:'+_mcol+';letter-spacing:0.04em;text-align:right;">'+_ms.value+'</div>';
+        h+='</div>';
+      }
+      h+='</div>';
+    }
+  } catch(e) {}
+
+  // ─── TRAIT DIVERSITY ─────────────────────────────────────────
+  // Counts of unique trait indices across the greenhouse, with
+  // progress bars per category (leaves/stems/pots/blooms/auras/substrates).
+  try {
+    if (gh.length > 0 && window.TRAIT_BANK) {
+      var _seenT = { leaves:{}, stems:{}, pots:{}, blooms:{}, auras:{}, substrates:{} };
+      for (var _tdi=0; _tdi<gh.length; _tdi++) {
+        try {
+          var _td = hashToTraits(gh[_tdi].hash);
+          if (!_td) continue;
+          if (_td.leafType != null) _seenT.leaves[_td.leafType] = true;
+          if (_td.stem != null) _seenT.stems[_td.stem] = true;
+          if (_td.pot != null) _seenT.pots[_td.pot] = true;
+          if (_td.hasFlower && _td.flower != null) _seenT.blooms[_td.flower] = true;
+          if (_td.aura != null) _seenT.auras[_td.aura] = true;
+          if (_td.base != null) _seenT.substrates[_td.base] = true;
+        } catch(e) {}
+      }
+      var _tb = window.TRAIT_BANK;
+      var _rows = [
+        { label: 'LEAF TYPES',     icon: '\ud83c\udf43', seen: Object.keys(_seenT.leaves).length,      total: (_tb.leaves||[]).length || 60 },
+        { label: 'STEM PATTERNS',  icon: '\ud83c\udf3f', seen: Object.keys(_seenT.stems).length,       total: (_tb.stems||[]).length || 24 },
+        { label: 'VESSEL TYPES',   icon: '\ud83c\udffa', seen: Object.keys(_seenT.pots).length,        total: (_tb.pots||[]).length || 60 },
+        { label: 'BLOOM SHAPES',   icon: '\ud83c\udf38', seen: Object.keys(_seenT.blooms).length,      total: (_tb.flowers||[]).length || 71 },
+        { label: 'AURAS',          icon: '\u2728',       seen: Object.keys(_seenT.auras).length,       total: 21 },
+        { label: 'SUBSTRATES',     icon: '\ud83e\udea8', seen: Object.keys(_seenT.substrates).length,  total: 30 }
+      ];
+      h+='<div style="margin-bottom:0.8rem;">';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.4rem;">\ud83c\udf31 TRAIT DIVERSITY</div>';
+      for (var _trj=0; _trj<_rows.length; _trj++) {
+        var _rr = _rows[_trj];
+        var _pct = _rr.total > 0 ? Math.round(_rr.seen/_rr.total*100) : 0;
+        h+='<div style="display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0.5rem;margin-bottom:3px;background:rgba(18,22,16,0.55);border:1px solid rgba(74,124,53,0.12);border-radius:6px;">';
+        h+='<div style="font-size:0.85rem;">'+_rr.icon+'</div>';
+        h+='<div style="flex:1;">';
+        h+='<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.4rem;color:var(--cream);"><span>'+_rr.label+'</span><span style="color:var(--sage);">'+_rr.seen+' / '+_rr.total+'</span></div>';
+        h+='<div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin-top:2px;"><div style="height:100%;width:'+_pct+'%;background:linear-gradient(90deg,rgba(122,179,86,0.6),rgba(200,168,75,0.7));border-radius:2px;transition:width 0.4s;"></div></div>';
+        h+='</div>';
+        h+='</div>';
+      }
+      h+='</div>';
+    }
+  } catch(e) {}
 
   // ─── RARITY PARADE ─────────────────────────────────────────────
   // First-minted plant of each of the 7 rarity tiers, shown as SVG cards.
