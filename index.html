@@ -3835,6 +3835,9 @@
 .hi-action-btn.hi-prune-hold.holding{border-color:rgba(216,112,96,0.85);box-shadow:0 0 18px rgba(216,112,96,0.5);}
 .hi-action-btn.hi-prune-hold.holding .hi-water-fill{transition:width 5s linear;}
 .hi-action-btn.hi-prune-hold.held{border-color:rgba(122,179,86,0.85);box-shadow:0 0 22px rgba(122,179,86,0.6);}
+.hi-action-btn.hi-bless-btn{border-color:rgba(200,168,75,0.5);color:var(--gold);background:linear-gradient(180deg,rgba(46,38,18,0.6),rgba(28,24,12,0.7));box-shadow:inset 0 0 12px rgba(200,168,75,0.12),0 0 14px rgba(200,168,75,0.2);animation:blessPulse 3s ease-in-out infinite;}
+.hi-action-btn.hi-bless-btn:active{box-shadow:none;transform:translateY(1px);}
+@keyframes blessPulse{0%,100%{box-shadow:inset 0 0 12px rgba(200,168,75,0.12),0 0 14px rgba(200,168,75,0.2);}50%{box-shadow:inset 0 0 18px rgba(200,168,75,0.2),0 0 22px rgba(200,168,75,0.4);}}
 .hi-plant-row.hi-plant-row-pest{border-left:3px solid rgba(216,112,96,0.6);background:linear-gradient(90deg,rgba(216,112,96,0.08),transparent 60%);}
 .hi-plant-row.hi-plant-row-pest .hi-pr-name::after{content:' \01F9A0';font-size:0.8em;}
 .hi-search{padding:0.5rem 1rem 0.3rem;border-top:1px solid rgba(200,168,75,0.06);}
@@ -31278,7 +31281,7 @@ document.addEventListener('keydown', function(e) {
     setTimeout(function(){ if(ov) ov.classList.add('dismissed'); }, msg ? 600 : 0);
   }
 
-  // ── Claim pending rewards on login (harvest rewards from displaced plants) ──
+  // ── Claim pending rewards on login (harvest, witness fees, blessing kickbacks) ──
   function _claimPendingRewards(uid) {
     if (!uid || !db) return;
     var rewardsRef = db.collection('vaults').doc(uid).collection('pendingRewards');
@@ -31287,18 +31290,25 @@ document.addEventListener('keydown', function(e) {
       var totalDew = 0;
       var batch = db.batch();
       var count = 0;
+      var byType = {};
+      var samples = [];
       snap.forEach(function(doc) {
         var d = doc.data();
-        totalDew += (d.amount || 0);
+        var amt = d.amount || 0;
+        totalDew += amt;
+        var t = d.type || 'wild_reward';
+        byType[t] = (byType[t] || 0) + amt;
+        if (samples.length < 3 && d.actorName && d.plantName) {
+          samples.push({actor: d.actorName, plant: d.plantName, action: d.action || t, amt: amt});
+        }
         batch.delete(doc.ref);
         count++;
       });
       if (totalDew <= 0) return;
-      // Apply rewards: credit Dew to player's ledger (harvest rewards are Dew)
       batch.commit().then(function() {
         try {
           if (typeof earnDew === 'function') {
-            earnDew(totalDew, 'wild_harvest_reward');
+            earnDew(totalDew, 'wild_pending_reward');
           } else {
             var ledgerRaw = _secureGet('sws_dew_ledger') || localStorage.getItem('sws_dew_ledger');
             var ledger = JSON.parse(ledgerRaw || '{}');
@@ -31310,7 +31320,14 @@ document.addEventListener('keydown', function(e) {
           if (window.updateDashboard) updateDashboard();
         } catch(e) {}
         if (window._swsLog) _swsLog('Claimed ' + count + ' rewards: +' + totalDew + ' Dew', 'ok');
-        if (window.showHexMsg) showHexMsg('+' + totalDew + ' Dew from your Wild plants!');
+        // Build a friendly summary that names a few of the actors
+        var msg = '+' + totalDew + ' Dew from your Wild plants';
+        if (samples.length) {
+          var firstSample = samples[0];
+          msg += ' — ' + firstSample.actor + ' ' + firstSample.action + 'ed your ' + firstSample.plant;
+          if (count > 1) msg += ' (and ' + (count - 1) + ' more)';
+        }
+        if (window.showHexMsg) showHexMsg(msg);
       }).catch(function(e) {
         if (window._swsLog) _swsLog('Reward claim batch err: ' + e.message, 'err');
       });
@@ -35246,6 +35263,94 @@ function _phenoRevealScan(wild,newIdx){
 }
 window._phenotypeOf=_phenotypeOf; // exposed so hex inspector + cards can read it
 
+// ═══ DAILY BLESSINGS + WITNESSING FEES ═══
+// Two compounding incentives that make putting rare plants in the wild
+// economically worth it without distorting the map view.
+//
+// BLESSINGS: every wild plant Rare+ generates one Dew gift per UTC day,
+// claimable by any player who visits it (the planter included as a thank-
+// you for tending). Once per plant per day per player. Bigger payouts for
+// rarer plants make wandering rewarding.
+//
+// WITNESS FEES: every time a STRANGER acts on a wild plant (water, tend,
+// mulch, cutting, prune), the planter gets a small Dew kickback via the
+// existing pendingRewards collection. Long-tail income proportional to
+// how interesting your plant is to others.
+var _BLESSING_TIER_DEW = {
+  Common: 0, Uncommon: 0,
+  Rare: 1, Epic: 3, Legendary: 5, Mythic: 8, Cosmic: 12
+};
+function _blessingDewFor(plant) {
+  if (!plant) return 0;
+  var grade = plant.rarity || plant.grade;
+  if (!grade && plant.hash) {
+    try {
+      var t = window.hashToTraits(plant.hash);
+      var tg = window.getTerraGrade(t);
+      grade = tg && (tg.label || tg.name);
+    } catch(e) {}
+  }
+  return _BLESSING_TIER_DEW[grade] || 0;
+}
+function _blessingsClaimedToday() {
+  try {
+    var raw = localStorage.getItem('lw_blessings_claimed') || '{}';
+    var parsed = JSON.parse(raw);
+    var today = new Date().toISOString().split('T')[0];
+    if (parsed.date !== today) return { date: today, hashes: {} };
+    return parsed;
+  } catch(e) { return { date: new Date().toISOString().split('T')[0], hashes: {} }; }
+}
+function _saveBlessingsClaimed(c) {
+  try { localStorage.setItem('lw_blessings_claimed', JSON.stringify(c)); } catch(e) {}
+}
+function _canReceiveBlessing(p) {
+  if (!p || !p.hash) return 0;
+  var dew = _blessingDewFor(p);
+  if (dew <= 0) return 0;
+  var claimed = _blessingsClaimedToday();
+  if (claimed.hashes[p.hash]) return 0;
+  return dew;
+}
+window._canReceiveBlessing = _canReceiveBlessing;
+
+// Witness fee: when a stranger acts on a wild plant, the planter gets a
+// small Dew kickback. Posted as a pendingReward doc that the planter
+// claims on next login (existing _claimPendingRewards path).
+var _WITNESS_FEE_BY_GRADE = {
+  Common: 1, Uncommon: 1, Rare: 2, Epic: 3,
+  Legendary: 5, Mythic: 8, Cosmic: 12
+};
+function _writeWitnessFee(p, actionLabel) {
+  try {
+    if (!p || !p.hash || p.own) return; // own plant — no fee
+    var ownerUid = p.ownerUid;
+    if (!ownerUid) return;
+    var actor = window.firebase && firebase.auth() && firebase.auth().currentUser;
+    if (!actor || actor.uid === ownerUid) return; // self-action somehow
+    if (!window.db) return;
+    // Resolve grade from plant or via hash
+    var grade = p.rarity || p.grade;
+    if (!grade) {
+      try { grade = window.getTerraGrade(window.hashToTraits(p.hash)).label; } catch(e) {}
+    }
+    var amount = _WITNESS_FEE_BY_GRADE[grade] || 1;
+    var actorName = (typeof localStorage !== 'undefined' && localStorage.getItem('pw_keeper_name')) || 'A keeper';
+    var rewardRef = window.db.collection('vaults').doc(ownerUid).collection('pendingRewards').doc();
+    rewardRef.set({
+      type: 'witness_fee',
+      action: actionLabel || 'tend',
+      amount: amount,
+      grade: grade || 'Common',
+      plantHash: p.hash,
+      plantName: (window.getPlantName ? window.getPlantName(p.hash) : p.hash.slice(0,8)),
+      actorUid: actor.uid,
+      actorName: actorName,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(function(){});
+  } catch(e) {}
+}
+
 // ═══ PEST OUTBREAK SYSTEM (Wild spec §5) ═══
 // 72hr cycle in dense areas (4+ plants in a zone). Detection runs once
 // per Wild activate (gated by a 12h scan cooldown). Stages derived from
@@ -36283,6 +36388,13 @@ function _selectHexPlant(idx,p){
   var _mulchTitle=_mFert>=1?'Spend 1 fertilizer for +24h lifespan + 1 EA':'Need 1 fertilizer (compost a greenhouse plant)';
   var _mulchCls=_mFert>=1?'':' locked';
   var _mulchBtn='<button class="hi-action-btn'+_mulchCls+'"'+(_mFert>=1?' onclick="window._hexAction(\'mulch\')"':'')+' title="'+_mulchTitle+'">&#127807; MULCH ('+_mFert+')</button>';
+  // BLESSING button — Rare+ plants generate a daily Dew gift, claimable
+  // once per plant per day per player. Available on own AND stranger plants.
+  var _blessBtn='';
+  var _blessDew=window._canReceiveBlessing?window._canReceiveBlessing(p):0;
+  if(_blessDew>0){
+    _blessBtn='<button class="hi-action-btn hi-bless-btn" onclick="window._hexAction(\'blessing\')" title="Receive a daily blessing from this plant">\ud83d\ude4f BLESSING (+'+_blessDew+'\ud83d\udca7)</button>';
+  }
   // PRUNE button — only when this plant has an active pest. 5s hold + 3 hashes.
   var _pruneBtn='';
   if(p.pestStage>0){
@@ -36297,6 +36409,7 @@ function _selectHexPlant(idx,p){
     actions+='<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
     actions+=_inspectBtn;
     actions+=_mulchBtn;
+    if(_blessBtn)actions+=_blessBtn;
     if(_pruneBtn)actions+=_pruneBtn;
     actions+='<button class="hi-action-btn" onclick="window._hexAction(\'defense\')">&#128737; DEFENSE</button>';
   }else{
@@ -36310,6 +36423,7 @@ function _selectHexPlant(idx,p){
     // — handlers attached to pointerdown/up so it works for touch + mouse.
     actions+='<button class="hi-action-btn hi-water-hold" data-hold-action="water" data-hold-ms="10000" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)" onpointerleave="window._waterHoldEnd(this)" title="Hold for 10 seconds to water"><span class="hi-water-fill"></span><span class="hi-water-label">&#128167; HOLD TO WATER</span></button>';
     actions+=_mulchBtn;
+    if(_blessBtn)actions+=_blessBtn;
     if(_pruneBtn)actions+=_pruneBtn;
     actions+='<button class="hi-action-btn'+(_canTend?'':' locked')+'"'+(_canTend?' onclick="window._hexAction(\'tend\')"':'')+' title="'+(_canTend?'Tend this plant — gives it +6h and grants you Dew':'Unlocks at Keeper Level 5')+'">&#127807; TEND'+(_canTend?'':' &#128274;')+'</button>';
     actions+='<button class="hi-action-btn gold'+(_canCut?'':' locked')+'"'+(_canCut?' onclick="window._hexAction(\'cutting\')"':'')+' title="'+(_canCut?'Take a cutting — clone seed, parent loses 10% lifespan. One-time per plant':'Unlocks at Keeper Level 15')+'">&#9986; CUTTING'+(_canCut?'':' &#128274;')+'</button>';
@@ -36416,6 +36530,7 @@ window._hexAction=function(action){
       }catch(e){}
       if(window.PW_grantXP)PW_grantXP(5,'wild_water_stranger');
       if(window.LW_Log)window.LW_Log.write('wild_watered_stranger',{hash:p.hash,ownerName:p.ownerName||'Keeper'});
+      _writeWitnessFee(p,'water');
       _toast('\ud83d\udca7 Watered a keeper\u2019s plant. +2h \u00b7 +5 XP. '+(5-wb.count)+' left today.');
       if(window._haptic)_haptic('bloom');
       if(window._trackQuest)_trackQuest('plantsWatered',1);
@@ -36447,6 +36562,7 @@ window._hexAction=function(action){
     if(window.earnDew)window.earnDew(2,'wild_tend_stranger');
     if(window.PW_grantXP)PW_grantXP(10,'wild_tend_stranger');
     if(window.LW_Log)window.LW_Log.write('wild_tended_stranger',{hash:p.hash,ownerName:p.ownerName||'Keeper'});
+    _writeWitnessFee(p,'tend');
     _toast('\ud83c\udf3f Tended '+(p.ownerName||'a keeper')+'\u2019s plant. +6h lifespan \u00b7 +2 Dew \u00b7 +10 XP');
     if(window._play)_play('match');
   }else if(action==='mulch'){
@@ -36504,6 +36620,7 @@ window._hexAction=function(action){
     }
     if(window.PW_grantXP)PW_grantXP(p.own?5:8,'wild_mulch');
     if(window.LW_Log)window.LW_Log.write('wild_mulched',{hash:p.hash,own:!!p.own,count:_mCount});
+    _writeWitnessFee(p,'mulch');
     if(window._haptic)_haptic('bloom');
     if(window._play)_play('match');
     var _msg='\ud83c\udf3e Mulched. +24h lifespan \u00b7 +1 EA \u00b7 \u2796 1 fert ('+_inv.fertilizer+' left)';
@@ -36513,6 +36630,47 @@ window._hexAction=function(action){
       setTimeout(function(){_toast('\ud83c\udfc5 STEWARD BADGE EARNED! 50 mulches \u2014 you\u2019re a friend to every garden.');},1800);
     }
     // Re-render the hex inspector so the vitality bar updates
+    if(_hexInspZone&&window.FG_Wild&&FG_Wild._openHexInspector){
+      setTimeout(function(){FG_Wild._openHexInspector(_hexInspZone);},200);
+    }
+  }else if(action==='blessing'){
+    // Claim a daily blessing from a Rare+ wild plant. Once per plant per
+    // UTC day per player. Owner gets a notification kickback so they
+    // know their plant is generating value out in the world.
+    if(_uLat&&p.lat){var _bDist=_dist(_uLat,_uLng,p.lat,p.lng);if(_bDist>COLLECT_RANGE){_toast('Walk closer! '+Math.round(_bDist)+'m away.');return;}}
+    var _bDew=_canReceiveBlessing(p);
+    if(_bDew<=0){_toast('No blessing available — already received today, or this plant is too common.');return;}
+    var _bClaimed=_blessingsClaimedToday();
+    _bClaimed.hashes[p.hash]=Date.now();
+    _saveBlessingsClaimed(_bClaimed);
+    if(window.earnDew)window.earnDew(_bDew,'wild_blessing');
+    if(window.PW_grantXP)PW_grantXP(_bDew,'wild_blessing');
+    if(window.LW_Log)window.LW_Log.write('wild_blessed',{hash:p.hash,dew:_bDew,from:p.ownerName||'Keeper'});
+    if(window._haptic)_haptic('bloom');
+    if(window._play)_play('match');
+    var _bGrade=p.rarity||p.grade||'?';
+    _toast('\ud83d\ude4f Blessing received from a '+_bGrade+' plant. +'+_bDew+' Dew \u00b7 +'+_bDew+' XP');
+    // Notify the planter — small Dew kickback so they know their plant is alive in the world
+    if(!p.own){
+      try{
+        var _bActor=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
+        var _bOwner=p.ownerUid;
+        if(_bActor&&_bOwner&&_bActor.uid!==_bOwner&&window.db){
+          var _bActorName=localStorage.getItem('pw_keeper_name')||'A keeper';
+          var _bRef=window.db.collection('vaults').doc(_bOwner).collection('pendingRewards').doc();
+          _bRef.set({
+            type:'blessing_granted',
+            amount:Math.max(1,Math.floor(_bDew/2)),
+            grade:_bGrade,
+            plantHash:p.hash,
+            plantName:(window.getPlantName?window.getPlantName(p.hash):p.hash.slice(0,8)),
+            actorUid:_bActor.uid,
+            actorName:_bActorName,
+            timestamp:firebase.firestore.FieldValue.serverTimestamp()
+          }).catch(function(){});
+        }
+      }catch(e){}
+    }
     if(_hexInspZone&&window.FG_Wild&&FG_Wild._openHexInspector){
       setTimeout(function(){FG_Wild._openHexInspector(_hexInspZone);},200);
     }
@@ -36542,6 +36700,7 @@ window._hexAction=function(action){
     }catch(e){}
     if(window.PW_grantXP)PW_grantXP(8,'wild_prune');
     if(window.LW_Log)window.LW_Log.write('wild_pruned',{hash:p.hash});
+    _writeWitnessFee(p,'prune');
     if(window._haptic)_haptic('bloom');
     _toast('\u2702\ufe0f Pruned. Pest cleared. \u2796 3 hashes \u00b7 +8 XP');
     if(_hexInspZone&&window.FG_Wild&&FG_Wild._openHexInspector){
