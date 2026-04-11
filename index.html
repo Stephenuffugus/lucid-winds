@@ -5202,6 +5202,8 @@ window.onerror=function(msg,url,line,col,err){
     </div>
     <!-- RECENTER BUTTON -->
     <button id="w-recenter" onclick="if(window.FG_Wild&&window.FG_Wild._recenter)FG_Wild._recenter();" style="display:none;position:fixed;bottom:calc(140px + env(safe-area-inset-bottom,0px));left:12px;z-index:999;width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(74,144,217,0.3);background:rgba(13,16,12,0.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,0.4);-webkit-tap-highlight-color:transparent;color:rgba(74,144,217,0.8);font-size:0.7rem;">&#8982;</button>
+    <!-- MASS WATER BUTTON — appears when player has 2+ wild plants needing water -->
+    <button id="w-mass-water" onclick="window._lwMassWater();" style="display:none;position:fixed;bottom:calc(190px + env(safe-area-inset-bottom,0px));left:12px;z-index:999;min-width:46px;height:46px;padding:0 12px;border-radius:23px;border:1.5px solid rgba(91,143,185,0.5);background:rgba(13,18,24,0.94);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:none;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 14px rgba(0,0,0,0.5),0 0 12px rgba(91,143,185,0.2);-webkit-tap-highlight-color:transparent;color:#7ab3d4;font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.06em;white-space:nowrap;"><span id="w-mass-water-label">&#128167; WATER ALL</span></button>
     <!-- MAP -->
     <div id="wild-map" style="width:100%;height:100vh;height:100dvh;min-height:250px;"></div>
     <div class="map-hex-overlay"></div>
@@ -32839,6 +32841,8 @@ function activate(){
   _updateUI();
   // Hydrate persisted step counter (was DOM-only, lost on reload)
   _hydrateStepsUI();
+  // Show/hide the mass water button based on current state
+  setTimeout(_lwMassWaterRefreshButton, 100);
   // Hydrate anti-farming state from Firestore (background)
   _afHydrate(function(){_loadState();_updateUI();});
   // Fallback: load plants even if GPS is slow — uses last known position or fallback
@@ -36727,6 +36731,105 @@ window._hexSeedSearch=function(){
     if(btn){btn.disabled=true;btn.innerHTML='<span class="hi-search-icon">&#127793;</span> SEARCHED TODAY';if(timerEl){timerEl.textContent='Resets at midnight';timerEl.style.display='block';}}
   },500);
 };
+
+// ═══ MASS WATER ═══
+// Convenience action: water all your wild plants that haven't been watered
+// in the last 24h. Costs Dew per plant, capped at 5 uses per UTC day so it
+// doesn't replace walking entirely. The button only appears when there are
+// 2+ plants eligible.
+var LW_MASS_WATER_DEW_PER = 10;
+var LW_MASS_WATER_DAILY_USES = 5;
+var LW_MASS_WATER_MAX_PER_USE = 20;
+function _lwMassWaterEligible(){
+  try{
+    var wild = _getWild();
+    var now = Date.now();
+    var out = [];
+    for (var i=0;i<wild.length;i++){
+      var p = wild[i];
+      if (!p) continue;
+      var lastW = p.lastWateredAt || 0;
+      if (now - lastW < 24*3600000) continue;
+      out.push(i);
+      if (out.length >= LW_MASS_WATER_MAX_PER_USE) break;
+    }
+    return out;
+  } catch(e) { return []; }
+}
+function _lwMassWaterUsesToday(){
+  try{
+    var raw = localStorage.getItem('lw_mass_water_log') || '{}';
+    var log = JSON.parse(raw);
+    var today = new Date().toISOString().split('T')[0];
+    if (log.date !== today) return 0;
+    return log.count || 0;
+  } catch(e) { return 0; }
+}
+function _lwMassWaterRecord(){
+  try{
+    var today = new Date().toISOString().split('T')[0];
+    var log = { date: today, count: _lwMassWaterUsesToday() + 1 };
+    localStorage.setItem('lw_mass_water_log', JSON.stringify(log));
+  } catch(e) {}
+}
+function _lwMassWaterRefreshButton(){
+  var btn = document.getElementById('w-mass-water');
+  if (!btn) return;
+  var eligible = _lwMassWaterEligible();
+  if (eligible.length < 2) { btn.style.display = 'none'; return; }
+  var usesLeft = LW_MASS_WATER_DAILY_USES - _lwMassWaterUsesToday();
+  if (usesLeft <= 0) { btn.style.display = 'none'; return; }
+  var label = document.getElementById('w-mass-water-label');
+  var cost = eligible.length * LW_MASS_WATER_DEW_PER;
+  if (label) label.innerHTML = '\ud83d\udca7 WATER ALL (' + eligible.length + ' \u00b7 ' + cost + ' Dew)';
+  btn.style.display = 'flex';
+}
+window._lwMassWater = function(){
+  var eligible = _lwMassWaterEligible();
+  if (eligible.length === 0) { _toast('All your plants are watered.'); return; }
+  if (_lwMassWaterUsesToday() >= LW_MASS_WATER_DAILY_USES) {
+    _toast('Mass water limit reached for today (' + LW_MASS_WATER_DAILY_USES + '/day). Walk to your plants for a free water.');
+    return;
+  }
+  var cost = eligible.length * LW_MASS_WATER_DEW_PER;
+  var bal = window.getTotalDew ? window.getTotalDew() : 0;
+  if (bal < cost) {
+    _toast('Need ' + cost + ' Dew (have ' + bal + ').');
+    return;
+  }
+  if (window._lwConfirm) {
+    window._lwConfirm({
+      title: 'WATER ALL PLANTS',
+      body: 'Water <b>' + eligible.length + '</b> plant' + (eligible.length===1?'':'s') + ' for <b>' + cost + ' Dew</b>?<br><br>Each plant\u2019s lifespan resets to full. ' + (LW_MASS_WATER_DAILY_USES - _lwMassWaterUsesToday() - 1) + ' uses left after this.',
+      yes: 'WATER ALL',
+      no: 'CANCEL'
+    }, function(){ _lwMassWaterDoIt(eligible, cost); });
+  } else {
+    _lwMassWaterDoIt(eligible, cost);
+  }
+};
+function _lwMassWaterDoIt(eligibleIdx, cost){
+  if (!window.spendDew(cost)) { _toast('Could not spend Dew.'); return; }
+  var wild = _getWild();
+  var now = Date.now();
+  var watered = 0;
+  for (var i=0;i<eligibleIdx.length;i++){
+    var w = wild[eligibleIdx[i]];
+    if (!w) continue;
+    _ensureVitality(w);
+    w.lastWateredAt = now;
+    w.decayAt = now + (w.lifespanMs || (7*86400000));
+    watered++;
+  }
+  _saveWild(wild);
+  _lwMassWaterRecord();
+  if (window.PW_grantXP) PW_grantXP(watered, 'mass_water');
+  if (window.LW_Log) LW_Log.write('mass_water', { count: watered, cost: cost });
+  if (window._haptic) _haptic('bloom');
+  _toast('\ud83d\udca7 Watered ' + watered + ' plants. \u2796 ' + cost + ' Dew \u00b7 +' + watered + ' XP');
+  _lwMassWaterRefreshButton();
+}
+window._lwMassWaterRefresh = _lwMassWaterRefreshButton;
 
 // Generic press-and-hold handlers — used for both water (10s) and prune (5s).
 // The button declares which _hexAction to fire and how long via data attrs:
@@ -44568,6 +44671,7 @@ window.FG_Backpack.hide = function() {
   if (fab) fab.style.display = 'none';
   if (rtb) rtb.style.display = 'none';
   var rc = document.getElementById('w-recenter'); if (rc) rc.style.display = 'none';
+  var mw = document.getElementById('w-mass-water'); if (mw) mw.style.display = 'none';
   var stp = document.getElementById('stp');
   if (stp) stp.style.display = 'none';
   // Hide map overlays
