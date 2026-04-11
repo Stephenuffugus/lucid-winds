@@ -332,6 +332,51 @@ function _dist(a,b,c,d){var x=(c-a)*Math.PI/180,y=(d-b)*Math.PI/180;var z=Math.s
 
 // ═══ 3-PER-ZONE CAP + EVICTION ═══
 var MAX_PER_ZONE=3;
+// Wild v3 balance: dice-roll takeover. Replaces the deterministic
+// `myEA > theirEA` check with 2d6 + companion temperament bonus on
+// both sides. Forager +3, Wanderer +2, Mystic +1 on attacker;
+// Guardian +2, Mystic +1 on defender.
+function _rollTakeover(attackerPlant,defenderPlant){
+  function _d(n,sides){var t=0;for(var i=0;i<n;i++)t+=Math.floor(Math.random()*sides)+1;return t;}
+  function _tempBonus(plant,side){
+    try{
+      var t=window.hashToTraits?window.hashToTraits(plant.hash):null;
+      if(!t)return 0;
+      var info=window.getCompanionInfo?window.getCompanionInfo(t):null;
+      if(!info||!info.tempKey)return 0;
+      if(side==='attacker'){
+        if(info.tempKey==='forager')return 3;
+        if(info.tempKey==='wanderer')return 2;
+        if(info.tempKey==='mystic')return 1;
+      }else{
+        if(info.tempKey==='guardian')return 2;
+        if(info.tempKey==='mystic')return 1;
+      }
+    }catch(e){}
+    return 0;
+  }
+  var attEA=(attackerPlant&&attackerPlant.ea)||0;
+  var defEA=(defenderPlant&&defenderPlant.ea)||0;
+  var attRoll=_d(2,6),defRoll=_d(2,6);
+  var attComp=_tempBonus(attackerPlant,'attacker');
+  var defComp=_tempBonus(defenderPlant,'defender');
+  return{
+    attEA:attEA,defEA:defEA,
+    attRoll:attRoll,defRoll:defRoll,
+    attComp:attComp,defComp:defComp,
+    attTotal:attEA+attRoll+attComp,
+    defTotal:defEA+defRoll+defComp,
+    attackerWins:(attEA+attRoll+attComp)>(defEA+defRoll+defComp)
+  };
+}
+window._rollTakeover=_rollTakeover;
+function _formatRollToast(r){
+  var attStr=r.attEA+'+'+r.attRoll+(r.attComp?'+'+r.attComp:'');
+  var defStr=r.defEA+'+'+r.defRoll+(r.defComp?'+'+r.defComp:'');
+  var verdict=r.attackerWins?'UPROOTED!':'DEFENDED';
+  var icon=r.attackerWins?'\u2694\ufe0f':'\ud83d\udee1\ufe0f';
+  return icon+' '+attStr+'='+r.attTotal+' vs '+defStr+'='+r.defTotal+' \u2014 '+verdict;
+}
 // Wild v3 balance: per-player spatial cap. Max 3 of YOUR OWN plants
 // within 700m of any drop point. Forces geographic spread so one
 // player can't lock down a neighborhood.
@@ -2833,18 +2878,19 @@ function _drop(pl){
   }
   var displaced=null;
   if(inZone.length>=MAX_PER_ZONE){
-    // Zone is full — try to evict the weakest if your plant is stronger
+    // DICE-ROLL TAKEOVER — 2d6 + companion bonus on each side
     var myInfo=_buildInfo(pl.hash);
     var myEA=window.computeEA?window.computeEA(myInfo.t,0):0;
     var w=_weakestInZone(inZone);
-    if(myEA<=w.ea){
-      _toast('Zone full ('+MAX_PER_ZONE+' plants). Weakest is EA '+w.ea+'. Yours is EA '+myEA+'. Grow stronger.');
+    var _att={hash:pl.hash,ea:myEA};
+    var _def={hash:w.plant.hash,ea:w.ea};
+    var _roll=_rollTakeover(_att,_def);
+    if(!_roll.attackerWins){
+      _toast('Zone full (3 plants). \ud83c\udfb2 '+_formatRollToast(_roll));
       return;
     }
-    // Weakest must be a remote plant (own-in-zone was blocked above).
-    // _writeSharedDrop needs {ownerUid, hash, grade} to run the takeover TX.
     displaced={ownerUid:w.plant.ownerUid,hash:w.plant.hash,grade:w.plant.grade||'Common',name:w.plant.name||'Plant'};
-    _toast('\ud83c\udf3f Eviction! Your EA '+myEA+' displaced the zone\u2019s weakest (EA '+w.ea+').');
+    _toast('\ud83c\udfb2 '+_formatRollToast(_roll));
   }
 
   // Wild v3 Phase 1: harvest is dead, so there's no defender game to pick.
@@ -3205,14 +3251,18 @@ function _dropFromBP(p){
   }
   var displaced=null;
   if(inZone.length>=MAX_PER_ZONE){
+    // DICE-ROLL TAKEOVER — 2d6 + companion bonus on each side
     var myInfo=_buildInfo(p.hash);
     var myEA=window.computeEA?window.computeEA(myInfo.t,0):0;
     var w=_weakestInZone(inZone);
-    if(myEA<=w.ea){
-      _toast('Zone full ('+MAX_PER_ZONE+' plants). Weakest is EA '+w.ea+'. Yours is EA '+myEA+'. Grow stronger.');return;
+    var _att={hash:p.hash,ea:myEA};
+    var _def={hash:w.plant.hash,ea:w.ea};
+    var _roll=_rollTakeover(_att,_def);
+    if(!_roll.attackerWins){
+      _toast('Zone full (3 plants). \ud83c\udfb2 '+_formatRollToast(_roll));return;
     }
     displaced={ownerUid:w.plant.ownerUid,hash:w.plant.hash,grade:w.plant.grade||'Common',name:w.plant.name||'Plant'};
-    _toast('\ud83c\udf3f Eviction! Your EA '+myEA+' displaced the zone\u2019s weakest (EA '+w.ea+').');
+    _toast('\ud83c\udfb2 '+_formatRollToast(_roll));
   }
 
   // Wild v3 Phase 1: skip defender picker (harvest removed), finish drop now.
