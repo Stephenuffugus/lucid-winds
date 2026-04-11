@@ -5371,7 +5371,10 @@ window.onerror=function(msg,url,line,col,err){
     <div class="cs-section"><div class="cs-section-title">KEEPER STATS</div><div class="cs-stats" id="cs-stats"><div>Plants Grown <b id="cs-s-plants">0</b></div><div>Pollen <b id="cs-s-pollen" style="color:var(--gold);">0</b></div><div>Seeds Found <b id="cs-s-seeds">0</b></div><div>Wild Active <b id="cs-s-wild">0</b></div><div>Games Played <b id="cs-s-games">0</b></div><div>Groves <b id="cs-s-groves">0</b></div><div>Compost Made <b id="cs-s-compost">0</b></div><div>Sunbeams <b id="cs-s-dew" style="color:var(--gold);">0</b></div><div>Rarest Grade <b id="cs-s-rarest">—</b></div><div>Creatures <b id="cs-s-creatures">0</b></div><div>Days Active <b id="cs-s-days">1</b></div><div>Friends <b id="cs-s-friends">0</b></div></div></div>
     <div class="cs-section"><div class="cs-section-title">FRIEND CODE</div><div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;"><div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--gold);letter-spacing:0.15em;" id="cs-friend-code">????-????</div><button onclick="PW_UI.copyFriendCode()" style="background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.2);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.5rem;padding:0.2rem 0.6rem;border-radius:4px;cursor:pointer;">COPY</button></div><div style="display:flex;gap:0.3rem;align-items:center;"><input type="text" id="cs-add-friend" placeholder="Enter friend code" maxlength="9" style="flex:1;padding:0.4rem;background:rgba(26,36,22,0.4);border:1.5px solid rgba(122,179,86,0.15);border-radius:6px;color:var(--cream);font-family:'DM Mono',monospace;font-size:0.5rem;outline:none;" /><button onclick="PW_UI.addFriend()" style="padding:0.4rem 0.6rem;border:1.5px solid rgba(122,179,86,0.2);border-radius:6px;background:rgba(26,36,22,0.3);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.5rem;cursor:pointer;min-height:36px;">ADD</button></div><div id="cs-friend-err" style="font-size:0.38rem;color:var(--muted);margin-top:0.25rem;min-height:0.8rem;"></div></div>
     <div class="cs-section"><div class="cs-section-title">FRIENDS <span id="cs-friend-count" style="color:var(--muted);">(0)</span></div><div id="cs-pending-list"></div><div id="cs-friends-list" style="font-size:0.42rem;color:var(--muted);">No friends yet. Share your code!</div></div>
-    <div style="display:flex;gap:0.4rem;margin-top:0.3rem;"><button onclick="PW_UI.closeCharacter()" style="flex:1;padding:0.5rem;border-radius:8px;border:2px solid rgba(74,124,53,0.15);background:rgba(26,36,22,0.3);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;cursor:pointer;min-height:48px;">CLOSE</button></div>
+    <div style="display:flex;gap:0.4rem;margin-top:0.3rem;">
+      <button onclick="window._openTitleShop()" style="flex:1;padding:0.5rem;border-radius:8px;border:2px solid rgba(200,168,75,0.35);background:linear-gradient(180deg,rgba(46,38,18,0.55),rgba(28,24,12,0.7));color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;cursor:pointer;min-height:48px;letter-spacing:0.06em;">&#10024; TITLES</button>
+      <button onclick="PW_UI.closeCharacter()" style="flex:1;padding:0.5rem;border-radius:8px;border:2px solid rgba(74,124,53,0.15);background:rgba(26,36,22,0.3);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;cursor:pointer;min-height:48px;">CLOSE</button>
+    </div>
   </div>
   <!-- ═══ ONBOARDING ═══ -->
   <div id="pw-onboard">
@@ -31482,6 +31485,9 @@ document.addEventListener('keydown', function(e) {
       // Keeper XP — the live source of truth for player level. Was missing
       // from the cloud payload, causing level resets on fresh sessions.
       keeperXP:        parseInt(localStorage.getItem('pw_xp')||'0'),
+      // Cosmetic titles owned + currently equipped
+      titlesOwned:     _ls('lw_titles_owned') || [],
+      activeTitle:     localStorage.getItem('lw_active_title') || '',
       lastSync: new Date().toISOString(),
       clientVersion: 'set-40'
     };
@@ -31510,6 +31516,19 @@ document.addEventListener('keydown', function(e) {
     // Restore wild tab state from cloud
     if (data.wildPlants && data.wildPlants.length) { if(window._secureSet){window._secureSet('fg_wild_plants',data.wildPlants);}else{_ss('fg_wild_plants', data.wildPlants);} }
     if (data.wildDropState) { if(window._secureSet){window._secureSet('fg_w_d',data.wildDropState);}else{_ss('fg_w_d', data.wildDropState);} }
+    if (data.titlesOwned && data.titlesOwned.length) {
+      try {
+        var localTitlesRaw = localStorage.getItem('lw_titles_owned');
+        var localTitles = localTitlesRaw ? JSON.parse(localTitlesRaw) : [];
+        var mergedT = {};
+        for (var lti = 0; lti < localTitles.length; lti++) mergedT[localTitles[lti]] = true;
+        for (var cti = 0; cti < data.titlesOwned.length; cti++) mergedT[data.titlesOwned[cti]] = true;
+        localStorage.setItem('lw_titles_owned', JSON.stringify(Object.keys(mergedT)));
+      } catch(e) {}
+    }
+    if (typeof data.activeTitle === 'string' && data.activeTitle && !localStorage.getItem('lw_active_title')) {
+      try { localStorage.setItem('lw_active_title', data.activeTitle); } catch(e) {}
+    }
     if (data.phenoRevealed && typeof data.phenoRevealed === 'object') {
       // Merge cloud registry with local — union of keys (reveals are sticky)
       try {
@@ -35626,7 +35645,9 @@ function _writeWitnessFee(p, actionLabel) {
       try { grade = window.getTerraGrade(window.hashToTraits(p.hash)).label; } catch(e) {}
     }
     var amount = _WITNESS_FEE_BY_GRADE[grade] || 1;
-    var actorName = (typeof localStorage !== 'undefined' && localStorage.getItem('pw_keeper_name')) || 'A keeper';
+    // Use the display name (with active title) so the planter sees
+    // "Stephen the Wandering" instead of just "Stephen"
+    var actorName = (window.PW_UI && window.PW_UI._getDisplayName) ? window.PW_UI._getDisplayName() : ((typeof localStorage !== 'undefined' && localStorage.getItem('pw_keeper_name')) || 'A keeper');
     var rewardRef = window.db.collection('vaults').doc(ownerUid).collection('pendingRewards').doc();
     rewardRef.set({
       type: 'witness_fee',
@@ -42306,17 +42327,181 @@ function _getFriendCode(){
   return c;
 }
 
+// ═══ KEEPER TITLES ═══
+// Curated cosmetic titles bought with Dew. Player picks one to equip; it
+// appears next to their name in the keeper bar, witness fee notifications,
+// and any other surface that reads the display name.
+window.LW_TITLES = {
+  // Tier 1 — atmospherics, 200 Dew each (10 titles)
+  mossy:     { tier:1, cost:200,  word:'Mossy',     desc:'Quiet, slow, full of moisture.' },
+  quiet:     { tier:1, cost:200,  word:'Quiet',     desc:'A keeper who tends without sound.' },
+  misty:     { tier:1, cost:200,  word:'Misty',     desc:'Found at dawn between rows of seedlings.' },
+  pale:      { tier:1, cost:200,  word:'Pale',      desc:'Touched by moonlight, never sun.' },
+  hidden:    { tier:1, cost:200,  word:'Hidden',    desc:'Walks unseen paths.' },
+  patient:   { tier:1, cost:200,  word:'Patient',   desc:'Knows that growing takes time.' },
+  wandering: { tier:1, cost:200,  word:'Wandering', desc:'Always one hex further out.' },
+  verdant:   { tier:1, cost:200,  word:'Verdant',   desc:'Greenest in any season.' },
+  wakeful:   { tier:1, cost:200,  word:'Wakeful',   desc:'Tends through the night.' },
+  wild:      { tier:1, cost:200,  word:'Wild',      desc:'Refuses the path.' },
+  // Tier 2 — evocative, 500 Dew each (15 titles)
+  ancient:   { tier:2, cost:500,  word:'Ancient',   desc:'A keeper from older days.' },
+  echoing:   { tier:2, cost:500,  word:'Echoing',   desc:'Whose work returns from the wild.' },
+  forgotten: { tier:2, cost:500,  word:'Forgotten', desc:'A garden remembered by no one but its plants.' },
+  frosted:   { tier:2, cost:500,  word:'Frosted',   desc:'Winter\u2019s favored hand.' },
+  glassy:    { tier:2, cost:500,  word:'Glassy',    desc:'Calm as still water.' },
+  lantern:   { tier:2, cost:500,  word:'Lantern',   desc:'Carries a light into the deep growth.' },
+  restless:  { tier:2, cost:500,  word:'Restless',  desc:'Cannot stay in one grove.' },
+  shaded:    { tier:2, cost:500,  word:'Shaded',    desc:'Prefers the canopy.' },
+  silver:    { tier:2, cost:500,  word:'Silver',    desc:'Of the moonlit hour.' },
+  sleeping:  { tier:2, cost:500,  word:'Sleeping',  desc:'Tends in dreams.' },
+  twilit:    { tier:2, cost:500,  word:'Twilit',    desc:'Walks the in-between.' },
+  velvet:    { tier:2, cost:500,  word:'Velvet',    desc:'Soft to the touch, deep to the eye.' },
+  whispered: { tier:2, cost:500,  word:'Whispered', desc:'Spoken of, never loud.' },
+  briar:     { tier:2, cost:500,  word:'Briar',     desc:'Thorned and tender both.' },
+  drifting:  { tier:2, cost:500,  word:'Drifting',  desc:'Carried where the seeds blow.' },
+  // Tier 3 — premium, 1500 Dew each (10 titles)
+  crimson:   { tier:3, cost:1500, word:'Crimson',   desc:'Deep as rose at twilight.' },
+  crowned:   { tier:3, cost:1500, word:'Crowned',   desc:'Wears the mycelial circlet.' },
+  dawnlit:   { tier:3, cost:1500, word:'Dawnlit',   desc:'First touch of morning gold.' },
+  embered:   { tier:3, cost:1500, word:'Embered',   desc:'Glows long after the day.' },
+  hallowed:  { tier:3, cost:1500, word:'Hallowed',  desc:'A keeper of small sacreds.' },
+  iron:      { tier:3, cost:1500, word:'Iron',      desc:'Unbroken across many seasons.' },
+  moonworn:  { tier:3, cost:1500, word:'Moonworn',  desc:'Polished by countless nights.' },
+  sovereign: { tier:3, cost:1500, word:'Sovereign', desc:'Of their own quiet grove.' },
+  sunlit:    { tier:3, cost:1500, word:'Sunlit',    desc:'Warmed even at dusk.' },
+  wreathed:  { tier:3, cost:1500, word:'Wreathed',  desc:'Encircled by their own work.' }
+};
+function _getActiveTitle(){
+  try {
+    var t = localStorage.getItem('lw_active_title');
+    if (!t) return null;
+    return window.LW_TITLES[t] || null;
+  } catch(e) { return null; }
+}
+function _getDisplayName(){
+  var name = _getName();
+  var t = _getActiveTitle();
+  if (t && t.word) return name + ' the ' + t.word;
+  return name;
+}
+function _ownedTitles(){
+  try { return JSON.parse(localStorage.getItem('lw_titles_owned')||'[]') || []; }
+  catch(e) { return []; }
+}
+window.lwBuyTitle = function(titleId){
+  var t = window.LW_TITLES[titleId];
+  if (!t) return false;
+  var bal = window.getTotalDew ? window.getTotalDew() : 0;
+  if (bal < t.cost) {
+    if (window._toast) window._toast('Need ' + t.cost + ' Dew (have ' + bal + ').');
+    return false;
+  }
+  var owned = _ownedTitles();
+  if (owned.indexOf(titleId) >= 0) {
+    if (window._toast) window._toast('You already own \u201cthe ' + t.word + '\u201d.');
+    return false;
+  }
+  if (!window.spendDew(t.cost)) {
+    if (window._toast) window._toast('Could not spend Dew.');
+    return false;
+  }
+  owned.push(titleId);
+  try { localStorage.setItem('lw_titles_owned', JSON.stringify(owned)); } catch(e) {}
+  if (window._toast) window._toast('\u2728 Title unlocked: \u201cthe ' + t.word + '\u201d. \u2796 ' + t.cost + ' Dew');
+  if (window._haptic) window._haptic('bloom');
+  if (document.getElementById('lw-title-shop')) window._openTitleShop();
+  return true;
+};
+window.lwEquipTitle = function(titleId){
+  if (titleId === '') {
+    try { localStorage.removeItem('lw_active_title'); } catch(e) {}
+    if (window._toast) window._toast('Title cleared.');
+  } else {
+    var t = window.LW_TITLES[titleId];
+    if (!t) return false;
+    var owned = _ownedTitles();
+    if (owned.indexOf(titleId) < 0) {
+      if (window._toast) window._toast('You don\u2019t own that title yet.');
+      return false;
+    }
+    try { localStorage.setItem('lw_active_title', titleId); } catch(e) {}
+    if (window._toast) window._toast('\u2728 Equipped: ' + _getName() + ' the ' + t.word);
+  }
+  if (window.PW_UI && PW_UI.updateKeeperBar) PW_UI.updateKeeperBar();
+  if (document.getElementById('lw-title-shop')) window._openTitleShop();
+  return true;
+};
+window._openTitleShop = function(){
+  var owned = _ownedTitles();
+  var active = localStorage.getItem('lw_active_title') || '';
+  var dew = window.getTotalDew ? window.getTotalDew() : 0;
+  var existing = document.getElementById('lw-title-shop');
+  if (existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'lw-title-shop';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:100002;display:flex;align-items:flex-start;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(10px);animation:panelFadeIn 0.3s ease;padding:1rem;overflow-y:auto;';
+  var h = '<div style="max-width:420px;width:100%;margin:1rem auto;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;padding:1.1rem 1rem 1rem;box-shadow:0 16px 50px rgba(0,0,0,0.7);">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.12em;color:var(--gold);">\u2728 KEEPER TITLES</div>';
+  h += '<button onclick="document.getElementById(\'lw-title-shop\').remove()" style="background:none;border:1px solid rgba(122,179,86,0.25);color:var(--muted);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:0.9rem;">\u2715</button>';
+  h += '</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);margin-bottom:0.55rem;line-height:1.5;">Your title appears next to your name when other keepers see your work in the wild.</div>';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--sage);margin-bottom:0.55rem;letter-spacing:0.08em;">Balance: <span style="color:var(--gold);">' + dew + ' \ud83d\udca7 Dew</span> \u00b7 Owned: <span style="color:var(--cream);">' + owned.length + '/' + Object.keys(window.LW_TITLES).length + '</span></div>';
+  // Clear-title button
+  var clearActive = active === '' ? ' style="border-color:rgba(122,179,86,0.7);"' : '';
+  h += '<button onclick="window.lwEquipTitle(\'\')" class="lw-title-row"' + clearActive + ' style="display:flex;width:100%;padding:0.55rem 0.7rem;margin-bottom:0.55rem;background:rgba(13,16,12,0.55);border:1.5px solid rgba(122,179,86,0.25);border-radius:8px;color:var(--muted);cursor:pointer;text-align:left;align-items:center;justify-content:space-between;">';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;">No title \u2014 just <span style="color:var(--cream);">' + _getName() + '</span></div>';
+  if (active === '') h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--sage);">EQUIPPED</div>';
+  h += '</button>';
+  // Group titles by tier
+  var tiers = [
+    { num:1, name:'WHISPERS',     color:'#7ab356' },
+    { num:2, name:'EVOCATIONS',   color:'#c8a84b' },
+    { num:3, name:'SOVEREIGNTIES', color:'#e8a0bf' }
+  ];
+  var allKeys = Object.keys(window.LW_TITLES);
+  for (var ti = 0; ti < tiers.length; ti++) {
+    var tier = tiers[ti];
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;letter-spacing:0.12em;color:' + tier.color + ';margin:0.7rem 0 0.35rem 0;">' + tier.name + '</div>';
+    for (var ki = 0; ki < allKeys.length; ki++) {
+      var key = allKeys[ki];
+      var ttl = window.LW_TITLES[key];
+      if (ttl.tier !== tier.num) continue;
+      var isOwned = owned.indexOf(key) >= 0;
+      var isActive = active === key;
+      var rowStyle = isActive ? 'border-color:' + tier.color + ';box-shadow:0 0 14px ' + tier.color + '44;' : (isOwned ? 'border-color:rgba(122,179,86,0.4);' : 'border-color:rgba(74,124,53,0.2);opacity:0.85;');
+      h += '<div class="lw-title-row" style="display:flex;width:100%;padding:0.55rem 0.65rem;margin-bottom:0.4rem;background:rgba(13,16,12,0.55);border:1.5px solid;border-radius:8px;align-items:center;gap:0.5rem;' + rowStyle + '">';
+      h += '<div style="flex:1;min-width:0;">';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:' + tier.color + ';letter-spacing:0.04em;">' + _getName() + ' the ' + ttl.word + '</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);line-height:1.4;margin-top:0.18rem;">' + ttl.desc + '</div>';
+      h += '</div>';
+      if (isActive) {
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--sage);padding:0.4rem 0.55rem;border:1px solid rgba(122,179,86,0.4);border-radius:6px;">EQUIPPED</div>';
+      } else if (isOwned) {
+        h += '<button onclick="window.lwEquipTitle(\'' + key + '\')" style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;background:rgba(74,124,53,0.25);border:1.5px solid rgba(122,179,86,0.45);color:var(--cream);border-radius:6px;padding:0.45rem 0.6rem;cursor:pointer;min-height:42px;">EQUIP</button>';
+      } else {
+        var canBuy = dew >= ttl.cost;
+        h += '<button onclick="window.lwBuyTitle(\'' + key + '\')" ' + (canBuy ? '' : 'disabled') + ' style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;background:' + (canBuy ? 'linear-gradient(180deg,rgba(46,38,18,0.55),rgba(28,24,12,0.7))' : 'rgba(46,46,46,0.3)') + ';border:1.5px solid ' + (canBuy ? 'rgba(200,168,75,0.45)' : 'rgba(122,122,122,0.3)') + ';color:' + (canBuy ? 'var(--gold)' : 'rgba(160,160,160,0.5)') + ';border-radius:6px;padding:0.45rem 0.6rem;cursor:' + (canBuy ? 'pointer' : 'not-allowed') + ';min-height:42px;min-width:70px;">' + ttl.cost + '\ud83d\udca7</button>';
+      }
+      h += '</div>';
+    }
+  }
+  h += '</div>';
+  modal.innerHTML = h;
+  document.body.appendChild(modal);
+};
+
 // ═══ XP BAR UPDATE ═══
 function updateKeeperBar(){
   var xp=_getXP(),r=_getRank(xp);
   var pct=Math.min(100,Math.round(((xp-RANKS[r.level-1].xp)/(r.nextXP-RANKS[r.level-1].xp))*100));
   var fill=document.getElementById('kb-xp-fill');if(fill)fill.style.width=pct+'%';
   var rank=document.getElementById('kb-rank');if(rank)rank.textContent='Lvl '+r.level+' · '+r.title+' · '+xp+' / '+r.nextXP+' XP';
-  var name=document.getElementById('kb-name');if(name)name.textContent=_getName();
+  var name=document.getElementById('kb-name');if(name)name.textContent=_getDisplayName();
   // Character sheet mirror
   var cf=document.getElementById('cs-xp-fill');if(cf)cf.style.width=pct+'%';
   var ct=document.getElementById('cs-xp-text');if(ct)ct.textContent=xp+' / '+r.nextXP+' XP → Level '+(r.level+1);
-  var cn=document.getElementById('cs-name');if(cn)cn.textContent=_getName();
+  var cn=document.getElementById('cs-name');if(cn)cn.textContent=_getDisplayName();
   var ti=document.getElementById('cs-title');if(ti)ti.textContent='◈ '+r.title+' · Level '+r.level;
   var fc=document.getElementById('cs-friend-code');if(fc)fc.textContent=_getFriendCode();
 }
@@ -42808,7 +42993,7 @@ return{toggleBP:toggleBP,closeBP:closeBP,toggleLeaderboard:toggleLeaderboard,set
   addFriend:addFriend,loadFriendsUI:loadFriendsUI,acceptReq:acceptReq,declineReq:declineReq,
   showWildUI:showWildUI,hideWildUI:hideWildUI,updateKeeperBar:updateKeeperBar,updateStats:updateStats,
   editName:editName,_saveName:_saveName,equipCompanion:equipCompanion,_pickCompanion:_pickCompanion,
-  _pickShowcase:_pickShowcase};
+  _pickShowcase:_pickShowcase,_getDisplayName:_getDisplayName,_getName:_getName};
 })();
 </script>
 
