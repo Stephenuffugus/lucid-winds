@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.56';
+  var LW_VERSION='2026.04.10.57';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -47281,6 +47281,85 @@ window._openCompendiumUI=function(){
         h+='<div style="font-size:0.5rem;color:var(--muted);">?</div>';
         h+='</div>';
       }
+    }
+    h+='</div></div>';
+  } catch(e) {}
+
+  // ─── HAIKU COLLECTION ────────────────────────────────────────
+  // Every minted plant has a unique procedural 7-5-7 haiku. Shows up
+  // to 5 of the rarest plants' haikus as a poetic preview.
+  try {
+    if (gh.length > 0 && window.getHaiku) {
+      var _rarOrder = { Common:0,Uncommon:1,Rare:2,Epic:3,Legendary:4,Mythic:5,Cosmic:6 };
+      var _ranked = gh.slice().map(function(p) {
+        var r = 'Common';
+        try {
+          var tt = hashToTraits(p.hash);
+          var tg2 = getTerraGrade(tt);
+          if (tg2 && tg2.name) r = tg2.name;
+        } catch(e) {}
+        return { plant: p, rarity: r, score: _rarOrder[r] || 0 };
+      }).sort(function(a,b){ return b.score - a.score; });
+      var _prev = _ranked.slice(0, 5);
+      h+='<div style="margin-bottom:0.8rem;">';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.4rem;">\ud83d\udcdc HAIKU COLLECTION <span style="color:var(--muted);font-size:0.4rem;">'+gh.length+' plants</span></div>';
+      var _parCol = { Common:'#959588', Uncommon:'#8CB86E', Rare:'#5b8fb9', Epic:'#9B59B6', Legendary:'#C8A84B', Mythic:'#A87285', Cosmic:'#D94FFF' };
+      for (var _hk=0; _hk<_prev.length; _hk++) {
+        var _entry = _prev[_hk];
+        var _pk = _entry.plant;
+        var _pnm = window.getPlantName ? getPlantName(_pk.hash) : 'Plant';
+        var _rc = _parCol[_entry.rarity] || 'var(--cream)';
+        var _haiku = null;
+        try { _haiku = getHaiku(_pk.hash); } catch(e) {}
+        if (!_haiku) continue;
+        h+='<div style="padding:0.55rem 0.7rem;margin-bottom:4px;background:rgba(18,22,16,0.55);border:1px solid '+_rc+'22;border-left:3px solid '+_rc+';border-radius:6px;">';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:'+_rc+';margin-bottom:0.3rem;letter-spacing:0.04em;">'+_pnm+' \u00b7 '+_entry.rarity+'</div>';
+        h+='<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.62rem;color:var(--cream);line-height:1.5;">'+_haiku.line1+'<br>'+_haiku.line2+'<br>'+_haiku.line3+'</div>';
+        h+='</div>';
+      }
+      if (_ranked.length > _prev.length) {
+        h+='<div style="text-align:center;font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);margin-top:0.4rem;font-style:italic;">+ '+(_ranked.length-_prev.length)+' more in your grove</div>';
+      }
+      h+='</div>';
+    }
+  } catch(e) {}
+
+  // ─── WEATHER ALMANAC ─────────────────────────────────────────
+  // Tally weather_cast events from the event log to show the player
+  // which weathers they've summoned and how many times each.
+  try {
+    var _wCounts = { sun:0, rain:0, mist:0, bloom:0 };
+    if (window.LW_Log) {
+      var _ae = LW_Log.all();
+      for (var _wi=0; _wi<_ae.length; _wi++) {
+        if (_ae[_wi].type === 'weather_cast' && _ae[_wi].data && _ae[_wi].data.type) {
+          var _wt = _ae[_wi].data.type;
+          if (_wCounts[_wt] !== undefined) _wCounts[_wt]++;
+        }
+      }
+    }
+    var _totalCast = _wCounts.sun + _wCounts.rain + _wCounts.mist + _wCounts.bloom;
+    var _castTypes = 0;
+    for (var _wck in _wCounts) if (_wCounts[_wck] > 0) _castTypes++;
+    var _wDefs = [
+      {key:'sun',name:'Sun Flare',icon:'\u2600\ufe0f',col:'#f0d090'},
+      {key:'rain',name:'Rain',icon:'\ud83c\udf27\ufe0f',col:'#8bd0e8'},
+      {key:'mist',name:'Dawn Mist',icon:'\ud83c\udf2b\ufe0f',col:'#c0c8d0'},
+      {key:'bloom',name:'Bloom Chorus',icon:'\ud83c\udfb6',col:'#E8A0BF'}
+    ];
+    h+='<div style="margin-bottom:0.8rem;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:rgba(91,175,220,0.9);letter-spacing:0.1em;margin-bottom:0.4rem;">\ud83c\udf26\ufe0f WEATHER ALMANAC <span style="color:var(--muted);font-size:0.4rem;">'+_castTypes+' / 4 summoned \u00b7 '+_totalCast+' total</span></div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.45rem;">';
+    for (var _wdi=0; _wdi<_wDefs.length; _wdi++) {
+      var _wd = _wDefs[_wdi];
+      var _count = _wCounts[_wd.key];
+      var _op = _count > 0 ? '1' : '0.45';
+      var _bc = _count > 0 ? _wd.col+'55' : 'rgba(74,124,53,0.1)';
+      h+='<div style="padding:0.5rem 0.6rem;background:rgba(18,22,26,0.5);border:1px solid '+_bc+';border-radius:8px;display:flex;align-items:center;gap:0.5rem;opacity:'+_op+';">';
+      h+='<div style="font-size:1.2rem;">'+_wd.icon+'</div>';
+      h+='<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:'+(_count>0?_wd.col:'var(--muted)')+';letter-spacing:0.06em;">'+_wd.name+'</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);">'+(_count>0?_count+' cast'+(_count!==1?'s':''):'not yet cast')+'</div></div>';
+      h+='</div>';
     }
     h+='</div></div>';
   } catch(e) {}
