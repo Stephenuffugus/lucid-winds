@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.52';
+  var LW_VERSION='2026.04.10.53';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2312,6 +2312,29 @@
     .slot-modal .slot-pull:disabled{opacity:0.4;cursor:not-allowed;}
     .slot-modal .slot-paytable{margin-top:0.9rem;font-family:'DM Mono',monospace;font-size:0.48rem;color:var(--muted);line-height:1.5;display:flex;flex-wrap:wrap;justify-content:center;gap:0.4rem;}
     .slot-modal .slot-paytable span{white-space:nowrap;}
+    /* ═══ WEATHER SUMMON — Dew sink, cast atmospheric effects over your wild plants ═══ */
+    #kb-weather{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:0.25rem;padding:0.55rem 0.75rem;border:1px solid rgba(91,175,220,0.35);border-radius:10px;background:linear-gradient(180deg,rgba(91,175,220,0.14),rgba(91,175,220,0.04));color:#8bd0e8;font-family:'Bebas Neue',sans-serif;font-size:0.72rem;letter-spacing:0.08em;cursor:pointer;min-height:48px;min-width:48px;flex-shrink:0;}
+    #kb-weather:hover{background:linear-gradient(180deg,rgba(91,175,220,0.22),rgba(91,175,220,0.08));}
+    #kb-weather.active{border-color:rgba(240,208,144,0.65);box-shadow:0 0 12px rgba(240,208,144,0.25);animation:kbWeatherPulse 2.5s ease-in-out infinite;}
+    @keyframes kbWeatherPulse{0%,100%{box-shadow:0 0 10px rgba(240,208,144,0.22);}50%{box-shadow:0 0 18px rgba(240,208,144,0.45);}}
+    .weather-modal{position:fixed;inset:0;z-index:100020;display:none;}
+    .weather-modal.open{display:block;animation:panelFadeIn 0.25s ease;}
+    .weather-modal .w-scrim{position:absolute;inset:0;background:rgba(8,10,6,0.88);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+    .weather-modal .w-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(94vw,400px);background:linear-gradient(180deg,#121a22,#0d100c);border:2px solid rgba(91,175,220,0.45);border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,0.85),0 0 0 1px rgba(91,175,220,0.15),inset 0 1px 0 rgba(140,210,240,0.1);padding:1.1rem 1rem 1.2rem;}
+    .weather-modal .w-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9rem;}
+    .weather-modal .w-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:#8bd0e8;letter-spacing:0.14em;}
+    .weather-modal .w-close{background:none;border:1px solid rgba(91,175,220,0.3);color:var(--muted);font-size:1rem;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .weather-modal .w-balance{font-family:'DM Mono',monospace;font-size:0.7rem;color:#8bd0e8;text-align:center;margin-bottom:0.5rem;}
+    .weather-modal .w-active{font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--gold);text-align:center;margin-bottom:0.8rem;padding:0.4rem;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.25);border-radius:8px;}
+    .weather-modal .w-active.hidden{display:none;}
+    .weather-modal .w-opts{display:grid;grid-template-columns:1fr 1fr;gap:0.55rem;}
+    .weather-modal .w-opt{padding:0.8rem 0.6rem;border:1.5px solid rgba(91,175,220,0.3);border-radius:12px;background:linear-gradient(180deg,rgba(26,36,46,0.7),rgba(13,16,22,0.8));cursor:pointer;text-align:center;min-height:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.25rem;transition:all 0.2s ease;}
+    .weather-modal .w-opt:hover:not(:disabled){border-color:rgba(140,210,240,0.5);background:linear-gradient(180deg,rgba(36,48,62,0.85),rgba(18,24,34,0.9));transform:translateY(-1px);}
+    .weather-modal .w-opt:disabled{opacity:0.4;cursor:not-allowed;}
+    .weather-modal .w-opt-icon{font-size:1.8rem;line-height:1;}
+    .weather-modal .w-opt-name{font-family:'Bebas Neue',sans-serif;font-size:0.78rem;color:var(--cream);letter-spacing:0.08em;}
+    .weather-modal .w-opt-desc{font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--muted);line-height:1.4;}
+    .weather-modal .w-opt-cost{font-family:'DM Mono',monospace;font-size:0.58rem;color:#8bd0e8;margin-top:0.2rem;}
     /* ═══ LEVEL UP CELEBRATION OVERLAY ═══ */
     .lu-overlay{position:fixed;inset:0;z-index:99998;display:none;}
     .lu-overlay.open{display:block;}
@@ -5256,6 +5279,7 @@ window.onerror=function(msg,url,line,col,err){
       <div id="kb-sunbeams" title="Sunbeams — focused attention that photosynthesizes into plants (30 = 1 plant)" onclick="if(window.openEconModal)openEconModal();"><span class="kb-icon">☀️</span><span class="kb-val">0</span></div>
       <div id="kb-dew" title="Dew — earned from wild plants, daily quests, and gifts. Spent on nursery acceleration and cuttings."><span class="kb-icon">💧</span><span class="kb-val">0</span></div>
       <div id="kb-slots" onclick="if(window._openSlots)_openSlots();" title="Pull the slots — gamble Dew for fertilizer, Sunbeams, and jackpots">🎰</div>
+      <div id="kb-weather" onclick="if(window._openWeather)_openWeather();" title="Summon weather over your wild plants — rain, sun flare, dawn mist">🌦️</div>
       <div id="kb-compendium" onclick="if(window._openCompendiumUI)_openCompendiumUI();" title="Book of Secrets entries discovered">📖 <span id="kb-comp-count">0</span></div>
       <div id="kb-root-report" onclick="if(window._openRootReport)_openRootReport('today');" title="Root Report — your keeper's journal"><span class="kb-rr-icon">🌿</span><span class="kb-rr-label">JOURNAL</span><span class="kb-rr-badge">0</span></div>
       <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install Lucid Winds as an app on your device">📲 <span class="kb-install-label">INSTALL</span></div>
@@ -7855,6 +7879,8 @@ document.addEventListener('keydown', function(e) {
         else if(si.isOpposite)seasonMod=2;
       }
       var cooldownMs=baseCooldown*seasonMod*86400000;
+      // Weather: Bloom Chorus halves breed cooldowns while active
+      try{if(window.isWeatherBloom&&window.isWeatherBloom())cooldownMs*=0.5;}catch(e){}
       var elapsed=now-lastBreed;
       if(elapsed<cooldownMs){
         var hoursLeft=Math.ceil((cooldownMs-elapsed)/3600000);
@@ -34614,12 +34640,16 @@ function _rollTakeover(attackerPlant,defenderPlant){
   var defRoll=_d(2,6);
   var attComp=_tempBonus(attackerPlant,'attacker');
   var defComp=_tempBonus(defenderPlant,'defender');
-  var attTotal=attEA+attRoll+attComp;
+  // Weather: Sun Flare gives attacker +3 (stacks with companion)
+  var attWeather=0;
+  try{if(window.isWeatherSun&&window.isWeatherSun())attWeather=3;}catch(e){}
+  var attTotal=attEA+attRoll+attComp+attWeather;
   var defTotal=defEA+defRoll+defComp;
   return{
     attEA:attEA,defEA:defEA,
     attRoll:attRoll,defRoll:defRoll,
     attComp:attComp,defComp:defComp,
+    attWeather:attWeather,
     attTotal:attTotal,defTotal:defTotal,
     attackerWins:attTotal>defTotal
   };
@@ -34627,7 +34657,7 @@ function _rollTakeover(attackerPlant,defenderPlant){
 window._rollTakeover=_rollTakeover;
 // Format a dice roll result as a toast message — "⚔️ 18+8+3 vs 22+7+2 — UPROOTED!"
 function _formatRollToast(r){
-  var attStr=r.attEA+'+'+r.attRoll+(r.attComp?'+'+r.attComp:'');
+  var attStr=r.attEA+'+'+r.attRoll+(r.attComp?'+'+r.attComp:'')+(r.attWeather?'+'+r.attWeather+'\u2600':'');
   var defStr=r.defEA+'+'+r.defRoll+(r.defComp?'+'+r.defComp:'');
   var verdict=r.attackerWins?'UPROOTED!':'DEFENDED';
   var icon=r.attackerWins?'\u2694\ufe0f':'\ud83d\udee1\ufe0f';
@@ -35060,6 +35090,8 @@ setInterval(function(){var w=_getWild();if(w.length>0){
     var mult=i<5?1.0:0.5;
     hourlyTotal+=sortedRates[i]*mult;
   }
+  // Weather: Dawn Mist doubles Dew generation while active
+  try{if(window.isWeatherMist&&window.isWeatherMist())hourlyTotal*=2;}catch(e){}
   // Fractional accumulator — keep leftover under a minute until it rounds
   var remainder=0;try{remainder=parseFloat(localStorage.getItem('fg_dew_rem')||localStorage.getItem('fg_pollen_rem')||'0');}catch(e){}
   var minuteEarned=hourlyTotal/240+remainder;
@@ -44015,6 +44047,190 @@ function _resolveSlotResult(results) {
   else if (isTrio && window._haptic) window._haptic('sync');
   if (typeof gtag !== 'undefined') gtag('event', 'slots_pull', { trio: isTrio, jackpot: isJackpot, dew: wonDew });
 }
+
+})();
+</script>
+
+<!-- ═══ WEATHER SUMMON — Dew sink, cast atmospheric effects over your wild plants ═══
+     Client-side only. State in localStorage with expiry timestamp.
+     Four weather types, each costing Dew:
+       Sun Flare: +3 dice-roll bonus on wild uproots for 24h (60 Dew)
+       Rain: all your wild plants get +12h lifespan immediately (50 Dew)
+       Dawn Mist: 2x Dew generation from wild plants for 12h (75 Dew)
+       Frost Ward: your wild plants cannot be cut/wounded for 24h (100 Dew)
+     Only one weather active at a time — casting a new one replaces. -->
+<script>
+(function(){
+'use strict';
+
+var WEATHER_KEY = 'lw_weather_active';
+var WEATHER_TYPES = {
+  sun: {
+    id: 'sun', name: 'Sun Flare', icon: '\u2600\ufe0f',
+    cost: 60, durationMs: 24 * 3600000,
+    desc: '+3 dice bonus on wild uproots for 24h',
+    log: 'The grove glows golden. Your plants are emboldened.'
+  },
+  rain: {
+    id: 'rain', name: 'Rain Calling', icon: '\ud83c\udf27\ufe0f',
+    cost: 50, durationMs: 0,  // instant effect
+    desc: '+12h lifespan to all your wild plants',
+    log: 'Rain falls on your wild plants. Their roots drink deep.'
+  },
+  mist: {
+    id: 'mist', name: 'Dawn Mist', icon: '\ud83c\udf2b\ufe0f',
+    cost: 75, durationMs: 12 * 3600000,
+    desc: '2x Dew from wild plants for 12h',
+    log: 'Dawn mist envelops the grove. Dew flows doubly.'
+  },
+  bloom: {
+    id: 'bloom', name: 'Bloom Chorus', icon: '\ud83c\udfb6',
+    cost: 90, durationMs: 12 * 3600000,
+    desc: 'Breed cooldowns halved for 12h',
+    log: 'The grove hums with song. Your plants breed readily.'
+  }
+};
+
+// Check if a weather type is currently active
+window.getActiveWeather = function() {
+  try {
+    var raw = localStorage.getItem(WEATHER_KEY);
+    if (!raw) return null;
+    var w = JSON.parse(raw);
+    if (!w || !w.type) return null;
+    if (w.endAt && Date.now() >= w.endAt) {
+      localStorage.removeItem(WEATHER_KEY);
+      return null;
+    }
+    return w;
+  } catch(e) { return null; }
+};
+
+// Helpers for other systems — read these to check if a weather is active
+window.isWeatherSun = function(){ var w=window.getActiveWeather();return w&&w.type==='sun'; };
+window.isWeatherMist = function(){ var w=window.getActiveWeather();return w&&w.type==='mist'; };
+window.isWeatherBloom = function(){ var w=window.getActiveWeather();return w&&w.type==='bloom'; };
+
+function _ensureWeatherModal() {
+  var m = document.getElementById('weather-modal');
+  if (m) return m;
+  m = document.createElement('div');
+  m.id = 'weather-modal';
+  m.className = 'weather-modal';
+  m.innerHTML =
+    '<div class="w-scrim" onclick="window._closeWeather()"></div>' +
+    '<div class="w-panel">' +
+      '<div class="w-header">' +
+        '<div class="w-title">\ud83c\udf26\ufe0f SUMMON WEATHER</div>' +
+        '<button class="w-close" onclick="window._closeWeather()">\u2715</button>' +
+      '</div>' +
+      '<div class="w-balance" id="w-balance">Dew: 0</div>' +
+      '<div class="w-active hidden" id="w-active"></div>' +
+      '<div class="w-opts" id="w-opts"></div>' +
+    '</div>';
+  document.body.appendChild(m);
+  return m;
+}
+
+function _renderWeatherOpts() {
+  var opts = document.getElementById('w-opts'); if (!opts) return;
+  var balance = typeof window.getTotalDew === 'function' ? window.getTotalDew() : 0;
+  var active = window.getActiveWeather();
+  var html = '';
+  for (var key in WEATHER_TYPES) {
+    var t = WEATHER_TYPES[key];
+    var affordable = balance >= t.cost;
+    var disabled = !affordable ? ' disabled' : '';
+    html += '<button class="w-opt"' + disabled + ' onclick="window._castWeather(\'' + t.id + '\')">' +
+      '<div class="w-opt-icon">' + t.icon + '</div>' +
+      '<div class="w-opt-name">' + t.name + '</div>' +
+      '<div class="w-opt-desc">' + t.desc + '</div>' +
+      '<div class="w-opt-cost">' + t.cost + ' \ud83d\udca7</div>' +
+    '</button>';
+  }
+  opts.innerHTML = html;
+  var bEl = document.getElementById('w-balance');
+  if (bEl) bEl.textContent = 'Dew: ' + balance;
+  var aEl = document.getElementById('w-active');
+  if (aEl) {
+    if (active && WEATHER_TYPES[active.type]) {
+      var w = WEATHER_TYPES[active.type];
+      var remMs = active.endAt - Date.now();
+      var remText = active.endAt ? Math.ceil(remMs / 3600000) + 'h remaining' : 'applied (one-time)';
+      aEl.textContent = w.icon + ' ' + w.name + ' \u00b7 ' + remText;
+      aEl.classList.remove('hidden');
+    } else {
+      aEl.classList.add('hidden');
+    }
+  }
+  // Pulse the keeper bar button if weather is active
+  var kb = document.getElementById('kb-weather');
+  if (kb) { if (active) kb.classList.add('active'); else kb.classList.remove('active'); }
+}
+
+window._openWeather = function() {
+  _ensureWeatherModal();
+  _renderWeatherOpts();
+  document.getElementById('weather-modal').classList.add('open');
+  if (typeof gtag !== 'undefined') gtag('event', 'weather_open');
+};
+window._closeWeather = function() {
+  var m = document.getElementById('weather-modal');
+  if (m) m.classList.remove('open');
+};
+
+window._castWeather = function(typeId) {
+  var t = WEATHER_TYPES[typeId];
+  if (!t) return;
+  var balance = typeof window.getTotalDew === 'function' ? window.getTotalDew() : 0;
+  if (balance < t.cost) {
+    if (window._toast) _toast('Need ' + t.cost + ' Dew. You have ' + balance + '.');
+    return;
+  }
+  if (typeof window.spendDew === 'function') {
+    if (!window.spendDew(t.cost)) { if (window._toast) _toast('Not enough Dew.'); return; }
+  }
+  // Apply effect
+  if (t.id === 'rain') {
+    // Immediate: add 12h to all wild plants' decayAt
+    try {
+      var wild = JSON.parse((window._secureGet ? window._secureGet('fg_wild_plants') : localStorage.getItem('fg_wild_plants')) || '[]');
+      var bonus = 12 * 3600000;
+      for (var i = 0; i < wild.length; i++) {
+        if (window._ensureVitality) window._ensureVitality(wild[i]);
+        if (wild[i].decayAt) wild[i].decayAt += bonus;
+      }
+      if (window._secureSet) window._secureSet('fg_wild_plants', wild);
+      else localStorage.setItem('fg_wild_plants', JSON.stringify(wild));
+    } catch(e) {}
+    // Rain is one-shot — don't set active weather
+    localStorage.removeItem(WEATHER_KEY);
+  } else {
+    // Time-bounded: store active weather
+    var state = {
+      type: t.id,
+      castAt: Date.now(),
+      endAt: Date.now() + t.durationMs
+    };
+    localStorage.setItem(WEATHER_KEY, JSON.stringify(state));
+  }
+  // Event log + toast
+  if (window.LW_Log) window.LW_Log.write('weather_cast', { type: t.id, name: t.name, icon: t.icon, cost: t.cost });
+  if (window._toast) _toast(t.icon + ' ' + t.name + ' cast! ' + t.log);
+  if (window._haptic) _haptic('bloom');
+  if (typeof gtag !== 'undefined') gtag('event', 'weather_cast', { type: t.id, cost: t.cost });
+  _renderWeatherOpts();
+  if (window._updateDewDisplay) window._updateDewDisplay();
+};
+
+// Update keeper bar button state on startup + every minute (expiry check)
+function _tickWeather() {
+  var kb = document.getElementById('kb-weather'); if (!kb) return;
+  if (window.getActiveWeather()) kb.classList.add('active');
+  else kb.classList.remove('active');
+}
+setTimeout(_tickWeather, 1000);
+setInterval(_tickWeather, 60000);
 
 })();
 </script>
