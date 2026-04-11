@@ -28458,6 +28458,36 @@ document.addEventListener('keydown', function(e) {
     if (document.visibilityState === 'hidden') { _flushPendingSaves(); }
   });
 
+  // ═══ PHENOTYPE REVELATION REGISTRY ══════════════════════════════════════
+  // Per-hash registry that survives plants moving between greenhouse/wild/
+  // backpack. Once a phenotype is revealed in the Wild (via the
+  // complementary-season scan in FG_Wild), the hash lands here and stays
+  // revealed forever — so the badge follows the plant into the breed
+  // screen, the carousel back face, and the details modal.
+  var LW_PHENO_REG_KEY = 'lw_pheno_revealed';
+  function _phenoLoadRegistry() {
+    try { return JSON.parse(localStorage.getItem(LW_PHENO_REG_KEY) || '{}') || {}; }
+    catch(e) { return {}; }
+  }
+  function _phenoSaveRegistry(reg) {
+    _throttledSave(LW_PHENO_REG_KEY, JSON.stringify(reg), true);
+  }
+  window.lwPhenoIsRevealed = function(hash) {
+    if (!hash) return false;
+    var reg = _phenoLoadRegistry();
+    return !!reg[hash];
+  };
+  window.lwPhenoMarkRevealed = function(hashes) {
+    if (!hashes) return;
+    if (typeof hashes === 'string') hashes = [hashes];
+    var reg = _phenoLoadRegistry();
+    var changed = false;
+    for (var i = 0; i < hashes.length; i++) {
+      if (hashes[i] && !reg[hashes[i]]) { reg[hashes[i]] = true; changed = true; }
+    }
+    if (changed) _phenoSaveRegistry(reg);
+  };
+
   // ═══ PHASE 28: sws_inventory WALLET ════════════════════════════════════
   // Isolated from sws_greenhouse — never stored inside plant entries.
   // Schema: { dnaFragments: 0, substrate: {}, lastUpdated: ISO }
@@ -31137,6 +31167,7 @@ document.addEventListener('keydown', function(e) {
       wildPlants:      _ls('fg_wild_plants')  || [],
       wildDropState:   _ls('fg_w_d')          || {},
       wildSteps:       _ls('lw_wild_steps')   || null,
+      phenoRevealed:   _ls('lw_pheno_revealed') || {},
       ferals:          _ls('fg_ferals')       || [],
       pollen:          parseInt((window._secureGet?window._secureGet('fg_pollen'):localStorage.getItem('fg_pollen'))||'0'),
       lastSync: new Date().toISOString(),
@@ -35111,13 +35142,16 @@ function _isComplementarySeason(a,b){
   return (a===0&&b===2)||(a===2&&b===0)||(a===1&&b===3)||(a===3&&b===1);
 }
 // Reveal scan. Called after a new wild plant is pushed. Updates BOTH
-// the new plant and any complementary neighbor in `wild`. Returns the
-// number of plants newly revealed (0 if no triggers found).
+// the new plant and any complementary neighbor in `wild`, AND writes
+// the revealed hashes into the global lwPhenoMarkRevealed registry so
+// the reveal carries back into greenhouse/breed/carousel surfaces.
+// Returns the number of plants newly revealed (0 if no triggers found).
 function _phenoRevealScan(wild,newIdx){
   if(!wild||!wild[newIdx])return 0;
   var n=wild[newIdx];
   if(typeof n.season!=='number')return 0;
   var revealedNow=0;
+  var revealedHashes=[];
   var REVEAL_RADIUS=ZONE_SIZE*2; // ~200m, deliberately tight so it feels earned
   for(var i=0;i<wild.length;i++){
     if(i===newIdx)continue;
@@ -35126,8 +35160,11 @@ function _phenoRevealScan(wild,newIdx){
     if(!_isComplementarySeason(n.season,o.season))continue;
     var d=Math.abs(n.lat-o.lat)+Math.abs(n.lng-o.lng);
     if(d>REVEAL_RADIUS)continue;
-    if(!o.phenoRevealed){o.phenoRevealed=true;revealedNow++;}
-    if(!n.phenoRevealed){n.phenoRevealed=true;revealedNow++;}
+    if(!o.phenoRevealed){o.phenoRevealed=true;revealedNow++;revealedHashes.push(o.hash);}
+    if(!n.phenoRevealed){n.phenoRevealed=true;revealedNow++;revealedHashes.push(n.hash);}
+  }
+  if(revealedHashes.length&&window.lwPhenoMarkRevealed){
+    window.lwPhenoMarkRevealed(revealedHashes);
   }
   return revealedNow;
 }
