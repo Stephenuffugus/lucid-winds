@@ -2675,6 +2675,11 @@
     .nur-btn.bloom:hover{background:rgba(122,179,86,0.3);}
     .nur-btn.abandon{background:none;border-color:rgba(139,46,46,0.3);color:rgba(192,112,112,0.6);font-size:0.45rem;padding:0.25rem 0.4rem;box-shadow:none;}
     .nur-btn.abandon:hover{border-color:rgba(139,46,46,0.5);color:rgba(192,112,112,0.85);}
+    .nur-seed-sprite{position:relative;display:flex;align-items:center;justify-content:center;width:70px;height:95px;}
+    .nur-seed-sprite svg,.nur-seed-sprite img{display:block;}
+    .nur-seed-sprite.nur-seed-mystery::before{content:'';position:absolute;inset:-4px;border-radius:50%;border:1px dashed rgba(200,168,75,0.55);pointer-events:none;animation:nurMystSpin 18s linear infinite;}
+    .nur-seed-sprite.nur-seed-mystery::after{content:'?';position:absolute;top:0;right:-2px;font-family:'Bebas Neue',sans-serif;font-size:0.75rem;color:var(--gold);text-shadow:0 0 6px rgba(200,168,75,0.6);pointer-events:none;}
+    @keyframes nurMystSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
     .nur-empty-slot{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.3rem;padding:1rem 0.5rem;opacity:0.6;}
     .nur-empty-icon{font-size:1.3rem;opacity:0.25;filter:grayscale(1);}
     .nur-empty-label{font-family:'Bebas Neue',sans-serif;font-size:0.44rem;letter-spacing:0.1em;color:var(--muted);}
@@ -29196,6 +29201,71 @@ document.addEventListener('keydown', function(e) {
     });
   };
 
+  // Seed sprite renderer — PNG primary, SVG fallback if asset missing.
+  // Stages: 0=planted, 1=sprouting, 2=growing, 3=ready-to-bloom
+  // Mystery seeds get the same base sprites but a dashed-gold halo class.
+  var _SEED_SPRITE_PATHS = [
+    'assets/nursery/seed-stage-0.png',
+    'assets/nursery/seed-stage-1.png',
+    'assets/nursery/seed-stage-2.png',
+    'assets/nursery/seed-stage-3.png'
+  ];
+  var _SEED_SPRITE_FALLBACKS = [
+    // 0 — planted (dormant in soil)
+    '<svg viewBox="0 0 70 95" width="70" height="95" xmlns="http://www.w3.org/2000/svg">' +
+      '<ellipse cx="35" cy="82" rx="18" ry="3" fill="#3A5C2A" opacity="0.2"/>' +
+      '<ellipse cx="35" cy="80" rx="5" ry="4" fill="#A87850" opacity="0.85"/>' +
+      '<ellipse cx="34" cy="79" rx="1.8" ry="1.2" fill="#C09870" opacity="0.5"/>' +
+      '<circle cx="35" cy="80" r="7" fill="none" stroke="#8CB86E" stroke-width="0.4" opacity="0.18"/>' +
+    '</svg>',
+    // 1 — sprouting (hooked stem with cotyledons)
+    '<svg viewBox="0 0 70 95" width="70" height="95" xmlns="http://www.w3.org/2000/svg">' +
+      '<ellipse cx="35" cy="83" rx="16" ry="2.5" fill="#3A5C2A" opacity="0.2"/>' +
+      '<line x1="35" y1="83" x2="35" y2="66" stroke="#5E8550" stroke-width="1.8" stroke-linecap="round"/>' +
+      '<path d="M35,71 C31,68 27,66 29,63 C31,60 35,62 35,66" fill="#8CB86E" opacity="0.75"/>' +
+      '<path d="M35,71 C39,68 43,66 41,63 C39,60 35,62 35,66" fill="#8CB86E" opacity="0.65"/>' +
+      '<ellipse cx="35" cy="83" rx="5" ry="3.5" fill="#A87850" opacity="0.7"/>' +
+    '</svg>',
+    // 2 — growing (taller seedling with first true leaves)
+    '<svg viewBox="0 0 70 95" width="70" height="95" xmlns="http://www.w3.org/2000/svg">' +
+      '<ellipse cx="35" cy="85" rx="18" ry="3" fill="#3A5C2A" opacity="0.2"/>' +
+      '<line x1="35" y1="85" x2="35" y2="48" stroke="#5E8550" stroke-width="2" stroke-linecap="round"/>' +
+      '<ellipse cx="25" cy="55" rx="10" ry="5" fill="#8CB86E" opacity="0.7" transform="rotate(-22 25 55)"/>' +
+      '<ellipse cx="45" cy="52" rx="10" ry="5" fill="#8CB86E" opacity="0.7" transform="rotate(22 45 52)"/>' +
+    '</svg>',
+    // 3 — ready (mature seedling, glowing aura, about to bloom)
+    '<svg viewBox="0 0 70 95" width="70" height="95" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 8px rgba(200,168,75,0.55));">' +
+      '<ellipse cx="35" cy="85" rx="18" ry="3" fill="#3A5C2A" opacity="0.25"/>' +
+      '<line x1="35" y1="85" x2="35" y2="40" stroke="#5E8550" stroke-width="2.2" stroke-linecap="round"/>' +
+      '<ellipse cx="22" cy="50" rx="11" ry="6" fill="#8CB86E" opacity="0.78" transform="rotate(-25 22 50)"/>' +
+      '<ellipse cx="48" cy="46" rx="11" ry="6" fill="#8CB86E" opacity="0.78" transform="rotate(25 48 46)"/>' +
+      '<circle cx="35" cy="38" r="4" fill="rgba(200,168,75,0.55)"/>' +
+      '<circle cx="35" cy="38" r="7" fill="none" stroke="rgba(200,168,75,0.4)" stroke-width="0.6"/>' +
+    '</svg>'
+  ];
+  // Pre-compute which sprite slots have a real PNG (probed once per session).
+  var _seedSpriteAvail = [null, null, null, null];
+  function _probeSeedSprite(idx) {
+    if (_seedSpriteAvail[idx] !== null) return;
+    _seedSpriteAvail[idx] = false; // assume missing until proven
+    var probe = new Image();
+    probe.onload = function() { _seedSpriteAvail[idx] = true; };
+    probe.onerror = function() { _seedSpriteAvail[idx] = false; };
+    probe.src = _SEED_SPRITE_PATHS[idx];
+  }
+  function _seedSpriteHtml(stage, isMystery) {
+    if (stage < 0) stage = 0; if (stage > 3) stage = 3;
+    _probeSeedSprite(stage);
+    var mysteryCls = isMystery ? ' nur-seed-mystery' : '';
+    if (_seedSpriteAvail[stage] === true) {
+      return '<div class="nur-seed-sprite' + mysteryCls + '">' +
+        '<img src="' + _SEED_SPRITE_PATHS[stage] + '" alt="seed stage ' + stage + '" style="width:70px;height:95px;display:block;">' +
+      '</div>';
+    }
+    // Fallback: inline SVG (current art) so the slot never goes blank
+    return '<div class="nur-seed-sprite' + mysteryCls + '">' + _SEED_SPRITE_FALLBACKS[stage] + '</div>';
+  }
+
   function _buildNurSlotHTML(seed, idx) {
     if (!seed) {
       return '<div class="nur-empty-slot">' +
@@ -29226,40 +29296,12 @@ document.addEventListener('keydown', function(e) {
       stateLabel = '💧 Needs water today';
       stateColor = 'var(--sage)';
     }
-    // Progressive growth visual
+    // Progressive growth visual — consistent seedling sprites for ALL seeds
+    // (no plant preview at days 2-3 — that spoiled the surprise). Mystery
+    // seeds get an extra dashed gold halo overlay via CSS class.
     var days = seed.waterLog.length;
-    var svgHtml;
-    if (days === 0) {
-      // Seed — tiny dot with halo
-      svgHtml = '<svg viewBox="0 0 70 95" width="48" height="65" xmlns="http://www.w3.org/2000/svg">' +
-        '<ellipse cx="35" cy="82" rx="18" ry="3" fill="#3A5C2A" opacity="0.2"/>' +
-        '<ellipse cx="35" cy="80" rx="5" ry="4" fill="#A87850" opacity="0.85"/>' +
-        '<ellipse cx="34" cy="79" rx="1.8" ry="1.2" fill="#C09870" opacity="0.5"/>' +
-        '<circle cx="35" cy="80" r="7" fill="none" stroke="#8CB86E" stroke-width="0.4" opacity="0.18"/>' +
-        '</svg>';
-    } else if (days === 1) {
-      // Sprout — small hooked stem, two cotyledons
-      svgHtml = '<svg viewBox="0 0 70 95" width="48" height="65" xmlns="http://www.w3.org/2000/svg">' +
-        '<ellipse cx="35" cy="83" rx="16" ry="2.5" fill="#3A5C2A" opacity="0.2"/>' +
-        '<line x1="35" y1="83" x2="35" y2="66" stroke="#5E8550" stroke-width="1.8" stroke-linecap="round"/>' +
-        '<path d="M35,71 C31,68 27,66 29,63 C31,60 35,62 35,66" fill="#8CB86E" opacity="0.75"/>' +
-        '<path d="M35,71 C39,68 43,66 41,63 C39,60 35,62 35,66" fill="#8CB86E" opacity="0.65"/>' +
-        '<ellipse cx="35" cy="83" rx="5" ry="3.5" fill="#A87850" opacity="0.7"/>' +
-        '</svg>';
-    } else if (days === 2) {
-      if (seed.mystery) {
-        svgHtml = '<svg viewBox="0 0 70 95" width="48" height="65" xmlns="http://www.w3.org/2000/svg"><ellipse cx="35" cy="85" rx="18" ry="3" fill="#3A5C2A" opacity="0.2"/><line x1="35" y1="85" x2="35" y2="48" stroke="#5E8550" stroke-width="2" stroke-linecap="round"/><ellipse cx="25" cy="55" rx="10" ry="5" fill="#8CB86E" opacity="0.7" transform="rotate(-22 25 55)"/><ellipse cx="45" cy="52" rx="10" ry="5" fill="#8CB86E" opacity="0.7" transform="rotate(22 45 52)"/><circle cx="35" cy="50" r="16" fill="none" stroke="#c8a84b" stroke-width="0.5" stroke-dasharray="1.5,2.5" opacity="0.5"/></svg>';
-      } else {
-        svgHtml = typeof generatePlantSVG === 'function' ? generatePlantSVG(seed.seedHash, 48, 0.45) : '';
-      }
-    } else {
-      if (seed.mystery) {
-        svgHtml = '<svg viewBox="0 0 70 95" width="48" height="65" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 8px rgba(200,168,75,0.55));"><ellipse cx="35" cy="85" rx="18" ry="3" fill="#3A5C2A" opacity="0.25"/><circle cx="35" cy="42" r="22" fill="rgba(200,168,75,0.18)"/><circle cx="35" cy="42" r="15" fill="rgba(200,168,75,0.28)"/><text x="35" y="50" text-anchor="middle" font-family="Bebas Neue,sans-serif" font-size="20" fill="#c8a84b" opacity="0.9">?</text><circle cx="35" cy="42" r="24" fill="none" stroke="#c8a84b" stroke-width="0.6" stroke-dasharray="2,2.5" opacity="0.55"/></svg>';
-      } else {
-        var baseSvg = typeof generatePlantSVG === 'function' ? generatePlantSVG(seed.seedHash, 48, 0.85) : '';
-        svgHtml = baseSvg.replace('<svg ', '<svg style="filter:drop-shadow(0 0 6px rgba(200,168,75,0.4));" ');
-      }
-    }
+    var stageIdx = days >= 3 ? 3 : days; // 0,1,2,3
+    var svgHtml = _seedSpriteHtml(stageIdx, !!seed.mystery);
     var sid = seed.id;
     var waterLabel    = wateredToday ? '✓ WATERED' : '💧 WATER';
     var waterDisabled = (wateredToday || bloomReady) ? 'disabled' : '';
