@@ -2543,21 +2543,20 @@ window.FG_Backpack.sendPlantHome = function(idx) {
   else if (window._toast) window._toast(name + ' sent to Greenhouse!');
 };
 
-// Send seed from backpack to nursery (with 6h cooldown)
+// Send seed from backpack to nursery (no cooldown — nursery space is the only gate)
 window.FG_Backpack.sendSeedToNursery = function(idx) {
   if (!BP || !BP.getState) return;
   var state = BP.getState();
   if (idx >= state.seeds.length) return;
-  var cdKey = 's' + idx;
-  var remaining = _bpCooldownRemaining(cdKey);
-  if (remaining > 0) {
-    if (BP.toast) BP.toast('Cooldown: ' + _bpFormatTime(remaining) + ' remaining');
-    else if (window._toast) window._toast('Cooldown: ' + _bpFormatTime(remaining) + ' remaining');
+  var _nurMax = (window.FG_Data && FG_Data.getNurSlots) ? FG_Data.getNurSlots() : 3;
+  var _nurNow = (window.FG_Data && FG_Data.getNursery) ? FG_Data.getNursery().length : 0;
+  if (_nurNow >= _nurMax) {
+    if (BP.toast) BP.toast('Nursery full (' + _nurNow + '/' + _nurMax + '). Bloom or abandon a seed first.');
+    else if (window._toast) window._toast('Nursery full (' + _nurNow + '/' + _nurMax + '). Bloom or abandon a seed first.');
     return;
   }
   var seed = state.seeds.splice(idx, 1)[0];
   if (!seed) return;
-  _bpSetCooldown(cdKey);
   window.dispatchEvent(new CustomEvent('bp-seed-to-nursery', {detail: seed}));
   BP.render();
   if (window.renderNursery) setTimeout(window.renderNursery, 200);
@@ -2614,13 +2613,14 @@ BP.ts = function(i) {
     if (sdi) {
       var existing = document.getElementById('bp-plant-seed');
       if (existing) existing.remove();
-      var cdKey = 's' + i;
-      var remaining = _bpCooldownRemaining(cdKey);
+      var _nurMax = (window.FG_Data && FG_Data.getNurSlots) ? FG_Data.getNurSlots() : 3;
+      var _nurNow = (window.FG_Data && FG_Data.getNursery) ? FG_Data.getNursery().length : 0;
+      var _nurFull = _nurNow >= _nurMax;
       var btn = document.createElement('button');
       btn.id = 'bp-plant-seed';
       btn.style.cssText = 'display:block;width:100%;margin-top:8px;padding:12px;min-height:48px;border:1px solid var(--gold);background:rgba(200,168,75,0.15);color:var(--gold);border-radius:8px;font-family:DM Mono,monospace;font-size:0.4rem;cursor:pointer;';
-      if (remaining > 0) {
-        btn.textContent = 'COOLDOWN: ' + _bpFormatTime(remaining);
+      if (_nurFull) {
+        btn.textContent = 'NURSERY FULL ' + _nurNow + '/' + _nurMax;
         btn.style.opacity = '0.5';
         btn.style.cursor = 'not-allowed';
       } else {

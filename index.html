@@ -26631,7 +26631,7 @@ document.addEventListener('keydown', function(e) {
             '<div class="gh-slot">#' + (realIdx + 1) + '</div>' +
             plantSvg +
             '<div class="gh-name" style="color:var(--cream);">' + (typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : _pName) + '</div>' +
-            (function(){var _gbs=window.FG_Data&&FG_Data.getBreedStatus?FG_Data.getBreedStatus(plant):null;if(!_gbs)return plant.breedCount>=3?'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(192,112,112,0.7);margin-top:1px;">\u26a1 SPENT 3/3</div>':'';if(_gbs.reason==='IMMATURE')return'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(91,175,220,0.7);margin-top:1px;">\ud83c\udf31 '+_gbs.daysLeft+'d to mature</div>';if(_gbs.reason==='COOLDOWN')return'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(200,168,75,0.7);margin-top:1px;">\u23f3 '+_gbs.cooldownDays+'d cooldown</div>';if(_gbs.reason==='NO_CHARGES')return'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(192,112,112,0.7);margin-top:1px;">\ud83d\udca4 Resting</div>';return'';})() +
+            (function(){var _gbs=window.FG_Data&&FG_Data.getBreedStatus?FG_Data.getBreedStatus(plant):null;if(!_gbs)return plant.breedCount>=3?'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(192,112,112,0.7);margin-top:1px;">\u26a1 SPENT 3/3</div>':'';if(_gbs.reason==='IMMATURE')return'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(91,175,220,0.7);margin-top:1px;">\ud83c\udf31 '+_gbs.daysLeft+'d to mature</div>';if(_gbs.reason==='COOLDOWN')return'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(200,168,75,0.7);margin-top:1px;">\u23f3 '+_gbs.cooldownDays+'d cooldown</div>';if(_gbs.reason==='NO_CHARGES')return'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(192,112,112,0.7);margin-top:1px;">\ud83d\udca4 Resting</div>';if(_gbs.canBreed){var _ch=_gbs.charges||0;return'<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:rgba(122,179,86,0.85);margin-top:1px;">\u26a1 '+_ch+'/3 ready</div>';}return'';})() +
             (_sea ? '<div style="display:flex;justify-content:center;gap:3px;margin-top:1px;font-size:0.3rem;align-items:center;"><span>' + _sea.emblem + '</span>' + (function(){ try { var _synIcons = checkSynergies(_ghTraits); if (!_synIcons || _synIcons.length === 0) return ''; var _si = ''; for (var _sj = 0; _sj < Math.min(_synIcons.length, 3); _sj++) _si += '<span title="' + _synIcons[_sj].name + '">' + _synIcons[_sj].emoji + '</span>'; return _si; } catch(e) { return ''; } })() + '</div>' : '') +
             _ghSymbol;
         }
@@ -27924,10 +27924,11 @@ document.addEventListener('keydown', function(e) {
     html += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.54rem;letter-spacing:0.06em;display:flex;gap:0.3rem;"><span style="color:' + sColor + ';">EA ' + _ea + '</span><span style="color:var(--muted);">' + seasonEmblems[_season] + '</span><span style="color:var(--muted);">Gen ' + (_t ? _t.chimerGen || 1 : 1) + '</span></div>';
     html += '</div>';
     html += '<div class="cb-rarity" style="color:' + sColor + ';">' + (_tg ? _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon : 'COMMON') + '</div>';
-    // Lineage moved to the Extra Details modal — button replaces the inline tree.
-    if (plant.parentAHash || plant.generation > 1 || plant.mutated || plant.compostLayers) {
-      html += '<button class="cb-details-btn" onclick="event.stopPropagation();window._openPlantDetails(\'' + plant.hash + '\');">⬡ LINEAGE & DETAILS</button>';
-    }
+    // Lineage moved to the Extra Details modal — button always visible so any
+    // plant has a path to the deep-dive (DNA, portrait, haiku, mint record).
+    var _hasLineage = (plant.parentAHash || plant.generation > 1 || plant.mutated || plant.compostLayers);
+    var _detailsLabel = _hasLineage ? '⬡ LINEAGE & DETAILS' : '⬡ DETAILS';
+    html += '<button class="cb-details-btn" onclick="event.stopPropagation();window._openPlantDetails(\'' + plant.hash + '\');return false;">' + _detailsLabel + '</button>';
     html += '<div class="cb-hash" style="margin-top:0.4rem;padding-top:0.3rem;border-top:1px solid rgba(74,124,53,0.06);">' + plant.hash + '</div>';
     html += '<div class="cb-date" style="margin-top:0.1rem;">Minted ' + (plant.date || '') + dateSuffix + '</div>';
     html += '<div class="cb-nameplate" style="position:absolute;bottom:8%;left:10%;right:10%;"><span class="cb-name" style="color:' + sColor + ';">' + name + '</span></div>';
@@ -43647,21 +43648,21 @@ window.FG_Backpack.sendPlantHome = function(idx) {
   else if (window._toast) window._toast(name + ' sent to Greenhouse!');
 };
 
-// Send seed from backpack to nursery (with 6h cooldown)
+// Send seed from backpack to nursery (no cooldown — nursery space is the only gate)
 window.FG_Backpack.sendSeedToNursery = function(idx) {
   if (!BP || !BP.getState) return;
   var state = BP.getState();
   if (idx >= state.seeds.length) return;
-  var cdKey = 's' + idx;
-  var remaining = _bpCooldownRemaining(cdKey);
-  if (remaining > 0) {
-    if (BP.toast) BP.toast('Cooldown: ' + _bpFormatTime(remaining) + ' remaining');
-    else if (window._toast) window._toast('Cooldown: ' + _bpFormatTime(remaining) + ' remaining');
+  // Pre-check nursery space so we never splice a seed out of the bag only to lose it.
+  var _nurMax = (window.FG_Data && FG_Data.getNurSlots) ? FG_Data.getNurSlots() : 3;
+  var _nurNow = (window.FG_Data && FG_Data.getNursery) ? FG_Data.getNursery().length : 0;
+  if (_nurNow >= _nurMax) {
+    if (BP.toast) BP.toast('Nursery full (' + _nurNow + '/' + _nurMax + '). Bloom or abandon a seed first.');
+    else if (window._toast) window._toast('Nursery full (' + _nurNow + '/' + _nurMax + '). Bloom or abandon a seed first.');
     return;
   }
   var seed = state.seeds.splice(idx, 1)[0];
   if (!seed) return;
-  _bpSetCooldown(cdKey);
   window.dispatchEvent(new CustomEvent('bp-seed-to-nursery', {detail: seed}));
   BP.render();
   if (window.renderNursery) setTimeout(window.renderNursery, 200);
@@ -43718,13 +43719,14 @@ BP.ts = function(i) {
     if (sdi) {
       var existing = document.getElementById('bp-plant-seed');
       if (existing) existing.remove();
-      var cdKey = 's' + i;
-      var remaining = _bpCooldownRemaining(cdKey);
+      var _nurMax = (window.FG_Data && FG_Data.getNurSlots) ? FG_Data.getNurSlots() : 3;
+      var _nurNow = (window.FG_Data && FG_Data.getNursery) ? FG_Data.getNursery().length : 0;
+      var _nurFull = _nurNow >= _nurMax;
       var btn = document.createElement('button');
       btn.id = 'bp-plant-seed';
       btn.style.cssText = 'display:block;width:100%;margin-top:8px;padding:12px;min-height:48px;border:1px solid var(--gold);background:rgba(200,168,75,0.15);color:var(--gold);border-radius:8px;font-family:DM Mono,monospace;font-size:0.4rem;cursor:pointer;';
-      if (remaining > 0) {
-        btn.textContent = 'COOLDOWN: ' + _bpFormatTime(remaining);
+      if (_nurFull) {
+        btn.textContent = 'NURSERY FULL ' + _nurNow + '/' + _nurMax;
         btn.style.opacity = '0.5';
         btn.style.cursor = 'not-allowed';
       } else {
