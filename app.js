@@ -22818,13 +22818,30 @@
   }
 
   // ── syncVaultToCloud (set-102): DUAL LOCK + visible diagnostics ─────────
-  window.syncVaultToCloud = function(gh, fbUser) {
+  // Public syncVaultToCloud is now a 5-second coalescing debouncer. Action
+  // bursts (breeding, watering, compost cycles) fire one write instead of 20.
+  // syncVaultToCloudNow() is the immediate-flush escape hatch for logout/Pi.
+  function _doFlushVaultToCloud(gh, fbUser) {
     var user = fbUser || (auth && auth.currentUser) || null;
     if (!_vaultHydrated || !user || !user.uid) {
       if (window._swsLog) _swsLog('↑ WRITE BLOCKED — hydrated:' + _vaultHydrated + ' auth:' + !!(user&&user.uid), 'err');
       return;
     }
     var p = _buildPayload(gh);
+    // Vault size cap: trim oldest event log if payload > 500KB
+    try {
+      var size = JSON.stringify(p).length;
+      if (size > 500000) {
+        try {
+          var log = JSON.parse(localStorage.getItem('lw_event_log') || '[]');
+          if (log.length > 50) {
+            log = log.slice(log.length - 50);
+            localStorage.setItem('lw_event_log', JSON.stringify(log));
+            if (window._swsLog) _swsLog('Trimmed event log to 50 (vault was ' + Math.round(size/1024) + 'KB)', 'warn');
+          }
+        } catch(e) {}
+      }
+    } catch(e) {}
     if (window._swsLog) _swsLog('↑ Writing to vaults/' + user.uid.slice(0,8) + '… | ' + p.sws_greenhouse.length + ' plants');
     var uid = user.uid;
     db.collection('vaults').doc(uid).set(p, {merge:true})
@@ -22847,7 +22864,35 @@
       streak: JSON.parse(localStorage.getItem('sws_streak') || 'null'),
       lastSync: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
+  }
+
+  var _syncPendingTimer = null;
+  var _syncPendingArgs = null;
+  var SYNC_DEBOUNCE_MS = 5000;
+  window.syncVaultToCloud = function(gh, fbUser) {
+    _syncPendingArgs = { gh: gh, fbUser: fbUser };
+    if (_syncPendingTimer) return;
+    _syncPendingTimer = setTimeout(function() {
+      var args = _syncPendingArgs;
+      _syncPendingTimer = null;
+      _syncPendingArgs = null;
+      if (args) _doFlushVaultToCloud(args.gh, args.fbUser);
+    }, SYNC_DEBOUNCE_MS);
   };
+  window.syncVaultToCloudNow = function(gh, fbUser) {
+    if (_syncPendingTimer) { clearTimeout(_syncPendingTimer); _syncPendingTimer = null; }
+    _syncPendingArgs = null;
+    _doFlushVaultToCloud(gh, fbUser);
+  };
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden' && _syncPendingTimer) {
+      clearTimeout(_syncPendingTimer);
+      _syncPendingTimer = null;
+      var args = _syncPendingArgs;
+      _syncPendingArgs = null;
+      if (args) _doFlushVaultToCloud(args.gh, args.fbUser);
+    }
+  });
   // Keep old name working
   window.sws_syncToCloud = function(email, hash, gh) { window.syncVaultToCloud(gh, auth&&auth.currentUser); };
   window.loadVaultFromCloud = function(cb) { 

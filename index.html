@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.51';
+  var LW_VERSION='2026.04.10.52';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -31001,13 +31001,34 @@ document.addEventListener('keydown', function(e) {
   }
 
   // ── syncVaultToCloud (set-102): DUAL LOCK + visible diagnostics ─────────
-  window.syncVaultToCloud = function(gh, fbUser) {
+  // Internal flush — writes the vault doc + meta subcollection immediately.
+  // Public `syncVaultToCloud` wraps this in a coalescing debouncer so rapid
+  // action bursts (breeding, watering, compost cycles) collapse into a single
+  // Firestore write instead of 10-20 writes in a row. Meta state flushes on
+  // the same cadence.
+  function _doFlushVaultToCloud(gh, fbUser) {
     var user = fbUser || (auth && auth.currentUser) || null;
     if (!_vaultHydrated || !user || !user.uid) {
       if (window._swsLog) _swsLog('↑ WRITE BLOCKED — hydrated:' + _vaultHydrated + ' auth:' + !!(user&&user.uid), 'err');
       return;
     }
+    // Build payload. If it's above 500KB, trim event log to stay under
+    // Firestore's 1MB doc cap with margin for growth.
     var p = _buildPayload(gh);
+    try {
+      var size = JSON.stringify(p).length;
+      if (size > 500000) {
+        // Trim oldest event log entries (localStorage-side) before next build
+        try {
+          var log = JSON.parse(localStorage.getItem('lw_event_log') || '[]');
+          if (log.length > 50) {
+            log = log.slice(log.length - 50); // keep newest 50
+            localStorage.setItem('lw_event_log', JSON.stringify(log));
+            if (window._swsLog) _swsLog('Trimmed event log to 50 entries (vault was ' + Math.round(size/1024) + 'KB)', 'warn');
+          }
+        } catch(e) {}
+      }
+    } catch(e) {}
     if (window._swsLog) _swsLog('↑ Writing to vaults/' + user.uid.slice(0,8) + '… | ' + p.sws_greenhouse.length + ' plants');
     var uid = user.uid;
     db.collection('vaults').doc(uid).set(p, {merge:true})
@@ -31030,7 +31051,38 @@ document.addEventListener('keydown', function(e) {
       streak: JSON.parse(localStorage.getItem('sws_streak') || 'null'),
       lastSync: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
+  }
+
+  // Coalescing debouncer — action bursts become one write
+  var _syncPendingTimer = null;
+  var _syncPendingArgs = null;
+  var SYNC_DEBOUNCE_MS = 5000; // 5 seconds
+  window.syncVaultToCloud = function(gh, fbUser) {
+    _syncPendingArgs = { gh: gh, fbUser: fbUser };
+    if (_syncPendingTimer) return; // already queued — args updated above
+    _syncPendingTimer = setTimeout(function() {
+      var args = _syncPendingArgs;
+      _syncPendingTimer = null;
+      _syncPendingArgs = null;
+      if (args) _doFlushVaultToCloud(args.gh, args.fbUser);
+    }, SYNC_DEBOUNCE_MS);
   };
+  // Immediate flush escape hatch — for logout, Pi payments, etc.
+  window.syncVaultToCloudNow = function(gh, fbUser) {
+    if (_syncPendingTimer) { clearTimeout(_syncPendingTimer); _syncPendingTimer = null; }
+    _syncPendingArgs = null;
+    _doFlushVaultToCloud(gh, fbUser);
+  };
+  // Flush on page hide so mobile backgrounding doesn't lose pending writes
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden' && _syncPendingTimer) {
+      clearTimeout(_syncPendingTimer);
+      _syncPendingTimer = null;
+      var args = _syncPendingArgs;
+      _syncPendingArgs = null;
+      if (args) _doFlushVaultToCloud(args.gh, args.fbUser);
+    }
+  });
   // Keep old name working
   window.sws_syncToCloud = function(email, hash, gh) { window.syncVaultToCloud(gh, auth&&auth.currentUser); };
   window.loadVaultFromCloud = function(cb) { 
