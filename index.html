@@ -10091,24 +10091,24 @@ document.addEventListener('keydown', function(e) {
     var t0 = hashToTraits(hash);
     // set-39: Allow trait overrides for companion/aura tester
     if (traitOverrides) { for (var _ok in traitOverrides) { if (traitOverrides.hasOwnProperty(_ok)) t0[_ok] = traitOverrides[_ok]; } }
-    // Phoenix gating: if this hash belongs to a greenhouse plant with
-    // phoenixSuppressed=true (rolled Phoenix but compost gate failed at mint),
-    // override the companion to the suppressed sentinel so the renderer skips
-    // drawing it. Pure caller-side overrides take precedence.
-    if (!traitOverrides || traitOverrides.companion === undefined) {
-      if (t0.companion === 33 && hash) {
-        try {
-          var _phxGh = JSON.parse(localStorage.getItem('sws_greenhouse') || '[]');
-          for (var _phxI = 0; _phxI < _phxGh.length; _phxI++) {
-            if (_phxGh[_phxI].hash === hash && _phxGh[_phxI].phoenixSuppressed) {
-              t0.companion = -1;
-              break;
-            }
+    // Plant-level overlays from greenhouse storage (Phoenix gating, forceFlower, etc.)
+    // — only run if the caller didn't explicitly override and we have a hash
+    if (hash && (!traitOverrides || (traitOverrides.companion === undefined && traitOverrides.hasFlower === undefined))) {
+      try {
+        var _ovGh = JSON.parse(localStorage.getItem('sws_greenhouse') || '[]');
+        for (var _ovI = 0; _ovI < _ovGh.length; _ovI++) {
+          if (_ovGh[_ovI].hash === hash) {
+            var _ovP = _ovGh[_ovI];
+            // Phoenix gating: rolled Phoenix but compost gate failed at mint
+            if (_ovP.phoenixSuppressed && t0.companion === 33) t0.companion = -1;
+            // Velvet Bowl: forces hasFlower on the bloomed plant
+            if (_ovP.forceFlower) t0.hasFlower = true;
+            break;
           }
-        } catch(e) {}
-      }
+        }
+      } catch(e) {}
     }
-    var _cacheKey = (hash || 'x') + '|' + s + '|' + prog.toFixed(2) + (traitOverrides ? '|ov' : '') + (t0.companion === -1 ? '|sup' : '');
+    var _cacheKey = (hash || 'x') + '|' + s + '|' + prog.toFixed(2) + (traitOverrides ? '|ov' : '') + (t0.companion === -1 ? '|sup' : '') + (t0.hasFlower ? '|f' : '|nf');
     var _skipCache = !!traitOverrides || (!_isThumb && t0.isRare && prog >= 1); // breathe animation is time-based; always skip cache for overrides
     if (!_skipCache) {
       var _cached = _svgCacheGet(_cacheKey);
@@ -28613,6 +28613,39 @@ document.addEventListener('keydown', function(e) {
       cost: 800,
       blurb: 'Guarantees Uncommon+ (auto-rerolls Common results)',
       color: '#7ab356'
+    },
+    // ─── EXPANSION SET — strategic depth ───
+    glasswort: {
+      id: 'glasswort',
+      name: 'Glasswort Vessel',
+      icon: '\ud83e\uddca',
+      cost: 250,
+      blurb: 'Gen 1 only — chimera generation resets to 1 on bloom',
+      color: '#b0e0e6'
+    },
+    iron: {
+      id: 'iron',
+      name: 'Iron Urn',
+      icon: '\u2697',
+      cost: 400,
+      blurb: '+2 climate immunity (peak season bonus doubled)',
+      color: '#888888'
+    },
+    velvet: {
+      id: 'velvet',
+      name: 'Velvet Bowl',
+      icon: '\ud83c\udf38',
+      cost: 600,
+      blurb: 'Forces hasFlower=true on bloom (always blooms a flower)',
+      color: '#e8a0bf'
+    },
+    starlight: {
+      id: 'starlight',
+      name: 'Starlight Cradle',
+      icon: '\u2728',
+      cost: 1200,
+      blurb: 'Doubles aura intensity — guarantees an aura if rolled',
+      color: '#c8a84b'
     }
   };
   window.lwBuyPot = function(potId) {
@@ -30200,10 +30233,15 @@ document.addEventListener('keydown', function(e) {
     //   phoenix   → doubles existing fertilizer effectiveness
     //   moonstone → +1 EA bonus (applied to plant object below)
     //   worldSeed → reroll if Common (applied after grading)
+    //   glasswort → forces gen 1 (chimera reset)
+    //   iron      → +2 climate immunity (eaBonus path)
+    //   velvet    → forces hasFlower true (post-trait override)
+    //   starlight → bumps aura — handled at trait time below
     var _fertCount = seed.fertApplied || 0;
     var _potId = seed.pot || null;
     if (_potId === 'crystal') _fertCount = _fertCount + 5;
     if (_potId === 'phoenix') _fertCount = _fertCount * 2;
+    if (_potId === 'starlight') _fertCount = _fertCount + 3;
     var mut = applyMutationRNG(spliced, _fertCount);
     var newHash = mut.hash;
     // World Seed Bowl: if the rolled grade is Common, retry with a higher
@@ -30316,14 +30354,16 @@ document.addEventListener('keydown', function(e) {
       timestamp: Date.now(),
       date:      today,
       rare:      mut.mutated,
-      generation: Math.min(6, Math.max(_parentAGen, _parentBGen) + 1), // Gen = max(parents) + 1, capped at 6
+      generation: (_potId === 'glasswort') ? 1 : Math.min(6, Math.max(_parentAGen, _parentBGen) + 1),
       breedLayers: _breedLayers,
       breedCount: 0,
       mycelialCrown: _hasCrown,
       compostLayers: Object.keys(_compostLayers).length > 0 ? _compostLayers : null,
       fertApplied: _fertCount || 0,
-      // Moonstone Cradle pot bakes a permanent +1 EA bonus into the plant
-      eaBonus:   (_potId === 'moonstone') ? 1 : 0,
+      // Pot-derived bonuses baked into the plant:
+      //   moonstone = +1 EA, iron = +2 EA (climate immunity), starlight = +1
+      eaBonus: (_potId === 'moonstone') ? 1 : (_potId === 'iron') ? 2 : (_potId === 'starlight') ? 1 : 0,
+      forceFlower: (_potId === 'velvet') ? true : false,
       birthPot:  _potId || null,
       // Phoenix suppressed flag — true if hash rolled Phoenix but compost gate failed
       phoenixSuppressed: _phoenixSuppressed,
