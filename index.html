@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.57';
+  var LW_VERSION='2026.04.10.58';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -47283,6 +47283,74 @@ window._openCompendiumUI=function(){
       }
     }
     h+='</div></div>';
+  } catch(e) {}
+
+  // ─── MEMORY GARDEN ───────────────────────────────────────────
+  // Composted plants live on as memorials. Reads sws_compost_log
+  // which stores { hash, tier, ts } per compost event. Shows the 6
+  // most recent as greyed silhouettes.
+  try {
+    var _cLog = JSON.parse(localStorage.getItem('sws_compost_log') || '[]');
+    if (_cLog.length > 0) {
+      var _recentComp = _cLog.slice().sort(function(a,b){ return (b.ts||0)-(a.ts||0); }).slice(0, 6);
+      var _mpc = { Common:'#959588', Uncommon:'#8CB86E', Rare:'#5b8fb9', Epic:'#9B59B6', Legendary:'#C8A84B', Mythic:'#A87285', Cosmic:'#D94FFF' };
+      h+='<div style="margin-bottom:0.8rem;">';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:#a58a6e;letter-spacing:0.1em;margin-bottom:0.4rem;">\ud83c\udf42 MEMORY GARDEN <span style="color:var(--muted);font-size:0.4rem;">'+_cLog.length+' returned to earth</span></div>';
+      h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;">';
+      for (var _mi=0; _mi<_recentComp.length; _mi++) {
+        var _mem = _recentComp[_mi];
+        var _memHash = _mem.hash || '';
+        while (_memHash.length < 64) _memHash += '0';
+        var _memName = window.getPlantName ? getPlantName(_memHash) : 'Plant';
+        var _memSvg = '';
+        try { if (window._generatePlantSVG) _memSvg = window._generatePlantSVG(_memHash, 44, 0.4); } catch(e) {}
+        var _memCol = _mpc[_mem.tier] || '#8a9178';
+        var _daysAgo = _mem.ts ? Math.max(0, Math.floor((Date.now()-_mem.ts)/86400000)) : 0;
+        var _ageLabel = _daysAgo === 0 ? 'today' : _daysAgo === 1 ? '1 day' : _daysAgo + 'd';
+        h+='<div style="padding:6px 4px;background:rgba(18,22,16,0.6);border:1px solid '+_memCol+'22;border-radius:8px;text-align:center;min-height:100px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;opacity:0.8;">';
+        h+='<div style="filter:grayscale(0.4) brightness(0.75);max-height:50px;overflow:hidden;display:flex;align-items:center;justify-content:center;">'+_memSvg+'</div>';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--cream);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">'+_memName+'</div>';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:'+_memCol+';">'+(_mem.tier||'Common')+' \u00b7 '+_ageLabel+'</div>';
+        h+='</div>';
+      }
+      h+='</div></div>';
+    }
+  } catch(e) {}
+
+  // ─── ACHIEVEMENT SHOWCASE ────────────────────────────────────
+  // Surfaces unlocked achievements inside the compendium for quick review.
+  try {
+    var _unl = JSON.parse(localStorage.getItem('sws_achievements') || '{}');
+    var _unlList = Object.keys(_unl);
+    if (_unlList.length > 0) {
+      h+='<div style="margin-bottom:0.8rem;">';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.4rem;">\ud83c\udfc6 ACHIEVEMENTS <span style="color:var(--muted);font-size:0.4rem;">'+_unlList.length+' unlocked</span></div>';
+      _unlList.sort(function(a,b){
+        var aT = (_unl[a] && _unl[a].unlockedAt) ? new Date(_unl[a].unlockedAt).getTime() : 0;
+        var bT = (_unl[b] && _unl[b].unlockedAt) ? new Date(_unl[b].unlockedAt).getTime() : 0;
+        return bT - aT;
+      });
+      var _achIcons = {
+        first_plant:'\ud83c\udf31', full_row:'\ud83c\udfdb', half_house:'\ud83c\udfe0', full_house:'\ud83c\udff0',
+        first_rare:'\u2b50', first_epic:'\ud83d\udc8e', first_legend:'\ud83d\udc51', first_cosmic:'\ud83c\udf0c',
+        first_cross:'\ud83e\uddec', breed_5:'\ud83e\uddea', breed_20:'\ud83d\udd2c', chimera_gen3:'\ud83d\udc09',
+        first_compost:'\ud83c\udf42', compost_10:'\u267b\ufe0f', compost_crown:'\ud83d\udc78', compost_deep:'\ud83c\udf33',
+        streak_7:'\ud83d\udd25', streak_30:'\ud83d\udd25', streak_100:'\ud83d\udd25',
+        spent_100:'\ud83d\udcb8', spent_1000:'\ud83d\udcb0', all_seasons:'\ud83c\udf0d'
+      };
+      h+='<div style="display:flex;flex-wrap:wrap;gap:5px;">';
+      for (var _ak=0; _ak<Math.min(_unlList.length, 18); _ak++) {
+        var _aid = _unlList[_ak];
+        var _ico = _achIcons[_aid] || '\u2728';
+        var _aLabel = _aid.replace(/_/g,' ').replace(/\b\w/g, function(c){return c.toUpperCase();});
+        h+='<div style="padding:5px 8px;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.28);border-radius:16px;display:flex;align-items:center;gap:4px;" title="'+_aLabel+'">';
+        h+='<span style="font-size:0.75rem;">'+_ico+'</span>';
+        h+='<span style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--gold);">'+_aLabel+'</span>';
+        h+='</div>';
+      }
+      if (_unlList.length > 18) h+='<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);align-self:center;">+ '+(_unlList.length-18)+' more</div>';
+      h+='</div></div>';
+    }
   } catch(e) {}
 
   // ─── HAIKU COLLECTION ────────────────────────────────────────
