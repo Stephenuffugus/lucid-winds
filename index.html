@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.10.55';
+  var LW_VERSION='2026.04.10.56';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -47238,6 +47238,102 @@ window._openCompendiumUI=function(){
     }
   }
   h+='</div></div>';
+
+  // ─── RARITY PARADE ─────────────────────────────────────────────
+  // First-minted plant of each of the 7 rarity tiers, shown as SVG cards.
+  // Cosmic only shows if you've actually minted one (0.39% drop rate).
+  try {
+    var parade = { Common:null, Uncommon:null, Rare:null, Epic:null, Legendary:null, Mythic:null, Cosmic:null };
+    var parOrder = ['Common','Uncommon','Rare','Epic','Legendary','Mythic','Cosmic'];
+    var parColors = { Common:'#959588', Uncommon:'#8CB86E', Rare:'#5b8fb9', Epic:'#9B59B6', Legendary:'#C8A84B', Mythic:'#A87285', Cosmic:'#D94FFF' };
+    // Walk greenhouse sorted by born/date to find first of each
+    var sorted = gh.slice().sort(function(a,b){
+      return (a.born||0)-(b.born||0);
+    });
+    for (var ps=0; ps<sorted.length; ps++) {
+      try {
+        var pt = window.hashToTraits?hashToTraits(sorted[ps].hash):null;
+        if (!pt) continue;
+        var ptg = window.getTerraGrade?getTerraGrade(pt):null;
+        if (!ptg || !ptg.name) continue;
+        if (!parade[ptg.name]) parade[ptg.name] = sorted[ps];
+      } catch(e) {}
+    }
+    var foundParade = 0;
+    for (var pk in parade) if (parade[pk]) foundParade++;
+    h+='<div style="margin-bottom:0.8rem;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.4rem;">\u2728 RARITY PARADE <span style="color:var(--muted);font-size:0.4rem;">'+foundParade+' / 7</span></div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">';
+    for (var pi3=0; pi3<parOrder.length; pi3++) {
+      var rname = parOrder[pi3];
+      var pplant = parade[rname];
+      var rcol = parColors[rname];
+      if (pplant) {
+        var psvg = '';
+        try { if (window._generatePlantSVG) psvg = window._generatePlantSVG(pplant.hash, 40, 1); } catch(e) {}
+        var pnm = window.getPlantName?getPlantName(pplant.hash):pplant.hash.slice(0,6);
+        h+='<div style="padding:3px;background:rgba(18,22,16,0.6);border:1px solid '+rcol+'55;border-radius:6px;text-align:center;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;" title="'+pnm+' ('+rname+')">';
+        h+='<div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;max-height:40px;">'+psvg+'</div>';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.25rem;color:'+rcol+';margin-top:1px;">'+rname.slice(0,4).toUpperCase()+'</div>';
+        h+='</div>';
+      } else {
+        h+='<div style="padding:3px;background:rgba(13,16,12,0.3);border:1px solid rgba(74,124,53,0.06);border-radius:6px;text-align:center;min-height:58px;display:flex;align-items:center;justify-content:center;opacity:0.35;">';
+        h+='<div style="font-size:0.5rem;color:var(--muted);">?</div>';
+        h+='</div>';
+      }
+    }
+    h+='</div></div>';
+  } catch(e) {}
+
+  // ─── COMPANION GALLERY ────────────────────────────────────────
+  // All 60 companions in a 6-column grid. Discovered ones full color,
+  // rest greyed with ??? name. Reads collection from greenhouse history.
+  try {
+    if (window.TRAIT_BANK && window.TRAIT_BANK.companions) {
+      var companions = window.TRAIT_BANK.companions;
+      var seen = {};
+      // Collect discovered companions from greenhouse + compost log + bestiary cache
+      for (var cgi=0; cgi<gh.length; cgi++) {
+        try {
+          var ct = window.hashToTraits?hashToTraits(gh[cgi].hash):null;
+          if (ct && ct.companion >= 20) seen[ct.companion] = true;
+        } catch(e) {}
+      }
+      try {
+        var cLog = JSON.parse(localStorage.getItem('sws_compost_log')||'[]');
+        for (var cli=0; cli<cLog.length; cli++) {
+          // Compost log doesn't store companion idx, skip for now
+        }
+      } catch(e) {}
+      try {
+        var bestiary = JSON.parse(localStorage.getItem('pw_bestiary')||'[]');
+        for (var bi5=0; bi5<bestiary.length; bi5++) seen[bestiary[bi5]] = true;
+      } catch(e) {}
+      // Count only the named companions (idx >= 20)
+      var namedCount = 0;
+      for (var ci2=20; ci2<companions.length; ci2++) {
+        if (companions[ci2].name && companions[ci2].name !== 'None') namedCount++;
+      }
+      var seenCount = Object.keys(seen).length;
+      h+='<div style="margin-bottom:0.8rem;">';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.4rem;">\ud83d\udc3e COMPANIONS <span style="color:var(--muted);font-size:0.4rem;">'+seenCount+' / '+namedCount+'</span></div>';
+      h+='<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;">';
+      for (var ccx=20; ccx<companions.length; ccx++) {
+        var comp = companions[ccx];
+        if (!comp.name || comp.name === 'None') continue;
+        var found = !!seen[ccx];
+        var rareStar = comp.rare ? ' \u2726' : '';
+        var cellBg = found ? 'rgba(200,168,75,0.08)' : 'rgba(13,16,12,0.35)';
+        var cellBorder = found ? 'rgba(200,168,75,0.28)' : 'rgba(74,124,53,0.08)';
+        var cellColor = found ? 'var(--gold)' : 'var(--muted)';
+        var cellOpacity = found ? '1' : '0.45';
+        h+='<div style="padding:3px;background:'+cellBg+';border:1px solid '+cellBorder+';border-radius:5px;text-align:center;min-height:38px;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:'+cellOpacity+';" title="'+(found?comp.name+(comp.rare?' (Rare)':'')+(comp.temp?' — '+comp.temp:''):'???')+'">';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.3rem;color:'+cellColor+';line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">'+(found?comp.name:'?')+rareStar+'</div>';
+        h+='</div>';
+      }
+      h+='</div></div>';
+    }
+  } catch(e) {}
 
   // Biomes section
   if(window.BIOMES){
