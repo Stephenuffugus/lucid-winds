@@ -3011,11 +3011,15 @@ function _updateCounts(){
   var w=_getWild();
   var c=document.getElementById('w-count');if(c)c.textContent=w.length;
   var now=Date.now();
-  var lastTick=0;try{lastTick=parseInt(localStorage.getItem('fg_pollen_tick')||'0');}catch(e){}
-  var total=_getPollen();
+  // Offline catch-up: compute Dew earned since last tick and credit via earnDew.
+  // The per-minute setInterval handles live ticking; this path catches up time
+  // the player spent on other tabs or offline, capped at 12 hours so idle
+  // weeks don't print a fortune on re-entry.
+  var lastTick=0;try{lastTick=parseInt(localStorage.getItem('fg_dew_tick')||localStorage.getItem('fg_pollen_tick')||'0');}catch(e){}
   if(lastTick>0&&w.length>0){
-    var elapsed=Math.floor((now-lastTick)/60000);
-    if(elapsed>0){
+    var elapsedMin=Math.floor((now-lastTick)/60000);
+    if(elapsedMin>720)elapsedMin=720;
+    if(elapsedMin>0){
       var pollenRates={Common:1,Uncommon:2,Rare:4,Epic:6,Legendary:9,Mythic:12,Cosmic:15};
       var hourlyTotal=0;
       for(var i=0;i<w.length;i++){
@@ -3025,14 +3029,14 @@ function _updateCounts(){
         }}catch(e){}
         hourlyTotal+=(pollenRates[grade]||1);
       }
-      var earned=Math.floor(hourlyTotal*elapsed/60);
-      if(earned>0){total+=earned;_savePollen(total);}
+      var earned=Math.floor(hourlyTotal*elapsedMin/60);
+      if(earned>0&&typeof window.earnDew==='function')window.earnDew(earned,'wild_offline_catchup');
     }
   }
-  localStorage.setItem('fg_pollen_tick',String(now));
+  localStorage.setItem('fg_dew_tick',String(now));
   // w-pollen shows Keeper XP (Pollen = XP rework); fg_pollen is dead
   var p=document.getElementById('w-pollen');
-  if(p){try{p.textContent=parseInt(localStorage.getItem('pw_xp')||'0');}catch(e){p.textContent=total;}}
+  if(p){try{p.textContent=parseInt(localStorage.getItem('pw_xp')||'0');}catch(e){}}
   // Update Dew balance display (real Dew ledger, not the hash ledger)
   try{
     var dewBal=typeof window.getTotalDew==='function'?window.getTotalDew():0;
