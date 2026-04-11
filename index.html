@@ -3823,6 +3823,13 @@
 .hi-action-btn.danger{border-color:rgba(200,80,60,0.2);color:rgba(200,120,100,0.9);}
 .hi-action-btn.gold{border-color:rgba(200,168,75,0.25);color:var(--gold);}
 .hi-action-btn.locked{opacity:0.45;border-style:dashed;cursor:not-allowed;color:rgba(122,179,86,0.5);}
+.hi-action-btn.hi-water-hold{position:relative;overflow:hidden;border-color:rgba(91,143,185,0.4);color:#7ab3d4;touch-action:none;-webkit-user-select:none;user-select:none;}
+.hi-action-btn.hi-water-hold .hi-water-fill{position:absolute;inset:0;background:linear-gradient(90deg,rgba(91,143,185,0.45),rgba(91,143,185,0.25));width:0%;transition:none;pointer-events:none;}
+.hi-action-btn.hi-water-hold .hi-water-label{position:relative;z-index:1;}
+.hi-action-btn.hi-water-hold.holding{border-color:rgba(91,143,185,0.85);box-shadow:0 0 18px rgba(91,143,185,0.45);}
+.hi-action-btn.hi-water-hold.holding .hi-water-fill{width:100%;transition:width 10s linear;}
+.hi-action-btn.hi-water-hold.held{border-color:rgba(122,179,86,0.85);box-shadow:0 0 22px rgba(122,179,86,0.6);}
+.hi-action-btn.hi-water-hold.held .hi-water-fill{background:linear-gradient(90deg,rgba(122,179,86,0.65),rgba(122,179,86,0.4));width:100%;transition:none;}
 .hi-search{padding:0.5rem 1rem 0.3rem;border-top:1px solid rgba(200,168,75,0.06);}
 .hi-search-btn{width:100%;min-height:56px;padding:0.5rem;border-radius:14px;cursor:pointer;border:2px solid rgba(122,179,86,0.25);background:linear-gradient(180deg,rgba(74,124,53,0.12),rgba(26,60,22,0.2));color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.12em;display:flex;align-items:center;justify-content:center;gap:10px;}
 .hi-search-btn:active{background:rgba(74,124,53,0.3);}
@@ -35079,6 +35086,36 @@ function _drop(pl){
     _toast('\ud83c\udfb2 '+_formatRollToast(_roll));
   }
 
+  // ── Overcrowding warning (Wild spec §5: same leaf family adjacent = -1 EA both) ──
+  // Bucket leaves into 7 broad families (leafType%71 / 10). If another plant in
+  // the zone shares the family, warn the player and ask before committing.
+  var _newTraits=null;try{_newTraits=window.hashToTraits(pl.hash);}catch(e){}
+  var _newFam=_newTraits?Math.floor((_newTraits.leafType%71)/10):-1;
+  var _crowdedNeighborHash=null;
+  if(_newFam>=0){
+    for(var _ci=0;_ci<inZone.length;_ci++){
+      var _cT=null;try{_cT=window.hashToTraits(inZone[_ci].hash);}catch(e){}
+      if(!_cT)continue;
+      if(Math.floor((_cT.leafType%71)/10)===_newFam){
+        _crowdedNeighborHash=inZone[_ci].hash;
+        break;
+      }
+    }
+  }
+  if(_crowdedNeighborHash&&window._lwConfirm){
+    var _crowdName=window.getPlantName?window.getPlantName(_crowdedNeighborHash):_crowdedNeighborHash.slice(0,6);
+    window._lwConfirm({
+      title:'OVERCROWDING WARNING',
+      body:'<b>'+_crowdName+'</b> is already in this zone with the same leaf family. Both plants will compete for sunlight and lose <b>-1 EA</b>. Plant anyway?',
+      yes:'PLANT ANYWAY',
+      no:'CANCEL'
+    },function(){
+      _pendingDrop={plant:pl,lat:la,lng:lo,wild:wild,displaced:displaced,crowdPenaltyHash:_crowdedNeighborHash};
+      _finishDrop('none');
+    });
+    return;
+  }
+
   // Wild v3 Phase 1: harvest is dead, so there's no defender game to pick.
   // Skip the picker and finish the drop directly. The defenderGame field
   // is still written for Firestore backward compat but is meaningless now.
@@ -35225,6 +35262,17 @@ function _finishDrop(defenderGame){
   // Compute EA at drop time
   var dropTraits=null;try{dropTraits=window.hashToTraits(pl.hash);}catch(e){}
   var dropEA=window.computeEA?window.computeEA(dropTraits,0):0;
+  // Overcrowding penalty: -1 EA on both the new plant and the matching neighbor
+  if(pd.crowdPenaltyHash){
+    dropEA=Math.max(0,dropEA-1);
+    for(var _cpi=0;_cpi<wild.length;_cpi++){
+      if(wild[_cpi]&&wild[_cpi].hash===pd.crowdPenaltyHash){
+        if(typeof wild[_cpi].ea==='number')wild[_cpi].ea=Math.max(0,wild[_cpi].ea-1);
+        wild[_cpi].crowdPenalty=true;
+        break;
+      }
+    }
+  }
 
   var _dropUid='';try{var _du=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_du)_dropUid=_du.uid;}catch(e){}
   var _dropGrade=_plantRarity(pl.hash);
@@ -36115,7 +36163,9 @@ function _selectHexPlant(idx,p){
     var _canTend=(window.canSee&&window.canSee.strangerTend&&window.canSee.strangerTend());
     var _canCut=(window.canSee&&window.canSee.wildCutting&&window.canSee.wildCutting());
     actions+=_inspectBtn;
-    actions+='<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
+    // Stranger water requires a 10-second hold (spec §5: "10s hold")
+    // — handlers attached to pointerdown/up so it works for touch + mouse.
+    actions+='<button class="hi-action-btn hi-water-hold" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)" onpointerleave="window._waterHoldEnd(this)" title="Hold for 10 seconds to water"><span class="hi-water-fill"></span><span class="hi-water-label">&#128167; HOLD TO WATER</span></button>';
     actions+='<button class="hi-action-btn'+(_canTend?'':' locked')+'"'+(_canTend?' onclick="window._hexAction(\'tend\')"':'')+' title="'+(_canTend?'Tend this plant — gives it +6h and grants you Dew':'Unlocks at Keeper Level 5')+'">&#127807; TEND'+(_canTend?'':' &#128274;')+'</button>';
     actions+='<button class="hi-action-btn gold'+(_canCut?'':' locked')+'"'+(_canCut?' onclick="window._hexAction(\'cutting\')"':'')+' title="'+(_canCut?'Take a cutting — clone seed, parent loses 10% lifespan. One-time per plant':'Unlocks at Keeper Level 15')+'">&#9986; CUTTING'+(_canCut?'':' &#128274;')+'</button>';
   }
@@ -36130,6 +36180,41 @@ window._hexSeedSearch=function(){
     var btn=document.getElementById('hi-search-btn'),timerEl=document.getElementById('hi-search-timer');
     if(btn){btn.disabled=true;btn.innerHTML='<span class="hi-search-icon">&#127793;</span> SEARCHED TODAY';if(timerEl){timerEl.textContent='Resets at midnight';timerEl.style.display='block';}}
   },500);
+};
+
+// Hold-to-water handlers — required for stranger water per spec §5 ("10s hold").
+// Stores the start timestamp + RAF id on the button itself; the fill bar
+// inside the button animates via CSS class while pressed. Releasing before
+// the threshold cancels with a toast; holding through fires water normally.
+var _WATER_HOLD_MS = 10000;
+window._waterHoldStart = function(btn, ev){
+  if(!btn||btn._holdActive)return;
+  if(ev&&ev.preventDefault)ev.preventDefault();
+  btn._holdActive=true;
+  btn._holdStart=Date.now();
+  btn.classList.add('holding');
+  // Capture pointer so leaving the button while still pressed cancels cleanly
+  try{if(ev&&ev.pointerId!=null&&btn.setPointerCapture)btn.setPointerCapture(ev.pointerId);}catch(e){}
+  btn._holdTimer=setTimeout(function(){
+    if(!btn._holdActive)return;
+    btn._holdActive=false;
+    btn.classList.remove('holding');
+    btn.classList.add('held');
+    setTimeout(function(){btn.classList.remove('held');},800);
+    // Fire the water action — same code path as a tapped own-plant water,
+    // routed through _hexAction so cooldowns + budgets stay in one place.
+    if(window._hexAction)window._hexAction('water');
+  },_WATER_HOLD_MS);
+};
+window._waterHoldEnd = function(btn){
+  if(!btn||!btn._holdActive)return;
+  var elapsed=Date.now()-(btn._holdStart||0);
+  btn._holdActive=false;
+  if(btn._holdTimer){clearTimeout(btn._holdTimer);btn._holdTimer=null;}
+  btn.classList.remove('holding');
+  if(elapsed<_WATER_HOLD_MS){
+    if(window._toast)window._toast('Released too soon — hold for 10 seconds.');
+  }
 };
 
 window._hexAction=function(action){
