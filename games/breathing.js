@@ -145,7 +145,7 @@ window._gameFns.breathing=function BR(a){
   }
 
   function loop(ts){
-    if(stopped)return;
+    if(stopped||!document.body.contains(pan)){stopped=true;return;}
     var dt=lastTime?Math.min((ts-lastTime)/1000,0.05):0.016;
     lastTime=ts;
     updateBreath(dt);

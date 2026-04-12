@@ -38494,7 +38494,10 @@ var G=[
 {id:'pollen',n:'Queen Bee',i:'\ud83d\udc1d',r:'Engine-builder: collect pollen, grow plants that produce more pollen. Race to 15 Growth!',cat:'card',thumb:'assets/games/thumbs/pollen.png'},
 {id:'stonegarden',n:'Stone Garden',i:'\ud83e\udea8',r:'Stack stones in zen balance. Reach the target height without collapsing!',cat:'creative',thumb:'assets/games/thumbs/stonegarden.png'},
 {id:'livingstones',n:'Living Stones',i:'\u26ab',r:'Go life-and-death puzzles. Find the single move that kills or saves.',cat:'puzzle',thumb:'assets/games/thumbs/livingstones.png'},
-{id:'trellis',n:'Trellis',i:'\ud83d\udd24',r:'Scrabble-style word-builder. Play words on premium squares for big scores. AI opponent.',cat:'card',thumb:'assets/games/thumbs/trellis.png'}
+{id:'trellis',n:'Trellis',i:'\ud83d\udd24',r:'Scrabble-style word-builder. Play words on premium squares for big scores. AI opponent.',cat:'card',thumb:'assets/games/thumbs/trellis.png'},
+{id:'petalmatch',n:'Petal Match',i:'\ud83c\udf38',r:'Match-3 botanical gems. Swap to make lines, chain cascades for combos!',cat:'puzzle',thumb:'assets/games/thumbs/petalmatch.png'},
+{id:'pixelgarden',n:'Pixel Garden',i:'\ud83c\udfa8',r:'Pixel art painter. Draw with 24 botanical colors. Save as PNG!',cat:'creative',thumb:'assets/games/thumbs/pixelgarden.png'},
+{id:'numbergarden',n:'Number Garden',i:'\ud83d\udd22',r:'60-second arithmetic drill. Add, subtract, multiply — build your streak!',cat:'puzzle',thumb:'assets/games/thumbs/numbergarden.png'}
 ];
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
 // ═══ HASH ACCUMULATION BUFFER ═══
@@ -38599,7 +38602,10 @@ var _afGameClass={
   pollen:'marathon',
   stonegarden:'free',
   livingstones:'sprint',
-  trellis:'marathon'
+  trellis:'marathon',
+  petalmatch:'standard',
+  pixelgarden:'free',
+  numbergarden:'sprint'
 };
 // Reset guards on game switch (called from _sg)
 function _afReset(){_afSessionProg=0;}
@@ -38662,7 +38668,10 @@ var _aw={
   pollen:{progress:1,milestone:1,game_win:6,game_loss:1,default:0},
   stonegarden:{milestone:2,game_win:3,default:0},
   livingstones:{progress:1,game_win:4,default:0},
-  trellis:{progress:1,milestone:1,game_win:6,game_loss:1,default:0}
+  trellis:{progress:1,milestone:1,game_win:6,game_loss:1,default:0},
+  petalmatch:{progress:1,milestone:1,game_win:4,game_loss:1,default:0},
+  pixelgarden:{progress:1,milestone:2,default:0},
+  numbergarden:{progress:1,milestone:1,game_win:4,default:0}
 };
 function _setDiff(lv){switch(lv){case 'easy':_dm=1.0;break;case 'medium':_dm=1.5;break;case 'hard':_dm=2.0;break;case 'expert':_dm=2.5;break;default:_dm=1.0}}
 function _gr(){try{return JSON.parse(localStorage.getItem(RK))||{}}catch(e){return{}}}

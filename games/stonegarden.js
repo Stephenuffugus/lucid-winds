@@ -273,7 +273,7 @@ window._gameFns.stonegarden = function SG(a){
     }else{
       if(mode==='challenge'&&maxHeight>=targetHeight){
         challengeLevel++;targetHeight=80+challengeLevel*40;maxHeight=0;stones=[];
-        sm('Level '+challengeLevel+'!');_e('milestone');_playWin();
+        sm('Level '+challengeLevel+'!');_e('game_win');_playWin();
       }
       if(stonesPlaced%3===0)_e('milestone');
     }

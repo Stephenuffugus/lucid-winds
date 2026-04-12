@@ -247,7 +247,7 @@ window._gameFns.dailybloom=function DB(a){
     h+='<div style="font-size:.7rem;opacity:.5;margin-top:8px;">Come back tomorrow to see your garden grow.</div>';
     pan.innerHTML=h;
     sm('Daily Bloom: '+bloom);
-    _e('milestone');_e('milestone');
+    _e('milestone');
     if(bloom>=60){_e('game_win');try{_playWin();}catch(e){}}
     _sr('dailybloom',{w:bloom>=60,s:bloom});
     try{
