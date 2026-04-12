@@ -3783,6 +3783,18 @@
 @keyframes feralHexPulse{0%,100%{stroke:rgba(200,168,75,0.4);fill:rgba(200,168,75,0.06);}50%{stroke:rgba(200,168,75,0.7);fill:rgba(200,168,75,0.14);}}
 /* Zone hex — flat static fills, zero animation, zero GPU churn */
 .zone-hex-dim path,.zone-hex-mod path,.zone-hex-hot path,.zone-hex-seed path,.zone-hex-locked path{animation:none!important;}
+/* ═══ HEX BADGE SCANNER — divIcon dots floating over hex centers ═══ */
+.lw-badge-icon{background:transparent!important;border:0!important;pointer-events:none;}
+.lw-badge-stack{display:flex;gap:3px;justify-content:center;align-items:center;}
+.lw-badge-dot{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-size:10px;line-height:1;color:#0d100c;font-weight:700;border:1.5px solid rgba(13,16,12,0.85);box-shadow:0 1px 4px rgba(0,0,0,0.6),0 0 0 1px rgba(232,220,200,0.15);}
+.lw-badge-more{background:rgba(232,220,200,0.92)!important;color:#0d100c;font-family:'DM Mono',monospace;font-size:9px;font-weight:700;}
+/* ═══ HEX BADGE FILTER CHIPS ═══ */
+.lw-badge-chips{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(70px + env(safe-area-inset-bottom,0px));z-index:996;display:none;gap:6px;padding:6px 8px;background:rgba(13,16,12,0.92);border:1px solid rgba(200,168,75,0.18);border-radius:18px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 6px 24px rgba(0,0,0,0.5);}
+.lw-badge-chips.show{display:flex;}
+.lw-chip{font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.08em;color:var(--cream);background:rgba(42,48,37,0.55);border:1px solid rgba(122,179,86,0.18);border-radius:14px;padding:5px 10px;cursor:pointer;transition:all 0.18s ease;min-height:28px;display:inline-flex;align-items:center;gap:4px;}
+.lw-chip:hover{background:rgba(74,124,53,0.25);}
+.lw-chip.active{background:rgba(122,179,86,0.35);border-color:rgba(122,179,86,0.6);color:#fff;box-shadow:0 0 0 1px rgba(200,168,75,0.25);}
+.lw-chip-dot{display:inline-block;width:8px;height:8px;border-radius:50%;}
 
 /* ═══ HEX INSPECTOR ═══ */
 #hex-insp-scrim{display:none;position:fixed;inset:0;z-index:99997;background:rgba(0,0,0,0.3);}
@@ -29296,8 +29308,8 @@ document.addEventListener('keydown', function(e) {
     var vig=document.querySelector('.map-vignette');
     var glass=document.querySelector('.map-glass-highlight');
     var wframe=document.getElementById('wild-frame');
-    if(tab==='wild'){if(vig)vig.style.display='block';if(glass)glass.style.display='block';if(wframe)wframe.style.display='block';_startPollenParticles();if(window.FG_Audio&&FG_Audio.enabled)try{FG_Audio.startWildAmbient();}catch(e){}}
-    else{if(vig)vig.style.display='none';if(glass)glass.style.display='none';if(wframe)wframe.style.display='none';_stopPollenParticles();if(window.FG_Wild&&FG_Wild._unsubShared)FG_Wild._unsubShared();if(window.FG_Audio)try{FG_Audio.stopWildAmbient();}catch(e){}}
+    if(tab==='wild'){if(vig)vig.style.display='block';if(glass)glass.style.display='block';if(wframe)wframe.style.display='block';_startPollenParticles();if(window.FG_Audio&&FG_Audio.enabled)try{FG_Audio.startWildAmbient();}catch(e){}if(window._lwShowBadgeChips)window._lwShowBadgeChips(true);}
+    else{if(vig)vig.style.display='none';if(glass)glass.style.display='none';if(wframe)wframe.style.display='none';_stopPollenParticles();if(window.FG_Wild&&FG_Wild._unsubShared)FG_Wild._unsubShared();if(window.FG_Audio)try{FG_Audio.stopWildAmbient();}catch(e){}if(window._lwShowBadgeChips)window._lwShowBadgeChips(false);}
     // Show/hide backpack — full on Wild, compact on greenhouse/nursery
     if (window.FG_Backpack) {
       if (tab === 'wild') { FG_Backpack.show(); FG_Backpack.init(); }
@@ -33085,6 +33097,9 @@ function _initMap(){
 
   // Seasonal particle spawner (replaces basic pollen)
   _startSeasonalParticles();
+
+  // Hex Badge Scanner — filter chip bar (added once)
+  _lwInjectBadgeChips();
 }
 
 // ═══ TIME OF DAY ═══
@@ -33397,9 +33412,227 @@ function _isSeedAvailable(zk){
   var lc=zt[zk]||0;if(lc===0)return true;
   return new Date(lc).toISOString().split('T')[0]!==new Date().toISOString().split('T')[0];
 }
+
+// ═══ HEX BADGE SCANNER — categorize what each hex offers ═══
+// Returns array of {category, icon, label, priority} so the map and filter
+// chips can show "where should I walk next". 4 categories:
+//   PERSONAL — your stuff that needs you (water, pest, near death)
+//   HELP     — strangers' plants that need rescue (pest, dying)
+//   FORAGE   — what you can collect here (feral seed, drift seed)
+//   SOCIAL   — synergy opportunities (cross-pollinate, blessing, bloom)
+// Stored as a small enum so the filter chip bar can hide/show by category.
+var LW_BADGE_CATS={PERSONAL:'personal',HELP:'help',FORAGE:'forage',SOCIAL:'social'};
+var LW_BADGE_COLOR={
+  personal:'#c8a84b', // gold — your own urgency
+  help:'#d96b4b',     // amber-red — needs intervention
+  forage:'#7ab356',   // sage — collectible
+  social:'#9c7bc8'    // soft purple — opportunity
+};
+function _lwHexBadges(zk){
+  if(!zk)return [];
+  var out=[];
+  try{
+    // Resolve zone center for adjacency math
+    var zParts=zk.split(',');
+    var zLat=parseFloat(zParts[0]),zLng=parseFloat(zParts[1]);
+    if(isNaN(zLat)||isNaN(zLng))return [];
+
+    // Pull every plant living in this zone (own + shared)
+    var own=_getWild();
+    var plantsHere=[];
+    var ownInZone=[];
+    for(var i=0;i<own.length;i++){
+      var p=own[i];if(!p||!p.lat||!p.hash)continue;
+      if(_zoneKey(p.lat,p.lng)!==zk)continue;
+      _ensureVitality(p);
+      plantsHere.push({p:p,own:true});
+      ownInZone.push(p);
+    }
+    if(_sharedMarkers){
+      for(var smk in _sharedMarkers){
+        var sm=_sharedMarkers[smk]&&_sharedMarkers[smk].data;
+        if(!sm||!sm.lat||!sm.hash)continue;
+        if(_zoneKey(sm.lat,sm.lng)!==zk)continue;
+        // Skip duplicates already covered by local own
+        var dup=false;
+        for(var di=0;di<ownInZone.length;di++){if(ownInZone[di].hash===sm.hash){dup=true;break;}}
+        if(dup)continue;
+        _ensureVitality(sm);
+        plantsHere.push({p:sm,own:false});
+      }
+    }
+
+    // ── PERSONAL: your own plants in trouble ─────────────────────────
+    var personalAdded={};
+    for(var op=0;op<ownInZone.length;op++){
+      var oP=ownInZone[op];
+      var v=_getWildVitality(oP);
+      // Pest on your plant — highest urgency
+      if(oP.pestedAt&&!personalAdded.pest){
+        out.push({category:'personal',icon:'\ud83e\udda0',label:'Your plant has pests',priority:10});
+        personalAdded.pest=true;
+      }
+      // Critical vitality (< 20%)
+      if(v.pct<0.2&&!v.dead&&!personalAdded.dying){
+        out.push({category:'personal',icon:'\ud83d\udc94',label:'Your plant is dying',priority:9});
+        personalAdded.dying=true;
+      }
+      // Needs water (> 24h since last water and vitality < 60%)
+      var lastW=oP.lastWateredAt||0;
+      if(!personalAdded.water&&v.pct<0.6&&Date.now()-lastW>24*3600000){
+        out.push({category:'personal',icon:'\ud83d\udca7',label:'Water your plant',priority:7});
+        personalAdded.water=true;
+      }
+    }
+
+    // ── HELP: stranger plants needing rescue ─────────────────────────
+    var helpAdded={};
+    for(var hp=0;hp<plantsHere.length;hp++){
+      var entry=plantsHere[hp];
+      if(entry.own)continue; // own goes in PERSONAL
+      var sP=entry.p;
+      // Pest on a stranger — Steward opportunity
+      if(sP.pestedAt&&!helpAdded.pest){
+        out.push({category:'help',icon:'\ud83e\udda0',label:'Pest needs treatment',priority:8});
+        helpAdded.pest=true;
+      }
+      // Critical vitality on a stranger — water rescue
+      var sv=_getWildVitality(sP);
+      if(sv.pct<0.25&&!sv.dead&&!helpAdded.dying){
+        out.push({category:'help',icon:'\ud83d\udc94',label:'Plant near death',priority:7});
+        helpAdded.dying=true;
+      }
+    }
+
+    // ── FORAGE: what you can collect here ────────────────────────────
+    if(_isSeedAvailable(zk)&&plantsHere.length>=1){
+      out.push({category:'forage',icon:'\ud83c\udf31',label:'Feral seed available',priority:6});
+    }
+    // Drift seed already landed at this zone (lw_drift sets fg_ferals with origin='drift')
+    try{
+      var ferals=JSON.parse(localStorage.getItem('fg_ferals')||'[]');
+      for(var f=0;f<ferals.length;f++){
+        var fr=ferals[f];if(!fr||fr.collected)continue;
+        if(fr.origin==='drift'&&fr.zone===zk){
+          out.push({category:'forage',icon:'\ud83c\udf81',label:'Drift seed waiting',priority:8});
+          break;
+        }
+      }
+    }catch(e){}
+
+    // ── SOCIAL: synergy / opportunity ────────────────────────────────
+    // Daily blessing — any unclaimed stranger plant in this zone
+    if(window._canReceiveBlessing){
+      for(var bp=0;bp<plantsHere.length;bp++){
+        if(plantsHere[bp].own)continue;
+        if(window._canReceiveBlessing(plantsHere[bp].p)>0){
+          out.push({category:'social',icon:'\ud83d\ude4f',label:'Blessing available',priority:6});
+          break;
+        }
+      }
+    }
+    // Cross-pollinate hint — 2+ plants of distinct lineages in zone
+    if(plantsHere.length>=2){
+      var seen={};var distinct=0;
+      for(var cp=0;cp<plantsHere.length;cp++){
+        var hh=plantsHere[cp].p.hash.slice(0,8);
+        if(!seen[hh]){seen[hh]=true;distinct++;}
+      }
+      if(distinct>=2){
+        out.push({category:'social',icon:'\u26a1',label:'Cross-pollinate opportunity',priority:5});
+      }
+    }
+  }catch(e){}
+  // Sort highest priority first, cap to top 3 visible
+  out.sort(function(a,b){return b.priority-a.priority;});
+  return out;
+}
+window._lwHexBadges=_lwHexBadges;
+
+// Active filter — 'all' shows everything; otherwise must match category enum
+var _lwBadgeFilter='all';
+function _lwSetBadgeFilter(f){
+  _lwBadgeFilter=f||'all';
+  try{localStorage.setItem('lw_badge_filter',_lwBadgeFilter);}catch(e){}
+  if(typeof _drawZoneHexes==='function')_drawZoneHexes();
+}
+try{
+  var _bfRaw=localStorage.getItem('lw_badge_filter');
+  if(_bfRaw)_lwBadgeFilter=_bfRaw;
+}catch(e){}
+var _lwBadgeMarkers=[];
+function _lwClearBadgeMarkers(){
+  for(var bm=0;bm<_lwBadgeMarkers.length;bm++){if(_map)_map.removeLayer(_lwBadgeMarkers[bm]);}
+  _lwBadgeMarkers=[];
+}
+function _lwBadgesForFilter(zk){
+  var all=_lwHexBadges(zk);
+  if(_lwBadgeFilter==='all')return all;
+  var f=[];for(var i=0;i<all.length;i++)if(all[i].category===_lwBadgeFilter)f.push(all[i]);
+  return f;
+}
+function _lwAddBadgeMarker(zk,lat,lng){
+  if(!_map)return;
+  var badges=_lwBadgesForFilter(zk);
+  if(!badges.length)return;
+  var visible=badges.slice(0,3);
+  var overflow=badges.length-visible.length;
+  var html='<div class="lw-badge-stack">';
+  for(var i=0;i<visible.length;i++){
+    var b=visible[i];var col=LW_BADGE_COLOR[b.category]||'#fff';
+    html+='<span class="lw-badge-dot" style="background:'+col+';" title="'+b.label+'">'+b.icon+'</span>';
+  }
+  if(overflow>0)html+='<span class="lw-badge-dot lw-badge-more">+'+overflow+'</span>';
+  html+='</div>';
+  var icon=L.divIcon({className:'lw-badge-icon',html:html,iconSize:[64,16],iconAnchor:[32,-12]});
+  var mk=L.marker([lat,lng],{icon:icon,interactive:false,keyboard:false}).addTo(_map);
+  _lwBadgeMarkers.push(mk);
+}
+window._lwSetBadgeFilter=_lwSetBadgeFilter;
+
+// Inject the filter chip bar once. Visibility is controlled by switchTab.
+function _lwInjectBadgeChips(){
+  if(document.getElementById('lw-badge-chips'))return;
+  var bar=document.createElement('div');
+  bar.id='lw-badge-chips';bar.className='lw-badge-chips';
+  var chips=[
+    {k:'all',label:'ALL'},
+    {k:'personal',label:'YOURS',color:LW_BADGE_COLOR.personal},
+    {k:'help',label:'HELP',color:LW_BADGE_COLOR.help},
+    {k:'forage',label:'FORAGE',color:LW_BADGE_COLOR.forage},
+    {k:'social',label:'SOCIAL',color:LW_BADGE_COLOR.social}
+  ];
+  for(var i=0;i<chips.length;i++){
+    var c=chips[i];
+    var btn=document.createElement('button');
+    btn.className='lw-chip'+(c.k===_lwBadgeFilter?' active':'');
+    btn.setAttribute('data-filter',c.k);
+    var inner='';
+    if(c.color)inner='<span class="lw-chip-dot" style="background:'+c.color+';"></span>';
+    inner+=c.label;
+    btn.innerHTML=inner;
+    btn.onclick=(function(key){return function(){
+      _lwSetBadgeFilter(key);
+      var all=bar.querySelectorAll('.lw-chip');
+      for(var ai=0;ai<all.length;ai++){
+        all[ai].classList.toggle('active',all[ai].getAttribute('data-filter')===key);
+      }
+    };})(c.k);
+    bar.appendChild(btn);
+  }
+  document.body.appendChild(bar);
+}
+function _lwShowBadgeChips(show){
+  var bar=document.getElementById('lw-badge-chips');
+  if(!bar)return;
+  bar.classList.toggle('show',!!show);
+}
+window._lwShowBadgeChips=_lwShowBadgeChips;
+
 function _drawZoneHexes(){
   for(var i=0;i<_zoneHexLayers.length;i++){if(_map)_map.removeLayer(_zoneHexLayers[i]);}
   _zoneHexLayers=[];
+  _lwClearBadgeMarkers();
   if(!_map||!_uLat)return;
   var zones=_getAllZonePlants(),zkeys=Object.keys(zones),half=ZONE_SIZE/2;
   var dynRange=typeof _getCollectRange==='function'?_getCollectRange():COLLECT_RANGE;
@@ -33444,6 +33677,8 @@ function _drawZoneHexes(){
       }
     });
     _zoneHexLayers.push(hex);
+    // Badge dots: float over the hex center, capped to top 3 + overflow pill
+    if(inRange)_lwAddBadgeMarker(zone.key,zone.lat,zone.lng);
   }
 }
 
