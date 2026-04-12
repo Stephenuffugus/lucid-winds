@@ -5418,11 +5418,11 @@ window.onerror=function(msg,url,line,col,err){
     </div>
     <!-- Row 2: currency badges (Sunbeams + Dew + optional Compendium + Install) -->
     <div class="kb-row2">
-      <div id="kb-sunbeams" title="Sunbeams — focused attention that photosynthesizes into plants (30 = 1 plant)" onclick="if(window.openEconModal)openEconModal();"><img src="assets/btn-sunbeams.png" alt="Sunbeams" style="width:100%;height:100%;border-radius:10px;object-fit:cover;display:block;"><span class="kb-val">0</span></div>
-      <div id="kb-dew" title="Dew — earned from wild plants, daily quests, and gifts. Spent on nursery acceleration and cuttings."><img src="assets/btn-dew.png" alt="Dew" style="width:100%;height:100%;border-radius:10px;object-fit:cover;display:block;"><span class="kb-val">0</span></div>
-      <div id="kb-slots" onclick="if(window._openSlots)_openSlots();" title="Pull the slots — gamble Dew for fertilizer, Sunbeams, and jackpots"><img src="assets/btn-slots.png" alt="Slots" style="width:150%;height:150%;border-radius:0;object-fit:cover;display:block;margin:-25%;"></div>
-      <div id="kb-weather" onclick="if(window._openWeather)_openWeather();" title="Summon weather over your wild plants — rain, sun flare, dawn mist"><img src="assets/btn-weather.png" alt="Weather" style="width:150%;height:150%;border-radius:0;object-fit:cover;display:block;margin:-25%;"></div>
-      <div id="kb-mystery" onclick="if(window._openMystery)_openMystery();" title="Open a mystery box — random loot for 25 Dew"><img src="assets/btn-mystery.png" alt="Mystery" style="width:150%;height:150%;border-radius:0;object-fit:cover;display:block;margin:-25%;"></div>
+      <div id="kb-sunbeams" title="Sunbeams — focused attention that photosynthesizes into plants (30 = 1 plant)" onclick="if(window.openEconModal)openEconModal();" style="border:2px solid rgba(200,168,75,0.5);"><img src="assets/btn-sunbeams.png" alt="Sunbeams" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:8px;"><span class="kb-val">0</span></div>
+      <div id="kb-dew" title="Dew — earned from wild plants, daily quests, and gifts. Spent on nursery acceleration and cuttings." onclick="if(window.openDewModal)openDewModal();"><img src="assets/btn-dew.png" alt="Dew" style="width:150%;height:150%;object-fit:cover;display:block;margin:-25%;"><span class="kb-val">0</span></div>
+      <div id="kb-slots" onclick="if(window._openSlots)_openSlots();" title="Pull the slots — gamble Dew for fertilizer, Sunbeams, and jackpots"><img src="assets/btn-slots.png" alt="Slots" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
+      <div id="kb-weather" onclick="if(window._openWeather)_openWeather();" title="Summon weather over your wild plants — rain, sun flare, dawn mist"><img src="assets/btn-weather.png" alt="Weather" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
+      <div id="kb-mystery" onclick="if(window._openMystery)_openMystery();" title="Open a mystery box — random loot for 25 Dew"><img src="assets/btn-mystery.png" alt="Mystery" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
       <div id="kb-compendium" onclick="if(window._openCompendiumUI)_openCompendiumUI();" title="Book of Secrets entries discovered">📖 <span id="kb-comp-count">0</span></div>
       <div id="kb-root-report" onclick="if(window._openRootReport)_openRootReport('today');" title="Root Report — your keeper's journal"><span class="kb-rr-icon">🌿</span><span class="kb-rr-label">JOURNAL</span><span class="kb-rr-badge">0</span></div>
       <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install Lucid Winds as an app on your device">📲 <span class="kb-install-label">INSTALL</span></div>
@@ -27551,6 +27551,35 @@ document.addEventListener('keydown', function(e) {
   };
   window.closeEconModal = function() {
     document.getElementById('hash-economy-modal').classList.remove('open');
+  };
+
+  // ═══ DEW INFO MODAL ═══
+  window.openDewModal = function() {
+    var bal = typeof getTotalDew === 'function' ? getTotalDew() : 0;
+    var el = document.getElementById('dew-info-modal');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'dew-info-modal';
+      el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:99998;display:flex;align-items:center;justify-content:center;padding:1rem;';
+      el.onclick = function(e) { if (e.target === el) el.style.display = 'none'; };
+      document.body.appendChild(el);
+    }
+    el.innerHTML = '<div class="econ-card" style="max-height:80vh;overflow-y:auto;">' +
+      '<h3 style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:#8bd0e8;letter-spacing:0.1em;margin-bottom:0.6rem;">DEW</h3>' +
+      '<div style="font-family:DM Mono,monospace;font-size:0.75rem;color:#8bd0e8;margin-bottom:0.8rem;">Balance: ' + bal + ' dew</div>' +
+      '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);line-height:1.7;">' +
+        '<div style="margin-bottom:0.5rem;"><span style="color:var(--sage);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">HOW TO EARN</span><br>Wild plants generate dew passively over time. You also earn dew from daily login bonuses, plant minting, and quest rewards.</div>' +
+        '<div style="margin-bottom:0.5rem;"><span style="color:var(--gold);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">WHAT TO SPEND ON</span><br>' +
+          '\u2022 Nursery acceleration — skip 1 day of watering (21 dew)<br>' +
+          '\u2022 Slot machine — gamble for fertilizer, sunbeams, and jackpots<br>' +
+          '\u2022 Weather summon — cast rain, sun flare, or mist over wild plants<br>' +
+          '\u2022 Mystery box — random loot (25 dew)<br>' +
+          '\u2022 Wild plant cuttings — coming soon</div>' +
+        '<div style="margin-bottom:0.5rem;"><span style="color:#E8A0BF;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">TIPS</span><br>Drop plants in the Wild to generate passive dew income. More plants = more dew per hour. Check the dew rate on the Wild tab.</div>' +
+      '</div>' +
+      '<button class="econ-close" onclick="document.getElementById(\'dew-info-modal\').style.display=\'none\';">GOT IT</button>' +
+    '</div>';
+    el.style.display = 'flex';
   };
 
   // ═══ PARTNER REWARDS — Token-Gated Commerce ═══
