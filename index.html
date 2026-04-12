@@ -27268,24 +27268,22 @@ document.addEventListener('keydown', function(e) {
   }
   // Update game tab dew balance + mint progress bar + keeper bar dew
   function _updateGameDew() {
-    var ledger = getHashLedger();
-    var balance = Math.max(0, (ledger.earned || 0) - (ledger.spent || 0));
-    var dv = document.getElementById('game-dew-val'); if (dv) dv.textContent = balance;
-    // Mint progress: hashes toward next plant (0-30)
+    // Sunbeams are PROGRESS toward next plant (0-29), not a currency balance.
+    // Fill the meter, mint the plant, meter resets. No accumulation.
     var mintProg = typeof window._getHashProgress === 'function' ? window._getHashProgress() : 0;
     var _dewCost = window._getMintCost ? window._getMintCost() : 30;
+    var dv = document.getElementById('game-dew-val'); if (dv) dv.textContent = mintProg;
     var fill = document.getElementById('game-dew-fill'); if (fill) fill.style.width = Math.round(Math.min(mintProg, _dewCost) / _dewCost * 100) + '%';
     var pg = document.getElementById('game-dew-progress'); if (pg) pg.textContent = mintProg;
     // Update the /30 label dynamically
     var pgParent = pg ? pg.parentNode : null;
     if (pgParent) { var spans = pgParent.querySelectorAll('span'); if (spans.length >= 2) { var last = spans[spans.length - 1]; if (last && last.textContent.indexOf('/') === 0) last.textContent = '/' + _dewCost; } }
-    // Keeper bar dew badge (visible on all non-wild tabs)
-    // Keeper bar SUNBEAMS badge — has icon + value children, update .kb-val only
+    // Keeper bar sunbeams badge — show progress, not balance
     var kbs = document.getElementById('kb-sunbeams');
     if (kbs) {
       var kbsv = kbs.querySelector('.kb-val');
-      if (kbsv) kbsv.textContent = balance;
-      else kbs.textContent = balance;
+      if (kbsv) kbsv.textContent = mintProg + '/' + _dewCost;
+      else kbs.textContent = mintProg + '/' + _dewCost;
     }
     if (typeof _updateDewDisplay === 'function') _updateDewDisplay();
     // Streak display on game tab
@@ -27378,7 +27376,9 @@ document.addEventListener('keydown', function(e) {
   function updateDashboard() {
     var gh = loadGreenhouse();
     var balance = getTotalHashes();
-    document.getElementById('dash-hashes').textContent = balance;
+    var mintProg = typeof window._getHashProgress === 'function' ? window._getHashProgress() : 0;
+    var _dewCost = window._getMintCost ? window._getMintCost() : 30;
+    document.getElementById('dash-hashes').textContent = mintProg + '/' + _dewCost;
     document.getElementById('dash-plants').textContent = gh.length;
     updateStorefrontUI(balance);
     renderBadges();
