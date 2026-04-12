@@ -29959,30 +29959,39 @@ document.addEventListener('keydown', function(e) {
 
   // ── Nursery breed shortcut — routes to full breed screen with genetic info ──
   window._nurStartBreed = function() {
-    if (!window.FG_Data) return;
-    if (FG_Data.getNursery().length >= (FG_Data.getNurSlots ? FG_Data.getNurSlots() : 3)) {
-      _setNurMsg('Nursery full. Bloom or abandon a seed first.');
+    if (!window.FG_Data) {
+      if (window._toast) window._toast('Game engine loading... try again in a moment.');
+      return;
+    }
+    var nurLen = FG_Data.getNursery().length;
+    var nurMax = FG_Data.getNurSlots ? FG_Data.getNurSlots() : 3;
+    if (nurLen >= nurMax) {
+      if (window._toast) window._toast('Nursery full (' + nurLen + '/' + nurMax + '). Bloom or abandon a seed first.');
       return;
     }
     var gh = loadGreenhouse();
-    // Use breed status if available, fall back to breedCount
+    if (gh.length < 2) {
+      if (window._toast) window._toast('Need at least 2 plants in your greenhouse to breed.');
+      return;
+    }
     var eligible;
-    if (window.FG_Data && FG_Data.getBreedStatus) {
+    if (FG_Data.getBreedStatus) {
       eligible = gh.filter(function(p) { var bs = FG_Data.getBreedStatus(p); return bs.canBreed; });
-      // If maturity gate blocks all, show helpful message
       if (eligible.length < 2) {
         var immature = gh.filter(function(p) { var bs = FG_Data.getBreedStatus(p); return bs.reason === 'IMMATURE'; });
-        if (immature.length > 0) {
-          _setNurMsg('Plants need ' + (FG_Data.MATURITY_DAYS || 7) + ' days to mature before breeding. ' + immature.length + ' still growing.');
-        } else {
-          _setNurMsg('Need at least 2 plants ready to breed.');
-        }
+        var cooling = gh.filter(function(p) { var bs = FG_Data.getBreedStatus(p); return bs.reason === 'COOLDOWN'; });
+        var resting = gh.filter(function(p) { var bs = FG_Data.getBreedStatus(p); return bs.reason === 'NO_CHARGES'; });
+        var msg = 'Need 2 breedable plants. You have ' + gh.length + ' total.';
+        if (immature.length) msg += '\n\ud83c\udf31 ' + immature.length + ' still maturing (' + (FG_Data.MATURITY_DAYS || 7) + ' days).';
+        if (cooling.length) msg += '\n\u23f3 ' + cooling.length + ' on breed cooldown.';
+        if (resting.length) msg += '\n\ud83d\udca4 ' + resting.length + ' resting (charges recover over 14 days).';
+        if (window._toast) window._toast(msg);
         return;
       }
     } else {
       eligible = gh.filter(function(p) { return (p.breedCount || 0) < 3; });
       if (eligible.length < 2) {
-        _setNurMsg('Need at least 2 plants with breeds remaining.');
+        if (window._toast) window._toast('Need at least 2 plants with breeds remaining.');
         return;
       }
     }
