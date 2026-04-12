@@ -4678,6 +4678,38 @@
       backdrop-filter: none !important;
       background: rgba(13,16,12,0.97) !important;
     }
+
+    /* — Greenhouse card perf overrides — */
+    .perf-lite .greenhouse-plant,
+    .perf-lite .greenhouse-plant.gh-new {
+      box-shadow: none !important;
+      transition: none !important;
+    }
+    @media (hover:hover){.perf-lite .greenhouse-plant:hover{box-shadow:none !important;transform:none !important;}}
+    .perf-lite .greenhouse-plant.gh-new::after { box-shadow: none !important; }
+    /* Kill season background images — use solid dark instead */
+    .perf-lite .greenhouse-plant.season-spring,
+    .perf-lite .greenhouse-plant.season-summer,
+    .perf-lite .greenhouse-plant.season-autumn,
+    .perf-lite .greenhouse-plant.season-winter {
+      background-image: none !important;
+      background: rgba(13,16,12,0.9) !important;
+      border: 1.5px solid rgba(122,179,86,0.15) !important;
+    }
+    /* Kill dual-season background images too */
+    .perf-lite .greenhouse-plant[class*="dual-"] {
+      background-image: none !important;
+      background: rgba(13,16,12,0.9) !important;
+    }
+    /* EA knot: hide SVG, keep text-only badge */
+    .perf-lite .ea-knot svg { display: none !important; }
+    .perf-lite .ea-knot .ea-frost {
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+      background: rgba(42,48,37,0.85) !important;
+      box-shadow: none !important;
+    }
+    .perf-lite .ea-knot.ea-high .ea-frost { box-shadow: none !important; }
     /* ── Offline warning banner ────────────────────────────────────── */
     #lw-offline-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:9998;background:rgba(30,24,12,0.94);border-bottom:1px solid rgba(200,168,75,0.2);padding:6px 36px 6px 12px;font-family:inherit;font-size:0.58rem;color:var(--muted);text-align:center;letter-spacing:0.03em;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
     #lw-offline-banner .lw-ob-x{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;border:none;background:transparent;color:var(--muted);font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;-webkit-tap-highlight-color:transparent;}
@@ -7046,7 +7078,10 @@ document.addEventListener('keydown', function(e) {
   // ─────────────────────────────────────────────────────────────────────────
   var _PAL = ['pine','sage','terra','sand','cream','moss','slate','teal','copper','ash','plum','amber','rust','rose','violet','gold'];
 
+  var _traitCache = {};
+  var _traitCacheSize = 0;
   window.hashToTraits = function hashToTraits(hash){
+    if (_traitCache[hash]) return _traitCache[hash];
     var h = (hash||'').toLowerCase();
     while(h.length < 64) h += '0';
     function hc(i){ return parseInt(h[i],16)||0; }
@@ -7094,7 +7129,7 @@ document.addEventListener('keydown', function(e) {
     var glowFlower  = hc(11) === 15;
     var crystalBase = hc(20) === 15;
 
-    return {
+    var _result = {
       pot:          goldenPot  ? 15 : hb(0) % 60, // 60 pot types (0-59)
       potColor:     _PAL[hc(1)],
       stem:         (mythByte >= 0xD0) ? 9 : ((hb(2) % 24) === 9 ? 0 : hb(2) % 24),
@@ -7131,6 +7166,9 @@ document.addEventListener('keydown', function(e) {
       isRare: goldenPot||glowFlower||crystalBase||mutName!=='None'||mythName!=='None',
       season: hb(22) % 4  // 0=Spring, 1=Summer, 2=Autumn, 3=Winter
     };
+    // Cache result — traits are deterministic from hash. Cap at 200 entries.
+    if (_traitCacheSize < 200) { _traitCache[hash] = _result; _traitCacheSize++; }
+    return _result;
   };
 
   // ═══ SEASON SYSTEM ═══
@@ -26720,9 +26758,11 @@ document.addEventListener('keydown', function(e) {
           continue;
         }
         var _ghOv = (plant.generation && plant.generation > 1) ? {chimerGen: plant.generation} : null;
-        // Lazy SVG: first 5 immediate (one screen), rest via IntersectionObserver
+        // Lazy SVG: first N immediate (one screen), rest via IntersectionObserver
+        // perf-lite: only 2 immediate to avoid blocking main thread on old devices
+        var _ghImmediateLimit = window._perfLite ? 2 : 4;
         var plantSvg;
-        if (i < 6) {
+        if (i < _ghImmediateLimit) {
           plantSvg = generatePlantSVG(plant.hash, 95, 1, _ghOv);
         } else {
           plantSvg = '<div class="gh-svg-lazy" data-hash="' + plant.hash + '" data-gen="' + (plant.generation || 1) + '" style="width:95px;height:120px;margin:0 auto;background:rgba(122,179,86,0.04);border-radius:6px;"></div>';
@@ -26796,7 +26836,16 @@ document.addEventListener('keydown', function(e) {
       grid.appendChild(el);
     }
     // Lazy SVG rendering — IntersectionObserver fills in off-screen cards
+    // Staggered: queue visible cards and render one per rAF to avoid blocking
     if ('IntersectionObserver' in window) {
+      var _lazyQueue = [];
+      var _lazyRunning = false;
+      function _processLazyQueue() {
+        if (!_lazyQueue.length) { _lazyRunning = false; return; }
+        var item = _lazyQueue.shift();
+        try { item.el.outerHTML = generatePlantSVG(item.h, 95, 1, item.ov); } catch(e) {}
+        requestAnimationFrame(_processLazyQueue);
+      }
       var _lazyObs = new IntersectionObserver(function(entries) {
         entries.forEach(function(entry) {
           if (!entry.isIntersecting) return;
@@ -26806,7 +26855,8 @@ document.addEventListener('keydown', function(e) {
           var g = parseInt(lazy.getAttribute('data-gen')) || 1;
           if (h && window._generatePlantSVG) {
             var ov = g > 1 ? {chimerGen: g} : null;
-            try { lazy.outerHTML = generatePlantSVG(h, 95, 1, ov); } catch(e) {}
+            _lazyQueue.push({el: lazy, h: h, ov: ov});
+            if (!_lazyRunning) { _lazyRunning = true; requestAnimationFrame(_processLazyQueue); }
           }
           _lazyObs.unobserve(entry.target);
         });
