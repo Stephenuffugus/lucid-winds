@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Pixel Garden — Petal Walk</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#0d100c;touch-action:none;user-select:none}
+#app{display:flex;flex-direction:column;height:100%;max-width:420px;margin:0 auto;align-items:center}
+.top-bar{display:flex;justify-content:space-between;align-items:center;width:100%;padding:6px 14px;flex-shrink:0}
+.top-bar .title{font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:#4A7C35;letter-spacing:2px}
+.top-bar .size-label{font-family:'Bebas Neue',sans-serif;font-size:.7rem;color:#D4A843;letter-spacing:1px}
+canvas{display:block;border-radius:4px;border:1px solid rgba(74,124,53,0.15)}
+.canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:4px}
+
+/* Color palette */
+.palette{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;padding:6px 10px;flex-shrink:0}
+.pal-color{width:28px;height:28px;border-radius:6px;border:2px solid transparent;cursor:pointer;transition:border-color .15s,transform .1s}
+.pal-color:active{transform:scale(0.9)}
+.pal-color.active{border-color:#E8DCC8;transform:scale(1.1)}
+
+/* Tools */
+.tool-bar{display:flex;gap:5px;justify-content:center;padding:4px 10px;flex-shrink:0;flex-wrap:wrap}
+.tool-btn{background:rgba(26,36,22,0.7);border:1px solid rgba(74,124,53,0.3);color:#E8DCC8;padding:6px 12px;border-radius:6px;font-family:'Bebas Neue',sans-serif;font-size:.6rem;letter-spacing:1px;cursor:pointer;transition:all .15s}
+.tool-btn:active{background:rgba(74,124,53,0.3);transform:scale(0.93)}
+.tool-btn.active{border-color:#4A7C35;color:#4A7C35;background:rgba(74,124,53,0.15)}
+
+#start-overlay{position:fixed;inset:0;background:rgba(13,16,12,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50}
+#start-overlay.hidden{display:none}
+#start-overlay h1{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#4A7C35;letter-spacing:4px;margin-bottom:4px}
+#start-overlay .sub{font-family:'Crimson Text',serif;font-style:italic;color:#E8DCC8;opacity:.6;margin-bottom:20px;font-size:.85rem}
+.size-btns{display:flex;gap:8px;margin-bottom:16px}
+.size-btn{background:rgba(26,36,22,0.8);border:1.5px solid rgba(74,124,53,0.4);color:#E8DCC8;font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;padding:10px 20px;border-radius:10px;cursor:pointer}
+.size-btn:active{background:rgba(74,124,53,0.3)}
+</style>
+</head>
+<body>
+<div id="start-overlay">
+  <h1>PIXEL GARDEN</h1>
+  <div class="sub">Grow tiny botanical art, pixel by pixel</div>
+  <div class="size-btns">
+    <button class="size-btn" onclick="beginEditor(16)">16×16</button>
+    <button class="size-btn" onclick="beginEditor(24)">24×24</button>
+    <button class="size-btn" onclick="beginEditor(32)">32×32</button>
+  </div>
+</div>
+<div id="app" style="display:none">
+  <div class="top-bar">
+    <span class="title">PIXEL GARDEN</span>
+    <span class="size-label" id="size-label">16×16</span>
+  </div>
+  <div class="canvas-wrap"><canvas id="c"></canvas></div>
+  <div class="palette" id="palette"></div>
+  <div class="tool-bar">
+    <div class="tool-btn active" data-tool="draw" onclick="setTool('draw')">✏ DRAW</div>
+    <div class="tool-btn" data-tool="erase" onclick="setTool('erase')">◻ ERASE</div>
+    <div class="tool-btn" data-tool="fill" onclick="setTool('fill')">🪣 FILL</div>
+    <div class="tool-btn" data-tool="pick" onclick="setTool('pick')">💉 PICK</div>
+    <div class="tool-btn" id="btn-mirror" onclick="toggleMirror()">↔ MIRROR</div>
+    <div class="tool-btn" onclick="toggleGrid()">▦ GRID</div>
+    <div class="tool-btn" onclick="clearAll()">✕ CLEAR</div>
+    <div class="tool-btn" onclick="undoAction()">↩ UNDO</div>
+    <div class="tool-btn" onclick="saveImage()">💾 SAVE</div>
+  </div>
+</div>
+<script>
+(function(){
+'use strict';
+
+var canvas,ctx,GRID=16,CELL,dpr;
+var pixels=[]; // pixels[r][c] = color string or null
+var currentColor='#4A7C35';
+var tool='draw';
+var mirrorMode=false;
+var showGrid=true;
+var undoStack=[];
+var maxUndo=30;
+var drawing=false;
+var totalPixels=0;
+var startTime=0;
+
+// Botanical palette — 24 colors
+var COLORS=[
+  // Greens
+  '#2d5020','#4A7C35','#6aaa4a','#a0cc80',
+  // Browns/earth
+  '#3d2a18','#6b4a2a','#8b6a3a','#b8a060',
+  // Flowers
+  '#C47A7A','#d4566a','#e8a0a0','#f0c8c8',
+  // Amber/gold
+  '#8a6a20','#D4A843','#e8cc70','#f0e0a0',
+  // Sky/water
+  '#2a4a6a','#5B9BD5','#90c0e8','#c0ddf0',
+  // Dark/light
+  '#0d100c','#2a2a2a','#808080','#E8DCC8'
+];
+
+function initGrid(){
+  pixels=[];
+  for(var r=0;r<GRID;r++){pixels[r]=[];for(var c=0;c<GRID;c++)pixels[r][c]=null;}
+  undoStack=[];totalPixels=0;
+}
+
+function initCanvas(){
+  canvas=document.getElementById('c');
+  ctx=canvas.getContext('2d');
+  dpr=window.devicePixelRatio||1;
+  var maxSize=Math.min(window.innerWidth-24,window.innerHeight-240,340);
+  CELL=Math.floor(maxSize/GRID);
+  var total=GRID*CELL;
+  canvas.width=total*dpr;canvas.height=total*dpr;
+  canvas.style.width=total+'px';canvas.style.height=total+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.imageSmoothingEnabled=false;
+}
+
+function buildPalette(){
+  var el=document.getElementById('palette');
+  var html='';
+  for(var i=0;i<COLORS.length;i++){
+    var active=COLORS[i]===currentColor?' active':'';
+    html+='<div class="pal-color'+active+'" style="background:'+COLORS[i]+'" data-color="'+COLORS[i]+'" onclick="pickColor(\''+COLORS[i]+'\')"></div>';
+  }
+  el.innerHTML=html;
+}
+
+// ─── RENDERING ───────────────────────────────────────────
+function render(){
+  var total=GRID*CELL;
+  // Background
+  ctx.fillStyle='#1a1a1a';
+  ctx.fillRect(0,0,total,total);
+
+  // Checkerboard for transparency
+  for(var r=0;r<GRID;r++){
+    for(var c=0;c<GRID;c++){
+      if(!pixels[r][c]){
+        ctx.fillStyle=(r+c)%2===0?'#1a1a1a':'#222222';
+        ctx.fillRect(c*CELL,r*CELL,CELL,CELL);
+      } else {
+        ctx.fillStyle=pixels[r][c];
+        ctx.fillRect(c*CELL,r*CELL,CELL,CELL);
+      }
+    }
+  }
+
+  // Grid overlay
+  if(showGrid&&CELL>=8){
+    ctx.strokeStyle='rgba(74,124,53,0.12)';
+    ctx.lineWidth=0.5;
+    for(var i=0;i<=GRID;i++){
+      ctx.beginPath();ctx.moveTo(i*CELL,0);ctx.lineTo(i*CELL,total);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(0,i*CELL);ctx.lineTo(total,i*CELL);ctx.stroke();
+    }
+  }
+
+  // Mirror line
+  if(mirrorMode){
+    ctx.strokeStyle='rgba(212,168,67,0.2)';
+    ctx.setLineDash([4,4]);
+    ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(total/2,0);ctx.lineTo(total/2,total);ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+// ─── TOOLS ───────────────────────────────────────────────
+function setPixel(r,c,color){
+  if(r<0||r>=GRID||c<0||c>=GRID)return;
+  pixels[r][c]=color;
+}
+
+function applyTool(r,c){
+  if(r<0||r>=GRID||c<0||c>=GRID)return;
+  if(tool==='draw'){
+    setPixel(r,c,currentColor);
+    if(mirrorMode) setPixel(r,GRID-1-c,currentColor);
+    totalPixels++;
+  } else if(tool==='erase'){
+    setPixel(r,c,null);
+    if(mirrorMode) setPixel(r,GRID-1-c,null);
+  } else if(tool==='fill'){
+    floodFill(r,c,currentColor);
+  } else if(tool==='pick'){
+    if(pixels[r][c]){
+      currentColor=pixels[r][c];
+      buildPalette();
+    }
+  }
+  render();
+}
+
+function floodFill(startR,startC,fillColor){
+  var target=pixels[startR][startC];
+  if(target===fillColor)return;
+  var stack=[[startR,startC]];
+  var visited={};
+  while(stack.length>0){
+    var p=stack.pop();
+    var pr=p[0],pc=p[1];
+    var key=pr+','+pc;
+    if(visited[key])continue;
+    visited[key]=true;
+    if(pr<0||pr>=GRID||pc<0||pc>=GRID)continue;
+    if(pixels[pr][pc]!==target)continue;
+    pixels[pr][pc]=fillColor;
+    stack.push([pr-1,pc],[pr+1,pc],[pr,pc-1],[pr,pc+1]);
+  }
+  if(mirrorMode){
+    // Fill mirror side too
+    var mirrorTarget=pixels[startR][GRID-1-startC];
+    stack=[[startR,GRID-1-startC]];visited={};
+    while(stack.length>0){
+      var p2=stack.pop();
+      var pr2=p2[0],pc2=p2[1];
+      var key2=pr2+','+pc2;
+      if(visited[key2])continue;visited[key2]=true;
+      if(pr2<0||pr2>=GRID||pc2<0||pc2>=GRID)continue;
+      if(pixels[pr2][pc2]!==mirrorTarget)continue;
+      pixels[pr2][pc2]=fillColor;
+      stack.push([pr2-1,pc2],[pr2+1,pc2],[pr2,pc2-1],[pr2,pc2+1]);
+    }
+  }
+}
+
+function saveUndo(){
+  var state=[];
+  for(var r=0;r<GRID;r++){state[r]=pixels[r].slice();}
+  undoStack.push(state);
+  if(undoStack.length>maxUndo)undoStack.shift();
+}
+
+// ─── INPUT ───────────────────────────────────────────────
+function getCell(e){
+  var rect=canvas.getBoundingClientRect();
+  var x,y;
+  if(e.touches&&e.touches.length>0){x=e.touches[0].clientX-rect.left;y=e.touches[0].clientY-rect.top;}
+  else{x=e.clientX-rect.left;y=e.clientY-rect.top;}
+  return{r:Math.floor(y/CELL),c:Math.floor(x/CELL)};
+}
+
+canvas.addEventListener('touchstart',function(e){
+  e.preventDefault();drawing=true;saveUndo();
+  var cell=getCell(e);applyTool(cell.r,cell.c);
+},{passive:false});
+canvas.addEventListener('touchmove',function(e){
+  e.preventDefault();if(!drawing)return;
+  var cell=getCell(e);
+  if(tool==='draw'||tool==='erase')applyTool(cell.r,cell.c);
+},{passive:false});
+canvas.addEventListener('touchend',function(e){e.preventDefault();drawing=false;},{passive:false});
+
+canvas.addEventListener('mousedown',function(e){drawing=true;saveUndo();var cell=getCell(e);applyTool(cell.r,cell.c);});
+canvas.addEventListener('mousemove',function(e){if(!drawing)return;var cell=getCell(e);if(tool==='draw'||tool==='erase')applyTool(cell.r,cell.c);});
+canvas.addEventListener('mouseup',function(){drawing=false;});
+canvas.addEventListener('mouseleave',function(){drawing=false;});
+
+// ─── CONTROLS ────────────────────────────────────────────
+window.pickColor=function(color){
+  currentColor=color;
+  var pals=document.querySelectorAll('.pal-color');
+  for(var i=0;i<pals.length;i++) pals[i].classList.toggle('active',pals[i].getAttribute('data-color')===color);
+};
+
+window.setTool=function(t){
+  tool=t;
+  var btns=document.querySelectorAll('.tool-btn[data-tool]');
+  for(var i=0;i<btns.length;i++) btns[i].classList.toggle('active',btns[i].getAttribute('data-tool')===t);
+};
+
+window.toggleMirror=function(){
+  mirrorMode=!mirrorMode;
+  document.getElementById('btn-mirror').classList.toggle('active',mirrorMode);
+  render();
+};
+
+window.toggleGrid=function(){
+  showGrid=!showGrid;render();
+};
+
+window.clearAll=function(){
+  saveUndo();
+  for(var r=0;r<GRID;r++)for(var c=0;c<GRID;c++)pixels[r][c]=null;
+  render();
+};
+
+window.undoAction=function(){
+  if(undoStack.length===0)return;
+  pixels=undoStack.pop();
+  render();
+};
+
+window.saveImage=function(){
+  // Render at 8x or 16x for crisp pixels
+  var scale=GRID<=16?16:8;
+  var sc=document.createElement('canvas');
+  sc.width=GRID*scale;sc.height=GRID*scale;
+  var sx=sc.getContext('2d');
+  sx.imageSmoothingEnabled=false;
+  sx.fillStyle='#0d100c';sx.fillRect(0,0,sc.width,sc.height);
+  for(var r=0;r<GRID;r++){
+    for(var c=0;c<GRID;c++){
+      if(pixels[r][c]){
+        sx.fillStyle=pixels[r][c];
+        sx.fillRect(c*scale,r*scale,scale,scale);
+      }
+    }
+  }
+  // Watermark
+  sx.fillStyle='rgba(232,220,200,0.15)';
+  sx.font=(scale*0.8)+'px sans-serif';
+  sx.textAlign='right';
+  sx.fillText('Pixel Garden',sc.width-4,sc.height-4);
+
+  var link=document.createElement('a');
+  link.download='pixel-garden-'+GRID+'x'+GRID+'-'+Date.now()+'.png';
+  link.href=sc.toDataURL('image/png');
+  link.click();
+
+  if(typeof window._e==='function')window._e('milestone');
+  if(typeof window._sr==='function')window._sr('pixelgarden',{w:true,s:totalPixels,sz:GRID});
+};
+
+// ─── START ───────────────────────────────────────────────
+window.beginEditor=function(size){
+  GRID=size;
+  document.getElementById('start-overlay').classList.add('hidden');
+  document.getElementById('app').style.display='flex';
+  document.getElementById('size-label').textContent=GRID+'×'+GRID;
+  initGrid();initCanvas();buildPalette();
+  startTime=Date.now();
+  render();
+
+  // Hash: earn per 60 seconds of drawing
+  setInterval(function(){
+    if(typeof window._e==='function'&&totalPixels>0)window._e('milestone');
+  },60000);
+};
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Number Garden — Petal Walk</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#0d100c;color:#E8DCC8;font-family:'Crimson Text',Georgia,serif;touch-action:manipulation}
+#app{display:flex;flex-direction:column;height:100%;max-width:420px;margin:0 auto;align-items:center}
+.top-bar{width:100%;display:flex;justify-content:space-between;align-items:center;padding:8px 14px;flex-shrink:0}
+.hud-box{font-family:'Bebas Neue',sans-serif;text-align:center;color:#E8DCC8}
+.hud-box .label{font-size:.5rem;opacity:.4;color:#4A7C35;letter-spacing:1px}
+.hud-box .val{font-size:1.1rem}
+.problem-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;padding:16px}
+.problem{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:3px;margin:8px 0;min-height:60px;text-align:center}
+.answer-display{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:#D4A843;min-height:50px;margin:4px 0;text-align:center;letter-spacing:2px;min-width:80px;border-bottom:2px solid rgba(212,168,67,0.3);padding-bottom:4px}
+.feedback{font-family:'Bebas Neue',sans-serif;font-size:1rem;min-height:28px;letter-spacing:1px;margin:4px 0}
+.feedback.correct{color:#4A7C35}.feedback.wrong{color:#C47A7A}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%;max-width:260px;padding:8px 0;flex-shrink:0}
+.num-btn{height:52px;border-radius:10px;background:rgba(26,36,22,0.6);border:1.5px solid rgba(74,124,53,0.25);color:#E8DCC8;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .1s}
+.num-btn:active{background:rgba(74,124,53,0.3);transform:scale(0.95)}
+.num-btn.enter{background:rgba(74,124,53,0.15);border-color:rgba(74,124,53,0.4);color:#4A7C35}
+.num-btn.del{border-color:rgba(196,122,122,0.3);color:#C47A7A}
+.mode-row{display:flex;gap:4px;justify-content:center;padding:6px;flex-shrink:0}
+.mode-btn{padding:6px 12px;border-radius:6px;background:rgba(26,36,22,0.6);border:1px solid rgba(74,124,53,0.2);color:#E8DCC8;font-family:'Bebas Neue',sans-serif;font-size:.6rem;letter-spacing:1px;cursor:pointer}
+.mode-btn:active{background:rgba(74,124,53,0.3)}
+.mode-btn.active{border-color:#4A7C35;color:#4A7C35}
+.timer-bar{width:90%;max-width:280px;height:4px;background:rgba(26,36,22,0.5);border-radius:2px;flex-shrink:0;overflow:hidden}
+.timer-fill{height:100%;background:#4A7C35;transition:width .1s}
+.streak-display{font-family:'Bebas Neue',sans-serif;font-size:.7rem;color:#D4A843;letter-spacing:1px;padding:2px;flex-shrink:0}
+#start-overlay{position:fixed;inset:0;background:rgba(13,16,12,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50}
+#start-overlay.hidden{display:none}
+#start-overlay h1{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#4A7C35;letter-spacing:4px;margin-bottom:4px}
+#start-overlay .sub{font-style:italic;opacity:.6;margin-bottom:8px;font-size:.85rem}
+#start-overlay .desc{font-size:.7rem;opacity:.4;max-width:280px;text-align:center;line-height:1.5;margin-bottom:20px}
+.start-btn{background:rgba(26,36,22,0.8);border:1.5px solid #4A7C35;color:#E8DCC8;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;padding:14px 36px;border-radius:10px;cursor:pointer}
+.start-btn:active{background:rgba(74,124,53,0.3)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:100}
+.modal-overlay.open{display:flex}
+.modal-box{background:#1a2416;border:1px solid rgba(74,124,53,0.3);border-radius:12px;padding:20px;max-width:280px;width:90%;text-align:center}
+.modal-box h2{font-family:'Bebas Neue',sans-serif;color:#4A7C35;font-size:1.2rem;letter-spacing:2px;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div id="start-overlay">
+  <h1>NUMBER GARDEN</h1>
+  <div class="sub">Arithmetic drills that keep your mind sharp</div>
+  <div class="desc">Solve math problems as fast as you can. Used in Japanese elder care programs and Dr. Kawashima's clinically-proven brain training method. Simple math activates your prefrontal cortex.</div>
+  <button class="start-btn" onclick="beginSession()">🔢 BEGIN</button>
+</div>
+<div id="app" style="display:none">
+  <div class="top-bar">
+    <div class="hud-box"><div class="label">CORRECT</div><div class="val" id="h-correct">0</div></div>
+    <div class="hud-box"><div class="label">SPEED</div><div class="val" id="h-speed">—</div></div>
+    <div class="hud-box"><div class="label">STREAK</div><div class="val" id="h-streak">0</div></div>
+  </div>
+  <div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>
+  <div class="streak-display" id="streak-display"></div>
+  <div class="problem-area">
+    <div class="problem" id="problem"></div>
+    <div class="answer-display" id="answer-display">_</div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+  <div class="numpad">
+    <div class="num-btn" onclick="numPress(1)">1</div>
+    <div class="num-btn" onclick="numPress(2)">2</div>
+    <div class="num-btn" onclick="numPress(3)">3</div>
+    <div class="num-btn" onclick="numPress(4)">4</div>
+    <div class="num-btn" onclick="numPress(5)">5</div>
+    <div class="num-btn" onclick="numPress(6)">6</div>
+    <div class="num-btn" onclick="numPress(7)">7</div>
+    <div class="num-btn" onclick="numPress(8)">8</div>
+    <div class="num-btn" onclick="numPress(9)">9</div>
+    <div class="num-btn del" onclick="numDel()">←</div>
+    <div class="num-btn" onclick="numPress(0)">0</div>
+    <div class="num-btn enter" onclick="numSubmit()">✓</div>
+  </div>
+  <div class="mode-row">
+    <div class="mode-btn active" data-mode="add" onclick="setMode('add')">+ ADD</div>
+    <div class="mode-btn" data-mode="sub" onclick="setMode('sub')">− SUB</div>
+    <div class="mode-btn" data-mode="mul" onclick="setMode('mul')">× MUL</div>
+    <div class="mode-btn" data-mode="mix" onclick="setMode('mix')">MIX</div>
+  </div>
+</div>
+<div class="modal-overlay" id="results-modal">
+  <div class="modal-box">
+    <h2>SESSION COMPLETE</h2>
+    <p id="results-text" style="font-size:.8rem;margin:8px 0;line-height:1.6;color:#E8DCC8"></p>
+    <button class="start-btn" onclick="closeResults()" style="font-size:.8rem;padding:8px 20px">🔢 AGAIN</button>
+  </div>
+</div>
+<script>
+(function(){
+'use strict';
+
+var mode='add';
+var answer='';
+var correctAnswer=0;
+var correct=0,total=0,streak=0,bestStreak=0;
+var sessionTime=60; // 60 seconds
+var startTime=0;
+var problemStartTime=0;
+var totalSolveTime=0;
+var running=false;
+var difficulty=1; // increases with streak
+
+window.numPress=function(n){
+  if(!running)return;
+  if(answer.length>=4)return;
+  answer+=String(n);
+  document.getElementById('answer-display').textContent=answer||'_';
+};
+
+window.numDel=function(){
+  if(!running)return;
+  answer=answer.slice(0,-1);
+  document.getElementById('answer-display').textContent=answer||'_';
+};
+
+window.numSubmit=function(){
+  if(!running||answer==='')return;
+  var num=parseInt(answer);
+  total++;
+  var fb=document.getElementById('feedback');
+
+  if(num===correctAnswer){
+    correct++;streak++;
+    if(streak>bestStreak)bestStreak=streak;
+    if(streak%5===0)difficulty=Math.min(5,difficulty+1);
+    var solveTime=Date.now()-problemStartTime;
+    totalSolveTime+=solveTime;
+    fb.textContent='✓ '+(solveTime<2000?'FAST!':solveTime<4000?'GOOD':'OK')+' ('+Math.round(solveTime/100)/10+'s)';
+    fb.className='feedback correct';
+    try{navigator.vibrate&&navigator.vibrate(10);}catch(e){}
+    if(typeof window._e==='function'&&streak%10===0)window._e('milestone');
+  } else {
+    streak=0;difficulty=Math.max(1,difficulty-1);
+    fb.textContent='✗ Answer: '+correctAnswer;
+    fb.className='feedback wrong';
+  }
+
+  answer='';
+  updateHUD();
+  setTimeout(generateProblem,300);
+};
+
+function generateProblem(){
+  if(!running)return;
+  var elapsed=(Date.now()-startTime)/1000;
+  if(elapsed>=sessionTime){endSession();return;}
+
+  var a,b,op,ans;
+  var ops=mode==='mix'?['+','-','×']:[mode==='add'?'+':mode==='sub'?'-':'×'];
+  op=ops[Math.floor(Math.random()*ops.length)];
+
+  var maxN=10+difficulty*5;
+
+  if(op==='+'){
+    a=Math.floor(Math.random()*maxN)+1;
+    b=Math.floor(Math.random()*maxN)+1;
+    ans=a+b;
+  } else if(op==='-'){
+    a=Math.floor(Math.random()*maxN)+5;
+    b=Math.floor(Math.random()*Math.min(a,maxN))+1;
+    ans=a-b;
+  } else {
+    a=Math.floor(Math.random()*Math.min(12,maxN))+2;
+    b=Math.floor(Math.random()*Math.min(12,maxN))+2;
+    ans=a*b;
+  }
+
+  correctAnswer=ans;
+  document.getElementById('problem').textContent=a+' '+op+' '+b+' =';
+  document.getElementById('answer-display').textContent='_';
+  document.getElementById('feedback').textContent='';
+  answer='';
+  problemStartTime=Date.now();
+
+  // Update timer
+  var remaining=Math.max(0,sessionTime-elapsed);
+  var fill=document.getElementById('timer-fill');
+  fill.style.transition='none';fill.style.width=(remaining/sessionTime*100)+'%';
+  setTimeout(function(){
+    fill.style.transition='width '+Math.round(remaining)+'s linear';
+    fill.style.width='0%';
+  },50);
+}
+
+function updateHUD(){
+  document.getElementById('h-correct').textContent=correct;
+  document.getElementById('h-streak').textContent=streak;
+  var avgSpeed=correct>0?Math.round(totalSolveTime/correct/100)/10:'—';
+  document.getElementById('h-speed').textContent=avgSpeed+'s';
+  document.getElementById('streak-display').textContent=streak>=3?'🔥 '+streak+' STREAK':'';
+}
+
+function endSession(){
+  running=false;
+  var avgSpeed=correct>0?Math.round(totalSolveTime/correct/100)/10:0;
+  var accuracy=total>0?Math.round(correct/total*100):0;
+
+  document.getElementById('results-text').innerHTML=
+    'Correct: <strong>'+correct+'</strong> / '+total+'<br>'+
+    'Accuracy: <strong>'+accuracy+'%</strong><br>'+
+    'Best streak: <strong>'+bestStreak+'</strong><br>'+
+    'Avg speed: <strong>'+avgSpeed+'s</strong> per problem<br>'+
+    'Difficulty reached: <strong>Level '+difficulty+'</strong>';
+  document.getElementById('results-modal').classList.add('open');
+
+  if(typeof window._sr==='function')window._sr('numbergarden',{w:correct>=10,s:correct,acc:accuracy,spd:avgSpeed,st:bestStreak});
+
+  // Save history
+  try{
+    var h=JSON.parse(localStorage.getItem('numgarden_history')||'[]');
+    h.push({date:new Date().toISOString().split('T')[0],correct:correct,total:total,speed:avgSpeed,mode:mode});
+    if(h.length>90)h=h.slice(-90);
+    localStorage.setItem('numgarden_history',JSON.stringify(h));
+  }catch(e){}
+}
+
+window.setMode=function(m){
+  mode=m;
+  var btns=document.querySelectorAll('.mode-btn');
+  for(var i=0;i<btns.length;i++)btns[i].classList.toggle('active',btns[i].getAttribute('data-mode')===m);
+};
+
+window.beginSession=function(){
+  document.getElementById('start-overlay').classList.add('hidden');
+  document.getElementById('app').style.display='flex';
+  correct=0;total=0;streak=0;bestStreak=0;difficulty=1;totalSolveTime=0;answer='';
+  running=true;startTime=Date.now();
+  updateHUD();generateProblem();
+};
+
+window.closeResults=function(){
+  document.getElementById('results-modal').classList.remove('open');
+  correct=0;total=0;streak=0;bestStreak=0;difficulty=1;totalSolveTime=0;answer='';
+  running=true;startTime=Date.now();
+  updateHUD();generateProblem();
+};
+
+})();
+</script>
+</body>
+</html>

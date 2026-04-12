@@ -1,0 +1,53 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Vine Cross Stress Test</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0d100c;color:#e8dcc8;font-family:'Segoe UI',sans-serif;padding:16px}h1{color:#D4A843;font-size:18px;margin-bottom:8px}h2{color:#7AB956;font-size:14px;margin-top:14px;margin-bottom:6px}.s{font-size:13px;line-height:1.7}.w{color:#C47A7A;font-weight:700}.g{color:#7AB956;font-weight:700}button{padding:8px 18px;background:rgba(74,124,53,.3);border:1px solid rgba(74,124,53,.4);border-radius:8px;color:#e8dcc8;font-size:13px;cursor:pointer;margin:4px}#log{margin-top:12px;padding:10px;background:rgba(26,31,23,.5);border:1px solid rgba(74,124,53,.12);border-radius:10px;max-height:600px;overflow-y:auto}#prog{font-size:12px;color:#D4A843;margin-top:6px}</style></head><body>
+<h1>⚫ Vine Cross — AI Stress Test</h1>
+<p class="s">Pits AI levels against each other. Verifies difficulty scaling, game length, and first-player advantage.</p>
+<button onclick="run(100)">▶ 100 Games (Lv3 vs Lv5)</button>
+<button onclick="runAll()">▶ Full Ladder (all levels)</button>
+<div id="prog"></div><div id="log"></div>
+<script>
+(function(){'use strict';
+var SZ=11;
+function makeBoard(){var b=[];for(var r=0;r<SZ;r++){b[r]=[];for(var c=0;c<SZ;c++)b[r][c]=0;}return b;}
+function checkWin(bd,r,c,who){var dirs=[[0,1],[1,0],[1,1],[1,-1]];for(var d=0;d<dirs.length;d++){var cnt=1;for(var i=1;i<5;i++){var nr=r+dirs[d][0]*i,nc=c+dirs[d][1]*i;if(nr>=0&&nr<SZ&&nc>=0&&nc<SZ&&bd[nr][nc]===who)cnt++;else break;}for(var i2=1;i2<5;i2++){var nr2=r-dirs[d][0]*i2,nc2=c-dirs[d][1]*i2;if(nr2>=0&&nr2<SZ&&nc2>=0&&nc2<SZ&&bd[nr2][nc2]===who)cnt++;else break;}if(cnt>=5)return true;}return false;}
+function getCands(bd){var seen={},c=[];for(var r=0;r<SZ;r++)for(var cl=0;cl<SZ;cl++){if(bd[r][cl]===0)continue;for(var dr=-2;dr<=2;dr++)for(var dc=-2;dc<=2;dc++){var nr=r+dr,nc=cl+dc;if(nr<0||nr>=SZ||nc<0||nc>=SZ||bd[nr][nc]!==0)continue;var k=nr*SZ+nc;if(seen[k])continue;seen[k]=true;c.push([nr,nc]);}}if(c.length===0)c.push([Math.floor(SZ/2),Math.floor(SZ/2)]);return c.slice(0,15);}
+function evalB(bd,who){var sc=0;for(var r=0;r<SZ;r++)for(var c=0;c<SZ;c++){if(bd[r][c]===0)continue;var w=bd[r][c];var m=w===who?1:-1;var dirs=[[0,1],[1,0],[1,1],[1,-1]];for(var d=0;d<dirs.length;d++){var cnt=1;for(var i=1;i<5;i++){var nr=r+dirs[d][0]*i,nc=c+dirs[d][1]*i;if(nr<0||nr>=SZ||nc<0||nc>=SZ)break;if(bd[nr][nc]===w)cnt++;else break;}if(cnt>=5)sc+=100000*m;else if(cnt>=4)sc+=5000*m;else if(cnt>=3)sc+=500*m;else if(cnt>=2)sc+=50*m;}}return sc;}
+function mm(bd,d,isMax,a,b,who){if(d<=0)return evalB(bd,who);var cs=getCands(bd);var p=isMax?who:(who===1?2:1);if(isMax){var mx=-1e9;for(var i=0;i<cs.length;i++){bd[cs[i][0]][cs[i][1]]=p;var w=checkWin(bd,cs[i][0],cs[i][1],p);var sc=w?100000:mm(bd,d-1,false,a,b,who);bd[cs[i][0]][cs[i][1]]=0;if(sc>mx)mx=sc;if(sc>a)a=sc;if(b<=a)break;}return mx;}else{var mn=1e9;for(var i2=0;i2<cs.length;i2++){bd[cs[i2][0]][cs[i2][1]]=p;var w2=checkWin(bd,cs[i2][0],cs[i2][1],p);var sc2=w2?-100000:mm(bd,d-1,true,a,b,who);bd[cs[i2][0]][cs[i2][1]]=0;if(sc2<mn)mn=sc2;if(sc2<b)b=sc2;if(b<=a)break;}return mn;}}
+function aiPick(bd,who,lvl){var depth=Math.min(Math.ceil(lvl/2),3);var cs=getCands(bd);var best=null,bs=-1e9;for(var i=0;i<cs.length;i++){bd[cs[i][0]][cs[i][1]]=who;var w=checkWin(bd,cs[i][0],cs[i][1],who);var sc=w?100000:-mm(bd,depth-1,false,-1e9,1e9,who);bd[cs[i][0]][cs[i][1]]=0;if(lvl<=3)sc+=Math.random()*500;if(sc>bs){bs=sc;best=cs[i];}}return best;}
+function simGame(lv1,lv2){var bd=makeBoard();var mv=0,max=SZ*SZ;while(mv<max){var who=(mv%2===0)?1:2;var lvl=(who===1)?lv1:lv2;var pick=aiPick(bd,who,lvl);if(!pick)break;bd[pick[0]][pick[1]]=who;mv++;if(checkWin(bd,pick[0],pick[1],who))return{winner:who,moves:mv};}return{winner:0,moves:mv};}
+
+window.run=function(n){
+  var log=document.getElementById('log'),prog=document.getElementById('prog');
+  log.innerHTML='';prog.textContent='Running Lv3 vs Lv5...';
+  setTimeout(function(){
+    var p1w=0,p2w=0,dr=0,tm=0;
+    for(var i=0;i<n;i++){var r=simGame(3,5);if(r.winner===1)p1w++;else if(r.winner===2)p2w++;else dr++;tm+=r.moves;}
+    var h='<h2>Lv3 (P1) vs Lv5 (P2) — '+n+' games</h2>';
+    h+='<div class="s"><b>P1 (Lv3):</b> '+p1w+' wins | <b>P2 (Lv5):</b> '+p2w+' wins | <b>Draws:</b> '+dr+'</div>';
+    h+='<div class="s"><b>Avg moves:</b> '+(tm/n).toFixed(1)+'</div>';
+    h+='<div class="s">Lv5 win rate: '+((p2w/n)*100).toFixed(1)+'% '+(p2w>p1w?'<span class="g">✓ Higher level wins more</span>':'<span class="w">⚠ Lower level competitive</span>')+'</div>';
+    log.innerHTML=h;prog.textContent='Done!';
+  },50);
+};
+
+window.runAll=function(){
+  var log=document.getElementById('log'),prog=document.getElementById('prog');
+  log.innerHTML='';var pairs=[[1,3],[3,5],[5,7],[7,9]];var pi=0;
+  function next(){
+    if(pi>=pairs.length){prog.textContent='Complete!';return;}
+    var lv1=pairs[pi][0],lv2=pairs[pi][1];
+    prog.textContent='Testing Lv'+lv1+' vs Lv'+lv2+'...';
+    setTimeout(function(){
+      var n=50,p1w=0,p2w=0,dr=0,tm=0;
+      for(var i=0;i<n;i++){var r=simGame(lv1,lv2);if(r.winner===1)p1w++;else if(r.winner===2)p2w++;else dr++;tm+=r.moves;}
+      var h='<h2>Lv'+lv1+' vs Lv'+lv2+' ('+n+' games)</h2>';
+      h+='<div class="s"><b>Lv'+lv1+':</b> '+p1w+' | <b>Lv'+lv2+':</b> '+p2w+' | Draws: '+dr+' | Avg moves: '+(tm/n).toFixed(1)+'</div>';
+      var wr=((p2w/n)*100).toFixed(1);
+      h+='<div class="s">Higher level win rate: '+wr+'% '+(parseFloat(wr)>55?'<span class="g">✓ Scales correctly</span>':'<span class="w">⚠ Weak scaling</span>')+'</div>';
+      log.innerHTML+=h;pi++;next();
+    },50);
+  }
+  next();
+};
+})();
+</script></body></html>

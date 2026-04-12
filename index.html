@@ -38485,7 +38485,12 @@ var G=[
 {id:'rootflow',n:'Root Flow',i:'\ud83d\udd17',r:'Draw paths to connect matching roots. Fill every cell!',cat:'puzzle',thumb:'assets/games/thumbs/rootflow.png'},
 {id:'gardenspades',n:'Garden Spades',i:'\u2660',r:'Classic Spades. Bid your tricks, spades is trump. Partner play.',cat:'card',thumb:'assets/games/thumbs/gardenspades.png'},
 {id:'juniper',n:'Juniper',i:'\ud83c\udcc1',r:'Rummy — draw, discard, build sets and runs. Go out first!',cat:'card',thumb:'assets/games/thumbs/juniper.png'},
-{id:'rootmaze',n:'Root Maze',i:'\ud83c\udf00',r:'Navigate the shifting maze. Reach the treasure before the AI!',cat:'puzzle',thumb:'assets/games/thumbs/rootmaze.png'}
+{id:'rootmaze',n:'Root Maze',i:'\ud83c\udf00',r:'Navigate the shifting maze. Reach the treasure before the AI!',cat:'puzzle',thumb:'assets/games/thumbs/rootmaze.png'},
+{id:'vinecross',n:'Vine Cross',i:'\u274c',r:'Gomoku — get five in a row before the AI. 9/11/13 board sizes.',cat:'board',thumb:'assets/games/thumbs/vinecross.png'},
+{id:'breathing',n:'Breathing Garden',i:'\ud83c\udf38',r:'Guided breathing with 4 patterns. Bloom with every breath.',cat:'creative',thumb:'assets/games/thumbs/breathing.png'},
+{id:'colorgarden',n:'Color Garden',i:'\ud83c\udfa8',r:'Tap to fill botanical coloring pages. 23 colors, 3 procedural scenes.',cat:'creative',thumb:'assets/games/thumbs/colorgarden.png'},
+{id:'dailybloom',n:'Daily Bloom',i:'\ud83c\udf05',r:'5 daily brain exercises: recall, math, reaction, patterns, Stroop.',cat:'puzzle',thumb:'assets/games/thumbs/dailybloom.png'},
+{id:'jade',n:'Jade Garden',i:'\ud83c\udc04',r:'Mahjong solitaire — match free pairs to clear the turtle. Hint and shuffle if stuck.',cat:'puzzle',thumb:'assets/games/thumbs/jade.png'}
 ];
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
 // ═══ HASH ACCUMULATION BUFFER ═══
@@ -38581,7 +38586,12 @@ var _afGameClass={
   rootflow:'standard',
   gardenspades:'marathon',
   juniper:'marathon',
-  rootmaze:'standard'
+  rootmaze:'standard',
+  vinecross:'standard',
+  breathing:'free',
+  colorgarden:'free',
+  dailybloom:'sprint',
+  jade:'marathon'
 };
 // Reset guards on game switch (called from _sg)
 function _afReset(){_afSessionProg=0;}
@@ -38635,7 +38645,12 @@ var _aw={
   rootflow:{progress:1,game_win:4,default:0},
   gardenspades:{progress:1,milestone:1,game_win:5,game_loss:1,default:0},
   juniper:{progress:1,milestone:1,game_win:5,game_loss:1,default:0},
-  rootmaze:{progress:1,game_win:4,default:0}
+  rootmaze:{progress:1,game_win:4,default:0},
+  vinecross:{progress:1,milestone:1,game_win:5,game_loss:1,default:0},
+  breathing:{milestone:1,default:0},
+  colorgarden:{milestone:1,default:0},
+  dailybloom:{milestone:1,game_win:4,default:0},
+  jade:{progress:1,milestone:1,game_win:5,default:0}
 };
 function _setDiff(lv){switch(lv){case 'easy':_dm=1.0;break;case 'medium':_dm=1.5;break;case 'hard':_dm=2.0;break;case 'expert':_dm=2.5;break;default:_dm=1.0}}
 function _gr(){try{return JSON.parse(localStorage.getItem(RK))||{}}catch(e){return{}}}

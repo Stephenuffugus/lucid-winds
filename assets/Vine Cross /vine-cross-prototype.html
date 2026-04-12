@@ -1,0 +1,256 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Vine Cross — Gomoku Prototype</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0d100c;color:#e8dcc8;font-family:'Segoe UI',sans-serif;-webkit-tap-highlight-color:transparent}.wrap{max-width:420px;margin:0 auto;padding:6px;user-select:none}.hdr{display:flex;justify-content:space-between;padding:6px 10px;background:rgba(26,31,23,.6);border:1px solid rgba(74,124,53,.15);border-radius:8px;margin-bottom:4px;font-size:13px}.hdr b{color:#D4A843}.st{text-align:center;font-size:12px;padding:2px 0;color:rgba(232,220,200,.6)}canvas{display:block;margin:4px auto;border-radius:8px;touch-action:none}.ev{height:10px;background:rgba(26,31,23,.5);border:1px solid rgba(74,124,53,.12);border-radius:4px;margin:4px 16px;overflow:hidden;display:flex}.ev-g{background:#4A7C35;transition:width .3s}.ev-r{background:#C47A7A;transition:width .3s}.ct{display:flex;gap:6px;justify-content:center;padding:4px 0;flex-wrap:wrap}.bt{padding:6px 12px;background:rgba(74,124,53,.2);border:1px solid rgba(74,124,53,.3);border-radius:8px;color:#e8dcc8;font-size:11px;cursor:pointer}.bt:active{background:rgba(74,124,53,.4)}.bt.ac{border-color:#7AB956;background:rgba(74,124,53,.35)}.toast{position:fixed;top:50px;left:50%;transform:translateX(-50%);background:rgba(26,31,23,.9);border:1px solid rgba(74,124,53,.3);border-radius:8px;padding:8px 16px;font-size:13px;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none}.toast.show{opacity:1}.mb{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center}.md{background:#1a1f17;border:1px solid rgba(74,124,53,.3);border-radius:14px;padding:20px;max-width:300px;text-align:center}.md h2{color:#D4A843;font-size:18px;margin-bottom:8px}.md p{font-size:13px;color:rgba(232,220,200,.7);margin:4px 0}.mbt{display:inline-block;margin:6px;padding:10px 18px;background:rgba(74,124,53,.3);border:1px solid rgba(74,124,53,.4);border-radius:8px;color:#e8dcc8;font-size:13px;cursor:pointer}</style></head>
+<body><div class="wrap" id="app"></div><div class="toast" id="toast"></div>
+<script>
+(function(){'use strict';
+var SZ=11,board,turn,moves,hist,gameOver,winner,lastMove,LVL=5,winLine;
+var CELL=30,PAD=15,cvs,ctx;
+
+function init(){
+  board=[];for(var r=0;r<SZ;r++){board[r]=[];for(var c=0;c<SZ;c++)board[r][c]=0;}
+  turn=1;moves=0;hist=[];gameOver=false;winner=0;lastMove=null;winLine=null;
+  renderUI();drawBoard();
+}
+
+function renderUI(){
+  var h='<div class="hdr"><b>⚫ Vine Cross</b><span>Level '+LVL+' | '+SZ+'×'+SZ+'</span></div>';
+  h+='<div class="st">'+(gameOver?(winner===1?'🟢 You Win!':winner===2?'🌸 AI Wins':'Draw'):(turn===1?'Your turn (🟢)':'AI thinking...'))+'</div>';
+  h+='<canvas id="cv" width="'+(SZ*CELL+PAD*2)+'" height="'+(SZ*CELL+PAD*2)+'"></canvas>';
+  // Eval bar
+  var ev=evaluate(board,1);var evPct=Math.max(5,Math.min(95,50+ev/200));
+  h+='<div class="ev"><div class="ev-g" style="width:'+evPct+'%"></div><div class="ev-r" style="width:'+(100-evPct)+'%"></div></div>';
+  h+='<div class="st" style="font-size:10px">Eval: '+(ev>0?'+':'')+ev+'</div>';
+  h+='<div class="ct"><div class="bt" onclick="undo()">↩ Undo</div><div class="bt" onclick="init()">🔄 New</div></div>';
+  h+='<div class="ct">';
+  [3,5,7,9].forEach(function(l){h+='<div class="bt'+(LVL===l?' ac':'')+'" onclick="setLvl('+l+')">Lv'+l+'</div>';});
+  h+='</div>';
+  h+='<div class="ct">';
+  [9,11,13].forEach(function(s){h+='<div class="bt'+(SZ===s?' ac':'')+'" onclick="setSz('+s+')">'+s+'×'+s+'</div>';});
+  h+='</div>';
+  document.getElementById('app').innerHTML=h;
+  cvs=document.getElementById('cv');ctx=cvs.getContext('2d');
+  cvs.addEventListener('click',onClick);
+  cvs.addEventListener('touchstart',function(e){e.preventDefault();var t=e.touches[0];var r2=cvs.getBoundingClientRect();onClick({clientX:t.clientX,clientY:t.clientY,target:cvs});},{passive:false});
+}
+
+function drawBoard(){
+  if(!ctx)return;
+  var W=SZ*CELL+PAD*2;
+  ctx.fillStyle='#DEB887';ctx.fillRect(0,0,W,W);
+  // Grid lines
+  ctx.strokeStyle='#4A3728';ctx.lineWidth=1;
+  for(var i=0;i<SZ;i++){
+    ctx.beginPath();ctx.moveTo(PAD+i*CELL,PAD);ctx.lineTo(PAD+i*CELL,PAD+(SZ-1)*CELL);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(PAD,PAD+i*CELL);ctx.lineTo(PAD+(SZ-1)*CELL,PAD+i*CELL);ctx.stroke();
+  }
+  // Star points
+  ctx.fillStyle='#4A3728';
+  var center=Math.floor(SZ/2);
+  [[center,center]].forEach(function(p){
+    ctx.beginPath();ctx.arc(PAD+p[0]*CELL,PAD+p[1]*CELL,3,0,Math.PI*2);ctx.fill();
+  });
+  // Stones
+  for(var r=0;r<SZ;r++)for(var c=0;c<SZ;c++){
+    if(board[r][c]===0)continue;
+    var x=PAD+c*CELL,y=PAD+r*CELL;
+    var grad=ctx.createRadialGradient(x-3,y-3,2,x,y,CELL/2-2);
+    if(board[r][c]===1){grad.addColorStop(0,'#8BC34A');grad.addColorStop(1,'#3a6028');}
+    else{grad.addColorStop(0,'#E8A0A0');grad.addColorStop(1,'#a05555');}
+    ctx.fillStyle=grad;ctx.beginPath();ctx.arc(x,y,CELL/2-2,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle=board[r][c]===1?'#2d4a1e':'#8a4040';ctx.lineWidth=1;ctx.stroke();
+  }
+  // Last move marker
+  if(lastMove){
+    ctx.fillStyle='#FFD700';ctx.beginPath();
+    ctx.arc(PAD+lastMove[1]*CELL,PAD+lastMove[0]*CELL,3,0,Math.PI*2);ctx.fill();
+  }
+  // Win line
+  if(winLine){
+    ctx.strokeStyle='#FFD700';ctx.lineWidth=3;ctx.shadowColor='#FFD700';ctx.shadowBlur=10;
+    ctx.beginPath();
+    ctx.moveTo(PAD+winLine[0][1]*CELL,PAD+winLine[0][0]*CELL);
+    ctx.lineTo(PAD+winLine[winLine.length-1][1]*CELL,PAD+winLine[winLine.length-1][0]*CELL);
+    ctx.stroke();ctx.shadowBlur=0;
+  }
+}
+
+function onClick(e){
+  if(gameOver||turn!==1)return;
+  var rect=cvs.getBoundingClientRect();
+  var mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  var c=Math.round((mx-PAD)/CELL),r=Math.round((my-PAD)/CELL);
+  if(r<0||r>=SZ||c<0||c>=SZ||board[r][c]!==0)return;
+  placeStone(r,c,1);
+  if(gameOver)return;
+  turn=2;renderUI();drawBoard();
+  setTimeout(aiMove,300+Math.random()*400);
+}
+
+function placeStone(r,c,who){
+  board[r][c]=who;lastMove=[r,c];moves++;
+  hist.push({r:r,c:c,who:who});
+  var wl=checkWin(r,c,who);
+  if(wl){winLine=wl;winner=who;gameOver=true;renderUI();drawBoard();
+    setTimeout(function(){showEnd(who);},600);return;}
+  if(moves>=SZ*SZ){gameOver=true;winner=0;renderUI();drawBoard();
+    setTimeout(function(){showEnd(0);},600);}
+}
+
+function checkWin(r,c,who){
+  var dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(var d=0;d<dirs.length;d++){
+    var dr=dirs[d][0],dc=dirs[d][1];
+    var line=[[r,c]];
+    for(var i=1;i<5;i++){var nr=r+dr*i,nc=c+dc*i;if(nr>=0&&nr<SZ&&nc>=0&&nc<SZ&&board[nr][nc]===who)line.push([nr,nc]);else break;}
+    for(var i2=1;i2<5;i2++){var nr2=r-dr*i2,nc2=c-dc*i2;if(nr2>=0&&nr2<SZ&&nc2>=0&&nc2<SZ&&board[nr2][nc2]===who)line.unshift([nr2,nc2]);else break;}
+    if(line.length>=5)return line;
+  }
+  return null;
+}
+
+// ═══ AI ═══
+function aiMove(){
+  if(gameOver)return;
+  var best=null,bestScore=-Infinity;
+  var depth=Math.min(Math.ceil(LVL/2),4);
+  var candidates=getCandidates(board,2);
+  for(var i=0;i<candidates.length;i++){
+    var m=candidates[i];
+    board[m[0]][m[1]]=2;
+    var sc=-minimax(board,depth-1,false,-Infinity,Infinity);
+    board[m[0]][m[1]]=0;
+    // Add randomness for lower levels
+    if(LVL<=3) sc+=Math.random()*500;
+    if(LVL<=5) sc+=Math.random()*100;
+    if(sc>bestScore){bestScore=sc;best=m;}
+  }
+  if(!best){// fallback
+    for(var r=0;r<SZ;r++)for(var c=0;c<SZ;c++)if(board[r][c]===0){best=[r,c];break;}
+  }
+  if(best){placeStone(best[0],best[1],2);}
+  turn=1;renderUI();drawBoard();
+}
+
+function minimax(bd,depth,isMax,alpha,beta){
+  if(depth<=0)return evaluate(bd,2);
+  var who=isMax?2:1;
+  var cands=getCandidates(bd,who);
+  if(cands.length===0)return evaluate(bd,2);
+  if(isMax){
+    var mx=-Infinity;
+    for(var i=0;i<cands.length;i++){
+      bd[cands[i][0]][cands[i][1]]=who;
+      var wl=checkWinFast(bd,cands[i][0],cands[i][1],who);
+      var sc=wl?100000:minimax(bd,depth-1,false,alpha,beta);
+      bd[cands[i][0]][cands[i][1]]=0;
+      if(sc>mx)mx=sc;if(sc>alpha)alpha=sc;if(beta<=alpha)break;
+    }return mx;
+  }else{
+    var mn=Infinity;
+    for(var i2=0;i2<cands.length;i2++){
+      bd[cands[i2][0]][cands[i2][1]]=who;
+      var wl2=checkWinFast(bd,cands[i2][0],cands[i2][1],who);
+      var sc2=wl2?-100000:minimax(bd,depth-1,true,alpha,beta);
+      bd[cands[i2][0]][cands[i2][1]]=0;
+      if(sc2<mn)mn=sc2;if(sc2<beta)beta=sc2;if(beta<=alpha)break;
+    }return mn;
+  }
+}
+
+function checkWinFast(bd,r,c,who){
+  var dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(var d=0;d<dirs.length;d++){
+    var cnt=1;
+    for(var i=1;i<5;i++){var nr=r+dirs[d][0]*i,nc=c+dirs[d][1]*i;if(nr>=0&&nr<SZ&&nc>=0&&nc<SZ&&bd[nr][nc]===who)cnt++;else break;}
+    for(var i2=1;i2<5;i2++){var nr2=r-dirs[d][0]*i2,nc2=c-dirs[d][1]*i2;if(nr2>=0&&nr2<SZ&&nc2>=0&&nc2<SZ&&bd[nr2][nc2]===who)cnt++;else break;}
+    if(cnt>=5)return true;
+  }return false;
+}
+
+function getCandidates(bd,who){
+  var seen={},cands=[];
+  // Only consider cells near existing stones
+  for(var r=0;r<SZ;r++)for(var c=0;c<SZ;c++){
+    if(bd[r][c]===0)continue;
+    for(var dr=-2;dr<=2;dr++)for(var dc=-2;dc<=2;dc++){
+      var nr=r+dr,nc=c+dc;
+      if(nr<0||nr>=SZ||nc<0||nc>=SZ||bd[nr][nc]!==0)continue;
+      var k=nr*SZ+nc;if(seen[k])continue;seen[k]=true;cands.push([nr,nc]);
+    }
+  }
+  if(cands.length===0){var cn=Math.floor(SZ/2);cands.push([cn,cn]);}
+  // Sort by proximity to center + existing threats
+  cands.sort(function(a,b){return scoreCandidate(bd,b,who)-scoreCandidate(bd,a,who);});
+  return cands.slice(0,20); // limit for performance
+}
+
+function scoreCandidate(bd,pos,who){
+  var sc=0;var r=pos[0],c=pos[1];
+  var cn=Math.floor(SZ/2);
+  sc-=Math.abs(r-cn)+Math.abs(c-cn); // center preference
+  // Quick threat check
+  bd[r][c]=who;
+  var dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(var d=0;d<dirs.length;d++){
+    var cnt=1;
+    for(var i=1;i<5;i++){var nr=r+dirs[d][0]*i,nc=c+dirs[d][1]*i;if(nr>=0&&nr<SZ&&nc>=0&&nc<SZ&&bd[nr][nc]===who)cnt++;else break;}
+    for(var i2=1;i2<5;i2++){var nr2=r-dirs[d][0]*i2,nc2=c-dirs[d][1]*i2;if(nr2>=0&&nr2<SZ&&nc2>=0&&nc2<SZ&&bd[nr2][nc2]===who)cnt++;else break;}
+    if(cnt>=4)sc+=1000;else if(cnt>=3)sc+=100;else if(cnt>=2)sc+=10;
+  }
+  bd[r][c]=0;
+  // Also check opponent threats
+  var opp=who===1?2:1;
+  bd[r][c]=opp;
+  for(var d2=0;d2<dirs.length;d2++){
+    var cnt2=1;
+    for(var i3=1;i3<5;i3++){var nr3=r+dirs[d2][0]*i3,nc3=c+dirs[d2][1]*i3;if(nr3>=0&&nr3<SZ&&nc3>=0&&nc3<SZ&&bd[nr3][nc3]===opp)cnt2++;else break;}
+    for(var i4=1;i4<5;i4++){var nr4=r-dirs[d2][0]*i4,nc4=c-dirs[d2][1]*i4;if(nr4>=0&&nr4<SZ&&nc4>=0&&nc4<SZ&&bd[nr4][nc4]===opp)cnt2++;else break;}
+    if(cnt2>=4)sc+=800;else if(cnt2>=3)sc+=80;
+  }
+  bd[r][c]=0;
+  return sc;
+}
+
+function evaluate(bd,aiPlayer){
+  var sc=0;var human=aiPlayer===1?2:1;
+  for(var r=0;r<SZ;r++)for(var c=0;c<SZ;c++){
+    if(bd[r][c]===0)continue;
+    var who=bd[r][c];var mult=(who===aiPlayer)?1:-1;
+    var dirs=[[0,1],[1,0],[1,1],[1,-1]];
+    for(var d=0;d<dirs.length;d++){
+      var cnt=1,open=0;
+      for(var i=1;i<5;i++){var nr=r+dirs[d][0]*i,nc=c+dirs[d][1]*i;if(nr<0||nr>=SZ||nc<0||nc>=SZ)break;if(bd[nr][nc]===who)cnt++;else{if(bd[nr][nc]===0)open++;break;}}
+      if(cnt>=5)sc+=100000*mult;
+      else if(cnt===4&&open>0)sc+=5000*mult;
+      else if(cnt===3&&open>0)sc+=500*mult;
+      else if(cnt===2&&open>0)sc+=50*mult;
+    }
+  }
+  return sc;
+}
+
+function undo(){
+  if(hist.length<2||gameOver)return;
+  var m2=hist.pop();board[m2.r][m2.c]=0;moves--;
+  var m1=hist.pop();board[m1.r][m1.c]=0;moves--;
+  lastMove=hist.length>0?[hist[hist.length-1].r,hist[hist.length-1].c]:null;
+  turn=1;winLine=null;renderUI();drawBoard();
+}
+
+function showEnd(w){
+  var h='<div class="mb"><div class="md">';
+  if(w===1)h+='<h2>🟢 Vine Complete!</h2><p>You connected 5!</p>';
+  else if(w===2)h+='<h2>🌸 Garden Overgrown</h2><p>The AI got 5 first. Try again!</p>';
+  else h+='<h2>Draw</h2><p>The garden is full!</p>';
+  h+='<p>Moves: '+moves+' | Level: '+LVL+'</p>';
+  h+='<div class="mbt" onclick="this.closest(\'.mb\').remove();init()">Play Again</div></div></div>';
+  var d=document.createElement('div');d.innerHTML=h;document.body.appendChild(d);
+}
+
+function showToast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},2000);}
+window.init=init;window.undo=undo;
+window.setLvl=function(l){LVL=l;init();};
+window.setSz=function(s){SZ=s;CELL=Math.floor(330/s);init();};
+init();
+})();
+</script></body></html>
