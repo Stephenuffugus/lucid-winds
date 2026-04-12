@@ -29545,6 +29545,23 @@ document.addEventListener('keydown', function(e) {
       var _fBal = _fInv.fertilizer || 0;
       fertEl.textContent = '\ud83c\udf3f ' + _fBal + ' Fertilizer';
     }
+    // Mini sunbeam progress bar — shows progress toward next plant mint
+    var _sbEl = document.getElementById('nur-sunbeam-progress');
+    if (!_sbEl) {
+      var _sbWrap = document.createElement('div');
+      _sbWrap.id = 'nur-sunbeam-progress';
+      _sbWrap.style.cssText = 'padding:0.15rem 0.6rem 0.25rem;';
+      var _sbParent = document.getElementById('panel-nursery');
+      var _sbRef = document.getElementById('nur-fert-balance');
+      if (_sbParent && _sbRef) _sbParent.insertBefore(_sbWrap, _sbRef.parentNode.nextSibling);
+      _sbEl = _sbWrap;
+    }
+    if (_sbEl) {
+      var _sbNow = typeof getTotalHashes === 'function' ? getTotalHashes() : 0;
+      var _sbPct = Math.min(100, Math.round((_sbNow % 30) / 30 * 100));
+      var _sbRemain = 30 - (_sbNow % 30);
+      _sbEl.innerHTML = '<div style="display:flex;align-items:center;gap:0.4rem;font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);"><span>\u2b21 ' + (_sbNow % 30) + '/30 Sunbeams</span><span style="color:var(--gold);">(' + _sbRemain + ' to next plant)</span></div><div style="height:4px;background:rgba(42,48,37,0.6);border-radius:2px;overflow:hidden;margin-top:3px;"><div style="width:' + _sbPct + '%;height:100%;background:linear-gradient(90deg,rgba(200,168,75,0.5),rgba(200,168,75,0.8));border-radius:2px;transition:width 0.5s ease;"></div></div>';
+    }
 
     var scEl = document.getElementById('nur-streak-count');
     var msEl = document.getElementById('nur-mercy-status');
