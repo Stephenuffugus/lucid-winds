@@ -4204,7 +4204,7 @@
     #kb-dew .kb-icon{font-size:1.15rem;filter:drop-shadow(0 0 4px rgba(91,175,220,0.4));}
     /* Default (non-wild tabs): book + backpack side-by-side, bottoms aligned with keeper bar */
     /* Keeper bar bottom is ~130px from top. Book is tall (92px), backpack (88px). Their bottoms sit at 132px. */
-    #kb-compendium{position:fixed;top:calc(env(safe-area-inset-top,0px) + 40px);right:calc(10px + 96px);z-index:999;width:72px;height:92px;cursor:pointer;border:none;background:none;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));transition:transform 0.15s;display:flex!important;}
+    #kb-compendium{position:fixed;top:calc(env(safe-area-inset-top,0px) + 80px);right:calc(10px + 96px);z-index:999;width:72px;height:92px;cursor:pointer;border:none;background:none;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));transition:transform 0.15s;display:flex!important;}
     /* Wild tab: stacked vertically on right side */
     body.tab-wild #kb-compendium{top:calc(env(safe-area-inset-top,0px) + 90px);right:10px;width:78px;height:100px;}
     #kb-compendium:active{transform:scale(0.92);}
@@ -4256,7 +4256,7 @@
     .cs-close{position:fixed;top:calc(0.5rem + env(safe-area-inset-top, 0px));right:0.5rem;width:36px;height:36px;border-radius:50%;border:2px solid rgba(74,124,53,0.15);background:rgba(26,36,22,0.6);color:var(--muted);font-size:0.75rem;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:99999;}
     /* ═══ BACKPACK SYSTEM CSS (from demo) ═══ */
 /* ═══ BACKPACK ═══ */
-#bpi{position:fixed;top:calc(env(safe-area-inset-top,0px) + 44px);right:10px;z-index:998;width:88px;height:88px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat}
+#bpi{position:fixed;top:calc(env(safe-area-inset-top,0px) + 84px);right:10px;z-index:998;width:88px;height:88px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat}
 body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 205px);right:10px;width:78px;height:78px;}
 #bpi:active{transform:scale(0.88);}
 #bpb{position:absolute;top:-4px;left:-4px;min-width:20px;height:20px;border-radius:10px;background:var(--gold);color:var(--black);font-family:'Bebas Neue',sans-serif;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,0.4);transition:all 0.25s ease;}
@@ -37164,7 +37164,7 @@ function _checkPendingRewards(){
 }
 function _toast(m){var e=document.getElementById('w-toast');if(!e)return;e.textContent=m;e.style.opacity='1';e.style.transform='translate(-50%,-50%) scale(1)';clearTimeout(_tt);_tt=setTimeout(function(){e.style.opacity='0';e.style.transform='translate(-50%,-50%) scale(0.95)';},3500);}
 
-var _wd=45;setInterval(function(){_wd=(_wd+(Math.random()>0.5?12:-8)+360)%360;var w=document.getElementById('w-wind');if(w){var ds=['N','NE','E','SE','S','SW','W','NW'];w.textContent=ds[Math.round(_wd/45)%8]+' '+(5+Math.round(Math.random()*10))+'mph';}},8000);
+var _wd=45;setInterval(function(){_wd=(_wd+(Math.random()>0.5?12:-8)+360)%360;var w=document.getElementById('w-wind');if(w){var ds=['N','NE','E','SE','S','SW','W','NW'];var span=w.querySelector('span');if(span)span.textContent=ds[Math.round(_wd/45)%8]+' '+(5+Math.round(Math.random()*10))+'mph';}},8000);
 // Cache grade lookups so we don't call hashToTraits every 60s
 var _wildGradeCache={};
 function _getWildGrade(hash){
