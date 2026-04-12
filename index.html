@@ -33714,7 +33714,56 @@ function _lwInjectBadgeChips(){
     };})(c.k);
     bar.appendChild(btn);
   }
+  // Legend help button
+  var helpBtn=document.createElement('button');
+  helpBtn.className='lw-chip';
+  helpBtn.innerHTML='?';
+  helpBtn.style.cssText='min-width:28px;padding:5px 7px;font-weight:700;';
+  helpBtn.onclick=function(){_lwShowLegend();};
+  bar.appendChild(helpBtn);
   document.body.appendChild(bar);
+}
+function _lwShowLegend(){
+  var ex=document.getElementById('lw-badge-legend');
+  if(ex){ex.remove();return;}
+  var m=document.createElement('div');m.id='lw-badge-legend';
+  m.style.cssText='position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.85);backdrop-filter:blur(8px);padding:1rem;animation:panelFadeIn 0.25s ease;';
+  m.addEventListener('click',function(ev){if(ev.target===m)m.remove();});
+  var h='<div onclick="event.stopPropagation()" style="max-width:360px;width:100%;max-height:80vh;overflow-y:auto;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;padding:1.1rem 1rem;box-shadow:0 16px 50px rgba(0,0,0,0.7);">';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.7rem;">';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.12em;color:var(--gold);">HEX SCANNER LEGEND</div>';
+  h+='<button onclick="document.getElementById(\'lw-badge-legend\').remove()" style="background:none;border:1px solid rgba(122,179,86,0.3);color:var(--cream);width:48px;height:48px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">\u2715</button>';
+  h+='</div>';
+  var cats=[
+    {dot:LW_BADGE_COLOR.personal,title:'YOURS',desc:'Your plants that need attention.',items:[
+      '\ud83e\udda0 Pest on your plant','\ud83d\udc94 Plant near death','\ud83d\udca7 Needs water'
+    ]},
+    {dot:LW_BADGE_COLOR.help,title:'HELP',desc:'Stranger plants you can rescue for Dew + XP.',items:[
+      '\ud83e\udda0 Pest needs treatment','\ud83d\udc94 Plant dying of neglect'
+    ]},
+    {dot:LW_BADGE_COLOR.forage,title:'FORAGE',desc:'Seeds and collectibles waiting for you.',items:[
+      '\ud83c\udf31 Feral seed available','\ud83c\udf81 Drift seed landed'
+    ]},
+    {dot:LW_BADGE_COLOR.social,title:'SOCIAL',desc:'Synergies and opportunities.',items:[
+      '\ud83d\ude4f Blessing available','\u26a1 Cross-pollinate opportunity'
+    ]}
+  ];
+  for(var ci=0;ci<cats.length;ci++){
+    var c=cats[ci];
+    h+='<div style="margin-bottom:0.65rem;padding:0.55rem;background:rgba(13,16,12,0.55);border:1px solid '+c.dot+'44;border-radius:9px;">';
+    h+='<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.3rem;">';
+    h+='<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+c.dot+';"></span>';
+    h+='<span style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:var(--cream);">'+c.title+'</span>';
+    h+='</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-bottom:0.35rem;">'+c.desc+'</div>';
+    for(var ii=0;ii<c.items.length;ii++){
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--cream);padding:0.15rem 0;">'+c.items[ii]+'</div>';
+    }
+    h+='</div>';
+  }
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);text-align:center;margin-top:0.4rem;">Badges appear on hexes within your collect range.</div>';
+  h+='</div>';
+  m.innerHTML=h;document.body.appendChild(m);
 }
 function _lwShowBadgeChips(show){
   var bar=document.getElementById('lw-badge-chips');
