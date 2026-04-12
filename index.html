@@ -4204,9 +4204,9 @@
     #kb-dew .kb-icon{font-size:1.15rem;filter:drop-shadow(0 0 4px rgba(91,175,220,0.4));}
     /* Default (non-wild tabs): book + backpack side-by-side, bottoms aligned with keeper bar */
     /* Keeper bar bottom is ~130px from top. Book is tall (92px), backpack (88px). Their bottoms sit at 132px. */
-    #kb-compendium{position:fixed;top:calc(env(safe-area-inset-top,0px) + 80px);right:calc(10px + 96px);z-index:999;width:88px;height:88px;cursor:pointer;border:none;background:none;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));transition:transform 0.15s;display:flex!important;}
-    /* Wild tab: stacked vertically on right side */
-    body.tab-wild #kb-compendium{top:calc(env(safe-area-inset-top,0px) + 90px);right:10px;width:88px;height:88px;}
+    /* Book container matches image aspect ratio (687:957 ~ 0.72) so image fills without gaps */
+    #kb-compendium{position:fixed;top:calc(env(safe-area-inset-top,0px) + 80px);right:calc(10px + 88px + 8px);z-index:999;width:64px;height:88px;cursor:pointer;border:none;background:none;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));transition:transform 0.15s;display:flex!important;}
+    body.tab-wild #kb-compendium{top:calc(env(safe-area-inset-top,0px) + 90px);right:10px;width:72px;height:100px;}
     #kb-compendium:active{transform:scale(0.92);}
     #kb-compendium #kb-comp-count{position:absolute;top:-4px;left:-4px;min-width:22px;height:22px;padding:0 5px;border-radius:11px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.55rem;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.5);}
     #kb-compendium.has-entries{display:flex;}
@@ -4900,7 +4900,7 @@ window.onerror=function(msg,url,line,col,err){
 <div class="game-wrap">
 
   <!-- Game panel (default) -->
-  <div class="grove-panel active" id="panel-game">
+  <div class="grove-panel" id="panel-game">
   <div class="game-header">
     <div class="game-title">Lucid <em>Winds</em></div>
     <!-- Sunbeams progress bar — shows balance + progress to next plant -->
@@ -5063,7 +5063,7 @@ window.onerror=function(msg,url,line,col,err){
   </div>
 
   <!-- Greenhouse panel -->
-  <div class="grove-panel" id="panel-greenhouse">
+  <div class="grove-panel active" id="panel-greenhouse">
     <div class="panel-header">
       <div class="panel-header-title">PLANTS</div>
       <div style="display:flex;align-items:center;gap:0.4rem;">
@@ -6652,8 +6652,8 @@ window.onerror=function(msg,url,line,col,err){
   <!-- PERSISTENT BOTTOM NAV — stone tablet v5 buttons -->
   <div class="fg-bottomnav">
     <button class="fg-nav-min" onclick="this.parentElement.classList.toggle('minimized')" title="Hide nav"><span class="nm-chev">▾</span><span>HIDE</span></button>
-    <button class="fg-nav-btn active" onclick="switchTab('game')"><img src="assets/games/wild/nav-game-v5.png" alt="Game"><span class="fg-nav-label">GAME</span></button>
-    <button class="fg-nav-btn" onclick="switchTab('greenhouse')" style="position:relative;"><img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse"><span class="fg-nav-label">GREENHOUSE</span><span id="nav-gh-badge" class="nav-badge" style="display:none;"></span></button>
+    <button class="fg-nav-btn" onclick="switchTab('game')"><img src="assets/games/wild/nav-game-v5.png" alt="Game"><span class="fg-nav-label">GAME</span></button>
+    <button class="fg-nav-btn active" onclick="switchTab('greenhouse')" style="position:relative;"><img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse"><span class="fg-nav-label">GREENHOUSE</span><span id="nav-gh-badge" class="nav-badge" style="display:none;"></span></button>
     <button class="fg-nav-btn" onclick="switchTab('nursery')" style="position:relative;"><img src="assets/games/wild/nav-nursery-v5.png" alt="Nursery"><span class="fg-nav-label">NURSERY</span><span id="nav-nur-badge" class="nav-badge" style="display:none;"></span></button>
     <button class="fg-nav-btn" onclick="switchTab('wild')"><img src="assets/games/wild/nav-wild-v5.png" alt="Wild"><span class="fg-nav-label">WILD</span></button>
   </div>
