@@ -4716,6 +4716,9 @@
     .perf-lite .cs-flip-wrap.flipped .cs-flip-inner { transform: rotateY(180deg) !important; }
     .perf-lite .cs-card-front[data-season] { background-image: none !important; background: #050505 !important; }
     .perf-lite .cf-synergy { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+    .perf-lite .cf-art-window svg,
+    .perf-lite .cf-art-window img { filter: none !important; }
+    .perf-lite .cf-art-window img { max-height: 100%; max-width: 80%; height: auto; width: auto; object-fit: contain; }
     /* ── Offline warning banner ────────────────────────────────────── */
     #lw-offline-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:9998;background:rgba(30,24,12,0.94);border-bottom:1px solid rgba(200,168,75,0.2);padding:6px 36px 6px 12px;font-family:inherit;font-size:0.58rem;color:var(--muted);text-align:center;letter-spacing:0.03em;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
     #lw-offline-banner .lw-ob-x{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;border:none;background:transparent;color:var(--muted);font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;-webkit-tap-highlight-color:transparent;}
@@ -27736,6 +27739,33 @@ document.addEventListener('keydown', function(e) {
   }
 
   // ── Populate a single slot with plant data ───────────────────────────
+  // Rasterize SVG string → <img> for perf-lite carousel cards.
+  // Same visual output, 1 DOM node instead of 600.
+  var _rasterCache = {};
+  function _rasterizeSvg(svgHtml, cacheKey, callback) {
+    if (_rasterCache[cacheKey]) { callback(_rasterCache[cacheKey]); return; }
+    var svgBlob = new Blob([svgHtml], {type:'image/svg+xml;charset=utf-8'});
+    var url = URL.createObjectURL(svgBlob);
+    var img = new Image();
+    img.onload = function() {
+      var c = document.createElement('canvas');
+      c.width = 280; c.height = Math.round(280 * 95 / 70);
+      var ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      try {
+        var dataUrl = c.toDataURL('image/png');
+        _rasterCache[cacheKey] = dataUrl;
+        // Cap cache at 20 to control memory
+        var keys = Object.keys(_rasterCache);
+        if (keys.length > 20) delete _rasterCache[keys[0]];
+        callback(dataUrl);
+      } catch(e) { callback(null); }
+    };
+    img.onerror = function() { URL.revokeObjectURL(url); callback(null); };
+    img.src = url;
+  }
+
   function _populateSlot(slotEl, plant) {
     if (!slotEl) return;
     slotEl.removeAttribute('data-season');
@@ -27805,7 +27835,25 @@ document.addEventListener('keydown', function(e) {
     front += '<div class="cf-ea">' + _ea + '</div>';
     var _npHtml = typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : name;
     front += '<div class="cf-name-zone"><div class="cf-name" style="color:' + _sNameColor + ';">' + _npHtml + '</div></div>';
-    front += '<div class="cf-art-window">' + svgHtml + '</div>';
+    // perf-lite: use placeholder, async rasterize SVG to <img> (1 node vs 600)
+    if (window._perfLite) {
+      var _artId = 'cs-art-' + plant.hash.slice(0,12);
+      front += '<div class="cf-art-window" id="' + _artId + '" style="min-height:120px;"></div>';
+      // Defer rasterization to after DOM insert
+      (function(artId, svg, key) {
+        requestAnimationFrame(function() {
+          _rasterizeSvg(svg, key, function(dataUrl) {
+            var artEl = document.getElementById(artId);
+            if (artEl) {
+              if (dataUrl) artEl.innerHTML = '<img src="' + dataUrl + '" alt="plant">';
+              else artEl.innerHTML = svg; // fallback to live SVG if raster fails
+            }
+          });
+        });
+      })(_artId, svgHtml, _csCacheKey);
+    } else {
+      front += '<div class="cf-art-window">' + svgHtml + '</div>';
+    }
     // Synergy badge (if any)
     var _syn = window.getSynergy ? window.getSynergy(_t) : null;
     if (_syn) {
