@@ -45528,7 +45528,9 @@ function render(){
   for(var i=0;i<st.plants.length&&i<mx;i++){
     var p=st.plants[i];var g=p.grade;var gc=GC[g]||GC.Common;
     var plantSvg='';if(window._generatePlantSVG&&p.hash){try{plantSvg=window._generatePlantSVG(p.hash,28);}catch(e){}}if(!plantSvg)plantSvg=MP[p.pi%5];
-    h+='<div class="ps" onclick="BP.tp('+i+')"><div class="tr" data-g="'+g+'">'+I.ter+'<div class="pm">'+plantSvg+'</div><div class="hd '+(p.hp||'h')+'"></div><div class="gl" style="color:'+gc+';background:rgba(13,16,12,0.8);">'+g.toUpperCase()+'</div></div></div>';
+    h+='<div class="ps" onclick="BP.tp('+i+')" style="position:relative;"><div class="tr" data-g="'+g+'">'+I.ter+'<div class="pm">'+plantSvg+'</div><div class="hd '+(p.hp||'h')+'"></div><div class="gl" style="color:'+gc+';background:rgba(13,16,12,0.8);">'+g.toUpperCase()+'</div></div>';
+    h+='<button onclick="event.stopPropagation();window.FG_Backpack.sendPlantHome('+i+');" style="position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);z-index:2;font-family:DM Mono,monospace;font-size:0.32rem;color:var(--sage);background:rgba(13,16,12,0.9);border:1px solid rgba(122,179,86,0.35);border-radius:6px;padding:3px 8px;cursor:pointer;white-space:nowrap;min-height:24px;">\ud83c\udfe0 SEND</button>';
+    h+='</div>';
   }
   for(var j=st.plants.length;j<mx;j++){h+='<div class="ps"><div class="tr" data-g="Common" style="opacity:0.2;">'+I.ter+'<div class="pm" style="opacity:0.12;color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;">+</div></div></div>';}
   var sh=0;for(var k=1;k<SL.length&&sh<2;k++){if(SL[k].k&&!st.unlocks[SL[k].k]){h+='<div class="lk">'+UI.lk+'<div class="lh">'+SL[k].h+'</div></div>';sh++;}}
