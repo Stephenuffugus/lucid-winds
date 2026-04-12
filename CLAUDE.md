@@ -365,7 +365,7 @@ window._doCrossPollination(wild, mate) — Wild tab breed execution
 - Hold-to-release: long press on backpack plant to drop into wild
 - Seed-to-nursery: feral seeds go to nursery via CustomEvent
 - Module: FG_Backpack / BP (Block 17)
-- Midnight reset: all backpack plants auto-deliver to greenhouse (NEEDS BUILDING)
+- Midnight reset: auto-delivers backpack plants/seeds on tab switch (BUILT)
 
 ### Wild Plant Rules
 - 3 drops per day from greenhouse (removes permanently)
@@ -455,11 +455,11 @@ window._doCrossPollination(wild, mate) — Wild tab breed execution
 
 ---
 
-## ANTI-FARMING (NEEDS BUILDING)
-- Daily harvest reward cap = backpack slots (3-6)
-- Diminishing returns per day
-- 2hr minimum wild time before harvest
-- Same player can't harvest same planter 2x/day
+## ANTI-FARMING (BUILT — set-39+)
+- Guard system: min play time, progress caps, completion cooldown
+- Daily harvest reward cap via Wild tab
+- Diminishing returns (80% decay per harvest)
+- Server-side economy protection in Firestore
 
 ## PI NETWORK INTEGRATION (NEEDS BUILDING)
 - Pi SDK for all payments — never custody user funds
