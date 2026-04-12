@@ -33877,6 +33877,16 @@ function _getAllZonePlants() {
     }
     if (!dup) zones[szk].push({hash: sm.data.hash, lat: sm.data.lat, lng: sm.data.lng});
   }
+  // Enforce MAX_PER_ZONE (3) across local + shared — keep top EA
+  var cap = typeof MAX_PER_ZONE !== 'undefined' ? MAX_PER_ZONE : 3;
+  for (var czk in zones) {
+    if (zones[czk].length > cap) {
+      zones[czk].sort(function(a, b) {
+        return (typeof _wildEA === 'function' ? _wildEA(b) - _wildEA(a) : 0);
+      });
+      zones[czk] = zones[czk].slice(0, cap);
+    }
+  }
   return zones;
 }
 
