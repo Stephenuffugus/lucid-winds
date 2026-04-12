@@ -77,6 +77,33 @@ Each item: `[ ] filename — prompt` (or description)
 - [ ] `assets/games/thumbs/jade.png` — jade mahjong tiles stacked in a turtle shape, deep green and gold, dark background --s 250 --ar 1:1
 - [ ] (FUTURE POLISH) 34 unique mahjong tile faces if we want authentic styling
 
+### Petal Match (Match-3)
+- [ ] `assets/games/thumbs/petalmatch.png` — colorful botanical gems arranged in a 3-in-a-row pattern, sparkle/burst effects, dark background --s 250 --ar 1:1
+
+### Pixel Garden
+- [ ] `assets/games/thumbs/pixelgarden.png` — pixel art flower with color palette dots, dark background, 8-bit aesthetic --s 250 --ar 1:1
+
+### Number Garden
+- [ ] `assets/games/thumbs/numbergarden.png` — glowing mathematical numbers growing from botanical roots, timer clock, dark background --s 250 --ar 1:1
+
+### Sprout (Wordle)
+- [ ] `assets/games/thumbs/sprout.png` — 5-letter word tiles (sage green and gold) on dark background, flat icon --s 250 --ar 1:1
+
+### Vine Words (Boggle)
+- [ ] `assets/games/thumbs/vinewords.png` — 4x4 letter grid with vines connecting letters to spell words, dark background --s 250 --ar 1:1
+
+### Story Seeds
+- [ ] `assets/games/thumbs/storyseeds.png` — ancient scroll with glowing seeds and branching story paths, dark background --s 250 --ar 1:1
+
+### Seed Sow (Mancala)
+- [ ] `assets/games/thumbs/seedsow.png` — mancala board with wooden pits full of colorful seeds, warm earth tones, dark background --s 250 --ar 1:1
+
+### Recall Garden
+- [ ] `assets/games/thumbs/recall.png` — glowing botanical memory cards flipped face down, sparkles of revelation, dark background --s 250 --ar 1:1
+
+### Rhythm Vine
+- [ ] `assets/games/thumbs/rhythmvine.png` — musical notes flowing along a growing vine, glowing with beat pulses, dark background --s 250 --ar 1:1
+
 ---
 
 ## KEEPER BAR / HUD (all DONE but listed for reference)
