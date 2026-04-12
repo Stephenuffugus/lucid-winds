@@ -1,9 +1,8 @@
 // ═══ LUCID WINDS — Story Seeds (daily creative writing) ═══
 (function(){
 'use strict';
-
-var _e=G.e,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G.sr;
-
+var G=window._G;
+var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G.sr;
 window._gameFns=window._gameFns||{};
 window._gameFns.storyseeds=function SS(a){
   var PROMPTS=[

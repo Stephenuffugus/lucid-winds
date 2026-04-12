@@ -3,6 +3,8 @@
 // through connected path tiles to collect your treasures before the AI.
 (function(){
 'use strict';
+var G=window._G;
+var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G.sr,sh=G.sh,_st=G.st,_xt=G.xt,_setDiff=G.setDiff;
 
 window._gameFns = window._gameFns || {};
 window._gameFns.rootmaze = function RootMaze(a){

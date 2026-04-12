@@ -2,6 +2,8 @@
 // Word recall, math, reaction, pattern match, Stroop color naming.
 (function(){
 'use strict';
+var G=window._G;
+var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G.sr,sh=G.sh,_st=G.st,_xt=G.xt,_setDiff=G.setDiff;
 window._gameFns=window._gameFns||{};
 window._gameFns.dailybloom=function DB(a){
   var exOrder=['wordRecall','math','reaction','pattern','colorName'];
