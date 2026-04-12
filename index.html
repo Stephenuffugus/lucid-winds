@@ -4202,7 +4202,7 @@
     /* INSTALL APP button — visible when running in browser, hidden when
        running as an installed PWA (display-mode:standalone). Compact to
        avoid crowding the currency badges. */
-    #kb-install{font-family:'Bebas Neue',sans-serif;font-size:0.75rem;color:rgba(122,200,240,0.95);padding:0.55rem 0.75rem;background:linear-gradient(180deg,rgba(91,175,220,0.15),rgba(91,175,220,0.04));border:1.5px solid rgba(91,175,220,0.35);border-radius:10px;white-space:nowrap;cursor:pointer;display:flex;align-items:center;gap:0.35rem;min-height:48px;min-width:48px;flex-shrink:0;letter-spacing:0.06em;box-shadow:0 2px 8px rgba(91,175,220,0.1);}
+    #kb-install{position:relative;display:flex;align-items:center;justify-content:center;padding:0;border:2px solid rgba(91,175,220,0.4);border-radius:10px;background:none;cursor:pointer;width:64px;height:64px;flex-shrink:0;overflow:hidden;}
     #kb-install:hover{background:linear-gradient(180deg,rgba(91,175,220,0.22),rgba(91,175,220,0.08));}
     #kb-install .kb-install-label{font-size:0.6rem;}
     @media (display-mode: standalone) { #kb-install { display: none !important; } }
@@ -5428,7 +5428,7 @@ window.onerror=function(msg,url,line,col,err){
       <div id="kb-weather" onclick="if(window._openWeather)_openWeather();" title="Summon weather over your wild plants — rain, sun flare, dawn mist"><img src="assets/btn-weather.png" alt="Weather" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
       <div id="kb-mystery" onclick="if(window._openMystery)_openMystery();" title="Open a mystery box — random loot for 25 Dew"><img src="assets/btn-mystery.png" alt="Mystery" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
       <div id="kb-compendium" onclick="if(window._openCompendiumUI)_openCompendiumUI();else if(window._openRootReport)_openRootReport('today');" title="Book of Secrets — compendium, journal, and discoveries"><img src="assets/btn-compendium.png" alt="Book" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"><span id="kb-comp-count" style="position:absolute;bottom:2px;right:4px;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);text-shadow:0 1px 4px rgba(0,0,0,0.9);z-index:2;">0</span></div>
-      <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install Lucid Winds as an app on your device">📲 <span class="kb-install-label">INSTALL</span></div>
+      <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install Lucid Winds as an app on your device"><img src="assets/btn-install.png" alt="Install" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
     </div>
   </div>
   <div id="pw-lb-dropdown">
