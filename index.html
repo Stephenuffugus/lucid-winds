@@ -4191,7 +4191,7 @@
     /* ═══ KEEPER IDENTITY BAR ═══ */
     #pw-keeper-bar{position:fixed;top:0;left:0;right:0;z-index:997;display:none;flex-direction:column;gap:0.45rem;padding:0.55rem 0.7rem 0.55rem 0.7rem;padding-top:calc(0.55rem + env(safe-area-inset-top, 0px));background:linear-gradient(180deg,rgba(13,16,12,0.97),rgba(13,16,12,0.92));border-bottom:1px solid rgba(74,124,53,0.08);backdrop-filter:blur(8px);max-width:680px;margin:0 auto;}
     #pw-keeper-bar .kb-row1{display:flex;align-items:center;gap:0.6rem;}
-    #pw-keeper-bar .kb-row2{display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;}
+    #pw-keeper-bar .kb-row2{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;}
     #pw-keeper-bar .kb-avatar{width:48px;height:48px;border-radius:50%;border:2px solid rgba(122,179,86,0.35);background:rgba(26,36,22,0.6);display:flex;align-items:center;justify-content:center;font-size:1.4rem;cursor:pointer;flex-shrink:0;}
     #pw-keeper-bar .kb-info{flex:1;min-width:0;}
     #pw-keeper-bar .kb-name{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--cream);letter-spacing:0.06em;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1;}
@@ -5428,10 +5428,10 @@ window.onerror=function(msg,url,line,col,err){
       <div id="pw-lb-toggle" onclick="PW_UI.toggleLeaderboard()"><span id="lb-my-rank">#—</span> <span style="font-size:0.55rem;">▼</span></div>
     </div>
     <!-- Row 2: currency badges (Sunbeams + Dew + optional Compendium + Install) -->
-    <div class="kb-row2" style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;">
+    <div class="kb-row2">
       <div id="kb-sunbeams" title="Sunbeams" onclick="if(window.openEconModal)openEconModal();" style="border:2px solid rgba(200,168,75,0.5);"><img src="assets/btn-sunbeams.png" alt="Sunbeams" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:8px;"><span class="kb-val">0</span></div>
-      <div id="kb-dew" title="Dew" onclick="if(window.openDewModal)openDewModal();" style="border:2px solid rgba(91,175,220,0.5);"><img src="assets/btn-dew.png" alt="Dew" style="width:150%;height:150%;object-fit:cover;display:block;margin:-25%;"><span class="kb-val">0</span></div>
       <div id="kb-mystery" onclick="if(window._openMystery)_openMystery();" title="Mystery Box"><img src="assets/btn-mystery.png" alt="Mystery" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
+      <div id="kb-dew" title="Dew" onclick="if(window.openDewModal)openDewModal();" style="border:2px solid rgba(91,175,220,0.5);"><img src="assets/btn-dew.png" alt="Dew" style="width:150%;height:150%;object-fit:cover;display:block;margin:-25%;"><span class="kb-val">0</span></div>
       <div id="kb-weather" onclick="if(window._openWeather)_openWeather();" title="Summon Weather"><img src="assets/btn-weather.png" alt="Weather" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
       <div id="kb-slots" onclick="if(window._openSlots)_openSlots();" title="Slot Machine"><img src="assets/btn-slots.png" alt="Slots" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
       <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install App"><img src="assets/btn-install.png" alt="Install" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
