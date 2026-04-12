@@ -29080,6 +29080,7 @@ document.addEventListener('keydown', function(e) {
     var _fertApplied = plant.fertApplied || 0;
     var _gen = plant.generation || 1;
     var _wildDrops = plant.wildDropCount || 0;
+    if(!_wildDrops){try{var _pmRead=JSON.parse(localStorage.getItem('lw_plant_meta')||'{}');_wildDrops=(_pmRead[plant.hash]&&_pmRead[plant.hash].wildDropCount)||0;}catch(e){}}
     var _age = plant.date ? Math.floor((Date.now() - new Date(plant.date).getTime()) / 86400000) : 0;
     html += '<div class="pdm-row"><span class="pdm-k">\ud83e\uddec Breed count</span><span class="pdm-v">' + _breedCount + (_breedCount >= 3 ? ' (prolific)' : '') + '</span></div>';
     if (_gen > 1) html += '<div class="pdm-row"><span class="pdm-k">\ud83e\uddea Chimera gen</span><span class="pdm-v">Gen ' + _gen + ' (\u2212' + ((_gen - 1) * 2) + ' EA, 2\u00d7 climate)</span></div>';
@@ -29337,6 +29338,9 @@ document.addEventListener('keydown', function(e) {
   window.switchTab = function(tab) {
     _haptic('tab');
     if(typeof gtag!=='undefined') gtag('event','tab_switch',{tab:tab});
+    // Midnight backpack auto-deliver — check on every tab switch so it
+    // fires reliably even if the player never visits Wild tab
+    if(window.BP&&BP.checkMidnightDeliver)try{BP.checkMidnightDeliver();}catch(e){}
     // Exit solitaire fullscreen when switching tabs
     if(document.body.classList.contains('sol-fs')&&window._solExitFS){document.body.classList.remove('sol-fs');var _ag=document.getElementById('fg-ag');if(_ag)_ag.classList.remove('sol-fs')}
 
@@ -36634,6 +36638,13 @@ function _finishDrop(defenderGame){
   var pl=pd.plant,la=pd.lat,lo=pd.lng,wild=pd.wild;
 
   _drops++;_saveState();_afRecordDrop();
+  // Track wild drop count in per-hash metadata (survives greenhouse removal)
+  try{
+    var _pm=JSON.parse(localStorage.getItem('lw_plant_meta')||'{}');
+    if(!_pm[pl.hash])_pm[pl.hash]={};
+    _pm[pl.hash].wildDropCount=(_pm[pl.hash].wildDropCount||0)+1;
+    localStorage.setItem('lw_plant_meta',JSON.stringify(_pm));
+  }catch(e){}
   var gh=_getGH().filter(function(g){return g.hash!==pl.hash;});_saveGH(gh);
 
   // Compute EA at drop time
