@@ -45522,7 +45522,7 @@ var BP=(function(){
 var _o=false,_ss=null,_sp=null,_ht=null;
 var SL=[{id:1},{id:2,h:'Harvest 1st plant',k:'slot2'},{id:3,h:'100 pollen',k:'slot3'},{id:4,h:'10 games',k:'slot4'},{id:5,h:'Drop 5 in Wild',k:'slot5'},{id:6,h:'Daily slot',k:'slot6',dy:true}];
 var SC=[{c:1,k:'seed1'},{c:5,k:'seed5'},{c:10,k:'seed10'},{c:15,k:'seed15'},{c:20,k:'seed20'}];
-function xp(){var c=1;for(var i=1;i<SL.length;i++){var s=SL[i];if(st.unlocks[s.k]){if(s.dy){var td=new Date().toISOString().split('T')[0];if(st.daily!==td)c++;}else c++;}}return c;}
+function xp(){var c=3;for(var i=1;i<SL.length;i++){var s=SL[i];if(s.k==='slot2'||s.k==='slot3')continue;if(st.unlocks[s.k]){if(s.dy){var td=new Date().toISOString().split('T')[0];if(st.daily!==td)c++;}else c++;}}return c;}
 function xc(){var c=1;for(var i=SC.length-1;i>=0;i--){if(st.unlocks[SC[i].k]){c=SC[i].c;break;}}return c;}
 function init(){var el=document.getElementById('bpi');if(el){var s=el.querySelector('svg');if(s)s.remove();}render();}
 function toggle(){if(_o)close();else open();}
@@ -45581,7 +45581,7 @@ function ul(k,m,s){if(st.unlocks[k])return;st.unlocks[k]=true;render();celeb(m,s
 function cu(){if(!st.unlocks.slot2&&st.ph>=1)ul('slot2','Second plant slot unlocked!','Harvest plants to fill it.');if(!st.unlocks.slot3&&st.pollen>=100)ul('slot3','Third slot unlocked!','100 pollen reached.');if(!st.unlocks.slot4&&st.gp>=10)ul('slot4','Bonus slot earned!','10 games played.');if(!st.unlocks.slot5&&st.wd>=5)ul('slot5','Fifth slot unlocked!','5 plants in the Wild.');if(!st.unlocks.seed5&&st.fc>=1)ul('seed5','Seed pouch expands to 5!','Find ferals as you walk.');if(!st.unlocks.seed10&&st.fc>=5)ul('seed10','Pouch holds 10!','Your eye sharpens.');}
 // ═══ RETURN TO BASE — unload backpack to greenhouse ═══
 // RTB: 2 free returns/day (base), +2 if extra backpack slots purchased = 4 max
-var RTB_BASE_PER_DAY=2;
+var RTB_BASE_PER_DAY=3;
 var RTB_PAID_BONUS=2;
 var RTB_KEY='fg_rtb_today';
 
