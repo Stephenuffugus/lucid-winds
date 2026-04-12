@@ -297,6 +297,7 @@ window._gameFns.pollen = function PN(a){
 
   window._PNnew=function(){newGame();};
   window._PNtap=function(id,isRes){
+    isRes=(isRes===true||isRes==='true');
     if(G.phase!=='player')return;
     var card=findCard(id);if(!card)return;
     var aff=canAfford(G.player,card);

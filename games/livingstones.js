@@ -206,7 +206,7 @@ window._gameFns.livingstones = function LS(a){
     }
     if(correct){
       puzzleSolved=true;
-      if(!solvedSet[difficulty+'_'+puzzleIdx]){solvedSet[difficulty+'_'+puzzleIdx]=true;totalSolved++;_e('milestone');}
+      if(!solvedSet[difficulty+'_'+puzzleIdx]){solvedSet[difficulty+'_'+puzzleIdx]=true;totalSolved++;_e('game_win');}
       _playWin();
       sm('✓ Solved!');
     }else{

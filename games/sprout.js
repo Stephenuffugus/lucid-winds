@@ -45,7 +45,7 @@ window._gameFns.sprout=function SP(a){
   var pan=document.createElement('div');pan.id='SPpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:8px;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb" onclick="_SPN()">🌱 NEW</button>';
+  mc(a).innerHTML='<button class="gb" onclick="_SPRN()">🌱 NEW</button>';
 
   function newGame(){
     secret=WORDS[Math.floor(Math.random()*WORDS.length)];
@@ -122,27 +122,27 @@ window._gameFns.sprout=function SP(a){
     h+='<div style="margin-top:12px;">';
     for(var rr=0;rr<3;rr++){
       h+='<div style="display:flex;gap:3px;justify-content:center;margin-bottom:4px;">';
-      if(rr===2){h+='<button onclick="_SPK(\'ENT\')" style="min-width:44px;height:48px;padding:0 8px;background:rgba(122,179,86,0.3);border:1px solid rgba(122,179,86,0.5);border-radius:4px;color:#e8dcc8;font-family:Bebas Neue,sans-serif;font-size:0.75rem;cursor:pointer;">ENTER</button>';}
+      if(rr===2){h+='<button onclick="_SPRK(\'ENT\')" style="min-width:44px;height:48px;padding:0 8px;background:rgba(122,179,86,0.3);border:1px solid rgba(122,179,86,0.5);border-radius:4px;color:#e8dcc8;font-family:Bebas Neue,sans-serif;font-size:0.75rem;cursor:pointer;">ENTER</button>';}
       for(var k=0;k<rows[rr].length;k++){
         var L=rows[rr].charAt(k);
         var kb=keyState[L];
         var kbg=kb==='g'?'#538D3E':kb==='y'?'#B59F3B':kb==='x'?'#3A3A3C':'rgba(122,179,86,0.2)';
-        h+='<button onclick="_SPK(\''+L+'\')" style="width:30px;height:48px;background:'+kbg+';border:1px solid rgba(122,179,86,0.3);border-radius:4px;color:#e8dcc8;font-family:DM Mono,monospace;font-size:0.9rem;font-weight:700;cursor:pointer;">'+L+'</button>';
+        h+='<button onclick="_SPRK(\''+L+'\')" style="width:30px;height:48px;background:'+kbg+';border:1px solid rgba(122,179,86,0.3);border-radius:4px;color:#e8dcc8;font-family:DM Mono,monospace;font-size:0.9rem;font-weight:700;cursor:pointer;">'+L+'</button>';
       }
-      if(rr===2){h+='<button onclick="_SPK(\'BS\')" style="min-width:44px;height:48px;padding:0 8px;background:rgba(122,179,86,0.3);border:1px solid rgba(122,179,86,0.5);border-radius:4px;color:#e8dcc8;font-family:Bebas Neue,sans-serif;font-size:0.75rem;cursor:pointer;">⌫</button>';}
+      if(rr===2){h+='<button onclick="_SPRK(\'BS\')" style="min-width:44px;height:48px;padding:0 8px;background:rgba(122,179,86,0.3);border:1px solid rgba(122,179,86,0.5);border-radius:4px;color:#e8dcc8;font-family:Bebas Neue,sans-serif;font-size:0.75rem;cursor:pointer;">⌫</button>';}
       h+='</div>';
     }
     h+='</div>';
     pan.innerHTML=h;
   }
 
-  window._SPK=function(k){
+  window._SPRK=function(k){
     if(done)return;
     if(k==='ENT'){submit();return;}
     if(k==='BS'){current=current.slice(0,-1);render();return;}
     if(current.length<5){current+=k;render();}
   };
-  window._SPN=function(){newGame();};
+  window._SPRN=function(){newGame();};
 
   newGame();
 };
