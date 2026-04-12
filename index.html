@@ -3169,6 +3169,10 @@
     /* Hide HUD clutter when any game is active (not SET, which has its own UI) */
     body.game-active .game-header{display:none!important}
     body.game-active .fg-pk{display:none!important}
+    body.game-active #pw-keeper-bar{display:none!important}
+    /* Back-to-games button inside game area */
+    .game-back-btn{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(13,16,12,0.9);border:1px solid rgba(74,124,53,0.25);border-radius:0 0 10px 10px;color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.06em;cursor:pointer;width:fit-content;min-height:44px;-webkit-tap-highlight-color:transparent;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+    .game-back-btn:active{transform:scale(0.95);}
 
     /* ══════════════════════════════════════════════════════════════════════
        SHARED COMPONENTS — consistent across all 21 games
@@ -38818,8 +38822,9 @@ function _spawnLeafParticles(container){
 // ═══ Hash toast — floating "+N ⚡" feedback ═══
 function _hashToast(n){
   var s=document.getElementById('gp-strip');if(!s)return;
-  var t=document.createElement('div');t.className='hash-toast';t.textContent='+'+n+' \u26a1';
-  s.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},1300);
+  var cost=window._getMintCost?window._getMintCost():30;
+  var t=document.createElement('div');t.className='hash-toast';t.textContent='+'+n+' ☀️ ('+_hashFilled+'/'+cost+')';
+  s.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},1800);
 }
 function _guardToast(msg){
   var s=document.getElementById('gp-strip');if(!s)return;
@@ -39075,6 +39080,12 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;_m=Math.m
   if(_bnav)_bnav.style.display='none';
   if(_solGames[id]){_solEnterFS()}
   if(gps){gps.classList.add('on');try{_updateGP()}catch(e){console.warn('[GP]',e)}}
+  // Back button — always present so player can exit any game
+  var _backBtn=document.createElement('button');
+  _backBtn.className='game-back-btn';
+  _backBtn.innerHTML='◀ GAMES';
+  _backBtn.onclick=function(){_sg('set');if(window._openGamePicker)_openGamePicker();};
+  ag.appendChild(_backBtn);
   var gi=null;for(var i=0;i<G.length;i++)if(G[i].id===id){gi=G[i];break}
   if(gi){var r=document.createElement('div');r.className='gr';r.textContent='📖 '+gi.r;ag.appendChild(r)}
   // ── Try: 1) already-loaded external, 2) lazy-load from games/ ──
