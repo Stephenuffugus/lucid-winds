@@ -5371,7 +5371,7 @@ window.onerror=function(msg,url,line,col,err){
   <div id="bpi" onclick="BP.toggle()" style="display:none;"><div id="bpb" class="e">0</div></div>
   <!-- Backpack expanded L-shape -->
   <div id="bpe"><div id="bpbk" onclick="BP.close()"></div><div id="bpp"></div><div id="bps"></div></div>
-  <div id="bp-rtb" onclick="BP.returnToBase()" style="display:none;"></div>
+  <div id="bp-rtb" onclick="BP.returnToBase()" style="display:none !important;"></div>
   <!-- Plant info card with hold-to-release -->
   <div id="pic"><div class="pic-top"><div class="pic-plant" id="pic-pl"></div><div class="pic-info"><div class="pic-name" id="pic-nm">—</div><div class="pic-grade" id="pic-gr">—</div><div class="pic-origin" id="pic-or">—</div></div><button class="pic-close" onclick="BP.cpi()">✕</button></div><div class="htc" id="htc-rel" onmousedown="BP.hts()" ontouchstart="BP.hts()" onmouseup="BP.hte()" ontouchend="BP.hte()" onmouseleave="BP.hte()"><div class="htc-fill" id="htcf"></div><span class="htc-label">HOLD TO RELEASE TO WILD</span></div></div>
   <!-- Seed info card with hold-to-send-to-nursery -->
@@ -45949,15 +45949,37 @@ function cpi(){_sp=null;document.getElementById('pic').classList.remove('show');
 function render(){
   var bg=document.getElementById('bpb');var t=st.plants.length+st.seeds.length;bg.textContent=t;bg.classList.toggle('e',t===0);
   var pe=document.getElementById('bpp');var mx=xp();var h='';
+  // Player level gate for cutting-clippings feature
+  var keeperLvl=0;try{if(window._getXP&&window._getRank){keeperLvl=window._getRank(window._getXP()).level;}}catch(e){}
+  var CLIPPING_UNLOCK_LEVEL=5, CLIPPING_CD_MS=6*60*60*1000;
+  var clipCDs={};try{clipCDs=JSON.parse(localStorage.getItem('fg_bp_clipCDs')||'{}');}catch(e){}
+  var now=Date.now();
   for(var i=0;i<st.plants.length&&i<mx;i++){
     var p=st.plants[i];var g=p.grade;var gc=GC[g]||GC.Common;
     var plantSvg='';if(window._generatePlantSVG&&p.hash){try{plantSvg=window._generatePlantSVG(p.hash,28);}catch(e){}}if(!plantSvg)plantSvg=MP[p.pi%5];
     h+='<div class="ps" onclick="BP.tp('+i+')" style="position:relative;"><div class="tr" data-g="'+g+'">'+I.ter+'<div class="pm">'+plantSvg+'</div><div class="hd '+(p.hp||'h')+'"></div><div class="gl" style="color:'+gc+';background:rgba(13,16,12,0.8);">'+g.toUpperCase()+'</div></div>';
     h+='<button onclick="event.stopPropagation();window.FG_Backpack.sendPlantHome('+i+');" style="position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);z-index:2;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--sage);background:rgba(13,16,12,0.9);border:1px solid rgba(122,179,86,0.35);border-radius:6px;padding:5px 10px;cursor:pointer;white-space:nowrap;min-height:36px;">\ud83c\udfe0 SEND</button>';
+    // Clipping button (level 5+, per-slot 6hr cooldown)
+    if(keeperLvl>=CLIPPING_UNLOCK_LEVEL){
+      var cdKey=(p.hash||('slot'+i))+'|cut';
+      var lastCut=clipCDs[cdKey]||0;
+      var timeLeft=CLIPPING_CD_MS-(now-lastCut);
+      if(timeLeft>0){
+        var mins=Math.ceil(timeLeft/60000);
+        var label=mins>=60?Math.floor(mins/60)+'h '+(mins%60)+'m':mins+'m';
+        h+='<div title="Clipping cooldown" style="position:absolute;top:-6px;right:-6px;z-index:2;font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);background:rgba(13,16,12,0.9);border:1px solid rgba(138,145,121,0.35);border-radius:8px;padding:3px 6px;">⏳ '+label+'</div>';
+      }else{
+        h+='<button onclick="event.stopPropagation();window.FG_Backpack.takeClipping('+i+');" title="Take a clipping (6h cooldown)" style="position:absolute;top:-6px;right:-6px;z-index:2;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--gold);background:rgba(13,16,12,0.9);border:1px solid rgba(200,168,75,0.5);border-radius:8px;padding:4px 8px;cursor:pointer;">✂️</button>';
+      }
+    }
     h+='</div>';
   }
   for(var j=st.plants.length;j<mx;j++){h+='<div class="ps"><div class="tr" data-g="Common" style="opacity:0.2;">'+I.ter+'<div class="pm" style="opacity:0.12;color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;">+</div></div></div>';}
   var sh=0;for(var k=1;k<SL.length&&sh<2;k++){if(SL[k].k&&!st.unlocks[SL[k].k]){h+='<div class="lk">'+UI.lk+'<div class="lh">'+SL[k].h+'</div></div>';sh++;}}
+  // Return to Base button inside backpack panel
+  h+='<div style="grid-column:1/-1;margin-top:8px;display:flex;justify-content:center;">';
+  h+='<button id="bp-rtb-inner" onclick="window.FG_Backpack&&FG_Backpack.returnToBase&&FG_Backpack.returnToBase();" style="min-height:44px;padding:10px 20px;font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.1em;color:var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(200,168,75,0.04));border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;cursor:pointer;">🏠 RETURN TO BASE</button>';
+  h+='</div>';
   pe.innerHTML=h;
   var se=document.getElementById('bps');var cp=xc();h='';
   for(var m=0;m<st.seeds.length&&m<cp;m++){h+='<div class="ss'+(st.seeds[m].rare?' rare':'')+'" onclick="BP.ts('+m+')"><div class="sd-icon">'+I.seed+'</div></div>';}
@@ -46321,6 +46343,76 @@ window.FG_Backpack.sendSeedToNursery = function(idx) {
   if (BP.toast) BP.toast('Seed sent to Nursery!');
   else if (window._toast) window._toast('Seed sent to Nursery!');
 };
+
+// ═══ TAKE CLIPPING — level 5+, per-slot 6hr cooldown ═══
+// Creates a seed in the nursery from a backpack plant without removing the plant.
+window.FG_Backpack.takeClipping = function(idx) {
+  if (!BP || !BP.getState) return;
+  var state = BP.getState();
+  if (idx >= state.plants.length) return;
+  var plant = state.plants[idx];
+  if (!plant) return;
+  // Check keeper level
+  var keeperLvl = 0;
+  try { if (window._getXP && window._getRank) keeperLvl = window._getRank(window._getXP()).level; } catch(e){}
+  if (keeperLvl < 5) {
+    if (window._toast) window._toast('Unlocks at Keeper Level 5');
+    return;
+  }
+  // Check cooldown
+  var clipCDs = {};
+  try { clipCDs = JSON.parse(localStorage.getItem('fg_bp_clipCDs') || '{}'); } catch(e){}
+  var cdKey = (plant.hash || ('slot'+idx)) + '|cut';
+  var last = clipCDs[cdKey] || 0;
+  var remaining = (6 * 60 * 60 * 1000) - (Date.now() - last);
+  if (remaining > 0) {
+    var mins = Math.ceil(remaining / 60000);
+    var label = mins >= 60 ? Math.floor(mins/60) + 'h ' + (mins%60) + 'm' : mins + 'm';
+    if (window._toast) window._toast('Clipping cooldown: ' + label);
+    return;
+  }
+  // Check nursery capacity
+  var nurMax = (window.FG_Data && FG_Data.getNurSlots) ? FG_Data.getNurSlots() : 3;
+  var nurNow = (window.FG_Data && FG_Data.getNursery) ? FG_Data.getNursery().length : 0;
+  if (nurNow >= nurMax) {
+    if (window._toast) window._toast('Nursery full — bloom a seed first');
+    return;
+  }
+  // Create seed with parent hash (auto-bloom will reuse that hash via breeding normally)
+  // For a clipping, the bloomed plant is an exact copy — we use a slightly perturbed hash so it's not a duplicate
+  var childHash = plant.hash;
+  // Dispatch seed-to-nursery event like backpack does for ferals
+  var seed = {
+    hash: childHash,
+    loc: 'clipping',
+    clim: plant.origin || 'wild',
+    rare: !!plant.rare,
+    parentAHash: plant.hash,
+    parentBHash: plant.hash,
+    origin: 'clipping'
+  };
+  window.dispatchEvent(new CustomEvent('bp-seed-to-nursery', {detail: seed}));
+  // Record cooldown start
+  clipCDs[cdKey] = Date.now();
+  try { localStorage.setItem('fg_bp_clipCDs', JSON.stringify(clipCDs)); } catch(e){}
+  BP.render();
+  if (window._toast) window._toast('✂️ Clipping sent to Nursery! 6h cooldown started.');
+  if (window.renderNursery) setTimeout(window.renderNursery, 200);
+  if (window.syncVaultToCloud) setTimeout(window.syncVaultToCloud, 500);
+};
+
+// Expose returnToBase through window.FG_Backpack for the in-panel button
+if (!window.FG_Backpack.returnToBase) {
+  window.FG_Backpack.returnToBase = function() {
+    if (BP && BP.returnToBase) BP.returnToBase();
+  };
+}
+
+// Periodic re-render to update the cooldown timers on clipping buttons
+setInterval(function(){
+  var bpe = document.getElementById('bpe');
+  if (bpe && bpe.classList.contains('open') && BP && BP.render) BP.render();
+}, 30000);
 
 // Context-aware plant tap — show "Send Home" button on greenhouse tab
 var _origTpFn = BP ? BP.tp : function(){};
