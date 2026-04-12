@@ -19,6 +19,8 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
 /* Transport */
 .gs-transport{display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(16,20,14,.8);border-bottom:1px solid rgba(74,124,53,.08);flex-wrap:wrap}
 .gs-btn{background:rgba(26,31,23,.8);border:1.5px solid var(--border);color:var(--cream);font-family:'DM Mono',monospace;font-size:clamp(.75rem,2.2vw,.9rem);padding:10px 16px;border-radius:8px;cursor:pointer;min-height:48px;-webkit-tap-highlight-color:transparent;transition:all .15s}
+.gs-btn:hover{background:rgba(42,48,37,.9);border-color:rgba(122,179,86,.35)}
+.gs-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .gs-btn:active{transform:scale(.95)}
 .gs-btn.on{border-color:var(--sage);color:var(--sage);box-shadow:0 0 8px rgba(122,179,86,.2)}
 .gs-btn.play{border-color:var(--sage);color:var(--sage)}
@@ -26,18 +28,25 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
 .gs-btn.accent-on{border-color:var(--gold);color:var(--gold);background:rgba(200,168,75,.12);box-shadow:0 0 12px rgba(200,168,75,.35);animation:accentPulse 2s ease infinite}
 @keyframes accentPulse{0%,100%{box-shadow:0 0 8px rgba(200,168,75,.25)}50%{box-shadow:0 0 16px rgba(200,168,75,.45)}}
 .gs-bpm{display:flex;align-items:center;gap:4px}
-.gs-bpm input[type=range]{width:70px;accent-color:var(--sage)}
-.gs-bpm span{font-size:.65rem;color:var(--muted);min-width:20px}
-.gs-bpm strong{font-size:.7rem;color:var(--cream);min-width:28px}
+.gs-bpm input[type=range]{width:90px;accent-color:var(--sage);height:28px}
+.gs-bpm span{font-size:.7rem;color:var(--muted);min-width:20px}
+.gs-bpm strong{font-size:.75rem;color:var(--cream);min-width:28px}
+input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:6px;background:rgba(122,179,86,.15);border-radius:3px;border:1px solid var(--border)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--sage);border:2px solid var(--dark);margin-top:-8px;box-shadow:0 0 6px rgba(122,179,86,.3)}
+input[type=range]::-moz-range-track{height:6px;background:rgba(122,179,86,.15);border-radius:3px;border:1px solid var(--border)}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--sage);border:2px solid var(--dark);box-shadow:0 0 6px rgba(122,179,86,.3)}
+input[type=range]:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 
 /* Section tabs */
 .gs-sections{display:flex;gap:4px;padding:8px 12px;background:rgba(13,16,12,.4);border-bottom:1px solid rgba(74,124,53,.06)}
-.gs-sec{font-family:'Bebas Neue',sans-serif;font-size:clamp(.85rem,2.5vw,1rem);padding:8px 16px;border-radius:6px;cursor:pointer;border:1.5px solid rgba(74,124,53,.15);color:var(--muted);letter-spacing:.06em;transition:all .15s;min-height:44px;display:flex;align-items:center}
+.gs-sec{font-family:'Bebas Neue',sans-serif;font-size:clamp(.85rem,2.5vw,1rem);padding:8px 16px;border-radius:6px;cursor:pointer;border:1.5px solid rgba(74,124,53,.15);color:var(--muted);letter-spacing:.06em;transition:all .15s;min-height:48px;display:flex;align-items:center}
+.gs-sec:hover{background:rgba(42,48,37,.3);border-color:rgba(74,124,53,.3)}
 .gs-sec.active{border-color:var(--gold);color:var(--gold);background:rgba(200,168,75,.06)}
 .gs-sec.sec-A{border-left:3px solid #7ab356}.gs-sec.sec-A.active{border-color:#7ab356;color:#7ab356;background:rgba(122,179,86,.08)}
 .gs-sec.sec-B{border-left:3px solid #c8a84b}.gs-sec.sec-B.active{border-color:#c8a84b;color:#c8a84b;background:rgba(200,168,75,.08)}
 .gs-sec.sec-C{border-left:3px solid #a0c4e8}.gs-sec.sec-C.active{border-color:#a0c4e8;color:#a0c4e8;background:rgba(160,196,232,.08)}
-.gs-sec-var{font-size:.55rem;opacity:.6;margin-left:2px}
+.gs-sec-var{font-size:.65rem;opacity:.6;margin-left:2px}
 
 /* Layer strip */
 .gs-layer{border-bottom:1px solid rgba(74,124,53,.06);transition:all .2s}
@@ -59,7 +68,8 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
 .ly-bass .gs-layer-mini div.on{background:#c75050}
 .ly-chords .gs-layer-mini div.on{background:#a0c4e8}
 .ly-melody .gs-layer-mini div.on{background:#c8a84b}
-.gs-mute,.gs-solo{font-size:clamp(.6rem,1.8vw,.75rem);padding:6px 10px;border-radius:4px;cursor:pointer;border:1px solid rgba(74,124,53,.15);color:var(--muted);font-family:'DM Mono',monospace;min-height:32px;display:flex;align-items:center}
+.gs-mute,.gs-solo{font-size:clamp(.65rem,1.8vw,.8rem);padding:8px 12px;border-radius:6px;cursor:pointer;border:1px solid rgba(74,124,53,.15);color:var(--muted);font-family:'DM Mono',monospace;min-height:48px;min-width:48px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.gs-mute:hover,.gs-solo:hover{background:rgba(42,48,37,.4)}
 .gs-mute.on{border-color:#c75050;color:#c75050;background:rgba(199,80,80,.08)}
 .gs-solo.on{border-color:var(--gold);color:var(--gold);background:rgba(200,168,75,.08)}
 
@@ -85,11 +95,12 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
 .gs-cell.note-head{border-top-right-radius:0;border-bottom-right-radius:0}
 .gs-cell.note-end{border-top-left-radius:0;border-bottom-left-radius:0;border-radius:0 3px 3px 0}
 .gs-cell.playhead{box-shadow:inset 0 0 0 2px var(--sage)}
-.gs-label{font-size:.45rem;color:var(--muted);font-family:'DM Mono',monospace;display:flex;align-items:center;justify-content:flex-end;padding-right:4px;white-space:nowrap}
+.gs-label{font-size:.65rem;color:var(--muted);font-family:'DM Mono',monospace;display:flex;align-items:center;justify-content:flex-end;padding-right:4px;white-space:nowrap}
 
 /* Arrangement */
 .gs-arr{display:flex;gap:6px;padding:10px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;background:rgba(13,16,12,.3);border-top:1px solid rgba(74,124,53,.08);min-height:64px;align-items:center}
-.gs-arr-block{font-family:'Bebas Neue',sans-serif;font-size:clamp(.75rem,2.2vw,.9rem);padding:10px 14px;border-radius:6px;border:1.5px solid rgba(74,124,53,.2);color:var(--cream);cursor:pointer;white-space:nowrap;min-width:48px;min-height:44px;text-align:center;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.gs-arr-block{font-family:'Bebas Neue',sans-serif;font-size:clamp(.75rem,2.2vw,.9rem);padding:10px 14px;border-radius:6px;border:1.5px solid rgba(74,124,53,.2);color:var(--cream);cursor:pointer;white-space:nowrap;min-width:48px;min-height:48px;text-align:center;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.gs-arr-block:hover{background:rgba(42,48,37,.3);border-color:rgba(74,124,53,.4)}
 .gs-arr-block.playing{box-shadow:0 0 10px rgba(122,179,86,.3)}
 .gs-arr-block.sec-A{border-color:rgba(122,179,86,.4);color:#7ab356}
 .gs-arr-block.sec-B{border-color:rgba(200,168,75,.4);color:#c8a84b}
@@ -101,31 +112,34 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
 .gs-circle.open{display:flex;flex-direction:column}
 .gs-circle h3{font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--gold);letter-spacing:.08em;text-align:center}
 .gs-circle .view-title{font-size:.65rem;color:var(--sage);text-align:center;margin:4px 0;font-family:'Bebas Neue',sans-serif;letter-spacing:.06em}
-.gs-circle .view-desc{font-size:.5rem;color:var(--muted);text-align:center;margin-bottom:8px;line-height:1.4;max-width:320px;margin-left:auto;margin-right:auto}
+.gs-circle .view-desc{font-size:.65rem;color:var(--muted);text-align:center;margin-bottom:8px;line-height:1.4;max-width:320px;margin-left:auto;margin-right:auto}
 .gs-circle .nav{display:flex;align-items:center;justify-content:center;gap:12px;margin:6px 0}
-.gs-circle .nav button{background:none;border:1.5px solid var(--border);color:var(--cream);font-size:1rem;width:40px;height:40px;border-radius:50%;cursor:pointer}
+.gs-circle .nav button{background:none;border:1.5px solid var(--border);color:var(--cream);font-size:1rem;width:48px;height:48px;border-radius:50%;cursor:pointer;transition:all .15s}
+.gs-circle .nav button:hover{border-color:var(--sage);background:rgba(122,179,86,.08)}
 .gs-circle .nav button:active{background:rgba(122,179,86,.15)}
-.gs-circle .nav span{font-size:.55rem;color:var(--cream);min-width:40px;text-align:center}
+.gs-circle .nav span{font-size:.7rem;color:var(--cream);min-width:40px;text-align:center}
 .gs-circle svg text{font-family:'DM Mono',monospace;fill:var(--cream)}
 .gs-circle .progs{display:flex;flex-direction:column;gap:6px;margin-top:8px;max-width:340px;margin-left:auto;margin-right:auto}
-.gs-circle .prog-row{display:flex;align-items:center;gap:6px;padding:6px 8px;background:rgba(26,31,23,.6);border:1px solid var(--border);border-radius:6px;cursor:pointer;min-height:40px}
+.gs-circle .prog-row{display:flex;align-items:center;gap:6px;padding:8px 10px;background:rgba(26,31,23,.6);border:1px solid var(--border);border-radius:6px;cursor:pointer;min-height:48px;transition:all .15s}
+.gs-circle .prog-row:hover{border-color:rgba(122,179,86,.3);background:rgba(26,31,23,.8)}
 .gs-circle .prog-row:active{border-color:var(--sage);background:rgba(26,31,23,.9)}
-.gs-circle .prog-name{font-size:.5rem;color:var(--gold);min-width:70px;font-family:'Bebas Neue',sans-serif;letter-spacing:.04em}
-.gs-circle .prog-chords{font-size:.55rem;color:var(--cream);flex:1}
-.gs-circle .prog-genre{font-size:.4rem;color:var(--muted)}
+.gs-circle .prog-name{font-size:.65rem;color:var(--gold);min-width:70px;font-family:'Bebas Neue',sans-serif;letter-spacing:.04em}
+.gs-circle .prog-chords{font-size:.65rem;color:var(--cream);flex:1}
+.gs-circle .prog-genre{font-size:.6rem;color:var(--muted)}
 .gs-euclid{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(8,10,6,.97);z-index:90;padding:14px 12px;border-top:2px solid var(--sage);border-radius:12px 12px 0 0;max-height:70vh;overflow-y:auto}
 .gs-euclid.open{display:block}
 .gs-euclid h3{font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--sage);letter-spacing:.08em;margin-bottom:8px}
 .gs-euclid .row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
-.gs-euclid .row label{font-size:.55rem;color:var(--muted);min-width:45px}
-.gs-euclid .row strong{font-size:.65rem;color:var(--cream);min-width:22px;text-align:center}
-.gs-euclid .row input[type=range]{flex:1;max-width:140px;accent-color:var(--sage)}
+.gs-euclid .row label{font-size:.7rem;color:var(--muted);min-width:45px}
+.gs-euclid .row strong{font-size:.75rem;color:var(--cream);min-width:22px;text-align:center}
+.gs-euclid .row input[type=range]{flex:1;max-width:180px;accent-color:var(--sage);height:28px}
 .gs-euclid .preview{display:flex;gap:3px;margin:10px 0;flex-wrap:wrap}
 .gs-euclid .preview div{width:22px;height:22px;border-radius:4px;background:var(--cell);border:1px solid var(--border)}
 .gs-euclid .preview div.hit{background:var(--cell-on);border-color:var(--sage);box-shadow:0 0 6px rgba(122,179,86,.3)}
 .gs-euclid .preview div.acc{background:rgba(200,168,75,.85);border-color:var(--gold);box-shadow:0 0 6px rgba(200,168,75,.3)}
 .gs-euclid .presets{display:flex;gap:4px;flex-wrap:wrap;margin:8px 0}
-.gs-euclid .presets div{font-size:.5rem;padding:5px 8px;background:rgba(26,31,23,.8);border:1px solid var(--border);border-radius:6px;color:var(--cream);cursor:pointer;min-height:32px;display:flex;align-items:center}
+.gs-euclid .presets div{font-size:.65rem;padding:8px 12px;background:rgba(26,31,23,.8);border:1px solid var(--border);border-radius:6px;color:var(--cream);cursor:pointer;min-height:48px;display:flex;align-items:center;transition:all .15s}
+.gs-euclid .presets div:hover{border-color:rgba(122,179,86,.3);background:rgba(26,31,23,.95)}
 .gs-euclid .presets div:active{transform:scale(.95)}
 .gs-sampler{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(8,10,6,.97);z-index:100;overflow-y:auto;padding:12px}
 .gs-sampler.open{display:block}
@@ -133,7 +147,8 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
 .gs-sampler-head h2{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);letter-spacing:.08em}
 .gs-wave-canvas{width:100%;height:140px;background:rgba(16,20,14,.8);border-radius:6px;border:1px solid var(--border);cursor:col-resize;touch-action:none}
 .gs-sample-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.gs-sample-chip{font-size:.55rem;padding:6px 10px;border-radius:4px;border:1px solid var(--border);color:var(--cream);cursor:pointer;background:rgba(26,31,23,.6);font-family:'DM Mono',monospace;min-height:36px;display:flex;align-items:center;gap:4px}
+.gs-sample-chip{font-size:.7rem;padding:8px 12px;border-radius:6px;border:1px solid var(--border);color:var(--cream);cursor:pointer;background:rgba(26,31,23,.6);font-family:'DM Mono',monospace;min-height:48px;display:flex;align-items:center;gap:6px;transition:all .15s}
+.gs-sample-chip:hover{border-color:rgba(122,179,86,.3);background:rgba(26,31,23,.9)}
 .gs-sample-chip:active{transform:scale(.95)}
 .gs-sample-chip .del{color:var(--muted);margin-left:4px;font-size:.7rem}
 .gs-rec-btn{width:56px;height:56px;border-radius:50%;border:3px solid #c75050;background:rgba(199,80,80,.15);color:#c75050;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
@@ -143,15 +158,39 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
 .gs-trim-region{position:absolute;top:0;bottom:0;background:rgba(122,179,86,.2);border-left:3px solid var(--sage);border-right:3px solid var(--sage)}
 
 /* Footer */
-.gs-foot{padding:6px 12px;text-align:center;font-size:.45rem;color:var(--muted);border-top:1px solid rgba(74,124,53,.06)}
+.gs-foot{padding:8px 12px;text-align:center;font-size:.65rem;color:var(--muted);border-top:1px solid rgba(74,124,53,.06)}
+.gs-foot a:hover{color:var(--gold)}
 .gs-foot a{color:var(--sage);text-decoration:none}
+
+/* Toast feedback */
+.gs-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(26,31,23,.95);border:1.5px solid var(--sage);color:var(--cream);font-family:'DM Mono',monospace;font-size:.75rem;padding:10px 20px;border-radius:8px;z-index:200;opacity:0;transition:all .3s ease;pointer-events:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.gs-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Select styling */
+select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a9178'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:24px}
+
+/* Mobile breakpoints */
+@media(max-width:480px){
+  .gs-transport{gap:4px;padding:6px 8px}
+  .gs-btn{padding:8px 10px;font-size:clamp(.65rem,2vw,.8rem)}
+  .gs-bpm{flex-wrap:nowrap}
+  .gs-bpm input[type=range]{width:70px}
+  .gs-sections{gap:2px;padding:6px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .gs-sec{padding:6px 10px;font-size:clamp(.75rem,2.2vw,.9rem);white-space:nowrap}
+  .gs-layer-head{padding:8px 10px}
+  .gs-layer-name{font-size:.8rem}
+  .gs-arr{gap:4px;padding:8px}
+  .gs-circle{padding:10px}
+  .gs-sampler{padding:10px}
+  select.gs-btn{max-width:none!important}
+}
 </style>
 </head>
 <body>
 
 <div class="gs-head">
   <div class="gs-logo"><span>GROVE</span> STUDIO</div>
-  <div style="font-size:.5rem;color:var(--muted)">by Lucid Winds</div>
+  <div style="font-size:.65rem;color:var(--muted)">by Lucid Winds</div>
 </div>
 
 <div class="gs-transport" id="gs-transport">
@@ -162,13 +201,13 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
     <input type="range" min="40" max="240" value="120" oninput="GS.setBpm(this.value)">
     <strong id="gs-bpm">120</strong>
   </div>
-  <button class="gs-btn" onclick="GS.zoom(-1)" style="padding:6px 8px">−</button>
-  <button class="gs-btn" onclick="GS.zoom(1)" style="padding:6px 8px">+</button>
+  <button class="gs-btn" onclick="GS.zoom(-1)" style="padding:8px 12px;min-width:48px">−</button>
+  <button class="gs-btn" onclick="GS.zoom(1)" style="padding:8px 12px;min-width:48px">+</button>
   <button class="gs-btn on" id="gs-arr-mode" onclick="GS.toggleArrMode()">📋 Song</button>
   <button class="gs-btn" id="gs-loop" onclick="GS.toggleLoop()">🔁</button>
-  <select class="gs-btn" id="gs-root" onchange="GS.setRoot(this.value)" style="max-width:52px">
+  <select class="gs-btn" id="gs-root" onchange="GS.setRoot(this.value)" style="max-width:80px">
   </select>
-  <select class="gs-btn" id="gs-scale" onchange="GS.setScale(this.value)" style="max-width:150px">
+  <select class="gs-btn" id="gs-scale" onchange="GS.setScale(this.value)" style="max-width:200px">
   </select>
   <button class="gs-btn" onclick="GS.playScale()">🎵 Hear</button>
   <button class="gs-btn" id="gs-suggest-btn" onclick="GS.showSuggestions()">💡</button>
@@ -183,16 +222,16 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
     <input type="range" min="0" max="100" value="0" oninput="GS.setHumanize(this.value)">
     <strong id="gs-humanize">0%</strong>
   </div>
-  <select class="gs-btn" id="gs-groove" onchange="GS.setGroove(this.value)" style="max-width:90px;font-size:.55rem;padding:4px 6px">
+  <select class="gs-btn" id="gs-groove" onchange="GS.setGroove(this.value)" style="max-width:120px">
     <option value="none">Groove: Off</option>
   </select>
-  <select class="gs-btn" id="gs-steps" onchange="GS.setSteps(this.value)" style="max-width:70px">
+  <select class="gs-btn" id="gs-steps" onchange="GS.setSteps(this.value)" style="max-width:90px">
     <option value="16">16</option>
     <option value="32" selected>32</option>
     <option value="64">64</option>
   </select>
   <button class="gs-btn" onclick="GS.exportWAV()">⬇ Export</button>
-  <select class="gs-btn" id="gs-kit" onchange="GS.setKit(this.value)" style="max-width:90px">
+  <select class="gs-btn" id="gs-kit" onchange="GS.setKit(this.value)" style="max-width:120px">
     <option value="Standard">Standard</option><option value="808">808</option><option value="Lo-Fi">Lo-Fi</option><option value="Electronic">Electronic</option>
   </select>
   <button class="gs-btn" id="gs-metro" onclick="GS.toggleMetro()">🥁 Metro</button>
@@ -218,7 +257,7 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
 <div class="gs-circle" id="gs-circle">
   <div style="display:flex;align-items:center;justify-content:space-between">
     <h3>⊙ CIRCLE OF FIFTHS</h3>
-    <button class="gs-btn" onclick="GS.closeCircle()" style="padding:6px 12px;min-height:36px">✕</button>
+    <button class="gs-btn" onclick="GS.closeCircle()" style="padding:8px 14px;min-height:48px">✕</button>
   </div>
   <div class="nav">
     <button onclick="GS.circleNav(-1)">◀</button>
@@ -235,13 +274,13 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
 <div class="gs-euclid" id="gs-euclid">
   <div style="display:flex;align-items:center;justify-content:space-between">
     <h3>◉ RHYTHM GENERATOR</h3>
-    <button class="gs-btn" onclick="GS.closeEuclid()" style="padding:6px 12px;min-height:36px">✕</button>
+    <button class="gs-btn" onclick="GS.closeEuclid()" style="padding:8px 14px;min-height:48px">✕</button>
   </div>
   <div class="row">
     <label>Layer</label>
-    <select class="gs-btn" id="gs-euc-layer" onchange="GS.eucUpdate()" style="font-size:.55rem;padding:4px 8px;min-height:36px;max-width:100px"></select>
+    <select class="gs-btn" id="gs-euc-layer" onchange="GS.eucUpdate()" style="font-size:.7rem;padding:8px 10px;min-height:48px;max-width:120px"></select>
     <label>Row</label>
-    <select class="gs-btn" id="gs-euc-row" onchange="GS.eucUpdate()" style="font-size:.55rem;padding:4px 8px;min-height:36px;max-width:80px"></select>
+    <select class="gs-btn" id="gs-euc-row" onchange="GS.eucUpdate()" style="font-size:.7rem;padding:8px 10px;min-height:48px;max-width:100px"></select>
   </div>
   <div class="row">
     <label>Hits</label>
@@ -259,7 +298,7 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
     <strong id="gs-euc-rot-v">0</strong>
   </div>
   <div class="preview" id="gs-euc-preview"></div>
-  <div style="font-size:.5rem;color:var(--muted);margin-bottom:6px" id="gs-euc-name"></div>
+  <div style="font-size:.65rem;color:var(--muted);margin-bottom:6px" id="gs-euc-name"></div>
   <div class="presets" id="gs-euc-presets"></div>
   <div style="display:flex;gap:6px;margin-top:8px">
     <button class="gs-btn" onclick="GS.eucApply()" style="flex:1;border-color:var(--sage);color:var(--sage)">Apply to Grid</button>
@@ -274,14 +313,14 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
   <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
     <button class="gs-rec-btn" id="gs-rec-btn" onclick="GS.toggleRecord()">⏺</button>
     <div>
-      <div style="font-size:.6rem;color:var(--cream)">Tap to record (3s max)</div>
-      <div style="font-size:.45rem;color:var(--muted)" id="gs-rec-status">Ready</div>
-      <div style="font-size:.4rem;color:var(--muted);margin-top:2px">Samples kept under 3s for copyright safety</div>
+      <div style="font-size:.75rem;color:var(--cream)">Tap to record (3s max)</div>
+      <div style="font-size:.65rem;color:var(--muted)" id="gs-rec-status">Ready</div>
+      <div style="font-size:.6rem;color:var(--muted);margin-top:2px">Samples kept under 3s for copyright safety</div>
     </div>
     <button class="gs-btn" onclick="GS.importSample()" style="margin-left:auto">📂 File</button>
   </div>
   <canvas class="gs-wave-canvas" id="gs-wave-canvas" width="400" height="140"></canvas>
-  <div style="display:flex;justify-content:space-between;padding:2px 4px;font-size:.45rem;color:var(--muted);font-family:DM Mono,monospace">
+  <div style="display:flex;justify-content:space-between;padding:2px 4px;font-size:.65rem;color:var(--muted);font-family:DM Mono,monospace">
     <span id="gs-trim-start-label">0.00s</span>
     <span>← drag edges to trim →</span>
     <span id="gs-trim-end-label">0.00s</span>
@@ -295,7 +334,7 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
     <button class="gs-btn" onclick="GS.sampleNormalize()">📊 Normalize</button>
     <button class="gs-btn" onclick="GS.sampleSave()">💾 Save to Kit</button>
   </div>
-  <div style="font-size:.6rem;color:var(--gold);font-family:'Bebas Neue',sans-serif;margin-top:8px;letter-spacing:.06em">YOUR SAMPLES</div>
+  <div style="font-size:.75rem;color:var(--gold);font-family:'Bebas Neue',sans-serif;margin-top:8px;letter-spacing:.06em">YOUR SAMPLES</div>
   <div class="gs-sample-list" id="gs-sample-list"></div>
 </div>
 
@@ -307,6 +346,17 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
 // ═══ GROVE STUDIO — DAW Lite ═══
 var GS = (function(){
   'use strict';
+
+  // ── Toast feedback ──
+  var _toastTimer = null;
+  function _toast(msg){
+    var el = document.getElementById('gs-toast');
+    if(!el){el=document.createElement('div');el.id='gs-toast';el.className='gs-toast';document.body.appendChild(el);}
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(function(){el.classList.remove('show');}, 1800);
+  }
 
   // ── Audio Context + Routing ──
   var ctx = null;
@@ -691,7 +741,7 @@ var GS = (function(){
           buffer = trimBuf;
         }
         if(callback) callback(buffer);
-      }, function(){alert('Could not decode audio');});
+      }, function(){_toast('Could not decode audio');});
     };
     reader.readAsArrayBuffer(file);
   }
@@ -1830,13 +1880,13 @@ var GS = (function(){
         layers:LAYER_TYPES.map(function(l){return {id:l.id,octave:l.octave}})};
       try{
         localStorage.setItem('gs_song', JSON.stringify(data));
-        alert('Song saved!');
-      }catch(e){alert('Save failed: '+e.message);}
+        _toast('Song saved!');
+      }catch(e){_toast('Save failed: '+e.message);}
     },
     load: function(){
       try{
         var raw = localStorage.getItem('gs_song');
-        if(!raw){alert('No saved song found');return;}
+        if(!raw){_toast('No saved song found');return;}
         var data = JSON.parse(raw);
         song = data.song;
         bpm = data.bpm || 120;
@@ -1848,8 +1898,8 @@ var GS = (function(){
         stop();
         renderScaleSelectors();
         renderAll();
-        alert('Song loaded!');
-      }catch(e){alert('Load failed: '+e.message);}
+        _toast('Song loaded!');
+      }catch(e){_toast('Load failed: '+e.message);}
     },
     clearSection: function(){
       if(!confirm('Clear all layers in '+currentSection+(currentVar+1)+'?')) return;
@@ -1995,10 +2045,10 @@ var GS = (function(){
       for(var lid in v){
         GS._clipboard[lid] = {grid:v[lid].grid.slice(), mute:v[lid].mute, solo:v[lid].solo, vol:v[lid].vol};
       }
-      alert('Copied ' + currentSection + (currentVar+1));
+      _toast('Copied ' + currentSection + (currentVar+1));
     },
     pasteSection: function(){
-      if(!GS._clipboard){alert('Nothing copied');return;}
+      if(!GS._clipboard){_toast('Nothing copied');return;}
       if(!confirm('Paste over ' + currentSection + (currentVar+1) + '?')) return;
       var v = getCurrentVar(); if(!v) return;
       for(var lid in GS._clipboard){
@@ -2010,7 +2060,7 @@ var GS = (function(){
       renderLayers();
     },
     exportWAV: function(){
-      alert('Rendering audio...');
+      _toast('Rendering audio...');
       try{
         var sampleRate = 44100;
         var stepDur = 60 / bpm / 4;
@@ -2090,9 +2140,9 @@ var GS = (function(){
           var a = document.createElement('a');
           a.href = url; a.download = 'grove-studio-export.wav';
           a.click(); URL.revokeObjectURL(url);
-          alert('Exported!');
+          _toast('Exported!');
         });
-      }catch(e){alert('Export error: '+e.message);}
+      }catch(e){_toast('Export error: '+e.message);}
     },
     setFX: function(lid, param, val){
       var v = getCurrentVar(); if(!v||!v[lid]) return;
@@ -2195,7 +2245,7 @@ var GS = (function(){
         // Auto-stop at max length
         setTimeout(function(){if(_isRecording)GS.toggleRecord()}, MAX_SAMPLE_SEC * 1000);
       }).catch(function(err){
-        alert('Mic access denied: '+err.message);
+        _toast('Mic access denied: '+err.message);
         document.getElementById('gs-rec-status').textContent = 'Mic denied';
       });
     },
@@ -2287,17 +2337,17 @@ var GS = (function(){
       document.getElementById('gs-rec-status').textContent = 'Editing: '+name+' ('+_editBuffer.duration.toFixed(2)+'s)';
     },
     addDrumSample: function(){
-      if(extraDrumRows.length >= MAX_EXTRA_DRUMS){alert('Max '+MAX_EXTRA_DRUMS+' sample pads');return}
+      if(extraDrumRows.length >= MAX_EXTRA_DRUMS){_toast('Max '+MAX_EXTRA_DRUMS+' sample pads');return}
       // Pick from saved samples
       var names = Object.keys(sampleBuffers);
-      if(!names.length){alert('Save a sample first (🎤 Sampler)');return}
+      if(!names.length){_toast('Save a sample first (🎤 Sampler)');return}
       var pick = prompt('Pick a sample:\n'+names.map(function(n,i){return (i+1)+'. '+n}).join('\n')+'\n\nEnter number or name:');
       if(!pick) return;
       var sName = null;
       var idx = parseInt(pick);
       if(idx >= 1 && idx <= names.length) sName = names[idx-1];
       else{for(var i=0;i<names.length;i++){if(names[i].toLowerCase()===pick.toLowerCase()){sName=names[i];break}}}
-      if(!sName){alert('Sample not found');return}
+      if(!sName){_toast('Sample not found');return}
       extraDrumRows.push({name:sName, sampleName:sName});
       // Extend drum grids in all sections
       var keys=['A','B','C'];
