@@ -28717,7 +28717,15 @@ document.addEventListener('keydown', function(e) {
     nur[idx].pot = potId;
     inv.pots[potId] = inv.pots[potId] - 1;
     inv.lastUpdated = new Date().toISOString();
-    try { _throttledSave('sws_nursery', JSON.stringify(nur), true); } catch(e) {}
+    // Direct write — NOT _throttledSave — so the pot assignment is visible
+    // to any subsequent _loadNursery/addSeed call in the same tick. Using
+    // throttled save caused a race where a new seed could read stale nursery
+    // data and inherit the pot from a sibling.
+    try {
+      var _nurStr = JSON.stringify(nur);
+      if (window._secureSet) window._secureSet('sws_nursery', nur);
+      else localStorage.setItem('sws_nursery', _nurStr);
+    } catch(e) {}
     saveInventory(inv, true);
     if (window._toast) window._toast(pot.icon + ' ' + pot.name + ' applied to seed.');
     if (window._haptic) window._haptic('bloom');
