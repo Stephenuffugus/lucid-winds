@@ -4203,7 +4203,7 @@
     #kb-sunbeams .kb-val,#kb-dew .kb-val{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--cream);text-shadow:0 1px 4px rgba(0,0,0,0.9),0 0 8px rgba(0,0,0,0.7);z-index:2;pointer-events:none;}
     #kb-dew .kb-icon{font-size:1.15rem;filter:drop-shadow(0 0 4px rgba(91,175,220,0.4));}
     /* Book positioning handled inline on element so nothing overrides it */
-    body.tab-wild #kb-compendium{top:calc(env(safe-area-inset-top,0px) + 160px)!important;right:10px!important;width:72px!important;height:100px!important;}
+    body.tab-wild #kb-compendium{top:calc(env(safe-area-inset-top,0px) + 90px)!important;right:10px!important;width:72px!important;height:100px!important;}
     #kb-compendium:active{transform:scale(0.92);}
     #kb-compendium #kb-comp-count{position:absolute;top:-4px;left:-4px;min-width:22px;height:22px;padding:0 5px;border-radius:11px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.55rem;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.5);}
     #kb-compendium.has-entries{display:flex;}
@@ -4255,7 +4255,7 @@
 /* ═══ BACKPACK ═══ */
 /* Backpack: greenhouse/nursery — 96x96 (top:65, right:10) */
 #bpi{position:fixed;top:calc(env(safe-area-inset-top,0px) + 58px);right:10px;z-index:998;width:96px;height:96px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat}
-body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 275px)!important;right:10px!important;width:78px!important;height:78px!important;}
+body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 205px)!important;right:10px!important;width:78px!important;height:78px!important;}
 #bpi:active{transform:scale(0.88);}
 #bpb{position:absolute;top:-4px;left:-4px;min-width:20px;height:20px;border-radius:10px;background:var(--gold);color:var(--black);font-family:'Bebas Neue',sans-serif;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,0.4);transition:all 0.25s ease;}
 #bpb.e{opacity:0;transform:scale(0.5);}
@@ -4376,7 +4376,7 @@ body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 275px)!important;righ
 /* ═══ WILD TAB v2 — Premium Redesign ═══ */
 
 /* ── Wild Log Bar (top navigation) ── */
-.wild-log{position:fixed;top:0;left:0;right:0;padding:8px;padding-top:calc(8px + env(safe-area-inset-top,0px));padding-right:calc(8px + 140px);background:linear-gradient(180deg,rgba(20,16,10,0.96),rgba(13,10,6,0.95));border-bottom:2px solid rgba(200,168,75,0.15);z-index:460;box-shadow:0 8px 32px rgba(0,0,0,0.7);display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto;gap:6px;}
+.wild-log{position:fixed;top:0;left:0;right:0;padding:8px;padding-top:calc(8px + env(safe-area-inset-top,0px));background:linear-gradient(180deg,rgba(20,16,10,0.96),rgba(13,10,6,0.95));border-bottom:2px solid rgba(200,168,75,0.15);z-index:460;box-shadow:0 8px 32px rgba(0,0,0,0.7);display:grid;grid-template-columns:1fr 1fr 1fr 90px;grid-template-rows:auto auto;grid-template-areas:'s1 s2 s3 cp' 's4 s5 s6 cp';gap:6px;}
 .wild-log-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(5,6,4,0.75);padding:6px 4px;border-radius:8px;border:1px solid rgba(200,168,75,0.12);min-height:52px;cursor:pointer;transition:all 0.15s;}
 .wild-log-stat:nth-child(1){grid-area:s1;}
 .wild-log-stat:nth-child(2){grid-area:s2;}
@@ -4384,14 +4384,10 @@ body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 275px)!important;righ
 .wild-log-stat:nth-child(4){grid-area:s4;}
 .wild-log-stat:nth-child(5){grid-area:s5;}
 .wild-log-stat:nth-child(6){grid-area:s6;}
-.wild-log-wind{position:absolute;top:calc(env(safe-area-inset-top,0px) + 4px);right:6px;width:150px;height:150px;display:flex;align-items:center;justify-content:center;}
-.wild-log-wind img{width:150px!important;height:150px!important;filter:drop-shadow(0 3px 12px rgba(200,168,75,0.5))!important;}
-.wild-log-wind span{position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--gold);white-space:nowrap;text-shadow:0 1px 4px rgba(0,0,0,1);background:rgba(13,10,6,0.8);padding:2px 8px;border-radius:8px;}
 .wild-log-stat:active{background:rgba(18,22,16,0.85);border-color:rgba(200,168,75,0.3);}
 .wild-log-val{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;color:var(--cream);line-height:1;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,.6)}
 .wild-log-lbl{font-family:'DM Mono',monospace;font-size:0.55rem;color:rgba(200,168,75,0.7);letter-spacing:0.08em;text-transform:uppercase;margin-top:1px;}
-.wild-log-wind{width:80px;height:80px;display:flex;align-items:center;justify-content:center;position:relative;}
-.wild-log-wind img{width:72px!important;height:72px!important;filter:drop-shadow(0 2px 8px rgba(200,168,75,0.3))!important;}
+.wild-log-wind{grid-area:cp;align-self:center;justify-self:center;position:relative;}
 .wild-log-wind span{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--gold);white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1);}
 
 /* ── Trait Panel v2 (bottom sheet) ── */
@@ -5294,7 +5290,7 @@ window.onerror=function(msg,url,line,col,err){
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Keeper XP \u2014 your lifetime experience. Pollen is the energy that grows your rank. Every kind act, wild drop, and bloom contributes.')"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl">xp</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Meters walked. Keep moving to find feral seeds!')"><div class="wild-log-val" style="color:var(--sage)" id="w-steps">0</div><div class="wild-log-lbl">meters</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Your biome — detected from real geography. Affects feral rarity and mutations.')"><div class="wild-log-val" style="font-size:0.7rem;" id="w-biome">🏡</div><div class="wild-log-lbl" id="w-biome-name">scanning</div></div>
-      <div class="wild-log-wind" id="w-wind"><img src="assets/games/wild/wild-compass-v4.png?v=2" alt=""><span></span></div>
+      <div class="wild-log-wind" id="w-wind"><img src="assets/games/wild/wild-compass-v4.png" loading="lazy" style="width:44px;height:44px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));" alt=""><span></span></div>
     </div>
     <!-- TERRITORY OVERVIEW (tap planted count to expand) -->
     <div id="w-territory" style="display:none;position:fixed;top:60px;left:8px;right:8px;z-index:998;background:rgba(13,16,12,0.94);border:1px solid rgba(122,179,86,0.12);border-radius:10px;padding:0.5rem;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:panelFadeIn 0.2s ease;max-width:360px;margin:0 auto;">
