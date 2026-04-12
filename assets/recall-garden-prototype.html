@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Recall Garden — Petal Walk</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#0d100c;color:#E8DCC8;font-family:'Crimson Text',Georgia,serif;touch-action:manipulation}
+#app{display:flex;flex-direction:column;height:100%;max-width:420px;margin:0 auto;align-items:center}
+.top-bar{width:100%;display:flex;justify-content:space-between;align-items:center;padding:8px 14px;flex-shrink:0}
+.hud-box{font-family:'Bebas Neue',sans-serif;text-align:center;color:#E8DCC8}
+.hud-box .label{font-size:.5rem;opacity:.4;color:#4A7C35;letter-spacing:1px}
+.hud-box .val{font-size:1.1rem}
+.exercise-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;padding:12px}
+.phase-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:#4A7C35;letter-spacing:2px;margin-bottom:4px}
+.phase-desc{font-size:.75rem;opacity:.5;margin-bottom:12px;font-style:italic;text-align:center}
+.card-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:340px}
+.mem-card{width:72px;height:72px;border-radius:10px;background:rgba(26,36,22,0.5);border:2px solid rgba(74,124,53,0.2);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;font-size:1.8rem}
+.mem-card:active{transform:scale(0.95)}
+.mem-card .card-label{font-family:'Bebas Neue',sans-serif;font-size:.5rem;letter-spacing:1px;opacity:.5;margin-top:2px}
+.mem-card.selected{border-color:#4A7C35;background:rgba(74,124,53,0.15);box-shadow:0 0 10px rgba(74,124,53,0.2)}
+.mem-card.correct{border-color:#4A7C35;background:rgba(74,124,53,0.2)}
+.mem-card.wrong{border-color:#C47A7A;background:rgba(196,122,122,0.15)}
+.mem-card.target{border-color:#D4A843;background:rgba(212,168,67,0.1)}
+.distraction-area{text-align:center;padding:20px}
+.distraction-area .countdown{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#D4A843}
+.distraction-task{font-size:.85rem;margin:8px 0}
+.msg{font-family:'Bebas Neue',sans-serif;font-size:.9rem;min-height:24px;text-align:center;letter-spacing:1px;margin:8px 0}
+.msg.good{color:#4A7C35}.msg.bad{color:#C47A7A}
+.result-card{background:rgba(26,36,22,0.4);border:1px solid rgba(74,124,53,0.2);border-radius:10px;padding:16px;text-align:center;max-width:280px}
+.result-score{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:#D4A843}
+.progress-dots{display:flex;gap:6px;justify-content:center;padding:6px;flex-shrink:0}
+.pdot{width:10px;height:10px;border-radius:50%;border:1.5px solid rgba(74,124,53,0.3)}
+.pdot.done{background:#4A7C35;border-color:#4A7C35}
+.pdot.active{border-color:#D4A843}
+#start-overlay{position:fixed;inset:0;background:rgba(13,16,12,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;padding:20px}
+#start-overlay.hidden{display:none}
+#start-overlay h1{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#4A7C35;letter-spacing:4px;margin-bottom:4px}
+#start-overlay .sub{font-style:italic;opacity:.6;margin-bottom:8px;font-size:.85rem}
+#start-overlay .desc{font-size:.7rem;opacity:.4;max-width:280px;text-align:center;line-height:1.5;margin-bottom:20px}
+.start-btn{background:rgba(26,36,22,0.8);border:1.5px solid #4A7C35;color:#E8DCC8;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;padding:14px 36px;border-radius:10px;cursor:pointer}
+.start-btn:active{background:rgba(74,124,53,0.3)}
+</style>
+</head>
+<body>
+<div id="start-overlay">
+  <h1>RECALL GARDEN</h1>
+  <div class="sub">Visual memory training</div>
+  <div class="desc">See botanical symbols. Wait. Then recall which ones you saw. This is the same type of exercise neuropsychologists use in cognitive assessments. Progressive difficulty builds your working memory.</div>
+  <button class="start-btn" onclick="beginSession()">🧠 BEGIN</button>
+</div>
+<div id="app" style="display:none">
+  <div class="top-bar">
+    <div class="hud-box"><div class="label">ROUND</div><div class="val" id="h-round">1</div></div>
+    <div class="hud-box"><div class="label">SCORE</div><div class="val" id="h-score">0</div></div>
+    <div class="hud-box"><div class="label">LEVEL</div><div class="val" id="h-level">1</div></div>
+  </div>
+  <div class="exercise-area" id="exercise-area"></div>
+  <div class="progress-dots" id="dots"></div>
+</div>
+<script>
+(function(){
+'use strict';
+
+// Botanical symbols (emoji + label)
+var SYMBOLS=[
+  {emoji:'🌿',name:'Fern'},{emoji:'🌸',name:'Bloom'},{emoji:'🌻',name:'Sun'},
+  {emoji:'🍄',name:'Spore'},{emoji:'🌲',name:'Pine'},{emoji:'🌾',name:'Grain'},
+  {emoji:'🍀',name:'Clover'},{emoji:'🌵',name:'Cactus'},{emoji:'🌴',name:'Palm'},
+  {emoji:'🍂',name:'Leaf'},{emoji:'🌺',name:'Hibiscus'},{emoji:'💐',name:'Bouquet'},
+  {emoji:'🌹',name:'Rose'},{emoji:'🌷',name:'Tulip'},{emoji:'🪻',name:'Lavender'},
+  {emoji:'🫐',name:'Berry'},{emoji:'🍇',name:'Grape'},{emoji:'🥕',name:'Root'},
+  {emoji:'🌽',name:'Corn'},{emoji:'🍎',name:'Apple'}
+];
+
+var round=0,score=0,level=1,totalRounds=8;
+var targetCount,distractorCount,showTime,waitTime;
+var targets=[],allChoices=[];
+var selected={};
+var phase=''; // show, wait, recall, result
+
+function configLevel(){
+  if(level<=2){targetCount=3;distractorCount=3;showTime=8000;waitTime=5000;}
+  else if(level<=4){targetCount=4;distractorCount=4;showTime=7000;waitTime=6000;}
+  else if(level<=6){targetCount=5;distractorCount=5;showTime=6000;waitTime=7000;}
+  else{targetCount=6;distractorCount=6;showTime=5000;waitTime=8000;}
+}
+
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+
+function startRound(){
+  round++;
+  configLevel();
+  selected={};
+
+  // Pick targets
+  var pool=shuffle(SYMBOLS.slice());
+  targets=pool.slice(0,targetCount);
+  var distractors=pool.slice(targetCount,targetCount+distractorCount);
+  allChoices=shuffle(targets.concat(distractors));
+
+  updateDots();
+  document.getElementById('h-round').textContent=round;
+  document.getElementById('h-level').textContent=level;
+
+  // Phase 1: Show targets
+  phase='show';
+  var area=document.getElementById('exercise-area');
+  area.innerHTML='<div class="phase-title">MEMORIZE</div>'+
+    '<div class="phase-desc">Remember these '+targetCount+' symbols</div>'+
+    '<div class="card-grid" id="show-grid"></div>'+
+    '<div class="msg" id="show-timer"></div>';
+
+  var grid=document.getElementById('show-grid');
+  var html='';
+  for(var i=0;i<targets.length;i++){
+    html+='<div class="mem-card target"><span>'+targets[i].emoji+'</span><div class="card-label">'+targets[i].name+'</div></div>';
+  }
+  grid.innerHTML=html;
+
+  // Countdown
+  var remaining=showTime/1000;
+  var timer=document.getElementById('show-timer');
+  timer.textContent=remaining+'s';
+  var countInterval=setInterval(function(){
+    remaining--;
+    if(timer)timer.textContent=Math.max(0,remaining)+'s';
+    if(remaining<=0)clearInterval(countInterval);
+  },1000);
+
+  // Phase 2: Distraction after showTime
+  setTimeout(function(){
+    clearInterval(countInterval);
+    startDistraction();
+  },showTime);
+}
+
+function startDistraction(){
+  phase='wait';
+  var area=document.getElementById('exercise-area');
+
+  // Simple distraction: count backwards from a random number
+  var startNum=50+Math.floor(Math.random()*50);
+  area.innerHTML='<div class="distraction-area">'+
+    '<div class="phase-title">WAIT</div>'+
+    '<div class="distraction-task">Count backwards from '+startNum+' by 3s in your head...</div>'+
+    '<div class="countdown" id="wait-countdown"></div></div>';
+
+  var remaining=waitTime/1000;
+  var cd=document.getElementById('wait-countdown');
+  cd.textContent=remaining;
+  var ti=setInterval(function(){
+    remaining--;
+    if(cd)cd.textContent=Math.max(0,remaining);
+    if(remaining<=0){clearInterval(ti);startRecall();}
+  },1000);
+}
+
+function startRecall(){
+  phase='recall';
+  var area=document.getElementById('exercise-area');
+  area.innerHTML='<div class="phase-title">RECALL</div>'+
+    '<div class="phase-desc">Tap the '+targetCount+' symbols you memorized</div>'+
+    '<div class="card-grid" id="recall-grid"></div>'+
+    '<div class="msg" id="recall-msg">0/'+targetCount+' selected</div>';
+
+  var grid=document.getElementById('recall-grid');
+  var html='';
+  for(var i=0;i<allChoices.length;i++){
+    html+='<div class="mem-card" data-idx="'+i+'" onclick="recallTap('+i+')">'+
+      '<span>'+allChoices[i].emoji+'</span><div class="card-label">'+allChoices[i].name+'</div></div>';
+  }
+  grid.innerHTML=html;
+}
+
+window.recallTap=function(idx){
+  if(phase!=='recall')return;
+  if(selected[idx]){
+    delete selected[idx];
+  } else {
+    if(Object.keys(selected).length>=targetCount)return;
+    selected[idx]=true;
+  }
+
+  // Update visual
+  var cards=document.querySelectorAll('#recall-grid .mem-card');
+  for(var i=0;i<cards.length;i++){
+    cards[i].classList.toggle('selected',!!selected[parseInt(cards[i].getAttribute('data-idx'))]);
+  }
+  document.getElementById('recall-msg').textContent=Object.keys(selected).length+'/'+targetCount+' selected';
+
+  // Auto-submit when enough selected
+  if(Object.keys(selected).length>=targetCount){
+    setTimeout(evaluateRecall,300);
+  }
+};
+
+function evaluateRecall(){
+  phase='result';
+  var correctCount=0;
+  var targetNames={};
+  for(var i=0;i<targets.length;i++)targetNames[targets[i].name]=true;
+
+  for(var key in selected){
+    var idx=parseInt(key);
+    if(targetNames[allChoices[idx].name])correctCount++;
+  }
+
+  // Visual feedback
+  var cards=document.querySelectorAll('#recall-grid .mem-card');
+  for(i=0;i<cards.length;i++){
+    var cardIdx=parseInt(cards[i].getAttribute('data-idx'));
+    var isTarget=targetNames[allChoices[cardIdx].name];
+    var wasSelected=!!selected[cardIdx];
+    if(wasSelected&&isTarget)cards[i].className='mem-card correct';
+    else if(wasSelected&&!isTarget)cards[i].className='mem-card wrong';
+    else if(!wasSelected&&isTarget)cards[i].className='mem-card target';
+  }
+
+  var pts=Math.round(correctCount/targetCount*100);
+  score+=pts;
+  document.getElementById('h-score').textContent=score;
+
+  var msg=document.getElementById('recall-msg');
+  msg.textContent=correctCount+'/'+targetCount+' correct!';
+  msg.className='msg '+(correctCount>=targetCount-1?'good':'bad');
+
+  // Level up if perfect
+  if(correctCount===targetCount&&level<8)level++;
+
+  try{navigator.vibrate&&navigator.vibrate(correctCount===targetCount?[10,20,10]:10);}catch(e){}
+  if(typeof window._e==='function'&&correctCount>=targetCount-1)window._e('milestone');
+
+  updateDots();
+
+  setTimeout(function(){
+    if(round>=totalRounds){showFinalResults();}
+    else{startRound();}
+  },2000);
+}
+
+function showFinalResults(){
+  var avg=Math.round(score/totalRounds);
+  var area=document.getElementById('exercise-area');
+  area.innerHTML='<div class="result-card">'+
+    '<div style="font-family:Bebas Neue,sans-serif;font-size:.7rem;color:#4A7C35;letter-spacing:2px;margin-bottom:4px">YOUR RECALL SCORE</div>'+
+    '<div class="result-score">'+avg+'%</div>'+
+    '<div style="font-size:.75rem;margin:8px 0;opacity:.5">'+totalRounds+' rounds · Level '+level+' reached</div>'+
+    '<div style="font-size:.7rem;opacity:.4;margin-top:8px">'+
+    (avg>=90?'Exceptional memory!':avg>=70?'Strong recall.':avg>=50?'Good effort — keep practicing.':'Keep at it — daily practice builds memory.')+
+    '</div></div>'+
+    '<button class="start-btn" onclick="restartSession()" style="margin-top:12px;font-size:.8rem;padding:8px 20px">🧠 AGAIN</button>';
+
+  if(typeof window._sr==='function')window._sr('recallgarden',{w:avg>=70,s:avg,lv:level,r:totalRounds});
+
+  try{
+    var h=JSON.parse(localStorage.getItem('recall_history')||'[]');
+    h.push({date:new Date().toISOString().split('T')[0],score:avg,level:level});
+    if(h.length>90)h=h.slice(-90);
+    localStorage.setItem('recall_history',JSON.stringify(h));
+  }catch(e){}
+}
+
+function updateDots(){
+  var el=document.getElementById('dots');
+  var html='';
+  for(var i=0;i<totalRounds;i++){
+    html+='<div class="pdot'+(i<round?' done':'')+(i===round-1?' active':'')+'"></div>';
+  }
+  el.innerHTML=html;
+}
+
+window.beginSession=function(){
+  document.getElementById('start-overlay').classList.add('hidden');
+  document.getElementById('app').style.display='flex';
+  round=0;score=0;level=1;
+  document.getElementById('h-score').textContent='0';
+  startRound();
+};
+
+window.restartSession=function(){
+  round=0;score=0;level=1;
+  document.getElementById('h-score').textContent='0';
+  startRound();
+};
+
+})();
+</script>
+</body>
+</html>

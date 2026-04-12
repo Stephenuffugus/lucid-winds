@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Rhythm Vine — Petal Walk</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#0d100c;touch-action:none;user-select:none}
+#app{display:flex;flex-direction:column;height:100%;max-width:420px;margin:0 auto;align-items:center}
+.top-bar{display:flex;justify-content:space-between;align-items:center;width:100%;padding:8px 14px;flex-shrink:0}
+.hud-box{font-family:'Bebas Neue',sans-serif;text-align:center;color:#E8DCC8}
+.hud-box .label{font-size:.5rem;opacity:.4;color:#4A7C35;letter-spacing:1px}
+.hud-box .val{font-size:1.1rem}
+canvas{display:block;flex:1;width:100%}
+.tap-zone{width:100%;padding:20px;flex-shrink:0;display:flex;justify-content:center}
+.tap-circle{width:120px;height:120px;border-radius:50%;background:rgba(26,36,22,0.6);border:3px solid rgba(74,124,53,0.3);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:#4A7C35;letter-spacing:2px;cursor:pointer;transition:all .08s;user-select:none}
+.tap-circle:active{background:rgba(74,124,53,0.3);border-color:#4A7C35;transform:scale(0.95)}
+.tap-circle.hit{background:rgba(74,124,53,0.4);border-color:#4A7C35;box-shadow:0 0 20px rgba(74,124,53,0.3)}
+.tap-circle.miss{background:rgba(196,122,122,0.2);border-color:#C47A7A}
+.msg-area{text-align:center;padding:2px 10px;min-height:20px;flex-shrink:0;font-family:'Bebas Neue',sans-serif;font-size:.85rem;letter-spacing:1px}
+.msg-area.perfect{color:#4A7C35}.msg-area.good{color:#D4A843}.msg-area.miss{color:#C47A7A}
+.ctrl-bar{display:flex;gap:8px;justify-content:center;padding:6px;flex-shrink:0}
+.ctrl-btn{background:rgba(26,36,22,0.7);border:1px solid rgba(74,124,53,0.3);color:#E8DCC8;padding:7px 14px;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:.65rem;letter-spacing:1px;cursor:pointer}
+.ctrl-btn:active{background:rgba(74,124,53,0.3)}
+.ctrl-btn.active{border-color:#4A7C35;color:#4A7C35}
+#start-overlay{position:fixed;inset:0;background:rgba(13,16,12,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50}
+#start-overlay.hidden{display:none}
+#start-overlay h1{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#4A7C35;letter-spacing:4px;margin-bottom:4px}
+#start-overlay .sub{font-family:'Crimson Text',serif;font-style:italic;color:#E8DCC8;opacity:.6;margin-bottom:24px;font-size:.85rem}
+.start-btn{background:rgba(26,36,22,0.8);border:1.5px solid #4A7C35;color:#E8DCC8;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;padding:14px 36px;border-radius:10px;cursor:pointer}
+.start-btn:active{background:rgba(74,124,53,0.3);transform:scale(0.95)}
+</style>
+</head>
+<body>
+<div id="start-overlay">
+  <h1>RHYTHM VINE</h1>
+  <div class="sub">Tap to the beat — train your rhythm brain</div>
+  <button class="start-btn" onclick="beginGame()">🎵 START</button>
+</div>
+<div id="app" style="display:none">
+  <div class="top-bar">
+    <div class="hud-box"><div class="label">SCORE</div><div class="val" id="h-score">0</div></div>
+    <div class="hud-box"><div class="label">STREAK</div><div class="val" id="h-streak">0</div></div>
+    <div class="hud-box"><div class="label">LEVEL</div><div class="val" id="h-level">1</div></div>
+    <div class="hud-box"><div class="label">BPM</div><div class="val" id="h-bpm">90</div></div>
+  </div>
+  <canvas id="c"></canvas>
+  <div class="msg-area" id="msg"></div>
+  <div class="tap-zone">
+    <div class="tap-circle" id="tap-circle" ontouchstart="tap(event)" onmousedown="tap(event)">TAP</div>
+  </div>
+  <div class="ctrl-bar">
+    <div class="ctrl-btn" onclick="adjustBPM(-10)">BPM −</div>
+    <div class="ctrl-btn" onclick="adjustBPM(10)">BPM +</div>
+    <div class="ctrl-btn" onclick="togglePlay()" id="btn-play">⏸ PAUSE</div>
+  </div>
+</div>
+<script>
+(function(){
+'use strict';
+
+var canvas,ctx,W,H,dpr;
+var bpm=90,beatInterval;
+var score=0,streak=0,bestStreak=0,level=1,combo=0;
+var playing=false;
+var audioCtx=null,masterGain=null;
+
+// Beat tracking
+var beats=[];  // upcoming beats with timestamps
+var nextBeatTime=0;
+var beatCount=0;
+var lastTapTime=0;
+var missCount=0;
+
+// Visual
+var vineLength=0;
+var hitFlash=0;
+var particles=[];
+var noteTrail=[]; // falling note indicators
+
+// Beat patterns per level (1=tap, 0=rest, within a 4-beat bar)
+var PATTERNS=[
+  [1,0,1,0],           // L1: half notes
+  [1,0,1,0,1,0,1,0],   // L2: quarter notes
+  [1,1,1,1],            // L3: all quarters
+  [1,0,1,1,1,0,1,1],   // L4: syncopation intro
+  [1,1,0,1,1,0,1,1],   // L5: more syncopation
+  [1,0,1,0,1,1,0,1],   // L6: offbeats
+  [1,1,1,0,1,1,1,0],   // L7: dotted feel
+  [1,0,1,1,0,1,1,0],   // L8: complex
+  [1,1,0,1,0,1,1,0],   // L9: harder
+  [1,1,1,1,0,1,1,1]    // L10: intense
+];
+
+function resize(){
+  dpr=window.devicePixelRatio||1;
+  var rect=canvas.getBoundingClientRect();
+  W=rect.width;H=rect.height;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+
+// ─── AUDIO ───────────────────────────────────────────────
+function initAudio(){
+  audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  masterGain=audioCtx.createGain();masterGain.gain.value=0.3;
+  masterGain.connect(audioCtx.destination);
+}
+
+function playClick(time,accent){
+  var osc=audioCtx.createOscillator();
+  osc.type='sine';osc.frequency.value=accent?880:660;
+  var g=audioCtx.createGain();
+  g.gain.setValueAtTime(accent?0.3:0.15,time);
+  g.gain.exponentialRampToValueAtTime(0.001,time+0.08);
+  osc.connect(g);g.connect(masterGain);
+  osc.start(time);osc.stop(time+0.1);
+}
+
+function playHitSound(){
+  if(!audioCtx)return;
+  var now=audioCtx.currentTime;
+  var osc=audioCtx.createOscillator();osc.type='triangle';osc.frequency.value=523.25;
+  var g=audioCtx.createGain();g.gain.setValueAtTime(0.15,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.15);
+  osc.connect(g);g.connect(masterGain);osc.start(now);osc.stop(now+0.2);
+}
+
+function playMissSound(){
+  if(!audioCtx)return;
+  var now=audioCtx.currentTime;
+  var osc=audioCtx.createOscillator();osc.type='sawtooth';osc.frequency.value=120;
+  var g=audioCtx.createGain();g.gain.setValueAtTime(0.08,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.1);
+  osc.connect(g);g.connect(masterGain);osc.start(now);osc.stop(now+0.15);
+}
+
+// ─── BEAT SCHEDULING ─────────────────────────────────────
+function scheduleBeat(){
+  if(!playing||!audioCtx)return;
+  var now=audioCtx.currentTime;
+  beatInterval=60/bpm;
+  var pattern=PATTERNS[Math.min(level-1,PATTERNS.length-1)];
+
+  while(nextBeatTime<now+0.5){
+    var patIdx=beatCount%pattern.length;
+    var isActive=pattern[patIdx]===1;
+    var isDownbeat=beatCount%4===0;
+
+    // Play metronome click
+    playClick(nextBeatTime,isDownbeat);
+
+    if(isActive){
+      // Schedule a note to hit
+      beats.push({
+        time:nextBeatTime,
+        hit:false,
+        missed:false,
+        y:0 // for visual falling
+      });
+      // Visual note indicator
+      noteTrail.push({
+        time:nextBeatTime,
+        x:W/2,
+        y:0,
+        active:true
+      });
+    }
+
+    beatCount++;
+    nextBeatTime+=beatInterval;
+  }
+
+  // Check for missed beats
+  for(var i=beats.length-1;i>=0;i--){
+    if(!beats[i].hit&&!beats[i].missed&&now-beats[i].time>0.25){
+      beats[i].missed=true;
+      missCount++;
+      if(missCount>=3){
+        streak=0;combo=0;
+        updateHUD();
+      }
+    }
+  }
+
+  // Clean old beats
+  while(beats.length>0&&(beats[0].hit||beats[0].missed)&&now-beats[0].time>1){
+    beats.shift();
+  }
+}
+
+// ─── TAP HANDLING ────────────────────────────────────────
+window.tap=function(e){
+  e.preventDefault();
+  if(!playing)return;
+  var now=audioCtx.currentTime;
+  lastTapTime=now;
+
+  // Find closest upcoming beat
+  var closestIdx=-1,closestDiff=Infinity;
+  for(var i=0;i<beats.length;i++){
+    if(beats[i].hit||beats[i].missed)continue;
+    var diff=Math.abs(now-beats[i].time);
+    if(diff<closestDiff){closestDiff=diff;closestIdx=i;}
+  }
+
+  var circle=document.getElementById('tap-circle');
+
+  if(closestIdx>=0&&closestDiff<0.2){
+    // HIT
+    beats[closestIdx].hit=true;
+    missCount=0;
+
+    var rating='';
+    var pts=0;
+    if(closestDiff<0.04){rating='PERFECT';pts=100;setMsg('PERFECT!','perfect');}
+    else if(closestDiff<0.1){rating='GREAT';pts=50;setMsg('GREAT!','good');}
+    else{rating='GOOD';pts=25;setMsg('GOOD','good');}
+
+    pts*=(1+combo*0.1);
+    score+=Math.round(pts);
+    streak++;combo++;
+    if(streak>bestStreak)bestStreak=streak;
+
+    // Level up every 20 streak
+    if(streak>0&&streak%20===0&&level<PATTERNS.length){
+      level++;
+      bpm=Math.min(160,bpm+5);
+      setMsg('LEVEL '+level+'!','perfect');
+    }
+
+    vineLength=Math.min(100,vineLength+2);
+    hitFlash=1;
+
+    playHitSound();
+    try{navigator.vibrate&&navigator.vibrate(15);}catch(ex){}
+
+    // Particles
+    for(var p=0;p<6;p++){
+      particles.push({
+        x:W/2+(Math.random()-0.5)*40,
+        y:H*0.7,
+        vx:(Math.random()-0.5)*60,
+        vy:-40-Math.random()*60,
+        life:0.4+Math.random()*0.3,
+        maxLife:0.4+Math.random()*0.3,
+        size:2+Math.random()*3,
+        color:['#4A7C35','#D4A843','#E8DCC8'][Math.floor(Math.random()*3)]
+      });
+    }
+
+    circle.classList.remove('miss');circle.classList.add('hit');
+    setTimeout(function(){circle.classList.remove('hit');},100);
+
+    if(typeof window._e==='function'&&streak%10===0)window._e('milestone');
+  } else {
+    // MISS (tapped with no beat nearby)
+    streak=0;combo=0;
+    vineLength=Math.max(0,vineLength-5);
+    playMissSound();
+    setMsg('MISS','miss');
+    circle.classList.remove('hit');circle.classList.add('miss');
+    setTimeout(function(){circle.classList.remove('miss');},150);
+  }
+
+  updateHUD();
+};
+
+// ─── DRAWING ─────────────────────────────────────────────
+function draw(){
+  ctx.fillStyle='#0d100c';
+  ctx.fillRect(0,0,W,H);
+
+  // Vine (grows from bottom based on vineLength)
+  var vineH=H*0.6*(vineLength/100);
+  var vineBaseY=H*0.75;
+  ctx.strokeStyle='rgba(74,124,53,'+(0.3+vineLength*0.005)+')';
+  ctx.lineWidth=3;
+  ctx.beginPath();
+  ctx.moveTo(W/2,vineBaseY);
+  for(var vy=0;vy<vineH;vy+=5){
+    var vx=W/2+Math.sin(vy*0.03+Date.now()*0.001)*15;
+    ctx.lineTo(vx,vineBaseY-vy);
+  }
+  ctx.stroke();
+
+  // Leaves on vine
+  if(vineLength>20){
+    var leafCount=Math.floor(vineLength/10);
+    ctx.fillStyle='rgba(74,124,53,0.4)';
+    for(var li=0;li<leafCount;li++){
+      var ly=vineBaseY-vineH*(li+1)/(leafCount+1);
+      var lx=W/2+Math.sin(ly*0.03+Date.now()*0.001)*15;
+      var side=(li%2===0)?1:-1;
+      ctx.save();
+      ctx.translate(lx,ly);
+      ctx.rotate(side*0.5);
+      ctx.beginPath();
+      ctx.ellipse(side*8,0,8,4,0,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // Bloom at top when vine is long
+  if(vineLength>60){
+    var bloomY=vineBaseY-vineH;
+    var bloomR=5+(vineLength-60)*0.2;
+    var bloomAlpha=0.3+(vineLength-60)*0.01;
+    ctx.fillStyle='rgba(196,122,122,'+bloomAlpha+')';
+    ctx.beginPath();ctx.arc(W/2,bloomY,bloomR,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(212,168,67,'+(bloomAlpha*0.6)+')';
+    ctx.beginPath();ctx.arc(W/2,bloomY,bloomR*0.4,0,Math.PI*2);ctx.fill();
+  }
+
+  // Note indicators (falling toward tap zone)
+  if(audioCtx){
+    var now=audioCtx.currentTime;
+    var lookAhead=1.5; // seconds of notes visible
+    ctx.fillStyle='rgba(212,168,67,0.6)';
+    for(var i=0;i<beats.length;i++){
+      var b=beats[i];
+      if(b.hit||b.missed)continue;
+      var timeUntil=b.time-now;
+      if(timeUntil>lookAhead||timeUntil<-0.3)continue;
+      var progress=1-(timeUntil/lookAhead);
+      var noteY=progress*H*0.65+H*0.05;
+      var noteAlpha=timeUntil<0.1?Math.max(0,1+timeUntil*5):0.6;
+      ctx.globalAlpha=noteAlpha;
+      ctx.beginPath();
+      ctx.arc(W/2,noteY,8+Math.sin(now*8)*2,0,Math.PI*2);
+      ctx.fill();
+      // Ring
+      ctx.strokeStyle='rgba(212,168,67,0.3)';
+      ctx.lineWidth=1;
+      ctx.beginPath();ctx.arc(W/2,noteY,12,0,Math.PI*2);ctx.stroke();
+      ctx.globalAlpha=1;
+    }
+  }
+
+  // Hit line
+  ctx.strokeStyle='rgba(74,124,53,0.15)';
+  ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(W*0.2,H*0.7);ctx.lineTo(W*0.8,H*0.7);ctx.stroke();
+
+  // Hit flash
+  if(hitFlash>0){
+    ctx.fillStyle='rgba(74,124,53,'+hitFlash*0.1+')';
+    ctx.fillRect(0,0,W,H);
+    hitFlash=Math.max(0,hitFlash-0.05);
+  }
+
+  // Particles
+  for(i=0;i<particles.length;i++){
+    var p=particles[i];
+    ctx.globalAlpha=Math.max(0,p.life/p.maxLife);
+    ctx.fillStyle=p.color;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.size*(p.life/p.maxLife),0,Math.PI*2);ctx.fill();
+  }
+  ctx.globalAlpha=1;
+}
+
+// ─── GAME LOOP ───────────────────────────────────────────
+var lastTime=0;
+
+function loop(ts){
+  var dt=lastTime?Math.min((ts-lastTime)/1000,0.05):0.016;
+  lastTime=ts;
+
+  if(playing)scheduleBeat();
+
+  // Update particles
+  for(var i=particles.length-1;i>=0;i--){
+    var p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=80*dt;
+    p.life-=dt;if(p.life<=0)particles.splice(i,1);
+  }
+
+  // Vine slowly shrinks without hits
+  if(playing)vineLength=Math.max(0,vineLength-dt*0.5);
+
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function updateHUD(){
+  document.getElementById('h-score').textContent=score;
+  document.getElementById('h-streak').textContent=streak;
+  document.getElementById('h-level').textContent=level;
+  document.getElementById('h-bpm').textContent=bpm;
+}
+
+function setMsg(t,cls){
+  var el=document.getElementById('msg');el.textContent=t;el.className='msg-area'+(cls?' '+cls:'');
+  if(t)setTimeout(function(){if(el.textContent===t)el.textContent='';},800);
+}
+
+window.adjustBPM=function(d){
+  bpm=Math.max(60,Math.min(180,bpm+d));
+  beatInterval=60/bpm;
+  document.getElementById('h-bpm').textContent=bpm;
+};
+
+window.togglePlay=function(){
+  playing=!playing;
+  document.getElementById('btn-play').textContent=playing?'⏸ PAUSE':'▶ PLAY';
+  if(playing&&audioCtx){nextBeatTime=audioCtx.currentTime+0.3;beats=[];beatCount=0;}
+};
+
+// ─── START ───────────────────────────────────────────────
+window.beginGame=function(){
+  document.getElementById('start-overlay').classList.add('hidden');
+  document.getElementById('app').style.display='flex';
+  canvas=document.getElementById('c');ctx=canvas.getContext('2d');
+  resize();window.addEventListener('resize',resize);
+  initAudio();
+  score=0;streak=0;bestStreak=0;level=1;combo=0;vineLength=10;
+  playing=true;beats=[];beatCount=0;missCount=0;
+  nextBeatTime=audioCtx.currentTime+0.5;
+  updateHUD();
+  requestAnimationFrame(loop);
+};
+})();
+</script>
+</body>
+</html>
