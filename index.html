@@ -4996,6 +4996,7 @@ window.onerror=function(msg,url,line,col,err){
     <div id="gh-next-bloom" style="display:flex;align-items:center;gap:0.4rem;padding:0.2rem 0.5rem;"></div>
     <div id="gh-season-strip" style="display:flex;justify-content:center;gap:0.5rem;padding:0.15rem 0.5rem;font-family:DM Mono,monospace;font-size:0.3rem;"></div>
     <div id="gh-spotlight" style="font-family:'DM Mono',monospace;font-size:0.33rem;color:var(--muted);text-align:center;padding:0.15rem 0;min-height:1em;"></div>
+    <div id="gh-collection-stats" style="display:none;font-family:DM Mono,monospace;font-size:0.32rem;color:var(--muted);text-align:center;padding:0.1rem 0.5rem;"></div>
     <div id="gh-recent-wrap" style="display:none;">
       <div class="gh-recent-label">RECENT BLOOMS</div>
       <div class="gh-recent-strip" id="gh-recent-strip"></div>
@@ -26512,6 +26513,25 @@ document.addEventListener('keydown', function(e) {
       _ssStrip.innerHTML = _ssH;
       _ssStrip.style.display = 'flex';
     } else if (_ssStrip) { _ssStrip.style.display = 'none'; }
+
+    // ── Collection stats (total EA, rarest grade, companion count) ──
+    var _csEl = document.getElementById('gh-collection-stats');
+    if (_csEl && gh.length >= 3) {
+      var _totalEA = 0, _companionSet = {}, _highestGrade = 'Common';
+      var _gradeOrder = {Common:0,Uncommon:1,Rare:2,Epic:3,Legendary:4,Mythic:5,Cosmic:6};
+      gh.forEach(function(p) {
+        try {
+          var _ct = hashToTraits(p.hash);
+          if (p.generation) _ct.chimerGen = p.generation;
+          _totalEA += window.computeEA ? computeEA(_ct) : 0;
+          var _cg = getTerraGrade(_ct);
+          if (_cg && (_gradeOrder[_cg.name] || 0) > (_gradeOrder[_highestGrade] || 0)) _highestGrade = _cg.name;
+          if (_ct.companion && _ct.companion !== 'None') _companionSet[_ct.companion] = true;
+        } catch(e) {}
+      });
+      _csEl.innerHTML = '\u2b21 Total EA: <span style="color:var(--sage);">' + _totalEA + '</span> \u00b7 Rarest: <span style="color:var(--gold);">' + _highestGrade + '</span> \u00b7 Companions: <span style="color:var(--cream);">' + Object.keys(_companionSet).length + '</span>';
+      _csEl.style.display = 'block';
+    } else if (_csEl) { _csEl.style.display = 'none'; }
 
     // ── Recent Blooms strip ──────────────────────────────────────────
     var _rbWrap = document.getElementById('gh-recent-wrap');
