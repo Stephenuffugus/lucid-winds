@@ -27778,8 +27778,7 @@ document.addEventListener('keydown', function(e) {
     slotEl.innerHTML = '<div class="cs-flip-wrap" data-revealed="' + _isRevealed + '" onclick="window._handleCardFlip(this,event)">' +
       '<div class="cs-flip-inner">' + front + back + '</div>' +
       '<div class="cs-reveal-flash" data-tier="' + _tierName + '"></div>' +
-      '</div>' +
-      '<button class="cs-lineage-overlay" data-pdh="' + plant.hash + '" style="display:none;" onclick="event.stopPropagation();var h=this.getAttribute(\'data-pdh\');if(h&&window._openPlantDetails)try{window._openPlantDetails(h);}catch(e){if(window._toast)window._toast(String(e.message));}">' + _overlayLabel + '</button>';
+      '</div>';
     slotEl.setAttribute('data-season', sk);
     // Chimera dual-season border + diagonal card front
     var _dualCls = window._chimeraDualClass ? window._chimeraDualClass(plant) : '';
@@ -28068,7 +28067,7 @@ document.addEventListener('keydown', function(e) {
     // there is no click propagation conflict with transform:rotateY.
     html += '<div class="cb-hash" style="margin-top:0.4rem;padding-top:0.3rem;border-top:1px solid rgba(74,124,53,0.06);">' + plant.hash + '</div>';
     html += '<div class="cb-date" style="margin-top:0.1rem;">Minted ' + (plant.date || '') + dateSuffix + '</div>';
-    html += '<div class="cb-nameplate" style="position:absolute;bottom:8%;left:10%;right:10%;"><span class="cb-name" style="color:' + sColor + ';">' + name + '</span></div>';
+    html += '<div class="cb-nameplate" style="position:absolute;bottom:8%;left:8%;right:8%;text-align:center;cursor:pointer;" data-pdh="' + plant.hash + '"><span class="cb-name" style="color:' + sColor + ';">' + name + '</span><div style="font-family:Bebas Neue,sans-serif;font-size:0.45rem;letter-spacing:0.08em;color:var(--gold);margin-top:2px;opacity:0.85;">\u2b21 TAP FOR DETAILS</div></div>';
     html += '<div class="cs-flip-hint">\u2190 tap to flip</div>';
 
     backEl.innerHTML = html;
@@ -28088,6 +28087,17 @@ document.addEventListener('keydown', function(e) {
     evt = evt || window.event;
     if (evt && evt.target && evt.target.closest) {
       if (evt.target.closest('.cb-details-btn')) return;
+      // Nameplate tap on back face → open details modal instead of flipping
+      var _npTap = evt.target.closest('[data-pdh]');
+      if (_npTap) {
+        var _ph = _npTap.getAttribute('data-pdh');
+        if (_ph && window._openPlantDetails) {
+          try { window._openPlantDetails(_ph); } catch(e) {
+            if (window._toast) window._toast('Details failed: ' + (e && e.message || ''));
+          }
+        }
+        return;
+      }
     }
     // Lazy-load back face content on first flip
     var backFace = el.querySelector('.cs-back-lazy');
@@ -28140,15 +28150,8 @@ document.addEventListener('keydown', function(e) {
       // Already revealed — normal flip toggle
       el.classList.toggle('flipped');
     }
-    // Show/hide the lineage overlay button based on flip state.
-    // The button is a sibling of the wrap (inside the carousel slot),
-    // NOT a descendant — zero propagation issues.
-    var _slotParent = el.parentNode;
-    var _lineageBtn = _slotParent ? _slotParent.querySelector('.cs-lineage-overlay') : null;
-    if (_lineageBtn) {
-      var _nowFlipped = el.classList.contains('flipped');
-      _lineageBtn.style.display = _nowFlipped ? '' : 'none';
-    }
+    // Lineage/details access is now via the nameplate on the card back
+    // ("TAP FOR DETAILS" under the plant name) — no separate overlay.
   };
 
   // ── Open details modal for whichever plant the carousel is showing ──
