@@ -27706,11 +27706,39 @@ document.addEventListener('keydown', function(e) {
     back += '</div>';
 
     // ── ASSEMBLE FLIP CARD ──
+    // No inline onclick — we attach a single programmatic click handler to
+    // the wrap below that routes lineage-button clicks directly to
+    // _openPlantDetails and lets all other clicks fall through to the flip
+    // handler. This avoids the iOS Safari race where capture-phase
+    // stopImmediatePropagation on a child button still let the parent's
+    // bubble-phase inline onclick fire on synthesized clicks.
     var _isRevealed = plant.revealed ? 'true' : 'false';
-    slotEl.innerHTML = '<div class="cs-flip-wrap" data-revealed="' + _isRevealed + '" onclick="window._handleCardFlip(this,event)">' +
+    slotEl.innerHTML = '<div class="cs-flip-wrap" data-revealed="' + _isRevealed + '">' +
       '<div class="cs-flip-inner">' + front + back + '</div>' +
       '<div class="cs-reveal-flash" data-tier="' + _tierName + '"></div>' +
       '</div>';
+    var _wrapEl = slotEl.querySelector('.cs-flip-wrap');
+    if (_wrapEl) {
+      _wrapEl.addEventListener('click', function(ev) {
+        // Lineage button — open Extra Details modal directly, do NOT flip.
+        var _btn = ev.target && ev.target.closest ? ev.target.closest('.cb-details-btn') : null;
+        if (_btn) {
+          ev.stopPropagation();
+          if (ev.preventDefault) ev.preventDefault();
+          var _ph = _btn.getAttribute('data-pdh');
+          if (_ph && window._openPlantDetails) {
+            try { window._openPlantDetails(_ph); }
+            catch (e) {
+              if (window._toast) window._toast('Could not open details: ' + (e && e.message ? e.message : 'unknown error'));
+              if (window.console) console.error('[lineage btn]', e);
+            }
+          }
+          return;
+        }
+        // Anything else in the wrap — normal flip
+        window._handleCardFlip(this, ev);
+      });
+    }
     slotEl.setAttribute('data-season', sk);
     // Chimera dual-season border + diagonal card front
     var _dualCls = window._chimeraDualClass ? window._chimeraDualClass(plant) : '';
@@ -28012,22 +28040,8 @@ document.addEventListener('keydown', function(e) {
 
     backEl.innerHTML = html;
     backEl.classList.remove('cs-back-lazy');
-    // Attach the details-button listener via JS so stopImmediatePropagation
-    // actually fires before the wrap's onclick can trigger a flip. Inline
-    // onclick + stopPropagation has been unreliable across iOS Safari versions.
-    var _detailsBtn = backEl.querySelector('.cb-details-btn');
-    if (_detailsBtn) {
-      _detailsBtn.addEventListener('click', function(ev) {
-        if (ev) {
-          if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
-          if (ev.stopPropagation) ev.stopPropagation();
-          if (ev.preventDefault) ev.preventDefault();
-        }
-        var ph = this.getAttribute('data-pdh');
-        if (ph && window._openPlantDetails) window._openPlantDetails(ph);
-        return false;
-      }, true); // capture phase — fires BEFORE bubble-phase parent handlers
-    }
+    // Click is routed by the wrap-level listener (see openCarousel slot
+    // builder) — no per-button listener needed here.
   }
 
   // ── Card flip handler: first-flip rarity reveal ────────────────────
@@ -28930,6 +28944,7 @@ document.addEventListener('keydown', function(e) {
   // Built dynamically on first open, reused thereafter.
   window._openPlantDetails = function(plantHash) {
     if (!plantHash) { if (window._toast) _toast('No plant hash provided.'); return; }
+    try {
     var plant = null, source = 'unknown';
     try { var gh = loadGreenhouse(); for (var i = 0; i < gh.length; i++) { if (gh[i].hash === plantHash) { plant = gh[i]; source = 'greenhouse'; break; } } } catch(e) {}
     if (!plant) { try { var wildRaw = (window._secureGet ? window._secureGet('fg_wild_plants') : localStorage.getItem('fg_wild_plants')) || '[]'; var wild = JSON.parse(wildRaw); for (var j = 0; j < wild.length; j++) { if (wild[j].hash === plantHash) { plant = wild[j]; source = 'wild'; break; } } } catch(e) {} }
@@ -29063,6 +29078,10 @@ document.addEventListener('keydown', function(e) {
 
     body.innerHTML = html;
     modal.classList.add('open');
+    } catch (e) {
+      if (window._toast) _toast('Details modal failed: ' + (e && e.message ? e.message : 'unknown error'));
+      if (window.console) console.error('[_openPlantDetails]', e);
+    }
   };
   window._closePlantDetails = function() {
     var modal = document.getElementById('plant-details-modal');
