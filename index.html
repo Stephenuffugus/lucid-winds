@@ -4202,7 +4202,10 @@
     #kb-sunbeams,#kb-dew{padding:0;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;width:64px;height:64px;border:none;background:none;overflow:hidden;flex-shrink:0;position:relative;}
     #kb-sunbeams .kb-val,#kb-dew .kb-val{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--cream);text-shadow:0 1px 4px rgba(0,0,0,0.9),0 0 8px rgba(0,0,0,0.7);z-index:2;pointer-events:none;}
     #kb-dew .kb-icon{font-size:1.15rem;filter:drop-shadow(0 0 4px rgba(91,175,220,0.4));}
-    #kb-compendium{position:fixed;top:calc(env(safe-area-inset-top,0px) + 90px);right:10px;z-index:999;width:78px;height:100px;cursor:pointer;border:none;background:none;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));transition:transform 0.15s;display:flex!important;}
+    /* Default (non-wild tabs): book + backpack side-by-side near keeper bar */
+    #kb-compendium{position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);right:calc(10px + 78px);z-index:999;width:72px;height:92px;cursor:pointer;border:none;background:none;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));transition:transform 0.15s;display:flex!important;}
+    /* Wild tab: stacked vertically on right side */
+    body.tab-wild #kb-compendium{top:calc(env(safe-area-inset-top,0px) + 90px);right:10px;width:78px;height:100px;}
     #kb-compendium:active{transform:scale(0.92);}
     #kb-compendium #kb-comp-count{position:absolute;top:-4px;left:-4px;min-width:22px;height:22px;padding:0 5px;border-radius:11px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.55rem;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.5);}
     #kb-compendium.has-entries{display:flex;}
@@ -4252,7 +4255,8 @@
     .cs-close{position:fixed;top:calc(0.5rem + env(safe-area-inset-top, 0px));right:0.5rem;width:36px;height:36px;border-radius:50%;border:2px solid rgba(74,124,53,0.15);background:rgba(26,36,22,0.6);color:var(--muted);font-size:0.75rem;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:99999;}
     /* ═══ BACKPACK SYSTEM CSS (from demo) ═══ */
 /* ═══ BACKPACK ═══ */
-#bpi{position:fixed;top:calc(env(safe-area-inset-top,0px) + 205px);right:10px;z-index:998;width:72px;height:72px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat}
+#bpi{position:fixed;top:calc(env(safe-area-inset-top,0px) + 18px);right:10px;z-index:998;width:72px;height:72px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat}
+body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 205px);right:10px;}
 #bpi:active{transform:scale(0.88);}
 #bpb{position:absolute;top:-4px;left:-4px;min-width:20px;height:20px;border-radius:10px;background:var(--gold);color:var(--black);font-family:'Bebas Neue',sans-serif;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,0.4);transition:all 0.25s ease;}
 #bpb.e{opacity:0;transform:scale(0.5);}
@@ -5440,9 +5444,9 @@ window.onerror=function(msg,url,line,col,err){
     <!-- Row 2: currency badges (Sunbeams + Dew + optional Compendium + Install) -->
     <div class="kb-row2">
       <div id="kb-sunbeams" title="Sunbeams" onclick="if(window.openEconModal)openEconModal();" style="border:2px solid rgba(200,168,75,0.5);"><img src="assets/btn-sunbeams.png" alt="Sunbeams" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:8px;"><span class="kb-val">0</span></div>
-      <div id="kb-mystery" onclick="if(window._openMystery)_openMystery();" title="Mystery Box"><img src="assets/btn-mystery.png" alt="Mystery" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
+      <div id="kb-mystery" onclick="if(window._openMystery)_openMystery();" title="Mystery Box" style="border:2px solid rgba(232,160,191,0.5);"><img src="assets/btn-mystery.png" alt="Mystery" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
       <div id="kb-dew" title="Dew" onclick="if(window.openDewModal)openDewModal();" style="border:2px solid rgba(91,175,220,0.5);"><img src="assets/btn-dew.png" alt="Dew" style="width:150%;height:150%;object-fit:cover;display:block;margin:-25%;"><span class="kb-val">0</span></div>
-      <div id="kb-weather" onclick="if(window._openWeather)_openWeather();" title="Summon Weather"><img src="assets/btn-weather.png" alt="Weather" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
+      <div id="kb-weather" onclick="if(window._openWeather)_openWeather();" title="Summon Weather" style="border:2px solid rgba(91,175,220,0.5);"><img src="assets/btn-weather.png" alt="Weather" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
       <div id="kb-slots" onclick="if(window._openSlots)_openSlots();" title="Slot Machine"><img src="assets/btn-slots.png" alt="Slots" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
       <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install App"><img src="assets/btn-install.png" alt="Install" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
     </div>
@@ -29545,11 +29549,13 @@ document.addEventListener('keydown', function(e) {
     if(tab==='wild'){
       if(stdNav)stdNav.style.display='none';
       if(keeperBar)keeperBar.style.display='none';
+      document.body.classList.add('tab-wild');
       if(wildNav){wildNav.style.display='block';wildNav.querySelectorAll('.wn-btn').forEach(function(b){b.classList.remove('active');});var wb=wildNav.querySelector('.wn-btn[onclick*="wild"]');if(wb)wb.classList.add('active');}
     } else {
       if(stdNav)stdNav.style.display='flex';
       if(keeperBar)keeperBar.style.display='flex';
       if(wildNav)wildNav.style.display='none';
+      document.body.classList.remove('tab-wild');
     }
     // Switch panel — hide all, then render + show target synchronously
     document.querySelectorAll('.grove-panel').forEach(function(p) {
