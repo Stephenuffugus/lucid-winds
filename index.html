@@ -28966,13 +28966,42 @@ document.addEventListener('keydown', function(e) {
     var name = typeof getPlantName === 'function' ? getPlantName(plant.hash) : plant.hash.slice(0, 8);
     var _t = null, _tg = null, _ea = null, _haiku = null;
     try { _t = hashToTraits(plant.hash); _tg = getTerraGrade(_t); } catch(e) {}
+    // Prefer stored grade (computed at mint with full context) over
+    // recomputed grade which may miss mythic overrides or chimera bonuses
+    if (plant.grade || plant.rarity) {
+      var _storedGrade = plant.grade || plant.rarity;
+      var _gradeSearch = [
+        {name:'Cosmic',color:'#c8a84b'},{name:'Mythic',color:'#9c7bc8'},
+        {name:'Legendary',color:'#d4a843'},{name:'Epic',color:'#a855f7'},
+        {name:'Rare',color:'#3b82f6'},{name:'Uncommon',color:'#7ab356'},
+        {name:'Common',color:'var(--cream)'}
+      ];
+      for (var _gi = 0; _gi < _gradeSearch.length; _gi++) {
+        if (_gradeSearch[_gi].name === _storedGrade) { _tg = _gradeSearch[_gi]; break; }
+      }
+    }
     try { _ea = window.computeEA ? computeEA(_t) : null; } catch(e) {}
     try { _haiku = window.getHaiku ? getHaiku(plant.hash) : null; } catch(e) {}
-    var tgColor = _tg ? _tg.color : 'var(--cream)';
+    var tgColor = _tg ? (_tg.color || 'var(--cream)') : 'var(--cream)';
+    // Season display — detect chimera dual seasons for gen > 1 plants
+    var _sNames = ['Spring','Summer','Autumn','Winter'];
+    var _sColors = ['#E8A0BF','#D4A843','#D4842A','#A0C4E8'];
+    var _sIcons = ['\ud83c\udf38','\u2600\ufe0f','\ud83c\udf42','\u2744\ufe0f'];
     var _seasonIdx = _t && typeof _t.season === 'number' ? _t.season : 0;
-    var _seasonName = ['Spring','Summer','Autumn','Winter'][_seasonIdx] || '';
-    var _seasonColor = ['#E8A0BF','#D4A843','#D4842A','#A0C4E8'][_seasonIdx] || 'var(--sage)';
-    var _seasonIcon = ['\ud83c\udf38','\u2600\ufe0f','\ud83c\udf42','\u2744\ufe0f'][_seasonIdx] || '';
+    var _seasonLabel = '', _seasonColor = _sColors[_seasonIdx] || 'var(--sage)';
+    var _isDualSeason = false;
+    if (plant.generation > 1 && plant.parentAHash && plant.parentBHash) {
+      var _hA = plant.parentAHash, _hB = plant.parentBHash;
+      var _sA = (parseInt(_hA.charAt(44) + _hA.charAt(45), 16) || 0) % 4;
+      var _sB = (parseInt(_hB.charAt(44) + _hB.charAt(45), 16) || 0) % 4;
+      if (_sA !== _sB) {
+        _isDualSeason = true;
+        _seasonLabel = _sIcons[_sA] + ' ' + _sNames[_sA] + ' / ' + _sIcons[_sB] + ' ' + _sNames[_sB];
+      }
+    }
+    if (!_isDualSeason) {
+      _seasonLabel = _sIcons[_seasonIdx] + ' ' + _sNames[_seasonIdx];
+    }
 
     var title = document.getElementById('pdm-title');
     if (title) title.innerHTML = '<span style="color:' + tgColor + ';">' + name + '</span>';
@@ -28988,7 +29017,7 @@ document.addEventListener('keydown', function(e) {
     html += '<div style="font-family:Playfair Display,serif;font-size:1rem;font-style:italic;color:var(--cream);text-align:center;line-height:1.25;">' + name + '</div>';
     html += '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center;font-family:DM Mono,monospace;font-size:0.55rem;">';
     if (_tg) html += '<span style="color:' + tgColor + ';padding:0.15rem 0.45rem;border:1px solid ' + tgColor + ';border-radius:4px;">' + (_tg.name || _tg.label) + '</span>';
-    if (_seasonName) html += '<span style="color:' + _seasonColor + ';padding:0.15rem 0.45rem;border:1px solid ' + _seasonColor + ';border-radius:4px;">' + _seasonIcon + ' ' + _seasonName + '</span>';
+    if (_seasonLabel) html += '<span style="color:' + _seasonColor + ';padding:0.15rem 0.45rem;border:1px solid ' + _seasonColor + ';border-radius:4px;">' + _seasonLabel + '</span>';
     if (_ea !== null) html += '<span style="color:var(--sage);padding:0.15rem 0.45rem;border:1px solid rgba(122,179,86,0.4);border-radius:4px;">EA ' + _ea + '</span>';
     html += '</div>';
     if (_haiku) {
@@ -28998,23 +29027,11 @@ document.addEventListener('keydown', function(e) {
     }
     html += '</div>';
 
-    if (_t) {
-      html += '<div class="pdm-section">';
-      html += '<div class="pdm-section-title">DNA LAYERS</div>';
-      var _rows = [
-        ['Pot', _t.pot != null ? String(_t.pot) : '?'],
-        ['Stem', _t.stem || '?'],
-        ['Leaves', (_t.leafCount != null ? _t.leafCount + 'x ' : '') + (_t.leafType || '?')],
-        ['Bloom', _t.hasFlower ? (_t.flower || 'Yes') : 'None'],
-        ['Base', _t.base != null ? String(_t.base) : '?'],
-        ['Aura', _t.aura != null ? String(_t.aura) : '?'],
-        ['Companion', (_t.companion && _t.companion !== 'None') ? _t.companion : 'None'],
-        ['Mutation', (_t.mutationName && _t.mutationName !== 'None') ? _t.mutationName : 'None']
-      ];
-      for (var _ri = 0; _ri < _rows.length; _ri++) {
-        html += '<div class="pdm-row"><span class="pdm-k">' + _rows[_ri][0] + '</span><span class="pdm-v">' + _rows[_ri][1] + '</span></div>';
-      }
-      html += '</div>';
+    // DNA Layers — reuse the card back's renderDNALedger which resolves
+    // trait indices to real names via TRAIT_BANK, not bland raw numbers.
+    // Wrapped in the same pdm-section styling for visual consistency.
+    if (_t && typeof renderDNALedger === 'function') {
+      try { html += renderDNALedger(plant); } catch(e) {}
     }
 
     if (plant.parentAHash && plant.parentBHash) {
