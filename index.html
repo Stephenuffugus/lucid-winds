@@ -4710,6 +4710,12 @@
       box-shadow: none !important;
     }
     .perf-lite .ea-knot.ea-high .ea-frost { box-shadow: none !important; }
+    /* Carousel perf-lite: kill card face GPU layers */
+    .perf-lite .cs-flip-inner { will-change: auto !important; }
+    .perf-lite .cs-card-face { will-change: auto !important; transform: none !important; }
+    .perf-lite .cs-flip-wrap.flipped .cs-flip-inner { transform: rotateY(180deg) !important; }
+    .perf-lite .cs-card-front[data-season] { background-image: none !important; background: #050505 !important; }
+    .perf-lite .cf-synergy { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
     /* ── Offline warning banner ────────────────────────────────────── */
     #lw-offline-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:9998;background:rgba(30,24,12,0.94);border-bottom:1px solid rgba(200,168,75,0.2);padding:6px 36px 6px 12px;font-family:inherit;font-size:0.58rem;color:var(--muted);text-align:center;letter-spacing:0.03em;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
     #lw-offline-banner .lw-ob-x{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;border:none;background:transparent;color:var(--muted);font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;-webkit-tap-highlight-color:transparent;}
@@ -27768,13 +27774,14 @@ document.addEventListener('keydown', function(e) {
     if (!window._csPlantSvgCache) window._csPlantSvgCache = {};
     var svgHtml = window._csPlantSvgCache[_csCacheKey];
     if (!svgHtml) {
-      svgHtml = generatePlantSVG(plant.hash, 200, 1, _csOv);
+      var _csSize = window._perfLite ? 140 : 200;
+      svgHtml = generatePlantSVG(plant.hash, _csSize, 1, _csOv);
       window._csPlantSvgCache[_csCacheKey] = svgHtml;
       // Cap cache at 30 entries to prevent memory bloat
       var _cacheKeys = Object.keys(window._csPlantSvgCache);
       if (_cacheKeys.length > 30) delete window._csPlantSvgCache[_cacheKeys[0]];
     }
-    if (plant.mutated) {
+    if (plant.mutated && !window._perfLite) {
       svgHtml = svgHtml.replace('<svg ', '<svg style="filter:drop-shadow(0 0 10px rgba(200,168,75,0.5)) drop-shadow(0 0 20px rgba(200,168,75,0.2));" ');
     }
     // smallSvg removed — back face is lazy-loaded, no thumbnail needed at creation
@@ -27874,12 +27881,22 @@ document.addEventListener('keydown', function(e) {
     var activePlant = _carousel.arr[_carousel.idx];
     var nextPlant   = _carousel.arr[_carousel.idx + 1] || null;
 
-    // Active card first (visible immediately), side cards deferred for speed
+    // Active card first (visible immediately)
     _populateSlot(document.getElementById('cs-slot-1'), activePlant); // active
-    requestAnimationFrame(function() {
-      _populateSlot(document.getElementById('cs-slot-0'), prevPlant);   // prev
-      _populateSlot(document.getElementById('cs-slot-2'), nextPlant);   // next
-    });
+    // perf-lite: defer side cards to separate rAF frames to avoid jank
+    if (window._perfLite) {
+      requestAnimationFrame(function() {
+        _populateSlot(document.getElementById('cs-slot-0'), prevPlant);
+        requestAnimationFrame(function() {
+          _populateSlot(document.getElementById('cs-slot-2'), nextPlant);
+        });
+      });
+    } else {
+      requestAnimationFrame(function() {
+        _populateSlot(document.getElementById('cs-slot-0'), prevPlant);
+        _populateSlot(document.getElementById('cs-slot-2'), nextPlant);
+      });
+    }
 
     // Reset track to center — no animation
     var track = document.getElementById('pgm-track');
