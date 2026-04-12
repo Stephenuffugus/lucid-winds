@@ -5206,7 +5206,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="wild-log">
       <div class="wild-log-stat" onclick="if(window._toggleTerritory)_toggleTerritory();"><div class="wild-log-val" id="w-count">0</div><div class="wild-log-lbl">planted</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Daily drops remaining. Resets at midnight.')"><div class="wild-log-val" id="w-drops-left">3</div><div class="wild-log-lbl">drops</div></div>
-      <div class="wild-log-stat" onclick="FG_Wild._logTip('Dew \u2014 produced by your wild plants and earned from participation. Spend on nursery acceleration and wild plant cuttings.')"><div class="wild-log-val" style="color:rgba(91,175,220,0.9)" id="w-dew">0</div><div class="wild-log-lbl">dew</div></div>
+      <div class="wild-log-stat" onclick="FG_Wild._logTip('Dew \u2014 produced by your wild plants and earned from participation. Spend on nursery acceleration and wild plant cuttings.')"><div class="wild-log-val" style="color:rgba(91,175,220,0.9)" id="w-dew">0</div><div class="wild-log-lbl">dew <span id="w-dew-rate" style="font-size:0.28rem;color:var(--muted);"></span></div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Keeper XP \u2014 your lifetime experience. Pollen is the energy that grows your rank. Every kind act, wild drop, and bloom contributes.')"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl">xp</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Meters walked. Keep moving to find feral seeds!')"><div class="wild-log-val" style="color:var(--sage)" id="w-steps">0</div><div class="wild-log-lbl">meters</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Your biome — detected from real geography. Affects feral rarity and mutations.')"><div class="wild-log-val" style="font-size:0.7rem;" id="w-biome">🏡</div><div class="wild-log-lbl" id="w-biome-name">scanning</div></div>
@@ -36850,6 +36850,19 @@ function _updateCounts(){
   try{
     var dewBal=(typeof getTotalDew==='function')?getTotalDew():0;
     var dEl=document.getElementById('w-dew');if(dEl)dEl.textContent=dewBal;
+    // Show hourly Dew rate so players see the value of more wild plants
+    var rateEl=document.getElementById('w-dew-rate');
+    if(rateEl&&w.length>0){
+      var _rates={Common:1,Uncommon:2,Rare:4,Epic:6,Legendary:9,Mythic:12,Cosmic:15};
+      var _hrTotal=0;
+      for(var _ri2=0;_ri2<w.length;_ri2++){
+        var _rg='Common';
+        try{if(window.hashToTraits&&window.getTerraGrade&&w[_ri2].hash){_rg=window.getTerraGrade(window.hashToTraits(w[_ri2].hash)).label||'Common';}}catch(e){}
+        _hrTotal+=(_rates[_rg]||1)*(_ri2<5?1:0.5);
+      }
+      var _perHr=(_hrTotal/240).toFixed(1);
+      rateEl.textContent='(+'+_perHr+'/hr)';
+    } else if(rateEl){rateEl.textContent='';}
   }catch(e){}
 }
 function toggleMenu(){}
