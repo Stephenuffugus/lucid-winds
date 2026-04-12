@@ -5019,7 +5019,10 @@ window.onerror=function(msg,url,line,col,err){
         <button id="nur-expand-btn" onclick="expandNurSlot()" style="font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.08em;background:rgba(200,168,75,0.1);border:1.5px solid rgba(200,168,75,0.3);color:var(--gold);border-radius:6px;padding:0.35rem 0.55rem;cursor:pointer;min-height:36px;white-space:nowrap;">+ SLOT</button>
       </div>
     </div>
-    <div id="nur-wallet-balance" class="wallet-balance">Balance: — ⚡</div>
+    <div style="display:flex;gap:0.4rem;align-items:center;justify-content:center;margin-bottom:0.25rem;">
+      <div id="nur-wallet-balance" class="wallet-balance" style="margin-bottom:0;">Balance: — ⚡</div>
+      <div id="nur-fert-balance" class="wallet-balance" style="margin-bottom:0;border-color:rgba(122,179,86,0.2);color:var(--sage);">🌿 — Fertilizer</div>
+    </div>
     <div class="nur-streak-strip">
       <span class="nur-streak-fire">🔥</span>
       <span id="nur-streak-count" class="nur-streak-count">0 day streak</span>
@@ -29498,7 +29501,13 @@ document.addEventListener('keydown', function(e) {
     var balEl = document.getElementById('nur-wallet-balance');
     if (balEl) {
       var bal = typeof getTotalHashes === 'function' ? getTotalHashes() : 0;
-      balEl.textContent = 'Balance: ' + bal + ' ⚡';
+      balEl.textContent = 'Balance: ' + bal + ' \u26a1';
+    }
+    var fertEl = document.getElementById('nur-fert-balance');
+    if (fertEl) {
+      var _fInv = {}; try { _fInv = JSON.parse(localStorage.getItem('sws_inventory') || '{}'); } catch(e) {}
+      var _fBal = _fInv.fertilizer || 0;
+      fertEl.textContent = '\ud83c\udf3f ' + _fBal + ' Fertilizer';
     }
 
     var scEl = document.getElementById('nur-streak-count');
