@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Trellis Stress Test — AI vs AI</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d100c;color:#E8DCC8;font-family:'Courier New',monospace;padding:12px;font-size:13px}
+h1{color:#4A7C35;font-size:1.4rem;margin-bottom:8px}
+.controls{margin:12px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{background:#1a2416;border:1px solid #4A7C35;color:#E8DCC8;padding:8px 16px;border-radius:6px;cursor:pointer;font-family:inherit}
+button:hover{background:#2a3a22}
+button:disabled{opacity:.3}
+select{background:#1a2416;border:1px solid #4A7C35;color:#E8DCC8;padding:6px;border-radius:4px;font-family:inherit}
+.progress{height:6px;background:#1a2416;border-radius:3px;margin:8px 0;overflow:hidden}
+.progress-fill{height:100%;background:#4A7C35;transition:width .1s}
+.log{background:#0a0d09;border:1px solid rgba(74,124,53,0.2);border-radius:6px;padding:10px;max-height:400px;overflow-y:auto;margin:10px 0;font-size:11px;line-height:1.5}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin:10px 0}
+.stat-box{background:#1a2416;border:1px solid rgba(74,124,53,0.2);border-radius:8px;padding:12px}
+.stat-box h3{color:#4A7C35;font-size:.85rem;margin-bottom:6px}
+.stat-box .val{font-size:1.3rem;color:#D4A843;font-weight:bold}
+.stat-box .sub{font-size:.7rem;opacity:.6;margin-top:2px}
+.error{color:#C47A7A}
+.ok{color:#4A7C35}
+.warn{color:#D4A843}
+table{width:100%;border-collapse:collapse;margin:8px 0}
+th,td{padding:4px 8px;text-align:left;border-bottom:1px solid rgba(74,124,53,0.1)}
+th{color:#4A7C35;font-size:.75rem}
+</style>
+</head>
+<body>
+<h1>🌿 TRELLIS — Stress Test</h1>
+<p>AI vs AI simulation to verify game mechanics, scoring, and balance.</p>
+
+<div class="controls">
+  <label>Games: <select id="count">
+    <option value="50">50</option>
+    <option value="100" selected>100</option>
+    <option value="250">250</option>
+    <option value="500">500</option>
+  </select></label>
+  <label>P1 Difficulty: <select id="d1">
+    <option value="0">Seedling</option>
+    <option value="1" selected>Gardener</option>
+    <option value="2">Botanist</option>
+  </select></label>
+  <label>P2 Difficulty: <select id="d2">
+    <option value="0">Seedling</option>
+    <option value="1">Gardener</option>
+    <option value="2" selected>Botanist</option>
+  </select></label>
+  <button id="btn-run" onclick="runTests()">▶ RUN TESTS</button>
+  <button onclick="document.getElementById('log').innerHTML=''">Clear Log</button>
+</div>
+
+<div class="progress"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+<div id="status" style="font-size:.8rem;color:#D4A843">Ready</div>
+
+<div class="stat-grid" id="stats"></div>
+
+<div id="checks" style="margin:10px 0"></div>
+
+<div class="log" id="log"></div>
+
+<script>
+(function(){
+'use strict';
+
+// ─── CONSTANTS (mirrored from prototype) ─────────────────
+var BOARD_SIZE = 15;
+var RACK_SIZE = 7;
+var BINGO_BONUS = 50;
+var CENTER = 7;
+
+var TILE_VALUES = {
+  A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,K:5,L:1,M:3,
+  N:1,O:1,P:3,Q:10,R:1,S:1,T:1,U:1,V:4,W:4,X:8,Y:4,Z:10,' ':0
+};
+
+var TILE_DIST = {
+  A:9,B:2,C:2,D:4,E:12,F:2,G:3,H:2,I:9,J:1,K:1,L:4,M:2,
+  N:6,O:8,P:2,Q:1,R:6,S:4,T:6,U:4,V:2,W:2,X:1,Y:2,Z:1,' ':2
+};
+
+var PREMIUMS = {};
+(function(){
+  var tw=[[0,0],[0,7],[0,14],[7,0],[7,14],[14,0],[14,7],[14,14]];
+  var dw=[[1,1],[1,13],[2,2],[2,12],[3,3],[3,11],[4,4],[4,10],[7,7],[10,4],[10,10],[11,3],[11,11],[12,2],[12,12],[13,1],[13,13]];
+  var tl=[[1,5],[1,9],[5,1],[5,5],[5,9],[5,13],[9,1],[9,5],[9,9],[9,13],[13,5],[13,9]];
+  var dl=[[0,3],[0,11],[2,6],[2,8],[3,0],[3,7],[3,14],[6,2],[6,6],[6,8],[6,12],[7,3],[7,11],[8,2],[8,6],[8,8],[8,12],[11,0],[11,7],[11,14],[12,6],[12,8],[14,3],[14,11]];
+  var i;
+  for(i=0;i<tw.length;i++) PREMIUMS[tw[i][0]+','+tw[i][1]]='tw';
+  for(i=0;i<dw.length;i++) PREMIUMS[dw[i][0]+','+dw[i][1]]='dw';
+  for(i=0;i<tl.length;i++) PREMIUMS[tl[i][0]+','+tl[i][1]]='tl';
+  for(i=0;i<dl.length;i++) PREMIUMS[dl[i][0]+','+dl[i][1]]='dl';
+})();
+
+// ─── WORD LIST (same as prototype) ───────────────────────
+var WORDS = (
+'AA AB AD AE AG AH AI AL AM AN AR AS AT AW AX AY '+
+'BA BE BI BO BY DA DE DO ED EF EH EL EM EN ER ES ET EX '+
+'FA FE GO HA HE HI HM HO ID IF IN IS IT JO KA KI LA LI LO '+
+'MA ME MI MM MO MU MY NA NE NO NU '+
+'OD OE OF OH OI OK OM ON OP OR OS OU OW OX OY '+
+'PA PE PI PO QI RE SH SI SO TA TI TO UH UM UN UP US UT WE WO XI XU YA YE YO ZA '+
+'AAH AAL AAS ABA ABO ABS ABY ACE ACT ADD ADO ADS ADZ AFF AFT AGA AGE AGO AGS AHA AHI '+
+'AHS AID AIM AIR AIS AIT ALA ALB ALE ALL ALP ALS ALT AMA AMI AMP AMU ANA AND ANE ANI '+
+'ANT ANY APE APO APP APT ARB ARC ARE ARF ARK ARM ARS ART ASH ASK ASP ASS ATE ATT AUK '+
+'AVA AVE AVO AWA AWE AWL AWN AXE AYS AZO '+
+'BAD BAG BAH BAM BAN BAP BAR BAS BAT BAY BED BEE BEG BEL BEN BET BEY BIB BID BIG BIN '+
+'BIS BIT BIZ BOA BOB BOD BOG BOP BOS BOT BOW BOX BOY BRA BRO BRR BUB BUD BUG BUM BUN '+
+'BUR BUS BUT BUY BYE BYS '+
+'CAB CAD CAM CAN CAP CAR CAT CAW CEE CEL CEP CHI CIG CIS COB COD COG COL CON COO COP '+
+'COR COS COT COW COX COY COZ CRU CRY CUB CUD CUE CUP CUR CUT CWM '+
+'DAB DAD DAG DAH DAK DAL DAM DAP DAW DAY DEB DEE DEL DEN DEV DEW DEX DEY DIB DID DIG '+
+'DIM DIN DIP DIS DIT DOC DOE DOG DOL DON DOR DOS DOT DOW DRY DUB DUD DUE DUG DUH DUI '+
+'DUN DUO DUP DYE '+
+'EAR EAT EAU EEL EEK EGG EGO EKE ELD ELF ELK ELL ELM EME EMS EMU END ENG ERA ERE ERG '+
+'ERN ERR ETA ETH EVE EWE EYE '+
+'FAB FAD FAN FAR FAS FAT FAX FAY FED FEE FEH FEM FEN FER FES FET FEU FEW FEY FEZ FIB '+
+'FID FIG FIN FIR FIS FIT FIX FIZ FLU FLY FOB FOE FOG FOH FON FOP FOR FOU FOX FOY FRO '+
+'FRY FUB FUG FUN FUR '+
+'GAB GAD GAE GAG GAL GAM GAN GAP GAR GAS GAT GAY GED GEE GEL GEM GEN GET GEY GHI GIB '+
+'GID GIE GIG GIN GIP GIT GNU GOA GOB GOD GOO GOR GOS GOT GOX GUL GUM GUN GUP GUS GUT '+
+'GUV GUY GYM GYP '+
+'HAD HAE HAG HAH HAJ HAM HAO HAP HAS HAT HAW HAY HEH HEM HEN HEP HER HES HET HEW HEX '+
+'HEY HIC HID HIE HIM HIN HIP HIS HIT HOB HOD HOE HOG HOP HOT HOW HOY HUB HUE HUG HUH '+
+'HUM HUN HUP HUT HYP '+
+'ICE ICH ICK ICY IDS IFF IFS IGG ILL IMP INK INN INS ION IRE IRK ISM ITS IVY '+
+'JAB JAG JAM JAR JAW JAY JEE JET JIB JIG JIN JOB JOE JOG JOT JOW JOY JUG JUN JUS JUT '+
+'KAB KAE KAF KAS KAT KAY KEA KED KEG KEN KEP KEX KEY KHI KID KIN KIP KIR KIS KIT '+
+'LAB LAC LAD LAG LAM LAP LAS LAT LAV LAW LAX LAY LEA LED LEE LEG LEI LET LEU LEV LEX '+
+'LEY LIB LID LIE LIN LIP LIS LIT LOG LOO LOP LOT LOW LOX LUG LUV LYE '+
+'MAC MAD MAE MAG MAN MAP MAR MAS MAT MAW MAX MAY MED MEL MEM MEN MET MEW MID MIG MIL '+
+'MIM MIR MIS MIX MOA MOB MOC MOD MOG MOL MOM MON MOP MOR MOS MOT MOW MUD MUG MUM MUN '+
+'MUS MUT '+
+'NAB NAE NAG NAH NAM NAN NAP NAW NAY NEE NET NEW NIB NIL NIM NIP NIT NIX NOB NOD NOG '+
+'NOM NOO NOR NOS NOT NOW NUB NUN NUS NUT '+
+'OAF OAK OAR OAT OBE OBI OCA ODD ODE ODS OES OFF OFT OHM OHO OHS OIK OIL OKA OKE OLD '+
+'OLE ONE ONO ONS OOH OOT OPE OPS OPT ORA ORB ORC ORE ORS ORT OSE OUD OUR OUT OVA OWE '+
+'OWL OWN OXO OXY '+
+'PAC PAD PAH PAL PAM PAN PAP PAR PAS PAT PAW PAX PAY PEA PEC PED PEE PEG PEH PEN PEP '+
+'PER PES PET PEW PHI PIE PIG PIN PIP PIS PIT PIU PIX PLY POD POH POI POL POM POP POT '+
+'POW POX PRO PRY PUB PUD PUG PUL PUN PUP PUR PUS PUT PYA PYX '+
+'QAT QUA '+
+'RAD RAG RAH RAI RAJ RAM RAN RAP RAS RAT RAW RAX RAY REB REC RED REE REF REG REI REM '+
+'REP RES RET REV REX RHO RIB RID RIF RIG RIM RIN RIP ROB ROC ROD ROE ROM ROT ROW RUB '+
+'RUE RUG RUM RUN RUT RYA RYE '+
+'SAB SAC SAD SAE SAG SAL SAP SAT SAU SAW SAX SAY SEA SEC SEE SEG SEI SEL SEN SER SET SEW '+
+'SHA SHE SHH SHY SIB SIC SIM SIN SIP SIR SIS SIT SIX SKA SKI SKY SLY SOB SOD SOL SOM '+
+'SON SOP SOS SOT SOU SOW SOX SOY SPA SPY STY SUB SUM SUN SUP SUQ '+
+'TAB TAD TAE TAG TAJ TAM TAN TAO TAP TAR TAS TAT TAU TAV TAW TAX TEA TED TEE TEG TEN '+
+'TET TEW THE THO THY TIC TIE TIN TIP TIS TIT TOD TOE TOG TOM TON TOO TOP TOR TOT TOUR '+
+'TOW TOY TSK TUB TUG TUI TUN TUP TUT TUX TWA TWO TYE '+
+'UDO UGH UKE ULE ULU UMM UMP UNI UNS UPO UPS URB URD URN URP USE UTA UTE UTS '+
+'VAC VAN VAR VAS VAT VAU VAV VAW VEE VEG VET VEX VIA VID VIE VIG VIM VIS VOW VOX '+
+'WAB WAD WAE WAG WAN WAP WAR WAS WAT WAW WAX WAY WEB WED WEE WEN WET WHA WHO WHY WIG '+
+'WIN WIS WIT WIZ WOE WOG WOK WON WOO WOP WOS WOT WOW '+
+'YAH YAK YAM YAP YAW YAY YEA YEH YEN YEP YES YET YEW YID YIN YIP YOB YOD YOK YOM YON '+
+'YOU YOW YUK YUM YUP '+
+'ZAG ZAP ZAX ZED ZEE ZEK ZEN ZEP ZIG ZIN ZIP ZIT ZOA ZOO '+
+'ABLE ACHE ACID ACME ACRE AGED AGES AIDE AIDS AIMS AIRS AIRY AJAR AKIN ALAS '+
+'ALMS ALSO AMID AMPS ARCH AREA ARIA ARMY ARTS ASKS ATOM AUTO AVID AWAY AXED AXES AXIS '+
+'BABE BACK BADE BAGS BAIL BAIT BAKE BALD BALE BALL BALM BAND BANE BANG BANK BANS BARE '+
+'BARK BARN BARS BASE BASH BASK BASS BAST BATH BATS BAYS BEAD BEAK BEAM BEAN BEAR BEAT '+
+'BEDS BEEF BEEN BEER BEES BELL BELT BEND BENT BERG BEST BETA BETS BIAS BIKE BILE BILL '+
+'BIND BIRD BITE BITS BLED BLEW BLIP BLOB BLOC BLOG BLOT BLOW BLUE BLUR BOAR BOAT BODY '+
+'BOIL BOLD BOLT BOMB BOND BONE BOOK BOOM BOON BOOT BORE BORN BOSS BOTH BOUT BOWL BOWS '+
+'BOYS BRAN BRAT BRED BREW BRIM BROW BUCK BUDS BUFF BUGS BULB BULK BULL BUMP BUMS BUNK '+
+'BUNS BURN BURR BURY BUSH BUST BUSY BUZZ BYTE '+
+'CAFE CAGE CAKE CALF CALL CALM CAME CAMP CANE CAPE CAPS CARD CARE CARP CARS CART CASE '+
+'CASH CAST CATS CAVE CELL CHAP CHAR CHAT CHEF CHIN CHIP CHOP CITE CITY CLAD CLAM CLAN '+
+'CLAP CLAW CLAY CLIP CLOD CLOG CLOT CLUB CLUE COAL COAT CODE COIL COIN COLD COLE COLT '+
+'COMB COME CONE COOK COOL COPE COPY CORD CORE CORK CORN COST COSY COUP COVE COZY CRAB '+
+'CREW CRIB CROP CROW CUBE CUED CUES CULT CUPS CURB CURD CURE CURL CUSP CUTE CUTS '+
+'DABS DADO DADS DALE DAME DAMP DAMS DANE DARE DARK DARN DART DASH DATA DATE DAUB DAWN '+
+'DAYS DAZE DEAD DEAF DEAL DEAR DEBT DECK DEED DEEM DEEP DEER DEMO DENT DENY DESK DEVA '+
+'DEVI DIAL DICE DIED DIES DIET DIGS DILL DIME DINE DING DINT DIRE DIRT DISC DISH DISK '+
+'DIVE DOCK DODO DOER DOES DOLE DOLL DOME DONE DOOM DOOR DOPE DOSE DOTE DOUR DOWN DOZE '+
+'DRAB DRAG DRAM DRAW DREW DRIP DROP DRUM DUAL DUCK DUCT DUDE DUEL DUES DUET DUFF DUKE '+
+'DULL DUMB DUMP DUNE DUNG DUNK DUPE DUSK DUST DUTY DYED DYER DYES '+
+'EACH EARL EARN EARS EASE EAST EASY EATS EBEN ECHO EDGE EDIT EELS EGGS EKED ELKS ELSE '+
+'EMIT ENDS ENVY EPIC ETCH EVEN EVER EVIL EWER EXAM EXEC EXES EXIT EXPO EYED EYES EYRE '+
+'FACE FACT FADE FAIL FAIR FAKE FALL FAME FANG FANS FARE FARM FART FAST FATE FAWN FAZE '+
+'FEAR FEAT FEED FEEL FEES FEET FELL FELT FEND FERN FEST FEUD FIAT FIDE FIEF FIGS FILE '+
+'FILL FILM FIND FINE FIRE FIRM FISH FIST FITS FIVE FLAG FLAK FLAM FLAN FLAP FLAT FLAW '+
+'FLAY FLEA FLED FLEE FLEW FLEX FLIP FLIT FLOG FLOP FLOW FLUE FLUX FOAM FOBS FOCI FOES '+
+'FOIL FOLD FOLK FOND FONT FOOD FOOL FOOT FORD FORE FORK FORM FORT FOUL FOUR FOWL FREE '+
+'FROM FUEL FULL FUME FUND FUNK FURL FURY FUSE FUSS FUZZ '+
+'GAGS GAIN GAIT GALE GALL GAME GANG GAPE GAPS GARB GASH GASP GATE GAVE GAWK GAZE GEAR '+
+'GELS GEMS GENE GERM GETS GIFT GIGS GILD GILL GILT GIRD GIRL GIST GIVE GLAD GLAM GLEN '+
+'GLIB GLOB GLOW GLUE GLUM GLUT GNAT GNAW GOAD GOAT GOES GOLD GOLF GONE GOOD GOOF GORE '+
+'GORY GOWN GRAB GRAM GRAY GREW GRID GRIM GRIN GRIP GRIT GROG GROOM GROW GRUB GULF GULL '+
+'GULP GUMS GUNG GUNK GUNS GUSH GUST GUTS GUYS GYMS '+
+'HACK HAIL HAIR HALE HALF HALL HALT HAMS HAND HANG HARD HARE HARK HARM HARP HASH HASP '+
+'HAST HATE HATH HAUL HAVE HAWK HAZE HAZY HEAD HEAL HEAP HEAR HEAT HECK HEED HEEL HEFT '+
+'HEIR HELD HELL HELM HELP HENS HERB HERD HERE HERO HERS HEWN HICK HIDE HIGH HIKE HILL '+
+'HILT HIND HINT HIPS HIRE HITS HIVE HOAR HOAX HOBS HOCK HOED HOES HOGS HOLD HOLE HOME '+
+'HONE HOOD HOOK HOOP HOOT HOPE HOPS HORN HOSE HOST HOUR HOWL HUBS HUED HUES HUFF HUGE '+
+'HUGS HULK HULL HUMP HUMS HUNG HUNK HUNT HURL HURT HUSH HUSK HYMN HYPE '+
+'ICED ICES ICKY IDEA IDLE IDLY IDOL IFFY INKS INNS INTO IONS IRIS IRKS IRON ISLE ITCH ITEM '+
+'JABS JACK JADE JAGS JAIL JAMS JAPE JARS JAVA JAWS JAYS JAZZ JEAN JEER JEST JETS JIBE '+
+'JIGS JILT JIVE JOBS JOCK JOGS JOIN JOKE JOLT JOSH JOTS JOWL JOYS JURY JUST JUTS JUTE '+
+'KALE KEEN KEEP KEGS KELP KEPT KEYS KICK KIDS KILL KILO KILT KIND KING KINK KISS KITE '+
+'KITS KNACK KNEE KNEW KNIT KNOB KNOT KNOW KNURL '+
+'LACE LACK LACY LAID LAIR LAKE LAMB LAME LAMP LAND LANE LAPS LARD LARK LASH LASS LAST '+
+'LATE LAUD LAVA LAWN LAWS LAYS LAZY LEAD LEAF LEAK LEAN LEAP LEFT LEND LENS LENT LESS '+
+'LEST LEVY LIAR LICE LICK LIED LIEN LIES LIFE LIFT LIKE LILY LIMB LIME LIMP LINE LINK '+
+'LINT LION LIPS LIST LIVE LOAD LOAF LOAM LOAN LOBE LOCK LOCO LODE LOFT LOGE LOGS LONE '+
+'LONG LOOK LOOM LOON LOOP LOOT LORD LORE LORN LOSE LOSS LOST LOTS LOUD LOVE LOWS LUCK '+
+'LULL LUMP LUNG LURE LURK LUSH LUST LUTE LYNX LYRE '+
+'MACE MADE MAID MAIL MAIN MAKE MALE MALL MALT MANE MANY MAPS MARE MARK MARS MASH MASK '+
+'MASS MAST MATE MATH MATS MAUL MAZE MEAD MEAL MEAN MEAT MEEK MEET MELD MELT MEMO MEND '+
+'MENU MERE MESH MESS META MICE MILD MILE MILK MILL MIME MIND MINE MINI MINT MIRE MISS '+
+'MIST MITE MITT MOAN MOAT MOCK MODE MOLD MOLE MOLT MONK MOOD MOON MOOR MOOT MOPE MORE '+
+'MORN MOSS MOST MOTH MOVE MUCH MUCK MUFF MUGS MULE MULL MUMM MUNG MUSE MUSH MUSK MUST '+
+'MUTE MUTT '+
+'NAGS NAIL NAME NAPE NAPS NAVY NEAR NEAT NECK NEED NEST NETS NEWS NEXT NICE NICK NINE '+
+'NODE NONE NOOK NOON NORM NOSE NOTE NOUN NUDE NULL NUMB NUNS NUTS '+
+'OAFS OAKS OARS OATH OATS OBEY ODDS ODES OFFS OGLE OILS OILY OKAY OMEN OMIT ONCE ONES '+
+'ONLY ONTO OPAL OPEN OPTS ORAL ORCA ORES OUCH OURS OUST OUTS OUZO OVAL OVEN OVER OWED '+
+'OWES OWLS OWNS OXEN OXES '+
+'PACE PACK PACT PADS PAGE PAID PAIL PAIN PAIR PALE PALM PANE PANG PANS PANT PARK PART '+
+'PASS PAST PATH PAVE PAWN PAWS PAYS PEAK PEAL PEAR PEAS PEAT PECK PEEL PEER PELT PEND '+
+'PENS PENT PEON PERK PERM PERT PEST PETS PICK PIER PIGS PIKE PILE PILL PINE PING PINK '+
+'PINS PINT PIPE PITS PITY PLAN PLAY PLEA PLED PLOD PLOT PLOW PLOY PLUG PLUM PLUS POCK '+
+'PODS POEM POET POKE POLE POLL POLO POMP POND PONY POOL POOP POOR POPS PORE PORK PORT '+
+'POSE POSH POST POUR POUT PRAY PREP PREY PRIG PRIM PROD PROM PROP PROW PRUDE PRUNE PUBS '+
+'PUCK PUDS PUFF PUGS PULL PULP PUMP PUNS PUNK PUNS PURE PURR PUSH PUTS PUTT '+
+'QUAD QUAY QUID QUIP QUIT QUIZ QUOTA '+
+'RACE RACK RAFT RAGE RAGS RAID RAIL RAIN RAKE RAMP RAMS RANG RANK RANT RAPS RARE RASH '+
+'RASP RATE RATS RAVE RAYS RAZE READ REAL REAM REAP REAR REDO REED REEF REEK REEL REIN '+
+'RELY REND RENT REST RIBS RICE RICH RICK RIDE RIFT RIGS RILE RILL RIME RIMS RIND RING '+
+'RINK RIOT RIPE RISE RISK RITE ROAD ROAM ROAR ROBE ROBS ROCK RODE RODS ROLE ROLL ROMP '+
+'ROOF ROOK ROOM ROOT ROPE ROSE ROSY ROTE ROUT ROVE ROWS RUBE RUBS RUBY RUCK RUDE RUED '+
+'RUES RUFF RUGS RUIN RULE RUMP RUMS RUNE RUNG RUNS RUNT RUSE RUSH RUST RUTS '+
+'SACK SAFE SAGE SAID SAIL SAKE SALE SALT SAME SAND SANE SANG SANK SASH SAVE SAWS SAYS '+
+'SCAB SCAM SCAN SCAR SEAL SEAM SEAR SEAS SEAT SECT SEED SEEK SEEM SEEN SEEP SELF SELL '+
+'SEMI SEND SENT SEPT SERA SERVE SETS SEWN SHED SHIM SHIN SHIP SHOD SHOE SHOO SHOP SHOT '+
+'SHOW SHREW SHUN SHUT SICK SIDE SIFT SIGH SIGN SILK SILL SILO SILT SILT SINE SING SINK '+
+'SIPS SIRE SITS SIZE SKEW SKID SKIM SKIN SKIP SKIT SLAB SLAG SLAM SLAP SLAT SLAW SLAY '+
+'SLED SLEW SLID SLIM SLIT SLOB SLOE SLOG SLOP SLOT SLOW SLUG SLUM SLUR SLUT SMOG SNAP '+
+'SNAG SNAG SNIP SNIT SNOB SNOT SNOW SNUB SNUG SOAK SOAP SOAR SOBS SOCK SODA SOFA SOFT '+
+'SOIL SOLD SOLE SOLO SOME SONG SOON SOOT SORE SORT SOUL SOUP SOUR SOWN SPAN SPAR SPAT '+
+'SPEC SPED SPIN SPIT SPOT SPRY SPUR STAB STAG STAR STAY STEM STEP STEW STIR STOP STOW '+
+'STUB STUD STUN SWAY SWIM SWUM '+
+'TABS TACK TACO TACT TADS TAGS TAIL TAKE TALE TALK TALL TAME TANG TANK TAPE TAPS TARN '+
+'TARP TARS TASK TAUT TAXA TEAL TEAM TEAR TEAS TEED TEEM TEEN TELL TEMP TEND TENS TENT '+
+'TERM TERN TEST TEXT THAN THAT THAW THEM THEN THEY THIN THIS THUD THUG THUS TICK TIDE '+
+'TIDY TIED TIER TIES TILE TILL TILT TIME TINE TING TINS TINY TIPS TIRE TOAD TOED TOES '+
+'TOIL TOLD TOLL TOMB TOME TONE TONG TONS TOOK TOOL TOOT TOPS TORE TORN TORT TOSS TOTE '+
+'TOUR TOUT TOWN TOYS TRAP TRAY TREE TREK TRIM TRIO TRIP TROD TRUE TUBE TUCK TUFT TUGS '+
+'TULIP TUNA TUNE TURF TURN TUSK TUFT TWIN TWIT TYPE '+
+'UGLY UNDO UNIT UNTO UPON URGE USED USER USES '+
+'VAIN VALE VANE VANS VARY VASE VAST VATS VEAL VEER VEIL VEIN VEND VENT VERB VERY VEST '+
+'VETO VIEW VILE VINE VISA VOID VOLE VOLT VOTE VOWS '+
+'WADE WAGE WAGS WAIL WAIT WAKE WALK WALL WAND WANE WANT WARD WARM WARN WARP WARS WART '+
+'WARY WASH WASP WAVE WAVY WAXY WAYS WEAK WEAN WEAR WEBS WEDS WEED WEEK WEEP WELD WELL '+
+'WELT WEND WENT WEPT WERE WEST WETS WHAT WHEN WHET WHEW WHEY WHIG WHIM WHIP WHIR WHOM '+
+'WICK WIDE WIFE WILD WILL WILT WILY WIMP WIND WINE WING WINK WINS WIPE WIRE WIRY WISE '+
+'WISH WISP WITH WITS WOKE WOLF WOMB WONT WOOD WOOF WOOL WORD WORE WORK WORM WORN WORT '+
+'WOVE WRAP WREN WRIT '+
+'YAKS YAMS YANK YAPS YARD YARN YAWN YEAR YELL YELP YOUR YOWL YULE '+
+'ZANY ZAPS ZEAL ZERO ZEST ZINC ZING ZONE ZOOM '+
+'ABIDE ABOUT ABOVE ABUSE ACIDS ACRES ACTED ACTOR ACUTE ADDED ADMIN ADMIT ADOPT ADULT '+
+'AFTER AGAIN AGENT AGING AGILE AGREE AHEAD AISLE ALARM ALBUM ALERT ALGAE ALIBI ALIEN '+
+'ALIGN ALIKE ALIVE ALLEY ALLOT ALLOW ALLOY ALONE ALONG ALOOF ALTER AMAZE AMBER AMEND '+
+'AMPLE ANGEL ANGER ANGLE ANGRY ANIME ANKLE ANNEX ANNOY ANTIC APART APPLE APPLY ARENA '+
+'ARGUE ARISE ARMOR AROMA AROSE ARRAY ARROW ASIDE ATLAS ATTIC AUDIO AUDIT AVAIL AVOID '+
+'AWAIT AWAKE AWARD AWARE AWFUL AZURE '+
+'BADGE BADLY BAKER BALLS BANDS BANKS BARON BASED BASIC BASIN BASIS BATCH BEACH BEADS '+
+'BEANS BEARD BEARS BEAST BEGAN BEGIN BEING BELLS BELOW BENCH BERRY BIBLE BILLS BIRDS '+
+'BIRTH BLACK BLADE BLAME BLAND BLANK BLAST BLAZE BLEAK BLEED BLEND BLESS BLIND BLINK '+
+'BLISS BLOCK BLOOD BLOOM BLOWN BLUES BLUFF BLUNT BLURT BOARD BOATS BOLTS BOMBS BONDS '+
+'BONES BONUS BOOKS BOOST BOOTS BOOTH BORED BOUND BOWLS BOXED BOXES BRAIN BRAND BRAVE '+
+'BREAD BREAK BREED BRICK BRIDE BRIEF BRING BRINK BRISK BROAD BROKE BROOK BROOM BROTH '+
+'BROWN BRUSH BUDDY BUILD BUILT BUNCH BURST BUYER '+
+'CABIN CABLE CAMEL CANDY CARGO CARRY CATCH CAUSE CEASE CHAIN CHAIR CHALK CHAMP CHAOS '+
+'CHARM CHART CHASE CHEAP CHEAT CHECK CHEEK CHEER CHESS CHEST CHIEF CHILD CHILL CHINA '+
+'CHOIR CHORD CHOSE CHUNK CIVIL CLAIM CLAMP CLASH CLASS CLEAN CLEAR CLERK CLICK CLIFF '+
+'CLIMB CLING CLIPS CLOCK CLONE CLOSE CLOTH CLOUD CLOWN CLUBS CLUCK COACH COAST COBRA '+
+'COLOR COMET COMIC CORAL COUNT COURT COVER CRACK CRAFT CRANE CRASH CRAZY CREAM CREWS '+
+'CRIME CRISP CROSS CROWD CROWN CRUDE CRUSH CURVE CYCLE '+
+'DAILY DANCE DEALS DEATH DEBUG DECAY DECOY DECOR DECOY DELTA DEMON DENSE DEPOT DEPTH '+
+'DERBY DEVIL DIARY DIGIT DIRTY DISCO DITCH DIZZY DODGE DOING DONOR DOUBT DOUGH DRAFT '+
+'DRAIN DRAKE DRAMA DRANK DRAPE DRAWN DRAWS DREAD DREAM DRESS DRIED DRIFT DRILL DRINK '+
+'DRIVE DROIT DRONE DROOL DROPS DROWN DRUMS DRUNK DRYER DRYLY DWARF DWELL '+
+'EAGER EAGLE EARLY EARTH EASED EIGHT ELDER ELECT ELITE EMBED EMBER EMPTY ENEMY ENJOY '+
+'ENTER ENTRY EQUAL EQUIP ERASE ERROR ESSAY EVENT EVERY EXACT EXALT EXILE EXIST EXTRA '+
+'FABLE FACED FACES FACTS FAINT FAIRY FAITH FALSE FANCY FATAL FAULT FAVOR FEAST FENCE '+
+'FETCH FEVER FIBER FIELD FIERY FIFTY FIGHT FINAL FINDS FIRST FIXED FLAME FLASH FLASK '+
+'FLESH FLIES FLOAT FLOCK FLOOD FLOOR FLOSS FLOUR FLOWS FLUID FLUSH FLUTE FOCAL FOCUS '+
+'FOGGY FORCE FORGE FORMS FORTH FORTY FOUND FRAME FRANK FRAUD FRESH FRONT FROST FROZE '+
+'FRUIT FULLY FUNDS FUNNY FUZZY '+
+'GAINS GAMES GASES GAUGE GHOST GIANT GIVEN GIVES GLAND GLARE GLASS GLEAM GLIDE GLOBE '+
+'GLOOM GLORY GLOSS GLOVE GOING GRACE GRADE GRAIN GRAND GRANT GRAPE GRAPH GRASP GRASS '+
+'GRAVE GRAVY GREED GREEN GREET GRIEF GRIND GROAN GROOM GROSS GROUP GROVE GROWN GROWS '+
+'GUARD GUESS GUEST GUIDE GUILD GUILT GUISE GULCH GUMMY '+
+'HABIT HAPPY HARSH HASTE HASTY HAVEN HEADS HEART HEAVY HEDGE HEELS HEIST HENCE HERBS '+
+'HINGE HOBBY HOMES HONEY HONOR HOPED HORSE HOTEL HOURS HOUSE HUMAN HUMOR HURRY '+
+'IDEAL IDEAS IMAGE IMPLY INDEX INDIE INFER INNER INPUT ISSUE IVORY '+
+'JEWEL JOKER JOLLY JUICE JUICY JUMBO '+
+'KAYAK KEEPS KINDS KNACK KNEEL KNIFE KNOCK KNOTS KNOWN KNOWS '+
+'LABEL LABOR LACED LAKES LANCE LANDS LANES LARGE LASER LATCH LATER LAUGH LAYER LEADS '+
+'LEAFY LEAKY LEAPS LEARN LEASE LEAST LEAVE LEGAL LEMON LEVEL LEVER LIGHT LIKED LIKES '+
+'LIMIT LINEN LINED LINES LINKS LIONS LISTS LIVED LIVEN LIVER LIVES LOADS LOCAL LODGE '+
+'LOGIC LOOSE LOVER LOWER LOYAL LUCKY LUNAR LUNCH LYING '+
+'MAGIC MAJOR MAKER MANOR MAPLE MARCH MARKS MARSH MATCH MAYBE MAYOR MEALS MEANS MEDIA '+
+'MERCY MERGE MERIT METAL METER MIGHT MILES MINOR MINUS MODAL MODEL MONEY MONTH MORAL '+
+'MOUNT MOUSE MOUTH MOVED MOVER MOVES MOVIE MUDDY MULTI MURAL MUSIC '+
+'NAIVE NAKED NAMED NAMES NAVAL NERVE NEVER NEWLY NICHE NIGHT NOBLE NOISE NORTH NOTED '+
+'NOTES NOVEL '+
+'OCCUR OCEAN OFFER OFTEN OLIVE ONSET OPERA ORDER ORGAN OTHER OUGHT OUTER OWNED OWNER OXIDE '+
+'PAINT PAIRS PANEL PANIC PAPER PARTS PARTY PASTE PATCH PAUSE PEACE PEACH PEARL PENNY '+
+'PHASE PHONE PHOTO PICKS PIECE PILOT PINCH PITCH PIXEL PLACE PLAIN PLANE PLANT PLATE '+
+'PLEAD PLAZA PLOTS PLUMB PLUME PLUSH POEMS POINT POLAR POLLS POOLS PORCH POSED POWER '+
+'PRESS PRICE PRIDE PRIME PRINT PRIOR PRIZE PROBE PRONE PROOF PROSE PROUD PROVE PRUNE '+
+'PSALM PULSE PUNCH PUPIL PURSE PUSH '+
+'QUEEN QUERY QUEST QUEUE QUICK QUIET QUILT QUIRK QUOTA QUOTE '+
+'RADAR RADII RADIO RAISE RALLY RANGE RANKS RAPID RAVEN REACH READS REALM REBEL REIGN '+
+'RELAY RENEW REPAY REPLY RESIN RIDER RIDGE RIFLE RIGHT RIGID RIPEN RISEN RISKY RIVAL '+
+'RIVER ROAST ROBOT ROCKY ROMAN ROOMS ROOTS ROSES ROUGH ROUND ROUTE ROVER ROYAL RUGBY '+
+'RULED RULER HUMOR RURAL RUSTY '+
+'SADLY SAINT SALAD SALES SALON SAUCE SAVED SCALE SCARE SCARF SCENE SCOPE SCORE SCOUT '+
+'SCRAP SEEDS SENSE SERVE SEVEN SHADE SHADY SHALL SHAME SHAPE SHARE SHARK SHARP SHAVE '+
+'SHEAR SHEDS SHEEN SHEER SHELF SHELL SHIFT SHINE SHINY SHIRT SHOCK SHOES SHONE SHOOK '+
+'SHOOT SHORE SHORT SHOTS SHOUT SHOWN SHOWS SIGHT SIGMA SINCE SIXTH SIXTY SIZED SIZES '+
+'SKILL SKULL SLASH SLATE SLEEP SLICE SLIDE SLOPE SMALL SMART SMELL SMILE SMOKE SNACK '+
+'SNAKE SOLAR SOLID SOLVE SORRY SOUND SOUTH SPACE SPARE SPARK SPAWN SPEAK SPEED SPELL '+
+'SPEND SPENT SPICE SPIKE SPINE SPLIT SPOKE SPOON SPORT SPOTS SPRAY SQUAD STACK STAFF '+
+'STAGE STAIN STAKE STALE STALL STAMP STAND STARE START STATE STAYS STEAK STEAL STEAM '+
+'STEEL STEEP STEER STEMS STEPS STERN STICK STIFF STILL STING STOCK STOLE STONE STOOD '+
+'STOOL STORE STORM STORY STOUT STOVE STRAP STRAW STRAY STRIP STUCK STUDY STUFF STUMP '+
+'STYLE SUGAR SUITE SUNNY SUPER SURGE SWAMP SWEAR SWEEP SWEET SWEPT SWIFT SWING SWIRL '+
+'SWORD SWORE SWORN SWUNG '+
+'TABLE TAKEN TAKES TALES TASTE TEACH TEAMS TEETH TEMPO TENDS TENSE TENTH TERMS THEIR '+
+'THEME THERE THESE THICK THING THINK THIRD THORN THOSE THREE THREW THROW THUMB TIDAL '+
+'TIGER TIGHT TIMER TIMES TIRED TITLE TODAY TOKEN TOOTH TOPIC TORCH TOTAL TOUCH TOUGH '+
+'TOWEL TOWER TOWNS TOXIC TRACE TRACK TRADE TRAIL TRAIN TRAIT TRASH TREAT TREES TREND '+
+'TRIAL TRIBE TRICK TRIED TRIPS TROOP TROUT TRUCK TRULY TRUMP TRUNK TRUST TRUTH TUBES '+
+'TULIP TUMOR TUNED TUNES TURNS TUTOR TWICE TWIST '+
+'ULCER ULTRA UNCLE UNDER UNDUE UNFIT UNION UNITE UNITY UNTIL UPPER UPSET URBAN USAGE '+
+'USUAL UTTER '+
+'VAGUE VALID VALUE VALVE VAPOR VAULT VERGE VERSE VIDEO VIGOR VINYL VIRAL VIRUS VISIT '+
+'VISTA VITAL VIVID VOCAL VODKA VOICE VOTED VOTER VOUCH VOWEL '+
+'WAGED WAGES WALKS WALLS WASTE WATCH WATER WAVES WEARY WEAVE WEEDS WEIGH WEIRD WHEEL '+
+'WHERE WHICH WHILE WHITE WHOLE WHOSE WIDTH WITCH WIVES WOMAN WOMEN WORDS WORLD WORRY '+
+'WORSE WORST WORTH WOULD WOUND WRATH WRIST WRITE WRONG WROTE '+
+'YACHT YEARS YIELD YOUNG YOUTH ZEROS ZONES'
+).split(/\s+/);
+
+// ─── TRIE ────────────────────────────────────────────────
+var TRIE_END = '$';
+function buildTrie(words) {
+  var root = {};
+  for (var i = 0; i < words.length; i++) {
+    var w = words[i].toUpperCase();
+    if (w.length < 2) continue;
+    var node = root;
+    for (var j = 0; j < w.length; j++) {
+      if (!node[w[j]]) node[w[j]] = {};
+      node = node[w[j]];
+    }
+    node[TRIE_END] = true;
+  }
+  return root;
+}
+
+var wordSet = {};
+function buildWordSet(words) {
+  for (var i = 0; i < words.length; i++) wordSet[words[i].toUpperCase()] = true;
+}
+
+function isWord(w) { return !!wordSet[w.toUpperCase()]; }
+
+// ─── GAME ENGINE (simplified from prototype) ─────────────
+function shuffleArray(a) {
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+function SimGame(d1, d2) {
+  this.board = [];
+  for (var r = 0; r < 15; r++) { this.board[r] = []; for (var c = 0; c < 15; c++) this.board[r][c] = null; }
+  this.bag = [];
+  var letters = Object.keys(TILE_DIST);
+  for (var i = 0; i < letters.length; i++) for (var j = 0; j < TILE_DIST[letters[i]]; j++) this.bag.push(letters[i]);
+  shuffleArray(this.bag);
+  this.racks = [[], []];
+  this.scores = [0, 0];
+  this.diffs = [d1, d2];
+  this.passes = 0;
+  this.turns = 0;
+  this.wordsPlayed = [[], []];
+  this.errors = [];
+  this.bingos = [0, 0];
+  this.trie = buildTrie(WORDS);
+  
+  for (var p = 0; p < 2; p++) {
+    while (this.racks[p].length < 7 && this.bag.length > 0) this.racks[p].push(this.bag.pop());
+  }
+}
+
+SimGame.prototype.boardHasTiles = function() {
+  for (var r = 0; r < 15; r++) for (var c = 0; c < 15; c++) if (this.board[r][c]) return true;
+  return false;
+};
+
+SimGame.prototype.computeCrossChecks = function() {
+  var checks = [];
+  for (var r = 0; r < 15; r++) {
+    checks[r] = [];
+    for (var c = 0; c < 15; c++) {
+      if (this.board[r][c]) { checks[r][c] = null; continue; }
+      checks[r][c] = {h: null, v: null};
+      // Vertical cross for horizontal play
+      var above = '', below = '';
+      var tr = r - 1;
+      while (tr >= 0 && this.board[tr][c]) { above = this.board[tr][c].letter + above; tr--; }
+      tr = r + 1;
+      while (tr < 15 && this.board[tr][c]) { below = below + this.board[tr][c].letter; tr++; }
+      if (above || below) {
+        var vh = {};
+        for (var li = 0; li < 26; li++) {
+          var l = String.fromCharCode(65 + li);
+          if (isWord(above + l + below)) vh[l] = true;
+        }
+        checks[r][c].h = vh;
+      }
+      // Horizontal cross for vertical play
+      var left = '', right = '';
+      var tc = c - 1;
+      while (tc >= 0 && this.board[r][tc]) { left = this.board[r][tc].letter + left; tc--; }
+      tc = c + 1;
+      while (tc < 15 && this.board[r][tc]) { right = right + this.board[r][tc].letter; tc++; }
+      if (left || right) {
+        var vv = {};
+        for (li = 0; li < 26; li++) {
+          l = String.fromCharCode(65 + li);
+          if (isWord(left + l + right)) vv[l] = true;
+        }
+        checks[r][c].v = vv;
+      }
+    }
+  }
+  return checks;
+};
+
+SimGame.prototype.findAnchors = function() {
+  var a = [];
+  if (!this.boardHasTiles()) { a.push({r:7,c:7}); return a; }
+  for (var r = 0; r < 15; r++) for (var c = 0; c < 15; c++) {
+    if (this.board[r][c]) continue;
+    if ((r>0&&this.board[r-1][c])||(r<14&&this.board[r+1][c])||(c>0&&this.board[r][c-1])||(c<14&&this.board[r][c+1]))
+      a.push({r:r,c:c});
+  }
+  return a;
+};
+
+SimGame.prototype.generateMoves = function(rack) {
+  var cc = this.computeCrossChecks();
+  var anchors = this.findAnchors();
+  var moves = [];
+  this._genDir(rack, cc, anchors, true, moves);
+  this._genDir(rack, cc, anchors, false, moves);
+  return moves;
+};
+
+SimGame.prototype._genDir = function(rack, cc, anchors, horiz, moves) {
+  var dr = horiz ? 0 : 1, dc = horiz ? 1 : 0;
+  var self = this;
+  for (var ai = 0; ai < anchors.length; ai++) {
+    var ar = anchors[ai].r, ac = anchors[ai].c;
+    var limit = 0;
+    var pr = ar - dr, pc = ac - dc;
+    while (pr >= 0 && pc >= 0 && pr < 15 && pc < 15 && !self.board[pr][pc]) {
+      var isAnch = false;
+      if (horiz) { if ((pr>0&&self.board[pr-1][pc])||(pr<14&&self.board[pr+1][pc])) isAnch=true; }
+      else { if ((pc>0&&self.board[pr][pc-1])||(pc<14&&self.board[pr][pc+1])) isAnch=true; }
+      if (isAnch) break;
+      limit++; pr -= dr; pc -= dc;
+    }
+    var prefixOnBoard = '';
+    var cr = ar - dr, crc = ac - dc;
+    while (cr >= 0 && crc >= 0 && cr < 15 && crc < 15 && self.board[cr][crc]) {
+      prefixOnBoard = self.board[cr][crc].letter + prefixOnBoard;
+      cr -= dr; crc -= dc;
+    }
+    if (prefixOnBoard) {
+      var node = self.trie;
+      for (var pi = 0; pi < prefixOnBoard.length; pi++) {
+        if (!node[prefixOnBoard[pi]]) { node = null; break; }
+        node = node[prefixOnBoard[pi]];
+      }
+      if (node) self._extR(ar, ac, dr, dc, node, rack.slice(), prefixOnBoard, [], cc, horiz, moves, true);
+    } else {
+      self._leftP(ar, ac, dr, dc, self.trie, rack.slice(), '', [], limit, cc, horiz, moves);
+    }
+  }
+};
+
+SimGame.prototype._leftP = function(ar, ac, dr, dc, node, rack, partial, used, limit, cc, horiz, moves) {
+  this._extR(ar, ac, dr, dc, node, rack.slice(), partial, used.slice(), cc, horiz, moves, true);
+  if (limit > 0) {
+    var tried = {};
+    for (var ri = 0; ri < rack.length; ri++) {
+      var l = rack[ri];
+      if (l === ' ') {
+        for (var bi = 0; bi < 26; bi++) {
+          var bl = String.fromCharCode(65+bi);
+          if (tried['_'+bl]||!node[bl]) continue;
+          tried['_'+bl]=true;
+          var nr = rack.slice(); nr.splice(ri,1);
+          this._leftP(ar,ac,dr,dc,node[bl],nr,partial+bl,used.concat([{letter:bl,isBlank:true}]),limit-1,cc,horiz,moves);
+        }
+      } else {
+        if (tried[l]||!node[l]) continue;
+        tried[l]=true;
+        var nr2 = rack.slice(); nr2.splice(ri,1);
+        this._leftP(ar,ac,dr,dc,node[l],nr2,partial+l,used.concat([{letter:l,isBlank:false}]),limit-1,cc,horiz,moves);
+      }
+    }
+  }
+};
+
+SimGame.prototype._extR = function(r, c, dr, dc, node, rack, partial, used, cc, horiz, moves, past) {
+  if (r<0||c<0||r>=15||c>=15) {
+    if (node[TRIE_END]&&past&&used.length>0) this._rec(r-dr,c-dc,dr,dc,partial,used,horiz,moves);
+    return;
+  }
+  if (this.board[r][c]) {
+    var el = this.board[r][c].letter;
+    if (node[el]) this._extR(r+dr,c+dc,dr,dc,node[el],rack,partial+el,used,cc,horiz,moves,true);
+    return;
+  }
+  if (node[TRIE_END]&&past&&used.length>0) this._rec(r-dr,c-dc,dr,dc,partial,used,horiz,moves);
+  var ccs = cc[r]?cc[r][c]:null;
+  var crossSet = null;
+  if (ccs) crossSet = horiz?ccs.h:ccs.v;
+  var tried = {};
+  for (var ri = 0; ri < rack.length; ri++) {
+    var l = rack[ri];
+    if (l === ' ') {
+      for (var bi = 0; bi < 26; bi++) {
+        var bl = String.fromCharCode(65+bi);
+        if (tried['_'+bl]) continue;
+        if (crossSet&&!crossSet[bl]) continue;
+        if (!node[bl]) continue;
+        tried['_'+bl]=true;
+        var nr = rack.slice(); nr.splice(ri,1);
+        this._extR(r+dr,c+dc,dr,dc,node[bl],nr,partial+bl,used.concat([{letter:bl,isBlank:true}]),cc,horiz,moves,true);
+      }
+    } else {
+      if (tried[l]) continue;
+      if (crossSet&&!crossSet[l]) continue;
+      if (!node[l]) continue;
+      tried[l]=true;
+      var nr2 = rack.slice(); nr2.splice(ri,1);
+      this._extR(r+dr,c+dc,dr,dc,node[l],nr2,partial+l,used.concat([{letter:l,isBlank:false}]),cc,horiz,moves,true);
+    }
+  }
+};
+
+SimGame.prototype._rec = function(endR, endC, dr, dc, word, used, horiz, moves) {
+  var startR = endR - (word.length-1)*dr;
+  var startC = endC - (word.length-1)*dc;
+  var positions = [];
+  var newTiles = [];
+  var ti = 0;
+  var cr = startR, cc2 = startC;
+  for (var i = 0; i < word.length; i++) {
+    positions.push({r:cr,c:cc2});
+    if (!this.board[cr]||this.board[cr][cc2]===null) {
+      if (ti < used.length) {
+        newTiles.push({r:cr,c:cc2,letter:used[ti].letter,isBlank:used[ti].isBlank});
+        ti++;
+      }
+    }
+    cr+=dr; cc2+=dc;
+  }
+  if (ti !== used.length) return;
+  var score = this._scoreMove(word, positions, newTiles);
+  if (used.length === 7) score += BINGO_BONUS;
+  moves.push({word:word,startR:startR,startC:startC,horizontal:horiz,tiles:newTiles,score:score,isBingo:used.length===7});
+};
+
+SimGame.prototype._scoreMove = function(word, positions, newTiles) {
+  var self = this;
+  function isNew(r,c) { for(var i=0;i<newTiles.length;i++) if(newTiles[i].r===r&&newTiles[i].c===c) return true; return false; }
+  function getBlank(r,c) { for(var i=0;i<newTiles.length;i++) if(newTiles[i].r===r&&newTiles[i].c===c) return newTiles[i].isBlank; var cl=self.board[r]?self.board[r][c]:null; return cl?cl.isBlank:false; }
+  
+  var main = 0, wm = 1;
+  for (var i = 0; i < word.length; i++) {
+    var r=positions[i].r,c=positions[i].c;
+    var lv = getBlank(r,c)?0:(TILE_VALUES[word[i]]||0);
+    var p = PREMIUMS[r+','+c];
+    if (p&&isNew(r,c)) {
+      if(p==='dl') lv*=2; else if(p==='tl') lv*=3;
+      else if(p==='dw') wm*=2; else if(p==='tw') wm*=3;
+    }
+    main += lv;
+  }
+  main *= wm;
+  
+  var cross = 0;
+  var dr2 = positions.length>1?(positions[1].r-positions[0].r):0;
+  var dc2 = positions.length>1?(positions[1].c-positions[0].c):0;
+  
+  for (var ti = 0; ti < newTiles.length; ti++) {
+    var tr=newTiles[ti].r, tc=newTiles[ti].c;
+    var cdr=dr2===0?1:0, cdc=dc2===0?1:0;
+    var sr=tr-cdr,sc=tc-cdc;
+    while(sr>=0&&sc>=0&&self.board[sr]&&self.board[sr][sc]) {sr-=cdr;sc-=cdc;}
+    sr+=cdr;sc+=cdc;
+    var cw='',cwp=[];
+    var cr2=sr,cc2=sc;
+    while(cr2>=0&&cc2>=0&&cr2<15&&cc2<15) {
+      var ch=null;
+      if(self.board[cr2]&&self.board[cr2][cc2]) ch=self.board[cr2][cc2].letter;
+      else if(cr2===tr&&cc2===tc) ch=newTiles[ti].letter;
+      else break;
+      cw+=ch; cwp.push({r:cr2,c:cc2}); cr2+=cdr; cc2+=cdc;
+    }
+    if(cw.length<2) continue;
+    var cs=0,cm=1;
+    for(var ci=0;ci<cw.length;ci++){
+      var pr2=cwp[ci].r,pc2=cwp[ci].c;
+      var clv=(pr2===tr&&pc2===tc)?(newTiles[ti].isBlank?0:(TILE_VALUES[cw[ci]]||0)):((self.board[pr2][pc2]&&self.board[pr2][pc2].isBlank)?0:(TILE_VALUES[cw[ci]]||0));
+      var cp=PREMIUMS[pr2+','+pc2];
+      if(cp&&pr2===tr&&pc2===tc){if(cp==='dl')clv*=2;else if(cp==='tl')clv*=3;else if(cp==='dw')cm*=2;else if(cp==='tw')cm*=3;}
+      cs+=clv;
+    }
+    cross+=cs*cm;
+  }
+  return main+cross;
+};
+
+SimGame.prototype.selectMove = function(moves, diff) {
+  if (moves.length===0) return null;
+  moves.sort(function(a,b){return b.score-a.score;});
+  if (diff===0) {
+    var f = moves.filter(function(m){return m.word.length<=5;});
+    if(!f.length) f=moves;
+    var bs=Math.floor(f.length*0.4);
+    var pool=f.slice(bs);
+    if(!pool.length) pool=f;
+    return pool[Math.floor(Math.random()*pool.length)];
+  } else if (diff===1) {
+    var te=Math.max(1,Math.floor(moves.length*0.4));
+    var p2=moves.slice(0,te);
+    return p2[Math.floor(Math.random()*Math.random()*p2.length)];
+  }
+  return moves[0];
+};
+
+SimGame.prototype.playTurn = function(playerIdx) {
+  var rack = this.racks[playerIdx];
+  var diff = this.diffs[playerIdx];
+  var moves = this.generateMoves(rack);
+  
+  if (moves.length === 0) {
+    if (this.bag.length >= 7) {
+      var ret = rack.splice(0, rack.length);
+      for (var i = 0; i < ret.length; i++) this.bag.push(ret[i]);
+      shuffleArray(this.bag);
+      while (rack.length < 7 && this.bag.length > 0) rack.push(this.bag.pop());
+      this.passes = 0;
+      return {action:'exchange'};
+    }
+    this.passes++;
+    return {action:'pass'};
+  }
+  
+  var chosen = this.selectMove(moves, diff);
+  if (!chosen) { this.passes++; return {action:'pass'}; }
+  
+  // Validate the chosen word
+  if (!isWord(chosen.word)) {
+    this.errors.push('AI played invalid word: ' + chosen.word);
+  }
+  
+  // Place tiles
+  for (var ti = 0; ti < chosen.tiles.length; ti++) {
+    var tile = chosen.tiles[ti];
+    this.board[tile.r][tile.c] = {letter:tile.letter, value:tile.isBlank?0:TILE_VALUES[tile.letter], isBlank:tile.isBlank};
+    var rl = tile.isBlank ? ' ' : tile.letter;
+    var ri = rack.indexOf(rl);
+    if (ri >= 0) rack.splice(ri, 1);
+  }
+  
+  this.scores[playerIdx] += chosen.score;
+  this.wordsPlayed[playerIdx].push(chosen.word);
+  if (chosen.isBingo) this.bingos[playerIdx]++;
+  this.passes = 0;
+  
+  while (rack.length < 7 && this.bag.length > 0) rack.push(this.bag.pop());
+  
+  return {action:'play', word:chosen.word, score:chosen.score, isBingo:chosen.isBingo};
+};
+
+SimGame.prototype.isOver = function() {
+  if (this.passes >= 4) return true;
+  if (this.bag.length === 0 && (this.racks[0].length === 0 || this.racks[1].length === 0)) return true;
+  if (this.turns > 200) return true; // safety
+  return false;
+};
+
+SimGame.prototype.finalize = function() {
+  for (var p = 0; p < 2; p++) {
+    var deduct = 0;
+    for (var i = 0; i < this.racks[p].length; i++) deduct += TILE_VALUES[this.racks[p][i]]||0;
+    this.scores[p] -= deduct;
+  }
+};
+
+// ─── TEST RUNNER ─────────────────────────────────────────
+var running = false;
+
+function log(msg, cls) {
+  var el = document.getElementById('log');
+  el.innerHTML += '<div class="' + (cls||'') + '">' + msg + '</div>';
+  el.scrollTop = el.scrollHeight;
+}
+
+window.runTests = function() {
+  if (running) return;
+  running = true;
+  document.getElementById('btn-run').disabled = true;
+  document.getElementById('log').innerHTML = '';
+  document.getElementById('stats').innerHTML = '';
+  document.getElementById('checks').innerHTML = '';
+  
+  var total = parseInt(document.getElementById('count').value);
+  var d1 = parseInt(document.getElementById('d1').value);
+  var d2 = parseInt(document.getElementById('d2').value);
+  var dNames = ['Seedling','Gardener','Botanist'];
+  
+  log('Starting ' + total + ' games: P1(' + dNames[d1] + ') vs P2(' + dNames[d2] + ')');
+  log('Dictionary: ' + WORDS.length + ' words');
+  
+  buildWordSet(WORDS);
+  
+  var results = {
+    p1Wins: 0, p2Wins: 0, ties: 0,
+    p1Scores: [], p2Scores: [],
+    p1Words: [], p2Words: [],
+    gameLengths: [],
+    errors: [],
+    bingos: [0, 0],
+    stalemates: 0,
+    allWordsPlayed: {}
+  };
+  
+  var completed = 0;
+  
+  function runBatch() {
+    var batchSize = Math.min(5, total - completed);
+    for (var b = 0; b < batchSize; b++) {
+      var game = new SimGame(d1, d2);
+      var turn = 0;
+      while (!game.isOver()) {
+        var pidx = turn % 2;
+        game.playTurn(pidx);
+        game.turns++;
+        turn++;
+      }
+      game.finalize();
+      
+      results.p1Scores.push(game.scores[0]);
+      results.p2Scores.push(game.scores[1]);
+      results.gameLengths.push(game.turns);
+      results.bingos[0] += game.bingos[0];
+      results.bingos[1] += game.bingos[1];
+      
+      if (game.scores[0] > game.scores[1]) results.p1Wins++;
+      else if (game.scores[1] > game.scores[0]) results.p2Wins++;
+      else results.ties++;
+      
+      if (game.turns >= 200) results.stalemates++;
+      
+      for (var p = 0; p < 2; p++) {
+        for (var wi = 0; wi < game.wordsPlayed[p].length; wi++) {
+          var w = game.wordsPlayed[p][wi];
+          results.allWordsPlayed[w] = (results.allWordsPlayed[w]||0)+1;
+          if (p === 0) results.p1Words.push(w);
+          else results.p2Words.push(w);
+        }
+      }
+      
+      if (game.errors.length > 0) {
+        for (var ei = 0; ei < game.errors.length; ei++) results.errors.push(game.errors[ei]);
+      }
+      
+      completed++;
+    }
+    
+    var pct = Math.round(completed/total*100);
+    document.getElementById('prog').style.width = pct+'%';
+    document.getElementById('status').textContent = completed + '/' + total + ' games (' + pct + '%)';
+    
+    if (completed % 25 === 0 || completed === total) {
+      log('Completed: ' + completed + '/' + total);
+    }
+    
+    if (completed < total) {
+      setTimeout(runBatch, 0);
+    } else {
+      showResults(results, total, d1, d2, dNames);
+      running = false;
+      document.getElementById('btn-run').disabled = false;
+    }
+  }
+  
+  setTimeout(runBatch, 10);
+};
+
+function avg(arr) { if (!arr.length) return 0; var s=0; for(var i=0;i<arr.length;i++) s+=arr[i]; return Math.round(s/arr.length); }
+function min(arr) { if (!arr.length) return 0; var m=arr[0]; for(var i=1;i<arr.length;i++) if(arr[i]<m)m=arr[i]; return m; }
+function max(arr) { if (!arr.length) return 0; var m=arr[0]; for(var i=1;i<arr.length;i++) if(arr[i]>m)m=arr[i]; return m; }
+function stddev(arr) {
+  if (arr.length<2) return 0;
+  var m=avg(arr);
+  var s=0; for(var i=0;i<arr.length;i++) s+=(arr[i]-m)*(arr[i]-m);
+  return Math.round(Math.sqrt(s/arr.length));
+}
+
+function showResults(r, total, d1, d2, dNames) {
+  var html = '';
+  
+  html += '<div class="stat-box"><h3>Win Rate</h3><div class="val">' + dNames[d1] + ': ' + Math.round(r.p1Wins/total*100) + '%</div>';
+  html += '<div class="sub">' + r.p1Wins + 'W / ' + r.p2Wins + 'L / ' + r.ties + 'T</div></div>';
+  
+  html += '<div class="stat-box"><h3>P1 Score (' + dNames[d1] + ')</h3><div class="val">' + avg(r.p1Scores) + ' avg</div>';
+  html += '<div class="sub">Range: ' + min(r.p1Scores) + ' – ' + max(r.p1Scores) + ' (σ ' + stddev(r.p1Scores) + ')</div></div>';
+  
+  html += '<div class="stat-box"><h3>P2 Score (' + dNames[d2] + ')</h3><div class="val">' + avg(r.p2Scores) + ' avg</div>';
+  html += '<div class="sub">Range: ' + min(r.p2Scores) + ' – ' + max(r.p2Scores) + ' (σ ' + stddev(r.p2Scores) + ')</div></div>';
+  
+  html += '<div class="stat-box"><h3>Game Length</h3><div class="val">' + avg(r.gameLengths) + ' turns avg</div>';
+  html += '<div class="sub">Range: ' + min(r.gameLengths) + ' – ' + max(r.gameLengths) + '</div></div>';
+  
+  html += '<div class="stat-box"><h3>Bingos</h3><div class="val">P1: ' + r.bingos[0] + ' / P2: ' + r.bingos[1] + '</div>';
+  html += '<div class="sub">Per game: ' + (r.bingos[0]/total).toFixed(2) + ' / ' + (r.bingos[1]/total).toFixed(2) + '</div></div>';
+  
+  var uniqueWords = Object.keys(r.allWordsPlayed).length;
+  html += '<div class="stat-box"><h3>Unique Words Played</h3><div class="val">' + uniqueWords + '</div>';
+  html += '<div class="sub">of ' + WORDS.length + ' in dictionary (' + Math.round(uniqueWords/WORDS.length*100) + '%)</div></div>';
+  
+  document.getElementById('stats').innerHTML = html;
+  
+  // Validation checks
+  var checks = '';
+  var allOk = true;
+  
+  function check(name, pass, detail) {
+    checks += '<div class="' + (pass?'ok':'error') + '">' + (pass?'✓':'✗') + ' ' + name;
+    if (detail) checks += ' — ' + detail;
+    checks += '</div>';
+    if (!pass) allOk = false;
+  }
+  
+  check('No invalid words played', r.errors.length === 0, r.errors.length > 0 ? r.errors.slice(0,5).join(', ') : '');
+  check('No stalemates (200+ turns)', r.stalemates === 0, r.stalemates > 0 ? r.stalemates + ' games stalled' : '');
+  check('Scores are non-negative (avg)', avg(r.p1Scores) >= 0 && avg(r.p2Scores) >= 0, '');
+  check('Games complete normally', min(r.gameLengths) >= 4, 'Shortest game: ' + min(r.gameLengths) + ' turns');
+  check('Higher difficulty wins more', d1 === d2 || (d1 > d2 ? r.p1Wins >= r.p2Wins : r.p2Wins >= r.p1Wins),
+    'P1 (' + dNames[d1] + '): ' + r.p1Wins + 'W vs P2 (' + dNames[d2] + '): ' + r.p2Wins + 'W');
+  check('Dictionary utilization > 5%', uniqueWords / WORDS.length > 0.05, Math.round(uniqueWords/WORDS.length*100) + '%');
+  check('Score variance is reasonable', stddev(r.p1Scores) > 10 && stddev(r.p1Scores) < 200, 'σ = ' + stddev(r.p1Scores));
+  
+  // Top words
+  var wordEntries = [];
+  var keys = Object.keys(r.allWordsPlayed);
+  for (var i = 0; i < keys.length; i++) wordEntries.push({word:keys[i], count:r.allWordsPlayed[keys[i]]});
+  wordEntries.sort(function(a,b){return b.count-a.count;});
+  
+  checks += '<br><strong>Top 20 Most Played Words:</strong><br>';
+  checks += '<table><tr><th>Word</th><th>Times</th><th>Length</th></tr>';
+  for (i = 0; i < Math.min(20, wordEntries.length); i++) {
+    checks += '<tr><td>' + wordEntries[i].word + '</td><td>' + wordEntries[i].count + '</td><td>' + wordEntries[i].word.length + '</td></tr>';
+  }
+  checks += '</table>';
+  
+  document.getElementById('checks').innerHTML = checks;
+  
+  log('--- COMPLETE ---', allOk ? 'ok' : 'error');
+  log('Overall: ' + (allOk ? 'ALL CHECKS PASSED' : 'SOME CHECKS FAILED'), allOk ? 'ok' : 'error');
+}
+
+})();
+</script>
+</body>
+</html>

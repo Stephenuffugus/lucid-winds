@@ -1,0 +1,378 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Breathing Garden — Petal Walk</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#0d100c;touch-action:none;user-select:none}
+#app{display:flex;flex-direction:column;height:100%;max-width:420px;margin:0 auto;align-items:center}
+canvas{display:block;flex:1;width:100%}
+
+.top-bar{display:flex;justify-content:space-between;align-items:center;width:100%;padding:8px 16px;flex-shrink:0;z-index:10}
+.top-bar .title{font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:#4A7C35;letter-spacing:2px}
+.top-bar .timer{font-family:'Bebas Neue',sans-serif;font-size:.85rem;color:#D4A843;letter-spacing:1px}
+
+.phase-text{position:fixed;top:42%;left:50%;transform:translate(-50%,-50%);font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:#E8DCC8;letter-spacing:4px;pointer-events:none;z-index:10;opacity:.8;transition:opacity .5s}
+.count-text{position:fixed;top:52%;left:50%;transform:translate(-50%,-50%);font-family:'Bebas Neue',sans-serif;font-size:3rem;color:rgba(232,220,200,0.3);pointer-events:none;z-index:10}
+
+.ctrl-bar{display:flex;justify-content:center;gap:6px;padding:10px 12px;flex-shrink:0;flex-wrap:wrap;z-index:10}
+.ctrl-btn{background:rgba(26,36,22,0.7);border:1px solid rgba(74,124,53,0.3);color:#E8DCC8;padding:8px 14px;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:.7rem;letter-spacing:1px;cursor:pointer;transition:all .15s}
+.ctrl-btn:active{background:rgba(74,124,53,0.3);transform:scale(0.93)}
+.ctrl-btn.active{border-color:#4A7C35;color:#4A7C35;background:rgba(74,124,53,0.15)}
+.ctrl-btn.go{border-color:#D4A843;color:#D4A843;padding:8px 24px;font-size:.85rem}
+
+.pattern-row{display:flex;gap:4px;justify-content:center}
+.pat-btn{padding:7px 10px;font-size:.6rem}
+
+.session-info{text-align:center;font-size:.6rem;opacity:.35;padding:2px;font-family:'Crimson Text',serif;flex-shrink:0}
+
+#start-overlay{position:fixed;inset:0;background:rgba(13,16,12,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50}
+#start-overlay.hidden{display:none}
+#start-overlay h1{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#4A7C35;letter-spacing:4px;margin-bottom:4px}
+#start-overlay .sub{font-family:'Crimson Text',serif;font-style:italic;color:#E8DCC8;opacity:.6;margin-bottom:6px;font-size:.85rem}
+#start-overlay .desc{font-size:.7rem;color:#E8DCC8;opacity:.4;max-width:280px;text-align:center;margin-bottom:24px;line-height:1.5}
+.start-btn{background:rgba(26,36,22,0.8);border:1.5px solid #4A7C35;color:#E8DCC8;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;padding:14px 36px;border-radius:10px;cursor:pointer}
+.start-btn:active{background:rgba(74,124,53,0.3);transform:scale(0.95)}
+</style>
+</head>
+<body>
+<div id="start-overlay">
+  <h1>BREATHING GARDEN</h1>
+  <div class="sub">Breathe with the bloom</div>
+  <div class="desc">A guided breathing tool. Follow the flower — inhale as it opens, hold at full bloom, exhale as it closes. Real breathing patterns used in clinical practice.</div>
+  <button class="start-btn" onclick="beginSession()">🌱 BEGIN</button>
+</div>
+<div id="app" style="display:none">
+  <div class="top-bar">
+    <span class="title">BREATHING GARDEN</span>
+    <span class="timer" id="timer">0:00</span>
+  </div>
+  <canvas id="c"></canvas>
+  <div class="phase-text" id="phase-text">READY</div>
+  <div class="count-text" id="count-text"></div>
+  <div class="session-info" id="session-info">Breaths: 0 · Session: 0:00</div>
+  <div class="ctrl-bar">
+    <div class="pattern-row">
+      <div class="ctrl-btn pat-btn active" data-pat="calm" onclick="setPattern('calm')">CALM 4-6</div>
+      <div class="ctrl-btn pat-btn" data-pat="box" onclick="setPattern('box')">BOX 4-4-4-4</div>
+      <div class="ctrl-btn pat-btn" data-pat="relax" onclick="setPattern('relax')">RELAX 4-7-8</div>
+      <div class="ctrl-btn pat-btn" data-pat="energy" onclick="setPattern('energy')">ENERGY 2-2</div>
+    </div>
+    <div class="ctrl-btn go" id="btn-go" onclick="toggleBreathing()">▶ START</div>
+  </div>
+</div>
+<script>
+(function(){
+'use strict';
+
+var canvas,ctx,W,H,dpr,cx,cy;
+
+// Breathing patterns: {name, phases:[{name,duration}]}
+var PATTERNS={
+  calm:{name:'Calm',phases:[{name:'INHALE',dur:4},{name:'EXHALE',dur:6}]},
+  box:{name:'Box',phases:[{name:'INHALE',dur:4},{name:'HOLD',dur:4},{name:'EXHALE',dur:4},{name:'HOLD',dur:4}]},
+  relax:{name:'4-7-8',phases:[{name:'INHALE',dur:4},{name:'HOLD',dur:7},{name:'EXHALE',dur:8}]},
+  energy:{name:'Energy',phases:[{name:'INHALE',dur:2},{name:'EXHALE',dur:2}]}
+};
+
+var currentPattern='calm';
+var phases=PATTERNS.calm.phases;
+var phaseIdx=0;
+var phaseTimer=0; // seconds into current phase
+var breathing=false;
+var sessionStart=0;
+var breathCount=0;
+var totalTime=0;
+
+// Audio
+var audioCtx=null,padGain=null,breathOsc=null,breathGain=null;
+
+// Visual state
+var bloomProgress=0; // 0=closed, 1=full bloom
+var targetBloom=0;
+var petalCount=8;
+var particles=[];
+
+function resize(){
+  dpr=window.devicePixelRatio||1;
+  var rect=canvas.getBoundingClientRect();
+  W=rect.width;H=rect.height;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  cx=W/2;cy=H/2;
+}
+
+// ─── AUDIO ───────────────────────────────────────────────
+function initAudio(){
+  audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+
+  // Ambient pad (very soft)
+  var pad1=audioCtx.createOscillator();pad1.type='sine';pad1.frequency.value=110;
+  var pad2=audioCtx.createOscillator();pad2.type='sine';pad2.frequency.value=164.81; // E3
+  var pad3=audioCtx.createOscillator();pad3.type='sine';pad3.frequency.value=220; // A3
+  padGain=audioCtx.createGain();padGain.gain.value=0.025;
+  pad1.connect(padGain);pad2.connect(padGain);pad3.connect(padGain);
+  padGain.connect(audioCtx.destination);
+  pad1.start();pad2.start();pad3.start();
+
+  // Breath tone (swells with inhale)
+  breathOsc=audioCtx.createOscillator();breathOsc.type='sine';breathOsc.frequency.value=220;
+  breathGain=audioCtx.createGain();breathGain.gain.value=0;
+  breathOsc.connect(breathGain);breathGain.connect(audioCtx.destination);
+  breathOsc.start();
+}
+
+function updateAudio(){
+  if(!breathGain)return;
+  // Breath tone volume follows bloom
+  var targetVol=bloomProgress*0.06;
+  breathGain.gain.setTargetAtTime(targetVol,audioCtx.currentTime,0.1);
+  // Pitch shifts slightly with bloom
+  breathOsc.frequency.setTargetAtTime(200+bloomProgress*40,audioCtx.currentTime,0.1);
+}
+
+// ─── BREATHING LOGIC ─────────────────────────────────────
+function updateBreathing(dt){
+  if(!breathing)return;
+  phaseTimer+=dt;
+  var phase=phases[phaseIdx];
+  var phaseDur=phase.dur;
+  var progress=Math.min(1,phaseTimer/phaseDur);
+
+  // Update target bloom based on phase
+  if(phase.name==='INHALE'){
+    targetBloom=progress;
+  } else if(phase.name==='EXHALE'){
+    targetBloom=1-progress;
+  }
+  // HOLD keeps targetBloom where it is
+
+  // Countdown display
+  var remaining=Math.ceil(phaseDur-phaseTimer);
+  document.getElementById('count-text').textContent=remaining>0?remaining:'';
+  document.getElementById('phase-text').textContent=phase.name;
+
+  // Phase transition
+  if(phaseTimer>=phaseDur){
+    phaseTimer=0;
+    phaseIdx=(phaseIdx+1)%phases.length;
+    // Count a breath on completing a full cycle
+    if(phaseIdx===0){
+      breathCount++;
+      if(typeof window._e==='function'&&breathCount%5===0)window._e('milestone');
+    }
+    // Haptic on phase change
+    try{navigator.vibrate&&navigator.vibrate(15);}catch(e){}
+  }
+
+  // Smooth bloom animation
+  bloomProgress+=(targetBloom-bloomProgress)*0.08;
+
+  // Session timer
+  totalTime+=dt;
+  var mins=Math.floor(totalTime/60);
+  var secs=Math.floor(totalTime%60);
+  document.getElementById('timer').textContent=mins+':'+(secs<10?'0':'')+secs;
+  document.getElementById('session-info').textContent='Breaths: '+breathCount+' · Session: '+mins+':'+(secs<10?'0':'')+secs;
+
+  updateAudio();
+}
+
+// ─── DRAWING ─────────────────────────────────────────────
+function drawBackground(){
+  ctx.fillStyle='#0d100c';
+  ctx.fillRect(0,0,W,H);
+
+  // Subtle radial gradient
+  var grd=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.min(W,H)*0.6);
+  grd.addColorStop(0,'rgba(26,36,22,0.15)');
+  grd.addColorStop(1,'rgba(13,16,12,0)');
+  ctx.fillStyle=grd;
+  ctx.fillRect(0,0,W,H);
+}
+
+function drawBreathCircle(){
+  // Outer guide ring (always visible, subtle)
+  var maxR=Math.min(W,H)*0.32;
+  ctx.beginPath();
+  ctx.arc(cx,cy,maxR,0,Math.PI*2);
+  ctx.strokeStyle='rgba(74,124,53,0.08)';
+  ctx.lineWidth=1;
+  ctx.stroke();
+
+  // Breath circle (expands/contracts with bloom)
+  var r=maxR*0.2+maxR*0.8*bloomProgress;
+
+  // Glow
+  var glowR=r+20;
+  var glow=ctx.createRadialGradient(cx,cy,r,cx,cy,glowR);
+  glow.addColorStop(0,'rgba(74,124,53,'+0.15*bloomProgress+')');
+  glow.addColorStop(1,'rgba(74,124,53,0)');
+  ctx.fillStyle=glow;
+  ctx.beginPath();ctx.arc(cx,cy,glowR,0,Math.PI*2);ctx.fill();
+
+  // Main circle
+  var circleGrad=ctx.createRadialGradient(cx-r*0.2,cy-r*0.2,0,cx,cy,r);
+  circleGrad.addColorStop(0,'rgba(122,179,86,'+(.15+bloomProgress*0.2)+')');
+  circleGrad.addColorStop(1,'rgba(74,124,53,'+(.05+bloomProgress*0.1)+')');
+  ctx.fillStyle=circleGrad;
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+
+  // Circle border
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.strokeStyle='rgba(122,179,86,'+(0.2+bloomProgress*0.3)+')';
+  ctx.lineWidth=1.5;ctx.stroke();
+}
+
+function drawFlower(){
+  var maxR=Math.min(W,H)*0.28;
+  var petalR=maxR*bloomProgress;
+  if(petalR<3)return;
+
+  ctx.save();
+  ctx.translate(cx,cy);
+
+  // Petals
+  for(var i=0;i<petalCount;i++){
+    var angle=(Math.PI*2/petalCount)*i+Math.sin(Date.now()*0.0003)*0.1;
+    ctx.save();
+    ctx.rotate(angle);
+
+    var petalLen=petalR*0.9;
+    var petalW=petalR*0.25;
+
+    // Petal shape
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.bezierCurveTo(petalW,-petalLen*0.4, petalW*0.6,-petalLen, 0,-petalLen);
+    ctx.bezierCurveTo(-petalW*0.6,-petalLen, -petalW,-petalLen*0.4, 0,0);
+    ctx.closePath();
+
+    var petalAlpha=0.15+bloomProgress*0.25;
+    var colors=['rgba(196,122,122,','rgba(212,168,67,','rgba(122,179,86,','rgba(91,155,213,'];
+    ctx.fillStyle=colors[i%colors.length]+petalAlpha+')';
+    ctx.fill();
+
+    // Petal vein
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.lineTo(0,-petalLen*0.8);
+    ctx.strokeStyle='rgba(232,220,200,'+(petalAlpha*0.3)+')';
+    ctx.lineWidth=0.5;
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // Center
+  var centerR=petalR*0.15;
+  var centerGrad=ctx.createRadialGradient(0,0,0,0,0,centerR);
+  centerGrad.addColorStop(0,'rgba(212,168,67,'+(0.3+bloomProgress*0.4)+')');
+  centerGrad.addColorStop(1,'rgba(196,122,122,'+(0.1+bloomProgress*0.2)+')');
+  ctx.fillStyle=centerGrad;
+  ctx.beginPath();ctx.arc(0,0,centerR,0,Math.PI*2);ctx.fill();
+
+  ctx.restore();
+}
+
+function drawParticles(){
+  for(var i=0;i<particles.length;i++){
+    var p=particles[i];
+    ctx.globalAlpha=Math.max(0,p.life/p.maxLife)*0.6;
+    ctx.fillStyle=p.color;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.size*(p.life/p.maxLife),0,Math.PI*2);ctx.fill();
+  }
+  ctx.globalAlpha=1;
+}
+
+function spawnBreathParticles(){
+  // Gentle particles during exhale
+  if(phases[phaseIdx].name==='EXHALE'&&Math.random()<0.15){
+    var angle=Math.random()*Math.PI*2;
+    var dist=bloomProgress*Math.min(W,H)*0.25;
+    particles.push({
+      x:cx+Math.cos(angle)*dist,
+      y:cy+Math.sin(angle)*dist,
+      vx:Math.cos(angle)*8,vy:Math.sin(angle)*8-10,
+      life:2+Math.random(),maxLife:2+Math.random(),
+      size:1.5+Math.random()*2,
+      color:['rgba(122,179,86,1)','rgba(196,122,122,1)','rgba(212,168,67,1)'][Math.floor(Math.random()*3)]
+    });
+  }
+}
+
+// ─── MAIN LOOP ───────────────────────────────────────────
+var lastTime=0;
+
+function loop(ts){
+  var dt=lastTime?Math.min((ts-lastTime)/1000,0.05):0.016;
+  lastTime=ts;
+
+  updateBreathing(dt);
+
+  // Update particles
+  for(var i=particles.length-1;i>=0;i--){
+    var p=particles[i];
+    p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy-=3*dt;
+    p.life-=dt;if(p.life<=0)particles.splice(i,1);
+  }
+  spawnBreathParticles();
+
+  // If not breathing, gentle idle animation
+  if(!breathing){
+    bloomProgress=0.3+Math.sin(Date.now()*0.001)*0.1;
+  }
+
+  drawBackground();
+  drawBreathCircle();
+  drawFlower();
+  drawParticles();
+
+  requestAnimationFrame(loop);
+}
+
+// ─── CONTROLS ────────────────────────────────────────────
+window.setPattern=function(key){
+  currentPattern=key;
+  phases=PATTERNS[key].phases;
+  phaseIdx=0;phaseTimer=0;
+  var btns=document.querySelectorAll('.pat-btn');
+  for(var i=0;i<btns.length;i++) btns[i].classList.toggle('active',btns[i].getAttribute('data-pat')===key);
+};
+
+window.toggleBreathing=function(){
+  breathing=!breathing;
+  var btn=document.getElementById('btn-go');
+  if(breathing){
+    btn.textContent='⏸ PAUSE';
+    phaseIdx=0;phaseTimer=0;
+    if(!audioCtx)initAudio();
+    if(audioCtx.state==='suspended')audioCtx.resume();
+  } else {
+    btn.textContent='▶ START';
+    document.getElementById('phase-text').textContent='PAUSED';
+    document.getElementById('count-text').textContent='';
+    if(breathGain)breathGain.gain.setTargetAtTime(0,audioCtx.currentTime,0.1);
+  }
+};
+
+// ─── SESSION START ───────────────────────────────────────
+window.beginSession=function(){
+  document.getElementById('start-overlay').classList.add('hidden');
+  document.getElementById('app').style.display='flex';
+  canvas=document.getElementById('c');
+  ctx=canvas.getContext('2d');
+  resize();
+  window.addEventListener('resize',resize);
+  breathCount=0;totalTime=0;bloomProgress=0.3;
+  requestAnimationFrame(loop);
+};
+
+})();
+</script>
+</body>
+</html>

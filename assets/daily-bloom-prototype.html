@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Daily Bloom — Petal Walk</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#0d100c;color:#E8DCC8;font-family:'Crimson Text',Georgia,serif;touch-action:manipulation}
+#app{display:flex;flex-direction:column;height:100%;max-width:420px;margin:0 auto;align-items:center}
+.top-bar{width:100%;display:flex;justify-content:space-between;align-items:center;padding:8px 14px;flex-shrink:0}
+.top-bar .title{font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:#4A7C35;letter-spacing:2px}
+.top-bar .day{font-family:'Bebas Neue',sans-serif;font-size:.7rem;color:#D4A843;letter-spacing:1px}
+.exercise-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;padding:16px;overflow:hidden}
+.exercise-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:#4A7C35;margin-bottom:4px;text-align:center}
+.exercise-desc{font-size:.75rem;opacity:.5;margin-bottom:16px;text-align:center;font-style:italic}
+.exercise-content{width:100%;max-width:340px;text-align:center}
+
+/* Progress dots */
+.progress-dots{display:flex;gap:6px;justify-content:center;padding:6px;flex-shrink:0}
+.pdot{width:10px;height:10px;border-radius:50%;border:1.5px solid rgba(74,124,53,0.3)}
+.pdot.done{background:#4A7C35;border-color:#4A7C35}
+.pdot.active{border-color:#D4A843;box-shadow:0 0 6px rgba(212,168,67,0.3)}
+
+/* Timer bar */
+.timer-bar{width:90%;max-width:300px;height:4px;background:rgba(26,36,22,0.5);border-radius:2px;margin:8px auto;flex-shrink:0;overflow:hidden}
+.timer-fill{height:100%;background:#4A7C35;border-radius:2px;transition:width .1s linear}
+
+/* Shared exercise elements */
+.big-text{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:#E8DCC8;letter-spacing:2px;margin:12px 0}
+.medium-text{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#E8DCC8;margin:8px 0}
+.option-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0}
+.option-btn{padding:12px 20px;border-radius:10px;background:rgba(26,36,22,0.7);border:1.5px solid rgba(74,124,53,0.3);color:#E8DCC8;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1px;cursor:pointer;transition:all .15s;min-width:64px;text-align:center}
+.option-btn:active{background:rgba(74,124,53,0.3);transform:scale(0.95)}
+.option-btn.correct{background:rgba(74,124,53,0.3);border-color:#4A7C35;color:#4A7C35}
+.option-btn.wrong{background:rgba(196,122,122,0.2);border-color:#C47A7A;color:#C47A7A}
+
+.tap-target{width:140px;height:140px;border-radius:50%;background:rgba(26,36,22,0.5);border:2px solid rgba(74,124,53,0.3);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1rem;color:#4A7C35;cursor:pointer;margin:16px auto;transition:all .1s}
+.tap-target:active{background:rgba(74,124,53,0.3);transform:scale(0.95)}
+
+.word-display{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0}
+.word-card{padding:10px 16px;border-radius:8px;background:rgba(26,36,22,0.5);border:1px solid rgba(74,124,53,0.2);font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:1px}
+
+.color-swatch{width:80px;height:80px;border-radius:12px;margin:8px auto;border:2px solid rgba(255,255,255,0.1)}
+
+/* Results */
+.result-card{background:rgba(26,36,22,0.5);border:1px solid rgba(74,124,53,0.2);border-radius:12px;padding:16px;width:100%;max-width:300px}
+.bloom-score{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:#D4A843;text-align:center}
+.bloom-label{font-family:'Bebas Neue',sans-serif;font-size:.8rem;color:#4A7C35;letter-spacing:2px;text-align:center;margin-bottom:4px}
+.score-breakdown{margin:12px 0;font-size:.75rem;line-height:1.8}
+.score-row{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid rgba(74,124,53,0.08)}
+.score-bar-mini{width:100%;height:6px;background:rgba(26,36,22,0.5);border-radius:3px;margin:2px 0}
+.score-bar-fill{height:100%;border-radius:3px;transition:width .5s}
+
+.msg{font-size:.8rem;margin:8px 0;min-height:24px;text-align:center}
+.msg.good{color:#4A7C35}.msg.bad{color:#C47A7A}
+
+#start-overlay{position:fixed;inset:0;background:rgba(13,16,12,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;padding:20px}
+#start-overlay.hidden{display:none}
+#start-overlay h1{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#4A7C35;letter-spacing:4px;margin-bottom:4px}
+#start-overlay .sub{font-style:italic;opacity:.6;margin-bottom:8px;font-size:.85rem}
+#start-overlay .desc{font-size:.7rem;opacity:.4;max-width:300px;text-align:center;line-height:1.6;margin-bottom:20px}
+.start-btn{background:rgba(26,36,22,0.8);border:1.5px solid #4A7C35;color:#E8DCC8;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;padding:14px 36px;border-radius:10px;cursor:pointer}
+.start-btn:active{background:rgba(74,124,53,0.3);transform:scale(0.95)}
+</style>
+</head>
+<body>
+<div id="start-overlay">
+  <h1>DAILY BLOOM</h1>
+  <div class="sub">Your 3-minute cognitive check-in</div>
+  <div class="desc">Five quick exercises that measure your focus, memory, speed, math, and perception today. Takes about 3 minutes. Do it daily to see your garden grow.</div>
+  <button class="start-btn" onclick="beginCheckIn()">🌱 BEGIN TODAY'S CHECK-IN</button>
+</div>
+<div id="app" style="display:none">
+  <div class="top-bar">
+    <span class="title">DAILY BLOOM</span>
+    <span class="day" id="day-label"></span>
+  </div>
+  <div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>
+  <div class="exercise-area" id="exercise-area"></div>
+  <div class="progress-dots" id="dots"></div>
+</div>
+<script>
+(function(){
+'use strict';
+
+var exercises=['wordRecall','math','reaction','pattern','colorName'];
+var exerciseNames=['WORD RECALL','QUICK MATH','REACTION TIME','PATTERN MATCH','COLOR NAMING'];
+var exerciseDescs=[
+  'Memorize these words, then recall them',
+  'Solve arithmetic as fast as you can',
+  'Tap when the circle turns green',
+  'Which pattern matches the original?',
+  'Name the COLOR of the text, not the word'
+];
+var currentEx=0;
+var scores=[0,0,0,0,0]; // 0-100 per exercise
+var exData={};
+var startTime=0;
+
+// ─── WORD RECALL ─────────────────────────────────────────
+var WORD_BANKS=[
+  ['fern','moss','stone','river','cloud','bloom','thorn','petal','root','bark'],
+  ['oak','rain','dew','soil','wind','leaf','vine','seed','pond','shade'],
+  ['grove','dawn','mist','ridge','trail','creek','pine','cliff','meadow','frost']
+];
+
+function startWordRecall(){
+  var bank=WORD_BANKS[Math.floor(Math.random()*WORD_BANKS.length)];
+  // Pick 5 random words
+  var shuffled=bank.slice();
+  for(var i=shuffled.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=shuffled[i];shuffled[i]=shuffled[j];shuffled[j]=t;}
+  var target=shuffled.slice(0,5);
+  var distractors=shuffled.slice(5,10);
+  exData={target:target,distractors:distractors,phase:'memorize',recalled:[],startTime:Date.now()};
+
+  var area=document.getElementById('exercise-area');
+  area.innerHTML='<div class="exercise-title">WORD RECALL</div>'+
+    '<div class="exercise-desc">Memorize these 5 words (10 seconds)</div>'+
+    '<div class="exercise-content"><div class="word-display" id="word-display"></div></div>';
+
+  var wd=document.getElementById('word-display');
+  var html='';for(var w=0;w<target.length;w++) html+='<div class="word-card">'+target[w].toUpperCase()+'</div>';
+  wd.innerHTML=html;
+
+  // After 10 seconds, show recall phase
+  setTimeout(function(){
+    if(exData.phase!=='memorize')return;
+    exData.phase='recall';
+    var all=target.concat(distractors);
+    for(var i2=all.length-1;i2>0;i2--){var j2=Math.floor(Math.random()*(i2+1));var t2=all[i2];all[i2]=all[j2];all[j2]=t2;}
+
+    area.innerHTML='<div class="exercise-title">WORD RECALL</div>'+
+      '<div class="exercise-desc">Tap the 5 words you memorized</div>'+
+      '<div class="exercise-content"><div class="option-grid" id="recall-grid"></div>'+
+      '<div class="msg" id="recall-msg">'+exData.recalled.length+'/5 selected</div></div>';
+
+    var grid=document.getElementById('recall-grid');
+    var gh='';
+    for(var i3=0;i3<all.length;i3++){
+      gh+='<div class="option-btn" data-word="'+all[i3]+'" onclick="recallTap(this,\''+all[i3]+'\')">'+all[i3].toUpperCase()+'</div>';
+    }
+    grid.innerHTML=gh;
+  },10000);
+
+  updateTimerBar(10000);
+}
+
+window.recallTap=function(el,word){
+  if(exData.phase!=='recall')return;
+  if(el.classList.contains('correct')||el.classList.contains('wrong'))return;
+
+  var isTarget=exData.target.indexOf(word)>=0;
+  if(isTarget){
+    el.classList.add('correct');
+    exData.recalled.push(word);
+  } else {
+    el.classList.add('wrong');
+  }
+
+  document.getElementById('recall-msg').textContent=exData.recalled.length+'/5 selected';
+
+  if(exData.recalled.length>=5||document.querySelectorAll('#recall-grid .wrong').length>=3){
+    scores[0]=Math.round(exData.recalled.length/5*100);
+    setTimeout(nextExercise,800);
+  }
+};
+
+// ─── MATH ────────────────────────────────────────────────
+function startMath(){
+  exData={correct:0,total:0,startTime:Date.now(),maxTime:20000};
+  showMathProblem();
+  updateTimerBar(20000);
+}
+
+function showMathProblem(){
+  if(Date.now()-exData.startTime>exData.maxTime){
+    scores[1]=Math.min(100,Math.round(exData.correct*12.5));
+    nextExercise();return;
+  }
+  var ops=['+','-','×'];
+  var op=ops[Math.floor(Math.random()*3)];
+  var a,b,answer;
+  if(op==='+'){a=Math.floor(Math.random()*50)+5;b=Math.floor(Math.random()*50)+5;answer=a+b;}
+  else if(op==='-'){a=Math.floor(Math.random()*50)+20;b=Math.floor(Math.random()*a)+1;answer=a-b;}
+  else{a=Math.floor(Math.random()*12)+2;b=Math.floor(Math.random()*12)+2;answer=a*b;}
+
+  // Generate wrong answers
+  var wrongs=[];
+  while(wrongs.length<3){
+    var w=answer+Math.floor(Math.random()*11)-5;
+    if(w!==answer&&wrongs.indexOf(w)<0&&w>=0)wrongs.push(w);
+  }
+  var options=[answer].concat(wrongs);
+  for(var i=options.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=options[i];options[i]=options[j];options[j]=t;}
+
+  var area=document.getElementById('exercise-area');
+  var elapsed=Math.round((Date.now()-exData.startTime)/1000);
+  area.innerHTML='<div class="exercise-title">QUICK MATH</div>'+
+    '<div class="exercise-desc">Solve as many as you can in 20 seconds ('+elapsed+'s)</div>'+
+    '<div class="exercise-content"><div class="big-text">'+a+' '+op+' '+b+'</div>'+
+    '<div class="option-grid" id="math-opts"></div>'+
+    '<div class="msg" id="math-msg">Correct: '+exData.correct+'</div></div>';
+
+  var grid=document.getElementById('math-opts');
+  var html='';
+  for(i=0;i<options.length;i++){
+    html+='<div class="option-btn" onclick="mathAnswer('+options[i]+','+answer+',this)">'+options[i]+'</div>';
+  }
+  grid.innerHTML=html;
+}
+
+window.mathAnswer=function(picked,correct,el){
+  exData.total++;
+  if(picked===correct){
+    exData.correct++;el.classList.add('correct');
+    try{navigator.vibrate&&navigator.vibrate(10);}catch(e){}
+  } else {
+    el.classList.add('wrong');
+  }
+  setTimeout(showMathProblem,300);
+};
+
+// ─── REACTION TIME ───────────────────────────────────────
+function startReaction(){
+  exData={times:[],phase:'wait',attempts:0,maxAttempts:5};
+  showReactionWait();
+}
+
+function showReactionWait(){
+  if(exData.attempts>=exData.maxAttempts){
+    var avg=0;for(var i=0;i<exData.times.length;i++)avg+=exData.times[i];
+    avg=exData.times.length>0?Math.round(avg/exData.times.length):999;
+    // Score: 300ms=50, 200ms=75, 150ms=100, 400ms+=25
+    scores[2]=Math.min(100,Math.max(0,Math.round(150-(avg-150)*0.5)));
+    nextExercise();return;
+  }
+
+  exData.phase='wait';
+  var area=document.getElementById('exercise-area');
+  area.innerHTML='<div class="exercise-title">REACTION TIME</div>'+
+    '<div class="exercise-desc">Tap when the circle turns green ('+(exData.attempts+1)+'/'+exData.maxAttempts+')</div>'+
+    '<div class="exercise-content"><div class="tap-target" id="react-target" style="border-color:rgba(196,122,122,0.3);color:#C47A7A" onclick="reactTap()">WAIT...</div>'+
+    '<div class="msg" id="react-msg">'+(exData.times.length>0?'Last: '+exData.times[exData.times.length-1]+'ms':'')+'</div></div>';
+
+  // Random delay 1.5-4 seconds
+  var delay=1500+Math.random()*2500;
+  exData.timer=setTimeout(function(){
+    exData.phase='go';
+    exData.goTime=Date.now();
+    var target=document.getElementById('react-target');
+    if(target){target.style.borderColor='#4A7C35';target.style.color='#4A7C35';target.style.background='rgba(74,124,53,0.15)';target.textContent='TAP NOW!';}
+  },delay);
+}
+
+window.reactTap=function(){
+  if(exData.phase==='wait'){
+    // Too early
+    clearTimeout(exData.timer);
+    document.getElementById('react-msg').textContent='Too early! Wait for green.';
+    document.getElementById('react-msg').className='msg bad';
+    setTimeout(showReactionWait,800);
+    return;
+  }
+  if(exData.phase==='go'){
+    var time=Date.now()-exData.goTime;
+    exData.times.push(time);
+    exData.attempts++;
+    exData.phase='done';
+    document.getElementById('react-msg').textContent=time+'ms';
+    document.getElementById('react-msg').className='msg good';
+    try{navigator.vibrate&&navigator.vibrate(10);}catch(e){}
+    setTimeout(showReactionWait,600);
+  }
+};
+
+// ─── PATTERN MATCH ───────────────────────────────────────
+function startPattern(){
+  exData={correct:0,total:0,round:0,maxRounds:5};
+  showPatternRound();
+}
+
+function showPatternRound(){
+  if(exData.round>=exData.maxRounds){
+    scores[3]=Math.round(exData.correct/exData.maxRounds*100);
+    nextExercise();return;
+  }
+  exData.round++;
+
+  // Generate a 3x3 pattern
+  var size=3;
+  var pattern=[];
+  for(var r=0;r<size;r++){pattern[r]=[];for(var c=0;c<size;c++)pattern[r][c]=Math.random()>0.5?1:0;}
+
+  // Generate 3 wrong variants (flip 1-2 cells)
+  var options=[pattern];
+  for(var v=0;v<3;v++){
+    var variant=[];
+    for(var rr=0;rr<size;rr++)variant[rr]=pattern[rr].slice();
+    var flips=1+Math.floor(Math.random()*2);
+    for(var f=0;f<flips;f++){
+      var fr=Math.floor(Math.random()*size),fc=Math.floor(Math.random()*size);
+      variant[fr][fc]=variant[fr][fc]?0:1;
+    }
+    options.push(variant);
+  }
+  // Shuffle
+  var correctIdx=0;
+  for(var i=options.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=options[i];options[i]=options[j];options[j]=t;if(j===correctIdx)correctIdx=i;else if(i===correctIdx)correctIdx=j;}
+
+  var area=document.getElementById('exercise-area');
+  area.innerHTML='<div class="exercise-title">PATTERN MATCH</div>'+
+    '<div class="exercise-desc">Which grid matches the original? ('+exData.round+'/'+exData.maxRounds+')</div>'+
+    '<div class="exercise-content">'+
+    '<div style="margin:8px auto;display:inline-block">'+renderGrid(pattern,40)+'</div>'+
+    '<div style="font-size:.6rem;opacity:.3;margin:4px 0">↑ ORIGINAL ↑</div>'+
+    '<div class="option-grid" id="pat-opts"></div></div>';
+
+  var grid=document.getElementById('pat-opts');
+  var html='';
+  for(i=0;i<options.length;i++){
+    html+='<div style="cursor:pointer;border:2px solid rgba(74,124,53,0.2);border-radius:6px;padding:4px" onclick="patternPick('+i+','+correctIdx+',this)">'+renderGrid(options[i],28)+'</div>';
+  }
+  grid.innerHTML=html;
+}
+
+function renderGrid(g,cellSize){
+  var h='<div style="display:inline-grid;grid-template-columns:repeat(3,'+cellSize+'px);gap:2px">';
+  for(var r=0;r<g.length;r++)for(var c=0;c<g[r].length;c++){
+    h+='<div style="width:'+cellSize+'px;height:'+cellSize+'px;border-radius:3px;background:'+(g[r][c]?'rgba(74,124,53,0.5)':'rgba(26,36,22,0.4)')+'"></div>';
+  }
+  return h+'</div>';
+}
+
+window.patternPick=function(picked,correct,el){
+  exData.total++;
+  if(picked===correct){exData.correct++;el.style.borderColor='#4A7C35';try{navigator.vibrate&&navigator.vibrate(10);}catch(e){}}
+  else{el.style.borderColor='#C47A7A';}
+  setTimeout(showPatternRound,500);
+};
+
+// ─── COLOR NAMING (STROOP) ──────────────────────────────
+var COLOR_NAMES=['RED','GREEN','BLUE','YELLOW'];
+var COLOR_HEX=['#cc4444','#44aa44','#4488cc','#ccaa44'];
+
+function startColorName(){
+  exData={correct:0,total:0,startTime:Date.now(),maxTime:15000};
+  showColorRound();
+  updateTimerBar(15000);
+}
+
+function showColorRound(){
+  if(Date.now()-exData.startTime>exData.maxTime){
+    scores[4]=Math.min(100,Math.round(exData.correct*14));
+    nextExercise();return;
+  }
+  // Show a color word printed in a DIFFERENT color
+  var wordIdx=Math.floor(Math.random()*4);
+  var colorIdx;do{colorIdx=Math.floor(Math.random()*4);}while(colorIdx===wordIdx);
+
+  var area=document.getElementById('exercise-area');
+  var elapsed=Math.round((Date.now()-exData.startTime)/1000);
+  area.innerHTML='<div class="exercise-title">COLOR NAMING</div>'+
+    '<div class="exercise-desc">Tap the COLOR of the text, not the word ('+elapsed+'s)</div>'+
+    '<div class="exercise-content">'+
+    '<div style="font-family:Bebas Neue,sans-serif;font-size:3rem;color:'+COLOR_HEX[colorIdx]+';margin:16px 0;letter-spacing:4px">'+COLOR_NAMES[wordIdx]+'</div>'+
+    '<div class="option-grid" id="color-opts"></div>'+
+    '<div class="msg">Correct: '+exData.correct+'</div></div>';
+
+  var grid=document.getElementById('color-opts');
+  var html='';
+  for(var i=0;i<4;i++){
+    html+='<div class="option-btn" style="color:'+COLOR_HEX[i]+';border-color:'+COLOR_HEX[i]+'44" onclick="colorPick('+i+','+colorIdx+',this)">'+COLOR_NAMES[i]+'</div>';
+  }
+  grid.innerHTML=html;
+}
+
+window.colorPick=function(picked,correct,el){
+  exData.total++;
+  if(picked===correct){exData.correct++;el.classList.add('correct');try{navigator.vibrate&&navigator.vibrate(10);}catch(e){}}
+  else{el.classList.add('wrong');}
+  setTimeout(showColorRound,250);
+};
+
+// ─── FLOW CONTROL ────────────────────────────────────────
+function nextExercise(){
+  currentEx++;
+  if(currentEx>=exercises.length){
+    showResults();return;
+  }
+  updateDots();
+  startExercise(currentEx);
+}
+
+function startExercise(idx){
+  switch(exercises[idx]){
+    case 'wordRecall':startWordRecall();break;
+    case 'math':startMath();break;
+    case 'reaction':startReaction();break;
+    case 'pattern':startPattern();break;
+    case 'colorName':startColorName();break;
+  }
+}
+
+function showResults(){
+  var total=0;for(var i=0;i<5;i++)total+=scores[i];
+  var bloomScore=Math.round(total/5);
+
+  var area=document.getElementById('exercise-area');
+  var html='<div class="result-card">';
+  html+='<div class="bloom-label">YOUR DAILY BLOOM SCORE</div>';
+  html+='<div class="bloom-score">'+bloomScore+'</div>';
+  html+='<div class="score-breakdown">';
+  for(i=0;i<5;i++){
+    var color=scores[i]>=70?'#4A7C35':scores[i]>=40?'#D4A843':'#C47A7A';
+    html+='<div class="score-row"><span>'+exerciseNames[i]+'</span><span style="color:'+color+'">'+scores[i]+'</span></div>';
+    html+='<div class="score-bar-mini"><div class="score-bar-fill" style="width:'+scores[i]+'%;background:'+color+'"></div></div>';
+  }
+  html+='</div></div>';
+  html+='<div style="margin-top:12px;font-size:.7rem;opacity:.4;text-align:center">Come back tomorrow to see your garden grow</div>';
+  html+='<button class="start-btn" onclick="backToStart()" style="margin-top:12px;font-size:.8rem;padding:8px 20px">🌸 DONE</button>';
+  area.innerHTML=html;
+
+  updateDots();
+
+  if(typeof window._e==='function')window._e('milestone');
+  if(typeof window._sr==='function')window._sr('dailybloom',{w:bloomScore>=60,s:bloomScore,wr:scores[0],ma:scores[1],rt:scores[2],pm:scores[3],cn:scores[4]});
+
+  // Save to localStorage
+  try{
+    var history=JSON.parse(localStorage.getItem('dailybloom_history')||'[]');
+    history.push({date:new Date().toISOString().split('T')[0],score:bloomScore,scores:scores.slice()});
+    if(history.length>90)history=history.slice(-90);
+    localStorage.setItem('dailybloom_history',JSON.stringify(history));
+  }catch(e){}
+}
+
+function updateDots(){
+  var el=document.getElementById('dots');
+  var html='';
+  for(var i=0;i<5;i++){
+    var cls='pdot';
+    if(i<currentEx)cls+=' done';
+    if(i===currentEx&&currentEx<5)cls+=' active';
+    html+='<div class="'+cls+'"></div>';
+  }
+  el.innerHTML=html;
+}
+
+function updateTimerBar(duration){
+  var fill=document.getElementById('timer-fill');
+  fill.style.width='100%';
+  fill.style.transition='none';
+  setTimeout(function(){
+    fill.style.transition='width '+Math.round(duration/1000)+'s linear';
+    fill.style.width='0%';
+  },50);
+}
+
+// ─── START ───────────────────────────────────────────────
+window.beginCheckIn=function(){
+  document.getElementById('start-overlay').classList.add('hidden');
+  document.getElementById('app').style.display='flex';
+  currentEx=0;scores=[0,0,0,0,0];
+  var today=new Date();
+  var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('day-label').textContent=days[today.getDay()]+', '+months[today.getMonth()]+' '+today.getDate();
+  updateDots();
+  startExercise(0);
+};
+
+window.backToStart=function(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('start-overlay').classList.remove('hidden');
+};
+
+})();
+</script>
+</body>
+</html>

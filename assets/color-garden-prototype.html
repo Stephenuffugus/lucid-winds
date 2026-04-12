@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Color Garden — Petal Walk</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#0d100c;color:#E8DCC8;font-family:'Crimson Text',Georgia,serif;touch-action:manipulation}
+#app{display:flex;flex-direction:column;height:100%;max-width:420px;margin:0 auto;align-items:center}
+.top-bar{width:100%;display:flex;justify-content:space-between;align-items:center;padding:6px 14px;flex-shrink:0}
+.top-bar .title{font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:#4A7C35;letter-spacing:2px}
+.top-bar .page-label{font-family:'Bebas Neue',sans-serif;font-size:.7rem;color:#D4A843}
+canvas{display:block;border-radius:6px;border:1px solid rgba(74,124,53,0.1)}
+.canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:4px}
+.palette{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;padding:6px 8px;flex-shrink:0}
+.pal-color{width:30px;height:30px;border-radius:50%;border:2.5px solid transparent;cursor:pointer;transition:all .15s}
+.pal-color:active{transform:scale(0.9)}
+.pal-color.active{border-color:#E8DCC8;transform:scale(1.15);box-shadow:0 0 8px rgba(232,220,200,0.3)}
+.ctrl-bar{display:flex;gap:6px;justify-content:center;padding:6px;flex-shrink:0}
+.ctrl-btn{background:rgba(26,36,22,0.7);border:1px solid rgba(74,124,53,0.3);color:#E8DCC8;padding:7px 14px;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:.65rem;letter-spacing:1px;cursor:pointer}
+.ctrl-btn:active{background:rgba(74,124,53,0.3)}
+#start-overlay{position:fixed;inset:0;background:rgba(13,16,12,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50}
+#start-overlay.hidden{display:none}
+#start-overlay h1{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#4A7C35;letter-spacing:4px;margin-bottom:4px}
+#start-overlay .sub{font-style:italic;opacity:.6;margin-bottom:20px;font-size:.85rem}
+.start-btn{background:rgba(26,36,22,0.8);border:1.5px solid #4A7C35;color:#E8DCC8;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;padding:14px 36px;border-radius:10px;cursor:pointer}
+.start-btn:active{background:rgba(74,124,53,0.3)}
+</style>
+</head>
+<body>
+<div id="start-overlay">
+  <h1>COLOR GARDEN</h1>
+  <div class="sub">Botanical coloring — tap to fill, find your calm</div>
+  <button class="start-btn" onclick="beginColoring()">🎨 START COLORING</button>
+</div>
+<div id="app" style="display:none">
+  <div class="top-bar">
+    <span class="title">COLOR GARDEN</span>
+    <span class="page-label" id="page-label">Page 1</span>
+  </div>
+  <div class="canvas-wrap"><canvas id="c"></canvas></div>
+  <div class="palette" id="palette"></div>
+  <div class="ctrl-bar">
+    <div class="ctrl-btn" onclick="prevPage()">← PREV</div>
+    <div class="ctrl-btn" onclick="clearColors()">✕ CLEAR</div>
+    <div class="ctrl-btn" onclick="saveImage()">💾 SAVE</div>
+    <div class="ctrl-btn" onclick="nextPage()">NEXT →</div>
+  </div>
+</div>
+<script>
+(function(){
+'use strict';
+
+var canvas,ctx,W,H,dpr;
+var currentColor='#4A7C35';
+var currentPage=0;
+var regions=[]; // {path, color, id}
+var regionColors={}; // id -> color
+
+var COLORS=[
+  '#2d5020','#4A7C35','#6aaa4a','#a0cc80',
+  '#3d2a18','#6b4a2a','#8b6a3a','#b8a060',
+  '#C47A7A','#d4566a','#e8a0a0','#f0c8c8',
+  '#8a6a20','#D4A843','#e8cc70','#f0e0a0',
+  '#2a4a6a','#5B9BD5','#90c0e8',
+  '#9B6BA3','#c4a0d0',
+  '#E8DCC8','#ffffff'
+];
+
+// ─── COLORING PAGES (procedural botanical line art) ──────
+// Each page is defined as a set of regions (closed paths)
+// We generate simple botanical shapes procedurally
+
+function generateFlowerPage(){
+  var rg=[];var id=0;var cx=180,cy=180;
+  // Pot
+  rg.push({id:id++,type:'rect',x:130,y:280,w:100,h:70,rx:8});
+  rg.push({id:id++,type:'rect',x:120,y:270,w:120,h:20,rx:4});
+  // Stem
+  rg.push({id:id++,type:'rect',x:175,y:140,w:10,h:140,rx:2});
+  // Leaves
+  rg.push({id:id++,type:'ellipse',cx:150,cy:220,rx:30,ry:12,rot:-0.5});
+  rg.push({id:id++,type:'ellipse',cx:210,cy:190,rx:28,ry:11,rot:0.4});
+  // Petals (8 around center)
+  for(var i=0;i<8;i++){
+    var a=(Math.PI*2/8)*i-Math.PI/2;
+    var px=cx+Math.cos(a)*50;
+    var py=cy-60+Math.sin(a)*50;
+    rg.push({id:id++,type:'ellipse',cx:px,cy:py,rx:25,ry:14,rot:a});
+  }
+  // Center
+  rg.push({id:id++,type:'circle',cx:cx,cy:cy-60,r:20});
+  return rg;
+}
+
+function generateTreePage(){
+  var rg=[];var id=0;
+  // Trunk
+  rg.push({id:id++,type:'rect',x:160,y:200,w:40,h:140,rx:4});
+  // Roots
+  rg.push({id:id++,type:'ellipse',cx:140,cy:340,rx:30,ry:8,rot:-0.3});
+  rg.push({id:id++,type:'ellipse',cx:220,cy:340,rx:28,ry:8,rot:0.3});
+  // Foliage clusters
+  var clusters=[[180,120,55],[140,150,40],[220,140,42],[160,80,35],[200,90,38],[180,170,30]];
+  for(var i=0;i<clusters.length;i++){
+    rg.push({id:id++,type:'circle',cx:clusters[i][0],cy:clusters[i][1],r:clusters[i][2]});
+  }
+  // Fruits
+  for(i=0;i<5;i++){
+    var fx=140+Math.random()*80;
+    var fy=90+Math.random()*90;
+    rg.push({id:id++,type:'circle',cx:fx,cy:fy,r:8});
+  }
+  return rg;
+}
+
+function generateSucculentPage(){
+  var rg=[];var id=0;
+  // Pot
+  rg.push({id:id++,type:'rect',x:100,y:260,w:160,h:80,rx:10});
+  rg.push({id:id++,type:'rect',x:90,y:250,w:180,h:20,rx:6});
+  // Rosette layers
+  for(var layer=0;layer<3;layer++){
+    var petals=layer===0?5:layer===1?7:9;
+    var r=layer===0?20:layer===1?45:70;
+    for(var i=0;i<petals;i++){
+      var a=(Math.PI*2/petals)*i-Math.PI/2+layer*0.3;
+      var px=180+Math.cos(a)*r;
+      var py=200+Math.sin(a)*r*0.6;
+      rg.push({id:id++,type:'ellipse',cx:px,cy:py,rx:22-layer*3,ry:12-layer*2,rot:a});
+    }
+  }
+  // Center
+  rg.push({id:id++,type:'circle',cx:180,cy:200,r:12});
+  return rg;
+}
+
+var PAGES=[generateFlowerPage,generateTreePage,generateSucculentPage];
+
+function loadPage(idx){
+  currentPage=idx%PAGES.length;
+  regions=PAGES[currentPage]();
+  regionColors={};
+  document.getElementById('page-label').textContent='Page '+(currentPage+1)+'/'+PAGES.length;
+  render();
+}
+
+// ─── CANVAS ──────────────────────────────────────────────
+function initCanvas(){
+  canvas=document.getElementById('c');ctx=canvas.getContext('2d');
+  dpr=window.devicePixelRatio||1;
+  var maxSize=Math.min(window.innerWidth-16,window.innerHeight-200,360);
+  W=maxSize;H=maxSize;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+
+// ─── RENDERING ───────────────────────────────────────────
+function drawRegion(r,fillColor,strokeOnly){
+  ctx.save();
+  if(r.type==='rect'){
+    var rx=r.rx||0;
+    ctx.beginPath();
+    ctx.moveTo(r.x+rx,r.y);
+    ctx.lineTo(r.x+r.w-rx,r.y);
+    ctx.quadraticCurveTo(r.x+r.w,r.y,r.x+r.w,r.y+rx);
+    ctx.lineTo(r.x+r.w,r.y+r.h-rx);
+    ctx.quadraticCurveTo(r.x+r.w,r.y+r.h,r.x+r.w-rx,r.y+r.h);
+    ctx.lineTo(r.x+rx,r.y+r.h);
+    ctx.quadraticCurveTo(r.x,r.y+r.h,r.x,r.y+r.h-rx);
+    ctx.lineTo(r.x,r.y+rx);
+    ctx.quadraticCurveTo(r.x,r.y,r.x+rx,r.y);
+    ctx.closePath();
+  } else if(r.type==='circle'){
+    ctx.beginPath();ctx.arc(r.cx,r.cy,r.r,0,Math.PI*2);ctx.closePath();
+  } else if(r.type==='ellipse'){
+    ctx.beginPath();
+    ctx.ellipse(r.cx,r.cy,r.rx,r.ry,r.rot||0,0,Math.PI*2);
+    ctx.closePath();
+  }
+  if(!strokeOnly&&fillColor){ctx.fillStyle=fillColor;ctx.fill();}
+  ctx.strokeStyle='rgba(140,120,80,0.6)';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.restore();
+}
+
+function render(){
+  // Background
+  ctx.fillStyle='#faf5ee';ctx.fillRect(0,0,W,H);
+
+  // Draw all regions (filled first, then outlines on top)
+  for(var i=0;i<regions.length;i++){
+    var color=regionColors[regions[i].id]||null;
+    drawRegion(regions[i],color,false);
+  }
+  // Redraw outlines on top for clean lines
+  for(i=0;i<regions.length;i++){
+    drawRegion(regions[i],null,true);
+  }
+}
+
+// ─── INPUT (tap to fill) ─────────────────────────────────
+function hitTest(x,y){
+  // Test regions in reverse order (top-most first)
+  for(var i=regions.length-1;i>=0;i--){
+    var r=regions[i];
+    drawRegion(r,null,true); // set up the path
+    if(ctx.isPointInPath(x*dpr,y*dpr)){return i;}
+  }
+  return -1;
+}
+
+canvas.addEventListener('click',function(e){
+  var rect=canvas.getBoundingClientRect();
+  var x=e.clientX-rect.left;
+  var y=e.clientY-rect.top;
+  var idx=hitTest(x,y);
+  if(idx>=0){
+    regionColors[regions[idx].id]=currentColor;
+    render();
+    try{navigator.vibrate&&navigator.vibrate(8);}catch(ex){}
+  }
+});
+
+canvas.addEventListener('touchstart',function(e){
+  e.preventDefault();
+  var rect=canvas.getBoundingClientRect();
+  var x=e.touches[0].clientX-rect.left;
+  var y=e.touches[0].clientY-rect.top;
+  var idx=hitTest(x,y);
+  if(idx>=0){
+    regionColors[regions[idx].id]=currentColor;
+    render();
+    try{navigator.vibrate&&navigator.vibrate(8);}catch(ex){}
+  }
+},{passive:false});
+
+// ─── PALETTE ─────────────────────────────────────────────
+function buildPalette(){
+  var el=document.getElementById('palette');
+  var html='';
+  for(var i=0;i<COLORS.length;i++){
+    var act=COLORS[i]===currentColor?' active':'';
+    html+='<div class="pal-color'+act+'" style="background:'+COLORS[i]+'" onclick="pickColor(\''+COLORS[i]+'\')" data-c="'+COLORS[i]+'"></div>';
+  }
+  el.innerHTML=html;
+}
+
+window.pickColor=function(c){
+  currentColor=c;
+  var pals=document.querySelectorAll('.pal-color');
+  for(var i=0;i<pals.length;i++)pals[i].classList.toggle('active',pals[i].getAttribute('data-c')===c);
+};
+
+// ─── CONTROLS ────────────────────────────────────────────
+window.prevPage=function(){loadPage((currentPage-1+PAGES.length)%PAGES.length);};
+window.nextPage=function(){loadPage(currentPage+1);};
+window.clearColors=function(){regionColors={};render();};
+window.saveImage=function(){
+  var link=document.createElement('a');
+  link.download='color-garden-'+(currentPage+1)+'-'+Date.now()+'.png';
+  link.href=canvas.toDataURL('image/png');
+  link.click();
+  if(typeof window._e==='function')window._e('milestone');
+};
+
+// ─── START ───────────────────────────────────────────────
+window.beginColoring=function(){
+  document.getElementById('start-overlay').classList.add('hidden');
+  document.getElementById('app').style.display='flex';
+  initCanvas();buildPalette();loadPage(0);
+
+  setInterval(function(){
+    if(typeof window._e==='function'&&Object.keys(regionColors).length>0)window._e('milestone');
+  },60000);
+};
+
+})();
+</script>
+</body>
+</html>
