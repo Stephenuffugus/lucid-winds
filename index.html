@@ -2686,10 +2686,10 @@
     .nur-seed-sprite.nur-seed-mystery::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:1.5px dashed rgba(200,168,75,0.55);pointer-events:none;animation:nurMystSpin 18s linear infinite;}
     .nur-seed-sprite.nur-seed-mystery::after{content:'?';position:absolute;top:0;right:-4px;font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--gold);text-shadow:0 0 6px rgba(200,168,75,0.6);pointer-events:none;}
     @keyframes nurMystSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
-    .nur-empty-slot{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.45rem;padding:1.4rem 0.7rem;opacity:0.6;}
-    .nur-empty-icon{font-size:1.8rem;opacity:0.25;filter:grayscale(1);}
-    .nur-empty-label{font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.1em;color:var(--muted);}
-    .nur-empty-slot .nur-btn{opacity:0.8;}
+    .nur-empty-slot{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.5rem;padding:1.4rem 0.7rem;background:rgba(13,16,12,0.3);border:1.5px dashed rgba(122,179,86,0.15);border-radius:12px;position:relative;}
+    .nur-empty-icon{font-size:2rem;opacity:0.35;}
+    .nur-empty-label{font-family:'Bebas Neue',sans-serif;font-size:0.72rem;letter-spacing:0.12em;color:var(--muted);}
+    .nur-empty-slot .nur-btn{opacity:0.9;border-style:dashed;}
     #nur-msg{font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--sage);text-align:center;min-height:1rem;padding:0.3rem 0;transition:opacity 0.5s ease;}
 
     /* ── P4 · CROSS-POLLINATE MODAL ── */
@@ -4843,7 +4843,7 @@ window.onerror=function(msg,url,line,col,err){
     <div style="max-width:400px;margin:0 auto;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">
         <div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:var(--gold);letter-spacing:0.1em;">SETTINGS</div>
-        <button onclick="toggleSettingsMenu()" style="background:linear-gradient(180deg,rgba(46,40,32,0.7) 0%,rgba(32,30,24,0.8) 100%);border:1px solid rgba(200,188,160,0.2);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.7rem;padding:0.4rem 0.8rem;border-radius:6px;cursor:pointer;min-height:40px;">CLOSE</button>
+        <button onclick="toggleSettingsMenu()" style="background:rgba(122,179,86,0.1);border:1.5px solid rgba(122,179,86,0.4);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.85rem;width:48px;height:48px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">&times;</button>
       </div>
 
       <div class="settings-group">
@@ -5008,7 +5008,7 @@ window.onerror=function(msg,url,line,col,err){
       </div>
     </div>
     <div class="greenhouse-grid" id="greenhouse-grid">
-      <div class="greenhouse-empty">No Plants yet. Complete a game to mint your first one.</div>
+      <div class="greenhouse-empty" style="text-align:center;padding:2rem 1rem;"><div style="font-size:1.8rem;margin-bottom:0.5rem;opacity:0.4;">&#127793;</div><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;color:var(--gold);margin-bottom:0.3rem;">YOUR GARDEN AWAITS</div><div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.6;">Complete a pattern game to earn Sunbeams.<br>30 Sunbeams mints your first plant.</div></div>
     </div>
   </div>
   <div class="grove-panel" id="panel-nursery">
@@ -5228,7 +5228,7 @@ window.onerror=function(msg,url,line,col,err){
     <div class="map-fog"><div class="fog-wisp"></div><div class="fog-wisp"></div><div class="fog-wisp"></div></div>
     <div id="wild-frame"><img src="assets/games/wild/viewport-frame-v2.png" loading="lazy" alt=""></div>
     <!-- TOAST -->
-    <div id="w-toast" style="position:fixed;top:40%;left:50%;transform:translate(-50%,-50%) scale(0.95);background:rgba(17,22,17,0.96);border:1px solid rgba(74,124,53,0.15);border-radius:10px;padding:0.6rem 1rem;z-index:99999;max-width:82%;font-size:0.65rem;color:var(--cream);text-align:center;line-height:1.5;opacity:0;transition:opacity 0.25s,transform 0.25s;pointer-events:none;box-shadow:0 8px 28px rgba(0,0,0,0.5);"></div>
+    <div id="w-toast" style="position:fixed;top:38%;left:50%;transform:translate(-50%,-50%) scale(0.95);background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.98));border:1.5px solid rgba(200,168,75,0.3);border-left:3px solid rgba(200,168,75,0.6);border-radius:12px;padding:0.7rem 1.1rem;z-index:99999;max-width:82%;font-family:'DM Mono',monospace;font-size:0.6rem;font-weight:500;color:var(--cream);text-align:center;line-height:1.6;opacity:0;transition:opacity 0.3s ease,transform 0.3s ease;pointer-events:none;box-shadow:0 12px 40px rgba(0,0,0,0.6),0 0 0 1px rgba(74,124,53,0.1);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);"></div>
     <!-- TRAIT PANEL v2 — premium bottom sheet -->
     <div id="w-tp" class="wtp2">
       <div class="wtp2-handle"></div>
@@ -29754,9 +29754,10 @@ document.addEventListener('keydown', function(e) {
   function _buildNurSlotHTML(seed, idx) {
     if (!seed) {
       return '<div class="nur-empty-slot">' +
-        '<div class="nur-empty-icon">○</div>' +
-        '<div class="nur-empty-label">Empty Slot ' + (idx + 1) + '</div>' +
-        '<button class="nur-btn water" onclick="window._nurStartBreed()" style="margin-top:0.28rem;">🧬 CROSS-POLLINATE</button>' +
+        '<div class="nur-empty-icon">\ud83c\udf31</div>' +
+        '<div class="nur-empty-label">SLOT ' + (idx + 1) + '</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);line-height:1.4;text-align:center;">Breed two plants or find a feral seed in the Wild</div>' +
+        '<button class="nur-btn water" onclick="window._nurStartBreed()" style="margin-top:0.28rem;">\ud83e\uddec CROSS-POLLINATE</button>' +
       '</div>';
     }
     var bloomReady   = FG_Data.isBloomReady(seed);
