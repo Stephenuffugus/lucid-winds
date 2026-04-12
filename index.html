@@ -4710,10 +4710,11 @@
       box-shadow: none !important;
     }
     .perf-lite .ea-knot.ea-high .ea-frost { box-shadow: none !important; }
-    /* Carousel perf-lite: kill card face GPU layers */
+    /* Carousel perf-lite: reduce GPU layers but preserve flip transforms */
     .perf-lite .cs-flip-inner { will-change: auto !important; }
-    .perf-lite .cs-card-face { will-change: auto !important; transform: none !important; }
-    .perf-lite .cs-flip-wrap.flipped .cs-flip-inner { transform: rotateY(180deg) !important; }
+    .perf-lite .cs-card-face { will-change: auto !important; }
+    /* DO NOT override transform on .cs-card-face or .cs-card-back —
+       backface-visibility:hidden + rotateY(180deg) is required for the flip */
     .perf-lite .cs-card-front[data-season] { background-image: none !important; background: #050505 !important; }
     .perf-lite .cf-synergy { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
     .perf-lite .cf-art-window svg,
