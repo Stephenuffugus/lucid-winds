@@ -17,6 +17,13 @@ Each item: `[ ] filename — prompt` (or description)
 - [ ] `assets/games/thumbs/bowergarden.png` — four playing card Jacks fanning out, bower/arbor archway background, dark black, gold accents, flat icon --s 250 --ar 1:1
 - [ ] Table felt background (optional) — green velvet card table texture, dark, subtle, tileable
 
+### Garden Lines (Qwirkle-style)
+- [ ] `assets/games/thumbs/gardenlines.png` — colorful tiles with botanical shapes (flower, leaf, drop, sun, sprout, mushroom) arranged in rows, dark background, flat icon --s 250 --ar 1:1
+- [ ] (FUTURE POLISH) Custom tile art for each of 6 shapes × 6 colors = 36 unique PNG sprites
+  - Currently uses emoji: 🌸🌿💧☀️🌱🍄 — works fine for MVP
+  - Custom art would be 64x64 shapes on transparent backgrounds
+- [ ] (FUTURE) Puzzle mode: 50 hand-crafted puzzle boards as JSON, no art needed
+
 ---
 
 ## KEEPER BAR / HUD (all DONE but listed for reference)
