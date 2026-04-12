@@ -5001,10 +5001,12 @@ window.onerror=function(msg,url,line,col,err){
       <div class="gh-recent-strip" id="gh-recent-strip"></div>
     </div>
     <div class="gh-grid-selector" style="display:flex;justify-content:flex-end;align-items:center;">
-      <div style="display:flex;gap:0.2rem;" id="gh-sort-btns">
+      <div style="display:flex;gap:0.2rem;flex-wrap:wrap;" id="gh-sort-btns">
         <button class="gh-grid-btn active" onclick="setGHSort('newest')">New</button>
         <button class="gh-grid-btn" onclick="setGHSort('rarest')">Rare</button>
         <button class="gh-grid-btn" onclick="setGHSort('name')">A-Z</button>
+        <button class="gh-grid-btn" onclick="setGHSort('season')">Season</button>
+        <button class="gh-grid-btn" onclick="setGHSort('ea')">EA</button>
       </div>
     </div>
     <div class="greenhouse-grid" id="greenhouse-grid">
@@ -26276,7 +26278,7 @@ document.addEventListener('keydown', function(e) {
     // Update active button
     var btns = document.querySelectorAll('#gh-sort-btns .gh-grid-btn');
     btns.forEach(function(b) { b.classList.remove('active'); });
-    var modes = ['newest', 'rarest', 'name'];
+    var modes = ['newest', 'rarest', 'name', 'season', 'ea'];
     var idx = modes.indexOf(mode);
     if (idx >= 0 && btns[idx]) btns[idx].classList.add('active');
     renderGreenhouse();
@@ -26586,6 +26588,20 @@ document.addEventListener('keydown', function(e) {
         try { na = (typeof getPlantName === 'function' ? getPlantName(a.hash) : a.hash.slice(0,8)).toLowerCase(); } catch(e) {}
         try { nb = (typeof getPlantName === 'function' ? getPlantName(b.hash) : b.hash.slice(0,8)).toLowerCase(); } catch(e) {}
         return na < nb ? -1 : na > nb ? 1 : 0;
+      });
+    } else if (_ghSortMode === 'season') {
+      sorted.sort(function(a, b) {
+        var sa = 0, sb = 0;
+        try { sa = hashToTraits(a.hash).season || 0; } catch(e) {}
+        try { sb = hashToTraits(b.hash).season || 0; } catch(e) {}
+        return sa - sb;
+      });
+    } else if (_ghSortMode === 'ea') {
+      sorted.sort(function(a, b) {
+        var ea = 0, eb = 0;
+        try { var _tae = hashToTraits(a.hash); if (a.generation) _tae.chimerGen = a.generation; ea = window.computeEA ? computeEA(_tae) : 0; } catch(e) {}
+        try { var _tbe = hashToTraits(b.hash); if (b.generation) _tbe.chimerGen = b.generation; eb = window.computeEA ? computeEA(_tbe) : 0; } catch(e) {}
+        return eb - ea;
       });
     } else {
       sorted.reverse(); // newest first (default)
