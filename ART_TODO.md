@@ -22,7 +22,60 @@ Each item: `[ ] filename — prompt` (or description)
 - [ ] (FUTURE POLISH) Custom tile art for each of 6 shapes × 6 colors = 36 unique PNG sprites
   - Currently uses emoji: 🌸🌿💧☀️🌱🍄 — works fine for MVP
   - Custom art would be 64x64 shapes on transparent backgrounds
-- [ ] (FUTURE) Puzzle mode: 50 hand-crafted puzzle boards as JSON, no art needed
+
+### Garden Sums (Kakuro)
+- [ ] `assets/games/thumbs/kakuro.png` — Kakuro grid with gold clue numbers and hand-written style digits, botanical border, dark background --s 250 --ar 1:1
+- [ ] (FUTURE) 20+ hand-validated puzzles beyond the starter 3
+
+### Bleeding Hearts
+- [ ] `assets/games/thumbs/bleedinghearts.png` — bleeding heart flowers with Queen of Spades card silhouette, dark moody red/black, flat icon --s 250 --ar 1:1
+
+### Mosaic Garden (Azul)
+- [ ] `assets/games/thumbs/mosaic.png` — colorful botanical tiles arranged in a 5x5 mosaic pattern, dark background, flat icon --s 250 --ar 1:1
+- [ ] (FUTURE POLISH) Custom tile art for 5 colors × 20 tiles: petal (pink), leaf (green), berry (blue), sun (gold), frost (ice). Currently emoji.
+
+### Root Flow (Flow Free)
+- [ ] `assets/games/thumbs/rootflow.png` — colored glowing root dots connected by flowing paths on a dark grid, flat icon --s 250 --ar 1:1
+- [ ] (FUTURE) Procedural puzzle generator — currently only 3 hand-crafted
+
+### Garden Spades
+- [ ] `assets/games/thumbs/gardenspades.png` — Ace of Spades with botanical vines, partnership card fan, dark background, flat icon --s 250 --ar 1:1
+
+### Juniper (Rummy)
+- [ ] `assets/games/thumbs/juniper.png` — juniper berries and a fan of playing cards with sets/runs visible, dark background, flat icon --s 250 --ar 1:1
+
+### Root Maze
+- [ ] `assets/games/thumbs/rootmaze.png` — twisting root system forming a maze with glowing treasure at center, dark earthy tones, flat icon --s 250 --ar 1:1
+
+### Queen Bee (Splendor engine-builder)
+- [ ] `assets/games/thumbs/pollen.png` — golden bee crowned, surrounded by flower tokens, dark background, flat icon --s 250 --ar 1:1
+- [ ] **HEAVY ART NEEDED**: Each of ~48 cards needs custom art showing its plant + cost + production
+- [ ] 4 pollen token types (colored gems/drops): amber (sunflower), crimson (rose), indigo (lavender), emerald (fern)
+
+### Trellis (Scrabble)
+- [ ] `assets/games/thumbs/trellis.png` — wooden trellis with letter tiles spelling botanical words climbing up it, dark background, flat icon --s 250 --ar 1:1
+
+### Living Stones (Tsumego / Go)
+- [ ] `assets/games/thumbs/livingstones.png` — lithops succulents arranged as Go stones on a wooden board, black and white stones forming a life/death shape, dark background --s 250 --ar 1:1
+
+### Stone Garden (Rock Stacking)
+- [ ] `assets/games/thumbs/stonegarden.png` — zen cairn of stacked weathered stones with a rising sun, minimalist, dark background --s 250 --ar 1:1
+
+### Vine Cross (Gomoku)
+- [ ] `assets/games/thumbs/vinecross.png` — 5 botanical markers in a row on a grid, vines crossing at the center, dark background --s 250 --ar 1:1
+
+### Breathing Garden (meditation)
+- [ ] `assets/games/thumbs/breathing.png` — lotus flower opening and closing with a pulsing glow, dark background, zen feel --s 250 --ar 1:1
+
+### Color Garden
+- [ ] `assets/games/thumbs/colorgarden.png` — rainbow of botanical color swatches in a grid, dark background, flat icon --s 250 --ar 1:1
+
+### Daily Bloom
+- [ ] `assets/games/thumbs/dailybloom.png` — flower of the day with calendar/sunrise motif, dark background, flat icon --s 250 --ar 1:1
+
+### Jade Garden (Mahjong)
+- [ ] `assets/games/thumbs/jade.png` — jade mahjong tiles stacked in a turtle shape, deep green and gold, dark background --s 250 --ar 1:1
+- [ ] (FUTURE POLISH) 34 unique mahjong tile faces if we want authentic styling
 
 ---
 
