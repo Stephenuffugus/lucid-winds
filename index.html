@@ -1122,11 +1122,12 @@
       width: 33.333%; flex-shrink: 0;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      overflow: hidden;
+      overflow: visible;
       padding: 0;
       box-sizing: border-box;
-      contain: layout style paint;
+      contain: style paint;
       isolation: isolate;
+      position: relative;
     }
     .cs-flip-wrap{perspective:1000px;width:92vw;max-width:460px;height:calc(100vh - 180px);max-height:600px;margin:0 auto;position:relative;contain:layout style paint;}
     .cs-flip-inner{position:relative;width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d;will-change:transform;-webkit-backface-visibility:hidden;}
@@ -2231,10 +2232,14 @@
     .plant-details-modal .lt-name{font-size:0.82rem;max-width:60%;}
     .plant-details-modal .lt-meta{font-size:0.62rem;}
     .plant-details-modal .lt-grandparents{padding-left:1rem;margin-top:0.3rem;}
-    /* Card back LINEAGE & DETAILS button — replaces inline lineage tree */
-    .cb-details-btn{display:block;margin:0.5rem auto 0.3rem;font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.08em;color:var(--gold);background:rgba(200,168,75,0.08);border:1.5px solid rgba(200,168,75,0.35);border-radius:8px;padding:0.45rem 0.9rem;cursor:pointer;min-height:36px;box-shadow:inset 0 1px 0 rgba(255,220,140,0.1);}
-    .cb-details-btn:active{transform:translateY(1px);}
-    .cb-details-btn:hover{background:rgba(200,168,75,0.14);}
+    /* Lineage overlay button — OUTSIDE the flip wrap, positioned absolute
+       over the bottom of the carousel slot. Because it's a sibling of the
+       wrap and not a descendant, click events can never propagate into the
+       flip handler. Third and final approach after two failed attempts with
+       capture-phase listeners and wrap-level routing. */
+    .cs-lineage-overlay{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:10;font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;color:var(--gold);background:rgba(13,16,12,0.92);border:1.5px solid rgba(200,168,75,0.45);border-radius:10px;padding:0.55rem 1.2rem;cursor:pointer;min-height:48px;box-shadow:0 4px 16px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,220,140,0.1);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+    .cs-lineage-overlay:active{transform:translateX(-50%) translateY(1px);background:rgba(200,168,75,0.15);}
+    .cs-lineage-overlay:hover{background:rgba(200,168,75,0.12);}
     /* Extra Details modal — lineage, chimera history, mutation, mint record */
     .plant-details-modal{position:fixed;inset:0;z-index:100005;display:none;}
     .plant-details-modal.open{display:block;animation:panelFadeIn 0.25s ease;}
@@ -27706,39 +27711,18 @@ document.addEventListener('keydown', function(e) {
     back += '</div>';
 
     // ── ASSEMBLE FLIP CARD ──
-    // No inline onclick — we attach a single programmatic click handler to
-    // the wrap below that routes lineage-button clicks directly to
-    // _openPlantDetails and lets all other clicks fall through to the flip
-    // handler. This avoids the iOS Safari race where capture-phase
-    // stopImmediatePropagation on a child button still let the parent's
-    // bubble-phase inline onclick fire on synthesized clicks.
     var _isRevealed = plant.revealed ? 'true' : 'false';
-    slotEl.innerHTML = '<div class="cs-flip-wrap" data-revealed="' + _isRevealed + '">' +
+    var _hasLineageForOverlay = (plant.parentAHash || plant.generation > 1 || plant.mutated || plant.compostLayers);
+    var _overlayLabel = _hasLineageForOverlay ? '\u2b21 LINEAGE & DETAILS' : '\u2b21 DETAILS';
+    // Lineage button is a SIBLING of cs-flip-wrap, not inside it.
+    // This eliminates all click-propagation issues with transform:rotateY
+    // parents. The button sits in the carousel slot but only shows when
+    // the card is flipped to the back (controlled by _handleCardFlip).
+    slotEl.innerHTML = '<div class="cs-flip-wrap" data-revealed="' + _isRevealed + '" onclick="window._handleCardFlip(this,event)">' +
       '<div class="cs-flip-inner">' + front + back + '</div>' +
       '<div class="cs-reveal-flash" data-tier="' + _tierName + '"></div>' +
-      '</div>';
-    var _wrapEl = slotEl.querySelector('.cs-flip-wrap');
-    if (_wrapEl) {
-      _wrapEl.addEventListener('click', function(ev) {
-        // Lineage button — open Extra Details modal directly, do NOT flip.
-        var _btn = ev.target && ev.target.closest ? ev.target.closest('.cb-details-btn') : null;
-        if (_btn) {
-          ev.stopPropagation();
-          if (ev.preventDefault) ev.preventDefault();
-          var _ph = _btn.getAttribute('data-pdh');
-          if (_ph && window._openPlantDetails) {
-            try { window._openPlantDetails(_ph); }
-            catch (e) {
-              if (window._toast) window._toast('Could not open details: ' + (e && e.message ? e.message : 'unknown error'));
-              if (window.console) console.error('[lineage btn]', e);
-            }
-          }
-          return;
-        }
-        // Anything else in the wrap — normal flip
-        window._handleCardFlip(this, ev);
-      });
-    }
+      '</div>' +
+      '<button class="cs-lineage-overlay" data-pdh="' + plant.hash + '" style="display:none;" onclick="event.stopPropagation();var h=this.getAttribute(\'data-pdh\');if(h&&window._openPlantDetails)try{window._openPlantDetails(h);}catch(e){if(window._toast)window._toast(String(e.message));}">' + _overlayLabel + '</button>';
     slotEl.setAttribute('data-season', sk);
     // Chimera dual-season border + diagonal card front
     var _dualCls = window._chimeraDualClass ? window._chimeraDualClass(plant) : '';
@@ -28023,16 +28007,8 @@ document.addEventListener('keydown', function(e) {
     html += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.54rem;letter-spacing:0.06em;display:flex;gap:0.3rem;"><span style="color:' + sColor + ';">EA ' + _ea + '</span><span style="color:var(--muted);">' + seasonEmblems[_season] + '</span><span style="color:var(--muted);">Gen ' + (_t ? _t.chimerGen || 1 : 1) + '</span></div>';
     html += '</div>';
     html += '<div class="cb-rarity" style="color:' + sColor + ';">' + (_tg ? _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon : 'COMMON') + '</div>';
-    // Lineage moved to the Extra Details modal — button always visible so any
-    // plant has a path to the deep-dive (DNA, portrait, haiku, mint record).
-    var _hasLineage = (plant.parentAHash || plant.generation > 1 || plant.mutated || plant.compostLayers);
-    var _detailsLabel = _hasLineage ? '⬡ LINEAGE & DETAILS' : '⬡ DETAILS';
-    // Inline onclick + stopPropagation has been unreliable on iOS Safari when
-    // the button sits inside a transform:rotateY parent. We attach the click
-    // listener via JS after innerHTML below so stopImmediatePropagation actually
-    // takes effect, and we set a data-hash attribute so the listener can read
-    // the plant hash without inline string concatenation.
-    html += '<button class="cb-details-btn" data-pdh="' + plant.hash + '">' + _detailsLabel + '</button>';
+    // Lineage button is now OUTSIDE the flip wrap (cs-lineage-overlay) so
+    // there is no click propagation conflict with transform:rotateY.
     html += '<div class="cb-hash" style="margin-top:0.4rem;padding-top:0.3rem;border-top:1px solid rgba(74,124,53,0.06);">' + plant.hash + '</div>';
     html += '<div class="cb-date" style="margin-top:0.1rem;">Minted ' + (plant.date || '') + dateSuffix + '</div>';
     html += '<div class="cb-nameplate" style="position:absolute;bottom:8%;left:10%;right:10%;"><span class="cb-name" style="color:' + sColor + ';">' + name + '</span></div>';
@@ -28106,6 +28082,15 @@ document.addEventListener('keydown', function(e) {
     } else {
       // Already revealed — normal flip toggle
       el.classList.toggle('flipped');
+    }
+    // Show/hide the lineage overlay button based on flip state.
+    // The button is a sibling of the wrap (inside the carousel slot),
+    // NOT a descendant — zero propagation issues.
+    var _slotParent = el.parentNode;
+    var _lineageBtn = _slotParent ? _slotParent.querySelector('.cs-lineage-overlay') : null;
+    if (_lineageBtn) {
+      var _nowFlipped = el.classList.contains('flipped');
+      _lineageBtn.style.display = _nowFlipped ? '' : 'none';
     }
   };
 
