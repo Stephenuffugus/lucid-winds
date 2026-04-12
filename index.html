@@ -1240,14 +1240,16 @@
     }
     .pgm-dl-btn:hover { background: rgba(200,168,75,0.2); border-color: var(--gold); }
     .pgm-act-btn {
-      background: rgba(26,36,22,0.7); border: 1px solid rgba(74,124,53,0.2);
+      background: rgba(26,36,22,0.7); border: 1.5px solid rgba(74,124,53,0.25);
       color: var(--sage); font-family: 'Bebas Neue', sans-serif;
-      font-size: 0.52rem; letter-spacing: 0.08em;
-      padding: 0.28rem 0.6rem; border-radius: 4px; cursor: pointer;
-      transition: all 0.2s; min-height: 32px;
+      font-size: 0.58rem; letter-spacing: 0.08em;
+      padding: 0.35rem 0.65rem; border-radius: 6px; cursor: pointer;
+      transition: all 0.2s; min-height: 44px;
     }
     .pgm-act-btn:hover { border-color: rgba(122,179,86,0.4); color: var(--cream); }
+    .pgm-act-btn:active { transform: scale(0.95); background: rgba(74,124,53,0.2); }
     .pgm-act-btn.gold { border-color: rgba(200,168,75,0.3); color: var(--gold); }
+    .pgm-act-btn.gold:active { background: rgba(200,168,75,0.15); }
 
     /* ── Swipe hint arrows (fade out after first swipe) ── */
     .pgm-nav-hint {
@@ -2140,8 +2142,9 @@
     /* ── GREENHOUSE ── */
     .greenhouse-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.55rem;}
     /* ═══ CARD FRONT: Seasonal frames ═══ */
-    .greenhouse-plant{border:none;border-radius:8px;padding:0.4rem 0.3rem;text-align:center;position:relative;overflow:visible;background-color:#050505;background-size:100% 100%;background-position:center;background-repeat:no-repeat;box-shadow:0 2px 6px rgba(0,0,0,0.4);aspect-ratio:544/736;display:flex;flex-direction:column;align-items:center;justify-content:center;contain:layout style paint;}
+    .greenhouse-plant{border:1px solid rgba(122,179,86,0.12);border-radius:8px;padding:0.4rem 0.3rem;text-align:center;position:relative;overflow:visible;background-color:#050505;background-size:100% 100%;background-position:center;background-repeat:no-repeat;box-shadow:0 2px 6px rgba(0,0,0,0.4);aspect-ratio:544/736;display:flex;flex-direction:column;align-items:center;justify-content:center;contain:layout style paint;transition:box-shadow 0.2s ease,transform 0.15s ease;}
     .greenhouse-plant:active{transform:scale(0.97);}
+    @media (hover:hover){.greenhouse-plant:hover{box-shadow:0 0 14px rgba(122,179,86,0.2),0 4px 12px rgba(0,0,0,0.5);transform:scale(1.02);}}
     .greenhouse-plant.gh-new{box-shadow:0 0 12px rgba(200,168,75,0.2),0 2px 6px rgba(0,0,0,0.4);}
     .greenhouse-plant.gh-new::after{content:'NEW';position:absolute;top:4px;left:4px;font-family:'Bebas Neue',sans-serif;font-size:0.25rem;letter-spacing:0.06em;color:#0d100c;background:var(--gold);padding:1px 4px;border-radius:3px;z-index:5;}
     .greenhouse-plant.season-spring{background-image:url('assets/cards/fronts/card-front-spring.png');}
@@ -2196,7 +2199,7 @@
     .greenhouse-plant .gh-name .np-top{display:none;}
     .greenhouse-plant .gh-name .np-title{display:none;}
     .gh-grid-selector{display:flex;gap:0.25rem;margin-bottom:0.3rem;}
-    .gh-grid-btn{background:linear-gradient(180deg,rgba(46,40,32,0.5) 0%,rgba(32,30,24,0.6) 100%);border:1px solid rgba(200,188,160,0.12);color:rgba(200,188,160,0.5);font-family:'DM Mono',monospace;font-size:0.45rem;padding:0.25rem 0.5rem;border-radius:5px;cursor:pointer;min-height:34px;transition:all 0.15s;}
+    .gh-grid-btn{background:linear-gradient(180deg,rgba(46,40,32,0.5) 0%,rgba(32,30,24,0.6) 100%);border:1px solid rgba(200,188,160,0.15);color:rgba(200,188,160,0.6);font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.06em;padding:0.3rem 0.55rem;border-radius:6px;cursor:pointer;min-height:40px;transition:all 0.15s;}
     .gh-grid-btn.active{border-color:rgba(122,179,86,0.3);color:var(--sage);background:rgba(74,124,53,0.1);}
     .gh-grid-btn:hover{border-color:rgba(200,188,160,0.25);}
     /* Recent Blooms strip */
@@ -2440,7 +2443,7 @@
     .gh-flip-back .ghb-val.mythic{color:var(--cream)!important;text-shadow:0 0 3px rgba(240,235,216,0.3);opacity:1!important;}
     .gh-flip-back .ghb-val.mutation{color:#d4956a!important;opacity:1!important;}
     .gh-flip-back .ghb-actions{display:flex;gap:0.15rem;justify-content:center;margin-top:0.12rem;}
-    .gh-flip-back .ghb-btn{font-family:'Bebas Neue',sans-serif;font-size:0.32rem;letter-spacing:0.06em;color:var(--sage);background:rgba(26,36,22,0.5);border:1px solid rgba(122,179,86,0.15);border-radius:4px;padding:0.12rem 0.25rem;cursor:pointer;min-height:24px;}
+    .gh-flip-back .ghb-btn{font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.06em;color:var(--sage);background:rgba(26,36,22,0.5);border:1px solid rgba(122,179,86,0.2);border-radius:6px;padding:0.25rem 0.4rem;cursor:pointer;min-height:44px;}
 
     .greenhouse-plant.undiscovered{cursor:default;opacity:0.4;background:rgba(13,16,12,0.3);box-shadow:inset 0 0 8px rgba(74,124,53,0.02);}
     .greenhouse-plant.undiscovered .gh-slot{color:rgba(74,124,53,0.15);text-shadow:none;}
@@ -2746,7 +2749,7 @@
     .bs-name{font-family:'Playfair Display',serif;font-size:0.85rem;font-weight:900;line-height:1.15;overflow:hidden;}
     .bs-name .np-top{display:inline;font-size:0.5rem;font-style:italic;opacity:0.7;font-weight:400;margin-right:0.15rem;}
     .bs-name .np-main{font-size:0.8rem;}
-    .bs-name .np-title{display:block;font-size:0.45rem;font-style:italic;opacity:0.6;font-weight:400;}
+    .bs-name .np-title{display:block;font-size:0.55rem;font-style:italic;opacity:0.75;font-weight:400;}
     .bs-meta{font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.05em;display:flex;gap:0.3rem;margin-top:0.08rem;flex-wrap:wrap;}
     .bs-row{display:flex;justify-content:space-between;align-items:baseline;padding:0.18rem 0;border-bottom:1px dotted rgba(74,124,53,0.04);}
     .bs-cat{font-size:0.6rem;color:var(--cream);opacity:0.4;letter-spacing:0.04em;flex-shrink:0;}
@@ -3827,9 +3830,9 @@
 .hi-detail{padding:0.5rem 1rem;border-top:1px solid rgba(200,168,75,0.06);animation:panelFadeIn 0.2s ease;}
 .hi-detail-name{font-family:'Playfair Display',serif;font-size:0.85rem;font-weight:700;color:var(--cream);margin-bottom:0.2rem;}
 .hi-detail-grade{font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.12em;margin-bottom:0.35rem;}
-.hi-detail-traits{font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--muted);line-height:1.7;margin-bottom:0.5rem;}
+.hi-detail-traits{font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--muted);line-height:1.6;margin-bottom:0.5rem;}
 .hi-actions{display:flex;gap:8px;flex-wrap:wrap;}
-.hi-action-btn{flex:1;min-width:90px;min-height:56px;padding:0.45rem 0.5rem;border-radius:12px;border:1.5px solid rgba(122,179,86,0.2);background:linear-gradient(180deg,rgba(26,36,22,0.5),rgba(18,24,16,0.6));color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;letter-spacing:0.1em;cursor:pointer;text-align:center;}
+.hi-action-btn{flex:1;min-width:90px;min-height:56px;padding:0.5rem 0.65rem;border-radius:12px;border:1.5px solid rgba(122,179,86,0.25);background:linear-gradient(180deg,rgba(26,36,22,0.55),rgba(18,24,16,0.65));color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.68rem;letter-spacing:0.08em;cursor:pointer;text-align:center;transition:all 0.15s ease;box-shadow:0 2px 6px rgba(0,0,0,0.3);}
 .hi-vitality{margin:0.5rem 0;padding:0.5rem 0.65rem;background:rgba(13,16,12,0.55);border:1px solid rgba(74,124,53,0.2);border-radius:8px;}
 .hi-vitality-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;}
 .hi-vitality-label{font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.12em;color:var(--muted);}
