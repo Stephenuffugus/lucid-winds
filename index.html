@@ -29049,12 +29049,9 @@ document.addEventListener('keydown', function(e) {
     }
     html += '</div>';
 
-    // DNA Layers — reuse the card back's renderDNALedger which resolves
-    // trait indices to real names via TRAIT_BANK, not bland raw numbers.
-    // Wrapped in the same pdm-section styling for visual consistency.
-    if (_t && typeof renderDNALedger === 'function') {
-      try { html += renderDNALedger(plant); } catch(e) {}
-    }
+    // DNA Layers removed — they're already on the card back and showing
+    // them here is redundant. The details modal focuses on data you
+    // CAN'T see on the card: lineage, enrichment, phenotype, mint record.
 
     if (plant.parentAHash && plant.parentBHash) {
       html += '<div class="pdm-section">';
@@ -29062,20 +29059,15 @@ document.addEventListener('keydown', function(e) {
       html += '</div>';
     }
 
-    if (plant.generation && plant.generation > 1) {
-      html += '<div class="pdm-section">';
-      html += '<div class="pdm-section-title">CHIMERA GENERATION</div>';
-      html += '<div class="pdm-row"><span class="pdm-k">Gen</span><span class="pdm-v">' + plant.generation + '</span></div>';
-      var eaP = (plant.generation - 1) * 2;
-      html += '<div class="pdm-row"><span class="pdm-k">EA penalty</span><span class="pdm-v" style="color:#c07070;">−' + eaP + '</span></div>';
-      html += '<div class="pdm-row"><span class="pdm-k">Climate immunity</span><span class="pdm-v" style="color:var(--sage);">2× (hardy hybrid)</span></div>';
-      html += '</div>';
-    }
-
+    // Chimera gen moved to Enrichment History section below.
+    // Mutation — only if it exists and is notable
     if (plant.mutated || (_t && _t.mutationName && _t.mutationName !== 'None')) {
       html += '<div class="pdm-section">';
       html += '<div class="pdm-section-title">MUTATION</div>';
-      html += '<div class="pdm-row"><span class="pdm-k">Name</span><span class="pdm-v" style="color:#d8a0a0;">' + ((_t && _t.mutationName) || 'Unknown') + '</span></div>';
+      html += '<div style="display:flex;align-items:center;gap:0.4rem;">';
+      html += '<span style="font-size:1rem;">\ud83e\uddec</span>';
+      html += '<span style="font-family:Playfair Display,serif;font-size:0.82rem;font-style:italic;color:#d8a0a0;">' + ((_t && _t.mutationName) || 'Unknown') + '</span>';
+      html += '</div>';
       html += '</div>';
     }
 
