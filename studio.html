@@ -166,6 +166,12 @@ input[type=range]:focus-visible{outline:2px solid var(--gold);outline-offset:2px
 .gs-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(26,31,23,.95);border:1.5px solid var(--sage);color:var(--cream);font-family:'DM Mono',monospace;font-size:.75rem;padding:10px 20px;border-radius:8px;z-index:200;opacity:0;transition:all .3s ease;pointer-events:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 4px 16px rgba(0,0,0,.4)}
 .gs-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* Control groups */
+.gs-group{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:6px 10px;border-right:1px solid rgba(74,124,53,.1)}
+.gs-group:last-child{border-right:none}
+.gs-group-label{font-family:'Bebas Neue',sans-serif;font-size:.6rem;color:var(--muted);letter-spacing:.1em;width:100%;margin-bottom:2px;opacity:.7}
+.gs-toolbar{display:flex;flex-wrap:wrap;gap:0;background:rgba(13,16,12,.4);border-bottom:1px solid rgba(74,124,53,.06)}
+
 /* Select styling */
 select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a9178'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:24px}
 
@@ -193,6 +199,7 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
   <div style="font-size:.65rem;color:var(--muted)">by Lucid Winds</div>
 </div>
 
+<!-- TRANSPORT: Play / BPM / Loop -->
 <div class="gs-transport" id="gs-transport">
   <button class="gs-btn play" id="gs-play" onclick="GS.toggle()">▶ Play</button>
   <button class="gs-btn" onclick="GS.stop()">⏹</button>
@@ -201,56 +208,79 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
     <input type="range" min="40" max="240" value="120" oninput="GS.setBpm(this.value)">
     <strong id="gs-bpm">120</strong>
   </div>
-  <button class="gs-btn" onclick="GS.zoom(-1)" style="padding:8px 12px;min-width:48px">−</button>
-  <button class="gs-btn" onclick="GS.zoom(1)" style="padding:8px 12px;min-width:48px">+</button>
-  <button class="gs-btn on" id="gs-arr-mode" onclick="GS.toggleArrMode()">📋 Song</button>
   <button class="gs-btn" id="gs-loop" onclick="GS.toggleLoop()">🔁</button>
-  <select class="gs-btn" id="gs-root" onchange="GS.setRoot(this.value)" style="max-width:80px">
-  </select>
-  <select class="gs-btn" id="gs-scale" onchange="GS.setScale(this.value)" style="max-width:200px">
-  </select>
-  <button class="gs-btn" onclick="GS.playScale()">🎵 Hear</button>
-  <button class="gs-btn" id="gs-suggest-btn" onclick="GS.showSuggestions()">💡</button>
-  <button class="gs-btn" id="gs-accent" onclick="GS.toggleAccent()">★ Accent</button>
-  <div class="gs-bpm">
-    <span>Swing</span>
-    <input type="range" min="0" max="80" value="0" oninput="GS.setSwing(this.value)">
-    <strong id="gs-swing">0%</strong>
-  </div>
-  <div class="gs-bpm">
-    <span>Hum</span>
-    <input type="range" min="0" max="100" value="0" oninput="GS.setHumanize(this.value)">
-    <strong id="gs-humanize">0%</strong>
-  </div>
-  <select class="gs-btn" id="gs-groove" onchange="GS.setGroove(this.value)" style="max-width:120px">
-    <option value="none">Groove: Off</option>
-  </select>
-  <select class="gs-btn" id="gs-steps" onchange="GS.setSteps(this.value)" style="max-width:90px">
-    <option value="16">16</option>
-    <option value="32" selected>32</option>
-    <option value="64">64</option>
-  </select>
-  <button class="gs-btn" onclick="GS.exportWAV()">⬇ Export</button>
-  <select class="gs-btn" id="gs-kit" onchange="GS.setKit(this.value)" style="max-width:120px">
-    <option value="Standard">Standard</option><option value="808">808</option><option value="Lo-Fi">Lo-Fi</option><option value="Electronic">Electronic</option>
-  </select>
   <button class="gs-btn" id="gs-metro" onclick="GS.toggleMetro()">🥁 Metro</button>
+  <button class="gs-btn on" id="gs-arr-mode" onclick="GS.toggleArrMode()">📋 Song</button>
 </div>
 <div id="gs-suggest" style="display:none;padding:6px 12px;background:rgba(16,20,14,.9);border-bottom:1px solid rgba(74,124,53,.1);max-height:120px;overflow-y:auto"></div>
 
-<div style="display:flex;gap:4px;padding:4px 12px;flex-wrap:wrap;background:rgba(13,16,12,.3);border-bottom:1px solid rgba(74,124,53,.06)">
-  <button class="gs-btn" onclick="GS.save()">💾 Save</button>
-  <button class="gs-btn" onclick="GS.load()">📂 Load</button>
-  <button class="gs-btn" onclick="GS.clearSection()">🗑 Clear</button>
-  <button class="gs-btn" onclick="GS.copySection()">📋 Copy</button>
-  <button class="gs-btn" onclick="GS.pasteSection()">📌 Paste</button>
-  <button class="gs-btn" onclick="GS.undo()">↩</button>
-  <button class="gs-btn" onclick="GS.openSampler()">🎤 Sampler</button>
-  <button class="gs-btn" onclick="GS.openEuclid()">◉ Rhythm</button>
-  <button class="gs-btn" onclick="GS.openCircle()">⊙ Circle</button>
+<!-- TOOLBAR: Organized into labeled groups -->
+<div class="gs-toolbar">
+  <!-- KEY -->
+  <div class="gs-group">
+    <div class="gs-group-label">KEY</div>
+    <select class="gs-btn" id="gs-root" onchange="GS.setRoot(this.value)" style="max-width:80px"></select>
+    <select class="gs-btn" id="gs-scale" onchange="GS.setScale(this.value)" style="max-width:200px"></select>
+    <button class="gs-btn" onclick="GS.playScale()">🎵 Hear</button>
+    <button class="gs-btn" id="gs-suggest-btn" onclick="GS.showSuggestions()">💡</button>
+  </div>
+  <!-- GRID -->
+  <div class="gs-group">
+    <div class="gs-group-label">GRID</div>
+    <select class="gs-btn" id="gs-steps" onchange="GS.setSteps(this.value)" style="max-width:90px">
+      <option value="16">16</option>
+      <option value="32" selected>32</option>
+      <option value="64">64</option>
+    </select>
+    <button class="gs-btn" onclick="GS.zoom(-1)" style="padding:8px 12px;min-width:48px">−</button>
+    <button class="gs-btn" onclick="GS.zoom(1)" style="padding:8px 12px;min-width:48px">+</button>
+    <button class="gs-btn" id="gs-accent" onclick="GS.toggleAccent()">★ Accent</button>
+    <select class="gs-btn" id="gs-kit" onchange="GS.setKit(this.value)" style="max-width:120px">
+      <option value="Standard">Standard</option><option value="808">808</option><option value="Lo-Fi">Lo-Fi</option><option value="Electronic">Electronic</option>
+    </select>
+  </div>
+  <!-- FEEL -->
+  <div class="gs-group">
+    <div class="gs-group-label">FEEL</div>
+    <div class="gs-bpm">
+      <span>Swing</span>
+      <input type="range" min="0" max="80" value="0" oninput="GS.setSwing(this.value)">
+      <strong id="gs-swing">0%</strong>
+    </div>
+    <div class="gs-bpm">
+      <span>Hum</span>
+      <input type="range" min="0" max="100" value="0" oninput="GS.setHumanize(this.value)">
+      <strong id="gs-humanize">0%</strong>
+    </div>
+    <select class="gs-btn" id="gs-groove" onchange="GS.setGroove(this.value)" style="max-width:120px">
+      <option value="none">Groove: Off</option>
+    </select>
+  </div>
+  <!-- FILE -->
+  <div class="gs-group">
+    <div class="gs-group-label">FILE</div>
+    <button class="gs-btn" onclick="GS.save()">💾 Save</button>
+    <button class="gs-btn" onclick="GS.load()">📂 Load</button>
+    <button class="gs-btn" onclick="GS.exportWAV()">⬇ Export</button>
+  </div>
+  <!-- EDIT -->
+  <div class="gs-group">
+    <div class="gs-group-label">EDIT</div>
+    <button class="gs-btn" onclick="GS.copySection()">📋 Copy</button>
+    <button class="gs-btn" onclick="GS.pasteSection()">📌 Paste</button>
+    <button class="gs-btn" onclick="GS.clearSection()">🗑 Clear</button>
+    <button class="gs-btn" onclick="GS.undo()">↩ Undo</button>
+  </div>
+  <!-- TOOLS -->
+  <div class="gs-group">
+    <div class="gs-group-label">TOOLS</div>
+    <button class="gs-btn" onclick="GS.openSampler()">🎤 Sampler</button>
+    <button class="gs-btn" onclick="GS.openEuclid()">◉ Rhythm</button>
+    <button class="gs-btn" onclick="GS.openCircle()">⊙ Circle</button>
+  </div>
 </div>
 <div class="gs-sections" id="gs-sections"></div>
-<div id="gs-sec-indicator" style="padding:4px 12px;font-size:.55rem;font-family:Bebas Neue,sans-serif;letter-spacing:.08em"></div>
+<div id="gs-sec-indicator" style="padding:6px 12px;font-size:.7rem;font-family:Bebas Neue,sans-serif;letter-spacing:.08em"></div>
 <div id="gs-layers"></div>
 <div class="gs-arr" id="gs-arr"></div>
 
@@ -848,14 +878,14 @@ var GS = (function(){
       html += '<div style="margin-bottom:6px">'
         +'<div class="gs-sample-chip" onclick="GS.editSample(\''+name+'\')">'
         +'🔊 '+name+' <span style="color:var(--muted)">'+dur+'s</span>'
-        +(assignStr?'<span style="color:var(--sage);font-size:.45rem">'+assignStr+'</span>':'')
+        +(assignStr?'<span style="color:var(--sage);font-size:.6rem">'+assignStr+'</span>':'')
         +'<span class="del" onclick="event.stopPropagation();GS.deleteSample(\''+name+'\')">✕</span></div>'
         +'<div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:3px">'
-        +'<div style="font-size:.4rem;color:var(--muted);padding:2px 0">Assign:</div>';
+        +'<div style="font-size:.6rem;color:var(--muted);padding:2px 0">Assign:</div>';
       // Drum pad assign buttons
       for(var di=0;di<DRUMS.length;di++){
         var isOn = drumSamples[di]===name;
-        html += '<div class="gs-sample-chip" style="font-size:.4rem;padding:3px 6px;min-height:24px;'+(isOn?'border-color:#e88a4a;color:#e88a4a;':'')
+        html += '<div class="gs-sample-chip" style="font-size:.6rem;padding:6px 8px;min-height:36px;'+(isOn?'border-color:#e88a4a;color:#e88a4a;':'')
           +'" onclick="GS.assignDrum('+di+',\''+name+'\')">'+DRUMS[di].name+'</div>';
       }
       // Note layer assign buttons
@@ -864,12 +894,12 @@ var GS = (function(){
       for(var ni=0;ni<noteLayers.length;ni++){
         var nl = noteLayers[ni];
         var isOnN = layerSampleName[nl]===name;
-        html += '<div class="gs-sample-chip" style="font-size:.4rem;padding:3px 6px;min-height:24px;'+(isOnN?'border-color:'+noteColors[nl]+';color:'+noteColors[nl]+';':'')
+        html += '<div class="gs-sample-chip" style="font-size:.6rem;padding:6px 8px;min-height:36px;'+(isOnN?'border-color:'+noteColors[nl]+';color:'+noteColors[nl]+';':'')
           +'" onclick="GS.assignLayer(\''+nl+'\',\''+name+'\')">'+nl+'</div>';
       }
       html += '</div></div>';
     }
-    if(!html) html = '<div style="font-size:.5rem;color:var(--muted)">No samples yet — record or import one</div>';
+    if(!html) html = '<div style="font-size:.65rem;color:var(--muted)">No samples yet — record or import one</div>';
     el.innerHTML = html;
   }
 
@@ -1251,6 +1281,8 @@ var GS = (function(){
     var el = document.getElementById('gs-layers');
     var v = getCurrentVar();
     if(!v) return;
+    // Preserve scroll positions across DOM rebuild
+    var _scrollSaved = _saveScroll();
     var html = '';
 
     for(var li=0;li<LAYER_TYPES.length;li++){
@@ -1281,9 +1313,9 @@ var GS = (function(){
 
       html += '<div class="gs-layer ly-'+lt.id+(isExp?' expanded':'')+'">'
         +'<div class="gs-layer-head" onclick="GS.expandLayer(\''+lt.id+'\')">'
-        +'<div class="gs-layer-name">'+lt.name+(lt.type==='note'?' <span style="font-size:.5rem;color:var(--muted);font-family:DM Mono,monospace">Oct '+lt.octave+'</span>':'')+'</div>'
-        +(lt.type==='note'?'<div style="display:flex;gap:2px" onclick="event.stopPropagation()"><div class="gs-mute" onclick="GS.octShift(\''+lt.id+'\',-1)" style="font-size:.5rem;padding:2px 5px">▼</div><div class="gs-mute" onclick="GS.octShift(\''+lt.id+'\',1)" style="font-size:.5rem;padding:2px 5px">▲</div></div>':'')
-        +(lt.id!=='drums'?'<select class="gs-mute" style="font-size:.5rem;padding:2px 4px;max-width:70px;background:rgba(26,31,23,.8);color:var(--cream);border-radius:3px" onclick="event.stopPropagation()" onchange="GS.setPreset(\''+lt.id+'\',this.value)">'+getPresetOptions(lt.id)+'</select>':'')
+        +'<div class="gs-layer-name">'+lt.name+(lt.type==='note'?' <span style="font-size:.65rem;color:var(--muted);font-family:DM Mono,monospace">Oct '+lt.octave+'</span>':'')+'</div>'
+        +(lt.type==='note'?'<div style="display:flex;gap:2px" onclick="event.stopPropagation()"><div class="gs-mute" onclick="GS.octShift(\''+lt.id+'\',-1)" style="font-size:.65rem;padding:6px 8px;min-height:36px">▼</div><div class="gs-mute" onclick="GS.octShift(\''+lt.id+'\',1)" style="font-size:.65rem;padding:6px 8px;min-height:36px">▲</div></div>':'')
+        +(lt.id!=='drums'?'<select class="gs-mute" style="font-size:.65rem;padding:4px 6px;max-width:90px;background:rgba(26,31,23,.8);color:var(--cream);border-radius:4px;min-height:36px" onclick="event.stopPropagation()" onchange="GS.setPreset(\''+lt.id+'\',this.value)">'+getPresetOptions(lt.id)+'</select>':'')
         +'<div class="gs-layer-mini">'+miniHtml+'</div>'
         +'<input type="range" min="0" max="100" value="'+(ld.vol!==undefined?ld.vol:80)+'" style="width:40px;accent-color:'+(({drums:'#e88a4a',bass:'#c75050',chords:'#a0c4e8',melody:'#c8a84b'})[lt.id]||'var(--sage)')+'" onclick="event.stopPropagation()" oninput="event.stopPropagation();GS.setVol(\''+lt.id+'\',this.value)">'
         +'<div class="gs-mute'+(ld.mute?' on':'')+'" onclick="event.stopPropagation();GS.toggleMute(\''+lt.id+'\')">M</div>'
@@ -1319,29 +1351,30 @@ var GS = (function(){
       }
       // Add sample button for drums
       if(lt.type==='drum' && extraDrumRows.length < MAX_EXTRA_DRUMS){
-        html += '<div style="padding:4px 8px"><button class="gs-btn" onclick="GS.addDrumSample()" style="font-size:.55rem;padding:4px 10px;min-height:32px">+ Sample Pad ('+extraDrumRows.length+'/'+MAX_EXTRA_DRUMS+')</button></div>';
+        html += '<div style="padding:6px 10px"><button class="gs-btn" onclick="GS.addDrumSample()" style="font-size:.7rem;padding:8px 14px">+ Sample Pad ('+extraDrumRows.length+'/'+MAX_EXTRA_DRUMS+')</button></div>';
       }
       // FX controls below grid
       var fxState = ld.fx || {filter:20000, filterQ:0.7, delay:0, delayFb:0, reverb:0};
       var adsrState = ld.adsr || DEFAULT_ADSR;
       html += '</div>'
-        +'<div style="display:flex;gap:8px;padding:6px 8px;flex-wrap:wrap;font-size:.5rem;color:var(--muted);align-items:center">'
-        +'<span>Filter</span><input type="range" min="100" max="20000" value="'+fxState.filter+'" style="width:60px;accent-color:var(--cream)" oninput="GS.setFX(\''+lt.id+'\',\'filter\',this.value)">'
-        +'<span>Res</span><input type="range" min="0" max="20" value="'+(fxState.filterQ*10)+'" style="width:40px;accent-color:var(--cream)" oninput="GS.setFX(\''+lt.id+'\',\'filterQ\',this.value/10)">'
-        +'<span>Delay</span><input type="range" min="0" max="80" value="'+(fxState.delay*100)+'" style="width:50px;accent-color:var(--cream)" oninput="GS.setFX(\''+lt.id+'\',\'delay\',this.value/100)">'
-        +'<span>Fb</span><input type="range" min="0" max="80" value="'+(fxState.delayFb*100)+'" style="width:40px;accent-color:var(--cream)" oninput="GS.setFX(\''+lt.id+'\',\'delayFb\',this.value/100)">'
-        +'<span>Reverb</span><input type="range" min="0" max="100" value="'+(fxState.reverb*100)+'" style="width:50px;accent-color:var(--cream)" oninput="GS.setFX(\''+lt.id+'\',\'reverb\',this.value/100)">'
+        +'<div style="display:flex;gap:10px;padding:8px 10px;flex-wrap:wrap;font-size:.65rem;color:var(--muted);align-items:center">'
+        +'<span style="color:var(--cream);font-family:Bebas Neue,sans-serif;letter-spacing:.06em">FX</span>'
+        +'<span>Filter</span><input type="range" min="100" max="20000" value="'+fxState.filter+'" style="width:80px" oninput="GS.setFX(\''+lt.id+'\',\'filter\',this.value)">'
+        +'<span>Res</span><input type="range" min="0" max="20" value="'+(fxState.filterQ*10)+'" style="width:60px" oninput="GS.setFX(\''+lt.id+'\',\'filterQ\',this.value/10)">'
+        +'<span>Delay</span><input type="range" min="0" max="80" value="'+(fxState.delay*100)+'" style="width:70px" oninput="GS.setFX(\''+lt.id+'\',\'delay\',this.value/100)">'
+        +'<span>Fb</span><input type="range" min="0" max="80" value="'+(fxState.delayFb*100)+'" style="width:60px" oninput="GS.setFX(\''+lt.id+'\',\'delayFb\',this.value/100)">'
+        +'<span>Reverb</span><input type="range" min="0" max="100" value="'+(fxState.reverb*100)+'" style="width:70px" oninput="GS.setFX(\''+lt.id+'\',\'reverb\',this.value/100)">'
         +'</div>'
-        +(lt.type==='note'?'<div style="display:flex;gap:8px;padding:4px 8px;flex-wrap:wrap;font-size:.5rem;color:var(--muted);align-items:center;border-top:1px solid rgba(74,124,53,.06)">'
-        +'<span style="color:var(--gold)">ADSR</span>'
-        +'<span>Atk</span><input type="range" min="1" max="500" value="'+(adsrState.a*1000)+'" style="width:45px;accent-color:var(--gold)" oninput="GS.setADSR(\''+lt.id+'\',\'a\',this.value/1000)">'
-        +'<span>Dec</span><input type="range" min="10" max="500" value="'+(adsrState.d*1000)+'" style="width:45px;accent-color:var(--gold)" oninput="GS.setADSR(\''+lt.id+'\',\'d\',this.value/1000)">'
-        +'<span>Sus</span><input type="range" min="0" max="100" value="'+(adsrState.s*100)+'" style="width:45px;accent-color:var(--gold)" oninput="GS.setADSR(\''+lt.id+'\',\'s\',this.value/100)">'
-        +'<span>Rel</span><input type="range" min="10" max="1000" value="'+(adsrState.r*1000)+'" style="width:45px;accent-color:var(--gold)" oninput="GS.setADSR(\''+lt.id+'\',\'r\',this.value/1000)">'
+        +(lt.type==='note'?'<div style="display:flex;gap:10px;padding:6px 10px;flex-wrap:wrap;font-size:.65rem;color:var(--muted);align-items:center;border-top:1px solid rgba(74,124,53,.06)">'
+        +'<span style="color:var(--gold);font-family:Bebas Neue,sans-serif;letter-spacing:.06em">ADSR</span>'
+        +'<span>Atk</span><input type="range" min="1" max="500" value="'+(adsrState.a*1000)+'" style="width:60px" oninput="GS.setADSR(\''+lt.id+'\',\'a\',this.value/1000)">'
+        +'<span>Dec</span><input type="range" min="10" max="500" value="'+(adsrState.d*1000)+'" style="width:60px" oninput="GS.setADSR(\''+lt.id+'\',\'d\',this.value/1000)">'
+        +'<span>Sus</span><input type="range" min="0" max="100" value="'+(adsrState.s*100)+'" style="width:60px" oninput="GS.setADSR(\''+lt.id+'\',\'s\',this.value/100)">'
+        +'<span>Rel</span><input type="range" min="10" max="1000" value="'+(adsrState.r*1000)+'" style="width:60px" oninput="GS.setADSR(\''+lt.id+'\',\'r\',this.value/1000)">'
         +'</div>':'')
-        +'<div style="display:flex;gap:8px;padding:4px 8px;flex-wrap:wrap;font-size:.5rem;color:var(--muted);align-items:center;border-top:1px solid rgba(74,124,53,.06)">'
-        +'<span style="color:#E8A0BF">Prob</span><input type="range" min="1" max="100" value="'+(ld.probability!==undefined?ld.probability:100)+'" style="width:60px;accent-color:#E8A0BF" oninput="GS.setProb(\''+lt.id+'\',this.value)"><strong style="font-size:.5rem;color:var(--cream);min-width:22px" id="gs-prob-'+lt.id+'">'+(ld.probability!==undefined?ld.probability:100)+'%</strong>'
-        +'<span style="color:#a0c4e8">Ratchet</span><select style="font-size:.5rem;padding:2px 4px;background:rgba(26,31,23,.8);color:var(--cream);border:1px solid var(--border);border-radius:3px" onchange="GS.setRatchet(\''+lt.id+'\',this.value)">'
+        +'<div style="display:flex;gap:10px;padding:6px 10px;flex-wrap:wrap;font-size:.65rem;color:var(--muted);align-items:center;border-top:1px solid rgba(74,124,53,.06)">'
+        +'<span style="color:#E8A0BF">Prob</span><input type="range" min="1" max="100" value="'+(ld.probability!==undefined?ld.probability:100)+'" style="width:80px;accent-color:#E8A0BF" oninput="GS.setProb(\''+lt.id+'\',this.value)"><strong style="font-size:.65rem;color:var(--cream);min-width:28px" id="gs-prob-'+lt.id+'">'+(ld.probability!==undefined?ld.probability:100)+'%</strong>'
+        +'<span style="color:#a0c4e8">Ratchet</span><select style="font-size:.65rem;padding:6px 8px;background:rgba(26,31,23,.8);color:var(--cream);border:1px solid var(--border);border-radius:4px;min-height:36px" onchange="GS.setRatchet(\''+lt.id+'\',this.value)">'
         +'<option value="1"'+(ld.ratchetAll===1||!ld.ratchetAll?' selected':'')+'>1x</option>'
         +'<option value="2"'+(ld.ratchetAll===2?' selected':'')+'>2x</option>'
         +'<option value="3"'+(ld.ratchetAll===3?' selected':'')+'>3x</option>'
@@ -1354,6 +1387,50 @@ var GS = (function(){
     }
 
     el.innerHTML = html;
+    // Restore scroll positions after DOM rebuild
+    requestAnimationFrame(function(){ _restoreScroll(_scrollSaved); });
+  }
+
+  // Update one layer's mini-preview strip without full re-render
+  function _updateMini(lid){
+    var v = getCurrentVar(); if(!v) return;
+    var ld = v[lid];
+    var lt = null;
+    for(var i=0;i<LAYER_TYPES.length;i++){if(LAYER_TYPES[i].id===lid){lt=LAYER_TYPES[i];break;}}
+    if(!lt) return;
+    var rows = lt.type === 'drum' ? (lt.rows + extraDrumRows.length) : getScaleNotes(lt.octave).length;
+    var miniCover = {};
+    if(lt.type==='note' && ld.lens){
+      for(var lk in ld.lens){
+        var lkI = parseInt(lk), lkLen = ld.lens[lk];
+        if(lkLen > 1 && ld.grid[lkI]){
+          var lkStep = lkI % STEPS;
+          for(var lkS=lkStep+1;lkS<lkStep+lkLen&&lkS<STEPS;lkS++) miniCover[lkS]=true;
+        }
+      }
+    }
+    var layerEl = document.querySelector('.ly-'+lid+' .gs-layer-mini');
+    if(!layerEl) return;
+    var divs = layerEl.children;
+    for(var s=0;s<STEPS&&s<divs.length;s++){
+      var hasNote = !!miniCover[s];
+      if(!hasNote){for(var r=0;r<rows;r++){if(ld.grid[r*STEPS+s]){hasNote=true;break;}}}
+      if(hasNote) divs[s].classList.add('on');
+      else divs[s].classList.remove('on');
+    }
+  }
+
+  // Save and restore scroll positions across full re-renders
+  function _saveScroll(){
+    var wraps = document.querySelectorAll('.gs-grid-wrap');
+    var pos = [];
+    for(var i=0;i<wraps.length;i++) pos.push(wraps[i].scrollLeft);
+    return {wraps:pos, pageY:window.scrollY||window.pageYOffset||0};
+  }
+  function _restoreScroll(saved){
+    var wraps = document.querySelectorAll('.gs-grid-wrap');
+    for(var i=0;i<wraps.length&&i<saved.wraps.length;i++) wraps[i].scrollLeft = saved.wraps[i];
+    window.scrollTo(0, saved.pageY);
   }
 
   function renderStep(){
@@ -1384,7 +1461,7 @@ var GS = (function(){
       var isPlaying = playing && arrMode && i === arrIdx;
       var sec = block.charAt(0);
       html += '<div class="gs-arr-block sec-'+sec+(isPlaying?' playing':'')+'" onclick="GS.arrClick('+i+')">'
-        +block+'<span style="margin-left:6px;color:var(--muted);font-size:.5rem;opacity:.5" onclick="event.stopPropagation();GS.arrDel('+i+')">✕</span></div>';
+        +block+'<span style="margin-left:6px;color:var(--muted);font-size:.65rem;opacity:.5" onclick="event.stopPropagation();GS.arrDel('+i+')">✕</span></div>';
     }
     html += '<div class="gs-arr-block gs-arr-add" onclick="GS.arrAdd()">+</div>';
     el.innerHTML = html;
@@ -1856,7 +1933,13 @@ var GS = (function(){
         }
       }
 
-      renderLayers();
+      // Targeted DOM update — no full re-render, preserves scroll
+      el.classList.remove('on','accent','note-head','tail','note-end');
+      if(cellVal){
+        el.classList.add('on');
+        if(cellVal === 2) el.classList.add('accent');
+      }
+      _updateMini(lid);
     },
     arrClick: function(i){
       var block = song.arrangement[i];
@@ -2448,12 +2531,12 @@ var GS = (function(){
         var barW = m.pct;
         var isModeRelative = m.total === current.length && m.shared === current.length;
         html += '<div style="display:flex;align-items:center;gap:6px;padding:2px 0;cursor:pointer" onclick="GS.setScale(\''+m.name+'\');document.getElementById(\'gs-scale\').value=\''+m.name+'\'">'
-          +'<div style="font-size:.5rem;color:var(--cream);min-width:90px;font-family:DM Mono,monospace">'+m.name+'</div>'
+          +'<div style="font-size:.65rem;color:var(--cream);min-width:90px;font-family:DM Mono,monospace">'+m.name+'</div>'
           +'<div style="flex:1;height:6px;background:rgba(26,31,23,.6);border-radius:3px;overflow:hidden"><div style="width:'+barW+'%;height:100%;background:'+(isModeRelative?'var(--gold)':'var(--sage)')+';border-radius:3px"></div></div>'
-          +'<div style="font-size:.4rem;color:var(--muted);min-width:30px">'+m.shared+'/'+m.total+(isModeRelative?' ★':'')+'</div>'
+          +'<div style="font-size:.6rem;color:var(--muted);min-width:30px">'+m.shared+'/'+m.total+(isModeRelative?' ★':'')+'</div>'
           +'</div>';
       }
-      if(matches.length === 0) html += '<div style="font-size:.5rem;color:var(--muted)">No close matches</div>';
+      if(matches.length === 0) html += '<div style="font-size:.65rem;color:var(--muted)">No close matches</div>';
       el.innerHTML = html;
       el.style.display = 'block';
     },
