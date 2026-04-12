@@ -3170,6 +3170,7 @@
     body.game-active .game-header{display:none!important}
     body.game-active .fg-pk{display:none!important}
     body.game-active #pw-keeper-bar{display:none!important}
+    body.game-active #kb-compendium{display:none!important}
     /* Back-to-games button inside game area */
     .game-back-btn{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(13,16,12,0.9);border:1px solid rgba(74,124,53,0.25);border-radius:0 0 10px 10px;color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.06em;cursor:pointer;width:fit-content;min-height:44px;-webkit-tap-highlight-color:transparent;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
     .game-back-btn:active{transform:scale(0.95);}
@@ -4201,7 +4202,9 @@
     #kb-sunbeams,#kb-dew{padding:0;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;width:64px;height:64px;border:none;background:none;overflow:hidden;flex-shrink:0;position:relative;}
     #kb-sunbeams .kb-val,#kb-dew .kb-val{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--cream);text-shadow:0 1px 4px rgba(0,0,0,0.9),0 0 8px rgba(0,0,0,0.7);z-index:2;pointer-events:none;}
     #kb-dew .kb-icon{font-size:1.15rem;filter:drop-shadow(0 0 4px rgba(91,175,220,0.4));}
-    #kb-compendium{position:relative;display:flex;align-items:center;justify-content:center;padding:0;border:2px solid rgba(200,168,75,0.4);border-radius:10px;background:none;cursor:pointer;width:64px;height:64px;flex-shrink:0;overflow:hidden;}
+    #kb-compendium{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 12px);left:12px;z-index:996;width:72px;height:72px;cursor:pointer;border:2px solid rgba(200,168,75,0.4);border-radius:14px;background:rgba(13,16,12,0.6);overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.6),0 0 0 1px rgba(200,168,75,0.1);transition:transform 0.15s;}
+    #kb-compendium:active{transform:scale(0.92);}
+    #kb-compendium #kb-comp-count{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.55rem;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.5);}
     #kb-compendium.has-entries{display:flex;}
     /* INSTALL APP button — visible when running in browser, hidden when
        running as an installed PWA (display-mode:standalone). Compact to
@@ -5431,9 +5434,13 @@ window.onerror=function(msg,url,line,col,err){
       <div id="kb-slots" onclick="if(window._openSlots)_openSlots();" title="Pull the slots — gamble Dew for fertilizer, Sunbeams, and jackpots"><img src="assets/btn-slots.png" alt="Slots" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
       <div id="kb-weather" onclick="if(window._openWeather)_openWeather();" title="Summon weather over your wild plants — rain, sun flare, dawn mist"><img src="assets/btn-weather.png" alt="Weather" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
       <div id="kb-mystery" onclick="if(window._openMystery)_openMystery();" title="Open a mystery box — random loot for 25 Dew"><img src="assets/btn-mystery.png" alt="Mystery" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
-      <div id="kb-compendium" onclick="if(window._openCompendiumUI)_openCompendiumUI();else if(window._openRootReport)_openRootReport('today');" title="Book of Secrets — compendium, journal, and discoveries"><img src="assets/btn-compendium.png" alt="Book" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"><span id="kb-comp-count" style="position:absolute;bottom:2px;right:4px;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);text-shadow:0 1px 4px rgba(0,0,0,0.9);z-index:2;">0</span></div>
       <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install Lucid Winds as an app on your device"><img src="assets/btn-install.png" alt="Install" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
     </div>
+  </div>
+  <!-- Book of Secrets — floating button, separate from keeper bar -->
+  <div id="kb-compendium" onclick="if(window._openCompendiumUI)_openCompendiumUI();" title="Book of Secrets">
+    <img src="assets/btn-compendium.png" alt="Book of Secrets" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:12px;">
+    <span id="kb-comp-count">0</span>
   </div>
   <div id="pw-lb-dropdown">
     <div class="lb-tabs"><div class="lb-tab active" onclick="PW_UI.setLBTab(this,'global')">GLOBAL</div><div class="lb-tab" onclick="PW_UI.setLBTab(this,'friends')">FRIENDS</div><div class="lb-tab" onclick="PW_UI.setLBTab(this,'region')">REGION</div></div>
