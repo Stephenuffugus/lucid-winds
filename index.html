@@ -28599,63 +28599,70 @@ document.addEventListener('keydown', function(e) {
       name: 'Crystal Nursery Pot',
       icon: '\u2756',
       cost: 200,
+      levelRequired: 1,
       blurb: '+5% rarity boost on bloom (stacks with fertilizer)',
       color: '#a0c4e8'
+    },
+    glasswort: {
+      id: 'glasswort',
+      name: 'Glasswort Vessel',
+      icon: '\ud83e\uddca',
+      cost: 250,
+      levelRequired: 3,
+      blurb: 'Gen 1 only — chimera generation resets to 1 on bloom',
+      color: '#b0e0e6'
     },
     moonstone: {
       id: 'moonstone',
       name: 'Moonstone Cradle',
       icon: '\ud83c\udf19',
       cost: 350,
+      levelRequired: 5,
       blurb: '+1 EA permanent bonus on the bloomed plant',
       color: '#c0d0e0'
-    },
-    phoenix: {
-      id: 'phoenix',
-      name: 'Phoenix Ash Urn',
-      icon: '\ud83d\udd25',
-      cost: 500,
-      blurb: 'Doubles fertilizer effectiveness for this seed',
-      color: '#d4842a'
-    },
-    worldSeed: {
-      id: 'worldSeed',
-      name: 'World Seed Bowl',
-      icon: '\ud83c\udf0d',
-      cost: 800,
-      blurb: 'Guarantees Uncommon+ (auto-rerolls Common results)',
-      color: '#7ab356'
-    },
-    // ─── EXPANSION SET — strategic depth ───
-    glasswort: {
-      id: 'glasswort',
-      name: 'Glasswort Vessel',
-      icon: '\ud83e\uddca',
-      cost: 250,
-      blurb: 'Gen 1 only — chimera generation resets to 1 on bloom',
-      color: '#b0e0e6'
     },
     iron: {
       id: 'iron',
       name: 'Iron Urn',
       icon: '\u2697',
       cost: 400,
+      levelRequired: 7,
       blurb: '+2 climate immunity (peak season bonus doubled)',
       color: '#888888'
+    },
+    phoenix: {
+      id: 'phoenix',
+      name: 'Phoenix Ash Urn',
+      icon: '\ud83d\udd25',
+      cost: 500,
+      levelRequired: 10,
+      blurb: 'Doubles fertilizer effectiveness for this seed',
+      color: '#d4842a'
     },
     velvet: {
       id: 'velvet',
       name: 'Velvet Bowl',
       icon: '\ud83c\udf38',
       cost: 600,
+      levelRequired: 12,
       blurb: 'Forces hasFlower=true on bloom (always blooms a flower)',
       color: '#e8a0bf'
+    },
+    worldSeed: {
+      id: 'worldSeed',
+      name: 'World Seed Bowl',
+      icon: '\ud83c\udf0d',
+      cost: 800,
+      levelRequired: 15,
+      blurb: 'Guarantees Uncommon+ (auto-rerolls Common results)',
+      color: '#7ab356'
     },
     starlight: {
       id: 'starlight',
       name: 'Starlight Cradle',
       icon: '\u2728',
       cost: 1200,
+      levelRequired: 20,
       blurb: 'Doubles aura intensity — guarantees an aura if rolled',
       color: '#c8a84b'
     }
@@ -28663,6 +28670,12 @@ document.addEventListener('keydown', function(e) {
   window.lwBuyPot = function(potId) {
     var pot = window.LW_POTS[potId];
     if (!pot) return false;
+    var lvlReq = pot.levelRequired || 1;
+    var curLvl = (window.canSee && window.canSee.currentLevel) ? window.canSee.currentLevel() : 1;
+    if (curLvl < lvlReq) {
+      if (window._toast) window._toast('Reach Level ' + lvlReq + ' to unlock ' + pot.name + '.');
+      return false;
+    }
     var bal = window.getTotalDew ? window.getTotalDew() : 0;
     if (bal < pot.cost) {
       if (window._toast) window._toast('Need ' + pot.cost + ' Dew (have ' + bal + ').');
@@ -29449,20 +29462,50 @@ document.addEventListener('keydown', function(e) {
     h += '<button onclick="document.getElementById(\'lw-pot-shop\').remove()" style="background:none;border:1px solid rgba(122,179,86,0.25);color:var(--muted);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:0.9rem;">\u2715</button>';
     h += '</div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);margin-bottom:0.85rem;line-height:1.5;">Specialty pots are consumable. Apply one to a growing seed and it triggers at bloom — single use.</div>';
-    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--sage);margin-bottom:0.55rem;letter-spacing:0.08em;">Balance: <span style="color:var(--gold);">' + dew + ' \ud83d\udca7 Dew</span></div>';
+    var curLvl = (window.canSee && window.canSee.currentLevel) ? window.canSee.currentLevel() : 1;
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.55rem;font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;">';
+    h += '<span style="color:var(--sage);">Balance: <span style="color:var(--gold);">' + dew + ' \ud83d\udca7 Dew</span></span>';
+    h += '<span style="color:var(--muted);">Level <span style="color:var(--cream);">' + curLvl + '</span></span>';
+    h += '</div>';
     var keys = Object.keys(window.LW_POTS);
     for (var i = 0; i < keys.length; i++) {
       var pot = window.LW_POTS[keys[i]];
       var owned = inv.pots[pot.id] || 0;
-      var canBuy = dew >= pot.cost;
-      h += '<div style="display:flex;gap:0.65rem;padding:0.7rem 0.55rem;margin-bottom:0.45rem;background:rgba(13,16,12,0.55);border:1px solid ' + pot.color + '55;border-radius:9px;align-items:center;">';
-      h += '<div style="font-size:1.6rem;flex-shrink:0;width:42px;text-align:center;">' + pot.icon + '</div>';
+      var lvlReq = pot.levelRequired || 1;
+      var levelLocked = curLvl < lvlReq;
+      var canAfford = dew >= pot.cost;
+      var canBuy = !levelLocked && canAfford;
+      // Three visual states: locked (level too low) / unaffordable (Dew too low) / available
+      var rowOpacity = levelLocked ? '0.55' : '1';
+      var borderCol = levelLocked ? 'rgba(122,122,122,0.35)' : (pot.color + '55');
+      h += '<div style="display:flex;gap:0.65rem;padding:0.7rem 0.55rem;margin-bottom:0.45rem;background:rgba(13,16,12,0.55);border:1px solid ' + borderCol + ';border-radius:9px;align-items:center;opacity:' + rowOpacity + ';position:relative;">';
+      // Icon — desaturated with a lock when level-gated
+      var iconStyle = levelLocked ? 'font-size:1.6rem;flex-shrink:0;width:42px;text-align:center;filter:grayscale(1) brightness(0.7);' : 'font-size:1.6rem;flex-shrink:0;width:42px;text-align:center;';
+      h += '<div style="' + iconStyle + '">' + pot.icon + '</div>';
       h += '<div style="flex:1;min-width:0;">';
-      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:' + pot.color + ';letter-spacing:0.06em;">' + pot.name + '</div>';
+      var nameCol = levelLocked ? 'rgba(160,160,160,0.75)' : pot.color;
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:' + nameCol + ';letter-spacing:0.06em;">' + pot.name + '</div>';
       h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);line-height:1.35;margin-top:0.18rem;">' + pot.blurb + '</div>';
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:0.22rem;">Owned: ' + owned + '</div>';
+      // Footer line: owned count + (locked / saving / ready) status
+      var statusLine = 'Owned: ' + owned;
+      if (levelLocked) statusLine += ' \u00b7 <span style="color:#d96b4b;">Lv ' + lvlReq + ' to unlock</span>';
+      else if (!canAfford) statusLine += ' \u00b7 <span style="color:var(--gold);">Save ' + (pot.cost - dew) + ' more Dew</span>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:0.22rem;">' + statusLine + '</div>';
       h += '</div>';
-      h += '<button onclick="window.lwBuyPot(\'' + pot.id + '\');" ' + (canBuy ? '' : 'disabled') + ' style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.06em;background:' + (canBuy ? 'linear-gradient(180deg,rgba(74,124,53,0.4),rgba(46,80,34,0.55))' : 'rgba(46,46,46,0.3)') + ';border:1.5px solid ' + (canBuy ? 'rgba(122,179,86,0.5)' : 'rgba(122,122,122,0.3)') + ';color:' + (canBuy ? 'var(--cream)' : 'rgba(160,160,160,0.5)') + ';border-radius:8px;padding:0.5rem 0.65rem;cursor:' + (canBuy ? 'pointer' : 'not-allowed') + ';min-height:48px;min-width:68px;flex-shrink:0;">' + pot.cost + '\ud83d\udca7</button>';
+      // Buy button — three states share one element
+      var btnBg, btnBorder, btnColor, btnLabel, btnCursor;
+      if (levelLocked) {
+        btnBg = 'rgba(80,30,30,0.25)'; btnBorder = 'rgba(217,107,75,0.35)';
+        btnColor = 'rgba(217,107,75,0.85)'; btnLabel = '\ud83d\udd12 Lv' + lvlReq; btnCursor = 'not-allowed';
+      } else if (!canAfford) {
+        btnBg = 'rgba(46,46,46,0.3)'; btnBorder = 'rgba(122,122,122,0.3)';
+        btnColor = 'rgba(160,160,160,0.6)'; btnLabel = pot.cost + '\ud83d\udca7'; btnCursor = 'not-allowed';
+      } else {
+        btnBg = 'linear-gradient(180deg,rgba(74,124,53,0.4),rgba(46,80,34,0.55))';
+        btnBorder = 'rgba(122,179,86,0.5)';
+        btnColor = 'var(--cream)'; btnLabel = pot.cost + '\ud83d\udca7'; btnCursor = 'pointer';
+      }
+      h += '<button onclick="window.lwBuyPot(\'' + pot.id + '\');" ' + (canBuy ? '' : 'disabled') + ' style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.06em;background:' + btnBg + ';border:1.5px solid ' + btnBorder + ';color:' + btnColor + ';border-radius:8px;padding:0.5rem 0.65rem;cursor:' + btnCursor + ';min-height:48px;min-width:68px;flex-shrink:0;">' + btnLabel + '</button>';
       h += '</div>';
     }
     h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:0.6rem;text-align:center;line-height:1.5;">Apply pots from each seed slot. Tap a seed and pick from your inventory.</div>';
