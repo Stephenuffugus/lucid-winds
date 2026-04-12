@@ -1740,6 +1740,7 @@
     @keyframes navDotIn{from{transform:scaleX(0);opacity:0;}to{transform:scaleX(1);opacity:0.8;}}
     .fg-nav-label{display:block;position:absolute;bottom:6px;left:0;right:0;font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.12em;color:rgba(232,220,200,0.85);text-shadow:0 1px 4px rgba(0,0,0,1),0 0 8px rgba(0,0,0,0.9);pointer-events:none;text-align:center;}
     .fg-nav-btn:not(.active) .fg-nav-label{opacity:0.5;}
+    .nav-badge{position:absolute;top:2px;right:4px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--gold);color:#0d100c;font-family:'DM Mono',monospace;font-size:0.4rem;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.5);pointer-events:none;}
 
     /* ── set-78: SWS ID Modal — CSS VAR ALIGNED (--moss, --black, --gold) ── */
     #sws-id-modal{
@@ -6569,8 +6570,8 @@ window.onerror=function(msg,url,line,col,err){
   <div class="fg-bottomnav">
     <button class="fg-nav-min" onclick="this.parentElement.classList.toggle('minimized')" title="Hide nav"><span class="nm-chev">▾</span><span>HIDE</span></button>
     <button class="fg-nav-btn active" onclick="switchTab('game')"><img src="assets/games/wild/nav-game-v5.png" alt="Game"><span class="fg-nav-label">GAME</span></button>
-    <button class="fg-nav-btn" onclick="switchTab('greenhouse')"><img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse"><span class="fg-nav-label">GREENHOUSE</span></button>
-    <button class="fg-nav-btn" onclick="switchTab('nursery')"><img src="assets/games/wild/nav-nursery-v5.png" alt="Nursery"><span class="fg-nav-label">NURSERY</span></button>
+    <button class="fg-nav-btn" onclick="switchTab('greenhouse')" style="position:relative;"><img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse"><span class="fg-nav-label">GREENHOUSE</span><span id="nav-gh-badge" class="nav-badge" style="display:none;"></span></button>
+    <button class="fg-nav-btn" onclick="switchTab('nursery')" style="position:relative;"><img src="assets/games/wild/nav-nursery-v5.png" alt="Nursery"><span class="fg-nav-label">NURSERY</span><span id="nav-nur-badge" class="nav-badge" style="display:none;"></span></button>
     <button class="fg-nav-btn" onclick="switchTab('wild')"><img src="assets/games/wild/nav-wild-v5.png" alt="Wild"><span class="fg-nav-label">WILD</span></button>
   </div>
 
@@ -26362,6 +26363,9 @@ document.addEventListener('keydown', function(e) {
     // Progress header
     var pct = Math.round((gh.length / MAX_COLLECTION_SIZE) * 100);
     if (countEl) countEl.textContent = gh.length + ' / ' + MAX_COLLECTION_SIZE;
+    // Nav badge — show plant count
+    var _ghBadge = document.getElementById('nav-gh-badge');
+    if (_ghBadge) { if (gh.length > 0) { _ghBadge.textContent = gh.length; _ghBadge.style.display = 'flex'; } else { _ghBadge.style.display = 'none'; } }
     if (fillEl) fillEl.style.width = pct + '%';
     var expandBtn = document.getElementById('gh-expand-btn');
     if (expandBtn) expandBtn.style.display = (MAX_COLLECTION_SIZE >= GH_SLOTS_MAX) ? 'none' : '';
@@ -29538,6 +29542,18 @@ document.addEventListener('keydown', function(e) {
     if (balEl) {
       var bal = typeof getTotalHashes === 'function' ? getTotalHashes() : 0;
       balEl.textContent = 'Balance: ' + bal + ' \u26a1';
+    }
+    // Nav badge — show seeds needing water
+    var _nurBadge = document.getElementById('nav-nur-badge');
+    if (_nurBadge) {
+      var _nurNeeds = 0;
+      var _nurToday = new Date().toISOString().split('T')[0];
+      for (var _ni = 0; _ni < nursery.length; _ni++) {
+        var _ns = nursery[_ni];
+        if (_ns && _ns.status === 'growing' && _ns.waterLog && _ns.waterLog.indexOf(_nurToday) === -1) _nurNeeds++;
+        if (_ns && FG_Data.isBloomReady && FG_Data.isBloomReady(_ns)) _nurNeeds++;
+      }
+      if (_nurNeeds > 0) { _nurBadge.textContent = _nurNeeds; _nurBadge.style.display = 'flex'; } else { _nurBadge.style.display = 'none'; }
     }
     var fertEl = document.getElementById('nur-fert-balance');
     if (fertEl) {
