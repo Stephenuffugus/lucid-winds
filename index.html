@@ -4253,7 +4253,7 @@
     .cs-close{position:fixed;top:calc(0.5rem + env(safe-area-inset-top, 0px));right:0.5rem;width:36px;height:36px;border-radius:50%;border:2px solid rgba(74,124,53,0.15);background:rgba(26,36,22,0.6);color:var(--muted);font-size:0.75rem;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:99999;}
     /* ═══ BACKPACK SYSTEM CSS (from demo) ═══ */
 /* ═══ BACKPACK ═══ */
-#bpi{position:fixed;top:calc(env(safe-area-inset-top,0px) + 56px);right:10px;z-index:998;width:112px;height:112px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat}
+#bpi{position:fixed;top:calc(env(safe-area-inset-top,0px) + 80px);right:10px;z-index:998;width:88px;height:88px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat}
 body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 205px);right:10px;width:78px;height:78px;}
 #bpi:active{transform:scale(0.88);}
 #bpb{position:absolute;top:-4px;left:-4px;min-width:20px;height:20px;border-radius:10px;background:var(--gold);color:var(--black);font-family:'Bebas Neue',sans-serif;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,0.4);transition:all 0.25s ease;}
@@ -4375,7 +4375,7 @@ body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 205px);right:10px;wid
 /* ═══ WILD TAB v2 — Premium Redesign ═══ */
 
 /* ── Wild Log Bar (top navigation) ── */
-.wild-log{position:fixed;top:0;left:0;right:0;padding:8px;padding-top:calc(8px + env(safe-area-inset-top,0px));background:linear-gradient(180deg,rgba(20,16,10,0.96),rgba(13,10,6,0.95));border-bottom:2px solid rgba(200,168,75,0.15);z-index:460;box-shadow:0 8px 32px rgba(0,0,0,0.7);display:grid;grid-template-columns:1fr 1fr 1fr 90px;grid-template-rows:auto auto;grid-template-areas:'s1 s2 s3 cp' 's4 s5 s6 cp';gap:6px;}
+.wild-log{position:fixed;top:0;left:0;right:0;padding:8px;padding-top:calc(8px + env(safe-area-inset-top,0px));background:linear-gradient(180deg,rgba(20,16,10,0.96),rgba(13,10,6,0.95));border-bottom:2px solid rgba(200,168,75,0.15);z-index:460;box-shadow:0 8px 32px rgba(0,0,0,0.7);display:grid;grid-template-columns:1fr 1fr 1fr 120px;grid-template-rows:auto auto;grid-template-areas:'s1 s2 s3 cp' 's4 s5 s6 cp';gap:6px;}
 .wild-log-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(5,6,4,0.75);padding:6px 4px;border-radius:8px;border:1px solid rgba(200,168,75,0.12);min-height:52px;cursor:pointer;transition:all 0.15s;}
 .wild-log-stat:nth-child(1){grid-area:s1;}
 .wild-log-stat:nth-child(2){grid-area:s2;}
@@ -4383,7 +4383,8 @@ body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 205px);right:10px;wid
 .wild-log-stat:nth-child(4){grid-area:s4;}
 .wild-log-stat:nth-child(5){grid-area:s5;}
 .wild-log-stat:nth-child(6){grid-area:s6;}
-.wild-log-wind{grid-area:cp;align-self:center;justify-self:center;}
+.wild-log-wind{grid-area:cp;align-self:stretch;justify-self:stretch;display:flex;align-items:center;justify-content:center;position:relative;padding:4px;}
+.wild-log-wind img{width:100%!important;height:auto!important;max-height:100%;aspect-ratio:1;object-fit:contain;image-rendering:-webkit-optimize-contrast;filter:drop-shadow(0 2px 8px rgba(200,168,75,0.4))!important;}
 .wild-log-stat:active{background:rgba(18,22,16,0.85);border-color:rgba(200,168,75,0.3);}
 .wild-log-val{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;color:var(--cream);line-height:1;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,.6)}
 .wild-log-lbl{font-family:'DM Mono',monospace;font-size:0.55rem;color:rgba(200,168,75,0.7);letter-spacing:0.08em;text-transform:uppercase;margin-top:1px;}
