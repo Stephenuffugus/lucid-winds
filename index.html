@@ -2216,7 +2216,7 @@
     .lt-branch{margin-bottom:0.2rem;padding-left:0.3rem;border-left:1px solid rgba(74,124,53,0.1);}
     .lt-parent{display:flex;align-items:center;gap:0.25rem;font-size:0.42rem;margin:2px 0;}
     .lt-label{font-family:'DM Mono',monospace;font-size:0.38rem;color:var(--muted);width:1rem;text-align:center;flex-shrink:0;}
-    .lt-name{font-family:'Playfair Display',serif;font-size:0.44rem;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:50%;}
+    .lt-name{font-family:'Playfair Display',serif;font-size:0.44rem;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%;}
     .lt-meta{font-family:'DM Mono',monospace;font-size:0.38rem;color:var(--muted);}
     .cs-card-back .lt-parent{font-size:0.5rem;}
     .cs-card-back .lt-label{font-size:0.42rem;}
@@ -2227,9 +2227,9 @@
     .plant-details-modal .lt-tree{padding:0.7rem;margin-top:0;background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.18);}
     .plant-details-modal .lt-section-title{display:none;}
     .plant-details-modal .lt-branch{padding-left:0.6rem;margin-bottom:0.5rem;border-left:2px solid rgba(122,179,86,0.25);}
-    .plant-details-modal .lt-parent{font-size:0.75rem;margin:4px 0;gap:0.4rem;}
+    .plant-details-modal .lt-parent{font-size:0.75rem;margin:4px 0;gap:0.4rem;flex-wrap:wrap;}
     .plant-details-modal .lt-label{font-size:0.7rem;width:1.3rem;}
-    .plant-details-modal .lt-name{font-size:0.82rem;max-width:60%;}
+    .plant-details-modal .lt-name{font-size:0.82rem;max-width:none;white-space:normal;overflow:visible;}
     .plant-details-modal .lt-meta{font-size:0.62rem;}
     .plant-details-modal .lt-grandparents{padding-left:1rem;margin-top:0.3rem;}
     /* Lineage overlay button — OUTSIDE the flip wrap, positioned absolute
@@ -29079,30 +29079,49 @@ document.addEventListener('keydown', function(e) {
       html += '</div>';
     }
 
-    if (plant.compostLayers || plant.breedLayers) {
-      html += '<div class="pdm-section">';
-      html += '<div class="pdm-section-title">ENRICHMENT HISTORY</div>';
-      if (plant.compostLayers) html += '<div class="pdm-row"><span class="pdm-k">Compost layers</span><span class="pdm-v">' + plant.compostLayers + '</span></div>';
-      if (plant.breedLayers) html += '<div class="pdm-row"><span class="pdm-k">Breed layers</span><span class="pdm-v">' + plant.breedLayers + '</span></div>';
-      html += '</div>';
-    }
+    // Enrichment History — always show, with breed/compost/wild stats
+    html += '<div class="pdm-section">';
+    html += '<div class="pdm-section-title">ENRICHMENT HISTORY</div>';
+    var _breedCount = plant.breedCount || 0;
+    var _compostLay = plant.compostLayers || 0;
+    var _breedLay = plant.breedLayers || 0;
+    var _fertApplied = plant.fertApplied || 0;
+    var _gen = plant.generation || 1;
+    var _wildDrops = plant.wildDropCount || 0;
+    var _age = plant.date ? Math.floor((Date.now() - new Date(plant.date).getTime()) / 86400000) : 0;
+    html += '<div class="pdm-row"><span class="pdm-k">\ud83e\uddec Breed count</span><span class="pdm-v">' + _breedCount + (_breedCount >= 3 ? ' (prolific)' : '') + '</span></div>';
+    if (_gen > 1) html += '<div class="pdm-row"><span class="pdm-k">\ud83e\uddea Chimera gen</span><span class="pdm-v">Gen ' + _gen + ' (\u2212' + ((_gen - 1) * 2) + ' EA, 2\u00d7 climate)</span></div>';
+    if (_compostLay) html += '<div class="pdm-row"><span class="pdm-k">\ud83c\udf3f Compost layers</span><span class="pdm-v">' + _compostLay + '</span></div>';
+    if (_breedLay) html += '<div class="pdm-row"><span class="pdm-k">\ud83c\udf31 Breed layers</span><span class="pdm-v">' + _breedLay + '</span></div>';
+    if (_fertApplied) html += '<div class="pdm-row"><span class="pdm-k">\u2728 Fertilizer applied</span><span class="pdm-v">+' + _fertApplied + '% rarity boost</span></div>';
+    html += '<div class="pdm-row"><span class="pdm-k">\ud83c\udf3e Age</span><span class="pdm-v">' + _age + ' day' + (_age !== 1 ? 's' : '') + '</span></div>';
+    if (_wildDrops) html += '<div class="pdm-row"><span class="pdm-k">\ud83c\udf0d Wild placements</span><span class="pdm-v">' + _wildDrops + '</span></div>';
+    html += '</div>';
 
-    // Phenotype reveal status — pulls from the per-hash registry that
-    // FG_Wild writes to whenever a complementary-season pair is detected
-    if (window.lwPhenoIsRevealed && window._phenotypeOf) {
-      var _isRev = window.lwPhenoIsRevealed(plant.hash);
-      var _phen = window._phenotypeOf(plant.hash);
-      html += '<div class="pdm-section">';
-      html += '<div class="pdm-section-title">PHENOTYPE</div>';
-      if (_isRev) {
-        html += '<div class="pdm-row"><span class="pdm-k" style="color:' + _phen.color + ';">\ud83d\udd2e Revealed</span><span class="pdm-v" style="color:' + _phen.color + ';font-weight:600;">' + _phen.name + '</span></div>';
-        html += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.7rem;color:var(--cream);margin-top:0.3rem;line-height:1.4;">' + _phen.flavor + '</div>';
-      } else {
-        html += '<div class="pdm-row"><span class="pdm-k">Status</span><span class="pdm-v" style="color:var(--gold);">\u2753 Sealed</span></div>';
-        html += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);margin-top:0.3rem;line-height:1.4;">Plant in the Wild within ~200m of a complementary-season plant (Spring\u2194Autumn or Summer\u2194Winter) to reveal.</div>';
-      }
+    // Phenotype — always show, with reveal status + seasonal affinity
+    html += '<div class="pdm-section">';
+    html += '<div class="pdm-section-title">PHENOTYPE</div>';
+    var _isRev = window.lwPhenoIsRevealed ? window.lwPhenoIsRevealed(plant.hash) : false;
+    var _phen = window._phenotypeOf ? window._phenotypeOf(plant.hash) : null;
+    if (_isRev && _phen) {
+      html += '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.35rem;">';
+      html += '<div style="width:36px;height:36px;border-radius:50%;background:' + (_phen.color || 'var(--sage)') + '22;border:1.5px solid ' + (_phen.color || 'var(--sage)') + '55;display:flex;align-items:center;justify-content:center;font-size:1rem;">\ud83d\udd2e</div>';
+      html += '<div><div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.08em;color:' + (_phen.color || 'var(--cream)') + ';">' + _phen.name + '</div>';
+      html += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">Revealed phenotype</div></div>';
       html += '</div>';
+      if (_phen.flavor) html += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.68rem;color:var(--cream);line-height:1.5;padding:0.35rem 0.4rem;background:rgba(74,124,53,0.06);border-radius:6px;border-left:2px solid ' + (_phen.color || 'var(--sage)') + '66;">' + _phen.flavor + '</div>';
+    } else {
+      html += '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;">';
+      html += '<div style="width:36px;height:36px;border-radius:50%;background:rgba(200,168,75,0.08);border:1.5px solid rgba(200,168,75,0.25);display:flex;align-items:center;justify-content:center;font-size:0.9rem;">\u2753</div>';
+      html += '<div><div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:var(--gold);">SEALED</div>';
+      html += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);">Not yet revealed</div></div>';
+      html += '</div>';
+      // Seasonal hint — tell the player what complement they need
+      var _compSeason = _seasonIdx === 0 ? 'Autumn' : _seasonIdx === 1 ? 'Winter' : _seasonIdx === 2 ? 'Spring' : 'Summer';
+      var _compIcon = _seasonIdx === 0 ? '\ud83c\udf42' : _seasonIdx === 1 ? '\u2744\ufe0f' : _seasonIdx === 2 ? '\ud83c\udf38' : '\u2600\ufe0f';
+      html += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.5;margin-top:0.2rem;">Drop this plant in the Wild within ~200m of a <span style="color:var(--cream);">' + _compIcon + ' ' + _compSeason + '</span> plant to reveal its hidden phenotype.</div>';
     }
+    html += '</div>';
 
     html += '<div class="pdm-section pdm-meta">';
     html += '<div class="pdm-section-title">MINT RECORD</div>';
