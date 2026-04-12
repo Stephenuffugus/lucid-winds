@@ -27740,33 +27740,6 @@ document.addEventListener('keydown', function(e) {
   }
 
   // ── Populate a single slot with plant data ───────────────────────────
-  // Rasterize SVG string → <img> for perf-lite carousel cards.
-  // Same visual output, 1 DOM node instead of 600.
-  var _rasterCache = {};
-  function _rasterizeSvg(svgHtml, cacheKey, callback) {
-    if (_rasterCache[cacheKey]) { callback(_rasterCache[cacheKey]); return; }
-    var svgBlob = new Blob([svgHtml], {type:'image/svg+xml;charset=utf-8'});
-    var url = URL.createObjectURL(svgBlob);
-    var img = new Image();
-    img.onload = function() {
-      var c = document.createElement('canvas');
-      c.width = 280; c.height = Math.round(280 * 95 / 70);
-      var ctx = c.getContext('2d');
-      ctx.drawImage(img, 0, 0, c.width, c.height);
-      URL.revokeObjectURL(url);
-      try {
-        var dataUrl = c.toDataURL('image/png');
-        _rasterCache[cacheKey] = dataUrl;
-        // Cap cache at 20 to control memory
-        var keys = Object.keys(_rasterCache);
-        if (keys.length > 20) delete _rasterCache[keys[0]];
-        callback(dataUrl);
-      } catch(e) { callback(null); }
-    };
-    img.onerror = function() { URL.revokeObjectURL(url); callback(null); };
-    img.src = url;
-  }
-
   function _populateSlot(slotEl, plant) {
     if (!slotEl) return;
     slotEl.removeAttribute('data-season');
@@ -27836,25 +27809,7 @@ document.addEventListener('keydown', function(e) {
     front += '<div class="cf-ea">' + _ea + '</div>';
     var _npHtml = typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : name;
     front += '<div class="cf-name-zone"><div class="cf-name" style="color:' + _sNameColor + ';">' + _npHtml + '</div></div>';
-    // perf-lite: use placeholder, async rasterize SVG to <img> (1 node vs 600)
-    if (window._perfLite) {
-      var _artId = 'cs-art-' + plant.hash.slice(0,12);
-      front += '<div class="cf-art-window" id="' + _artId + '" style="min-height:120px;"></div>';
-      // Defer rasterization to after DOM insert
-      (function(artId, svg, key) {
-        requestAnimationFrame(function() {
-          _rasterizeSvg(svg, key, function(dataUrl) {
-            var artEl = document.getElementById(artId);
-            if (artEl) {
-              if (dataUrl) artEl.innerHTML = '<img src="' + dataUrl + '" alt="plant">';
-              else artEl.innerHTML = svg; // fallback to live SVG if raster fails
-            }
-          });
-        });
-      })(_artId, svgHtml, _csCacheKey);
-    } else {
-      front += '<div class="cf-art-window">' + svgHtml + '</div>';
-    }
+    front += '<div class="cf-art-window">' + svgHtml + '</div>';
     // Synergy badge (if any)
     var _syn = window.getSynergy ? window.getSynergy(_t) : null;
     if (_syn) {
@@ -27930,16 +27885,16 @@ document.addEventListener('keydown', function(e) {
     var activePlant = _carousel.arr[_carousel.idx];
     var nextPlant   = _carousel.arr[_carousel.idx + 1] || null;
 
-    // Active card first (visible immediately)
-    _populateSlot(document.getElementById('cs-slot-1'), activePlant); // active
-    // perf-lite: defer side cards to separate rAF frames to avoid jank
+    // Active card rendered immediately
+    _populateSlot(document.getElementById('cs-slot-1'), activePlant);
+    // perf-lite: only render side cards after a short delay to keep UI responsive
     if (window._perfLite) {
-      requestAnimationFrame(function() {
+      setTimeout(function() {
         _populateSlot(document.getElementById('cs-slot-0'), prevPlant);
-        requestAnimationFrame(function() {
-          _populateSlot(document.getElementById('cs-slot-2'), nextPlant);
-        });
-      });
+      }, 150);
+      setTimeout(function() {
+        _populateSlot(document.getElementById('cs-slot-2'), nextPlant);
+      }, 300);
     } else {
       requestAnimationFrame(function() {
         _populateSlot(document.getElementById('cs-slot-0'), prevPlant);
