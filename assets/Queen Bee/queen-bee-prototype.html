@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Queen Bee — Engine Builder Prototype</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d100c;color:#e8dcc8;font-family:'Segoe UI',system-ui,sans-serif;overflow-x:hidden;min-height:100vh;-webkit-tap-highlight-color:transparent}
+.game-wrap{max-width:420px;margin:0 auto;padding:8px;user-select:none;-webkit-user-select:none}
+
+/* Header */
+.hdr{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(26,31,23,.6);border:1px solid rgba(74,124,53,.15);border-radius:10px;margin-bottom:8px}
+.hdr-title{font-size:18px;font-weight:700;color:#D4A843}
+.hdr-title span{font-size:14px;color:rgba(232,220,200,.5);font-weight:400}
+.gp-row{display:flex;gap:16px;font-size:14px}
+.gp-you{color:#7AB956;font-weight:700}
+.gp-ai{color:#C47A7A;font-weight:700}
+
+/* Pollinators */
+.poll-section{margin-bottom:6px}
+.poll-label{font-size:11px;color:rgba(232,220,200,.4);margin-bottom:4px;padding-left:4px}
+.poll-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.poll-tile{min-width:72px;padding:6px 8px;background:rgba(26,31,23,.5);border:1px solid rgba(74,124,53,.15);border-radius:8px;text-align:center;font-size:10px;line-height:1.4;flex-shrink:0}
+.poll-tile.claimed-you{border-color:#7AB956;background:rgba(122,185,86,.1)}
+.poll-tile.claimed-ai{border-color:#C47A7A;background:rgba(196,122,122,.1)}
+.poll-icon{font-size:18px}
+.poll-req{color:rgba(232,220,200,.5);margin-top:2px}
+
+/* Market */
+.mkt-section{margin-bottom:6px}
+.mkt-tier{display:flex;align-items:center;gap:4px;margin-bottom:4px}
+.tier-label{writing-mode:vertical-rl;text-orientation:mixed;font-size:9px;color:rgba(232,220,200,.35);width:14px;text-align:center;letter-spacing:1px}
+.tier-cards{display:flex;gap:4px;flex:1}
+.tier-deck{width:42px;height:60px;background:rgba(26,31,23,.6);border:1px solid rgba(74,124,53,.1);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(232,220,200,.3)}
+
+/* Cards */
+.card{width:72px;height:100px;background:#F5F0E1;border:2px solid #C4B998;border-radius:6px;padding:4px;cursor:pointer;position:relative;transition:transform .15s,border-color .15s,box-shadow .15s}
+.card:active{transform:scale(.95)}
+.card.affordable{border-color:#7AB956;box-shadow:0 0 8px rgba(122,185,86,.25)}
+.card.t1{border-left:3px solid #4A7C35}
+.card.t2{border-left:3px solid #D4A843}
+.card.t3{border-left:3px solid #FFD700}
+.card-gp{position:absolute;top:3px;left:5px;font-size:13px;font-weight:800;color:#1a1f17}
+.card-prod{position:absolute;top:3px;right:5px;width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.2)}
+.card-art{text-align:center;font-size:22px;margin-top:22px}
+.card-cost{position:absolute;bottom:4px;left:4px;right:4px;display:flex;gap:2px;flex-wrap:wrap}
+.cost-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(0,0,0,.15)}
+
+/* Supply */
+.supply-row{display:flex;gap:6px;justify-content:center;padding:6px 0;flex-wrap:wrap}
+.supply-tok{display:flex;align-items:center;gap:3px;padding:4px 8px;background:rgba(26,31,23,.5);border:1px solid rgba(74,124,53,.12);border-radius:6px;font-size:12px;cursor:pointer;transition:background .15s,border-color .15s}
+.supply-tok:active{background:rgba(74,124,53,.2)}
+.supply-tok.selected{border-color:#7AB956;background:rgba(122,185,86,.15)}
+.tok-dot{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.15)}
+
+/* Player area */
+.player-area{background:rgba(26,31,23,.4);border:1px solid rgba(74,124,53,.12);border-radius:10px;padding:8px 10px;margin:6px 0}
+.pa-label{font-size:11px;color:rgba(232,220,200,.4);margin-bottom:4px}
+.pa-tokens{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+.pa-tok{display:flex;align-items:center;gap:2px;font-size:12px}
+.pa-production{display:flex;gap:3px;flex-wrap:wrap;align-items:center;margin-bottom:4px}
+.prod-dot{width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.15)}
+.pa-reserved{font-size:11px;color:rgba(232,220,200,.5)}
+
+/* Actions */
+.actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;padding:6px 0}
+.act-btn{padding:8px 14px;background:rgba(74,124,53,.2);border:1px solid rgba(74,124,53,.3);border-radius:8px;color:#e8dcc8;font-size:12px;cursor:pointer;transition:background .15s}
+.act-btn:active{background:rgba(74,124,53,.4)}
+.act-btn.active{background:rgba(74,124,53,.35);border-color:#7AB956}
+.act-btn:disabled{opacity:.35;cursor:default}
+
+/* Modal overlay */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:#1a1f17;border:1px solid rgba(74,124,53,.3);border-radius:14px;padding:20px;max-width:340px;width:100%;text-align:center}
+.modal h2{color:#D4A843;font-size:20px;margin-bottom:10px}
+.modal p{font-size:13px;line-height:1.6;color:rgba(232,220,200,.7);margin-bottom:6px}
+.modal .stat{font-size:15px;color:#e8dcc8;margin:4px 0}
+.modal-btn{margin-top:14px;padding:10px 24px;background:rgba(74,124,53,.3);border:1px solid rgba(74,124,53,.4);border-radius:8px;color:#e8dcc8;font-size:14px;cursor:pointer;margin-left:6px;margin-right:6px}
+.modal-btn:active{background:rgba(74,124,53,.5)}
+
+/* Card detail modal */
+.card-detail{background:#1a1f17;border:1px solid rgba(74,124,53,.3);border-radius:14px;padding:16px;max-width:300px;width:100%;text-align:left}
+.cd-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.cd-title{font-size:16px;font-weight:700;color:#D4A843}
+.cd-close{font-size:20px;cursor:pointer;color:rgba(232,220,200,.5);padding:4px 8px}
+.cd-row{font-size:13px;margin:6px 0;color:rgba(232,220,200,.8);display:flex;align-items:center;gap:6px}
+.cd-cost-line{display:flex;align-items:center;gap:4px;margin:3px 0;font-size:12px}
+.cd-cost-line .check{color:#7AB956}
+.cd-cost-line .need{color:#C47A7A}
+.cd-buttons{display:flex;gap:8px;margin-top:12px}
+
+/* Toast */
+.toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:rgba(26,31,23,.9);border:1px solid rgba(74,124,53,.3);border-radius:8px;padding:8px 16px;font-size:13px;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* Turn indicator */
+.turn-ind{text-align:center;font-size:12px;color:rgba(232,220,200,.5);padding:4px 0}
+.turn-ind.your-turn{color:#7AB956}
+.turn-ind.ai-turn{color:#C47A7A}
+
+/* Colors */
+.c-green{background:#4A7C35}.c-rose{background:#C47A7A}.c-blue{background:#5B9BD5}
+.c-amber{background:#D4A843}.c-spore{background:#E8DCC8}.c-gold{background:#FFD700}
+
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="game-wrap" id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+// ═══ COLORS ═══
+var COLORS = ['green','rose','blue','amber','spore'];
+var COLOR_HEX = {green:'#4A7C35',rose:'#C47A7A',blue:'#5B9BD5',amber:'#D4A843',spore:'#E8DCC8',gold:'#FFD700'};
+var COLOR_ICONS = {green:'🌿',rose:'🌸',blue:'💧',amber:'🍂',spore:'🍄',gold:'⭐'};
+var TIER_ICONS = ['🌱','🌿','🌳'];
+var TIER_NAMES = ['Seedling','Sapling','Ancient Tree'];
+
+// ═══ CARD GENERATION ═══
+function generateCards() {
+  var cards = {tier1:[],tier2:[],tier3:[]};
+  var id = 0;
+
+  // Tier 1: 40 cards, 8 per color, GP 0-1
+  COLORS.forEach(function(col) {
+    var others = COLORS.filter(function(c){return c!==col;});
+    // 6 cards with 0 GP
+    cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(others,2,1)});
+    cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(others,2,1)});
+    cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(others,3,2)});
+    cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(others,3,1)});
+    cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(others,4,2)});
+    cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(others,1,1)});
+    // 2 cards with 1 GP
+    cards.tier1.push({id:id++,tier:1,gp:1,produces:col,cost:makeCost(others,4,2)});
+    cards.tier1.push({id:id++,tier:1,gp:1,produces:col,cost:makeCost(others,3,2)});
+  });
+
+  // Tier 2: 30 cards, 6 per color, GP 1-3
+  COLORS.forEach(function(col) {
+    var others = COLORS.filter(function(c){return c!==col;});
+    cards.tier2.push({id:id++,tier:2,gp:1,produces:col,cost:makeCost(others,5,2)});
+    cards.tier2.push({id:id++,tier:2,gp:1,produces:col,cost:makeCost(others,4,2)});
+    cards.tier2.push({id:id++,tier:2,gp:2,produces:col,cost:makeCost(others,5,3)});
+    cards.tier2.push({id:id++,tier:2,gp:2,produces:col,cost:makeCost(others,6,3)});
+    cards.tier2.push({id:id++,tier:2,gp:3,produces:col,cost:makeCost(others,6,3)});
+    cards.tier2.push({id:id++,tier:2,gp:3,produces:col,cost:makeCost(others,7,3)});
+  });
+
+  // Tier 3: 20 cards, 4 per color, GP 3-5
+  COLORS.forEach(function(col) {
+    var others = COLORS.filter(function(c){return c!==col;});
+    cards.tier3.push({id:id++,tier:3,gp:3,produces:col,cost:makeCost(others,7,2)});
+    cards.tier3.push({id:id++,tier:3,gp:4,produces:col,cost:makeCost(others,8,3)});
+    cards.tier3.push({id:id++,tier:3,gp:4,produces:col,cost:makeCost(others,9,3)});
+    cards.tier3.push({id:id++,tier:3,gp:5,produces:col,cost:makeCost(others,10,3)});
+  });
+
+  return cards;
+}
+
+function makeCost(availableColors, totalPollen, numColors) {
+  var cost = {};
+  var colors = shuffle(availableColors.slice()).slice(0, numColors);
+  var remaining = totalPollen;
+  for (var i = 0; i < colors.length; i++) {
+    if (i === colors.length - 1) {
+      cost[colors[i]] = remaining;
+    } else {
+      var amt = Math.max(1, Math.floor(Math.random() * (remaining - (colors.length - i - 1))) + 1);
+      if (amt > remaining - (colors.length - i - 1)) amt = remaining - (colors.length - i - 1);
+      cost[colors[i]] = amt;
+      remaining -= amt;
+    }
+  }
+  return cost;
+}
+
+// ═══ POLLINATORS ═══
+var ALL_POLLINATORS = [
+  {name:'Monarch',icon:'🦋',req:{green:3,blue:3},gp:3},
+  {name:'Honeybee',icon:'🐝',req:{rose:3,amber:3},gp:3},
+  {name:'Hummingbird',icon:'🐦',req:{blue:3,spore:3},gp:3},
+  {name:'Luna Moth',icon:'🦋',req:{green:3,rose:3},gp:3},
+  {name:'Bumblebee',icon:'🐝',req:{amber:3,spore:3},gp:3},
+  {name:'Dragonfly',icon:'🪰',req:{green:4,blue:2},gp:3},
+  {name:'Ladybug',icon:'🐞',req:{rose:4,amber:2},gp:3},
+  {name:'Firefly',icon:'✨',req:{amber:4,green:2},gp:3},
+  {name:'Cicada',icon:'🦗',req:{blue:4,spore:2},gp:3},
+  {name:'Scarab',icon:'🪲',req:{spore:4,rose:2},gp:3}
+];
+
+// ═══ GAME STATE ═══
+var G = null;
+
+function newGame() {
+  var allCards = generateCards();
+  var pollinators = shuffle(ALL_POLLINATORS.slice()).slice(0,5).map(function(p){
+    return {name:p.name,icon:p.icon,req:p.req,gp:p.gp,claimedBy:null};
+  });
+
+  G = {
+    turn: 0,
+    phase: 'player', // 'player' | 'ai' | 'gameover'
+    // Decks
+    deck1: shuffle(allCards.tier1.slice()),
+    deck2: shuffle(allCards.tier2.slice()),
+    deck3: shuffle(allCards.tier3.slice()),
+    // Market (4 face-up per tier)
+    market1: [], market2: [], market3: [],
+    // Supply
+    supply: {green:5,rose:5,blue:5,amber:5,spore:5,gold:5},
+    // Pollinators
+    pollinators: pollinators,
+    // Player
+    player: {gp:0, tokens:{green:0,rose:0,blue:0,amber:0,spore:0,gold:0}, cards:[], reserved:[], production:{}},
+    // AI
+    ai: {gp:0, tokens:{green:0,rose:0,blue:0,amber:0,spore:0,gold:0}, cards:[], reserved:[], production:{}},
+    // UI state
+    selectedTokens: [],
+    action: null // 'collect3' | 'collect2' | null
+  };
+
+  // Fill production trackers
+  COLORS.forEach(function(c){G.player.production[c]=0; G.ai.production[c]=0;});
+
+  // Deal market
+  for(var i=0;i<4;i++){
+    if(G.deck1.length) G.market1.push(G.deck1.pop());
+    if(G.deck2.length) G.market2.push(G.deck2.pop());
+    if(G.deck3.length) G.market3.push(G.deck3.pop());
+  }
+
+  render();
+}
+
+// ═══ UTILITY ═══
+function shuffle(arr){
+  for(var i=arr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=arr[i];arr[i]=arr[j];arr[j]=t;}
+  return arr;
+}
+function totalTokens(tok){var s=0;COLORS.forEach(function(c){s+=tok[c];});s+=tok.gold;return s;}
+function cloneTokens(t){var o={};for(var k in t)o[k]=t[k];return o;}
+
+// ═══ AFFORDABILITY CHECK ═══
+function canAfford(who, card) {
+  var needed = 0;
+  var info = [];
+  COLORS.forEach(function(c) {
+    var cardCost = card.cost[c] || 0;
+    if (cardCost === 0) return;
+    var prod = who.production[c] || 0;
+    var fromTokens = Math.max(0, cardCost - prod);
+    var have = who.tokens[c] || 0;
+    var shortfall = Math.max(0, fromTokens - have);
+    needed += shortfall;
+    info.push({color:c, total:cardCost, prod:prod, fromTokens:fromTokens, have:have, short:shortfall});
+  });
+  // Gold covers shortfall
+  var goldNeeded = needed;
+  var canDo = goldNeeded <= (who.tokens.gold || 0);
+  return {affordable:canDo, info:info, goldNeeded:goldNeeded};
+}
+
+function payForCard(who, card) {
+  var goldLeft = who.tokens.gold || 0;
+  COLORS.forEach(function(c) {
+    var cardCost = card.cost[c] || 0;
+    if (cardCost === 0) return;
+    var prod = who.production[c] || 0;
+    var fromTokens = Math.max(0, cardCost - prod);
+    var fromHand = Math.min(fromTokens, who.tokens[c]);
+    who.tokens[c] -= fromHand;
+    G.supply[c] += fromHand;
+    var remaining = fromTokens - fromHand;
+    if (remaining > 0) {
+      who.tokens.gold -= remaining;
+      G.supply.gold += remaining;
+    }
+  });
+  who.cards.push(card);
+  who.production[card.produces] = (who.production[card.produces]||0) + 1;
+  who.gp += card.gp;
+}
+
+// ═══ POLLINATOR CHECK ═══
+function checkPollinators(who, whoLabel) {
+  G.pollinators.forEach(function(p) {
+    if (p.claimedBy) return;
+    var qualifies = true;
+    for (var c in p.req) {
+      if ((who.production[c]||0) < p.req[c]) { qualifies = false; break; }
+    }
+    if (qualifies) {
+      p.claimedBy = whoLabel;
+      who.gp += p.gp;
+      showToast(p.icon + ' ' + p.name + ' visits ' + (whoLabel==='player'?'you':'AI') + '! +' + p.gp + ' GP');
+    }
+  });
+}
+
+// ═══ PLAYER ACTIONS ═══
+function collectTokens(colors) {
+  colors.forEach(function(c) {
+    if (G.supply[c] > 0) {
+      G.supply[c]--;
+      G.player.tokens[c]++;
+    }
+  });
+  // Hand limit check
+  if (totalTokens(G.player.tokens) > 10) {
+    // Auto-discard excess (return most abundant non-gold)
+    while (totalTokens(G.player.tokens) > 10) {
+      var maxC = null, maxV = 0;
+      COLORS.forEach(function(c){
+        if(G.player.tokens[c]>maxV){maxV=G.player.tokens[c];maxC=c;}
+      });
+      if(maxC && G.player.tokens[maxC]>0){G.player.tokens[maxC]--;G.supply[maxC]++;}
+      else break;
+    }
+  }
+  endPlayerTurn();
+}
+
+function buyCard(card, marketArr, deck) {
+  payForCard(G.player, card);
+  var idx = -1;
+  for(var i=0;i<marketArr.length;i++){if(marketArr[i]&&marketArr[i].id===card.id){idx=i;break;}}
+  if(idx>=0){
+    if(deck.length) marketArr[idx]=deck.pop();
+    else marketArr.splice(idx,1);
+  }
+  checkPollinators(G.player,'player');
+  endPlayerTurn();
+}
+
+function buyReserved(card) {
+  payForCard(G.player, card);
+  var idx=-1;
+  for(var i=0;i<G.player.reserved.length;i++){if(G.player.reserved[i].id===card.id){idx=i;break;}}
+  if(idx>=0) G.player.reserved.splice(idx,1);
+  checkPollinators(G.player,'player');
+  endPlayerTurn();
+}
+
+function reserveCard(card, marketArr, deck) {
+  if(G.player.reserved.length>=3){showToast('Max 3 reserved cards');return;}
+  var idx=-1;
+  for(var i=0;i<marketArr.length;i++){if(marketArr[i]&&marketArr[i].id===card.id){idx=i;break;}}
+  if(idx>=0){
+    G.player.reserved.push(card);
+    if(deck.length) marketArr[idx]=deck.pop();
+    else marketArr.splice(idx,1);
+  }
+  if(G.supply.gold>0){G.supply.gold--;G.player.tokens.gold++;}
+  endPlayerTurn();
+}
+
+function endPlayerTurn() {
+  G.turn++;
+  G.selectedTokens = [];
+  G.action = null;
+  if(G.player.gp>=15){G.phase='gameover';render();showEndModal('player');return;}
+  G.phase='ai';
+  render();
+  setTimeout(aiTurn, 800);
+}
+
+// ═══ AI (GREEDY) ═══
+function aiTurn() {
+  // Priority 1: Buy highest GP card affordable
+  var bestCard=null,bestGP=-1,bestMarket=null,bestDeck=null;
+  [[G.market3,G.deck3],[G.market2,G.deck2],[G.market1,G.deck1]].forEach(function(pair){
+    pair[0].forEach(function(card){
+      if(!card) return;
+      var aff=canAfford(G.ai,card);
+      if(aff.affordable && card.gp>bestGP){bestGP=card.gp;bestCard=card;bestMarket=pair[0];bestDeck=pair[1];}
+    });
+  });
+
+  if(bestCard && bestGP>=1) {
+    // Buy it
+    payForCard(G.ai, bestCard);
+    var idx=-1;
+    for(var i=0;i<bestMarket.length;i++){if(bestMarket[i]&&bestMarket[i].id===bestCard.id){idx=i;break;}}
+    if(idx>=0){if(bestDeck.length)bestMarket[idx]=bestDeck.pop();else bestMarket.splice(idx,1);}
+    checkPollinators(G.ai,'ai');
+    showToast('🤖 AI bought '+TIER_NAMES[bestCard.tier-1]+' (+'+bestCard.gp+' GP)');
+  } else if(bestCard && bestGP>=0) {
+    // Buy any card for engine
+    payForCard(G.ai, bestCard);
+    var idx2=-1;
+    for(var i=0;i<bestMarket.length;i++){if(bestMarket[i]&&bestMarket[i].id===bestCard.id){idx2=i;break;}}
+    if(idx2>=0){if(bestDeck.length)bestMarket[idx2]=bestDeck.pop();else bestMarket.splice(idx2,1);}
+    checkPollinators(G.ai,'ai');
+    showToast('🤖 AI grew a '+TIER_NAMES[bestCard.tier-1]);
+  } else {
+    // Collect tokens — prefer colors needed for cheapest unbought card
+    var collected=[];
+    var needed=aiNeededColors();
+    var avail=COLORS.filter(function(c){return G.supply[c]>0;});
+    // Sort by need
+    avail.sort(function(a,b){return (needed[b]||0)-(needed[a]||0);});
+    for(var i=0;i<avail.length&&collected.length<3;i++){
+      if(G.supply[avail[i]]>0){collected.push(avail[i]);G.supply[avail[i]]--;G.ai.tokens[avail[i]]++;}
+    }
+    // Hand limit
+    while(totalTokens(G.ai.tokens)>10){
+      var mc=null,mv=0;
+      COLORS.forEach(function(c){if(G.ai.tokens[c]>mv){mv=G.ai.tokens[c];mc=c;}});
+      if(mc){G.ai.tokens[mc]--;G.supply[mc]++;}else break;
+    }
+    showToast('🤖 AI collected pollen');
+  }
+
+  G.turn++;
+  if(G.ai.gp>=15){G.phase='gameover';render();showEndModal('ai');return;}
+  G.phase='player';
+  render();
+}
+
+function aiNeededColors(){
+  var needs={};
+  COLORS.forEach(function(c){needs[c]=0;});
+  // Check cheapest tier1-2 cards
+  G.market1.concat(G.market2).forEach(function(card){
+    if(!card)return;
+    for(var c in card.cost){
+      var gap=Math.max(0,(card.cost[c]||0)-(G.ai.production[c]||0)-(G.ai.tokens[c]||0));
+      needs[c]+=gap;
+    }
+  });
+  return needs;
+}
+
+// ═══ RENDERING ═══
+function render() {
+  var h='';
+  // Header
+  h+='<div class="hdr">';
+  h+='<div class="hdr-title">👑 Queen Bee <span>Turn '+G.turn+'</span></div>';
+  h+='<div class="gp-row"><span class="gp-you">You: '+G.player.gp+' GP</span>';
+  h+='<span class="gp-ai">AI: '+G.ai.gp+' GP</span></div></div>';
+
+  // Turn indicator
+  if(G.phase==='player') h+='<div class="turn-ind your-turn">— Your Turn —</div>';
+  else if(G.phase==='ai') h+='<div class="turn-ind ai-turn">— AI Thinking... —</div>';
+  else h+='<div class="turn-ind">— Game Over —</div>';
+
+  // Pollinators
+  h+='<div class="poll-section"><div class="poll-label">POLLINATORS</div><div class="poll-row">';
+  G.pollinators.forEach(function(p){
+    var cls='poll-tile';
+    if(p.claimedBy==='player')cls+=' claimed-you';
+    if(p.claimedBy==='ai')cls+=' claimed-ai';
+    h+='<div class="'+cls+'">';
+    h+='<div class="poll-icon">'+p.icon+'</div>';
+    h+='<div style="font-size:10px;font-weight:700">'+p.name+'</div>';
+    h+='<div class="poll-req">';
+    for(var c in p.req) h+='<span style="color:'+COLOR_HEX[c]+'">'+p.req[c]+COLOR_ICONS[c]+' </span>';
+    h+='</div>';
+    if(p.claimedBy) h+='<div style="font-size:9px;color:'+(p.claimedBy==='player'?'#7AB956':'#C47A7A')+'">'+(p.claimedBy==='player'?'Yours':'AI\'s')+'</div>';
+    h+='</div>';
+  });
+  h+='</div></div>';
+
+  // Market
+  h+='<div class="mkt-section">';
+  h+=renderTier('T3',G.market3,G.deck3,3);
+  h+=renderTier('T2',G.market2,G.deck2,2);
+  h+=renderTier('T1',G.market1,G.deck1,1);
+  h+='</div>';
+
+  // Supply
+  h+='<div class="poll-label" style="margin-top:4px">POLLEN SUPPLY</div>';
+  h+='<div class="supply-row">';
+  COLORS.concat(['gold']).forEach(function(c){
+    var sel=G.selectedTokens.indexOf(c)>=0;
+    h+='<div class="supply-tok'+(sel?' selected':'')+'" onclick="window._tapSupply(\''+c+'\')">';
+    h+='<div class="tok-dot c-'+c+'"></div> '+G.supply[c];
+    h+='</div>';
+  });
+  h+='</div>';
+
+  // Player area
+  h+='<div class="player-area">';
+  h+='<div class="pa-label">YOUR POLLEN ('+totalTokens(G.player.tokens)+'/10)</div>';
+  h+='<div class="pa-tokens">';
+  COLORS.concat(['gold']).forEach(function(c){
+    if(G.player.tokens[c]>0)h+='<div class="pa-tok"><div class="tok-dot c-'+c+'"></div>'+G.player.tokens[c]+'</div>';
+  });
+  h+='</div>';
+  h+='<div class="pa-label">YOUR PLANTS (production)</div>';
+  h+='<div class="pa-production">';
+  COLORS.forEach(function(c){
+    for(var i=0;i<(G.player.production[c]||0);i++) h+='<div class="prod-dot c-'+c+'"></div>';
+  });
+  if(G.player.cards.length===0) h+='<span style="font-size:11px;color:rgba(232,220,200,.3)">None yet</span>';
+  h+='</div>';
+  if(G.player.reserved.length>0){
+    h+='<div class="pa-label">RESERVED ('+G.player.reserved.length+'/3)</div>';
+    h+='<div class="tier-cards">';
+    G.player.reserved.forEach(function(card){h+=renderCard(card,true);});
+    h+='</div>';
+  }
+  h+='</div>';
+
+  // Actions
+  if(G.phase==='player'){
+    h+='<div class="actions">';
+    h+='<div class="act-btn'+(G.action==='collect3'?' active':'')+'" onclick="window._setAction(\'collect3\')">Take 3 Diff</div>';
+    h+='<div class="act-btn'+(G.action==='collect2'?' active':'')+'" onclick="window._setAction(\'collect2\')">Take 2 Same</div>';
+    if(G.selectedTokens.length>0) h+='<div class="act-btn" onclick="window._confirmCollect()">✓ Confirm</div>';
+    h+='<div class="act-btn" onclick="window._cancelAction()">✕ Cancel</div>';
+    h+='</div>';
+  }
+
+  document.getElementById('app').innerHTML=h;
+}
+
+function renderTier(label, market, deck, tierNum) {
+  var h='<div class="mkt-tier">';
+  h+='<div class="tier-label">'+label+'</div>';
+  h+='<div class="tier-cards">';
+  market.forEach(function(card){
+    if(card) h+=renderCard(card,false);
+  });
+  // Fill empty slots
+  for(var i=market.length;i<4;i++) h+='<div class="card" style="opacity:.15"></div>';
+  h+='</div>';
+  h+='<div class="tier-deck">'+deck.length+'</div>';
+  h+='</div>';
+  return h;
+}
+
+function renderCard(card, isReserved) {
+  var aff=canAfford(G.player,card);
+  var cls='card t'+card.tier+(aff.affordable?' affordable':'');
+  var h='<div class="'+cls+'" onclick="window._tapCard('+card.id+','+(isReserved?'true':'false')+')">';
+  h+='<div class="card-gp">'+(card.gp>0?card.gp:'')+'</div>';
+  h+='<div class="card-prod c-'+card.produces+'"></div>';
+  h+='<div class="card-art">'+TIER_ICONS[card.tier-1]+'</div>';
+  h+='<div class="card-cost">';
+  for(var c in card.cost){
+    for(var i=0;i<card.cost[c];i++) h+='<div class="cost-dot c-'+c+'"></div>';
+  }
+  h+='</div></div>';
+  return h;
+}
+
+// ═══ CARD DETAIL MODAL ═══
+function showCardDetail(card, isReserved) {
+  var aff=canAfford(G.player,card);
+  var h='<div class="modal-bg" onclick="window._closeModal(event)">';
+  h+='<div class="card-detail" onclick="event.stopPropagation()">';
+  h+='<div class="cd-header"><div class="cd-title">'+TIER_ICONS[card.tier-1]+' '+TIER_NAMES[card.tier-1]+'</div>';
+  h+='<div class="cd-close" onclick="window._closeModal()">✕</div></div>';
+  h+='<div class="cd-row">Growth Points: <strong style="color:#D4A843">+'+(card.gp||0)+'</strong></div>';
+  h+='<div class="cd-row">Produces: <div class="tok-dot c-'+card.produces+'" style="width:16px;height:16px"></div> '+card.produces+'</div>';
+  h+='<div style="margin-top:8px;font-size:12px;color:rgba(232,220,200,.5)">COST BREAKDOWN:</div>';
+
+  var totalShort=0;
+  for(var c in card.cost){
+    var need=card.cost[c];
+    var prod=G.player.production[c]||0;
+    var fromTok=Math.max(0,need-prod);
+    var have=G.player.tokens[c]||0;
+    var short=Math.max(0,fromTok-have);
+    totalShort+=short;
+    h+='<div class="cd-cost-line">';
+    h+='<div class="tok-dot c-'+c+'" style="width:14px;height:14px"></div> ';
+    h+=need+' needed';
+    if(prod>0) h+=' <span class="check">(−'+Math.min(prod,need)+' from plants)</span>';
+    if(fromTok>0) h+=' → pay '+fromTok;
+    if(short>0) h+=' <span class="need">(short '+short+')</span>';
+    else if(fromTok>0) h+=' <span class="check">✓</span>';
+    h+='</div>';
+  }
+
+  if(totalShort>0 && G.player.tokens.gold>=totalShort){
+    h+='<div class="cd-cost-line"><div class="tok-dot c-gold" style="width:14px;height:14px"></div> Use '+totalShort+' ⭐ gold to cover <span class="check">✓</span></div>';
+  }
+
+  h+='<div class="cd-buttons">';
+  if(aff.affordable && G.phase==='player'){
+    h+='<div class="modal-btn" onclick="window._buyFromDetail('+card.id+','+(isReserved?'true':'false')+')">🐝 Buy</div>';
+  }
+  if(!isReserved && G.player.reserved.length<3 && G.phase==='player'){
+    h+='<div class="modal-btn" onclick="window._reserveFromDetail('+card.id+')">📌 Reserve</div>';
+  }
+  if(!aff.affordable) h+='<div style="color:#C47A7A;font-size:12px;margin-top:8px">Cannot afford</div>';
+  h+='</div></div></div>';
+
+  var div=document.createElement('div');
+  div.id='modal-container';
+  div.innerHTML=h;
+  document.body.appendChild(div);
+}
+
+// ═══ GAME END MODAL ═══
+function showEndModal(winner) {
+  var h='<div class="modal-bg">';
+  h+='<div class="modal">';
+  if(winner==='player'){
+    h+='<h2>👑 Garden Complete!</h2>';
+    h+='<p>Your garden is thriving!</p>';
+  } else {
+    h+='<h2>🌱 Garden Still Growing...</h2>';
+    h+='<p>The AI\'s garden bloomed first.<br>Your engine was strong — try again!</p>';
+  }
+  h+='<div class="stat">You: '+G.player.gp+' GP — AI: '+G.ai.gp+' GP</div>';
+  h+='<div class="stat">Turns: '+G.turn+'</div>';
+  h+='<div class="stat">Your Plants: '+G.player.cards.length+'</div>';
+  h+='<div class="stat" style="margin-top:8px">';
+  COLORS.forEach(function(c){
+    for(var i=0;i<(G.player.production[c]||0);i++) h+='<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:'+COLOR_HEX[c]+';margin:1px"></span>';
+  });
+  h+='</div>';
+  h+='<div style="margin-top:12px"><div class="modal-btn" onclick="window._newGame()">Play Again</div></div>';
+  h+='</div></div>';
+
+  var div=document.createElement('div');
+  div.id='modal-container';
+  div.innerHTML=h;
+  document.body.appendChild(div);
+}
+
+// ═══ TOAST ═══
+function showToast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer=setTimeout(function(){t.classList.remove('show');},2000);
+}
+
+// ═══ FIND CARD BY ID ═══
+function findCard(id) {
+  var allMarket=G.market1.concat(G.market2).concat(G.market3);
+  for(var i=0;i<allMarket.length;i++){if(allMarket[i]&&allMarket[i].id===id)return allMarket[i];}
+  for(var i=0;i<G.player.reserved.length;i++){if(G.player.reserved[i].id===id)return G.player.reserved[i];}
+  return null;
+}
+function findMarketAndDeck(id) {
+  for(var i=0;i<G.market1.length;i++){if(G.market1[i]&&G.market1[i].id===id)return{market:G.market1,deck:G.deck1};}
+  for(var i=0;i<G.market2.length;i++){if(G.market2[i]&&G.market2[i].id===id)return{market:G.market2,deck:G.deck2};}
+  for(var i=0;i<G.market3.length;i++){if(G.market3[i]&&G.market3[i].id===id)return{market:G.market3,deck:G.deck3};}
+  return null;
+}
+
+// ═══ WINDOW HANDLERS ═══
+window._tapCard = function(id, isReserved) {
+  if(G.phase!=='player') return;
+  var card=findCard(id);
+  if(!card) return;
+  showCardDetail(card, isReserved);
+};
+
+window._buyFromDetail = function(id, isReserved) {
+  var card=findCard(id);
+  if(!card) return;
+  var el=document.getElementById('modal-container');
+  if(el) el.remove();
+  if(isReserved){
+    buyReserved(card);
+  } else {
+    var md=findMarketAndDeck(id);
+    if(md) buyCard(card,md.market,md.deck);
+  }
+};
+
+window._reserveFromDetail = function(id) {
+  var card=findCard(id);
+  if(!card) return;
+  var el=document.getElementById('modal-container');
+  if(el) el.remove();
+  var md=findMarketAndDeck(id);
+  if(md) reserveCard(card,md.market,md.deck);
+};
+
+window._closeModal = function(e) {
+  if(e && e.target && !e.target.classList.contains('modal-bg')) return;
+  var el=document.getElementById('modal-container');
+  if(el) el.remove();
+};
+
+window._setAction = function(action) {
+  if(G.phase!=='player') return;
+  G.action=action;
+  G.selectedTokens=[];
+  render();
+};
+
+window._tapSupply = function(color) {
+  if(G.phase!=='player' || !G.action) {showToast('Choose an action first');return;}
+  if(G.supply[color]<=0){showToast('No '+color+' pollen available');return;}
+  if(color==='gold'){showToast('Gold is earned by reserving cards');return;}
+
+  if(G.action==='collect3'){
+    if(G.selectedTokens.indexOf(color)>=0){
+      // Deselect
+      G.selectedTokens.splice(G.selectedTokens.indexOf(color),1);
+    } else if(G.selectedTokens.length<3){
+      G.selectedTokens.push(color);
+    }
+  } else if(G.action==='collect2'){
+    if(G.selectedTokens.length===0){
+      if(G.supply[color]<4){showToast('Need 4+ in supply to take 2');return;}
+      G.selectedTokens=[color,color];
+    } else {
+      G.selectedTokens=[];
+    }
+  }
+  render();
+};
+
+window._confirmCollect = function() {
+  if(G.action==='collect3' && G.selectedTokens.length>=1 && G.selectedTokens.length<=3){
+    // Check all different
+    var unique={};
+    var valid=true;
+    G.selectedTokens.forEach(function(c){if(unique[c])valid=false;unique[c]=true;});
+    if(!valid){showToast('Must be 3 different colors');return;}
+    collectTokens(G.selectedTokens);
+  } else if(G.action==='collect2' && G.selectedTokens.length===2){
+    collectTokens(G.selectedTokens);
+  } else {
+    showToast('Select pollen tokens first');
+  }
+};
+
+window._cancelAction = function() {
+  G.action=null;
+  G.selectedTokens=[];
+  render();
+};
+
+window._newGame = function() {
+  var el=document.getElementById('modal-container');
+  if(el) el.remove();
+  newGame();
+};
+
+// ═══ INIT ═══
+newGame();
+
+})();
+</script>
+</body>
+</html>

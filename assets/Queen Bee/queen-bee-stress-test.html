@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Queen Bee — Stress Test (100 Games)</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d100c;color:#e8dcc8;font-family:'Segoe UI',system-ui,sans-serif;padding:20px}
+h1{color:#D4A843;font-size:20px;margin-bottom:12px}
+h2{color:#7AB956;font-size:16px;margin-top:16px;margin-bottom:8px}
+.stat{font-size:14px;line-height:1.8;color:rgba(232,220,200,.8)}
+.stat b{color:#e8dcc8}
+.warn{color:#C47A7A;font-weight:700}
+.good{color:#7AB956;font-weight:700}
+.bar{display:inline-block;height:14px;background:#4A7C35;border-radius:3px;margin-right:6px;vertical-align:middle}
+button{padding:10px 24px;background:rgba(74,124,53,.3);border:1px solid rgba(74,124,53,.4);border-radius:8px;color:#e8dcc8;font-size:14px;cursor:pointer;margin-top:12px}
+button:active{background:rgba(74,124,53,.5)}
+#log{margin-top:16px;padding:12px;background:rgba(26,31,23,.5);border:1px solid rgba(74,124,53,.12);border-radius:10px;max-height:500px;overflow-y:auto;font-size:12px;line-height:1.6}
+</style>
+</head>
+<body>
+<h1>👑 Queen Bee — Balance Stress Test</h1>
+<p class="stat">Runs 100 AI-vs-AI games. Reports win rates, turn counts, color balance, and Pollinator claim rates.</p>
+<button onclick="runTest()">▶ Run 100 Games</button>
+<button onclick="runTest(500)">▶ Run 500 Games</button>
+<div id="log"></div>
+
+<script>
+(function(){
+'use strict';
+
+var COLORS = ['green','rose','blue','amber','spore'];
+
+function shuffle(arr){
+  for(var i=arr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=arr[i];arr[i]=arr[j];arr[j]=t;}
+  return arr;
+}
+
+function makeCost(availableColors, totalPollen, numColors) {
+  var cost = {};
+  var colors = shuffle(availableColors.slice()).slice(0, numColors);
+  var remaining = totalPollen;
+  for (var i = 0; i < colors.length; i++) {
+    if (i === colors.length - 1) { cost[colors[i]] = remaining; }
+    else {
+      var amt = Math.max(1, Math.floor(Math.random() * (remaining - (colors.length - i - 1))) + 1);
+      if (amt > remaining - (colors.length - i - 1)) amt = remaining - (colors.length - i - 1);
+      cost[colors[i]] = amt; remaining -= amt;
+    }
+  }
+  return cost;
+}
+
+function generateCards() {
+  var cards = {tier1:[],tier2:[],tier3:[]};
+  var id = 0;
+  COLORS.forEach(function(col) {
+    var others = COLORS.filter(function(c){return c!==col;});
+    cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(others,2,1)});
+    cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(others,2,1)});
+    cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(others,3,2)});
+    cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(others,3,1)});
+    cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(others,4,2)});
+    cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(others,1,1)});
+    cards.tier1.push({id:id++,tier:1,gp:1,produces:col,cost:makeCost(others,4,2)});
+    cards.tier1.push({id:id++,tier:1,gp:1,produces:col,cost:makeCost(others,3,2)});
+  });
+  COLORS.forEach(function(col) {
+    var others = COLORS.filter(function(c){return c!==col;});
+    cards.tier2.push({id:id++,tier:2,gp:1,produces:col,cost:makeCost(others,5,2)});
+    cards.tier2.push({id:id++,tier:2,gp:1,produces:col,cost:makeCost(others,4,2)});
+    cards.tier2.push({id:id++,tier:2,gp:2,produces:col,cost:makeCost(others,5,3)});
+    cards.tier2.push({id:id++,tier:2,gp:2,produces:col,cost:makeCost(others,6,3)});
+    cards.tier2.push({id:id++,tier:2,gp:3,produces:col,cost:makeCost(others,6,3)});
+    cards.tier2.push({id:id++,tier:2,gp:3,produces:col,cost:makeCost(others,7,3)});
+  });
+  COLORS.forEach(function(col) {
+    var others = COLORS.filter(function(c){return c!==col;});
+    cards.tier3.push({id:id++,tier:3,gp:3,produces:col,cost:makeCost(others,7,2)});
+    cards.tier3.push({id:id++,tier:3,gp:4,produces:col,cost:makeCost(others,8,3)});
+    cards.tier3.push({id:id++,tier:3,gp:4,produces:col,cost:makeCost(others,9,3)});
+    cards.tier3.push({id:id++,tier:3,gp:5,produces:col,cost:makeCost(others,10,3)});
+  });
+  return cards;
+}
+
+var ALL_POLLINATORS = [
+  {name:'Monarch',req:{green:3,blue:3},gp:3},
+  {name:'Honeybee',req:{rose:3,amber:3},gp:3},
+  {name:'Hummingbird',req:{blue:3,spore:3},gp:3},
+  {name:'Luna Moth',req:{green:3,rose:3},gp:3},
+  {name:'Bumblebee',req:{amber:3,spore:3},gp:3},
+  {name:'Dragonfly',req:{green:4,blue:2},gp:3},
+  {name:'Ladybug',req:{rose:4,amber:2},gp:3},
+  {name:'Firefly',req:{amber:4,green:2},gp:3},
+  {name:'Cicada',req:{blue:4,spore:2},gp:3},
+  {name:'Scarab',req:{spore:4,rose:2},gp:3}
+];
+
+function totalTokens(tok){var s=0;COLORS.forEach(function(c){s+=tok[c];});s+=tok.gold;return s;}
+
+function canAfford(who, card) {
+  var needed=0;
+  COLORS.forEach(function(c){
+    var cc=card.cost[c]||0;if(cc===0)return;
+    var prod=who.production[c]||0;
+    var ft=Math.max(0,cc-prod);
+    var have=who.tokens[c]||0;
+    needed+=Math.max(0,ft-have);
+  });
+  return needed<=(who.tokens.gold||0);
+}
+
+function payForCard(who, card, supply) {
+  COLORS.forEach(function(c){
+    var cc=card.cost[c]||0;if(cc===0)return;
+    var prod=who.production[c]||0;
+    var ft=Math.max(0,cc-prod);
+    var fh=Math.min(ft,who.tokens[c]);
+    who.tokens[c]-=fh;supply[c]+=fh;
+    var rem=ft-fh;
+    if(rem>0){who.tokens.gold-=rem;supply.gold+=rem;}
+  });
+  who.cards.push(card);
+  who.production[card.produces]=(who.production[card.produces]||0)+1;
+  who.gp+=card.gp;
+}
+
+function checkPollinators(who, pollinators) {
+  var claimed=0;
+  pollinators.forEach(function(p){
+    if(p.claimed) return;
+    var q=true;
+    for(var c in p.req){if((who.production[c]||0)<p.req[c]){q=false;break;}}
+    if(q){p.claimed=true;who.gp+=p.gp;claimed++;}
+  });
+  return claimed;
+}
+
+function aiTurn(who, market1, market2, market3, deck1, deck2, deck3, supply, pollinators) {
+  // Greedy: buy best GP affordable, else buy any, else collect
+  var best=null,bestGP=-1,bestM=null,bestD=null;
+  [[market3,deck3],[market2,deck2],[market1,deck1]].forEach(function(p){
+    p[0].forEach(function(card){
+      if(!card)return;
+      if(canAfford(who,card)&&card.gp>bestGP){bestGP=card.gp;best=card;bestM=p[0];bestD=p[1];}
+    });
+  });
+
+  if(best) {
+    payForCard(who,best,supply);
+    var idx=-1;
+    for(var i=0;i<bestM.length;i++){if(bestM[i]&&bestM[i].id===best.id){idx=i;break;}}
+    if(idx>=0){if(bestD.length)bestM[idx]=bestD.pop();else bestM.splice(idx,1);}
+    checkPollinators(who,pollinators);
+    return 'buy';
+  } else {
+    // Collect 3 different
+    var taken=0;
+    var avail=COLORS.filter(function(c){return supply[c]>0;});
+    shuffle(avail);
+    for(var i=0;i<avail.length&&taken<3;i++){
+      supply[avail[i]]--;who.tokens[avail[i]]++;taken++;
+    }
+    while(totalTokens(who.tokens)>10){
+      var mc=null,mv=0;
+      COLORS.forEach(function(c){if(who.tokens[c]>mv){mv=who.tokens[c];mc=c;}});
+      if(mc){who.tokens[mc]--;supply[mc]++;}else break;
+    }
+    return 'collect';
+  }
+}
+
+function runSingleGame() {
+  var allCards=generateCards();
+  var pollinators=shuffle(ALL_POLLINATORS.slice()).slice(0,5).map(function(p){
+    return{name:p.name,req:p.req,gp:p.gp,claimed:false};
+  });
+  var deck1=shuffle(allCards.tier1.slice());
+  var deck2=shuffle(allCards.tier2.slice());
+  var deck3=shuffle(allCards.tier3.slice());
+  var market1=[],market2=[],market3=[];
+  for(var i=0;i<4;i++){
+    if(deck1.length)market1.push(deck1.pop());
+    if(deck2.length)market2.push(deck2.pop());
+    if(deck3.length)market3.push(deck3.pop());
+  }
+  var supply={green:5,rose:5,blue:5,amber:5,spore:5,gold:5};
+  var p1={gp:0,tokens:{green:0,rose:0,blue:0,amber:0,spore:0,gold:0},cards:[],production:{}};
+  var p2={gp:0,tokens:{green:0,rose:0,blue:0,amber:0,spore:0,gold:0},cards:[],production:{}};
+  COLORS.forEach(function(c){p1.production[c]=0;p2.production[c]=0;});
+
+  var turn=0;
+  var maxTurns=60;
+  while(turn<maxTurns){
+    aiTurn(p1,market1,market2,market3,deck1,deck2,deck3,supply,pollinators);
+    turn++;
+    if(p1.gp>=15) break;
+    aiTurn(p2,market1,market2,market3,deck1,deck2,deck3,supply,pollinators);
+    turn++;
+    if(p2.gp>=15) break;
+  }
+
+  var winner=p1.gp>=p2.gp?'p1':'p2';
+  if(p1.gp===p2.gp) winner='draw';
+
+  // Winning color analysis
+  var winProd={};
+  var w=winner==='p1'?p1:p2;
+  COLORS.forEach(function(c){winProd[c]=(w.production[c]||0);});
+
+  return {
+    winner:winner,
+    p1gp:p1.gp, p2gp:p2.gp,
+    turns:turn,
+    p1cards:p1.cards.length, p2cards:p2.cards.length,
+    p1prod:Object.assign({},p1.production),
+    p2prod:Object.assign({},p2.production),
+    winProd:winProd,
+    pollinatorsClaimed:pollinators.filter(function(p){return p.claimed;}).length
+  };
+}
+
+window.runTest = function(count) {
+  count = count || 100;
+  var log=document.getElementById('log');
+  log.innerHTML='<p>Running '+count+' games...</p>';
+
+  setTimeout(function(){
+    var results=[];
+    for(var i=0;i<count;i++) results.push(runSingleGame());
+
+    var p1wins=0,p2wins=0,draws=0;
+    var totalTurns=0;
+    var turnCounts=[];
+    var colorWins={green:0,rose:0,blue:0,amber:0,spore:0};
+    var totalPollClaimed=0;
+    var gamesUnder15=0,gamesUnder20=0,gamesUnder25=0,gamesUnder30=0,gamesOver30=0;
+    var gpTotals=[];
+
+    results.forEach(function(r){
+      if(r.winner==='p1')p1wins++;
+      else if(r.winner==='p2')p2wins++;
+      else draws++;
+      totalTurns+=r.turns;
+      turnCounts.push(r.turns);
+      totalPollClaimed+=r.pollinatorsClaimed;
+      gpTotals.push(Math.max(r.p1gp,r.p2gp));
+
+      if(r.turns<15)gamesUnder15++;
+      else if(r.turns<20)gamesUnder20++;
+      else if(r.turns<25)gamesUnder25++;
+      else if(r.turns<30)gamesUnder30++;
+      else gamesOver30++;
+
+      // Track winning color production
+      var wp=r.winner==='p1'?r.p1prod:r.p2prod;
+      COLORS.forEach(function(c){colorWins[c]+=(wp[c]||0);});
+    });
+
+    turnCounts.sort(function(a,b){return a-b;});
+    var medianTurns=turnCounts[Math.floor(count/2)];
+    var avgTurns=(totalTurns/count).toFixed(1);
+    var minTurns=turnCounts[0];
+    var maxTurns2=turnCounts[turnCounts.length-1];
+
+    // Color balance check
+    var totalColorProd=0;
+    COLORS.forEach(function(c){totalColorProd+=colorWins[c];});
+    var colorPcts={};
+    COLORS.forEach(function(c){colorPcts[c]=((colorWins[c]/totalColorProd)*100).toFixed(1);});
+
+    // Build report
+    var h='<h2>📊 Results ('+count+' games)</h2>';
+    h+='<div class="stat"><b>P1 Wins:</b> '+p1wins+' ('+((p1wins/count)*100).toFixed(1)+'%) — <b>P2 Wins:</b> '+p2wins+' ('+((p2wins/count)*100).toFixed(1)+'%) — <b>Draws:</b> '+draws+'</div>';
+    h+='<div class="stat">First-player advantage: '+(p1wins>p2wins?'<span class="warn">P1 favored ('+(((p1wins-p2wins)/count)*100).toFixed(1)+'% gap)</span>':'<span class="good">Balanced</span>')+'</div>';
+
+    h+='<h2>⏱ Turn Distribution</h2>';
+    h+='<div class="stat"><b>Average:</b> '+avgTurns+' turns — <b>Median:</b> '+medianTurns+' — <b>Range:</b> '+minTurns+'–'+maxTurns2+'</div>';
+    h+='<div class="stat"><b>Under 15 turns:</b> '+gamesUnder15+' '+(gamesUnder15>count*0.1?'<span class="warn">⚠ too fast</span>':'<span class="good">✓</span>')+'</div>';
+    h+='<div class="stat"><b>15-19 turns:</b> '+gamesUnder20+'</div>';
+    h+='<div class="stat"><b>20-24 turns:</b> '+gamesUnder25+' <span class="good">← target range</span></div>';
+    h+='<div class="stat"><b>25-29 turns:</b> '+gamesUnder30+'</div>';
+    h+='<div class="stat"><b>30+ turns:</b> '+gamesOver30+' '+(gamesOver30>count*0.2?'<span class="warn">⚠ too slow</span>':'<span class="good">✓</span>')+'</div>';
+
+    h+='<h2>🎨 Color Balance (Winner Production)</h2>';
+    h+='<div class="stat">Even distribution = ~20% each. Deviation > 25% = potential imbalance.</div>';
+    var maxBar=0;
+    COLORS.forEach(function(c){if(colorWins[c]>maxBar)maxBar=colorWins[c];});
+    COLORS.forEach(function(c){
+      var pct=colorPcts[c];
+      var w=Math.max(10,Math.round((colorWins[c]/maxBar)*200));
+      var warn=parseFloat(pct)>25||parseFloat(pct)<15;
+      h+='<div class="stat"><div class="bar" style="width:'+w+'px;background:'+{green:'#4A7C35',rose:'#C47A7A',blue:'#5B9BD5',amber:'#D4A843',spore:'#E8DCC8'}[c]+'"></div>';
+      h+='<b>'+c+':</b> '+pct+'% '+(warn?'<span class="warn">⚠</span>':'<span class="good">✓</span>')+'</div>';
+    });
+
+    h+='<h2>🐝 Pollinator Claim Rate</h2>';
+    var avgPoll=(totalPollClaimed/count).toFixed(1);
+    h+='<div class="stat"><b>Average Pollinators claimed per game:</b> '+avgPoll+'/5</div>';
+    h+='<div class="stat">'+(parseFloat(avgPoll)<1?'<span class="warn">⚠ Too hard to claim — lower requirements?</span>':parseFloat(avgPoll)>4?'<span class="warn">⚠ Too easy to claim — raise requirements?</span>':'<span class="good">✓ Healthy claim rate</span>')+'</div>';
+
+    h+='<h2>🏆 Winning GP Distribution</h2>';
+    var avgGP=0;gpTotals.forEach(function(g){avgGP+=g;});avgGP=(avgGP/count).toFixed(1);
+    h+='<div class="stat"><b>Average winning GP:</b> '+avgGP+'</div>';
+
+    h+='<h2>✅ Balance Verdict</h2>';
+    var issues=[];
+    if(Math.abs(p1wins-p2wins)>count*0.1) issues.push('First-player advantage too large');
+    if(parseFloat(avgTurns)<18) issues.push('Games too short (avg under 18 turns)');
+    if(parseFloat(avgTurns)>28) issues.push('Games too long (avg over 28 turns)');
+    if(gamesOver30>count*0.25) issues.push('Too many games go 30+ turns');
+    COLORS.forEach(function(c){
+      if(parseFloat(colorPcts[c])>28) issues.push(c+' pollen is over-represented in wins');
+      if(parseFloat(colorPcts[c])<12) issues.push(c+' pollen is under-represented in wins');
+    });
+    if(parseFloat(avgPoll)<0.8) issues.push('Pollinators too hard to claim');
+    if(parseFloat(avgPoll)>4.2) issues.push('Pollinators too easy to claim');
+
+    if(issues.length===0){
+      h+='<div class="stat"><span class="good">✅ ALL CHECKS PASSED — Economy is balanced for shipping.</span></div>';
+    } else {
+      h+='<div class="stat"><span class="warn">⚠ '+issues.length+' ISSUE(S) FOUND:</span></div>';
+      issues.forEach(function(issue){
+        h+='<div class="stat"><span class="warn">• '+issue+'</span></div>';
+      });
+    }
+
+    log.innerHTML=h;
+  }, 50);
+};
+
+})();
+</script>
+</body>
+</html>

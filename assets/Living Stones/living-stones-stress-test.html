@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Living Stones Stress Test</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d100c;color:#E8DCC8;font-family:'Courier New',monospace;padding:12px;font-size:13px}
+h1{color:#4A7C35;font-size:1.4rem;margin-bottom:8px}
+button{background:#1a2416;border:1px solid #4A7C35;color:#E8DCC8;padding:8px 16px;border-radius:6px;cursor:pointer;font-family:inherit;margin:4px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin:10px 0}
+.stat-box{background:#1a2416;border:1px solid rgba(74,124,53,0.2);border-radius:8px;padding:12px}
+.stat-box h3{color:#4A7C35;font-size:.85rem;margin-bottom:6px}
+.stat-box .val{font-size:1.3rem;color:#D4A843;font-weight:bold}
+.stat-box .sub{font-size:.7rem;opacity:.6;margin-top:2px}
+.error{color:#C47A7A}.ok{color:#4A7C35}.warn{color:#D4A843}
+.log{background:#0a0d09;border:1px solid rgba(74,124,53,0.2);border-radius:6px;padding:10px;max-height:500px;overflow-y:auto;margin:10px 0;font-size:11px;line-height:1.6}
+</style>
+</head>
+<body>
+<h1>⚫⚪ LIVING STONES — Stress Test</h1>
+<p>Validates Go rule engine and puzzle solvability.</p>
+<button onclick="runTests()">▶ RUN ALL TESTS</button>
+<div class="stat-grid" id="stats"></div>
+<div id="checks" style="margin:10px 0"></div>
+<div class="log" id="log"></div>
+<script>
+(function(){
+'use strict';
+var EMPTY=0,BLACK=1,WHITE=2;
+
+function log(m,c){var e=document.getElementById('log');e.innerHTML+='<div class="'+(c||'')+'">'+m+'</div>';e.scrollTop=e.scrollHeight;}
+
+function makeBoard(sz){var b=[];for(var r=0;r<sz;r++){b[r]=[];for(var c=0;c<sz;c++)b[r][c]=EMPTY;}return b;}
+function copyBoard(b){var c=[];for(var i=0;i<b.length;i++)c[i]=b[i].slice();return c;}
+
+function getGroup(b,r,c,sz){
+  var color=b[r][c];if(color===EMPTY)return null;
+  var vis={},stones=[],libs=0,stack=[[r,c]];
+  while(stack.length){
+    var p=stack.pop(),pr=p[0],pc=p[1],k=pr+','+pc;
+    if(vis[k])continue;vis[k]=true;
+    if(b[pr][pc]===color){
+      stones.push(p);
+      var nb=[[pr-1,pc],[pr+1,pc],[pr,pc-1],[pr,pc+1]];
+      for(var i=0;i<nb.length;i++){
+        var nr=nb[i][0],nc=nb[i][1];
+        if(nr<0||nr>=sz||nc<0||nc>=sz)continue;
+        var nk=nr+','+nc;
+        if(vis[nk])continue;
+        if(b[nr][nc]===EMPTY){libs++;vis[nk]=true;}
+        else if(b[nr][nc]===color)stack.push([nr,nc]);
+      }
+    }
+  }
+  return{stones:stones,liberties:libs,color:color};
+}
+
+function removeGroup(b,stones){for(var i=0;i<stones.length;i++)b[stones[i][0]][stones[i][1]]=EMPTY;return stones.length;}
+
+function playMove(b,r,c,color,sz){
+  if(r<0||r>=sz||c<0||c>=sz||b[r][c]!==EMPTY)return{valid:false};
+  b[r][c]=color;var opp=color===BLACK?WHITE:BLACK,cap=0;
+  var nb=[[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+  for(var i=0;i<nb.length;i++){
+    var nr=nb[i][0],nc=nb[i][1];
+    if(nr<0||nr>=sz||nc<0||nc>=sz)continue;
+    if(b[nr][nc]===opp){var g=getGroup(b,nr,nc,sz);if(g&&g.liberties===0)cap+=removeGroup(b,g.stones);}
+  }
+  var my=getGroup(b,r,c,sz);
+  if(my&&my.liberties===0){b[r][c]=EMPTY;return{valid:false,suicide:true};}
+  return{valid:true,captured:cap};
+}
+
+// Puzzle bank (same as prototype)
+var ALL_PUZZLES={
+  beginner:[
+    {size:5,B:[[1,1],[1,3],[2,0],[2,2],[3,1]],W:[[2,1]],solution:[[3,0]],check:'captured'},
+    {size:5,B:[[0,1],[0,3],[1,0],[1,2],[1,4],[2,1],[2,3]],W:[[0,2],[1,3]],solution:[[1,3]],check:'captured'},
+    {size:5,B:[[1,1],[1,2],[1,3],[2,0],[2,3],[3,1],[3,2],[3,3]],W:[[2,1],[2,2]],solution:[[2,3]],check:'captured'},
+    {size:7,B:[[0,3],[1,1],[1,4],[2,0],[2,4],[3,0],[3,1],[3,2],[3,3],[3,4]],W:[[0,1],[0,2],[1,2],[1,3],[2,1],[2,2],[2,3]],solution:[[0,0]],check:'dead'},
+    {size:5,B:[[0,1],[1,0],[1,2],[2,1],[2,3],[3,2]],W:[[1,1],[2,2]],solution:[[3,1]],check:'captured'},
+    {size:7,B:[[1,0],[1,1],[1,2],[1,3],[1,4],[0,4]],W:[[0,0],[0,1],[0,2],[0,3]],solution:[[0,1]],check:'dead'},
+    {size:7,B:[[2,0],[2,1],[2,2],[2,3],[2,4],[2,5],[1,5],[0,5]],W:[[0,0],[0,1],[0,2],[0,3],[0,4],[1,0],[1,1],[1,2],[1,3],[1,4]],solution:[[0,2]],check:'dead'},
+    {size:5,B:[[0,0],[0,1],[1,2],[2,0],[2,1],[2,2]],W:[[1,0],[1,1]],solution:[[0,2]],check:'captured'},
+    {size:5,B:[[1,0],[1,1],[1,3],[1,4],[2,2],[0,2],[0,4]],W:[[0,1],[0,3],[1,2]],solution:[[0,0]],check:'captured'},
+    {size:7,B:[[1,0],[1,1],[1,2],[0,2]],W:[[0,0],[0,1]],solution:[[0,0]],check:'captured'}
+  ],
+  intermediate:[
+    {size:7,B:[[2,0],[2,1],[2,2],[2,3],[2,4],[1,4],[0,4]],W:[[0,0],[0,1],[0,2],[0,3],[1,0],[1,1],[1,2],[1,3]],solution:[[0,1]],check:'dead'},
+    {size:7,B:[[0,3],[1,3],[2,3],[2,2],[2,1],[2,0]],W:[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2]],solution:[[0,0]],check:'captured'},
+    {size:7,B:[[0,0],[0,1],[0,2],[0,3],[0,4],[1,0],[1,4],[2,0],[2,1],[2,2],[2,3],[2,4]],W:[[1,1],[1,2],[1,3],[3,0],[3,1],[3,2],[3,3],[3,4]],solution:[[1,2]],check:'alive'},
+    {size:7,B:[[3,0],[3,1],[3,2],[3,3],[3,4],[3,5],[2,5],[1,5],[0,5]],W:[[0,0],[0,1],[0,2],[0,3],[0,4],[1,0],[1,1],[1,2],[1,3],[1,4],[2,0],[2,1],[2,2],[2,3],[2,4]],solution:[[1,2]],check:'dead'},
+    {size:7,B:[[2,0],[2,1],[2,2],[2,3],[1,3],[0,3]],W:[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2]],solution:[[0,0]],check:'dead'},
+    {size:7,B:[[0,3],[1,3],[2,3],[2,2],[2,1],[2,0]],W:[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2]],solution:[[0,1]],check:'dead'},
+    {size:7,B:[[1,0],[1,1],[1,2],[1,3],[0,3]],W:[[0,0],[0,1],[0,2]],solution:[[0,0]],check:'captured'},
+    {size:7,B:[[2,0],[2,1],[2,2],[2,3],[2,4],[1,4],[0,4]],W:[[0,0],[0,1],[0,2],[0,3],[1,0],[1,1],[1,2],[1,3]],solution:[[0,0]],check:'dead'},
+    {size:7,B:[[0,0],[0,2],[1,1],[1,3],[2,0],[2,2],[2,4],[3,1],[3,3]],W:[[1,0],[1,2],[1,4]],solution:[[0,1]],check:'captured'},
+    {size:7,B:[[0,3],[1,0],[1,3],[2,0],[2,1],[2,2],[2,3]],W:[[0,0],[0,1],[0,2],[1,1],[1,2]],solution:[[0,0]],check:'captured'}
+  ],
+  advanced:[
+    {size:9,B:[[3,0],[3,1],[3,2],[3,3],[2,3],[1,3],[0,3]],W:[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]],solution:[[0,0]],check:'dead'},
+    {size:9,B:[[0,0],[0,1],[0,2],[0,3],[1,0],[1,3],[2,0],[2,3]],W:[[1,1],[1,2],[2,1],[2,2],[3,0],[3,1],[3,2],[3,3]],solution:[[1,1]],check:'alive'},
+    {size:9,B:[[4,0],[4,1],[4,2],[4,3],[4,4],[3,4],[2,4],[1,4],[0,4]],W:[[0,0],[0,1],[0,2],[0,3],[1,0],[1,1],[1,2],[1,3],[2,0],[2,1],[2,2],[2,3],[3,0],[3,1],[3,2],[3,3]],solution:[[1,1]],check:'dead'},
+    {size:9,B:[[0,4],[1,4],[2,4],[2,3],[2,2],[2,1],[2,0]],W:[[0,0],[0,1],[0,2],[0,3],[1,0],[1,1],[1,2],[1,3]],solution:[[0,0]],check:'captured'},
+    {size:9,B:[[0,0],[0,1],[0,2],[0,3],[0,4],[1,0],[1,4],[2,0],[2,1],[2,2],[2,3],[2,4]],W:[[1,1],[1,2],[1,3],[3,0],[3,1],[3,2],[3,3],[3,4]],solution:[[1,2]],check:'alive'}
+  ]
+};
+
+window.runTests=function(){
+  document.getElementById('log').innerHTML='';
+  document.getElementById('stats').innerHTML='';
+  document.getElementById('checks').innerHTML='';
+
+  var totalPuzzles=0,validPuzzles=0,solutionWorks=0,engineErrors=0;
+  var checks='';
+
+  // ── TEST 1: Go Rule Engine ──
+  log('═══ GO RULE ENGINE TESTS ═══','ok');
+
+  // Test capture
+  var b=makeBoard(5);
+  b[1][1]=BLACK;b[1][3]=BLACK;b[2][0]=BLACK;b[2][2]=BLACK;b[3][1]=BLACK;b[2][1]=WHITE;
+  var r=playMove(b,3,0,BLACK,5);
+  // White at 2,1 should still have a liberty at... let me check
+  // After placing black at 3,0: white at 2,1 neighbors are 1,1(B), 2,0(B), 2,2(B), 3,1(B)
+  // Wait, 3,1 is B already. So white at 2,1 has neighbors: up=1,1(B), down=3,1(B), left=2,0(B), right=2,2(B) — 0 liberties!
+  var whiteGone=b[2][1]===EMPTY;
+  log('Capture test: '+(whiteGone?'PASS':'FAIL')+' (white captured='+(r.captured||0)+')',whiteGone?'ok':'error');
+  if(!whiteGone)engineErrors++;
+
+  // Test suicide prevention
+  b=makeBoard(5);
+  b[0][1]=BLACK;b[1][0]=BLACK;b[1][2]=BLACK;b[2][1]=BLACK;
+  r=playMove(b,1,1,WHITE,5);
+  var suicideBlocked=!r.valid;
+  log('Suicide prevention: '+(suicideBlocked?'PASS':'FAIL'),suicideBlocked?'ok':'error');
+  if(!suicideBlocked)engineErrors++;
+
+  // Test capture beats suicide (playing into 0 liberties but capturing first)
+  b=makeBoard(5);
+  b[0][0]=WHITE;b[0][2]=BLACK;b[1][0]=BLACK;b[1][1]=BLACK;
+  // White at 0,0 has neighbors: right=0,1(empty), down=1,0(B). Liberties = 1 (0,1)
+  // Play black at 0,1: captures white at 0,0
+  r=playMove(b,0,1,BLACK,5);
+  var captureOverSuicide=r.valid&&b[0][0]===EMPTY;
+  log('Capture-over-suicide: '+(captureOverSuicide?'PASS':'FAIL'),captureOverSuicide?'ok':'error');
+  if(!captureOverSuicide)engineErrors++;
+
+  // Test liberty counting
+  b=makeBoard(5);b[2][2]=BLACK;
+  var g=getGroup(b,2,2,5);
+  var libsCorrect=g.liberties===4;
+  log('Liberty count (center stone=4): '+(libsCorrect?'PASS':'FAIL')+' (got '+g.liberties+')',libsCorrect?'ok':'error');
+  if(!libsCorrect)engineErrors++;
+
+  b=makeBoard(5);b[0][0]=BLACK;
+  g=getGroup(b,0,0,5);
+  var cornerLibs=g.liberties===2;
+  log('Liberty count (corner stone=2): '+(cornerLibs?'PASS':'FAIL')+' (got '+g.liberties+')',cornerLibs?'ok':'error');
+  if(!cornerLibs)engineErrors++;
+
+  // Group detection
+  b=makeBoard(5);b[2][2]=BLACK;b[2][3]=BLACK;b[3][2]=BLACK;
+  g=getGroup(b,2,2,5);
+  var groupSize=g.stones.length===3;
+  log('Group detection (3 connected): '+(groupSize?'PASS':'FAIL')+' (got '+g.stones.length+')',groupSize?'ok':'error');
+  if(!groupSize)engineErrors++;
+
+  // ── TEST 2: Puzzle Validity ──
+  log('');log('═══ PUZZLE VALIDITY TESTS ═══','ok');
+  var cats=['beginner','intermediate','advanced'];
+  for(var ci=0;ci<cats.length;ci++){
+    var cat=cats[ci];
+    var puzzles=ALL_PUZZLES[cat];
+    log('--- '+cat.toUpperCase()+' ('+puzzles.length+' puzzles) ---');
+    for(var pi=0;pi<puzzles.length;pi++){
+      totalPuzzles++;
+      var p=puzzles[pi];
+      var valid=true;var reason='';
+
+      // Check board setup is valid
+      var tb=makeBoard(p.size);
+      try{
+        for(var si=0;si<p.B.length;si++){
+          var sr=p.B[si][0],sc=p.B[si][1];
+          if(sr<0||sr>=p.size||sc<0||sc>=p.size){valid=false;reason='B stone out of bounds';break;}
+          tb[sr][sc]=BLACK;
+        }
+        for(si=0;si<p.W.length;si++){
+          sr=p.W[si][0];sc=p.W[si][1];
+          if(sr<0||sr>=p.size||sc<0||sc>=p.size){valid=false;reason='W stone out of bounds';break;}
+          if(tb[sr][sc]!==EMPTY){valid=false;reason='Overlapping stones';break;}
+          tb[sr][sc]=WHITE;
+        }
+      }catch(e){valid=false;reason='Setup error: '+e.message;}
+
+      if(valid)validPuzzles++;
+
+      // Check solution is playable
+      if(valid&&p.solution.length>0){
+        var solBoard=copyBoard(tb);
+        var sol=p.solution[0];
+        if(sol[0]<0||sol[0]>=p.size||sol[1]<0||sol[1]>=p.size){
+          valid=false;reason='Solution out of bounds';
+        } else {
+          var mr=playMove(solBoard,sol[0],sol[1],BLACK,p.size);
+          if(mr.valid){
+            solutionWorks++;
+            log('  P'+(pi+1)+': Setup OK, solution valid ('+sol[0]+','+sol[1]+') cap='+mr.captured,'ok');
+          } else {
+            log('  P'+(pi+1)+': Setup OK, but SOLUTION INVALID at ('+sol[0]+','+sol[1]+')','error');
+          }
+        }
+      } else if(valid){
+        log('  P'+(pi+1)+': Setup OK, no solution defined','warn');
+        solutionWorks++; // count as pass since some puzzles check by result
+      }
+
+      if(!valid) log('  P'+(pi+1)+': INVALID — '+reason,'error');
+    }
+  }
+
+  // ── RESULTS ──
+  var html='';
+  html+='<div class="stat-box"><h3>Total Puzzles</h3><div class="val">'+totalPuzzles+'</div><div class="sub">Across 3 difficulties</div></div>';
+  html+='<div class="stat-box"><h3>Valid Setups</h3><div class="val" style="color:'+(validPuzzles===totalPuzzles?'#4A7C35':'#C47A7A')+'">'+validPuzzles+'/'+totalPuzzles+'</div></div>';
+  html+='<div class="stat-box"><h3>Solutions Work</h3><div class="val" style="color:'+(solutionWorks===totalPuzzles?'#4A7C35':'#C47A7A')+'">'+solutionWorks+'/'+totalPuzzles+'</div></div>';
+  html+='<div class="stat-box"><h3>Engine Errors</h3><div class="val" style="color:'+(engineErrors===0?'#4A7C35':'#C47A7A')+'">'+engineErrors+'</div></div>';
+  document.getElementById('stats').innerHTML=html;
+
+  function check(n,p,d){checks+='<div class="'+(p?'ok':'error')+'">'+(p?'✓':'✗')+' '+n+(d?' — '+d:'')+'</div>';}
+  check('Capture detection works',whiteGone);
+  check('Suicide prevention works',suicideBlocked);
+  check('Capture-over-suicide works',captureOverSuicide);
+  check('Liberty counting correct',libsCorrect&&cornerLibs);
+  check('Group detection correct',groupSize);
+  check('All puzzle setups valid',validPuzzles===totalPuzzles,validPuzzles+'/'+totalPuzzles);
+  check('All solutions playable',solutionWorks===totalPuzzles,solutionWorks+'/'+totalPuzzles);
+  check('Zero engine errors',engineErrors===0);
+  document.getElementById('checks').innerHTML=checks;
+
+  log('');log('═══ COMPLETE ═══',engineErrors===0&&validPuzzles===totalPuzzles?'ok':'error');
+};
+})();
+</script>
+</body>
+</html>

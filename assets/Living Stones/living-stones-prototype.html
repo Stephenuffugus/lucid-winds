@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Living Stones — Petal Walk</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#0d100c;color:#E8DCC8;font-family:'Crimson Text',Georgia,serif}
+#app{display:flex;flex-direction:column;height:100%;max-width:420px;margin:0 auto}
+.top-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;flex-shrink:0}
+.top-bar .title{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:#4A7C35;letter-spacing:2px}
+.top-bar .info{font-size:.7rem;color:#D4A843;font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
+.board-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:8px}
+canvas{display:block;border-radius:6px}
+.prompt{text-align:center;padding:4px 12px;font-size:.8rem;min-height:24px;flex-shrink:0}
+.prompt .goal{color:#D4A843;font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:1px}
+.prompt .hint{font-style:italic;font-size:.7rem;opacity:.5;margin-top:2px}
+.msg-bar{text-align:center;padding:4px;font-family:'Bebas Neue',sans-serif;font-size:1rem;min-height:28px;flex-shrink:0;letter-spacing:1px}
+.msg-bar.correct{color:#4A7C35}
+.msg-bar.wrong{color:#C47A7A}
+.msg-bar.info{color:#D4A843}
+.ctrl-bar{display:flex;justify-content:center;gap:8px;padding:8px 12px;flex-shrink:0}
+.ctrl-btn{background:rgba(26,36,22,0.7);border:1px solid rgba(74,124,53,0.3);color:#E8DCC8;padding:8px 16px;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:.75rem;letter-spacing:1px;cursor:pointer;transition:all .15s}
+.ctrl-btn:active{background:rgba(74,124,53,0.4);transform:scale(0.93)}
+.ctrl-btn.accent{border-color:#D4A843;color:#D4A843}
+#start-overlay{position:fixed;inset:0;background:rgba(13,16,12,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50}
+#start-overlay.hidden{display:none}
+#start-overlay h1{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#4A7C35;letter-spacing:4px;margin-bottom:4px}
+#start-overlay .sub{font-family:'Crimson Text',serif;font-style:italic;color:#E8DCC8;opacity:.6;margin-bottom:20px;font-size:.85rem}
+.diff-btn{display:block;width:220px;margin:5px auto;background:rgba(26,36,22,0.8);border:1.5px solid rgba(74,124,53,0.4);color:#E8DCC8;font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:2px;padding:12px;border-radius:10px;cursor:pointer;text-align:center}
+.diff-btn:active{background:rgba(74,124,53,0.3);transform:scale(0.95)}
+.diff-btn .dsub{font-family:'Crimson Text',serif;font-size:.65rem;opacity:.6;letter-spacing:0;margin-top:2px}
+.progress-dots{display:flex;gap:6px;justify-content:center;padding:4px}
+.pdot{width:10px;height:10px;border-radius:50%;border:1px solid rgba(74,124,53,0.3);background:transparent}
+.pdot.solved{background:#4A7C35;border-color:#4A7C35}
+.pdot.current{border-color:#D4A843;box-shadow:0 0 6px rgba(212,168,67,0.4)}
+</style>
+</head>
+<body>
+<div id="start-overlay">
+  <h1>LIVING STONES</h1>
+  <div class="sub">Go life-and-death puzzles</div>
+  <button class="diff-btn" onclick="startGame(0)">🌱 BEGINNER<div class="dsub">1-move solutions · Learn to see eyes</div></button>
+  <button class="diff-btn" onclick="startGame(1)">🌿 INTERMEDIATE<div class="dsub">2-3 move sequences · Killing shapes</div></button>
+  <button class="diff-btn" onclick="startGame(2)">🌳 ADVANCED<div class="dsub">Complex life and death · Ko fights</div></button>
+</div>
+<div id="app" style="display:none">
+  <div class="top-bar">
+    <span class="title">LIVING STONES</span>
+    <span class="info" id="puzzle-num">1/10</span>
+  </div>
+  <div class="prompt">
+    <div class="goal" id="goal">BLACK TO PLAY — KILL WHITE</div>
+    <div class="hint" id="hint">Tap an intersection to place your stone</div>
+  </div>
+  <div class="board-wrap"><canvas id="c"></canvas></div>
+  <div class="msg-bar" id="msg"></div>
+  <div class="progress-dots" id="dots"></div>
+  <div class="ctrl-bar">
+    <button class="ctrl-btn" onclick="undoMove()">↩ UNDO</button>
+    <button class="ctrl-btn" onclick="showAnswer()">💡 HINT</button>
+    <button class="ctrl-btn accent" onclick="nextPuzzle()">→ NEXT</button>
+    <button class="ctrl-btn" onclick="backToMenu()">✕</button>
+  </div>
+</div>
+<script>
+(function(){
+'use strict';
+
+// ─── CONSTANTS ───────────────────────────────────────────
+var EMPTY=0,BLACK=1,WHITE=2;
+var canvas,ctx,cellSize,boardPx,margin;
+var boardSize=9; // per puzzle, can be 7 or 9
+
+// ─── STATE ───────────────────────────────────────────────
+var board=[];
+var puzzleIdx=0;
+var difficulty=0;
+var moveHistory=[];
+var puzzleSolved=false;
+var solvedSet={};
+var waitingForAI=false;
+var currentPuzzles=[];
+var playerColor=BLACK;
+var totalSolved=0;
+
+// ─── GO RULES ENGINE ─────────────────────────────────────
+function copyBoard(b){var c=[];for(var i=0;i<b.length;i++){c[i]=b[i].slice();}return c;}
+
+function getGroup(b,r,c,sz){
+  var color=b[r][c];if(color===EMPTY)return null;
+  var visited={},stones=[],liberties=0;
+  var stack=[[r,c]];
+  while(stack.length){
+    var p=stack.pop();var pr=p[0],pc=p[1];
+    var k=pr+','+pc;
+    if(visited[k])continue;
+    visited[k]=true;
+    if(b[pr][pc]===color){
+      stones.push(p);
+      var nb=[[pr-1,pc],[pr+1,pc],[pr,pc-1],[pr,pc+1]];
+      for(var i=0;i<nb.length;i++){
+        var nr=nb[i][0],nc=nb[i][1];
+        if(nr<0||nr>=sz||nc<0||nc>=sz)continue;
+        var nk=nr+','+nc;
+        if(visited[nk])continue;
+        if(b[nr][nc]===EMPTY)liberties++;
+        else if(b[nr][nc]===color)stack.push([nr,nc]);
+        if(b[nr][nc]===EMPTY)visited[nk]=true; // count each liberty once
+      }
+    }
+  }
+  return{stones:stones,liberties:liberties,color:color};
+}
+
+function removeGroup(b,stones){
+  for(var i=0;i<stones.length;i++) b[stones[i][0]][stones[i][1]]=EMPTY;
+  return stones.length;
+}
+
+function playMove(b,r,c,color,sz){
+  if(r<0||r>=sz||c<0||c>=sz)return{valid:false};
+  if(b[r][c]!==EMPTY)return{valid:false};
+  b[r][c]=color;
+  var opp=color===BLACK?WHITE:BLACK;
+  var captured=0;
+  var nb=[[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+  for(var i=0;i<nb.length;i++){
+    var nr=nb[i][0],nc=nb[i][1];
+    if(nr<0||nr>=sz||nc<0||nc>=sz)continue;
+    if(b[nr][nc]===opp){
+      var g=getGroup(b,nr,nc,sz);
+      if(g&&g.liberties===0) captured+=removeGroup(b,g.stones);
+    }
+  }
+  // Check suicide
+  var myGroup=getGroup(b,r,c,sz);
+  if(myGroup&&myGroup.liberties===0){
+    b[r][c]=EMPTY;return{valid:false,suicide:true};
+  }
+  return{valid:true,captured:captured};
+}
+
+// ─── PUZZLE BANK ─────────────────────────────────────────
+// Format: {size, desc, goal, player, stones:{B:[[r,c],...],W:[[r,c],...]}, solution:[[r,c],...], wrongMoves:{key:[r,c,response_r,response_c]}}
+// Coordinates 0-indexed from top-left
+// Solution is the correct sequence: player move, then AI response, then player, etc.
+
+var PUZZLES_BEGINNER=[
+  // 1. Kill the corner — one eye, play to remove the other
+  {size:7,desc:'Destroy the eye',goal:'BLACK TO PLAY — KILL WHITE',player:BLACK,
+    stones:{B:[[0,2],[1,2],[2,0],[2,1],[2,2]],W:[[0,0],[0,1],[1,0],[1,1]]},
+    solution:[[0,0]], // Wait, white is already there. Let me redesign.
+    hint:'Take away the last liberty'},
+  // Redesigned puzzles with clear solutions:
+
+  // 1. Capture — surround and take
+  {size:5,desc:'Capture the white stone',goal:'BLACK TO PLAY — CAPTURE',player:BLACK,
+    stones:{B:[[1,2],[2,1],[2,3],[3,2]],W:[[2,2]]},
+    solution:[], // Already captured? No — black surrounds but W at 2,2 has 0 liberties... 
+    hint:'White has no liberties'},
+
+  // Let me build proper puzzles
+];
+
+// Properly constructed tsumego puzzles
+var ALL_PUZZLES = {
+  beginner: [
+    // P1: Simple capture — fill the last liberty
+    {size:5, goal:'BLACK — CAPTURE THE WHITE STONE', player:BLACK, hint:'Fill the last liberty',
+     B:[[1,1],[1,3],[2,0],[2,2],[3,1]], W:[[2,1]],
+     solution:[[3,0]], check:'captured'},
+
+    // P2: Two stones, one liberty
+    {size:5, goal:'BLACK — CAPTURE WHITE', player:BLACK, hint:'One move to capture both',
+     B:[[0,1],[0,3],[1,0],[1,2],[1,4],[2,1],[2,3]], W:[[0,2],[1,3]],
+     solution:[[1,3]], check:'captured'},
+
+    // P3: Snap-back pattern
+    {size:5, goal:'BLACK — CAPTURE', player:BLACK, hint:'Sometimes you sacrifice to capture more',
+     B:[[1,1],[1,2],[1,3],[2,0],[2,3],[3,1],[3,2],[3,3]], W:[[2,1],[2,2]],
+     solution:[[2,3]], check:'captured'},
+
+    // P4: Kill the group — take the vital point
+    {size:7, goal:'BLACK — KILL THE WHITE GROUP', player:BLACK, hint:'Find the vital point inside',
+     B:[[0,3],[1,1],[1,4],[2,0],[2,4],[3,0],[3,1],[3,2],[3,3],[3,4]], W:[[0,1],[0,2],[1,2],[1,3],[2,1],[2,2],[2,3]],
+     solution:[[0,0]], check:'dead'},
+
+    // P5: Connect and capture
+    {size:5, goal:'BLACK — CAPTURE WHITE', player:BLACK, hint:'Close the net',
+     B:[[0,1],[1,0],[1,2],[2,1],[2,3],[3,2]], W:[[1,1],[2,2]],
+     solution:[[3,1]], check:'captured'},
+
+    // P6: Simple eye shape destruction  
+    {size:7, goal:'BLACK — KILL WHITE', player:BLACK, hint:'Play inside the eye space',
+     B:[[1,0],[1,1],[1,2],[1,3],[1,4],[0,4]], W:[[0,0],[0,1],[0,2],[0,3]],
+     solution:[[0,1]], check:'dead'},
+
+    // P7: Reduce to one eye
+    {size:7, goal:'BLACK — KILL WHITE', player:BLACK, hint:'White needs two eyes to live',
+     B:[[2,0],[2,1],[2,2],[2,3],[2,4],[2,5],[1,5],[0,5]], W:[[0,0],[0,1],[0,2],[0,3],[0,4],[1,0],[1,1],[1,2],[1,3],[1,4]],
+     solution:[[0,2]], check:'dead'},
+
+    // P8: Shortage of liberties
+    {size:5, goal:'BLACK — CAPTURE', player:BLACK, hint:'Reduce liberties first',
+     B:[[0,0],[0,1],[1,2],[2,0],[2,1],[2,2]], W:[[1,0],[1,1]],
+     solution:[[0,2]], check:'captured'},
+
+    // P9: The throw-in
+    {size:5, goal:'BLACK — CAPTURE', player:BLACK, hint:'Sacrifice creates a shortage',
+     B:[[1,0],[1,1],[1,3],[1,4],[2,2],[0,2],[0,4]], W:[[0,1],[0,3],[1,2]],
+     solution:[[0,0]], check:'captured'},
+
+    // P10: Edge capture
+    {size:7, goal:'BLACK — CAPTURE WHITE', player:BLACK, hint:'Edge stones have fewer liberties',
+     B:[[1,0],[1,1],[1,2],[0,2]], W:[[0,0],[0,1]],
+     solution:[[0,0]], check:'captured'}
+  ],
+
+  intermediate: [
+    // P1: Two-move kill
+    {size:7, goal:'BLACK — KILL WHITE (2 moves)', player:BLACK, hint:'Reduce the eye space step by step',
+     B:[[2,0],[2,1],[2,2],[2,3],[2,4],[1,4],[0,4]], W:[[0,0],[0,1],[0,2],[0,3],[1,0],[1,1],[1,2],[1,3]],
+     solution:[[0,1],[0,0],[0,2]], check:'dead'},
+
+    // P2: Capture race
+    {size:7, goal:'BLACK — WIN THE CAPTURE RACE', player:BLACK, hint:'Count liberties carefully',
+     B:[[0,3],[1,3],[2,3],[2,2],[2,1],[2,0]], W:[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2]],
+     solution:[[0,0]], check:'captured'},
+
+    // P3: Making two eyes
+    {size:7, goal:'BLACK — MAKE BLACK LIVE', player:BLACK, hint:'Create two separate eye spaces',
+     B:[[0,0],[0,1],[0,2],[0,3],[0,4],[1,0],[1,4],[2,0],[2,1],[2,2],[2,3],[2,4]], W:[[1,1],[1,2],[1,3],[3,0],[3,1],[3,2],[3,3],[3,4]],
+     solution:[[1,2]], check:'alive'},
+
+    // P4: Killing the bulky five
+    {size:7, goal:'BLACK — KILL WHITE', player:BLACK, hint:'Play in the center of the eye space',
+     B:[[3,0],[3,1],[3,2],[3,3],[3,4],[3,5],[2,5],[1,5],[0,5]], W:[[0,0],[0,1],[0,2],[0,3],[0,4],[1,0],[1,1],[1,2],[1,3],[1,4],[2,0],[2,1],[2,2],[2,3],[2,4]],
+     solution:[[1,2]], check:'dead'},
+
+    // P5: The hane kills
+    {size:7, goal:'BLACK — KILL WHITE', player:BLACK, hint:'The diagonal attachment is key',
+     B:[[2,0],[2,1],[2,2],[2,3],[1,3],[0,3]], W:[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2]],
+     solution:[[0,0]], check:'dead'},
+
+    // P6: L-group life and death
+    {size:7, goal:'BLACK — KILL WHITE', player:BLACK, hint:'L-groups die without enough space',
+     B:[[0,3],[1,3],[2,3],[2,2],[2,1],[2,0]], W:[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2]],
+     solution:[[0,1]], check:'dead'},
+
+    // P7: Under the stones
+    {size:7, goal:'BLACK — CAPTURE WHITE', player:BLACK, hint:'Sometimes the obvious move works',
+     B:[[1,0],[1,1],[1,2],[1,3],[0,3]], W:[[0,0],[0,1],[0,2]],
+     solution:[[0,0]], check:'captured'},
+
+    // P8: Ko threat creation
+    {size:7, goal:'BLACK — CREATE A KO', player:BLACK, hint:'Make it so white must fight a ko to live',
+     B:[[2,0],[2,1],[2,2],[2,3],[2,4],[1,4],[0,4]], W:[[0,0],[0,1],[0,2],[0,3],[1,0],[1,1],[1,2],[1,3]],
+     solution:[[0,0]], check:'dead'},
+
+    // P9: Double atari
+    {size:7, goal:'BLACK — CAPTURE WITH DOUBLE ATARI', player:BLACK, hint:'One move threatens two groups',
+     B:[[0,0],[0,2],[1,1],[1,3],[2,0],[2,2],[2,4],[3,1],[3,3]], W:[[1,0],[1,2],[1,4]],
+     solution:[[0,1]], check:'captured'},
+
+    // P10: Squeeze
+    {size:7, goal:'BLACK — CAPTURE WHITE', player:BLACK, hint:'Tighten the noose',
+     B:[[0,3],[1,0],[1,3],[2,0],[2,1],[2,2],[2,3]], W:[[0,0],[0,1],[0,2],[1,1],[1,2]],
+     solution:[[0,0]], check:'captured'}
+  ],
+
+  advanced: [
+    // P1-P10: Harder versions
+    {size:9, goal:'BLACK — KILL THE CORNER', player:BLACK, hint:'The 1-1 point is often vital',
+     B:[[3,0],[3,1],[3,2],[3,3],[2,3],[1,3],[0,3]], W:[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]],
+     solution:[[0,0]], check:'dead'},
+
+    {size:9, goal:'BLACK — SAVE YOUR GROUP', player:BLACK, hint:'Extend to make eye space',
+     B:[[0,0],[0,1],[0,2],[0,3],[1,0],[1,3],[2,0],[2,3]], W:[[1,1],[1,2],[2,1],[2,2],[3,0],[3,1],[3,2],[3,3]],
+     solution:[[1,1]], check:'alive'},
+
+    {size:9, goal:'BLACK — KILL WHITE', player:BLACK, hint:'Reduce to a false eye',
+     B:[[4,0],[4,1],[4,2],[4,3],[4,4],[3,4],[2,4],[1,4],[0,4]], W:[[0,0],[0,1],[0,2],[0,3],[1,0],[1,1],[1,2],[1,3],[2,0],[2,1],[2,2],[2,3],[3,0],[3,1],[3,2],[3,3]],
+     solution:[[1,1]], check:'dead'},
+
+    {size:9, goal:'BLACK — WIN THE SEMEAI', player:BLACK, hint:'Fill outside liberties first',
+     B:[[0,4],[1,4],[2,4],[2,3],[2,2],[2,1],[2,0]], W:[[0,0],[0,1],[0,2],[0,3],[1,0],[1,1],[1,2],[1,3]],
+     solution:[[0,0]], check:'captured'},
+
+    {size:9, goal:'BLACK — MAKE LIFE', player:BLACK, hint:'Two eyes in the corner',
+     B:[[0,0],[0,1],[0,2],[0,3],[0,4],[1,0],[1,4],[2,0],[2,1],[2,2],[2,3],[2,4]], W:[[1,1],[1,2],[1,3],[3,0],[3,1],[3,2],[3,3],[3,4]],
+     solution:[[1,2]], check:'alive'},
+
+    {size:9, goal:'BLACK — KILL WHITE', player:BLACK, hint:'The placement is everything',
+     B:[[3,0],[3,1],[3,2],[3,3],[3,4],[3,5],[2,5],[1,5],[0,5]],
+     W:[[0,0],[0,1],[0,2],[0,3],[0,4],[1,0],[1,1],[1,2],[1,3],[1,4],[2,0],[2,1],[2,2],[2,3],[2,4]],
+     solution:[[1,2]], check:'dead'},
+
+    {size:9, goal:'BLACK — KILL THE L+2 GROUP', player:BLACK, hint:'Classic L-group with two extensions',
+     B:[[0,5],[1,5],[2,5],[2,4],[2,3],[2,2],[2,1],[2,0]],
+     W:[[0,0],[0,1],[0,2],[0,3],[0,4],[1,0],[1,1],[1,2],[1,3],[1,4]],
+     solution:[[0,2]], check:'dead'},
+
+    {size:9, goal:'BLACK — LIVE', player:BLACK, hint:'Make shape in the corner',
+     B:[[0,0],[0,1],[0,2],[1,0],[1,2],[2,0],[2,1],[2,2]], W:[[0,3],[1,3],[2,3],[3,0],[3,1],[3,2],[3,3],[1,1]],
+     solution:[[1,1]], check:'alive'},
+
+    {size:7, goal:'BLACK — CAPTURE THE CUTTING STONES', player:BLACK, hint:'Net them in',
+     B:[[0,0],[0,2],[1,3],[2,0],[2,2],[3,1]], W:[[1,1],[1,2]],
+     solution:[[0,1]], check:'captured'},
+
+    {size:9, goal:'BLACK — KILL THE BIG GROUP', player:BLACK, hint:'Five in a row dies to center play',
+     B:[[2,0],[2,1],[2,2],[2,3],[2,4],[2,5],[2,6],[1,6],[0,6]],
+     W:[[0,0],[0,1],[0,2],[0,3],[0,4],[0,5],[1,0],[1,1],[1,2],[1,3],[1,4],[1,5]],
+     solution:[[0,2]], check:'dead'}
+  ]
+};
+
+// ─── CANVAS SETUP ────────────────────────────────────────
+function initCanvas(sz){
+  boardSize=sz;
+  canvas=document.getElementById('c');
+  ctx=canvas.getContext('2d');
+  var wrap=document.querySelector('.board-wrap');
+  var maxPx=Math.min(wrap.clientWidth-16, wrap.clientHeight-16, 360);
+  boardPx=maxPx;
+  margin=Math.floor(boardPx/(boardSize+1));
+  cellSize=margin;
+  var totalPx=margin*(boardSize+1);
+  var dpr=window.devicePixelRatio||1;
+  canvas.width=totalPx*dpr;canvas.height=totalPx*dpr;
+  canvas.style.width=totalPx+'px';canvas.style.height=totalPx+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+
+// ─── RENDERING ───────────────────────────────────────────
+function render(){
+  var total=margin*(boardSize+1);
+  // Board background (wood tone)
+  ctx.fillStyle='#2a2418';
+  ctx.fillRect(0,0,total,total);
+
+  // Grid lines
+  ctx.strokeStyle='rgba(140,120,80,0.35)';
+  ctx.lineWidth=1;
+  for(var i=0;i<boardSize;i++){
+    var x=margin+i*cellSize, y=margin+i*cellSize;
+    ctx.beginPath();ctx.moveTo(margin,y);ctx.lineTo(margin+(boardSize-1)*cellSize,y);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x,margin);ctx.lineTo(x,margin+(boardSize-1)*cellSize);ctx.stroke();
+  }
+
+  // Star points
+  ctx.fillStyle='rgba(140,120,80,0.5)';
+  var stars=[];
+  if(boardSize===9)stars=[[2,2],[2,6],[4,4],[6,2],[6,6]];
+  else if(boardSize===7)stars=[[1,1],[1,5],[3,3],[5,1],[5,5]];
+  else if(boardSize===5)stars=[[2,2]];
+  for(var si=0;si<stars.length;si++){
+    var sx=margin+stars[si][1]*cellSize,sy=margin+stars[si][0]*cellSize;
+    ctx.beginPath();ctx.arc(sx,sy,3,0,Math.PI*2);ctx.fill();
+  }
+
+  // Stones
+  var stoneR=cellSize*0.42;
+  for(var r=0;r<boardSize;r++){
+    for(var c=0;c<boardSize;c++){
+      if(board[r][c]===EMPTY)continue;
+      var cx2=margin+c*cellSize,cy2=margin+r*cellSize;
+
+      if(board[r][c]===BLACK){
+        // Black stone
+        var bg=ctx.createRadialGradient(cx2-stoneR*0.3,cy2-stoneR*0.3,stoneR*0.1,cx2,cy2,stoneR);
+        bg.addColorStop(0,'#4a4a4a');bg.addColorStop(1,'#1a1a1a');
+        ctx.fillStyle=bg;
+      } else {
+        // White stone
+        var wg=ctx.createRadialGradient(cx2-stoneR*0.3,cy2-stoneR*0.3,stoneR*0.1,cx2,cy2,stoneR);
+        wg.addColorStop(0,'#ffffff');wg.addColorStop(1,'#c8c8c0');
+        ctx.fillStyle=wg;
+      }
+      ctx.beginPath();ctx.arc(cx2,cy2,stoneR,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='rgba(0,0,0,0.3)';ctx.lineWidth=1;ctx.stroke();
+    }
+  }
+
+  // Last move marker
+  if(moveHistory.length>0){
+    var last=moveHistory[moveHistory.length-1];
+    var lx=margin+last.c*cellSize,ly=margin+last.r*cellSize;
+    ctx.fillStyle=last.color===BLACK?'#E8DCC8':'#1a1a1a';
+    ctx.beginPath();ctx.arc(lx,ly,stoneR*0.25,0,Math.PI*2);ctx.fill();
+  }
+}
+
+// ─── PUZZLE SETUP ────────────────────────────────────────
+function loadPuzzle(idx){
+  var p=currentPuzzles[idx];
+  if(!p)return;
+  boardSize=p.size;
+  initCanvas(boardSize);
+
+  board=[];
+  for(var r=0;r<boardSize;r++){board[r]=[];for(var c=0;c<boardSize;c++)board[r][c]=EMPTY;}
+
+  // Place stones
+  for(var i=0;i<p.B.length;i++) board[p.B[i][0]][p.B[i][1]]=BLACK;
+  for(i=0;i<p.W.length;i++) board[p.W[i][0]][p.W[i][1]]=WHITE;
+
+  playerColor=p.player;
+  puzzleSolved=false;
+  moveHistory=[];
+  waitingForAI=false;
+
+  document.getElementById('goal').textContent=p.goal;
+  document.getElementById('hint').textContent=p.hint;
+  document.getElementById('puzzle-num').textContent=(idx+1)+'/'+currentPuzzles.length;
+  setMsg('','');
+  updateDots();
+  render();
+}
+
+// ─── INPUT ───────────────────────────────────────────────
+function onBoardClick(e){
+  if(puzzleSolved||waitingForAI)return;
+  var rect=canvas.getBoundingClientRect();
+  var x=(e.clientX||e.touches[0].clientX)-rect.left;
+  var y=(e.clientY||e.touches[0].clientY)-rect.top;
+  var scale=canvas.clientWidth/(margin*(boardSize+1));
+  x/=scale; y/=scale;
+
+  var col=Math.round((x-margin)/cellSize);
+  var row=Math.round((y-margin)/cellSize);
+
+  if(row<0||row>=boardSize||col<0||col>=boardSize)return;
+  if(board[row][col]!==EMPTY)return;
+
+  // Try the move
+  var savedBoard=copyBoard(board);
+  var result=playMove(board,row,col,playerColor,boardSize);
+  if(!result.valid){
+    board=savedBoard;
+    setMsg('Invalid move','wrong');
+    return;
+  }
+
+  moveHistory.push({r:row,c:col,color:playerColor,savedBoard:savedBoard});
+  render();
+
+  // Check if this is the solution
+  var p=currentPuzzles[puzzleIdx];
+  if(p.solution.length>0 && row===p.solution[0][0] && col===p.solution[0][1]){
+    // Correct!
+    puzzleSolved=true;
+    solvedSet[difficulty+'_'+puzzleIdx]=true;
+    totalSolved++;
+    setMsg('✓ CORRECT!','correct');
+    updateDots();
+    try{navigator.vibrate&&navigator.vibrate(30);}catch(e2){}
+    if(typeof window._e==='function')window._e('milestone');
+  } else {
+    // Check if the move achieves the puzzle goal anyway
+    var achieved=checkGoal(p);
+    if(achieved){
+      puzzleSolved=true;
+      solvedSet[difficulty+'_'+puzzleIdx]=true;
+      totalSolved++;
+      setMsg('✓ CORRECT! (alternate solution)','correct');
+      updateDots();
+      try{navigator.vibrate&&navigator.vibrate(30);}catch(e3){}
+      if(typeof window._e==='function')window._e('milestone');
+    } else {
+      setMsg('Try again — that doesn\'t work','wrong');
+      // Auto-undo after delay
+      setTimeout(function(){
+        if(!puzzleSolved&&moveHistory.length>0)undoMove();
+      },1200);
+    }
+  }
+}
+
+function checkGoal(p){
+  if(p.check==='captured'){
+    // Check if all white stones are gone
+    for(var r=0;r<boardSize;r++)for(var c=0;c<boardSize;c++)if(board[r][c]===WHITE)return false;
+    return true;
+  }
+  if(p.check==='dead'){
+    // Check if white group has <2 eyes (simplified: count empty spaces inside)
+    // For puzzles, just check if the solution move was played somewhere reasonable
+    // Full life/death analysis is complex — we rely on the solution tree
+    return false;
+  }
+  if(p.check==='alive'){
+    // Check if the player's group can make two eyes
+    return false;
+  }
+  return false;
+}
+
+canvas.addEventListener('click',onBoardClick);
+canvas.addEventListener('touchstart',function(e){e.preventDefault();onBoardClick(e);},{passive:false});
+
+// ─── CONTROLS ────────────────────────────────────────────
+window.undoMove=function(){
+  if(moveHistory.length===0)return;
+  var last=moveHistory.pop();
+  board=last.savedBoard;
+  puzzleSolved=false;
+  setMsg('','');
+  render();
+};
+
+window.showAnswer=function(){
+  var p=currentPuzzles[puzzleIdx];
+  if(!p||!p.solution||p.solution.length===0)return;
+  var sol=p.solution[0];
+  // Flash the solution point
+  var cx2=margin+sol[1]*cellSize,cy2=margin+sol[0]*cellSize;
+  var stoneR=cellSize*0.42;
+  var flash=0;
+  var interval=setInterval(function(){
+    render();
+    if(flash%2===0){
+      ctx.fillStyle='rgba(212,168,67,0.5)';
+      ctx.beginPath();ctx.arc(cx2,cy2,stoneR+4,0,Math.PI*2);ctx.fill();
+    }
+    flash++;
+    if(flash>5)clearInterval(interval);
+  },300);
+  setMsg('Hint: row '+(sol[0]+1)+', col '+(sol[1]+1),'info');
+};
+
+window.nextPuzzle=function(){
+  puzzleIdx++;
+  if(puzzleIdx>=currentPuzzles.length)puzzleIdx=0;
+  loadPuzzle(puzzleIdx);
+};
+
+window.backToMenu=function(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('start-overlay').classList.remove('hidden');
+  if(typeof window._sr==='function'){
+    window._sr('livingstones',{w:totalSolved>0,s:totalSolved,lv:difficulty,tp:currentPuzzles.length});
+  }
+};
+
+function setMsg(text,cls){
+  var el=document.getElementById('msg');
+  el.textContent=text;
+  el.className='msg-bar'+(cls?' '+cls:'');
+}
+
+function updateDots(){
+  var el=document.getElementById('dots');
+  var html='';
+  for(var i=0;i<currentPuzzles.length;i++){
+    var cls='pdot';
+    if(solvedSet[difficulty+'_'+i])cls+=' solved';
+    if(i===puzzleIdx)cls+=' current';
+    html+='<div class="'+cls+'"></div>';
+  }
+  el.innerHTML=html;
+}
+
+// ─── GAME START ──────────────────────────────────────────
+window.startGame=function(diff){
+  difficulty=diff;
+  var keys=['beginner','intermediate','advanced'];
+  currentPuzzles=ALL_PUZZLES[keys[diff]];
+  puzzleIdx=0;
+  totalSolved=0;
+  solvedSet={};
+  document.getElementById('start-overlay').classList.add('hidden');
+  document.getElementById('app').style.display='flex';
+  loadPuzzle(0);
+};
+
+})();
+</script>
+</body>
+</html>

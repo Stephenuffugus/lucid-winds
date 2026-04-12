@@ -38480,7 +38480,9 @@ var G=[
 {id:'bowergarden',n:'Bower Garden',i:'\ud83c\udccf',r:'Euchre — 4-player trick-taking with bowers. You + AI partner vs 2 AI opponents. First to 10.',cat:'card',thumb:'assets/games/thumbs/bowergarden.png'},
 {id:'gardenlines',n:'Garden Lines',i:'\ud83d\udd36',r:'Place tiles to build matching lines. Same shape or same color. Score big!',cat:'puzzle',thumb:'assets/games/thumbs/gardenlines.png'},
 {id:'kakuro',n:'Garden Sums',i:'\u2795',r:'Kakuro — fill cells with 1-9 so each run adds to its clue. No repeats!',cat:'puzzle',thumb:'assets/games/thumbs/kakuro.png'},
-{id:'bleedinghearts',n:'Bleeding Hearts',i:'\u2665',r:'Classic Hearts. Avoid hearts (1pt) and the Queen of Spades (13pts). Shoot the moon to send all 26 to opponents!',cat:'card',thumb:'assets/games/thumbs/bleedinghearts.png'}
+{id:'bleedinghearts',n:'Bleeding Hearts',i:'\u2665',r:'Classic Hearts. Avoid hearts (1pt) and the Queen of Spades (13pts). Shoot the moon to send all 26 to opponents!',cat:'card',thumb:'assets/games/thumbs/bleedinghearts.png'},
+{id:'mosaic',n:'Mosaic Garden',i:'\ud83e\udebb',r:'Azul-style tile drafting! Pull colored tiles to fill your mosaic rows for points.',cat:'puzzle',thumb:'assets/games/thumbs/mosaic.png'},
+{id:'rootflow',n:'Root Flow',i:'\ud83d\udd17',r:'Draw paths to connect matching roots. Fill every cell!',cat:'puzzle',thumb:'assets/games/thumbs/rootflow.png'}
 ];
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
 // ═══ HASH ACCUMULATION BUFFER ═══
@@ -38571,7 +38573,9 @@ var _afGameClass={
   bowergarden:'marathon',
   gardenlines:'marathon',
   kakuro:'marathon',
-  bleedinghearts:'marathon'
+  bleedinghearts:'marathon',
+  mosaic:'marathon',
+  rootflow:'standard'
 };
 // Reset guards on game switch (called from _sg)
 function _afReset(){_afSessionProg=0;}
@@ -38620,7 +38624,9 @@ var _aw={
   bowergarden:{progress:1,milestone:1,game_win:5,game_loss:1,default:0},
   gardenlines:{progress:1,milestone:2,game_win:5,game_loss:1,default:0},
   kakuro:{progress:1,game_win:4,default:0},
-  bleedinghearts:{progress:1,milestone:1,game_win:5,game_loss:1,default:0}
+  bleedinghearts:{progress:1,milestone:1,game_win:5,game_loss:1,default:0},
+  mosaic:{progress:1,milestone:2,game_win:5,default:0},
+  rootflow:{progress:1,game_win:4,default:0}
 };
 function _setDiff(lv){switch(lv){case 'easy':_dm=1.0;break;case 'medium':_dm=1.5;break;case 'hard':_dm=2.0;break;case 'expert':_dm=2.5;break;default:_dm=1.0}}
 function _gr(){try{return JSON.parse(localStorage.getItem(RK))||{}}catch(e){return{}}}

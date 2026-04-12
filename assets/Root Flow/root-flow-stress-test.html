@@ -1,0 +1,45 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Root Flow Stress Test</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0d100c;color:#e8dcc8;font-family:'Segoe UI',sans-serif;padding:16px}h1{color:#D4A843;font-size:18px;margin-bottom:8px}h2{color:#7AB956;font-size:14px;margin-top:14px;margin-bottom:6px}.s{font-size:13px;line-height:1.7}.w{color:#C47A7A;font-weight:700}.g{color:#7AB956;font-weight:700}button{padding:8px 18px;background:rgba(74,124,53,.3);border:1px solid rgba(74,124,53,.4);border-radius:8px;color:#e8dcc8;font-size:13px;cursor:pointer;margin:4px}#log{margin-top:12px;padding:10px;background:rgba(26,31,23,.5);border:1px solid rgba(74,124,53,.12);border-radius:10px;max-height:600px;overflow-y:auto}#prog{font-size:12px;color:#D4A843;margin-top:6px}</style></head><body>
+<h1>🔗 Root Flow — Generator Stress Test</h1>
+<p class="s">Tests puzzle generation success rate, timing, path distribution, and grid fill across all sizes.</p>
+<button onclick="run()">▶ Test All Sizes (1000 attempts each)</button>
+<div id="prog"></div><div id="log"></div>
+<script>
+(function(){'use strict';
+function gen(sz,np){var g=[];for(var r=0;r<sz;r++){g[r]=[];for(var c=0;c<sz;c++)g[r][c]=0;}var ps=[];for(var p=0;p<np;p++){var pos=re(g,sz);if(!pos)return null;g[pos[0]][pos[1]]=p+1;ps.push([[pos[0],pos[1]]]);}var mx=sz*sz*20,it=0;while(he(g,sz)&&it<mx){it++;var pi=Math.floor(Math.random()*ps.length);var hd=ps[pi][ps[pi].length-1];var nb=en(g,hd[0],hd[1],sz);if(!nb.length)continue;var pk=nb[Math.floor(Math.random()*nb.length)];g[pk[0]][pk[1]]=pi+1;ps[pi].push(pk);}if(he(g,sz))return null;for(var i=0;i<ps.length;i++)if(ps[i].length<2)return null;return{paths:ps};}
+function re(g,sz){var e=[];for(var r=0;r<sz;r++)for(var c=0;c<sz;c++)if(g[r][c]===0)e.push([r,c]);return e.length?e[Math.floor(Math.random()*e.length)]:null;}
+function he(g,sz){for(var r=0;r<sz;r++)for(var c=0;c<sz;c++)if(g[r][c]===0)return true;return false;}
+function en(g,r,c,sz){var n=[];if(r>0&&g[r-1][c]===0)n.push([r-1,c]);if(r<sz-1&&g[r+1][c]===0)n.push([r+1,c]);if(c>0&&g[r][c-1]===0)n.push([r,c-1]);if(c<sz-1&&g[r][c+1]===0)n.push([r,c+1]);return n;}
+window.run=function(){
+  var log=document.getElementById('log'),prog=document.getElementById('prog');
+  log.innerHTML='';prog.textContent='Testing...';
+  var sizes=[{sz:5,np:4},{sz:6,np:5},{sz:7,np:6},{sz:8,np:7},{sz:9,np:8}];
+  var si=0;
+  function testSize(){
+    if(si>=sizes.length){prog.textContent='Complete!';return;}
+    var s=sizes[si];prog.textContent='Testing '+s.sz+'x'+s.sz+'...';
+    setTimeout(function(){
+      var attempts=1000,successes=0,times=[],pathLens=[];
+      for(var i=0;i<attempts;i++){
+        var t0=performance.now();
+        var result=gen(s.sz,s.np);
+        var t1=performance.now();
+        if(result){successes++;times.push(t1-t0);result.paths.forEach(function(p){pathLens.push(p.length);});}
+      }
+      var avgTime=0;times.forEach(function(t){avgTime+=t;});avgTime=times.length?(avgTime/times.length).toFixed(2):'N/A';
+      var maxPath=0,minPath=999,avgPath=0;
+      pathLens.forEach(function(l){if(l>maxPath)maxPath=l;if(l<minPath)minPath=l;avgPath+=l;});
+      avgPath=pathLens.length?(avgPath/pathLens.length).toFixed(1):'N/A';
+      var rate=((successes/attempts)*100).toFixed(1);
+      var maxPct=((maxPath/(s.sz*s.sz))*100).toFixed(0);
+      var h='<h2>'+s.sz+'×'+s.sz+' ('+s.np+' pairs, '+attempts+' attempts)</h2>';
+      h+='<div class="s"><b>Success rate:</b> '+rate+'% ('+successes+'/'+attempts+') '+(parseFloat(rate)<50?'<span class="w">⚠ low</span>':'<span class="g">✓</span>')+'</div>';
+      h+='<div class="s"><b>Avg generation time:</b> '+avgTime+'ms '+(parseFloat(avgTime)>300?'<span class="w">⚠ slow</span>':'<span class="g">✓</span>')+'</div>';
+      h+='<div class="s"><b>Path lengths:</b> min='+minPath+' avg='+avgPath+' max='+maxPath+' ('+maxPct+'% of grid) '+(parseInt(maxPct)>50?'<span class="w">⚠ dominant path</span>':'<span class="g">✓</span>')+'</div>';
+      log.innerHTML+=h;si++;testSize();
+    },20);
+  }
+  testSize();
+};
+})();
+</script></body></html>

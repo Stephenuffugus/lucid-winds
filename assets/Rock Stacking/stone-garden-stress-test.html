@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Stone Garden Stress Test</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d100c;color:#E8DCC8;font-family:'Courier New',monospace;padding:12px;font-size:13px}
+h1{color:#4A7C35;font-size:1.4rem;margin-bottom:8px}
+.controls{margin:12px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{background:#1a2416;border:1px solid #4A7C35;color:#E8DCC8;padding:8px 16px;border-radius:6px;cursor:pointer;font-family:inherit}
+button:hover{background:#2a3a22}
+button:disabled{opacity:.3}
+select{background:#1a2416;border:1px solid #4A7C35;color:#E8DCC8;padding:6px;border-radius:4px;font-family:inherit}
+.progress{height:6px;background:#1a2416;border-radius:3px;margin:8px 0;overflow:hidden}
+.progress-fill{height:100%;background:#4A7C35;transition:width .1s}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin:10px 0}
+.stat-box{background:#1a2416;border:1px solid rgba(74,124,53,0.2);border-radius:8px;padding:12px}
+.stat-box h3{color:#4A7C35;font-size:.85rem;margin-bottom:6px}
+.stat-box .val{font-size:1.3rem;color:#D4A843;font-weight:bold}
+.stat-box .sub{font-size:.7rem;opacity:.6;margin-top:2px}
+.error{color:#C47A7A}
+.ok{color:#4A7C35}
+.warn{color:#D4A843}
+.log{background:#0a0d09;border:1px solid rgba(74,124,53,0.2);border-radius:6px;padding:10px;max-height:400px;overflow-y:auto;margin:10px 0;font-size:11px;line-height:1.6}
+table{width:100%;border-collapse:collapse;margin:8px 0}
+th,td{padding:4px 8px;text-align:left;border-bottom:1px solid rgba(74,124,53,0.1)}
+th{color:#4A7C35;font-size:.75rem}
+td.num{text-align:right}
+</style>
+</head>
+<body>
+<h1>🪨 STONE GARDEN — Stress Test</h1>
+<p>Headless physics: drop stones, verify stability, check for explosions/tunneling, measure difficulty curve.</p>
+
+<div class="controls">
+  <label>Simulations: <select id="sims">
+    <option value="50">50</option>
+    <option value="100" selected>100</option>
+    <option value="250">250</option>
+    <option value="500">500</option>
+  </select></label>
+  <label>Stones per sim: <select id="stonesPerSim">
+    <option value="10">10</option>
+    <option value="15" selected>15</option>
+    <option value="20">20</option>
+    <option value="30">30</option>
+  </select></label>
+  <button id="btn-run" onclick="runTests()">▶ RUN TESTS</button>
+</div>
+
+<div class="progress"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+<div id="status" style="font-size:.8rem;color:#D4A843">Ready</div>
+<div class="stat-grid" id="stats"></div>
+<div id="checks" style="margin:10px 0"></div>
+<div class="log" id="log"></div>
+
+<script>
+(function(){
+'use strict';
+
+var W = 360, H = 740;
+var GROUND_Y = H * 0.85;
+var GRAVITY = 580;
+var RESTITUTION = 0.12;
+var FRICTION = 0.65;
+var ANG_DAMP = 0.94;
+var LIN_DAMP = 0.998;
+var SETTLE_VEL = 0.8;
+var SETTLE_ANG = 0.01;
+var SETTLE_FRAMES = 40;
+var SUBSTEPS = 4;
+
+function makeStone(difficulty) {
+  var minW, maxW, minH, maxH;
+  if (difficulty <= 3) { minW = 50; maxW = 90; minH = 20; maxH = 35; }
+  else if (difficulty <= 6) { minW = 35; maxW = 85; minH = 18; maxH = 40; }
+  else if (difficulty <= 10) { minW = 25; maxW = 80; minH = 15; maxH = 45; }
+  else if (difficulty <= 15) { minW = 20; maxW = 75; minH = 12; maxH = 50; }
+  else { minW = 15; maxW = 70; minH = 10; maxH = 55; }
+  var w = minW + Math.random() * (maxW - minW);
+  var h = minH + Math.random() * (maxH - minH);
+  var mass = w * h * 0.01;
+  var inertia = mass * (w * w + h * h) / 12;
+  return {
+    x: 0, y: 0, vx: 0, vy: 0, angle: 0, angVel: 0,
+    w: w, h: h, hw: w/2, hh: h/2,
+    mass: mass, invMass: 1/mass, inertia: inertia, invInertia: 1/inertia,
+    settled: false, settleTimer: 0, isStatic: false
+  };
+}
+
+function getCorners(s) {
+  var c = Math.cos(s.angle), sn = Math.sin(s.angle);
+  var hw = s.hw, hh = s.hh;
+  return [
+    {x: s.x + (-hw*c - -hh*sn), y: s.y + (-hw*sn + -hh*c)},
+    {x: s.x + ( hw*c - -hh*sn), y: s.y + ( hw*sn + -hh*c)},
+    {x: s.x + ( hw*c -  hh*sn), y: s.y + ( hw*sn +  hh*c)},
+    {x: s.x + (-hw*c -  hh*sn), y: s.y + (-hw*sn +  hh*c)}
+  ];
+}
+
+function getAxes(corners) {
+  var axes = [];
+  for (var i = 0; i < corners.length; i++) {
+    var j = (i+1) % corners.length;
+    var ex = corners[j].x - corners[i].x, ey = corners[j].y - corners[i].y;
+    var len = Math.sqrt(ex*ex + ey*ey);
+    if (len < 0.001) continue;
+    axes.push({x: -ey/len, y: ex/len});
+  }
+  return axes;
+}
+
+function projectOnAxis(corners, ax) {
+  var min = Infinity, max = -Infinity;
+  for (var i = 0; i < corners.length; i++) {
+    var p = corners[i].x * ax.x + corners[i].y * ax.y;
+    if (p < min) min = p;
+    if (p > max) max = p;
+  }
+  return {min: min, max: max};
+}
+
+function satTest(a, b) {
+  var cA = getCorners(a), cB = getCorners(b);
+  var axes = getAxes(cA).concat(getAxes(cB));
+  var minOv = Infinity, minAx = null;
+  for (var i = 0; i < axes.length; i++) {
+    var pA = projectOnAxis(cA, axes[i]);
+    var pB = projectOnAxis(cB, axes[i]);
+    var ov = Math.min(pA.max - pB.min, pB.max - pA.min);
+    if (ov <= 0) return null;
+    if (ov < minOv) { minOv = ov; minAx = axes[i]; }
+  }
+  var dx = b.x - a.x, dy = b.y - a.y;
+  if (dx * minAx.x + dy * minAx.y < 0) minAx = {x: -minAx.x, y: -minAx.y};
+  return {normal: minAx, depth: minOv};
+}
+
+function resolveCollision(a, b, col) {
+  var n = col.normal, depth = col.depth;
+  var totalInvMass = (a.isStatic?0:a.invMass) + (b.isStatic?0:b.invMass);
+  if (totalInvMass === 0) return;
+  var sep = depth / totalInvMass;
+  if (!a.isStatic) { a.x -= n.x*sep*a.invMass; a.y -= n.y*sep*a.invMass; }
+  if (!b.isStatic) { b.x += n.x*sep*b.invMass; b.y += n.y*sep*b.invMass; }
+  var cpx = (a.x+b.x)*0.5, cpy = (a.y+b.y)*0.5;
+  var raX = cpx-a.x, raY = cpy-a.y, rbX = cpx-b.x, rbY = cpy-b.y;
+  var vaX = a.vx+(-a.angVel*raY), vaY = a.vy+(a.angVel*raX);
+  var vbX = b.vx+(-b.angVel*rbY), vbY = b.vy+(b.angVel*rbX);
+  var rvx = vbX-vaX, rvy = vbY-vaY;
+  var rvn = rvx*n.x + rvy*n.y;
+  if (rvn > 0) return;
+  var raCN = raX*n.y - raY*n.x, rbCN = rbX*n.y - rbY*n.x;
+  var invMS = (a.isStatic?0:a.invMass) + (b.isStatic?0:b.invMass) +
+    (a.isStatic?0:raCN*raCN*a.invInertia) + (b.isStatic?0:rbCN*rbCN*b.invInertia);
+  var j = -(1+RESTITUTION)*rvn/invMS;
+  if (!a.isStatic) { a.vx -= j*n.x*a.invMass; a.vy -= j*n.y*a.invMass; a.angVel -= raCN*j*a.invInertia; }
+  if (!b.isStatic) { b.vx += j*n.x*b.invMass; b.vy += j*n.y*b.invMass; b.angVel += rbCN*j*b.invInertia; }
+  // Friction
+  var tx = rvx - rvn*n.x, ty = rvy - rvn*n.y;
+  var tl = Math.sqrt(tx*tx+ty*ty);
+  if (tl > 0.001) {
+    tx /= tl; ty /= tl;
+    var rvt = rvx*tx + rvy*ty;
+    var raCT = raX*ty-raY*tx, rbCT = rbX*ty-rbY*tx;
+    var invMT = (a.isStatic?0:a.invMass) + (b.isStatic?0:b.invMass) +
+      (a.isStatic?0:raCT*raCT*a.invInertia) + (b.isStatic?0:rbCT*rbCT*b.invInertia);
+    var jt = -rvt/invMT;
+    if (Math.abs(jt)>Math.abs(j)*FRICTION) jt = (jt>0?1:-1)*Math.abs(j)*FRICTION;
+    if (!a.isStatic) { a.vx -= jt*tx*a.invMass; a.vy -= jt*ty*a.invMass; a.angVel -= raCT*jt*a.invInertia; }
+    if (!b.isStatic) { b.vx += jt*tx*b.invMass; b.vy += jt*ty*b.invMass; b.angVel += rbCT*jt*b.invInertia; }
+  }
+}
+
+function groundCollision(s) {
+  if (s.isStatic) return;
+  var corners = getCorners(s);
+  for (var i = 0; i < corners.length; i++) {
+    if (corners[i].y > GROUND_Y) {
+      var pen = corners[i].y - GROUND_Y;
+      s.y -= pen;
+      var rx = corners[i].x - s.x, ry = corners[i].y - s.y;
+      var vc = s.vy + s.angVel * rx;
+      if (vc > 0) {
+        var rCN = rx;
+        var invM = s.invMass + rCN*rCN*s.invInertia;
+        var jj = -(1+RESTITUTION)*vc/invM;
+        s.vy += jj*s.invMass;
+        s.angVel += rCN*jj*s.invInertia;
+        var vtx = s.vx - s.angVel*ry;
+        var rCT = -ry;
+        var invMT = s.invMass + rCT*rCT*s.invInertia;
+        var jt = -vtx/invMT;
+        if (Math.abs(jt)>Math.abs(jj)*FRICTION) jt=(jt>0?1:-1)*Math.abs(jj)*FRICTION;
+        s.vx += jt*s.invMass;
+        s.angVel += rCT*jt*s.invInertia;
+      }
+    }
+  }
+  if (s.x - s.hw < 0) { s.x = s.hw; s.vx = Math.abs(s.vx)*0.3; }
+  if (s.x + s.hw > W) { s.x = W - s.hw; s.vx = -Math.abs(s.vx)*0.3; }
+}
+
+function physicsStep(stones, dt) {
+  var subDt = dt / SUBSTEPS;
+  for (var sub = 0; sub < SUBSTEPS; sub++) {
+    for (var i = 0; i < stones.length; i++) {
+      var s = stones[i];
+      if (s.isStatic || s.settled) continue;
+      s.vy += GRAVITY * subDt;
+      s.vx *= LIN_DAMP;
+      s.x += s.vx * subDt;
+      s.y += s.vy * subDt;
+      s.angVel *= ANG_DAMP;
+      s.angle += s.angVel * subDt;
+    }
+    for (i = 0; i < stones.length; i++) {
+      if (stones[i].isStatic) continue;
+      groundCollision(stones[i]);
+      for (var j = i + 1; j < stones.length; j++) {
+        var col = satTest(stones[i], stones[j]);
+        if (col) resolveCollision(stones[i], stones[j], col);
+      }
+    }
+  }
+  for (i = 0; i < stones.length; i++) {
+    var st = stones[i];
+    if (st.isStatic || st.settled) continue;
+    var speed = Math.sqrt(st.vx*st.vx + st.vy*st.vy);
+    if (speed < SETTLE_VEL && Math.abs(st.angVel) < SETTLE_ANG) {
+      st.settleTimer++;
+      if (st.settleTimer > SETTLE_FRAMES) { st.settled = true; st.vx=0; st.vy=0; st.angVel=0; }
+    } else { st.settleTimer = 0; }
+  }
+}
+
+function measureHeight(stones) {
+  var topY = GROUND_Y;
+  for (var i = 0; i < stones.length; i++) {
+    var corners = getCorners(stones[i]);
+    for (var c = 0; c < corners.length; c++) {
+      if (corners[c].y < topY) topY = corners[c].y;
+    }
+  }
+  return Math.max(0, Math.round(GROUND_Y - topY));
+}
+
+function allSettled(stones) {
+  for (var i = 0; i < stones.length; i++) {
+    if (!stones[i].settled && !stones[i].isStatic) return false;
+  }
+  return true;
+}
+
+function checkExplosion(stones) {
+  for (var i = 0; i < stones.length; i++) {
+    var s = stones[i];
+    if (Math.abs(s.vx) > 5000 || Math.abs(s.vy) > 5000) return true;
+    if (s.y < -2000 || s.y > H + 2000) return true;
+    if (s.x < -2000 || s.x > W + 2000) return true;
+  }
+  return false;
+}
+
+// ─── TEST RUNNER ─────────────────────────────────────────
+var running = false;
+
+function log(msg, cls) {
+  var el = document.getElementById('log');
+  el.innerHTML += '<div class="' + (cls||'') + '">' + msg + '</div>';
+  el.scrollTop = el.scrollHeight;
+}
+
+window.runTests = function() {
+  if (running) return;
+  running = true;
+  document.getElementById('btn-run').disabled = true;
+  document.getElementById('log').innerHTML = '';
+  document.getElementById('stats').innerHTML = '';
+  document.getElementById('checks').innerHTML = '';
+
+  var totalSims = parseInt(document.getElementById('sims').value);
+  var stonesPerSim = parseInt(document.getElementById('stonesPerSim').value);
+  var dt = 1/60;
+
+  log('Running ' + totalSims + ' simulations, ' + stonesPerSim + ' stones each');
+  log('Physics: gravity=' + GRAVITY + ', restitution=' + RESTITUTION + ', friction=' + FRICTION);
+  log('Viewport: ' + W + 'x' + H + ', ground_y=' + GROUND_Y);
+  log('---');
+
+  var results = {
+    heights: [],
+    stonesBeforeTopple: [],
+    explosions: 0,
+    tunneling: 0,
+    settleTimesMs: [],
+    maxHeightEver: 0,
+    stableStacks: 0,
+    topples: 0,
+    totalSettleFrames: 0,
+    difficultyHeights: {} // diff -> [heights]
+  };
+
+  var completed = 0;
+
+  function runBatch() {
+    var batchSize = Math.min(5, totalSims - completed);
+    for (var b = 0; b < batchSize; b++) {
+      var stones = [];
+      var toppled = false;
+      var stonesBeforeTopple = stonesPerSim;
+      var maxH = 0;
+
+      for (var si = 0; si < stonesPerSim; si++) {
+        var diff = Math.min(20, Math.floor(si / 3) + 1);
+        var newStone = makeStone(diff);
+
+        // Smart placement: center with small random offset, above current tower
+        var towerTop = GROUND_Y;
+        for (var ti = 0; ti < stones.length; ti++) {
+          var tc = getCorners(stones[ti]);
+          for (var ci = 0; ci < tc.length; ci++) {
+            if (tc[ci].y < towerTop) towerTop = tc[ci].y;
+          }
+        }
+        newStone.x = W/2 + (Math.random()-0.5)*30;
+        newStone.y = Math.max(20, towerTop - 60);
+        newStone.angle = (Math.random()-0.5)*0.3;
+
+        stones.push(newStone);
+
+        // Simulate until settled or timeout
+        var maxFrames = 600; // 10 seconds
+        var frames = 0;
+        while (frames < maxFrames) {
+          physicsStep(stones, dt);
+          frames++;
+
+          if (checkExplosion(stones)) {
+            results.explosions++;
+            toppled = true;
+            stonesBeforeTopple = si;
+            break;
+          }
+
+          if (allSettled(stones)) break;
+        }
+
+        results.totalSettleFrames += frames;
+
+        if (toppled) break;
+
+        // Check if stones fell off screen (topple)
+        var surviving = 0;
+        for (ti = stones.length - 1; ti >= 0; ti--) {
+          if (stones[ti].y > GROUND_Y + 100 || stones[ti].x < -100 || stones[ti].x > W + 100) {
+            stones.splice(ti, 1);
+          } else {
+            surviving++;
+          }
+        }
+
+        var h = measureHeight(stones);
+        if (h > maxH) maxH = h;
+
+        // Check for significant topple (lost half the height)
+        if (si > 3 && h < maxH * 0.4) {
+          toppled = true;
+          stonesBeforeTopple = si;
+          results.topples++;
+          break;
+        }
+
+        // Record per-difficulty
+        if (!results.difficultyHeights[diff]) results.difficultyHeights[diff] = [];
+        results.difficultyHeights[diff].push(h);
+      }
+
+      if (!toppled) {
+        results.stableStacks++;
+        stonesBeforeTopple = stonesPerSim;
+      }
+
+      results.heights.push(maxH);
+      results.stonesBeforeTopple.push(stonesBeforeTopple);
+      if (maxH > results.maxHeightEver) results.maxHeightEver = maxH;
+
+      completed++;
+    }
+
+    var pct = Math.round(completed / totalSims * 100);
+    document.getElementById('prog').style.width = pct + '%';
+    document.getElementById('status').textContent = completed + '/' + totalSims + ' simulations';
+
+    if (completed < totalSims) {
+      setTimeout(runBatch, 0);
+    } else {
+      showResults(results, totalSims, stonesPerSim);
+      running = false;
+      document.getElementById('btn-run').disabled = false;
+    }
+  }
+
+  setTimeout(runBatch, 10);
+};
+
+function avg(arr) { if (!arr.length) return 0; var s = 0; for (var i=0;i<arr.length;i++) s+=arr[i]; return Math.round(s/arr.length); }
+function minA(arr) { if (!arr.length) return 0; var m=arr[0]; for (var i=1;i<arr.length;i++) if (arr[i]<m)m=arr[i]; return m; }
+function maxA(arr) { if (!arr.length) return 0; var m=arr[0]; for (var i=1;i<arr.length;i++) if (arr[i]>m)m=arr[i]; return m; }
+function stddev(arr) { if (arr.length<2) return 0; var m=avg(arr); var s=0; for(var i=0;i<arr.length;i++) s+=(arr[i]-m)*(arr[i]-m); return Math.round(Math.sqrt(s/arr.length)); }
+
+function showResults(r, totalSims, stonesPerSim) {
+  var html = '';
+
+  html += '<div class="stat-box"><h3>Max Height</h3><div class="val">' + r.maxHeightEver + 'px</div>';
+  html += '<div class="sub">Avg: ' + avg(r.heights) + 'px, Range: ' + minA(r.heights) + '-' + maxA(r.heights) + 'px</div></div>';
+
+  html += '<div class="stat-box"><h3>Stable Stacks</h3><div class="val">' + r.stableStacks + '/' + totalSims + '</div>';
+  html += '<div class="sub">' + Math.round(r.stableStacks/totalSims*100) + '% held all ' + stonesPerSim + ' stones</div></div>';
+
+  html += '<div class="stat-box"><h3>Stones Before Topple</h3><div class="val">' + avg(r.stonesBeforeTopple) + ' avg</div>';
+  html += '<div class="sub">Range: ' + minA(r.stonesBeforeTopple) + '-' + maxA(r.stonesBeforeTopple) + '</div></div>';
+
+  html += '<div class="stat-box"><h3>Physics Explosions</h3><div class="val" style="color:' + (r.explosions===0?'#4A7C35':'#C47A7A') + '">' + r.explosions + '</div>';
+  html += '<div class="sub">Bodies reaching extreme velocity/position</div></div>';
+
+  html += '<div class="stat-box"><h3>Topples</h3><div class="val">' + r.topples + '</div>';
+  html += '<div class="sub">' + Math.round(r.topples/totalSims*100) + '% of simulations</div></div>';
+
+  html += '<div class="stat-box"><h3>Avg Settle Time</h3><div class="val">' + Math.round(r.totalSettleFrames / (totalSims*stonesPerSim)) + ' frames</div>';
+  html += '<div class="sub">Per stone drop (~60fps)</div></div>';
+
+  document.getElementById('stats').innerHTML = html;
+
+  // Checks
+  var checks = '';
+  function check(name, pass, detail) {
+    checks += '<div class="' + (pass?'ok':'error') + '">' + (pass?'✓':'✗') + ' ' + name;
+    if (detail) checks += ' — ' + detail;
+    checks += '</div>';
+  }
+
+  check('No physics explosions', r.explosions === 0, r.explosions > 0 ? r.explosions + ' explosions detected' : '');
+  check('Stacks can survive 5+ stones', avg(r.stonesBeforeTopple) >= 5, 'Avg: ' + avg(r.stonesBeforeTopple));
+  check('Max height achievable > 100px', r.maxHeightEver > 100, r.maxHeightEver + 'px');
+  check('Some stacks fully stable', r.stableStacks > 0, r.stableStacks + ' of ' + totalSims);
+  check('Not all stacks trivially easy', r.topples > 0 || totalSims <= 10, r.topples + ' topples');
+  check('Height has variance (not deterministic)', stddev(r.heights) > 10, 'σ = ' + stddev(r.heights));
+  check('Stones settle in reasonable time', Math.round(r.totalSettleFrames/(totalSims*stonesPerSim)) < 300, avg(r.settleTimesMs) + ' frames avg');
+
+  // Difficulty curve
+  var diffs = Object.keys(r.difficultyHeights).sort(function(a,b){return parseInt(a)-parseInt(b);});
+  if (diffs.length > 1) {
+    checks += '<br><strong>Height by Difficulty Level:</strong>';
+    checks += '<table><tr><th>Difficulty</th><th>Avg Height</th><th>Samples</th></tr>';
+    for (var di = 0; di < diffs.length; di++) {
+      var dh = r.difficultyHeights[diffs[di]];
+      checks += '<tr><td>' + diffs[di] + '</td><td class="num">' + avg(dh) + 'px</td><td class="num">' + dh.length + '</td></tr>';
+    }
+    checks += '</table>';
+  }
+
+  document.getElementById('checks').innerHTML = checks;
+  log('--- COMPLETE ---', r.explosions === 0 ? 'ok' : 'error');
+}
+
+})();
+</script>
+</body>
+</html>

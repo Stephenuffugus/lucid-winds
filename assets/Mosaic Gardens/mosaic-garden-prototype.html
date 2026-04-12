@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Mosaic Garden — Tile Drafting Prototype</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d100c;color:#e8dcc8;font-family:'Segoe UI',system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:420px;margin:0 auto;padding:6px;user-select:none;-webkit-user-select:none}
+.hdr{display:flex;justify-content:space-between;padding:6px 10px;background:rgba(26,31,23,.6);border:1px solid rgba(74,124,53,.15);border-radius:8px;margin-bottom:4px;font-size:13px}
+.hdr b{color:#D4A843}
+.status{text-align:center;font-size:12px;padding:3px 0;color:#7AB956}
+
+/* Tiles */
+.t{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:4px;font-size:14px;border:2px solid rgba(0,0,0,.15);cursor:pointer;transition:transform .12s,box-shadow .12s;flex-shrink:0}
+.t:active{transform:scale(.9)}
+.t.sel{transform:scale(1.1);box-shadow:0 0 8px rgba(122,185,86,.5);border-color:#7AB956}
+.t-petal{background:#C47A7A}.t-leaf{background:#4A7C35}.t-berry{background:#5B9BD5}
+.t-sun{background:#D4A843}.t-frost{background:#E8DCC8;color:#333}
+.t-empty{background:rgba(26,31,23,.3);border:1px dashed rgba(74,124,53,.15);cursor:default}
+.t-ghost{opacity:.15;cursor:default;border-style:dashed}
+.t-placed{box-shadow:inset 0 0 6px rgba(0,0,0,.3)}
+.t-sm{width:24px;height:24px;font-size:11px;border-radius:3px}
+
+/* Factories */
+.fac-section{margin-bottom:6px}
+.fac-label{font-size:10px;color:rgba(232,220,200,.4);margin-bottom:3px;padding-left:4px}
+.fac-row{display:flex;gap:6px;flex-wrap:wrap}
+.fac{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:6px;background:rgba(26,31,23,.4);border:1px solid rgba(74,124,53,.12);border-radius:8px;min-width:72px}
+.fac.empty{opacity:.2}
+.center-area{padding:6px 8px;background:rgba(26,31,23,.3);border:1px solid rgba(74,124,53,.1);border-radius:8px;display:flex;gap:3px;flex-wrap:wrap;min-height:38px;align-items:center}
+.center-label{font-size:10px;color:rgba(232,220,200,.3);margin-right:4px}
+
+/* Player board */
+.board{background:rgba(26,31,23,.4);border:1px solid rgba(74,124,53,.15);border-radius:10px;padding:8px;margin:6px 0}
+.board-label{font-size:11px;color:rgba(232,220,200,.4);margin-bottom:4px}
+.row-pair{display:flex;align-items:center;gap:4px;margin-bottom:3px}
+.staging{display:flex;gap:2px;justify-content:flex-end;min-width:140px}
+.arrow{color:rgba(232,220,200,.2);font-size:12px}
+.wall-row{display:flex;gap:2px}
+
+/* Floor */
+.floor{display:flex;gap:2px;align-items:center;margin-top:6px}
+.floor-slot{width:24px;height:24px;border-radius:3px;background:rgba(26,31,23,.3);border:1px solid rgba(196,122,122,.15);display:flex;align-items:center;justify-content:center;font-size:8px;color:rgba(196,122,122,.4)}
+.floor-slot.filled{border-color:#C47A7A}
+
+/* Actions */
+.actions{display:flex;gap:6px;justify-content:center;padding:4px 0;flex-wrap:wrap}
+.btn{padding:7px 14px;background:rgba(74,124,53,.2);border:1px solid rgba(74,124,53,.3);border-radius:8px;color:#e8dcc8;font-size:12px;cursor:pointer}
+.btn:active{background:rgba(74,124,53,.4)}
+.btn:disabled{opacity:.3}
+.btn-place{background:rgba(74,124,53,.3)}
+
+.toast{position:fixed;top:50px;left:50%;transform:translateX(-50%);background:rgba(26,31,23,.9);border:1px solid rgba(74,124,53,.3);border-radius:8px;padding:8px 16px;font-size:13px;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center}
+.modal{background:#1a1f17;border:1px solid rgba(74,124,53,.3);border-radius:14px;padding:20px;max-width:320px;text-align:center}
+.modal h2{color:#D4A843;font-size:18px;margin-bottom:8px}
+.modal p{font-size:13px;color:rgba(232,220,200,.7);margin:4px 0}
+.mbtn{display:inline-block;margin-top:10px;padding:10px 20px;background:rgba(74,124,53,.3);border:1px solid rgba(74,124,53,.4);border-radius:8px;color:#e8dcc8;font-size:14px;cursor:pointer}
+.score-pop{color:#7AB956;font-weight:700;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast"></div>
+<script>
+(function(){
+'use strict';
+
+var COLORS=['petal','leaf','berry','sun','frost'];
+var ICONS={petal:'🌸',leaf:'🌿',berry:'💧',sun:'☀️',frost:'❄️'};
+var CCLASS={petal:'t-petal',leaf:'t-leaf',berry:'t-berry',sun:'t-sun',frost:'t-frost'};
+// Wall pattern (Latin square)
+var WALL=[
+  ['petal','leaf','berry','sun','frost'],
+  ['frost','petal','leaf','berry','sun'],
+  ['sun','frost','petal','leaf','berry'],
+  ['berry','sun','frost','petal','leaf'],
+  ['leaf','berry','sun','frost','petal']
+];
+var FLOOR_PEN=[-1,-1,-2,-2,-2,-3,-3];
+
+var G;
+
+function newGame(){
+  var bag=[];
+  COLORS.forEach(function(c){for(var i=0;i<20;i++)bag.push(c);});
+  shuffle(bag);
+
+  G={
+    bag:bag, discard:[], score:0, round:1,
+    factories:[[],[],[],[],[]], center:[],
+    staging:[[],[],[],[],[]], // each row: array of color strings
+    wall:[[false,false,false,false,false],[false,false,false,false,false],
+          [false,false,false,false,false],[false,false,false,false,false],
+          [false,false,false,false,false]],
+    floor:[],
+    phase:'draft', // 'draft' | 'score' | 'gameover'
+    selected:null, // {source:'fac'|'center', facIdx:N, color:'petal', tiles:['petal','petal']}
+    firstPlayerTaken:false
+  };
+  fillFactories();
+  render();
+}
+
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}}
+
+function fillFactories(){
+  for(var f=0;f<5;f++){
+    G.factories[f]=[];
+    for(var i=0;i<4;i++){
+      if(G.bag.length===0){
+        // Refill from discard
+        G.bag=G.discard.slice();G.discard=[];shuffle(G.bag);
+      }
+      if(G.bag.length>0) G.factories[f].push(G.bag.pop());
+    }
+  }
+  G.center=[];
+  G.firstPlayerTaken=false;
+}
+
+// ═══ DRAFTING ═══
+function selectFromFactory(facIdx, color){
+  var fac=G.factories[facIdx];
+  var taken=fac.filter(function(c){return c===color;});
+  var rest=fac.filter(function(c){return c!==color;});
+  G.factories[facIdx]=[];
+  rest.forEach(function(c){G.center.push(c);});
+  G.selected={source:'fac',facIdx:facIdx,color:color,tiles:taken};
+  render();
+}
+
+function selectFromCenter(color){
+  var taken=G.center.filter(function(c){return c===color;});
+  G.center=G.center.filter(function(c){return c!==color;});
+  var fp=!G.firstPlayerTaken;
+  if(fp) G.firstPlayerTaken=true;
+  G.selected={source:'center',color:color,tiles:taken,firstPlayer:fp};
+  render();
+}
+
+function placeInRow(rowIdx){
+  if(!G.selected) return;
+  var row=G.staging[rowIdx];
+  var maxSize=rowIdx+1;
+  var wallCol=WALL[rowIdx].indexOf(G.selected.color);
+
+  // Validate: row must be empty or same color, wall position must be empty
+  if(row.length>0&&row[0]!==G.selected.color){showToast('Row already has different color');return;}
+  if(G.wall[rowIdx][wallCol]){showToast('Wall position already filled');return;}
+
+  var space=maxSize-row.length;
+  var tiles=G.selected.tiles;
+
+  // First player penalty
+  if(G.selected.firstPlayer){
+    G.floor.push('first');
+  }
+
+  // Place what fits
+  var placed=0;
+  for(var i=0;i<tiles.length;i++){
+    if(placed<space){
+      row.push(tiles[i]);
+      placed++;
+    } else {
+      // Overflow to floor
+      if(G.floor.length<7) G.floor.push(tiles[i]);
+      else G.discard.push(tiles[i]); // overflow beyond floor
+    }
+  }
+
+  G.selected=null;
+  ghostTurn();
+  checkDraftEnd();
+  render();
+}
+
+// ═══ GHOST GARDENER ═══
+function ghostTurn(){
+  // Find factory/center with most tiles of one color
+  var bestSource=null,bestColor=null,bestCount=0;
+
+  for(var f=0;f<5;f++){
+    if(G.factories[f].length===0) continue;
+    var counts={};
+    G.factories[f].forEach(function(c){counts[c]=(counts[c]||0)+1;});
+    for(var c in counts){
+      if(counts[c]>bestCount){bestCount=counts[c];bestColor=c;bestSource={type:'fac',idx:f};}
+    }
+  }
+  // Check center
+  if(G.center.length>0){
+    var cc={};
+    G.center.forEach(function(c){cc[c]=(cc[c]||0)+1;});
+    for(var c2 in cc){
+      if(cc[c2]>bestCount){bestCount=cc[c2];bestColor=c2;bestSource={type:'center'};}
+    }
+  }
+
+  if(!bestSource) return;
+
+  // Ghost takes and discards
+  if(bestSource.type==='fac'){
+    var fac=G.factories[bestSource.idx];
+    var taken=fac.filter(function(c){return c===bestColor;});
+    var rest=fac.filter(function(c){return c!==bestColor;});
+    G.factories[bestSource.idx]=[];
+    rest.forEach(function(c){G.center.push(c);});
+    taken.forEach(function(c){G.discard.push(c);});
+  } else {
+    var taken2=G.center.filter(function(c){return c===bestColor;});
+    G.center=G.center.filter(function(c){return c!==bestColor;});
+    taken2.forEach(function(c){G.discard.push(c);});
+    if(!G.firstPlayerTaken) G.firstPlayerTaken=true;
+  }
+}
+
+function checkDraftEnd(){
+  var allEmpty=true;
+  for(var f=0;f<5;f++){if(G.factories[f].length>0){allEmpty=false;break;}}
+  if(G.center.length>0) allEmpty=false;
+  if(allEmpty) scoringPhase();
+}
+
+// ═══ SCORING PHASE ═══
+function scoringPhase(){
+  G.phase='score';
+  var roundScore=0;
+
+  for(var r=0;r<5;r++){
+    var maxSize=r+1;
+    if(G.staging[r].length===maxSize){
+      // Row complete — transfer to wall
+      var color=G.staging[r][0];
+      var col=WALL[r].indexOf(color);
+      G.wall[r][col]=true;
+
+      // Score this placement
+      var pts=calcPlacementScore(r,col);
+      roundScore+=pts;
+
+      // Discard excess tiles from staging
+      for(var i=0;i<G.staging[r].length-1;i++) G.discard.push(G.staging[r][i]);
+      G.staging[r]=[];
+    }
+    // Incomplete rows carry over
+  }
+
+  // Floor penalties
+  var penalty=0;
+  for(var i=0;i<G.floor.length&&i<7;i++){
+    penalty+=FLOOR_PEN[i];
+    if(G.floor[i]!=='first') G.discard.push(G.floor[i]);
+  }
+  roundScore+=penalty;
+
+  G.score=Math.max(0,G.score+roundScore);
+  G.floor=[];
+
+  showToast('Round '+G.round+': '+(roundScore>=0?'+':'')+roundScore+' pts (Total: '+G.score+')');
+
+  // Check game end
+  var gameOver=false;
+  for(var r2=0;r2<5;r2++){
+    var full=true;
+    for(var c=0;c<5;c++){if(!G.wall[r2][c]){full=false;break;}}
+    if(full){gameOver=true;break;}
+  }
+
+  if(gameOver){
+    endgameScoring();
+  } else {
+    G.round++;
+    G.phase='draft';
+    fillFactories();
+  }
+  render();
+}
+
+function calcPlacementScore(row,col){
+  var pts=0;
+  // Horizontal
+  var hCount=1;
+  for(var c=col-1;c>=0&&G.wall[row][c];c--)hCount++;
+  for(var c2=col+1;c2<5&&G.wall[row][c2];c2++)hCount++;
+  // Vertical
+  var vCount=1;
+  for(var r=row-1;r>=0&&G.wall[r][col];r--)vCount++;
+  for(var r2=row+1;r2<5&&G.wall[r2][col];r2++)vCount++;
+
+  if(hCount===1&&vCount===1) return 1; // isolated
+  if(hCount>1) pts+=hCount;
+  if(vCount>1) pts+=vCount;
+  return pts;
+}
+
+function endgameScoring(){
+  G.phase='gameover';
+  var bonus=0;
+  // Complete rows (+2 each)
+  var rows=0;
+  for(var r=0;r<5;r++){
+    var full=true;
+    for(var c=0;c<5;c++){if(!G.wall[r][c]){full=false;break;}}
+    if(full){rows++;bonus+=2;}
+  }
+  // Complete columns (+7 each)
+  var cols=0;
+  for(var c2=0;c2<5;c2++){
+    var full2=true;
+    for(var r2=0;r2<5;r2++){if(!G.wall[r2][c2]){full2=false;break;}}
+    if(full2){cols++;bonus+=7;}
+  }
+  // Complete color sets (+10 each)
+  var colorSets=0;
+  COLORS.forEach(function(color){
+    var count=0;
+    for(var r3=0;r3<5;r3++){
+      var ci=WALL[r3].indexOf(color);
+      if(G.wall[r3][ci]) count++;
+    }
+    if(count===5){colorSets++;bonus+=10;}
+  });
+  G.score+=bonus;
+
+  setTimeout(function(){
+    var rating=G.score>=80?'⭐⭐⭐⭐ Master':G.score>=60?'⭐⭐⭐ Artisan':G.score>=40?'⭐⭐ Gardener':'⭐ Seedling';
+    var h='<div class="modal-bg"><div class="modal">';
+    h+='<h2>🪻 Mosaic Complete!</h2>';
+    h+='<p class="score-pop">Final Score: '+G.score+'</p>';
+    h+='<p>Rating: '+rating+'</p>';
+    h+='<p>Rounds: '+G.round+'</p>';
+    h+='<p>Rows: '+rows+' (+'+rows*2+') | Cols: '+cols+' (+'+cols*7+') | Colors: '+colorSets+' (+'+colorSets*10+')</p>';
+    h+='<p>Endgame Bonus: +'+bonus+'</p>';
+    h+='<div class="mbtn" onclick="this.parentElement.parentElement.remove();newGame()">Play Again</div>';
+    h+='</div></div>';
+    var d=document.createElement('div');d.innerHTML=h;document.body.appendChild(d);
+  },600);
+}
+
+// ═══ RENDER ═══
+function render(){
+  var h='';
+  h+='<div class="hdr"><b>🪻 Mosaic Garden</b><span>Score: '+G.score+' | Round '+G.round+'</span></div>';
+  h+='<div class="status">'+(G.phase==='draft'?(G.selected?'Tap a row to place '+G.selected.tiles.length+' '+ICONS[G.selected.color]+' tiles':'Tap tiles in a garden bed to draft'):(G.phase==='score'?'Scoring...':'Game Over'))+'</div>';
+
+  // Factories
+  h+='<div class="fac-section"><div class="fac-label">GARDEN BEDS</div><div class="fac-row">';
+  for(var f=0;f<5;f++){
+    if(G.factories[f].length===0){
+      h+='<div class="fac empty"><div class="t t-empty"></div><div class="t t-empty"></div><div class="t t-empty"></div><div class="t t-empty"></div></div>';
+    } else {
+      h+='<div class="fac">';
+      G.factories[f].forEach(function(c,idx){
+        h+='<div class="t '+CCLASS[c]+'" onclick="window._tapFac('+f+',\''+c+'\')">'+ICONS[c]+'</div>';
+      });
+      h+='</div>';
+    }
+  }
+  h+='</div>';
+
+  // Center
+  h+='<div class="fac-label" style="margin-top:4px">CENTER</div>';
+  h+='<div class="center-area">';
+  if(G.center.length===0) h+='<span class="center-label">Empty</span>';
+  else {
+    // Group by color for cleaner display
+    var grouped={};
+    G.center.forEach(function(c){grouped[c]=(grouped[c]||0)+1;});
+    for(var gc in grouped){
+      for(var gi=0;gi<grouped[gc];gi++){
+        h+='<div class="t '+CCLASS[gc]+'" onclick="window._tapCenter(\''+gc+'\')">'+ICONS[gc]+'</div>';
+      }
+    }
+  }
+  h+='</div></div>';
+
+  // Selected tiles indicator
+  if(G.selected){
+    h+='<div style="text-align:center;padding:4px;color:#D4A843;font-size:12px">Selected: ';
+    G.selected.tiles.forEach(function(c){h+='<span class="t '+CCLASS[c]+'" style="width:22px;height:22px;font-size:10px;display:inline-flex;vertical-align:middle">'+ICONS[c]+'</span> ';});
+    h+='→ Tap a staging row</div>';
+  }
+
+  // Player board
+  h+='<div class="board"><div class="board-label">YOUR MOSAIC</div>';
+  for(var r=0;r<5;r++){
+    var maxSize=r+1;
+    h+='<div class="row-pair">';
+    // Staging row (right-aligned)
+    h+='<div class="staging" onclick="window._tapRow('+r+')">';
+    for(var s=0;s<maxSize;s++){
+      if(s<G.staging[r].length){
+        var sc=G.staging[r][s];
+        h+='<div class="t t-sm '+CCLASS[sc]+'">'+ICONS[sc]+'</div>';
+      } else {
+        h+='<div class="t t-sm t-empty"></div>';
+      }
+    }
+    h+='</div>';
+    h+='<div class="arrow">→</div>';
+    // Wall row
+    h+='<div class="wall-row">';
+    for(var c=0;c<5;c++){
+      var wc=WALL[r][c];
+      if(G.wall[r][c]){
+        h+='<div class="t t-sm '+CCLASS[wc]+' t-placed">'+ICONS[wc]+'</div>';
+      } else {
+        h+='<div class="t t-sm '+CCLASS[wc]+' t-ghost">'+ICONS[wc]+'</div>';
+      }
+    }
+    h+='</div></div>';
+  }
+
+  // Floor
+  h+='<div class="floor"><span style="font-size:10px;color:rgba(232,220,200,.3);margin-right:4px">Floor:</span>';
+  for(var fl=0;fl<7;fl++){
+    var filled=fl<G.floor.length;
+    h+='<div class="floor-slot'+(filled?' filled':'')+'">';
+    if(filled){
+      if(G.floor[fl]==='first') h+='1st';
+      else h+=ICONS[G.floor[fl]]||'';
+    } else {
+      h+=FLOOR_PEN[fl];
+    }
+    h+='</div>';
+  }
+  h+='</div></div>';
+
+  document.getElementById('app').innerHTML=h;
+}
+
+// ═══ HANDLERS ═══
+window._tapFac=function(facIdx,color){
+  if(G.phase!=='draft'||G.selected) return;
+  if(G.factories[facIdx].length===0) return;
+  selectFromFactory(facIdx,color);
+};
+window._tapCenter=function(color){
+  if(G.phase!=='draft'||G.selected) return;
+  if(G.center.length===0) return;
+  selectFromCenter(color);
+};
+window._tapRow=function(rowIdx){
+  if(!G.selected) return;
+  placeInRow(rowIdx);
+};
+
+function showToast(msg){
+  var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._tm);t._tm=setTimeout(function(){t.classList.remove('show');},2200);
+}
+
+window.newGame=newGame;
+newGame();
+})();
+</script>
+</body>
+</html>
