@@ -29144,8 +29144,15 @@ document.addEventListener('keydown', function(e) {
     h += '<div style="margin:0 auto 0.3rem;opacity:0.7;">'+svg+'</div>';
     h += '<div style="font-family:Playfair Display,serif;font-size:0.7rem;color:var(--cream);margin-bottom:0.15rem;">'+name+'</div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);margin-bottom:0.5rem;">'+tierName+' · This cannot be undone</div>';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--sage);margin-bottom:0.2rem;">You will receive <span style="color:var(--gold);">+'+fertReward+' Fertilizer</span></div>';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.3rem;color:var(--muted);margin-bottom:0.5rem;line-height:1.5;">Apply fertilizer to nursery seeds for +1% rarity boost each (max 25)</div>';
+    // Reward breakdown — prominent so the player knows exactly what they get
+    h += '<div style="background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.25);border-radius:8px;padding:0.5rem 0.65rem;margin-bottom:0.5rem;">';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.1em;color:var(--gold);margin-bottom:0.3rem;">YOU WILL RECEIVE</div>';
+    h += '<div style="display:flex;justify-content:center;gap:0.8rem;">';
+    h += '<div style="text-align:center;"><div style="font-size:1.1rem;">\ud83c\udf3f</div><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);">+'+fertReward+'</div><div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);">Fertilizer</div></div>';
+    h += '<div style="text-align:center;"><div style="font-size:1.1rem;">\ud83e\uddec</div><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);">+'+fertReward+'</div><div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);">DNA</div></div>';
+    h += '</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);margin-top:0.3rem;text-align:center;">Fertilizer: +1% rarity per seed (max 25)</div>';
+    h += '</div>';
     h += '<button onclick="_execCompost('+plantIndex+')" style="width:100%;padding:0.5rem;margin-bottom:0.3rem;border:1.5px solid rgba(200,80,60,0.4);border-radius:8px;background:linear-gradient(180deg,rgba(180,60,40,0.25),rgba(120,30,20,0.35));color:#e8a0a0;font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">COMPOST</button>';
     h += '<button onclick="_closeCompostModal()" style="width:100%;padding:0.4rem;border:1px solid rgba(122,179,86,0.2);border-radius:8px;background:rgba(46,60,38,0.2);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;">KEEP PLANT</button>';
     h += '</div>';
@@ -29158,9 +29165,37 @@ document.addEventListener('keydown', function(e) {
     if(m) m.remove();
   };
   window._execCompost = function(plantIndex){
-    _closeCompostModal();
+    // Brief decomposition animation before the actual compost
+    var modal = document.getElementById('compost-confirm-modal');
+    if (modal) {
+      var panel = modal.querySelector('div');
+      if (panel) {
+        panel.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        panel.style.opacity = '0';
+        panel.style.transform = 'scale(0.85) translateY(20px)';
+      }
+      // Spawn floating leaf particles over the modal
+      for (var lp = 0; lp < 8; lp++) {
+        var leaf = document.createElement('div');
+        var lx = 30 + Math.random() * 40;
+        var ly = 30 + Math.random() * 30;
+        leaf.style.cssText = 'position:fixed;left:' + lx + '%;top:' + ly + '%;z-index:100002;font-size:' + (0.8 + Math.random() * 0.8) + 'rem;pointer-events:none;opacity:0.9;transition:all 1.2s ease;';
+        leaf.textContent = ['\ud83c\udf42','\ud83c\udf43','\ud83c\udf3f','\u2728'][lp % 4];
+        document.body.appendChild(leaf);
+        (function(el, delay) {
+          setTimeout(function() {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(' + (40 + Math.random() * 40) + 'px) rotate(' + (Math.random() * 180 - 90) + 'deg)';
+            setTimeout(function() { if (el.parentNode) el.remove(); }, 1300);
+          }, delay);
+        })(leaf, lp * 80);
+      }
+    }
     _haptic('disc');
-    compostPlant(plantIndex);
+    setTimeout(function() {
+      _closeCompostModal();
+      compostPlant(plantIndex);
+    }, 700);
   };
 
   // ═══ REUSABLE IN-GAME CONFIRM MODAL ═══
