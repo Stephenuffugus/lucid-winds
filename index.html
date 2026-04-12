@@ -6660,6 +6660,7 @@ window.onerror=function(msg,url,line,col,err){
       <div class="pgm-btn-row">
         <button class="pgm-dl-btn" id="gallery-download-btn" onclick="downloadPlantCard()">⬡ DOWNLOAD</button>
         <button class="pgm-act-btn" onclick="shareGalleryPlant()">↗ SHARE</button>
+        <button class="pgm-act-btn" onclick="window._carouselDetails()" style="border-color:rgba(200,168,75,0.3);color:var(--gold);">⬡ DETAILS</button>
         <button class="pgm-act-btn" onclick="carouselBreed()" style="border-color:rgba(200,168,75,0.3);color:var(--gold);">🧬 BREED</button>
         <button class="pgm-act-btn" onclick="carouselCompost()" style="border-color:rgba(139,46,46,0.3);color:rgba(192,112,112,0.9);">🧪 COMPOST</button>
       </div>
@@ -28101,6 +28102,17 @@ document.addEventListener('keydown', function(e) {
     if (_lineageBtn) {
       var _nowFlipped = el.classList.contains('flipped');
       _lineageBtn.style.display = _nowFlipped ? '' : 'none';
+    }
+  };
+
+  // ── Open details modal for whichever plant the carousel is showing ──
+  window._carouselDetails = function() {
+    var plant = _carousel ? _carousel.arr[_carousel.idx] : null;
+    if (plant && plant.hash && window._openPlantDetails) {
+      try { window._openPlantDetails(plant.hash); }
+      catch (e) { if (window._toast) window._toast('Details failed: ' + (e && e.message ? e.message : '')); }
+    } else {
+      if (window._toast) window._toast('No plant selected.');
     }
   };
 
