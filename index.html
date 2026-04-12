@@ -28703,11 +28703,14 @@ document.addEventListener('keydown', function(e) {
     inv.pots[potId] = (inv.pots[potId] || 0) + 1;
     inv.lastUpdated = new Date().toISOString();
     saveInventory(inv, true);
-    if (window._toast) window._toast(pot.icon + ' Bought ' + pot.name + '. \u2796 ' + pot.cost + ' Dew');
+    if (window._toast) window._toast('\u2705 ' + pot.icon + ' ' + pot.name + ' added to inventory. \u2796 ' + pot.cost + ' Dew');
     if (window._haptic) window._haptic('bloom');
     if (window.renderNursery) renderNursery();
-    // Refresh the pot shop modal so the owned count updates without close/reopen
-    if (document.getElementById('lw-pot-shop')) window._openPotShop();
+    // Pots are single-use per seed and apply from the seed slot — close the
+    // shop after a purchase so the player can immediately apply it. Stephen
+    // flagged the auto-refresh-loop pattern as unclear feedback.
+    var _shop = document.getElementById('lw-pot-shop');
+    if (_shop) _shop.remove();
     return true;
   };
   window.lwApplyPot = function(seedId, potId) {
@@ -29474,12 +29477,20 @@ document.addEventListener('keydown', function(e) {
     if (existing) existing.remove();
     var modal = document.createElement('div');
     modal.id = 'lw-pot-shop';
-    modal.style.cssText = 'position:fixed;inset:0;z-index:100002;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(10px);animation:panelFadeIn 0.3s ease;padding:1rem;overflow-y:auto;';
-    var h = '<div style="max-width:380px;width:100%;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;padding:1.1rem 1rem 1rem;box-shadow:0 16px 50px rgba(0,0,0,0.7);">';
-    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:100002;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(10px);animation:panelFadeIn 0.3s ease;padding:1rem;';
+    // Backdrop tap closes the shop
+    modal.addEventListener('click', function(ev) {
+      if (ev.target === modal) modal.remove();
+    });
+    // Inner panel scrolls internally so the sticky header is always reachable
+    var h = '<div onclick="event.stopPropagation()" style="max-width:380px;width:100%;max-height:88vh;display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;box-shadow:0 16px 50px rgba(0,0,0,0.7);overflow:hidden;">';
+    // Sticky header — title + always-visible 48px close button
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.9rem 1rem 0.6rem;border-bottom:1px solid rgba(74,124,53,0.15);flex-shrink:0;background:rgba(13,16,12,0.6);">';
     h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.12em;color:var(--gold);">\ud83e\udeb4 NURSERY POT SHOP</div>';
-    h += '<button onclick="document.getElementById(\'lw-pot-shop\').remove()" style="background:none;border:1px solid rgba(122,179,86,0.25);color:var(--muted);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:0.9rem;">\u2715</button>';
+    h += '<button onclick="document.getElementById(\'lw-pot-shop\').remove()" aria-label="Close" style="background:rgba(122,179,86,0.1);border:1.5px solid rgba(122,179,86,0.4);color:var(--cream);width:48px;height:48px;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">\u2715</button>';
     h += '</div>';
+    // Scrollable body
+    h += '<div style="overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.9rem 1rem 1.1rem;flex:1;">';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);margin-bottom:0.85rem;line-height:1.5;">Specialty pots are consumable. Apply one to a growing seed and it triggers at bloom — single use.</div>';
     var curLvl = (window.canSee && window.canSee.currentLevel) ? window.canSee.currentLevel() : 1;
     h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.55rem;font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;">';
@@ -29528,7 +29539,8 @@ document.addEventListener('keydown', function(e) {
       h += '</div>';
     }
     h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:0.6rem;text-align:center;line-height:1.5;">Apply pots from each seed slot. Tap a seed and pick from your inventory.</div>';
-    h += '</div>';
+    h += '</div>'; // close scrollable body
+    h += '</div>'; // close inner panel
     modal.innerHTML = h;
     document.body.appendChild(modal);
   };
