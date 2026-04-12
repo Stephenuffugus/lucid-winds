@@ -4373,11 +4373,21 @@
 /* ═══ WILD TAB v2 — Premium Redesign ═══ */
 
 /* ── Wild Log Bar (top navigation) ── */
-.wild-log{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-around;padding:10px 8px 8px;padding-top:calc(10px + env(safe-area-inset-top,0px));min-height:72px;background:url('assets/games/wild/wild-log-bar-v4.png') center/cover no-repeat;background-color:rgba(20,16,10,.98);background-size:100% 100%;border-bottom:2px solid rgba(200,168,75,0.1);z-index:460;box-shadow:0 8px 32px rgba(0,0,0,0.7);}
-.wild-log-stat{display:flex;flex-direction:column;align-items:center;gap:2px;background:rgba(5,6,4,0.7);padding:5px 12px;border-radius:6px;border:1px solid rgba(200,168,75,0.08);box-shadow:inset 0 2px 6px rgba(0,0,0,0.5),inset 0 -1px 0 rgba(200,168,75,0.05);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
-.wild-log-val{font-family:'Bebas Neue',sans-serif;font-size:clamp(.9rem,2.8vw,1.2rem);color:var(--cream);line-height:1;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,.6)}
-.wild-log-lbl{font-family:'DM Mono',monospace;font-size:clamp(.3rem,.9vw,.38rem);color:rgba(200,168,75,.45);letter-spacing:.12em;text-transform:uppercase}
-.wild-log-wind{font-family:'DM Mono',monospace;font-size:clamp(.35rem,1vw,.45rem);color:var(--muted);display:flex;align-items:center;gap:4px}
+.wild-log{position:fixed;top:0;left:0;right:0;padding:8px;padding-top:calc(8px + env(safe-area-inset-top,0px));background:linear-gradient(180deg,rgba(20,16,10,0.96),rgba(13,10,6,0.95));border-bottom:2px solid rgba(200,168,75,0.15);z-index:460;box-shadow:0 8px 32px rgba(0,0,0,0.7);display:grid;grid-template-columns:1fr 1fr 1fr 90px;grid-template-rows:auto auto;grid-template-areas:'s1 s2 s3 cp' 's4 s5 s6 cp';gap:6px;}
+.wild-log-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(5,6,4,0.75);padding:6px 4px;border-radius:8px;border:1px solid rgba(200,168,75,0.12);min-height:52px;cursor:pointer;transition:all 0.15s;}
+.wild-log-stat:nth-child(1){grid-area:s1;}
+.wild-log-stat:nth-child(2){grid-area:s2;}
+.wild-log-stat:nth-child(3){grid-area:s3;}
+.wild-log-stat:nth-child(4){grid-area:s4;}
+.wild-log-stat:nth-child(5){grid-area:s5;}
+.wild-log-stat:nth-child(6){grid-area:s6;}
+.wild-log-wind{grid-area:cp;align-self:center;justify-self:center;}
+.wild-log-stat:active{background:rgba(18,22,16,0.85);border-color:rgba(200,168,75,0.3);}
+.wild-log-val{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;color:var(--cream);line-height:1;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,.6)}
+.wild-log-lbl{font-family:'DM Mono',monospace;font-size:0.55rem;color:rgba(200,168,75,0.7);letter-spacing:0.08em;text-transform:uppercase;margin-top:1px;}
+.wild-log-wind{width:80px;height:80px;display:flex;align-items:center;justify-content:center;position:relative;}
+.wild-log-wind img{width:72px!important;height:72px!important;filter:drop-shadow(0 2px 8px rgba(200,168,75,0.3))!important;}
+.wild-log-wind span{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--gold);white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1);}
 
 /* ── Trait Panel v2 (bottom sheet) ── */
 .wtp2{position:fixed;bottom:0;left:0;right:0;z-index:99998;background:linear-gradient(180deg,rgba(13,16,12,.97) 0%,rgba(8,12,6,.99) 100%);border-top:1px solid rgba(74,124,53,.12);border-radius:16px 16px 0 0;padding:0;max-width:680px;margin:0 auto;box-shadow:0 -8px 40px rgba(0,0,0,.6);transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.56,.64,1);overflow:hidden}
