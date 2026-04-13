@@ -27369,6 +27369,10 @@ document.addEventListener('keydown', function(e) {
     if (!amount || amount < 0) return;
     // Tender class bonus: L2+ multiplies dew income
     try{if(window._LW_classBonus){amount=Math.ceil(amount*window._LW_classBonus('dewRate'));}}catch(e){}
+    // Dew Cache booster: +50% for 3h
+    try{if(window.lwIsBoostActive&&window.lwIsBoostActive('dewCache'))amount=Math.ceil(amount*1.5);}catch(e){}
+    // Dawn Anthem (Keeper class item): +10% all bonuses — applies to dew income
+    try{if(window.lwIsBoostActive&&window.lwIsBoostActive('dawnAnthem'))amount=Math.ceil(amount*1.1);}catch(e){}
     // Tender XP: dew income feeds class XP (1 per 4 dew to prevent spam)
     try{if(window._LW_classXP&&amount>=4)window._LW_classXP('dew',Math.floor(amount/4));}catch(e){}
     var ledger = getDewLedger();
@@ -28885,6 +28889,153 @@ document.addEventListener('keydown', function(e) {
       color: '#c8a84b'
     }
   };
+
+  // ═══ BOOSTERS — timed multipliers purchased with Dew ═══
+  // Active effects stored at localStorage key 'lw_boosters' as {id: expireTs}
+  window.LW_BOOSTERS = {
+    pollenRush: {
+      id: 'pollenRush',
+      name: 'Pollen Rush',
+      icon: '\ud83c\udf3c',
+      cost: 120,
+      levelRequired: 3,
+      durationMs: 60 * 60 * 1000, // 1 hour
+      blurb: '2× Pollen XP for 1 hour',
+      color: '#c8a84b'
+    },
+    bloomTonic: {
+      id: 'bloomTonic',
+      name: 'Bloom Tonic',
+      icon: '\ud83c\udf38',
+      cost: 180,
+      levelRequired: 5,
+      durationMs: 24 * 60 * 60 * 1000,
+      blurb: '1.5× Nursery growth speed for 24h',
+      color: '#e8a0bf'
+    },
+    dewCache: {
+      id: 'dewCache',
+      name: 'Dew Cache',
+      icon: '\ud83d\udca7',
+      cost: 220,
+      levelRequired: 8,
+      durationMs: 3 * 60 * 60 * 1000,
+      blurb: '+50% Dew income for 3h',
+      color: '#5b9bd5'
+    }
+  };
+
+  // ═══ CLASS ITEMS — purchasable consumables tied to chosen class ═══
+  // Visible to all classes but only USABLE by the matching class.
+  window.LW_CLASS_ITEMS = {
+    forager: {
+      id: 'forestSight',
+      name: 'Forest Sight Tincture',
+      icon: '\ud83c\udf41',
+      cost: 180,
+      class: 'forager',
+      blurb: 'Reveals all feral seed locations within 500m for 30min',
+      color: '#7ab356',
+      durationMs: 30*60*1000
+    },
+    breeder: {
+      id: 'graftKit',
+      name: 'Graft Kit',
+      icon: '\ud83e\uddec',
+      cost: 260,
+      class: 'breeder',
+      blurb: 'Next breed — reroll one inherited trait after bloom',
+      color: '#e8a0bf',
+      oneShot: true
+    },
+    cartographer: {
+      id: 'sextantPolish',
+      name: 'Sextant Polish',
+      icon: '\ud83e\udded',
+      cost: 140,
+      class: 'cartographer',
+      blurb: 'Next new-biome discovery awards 3× Compass XP',
+      color: '#c8a84b',
+      oneShot: true
+    },
+    tender: {
+      id: 'mistVial',
+      name: 'Mist Vial',
+      icon: '\ud83c\udf2b\ufe0f',
+      cost: 150,
+      class: 'tender',
+      blurb: 'Auto-waters all your wild plants once, no Dew cost',
+      color: '#5b9bd5',
+      oneShot: true
+    },
+    keeper: {
+      id: 'dawnAnthem',
+      name: 'Dawn Anthem',
+      icon: '\ud83c\udf05',
+      cost: 200,
+      class: 'keeper',
+      blurb: '+10% to ALL bonuses for 2 hours (stacks with Beholder)',
+      color: '#c8a84b',
+      durationMs: 2*60*60*1000
+    }
+  };
+
+  // Booster state helpers
+  window.lwLoadBoosters = function(){
+    try{var raw=localStorage.getItem('lw_boosters')||'{}';var b=JSON.parse(raw);var now=Date.now();var clean={};for(var k in b){if(b.hasOwnProperty(k)&&b[k]>now)clean[k]=b[k];}return clean;}catch(e){return {};}
+  };
+  window.lwSaveBoosters = function(b){try{localStorage.setItem('lw_boosters',JSON.stringify(b));}catch(e){}};
+  window.lwIsBoostActive = function(id){var b=window.lwLoadBoosters();return (b[id]||0)>Date.now();};
+
+  window.lwBuyBooster = function(bid){
+    var def=window.LW_BOOSTERS[bid];if(!def)return false;
+    var dew=window.getTotalDew?window.getTotalDew():0;
+    var curLvl=(window.canSee&&window.canSee.currentLevel)?window.canSee.currentLevel():1;
+    if(curLvl<(def.levelRequired||1)){if(window._toast)_toast('Reach Lv '+(def.levelRequired||1)+' first.');return false;}
+    if(dew<def.cost){if(window._toast)_toast('Need '+def.cost+' Dew ('+(def.cost-dew)+' more).');return false;}
+    if(!window.spendDew(def.cost))return false;
+    var boosters=window.lwLoadBoosters();
+    // If already active, extend from current expiry; else start from now
+    var base=boosters[def.id]&&boosters[def.id]>Date.now()?boosters[def.id]:Date.now();
+    boosters[def.id]=base+def.durationMs;
+    window.lwSaveBoosters(boosters);
+    if(window._toast)_toast(def.icon+' '+def.name+' active!');
+    try{if(window._playWin)_playWin();}catch(e){}
+    try{if(typeof gtag!=='undefined')gtag('event','booster_buy',{id:def.id});}catch(e){}
+    if(window._openNurseryShop)window._openNurseryShop();
+    return true;
+  };
+
+  window.lwBuyClassItem = function(cid){
+    var def=null;for(var k in window.LW_CLASS_ITEMS){if(window.LW_CLASS_ITEMS[k].id===cid||k===cid){def=window.LW_CLASS_ITEMS[k];break;}}
+    if(!def)return false;
+    var playerClass=localStorage.getItem('lw_class')||null;
+    if(!playerClass){if(window._toast)_toast('Pick a class first.');return false;}
+    if(def.class!==playerClass){if(window._toast)_toast('Only '+def.class+'s can use this item.');return false;}
+    var dew=window.getTotalDew?window.getTotalDew():0;
+    if(dew<def.cost){if(window._toast)_toast('Need '+def.cost+' Dew.');return false;}
+    if(!window.spendDew(def.cost))return false;
+    if (def.durationMs) {
+      // Timed effect — write into boosters registry
+      var boosters=window.lwLoadBoosters();
+      var base=boosters[def.id]&&boosters[def.id]>Date.now()?boosters[def.id]:Date.now();
+      boosters[def.id]=base+def.durationMs;
+      window.lwSaveBoosters(boosters);
+      if(window._toast)_toast(def.icon+' '+def.name+' active!');
+    } else {
+      // One-shot consumable
+      try{
+        var inv=JSON.parse(localStorage.getItem('lw_class_inventory')||'{}');
+        inv[def.id]=(inv[def.id]||0)+1;
+        localStorage.setItem('lw_class_inventory',JSON.stringify(inv));
+      }catch(e){}
+      if(window._toast)_toast(def.icon+' '+def.name+' added to satchel.');
+    }
+    try{if(window._playWin)_playWin();}catch(e){}
+    if(window._openNurseryShop)window._openNurseryShop();
+    return true;
+  };
+
   window.lwBuyPot = function(potId) {
     var pot = window.LW_POTS[potId];
     if (!pot) return false;
@@ -29788,7 +29939,10 @@ document.addEventListener('keydown', function(e) {
   }
 
   // ═══ POT SHOP UI ═══
-  window._openPotShop = function() {
+  // Nursery Shop tab state
+  var _nurseryShopTab = 'pots';
+  window._setNurseryShopTab = function(t){_nurseryShopTab=t;window._openNurseryShop();};
+  window._openNurseryShop = function() {
     var inv = loadInventory();
     var dew = window.getTotalDew ? window.getTotalDew() : 0;
     var existing = document.getElementById('lw-pot-shop');
@@ -29804,17 +29958,100 @@ document.addEventListener('keydown', function(e) {
     var h = '<div onclick="event.stopPropagation()" style="max-width:380px;width:100%;max-height:88vh;display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;box-shadow:0 16px 50px rgba(0,0,0,0.7);overflow:hidden;">';
     // Sticky header — title + always-visible 48px close button
     h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.9rem 1rem 0.6rem;border-bottom:1px solid rgba(74,124,53,0.15);flex-shrink:0;background:rgba(13,16,12,0.6);">';
-    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.12em;color:var(--gold);">\ud83e\udeb4 NURSERY POT SHOP</div>';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.12em;color:var(--gold);">\ud83e\udeb4 NURSERY SHOP</div>';
     h += '<button onclick="document.getElementById(\'lw-pot-shop\').remove()" aria-label="Close" style="background:rgba(122,179,86,0.1);border:1.5px solid rgba(122,179,86,0.4);color:var(--cream);width:48px;height:48px;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">\u2715</button>';
+    h += '</div>';
+    // Tab bar
+    var tabs = [
+      {k:'pots', lbl:'POTS'},
+      {k:'boosters', lbl:'BOOSTERS'},
+      {k:'class', lbl:'CLASS'}
+    ];
+    h += '<div style="display:flex;gap:0.3rem;padding:0.45rem 0.7rem 0.3rem;flex-shrink:0;">';
+    for (var ti=0; ti<tabs.length; ti++){
+      var t=tabs[ti]; var act=_nurseryShopTab===t.k;
+      h += '<button onclick="window._setNurseryShopTab(\''+t.k+'\')" style="flex:1;min-height:40px;padding:6px 8px;font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;background:'+(act?'rgba(200,168,75,0.15)':'rgba(26,36,22,0.4)')+';border:1.5px solid '+(act?'rgba(200,168,75,0.55)':'rgba(122,179,86,0.2)')+';color:'+(act?'var(--gold)':'var(--muted)')+';border-radius:8px;cursor:pointer;">'+t.lbl+'</button>';
+    }
     h += '</div>';
     // Scrollable body
     h += '<div style="overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.9rem 1rem 1.1rem;flex:1;">';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);margin-bottom:0.85rem;line-height:1.5;">Specialty pots are consumable. Apply one to a growing seed and it triggers at bloom — single use.</div>';
     var curLvl = (window.canSee && window.canSee.currentLevel) ? window.canSee.currentLevel() : 1;
     h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.55rem;font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;">';
     h += '<span style="color:var(--sage);">Balance: <span style="color:var(--gold);">' + dew + ' \ud83d\udca7 Dew</span></span>';
     h += '<span style="color:var(--muted);">Level <span style="color:var(--cream);">' + curLvl + '</span></span>';
     h += '</div>';
+    if (_nurseryShopTab === 'boosters') {
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);margin-bottom:0.85rem;line-height:1.5;">Timed multipliers. Activating again while one is still running extends the duration.</div>';
+      var boosters=window.lwLoadBoosters();
+      var bks=Object.keys(window.LW_BOOSTERS);
+      for (var bi=0;bi<bks.length;bi++){
+        var b=window.LW_BOOSTERS[bks[bi]];
+        var lvlReq=b.levelRequired||1; var locked=curLvl<lvlReq;
+        var canAfford=dew>=b.cost; var canBuy=!locked&&canAfford;
+        var rowOpacity=locked?'0.55':'1';
+        var borderCol=locked?'rgba(122,122,122,0.35)':(b.color+'55');
+        var expireTs=boosters[b.id]||0; var active=expireTs>Date.now();
+        h += '<div style="display:flex;gap:0.65rem;padding:0.7rem 0.55rem;margin-bottom:0.45rem;background:rgba(13,16,12,0.55);border:1px solid '+borderCol+';border-radius:9px;align-items:center;opacity:'+rowOpacity+';">';
+        h += '<div style="font-size:1.6rem;width:42px;text-align:center;flex-shrink:0;'+(locked?'filter:grayscale(1) brightness(0.7);':'')+'">'+b.icon+'</div>';
+        h += '<div style="flex:1;min-width:0;">';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+(locked?'rgba(160,160,160,0.75)':b.color)+';letter-spacing:0.06em;">'+b.name+'</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);line-height:1.35;margin-top:0.18rem;">'+b.blurb+'</div>';
+        var line='';
+        if (active) { var mins=Math.ceil((expireTs-Date.now())/60000); line='\u2728 Active \u00b7 '+(mins>=60?Math.floor(mins/60)+'h '+(mins%60)+'m':mins+'m')+' left'; }
+        else if (locked) line='<span style="color:#d96b4b;">Lv '+lvlReq+' to unlock</span>';
+        else if (!canAfford) line='<span style="color:var(--gold);">Save '+(b.cost-dew)+' more Dew</span>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:0.22rem;">'+line+'</div>';
+        h += '</div>';
+        var btnBg=locked?'rgba(80,30,30,0.25)':(!canAfford?'rgba(46,46,46,0.3)':'linear-gradient(180deg,rgba(74,124,53,0.4),rgba(46,80,34,0.55))');
+        var btnBorder=locked?'rgba(217,107,75,0.35)':(!canAfford?'rgba(122,122,122,0.3)':'rgba(122,179,86,0.5)');
+        var btnColor=locked?'rgba(217,107,75,0.85)':(!canAfford?'rgba(160,160,160,0.6)':'var(--cream)');
+        var btnLbl=locked?'\ud83d\udd12 Lv'+lvlReq:(b.cost+'\ud83d\udca7');
+        h += '<button onclick="window.lwBuyBooster(\''+b.id+'\')" '+(canBuy?'':'disabled')+' style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.06em;background:'+btnBg+';border:1.5px solid '+btnBorder+';color:'+btnColor+';border-radius:8px;padding:0.5rem 0.65rem;cursor:'+(canBuy?'pointer':'not-allowed')+';min-height:48px;min-width:68px;flex-shrink:0;">'+btnLbl+'</button>';
+        h += '</div>';
+      }
+      h += '</div></div>';
+      modal.innerHTML = h;
+      document.body.appendChild(modal);
+      return;
+    }
+    if (_nurseryShopTab === 'class') {
+      var playerClass=localStorage.getItem('lw_class')||null;
+      var classInv={};try{classInv=JSON.parse(localStorage.getItem('lw_class_inventory')||'{}');}catch(e){}
+      if (!playerClass) {
+        h += '<div style="padding:1.5rem 0.5rem;text-align:center;font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);line-height:1.6;">Choose a class in the Book of Secrets to unlock class-specific items.</div>';
+      } else {
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);margin-bottom:0.85rem;line-height:1.5;">Items for every class — each only usable by its own class. Visible so you can aspire toward other paths.</div>';
+        var cks=Object.keys(window.LW_CLASS_ITEMS);
+        for (var ci=0;ci<cks.length;ci++){
+          var item=window.LW_CLASS_ITEMS[cks[ci]];
+          var mineCls=item.class===playerClass;
+          var canAff=dew>=item.cost; var canB=mineCls&&canAff;
+          var owned=classInv[item.id]||0;
+          var bCol=mineCls?(item.color+'55'):'rgba(122,122,122,0.3)';
+          h += '<div style="display:flex;gap:0.65rem;padding:0.7rem 0.55rem;margin-bottom:0.45rem;background:rgba(13,16,12,0.55);border:1px solid '+bCol+';border-radius:9px;align-items:center;opacity:'+(mineCls?'1':'0.6')+';">';
+          h += '<div style="font-size:1.6rem;width:42px;text-align:center;flex-shrink:0;'+(mineCls?'':'filter:grayscale(0.6);')+'">'+item.icon+'</div>';
+          h += '<div style="flex:1;min-width:0;">';
+          h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+(mineCls?item.color:'rgba(180,180,180,0.85)')+';letter-spacing:0.06em;">'+item.name+'</div>';
+          h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);line-height:1.35;margin-top:0.18rem;">'+item.blurb+'</div>';
+          var statusL='Class: <b style="color:'+(mineCls?'var(--sage)':'#d96b4b')+';">'+item.class.toUpperCase()+'</b> \u00b7 Owned: '+owned;
+          if (mineCls && !canAff) statusL += ' \u00b7 <span style="color:var(--gold);">Save '+(item.cost-dew)+' Dew</span>';
+          h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:0.22rem;">'+statusL+'</div>';
+          h += '</div>';
+          var bBg=!mineCls?'rgba(80,30,30,0.25)':(!canAff?'rgba(46,46,46,0.3)':'linear-gradient(180deg,rgba(74,124,53,0.4),rgba(46,80,34,0.55))');
+          var bBdr=!mineCls?'rgba(217,107,75,0.35)':(!canAff?'rgba(122,122,122,0.3)':'rgba(122,179,86,0.5)');
+          var bCr=!mineCls?'rgba(217,107,75,0.85)':(!canAff?'rgba(160,160,160,0.6)':'var(--cream)');
+          var bLbl=!mineCls?'\ud83d\udd12':(item.cost+'\ud83d\udca7');
+          h += '<button onclick="window.lwBuyClassItem(\''+item.id+'\')" '+(canB?'':'disabled')+' style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.06em;background:'+bBg+';border:1.5px solid '+bBdr+';color:'+bCr+';border-radius:8px;padding:0.5rem 0.65rem;cursor:'+(canB?'pointer':'not-allowed')+';min-height:48px;min-width:68px;flex-shrink:0;">'+bLbl+'</button>';
+          h += '</div>';
+        }
+      }
+      h += '</div></div>';
+      modal.innerHTML = h;
+      document.body.appendChild(modal);
+      return;
+    }
+    // Default = pots tab
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);margin-bottom:0.85rem;line-height:1.5;">Specialty pots are consumable. Apply one to a growing seed and it triggers at bloom — single use.</div>';
     var keys = Object.keys(window.LW_POTS);
     for (var i = 0; i < keys.length; i++) {
       var pot = window.LW_POTS[keys[i]];
@@ -29862,6 +30099,8 @@ document.addEventListener('keydown', function(e) {
     modal.innerHTML = h;
     document.body.appendChild(modal);
   };
+  // Legacy alias so existing onclick handlers keep working
+  window._openPotShop = window._openNurseryShop;
 
   // Pot picker on a single seed — opens an inventory selector
   window._openPotPicker = function(seedId) {
@@ -30906,8 +31145,9 @@ document.addEventListener('keydown', function(e) {
     if (window._LW_classXP) window._LW_classXP('tend', 5);
     if (window._trackQuest) window._trackQuest('seedsWatered', 1);
 
-    // BLOOM TRIGGER — 3rd water makes bloom-ready; confirm before executing
-    if (seed.waterLog.length >= 3) {
+    // BLOOM TRIGGER — 3rd water (or 2nd with Bloom Tonic booster)
+    var _bloomReq = (window.lwIsBoostActive&&window.lwIsBoostActive('bloomTonic')) ? 2 : 3;
+    if (seed.waterLog.length >= _bloomReq) {
       _setNurMsg('🌸 Three waterings complete! Ready to bloom.');
       // Save nursery state first so _executeBloom reads the correct index
       _throttledSave('sws_nursery', JSON.stringify(nur), true); // Phase 27: force-flush before _executeBloom re-read
@@ -43948,6 +44188,9 @@ function updateKeeperBar(){
 
 // ═══ GRANT XP (called from game systems) ═══
 window.PW_grantXP=function(amount,reason){
+  // Pollen Rush booster: 2x XP for 1h
+  try{if(window.lwIsBoostActive&&window.lwIsBoostActive('pollenRush'))amount=amount*2;}catch(e){}
+  try{if(window.lwIsBoostActive&&window.lwIsBoostActive('dawnAnthem'))amount=Math.ceil(amount*1.1);}catch(e){}
   var xp=_getXP();
   var oldR=_getRank(xp);
   xp+=amount;_saveXP(xp);
