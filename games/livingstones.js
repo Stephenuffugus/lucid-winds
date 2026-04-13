@@ -143,6 +143,12 @@ window._gameFns.livingstones = function LS(a){
     for(var i=0;i<diffs.length;i++){
       h+='<button class="gb" onclick="_LSstart('+diffs[i][2]+')" style="display:block;width:220px;margin:6px auto;padding:10px;min-height:48px;">'+diffs[i][0]+'<div style="font-size:0.78rem;opacity:0.85;font-style:italic;margin-top:2px;">'+diffs[i][1]+'</div></button>';
     }
+    h+='<div style="margin:18px 0 6px;font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--gold);letter-spacing:2px;">PLAY AI</div>';
+    h+='<div style="font-style:italic;font-size:0.72rem;color:var(--muted);margin-bottom:8px;">Full game vs. MCTS opponent</div>';
+    var ais=[['9×9 EASY',9,1500],['9×9 MEDIUM',9,4000],['9×9 HARD',9,10000],['13×13 MEDIUM',13,4000]];
+    for(var j=0;j<ais.length;j++){
+      h+='<button class="gb" onclick="_LSai('+ais[j][1]+','+ais[j][2]+')" style="display:block;width:220px;margin:6px auto;padding:10px;min-height:48px;">'+ais[j][0]+'</button>';
+    }
     pan.innerHTML=h;
   }
 
@@ -266,7 +272,185 @@ window._gameFns.livingstones = function LS(a){
   };
   window._LSmenu=function(){
     _sr('livingstones',{w:totalSolved>0,s:totalSolved,lv:difficulty,tp:currentPuzzles.length});
+    if(aiWorker){try{aiWorker.terminate();}catch(e){}aiWorker=null;}
+    aiMode=false;
     renderMenu();
+  };
+
+  // ═══ PLAY AI MODE ═══
+  var aiWorker=null,aiMode=false,aiSize=9,aiPlayouts=4000,aiThinking=false;
+  var aiBoard=[],aiConsecPass=0,aiPlayerCaps=0,aiOppCaps=0,aiGameOver=false,aiStatus='';
+  var COLS='ABCDEFGHJKLMNOPQRST';
+  function aiCoordFromRC(r,c){return COLS.charAt(c)+(aiSize-r);}
+  function aiRCFromCoord(s){
+    if(!s||s==='pass'||s==='resign')return null;
+    s=s.toUpperCase();
+    var c=COLS.indexOf(s.charAt(0));
+    var r=aiSize-parseInt(s.substring(1),10);
+    if(c<0||isNaN(r))return null;
+    return[r,c];
+  }
+  function aiInitBoard(){
+    aiBoard=[];for(var r=0;r<aiSize;r++){aiBoard[r]=[];for(var c=0;c<aiSize;c++)aiBoard[r][c]=EMPTY;}
+  }
+  function aiRender(){
+    var px=Math.min(380,window.innerWidth-40);
+    var margin=Math.floor(px/(aiSize+1));
+    var cell=margin,total=margin*(aiSize+1);
+    var svg='<svg width="'+total+'" height="'+total+'" style="background:#2a2418;border-radius:6px;display:block;margin:8px auto;touch-action:none;">';
+    for(var i=0;i<aiSize;i++){
+      var xy=margin+i*cell;
+      svg+='<line x1="'+margin+'" y1="'+xy+'" x2="'+(margin+(aiSize-1)*cell)+'" y2="'+xy+'" stroke="rgba(140,120,80,0.4)" stroke-width="1"/>';
+      svg+='<line x1="'+xy+'" y1="'+margin+'" x2="'+xy+'" y2="'+(margin+(aiSize-1)*cell)+'" stroke="rgba(140,120,80,0.4)" stroke-width="1"/>';
+    }
+    var sr=cell*0.42;
+    for(var r=0;r<aiSize;r++){
+      for(var c=0;c<aiSize;c++){
+        var cx=margin+c*cell,cy=margin+r*cell;
+        if(aiBoard[r][c]===BLACK)svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+sr+'" fill="#1a1a1a" stroke="#000" stroke-width="1"/>';
+        else if(aiBoard[r][c]===WHITE)svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+sr+'" fill="#e8e8e0" stroke="#888" stroke-width="1"/>';
+        else if(!aiThinking&&!aiGameOver)svg+='<rect x="'+(cx-cell/2)+'" y="'+(cy-cell/2)+'" width="'+cell+'" height="'+cell+'" fill="transparent" style="cursor:pointer;" onclick="_LSaiTap('+r+','+c+')"/>';
+      }
+    }
+    svg+='</svg>';
+    var h='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:1px;margin:6px 0;">YOU (Black) vs AI (White) — '+aiSize+'×'+aiSize+'</div>';
+    h+='<div style="font-size:0.78rem;color:var(--cream);margin-bottom:6px;">Captures — you: '+aiPlayerCaps+' · AI: '+aiOppCaps+'</div>';
+    h+=svg;
+    h+='<div style="font-style:italic;font-size:0.8rem;color:var(--cream);min-height:1.2em;margin:4px 0;">'+(aiStatus||'')+'</div>';
+    h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:6px;">';
+    if(!aiGameOver){
+      h+='<button class="gb" onclick="_LSaiPass()" style="min-height:44px;padding:8px 14px;"'+(aiThinking?' disabled':'')+'>PASS</button>';
+      h+='<button class="gb" onclick="_LSaiResign()" style="min-height:44px;padding:8px 14px;"'+(aiThinking?' disabled':'')+'>RESIGN</button>';
+    }
+    h+='<button class="gb" onclick="_LSmenu()" style="min-height:44px;padding:8px 14px;">MENU</button>';
+    h+='</div>';
+    pan.innerHTML=h;
+  }
+  function aiApplyMove(r,c,color){
+    var res=playMove(aiBoard,r,c,color,aiSize);
+    if(res.valid&&res.captured){
+      if(color===BLACK)aiPlayerCaps+=res.captured;
+      else aiOppCaps+=res.captured;
+    }
+    return res;
+  }
+  function aiScore(){
+    // Tromp-Taylor-ish: stones + sole-color-bordered empty regions. Black komi 0, White komi 0.5.
+    var bs=0,ws=0,seen={};
+    for(var r=0;r<aiSize;r++)for(var c=0;c<aiSize;c++){
+      if(aiBoard[r][c]===BLACK)bs++;
+      else if(aiBoard[r][c]===WHITE)ws++;
+      else if(!seen[r+','+c]){
+        var stack=[[r,c]],region=[],borders=0;
+        seen[r+','+c]=true;
+        while(stack.length){
+          var p=stack.pop();region.push(p);
+          var nb=[[p[0]-1,p[1]],[p[0]+1,p[1]],[p[0],p[1]-1],[p[0],p[1]+1]];
+          for(var k=0;k<nb.length;k++){
+            var nr=nb[k][0],nc=nb[k][1];
+            if(nr<0||nr>=aiSize||nc<0||nc>=aiSize)continue;
+            if(aiBoard[nr][nc]===EMPTY){
+              if(!seen[nr+','+nc]){seen[nr+','+nc]=true;stack.push([nr,nc]);}
+            }else if(aiBoard[nr][nc]===BLACK)borders|=1;
+            else if(aiBoard[nr][nc]===WHITE)borders|=2;
+          }
+        }
+        if(borders===1)bs+=region.length;
+        else if(borders===2)ws+=region.length;
+      }
+    }
+    return{black:bs,white:ws+0.5};
+  }
+  function aiEndGame(msg){
+    aiGameOver=true;
+    var s=aiScore();
+    var result='Black '+s.black+' · White '+s.white;
+    var won=s.black>s.white;
+    aiStatus=(msg?msg+' · ':'')+result+' — '+(won?'You win!':'AI wins');
+    if(won){_playWin();_e('game_win');}
+    else{_play('lose');}
+    _sr('livingstones',{w:won,s:s.black,lv:'ai'+aiSize,tp:Math.round(s.white)});
+    aiRender();
+  }
+  function aiRequestMove(){
+    if(!aiWorker||aiGameOver)return;
+    aiThinking=true;aiStatus='AI thinking...';aiRender();
+    aiWorker.postMessage({cmd:'genmove',color:'W',playouts:aiPlayouts});
+  }
+  window._LSai=function(size,playouts){
+    aiMode=true;aiSize=size;aiPlayouts=playouts;
+    aiInitBoard();
+    aiConsecPass=0;aiPlayerCaps=0;aiOppCaps=0;aiGameOver=false;
+    aiThinking=true;aiStatus='Loading opponent...';
+    pan.innerHTML='<div style="padding:40px;color:var(--cream);font-style:italic;">Loading opponent...</div>';
+    try{
+      if(aiWorker){aiWorker.terminate();aiWorker=null;}
+      aiWorker=new Worker('/games/livingstones-ai-worker.js');
+    }catch(e){
+      pan.innerHTML='<div style="padding:40px;color:#c66;">AI worker failed to load: '+e.message+'</div>';
+      return;
+    }
+    var readyCount=0;
+    aiWorker.onmessage=function(ev){
+      var m=ev.data||{};
+      if(m.type==='ready'){
+        readyCount++;
+        if(readyCount===1){
+          // first 'ready' is auto on load; set size now
+          aiWorker.postMessage({cmd:'boardsize',n:aiSize});
+        }else if(readyCount===2){
+          aiWorker.postMessage({cmd:'clear_board'});
+        }else if(readyCount===3){
+          aiThinking=false;aiStatus='Your move.';aiRender();
+        }
+      }else if(m.type==='thinking'){
+        aiStatus='AI thinking... '+Math.round(m.progress*100)+'%';
+        // lightweight update: only update status text
+        var el=pan.querySelector('div[style*="italic"]');
+        if(el)el.textContent=aiStatus;
+      }else if(m.type==='move'){
+        aiThinking=false;
+        if(m.move==='resign'){aiEndGame('AI resigns');return;}
+        if(m.move==='pass'){
+          aiConsecPass++;aiStatus='AI passes.';
+          if(aiConsecPass>=2){aiEndGame('Both pass');return;}
+          aiRender();return;
+        }
+        var rc=aiRCFromCoord(m.move);
+        if(rc){
+          aiApplyMove(rc[0],rc[1],WHITE);
+          aiConsecPass=0;
+          aiStatus='Your move.';
+        }
+        aiRender();
+      }
+    };
+    sm('Play AI — you are Black');
+  };
+  window._LSaiTap=function(r,c){
+    if(aiThinking||aiGameOver)return;
+    if(aiBoard[r][c]!==EMPTY)return;
+    var res=aiApplyMove(r,c,BLACK);
+    if(!res.valid){sm('Invalid move');_play('lose');return;}
+    aiConsecPass=0;_play('tap');
+    aiWorker.postMessage({cmd:'play',color:'B',move:aiCoordFromRC(r,c)});
+    aiRender();
+    setTimeout(aiRequestMove,80);
+  };
+  window._LSaiPass=function(){
+    if(aiThinking||aiGameOver)return;
+    aiConsecPass++;
+    aiWorker.postMessage({cmd:'play',color:'B',move:'pass'});
+    if(aiConsecPass>=2){aiEndGame('Both pass');return;}
+    aiStatus='You passed.';aiRender();
+    setTimeout(aiRequestMove,80);
+  };
+  window._LSaiResign=function(){
+    if(aiThinking||aiGameOver)return;
+    aiGameOver=true;aiStatus='You resigned — AI wins';
+    _play('lose');
+    _sr('livingstones',{w:false,s:0,lv:'ai'+aiSize,tp:0});
+    aiRender();
   };
 
   renderMenu();

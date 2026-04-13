@@ -9143,6 +9143,110 @@ document.addEventListener('keydown', function(e) {
   // is SET (or no game is active).
   window._gameRules = window._gameRules || {};
 
+  // Detailed rules for strategic games where the picker blurb isn't enough.
+  // The ? button in the game header looks these up by game id.
+  // Format: HTML string. Use <p>, <strong>, <em>.
+  (function populateRules(){
+    var R=window._gameRules;
+    R.bowergarden = ''+
+      '<p><strong>Goal:</strong> First team (You + Partner) to <strong style="color:var(--gold);">10 points</strong> wins.</p>'+
+      '<p><strong>Deck:</strong> 24 cards — 9 through Ace in 4 suits. Each player dealt 5.</p>'+
+      '<p><strong>Strong suit:</strong> One suit each hand becomes the "Strong" suit (it beats all other suits). The dealer flips an upcard; players bid in turn to either CALL it as Strong or PASS. If all pass, second round picks any non-upcard suit.</p>'+
+      '<p><strong>Bowers:</strong> The Jack of Strong = <strong>Right Bower</strong> (highest card). The Jack of the SAME-COLOR suit = <strong>Left Bower</strong> (second highest, counts as a Strong card). Other Strongs rank A,K,Q,10,9.</p>'+
+      '<p><strong>Play:</strong> Caller leads first trick. Must follow lead suit if you can. Strong always beats non-Strong.</p>'+
+      '<p><strong>Score:</strong> Maker takes 3-4 = 1, all 5 (march) = 2. Defenders euchre maker (take 3+) = 2. <strong style="color:var(--gold);">Loner:</strong> caller goes alone, partner sits out — 3-4 = 1, all 5 alone = 4.</p>';
+    R.bleedinghearts = ''+
+      '<p><strong>Goal:</strong> Lowest score wins. Game ends when someone hits <strong style="color:var(--gold);">100 points</strong>.</p>'+
+      '<p><strong>Deal:</strong> 52 cards split 13 each. Pass 3 cards each round (left, right, across, then no-pass and repeat).</p>'+
+      '<p><strong>Penalties:</strong> Each ♥ = 1 point. ♠Q = 13 points.</p>'+
+      '<p><strong>Play:</strong> 2♣ leads first trick. Must follow suit if possible. No hearts on the first trick (and no ♠Q on first trick). Hearts can\'t be led until "broken" (played on an off-suit trick).</p>'+
+      '<p><strong style="color:var(--gold);">Shoot the Moon:</strong> Take ALL 13 hearts AND the ♠Q in one hand → 26 points to every other player instead of you.</p>';
+    R.gardenspades = ''+
+      '<p><strong>Goal:</strong> First team to <strong style="color:var(--gold);">250 points</strong>.</p>'+
+      '<p><strong>Deal:</strong> 52 cards, 13 each. Spades is always trump.</p>'+
+      '<p><strong>Bid:</strong> Each player bids the number of tricks they expect to win. Bids of 0 = NIL (special: take 0 tricks for +100, take any for −100).</p>'+
+      '<p><strong>Play:</strong> Must follow suit if possible. Spades cannot be led until "broken" (played on an off-suit trick).</p>'+
+      '<p><strong>Score:</strong> Make your team\'s combined bid: 10 × bid + 1 per overtrick (bag). Miss your bid: −10 × bid. Every 10 bags = −100 penalty.</p>';
+    R.juniper = ''+
+      '<p><strong>Goal:</strong> Form sets (3+ of same rank) and runs (3+ in sequence, same suit) to reduce your "deadwood" — unmatched card values.</p>'+
+      '<p><strong>Deal:</strong> 10 cards each. Top of stock pile is starter; deck below is draw pile.</p>'+
+      '<p><strong>Turn:</strong> Draw 1 card (from stock or discard), then discard 1.</p>'+
+      '<p><strong style="color:var(--gold);">Knock:</strong> When deadwood ≤ 10, end the round. Score = opponent\'s deadwood − yours.</p>'+
+      '<p><strong style="color:var(--sage);">Gin:</strong> All 10 cards in melds → +25 bonus.</p>';
+    R.cribbage = ''+
+      '<p><strong>Goal:</strong> First to <strong style="color:var(--gold);">121 points</strong> (peg around the board).</p>'+
+      '<p><strong>Deal:</strong> 6 cards each. Each player chooses 2 to discard into the dealer\'s "crib." Top card of remaining deck is the "starter" (cut card).</p>'+
+      '<p><strong>Pegging phase:</strong> Players alternate playing cards face up, calling running total. Score during play: pair (+2), triple (+6), 15 (+2), run (+1 per card), 31 (+2), last-card (+1).</p>'+
+      '<p><strong>Show phase:</strong> Each player scores their hand + the starter. Dealer also scores the crib. Combinations: pair, run, flush, fifteen, nobs (J of starter suit).</p>';
+    R.trellis = ''+
+      '<p><strong>Goal:</strong> Build words on a 15×15 grid using lettered tiles. Highest score wins.</p>'+
+      '<p><strong>Tiles:</strong> 7 in your rack. Each tile has a letter and a point value (Q,Z = 10; J,X = 8; common letters = 1).</p>'+
+      '<p><strong>Premium squares:</strong> <span style="color:#7ab356;">DL</span>=Double Letter, <span style="color:#5b9bd5;">TL</span>=Triple Letter, <span style="color:#d4a843;">DW</span>=Double Word, <span style="color:#c47a7a;">TW</span>=Triple Word. First word must cover the center star.</p>'+
+      '<p><strong>Plays must:</strong> Form a continuous word, connect to existing tiles (after first move), and create only valid words in all directions.</p>'+
+      '<p><strong style="color:var(--gold);">Bingo:</strong> Use all 7 tiles in one play → +50 bonus.</p>';
+    R.pollen = ''+
+      '<p><strong>Goal:</strong> First to <strong style="color:var(--gold);">15 Growth Points</strong> (GP) wins.</p>'+
+      '<p><strong>Each turn pick ONE:</strong></p>'+
+      '<p>• <strong>Collect</strong> 3 different pollen tokens (or 2 of same if 4+ available)</p>'+
+      '<p>• <strong>Buy a plant card</strong> using your tokens. Plant adds permanent pollen production toward future buys.</p>'+
+      '<p>• <strong>Reserve a plant</strong> for later, gain a wild gold token.</p>'+
+      '<p><strong>Pollinators</strong> are claimed automatically when you reach the production thresholds shown — they grant their bonus GP.</p>'+
+      '<p><strong>Token cap:</strong> Max 10 in hand. Excess returns to supply.</p>';
+    R.jade = ''+
+      '<p><strong>Goal:</strong> Clear all 144 tiles by matching pairs.</p>'+
+      '<p><strong>Free tile:</strong> A tile is free if (a) nothing is on top of it AND (b) at least one of its left or right sides is open.</p>'+
+      '<p><strong>Match:</strong> Tap two free tiles with the same face. Special: any two SEASONS match each other; any two ELEMENTS match each other (these are the wild groups).</p>'+
+      '<p><strong>Helpers:</strong> 5 hints (highlight a valid pair) and 3 shuffles (re-randomize remaining tiles). Game over when no matches AND no shuffles remain.</p>';
+    R.livingstones = ''+
+      '<p><strong>Tsumego:</strong> Life-and-death puzzles in the game of Go. You play <strong style="color:var(--cream);">Black</strong>. The hint tells you what to find.</p>'+
+      '<p><strong>Captures:</strong> Surround all of an enemy group\'s liberties (empty adjacent points) to capture them.</p>'+
+      '<p><strong>Two eyes = life:</strong> A group with two separate empty interior points cannot be captured.</p>'+
+      '<p><strong>One move:</strong> Each puzzle has a single correct first move. Wrong moves auto-undo after a moment.</p>';
+    R.vinecross = ''+
+      '<p><strong>Goal:</strong> Get five of your stones in a row before the AI — horizontally, vertically, or diagonally.</p>'+
+      '<p><strong>Place:</strong> Tap any empty intersection. Stones cannot be moved or captured once placed.</p>'+
+      '<p><strong>Tip:</strong> Watch the AI\'s threats — three-in-a-row that\'s open on both sides is forcing.</p>'+
+      '<p><strong>Boards:</strong> 9×9 (fast), 11×11 (standard), 13×13 (long).</p>';
+    R.kakuro = ''+
+      '<p><strong>Goal:</strong> Fill empty cells with digits 1-9 so each "run" (horizontal or vertical sequence of empty cells) sums to its clue.</p>'+
+      '<p><strong>Clues:</strong> A black cell with a number above-right is the sum for the run going RIGHT. Below-left is the sum for the run going DOWN.</p>'+
+      '<p><strong>Rule:</strong> No digit repeats within a single run. (Same digit can appear in different runs.)</p>'+
+      '<p><strong>Tip:</strong> Long-press a cell to mark pencil notes (small digits) when you\'re unsure.</p>';
+    R.gardenlines = ''+
+      '<p><strong>Goal:</strong> Score the most points by building lines of tiles that share a shape OR a color.</p>'+
+      '<p><strong>Tiles:</strong> 6 colors × 6 shapes. Each tile is unique by shape+color combo.</p>'+
+      '<p><strong>Place:</strong> Tap a tile in your hand, then tap an empty board cell. Each placed tile must extend an existing line that\'s ALL same shape or ALL same color.</p>'+
+      '<p><strong>Score:</strong> Length of all lines the new tile extends. <strong style="color:var(--gold);">Garden Line bonus:</strong> completing a 6-tile line = +6.</p>'+
+      '<p><strong>Turn:</strong> Place 1+ tiles per turn (all extending the same line). End turn to refill hand. Or SWAP all tiles and end turn.</p>';
+    R.seedsow = ''+
+      '<p><strong>Goal:</strong> Capture more seeds than the AI into your store (the right pit).</p>'+
+      '<p><strong>Sow:</strong> Tap one of your 6 pits. The seeds inside are sown one-per-pit counterclockwise. Skip the AI\'s store.</p>'+
+      '<p><strong style="color:var(--gold);">Bonus turn:</strong> If your last seed lands in YOUR store, go again.</p>'+
+      '<p><strong style="color:var(--sage);">Capture:</strong> If your last seed lands in an empty pit on YOUR side, capture it AND all seeds in the AI\'s pit directly opposite.</p>'+
+      '<p><strong>End:</strong> When one side is empty, the other side\'s remaining seeds go to that player\'s store.</p>';
+    R.mosaic = ''+
+      '<p><strong>1. DRAFT:</strong> Tap a tile in any factory (circle) — take ALL of that color from that bed. The rest go to the center.</p>'+
+      '<p><strong>2. STAGE:</strong> Place them in one of your 5 staging rows (1, 2, 3, 4, or 5 wide). Excess drops to your floor (penalty).</p>'+
+      '<p><strong>3. SCORE:</strong> When all factories + center empty, full staging rows transfer to your wall. Adjacent wall tiles score.</p>'+
+      '<p><strong style="color:var(--gold);">End bonuses:</strong> +2 per full row, +7 per full column, +10 per all-5-of-color set. First completed wall row triggers final scoring.</p>';
+    R.stopten = ''+
+      '<p><strong>Goal:</strong> Stop the clock at exactly <strong style="color:var(--gold);">10.00 seconds</strong>.</p>'+
+      '<p><strong>Tap START</strong> — clock counts up. <strong>Tap STOP</strong> when you think it\'s 10.</p>'+
+      '<p><strong>Tiers:</strong> Perfect (≤±0.005s = +3 SB) · So Close (±0.015s = +2 SB) · Nice (±0.035s = +1 SB) · Miss (beyond).</p>'+
+      '<p><strong>Session:</strong> 3 attempts then a summary card with your best.</p>';
+    R.rhythmvine = ''+
+      '<p><strong>Goal:</strong> Tap each falling note as it crosses the gold hit line.</p>'+
+      '<p><strong>4 lanes:</strong> Spring (pink) · Summer (gold) · Autumn (copper) · Winter (ice).</p>'+
+      '<p><strong>Hit windows:</strong> Perfect (40ms) · Great (80ms) · OK (120ms). Miss beyond.</p>'+
+      '<p><strong>Combo:</strong> Consecutive hits multiply your score. Miss = combo resets.</p>'+
+      '<p><strong>Keys:</strong> D F J K on desktop, or tap the four pads on mobile.</p>';
+    R.recall = ''+
+      '<p><strong>Goal:</strong> Memorize symbols, count backward to clear your short-term memory, then identify which symbols you saw.</p>'+
+      '<p><strong>Phases:</strong> MEMORIZE (5-6 seconds) → WAIT (12-18 seconds, count backward by 3s) → RECALL (tap the symbols you remember).</p>'+
+      '<p><strong>Score:</strong> +100 for correct symbols, partial credit for partial recall. Level up to add more symbols + distractors.</p>'+
+      '<p><strong>Variation:</strong> Every 3rd round adds an extra target.</p>';
+  })();
+
   // Generic rules modal renderer. Shows registered rules HTML if
   // available, otherwise falls back to the short blurb from G[].r
   // so every game gets at least a basic rules card.
