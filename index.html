@@ -2408,6 +2408,37 @@
     .lu-overlay .lu-unlock-desc{font-family:'DM Sans',sans-serif;font-size:0.66rem;color:rgba(232,220,200,0.85);line-height:1.4;}
     .lu-overlay .lu-burst{position:absolute;inset:-50px;pointer-events:none;background:radial-gradient(circle at center,rgba(255,220,140,0.25),transparent 60%);animation:luBurst 1.4s ease-out;}
     @keyframes luBurst{0%{opacity:0;transform:scale(0.5);}30%{opacity:0.8;}100%{opacity:0;transform:scale(1.4);}}
+
+    /* ═══ CELEBRATION PARTICLES ═══
+       Reusable SVG particle system for level-ups, mints, daily rewards.
+       Pure CSS + inline SVG — no image deps, no emoji, GPU-friendly. */
+    .lw-fx-layer{position:absolute;inset:0;pointer-events:none;overflow:visible;z-index:5;}
+    .lw-fx{position:absolute;top:50%;left:50%;will-change:transform,opacity;pointer-events:none;}
+    .lw-fx svg{display:block;}
+    .lw-fx-sparkle{animation:lwFxSparkle 1600ms cubic-bezier(0.18,0.7,0.4,1) forwards;}
+    .lw-fx-petal{animation:lwFxPetalFall 2400ms cubic-bezier(0.45,0.05,0.55,0.95) forwards;}
+    .lw-fx-leaf{animation:lwFxLeafFall 2800ms cubic-bezier(0.45,0.05,0.55,0.95) forwards;}
+    .lw-fx-ring{animation:lwFxRingExpand 1400ms cubic-bezier(0.16,1,0.3,1) forwards;}
+    @keyframes lwFxSparkle{
+      0%{opacity:0;transform:translate(-50%,-50%) translate(var(--fx-x0,0px),var(--fx-y0,0px)) scale(0.2) rotate(0deg);}
+      20%{opacity:1;}
+      100%{opacity:0;transform:translate(-50%,-50%) translate(var(--fx-x1,80px),var(--fx-y1,-80px)) scale(0.6) rotate(var(--fx-rot,360deg));}
+    }
+    @keyframes lwFxPetalFall{
+      0%{opacity:0;transform:translate(-50%,-50%) translate(var(--fx-x0,0px),-260px) scale(0.6) rotate(0deg);}
+      15%{opacity:1;}
+      100%{opacity:0;transform:translate(-50%,-50%) translate(var(--fx-x1,40px),320px) scale(1) rotate(var(--fx-rot,540deg));}
+    }
+    @keyframes lwFxLeafFall{
+      0%{opacity:0;transform:translate(-50%,-50%) translate(var(--fx-x0,0px),-280px) scale(0.5) rotate(-30deg);}
+      15%{opacity:1;}
+      55%{transform:translate(-50%,-50%) translate(calc(var(--fx-x0,0px) + 30px),50px) scale(0.95) rotate(45deg);}
+      100%{opacity:0;transform:translate(-50%,-50%) translate(var(--fx-x1,-20px),360px) scale(1.1) rotate(var(--fx-rot,720deg));}
+    }
+    @keyframes lwFxRingExpand{
+      0%{opacity:0.9;transform:translate(-50%,-50%) scale(0.1);}
+      100%{opacity:0;transform:translate(-50%,-50%) scale(2.4);}
+    }
     .greenhouse-plant .gh-traits{font-family:'DM Mono',monospace;font-size:0.35rem;color:var(--sage);margin-top:0.1rem;opacity:0.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .greenhouse-plant .gh-slot{position:absolute;top:3px;left:5px;font-family:'Bebas Neue',sans-serif;font-size:0.55rem;color:rgba(122,179,86,0.35);text-shadow:0 0 6px rgba(122,179,86,0.15);letter-spacing:0.02em;}
     .cross-badge{display:inline-block;font-family:'DM Mono',monospace;font-size:0.28rem;letter-spacing:0.06em;color:#8BBFE0;background:rgba(91,143,185,0.12);border:1px solid rgba(91,143,185,0.3);border-radius:3px;padding:0.06rem 0.25rem;margin-top:0.1rem;vertical-align:middle;}
@@ -45876,6 +45907,68 @@ function _showLevelUp(level,reason){
   _luQueue.push({level:level,title:rankEntry.title,unlock:LEVEL_UNLOCKS[level]||null,reason:reason});
   if(!_luBusy)_luProcessQueue();
 }
+// ═══ CELEBRATION PARTICLE FACTORY ═══
+// Stephen wants real visual celebrations, not emoji. Builds inline SVG
+// particles (sparkles, petals, leaves, rings) and lets CSS animate them
+// outward from a center point. Auto-cleans up after the animation ends.
+//
+// Usage: window._lwSpawnParticles(container, {sparkles:18, petals:8, leaves:6, rings:2});
+window._lwSpawnParticles=function(container,opts){
+  if(!container)return;
+  opts=opts||{};
+  var layer=document.createElement('div');
+  layer.className='lw-fx-layer';
+  container.appendChild(layer);
+  var SVGS={
+    // 4-point gold star — classic sparkle silhouette
+    sparkle:'<svg width="14" height="14" viewBox="-10 -10 20 20"><path d="M0 -9 L2 -2 L9 0 L2 2 L0 9 L-2 2 L-9 0 L-2 -2 Z" fill="url(#fxGold)"/><defs><radialGradient id="fxGold" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff5c8"/><stop offset="0.6" stop-color="#f5dc95"/><stop offset="1" stop-color="#c8a84b"/></radialGradient></defs></svg>',
+    // Soft rose petal — ellipse rotated, gradient fill
+    petal:'<svg width="16" height="22" viewBox="-8 -11 16 22"><ellipse cx="0" cy="0" rx="5" ry="10" fill="url(#fxPetal)" opacity="0.9"/><defs><linearGradient id="fxPetal" x1="0" y1="-1" x2="0" y2="1"><stop offset="0" stop-color="#f4c8d8"/><stop offset="0.6" stop-color="#e8a0bf"/><stop offset="1" stop-color="#c47a98"/></linearGradient></defs></svg>',
+    // Sage leaf — almond shape with a midrib vein
+    leaf:'<svg width="18" height="14" viewBox="-9 -7 18 14"><path d="M-8 0 Q-4 -7 0 -6 Q4 -7 8 0 Q4 7 0 6 Q-4 7 -8 0 Z" fill="url(#fxLeaf)"/><path d="M-7 0 L7 0" stroke="#3a5a28" stroke-width="0.6" opacity="0.5"/><defs><linearGradient id="fxLeaf" x1="-1" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5a8c3a"/><stop offset="0.5" stop-color="#7ab356"/><stop offset="1" stop-color="#a0cc80"/></linearGradient></defs></svg>',
+    // Expanding gold ring — sits at center, no displacement
+    ring:'<svg width="40" height="40" viewBox="-20 -20 40 40"><circle cx="0" cy="0" r="14" fill="none" stroke="url(#fxRing)" stroke-width="2"/><defs><radialGradient id="fxRing" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff5c8" stop-opacity="0"/><stop offset="0.7" stop-color="#f5dc95"/><stop offset="1" stop-color="#c8a84b" stop-opacity="0"/></radialGradient></defs></svg>'
+  };
+  function spawn(type,count,delayBase){
+    for(var i=0;i<count;i++){
+      var el=document.createElement('div');
+      el.className='lw-fx lw-fx-'+type;
+      el.innerHTML=SVGS[type]||'';
+      // Random trajectory: angle 0-2π, distance 60-220px outward
+      var ang=Math.random()*Math.PI*2;
+      var dist=60+Math.random()*160;
+      var x1=Math.round(Math.cos(ang)*dist);
+      var y1=Math.round(Math.sin(ang)*dist);
+      var rot=Math.round((Math.random()*2-1)*720);
+      // Small initial offset so the burst doesn't all-stack at exact center
+      var x0=Math.round((Math.random()*2-1)*8);
+      var y0=Math.round((Math.random()*2-1)*8);
+      // Petals/leaves drift downward — override y0 to start above center
+      if(type==='petal'||type==='leaf'){
+        y0=-260-Math.random()*40;
+        x0=Math.round((Math.random()*2-1)*180);
+        x1=x0+Math.round((Math.random()*2-1)*120);
+      }
+      el.style.cssText+=
+        '--fx-x0:'+x0+'px;'+
+        '--fx-y0:'+y0+'px;'+
+        '--fx-x1:'+x1+'px;'+
+        '--fx-y1:'+y1+'px;'+
+        '--fx-rot:'+rot+'deg;'+
+        'animation-delay:'+(delayBase+Math.random()*200)+'ms;';
+      layer.appendChild(el);
+      // Auto-cleanup
+      el.addEventListener('animationend',function(){if(this.parentNode)this.parentNode.removeChild(this);});
+    }
+  }
+  if(opts.rings)spawn('ring',opts.rings,0);
+  if(opts.sparkles)spawn('sparkle',opts.sparkles,80);
+  if(opts.petals)spawn('petal',opts.petals,150);
+  if(opts.leaves)spawn('leaf',opts.leaves,120);
+  // Layer cleanup after the longest animation finishes (~3s)
+  setTimeout(function(){if(layer.parentNode)layer.parentNode.removeChild(layer);},3500);
+};
+
 function _luProcessQueue(){
   if(_luQueue.length===0){_luBusy=false;return;}
   _luBusy=true;
@@ -45924,6 +46017,15 @@ function _luProcessQueue(){
   ov.classList.add('open');
   try{if(navigator.vibrate)navigator.vibrate([30,55,30]);}catch(e){}
   if(window._playWin)window._playWin();
+  // Particle celebration — sparkles burst out, petals + leaves drift down,
+  // 2 expanding gold rings. All inline SVG, no images, no emoji.
+  // Spawned into the panel so they fly relative to the level number.
+  try{
+    var panel=ov.querySelector('.lu-panel');
+    if(panel&&window._lwSpawnParticles){
+      window._lwSpawnParticles(panel,{rings:2,sparkles:18,petals:6,leaves:5});
+    }
+  }catch(e){}
   clearTimeout(_luTimer);
   _luTimer=setTimeout(function(){_luDismiss();},4500);
 }
