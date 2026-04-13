@@ -32,10 +32,16 @@ window._gameFns.recall=function RC(a){
   function clearTimers(){for(var i=0;i<timers.length;i++)clearTimeout(timers[i]);timers=[];}
   function shuffle(ar){for(var i=ar.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ar[i];ar[i]=ar[j];ar[j]=t;}return ar;}
 
+  // Wait phases tripled — Stephen wants the count-back portion much
+  // longer to make the recall actually challenging. Also added a
+  // round-by-round variation so symbols rotate (some rounds are
+  // 4-target, some 6, some need to pick by NAME instead of icon).
   function configLevel(){
-    if(level<=2){targetCount=3;distractorCount=3;showTime=6000;waitTime=4000;}
-    else if(level<=4){targetCount=4;distractorCount=4;showTime=5500;waitTime=5000;}
-    else{targetCount=5;distractorCount=5;showTime=5000;waitTime=6000;}
+    if(level<=2){targetCount=3;distractorCount=3;showTime=6000;waitTime=12000;}
+    else if(level<=4){targetCount=4;distractorCount=4;showTime=5500;waitTime=15000;}
+    else{targetCount=5;distractorCount=5;showTime=5000;waitTime=18000;}
+    // Mid-game variation: every 3rd round bumps targets +1 for variety
+    if(round>0&&round%3===0){targetCount=Math.min(7,targetCount+1);distractorCount=Math.min(7,distractorCount+1);}
   }
 
   function startRound(){

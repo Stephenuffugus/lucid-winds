@@ -39160,7 +39160,7 @@ var G=[
 {id:'vinewords',n:'Vine Words',i:'\ud83d\udd24',r:'Find words by connecting adjacent letters. 2 minutes, longer = more points!',cat:'puzzle',thumb:'assets/games/thumbs/vinewords.png'},
 {id:'storyseeds',n:'Story Seeds',i:'\ud83d\udcdc',r:'Daily writing prompts. Plant a seed, watch the story grow. Save your entries!',cat:'creative',thumb:'assets/games/thumbs/storyseeds.png'},
 {id:'seedsow',n:'Seed Sow',i:'\ud83c\udf31',r:'Sow seeds around the board, capture into your store. First to empty wins.',cat:'board',thumb:'assets/games/thumbs/seedsow.png'},
-{id:'recall',n:'Recall Garden',i:'\ud83e\udde0',r:'Memory recall: watch symbols, count backwards, tap the ones you saw.',cat:'puzzle',thumb:'assets/games/thumbs/recall.png'},
+{id:'recall',n:'Recall Garden',i:'\ud83e\udde0',r:'Memory recall: watch symbols, count backwards, tap the ones you saw.',cat:'pattern',thumb:'assets/games/thumbs/recall.png'},
 {id:'rhythmvine',n:'Rhythm and Vine',i:'\ud83c\udfb5',r:'Tap to the beat! Perfect, Great, Good timing windows. Level up your rhythm. (A play on rhythm and rhyme.)',cat:'creative',thumb:'assets/games/thumbs/rhythmvine.png'},
 {id:'seedtoss2',n:'Seed Toss',i:'\ud83c\udf31',r:'Flick seeds into the pot. Physics + wind at higher levels. Hit the bullseye!',cat:'creative',thumb:'assets/games/thumbs/seedtoss2.png'},
 {id:'pottingbench',n:'Potting Bench',i:'\ud83e\udeb4',r:'Speed card sorting. Match any attribute to send a card to either pile. Clear the deck fast!',cat:'pattern',thumb:'assets/games/thumbs/pottingbench.png'}
@@ -43186,11 +43186,18 @@ function GCS(a){var tubes=[],numT=7,cap=4,sel=-1;var COLS=['#4a7c35','#C8A84B','
 function GBS(a){
   var SZ=8,SHIPS=[4,3,3,2,2],SHIP_NAMES=['Vine','Root','Branch','Sprout','Seed'];
   var pGrid,eGrid,phase,selShip,placements,shipDirs,gameOver,turn,aiStack,aiHits;
+  // Confirm-attack toggle for accessibility — saves preference across sessions.
+  var confirmAttack=false;
+  try{confirmAttack=localStorage.getItem('lw_bs_confirm')==='on';}catch(e){}
   ms(a,'<span id="BSph">Place your fleet</span>');mm(a);
   var wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px';a.appendChild(wrap);
   var lbl=document.createElement('div');lbl.id='BSlbl';lbl.style.cssText='font-family:DM Mono,monospace;font-size:0.75rem;color:var(--muted);text-align:center;min-height:1.4em;width:100%';wrap.appendChild(lbl);
-  var grids=document.createElement('div');grids.style.cssText='display:flex;gap:clamp(8px,3vw,16px);justify-content:center;flex-wrap:wrap';wrap.appendChild(grids);
-  mc(a).innerHTML='<button class="gb" id="BSdir" onclick="_BSR()" style="min-width:86px">↻ Rotate</button> <button class="gb" id="BSready" onclick="_BSready()" style="min-width:104px;background:rgba(74,124,53,0.28);opacity:0.4" disabled>✓ I\'M READY</button> <button class="gb-new" onclick="_BSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  // Stack grids vertically during BATTLE so each one is large.
+  // Side-by-side worked for placement but made enemy targeting hard
+  // when both grids were small — Stephen reported wrong-square taps.
+  var grids=document.createElement('div');grids.style.cssText='display:flex;flex-direction:column;align-items:center;gap:clamp(10px,3vw,18px);width:100%';wrap.appendChild(grids);
+  function _bsSyncCfm(){var b=document.getElementById('BSconfirmBtn');if(b)b.textContent=confirmAttack?'✓ CONFIRM ON':'CONFIRM OFF';}
+  mc(a).innerHTML='<button class="gb" id="BSdir" onclick="_BSR()" style="min-width:86px">↻ Rotate</button> <button class="gb" id="BSready" onclick="_BSready()" style="min-width:104px;background:rgba(74,124,53,0.28);opacity:0.4" disabled>✓ I\'M READY</button> <button class="gb" id="BSconfirmBtn" onclick="_BSToggleConfirm()" style="min-width:120px;font-size:0.7rem;letter-spacing:0.06em;">'+(confirmAttack?'✓ CONFIRM ON':'CONFIRM OFF')+'</button> <button class="gb-new" onclick="_BSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   function mkGrid(){return new Array(SZ*SZ).fill(0)}
   function idx(r,c){return r*SZ+c}
@@ -43218,7 +43225,9 @@ function GBS(a){
     g.style.cssText='display:inline-block;text-align:center';
     var title=document.createElement('div');title.style.cssText='font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:'+(isEnemy?'var(--gold)':'var(--sage)')+';letter-spacing:0.1em;margin-bottom:4px';
     title.textContent=isEnemy?'ENEMY WATERS':'YOUR FLEET';g.appendChild(title);
-    var gridW=phase==='place'?'clamp(260px,80vw,360px)':'clamp(160px,42vw,220px)';
+    // Vertical-stacked layout means each grid can be much wider during
+    // battle. Was clamp(160,42vw,220) — way too small to tap accurately.
+    var gridW=phase==='place'?'clamp(260px,80vw,360px)':'clamp(280px,90vw,420px)';
     var tbl=document.createElement('div');tbl.style.cssText='display:grid;grid-template-columns:repeat('+SZ+',1fr);gap:1px;background:rgba(74,124,53,0.08);border:1.5px solid rgba(74,124,53,0.15);border-radius:6px;overflow:hidden;width:'+gridW;
     for(var i=0;i<SZ*SZ;i++){
       var d=document.createElement('div');var v=grid[i];
@@ -43317,14 +43326,44 @@ function GBS(a){
       if(readyBtn)readyBtn.style.display='none';
       lbl.innerHTML='';
       lbl.style.minHeight='';
-      // Enemy grid — player shoots here
-      renderGrid(eGrid,grids,true,turn==='player'&&!gameOver?function(){
-        var i=parseInt(this.getAttribute('data-i'));if(eGrid[i]<0)return;
+      // Add a header for each board so the vertical stack reads clearly
+      var enemyHdr=document.createElement('div');
+      enemyHdr.style.cssText='font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:var(--gold);letter-spacing:0.12em;text-align:center;margin:4px 0 2px;';
+      enemyHdr.textContent='⚔ ENEMY WATERS — TAP TO ATTACK';
+      grids.appendChild(enemyHdr);
+      // Enemy grid — player shoots here. With confirm-attack on, a
+      // first tap "selects" a square (gold ring) and a second tap on
+      // the SAME square commits. Tapping a different square moves the
+      // selection. Cleared by tap-elsewhere or pressing "✗ CANCEL".
+      var _bsPendingShot=-1;
+      function _bsCommitShot(i){
+        if(eGrid[i]<0)return;
         if(eGrid[i]>0){eGrid[i]=-2;_play('snap');sm('💥 Hit!');
-          if(allSunk(eGrid,SHIPS)){gameOver=true;sm('🌿 All sunk! You win!');_e('game_win');_playWin();_sr('battleship',{w:true,s:1});rn();return}
+          if(allSunk(eGrid,SHIPS)){gameOver=true;sm('🌿 All sunk! You win!');_e('game_win');_playWin();_sr('battleship',{w:true,s:1});rn();return;}
         }else{eGrid[i]=-1;_play('tap');sm('· Miss');}
-        turn='ai';rn();setTimeout(aiTurn,600);
+        turn='ai';_bsPendingShot=-1;rn();setTimeout(aiTurn,600);
+      }
+      renderGrid(eGrid,grids,true,turn==='player'&&!gameOver?function(){
+        var i=parseInt(this.getAttribute('data-i'));
+        if(eGrid[i]<0)return;
+        if(confirmAttack){
+          if(_bsPendingShot===i){_bsCommitShot(i);return;}
+          _bsPendingShot=i;
+          var coord='ABCDEFGH'.charAt(i%SZ)+(Math.floor(i/SZ)+1);
+          sm('🎯 Aimed at '+coord+' — tap again to fire');
+          // Light highlight on the selected cell
+          var enemyTbl=grids.querySelectorAll('div[data-i]');
+          enemyTbl.forEach(function(el){
+            if(parseInt(el.getAttribute('data-i'),10)===i)el.style.boxShadow='0 0 0 3px rgba(200,168,75,0.85), 0 0 12px rgba(200,168,75,0.5)';
+          });
+          return;
+        }
+        _bsCommitShot(i);
       }:null);
+      var youHdr=document.createElement('div');
+      youHdr.style.cssText='font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:var(--sage);letter-spacing:0.12em;text-align:center;margin:8px 0 2px;';
+      youHdr.textContent='🌱 YOUR FLEET';
+      grids.appendChild(youHdr);
       // Player grid — shows AI shots
       renderGrid(pGrid,grids,false,null);
     }
@@ -43387,7 +43426,14 @@ function GBS(a){
     gameOver=false;turn='player';aiStack=[];aiHits=[];
     autoPlace(eGrid);
     document.getElementById('BSph').innerHTML='Place your fleet';sm('');rn();
-  };_BSN();
+  };
+  window._BSToggleConfirm=function(){
+    confirmAttack=!confirmAttack;
+    try{localStorage.setItem('lw_bs_confirm',confirmAttack?'on':'off');}catch(e){}
+    _bsSyncCfm();
+    sm(confirmAttack?'🎯 Confirm-attack ON — tap once to aim, twice to fire':'⚡ Confirm-attack OFF — single-tap fires');
+  };
+  _BSN();
 }
 // ═══ SOKOBAN — GARDEN PATH ═══
 function GSK(a){

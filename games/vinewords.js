@@ -139,7 +139,14 @@ window._gameFns.vinewords=function VW(a){
 
   function render(){
     var h='';
-    h+='<div style="text-align:center;font-family:DM Mono,monospace;font-size:1rem;color:var(--cream);min-height:22px;margin:6px 0;">'+pathWord()+'</div>';
+    var curWord=pathWord();
+    var canSubmit=curWord.length>=3&&DICT[curWord]&&!foundSet[curWord];
+    h+='<div style="text-align:center;font-family:DM Mono,monospace;font-size:1.4rem;color:'+(canSubmit?'var(--sage)':'var(--cream)')+';min-height:32px;margin:6px 0;letter-spacing:0.06em;font-weight:700;">'+(curWord||'—')+'</div>';
+    // Explicit submit + clear buttons (was hidden behind tap-last-letter-again)
+    h+='<div style="display:flex;gap:8px;justify-content:center;padding:4px 0 8px;">';
+    h+='<button class="gb" onclick="_VWsub()" '+(curWord.length===0?'disabled':'')+' style="min-height:48px;padding:10px 20px;background:'+(canSubmit?'rgba(122,179,86,0.3)':'rgba(26,31,23,0.6)')+';border-color:'+(canSubmit?'rgba(122,179,86,0.6)':'rgba(74,124,53,0.25)')+';color:'+(canSubmit?'var(--sage)':'var(--cream)')+';font-size:0.85rem;letter-spacing:0.08em;'+(curWord.length===0?'opacity:0.4;':'')+'">✓ SUBMIT</button>';
+    h+='<button class="gb" onclick="_VWclr()" '+(curWord.length===0?'disabled':'')+' style="min-height:48px;padding:10px 20px;font-size:0.85rem;letter-spacing:0.08em;'+(curWord.length===0?'opacity:0.4;':'')+'">✗ CLEAR</button>';
+    h+='</div>';
     h+='<div style="display:flex;flex-direction:column;gap:4px;align-items:center;">';
     for(var r=0;r<4;r++){
       h+='<div style="display:flex;gap:4px;">';
@@ -161,6 +168,8 @@ window._gameFns.vinewords=function VW(a){
   }
 
   window._VWC=function(r,c){onCell(r,c);};
+  window._VWsub=function(){if(playing)submitWord();};
+  window._VWclr=function(){path=[];render();};
   window._VWN=function(){
     if(timerId)clearInterval(timerId);
     newGrid();path=[];foundSet={};foundList=[];score=0;timeLeft=120;playing=true;
