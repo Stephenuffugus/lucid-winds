@@ -11,8 +11,12 @@ window._gameFns.stonegarden = function SG(a){
   var SETTLE_VEL=0.8,SETTLE_ANG=0.01,SETTLE_FRAMES=40,SUBSTEPS=4;
 
   var mode='zen',state='menu';
+  // Persist Best Height across sessions — it's a featured stat in the
+  // menu, so seeing it reset to 0 every time the game opens makes the
+  // run feel meaningless. Hydrated below.
   var stones=[],hoverStone=null,particles=[];
   var stonesPlaced=0,maxHeight=0,bestHeight=0,lives=3,challengeLevel=1,targetHeight=120,toppleCount=0;
+  try{bestHeight=parseInt(localStorage.getItem('lw_sg_best')||'0',10)||0;}catch(e){}
   var settleCounter=0,W=360,H=480,GROUND_Y=400;
   var canvas,ctx,dpr=1,running=false,lastTime=0;
 
@@ -256,7 +260,7 @@ window._gameFns.stonegarden = function SG(a){
   }
   function onAllSettled(){
     var h=measureHeight();
-    if(h>maxHeight){maxHeight=h;if(h>bestHeight)bestHeight=h;}
+    if(h>maxHeight){maxHeight=h;if(h>bestHeight){bestHeight=h;try{localStorage.setItem('lw_sg_best',String(bestHeight));}catch(e){}}}
     stonesPlaced++;
     if(checkTopple()){
       toppleCount++;
