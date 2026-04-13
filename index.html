@@ -39788,15 +39788,14 @@ function _op(){var o=document.getElementById('fg-ov'),rc=_gr();
     h+='</button>';
     h+='<div class="gp-cat-body"><div class="fk2-grid">';
     games.forEach(function(g){
-      var r=rc[g.id]||{};var isNew=!r.p;
-      h+='<div class="fk2" onclick="_lwLaunch(\''+g.id+'\')" style="animation-delay:'+(gi*20)+'ms;'+(isNew?'border-color:rgba(200,168,75,0.25);':'')+'">';
+      var r=rc[g.id]||{};
+      h+='<div class="fk2" onclick="_lwLaunch(\''+g.id+'\')" style="animation-delay:'+(gi*20)+'ms;">';
       // Thumbnail or emoji fallback
       if(g.thumb){
         h+='<div class="fk2-thumb"><img src="'+g.thumb+'" loading="lazy" alt="" onerror="this.parentElement.innerHTML=\'<span style=font-size:2rem>'+g.i+'</span>\'"></div>';
       }else{
         h+='<div style="font-size:2rem;margin-bottom:4px;position:relative;">'+g.i+'</div>';
       }
-      if(isNew)h+='<span class="fk2-new">NEW</span>';
       h+='<div style="position:absolute;bottom:0;left:0;right:0;padding:6px 4px 5px;background:linear-gradient(transparent,rgba(8,10,6,0.85) 30%,rgba(8,10,6,0.95));border-radius:0 0 clamp(9px,2.8vw,13px) clamp(9px,2.8vw,13px);">';
       h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.06em;line-height:1.1;text-shadow:0 1px 4px rgba(0,0,0,0.8);">'+g.n+'</div>';
       h+=(r.p?'<div style="font-size:0.3rem;color:var(--muted);margin-top:1px;text-shadow:0 1px 3px rgba(0,0,0,0.8);">'+r.p+' played'+(r.w?' \u00b7 '+r.w+' won':'')+'</div>':'<div style="font-size:0.28rem;color:var(--gold);margin-top:1px;opacity:0.6;">Try it!</div>');
