@@ -25848,6 +25848,7 @@ document.addEventListener('keydown', function(e) {
     updateDashboard();
     // account nudge removed — vault sync prompt disabled
     if (typeof gtag !== 'undefined') gtag('event', 'plant_minted', { total: gh.length, rare: traits.isRare });
+    if (window._LW_classXP) window._LW_classXP('harvest', traits.isRare ? 15 : 5);
     // PWA install hook — trigger at 3rd plant or on rare
     if (window.checkPWAPrompt) window.checkPWAPrompt(gh.length, traits.isRare);
     if (window.syncVaultToCloud) syncVaultToCloud();
@@ -30891,6 +30892,7 @@ document.addEventListener('keydown', function(e) {
     nur[seedIndex] = seed;
 
     if (typeof gtag !== 'undefined') gtag('event', 'nursery_water', { id: seedId, days: seed.waterLog.length });
+    if (window._LW_classXP) window._LW_classXP('tend', 5);
     if (window._trackQuest) window._trackQuest('seedsWatered', 1);
 
     // BLOOM TRIGGER — 3rd water makes bloom-ready; confirm before executing
@@ -35194,6 +35196,7 @@ function _doCollectFeral(f,mk){
   _feralBurst(info.grade,info.gc,info.nm,reward);
   if(window.FG_Audio&&FG_Audio.enabled)try{FG_Audio.playCollectChime();}catch(e){}
   if(typeof gtag!=='undefined') gtag('event','feral_collected',{grade:info.grade,dew_reward:reward});
+  if(window._LW_classXP)window._LW_classXP('feral',10);
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
 }
 
@@ -48189,6 +48192,7 @@ window.bsExecuteBreed=function(){
           var res=window.FG_Data.addSeed({seedHash:offHash,parentAHash:_bsA.hash,parentBHash:_bsM.hash,nonce:offGen});
           if(!res.ok){if(window._toast)window._toast('Nursery full. Bloom or abandon a seed first.');return;}
         }
+        if(window._LW_classXP){window._LW_classXP('breed',20);if(offGen>=2)window._LW_classXP('chimera',10);}
         // Use breed charges on both parents (handles cooldown, charges, breedCount)
         if(window.FG_Data&&FG_Data.useBreedCharge){
           FG_Data.useBreedCharge(_bsA.hash);
