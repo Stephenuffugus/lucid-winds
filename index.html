@@ -43024,7 +43024,14 @@ function GMM(a){var code=[],guesses=[],cur=[],_mmMode='color';
     if(_mmMode==='letter')return '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:clamp(1.2rem,4vw,1.6rem);font-weight:700;color:'+p.fill+';text-shadow:0 1px 3px rgba(0,0,0,0.5)">'+LETTERS[idx]+'</div>';
     if(_mmMode==='number')return '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:clamp(1.2rem,4vw,1.6rem);font-weight:700;color:'+p.fill+';text-shadow:0 1px 3px rgba(0,0,0,0.5)">'+NUMBERS[idx]+'</div>';
     return p.svg.replace(/PAL/g,p.fill).replace(/ACC/g,p.accent)}
-  ms(a,'Guesses: <strong id="MMg">0</strong>/10');mm(a);
+  // Difficulty wiring: pre-game modal stashes lw_diff_mastermind in
+  // localStorage. Easy = no duplicate colors in the code (much easier
+  // to deduce). Higher tiers reduce max guesses to compensate for the
+  // same color pool.
+  var _mmDiff='medium';try{_mmDiff=localStorage.getItem('lw_diff_mastermind')||'medium';}catch(e){}
+  var _mmMaxG={easy:12,medium:10,hard:7,expert:5}[_mmDiff]||10;
+  var _mmNoDupes=(_mmDiff==='easy');
+  ms(a,'Guesses: <strong id="MMg">0</strong>/'+_mmMaxG);mm(a);
   // Directions
   var dir=document.createElement('div');
   dir.style.cssText='text-align:center;padding:0.5rem 0.8rem;margin:0.3rem auto;max-width:380px;font-family:DM Sans,sans-serif;font-size:clamp(0.65rem,2vw,0.8rem);color:var(--cream);line-height:1.5;opacity:0.85';
@@ -43091,11 +43098,29 @@ function GMM(a){var code=[],guesses=[],cur=[],_mmMode='color';
     document.getElementById('MMg').textContent=guesses.length;
     if(exact>0)_e('progress');
     if(exact===4){_e('game_win');_playWin();sm('Cracked in '+guesses.length+'!');_sr('mastermind',{w:true,s:guesses.length})}
-    else if(guesses.length>=10){_e('game_loss');sm('The code was: '+code.map(function(c){return PEGS[c].name}).join(' \u2022 '));_sr('mastermind',{w:false,s:0})}
+    else if(guesses.length>=_mmMaxG){_e('game_loss');sm('The code was: '+code.map(function(c){return PEGS[c].name}).join(' \u2022 '));_sr('mastermind',{w:false,s:0})}
     rn();
   };
   window._MMMode=function(){_mmMode=_mmMode==='color'?'letter':_mmMode==='letter'?'number':'color';var btn=document.getElementById('MMmode');if(btn)btn.textContent='MODE: '+_mmMode.toUpperCase();_play('tap');pal.innerHTML='';PEGS.forEach(function(p,i){var d=document.createElement('div');d.className='mmp';d.style.cssText='background:rgba(26,36,22,.8);border-color:'+p.fill;d.innerHTML=pegSvg(i);d.addEventListener('click',function(){_MMA(i)});pal.appendChild(d)});rn()};
-  window._MMN=function(){code=[];for(var i=0;i<4;i++)code.push(Math.floor(Math.random()*6));guesses=[];cur=[];document.getElementById('MMg').textContent='0';sm('');rn()};_MMN();
+  window._MMN=function(){
+    // Re-read difficulty in case player changed it between games
+    try{_mmDiff=localStorage.getItem('lw_diff_mastermind')||'medium';}catch(e){}
+    _mmMaxG={easy:12,medium:10,hard:7,expert:5}[_mmDiff]||10;
+    _mmNoDupes=(_mmDiff==='easy');
+    code=[];
+    if(_mmNoDupes){
+      // Sample 4 distinct colors from the 6-peg pool
+      var pool=[0,1,2,3,4,5];
+      for(var p=pool.length-1;p>0;p--){var j=Math.floor(Math.random()*(p+1));var t=pool[p];pool[p]=pool[j];pool[j]=t;}
+      code=pool.slice(0,4);
+    } else {
+      for(var i=0;i<4;i++)code.push(Math.floor(Math.random()*6));
+    }
+    guesses=[];cur=[];
+    var msb=document.querySelector('.fg-ms');
+    if(msb)msb.innerHTML='Guesses: <strong id="MMg">0</strong>/'+_mmMaxG;
+    sm('');rn()
+  };_MMN();
 }
 // ═══ FLOOD FILL ═══
 function GCS(a){var tubes=[],numT=7,cap=4,sel=-1;var COLS=['#4a7c35','#C8A84B','#4a7aaa','#c76a30','#9b59b6'];
