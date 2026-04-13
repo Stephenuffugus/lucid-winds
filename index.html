@@ -9925,7 +9925,9 @@ document.addEventListener('keydown', function(e) {
     var _ahEl = document.getElementById('attn-hash');
     if (_ahEl) _ahEl.textContent = payload.verification.hash ? payload.verification.hash.substring(0, 12) + '...' : '—';
 
-    console.log('[AttentionProof] Payload #' + attentionPayloads.length, JSON.stringify(payload, null, 2));
+    // Silenced for testers — fires on every game completion with full JSON.
+    // Re-enable by setting window._LW_DEBUG=true in console.
+    if (window._LW_DEBUG) console.log('[AttentionProof] Payload #' + attentionPayloads.length, JSON.stringify(payload, null, 2));
     if (typeof gtag !== 'undefined') gtag('event', 'attention_proof', { event: event, phenos: phenosFound, time: getTimeSec() });
 
     return payload;
@@ -26245,7 +26247,7 @@ document.addEventListener('keydown', function(e) {
   function setPity(n){ try{localStorage.setItem(_PITY_KEY,String(n));}catch(e){} }
 
   async function mintPlant(hash, opts) {
-    console.log('[mintPlant] called with hash:', hash, 'gh.length:', loadGreenhouse().length);
+    if (window._LW_DEBUG) console.log('[mintPlant] called with hash:', hash, 'gh.length:', loadGreenhouse().length);
     var gh = loadGreenhouse();
     // Check if this plant was pre-written by _autoMintPlant (bare-bones entry)
     var existingIdx = -1;
@@ -26310,7 +26312,7 @@ document.addEventListener('keydown', function(e) {
       _existing.phenos = entry.phenos;
       _existing.time = entry.time;
       _existing.seal = entry.seal;
-      console.log('[mintPlant] enhanced pre-written plant at index', existingIdx);
+      if (window._LW_DEBUG) console.log('[mintPlant] enhanced pre-written plant at index', existingIdx);
     } else {
       gh.push(entry);
     }
@@ -27820,11 +27822,11 @@ document.addEventListener('keydown', function(e) {
   }
   // Phase 28 fix: persist earned hashes immediately — force=true bypasses 2s debounce
   function earnHashes(amount) {
-    console.log('[earnHashes] amount:', amount);
+    if (window._LW_DEBUG) console.log('[earnHashes] amount:', amount);
     var ledger = getHashLedger();
     ledger.earned = (ledger.earned || 0) + amount;
     _secureSet(HASH_LEDGER_KEY, ledger);
-    console.log('[earnHashes] ledger.earned now:', ledger.earned);
+    if (window._LW_DEBUG) console.log('[earnHashes] ledger.earned now:', ledger.earned);
     if(window.PW_grantXP) PW_grantXP(amount * 2, 'dew_drop');
     _updateGameDew();
   }
@@ -35139,7 +35141,7 @@ function _drawZoneHexes(){
     var hex=L.polygon(hexPts,{color:base+sa,weight:1.5,fillColor:base+fa,fillOpacity:1,interactive:true,className:cls}).addTo(_map);
     hex._zoneKey=zone.key;hex._zoneDist=zone.dist;hex._zonePlantCount=zone.count;
     hex.on('click',function(e){L.DomEvent.stopPropagation(e);
-      console.log('[HEX TAP] zone='+this._zoneKey+' dist='+Math.round(this._zoneDist)+'m plants='+this._zonePlantCount+' FG_Wild.inspector='+(!!window.FG_Wild&&!!FG_Wild._openHexInspector));
+      if (window._LW_DEBUG) console.log('[HEX TAP] zone='+this._zoneKey+' dist='+Math.round(this._zoneDist)+'m plants='+this._zonePlantCount+' FG_Wild.inspector='+(!!window.FG_Wild&&!!FG_Wild._openHexInspector));
       var _dynR=typeof _getCollectRange==='function'?_getCollectRange():COLLECT_RANGE;
       if(window.FG_Wild&&FG_Wild._openHexInspector&&this._zoneDist<=_dynR){
         FG_Wild._openHexInspector(this._zoneKey);
@@ -40247,7 +40249,7 @@ function _e(v){
     var elapsed=Math.floor((Date.now()-_s)/1000);
     var gc2=_afClass[_afGameClass[_a]||'standard']||_afClass.standard;
     if(elapsed<gc2.minTime){
-      console.log('[_e] BLOCKED — played '+elapsed+'s, need '+gc2.minTime+'s min');
+      if(window._LW_DEBUG)console.log('[_e] BLOCKED — played '+elapsed+'s, need '+gc2.minTime+'s min');
       if(v==='game_win')_guardToast('Play '+(gc2.minTime-elapsed)+'s more to earn');
       base=0;
     }
@@ -40256,7 +40258,7 @@ function _e(v){
   if(isComplete&&base>0){
     var now=Date.now();
     if(_afLastComplete>0&&(now-_afLastComplete)/1000<_afCompleteCd){
-      console.log('[_e] BLOCKED — completion cooldown ('+Math.round(_afCompleteCd-(now-_afLastComplete)/1000)+'s left)');
+      if(window._LW_DEBUG)console.log('[_e] BLOCKED — completion cooldown ('+Math.round(_afCompleteCd-(now-_afLastComplete)/1000)+'s left)');
       base=0;
     }else{
       _afLastComplete=now;
@@ -40306,7 +40308,7 @@ function _e(v){
       }
       _persistHashBuf();
       // Mint the plant
-      console.log('[_e] MINT triggered, hash:',hex);
+      if(window._LW_DEBUG)console.log('[_e] MINT triggered, hash:',hex);
       try{
         if(window.mintPlant)window.mintPlant(hex);
       }catch(err){console.error('[_e] mintPlant error:',err);}
@@ -46486,7 +46488,7 @@ return{
 })();
 </script>
 
-<script>console.log('[LW-DIAG] Pre-onboard block. pw-onboard exists:',!!document.getElementById('pw-onboard'),'pw_onboarded:',localStorage.getItem('pw_onboarded'));</script>
+<script>if(window._LW_DEBUG)console.log('[LW-DIAG] Pre-onboard block. pw-onboard exists:',!!document.getElementById('pw-onboard'),'pw_onboarded:',localStorage.getItem('pw_onboarded'));</script>
 <!-- ═══ FIRST OPEN EXPERIENCE — Onboarding Controller ═══ -->
 <script>
 window.PW_Onboard=(function(){
@@ -46571,7 +46573,7 @@ function start(){
   el.classList.add('active');
   document.body.classList.add('ob-active'); // hides feedback button until signup completes
   var kb=document.getElementById('pw-keeper-bar');if(kb)kb.style.display='none';
-  console.log('[LW] start() called');
+  if(window._LW_DEBUG)console.log('[LW] start() called');
   // Funnel: cinematic actually shown to a fresh user (vs page-load with
   // existing account where _isOnboarded short-circuits above).
   try{if(typeof gtag!=='undefined')gtag('event','onboard_start');}catch(e){}
@@ -46583,8 +46585,8 @@ function start(){
     for(var i=0;i<64;i++)_giftHash+='0123456789abcdef'[Math.floor(Math.random()*16)];
     if(window.hashToTraits){try{_giftTraits=window.hashToTraits(_giftHash);}catch(e2){_giftTraits=null;}}
   }
-  console.log('[LW] Onboard start(), _generatePlantSVG exists:',!!window._generatePlantSVG);
-  console.log('[LW] _giftHash:',_giftHash?_giftHash.substring(0,8)+'...':'NULL');
+  if(window._LW_DEBUG){console.log('[LW] Onboard start(), _generatePlantSVG exists:',!!window._generatePlantSVG);
+  console.log('[LW] _giftHash:',_giftHash?_giftHash.substring(0,8)+'...':'NULL');}
   if(window.startRain)window.startRain();
   // Beat 1 is already show class in HTML
   _beat=1;
@@ -46831,7 +46833,7 @@ function submitAuth(){
 
   if(btn){btn.disabled=true;btn.textContent='Growing...';}
   if(errEl)errEl.textContent='';
-  console.log('[LW] submitAuth called, hash:',_giftHash?_giftHash.substring(0,8):'NULL');
+  if(window._LW_DEBUG)console.log('[LW] submitAuth called, hash:',_giftHash?_giftHash.substring(0,8):'NULL');
 
   // Save keeper name
   localStorage.setItem('pw_keeper_name',name);
@@ -47190,7 +47192,7 @@ function forgotPassword(){
 return{start:start,submitAuth:submitAuth,finish:finish,skip:skip,goToBeat:goToBeat,showLogin:showLogin,showSignup:showSignup,submitLogin:submitLogin,forgotPassword:forgotPassword};
 })();
 </script>
-<script>console.log('[LW-DIAG] Post-onboard block. PW_Onboard defined:',!!window.PW_Onboard,'type:',typeof window.PW_Onboard);</script>
+<script>if(window._LW_DEBUG)console.log('[LW-DIAG] Post-onboard block. PW_Onboard defined:',!!window.PW_Onboard,'type:',typeof window.PW_Onboard);</script>
 
 <!-- ═══ FERAL CHALLENGE ENGINE ═══ -->
 <script>
