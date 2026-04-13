@@ -173,6 +173,16 @@ window._gameFns.recall=function RC(a){
     startRound();
   };
 
+  // Clean up timers if player exits the game mid-round. Without this,
+  // the Memorize/Wait/Recall callbacks fire after the panel is gone
+  // and either error or pop a stale overlay onto the next screen.
+  var _watchExit=setInterval(function(){
+    if(!document.body.classList.contains('game-active')){
+      clearTimers();
+      clearInterval(_watchExit);
+    }
+  },1000);
+
   _RCN();
 };
 })();
