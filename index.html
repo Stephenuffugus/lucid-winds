@@ -34723,6 +34723,10 @@ function _initCompass(){
   var windEl=document.getElementById('w-wind');if(!windEl)return;
   var compassImg=windEl.querySelector('img');
   var cardinals=['N','NE','E','SE','S','SW','W','NW'];
+  // Counter-rotate the arrow image by the device heading so the tip
+  // always points to true north regardless of which way the phone faces.
+  // heading=0 (facing N) → rotation 0  → tip up
+  // heading=90 (facing E) → rotation -90 → tip points to device's left = world N
   function _updateCompass(heading){
     if(compassImg)compassImg.style.transform='rotate('+(-heading)+'deg)';
     var idx=Math.round(heading/45)%8;
@@ -34730,34 +34734,42 @@ function _initCompass(){
     if(!txt){txt=document.createElement('span');txt.style.cssText='font-family:Bebas Neue,sans-serif;font-size:0.4rem;color:var(--cream);letter-spacing:0.06em;';windEl.appendChild(txt);}
     txt.textContent=cardinals[idx];
   }
-  // Try absolute orientation first (iOS requires permission)
-  if(window.DeviceOrientationEvent){
-    // iOS 13+ requires permission request
-    if(typeof DeviceOrientationEvent.requestPermission==='function'){
-      // Will request on first tap (can't auto-request)
-      windEl.onclick=function(){
-        DeviceOrientationEvent.requestPermission().then(function(state){
-          if(state==='granted'){
-            window.addEventListener('deviceorientation',function(e){
-              var h=e.webkitCompassHeading||e.alpha||0;
-              _updateCompass(h);
-            });
-            windEl.onclick=null;
-          }
-        }).catch(function(){});
-      };
-    } else {
-      window.addEventListener('deviceorientationabsolute',function(e){
-        if(e.alpha!==null)_updateCompass(360-e.alpha);
-      });
-      // Fallback to regular deviceorientation
-      window.addEventListener('deviceorientation',function(e){
-        if(e.webkitCompassHeading){_updateCompass(e.webkitCompassHeading);}
-        else if(e.absolute&&e.alpha!==null){_updateCompass(360-e.alpha);}
-      });
-    }
+  _updateCompass(0); // default: tip up = north
+  if(!window.DeviceOrientationEvent)return;
+  var _attached=false;
+  function _attachOrientation(){
+    if(_attached)return;_attached=true;
+    // Prefer absolute orientation when available (true compass heading).
+    // Fall back to regular orientation with webkitCompassHeading (iOS) or
+    // alpha (Android). alpha is anti-clockwise so subtract from 360.
+    window.addEventListener('deviceorientationabsolute',function(e){
+      if(e.alpha!==null)_updateCompass((360-e.alpha)%360);
+    },true);
+    window.addEventListener('deviceorientation',function(e){
+      if(typeof e.webkitCompassHeading==='number')_updateCompass(e.webkitCompassHeading);
+      else if(e.absolute&&e.alpha!==null)_updateCompass((360-e.alpha)%360);
+    },true);
   }
-  _updateCompass(0); // default: North
+  // iOS 13+: must request permission via user gesture. Wrap (don't replace)
+  // any existing onclick so the compass tool action still fires after
+  // permission is granted/denied.
+  if(typeof DeviceOrientationEvent.requestPermission==='function'){
+    var _prev=windEl.getAttribute('onclick');
+    windEl.removeAttribute('onclick');
+    windEl.addEventListener('click',function _ask(){
+      DeviceOrientationEvent.requestPermission().then(function(state){
+        if(state==='granted')_attachOrientation();
+      }).catch(function(){});
+      // Run the original action regardless of permission outcome
+      if(window._lwCompassTap)window._lwCompassTap();
+      // Permission only needs requesting once
+      windEl.removeEventListener('click',_ask);
+      windEl.addEventListener('click',function(){if(window._lwCompassTap)window._lwCompassTap();});
+    });
+  } else {
+    // Android / desktop: attach immediately, no permission needed.
+    _attachOrientation();
+  }
 }
 
 var _lantern=null,_scanRing=null;
