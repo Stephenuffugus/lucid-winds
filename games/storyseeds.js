@@ -71,11 +71,11 @@ window._gameFns.storyseeds=function SS(a){
     h+='<div style="text-align:center;padding:12px 8px;">';
     h+='<div style="font-size:1.8rem;margin-bottom:6px;">'+currentPrompt.icon+'</div>';
     h+='<div style="font-family:Crimson Text,Georgia,serif;font-size:1rem;font-style:italic;color:var(--cream);line-height:1.5;max-width:340px;margin:0 auto;">"'+currentPrompt.text+'"</div>';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:2px;color:var(--sage);margin-top:6px;opacity:0.6;">'+currentPrompt.category+'</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.12em;color:var(--sage);margin-top:8px;">'+currentPrompt.category+'</div>';
     h+='</div>';
     h+='<textarea id="SSta" oninput="_SSIn()" placeholder="Begin writing here..." style="width:100%;min-height:220px;background:rgba(26,36,22,0.3);border:1px solid rgba(122,179,86,0.3);border-radius:10px;color:var(--cream);font-family:Crimson Text,Georgia,serif;font-size:0.95rem;line-height:1.6;padding:12px;resize:vertical;outline:none;box-sizing:border-box;"></textarea>';
     if(streak>0){
-      h+='<div style="text-align:center;font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:var(--gold);letter-spacing:2px;padding:6px;opacity:0.7;">🔥 '+streak+' DAY STREAK</div>';
+      h+='<div style="text-align:center;font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--gold);letter-spacing:0.12em;padding:8px;">🔥 '+streak+' DAY STREAK</div>';
     }
     pan.innerHTML=h;
   }

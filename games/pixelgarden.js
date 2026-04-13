@@ -84,10 +84,10 @@ window._gameFns.pixelgarden = function PG(a){
     var h='';
     for(var i=0;i<tools.length;i++){
       var active=tool===tools[i][0];
-      h+='<button class="gb" onclick="_PGT(\''+tools[i][0]+'\')" style="padding:5px 10px;font-size:0.6rem;'+(active?'background:rgba(122,179,86,0.2);border-color:#7ab356;color:#7ab356;':'')+'">'+tools[i][1]+'</button>';
+      h+='<button class="gb" onclick="_PGT(\''+tools[i][0]+'\')" style="padding:5px 10px;font-size:0.78rem;letter-spacing:0.05em;'+(active?'background:rgba(122,179,86,0.2);border-color:#7ab356;color:#7ab356;':'')+'">'+tools[i][1]+'</button>';
     }
-    h+='<button class="gb" onclick="_PGMIR()" style="padding:5px 10px;font-size:0.6rem;'+(mirrorMode?'background:rgba(200,168,75,0.2);border-color:#c8a84b;color:#c8a84b;':'')+'">MIRROR</button>';
-    h+='<button class="gb" onclick="_PGGR()" style="padding:5px 10px;font-size:0.6rem;">GRID</button>';
+    h+='<button class="gb" onclick="_PGMIR()" style="padding:5px 10px;font-size:0.78rem;letter-spacing:0.05em;'+(mirrorMode?'background:rgba(200,168,75,0.2);border-color:#c8a84b;color:#c8a84b;':'')+'">MIRROR</button>';
+    h+='<button class="gb" onclick="_PGGR()" style="padding:5px 10px;font-size:0.78rem;letter-spacing:0.05em;">GRID</button>';
     toolEl.innerHTML=h;
   }
   function render(){

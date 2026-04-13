@@ -247,14 +247,14 @@ window._gameFns.gardenspades = function GardenSpades(a){
       h+='<div style="text-align:center;padding:8px;background:rgba(26,31,23,0.5);border-radius:8px;margin:6px 0;">';
       h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:#c8a84b;letter-spacing:0.1em;margin-bottom:6px;">YOUR BID</div>';
       h+='<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">';
-      h+='<div onclick="_GSB(0)" style="min-width:36px;min-height:44px;display:flex;align-items:center;justify-content:center;background:rgba(26,36,22,0.7);border:1px solid rgba(196,122,122,0.5);border-radius:6px;font-family:Bebas Neue,sans-serif;font-size:0.65rem;cursor:pointer;color:#c47a7a;padding:6px;">NIL</div>';
+      h+='<div onclick="_GSB(0)" style="min-width:36px;min-height:44px;display:flex;align-items:center;justify-content:center;background:rgba(26,36,22,0.7);border:1px solid rgba(196,122,122,0.5);border-radius:6px;font-family:Bebas Neue,sans-serif;font-size:0.85rem;cursor:pointer;color:#c47a7a;padding:6px;letter-spacing:0.06em;">NIL</div>';
       for(var bi=1;bi<=13;bi++){
         h+='<div onclick="_GSB('+bi+')" style="min-width:36px;min-height:44px;display:flex;align-items:center;justify-content:center;background:rgba(26,36,22,0.7);border:1px solid rgba(122,179,86,0.3);border-radius:6px;font-family:Bebas Neue,sans-serif;font-size:0.85rem;cursor:pointer;color:#e8dcc8;">'+bi+'</div>';
       }
       h+='</div></div>';
     }
     // Player hand
-    h+='<div style="padding:4px;"><div style="font-size:0.5rem;color:#8a9178;text-align:center;margin-bottom:3px;">YOUR HAND</div>';
+    h+='<div style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:6px;">YOUR HAND</div>';
     h+='<div style="display:flex;gap:3px;justify-content:center;flex-wrap:wrap;">';
     var leadS=trick.length>0?trick[0].card.suit:'';
     var playable=[];

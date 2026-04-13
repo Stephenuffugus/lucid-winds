@@ -28,7 +28,7 @@ window._gameFns.petalmatch = function PM(a){
   a.appendChild(pan);
   var hud=document.createElement('div');
   hud.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:6px;background:rgba(26,31,23,0.5);border-radius:8px;margin:4px 0;font-family:DM Mono,monospace;';
-  hud.innerHTML='<div><div style="font-size:0.5rem;color:#7ab356;">SCORE</div><div id="PMsc" style="font-size:1.1rem;color:#c8a84b;">0</div></div><div><div style="font-size:0.5rem;color:#7ab356;">LEVEL</div><div id="PMlv2" style="font-size:1.1rem;color:#e8dcc8;">1</div></div><div><div style="font-size:0.5rem;color:#7ab356;">MOVES</div><div id="PMmv" style="font-size:1.1rem;color:#e8dcc8;">30</div></div>';
+  hud.innerHTML='<div><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:#7ab356;letter-spacing:0.08em;">SCORE</div><div id="PMsc" style="font-size:1.1rem;color:#c8a84b;">0</div></div><div><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:#7ab356;letter-spacing:0.08em;">LEVEL</div><div id="PMlv2" style="font-size:1.1rem;color:#e8dcc8;">1</div></div><div><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:#7ab356;letter-spacing:0.08em;">MOVES</div><div id="PMmv" style="font-size:1.1rem;color:#e8dcc8;">30</div></div>';
   pan.appendChild(hud);
   var bar=document.createElement('div');
   bar.style.cssText='width:90%;max-width:300px;height:6px;background:rgba(26,36,22,0.5);border-radius:3px;margin:4px auto;overflow:hidden;';
