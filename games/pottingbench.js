@@ -84,8 +84,34 @@ window._gameFns.pottingbench=function PB(a){
     _sr('pottingbench',{w:true,s:Math.round(elapsedMs)});
   }
 
+  // Returns true if at least one hand card can match either pile.
+  // Used to detect soft-lock: no playable cards AND no draws left.
+  function hasPlayableMove(){
+    for(var i=0;i<hand.length;i++){
+      if(shareAttr(hand[i],pileA)>=1||shareAttr(hand[i],pileB)>=1)return true;
+    }
+    return false;
+  }
+
+  function checkStuck(){
+    // If draw is available, player can always force a new pileA, so
+    // they're never truly stuck. Only end when both options exhausted.
+    if(drawPile.length>0)return false;
+    if(hasPlayableMove())return false;
+    // Stuck — end with current state. Treat as a partial run: write
+    // a non-win record so attempts count, but don't fire game_loss
+    // since the player did real work.
+    running=false;if(timerId)clearInterval(timerId);
+    var secs=(elapsedMs/1000).toFixed(1);
+    sm('🍂 Stuck — no matches left in hand. '+secs+'s');
+    _sr('pottingbench',{w:false,s:Math.round(elapsedMs)});
+    render();
+    return true;
+  }
+
   function playCard(pile){
-    if(!running||selected<0)return;
+    if(!running)return;
+    if(selected<0){sm('Pick a card from your hand first');return;}
     var card=hand[selected];
     var top=pile==='A'?pileA:pileB;
     if(shareAttr(card,top)>=1){
@@ -97,18 +123,25 @@ window._gameFns.pottingbench=function PB(a){
       if(streak%5===0)_e('milestone');
       if(hand.length===0&&drawPile.length===0){win();return;}
       render();
+      // Detect soft-lock after the new card is dealt. If still
+      // playable, fine; otherwise end the run cleanly.
+      checkStuck();
     } else {
       sm('No match');streak=0;
     }
   }
 
   function drawPenalty(){
-    if(!running||drawPile.length===0)return;
+    if(!running)return;
+    if(drawPile.length===0){sm('Draw pile empty');return;}
     pileA=drawPile.shift();
     startTime-=2000;
     streak=0;selected=-1;
     sm('+2s penalty');
     render();
+    // After force-swapping pileA, may have surfaced a stuck state if
+    // hand still doesn't match and that was the last draw card.
+    checkStuck();
   }
 
   function renderCard(card,idx,isSelected){
