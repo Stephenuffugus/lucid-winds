@@ -218,8 +218,13 @@ window._gameFns.rootmaze = function RootMaze(a){
     var W=SZ*CS+PAD*2;
     var pTarget=playerTIdx<playerTargets.length?playerTargets[playerTIdx]:'✓';
     var h='';
-    h+='<div style="text-align:center;font-size:0.85rem;padding:4px 0;">Find: <span style="font-size:1.4rem;">'+pTarget+'</span> <span style="opacity:0.6;">('+playerTIdx+'/'+playerTargets.length+')</span> | AI: '+aiTIdx+'/'+aiTargets.length+'</div>';
-    h+='<div style="text-align:center;font-size:0.7rem;padding:2px 0;color:#7ab356;">'+(phase==='shift'?'Tap edge arrows to shift':phase==='move'?'Tap a reachable tile to move':phase==='ai_shift'?"AI's turn...":'Game Over')+'</div>';
+    h+='<div style="text-align:center;padding:6px 0;font-family:Bebas Neue,sans-serif;letter-spacing:0.06em;">';
+    h+='<div style="font-size:0.85rem;color:var(--cream);">FIND: <span style="font-size:2rem;">'+pTarget+'</span> <span style="font-size:0.7rem;color:var(--muted);">('+playerTIdx+'/'+playerTargets.length+')</span></div>';
+    h+='<div style="font-size:0.65rem;color:#c47a7a;letter-spacing:0.08em;margin-top:3px;">AI: '+aiTIdx+'/'+aiTargets.length+'</div>';
+    h+='</div>';
+    var phaseMsg=phase==='shift'?'⇄ TAP AN EDGE ARROW TO SHIFT THE MAZE':phase==='move'?'👣 TAP A GREEN TILE TO MOVE':phase==='ai_shift'?"⏳ AI's turn…":'🏁 Game Over';
+    var phaseColor=phase==='shift'?'#c8a84b':phase==='move'?'#7ab356':phase==='ai_shift'?'#c47a7a':'var(--cream)';
+    h+='<div style="text-align:center;font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:'+phaseColor+';padding:6px;letter-spacing:0.08em;background:rgba(26,31,23,0.6);border-radius:8px;margin:4px 12px;">'+phaseMsg+'</div>';
     h+='<canvas id="RMcv" width="'+W+'" height="'+W+'" style="display:block;margin:4px auto;border-radius:6px;"></canvas>';
     h+='<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:6px 0;">';
     h+='<span style="font-size:0.7rem;opacity:0.5;">Spare:</span>';
@@ -280,9 +285,18 @@ window._gameFns.rootmaze = function RootMaze(a){
     var cv=document.getElementById('RMcv');if(!cv)return;
     var ctx=cv.getContext('2d');var W=SZ*CS+PAD*2;
     ctx.fillStyle='#0d100c';ctx.fillRect(0,0,W,W);
-    ctx.fillStyle='#c8a84b';ctx.font='14px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    // Bigger gold arrows so it's obvious where to tap to shift.
+    // Was 14px which was almost invisible at the canvas margin.
+    ctx.fillStyle='#c8a84b';ctx.font='bold 22px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
     for(var i=0;i<SZ;i++){
       if(i%2===1){
+        // Subtle highlight pad behind each arrow so it reads as tappable
+        ctx.fillStyle='rgba(200,168,75,0.12)';
+        ctx.fillRect(PAD+i*CS+4,2,CS-8,PAD-4);                              // top
+        ctx.fillRect(PAD+i*CS+4,PAD+SZ*CS+2,CS-8,PAD-4);                    // bottom
+        ctx.fillRect(2,PAD+i*CS+4,PAD-4,CS-8);                              // left
+        ctx.fillRect(PAD+SZ*CS+2,PAD+i*CS+4,PAD-4,CS-8);                    // right
+        ctx.fillStyle='#c8a84b';
         ctx.fillText('▼',PAD+i*CS+CS/2,PAD/2);
         ctx.fillText('▲',PAD+i*CS+CS/2,PAD+SZ*CS+PAD/2);
         ctx.fillText('►',PAD/2,PAD+i*CS+CS/2);

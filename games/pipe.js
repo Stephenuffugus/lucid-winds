@@ -66,15 +66,44 @@ function GPP(a){var SZ=6,grid=[],_rc=0,srcI=0,endI=0;
       var op=[2,3,0,1];
       for(var d=0;d<4;d++){var ni=nb[d];if(ni<0||vis[ni])continue;if(e[d]){var ne=pExit(ni);if(ne[op[d]]){vis[ni]=true;q.push(ni);cnt++}}}}
     return {won:vis[endI],count:cnt,vis:vis}}
-  function rn(){gd.innerHTML='';var st=_ppCheck();var el=document.getElementById('PPc');if(el)el.textContent=st.count;
-    for(var i=0;i<SZ*SZ;i++){var d=document.createElement('div');d.className='lc';var g=grid[i];
+  function rn(){
+    gd.innerHTML='';var st=_ppCheck();var el=document.getElementById('PPc');if(el)el.textContent=st.count;
+    for(var i=0;i<SZ*SZ;i++){
+      var wrap=document.createElement('div');wrap.style.cssText='position:relative;';
+      var d=document.createElement('div');d.className='lc';var g=grid[i];
       d.style.background='url('+g.img+') center/cover #1a1e16';d.style.transform='rotate('+(g.rot*90)+'deg)';d.style.transition='transform 0.15s ease';
       if(st.vis[i])d.style.boxShadow='inset 0 0 12px rgba(122,179,86,.4)';
-      if(i===srcI)d.style.boxShadow='0 0 10px rgba(122,179,86,.6),inset 0 0 12px rgba(122,179,86,.4)';
-      else if(i===endI)d.style.boxShadow='0 0 10px rgba(200,168,75,.6)'+(st.vis[i]?',inset 0 0 12px rgba(122,179,86,.4)':'');
-      if(!g.fixed){d.setAttribute('data-i',i);d.onclick=function(){var idx=parseInt(this.getAttribute('data-i'));_play('click');grid[idx].rot=(grid[idx].rot+1)%4;_rc++;rn();
-        var res=_ppCheck();if(res.won){_e('game_win');_playWin();sm('🌿 Root to bloom! '+_rc+' rotations');_sr('pipe',{w:true,s:_rc})}}}
-      gd.appendChild(d)}}
+      if(i===srcI)d.style.boxShadow='0 0 14px rgba(122,179,86,.85),inset 0 0 16px rgba(122,179,86,.55)';
+      else if(i===endI)d.style.boxShadow='0 0 14px rgba(200,168,75,.85)'+(st.vis[i]?',inset 0 0 16px rgba(122,179,86,.5)':',inset 0 0 14px rgba(200,168,75,.35)');
+      wrap.appendChild(d);
+      // Source/end need crystal-clear visual labels — Stephen reported
+      // the end "looks like a crossroad". Overlay a 🌱 START / 🌸 FINISH
+      // marker in the corner that doesn't rotate with the tile.
+      if(i===srcI){
+        var s=document.createElement('div');s.style.cssText='position:absolute;top:1px;left:2px;font-size:0.55rem;font-family:Bebas Neue,sans-serif;color:#7ab356;letter-spacing:0.06em;text-shadow:0 0 4px #000,0 0 2px #000;pointer-events:none;z-index:2;';
+        s.textContent='🌱 START';wrap.appendChild(s);
+      } else if(i===endI){
+        var f=document.createElement('div');f.style.cssText='position:absolute;top:1px;left:2px;font-size:0.55rem;font-family:Bebas Neue,sans-serif;color:'+(st.won?'#c8a84b':'#e8a0bf')+';letter-spacing:0.06em;text-shadow:0 0 4px #000,0 0 2px #000;pointer-events:none;z-index:2;'+(st.won?'':'animation:pipeBlink 1.4s ease-in-out infinite;');
+        f.textContent=st.won?'🌸 BLOOM':'🌸 FINISH';wrap.appendChild(f);
+      }
+      if(!g.fixed){
+        d.setAttribute('data-i',i);
+        d.onclick=function(){
+          var idx=parseInt(this.getAttribute('data-i'));
+          _play('click');grid[idx].rot=(grid[idx].rot+1)%4;_rc++;rn();
+          var res=_ppCheck();
+          if(res.won){_e('game_win');_playWin();sm('🌸 Root reached the bloom! '+_rc+' rotations');_sr('pipe',{w:true,s:_rc});}
+        };
+      }
+      gd.appendChild(wrap);
+    }
+  }
+  // Inject pulse keyframes for the FINISH marker
+  if(!document.getElementById('pipe-blink-style')){
+    var _ps=document.createElement('style');_ps.id='pipe-blink-style';
+    _ps.textContent='@keyframes pipeBlink{0%,100%{opacity:1}50%{opacity:0.5}}';
+    document.head.appendChild(_ps);
+  }
   window._PPN=function(){gen();sm('Connect root to bloom');rn()};_PPN();}
 
 window._gameFns.pipe=GPP;
