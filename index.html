@@ -9251,6 +9251,99 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>Phases:</strong> MEMORIZE (5-6 seconds) → WAIT (12-18 seconds, count backward by 3s) → RECALL (tap the symbols you remember).</p>'+
       '<p><strong>Score:</strong> +100 for correct symbols, partial credit for partial recall. Level up to add more symbols + distractors.</p>'+
       '<p><strong>Variation:</strong> Every 3rd round adds an extra target.</p>';
+    // Additional games — added so the ? button gets useful rules everywhere
+    R.merge = ''+
+      '<p><strong>Goal:</strong> Combine matching tiles to reach the <strong style="color:var(--gold);">2048</strong> tile.</p>'+
+      '<p><strong>Move:</strong> Swipe (or tap arrows) in a direction. All tiles slide that way; same-number neighbors merge into one tile of double value.</p>'+
+      '<p><strong>Each move:</strong> A new 2 or 4 tile appears on a random empty cell.</p>'+
+      '<p><strong>Lose:</strong> Board fills up with no possible merges.</p>'+
+      '<p><strong>Tip:</strong> Pick a corner and never let your highest tile leave it.</p>';
+    R.simon = ''+
+      '<p><strong>Goal:</strong> Repeat the growing color sequence as long as you can.</p>'+
+      '<p><strong>Each round:</strong> The board flashes a sequence of colored tiles. Tap them back in the same order. Each successful round adds one more flash.</p>'+
+      '<p><strong>Win event:</strong> Reach round 10. (Game continues for higher scores.)</p>'+
+      '<p><strong>Tip:</strong> Speak the sequence out loud. Chunk it into pairs.</p>';
+    R.lights = ''+
+      '<p><strong>Goal:</strong> Turn off every light on the board.</p>'+
+      '<p><strong>Tap a light:</strong> Toggles that cell AND its 4 orthogonal neighbors.</p>'+
+      '<p><strong>Strategy:</strong> Use the "chase the lights" method — solve top to bottom, then chase remaining bottom-row lights to the top by working a "pattern row".</p>';
+    R.memory = ''+
+      '<p><strong>Goal:</strong> Match all card pairs in the fewest moves.</p>'+
+      '<p><strong>Each turn:</strong> Flip 2 cards. If they match, they stay revealed. If not, they flip back.</p>'+
+      '<p><strong>Difficulty:</strong> Easy 6 pairs · Medium 8 · Hard 10 · Expert 12.</p>';
+    R.battleship = ''+
+      '<p><strong>Place phase:</strong> Drag your fleet onto your grid. Rotate ships with the ↻ button. Tap "I\'M READY" when all ships placed.</p>'+
+      '<p><strong>Battle phase:</strong> Tap a cell on the enemy grid to attack. 💥 = hit, · = miss.</p>'+
+      '<p><strong>Win:</strong> Sink all enemy ships before they sink yours.</p>'+
+      '<p><strong>Confirm-attack:</strong> Toggle "CONFIRM ON" to require tap-to-aim then tap-to-fire (helps avoid mis-taps).</p>'+
+      '<p><strong>Zoom:</strong> Toggle 🔍 1.5× to enlarge the enemy grid for accuracy.</p>';
+    R.picross = ''+
+      '<p><strong>Goal:</strong> Reveal a hidden picture by filling cells in each row and column based on number clues.</p>'+
+      '<p><strong>Clues:</strong> Numbers tell you how many CONSECUTIVE filled cells are in that row/column, in order. e.g. "3 1 2" = a run of 3, then a gap, then 1, then a gap, then 2.</p>'+
+      '<p><strong>Tap once:</strong> Fill cell. <strong>Tap again:</strong> Mark with X (definitely empty). <strong>Tap third:</strong> Clear back to empty.</p>'+
+      '<p><strong>Sizes:</strong> 5×5 (easy) · 7×7 (medium) · 10×10 (hard).</p>';
+    R.colorsort = ''+
+      '<p><strong>Goal:</strong> Sort the colors so each tube holds only one color.</p>'+
+      '<p><strong>Pour:</strong> Tap a source tube, then tap a destination. Color pours over IF the destination is empty OR its top color matches the source color (and there\'s room).</p>'+
+      '<p><strong>Tip:</strong> Empty tubes are gold — use them for temporary storage.</p>';
+    R.hanoi = ''+
+      '<p><strong>Goal:</strong> Move all discs from the left peg to the right peg.</p>'+
+      '<p><strong>Rules:</strong> Move only ONE disc at a time. Never place a larger disc on top of a smaller one.</p>'+
+      '<p><strong>Optimal moves:</strong> 2^n − 1 (4 discs = 15, 5 = 31, 6 = 63, 7 = 127).</p>';
+    R.pipe = ''+
+      '<p><strong>Goal:</strong> Connect the 🌱 START tile to the 🌸 FINISH tile by rotating vine pieces.</p>'+
+      '<p><strong>Tap:</strong> Each tap rotates the tile 90° clockwise.</p>'+
+      '<p><strong>Source/finish:</strong> Source has a green glow; finish has a gold glow that pulses while disconnected, lights up solid when the path completes.</p>';
+    R.sokoban = ''+
+      '<p><strong>Goal:</strong> Push every crate (🌱) onto a target (◯).</p>'+
+      '<p><strong>Move:</strong> Tap arrows or use D-pad. You can only PUSH crates, never pull. Plan ahead — a crate against a wall in the wrong spot is stuck.</p>'+
+      '<p><strong>Levels:</strong> 170 puzzles, escalating difficulty. Use 📋 Jump to Level to skip to a specific level (1-170).</p>'+
+      '<p><strong>Helpers:</strong> ↩ Reset the level, ⬅️ Undo the last move.</p>';
+    R.petalfall = ''+
+      '<p><strong>Goal:</strong> Arrange falling tile shapes to fill complete horizontal rows. Cleared rows = points + speed boost.</p>'+
+      '<p><strong>Move:</strong> ← → to slide, ↻ to rotate, ↓ to soft drop, SPACE to hard drop.</p>'+
+      '<p><strong>Lose:</strong> A new piece can\'t fit when it spawns.</p>';
+    R.slider = ''+
+      '<p><strong>Goal:</strong> Slide the 15 numbered tiles into 1-15 order, top-left to bottom-right.</p>'+
+      '<p><strong>Move:</strong> Tap a tile adjacent to the empty space — it slides into the gap.</p>'+
+      '<p><strong>Tip:</strong> Solve top row first, then left column. Final 2×2 corner is solved by cycling.</p>';
+    R.bloomwheel = ''+
+      '<p><strong>Goal:</strong> Draw a botanical mandala on a slowly-spinning canvas.</p>'+
+      '<p><strong>Touch:</strong> Drag to draw. The wheel rotates, creating spiral patterns automatically.</p>'+
+      '<p><strong>Symmetry:</strong> Choose 1× to 12× — strokes mirror around the center the chosen number of times.</p>'+
+      '<p><strong>SAVE:</strong> Mints a hash and downloads your mandala as a PNG.</p>';
+    R.farkle = ''+
+      '<p><strong>Goal:</strong> First to 10,000 points wins.</p>'+
+      '<p><strong>Each turn:</strong> Roll 6 dice. Set aside scoring dice (1s, 5s, three-of-a-kinds, runs). RE-ROLL the remaining dice for more points OR BANK to lock in your score this turn.</p>'+
+      '<p><strong>Scoring:</strong> 1 = 100, 5 = 50, three 1s = 1000, three of any other = 100×face, four of a kind = 1000, run 1-6 = 1500, three pairs = 1500.</p>'+
+      '<p><strong>FARKLE:</strong> If a roll has zero scoring dice, you bust — lose this turn\'s points.</p>'+
+      '<p><strong>Hot dice:</strong> Use ALL 6 in scoring? Roll all 6 again with stacked points.</p>';
+    R.yahtzee = ''+
+      '<p><strong>Goal:</strong> Highest total score across 13 rounds.</p>'+
+      '<p><strong>Each turn:</strong> Roll 5 dice. Re-roll up to 2 more times, holding any dice you want to keep. Then SCORE in one of the 13 categories.</p>'+
+      '<p><strong>Categories:</strong> Ones-Sixes (sum of that face), 3-of-a-kind, 4-of-a-kind, Full House (25), Sm Straight (30), Lg Straight (40), Yahtzee (5-of-a-kind = 50), Chance (sum).</p>'+
+      '<p><strong>Bonus:</strong> Upper section (Ones-Sixes) totaling 63+ = +35 bonus.</p>';
+    R.checkers = ''+
+      '<p><strong>Goal:</strong> Capture all opponent pieces, or block them so they can\'t move.</p>'+
+      '<p><strong>Move:</strong> Diagonal forward only. Tap your piece, then tap an empty diagonal square.</p>'+
+      '<p><strong>Capture:</strong> Jump diagonally over an opponent piece into the empty square beyond. <strong>Multi-jump</strong> required when possible.</p>'+
+      '<p><strong>King:</strong> Reach the far row → your piece becomes a King and can move both directions.</p>';
+    R.reversi = ''+
+      '<p><strong>Goal:</strong> Have the most discs of your color when no more moves are possible.</p>'+
+      '<p><strong>Move:</strong> Place a disc adjacent to one of your opponent\'s discs in a line where the other end is YOUR color. All trapped discs flip to your color.</p>'+
+      '<p><strong>Tip:</strong> Corners can\'t be flipped — fight for them.</p>';
+    R.backgammon = ''+
+      '<p><strong>Goal:</strong> Move all 15 of your pieces home (your last quarter), then BEAR them OFF the board.</p>'+
+      '<p><strong>Roll:</strong> Two dice = two move distances. (Doubles = four moves of that distance.)</p>'+
+      '<p><strong>Hit:</strong> Land on a single opponent piece (a "blot") to send it to the bar — they must re-enter from their start before doing anything else.</p>'+
+      '<p><strong>Block:</strong> 2+ of your pieces on a point = opponent can\'t land there.</p>';
+    R.doubleshutter = ''+
+      '<p><strong>Goal:</strong> Shut every tile (1-9) by rolling 2 dice and flipping tiles that sum to your roll. Double-row variant — clear BOTH rows.</p>'+
+      '<p><strong>Each turn:</strong> Roll 2 dice. Tap one or more open tiles whose sum equals your roll. Tap ROLL to roll again.</p>'+
+      '<p><strong>Row 1 → Row 2:</strong> When the bottom row is cleared, the top row unlocks.</p>'+
+      '<p><strong>End:</strong> Clear both rows = perfect game. If no valid combo can be made, the game ends.</p>';
+    R.bloomgrid = R.picross; // alias for the renamed picker label
+    R.tideHunt = R.battleship; // alias for renamed label
   })();
 
   // Generic rules modal renderer. Shows registered rules HTML if
@@ -42808,7 +42901,13 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
       var tot=0;for(var k in scores)tot+=scores[k];
       var upperSum=0;for(var i=0;i<6;i++)if(scores[i]!==undefined)upperSum+=scores[i];
       if(upperSum>=63)tot+=35;
-      _e('game_win');_playWin();sm('Final score: '+tot);_sr('yahtzee',{w:true,s:tot});
+      // Was: fired game_win unconditionally even on a 0 score. Now only
+      // marks a win at a respectable threshold (≥150 = casual win line).
+      // Below threshold still records the run but as a non-win.
+      var won=tot>=150;
+      if(won){_e('game_win');_playWin();}else{_e('game_loss');_play('lose');}
+      sm('Final score: '+tot+(won?' 🏆':''));
+      _sr('yahtzee',{w:won,s:tot});
     }else if(turn%3===0)_e('milestone');
     rn();
   };
@@ -43062,22 +43161,34 @@ function GCK(a){var bd=new Array(64).fill(0),sel=-1,tn=1,mv=0,lastFrom=-1,lastTo
     var jumps=moves.filter(function(m){return m.j});
     if(jumps.length){pick=jumps[Math.floor(Math.random()*jumps.length)]}
     else{
-      // Score moves: prefer advancing, center, king threats
       var best=-99,candidates=[];
       moves.forEach(function(m){
         var sc=0;var tr=Math.floor(m.t/8),tc=m.t%8;
-        sc+=tr;// Advance toward player side
-        if(tc>1&&tc<6)sc+=1;// Center control
-        if(bd[m.f]===4)sc+=2;// King mobility
+        sc+=tr;
+        if(tc>1&&tc<6)sc+=1;
+        if(bd[m.f]===4)sc+=2;
         if(sc>best){best=sc;candidates=[m]}else if(sc===best)candidates.push(m);
       });
       pick=candidates[Math.floor(Math.random()*candidates.length)];
+      // Safety: if scoring loop produced no candidates (shouldn't happen
+      // since moves is non-empty, but defensive), fall back to any move.
+      if(!pick&&moves.length)pick=moves[0];
     }
+    if(!pick){tn=1;rn();return;} // hard guard against undefined pick
     doMove(pick);crown(pick.t);
-    // Multi-jump for AI
-    if(pick.j){var more=getMoves(pick.t,2).jumps;if(more.length>0){setTimeout(function(){
-      var pick2=more[Math.floor(Math.random()*more.length)];doMove(pick2);crown(pick2.t);tn=1;rn();
-    },300);return}}
+    // Multi-jump for AI — was only doing ONE extra jump, breaking forced-
+    // jump rule. Now loops until no more jumps.
+    function _ckChainJump(from){
+      var more=getMoves(from,2).jumps;
+      if(!more.length){tn=1;rn();return;}
+      setTimeout(function(){
+        var p2=more[Math.floor(Math.random()*more.length)];
+        if(!p2){tn=1;rn();return;}
+        doMove(p2);crown(p2.t);
+        _ckChainJump(p2.t);
+      },300);
+    }
+    if(pick.j){_ckChainJump(pick.t);return;}
     tn=1;rn();
   }
   function checkWin(){
@@ -43180,7 +43291,7 @@ function GRV(a){var bd=new Array(64).fill(0),tn=1,ov=false,lastMove=-1,flipCells
     updateScore();
     if(p1>p2){_e('game_win');_playWin();sm('You win! '+p1+' \u2013 '+p2);_sr('reversi',{w:true,s:p1})}
     else if(p2>p1){_e('game_loss');_play('lose');sm('AI wins '+p2+' \u2013 '+p1);_sr('reversi',{w:false,s:p1})}
-    else{sm('Draw! '+p1+' \u2013 '+p2);_sr('reversi',{w:false,s:p1})}
+    else{_e('milestone');sm('Draw! '+p1+' \u2013 '+p2);_sr('reversi',{w:false,s:p1});}
   }
   window._RVN=function(){setup();sm('');rn()};_RVN();
 }
@@ -44273,11 +44384,22 @@ function GBW(a){
 // ═══ BACKGAMMON — Garden Gate ═══
 function GBG(a){
   var B,DICE,DICE_USED,TURN,SEL,VALID_DESTS,PHASE,MOVES_LEFT,BO_H,BO_A;
+  // Generation token: every init() bumps this. AI callbacks check the
+  // captured generation against this value before acting — so a New Game
+  // mid-AI-think can't have stale callbacks corrupt the new board.
+  var BG_GEN=0;
+  // Pending timer IDs cleared on init so callbacks scheduled before
+  // _BGN don't fire onto the new game.
+  var BG_PENDING=[];
+  function bgClearPending(){for(var i=0;i<BG_PENDING.length;i++)clearTimeout(BG_PENDING[i]);BG_PENDING=[];}
+  function bgSchedule(fn,ms){var id=setTimeout(function(){var idx=BG_PENDING.indexOf(id);if(idx>=0)BG_PENDING.splice(idx,1);fn();},ms);BG_PENDING.push(id);return id;}
   ms(a,'<span class="gp-you" style="color:#7AB956">You: <strong id="BGh">0</strong></span> · <span class="gp-ai" style="color:#C47A7A">AI: <strong id="BGa">0</strong></span>');mm(a);
   var wrap=document.createElement('div');wrap.id='BGwrap';wrap.className='bg-outer';wrap.style.cssText='user-select:none;-webkit-user-select:none';a.appendChild(wrap);
   mc(a).innerHTML='<button class="gb-new" onclick="_BGN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   function init(){
+    bgClearPending();   // cancel any AI callbacks queued from the prior game
+    BG_GEN++;            // invalidate any in-flight callbacks that pre-date this init
     B=new Array(26);for(var i=0;i<26;i++)B[i]=0;
     B[24]=2;B[13]=5;B[8]=3;B[6]=5;
     B[1]=-2;B[12]=-5;B[17]=-3;B[19]=-5;
@@ -44343,7 +44465,7 @@ function GBG(a){
     }
   }
   function endTurn(){TURN=TURN==='human'?'ai':'human';PHASE='roll';SEL=-1;VALID_DESTS=[];rn();
-    if(TURN==='ai')setTimeout(function(){rollDice();rn();setTimeout(aiPlay,500)},400);
+    if(TURN==='ai'){var _g=BG_GEN;bgSchedule(function(){if(_g!==BG_GEN)return;rollDice();rn();bgSchedule(function(){if(_g!==BG_GEN)return;aiPlay();},500);},400);}
   }
   // ═══ GNUBG-INSPIRED POSITION EVALUATION ═══
   function evalPos(board,boH,boA){
@@ -44373,21 +44495,28 @@ function GBG(a){
     return s;
   }
   function aiPlay(){
-    if(MOVES_LEFT.length===0){endTurn();return}
-    var moves=getValidMoves('ai');if(moves.length===0){MOVES_LEFT=[];endTurn();return}
-    // Evaluate full position after each candidate move
-    var best=null,bs=-999999;
-    moves.forEach(function(mv){
-      // Save state
-      var savedB=B.slice(),savedML=MOVES_LEFT.slice(),savedBoH=BO_H,savedBoA=BO_A;
-      applyMove(mv,'ai');
-      var sc=evalPos(B,BO_H,BO_A);
-      // Restore state
-      B=savedB;MOVES_LEFT=savedML;BO_H=savedBoH;BO_A=savedBoA;
-      if(sc>bs){bs=sc;best=mv}
-    });
-    if(best){applyMove(best,'ai');if(BO_A>=15){_e('game_loss');sm('AI wins!');_sr('backgammon',{w:false,s:0});rn();return}}
-    if(MOVES_LEFT.length>0)setTimeout(aiPlay,250);else setTimeout(endTurn,250);rn();
+    // Wrap in try/finally so any throw inside evalPos/applyMove
+    // doesn't permanently hang the AI turn (was a HIGH risk).
+    try{
+      if(MOVES_LEFT.length===0){endTurn();return}
+      var moves=getValidMoves('ai');if(moves.length===0){MOVES_LEFT=[];endTurn();return}
+      var best=null,bs=-999999;
+      moves.forEach(function(mv){
+        var savedB=B.slice(),savedML=MOVES_LEFT.slice(),savedBoH=BO_H,savedBoA=BO_A;
+        applyMove(mv,'ai');
+        var sc=evalPos(B,BO_H,BO_A);
+        B=savedB;MOVES_LEFT=savedML;BO_H=savedBoH;BO_A=savedBoA;
+        if(sc>bs){bs=sc;best=mv}
+      });
+      if(best){applyMove(best,'ai');if(BO_A>=15){_e('game_loss');sm('AI wins!');_sr('backgammon',{w:false,s:0});rn();return}}
+      var _g2=BG_GEN;
+      if(MOVES_LEFT.length>0)bgSchedule(function(){if(_g2===BG_GEN)aiPlay();},250);
+      else bgSchedule(function(){if(_g2===BG_GEN)endTurn();},250);
+      rn();
+    } catch(err){
+      try{console.error('[backgammon aiPlay]',err);}catch(e){}
+      MOVES_LEFT=[];try{endTurn();}catch(e2){}
+    }
   }
   function rPt(p,side){
     var count=B[p],who=count>0?'human':count<0?'ai':'',abs=Math.abs(count);
