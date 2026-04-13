@@ -31028,7 +31028,8 @@ document.addEventListener('keydown', function(e) {
   // ── Cross-Pollinate Flow (legacy picker — fallback) ──
   window.openCrossPollinateFlow = function() {
     if (!window.FG_Data) return;
-    if (FG_Data.getNursery().length >= 3) { _setNurMsg('Nursery is full (3/3). Bloom or abandon a seed first.'); return; }
+    var _cpMaxNur = FG_Data.getNurSlots ? FG_Data.getNurSlots() : 3;
+    if (FG_Data.getNursery().length >= _cpMaxNur) { _setNurMsg('Nursery is full ('+_cpMaxNur+'/'+_cpMaxNur+'). Bloom or abandon a seed first.'); return; }
     _cpSelectedA = null; _cpSelectedB = null;
     _renderCPGrid();
     _updateCPDisplay();
@@ -34221,12 +34222,36 @@ function _pruneWild(){
   var wild=_getWild();if(!wild.length)return wild;
   for(var i0=0;i0<wild.length;i0++)_ensureVitality(wild[i0]);
   var died=[];
+  var rescued=0; // plants Tender L3 Phoenix Ward kept alive past expiry
+  var _isTenderMaster=false;
+  try{_isTenderMaster=window._lwGetClass&&window._lwGetClass()==='tender'&&window._lwGetClassLevel&&window._lwGetClassLevel('tender')>=3;}catch(e){}
   var fresh=wild.filter(function(w){
     if(!w||!w.hash)return false;
+    // Compute the raw "would have died" state ignoring Phoenix Ward, so we
+    // can count rescues even though _getWildVitality already masks them.
+    var rawDead=(w.decayAt-Date.now())<=0;
     var v=_getWildVitality(w);
     if(v.dead){died.push(w);return false;}
+    if(rawDead&&w.own&&_isTenderMaster)rescued++;
     return true;
   });
+  // Surface Phoenix Ward rescues — once per session per plant, so the
+  // player sees the ability working without spamming on every prune.
+  if(rescued>0&&window._toast){
+    var _seen=window._lwPhoenixWardSeen||{};
+    var _newRescues=0;
+    for(var _ri=0;_ri<wild.length;_ri++){
+      var _rw=wild[_ri];
+      if(_rw&&_rw.own&&(_rw.decayAt-Date.now())<=0&&_isTenderMaster&&!_seen[_rw.hash]){
+        _seen[_rw.hash]=Date.now();_newRescues++;
+      }
+    }
+    window._lwPhoenixWardSeen=_seen;
+    if(_newRescues>0){
+      var _msg=_newRescues===1?'💧 Phoenix Ward kept 1 plant alive past its lifespan.':'💧 Phoenix Ward kept '+_newRescues+' plants alive past their lifespan.';
+      setTimeout(function(){window._toast(_msg);},300);
+    }
+  }
   if(died.length>0){
     if(window._swsLog)_swsLog('Pruned '+died.length+' withered wild plants','ok');
     _saveWild(fresh);
@@ -36274,7 +36299,10 @@ function _doCollectFeral(f,mk){
   var dewReward={Common:1,Uncommon:2,Rare:3,Epic:5,Legendary:8,Mythic:12,Cosmic:20};
   var reward=dewReward[info.grade]||1;
   // Class synergy: Forager Master + Raccoon = 2x feral drops
-  try{if(window._LW_hasSynergy&&window._LW_hasSynergy()){var _lwc=localStorage.getItem('lw_class');if(_lwc==='forager')reward*=2;}}catch(e){}
+  var _foragerKinFired=false;
+  try{if(window._LW_hasSynergy&&window._LW_hasSynergy()){var _lwc=localStorage.getItem('lw_class');if(_lwc==='forager'){reward*=2;_foragerKinFired=true;}}}catch(e){}
+  // Surface the synergy so the player knows their Master ability triggered.
+  if(_foragerKinFired&&window._toast)setTimeout(function(){window._toast('🍂 Wild Kin: Raccoon doubled the drop (+'+reward+' Dew)');},250);
   if(window.earnDew)window.earnDew(reward,'feral_collect');
   // Event log: record feral collection for Root Report / discovery stats
   if(window.LW_Log){
@@ -52703,9 +52731,28 @@ window._LW_classXP=function(source,amount){
   // (Master L3) lifts the penalty so Keeper L3 earns full XP from any
   // source. Other classes still get full XP only from their declared sources.
   var mult=0;
-  if(cls==='keeper')mult=_lwGetClassLevel('keeper')>=3?1:0.25;
+  var _polymathFired=false;
+  if(cls==='keeper'){
+    if(_lwGetClassLevel('keeper')>=3){
+      mult=1;
+      // Polymath fires whenever Keeper Master earns XP from a source they
+      // wouldn't normally get full credit for. Surface this once per source
+      // so the player feels the Master ability working.
+      _polymathFired=true;
+    } else mult=0.25;
+  }
   else if(def.xpSrc.indexOf(source)>=0||def.xpSrc.indexOf('all')>=0)mult=1;
   if(mult<=0)return;
+  if(_polymathFired){
+    try{
+      var _polSeen={};try{_polSeen=JSON.parse(localStorage.getItem('lw_polymath_seen')||'{}');}catch(e){}
+      if(!_polSeen[source]){
+        _polSeen[source]=Date.now();
+        localStorage.setItem('lw_polymath_seen',JSON.stringify(_polSeen));
+        if(window._toast)setTimeout(function(){window._toast('🌿 Polymath: full XP from "'+source+'" too.');},400);
+      }
+    }catch(e){}
+  }
   // Biome bonus: +25% XP when in matching biome
   if(_lwBiomeMatch())mult*=1.25;
   // Cartographer Master + Heron synergy: doubles biome bonus effect.
