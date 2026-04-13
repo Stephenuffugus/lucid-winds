@@ -30596,15 +30596,46 @@ document.addEventListener('keydown', function(e) {
   // Pre-probe all 4 stages on load so PNGs are ready before first render
   for (var _pi = 0; _pi < 4; _pi++) _probeSeedSprite(_pi);
 
-  function _seedSpriteHtml(stage, isMystery) {
+  // Seed art pool — Stephen's mystical-seed renders. Add new files to
+  // /assets/seeds/ as seed-NN.png and bump _LW_SEED_POOL to match.
+  // The image is picked DETERMINISTICALLY per seed (by hash byte) so a
+  // single seed shows the SAME art everywhere it appears (nursery,
+  // backpack, breeding screen). Source files are full-resolution; CSS
+  // scales them down per location — never modify the source PNGs.
+  var _LW_SEED_POOL = 10;
+  function _LW_seedImagePath(seed){
+    if(!seed)return null;
+    // Pick by seedHash first byte (or fallback to id char) — stable per seed
+    var h = seed.seedHash || seed.id || '00';
+    var idx = (parseInt(h.slice(0,2),16) || 0) % _LW_SEED_POOL;
+    var n = String(idx + 1);
+    if(n.length < 2) n = '0' + n;
+    return 'assets/seeds/seed-' + n + '.png';
+  }
+  // Expose so backpack + other UIs use the same picker
+  window._LW_seedImagePath = _LW_seedImagePath;
+
+  function _seedSpriteHtml(stage, isMystery, seed) {
     if (stage < 0) stage = 0; if (stage > 3) stage = 3;
     var mysteryCls = isMystery ? ' nur-seed-mystery' : '';
+    // NEW: if we have a seed object, render its assigned art image at full
+    // size — gives variety so seeds visually differ. Stage progression is
+    // optional (commented out for now per Stephen's "single image per
+    // seed" direction). CSS sizes the container; img scales naturally.
+    if (seed) {
+      var p = _LW_seedImagePath(seed);
+      if (p) {
+        return '<div class="nur-seed-sprite' + mysteryCls + '">' +
+          '<img src="' + p + '" alt="seed" style="width:100%;height:100%;object-fit:contain;display:block;">' +
+        '</div>';
+      }
+    }
+    // Fallback to original stage sprites (used when no seed object passed)
     if (_seedSpriteAvail[stage] === true) {
       return '<div class="nur-seed-sprite' + mysteryCls + '">' +
         '<img src="' + _SEED_SPRITE_PATHS[stage] + '" alt="seed stage ' + stage + '">' +
       '</div>';
     }
-    // Fallback: inline SVG (current art) so the slot never goes blank
     return '<div class="nur-seed-sprite' + mysteryCls + '">' + _SEED_SPRITE_FALLBACKS[stage] + '</div>';
   }
 
@@ -30644,7 +30675,7 @@ document.addEventListener('keydown', function(e) {
     // seeds get an extra dashed gold halo overlay via CSS class.
     var days = seed.waterLog.length;
     var stageIdx = days >= 3 ? 3 : days; // 0,1,2,3
-    var svgHtml = _seedSpriteHtml(stageIdx, !!seed.mystery);
+    var svgHtml = _seedSpriteHtml(stageIdx, !!seed.mystery, seed);
     var sid = seed.id;
     var waterLabel    = wateredToday ? '✓ WATERED' : '💧 WATER';
     var waterDisabled = (wateredToday || bloomReady) ? 'disabled' : '';
@@ -47214,7 +47245,16 @@ function render(){
   h+='</div>';
   pe.innerHTML=h;
   var se=document.getElementById('bps');var cp=xc();h='';
-  for(var m=0;m<st.seeds.length&&m<cp;m++){h+='<div class="ss'+(st.seeds[m].rare?' rare':'')+'" onclick="BP.ts('+m+')"><div class="sd-icon">'+I.seed+'</div></div>';}
+  for(var m=0;m<st.seeds.length&&m<cp;m++){
+    // Use the same per-seed art image that the nursery uses, so the seed
+    // looks consistent across UIs. Falls back to the default I.seed icon
+    // if the helper isn't loaded.
+    var _bpSeedImg=window._LW_seedImagePath?window._LW_seedImagePath(st.seeds[m]):null;
+    var _bpSeedInner=_bpSeedImg
+      ?'<img src="'+_bpSeedImg+'" alt="seed" style="width:100%;height:100%;object-fit:contain;display:block;border-radius:6px;">'
+      :I.seed;
+    h+='<div class="ss'+(st.seeds[m].rare?' rare':'')+'" onclick="BP.ts('+m+')"><div class="sd-icon">'+_bpSeedInner+'</div></div>';
+  }
   for(var n=st.seeds.length;n<cp;n++)h+='<div class="se"></div>';
   se.innerHTML=h;
   // dbb badge is owned by FG_Wild._updateUI — do not overwrite here
