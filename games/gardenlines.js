@@ -2,6 +2,8 @@
 // Place tiles to build lines of matching shape OR color. 6 shapes × 6 colors, 3 copies each.
 (function(){
 'use strict';
+var LWG=window._G;
+var _e=LWG.e,_play=LWG.play,_playWin=LWG.playWin,ms=LWG.ms,mm=LWG.mm,mc=LWG.mc,sm=LWG.sm,sh=LWG.sh,_sr=LWG.sr,_st=LWG.st,_xt=LWG.xt;
 
 window._gameFns = window._gameFns || {};
 window._gameFns.gardenlines = function GL(a){

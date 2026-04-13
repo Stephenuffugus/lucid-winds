@@ -3,6 +3,8 @@
 // First team to 500 wins. -200 loses. 10 bags = -100 penalty.
 (function(){
 'use strict';
+var G=window._G;
+var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.sh,_sr=G.sr,_st=G.st,_xt=G.xt;
 
 window._gameFns = window._gameFns || {};
 window._gameFns.gardenspades = function GardenSpades(a){
