@@ -6,13 +6,37 @@ var G=window._G;
 var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G.sr;
 
 
+// ── SEED & POT PROGRESSION (unlock at higher levels) ──
+// Art is Midjourney-replaceable: each entry has {name, color, gradient[2], particles[3]} for seeds
+// and {name, baseColor, rimColor} for pots. When art lands, swap colors for img refs.
+var SEED_TIERS = [
+  { lvl: 1,  name: 'Sunflower Seed',   inner:'#e8c860', outer:'#a08030', glow:'rgba(200,168,75,0.15)', particles:['#7ab356','#c8a84b','#e8dcc8'] },
+  { lvl: 3,  name: 'Poppy Seed',       inner:'#c47a7a', outer:'#7a3a3a', glow:'rgba(196,122,122,0.18)', particles:['#c47a7a','#e8a0bf','#f0d0d0'] },
+  { lvl: 5,  name: 'Acorn',            inner:'#a08040', outer:'#4a2a10', glow:'rgba(160,128,64,0.18)', particles:['#a08040','#6a4020','#e8dcc8'] },
+  { lvl: 7,  name: 'Starfruit Pit',    inner:'#d4ff70', outer:'#6a9a2a', glow:'rgba(212,255,112,0.2)', particles:['#d4ff70','#7ab356','#ffffff'] },
+  { lvl: 10, name: 'Moonstone Kernel', inner:'#e8e0f0', outer:'#8080a0', glow:'rgba(232,224,240,0.25)', particles:['#e8e0f0','#c8a8e8','#ffffff'] },
+  { lvl: 15, name: 'Phoenix Ember',    inner:'#ffa040', outer:'#c04020', glow:'rgba(255,160,64,0.3)', particles:['#ffa040','#ff6020','#ffe0a0'] }
+];
+var POT_TIERS = [
+  { lvl: 1,  name: 'Clay Pot',      base:'#6b4a2a', rim:'#5a3a1a' },
+  { lvl: 4,  name: 'Terracotta',    base:'#b06040', rim:'#8a4020' },
+  { lvl: 6,  name: 'Glazed Urn',    base:'#406080', rim:'#2a4060' },
+  { lvl: 9,  name: 'Jade Vessel',   base:'#5aa070', rim:'#3a7050' },
+  { lvl: 12, name: 'Golden Pot',    base:'#d4a843', rim:'#a07a20' },
+  { lvl: 18, name: 'Cosmic Cradle', base:'#602080', rim:'#300a40' }
+];
+function _STcurrentSeedTier(lvl){var t=SEED_TIERS[0];for(var i=0;i<SEED_TIERS.length;i++)if(lvl>=SEED_TIERS[i].lvl)t=SEED_TIERS[i];return t;}
+function _STcurrentPotTier(lvl){var t=POT_TIERS[0];for(var i=0;i<POT_TIERS.length;i++)if(lvl>=POT_TIERS[i].lvl)t=POT_TIERS[i];return t;}
+function _STnextSeedUnlock(lvl){for(var i=0;i<SEED_TIERS.length;i++)if(SEED_TIERS[i].lvl>lvl)return SEED_TIERS[i];return null;}
+function _STnextPotUnlock(lvl){for(var i=0;i<POT_TIERS.length;i++)if(POT_TIERS[i].lvl>lvl)return POT_TIERS[i];return null;}
+
 window._gameFns=window._gameFns||{};
 window._gameFns.seedtoss2=function ST(a){
   var GRAVITY=800,SEED_RADIUS=8;
   var W=380,H=480,GROUND_Y;
   var canvas,ctx;
   var score=0,streak=0,bestStreak=0,level=1,seedsLeft=15,totalMade=0,totalThrown=0;
-  var seed=null,pot=null,wind=0;
+  var seed=null,pot=null,wind=0,peakHeight=0;
   var phase='ready';
   var particles=[];
   var touchStart=null,touchHistory=[];
@@ -63,6 +87,7 @@ window._gameFns.seedtoss2=function ST(a){
   function resetSeed(){
     seed={x:W/2,y:H*0.78,vx:0,vy:0,active:false,trail:[]};
     phase='ready';
+    peakHeight=seed.y;  // track topmost (smallest y) point reached
   }
 
   function onDown(e){
@@ -107,6 +132,8 @@ window._gameFns.seedtoss2=function ST(a){
     if(!seed||!seed.active)return;
     seed.vy+=GRAVITY*dt;seed.vx+=wind*dt;
     seed.x+=seed.vx*dt;seed.y+=seed.vy*dt;
+    // Track peak arc height (min y) for bonus scoring
+    if(seed.y<peakHeight)peakHeight=seed.y;
     seed.trail.push({x:seed.x,y:seed.y,life:0.5});
     if(seed.trail.length>20)seed.trail.shift();
     var pl=pot.x-pot.width/2,pr=pot.x+pot.width/2;
@@ -126,13 +153,34 @@ window._gameFns.seedtoss2=function ST(a){
     var pts=100*level+(streak>1?(streak-1)*25:0);
     var dist=Math.abs(seed.x-pot.x);
     if(dist<5)pts+=50;else if(dist<15)pts+=25;
+    // ── HEIGHT BONUS — higher arcs earn more points ──
+    // peakHeight is y-coordinate of topmost seed position (smaller = higher)
+    // Measurement zones (from canvas top to pot top) map to 4 tiers.
+    var potTop=pot.y-pot.height-4;
+    var arcTop=Math.max(0,potTop-peakHeight);  // pixels above pot rim
+    var heightBonus=0;
+    var heightLabel='';
+    if(arcTop>potTop*0.85){ heightBonus=200; heightLabel=' · SKY!'; }
+    else if(arcTop>potTop*0.65){ heightBonus=100; heightLabel=' · HIGH'; }
+    else if(arcTop>potTop*0.4){ heightBonus=50; heightLabel=' · GOOD'; }
+    else if(arcTop>potTop*0.15){ heightBonus=25; heightLabel=' · OK'; }
+    pts+=heightBonus;
     score+=pts;
-    setMsg('+'+pts);
+    setMsg('+'+pts+heightLabel);
+    // Pop particles in current seed tier colors
+    var seedTier=_STcurrentSeedTier(level);
     for(var i=0;i<16;i++){var ang=Math.random()*Math.PI*2,sp=50+Math.random()*120;
-      particles.push({x:pot.x,y:pot.y-pot.height,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp-60,life:0.8,maxLife:0.8,size:2+Math.random()*3,color:['#7ab356','#c8a84b','#e8dcc8'][Math.floor(Math.random()*3)]});}
+      particles.push({x:pot.x,y:pot.y-pot.height,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp-60,life:0.8,maxLife:0.8,size:2+Math.random()*3,color:seedTier.particles[Math.floor(Math.random()*3)]});}
     _e('progress');
     if(streak%5===0)_e('milestone');
-    if(totalMade%5===0){level++;setMsg('LEVEL '+level+'!');}
+    if(totalMade%5===0){
+      level++;
+      // Check for seed/pot unlocks at this new level
+      var unlockMsg='LEVEL '+level+'!';
+      for(var u=0;u<SEED_TIERS.length;u++){if(SEED_TIERS[u].lvl===level){unlockMsg='🌱 '+SEED_TIERS[u].name.toUpperCase()+' UNLOCKED!';break;}}
+      for(u=0;u<POT_TIERS.length;u++){if(POT_TIERS[u].lvl===level){unlockMsg='🏺 '+POT_TIERS[u].name.toUpperCase()+' UNLOCKED!';break;}}
+      setMsg(unlockMsg);
+    }
     updateHUD();
     setTimeout(function(){if(seedsLeft>0){genPot();resetSeed();}else endGame();},500);
   }
@@ -159,18 +207,44 @@ window._gameFns.seedtoss2=function ST(a){
 
   function draw(){
     ctx.fillStyle='#0d100c';ctx.fillRect(0,0,W,H);
+    // ── MEASUREMENT LINES — height-bonus zones ──
+    // Drawn from pot top up; the higher the arc peak, the bigger the bonus chip.
+    if(pot){
+      var potTop=pot.y-pot.height-4;
+      var zones=[
+        {y:potTop*0.15,pts:'+25',color:'rgba(122,179,86,0.18)'},
+        {y:potTop*0.40,pts:'+50',color:'rgba(200,168,75,0.22)'},
+        {y:potTop*0.65,pts:'+100',color:'rgba(232,160,191,0.25)'},
+        {y:potTop*0.85,pts:'+200 SKY',color:'rgba(91,155,213,0.3)'}
+      ];
+      ctx.save();
+      ctx.setLineDash([6,4]);
+      for(var zi=0;zi<zones.length;zi++){
+        var zY=zones[zi].y;
+        ctx.strokeStyle=zones[zi].color;
+        ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(8,zY);ctx.lineTo(W-8,zY);ctx.stroke();
+        ctx.fillStyle=zones[zi].color.replace(/0\.\d+/,'0.7');
+        ctx.font='bold 10px monospace';ctx.textAlign='left';
+        ctx.fillText(zones[zi].pts,12,zY-3);
+        ctx.textAlign='right';
+        ctx.fillText(zones[zi].pts,W-12,zY-3);
+      }
+      ctx.restore();
+    }
     // Ground
     ctx.fillStyle='rgba(40,35,25,0.4)';ctx.fillRect(0,GROUND_Y-3,W,H-GROUND_Y);
     ctx.strokeStyle='rgba(80,70,50,0.3)';ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(0,GROUND_Y);ctx.lineTo(W,GROUND_Y);ctx.stroke();
-    // Pot
+    // Pot — uses current level's pot tier
     if(pot){
+      var potTier=_STcurrentPotTier(level);
       var px=pot.x,py=pot.y,pw=pot.width,ph=pot.height;
-      ctx.fillStyle='#6b4a2a';
+      ctx.fillStyle=potTier.base;
       ctx.beginPath();
       ctx.moveTo(px-pw/2,py);ctx.lineTo(px-pw*0.35,py-ph);ctx.lineTo(px+pw*0.35,py-ph);ctx.lineTo(px+pw/2,py);
       ctx.closePath();ctx.fill();
-      ctx.fillStyle='#5a3a1a';ctx.fillRect(px-pw/2-6,py-ph-6,pw+12,8);
+      ctx.fillStyle=potTier.rim;ctx.fillRect(px-pw/2-6,py-ph-6,pw+12,8);
       ctx.fillStyle='rgba(0,0,0,0.4)';ctx.fillRect(px-pw*0.3,py-ph-2,pw*0.6,6);
     }
     // Wind indicator
@@ -188,12 +262,13 @@ window._gameFns.seedtoss2=function ST(a){
       }
       ctx.globalAlpha=1;
     }
-    // Seed
+    // Seed — uses current level's seed tier
     if(seed&&phase!=='scored'){
-      ctx.fillStyle='rgba(200,168,75,0.15)';
+      var seedTier=_STcurrentSeedTier(level);
+      ctx.fillStyle=seedTier.glow;
       ctx.beginPath();ctx.arc(seed.x,seed.y,SEED_RADIUS+5,0,Math.PI*2);ctx.fill();
       var gr=ctx.createRadialGradient(seed.x-2,seed.y-2,0,seed.x,seed.y,SEED_RADIUS);
-      gr.addColorStop(0,'#e8c860');gr.addColorStop(1,'#a08030');
+      gr.addColorStop(0,seedTier.inner);gr.addColorStop(1,seedTier.outer);
       ctx.fillStyle=gr;
       ctx.beginPath();ctx.arc(seed.x,seed.y,SEED_RADIUS,0,Math.PI*2);ctx.fill();
     }

@@ -3177,9 +3177,9 @@
     body.game-active #pw-keeper-bar{display:none!important}
     body.game-active #kb-compendium{display:none!important}
     /* Universal EXIT button during game — returns to picker */
-    #game-exit-btn{display:none;position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);left:10px;z-index:9999;min-width:60px;min-height:44px;padding:8px 14px;background:rgba(13,16,12,0.85);border:1.5px solid rgba(122,179,86,0.35);color:var(--cream);font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:10px;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 3px 12px rgba(0,0,0,0.5);}
-    body.game-active #game-exit-btn{display:flex;align-items:center;justify-content:center;gap:4px;}
-    #game-exit-btn:active{transform:scale(0.94);background:rgba(74,124,53,0.25);}
+    #game-exit-btn{display:none;position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;z-index:999999;min-width:64px;min-height:44px;padding:8px 14px;background:rgba(13,16,12,0.92);border:1.5px solid rgba(122,179,86,0.45);color:var(--cream);font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:10px;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 3px 12px rgba(0,0,0,0.6);pointer-events:auto;}
+    body.game-active #game-exit-btn{display:flex !important;align-items:center;justify-content:center;gap:4px;}
+    #game-exit-btn:active{transform:scale(0.94);background:rgba(74,124,53,0.35);}
     @keyframes classPrompt{0%,100%{filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7))}50%{filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 10px rgba(200,168,75,0.6))}}
     #kb-compendium.class-prompt{animation:classPrompt 2.4s ease-in-out infinite;}
     /* Back-to-games button inside game area */
@@ -26931,6 +26931,41 @@ document.addEventListener('keydown', function(e) {
     }
   }
 
+  // ═══ GREENHOUSE DIAGNOSTIC — call _ghDebug() in console ═══
+  window._ghDebug = function() {
+    var gh = loadGreenhouse();
+    var grid = document.getElementById('greenhouse-grid');
+    var out = ['═══ GREENHOUSE DIAGNOSTIC ═══'];
+    out.push('Plants in storage: ' + gh.length);
+    out.push('MAX_COLLECTION_SIZE: ' + MAX_COLLECTION_SIZE);
+    out.push('Grid element found: ' + (!!grid));
+    if (grid) {
+      out.push('Grid children (DOM cards): ' + grid.children.length);
+      out.push('Grid scroll height: ' + grid.scrollHeight);
+      out.push('Grid client height: ' + grid.clientHeight);
+      var cs = window.getComputedStyle(grid);
+      out.push('Grid computed display: ' + cs.display);
+      out.push('Grid computed overflow: ' + cs.overflow);
+      out.push('Grid computed max-height: ' + cs.maxHeight);
+      out.push('Grid computed grid-template-rows: ' + cs.gridTemplateRows);
+    }
+    var panel = document.getElementById('panel-greenhouse');
+    if (panel) {
+      var ps = window.getComputedStyle(panel);
+      out.push('Panel display: ' + ps.display);
+      out.push('Panel overflow: ' + ps.overflow);
+      out.push('Panel height: ' + panel.offsetHeight);
+    }
+    // First 20 plant hashes so we can verify they're all in storage
+    out.push('');
+    out.push('Plant hash prefixes:');
+    for (var i = 0; i < gh.length; i++) {
+      out.push('  ' + i + ': ' + (gh[i].hash ? gh[i].hash.slice(0,12) : '??'));
+    }
+    console.log(out.join('\n'));
+    return out.join('\n');
+  };
+
   // ═══ EXPOSE CRITICAL FUNCTIONS ON WINDOW ═══
   window.mintPlant = mintPlant;
   window.renderGreenhouse = renderGreenhouse;
@@ -33144,22 +33179,86 @@ document.addEventListener('keydown', function(e) {
     if (_activeModalId === id) _activeModalId = null;
   }
 
+  // GLOBAL back-button trap — EVERY popstate consumes one layer of app state
+  // (close a modal, exit a game, pop to greenhouse) before the browser is
+  // allowed to leave the page. Push a sentinel at boot so there's always
+  // history to consume; re-push after every pop so the trap is self-sustaining.
+  function _pushBackTrap() { try { window.history.pushState({ lwTrap: 1 }, ''); } catch(e) {} }
+  try { _pushBackTrap(); } catch(e) {}
+
   window.addEventListener('popstate', function(e) {
+    var handled = false;
+
+    // Layer 1: close registered modal if any
     var id = (e.state && e.state.swsModal) ? e.state.swsModal : _activeModalId;
-    if (!id) return;
-    // Dismiss the element
-    var el = document.getElementById(id);
-    if (el) { el.classList.remove('open'); el.classList.remove('active'); }
-    _activeModalId = null;
-    // Per-modal teardown (mirror the explicit close functions)
-    if      (id === 'cp-modal')           { _cpSelectedA = null; _cpSelectedB = null; }
-    else if (id === 'bloom-modal')        { _bloomPendingSeed = null; if(window.FG_Audio) FG_Audio.setRarityTier(0); }
-    else if (id === 'cinematic-reveal')   { /* overlay self-cleans on next open */ }
-    else if (id === 'discovery-overlay')  { /* overlay self-cleans on next open */ }
-    else if (id === 'plant-gallery-modal'){ galleryPlant = null; if(window.FG_Audio) FG_Audio.setRarityTier(0); }
-    else if (id === 'print-modal')        { /* no state to clear */ }
-    else if (id === 'market-modal')       { /* no state to clear */ }
-    else if (id === 'sws-id-modal')        { _fadeClose('sws-id-modal'); }
+    if (id) {
+      var el = document.getElementById(id);
+      if (el) { el.classList.remove('open'); el.classList.remove('active'); }
+      _activeModalId = null;
+      if      (id === 'cp-modal')           { _cpSelectedA = null; _cpSelectedB = null; }
+      else if (id === 'bloom-modal')        { _bloomPendingSeed = null; if(window.FG_Audio) FG_Audio.setRarityTier(0); }
+      else if (id === 'plant-gallery-modal'){ galleryPlant = null; if(window.FG_Audio) FG_Audio.setRarityTier(0); }
+      else if (id === 'sws-id-modal')       { _fadeClose('sws-id-modal'); }
+      handled = true;
+    }
+
+    // Layer 2: close any known overlay that's open (carousel, drawer, shops, BoS, etc)
+    if (!handled) {
+      var overlays = [
+        {id:'bos-overlay', close:function(el){el.remove();}},
+        {id:'lw-pot-shop', close:function(el){el.remove();}},
+        {id:'lw-class-overlay', close:function(el){el.remove();}},
+        {id:'mystery-modal', close:function(el){el.classList.remove('open');}},
+        {id:'slot-modal', close:function(el){el.classList.remove('open');}},
+        {id:'weather-modal', close:function(el){el.classList.remove('open');}},
+        {id:'daily-reward-modal', close:function(el){el.remove();}},
+        {id:'breed-screen', close:function(el){if(window.closeBreedScreen)closeBreedScreen();else el.classList.remove('open');}},
+        {id:'pad-drawer', close:function(el){if(window.closePlantActionDrawer)closePlantActionDrawer();else el.classList.remove('open');}},
+        {id:'plant-gallery-modal', close:function(el){if(window.closePlantGallery)closePlantGallery();else el.classList.remove('open');}},
+        {id:'lw-pot-picker', close:function(el){el.remove();}},
+        {id:'plant-details-modal', close:function(el){el.classList.remove('open');}},
+        {id:'fg-ov', close:function(el){el.classList.remove('open');}},
+        {id:'fg-sc', close:function(el){el.classList.remove('open');}}
+      ];
+      for (var ov=0; ov<overlays.length; ov++) {
+        var ovEl = document.getElementById(overlays[ov].id);
+        if (ovEl && (ovEl.classList.contains('open') || ovEl.classList.contains('active') || ovEl.style.display === 'flex' || ovEl.offsetParent !== null && ovEl.tagName !== 'DIV' || (ovEl.id && ovEl.offsetParent))) {
+          // Element is in the DOM; treat as open
+          try { overlays[ov].close(ovEl); } catch(err) {}
+          handled = true;
+          break;
+        }
+      }
+    }
+
+    // Layer 3: if game is active, exit to picker
+    if (!handled && document.body.classList.contains('game-active')) {
+      if (window._openGamePicker) { window._openGamePicker(); handled = true; }
+    }
+
+    // Layer 4: if not on greenhouse, pop to greenhouse (home tab)
+    if (!handled) {
+      var active = document.querySelector('.grove-panel.active');
+      var activeId = active ? active.id : '';
+      if (activeId && activeId !== 'panel-greenhouse') {
+        if (window.switchTab) { window.switchTab('greenhouse'); handled = true; }
+      }
+    }
+
+    // Always re-push sentinel so next back-press has something to consume.
+    // Only allow actual exit if the user back-presses TWICE on greenhouse (Android pattern).
+    if (handled) {
+      _pushBackTrap();
+    } else {
+      // "Tap back again to exit" — give a 2-second window
+      if (window._lwBackExit && (Date.now() - window._lwBackExit) < 2000) {
+        // Second press within window — allow exit
+        return;
+      }
+      window._lwBackExit = Date.now();
+      if (window._toast) _toast('Tap back again to leave Lucid Winds.');
+      _pushBackTrap();
+    }
   });
 
   // ── INIT ──
