@@ -34710,15 +34710,64 @@ function _fetchReproWeather(lat, lng, cb) {
 }
 
 function _wildReproduction(simMode) {
-  if (!_uLat || !_map) return;
+  if (!_uLat || !_map) {window._reproLastReason='missing GPS or map';return;}
   var user = window.firebase && firebase.auth() && firebase.auth().currentUser;
-  if (!user || !user.uid || !window.db) return;
+  if (!user || !user.uid || !window.db) {window._reproLastReason='not signed in or no db';return;}
 
   // Fetch weather then proceed
   _fetchReproWeather(_uLat, _uLng, function(weather) {
     _doReproduction(weather, simMode);
   });
 }
+
+// Diagnostic helper — call from console: window._reproDebug()
+// Reports the state of every gate that governs wild-plant spreading.
+window._reproDebug = function() {
+  var out = ['═══ WILD REPRODUCTION DIAGNOSTIC ═══'];
+  out.push('Last gate hit: ' + (window._reproLastReason || 'none / unknown'));
+  out.push('GPS:  ' + (_uLat ? _uLat.toFixed(4)+','+_uLng.toFixed(4) : 'MISSING'));
+  out.push('Map:  ' + (_map ? 'loaded' : 'MISSING'));
+  var user = window.firebase && firebase.auth() && firebase.auth().currentUser;
+  out.push('Auth: ' + (user ? user.uid.slice(0,8) : 'NOT SIGNED IN'));
+  out.push('DB:   ' + (window.db ? 'ready' : 'MISSING'));
+  var today = new Date().toISOString().split('T')[0];
+  var reproToday = localStorage.getItem('lw_repro_today');
+  out.push('Already ran today? ' + (reproToday === today ? 'YES (skip until tomorrow)' : 'no'));
+  try {
+    var zones = _getAllZonePlants();
+    var zk = Object.keys(zones);
+    out.push('Zones with plants: ' + zk.length);
+    var checked = {}; try { checked = JSON.parse(localStorage.getItem(REPRO_KEY) || '{}'); } catch(e) {}
+    var eligible = 0, adjBonus = 0;
+    for (var i = 0; i < zk.length; i++) {
+      var z = zk[i];
+      var base = (zones[z] || []).length;
+      // Count plants reachable including 8 neighbors
+      var zp = z.split(',');
+      var zLat = parseFloat(zp[0]), zLng = parseFloat(zp[1]);
+      var step = (typeof ZONE_SIZE !== 'undefined') ? ZONE_SIZE : 0.001;
+      var tot = base;
+      for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) {
+        if (dx === 0 && dy === 0) continue;
+        var ak = (Math.round((zLat+dx*step)/step)*step).toFixed(4)+','+(Math.round((zLng+dy*step)/step)*step).toFixed(4);
+        if (zones[ak]) tot += zones[ak].length;
+      }
+      if (tot >= 2) {
+        eligible++;
+        if (checked[z] !== today) adjBonus++;
+      }
+    }
+    out.push('Breeding-eligible zones: ' + eligible + ' (need 2+ plants incl. neighbors)');
+    out.push('Uncheck-this-session: ' + adjBonus);
+    out.push('Base reproduction chance per pair: ' + (REPRO_CHANCE*100).toFixed(0) + '%');
+  } catch (e) {
+    out.push('Zone scan error: ' + e.message);
+  }
+  out.push('');
+  out.push('To force-run right now: localStorage.removeItem("lw_repro_today"); FG_Wild._wildReproduction()');
+  console.log(out.join('\n'));
+  return out.join('\n');
+};
 
 function _doReproduction(weather, simMode) {
   var user = firebase.auth().currentUser;
