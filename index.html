@@ -33785,7 +33785,8 @@ function activate(){
         window._lastBiodiversity=bd;
         if(bd.tier==='hotspot'&&!localStorage.getItem('lw_hotspot_seen')){
           localStorage.setItem('lw_hotspot_seen','1');
-          if(window._toast)_toast('Biodiversity Hotspot! '+bd.species+' real plant species observed here. Rare ferals possible!');
+          // Logged silently to Book of Secrets instead of toast so the Wild art can breathe.
+          if(window._logWildEvent)_logWildEvent({type:'hotspot',species:bd.species});
         }
       });
     }
@@ -33800,7 +33801,8 @@ function activate(){
         var _biShow=localStorage.getItem('lw_biome_shown');
         if(_biShow!==b&&window.getBiomeInfo){
           var _bInfo=getBiomeInfo(b);
-          if(window._toast)_toast(_bInfo.icon+' Biome: '+_bInfo.name+(_bInfo.mutation?' — '+_bInfo.mutation+' possible':''));
+          // Logged silently; appears in Book of Secrets instead of interrupting Wild.
+          if(window._logWildEvent)_logWildEvent({type:'biome',biome:b,name:_bInfo.name,icon:_bInfo.icon,mutation:_bInfo.mutation||null});
           localStorage.setItem('lw_biome_shown',b);
           // New biome discovery: Cartographer XP + Compass XP
           try{if(window._LW_classXP)window._LW_classXP('biome',25);}catch(e){}
@@ -34081,7 +34083,8 @@ function _checkStepMilestone(){
     if(meters>=milestones[i]&&_lastStepMilestone<milestones[i]){
       _lastStepMilestone=milestones[i];
       var labels={500:'500m walked!',1000:'1km explorer!',2500:'2.5km trekker!',5000:'5km ranger!',10000:'10km legend!'};
-      _toast('\ud83e\udeb4 '+labels[milestones[i]]);
+      // Silent — logged to Book of Secrets. Stops step-milestones from spamming on Wild entry.
+      if(window._logWildEvent)_logWildEvent({type:'step_milestone',meters:milestones[i],label:labels[milestones[i]]});
       break;
     }
   }
@@ -35512,7 +35515,7 @@ function _doReproduction(weather, simMode) {
         if (window._logWildEvent) {
           window._logWildEvent({ type: 'feral', hash: wp.hash, name: feralName, reason: 'neglect' });
         }
-        if (window._toast) _toast('💀 Your ' + (feralName || 'plant') + ' went feral from neglect.');
+        // Toast removed — ferality is a narrative event for the Book of Secrets, not a wild-entry interruption.
         // Convert to wild-owned
         wp.ownerUid = 'wild';
         wp.ownerName = 'Feral';
@@ -35578,7 +35581,8 @@ function _doReproduction(weather, simMode) {
   localStorage.setItem(REPRO_KEY, JSON.stringify(checked));
 
   if (births > 0) {
-    _toast('\ud83c\udf31 ' + births + ' new plant' + (births > 1 ? 's' : '') + ' sprouted in the wild!');
+    // Silent — daily reproduction scan logs to Book of Secrets instead of spamming on Wild entry.
+    if(window._logWildEvent)window._logWildEvent({type:'reproduction',births:births});
   }
 }
 
