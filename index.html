@@ -4349,10 +4349,11 @@ body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 275px)!important;righ
 .se{width:42px;height:42px;flex-shrink:0;border-radius:50%;border:1.5px dashed rgba(200,168,75,0.08);opacity:0.2;}
 
 /* Drop FAB */
-#dfb{position:fixed;bottom:calc(92px + env(safe-area-inset-bottom,0px) + 8px);right:12px;z-index:999;width:54px;height:54px;border-radius:50%;border:2px solid rgba(200,168,75,.3);cursor:pointer;background:rgba(26,36,22,.85) url('assets/games/wild/wild-drop-fab-v4.png') center/70% no-repeat;box-shadow:0 4px 16px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;transition:transform 0.15s;}
+#dfb{position:fixed;bottom:calc(92px + env(safe-area-inset-bottom,0px) + 8px);right:8px;z-index:999;width:112px;height:112px;border-radius:0;border:none;cursor:pointer;background:url('assets/wild-drop-fab-t.png') center/contain no-repeat;filter:drop-shadow(0 4px 14px rgba(0,0,0,.6));display:flex;align-items:center;justify-content:center;transition:transform 0.15s;-webkit-tap-highlight-color:transparent;padding:0;}
+#dfb:active{transform:scale(.92);}
 @keyframes fr{0%,100%{box-shadow:0 4px 20px rgba(42,92,42,0.5),0 0 0 3px rgba(122,179,86,0.08)}50%{box-shadow:0 6px 24px rgba(42,92,42,0.6),0 0 0 5px rgba(122,179,86,0.12)}}
 #dfb:active{transform:scale(0.9);animation:none;}
-#dbb{position:absolute;top:-3px;right:-3px;width:20px;height:20px;border-radius:50%;background:var(--sage);color:var(--black);font-family:'Bebas Neue',sans-serif;font-size:11px;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+#dbb{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;background:var(--sage);color:#0d100c;font-family:'Bebas Neue',sans-serif;font-size:13px;display:flex;align-items:center;justify-content:center;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.5);border:1.5px solid rgba(13,16,12,.6);}
 #dbb.lo{background:var(--gold);animation:dw 1s ease-in-out infinite;}
 @keyframes dw{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
 
@@ -5344,7 +5345,7 @@ window.onerror=function(msg,url,line,col,err){
       <div id="w-territory-stats" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;font-family:DM Mono,monospace;font-size:0.5rem;text-align:center;"></div>
     </div>
     <!-- RECENTER BUTTON -->
-    <button id="w-recenter" onclick="if(window.FG_Wild&&window.FG_Wild._recenter)FG_Wild._recenter();" style="display:none;position:fixed;bottom:calc(140px + env(safe-area-inset-bottom,0px));left:12px;z-index:999;width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(74,144,217,0.3);background:rgba(13,16,12,0.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,0.4);-webkit-tap-highlight-color:transparent;color:rgba(74,144,217,0.8);font-size:0.7rem;">&#8982;</button>
+    <button id="w-recenter" onclick="if(window.FG_Wild&&window.FG_Wild._recenter)FG_Wild._recenter();" style="display:none;position:fixed;bottom:calc(240px + env(safe-area-inset-bottom,0px));left:12px;z-index:999;width:54px;height:54px;border-radius:50%;border:1.5px solid rgba(74,144,217,0.45);background:rgba(13,16,12,0.94);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.5);-webkit-tap-highlight-color:transparent;color:rgba(140,200,235,0.95);font-size:1.4rem;line-height:1;">&#8982;</button>
     <!-- MASS WATER BUTTON — appears when player has 2+ wild plants needing water -->
     <button id="w-mass-water" onclick="window._lwMassWater();" style="display:none;position:fixed;bottom:calc(190px + env(safe-area-inset-bottom,0px));left:12px;z-index:999;min-width:46px;height:46px;padding:0 12px;border-radius:23px;border:1.5px solid rgba(91,143,185,0.5);background:rgba(13,18,24,0.94);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:none;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 14px rgba(0,0,0,0.5),0 0 12px rgba(91,143,185,0.2);-webkit-tap-highlight-color:transparent;color:#7ab3d4;font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.06em;white-space:nowrap;"><span id="w-mass-water-label">&#128167; WATER ALL</span></button>
     <!-- MAP -->
@@ -5413,7 +5414,8 @@ window.onerror=function(msg,url,line,col,err){
   <div id="bpi" onclick="BP.toggle()" style="display:none;"><div id="bpb" class="e">0</div></div>
   <!-- Backpack expanded L-shape -->
   <div id="bpe"><div id="bpbk" onclick="BP.close()"></div><div id="bpp"></div><div id="bps"></div></div>
-  <div id="bp-rtb" onclick="BP.returnToBase()" style="display:none !important;"></div>
+  <!-- bp-rtb removed: return-to-base now lives inside the backpack panel. -->
+  <div id="bp-rtb" style="display:none !important;"></div>
   <!-- Plant info card with hold-to-release -->
   <div id="pic"><div class="pic-top"><div class="pic-plant" id="pic-pl"></div><div class="pic-info"><div class="pic-name" id="pic-nm">—</div><div class="pic-grade" id="pic-gr">—</div><div class="pic-origin" id="pic-or">—</div></div><button class="pic-close" onclick="BP.cpi()">✕</button></div><div class="htc" id="htc-rel" onmousedown="BP.hts()" ontouchstart="BP.hts()" onmouseup="BP.hte()" ontouchend="BP.hte()" onmouseleave="BP.hte()"><div class="htc-fill" id="htcf"></div><span class="htc-label">HOLD TO RELEASE TO WILD</span></div></div>
   <!-- Seed info card with hold-to-send-to-nursery -->
@@ -47545,8 +47547,12 @@ function returnToBase(){
 }
 
 function _rtbRender(){
-  var btn=document.getElementById('bp-rtb');if(!btn)return;
-  // Only show on Wild tab
+  // Floating bottom-left return button retired — return action lives in the
+  // backpack panel itself. Keep the function as a no-op so existing call
+  // sites stay safe; the in-panel button (bp-rtb-inner) renders separately.
+  var btn=document.getElementById('bp-rtb');if(btn)btn.style.display='none';
+  return;
+  // eslint-disable-next-line no-unreachable
   var wp=document.getElementById('panel-wild');
   if(!wp||!wp.classList.contains('active')){btn.style.display='none';return}
   btn.style.display='block';
