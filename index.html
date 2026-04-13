@@ -40362,7 +40362,10 @@ function GR(a){
   bd.addEventListener('touchend',function(e){if(bd._sx===undefined)return;var dx=e.changedTouches[0].clientX-bd._sx,dy=e.changedTouches[0].clientY-bd._sy;if(Math.max(Math.abs(dx),Math.abs(dy))<25)return;if(Math.abs(dx)>Math.abs(dy))_Rm(dx>0?'right':'left');else _Rm(dy>0?'down':'up');bd._sx=bd._sy=undefined;},{passive:true});
 
   // Keyboard handling
-  document.addEventListener('keydown',function(e){var m={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down'};if(m[e.key]&&_a==='merge'){e.preventDefault();_Rm(m[e.key]);}});
+  if(!window._mergeKeyBound){
+    window._mergeKeyBound=true;
+    document.addEventListener('keydown',function(e){var m={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down'};if(m[e.key]&&_a==='merge'){e.preventDefault();_Rm(m[e.key]);}});
+  }
 
   // New game
   window._RN=function(){g=new Array(16).fill(0);sc=0;bt=2;ov=false;busy=false;
@@ -43455,9 +43458,12 @@ function GBS(a){
           _bsPendingShot=i;
           var coord='ABCDEFGH'.charAt(i%SZ)+(Math.floor(i/SZ)+1);
           sm('🎯 Aimed at '+coord+' — tap again to fire');
-          // Light highlight on the selected cell
+          // Clear ALL existing highlights first, then apply to the new
+          // aim cell. Was leaving stale gold rings on previously-aimed
+          // cells when player moved their aim.
           var enemyTbl=grids.querySelectorAll('div[data-i]');
           enemyTbl.forEach(function(el){
+            el.style.boxShadow='';
             if(parseInt(el.getAttribute('data-i'),10)===i)el.style.boxShadow='0 0 0 3px rgba(200,168,75,0.85), 0 0 12px rgba(200,168,75,0.5)';
           });
           return;
@@ -43490,7 +43496,11 @@ function GBS(a){
     }
     var r=Math.floor(target/SZ),c=target%SZ;
     if(pGrid[target]>0){
-      pGrid[target]=-2;sm('💥 Enemy hit your '+SHIP_NAMES[0]+'!');
+      // Look up which ship was struck BEFORE overwriting to -2.
+      // Was hardcoded to SHIP_NAMES[0] ("Vine") regardless of what got hit.
+      var _hitId=pGrid[target];
+      var _hitName=(_hitId>0&&SHIP_NAMES[_hitId-1])?SHIP_NAMES[_hitId-1]:'fleet';
+      pGrid[target]=-2;sm('💥 Enemy hit your '+_hitName+'!');
       aiHits.push(target);
       // Add adjacent cells to hunt stack
       var adj=[[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
@@ -43853,7 +43863,12 @@ function GSK(a){
     if(isNaN(n)||n<1||n>LEVELS.length){sm('Invalid level — must be 1 to '+LEVELS.length);return;}
     _skHist=[];lvl=n-1;localStorage.setItem('sk_lvl',String(lvl));load();sm('Level '+(lvl+1));rn();
   };
-  document.addEventListener('keydown',function(e){var m={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};if(m[e.key]&&_a==='sokoban'){e.preventDefault();_SKM(m[e.key][0],m[e.key][1])}});
+  // Bind keydown only ONCE — was attaching a fresh listener every
+  // time GSK was invoked (new game / tab revisit), stacking handlers.
+  if(!window._skKeyBound){
+    window._skKeyBound=true;
+    document.addEventListener('keydown',function(e){var m={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};if(m[e.key]&&_a==='sokoban'){e.preventDefault();_SKM(m[e.key][0],m[e.key][1]);}});
+  }
   load();rn()}
 // ═══ PETAL FALL — Falling Block Puzzle ═══
 function GPF(a){
@@ -44206,7 +44221,7 @@ function GBW(a){
     sx.beginPath();sx.arc(cx,cy,radius,0,Math.PI*2);sx.strokeStyle='rgba(74,124,53,0.3)';sx.lineWidth=2;sx.stroke();
     sx.fillStyle='rgba(232,220,200,0.2)';sx.font='10px Bebas Neue,sans-serif';sx.textAlign='center';sx.fillText('BLOOM WHEEL — LUCID WINDS',cx,H-10);
     var lk=document.createElement('a');lk.download='bloom-wheel-'+Date.now()+'.png';lk.href=sc.toDataURL('image/png');lk.click();
-    _e('milestone');_sr('bloomwheel',{w:true,s:Math.round((Date.now()-startT)/1000)});sm('Mandala saved!')};
+    _e('game_win');_playWin();_sr('bloomwheel',{w:true,s:Math.round((Date.now()-startT)/1000)});sm('Mandala saved!')};
 
   // Hash earning — 1 per 60 seconds of active drawing (track interval so we can clear on teardown)
   if(window._bwHashInt){try{clearInterval(window._bwHashInt);}catch(e){}}
