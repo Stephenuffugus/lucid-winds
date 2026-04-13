@@ -51648,7 +51648,12 @@ function _bosClassContent() {
       h += '<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--muted);margin-bottom:0.8rem;line-height:1.6;">The five paths reveal themselves to you at <span style="color:var(--gold);">Keeper Level 7</span>. For now, tend your garden — let the world shape your leanings first. <span style="color:var(--cream);">(Currently Lv ' + keeperLvl + ')</span></div>';
     }
   } else {
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--muted);margin-bottom:0.8rem;line-height:1.6;">Each level earns an ability. Master rank unlocks your companion synergy — and opens the door to walk a new path if you choose.</div>';
+    // Keeper's Master is Polymath (no companion); other classes get companion synergy at L3.
+    var _curIsKeeper = cur === 'keeper';
+    var _masterCopy = _curIsKeeper
+      ? 'Each level earns an ability. Master rank lifts the keeper XP penalty — Polymath earns full XP from every source. Walk a new path any time.'
+      : 'Each level earns an ability. Master rank unlocks your companion synergy. Walk a new path any time.';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--muted);margin-bottom:0.8rem;line-height:1.6;">' + _masterCopy + '</div>';
   }
 
   for (var cid in LW_CLASSES) {
@@ -51692,7 +51697,11 @@ function _bosClassContent() {
       h += '<div style="padding:5px 8px;margin-top:4px;background:' + (unlocked ? 'rgba(74,124,53,0.12)' : 'rgba(13,16,12,0.4)') + ';border-left:3px solid ' + (unlocked ? 'var(--sage)' : 'rgba(74,124,53,0.1)') + ';border-radius:4px;">';
       h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:' + (unlocked ? 'var(--sage)' : 'var(--muted)') + ';letter-spacing:0.06em;">L' + abl + ' ' + titles[abl].toUpperCase() + '</div>';
       if (isMasterHidden) {
-        h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);margin-top:2px;"><em style="opacity:0.6;">A companion bond awaits those who walk this path to Master.</em></div>';
+        // Keeper's Master is Polymath (no companion); others get companion bond.
+        var _hint = (cid === 'keeper')
+          ? 'Mastery of every craft awaits those who walk this path to Master.'
+          : 'A companion bond awaits those who walk this path to Master.';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);margin-top:2px;"><em style="opacity:0.6;">' + _hint + '</em></div>';
       } else {
         h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:' + (unlocked ? 'var(--cream)' : 'var(--muted)') + ';margin-top:2px;"><strong>' + ab.name + '</strong> \u2014 ' + ab.desc + '</div>';
       }
