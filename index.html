@@ -5294,7 +5294,7 @@ window.onerror=function(msg,url,line,col,err){
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Keeper XP \u2014 your lifetime experience. Pollen is the energy that grows your rank. Every kind act, wild drop, and bloom contributes.')"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl">xp</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Meters walked. Keep moving to find feral seeds!')"><div class="wild-log-val" style="color:var(--sage)" id="w-steps">0</div><div class="wild-log-lbl">meters</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Your biome — detected from real geography. Affects feral rarity and mutations.')"><div class="wild-log-val" style="font-size:0.7rem;" id="w-biome">🏡</div><div class="wild-log-lbl" id="w-biome-name">scanning</div></div>
-      <div class="wild-log-wind" id="w-wind">🧭<span></span></div>
+      <div class="wild-log-wind" id="w-wind" onclick="if(window._lwCompassTap)window._lwCompassTap();" style="cursor:pointer;">🧭<span></span></div>
     </div>
     <!-- TERRITORY OVERVIEW (tap planted count to expand) -->
     <div id="w-territory" style="display:none;position:fixed;top:60px;left:8px;right:8px;z-index:998;background:rgba(13,16,12,0.94);border:1px solid rgba(122,179,86,0.12);border-radius:10px;padding:0.5rem;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:panelFadeIn 0.2s ease;max-width:360px;margin:0 auto;">
@@ -33697,6 +33697,7 @@ window._retryGps=function(){
   navigator.geolocation.getCurrentPosition(function(p){
     _gpsDenied=false;
     _uLat=p.coords.latitude;_uLng=p.coords.longitude;
+    window._uLat=_uLat;window._uLng=_uLng;
     if(_map)_map.setView([_uLat,_uLng],16);
     _placeUser();_loadAll();
     _toast('Location locked! Tap \ud83c\udf31 to plant.');
@@ -37993,7 +37994,9 @@ function _lwMassWaterEligible(){
       var lastW = p.lastWateredAt || 0;
       if (now - lastW < 24*3600000) continue;
       out.push(i);
-      if (out.length >= LW_MASS_WATER_MAX_PER_USE) break;
+      // Cap per-use by watering can tool level (0=none, 3=L2, 6=L3)
+      var _mwCap = _lwCanToolCap() || LW_MASS_WATER_MAX_PER_USE;
+      if (out.length >= _mwCap) break;
     }
     return out;
   } catch(e) { return []; }
@@ -38014,16 +38017,63 @@ function _lwMassWaterRecord(){
     localStorage.setItem('lw_mass_water_log', JSON.stringify(log));
   } catch(e) {}
 }
+// Compass tool tap handler — L1 says wind only, L2 reveals biome on demand, L3 points to nearest feral
+window._lwCompassTap=function(){
+  var lvl=1;
+  try{var tx=JSON.parse(localStorage.getItem('lw_tool_xp')||'{}');var x=tx.compass||0;lvl=x>=100?3:x>=30?2:1;}catch(e){}
+  if(lvl<2){_toast('\ud83e\udded Compass L1 \u2014 wind only. Discover biomes to level up.');return;}
+  if(lvl===2){
+    // Reveal biome
+    var bInfo=null;try{if(window._lastDetectedBiome&&window.getBiomeInfo)bInfo=window.getBiomeInfo(window._lastDetectedBiome);}catch(e){}
+    if(bInfo)_toast(bInfo.icon+' '+bInfo.name+(bInfo.mutation?' \u2014 '+bInfo.mutation:''));
+    else _toast('\ud83e\udded Biome: scanning\u2026');
+    return;
+  }
+  // L3: point to nearest uncollected feral
+  try{
+    var ferals=[];try{ferals=JSON.parse(localStorage.getItem('fg_ferals')||'[]');}catch(e){}
+    if(!window._uLat||!ferals.length){_toast('\ud83e\udded No ferals nearby. Keep walking.');return;}
+    var best=null,bestD=Infinity;
+    for(var i=0;i<ferals.length;i++){
+      var f=ferals[i];if(!f||f.collected||!f.lat)continue;
+      var _a=window._uLat,_b=window._uLng,_c=f.lat,_d=f.lng;
+      var _x=(_c-_a)*Math.PI/180,_y=(_d-_b)*Math.PI/180;
+      var _z=Math.sin(_x/2)*Math.sin(_x/2)+Math.cos(_a*Math.PI/180)*Math.cos(_c*Math.PI/180)*Math.sin(_y/2)*Math.sin(_y/2);
+      var d=6371000*2*Math.atan2(Math.sqrt(_z),Math.sqrt(1-_z));
+      if(d<bestD){bestD=d;best=f;}
+    }
+    if(!best){_toast('\ud83e\udded All nearby ferals collected!');return;}
+    // Compute bearing
+    var dy=best.lat-window._uLat,dx=(best.lng-window._uLng)*Math.cos(window._uLat*Math.PI/180);
+    var rad=Math.atan2(dx,dy);var deg=(rad*180/Math.PI+360)%360;
+    var dirs=['N','NE','E','SE','S','SW','W','NW'];
+    var dir=dirs[Math.round(deg/45)%8];
+    _toast('\ud83e\udded '+dir+' \u00b7 '+Math.round(bestD)+'m to nearest feral');
+  }catch(e){_toast('\ud83e\udded Compass error.');}
+};
+function _lwCanToolCap(){
+  // Watering Can tool: L1 = no mass, L2 = 3 per use, L3 = 6 per use
+  try{
+    if(!window._LW_toolMod)return 0;
+    // pouch tool returns slots, can tool cap we derive from level
+    var lvl=0;
+    try{var tx=JSON.parse(localStorage.getItem('lw_tool_xp')||'{}');var x=tx.can||0;lvl=x>=100?3:x>=30?2:1;}catch(e){lvl=1;}
+    if(lvl>=3)return 6;if(lvl>=2)return 3;return 0;
+  }catch(e){return 0;}
+}
 function _lwMassWaterRefreshButton(){
   var btn = document.getElementById('w-mass-water');
   if (!btn) return;
+  var canCap = _lwCanToolCap();
+  if (canCap < 2) { btn.style.display = 'none'; return; }
   var eligible = _lwMassWaterEligible();
   if (eligible.length < 2) { btn.style.display = 'none'; return; }
   var usesLeft = LW_MASS_WATER_DAILY_USES - _lwMassWaterUsesToday();
   if (usesLeft <= 0) { btn.style.display = 'none'; return; }
   var label = document.getElementById('w-mass-water-label');
-  var cost = eligible.length * LW_MASS_WATER_DEW_PER;
-  if (label) label.innerHTML = '\ud83d\udca7 WATER ALL (' + eligible.length + ' \u00b7 ' + cost + ' Dew)';
+  var isL3 = canCap >= 6;
+  var cost = isL3 ? 0 : (eligible.length * LW_MASS_WATER_DEW_PER);
+  if (label) label.innerHTML = (isL3?'\ud83c\udf27\ufe0f RAIN':'\ud83d\udca7 WATER ALL') + ' (' + eligible.length + (cost?(' \u00b7 ' + cost + ' Dew'):' \u00b7 FREE') + ')';
   btn.style.display = 'flex';
 }
 window._lwMassWater = function(){
@@ -38033,17 +38083,19 @@ window._lwMassWater = function(){
     _toast('Mass water limit reached for today (' + LW_MASS_WATER_DAILY_USES + '/day). Walk to your plants for a free water.');
     return;
   }
-  var cost = eligible.length * LW_MASS_WATER_DEW_PER;
+  // Can L3 = rain ability, free; otherwise pay per plant
+  var isL3 = _lwCanToolCap() >= 6;
+  var cost = isL3 ? 0 : (eligible.length * LW_MASS_WATER_DEW_PER);
   var bal = window.getTotalDew ? window.getTotalDew() : 0;
-  if (bal < cost) {
+  if (cost > 0 && bal < cost) {
     _toast('Need ' + cost + ' Dew (have ' + bal + ').');
     return;
   }
   if (window._lwConfirm) {
     window._lwConfirm({
       title: 'WATER ALL PLANTS',
-      body: 'Water <b>' + eligible.length + '</b> plant' + (eligible.length===1?'':'s') + ' for <b>' + cost + ' Dew</b>?<br><br>Each plant\u2019s lifespan resets to full. ' + (LW_MASS_WATER_DAILY_USES - _lwMassWaterUsesToday() - 1) + ' uses left after this.',
-      yes: 'WATER ALL',
+      body: (isL3?'Summon <b>rain</b> — free watering!':'Water <b>' + eligible.length + '</b> plant' + (eligible.length===1?'':'s') + ' for <b>' + cost + ' Dew</b>?') + '<br><br>Each plant\u2019s lifespan resets to full. ' + (LW_MASS_WATER_DAILY_USES - _lwMassWaterUsesToday() - 1) + ' uses left after this.',
+      yes: isL3?'SUMMON RAIN':'WATER ALL',
       no: 'CANCEL'
     }, function(){ _lwMassWaterDoIt(eligible, cost); });
   } else {
@@ -38051,7 +38103,7 @@ window._lwMassWater = function(){
   }
 };
 function _lwMassWaterDoIt(eligibleIdx, cost){
-  if (!window.spendDew(cost)) { _toast('Could not spend Dew.'); return; }
+  if (cost > 0 && !window.spendDew(cost)) { _toast('Could not spend Dew.'); return; }
   var wild = _getWild();
   var now = Date.now();
   var watered = 0;
