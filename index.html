@@ -9345,6 +9345,107 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>End:</strong> Clear both rows = perfect game. If no valid combo can be made, the game ends.</p>';
     R.bloomgrid = R.picross; // alias for the renamed picker label
     R.tideHunt = R.battleship; // alias for renamed label
+    R.tideHunting = R.battleship;
+    // ── Round 2 additions ──
+    R.chess = ''+
+      '<p><strong>Goal:</strong> Checkmate the enemy king — attack it with no escape.</p>'+
+      '<p><strong>Pieces:</strong> Pawn (1 forward, 2 from start, captures diagonal), Knight (L-shape, jumps), Bishop (diagonals), Rook (lines), Queen (any direction), King (1 square any way).</p>'+
+      '<p><strong>Special:</strong> Castling (king+rook swap), En passant (pawn double-step capture), Promotion (pawn reaching last rank → queen).</p>'+
+      '<p><strong>AI:</strong> Powered by Stockfish — picks difficulty in the menu.</p>';
+    R.c4 = R.connectfleur = ''+
+      '<p><strong>Goal:</strong> Get four of your discs in a row — horizontal, vertical, or diagonal — before the AI.</p>'+
+      '<p><strong>Drop:</strong> Tap a column. Your disc falls to the lowest empty cell in that column.</p>'+
+      '<p><strong>Tip:</strong> Center column is strongest — control it. Watch for "double threats" (two ways to win at once).</p>';
+    R.flood = ''+
+      '<p><strong>Goal:</strong> Flood the entire board with one color in the fewest moves.</p>'+
+      '<p><strong>Each turn:</strong> Tap a color. Your top-left territory becomes that color and absorbs every connected same-color cell.</p>'+
+      '<p><strong>Move limit:</strong> Each board size has a target — beat it for the win.</p>';
+    R.freecell = ''+
+      '<p><strong>Goal:</strong> Build all four foundations up from Ace to King by suit.</p>'+
+      '<p><strong>Tableau:</strong> Build down by alternating colors. Move single cards (or stacks of cards your free cells can support) to other tableaus or to free cells.</p>'+
+      '<p><strong>Free cells:</strong> 4 single-card holding spots.</p>'+
+      '<p><strong>Tip:</strong> Solvable from almost any deal — plan moves that free up Aces and 2s first.</p>';
+    R.klondike = ''+
+      '<p><strong>Goal:</strong> Build all four foundations from Ace to King by suit.</p>'+
+      '<p><strong>Tableau:</strong> Build down by alternating colors (red on black, black on red). Move stacks together if they\'re a valid run.</p>'+
+      '<p><strong>Stock:</strong> Tap to flip 1 (or 3) cards to the waste. Cycle through endlessly.</p>'+
+      '<p><strong>Empty column:</strong> Only a King (or King-headed run) may fill it.</p>';
+    R.spider = ''+
+      '<p><strong>Goal:</strong> Build 8 complete suit-runs (King to Ace, same suit) into the foundations.</p>'+
+      '<p><strong>Tableau:</strong> Build down by rank. Same-suit runs move together; mixed-suit runs only move one card at a time.</p>'+
+      '<p><strong>Deal:</strong> Tap the stock to deal one card to each column (only when no columns are empty).</p>'+
+      '<p><strong>Difficulty:</strong> 1-suit (easy) · 2-suit · 4-suit (hard).</p>';
+    R.tripeaks = ''+
+      '<p><strong>Goal:</strong> Clear all the peak cards.</p>'+
+      '<p><strong>Tap:</strong> Any uncovered peak card whose rank is ±1 from the waste pile top (Aces wrap to Kings).</p>'+
+      '<p><strong>Stock:</strong> Tap to flip a new waste card when you\'re stuck.</p>'+
+      '<p><strong>Streaks:</strong> Consecutive clears without using the stock multiply your score.</p>';
+    R.pyramid = ''+
+      '<p><strong>Goal:</strong> Clear the pyramid by pairing cards that sum to 13 (K=13 alone, Q+A, J+2, 10+3, etc.).</p>'+
+      '<p><strong>Pair:</strong> Tap two uncovered cards that sum to 13 — both clear. Kings clear alone.</p>'+
+      '<p><strong>Stock:</strong> Tap to flip a new waste card. Pair waste with pyramid cards too.</p>';
+    R.golf = ''+
+      '<p><strong>Goal:</strong> Clear all 7 tableau columns into the waste pile.</p>'+
+      '<p><strong>Tap:</strong> The bottom card of any column whose rank is ±1 from the waste top (no wrap — Aces don\'t pair with Kings).</p>'+
+      '<p><strong>Stock:</strong> Tap to deal a new waste card when stuck.</p>'+
+      '<p><strong>Score:</strong> Lower remaining-card count = better. 0 left = clear.</p>';
+    R.mines = ''+
+      '<p><strong>Goal:</strong> Reveal every safe cell without detonating a mine.</p>'+
+      '<p><strong>Tap:</strong> Reveal a cell. Numbers show how many mines touch that cell. Long-press to flag a suspected mine.</p>'+
+      '<p><strong>Tip:</strong> If a number equals the flagged neighbors around it, the rest are safe.</p>';
+    R.sudoku = ''+
+      '<p><strong>Goal:</strong> Fill the grid so every row, column, and 3×3 box contains digits 1-9 with no repeats.</p>'+
+      '<p><strong>Enter:</strong> Tap a cell, then tap a number. Long-press for pencil notes (small candidates).</p>'+
+      '<p><strong>Difficulty:</strong> Easy/Medium/Hard/Expert — uniqueness guaranteed. Hint button reveals one safe digit.</p>';
+    R.wordsearch = ''+
+      '<p><strong>Goal:</strong> Find every word in the list, hidden in the grid.</p>'+
+      '<p><strong>Select:</strong> Drag from a word\'s first letter to its last. Words run horizontal, vertical, or diagonal — forward or backward.</p>'+
+      '<p><strong>Found words:</strong> Highlighted on the grid and crossed off the list.</p>';
+    R.vinewords = ''+
+      '<p><strong>Goal:</strong> Make as many valid words as you can from the 7 letters before time runs out.</p>'+
+      '<p><strong>Type:</strong> Tap letters to spell a word, then ✓ SUBMIT. ✗ CLEAR resets the input.</p>'+
+      '<p><strong>Score:</strong> Longer words score more. Find the all-7-letter pangram for a bonus.</p>';
+    R.sprout = ''+
+      '<p><strong>Goal:</strong> Guess the 5-letter botanical word in 6 tries.</p>'+
+      '<p><strong>Each guess:</strong> Must be a real word. Tile colors after submit — <span style="color:#7ab356;">green</span> = right letter, right spot · <span style="color:#c8a84b;">gold</span> = right letter, wrong spot · gray = not in word.</p>';
+    R.numbergarden = ''+
+      '<p><strong>Goal:</strong> Match the target number using the dice shown.</p>'+
+      '<p><strong>Tap dice + operators:</strong> Build an expression that evaluates to the target. Use +, −, ×, ÷ and parentheses.</p>'+
+      '<p><strong>Score:</strong> Faster solves and using all dice score higher.</p>';
+    R.rootflow = ''+
+      '<p><strong>Goal:</strong> Connect every pair of matching colored dots with a path that doesn\'t cross any other path.</p>'+
+      '<p><strong>Drag:</strong> From a dot to its match. Paths can\'t share a cell.</p>'+
+      '<p><strong>Win:</strong> All pairs connected AND every cell of the grid used.</p>';
+    R.rootmaze = ''+
+      '<p><strong>Goal:</strong> Guide your sprout from the entrance to the bloom at the exit.</p>'+
+      '<p><strong>Move:</strong> Tap arrows or swipe. Walls block — find the open path.</p>';
+    R.colorgarden = ''+
+      '<p><strong>Goal:</strong> Color every region of the page so no two touching regions share a color.</p>'+
+      '<p><strong>Tap a color, then tap a region.</strong> Page complete = no conflicts.</p>'+
+      '<p><strong>Pages:</strong> Use ◀ ▶ to switch botanical pages.</p>';
+    R.pixelgarden = ''+
+      '<p><strong>No win/lose</strong> — a pixel-art studio that mints a hash on your first SAVE per session.</p>'+
+      '<p><strong>Tools:</strong> DRAW · ERASE · FILL · PICK. MIRROR doubles strokes across center. GRID toggles overlay.</p>'+
+      '<p><strong>Sizes:</strong> 16×16 · 24×24 · 32×32. UNDO holds 30 steps. SAVE downloads PNG.</p>';
+    R.breathing = ''+
+      '<p><strong>Follow the bloom:</strong> Inhale as it opens, exhale as it closes.</p>'+
+      '<p><strong>Patterns:</strong> CALM 4-6 (stress) · BOX 4-4-4-4 (focus) · RELAX 4-7-8 (sleep) · ENERGY 2-2 (wake).</p>'+
+      '<p><strong>Hash mint:</strong> Reach 10 completed breaths in a session.</p>';
+    R.pottingbench = ''+
+      '<p><strong>Goal:</strong> Find the three matching shapes in the grid before time runs out.</p>'+
+      '<p><strong>Each round:</strong> Tap shapes that share an attribute the puzzle calls for.</p>';
+    R.song = ''+
+      '<p><strong>Goal:</strong> Repeat the melody you hear, in order, on the four pads.</p>'+
+      '<p><strong>Each round:</strong> One note added to the sequence. Miss = round ends.</p>';
+    R.stonegarden = ''+
+      '<p><strong>Goal:</strong> Stack stones as high as you can without toppling.</p>'+
+      '<p><strong>Tap to drop:</strong> Stone aligned over the previous = stable. Off-center = trims overhang.</p>';
+    R.dailybloom = ''+
+      '<p><strong>Daily Bloom:</strong> A rotating challenge that resets every 24 hours.</p>'+
+      '<p><strong>Reward:</strong> Completing today\'s bloom mints a hash and grants Sunbeam XP.</p>';
+    R.storyseeds = ''+
+      '<p><strong>Pick a path:</strong> Each scene offers choices that branch the story.</p>'+
+      '<p><strong>Reach the bloom:</strong> Some endings mint a hash, others reveal a hidden petal.</p>';
   })();
 
   // Generic rules modal renderer. Shows registered rules HTML if
