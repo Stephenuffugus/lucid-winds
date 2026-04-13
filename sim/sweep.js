@@ -25,6 +25,7 @@ function simulate(arch, gates, seed) {
     p.dayIndex = day;
     let playsToday = true;
     if (arch.lapser) playsToday = (day % 8 === 0);
+    if (arch.weekender) playsToday = (day % 7 === 5 || day % 7 === 6);
     if (playsToday) {
       const numSessions = arch.sessionsPerDay(rng);
       for (let s = 0; s < numSessions; s++) {

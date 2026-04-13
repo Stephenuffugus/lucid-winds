@@ -99,6 +99,56 @@ const ARCHETYPES = [
     tickMix: { playGame: 0.45, mintPlant: 0.12, dropWild: 0.1, collectFeral: 0.1, tendStranger: 0.1, breed: 0.05, idle: 0.08 },
     unlockReactionMs: 30000,
     lapser: true                   // flag: 1 day on, 7 days off, back on day 8...
+  },
+  // ═══ HYBRID ARCHETYPES (round 2) ═══
+  {
+    name: 'Wanderer',   // Explorer + Cautious hybrid: walks a lot, short contemplative sessions
+    sessionMinutes: rng => rng.int(15, 30),
+    sessionsPerDay: rng => rng.int(1, 3),
+    dropoutChance: 0.02,
+    tickMix: { playGame: 0.2, mintPlant: 0.05, dropWild: 0.2, collectFeral: 0.2, tendStranger: 0.15, breed: 0.02, idle: 0.18 },
+    unlockReactionMs: 8000
+  },
+  {
+    name: 'Streaker',   // Daily login obsessed, short sessions, maximize streak
+    sessionMinutes: rng => rng.int(5, 15),
+    sessionsPerDay: rng => 1,
+    dropoutChance: 0.015,   // very sticky — chasing the streak
+    tickMix: { playGame: 0.5, mintPlant: 0.1, dropWild: 0.1, collectFeral: 0.1, tendStranger: 0.1, breed: 0.02, idle: 0.08 },
+    unlockReactionMs: 10000
+  },
+  {
+    name: 'Gardener',   // Greenhouse-only, barely touches Wild
+    sessionMinutes: rng => rng.int(20, 50),
+    sessionsPerDay: rng => rng.int(1, 2),
+    dropoutChance: 0.025,
+    tickMix: { playGame: 0.4, mintPlant: 0.25, dropWild: 0.02, collectFeral: 0.02, tendStranger: 0.02, breed: 0.2, idle: 0.09 },
+    unlockReactionMs: 20000
+  },
+  {
+    name: 'Naturalist', // Completionist-style but prefers observation over combat
+    sessionMinutes: rng => rng.int(25, 60),
+    sessionsPerDay: rng => rng.int(1, 2),
+    dropoutChance: 0.015,
+    tickMix: { playGame: 0.25, mintPlant: 0.1, dropWild: 0.15, collectFeral: 0.15, tendStranger: 0.15, breed: 0.05, idle: 0.15 },
+    unlockReactionMs: 5000
+  },
+  {
+    name: 'Weekender',  // Only plays Sat/Sun but long sessions
+    sessionMinutes: rng => rng.int(60, 150),
+    sessionsPerDay: rng => 1,
+    dropoutChance: 0.05,
+    tickMix: { playGame: 0.4, mintPlant: 0.15, dropWild: 0.1, collectFeral: 0.15, tendStranger: 0.1, breed: 0.05, idle: 0.05 },
+    unlockReactionMs: 8000,
+    weekender: true   // day % 7 in [5,6]
+  },
+  {
+    name: 'Commuter',   // Micro-session during commute, twice daily, medium patience
+    sessionMinutes: rng => rng.int(8, 18),
+    sessionsPerDay: rng => 2,
+    dropoutChance: 0.025,
+    tickMix: { playGame: 0.6, mintPlant: 0.1, dropWild: 0.08, collectFeral: 0.1, tendStranger: 0.06, breed: 0.02, idle: 0.04 },
+    unlockReactionMs: 15000
   }
 ];
 

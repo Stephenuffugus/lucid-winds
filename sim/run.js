@@ -41,6 +41,9 @@ function simulatePlayer(archetype, gates, seed) {
       const weekSlot = day % 8;
       playsToday = (weekSlot === 0);
     }
+    if (archetype.weekender) {
+      playsToday = (day % 7 === 5 || day % 7 === 6);
+    }
 
     if (playsToday) {
       const numSessions = archetype.sessionsPerDay(rng);
