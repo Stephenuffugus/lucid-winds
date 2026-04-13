@@ -39513,7 +39513,12 @@ window._hexAction=function(action){
     if(window._openPlantDetails){window._closeHexInspector();window._openPlantDetails(p.hash);}
     else{_toast('Details view loading...');}
   }else if(action==='defense'){
-    if(typeof _pickDefense==='function')_pickDefense(p.hash);
+    // Was calling _pickDefense(p.hash) — wrong helper. _pickDefense expects
+    // a gameId to finish an in-flight drop, so it bailed silently because
+    // _pendingDrop was null. _changeDefense opens the defender-game picker
+    // for an already-placed plant.
+    if(typeof _changeDefense==='function'){window._closeHexInspector();_changeDefense(p);}
+    else{_toast('Defense picker unavailable.');}
   }
 };
 
