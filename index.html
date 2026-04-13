@@ -45998,7 +45998,8 @@ function render(){
   var pe=document.getElementById('bpp');var mx=xp();var h='';
   // Player level gate for cutting-clippings feature
   var keeperLvl=0;try{if(window._getXP&&window._getRank){keeperLvl=window._getRank(window._getXP()).level;}}catch(e){}
-  var CLIPPING_UNLOCK_LEVEL=5, CLIPPING_CD_MS=6*60*60*1000;
+  var CLIPPING_UNLOCK_LEVEL=5, CLIPPING_CD_MS=(window._LW_toolMod&&window._LW_toolMod('shears'))||(6*60*60*1000);
+  var _clipHrs=Math.round(CLIPPING_CD_MS/3600000);
   var clipCDs={};try{clipCDs=JSON.parse(localStorage.getItem('fg_bp_clipCDs')||'{}');}catch(e){}
   var now=Date.now();
   for(var i=0;i<st.plants.length&&i<mx;i++){
@@ -46016,7 +46017,7 @@ function render(){
         var label=mins>=60?Math.floor(mins/60)+'h '+(mins%60)+'m':mins+'m';
         h+='<div title="Clipping cooldown" style="position:absolute;top:-6px;right:-6px;z-index:2;font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);background:rgba(13,16,12,0.9);border:1px solid rgba(138,145,121,0.35);border-radius:8px;padding:3px 6px;">⏳ '+label+'</div>';
       }else{
-        h+='<button onclick="event.stopPropagation();window.FG_Backpack.takeClipping('+i+');" title="Take a clipping (6h cooldown)" style="position:absolute;top:-6px;right:-6px;z-index:2;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--gold);background:rgba(13,16,12,0.9);border:1px solid rgba(200,168,75,0.5);border-radius:8px;padding:4px 8px;cursor:pointer;">✂️</button>';
+        h+='<button onclick="event.stopPropagation();window.FG_Backpack.takeClipping('+i+');" title="Take a clipping ('+_clipHrs+'h cooldown)" style="position:absolute;top:-6px;right:-6px;z-index:2;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--gold);background:rgba(13,16,12,0.9);border:1px solid rgba(200,168,75,0.5);border-radius:8px;padding:4px 8px;cursor:pointer;">✂️</button>';
       }
     }
     h+='</div>';
@@ -46445,7 +46446,8 @@ window.FG_Backpack.takeClipping = function(idx) {
   try { localStorage.setItem('fg_bp_clipCDs', JSON.stringify(clipCDs)); } catch(e){}
   if (window._LW_toolXP) window._LW_toolXP('shears', 10);
   BP.render();
-  if (window._toast) window._toast('✂️ Clipping sent to Nursery! 6h cooldown started.');
+  var _cdHrs=Math.round(((window._LW_toolMod&&window._LW_toolMod('shears'))||(6*60*60*1000))/3600000);
+  if (window._toast) window._toast('✂️ Clipping sent to Nursery! '+_cdHrs+'h cooldown started.');
   if (window.renderNursery) setTimeout(window.renderNursery, 200);
   if (window.syncVaultToCloud) setTimeout(window.syncVaultToCloud, 500);
 };
