@@ -141,26 +141,36 @@ window._gameFns.vinecross=function VC(a){
 
   function aiMove(){
     if(gameOver){thinking=false;return;}
-    var best=null,bestScore=-Infinity;
-    var depth=Math.min(Math.ceil(LVL/2),4);
-    var cands=getCandidates(board,2);
-    for(var i=0;i<cands.length;i++){
-      var m=cands[i];
-      board[m[0]][m[1]]=2;
-      var sc;
-      if(checkWinFast(board,m[0],m[1],2))sc=1000000;
-      else sc=-minimax(board,depth-1,false,-Infinity,Infinity);
-      board[m[0]][m[1]]=0;
-      if(LVL<=3)sc+=Math.random()*500;
-      else if(LVL<=5)sc+=Math.random()*80;
-      if(sc>bestScore){bestScore=sc;best=m;}
+    // If player exited mid-AI-think the canvas is detached. Bail
+    // before doing the search so we don't burn CPU on a dead game.
+    if(!cvs||!document.body.contains(cvs)){thinking=false;return;}
+    // Wrap the whole search in try/finally so a deep-minimax error
+    // can never leave thinking=true and soft-lock the player out
+    // of their next move on retry.
+    try{
+      var best=null,bestScore=-Infinity;
+      var depth=Math.min(Math.ceil(LVL/2),4);
+      var cands=getCandidates(board,2);
+      for(var i=0;i<cands.length;i++){
+        var m=cands[i];
+        board[m[0]][m[1]]=2;
+        var sc;
+        if(checkWinFast(board,m[0],m[1],2))sc=1000000;
+        else sc=-minimax(board,depth-1,false,-Infinity,Infinity);
+        board[m[0]][m[1]]=0;
+        if(LVL<=3)sc+=Math.random()*500;
+        else if(LVL<=5)sc+=Math.random()*80;
+        if(sc>bestScore){bestScore=sc;best=m;}
+      }
+      if(!best){
+        outer:for(var r=0;r<SZ;r++)for(var c=0;c<SZ;c++)if(board[r][c]===0){best=[r,c];break outer;}
+      }
+      if(best)placeStone(best[0],best[1],2);
+      drawBoard();
+      var st=document.getElementById('VCst');if(st&&!gameOver)st.textContent='Your turn';
+    } finally {
+      turn=1;thinking=false;
     }
-    if(!best){
-      outer:for(var r=0;r<SZ;r++)for(var c=0;c<SZ;c++)if(board[r][c]===0){best=[r,c];break outer;}
-    }
-    if(best)placeStone(best[0],best[1],2);
-    turn=1;thinking=false;drawBoard();
-    var st=document.getElementById('VCst');if(st&&!gameOver)st.textContent='Your turn';
   }
 
   function minimax(bd,depth,isMax,alpha,beta){
