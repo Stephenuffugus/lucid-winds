@@ -377,7 +377,11 @@ function mcts(rootColor, playouts) {
 // ——— message handler ———
 self.onmessage = function(ev) {
   var msg = ev.data || {};
-  if (msg.cmd === 'boardsize') {
+  if (msg.cmd === 'ping') {
+    // Handshake — main thread sends this immediately after attaching
+    // its onmessage listener, guaranteeing this 'ready' is delivered.
+    self.postMessage({ type: 'ready' });
+  } else if (msg.cmd === 'boardsize') {
     setSize(msg.n || 9);
     self.postMessage({ type: 'ready' });
   } else if (msg.cmd === 'clear_board') {
@@ -413,4 +417,8 @@ self.onmessage = function(ev) {
 
 // initial default size
 setSize(9);
-self.postMessage({ type: 'ready' });
+// DO NOT auto-fire 'ready' on load — the main thread can't have its
+// onmessage listener attached before the worker starts running, so an
+// auto-ready can be lost. Instead the main thread sends a 'ping'
+// command and we respond, guaranteeing the listener is attached.
+// (Keeping the cmd handler also responds to legacy first-ready calls.)

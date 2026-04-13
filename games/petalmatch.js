@@ -444,8 +444,13 @@ window._gameFns.petalmatch = function PM(a){
       level++;moves=30+level*2;target=500+level*300;score=0;
       sm('LEVEL '+(level-1)+' COMPLETE!');_playWin();
       if(level>bestLevel){bestLevel=level;try{localStorage.setItem('lw_pm_level',String(bestLevel));}catch(e){}var bel=document.getElementById('PMbest');if(bel)bel.textContent=bestLevel;}
-      if(level===2&&!won){won=true;_e('game_win');_sr('petalmatch',{w:true,s:score,lv:level-1});}
+      // Was: only fired game_win on level 2. Players who cleared 5
+      // levels never got a win record after the first. Now writes a
+      // fresh _sr on every level clear and keeps milestone events for
+      // additional Sunbeams.
+      if(!won){won=true;_e('game_win');}
       else _e('milestone');
+      _sr('petalmatch',{w:true,s:score,lv:level-1});
       initGrid();while(findMatches().length>0)initGrid();
       updateHUD();render();return;
     }

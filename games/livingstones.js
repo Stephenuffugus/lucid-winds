@@ -396,7 +396,6 @@ window._gameFns.livingstones = function LS(a){
       if(m.type==='ready'){
         readyCount++;
         if(readyCount===1){
-          // first 'ready' is auto on load; set size now
           aiWorker.postMessage({cmd:'boardsize',n:aiSize});
         }else if(readyCount===2){
           aiWorker.postMessage({cmd:'clear_board'});
@@ -425,6 +424,9 @@ window._gameFns.livingstones = function LS(a){
         aiRender();
       }
     };
+    // Listener is now attached — kick off the handshake. Worker
+    // responds with 'ready' which triggers boardsize → clear → start.
+    aiWorker.postMessage({cmd:'ping'});
     sm('Play AI — you are Black');
   };
   window._LSaiTap=function(r,c){
