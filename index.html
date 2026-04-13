@@ -45962,10 +45962,28 @@ function start(){
     },2000);
     setTimeout(function(){var sk=document.getElementById('ob-skip');if(sk)sk.classList.add('show');},6000);
   }
+  // Track touch movement so swipes don't double-trigger as taps
+  var _obTouchMoved=false,_obTouchStartX=0,_obTouchStartY=0,_obLastTouchEnd=0;
+  el.addEventListener('touchstart',function(e){
+    _obTouchMoved=false;
+    if(e.changedTouches&&e.changedTouches[0]){
+      _obTouchStartX=e.changedTouches[0].clientX;
+      _obTouchStartY=e.changedTouches[0].clientY;
+    }
+  },{passive:true});
+  el.addEventListener('touchmove',function(e){
+    if(!e.changedTouches||!e.changedTouches[0])return;
+    var dx=Math.abs(e.changedTouches[0].clientX-_obTouchStartX);
+    var dy=Math.abs(e.changedTouches[0].clientY-_obTouchStartY);
+    if(dx>10||dy>10)_obTouchMoved=true;
+  },{passive:true});
+  el.addEventListener('touchend',function(){_obLastTouchEnd=Date.now();},{passive:true,capture:true});
   // Tap left to go back, tap right to go forward
   el.addEventListener('click',function(e){
     if(e.target.tagName==='INPUT'||e.target.tagName==='BUTTON')return;
     if(e.target.classList&&e.target.classList.contains('ob-dot'))return; // dots handle themselves
+    // Suppress click if it came from a swipe (touchmove) or right after a touchend that the swipe handler claimed
+    if(_obTouchMoved){_obTouchMoved=false;return;}
     // Start rain on first interaction (mobile requires gesture for AudioContext)
     if(window.startRain)window.startRain();
     var x=e.clientX||0;
