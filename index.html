@@ -2376,7 +2376,8 @@
     .mystery-modal .my-close{background:none;border:1px solid rgba(232,160,191,0.3);color:var(--muted);font-size:1rem;width:48px;height:48px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:border-color 0.15s;}
     .mystery-modal .my-close:hover{border-color:rgba(232,160,191,0.6);}
     .mystery-modal .my-balance{font-family:'DM Mono',monospace;font-size:0.7rem;color:#8bd0e8;margin-bottom:1rem;}
-    .mystery-modal .my-box{width:120px;height:120px;margin:0 auto 1rem;font-size:4rem;display:flex;align-items:center;justify-content:center;transition:transform 0.2s ease;filter:drop-shadow(0 4px 12px rgba(232,160,191,0.4));}
+    .mystery-modal .my-box{width:180px;height:180px;margin:0 auto 1rem;font-size:5.5rem;display:flex;align-items:center;justify-content:center;transition:transform 0.2s ease;filter:drop-shadow(0 6px 20px rgba(232,160,191,0.5));}
+    .mystery-modal .my-box img{width:100%;height:100%;object-fit:contain;}
     .mystery-modal .my-box.shaking{animation:myShake 0.08s linear infinite;}
     @keyframes myShake{0%{transform:translate(-3px,-2px) rotate(-2deg);}25%{transform:translate(3px,2px) rotate(2deg);}50%{transform:translate(-2px,3px) rotate(-1deg);}75%{transform:translate(2px,-3px) rotate(1deg);}100%{transform:translate(-3px,-2px) rotate(-2deg);}}
     .mystery-modal .my-box.opened{animation:myOpen 0.5s ease forwards;}
@@ -47229,7 +47230,7 @@ function _ensureMysteryModal() {
         '<button class="my-close" onclick="window._closeMystery()">\u2715</button>' +
       '</div>' +
       '<div class="my-balance" id="my-balance">Dew: 0</div>' +
-      '<div class="my-box" id="my-box">\ud83c\udf81</div>' +
+      '<div class="my-box" id="my-box"><img src="assets/btn-mystery.png" alt="Mystery Box"></div>' +
       '<div class="my-prize" id="my-prize">Pay ' + MYSTERY_COST + ' Dew to open...</div>' +
       '<button class="my-pull" id="my-pull" onclick="window._openMysteryBox()">OPEN BOX \u2014 ' + MYSTERY_COST + ' \ud83d\udca7</button>' +
     '</div>';
@@ -47245,7 +47246,7 @@ function _refreshMyBalance() {
 window._openMystery = function() {
   _ensureMysteryModal();
   _refreshMyBalance();
-  var box = document.getElementById('my-box'); if (box) { box.className = 'my-box'; box.textContent = '\ud83c\udf81'; }
+  var box = document.getElementById('my-box'); if (box) { box.className = 'my-box'; box.innerHTML = '<img src="assets/btn-mystery.png" alt="Mystery Box">'; }
   var p = document.getElementById('my-prize'); if (p) { p.textContent = 'Pay ' + MYSTERY_COST + ' Dew to open...'; p.className = 'my-prize'; }
   var btn = document.getElementById('my-pull'); if (btn) { btn.disabled = false; btn.textContent = 'OPEN BOX \u2014 ' + MYSTERY_COST + ' \ud83d\udca7'; }
   document.getElementById('mystery-modal').classList.add('open');
@@ -47280,7 +47281,7 @@ window._openMysteryBox = function() {
   // Shake for 900ms then reveal
   setTimeout(function() {
     var loot = _pickLoot();
-    if (box) { box.classList.remove('shaking'); box.classList.add('opened'); box.textContent = loot.icon; }
+    if (box) { box.classList.remove('shaking'); box.classList.add('opened'); box.innerHTML = '<span style="font-size:5.5rem;">' + loot.icon + '</span>'; }
     // Apply rewards
     if (loot.fert) {
       try {
