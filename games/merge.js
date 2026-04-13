@@ -249,8 +249,19 @@ function GR(a){
   bd.addEventListener('touchstart',function(e){bd._sx=e.touches[0].clientX;bd._sy=e.touches[0].clientY;},{passive:true});
   bd.addEventListener('touchend',function(e){if(bd._sx===undefined)return;var dx=e.changedTouches[0].clientX-bd._sx,dy=e.changedTouches[0].clientY-bd._sy;if(Math.max(Math.abs(dx),Math.abs(dy))<25)return;if(Math.abs(dx)>Math.abs(dy))_Rm(dx>0?'right':'left');else _Rm(dy>0?'down':'up');bd._sx=bd._sy=undefined;},{passive:true});
 
-  // Keyboard handling
-  document.addEventListener('keydown',function(e){var m={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down'};if(m[e.key]&&_a==='merge'){e.preventDefault();_Rm(m[e.key]);}});
+  // Keyboard handling — only fire while the merge board is in the DOM
+  if(!window._RmergeKeyBound){
+    window._RmergeKeyBound=true;
+    document.addEventListener('keydown',function(e){
+      var m={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down'};
+      if(!m[e.key])return;
+      var active=document.getElementById('Rb')||document.getElementById('Rs');
+      if(!active)return;
+      e.preventDefault();
+      if(window._RmergeMove)window._RmergeMove(m[e.key]);
+    });
+  }
+  window._RmergeMove=_Rm;
 
   // New game
   window._RN=function(){g=new Array(16).fill(0);sc=0;bt=2;ov=false;busy=false;

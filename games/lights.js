@@ -3,7 +3,7 @@
 'use strict';
 var G=window._G;
 if(!document.getElementById('_lights_glow_css')){var _s=document.createElement('style');_s.id='_lights_glow_css';_s.textContent='.lc{transition:box-shadow 240ms ease,filter 240ms ease,opacity 240ms ease}.lc.l-on{animation:_lcPulseOn 260ms ease-out}.lc.l-off{animation:_lcPulseOff 260ms ease-out}@keyframes _lcPulseOn{0%{box-shadow:none;filter:brightness(0.85)}45%{box-shadow:0 0 20px var(--gold,#c8a84b),0 0 8px var(--gold,#c8a84b);filter:brightness(1.15)}100%{box-shadow:0 0 6px rgba(200,168,75,0.35);filter:brightness(1)}}@keyframes _lcPulseOff{0%{box-shadow:0 0 18px var(--gold,#c8a84b);filter:brightness(1.1)}100%{box-shadow:none;filter:brightness(1)}}';document.head.appendChild(_s);}
-var _e=G.e,_play=G.play,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.sh,_sr=G.sr,_st=G.st,_xt=G.xt;
+var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.sh,_sr=G.sr,_st=G.st,_xt=G.xt;
 
 function GL(a){var SZ=5,gr=[],ini=[],mv=0,sl=0,pz=0;
   ms(a,'#<strong id="Lp">1</strong> · 👆<strong id="Lm">0</strong> · ✅<strong id="Ls">0</strong>');mm(a);
