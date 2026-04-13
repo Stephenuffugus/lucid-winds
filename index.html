@@ -26768,8 +26768,10 @@ document.addEventListener('keydown', function(e) {
       grid.appendChild(_welcome);
     }
 
-    // Show occupied slots + enough empty to fill at least 2 rows (10 slots min)
-    var slotsToShow = Math.max(10, Math.min(MAX_COLLECTION_SIZE, gh.length + 4));
+    // Show ALL plants (never hide them if gh exceeds purchased slots) +
+    // enough empty to fill at least 2 rows (10 min). Purchased slot cap
+    // only governs EMPTY slot rendering, never cuts off actual plants.
+    var slotsToShow = Math.max(gh.length, 10, Math.min(MAX_COLLECTION_SIZE, gh.length + 4));
     for (var i = 0; i < slotsToShow; i++) {
       var el = document.createElement('div');
 
