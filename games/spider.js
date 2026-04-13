@@ -104,7 +104,7 @@ function GSP(a){
     info.textContent=completed+'/8 runs';topRow.appendChild(info);
     gd.appendChild(topRow);
     var tabRow=document.createElement('div');
-    var spW='clamp(34px,9vw,60px)',spH='clamp(48px,12.6vw,84px)',spF='clamp(.5rem,1.4vw,.65rem)';
+    var spW='clamp(40px,10.5vw,70px)',spH='clamp(56px,14.7vw,98px)',spF='clamp(.55rem,1.5vw,.72rem)';
     tabRow.style.cssText='display:flex;gap:clamp(1px,.3vw,2px);justify-content:center;padding:clamp(2px,1vw,4px) 0;width:clamp(320px,99vw,700px);margin:0 auto';
     for(var c=0;c<10;c++){
       var colDiv=document.createElement('div');colDiv.className='gc-stk';

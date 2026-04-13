@@ -108,7 +108,7 @@ function GFC(a){
   function rn(){
     gd.innerHTML='';
     var topRow=document.createElement('div');
-    var fcW='clamp(42px,11.5vw,72px)',fcH='clamp(59px,16vw,100px)',fcF='clamp(.55rem,1.6vw,.75rem)';
+    var fcW='clamp(48px,13vw,84px)',fcH='clamp(67px,18.2vw,117px)',fcF='clamp(.6rem,1.75vw,.85rem)';
     topRow.style.cssText='display:flex;gap:clamp(2px,.6vw,4px);justify-content:center;padding:clamp(2px,1vw,4px) 0;width:clamp(320px,100vw,680px);margin:0 auto;align-items:flex-start';
     // Free cells
     for(var i=0;i<4;i++){

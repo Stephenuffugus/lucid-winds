@@ -227,7 +227,7 @@ function GKL(a){
 
     // Top row: stock, waste, spacer, 4 foundations
     var topRow=document.createElement('div');
-    var klW='clamp(46px,12.5vw,80px)',klH='clamp(64px,17.5vw,112px)',klF='clamp(.6rem,1.8vw,.85rem)';
+    var klW='clamp(56px,14.5vw,92px)',klH='clamp(78px,20.2vw,128px)',klF='clamp(.65rem,1.9vw,.9rem)';
     topRow.style.cssText='display:flex;gap:clamp(2px,.8vw,4px);justify-content:center;padding:clamp(2px,1vw,4px) 0;width:clamp(320px,100vw,680px);margin:0 auto;align-items:flex-start;flex-wrap:nowrap';
 
     // Stock

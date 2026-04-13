@@ -260,10 +260,10 @@ window._gameFns.gardenspades = function GardenSpades(a){
       var canP=playable.some(function(p){return p.rank===cc.rank&&p.suit===cc.suit;});
       var col=cc.suit==='hearts'||cc.suit==='diamonds'?'#c47a7a':'#1a1f17';
       var bc=canP?'#7ab356':'#b8a878';
-      var sty='display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:40px;height:56px;border-radius:6px;background:#F5F0E1;border:2px solid '+bc+';color:'+col+';font-weight:700;position:relative;';
+      var sty='display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:clamp(48px,12vw,64px);height:clamp(68px,17vw,90px);border-radius:6px;background:#F5F0E1;border:2px solid '+bc+';box-shadow:inset 0 0 0 1px rgba(255,255,255,0.55),0 2px 5px rgba(0,0,0,0.35);color:'+col+';font-weight:700;position:relative;margin:2px 1px;';
       if(canP)sty+='cursor:pointer;';
       if(!canP&&phase==='play')sty+='opacity:0.5;';
-      h+='<div style="'+sty+'" onclick="_GSCC(\''+cc.rank+'\',\''+cc.suit+'\')"><div style="font-size:0.7rem;position:absolute;top:2px;left:4px;">'+cc.rank+'</div><div style="font-size:1.1rem;">'+SI[cc.suit]+'</div></div>';
+      h+='<div style="'+sty+'" onclick="_GSCC(\''+cc.rank+'\',\''+cc.suit+'\')"><div style="font-size:0.8rem;position:absolute;top:3px;left:5px;">'+cc.rank+'</div><div style="font-size:1.35rem;">'+SI[cc.suit]+'</div></div>';
     }
     h+='</div></div>';
     pan.innerHTML=h;

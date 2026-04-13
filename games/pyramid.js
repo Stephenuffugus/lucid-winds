@@ -115,11 +115,11 @@ function GPY(a){
       for(var c=0;c<=r;c++){
         var pi=idx;
         if(removed[pi]){
-          var em=document.createElement('div');em.style.cssText='width:clamp(48px,11.5vw,72px);height:clamp(67px,16vw,100px)';
+          var em=document.createElement('div');em.style.cssText='width:clamp(48px,13vw,84px);height:clamp(67px,18.2vw,117px)';
           rowDiv.appendChild(em);
         }else{
           var cd=_cdEl(pyr[pi]);
-          cd.style.width='clamp(48px,11.5vw,72px)';cd.style.height='clamp(67px,16vw,100px)';cd.style.fontSize='clamp(.6rem,1.6vw,.8rem)';
+          cd.style.width='clamp(48px,13vw,84px)';cd.style.height='clamp(67px,18.2vw,117px)';cd.style.fontSize='clamp(.65rem,1.8vw,.9rem)';
           if(!isExposed(pi))cd.style.opacity='.5';
           else cd.style.cursor='pointer';
           if(sel&&sel.type==='pyr'&&sel.idx===pi)cd.className+=' gc-sel';

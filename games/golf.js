@@ -99,7 +99,7 @@ function GGF(a){
     if(sc)sc.textContent=countLeft();
 
     // Top row: stock, waste, score
-    var gfW='clamp(46px,12.5vw,80px)',gfH='clamp(64px,17.5vw,112px)',gfF='clamp(.6rem,1.8vw,.85rem)';
+    var gfW='clamp(56px,14.5vw,92px)',gfH='clamp(78px,20.2vw,128px)',gfF='clamp(.65rem,1.9vw,.9rem)';
     var topRow=document.createElement('div');
     topRow.style.cssText='display:flex;gap:clamp(2px,.8vw,4px);justify-content:center;padding:clamp(2px,1vw,4px) 0;width:clamp(320px,100vw,680px);margin:0 auto;align-items:center';
 
