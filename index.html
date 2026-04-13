@@ -32940,6 +32940,11 @@ document.addEventListener('keydown', function(e) {
       classChoice: localStorage.getItem('lw_class') || null,
       classXP: JSON.parse(localStorage.getItem('lw_class_xp') || 'null'),
       toolXP: JSON.parse(localStorage.getItem('lw_tool_xp') || 'null'),
+      // Class shop purchases — consumables in satchel + active boosters
+      // with expiry timestamps. Without these, players lose paid items
+      // on reinstall.
+      classInventory: JSON.parse(localStorage.getItem('lw_class_inventory') || 'null'),
+      boosters: JSON.parse(localStorage.getItem('lw_boosters') || 'null'),
       lastSync: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
   }
@@ -33015,6 +33020,8 @@ document.addEventListener('keydown', function(e) {
               if (d.classChoice) localStorage.setItem('lw_class', d.classChoice);
               if (d.classXP) localStorage.setItem('lw_class_xp', JSON.stringify(d.classXP));
               if (d.toolXP) localStorage.setItem('lw_tool_xp', JSON.stringify(d.toolXP));
+              if (d.classInventory) localStorage.setItem('lw_class_inventory', JSON.stringify(d.classInventory));
+              if (d.boosters) localStorage.setItem('lw_boosters', JSON.stringify(d.boosters));
             }
           });
           // ── Claim pending rewards (harvest rewards from displaced plants) ──
