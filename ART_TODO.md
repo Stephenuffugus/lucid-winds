@@ -6,6 +6,14 @@ Each item: `[ ] filename — prompt` (or description)
 
 ---
 
+## CLASS SYSTEM (new, Apr 13)
+- [ ] `assets/class-forager.png` — autumn forest path, leaves in hand, earthy browns/greens, woodsman aesthetic, dark bg, 128x128 flat circular badge --s 250
+- [ ] `assets/class-breeder.png` — DNA helix made of flower stems + cross-pollination imagery, science + garden, dark bg, 128x128 circular badge --s 250
+- [ ] `assets/class-cartographer.png` — old compass + vintage map unfurling + boot prints, sepia + sage, 128x128 circular badge --s 250
+- [ ] `assets/class-tender.png` — dew drop cradling a sprout, soft blue + sage, gentle hands motif, 128x128 circular badge --s 250
+- [ ] `assets/class-keeper.png` — sun-in-a-circle + all four other motifs small around it, balance/unity, gold + cream, 128x128 circular badge --s 250
+- [ ] `assets/compass-main.png` — beautiful hand-drawn compass with N/E/S/W and ornate cardinal rose, gold + cream + sage on dark, replaces 🧭 in Wild tab log bar, 64x64 transparent PNG --s 250
+
 ## GAMES
 
 ### Cribbage (Garden Crib)
