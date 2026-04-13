@@ -5332,6 +5332,7 @@ window.onerror=function(msg,url,line,col,err){
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Keeper XP \u2014 your lifetime experience. Pollen is the energy that grows your rank. Every kind act, wild drop, and bloom contributes.')"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl">xp</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Meters walked. Keep moving to find feral seeds!')"><div class="wild-log-val" style="color:var(--sage)" id="w-steps">0</div><div class="wild-log-lbl">meters</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Your biome — detected from real geography. Affects feral rarity and mutations.')"><div class="wild-log-val" style="font-size:0.7rem;" id="w-biome">🏡</div><div class="wild-log-lbl" id="w-biome-name">scanning</div></div>
+      <div class="wild-log-stat" id="w-class-stat" onclick="if(window._LW_openClassPicker)_LW_openClassPicker();else if(window._openCompendiumUI)_openCompendiumUI();" style="cursor:pointer;"><div class="wild-log-val" style="font-size:0.85rem;" id="w-class-icon">—</div><div class="wild-log-lbl" id="w-class-lbl">no class</div></div>
       <div class="wild-log-wind" id="w-wind" onclick="if(window._lwCompassTap)window._lwCompassTap();" style="cursor:pointer;">🧭<span></span></div>
     </div>
     <!-- TERRITORY OVERVIEW (tap planted count to expand) -->
@@ -28343,12 +28344,19 @@ document.addEventListener('keydown', function(e) {
     track.style.transition = '';
     track.style.transform  = 'translateX(' + targetX + ')';
 
-    track.addEventListener('transitionend', function onEnd() {
-      track.removeEventListener('transitionend', onEnd);
+    var _settled = false;
+    function _onEnd(){
+      if(_settled)return;_settled=true;
+      track.removeEventListener('transitionend', _onEnd);
       _haptic('tab');
       _carouselLoad(targetIdx);
       if (typeof gtag !== 'undefined') gtag('event', 'carousel_swipe', { idx: targetIdx, dir: direction });
-    }, { once: true });
+    }
+    track.addEventListener('transitionend', _onEnd, { once: true });
+    // Fallback: if transitionend never fires (tab hidden, transform value
+    // unchanged at boundary), force the load after 600ms so the carousel
+    // doesn't soft-lock with _carousel.busy=true.
+    setTimeout(_onEnd, 600);
   }
 
   // ── Rubber-band bounce at boundary ──────────────────────────────────
@@ -28691,6 +28699,10 @@ document.addEventListener('keydown', function(e) {
     }
     galleryPlant = null;
     _carousel.arr = []; _carousel.busy = false;
+    // Reset flipped state on every card slot so the next carousel open
+    // doesn't show a stale back-face (was a real bug — flipped class
+    // persisted on .cs-flip-wrap elements across closes).
+    try{var flipped=document.querySelectorAll('.cs-flip-wrap.flipped');for(var fi=0;fi<flipped.length;fi++)flipped[fi].classList.remove('flipped');}catch(e){}
     if (window.FG_Audio) FG_Audio.setRarityTier(0);
   };
 
@@ -34436,7 +34448,13 @@ window._lwDemoBadgeVisibility=function(onWild){
 };
 window._dismissGpsBanner=function(){
   _hideGpsBanner();
-  if(_gpsDenied)_showDemoBadge();
+  if(_gpsDenied){
+    _showDemoBadge();
+    // Force visibility — _showDemoBadge early-returns if pill already
+    // exists, which left it hidden when dismiss happened off-Wild-tab.
+    var p=document.getElementById('lw-demo-badge');
+    if(p)p.style.display=document.body.classList.contains('tab-wild')?'block':'none';
+  }
 };
 window._retryGps=function(){
   if(!navigator.geolocation){_toast('This device does not support GPS.');return;}
@@ -52349,6 +52367,23 @@ function _lwBiomeMatch(){
   try{return window._lastDetectedBiome===def.biome;}catch(e){return false;}
 }
 window._LW_biomeMatch=_lwBiomeMatch;
+// Update the Wild HUD class stat (icon + label + ✓ when biome matches).
+// Called on every switchTab + biome detection so it stays current.
+window._LW_updateWildClassStat=function(){
+  var iEl=document.getElementById('w-class-icon');
+  var lEl=document.getElementById('w-class-lbl');
+  if(!iEl||!lEl)return;
+  var cls=_lwGetClass();
+  if(!cls){iEl.textContent='—';iEl.style.color='var(--muted)';lEl.textContent='no class';return;}
+  var def=LW_CLASSES[cls];if(!def){iEl.textContent='?';return;}
+  var match=_lwBiomeMatch();
+  iEl.textContent=def.icon||'·';
+  iEl.style.color=match?'var(--gold)':'var(--cream)';
+  lEl.textContent=def.name+(match?' ✓':'');
+  lEl.style.color=match?'var(--gold)':'var(--muted)';
+};
+// Re-run on tab switch
+(function(){var p=window.switchTab;if(typeof p==='function'){window.switchTab=function(){try{window._LW_updateWildClassStat&&window._LW_updateWildClassStat();}catch(e){}return p.apply(this,arguments);};}})();
 // Award XP to current class
 window._LW_classXP=function(source,amount){
   var cls=_lwGetClass();if(!cls)return;
