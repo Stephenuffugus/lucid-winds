@@ -3179,6 +3179,10 @@
     /* Universal EXIT button during game — returns to picker */
     #game-exit-btn{display:none;position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;z-index:999999;min-width:64px;min-height:44px;padding:8px 14px;background:rgba(13,16,12,0.92);border:1.5px solid rgba(122,179,86,0.45);color:var(--cream);font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:10px;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 3px 12px rgba(0,0,0,0.6);pointer-events:auto;}
     body.game-active #game-exit-btn{display:flex !important;align-items:center;justify-content:center;gap:4px;}
+    /* Hide the back-to-games button when the picker itself is open —
+       otherwise it sits there as a button that brings you to the
+       screen you're already on. */
+    body:has(#fg-ov.open) #game-exit-btn{display:none !important;}
     #game-exit-btn:active{transform:scale(0.94);background:rgba(74,124,53,0.35);}
     @keyframes classPrompt{0%,100%{filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7))}50%{filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 10px rgba(200,168,75,0.6))}}
     #kb-compendium.class-prompt{animation:classPrompt 2.4s ease-in-out infinite;}
@@ -3244,7 +3248,7 @@
        PRIORITY 2: SUDOKU
        ══════════════════════════════════════════════════════════════════════ */
 
-    .ug{display:grid;grid-template-columns:repeat(9,1fr);gap:0;width:clamp(300px,95vw,440px);margin:0 auto;border:2px solid rgba(74,124,53,.3);border-radius:clamp(6px,1.5vw,10px);background:rgba(13,16,12,.35);box-shadow:0 4px 24px rgba(0,0,0,.28),inset 0 0 40px rgba(74,124,53,.015);overflow:hidden;animation:boardFadeIn .4s cubic-bezier(.25,.46,.45,.94)}
+    .ug{display:grid;grid-template-columns:repeat(9,1fr);gap:0;width:min(92vw,420px);max-width:100%;box-sizing:border-box;margin:0 auto;border:2px solid rgba(74,124,53,.3);border-radius:clamp(6px,1.5vw,10px);background:rgba(13,16,12,.35);box-shadow:0 4px 24px rgba(0,0,0,.28),inset 0 0 40px rgba(74,124,53,.015);overflow:hidden;animation:boardFadeIn .4s cubic-bezier(.25,.46,.45,.94)}
     .uc{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:clamp(1.65rem,5vw,2.3rem);font-weight:700;letter-spacing:.02em;cursor:pointer;border:.5px solid rgba(74,124,53,.08);color:var(--cream);-webkit-tap-highlight-color:transparent;background:rgba(26,31,23,.45);transition:background .2s ease,color .2s ease,box-shadow .2s ease;position:relative}
     .uc::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 35%,rgba(122,179,86,.025) 0%,transparent 65%);pointer-events:none}
     .uc:active{background:rgba(74,124,53,.12)}
@@ -3256,7 +3260,7 @@
     .uc:nth-child(n+19):nth-child(-n+27){border-bottom:2px solid rgba(74,124,53,.25)}
     .uc:nth-child(n+46):nth-child(-n+54){border-bottom:2px solid rgba(74,124,53,.25)}
     /* Number pad */
-    .up{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(4px,1.5vw,8px);width:clamp(300px,95vw,440px);margin:clamp(8px,2.5vw,14px) auto 0;padding:clamp(6px,2vw,10px)}
+    .up{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(4px,1.5vw,8px);width:min(92vw,420px);max-width:100%;box-sizing:border-box;margin:clamp(8px,2.5vw,14px) auto 0;padding:clamp(6px,2vw,10px)}
     .upb{aspect-ratio:1.15;border-radius:clamp(8px,2vw,14px);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:clamp(1.1rem,3vw,1.4rem);cursor:pointer;background:rgba(26,31,23,.65);border:1.5px solid rgba(74,124,53,.18);color:var(--cream);-webkit-tap-highlight-color:transparent;min-height:48px;transition:all .15s cubic-bezier(.25,.46,.45,.94);box-shadow:0 2px 8px rgba(0,0,0,.18),inset 0 1px 0 rgba(122,179,86,.03)}
     .upb:active{background:rgba(74,124,53,.22);transform:scale(.93);box-shadow:0 0 10px rgba(74,124,53,.1);transition-duration:.06s}
     /* ══════════════════════════════════════════════════════════════════════
@@ -39110,7 +39114,7 @@ var G=[
 {id:'colorsort',n:'Color Sort',i:'\ud83e\uddea',r:'Pour colors between tubes until each holds a single color. Match tops to pour.',cat:'puzzle',thumb:'assets/games/thumbs/colorsort.png'},
 {id:'battleship',n:'Tide Hunt',i:'\ud83c\udf0a',r:'Hunt hidden vessels on a 10\u00d710 grid. Sink them all in as few shots as you can.',cat:'board',thumb:'assets/games/thumbs/battleship.png'},
 {id:'flood',n:'Flood Fill',i:'\ud83c\udf42',r:'Tap a color to flood from the top-left. Fill the whole board in one color!',cat:'puzzle',thumb:'assets/games/flood/leaf-crimson.png'},
-{id:'pipe',n:'Pipe Puzzle',i:'\ud83c\udf3f',r:'Rotate pipe tiles to connect the flow from source to end!',cat:'puzzle',thumb:'assets/games/thumbs/pipe.png'},
+{id:'pipe',n:'Vine Puzzle',i:'\ud83c\udf3f',r:'Rotate vine tiles to connect the flow from source to end!',cat:'puzzle',thumb:'assets/games/thumbs/pipe.png'},
 {id:'chess',n:'Chess',i:'\u265f',r:'Classic chess against AI. Tap a piece, tap where to move.',cat:'board',thumb:'assets/games/thumbs/chess.png'},
 {id:'c4',n:'Connect Fleur',i:'\ud83c\udf38',r:'Drop pieces to connect 4 in a row \u2014 horizontal, vertical, or diagonal!',cat:'board',thumb:'assets/games/thumbs/c4.png'},
 {id:'song',n:'Music Studio',i:'\ud83c\udfb5',r:'Full music production studio. Layer drums, bass, keys and leads \u2014 make beats, earn dew.',cat:'creative',thumb:'assets/games/thumbs/song.png'},

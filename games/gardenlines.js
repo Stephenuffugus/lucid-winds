@@ -161,8 +161,24 @@ window._gameFns.gardenlines = function GL(a){
     if(won){_e('game_win');_playWin();sm('🔶 Garden complete! '+G.pScore+'-'+G.aScore);}
     else{_e('game_loss');_play('lose');sm('Garden resting. '+G.pScore+'-'+G.aScore);}
     _sr('gardenlines',{w:won,s:G.pScore});
+    // Render an in-panel result card so the player gets a clear
+    // ending + replay button — was just freezing on the final board
+    // with the win message buried in the status bar.
+    var endCard=document.createElement('div');
+    endCard.style.cssText='margin:14px auto;max-width:340px;padding:18px;background:linear-gradient(180deg,rgba(20,28,18,0.97),rgba(13,16,12,0.98));border:2px solid '+(won?'rgba(200,168,75,0.5)':'rgba(199,80,80,0.4)')+';border-radius:14px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.6);';
+    endCard.innerHTML='<div style="font-family:Bebas Neue,sans-serif;font-size:1.5rem;color:'+(won?'var(--gold)':'var(--cream)')+';letter-spacing:0.12em;margin-bottom:8px;">'+(won?'🌿 GARDEN COMPLETE':'🍂 GARDEN RESTING')+'</div>'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.85rem;color:var(--cream);margin-bottom:14px;">YOU '+G.pScore+' · AI '+G.aScore+'</div>'
+      +'<button class="gb" onclick="_GLN()" style="min-height:48px;padding:10px 24px;background:rgba(122,179,86,0.25);border-color:rgba(122,179,86,0.5);color:var(--sage);font-size:0.85rem;letter-spacing:0.1em;">↻ NEW GARDEN</button>';
+    pan.appendChild(endCard);
   }
   function render(){
+    // Preserve scroll positions so a re-render doesn't yank the
+    // viewport. Was uncomfortable: every tap rebuilt all DOM and
+    // jerked the page back to the top.
+    var _pageScrollY=window.scrollY;
+    var _boardEl=pan.querySelector('div[style*="overflow:auto"]');
+    var _boardScrollT=_boardEl?_boardEl.scrollTop:0;
+    var _boardScrollL=_boardEl?_boardEl.scrollLeft:0;
     var ps=document.getElementById('GLp');if(ps)ps.textContent=G.pScore;
     var as=document.getElementById('GLa');if(as)as.textContent=G.aScore;
     var bg=document.getElementById('GLb');if(bg)bg.textContent=G.bag.length;
@@ -186,15 +202,15 @@ window._gameFns.gardenlines = function GL(a){
       });
     }
     h+='<div style="overflow:auto;max-height:320px;background:rgba(8,12,6,0.5);border:1px solid rgba(74,124,53,0.2);border-radius:8px;padding:4px;margin:4px 0;-webkit-overflow-scrolling:touch;">';
-    h+='<div style="display:grid;grid-template-columns:repeat('+cols+',36px);gap:2px;justify-content:center;">';
+    h+='<div style="display:grid;grid-template-columns:repeat('+cols+',48px);gap:3px;justify-content:center;">';
     for(var r=minR;r<=maxR;r++){
       for(var c=minC;c<=maxC;c++){
         var t=getBoard(r,c);var pk=posKey(r,c);var isValid=validPos[pk];
         if(t){
-          h+='<div style="width:36px;height:36px;border-radius:6px;background:'+COLORS[t.color]+';display:flex;align-items:center;justify-content:center;font-size:1.1rem;border:1.5px solid rgba(0,0,0,0.25);box-shadow:0 1px 3px rgba(0,0,0,0.4);">'+SHAPES[t.shape]+'</div>';
+          h+='<div style="width:48px;height:48px;border-radius:6px;background:'+COLORS[t.color]+';display:flex;align-items:center;justify-content:center;font-size:1.1rem;border:1.5px solid rgba(0,0,0,0.25);box-shadow:0 1px 3px rgba(0,0,0,0.4);">'+SHAPES[t.shape]+'</div>';
         }else{
-          var eStyle='width:36px;height:36px;border-radius:6px;border:1px dashed rgba(74,124,53,0.1);';
-          if(isValid){eStyle='width:36px;height:36px;border-radius:6px;border:2px solid rgba(122,179,86,0.6);background:rgba(122,179,86,0.15);cursor:pointer;';}
+          var eStyle='width:48px;height:48px;border-radius:6px;border:1px dashed rgba(74,124,53,0.1);';
+          if(isValid){eStyle='width:48px;height:48px;border-radius:6px;border:2px solid rgba(122,179,86,0.6);background:rgba(122,179,86,0.15);cursor:pointer;';}
           h+='<div style="'+eStyle+'" onclick="_GLPT('+r+','+c+')"></div>';
         }
       }
@@ -220,6 +236,10 @@ window._gameFns.gardenlines = function GL(a){
     }
     h+='</div>';
     pan.innerHTML=h;
+    // Restore scroll after the rebuild so the player isn't jerked.
+    var _newBoard=pan.querySelector('div[style*="overflow:auto"]');
+    if(_newBoard){_newBoard.scrollTop=_boardScrollT;_newBoard.scrollLeft=_boardScrollL;}
+    window.scrollTo(0,_pageScrollY);
   }
   function init(){
     var bag=makeBag();
