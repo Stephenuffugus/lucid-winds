@@ -35,13 +35,16 @@ window._gameFns.pottingbench=function PB(a){
 
   var deck=[],hand=[],pileA=null,pileB=null,drawPile=[];
   var selected=-1,streak=0,startTime=0,elapsedMs=0,running=false,timerId=0;
+  var phase='menu'; // 'menu' | 'playing' | 'done'
+  var bestMs=0;
+  try{bestMs=parseInt(localStorage.getItem('lw_pb_best')||'0',10)||0;}catch(e){}
 
-  ms(a,'Potting Bench · <span id="PBt">0.0s</span> · <span id="PBq">30</span> left');
+  ms(a,'Potting Bench · best <span id="PBb">'+(bestMs?(bestMs/1000).toFixed(2)+'s':'—')+'</span>');
   mm(a);
   var pan=document.createElement('div');pan.id='PBpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:8px;text-align:center;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb" onclick="_PBN()">🌱 NEW</button> <button class="gb" onclick="_PBDR()">DRAW +2s</button>';
+  mc(a).innerHTML='<button class="gb" onclick="_PBN()">🌱 NEW</button> <button class="gb" onclick="_PBDR()" id="PBdrawBtn">DRAW +2s</button>';
 
   function cardSVG(card,size){
     var s=size||50;
@@ -56,32 +59,58 @@ window._gameFns.pottingbench=function PB(a){
     return h;
   }
 
-  function newGame(){
+  function dealDeck(){
     deck=shuffle(allCards()).slice(0,30);
     pileA=deck[0];pileB=deck[1];
     while(shareAttr(pileA,pileB)===3){deck=shuffle(allCards()).slice(0,30);pileA=deck[0];pileB=deck[1];}
     hand=[deck[2],deck[3],deck[4]];
     drawPile=deck.slice(5);
-    selected=-1;streak=0;
-    startTime=Date.now();elapsedMs=0;running=true;
+    selected=-1;streak=0;elapsedMs=0;
+  }
+
+  // Reset to the menu screen — cards dealt in background but hidden
+  // behind the START overlay so player gets the "click to begin" beat.
+  function showMenu(){
+    phase='menu';
+    if(timerId){clearInterval(timerId);timerId=0;}
+    running=false;
+    dealDeck();
+    renderMenu();
+    sm('');
+  }
+
+  // Click START — reveal cards, kick off the timer.
+  function beginRun(){
+    phase='playing';running=true;
+    startTime=Date.now();elapsedMs=0;
     if(timerId)clearInterval(timerId);
     timerId=setInterval(function(){
+      if(!running||phase!=='playing'){clearInterval(timerId);timerId=0;return;}
       elapsedMs=Date.now()-startTime;
-      var t=document.getElementById('PBt');
-      if(t)t.textContent=(elapsedMs/1000).toFixed(1)+'s';
-    },100);
+      var t=document.getElementById('PBclock');
+      if(t)t.textContent=(elapsedMs/1000).toFixed(2);
+    },50);
     render();
-    sm('Match any attribute · speed wins');
+    sm('Match any attribute · clear all 30 to beat your best');
   }
 
   function remainingCount(){return hand.length+drawPile.length;}
 
   function win(){
-    running=false;if(timerId)clearInterval(timerId);
+    running=false;phase='done';
+    if(timerId){clearInterval(timerId);timerId=0;}
     _e('game_win');_playWin();
-    var secs=(elapsedMs/1000).toFixed(1);
-    sm('✓ Cleared in '+secs+'s');
+    var secs=(elapsedMs/1000).toFixed(2);
+    var newBest=false;
+    if(!bestMs||elapsedMs<bestMs){
+      bestMs=elapsedMs;newBest=true;
+      try{localStorage.setItem('lw_pb_best',String(bestMs));}catch(e){}
+    }
+    var bb=document.getElementById('PBb');
+    if(bb)bb.textContent=(bestMs/1000).toFixed(2)+'s';
+    sm((newBest?'🌟 NEW BEST · ':'✓ Cleared · ')+secs+'s');
     _sr('pottingbench',{w:true,s:Math.round(elapsedMs)});
+    renderEnd(secs,newBest);
   }
 
   // Returns true if at least one hand card can match either pile.
@@ -94,18 +123,14 @@ window._gameFns.pottingbench=function PB(a){
   }
 
   function checkStuck(){
-    // If draw is available, player can always force a new pileA, so
-    // they're never truly stuck. Only end when both options exhausted.
     if(drawPile.length>0)return false;
     if(hasPlayableMove())return false;
-    // Stuck — end with current state. Treat as a partial run: write
-    // a non-win record so attempts count, but don't fire game_loss
-    // since the player did real work.
-    running=false;if(timerId)clearInterval(timerId);
-    var secs=(elapsedMs/1000).toFixed(1);
+    running=false;phase='done';
+    if(timerId){clearInterval(timerId);timerId=0;}
+    var secs=(elapsedMs/1000).toFixed(2);
     sm('🍂 Stuck — no matches left in hand. '+secs+'s');
     _sr('pottingbench',{w:false,s:Math.round(elapsedMs)});
-    render();
+    renderEnd(secs,false,true);
     return true;
   }
 
@@ -149,25 +174,65 @@ window._gameFns.pottingbench=function PB(a){
     return '<div onclick="_PBH('+idx+')" style="'+sty+'">'+cardSVG(card)+'</div>';
   }
 
+  function renderMenu(){
+    var bestStr=bestMs?(bestMs/1000).toFixed(2)+'s':'—';
+    var h='';
+    h+='<div style="margin:8px 0 14px;">';
+    h+='<div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--muted);letter-spacing:0.06em;margin-bottom:6px;">Beat your best time</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:clamp(2.6rem,12vw,4rem);color:var(--cream);letter-spacing:0.04em;line-height:1;text-shadow:0 0 18px rgba(200,168,75,0.15);">0.00</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);opacity:0.7;letter-spacing:0.1em;margin:4px 0 18px;">SECONDS</div>';
+    h+='<button onclick="_PBstart()" style="min-width:170px;min-height:72px;padding:18px 32px;font-family:Bebas Neue,sans-serif;font-size:1.3rem;letter-spacing:0.16em;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.25));border:2.5px solid var(--sage);color:var(--sage);border-radius:14px;cursor:pointer;box-shadow:0 4px 18px rgba(74,124,53,0.4);">▶ START</button>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--gold);margin-top:18px;letter-spacing:0.06em;">BEST: '+bestStr+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);opacity:0.7;margin-top:6px;">30 cards · match shape, color, or count</div>';
+    h+='</div>';
+    pan.innerHTML=h;
+    var draw=document.getElementById('PBdrawBtn');if(draw)draw.style.display='none';
+  }
+
+  function renderEnd(secs,newBest,stuck){
+    var bestStr=bestMs?(bestMs/1000).toFixed(2)+'s':'—';
+    var h='';
+    h+='<div style="margin:8px 0 14px;">';
+    h+='<div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--muted);letter-spacing:0.06em;margin-bottom:6px;">'+(stuck?'STUCK':'CLEARED')+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:clamp(2.6rem,12vw,4rem);color:'+(newBest?'var(--gold)':'var(--cream)')+';letter-spacing:0.04em;line-height:1;text-shadow:0 0 18px '+(newBest?'rgba(200,168,75,0.4)':'rgba(122,179,86,0.15)')+';">'+secs+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);opacity:0.7;letter-spacing:0.1em;margin:4px 0 18px;">SECONDS</div>';
+    if(newBest)h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:var(--gold);letter-spacing:0.14em;margin-bottom:14px;text-shadow:0 0 18px rgba(200,168,75,0.4);">🌟 NEW BEST</div>';
+    h+='<button onclick="_PBstart()" style="min-width:170px;min-height:64px;padding:14px 28px;font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:0.14em;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.2));border:2px solid var(--sage);color:var(--sage);border-radius:12px;cursor:pointer;">↻ TRY AGAIN</button>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--gold);margin-top:14px;letter-spacing:0.06em;">BEST: '+bestStr+'</div>';
+    h+='</div>';
+    pan.innerHTML=h;
+    var draw=document.getElementById('PBdrawBtn');if(draw)draw.style.display='none';
+  }
+
   function render(){
-    var h='<div style="margin:10px 0;">';
+    if(phase==='menu'){renderMenu();return;}
+    if(phase==='done')return; // renderEnd handles this state
+    var clk=(elapsedMs/1000).toFixed(2);
+    var h='<div style="margin:6px 0 10px;">';
+    h+='<div id="PBclock" style="font-family:DM Mono,monospace;font-size:clamp(1.8rem,7vw,2.4rem);color:var(--gold);letter-spacing:0.04em;text-shadow:0 0 14px rgba(200,168,75,0.25);">'+clk+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);opacity:0.7;letter-spacing:0.1em;">SECONDS</div>';
+    h+='</div>';
     h+='<div style="display:flex;justify-content:center;gap:16px;margin-bottom:10px;">';
     h+='<div onclick="_PBP(\'A\')" style="cursor:pointer;padding:3px;border:2px solid rgba(122,179,86,0.3);border-radius:8px;background:rgba(26,31,23,0.6);">'+cardSVG(pileA,60)+'<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--sage);">PILE A</div></div>';
     h+='<div onclick="_PBP(\'B\')" style="cursor:pointer;padding:3px;border:2px solid rgba(122,179,86,0.3);border-radius:8px;background:rgba(26,31,23,0.6);">'+cardSVG(pileB,60)+'<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--sage);">PILE B</div></div>';
     h+='</div>';
-    h+='<div style="font-size:0.65rem;opacity:0.6;margin:4px;">Draw pile: '+drawPile.length+'  ·  Streak: '+streak+(streak>=5?' 🔥':'')+'</div>';
+    h+='<div style="font-size:0.65rem;opacity:0.6;margin:4px;">Draw pile: '+drawPile.length+'  ·  Cards left: '+remainingCount()+'</div>';
     h+='<div style="margin-top:16px;">';
     for(var i=0;i<hand.length;i++)h+=renderCard(hand[i],i,selected===i);
     h+='</div>';
-    h+='</div>';
     pan.innerHTML=h;
-    var q=document.getElementById('PBq');if(q)q.textContent=remainingCount();
+    var draw=document.getElementById('PBdrawBtn');if(draw)draw.style.display='';
   }
 
   window._PBH=function(i){if(!running)return;selected=(selected===i?-1:i);render();};
   window._PBP=function(p){playCard(p);};
   window._PBDR=function(){drawPenalty();};
-  window._PBN=function(){newGame();};
+  window._PBstart=function(){
+    // Re-deal so each START is a fresh shuffle, then fire the run.
+    dealDeck();beginRun();
+  };
+  // 🌱 NEW button = back to menu (re-deals + shows START)
+  window._PBN=function(){showMenu();};
 
   // Tear down the elapsed-time setInterval if player exits mid-game,
   // otherwise it keeps ticking and updating a non-existent #PBt.
@@ -178,6 +243,6 @@ window._gameFns.pottingbench=function PB(a){
     }
   },1000);
 
-  newGame();
+  showMenu();
 };
 })();
