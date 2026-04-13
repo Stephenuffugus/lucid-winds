@@ -31495,6 +31495,25 @@ document.addEventListener('keydown', function(e) {
 
       if (window.FG_Audio && FG_Audio.enabled) { try { FG_Audio.playMintDrone(); } catch(e) {} }
       _haptic('bloom'); // Phase 26: organic triple-pulse — Plant mint event
+      // Layered SVG particle celebration on top of the existing cr-particles.
+      // Mutated blooms get rose petals (the "drift" feels right for genetic
+      // chaos); normal blooms get sage leaves. Both get rings + sparkles.
+      try{
+        if(window._lwSpawnParticles){
+          window._lwSpawnParticles(ov,{
+            rings:3,
+            sparkles:mutated?22:16,
+            petals:mutated?8:4,
+            leaves:mutated?3:6
+          });
+          // Second wave of sparkles when the plant resolves into focus
+          setTimeout(function(){
+            if(ov.classList.contains('open')&&window._lwSpawnParticles){
+              window._lwSpawnParticles(ov,{sparkles:14});
+            }
+          },800);
+        }
+      }catch(e){}
 
       var collectBtn = document.getElementById('cr-collect-btn');
       if (collectBtn) {
