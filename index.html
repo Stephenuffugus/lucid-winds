@@ -39946,6 +39946,59 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
     st2.textContent='@keyframes lwGamesPulse{0%,100%{box-shadow:0 0 0 0 rgba(122,179,86,0.7);}50%{box-shadow:0 0 0 10px rgba(122,179,86,0);}}';
     document.head.appendChild(st2);
   }
+  // Per-tab first-visit teaching modals — fire once each, persisted.
+  // Stephen's call: 'tutorial needs to just carry them level to level
+  // while teaching all the features.' Each tab gets a focused teach.
+  var TAB_TEACHES={
+    nursery:{
+      icon:'🌱',
+      title:'NURSERY',
+      body:'Cross-pollinate two of your plants to grow a chimera seed. Tap CROSS-POLLINATE → pick two parents → water the seed 3 days → it blooms into a new plant with traits from both.<br><br>You can hold up to <b>3 seeds</b> at once (Breeder class adds +1).'
+    },
+    wild:{
+      icon:'🌍',
+      title:'WILD',
+      body:'The real-world map. Three things to do here:<br><br>'+
+        '<b>1. DROP</b> — Tap the 🌱 button (right side) to plant one of your greenhouse plants in the real world. Lasts 7-60 days depending on rarity.<br>'+
+        '<b>2. COLLECT</b> — Tap glowing feral seed markers within 75m to add them to your pouch.<br>'+
+        '<b>3. TEND</b> — Tap any wild plant hex to inspect. Water your own plants to reset their lifespan; tend strangers\u2019 plants for Dew.'
+    },
+    game:{
+      icon:'🎮',
+      title:'GAMES',
+      body:'Pick any game from the picker. Each tap on a game card opens it. Win or progress to earn <b>Sunbeams ☀️</b>.<br><br>'+
+        '<b>30 Sunbeams = a new plant</b> in your Greenhouse. Different games pay different amounts — try them all to find your favorites.<br><br>'+
+        'Tap the <b>?</b> in any game header for its rules.'
+    }
+  };
+  function _maybeShowTabTeach(tab){
+    if(!TAB_TEACHES[tab])return;
+    var key='lw_tab_teach_'+tab;
+    if(localStorage.getItem(key))return;
+    // Don't fire on the very first switchTab — wait until player has a plant
+    // (proves they finished onboarding, not just landed on a default tab).
+    var ghLen=0;try{ghLen=(JSON.parse(localStorage.getItem('sws_greenhouse')||'[]')||[]).length;}catch(e){}
+    if(ghLen<1)return;
+    localStorage.setItem(key,'1');
+    setTimeout(function(){
+      var t=TAB_TEACHES[tab];
+      var ov=document.createElement('div');
+      ov.id='lw-tab-teach';
+      ov.style.cssText='position:fixed;inset:0;z-index:999997;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.85);backdrop-filter:blur(8px);padding:1rem;font-family:DM Sans,sans-serif;animation:panelFadeIn 0.3s ease;';
+      ov.onclick=function(e){if(e.target===ov)ov.remove();};
+      ov.innerHTML=
+        '<div style="max-width:380px;width:100%;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(122,179,86,0.45);border-radius:14px;padding:1.2rem 1rem;box-shadow:0 16px 50px rgba(0,0,0,0.7);">'+
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem;">'+
+            '<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:var(--gold,#c8a84b);letter-spacing:0.12em;">'+t.icon+' '+t.title+'</div>'+
+            '<button onclick="document.getElementById(\'lw-tab-teach\').remove()" style="width:36px;height:36px;border-radius:50%;background:rgba(40,40,30,0.5);border:1px solid rgba(138,145,120,0.25);color:var(--cream,#e8dcc8);cursor:pointer;font-size:0.9rem;">✕</button>'+
+          '</div>'+
+          '<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:var(--cream,#e8dcc8);line-height:1.7;">'+t.body+'</div>'+
+          '<button onclick="document.getElementById(\'lw-tab-teach\').remove()" style="margin-top:1rem;width:100%;padding:0.6rem;background:linear-gradient(180deg,rgba(74,124,53,0.3),rgba(46,80,34,0.4));border:1.5px solid rgba(122,179,86,0.5);border-radius:8px;color:var(--cream,#e8dcc8);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:44px;">GOT IT</button>'+
+        '</div>';
+      document.body.appendChild(ov);
+      try{if(typeof gtag!=='undefined')gtag('event','tab_teach_shown',{tab:tab});}catch(e){}
+    },800); // delay so it lands after the tab content paints
+  }
   // Wrap switchTab — add ourselves to the chain
   if(typeof window.switchTab==='function'){
     var _origSt=window.switchTab;
@@ -39953,6 +40006,7 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
       try{_maybeShowFeedbackHint(tab);}catch(e){}
       try{_maybeShowGamesNudge(tab);}catch(e){}
       try{_maybeShowWhatNowButton(tab);}catch(e){}
+      try{_maybeShowTabTeach(tab);}catch(e){}
       return _origSt.apply(this,arguments);
     };
   }
