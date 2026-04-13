@@ -4410,7 +4410,10 @@ body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 275px)!important;righ
 .wild-log-val{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;color:var(--cream);line-height:1;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,.6)}
 .wild-log-lbl{font-family:'DM Mono',monospace;font-size:0.55rem;color:rgba(200,168,75,0.7);letter-spacing:0.08em;text-transform:uppercase;margin-top:1px;}
 .wild-log-wind{grid-area:cp;align-self:center;justify-self:center;width:72px;height:72px;display:flex;align-items:center;justify-content:center;position:relative;font-size:2rem;color:var(--gold);}
-.wild-log-wind img{width:72px!important;height:72px!important;filter:drop-shadow(0 2px 8px rgba(200,168,75,0.4));}
+/* Compass arrow: tall thin needle, scaled by height so the leaf-vine arrow
+   keeps its proportions inside the square cell. Transform-origin centered
+   so device-orientation rotation pivots on the midpoint. */
+.wild-log-wind img{height:64px!important;width:auto!important;max-width:none!important;filter:drop-shadow(0 2px 6px rgba(122,179,86,0.55));transform-origin:50% 50%;transition:transform 0.25s ease-out;}
 .wild-log-wind span{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--gold);white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1);}
 
 /* ── Trait Panel v2 (bottom sheet) ── */
@@ -5334,7 +5337,7 @@ window.onerror=function(msg,url,line,col,err){
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Meters walked. Keep moving to find feral seeds!')"><div class="wild-log-val" style="color:var(--sage)" id="w-steps">0</div><div class="wild-log-lbl">meters</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Your biome — detected from real geography. Affects feral rarity and mutations.')"><div class="wild-log-val" style="font-size:0.7rem;" id="w-biome">🏡</div><div class="wild-log-lbl" id="w-biome-name">scanning</div></div>
       <div class="wild-log-stat" id="w-class-stat" onclick="if(window._LW_openClassPicker)_LW_openClassPicker();else if(window._openCompendiumUI)_openCompendiumUI();" style="cursor:pointer;"><div class="wild-log-val" style="font-size:0.85rem;" id="w-class-icon">—</div><div class="wild-log-lbl" id="w-class-lbl">no class</div></div>
-      <div class="wild-log-wind" id="w-wind" onclick="if(window._lwCompassTap)window._lwCompassTap();" style="cursor:pointer;">🧭<span></span></div>
+      <div class="wild-log-wind" id="w-wind" onclick="if(window._lwCompassTap)window._lwCompassTap();" style="cursor:pointer;"><img src="assets/compasses/compass-arrow.png" alt="compass" draggable="false"><span></span></div>
     </div>
     <!-- TERRITORY OVERVIEW (tap planted count to expand) -->
     <div id="w-territory" style="display:none;position:fixed;top:60px;left:8px;right:8px;z-index:998;background:rgba(13,16,12,0.94);border:1px solid rgba(122,179,86,0.12);border-radius:10px;padding:0.5rem;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:panelFadeIn 0.2s ease;max-width:360px;margin:0 auto;">
