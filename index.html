@@ -44211,8 +44211,10 @@ var RANKS=[
 ];
 // Level-gated Wild v3 unlocks. Shown in the level-up celebration card.
 var LEVEL_UNLOCKS={
+  3:  {key:'wildTab',      title:'Wild tab',             desc:'Walk the world. Drop plants in the wild, collect feral seeds, meet strangers\u2019 gardens.'},
   5:  {key:'strangerTend', title:'Tend stranger plants', desc:'You can now tend other keepers\u2019 wild plants within 75m for +2 Dew each.'},
-  7:  {key:'breed',        title:'Greenhouse breeding',  desc:'Cross-pollinate two of your own plants to grow a chimera seed.'},
+  6:  {key:'classPreview', title:'A path is forming',    desc:'Next level you\u2019ll choose a Keeper class \u2014 Forager, Breeder, Cartographer, Tender, or Keeper. Each shapes how you play.'},
+  7:  {key:'breed',        title:'Greenhouse breeding',  desc:'Cross-pollinate two of your own plants to grow a chimera seed. Choose your Keeper class in the Book of Secrets.'},
   10: {key:'fruitHarvest', title:'Fruit harvest',        desc:'Take ripe fruit from stranger wild plants for Dew (small bloom delay).'},
   12: {key:'mergeBreed',   title:'Nursery merge breed',  desc:'Merge two nursery seeds into one for trait selection.'},
   15: {key:'cutting',      title:'Wild cuttings',        desc:'Take a cutting from a stranger wild plant — sample breeding seed.'},
@@ -44603,6 +44605,7 @@ function _luProcessQueue(){
           '<div class="lu-unlock-name" id="lu-unlock-name"></div>'+
           '<div class="lu-unlock-desc" id="lu-unlock-desc"></div>'+
         '</div>'+
+        '<div class="lu-next" id="lu-next-card" style="display:none;font-size:0.55rem;letter-spacing:0.08em;color:rgba(200,168,75,0.55);margin-top:0.6rem;text-align:center;font-family:\'DM Mono\',monospace;"></div>'+
         '<div class="lu-burst"></div>'+
       '</div>';
     document.body.appendChild(ov);
@@ -44617,6 +44620,15 @@ function _luProcessQueue(){
     unlockCard.style.display='block';
   } else {
     unlockCard.style.display='none';
+  }
+  // Next-milestone hook: scan LEVEL_UNLOCKS for the soonest level above
+  // current and surface it so players never plateau without a goal.
+  var nextCard=document.getElementById('lu-next-card');
+  if(nextCard){
+    var nextLvl=null,nextU=null;
+    for(var lk in LEVEL_UNLOCKS){if(LEVEL_UNLOCKS.hasOwnProperty(lk)){var lkn=parseInt(lk,10);if(lkn>item.level&&(nextLvl===null||lkn<nextLvl)){nextLvl=lkn;nextU=LEVEL_UNLOCKS[lk];}}}
+    if(nextU){nextCard.textContent='NEXT AT L'+nextLvl+' \u2014 '+nextU.title;nextCard.style.display='block';}
+    else {nextCard.style.display='none';}
   }
   ov.classList.add('open');
   try{if(navigator.vibrate)navigator.vibrate([30,55,30]);}catch(e){}
