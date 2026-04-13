@@ -85,12 +85,12 @@ function GTP(a){
     flipParents();
     if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('tripeaks',{w:true,s:moves});}
     upd();rn();
-    if(!gameOver&&checkLoss()){gameOver=true;var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;mm_up(left+' left — stuck');_e('game_loss');_sr('tripeaks',{w:false,s:28-left});}
+    if(!gameOver&&checkLoss()){gameOver=true;var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;mm_up(left+' left — stuck');_e('game_loss');_play('lose');_sr('tripeaks',{w:false,s:28-left});}
   }
   function tapStock(){
     if(gameOver||stock.length===0)return;
     var cd=stock.pop();cd.up=true;waste.push(cd);streak=0;_play('tap');upd();rn();
-    if(checkLoss()){gameOver=true;var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;mm_up(left+' left — stuck');_e('game_loss');_sr('tripeaks',{w:false,s:28-left});}
+    if(checkLoss()){gameOver=true;var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;mm_up(left+' left — stuck');_e('game_loss');_play('lose');_sr('tripeaks',{w:false,s:28-left});}
   }
   function rn(){
     gd.innerHTML='';

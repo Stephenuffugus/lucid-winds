@@ -60,7 +60,7 @@ function GGF(a){
     gameOver=true;
     var left=countLeft();score=left;
     mm_up(left+' left — no moves');
-    _e('game_loss');_sr('golf',{w:false,s:35-left});
+    _e('game_loss');_play('lose');_sr('golf',{w:false,s:35-left});
   }
 
   function mm_up(txt){

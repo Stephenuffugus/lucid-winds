@@ -77,7 +77,7 @@ function GPY(a){
         moves++;_play('tap');_e('progress');
         if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('pyramid',{w:true,s:moves});}
         sel=null;upd();rn();
-        if(!gameOver&&checkLoss()){gameOver=true;mm_up('No moves left');_e('game_loss');_sr('pyramid',{w:false,s:moves});}
+        if(!gameOver&&checkLoss()){gameOver=true;mm_up('No moves left');_e('game_loss');_play('lose');_sr('pyramid',{w:false,s:moves});}
         return;
       }
       sel={type:'pyr',idx:idx};rn();return;
@@ -100,7 +100,7 @@ function GPY(a){
   function tapStock(){
     if(gameOver||stock.length===0)return;
     var cd=stock.pop();cd.up=true;waste.push(cd);_play('tap');sel=null;rn();
-    if(checkLoss()){gameOver=true;mm_up('No moves left');_e('game_loss');_sr('pyramid',{w:false,s:moves});}
+    if(checkLoss()){gameOver=true;mm_up('No moves left');_e('game_loss');_play('lose');_sr('pyramid',{w:false,s:moves});}
   }
   function rn(){
     gd.innerHTML='';
