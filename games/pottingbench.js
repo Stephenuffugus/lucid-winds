@@ -1,39 +1,42 @@
-// ═══ LUCID WINDS — Petal Blink (speed attribute-match card game) ═══
+// ═══ LUCID WINDS — Potting Bench (speed attribute-match) ═══
+// Uses Three Sisters shape set (clover / pot / droplet) for brand consistency.
 (function(){
 'use strict';
 var G=window._G;
 var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G.sr;
 
-
 window._gameFns=window._gameFns||{};
-window._gameFns.petalblink=function PB(a){
-  var SHAPES=['leaf','bloom','stem','seed','drop','vine'];
+window._gameFns.pottingbench=function PB(a){
+  var SHAPES=['clover','pot','droplet'];
   var COLORS=['#7ab356','#c8a84b','#c47a7a','#5b9bd5','#e8dcc8'];
   var COUNTS=[1,2,3];
 
-  // Build full 90-card deck
+  var PATHS={
+    clover:'M16 11 C14 7 8 5 6 9 C4 13 8 15 12 14 C9 15 4 17 5 22 C6 26 12 25 14 21 C14 24 16 28 19 28 C22 28 24 24 22 20 C25 23 30 22 30 18 C30 14 25 12 21 14 C24 12 24 7 20 6 C17 5 15 7 16 11Z',
+    pot:'M5 8 L27 8 L23 28 L9 28 Z',
+    droplet:'M16 3 C16 3 6 16 6 21 C6 26.5 10.5 30 16 30 C21.5 30 26 26.5 26 21 C26 16 16 3 16 3Z'
+  };
+
+  function shapeSVG(shape,color,cx,cy,scale){
+    scale=scale||0.6;
+    // Path space is 32×32; translate so center of path (16,16) lands on (cx,cy) after scale.
+    var tx=cx-16*scale,ty=cy-16*scale;
+    return '<g transform="translate('+tx.toFixed(2)+','+ty.toFixed(2)+') scale('+scale+')"><path d="'+PATHS[shape]+'" fill="'+color+'" stroke="'+color+'" stroke-width="1.2" stroke-linejoin="round"/></g>';
+  }
+
   function allCards(){
     var out=[];
     for(var s=0;s<SHAPES.length;s++)for(var c=0;c<COLORS.length;c++)for(var n=0;n<COUNTS.length;n++)
       out.push({shape:SHAPES[s],color:COLORS[c],count:COUNTS[n]});
     return out;
   }
-
   function shuffle(ar){for(var i=ar.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ar[i];ar[i]=ar[j];ar[j]=t;}return ar;}
-
-  function shareAttr(a,b){
-    var c=0;
-    if(a.shape===b.shape)c++;
-    if(a.color===b.color)c++;
-    if(a.count===b.count)c++;
-    return c;
-  }
+  function shareAttr(a,b){var c=0;if(a.shape===b.shape)c++;if(a.color===b.color)c++;if(a.count===b.count)c++;return c;}
 
   var deck=[],hand=[],pileA=null,pileB=null,drawPile=[];
-  var selected=-1,streak=0,startTime=0,elapsedMs=0,running=false;
-  var timerId=0;
+  var selected=-1,streak=0,startTime=0,elapsedMs=0,running=false,timerId=0;
 
-  ms(a,'Petal Blink · <span id="PBt">0.0s</span> · <span id="PBq">30</span> left');
+  ms(a,'Potting Bench · <span id="PBt">0.0s</span> · <span id="PBq">30</span> left');
   mm(a);
   var pan=document.createElement('div');pan.id='PBpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:8px;text-align:center;';
@@ -45,30 +48,17 @@ window._gameFns.petalblink=function PB(a){
     var h='<svg width="'+s+'" height="'+(s*1.4)+'" viewBox="0 0 50 70" style="display:block;">';
     h+='<rect x="1" y="1" width="48" height="68" rx="6" fill="rgba(26,31,23,0.9)" stroke="rgba(122,179,86,0.4)" stroke-width="1.5"/>';
     var positions=card.count===1?[[25,35]]:card.count===2?[[17,35],[33,35]]:[[17,28],[33,28],[25,46]];
+    var scale=card.count===1?0.65:0.5;
     for(var i=0;i<positions.length;i++){
-      var cx=positions[i][0],cy=positions[i][1];
-      h+=shapeSVG(card.shape,card.color,cx,cy);
+      h+=shapeSVG(card.shape,card.color,positions[i][0],positions[i][1],scale);
     }
     h+='</svg>';
     return h;
   }
 
-  function shapeSVG(shape,color,cx,cy){
-    switch(shape){
-      case 'leaf':return '<path d="M'+cx+','+(cy-7)+' Q'+(cx+6)+','+(cy-4)+' '+(cx+5)+','+(cy+4)+' Q'+cx+','+(cy+7)+' '+(cx-5)+','+(cy+4)+' Q'+(cx-6)+','+(cy-4)+' '+cx+','+(cy-7)+' Z" fill="'+color+'"/>';
-      case 'bloom':var p='';for(var k=0;k<5;k++){var ang=k*72*Math.PI/180;var px=cx+Math.cos(ang)*4,py=cy+Math.sin(ang)*4;p+='<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="2.5" fill="'+color+'"/>';}return p+'<circle cx="'+cx+'" cy="'+cy+'" r="1.8" fill="'+color+'" opacity="0.8"/>';
-      case 'stem':return '<rect x="'+(cx-2)+'" y="'+(cy-6)+'" width="4" height="12" rx="2" fill="'+color+'"/>';
-      case 'seed':return '<ellipse cx="'+cx+'" cy="'+cy+'" rx="3.5" ry="5.5" fill="'+color+'"/>';
-      case 'drop':return '<path d="M'+cx+','+(cy-6)+' Q'+(cx+5)+','+cy+' '+cx+','+(cy+6)+' Q'+(cx-5)+','+cy+' '+cx+','+(cy-6)+' Z" fill="'+color+'"/>';
-      case 'vine':return '<path d="M'+(cx-5)+','+(cy-5)+' Q'+(cx+5)+','+(cy-2)+' '+(cx-5)+','+(cy+2)+' Q'+(cx+5)+','+(cy+4)+' '+(cx+2)+','+(cy+6)+'" stroke="'+color+'" stroke-width="2" fill="none"/>';
-    }
-    return '';
-  }
-
   function newGame(){
     deck=shuffle(allCards()).slice(0,30);
     pileA=deck[0];pileB=deck[1];
-    // Ensure different
     while(shareAttr(pileA,pileB)===3){deck=shuffle(allCards()).slice(0,30);pileA=deck[0];pileB=deck[1];}
     hand=[deck[2],deck[3],deck[4]];
     drawPile=deck.slice(5);
@@ -87,12 +77,11 @@ window._gameFns.petalblink=function PB(a){
   function remainingCount(){return hand.length+drawPile.length;}
 
   function win(){
-    running=false;
-    if(timerId)clearInterval(timerId);
+    running=false;if(timerId)clearInterval(timerId);
     _e('game_win');_playWin();
     var secs=(elapsedMs/1000).toFixed(1);
     sm('✓ Cleared in '+secs+'s');
-    _sr('petalblink',{w:true,s:Math.round(elapsedMs)});
+    _sr('pottingbench',{w:true,s:Math.round(elapsedMs)});
   }
 
   function playCard(pile){
@@ -109,18 +98,14 @@ window._gameFns.petalblink=function PB(a){
       if(hand.length===0&&drawPile.length===0){win();return;}
       render();
     } else {
-      // shake feedback
-      sm('No match');
-      streak=0;
+      sm('No match');streak=0;
     }
   }
 
   function drawPenalty(){
     if(!running||drawPile.length===0)return;
-    var top=drawPile.shift();
-    // Apply to whichever pile differs less
-    pileA=top;
-    startTime-=2000; // 2 second penalty
+    pileA=drawPile.shift();
+    startTime-=2000;
     streak=0;selected=-1;
     sm('+2s penalty');
     render();
