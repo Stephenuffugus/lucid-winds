@@ -397,8 +397,17 @@ self.onmessage = function(ev) {
       self.postMessage({ type: 'move', move: 'resign' });
       return;
     }
-    playOnReal(mv, color2);
-    self.postMessage({ type: 'move', move: coordFromIdx(mv) });
+    // Bug fix: was ignoring playOnReal's return value. If MCTS chose an
+    // illegal move (rare race with ko expiring across rollout boundaries),
+    // the worker would still post the move and the local board would
+    // reject it — silent worker/local desync. Now if the move is illegal
+    // on the real board, we fall back to a pass.
+    var pres = playOnReal(mv, color2);
+    if (pres && pres.ok) {
+      self.postMessage({ type: 'move', move: coordFromIdx(mv) });
+    } else {
+      self.postMessage({ type: 'move', move: 'pass' });
+    }
   }
 };
 

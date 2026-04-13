@@ -96,6 +96,17 @@ window._gameFns.gardenlines = function GL(a){
     if(G.selIdx<0||G.turn!=='player')return;
     var tile=G.pHand[G.selIdx];
     if(!canPlace(r,c,tile)){sm('Invalid placement');return;}
+    // Qwirkle rule: all tiles placed in a single turn must lie on
+    // the same row OR same column (and be contiguous after play).
+    // Was missing — players could T-shape or scatter placements.
+    if(G.placed.length>=1){
+      var allSameRow=true,allSameCol=true;
+      for(var pi=0;pi<G.placed.length;pi++){
+        if(G.placed[pi].r!==r)allSameRow=false;
+        if(G.placed[pi].c!==c)allSameCol=false;
+      }
+      if(!allSameRow&&!allSameCol){sm('Tiles must form one straight line');return;}
+    }
     setBoard(r,c,tile);
     G.pHand.splice(G.selIdx,1);
     var pts=scorePlace(r,c);

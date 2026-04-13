@@ -424,7 +424,7 @@ window._gameFns.petalmatch = function PM(a){
           }
         }
         if(pendingBurstPop.length>0){setTimeout(nextStep,120);}
-        else step();
+        else setTimeout(step,250); // was synchronous step() — could stack-overflow on long cascades AND skipped clear animation
       },200);
     }
     step();
@@ -605,6 +605,20 @@ window._gameFns.petalmatch = function PM(a){
         var counts=applyClear(toClear);
         var pts=(counts.p*10+counts.v*20+counts.b*30+counts.s*40)*5*level;
         score+=pts;sm('SPORE! +'+pts);_play('snap');
+        collapseAndRefill();updateHUD();
+        setTimeout(function(){resolveCascade(null,null,function(){animating=false;selected=null;checkState();});},250);
+      } else if(swapPair===null&&(aSpec==='vine'||aSpec==='burst'||bSpec==='vine'||bSpec==='burst')){
+        // Bug fix: vine or burst swapped with a plain gem was NOT activating —
+        // player lost a move for nothing. Now we explicitly seed toClear with
+        // the special's NEW position (post-swap) so expandActivations fires its
+        // effect (sweep row/col for vine, 3x3 burst for burst).
+        var spR=aSpec?swapR:tsR,spC=aSpec?swapC:tsC; // after swap, A moved to (swapR,swapC)
+        var toClear2={},pendBP2=[];
+        toClear2[spR+','+spC]=1;
+        expandActivations(toClear2,pendBP2);
+        var counts2=applyClear(toClear2);
+        var pts2=(counts2.p*10+counts2.v*20+counts2.b*30+counts2.s*40)*level;
+        score+=pts2;sm('💥 +'+pts2);_play('snap');
         collapseAndRefill();updateHUD();
         setTimeout(function(){resolveCascade(null,null,function(){animating=false;selected=null;checkState();});},250);
       } else {
