@@ -34203,15 +34203,6 @@ function _getWildVitality(plant){
   var life=plant.lifespanMs||_lifespanMsFor(plant.rarity||'Common');
   var pct=Math.max(0,Math.min(1,remaining/life));
   var dead=remaining<=0;
-  // Tender L3 Phoenix Ward: your own wild plants never wilt. They visually
-  // age (pct ticks down) but they're never pruned, never marked dead, and
-  // always show ≥10% vitality so the UI stays readable.
-  try{
-    if(plant.own&&window._lwGetClass&&window._lwGetClass()==='tender'&&window._lwGetClassLevel&&window._lwGetClassLevel('tender')>=3){
-      dead=false;
-      if(pct<0.1)pct=0.1;
-    }
-  }catch(e){}
   return {pct:pct,daysLeft:Math.max(0,remaining/86400000),dead:dead,lifeMs:life,remainingMs:Math.max(0,remaining)};
 }
 window._getWildVitality=_getWildVitality;
@@ -34222,36 +34213,12 @@ function _pruneWild(){
   var wild=_getWild();if(!wild.length)return wild;
   for(var i0=0;i0<wild.length;i0++)_ensureVitality(wild[i0]);
   var died=[];
-  var rescued=0; // plants Tender L3 Phoenix Ward kept alive past expiry
-  var _isTenderMaster=false;
-  try{_isTenderMaster=window._lwGetClass&&window._lwGetClass()==='tender'&&window._lwGetClassLevel&&window._lwGetClassLevel('tender')>=3;}catch(e){}
   var fresh=wild.filter(function(w){
     if(!w||!w.hash)return false;
-    // Compute the raw "would have died" state ignoring Phoenix Ward, so we
-    // can count rescues even though _getWildVitality already masks them.
-    var rawDead=(w.decayAt-Date.now())<=0;
     var v=_getWildVitality(w);
     if(v.dead){died.push(w);return false;}
-    if(rawDead&&w.own&&_isTenderMaster)rescued++;
     return true;
   });
-  // Surface Phoenix Ward rescues — once per session per plant, so the
-  // player sees the ability working without spamming on every prune.
-  if(rescued>0&&window._toast){
-    var _seen=window._lwPhoenixWardSeen||{};
-    var _newRescues=0;
-    for(var _ri=0;_ri<wild.length;_ri++){
-      var _rw=wild[_ri];
-      if(_rw&&_rw.own&&(_rw.decayAt-Date.now())<=0&&_isTenderMaster&&!_seen[_rw.hash]){
-        _seen[_rw.hash]=Date.now();_newRescues++;
-      }
-    }
-    window._lwPhoenixWardSeen=_seen;
-    if(_newRescues>0){
-      var _msg=_newRescues===1?'💧 Phoenix Ward kept 1 plant alive past its lifespan.':'💧 Phoenix Ward kept '+_newRescues+' plants alive past their lifespan.';
-      setTimeout(function(){window._toast(_msg);},300);
-    }
-  }
   if(died.length>0){
     if(window._swsLog)_swsLog('Pruned '+died.length+' withered wild plants','ok');
     _saveWild(fresh);
@@ -38985,12 +38952,33 @@ function _selectHexPlant(idx,p){
       _pruneBtn='<button class="hi-action-btn locked" title="Need 3 hashes to prune">\u2702 PRUNE (need 3\u26a1)</button>';
     }
   }
+  // Phoenix Bloom button — visible only on own plants when player is Tender L3
+  // AND has at least one Phoenix-bearing plant in the greenhouse AND this
+  // wild plant is wilting (≤25% vitality) or already dead. Each tap consumes
+  // one Phoenix permanently from its source card.
+  var _phxBtn='';
+  try{
+    if(isOwn&&window._lwGetClass&&window._lwGetClass()==='tender'&&window._lwGetClassLevel&&window._lwGetClassLevel('tender')>=3){
+      var _phxPlants=window._lwGetPhoenixPlants?window._lwGetPhoenixPlants():[];
+      var _phxLocalWild=_getWild();
+      var _vitality=null;
+      for(var _vi=0;_vi<_phxLocalWild.length;_vi++){if(_phxLocalWild[_vi].hash===p.hash){_vitality=_getWildVitality(_phxLocalWild[_vi]);break;}}
+      var _isWilting=_vitality&&(_vitality.dead||_vitality.pct<=0.25);
+      if(_phxPlants.length>0&&_isWilting){
+        _phxBtn='<button class="hi-action-btn" onclick="window._hexAction(\'phoenix\')" style="border-color:rgba(232,140,80,0.6);background:linear-gradient(180deg,rgba(232,140,80,0.15),rgba(180,80,40,0.18));color:#f0a878;" title="Sacrifice one Phoenix ('+_phxPlants.length+' available) to revive this plant to full vitality">\ud83d\udd25 PHOENIX BLOOM ('+_phxPlants.length+')</button>';
+      } else if(_phxPlants.length===0&&_isWilting){
+        // Phoenix-less Tender Master: locked tooltip explains the requirement
+        _phxBtn='<button class="hi-action-btn locked" title="Phoenix Bloom needs a plant with the Phoenix companion. Mint plants until one bears it." style="opacity:0.45;">\ud83d\udd25 PHOENIX BLOOM (0)</button>';
+      }
+    }
+  }catch(e){}
   if(isOwn){
     actions+='<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
     actions+=_inspectBtn;
     actions+=_mulchBtn;
     if(_blessBtn)actions+=_blessBtn;
     if(_pruneBtn)actions+=_pruneBtn;
+    if(_phxBtn)actions+=_phxBtn;
     actions+='<button class="hi-action-btn" onclick="window._hexAction(\'defense\')">&#128737; DEFENSE</button>';
   }else{
     // Wild v3: stranger plants no longer have HARVEST.
@@ -39561,6 +39549,101 @@ window._hexAction=function(action){
     // for an already-placed plant.
     if(typeof _changeDefense==='function'){window._closeHexInspector();_changeDefense(p);}
     else{_toast('Defense picker unavailable.');}
+  }else if(action==='phoenix'){
+    // Phoenix Bloom — Tender L3 sacrifices a Phoenix-bearing plant from the
+    // greenhouse to revive THIS wild plant. The Phoenix is permanently
+    // consumed (phoenixConsumed=true + phoenixSuppressed=true so it stops
+    // rendering on the source card).
+    if(!p.own){_toast('Phoenix Bloom only works on your own wild plants.');return;}
+    if(!window._lwGetClass||window._lwGetClass()!=='tender'||!window._lwGetClassLevel||window._lwGetClassLevel('tender')<3){
+      _toast('Phoenix Bloom unlocks at Tender Master.');return;
+    }
+    var _phxList=window._lwGetPhoenixPlants?window._lwGetPhoenixPlants():[];
+    if(_phxList.length===0){_toast('No Phoenix companions in your greenhouse.');return;}
+    // Locate the wild plant (only own plants live in local cache).
+    var _pbWild=_getWild();
+    var _pbHit=null,_pbHitIdx=-1;
+    for(var _pbi=0;_pbi<_pbWild.length;_pbi++){
+      if(_pbWild[_pbi].hash===p.hash){_pbHit=_pbWild[_pbi];_pbHitIdx=_pbi;break;}
+    }
+    if(!_pbHit){_toast('Plant not found in your local wild cache.');return;}
+    // Pick the Phoenix to sacrifice. If the player has more than one,
+    // open a chooser. Otherwise consume the only one immediately.
+    function _doPhoenixBloom(srcPlant){
+      _ensureVitality(_pbHit);
+      _pbHit.lastWateredAt=Date.now();
+      _pbHit.decayAt=Date.now()+_pbHit.lifespanMs;
+      _pbWild[_pbHitIdx]=_pbHit;_saveWild(_pbWild);
+      // Mark the Phoenix consumed on the greenhouse plant.
+      var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+      for(var gi=0;gi<gh.length;gi++){
+        if(gh[gi].hash===srcPlant.hash){
+          gh[gi].phoenixConsumed=true;
+          gh[gi].phoenixSuppressed=true;
+          gh[gi].phoenixConsumedAt=Date.now();
+          break;
+        }
+      }
+      if(window.saveGreenhouse)window.saveGreenhouse(gh);
+      else localStorage.setItem('sws_greenhouse',JSON.stringify(gh));
+      // Log + reward + UI
+      var _srcName=window.getPlantName?window.getPlantName(srcPlant.hash):srcPlant.hash.slice(0,8);
+      if(window.LW_Log)window.LW_Log.write('phoenix_bloom',{wildHash:p.hash,sourceHash:srcPlant.hash,sourceName:_srcName});
+      if(window.PW_grantXP)PW_grantXP(20,'phoenix_bloom');
+      try{if(window._haptic)window._haptic('bloom');}catch(e){}
+      try{if(window._playWin)window._playWin();}catch(e){}
+      _toast('🔥 Phoenix Bloom! '+_srcName+' burned to revive your wild plant.');
+      // Refresh the hex inspector to show updated vitality.
+      if(_hexInspZone&&window.FG_Wild&&window.FG_Wild._openHexInspector){
+        setTimeout(function(){window.FG_Wild._openHexInspector(_hexInspZone);},250);
+      }
+    }
+    if(_phxList.length===1){
+      var _onlyPhx=_phxList[0];
+      var _onlyName=window.getPlantName?window.getPlantName(_onlyPhx.hash):_onlyPhx.hash.slice(0,8);
+      if(window._lwConfirm){
+        window._lwConfirm({
+          title:'BURN THE PHOENIX',
+          body:'Sacrifice <b>'+_onlyName+'</b>\u2019s Phoenix to revive this wild plant? The Phoenix will be permanently removed from the card.',
+          yes:'\ud83d\udd25 BURN & REVIVE',
+          no:'CANCEL'
+        },function(){_doPhoenixBloom(_onlyPhx);});
+      } else if(confirm('Sacrifice '+_onlyName+'\u2019s Phoenix to revive this wild plant? Permanent.')){
+        _doPhoenixBloom(_onlyPhx);
+      }
+    } else {
+      // Multiple Phoenixes — open a chooser. Built inline so we don't need
+      // a new modal element. List highest-EA first (player likely wants to
+      // keep the strongest one alive).
+      try{_phxList.sort(function(a,b){var ea=function(pl){try{var t=window.hashToTraits(pl.hash);if(pl.generation)t.chimerGen=pl.generation;return window.computeEA?window.computeEA(t,0,pl):0;}catch(e){return 0;}};return ea(a)-ea(b);});}catch(e){}
+      var _ov=document.createElement('div');
+      _ov.style.cssText='position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.9);backdrop-filter:blur(10px);padding:1rem;';
+      var _h='<div style="max-width:360px;width:100%;background:linear-gradient(180deg,rgba(40,22,12,0.97),rgba(20,12,8,0.99));border:1.5px solid rgba(232,140,80,0.5);border-radius:14px;padding:1rem;box-shadow:0 16px 50px rgba(0,0,0,0.7),0 0 32px rgba(232,140,80,0.15);">';
+      _h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:#f0a878;letter-spacing:0.1em;text-align:center;margin-bottom:0.4rem;">\ud83d\udd25 BURN A PHOENIX</div>';
+      _h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;margin-bottom:0.7rem;line-height:1.5;">Pick which Phoenix to sacrifice. The Phoenix is consumed permanently from the chosen plant — they keep the rest of their traits, but the Phoenix is gone.</div>';
+      for(var _pi=0;_pi<_phxList.length;_pi++){
+        var _pp=_phxList[_pi];
+        var _pn=window.getPlantName?window.getPlantName(_pp.hash):_pp.hash.slice(0,8);
+        var _pgrade='';try{var _pt=window.hashToTraits(_pp.hash);if(_pp.generation)_pt.chimerGen=_pp.generation;var _ptg=window.getTerraGrade(_pt);_pgrade=_ptg.name||'';}catch(e){}
+        _h+='<button onclick="window._lwBurnPhoenix(\''+_pp.hash+'\')" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.6rem;margin-bottom:0.4rem;background:rgba(60,28,16,0.5);border:1.5px solid rgba(232,140,80,0.3);border-radius:10px;color:var(--cream);cursor:pointer;text-align:left;min-height:48px;">';
+        _h+='<div style="font-size:1.2rem;">\ud83d\udd25</div>';
+        _h+='<div style="flex:1;"><div style="font-family:Playfair Display,serif;font-size:0.78rem;font-style:italic;">'+_pn+'</div>';
+        _h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">'+_pgrade+'</div></div>';
+        _h+='</button>';
+      }
+      _h+='<button onclick="document.getElementById(\'lw-phx-chooser\').remove();" style="width:100%;padding:0.5rem;margin-top:0.3rem;background:rgba(40,40,30,0.5);border:1px solid rgba(122,179,86,0.15);border-radius:8px;color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;min-height:44px;">CANCEL</button>';
+      _h+='</div>';
+      _ov.id='lw-phx-chooser';_ov.innerHTML=_h;
+      document.body.appendChild(_ov);
+      // One-shot global so the inline onclick can find this scope.
+      window._lwBurnPhoenix=function(hash){
+        var picked=null;for(var pp=0;pp<_phxList.length;pp++)if(_phxList[pp].hash===hash){picked=_phxList[pp];break;}
+        var picker=document.getElementById('lw-phx-chooser');if(picker)picker.remove();
+        if(!picked){_toast('Phoenix not found.');return;}
+        _doPhoenixBloom(picked);
+        try{delete window._lwBurnPhoenix;}catch(e){}
+      };
+    }
   }
 };
 
@@ -52603,7 +52686,11 @@ var LW_CLASSES={
     abilities:{
       1:{name:'Green Thumb',desc:'Wild plants live 2× longer'},
       2:{name:'Dew Touched',desc:'+20% dew generation'},
-      3:{name:'Phoenix Ward',desc:'Phoenix immunity applies to all your plants'}
+      // Phoenix Bloom: tap any wilting/dead own wild plant, sacrifice a
+      // Phoenix companion (consumed permanently from its card) to revive
+      // the wild plant to full vitality. Each Phoenix is a single-use
+      // resurrection — scarcity creates real choice.
+      3:{name:'Phoenix Bloom',desc:'Sacrifice a Phoenix to revive a wild plant'}
     },companion:33,biome:'wetland'},
   keeper:{name:'Keeper',icon:'🌿',desc:'Balanced generalist',xpSrc:['all'],
     abilities:{
@@ -52805,7 +52892,7 @@ window._LW_classBonus=function(kind){
   if(kind==='nurserySlotPlus'){if(cls==='breeder')return 1;return 0;}
   if(kind==='chimeraPurity'&&cls==='breeder'&&lvl>=2)return 1.20+keeper;
   if(kind==='stepBonus'&&cls==='cartographer')return 1.10+keeper;
-  if(kind==='plantLongevity'&&cls==='tender'){var _tbase=2+keeper;try{if(lvl>=3&&window._LW_hasSynergy&&window._LW_hasSynergy())_tbase+=1;}catch(e){}return _tbase;}
+  if(kind==='plantLongevity'&&cls==='tender')return 2+keeper; // L1 Green Thumb baseline; Master no longer adds longevity (replaced by active Phoenix Bloom)
   if(kind==='dewRate'&&cls==='tender'&&lvl>=2)return 1.20+keeper;
   return 1+keeper;
 };
@@ -52826,6 +52913,22 @@ window._LW_toolMod=function(tool){
   if(tool==='can')return lvl;     // 1 = no mass-water, 2 = cap 3, 3 = cap 6 + RAIN
   if(tool==='compass')return lvl; // 1 = wind, 2 = biome reveal, 3 = bearing
   return null;
+};
+// Phoenix Bloom (Tender L3) — count the player's available Phoenix-bearing
+// plants. A "consumed" Phoenix has plant.phoenixConsumed=true and is filtered
+// out so the same Phoenix can't revive twice.
+window._lwGetPhoenixPlants=function(){
+  var out=[];
+  try{
+    var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+    for(var i=0;i<gh.length;i++){
+      var p=gh[i];if(!p||!p.hash)continue;
+      if(p.phoenixConsumed)continue;
+      var t=window.hashToTraits?window.hashToTraits(p.hash):null;
+      if(t&&t.companion===33)out.push(p);
+    }
+  }catch(e){}
+  return out;
 };
 // Check if companion synergy active (player has Master class + bound companion)
 window._LW_hasSynergy=function(){
