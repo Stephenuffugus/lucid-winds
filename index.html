@@ -50026,9 +50026,96 @@ function _bosSetTab(tab) {
   if (tab === 'report') body.innerHTML = _bosReportContent();
   else if (tab === 'secrets') body.innerHTML = _bosSecretsContent();
   else if (tab === 'events') body.innerHTML = _bosEventsContent();
+  else if (tab === 'class') body.innerHTML = _bosClassContent();
   var tabs = document.querySelectorAll('.bos-tab');
   for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('active', tabs[i].getAttribute('data-tab') === tab);
+  // Update the active style for tabs (override gold for active, muted for inactive)
+  for (var j = 0; j < tabs.length; j++) {
+    var active = tabs[j].getAttribute('data-tab') === tab;
+    tabs[j].style.background = active ? 'rgba(200,168,75,0.1)' : 'rgba(26,36,22,0.4)';
+    tabs[j].style.borderColor = active ? 'rgba(200,168,75,0.5)' : 'rgba(122,179,86,0.2)';
+    tabs[j].style.color = active ? 'var(--gold)' : 'var(--muted)';
+  }
 }
+
+// Build CLASS tab content — uses the same engine as _LW_openClassPicker but inline
+function _bosClassContent() {
+  if (typeof LW_CLASSES === 'undefined') return '<div style="padding:2rem;text-align:center;color:var(--muted);">Class system loading...</div>';
+  var cur = localStorage.getItem('lw_class') || null;
+  var classXP = {}; try { classXP = JSON.parse(localStorage.getItem('lw_class_xp') || '{}'); } catch(e) {}
+  var toolXP = {}; try { toolXP = JSON.parse(localStorage.getItem('lw_tool_xp') || '{}'); } catch(e) {}
+  var getClassLevel = function(cid) {
+    var xp = classXP[cid] || 0;
+    if (xp >= LW_CLASS_XP_L3) return 3;
+    if (xp >= LW_CLASS_XP_L2) return 2;
+    return 1;
+  };
+  var getToolLevel = function(tid) {
+    var xp = toolXP[tid] || 0;
+    if (xp >= LW_TOOL_XP_L3) return 3;
+    if (xp >= LW_TOOL_XP_L2) return 2;
+    return 1;
+  };
+
+  var h = '';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--muted);margin-bottom:0.8rem;line-height:1.6;">Choose one path. Each level unlocks an ability. Master rank unlocks companion synergy. Progress is slow — play long-term.</div>';
+
+  for (var cid in LW_CLASSES) {
+    var def = LW_CLASSES[cid];
+    var lvl = getClassLevel(cid);
+    var xp = classXP[cid] || 0;
+    var nextXP = lvl >= 3 ? 'MAX' : lvl >= 2 ? LW_CLASS_XP_L3 : LW_CLASS_XP_L2;
+    var pct = lvl >= 3 ? 100 : lvl >= 2 ? ((xp - LW_CLASS_XP_L2) / (LW_CLASS_XP_L3 - LW_CLASS_XP_L2)) * 100 : (xp / LW_CLASS_XP_L2) * 100;
+    var picked = cur === cid;
+    var lockedCur = cur && cur !== cid;
+    h += '<div style="margin-bottom:0.7rem;padding:0.7rem;background:' + (picked ? 'rgba(200,168,75,0.1)' : 'rgba(26,36,22,0.4)') + ';border:1.5px solid ' + (picked ? 'rgba(200,168,75,0.5)' : 'rgba(74,124,53,0.15)') + ';border-radius:12px;' + (lockedCur ? 'opacity:0.4;' : '') + '">';
+    h += '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;">';
+    h += '<div style="font-size:1.6rem;">' + def.icon + '</div>';
+    h += '<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:' + (picked ? 'var(--gold)' : 'var(--cream)') + ';letter-spacing:0.08em;">' + def.name.toUpperCase() + (picked ? ' · L' + lvl : '') + '</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">' + def.desc + '</div></div>';
+    if (!cur) h += '<button onclick="if(confirm(\'Choose ' + def.name + '? You can respec later for Pi.\')){localStorage.setItem(\'lw_class\',\'' + cid + '\');_bosSetTab(\'class\');}" style="min-height:40px;padding:6px 10px;font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;background:rgba(122,179,86,0.2);border:1.5px solid var(--sage);color:var(--sage);border-radius:8px;cursor:pointer;">CHOOSE</button>';
+    h += '</div>';
+    if (picked) {
+      h += '<div style="margin:0.3rem 0;"><div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);"><span>XP: ' + xp + '</span><span>Next: ' + nextXP + '</span></div>';
+      h += '<div style="height:4px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;margin-top:2px;"><div style="height:100%;width:' + Math.min(100, pct) + '%;background:linear-gradient(90deg,rgba(122,179,86,0.6),rgba(200,168,75,0.8));border-radius:2px;"></div></div></div>';
+    }
+    for (var abl = 1; abl <= 3; abl++) {
+      var ab = def.abilities[abl];
+      var unlocked = picked && lvl >= abl;
+      var titles = ['', 'Apprentice', 'Journeyman', 'Master'];
+      h += '<div style="padding:5px 8px;margin-top:4px;background:' + (unlocked ? 'rgba(74,124,53,0.12)' : 'rgba(13,16,12,0.4)') + ';border-left:3px solid ' + (unlocked ? 'var(--sage)' : 'rgba(74,124,53,0.1)') + ';border-radius:4px;">';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:' + (unlocked ? 'var(--sage)' : 'var(--muted)') + ';letter-spacing:0.06em;">L' + abl + ' ' + titles[abl].toUpperCase() + '</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:' + (unlocked ? 'var(--cream)' : 'var(--muted)') + ';margin-top:2px;"><strong>' + ab.name + '</strong> — ' + ab.desc + '</div>';
+      h += '</div>';
+    }
+    h += '</div>';
+  }
+
+  // Tools section
+  h += '<div style="margin-top:1.2rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.5rem;">TOOLS</div>';
+  for (var tid in LW_TOOLS) {
+    var tdef = LW_TOOLS[tid];
+    var tlvl = getToolLevel(tid);
+    var txp = toolXP[tid] || 0;
+    var tnextXP = tlvl >= 3 ? 'MAX' : tlvl >= 2 ? LW_TOOL_XP_L3 : LW_TOOL_XP_L2;
+    var tpct = tlvl >= 3 ? 100 : tlvl >= 2 ? ((txp - LW_TOOL_XP_L2) / (LW_TOOL_XP_L3 - LW_TOOL_XP_L2)) * 100 : (txp / LW_TOOL_XP_L2) * 100;
+    h += '<div style="margin-bottom:0.5rem;padding:0.55rem;background:rgba(26,36,22,0.4);border:1px solid rgba(74,124,53,0.15);border-radius:10px;">';
+    h += '<div style="display:flex;align-items:center;gap:0.5rem;">';
+    h += '<div style="font-size:1.3rem;">' + tdef.icon + '</div>';
+    h += '<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--cream);letter-spacing:0.06em;">' + tdef.name.toUpperCase() + ' · L' + tlvl + '</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--gold);">' + tdef.levels[tlvl] + '</div></div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);">' + txp + ' / ' + tnextXP + '</div>';
+    h += '</div>';
+    if (tlvl < 3) {
+      h += '<div style="height:3px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;margin-top:4px;"><div style="height:100%;width:' + Math.min(100, tpct) + '%;background:linear-gradient(90deg,rgba(122,179,86,0.6),rgba(200,168,75,0.7));border-radius:2px;"></div></div>';
+    }
+    h += '</div>';
+  }
+  h += '</div>';
+
+  return h;
+}
+window._bosClassContent = _bosClassContent;
 window._bosSetTab = _bosSetTab;
 
 var _bosReportRange = 'today';
@@ -50685,10 +50772,11 @@ window._openCompendiumUI=function(){
         '<button onclick="var bo=document.getElementById(\'bos-overlay\');if(bo)bo.remove();" style="width:48px;height:48px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">\u2715</button>'+
       '</div>'+
       // Tabs
-      '<div style="display:flex;gap:0.3rem;padding:0.4rem 1rem 0.5rem;flex-shrink:0;">'+
-        '<button class="bos-tab" data-tab="report" onclick="_bosSetTab(\'report\')" style="flex:1;padding:0.65rem 0.3rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;border-radius:8px;cursor:pointer;min-height:48px;">REPORT</button>'+
-        '<button class="bos-tab active" data-tab="secrets" onclick="_bosSetTab(\'secrets\')" style="flex:1;padding:0.65rem 0.3rem;border:1.5px solid rgba(200,168,75,0.5);background:rgba(200,168,75,0.1);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;border-radius:8px;cursor:pointer;min-height:48px;">SECRETS</button>'+
-        '<button class="bos-tab" data-tab="events" onclick="_bosSetTab(\'events\')" style="flex:1;padding:0.65rem 0.3rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;border-radius:8px;cursor:pointer;min-height:48px;">WILD EVENTS</button>'+
+      '<div style="display:flex;gap:0.25rem;padding:0.4rem 0.6rem 0.5rem;flex-shrink:0;flex-wrap:wrap;">'+
+        '<button class="bos-tab" data-tab="report" onclick="_bosSetTab(\'report\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">REPORT</button>'+
+        '<button class="bos-tab active" data-tab="secrets" onclick="_bosSetTab(\'secrets\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(200,168,75,0.5);background:rgba(200,168,75,0.1);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">SECRETS</button>'+
+        '<button class="bos-tab" data-tab="events" onclick="_bosSetTab(\'events\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">EVENTS</button>'+
+        '<button class="bos-tab" data-tab="class" onclick="_bosSetTab(\'class\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">CLASS</button>'+
       '</div>'+
       // Body
       '<div id="bos-body" style="flex:1;overflow-y:auto;padding:0.6rem 1rem 1.5rem;-webkit-overflow-scrolling:touch;"></div>'+
