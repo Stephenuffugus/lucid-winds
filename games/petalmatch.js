@@ -184,7 +184,12 @@ window._gameFns.petalmatch = function PM(a){
     }
   }
   var rafId=0;
-  function loop(){render();rafId=requestAnimationFrame(loop);}
+  // Loop checks game-active so it dies when player exits — without
+  // this it kept requesting frames forever on a detached canvas.
+  function loop(){
+    if(!document.body.classList.contains('game-active')){rafId=0;return;}
+    render();rafId=requestAnimationFrame(loop);
+  }
 
   var tsR=-1,tsC=-1;
   function handleStart(x,y){

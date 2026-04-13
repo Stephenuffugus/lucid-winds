@@ -287,6 +287,9 @@ window._gameFns.stonegarden = function SG(a){
   }
   function loop(ts){
     if(!running)return;
+    // Same exit guard as other rAF games — running flag doesn't get
+    // cleared on tab exit otherwise.
+    if(!document.body.classList.contains('game-active')){running=false;return;}
     var dt=lastTime?Math.min((ts-lastTime)/1000,0.04):0.016;
     lastTime=ts;
     if(state==='dropping'||state==='settling'){

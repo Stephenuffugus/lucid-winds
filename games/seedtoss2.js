@@ -291,6 +291,9 @@ window._gameFns.seedtoss2=function ST(a){
   var lastT=0;
   function loop(ts){
     if(!running)return;
+    // Bail if player exited via tab switch — running flag wouldn't
+    // catch it otherwise and rAF would burn CPU on a dead canvas.
+    if(!document.body.classList.contains('game-active')){running=false;return;}
     var dt=lastT?Math.min((ts-lastT)/1000,0.04):0.016;lastT=ts;
     updateSeed(dt);
     if(seed&&seed.trail)for(var i=seed.trail.length-1;i>=0;i--){seed.trail[i].life-=dt*2;if(seed.trail[i].life<=0)seed.trail.splice(i,1);}
