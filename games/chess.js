@@ -603,7 +603,114 @@ function GCH(a){
     return best;
   }
 
+  // ── Stockfish integration (lazy-loaded for Old Growth + Ancient tiers) ──
+  // The hand-rolled minimax below stays the engine for Seedling/Sapling so
+  // casual players never pay the ~1MB asm.js download. When the player
+  // picks tier 3 or 4 we fetch stockfish.js from jsDelivr, instantiate it
+  // as a Worker via blob URL (sidesteps CORS for cross-origin Workers),
+  // and delegate move selection. On any failure we fall back silently to
+  // the local engine so chess never breaks.
+  var _sfWorker=null,_sfReady=false,_sfLoading=false,_sfCallback=null;
+  function _loadStockfish(cb){
+    if(_sfReady){cb();return;}
+    if(_sfLoading){setTimeout(function(){_loadStockfish(cb);},250);return;}
+    _sfLoading=true;
+    var SF_URL='https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js';
+    fetch(SF_URL).then(function(r){return r.text();}).then(function(txt){
+      try{
+        var blob=new Blob([txt],{type:'application/javascript'});
+        var url=URL.createObjectURL(blob);
+        _sfWorker=new Worker(url);
+        _sfWorker.onmessage=function(e){
+          var line=typeof e.data==='string'?e.data:(e.data&&e.data.line)||'';
+          if(line==='uciok'){_sfWorker.postMessage('isready');}
+          else if(line==='readyok'){_sfReady=true;_sfLoading=false;cb();}
+          else if(line.indexOf('bestmove')===0){
+            var mv=line.split(' ')[1];
+            if(_sfCallback){var c=_sfCallback;_sfCallback=null;c(mv);}
+          }
+        };
+        _sfWorker.onerror=function(){_sfLoading=false;cb('error');};
+        _sfWorker.postMessage('uci');
+      }catch(e){_sfLoading=false;cb('error');}
+    }).catch(function(){_sfLoading=false;cb('error');});
+  }
+  function _boardToFEN(){
+    var rows=[];
+    for(var r=0;r<8;r++){
+      var s='',empty=0;
+      for(var c=0;c<8;c++){
+        var p=board[r][c];
+        if(!p){empty++;continue;}
+        if(empty){s+=empty;empty=0;}
+        var ch=p.type;
+        if(p.color==='b')ch=ch.toLowerCase();
+        s+=ch;
+      }
+      if(empty)s+=empty;
+      rows.push(s);
+    }
+    var cas='';
+    if(castling.wK)cas+='K';if(castling.wQ)cas+='Q';
+    if(castling.bK)cas+='k';if(castling.bQ)cas+='q';
+    if(!cas)cas='-';
+    var ep='-';
+    if(epSquare){ep='abcdefgh'.charAt(epSquare[1])+(8-epSquare[0]);}
+    return rows.join('/')+' '+turn+' '+cas+' '+ep+' '+halfmove+' '+(Math.floor(moveCount/2)+1);
+  }
+  function _uciToMove(uci){
+    if(!uci||uci.length<4)return null;
+    var fc='abcdefgh'.indexOf(uci.charAt(0));
+    var fr=8-parseInt(uci.charAt(1),10);
+    var tc='abcdefgh'.indexOf(uci.charAt(2));
+    var tr=8-parseInt(uci.charAt(3),10);
+    var promo=uci.length>4?uci.charAt(4).toUpperCase():null;
+    var legal=getLegalMoves(board,B,castling,epSquare);
+    for(var i=0;i<legal.length;i++){
+      var m=legal[i];
+      if(m.fr===fr&&m.fc===fc&&m.tr===tr&&m.tc===tc){
+        if(promo)m.promotion=promo;
+        return m;
+      }
+    }
+    return null;
+  }
+  function _aiMoveStockfish(skill){
+    if(gameOver||turn!==B)return;
+    sm('🌳 Engine thinking...');
+    _loadStockfish(function(err){
+      if(err==='error'||!_sfReady){
+        sm('Engine unavailable, using local AI.');
+        _aiMoveLocal();return;
+      }
+      // Re-check turn in case player exited / undid during async load
+      if(gameOver||turn!==B)return;
+      _sfWorker.postMessage('setoption name Skill Level value '+skill);
+      _sfWorker.postMessage('position fen '+_boardToFEN());
+      _sfCallback=function(uciMove){
+        if(turn!==B||gameOver)return;
+        var mv=_uciToMove(uciMove);
+        if(!mv){_aiMoveLocal();return;}
+        makeMove(mv);checkGameState();render();
+      };
+      _sfWorker.postMessage('go movetime '+(skill>=15?1500:800));
+    });
+  }
+
   function aiMove(){
+    if(gameOver||turn!==B)return;
+    // Dispatch: tier 3 = Stockfish skill 8, tier 4 = Stockfish skill 20.
+    // Tiers 1-2 keep the hand-rolled minimax (instant, no asset cost).
+    var diffVal=parseInt((document.getElementById('CHd')||{}).value,10)||2;
+    if(diffVal>=3){
+      var skill=diffVal===3?8:20;
+      _aiMoveStockfish(skill);
+      return;
+    }
+    _aiMoveLocal();
+  }
+
+  function _aiMoveLocal(){
     if(gameOver||turn!==B)return;
     // Opening book lookup
     var bookKey=moveLog.join(' ');
@@ -812,7 +919,7 @@ function GCH(a){
   mm(a,'Your move');
   boardEl=document.createElement('div');boardEl.id='CHboard';
   boardEl.style.cssText='padding:4px 0';a.appendChild(boardEl);
-  mc(a).innerHTML='<select class="gsl" id="CHd" style="max-width:130px" onchange="var v=this.value;_setDiff(v===\'1\'?\'easy\':v===\'2\'?\'medium\':v===\'3\'?\'hard\':\'expert\')"><option value="1">Seedling</option><option value="2" selected>Sapling</option><option value="3">Old Growth</option><option value="4">Ancient</option></select><button class="gb" onclick="_CHNew()">🔄 New</button><button class="gb" onclick="_CHUndo()">↩ Undo</button>';
+  mc(a).innerHTML='<select class="gsl" id="CHd" style="max-width:160px" onchange="var v=this.value;_setDiff(v===\'1\'?\'easy\':v===\'2\'?\'medium\':v===\'3\'?\'hard\':\'expert\')"><option value="1">Seedling</option><option value="2" selected>Sapling</option><option value="3">Old Growth ♛</option><option value="4">Ancient ♛</option></select><button class="gb" onclick="_CHNew()">🔄 New</button><button class="gb" onclick="_CHUndo()">↩ Undo</button>';
   _setDiff('medium');
   initBoard();render();
 }
