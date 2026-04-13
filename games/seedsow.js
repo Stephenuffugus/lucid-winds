@@ -18,7 +18,9 @@ window._gameFns.seedsow=function SS(a){
   ms(a,'Seed Sow · <span id="SWm">Your turn</span>');
   mm(a);
   var pan=document.createElement('div');pan.id='SWpan';
-  pan.style.cssText='max-width:420px;margin:0 auto;padding:10px;';
+  // Bumped max-width for breathing room and switched padding to be
+  // box-sizing safe so the right edge stops getting clipped.
+  pan.style.cssText='max-width:min(96vw,460px);width:100%;margin:0 auto;padding:6px 6px 10px;box-sizing:border-box;';
   a.appendChild(pan);
   mc(a).innerHTML='<button class="gb" onclick="_SWD(0)" id="SWd0">EASY</button> <button class="gb" onclick="_SWD(1)" id="SWd1">MED</button> <button class="gb" onclick="_SWN()">🌱 NEW</button>';
 
@@ -145,7 +147,7 @@ window._gameFns.seedsow=function SS(a){
 
   function render(){
     var h='';
-    h+='<div style="display:grid;grid-template-columns:60px repeat(6,1fr) 60px;gap:4px;align-items:center;margin:10px 0;">';
+    h+='<div style="display:grid;grid-template-columns:52px repeat(6,1fr) 52px;gap:3px;align-items:center;margin:8px 0;width:100%;box-sizing:border-box;">';
     // AI store
     h+='<div style="grid-row:span 2;background:rgba(26,31,23,0.6);border:2px solid rgba(196,122,122,0.4);border-radius:30px;padding:14px 4px;text-align:center;font-family:Bebas Neue,sans-serif;color:var(--cream);min-height:120px;display:flex;flex-direction:column;justify-content:center;">';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:#e8a0a0;letter-spacing:0.1em;">AI</div><div style="font-size:1.5rem;color:var(--gold);">'+board[13]+'</div></div>';

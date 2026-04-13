@@ -43709,7 +43709,7 @@ function GSK(a){
     +'<button style="'+_abs+'" onclick="_SKM(-1,0)"><img src="assets/games/arrow-left.png" style="'+_ais+'" alt="Left"></button><div></div>'
     +'<button style="'+_abs+'" onclick="_SKM(1,0)"><img src="assets/games/arrow-right.png" style="'+_ais+'" alt="Right"></button><div></div>'
     +'<button style="'+_abs+'" onclick="_SKM(0,1)"><img src="assets/games/arrow-down.png" style="'+_ais+'" alt="Down"></button><div></div>';
-  a.appendChild(db);mc(a).innerHTML='<button class="gb" onclick="_SKU()">⬅️ Undo</button><button class="gb" onclick="_SKR()">↩️ Reset</button><button class="gb" onclick="_SKN()">⏭️ Next Level</button>';
+  a.appendChild(db);mc(a).innerHTML='<button class="gb" onclick="_SKU()">⬅️ Undo</button><button class="gb" onclick="_SKR()">↩️ Reset</button><button class="gb" onclick="_SKN()">⏭️ Next Level</button> <button class="gb" onclick="_SKjump()" style="font-size:0.7rem;">📋 Jump to Level</button>';
   var _skHist=[];
   // 0=floor,1=wall,2=crate,3=target,4=crate-on-target
   function load(){var L=LEVELS[lvl%LEVELS.length];w=L.w;h=L.h;grid=[];
@@ -43741,7 +43741,14 @@ function GSK(a){
     px=nx;py=ny;moves++;rn()};
   window._SKU=function(){if(!_skHist.length){sm('Nothing to undo');return;}var s=_skHist.pop();grid=s.g;px=s.px;py=s.py;moves=s.mv;_play('tap');rn();};
   window._SKR=function(){_skHist=[];load();sm('Reset');rn()};
-  window._SKN=function(){_skHist=[];lvl=(lvl+1)%LEVELS.length;load();sm('Level '+(lvl+1));rn()};
+  window._SKN=function(){_skHist=[];lvl=(lvl+1)%LEVELS.length;localStorage.setItem('sk_lvl',String(lvl));load();sm('Level '+(lvl+1));rn();};
+  window._SKjump=function(){
+    var v=prompt('Jump to level (1-'+LEVELS.length+'):',String(lvl+1));
+    if(v===null)return;
+    var n=parseInt(v,10);
+    if(isNaN(n)||n<1||n>LEVELS.length){sm('Invalid level — must be 1 to '+LEVELS.length);return;}
+    _skHist=[];lvl=n-1;localStorage.setItem('sk_lvl',String(lvl));load();sm('Level '+(lvl+1));rn();
+  };
   document.addEventListener('keydown',function(e){var m={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};if(m[e.key]&&_a==='sokoban'){e.preventDefault();_SKM(m[e.key][0],m[e.key][1])}});
   load();rn()}
 // ═══ PETAL FALL — Falling Block Puzzle ═══
