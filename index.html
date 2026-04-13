@@ -4769,6 +4769,25 @@ body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 275px)!important;righ
   </style>
 </head>
 <body>
+  <!-- ═══ BOOT SPLASH — sprout emerging from seed; covers all UI until app ready ═══ -->
+  <div id="lw-boot-splash" style="position:fixed;inset:0;z-index:2147483646;background:#050505 url('assets/splash-seed-v2.png') center 35%/cover no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:calc(100px + env(safe-area-inset-bottom, 0px));transition:opacity 1.2s ease;">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:clamp(2.8rem,11vw,4.2rem);font-weight:700;color:#d4a843;text-shadow:0 2px 30px rgba(0,0,0,0.9),0 0 60px rgba(212,168,67,0.15);letter-spacing:0.06em;opacity:0;animation:splashFadeIn 1.6s ease 0.4s forwards;">lucid <em style="font-style:italic;color:#7ab356;">winds</em></div>
+  </div>
+  <script>
+  (function(){
+    function hide(){
+      var s=document.getElementById('lw-boot-splash');
+      if(!s)return;
+      s.style.opacity='0';
+      s.style.pointerEvents='none';
+      setTimeout(function(){if(s&&s.parentNode)s.parentNode.removeChild(s);},1300);
+    }
+    // Prefer window load (all assets ready). Fallback: hard 4s ceiling.
+    if(document.readyState==='complete'){setTimeout(hide,900);}
+    else{window.addEventListener('load',function(){setTimeout(hide,900);});}
+    setTimeout(hide,4000);
+  })();
+  </script>
   <!-- ═══ OFFLINE WARNING BANNER ═══ -->
   <div id="lw-offline-banner"><span>Offline &#8212; progress saves locally only</span><button class="lw-ob-x" onclick="document.getElementById('lw-offline-banner').style.display='none';">&times;</button></div>
 
