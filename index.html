@@ -43169,11 +43169,17 @@ function GBW(a){
     if(_bwRaf){cancelAnimationFrame(_bwRaf);_bwRaf=0;}
   }
   window._bwKillAudio=_bwKillAudio;
-  // Kill audio when browser tab is hidden/minimized
-  document.addEventListener('visibilitychange',function(){
-    if(document.hidden&&aCtx&&_a==='bloomwheel'){aCtx.suspend();}
-    else if(!document.hidden&&aCtx&&_a==='bloomwheel'){aCtx.resume();}
-  });
+  // Kill audio when browser tab is hidden/minimized — register once only
+  if(!window._bwVisHandler){
+    window._bwVisHandler=function(){
+      try{
+        if(document.hidden&&window._bwAudioCtx&&_a==='bloomwheel'&&window._bwAudioCtx.state==='running'){window._bwAudioCtx.suspend();}
+        else if(!document.hidden&&window._bwAudioCtx&&_a==='bloomwheel'&&window._bwAudioCtx.state==='suspended'){window._bwAudioCtx.resume();}
+      }catch(e){}
+    };
+    document.addEventListener('visibilitychange',window._bwVisHandler);
+  }
+  window._bwAudioCtx=aCtx;
   function render(ts){
     if(_a!=='bloomwheel'){_bwKillAudio();return}
     if(!ctx||!bufC){_bwKillAudio();return}
@@ -43274,10 +43280,14 @@ function GBW(a){
     var lk=document.createElement('a');lk.download='bloom-wheel-'+Date.now()+'.png';lk.href=sc.toDataURL('image/png');lk.click();
     _e('milestone');_sr('bloomwheel',{w:true,s:Math.round((Date.now()-startT)/1000)});sm('Mandala saved!')};
 
-  // Hash earning — 1 per 60 seconds of active drawing
-  setInterval(function(){if(_a==='bloomwheel'&&strokes>0)_e('progress')},60000);
+  // Hash earning — 1 per 60 seconds of active drawing (track interval so we can clear on teardown)
+  if(window._bwHashInt){try{clearInterval(window._bwHashInt);}catch(e){}}
+  window._bwHashInt=setInterval(function(){if(_a==='bloomwheel'&&strokes>0)_e('progress');else if(_a!=='bloomwheel'){try{clearInterval(window._bwHashInt);window._bwHashInt=null;}catch(e){}}},60000);
 
-  resize();window.addEventListener('resize',resize);
+  // Resize handler — only register once across multiple entries
+  if(window._bwResize){try{window.removeEventListener('resize',window._bwResize);}catch(e){}}
+  window._bwResize=resize;
+  resize();window.addEventListener('resize',window._bwResize);
   requestAnimationFrame(render);
 }
 // ═══ BACKGAMMON — Garden Gate ═══

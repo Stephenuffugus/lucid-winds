@@ -120,27 +120,28 @@ window._gameFns.cribbage = function CRIB(a){
       if(G.playCount+G.aHand[i].val<=31)avail.push(i);
     }
     if(avail.length===0){
+      // AI can't play — say "Go"
       G.aPass=true;
-      if(G.pPass){
+      // Check if player also can't play
+      var pCanPlay=false;
+      for(var i2=0;i2<G.pHand.length;i2++){
+        if(G.pPlayed.indexOf(i2)>=0)continue;
+        if(G.playCount+G.pHand[i2].val<=31){pCanPlay=true;break;}
+      }
+      if(!pCanPlay){
+        // Both passed — award last-card point, reset count
         var lastWho=G.playArea.length>0?G.playArea[G.playArea.length-1].who:'player';
         if(lastWho==='ai')G.aScore+=1;else G.pScore+=1;
+        sm((lastWho==='ai'?'AI':'You')+' +1 (Go)');
         G.playCount=0;G.playArea=[];G.pPass=false;G.aPass=false;
         if(checkWin())return;
         render();checkPegContinue();
       }else{
-        sm('AI "Go" — +1');G.pScore+=1;
+        // AI passes, player keeps playing
+        sm('AI "Go" — +1 to you');G.pScore+=1;
         if(checkWin())return;
         render();
-        var pCanPlay=false;
-        for(var i2=0;i2<G.pHand.length;i2++){
-          if(G.pPlayed.indexOf(i2)>=0)continue;
-          if(G.playCount+G.pHand[i2].val<=31){pCanPlay=true;break;}
-        }
-        if(!pCanPlay){
-          G.pPass=true;G.playCount=0;G.playArea=[];
-          G.pPass=false;G.aPass=false;
-          render();checkPegContinue();
-        }
+        // Player's turn (no auto-advance — wait for player card tap)
       }
       return;
     }
@@ -173,9 +174,14 @@ window._gameFns.cribbage = function CRIB(a){
       if(checkWin())return;
       setTimeout(showPhase,800);return;
     }
-    var isPlayerNext=(G.dealer==='player')?G.playArea.length%2===1:G.playArea.length%2===0;
-    if(G.aPass)isPlayerNext=true;
-    if(G.pPass)isPlayerNext=false;
+    // Turn order based on last card + passes, not brittle parity math
+    var lastWho=G.playArea.length>0?G.playArea[G.playArea.length-1].who:null;
+    var isPlayerNext;
+    if(G.aPass&&!G.pPass)isPlayerNext=true;       // AI passed, player continues
+    else if(G.pPass&&!G.aPass)isPlayerNext=false; // player passed, AI continues
+    else if(lastWho==='player')isPlayerNext=false; // player just played, AI's turn
+    else if(lastWho==='ai')isPlayerNext=true;     // AI just played, player's turn
+    else isPlayerNext=(G.dealer==='ai');            // fresh sequence: non-dealer leads
     if(!isPlayerNext)setTimeout(aiPeg,500);
   }
   function scorePeg(area,count){
@@ -351,9 +357,23 @@ window._gameFns.cribbage = function CRIB(a){
   window._CBD=confirmDiscard;
   window._CBPC=playCard;
   window._CBGO=function(){
-    G.pPass=true;G.aScore+=1;sm('AI +1');
+    // Check if AI still has cards to play
+    var aiHasCard=false;
+    for(var i=0;i<G.aHand.length;i++){
+      if(G.aPlayed.indexOf(i)>=0)continue;
+      if(G.playCount+G.aHand[i].val<=31){aiHasCard=true;break;}
+    }
+    G.pPass=true;
+    if(aiHasCard){G.aScore+=1;sm('AI +1 (you said Go)');}
+    else{
+      // Both can't play — count resets, last-card point
+      var lastWho=G.playArea.length>0?G.playArea[G.playArea.length-1].who:'player';
+      if(lastWho==='ai')G.aScore+=1;else G.pScore+=1;
+      sm((lastWho==='ai'?'AI':'You')+' +1 (last card)');
+      G.playCount=0;G.playArea=[];G.pPass=false;G.aPass=false;
+    }
     if(checkWin())return;
-    render();setTimeout(aiPeg,500);
+    render();checkPegContinue();
   };
 
   newGame();

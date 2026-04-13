@@ -417,9 +417,10 @@ var GS = (function(){
     fxReady = true;
     var c = ctx;
 
-    // Master reverb (convolution)
+    // Master reverb (convolution) — smaller impulse = fast first-play, good enough
+    // Was 2.5s/2.5 decay (~220KB buffer, 100-200ms stall). Now 1.2s/3 (smaller, snappier).
     masterReverb = c.createConvolver();
-    masterReverb.buffer = createImpulse(2.5, 2.5);
+    masterReverb.buffer = createImpulse(1.2, 3);
     masterReverbGain = c.createGain();
     masterReverbGain.gain.value = 1;
     masterReverb.connect(masterReverbGain);
