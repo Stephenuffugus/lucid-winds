@@ -40775,6 +40775,21 @@ function mc(a){var d=document.createElement('div');d.className='gcr';a.appendChi
 
 // ═══ PICKER ═══
 function _bp(){var p=document.getElementById('fg-pk');if(!p)return;p.innerHTML='';
+  // START HERE chip — pinned for fresh testers who haven't won a game yet.
+  // Opens Memory directly (universal, 1-2min, satisfying mint on win).
+  // Auto-disappears once they've completed their first game.
+  if(!localStorage.getItem('lw_first_game_won')){
+    var startBtn=document.createElement('div');startBtn.className='fg-c';
+    startBtn.style.cssText='background:linear-gradient(145deg,rgba(122,179,86,0.25),rgba(74,124,53,0.12));border-color:rgba(122,179,86,0.55);box-shadow:0 0 14px rgba(122,179,86,0.2);animation:lwStartHerePulse 2.4s ease-in-out infinite;';
+    startBtn.innerHTML='<span class="fi">\ud83c\udf31</span><span class="fn" style="color:var(--sage,#7ab356);">START HERE</span>';
+    startBtn.addEventListener('click',function(){if(window._sg)window._sg('memory');});
+    p.appendChild(startBtn);
+    if(!document.getElementById('lw-starthere-pulse')){
+      var sp=document.createElement('style');sp.id='lw-starthere-pulse';
+      sp.textContent='@keyframes lwStartHerePulse{0%,100%{box-shadow:0 0 14px rgba(122,179,86,0.2);}50%{box-shadow:0 0 22px rgba(122,179,86,0.5);}}';
+      document.head.appendChild(sp);
+    }
+  }
   // ALL GAMES button
   var allBtn=document.createElement('div');allBtn.className='fg-c';allBtn.style.cssText='background:linear-gradient(145deg,rgba(200,168,75,0.12),rgba(200,168,75,0.04));border-color:rgba(200,168,75,0.2);';
   allBtn.innerHTML='<span class="fi">\ud83c\udfae</span><span class="fn" style="color:var(--gold);">ALL GAMES</span>';
