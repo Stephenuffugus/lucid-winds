@@ -50827,7 +50827,8 @@ window._openCompendiumUI=function(){
       '<div id="bos-body" style="flex:1;overflow-y:auto;padding:0.6rem 1rem 1.5rem;-webkit-overflow-scrolling:touch;"></div>'+
     '</div>';
   document.body.appendChild(ov);
-  // Set initial tab content
+  // Set initial tab content — auto-open CLASS tab if unpicked
+  if(!localStorage.getItem('lw_class'))_bosTab='class';
   _bosSetTab(_bosTab);
   // Mark report as read
   if(window._setLastRead)_setLastRead(Date.now());
