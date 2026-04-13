@@ -40544,6 +40544,14 @@ function _showMintCelebration(fullHash){
   h+='<button onclick="_dismissWin();_restartCurrentGame();" style="width:100%;padding:0.45rem;border:1.5px solid rgba(122,179,86,0.25);border-radius:8px;background:rgba(46,60,38,0.3);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;">KEEP PLAYING</button>';
   h+='</div></div>';
   ov.innerHTML=h;document.body.appendChild(ov);
+  // Layered celebration:
+  //   - rings burst at t=0 (the moment)
+  //   - sparkles burst at t=600ms (when the plant resolves into focus)
+  //   - existing petal/leaf drift (below) keeps the slow ambient feel
+  try{
+    if(window._lwSpawnParticles)window._lwSpawnParticles(ov,{rings:3,sparkles:14});
+    setTimeout(function(){if(window._lwSpawnParticles)window._lwSpawnParticles(ov,{sparkles:22});},600);
+  }catch(e){}
   // Phase 2 trigger: plant grows from silhouette
   setTimeout(function(){var rv=document.getElementById('mint-plant-reveal');if(rv){rv.style.opacity='1';rv.style.transform='scale(1)';rv.style.filter='brightness(1) blur(0px)';}},600);
   // Haptic + sound at name reveal
@@ -40593,7 +40601,21 @@ function _showWinCelebration(){
   var h='<div style="text-align:center;max-width:340px;">';
   var pct=Math.round((inPlant/30)*100);
   var _winNear=inPlant>=25;var _winRemain=30-inPlant;
-  h+='<div style="font-size:2.5rem;margin-bottom:0.3rem;animation:nearBloomPulse 2s ease infinite;">🌿</div>';
+  // Replaced 🌿 emoji with inline SVG leaf — matches the unified celebration set.
+  // When _winNear (≥25 hashes), the leaf glows gold to signal "almost there."
+  var _winLeafColor=_winNear?'#f5dc95':'#7ab356';
+  var _winLeafGrad=_winNear?'#c8a84b':'#5a8c3a';
+  h+='<div style="margin-bottom:0.3rem;animation:nearBloomPulse 2s ease infinite;display:flex;justify-content:center;">'+
+      '<svg width="56" height="44" viewBox="-9 -7 18 14" style="filter:drop-shadow(0 0 10px '+_winLeafColor+'66);">'+
+        '<defs><linearGradient id="winLeafGrad" x1="-1" y1="0" x2="1" y2="0">'+
+          '<stop offset="0" stop-color="'+_winLeafGrad+'"/>'+
+          '<stop offset="0.5" stop-color="'+_winLeafColor+'"/>'+
+          '<stop offset="1" stop-color="'+_winLeafGrad+'"/>'+
+        '</linearGradient></defs>'+
+        '<path d="M-8 0 Q-4 -7 0 -6 Q4 -7 8 0 Q4 7 0 6 Q-4 7 -8 0 Z" fill="url(#winLeafGrad)"/>'+
+        '<path d="M-7 0 L7 0" stroke="#3a5a28" stroke-width="0.6" opacity="0.5"/>'+
+      '</svg>'+
+    '</div>';
   h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.6rem;color:var(--cream);letter-spacing:0.12em;margin-bottom:0.15rem;">WELL PLAYED!</div>';
   h+='<div style="font-family:DM Sans,sans-serif;font-size:0.6rem;color:var(--gold);margin-bottom:0.5rem;font-weight:500;">'+inPlant+' / 30 Sunbeams</div>';
   h+='<div style="width:100%;height:10px;background:rgba(42,48,37,0.6);border-radius:5px;overflow:hidden;margin-bottom:0.15rem;"><div class="'+(_winNear?'near-bloom':'')+'" style="width:'+pct+'%;height:100%;background:linear-gradient(90deg,var(--leaf),var(--sage)'+(_winNear?',var(--gold)':'')+');border-radius:5px;transition:width 0.8s ease;"></div></div>';
@@ -40603,6 +40625,17 @@ function _showWinCelebration(){
   h+='<button onclick="_dismissWin();_openGamePicker();" style="width:100%;padding:0.55rem;margin-bottom:0.3rem;border:1.5px solid rgba(200,168,75,0.2);border-radius:8px;background:rgba(46,40,32,0.4);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.08em;cursor:pointer;min-height:48px;">🎮 TRY ANOTHER GAME</button>';
   h+='<button onclick="_dismissWin();switchTab(\'greenhouse\');" style="width:100%;padding:0.4rem;border:1px solid rgba(200,188,160,0.08);border-radius:8px;background:none;color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.06em;cursor:pointer;min-height:44px;">🌿 VIEW GREENHOUSE</button>';
   h+='</div>';ov.innerHTML=h;document.body.appendChild(ov);
+  // Layered particle celebration. _winNear gets an extra ring + 50% more
+  // sparkles to signal the mint is one game away.
+  try{
+    if(window._lwSpawnParticles){
+      window._lwSpawnParticles(ov,{
+        rings: _winNear?2:1,
+        sparkles: _winNear?16:10,
+        leaves: 4
+      });
+    }
+  }catch(e){}
   setTimeout(function(){if(document.getElementById('pw-win-overlay'))_dismissWin();},15000);
 }
 function _dismissWin(){var o=document.getElementById('pw-win-overlay');if(o)o.remove();}
