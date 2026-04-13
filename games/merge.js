@@ -2,7 +2,7 @@
 (function(){
 'use strict';
 var G=window._G;
-var _e=G.e,_play=G.play,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.sh,_sr=G.sr,_st=G.st,_xt=G.xt;
+var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.sh,_sr=G.sr,_st=G.st,_xt=G.xt;
 
 function GR(a){
   // Plant tile hashes — progression from bare seed to cosmic specimen
@@ -28,7 +28,7 @@ function GR(a){
       try{ST[vals[i]]=gen(_TH[vals[i]],56);}catch(e){ST[vals[i]]='🌱';}
     }
   })();
-  var g=new Array(16).fill(0),sc=0,bt=2,ov=false,busy=false;
+  var g=new Array(16).fill(0),sc=0,bt=2,ov=false,busy=false,won=false;
   ms(a,'🏆 <strong id="Rs">0</strong> · Best: <strong id="Rb">2</strong>');mm(a);
 
   // Grid container — CSS grid provides the cell positions
@@ -142,6 +142,10 @@ function GR(a){
         sc+=nv;
         if(nv>bt){bt=nv;document.getElementById('Rb').textContent=bt;
           if([64,128,256,512,1024,2048].indexOf(nv)>-1)_e('reached_'+nv);
+          // Reaching 2048 is the canonical win condition. Fire it
+          // exactly once per game so the player gets the standard
+          // win reward + celebration on first 2048 tile.
+          if(nv===2048&&!won){won=true;_e('game_win');if(_playWin)_playWin();sm('🌿 You reached 2048! Keep going for a higher score.');_sr('merge',{w:true,s:sc});}
         }
         ri++;i++;
       } else {
@@ -264,7 +268,7 @@ function GR(a){
   window._RmergeMove=_Rm;
 
   // New game
-  window._RN=function(){g=new Array(16).fill(0);sc=0;bt=2;ov=false;busy=false;
+  window._RN=function(){g=new Array(16).fill(0);sc=0;bt=2;ov=false;busy=false;won=false;
     document.getElementById('Rb').textContent='2';
     for(var t=tiles.length-1;t>=0;t--)rmTile(tiles[t]);
     tiles=[];

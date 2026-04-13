@@ -17,7 +17,7 @@ window._gameFns.petalmatch = function PM(a){
     {color:'#9b6ba3'},
     {color:'#e8dcc8'}
   ];
-  var grid=[],score=0,level=1,moves=30,target=500;
+  var grid=[],score=0,level=1,moves=30,target=500,won=false;
   var selected=null,animating=false,comboCount=0;
   var canvas,ctx,dpr;
 
@@ -135,13 +135,22 @@ window._gameFns.petalmatch = function PM(a){
   function checkState(){
     if(score>=target){
       level++;moves=30+level*2;target=500+level*300;score=0;
-      sm('LEVEL '+(level-1)+' COMPLETE!');_playWin();_e('milestone');
+      sm('LEVEL '+(level-1)+' COMPLETE!');_playWin();
+      // Clearing level 1 (advancing to level 2) is the canonical win
+      // event — fires once per game session so the player gets a
+      // proper win record and reward for the first clear. After that,
+      // each additional level fires a milestone for incremental SB.
+      if(level===2&&!won){won=true;_e('game_win');_sr('petalmatch',{w:true,s:score,lv:level-1});}
+      else _e('milestone');
       initGrid();while(findMatches().length>0)initGrid();
       updateHUD();render();return;
     }
     if(moves<=0){
-      sm('Out of moves. Final '+score);_play('lose');_e('game_loss');
-      _sr('petalmatch',{w:false,s:score,lv:level});
+      sm('Out of moves. Final '+score);_play('lose');
+      // Only record a loss if the player never cleared level 1.
+      // Otherwise their session is logged as the win they earned.
+      if(!won){_e('game_loss');_sr('petalmatch',{w:false,s:score,lv:level});}
+      else _sr('petalmatch',{w:true,s:score,lv:level});
       return;
     }
     if(!hasValidMove()){sm('No moves — shuffling!');initGrid();while(findMatches().length>0)initGrid();}
@@ -209,7 +218,7 @@ window._gameFns.petalmatch = function PM(a){
 
   window._PMN=function(){
     if(rafId)cancelAnimationFrame(rafId);
-    initCanvas();level=1;score=0;moves=30;target=500;animating=false;selected=null;
+    initCanvas();level=1;score=0;moves=30;target=500;animating=false;selected=null;won=false;
     initGrid();while(findMatches().length>0)initGrid();
     updateHUD();rafId=requestAnimationFrame(loop);
     sm('Swipe to swap adjacent petals');
