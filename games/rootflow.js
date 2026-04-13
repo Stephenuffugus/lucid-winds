@@ -111,9 +111,10 @@ window._gameFns.rootflow = function RF(a){
         // dot keeps its color identity but path is cleared
       }
     }
-    // But need to restore dot's color
-    G.dots.forEach(function(d){if(d[2]===color)G.grid[d[0]][d[1]]={color:d[2],isDot:true};});
-    // Hmm G.dots isn't stored per-game. Use original:
+    // Restore both dots of this color from the canonical puzzle data.
+    // (Earlier code referenced G.dots — never actually stored per-game,
+    // would have crashed on first call. Removed and consolidated to
+    // PUZZLES[G.pi].dots which is the source of truth.)
     PUZZLES[G.pi].dots.forEach(function(d){if(d[2]===color)G.grid[d[0]][d[1]]={color:d[2],isDot:true};});
     G.paths[color]=[];
   }

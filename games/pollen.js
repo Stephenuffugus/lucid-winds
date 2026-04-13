@@ -229,7 +229,13 @@ window._gameFns.pollen = function PN(a){
     // Append celebration card
     var card=document.createElement('div');
     card.style.cssText='position:fixed;inset:0;background:rgba(8,10,6,0.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:200000;display:flex;align-items:center;justify-content:center;padding:1rem;';
-    var pollCnt=GS.player.pollinators.length;
+    // Bug fix: GS.player has no pollinators field (just gp/tokens/cards/
+    // reserved/production). Pollinators live on GS.pollinators with a
+    // claimedBy tag. Without this fix the very next line crashed with
+    // "Cannot read properties of undefined (reading 'length')" on the
+    // win/loss screen for every game.
+    var pollCnt=0;
+    for(var _pi=0;_pi<GS.pollinators.length;_pi++)if(GS.pollinators[_pi].claimedBy==='player')pollCnt++;
     card.innerHTML='<div style="background:linear-gradient(160deg,#1a1f17,#0d100c);border:2px solid '+(won?'rgba(200,168,75,0.5)':'rgba(199,80,80,0.35)')+';border-radius:16px;padding:2rem 1.5rem;max-width:360px;text-align:center;box-shadow:0 12px 48px rgba(0,0,0,0.8),0 0 32px '+(won?'rgba(200,168,75,0.25)':'rgba(0,0,0,0.3)')+';">'+
       '<div style="font-size:3rem;margin-bottom:0.5rem;">'+(won?'🌸':'🐝')+'</div>'+
       '<div style="font-family:Bebas Neue,sans-serif;font-size:1.5rem;color:'+(won?'var(--gold)':'var(--cream)')+';letter-spacing:0.12em;margin-bottom:0.6rem;">'+(won?'GARDEN BLOOMS':'HIVE RESTS')+'</div>'+
