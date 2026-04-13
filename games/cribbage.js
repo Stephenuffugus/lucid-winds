@@ -284,9 +284,13 @@ window._gameFns.cribbage = function CRIB(a){
     else if(G.phase==='peg')st='Pegging — Count: '+G.playCount+'/31';
     else if(G.phase==='show')st='Scoring hands...';
     else st='Game Over';
-    h+='<div style="text-align:center;font-family:DM Mono,monospace;font-size:0.7rem;color:var(--sage);padding:4px 0;">'+st+' · Round '+G.roundNum+' · Dealer: '+(G.dealer==='player'?'You':'AI')+'</div>';
+    h+='<div style="display:flex;gap:14px;justify-content:center;align-items:center;padding:6px 4px;flex-wrap:wrap;font-family:DM Mono,monospace;font-size:0.85rem;letter-spacing:0.06em;">';
+    h+='<div style="color:var(--sage);">'+st+'</div>';
+    h+='<div style="color:var(--muted);">Round <strong style="color:var(--cream);">'+G.roundNum+'</strong></div>';
+    h+='<div style="color:var(--muted);">Dealer: <strong style="color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:1rem;">'+(G.dealer==='player'?'YOU':'AI')+'</strong></div>';
+    h+='</div>';
     h+='<div style="background:rgba(26,31,23,.4);border:1px solid rgba(74,124,53,.12);border-radius:8px;padding:8px;margin:4px 0;">';
-    h+='<div style="font-size:0.55rem;color:rgba(232,220,200,.5);margin-bottom:3px;">AI HAND</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:5px;">AI HAND</div>';
     h+='<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:64px;align-items:center;">';
     if(G.phase==='show'||G.phase==='gameover'){
       G.aHand.forEach(function(c){h+=_cardHtml(c,false,false,false,false);});
@@ -298,7 +302,7 @@ window._gameFns.cribbage = function CRIB(a){
     }
     h+='</div></div>';
     if(G.starter){
-      h+='<div style="text-align:center;padding:3px 0;"><span style="font-size:0.55rem;color:rgba(232,220,200,.5);">STARTER: </span>';
+      h+='<div style="text-align:center;padding:5px 0;"><span style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.1em;">STARTER:&nbsp;</span>';
       h+=_cardHtml(G.starter,false,false,false,true);
       h+='</div>';
     }
@@ -309,10 +313,10 @@ window._gameFns.cribbage = function CRIB(a){
       h+='</div>';
     }
     if(G.lastScoreBreakdown){
-      h+='<div style="font-size:0.65rem;color:rgba(232,220,200,.8);text-align:center;padding:6px;background:rgba(26,31,23,.4);border-radius:6px;margin:4px 0;line-height:1.5;">'+G.lastScoreBreakdown+'</div>';
+      h+='<div style="font-size:0.78rem;color:var(--cream);text-align:center;padding:8px;background:rgba(26,31,23,.5);border:1px solid rgba(122,179,86,0.2);border-radius:6px;margin:4px 0;line-height:1.5;">'+G.lastScoreBreakdown+'</div>';
     }
     h+='<div style="background:rgba(26,31,23,.4);border:1px solid rgba(74,124,53,.12);border-radius:8px;padding:8px;margin:4px 0;">';
-    h+='<div style="font-size:0.55rem;color:rgba(232,220,200,.5);margin-bottom:3px;">YOUR HAND</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:5px;">YOUR HAND</div>';
     h+='<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:64px;align-items:center;">';
     G.pHand.forEach(function(c,i){
       var isSel=G.pSelected.indexOf(i)>=0;

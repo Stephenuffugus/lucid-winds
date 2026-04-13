@@ -207,20 +207,21 @@ window._gameFns.juniper = function Juniper(a){
     h+='</div>';
     // Piles
     h+='<div style="display:flex;align-items:center;justify-content:center;gap:16px;padding:10px 20px;">';
-    h+='<div style="text-align:center;"><div onclick="_JUDS()" style="width:64px;height:90px;border-radius:8px;background:linear-gradient(135deg,#2a3a22,#1a2416);border:2px solid rgba(122,179,86,0.3);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;"><span style="font-size:1.5rem;opacity:0.3;">🂠</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;opacity:0.5;position:absolute;bottom:4px;color:#e8dcc8;">'+stock.length+'</span></div><div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:1px;opacity:0.3;margin-top:4px;">STOCK</div></div>';
+    h+='<div style="text-align:center;"><div onclick="_JUDS()" style="width:64px;height:90px;border-radius:8px;background:linear-gradient(135deg,#2a3a22,#1a2416);border:2px solid rgba(122,179,86,0.4);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;"><span style="font-size:1.6rem;opacity:0.5;">🂠</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:var(--gold);position:absolute;bottom:4px;text-shadow:0 1px 4px #000;">'+stock.length+'</span></div><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;color:var(--cream);margin-top:5px;">STOCK</div></div>';
     h+='<div style="text-align:center;">';
     if(discardPile.length>0){
       var top=discardPile[discardPile.length-1];
       var col=top.suit==='hearts'||top.suit==='diamonds'?'#c47a7a':'#1a1f17';
       h+='<div onclick="_JUDD()" style="width:64px;height:90px;border-radius:8px;background:#E8DCC8;border:2px solid #b8a878;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:'+col+';font-weight:700;"><div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;">'+top.rank+'</div><div style="font-size:1.3rem;">'+SI[top.suit]+'</div></div>';
     }else{
-      h+='<div style="width:64px;height:90px;border-radius:8px;background:rgba(26,36,22,0.3);border:2px dashed rgba(122,179,86,0.2);display:flex;align-items:center;justify-content:center;font-size:0.6rem;opacity:0.3;">empty</div>';
+      h+='<div style="width:64px;height:90px;border-radius:8px;background:rgba(26,36,22,0.3);border:2px dashed rgba(122,179,86,0.3);display:flex;align-items:center;justify-content:center;font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);">empty</div>';
     }
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:1px;opacity:0.3;margin-top:4px;">DISCARD</div></div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;color:var(--cream);margin-top:5px;">DISCARD</div></div>';
     h+='</div>';
-    // Deadwood display
+    // Deadwood display — bumped from 0.65rem to readable
     var dw=playerHand.length<=11?getDeadwood(playerHand):'—';
-    h+='<div style="text-align:center;font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:1px;opacity:0.6;padding:2px;">DEADWOOD: '+dw+'</div>';
+    var dwColor=(typeof dw==='number'&&dw<=10)?'var(--gold)':'var(--cream)';
+    h+='<div style="text-align:center;font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.1em;color:var(--cream);padding:6px;background:rgba(26,31,23,0.4);border-radius:6px;margin:4px 16px;">DEADWOOD: <strong style="color:'+dwColor+';font-size:1.3rem;">'+dw+'</strong></div>';
     // Controls
     h+='<div style="display:flex;justify-content:center;gap:8px;padding:6px 12px;">';
     var canKnock=phase==='discard'&&playerHand.length===10&&typeof dw==='number'&&dw<=10;

@@ -211,38 +211,39 @@ window._gameFns.bleedinghearts = function BH(a){
 
   function render(){
     var h='';
-    // Score banner
-    h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:6px;background:rgba(26,31,23,0.5);border-radius:8px;margin:4px 0;">';
+    // Score banner — readability pass
+    h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:8px;background:linear-gradient(135deg,rgba(26,31,23,0.9),rgba(13,16,12,0.95));border:1.5px solid rgba(122,179,86,0.3);border-radius:12px;margin:6px 0;">';
     for(var p=0;p<4;p++){
       var you=p===S;
-      h+='<div style="text-align:center;padding:4px;background:rgba(13,16,12,0.4);border-radius:6px;'+(you?'border:1px solid rgba(122,179,86,0.4);':'')+'">';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:'+(you?'var(--sage)':'var(--muted)')+';">'+NAMES[p]+'</div>';
-      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:var(--gold);">'+scores[p]+'</div>';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:#c47a7a;">+'+roundPts[p]+'</div>';
+      var isCur=(p===currentPlayer&&(phase==='play'||phase==='passing'));
+      h+='<div style="text-align:center;padding:6px 4px;background:rgba(13,16,12,0.4);border-radius:6px;'+(isCur?'border:1.5px solid #c8a84b;box-shadow:0 0 8px rgba(200,168,75,0.3);':you?'border:1.5px solid rgba(122,179,86,0.4);':'')+'">';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+(you?'var(--sage)':'var(--cream)')+';letter-spacing:0.08em;">'+NAMES[p]+'</div>';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.5rem;color:var(--gold);line-height:1.1;">'+scores[p]+'</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:#c47a7a;margin-top:2px;">+'+roundPts[p]+' this hand</div>';
       h+='</div>';
     }
     h+='</div>';
-    if(heartsBroken)h+='<div style="text-align:center;font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:#c47a7a;letter-spacing:0.1em;padding:4px;">♥ HEARTS BROKEN</div>';
-    // North
-    h+='<div style="text-align:center;padding:4px;"><div style="font-size:0.5rem;color:var(--muted);margin-bottom:3px;">NORTH</div><div>';
+    if(heartsBroken)h+='<div style="text-align:center;font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:#c47a7a;letter-spacing:0.12em;padding:4px;background:rgba(196,122,122,0.08);border-radius:6px;margin:4px 0;">♥ HEARTS BROKEN</div>';
+    // North — bumped label, use bigger face-down cards
+    h+='<div style="text-align:center;padding:6px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:5px;">NORTH</div><div>';
     for(var n=0;n<hands[N].length;n++)h+=_cardHtml(null,true);
     h+='</div></div>';
     // West | Trick | East
-    h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center;padding:4px;min-height:120px;">';
-    h+='<div><div style="font-size:0.5rem;color:var(--muted);text-align:center;margin-bottom:3px;">WEST</div><div style="display:flex;flex-direction:column;gap:1px;align-items:center;">';
+    h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;">';
+    h+='<div style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">WEST</div><div style="display:flex;flex-direction:column;gap:2px;align-items:center;">';
     for(var w=0;w<hands[W].length;w++)h+=_cardHtml(null,true);
     h+='</div></div>';
     // Trick
-    h+='<div style="position:relative;min-height:120px;background:rgba(26,31,23,0.3);border-radius:8px;">';
-    var pos={};pos[S]='bottom:4px;left:50%;transform:translateX(-50%);';pos[W]='left:4px;top:50%;transform:translateY(-50%);';pos[N]='top:4px;left:50%;transform:translateX(-50%);';pos[E]='right:4px;top:50%;transform:translateY(-50%);';
+    h+='<div style="position:relative;min-height:160px;background:rgba(26,31,23,0.3);border-radius:8px;">';
+    var pos={};pos[S]='bottom:8px;left:50%;transform:translateX(-50%);';pos[W]='left:8px;top:50%;transform:translateY(-50%);';pos[N]='top:8px;left:50%;transform:translateX(-50%);';pos[E]='right:8px;top:50%;transform:translateY(-50%);';
     for(var pl=0;pl<4;pl++){
       var c=trickCards[pl];if(!c)continue;
       var col=c.suit==='hearts'||c.suit==='diamonds'?'#c47a7a':'#1a1f17';
-      h+='<div style="position:absolute;'+pos[pl]+'background:#F5F0E1;color:'+col+';border:2px solid '+(pl===S?'#7AB956':'#C47A7A')+';border-radius:6px;padding:3px 6px;font-weight:700;min-width:36px;text-align:center;">';
-      h+='<div style="font-size:0.7rem;">'+c.rank+'</div><div style="font-size:1rem;">'+SI[c.suit]+'</div></div>';
+      h+='<div style="position:absolute;'+pos[pl]+'background:#F5F0E1;color:'+col+';border:2px solid '+(pl===S?'#7AB956':'#C47A7A')+';border-radius:6px;padding:6px 9px;font-weight:700;min-width:38px;text-align:center;">';
+      h+='<div style="font-size:0.85rem;">'+c.rank+'</div><div style="font-size:1.1rem;">'+SI[c.suit]+'</div></div>';
     }
     h+='</div>';
-    h+='<div><div style="font-size:0.5rem;color:var(--muted);text-align:center;margin-bottom:3px;">EAST</div><div style="display:flex;flex-direction:column;gap:1px;align-items:center;">';
+    h+='<div style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">EAST</div><div style="display:flex;flex-direction:column;gap:2px;align-items:center;">';
     for(var e=0;e<hands[E].length;e++)h+=_cardHtml(null,true);
     h+='</div></div>';
     h+='</div>';
@@ -255,7 +256,7 @@ window._gameFns.bleedinghearts = function BH(a){
       h+='</div>';
     }
     // Player hand
-    h+='<div style="padding:4px;"><div style="font-size:0.5rem;color:var(--muted);text-align:center;margin-bottom:3px;">YOUR HAND</div>';
+    h+='<div style="padding:6px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:6px;">YOUR HAND</div>';
     h+='<div style="display:flex;gap:3px;justify-content:center;flex-wrap:wrap;">';
     var leadS=trick.length>0?trick[0].card.suit:'';
     var playable=[];

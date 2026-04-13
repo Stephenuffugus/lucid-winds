@@ -196,48 +196,50 @@ window._gameFns.gardenspades = function GardenSpades(a){
 
   function render(){
     var h='';
-    // Score banner
-    h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(26,31,23,0.5);border-radius:8px;margin:4px 0;font-size:0.7rem;">';
-    h+='<div style="text-align:center;"><div style="font-family:DM Mono,monospace;font-size:0.55rem;color:#7ab356;letter-spacing:1px;">YOUR TEAM</div>';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:#c8a84b;">'+teamScore[0]+'</div>';
-    h+='<div style="font-size:0.5rem;opacity:0.6;">Bid:'+teamBids[0]+' Bags:'+teamBags[0]+'</div></div>';
-    h+='<div style="opacity:0.3;font-family:Bebas Neue,sans-serif;">VS</div>';
-    h+='<div style="text-align:center;"><div style="font-family:DM Mono,monospace;font-size:0.55rem;color:#c47a7a;letter-spacing:1px;">OPPONENTS</div>';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:#c8a84b;">'+teamScore[1]+'</div>';
-    h+='<div style="font-size:0.5rem;opacity:0.6;">Bid:'+teamBids[1]+' Bags:'+teamBags[1]+'</div></div>';
+    // Score banner — readability pass to match Bower Garden
+    h+='<div style="background:linear-gradient(135deg,rgba(26,31,23,0.9),rgba(13,16,12,0.95));border:1.5px solid rgba(122,179,86,0.3);border-radius:12px;padding:10px 14px;margin:6px 0;font-family:Bebas Neue,sans-serif;">';
+    h+='<div style="display:flex;justify-content:space-around;align-items:baseline;">';
+    h+='<div style="text-align:center;"><div style="color:#7ab356;font-size:0.7rem;letter-spacing:0.08em;">YOUR TEAM</div><div style="color:#c8a84b;font-size:1.8rem;line-height:1;margin-top:2px;">'+teamScore[0]+'</div></div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);letter-spacing:0.1em;align-self:center;">to 250</div>';
+    h+='<div style="text-align:center;"><div style="color:#c47a7a;font-size:0.7rem;letter-spacing:0.08em;">OPPONENTS</div><div style="color:#c8a84b;font-size:1.8rem;line-height:1;margin-top:2px;">'+teamScore[1]+'</div></div>';
     h+='</div>';
-    if(spadesBroken)h+='<div style="text-align:center;font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:#c8a84b;letter-spacing:0.1em;padding:2px;">♠ SPADES BROKEN</div>';
-    // Bid banner
-    h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;font-size:0.55rem;">';
+    h+='<div style="display:flex;justify-content:space-around;margin-top:8px;padding-top:8px;border-top:1px solid rgba(122,179,86,0.2);font-family:DM Mono,monospace;font-size:0.8rem;letter-spacing:0.05em;">';
+    h+='<div style="color:var(--cream);">Bid <strong style="color:#7ab356;font-size:1.05rem;">'+teamBids[0]+'</strong> · Bags <strong style="color:#e8dcc8;font-size:1.05rem;">'+teamBags[0]+'</strong></div>';
+    h+='<div style="color:var(--cream);">Bid <strong style="color:#e8a0a0;font-size:1.05rem;">'+teamBids[1]+'</strong> · Bags <strong style="color:#e8dcc8;font-size:1.05rem;">'+teamBags[1]+'</strong></div>';
+    h+='</div>';
+    h+='</div>';
+    if(spadesBroken)h+='<div style="text-align:center;font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:#c8a84b;letter-spacing:0.12em;padding:4px;background:rgba(200,168,75,0.08);border-radius:6px;margin:4px 0;">♠ SPADES BROKEN</div>';
+    // Per-player bid grid — bumped from 0.55rem to readable
+    h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:4px;">';
     for(var p=0;p<4;p++){
       var b=bids[p];
-      h+='<div style="text-align:center;padding:3px;background:rgba(13,16,12,0.4);border-radius:4px;'+(p===S?'border:1px solid rgba(122,179,86,0.4);':'')+'">';
-      h+='<div style="color:#8a9178;">'+NAMES[p]+'</div>';
-      h+='<div style="color:#c8a84b;font-family:Bebas Neue,sans-serif;font-size:0.9rem;">'+(b<0?'—':b===0?'NIL':b)+' ('+tricksTaken[p]+')</div>';
+      h+='<div style="text-align:center;padding:5px;background:rgba(13,16,12,0.5);border-radius:6px;'+(p===currentPlayer&&phase!=='gameOver'?'border:1.5px solid #c8a84b;box-shadow:0 0 8px rgba(200,168,75,0.3);':p===S?'border:1px solid rgba(122,179,86,0.4);':'')+'">';
+      h+='<div style="color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.06em;">'+NAMES[p]+'</div>';
+      h+='<div style="color:#c8a84b;font-family:Bebas Neue,sans-serif;font-size:1.1rem;line-height:1.1;">'+(b<0?'—':b===0?'NIL':b)+' <span style="color:var(--muted);font-size:0.7rem;">('+tricksTaken[p]+')</span></div>';
       h+='</div>';
     }
     h+='</div>';
-    // North (partner)
-    h+='<div style="text-align:center;padding:4px;"><div style="font-size:0.5rem;color:#8a9178;margin-bottom:3px;">PARTNER</div><div>';
-    for(var n=0;n<hands[N].length;n++)h+='<div style="width:22px;height:32px;border-radius:3px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1px solid #2d4a1e;display:inline-block;margin:0 1px;"></div>';
+    // North (partner) — labels and cards bumped
+    h+='<div style="text-align:center;padding:6px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:5px;">PARTNER</div><div>';
+    for(var n=0;n<hands[N].length;n++)h+='<div style="width:30px;height:42px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;display:inline-block;margin:0 2px;"></div>';
     h+='</div></div>';
-    // West | Trick | East
-    h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center;padding:4px;min-height:120px;">';
-    h+='<div><div style="font-size:0.5rem;color:#8a9178;text-align:center;margin-bottom:3px;">WEST</div><div style="display:flex;flex-direction:column;gap:1px;align-items:center;">';
-    for(var w=0;w<hands[W].length;w++)h+='<div style="width:22px;height:32px;border-radius:3px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1px solid #2d4a1e;"></div>';
+    // West | Trick | East — bumped sizes
+    h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;">';
+    h+='<div style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">WEST</div><div style="display:flex;flex-direction:column;gap:3px;align-items:center;">';
+    for(var w=0;w<hands[W].length;w++)h+='<div style="width:30px;height:42px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;"></div>';
     h+='</div></div>';
     // Trick area
-    h+='<div style="position:relative;min-height:120px;background:rgba(26,31,23,0.3);border-radius:8px;">';
-    var pos={};pos[S]='bottom:4px;left:50%;transform:translateX(-50%);';pos[W]='left:4px;top:50%;transform:translateY(-50%);';pos[N]='top:4px;left:50%;transform:translateX(-50%);';pos[E]='right:4px;top:50%;transform:translateY(-50%);';
+    h+='<div style="position:relative;min-height:160px;background:rgba(26,31,23,0.3);border-radius:8px;">';
+    var pos={};pos[S]='bottom:8px;left:50%;transform:translateX(-50%);';pos[W]='left:8px;top:50%;transform:translateY(-50%);';pos[N]='top:8px;left:50%;transform:translateX(-50%);';pos[E]='right:8px;top:50%;transform:translateY(-50%);';
     for(var pl=0;pl<4;pl++){
       var c=trickCards[pl];if(!c)continue;
       var col=c.suit==='hearts'||c.suit==='diamonds'?'#c47a7a':'#1a1f17';
-      h+='<div style="position:absolute;'+pos[pl]+'background:#F5F0E1;color:'+col+';border:2px solid '+(pl===S?'#7ab356':'#c8a84b')+';border-radius:6px;padding:3px 6px;font-weight:700;min-width:36px;text-align:center;">';
-      h+='<div style="font-size:0.7rem;">'+c.rank+'</div><div style="font-size:1rem;">'+SI[c.suit]+'</div></div>';
+      h+='<div style="position:absolute;'+pos[pl]+'background:#F5F0E1;color:'+col+';border:2px solid '+(pl===S?'#7ab356':'#c8a84b')+';border-radius:6px;padding:6px 9px;font-weight:700;min-width:38px;text-align:center;">';
+      h+='<div style="font-size:0.85rem;">'+c.rank+'</div><div style="font-size:1.1rem;">'+SI[c.suit]+'</div></div>';
     }
     h+='</div>';
-    h+='<div><div style="font-size:0.5rem;color:#8a9178;text-align:center;margin-bottom:3px;">EAST</div><div style="display:flex;flex-direction:column;gap:1px;align-items:center;">';
-    for(var e=0;e<hands[E].length;e++)h+='<div style="width:22px;height:32px;border-radius:3px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1px solid #2d4a1e;"></div>';
+    h+='<div style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">EAST</div><div style="display:flex;flex-direction:column;gap:3px;align-items:center;">';
+    for(var e=0;e<hands[E].length;e++)h+='<div style="width:30px;height:42px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;"></div>';
     h+='</div></div>';
     h+='</div>';
     // Bid UI
