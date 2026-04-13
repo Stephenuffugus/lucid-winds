@@ -1,5 +1,6 @@
 'use strict';
 const { ACTIONS, ACTION_GATE } = require('./actions');
+const R = require('./xp-rewards');
 
 // Filter tickMix by available gates given current player level.
 function availableMix(mix, gates, lvl) {
@@ -18,6 +19,8 @@ function availableMix(mix, gates, lvl) {
 function runSession(player, archetype, gates, minutes) {
   player.sessionsPlayed++;
   player.wildDropsToday = 0;
+  // RETURN XP — fires on session start based on day gap
+  R.onSessionStart(player);
   for (let i = 0; i < minutes; i++) {
     const mix = availableMix(archetype.tickMix, gates, player.level);
     let action = player.rng.weighted(mix);

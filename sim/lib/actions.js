@@ -1,6 +1,7 @@
 'use strict';
 const { BLOOM_XP } = require('./xp');
 const { addXp, recordAction } = require('./player');
+const R = require('./xp-rewards');
 
 // Realistic per-minute activity grants. Each returns true if executed.
 // Gates: the session loop checks gate availability before selecting.
@@ -13,15 +14,20 @@ function playGame(p) {
     const beams = r.int(3, 5);
     p.sunbeams += beams;
     addXp(p, beams * 2, 'game');
+    R.onGameWin(p);
   } else {
-    addXp(p, 1, 'game_loss');  // small consolation
+    addXp(p, 1, 'game_loss');
+    R.onGameLoss(p);
   }
   recordAction(p, 'playGame');
+  R.onActionFirstTime(p, 'playGame');
+  // Pattern XP: variety within a session (proxy: random game id from 0-29)
+  R.onGamePlayed(p, 'g' + r.int(0, 29));
   p.eventLog.push({ m: p.minutesPlayed, t: 'playGame', won });
   return true;
 }
 
-// Mint plant: costs 30 sunbeams. Rarity weighted (common-heavy for new players).
+// Mint plant: costs 30 sunbeams. Rarity weighted.
 function mintPlant(p) {
   if (p.sunbeams < 30) return false;
   p.sunbeams -= 30;
@@ -40,44 +46,51 @@ function mintPlant(p) {
   addXp(p, xp, 'mint_' + rarity);
   recordAction(p, 'mintPlant');
   p.unlockUsed.mintPlant = 1;
+  R.onActionFirstTime(p, 'mintPlant');
+  // Reading XP — small chance the player inspects their new plant
+  if (r.chance(0.25)) R.onPostMintRead(p);
   p.eventLog.push({ m: p.minutesPlayed, t: 'mint', rarity, xp });
   return true;
 }
 
-// Drop a wild plant. 3/day cap. Removes from greenhouse.
+// Drop a wild plant. 3/day cap.
 function dropWild(p) {
   if (p.wildDropsToday >= 3) return false;
-  if (p.plants < 2) return false; // won't strip last plant
+  if (p.plants < 2) return false;
   p.plants--;
   p.wildDrops++;
   p.wildDropsToday++;
   if (p.firstWildDropMinute == null) p.firstWildDropMinute = p.minutesPlayed;
-  // water own wild plant grant (3 XP) + 1 Dew from the action
   p.dew += 1;
   addXp(p, 1, 'dew');
   addXp(p, 3, 'wild_water');
   recordAction(p, 'dropWild');
   p.unlockUsed.wildDrop = 1;
+  R.onActionFirstTime(p, 'dropWild');
+  R.onActionFirstOfKind(p, 'dropWild');
   p.eventLog.push({ m: p.minutesPlayed, t: 'dropWild' });
   return true;
 }
 
-// Collect feral seed: 2 Dew → 2 XP. ~60% success (challenge game).
+// Collect feral seed. ~60% success.
 function collectFeral(p) {
   if (!p.rng.chance(0.6)) {
     p.eventLog.push({ m: p.minutesPlayed, t: 'feralFail' });
-    return true; // time still spent
+    return true;
   }
   p.ferals++;
   p.dew += 2;
   addXp(p, 2, 'feral');
   recordAction(p, 'collectFeral');
   p.unlockUsed.feralCollect = 1;
+  R.onActionFirstTime(p, 'collectFeral');
+  R.onActionFirstOfKind(p, 'collectFeral');
+  R.onFeralCollected(p, 'sp' + p.rng.int(0, 9)); // 10 species pool
   p.eventLog.push({ m: p.minutesPlayed, t: 'feral' });
   return true;
 }
 
-// Tend stranger plant: 10 XP + 5 XP water + dew
+// Tend stranger plant.
 function tendStranger(p) {
   addXp(p, 10, 'tend');
   addXp(p, 5, 'tend_water');
@@ -86,29 +99,33 @@ function tendStranger(p) {
   p.strangersTended++;
   recordAction(p, 'tendStranger');
   p.unlockUsed.strangerTend = 1;
+  R.onActionFirstTime(p, 'tendStranger');
+  R.onActionFirstOfKind(p, 'tendStranger');
   p.eventLog.push({ m: p.minutesPlayed, t: 'tend' });
   return true;
 }
 
-// Breed two plants. 5 XP cross-pollinate. Needs 2+ plants.
+// Breed two plants.
 function breed(p) {
   if (p.plants < 2) return false;
   addXp(p, 5, 'breed');
   p.breedsDone++;
   recordAction(p, 'breed');
   p.unlockUsed.greenhouseBreed = 1;
+  R.onActionFirstTime(p, 'breed');
+  R.onActionFirstOfKind(p, 'breed');
   p.eventLog.push({ m: p.minutesPlayed, t: 'breed' });
   return true;
 }
 
 function idle(p) {
   recordAction(p, 'idle');
+  R.onIdleTick(p);
   return true;
 }
 
 const ACTIONS = { playGame, mintPlant, dropWild, collectFeral, tendStranger, breed, idle };
 
-// Map action -> required gate key (or null)
 const ACTION_GATE = {
   playGame:      null,
   mintPlant:     'mintPlant',
