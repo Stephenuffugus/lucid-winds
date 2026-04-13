@@ -50443,6 +50443,9 @@ function _bosClassContent() {
     if (picked) {
       h += '<div style="margin:0.3rem 0;"><div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);"><span>XP: ' + xp + '</span><span>Next: ' + nextXP + '</span></div>';
       h += '<div style="height:4px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;margin-top:2px;"><div style="height:100%;width:' + Math.min(100, pct) + '%;background:linear-gradient(90deg,rgba(122,179,86,0.6),rgba(200,168,75,0.8));border-radius:2px;"></div></div></div>';
+      if (lvl >= 3) {
+        h += '<button onclick="window._lwRespec()" style="width:100%;margin-top:0.5rem;min-height:44px;padding:8px;font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(74,124,53,0.12));border:1.5px solid rgba(200,168,75,0.45);color:var(--gold);border-radius:8px;cursor:pointer;">\ud83c\udf3f WALK A NEW PATH</button>';
+      }
     }
     // Abilities: only shown for the currently-picked class (or to the picked-class self at Master)
     if (picked) {
@@ -51274,6 +51277,21 @@ window._lwRefreshAvatar=function(){
   }
 };
 setTimeout(function(){try{window._lwRefreshAvatar();}catch(e){}},500);
+// Respec — available once current class is at Master (L3).
+// Wipes the class selection but PRESERVES accumulated class XP, so if
+// the player ever walks back the same path, they return at Master.
+window._lwRespec=function(){
+  var cur=_lwGetClass();if(!cur)return;
+  var lvl=_lwGetClassLevel(cur);if(lvl<3){if(window._toast)_toast('Respec unlocks at Master rank.');return;}
+  if(!confirm('Walk a new path?\n\nYou keep your ' + (LW_CLASSES[cur]?LW_CLASSES[cur].name:'current') + ' progress (Master remains). You\u2019ll be able to choose a different class. Companion synergy will follow whichever class you\u2019re walking.'))return;
+  try{localStorage.removeItem('lw_class');}catch(e){}
+  if(window._toast)_toast('\ud83c\udf3f The path is yours to choose again.');
+  try{if(window._haptic)window._haptic();}catch(e){}
+  try{if(window._lwRefreshAvatar)window._lwRefreshAvatar();}catch(e){}
+  try{if(window._updateCompCount)window._updateCompCount();}catch(e){}
+  try{if(window._bosSetTab)window._bosSetTab('class');}catch(e){}
+  try{if(typeof gtag!=='undefined')gtag('event','class_respec',{from:cur});}catch(e){}
+};
 // Canonical class picker — confirmation, haptic, toast, sync
 window._lwPickClass=function(cid,nm,icon){
   if(!cid||!LW_CLASSES[cid])return;
