@@ -5675,6 +5675,7 @@ window.onerror=function(msg,url,line,col,err){
               alert('Cloud has '+cloudGH.length+' plants. Restoring...');
               if(cloudGH.length>0){
                 localStorage.setItem('sws_greenhouse',JSON.stringify(cloudGH));
+                if(window._invalidateGHCache)window._invalidateGHCache();
                 if(window.renderGreenhouse)renderGreenhouse();
                 alert('Restored '+cloudGH.length+' plants from cloud!');
               }else{alert('Cloud vault is empty too.');}
@@ -27192,9 +27193,15 @@ document.addEventListener('keydown', function(e) {
         (function(idx, p) {
           el.onclick = function() { openCarousel(loadGreenhouse(), idx, 'greenhouse'); };
         })(realIdx, plant);
-        // Card cache — skip expensive SVG/trait/name computation if unchanged
-        // v2 suffix busts old 65px SVG cache after grid resize
-        var _cacheKey = plant.hash + '|' + (plant.breedCount || 0) + '|' + (plant.mycelialCrown ? 1 : 0) + '|v2';
+        // Card cache — skip expensive SVG/trait/name computation if unchanged.
+        // Key covers every plant field that the rendered HTML interpolates:
+        //   hash (everything), breedCount (breed text), mycelialCrown (crown
+        //   render + Terra Grade), revealed (rarity symbol), realIdx (slot #),
+        //   age tier (EA bonus is 0/+1/+2/+3 by Day 0-6/7-29/30-89/90+).
+        // v3 suffix busts the older v2 cache that missed age + revealed + idx.
+        var _ghAgeDays = plant.born ? Math.floor((Date.now() - plant.born) / 86400000) : 0;
+        var _ghAgeTier = _ghAgeDays >= 90 ? 3 : _ghAgeDays >= 30 ? 2 : _ghAgeDays >= 7 ? 1 : 0;
+        var _cacheKey = plant.hash + '|' + (plant.breedCount || 0) + '|' + (plant.mycelialCrown ? 1 : 0) + '|' + (plant.revealed ? 1 : 0) + '|' + realIdx + '|' + _ghAgeTier + '|v3';
         if (_ghCardCache[_cacheKey]) {
           el.innerHTML = _ghCardCache[_cacheKey];
           (function(idx) { el.onclick = function() { openCarousel(loadGreenhouse(), idx, 'greenhouse'); }; })(realIdx);
@@ -34155,7 +34162,7 @@ function _pruneWild(){
   return fresh;
 }
 function _getGH(){try{return JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){return[];}}
-function _saveGH(a){localStorage.setItem('sws_greenhouse',JSON.stringify(a));}
+function _saveGH(a){if(window.saveGreenhouse)window.saveGreenhouse(a);else localStorage.setItem('sws_greenhouse',JSON.stringify(a));}
 function _zoneKey(a,b){return(Math.round(a/ZONE_SIZE)*ZONE_SIZE).toFixed(4)+','+(Math.round(b/ZONE_SIZE)*ZONE_SIZE).toFixed(4);}
 function _dist(a,b,c,d){var x=(c-a)*Math.PI/180,y=(d-b)*Math.PI/180;var z=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(y/2)*Math.sin(y/2);return 6371000*2*Math.atan2(Math.sqrt(z),Math.sqrt(1-z));}
 
@@ -47478,7 +47485,8 @@ function returnToBase(){
     gh.push({hash:p.hash,date:new Date().toISOString(),born:Date.now(),origin:p.origin||'wild',rare:false,traits:null,breedCount:0,generation:1});
     delivered++;
   }
-  localStorage.setItem('sws_greenhouse',JSON.stringify(gh));
+  if(window.saveGreenhouse)window.saveGreenhouse(gh);
+  else localStorage.setItem('sws_greenhouse',JSON.stringify(gh));
   st.plants=[];
 
   // Deliver seeds to nursery
@@ -47560,7 +47568,8 @@ function checkMidnightDeliver(){
     gh.push({hash:p.hash,date:new Date().toISOString(),born:Date.now(),origin:p.origin||'wild',rare:false,traits:null,breedCount:0,generation:1});
     delivered++;
   }
-  localStorage.setItem('sws_greenhouse',JSON.stringify(gh));
+  if(window.saveGreenhouse)window.saveGreenhouse(gh);
+  else localStorage.setItem('sws_greenhouse',JSON.stringify(gh));
   var seedCount=st.seeds.length;
   for(var j=0;j<st.seeds.length;j++){
     window.dispatchEvent(new CustomEvent('bp-seed-to-nursery',{detail:st.seeds[j]}));
