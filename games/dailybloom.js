@@ -255,14 +255,27 @@ window._gameFns.dailybloom=function DB(a){
     h+='<div style="font-size:.7rem;opacity:.5;margin-top:8px;">Come back tomorrow to see your garden grow.</div>';
     pan.innerHTML=h;
     sm('Daily Bloom: '+bloom);
+    // Daily gate: only the first run per day mints. Replays still play
+    // (good for self-tracking) but award nothing — prevents spam farming.
+    var _today=new Date().toISOString().split('T')[0];
+    var _hist=[];try{_hist=JSON.parse(localStorage.getItem('dailybloom_history')||'[]');}catch(e){}
+    var _alreadyToday=_hist.some(function(h){return h.date===_today&&!h.replay;});
+    if(_alreadyToday){
+      try{
+        _hist.push({date:_today,score:bloom,scores:scores.slice(),replay:true});
+        if(_hist.length>90)_hist=_hist.slice(-90);
+        localStorage.setItem('dailybloom_history',JSON.stringify(_hist));
+      }catch(e){}
+      pan.insertAdjacentHTML('beforeend','<div style="margin-top:10px;font-family:DM Mono,monospace;font-size:0.55rem;color:rgba(200,168,75,0.75);letter-spacing:0.08em;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.25);border-radius:6px;padding:6px 10px;display:inline-block;">REPLAY · NO REWARD · COME BACK TOMORROW</div>');
+      return;
+    }
     _e('milestone');
     if(bloom>=60){_e('game_win');try{_playWin();}catch(e){}}
     _sr('dailybloom',{w:bloom>=60,s:bloom});
     try{
-      var hist=JSON.parse(localStorage.getItem('dailybloom_history')||'[]');
-      hist.push({date:new Date().toISOString().split('T')[0],score:bloom,scores:scores.slice()});
-      if(hist.length>90)hist=hist.slice(-90);
-      localStorage.setItem('dailybloom_history',JSON.stringify(hist));
+      _hist.push({date:_today,score:bloom,scores:scores.slice()});
+      if(_hist.length>90)_hist=_hist.slice(-90);
+      localStorage.setItem('dailybloom_history',JSON.stringify(_hist));
     }catch(e){}
   }
 
