@@ -4,7 +4,13 @@
 var G=window._G;
 var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.sh,_sr=G.sr,_st=G.st,_xt=G.xt;
 
-function GC4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0;
+// Inject drop keyframes once
+if(!document.getElementById('c4-drop-style')){
+  var _c4s=document.createElement('style');_c4s.id='c4-drop-style';
+  _c4s.textContent='@keyframes c4drop{0%{transform:translateY(-420%)}60%{transform:translateY(8%)}75%{transform:translateY(-4%)}100%{transform:translateY(0)}}.c4-dropping{animation:c4drop .42s cubic-bezier(.5,.1,.6,1) both}';
+  document.head.appendChild(_c4s);
+}
+function GC4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0,_lastDrop=-1;
   var IMG_P='assets/games/c4/zinnia.png',IMG_A='assets/games/c4/calendula.png';
   ms(a,'Moves: <strong id="C4m">0</strong>');mm(a);
   // Pure CSS board — no image overlay alignment needed
@@ -14,7 +20,7 @@ function GC4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0;
   var obDiv=document.createElement('div');obDiv.id='C4ob';obDiv.style.cssText='text-align:center;min-height:40px;padding:4px 0';a.appendChild(obDiv);
   mc(a).innerHTML='<select class="gsl" id="C4d"><option value="1">Seedling</option><option value="2" selected>Sapling</option><option value="3">Old Growth</option></select><button class="gb" onclick="_C4N()">🔄 New</button>';
   function init(){bd=[];for(var i=0;i<ROWS*COLS;i++)bd.push(0);turn=1;over=false;mv=0;var _cm=document.getElementById('C4m');if(_cm)_cm.textContent='0'}
-  function drop(col){for(var r=ROWS-1;r>=0;r--){if(bd[r*COLS+col]===0){bd[r*COLS+col]=turn;return r;}}}
+  function drop(col){for(var r=ROWS-1;r>=0;r--){if(bd[r*COLS+col]===0){bd[r*COLS+col]=turn;_lastDrop=r*COLS+col;return r;}}}
   function check(p){
     for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){
       if(c+3<COLS&&bd[r*COLS+c]===p&&bd[r*COLS+c+1]===p&&bd[r*COLS+c+2]===p&&bd[r*COLS+c+3]===p)return true;
@@ -69,7 +75,10 @@ function GC4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0;
       if(v===1){d.style.background='url('+IMG_P+') center/cover';d.style.boxShadow='inset 0 0 4px rgba(0,0,0,.3),0 2px 6px rgba(0,0,0,.25)';}
       else if(v===2){d.style.background='url('+IMG_A+') center/cover';d.style.boxShadow='inset 0 0 4px rgba(0,0,0,.3),0 2px 6px rgba(0,0,0,.25)';}
       else{d.style.background='rgba(10,8,4,.7)';d.style.boxShadow='inset 0 2px 6px rgba(0,0,0,.6)';}
+      if(i===_lastDrop){d.classList.remove('c4-dropping');void d.offsetWidth;d.classList.add('c4-dropping');}
+      else{d.classList.remove('c4-dropping');}
     }
+    _lastDrop=-1;
     var ob=document.getElementById('C4ob');
     if(ob){
       if(!over){ob.innerHTML='';}
