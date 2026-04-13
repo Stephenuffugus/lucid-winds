@@ -24,6 +24,7 @@ window._gameFns.rhythmvine=function RV(a){
   var notes=[];                 // active note objects
   var nextNoteIdx=0;
   var rafId=0;
+  var endTimerId=0;             // tracked so PLAY-AGAIN doesn't stack timers
   var score=0,combo=0,maxCombo=0,hits={p:0,g:0,o:0,m:0};
   var lastResult=null;
 
@@ -161,8 +162,17 @@ window._gameFns.rhythmvine=function RV(a){
   // ─── Main loop ────────────────────────────────────────────
   function startRun(){
     initAudio().then(function(){
+      // Tear down any leftover state from a previous song before starting
+      // fresh — without this, PLAY AGAIN leaks the previous round's note
+      // DOM elements and also stacks a second endRun timer.
+      if(endTimerId){clearTimeout(endTimerId);endTimerId=0;}
+      for(var i=notes.length-1;i>=0;i--){
+        var oldN=notes[i];
+        if(oldN.el&&oldN.el.parentNode)oldN.el.parentNode.removeChild(oldN.el);
+      }
+      notes.length=0;
       chart=buildSyntheticChart();
-      notes.length=0;nextNoteIdx=0;score=0;combo=0;maxCombo=0;
+      nextNoteIdx=0;score=0;combo=0;maxCombo=0;
       hits={p:0,g:0,o:0,m:0};
       songStartedAt=audioCtx.currentTime+0.6;
       running=true;
@@ -170,7 +180,7 @@ window._gameFns.rhythmvine=function RV(a){
       updateHUD();
       rafId=requestAnimationFrame(loop);
       var totalSec=chart.notes.length?chart.notes[chart.notes.length-1][0]+2:60;
-      setTimeout(endRun,(totalSec+0.5)*1000);
+      endTimerId=setTimeout(endRun,(totalSec+0.5)*1000);
     },function(){sm('Audio blocked — tap screen to unlock');});
   }
 
@@ -225,8 +235,10 @@ window._gameFns.rhythmvine=function RV(a){
       if(!n.hit){
         var y=hitY-(dt/(NOTE_FALL_MS/1000))*hitY;
         n.el.style.transform='translateY('+y.toFixed(1)+'px)';
-        if(-dt>HIT_OK+0.04){
-          // missed
+        if(-dt>HIT_OK){
+          // Auto-miss the moment the hit window closes. Previous threshold
+          // (HIT_OK + 0.04) left a 40ms dead zone where the note was visible
+          // but not hittable — players felt it as an unfair miss.
           n.el.style.opacity='0';n.hit=true;n.result='m';
           hits.m++;combo=0;updateHUD();judge('MISS','#c47a7a');
           setTimeout(cleanupDone,260);
@@ -307,6 +319,14 @@ window._gameFns.rhythmvine=function RV(a){
   // ─── Public controls ──────────────────────────────────────
   window._RVN=function(){
     if(running){running=false;cancelAnimationFrame(rafId);}
+    if(endTimerId){clearTimeout(endTimerId);endTimerId=0;}
+    // Wipe any visible notes from the previous run so the start overlay
+    // doesn't render on top of stale tiles.
+    for(var i=notes.length-1;i>=0;i--){
+      var oldN=notes[i];
+      if(oldN.el&&oldN.el.parentNode)oldN.el.parentNode.removeChild(oldN.el);
+    }
+    notes.length=0;
     startOv.style.display='';
     startOv.innerHTML='<div class="t">Rhythm Vine</div><div class="s">Tap each lane as the note crosses the gold line. Perfect hits score highest.</div><button id="RVgo">▶ PLAY</button>';
     document.getElementById('RVgo').addEventListener('click',function(){startRun();});
@@ -330,6 +350,7 @@ window._gameFns.rhythmvine=function RV(a){
     if(!document.body.contains(stage)){
       document.removeEventListener('keydown',keyHandler);
       if(rafId)cancelAnimationFrame(rafId);
+      if(endTimerId){clearTimeout(endTimerId);endTimerId=0;}
       running=false;
       _obs.disconnect();
     }
