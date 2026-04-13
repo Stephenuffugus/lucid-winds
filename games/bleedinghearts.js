@@ -20,12 +20,21 @@ window._gameFns.bleedinghearts = function BH(a){
   var leader=0,currentPlayer=0,phase='',heartsBroken=false;
   var passDir=0,passSelection=[],roundNum=0,trickNum=0;
 
+  // Style-aware pip lookup — Garden swaps ♠♥♦♣ for 🍄🌸🐝🐦
+  function _pip(suitName){return (window._cdPipFor)?window._cdPipFor(suitName):SI[suitName];}
   ms(a,'♥ Round <strong id="BHr">1</strong>');
   mm(a);
   var pan=document.createElement('div');pan.id='BHpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:6px;user-select:none;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb-new" onclick="_BHN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  var _bhStyleLbl=(window._cdStyle&&window._cdStyle()==='classic')?'🃏 Classic':'🃏 Garden';
+  mc(a).innerHTML='<button class="gb-new" onclick="_BHN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="BHstyle" onclick="_BHToggleStyle()" style="font-size:0.7rem;">'+_bhStyleLbl+'</button>';
+  window._BHToggleStyle=function(){
+    var nxt=window._cdToggleStyle();
+    var b=document.getElementById('BHstyle');
+    if(b)b.textContent=nxt==='classic'?'🃏 Classic':'🃏 Garden';
+    render();
+  };
 
   function makeDeck(){var d=[];for(var s=0;s<4;s++)for(var r=0;r<13;r++)d.push({rank:RANKS[r],suit:SUITS[s]});return d;}
   function shuf(ar){for(var i=ar.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ar[i];ar[i]=ar[j];ar[j]=t;}return ar;}
@@ -206,7 +215,7 @@ window._gameFns.bleedinghearts = function BH(a){
     if(faceDown){return '<div style="width:28px;height:40px;border-radius:4px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;display:inline-block;"></div>';}
     var col=c.suit==='hearts'||c.suit==='diamonds'?'#c47a7a':'#1a1f17';
     var bc=extraClass==='sel'?'var(--gold)':extraClass==='play'?'#7AB956':'#C4B998';
-    return '<div style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:42px;height:58px;border-radius:6px;background:#F5F0E1;border:2px solid '+bc+';color:'+col+';font-weight:700;position:relative;'+(extraClass==='play'?'cursor:pointer;':'')+(extraClass==='sel'?'transform:translateY(-6px);box-shadow:0 4px 12px rgba(200,168,75,0.4);cursor:pointer;':'')+'"><div style="font-size:0.75rem;position:absolute;top:2px;left:4px;">'+c.rank+'</div><div style="font-size:1.2rem;">'+SI[c.suit]+'</div></div>';
+    return '<div style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:42px;height:58px;border-radius:6px;background:#F5F0E1;border:2px solid '+bc+';color:'+col+';font-weight:700;position:relative;'+(extraClass==='play'?'cursor:pointer;':'')+(extraClass==='sel'?'transform:translateY(-6px);box-shadow:0 4px 12px rgba(200,168,75,0.4);cursor:pointer;':'')+'"><div style="font-size:0.75rem;position:absolute;top:2px;left:4px;">'+c.rank+'</div><div style="font-size:1.2rem;">'+_pip(c.suit)+'</div></div>';
   }
 
   function render(){
@@ -240,7 +249,7 @@ window._gameFns.bleedinghearts = function BH(a){
       var c=trickCards[pl];if(!c)continue;
       var col=c.suit==='hearts'||c.suit==='diamonds'?'#c47a7a':'#1a1f17';
       h+='<div style="position:absolute;'+pos[pl]+'background:#F5F0E1;color:'+col+';border:2px solid '+(pl===S?'#7AB956':'#C47A7A')+';border-radius:6px;padding:6px 9px;font-weight:700;min-width:38px;text-align:center;">';
-      h+='<div style="font-size:0.85rem;">'+c.rank+'</div><div style="font-size:1.1rem;">'+SI[c.suit]+'</div></div>';
+      h+='<div style="font-size:0.85rem;">'+c.rank+'</div><div style="font-size:1.1rem;">'+_pip(c.suit)+'</div></div>';
     }
     h+='</div>';
     h+='<div style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">EAST'+(currentPlayer===E?' <span style="color:var(--gold);">●</span>':'')+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';

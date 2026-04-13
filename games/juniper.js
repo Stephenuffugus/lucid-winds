@@ -24,7 +24,15 @@ window._gameFns.juniper = function Juniper(a){
   var pan=document.createElement('div');pan.id='JUpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:6px;user-select:none;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb-new" onclick="_JUN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  function _pip(suitName){return (window._cdPipFor)?window._cdPipFor(suitName):SI[suitName];}
+  var _juStyleLbl=(window._cdStyle&&window._cdStyle()==='classic')?'🃏 Classic':'🃏 Garden';
+  mc(a).innerHTML='<button class="gb-new" onclick="_JUN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="JUstyle" onclick="_JUToggleStyle()" style="font-size:0.7rem;">'+_juStyleLbl+'</button>';
+  window._JUToggleStyle=function(){
+    var nxt=window._cdToggleStyle();
+    var b=document.getElementById('JUstyle');
+    if(b)b.textContent=nxt==='classic'?'🃏 Classic':'🃏 Garden';
+    if(typeof render==='function')render();
+  };
 
   function makeDeck(){var d=[];for(var s=0;s<4;s++)for(var r=0;r<13;r++)d.push({rank:RANKS[r],suit:SUITS[s]});return d;}
   function shuffle(ar){for(var i=ar.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ar[i];ar[i]=ar[j];ar[j]=t;}return ar;}
@@ -212,7 +220,7 @@ window._gameFns.juniper = function Juniper(a){
     if(discardPile.length>0){
       var top=discardPile[discardPile.length-1];
       var col=top.suit==='hearts'||top.suit==='diamonds'?'#c47a7a':'#1a1f17';
-      h+='<div onclick="_JUDD()" style="width:64px;height:90px;border-radius:8px;background:#E8DCC8;border:2px solid #b8a878;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:'+col+';font-weight:700;"><div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;">'+top.rank+'</div><div style="font-size:1.3rem;">'+SI[top.suit]+'</div></div>';
+      h+='<div onclick="_JUDD()" style="width:64px;height:90px;border-radius:8px;background:#E8DCC8;border:2px solid #b8a878;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:'+col+';font-weight:700;"><div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;">'+top.rank+'</div><div style="font-size:1.3rem;">'+_pip(top.suit)+'</div></div>';
     }else{
       h+='<div style="width:64px;height:90px;border-radius:8px;background:rgba(26,36,22,0.3);border:2px dashed rgba(122,179,86,0.3);display:flex;align-items:center;justify-content:center;font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);">empty</div>';
     }
@@ -240,7 +248,7 @@ window._gameFns.juniper = function Juniper(a){
       var col=c.suit==='hearts'||c.suit==='diamonds'?'#c47a7a':'#1a1f17';
       var bg=inMeld?'#d8e0c8':'#E8DCC8';
       var bc=inMeld?'#7ab356':'#b8a878';
-      h+='<div onclick="_JUCC('+k+')" style="width:40px;height:56px;border-radius:6px;background:'+bg+';border:2px solid '+bc+';display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:'+col+';font-weight:700;"><div style="font-family:Bebas Neue,sans-serif;font-size:1rem;line-height:1;">'+c.rank+'</div><div style="font-size:1rem;">'+SI[c.suit]+'</div></div>';
+      h+='<div onclick="_JUCC('+k+')" style="width:40px;height:56px;border-radius:6px;background:'+bg+';border:2px solid '+bc+';display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:'+col+';font-weight:700;"><div style="font-family:Bebas Neue,sans-serif;font-size:1rem;line-height:1;">'+c.rank+'</div><div style="font-size:1rem;">'+_pip(c.suit)+'</div></div>';
     }
     h+='</div>';
     pan.innerHTML=h;

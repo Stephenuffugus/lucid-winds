@@ -29,7 +29,15 @@ window._gameFns.gardenspades = function GardenSpades(a){
   var pan=document.createElement('div');pan.id='GSpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:6px;user-select:none;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb-new" onclick="_GSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  function _pip(suitName){return (window._cdPipFor)?window._cdPipFor(suitName):SI[suitName];}
+  var _gsStyleLbl=(window._cdStyle&&window._cdStyle()==='classic')?'🃏 Classic':'🃏 Garden';
+  mc(a).innerHTML='<button class="gb-new" onclick="_GSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="GSstyle" onclick="_GSToggleStyle()" style="font-size:0.7rem;">'+_gsStyleLbl+'</button>';
+  window._GSToggleStyle=function(){
+    var nxt=window._cdToggleStyle();
+    var b=document.getElementById('GSstyle');
+    if(b)b.textContent=nxt==='classic'?'🃏 Classic':'🃏 Garden';
+    if(typeof render==='function')render();
+  };
 
   function makeDeck(){var d=[];for(var s=0;s<4;s++)for(var r=0;r<13;r++)d.push({rank:RANKS[r],suit:SUITS[s]});return d;}
   function shuffle(ar){for(var i=ar.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ar[i];ar[i]=ar[j];ar[j]=t;}return ar;}
@@ -235,7 +243,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
       var c=trickCards[pl];if(!c)continue;
       var col=c.suit==='hearts'||c.suit==='diamonds'?'#c47a7a':'#1a1f17';
       h+='<div style="position:absolute;'+pos[pl]+'background:#F5F0E1;color:'+col+';border:2px solid '+(pl===S?'#7ab356':'#c8a84b')+';border-radius:6px;padding:6px 9px;font-weight:700;min-width:38px;text-align:center;">';
-      h+='<div style="font-size:0.85rem;">'+c.rank+'</div><div style="font-size:1.1rem;">'+SI[c.suit]+'</div></div>';
+      h+='<div style="font-size:0.85rem;">'+c.rank+'</div><div style="font-size:1.1rem;">'+_pip(c.suit)+'</div></div>';
     }
     h+='</div>';
     h+='<div style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">EAST</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
@@ -267,7 +275,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
       var sty='display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:clamp(48px,12vw,64px);height:clamp(68px,17vw,90px);border-radius:6px;background:#F5F0E1;border:2px solid '+bc+';box-shadow:inset 0 0 0 1px rgba(255,255,255,0.55),0 2px 5px rgba(0,0,0,0.35);color:'+col+';font-weight:700;position:relative;margin:2px 1px;';
       if(canP)sty+='cursor:pointer;';
       if(!canP&&phase==='play')sty+='opacity:0.5;';
-      h+='<div style="'+sty+'" onclick="_GSCC(\''+cc.rank+'\',\''+cc.suit+'\')"><div style="font-size:0.8rem;position:absolute;top:3px;left:5px;">'+cc.rank+'</div><div style="font-size:1.35rem;">'+SI[cc.suit]+'</div></div>';
+      h+='<div style="'+sty+'" onclick="_GSCC(\''+cc.rank+'\',\''+cc.suit+'\')"><div style="font-size:0.8rem;position:absolute;top:3px;left:5px;">'+cc.rank+'</div><div style="font-size:1.35rem;">'+_pip(cc.suit)+'</div></div>';
     }
     h+='</div></div>';
     pan.innerHTML=h;

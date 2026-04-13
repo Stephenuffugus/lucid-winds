@@ -55,6 +55,15 @@ function _cdSuit(s){
   // Style-aware: returns the appropriate symbol set
   return _cdStyle()==='classic'?_CL_SYM[s]:_SUIT_SYM[s];
 }
+// Trick games (Hearts/Bower/Cribbage/Spades/Juniper) use string suit names.
+// Map name → numeric idx → style-aware symbol.
+//   spades=0  hearts=1  diamonds=2  clubs=3   (_cdIsRed checks 1,2 = red)
+var _SUIT_NAME_TO_IDX={spades:0,hearts:1,diamonds:2,clubs:3};
+function _cdPipFor(suitName){
+  var idx=_SUIT_NAME_TO_IDX[suitName];
+  if(idx===undefined)return '?';
+  return _cdSuit(idx);
+}
 function _cdIsRed(s){return s===1||s===2}
 
 function _cdBackStyle(el){
@@ -152,6 +161,7 @@ window._cdArt=_cdArt;
 window._cdStyle=_cdStyle;
 window._cdSetStyle=_cdSetStyle;
 window._cdToggleStyle=_cdToggleStyle;
+window._cdPipFor=_cdPipFor;
 window._SUIT_SYM=_SUIT_SYM;
 window._SUIT_CLR=_SUIT_CLR;
 window._SUIT_GRP=_SUIT_GRP;

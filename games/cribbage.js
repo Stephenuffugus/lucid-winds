@@ -18,10 +18,19 @@ window._gameFns.cribbage = function CRIB(a){
   pan.id='CBpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:6px;user-select:none';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb-new" onclick="_CBN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  // Style-aware pip — Garden swaps ♠♥♦♣ for 🍄🌸🐝🐦
+  function _pip(idx){return (window._cdSuit)?window._cdSuit(idx):SUITS[idx];}
+  var _cbStyleLbl=(window._cdStyle&&window._cdStyle()==='classic')?'🃏 Classic':'🃏 Garden';
+  mc(a).innerHTML='<button class="gb-new" onclick="_CBN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="CBstyle" onclick="_CBToggleStyle()" style="font-size:0.7rem;">'+_cbStyleLbl+'</button>';
+  window._CBToggleStyle=function(){
+    var nxt=window._cdToggleStyle();
+    var b=document.getElementById('CBstyle');
+    if(b)b.textContent=nxt==='classic'?'🃏 Classic':'🃏 Garden';
+    if(typeof render==='function')render();
+  };
 
   function makeDeck(){var d=[];for(var s=0;s<4;s++)for(var r=0;r<13;r++)d.push({rank:r,suit:s,val:VALS[r]});return sh(d);}
-  function cstr(c){return RANKS[c.rank]+SUITS[c.suit];}
+  function cstr(c){return RANKS[c.rank]+_pip(c.suit);}
   function isRed(c){return c.suit===1||c.suit===2;}
 
   function newGame(){
@@ -353,7 +362,7 @@ window._gameFns.cribbage = function CRIB(a){
     var onclick='';
     if(G.phase==='discard'&&!played&&idx!==undefined)onclick='_CBTS('+idx+')';
     else if(G.phase==='peg'&&canPlay&&idx!==undefined)onclick='_CBPC('+idx+')';
-    return '<div style="'+style+'" '+(onclick?'onclick="'+onclick+'"':'')+'><span style="font-size:13px;position:absolute;top:2px;left:4px;">'+RANKS[c.rank]+'</span><span style="font-size:18px;">'+SUITS[c.suit]+'</span></div>';
+    return '<div style="'+style+'" '+(onclick?'onclick="'+onclick+'"':'')+'><span style="font-size:13px;position:absolute;top:2px;left:4px;">'+RANKS[c.rank]+'</span><span style="font-size:18px;">'+_pip(c.suit)+'</span></div>';
   }
 
   window._CBN=newGame;

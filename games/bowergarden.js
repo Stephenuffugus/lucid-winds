@@ -53,7 +53,15 @@ window._gameFns.bowergarden = function BG(a){
   // Wider playfield — bumped from 420 to 540 so cards have room to breathe.
   pan.style.cssText='max-width:540px;margin:0 auto;padding:6px;user-select:none;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb-new" onclick="_BGN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  function _pip(suitName){return (window._cdPipFor)?window._cdPipFor(suitName):SUIT_ICONS[suitName];}
+  var _bgStyleLbl=(window._cdStyle&&window._cdStyle()==='classic')?'🃏 Classic':'🃏 Garden';
+  mc(a).innerHTML='<button class="gb-new" onclick="_BGN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="BGstyle" onclick="_BGToggleStyle()" style="font-size:0.7rem;">'+_bgStyleLbl+'</button>';
+  window._BGToggleStyle=function(){
+    var nxt=window._cdToggleStyle();
+    var b=document.getElementById('BGstyle');
+    if(b)b.textContent=nxt==='classic'?'🃏 Classic':'🃏 Garden';
+    if(typeof render==='function')render();
+  };
 
   // Track the most-recently-played card so we can apply the slide
   // animation only to that one when render() repaints the trick.
@@ -225,7 +233,7 @@ window._gameFns.bowergarden = function BG(a){
   function orderUp(p,goAlone){
     trumpSuit=upcard.suit;callingTeam=p%2;
     if(goAlone){loner=true;sittingOut=(p+2)%4;}
-    sm(PLAYER_NAMES[p]+' calls '+SUIT_ICONS[trumpSuit]+' Strong'+(goAlone?' (alone)':''));
+    sm(PLAYER_NAMES[p]+' calls '+_pip(trumpSuit)+' Strong'+(goAlone?' (alone)':''));
     var dh=hands[dealer];dh.push(upcard);
     dh.sort(function(x,y){return cardVal(x,trumpSuit,'x')-cardVal(y,trumpSuit,'x');});
     dh.shift();
@@ -234,7 +242,7 @@ window._gameFns.bowergarden = function BG(a){
   function callTrump(p,suit,goAlone){
     trumpSuit=suit;callingTeam=p%2;
     if(goAlone){loner=true;sittingOut=(p+2)%4;}
-    sm(PLAYER_NAMES[p]+' calls '+SUIT_ICONS[suit]+' Strong'+(goAlone?' (alone)':''));
+    sm(PLAYER_NAMES[p]+' calls '+_pip(suit)+' Strong'+(goAlone?' (alone)':''));
     startPlay();
   }
   function startPlay(){
@@ -345,7 +353,7 @@ window._gameFns.bowergarden = function BG(a){
     h+='<div style="display:flex;gap:14px;justify-content:center;align-items:center;padding:6px 4px;flex-wrap:wrap;">';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.75rem;color:var(--muted);letter-spacing:0.08em;">DEALER: <span style="color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.06em;">'+PLAYER_NAMES[dealer]+'</span></div>';
     if(trumpSuit){
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.85rem;color:var(--gold);letter-spacing:0.08em;">STRONG: <span style="font-size:1.6rem;vertical-align:middle;color:'+(trumpSuit==='hearts'||trumpSuit==='diamonds'?'#c47a7a':'var(--cream)')+';">'+SUIT_ICONS[trumpSuit]+'</span></div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.85rem;color:var(--gold);letter-spacing:0.08em;">STRONG: <span style="font-size:1.6rem;vertical-align:middle;color:'+(trumpSuit==='hearts'||trumpSuit==='diamonds'?'#c47a7a':'var(--cream)')+';">'+_pip(trumpSuit)+'</span></div>';
     }
     if(loner)h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--gold);letter-spacing:0.1em;background:rgba(200,168,75,0.15);padding:3px 10px;border-radius:6px;border:1px solid rgba(200,168,75,0.4);">⚡ LONER</div>';
     h+='</div>';
@@ -365,7 +373,7 @@ window._gameFns.bowergarden = function BG(a){
     if(upcard&&phase==='call1'){
       var ucol=upcard.suit==='hearts'||upcard.suit==='diamonds'?'#c47a7a':'#1a1f17';
       h+='<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#F5F0E1;color:'+ucol+';border:2px solid #C4B998;border-radius:6px;padding:6px;font-weight:700;">';
-      h+='<div style="font-size:0.95rem;">'+upcard.rank+'</div><div style="font-size:1.4rem;text-align:center;">'+SUIT_ICONS[upcard.suit]+'</div></div>';
+      h+='<div style="font-size:0.95rem;">'+upcard.rank+'</div><div style="font-size:1.4rem;text-align:center;">'+_pip(upcard.suit)+'</div></div>';
     }
     // Played cards positioned. Now bigger (was font-size 0.7rem) and
     // animated in via .bg-played-{seat} class on the most recent play.
@@ -376,7 +384,7 @@ window._gameFns.bowergarden = function BG(a){
       var col=c.suit==='hearts'||c.suit==='diamonds'?'#c47a7a':'#1a1f17';
       var animCls=(pl===lastPlayed)?(' bg-played-'+SEAT_LETTER[pl]):'';
       h+='<div class="bg-pcard'+animCls+'" style="position:absolute;'+pos[pl]+'background:#F5F0E1;color:'+col+';border:2px solid '+(pl%2===0?'#4A7C35':'#C47A7A')+';border-radius:6px;padding:6px 9px;font-weight:700;font-size:0.85rem;min-width:38px;">';
-      h+='<div>'+c.rank+'</div><div style="font-size:1.1rem;text-align:center;">'+SUIT_ICONS[c.suit]+'</div></div>';
+      h+='<div>'+c.rank+'</div><div style="font-size:1.1rem;text-align:center;">'+_pip(c.suit)+'</div></div>';
     }
     h+='</div>';
     // East — bumped to 32x46
@@ -423,7 +431,7 @@ window._gameFns.bowergarden = function BG(a){
       h+='<div style="'+sty+'"'+oc+'><span style="font-size:0.78rem;position:absolute;top:2px;left:5px;">'+cc.rank+'</span>';
       if(isLeftBower)h+='<span style="font-size:0.42rem;color:#c8a84b;position:absolute;top:2px;right:4px;font-family:Bebas Neue,sans-serif;letter-spacing:0.06em;">L</span>';
       if(isRightBower)h+='<span style="font-size:0.42rem;color:#c8a84b;position:absolute;top:2px;right:4px;font-family:Bebas Neue,sans-serif;letter-spacing:0.06em;">R</span>';
-      h+='<span style="font-size:1.2rem;">'+SUIT_ICONS[cc.suit]+'</span></div>';
+      h+='<span style="font-size:1.2rem;">'+_pip(cc.suit)+'</span></div>';
     }
     h+='</div></div>';
     // Go-alone prompt — shown after player commits to a call
@@ -439,20 +447,20 @@ window._gameFns.bowergarden = function BG(a){
     // Call UI
     if(phase==='call1'&&currentPlayer===SOUTH){
       h+='<div style="padding:8px;text-align:center;background:rgba(26,31,23,0.5);border-radius:8px;margin:6px 0;">';
-      h+='<div style="font-size:0.6rem;color:var(--muted);margin-bottom:6px;">Make '+SUIT_ICONS[upcard.suit]+' your Strong suit?</div>';
+      h+='<div style="font-size:0.6rem;color:var(--muted);margin-bottom:6px;">Make '+_pip(upcard.suit)+' your Strong suit?</div>';
       h+='<div style="display:flex;gap:6px;justify-content:center;">';
-      h+='<button class="gb" onclick="_BGORD()" style="min-height:44px;padding:8px 16px;background:rgba(200,168,75,0.15);border-color:rgba(200,168,75,0.4);color:var(--gold);">CALL '+SUIT_ICONS[upcard.suit]+' STRONG</button>';
+      h+='<button class="gb" onclick="_BGORD()" style="min-height:44px;padding:8px 16px;background:rgba(200,168,75,0.15);border-color:rgba(200,168,75,0.4);color:var(--gold);">CALL '+_pip(upcard.suit)+' STRONG</button>';
       h+='<button class="gb" onclick="_BGP1()" style="min-height:44px;padding:8px 16px;">PASS</button>';
       h+='</div></div>';
     }
     if(phase==='call2'&&currentPlayer===SOUTH){
       h+='<div style="padding:8px;text-align:center;background:rgba(26,31,23,0.5);border-radius:8px;margin:6px 0;">';
-      h+='<div style="font-size:0.6rem;color:var(--muted);margin-bottom:6px;">Pick your Strong suit (not '+SUIT_ICONS[upcard.suit]+'):</div>';
+      h+='<div style="font-size:0.6rem;color:var(--muted);margin-bottom:6px;">Pick your Strong suit (not '+_pip(upcard.suit)+'):</div>';
       h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">';
       for(var si=0;si<SUITS.length;si++){
         if(SUITS[si]===upcard.suit)continue;
         var icol=SUITS[si]==='hearts'||SUITS[si]==='diamonds'?'#c47a7a':'var(--cream)';
-        h+='<button class="gb" onclick="_BGCT(\''+SUITS[si]+'\')" style="min-height:48px;min-width:48px;padding:6px 14px;font-size:1.4rem;color:'+icol+';">'+SUIT_ICONS[SUITS[si]]+'</button>';
+        h+='<button class="gb" onclick="_BGCT(\''+SUITS[si]+'\')" style="min-height:48px;min-width:48px;padding:6px 14px;font-size:1.4rem;color:'+icol+';">'+_pip(SUITS[si])+'</button>';
       }
       if(currentPlayer!==dealer)h+='<button class="gb" onclick="_BGP2()" style="min-height:44px;padding:8px 16px;">PASS</button>';
       h+='</div></div>';
