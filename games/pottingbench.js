@@ -136,6 +136,15 @@ window._gameFns.pottingbench=function PB(a){
   window._PBDR=function(){drawPenalty();};
   window._PBN=function(){newGame();};
 
+  // Tear down the elapsed-time setInterval if player exits mid-game,
+  // otherwise it keeps ticking and updating a non-existent #PBt.
+  var _watchExit=setInterval(function(){
+    if(!document.body.classList.contains('game-active')){
+      if(timerId){clearInterval(timerId);timerId=0;}
+      clearInterval(_watchExit);
+    }
+  },1000);
+
   newGame();
 };
 })();
