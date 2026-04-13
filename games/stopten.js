@@ -6,9 +6,12 @@ var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G
 
 window._gameFns=window._gameFns||{};
 window._gameFns.stopten=function ST(a){
+  var MAX_ATTEMPTS=3;     // session = 3 attempts then summary
+  var AUTO_STOP_AT=15;    // force-stop if player walks away
   var startMs=0,elapsed=0,running=false,rafId=0,attempts=0,best=Infinity;
+  var sessionDone=false;
 
-  ms(a,'Stop at Ten · <span id="STa">0</span>/3 · best <span id="STb">—</span>');
+  ms(a,'Stop at Ten · <span id="STa">0</span>/'+MAX_ATTEMPTS+' · best <span id="STb">—</span>');
   mm(a);
   var pan=document.createElement('div');
   pan.style.cssText='max-width:420px;margin:0 auto;padding:24px 16px;text-align:center;';
@@ -16,10 +19,9 @@ window._gameFns.stopten=function ST(a){
   mc(a).innerHTML='<button class="gb" onclick="_STN()">🌱 NEW ROUND</button>';
 
   function tiers(delta){
-    // delta is absolute deviation in seconds. Display is .toFixed(2).
-    if(delta<0.005)return {lbl:'PERFECT',col:'#c8a84b',reward:1,sb:3};   // 10.00 spot on
-    if(delta<=0.015)return {lbl:'SO CLOSE',col:'#7ab356',reward:1,sb:2}; // ±0.01
-    if(delta<=0.035)return {lbl:'NICE',col:'#7ab356',reward:0,sb:1};     // ±0.02 or ±0.03
+    if(delta<0.005)return {lbl:'PERFECT',col:'#c8a84b',reward:1,sb:3};
+    if(delta<=0.015)return {lbl:'SO CLOSE',col:'#7ab356',reward:1,sb:2};
+    if(delta<=0.035)return {lbl:'NICE',col:'#7ab356',reward:0,sb:1};
     return {lbl:'MISS',col:'#c47a7a',reward:0,sb:0};
   }
 
@@ -28,17 +30,20 @@ window._gameFns.stopten=function ST(a){
     elapsed=(Date.now()-startMs)/1000;
     var el=document.getElementById('STclock');
     if(el)el.textContent=elapsed.toFixed(2);
+    // Force-stop if player abandoned the round so the clock can't
+    // run forever (and so the rAF loop releases CPU).
+    if(elapsed>=AUTO_STOP_AT){stop(true);return;}
     rafId=requestAnimationFrame(tick);
   }
 
   function start(){
-    if(running)return;
+    if(running||sessionDone)return;
     startMs=Date.now();elapsed=0;running=true;
     render();
     tick();
   }
 
-  function stop(){
+  function stop(autoStop){
     if(!running)return;
     running=false;cancelAnimationFrame(rafId);
     elapsed=(Date.now()-startMs)/1000;
@@ -48,12 +53,23 @@ window._gameFns.stopten=function ST(a){
     if(delta<best)best=delta;
     var ba=document.getElementById('STa');if(ba)ba.textContent=attempts;
     var bb=document.getElementById('STb');if(bb)bb.textContent=isFinite(best)?('±'+best.toFixed(2)+'s'):'—';
-    // Reward
+    // Reward — drip Sunbeam progress per tier
     if(t.sb>0){for(var i=0;i<t.sb;i++)_e('progress');}
     if(t.lbl==='PERFECT'){_e('game_win');_playWin();_sr('stopten',{w:true,s:Math.round(delta*1000)});}
     else if(t.reward>0){_e('milestone');}
-    renderResult(delta,t);
-    sm(t.lbl+' · '+elapsed.toFixed(2)+'s (±'+delta.toFixed(2)+')');
+    renderResult(delta,t,autoStop);
+    if(autoStop)sm('Auto-stopped at '+AUTO_STOP_AT+'s · '+t.lbl);
+    else sm(t.lbl+' · '+elapsed.toFixed(2)+'s (±'+delta.toFixed(2)+')');
+    // Session complete?
+    if(attempts>=MAX_ATTEMPTS){
+      sessionDone=true;
+      // If no PERFECT yet, log the session's best as a non-win record
+      // so attempts count toward stats instead of vanishing.
+      if(isFinite(best)&&best>=0.005){
+        _sr('stopten',{w:false,s:Math.round(best*1000)});
+      }
+      setTimeout(function(){if(document.body.contains(pan))renderSessionSummary();},900);
+    }
   }
 
   function render(){
@@ -70,17 +86,51 @@ window._gameFns.stopten=function ST(a){
     pan.innerHTML=h;
   }
 
-  function renderResult(delta,t){
+  function renderResult(delta,t,autoStop){
     var el=document.getElementById('STresult');if(!el)return;
     var sign=elapsed>=10?'+':'-';
-    el.innerHTML='<div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;letter-spacing:0.12em;color:'+t.col+';text-shadow:0 0 18px '+t.col+'33;">'+t.lbl+'</div>'
+    var label=autoStop?'TIME OUT':t.lbl;
+    var col=autoStop?'#c47a7a':t.col;
+    el.innerHTML='<div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;letter-spacing:0.12em;color:'+col+';text-shadow:0 0 18px '+col+'33;">'+label+'</div>'
       +'<div style="font-family:DM Mono,monospace;font-size:0.75rem;color:var(--cream);opacity:0.8;margin-top:4px;">'+sign+delta.toFixed(2)+'s from 10.00</div>'
       +(t.sb>0?'<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--gold);margin-top:4px;">+'+t.sb+' Sunbeam progress</div>':'');
   }
 
+  function renderSessionSummary(){
+    var el=document.getElementById('STresult');if(!el)return;
+    var ranking;
+    if(best<0.005)ranking={lbl:'GROVE LEGEND',col:'#c8a84b'};
+    else if(best<=0.015)ranking={lbl:'KEEN EYE',col:'#7ab356'};
+    else if(best<=0.05)ranking={lbl:'STEADY HAND',col:'#7ab356'};
+    else if(best<=0.2)ranking={lbl:'GOOD TRY',col:'var(--cream)'};
+    else ranking={lbl:'KEEP PRACTICING',col:'var(--muted)'};
+    el.innerHTML='<div style="margin-top:18px;padding:14px;background:rgba(26,31,23,0.6);border:1.5px solid rgba(74,124,53,0.25);border-radius:10px;">'
+      +'<div style="font-family:Cormorant Garamond,serif;font-size:0.7rem;color:var(--muted);letter-spacing:0.06em;">SESSION COMPLETE</div>'
+      +'<div style="font-family:Bebas Neue,sans-serif;font-size:1.3rem;color:'+ranking.col+';letter-spacing:0.12em;margin:6px 0;">'+ranking.lbl+'</div>'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--cream);opacity:0.85;">Best: ±'+best.toFixed(2)+'s</div>'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:8px;">Tap NEW ROUND to play again</div>'
+      +'</div>';
+  }
+
   window._STS=function(){start();};
-  window._STX=function(){stop();};
-  window._STN=function(){if(running){running=false;cancelAnimationFrame(rafId);}attempts=0;best=Infinity;elapsed=0;var ba=document.getElementById('STa');if(ba)ba.textContent=0;var bb=document.getElementById('STb');if(bb)bb.textContent='—';render();};
+  window._STX=function(){stop(false);};
+  window._STN=function(){
+    if(running){running=false;cancelAnimationFrame(rafId);}
+    attempts=0;best=Infinity;elapsed=0;sessionDone=false;
+    var ba=document.getElementById('STa');if(ba)ba.textContent=0;
+    var bb=document.getElementById('STb');if(bb)bb.textContent='—';
+    render();
+  };
+
+  // Cleanup — kill the rAF loop if player exits mid-round so we don't
+  // burn CPU running tick() forever on a detached panel.
+  var _watchExit=setInterval(function(){
+    if(!document.body.contains(pan)){
+      running=false;
+      if(rafId)cancelAnimationFrame(rafId);
+      clearInterval(_watchExit);
+    }
+  },1000);
 
   render();
 };
