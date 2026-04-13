@@ -13,7 +13,14 @@ function GFC(a){
   var tab=[],free=[null,null,null,null],fnd=[[],[],[],[]],sel=null,gameOver=false,moves=0;
   ms(a,'Moves: <strong id="FCmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='FCgd';a.appendChild(gd);
-  mc(a).innerHTML='<button class="gb" onclick="_FCN()">🔄 New</button>';
+  var _fcStyleLbl=(window._cdStyle&&window._cdStyle()==='classic')?'🃏 Classic':'🃏 Garden';
+  mc(a).innerHTML='<button class="gb" onclick="_FCN()">🔄 New</button> <button class="gb" id="FCstyle" onclick="_FCToggleStyle()" style="font-size:0.7rem;">'+_fcStyleLbl+'</button>';
+  window._FCToggleStyle=function(){
+    var nxt=window._cdToggleStyle();
+    var b=document.getElementById('FCstyle');
+    if(b)b.textContent=nxt==='classic'?'🃏 Classic':'🃏 Garden';
+    rn();
+  };
 
   function init(){
     var deck=_cdSh(_cdMk());

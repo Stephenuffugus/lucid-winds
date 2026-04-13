@@ -15,7 +15,14 @@ function GTP(a){
   // Layout: 3 mini-pyramids of 3 rows each (1+2+3=6 cards each = 18), plus 10 base cards
   ms(a,'Streak: <strong id="TPst">0</strong> · Left: <strong id="TPlf">28</strong>');mm(a);
   var gd=document.createElement('div');gd.id='TPgd';a.appendChild(gd);
-  mc(a).innerHTML='<button class="gb" onclick="_TPN()">🔄 New</button>';
+  var _tpStyleLbl=(window._cdStyle&&window._cdStyle()==='classic')?'🃏 Classic':'🃏 Garden';
+  mc(a).innerHTML='<button class="gb" onclick="_TPN()">🔄 New</button> <button class="gb" id="TPstyle" onclick="_TPToggleStyle()" style="font-size:0.7rem;">'+_tpStyleLbl+'</button>';
+  window._TPToggleStyle=function(){
+    var nxt=window._cdToggleStyle();
+    var b=document.getElementById('TPstyle');
+    if(b)b.textContent=nxt==='classic'?'🃏 Classic':'🃏 Garden';
+    rn();
+  };
 
   // Peak structure: 3 peaks, each has rows of 1,2,3 cards
   // Peak 0: indices 0, 1,2, 3,4,5
