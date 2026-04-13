@@ -52981,15 +52981,51 @@ window._lwApplyGates=function(){
     if(window.canSee.wildTab()){wildBtn.style.display='';wildBtn.classList.remove('gated');}
     else {wildBtn.classList.add('gated');}
   }
-  // Keeper-bar sinks (mystery/slots/weather) — hide until Lv 6
+  // Keeper-bar sinks (mystery/slots/weather) — visible from start but
+  // GREYED OUT until Lv 6 so players see what they're working toward.
+  // Tapping a locked one shows the unlock-level toast instead of opening.
   var sinks=['kb-mystery','kb-slots','kb-weather'];
-  var sinksShown=window.canSee.keeperBarSinks();
+  var sinksUnlocked=window.canSee.keeperBarSinks();
   for(var i=0;i<sinks.length;i++){
     var el=document.getElementById(sinks[i]);
     if(!el)continue;
-    el.style.display=sinksShown?'':'none';
+    el.style.display='';
+    if(sinksUnlocked){
+      el.classList.remove('lw-locked');
+      el.style.opacity='';
+      el.style.filter='';
+      el.style.cursor='pointer';
+    } else {
+      el.classList.add('lw-locked');
+      el.style.opacity='0.4';
+      el.style.filter='grayscale(0.85)';
+      el.style.cursor='not-allowed';
+    }
   }
 };
+// Intercept clicks on locked sinks so they explain the gate instead of
+// firing _openMystery/_openSlots/_openWeather.
+(function(){
+  var _origMystery=window._openMystery,_origSlots=window._openSlots,_origWeather=window._openWeather;
+  function _lockedToast(name){
+    if(window._toast)window._toast('🔒 '+name+' unlocks at Keeper Level 6.');
+  }
+  window._openMystery=function(){
+    var el=document.getElementById('kb-mystery');
+    if(el&&el.classList.contains('lw-locked')){_lockedToast('Mystery Box');return;}
+    if(_origMystery)return _origMystery.apply(this,arguments);
+  };
+  window._openSlots=function(){
+    var el=document.getElementById('kb-slots');
+    if(el&&el.classList.contains('lw-locked')){_lockedToast('Slot Machine');return;}
+    if(_origSlots)return _origSlots.apply(this,arguments);
+  };
+  window._openWeather=function(){
+    var el=document.getElementById('kb-weather');
+    if(el&&el.classList.contains('lw-locked')){_lockedToast('Weather Summon');return;}
+    if(_origWeather)return _origWeather.apply(this,arguments);
+  };
+})();
 // Re-apply gates on level-up, tab switch, and boot.
 if(window.PW_grantXP){
   var _origGrant=window.PW_grantXP;
