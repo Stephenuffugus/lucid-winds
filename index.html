@@ -5432,7 +5432,7 @@ window.onerror=function(msg,url,line,col,err){
   <div id="pw-keeper-bar">
     <!-- Row 1: avatar + name/level + leaderboard toggle -->
     <div class="kb-row1">
-      <div class="kb-avatar" onclick="PW_UI.openCharacter()">🌱</div>
+      <div class="kb-avatar" id="kb-avatar" onclick="PW_UI.openCharacter()" style="position:relative;">🌱<span id="kb-class-lvl" style="display:none;position:absolute;bottom:-2px;right:-2px;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.45rem;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,0.5);border:1px solid rgba(13,16,12,0.8);">L1</span></div>
       <div class="kb-info">
         <div class="kb-name" onclick="PW_UI.openCharacter()" id="kb-name">Keeper</div>
         <div class="kb-xp-wrap" onclick="PW_UI.openCharacter()"><div class="kb-xp-fill" id="kb-xp-fill" style="width:0%;"></div></div>
@@ -50922,6 +50922,24 @@ function _lwGetToolLevel(toolId){
   if(x>=LW_TOOL_XP_L2)return 2;
   return 1;
 }
+// Refresh keeper-bar avatar to show chosen class
+window._lwRefreshAvatar=function(){
+  var av=document.getElementById('kb-avatar');if(!av)return;
+  var lvlBadge=document.getElementById('kb-class-lvl');
+  var cid=_lwGetClass();
+  if(cid&&LW_CLASSES[cid]){
+    var def=LW_CLASSES[cid];
+    // Preserve inner span by rebuilding
+    var lvl=_lwGetClassLevel(cid);
+    av.firstChild.textContent=def.icon;
+    if(lvlBadge){lvlBadge.textContent='L'+lvl;lvlBadge.style.display='flex';}
+    av.title=def.name+' · Level '+lvl;
+  } else {
+    if(av.firstChild)av.firstChild.textContent='🌱';
+    if(lvlBadge)lvlBadge.style.display='none';
+  }
+};
+setTimeout(function(){try{window._lwRefreshAvatar();}catch(e){}},500);
 // Canonical class picker — confirmation, haptic, toast, sync
 window._lwPickClass=function(cid,nm,icon){
   if(!cid||!LW_CLASSES[cid])return;
@@ -50932,6 +50950,7 @@ window._lwPickClass=function(cid,nm,icon){
   try{if(window._playWin)window._playWin();}catch(e){}
   try{if(window.syncVaultToCloud)setTimeout(window.syncVaultToCloud,400);}catch(e){}
   try{if(typeof gtag!=='undefined')gtag('event','class_picked',{cls:cid});}catch(e){}
+  try{window._lwRefreshAvatar();}catch(e){}
   if(window._bosSetTab)window._bosSetTab('class');
 };
 // Biome match: +25% class XP, 1.5x tool effect when playing Wild in class biome
@@ -50967,6 +50986,7 @@ window._LW_classXP=function(source,amount){
     var titles=['','Apprentice','Journeyman','Master'];
     if(window._toast)window._toast(def.icon+' '+titles[newLvl]+' '+def.name+' — '+ab.name);
     try{if(window._playWin)_playWin();}catch(e){}
+    try{if(window._lwRefreshAvatar)window._lwRefreshAvatar();}catch(e){}
   }
 };
 // Award tool XP
