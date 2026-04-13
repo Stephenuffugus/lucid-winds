@@ -48996,9 +48996,15 @@ function _showDailyReward() {
   }
   h += '</div>';
 
-  // Today's reward
-  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:rgba(91,175,220,0.95);text-shadow:0 0 15px rgba(91,175,220,0.3);margin:0.2rem 0;">+' + dayReward + '</div>';
+  // Today's reward (base + streak bonus when applicable)
+  // The streak bonus (7d:+25, 14d:+50, 30d:+100, then every 30d) was being
+  // computed in _dailyReward but never granted. Now folded into totalDew.
+  var totalDew = dayReward + (reward.bonus || 0);
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:rgba(91,175,220,0.95);text-shadow:0 0 15px rgba(91,175,220,0.3);margin:0.2rem 0;">+' + totalDew + '</div>';
   h += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);margin-bottom:0.3rem;">Sunbeams (Week ' + Math.ceil(dayOfMonth / 7) + ' bonus)</div>';
+  if (reward.bonus > 0) {
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.3rem;text-shadow:0 0 10px rgba(200,168,75,0.4);">\u2728 ' + reward.bonusLabel + ' \u00b7 +' + reward.bonus + '</div>';
+  }
 
   // Streak info
   h += '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);margin-bottom:0.15rem;">\ud83d\udd25 ' + daily.streak + ' day streak</div>';
@@ -49013,8 +49019,8 @@ function _showDailyReward() {
   h += 'Month-end reward: <span style="color:var(--gold);">' + daysInMonth + '/' + daysInMonth + ' = Rare Feral Seed + 50 Dew</span>';
   h += '</div>';
 
-  // Collect button
-  h += '<button onclick="if(window.earnDew)earnDew(' + dayReward + ',\'daily_login\');if(window.updateDashboard)setTimeout(updateDashboard,300);this.textContent=\'COLLECTED!\';this.disabled=true;this.style.opacity=\'0.5\';var _m=this.parentNode.parentNode;setTimeout(function(){if(_m&&_m.parentNode)_m.remove();if(window._lwNotifPrompt)window._lwNotifPrompt();},800);" style="margin-top:0.5rem;width:100%;padding:0.5rem;border:1.5px solid rgba(122,179,86,0.3);border-radius:8px;background:linear-gradient(180deg,rgba(74,124,53,0.25),rgba(46,80,36,0.35));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">COLLECT +' + dayReward + ' DEW</button>';
+  // Collect button — grants base + any streak bonus
+  h += '<button onclick="if(window.earnDew)earnDew(' + totalDew + ',\'daily_login\');if(window.updateDashboard)setTimeout(updateDashboard,300);this.textContent=\'COLLECTED!\';this.disabled=true;this.style.opacity=\'0.5\';var _m=this.parentNode.parentNode;setTimeout(function(){if(_m&&_m.parentNode)_m.remove();if(window._lwNotifPrompt)window._lwNotifPrompt();},800);" style="margin-top:0.5rem;width:100%;padding:0.5rem;border:1.5px solid rgba(122,179,86,0.3);border-radius:8px;background:linear-gradient(180deg,rgba(74,124,53,0.25),rgba(46,80,36,0.35));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">COLLECT +' + totalDew + ' DEW</button>';
   h += '</div>';
 
   ov.innerHTML = h;
