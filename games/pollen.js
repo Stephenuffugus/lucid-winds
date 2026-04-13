@@ -247,7 +247,7 @@ window._gameFns.pollen = function PN(a){
     if(GS.phase==='player')h+='<div style="text-align:center;color:var(--sage);font-size:0.7rem;padding:2px;">— Your Turn —</div>';
     else if(GS.phase==='ai')h+='<div style="text-align:center;color:#c47a7a;font-size:0.7rem;padding:2px;">— AI thinking —</div>';
     // Pollinators
-    h+='<div style="font-size:0.6rem;color:var(--muted);margin:4px 0 2px;">POLLINATORS</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.1em;margin:8px 0 4px;">POLLINATORS</div>';
     h+='<div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:3px;">';
     GS.pollinators.forEach(function(p){
       var bg=p.claimedBy==='player'?'rgba(122,179,86,0.15);border-color:#7ab356':p.claimedBy==='ai'?'rgba(196,122,122,0.15);border-color:#c47a7a':'rgba(26,31,23,0.5);border-color:rgba(122,179,86,0.2)';
@@ -269,7 +269,7 @@ window._gameFns.pollen = function PN(a){
       h+='</div>';
     });
     // Supply
-    h+='<div style="font-size:0.6rem;color:var(--muted);margin:6px 0 2px;">SUPPLY</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.1em;margin:8px 0 4px;">SUPPLY</div>';
     h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">';
     COLORS.concat(['gold']).forEach(function(c){
       var sel=GS.selectedTokens.indexOf(c)>=0;
@@ -279,17 +279,17 @@ window._gameFns.pollen = function PN(a){
     h+='</div>';
     // Player area
     h+='<div style="background:rgba(26,31,23,0.4);border-radius:8px;padding:6px;margin:6px 0;">';
-    h+='<div style="font-size:0.6rem;color:var(--muted);">YOUR POLLEN ('+totalTok(GS.player.tokens)+'/10)</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.1em;">YOUR POLLEN ('+totalTok(GS.player.tokens)+'/10)</div>';
     h+='<div style="display:flex;gap:4px;flex-wrap:wrap;margin:3px 0;">';
     COLORS.concat(['gold']).forEach(function(c){if(GS.player.tokens[c]>0)h+='<span style="font-size:12px;">'+tokDot(c,12)+' '+GS.player.tokens[c]+'</span>';});
     h+='</div>';
-    h+='<div style="font-size:0.6rem;color:var(--muted);">PLANTS</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.1em;">PLANTS</div>';
     h+='<div style="display:flex;gap:2px;flex-wrap:wrap;">';
     COLORS.forEach(function(c){for(var i=0;i<(GS.player.production[c]||0);i++)h+=tokDot(c,14);});
     if(GS.player.cards.length===0)h+='<span style="font-size:10px;color:var(--muted);">None yet</span>';
     h+='</div>';
     if(GS.player.reserved.length>0){
-      h+='<div style="font-size:0.6rem;color:var(--muted);margin-top:4px;">RESERVED</div>';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--gold);letter-spacing:0.1em;margin-top:6px;">RESERVED</div>';
       h+='<div>';GS.player.reserved.forEach(function(c){h+=renderCard(c,true);});h+='</div>';
     }
     h+='</div>';

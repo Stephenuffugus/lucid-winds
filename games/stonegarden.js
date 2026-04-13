@@ -31,8 +31,8 @@ window._gameFns.stonegarden = function SG(a){
     state='menu';running=false;
     var h='<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:var(--sage);letter-spacing:3px;margin:16px 0 4px;">STONE GARDEN</div>';
     h+='<div style="font-style:italic;font-size:0.75rem;color:var(--muted);margin-bottom:14px;">Stack stones in a zen garden</div>';
-    h+='<button class="gb" onclick="_SGbegin(\'zen\')" style="display:block;width:240px;margin:6px auto;padding:12px;min-height:48px;">ZEN MODE<div style="font-size:0.6rem;opacity:0.7;font-style:italic;margin-top:2px;">No fail. Build freely.</div></button>';
-    h+='<button class="gb" onclick="_SGbegin(\'challenge\')" style="display:block;width:240px;margin:6px auto;padding:12px;min-height:48px;">CHALLENGE<div style="font-size:0.6rem;opacity:0.7;font-style:italic;margin-top:2px;">Reach target. 3 lives.</div></button>';
+    h+='<button class="gb" onclick="_SGbegin(\'zen\')" style="display:block;width:240px;margin:6px auto;padding:12px;min-height:48px;">ZEN MODE<div style="font-size:0.78rem;opacity:0.85;font-style:italic;margin-top:2px;">No fail. Build freely.</div></button>';
+    h+='<button class="gb" onclick="_SGbegin(\'challenge\')" style="display:block;width:240px;margin:6px auto;padding:12px;min-height:48px;">CHALLENGE<div style="font-size:0.78rem;opacity:0.85;font-style:italic;margin-top:2px;">Reach target. 3 lives.</div></button>';
     h+='<div style="margin-top:14px;font-size:0.7rem;color:var(--muted);">Best Height: <span style="color:var(--gold)">'+bestHeight+'</span></div>';
     pan.innerHTML=h;
   }

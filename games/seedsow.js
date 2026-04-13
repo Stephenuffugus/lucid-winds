@@ -148,14 +148,14 @@ window._gameFns.seedsow=function SS(a){
     h+='<div style="display:grid;grid-template-columns:60px repeat(6,1fr) 60px;gap:4px;align-items:center;margin:10px 0;">';
     // AI store
     h+='<div style="grid-row:span 2;background:rgba(26,31,23,0.6);border:2px solid rgba(196,122,122,0.4);border-radius:30px;padding:14px 4px;text-align:center;font-family:Bebas Neue,sans-serif;color:var(--cream);min-height:120px;display:flex;flex-direction:column;justify-content:center;">';
-    h+='<div style="font-size:0.55rem;color:#c47a7a;letter-spacing:1px;">AI</div><div style="font-size:1.5rem;color:var(--gold);">'+board[13]+'</div></div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:#e8a0a0;letter-spacing:0.1em;">AI</div><div style="font-size:1.5rem;color:var(--gold);">'+board[13]+'</div></div>';
     // AI pits row (right to left: board[12..7])
     for(var i=12;i>=7;i--){
       h+='<div style="background:rgba(26,31,23,0.5);border:2px solid rgba(196,122,122,0.25);border-radius:50%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:var(--cream);min-height:44px;">'+board[i]+'</div>';
     }
     // Player store (spans both rows, on right)
     h+='<div style="grid-row:span 2;background:rgba(26,31,23,0.6);border:2px solid rgba(122,179,86,0.4);border-radius:30px;padding:14px 4px;text-align:center;font-family:Bebas Neue,sans-serif;color:var(--cream);min-height:120px;display:flex;flex-direction:column;justify-content:center;">';
-    h+='<div style="font-size:0.55rem;color:var(--sage);letter-spacing:1px;">YOU</div><div style="font-size:1.5rem;color:var(--gold);">'+board[6]+'</div></div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--sage);letter-spacing:0.1em;">YOU</div><div style="font-size:1.5rem;color:var(--gold);">'+board[6]+'</div></div>';
     // Player pits row (0..5)
     for(i=0;i<6;i++){
       var canPlay=(turn===0&&!busy&&board[i]>0);

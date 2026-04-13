@@ -177,7 +177,7 @@ window._gameFns.mosaic = function MS(a){
     var ss=document.getElementById('MSs');if(ss)ss.textContent=G.score;
     var rr=document.getElementById('MSr');if(rr)rr.textContent=G.round;
     var h='';
-    h+='<div style="text-align:center;font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);padding:4px 0;">'+
+    h+='<div style="text-align:center;font-family:DM Mono,monospace;font-size:0.85rem;color:var(--cream);padding:6px 0;letter-spacing:0.04em;">'+
       (G.phase==='draft'?(G.selected?'Selected '+G.selected.tiles.length+' '+ICONS[G.selected.color]+' — tap a staging row':'Tap tiles in a bed, or in the center'):(G.phase==='score'?'Scoring...':'Game over'))+'</div>';
     // Factories
     h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:4px 0;">';
@@ -191,9 +191,9 @@ window._gameFns.mosaic = function MS(a){
     h+='</div>';
     // Center
     h+='<div style="text-align:center;padding:6px;background:rgba(26,31,23,0.3);border-radius:10px;margin:4px 0;min-height:36px;display:flex;gap:3px;flex-wrap:wrap;justify-content:center;align-items:center;">';
-    if(G.center.length===0)h+='<span style="font-size:0.6rem;color:var(--muted);">Empty</span>';
+    if(G.center.length===0)h+='<span style="font-family:DM Mono,monospace;font-size:0.78rem;color:var(--muted);letter-spacing:0.06em;">CENTER EMPTY</span>';
     else{
-      if(!G.firstPlayerTaken)h+='<div style="width:26px;height:26px;border-radius:4px;border:2px dashed rgba(200,168,75,0.6);display:inline-flex;align-items:center;justify-content:center;font-size:0.55rem;color:var(--gold);">1st</div>';
+      if(!G.firstPlayerTaken)h+='<div style="width:30px;height:30px;border-radius:4px;border:2px dashed rgba(200,168,75,0.7);display:inline-flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);">1st</div>';
       var grouped={};G.center.forEach(function(c){grouped[c]=(grouped[c]||0)+1;});
       for(var gc in grouped){
         for(var gi=0;gi<grouped[gc];gi++){
@@ -204,7 +204,7 @@ window._gameFns.mosaic = function MS(a){
     h+='</div>';
     // Board
     h+='<div style="background:rgba(26,31,23,0.4);border:1.5px solid rgba(74,124,53,0.2);border-radius:10px;padding:8px;margin:6px 0;">';
-    h+='<div style="font-size:0.55rem;color:var(--muted);text-align:center;margin-bottom:4px;">YOUR MOSAIC</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:6px;">YOUR MOSAIC</div>';
     for(var r=0;r<5;r++){
       var maxSize=r+1;
       h+='<div style="display:flex;align-items:center;gap:4px;margin:3px 0;">';
@@ -226,7 +226,7 @@ window._gameFns.mosaic = function MS(a){
     }
     // Floor
     h+='<div style="display:flex;gap:2px;justify-content:center;margin-top:6px;">';
-    h+='<span style="font-size:0.5rem;color:var(--muted);align-self:center;margin-right:4px;">FLOOR</span>';
+    h+='<span style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--cream);letter-spacing:0.1em;align-self:center;margin-right:6px;">FLOOR</span>';
     for(var fl=0;fl<7;fl++){
       var filled=fl<G.floor.length;
       h+='<div onclick="_MSFL()" style="width:26px;height:26px;border-radius:4px;border:1px solid '+(filled?'rgba(199,80,80,0.4)':'rgba(74,124,53,0.2)')+';background:'+(filled?'rgba(199,80,80,0.15)':'transparent')+';display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:'+(filled?'var(--cream)':'rgba(199,80,80,0.5)')+';cursor:pointer;">';

@@ -141,7 +141,7 @@ window._gameFns.livingstones = function LS(a){
     h+='<div style="font-style:italic;font-size:0.75rem;color:var(--muted);margin-bottom:16px;">Go life-and-death puzzles</div>';
     var diffs=[['BEGINNER','1-move captures & kills',0],['INTERMEDIATE','Capture race & killing shapes',1],['ADVANCED','Corner life & death',2]];
     for(var i=0;i<diffs.length;i++){
-      h+='<button class="gb" onclick="_LSstart('+diffs[i][2]+')" style="display:block;width:220px;margin:6px auto;padding:10px;min-height:48px;">'+diffs[i][0]+'<div style="font-size:0.6rem;opacity:0.7;font-style:italic;margin-top:2px;">'+diffs[i][1]+'</div></button>';
+      h+='<button class="gb" onclick="_LSstart('+diffs[i][2]+')" style="display:block;width:220px;margin:6px auto;padding:10px;min-height:48px;">'+diffs[i][0]+'<div style="font-size:0.78rem;opacity:0.85;font-style:italic;margin-top:2px;">'+diffs[i][1]+'</div></button>';
     }
     pan.innerHTML=h;
   }
@@ -179,7 +179,7 @@ window._gameFns.livingstones = function LS(a){
     }
     svg+='</svg>';
     var h='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:1px;margin:6px 0;">PUZZLE '+(puzzleIdx+1)+'/'+currentPuzzles.length+'</div>';
-    h+='<div style="font-style:italic;font-size:0.65rem;color:var(--muted);margin-bottom:4px;">'+p.hint+'</div>';
+    h+='<div style="font-style:italic;font-size:0.85rem;color:var(--cream);margin-bottom:6px;letter-spacing:0.02em;">'+p.hint+'</div>';
     h+=svg;
     var dots='';
     for(var d=0;d<currentPuzzles.length;d++){

@@ -296,7 +296,7 @@ window._gameFns.kakuro = function KK(a){
     var ne=document.getElementById('KKn');if(ne)ne.textContent=PI+1;
     var ee=document.getElementById('KKe');if(ee)ee.textContent=errors;
     var h='';
-    h+='<div style="text-align:center;font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);padding:4px 0;">'+G.name+' · Tap cell, then a number</div>';
+    h+='<div style="text-align:center;font-family:DM Mono,monospace;font-family:DM Mono,monospace;font-size:0.85rem;color:var(--cream);padding:6px 0;letter-spacing:0.04em;">'+G.name+' · Tap cell, then a number</div>';
     // Grid
     h+='<div style="text-align:center;">';
     h+='<div style="display:inline-grid;gap:1px;background:rgba(74,124,53,0.2);border:2px solid rgba(74,124,53,0.3);border-radius:6px;padding:2px;grid-template-columns:repeat('+G.size+',44px);">';
@@ -337,7 +337,7 @@ window._gameFns.kakuro = function KK(a){
       }
     }
     h+='</div></div>';
-    h+='<div style="text-align:center;font-size:0.5rem;color:var(--muted);padding:4px 0;">Tap = answer · Long-press = pencil mark</div>';
+    h+='<div style="text-align:center;font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);padding:6px 0;letter-spacing:0.04em;">Tap = answer · Long-press = pencil mark</div>';
     // Number pad
     h+='<div style="display:flex;gap:5px;justify-content:center;padding:6px 0;flex-wrap:wrap;">';
     for(var n=1;n<=9;n++){
@@ -354,7 +354,7 @@ window._gameFns.kakuro = function KK(a){
     h+='<div style="display:flex;gap:4px;justify-content:center;padding:4px 0;flex-wrap:wrap;">';
     for(var pi=0;pi<PUZZLES.length;pi++){
       var sel=PI===pi;
-      h+='<button class="gb" onclick="_KKL('+pi+')" style="min-height:36px;padding:4px 10px;font-size:0.65rem;'+(sel?'background:rgba(200,168,75,0.2);border-color:rgba(200,168,75,0.5);color:var(--gold);':'')+'">#'+(pi+1)+'</button>';
+      h+='<button class="gb" onclick="_KKL('+pi+')" style="min-height:36px;padding:4px 10px;font-size:0.78rem;letter-spacing:0.06em;'+(sel?'background:rgba(200,168,75,0.2);border-color:rgba(200,168,75,0.5);color:var(--gold);':'')+'">#'+(pi+1)+'</button>';
     }
     h+='</div>';
     pan.innerHTML=h;

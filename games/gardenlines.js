@@ -201,7 +201,7 @@ window._gameFns.gardenlines = function GL(a){
     }
     h+='</div></div>';
     // Hand
-    h+='<div style="padding:4px;"><div style="font-size:0.55rem;color:var(--muted);text-align:center;margin-bottom:4px;">YOUR HAND · Tap a tile, then tap the board</div>';
+    h+='<div style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:6px;">YOUR HAND · Tap a tile, then tap the board</div>';
     h+='<div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;">';
     G.pHand.forEach(function(tile,i){
       var sel=G.selIdx===i;

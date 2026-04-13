@@ -125,7 +125,7 @@ window._gameFns.rootflow = function RF(a){
     var ne=document.getElementById('RFn');if(ne)ne.textContent=G.pi+1;
     var fe=document.getElementById('RFf');if(fe)fe.textContent=cellFillCount();
     var h='';
-    h+='<div style="text-align:center;font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);padding:4px 0;">'+G.name+' · Tap a dot, drag to match</div>';
+    h+='<div style="text-align:center;font-family:DM Mono,monospace;font-family:DM Mono,monospace;font-size:0.85rem;color:var(--cream);padding:6px 0;letter-spacing:0.04em;">'+G.name+' · Tap a dot, drag to match</div>';
     h+='<div style="text-align:center;margin:6px 0;">';
     h+='<div style="display:inline-grid;grid-template-columns:repeat('+G.size+',44px);gap:2px;background:rgba(26,31,23,0.6);border:2px solid rgba(74,124,53,0.3);border-radius:8px;padding:4px;touch-action:none;" id="RFgrid">';
     for(var r=0;r<G.size;r++){
@@ -139,7 +139,7 @@ window._gameFns.rootflow = function RF(a){
     }
     h+='</div></div>';
     // Hint
-    h+='<div style="text-align:center;color:var(--muted);font-size:0.55rem;padding:4px;">Drag from dot to dot. Every cell must fill.</div>';
+    h+='<div style="text-align:center;color:var(--muted);font-family:DM Mono,monospace;font-size:0.78rem;padding:6px;letter-spacing:0.04em;">Drag from dot to dot. Every cell must fill.</div>';
     pan.innerHTML=h;
   }
   window._RFR=function(){loadPuzzle(G.pi);};
