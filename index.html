@@ -1735,6 +1735,10 @@
     .fg-nav-btn:not(.active) img{opacity:0.4;filter:saturate(0.3) brightness(0.6);}
     .fg-nav-btn.active img{opacity:1;filter:brightness(1.05) drop-shadow(0 0 8px rgba(122,179,86,0.15));}
     .fg-nav-btn:active{transform:scale(0.94);}
+    /* Gated nav button — appears locked, still visible so player sees the aspiration */
+    .fg-nav-btn.gated img{opacity:0.2;filter:saturate(0) brightness(0.5);}
+    .fg-nav-btn.gated .fg-nav-label{opacity:0.4;}
+    .fg-nav-btn.gated::before{content:'🔒';position:absolute;top:4px;right:4px;font-size:0.55rem;z-index:2;text-shadow:0 0 4px rgba(0,0,0,0.6);}
     .fg-nav-btn.active::after{
       content:'';position:absolute;bottom:2px;left:20%;right:20%;height:2px;
       background:var(--sage);border-radius:1px;opacity:0.8;
@@ -6659,8 +6663,8 @@ window.onerror=function(msg,url,line,col,err){
     <button class="fg-nav-min" onclick="this.parentElement.classList.toggle('minimized')" title="Hide nav"><span class="nm-chev">▾</span><span>HIDE</span></button>
     <button class="fg-nav-btn" onclick="switchTab('game')"><img src="assets/games/wild/nav-game-v5.png" alt="Game"><span class="fg-nav-label">GAME</span></button>
     <button class="fg-nav-btn active" onclick="switchTab('greenhouse')" style="position:relative;"><img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse"><span class="fg-nav-label">GREENHOUSE</span><span id="nav-gh-badge" class="nav-badge" style="display:none;"></span></button>
-    <button class="fg-nav-btn" onclick="switchTab('nursery')" style="position:relative;"><img src="assets/games/wild/nav-nursery-v5.png" alt="Nursery"><span class="fg-nav-label">NURSERY</span><span id="nav-nur-badge" class="nav-badge" style="display:none;"></span></button>
-    <button class="fg-nav-btn" onclick="switchTab('wild')"><img src="assets/games/wild/nav-wild-v5.png" alt="Wild"><span class="fg-nav-label">WILD</span></button>
+    <button id="nav-btn-nursery" class="fg-nav-btn" onclick="if(window._lwNavTap)_lwNavTap('nursery',2);else switchTab('nursery');" style="position:relative;"><img src="assets/games/wild/nav-nursery-v5.png" alt="Nursery"><span class="fg-nav-label">NURSERY</span><span id="nav-nur-badge" class="nav-badge" style="display:none;"></span></button>
+    <button id="nav-btn-wild" class="fg-nav-btn" onclick="if(window._lwNavTap)_lwNavTap('wild',3);else switchTab('wild');"><img src="assets/games/wild/nav-wild-v5.png" alt="Wild"><span class="fg-nav-label">WILD</span></button>
   </div>
 
   <!-- WILD TAB NAV — replaces bottom nav when on Wild tab -->
@@ -29969,10 +29973,13 @@ document.addEventListener('keydown', function(e) {
   }
 
   // ═══ POT SHOP UI ═══
-  // Nursery Shop tab state
-  var _nurseryShopTab = 'pots';
+  // Nursery Shop tab state — default to first unlocked tab
+  var _nurseryShopTab = 'class';
   window._setNurseryShopTab = function(t){_nurseryShopTab=t;window._openNurseryShop();};
   window._openNurseryShop = function() {
+    // Choose default tab based on what's unlocked
+    if (_nurseryShopTab === 'pots' && window.canSee && window.canSee.nurseryShopPots && !window.canSee.nurseryShopPots()) _nurseryShopTab = 'class';
+    if (_nurseryShopTab === 'boosters' && window.canSee && window.canSee.nurseryShopBoosters && !window.canSee.nurseryShopBoosters()) _nurseryShopTab = 'class';
     var inv = loadInventory();
     var dew = window.getTotalDew ? window.getTotalDew() : 0;
     var existing = document.getElementById('lw-pot-shop');
@@ -29991,16 +29998,20 @@ document.addEventListener('keydown', function(e) {
     h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.12em;color:var(--gold);">\ud83e\udeb4 NURSERY SHOP</div>';
     h += '<button onclick="document.getElementById(\'lw-pot-shop\').remove()" aria-label="Close" style="background:rgba(122,179,86,0.1);border:1.5px solid rgba(122,179,86,0.4);color:var(--cream);width:48px;height:48px;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">\u2715</button>';
     h += '</div>';
-    // Tab bar
-    var tabs = [
-      {k:'pots', lbl:'POTS'},
-      {k:'boosters', lbl:'BOOSTERS'},
-      {k:'class', lbl:'CLASS'}
-    ];
+    // Tab bar — pots unlock Lv 9, boosters Lv 10, class visible at Lv 7+ or when class picked
+    var _curLvlTabs = (window.canSee && window.canSee.currentLevel) ? window.canSee.currentLevel() : 1;
+    var tabs = [];
+    tabs.push({k:'pots', lbl:'POTS', locked: !window.canSee || !window.canSee.nurseryShopPots || !window.canSee.nurseryShopPots(), lvl:9});
+    tabs.push({k:'boosters', lbl:'BOOSTERS', locked: !window.canSee || !window.canSee.nurseryShopBoosters || !window.canSee.nurseryShopBoosters(), lvl:10});
+    tabs.push({k:'class', lbl:'CLASS', locked: false});
     h += '<div style="display:flex;gap:0.3rem;padding:0.45rem 0.7rem 0.3rem;flex-shrink:0;">';
     for (var ti=0; ti<tabs.length; ti++){
       var t=tabs[ti]; var act=_nurseryShopTab===t.k;
-      h += '<button onclick="window._setNurseryShopTab(\''+t.k+'\')" style="flex:1;min-height:40px;padding:6px 8px;font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;background:'+(act?'rgba(200,168,75,0.15)':'rgba(26,36,22,0.4)')+';border:1.5px solid '+(act?'rgba(200,168,75,0.55)':'rgba(122,179,86,0.2)')+';color:'+(act?'var(--gold)':'var(--muted)')+';border-radius:8px;cursor:pointer;">'+t.lbl+'</button>';
+      if (t.locked) {
+        h += '<button onclick="window._toast&&window._toast(\'🔒 Keeper Level '+t.lvl+' to unlock.\')" style="flex:1;min-height:40px;padding:6px 8px;font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;background:rgba(26,36,22,0.25);border:1.5px dashed rgba(217,107,75,0.35);color:rgba(217,107,75,0.65);border-radius:8px;cursor:pointer;">🔒 '+t.lbl+'</button>';
+      } else {
+        h += '<button onclick="window._setNurseryShopTab(\''+t.k+'\')" style="flex:1;min-height:40px;padding:6px 8px;font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;background:'+(act?'rgba(200,168,75,0.15)':'rgba(26,36,22,0.4)')+';border:1.5px solid '+(act?'rgba(200,168,75,0.55)':'rgba(122,179,86,0.2)')+';color:'+(act?'var(--gold)':'var(--muted)')+';border-radius:8px;cursor:pointer;">'+t.lbl+'</button>';
+      }
     }
     h += '</div>';
     // Scrollable body
@@ -35391,6 +35402,10 @@ function _addFeral(f){
 }
 
 function _collectFeral(f,mk){
+  // Progressive unlock — feral collection opens at Keeper Level 4.
+  if(window.canSee&&window.canSee.feralCollect&&!window.canSee.feralCollect()){
+    _toast('🔒 Feral seeds respond to you at Keeper Level 4.');return;
+  }
   if(!_uLat){_toast('Need location.');return;}
   var d=_dist(_uLat,_uLng,f.lat,f.lng);
   var _fcRange=typeof _getCollectRange==='function'?_getCollectRange():COLLECT_RANGE;
@@ -51385,6 +51400,79 @@ function _updateCompCount(){
   el.textContent=(progress.found+Object.keys(synSet).length);
 }
 setTimeout(_updateCompCount,3000);
+
+// ═══ PROGRESSIVE UNLOCK LADDER — hide tabs / sinks until level-gated ═══
+// Mirrors docs/TUTORIAL_PROGRESSION.md. Each gated surface hides or degrades
+// until the player reaches the required Keeper Level, then lights up with a
+// ceremony toast (see _lwLevelCeremony).
+window._lwNavTap=function(tab,reqLvl){
+  var lvl=(window.canSee&&window.canSee.currentLevel)?window.canSee.currentLevel():1;
+  if(lvl<reqLvl){
+    if(window._toast){
+      var msg='🔒 '+tab.toUpperCase()+' opens at Keeper Level '+reqLvl+'. (You\'re Lv '+lvl+'.)';
+      window._toast(msg);
+    }
+    try{if(window._haptic)window._haptic('tap');}catch(e){}
+    return;
+  }
+  if(window.switchTab)window.switchTab(tab);
+};
+window._lwApplyGates=function(){
+  if(!window.canSee)return;
+  var curLvl=(window.canSee.currentLevel)?window.canSee.currentLevel():1;
+  // Tabs: show/hide buttons (keep visible with lock chip if close-to-unlock?)
+  var nurBtn=document.getElementById('nav-btn-nursery');
+  if(nurBtn){
+    if(window.canSee.nurseryTab()){nurBtn.style.display='';nurBtn.classList.remove('gated');}
+    else {nurBtn.classList.add('gated');}
+  }
+  var wildBtn=document.getElementById('nav-btn-wild');
+  if(wildBtn){
+    if(window.canSee.wildTab()){wildBtn.style.display='';wildBtn.classList.remove('gated');}
+    else {wildBtn.classList.add('gated');}
+  }
+  // Keeper-bar sinks (mystery/slots/weather) — hide until Lv 6
+  var sinks=['kb-mystery','kb-slots','kb-weather'];
+  var sinksShown=window.canSee.keeperBarSinks();
+  for(var i=0;i<sinks.length;i++){
+    var el=document.getElementById(sinks[i]);
+    if(!el)continue;
+    el.style.display=sinksShown?'':'none';
+  }
+};
+// Re-apply gates on level-up, tab switch, and boot.
+if(window.PW_grantXP){
+  var _origGrant=window.PW_grantXP;
+  window.PW_grantXP=function(amount,reason){
+    var before=(window.canSee&&window.canSee.currentLevel)?window.canSee.currentLevel():1;
+    var ret=_origGrant.apply(this,arguments);
+    var after=(window.canSee&&window.canSee.currentLevel)?window.canSee.currentLevel():1;
+    if(after>before&&window._lwApplyGates)try{window._lwApplyGates();}catch(e){}
+    if(after>before&&window._lwLevelCeremony)try{window._lwLevelCeremony(after);}catch(e){}
+    return ret;
+  };
+}
+// Level-up ceremony: celebrates what just unlocked. Replaces the plain toast
+// for levels 2–10 with a specific unlock announcement.
+window._lwLevelCeremony=function(newLvl){
+  var ceremonies={
+    2:{icon:'🌱',title:'SPROUT',body:'Nursery opens — seeds grow into plants here.'},
+    3:{icon:'🌳',title:'YOUNG SHOOT',body:'The world opens. Tap WILD to plant one of your garden\'s children somewhere real.'},
+    4:{icon:'🍂',title:'BUDDING',body:'Wild seeds now respond to you. Walk close to any feral to collect it.'},
+    5:{icon:'🤝',title:'TENDER',body:'You can now tend other keepers\' wild plants within 75m for Dew.'},
+    6:{icon:'🎁',title:'GROWER',body:'Three gifts: a mystery box, slots, and the power to summon weather.'},
+    7:{icon:'🧭',title:'CULTIVATOR',body:'Book of Secrets → CLASS tab. Five paths await. Choose one.'},
+    8:{icon:'🍃',title:'FORAGER',body:'Class & tool XP now visible. Feral cooldowns shortened.'},
+    9:{icon:'🌸',title:'GARDENER',body:'Nursery Shop POTS unlocked. Apply one to a growing seed for bloom-time magic.'},
+    10:{icon:'🔬',title:'NATURALIST',body:'Nursery Shop BOOSTERS unlocked. And you can now harvest fruit from strangers\' wild plants.'}
+  };
+  var c=ceremonies[newLvl];if(!c)return;
+  if(window._toast)window._toast(c.icon+' '+c.title+' — '+c.body);
+  try{if(window._playWin)window._playWin();}catch(e){}
+  try{if(window._haptic)window._haptic('bloom');}catch(e){}
+};
+// Initial apply
+setTimeout(function(){try{window._lwApplyGates();}catch(e){}},600);
 window._updateCompCount=_updateCompCount;
 
 // ═══ CLASS SYSTEM v1 ═══
@@ -52188,9 +52276,16 @@ function _lwLevel(){
 // Each returns true if the feature should be VISIBLE. Wild v3 level gates
 // are folded in alongside existing activity-based gates.
 window.canSee = {
+  // ═══ PROGRESSIVE UNLOCK LADDER (from docs/TUTORIAL_PROGRESSION.md) ═══
+  nurseryTab: function(){return _lwLevel()>=2;},
+  wildTab: function(){return _lwLevel()>=3;},
+  feralCollect: function(){return _lwLevel()>=4;},
   strangerTend: function(){return _lwLevel()>=5;},
+  keeperBarSinks: function(){return _lwLevel()>=6;},  // mystery/slots/weather
   classPick: function(){return _lwLevel()>=7;},
   greenhouseBreed: function(){return _lwLevel()>=7;},
+  nurseryShopPots: function(){return _lwLevel()>=9;},
+  nurseryShopBoosters: function(){return _lwLevel()>=10;},
   fruitHarvest: function(){return _lwLevel()>=10;},
   nurseryMergeBreed: function(){return _lwLevel()>=12;},
   wildCutting: function(){return _lwLevel()>=15;},
