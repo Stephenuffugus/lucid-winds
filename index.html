@@ -26053,11 +26053,14 @@ document.addEventListener('keydown', function(e) {
   }
 
   function _layerTier(cat, t) {
+    // Per-layer rarity tiers — MUST MATCH getTerraGrade (window.getTerraGrade)
+    // so aggregate grade is consistent with layer colors. See index.html:7533.
     if (cat==='VESSEL') {
-      var _p=t.pot%71;
-      if (_p===15) return {tier:'legendary',color:_TIER_COLORS.legendary};
-      if (_p===56||_p===57) return {tier:'legendary',color:_TIER_COLORS.legendary};
-      if (_p===50||_p===51||_p===52) return {tier:'epic',color:_TIER_COLORS.epic};
+      var _p=t.pot%60;
+      if (t.pot===15) return {tier:'legendary',color:_TIER_COLORS.legendary}; // Golden Pot
+      if (_p===59) return {tier:'mythic',color:_TIER_COLORS.mythic};          // World Seed Cradle
+      if (_p===56||_p===57||_p===58) return {tier:'legendary',color:_TIER_COLORS.legendary};
+      if (_p===50||_p===51||_p===52||_p===53||_p===54) return {tier:'epic',color:_TIER_COLORS.epic};
       if (_p===7||_p===21||_p===22||_p===23||_p===27||_p===28) return {tier:'rare',color:_TIER_COLORS.rare};
       if (_p===4||_p===5||_p===6||_p===11||_p===12||_p===13||_p===14||_p===16||_p===18||_p===20||_p===24||_p===25||_p===26) return {tier:'uncommon',color:_TIER_COLORS.uncommon};
       return {tier:'common',color:_TIER_COLORS.common};
@@ -26090,11 +26093,13 @@ document.addEventListener('keydown', function(e) {
       return {tier:'common',color:_TIER_COLORS.common};
     }
     if (cat==='SUBSTRATE') {
+      // Must match getTerraGrade substrate tiers (index.html:7549)
       var _b=t.base%71;
       if (_b<7) return null;
-      if (_b===52||_b===53||_b===56||_b===60) return {tier:'rare',color:_TIER_COLORS.rare};
-      if (_b===15||_b===28) return {tier:'legendary',color:_TIER_COLORS.legendary};
-      if (_b===16||_b===17||_b===29) return {tier:'rare',color:_TIER_COLORS.rare};
+      if (_b===59||_b===60||_b===61) return {tier:'mythic',color:_TIER_COLORS.mythic};   // Phoenix Ash, Void Essence, Moonstone Dust
+      if (_b===56||_b===57||_b===58) return {tier:'legendary',color:_TIER_COLORS.legendary}; // Stardust, Dragon Bone, Quicksilver
+      if (_b===52||_b===53||_b===54||_b===55) return {tier:'epic',color:_TIER_COLORS.epic};  // Amber, Biolum, Magnetic, Fossil
+      if (_b===15||_b===16||_b===17||_b===28||_b===29) return {tier:'rare',color:_TIER_COLORS.rare}; // Crystal, Sulfuric, Obsidian, Meteorite, Mycelium
       if (_b===7||_b===10||_b===18||_b===22) return {tier:'uncommon',color:_TIER_COLORS.uncommon};
       return {tier:'common',color:_TIER_COLORS.common};
     }
@@ -28272,8 +28277,24 @@ document.addEventListener('keydown', function(e) {
 
     backEl.innerHTML = html;
     backEl.classList.remove('cs-back-lazy');
-    // Click is routed by the wrap-level listener (see openCarousel slot
-    // builder) — no per-button listener needed here.
+    // CAPTURE-PHASE listener for LINEAGE & DETAILS nameplate.
+    // See memory: feedback_lineage_button_iOS.md — inline onclick is
+    // unreliable on iOS Safari when the button is inside a rotateY
+    // parent. Capture phase fires before bubble, stopping flip.
+    var npBtn = backEl.querySelector('.cb-nameplate[data-pdh]');
+    if (npBtn) {
+      npBtn.addEventListener('click', function(e) {
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+        e.preventDefault();
+        var ph = npBtn.getAttribute('data-pdh');
+        if (ph && window._openPlantDetails) {
+          try { window._openPlantDetails(ph); } catch(err) {
+            if (window._toast) window._toast('Details failed: ' + (err && err.message || ''));
+          }
+        }
+      }, true); // ← capture phase
+    }
   }
 
   // ── Card flip handler: first-flip rarity reveal ────────────────────
