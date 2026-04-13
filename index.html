@@ -29824,11 +29824,13 @@ document.addEventListener('keydown', function(e) {
       if(keeperBar)keeperBar.style.display='none';
       document.body.classList.add('tab-wild');
       if(wildNav){wildNav.style.display='block';wildNav.querySelectorAll('.wn-btn').forEach(function(b){b.classList.remove('active');});var wb=wildNav.querySelector('.wn-btn[onclick*="wild"]');if(wb)wb.classList.add('active');}
+      if(window._lwDemoBadgeVisibility)window._lwDemoBadgeVisibility(true);
     } else {
       if(stdNav)stdNav.style.display='flex';
       if(keeperBar)keeperBar.style.display='flex';
       if(wildNav)wildNav.style.display='none';
       document.body.classList.remove('tab-wild');
+      if(window._lwDemoBadgeVisibility)window._lwDemoBadgeVisibility(false);
     }
     // Switch panel — hide all, then render + show target synchronously
     document.querySelectorAll('.grove-panel').forEach(function(p) {
@@ -33610,7 +33612,11 @@ var _snapUnsub=null;   // Firestore onSnapshot unsubscribe function
 var _snapZones=null;   // currently subscribed zone set (string for comparison)
 var _snapDebounce=null; // debounce timer for moveend re-subscription
 var GC={Common:'#8a9a7a',Uncommon:'#5a9e3f',Rare:'#4a90d9',Epic:'#9b59b6',Legendary:'#C8A84B',Mythic:'#e74c3c',Cosmic:'#ff6ec7'};
-var FALLBACK=[40.758,-73.9855];
+// Demo coords: New York Botanical Garden. Picked because (a) lush biome
+// for the demo player to look at, (b) iconic location, (c) far enough
+// from any single user's home that real ferals nearby aren't poisoned
+// by demo-mode noise.
+var FALLBACK=[40.8617,-73.8773];
 
 // ── WILD v3: rarity-scaled vitality ──
 // Each wild plant has a lifespan based on rarity. decayAt is the
@@ -34098,7 +34104,7 @@ function _showGpsBanner(){
   _gpsDenied=true;
   var b=document.createElement('div');
   b.id='gps-recovery-banner';
-  b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:rgba(13,16,12,0.95);border-bottom:1.5px solid var(--sage,#7ab356);padding:14px 16px;font-family:DM Mono,monospace;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:panelFadeIn 0.35s ease;';
+  b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:rgba(13,16,12,0.95);border-bottom:1.5px solid var(--sage,#7ab356);padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top,0px));font-family:DM Mono,monospace;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:panelFadeIn 0.35s ease;';
   var inner='<div style="max-width:500px;margin:0 auto;">';
   inner+='<div style="color:var(--gold,#c8a84b);font-size:0.78rem;font-weight:700;letter-spacing:0.06em;margin-bottom:6px;">\u26A0 GPS UNAVAILABLE</div>';
   inner+='<div style="color:var(--cream,#e8dcc8);font-size:0.65rem;line-height:1.5;margin-bottom:12px;opacity:0.85;">Location is needed to plant, harvest, and collect feral seeds in the Wild. You are currently in demo mode.</div>';
@@ -34108,13 +34114,37 @@ function _showGpsBanner(){
   inner+='</div></div>';
   b.innerHTML=inner;
   document.body.appendChild(b);
+  _showDemoBadge(); // ensures badge persists after banner dismiss
 }
 function _hideGpsBanner(){
   var b=document.getElementById('gps-recovery-banner');
   if(b)b.remove();
 }
+// Persistent demo-mode pill. Lives in the corner of the wild map after
+// the banner is dismissed so the player never forgets they're not
+// looking at their real surroundings. Tap reopens GPS retry.
+function _showDemoBadge(){
+  if(document.getElementById('lw-demo-badge'))return;
+  var pill=document.createElement('div');
+  pill.id='lw-demo-badge';
+  pill.onclick=function(){window._retryGps();};
+  pill.style.cssText='position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:50%;transform:translateX(-50%);z-index:998;background:rgba(13,16,12,0.92);border:1.2px solid rgba(200,168,75,0.55);color:var(--gold,#c8a84b);font-family:DM Mono,monospace;font-size:0.55rem;letter-spacing:0.1em;padding:6px 12px;border-radius:14px;cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 2px 8px rgba(0,0,0,0.5);display:none;';
+  pill.textContent='\u2316 DEMO LOCATION \u2014 TAP FOR GPS';
+  document.body.appendChild(pill);
+  // Only show on Wild tab; switchTab toggles via class on body.
+  if(document.body.classList.contains('tab-wild'))pill.style.display='block';
+}
+function _hideDemoBadge(){
+  var p=document.getElementById('lw-demo-badge');if(p)p.remove();
+}
+// Toggle visibility on tab switch (badge only relevant on Wild)
+window._lwDemoBadgeVisibility=function(onWild){
+  var p=document.getElementById('lw-demo-badge');
+  if(p)p.style.display=onWild?'block':'none';
+};
 window._dismissGpsBanner=function(){
   _hideGpsBanner();
+  if(_gpsDenied)_showDemoBadge();
 };
 window._retryGps=function(){
   if(!navigator.geolocation){_toast('This device does not support GPS.');return;}
@@ -34126,6 +34156,7 @@ window._retryGps=function(){
     window._uLat=_uLat;window._uLng=_uLng;
     if(_map)_map.setView([_uLat,_uLng],16);
     _placeUser();_loadAll();
+    _hideDemoBadge();
     _toast('Location locked! Tap \ud83c\udf31 to plant.');
   },function(err){
     _toast('GPS still unavailable. Check device settings.');
@@ -35601,6 +35632,7 @@ function _collectFeral(f,mk){
     _toast('🔒 Feral seeds respond to you at Keeper Level 4.');return;
   }
   if(!_uLat){_toast('Need location.');return;}
+  if(_gpsDenied){_toast('\u2316 Demo mode \u2014 enable GPS to collect ferals in your area.');return;}
   var d=_dist(_uLat,_uLng,f.lat,f.lng);
   var _fcRange=typeof _getCollectRange==='function'?_getCollectRange():COLLECT_RANGE;
   if(d>_fcRange){_toast('Walk closer! '+Math.round(d*3.281)+' ft away. Need within '+Math.round(_fcRange*3.281)+' ft.');return;}
@@ -36671,6 +36703,7 @@ function _allPlantsInZone(zoneKey){
 function _drop(pl){
   closePicker();
   if(!_uLat||!_uLng){_toast('No location.');return;}
+  if(_gpsDenied){_toast('\u2316 Demo mode \u2014 enable GPS to plant in the real world.');return;}
   if((MAX_DROPS-_drops)<=0)return;
   var wild=_getWild();
   var myUid='';try{var _cu=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_cu)myUid=_cu.uid;}catch(e){}
