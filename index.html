@@ -7900,6 +7900,7 @@ document.addEventListener('keydown', function(e) {
   function addSeed(opts){
     var nursery=_loadNursery();
     var maxSlots = getNurSlots();
+    try{if(window._LW_classBonus){maxSlots=Math.floor(maxSlots*window._LW_classBonus('nurserySlot'));}}catch(e){}
     if(nursery.length>=maxSlots) return {ok:false,reason:'NURSERY_FULL'};
     var today=_today();
     var seed={
@@ -33207,6 +33208,10 @@ function _ensureVitality(plant){
   var rarity=plant.rarity||plant.grade||_plantRarity(plant.hash);
   plant.rarity=rarity;
   var lifeMs=plant.lifespanMs||_lifespanMsFor(rarity);
+  // Tender class bonus: extend lifespan for plants owned by Tender (applied once at ensure time)
+  if(!plant.lifespanMs){
+    try{if(window._LW_classBonus&&plant.own){lifeMs=Math.round(lifeMs*window._LW_classBonus('plantLongevity'));}}catch(e){}
+  }
   plant.lifespanMs=lifeMs;
   // Prefer the numeric droppedAtMs/decayAtMs fields written by the new
   // _writeSharedDrop. Fall back to parsing droppedAt/decayAt (which may
@@ -33615,6 +33620,10 @@ function _loadSteps(){
 function _saveSteps(s){try{localStorage.setItem(LW_STEPS_KEY,JSON.stringify(s));}catch(e){}}
 function _addSteps(meters){
   if(!meters||meters<=0)return;
+  // Cartographer class: multiplies step distance credit
+  try{if(window._LW_classBonus){meters=meters*window._LW_classBonus('stepBonus');}}catch(e){}
+  // Cartographer XP: 1 XP per 10 meters walked
+  try{if(window._LW_classXP){window._LW_classXP('steps',Math.ceil(meters/10));}}catch(e){}
   var s=_loadSteps();
   var prevLifetime=s.lifetime||0;
   s.lifetime=prevLifetime+meters;
@@ -34197,6 +34206,8 @@ function _adjustOffspringRarity(hash, gradeA, gradeB) {
   if (roll < 0.10) targetIdx = Math.min(6, Math.ceil(avg) + 1);
   else if (roll < 0.30) targetIdx = Math.max(0, Math.floor(avg) - 1);
   else targetIdx = Math.round(avg);
+  // Forager L2+ rareOdds: small upward nudge on tier
+  try{if(window._LW_classBonus){var _ro=window._LW_classBonus('rareOdds');if(_ro>1.1&&Math.random()<(_ro-1)){targetIdx=Math.min(6,targetIdx+1);}}}catch(e){}
   var chars = hash.split('');
   if (targetIdx >= 5) { chars[32] = 'f'; chars[33] = 'e'; }
   else if (targetIdx >= 3) { chars[32] = 'c'; chars[33] = Math.floor(Math.random() * 4).toString(16); }
