@@ -28150,6 +28150,8 @@ document.addEventListener('keydown', function(e) {
   // ── Public: open carousel ────────────────────────────────────────────
   window.openCarousel = function(arr, startIdx, source) {
     if (!arr || !arr.length) return;
+    // Discovery XP — first time opening the plant inspector.
+    try{if(window.LW_XP)window.LW_XP.grantOnce('disc_carousel',8,'discover_carousel','🔍 +8 XP — plant inspector unlocked. Swipe to browse, tap to flip.');}catch(e){}
     _carousel.arr       = arr;
     _carousel.idx       = Math.max(0, Math.min(startIdx, arr.length - 1));
     _carousel.source    = source || 'greenhouse';
@@ -29251,6 +29253,7 @@ document.addEventListener('keydown', function(e) {
   var _padDrawerCtx    = null; // 'greenhouse' | 'nursery'
 
   window.openPlantActionDrawer = function(plant, context, plantIndex) {
+    try{if(window.LW_XP)window.LW_XP.grantOnce('disc_drawer',5,'discover_drawer','⚙️ +5 XP — plant actions. Download, breed, share, compost.');}catch(e){}
     _padDrawerPlant  = plant;
     window._padBreedPlant = plant; // Expose for inline onclick in breed button
     _padDrawerCtx    = context || 'greenhouse';
@@ -29693,6 +29696,12 @@ document.addEventListener('keydown', function(e) {
   window.switchTab = function(tab) {
     _haptic('tab');
     if(typeof gtag!=='undefined') gtag('event','tab_switch',{tab:tab});
+    // Discovery XP — first touch of each tab (5 XP each, one-time).
+    // Labels teach what the tab is for.
+    try{
+      var tabTeach={game:'Pattern games grow your garden.',greenhouse:'Your garden lives here.',nursery:'Seeds grow into plants here.',wild:'Walk real places. Plant seeds.',binder:'Companions you\'ve discovered.'};
+      if(window.LW_XP&&tabTeach[tab])window.LW_XP.grantOnce('disc_tab_'+tab,5,'discover_tab','+5 XP — '+tabTeach[tab]);
+    }catch(e){}
     // Clear game-active HUD state when leaving game tab
     document.body.classList.remove('game-active');
     // Midnight backpack auto-deliver — check on every tab switch so it
@@ -30517,6 +30526,7 @@ document.addEventListener('keydown', function(e) {
         if (typeof gtag!=='undefined') gtag('event','pollination_event',{ nonce:result.nonce, parentA:selA.hash.slice(0,8), parentB:selB.hash.slice(0,8) });
         if(window._updateNextStep)_updateNextStep();
         if(window.PW_grantXP) PW_grantXP(5,'cross_pollinate');
+        try{if(window.LW_XP)window.LW_XP.grantOnce('first_cross',15,'first_of_kind','🧬 +15 XP — first cross-pollination. Two lineages become one.');}catch(e){}
         if(window.LW_Log) window.LW_Log.write('plant_bred', {
           parentAHash: selA.hash,
           parentBHash: selB.hash,
@@ -35475,6 +35485,8 @@ function _doCollectFeral(f,mk){
   if(typeof gtag!=='undefined') gtag('event','feral_collected',{grade:info.grade,dew_reward:reward});
   if(window._LW_classXP)window._LW_classXP('feral',10);
   if(window._LW_toolXP)window._LW_toolXP('pouch',2);
+  // Tutorial-proxy: first feral collection is a milestone.
+  try{if(window.LW_XP)window.LW_XP.grantOnce('first_feral',10,'first_of_kind','🌿 +10 XP — first feral seed. They grow different from garden stock.');}catch(e){}
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
 }
 
@@ -36153,6 +36165,7 @@ function _waterOwnPlant(p,mk){
   _play('match');
   // Watering grants pollen XP as a caretaker reward (direct XP, no Dew earn)
   var _waterXP=3;if(window.PW_grantXP)PW_grantXP(_waterXP,'water_care');
+  try{if(window.LW_XP)window.LW_XP.grantOnce('first_water',10,'first_of_kind','💧 +10 XP — first watering. Plants remember kindness.');}catch(e){}
   if(window._LW_toolXP)window._LW_toolXP('can',3);
   if(window.LW_Log)window.LW_Log.write('wild_watered',{hash:p.hash});
   _play('water');
@@ -37499,6 +37512,8 @@ function _dropFromBP(p){
   if(_speedKmh>25){_toast('\ud83c\udf3f Slow down to plant! Moving too fast.');return;}
   if(!_uLat||!_uLng){_toast('Need GPS location to drop.');return;}
   if(typeof gtag!=='undefined') gtag('event','wild_plant_drop',{lat:_uLat.toFixed(3),lng:_uLng.toFixed(3)});
+  // Tutorial-proxy: first wild drop is a massive milestone — the world opens.
+  try{if(window.LW_XP)window.LW_XP.grantOnce('first_wild_drop',15,'first_of_kind','🌎 +15 XP — your first wild planting. This plant lives in the real world now.');}catch(e){}
   var wild=_getWild();
   var myUid='';try{var _cu=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_cu)myUid=_cu.uid;}catch(e){}
   var la=_uLat+(Math.random()-0.5)*0.0005,lo=_uLng+(Math.random()-0.5)*0.0005;
@@ -38492,6 +38507,7 @@ window._hexAction=function(action){
     }catch(e){}
     if(window.earnDew)window.earnDew(2,'wild_tend_stranger');
     if(window.PW_grantXP)PW_grantXP(10,'wild_tend_stranger');
+    try{if(window.LW_XP)window.LW_XP.grantOnce('first_tend',15,'first_of_kind','🤝 +15 XP — first stranger tended. You\'re part of something bigger.');}catch(e){}
     if(window.LW_Log)window.LW_Log.write('wild_tended_stranger',{hash:p.hash,ownerName:p.ownerName||'Keeper'});
     _writeWitnessFee(p,'tend');
     _toast('\ud83c\udf3f Tended '+(p.ownerName||'a keeper')+'\u2019s plant. +6h lifespan \u00b7 +2 Dew \u00b7 +10 XP');
@@ -44193,6 +44209,61 @@ function updateKeeperBar(){
   var fc=document.getElementById('cs-friend-code');if(fc)fc.textContent=_getFriendCode();
 }
 
+// ═══ LW_XP — dedup/cooldown/dwell primitives for new XP reward architecture ═══
+// See docs/XP_REWARD_ARCHITECTURE.md. Every new XP source routes through here
+// so rules (one-time, daily, cooldown, dwell) are enforced consistently and
+// persist to Firestore via the same sync path as sws_inventory.
+(function(){
+  var SEEN_KEY='sws_xp_seen';
+  var DAILY_KEY='sws_xp_daily';
+  var CD_KEY='sws_xp_cooldown';
+  function loadSet(k){try{return JSON.parse(localStorage.getItem(k)||'{}');}catch(e){return {};}}
+  function saveSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+  function todayKey(){return new Date().toISOString().split('T')[0];}
+  function emitToast(text,gentle){
+    if(!window._toast)return;
+    try{window._toast(text);}catch(e){}
+  }
+  window.LW_XP={
+    // One-time grant — ever.
+    grantOnce:function(id,amt,reason,toastText){
+      var s=loadSet(SEEN_KEY);if(s[id])return 0;
+      s[id]=Date.now();saveSet(SEEN_KEY,s);
+      if(window.PW_grantXP)window.PW_grantXP(amt,reason||'xp_once');
+      if(toastText)emitToast(toastText);
+      return amt;
+    },
+    // One per local-day.
+    grantDaily:function(id,amt,reason,toastText){
+      var d=loadSet(DAILY_KEY);var today=todayKey();
+      if(d[id]===today)return 0;
+      d[id]=today;saveSet(DAILY_KEY,d);
+      if(window.PW_grantXP)window.PW_grantXP(amt,reason||'xp_daily');
+      if(toastText)emitToast(toastText);
+      return amt;
+    },
+    // Minimum seconds between fires.
+    grantCooldown:function(id,amt,reason,minSec){
+      var c=loadSet(CD_KEY);var now=Date.now();
+      var last=c[id]||0;
+      if(now-last<minSec*1000)return 0;
+      c[id]=now;saveSet(CD_KEY,c);
+      if(window.PW_grantXP)window.PW_grantXP(amt,reason||'xp_cd');
+      return amt;
+    },
+    // Dwell: grant after element stays visible for ms. Returns timer id so
+    // caller can cancel (e.g., if user flips card back early).
+    grantDwell:function(id,amt,reason,ms,validateFn){
+      var self=this;
+      return setTimeout(function(){
+        try{if(validateFn&&!validateFn())return;}catch(e){return;}
+        self.grantOnce(id,amt,reason||'xp_dwell');
+      },ms);
+    },
+    hasSeen:function(id){return !!loadSet(SEEN_KEY)[id];}
+  };
+})();
+
 // ═══ GRANT XP (called from game systems) ═══
 window.PW_grantXP=function(amount,reason){
   // Pollen Rush booster: 2x XP for 1h
@@ -46307,7 +46378,7 @@ var SC=[{c:1,k:'seed1'},{c:5,k:'seed5'},{c:10,k:'seed10'},{c:15,k:'seed15'},{c:2
 function xp(){var c=3;try{if(window._LW_toolMod){var _ps=window._LW_toolMod('pouch');if(_ps)c=_ps;}}catch(e){}for(var i=1;i<SL.length;i++){var s=SL[i];if(s.k==='slot2'||s.k==='slot3')continue;if(st.unlocks[s.k]){if(s.dy){var td=new Date().toISOString().split('T')[0];if(st.daily!==td)c++;}else c++;}}return c;}
 function xc(){var c=1;for(var i=SC.length-1;i>=0;i--){if(st.unlocks[SC[i].k]){c=SC[i].c;break;}}return c;}
 function init(){var el=document.getElementById('bpi');if(el){var s=el.querySelector('svg');if(s)s.remove();}render();}
-function toggle(){if(_o)close();else open();}
+function toggle(){if(_o)close();else{try{if(window.LW_XP)window.LW_XP.grantOnce('disc_backpack',5,'discover_backpack','🎒 +5 XP — Field Pouch. Carry seeds and plants here.');}catch(e){}open();}}
 function open(){_o=true;hap();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-open-v4.png')";}document.getElementById('bpe').classList.add('open');render();}
 function close(){_o=false;csi();cpi();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-closed-v4.png')";}document.getElementById('bpe').classList.remove('open');}
 function csi(){_ss=null;document.getElementById('sdi').classList.remove('show');}
@@ -47843,6 +47914,21 @@ var _dailyLoginChecked = false;
 window._checkDailyLogin = function() {
   if (_dailyLoginChecked) return;
   _dailyLoginChecked = true;
+  // RETURN XP — fires before daily reward so the XP shows first.
+  // 5 XP daily, +15 on ≥24h gap, +40 on ≥3d, +100 on ≥7d.
+  try{
+    var lastOpen=parseInt(localStorage.getItem('sws_last_open')||'0',10);
+    var now=Date.now();
+    var gapMs=now-lastOpen;
+    var oneDay=86400000;
+    if(!lastOpen||gapMs>=oneDay*0.5){
+      if(window.LW_XP)window.LW_XP.grantDaily('return_daily',5,'return_daily','☀️ +5 XP — welcome back.');
+      if(gapMs>=oneDay*1.5&&window.LW_XP)window.PW_grantXP(15,'return_24h');
+      if(gapMs>=oneDay*3&&window.LW_XP)window.LW_XP.grantCooldown('return_3d',40,'return_3d',3*86400);
+      if(gapMs>=oneDay*7&&window.LW_XP)window.LW_XP.grantCooldown('return_7d',100,'return_7d',7*86400);
+    }
+    localStorage.setItem('sws_last_open',String(now));
+  }catch(e){}
   var _dlToday = new Date().toISOString().split('T')[0];
   if (localStorage.getItem('lw_daily_claimed') === _dlToday) return;
   if (document.getElementById('daily-reward-modal')) return;
@@ -51151,6 +51237,7 @@ function _bosSecretsContent() {
 }
 
 window._openCompendiumUI=function(){
+  try{if(window.LW_XP)window.LW_XP.grantOnce('disc_book',5,'discover_book','📖 +5 XP — Book of Secrets. Everything you\'ve discovered lives here.');}catch(e){}
   // Remove old overlay if present
   var old=document.getElementById('bos-overlay');if(old)old.remove();
 
