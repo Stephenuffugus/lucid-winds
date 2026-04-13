@@ -38,7 +38,7 @@ window._gameFns.storyseeds=function SS(a){
     {text:'Describe a place where time moves slowly.',category:'SENSES',icon:'🕰'}
   ];
 
-  var currentPrompt=null,savedMilestone=false;
+  var currentPrompt=null,savedMilestone=false,_ssWon=false;
 
   ms(a,'Story Seeds · <span id="SSw">0 words</span>');
   mm(a);
@@ -107,7 +107,10 @@ window._gameFns.storyseeds=function SS(a){
       if(entries.length>365)entries=entries.slice(-365);
       localStorage.setItem('sws_storyseeds_entries',JSON.stringify(entries));
     }catch(e){}
-    _e('milestone');
+    // First substantial save (≥10 words) per session mints a hash;
+    // additional saves fire milestones for incremental Sunbeams.
+    if(n>=10&&!_ssWon){_ssWon=true;_e('game_win');if(_playWin)_playWin();}
+    else _e('milestone');
     _sr('storyseeds',{w:true,s:n});
     sm('✓ Saved · '+n+' words');
     ta.value='';updateWords();savedMilestone=false;

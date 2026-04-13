@@ -244,8 +244,10 @@ window._gameFns.jade=function JG(a){
     return !(leftBlock&&rightBlock);
   }
 
-  function TILE_W(){return 30;}
-  function TILE_H(){return 42;}
+  // Bumped from 30×42 to 42×58 — was cramped per Stephen's report.
+  // Mahjong tiles need to be readable to identify face symbols.
+  function TILE_W(){return 42;}
+  function TILE_H(){return 58;}
   function tilePos(t){
     var TW=TILE_W(),TH=TILE_H();
     var x=t.col*(TW*0.6)+t.layer*-3;

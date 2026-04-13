@@ -15,7 +15,7 @@ window._gameFns.breathing=function BR(a){
   var curKey='calm';
   var phases=PATTERNS.calm.phases;
   var phaseIdx=0,phaseTimer=0,breathing=false;
-  var breathCount=0,totalTime=0;
+  var breathCount=0,totalTime=0,_brWon=false;
   var bloomProgress=0.3,targetBloom=0;
   var particles=[];
   var raf=null,lastTime=0,stopped=false;
@@ -71,6 +71,10 @@ window._gameFns.breathing=function BR(a){
       if(phaseIdx===0){
         breathCount++;
         if(breathCount%5===0){_e('milestone');try{if(window._play)_play('match');}catch(e){}}
+        // Mint a hash after 10 completed breaths — a meaningful
+        // session of practice — so creative/ambient games still
+        // generate Sunbeams. Fires once per game launch.
+        if(breathCount===10&&!_brWon){_brWon=true;_e('game_win');try{if(window._sr)window._sr('breathing',{w:true,s:breathCount});}catch(e){}}
       }
       try{navigator.vibrate&&navigator.vibrate(15);}catch(e){}
     }

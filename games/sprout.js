@@ -22,9 +22,11 @@ var KEY_ROWS=['qwertyuiop','asdfghjkl','zxcvbnm'];
   if(document.getElementById('pw-petal-style'))return;
   var s=document.createElement('style');s.id='pw-petal-style';
   s.cssText=[
-    '.pw-board{display:flex;flex-direction:column;gap:6px;align-items:center;padding:10px 6px;}',
-    '.pw-row{display:flex;gap:6px;}',
-    '.pw-cell{width:clamp(40px,11vw,56px);height:clamp(40px,11vw,56px);border:2px solid rgba(74,124,53,0.35);background:rgba(13,16,12,0.6);color:var(--cream,#e8dcc8);font-family:Bebas Neue,sans-serif;font-size:clamp(1.4rem,5vw,2rem);display:flex;align-items:center;justify-content:center;text-transform:uppercase;border-radius:4px;transition:transform .15s ease,background .25s ease,border-color .25s ease;}',
+    '.pw-board{display:flex;flex-direction:column;gap:8px;align-items:center;padding:14px 8px;}',
+    '.pw-row{display:flex;gap:8px;}',
+    /* Bumped cells noticeably — was 40-56 capped; now 52-72 so the */
+    /* board reads from across the room. */
+    '.pw-cell{width:clamp(52px,14vw,72px);height:clamp(52px,14vw,72px);border:2.5px solid rgba(74,124,53,0.45);background:rgba(13,16,12,0.6);color:var(--cream,#e8dcc8);font-family:Bebas Neue,sans-serif;font-size:clamp(1.9rem,7vw,2.6rem);display:flex;align-items:center;justify-content:center;text-transform:uppercase;border-radius:6px;transition:transform .15s ease,background .25s ease,border-color .25s ease;}',
     '.pw-cell.pw-typed{border-color:rgba(200,168,75,0.7);transform:scale(1.05);}',
     '.pw-cell.pw-hit{background:var(--sage,#7ab356);border-color:var(--sage,#7ab356);color:#0d100c;}',
     '.pw-cell.pw-near{background:var(--gold,#c8a84b);border-color:var(--gold,#c8a84b);color:#0d100c;}',
@@ -35,8 +37,10 @@ var KEY_ROWS=['qwertyuiop','asdfghjkl','zxcvbnm'];
     '@keyframes pwShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-3px)}}',
     '.pw-keyboard{display:flex;flex-direction:column;gap:6px;align-items:center;padding:10px 4px 14px;}',
     '.pw-krow{display:flex;gap:4px;justify-content:center;width:100%;max-width:480px;}',
-    '.pw-key{flex:1;min-width:0;height:48px;border:1px solid rgba(74,124,53,0.3);background:rgba(26,31,23,0.85);color:var(--cream,#e8dcc8);font-family:DM Mono,monospace;font-size:0.75rem;font-weight:700;text-transform:uppercase;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;transition:background .25s ease,border-color .25s ease;padding:0;}',
-    '.pw-key.pw-wide{flex:1.5;font-size:0.55rem;}',
+    '.pw-key{flex:1;min-width:0;height:54px;border:1px solid rgba(74,124,53,0.3);background:rgba(26,31,23,0.85);color:var(--cream,#e8dcc8);font-family:DM Mono,monospace;font-size:0.95rem;font-weight:700;text-transform:uppercase;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;transition:background .25s ease,border-color .25s ease;padding:0;}',
+    '.pw-key.pw-wide{flex:1.5;font-size:0.7rem;}',
+    '.pw-howto{font-family:DM Mono,monospace;font-size:0.78rem;color:var(--cream);background:rgba(26,31,23,0.5);border:1px solid rgba(122,179,86,0.25);border-radius:8px;padding:8px 12px;margin:6px auto 10px;max-width:380px;text-align:center;line-height:1.5;letter-spacing:0.02em;}',
+    '.pw-howto strong{color:var(--gold);}',
     '.pw-key.pw-hit{background:var(--sage,#7ab356);border-color:var(--sage,#7ab356);color:#0d100c;}',
     '.pw-key.pw-near{background:var(--gold,#c8a84b);border-color:var(--gold,#c8a84b);color:#0d100c;}',
     '.pw-key.pw-miss{background:rgba(28,32,24,0.95);border-color:rgba(40,46,34,0.85);color:rgba(232,220,200,0.35);}',
@@ -51,6 +55,10 @@ window._gameFns.sprout=function GPW(a){
   var keyState={}; // letter -> 'hit'|'near'|'miss'
   ms(a,'Guess: <strong id="PWg">0</strong>/6');
   mm(a,'Find the 5-letter word');
+  // How-to-play card so first-timers don't have to figure it out from scratch
+  var howto=document.createElement('div');howto.className='pw-howto';
+  howto.innerHTML='Type a 5-letter word and press <strong>ENTER</strong>. <strong style="color:#7ab356">Green</strong> = right letter, right spot. <strong style="color:#c8a84b">Gold</strong> = right letter, wrong spot. Grey = not in word.';
+  a.appendChild(howto);
   var wrap=document.createElement('div');wrap.className='pw-board';wrap.id='PWboard';a.appendChild(wrap);
   var msg=document.createElement('div');msg.className='pw-msg';msg.id='PWmsg';a.appendChild(msg);
   var kb=document.createElement('div');kb.className='pw-keyboard';kb.id='PWkb';a.appendChild(kb);

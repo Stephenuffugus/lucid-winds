@@ -20,8 +20,14 @@ window._gameFns.petalmatch = function PM(a){
   var grid=[],score=0,level=1,moves=30,target=500,won=false;
   var selected=null,animating=false,comboCount=0;
   var canvas,ctx,dpr;
+  // Persisted highest level + total score so progress doesn't vanish
+  // between sessions. New game resumes at saved level so player keeps
+  // their accumulated progress.
+  var bestLevel=1,bestScore=0;
+  try{bestLevel=parseInt(localStorage.getItem('lw_pm_level')||'1',10)||1;bestScore=parseInt(localStorage.getItem('lw_pm_score')||'0',10)||0;}catch(e){}
+  level=bestLevel;target=500+(level-1)*300;moves=30+level*2;
 
-  ms(a,'Level <strong id="PMlv">1</strong> · Target <strong id="PMtg">500</strong>');
+  ms(a,'Level <strong id="PMlv">1</strong> · Target <strong id="PMtg">500</strong> · best L<strong id="PMbest">'+bestLevel+'</strong>');
   mm(a);
   var pan=document.createElement('div');
   pan.style.cssText='max-width:420px;margin:0 auto;padding:6px;user-select:none;text-align:center;';
@@ -136,10 +142,8 @@ window._gameFns.petalmatch = function PM(a){
     if(score>=target){
       level++;moves=30+level*2;target=500+level*300;score=0;
       sm('LEVEL '+(level-1)+' COMPLETE!');_playWin();
-      // Clearing level 1 (advancing to level 2) is the canonical win
-      // event — fires once per game session so the player gets a
-      // proper win record and reward for the first clear. After that,
-      // each additional level fires a milestone for incremental SB.
+      // Persist the new highest level so player keeps progress next session
+      if(level>bestLevel){bestLevel=level;try{localStorage.setItem('lw_pm_level',String(bestLevel));}catch(e){}var bel=document.getElementById('PMbest');if(bel)bel.textContent=bestLevel;}
       if(level===2&&!won){won=true;_e('game_win');_sr('petalmatch',{w:true,s:score,lv:level-1});}
       else _e('milestone');
       initGrid();while(findMatches().length>0)initGrid();

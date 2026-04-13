@@ -13,8 +13,11 @@ window._gameFns.numbergarden = function NG(a){
   var sessionTime=60,startTime=0,problemStartTime=0,totalSolveTime=0;
   var running=false,difficulty=1;
   var timerInterval=0;
+  // Persisted lifetime best so progress carries over.
+  var lifetimeBest=0;
+  try{lifetimeBest=parseInt(localStorage.getItem('lw_ng_best')||'0',10)||0;}catch(e){}
 
-  ms(a,'NUMBER GARDEN · 60s drill');
+  ms(a,'NUMBER GARDEN · 60s drill · best <strong id="NGbest">'+lifetimeBest+'</strong>');
   mm(a);
   var pan=document.createElement('div');
   pan.style.cssText='max-width:420px;margin:0 auto;padding:6px;user-select:none;text-align:center;';
@@ -119,7 +122,10 @@ window._gameFns.numbergarden = function NG(a){
     var avgSpeed=correct>0?Math.round(totalSolveTime/correct/100)/10:0;
     var accuracy=total>0?Math.round(correct/total*100):0;
     var won=correct>=10;
-    sm((won?'✓ ':'')+correct+'/'+total+' · '+accuracy+'% · '+avgSpeed+'s avg · best streak '+bestStreak);
+    var newBest=correct>lifetimeBest;
+    if(newBest){lifetimeBest=correct;try{localStorage.setItem('lw_ng_best',String(lifetimeBest));}catch(e){}}
+    var bEl=document.getElementById('NGbest');if(bEl)bEl.textContent=lifetimeBest;
+    sm((won?'✓ ':'')+correct+'/'+total+' · '+accuracy+'% · '+avgSpeed+'s avg'+(newBest?' · 🌟 NEW BEST':''));
     if(won){_playWin();_e('game_win');}else{_play('lose');_e('game_loss');}
     _sr('numbergarden',{w:won,s:correct,acc:accuracy,spd:avgSpeed,st:bestStreak});
     document.getElementById('NGprob').textContent='Done';

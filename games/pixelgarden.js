@@ -193,7 +193,7 @@ window._gameFns.pixelgarden = function PG(a){
     link.href=sc.toDataURL('image/png');
     link.click();
     sm('Saved ('+totalPixels+' strokes)');
-    _playWin();_e('milestone');
+    _playWin();_e('game_win');
     _sr('pixelgarden',{w:true,s:totalPixels,sz:GRID});
   };
   window._PGSZ=function(s){

@@ -144,7 +144,7 @@ window._gameFns.colorgarden=function CG(a){
       try{navigator.vibrate&&navigator.vibrate(8);}catch(e2){}
       try{if(window._play)_play('tap');}catch(e2){}
       if(Object.keys(regionColors).length===regions.length){
-        _e('milestone');sm('🌸 Page complete!');
+        _e('game_win');if(_playWin)_playWin();sm('🌸 Page complete!');
         _sr('colorgarden',{w:true,s:regions.length});
       }
     }
