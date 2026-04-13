@@ -36660,8 +36660,10 @@ function showTP(p,mk){
         // Bloom chorus bonus
         var _chBonus=window.getChorusBonus?getChorusBonus(p.hash):null;
         if(_chBonus&&_chBonus.inChorus)_polRate=Math.round(_polRate*(1+_chBonus.pollenBonus));
-        // Class synergy: Breeder Master + Garden Spider = 2x pollen
-        try{if(window._LW_hasSynergy&&window._LW_hasSynergy()){var _lwc=localStorage.getItem('lw_class');if(_lwc==='breeder')_polRate*=2;}}catch(e){}
+        // (Breeder Master + Garden Spider 2× pollen synergy moved out of
+        // here — was firing on PASSIVE wild plant pollen rate display, but
+        // the spec is "doubles pollen on BREED action." Now applied at the
+        // _cpReward call site below where breed XP is granted.)
       }
     }catch(e){}
     var waterBtn=document.getElementById('wtp-water');
@@ -37106,22 +37108,35 @@ function _doCrossPollination(wildPlant,matePlant){
   function _cpReward(offGen){
     var roll=Math.random();
     var rewardMsg='';
+    // Breeder Master + Garden Spider synergy: doubles ALL breed-action
+    // rewards (XP, Dew, Sunbeams). The synergy fires on the BREED action,
+    // not on passive pollen rate (which is what it used to do, wrong
+    // surface entirely).
+    var _spiderBonus=1;
+    var _spiderFired=false;
+    try{
+      if(window._LW_hasSynergy&&window._LW_hasSynergy()){
+        var _lwc=localStorage.getItem('lw_class');
+        if(_lwc==='breeder'){_spiderBonus=2;_spiderFired=true;}
+      }
+    }catch(e){}
     if(roll<0.6){
       // 60% — XP reward (monotonic pollen, no spend)
-      var xpBonus=5+Math.floor(Math.random()*10);
+      var xpBonus=(5+Math.floor(Math.random()*10))*_spiderBonus;
       if(window.PW_grantXP)PW_grantXP(xpBonus,'cross_pollinate');
       rewardMsg='+'+xpBonus+' XP!';
     } else if(roll<0.9){
       // 30% — Dew reward (spendable on acceleration + cuttings)
-      var dewBonus=2+Math.floor(Math.random()*4);
+      var dewBonus=(2+Math.floor(Math.random()*4))*_spiderBonus;
       if(window.earnDew)window.earnDew(dewBonus,'cross_pollinate');
       rewardMsg='+'+dewBonus+' Dew!';
     } else {
       // 10% — Sunbeams reward (toward next plant mint)
-      var sbBonus=3+Math.floor(Math.random()*5);
+      var sbBonus=(3+Math.floor(Math.random()*5))*_spiderBonus;
       if(window.earnHashes)window.earnHashes(sbBonus);
       rewardMsg='+'+sbBonus+' Sunbeams toward a new plant!';
     }
+    if(_spiderFired&&window._toast)setTimeout(function(){window._toast('🕷 Web Weaver: Garden Spider doubled the reward.');},250);
     _play('match');
     var parentInfo=_buildInfo(wildPlant.hash);
     var mateInfo=_buildInfo(matePlant.hash);
@@ -39213,8 +39228,17 @@ window._lwCompassTap=function(){
   // which mismatched the canonical 50/200 used by shears/pouch and by
   // _LW_toolMod, causing compass to "feel" leveled before BoS UI agreed.
   var lvl=(window._lwGetToolLevel?window._lwGetToolLevel('compass'):1);
-  // Award compass tool XP for tapping the tool (not just biome discovery)
-  try{if(window._LW_toolXP)window._LW_toolXP('compass',1);}catch(e){}
+  // Award compass tool XP — rate-limited to 1 per 60 seconds so spam-tapping
+  // can't grind to L3 in seconds. Was: +1 XP per tap, no gate (200 taps =
+  // L3, ~30s of frantic tapping). Now: max 1440 XP/day, real interaction
+  // required.
+  try{
+    var _ccLast=parseInt(localStorage.getItem('lw_compass_xp_last')||'0',10);
+    if(Date.now()-_ccLast>=60000){
+      localStorage.setItem('lw_compass_xp_last',String(Date.now()));
+      if(window._LW_toolXP)window._LW_toolXP('compass',1);
+    }
+  }catch(e){}
   if(lvl<2){_toast('\ud83e\udded Compass L1 \u2014 wind only. Discover biomes to level up.');return;}
   if(lvl===2){
     // Reveal biome
@@ -39246,13 +39270,15 @@ window._lwCompassTap=function(){
   }catch(e){_toast('\ud83e\udded Compass error.');}
 };
 function _lwCanToolCap(){
-  // Watering Can tool: L1 = no mass, L2 = 3 per use, L3 = 6 per use
+  // Watering Can: L1 = no mass, L2 = 3 per use, L3 = 6 per use.
+  // Biome match applies the same 1.5× boost as Shears/Pouch get for
+  // tool-effect uniformity. L2 → 5 in biome, L3 → 9 in biome.
   try{
     if(!window._LW_toolMod)return 0;
-    // pouch tool returns slots, can tool cap we derive from level
-    // Use canonical thresholds via _lwGetToolLevel — was inline 30/100.
     var lvl=(window._lwGetToolLevel?window._lwGetToolLevel('can'):1);
-    if(lvl>=3)return 6;if(lvl>=2)return 3;return 0;
+    var cap=lvl>=3?6:lvl>=2?3:0;
+    if(cap>0&&window._LW_biomeMatch&&window._LW_biomeMatch())cap=Math.round(cap*1.5);
+    return cap;
   }catch(e){return 0;}
 }
 function _lwMassWaterRefreshButton(){
@@ -39312,6 +39338,10 @@ function _lwMassWaterDoIt(eligibleIdx, cost){
   _saveWild(wild);
   _lwMassWaterRecord();
   if (window.PW_grantXP) PW_grantXP(watered, 'mass_water');
+  // Award Watering Can tool XP — its signature L2/L3 feature was granting
+  // zero tool XP. Capped per call so a single mass-water with 6+ plants
+  // can't grant L2→L3 in one tap.
+  if (window._LW_toolXP) window._LW_toolXP('can', Math.min(watered, 4));
   if (window.LW_Log) LW_Log.write('mass_water', { count: watered, cost: cost });
   if (window._haptic) _haptic('bloom');
   _toast('\ud83d\udca7 Watered ' + watered + ' plants. \u2796 ' + cost + ' Dew \u00b7 +' + watered + ' XP');
@@ -53590,12 +53620,10 @@ window._LW_classXP=function(source,amount){
   }
   // Biome bonus: +25% XP when in matching biome
   if(_lwBiomeMatch())mult*=1.25;
-  // Cartographer Master + Heron synergy: doubles biome bonus effect.
-  // Was multiplying by 1.25 (so total 1.25 * 1.25 = 1.5625) — spec
-  // says biome bonus DOUBLES from the base 1.25× to 1.5×, meaning the
-  // synergy contribution is +0.25× on top. With mult already at 1.25,
-  // multiplying by ANOTHER 1.6 brings it to ~2.0× — i.e. doubled.
-  if(_lwBiomeMatch()&&cls==='cartographer'&&window._LW_hasSynergy&&window._LW_hasSynergy())mult*=1.6;
+  // Cartographer Master + Heron synergy: biome XP bonus rises from
+  // 1.25× to 1.5× (doubles the +0.25 bonus contribution to +0.50).
+  // Code + spec + description now all agree on 1.5× total.
+  if(_lwBiomeMatch()&&cls==='cartographer'&&window._LW_hasSynergy&&window._LW_hasSynergy())mult*=1.2;
   var gain=Math.ceil(amount*mult);
   var x=_lwGetClassXP();
   var was=x[cls]||0;
@@ -53654,12 +53682,23 @@ window._LW_toolMod=function(tool){
   var keeperCdMult=1;
   try{if(_lwGetClass()==='keeper'&&_lwGetClassLevel('keeper')>=2)keeperCdMult=0.9;}catch(e){}
   if(tool==='shears'){var base=lvl>=3?2*60*60*1000:lvl>=2?4*60*60*1000:6*60*60*1000;return Math.round((base*keeperCdMult)/biomeBoost);}
-  if(tool==='pouch'){var slots=lvl>=3?7:lvl>=2?5:3;if(biomeBoost>1)slots+=1;return slots;}
-  // Added: can + compass were missing branches, forcing inline
-  // localStorage reads with mismatched thresholds elsewhere in the
-  // codebase. Now everyone goes through one path.
-  if(tool==='can')return lvl;     // 1 = no mass-water, 2 = cap 3, 3 = cap 6 + RAIN
-  if(tool==='compass')return lvl; // 1 = wind, 2 = biome reveal, 3 = bearing
+  // Pouch: slots scale by level. Biome match was additive (+1) — now
+  // multiplicative (×1.5) to match Shears so the "biome boost = 1.5×
+  // tool effect" promise is uniform across tools.
+  if(tool==='pouch'){
+    var slots=lvl>=3?7:lvl>=2?5:3;
+    if(biomeBoost>1)slots=Math.round(slots*biomeBoost);
+    return slots;
+  }
+  // Can: mass-water cap = 0 at L1, 3 at L2, 6 at L3. Biome match scales
+  // the cap. _lwCanToolCap reads this and applies. Returning the LEVEL
+  // (not the cap) here to keep API parity; consumer scales by biomeBoost.
+  // Note: we return the level for back-compat, but mass-water consumers
+  // also call _lwCanToolCap which now applies biomeBoost on top.
+  if(tool==='can')return lvl;
+  // Compass: feature unlocks at each level (1 wind, 2 biome reveal,
+  // 3 bearing). No biome boost — features unlock by tier, not magnitude.
+  if(tool==='compass')return lvl;
   return null;
 };
 // Phoenix Bloom (Tender L3) — count the player's available Phoenix-bearing
