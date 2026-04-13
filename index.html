@@ -39791,10 +39791,26 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      they have an account. -->
 <button id="lw-fb-btn" onclick="window._lwOpenFeedback&&window._lwOpenFeedback()" title="Share feedback" style="position:fixed;bottom:calc(var(--nav-h, 58px) + env(safe-area-inset-bottom, 0px) + 6px);right:8px;z-index:999998;background:rgba(122,179,86,0.12);color:rgba(122,179,86,0.7);padding:5px 10px;font-family:'DM Mono',monospace;font-size:0.5rem;letter-spacing:0.05em;border-radius:6px;border:1px solid rgba(122,179,86,0.25);cursor:pointer;">📝 FEEDBACK</button>
 <style>
-  /* Hide feedback button while the onboarding overlay is active —
-     don't compete with the cinematic, and don't let testers reset their
-     account before they've made one. */
+  /* Hide feedback button during onboarding AND any time a major overlay
+     is open — don't let it cover or compete with celebrations, modals,
+     or the cinematic reveal. Uses :has() (iOS 15.4+, Chrome 105+).
+     Fallback: when :has() is unsupported the button just stays visible —
+     not a bug, just slightly busy. */
   body.ob-active #lw-fb-btn{display:none !important;}
+  body:has(.lu-overlay.open) #lw-fb-btn,
+  body:has(#pw-win-overlay) #lw-fb-btn,
+  body:has(#cinematic-reveal.open) #lw-fb-btn,
+  body:has(#daily-reward-modal) #lw-fb-btn,
+  body:has(#lw-tab-teach) #lw-fb-btn,
+  body:has(#lw-whatnow-modal) #lw-fb-btn,
+  body:has(#lw-fb-modal) #lw-fb-btn{display:none !important;}
+  /* Same gate for the 💡 What now? button so it doesn't poke through
+     a celebration. */
+  body:has(.lu-overlay.open) #lw-whatnow-btn,
+  body:has(#pw-win-overlay) #lw-whatnow-btn,
+  body:has(#cinematic-reveal.open) #lw-whatnow-btn,
+  body:has(#daily-reward-modal) #lw-whatnow-btn,
+  body:has(#lw-tab-teach) #lw-whatnow-btn{display:none !important;}
 </style>
 <script>
 (function(){
