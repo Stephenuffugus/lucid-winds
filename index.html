@@ -2419,6 +2419,18 @@
     .lw-fx-petal{animation:lwFxPetalFall 2400ms cubic-bezier(0.45,0.05,0.55,0.95) forwards;}
     .lw-fx-leaf{animation:lwFxLeafFall 2800ms cubic-bezier(0.45,0.05,0.55,0.95) forwards;}
     .lw-fx-ring{animation:lwFxRingExpand 1400ms cubic-bezier(0.16,1,0.3,1) forwards;}
+    .lw-fx-dewdrop{animation:lwFxDewFall 2200ms cubic-bezier(0.5,0,0.8,0.4) forwards;}
+    .lw-fx-ember{animation:lwFxEmberRise 2000ms cubic-bezier(0.3,0,0.7,0.5) forwards;}
+    @keyframes lwFxDewFall{
+      0%{opacity:0;transform:translate(-50%,-50%) translate(var(--fx-x0,0px),-280px) scale(0.4);}
+      18%{opacity:1;}
+      100%{opacity:0;transform:translate(-50%,-50%) translate(var(--fx-x0,0px),360px) scale(1);}
+    }
+    @keyframes lwFxEmberRise{
+      0%{opacity:0;transform:translate(-50%,-50%) translate(var(--fx-x0,0px),60px) scale(0.3);}
+      15%{opacity:1;transform:translate(-50%,-50%) translate(var(--fx-x0,0px),40px) scale(1);}
+      100%{opacity:0;transform:translate(-50%,-50%) translate(var(--fx-x1,30px),-280px) scale(0.6) rotate(var(--fx-rot,180deg));}
+    }
     @keyframes lwFxSparkle{
       0%{opacity:0;transform:translate(-50%,-50%) translate(var(--fx-x0,0px),var(--fx-y0,0px)) scale(0.2) rotate(0deg);}
       20%{opacity:1;}
@@ -39635,6 +39647,22 @@ window._hexAction=function(action){
       if(window.PW_grantXP)PW_grantXP(20,'phoenix_bloom');
       try{if(window._haptic)window._haptic('bloom');}catch(e){}
       try{if(window._playWin)window._playWin();}catch(e){}
+      // Phoenix Bloom celebration — embers rise from below, sparkles burst,
+      // ring of warm gold expands. Lasts ~3s then auto-cleans up.
+      try{
+        if(window._lwSpawnParticles){
+          var fxOv=document.createElement('div');
+          fxOv.style.cssText='position:fixed;inset:0;z-index:99996;pointer-events:none;background:radial-gradient(circle at center,rgba(232,140,80,0.18),transparent 60%);animation:lwFxFadeOut 3s ease forwards;';
+          if(!document.getElementById('lw-fx-fadeout-style')){
+            var fos=document.createElement('style');fos.id='lw-fx-fadeout-style';
+            fos.textContent='@keyframes lwFxFadeOut{0%,40%{opacity:1;}100%{opacity:0;}}';
+            document.head.appendChild(fos);
+          }
+          document.body.appendChild(fxOv);
+          window._lwSpawnParticles(fxOv,{embers:24,sparkles:14,rings:2});
+          setTimeout(function(){if(fxOv.parentNode)fxOv.parentNode.removeChild(fxOv);},3500);
+        }
+      }catch(e){}
       _toast('🔥 Phoenix Bloom! '+_srcName+' burned to revive your wild plant.');
       // Refresh the hex inspector to show updated vitality.
       if(_hexInspZone&&window.FG_Wild&&window.FG_Wild._openHexInspector){
@@ -45960,7 +45988,11 @@ window._lwSpawnParticles=function(container,opts){
     // Sage leaf — almond shape with a midrib vein
     leaf:'<svg width="18" height="14" viewBox="-9 -7 18 14"><path d="M-8 0 Q-4 -7 0 -6 Q4 -7 8 0 Q4 7 0 6 Q-4 7 -8 0 Z" fill="url(#fxLeaf)"/><path d="M-7 0 L7 0" stroke="#3a5a28" stroke-width="0.6" opacity="0.5"/><defs><linearGradient id="fxLeaf" x1="-1" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5a8c3a"/><stop offset="0.5" stop-color="#7ab356"/><stop offset="1" stop-color="#a0cc80"/></linearGradient></defs></svg>',
     // Expanding gold ring — sits at center, no displacement
-    ring:'<svg width="40" height="40" viewBox="-20 -20 40 40"><circle cx="0" cy="0" r="14" fill="none" stroke="url(#fxRing)" stroke-width="2"/><defs><radialGradient id="fxRing" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff5c8" stop-opacity="0"/><stop offset="0.7" stop-color="#f5dc95"/><stop offset="1" stop-color="#c8a84b" stop-opacity="0"/></radialGradient></defs></svg>'
+    ring:'<svg width="40" height="40" viewBox="-20 -20 40 40"><circle cx="0" cy="0" r="14" fill="none" stroke="url(#fxRing)" stroke-width="2"/><defs><radialGradient id="fxRing" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff5c8" stop-opacity="0"/><stop offset="0.7" stop-color="#f5dc95"/><stop offset="1" stop-color="#c8a84b" stop-opacity="0"/></radialGradient></defs></svg>',
+    // Crystal blue dewdrop — teardrop with a bright highlight
+    dewdrop:'<svg width="12" height="16" viewBox="-6 -8 12 16"><path d="M0 -7 Q4 -1 4 3 Q4 7 0 7 Q-4 7 -4 3 Q-4 -1 0 -7 Z" fill="url(#fxDew)" opacity="0.9"/><ellipse cx="-1.5" cy="-2" rx="1.2" ry="2" fill="#fff" opacity="0.7"/><defs><linearGradient id="fxDew" x1="0" y1="-1" x2="0" y2="1"><stop offset="0" stop-color="#c8e0f0"/><stop offset="0.6" stop-color="#7ab3d4"/><stop offset="1" stop-color="#3a7a9a"/></linearGradient></defs></svg>',
+    // Phoenix ember — small flickering teardrop, ember-orange to cream
+    ember:'<svg width="10" height="14" viewBox="-5 -7 10 14"><path d="M0 -6 Q3 -2 3 2 Q3 6 0 6 Q-3 6 -3 2 Q-3 -2 0 -6 Z" fill="url(#fxEmber)"/><defs><radialGradient id="fxEmber" cx="0.5" cy="0.7" r="0.6"><stop offset="0" stop-color="#fff5c8"/><stop offset="0.5" stop-color="#f0a878"/><stop offset="1" stop-color="#c84a2c" stop-opacity="0.7"/></radialGradient></defs></svg>'
   };
   function spawn(type,count,delayBase){
     for(var i=0;i<count;i++){
@@ -45976,11 +46008,17 @@ window._lwSpawnParticles=function(container,opts){
       // Small initial offset so the burst doesn't all-stack at exact center
       var x0=Math.round((Math.random()*2-1)*8);
       var y0=Math.round((Math.random()*2-1)*8);
-      // Petals/leaves drift downward — override y0 to start above center
-      if(type==='petal'||type==='leaf'){
+      // Petals/leaves/dewdrops drift downward — start above center
+      if(type==='petal'||type==='leaf'||type==='dewdrop'){
         y0=-260-Math.random()*40;
         x0=Math.round((Math.random()*2-1)*180);
         x1=x0+Math.round((Math.random()*2-1)*120);
+      }
+      // Embers rise upward from below center, drift sideways slightly
+      if(type==='ember'){
+        x0=Math.round((Math.random()*2-1)*120);
+        x1=x0+Math.round((Math.random()*2-1)*60);
+        rot=Math.round((Math.random()*2-1)*180); // gentler rotation
       }
       el.style.cssText+=
         '--fx-x0:'+x0+'px;'+
@@ -45998,6 +46036,8 @@ window._lwSpawnParticles=function(container,opts){
   if(opts.sparkles)spawn('sparkle',opts.sparkles,80);
   if(opts.petals)spawn('petal',opts.petals,150);
   if(opts.leaves)spawn('leaf',opts.leaves,120);
+  if(opts.dewdrops)spawn('dewdrop',opts.dewdrops,140);
+  if(opts.embers)spawn('ember',opts.embers,40);
   // Layer cleanup after the longest animation finishes (~3s)
   setTimeout(function(){if(layer.parentNode)layer.parentNode.removeChild(layer);},3500);
 };
@@ -49730,6 +49770,29 @@ function _showDailyReward() {
 
   ov.innerHTML = h;
   document.body.appendChild(ov);
+
+  // Ambient: dewdrops drift down behind the modal while they read.
+  try{
+    if(window._lwSpawnParticles){
+      window._lwSpawnParticles(ov,{dewdrops:8,sparkles:4});
+    }
+  }catch(e){}
+  // Burst: when COLLECT is tapped — gold rings + sparkles + 1 ring of dewdrops
+  // for the streak-bonus moments. Hook AFTER innerHTML so the button exists.
+  var _collectBtn=ov.querySelector('button');
+  if(_collectBtn){
+    _collectBtn.addEventListener('click',function(){
+      try{
+        if(window._lwSpawnParticles){
+          window._lwSpawnParticles(ov,{
+            rings:reward.bonus>0?3:2,
+            sparkles:reward.bonus>0?20:14,
+            dewdrops:6
+          });
+        }
+      }catch(e){}
+    });
+  }
 
   // Haptic + analytics
   try { if (window._haptic) _haptic('sync'); } catch(e) {}
