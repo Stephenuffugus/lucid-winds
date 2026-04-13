@@ -28310,6 +28310,20 @@ document.addEventListener('keydown', function(e) {
     } else {
       // Already revealed — normal flip toggle
       el.classList.toggle('flipped');
+      // DWELL XP — if the card is now flipped to back (showing haiku/DNA),
+      // award reading XP after sustained dwell. Cancels if flipped back early.
+      try{
+        if(el.classList.contains('flipped')&&window.LW_XP){
+          var plantHash=el.getAttribute('data-plant-hash')||(window._carousel&&_carousel.arr&&_carousel.arr[_carousel.idx]&&_carousel.arr[_carousel.idx].hash)||'';
+          if(plantHash){
+            var haikuId='haiku_'+plantHash.slice(0,8);
+            window.LW_XP.grantDwell(haikuId,2,'dwell_haiku',2500,function(){return el.classList.contains('flipped');});
+            var dnaId='dna_'+plantHash.slice(0,8);
+            window.LW_XP.grantDwell(dnaId,3,'dwell_dna',4000,function(){return el.classList.contains('flipped');});
+          }
+          window.LW_XP.grantOnce('disc_flip',10,'discover_flip','🔄 +10 XP — card flip reveals haiku & DNA.');
+        }
+      }catch(e){}
     }
     // Lineage/details access is now via the nameplate on the card back
     // ("TAP FOR DETAILS" under the plant name) — no separate overlay.
@@ -39148,6 +39162,40 @@ function _e(v){
   if(v==='game_win'&&_a!=='sokoban')_showWinCelebration();
 }
 window._e=_e;
+
+// ═══ PATTERN + MASTERY XP — wraps _e to observe game_win/loss ═══
+// 3 different games in one session → +10 XP (daily)
+// Win streak 3 → +5 XP (cooldown 10min)
+// Win streak 5 → +15 XP (cooldown 20min)
+(function(){
+  var sessionGames={};
+  var streak=0;
+  var origE=window._e;
+  window._e=function(v){
+    try{
+      if(v==='game_win'){
+        streak++;
+        if(streak===3&&window.LW_XP)window.LW_XP.grantCooldown('streak_3',5,'mastery_streak3',600);
+        if(streak===5&&window.LW_XP)window.LW_XP.grantCooldown('streak_5',15,'mastery_streak5',1200);
+        // Pattern: variety
+        if(window._a){
+          if(!sessionGames[window._a]){sessionGames[window._a]=true;
+            var count=0;for(var k in sessionGames)if(sessionGames.hasOwnProperty(k))count++;
+            if(count===3&&window.LW_XP)window.LW_XP.grantDaily('three_games',10,'pattern_three_games','🎮 +10 XP — three games explored today.');
+          }
+        }
+      } else if(v==='game_loss'){
+        streak=0;
+      }
+    }catch(e){}
+    return origE.apply(this,arguments);
+  };
+  // Reset session variety when switching tab out of game
+  if(window.switchTab){
+    var _origST=window.switchTab;
+    window.switchTab=function(tab){if(tab!=='game')sessionGames={};return _origST.apply(this,arguments);};
+  }
+})();
 window._getHashProgress=function(){return _hashFilled;};
 // ═══ MINT CELEBRATION — epic reveal when plant blooms ═══
 function _showMintCelebration(fullHash){
@@ -44262,6 +44310,39 @@ function updateKeeperBar(){
     },
     hasSeen:function(id){return !!loadSet(SEEN_KEY)[id];}
   };
+})();
+
+// ═══ PRESENCE XP — 1 XP per quiet minute while foregrounded ═══
+// The Keeper-is-the-Sun doctrine: being present matters. Caps prevent AFK
+// farming: 5 XP/session, 10 XP/day.
+(function(){
+  var presenceState={session:0,day:0,dayKey:'',lastTabSwitch:Date.now()};
+  function today(){return new Date().toISOString().split('T')[0];}
+  function reset(){
+    var t=today();
+    if(presenceState.dayKey!==t){presenceState.dayKey=t;presenceState.day=0;}
+  }
+  // Hook into switchTab to reset the 60s timer
+  var origSwitch=null;
+  function wrapSwitch(){
+    if(origSwitch||!window.switchTab)return;
+    origSwitch=window.switchTab;
+    window.switchTab=function(tab){presenceState.lastTabSwitch=Date.now();presenceState.session=0;return origSwitch.apply(this,arguments);};
+  }
+  setTimeout(wrapSwitch,500);
+  // Tick every 60 seconds
+  setInterval(function(){
+    try{
+      if(document.visibilityState!=='visible')return;
+      reset();
+      if(presenceState.session>=5||presenceState.day>=10)return;
+      // Require 60s since last tab switch (no tab ping-pong farming)
+      if(Date.now()-presenceState.lastTabSwitch<55000)return;
+      presenceState.session++;
+      presenceState.day++;
+      if(window.PW_grantXP)window.PW_grantXP(1,'presence');
+    }catch(e){}
+  },60000);
 })();
 
 // ═══ GRANT XP (called from game systems) ═══
