@@ -50862,31 +50862,31 @@ var LW_CLASSES={
       1:{name:'Keen Eye',desc:'+25% feral seed range'},
       2:{name:'Bountiful',desc:'+15% rare drop odds'},
       3:{name:'Wild Kin',desc:'Raccoon companion doubles feral drops'}
-    },companion:35},
+    },companion:35,biome:'forest'},
   breeder:{name:'Breeder',icon:'🧬',desc:'Nursery mastery',xpSrc:['breed','chimera'],
     abilities:{
       1:{name:'Patient Hand',desc:'+1 nursery slot'},
       2:{name:'Purebred',desc:'+20% chimera purity'},
       3:{name:'Web Weaver',desc:'Garden Spider doubles pollen on breed'}
-    },companion:37},
+    },companion:37,biome:'garden'},
   cartographer:{name:'Cartographer',icon:'🧭',desc:'Map & movement',xpSrc:['biome','steps'],
     abilities:{
       1:{name:'Surefoot',desc:'+10% step bonus'},
       2:{name:'Biome Sense',desc:'Reveal biome on compass tap'},
       3:{name:'Sky Watcher',desc:'Great Blue Heron doubles biome bonus'}
-    },companion:36},
+    },companion:36,biome:'mountain'},
   tender:{name:'Tender',icon:'💧',desc:'Plant longevity',xpSrc:['tend','dew'],
     abilities:{
       1:{name:'Green Thumb',desc:'Wild plants live 2× longer'},
       2:{name:'Dew Touched',desc:'+20% dew generation'},
       3:{name:'Phoenix Ward',desc:'Phoenix immunity applies to all your plants'}
-    },companion:33},
+    },companion:33,biome:'wetland'},
   keeper:{name:'Keeper',icon:'🌿',desc:'Balanced generalist',xpSrc:['all'],
     abilities:{
       1:{name:'Attuned',desc:'+5% to all bonuses'},
       2:{name:'Versatile',desc:'All tool cooldowns -10%'},
       3:{name:'Beholden',desc:'The Beholder grants +10% everything'}
-    },companion:38}
+    },companion:38,biome:'suburban'}
 };
 var LW_TOOLS={
   shears:{name:'Shears',icon:'✂️',desc:'Clipping cooldown reducer',levels:{1:'6h cooldown',2:'4h cooldown',3:'2h cooldown'}},
@@ -50918,6 +50918,13 @@ function _lwGetToolLevel(toolId){
   if(x>=LW_TOOL_XP_L2)return 2;
   return 1;
 }
+// Biome match: +25% class XP, 1.5x tool effect when playing Wild in class biome
+function _lwBiomeMatch(){
+  var cls=_lwGetClass();if(!cls)return false;
+  var def=LW_CLASSES[cls];if(!def||!def.biome)return false;
+  try{return window._lastDetectedBiome===def.biome;}catch(e){return false;}
+}
+window._LW_biomeMatch=_lwBiomeMatch;
 // Award XP to current class
 window._LW_classXP=function(source,amount){
   var cls=_lwGetClass();if(!cls)return;
@@ -50927,6 +50934,10 @@ window._LW_classXP=function(source,amount){
   if(cls==='keeper')mult=0.25;
   else if(def.xpSrc.indexOf(source)>=0||def.xpSrc.indexOf('all')>=0)mult=1;
   if(mult<=0)return;
+  // Biome bonus: +25% XP when in matching biome
+  if(_lwBiomeMatch())mult*=1.25;
+  // Cartographer Master + Heron synergy: doubles biome bonus effect
+  if(_lwBiomeMatch()&&cls==='cartographer'&&window._LW_hasSynergy&&window._LW_hasSynergy())mult*=1.25;
   var gain=Math.ceil(amount*mult);
   var x=_lwGetClassXP();
   var was=x[cls]||0;
@@ -50959,8 +50970,9 @@ window._LW_toolXP=function(tool,amount){
 window._LW_classBonus=function(kind){
   var cls=_lwGetClass();if(!cls)return 1;
   var lvl=_lwGetClassLevel(cls);
-  // Keeper always gets 5% extra
+  // Keeper always gets 5% extra; Beholder synergy adds another 10%
   var keeper=cls==='keeper'?0.05*lvl:0;
+  try{if(cls==='keeper'&&window._LW_hasSynergy&&window._LW_hasSynergy())keeper+=0.10;}catch(e){}
   if(kind==='feralRange'&&cls==='forager')return 1.25+keeper;
   if(kind==='rareOdds'&&cls==='forager'&&lvl>=2)return 1.15+keeper;
   if(kind==='nurserySlot'&&cls==='breeder')return 1+keeper;
@@ -50973,8 +50985,9 @@ window._LW_classBonus=function(kind){
 // Read current tool cooldown modifier
 window._LW_toolMod=function(tool){
   var lvl=_lwGetToolLevel(tool);
-  if(tool==='shears'){if(lvl>=3)return 2*60*60*1000;if(lvl>=2)return 4*60*60*1000;return 6*60*60*1000;}
-  if(tool==='pouch'){if(lvl>=3)return 7;if(lvl>=2)return 5;return 3;}
+  var biomeBoost=_lwBiomeMatch()?1.5:1;
+  if(tool==='shears'){var base=lvl>=3?2*60*60*1000:lvl>=2?4*60*60*1000:6*60*60*1000;return Math.round(base/biomeBoost);}
+  if(tool==='pouch'){var slots=lvl>=3?7:lvl>=2?5:3;if(biomeBoost>1)slots+=1;return slots;}
   return null;
 };
 // Check if companion synergy active (player has Master class + bound companion)
