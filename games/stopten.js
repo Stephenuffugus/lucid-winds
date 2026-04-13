@@ -16,10 +16,10 @@ window._gameFns.stopten=function ST(a){
   mc(a).innerHTML='<button class="gb" onclick="_STN()">🌱 NEW ROUND</button>';
 
   function tiers(delta){
-    if(delta<=0.01)return {lbl:'PERFECT',col:'#c8a84b',reward:1,sb:3};
-    if(delta<=0.10)return {lbl:'EXCELLENT',col:'#7ab356',reward:1,sb:2};
-    if(delta<=0.25)return {lbl:'GOOD',col:'#7ab356',reward:0,sb:1};
-    if(delta<=0.50)return {lbl:'CLOSE',col:'#c8a84b',reward:0,sb:0};
+    // delta is absolute deviation in seconds. Display is .toFixed(2).
+    if(delta<0.005)return {lbl:'PERFECT',col:'#c8a84b',reward:1,sb:3};   // 10.00 spot on
+    if(delta<=0.015)return {lbl:'SO CLOSE',col:'#7ab356',reward:1,sb:2}; // ±0.01
+    if(delta<=0.035)return {lbl:'NICE',col:'#7ab356',reward:0,sb:1};     // ±0.02 or ±0.03
     return {lbl:'MISS',col:'#c47a7a',reward:0,sb:0};
   }
 
