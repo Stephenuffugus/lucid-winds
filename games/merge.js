@@ -69,13 +69,17 @@ function GR(a){
     var p=posOf(idx);
     var el=document.createElement('div');
     el.className='tc t'+Math.min(val,2048);
-    el.style.cssText='position:absolute;left:'+p.x+'px;top:'+p.y+'px;width:'+p.w+'px;height:'+p.w+'px;'
-      +'transition:left 150ms ease,top 150ms ease,transform 150ms ease,opacity 100ms ease;'
+    el.style.cssText='position:absolute;left:0;top:0;width:'+p.w+'px;height:'+p.w+'px;'
+      +'transform:translate('+p.x+'px,'+p.y+'px);'
+      +'transition:transform 120ms ease-out,opacity 100ms ease;'
       +'z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+    el._tx=p.x;el._ty=p.y;
     el.innerHTML='<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px">'+'<div class="ti" style="flex:1;width:100%;display:flex;align-items:center;justify-content:center">'+(ST[Math.min(val,2048)]||'🔥')+'</div>'+'<div style="font-size:clamp(.9rem,3vw,1.3rem);color:rgba(232,220,200,0.95);font-weight:800;font-family:DM Mono,monospace;text-shadow:0 1px 3px rgba(0,0,0,0.4);line-height:1;padding-bottom:4px">'+val+'</div></div>';
     if(animate){
-      el.style.transform='scale(0)';
-      setTimeout(function(){el.style.transform='scale(1)'},20);
+      el.style.transform='translate('+p.x+'px,'+p.y+'px) scale(0)';
+      setTimeout(function(){el.style.transform='translate('+p.x+'px,'+p.y+'px) scale(1)';
+        setTimeout(function(){el.style.transform='translate('+p.x+'px,'+p.y+'px)';},180);
+      },20);
     }
     bd.appendChild(el);
     var t={el:el,val:val,idx:idx,id:++tileId};
@@ -93,8 +97,8 @@ function GR(a){
   // Move a tile element to a new grid index (animates via CSS transition)
   function mvTile(t,newIdx){
     var p=posOf(newIdx);
-    t.el.style.left=p.x+'px';
-    t.el.style.top=p.y+'px';
+    t.el.style.transform='translate('+p.x+'px,'+p.y+'px)';
+    t.el._tx=p.x;t.el._ty=p.y;
     t.idx=newIdx;
   }
 
