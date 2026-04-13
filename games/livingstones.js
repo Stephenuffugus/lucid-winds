@@ -80,7 +80,13 @@ window._gameFns.livingstones = function LS(a){
   };
 
   var board=[],puzzleIdx=0,difficulty=0,moveHistory=[],puzzleSolved=false;
-  var solvedSet={},currentPuzzles=[],totalSolved=0,boardSize=9;
+  // Persist solved puzzles across sessions so progress isn't lost on
+  // tab close. Keyed by `<difficulty>_<puzzleIdx>` to allow tier
+  // segregation. totalSolved is derived on each load.
+  var solvedSet={};
+  try{solvedSet=JSON.parse(localStorage.getItem('lw_ls_solved')||'{}');}catch(e){solvedSet={};}
+  function _saveSolved(){try{localStorage.setItem('lw_ls_solved',JSON.stringify(solvedSet));}catch(e){}}
+  var currentPuzzles=[],totalSolved=0,boardSize=9;
 
   ms(a,'<strong id="LSn">Choose difficulty</strong>');
   mm(a);
@@ -208,7 +214,16 @@ window._gameFns.livingstones = function LS(a){
     }
     if(correct){
       puzzleSolved=true;
-      if(!solvedSet[difficulty+'_'+puzzleIdx]){solvedSet[difficulty+'_'+puzzleIdx]=true;totalSolved++;_e('game_win');}
+      var key=difficulty+'_'+puzzleIdx;
+      if(!solvedSet[key]){
+        solvedSet[key]=true;totalSolved++;
+        _saveSolved();
+        _e('game_win');
+        // Write a record so puzzles solved actually count toward stats.
+        // Score is the cumulative solved count for this tier.
+        var tierKeys=['beginner','intermediate','advanced'];
+        _sr('livingstones',{w:true,s:totalSolved,tier:tierKeys[difficulty]||'?'});
+      }
       _playWin();
       sm('✓ Solved!');
     }else{
@@ -224,7 +239,11 @@ window._gameFns.livingstones = function LS(a){
     difficulty=d;
     var keys=['beginner','intermediate','advanced'];
     currentPuzzles=ALL_PUZZLES[keys[d]];
-    puzzleIdx=0;totalSolved=0;solvedSet={};
+    puzzleIdx=0;
+    // Recount solved from the persisted set instead of resetting it.
+    // Was wiping progress every time tier was changed.
+    totalSolved=0;
+    for(var k in solvedSet){if(solvedSet.hasOwnProperty(k)&&k.indexOf(d+'_')===0)totalSolved++;}
     loadPuzzle(0);
   };
   window._LStap=function(r,c){onTap(r,c);};
