@@ -220,6 +220,12 @@ window._gameFns.dailybloom=function DB(a){
   };
 
   function nextEx(){
+    // Bail if player exited mid-flow — every exercise advance routes
+    // through this function, so guarding here stops the chain after
+    // the current pending setTimeout fires harmlessly on a detached
+    // DOM. Without this guard, the next exercise pops up onto whatever
+    // tab the player switched to.
+    if(!document.body.contains(pan))return;
     currentEx++;
     if(currentEx>=exOrder.length){showResults();return;}
     var d=document.getElementById('DBd');if(d)d.textContent=exNames[currentEx];
