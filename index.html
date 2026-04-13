@@ -49496,9 +49496,14 @@ window._checkDailyLogin = function() {
     var oneDay=86400000;
     if(!lastOpen||gapMs>=oneDay*0.5){
       if(window.LW_XP)window.LW_XP.grantDaily('return_daily',5,'return_daily','☀️ +5 XP — welcome back.');
-      if(gapMs>=oneDay*1.5&&window.LW_XP)window.PW_grantXP(15,'return_24h');
-      if(gapMs>=oneDay*3&&window.LW_XP)window.LW_XP.grantCooldown('return_3d',40,'return_3d',3*86400);
-      if(gapMs>=oneDay*7&&window.LW_XP)window.LW_XP.grantCooldown('return_7d',100,'return_7d',7*86400);
+      // Only fire the gap-bonus tiers for RETURNING users. Fresh accounts
+      // have lastOpen=0 which made gapMs enormous, so every tier fired
+      // (+15+40+100=155 XP) on first claim — overshooting to level 4.
+      if(lastOpen>0){
+        if(gapMs>=oneDay*1.5&&window.LW_XP)window.PW_grantXP(15,'return_24h');
+        if(gapMs>=oneDay*3&&window.LW_XP)window.LW_XP.grantCooldown('return_3d',40,'return_3d',3*86400);
+        if(gapMs>=oneDay*7&&window.LW_XP)window.LW_XP.grantCooldown('return_7d',100,'return_7d',7*86400);
+      }
     }
     // Funnel: day-2 return is the single best signal of stickiness.
     // Fires once when an onboarded player comes back after ≥18h gap.
