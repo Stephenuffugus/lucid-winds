@@ -45318,6 +45318,10 @@ function _genGiftHash(){
     try{
       if(window.hashToTraits&&window.getTerraGrade){
         var t=window.hashToTraits(h);
+        // Hard block: no mythic companion overrides on gift plant (Toad 0xD0+,
+        // Phoenix 0xE0+, Mammoth 0xF4+, Raccoon 0xF8+, Heron 0xFC+, Spider 0xFE+,
+        // Beholder 0xFF). Players must earn these through play.
+        if(t && t.mythic >= 0xD0) continue;
         var g=window.getTerraGrade(t);
         // Exact hit within target tier → done
         if(g.score>=targetMin&&g.score<=targetMax){
