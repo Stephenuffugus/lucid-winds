@@ -3626,6 +3626,12 @@
     .fk2:active{transform:scale(.98);background:rgba(24,30,20,.82);transition-duration:.06s}
     .fk2-thumb{width:100%;height:100%;margin:0;border-radius:10px;overflow:hidden;background:rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:absolute;top:0;left:0;}
     .fk2-thumb img{width:100%;height:100%;object-fit:cover;border-radius:10px;}
+    /* Inset vignette + slight zoom-in masks the white/light edges that
+       several source thumbnails (golf/klondike/freecell/pyramid/spider/
+       tripeaks/hanoi/wordsearch/farkle/stopten) have baked into them.
+       Non-destructive — keeps source PNG quality intact. */
+    .fk2-thumb img{transform:scale(1.06);transform-origin:center;}
+    .fk2-thumb::after{content:'';position:absolute;inset:0;border-radius:10px;box-shadow:inset 0 0 28px 4px rgba(0,0,0,0.55);pointer-events:none;z-index:1;}
     .fk2-new{position:absolute;top:6px;right:6px;font-size:0.25rem;background:var(--gold);color:#0d100c;padding:1px 4px;border-radius:3px;font-family:'Bebas Neue',sans-serif;letter-spacing:0.06em;z-index:2;}
 
     /* ── Card flip rarity reveal ── */
@@ -43317,7 +43323,10 @@ function GBS(a){
   // when both grids were small — Stephen reported wrong-square taps.
   var grids=document.createElement('div');grids.style.cssText='display:flex;flex-direction:column;align-items:center;gap:clamp(10px,3vw,18px);width:100%';wrap.appendChild(grids);
   function _bsSyncCfm(){var b=document.getElementById('BSconfirmBtn');if(b)b.textContent=confirmAttack?'✓ CONFIRM ON':'CONFIRM OFF';}
-  mc(a).innerHTML='<button class="gb" id="BSdir" onclick="_BSR()" style="min-width:86px">↻ Rotate</button> <button class="gb" id="BSready" onclick="_BSready()" style="min-width:104px;background:rgba(74,124,53,0.28);opacity:0.4" disabled>✓ I\'M READY</button> <button class="gb" id="BSconfirmBtn" onclick="_BSToggleConfirm()" style="min-width:120px;font-size:0.7rem;letter-spacing:0.06em;">'+(confirmAttack?'✓ CONFIRM ON':'CONFIRM OFF')+'</button> <button class="gb-new" onclick="_BSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  // Zoom state — 1.0 = normal, 1.5 = closer view of opponent grid for accuracy
+  var enemyZoom=1;
+  try{enemyZoom=parseFloat(localStorage.getItem('lw_bs_zoom')||'1')||1;}catch(e){}
+  mc(a).innerHTML='<button class="gb" id="BSdir" onclick="_BSR()" style="min-width:86px">↻ Rotate</button> <button class="gb" id="BSready" onclick="_BSready()" style="min-width:104px;background:rgba(74,124,53,0.28);opacity:0.4" disabled>✓ I\'M READY</button> <button class="gb" id="BSconfirmBtn" onclick="_BSToggleConfirm()" style="min-width:120px;font-size:0.7rem;letter-spacing:0.06em;">'+(confirmAttack?'✓ CONFIRM ON':'CONFIRM OFF')+'</button> <button class="gb" id="BSzoomBtn" onclick="_BSToggleZoom()" style="min-width:80px;font-size:0.7rem;letter-spacing:0.06em;">'+(enemyZoom>1?'🔍 1.5×':'🔍 1×')+'</button> <button class="gb-new" onclick="_BSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   function mkGrid(){return new Array(SZ*SZ).fill(0)}
   function idx(r,c){return r*SZ+c}
@@ -43451,6 +43460,15 @@ function GBS(a){
       enemyHdr.style.cssText='font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:var(--gold);letter-spacing:0.12em;text-align:center;margin:4px 0 2px;';
       enemyHdr.textContent='⚔ ENEMY WATERS — TAP TO ATTACK';
       grids.appendChild(enemyHdr);
+      // Wrap the enemy grid in a zoom container — gives player real
+      // close-up of the opponent board for accurate tapping.
+      var enemyZoomWrap=document.createElement('div');
+      enemyZoomWrap.id='BSenemyZoom';
+      enemyZoomWrap.style.cssText='display:flex;justify-content:center;width:100%;overflow:auto;-webkit-overflow-scrolling:touch;padding:4px 0;';
+      var enemyZoomInner=document.createElement('div');
+      enemyZoomInner.style.cssText='transform:scale('+enemyZoom+');transform-origin:top center;transition:transform 0.2s ease;';
+      enemyZoomWrap.appendChild(enemyZoomInner);
+      grids.appendChild(enemyZoomWrap);
       // Enemy grid — player shoots here. With confirm-attack on, a
       // first tap "selects" a square (gold ring) and a second tap on
       // the SAME square commits. Tapping a different square moves the
@@ -43463,7 +43481,7 @@ function GBS(a){
         }else{eGrid[i]=-1;_play('tap');sm('· Miss');}
         turn='ai';_bsPendingShot=-1;rn();setTimeout(aiTurn,600);
       }
-      renderGrid(eGrid,grids,true,turn==='player'&&!gameOver?function(){
+      renderGrid(eGrid,enemyZoomInner,true,turn==='player'&&!gameOver?function(){
         var i=parseInt(this.getAttribute('data-i'));
         if(eGrid[i]<0)return;
         if(confirmAttack){
@@ -43559,6 +43577,12 @@ function GBS(a){
     try{localStorage.setItem('lw_bs_confirm',confirmAttack?'on':'off');}catch(e){}
     _bsSyncCfm();
     sm(confirmAttack?'🎯 Confirm-attack ON — tap once to aim, twice to fire':'⚡ Confirm-attack OFF — single-tap fires');
+  };
+  window._BSToggleZoom=function(){
+    enemyZoom=enemyZoom>1?1:1.5;
+    try{localStorage.setItem('lw_bs_zoom',String(enemyZoom));}catch(e){}
+    var b=document.getElementById('BSzoomBtn');if(b)b.textContent=enemyZoom>1?'🔍 1.5×':'🔍 1×';
+    rn();
   };
   _BSN();
 }
