@@ -4376,7 +4376,7 @@ body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 275px)!important;righ
 /* ═══ WILD TAB v2 — Premium Redesign ═══ */
 
 /* ── Wild Log Bar (top navigation) ── */
-.wild-log{position:fixed;top:0;left:0;right:0;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top,0px));padding-right:calc(12px + 160px);background:linear-gradient(180deg,rgba(20,16,10,0.96),rgba(13,10,6,0.96));border-bottom:2px solid rgba(200,168,75,0.2);z-index:460;box-shadow:0 8px 32px rgba(0,0,0,0.7);display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto;gap:6px;}
+.wild-log{position:fixed;top:0;left:0;right:0;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top,0px));background:linear-gradient(180deg,rgba(20,16,10,0.96),rgba(13,10,6,0.96));border-bottom:2px solid rgba(200,168,75,0.2);z-index:460;box-shadow:0 8px 32px rgba(0,0,0,0.7);display:grid;grid-template-columns:repeat(3,1fr) auto;grid-template-rows:auto auto;grid-template-areas:'s1 s2 s3 cp' 's4 s5 s6 cp';gap:6px;}
 .wild-log-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(5,6,4,0.75);padding:6px 4px;border-radius:8px;border:1px solid rgba(200,168,75,0.12);min-height:52px;cursor:pointer;transition:all 0.15s;}
 .wild-log-stat:nth-child(1){grid-area:s1;}
 .wild-log-stat:nth-child(2){grid-area:s2;}
@@ -4387,9 +4387,9 @@ body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 275px)!important;righ
 .wild-log-stat:active{background:rgba(18,22,16,0.85);border-color:rgba(200,168,75,0.3);}
 .wild-log-val{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;color:var(--cream);line-height:1;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,.6)}
 .wild-log-lbl{font-family:'DM Mono',monospace;font-size:0.55rem;color:rgba(200,168,75,0.7);letter-spacing:0.08em;text-transform:uppercase;margin-top:1px;}
-.wild-log-wind{position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);right:8px;width:150px;height:150px;z-index:461;display:flex;align-items:center;justify-content:center;pointer-events:none;}
-.wild-log-wind img{width:100%!important;height:100%!important;object-fit:contain;filter:drop-shadow(0 4px 16px rgba(200,168,75,0.5));}
-.wild-log-wind span{position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--gold);white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1);background:rgba(13,10,6,0.9);padding:3px 10px;border-radius:10px;pointer-events:auto;border:1px solid rgba(200,168,75,0.25);}
+.wild-log-wind{grid-area:cp;align-self:center;justify-self:center;width:72px;height:72px;display:flex;align-items:center;justify-content:center;position:relative;font-size:2rem;color:var(--gold);}
+.wild-log-wind img{width:72px!important;height:72px!important;filter:drop-shadow(0 2px 8px rgba(200,168,75,0.4));}
+.wild-log-wind span{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--gold);white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1);}
 
 /* ── Trait Panel v2 (bottom sheet) ── */
 .wtp2{position:fixed;bottom:0;left:0;right:0;z-index:99998;background:linear-gradient(180deg,rgba(13,16,12,.97) 0%,rgba(8,12,6,.99) 100%);border-top:1px solid rgba(74,124,53,.12);border-radius:16px 16px 0 0;padding:0;max-width:680px;margin:0 auto;box-shadow:0 -8px 40px rgba(0,0,0,.6);transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.56,.64,1);overflow:hidden}
@@ -5291,7 +5291,7 @@ window.onerror=function(msg,url,line,col,err){
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Keeper XP \u2014 your lifetime experience. Pollen is the energy that grows your rank. Every kind act, wild drop, and bloom contributes.')"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl">xp</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Meters walked. Keep moving to find feral seeds!')"><div class="wild-log-val" style="color:var(--sage)" id="w-steps">0</div><div class="wild-log-lbl">meters</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Your biome — detected from real geography. Affects feral rarity and mutations.')"><div class="wild-log-val" style="font-size:0.7rem;" id="w-biome">🏡</div><div class="wild-log-lbl" id="w-biome-name">scanning</div></div>
-      <div class="wild-log-wind" id="w-wind"><img src="assets/compass-main.png" alt=""><span></span></div>
+      <div class="wild-log-wind" id="w-wind">🧭<span></span></div>
     </div>
     <!-- TERRITORY OVERVIEW (tap planted count to expand) -->
     <div id="w-territory" style="display:none;position:fixed;top:60px;left:8px;right:8px;z-index:998;background:rgba(13,16,12,0.94);border:1px solid rgba(122,179,86,0.12);border-radius:10px;padding:0.5rem;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:panelFadeIn 0.2s ease;max-width:360px;margin:0 auto;">
@@ -50726,6 +50726,207 @@ function _updateCompCount(){
 }
 setTimeout(_updateCompCount,3000);
 window._updateCompCount=_updateCompCount;
+
+// ═══ CLASS SYSTEM v1 ═══
+// Pick one class, level 1→3, each level unlocks abilities. Tools level separately.
+// XP hooks fire via window._LW_classXP(source, amount).
+var LW_CLASSES={
+  forager:{name:'Forager',icon:'🍂',desc:'Wild plant expertise',xpSrc:['feral','harvest'],
+    abilities:{
+      1:{name:'Keen Eye',desc:'+25% feral seed range'},
+      2:{name:'Bountiful',desc:'+15% rare drop odds'},
+      3:{name:'Wild Kin',desc:'Raccoon companion doubles feral drops'}
+    },companion:35},
+  breeder:{name:'Breeder',icon:'🧬',desc:'Nursery mastery',xpSrc:['breed','chimera'],
+    abilities:{
+      1:{name:'Patient Hand',desc:'+1 nursery slot'},
+      2:{name:'Purebred',desc:'+20% chimera purity'},
+      3:{name:'Web Weaver',desc:'Garden Spider doubles pollen on breed'}
+    },companion:37},
+  cartographer:{name:'Cartographer',icon:'🧭',desc:'Map & movement',xpSrc:['biome','steps'],
+    abilities:{
+      1:{name:'Surefoot',desc:'+10% step bonus'},
+      2:{name:'Biome Sense',desc:'Reveal biome on compass tap'},
+      3:{name:'Sky Watcher',desc:'Great Blue Heron doubles biome bonus'}
+    },companion:36},
+  tender:{name:'Tender',icon:'💧',desc:'Plant longevity',xpSrc:['tend','dew'],
+    abilities:{
+      1:{name:'Green Thumb',desc:'Wild plants live 2× longer'},
+      2:{name:'Dew Touched',desc:'+20% dew generation'},
+      3:{name:'Phoenix Ward',desc:'Phoenix immunity applies to all your plants'}
+    },companion:33},
+  keeper:{name:'Keeper',icon:'🌿',desc:'Balanced generalist',xpSrc:['all'],
+    abilities:{
+      1:{name:'Attuned',desc:'+5% to all bonuses'},
+      2:{name:'Versatile',desc:'All tool cooldowns -10%'},
+      3:{name:'Beholden',desc:'The Beholder grants +10% everything'}
+    },companion:38}
+};
+var LW_TOOLS={
+  shears:{name:'Shears',icon:'✂️',desc:'Clipping cooldown reducer',levels:{1:'6h cooldown',2:'4h cooldown',3:'2h cooldown'}},
+  can:{name:'Watering Can',icon:'💧',desc:'Batch watering',levels:{1:'1 plant',2:'Mass water 3',3:'Mass water 6 + rain'}},
+  pouch:{name:'Field Pouch',icon:'🎒',desc:'Backpack capacity',levels:{1:'3 slots',2:'5 slots',3:'7 slots'}},
+  compass:{name:'Compass',icon:'🧭',desc:'Wayfinding',levels:{1:'Wind direction',2:'Tap reveals biome',3:'Predicts next feral'}}
+};
+// XP thresholds per class level (cumulative)
+var LW_CLASS_XP_L2=100;
+var LW_CLASS_XP_L3=500;
+var LW_TOOL_XP_L2=50;
+var LW_TOOL_XP_L3=200;
+
+function _lwGetClass(){return localStorage.getItem('lw_class')||null;}
+function _lwSetClass(id){localStorage.setItem('lw_class',id);}
+function _lwGetClassXP(){try{return JSON.parse(localStorage.getItem('lw_class_xp')||'{}');}catch(e){return{};}}
+function _lwSetClassXP(x){localStorage.setItem('lw_class_xp',JSON.stringify(x));}
+function _lwGetClassLevel(classId){
+  var x=_lwGetClassXP()[classId]||0;
+  if(x>=LW_CLASS_XP_L3)return 3;
+  if(x>=LW_CLASS_XP_L2)return 2;
+  return 1;
+}
+function _lwGetToolXP(){try{return JSON.parse(localStorage.getItem('lw_tool_xp')||'{}');}catch(e){return{};}}
+function _lwSetToolXP(x){localStorage.setItem('lw_tool_xp',JSON.stringify(x));}
+function _lwGetToolLevel(toolId){
+  var x=_lwGetToolXP()[toolId]||0;
+  if(x>=LW_TOOL_XP_L3)return 3;
+  if(x>=LW_TOOL_XP_L2)return 2;
+  return 1;
+}
+// Award XP to current class
+window._LW_classXP=function(source,amount){
+  var cls=_lwGetClass();if(!cls)return;
+  var def=LW_CLASSES[cls];if(!def)return;
+  // Keeper gets ¼ XP from everything; others only from their sources
+  var mult=0;
+  if(cls==='keeper')mult=0.25;
+  else if(def.xpSrc.indexOf(source)>=0||def.xpSrc.indexOf('all')>=0)mult=1;
+  if(mult<=0)return;
+  var gain=Math.ceil(amount*mult);
+  var x=_lwGetClassXP();
+  var was=x[cls]||0;
+  x[cls]=was+gain;
+  _lwSetClassXP(x);
+  // Level-up toast
+  var oldLvl=was>=LW_CLASS_XP_L3?3:was>=LW_CLASS_XP_L2?2:1;
+  var newLvl=x[cls]>=LW_CLASS_XP_L3?3:x[cls]>=LW_CLASS_XP_L2?2:1;
+  if(newLvl>oldLvl){
+    var ab=def.abilities[newLvl];
+    var titles=['','Apprentice','Journeyman','Master'];
+    if(window._toast)window._toast(def.icon+' '+titles[newLvl]+' '+def.name+' — '+ab.name);
+    try{if(window._playWin)_playWin();}catch(e){}
+  }
+};
+// Award tool XP
+window._LW_toolXP=function(tool,amount){
+  var x=_lwGetToolXP();
+  var was=x[tool]||0;
+  x[tool]=was+amount;
+  _lwSetToolXP(x);
+  var oldLvl=was>=LW_TOOL_XP_L3?3:was>=LW_TOOL_XP_L2?2:1;
+  var newLvl=x[tool]>=LW_TOOL_XP_L3?3:x[tool]>=LW_TOOL_XP_L2?2:1;
+  if(newLvl>oldLvl){
+    var def=LW_TOOLS[tool];
+    if(window._toast&&def)window._toast(def.icon+' '+def.name+' L'+newLvl+' — '+def.levels[newLvl]);
+  }
+};
+// Read current class passive bonuses
+window._LW_classBonus=function(kind){
+  var cls=_lwGetClass();if(!cls)return 1;
+  var lvl=_lwGetClassLevel(cls);
+  // Keeper always gets 5% extra
+  var keeper=cls==='keeper'?0.05*lvl:0;
+  if(kind==='feralRange'&&cls==='forager')return 1.25+keeper;
+  if(kind==='rareOdds'&&cls==='forager'&&lvl>=2)return 1.15+keeper;
+  if(kind==='nurserySlot'&&cls==='breeder')return 1+keeper;
+  if(kind==='chimeraPurity'&&cls==='breeder'&&lvl>=2)return 1.20+keeper;
+  if(kind==='stepBonus'&&cls==='cartographer')return 1.10+keeper;
+  if(kind==='plantLongevity'&&cls==='tender')return 2+keeper;
+  if(kind==='dewRate'&&cls==='tender'&&lvl>=2)return 1.20+keeper;
+  return 1+keeper;
+};
+// Read current tool cooldown modifier
+window._LW_toolMod=function(tool){
+  var lvl=_lwGetToolLevel(tool);
+  if(tool==='shears'){if(lvl>=3)return 2*60*60*1000;if(lvl>=2)return 4*60*60*1000;return 6*60*60*1000;}
+  if(tool==='pouch'){if(lvl>=3)return 7;if(lvl>=2)return 5;return 3;}
+  return null;
+};
+// Check if companion synergy active (player has Master class + bound companion)
+window._LW_hasSynergy=function(){
+  var cls=_lwGetClass();if(!cls)return false;
+  if(_lwGetClassLevel(cls)<3)return false;
+  var def=LW_CLASSES[cls];if(!def||!def.companion)return false;
+  try{
+    var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+    for(var i=0;i<gh.length;i++){
+      var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;
+      if(t&&t.companion===def.companion)return true;
+    }
+  }catch(e){}
+  return false;
+};
+
+// Class picker UI — opens from Book of Secrets
+window._LW_openClassPicker=function(){
+  var cur=_lwGetClass();
+  var ov=document.createElement('div');
+  ov.id='lw-class-overlay';
+  ov.style.cssText='position:fixed;inset:0;z-index:99997;background:rgba(5,8,4,0.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);overflow-y:auto;padding:1rem;-webkit-overflow-scrolling:touch;';
+  var h='<div style="max-width:420px;margin:0 auto;">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">';
+  h+='<div style="font-family:Playfair Display,serif;font-size:1.1rem;color:var(--gold);font-style:italic;">The Keeper\'s Path</div>';
+  h+='<button onclick="document.getElementById(\'lw-class-overlay\').remove()" style="width:48px;height:48px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:1rem;cursor:pointer;">✕</button>';
+  h+='</div>';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);margin-bottom:1rem;line-height:1.5;">Choose one path. Each level unlocks an ability. Master rank unlocks companion synergy. Progress is slow — play long-term.</div>';
+  for(var cid in LW_CLASSES){
+    var def=LW_CLASSES[cid];
+    var lvl=_lwGetClassLevel(cid);
+    var xp=_lwGetClassXP()[cid]||0;
+    var nextXP=lvl>=3?'MAX':lvl>=2?LW_CLASS_XP_L3:LW_CLASS_XP_L2;
+    var pct=lvl>=3?100:lvl>=2?((xp-LW_CLASS_XP_L2)/(LW_CLASS_XP_L3-LW_CLASS_XP_L2))*100:(xp/LW_CLASS_XP_L2)*100;
+    var picked=cur===cid;
+    var lockedCur=cur&&cur!==cid;
+    h+='<div style="margin-bottom:0.7rem;padding:0.8rem;background:'+(picked?'rgba(200,168,75,0.1)':'rgba(26,36,22,0.4)')+';border:1.5px solid '+(picked?'rgba(200,168,75,0.5)':'rgba(74,124,53,0.15)')+';border-radius:12px;'+(lockedCur?'opacity:0.4;':'')+'">';
+    h+='<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.4rem;">';
+    h+='<div style="font-size:1.8rem;">'+def.icon+'</div>';
+    h+='<div style="flex:1;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:'+(picked?'var(--gold)':'var(--cream)')+';letter-spacing:0.08em;">'+def.name.toUpperCase()+(picked?' · L'+lvl:'')+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">'+def.desc+'</div>';
+    h+='</div>';
+    if(!cur)h+='<button onclick="if(confirm(\'Choose '+def.name+'? You can respec later for Pi.\')){localStorage.setItem(\'lw_class\',\''+cid+'\');document.getElementById(\'lw-class-overlay\').remove();setTimeout(_LW_openClassPicker,150);}" style="min-height:40px;padding:8px 12px;font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;background:rgba(122,179,86,0.2);border:1.5px solid var(--sage);color:var(--sage);border-radius:8px;cursor:pointer;">CHOOSE</button>';
+    h+='</div>';
+    if(picked){
+      h+='<div style="margin:0.3rem 0;"><div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);"><span>XP: '+xp+'</span><span>Next: '+nextXP+'</span></div>';
+      h+='<div style="height:4px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;margin-top:2px;"><div style="height:100%;width:'+Math.min(100,pct)+'%;background:linear-gradient(90deg,rgba(122,179,86,0.6),rgba(200,168,75,0.8));border-radius:2px;"></div></div></div>';
+    }
+    for(var abl=1;abl<=3;abl++){
+      var ab=def.abilities[abl];var unlocked=picked&&lvl>=abl;
+      var titles=['','Apprentice','Journeyman','Master'];
+      h+='<div style="padding:5px 8px;margin-top:4px;background:'+(unlocked?'rgba(74,124,53,0.12)':'rgba(13,16,12,0.4)')+';border-left:3px solid '+(unlocked?'var(--sage)':'rgba(74,124,53,0.1)')+';border-radius:4px;">';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:'+(unlocked?'var(--sage)':'var(--muted)')+';letter-spacing:0.06em;">L'+abl+' '+titles[abl].toUpperCase()+'</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+(unlocked?'var(--cream)':'var(--muted)')+';margin-top:2px;"><strong>'+ab.name+'</strong> — '+ab.desc+'</div>';
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+  // Tools section
+  h+='<div style="margin-top:1.2rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.5rem;">TOOLS</div>';
+  for(var tid in LW_TOOLS){
+    var tdef=LW_TOOLS[tid];
+    var tlvl=_lwGetToolLevel(tid);
+    var txp=_lwGetToolXP()[tid]||0;
+    h+='<div style="margin-bottom:0.5rem;padding:0.6rem;background:rgba(26,36,22,0.4);border:1px solid rgba(74,124,53,0.15);border-radius:10px;">';
+    h+='<div style="display:flex;align-items:center;gap:0.5rem;">';
+    h+='<div style="font-size:1.3rem;">'+tdef.icon+'</div>';
+    h+='<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--cream);letter-spacing:0.06em;">'+tdef.name.toUpperCase()+' · L'+tlvl+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--gold);">'+tdef.levels[tlvl]+'</div></div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">'+txp+' xp</div>';
+    h+='</div></div>';
+  }
+  h+='</div></div>';
+  ov.innerHTML=h;
+  document.body.appendChild(ov);
+};
 })();
 </script>
 
