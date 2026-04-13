@@ -46526,6 +46526,12 @@ function _mintGiftPlant(){
     });
   }
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
+  // If the player tapped Continue and finish() already swapped to the
+  // greenhouse before the mint completed (vault-hydrate wait can take a
+  // few seconds), the gift appears in localStorage but the rendered grid
+  // doesn't know. Force a re-render so it's visible immediately.
+  if(window.renderGreenhouse){try{renderGreenhouse();}catch(e){}}
+  if(window.updateDashboard){try{updateDashboard();}catch(e){}}
 }
 
 function finish(){
