@@ -52527,8 +52527,11 @@ var LW_CLASSES={
     abilities:{
       1:{name:'Attuned',desc:'+5% to all bonuses'},
       2:{name:'Versatile',desc:'All tool cooldowns -10%'},
-      3:{name:'Beholden',desc:'The Beholder grants +10% everything'}
-    },companion:38,biome:'suburban'}
+      // Beholden was Beholder synergy — Beholder is Cosmic 0.39%, too rare
+      // to gate progression. Polymath replaces it: lift the keeper ¼ XP
+      // penalty and earn full XP from every source.
+      3:{name:'Polymath',desc:'Earn full class XP from every source'}
+    },biome:'suburban'}
 };
 var LW_TOOLS={
   shears:{name:'Shears',icon:'✂️',desc:'Clipping cooldown reducer',levels:{1:'6h cooldown',2:'4h cooldown',3:'2h cooldown'}},
@@ -52581,13 +52584,12 @@ window._lwRefreshAvatar=function(){
   }
 };
 setTimeout(function(){try{window._lwRefreshAvatar();}catch(e){}},500);
-// Respec — available once current class is at Master (L3).
-// Wipes the class selection but PRESERVES accumulated class XP, so if
-// the player ever walks back the same path, they return at Master.
+// Respec — switch classes freely. Class XP is PRESERVED per class so if
+// you walk back the same path, you return at the level you left.
+// (Was Master-only — that gated experimentation. Now anyone, any level.)
 window._lwRespec=function(){
   var cur=_lwGetClass();if(!cur)return;
-  var lvl=_lwGetClassLevel(cur);if(lvl<3){if(window._toast)_toast('Respec unlocks at Master rank.');return;}
-  if(!confirm('Walk a new path?\n\nYou keep your ' + (LW_CLASSES[cur]?LW_CLASSES[cur].name:'current') + ' progress (Master remains). You\u2019ll be able to choose a different class. Companion synergy will follow whichever class you\u2019re walking.'))return;
+  if(!confirm('Walk a new path?\n\nYou keep your ' + (LW_CLASSES[cur]?LW_CLASSES[cur].name:'current') + ' progress so you can return any time. You\u2019ll be able to choose a different class. Companion synergy will follow whichever class you\u2019re walking.'))return;
   try{localStorage.removeItem('lw_class');}catch(e){}
   if(window._toast)_toast('\ud83c\udf3f The path is yours to choose again.');
   try{if(window._haptic)window._haptic();}catch(e){}
@@ -52643,9 +52645,11 @@ window._LW_updateWildClassStat=function(){
 window._LW_classXP=function(source,amount){
   var cls=_lwGetClass();if(!cls)return;
   var def=LW_CLASSES[cls];if(!def)return;
-  // Keeper gets ¼ XP from everything; others only from their sources
+  // Keeper earns ¼ XP from every source (generalist penalty). Polymath
+  // (Master L3) lifts the penalty so Keeper L3 earns full XP from any
+  // source. Other classes still get full XP only from their declared sources.
   var mult=0;
-  if(cls==='keeper')mult=0.25;
+  if(cls==='keeper')mult=_lwGetClassLevel('keeper')>=3?1:0.25;
   else if(def.xpSrc.indexOf(source)>=0||def.xpSrc.indexOf('all')>=0)mult=1;
   if(mult<=0)return;
   // Biome bonus: +25% XP when in matching biome
@@ -52689,9 +52693,10 @@ window._LW_toolXP=function(tool,amount){
 window._LW_classBonus=function(kind){
   var cls=_lwGetClass();if(!cls)return 1;
   var lvl=_lwGetClassLevel(cls);
-  // Keeper always gets 5% extra; Beholder synergy adds another 10%
+  // Keeper Attuned: +5% per level (L1 +5%, L2 +10%, L3 +15%).
+  // Beholder synergy was removed — Beholder is Cosmic 0.39% and shouldn't
+  // gate progression. Keeper L3 ability is Polymath (full XP) instead.
   var keeper=cls==='keeper'?0.05*lvl:0;
-  try{if(cls==='keeper'&&window._LW_hasSynergy&&window._LW_hasSynergy())keeper+=0.10;}catch(e){}
   if(kind==='feralRange'&&cls==='forager')return 1.25+keeper;
   if(kind==='rareOdds'&&cls==='forager'&&lvl>=2)return 1.15+keeper;
   if(kind==='nurserySlot'&&cls==='breeder')return 1+keeper; // legacy key — multiplier no-op
