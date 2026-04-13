@@ -329,7 +329,20 @@ window._gameFns.jade=function JG(a){
   }
   function checkStuck(){
     if(!findAnyMatch()){
-      sm('No matches left — shuffle or new game.');
+      // Without this branch, a player with 0 shuffles + no matches
+      // saw the same toast as a player with 3 shuffles — but the
+      // first player was soft-locked. Now we differentiate so they
+      // know to start a new game instead of looking for a button
+      // that won't help.
+      if(shufflesLeft<=0){
+        sm('🍂 No matches and no shuffles left. Tap NEW to play again.');
+        if(timerInt){clearInterval(timerInt);timerInt=null;}
+        var secs=Math.round((Date.now()-startTime)/1000);
+        var cleared=0;for(var i=0;i<tiles.length;i++)if(tiles[i].removed)cleared++;
+        _sr('jade',{w:false,s:secs,cleared:cleared});
+      } else {
+        sm('No matches available — tap ♻ to shuffle ('+shufflesLeft+' left).');
+      }
     }
   }
 
