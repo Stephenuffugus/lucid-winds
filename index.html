@@ -39673,7 +39673,17 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
 <button id="sws-debug-toggle" onclick="(function(){var el=document.getElementById('sws-debug-log');el.classList.toggle('visible');this.textContent=el.classList.contains('visible')?'[×] Hide Log':'[🔍] Firebase Log';}).call(this)">[🔍] Firebase Log</button>
 
 <!-- Beta tester feedback button — small floating ribbon, low-impact -->
-<button id="lw-fb-btn" onclick="window._lwOpenFeedback&&window._lwOpenFeedback()" title="Share feedback" style="position:fixed;bottom:4px;right:4px;z-index:999998;background:rgba(122,179,86,0.12);color:rgba(122,179,86,0.7);padding:5px 10px;font-family:'DM Mono',monospace;font-size:0.5rem;letter-spacing:0.05em;border-radius:6px;border:1px solid rgba(122,179,86,0.25);cursor:pointer;">📝 FEEDBACK</button>
+<!-- bottom-right placement is above the bottom nav (var(--nav-h)) and clear
+     of the iOS home indicator (env(safe-area-inset-bottom)). Hidden during
+     onboarding via the .ob-active body class so testers don't tap it before
+     they have an account. -->
+<button id="lw-fb-btn" onclick="window._lwOpenFeedback&&window._lwOpenFeedback()" title="Share feedback" style="position:fixed;bottom:calc(var(--nav-h, 58px) + env(safe-area-inset-bottom, 0px) + 6px);right:8px;z-index:999998;background:rgba(122,179,86,0.12);color:rgba(122,179,86,0.7);padding:5px 10px;font-family:'DM Mono',monospace;font-size:0.5rem;letter-spacing:0.05em;border-radius:6px;border:1px solid rgba(122,179,86,0.25);cursor:pointer;">📝 FEEDBACK</button>
+<style>
+  /* Hide feedback button while the onboarding overlay is active —
+     don't compete with the cinematic, and don't let testers reset their
+     account before they've made one. */
+  body.ob-active #lw-fb-btn{display:none !important;}
+</style>
 <script>
 (function(){
   // Beta tester feedback collector. Posts to a Discord webhook when set,
@@ -39727,6 +39737,13 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
         '<textarea id="lw-fb-text" placeholder="What stood out? What confused you? Anything that broke?" style="width:100%;box-sizing:border-box;min-height:80px;padding:8px;font-family:DM Mono,monospace;font-size:0.6rem;background:rgba(13,16,12,0.7);border:1.5px solid rgba(122,179,86,0.3);border-radius:8px;color:var(--cream,#e8dcc8);resize:vertical;margin-bottom:0.5rem;"></textarea>'+
         '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted,#8a9178);margin-bottom:0.6rem;line-height:1.5;opacity:0.7;">Sending: tab=<b>'+c.tab+'</b> · plants=<b>'+c.plants+'</b> · class=<b>'+c.class+'</b></div>'+
         '<button id="lw-fb-send" style="width:100%;padding:0.6rem;background:linear-gradient(180deg,rgba(74,124,53,0.3),rgba(46,80,34,0.4));border:1.5px solid rgba(122,179,86,0.5);border-radius:8px;color:var(--cream,#e8dcc8);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">SEND</button>'+
+        // Tester reset path — small link, triple-confirmed. Lives inside the
+        // feedback modal so testers find it naturally when they want to retry,
+        // but real users won't trip on it (low-traffic surface, gated by 3
+        // confirms). Wipes local + cloud + signs out + reloads.
+        '<div style="margin-top:0.7rem;text-align:center;">'+
+          '<a href="#" id="lw-fb-reset" style="font-family:DM Mono,monospace;font-size:0.45rem;color:rgba(196,122,122,0.5);text-decoration:underline;cursor:pointer;letter-spacing:0.06em;">🔁 start over (wipes account)</a>'+
+        '</div>'+
       '</div>';
     document.body.appendChild(ov);
 
@@ -39753,6 +39770,29 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
       };})(tagBtns[t]);
     }
 
+    // Tester reset — triple-confirm so it can't fire by accident.
+    var _resetLink=document.getElementById('lw-fb-reset');
+    if(_resetLink){
+      _resetLink.onclick=function(e){
+        e.preventDefault();
+        if(!confirm('Start over?\n\nThis wipes your account on this device. Your cloud vault is also deleted. Onboarding will run again from scratch.'))return;
+        if(!confirm('Are you SURE? This cannot be undone.\n\n(Beta tester reset — only do this if you want to re-test the new-player flow.)'))return;
+        // Final guard: type the word YES so a fat-finger can't blast through.
+        var t=prompt('Type YES to confirm full reset:');
+        if(!t||t.trim().toUpperCase()!=='YES'){alert('Reset cancelled.');return;}
+        try{
+          if(typeof gtag!=='undefined')gtag('event','tester_reset',{rating:rating,plants:c.plants,xp:c.xp});
+        }catch(e2){}
+        try{
+          var _u=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
+          if(_u&&firebase.firestore)firebase.firestore().collection('vaults').doc(_u.uid).delete().catch(function(){});
+          if(window.firebase&&firebase.auth)firebase.auth().signOut().catch(function(){});
+        }catch(e2){}
+        try{localStorage.clear();}catch(e2){}
+        // Brief delay so signOut + delete promises have a chance to fire.
+        setTimeout(function(){location.reload();},600);
+      };
+    }
     document.getElementById('lw-fb-send').onclick=function(){
       var msg=(document.getElementById('lw-fb-text').value||'').trim();
       if(!rating&&!msg&&!tags.length){alert('Pick a rating, tap a tag, or write something.');return;}
@@ -46453,6 +46493,7 @@ function start(){
   if(_isOnboarded())return;
   var el=document.getElementById('pw-onboard');if(!el)return;
   el.classList.add('active');
+  document.body.classList.add('ob-active'); // hides feedback button until signup completes
   var kb=document.getElementById('pw-keeper-bar');if(kb)kb.style.display='none';
   console.log('[LW] start() called');
   // Funnel: cinematic actually shown to a fresh user (vs page-load with
@@ -46771,7 +46812,7 @@ function submitAuth(){
           _markOnboarded();
           var authEl=document.getElementById('ob-auth');if(authEl)authEl.style.display='none';
           var el=document.getElementById('pw-onboard');
-          if(el){el.style.display='none';el.style.pointerEvents='none';el.classList.remove('active');}
+          if(el){el.style.display='none';el.style.pointerEvents='none';el.classList.remove('active');}document.body.classList.remove('ob-active');
           var kb=document.getElementById('pw-keeper-bar');if(kb)kb.style.display='flex';
           if(window.PW_UI)PW_UI.updateKeeperBar();
           setTimeout(function(){
@@ -46861,7 +46902,7 @@ function _mintGiftPlant(){
 function finish(){
   _markOnboarded();
   var el=document.getElementById('pw-onboard');
-  if(el){el.style.display='none';el.style.pointerEvents='none';el.classList.remove('active');}
+  if(el){el.style.display='none';el.style.pointerEvents='none';el.classList.remove('active');}document.body.classList.remove('ob-active');
   var dots=document.getElementById('ob-dots');if(dots)dots.style.display='none';
   var skip=document.getElementById('ob-skip');if(skip)skip.style.display='none';
   var kb=document.getElementById('pw-keeper-bar');if(kb)kb.style.display='flex';
@@ -47015,7 +47056,7 @@ function submitLogin(){
       _markOnboarded();
       // Hide onboarding
       var el=document.getElementById('pw-onboard');
-      if(el){el.style.display='none';el.style.pointerEvents='none';el.classList.remove('active');}
+      if(el){el.style.display='none';el.style.pointerEvents='none';el.classList.remove('active');}document.body.classList.remove('ob-active');
       var dots=document.getElementById('ob-dots');if(dots)dots.style.display='none';
       var kb=document.getElementById('pw-keeper-bar');if(kb)kb.style.display='flex';
       if(window.PW_UI)PW_UI.updateKeeperBar();
