@@ -27367,6 +27367,8 @@ document.addEventListener('keydown', function(e) {
     if (!amount || amount < 0) return;
     // Tender class bonus: L2+ multiplies dew income
     try{if(window._LW_classBonus){amount=Math.ceil(amount*window._LW_classBonus('dewRate'));}}catch(e){}
+    // Tender XP: dew income feeds class XP (1 per 4 dew to prevent spam)
+    try{if(window._LW_classXP&&amount>=4)window._LW_classXP('dew',Math.floor(amount/4));}catch(e){}
     var ledger = getDewLedger();
     ledger.earned = (ledger.earned || 0) + amount;
     _secureSet(DEW_LEDGER_KEY, ledger);
@@ -50978,7 +50980,7 @@ window._LW_classBonus=function(kind){
   if(kind==='nurserySlot'&&cls==='breeder')return 1+keeper;
   if(kind==='chimeraPurity'&&cls==='breeder'&&lvl>=2)return 1.20+keeper;
   if(kind==='stepBonus'&&cls==='cartographer')return 1.10+keeper;
-  if(kind==='plantLongevity'&&cls==='tender')return 2+keeper;
+  if(kind==='plantLongevity'&&cls==='tender'){var _tbase=2+keeper;try{if(lvl>=3&&window._LW_hasSynergy&&window._LW_hasSynergy())_tbase+=1;}catch(e){}return _tbase;}
   if(kind==='dewRate'&&cls==='tender'&&lvl>=2)return 1.20+keeper;
   return 1+keeper;
 };
