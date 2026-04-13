@@ -44251,39 +44251,32 @@ function GBG(a){
 }
 // ═══ PIPE CONNECT ═══
 
-try{window._gameFns.memory=GM}catch(e){}    // Memory Garden
-try{window._gameFns.merge=GR}catch(e){}     // Merge 2048
-try{window._gameFns.simon=GS}catch(e){}     // Seasonal Cycle
-try{window._gameFns.lights=GL}catch(e){}    // Glow Shrooms
-try{window._gameFns.mines=GN}catch(e){}     // Root Rot
-try{window._gameFns.sudoku=GU}catch(e){}    // Soil Grid
-try{window._gameFns.wordsearch=GW}catch(e){}// Root Words
-try{window._gameFns.hanoi=GH}catch(e){}     // Root Stack
-try{window._gameFns.flood=GFL}catch(e){}    // Autumn Leaves
-try{window._gameFns.pipe=GPP}catch(e){}     // Vine Flow
-try{window._gameFns.chess=GCH}catch(e){}    // Grove Chess
-try{window._gameFns.c4=G4}catch(e){}        // Connect Fleur
-try{window._gameFns.song=GSG}catch(e){}     // Seed Song
-try{window._gameFns.slider=GD}catch(e){}    // 15 Puzzle
-try{window._gameFns.farkle=GF}catch(e){}    // Farkle
-try{window._gameFns.golf=GGO}catch(e){}     // Golf Solitaire
-try{window._gameFns.klondike=GK}catch(e){}  // Klondike
-try{window._gameFns.spider=GSP}catch(e){}   // Spider
-try{window._gameFns.freecell=GFC}catch(e){} // Freecell
-try{window._gameFns.pyramid=GP}catch(e){}   // Pyramid
-try{window._gameFns.tripeaks=GT}catch(e){}  // TriPeaks
-try{window._gameFns.yahtzee=GY}catch(e){}   // Yahtzee
-try{window._gameFns.picross=GX}catch(e){}   // Picross
-try{window._gameFns.checkers=GCK}catch(e){} // Checkers
-try{window._gameFns.reversi=GRV}catch(e){}  // Reversi
-try{window._gameFns.mastermind=GMM}catch(e){}// Mastermind
-try{window._gameFns.colorsort=GCS}catch(e){}// Color Sort
-try{window._gameFns.battleship=GBS}catch(e){}// Battleship
-try{window._gameFns.sokoban=GSK}catch(e){}  // Sokoban
-try{window._gameFns.backgammon=GBG}catch(e){} // Backgammon
-try{window._gameFns.bloomwheel=GBW}catch(e){} // Bloom Wheel
-try{window._gameFns.petalfall=GPF}catch(e){} // Petal Fall
-try{window._gameFns.doubleshutter=GDS}catch(e){} // Double Shutter
+// Inline-only games (no file version in /games/) — register eagerly
+// so they're available without lazy-load.
+try{window._gameFns.slider=GD}catch(e){}        // 15 Puzzle
+try{window._gameFns.farkle=GF}catch(e){}        // Farkle
+try{window._gameFns.yahtzee=GY}catch(e){}       // Yahtzee
+try{window._gameFns.picross=GX}catch(e){}       // Bloom Grid
+try{window._gameFns.checkers=GCK}catch(e){}     // Checkers
+try{window._gameFns.reversi=GRV}catch(e){}      // Reversi
+try{window._gameFns.mastermind=GMM}catch(e){}   // Seed Code
+try{window._gameFns.colorsort=GCS}catch(e){}    // Color Sort
+try{window._gameFns.battleship=GBS}catch(e){}   // Tide Hunt
+try{window._gameFns.sokoban=GSK}catch(e){}      // Sokoban
+try{window._gameFns.backgammon=GBG}catch(e){}   // Backgammon
+try{window._gameFns.bloomwheel=GBW}catch(e){}   // Bloom Wheel
+try{window._gameFns.petalfall=GPF}catch(e){}    // Block Drop
+try{window._gameFns.doubleshutter=GDS}catch(e){}// Double Shutter
+// Note: memory, merge, simon, lights, mines, sudoku, wordsearch,
+// hanoi, flood, pipe, chess, c4, song, golf, klondike, spider,
+// freecell, pyramid, tripeaks all live in /games/{id}.js as the
+// canonical version. The inline GM/GR/GS/etc. functions in this
+// file are dead code kept only for git history. They previously
+// shadowed the file versions — meaning fixes shipped to the
+// modular files (sudoku rewrite, 2048 win event, simon win event,
+// chess Stockfish, flood leaves toggle, etc.) silently never ran
+// in production. Removing the registration lines lets the
+// lazy-loader pick up the files.
 
 
 _bp();
