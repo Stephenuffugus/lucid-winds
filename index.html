@@ -33377,6 +33377,9 @@ function activate(){
           var _bInfo=getBiomeInfo(b);
           if(window._toast)_toast(_bInfo.icon+' Biome: '+_bInfo.name+(_bInfo.mutation?' — '+_bInfo.mutation+' possible':''));
           localStorage.setItem('lw_biome_shown',b);
+          // New biome discovery: Cartographer XP + Compass XP
+          try{if(window._LW_classXP)window._LW_classXP('biome',25);}catch(e){}
+          try{if(window._LW_toolXP)window._LW_toolXP('compass',15);}catch(e){}
         }
       });
     }
@@ -35201,6 +35204,8 @@ function _doCollectFeral(f,mk){
   // Award Dew based on rarity (feral collection drips dew into the pouch)
   var dewReward={Common:1,Uncommon:2,Rare:3,Epic:5,Legendary:8,Mythic:12,Cosmic:20};
   var reward=dewReward[info.grade]||1;
+  // Class synergy: Forager Master + Raccoon = 2x feral drops
+  try{if(window._LW_hasSynergy&&window._LW_hasSynergy()){var _lwc=localStorage.getItem('lw_class');if(_lwc==='forager')reward*=2;}}catch(e){}
   if(window.earnDew)window.earnDew(reward,'feral_collect');
   // Event log: record feral collection for Root Report / discovery stats
   if(window.LW_Log){
@@ -35217,6 +35222,7 @@ function _doCollectFeral(f,mk){
   if(window.FG_Audio&&FG_Audio.enabled)try{FG_Audio.playCollectChime();}catch(e){}
   if(typeof gtag!=='undefined') gtag('event','feral_collected',{grade:info.grade,dew_reward:reward});
   if(window._LW_classXP)window._LW_classXP('feral',10);
+  if(window._LW_toolXP)window._LW_toolXP('pouch',2);
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
 }
 
@@ -35498,6 +35504,8 @@ function showTP(p,mk){
         // Bloom chorus bonus
         var _chBonus=window.getChorusBonus?getChorusBonus(p.hash):null;
         if(_chBonus&&_chBonus.inChorus)_polRate=Math.round(_polRate*(1+_chBonus.pollenBonus));
+        // Class synergy: Breeder Master + Garden Spider = 2x pollen
+        try{if(window._LW_hasSynergy&&window._LW_hasSynergy()){var _lwc=localStorage.getItem('lw_class');if(_lwc==='breeder')_polRate*=2;}}catch(e){}
       }
     }catch(e){}
     var waterBtn=document.getElementById('wtp-water');
@@ -35893,6 +35901,7 @@ function _waterOwnPlant(p,mk){
   _play('match');
   // Watering grants pollen XP as a caretaker reward (direct XP, no Dew earn)
   var _waterXP=3;if(window.PW_grantXP)PW_grantXP(_waterXP,'water_care');
+  if(window._LW_toolXP)window._LW_toolXP('can',3);
   if(window.LW_Log)window.LW_Log.write('wild_watered',{hash:p.hash});
   _play('water');
   _toast('\ud83d\udca7 Watered! Lifespan reset. (-5 Dew, +'+_waterXP+' XP)');
@@ -45972,7 +45981,7 @@ var BP=(function(){
 var _o=false,_ss=null,_sp=null,_ht=null;
 var SL=[{id:1},{id:2,h:'Harvest 1st plant',k:'slot2'},{id:3,h:'100 pollen',k:'slot3'},{id:4,h:'10 games',k:'slot4'},{id:5,h:'Drop 5 in Wild',k:'slot5'},{id:6,h:'Daily slot',k:'slot6',dy:true}];
 var SC=[{c:1,k:'seed1'},{c:5,k:'seed5'},{c:10,k:'seed10'},{c:15,k:'seed15'},{c:20,k:'seed20'}];
-function xp(){var c=3;for(var i=1;i<SL.length;i++){var s=SL[i];if(s.k==='slot2'||s.k==='slot3')continue;if(st.unlocks[s.k]){if(s.dy){var td=new Date().toISOString().split('T')[0];if(st.daily!==td)c++;}else c++;}}return c;}
+function xp(){var c=3;try{if(window._LW_toolMod){var _ps=window._LW_toolMod('pouch');if(_ps)c=_ps;}}catch(e){}for(var i=1;i<SL.length;i++){var s=SL[i];if(s.k==='slot2'||s.k==='slot3')continue;if(st.unlocks[s.k]){if(s.dy){var td=new Date().toISOString().split('T')[0];if(st.daily!==td)c++;}else c++;}}return c;}
 function xc(){var c=1;for(var i=SC.length-1;i>=0;i--){if(st.unlocks[SC[i].k]){c=SC[i].c;break;}}return c;}
 function init(){var el=document.getElementById('bpi');if(el){var s=el.querySelector('svg');if(s)s.remove();}render();}
 function toggle(){if(_o)close();else open();}
@@ -46398,7 +46407,8 @@ window.FG_Backpack.takeClipping = function(idx) {
   try { clipCDs = JSON.parse(localStorage.getItem('fg_bp_clipCDs') || '{}'); } catch(e){}
   var cdKey = (plant.hash || ('slot'+idx)) + '|cut';
   var last = clipCDs[cdKey] || 0;
-  var remaining = (6 * 60 * 60 * 1000) - (Date.now() - last);
+  var _shearCD = (window._LW_toolMod && window._LW_toolMod('shears')) || (6 * 60 * 60 * 1000);
+  var remaining = _shearCD - (Date.now() - last);
   if (remaining > 0) {
     var mins = Math.ceil(remaining / 60000);
     var label = mins >= 60 ? Math.floor(mins/60) + 'h ' + (mins%60) + 'm' : mins + 'm';
@@ -46429,6 +46439,7 @@ window.FG_Backpack.takeClipping = function(idx) {
   // Record cooldown start
   clipCDs[cdKey] = Date.now();
   try { localStorage.setItem('fg_bp_clipCDs', JSON.stringify(clipCDs)); } catch(e){}
+  if (window._LW_toolXP) window._LW_toolXP('shears', 10);
   BP.render();
   if (window._toast) window._toast('✂️ Clipping sent to Nursery! 6h cooldown started.');
   if (window.renderNursery) setTimeout(window.renderNursery, 200);
