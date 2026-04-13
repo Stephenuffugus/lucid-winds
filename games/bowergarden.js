@@ -351,14 +351,14 @@ window._gameFns.bowergarden = function BG(a){
     h+='</div>';
     // North (partner) hand - face down. Bumped to 38x52 (was 32x44).
     var northSittingOut=(loner&&sittingOut===NORTH);
-    h+='<div style="text-align:center;padding:6px;'+(northSittingOut?'opacity:0.35;':'')+'" class="bg-seat'+activeClass(NORTH)+'"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:5px;">PARTNER'+dealerBadge(NORTH)+(northSittingOut?' <span style="color:var(--gold);font-size:0.65rem;">(SITTING OUT)</span>':'')+'</div><div style="display:flex;gap:3px;justify-content:center;">';
-    for(var n=0;n<hands[NORTH].length;n++)h+='<div style="width:38px;height:52px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;"></div>';
+    h+='<div style="text-align:center;padding:6px;'+(northSittingOut?'opacity:0.35;':'')+'" class="bg-seat'+activeClass(NORTH)+'"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:5px;">PARTNER'+dealerBadge(NORTH)+(northSittingOut?' <span style="color:var(--gold);font-size:0.65rem;">(SITTING OUT)</span>':'')+'</div><div style="display:inline-flex;justify-content:center;">';
+    for(var n=0;n<hands[NORTH].length;n++)h+='<div style="width:38px;height:52px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-left:'+(n===0?'0':'-22px')+';"></div>';
     h+='</div></div>';
     // Middle: West | Trick | East. Bumped min-height + side card sizes.
     h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;">';
     // West — bumped to 32x46 (was 28x40)
-    h+='<div class="bg-seat'+activeClass(WEST)+'" style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">WEST'+dealerBadge(WEST)+'</div><div style="display:flex;flex-direction:column;gap:3px;">';
-    for(var w=0;w<hands[WEST].length;w++)h+='<div style="width:32px;height:46px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;"></div>';
+    h+='<div class="bg-seat'+activeClass(WEST)+'" style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">WEST'+dealerBadge(WEST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
+    for(var w=0;w<hands[WEST].length;w++)h+='<div style="width:32px;height:46px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-top:'+(w===0?'0':'-32px')+';"></div>';
     h+='</div></div>';
     // Trick area — bumped min-height
     h+='<div style="position:relative;min-height:160px;background:rgba(26,31,23,0.3);border-radius:8px;">';
@@ -380,8 +380,8 @@ window._gameFns.bowergarden = function BG(a){
     }
     h+='</div>';
     // East — bumped to 32x46
-    h+='<div class="bg-seat'+activeClass(EAST)+'" style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">EAST'+dealerBadge(EAST)+'</div><div style="display:flex;flex-direction:column;gap:3px;">';
-    for(var e=0;e<hands[EAST].length;e++)h+='<div style="width:32px;height:46px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;"></div>';
+    h+='<div class="bg-seat'+activeClass(EAST)+'" style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">EAST'+dealerBadge(EAST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
+    for(var e=0;e<hands[EAST].length;e++)h+='<div style="width:32px;height:46px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-top:'+(e===0?'0':'-32px')+';"></div>';
     h+='</div></div>';
     h+='</div>';
     // South (player) hand

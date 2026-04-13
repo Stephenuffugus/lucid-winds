@@ -224,14 +224,14 @@ window._gameFns.bleedinghearts = function BH(a){
     }
     h+='</div>';
     if(heartsBroken)h+='<div style="text-align:center;font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:#c47a7a;letter-spacing:0.12em;padding:4px;background:rgba(196,122,122,0.08);border-radius:6px;margin:4px 0;">♥ HEARTS BROKEN</div>';
-    // North — bumped label, use bigger face-down cards
-    h+='<div style="text-align:center;padding:6px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:5px;">NORTH</div><div>';
-    for(var n=0;n<hands[N].length;n++)h+=_cardHtml(null,true);
+    // North — face-down cards with horizontal overlap for compactness
+    h+='<div style="text-align:center;padding:6px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:5px;">NORTH'+(currentPlayer===N?' <span style="color:var(--gold);">●</span>':'')+'</div><div style="display:inline-flex;justify-content:center;">';
+    for(var n=0;n<hands[N].length;n++)h+='<span style="margin-left:'+(n===0?'0':'-18px')+';">'+_cardHtml(null,true)+'</span>';
     h+='</div></div>';
-    // West | Trick | East
+    // West | Trick | East — vertical-overlap for side hands
     h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;">';
-    h+='<div style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">WEST</div><div style="display:flex;flex-direction:column;gap:2px;align-items:center;">';
-    for(var w=0;w<hands[W].length;w++)h+=_cardHtml(null,true);
+    h+='<div style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">WEST'+(currentPlayer===W?' <span style="color:var(--gold);">●</span>':'')+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
+    for(var w=0;w<hands[W].length;w++)h+='<span style="margin-top:'+(w===0?'0':'-26px')+';">'+_cardHtml(null,true)+'</span>';
     h+='</div></div>';
     // Trick
     h+='<div style="position:relative;min-height:160px;background:rgba(26,31,23,0.3);border-radius:8px;">';
@@ -243,8 +243,8 @@ window._gameFns.bleedinghearts = function BH(a){
       h+='<div style="font-size:0.85rem;">'+c.rank+'</div><div style="font-size:1.1rem;">'+SI[c.suit]+'</div></div>';
     }
     h+='</div>';
-    h+='<div style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">EAST</div><div style="display:flex;flex-direction:column;gap:2px;align-items:center;">';
-    for(var e=0;e<hands[E].length;e++)h+=_cardHtml(null,true);
+    h+='<div style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">EAST'+(currentPlayer===E?' <span style="color:var(--gold);">●</span>':'')+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
+    for(var e=0;e<hands[E].length;e++)h+='<span style="margin-top:'+(e===0?'0':'-26px')+';">'+_cardHtml(null,true)+'</span>';
     h+='</div></div>';
     h+='</div>';
     // Pass UI
