@@ -47541,12 +47541,12 @@ var MYSTERY_COST = 25;
 // (1 fert ≈ 5 dew, 1 DNA ≈ 1 dew, 1 Sunbeam ≈ 1 dew).
 var MYSTERY_LOOT = [
   { weight: 0.30, icon: '\ud83c\udf3e', name: 'Seed Shell',  desc: '+2 Fertilizer',                          fert:  2, rare: false },
-  { weight: 0.25, icon: '\ud83e\udea8', name: 'Fossil Bit',  desc: '+5 DNA fragments',                       dna:   5, rare: false },
+  { weight: 0.25, icon: '\u2600\ufe0f', name: 'Sun Spark',   desc: '+10 Sunbeams',                           sb:   10, rare: false },
   { weight: 0.20, icon: '\u2728',       name: 'Sun Drop',    desc: '+20 Sunbeams',                           sb:   20, rare: false },
   { weight: 0.15, icon: '\ud83d\udca7', name: 'Dew Pearl',   desc: '+15 Dew',                                dew:  15, rare: false },
   { weight: 0.07, icon: '\ud83c\udf19', name: 'Moon Shard',  desc: '+40 Sunbeams +1 Fertilizer',             sb:  40, fert: 1, rare: true },
-  { weight: 0.02, icon: '\ud83c\udf20', name: 'Starstone',   desc: '+100 Sunbeams +3 Fertilizer +3 DNA',     sb: 100, fert: 3, dna: 3, rare: true },
-  { weight: 0.01, icon: '\ud83d\udc8e', name: 'JACKPOT!',    desc: '+250 Sunbeams +5 Fertilizer +10 DNA +30 Dew', sb: 250, fert: 5, dna: 10, dew: 30, rare: true, jackpot: true }
+  { weight: 0.02, icon: '\ud83c\udf20', name: 'Starstone',   desc: '+120 Sunbeams +3 Fertilizer',            sb: 120, fert: 3, rare: true },
+  { weight: 0.01, icon: '\ud83d\udc8e', name: 'JACKPOT!',    desc: '+300 Sunbeams +5 Fertilizer +30 Dew',    sb: 300, fert: 5, dew: 30, rare: true, jackpot: true }
 ];
 
 function _pickLoot() {
@@ -47641,6 +47641,11 @@ window._openMysteryBox = function() {
     }
     if (loot.sb && typeof window.earnHashes === 'function') window.earnHashes(loot.sb);
     if (loot.dew && typeof window.earnDew === 'function') window.earnDew(loot.dew, 'mystery_box');
+    // Force a dashboard update so sunbeams bar reflects new balance immediately
+    try{if(window.updateDashboard)window.updateDashboard();}catch(e){}
+    try{if(window._updateGameDew)window._updateGameDew();}catch(e){}
+    // Persist to cloud so rewards survive browser clears
+    try{if(window.syncVaultToCloud)setTimeout(window.syncVaultToCloud,400);}catch(e){}
     // Display
     if (pEl) {
       pEl.textContent = loot.name + ' \u00b7 ' + loot.desc;
