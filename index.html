@@ -37145,6 +37145,16 @@ function _doCrossPollination(wildPlant,matePlant){
     _wildBreedOv.style.cssText='position:fixed;inset:0;z-index:99996;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,8,4,0.92);backdrop-filter:blur(14px);animation:panelFadeIn 0.3s ease;';
     _wildBreedOv.innerHTML='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.2em;color:var(--sage);margin-bottom:0.6rem;">CROSS-POLLINATING</div><div style="font-size:3rem;animation:nearBloomPulse 1.2s ease infinite;">\ud83e\uddec</div><div style="font-family:Playfair Display,serif;font-size:0.7rem;font-style:italic;color:var(--cream);margin-top:0.6rem;opacity:0.7;">Genes intertwining...</div>';
     document.body.appendChild(_wildBreedOv);
+    try{
+      if(window._lwSpawnParticles){
+        window._lwSpawnParticles(_wildBreedOv,{rings:2,sparkles:12,petals:6,leaves:6});
+        setTimeout(function(){
+          if(_wildBreedOv.parentNode&&window._lwSpawnParticles){
+            window._lwSpawnParticles(_wildBreedOv,{sparkles:10});
+          }
+        },900);
+      }
+    }catch(e){}
     setTimeout(function(){if(_wildBreedOv.parentNode){_wildBreedOv.style.transition='opacity 0.5s';_wildBreedOv.style.opacity='0';setTimeout(function(){if(_wildBreedOv.parentNode)_wildBreedOv.remove();},500);}},2200);
     FG_Data.crossPollinateHashes(wildPlant.hash,matePlant.hash).then(function(result){
       var offHash=result.childHash;
@@ -50554,16 +50564,20 @@ window.bsExecuteBreed=function(){
       var _breedOv = document.createElement('div');
       _breedOv.style.cssText = 'position:fixed;inset:0;z-index:99996;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,8,4,0.92);backdrop-filter:blur(14px);animation:panelFadeIn 0.3s ease;';
       _breedOv.innerHTML = '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.2em;color:var(--sage);margin-bottom:0.6rem;">CROSS-POLLINATING</div><div style="font-size:3rem;animation:nearBloomPulse 1.2s ease infinite;">\ud83e\uddec</div><div style="font-family:Playfair Display,serif;font-size:0.7rem;font-style:italic;color:var(--cream);margin-top:0.6rem;opacity:0.7;">Genes intertwining...</div>';
-      for (var _bp = 0; _bp < 12; _bp++) {
-        var _petal = document.createElement('div');
-        var _bpAngle = (_bp / 12) * Math.PI * 2;
-        var _bpX = 50 + Math.cos(_bpAngle) * 25;
-        var _bpY = 45 + Math.sin(_bpAngle) * 20;
-        _petal.style.cssText = 'position:absolute;left:' + _bpX + '%;top:' + _bpY + '%;font-size:' + (0.6 + Math.random() * 0.5) + 'rem;pointer-events:none;opacity:0;animation:leafFloat ' + (2 + Math.random() * 2) + 's ease ' + (_bp * 100) + 'ms forwards;';
-        _petal.textContent = ['\ud83c\udf3f','\u2728','\ud83c\udf38','\ud83c\udf3e','\ud83c\udf43','\ud83c\udf31'][_bp % 6];
-        _breedOv.appendChild(_petal);
-      }
       document.body.appendChild(_breedOv);
+      // Unified SVG particles replace the old emoji ring (🌿✨🌸🌾🍃🌱).
+      // Petals + leaves drift down for the "two lineages becoming one" feel.
+      // Sparkles fire in two waves to bracket the 2.2s overlay lifespan.
+      try{
+        if(window._lwSpawnParticles){
+          window._lwSpawnParticles(_breedOv,{rings:2,sparkles:12,petals:6,leaves:6});
+          setTimeout(function(){
+            if(_breedOv.parentNode&&window._lwSpawnParticles){
+              window._lwSpawnParticles(_breedOv,{sparkles:10});
+            }
+          },900);
+        }
+      }catch(e){}
       setTimeout(function() { if (_breedOv.parentNode) { _breedOv.style.transition = 'opacity 0.5s'; _breedOv.style.opacity = '0'; setTimeout(function() { if (_breedOv.parentNode) _breedOv.remove(); }, 500); } }, 2200);
       FG_Data.crossPollinateHashes(_bsA.hash,_bsM.hash).then(function(result){
         var offHash=result.childHash;
