@@ -36397,6 +36397,22 @@ function _feralBurst(grade,gc,name,reward){
   overlay.appendChild(rw);
   document.body.appendChild(overlay);
   try{navigator.vibrate&&navigator.vibrate([20,40,30]);}catch(e){}
+  // Layered SVG particles — scales with rarity. Common gets a small
+  // sage-leaf burst; Cosmic gets the full "rare drop" treatment.
+  // The existing colored-dot burst above keeps the snappy popcorn feel;
+  // the unified particles add the elegant layer.
+  try{
+    if(window._lwSpawnParticles){
+      var _gradeTier={Common:0,Uncommon:1,Rare:2,Epic:3,Legendary:4,Mythic:5,Cosmic:6}[grade]||0;
+      var _opts={
+        rings: _gradeTier>=2 ? (_gradeTier>=4?2:1) : 0,
+        sparkles: 4 + _gradeTier*3, // 4 → 22
+        leaves: _gradeTier<=2 ? 4 : 2,
+        petals: _gradeTier>=3 ? 3 : 0
+      };
+      window._lwSpawnParticles(overlay,_opts);
+    }
+  }catch(e){}
   setTimeout(function(){overlay.remove();},2200);
 }
 
