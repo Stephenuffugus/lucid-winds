@@ -38155,25 +38155,29 @@ function _finishDrop(defenderGame){
   if(window.renderGreenhouse)renderGreenhouse();
   try{navigator.vibrate&&navigator.vibrate([30,55,30]);}catch(e){} // sync pulse — planted!
   _toast('\ud83c\udf31 Planted with '+defenderGame.toUpperCase()+' defense (EA: '+dropEA+')');
-  // Drop burst animation at map coordinates
+  // Drop burst — unified SVG particles anchored at the map point where
+  // the plant landed. Builds a tiny invisible anchor div positioned at
+  // the screen-space coordinate, spawns particles into it (the helper
+  // anchors to the container's center via top:50%/left:50%), then
+  // auto-cleans up.
   setTimeout(function(){
-    if(!_map)return;
+    if(!_map||!window._lwSpawnParticles)return;
     var pt=_map.latLngToContainerPoint([la,lo]);
-    var cx=pt.x,cy=pt.y;
     var mapEl=document.getElementById('wild-map');
     if(!mapEl)return;
     var rect=mapEl.getBoundingClientRect();
-    cx+=rect.left;cy+=rect.top;
-    for(var _di=0;_di<12;_di++){(function(i){
-      var angle=(i/12)*Math.PI*2;
-      var dist=25+Math.random()*30;
-      var dx=Math.cos(angle)*dist;var dy=Math.sin(angle)*dist;
-      var leaf=document.createElement('div');
-      leaf.innerHTML='\ud83c\udf3f';
-      leaf.style.cssText='position:fixed;left:'+cx+'px;top:'+cy+'px;pointer-events:none;z-index:99999;font-size:0.6rem;opacity:0;animation:sparkBurst 1s ease forwards;animation-delay:'+(i*30)+'ms;--sdx:'+dx+'px;--sdy:'+dy+'px;';
-      document.body.appendChild(leaf);
-      setTimeout(function(){if(leaf.parentNode)leaf.remove();},1200);
-    })(_di);}
+    var cx=pt.x+rect.left,cy=pt.y+rect.top;
+    var anchor=document.createElement('div');
+    anchor.style.cssText='position:fixed;left:'+cx+'px;top:'+cy+'px;width:0;height:0;pointer-events:none;z-index:99999;';
+    document.body.appendChild(anchor);
+    // Tier-aware: the more powerful the plant, the bigger the planting.
+    var _dropTier={Common:0,Uncommon:1,Rare:2,Epic:3,Legendary:4,Mythic:5,Cosmic:6}[_dropGrade]||0;
+    window._lwSpawnParticles(anchor,{
+      rings: _dropTier>=2?2:1,
+      sparkles: 6+_dropTier*2,
+      leaves: 4
+    });
+    setTimeout(function(){if(anchor.parentNode)anchor.parentNode.removeChild(anchor);},3500);
   },600);
   // First drop milestone
   var _eh=document.getElementById('w-empty-hint');if(_eh)_eh.remove();
