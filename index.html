@@ -26323,6 +26323,14 @@ document.addEventListener('keydown', function(e) {
     updateDashboard();
     // account nudge removed — vault sync prompt disabled
     if (typeof gtag !== 'undefined') gtag('event', 'plant_minted', { total: gh.length, rare: traits.isRare });
+    // Funnel: second plant minted = player completed the core loop once
+    // (gift was #1, this is the first plant they earned through gameplay).
+    try{
+      if(gh.length===2&&!localStorage.getItem('lw_second_mint')&&typeof gtag!=='undefined'){
+        localStorage.setItem('lw_second_mint',Date.now()+'');
+        gtag('event','second_plant_minted',{minutes_since_signup:_lwMinutesSinceFirstSignup()});
+      }
+    }catch(e){}
     if (window._LW_classXP) window._LW_classXP('harvest', traits.isRare ? 15 : 5);
     // PWA install hook — trigger at 3rd plant or on rare
     if (window.checkPWAPrompt) window.checkPWAPrompt(gh.length, traits.isRare);
@@ -39663,6 +39671,127 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
 <!-- set-102: Firebase diagnostic log — shows EVERY auth + Firestore operation -->
 <div id="sws-debug-log"></div>
 <button id="sws-debug-toggle" onclick="(function(){var el=document.getElementById('sws-debug-log');el.classList.toggle('visible');this.textContent=el.classList.contains('visible')?'[×] Hide Log':'[🔍] Firebase Log';}).call(this)">[🔍] Firebase Log</button>
+
+<!-- Beta tester feedback button — small floating ribbon, low-impact -->
+<button id="lw-fb-btn" onclick="window._lwOpenFeedback&&window._lwOpenFeedback()" title="Share feedback" style="position:fixed;bottom:4px;right:4px;z-index:999998;background:rgba(122,179,86,0.12);color:rgba(122,179,86,0.7);padding:5px 10px;font-family:'DM Mono',monospace;font-size:0.5rem;letter-spacing:0.05em;border-radius:6px;border:1px solid rgba(122,179,86,0.25);cursor:pointer;">📝 FEEDBACK</button>
+<script>
+(function(){
+  // Beta tester feedback collector. Posts to a Discord webhook when set,
+  // otherwise copies to clipboard with explanation. Always backs up to
+  // localStorage (lw_feedback) so feedback is never lost.
+  // To enable Discord delivery: set window.LW_FEEDBACK_WEBHOOK to your
+  // webhook URL (e.g. via dev panel or hardcode here for the beta).
+  window.LW_FEEDBACK_WEBHOOK = window.LW_FEEDBACK_WEBHOOK || ''; // ← Stephen sets this
+
+  function _ctx(){
+    // Snapshot what the player was looking at when they opened the form.
+    var tab='?';try{var bc=document.body.classList;for(var i=0;i<bc.length;i++)if(bc[i].indexOf('tab-')===0){tab=bc[i].slice(4);break;}}catch(e){}
+    var lvl='?';try{lvl=(window.PW_getXP&&window.PW_getXP())||(localStorage.getItem('pw_xp')||'0');}catch(e){}
+    var ghLen=0;try{ghLen=(JSON.parse(localStorage.getItem('sws_greenhouse')||'[]')||[]).length;}catch(e){}
+    var hashes=0;try{hashes=parseInt(localStorage.getItem('sws_totalHashes')||'0',10);}catch(e){}
+    var cls='';try{cls=localStorage.getItem('lw_class')||'(none)';}catch(e){}
+    var nick='';try{nick=localStorage.getItem('pw_keeper_name')||'';}catch(e){}
+    var ua=navigator.userAgent.slice(0,80);
+    var url=location.href.split('?')[0];
+    return {tab:tab,xp:lvl,plants:ghLen,sunbeams:hashes,class:cls,name:nick,ua:ua,url:url,when:new Date().toISOString()};
+  }
+
+  window._lwOpenFeedback=function(){
+    var old=document.getElementById('lw-fb-modal');if(old)old.remove();
+    var ov=document.createElement('div');
+    ov.id='lw-fb-modal';
+    ov.style.cssText='position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.85);backdrop-filter:blur(8px);padding:1rem;font-family:DM Sans,sans-serif;';
+    ov.onclick=function(e){if(e.target===ov)ov.remove();};
+    var c=_ctx();
+    ov.innerHTML=
+      '<div style="max-width:380px;width:100%;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(122,179,86,0.35);border-radius:14px;padding:1.1rem;box-shadow:0 16px 50px rgba(0,0,0,0.7);">'+
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem;">'+
+          '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--gold,#c8a84b);letter-spacing:0.12em;">📝 SHARE FEEDBACK</div>'+
+          '<button onclick="document.getElementById(\'lw-fb-modal\').remove()" style="width:36px;height:36px;border-radius:50%;background:rgba(40,40,30,0.5);border:1px solid rgba(138,145,120,0.25);color:var(--cream,#e8dcc8);cursor:pointer;font-size:0.9rem;">✕</button>'+
+        '</div>'+
+        '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted,#8a9178);line-height:1.5;margin-bottom:0.7rem;">Quick rating + anything you noticed. Anonymous unless you write your name in the message.</div>'+
+        // Star rating
+        '<div id="lw-fb-stars" style="display:flex;gap:6px;justify-content:center;margin-bottom:0.7rem;font-size:1.4rem;">'+
+          '<span data-r="1" style="cursor:pointer;opacity:0.3;">★</span>'+
+          '<span data-r="2" style="cursor:pointer;opacity:0.3;">★</span>'+
+          '<span data-r="3" style="cursor:pointer;opacity:0.3;">★</span>'+
+          '<span data-r="4" style="cursor:pointer;opacity:0.3;">★</span>'+
+          '<span data-r="5" style="cursor:pointer;opacity:0.3;">★</span>'+
+        '</div>'+
+        // Tag picker
+        '<div style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-bottom:0.7rem;" id="lw-fb-tags">'+
+          ['Bug','Confusing','Too hard','Too easy','Loved it','Slow','Idea'].map(function(t){
+            return '<button data-t="'+t+'" style="padding:5px 9px;font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.05em;background:rgba(26,36,22,0.5);border:1px solid rgba(122,179,86,0.18);border-radius:6px;color:var(--muted,#8a9178);cursor:pointer;min-height:34px;">'+t+'</button>';
+          }).join('')+
+        '</div>'+
+        '<textarea id="lw-fb-text" placeholder="What stood out? What confused you? Anything that broke?" style="width:100%;box-sizing:border-box;min-height:80px;padding:8px;font-family:DM Mono,monospace;font-size:0.6rem;background:rgba(13,16,12,0.7);border:1.5px solid rgba(122,179,86,0.3);border-radius:8px;color:var(--cream,#e8dcc8);resize:vertical;margin-bottom:0.5rem;"></textarea>'+
+        '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted,#8a9178);margin-bottom:0.6rem;line-height:1.5;opacity:0.7;">Sending: tab=<b>'+c.tab+'</b> · plants=<b>'+c.plants+'</b> · class=<b>'+c.class+'</b></div>'+
+        '<button id="lw-fb-send" style="width:100%;padding:0.6rem;background:linear-gradient(180deg,rgba(74,124,53,0.3),rgba(46,80,34,0.4));border:1.5px solid rgba(122,179,86,0.5);border-radius:8px;color:var(--cream,#e8dcc8);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">SEND</button>'+
+      '</div>';
+    document.body.appendChild(ov);
+
+    var rating=0;
+    var stars=ov.querySelectorAll('#lw-fb-stars span');
+    for(var s=0;s<stars.length;s++){
+      (function(el){el.onclick=function(){
+        rating=parseInt(el.getAttribute('data-r'),10);
+        for(var k=0;k<stars.length;k++){
+          var n=parseInt(stars[k].getAttribute('data-r'),10);
+          stars[k].style.opacity=n<=rating?'1':'0.3';
+          stars[k].style.color=n<=rating?'#c8a84b':'';
+        }
+      };})(stars[s]);
+    }
+    var tags=[];
+    var tagBtns=ov.querySelectorAll('#lw-fb-tags button');
+    for(var t=0;t<tagBtns.length;t++){
+      (function(b){b.onclick=function(){
+        var label=b.getAttribute('data-t');
+        var i=tags.indexOf(label);
+        if(i>=0){tags.splice(i,1);b.style.background='rgba(26,36,22,0.5)';b.style.borderColor='rgba(122,179,86,0.18)';b.style.color='var(--muted,#8a9178)';}
+        else{tags.push(label);b.style.background='rgba(122,179,86,0.18)';b.style.borderColor='rgba(122,179,86,0.5)';b.style.color='var(--cream,#e8dcc8)';}
+      };})(tagBtns[t]);
+    }
+
+    document.getElementById('lw-fb-send').onclick=function(){
+      var msg=(document.getElementById('lw-fb-text').value||'').trim();
+      if(!rating&&!msg&&!tags.length){alert('Pick a rating, tap a tag, or write something.');return;}
+      var payload={rating:rating,tags:tags,msg:msg,ctx:c};
+      // Always back up locally so feedback is never lost.
+      try{
+        var arr=JSON.parse(localStorage.getItem('lw_feedback')||'[]');
+        arr.push(payload);
+        localStorage.setItem('lw_feedback',JSON.stringify(arr.slice(-50)));
+      }catch(e){}
+      // GA event for funnel correlation
+      try{if(typeof gtag!=='undefined')gtag('event','feedback_submitted',{rating:rating,tags:tags.join(','),tab:c.tab,plants:c.plants});}catch(e){}
+      // Try Discord webhook if configured.
+      var sent=false;
+      if(window.LW_FEEDBACK_WEBHOOK){
+        var content='**'+(rating||'-')+'★** '+(tags.length?'`'+tags.join(', ')+'` ':'')+'\n'+
+          '> '+(msg||'(no message)').slice(0,1000)+'\n'+
+          '`'+c.tab+' · plants='+c.plants+' · sunbeams='+c.sunbeams+' · xp='+c.xp+' · class='+c.class+(c.name?' · "'+c.name+'"':'')+'`';
+        try{
+          fetch(window.LW_FEEDBACK_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:content})}).then(function(r){
+            if(r.ok)console.log('[LW] feedback delivered');
+          }).catch(function(e){console.warn('[LW] feedback webhook failed',e);});
+          sent=true;
+        }catch(e){console.warn('[LW] feedback fetch threw',e);}
+      }
+      if(sent){
+        document.getElementById('lw-fb-modal').remove();
+        if(window._toast)window._toast('🌿 Thanks — feedback sent!');
+      } else {
+        // Fallback: copy a formatted message to clipboard.
+        var txt='Lucid Winds feedback — '+rating+'★ '+tags.join(', ')+'\n\n'+msg+'\n\n[ctx: '+c.tab+' · plants='+c.plants+' · sunbeams='+c.sunbeams+' · xp='+c.xp+' · class='+c.class+']';
+        try{navigator.clipboard&&navigator.clipboard.writeText(txt);}catch(e){}
+        document.getElementById('lw-fb-modal').remove();
+        if(window._toast)window._toast('🌿 Feedback saved locally + copied. Send to Stephen!');
+      }
+    };
+  };
+})();
+</script>
 <script>
 (function(){
   var _dtc=0,_dtt=null;
@@ -40092,6 +40221,14 @@ window._e=_e;
     try{
       if(v==='game_win'){
         streak++;
+        // Funnel: first game won — distinct from "first game started" so we
+        // can see the win-rate gap between starting and finishing.
+        try{
+          if(!localStorage.getItem('lw_first_game_won')&&typeof gtag!=='undefined'){
+            localStorage.setItem('lw_first_game_won',(window._a||'?')+'|'+Date.now());
+            gtag('event','first_game_completed',{game:window._a||'?'});
+          }
+        }catch(e){}
         if(streak===3&&window.LW_XP)window.LW_XP.grantCooldown('streak_3',5,'mastery_streak3',600);
         if(streak===5&&window.LW_XP)window.LW_XP.grantCooldown('streak_5',15,'mastery_streak5',1200);
         // Pattern: variety
@@ -40547,6 +40684,14 @@ window._G={
 var _gameLoading={};
 // ═══ GAME SWITCH ═══
 window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;window._a=id;_m=Math.min(_hashFilled,30);_dm=1.0;
+  // Funnel: first game ever opened (any id). Persists across sessions
+  // so we can see how many testers got past "the picker exists" stage.
+  try{
+    if(!localStorage.getItem('lw_first_game_started')&&typeof gtag!=='undefined'){
+      localStorage.setItem('lw_first_game_started',id+'|'+Date.now());
+      gtag('event','first_game_started',{game:id});
+    }
+  }catch(e){}
   document.querySelectorAll('.fg-c').forEach(function(c){c.classList.toggle('on',c.getAttribute('data-g')===id)});
   var sw=document.getElementById('sw'),ag=document.getElementById('fg-ag'),gps=document.getElementById('gp-strip'),ssb=document.getElementById('set-status');
   var _solGames={golf:1,klondike:1,spider:1,freecell:1,pyramid:1,tripeaks:1};
@@ -45474,6 +45619,14 @@ window.PW_grantXP=function(amount,reason){
       fromLevel:oldR.level,toLevel:newR.level,newTitle:newR.title,reason:reason||'unknown'
     });
     console.log('[PW] Level up! '+oldR.title+' \u2192 '+newR.title+' (reason: '+(reason||'?')+')');
+    // Funnel: hitting Lv 7 = class picker unlocks. Big checkpoint for
+    // testers since most Master-path engagement starts here.
+    try{
+      if(newR.level>=7&&!localStorage.getItem('lw_lv7_reached')&&typeof gtag!=='undefined'){
+        localStorage.setItem('lw_lv7_reached',Date.now()+'');
+        gtag('event','keeper_lv7_reached',{minutes_since_signup:_lwMinutesSinceFirstSignup()});
+      }
+    }catch(e){}
   }
 };
 
@@ -46239,7 +46392,17 @@ function _isOnboarded(){
   try{if(window.firebase&&firebase.auth&&firebase.auth().currentUser){_markOnboarded();return true;}}catch(e){}
   return false;
 }
-function _markOnboarded(){localStorage.setItem('pw_onboarded','1');}
+function _markOnboarded(){
+  localStorage.setItem('pw_onboarded','1');
+  // Stamp the moment of first-ever onboarding completion for funnel math.
+  if(!localStorage.getItem('lw_first_signup_ts'))localStorage.setItem('lw_first_signup_ts',String(Date.now()));
+}
+// Helper: minutes between first signup and now (for funnel events).
+window._lwMinutesSinceFirstSignup=function(){
+  var ts=parseInt(localStorage.getItem('lw_first_signup_ts')||'0',10);
+  if(!ts)return 0;
+  return Math.round((Date.now()-ts)/60000);
+};
 
 // Generate a gift plant hash — weighted distribution, capped at Rare.
 // 50% Common / 35% Uncommon / 15% Rare. No Epic+ on gift (keeps rarities meaningful
@@ -46292,6 +46455,10 @@ function start(){
   el.classList.add('active');
   var kb=document.getElementById('pw-keeper-bar');if(kb)kb.style.display='none';
   console.log('[LW] start() called');
+  // Funnel: cinematic actually shown to a fresh user (vs page-load with
+  // existing account where _isOnboarded short-circuits above).
+  try{if(typeof gtag!=='undefined')gtag('event','onboard_start');}catch(e){}
+  window._lwOnboardStartTs=Date.now();
   try{_genGiftHash();}catch(e){console.error('[LW] Gift hash generation failed:',e);}
   // Fallback: if _genGiftHash crashed, make a simple random hash
   if(!_giftHash){
@@ -46402,6 +46569,20 @@ function _showBeat(n){
   var prev=_beat;
   _beat=n;
   clearTimeout(_lineTimer);
+  // ── Funnel events: per-beat enter so we can see drop-off ──
+  // Only fire on actual transitions (prev !== n) so re-renders don't spam.
+  try{
+    if(prev!==n&&typeof gtag!=='undefined'){
+      gtag('event','onboard_beat_enter',{beat:n,from_beat:prev});
+      // Mark how long the player stayed on the previous beat — proxies
+      // for engagement vs. instant-skip.
+      if(prev>=1&&window._lwBeatEnterTs){
+        var dwell=Math.round((Date.now()-window._lwBeatEnterTs)/1000);
+        gtag('event','onboard_beat_exit',{beat:prev,dwell_seconds:dwell});
+      }
+      window._lwBeatEnterTs=Date.now();
+    }
+  }catch(e){}
 
   // Update dots
   var dots=document.querySelectorAll('.ob-dot');
@@ -46538,10 +46719,20 @@ function submitAuth(){
   // Save keeper name
   localStorage.setItem('pw_keeper_name',name);
 
+  // Funnel: auth attempted (vs just sat on the form). Time-to-submit is
+  // a proxy for friction on the form itself.
+  try{
+    if(typeof gtag!=='undefined'){
+      var _ttsubmit=window._lwOnboardStartTs?Math.round((Date.now()-window._lwOnboardStartTs)/1000):0;
+      gtag('event','onboard_auth_attempt',{seconds_since_start:_ttsubmit});
+    }
+  }catch(e){}
+
   // Safety: re-enable button after 10s if nothing happened
   var _authTimeout=setTimeout(function(){
     if(btn){btn.disabled=false;btn.textContent='\uD83C\uDF31 CLAIM THIS PLANT';}
     if(errEl)errEl.textContent='Connection timed out. Tap to try again.';
+    try{if(typeof gtag!=='undefined')gtag('event','onboard_auth_timeout');}catch(e){}
   },10000);
 
   // Firebase auth
@@ -46568,6 +46759,7 @@ function submitAuth(){
     }).catch(function(err){
       clearTimeout(_authTimeout);
       console.error('[LW] Auth error:',err.code,err.message);
+      try{if(typeof gtag!=='undefined')gtag('event','onboard_auth_fail',{code:err.code||'unknown'});}catch(e){}
       if(btn){btn.disabled=false;btn.textContent='\uD83C\uDF31 CLAIM THIS PLANT';}
       var msg=err.message||'Something went wrong.';
       if(err.code==='auth/email-already-in-use'){
@@ -46680,6 +46872,8 @@ function finish(){
 }
 
 function skip(){
+  // Funnel: which beat did they skip from?
+  try{if(typeof gtag!=='undefined')gtag('event','onboard_skip',{from_beat:_beat});}catch(e){}
   if(window.stopRain)window.stopRain();
   // set-51: Skip cinematic but still show auth form (beat 4)
   // Previously this bypassed signup entirely — user got no account
@@ -49187,6 +49381,14 @@ window._checkDailyLogin = function() {
       if(gapMs>=oneDay*3&&window.LW_XP)window.LW_XP.grantCooldown('return_3d',40,'return_3d',3*86400);
       if(gapMs>=oneDay*7&&window.LW_XP)window.LW_XP.grantCooldown('return_7d',100,'return_7d',7*86400);
     }
+    // Funnel: day-2 return is the single best signal of stickiness.
+    // Fires once when an onboarded player comes back after ≥18h gap.
+    try{
+      if(typeof gtag!=='undefined'&&lastOpen&&gapMs>=18*3600000&&!localStorage.getItem('lw_day2_return_sent')){
+        localStorage.setItem('lw_day2_return_sent','1');
+        gtag('event','day_2_return',{hours_since_last:Math.round(gapMs/3600000)});
+      }
+    }catch(e){}
     localStorage.setItem('sws_last_open',String(now));
   }catch(e){}
   var _dlToday = new Date().toISOString().split('T')[0];
