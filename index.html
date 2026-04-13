@@ -2246,9 +2246,8 @@
        wrap and not a descendant, click events can never propagate into the
        flip handler. Third and final approach after two failed attempts with
        capture-phase listeners and wrap-level routing. */
-    .cs-lineage-overlay{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:10;font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;color:var(--gold);background:rgba(13,16,12,0.92);border:1.5px solid rgba(200,168,75,0.45);border-radius:10px;padding:0.55rem 1.2rem;cursor:pointer;min-height:48px;box-shadow:0 4px 16px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,220,140,0.1);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
-    .cs-lineage-overlay:active{transform:translateX(-50%) translateY(1px);background:rgba(200,168,75,0.15);}
-    .cs-lineage-overlay:hover{background:rgba(200,168,75,0.12);}
+    /* .cs-lineage-overlay removed — the lineage button moved to the back
+       face as .cb-nameplate[data-pdh] with a capture-phase click handler. */
     /* Extra Details modal — lineage, chimera history, mutation, mint record */
     .plant-details-modal{position:fixed;inset:0;z-index:100005;display:none;}
     .plant-details-modal.open{display:block;animation:panelFadeIn 0.25s ease;}
@@ -28729,8 +28728,11 @@ document.addEventListener('keydown', function(e) {
     html += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.54rem;letter-spacing:0.06em;display:flex;gap:0.3rem;"><span style="color:' + sColor + ';">EA ' + _ea + '</span><span style="color:var(--muted);">' + seasonEmblems[_season] + '</span><span style="color:var(--muted);">Gen ' + (_t ? _t.chimerGen || 1 : 1) + '</span></div>';
     html += '</div>';
     html += '<div class="cb-rarity" style="color:' + sColor + ';">' + (_tg ? _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon : 'COMMON') + '</div>';
-    // Lineage button is now OUTSIDE the flip wrap (cs-lineage-overlay) so
-    // there is no click propagation conflict with transform:rotateY.
+    // Hash + mint date sit above the LINEAGE & DETAILS nameplate. The
+    // nameplate (.cb-nameplate[data-pdh]) is the lineage entry point —
+    // it lives on the back face and uses a capture-phase click listener
+    // (see _populateBackLazy below) to route to _openPlantDetails before
+    // the bubble-phase _handleCardFlip can flip the card.
     html += '<div class="cb-hash" style="margin-top:0.4rem;padding-top:0.3rem;border-top:1px solid rgba(74,124,53,0.06);">' + plant.hash + '</div>';
     html += '<div class="cb-date" style="margin-top:0.1rem;">Minted ' + (plant.date || '') + dateSuffix + '</div>';
     html += '<div class="cb-nameplate" style="margin-top:0.5rem;text-align:center;cursor:pointer;padding:0.6rem 0.5rem;border-radius:8px;background:rgba(200,168,75,0.08);border:1.5px solid rgba(200,168,75,0.3);min-height:48px;display:flex;align-items:center;justify-content:center;" data-pdh="' + plant.hash + '"><div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.12em;color:var(--gold);">\u2b21 LINEAGE & DETAILS</div></div>';
@@ -32395,7 +32397,12 @@ document.addEventListener('keydown', function(e) {
 
   window.openVerifyLink = function() {
     if (!galleryPlant) return;
-    window.open('/verify.html?hash=' + galleryPlant.hash, '_blank');
+    // /verify.html doesn't exist yet — was 404'ing. Copy hash to clipboard
+    // (so the player gets something useful) and toast that verification is
+    // coming. When verify.html ships, swap this back to window.open.
+    if (navigator.clipboard) navigator.clipboard.writeText(galleryPlant.hash).catch(function(){});
+    if (window._toast) window._toast('🔍 Hash copied. Public verifier launches with Pi.');
+    else if (window.showHexMsg) window.showHexMsg('Hash copied. Public verifier coming soon.');
   };
   // ═══ PHASE 25 — SWS ID FULL AUTH ENGINE ════════════════════════════════
   // CONSENSUS LOCKED (see team comment at top of file):
