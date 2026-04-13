@@ -25,7 +25,31 @@ window._gameFns.mosaic = function MS(a){
   var pan=document.createElement('div');pan.id='MSpan';
   pan.style.cssText='max-width:440px;margin:0 auto;padding:6px;user-select:none;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb-new" onclick="_MSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  mc(a).innerHTML='<button class="gb" onclick="_MShelp()" style="font-size:0.78rem;">❓ How to Play</button> <button class="gb-new" onclick="_MSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+
+  // First-launch how-to-play card. User reported "not sure how it works".
+  // Auto-dismisses on click anywhere outside, persists dismissal so it
+  // doesn't keep showing every game. ❓ button re-opens it.
+  function _showHelp(){
+    if(document.getElementById('msHelpOv'))return;
+    var ov=document.createElement('div');ov.id='msHelpOv';
+    ov.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(5,7,4,0.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem;';
+    ov.onclick=function(e){if(e.target===ov)ov.remove();};
+    ov.innerHTML='<div style="max-width:380px;background:linear-gradient(180deg,rgba(20,28,18,0.97),rgba(13,16,12,0.98));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;padding:1.4rem 1.2rem;box-shadow:0 16px 48px rgba(0,0,0,0.7);font-family:DM Sans,sans-serif;color:var(--cream);font-size:0.78rem;line-height:1.6;">'+
+      '<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:var(--gold);letter-spacing:0.12em;text-align:center;margin-bottom:6px;">MOSAIC GARDEN</div>'+
+      '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;letter-spacing:0.1em;margin-bottom:1rem;">HOW TO PLAY</div>'+
+      '<p style="margin:0 0 0.7rem;"><strong style="color:var(--sage);">1. DRAFT.</strong> Tap any tile in a circular bed (factory) — you take ALL tiles of that color from that bed. The rest go to the center.</p>'+
+      '<p style="margin:0 0 0.7rem;"><strong style="color:var(--sage);">2. STAGE.</strong> Tap one of your 5 staging rows to place them. Rows fit 1, 2, 3, 4, or 5 tiles top-to-bottom. Excess tiles drop to your floor (penalty).</p>'+
+      '<p style="margin:0 0 0.7rem;"><strong style="color:var(--sage);">3. SCORE.</strong> When all factories AND the center empty, full staging rows transfer to your wall. Adjacent tiles on the wall score points (1 alone, +1 per neighbor).</p>'+
+      '<p style="margin:0 0 0.7rem;"><strong style="color:var(--gold);">END BONUS:</strong> +2 per full row, +7 per full column, +10 per all-5-of-a-color set.</p>'+
+      '<p style="margin:0 0 1rem;"><strong style="color:#c47a7a;">END GAME:</strong> First completed wall row triggers final scoring.</p>'+
+      '<button onclick="document.getElementById(\'msHelpOv\').remove();" style="display:block;width:100%;padding:0.65rem;min-height:48px;background:linear-gradient(180deg,rgba(46,40,32,0.7),rgba(32,30,24,0.8));border:1px solid rgba(200,168,75,0.25);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;border-radius:8px;cursor:pointer;">I GOT IT</button>'+
+      '</div>';
+    document.body.appendChild(ov);
+  }
+  window._MShelp=_showHelp;
+  // Auto-show on first ever launch
+  try{if(!localStorage.getItem('lw_ms_helped')){_showHelp();localStorage.setItem('lw_ms_helped','1');}}catch(e){}
 
   function shuf(ar){for(var i=ar.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ar[i];ar[i]=ar[j];ar[j]=t;}return ar;}
   function newGame(){
