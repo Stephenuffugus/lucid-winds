@@ -5595,6 +5595,22 @@ window.onerror=function(msg,url,line,col,err){
     <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button><button class="dev-btn" onclick="PW_Dev.spawnChimeras()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🧬 SPAWN 4 CHIMERAS (dual borders)</button><button class="dev-btn" onclick="PW_Dev.grantDew(500)" style="border-color:rgba(91,175,220,0.4);color:rgba(91,175,220,0.9);">💧 +500 DEW DROPS</button></div>
     <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button><button class="dev-btn" onclick="try{PW_Dev.cardFrontAligner()}catch(e){alert(e.message)}">🃏 CARD FRONT ALIGNMENT</button><button class="dev-btn" onclick="try{PW_Dev.cardBackViewer()}catch(e){alert(e.message)}">🔙 CARD BACK NAMEPLATES</button><button class="dev-btn" onclick="try{PW_Dev.leafBloomEditor()}catch(e){alert(e.message)}">🌿 LEAF & BLOOM EDITOR</button></div>
     <div class="dev-section"><div class="dev-section-title">GREENHOUSE SLOTS</div><button class="dev-btn" onclick="var c=parseInt(localStorage.getItem('sws_greenhouse_slots')||'10');var n=prompt('Current: '+c+' slots. New value (10-60):',c);if(n){n=Math.max(10,Math.min(60,parseInt(n)||10));localStorage.setItem('sws_greenhouse_slots',String(n));alert('Slots set to '+n+'. Refresh greenhouse.');if(window.renderGreenhouse)renderGreenhouse();}">🏡 SET GREENHOUSE SLOTS</button><button class="dev-btn" onclick="var c=parseInt(localStorage.getItem('sws_greenhouse_slots')||'10');var n=Math.min(60,c+5);localStorage.setItem('sws_greenhouse_slots',String(n));alert('Slots: '+c+' → '+n);if(window.renderGreenhouse)renderGreenhouse();">+5 SLOTS</button></div>
+    <div class="dev-section"><div class="dev-section-title">CLASS SYSTEM TEST</div>
+      <button class="dev-btn" onclick="PW_Dev.classStatus()">🌿 SHOW CURRENT CLASS STATE</button>
+      <button class="dev-btn" onclick="PW_Dev.pickClass('forager')">🍂 SET FORAGER</button>
+      <button class="dev-btn" onclick="PW_Dev.pickClass('breeder')">🧬 SET BREEDER</button>
+      <button class="dev-btn" onclick="PW_Dev.pickClass('cartographer')">🧭 SET CARTOGRAPHER</button>
+      <button class="dev-btn" onclick="PW_Dev.pickClass('tender')">💧 SET TENDER</button>
+      <button class="dev-btn" onclick="PW_Dev.pickClass('keeper')">🌿 SET KEEPER</button>
+      <button class="dev-btn" onclick="PW_Dev.classClear()">⊘ CLEAR CLASS</button>
+      <button class="dev-btn" onclick="PW_Dev.classLevel(1)">⬇ FORCE L1</button>
+      <button class="dev-btn" onclick="PW_Dev.classLevel(2)">→ FORCE L2 (Journeyman)</button>
+      <button class="dev-btn" onclick="PW_Dev.classLevel(3)">⬆ FORCE L3 (MASTER)</button>
+      <button class="dev-btn" onclick="PW_Dev.toolLevel('shears',3)">✂️ SHEARS L3</button>
+      <button class="dev-btn" onclick="PW_Dev.toolLevel('can',3)">💧 CAN L3 (RAIN)</button>
+      <button class="dev-btn" onclick="PW_Dev.toolLevel('pouch',3)">🎒 POUCH L3 (7 SLOTS)</button>
+      <button class="dev-btn" onclick="PW_Dev.toolLevel('compass',3)">🧭 COMPASS L3</button>
+    </div>
     <div class="dev-section"><div class="dev-section-title">NUCLEAR</div><button class="dev-btn danger" onclick="PW_Dev.fullReset()">☢ WIPE EVERYTHING</button></div>
     <div class="dev-log" id="dev-log">Ready.\n</div>
   </div>
@@ -5634,6 +5650,46 @@ window.onerror=function(msg,url,line,col,err){
   }
 
   window.PW_Dev={
+    // ── Class system test helpers ─────────────────────────────────
+    classStatus:function(){
+      var cls=localStorage.getItem('lw_class')||'(none)';
+      var xp={};try{xp=JSON.parse(localStorage.getItem('lw_class_xp')||'{}');}catch(e){}
+      var tx={};try{tx=JSON.parse(localStorage.getItem('lw_tool_xp')||'{}');}catch(e){}
+      var lvl=window._lwGetClassLevel?window._lwGetClassLevel(cls):'?';
+      var biome=window._lastDetectedBiome||'(unknown)';
+      var match=window._LW_biomeMatch?window._LW_biomeMatch():false;
+      var syn=window._LW_hasSynergy?window._LW_hasSynergy():false;
+      alert('CLASS STATE\n\nClass: '+cls+'\nLevel: '+lvl+'\nClass XP: '+JSON.stringify(xp,null,2)+'\nTool XP: '+JSON.stringify(tx,null,2)+'\n\nBiome detected: '+biome+'\nBiome match: '+match+'\nMaster synergy active: '+syn);
+    },
+    pickClass:function(cid){
+      localStorage.setItem('lw_class',cid);
+      // Clear old XP so level picker has clean slate to combine with classLevel buttons
+      try{if(window._lwRefreshAvatar)window._lwRefreshAvatar();}catch(e){}
+      try{if(window.syncVaultToCloud)setTimeout(window.syncVaultToCloud,200);}catch(e){}
+      alert('Class set to: '+cid+'. Use FORCE L1/L2/L3 to set level.');
+    },
+    classClear:function(){
+      localStorage.removeItem('lw_class');
+      try{if(window._lwRefreshAvatar)window._lwRefreshAvatar();}catch(e){}
+      alert('Class cleared.');
+    },
+    classLevel:function(lvl){
+      var cls=localStorage.getItem('lw_class');
+      if(!cls){alert('Pick a class first.');return;}
+      var xp={};try{xp=JSON.parse(localStorage.getItem('lw_class_xp')||'{}');}catch(e){}
+      // Use canonical thresholds: L1 = 0, L2 = 100, L3 = 500
+      xp[cls]=lvl>=3?500:lvl>=2?100:0;
+      localStorage.setItem('lw_class_xp',JSON.stringify(xp));
+      try{if(window._lwRefreshAvatar)window._lwRefreshAvatar();}catch(e){}
+      try{if(window.syncVaultToCloud)setTimeout(window.syncVaultToCloud,200);}catch(e){}
+      alert(cls+' forced to L'+lvl+' (XP set to '+xp[cls]+').');
+    },
+    toolLevel:function(tool,lvl){
+      var x={};try{x=JSON.parse(localStorage.getItem('lw_tool_xp')||'{}');}catch(e){}
+      x[tool]=lvl>=3?200:lvl>=2?50:0;
+      localStorage.setItem('lw_tool_xp',JSON.stringify(x));
+      alert(tool+' forced to L'+lvl+' (XP '+x[tool]+'). Re-open Wild tab to see effects.');
+    },
     nukeAccount:function(){
       if(!confirm('WIPE current account from Firestore?'))return;
       try{
@@ -7932,11 +7988,22 @@ document.addEventListener('keydown', function(e) {
   var NUR_SLOTS_BASE = 3;
   var NUR_SLOTS_MAX = 6;
   function getNurSlots() {
+    var base = NUR_SLOTS_BASE;
     try {
       var stored = parseInt(localStorage.getItem(NUR_SLOTS_KEY), 10);
-      if (stored >= NUR_SLOTS_BASE && stored <= NUR_SLOTS_MAX) return stored;
-      return NUR_SLOTS_BASE;
-    } catch(e) { return NUR_SLOTS_BASE; }
+      if (stored >= NUR_SLOTS_BASE && stored <= NUR_SLOTS_MAX) base = stored;
+    } catch(e) {}
+    // Class bonus: Breeder L1 Patient Hand grants +1 nursery slot. The
+    // bonus is additive (not multiplicative) so 3 → 4. Bake it in here so
+    // every consumer (UI cap labels, addSeed gate, dashboards) reads the
+    // same effective cap. Cap at NUR_SLOTS_MAX.
+    try {
+      if (window._LW_classBonus) {
+        var _nsBonus = window._LW_classBonus('nurserySlotPlus') || 0;
+        if (_nsBonus > 0) base = Math.min(NUR_SLOTS_MAX, base + _nsBonus);
+      }
+    } catch(e) {}
+    return base;
   }
   function setNurSlots(n) {
     var clamped = Math.max(NUR_SLOTS_BASE, Math.min(NUR_SLOTS_MAX, n));
@@ -7946,8 +8013,8 @@ document.addEventListener('keydown', function(e) {
 
   function addSeed(opts){
     var nursery=_loadNursery();
+    // getNurSlots already folds in the Breeder L1 +1 slot bonus.
     var maxSlots = getNurSlots();
-    try{if(window._LW_classBonus){maxSlots=Math.floor(maxSlots*window._LW_classBonus('nurserySlot'));}}catch(e){}
     if(nursery.length>=maxSlots) return {ok:false,reason:'NURSERY_FULL'};
     var today=_today();
     var seed={
@@ -34113,7 +34180,17 @@ function _getWildVitality(plant){
   var remaining=plant.decayAt-now;
   var life=plant.lifespanMs||_lifespanMsFor(plant.rarity||'Common');
   var pct=Math.max(0,Math.min(1,remaining/life));
-  return {pct:pct,daysLeft:Math.max(0,remaining/86400000),dead:remaining<=0,lifeMs:life,remainingMs:Math.max(0,remaining)};
+  var dead=remaining<=0;
+  // Tender L3 Phoenix Ward: your own wild plants never wilt. They visually
+  // age (pct ticks down) but they're never pruned, never marked dead, and
+  // always show ≥10% vitality so the UI stays readable.
+  try{
+    if(plant.own&&window._lwGetClass&&window._lwGetClass()==='tender'&&window._lwGetClassLevel&&window._lwGetClassLevel('tender')>=3){
+      dead=false;
+      if(pct<0.1)pct=0.1;
+    }
+  }catch(e){}
+  return {pct:pct,daysLeft:Math.max(0,remaining/86400000),dead:dead,lifeMs:life,remainingMs:Math.max(0,remaining)};
 }
 window._getWildVitality=_getWildVitality;
 function _getWild(){try{var j=window._secureGet?window._secureGet('fg_wild_plants'):localStorage.getItem('fg_wild_plants');return JSON.parse(j||'[]');}catch(e){return[];}}
@@ -52454,6 +52531,7 @@ var LW_TOOL_XP_L2=50;
 var LW_TOOL_XP_L3=200;
 
 function _lwGetClass(){return localStorage.getItem('lw_class')||null;}
+window._lwGetClass=_lwGetClass;
 function _lwSetClass(id){localStorage.setItem('lw_class',id);}
 function _lwGetClassXP(){try{return JSON.parse(localStorage.getItem('lw_class_xp')||'{}');}catch(e){return{};}}
 function _lwSetClassXP(x){localStorage.setItem('lw_class_xp',JSON.stringify(x));}
@@ -52463,6 +52541,7 @@ function _lwGetClassLevel(classId){
   if(x>=LW_CLASS_XP_L2)return 2;
   return 1;
 }
+window._lwGetClassLevel=_lwGetClassLevel;
 function _lwGetToolXP(){try{return JSON.parse(localStorage.getItem('lw_tool_xp')||'{}');}catch(e){return{};}}
 function _lwSetToolXP(x){localStorage.setItem('lw_tool_xp',JSON.stringify(x));}
 function _lwGetToolLevel(toolId){
@@ -52471,6 +52550,7 @@ function _lwGetToolLevel(toolId){
   if(x>=LW_TOOL_XP_L2)return 2;
   return 1;
 }
+window._lwGetToolLevel=_lwGetToolLevel;
 // Refresh keeper-bar avatar to show chosen class
 window._lwRefreshAvatar=function(){
   var av=document.getElementById('kb-avatar');if(!av)return;
@@ -52602,7 +52682,9 @@ window._LW_classBonus=function(kind){
   try{if(cls==='keeper'&&window._LW_hasSynergy&&window._LW_hasSynergy())keeper+=0.10;}catch(e){}
   if(kind==='feralRange'&&cls==='forager')return 1.25+keeper;
   if(kind==='rareOdds'&&cls==='forager'&&lvl>=2)return 1.15+keeper;
-  if(kind==='nurserySlot'&&cls==='breeder')return 1+keeper;
+  if(kind==='nurserySlot'&&cls==='breeder')return 1+keeper; // legacy key — multiplier no-op
+  // Additive: extra nursery slots granted by current class. Breeder L1 +1.
+  if(kind==='nurserySlotPlus'){if(cls==='breeder')return 1;return 0;}
   if(kind==='chimeraPurity'&&cls==='breeder'&&lvl>=2)return 1.20+keeper;
   if(kind==='stepBonus'&&cls==='cartographer')return 1.10+keeper;
   if(kind==='plantLongevity'&&cls==='tender'){var _tbase=2+keeper;try{if(lvl>=3&&window._LW_hasSynergy&&window._LW_hasSynergy())_tbase+=1;}catch(e){}return _tbase;}
@@ -52613,7 +52695,12 @@ window._LW_classBonus=function(kind){
 window._LW_toolMod=function(tool){
   var lvl=_lwGetToolLevel(tool);
   var biomeBoost=_lwBiomeMatch()?1.5:1;
-  if(tool==='shears'){var base=lvl>=3?2*60*60*1000:lvl>=2?4*60*60*1000:6*60*60*1000;return Math.round(base/biomeBoost);}
+  // Keeper L2 Versatile: -10% on every tool cooldown. Stacks with biome match.
+  // Only cooldown-bearing tool today is shears; engine is here so future
+  // cooldowns inherit it automatically.
+  var keeperCdMult=1;
+  try{if(_lwGetClass()==='keeper'&&_lwGetClassLevel('keeper')>=2)keeperCdMult=0.9;}catch(e){}
+  if(tool==='shears'){var base=lvl>=3?2*60*60*1000:lvl>=2?4*60*60*1000:6*60*60*1000;return Math.round((base*keeperCdMult)/biomeBoost);}
   if(tool==='pouch'){var slots=lvl>=3?7:lvl>=2?5:3;if(biomeBoost>1)slots+=1;return slots;}
   // Added: can + compass were missing branches, forcing inline
   // localStorage reads with mismatched thresholds elsewhere in the
