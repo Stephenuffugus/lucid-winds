@@ -39830,6 +39830,50 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
       }
     };
   };
+
+  // ── First-greenhouse hint: highlight the FEEDBACK button so testers
+  // notice it exists. Fires once per account when the player first
+  // reaches greenhouse with at least one plant (proves they finished
+  // onboarding, not just opened tabs from a skip).
+  function _maybeShowFeedbackHint(tab){
+    if(tab!=='greenhouse')return;
+    if(localStorage.getItem('lw_fb_hint_shown'))return;
+    var ghLen=0;try{ghLen=(JSON.parse(localStorage.getItem('sws_greenhouse')||'[]')||[]).length;}catch(e){}
+    if(ghLen<1)return;
+    localStorage.setItem('lw_fb_hint_shown','1');
+    setTimeout(function(){
+      var btn=document.getElementById('lw-fb-btn');
+      if(btn){
+        btn.style.transition='all 0.4s ease';
+        btn.style.background='rgba(200,168,75,0.4)';
+        btn.style.color='var(--gold,#c8a84b)';
+        btn.style.borderColor='rgba(200,168,75,0.8)';
+        btn.style.boxShadow='0 0 0 0 rgba(200,168,75,0.6)';
+        btn.style.animation='lwFbPulse 1.6s ease-in-out 4';
+        setTimeout(function(){
+          btn.style.background='rgba(122,179,86,0.12)';
+          btn.style.color='rgba(122,179,86,0.7)';
+          btn.style.borderColor='rgba(122,179,86,0.25)';
+          btn.style.animation='';
+        },7000);
+      }
+      if(window._toast)window._toast('📝 Tap the FEEDBACK button anytime — your reactions help shape the game.');
+    },1200); // small delay so the toast lands AFTER greenhouse renders
+  }
+  // Add pulse keyframes once
+  if(!document.getElementById('lw-fb-pulse-style')){
+    var st=document.createElement('style');st.id='lw-fb-pulse-style';
+    st.textContent='@keyframes lwFbPulse{0%,100%{box-shadow:0 0 0 0 rgba(200,168,75,0.6);}50%{box-shadow:0 0 0 12px rgba(200,168,75,0);}}';
+    document.head.appendChild(st);
+  }
+  // Wrap switchTab — add ourselves to the chain
+  if(typeof window.switchTab==='function'){
+    var _origSt=window.switchTab;
+    window.switchTab=function(tab){
+      try{_maybeShowFeedbackHint(tab);}catch(e){}
+      return _origSt.apply(this,arguments);
+    };
+  }
 })();
 </script>
 <script>
