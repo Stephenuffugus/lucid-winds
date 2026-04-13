@@ -101,7 +101,11 @@ window._gameFns.pollen = function PN(a){
   function newGame(){
     var all=generateCards();
     var pls=shuffle(ALL_POLLINATORS.slice()).slice(0,5).map(function(p){return{name:p.name,icon:p.icon,req:p.req,gp:p.gp,claimedBy:null};});
-    G={
+    // Bug fix: was assigning to `G` (which is the shared window._G,
+    // not this game's state). Result was GS stayed null and the very
+    // next line crashed reading GS.player.production. Now correctly
+    // initializes the GS state object the rest of the file uses.
+    GS={
       turn:0,phase:'player',
       deck1:shuffle(all.tier1.slice()),deck2:shuffle(all.tier2.slice()),deck3:shuffle(all.tier3.slice()),
       market1:[],market2:[],market3:[],
