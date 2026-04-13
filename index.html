@@ -29587,14 +29587,24 @@ document.addEventListener('keydown', function(e) {
   // ── Compost atomic transaction ───────────────────────────────────────
   // Steps: verify → stage → add to inventory → remove from gh → commit
   // On any failure: restore from staging key, abort.
-  window.compostPlant = function(plantIndex) {
+  window.compostPlant = function(plantIndexOrHash) {
     var gh = loadGreenhouse();
+    // Resolve by hash first (preferred — survives concurrent mutations);
+    // fall back to numeric index for legacy callers. Indexes can drift
+    // if anything mutates gh between drawer-open and confirm-tap (e.g.
+    // backpack midnight delivery firing on tab return).
+    var plantIndex = -1, plant = null;
+    if (typeof plantIndexOrHash === 'string') {
+      for (var _ci = 0; _ci < gh.length; _ci++) if (gh[_ci].hash === plantIndexOrHash) { plantIndex = _ci; plant = gh[_ci]; break; }
+    } else {
+      plantIndex = plantIndexOrHash;
+      if (plantIndex >= 0 && plantIndex < gh.length) plant = gh[plantIndex];
+    }
     // Step 1: verify
-    if (plantIndex < 0 || plantIndex >= gh.length) {
+    if (plantIndex < 0 || plantIndex >= gh.length || !plant) {
       showHexMsg('⚠ Plant not found — cannot compost.'); return;
     }
-    var plant = gh[plantIndex];
-    if (!plant || !plant.hash) {
+    if (!plant.hash) {
       showHexMsg('⚠ Invalid plant data.'); return;
     }
 
@@ -29990,7 +30000,7 @@ document.addEventListener('keydown', function(e) {
     h += '</div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);margin-top:0.3rem;text-align:center;">Fertilizer: +1% rarity per seed (max 25)</div>';
     h += '</div>';
-    h += '<button onclick="_execCompost('+plantIndex+')" style="width:100%;padding:0.5rem;margin-bottom:0.3rem;border:1.5px solid rgba(200,80,60,0.4);border-radius:8px;background:linear-gradient(180deg,rgba(180,60,40,0.25),rgba(120,30,20,0.35));color:#e8a0a0;font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">COMPOST</button>';
+    h += '<button onclick="_execCompost(\''+plant.hash+'\')" style="width:100%;padding:0.5rem;margin-bottom:0.3rem;border:1.5px solid rgba(200,80,60,0.4);border-radius:8px;background:linear-gradient(180deg,rgba(180,60,40,0.25),rgba(120,30,20,0.35));color:#e8a0a0;font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">COMPOST</button>';
     h += '<button onclick="_closeCompostModal()" style="width:100%;padding:0.4rem;border:1px solid rgba(122,179,86,0.2);border-radius:8px;background:rgba(46,60,38,0.2);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;">KEEP PLANT</button>';
     h += '</div>';
     modal.innerHTML = h;
@@ -30001,7 +30011,9 @@ document.addEventListener('keydown', function(e) {
     var m = document.getElementById('compost-confirm-modal');
     if(m) m.remove();
   };
-  window._execCompost = function(plantIndex){
+  window._execCompost = function(plantIndexOrHash){
+    // Accept hash (preferred) or numeric index. compostPlant resolves both.
+    var plantIndex = plantIndexOrHash;
     // Brief decomposition animation before the actual compost
     var modal = document.getElementById('compost-confirm-modal');
     if (modal) {
