@@ -46186,8 +46186,15 @@ function submitAuth(){
       console.log('[LW] Auth success, calling _mintGiftPlant + _revealPlant');
       // ═══ TRACK SIGN UP WITH REF CODE (set-38) ═══
       if(typeof gtag!=='undefined')gtag('event','sign_up',{method:'email',ref_code:window._swsRef||''});
-      // Success — mint the gift plant
-      _mintGiftPlant();
+      // Wait for vault hydration before minting — onAuthStateChanged fires
+      // _loadVaultForUser in parallel; if we mint first, its initial empty
+      // sync (or returning-user cloud snapshot) can wipe the gift plant.
+      var _gMintTries=0;
+      function _mintWhenReady(){
+        if(window._vaultHydrated||_gMintTries>40){_mintGiftPlant();return;}
+        _gMintTries++;setTimeout(_mintWhenReady,150);
+      }
+      _mintWhenReady();
       // Hide auth, reveal plant
       var auth=document.getElementById('ob-auth');if(auth)auth.style.display='none';
       _revealPlant();
