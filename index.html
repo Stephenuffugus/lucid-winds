@@ -50447,17 +50447,23 @@ function _bosClassContent() {
         h += '<button onclick="window._lwRespec()" style="width:100%;margin-top:0.5rem;min-height:44px;padding:8px;font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(74,124,53,0.12));border:1.5px solid rgba(200,168,75,0.45);color:var(--gold);border-radius:8px;cursor:pointer;">\ud83c\udf3f WALK A NEW PATH</button>';
       }
     }
-    // Abilities: only shown for the currently-picked class (or to the picked-class self at Master)
-    if (picked) {
-      for (var abl = 1; abl <= 3; abl++) {
-        var ab = def.abilities[abl];
-        var unlocked = lvl >= abl;
-        var titles = ['', 'Apprentice', 'Journeyman', 'Master'];
-        h += '<div style="padding:5px 8px;margin-top:4px;background:' + (unlocked ? 'rgba(74,124,53,0.12)' : 'rgba(13,16,12,0.4)') + ';border-left:3px solid ' + (unlocked ? 'var(--sage)' : 'rgba(74,124,53,0.1)') + ';border-radius:4px;">';
-        h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:' + (unlocked ? 'var(--sage)' : 'var(--muted)') + ';letter-spacing:0.06em;">L' + abl + ' ' + titles[abl].toUpperCase() + '</div>';
-        h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:' + (unlocked ? 'var(--cream)' : 'var(--muted)') + ';margin-top:2px;">' + (unlocked ? ('<strong>' + ab.name + '</strong> \u2014 ' + ab.desc) : '<em style="opacity:0.6;">Revealed at L' + abl + '.</em>') + '</div>';
-        h += '</div>';
+    // Abilities: L1 + L2 always visible (helps choose). L3 Master companion
+    // synergy stays hidden until the player reaches Master — let it be a
+    // discovery. For the picked class, the L3 row shows name/desc only
+    // once unlocked.
+    for (var abl = 1; abl <= 3; abl++) {
+      var ab = def.abilities[abl];
+      var unlocked = picked && lvl >= abl;
+      var titles = ['', 'Apprentice', 'Journeyman', 'Master'];
+      var isMasterHidden = (abl === 3) && !unlocked;
+      h += '<div style="padding:5px 8px;margin-top:4px;background:' + (unlocked ? 'rgba(74,124,53,0.12)' : 'rgba(13,16,12,0.4)') + ';border-left:3px solid ' + (unlocked ? 'var(--sage)' : 'rgba(74,124,53,0.1)') + ';border-radius:4px;">';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:' + (unlocked ? 'var(--sage)' : 'var(--muted)') + ';letter-spacing:0.06em;">L' + abl + ' ' + titles[abl].toUpperCase() + '</div>';
+      if (isMasterHidden) {
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);margin-top:2px;"><em style="opacity:0.6;">A companion bond awaits those who walk this path to Master.</em></div>';
+      } else {
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:' + (unlocked ? 'var(--cream)' : 'var(--muted)') + ';margin-top:2px;"><strong>' + ab.name + '</strong> \u2014 ' + ab.desc + '</div>';
       }
+      h += '</div>';
     }
     h += '</div>';
   }
