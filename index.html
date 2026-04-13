@@ -32685,6 +32685,11 @@ document.addEventListener('keydown', function(e) {
       hashLedger: JSON.parse(localStorage.getItem('sws_hash_ledger') || 'null'),
       dewLedger: JSON.parse(localStorage.getItem('sws_dew_ledger') || 'null'),
       streak: JSON.parse(localStorage.getItem('sws_streak') || 'null'),
+      // Class system persistence — was localStorage-only, wiped on reinstall
+      // or new device. Now syncs alongside other meta state.
+      classChoice: localStorage.getItem('lw_class') || null,
+      classXP: JSON.parse(localStorage.getItem('lw_class_xp') || 'null'),
+      toolXP: JSON.parse(localStorage.getItem('lw_tool_xp') || 'null'),
       lastSync: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
   }
@@ -32756,6 +32761,10 @@ document.addEventListener('keydown', function(e) {
               if (d.inventory) localStorage.setItem('sws_inventory', JSON.stringify(d.inventory));
               if (d.hashLedger) _secureSet('sws_hash_ledger', d.hashLedger);
               if (d.streak) localStorage.setItem('sws_streak', JSON.stringify(d.streak));
+              // Class system rehydration — was wiped on reinstall before
+              if (d.classChoice) localStorage.setItem('lw_class', d.classChoice);
+              if (d.classXP) localStorage.setItem('lw_class_xp', JSON.stringify(d.classXP));
+              if (d.toolXP) localStorage.setItem('lw_tool_xp', JSON.stringify(d.toolXP));
             }
           });
           // ── Claim pending rewards (harvest rewards from displaced plants) ──
@@ -38690,8 +38699,12 @@ function _lwMassWaterRecord(){
 }
 // Compass tool tap handler — L1 says wind only, L2 reveals biome on demand, L3 points to nearest feral
 window._lwCompassTap=function(){
-  var lvl=1;
-  try{var tx=JSON.parse(localStorage.getItem('lw_tool_xp')||'{}');var x=tx.compass||0;lvl=x>=100?3:x>=30?2:1;}catch(e){}
+  // Use canonical thresholds via _lwGetToolLevel — was inline 30/100
+  // which mismatched the canonical 50/200 used by shears/pouch and by
+  // _LW_toolMod, causing compass to "feel" leveled before BoS UI agreed.
+  var lvl=(window._lwGetToolLevel?window._lwGetToolLevel('compass'):1);
+  // Award compass tool XP for tapping the tool (not just biome discovery)
+  try{if(window._LW_toolXP)window._LW_toolXP('compass',1);}catch(e){}
   if(lvl<2){_toast('\ud83e\udded Compass L1 \u2014 wind only. Discover biomes to level up.');return;}
   if(lvl===2){
     // Reveal biome
@@ -38727,8 +38740,8 @@ function _lwCanToolCap(){
   try{
     if(!window._LW_toolMod)return 0;
     // pouch tool returns slots, can tool cap we derive from level
-    var lvl=0;
-    try{var tx=JSON.parse(localStorage.getItem('lw_tool_xp')||'{}');var x=tx.can||0;lvl=x>=100?3:x>=30?2:1;}catch(e){lvl=1;}
+    // Use canonical thresholds via _lwGetToolLevel — was inline 30/100.
+    var lvl=(window._lwGetToolLevel?window._lwGetToolLevel('can'):1);
     if(lvl>=3)return 6;if(lvl>=2)return 3;return 0;
   }catch(e){return 0;}
 }
@@ -52154,8 +52167,12 @@ window._LW_classXP=function(source,amount){
   if(mult<=0)return;
   // Biome bonus: +25% XP when in matching biome
   if(_lwBiomeMatch())mult*=1.25;
-  // Cartographer Master + Heron synergy: doubles biome bonus effect
-  if(_lwBiomeMatch()&&cls==='cartographer'&&window._LW_hasSynergy&&window._LW_hasSynergy())mult*=1.25;
+  // Cartographer Master + Heron synergy: doubles biome bonus effect.
+  // Was multiplying by 1.25 (so total 1.25 * 1.25 = 1.5625) — spec
+  // says biome bonus DOUBLES from the base 1.25× to 1.5×, meaning the
+  // synergy contribution is +0.25× on top. With mult already at 1.25,
+  // multiplying by ANOTHER 1.6 brings it to ~2.0× — i.e. doubled.
+  if(_lwBiomeMatch()&&cls==='cartographer'&&window._LW_hasSynergy&&window._LW_hasSynergy())mult*=1.6;
   var gain=Math.ceil(amount*mult);
   var x=_lwGetClassXP();
   var was=x[cls]||0;
@@ -52207,6 +52224,11 @@ window._LW_toolMod=function(tool){
   var biomeBoost=_lwBiomeMatch()?1.5:1;
   if(tool==='shears'){var base=lvl>=3?2*60*60*1000:lvl>=2?4*60*60*1000:6*60*60*1000;return Math.round(base/biomeBoost);}
   if(tool==='pouch'){var slots=lvl>=3?7:lvl>=2?5:3;if(biomeBoost>1)slots+=1;return slots;}
+  // Added: can + compass were missing branches, forcing inline
+  // localStorage reads with mismatched thresholds elsewhere in the
+  // codebase. Now everyone goes through one path.
+  if(tool==='can')return lvl;     // 1 = no mass-water, 2 = cap 3, 3 = cap 6 + RAIN
+  if(tool==='compass')return lvl; // 1 = wind, 2 = biome reveal, 3 = bearing
   return null;
 };
 // Check if companion synergy active (player has Master class + bound companion)
@@ -52251,7 +52273,7 @@ window._LW_openClassPicker=function(){
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:'+(picked?'var(--gold)':'var(--cream)')+';letter-spacing:0.08em;">'+def.name.toUpperCase()+(picked?' · L'+lvl:'')+'</div>';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">'+def.desc+'</div>';
     h+='</div>';
-    if(!cur)h+='<button onclick="if(confirm(\'Choose '+def.name+'? You can respec later for Pi.\')){localStorage.setItem(\'lw_class\',\''+cid+'\');document.getElementById(\'lw-class-overlay\').remove();setTimeout(_LW_openClassPicker,150);}" style="min-height:40px;padding:8px 12px;font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;background:rgba(122,179,86,0.2);border:1.5px solid var(--sage);color:var(--sage);border-radius:8px;cursor:pointer;">CHOOSE</button>';
+    if(!cur)h+='<button onclick="if(window._lwPickClass)_lwPickClass(\''+cid+'\',\''+def.name+'\',\''+def.icon+'\');" style="min-height:40px;padding:8px 12px;font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;background:rgba(122,179,86,0.2);border:1.5px solid var(--sage);color:var(--sage);border-radius:8px;cursor:pointer;">CHOOSE</button>';
     h+='</div>';
     if(picked){
       h+='<div style="margin:0.3rem 0;"><div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);"><span>XP: '+xp+'</span><span>Next: '+nextXP+'</span></div>';
