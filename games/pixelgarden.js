@@ -176,6 +176,9 @@ window._gameFns.pixelgarden = function PG(a){
   window._PGGR=function(){showGrid=!showGrid;render();};
   window._PGCLR=function(){saveUndo();for(var r=0;r<GRID;r++)for(var c=0;c<GRID;c++)pixels[r][c]=null;render();sm('Cleared');};
   window._PGUN=function(){if(undoStack.length===0){sm('Nothing to undo');return;}pixels=undoStack.pop();render();_play('tap');};
+  // Track whether this session has already minted a hash so save can't
+  // be tap-farmed for unlimited Sunbeams.
+  var _pgWonThisSession=false;
   window._PGSV=function(){
     var scale=GRID<=16?16:8;
     var sc=document.createElement('canvas');
@@ -193,8 +196,11 @@ window._gameFns.pixelgarden = function PG(a){
     link.href=sc.toDataURL('image/png');
     link.click();
     sm('Saved ('+totalPixels+' strokes)');
-    _playWin();_e('game_win');
-    _sr('pixelgarden',{w:true,s:totalPixels,sz:GRID});
+    _playWin();
+    // First save per session mints a hash; subsequent saves fire only
+    // a milestone for incremental Sunbeams. Stops the tap-save farm.
+    if(!_pgWonThisSession){_pgWonThisSession=true;_e('game_win');_sr('pixelgarden',{w:true,s:totalPixels,sz:GRID});}
+    else _e('milestone');
   };
   window._PGSZ=function(s){
     GRID=s;

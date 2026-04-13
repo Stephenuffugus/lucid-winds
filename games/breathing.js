@@ -178,7 +178,9 @@ window._gameFns.breathing=function BR(a){
     }
   };
   window._BRR=function(){
-    breathing=false;phaseIdx=0;phaseTimer=0;breathCount=0;totalTime=0;bloomProgress=0.3;
+    // Was: not resetting _brWon, so re-reaching 10 breaths after RESET
+    // would silently skip the hash mint.
+    breathing=false;phaseIdx=0;phaseTimer=0;breathCount=0;totalTime=0;bloomProgress=0.3;_brWon=false;
     var btn=document.getElementById('BRgo');if(btn)btn.textContent='▶ START';
     var phEl=document.getElementById('BRph');if(phEl)phEl.textContent='READY';
     var ct=document.getElementById('BRct');if(ct)ct.textContent='';

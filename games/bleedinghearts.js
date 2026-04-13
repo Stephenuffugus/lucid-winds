@@ -278,7 +278,14 @@ window._gameFns.bleedinghearts = function BH(a){
     pan.innerHTML=h;
   }
 
-  window._BHN=function(){scores=[0,0,0,0];roundNum=0;trickNum=0;newRound();};
+  window._BHN=function(){
+    // Reset full state. Was missing phase/passSelection — pressing NEW
+    // mid-pass left stale selections that bled into the new round.
+    scores=[0,0,0,0];roundNum=0;trickNum=0;
+    phase='';passSelection=[];trick=[];trickCards=[null,null,null,null];
+    heartsBroken=false;currentPlayer=0;
+    newRound();
+  };
   window._BHCC=function(r,s){onCardClick({rank:r,suit:s});};
   window._BHPASS=function(){confirmPass();};
 
