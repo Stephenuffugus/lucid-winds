@@ -39696,7 +39696,8 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
   function _ctx(){
     // Snapshot what the player was looking at when they opened the form.
     var tab='?';try{var bc=document.body.classList;for(var i=0;i<bc.length;i++)if(bc[i].indexOf('tab-')===0){tab=bc[i].slice(4);break;}}catch(e){}
-    var lvl='?';try{lvl=(window.PW_getXP&&window.PW_getXP())||(localStorage.getItem('pw_xp')||'0');}catch(e){}
+    // Raw XP — RANKS thresholds change as we tune; XP number is stable.
+    var lvl='?';try{lvl=localStorage.getItem('pw_xp')||'0';}catch(e){}
     var ghLen=0;try{ghLen=(JSON.parse(localStorage.getItem('sws_greenhouse')||'[]')||[]).length;}catch(e){}
     var hashes=0;try{hashes=parseInt(localStorage.getItem('sws_totalHashes')||'0',10);}catch(e){}
     var cls='';try{cls=localStorage.getItem('lw_class')||'(none)';}catch(e){}
@@ -39866,11 +39867,42 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
     st.textContent='@keyframes lwFbPulse{0%,100%{box-shadow:0 0 0 0 rgba(200,168,75,0.6);}50%{box-shadow:0 0 0 12px rgba(200,168,75,0);}}';
     document.head.appendChild(st);
   }
+  // First-greenhouse "what now?" nudge — testers often stare at their
+  // gift plant without knowing they need to play games to earn the next.
+  // Highlights the GAMES nav button and toasts a concrete next step.
+  function _maybeShowGamesNudge(tab){
+    if(tab!=='greenhouse')return;
+    if(localStorage.getItem('lw_games_nudge_shown'))return;
+    var ghLen=0;try{ghLen=(JSON.parse(localStorage.getItem('sws_greenhouse')||'[]')||[]).length;}catch(e){}
+    var totalHashes=0;try{totalHashes=parseInt(localStorage.getItem('sws_totalHashes')||'0',10);}catch(e){}
+    // Only nudge if they have the gift but haven't earned anything yet
+    if(ghLen<1||totalHashes>0)return;
+    localStorage.setItem('lw_games_nudge_shown','1');
+    setTimeout(function(){
+      // Pulse the GAMES nav button if we can find it
+      var gameBtn=document.querySelector('[onclick*="switchTab(\'game\')"]')||document.querySelector('#nav-btn-game');
+      if(gameBtn){
+        gameBtn.style.transition='all 0.4s ease';
+        gameBtn.style.boxShadow='0 0 0 0 rgba(122,179,86,0.7)';
+        gameBtn.style.animation='lwGamesPulse 1.6s ease-in-out 5';
+        setTimeout(function(){gameBtn.style.animation='';gameBtn.style.boxShadow='';},9000);
+      }
+      if(window._toast)window._toast('🌿 Tap GAMES to earn Sunbeams. 30 Sunbeams = your next plant.');
+    },2200); // delay so it lands AFTER the feedback hint
+  }
+  // Add nav-pulse keyframes once (separate from feedback button so they
+  // can fire concurrently if needed)
+  if(!document.getElementById('lw-games-pulse-style')){
+    var st2=document.createElement('style');st2.id='lw-games-pulse-style';
+    st2.textContent='@keyframes lwGamesPulse{0%,100%{box-shadow:0 0 0 0 rgba(122,179,86,0.7);}50%{box-shadow:0 0 0 10px rgba(122,179,86,0);}}';
+    document.head.appendChild(st2);
+  }
   // Wrap switchTab — add ourselves to the chain
   if(typeof window.switchTab==='function'){
     var _origSt=window.switchTab;
     window.switchTab=function(tab){
       try{_maybeShowFeedbackHint(tab);}catch(e){}
+      try{_maybeShowGamesNudge(tab);}catch(e){}
       return _origSt.apply(this,arguments);
     };
   }
