@@ -44964,26 +44964,38 @@ function _isOnboarded(){
 }
 function _markOnboarded(){localStorage.setItem('pw_onboarded','1');}
 
-// Generate a gift plant hash guaranteed Uncommon+ (min score 3)
+// Generate a gift plant hash — weighted distribution, capped at Rare.
+// 50% Common / 35% Uncommon / 15% Rare. No Epic+ on gift (keeps rarities meaningful
+// — players earn Epic+ through play, never as a freebie).
+// Score bands: Common 0-1, Uncommon 2-3, Rare 4-5.
 function _genGiftHash(){
-  // Gift plant must be Uncommon+ (score >= 2). Try 500 times.
-  // hashToTraits + getTerraGrade are in Block 5, loaded before Block 15 (onboarding).
-  var bestHash='';var bestScore=0;
+  var roll=Math.random();
+  var targetMin,targetMax;
+  if(roll<0.50){targetMin=0;targetMax=1;}        // Common
+  else if(roll<0.85){targetMin=2;targetMax=3;}   // Uncommon
+  else{targetMin=4;targetMax=5;}                 // Rare
+  var bestHash='',bestMatchScore=-1;
   for(var attempts=0;attempts<500;attempts++){
     var h='';for(var i=0;i<64;i++)h+='0123456789abcdef'[Math.floor(Math.random()*16)];
     try{
       if(window.hashToTraits&&window.getTerraGrade){
         var t=window.hashToTraits(h);
         var g=window.getTerraGrade(t);
-        if(g.score>bestScore){bestHash=h;bestScore=g.score;}
-        if(g.score>=2){_giftHash=h;_giftTraits=t;console.log('[LW] Gift plant: '+g.name+' (score '+g.score+', attempt '+attempts+')');return h;}
+        // Exact hit within target tier → done
+        if(g.score>=targetMin&&g.score<=targetMax){
+          _giftHash=h;_giftTraits=t;
+          console.log('[LW] Gift plant: '+g.name+' (score '+g.score+', target '+targetMin+'-'+targetMax+', attempt '+attempts+')');
+          return h;
+        }
+        // Track best candidate below target (never above — Epic+ never gifted)
+        if(g.score<=targetMax&&g.score>bestMatchScore){bestHash=h;bestMatchScore=g.score;}
       }
     }catch(e){}
   }
-  // Fallback: use the best hash we found (even if Common — better than random)
-  _giftHash=bestHash||('a'.repeat(64));
+  // Fallback: best below-target candidate (Common if we rolled Rare but couldn't find one)
+  _giftHash=bestHash||('0'.repeat(64));
   try{if(window.hashToTraits)_giftTraits=window.hashToTraits(_giftHash);}catch(e){_giftTraits=null;}
-  console.log('[LW] Gift plant fallback, best score: '+bestScore);
+  console.log('[LW] Gift plant fallback, best below-target score: '+bestMatchScore);
   return _giftHash;
 }
 
