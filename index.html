@@ -50406,7 +50406,17 @@ function _bosClassContent() {
   };
 
   var h = '';
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--muted);margin-bottom:0.8rem;line-height:1.6;">Choose one path. Each level unlocks an ability. Master rank unlocks companion synergy. Progress is slow — play long-term.</div>';
+  var keeperLvl = (window.canSee && window.canSee.currentLevel) ? window.canSee.currentLevel() : 1;
+  var canPick = keeperLvl >= 7;
+  if (!cur) {
+    if (canPick) {
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--cream);margin-bottom:0.8rem;line-height:1.6;">Five paths. Each shapes how you play — and how the world responds to you. Pick one that calls to you; you can walk a different path once you\u2019ve mastered this one.</div>';
+    } else {
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--muted);margin-bottom:0.8rem;line-height:1.6;">The five paths reveal themselves to you at <span style="color:var(--gold);">Keeper Level 7</span>. For now, tend your garden — let the world shape your leanings first. <span style="color:var(--cream);">(Currently Lv ' + keeperLvl + ')</span></div>';
+    }
+  } else {
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--muted);margin-bottom:0.8rem;line-height:1.6;">Each level earns an ability. Master rank unlocks your companion synergy — and opens the door to walk a new path if you choose.</div>';
+  }
 
   for (var cid in LW_CLASSES) {
     if (!LW_CLASSES.hasOwnProperty(cid)) continue;
@@ -50422,20 +50432,29 @@ function _bosClassContent() {
     h += '<div style="font-size:1.6rem;">' + def.icon + '</div>';
     h += '<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:' + (picked ? 'var(--gold)' : 'var(--cream)') + ';letter-spacing:0.08em;">' + def.name.toUpperCase() + (picked ? ' · L' + lvl : '') + '</div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">' + def.desc + '</div></div>';
-    if (!cur) h += '<button onclick="window._lwPickClass(\'' + cid + '\',\'' + def.name + '\',\'' + def.icon + '\')" style="min-height:40px;padding:6px 10px;font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;background:rgba(122,179,86,0.2);border:1.5px solid var(--sage);color:var(--sage);border-radius:8px;cursor:pointer;">CHOOSE</button>';
+    if (!cur) {
+      if (canPick) {
+        h += '<button onclick="window._lwPickClass(\'' + cid + '\',\'' + def.name + '\',\'' + def.icon + '\')" style="min-height:40px;padding:6px 10px;font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;background:rgba(122,179,86,0.2);border:1.5px solid var(--sage);color:var(--sage);border-radius:8px;cursor:pointer;">CHOOSE</button>';
+      } else {
+        h += '<div style="min-height:40px;padding:6px 10px;font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;background:rgba(80,30,30,0.15);border:1.5px solid rgba(217,107,75,0.25);color:rgba(217,107,75,0.7);border-radius:8px;display:flex;align-items:center;">\ud83d\udd12 Lv 7</div>';
+      }
+    }
     h += '</div>';
     if (picked) {
       h += '<div style="margin:0.3rem 0;"><div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);"><span>XP: ' + xp + '</span><span>Next: ' + nextXP + '</span></div>';
       h += '<div style="height:4px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;margin-top:2px;"><div style="height:100%;width:' + Math.min(100, pct) + '%;background:linear-gradient(90deg,rgba(122,179,86,0.6),rgba(200,168,75,0.8));border-radius:2px;"></div></div></div>';
     }
-    for (var abl = 1; abl <= 3; abl++) {
-      var ab = def.abilities[abl];
-      var unlocked = picked && lvl >= abl;
-      var titles = ['', 'Apprentice', 'Journeyman', 'Master'];
-      h += '<div style="padding:5px 8px;margin-top:4px;background:' + (unlocked ? 'rgba(74,124,53,0.12)' : 'rgba(13,16,12,0.4)') + ';border-left:3px solid ' + (unlocked ? 'var(--sage)' : 'rgba(74,124,53,0.1)') + ';border-radius:4px;">';
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:' + (unlocked ? 'var(--sage)' : 'var(--muted)') + ';letter-spacing:0.06em;">L' + abl + ' ' + titles[abl].toUpperCase() + '</div>';
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:' + (unlocked ? 'var(--cream)' : 'var(--muted)') + ';margin-top:2px;"><strong>' + ab.name + '</strong> — ' + ab.desc + '</div>';
-      h += '</div>';
+    // Abilities: only shown for the currently-picked class (or to the picked-class self at Master)
+    if (picked) {
+      for (var abl = 1; abl <= 3; abl++) {
+        var ab = def.abilities[abl];
+        var unlocked = lvl >= abl;
+        var titles = ['', 'Apprentice', 'Journeyman', 'Master'];
+        h += '<div style="padding:5px 8px;margin-top:4px;background:' + (unlocked ? 'rgba(74,124,53,0.12)' : 'rgba(13,16,12,0.4)') + ';border-left:3px solid ' + (unlocked ? 'var(--sage)' : 'rgba(74,124,53,0.1)') + ';border-radius:4px;">';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:' + (unlocked ? 'var(--sage)' : 'var(--muted)') + ';letter-spacing:0.06em;">L' + abl + ' ' + titles[abl].toUpperCase() + '</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:' + (unlocked ? 'var(--cream)' : 'var(--muted)') + ';margin-top:2px;">' + (unlocked ? ('<strong>' + ab.name + '</strong> \u2014 ' + ab.desc) : '<em style="opacity:0.6;">Revealed at L' + abl + '.</em>') + '</div>';
+        h += '</div>';
+      }
     }
     h += '</div>';
   }
@@ -51126,14 +51145,14 @@ window._openCompendiumUI=function(){
         '<button class="bos-tab" data-tab="report" onclick="_bosSetTab(\'report\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">REPORT</button>'+
         '<button class="bos-tab active" data-tab="secrets" onclick="_bosSetTab(\'secrets\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(200,168,75,0.5);background:rgba(200,168,75,0.1);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">SECRETS</button>'+
         '<button class="bos-tab" data-tab="events" onclick="_bosSetTab(\'events\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">EVENTS</button>'+
-        '<button class="bos-tab" data-tab="class" onclick="_bosSetTab(\'class\')" style="position:relative;flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">CLASS'+ (!localStorage.getItem('lw_class')?'<span style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px rgba(200,168,75,0.8);"></span>':'') +'</button>'+
+        '<button class="bos-tab" data-tab="class" onclick="_bosSetTab(\'class\')" style="position:relative;flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">CLASS'+ ((!localStorage.getItem('lw_class')&&window.canSee&&window.canSee.classPick&&window.canSee.classPick())?'<span style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px rgba(200,168,75,0.8);"></span>':'') +'</button>'+
       '</div>'+
       // Body
       '<div id="bos-body" style="flex:1;overflow-y:auto;padding:0.6rem 1rem 1.5rem;-webkit-overflow-scrolling:touch;"></div>'+
     '</div>';
   document.body.appendChild(ov);
-  // Set initial tab content — auto-open CLASS tab if unpicked
-  if(!localStorage.getItem('lw_class'))_bosTab='class';
+  // Set initial tab content — auto-open CLASS tab if unpicked AND eligible (Lv 7+)
+  if(!localStorage.getItem('lw_class')&&window.canSee&&window.canSee.classPick&&window.canSee.classPick())_bosTab='class';
   _bosSetTab(_bosTab);
   // Mark report as read
   if(window._setLastRead)_setLastRead(Date.now());
@@ -51151,9 +51170,9 @@ function _updateCompCount(){
     if(show)compBtn.classList.add('has-entries');
     else compBtn.classList.remove('has-entries');
   }
-  // Class unpicked: gentle gold pulse on book to surface the CLASS tab
+  // Class unpicked AND eligible (Lv 7+): gentle gold pulse to surface the CLASS tab
   if(compBtn){
-    var _cp=!localStorage.getItem('lw_class');
+    var _cp=!localStorage.getItem('lw_class')&&window.canSee&&window.canSee.classPick&&window.canSee.classPick();
     if(_cp)compBtn.classList.add('class-prompt');else compBtn.classList.remove('class-prompt');
   }
   var progress=window.getCompendiumProgress?window.getCompendiumProgress():{found:0};
@@ -51258,7 +51277,12 @@ setTimeout(function(){try{window._lwRefreshAvatar();}catch(e){}},500);
 // Canonical class picker — confirmation, haptic, toast, sync
 window._lwPickClass=function(cid,nm,icon){
   if(!cid||!LW_CLASSES[cid])return;
-  if(!confirm('Choose '+nm+'? This is a long-term commitment.'))return;
+  // Level gate — can't pick until Lv 7
+  if(window.canSee&&window.canSee.classPick&&!window.canSee.classPick()){
+    if(window._toast)_toast('Reach Keeper Level 7 to choose your path.');
+    return;
+  }
+  if(!confirm('Walk the path of the '+nm+'?\n\nYou can change paths later once you\u2019ve mastered a class.'))return;
   try{localStorage.setItem('lw_class',cid);}catch(e){}
   try{if(window._haptic)window._haptic();}catch(e){}
   try{if(window._toast)window._toast(icon+' You chose '+nm+'. Begin your path.');}catch(e){}
@@ -51954,6 +51978,7 @@ function _lwLevel(){
 // are folded in alongside existing activity-based gates.
 window.canSee = {
   strangerTend: function(){return _lwLevel()>=5;},
+  classPick: function(){return _lwLevel()>=7;},
   greenhouseBreed: function(){return _lwLevel()>=7;},
   fruitHarvest: function(){return _lwLevel()>=10;},
   nurseryMergeBreed: function(){return _lwLevel()>=12;},
