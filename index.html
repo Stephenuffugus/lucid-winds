@@ -7331,9 +7331,13 @@ document.addEventListener('keydown', function(e) {
     // SYNERGY BONUS (cosmetic + EA only, never affects Terra Grade)
     var syn = window.getSynergy ? window.getSynergy(traits) : null;
     if (syn) ea += syn.ea;
-    // CHIMERA PENALTY: -2 per gen
+    // CHIMERA PENALTY: -2 per gen (Breeder L2+ reduces penalty via chimeraPurity)
     var gen = (traits.chimerGen || 1) - 1;
-    if (gen > 0) ea -= gen * 2;
+    if (gen > 0) {
+      var _penalty = gen * 2;
+      try{if(window._LW_classBonus){_penalty = _penalty / window._LW_classBonus('chimeraPurity');}}catch(e){}
+      ea -= _penalty;
+    }
     // POT BONUS: Moonstone Cradle bakes a permanent +1 EA on the bloomed plant
     if (plant && plant.eaBonus) ea += plant.eaBonus;
     return Math.max(0, ea);
@@ -27360,6 +27364,8 @@ document.addEventListener('keydown', function(e) {
   }
   function earnDew(amount, source) {
     if (!amount || amount < 0) return;
+    // Tender class bonus: L2+ multiplies dew income
+    try{if(window._LW_classBonus){amount=Math.ceil(amount*window._LW_classBonus('dewRate'));}}catch(e){}
     var ledger = getDewLedger();
     ledger.earned = (ledger.earned || 0) + amount;
     _secureSet(DEW_LEDGER_KEY, ledger);
@@ -33032,6 +33038,8 @@ function _getCollectRange(){
       if(ci&&ci.temperament&&ci.temperament.feralRange){range+=ci.temperament.feralRange;break;}
     }
   }catch(e){}
+  // Forager class: multiplies collect range (1.25x L1, +keeper stacking)
+  try{if(window._LW_classBonus){range=Math.round(range*window._LW_classBonus('feralRange'));}}catch(e){}
   return range;
 }
 // ═══ ANTI-FARMING: server-side economy protection ═══
@@ -35095,7 +35103,8 @@ function _addFeral(f){
 function _collectFeral(f,mk){
   if(!_uLat){_toast('Need location.');return;}
   var d=_dist(_uLat,_uLng,f.lat,f.lng);
-  if(d>COLLECT_RANGE){_toast('Walk closer! '+Math.round(d*3.281)+' ft away. Need within '+Math.round(COLLECT_RANGE*3.281)+' ft.');return;}
+  var _fcRange=typeof _getCollectRange==='function'?_getCollectRange():COLLECT_RANGE;
+  if(d>_fcRange){_toast('Walk closer! '+Math.round(d*3.281)+' ft away. Need within '+Math.round(_fcRange*3.281)+' ft.');return;}
   // Check cooldown (keyed by zone+date since hash doesn't exist yet)
   var cdKey=(f.zone||'x')+'_'+((f.date||'').slice(0,10));
   if(!f._cooldown){try{var _fc=JSON.parse(localStorage.getItem('fg_feral_cd')||'{}');if(_fc[cdKey])f._cooldown=_fc[cdKey];}catch(e){}}
