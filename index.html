@@ -51950,7 +51950,10 @@ window._lwNavTap=function(tab,reqLvl){
   if(window.switchTab)window.switchTab(tab);
 };
 window._lwApplyGates=function(){
-  if(!window.canSee)return;
+  // If canSee isn't ready yet (race during startup), retry shortly.
+  // Without this, the function bails and never runs again — leaving
+  // .gated stuck on nav buttons even after the player levels up.
+  if(!window.canSee){setTimeout(window._lwApplyGates,400);return;}
   var curLvl=(window.canSee.currentLevel)?window.canSee.currentLevel():1;
   // Tabs: show/hide buttons (keep visible with lock chip if close-to-unlock?)
   var nurBtn=document.getElementById('nav-btn-nursery');
@@ -52005,6 +52008,15 @@ window._lwLevelCeremony=function(newLvl){
 };
 // Initial apply
 setTimeout(function(){try{window._lwApplyGates();}catch(e){}},600);
+// Re-apply gates whenever the player switches tabs — guarantees the
+// nav buttons reflect current level. Was getting stuck with stale
+// .gated state if the initial gate-apply ran before canSee was ready.
+(function(){
+  var prev=window.switchTab;
+  if(typeof prev==='function'){
+    window.switchTab=function(){try{window._lwApplyGates&&window._lwApplyGates();}catch(e){}return prev.apply(this,arguments);};
+  }
+})();
 window._updateCompCount=_updateCompCount;
 
 // ═══ CLASS SYSTEM v1 ═══
