@@ -1,150 +1,221 @@
-// ═══ LUCID WINDS — Sprout (Wordle-style 5-letter deduction) ═══
+// ═══ LUCID WINDS — Sprout (5-letter word puzzle) ═══
+// 6 guesses to find the hidden 5-letter word.
+//   Green tile  = right letter, right position
+//   Gold tile   = right letter, wrong position
+//   Muted tile  = letter not in the word
+// On-screen QWERTY for mobile, with hardware keyboard support.
+// Answer pool ~350 common English words plus botanical flavor.
+// Valid guesses must be in the pool (prevents random gibberish).
 (function(){
 'use strict';
 var G=window._G;
 var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G.sr;
 
+// ── Word pool: ~350 common 5-letter English words + botanical extras
+var WORDS=('about above abuse actor acute admit adopt adult after again agent agree ahead alarm album alert alike alive allow alone along alter among anger angle angry apart apple apply arena argue arise array aside asset audio audit avoid award aware badge badly baker basic basis beach began begin being below bench berry birth black blame blank blast blend bless blind block blood board boost booth bound brain brand bread break breed brief bring broad broke brown build built buyer cable carry catch cause chain chair chart chase cheap check chest chief child chose civil claim class clean clear click clock close coach coast could count court cover craft crash cream crime cross crowd crown curve cycle daily dance dated dealt death debut delay depth doing doubt dozen draft drama drawn dream dress drill drink drive drove dying eager early earth eight elite empty enemy enjoy enter entry equal error event every exact exist extra faith false fault fiber field fifth fifty fight final first fixed flash fleet floor fluid focus force forth forty forum found frame frank fresh front fruit fully funny giant given glass globe going grace grade grand grant grass great green gross group grown guard guess guest guide happy heart heavy horse hotel house human ideal image index inner input irony issue judge known label large laser later laugh learn lease least leave legal level light limit local logic loose lower lucky lunch lying magic major maker march match mayor meant media metal might minor minus mixed model money month moral motor mount mouse mouth movie music needs never newly night noise north noted novel nurse occur ocean offer often order other ought paint panel paper party peace phase phone photo piece pilot pitch place plain plane plant plate point pound power press price pride prime print prior prize proof proud prove queen quick quiet quite radio raise range rapid ratio reach ready realm refer right rival river roman rough round route royal rural scale scene scope score sense serve seven shall shape share sharp sheet shelf shell shift shirt shock shoot short shown sight since sixth sixty sized skill sleep slide small smart smile smoke solid solve sorry sound south space spare speak speed spend spent split spoke sport staff stage stake stand start state steam steel stick still stock stone stood store storm story strip stuck study stuff style sugar suite super sweet table taken taste teach teeth thank theft their theme there these thick thing think third those three threw throw tight times tired title today topic total touch tough tower track trade train treat trend trial tried tries truck truly trust truth twice under undue union unity until upper upset urban usage usual valid value video virus visit vital voice waste watch water wheel where which while white whole whose woman women world worry worse worst worth would wound write wrong wrote yield young youth acorn alder amber anise anvil apron arbor aspen aster atoll basin beach birch bloom briar broom cedar daisy dandy ferns fairy field flora gourd grain grove heath ivory lemon liana lilac lotus magic maple marsh mossy myrrh olive onion peach peony petal plant plumb poppy raven roots rosed sedge seeds shoot snail spore stalk stone storm sumac swamp thorn tulip vines weeds wheat fruit').split(' ');
+// Dedupe + clean
+(function(){var seen={},out=[];for(var i=0;i<WORDS.length;i++){var w=WORDS[i].toLowerCase();if(w.length===5&&!seen[w]){seen[w]=1;out.push(w);}}WORDS=out;})();
+
+var KEY_ROWS=['qwertyuiop','asdfghjkl','zxcvbnm'];
+
+(function injectStyle(){
+  if(document.getElementById('pw-petal-style'))return;
+  var s=document.createElement('style');s.id='pw-petal-style';
+  s.cssText=[
+    '.pw-board{display:flex;flex-direction:column;gap:6px;align-items:center;padding:10px 6px;}',
+    '.pw-row{display:flex;gap:6px;}',
+    '.pw-cell{width:clamp(40px,11vw,56px);height:clamp(40px,11vw,56px);border:2px solid rgba(74,124,53,0.35);background:rgba(13,16,12,0.6);color:var(--cream,#e8dcc8);font-family:Bebas Neue,sans-serif;font-size:clamp(1.4rem,5vw,2rem);display:flex;align-items:center;justify-content:center;text-transform:uppercase;border-radius:4px;transition:transform .15s ease,background .25s ease,border-color .25s ease;}',
+    '.pw-cell.pw-typed{border-color:rgba(200,168,75,0.7);transform:scale(1.05);}',
+    '.pw-cell.pw-hit{background:var(--sage,#7ab356);border-color:var(--sage,#7ab356);color:#0d100c;}',
+    '.pw-cell.pw-near{background:var(--gold,#c8a84b);border-color:var(--gold,#c8a84b);color:#0d100c;}',
+    '.pw-cell.pw-miss{background:rgba(40,44,36,0.85);border-color:rgba(60,68,54,0.85);color:rgba(232,220,200,0.5);}',
+    '.pw-flip{animation:pwFlip .55s ease both;}',
+    '@keyframes pwFlip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}',
+    '.pw-shake{animation:pwShake .4s ease;}',
+    '@keyframes pwShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-3px)}}',
+    '.pw-keyboard{display:flex;flex-direction:column;gap:6px;align-items:center;padding:10px 4px 14px;}',
+    '.pw-krow{display:flex;gap:4px;justify-content:center;width:100%;max-width:480px;}',
+    '.pw-key{flex:1;min-width:0;height:48px;border:1px solid rgba(74,124,53,0.3);background:rgba(26,31,23,0.85);color:var(--cream,#e8dcc8);font-family:DM Mono,monospace;font-size:0.75rem;font-weight:700;text-transform:uppercase;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;transition:background .25s ease,border-color .25s ease;padding:0;}',
+    '.pw-key.pw-wide{flex:1.5;font-size:0.55rem;}',
+    '.pw-key.pw-hit{background:var(--sage,#7ab356);border-color:var(--sage,#7ab356);color:#0d100c;}',
+    '.pw-key.pw-near{background:var(--gold,#c8a84b);border-color:var(--gold,#c8a84b);color:#0d100c;}',
+    '.pw-key.pw-miss{background:rgba(28,32,24,0.95);border-color:rgba(40,46,34,0.85);color:rgba(232,220,200,0.35);}',
+    '.pw-msg{font-family:DM Mono,monospace;font-size:0.6rem;color:var(--gold,#c8a84b);text-align:center;min-height:1.2em;letter-spacing:0.06em;padding:4px 0;}'
+  ].join('');
+  document.head.appendChild(s);
+})();
 
 window._gameFns=window._gameFns||{};
-window._gameFns.sprout=function SP(a){
-  // Compact botanical/common 5-letter word pool (~300 words).
-  var WORDS=('BLOOM,FROND,SPORE,THORN,PETAL,FLORA,PLANT,SHRUB,STALK,GROVE,HERBS,TULIP,LILAC,DAISY,PANSY,ASTER,CEDAR,BIRCH,MAPLE,OLIVE,'+
-    'HEDGE,WHEAT,GRAIN,GOURD,FUNGI,LEAFY,GROWN,SEEDS,FIELD,MARSH,CREEK,EARTH,MULCH,PRUNE,GRAFT,FRUIT,BERRY,MELON,PEACH,MANGO,'+
-    'LEMON,GRAPE,ACORN,ALDER,CROPS,FERNS,GRASS,LOTUS,MAIZE,PALMS,REEDS,ROSES,VINES,BOUGH,BRIAR,ABOUT,ABOVE,AFTER,AGAIN,ALIGN,'+
-    'ALLOW,ALONE,ALONG,ANGRY,APART,APPLE,APPLY,ARENA,ARGUE,ARISE,ASIDE,AVOID,AWAKE,AWARD,AWARE,BASIC,BEACH,BEGIN,BEING,BELOW,'+
-    'BENCH,BIRTH,BLACK,BLAME,BLANK,BLAST,BLAZE,BLEED,BLEND,BLIND,BLOCK,BLOOD,BOARD,BOUND,BRAIN,BRAND,BRAVE,BREAD,BREAK,BREED,'+
-    'BRIEF,BRING,BROAD,BROKE,BROWN,BRUSH,BUILD,BURST,BUYER,CABIN,CABLE,CAMEL,CANDY,CARGO,CATCH,CAUSE,CHAIN,CHAIR,CHALK,CHAMP,'+
-    'CHARM,CHART,CHASE,CHEAP,CHECK,CHESS,CHEST,CHICK,CHIEF,CHILD,CHILI,CHILL,CHINA,CHIRP,CHOIR,CHOKE,CHOSE,CIVIC,CIVIL,CLAIM,'+
-    'CLAMP,CLASH,CLASS,CLEAN,CLEAR,CLERK,CLICK,CLIFF,CLIMB,CLOCK,CLOSE,CLOTH,CLOUD,CLOWN,CLUCK,COACH,COAST,COLOR,COULD,COUNT,'+
-    'COURT,COVER,CRACK,CRAFT,CRANE,CRASH,CRAZY,CREAM,CREPT,CRIED,CRISP,CROSS,CROWD,CROWN,CRUEL,CRUSH,CRUST,CURVE,DAILY,DANCE,'+
-    'DATED,DEALT,DEATH,DEBUT,DECAL,DECAY,DELAY,DEPTH,DRAFT,DRAIN,DRANK,DRAWN,DREAM,DRESS,DRIED,DRIFT,DRILL,DRINK,DRIVE,DROVE,'+
-    'DRYLY,DWELL,EAGER,EAGLE,EARLY,ENEMY,ENJOY,ENTER,ENTRY,EQUAL,ERROR,EVENT,EVERY,EXACT,EXIST,EXTRA,FAITH,FALSE,FANCY,FAULT,'+
-    'FENCE,FEVER,FEWER,FIBER,FIGHT,FINAL,FIRST,FIXED,FLAIR,FLAKE,FLAME,FLASH,FLEET,FLESH,FLICK,FLING,FLOAT,FLOCK,FLOOD,FLOOR,'+
-    'FLOUR,FOCUS,FORCE,FORTH,FORTY,FORUM,FOUND,FRAME,FRANK,FRESH,FROWN,GIANT,GLASS,GLEAM,GLIDE,GLOBE,GLOOM,GLORY,GLOVE,GRACE,'+
-    'GRAND,GRANT,GRAVE,GREAT,GREEN,GUARD,GUESS,GUEST,GUIDE,HABIT,HAPPY,HARDY,HARSH,HATCH,HEART,HEAVY,HENCE,HORSE,HOTEL,HOUSE,'+
-    'HUMAN,IDEAL,IMAGE,INDEX,INNER,INPUT,JOINT,JUICE,JUMPY,KNIFE,KNOCK,KNOWN,LABEL,LAPSE,LARGE,LATER,LAYER,LEARN,LEAST,LEAVE,'+
-    'LEGAL,LEVEL,LIGHT,LIMIT,LOCAL,LOGIC,LOOSE,LOVER,LOWER,LOYAL,LUCKY,LUNAR,LUNCH,MAGIC,MAJOR,MATCH,MIGHT,MINOR,MIXED,MONEY,'+
-    'MONTH,MORAL,MOTOR,MOUNT,MOUSE,MOUTH,MOVIE,MUSIC,NEVER,NEWER,NIGHT,NOBLE,NOISE,NORTH,NOVEL,NURSE,OCEAN,OFFER,OFTEN,ORDER,'+
-    'ORGAN,OTHER,OUTER,OWNER,PAINT,PANEL,PAPER,PARTY,PEACE,PHONE,PIANO,PIECE,PILOT,PITCH,PLACE,PLAIN,PLATE,PLAZA,POINT,POUND,'+
-    'POWER,PRESS,PRICE,PRIDE,PRIZE,PROUD,QUEEN,QUICK,QUIET,QUITE,RADIO,RAISE,RANGE,RAPID,RATIO,REACH,READY,REALM,REBEL,REFER,'+
-    'RELAX,REPLY,RIDGE,RIGHT,RIVAL,RIVER,ROBIN,ROUND,ROUTE,ROYAL,SCALE,SCENE,SCOPE,SCORE,SENSE,SHADE,SHAKE,SHALL,SHAPE,SHARP,'+
-    'SHEER,SHEET,SHELF,SHELL,SHIFT,SHINE,SHIRT,SHOCK,SHONE,SHOOT,SHORE,SHORT,SHOWN,SIGHT,SILLY,SINCE,SKILL,SLEEP,SLIDE,SMALL,'+
-    'SMART,SMILE,SMOKE,SNAKE,SOLID,SOLVE,SORRY,SOUND,SOUTH,SPACE,SPARE,SPEAK,SPEED,SPELL,SPEND,SPLIT,SPOKE,SPORT,STAFF,STAGE,'+
-    'STAND,START,STATE,STEAM,STEEL,STEEP,STEER,STICK,STILL,STOCK,STONE,STOOD,STORE,STORM,STORY,STOUT,STRAP,STRAW,STUDY,STUFF,'+
-    'STYLE,SUGAR,SUITE,SUPER,SWEET,SWIFT,SWING,SWORN,TABLE,TASTE,TEACH,TENSE,TERRY,THANK,THEFT,THEIR,THEME,THERE,THESE,THICK,'+
-    'THING,THINK,THIRD,THOSE,THREE,THREW,THROW,THUMB,TIGER,TIGHT,TIMER,TODAY,TOOTH,TOPIC,TOTAL,TOUCH,TOUGH,TOWER,TRACK,TRADE,'+
-    'TRAIL,TRAIN,TREAT,TREND,TRIAL,TRIBE,TRICK,TRIED,TRUCK,TRULY,TRUNK,TRUST,TRUTH,TWICE,UNDER,UNION,UNITY,UNTIL,UPPER,UPSET,'+
-    'URBAN,USAGE,USUAL,VALID,VALUE,VIDEO,VISIT,VITAL,VOCAL,VOICE,WAIST,WATCH,WATER,WHEEL,WHERE,WHICH,WHILE,WHITE,WHOLE,WORLD,'+
-    'WORRY,WORSE,WORST,WORTH,WOULD,WRITE,WRONG,WROTE,YOUNG,YOUTH').split(',');
-  var VALID={};for(var i=0;i<WORDS.length;i++)VALID[WORDS[i]]=1;
+window._gameFns.sprout=function GPW(a){
+  var answer='',row=0,col=0,grid=[],done=false;
+  var keyState={}; // letter -> 'hit'|'near'|'miss'
+  ms(a,'Guess: <strong id="PWg">0</strong>/6');
+  mm(a,'Find the 5-letter word');
+  var wrap=document.createElement('div');wrap.className='pw-board';wrap.id='PWboard';a.appendChild(wrap);
+  var msg=document.createElement('div');msg.className='pw-msg';msg.id='PWmsg';a.appendChild(msg);
+  var kb=document.createElement('div');kb.className='pw-keyboard';kb.id='PWkb';a.appendChild(kb);
+  mc(a).innerHTML='<button class="gb" onclick="window._PWNew()">🔄 New Word</button>';
 
-  var secret='',guesses=[],current='',done=false,won=false;
-  var keyState={}; // letter -> 'g','y','x'
+  function pickWord(){return WORDS[Math.floor(Math.random()*WORDS.length)];}
 
-  ms(a,'Sprout · <span id="SPms">Guess the word</span>');
-  mm(a);
-  var pan=document.createElement('div');pan.id='SPpan';
-  pan.style.cssText='max-width:420px;margin:0 auto;padding:8px;';
-  a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb" onclick="_SPRN()">🌱 NEW</button>';
-
-  function newGame(){
-    secret=WORDS[Math.floor(Math.random()*WORDS.length)];
-    guesses=[];current='';done=false;won=false;keyState={};
-    sm('Guess the 5-letter word');
-    render();
-  }
-
-  function evaluate(guess){
-    var res=['x','x','x','x','x'];
-    var used=[0,0,0,0,0];
-    for(var i=0;i<5;i++){
-      if(guess.charAt(i)===secret.charAt(i)){res[i]='g';used[i]=1;}
-    }
-    for(i=0;i<5;i++){
-      if(res[i]==='g')continue;
-      for(var j=0;j<5;j++){
-        if(!used[j]&&guess.charAt(i)===secret.charAt(j)){res[i]='y';used[j]=1;break;}
-      }
-    }
-    return res;
-  }
-
-  function submit(){
-    if(done||current.length!==5)return;
-    if(!VALID[current]){
-      var ms1=document.getElementById('SPms');if(ms1)ms1.textContent='Not in word list';
-      return;
-    }
-    var res=evaluate(current);
-    guesses.push({w:current,r:res});
-    // Update keyboard state (g>y>x priority)
-    for(var i=0;i<5;i++){
-      var ch=current.charAt(i),s=res[i];
-      if(keyState[ch]==='g')continue;
-      if(s==='g')keyState[ch]='g';
-      else if(s==='y'&&keyState[ch]!=='g')keyState[ch]='y';
-      else if(!keyState[ch])keyState[ch]='x';
-    }
-    if(current===secret){
-      done=true;won=true;
-      _e('game_win');_playWin();sm('✓ Solved in '+guesses.length+'!');
-      _sr('sprout',{w:true,s:guesses.length});
-    } else if(guesses.length>=6){
-      done=true;
-      _e('game_loss');_play('lose');sm('The word was '+secret);
-      _sr('sprout',{w:false,s:6});
-    } else {
-      _e('progress');
-    }
-    current='';render();
-  }
-
-  function render(){
-    var h='';
-    var COLORS={g:'#538D3E',y:'#B59F3B',x:'#3A3A3C','':'rgba(26,31,23,0.5)'};
-    h+='<div style="display:flex;flex-direction:column;gap:4px;align-items:center;margin:8px 0;">';
+  function buildBoard(){
+    wrap.innerHTML='';grid=[];
     for(var r=0;r<6;r++){
-      h+='<div style="display:flex;gap:4px;">';
-      var gd=guesses[r];
-      var wd=gd?gd.w:(r===guesses.length?current:'');
+      var rowEl=document.createElement('div');rowEl.className='pw-row';
+      var cells=[];
       for(var c=0;c<5;c++){
-        var ch=wd.charAt(c)||'';
-        var st=gd?gd.r[c]:'';
-        var bg=gd?COLORS[st]:'rgba(26,31,23,0.5)';
-        var bc=gd?bg:(ch?'rgba(122,179,86,0.5)':'rgba(122,179,86,0.2)');
-        h+='<div style="width:52px;height:52px;background:'+bg+';border:2px solid '+bc+';border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:1.6rem;color:#e8dcc8;font-weight:700;">'+ch+'</div>';
+        var cell=document.createElement('div');cell.className='pw-cell';
+        rowEl.appendChild(cell);cells.push(cell);
       }
-      h+='</div>';
+      wrap.appendChild(rowEl);grid.push(cells);
     }
-    h+='</div>';
-    // Keyboard
-    var rows=['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'];
-    h+='<div style="margin-top:12px;">';
-    for(var rr=0;rr<3;rr++){
-      h+='<div style="display:flex;gap:3px;justify-content:center;margin-bottom:4px;">';
-      if(rr===2){h+='<button onclick="_SPRK(\'ENT\')" style="min-width:44px;height:48px;padding:0 8px;background:rgba(122,179,86,0.3);border:1px solid rgba(122,179,86,0.5);border-radius:4px;color:#e8dcc8;font-family:Bebas Neue,sans-serif;font-size:0.75rem;cursor:pointer;">ENTER</button>';}
-      for(var k=0;k<rows[rr].length;k++){
-        var L=rows[rr].charAt(k);
-        var kb=keyState[L];
-        var kbg=kb==='g'?'#538D3E':kb==='y'?'#B59F3B':kb==='x'?'#3A3A3C':'rgba(122,179,86,0.2)';
-        h+='<button onclick="_SPRK(\''+L+'\')" style="width:30px;height:48px;background:'+kbg+';border:1px solid rgba(122,179,86,0.3);border-radius:4px;color:#e8dcc8;font-family:DM Mono,monospace;font-size:0.9rem;font-weight:700;cursor:pointer;">'+L+'</button>';
-      }
-      if(rr===2){h+='<button onclick="_SPRK(\'BS\')" style="min-width:44px;height:48px;padding:0 8px;background:rgba(122,179,86,0.3);border:1px solid rgba(122,179,86,0.5);border-radius:4px;color:#e8dcc8;font-family:Bebas Neue,sans-serif;font-size:0.75rem;cursor:pointer;">⌫</button>';}
-      h+='</div>';
-    }
-    h+='</div>';
-    pan.innerHTML=h;
   }
 
-  window._SPRK=function(k){
-    if(done)return;
-    if(k==='ENT'){submit();return;}
-    if(k==='BS'){current=current.slice(0,-1);render();return;}
-    if(current.length<5){current+=k;render();}
-  };
-  window._SPRN=function(){newGame();};
+  function buildKeyboard(){
+    kb.innerHTML='';
+    for(var r=0;r<KEY_ROWS.length;r++){
+      var rowEl=document.createElement('div');rowEl.className='pw-krow';
+      if(r===2){
+        var enter=document.createElement('button');enter.className='pw-key pw-wide';enter.textContent='ENTER';enter.setAttribute('data-k','enter');
+        enter.onclick=function(){submitGuess();};
+        rowEl.appendChild(enter);
+      }
+      var letters=KEY_ROWS[r];
+      for(var i=0;i<letters.length;i++){
+        var k=document.createElement('button');k.className='pw-key';k.textContent=letters[i];k.setAttribute('data-k',letters[i]);
+        k.onclick=(function(letter){return function(){typeLetter(letter);};})(letters[i]);
+        rowEl.appendChild(k);
+      }
+      if(r===2){
+        var del=document.createElement('button');del.className='pw-key pw-wide';del.innerHTML='⌫';del.setAttribute('data-k','back');
+        del.onclick=function(){deleteLetter();};
+        rowEl.appendChild(del);
+      }
+      kb.appendChild(rowEl);
+    }
+  }
 
-  newGame();
+  function showMsg(t){msg.textContent=t;}
+
+  function typeLetter(ch){
+    if(done||row>=6||col>=5)return;
+    grid[row][col].textContent=ch;
+    grid[row][col].classList.add('pw-typed');
+    col++;
+    _play('tap');
+  }
+
+  function deleteLetter(){
+    if(done||col<=0)return;
+    col--;
+    grid[row][col].textContent='';
+    grid[row][col].classList.remove('pw-typed');
+  }
+
+  function shakeRow(r){
+    for(var c=0;c<5;c++){
+      grid[r][c].classList.add('pw-shake');
+      (function(cell){setTimeout(function(){cell.classList.remove('pw-shake');},420);})(grid[r][c]);
+    }
+  }
+
+  function buildGuess(){
+    var g='';for(var c=0;c<5;c++)g+=(grid[row][c].textContent||'').toLowerCase();
+    return g;
+  }
+
+  function submitGuess(){
+    if(done)return;
+    if(col<5){showMsg('Need 5 letters');shakeRow(row);return;}
+    var guess=buildGuess();
+    if(WORDS.indexOf(guess)<0){showMsg('Not in word list');shakeRow(row);return;}
+    showMsg('');
+    // Score the guess: handle duplicate letters correctly. First pass
+    // marks exact hits and consumes those letters from the answer pool.
+    // Second pass marks remaining letters as near or miss.
+    var status=['miss','miss','miss','miss','miss'];
+    var ansArr=answer.split('');
+    var taken=[false,false,false,false,false];
+    for(var c=0;c<5;c++){
+      if(guess[c]===ansArr[c]){status[c]='hit';taken[c]=true;}
+    }
+    for(var c=0;c<5;c++){
+      if(status[c]==='hit')continue;
+      for(var k=0;k<5;k++){
+        if(!taken[k]&&guess[c]===ansArr[k]){status[c]='near';taken[k]=true;break;}
+      }
+    }
+    // Animate each cell with a flip + color, staggered for satisfaction
+    for(var c=0;c<5;c++){
+      (function(c){
+        setTimeout(function(){
+          var cell=grid[row][c];
+          cell.classList.add('pw-flip');
+          cell.classList.remove('pw-typed');
+          setTimeout(function(){
+            cell.classList.add('pw-'+status[c]);
+            // Update keyboard color (only upgrade severity: miss→near→hit)
+            var letter=guess[c];
+            var cur=keyState[letter];var next=status[c];
+            var rank={miss:1,near:2,hit:3};
+            if(!cur||rank[next]>rank[cur]){
+              keyState[letter]=next;
+              var keyEl=kb.querySelector('[data-k="'+letter+'"]');
+              if(keyEl){
+                keyEl.classList.remove('pw-hit','pw-near','pw-miss');
+                keyEl.classList.add('pw-'+next);
+              }
+            }
+          },280);
+        },c*220);
+      })(c);
+    }
+    // After all flips finish, evaluate end state
+    setTimeout(function(){
+      if(guess===answer){
+        done=true;
+        var bonus=6-row; // remaining guesses
+        // Reward scaled by efficiency. _e()'s "milestone" gives a small
+        // hash bump per remaining guess; "game_win" is the main grant.
+        for(var b=0;b<bonus;b++)_e('milestone');
+        _e('game_win');
+        if(_playWin)_playWin();
+        showMsg('🌿 Solved in '+(row+1)+'!');
+        _sr('sprout',{w:true,s:row+1});
+      } else {
+        row++;col=0;
+        var gEl=document.getElementById('PWg');if(gEl)gEl.textContent=row;
+        if(row>=6){
+          done=true;
+          showMsg('🥀 The word was: '+answer.toUpperCase());
+          _sr('sprout',{w:false,s:answer});
+        }
+      }
+    },5*220+320);
+  }
+
+  // Hardware keyboard support (on devices with one)
+  function onKey(e){
+    if(done)return;
+    if(e.key==='Enter'){submitGuess();e.preventDefault();return;}
+    if(e.key==='Backspace'){deleteLetter();e.preventDefault();return;}
+    var ch=(e.key||'').toLowerCase();
+    if(ch.length===1&&ch>='a'&&ch<='z')typeLetter(ch);
+  }
+  document.addEventListener('keydown',onKey);
+  // Cleanup on game switch (game-active class drops when player exits)
+  var watcher=setInterval(function(){
+    if(!document.body.classList.contains('game-active')){
+      document.removeEventListener('keydown',onKey);
+      clearInterval(watcher);
+    }
+  },1000);
+
+  window._PWNew=function(){
+    answer=pickWord();row=0;col=0;done=false;keyState={};
+    var gEl=document.getElementById('PWg');if(gEl)gEl.textContent='0';
+    showMsg('');buildBoard();buildKeyboard();
+  };
+  _PWNew();
 };
 })();
