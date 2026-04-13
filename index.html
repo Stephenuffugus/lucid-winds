@@ -9132,8 +9132,53 @@ document.addEventListener('keydown', function(e) {
   var demoActive = false;
   var demoPheno = null;
 
+  // Per-game rules registry. Games (or callers) populate
+  // window._gameRules[id] with detailed HTML strings. The ? button
+  // routes to the entry matching the active game. Falls through to
+  // the Three Sisters interactive tutorial only when the active game
+  // is SET (or no game is active).
+  window._gameRules = window._gameRules || {};
+
+  // Generic rules modal renderer. Shows registered rules HTML if
+  // available, otherwise falls back to the short blurb from G[].r
+  // so every game gets at least a basic rules card.
+  window._showGameRules = function(gameId){
+    if (document.getElementById('tutorial-overlay')) { closeTutorial(); return; }
+    var gameMeta=null;
+    try {
+      if (window.G && window.G.length) {
+        for (var i=0;i<window.G.length;i++) if (window.G[i].id===gameId){gameMeta=window.G[i];break;}
+      }
+    } catch(e){}
+    var name = gameMeta ? gameMeta.n : 'How to Play';
+    var detailedRules = window._gameRules[gameId] || null;
+    var fallbackRules = gameMeta ? gameMeta.r : 'Detailed rules coming soon.';
+    var bodyHTML = detailedRules || ('<p style="font-family:DM Sans,sans-serif;font-size:0.85rem;line-height:1.6;color:var(--cream);margin:0;">'+fallbackRules+'</p>');
+
+    var ov = document.createElement('div');
+    ov.id = 'tutorial-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(5,7,4,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:1rem;';
+    ov.onclick = function(e){if(e.target===ov)closeTutorial();};
+    ov.innerHTML =
+      '<div style="max-width:420px;width:100%;max-height:84vh;overflow-y:auto;background:linear-gradient(180deg,rgba(20,28,18,0.97),rgba(13,16,12,0.98));border:1.5px solid rgba(200,168,75,0.3);border-radius:14px;padding:1.4rem 1.2rem;box-shadow:0 16px 48px rgba(0,0,0,0.7);font-family:DM Sans,sans-serif;color:var(--cream);">'+
+        '<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:var(--gold);letter-spacing:0.12em;text-align:center;margin-bottom:6px;">'+name+'</div>'+
+        '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;letter-spacing:0.1em;margin-bottom:1.1rem;">HOW TO PLAY</div>'+
+        '<div style="font-size:0.78rem;line-height:1.65;">'+bodyHTML+'</div>'+
+        '<button onclick="closeTutorial()" style="display:block;width:100%;margin-top:1.2rem;padding:0.65rem;min-height:48px;background:linear-gradient(180deg,rgba(46,40,32,0.7),rgba(32,30,24,0.8));border:1px solid rgba(200,168,75,0.25);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;border-radius:8px;cursor:pointer;">I GOT IT</button>'+
+      '</div>';
+    document.body.appendChild(ov);
+  };
+
   window.triggerTutorialDemo = function() {
     if (document.getElementById('tutorial-overlay')) { closeTutorial(); return; }
+    // Route per-game help: if the active game has registered detailed
+    // rules OR if it's not Three Sisters, show a rules modal instead
+    // of the SET interactive demo (which is irrelevant to other games).
+    var activeId = window._a;
+    if (activeId && activeId !== 'set') {
+      window._showGameRules(activeId);
+      return;
+    }
 
     // ── TUTORIAL MINI-GAME — sandboxed, plays like real game ──
     var colors;
@@ -39116,7 +39161,9 @@ var G=[
 {id:'seedtoss2',n:'Seed Toss',i:'\ud83c\udf31',r:'Flick seeds into the pot. Physics + wind at higher levels. Hit the bullseye!',cat:'creative',thumb:'assets/games/thumbs/seedtoss2.png'},
 {id:'pottingbench',n:'Potting Bench',i:'\ud83e\udeb4',r:'Speed card sorting. Match any attribute to send a card to either pile. Clear the deck fast!',cat:'card',thumb:'assets/games/thumbs/pottingbench.png'}
 ];
+window.G=G;          // expose so rules-modal + other helpers can look up game metadata
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
+window._a=_a;        // keep window in sync for external readers (rules modal, switchTab)
 // ═══ HASH ACCUMULATION BUFFER ═══
 // 32 bytes = 64 hex chars. Buffer starts random-seeded so rarity distribution
 // is correct from byte 0. Each hash earned XORs additional entropy on top.
@@ -39872,7 +39919,7 @@ window._G={
 };
 var _gameLoading={};
 // ═══ GAME SWITCH ═══
-window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;_m=Math.min(_hashFilled,30);_dm=1.0;
+window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;window._a=id;_m=Math.min(_hashFilled,30);_dm=1.0;
   document.querySelectorAll('.fg-c').forEach(function(c){c.classList.toggle('on',c.getAttribute('data-g')===id)});
   var sw=document.getElementById('sw'),ag=document.getElementById('fg-ag'),gps=document.getElementById('gp-strip'),ssb=document.getElementById('set-status');
   var _solGames={golf:1,klondike:1,spider:1,freecell:1,pyramid:1,tripeaks:1};
