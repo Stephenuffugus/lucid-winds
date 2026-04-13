@@ -50100,6 +50100,7 @@ function _bosClassContent() {
   h += '<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--muted);margin-bottom:0.8rem;line-height:1.6;">Choose one path. Each level unlocks an ability. Master rank unlocks companion synergy. Progress is slow — play long-term.</div>';
 
   for (var cid in LW_CLASSES) {
+    if (!LW_CLASSES.hasOwnProperty(cid)) continue;
     var def = LW_CLASSES[cid];
     var lvl = getClassLevel(cid);
     var xp = classXP[cid] || 0;
@@ -50112,7 +50113,7 @@ function _bosClassContent() {
     h += '<div style="font-size:1.6rem;">' + def.icon + '</div>';
     h += '<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:' + (picked ? 'var(--gold)' : 'var(--cream)') + ';letter-spacing:0.08em;">' + def.name.toUpperCase() + (picked ? ' · L' + lvl : '') + '</div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">' + def.desc + '</div></div>';
-    if (!cur) h += '<button onclick="if(confirm(\'Choose ' + def.name + '? You can respec later for Pi.\')){localStorage.setItem(\'lw_class\',\'' + cid + '\');_bosSetTab(\'class\');}" style="min-height:40px;padding:6px 10px;font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;background:rgba(122,179,86,0.2);border:1.5px solid var(--sage);color:var(--sage);border-radius:8px;cursor:pointer;">CHOOSE</button>';
+    if (!cur) h += '<button onclick="window._lwPickClass(\'' + cid + '\',\'' + def.name + '\',\'' + def.icon + '\')" style="min-height:40px;padding:6px 10px;font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;background:rgba(122,179,86,0.2);border:1.5px solid var(--sage);color:var(--sage);border-radius:8px;cursor:pointer;">CHOOSE</button>';
     h += '</div>';
     if (picked) {
       h += '<div style="margin:0.3rem 0;"><div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);"><span>XP: ' + xp + '</span><span>Next: ' + nextXP + '</span></div>';
@@ -50133,6 +50134,7 @@ function _bosClassContent() {
   // Tools section
   h += '<div style="margin-top:1.2rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.5rem;">TOOLS</div>';
   for (var tid in LW_TOOLS) {
+    if (!LW_TOOLS.hasOwnProperty(tid)) continue;
     var tdef = LW_TOOLS[tid];
     var tlvl = getToolLevel(tid);
     var txp = toolXP[tid] || 0;
@@ -50920,6 +50922,18 @@ function _lwGetToolLevel(toolId){
   if(x>=LW_TOOL_XP_L2)return 2;
   return 1;
 }
+// Canonical class picker — confirmation, haptic, toast, sync
+window._lwPickClass=function(cid,nm,icon){
+  if(!cid||!LW_CLASSES[cid])return;
+  if(!confirm('Choose '+nm+'? This is a long-term commitment.'))return;
+  try{localStorage.setItem('lw_class',cid);}catch(e){}
+  try{if(window._haptic)window._haptic();}catch(e){}
+  try{if(window._toast)window._toast(icon+' You chose '+nm+'. Begin your path.');}catch(e){}
+  try{if(window._playWin)window._playWin();}catch(e){}
+  try{if(window.syncVaultToCloud)setTimeout(window.syncVaultToCloud,400);}catch(e){}
+  try{if(typeof gtag!=='undefined')gtag('event','class_picked',{cls:cid});}catch(e){}
+  if(window._bosSetTab)window._bosSetTab('class');
+};
 // Biome match: +25% class XP, 1.5x tool effect when playing Wild in class biome
 function _lwBiomeMatch(){
   var cls=_lwGetClass();if(!cls)return false;
