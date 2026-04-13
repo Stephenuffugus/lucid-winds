@@ -24,7 +24,7 @@ if(!document.getElementById('bg-anim-style')){
     '.bg-played-W{animation:bgSlideW .32s cubic-bezier(.4,1.4,.5,1) both}'+
     '.bg-played-E{animation:bgSlideE .32s cubic-bezier(.4,1.4,.5,1) both}'+
     '@keyframes bgPulse{0%{box-shadow:0 0 0 0 rgba(200,168,75,.6)}70%{box-shadow:0 0 0 8px rgba(200,168,75,0)}100%{box-shadow:0 0 0 0 rgba(200,168,75,0)}}'+
-    '.bg-dealer-badge{display:inline-block;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#c8a84b,#8a6a30);color:#0d100c;font-family:Bebas Neue,sans-serif;font-size:0.65rem;font-weight:700;text-align:center;line-height:18px;margin-left:5px;animation:bgPulse 2s ease-in-out infinite;vertical-align:middle;}'+
+    '.bg-dealer-badge{display:inline-block;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#c8a84b,#8a6a30);color:#0d100c;font-family:Bebas Neue,sans-serif;font-size:0.95rem;font-weight:700;text-align:center;line-height:24px;margin-left:6px;animation:bgPulse 2s ease-in-out infinite;vertical-align:middle;box-shadow:0 0 8px rgba(200,168,75,0.5);}'+
     '.bg-active{outline:2px solid var(--gold,#c8a84b);outline-offset:2px;border-radius:8px;animation:bgPulse 1.4s ease-in-out infinite}';
   document.head.appendChild(_bgs);
 }
@@ -324,26 +324,40 @@ window._gameFns.bowergarden = function BG(a){
     // Helper for the dealer badge so it's consistent everywhere
     function dealerBadge(seat){return seat===dealer?'<span class="bg-dealer-badge" title="Dealer">D</span>':'';}
     function activeClass(seat){return (seat===currentPlayer&&(phase==='play'||phase==='call1'||phase==='call2'))?' bg-active':'';}
-    // Score banner
-    h+='<div style="background:linear-gradient(135deg,rgba(26,31,23,0.85),rgba(13,16,12,0.9));border:1.5px solid rgba(122,179,86,0.25);border-radius:10px;padding:8px 12px;margin:4px 0;display:flex;justify-content:space-around;align-items:center;font-family:Bebas Neue,sans-serif;font-size:0.85rem;">';
-    h+='<div><span style="color:var(--sage);">YOU + PARTNER</span> <strong style="color:var(--gold);font-size:1.1rem;">'+teamScore[0]+'</strong> <span style="color:var(--muted);font-size:0.55rem;">Tricks:'+teamTricks[0]+'</span></div>';
-    h+='<div><span style="color:#c47a7a;">OPPONENTS</span> <strong style="color:var(--gold);font-size:1.1rem;">'+teamScore[1]+'</strong> <span style="color:var(--muted);font-size:0.55rem;">Tricks:'+teamTricks[1]+'</span></div>';
+    // Score banner — readability pass: scores are big, but tricks
+    // counters were 0.55rem and unreadable mid-game. Bumped to a
+    // dedicated row with its own visual weight.
+    h+='<div style="background:linear-gradient(135deg,rgba(26,31,23,0.9),rgba(13,16,12,0.95));border:1.5px solid rgba(122,179,86,0.3);border-radius:12px;padding:10px 14px;margin:6px 0;font-family:Bebas Neue,sans-serif;">';
+    h+='<div style="display:flex;justify-content:space-around;align-items:baseline;font-size:0.95rem;">';
+    h+='<div style="text-align:center;"><div style="color:var(--sage);font-size:0.7rem;letter-spacing:0.08em;">YOU + PARTNER</div><div style="color:var(--gold);font-size:1.8rem;line-height:1;margin-top:2px;">'+teamScore[0]+'</div></div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);letter-spacing:0.1em;align-self:center;">to 10</div>';
+    h+='<div style="text-align:center;"><div style="color:#c47a7a;font-size:0.7rem;letter-spacing:0.08em;">OPPONENTS</div><div style="color:var(--gold);font-size:1.8rem;line-height:1;margin-top:2px;">'+teamScore[1]+'</div></div>';
     h+='</div>';
-    // Tall (leading suit) indicator + dealer name
-    var dealerLine='<div style="text-align:center;padding:2px;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);letter-spacing:0.06em;">DEALER: <span style="color:var(--gold);">'+PLAYER_NAMES[dealer]+'</span></div>';
-    h+=dealerLine;
+    // Dedicated tricks row — visible without squinting
     if(trumpSuit){
-      h+='<div style="text-align:center;padding:4px;font-family:DM Mono,monospace;font-size:0.7rem;color:var(--gold);">STRONG: <span style="font-size:1.2rem;vertical-align:middle;color:'+(trumpSuit==='hearts'||trumpSuit==='diamonds'?'#c47a7a':'var(--cream)')+';">'+SUIT_ICONS[trumpSuit]+'</span></div>';
+      h+='<div style="display:flex;justify-content:space-around;margin-top:8px;padding-top:8px;border-top:1px solid rgba(122,179,86,0.2);font-family:DM Mono,monospace;font-size:0.85rem;letter-spacing:0.06em;">';
+      h+='<div style="color:var(--cream);">Tricks: <strong style="color:var(--sage);font-size:1.2rem;">'+teamTricks[0]+'</strong></div>';
+      h+='<div style="color:var(--cream);">Tricks: <strong style="color:#e8a0a0;font-size:1.2rem;">'+teamTricks[1]+'</strong></div>';
+      h+='</div>';
     }
+    h+='</div>';
+    // Strong (called suit) + dealer name — bumped from 0.55/0.7 to 0.75/0.95
+    h+='<div style="display:flex;gap:14px;justify-content:center;align-items:center;padding:6px 4px;flex-wrap:wrap;">';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.75rem;color:var(--muted);letter-spacing:0.08em;">DEALER: <span style="color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.06em;">'+PLAYER_NAMES[dealer]+'</span></div>';
+    if(trumpSuit){
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.85rem;color:var(--gold);letter-spacing:0.08em;">STRONG: <span style="font-size:1.6rem;vertical-align:middle;color:'+(trumpSuit==='hearts'||trumpSuit==='diamonds'?'#c47a7a':'var(--cream)')+';">'+SUIT_ICONS[trumpSuit]+'</span></div>';
+    }
+    if(loner)h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--gold);letter-spacing:0.1em;background:rgba(200,168,75,0.15);padding:3px 10px;border-radius:6px;border:1px solid rgba(200,168,75,0.4);">⚡ LONER</div>';
+    h+='</div>';
     // North (partner) hand - face down. Bumped to 38x52 (was 32x44).
     var northSittingOut=(loner&&sittingOut===NORTH);
-    h+='<div style="text-align:center;padding:6px;'+(northSittingOut?'opacity:0.35;':'')+'" class="bg-seat'+activeClass(NORTH)+'"><div style="font-size:0.55rem;color:var(--muted);margin-bottom:4px;">PARTNER'+dealerBadge(NORTH)+(northSittingOut?' <span style="color:var(--gold);">(SITTING OUT)</span>':'')+'</div><div style="display:flex;gap:3px;justify-content:center;">';
+    h+='<div style="text-align:center;padding:6px;'+(northSittingOut?'opacity:0.35;':'')+'" class="bg-seat'+activeClass(NORTH)+'"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:5px;">PARTNER'+dealerBadge(NORTH)+(northSittingOut?' <span style="color:var(--gold);font-size:0.65rem;">(SITTING OUT)</span>':'')+'</div><div style="display:flex;gap:3px;justify-content:center;">';
     for(var n=0;n<hands[NORTH].length;n++)h+='<div style="width:38px;height:52px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;"></div>';
     h+='</div></div>';
     // Middle: West | Trick | East. Bumped min-height + side card sizes.
     h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;">';
     // West — bumped to 32x46 (was 28x40)
-    h+='<div class="bg-seat'+activeClass(WEST)+'" style="padding:4px;"><div style="font-size:0.55rem;color:var(--muted);text-align:center;margin-bottom:4px;">WEST'+dealerBadge(WEST)+'</div><div style="display:flex;flex-direction:column;gap:3px;">';
+    h+='<div class="bg-seat'+activeClass(WEST)+'" style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">WEST'+dealerBadge(WEST)+'</div><div style="display:flex;flex-direction:column;gap:3px;">';
     for(var w=0;w<hands[WEST].length;w++)h+='<div style="width:32px;height:46px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;"></div>';
     h+='</div></div>';
     // Trick area — bumped min-height
@@ -366,12 +380,12 @@ window._gameFns.bowergarden = function BG(a){
     }
     h+='</div>';
     // East — bumped to 32x46
-    h+='<div class="bg-seat'+activeClass(EAST)+'" style="padding:4px;"><div style="font-size:0.55rem;color:var(--muted);text-align:center;margin-bottom:4px;">EAST'+dealerBadge(EAST)+'</div><div style="display:flex;flex-direction:column;gap:3px;">';
+    h+='<div class="bg-seat'+activeClass(EAST)+'" style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">EAST'+dealerBadge(EAST)+'</div><div style="display:flex;flex-direction:column;gap:3px;">';
     for(var e=0;e<hands[EAST].length;e++)h+='<div style="width:32px;height:46px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;"></div>';
     h+='</div></div>';
     h+='</div>';
     // South (player) hand
-    h+='<div class="bg-seat'+activeClass(SOUTH)+'" style="padding:6px;"><div style="font-size:0.55rem;color:var(--muted);text-align:center;margin-bottom:4px;">YOUR HAND'+dealerBadge(SOUTH)+'</div>';
+    h+='<div class="bg-seat'+activeClass(SOUTH)+'" style="padding:6px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:6px;">YOUR HAND'+dealerBadge(SOUTH)+'</div>';
     h+='<div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;">';
     var ls=trick.length>0?effSuit(trick[0].card,trumpSuit):'';
     var pl2=phase==='play'&&currentPlayer===SOUTH?playable(hands[SOUTH],trumpSuit,ls):[];
