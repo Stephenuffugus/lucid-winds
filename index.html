@@ -44659,13 +44659,20 @@ function GBW(a){
   };
   window._BWFreeze=function(){spinOn=!spinOn;var btn=document.getElementById('BWfrz');if(btn){btn.textContent=spinOn?'❄ FREEZE':'▶ RESUME';btn.className='gb'+(spinOn?'':' gon')}sm(spinOn?'Spinning':'Frozen — screenshot or save!')};
   window._BWClear=function(){bufX.clearRect(0,0,bufC.width,bufC.height);rotAngle=0;strokes=0;_bwCustomPath=[];_bwDrawingPath=false;_bwPathIdx=0;_bwPathT=0;cx=W/2;cy=H/2;var pb=document.getElementById('BWpath');if(pb)pb.textContent='◯ SPIN';sm('Canvas cleared')};
+  // Track whether this session has already minted a hash so save can't
+  // be tap-farmed for unlimited Sunbeams. Same pattern as pixelgarden.
+  var _bwWonThisSession=false;
   window._BWSave=function(){
     var sc=document.createElement('canvas');sc.width=W*dpr;sc.height=H*dpr;var sx=sc.getContext('2d');sx.setTransform(dpr,0,0,dpr,0,0);
     sx.fillStyle='#0d100c';sx.fillRect(0,0,W,H);sx.save();sx.beginPath();sx.arc(cx,cy,radius,0,Math.PI*2);sx.clip();sx.drawImage(bufC,0,0,W,H);sx.restore();
     sx.beginPath();sx.arc(cx,cy,radius,0,Math.PI*2);sx.strokeStyle='rgba(74,124,53,0.3)';sx.lineWidth=2;sx.stroke();
     sx.fillStyle='rgba(232,220,200,0.2)';sx.font='10px Bebas Neue,sans-serif';sx.textAlign='center';sx.fillText('BLOOM WHEEL — LUCID WINDS',cx,H-10);
     var lk=document.createElement('a');lk.download='bloom-wheel-'+Date.now()+'.png';lk.href=sc.toDataURL('image/png');lk.click();
-    _e('game_win');_playWin();_sr('bloomwheel',{w:true,s:Math.round((Date.now()-startT)/1000)});sm('Mandala saved!')};
+    _playWin();sm('Mandala saved!');
+    // First save per session mints; subsequent saves only milestone.
+    if(!_bwWonThisSession){_bwWonThisSession=true;_e('game_win');_sr('bloomwheel',{w:true,s:Math.round((Date.now()-startT)/1000)});}
+    else _e('milestone');
+  };
 
   // Hash earning — 1 per 60 seconds of active drawing (track interval so we can clear on teardown)
   if(window._bwHashInt){try{clearInterval(window._bwHashInt);}catch(e){}}
