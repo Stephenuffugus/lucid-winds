@@ -3207,7 +3207,13 @@
     @keyframes hashFloat{0%{opacity:0;transform:translateY(0) scale(.8)}15%{opacity:1;transform:translateY(-4px) scale(1.1)}100%{opacity:0;transform:translateY(-28px) scale(.7)}}
 
     /* ── GAME AREA CONTAINER ── */
-    #fg-ag{display:none;flex-direction:column;padding:0 0 calc(var(--nav-h,58px) + var(--sb,0px)) 0;touch-action:pan-y;position:relative;z-index:1;}
+    /* Games can have tall content (technique grids, settings panels,
+       long rule cards). Give the container vertical scroll so creative
+       games like Meditation's 13-technique list are actually reachable
+       on short viewports. -webkit-overflow-scrolling keeps momentum on
+       iOS. touch-action:pan-y means child canvases that set their own
+       touch-action:none still claim gestures from their surface. */
+    #fg-ag{display:none;flex-direction:column;padding:0 0 calc(var(--nav-h,58px) + var(--sb,0px)) 0;touch-action:pan-y;position:relative;z-index:1;max-height:calc(100vh - 58px);overflow-y:auto;-webkit-overflow-scrolling:touch;}
     /* Game backgrounds: clean solid by default. Art available as cosmetic toggle. */
     #fg-ag.on{display:flex}
     #fg-ag.sol{background:radial-gradient(ellipse at 50% 30%,rgba(18,32,14,.95) 0%,rgba(8,14,6,.98) 60%,rgba(4,8,3,1) 100%)}
@@ -5467,8 +5473,10 @@ window._addSwitchTabHook = function(fn){
   <div id="px"><div id="pxd" style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);text-shadow:0 2px 12px rgba(200,168,75,0.4);">47m</div><div id="pxl" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--sage);">getting closer</div><div id="pxb" style="width:120px;height:4px;border-radius:2px;background:rgba(74,124,53,0.15);margin:6px auto 0;overflow:hidden;"><div id="pxf" style="height:100%;border-radius:2px;background:linear-gradient(90deg,var(--sage),var(--gold));width:0%;transition:width 0.5s;"></div></div></div>
   <!-- Step tracker -->
   <div id="stp" style="display:none;"><div class="stp-num" id="snv">0</div><div class="stp-lbl">steps</div><div class="stp-bar"><div class="stp-fill" id="sfv"></div></div><div class="stp-lbl" style="margin-top:2px;font-size:7px;">200 for gift</div></div>
-  <!-- Achievement bar -->
-  <div id="ab"><div class="abt"><span class="abv" id="abp">0/1</span> — harvest a plant to unlock slot 2</div><div class="abk"><div class="abf" id="abf" style="width:0%"></div></div></div>
+  <!-- Achievement bar — hidden. Slot-unlock progress belongs in the Book
+       (Quests) not in the always-on HUD where it overlapped the ← GAMES
+       button. ul() toasts still fire at the actual unlock moment. -->
+  <div id="ab" style="display:none !important;"><div class="abt"><span class="abv" id="abp">0/1</span> — harvest a plant to unlock slot 2</div><div class="abk"><div class="abf" id="abf" style="width:0%"></div></div></div>
   <!-- Backpack icon + badge -->
   <div id="bpi" onclick="BP.toggle()" style="display:none;"><div id="bpb" class="e">0</div></div>
   <!-- Backpack expanded L-shape -->
