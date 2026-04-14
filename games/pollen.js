@@ -34,7 +34,7 @@ window._gameFns.pollen = function PN(a){
     {slug:'blue-tailed-damselfly', name:'Blue-Tailed Damselfly',icon:'🜸', req:{blue:4,amber:2},        gp:3},
     {slug:'fruit-bat',             name:'Fruit Bat',           icon:'🦇', req:{spore:4,rose:2},        gp:3},
     {slug:'honey-possum',          name:'Honey Possum',        icon:'🐭', req:{green:2,rose:2,blue:2}, gp:3},
-    {slug:'black-and-white-pollinator',name:'Lesser Long-Nosed Bat',icon:'🦇', req:{rose:2,amber:2,spore:2}, gp:3}
+    {slug:'ruffled-lemur',         name:'Ruffled Lemur',       icon:'🐒', req:{rose:2,amber:2,spore:2}, gp:3}
   ];
   // Pollinators visible this game.
   function pollinatorCount(numPlayers){
@@ -673,7 +673,17 @@ window._gameFns.pollen = function PN(a){
   a.appendChild(pan);
   mc(a).innerHTML='<button class="gb-new" onclick="_PNnew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
-  function tokDot(c,sz){return '<span style="display:inline-block;width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+COLOR_HEX[c]+';border:1px solid rgba(0,0,0,0.2);vertical-align:middle;"></span>';}
+  // Token chip — uses Stephen's seed art (assets/games/masterpollinator/
+  // tokens/<color>.png) with a CSS-dot fallback if the PNG is missing.
+  // The img + bg-color combo means even if the PNG never loads, the
+  // chip still reads as the right color (no broken-image icon).
+  function tokDot(c,sz){
+    var src='assets/games/masterpollinator/tokens/'+c+'.png';
+    return '<span style="position:relative;display:inline-block;width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+COLOR_HEX[c]+';border:1px solid rgba(0,0,0,0.2);vertical-align:middle;overflow:hidden;">'
+      +'<img src="'+src+'" alt="" onerror="this.style.display=\'none\'" '
+      +'style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;pointer-events:none;">'
+      +'</span>';
+  }
 
   // Art-first renderer: if assets/games/masterpollinator/<slug>.png loads,
   // it fills the centre of the card. On 404 the img element is removed
