@@ -53,7 +53,11 @@ window._gameFns.pixelgarden = function PG(a){
   toolEl.style.cssText='display:flex;gap:4px;justify-content:center;padding:4px 0;flex-wrap:wrap;';
   pan.appendChild(toolEl);
 
-  mc(a).innerHTML='<button class="gb" onclick="_PGCLR()">CLEAR</button><button class="gb" onclick="_PGUN()">UNDO</button><button class="gb" onclick="_PGSV()">SAVE</button>';
+  mc(a).innerHTML='<button class="gb" onclick="_PGCLR()">CLEAR</button>'
+    +'<button class="gb" onclick="_PGUN()">UNDO</button>'
+    +'<button class="gb" onclick="_PGSV()">SAVE</button>'
+    +'<button class="gb" onclick="_PGGal()">📂 GALLERY</button>'
+    +'<button class="gb" onclick="_PGExport()">⬇ PNG</button>';
 
   function initGrid(){
     pixels=[];
@@ -176,10 +180,58 @@ window._gameFns.pixelgarden = function PG(a){
   window._PGGR=function(){showGrid=!showGrid;render();};
   window._PGCLR=function(){saveUndo();for(var r=0;r<GRID;r++)for(var c=0;c<GRID;c++)pixels[r][c]=null;render();sm('Cleared');};
   window._PGUN=function(){if(undoStack.length===0){sm('Nothing to undo');return;}pixels=undoStack.pop();render();_play('tap');};
-  // Track whether this session has already minted a hash so save can't
-  // be tap-farmed for unlimited Sunbeams.
-  var _pgWonThisSession=false;
-  window._PGSV=function(){
+  // ─── IN-APP GALLERY (save + load) ──────────────────────────────────
+  // Paintings live in localStorage under GAL_KEY as an array of
+  // {id, name, grid, pixels (rows of color strings or null), created}.
+  // Capped at GAL_MAX to stay under localStorage quota.
+  var GAL_KEY='lw_pixelgarden_gallery', GAL_MAX=24;
+  function galLoad(){
+    try{return JSON.parse(localStorage.getItem(GAL_KEY)||'[]');}catch(e){return [];}
+  }
+  function galWrite(arr){
+    try{localStorage.setItem(GAL_KEY,JSON.stringify(arr));}catch(e){
+      // Quota hit — shed oldest entries until it fits.
+      while(arr.length>0){arr.shift();try{localStorage.setItem(GAL_KEY,JSON.stringify(arr));return;}catch(e2){}}
+    }
+  }
+  function galSaveCurrent(name){
+    var gal=galLoad();
+    var entry={
+      id:'pg_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
+      name:name||('Untitled '+(gal.length+1)),
+      grid:GRID,
+      pixels:pixels.map(function(row){return row.slice();}),
+      created:Date.now()
+    };
+    gal.push(entry);
+    // Keep newest-first so oldest falls off on overflow.
+    if(gal.length>GAL_MAX)gal.splice(0,gal.length-GAL_MAX);
+    galWrite(gal);
+    return entry;
+  }
+  function galDelete(id){
+    var gal=galLoad().filter(function(e){return e.id!==id;});
+    galWrite(gal);
+  }
+  // Paint an entry into a tiny canvas for thumbnail display in the
+  // gallery modal. Returns a data URL.
+  function thumbDataURL(entry,size){
+    size=size||96;
+    var sc=document.createElement('canvas');
+    sc.width=size;sc.height=size;
+    var sx=sc.getContext('2d');
+    sx.imageSmoothingEnabled=false;
+    sx.fillStyle='#0d100c';sx.fillRect(0,0,size,size);
+    var cell=size/entry.grid;
+    for(var r=0;r<entry.grid;r++){
+      for(var c=0;c<entry.grid;c++){
+        var col=entry.pixels[r]&&entry.pixels[r][c];
+        if(col){sx.fillStyle=col;sx.fillRect(Math.floor(c*cell),Math.floor(r*cell),Math.ceil(cell),Math.ceil(cell));}
+      }
+    }
+    return sc.toDataURL('image/png');
+  }
+  function renderPNG(){
     var scale=GRID<=16?16:8;
     var sc=document.createElement('canvas');
     sc.width=GRID*scale;sc.height=GRID*scale;
@@ -191,16 +243,98 @@ window._gameFns.pixelgarden = function PG(a){
     sx.font=(scale*0.7)+'px sans-serif';
     sx.textAlign='right';
     sx.fillText('Lucid Winds',sc.width-4,sc.height-4);
-    var link=document.createElement('a');
-    link.download='pixel-garden-'+GRID+'x'+GRID+'-'+Date.now()+'.png';
-    link.href=sc.toDataURL('image/png');
-    link.click();
-    sm('Saved ('+totalPixels+' strokes)');
+    return sc.toDataURL('image/png');
+  }
+
+  // Track whether this session has already minted a hash so save can't
+  // be tap-farmed for unlimited Sunbeams.
+  var _pgWonThisSession=false;
+  window._PGSV=function(){
+    // SAVE = commit current work to the in-app gallery (not a file).
+    // Prompt for a name; empty input → auto-named.
+    var defName='Garden '+(new Date()).toLocaleDateString();
+    var name=(window.prompt&&window.prompt('Name this piece:',defName))||defName;
+    name=String(name).slice(0,40);
+    var entry=galSaveCurrent(name);
+    sm('Saved to Gallery: '+entry.name);
     _playWin();
-    // First save per session mints a hash; subsequent saves fire only
-    // a milestone for incremental Sunbeams. Stops the tap-save farm.
     if(!_pgWonThisSession){_pgWonThisSession=true;_e('game_win');_sr('pixelgarden',{w:true,s:totalPixels,sz:GRID});}
     else _e('milestone');
+  };
+  window._PGExport=function(){
+    var link=document.createElement('a');
+    link.download='pixel-garden-'+GRID+'x'+GRID+'-'+Date.now()+'.png';
+    link.href=renderPNG();
+    link.click();
+    sm('PNG exported');
+  };
+
+  // ─── GALLERY MODAL ─────────────────────────────────────────────────
+  window._PGGal=function(){
+    var ov=document.getElementById('PGgalOV');
+    if(ov){ov.remove();return;}
+    ov=document.createElement('div');
+    ov.id='PGgalOV';
+    ov.style.cssText='position:fixed;inset:0;z-index:99993;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.92);backdrop-filter:blur(10px);padding:12px;animation:panelFadeIn 0.3s ease;';
+    ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
+    document.body.appendChild(ov);
+    _renderGallery();
+  };
+  function _renderGallery(){
+    var ov=document.getElementById('PGgalOV');if(!ov)return;
+    var gal=galLoad();
+    var h='<div style="max-width:440px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:rgba(15,20,12,0.96);border:1px solid rgba(200,168,75,0.35);border-radius:12px;padding:16px;font-family:DM Mono,monospace;">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:0.12em;color:var(--gold);">📂 GALLERY</div>';
+    h+='<button class="gb" onclick="document.getElementById(\'PGgalOV\').remove()" style="min-height:44px;padding:6px 14px;">CLOSE</button>';
+    h+='</div>';
+    if(gal.length===0){
+      h+='<div style="text-align:center;padding:40px 10px;color:var(--muted);font-style:italic;font-size:0.75rem;line-height:1.5;">No saved paintings yet.<br>Create something, then hit SAVE to stash it here.</div>';
+    } else {
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:8px;">'+gal.length+' / '+GAL_MAX+' saved</div>';
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+      // Newest first for display
+      for(var i=gal.length-1;i>=0;i--){
+        var e=gal[i];
+        var thumb=thumbDataURL(e,96);
+        h+='<div style="background:rgba(26,31,23,0.7);border:1px solid rgba(74,124,53,0.2);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:4px;">';
+        h+='<img src="'+thumb+'" alt="" style="width:100%;aspect-ratio:1;border-radius:4px;image-rendering:pixelated;background:#0d100c;">';
+        h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--cream);letter-spacing:0.04em;word-break:break-word;">'+e.name+'</div>';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">'+e.grid+'×'+e.grid+'</div>';
+        h+='<div style="display:flex;gap:4px;margin-top:2px;">';
+        h+='<button class="gb" onclick="_PGLoad(\''+e.id+'\')" style="flex:1;min-height:44px;padding:6px;font-size:0.6rem;color:var(--sage);border-color:rgba(122,179,86,0.4);">LOAD</button>';
+        h+='<button class="gb" onclick="_PGDel(\''+e.id+'\')" style="min-height:44px;padding:6px 10px;font-size:0.6rem;color:var(--muted);border-color:rgba(138,145,120,0.25);">🗑</button>';
+        h+='</div>';
+        h+='</div>';
+      }
+      h+='</div>';
+    }
+    h+='</div>';
+    ov.innerHTML=h;
+  }
+  window._PGLoad=function(id){
+    var gal=galLoad();
+    var entry=null;
+    for(var i=0;i<gal.length;i++)if(gal[i].id===id){entry=gal[i];break;}
+    if(!entry)return;
+    saveUndo(); // allow UNDO to recover pre-load state
+    GRID=entry.grid;
+    var szEl=document.getElementById('PGsz');if(szEl)szEl.textContent=GRID+'×'+GRID;
+    // Reinit with loaded data
+    pixels=[];
+    for(var r=0;r<GRID;r++){
+      pixels[r]=[];
+      for(var c=0;c<GRID;c++)pixels[r][c]=(entry.pixels[r]&&entry.pixels[r][c])||null;
+    }
+    initCanvas();buildPalette();buildTools();render();
+    sm('Loaded: '+entry.name);
+    var ov=document.getElementById('PGgalOV');if(ov)ov.remove();
+    _play('tap');
+  };
+  window._PGDel=function(id){
+    if(!window.confirm||!window.confirm('Delete this painting? This cannot be undone.'))return;
+    galDelete(id);
+    _renderGallery();
   };
   window._PGSZ=function(s){
     GRID=s;
