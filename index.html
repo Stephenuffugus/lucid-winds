@@ -34704,8 +34704,8 @@ function _hydrateStepsUI(){
   }
 }
 function _checkStepMilestone(){
-  var el=document.getElementById('w-steps');if(!el)return;
-  var meters=parseInt(el.textContent||'0');
+  var s=_loadSteps();
+  var meters=s.today||0;
   var milestones=[500,1000,2500,5000,10000];
   for(var i=milestones.length-1;i>=0;i--){
     if(meters>=milestones[i]&&_lastStepMilestone<milestones[i]){
