@@ -53221,6 +53221,7 @@ function _bosSetTab(tab) {
   else if (tab === 'events') body.innerHTML = _bosEventsContent();
   else if (tab === 'class') body.innerHTML = _bosClassContent();
   else if (tab === 'activity') body.innerHTML = _bosActivityContent();
+  else if (tab === 'mementos') body.innerHTML = _bosMementosContent();
   var tabs = document.querySelectorAll('.bos-tab');
   for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('active', tabs[i].getAttribute('data-tab') === tab);
   // Update the active style for tabs (override gold for active, muted for inactive)
@@ -53431,6 +53432,241 @@ function _bosFormatWhen(ts) {
   return Math.floor(delta / 86400000) + 'd ago';
 }
 window._bosActivityContent = _bosActivityContent;
+
+// ─── MEMENTOS TAB — permanent companion keepsakes ───
+function _bosMementosContent() {
+  var collected = [];
+  try { collected = JSON.parse(localStorage.getItem('lw_companion_mementos') || '[]'); } catch(e) {}
+  var equipLog = {};
+  try { equipLog = JSON.parse(localStorage.getItem('lw_companion_first_equipped') || '{}'); } catch(e) {}
+  var now = Date.now();
+  var THIRTY = 30 * 86400000;
+
+  var h = '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);margin-bottom:0.7rem;line-height:1.6;">Keepsakes from companions you\u2019ve tended for 30+ days. Each is unique, earned once, yours forever.</div>';
+
+  if (!collected.length && !Object.keys(equipLog).length) {
+    h += '<div style="padding:1.2rem;text-align:center;color:var(--muted);font-family:DM Mono,monospace;font-size:0.5rem;line-height:1.7;">Equip your first companion on your character sheet.<br>After 30 days, they\u2019ll leave a keepsake here.</div>';
+    return h;
+  }
+
+  if (collected.length) {
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.08em;margin:0.5rem 0 0.4rem;">COLLECTED \u00b7 ' + collected.length + '</div>';
+    collected.sort(function(a,b){return (b.awardedAt||0)-(a.awardedAt||0);});
+    for (var i = 0; i < collected.length; i++) {
+      var m = collected[i];
+      var ago = now - (m.awardedAt || 0);
+      var agoTxt = ago < 86400000 ? 'today' : Math.floor(ago/86400000) + 'd ago';
+      h += '<div style="padding:0.6rem;margin-bottom:0.35rem;background:linear-gradient(180deg,rgba(32,28,18,0.65),rgba(18,22,16,0.8));border:1px solid rgba(200,168,75,0.3);border-left:3px solid var(--gold);border-radius:8px;">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+      h += '<span style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.06em;">\u2728 ' + m.name + '</span>';
+      h += '<span style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);">' + agoTxt + '</span>';
+      h += '</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);margin-top:4px;line-height:1.5;font-style:italic;">' + m.text + '</div>';
+      h += '</div>';
+    }
+  }
+
+  // In-progress companions (equipped but not 30 days yet)
+  var pending = [];
+  var ownedIdx = {};
+  for (var ci = 0; ci < collected.length; ci++) ownedIdx[collected[ci].idx] = true;
+  for (var idx in equipLog) {
+    if (ownedIdx[idx]) continue;
+    var elapsed = now - equipLog[idx];
+    if (elapsed < THIRTY) pending.push({ idx: parseInt(idx, 10), elapsed: elapsed, remaining: THIRTY - elapsed });
+  }
+  if (pending.length) {
+    pending.sort(function(a,b){return a.remaining-b.remaining;});
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:var(--sage);letter-spacing:0.08em;margin:0.9rem 0 0.4rem;">GROWING CLOSER \u00b7 ' + pending.length + '</div>';
+    for (var pi = 0; pi < pending.length; pi++) {
+      var p = pending[pi];
+      var m2 = window.LW_MEMENTOS ? LW_MEMENTOS[p.idx] : null;
+      var compName = 'Companion #' + p.idx;
+      try {
+        if (window.TRAIT_BANK && window.TRAIT_BANK.companions && window.TRAIT_BANK.companions[p.idx]) {
+          compName = window.TRAIT_BANK.companions[p.idx].name;
+        }
+      } catch(e) {}
+      var daysLeft = Math.ceil(p.remaining / 86400000);
+      var pct = Math.round((p.elapsed / THIRTY) * 100);
+      h += '<div style="padding:0.55rem;margin-bottom:0.35rem;background:rgba(18,22,16,0.55);border:1px solid rgba(74,124,53,0.18);border-radius:7px;">';
+      h += '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);margin-bottom:4px;"><span>' + compName + '</span><span style="color:var(--muted);">' + daysLeft + 'd to keepsake</span></div>';
+      h += '<div style="height:3px;background:rgba(122,179,86,0.1);border-radius:2px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,var(--sage),var(--gold));"></div></div>';
+      h += '</div>';
+    }
+  }
+
+  return h;
+}
+window._bosMementosContent = _bosMementosContent;
+
+// ═══ FORAGING GAME — data layer (Session 1 per spec) ═══
+// 6-element RPS-cycle deckbuilding for hex foraging. Replaces the 6
+// borrowed challenges (retention leak #1). UI lands in Session 2.
+// Full spec: docs/FORAGING_GAME_SPEC.md
+(function(){
+  var EL = {
+    sun:   { id:'sun',   icon:'\u2600\ufe0f', label:'Sun' },
+    shade: { id:'shade', icon:'\ud83c\udf11',  label:'Shade' },
+    rain:  { id:'rain',  icon:'\ud83d\udca7', label:'Rain' },
+    dry:   { id:'dry',   icon:'\ud83c\udfdc\ufe0f', label:'Dry' },
+    wind:  { id:'wind',  icon:'\ud83d\udca8', label:'Wind' },
+    still: { id:'still', icon:'\ud83d\udd47',  label:'Still' }
+  };
+  // Counter cycle: Sun -> Dry -> Rain -> Still -> Wind -> Shade -> Sun
+  // Each element BEATS the next. Each is BEATEN BY the previous.
+  var CYCLE = ['sun','dry','rain','still','wind','shade'];
+  function countered(by, target) {
+    var i = CYCLE.indexOf(by);
+    return i >= 0 && CYCLE[(i + 1) % 6] === target;
+  }
+
+  // Biome dominant/rare attributes — shapes hex generation probabilities.
+  var BIOME = {
+    forest:   { dom:['shade','still'], rare:['sun','dry'] },
+    desert:   { dom:['sun','dry'],     rare:['rain','still'] },
+    wetland:  { dom:['rain','still'],  rare:['dry','wind'] },
+    mountain: { dom:['wind','dry'],    rare:['rain','shade'] },
+    urban:    { dom:['still','sun'],   rare:['wind','rain'] },
+    coastal:  { dom:['rain','wind'],   rare:['sun','dry'] }
+  };
+
+  // Weather tilt — boosts one element based on current conditions.
+  // Reads from the reproduction weather cache to avoid double-fetching.
+  function currentTilt() {
+    try {
+      if (!window._reproWeather) return null;
+      var w = window._reproWeather;
+      if ((w.rain || 0) > 5) return 'rain';
+      if ((w.temp || 20) > 30) return 'sun';
+      if ((w.temp || 20) < 5) return 'still';
+      if ((w.wind || 0) > 20) return 'wind';
+      if ((w.rain || 0) === 0 && (w.wind || 0) === 0) return 'still';
+    } catch(e) {}
+    return null;
+  }
+
+  // Deterministic hex composition — same zone on same day produces the
+  // same hidden attributes so multiple attempts by the same player see
+  // a consistent puzzle. Generates 3 attributes from 6 elements.
+  // Bias: biome dominant = 2x weight, rare = 0.5x, neutral = 1x.
+  // Weather tilt adds +1 weight to the tilted element.
+  function hexComposition(zoneKey, biomeId) {
+    if (!biomeId) biomeId = (window._lastDetectedBiome || 'forest');
+    var def = BIOME[biomeId] || BIOME.forest;
+    var tilt = currentTilt();
+    var today = new Date().toISOString().slice(0, 10);
+    // Seed a PRNG from zoneKey + today + biome so composition is stable per day
+    var seed = 0;
+    var src = zoneKey + '|' + today + '|' + biomeId;
+    for (var i = 0; i < src.length; i++) seed = ((seed << 5) - seed + src.charCodeAt(i)) | 0;
+    var rng = function() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    var weights = {};
+    for (var k in EL) weights[k] = 1;
+    for (var di = 0; di < def.dom.length; di++) weights[def.dom[di]] *= 2;
+    for (var ri = 0; ri < def.rare.length; ri++) weights[def.rare[ri]] *= 0.5;
+    if (tilt && weights[tilt] !== undefined) weights[tilt] += 1;
+    // Weighted pick 3 without replacement
+    var picked = [];
+    var pool = Object.keys(weights);
+    for (var p = 0; p < 3; p++) {
+      var total = 0;
+      for (var pi = 0; pi < pool.length; pi++) total += weights[pool[pi]];
+      var roll = rng() * total;
+      var acc = 0;
+      for (var pk = 0; pk < pool.length; pk++) {
+        acc += weights[pool[pk]];
+        if (roll <= acc) {
+          picked.push(pool[pk]);
+          pool.splice(pk, 1);
+          break;
+        }
+      }
+    }
+    return { elements: picked, biome: biomeId, weather: tilt };
+  }
+
+  // Resolve a foraging attempt — 3 cards played against hex's 3 elements.
+  // Returns { matches, counters, neutrals, score, success, reveal }.
+  // reveal[i] = {card, hex, verdict: 'match'|'counter'|'neutral'}
+  function resolveAttempt(hexElements, cardsPlayed) {
+    if (!cardsPlayed || cardsPlayed.length !== 3) return null;
+    if (!hexElements || hexElements.length !== 3) return null;
+    var reveal = [];
+    var matches = 0, counters = 0, neutrals = 0;
+    // Each card pairs with hex element at same index for deterministic
+    // reveal (player sees exactly which card hit which slot).
+    for (var i = 0; i < 3; i++) {
+      var card = cardsPlayed[i], hex = hexElements[i];
+      var verdict;
+      if (card === hex) { verdict = 'match'; matches++; }
+      else if (countered(card, hex)) { verdict = 'counter'; counters++; }
+      else { verdict = 'neutral'; neutrals++; }
+      reveal.push({ card: card, hex: hex, verdict: verdict });
+    }
+    var score = matches * 2 + counters; // match worth 2, counter worth 1
+    var success = score >= 3; // 1 match + 1 counter = success, or 2 matches
+    return { matches: matches, counters: counters, neutrals: neutrals, score: score, success: success, reveal: reveal };
+  }
+
+  // Inventory helpers
+  function loadInventory() {
+    try { return JSON.parse(localStorage.getItem('lw_forage_cards') || 'null') || defaultInventory(); }
+    catch(e) { return defaultInventory(); }
+  }
+  function saveInventory(inv) { try { localStorage.setItem('lw_forage_cards', JSON.stringify(inv)); } catch(e) {} }
+  function defaultInventory() {
+    // Starter: 1 Sun, 1 Rain, 1 Wind = each axis of the cycle
+    return { sun:1, rain:1, wind:1, shade:0, dry:0, still:0 };
+  }
+  function addCard(elId, n) {
+    var inv = loadInventory();
+    inv[elId] = (inv[elId] || 0) + (n || 1);
+    saveInventory(inv);
+  }
+  function totalCards(inv) {
+    var sum = 0; if (!inv) inv = loadInventory();
+    for (var k in inv) sum += (inv[k] || 0);
+    return sum;
+  }
+  function cardCapacity() {
+    var lvl = (window.canSee && window.canSee.currentLevel) ? window.canSee.currentLevel() : 1;
+    return 8 + Math.floor(lvl / 10); // +1 every 10 keeper levels, grows slowly
+  }
+
+  // Deck helpers — up to 4 named decks, 5 cards per active deck
+  function loadDecks() {
+    try { return JSON.parse(localStorage.getItem('lw_forage_decks') || '[]'); }
+    catch(e) { return []; }
+  }
+  function saveDecks(d) { try { localStorage.setItem('lw_forage_decks', JSON.stringify(d)); } catch(e) {} }
+  function getActiveDeck() {
+    try {
+      var decks = loadDecks();
+      var idx = parseInt(localStorage.getItem('lw_forage_deck_active') || '0', 10);
+      return decks[idx] || { name:'Default', cards:['sun','rain','wind','shade','dry'].slice(0,5) };
+    } catch(e) { return { name:'Default', cards:['sun','rain','wind','shade','dry'] }; }
+  }
+
+  // Public API
+  window.LW_FORAGING = {
+    EL: EL,
+    CYCLE: CYCLE,
+    BIOME: BIOME,
+    countered: countered,
+    currentTilt: currentTilt,
+    hexComposition: hexComposition,
+    resolveAttempt: resolveAttempt,
+    loadInventory: loadInventory,
+    saveInventory: saveInventory,
+    addCard: addCard,
+    totalCards: totalCards,
+    cardCapacity: cardCapacity,
+    loadDecks: loadDecks,
+    saveDecks: saveDecks,
+    getActiveDeck: getActiveDeck
+  };
+})();
 
 var _bosReportRange = 'today';
 var _bosReportFilter = 'all';
@@ -54095,6 +54331,7 @@ window._openCompendiumUI=function(){
         '<button class="bos-tab" data-tab="activity" onclick="_bosSetTab(\'activity\')" style="position:relative;flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">ACTIVITY'+ ((window._getBookUnreadCount&&window._getBookUnreadCount()>0)?'<span style="position:absolute;top:4px;right:4px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.38rem;display:inline-flex;align-items:center;justify-content:center;">'+window._getBookUnreadCount()+'</span>':'') +'</button>'+
         '<button class="bos-tab active" data-tab="secrets" onclick="_bosSetTab(\'secrets\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(200,168,75,0.5);background:rgba(200,168,75,0.1);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">SECRETS</button>'+
         '<button class="bos-tab" data-tab="events" onclick="_bosSetTab(\'events\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">EVENTS</button>'+
+        '<button class="bos-tab" data-tab="mementos" onclick="_bosSetTab(\'mementos\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">MEMENTOS</button>'+
         '<button class="bos-tab" data-tab="class" onclick="_bosSetTab(\'class\')" style="position:relative;flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">CLASS'+ ((!localStorage.getItem('lw_class')&&window.canSee&&window.canSee.classPick&&window.canSee.classPick())?'<span style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px rgba(200,168,75,0.8);"></span>':'') +'</button>'+
       '</div>'+
       // Body
