@@ -176,23 +176,34 @@ var QUIZ=[
   }
 ];
 function _cycleDur(p){var t=0;for(var i=0;i<p.phases.length;i++)t+=p.phases[i].dur;return t;}
-function _recommend(answers){
-  // answers = [{pickI:0..}, {pickI:0..}, {pickI:0..}]
-  var picks=QUIZ[0].opts[answers[0]].picks;
+// Return up to `n` candidate keys ordered best → acceptable, so the quiz
+// result can offer the player several options instead of a single pick.
+function _recommend(answers,n){
+  n=n||3;
+  var picks=QUIZ[0].opts[answers[0]].picks.slice();
   var maxDur=QUIZ[1].opts[answers[1]].maxDur;
   var allowAudible=QUIZ[2].opts[answers[2]].allowAudible;
-  // Try each candidate in order, return first that fits constraints.
+  var strict=[],loose=[];
   for(var i=0;i<picks.length;i++){
-    var k=picks[i]; var p=PATTERNS[k]; if(!p)continue;
-    if(!allowAudible&&p.audible)continue;
-    if(_cycleDur(p)>maxDur)continue;
-    return k;
+    var k=picks[i],p=PATTERNS[k];if(!p)continue;
+    var quietOk=allowAudible||!p.audible;
+    var timeOk=_cycleDur(p)<=maxDur;
+    if(quietOk&&timeOk)strict.push(k);
+    else if(quietOk)loose.push(k);
   }
-  // Nothing matched tightly — relax the constraints one step.
-  for(var j=0;j<picks.length;j++){
-    var k2=picks[j]; if(PATTERNS[k2]&&(allowAudible||!PATTERNS[k2].audible))return k2;
+  var out=strict.concat(loose);
+  // Still short? Fill with category-adjacent picks that respect quiet/time.
+  if(out.length<n){
+    var all=Object.keys(PATTERNS);
+    for(var j=0;j<all.length;j++){
+      var kk=all[j];if(out.indexOf(kk)>=0)continue;
+      var pp=PATTERNS[kk];
+      if(!allowAudible&&pp.audible)continue;
+      if(_cycleDur(pp)>maxDur)continue;
+      out.push(kk);if(out.length>=n)break;
+    }
   }
-  return picks[0]||'coherent';
+  return out.slice(0,n);
 }
 
 window._gameFns.breathing=function BR(a){
@@ -205,6 +216,57 @@ window._gameFns.breathing=function BR(a){
   var particles=[];
   var raf=null,lastTime=0,stopped=false;
   var cvs,ctx,W,H,cx,cy,dpr;
+
+  // ─── AUDIO GUIDANCE ──────────────────────────────────────────────────
+  // Synthesised singing-bowl tone per phase via WebAudio — no asset cost,
+  // works anywhere. Preference persisted so it survives sessions.
+  var audioOn=true;
+  try{var s=localStorage.getItem('lw_breath_audio');if(s==='0')audioOn=false;}catch(e){}
+  var _ac=null;
+  function _getAC(){
+    if(_ac)return _ac;
+    try{var A=window.AudioContext||window.webkitAudioContext;if(A)_ac=new A();}catch(e){}
+    return _ac;
+  }
+  // Phase → tone profile. Inhale = rising bright, exhale = lower warm,
+  // holds/transitions = soft tick. Durations are short so the tone sits
+  // under the phase, never over it.
+  function _tone(phaseName){
+    if(!audioOn)return;
+    var ac=_getAC();if(!ac)return;
+    try{if(ac.state==='suspended')ac.resume();}catch(e){}
+    // Map phases to base frequencies (Hz) and gains. Kept gentle on purpose.
+    var map={
+      INHALE:{f:528,dur:0.85,peak:0.09},   // rising bright "solfeggio" C
+      EXHALE:{f:396,dur:1.2,peak:0.09},    // warm lower
+      HUM:   {f:220,dur:1.2,peak:0.07},    // deep for bee hum
+      ROAR:  {f:174,dur:0.6,peak:0.1},
+      HOLD:  {f:432,dur:0.25,peak:0.045},  // tiny tick
+      'TOP-UP':{f:660,dur:0.2,peak:0.055}
+    };
+    var prof=map[phaseName]||map.HOLD;
+    var now=ac.currentTime;
+    var osc=ac.createOscillator();
+    var g=ac.createGain();
+    osc.type='sine';
+    osc.frequency.setValueAtTime(prof.f,now);
+    // Gentle bell envelope: fast-ish attack, long-ish decay, no clicks.
+    g.gain.setValueAtTime(0.0001,now);
+    g.gain.exponentialRampToValueAtTime(prof.peak,now+0.04);
+    g.gain.exponentialRampToValueAtTime(0.0001,now+prof.dur);
+    // Add a soft overtone for warmth (a fifth up, quieter).
+    var osc2=ac.createOscillator();
+    var g2=ac.createGain();
+    osc2.type='sine';
+    osc2.frequency.setValueAtTime(prof.f*1.5,now);
+    g2.gain.setValueAtTime(0.0001,now);
+    g2.gain.exponentialRampToValueAtTime(prof.peak*0.35,now+0.05);
+    g2.gain.exponentialRampToValueAtTime(0.0001,now+prof.dur*0.9);
+    osc.connect(g);g.connect(ac.destination);
+    osc2.connect(g2);g2.connect(ac.destination);
+    osc.start(now);osc2.start(now);
+    osc.stop(now+prof.dur+0.05);osc2.stop(now+prof.dur+0.05);
+  }
 
   ms(a,'🌸 Meditation — <strong id="BRt">0:00</strong>');
   mm(a,'READY');
@@ -228,7 +290,9 @@ window._gameFns.breathing=function BR(a){
     // Technique cards container
     '<div id="BRlist" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px;"></div>';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb" id="BRgo" onclick="_BRG()">▶ START</button> <button class="gb" onclick="_BRR()">↺ RESET</button>';
+  mc(a).innerHTML='<button class="gb" id="BRgo" onclick="_BRG()">▶ START</button> '
+    +'<button class="gb" onclick="_BRR()">↺ RESET</button> '
+    +'<button class="gb" id="BRaud" onclick="_BRAud()">'+(audioOn?'🔔 Guide: ON':'🔕 Guide: OFF')+'</button>';
 
   cvs=document.getElementById('BRcv');ctx=cvs.getContext('2d');
   function resize(){
@@ -310,16 +374,31 @@ window._gameFns.breathing=function BR(a){
   }
   function _renderQuizResult(){
     var ov=document.getElementById('BRquizOV');if(!ov)return;
-    var key=_recommend(quizAns);
-    var p=PATTERNS[key];
-    var h='<div style="max-width:380px;width:100%;background:rgba(15,20,12,0.96);border:1px solid rgba(200,168,75,0.45);border-radius:12px;padding:20px 18px;font-family:DM Mono,monospace;text-align:center;">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.15em;color:var(--sage);margin-bottom:8px;">WE SUGGEST</div>';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:4px;">'+p.name+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--sage);margin-bottom:6px;">'+p.tag+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-bottom:12px;">'+p.origin+'</div>';
-    h+='<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.78rem;color:var(--cream);opacity:0.85;line-height:1.4;margin-bottom:16px;">'+(p.cue||'')+'</div>';
-    h+='<button class="gb" onclick="_BRQuizAccept(\''+key+'\')" style="width:100%;padding:12px;font-size:0.8rem;letter-spacing:0.1em;color:var(--sage);border-color:var(--sage);min-height:52px;margin-bottom:8px;">TRY IT</button>';
-    h+='<button class="gb" onclick="_BRQuizRetry()" style="width:100%;padding:8px;font-size:0.6rem;color:var(--muted);border-color:rgba(138,145,120,0.25);min-height:44px;">Ask again</button>';
+    var keys=_recommend(quizAns,3);
+    var top=PATTERNS[keys[0]];
+    var h='<div style="max-width:400px;width:100%;background:rgba(15,20,12,0.96);border:1px solid rgba(200,168,75,0.45);border-radius:12px;padding:20px 18px;font-family:DM Mono,monospace;">';
+    // Headline recommendation
+    h+='<div style="text-align:center;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.15em;color:var(--sage);margin-bottom:8px;">BEST FIT</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:4px;">'+top.name+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--sage);margin-bottom:6px;">'+top.tag+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-bottom:10px;">'+top.origin+'</div>';
+    h+='<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.75rem;color:var(--cream);opacity:0.85;line-height:1.4;margin-bottom:14px;">'+(top.cue||'')+'</div>';
+    h+='<button class="gb" onclick="_BRQuizAccept(\''+keys[0]+'\')" style="width:100%;padding:12px;font-size:0.8rem;letter-spacing:0.1em;color:var(--sage);border-color:var(--sage);min-height:52px;margin-bottom:14px;">TRY THIS ONE</button>';
+    h+='</div>';
+    // Alternate options — give the player agency.
+    if(keys.length>1){
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.15em;color:var(--muted);border-top:1px solid rgba(200,168,75,0.2);padding-top:12px;margin-bottom:8px;text-align:center;">OR TRY INSTEAD</div>';
+      for(var i=1;i<keys.length;i++){
+        var alt=PATTERNS[keys[i]];if(!alt)continue;
+        h+='<button class="gb" onclick="_BRQuizAccept(\''+keys[i]+'\')" '
+          +'style="width:100%;padding:10px 12px;margin-bottom:6px;min-height:56px;text-align:left;display:flex;flex-direction:column;gap:2px;font-family:inherit;">'
+          +'<div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.06em;color:var(--cream);">'+alt.name+'</div>'
+          +'<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--sage);opacity:0.85;">'+alt.tag+'</div>'
+          +'</button>';
+      }
+    }
+    h+='<button class="gb" onclick="_BRQuizRetry()" style="width:100%;padding:8px;font-size:0.6rem;color:var(--muted);border-color:rgba(138,145,120,0.25);min-height:44px;margin-top:8px;">Ask again</button>';
     h+='</div>';
     ov.innerHTML=h;
   }
@@ -351,6 +430,9 @@ window._gameFns.breathing=function BR(a){
     var phEl=document.getElementById('BRph');if(phEl)phEl.textContent=ph.label||ph.name;
     if(phaseTimer>=ph.dur){
       phaseTimer=0;phaseIdx=(phaseIdx+1)%phases.length;
+      // Gentle tone cue at the start of the NEW phase so the breath has
+      // a soft auditory anchor. Fires even on the cycle wrap.
+      _tone(phases[phaseIdx].name);
       if(phaseIdx===0){
         breathCount++;
         if(breathCount%5===0){_e('milestone');try{if(window._play)_play('match');}catch(e){}}
@@ -456,11 +538,19 @@ window._gameFns.breathing=function BR(a){
     var btn=document.getElementById('BRgo');
     if(breathing){
       btn.textContent='⏸ PAUSE';phaseIdx=0;phaseTimer=0;sm('Breathe with the bloom.');
+      // Unlock audio on user gesture and sound the first phase tone.
+      _getAC();_tone(phases[0].name);
     } else {
       btn.textContent='▶ START';
       var phEl=document.getElementById('BRph');if(phEl)phEl.textContent='PAUSED';
       sm('Paused.');
     }
+  };
+  window._BRAud=function(){
+    audioOn=!audioOn;
+    try{localStorage.setItem('lw_breath_audio',audioOn?'1':'0');}catch(e){}
+    var b=document.getElementById('BRaud');if(b)b.textContent=audioOn?'🔔 Guide: ON':'🔕 Guide: OFF';
+    if(audioOn){_getAC();_tone('INHALE');}
   };
   window._BRR=function(){
     breathing=false;phaseIdx=0;phaseTimer=0;breathCount=0;totalTime=0;bloomProgress=0.3;_brWon=false;
