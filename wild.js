@@ -3576,8 +3576,12 @@ function _subscribeSharedDrops(){
 
           // Skip if we already have this marker
           if(_sharedMarkers[d.hash])return;
-          // Cap total shared markers to prevent map lag
-          if(_sharedCount>=30)return;
+          // Cap total shared markers to prevent map lag. Raised from 30
+          // to 80 because wild-born births were silently dropped once a
+          // keeper's cluster + neighbors filled the earlier cap —
+          // reproduction ran but new plants never rendered. 80 still
+          // keeps perf in bounds on low-end devices.
+          if(_sharedCount>=80)return;
           _sharedCount++;
 
           var isOwn=(d.ownerUid===user.uid);
