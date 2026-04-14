@@ -30552,7 +30552,10 @@ document.addEventListener('keydown', function(e) {
     var title = opts.title || 'CONFIRM';
     var body = opts.body || '';
     var yes = opts.yes || 'CONFIRM';
-    var no = opts.no || 'CANCEL';
+    // Explicit empty string hides the secondary button — used for one-shot
+    // informational dialogs (tutorials) where there is no "cancel" path.
+    var hideNo = (opts.no === '');
+    var no = hideNo ? '' : (opts.no || 'CANCEL');
     var danger = opts.danger || false;
     var m = document.createElement('div');
     m.id = 'lw-confirm-modal';
@@ -30564,13 +30567,14 @@ document.addEventListener('keydown', function(e) {
     var yBg = danger ? 'linear-gradient(180deg,rgba(180,60,40,0.25),rgba(120,30,20,0.35))' : 'linear-gradient(180deg,rgba(74,124,53,0.3),rgba(26,60,22,0.4))';
     var yColor = danger ? '#e8a0a0' : 'var(--sage)';
     h += '<button id="lw-confirm-yes" style="width:100%;padding:0.5rem;margin-bottom:0.3rem;border:1.5px solid ' + yBorder + ';border-radius:8px;background:' + yBg + ';color:' + yColor + ';font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">' + yes + '</button>';
-    h += '<button id="lw-confirm-no" style="width:100%;padding:0.4rem;border:1px solid rgba(122,179,86,0.15);border-radius:8px;background:rgba(46,60,38,0.15);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;">' + no + '</button>';
+    if (!hideNo) h += '<button id="lw-confirm-no" style="width:100%;padding:0.4rem;border:1px solid rgba(122,179,86,0.15);border-radius:8px;background:rgba(46,60,38,0.15);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;">' + no + '</button>';
     h += '</div>';
     m.innerHTML = h;
     document.body.appendChild(m);
     _haptic('tab');
     document.getElementById('lw-confirm-yes').onclick = function() { m.remove(); if (onYes) onYes(); };
-    document.getElementById('lw-confirm-no').onclick = function() { m.remove(); };
+    var _lwCNo = document.getElementById('lw-confirm-no');
+    if (_lwCNo) _lwCNo.onclick = function() { m.remove(); };
   };
 
   window.shareDrawerPlant = function(plantIndex) {
@@ -47234,6 +47238,24 @@ function _pickCompanion(idx){
   _loadCompanion();
   var pk=document.getElementById('cs-comp-picker');if(pk)pk.remove();
   if(window._toast)window._toast(f.name+' equipped!');
+  // First-ever equip teaches the L1/L2/L3 ladder. One-shot, device-local.
+  try {
+    if (!localStorage.getItem('lw_tut_companion_v1')) {
+      localStorage.setItem('lw_tut_companion_v1', '1');
+      setTimeout(function(){
+        if (window._lwConfirm) {
+          window._lwConfirm({
+            title: 'COMPANION LADDER',
+            body: f.name + ' is now <b>L1</b>. Keep them equipped to grow the bond:<br><br>\u2728 <b>L2</b> after 7 days equipped \u2014 doubles their effect<br>\u2728 <b>L3</b> after 30 days equipped \u2014 unlocks a signature ability<br><br>Only one companion gains time at a time. Swap often at your own pace \u2014 progress pauses, never resets.',
+            yes: 'GOT IT',
+            no: ''
+          }, function(){});
+        } else if (window._toast) {
+          window._toast(f.name + ' is L1. Keep them equipped for 7 days to reach L2.');
+        }
+      }, 400);
+    }
+  } catch(e) {}
   _syncProfileField('activeCompanion',compData);
   if (window._lwCheckMementos) window._lwCheckMementos();
 }
@@ -53974,6 +53996,21 @@ window._lwClaimHerbarium = function(id){
       onDone(false);
       return;
     }
+    // First-time foraging tutorial — one-shot per device so veterans aren't
+    // nagged. Explains the core idea before dropping them into the UI cold.
+    try {
+      if (!localStorage.getItem('lw_tut_forage_v1')) {
+        localStorage.setItem('lw_tut_forage_v1', '1');
+        if (window._lwConfirm) {
+          window._lwConfirm({
+            title: 'FORAGING — HOW IT WORKS',
+            body: 'This hex hides <b>3 elements</b> (Sun, Rain, Wind\u2026). Play 3 cards from your hand to match or counter them.<br><br>\u2728 <b>Match</b> same element = full hit.<br>\u2694\ufe0f <b>Counter</b> the element one step back in the cycle = partial hit.<br><br>Score 3+ to win the seed. You get <b>3 attempts</b> — each reveals more info than the last.',
+            yes: 'BEGIN',
+            no: ''
+          }, function(){});
+        }
+      }
+    } catch(e) {}
     var comp = hexComposition(zoneKey);
     var hand = buildHand();
     if (hand.length < 3) {
@@ -55366,25 +55403,25 @@ window._updateCompCount=_updateCompCount;
 // Pick one class, level 1→3, each level unlocks abilities. Tools level separately.
 // XP hooks fire via window._LW_classXP(source, amount).
 var LW_CLASSES={
-  forager:{name:'Forager',icon:'🍂',desc:'Wild plant expertise',xpSrc:['feral','harvest'],
+  forager:{name:'Forager',icon:'🍂',desc:'Walk further. Feral seeds find you more often and rare drops tilt in your favor. Pairs with the Field Pouch and Compass — the path-finder build.',xpSrc:['feral','harvest'],
     abilities:{
       1:{name:'Keen Eye',desc:'+25% feral seed range'},
       2:{name:'Bountiful',desc:'+15% rare drop odds'},
       3:{name:'Wild Kin',desc:'+50% feral drops · 2× when Raccoon equipped'}
     },companion:35,biome:'forest'},
-  breeder:{name:'Breeder',icon:'🧬',desc:'Nursery mastery',xpSrc:['breed','chimera'],
+  breeder:{name:'Breeder',icon:'🧬',desc:'Blend lineages in the greenhouse. Extra nursery slot, cleaner chimera EA, and every cross-pollinate rewards more. Pairs with Watering Can and the Nursery.',xpSrc:['breed','chimera'],
     abilities:{
       1:{name:'Patient Hand',desc:'+1 nursery slot'},
       2:{name:'Purebred',desc:'+20% chimera purity'},
       3:{name:'Web Weaver',desc:'+50% breed reward · 2× with Garden Spider'}
     },companion:37,biome:'garden'},
-  cartographer:{name:'Cartographer',icon:'🧭',desc:'Map & movement',xpSrc:['biome','steps'],
+  cartographer:{name:'Cartographer',icon:'🧭',desc:'Steps become XP. Biomes reveal themselves and feral patterns emerge on the map. Pairs with the Compass — built for walkers.',xpSrc:['biome','steps'],
     abilities:{
       1:{name:'Surefoot',desc:'+25% step XP'},
       2:{name:'Biome Sense',desc:'Reveal biome on compass tap'},
       3:{name:'Sky Watcher',desc:'+10% biome bonus · doubled with Heron'}
     },companion:36,biome:'mountain'},
-  tender:{name:'Tender',icon:'💧',desc:'Plant longevity',xpSrc:['tend','dew'],
+  tender:{name:'Tender',icon:'💧',desc:'Your wild plants outlive everyone else\u2019s. Dew flows stronger, watering deepens your bond. Pairs with the Watering Can — the caretaker path.',xpSrc:['tend','dew'],
     abilities:{
       1:{name:'Green Thumb',desc:'Wild plants live 2× longer'},
       2:{name:'Dew Touched',desc:'+20% dew generation'},
@@ -55393,7 +55430,7 @@ var LW_CLASSES={
       // companion dependency. Avoids the "must-own Phoenix" hoarding trap.
       3:{name:'Deep Green',desc:'Wild plants live 2.5× longer (passive)'}
     },companion:33,biome:'wetland'},
-  keeper:{name:'Keeper',icon:'🌿',desc:'Balanced generalist',xpSrc:['all'],
+  keeper:{name:'Keeper',icon:'🌿',desc:'The patient path. Every XP source counts, every tool cools faster, no weakness. Pairs with all tools — slow and steady through every biome.',xpSrc:['all'],
     abilities:{
       1:{name:'Attuned',desc:'+5% to all bonuses'},
       2:{name:'Versatile',desc:'All tool cooldowns -10%'},
