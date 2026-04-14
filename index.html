@@ -54767,13 +54767,18 @@ window._checkBeholderOmnisight=function(){
   var ferals=[];try{ferals=JSON.parse(localStorage.getItem('fg_ferals')||'[]');}catch(e){}
   var feralCount=ferals.filter(function(f){return!f.collected;}).length;
 
-  // Count plants in extended range
+  // Count plants in extended range — own drops live in fg_wild_plants (local),
+  // other players' drops live in _sharedMarkers. The Beholder should count
+  // both; previously only shared was read, so a keeper with only own plants
+  // saw "0 wild plants nearby" despite standing in their own cluster.
   var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+  var ownCount=wild.length;
   var shared=0;
   if(window._sharedMarkers){shared=Object.keys(window._sharedMarkers).length;}
+  var totalPlants=ownCount+shared;
 
-  if(feralCount>0||shared>0){
-    if(window._toast)window._toast('👁️ Beholder sees: '+feralCount+' feral seed'+(feralCount!==1?'s':'')+' · '+shared+' wild plant'+(shared!==1?'s':'')+' nearby');
+  if(feralCount>0||totalPlants>0){
+    if(window._toast)window._toast('👁️ Beholder sees: '+feralCount+' feral seed'+(feralCount!==1?'s':'')+' · '+totalPlants+' wild plant'+(totalPlants!==1?'s':'')+' nearby');
   }
 
   // Log to compendium if first time
