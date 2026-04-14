@@ -7588,6 +7588,21 @@ document.addEventListener('keydown', function(e) {
   // ── UTC date string ──
   function _today(){ return new Date().toISOString().split('T')[0]; }
 
+  // ── Strip environmental bytes from a hash (for cuttings) ──
+  // Zeros out pot (hb0 chars 0-1), aura (hb15 chars 30-31), mythic override
+  // (hb18/19 chars 36-39), substrate (hb20 chars 40-41), and companion
+  // (hb21 chars 42-43). Leaves stem/leaf/flower/season bytes intact so the
+  // clipping represents the plant's genetics only. Used by wild cuttings so
+  // a clone never inherits the parent's pot / substrate / aura / companion
+  // — those belong to the parent's environment, not the genome.
+  window._lwStripEnvironmentalTraits = function(hash) {
+    if (!hash || hash.length < 44) return hash;
+    var c = hash.split('');
+    var zeroAt = [0,1, 30,31, 36,37,38,39, 40,41, 42,43];
+    for (var i = 0; i < zeroAt.length; i++) c[zeroAt[i]] = '0';
+    return c.join('');
+  };
+
   // ─────────────────────────────────────────────────────────────────────────
   // hashToTraits v3 — window-exposed, overwrites game IIFE version at runtime
   // Slot map: 0-15 traits, 16-17 mutation byte, 18-19 mythic byte,
@@ -28279,6 +28294,23 @@ document.addEventListener('keydown', function(e) {
   }
   function earnDew(amount, source) {
     if (!amount || amount < 0) return;
+    // First-ever Dew — teach the Dew vs Sunbeams split before the player
+    // has two silently-accumulating currencies with no idea which is which.
+    try {
+      if (!localStorage.getItem('lw_tut_currency_v1')) {
+        localStorage.setItem('lw_tut_currency_v1', '1');
+        setTimeout(function(){
+          if (window._lwConfirm) {
+            window._lwConfirm({
+              title: 'TWO CURRENCIES',
+              body: '\u2600\ufe0f <b>Sunbeams</b> \u2014 progress toward your next plant. Earned by playing games. They fill the mint meter (30 = 1 new plant).<br><br>\ud83d\udca7 <b>Dew</b> \u2014 a spendable balance. Earned from the wild and watering. Use it to accelerate the nursery or take cuttings.<br><br>Both level up your keeper rank. They never convert into each other.',
+              yes: 'GOT IT',
+              no: ''
+            }, function(){});
+          }
+        }, 800);
+      }
+    } catch(e) {}
     // Tender class bonus: L2+ multiplies dew income
     try{if(window._LW_classBonus){amount=Math.ceil(amount*window._LW_classBonus('dewRate'));}}catch(e){}
     // Companion family bonus: Conduits grant +3% dewRate (+25% affinity for Cartographer)
@@ -40131,12 +40163,19 @@ window._hexAction=function(action){
       if(!window.FG_Data||!window.FG_Data.addSeed){
         _toast('Nursery engine not available — try again.');return;
       }
+      // A clipping carries only the plant's genetics (leaf, stem, flower,
+      // season). Pot, substrate, aura, and companion are the parent's
+      // environment — they stay with the parent. Strip those bytes from
+      // the clipping's seed hash so the sprout (and any breed it joins)
+      // doesn't inherit them.
+      var _clipHash = (window._lwStripEnvironmentalTraits ? window._lwStripEnvironmentalTraits(p.hash) : p.hash);
       var _addResult=window.FG_Data.addSeed({
-        seedHash:p.hash,
-        parentAHash:p.hash,
-        parentBHash:p.hash,
+        seedHash:_clipHash,
+        parentAHash:_clipHash,
+        parentBHash:_clipHash,
         nonce:0,
-        mystery:false
+        mystery:false,
+        origin:'cutting'
       });
       if(!_addResult||!_addResult.ok){
         _toast('Cutting failed to land in nursery. Parent plant was spared.');
@@ -55172,6 +55211,21 @@ function _bosSecretsContent() {
 
 window._openCompendiumUI=function(){
   try{if(window.LW_XP)window.LW_XP.grantOnce('disc_book',5,'discover_book','📖 +5 XP — Book of Secrets. Everything you\'ve discovered lives here.');}catch(e){}
+  // First-open tutorial — explains the tabs so players don't land on a
+  // blank synergies grid with zero context. Device-local one-shot.
+  try {
+    if (!localStorage.getItem('lw_tut_book_v1')) {
+      localStorage.setItem('lw_tut_book_v1', '1');
+      if (window._lwConfirm) {
+        window._lwConfirm({
+          title: 'THE BOOK OF SECRETS',
+          body: 'Everything you discover lives here.<br><br>\u2728 <b>ACTIVITY</b> \u2014 a diary of what you\u2019ve done in the world<br>\ud83e\uddec <b>CLASS</b> \u2014 pick or change your keeper class + tools<br>\ud83c\udf3f <b>HERBARIUM</b> \u2014 weekly collection goals for bonus rewards<br>\u269c\ufe0f <b>COMPANIONS</b> \u2014 your friendship bonds and mementos<br><br>The grid fills in over time. Tap anything for details.',
+          yes: 'OPEN THE BOOK',
+          no: ''
+        }, function(){});
+      }
+    }
+  } catch(e) {}
   // Mark every wild event as read so the book badge clears. Fires before
   // overlay build so the badge update is atomic with the open gesture.
   if(window._markBookRead)window._markBookRead();
