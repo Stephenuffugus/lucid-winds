@@ -609,6 +609,8 @@ function activate(){
     localStorage.setItem('lw_repro_today',_todayStr);
     setTimeout(function(){if(window._wildReproduction)_wildReproduction();},window._perfLite?8000:2000);
   }
+  // Bloom Day announce — toast the monthly event on first Wild entry.
+  if (window._lwAnnounceBloomDay) setTimeout(function(){window._lwAnnounceBloomDay();},3500);
   // Daily climate damage check — independent lock so it runs even when
   // reproduction is rate-limited. Same weather cache is reused.
   var _climateToday=localStorage.getItem('lw_climate_today');
@@ -1241,6 +1243,53 @@ function _collectFeralFromZone(zk, zonePlants) {
       if (window._logWildEvent) window._logWildEvent({type:'rare', event:'biome_mutation', biome:_fBiome.name, mutation:_fBiome.mutation});
     }
   }
+
+  // SEASONAL FERAL ROTATION — bias the feral's season trait toward the
+  // current real-world season so Wild foraging feels alive year-round.
+  // Spring plants bloom in April, winter plants in January, etc.
+  //   70% chance feral matches current season
+  //   20% chance adjacent season (Spring/Autumn, Summer/Winter)
+  //   10% chance opposite season (kept for variety + rare surprise)
+  // Injected into hash byte 22 (which hashToTraits reads as season).
+  try {
+    var _fCurMonth = new Date().getMonth();
+    var _fCurSeason = _fCurMonth < 3 ? 3 : _fCurMonth < 6 ? 0 : _fCurMonth < 9 ? 1 : 2;
+    var _fRoll = Math.random();
+    var _fTargetSeason;
+    if (_fRoll < 0.70) {
+      _fTargetSeason = _fCurSeason;
+    } else if (_fRoll < 0.90) {
+      _fTargetSeason = (_fCurSeason + (Math.random() < 0.5 ? 1 : 3)) % 4;
+    } else {
+      _fTargetSeason = (_fCurSeason + 2) % 4;
+    }
+    // hashToTraits does hb(22) % 4 for season. byte 22 = chars 44-45.
+    // Write a hex value whose %4 equals _fTargetSeason. Pick a random
+    // value from 0-255 that satisfies this constraint so other trait
+    // variations are preserved.
+    var _fValidByte = Math.floor(Math.random() * 64) * 4 + _fTargetSeason;
+    var _fHex = _fValidByte.toString(16);
+    if (_fHex.length < 2) _fHex = '0' + _fHex;
+    var _fsArr = feralHash.split('');
+    _fsArr[44] = _fHex[0];
+    _fsArr[45] = _fHex[1];
+    feralHash = _fsArr.join('');
+  } catch (e) {}
+
+  // BLOOM DAY RARITY BUMP — on the 2nd Saturday of each month, ferals
+  // roll a rarity-boost check scaled by the day's multiplier. Makes
+  // Bloom Day feel like a real event. Rare-seed-hunting concentrates
+  // around these dates organically, driving returning play.
+  try {
+    var _bloomMult = (window._lwBloomDayRareMult ? window._lwBloomDayRareMult() : 1.0);
+    if (_bloomMult > 1.0 && Math.random() < (0.10 * (_bloomMult - 1.0))) {
+      var _bhArr = feralHash.split('');
+      _bhArr[0] = 'f';  // push pot to golden tier
+      _bhArr[22] = 'd'; // high flower rarity
+      _bhArr[40] = 'f'; // push substrate to crystal tier
+      feralHash = _bhArr.join('');
+    }
+  } catch(e) {}
 
   // Biodiversity rarity boost
   if (window._lastBiodiversity && window._lastBiodiversity.tier !== 'barren') {

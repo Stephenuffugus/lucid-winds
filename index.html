@@ -47029,11 +47029,176 @@ function _pickCompanion(idx){
   var f=window._csCompFound?window._csCompFound[idx]:null;if(!f)return;
   var compData={idx:f.idx,name:f.name,icon:f.icon,ability:f.ability,temperament:f.temperament,tempIcon:f.tempIcon};
   localStorage.setItem('pw_active_companion',JSON.stringify(compData));
+  // MEMENTO TIMER — record first-equip timestamp per companion idx so
+  // the 30-day keepsake can be awarded later. Never overwrites existing
+  // timestamp (so swapping away and back doesn't reset the clock).
+  try {
+    var _equipLog = JSON.parse(localStorage.getItem('lw_companion_first_equipped') || '{}');
+    if (!_equipLog[f.idx]) {
+      _equipLog[f.idx] = Date.now();
+      localStorage.setItem('lw_companion_first_equipped', JSON.stringify(_equipLog));
+    }
+  } catch(e) {}
   _loadCompanion();
   var pk=document.getElementById('cs-comp-picker');if(pk)pk.remove();
   if(window._toast)window._toast(f.name+' equipped!');
   _syncProfileField('activeCompanion',compData);
+  if (window._lwCheckMementos) window._lwCheckMementos();
 }
+
+// ═══ COMPANION MEMENTOS — 30-day keepsake per companion ═══
+// After a companion has been first-equipped 30+ days ago, award a unique
+// keepsake that lives in Book of Secrets forever. Parallel collection
+// alongside plants — Neko-Atsume-style emotional hook.
+var LW_MEMENTOS = {
+  20:{name:'Shimmer Dust', text:'Navi left a pinch of iridescent dust on your windowsill.'},
+  21:{name:'Honey Pearl', text:'The bee left behind a single crystallized drop of garden honey.'},
+  22:{name:'Curled Shell', text:'A tiny perfect spiral, still carrying the scent of leaf mold.'},
+  23:{name:'Glowing Lantern', text:'A firefly-light that never dims. It pulses in time with your breath.'},
+  24:{name:'Pressed Wing', text:'A butterfly wing, paper-thin and impossibly blue.'},
+  25:{name:'Moon Thread', text:'Silk the moth spun while you slept. It shimmers only in shadow.'},
+  26:{name:'Seven-Spot Coin', text:'A perfect ladybug-colored token. Good luck, the old keepers said.'},
+  27:{name:'Silver Trail', text:'The snail left a shimmering path across your journal.'},
+  28:{name:'Hovering Feather', text:'A hummingbird feather that refuses to fall.'},
+  29:{name:'Lace Wing', text:'A dragonfly wing, veined like a stained-glass window.'},
+  30:{name:'Silk Cocoon', text:'A perfect cocoon, unopened. It feels warm in your palm.'},
+  31:{name:'Web Lattice', text:'A spider-silk lattice that catches morning dew in perfect patterns.'},
+  32:{name:'Rain Stone', text:'A smooth river stone the toad guarded. It sings when wet.'},
+  33:{name:'Phoenix Feather', text:'A feather that smolders without burning. A gift beyond price.'},
+  34:{name:'Mammoth Tusk', text:'A small carved ice-tusk. Cold to the touch, always.'},
+  35:{name:'Bright Button', text:'A collection of 9 shiny objects. You don\u2019t remember losing any of them.'},
+  36:{name:'Long Feather', text:'A heron feather twice the length of your hand.'},
+  37:{name:'Garden Web', text:'A web shaped like a perfect star.'},
+  38:{name:'All-Seeing Pearl', text:'A pearl that reflects places you\u2019ve never been.'},
+  39:{name:'Purring Stone', text:'A small warm stone the cat slept on. Still warm.'},
+  40:{name:'Egg Shell', text:'A platypus shell no bigger than a thumbprint.'},
+  41:{name:'Green Leaf', text:'A mantis-shaped leaf, perfectly preserved.'},
+  42:{name:'Spine Crown', text:'A ring of shed hedgehog quills.'},
+  43:{name:'Armor Scale', text:'A pangolin scale. Strong enough to turn a blade.'},
+  44:{name:'Moon Wing', text:'A luna moth wing that glows softly in moonlight.'},
+  45:{name:'Quill Pen', text:'A porcupine quill, sharpened to a fine point. Perfect for letters.'},
+  47:{name:'Gill Frond', text:'A delicate axolotl frond, fresh as water.'},
+  48:{name:'Amber Stinger', text:'A scorpion tail-tip preserved in tree sap.'},
+  49:{name:'Paper Crane', text:'An origami crane folded from unknown paper.'},
+  50:{name:'Garden Hat', text:'A miniature pointed hat. Fits no one.'},
+  51:{name:'Robin Egg', text:'A perfect blue egg. It never hatches, never breaks.'},
+  52:{name:'Earth Coil', text:'A perfect spiral of castings. The earthworm\u2019s signature.'},
+  53:{name:'Shell Fragment', text:'A turtle-shell fragment carved with tiny maps.'},
+  54:{name:'Echo Ribbon', text:'A bat gifted you this: a ribbon of silent sound.'},
+  55:{name:'Grain Hoard', text:'A perfect cache of 47 seeds. Organized by color.'},
+  56:{name:'Owl Pellet', text:'Not what you think. A wrapped packet of tiny bones.'},
+  57:{name:'Feather Crown', text:'Five goose feathers bound with grass. A silly crown.'},
+  60:{name:'Bright Scale', text:'A dart frog\u2019s shed skin, vivid as flame.'},
+  61:{name:'Soft Pelt', text:'A tuft of rabbit fur. Softer than anything.'},
+  62:{name:'Singing Stone', text:'A cricket-song pebble. Hums when held.'},
+  63:{name:'Puffin Beak', text:'A small orange beak bead. Ocean-salted.'},
+  64:{name:'Scarab Shell', text:'A beetle carapace that catches every color.'},
+  65:{name:'Ant Trail', text:'A line of 12 perfect sand grains. The last gift of the colony.'},
+  66:{name:'Red Cap Feather', text:'A feather touched with sunrise red.'},
+  67:{name:'Acorn Cache', text:'Seventeen acorns, each perfect, each saved for winter.'},
+  68:{name:'Eucalyptus Sprig', text:'A koala-scented sprig. Nothing grows faster near it.'},
+  69:{name:'Flamingo Plume', text:'A single pink plume. Stands on end in water.'},
+  70:{name:'Sea Curl', text:'A seahorse-shaped curl of kelp.'},
+  71:{name:'Koi Scale', text:'A single gold scale. Rare and quiet.'},
+  72:{name:'Jelly Bell', text:'A jellyfish-shaped bell of glass. Rings only when alone.'},
+  73:{name:'Mushroom Cap', text:'A tiny perfect cap. Dried and pressed.'},
+  74:{name:'Velvet Moss', text:'A strip of fawn-soft moss.'},
+  75:{name:'Raven Eye', text:'A polished obsidian stone. Watches back.'},
+  79:{name:'Wisp Jar', text:'A sealed jar that glows faintly. Always.'},
+  81:{name:'Bamboo Flute', text:'A panda-carved flute that plays by itself when you\u2019re sad.'}
+};
+window._lwCheckMementos = function() {
+  try {
+    var equipLog = JSON.parse(localStorage.getItem('lw_companion_first_equipped') || '{}');
+    var collected = JSON.parse(localStorage.getItem('lw_companion_mementos') || '[]');
+    var ownedIdx = {};
+    for (var ci = 0; ci < collected.length; ci++) ownedIdx[collected[ci].idx] = true;
+    var now = Date.now();
+    var THIRTY_DAYS = 30 * 86400000;
+    var newMementos = [];
+    for (var idx in equipLog) {
+      if (ownedIdx[idx]) continue;
+      if (!LW_MEMENTOS[idx]) continue;
+      if (now - equipLog[idx] >= THIRTY_DAYS) {
+        var m = LW_MEMENTOS[idx];
+        var entry = { idx: parseInt(idx, 10), name: m.name, text: m.text, awardedAt: now, source: 'companion' };
+        collected.push(entry);
+        newMementos.push(entry);
+      }
+    }
+    if (newMementos.length) {
+      localStorage.setItem('lw_companion_mementos', JSON.stringify(collected));
+      for (var nm = 0; nm < newMementos.length; nm++) {
+        var nmE = newMementos[nm];
+        if (window._toast) window._toast('\u2728 Keepsake received: ' + nmE.name);
+        if (window._logWildEvent) window._logWildEvent({ type: 'memento', source: 'companion', name: nmE.name, text: nmE.text });
+      }
+    }
+    return newMementos;
+  } catch (e) { return []; }
+};
+// Auto-check on Wild tab entry + periodic
+setTimeout(function(){ if (window._lwCheckMementos) window._lwCheckMementos(); }, 8000);
+setInterval(function(){ if (window._lwCheckMementos) window._lwCheckMementos(); }, 3600000);
+
+// ═══ MONTHLY BLOOM DAYS — community event schedule ═══
+// Second Saturday of every month is a Bloom Day. 24-hour window with
+// 2x feral spawn chance + themed trait boost + unique keepsake entry.
+// Push notification opt-in lives in the character sheet (deferred).
+// Naming/theme rotates so each month feels like its own event.
+var LW_BLOOM_DAYS = {
+  0:  { name: 'Frost Star',     theme: 'winter-hardy plants + icy colors',   seasonBias: 3, rareMult: 2.0 },
+  1:  { name: 'Seed Awakening', theme: 'early sprouts + pale greens',         seasonBias: 0, rareMult: 1.8 },
+  2:  { name: 'Rain Festival',  theme: 'rain-lovers + blue-tinted leaves',    seasonBias: 0, rareMult: 2.0 },
+  3:  { name: 'Spring Surge',   theme: 'flower-bearers + vivid pinks',        seasonBias: 0, rareMult: 2.5 },
+  4:  { name: 'Pollen Dance',   theme: 'Pollinator companions x3',            seasonBias: 1, rareMult: 2.0, familyBoost: 'pollinators' },
+  5:  { name: 'Solstice Sun',   theme: 'golden pots + sun-loving plants',     seasonBias: 1, rareMult: 2.5 },
+  6:  { name: 'Wild Heat',      theme: 'desert biome bonuses + Dry elements', seasonBias: 1, rareMult: 2.0 },
+  7:  { name: 'Late Bloom',     theme: 'mature plants + autumn transitions',  seasonBias: 2, rareMult: 2.0 },
+  8:  { name: 'Harvest Moon',   theme: 'copper & bronze + Scatterer companions', seasonBias: 2, rareMult: 2.5, familyBoost: 'scatterers' },
+  9:  { name: 'Leaf Fall',      theme: 'warm autumn colors + Watcher companions', seasonBias: 2, rareMult: 2.0, familyBoost: 'watchers' },
+  10: { name: 'Equinox Dusk',   theme: 'Mystic plants + night-active',         seasonBias: 3, rareMult: 2.0 },
+  11: { name: 'Winter\u2019s Gift',  theme: 'Guardian companions + silver leaves', seasonBias: 3, rareMult: 2.5, familyBoost: 'guardians' }
+};
+// Bloom Day = 2nd Saturday of month. Returns { active, def, hoursLeft } or null.
+window._lwGetActiveBloomDay = function() {
+  var now = new Date();
+  var month = now.getMonth();
+  var year = now.getFullYear();
+  // Find the 2nd Saturday
+  var first = new Date(year, month, 1);
+  var daysToFirstSat = (6 - first.getDay() + 7) % 7;
+  var secondSatDate = 1 + daysToFirstSat + 7;
+  if (now.getDate() !== secondSatDate) return null;
+  var def = LW_BLOOM_DAYS[month];
+  if (!def) return null;
+  var endOfDay = new Date(year, month, secondSatDate + 1, 0, 0, 0).getTime();
+  var hoursLeft = Math.max(0, (endOfDay - now.getTime()) / 3600000);
+  return { active: true, def: def, hoursLeft: hoursLeft };
+};
+// Multiplier hook for feral generation. Returns 1.0 on non-Bloom days.
+window._lwBloomDayRareMult = function() {
+  var b = window._lwGetActiveBloomDay && window._lwGetActiveBloomDay();
+  return b ? (b.def.rareMult || 1.0) : 1.0;
+};
+// Announce Bloom Day on Wild-tab entry (once per Bloom Day).
+window._lwAnnounceBloomDay = function() {
+  var b = window._lwGetActiveBloomDay && window._lwGetActiveBloomDay();
+  if (!b) return;
+  var seenKey = 'lw_bloom_day_seen';
+  var today = new Date().toISOString().split('T')[0];
+  if (localStorage.getItem(seenKey) === today) return;
+  localStorage.setItem(seenKey, today);
+  if (window._toast) {
+    setTimeout(function(){
+      window._toast('\ud83c\udf38 BLOOM DAY: ' + b.def.name + ' \u2014 ' + b.def.theme + '. Forage today for 2\u00d7 rare seeds!');
+    }, 3000);
+  }
+  if (window._logWildEvent) {
+    window._logWildEvent({ type: 'bloom_day', name: b.def.name, theme: b.def.theme });
+  }
+};
+setTimeout(function(){ if (window._lwAnnounceBloomDay) window._lwAnnounceBloomDay(); }, 4500);
 
 // ═══ SYNC SINGLE PROFILE FIELD TO FIRESTORE ═══
 function _syncProfileField(field,value){
