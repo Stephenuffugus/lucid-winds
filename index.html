@@ -39323,7 +39323,10 @@ function _selectHexPlant(idx,p){
   if(p.pestStage>0){
     var _hashesNow=window.getTotalHashes?window.getTotalHashes():0;
     if(_hashesNow>=3){
-      _pruneBtn='<button class="hi-action-btn hi-prune-hold" data-hold-action="prune" data-hold-ms="5000" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)" onpointerleave="window._waterHoldEnd(this)" title="Hold 5 seconds, costs 3 hashes"><span class="hi-water-fill"></span><span class="hi-water-label">\u2702 HOLD TO PRUNE (\u22923\u26a1)</span></button>';
+      // Removed onpointerleave: on mobile, slight finger shifts fire leave
+      // even with setPointerCapture, which cancelled the hold mid-gesture.
+      // pointerup + pointercancel are enough for cleanup.
+      _pruneBtn='<button class="hi-action-btn hi-prune-hold" data-hold-action="prune" data-hold-ms="5000" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)" title="Hold 5 seconds, costs 3 hashes"><span class="hi-water-fill"></span><span class="hi-water-label">\u2702 HOLD TO PRUNE (\u22923\u26a1)</span></button>';
     } else {
       _pruneBtn='<button class="hi-action-btn locked" title="Need 3 hashes to prune">\u2702 PRUNE (need 3\u26a1)</button>';
     }
@@ -39365,7 +39368,7 @@ function _selectHexPlant(idx,p){
     actions+=_inspectBtn;
     // Stranger water requires a 10-second hold (spec §5: "10s hold")
     // — handlers attached to pointerdown/up so it works for touch + mouse.
-    actions+='<button class="hi-action-btn hi-water-hold" data-hold-action="water" data-hold-ms="10000" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)" onpointerleave="window._waterHoldEnd(this)" title="Hold for 10 seconds to water"><span class="hi-water-fill"></span><span class="hi-water-label">&#128167; HOLD TO WATER</span></button>';
+    actions+='<button class="hi-action-btn hi-water-hold" data-hold-action="water" data-hold-ms="10000" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)" title="Hold for 10 seconds to water"><span class="hi-water-fill"></span><span class="hi-water-label">&#128167; HOLD TO WATER</span></button>';
     actions+=_mulchBtn;
     if(_blessBtn)actions+=_blessBtn;
     if(_pruneBtn)actions+=_pruneBtn;

@@ -19476,9 +19476,11 @@
     html += '<div class="cb-rarity" style="color:' + sColor + ';">' + (_tg ? _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon : 'COMMON') + '</div>';
     // Lineage moved to the Extra Details modal — button replaces the inline tree.
     // Only show the button if this plant has parents to show OR has interesting metadata.
-    if (plant.parentAHash || plant.generation > 1 || plant.mutated || plant.compostLayers) {
-      html += '<button class="cb-details-btn" onclick="event.stopPropagation();window._openPlantDetails(\'' + plant.hash + '\');">⬡ LINEAGE & DETAILS</button>';
-    }
+    // Lineage & Details button — always shown now. iOS Safari capture-phase
+    // fix: button sits inside a transform:rotateY parent (.cs-flip-wrap) so
+    // inline onclick + stopPropagation is unreliable. Use data-pdh to pass
+    // the hash and attach a capture-phase listener below.
+    html += '<button class="cb-details-btn" data-pdh="' + plant.hash + '">⬡ LINEAGE & DETAILS</button>';
     html += '<div class="cb-hash" style="margin-top:0.4rem;padding-top:0.3rem;border-top:1px solid rgba(74,124,53,0.06);">' + plant.hash + '</div>';
     html += '<div class="cb-date" style="margin-top:0.1rem;">Minted ' + (plant.date || '') + dateSuffix + '</div>';
     html += '<div class="cb-nameplate" style="position:absolute;bottom:8%;left:10%;right:10%;"><span class="cb-name" style="color:' + sColor + ';">' + name + '</span></div>';
@@ -19486,6 +19488,21 @@
 
     backEl.innerHTML = html;
     backEl.classList.remove('cs-back-lazy');
+    // Capture-phase listener on the lineage button — fires before the
+    // bubble-phase flip handler on the card wrapper. Inline onclick +
+    // stopPropagation was unreliable on iOS when the button lives inside
+    // a transform:rotateY parent. Capture phase + all three stop methods
+    // is the belt-and-suspenders fix.
+    var _lineageBtn = backEl.querySelector('.cb-details-btn');
+    if (_lineageBtn) {
+      _lineageBtn.addEventListener('click', function(e){
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+        e.preventDefault();
+        var _h = this.getAttribute('data-pdh');
+        if (_h && window._openPlantDetails) window._openPlantDetails(_h);
+      }, true);
+    }
   }
 
   // ── Card flip handler: first-flip rarity reveal ────────────────────
