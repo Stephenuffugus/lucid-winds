@@ -25,12 +25,12 @@ window._gameFns.juniper = function Juniper(a){
   pan.style.cssText='max-width:420px;margin:0 auto;padding:6px;user-select:none;';
   a.appendChild(pan);
   function _pip(suitName){return (window._cdPipFor)?window._cdPipFor(suitName):SI[suitName];}
-  var _juStyleLbl='🃏 '+(window._cdStyleLabel?window._cdStyleLabel():'Garden');
+  var _juStyleLbl='🃏 Style';
   mc(a).innerHTML='<button class="gb-new" onclick="_JUN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="JUstyle" onclick="_JUToggleStyle()" style="font-size:0.7rem;">'+_juStyleLbl+'</button>';
   window._JUToggleStyle=function(){
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('JUstyle');
-    if(b)b.textContent='🃏 '+(window._cdStyleLabel?window._cdStyleLabel(nxt):'Garden');
+    if(b)b.textContent='🃏 Style';
     if(typeof render==='function')render();
   };
 

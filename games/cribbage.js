@@ -20,12 +20,12 @@ window._gameFns.cribbage = function CRIB(a){
   a.appendChild(pan);
   // Style-aware pip — Garden swaps ♠♥♦♣ for 🍄🌸🐝🐦
   function _pip(idx){return (window._cdSuit)?window._cdSuit(idx):SUITS[idx];}
-  var _cbStyleLbl='🃏 '+(window._cdStyleLabel?window._cdStyleLabel():'Garden');
+  var _cbStyleLbl='🃏 Style';
   mc(a).innerHTML='<button class="gb-new" onclick="_CBN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="CBstyle" onclick="_CBToggleStyle()" style="font-size:0.7rem;">'+_cbStyleLbl+'</button>';
   window._CBToggleStyle=function(){
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('CBstyle');
-    if(b)b.textContent='🃏 '+(window._cdStyleLabel?window._cdStyleLabel(nxt):'Garden');
+    if(b)b.textContent='🃏 Style';
     if(typeof render==='function')render();
   };
 

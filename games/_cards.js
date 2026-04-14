@@ -26,19 +26,28 @@ var _FL_BASE='assets/decks/floral/';
 var _FL_SUIT=['suit-spade.png','suit-heart.png','suit-diamond.png','suit-club.png'];
 
 // Style: 'lw' (botanical) | 'classic' (standard pips) | 'floral' (hand-drawn)
-var _STYLE_CYCLE=['lw','classic','floral'];
+// Default is FLORAL — Jessie's hand-drawn semi-traditional deck is our
+// lead art. LW and Classic are unlockable alternate styles.
+var _STYLE_CYCLE=['floral','classic','lw'];
+var _DEFAULT_STYLE='floral';
 function _cdStyle(){
   try{
     var s=localStorage.getItem('lw_card_style');
     if(s==='classic'||s==='floral'||s==='lw')return s;
-    return 'lw';
-  }catch(e){return 'lw';}
+    return _DEFAULT_STYLE;
+  }catch(e){return _DEFAULT_STYLE;}
 }
 function _cdSetStyle(s){
-  if(s!=='classic'&&s!=='floral'&&s!=='lw')s='lw';
+  if(s!=='classic'&&s!=='floral'&&s!=='lw')s=_DEFAULT_STYLE;
   try{localStorage.setItem('lw_card_style',s);}catch(e){}
   if(s==='floral')_preloadFloral();
 }
+// Deck metadata used by the style picker.
+var _DECKS=[
+  {id:'floral', name:'Floral',  tag:'Semi-traditional · hand-drawn', unlocked:true},
+  {id:'classic',name:'Classic', tag:'Standard pips · familiar',       unlocked:true},
+  {id:'lw',     name:'Garden',  tag:'Botanical reskin · mushroom·bee·flower·bird', unlocked:true}
+];
 
 // Preload card images (only relevant for LW style — classic is pure CSS)
 var files=['playing-card-backs'];
@@ -156,7 +165,9 @@ function _cdElClassic(d,card){
     var rnk=_cdRnk(card.r);
     // Classic cream-white card with rank+suit corners and a big center suit
     d.style.backgroundImage='';
-    d.style.background='linear-gradient(180deg,#faf6ec,#ede5d0)';
+    // Pure white so inline suit PNGs (whose source also has a white bg)
+    // merge cleanly with the card face — no cream halo.
+    d.style.background='#ffffff';
     d.style.color=clr;
     d.style.border='1px solid rgba(0,0,0,0.18)';
     d.innerHTML=
@@ -194,7 +205,10 @@ function _cdElFloral(d,card){
     var suitPng=_FL_BASE+_FL_SUIT[card.s];
     var rankClr=isRed?'#b42a2a':'#1a1a1a';
     d.style.backgroundImage='';
-    d.style.background='linear-gradient(180deg,#faf6ec,#ede5d0)';
+    // Pure white so the floral suit PNG and face-card PNG (both with
+    // white backgrounds in the source art) blend seamlessly with the
+    // card face — no cream halo, no harsh rectangle edges.
+    d.style.background='#ffffff';
     d.style.color=rankClr;
     d.style.border='1px solid rgba(0,0,0,0.2)';
     // Center art: Ace/J/Q/K get the floral face art, 2-10 get a big pip.
@@ -249,27 +263,98 @@ function _cdEl(card){
   return d;
 }
 
-// Toggle helper that any card game can wire into a button. Cycles
-// lw → classic → floral → lw. Existing callers that just want "next
-// style" keep working; callers that want a specific style can use
-// _cdSetStyle directly.
+// Legacy cycle helper kept for back-compat with games still wired to
+// the old toggle — now just opens the picker so the UX is consistent.
 function _cdToggleStyle(){
-  var cur=_cdStyle();
-  var idx=_STYLE_CYCLE.indexOf(cur);
-  if(idx<0)idx=0;
-  var nxt=_STYLE_CYCLE[(idx+1)%_STYLE_CYCLE.length];
-  _cdSetStyle(nxt);
-  // Notify any listening game to re-render
-  try{document.dispatchEvent(new CustomEvent('lw-card-style-change',{detail:{style:nxt}}));}catch(e){}
-  return nxt;
+  _cdOpenStylePicker();
+  return _cdStyle();
 }
-// Label for UI buttons — what the user sees on the style toggle.
+// Label for UI buttons — what the user sees on the style button.
 function _cdStyleLabel(s){
   s=s||_cdStyle();
-  if(s==='classic')return 'Classic';
-  if(s==='floral')return 'Floral';
-  return 'Garden';
+  for(var i=0;i<_DECKS.length;i++)if(_DECKS[i].id===s)return _DECKS[i].name;
+  return 'Floral';
 }
+// Render a tiny preview card (used in the style picker).
+function _cdDeckPreviewHTML(styleId){
+  // A 3-row mini showing K♥, Q♠, J♦ as a visual taste.
+  var samples=[{s:1,r:12},{s:0,r:11},{s:2,r:10}];
+  var prev='';
+  var cellStyle='display:inline-block;width:44px;height:64px;border-radius:6px;border:1px solid rgba(0,0,0,0.2);background:#ffffff;position:relative;margin-right:2px;overflow:hidden;vertical-align:top;';
+  for(var i=0;i<samples.length;i++){
+    var s=samples[i].s,r=samples[i].r;
+    var isRed=(s===1||s===2);
+    var clr=isRed?'#b42a2a':'#1a1a1a';
+    var sym=_CL_SYM[s];
+    var rnk=_RANK_SYM[r];
+    var body='';
+    if(styleId==='lw'){
+      var pip=_CD_BASE+_SUIT_NAME[s]+'.png';
+      var art=(r===0)?_CD_BASE+_SUIT_NAME[s]+'-ace.png'
+                 :(r===10)?_CD_BASE+_SUIT_NAME[s]+'-jack.png'
+                 :(r===11)?_CD_BASE+_SUIT_NAME[s]+'-queen.png'
+                 :_CD_BASE+_SUIT_NAME[s]+'-king.png';
+      body='<div style="'+cellStyle+'background:#0d100c url(\''+art+'\') center/cover;">'
+        +'<img src="'+pip+'" style="position:absolute;top:2px;right:3px;width:10px;height:10px;">'
+        +'<div style="position:absolute;top:2px;left:3px;color:'+_SUIT_CLR[s]+';font-size:9px;font-weight:700;">'+rnk+'</div>'
+        +'</div>';
+    } else if(styleId==='classic'){
+      body='<div style="'+cellStyle+'">'
+        +'<div style="position:absolute;top:2px;left:4px;color:'+clr+';font-family:Georgia,serif;font-size:10px;font-weight:700;text-align:center;">'+rnk+'<div style="font-size:8px;line-height:1;">'+sym+'</div></div>'
+        +'<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:'+clr+';font-size:20px;opacity:0.85;">'+sym+'</div>'
+        +'</div>';
+    } else { // floral
+      var face=(r===10?'jack':r===11?'queen':'king')+'-'+(isRed?'red':'black');
+      var suitPng=_FL_BASE+_FL_SUIT[s];
+      body='<div style="'+cellStyle+'">'
+        +'<img src="'+_FL_BASE+face+'.png" style="position:absolute;inset:6% 10%;width:80%;height:84%;object-fit:contain;">'
+        +'<div style="position:absolute;top:2px;left:3px;color:'+clr+';font-family:Georgia,serif;font-size:9px;font-weight:700;text-align:center;">'+rnk
+        +'<img src="'+suitPng+'" style="display:block;width:9px;height:9px;margin:1px auto 0;object-fit:contain;"></div>'
+        +'</div>';
+    }
+    prev+=body;
+  }
+  return prev;
+}
+// Open the picker modal with all unlocked decks as tappable cards.
+function _cdOpenStylePicker(){
+  var ov=document.getElementById('cdStyleOV');
+  if(ov){ov.remove();return;}
+  ov=document.createElement('div');
+  ov.id='cdStyleOV';
+  ov.style.cssText='position:fixed;inset:0;z-index:99994;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.92);backdrop-filter:blur(10px);padding:14px;';
+  ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
+  var cur=_cdStyle();
+  var h='<div style="max-width:460px;width:100%;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:rgba(15,20,12,0.96);border:1px solid rgba(200,168,75,0.45);border-radius:14px;padding:18px 16px;font-family:DM Mono,monospace;">';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:0.14em;color:var(--gold);">CARD STYLE</div>';
+  h+='<button class="gb" onclick="document.getElementById(\'cdStyleOV\').remove()" style="min-height:44px;padding:6px 14px;">CLOSE</button>';
+  h+='</div>';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);margin-bottom:12px;line-height:1.5;">Tap a deck to switch every card game to that style. More decks unlock as you play.</div>';
+  for(var i=0;i<_DECKS.length;i++){
+    var d=_DECKS[i];
+    var sel=(d.id===cur);
+    var locked=!d.unlocked;
+    h+='<button class="gb" onclick="_cdPickStyle(\''+d.id+'\')" '+(locked?'disabled':'')+' '
+      +'style="display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;margin-bottom:8px;min-height:80px;text-align:left;font-family:inherit;'
+      +(sel?'background:rgba(200,168,75,0.22);border-color:var(--gold);':locked?'opacity:0.45;':'')+'">';
+    h+='<div style="flex-shrink:0;">'+_cdDeckPreviewHTML(d.id)+'</div>';
+    h+='<div style="flex:1;min-width:0;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.06em;color:var(--cream);">'+d.name+(sel?' <span style="color:var(--gold);font-size:0.65rem;letter-spacing:0.12em;">· ACTIVE</span>':'')+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--sage);opacity:0.85;margin-top:2px;">'+d.tag+'</div>';
+    if(locked)h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:4px;">🔒 Locked</div>';
+    h+='</div>';
+    h+='</button>';
+  }
+  h+='</div>';
+  ov.innerHTML=h;
+  document.body.appendChild(ov);
+}
+window._cdPickStyle=function(id){
+  _cdSetStyle(id);
+  try{document.dispatchEvent(new CustomEvent('lw-card-style-change',{detail:{style:id}}));}catch(e){}
+  var ov=document.getElementById('cdStyleOV');if(ov)ov.remove();
+};
 
 // Expose on window for game scripts
 window._cdMk=_cdMk;
@@ -283,6 +368,7 @@ window._cdArt=_cdArt;
 window._cdStyle=_cdStyle;
 window._cdSetStyle=_cdSetStyle;
 window._cdToggleStyle=_cdToggleStyle;
+window._cdOpenStylePicker=_cdOpenStylePicker;
 window._cdStyleLabel=_cdStyleLabel;
 window._cdPipFor=_cdPipFor;
 window._cdFloralPipImg=_cdFloralPipImg;

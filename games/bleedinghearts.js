@@ -27,12 +27,12 @@ window._gameFns.bleedinghearts = function BH(a){
   var pan=document.createElement('div');pan.id='BHpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:6px;user-select:none;';
   a.appendChild(pan);
-  var _bhStyleLbl='🃏 '+(window._cdStyleLabel?window._cdStyleLabel():'Garden');
+  var _bhStyleLbl='🃏 Style';
   mc(a).innerHTML='<button class="gb-new" onclick="_BHN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="BHstyle" onclick="_BHToggleStyle()" style="font-size:0.7rem;">'+_bhStyleLbl+'</button>';
   window._BHToggleStyle=function(){
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('BHstyle');
-    if(b)b.textContent='🃏 '+(window._cdStyleLabel?window._cdStyleLabel(nxt):'Garden');
+    if(b)b.textContent='🃏 Style';
     render();
   };
 

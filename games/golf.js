@@ -13,12 +13,12 @@ function GGF(a){
   var cols=[],stock=[],waste=[],deck,gameOver=false,score=35;
   ms(a,'Left: <strong id="GFsc">35</strong>');mm(a);
   var gd=document.createElement('div');gd.id='GFgd';a.appendChild(gd);
-  var _gfStyleLbl='🃏 '+(window._cdStyleLabel?window._cdStyleLabel():'Garden');
+  var _gfStyleLbl='🃏 Style';
   mc(a).innerHTML='<button class="gb" onclick="_GFN()">🔄 New</button> <button class="gb" id="GFstyle" onclick="_GFToggleStyle()" style="font-size:0.7rem;">'+_gfStyleLbl+'</button>';
   window._GFToggleStyle=function(){
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('GFstyle');
-    if(b)b.textContent='🃏 '+(window._cdStyleLabel?window._cdStyleLabel(nxt):'Garden');
+    if(b)b.textContent='🃏 Style';
     rn();
   };
 

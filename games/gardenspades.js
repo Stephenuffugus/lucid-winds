@@ -30,12 +30,12 @@ window._gameFns.gardenspades = function GardenSpades(a){
   pan.style.cssText='max-width:420px;margin:0 auto;padding:6px;user-select:none;';
   a.appendChild(pan);
   function _pip(suitName){return (window._cdPipFor)?window._cdPipFor(suitName):SI[suitName];}
-  var _gsStyleLbl='🃏 '+(window._cdStyleLabel?window._cdStyleLabel():'Garden');
+  var _gsStyleLbl='🃏 Style';
   mc(a).innerHTML='<button class="gb-new" onclick="_GSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="GSstyle" onclick="_GSToggleStyle()" style="font-size:0.7rem;">'+_gsStyleLbl+'</button>';
   window._GSToggleStyle=function(){
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('GSstyle');
-    if(b)b.textContent='🃏 '+(window._cdStyleLabel?window._cdStyleLabel(nxt):'Garden');
+    if(b)b.textContent='🃏 Style';
     if(typeof render==='function')render();
   };
 
