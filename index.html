@@ -34398,10 +34398,15 @@ var FALLBACK=[40.8617,-73.8773];
 // ── WILD v3: rarity-scaled vitality ──
 // Each wild plant has a lifespan based on rarity. decayAt is the
 // timestamp at which vitality hits 0. Owner water resets it to full.
-// Stranger tend adds 6h, stranger water adds 2h, shared +5d hard cap.
-var WILD_LIFESPAN_DAYS={Common:7,Uncommon:10,Rare:14,Epic:21,Legendary:30,Mythic:45,Cosmic:60};
+// Flat lifespan policy (Apr 14, 2026): all rarities share the same short
+// base. Rarity governs trait quality, not survival. Communities must
+// actively tend valuable plants through climate damage to keep them.
+var WILD_BASE_LIFESPAN_DAYS=3;
+var WILD_LIFESPAN_DAYS={Common:WILD_BASE_LIFESPAN_DAYS,Uncommon:WILD_BASE_LIFESPAN_DAYS,Rare:WILD_BASE_LIFESPAN_DAYS,Epic:WILD_BASE_LIFESPAN_DAYS,Legendary:WILD_BASE_LIFESPAN_DAYS,Mythic:WILD_BASE_LIFESPAN_DAYS,Cosmic:WILD_BASE_LIFESPAN_DAYS};
 var WILD_TEND_BONUS_MS=6*3600000;
-var WILD_TEND_BONUS_CAP=5*86400000;
+// 5-day tend cap lifted — raised to 30 days so indefinite community
+// tending works but single-player exploit loops still bottom out.
+var WILD_TEND_BONUS_CAP=30*86400000;
 var WILD_WATER_BONUS_MS=2*3600000;
 var WILD_MAX_AGE_DAYS=14; // legacy fallback only — pre-vitality plants
 function _plantRarity(hash){

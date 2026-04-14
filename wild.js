@@ -177,14 +177,23 @@ var FALLBACK=[40.758,-73.9855];
 // ── Wild v3 vitality / lifespan ──
 // Every plant has a rarity-scaled lifespan in days. decayAt is the
 // timestamp at which vitality hits 0. Owner water resets it to full.
-// Stranger tend adds 6h to remaining lifespan, capped at +5 days
-// total across the plant's life (plant.strangerTendAddMs, max 5*86400000).
+// Flat lifespan policy (Apr 14, 2026): every wild plant lives the same
+// short base time regardless of rarity. Rarity governs trait quality, not
+// survival. Communities must actively tend valuable plants — especially
+// off-season where climate damage burns days of life per day. If no one
+// visits a hex, plants naturally die and the map self-prunes.
+var WILD_BASE_LIFESPAN_DAYS = 3;
 var WILD_LIFESPAN_DAYS = {
-  Common: 7, Uncommon: 10, Rare: 14, Epic: 21,
-  Legendary: 30, Mythic: 45, Cosmic: 60
+  Common: WILD_BASE_LIFESPAN_DAYS, Uncommon: WILD_BASE_LIFESPAN_DAYS,
+  Rare: WILD_BASE_LIFESPAN_DAYS, Epic: WILD_BASE_LIFESPAN_DAYS,
+  Legendary: WILD_BASE_LIFESPAN_DAYS, Mythic: WILD_BASE_LIFESPAN_DAYS,
+  Cosmic: WILD_BASE_LIFESPAN_DAYS
 };
 var WILD_TEND_BONUS_MS = 6 * 3600000;     // +6h per tend
-var WILD_TEND_BONUS_CAP = 5 * 86400000;   // at most +5 days lifetime
+// Previous 5-day lifetime cap is lifted — communities can keep a plant
+// alive indefinitely if someone tends every few hours. A high ceiling
+// (30 days) remains to prevent single-player exploit loops.
+var WILD_TEND_BONUS_CAP = 30 * 86400000;
 var WILD_WATER_BONUS_MS = 2 * 3600000;    // +2h per stranger water
 var WILD_MAX_AGE_DAYS = 14; // legacy fallback only
 
