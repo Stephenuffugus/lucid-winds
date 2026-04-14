@@ -4307,10 +4307,23 @@ function _renderHexPlants(plants) {
     }
     var origin = ap.own ? 'Planted' : (ap.wildBorn ? 'Wild Born' : ap.ownerName);
 
-    card.innerHTML =
-      '<div class="hi-pr-svg">' + svgHtml + '</div>' +
-      '<div class="hi-pr-info"><div class="hi-pr-name">' + name + '</div>' +
-      '<div class="hi-pr-meta" style="color:' + gradeColor + ';">' + grade + ' · ' + origin + '</div></div>';
+    // Sprout render override — a dormant seedling awaiting germination.
+    // Shows the sprout art + countdown instead of generated plant SVG.
+    if (ap.sprout && ap.germinateAt) {
+      var _remainMs = ap.germinateAt - Date.now();
+      var _remainTxt = _remainMs <= 0 ? 'Ready to germinate' :
+        _remainMs >= 3600000 ? Math.round(_remainMs / 3600000) + 'h' :
+        Math.round(_remainMs / 60000) + 'm';
+      card.innerHTML =
+        '<div class="hi-pr-svg" style="display:flex;align-items:center;justify-content:center;"><img src="assets/games/wild/wild-sprout.png" alt="sprout" style="width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));"></div>' +
+        '<div class="hi-pr-info"><div class="hi-pr-name" style="color:var(--sage);font-style:italic;">Sprout</div>' +
+        '<div class="hi-pr-meta" style="color:var(--gold);">Germinates in ' + _remainTxt + '</div></div>';
+    } else {
+      card.innerHTML =
+        '<div class="hi-pr-svg">' + svgHtml + '</div>' +
+        '<div class="hi-pr-info"><div class="hi-pr-name">' + name + '</div>' +
+        '<div class="hi-pr-meta" style="color:' + gradeColor + ';">' + grade + ' · ' + origin + '</div></div>';
+    }
 
     // Tap to select
     (function(idx, plantData) {
