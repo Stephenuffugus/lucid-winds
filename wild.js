@@ -1449,15 +1449,40 @@ function _doReproduction(weather, simMode) {
         }
       }
     }
-    if (plants.length < 2) continue; // need 2+ for breeding pair (including adjacent)
+    // Age-gate: plants under 2 days old can't breed. Prevents explosive
+    // compounding where wild-born babies become parents the same week
+    // and the cluster runs away from its map. A 2-day floor also leaves
+    // a natural breeding window (plants live 3 days baseline) before
+    // climate damage closes the door.
+    var MATURE_MS = 2 * 86400000;
+    var now = Date.now();
+    var maturePlants = [];
+    for (var am = 0; am < plants.length; am++) {
+      var _ap = plants[am];
+      var _dat = _ap && _ap.droppedAt;
+      if (typeof _dat === 'string') _dat = new Date(_dat).getTime();
+      if (typeof _dat !== 'number' || isNaN(_dat)) _dat = now; // legacy: assume fresh
+      if ((now - _dat) >= MATURE_MS) maturePlants.push(_ap);
+    }
+    // Override plants array with mature-only for the breeding logic below.
+    plants = maturePlants;
+
+    if (plants.length < 2) continue; // need 2+ mature parents
     if (!simMode && checked[zk] === td) continue; // already checked today
 
     if (!simMode) checked[zk] = td;
 
     // Population scaling: larger populations reproduce faster (ecological resilience)
     var popMod = _popScale(plants.length);
-    // Density pressure: cap at 6+ plants per zone (overcrowding)
-    var densityMod = plants.length >= 6 ? 0.5 : 1.0;
+    // Density falloff — replaces the soft 50% cap at 6 plants. Sharper
+    // tiers so dense zones self-limit instead of becoming permanent
+    // growth engines. At 7+ plants no birth rolls from this zone.
+    var densityMod =
+      plants.length >= 7 ? 0 :
+      plants.length >= 5 ? 0.10 :
+      plants.length >= 3 ? 0.35 :
+      1.0;
+    if (densityMod === 0) continue; // zone is saturated; skip
 
     // Pick best complementary pair (prefer opposite seasons)
     var bestPair = null, bestScore = -1;
