@@ -1767,7 +1767,10 @@ function _doReproduction(weather, simMode) {
       var _bi = getBiomeInfo(window._lastDetectedBiome);
       if (_bi && _bi.spawnMod) biomeMod = _bi.spawnMod;
     }
-    var finalChance = REPRO_CHANCE * weatherMod * densityMod * seasonMod * popMod * meshMod * soilMod * compMod * biomeMod;
+    // Companion family bonus: Weavers grant +3% breedReward (+25% for Breeder)
+    var _weaverMult = 1.0;
+    try { if (window.LW_COMPANION) _weaverMult = window.LW_COMPANION.getCompanionMult('breedReward'); } catch(e) {}
+    var finalChance = REPRO_CHANCE * weatherMod * densityMod * seasonMod * popMod * meshMod * soilMod * compMod * biomeMod * _weaverMult;
     if (Math.random() >= finalChance) {
       if (simMode) simLog.push({ zone: zk, chance: Math.round(finalChance * 100) + '%', result: 'no breed' });
       continue;

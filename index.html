@@ -54801,6 +54801,26 @@ window._lwLevelCeremony=function(newLvl){
   if(window._toast)window._toast(c.icon+' '+c.title+' — '+c.body);
   try{if(window._playWin)window._playWin();}catch(e){}
   try{if(window._haptic)window._haptic('bloom');}catch(e){}
+  // Foraging card grant on every level-up (capped at card capacity).
+  // Element picked weighted toward what the player owns least so the
+  // hand stays balanced instead of mono-element.
+  try {
+    if (window.LW_FORAGING) {
+      var _inv = window.LW_FORAGING.loadInventory();
+      if (window.LW_FORAGING.totalCards(_inv) < window.LW_FORAGING.cardCapacity()) {
+        var _min = Infinity;
+        for (var _ek in _inv) if (_inv[_ek] < _min) _min = _inv[_ek];
+        var _candidates = [];
+        for (var _ek2 in _inv) if (_inv[_ek2] === _min) _candidates.push(_ek2);
+        var _pick = _candidates[Math.floor(Math.random() * _candidates.length)];
+        window.LW_FORAGING.addCard(_pick, 1);
+        var _el = window.LW_FORAGING.EL[_pick];
+        if (_el && window._toast) setTimeout(function(){
+          window._toast('\ud83c\udff5\ufe0f Level-up gift: ' + _el.icon + ' ' + _el.label + ' card added to foraging hand.');
+        }, 2500);
+      }
+    }
+  } catch(e) {}
 };
 // Initial apply
 setTimeout(function(){try{window._lwApplyGates();}catch(e){}},600);
