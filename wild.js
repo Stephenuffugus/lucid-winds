@@ -164,6 +164,10 @@ var _gpsDenied=false,_gpsFallbackTimer=null; // tracks if GPS was denied/unavail
 var _lastGeoTime=0,_lastGeoLat=0,_lastGeoLng=0,_speedKmh=0;
 // ── Shared drop real-time listener state ──
 var _sharedMarkers={}; // hash → {marker, data} for live shared drops
+// Expose on window so cross-IIFE callers (Beholder Omnisight, diagnostics,
+// compendium counters) can read the live shared-plant map. Same object,
+// not a copy, so mutations inside this IIFE stay visible everywhere.
+window._sharedMarkers = _sharedMarkers;
 var _snapUnsub=null;   // Firestore onSnapshot unsubscribe function
 var _snapZones=null;   // currently subscribed zone set (string for comparison)
 var _snapDebounce=null; // debounce timer for moveend re-subscription

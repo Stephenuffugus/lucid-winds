@@ -5943,10 +5943,28 @@ window._addSwitchTabHook = function(fn){
       alert('Seeded '+count+' plants across 25 zones (500m radius)!\nSwitch to Wild tab. Ferals will spawn within days.');
     },
     simulateSpread:function(){
-      // Simulate X days of spread using YOUR actual wild plants
+      // Simulate X days of spread using YOUR actual wild plants + every
+      // shared-marker plant visible on the map. Previously we only read
+      // fg_wild_plants (local own) which often holds fewer entries than
+      // Firestore — a keeper with 2 local drops but 9 plants on the map
+      // saw zero sim births because the local pool was sparse.
       var days=parseInt(prompt('Simulate how many days of spread?','7'))||7;
       var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
-      if(wild.length<2){alert('Need at least 2 wild plants to simulate. Drop some first!');return;}
+      // Merge in shared markers (other players + wild-born drops).
+      try{
+        if(window._sharedMarkers){
+          var seen={};for(var wi=0;wi<wild.length;wi++)seen[wild[wi].hash]=true;
+          for(var smk in window._sharedMarkers){
+            var sm=window._sharedMarkers[smk]&&window._sharedMarkers[smk].data;
+            if(!sm||!sm.hash||seen[sm.hash])continue;
+            wild.push({hash:sm.hash,lat:sm.lat,lng:sm.lng,season:sm.season||0,
+              ea:sm.ea||0,grade:sm.grade||'Common',date:sm.droppedAt||new Date().toISOString()});
+          }
+        }
+      }catch(e){}
+      if(wild.length<2){alert('Need at least 2 wild plants to simulate. Drop some first! (Found '+wild.length+' total across local + shared.)');return;}
+      // Persist the merged set so the day loop's reloads see shared plants too.
+      localStorage.setItem('fg_wild_plants',JSON.stringify(wild));
       var lat=wild[0].lat,lng=wild[0].lng;
       // Fetch real weather for YOUR location
       fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat.toFixed(4)+'&longitude='+lng.toFixed(4)+'&current_weather=true&daily=precipitation_sum&timezone=auto&forecast_days=1')
