@@ -1312,8 +1312,15 @@ function _collectFeralFromZone(zk, zonePlants) {
     info = { nm: typeof getPlantName === 'function' ? getPlantName(feralHash) : feralHash.slice(0, 8), grade: tg ? tg.name : 'Common' };
   } catch (e) { info = { nm: feralHash.slice(0, 8), grade: 'Common' }; }
 
-  // Challenge gate
-  if (window.FG_Challenge) {
+  // Challenge gate — prefer the new LW_FORAGING card mechanic. Falls
+  // back to the legacy 6 borrowed challenges if the new system isn't
+  // loaded yet (shouldn't happen in current builds).
+  if (window.LW_FORAGING && window.LW_FORAGING.openPanel) {
+    window.LW_FORAGING.openPanel(zk, info.grade, function(success){
+      if (success) _awardFeral(feralHash, parentA.hash, parentB.hash, zk, info);
+      // No toast on fail — the panel itself shows "HEX LOCKED" messaging.
+    });
+  } else if (window.FG_Challenge) {
     FG_Challenge.start(info.grade, function(success) {
       if (success) {
         _awardFeral(feralHash, parentA.hash, parentB.hash, zk, info);
