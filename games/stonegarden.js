@@ -315,13 +315,8 @@ window._gameFns.stonegarden=function SG(a){
     for(var step=0;step<SUBSTEPS;step++){
       for(var i=0;i<stones.length;i++){
         var s=stones[i];if(s.settled)continue;
-        // Mammoth bump: a fraction reduces gravity and tightens damping,
-        // so stones settle faster and fight tilt harder. 0.15→40% range.
-        var mGrav=mammothStability?GRAVITY*(1-mammothStability*0.25):GRAVITY;
-        var mAng=mammothStability?Math.min(0.985,ANG_DAMP+mammothStability*0.05):ANG_DAMP;
-        var mLin=mammothStability?Math.min(0.9995,LIN_DAMP+mammothStability*0.001):LIN_DAMP;
-        s.vy+=mGrav*subDt;
-        s.vx*=mLin;s.angVel*=mAng;
+        s.vy+=GRAVITY*subDt;
+        s.vx*=LIN_DAMP;s.angVel*=ANG_DAMP;
         s.x+=s.vx*subDt;s.y+=s.vy*subDt;
         s.angle+=s.angVel*subDt;
         groundCol(s);
@@ -626,18 +621,6 @@ window._gameFns.stonegarden=function SG(a){
 
   var lives=3;
   function gameOver(){
-    // ── PHOENIX BOOST — consume a revive instead of ending the run ──
-    // phoenixRevives was set at begin() from LW_Comp.use. Each use here
-    // restores one life and resumes play. Lv 3 also restores a second
-    // life on the same trigger (bundled into the use's value).
-    if(phoenixRevives>0){
-      phoenixRevives--;
-      lives=1;
-      state='playing';running=true;
-      _flash('🔥 PHOENIX REVIVE','#ffb85a');
-      try{if(window._toast)window._toast('🔥 Phoenix revived you — '+phoenixRevives+' left');}catch(e){}
-      return;
-    }
     running=false;state='gameover';
     sm('Run ended — '+score+' pts · '+stonesPlaced+' stones');
     _e('game_loss');
@@ -654,30 +637,9 @@ window._gameFns.stonegarden=function SG(a){
     ctx=canvas.getContext('2d');
     ctx.setTransform(dpr,0,0,dpr,0,0);
   }
-  // Companion boost state — applied at begin() for the whole run.
-  var mammothStability=0; // 0..0.40 damping bump
-  var phoenixRevives=0;   // remaining revives on this Challenge run
   function begin(m){
     mode=m;state='playing';carries={};stones=[];particles=[];
     score=0;stonesPlaced=0;maxHeight=0;arcs=0;ringDetected=false;arcSig='';lives=3;
-    // ── COMPANION BOOST — fresh read each run ──
-    //   Mammoth: passive physics bump applied on every run the equipped
-    //     companion is Mammoth. XP only banks once per session.
-    //   Phoenix: revive pool allocated once per session (Challenge mode
-    //     only). Consumed by gameOver(). If the player finishes the run
-    //     with revives unused, they're gone — "per session" not "per run".
-    mammothStability=0;phoenixRevives=0;
-    try{
-      var mm=window.LW_Comp&&LW_Comp.peek('stonegarden');
-      if(mm&&mm.slug==='mammoth'){
-        mammothStability=mm.value;        // always-on passive
-        if(!mm.used)LW_Comp.use('stonegarden'); // XP once per session
-      } else if(mm&&mm.slug==='phoenix'&&m==='challenge'){
-        if(!mm.used){
-          phoenixRevives=LW_Comp.use('stonegarden')||0;
-        }
-      }
-    }catch(e){}
     pan.innerHTML='';
     canvas=document.createElement('canvas');
     canvas.style.cssText='display:block;border-radius:8px;margin:8px auto;touch-action:none;background:#0d100c;';
