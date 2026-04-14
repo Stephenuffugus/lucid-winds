@@ -103,115 +103,315 @@ window._gameFns.pollen = function PN(a){
     who.production[card.produces]=(who.production[card.produces]||0)+1;
     who.gp+=card.gp;
   }
-  function checkPollinators(who,label){
+  function checkPollinators(who){
     GS.pollinators.forEach(function(p){
       if(p.claimedBy)return;
       var ok=true;
       for(var c in p.req)if((who.production[c]||0)<p.req[c]){ok=false;break;}
-      if(ok){p.claimedBy=label;who.gp+=p.gp;sm(p.icon+' '+p.name+' visits '+(label==='player'?'you':'AI')+'!');}
+      if(ok){p.claimedBy=who.id;who.gp+=p.gp;sm(p.icon+' '+p.name+' visits '+who.name+'!');}
     });
   }
 
-  function newGame(){
+  // ─── TOKEN-POOL SCALING BY PLAYER COUNT ──────────────────────────────
+  // Traditional Splendor math. Gold is always 5.
+  //   2p → 4 of each color
+  //   3p → 5 of each color
+  //   4p → 7 of each color
+  // 1p (solo vs AI) keeps 5 of each for a decent supply-side fight.
+  function poolSize(numPlayers){
+    if(numPlayers<=1)return 5;
+    if(numPlayers===2)return 4;
+    if(numPlayers===3)return 5;
+    return 7; // 4p
+  }
+  // Build a fresh seat record.
+  function mkSeat(id,name,isAI){
+    var s={id:id,name:name,isAI:!!isAI,gp:0,
+      tokens:{green:0,rose:0,blue:0,amber:0,spore:0,gold:0},
+      cards:[],reserved:[],production:{}};
+    COLORS.forEach(function(c){s.production[c]=0;});
+    return s;
+  }
+  // Live alias for code that still reads GS.player — always points to
+  // the active seat. Updated whenever activeIdx rotates.
+  function setActive(idx){GS.activeIdx=idx;GS.player=GS.players[idx];}
+
+  // ─── SETUP SCREEN ────────────────────────────────────────────────────
+  // Shown at game start (and via _PNnew). Pick 1–4 seats, mark each
+  // human or AI. Persisted in localStorage so Stephen's preferred
+  // config comes back next session.
+  function defaultSetup(){
+    try{
+      var raw=localStorage.getItem('lw_pn_setup');
+      if(raw){var s=JSON.parse(raw);if(s&&s.seats&&s.seats.length>=1&&s.seats.length<=4)return s;}
+    }catch(e){}
+    return{seats:[{name:'You',isAI:false},{name:'AI',isAI:true}]};
+  }
+  function persistSetup(s){try{localStorage.setItem('lw_pn_setup',JSON.stringify(s));}catch(e){}}
+  function showSetup(){
+    var cur=defaultSetup();
+    var ov=document.getElementById('PNsetupOV');if(ov)ov.remove();
+    ov=document.createElement('div');ov.id='PNsetupOV';
+    ov.style.cssText='position:fixed;inset:0;z-index:200002;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:16px;animation:pnFadeIn 0.25s ease;';
+    document.body.appendChild(ov);
+    _renderSetup(cur);
+  }
+  function _renderSetup(st){
+    var ov=document.getElementById('PNsetupOV');if(!ov)return;
+    var h='<div style="max-width:420px;width:100%;background:rgba(15,20,12,0.97);border:1px solid rgba(200,168,75,0.45);border-radius:14px;padding:20px;font-family:DM Mono,monospace;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;letter-spacing:0.16em;color:var(--gold);margin-bottom:4px;">MASTER POLLINATOR</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:var(--muted);margin-bottom:16px;">1–4 players. Pass-and-play. First to 15 GP wins.</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.12em;color:var(--sage);margin-bottom:8px;">SEATS</div>';
+    for(var i=0;i<st.seats.length;i++){
+      var s=st.seats[i];
+      h+='<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;background:rgba(26,31,23,0.5);border:1px solid rgba(122,179,86,0.15);border-radius:10px;padding:8px 10px;">';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);width:40px;">P'+(i+1)+'</div>';
+      h+='<input type="text" value="'+(s.name||'')+'" oninput="_PNsetName('+i+',this.value)" maxlength="12" style="flex:1;min-width:0;background:rgba(13,16,12,0.7);border:1px solid rgba(122,179,86,0.2);border-radius:6px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.7rem;padding:6px 8px;min-height:40px;">';
+      h+='<button class="gb" onclick="_PNsetAI('+i+',false)" style="min-height:40px;padding:6px 10px;font-size:0.58rem;'+(!s.isAI?'background:rgba(122,179,86,0.25);border-color:var(--sage);color:var(--sage);':'')+'">HUMAN</button>';
+      h+='<button class="gb" onclick="_PNsetAI('+i+',true)" style="min-height:40px;padding:6px 10px;font-size:0.58rem;'+(s.isAI?'background:rgba(196,122,122,0.22);border-color:#c47a7a;color:#c47a7a;':'')+'">AI</button>';
+      if(st.seats.length>1)h+='<button class="gb" onclick="_PNdropSeat('+i+')" style="min-height:40px;padding:6px 8px;font-size:0.55rem;color:var(--muted);">✕</button>';
+      h+='</div>';
+    }
+    if(st.seats.length<4){
+      h+='<button class="gb" onclick="_PNaddSeat()" style="width:100%;margin:4px 0 14px;min-height:44px;font-size:0.65rem;letter-spacing:0.08em;">+ ADD SEAT</button>';
+    }
+    // Pool preview
+    var pool=poolSize(st.seats.length);
+    h+='<div style="background:rgba(26,31,23,0.5);border-radius:10px;padding:10px 12px;margin:8px 0 14px;font-family:DM Mono,monospace;font-size:0.6rem;line-height:1.7;color:var(--cream);">';
+    h+='<div style="color:var(--sage);letter-spacing:0.08em;margin-bottom:2px;">TOKEN POOL · '+st.seats.length+' player'+(st.seats.length===1?'':'s')+'</div>';
+    h+='<div>'+pool+' × each color &nbsp;·&nbsp; <span style="color:#ffd700;">5</span> gold</div>';
+    h+='</div>';
+    h+='<button class="gb" onclick="_PNstartFromSetup()" style="width:100%;min-height:52px;padding:14px;font-size:0.85rem;letter-spacing:0.12em;color:var(--gold);border-color:var(--gold);background:rgba(200,168,75,0.18);">BEGIN</button>';
+    h+='</div>';
+    ov.innerHTML=h;
+    ov.__setup=st;
+  }
+  window._PNsetName=function(i,v){var ov=document.getElementById('PNsetupOV');if(!ov)return;ov.__setup.seats[i].name=v;};
+  window._PNsetAI=function(i,v){var ov=document.getElementById('PNsetupOV');if(!ov)return;ov.__setup.seats[i].isAI=v;_renderSetup(ov.__setup);};
+  window._PNaddSeat=function(){var ov=document.getElementById('PNsetupOV');if(!ov)return;if(ov.__setup.seats.length>=4)return;ov.__setup.seats.push({name:'Player '+(ov.__setup.seats.length+1),isAI:false});_renderSetup(ov.__setup);};
+  window._PNdropSeat=function(i){var ov=document.getElementById('PNsetupOV');if(!ov)return;if(ov.__setup.seats.length<=1)return;ov.__setup.seats.splice(i,1);_renderSetup(ov.__setup);};
+  window._PNstartFromSetup=function(){
+    var ov=document.getElementById('PNsetupOV');if(!ov)return;
+    var setup=ov.__setup;persistSetup(setup);ov.remove();
+    startGame(setup);
+  };
+
+  function startGame(setup){
     var all=generateCards();
     var pls=shuffle(ALL_POLLINATORS.slice()).slice(0,5).map(function(p){return{name:p.name,icon:p.icon,req:p.req,gp:p.gp,claimedBy:null};});
-    // Bug fix: was assigning to `G` (which is the shared window._G,
-    // not this game's state). Result was GS stayed null and the very
-    // next line crashed reading GS.player.production. Now correctly
-    // initializes the GS state object the rest of the file uses.
+    var n=setup.seats.length;
+    var pool=poolSize(n);
+    var players=[];
+    for(var i=0;i<n;i++){
+      var s=setup.seats[i];
+      players.push(mkSeat(i,s.name||('P'+(i+1)),s.isAI));
+    }
     GS={
       turn:0,phase:'player',
       deck1:shuffle(all.tier1.slice()),deck2:shuffle(all.tier2.slice()),deck3:shuffle(all.tier3.slice()),
       market1:[],market2:[],market3:[],
-      supply:{green:5,rose:5,blue:5,amber:5,spore:5,gold:5},
+      supply:{green:pool,rose:pool,blue:pool,amber:pool,spore:pool,gold:5},
       pollinators:pls,
-      player:{gp:0,tokens:{green:0,rose:0,blue:0,amber:0,spore:0,gold:0},cards:[],reserved:[],production:{}},
-      ai:{gp:0,tokens:{green:0,rose:0,blue:0,amber:0,spore:0,gold:0},cards:[],reserved:[],production:{}},
-      selectedTokens:[],action:null
+      players:players,activeIdx:0,numPlayers:n,
+      selectedTokens:[],action:null,
+      pendingReturn:null // set when someone needs to return tokens before ending turn
     };
-    COLORS.forEach(function(c){GS.player.production[c]=0;GS.ai.production[c]=0;});
-    for(var i=0;i<4;i++){
+    setActive(0);
+    for(var k=0;k<4;k++){
       if(GS.deck1.length)GS.market1.push(GS.deck1.pop());
       if(GS.deck2.length)GS.market2.push(GS.deck2.pop());
       if(GS.deck3.length)GS.market3.push(GS.deck3.pop());
     }
     render();
+    // If first seat is AI, kick it off after a beat.
+    if(me().isAI)setTimeout(aiTurn,600);
   }
+  function me(){return GS.players[GS.activeIdx];}
+  function newGame(){showSetup();}
 
   function collectTokens(cs){
-    cs.forEach(function(c){if(GS.supply[c]>0){GS.supply[c]--;GS.player.tokens[c]++;}});
-    while(totalTok(GS.player.tokens)>10){
+    var who=me();
+    cs.forEach(function(c){if(GS.supply[c]>0){GS.supply[c]--;who.tokens[c]++;}});
+    // Over-cap? Route through return modal (human) or auto-trim (AI).
+    if(totalTok(who.tokens)>10){
+      if(who.isAI){autoTrim(who);endTurn();}
+      else{showReturnModal(who);return;}
+    }else endTurn();
+  }
+  // Auto-trim for AI: drop highest count first.
+  function autoTrim(who){
+    while(totalTok(who.tokens)>10){
       var mc=null,mv=0;
-      COLORS.forEach(function(c){if(GS.player.tokens[c]>mv){mv=GS.player.tokens[c];mc=c;}});
-      if(mc&&GS.player.tokens[mc]>0){GS.player.tokens[mc]--;GS.supply[mc]++;}else break;
+      COLORS.forEach(function(c){if(who.tokens[c]>mv){mv=who.tokens[c];mc=c;}});
+      if(mc&&who.tokens[mc]>0){who.tokens[mc]--;GS.supply[mc]++;}else break;
     }
-    endPlayerTurn();
   }
   function buyCard(card,mkt,deck){
-    payForCard(GS.player,card);
+    var who=me();
+    payForCard(who,card);
     for(var i=0;i<mkt.length;i++)if(mkt[i]&&mkt[i].id===card.id){if(deck.length)mkt[i]=deck.pop();else mkt.splice(i,1);break;}
-    checkPollinators(GS.player,'player');
+    checkPollinators(who);
     _play('snap');_e('progress');
-    endPlayerTurn();
+    endTurn();
   }
   function buyReserved(card){
-    payForCard(GS.player,card);
-    for(var i=0;i<GS.player.reserved.length;i++)if(GS.player.reserved[i].id===card.id){GS.player.reserved.splice(i,1);break;}
-    checkPollinators(GS.player,'player');
+    var who=me();
+    payForCard(who,card);
+    for(var i=0;i<who.reserved.length;i++)if(who.reserved[i].id===card.id){who.reserved.splice(i,1);break;}
+    checkPollinators(who);
     _play('snap');_e('progress');
-    endPlayerTurn();
+    endTurn();
   }
   function reserveCard(card,mkt,deck){
-    if(GS.player.reserved.length>=3){sm('Max 3 reserved');return;}
-    for(var i=0;i<mkt.length;i++)if(mkt[i]&&mkt[i].id===card.id){GS.player.reserved.push(card);if(deck.length)mkt[i]=deck.pop();else mkt.splice(i,1);break;}
-    if(GS.supply.gold>0){GS.supply.gold--;GS.player.tokens.gold++;}
+    var who=me();
+    if(who.reserved.length>=3){sm('Max 3 reserved');return;}
+    for(var i=0;i<mkt.length;i++)if(mkt[i]&&mkt[i].id===card.id){who.reserved.push(card);if(deck.length)mkt[i]=deck.pop();else mkt.splice(i,1);break;}
+    if(GS.supply.gold>0){GS.supply.gold--;who.tokens.gold++;}
     _play('tap');
-    endPlayerTurn();
+    // Reserving can push you over the cap.
+    if(totalTok(who.tokens)>10){
+      if(who.isAI){autoTrim(who);endTurn();}
+      else{showReturnModal(who);return;}
+    }else endTurn();
   }
 
-  function endPlayerTurn(){
+  // Rotate to next seat. Checks for winners at the end of a FULL round
+  // — traditional Splendor rule: once any player hits 15, finish the
+  // round so all seats have equal turns, then whoever has the most
+  // points wins (ties broken by fewest cards bought).
+  function endTurn(){
     GS.turn++;GS.selectedTokens=[];GS.action=null;
-    if(GS.player.gp>=15){GS.phase='gameover';_e('game_win');_playWin();sm('🌸 Garden blooms!');_sr('pollen',{w:true,s:GS.player.gp,t:GS.turn});showEndCard(true);return;}
-    GS.phase='ai';render();
-    setTimeout(aiTurn,700);
+    // Mark this seat's "has hit 15" for end-of-round check.
+    var current=GS.activeIdx;
+    var nextIdx=(current+1)%GS.numPlayers;
+    // If we're wrapping back to seat 0, check winners.
+    if(nextIdx===0&&GS.players.some(function(p){return p.gp>=15;})){
+      return finishGame();
+    }
+    setActive(nextIdx);
+    render();
+    var nxt=me();
+    if(nxt.isAI){
+      GS.phase='ai';render();
+      setTimeout(aiTurn,700);
+    } else {
+      GS.phase='player';
+      // Pass-the-phone curtain only when there's more than one human seat.
+      if(GS.numPlayers>1&&countHumans()>1)showPassCurtain(nxt);
+      render();
+    }
   }
-  function aiNeeded(){
+  function countHumans(){var n=0;for(var i=0;i<GS.players.length;i++)if(!GS.players[i].isAI)n++;return n;}
+  function finishGame(){
+    GS.phase='gameover';
+    // Winner = highest gp, tie-break on fewer cards.
+    var winner=GS.players[0];
+    for(var i=1;i<GS.players.length;i++){
+      var p=GS.players[i];
+      if(p.gp>winner.gp||(p.gp===winner.gp&&p.cards.length<winner.cards.length))winner=p;
+    }
+    var won=!winner.isAI&&countHumans()>0;
+    if(won){_e('game_win');_playWin();}else{_e('game_loss');_play('lose');}
+    sm(winner.name+' wins — '+winner.gp+' GP');
+    _sr('pollen',{w:won,s:winner.gp,t:GS.turn,n:GS.numPlayers});
+    showEndCard(winner,won);
+  }
+  function aiNeeded(who){
     var n={};COLORS.forEach(function(c){n[c]=0;});
     GS.market1.concat(GS.market2).forEach(function(card){
       if(!card)return;
-      for(var c in card.cost){var gap=Math.max(0,(card.cost[c]||0)-(GS.ai.production[c]||0)-(GS.ai.tokens[c]||0));n[c]+=gap;}
+      for(var c in card.cost){var gap=Math.max(0,(card.cost[c]||0)-(who.production[c]||0)-(who.tokens[c]||0));n[c]+=gap;}
     });
     return n;
   }
   function aiTurn(){
+    var who=me();if(!who||!who.isAI)return;
     var best=null,bestGP=-1,bm=null,bd=null;
     [[GS.market3,GS.deck3],[GS.market2,GS.deck2],[GS.market1,GS.deck1]].forEach(function(pr){
       pr[0].forEach(function(c){
         if(!c)return;
-        var af=canAfford(GS.ai,c);
+        var af=canAfford(who,c);
         if(af.affordable&&c.gp>bestGP){bestGP=c.gp;best=c;bm=pr[0];bd=pr[1];}
       });
     });
     if(best&&bestGP>=0){
-      payForCard(GS.ai,best);
+      payForCard(who,best);
       for(var i=0;i<bm.length;i++)if(bm[i]&&bm[i].id===best.id){if(bd.length)bm[i]=bd.pop();else bm.splice(i,1);break;}
-      checkPollinators(GS.ai,'ai');
-      sm('AI grew '+TIER_NAMES[best.tier-1]+' (+'+best.gp+')');
+      checkPollinators(who);
+      sm(who.name+' grew '+TIER_NAMES[best.tier-1]+' (+'+best.gp+')');
     }else{
-      var needed=aiNeeded();
+      var needed=aiNeeded(who);
       var avail=COLORS.filter(function(c){return GS.supply[c]>0;});
       avail.sort(function(a,b){return(needed[b]||0)-(needed[a]||0);});
       var got=0;
-      for(var i=0;i<avail.length&&got<3;i++){if(GS.supply[avail[i]]>0){GS.supply[avail[i]]--;GS.ai.tokens[avail[i]]++;got++;}}
-      while(totalTok(GS.ai.tokens)>10){
-        var mc=null,mv=0;COLORS.forEach(function(c){if(GS.ai.tokens[c]>mv){mv=GS.ai.tokens[c];mc=c;}});
-        if(mc){GS.ai.tokens[mc]--;GS.supply[mc]++;}else break;
-      }
-      sm('AI gathered pollen');
+      for(var i=0;i<avail.length&&got<3;i++){if(GS.supply[avail[i]]>0){GS.supply[avail[i]]--;who.tokens[avail[i]]++;got++;}}
+      autoTrim(who);
+      sm(who.name+' gathered pollen');
     }
-    GS.turn++;
-    if(GS.ai.gp>=15){GS.phase='gameover';_e('game_loss');_play('lose');sm('AI wins');_sr('pollen',{w:false,s:GS.player.gp,t:GS.turn});showEndCard(false);return;}
-    GS.phase='player';render();
+    endTurn();
+  }
+
+  // ─── 10-CHIP EXCHANGE MODAL ──────────────────────────────────────────
+  // Traditional rule: you can pick up tokens even if it pushes you
+  // over 10, but you must finish your turn at ≤10 and the sequence
+  // must be legal. Instead of auto-trimming (which strips tactical
+  // depth), surface a picker so the player decides which excess to
+  // return.
+  function showReturnModal(who){
+    GS.pendingReturn=who.id;
+    var ov=document.getElementById('PNreturnOV');if(ov)ov.remove();
+    ov=document.createElement('div');ov.id='PNreturnOV';
+    ov.style.cssText='position:fixed;inset:0;z-index:200001;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:16px;animation:pnFadeIn 0.2s ease;';
+    document.body.appendChild(ov);
+    _renderReturnModal();
+  }
+  function _renderReturnModal(){
+    var ov=document.getElementById('PNreturnOV');if(!ov)return;
+    var who=me();
+    var excess=totalTok(who.tokens)-10;
+    var h='<div style="max-width:360px;width:100%;background:rgba(15,20,12,0.97);border:1px solid rgba(200,168,75,0.45);border-radius:14px;padding:20px;font-family:DM Mono,monospace;text-align:center;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.18em;color:var(--muted);">RETURN '+excess+' TOKEN'+(excess===1?'':'S')+'</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;letter-spacing:0.08em;color:var(--gold);margin:4px 0 6px;">'+who.name+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--cream);opacity:0.8;margin-bottom:16px;line-height:1.5;">You\'re at '+totalTok(who.tokens)+'/10. Tap tokens in your pool to return them to supply until you\'re at 10.</div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;">';
+    COLORS.concat(['gold']).forEach(function(c){
+      if((who.tokens[c]||0)<=0)return;
+      h+='<button class="gb" onclick="_PNreturnOne(\''+c+'\')" style="min-height:52px;padding:10px 14px;display:inline-flex;align-items:center;gap:6px;">'
+        +tokDot(c,18)+' <span style="font-size:0.75rem;">'+who.tokens[c]+'</span></button>';
+    });
+    h+='</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.56rem;color:var(--sage);">Total: '+totalTok(who.tokens)+' / 10</div>';
+    h+='</div>';
+    ov.innerHTML=h;
+  }
+  window._PNreturnOne=function(c){
+    var who=me();
+    if((who.tokens[c]||0)<=0)return;
+    who.tokens[c]--;GS.supply[c]++;_play('tap');
+    if(totalTok(who.tokens)<=10){
+      var ov=document.getElementById('PNreturnOV');if(ov)ov.remove();
+      GS.pendingReturn=null;
+      endTurn();
+    } else _renderReturnModal();
+  };
+
+  // ─── PASS-THE-PHONE CURTAIN ──────────────────────────────────────────
+  // In multi-human games, drop a curtain between turns so the next
+  // seat doesn't see the previous player's reserved cards / hand at
+  // a glance. Tap to continue.
+  function showPassCurtain(nextSeat){
+    var ov=document.getElementById('PNpassOV');if(ov)ov.remove();
+    ov=document.createElement('div');ov.id='PNpassOV';
+    ov.style.cssText='position:fixed;inset:0;z-index:200000;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.96);padding:16px;animation:pnFadeIn 0.25s ease;cursor:pointer;';
+    ov.innerHTML=
+      '<div style="text-align:center;font-family:DM Mono,monospace;">'
+      +'<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.18em;color:var(--muted);">PASS TO</div>'
+      +'<div style="font-family:Bebas Neue,sans-serif;font-size:2rem;letter-spacing:0.1em;color:var(--gold);margin:8px 0;">'+nextSeat.name+'</div>'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--cream);opacity:0.7;margin-bottom:16px;">tap to continue</div>'
+      +'<div style="font-size:2.5rem;opacity:0.6;">👆</div>'
+      +'</div>';
+    ov.addEventListener('click',function(){ov.remove();});
+    document.body.appendChild(ov);
   }
 
   ms(a,'<strong id="PNt">Master Pollinator</strong>');
@@ -243,7 +443,7 @@ window._gameFns.pollen = function PN(a){
   function tokDot(c,sz){return '<span style="display:inline-block;width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+COLOR_HEX[c]+';border:1px solid rgba(0,0,0,0.2);vertical-align:middle;"></span>';}
 
   function renderCard(card,isReserved){
-    var aff=canAfford(GS.player,card);
+    var aff=canAfford(me(),card);
     var border=aff.affordable?'2px solid #7ab356':'2px solid #6a6051';
     var bgShade=card.tier===1?'#4a7c35':card.tier===2?'#c8a84b':'#ffd700';
     var h='<div class="pn-card'+(aff.affordable?' aff':'')+'" style="width:72px;height:100px;background:#faf5e4;border-radius:8px;padding:4px;border:'+border+';border-left:4px solid '+bgShade+';display:inline-block;vertical-align:top;margin:3px;position:relative;cursor:pointer;color:#1a1f17;box-shadow:0 2px 4px rgba(0,0,0,0.25);" onclick="_PNtap('+card.id+','+(isReserved?'true':'false')+')">';
@@ -256,49 +456,74 @@ window._gameFns.pollen = function PN(a){
     return h;
   }
 
-  function showEndCard(won){
+  function showEndCard(winner,humanWon){
     render();
-    var pan=document.querySelector('#fg-ag [data-pn]');
-    // Append celebration card
     var card=document.createElement('div');
     card.style.cssText='position:fixed;inset:0;background:rgba(8,10,6,0.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:200000;display:flex;align-items:center;justify-content:center;padding:1rem;';
-    // Bug fix: GS.player has no pollinators field (just gp/tokens/cards/
-    // reserved/production). Pollinators live on GS.pollinators with a
-    // claimedBy tag. Without this fix the very next line crashed with
-    // "Cannot read properties of undefined (reading 'length')" on the
-    // win/loss screen for every game.
-    var pollCnt=0;
-    for(var _pi=0;_pi<GS.pollinators.length;_pi++)if(GS.pollinators[_pi].claimedBy==='player')pollCnt++;
-    card.innerHTML='<div style="background:linear-gradient(160deg,#1a1f17,#0d100c);border:2px solid '+(won?'rgba(200,168,75,0.5)':'rgba(199,80,80,0.35)')+';border-radius:16px;padding:2rem 1.5rem;max-width:360px;text-align:center;box-shadow:0 12px 48px rgba(0,0,0,0.8),0 0 32px '+(won?'rgba(200,168,75,0.25)':'rgba(0,0,0,0.3)')+';">'+
-      '<div style="font-size:3rem;margin-bottom:0.5rem;">'+(won?'🌸':'🐝')+'</div>'+
-      '<div style="font-family:Bebas Neue,sans-serif;font-size:1.5rem;color:'+(won?'var(--gold)':'var(--cream)')+';letter-spacing:0.12em;margin-bottom:0.6rem;">'+(won?'GARDEN BLOOMS':'HIVE RESTS')+'</div>'+
-      '<div style="font-family:DM Mono,monospace;font-size:0.75rem;color:var(--cream);margin-bottom:1rem;line-height:1.7;">'+
-        'You: <strong style="color:var(--gold);">'+GS.player.gp+'</strong> GP<br>'+
-        'AI: <strong style="color:#c47a7a;">'+GS.ai.gp+'</strong> GP<br>'+
-        'Turn: '+GS.turn+' · Pollinators: '+pollCnt+
-      '</div>'+
+    // Build standings
+    var standings=GS.players.slice().sort(function(a,b){if(b.gp!==a.gp)return b.gp-a.gp;return a.cards.length-b.cards.length;});
+    var rows='';
+    for(var i=0;i<standings.length;i++){
+      var p=standings[i];
+      var isWin=(p.id===winner.id);
+      rows+='<div style="display:flex;justify-content:space-between;padding:6px 8px;background:'+(isWin?'rgba(200,168,75,0.18)':'rgba(26,31,23,0.5)')+';border:1px solid '+(isWin?'rgba(200,168,75,0.45)':'rgba(122,179,86,0.1)')+';border-radius:6px;margin-bottom:4px;font-family:DM Mono,monospace;font-size:0.68rem;">'
+        +'<span style="color:'+(isWin?'var(--gold)':'var(--cream)')+';">'+(isWin?'🏆 ':'')+(i+1)+'. '+p.name+(p.isAI?' <span style="color:var(--muted);font-size:0.55rem;">AI</span>':'')+'</span>'
+        +'<span style="color:'+(isWin?'var(--gold)':'var(--sage)')+';font-weight:700;">'+p.gp+' GP</span>'
+        +'</div>';
+    }
+    card.innerHTML='<div style="background:linear-gradient(160deg,#1a1f17,#0d100c);border:2px solid '+(humanWon?'rgba(200,168,75,0.5)':'rgba(199,80,80,0.35)')+';border-radius:16px;padding:2rem 1.5rem;max-width:360px;width:100%;text-align:center;box-shadow:0 12px 48px rgba(0,0,0,0.8),0 0 32px '+(humanWon?'rgba(200,168,75,0.25)':'rgba(0,0,0,0.3)')+';">'+
+      '<div style="font-size:3rem;margin-bottom:0.5rem;">'+(humanWon?'🌸':'🐝')+'</div>'+
+      '<div style="font-family:Bebas Neue,sans-serif;font-size:1.5rem;color:'+(humanWon?'var(--gold)':'var(--cream)')+';letter-spacing:0.12em;margin-bottom:0.6rem;">'+winner.name.toUpperCase()+' WINS</div>'+
+      '<div style="text-align:left;margin:14px 0;">'+rows+'</div>'+
+      '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);margin-bottom:14px;">'+GS.turn+' turns played</div>'+
       '<button onclick="this.parentNode.parentNode.remove();_PNnew();" style="padding:12px 28px;font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.1em;background:rgba(122,179,86,0.2);border:1.5px solid var(--sage);color:var(--sage);border-radius:10px;cursor:pointer;min-height:48px;">PLAY AGAIN</button>'+
       '</div>';
     document.body.appendChild(card);
   }
 
   function render(){
+    if(!GS||!GS.players)return;
     var h='';
+    // Header + scoreboard row
     h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(26,31,23,0.6);border-radius:8px;margin-bottom:4px;">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;color:var(--gold);letter-spacing:2px;">🐝 POLLEN <span style="font-size:0.7rem;color:var(--muted);">T'+GS.turn+'</span></div>';
-    h+='<div style="display:flex;gap:10px;font-weight:700;"><span style="color:var(--sage);">You:'+GS.player.gp+'</span><span style="color:#c47a7a;">AI:'+GS.ai.gp+'</span></div></div>';
-    if(GS.phase==='player')h+='<div style="text-align:center;color:var(--sage);font-size:0.7rem;padding:2px;">— Your Turn —</div>';
-    else if(GS.phase==='ai')h+='<div style="text-align:center;color:#c47a7a;font-size:0.7rem;padding:2px;">— AI thinking —</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;color:var(--gold);letter-spacing:2px;">🐝 MASTER POLLINATOR <span style="font-size:0.65rem;color:var(--muted);">T'+GS.turn+'</span></div>';
+    h+='</div>';
+    // Per-seat scorebar so every player sees their standing at all times.
+    h+='<div style="display:grid;grid-template-columns:repeat('+GS.numPlayers+',1fr);gap:3px;margin-bottom:4px;">';
+    for(var pi=0;pi<GS.players.length;pi++){
+      var p=GS.players[pi];var isActive=(pi===GS.activeIdx);
+      var bg=isActive?'rgba(200,168,75,0.22)':'rgba(26,31,23,0.5)';
+      var bd=isActive?'var(--gold)':'rgba(122,179,86,0.15)';
+      var nameClr=isActive?'var(--gold)':'var(--cream)';
+      h+='<div style="background:'+bg+';border:1px solid '+bd+';border-radius:6px;padding:4px 6px;text-align:center;font-family:DM Mono,monospace;">'
+        +'<div style="font-size:0.55rem;color:'+nameClr+';letter-spacing:0.05em;word-break:break-word;">'+p.name+(p.isAI?' 🤖':'')+'</div>'
+        +'<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:'+nameClr+';">'+p.gp+'</div>'
+        +'</div>';
+    }
+    h+='</div>';
+    var active=me();
+    if(GS.phase==='player')h+='<div style="text-align:center;color:var(--sage);font-size:0.7rem;padding:2px;">— '+active.name+"'s turn —</div>";
+    else if(GS.phase==='ai')h+='<div style="text-align:center;color:#c47a7a;font-size:0.7rem;padding:2px;">— '+active.name+' thinking —</div>';
     // Pollinators
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.1em;margin:8px 0 4px;">POLLINATORS</div>';
     h+='<div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:3px;">';
     GS.pollinators.forEach(function(p){
-      var bg=p.claimedBy==='player'?'rgba(122,179,86,0.15);border-color:#7ab356':p.claimedBy==='ai'?'rgba(196,122,122,0.15);border-color:#c47a7a':'rgba(26,31,23,0.5);border-color:rgba(122,179,86,0.2)';
+      var claimedBy=null;
+      if(p.claimedBy!==null&&p.claimedBy!==undefined){
+        for(var ci=0;ci<GS.players.length;ci++)if(GS.players[ci].id===p.claimedBy){claimedBy=GS.players[ci];break;}
+      }
+      var bg,tag='';
+      if(claimedBy){
+        bg='rgba(200,168,75,0.18);border-color:var(--gold)';
+        tag='<div style="font-size:0.45rem;color:var(--gold);margin-top:2px;">'+claimedBy.name+'</div>';
+      } else {
+        bg='rgba(26,31,23,0.5);border-color:rgba(122,179,86,0.2)';
+      }
       h+='<div class="pn-poll" style="min-width:78px;padding:6px;background:'+bg+';border:1px solid;border-radius:8px;text-align:center;font-size:10px;flex-shrink:0;">';
       h+='<div style="font-size:16px;">'+p.icon+'</div><div style="font-weight:700;">'+p.name+'</div>';
       h+='<div style="color:var(--muted);">';
       for(var c in p.req)h+='<span style="color:'+COLOR_HEX[c]+'">'+p.req[c]+'</span> ';
-      h+='</div></div>';
+      h+='</div>'+tag+'</div>';
     });
     h+='</div>';
     // Market
@@ -320,20 +545,22 @@ window._gameFns.pollen = function PN(a){
       h+='<div class="pn-tok'+(sel?' sel':'')+'" style="'+sty+'" onclick="_PNsup(\''+c+'\')">'+tokDot(c,14)+' '+GS.supply[c]+'</div>';
     });
     h+='</div>';
-    // Player area
-    h+='<div style="background:rgba(26,31,23,0.4);border-radius:8px;padding:6px;margin:6px 0;">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.1em;">YOUR POLLEN ('+totalTok(GS.player.tokens)+'/10)</div>';
-    h+='<div style="display:flex;gap:4px;flex-wrap:wrap;margin:3px 0;">';
-    COLORS.concat(['gold']).forEach(function(c){if(GS.player.tokens[c]>0)h+='<span style="font-size:12px;">'+tokDot(c,12)+' '+GS.player.tokens[c]+'</span>';});
+    // Active player area — shows whoever's turn it is (hides others'
+    // reserved cards, which the pass-curtain also reinforces).
+    var meRef=me();
+    h+='<div style="background:rgba(26,31,23,0.4);border:1px solid rgba(200,168,75,0.12);border-radius:8px;padding:6px;margin:6px 0;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--gold);letter-spacing:0.1em;">'+meRef.name.toUpperCase()+' · POLLEN ('+totalTok(meRef.tokens)+'/10)</div>';
+    h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin:3px 0;">';
+    COLORS.concat(['gold']).forEach(function(c){if(meRef.tokens[c]>0)h+='<span style="font-size:12px;">'+tokDot(c,12)+' '+meRef.tokens[c]+'</span>';});
     h+='</div>';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.1em;">PLANTS</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.1em;">PLANTS</div>';
     h+='<div style="display:flex;gap:2px;flex-wrap:wrap;">';
-    COLORS.forEach(function(c){for(var i=0;i<(GS.player.production[c]||0);i++)h+=tokDot(c,14);});
-    if(GS.player.cards.length===0)h+='<span style="font-size:10px;color:var(--muted);">None yet</span>';
+    COLORS.forEach(function(c){for(var i=0;i<(meRef.production[c]||0);i++)h+=tokDot(c,14);});
+    if(meRef.cards.length===0)h+='<span style="font-size:10px;color:var(--muted);">None yet</span>';
     h+='</div>';
-    if(GS.player.reserved.length>0){
+    if(meRef.reserved.length>0){
       h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--gold);letter-spacing:0.1em;margin-top:6px;">RESERVED</div>';
-      h+='<div>';GS.player.reserved.forEach(function(c){h+=renderCard(c,true);});h+='</div>';
+      h+='<div>';meRef.reserved.forEach(function(c){h+=renderCard(c,true);});h+='</div>';
     }
     h+='</div>';
     // Actions
@@ -349,7 +576,7 @@ window._gameFns.pollen = function PN(a){
   }
 
   function findCard(id){
-    var all=GS.market1.concat(GS.market2).concat(GS.market3).concat(GS.player.reserved);
+    var all=GS.market1.concat(GS.market2).concat(GS.market3).concat(me().reserved);
     for(var i=0;i<all.length;i++)if(all[i]&&all[i].id===id)return all[i];
     return null;
   }
@@ -364,12 +591,13 @@ window._gameFns.pollen = function PN(a){
   window._PNtap=function(id,isRes){
     isRes=(isRes===true||isRes==='true');
     if(GS.phase!=='player')return;
+    if(me().isAI)return; // safety: don't let UI interrupt AI turn
     var card=findCard(id);if(!card)return;
-    var aff=canAfford(GS.player,card);
+    var aff=canAfford(me(),card);
     if(aff.affordable){
       if(isRes)buyReserved(card);
       else{var md=findMD(id);if(md)buyCard(card,md.market,md.deck);}
-    }else if(!isRes&&GS.player.reserved.length<3){
+    }else if(!isRes&&me().reserved.length<3){
       // Show a confirm overlay with the card enlarged — the "pick it up
       // and look at it" feel Stephen asked for. Nothing happens until
       // the player taps RESERVE or BACK.
@@ -414,9 +642,10 @@ window._gameFns.pollen = function PN(a){
     reserveCard(card,md.market,md.deck);
     sm('Reserved · +1 gold');
   };
-  window._PNact=function(act){if(GS.phase!=='player')return;GS.action=act;GS.selectedTokens=[];render();};
+  window._PNact=function(act){if(GS.phase!=='player'||me().isAI)return;GS.action=act;GS.selectedTokens=[];render();};
   window._PNsup=function(c){
-    if(GS.phase!=='player'||!GS.action){sm('Pick action first');return;}
+    if(GS.phase!=='player'||me().isAI){return;}
+    if(!GS.action){sm('Pick action first');return;}
     if(GS.supply[c]<=0){sm('Supply empty');return;}
     if(c==='gold'){sm('Gold: reserve a card');return;}
     if(GS.action==='collect3'){
