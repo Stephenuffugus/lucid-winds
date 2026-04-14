@@ -264,6 +264,15 @@ function _saveWild(a){if(window._secureSet){window._secureSet('fg_wild_plants',a
 // Each plant dies when its decayAt timestamp is in the past. Dead plants
 // are removed from localStorage, deleted from Firestore, written to the
 // event log, and toasted to the player on next wild-tab entry.
+// Returns true if a plant's death was climate-attributable — i.e. it took
+// climate damage in the last 24h before dying. Used to gate sprouts so
+// combat or natural-age deaths don't regenerate.
+function _diedFromClimate(plant){
+  if(!plant||!plant.lastClimateHitAt)return false;
+  var sinceHit=Date.now()-plant.lastClimateHitAt;
+  return sinceHit < 24*3600000;
+}
+
 function _pruneWild(){
   var wild=_getWild();if(!wild.length)return wild;
   // Ensure every plant has vitality fields before comparing (migrates legacy)
@@ -309,6 +318,72 @@ function _pruneWild(){
       ?'\ud83c\udf42 '+names[0]+' withered in the wild.'
       :'\ud83c\udf42 '+died.length+' plants withered: '+names.join(', ')+(died.length>3?'...':'');
     setTimeout(function(){_toast(msg);},1000);
+    // ── DEATH SPROUTS ──
+    // One sprout per hex, gated on: (1) hex is now empty (no surviving
+    // plants + no live shared markers), (2) last death in that hex was
+    // climate-caused. Sprouts are wildDrops docs marked sprout:true with
+    // a future germinateAt. On next Wild-tab tick they activate into
+    // full plants via _germinateSprouts. Inherits parent hash so the
+    // local ecosystem's surviving lineage dominates regrowth.
+    try {
+      var _userS = window.firebase && firebase.auth() && firebase.auth().currentUser;
+      if (_userS && _userS.uid && window.db) {
+        // Group deaths by zone, check each zone once
+        var _deadByZone = {};
+        for (var dz = 0; dz < died.length; dz++) {
+          var _dpZk = _zoneKey(died[dz].lat, died[dz].lng);
+          if (!_deadByZone[_dpZk]) _deadByZone[_dpZk] = [];
+          _deadByZone[_dpZk].push(died[dz]);
+        }
+        // Survivors in fresh arr + shared markers = anything still alive in zone
+        var _zoneAlive = {};
+        for (var fs = 0; fs < fresh.length; fs++) {
+          var _fsZk = _zoneKey(fresh[fs].lat, fresh[fs].lng);
+          _zoneAlive[_fsZk] = (_zoneAlive[_fsZk] || 0) + 1;
+        }
+        if (window._sharedMarkers) {
+          for (var _sk in window._sharedMarkers) {
+            var _smd = window._sharedMarkers[_sk] && window._sharedMarkers[_sk].data;
+            if (!_smd || !_smd.lat) continue;
+            var _smZk = _zoneKey(_smd.lat, _smd.lng);
+            _zoneAlive[_smZk] = (_zoneAlive[_smZk] || 0) + 1;
+          }
+        }
+        for (var _dzk in _deadByZone) {
+          if ((_zoneAlive[_dzk] || 0) > 0) continue; // zone still has plants
+          var _zoneDeaths = _deadByZone[_dzk];
+          // Most-recent death in this zone determines cause
+          var _lastDead = _zoneDeaths[_zoneDeaths.length - 1];
+          if (!_diedFromClimate(_lastDead)) continue;
+          // Write sprout doc
+          var _parentHash = _lastDead.hash;
+          var _zParts = _dzk.split(',');
+          var _sLat = parseFloat(_zParts[0]) + (Math.random() - 0.5) * 0.00005;
+          var _sLng = parseFloat(_zParts[1]) + (Math.random() - 0.5) * 0.00005;
+          var _germH = 24 + Math.floor(Math.random() * 12);
+          var _sprDoc = {
+            lat: _sLat, lng: _sLng, hash: _parentHash, // hash reused; _germinateSprouts regenerates for birth
+            ownerUid: 'wild', ownerName: 'Wild',
+            ea: 0, defenderGame: 'set', season: 0,
+            status: 'alive', grade: 'Common', generation: 1,
+            zone: _dzk,
+            droppedAt: new Date().toISOString(),
+            wildBorn: true,
+            sprout: true,
+            germinateAt: Date.now() + _germH * 3600000,
+            parentHash: _parentHash
+          };
+          var _sprId = 'sprout_' + _dzk.replace(/[^0-9A-Za-z]/g, '') + '_' + Date.now();
+          window.db.collection('wildDrops').doc(_sprId).set(_sprDoc).catch(function(e){
+            if (window._swsLog) _swsLog('Sprout write failed: ' + (e && e.message || e), 'warn');
+          });
+          if (window._logWildEvent) {
+            window._logWildEvent({ type: 'sprout', zone: _dzk, parentHash: _parentHash, germinateInHours: _germH });
+          }
+          if (window._swsLog) _swsLog('Sprout seeded in ' + _dzk + ', germinates in ' + _germH + 'h', 'ok');
+        }
+      }
+    } catch (e) { if (window._swsLog) _swsLog('Sprout error: ' + e.message, 'warn'); }
   }
   // ── ENFORCE 3-PER-ZONE CAP — keep top 3 EA, evict rest ──
   // (Migrates legacy zones that pre-date the cap)
@@ -523,6 +598,11 @@ function activate(){
     localStorage.setItem('lw_climate_today',_todayStr);
     setTimeout(function(){if(window._wildClimateTick)_wildClimateTick();},window._perfLite?10000:3500);
   }
+  // Sprout germination: opportunistic, runs every Wild entry (cheap —
+  // one Firestore query capped at 20 docs). Any authenticated player
+  // can activate due sprouts for the whole ecosystem, so no per-user
+  // lock is needed. First player online each day does the work.
+  setTimeout(function(){if(window._wildGerminateSprouts)_wildGerminateSprouts();},window._perfLite?12000:5000);
   // First-visit onboarding
   if(!localStorage.getItem('lw_wild_onboarded')){
     localStorage.setItem('lw_wild_onboarded','1');
@@ -1282,6 +1362,69 @@ function _wildClimateTick() {
   });
 }
 window._wildClimateTick = _wildClimateTick;
+
+// ═══ SPROUT GERMINATION ═══
+// Scan Firestore for sprout docs whose germinateAt has passed, then flip
+// them to full wild plants. Runs on Wild-tab entry. Any authenticated
+// player can germinate (wildDrops rule v6 already allows any auth'd user
+// to update wild-owned docs), so the first player online each day does
+// the work for the whole ecosystem.
+function _wildGerminateSprouts() {
+  if (!window.db || !window.firebase || !firebase.auth().currentUser) return;
+  var now = Date.now();
+  try {
+    window.db.collection('wildDrops')
+      .where('status', '==', 'alive')
+      .where('sprout', '==', true)
+      .limit(20)
+      .get()
+      .then(function(snap) {
+        var activated = 0;
+        snap.forEach(function(doc) {
+          var d = doc.data();
+          if (!d.germinateAt || d.germinateAt > now) return;
+          // Synthesize an offspring hash from the parent so the sprout
+          // becomes a new plant rather than an exact parent clone.
+          var ph = d.parentHash || d.hash || '';
+          var newHash = '';
+          var timeSalt = Math.floor(now / 1000).toString(16);
+          for (var h = 0; h < 64; h++) {
+            var a = parseInt(ph[h] || '0', 16);
+            var s = parseInt(timeSalt[h % timeSalt.length] || '0', 16);
+            newHash += (a ^ s % 16).toString(16);
+          }
+          var newTraits = null, newEA = 5, newGrade = 'Common';
+          try {
+            newTraits = window.hashToTraits ? window.hashToTraits(newHash) : null;
+            if (newTraits) {
+              newEA = window.computeEA ? window.computeEA(newTraits, 0) : 5;
+              var tg = window.getTerraGrade ? window.getTerraGrade(newTraits) : null;
+              newGrade = tg ? (tg.name || 'Common') : 'Common';
+            }
+          } catch (e) {}
+          doc.ref.update({
+            sprout: false,
+            germinateAt: null,
+            hash: newHash,
+            ea: newEA,
+            grade: newGrade,
+            season: (newTraits && newTraits.season) || 0,
+            droppedAt: new Date().toISOString()
+          }).then(function() {
+            if (window._logWildEvent) {
+              window._logWildEvent({ type: 'germinate', zone: d.zone, hash: newHash, grade: newGrade, parentHash: ph });
+            }
+          }).catch(function(){});
+          activated++;
+        });
+        if (activated > 0 && window._swsLog) _swsLog('Germinated ' + activated + ' sprouts', 'ok');
+      })
+      .catch(function(e){
+        if (window._swsLog) _swsLog('Germination query failed: ' + (e && e.message || e), 'warn');
+      });
+  } catch(e) {}
+}
+window._wildGerminateSprouts = _wildGerminateSprouts;
 
 function _doClimateTick(weather) {
   var zones = _getAllZonePlants();
