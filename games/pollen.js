@@ -20,17 +20,19 @@ window._gameFns.pollen = function PN(a){
   // 10-pollinator pool (matches user's "100 pieces total" design).
   // Draw scales by player count: N+1, min 3. Each pollinator rewards
   // 3 GP and requires production (not tokens) to attract.
+  // Pollinators — names + slugs so art drops in as
+  // assets/games/masterpollinator/pollinator-<slug>.png
   var ALL_POLLINATORS=[
-    {name:'Monarch',     icon:'🦋', req:{green:3,blue:3},           gp:3},
-    {name:'Honeybee',    icon:'🐝', req:{rose:3,amber:3},           gp:3},
-    {name:'Hummingbird', icon:'🐦', req:{blue:3,spore:3},           gp:3},
-    {name:'Luna Moth',   icon:'🌙', req:{green:3,rose:3},           gp:3},
-    {name:'Bumblebee',   icon:'🐝', req:{amber:3,spore:3},          gp:3},
-    {name:'Dragonfly',   icon:'🜸', req:{green:4,blue:2},           gp:3},
-    {name:'Firefly',     icon:'✨', req:{amber:4,green:2},          gp:3},
-    {name:'Sphinx Moth', icon:'🌙', req:{blue:4,amber:2},           gp:3},
-    {name:'Scarab',      icon:'🪲', req:{spore:4,rose:2},           gp:3},
-    {name:'Orchid Bee',  icon:'🐝', req:{green:2,rose:2,blue:2},    gp:3}
+    {slug:'monarch',     name:'Monarch',     icon:'🦋', req:{green:3,blue:3},          gp:3},
+    {slug:'honeybee',    name:'Honeybee',    icon:'🐝', req:{rose:3,amber:3},          gp:3},
+    {slug:'hummingbird', name:'Hummingbird', icon:'🐦', req:{blue:3,spore:3},          gp:3},
+    {slug:'luna-moth',   name:'Luna Moth',   icon:'🌙', req:{green:3,rose:3},          gp:3},
+    {slug:'bumblebee',   name:'Bumblebee',   icon:'🐝', req:{amber:3,spore:3},         gp:3},
+    {slug:'dragonfly',   name:'Dragonfly',   icon:'🜸', req:{green:4,blue:2},          gp:3},
+    {slug:'firefly',     name:'Firefly',     icon:'✨', req:{amber:4,green:2},         gp:3},
+    {slug:'sphinx-moth', name:'Sphinx Moth', icon:'🌙', req:{blue:4,amber:2},          gp:3},
+    {slug:'scarab',      name:'Scarab',      icon:'🪲', req:{spore:4,rose:2},          gp:3},
+    {slug:'orchid-bee',  name:'Orchid Bee',  icon:'🐝', req:{green:2,rose:2,blue:2},   gp:3}
   ];
   // Pollinators visible this game.
   function pollinatorCount(numPlayers){
@@ -55,43 +57,170 @@ window._gameFns.pollen = function PN(a){
     }
     return c;
   }
-  // Full deck sizes — ~tournament Splendor proportions:
-  //   Tier 1 (common plants):   40 cards (8 per color × 5 colors)
-  //   Tier 2 (uncommon plants): 30 cards (6 per color × 5 colors)
-  //   Tier 3 (rare plants):     20 cards (4 per color × 5 colors)
-  //   Pollinators:              10 cards (drawn down to N+1 each game)
+  // ═══ 100-FLOWER CATALOG ═══════════════════════════════════════════════
+  // 40 common · 30 uncommon · 20 rare real-flower plants. Each entry is
+  // [slug, name, {cost}, gp]. Tier is implied by the list it's in;
+  // produces color is implied by which inner array it sits in.
+  // Costs are hand-tuned to mirror Splendor's base-game distribution
+  // (tier 1 totals 2-4, tier 2 totals 5-7 with 1-3 GP, tier 3 totals
+  // 7-10 with 3-5 GP). Costs use the other four colors (g=green,
+  // r=rose, b=blue, a=amber, s=spore) — a card never requires its own
+  // produces color.
+  //
+  // Art hook: the slug is the filename under assets/games/masterpollinator/.
+  //   <slug>.png  (e.g. dandelion.png, wild-rose.png, black-bat-flower.png)
+  // If the PNG is missing the card falls back to emoji + tier icon so
+  // the game plays cleanly while art is still being drawn.
+  var CATALOG={
+    tier1:{
+      green:[
+        ['fern',            'Fern',             {a:2},0],
+        ['clover',          'Clover',           {r:2},0],
+        ['ivy',             'Ivy',              {b:3},0],
+        ['wood-sorrel',     'Wood Sorrel',      {r:1,a:1},0],
+        ['ladys-mantle',    "Lady's Mantle",    {a:2,s:1},0],
+        ['moss-campion',    'Moss Campion',     {r:1,b:1,s:1},0],
+        ['plantain',        'Plantain',         {b:2,a:2},1],
+        ['sweet-woodruff',  'Sweet Woodruff',   {r:2,a:1,s:1},1]
+      ],
+      rose:[
+        ['wild-rose',       'Wild Rose',        {g:2},0],
+        ['cosmos',          'Cosmos',           {a:2},0],
+        ['bee-balm',         'Bee Balm',         {s:3},0],
+        ['wild-columbine',  'Wild Columbine',   {g:1,b:1},0],
+        ['pink-clover',     'Pink Clover',      {g:2,a:1},0],
+        ['dogwood',         'Dogwood',          {g:1,b:1,s:1},0],
+        ['lupine',          'Lupine',           {g:2,b:2},1],
+        ['pink-foxglove',   'Pink Foxglove',    {g:2,a:1,s:1},1]
+      ],
+      blue:[
+        ['bluebell',        'Bluebell',         {g:2},0],
+        ['cornflower',      'Cornflower',       {s:2},0],
+        ['forget-me-not',   'Forget-Me-Not',    {r:3},0],
+        ['morning-glory',   'Morning Glory',    {g:1,s:1},0],
+        ['blue-flax',       'Blue Flax',        {g:1,r:1,a:1},0],
+        ['chicory',         'Chicory',          {r:2,a:1},0],
+        ['lobelia',         'Lobelia',          {g:3,r:1},1],
+        ['borage',          'Borage',           {r:2,a:1,s:1},1]
+      ],
+      amber:[
+        ['dandelion',       'Dandelion',        {g:2},0],
+        ['buttercup',       'Buttercup',        {r:2},0],
+        ['black-eyed-susan','Black-Eyed Susan', {b:3},0],
+        ['marigold',        'Marigold',         {g:1,r:1},0],
+        ['goldenrod',       'Goldenrod',        {g:1,b:1,s:1},0],
+        ['calendula',       'Calendula',        {r:1,b:2},0],
+        ['yarrow',          'Yarrow',           {g:2,s:2},1],
+        ['wild-sunflower',  'Wild Sunflower',   {g:1,b:2,s:1},1]
+      ],
+      spore:[
+        ['daisy',           'Daisy',            {g:2},0],
+        ['lily-of-valley',  'Lily of the Valley',{b:2},0],
+        ['babys-breath',    "Baby's Breath",    {r:3},0],
+        ['queen-annes-lace','Queen Anne\u2019s Lace',{g:1,a:1},0],
+        ['snowdrop',        'Snowdrop',         {g:1,r:1,b:1},0],
+        ['alyssum',         'Sweet Alyssum',    {b:2,a:1},0],
+        ['elderflower',     'Elderflower',      {r:1,a:3},1],
+        ['white-clover',    'White Clover',     {g:2,b:1,a:1},1]
+      ]
+    },
+    tier2:{
+      green:[
+        ['hosta',           'Hosta',            {a:3,s:2},1],
+        ['hellebore',       'Hellebore',        {r:2,b:2,s:1},2],
+        ['coleus',          'Coleus',           {r:3,a:2},2],
+        ['lady-fern',       'Lady Fern',        {b:3,a:2,s:1},2],
+        ['maidenhair-fern', 'Maidenhair Fern',  {r:2,b:2,s:2},3],
+        ['boxwood',         'Boxwood',          {r:3,a:3,s:1},3]
+      ],
+      rose:[
+        ['peony',           'Peony',            {g:3,s:2},1],
+        ['camellia',        'Camellia',         {g:2,b:2,a:1},2],
+        ['hydrangea-pink',  'Pink Hydrangea',   {g:3,b:2},2],
+        ['tea-rose',        'Tea Rose',         {g:2,b:2,s:2},2],
+        ['hibiscus',        'Hibiscus',         {g:2,a:2,s:2},3],
+        ['bleeding-heart',  'Bleeding Heart',   {g:3,b:3,s:1},3]
+      ],
+      blue:[
+        ['delphinium',      'Delphinium',       {g:3,s:2},1],
+        ['iris',            'Iris',             {g:2,r:2,s:1},2],
+        ['hydrangea-blue',  'Blue Hydrangea',   {g:3,r:2},2],
+        ['larkspur',        'Larkspur',         {g:2,r:2,a:2},2],
+        ['gentian',         'Gentian',          {g:2,a:2,s:2},3],
+        ['periwinkle',      'Periwinkle',       {g:3,r:3,s:1},3]
+      ],
+      amber:[
+        ['zinnia',          'Zinnia',           {g:3,b:2},1],
+        ['chrysanthemum',   'Chrysanthemum',    {g:2,r:2,s:1},2],
+        ['gerbera',         'Gerbera Daisy',    {r:3,s:2},2],
+        ['tiger-lily',      'Tiger Lily',       {g:2,r:2,b:2},2],
+        ['nasturtium',      'Nasturtium',       {g:2,r:2,s:2},3],
+        ['gazania',         'Gazania',          {g:3,r:3,s:1},3]
+      ],
+      spore:[
+        ['gardenia',        'Gardenia',         {g:3,r:2},1],
+        ['jasmine',         'Jasmine',          {g:2,b:2,a:1},2],
+        ['calla-lily',      'Calla Lily',       {g:3,a:2},2],
+        ['magnolia',        'Magnolia',         {r:2,b:2,a:2},2],
+        ['stephanotis',     'Stephanotis',      {g:2,r:2,a:2},3],
+        ['angels-trumpet',  "Angel\u2019s Trumpet",{g:3,b:3,a:1},3]
+      ]
+    },
+    tier3:{
+      green:[
+        ['corpse-flower',   'Corpse Flower',    {r:5,b:3},3],
+        ['dragon-arum',     'Dragon Arum',      {r:3,b:3,a:3},4],
+        ['ghost-fern',      'Ghost Fern',       {r:3,b:3,s:3},4],
+        ['black-bat-flower','Black Bat Flower', {r:3,b:7},5]
+      ],
+      rose:[
+        ['chocolate-cosmos','Chocolate Cosmos', {g:5,a:3},3],
+        ['parrot-flower',   'Parrot Flower',    {g:3,b:3,a:3},4],
+        ['bat-face-cuphea', 'Bat-Face Cuphea',  {g:3,b:3,s:3},4],
+        ['rafflesia',       'Rafflesia',        {g:7,s:3},5]
+      ],
+      blue:[
+        ['blue-poppy',      'Himalayan Blue Poppy',{g:5,r:3},3],
+        ['meconopsis',      'Meconopsis',       {g:3,r:3,a:3},4],
+        ['sea-holly',       'Sea Holly',        {g:3,r:3,s:3},4],
+        ['ghost-orchid',    'Blue Ghost Orchid',{g:7,r:3},5]
+      ],
+      amber:[
+        ['saffron-crocus',  'Saffron Crocus',   {g:3,r:5},3],
+        ['middlemist',      "Middlemist\u2019s Red",{g:3,r:3,b:3},4],
+        ['gold-medal-rose', 'Gold Medal Rose',  {r:3,b:3,s:3},4],
+        ['kadupul',         'Kadupul',          {r:7,s:3},5]
+      ],
+      spore:[
+        ['youtan-poluo',    'Youtan Poluo',     {g:3,b:5},3],
+        ['jade-vine',       'Jade Vine',        {g:3,r:3,a:3},4],
+        ['ghost-plant',     'Ghost Plant',      {g:3,b:3,a:3},4],
+        ['franklin-tree',   'Franklin Tree',    {b:7,a:3},5]
+      ]
+    }
+  };
+  // Translate short cost keys (g/r/b/a/s) to full color names.
+  var _COST_KEY={g:'green',r:'rose',b:'blue',a:'amber',s:'spore'};
+  function _expandCost(short){var out={};for(var k in short)if(short.hasOwnProperty(k))out[_COST_KEY[k]||k]=short[k];return out;}
+
   function generateCards(){
     var cards={tier1:[],tier2:[],tier3:[]},id=0;
-    COLORS.forEach(function(col){
-      var oth=COLORS.filter(function(c){return c!==col;});
-      // 8 tier-1 cards per color — mostly 0 GP, a few with 1 GP.
-      cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(oth,2,1)});
-      cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(oth,2,2)});
-      cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(oth,3,1)});
-      cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(oth,3,2)});
-      cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(oth,3,3)});
-      cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(oth,4,2)});
-      cards.tier1.push({id:id++,tier:1,gp:1,produces:col,cost:makeCost(oth,4,2)});
-      cards.tier1.push({id:id++,tier:1,gp:1,produces:col,cost:makeCost(oth,4,3)});
-    });
-    COLORS.forEach(function(col){
-      var oth=COLORS.filter(function(c){return c!==col;});
-      // 6 tier-2 cards per color — 1-3 GP range.
-      cards.tier2.push({id:id++,tier:2,gp:1,produces:col,cost:makeCost(oth,5,2)});
-      cards.tier2.push({id:id++,tier:2,gp:2,produces:col,cost:makeCost(oth,5,3)});
-      cards.tier2.push({id:id++,tier:2,gp:2,produces:col,cost:makeCost(oth,6,2)});
-      cards.tier2.push({id:id++,tier:2,gp:2,produces:col,cost:makeCost(oth,6,3)});
-      cards.tier2.push({id:id++,tier:2,gp:3,produces:col,cost:makeCost(oth,6,3)});
-      cards.tier2.push({id:id++,tier:2,gp:3,produces:col,cost:makeCost(oth,7,3)});
-    });
-    COLORS.forEach(function(col){
-      var oth=COLORS.filter(function(c){return c!==col;});
-      // 4 tier-3 cards per color — 3-5 GP range, chunky costs.
-      cards.tier3.push({id:id++,tier:3,gp:3,produces:col,cost:makeCost(oth,7,2)});
-      cards.tier3.push({id:id++,tier:3,gp:4,produces:col,cost:makeCost(oth,8,3)});
-      cards.tier3.push({id:id++,tier:3,gp:4,produces:col,cost:makeCost(oth,9,3)});
-      cards.tier3.push({id:id++,tier:3,gp:5,produces:col,cost:makeCost(oth,10,3)});
-    });
+    function pushTier(tierKey, tierNum){
+      var tier=CATALOG[tierKey];
+      for(var col in tier)if(tier.hasOwnProperty(col)){
+        tier[col].forEach(function(row){
+          cards[tierKey].push({
+            id:id++, tier:tierNum,
+            gp:row[3], produces:col,
+            cost:_expandCost(row[2]),
+            slug:row[0], name:row[1]
+          });
+        });
+      }
+    }
+    pushTier('tier1',1);
+    pushTier('tier2',2);
+    pushTier('tier3',3);
     return cards;
   }
 
@@ -517,15 +646,29 @@ window._gameFns.pollen = function PN(a){
 
   function tokDot(c,sz){return '<span style="display:inline-block;width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+COLOR_HEX[c]+';border:1px solid rgba(0,0,0,0.2);vertical-align:middle;"></span>';}
 
+  // Art-first renderer: if assets/games/masterpollinator/<slug>.png loads,
+  // it fills the centre of the card. On 404 the img element is removed
+  // and the emoji tier icon shows through underneath. Flower name sits
+  // under the art in small caps so players can read it at a glance.
   function renderCard(card,isReserved){
     var aff=canAfford(me(),card);
     var border=aff.affordable?'2px solid #7ab356':'2px solid #6a6051';
     var bgShade=card.tier===1?'#4a7c35':card.tier===2?'#c8a84b':'#ffd700';
-    var h='<div class="pn-card'+(aff.affordable?' aff':'')+'" style="width:72px;height:100px;background:#faf5e4;border-radius:8px;padding:4px;border:'+border+';border-left:4px solid '+bgShade+';display:inline-block;vertical-align:top;margin:3px;position:relative;cursor:pointer;color:#1a1f17;box-shadow:0 2px 4px rgba(0,0,0,0.25);" onclick="_PNtap('+card.id+','+(isReserved?'true':'false')+')">';
-    h+='<div style="position:absolute;top:2px;left:4px;font-size:12px;font-weight:800;">'+(card.gp>0?card.gp:'')+'</div>';
-    h+='<div style="position:absolute;top:3px;right:4px;">'+tokDot(card.produces,12)+'</div>';
-    h+='<div style="text-align:center;font-size:18px;margin-top:20px;">'+TIER_ICONS[card.tier-1]+'</div>';
-    h+='<div style="position:absolute;bottom:3px;left:3px;right:3px;display:flex;gap:1px;flex-wrap:wrap;">';
+    var artSrc=card.slug?('assets/games/masterpollinator/'+card.slug+'.png'):'';
+    var h='<div class="pn-card'+(aff.affordable?' aff':'')+'" style="width:72px;height:100px;border-radius:8px;padding:4px;border:'+border+';border-left:4px solid '+bgShade+';display:inline-block;vertical-align:top;margin:3px;position:relative;cursor:pointer;color:#1a1f17;box-shadow:0 2px 4px rgba(0,0,0,0.25);overflow:hidden;" onclick="_PNtap('+card.id+','+(isReserved?'true':'false')+')">';
+    h+='<div style="position:absolute;top:2px;left:4px;font-size:12px;font-weight:800;z-index:2;text-shadow:0 1px 2px rgba(255,255,255,0.8);">'+(card.gp>0?card.gp:'')+'</div>';
+    h+='<div style="position:absolute;top:3px;right:4px;z-index:2;">'+tokDot(card.produces,12)+'</div>';
+    // Emoji fallback sits behind art.
+    h+='<div style="position:absolute;inset:18px 4px 26px;display:flex;align-items:center;justify-content:center;font-size:22px;opacity:0.7;z-index:0;">'+TIER_ICONS[card.tier-1]+'</div>';
+    if(artSrc){
+      h+='<img src="'+artSrc+'" alt="" onerror="this.style.display=\'none\'" '
+        +'style="position:absolute;inset:14px 3px 24px;width:calc(100% - 6px);height:calc(100% - 38px);object-fit:contain;z-index:1;pointer-events:none;">';
+    }
+    // Flower name strip — tiny caps, readable at all zoom levels.
+    if(card.name){
+      h+='<div style="position:absolute;left:3px;right:3px;bottom:14px;text-align:center;font-family:DM Mono,monospace;font-size:6.5px;letter-spacing:0.04em;color:#2a2218;text-transform:uppercase;text-shadow:0 1px 1px rgba(255,255,255,0.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2;">'+esc(card.name)+'</div>';
+    }
+    h+='<div style="position:absolute;bottom:2px;left:3px;right:3px;display:flex;gap:1px;flex-wrap:wrap;z-index:2;">';
     for(var c in card.cost){for(var i=0;i<card.cost[c];i++)h+=tokDot(c,9);}
     h+='</div></div>';
     return h;
