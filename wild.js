@@ -1332,16 +1332,21 @@ function _popScale(count) { return Math.min(1.4, 0.5 + count * 0.125); }
 var _reproTimer = null;
 var _reproWeather = null; // cached weather data {temp, rain, fetched}
 
-// Fetch real weather from Open-Meteo (free, no API key)
+// Fetch real weather from Open-Meteo (free, no API key). Captures temp,
+// daily rain, and current windspeed (for the WIND climate threshold).
 function _fetchReproWeather(lat, lng, cb) {
   if (_reproWeather && (Date.now() - _reproWeather.fetched) < 3600000) { cb(_reproWeather); return; }
   var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat.toFixed(4) + '&longitude=' + lng.toFixed(4) + '&current_weather=true&daily=precipitation_sum&timezone=auto&forecast_days=1';
   fetch(url).then(function(r) { return r.json(); }).then(function(d) {
     var rain = 0; try { rain = d.daily.precipitation_sum[0] || 0; } catch (e) {}
     var temp = 20; try { temp = d.current_weather.temperature || 20; } catch (e) {}
-    _reproWeather = { rain: rain, temp: temp, fetched: Date.now() };
+    // open-meteo returns windspeed in km/h. Convert to mph to match the
+    // plant windMax threshold units (18-45 mph range).
+    var windKmh = 0; try { windKmh = d.current_weather.windspeed || 0; } catch (e) {}
+    var wind = Math.round(windKmh * 0.621371 * 10) / 10;
+    _reproWeather = { rain: rain, temp: temp, wind: wind, fetched: Date.now() };
     cb(_reproWeather);
-  }).catch(function() { cb({ rain: 0, temp: 20, fetched: Date.now() }); });
+  }).catch(function() { cb({ rain: 0, temp: 20, wind: 0, fetched: Date.now() }); });
 }
 
 // ═══ WILD CLIMATE DAMAGE TICK ═══
@@ -1432,10 +1437,7 @@ function _doClimateTick(weather) {
   if (!zoneKeys.length) return;
   var temp = weather.temp || 20;
   var rain = weather.rain || 0;
-  var wind = weather.wind || 0; // open-meteo current_weather.windspeed (may not be fetched; default 0)
-  // Wind estimate: open-meteo returns windspeed with current_weather but the
-  // existing fetcher doesn't capture it. Treat 0 as "no data" — skip wind
-  // checks until a future fetch upgrade. See _fetchReproWeather.
+  var wind = weather.wind || 0; // mph — captured by _fetchReproWeather as of Apr 14 2026
   // Dry-day tracking per zone
   var dryMap = {};
   try { dryMap = JSON.parse(localStorage.getItem('lw_dry_days') || '{}'); } catch(e) {}
@@ -1470,6 +1472,8 @@ function _doClimateTick(weather) {
       if (temp < coldMin) breaches.push({ kind: 'cold', cur: temp, thr: coldMin });
       if (rain > floodMm) breaches.push({ kind: 'flood', cur: rain, thr: floodMm });
       if (zDry > droughtDays) breaches.push({ kind: 'drought', cur: zDry, thr: droughtDays });
+      var windMax = typeof t.windMax === 'number' ? t.windMax : 28;
+      if (wind > windMax) breaches.push({ kind: 'wind', cur: wind, thr: windMax });
       if (!breaches.length) continue;
 
       // Season multiplier: peak 0.5x, adjacent 1.0x, opposite 1.75x
@@ -4472,13 +4476,14 @@ function _selectHexPlant(idx, plantData) {
       _curRain !== null && _curRain > traits.floodMm,
       _curRain !== null && _curRain > traits.floodMm * 0.8 && _curRain <= traits.floodMm
     );
-    // Wind (data not yet fetched — always "—" until windspeed capture ships)
+    // Wind — open-meteo windspeed converted to mph in _fetchReproWeather
+    var _curWind = _cw ? _cw.wind : null;
     climateHtml += _climateRow(
       '\ud83d\udca8', 'WIND',
       '\u2264 ' + traits.windMax + 'mph',
-      '\u2014',
-      false,
-      false
+      _curWind !== null ? Math.round(_curWind) + 'mph' : '\u2014',
+      _curWind !== null && _curWind > traits.windMax,
+      _curWind !== null && _curWind > traits.windMax - 5 && _curWind <= traits.windMax
     );
     climateHtml += '</div>';
   }
@@ -4582,8 +4587,27 @@ window._hexAction = function(action) {
 
   switch (action) {
     case 'water':
+      // Hourly tending model (Apr 14, 2026): any watering is gated on a
+      // per-plant-per-user 1h cooldown. No daily budget caps — you can
+      // tend as many different plants as you want, but not the same plant
+      // twice in under an hour. This is what makes community tending
+      // meaningful: one keeper can keep a plant alive in peak season,
+      // four keepers rotating every 2h can keep it alive in winter.
+      var _tendMap = {}; try { _tendMap = JSON.parse(localStorage.getItem('lw_plant_last_tend') || '{}'); } catch (e) {}
+      var _lastTend = _tendMap[p.hash] || 0;
+      var _sinceTend = Date.now() - _lastTend;
+      if (_sinceTend < 3600000) {
+        var _mins = Math.max(1, Math.ceil((3600000 - _sinceTend) / 60000));
+        _toast('\u231b Tended recently. Back in ' + _mins + 'm.');
+        break;
+      }
+      if (!p.own && _uLat && p.lat) {
+        var _wDist = _dist(_uLat, _uLng, p.lat, p.lng);
+        if (_wDist > COLLECT_RANGE) { _toast('Walk closer! ' + Math.round(_wDist) + 'm away.'); break; }
+      }
       if (p.own) {
-        // Water own plant — once per 24h, resets decayAt to full lifespan.
+        // Owner water: +6h, no lifetime cap. Can stack indefinitely as
+        // long as each tend is at least 1h after the previous.
         var _wild = _getWild();
         var _hit = null, _hitIdx = -1;
         for (var _wi = 0; _wi < _wild.length; _wi++) {
@@ -4591,39 +4615,18 @@ window._hexAction = function(action) {
         }
         if (!_hit) { _toast('Plant not found in your local wild cache.'); break; }
         _ensureVitality(_hit);
-        var _lastWater = _hit.lastWateredAt || 0;
-        if (Date.now() - _lastWater < 24 * 3600000) {
-          var _hrs = Math.ceil(24 - (Date.now() - _lastWater) / 3600000);
-          _toast('Already watered. Back in ' + _hrs + 'h.');
-          break;
-        }
         _hit.lastWateredAt = Date.now();
-        _hit.decayAt = Date.now() + _hit.lifespanMs; // full reset
+        _hit.decayAt = (_hit.decayAt || Date.now()) + 6 * 3600000;
         _wild[_hitIdx] = _hit;
         _saveWild(_wild);
-        _toast('\ud83d\udca7 Watered! Lifespan reset to full.');
+        _toast('\ud83d\udca7 Watered! +6h of life.');
         if (window._haptic) _haptic('bloom');
         if (window._trackQuest) _trackQuest('plantsWatered', 1);
         if (window.LW_Log) window.LW_Log.write('wild_watered', { hash: p.hash });
-        // Refresh inspector detail if open
-        if (typeof _selectHexPlant === 'function') _selectHexPlant(0, p);
       } else {
-        // Water a stranger's plant — budgeted kindness. Adds +2h to
-        // their lifespan via the shared marker, grants pollen XP.
-        var _waterKey = 'lw_water_budget';
-        var _wBudget = {}; try { _wBudget = JSON.parse(localStorage.getItem(_waterKey) || '{}'); } catch (e) {}
-        var _wToday = new Date().toISOString().split('T')[0];
-        if (_wBudget.date !== _wToday) _wBudget = { date: _wToday, count: 0 };
-        if (_wBudget.count >= 5) { _toast('No waters left today (5/day).'); break; }
-        if (_uLat && p.lat) {
-          var _wDist = _dist(_uLat, _uLng, p.lat, p.lng);
-          if (_wDist > COLLECT_RANGE) { _toast('Walk closer! ' + Math.round(_wDist) + 'm away.'); break; }
-        }
-        _wBudget.count = (_wBudget.count || 0) + 1;
-        localStorage.setItem(_waterKey, JSON.stringify(_wBudget));
-        // Bump shared marker so the +2h actually lands on the plant.
-        // Uses the same strangerTendAddMs bucket so the 5-day cap is
-        // shared with TEND — one kindness budget per plant, total.
+        // Stranger water: +2h onto the shared marker's decayAt. Still
+        // respects the WILD_TEND_BONUS_CAP so a single plant can't get
+        // infinite tending across all visitors (raised to 30d earlier).
         try {
           if (_sharedMarkers && _sharedMarkers[p.hash] && _sharedMarkers[p.hash].data) {
             var _wSmd = _sharedMarkers[p.hash].data;
@@ -4636,10 +4639,15 @@ window._hexAction = function(action) {
         } catch(e) {}
         if (window.PW_grantXP) PW_grantXP(5, 'wild_water_stranger');
         if (window.LW_Log) window.LW_Log.write('wild_watered_stranger', { hash: p.hash, ownerName: p.ownerName || 'Keeper' });
-        _toast('\ud83d\udca7 Watered a keeper\u2019s plant. +2h \u00b7 +5 XP. ' + (5 - _wBudget.count) + ' left today.');
+        _toast('\ud83d\udca7 Watered a keeper\u2019s plant. +2h \u00b7 +5 XP.');
         if (window._haptic) _haptic('bloom');
         if (window._trackQuest) _trackQuest('plantsWatered', 1);
       }
+      // Write hourly cooldown timestamp for this plant
+      _tendMap[p.hash] = Date.now();
+      try { localStorage.setItem('lw_plant_last_tend', JSON.stringify(_tendMap)); } catch(e) {}
+      // Refresh inspector detail
+      if (typeof _selectHexPlant === 'function') _selectHexPlant(0, p);
       break;
 
     case 'breed':
