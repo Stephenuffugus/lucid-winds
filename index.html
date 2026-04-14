@@ -3653,13 +3653,20 @@
 
     /* Game picker cards — staggered entry, organic hover */
     /* ── Game Picker: Category Accordion (set-39) ── */
-    .gp-cat{margin-bottom:6px;border-radius:10px;overflow:hidden;border:1px solid rgba(74,124,53,0.08);background:rgba(13,16,12,0.5);}
-    .gp-cat-hdr{display:flex;align-items:center;gap:8px;width:100%;padding:10px 12px;border:none;background:rgba(26,36,22,0.6);color:var(--cream);cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:48px;transition:background 0.2s;}
-    .gp-cat-hdr:active{background:rgba(26,36,22,0.85);}
+    .gp-cat{margin-bottom:8px;border-radius:12px;overflow:hidden;border:1px solid rgba(74,124,53,0.08);background:rgba(13,16,12,0.5);}
+    /* Banner-enabled header: image fills the full row at native ratio.
+       The count chip + chevron float on top in opposite corners. When
+       the banner is missing, the text fallback becomes visible and the
+       row drops back to the minimal 48px text row. */
+    .gp-cat-hdr{position:relative;display:flex;align-items:center;width:100%;padding:0;border:none;background:rgba(26,36,22,0.6);color:var(--cream);cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:48px;transition:transform 0.2s,filter 0.2s;overflow:hidden;}
+    .gp-cat-hdr:active{transform:scale(0.995);filter:brightness(1.1);}
+    .gp-cat-banner{display:block;width:100%;height:auto;object-fit:cover;}
+    .gp-cat-text-fallback{display:none;align-items:center;gap:8px;padding:10px 12px;flex:1;}
+    .gp-cat-text-fallback.show{display:flex;}
     .gp-cat-icon{font-size:1.1rem;flex-shrink:0;width:28px;text-align:center;}
     .gp-cat-label{font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.1em;color:var(--gold);flex:1;text-align:left;}
-    .gp-cat-count{font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--muted);background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:10px;flex-shrink:0;}
-    .gp-chev{font-size:0.45rem;color:var(--muted);transition:transform 0.25s ease;flex-shrink:0;}
+    .gp-cat-count{position:absolute;top:8px;right:44px;font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--cream);background:rgba(8,10,6,0.85);padding:3px 9px;border-radius:12px;flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,0.5);border:1px solid rgba(200,168,75,0.3);}
+    .gp-chev{position:absolute;top:10px;right:12px;font-size:0.6rem;color:var(--cream);transition:transform 0.25s ease;flex-shrink:0;background:rgba(8,10,6,0.85);width:26px;height:26px;border-radius:13px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(200,168,75,0.25);}
     .gp-chev.open{transform:rotate(0deg);}
     .gp-cat:not(.open) .gp-chev{transform:rotate(-90deg);}
     .gp-cat-body{max-height:0;overflow:hidden;transition:max-height 0.35s cubic-bezier(0.25,0.46,0.45,0.94);padding:0 8px;}
@@ -41237,9 +41244,13 @@ function _opCat(catKey){
 function _op(){var o=document.getElementById('fg-ov'),rc=_gr();
   // Build categorized accordion picker with thumbnails
   var h='<div style="max-width:460px;margin:0 auto;padding:0.5rem">';
-  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
-  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:var(--gold);letter-spacing:.1em">CHOOSE YOUR GAME</div>';
-  h+='<button class="gb" onclick="_cp();if(window.switchTab)switchTab(\'greenhouse\');" style="min-height:44px;padding:0.4rem 0.8rem;">CLOSE</button></div>';
+  // Header banner — full-width image that replaces the old Bebas text.
+  // Falls back to the text treatment if the file is missing.
+  h+='<div style="position:relative;margin:0 -0.5rem 14px;">';
+  h+='<img id="gp-header-banner" src="assets/games/category-banners/header.png" alt="Choose Your Game" style="display:block;width:100%;height:auto;border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,0.45);" onerror="this.style.display=\'none\';var tf=document.getElementById(\'gp-header-fallback\');if(tf)tf.style.display=\'block\';">';
+  h+='<div id="gp-header-fallback" style="display:none;font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:var(--gold);letter-spacing:.1em;text-align:center;padding:12px 0;">CHOOSE YOUR GAME</div>';
+  h+='<button class="gb" onclick="_cp();if(window.switchTab)switchTab(\'greenhouse\');" style="position:absolute;top:8px;right:8px;min-height:40px;padding:0.35rem 0.75rem;background:rgba(8,10,6,0.85);border:1.5px solid rgba(200,168,75,0.35);border-radius:8px;color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;cursor:pointer;">CLOSE</button>';
+  h+='</div>';
   // Category accordions
   var gi=0;
   G_CATS.forEach(function(cat){
@@ -41247,8 +41258,13 @@ function _op(){var o=document.getElementById('fg-ov'),rc=_gr();
     if(!games.length)return;
     h+='<div class="gp-cat" data-cat="'+cat.key+'">';
     h+='<button class="gp-cat-hdr" onclick="this.parentElement.classList.toggle(\'open\');this.querySelector(\'.gp-chev\').classList.toggle(\'open\')">';
-    h+='<span class="gp-cat-icon">'+cat.icon+'</span>';
-    h+='<span class="gp-cat-label">'+cat.label+'</span>';
+    // Banner image by convention: assets/games/category-banners/{key}.png.
+    // onerror reveals the text fallback so missing art doesn't leave a
+    // blank category header. When present, the banner fills the row at
+    // full width and the icon/label/count ride on top of it.
+    h+='<img class="gp-cat-banner" src="assets/games/category-banners/'+cat.key+'.png" alt="" onerror="this.style.display=\'none\';var f=this.nextSibling;if(f)f.classList.add(\'show\');">';
+    h+='<span class="gp-cat-text-fallback"><span class="gp-cat-icon">'+cat.icon+'</span>';
+    h+='<span class="gp-cat-label">'+cat.label+'</span></span>';
     h+='<span class="gp-cat-count">'+games.length+'</span>';
     h+='<span class="gp-chev">\u25bc</span>';
     h+='</button>';
