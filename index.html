@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.14.82';
+  var LW_VERSION='2026.04.14.83';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -36393,11 +36393,23 @@ function _doCollectFeral(f,mk){
   // Award Dew based on rarity (feral collection drips dew into the pouch)
   var dewReward={Common:1,Uncommon:2,Rare:3,Epic:5,Legendary:8,Mythic:12,Cosmic:20};
   var reward=dewReward[info.grade]||1;
-  // Class synergy: Forager Master + Raccoon = 2x feral drops
-  var _foragerKinFired=false;
-  try{if(window._LW_hasSynergy&&window._LW_hasSynergy()){var _lwc=localStorage.getItem('lw_class');if(_lwc==='forager'){reward*=2;_foragerKinFired=true;}}}catch(e){}
-  // Surface the synergy so the player knows their Master ability triggered.
-  if(_foragerKinFired&&window._toast)setTimeout(function(){window._toast('🍂 Wild Kin: Raccoon doubled the drop (+'+reward+' Dew)');},250);
+  // Class synergy with fallback — Forager Master always gets +50% on
+  // ferals once Lv 3, and 2× when Raccoon (idx 35) is in greenhouse.
+  // Stops Wild Kin from being a dead pick when the Legendary Raccoon
+  // (~2.27%) doesn't drop. Was: 2× w/ Raccoon, 1× without (dead).
+  var _foragerKinFired=false;var _kinFull=false;
+  try{
+    var _lwc=localStorage.getItem('lw_class');
+    if(_lwc==='forager'&&window._lwGetClassLevel&&_lwGetClassLevel('forager')>=3){
+      _foragerKinFired=true;
+      if(window._LW_hasSynergy&&window._LW_hasSynergy()){_kinFull=true;reward=Math.round(reward*2);}
+      else reward=Math.round(reward*1.5);
+    }
+  }catch(e){}
+  if(_foragerKinFired&&window._toast)setTimeout(function(){
+    var lbl=_kinFull?'Wild Kin: Raccoon doubled the drop':'Wild Kin: +50% drop (find a Raccoon for 2×)';
+    window._toast('🍂 '+lbl+' (+'+reward+' Dew)');
+  },250);
   if(window.earnDew)window.earnDew(reward,'feral_collect');
   // Event log: record feral collection for Root Report / discovery stats
   if(window.LW_Log){
@@ -37171,12 +37183,18 @@ function _doCrossPollination(wildPlant,matePlant){
     // rewards (XP, Dew, Sunbeams). The synergy fires on the BREED action,
     // not on passive pollen rate (which is what it used to do, wrong
     // surface entirely).
+    // Breeder Master + Garden Spider synergy with fallback. Always +50%
+    // at L3 once mastered; doubled when Spider equipped. Spider is 0.39%
+    // (Legendary) so most breeders never see it — half-strength fallback
+    // makes Web Weaver still worth the L3 grind.
     var _spiderBonus=1;
-    var _spiderFired=false;
+    var _spiderFired=false;var _spiderFull=false;
     try{
-      if(window._LW_hasSynergy&&window._LW_hasSynergy()){
-        var _lwc=localStorage.getItem('lw_class');
-        if(_lwc==='breeder'){_spiderBonus=2;_spiderFired=true;}
+      var _lwc=localStorage.getItem('lw_class');
+      if(_lwc==='breeder'&&window._lwGetClassLevel&&_lwGetClassLevel('breeder')>=3){
+        _spiderFired=true;
+        if(window._LW_hasSynergy&&window._LW_hasSynergy()){_spiderBonus=2;_spiderFull=true;}
+        else _spiderBonus=1.5;
       }
     }catch(e){}
     if(roll<0.6){
@@ -37195,7 +37213,9 @@ function _doCrossPollination(wildPlant,matePlant){
       if(window.earnHashes)window.earnHashes(sbBonus);
       rewardMsg='+'+sbBonus+' Sunbeams toward a new plant!';
     }
-    if(_spiderFired&&window._toast)setTimeout(function(){window._toast('🕷 Web Weaver: Garden Spider doubled the reward.');},250);
+    if(_spiderFired&&window._toast)setTimeout(function(){
+      window._toast(_spiderFull?'🕷 Web Weaver: Spider doubled the reward.':'🕷 Web Weaver: +50% reward (find a Garden Spider for 2×)');
+    },250);
     _play('match');
     var parentInfo=_buildInfo(wildPlant.hash);
     var mateInfo=_buildInfo(matePlant.hash);
@@ -53552,19 +53572,19 @@ var LW_CLASSES={
     abilities:{
       1:{name:'Keen Eye',desc:'+25% feral seed range'},
       2:{name:'Bountiful',desc:'+15% rare drop odds'},
-      3:{name:'Wild Kin',desc:'Raccoon companion doubles feral drops'}
+      3:{name:'Wild Kin',desc:'+50% feral drops · 2× when Raccoon equipped'}
     },companion:35,biome:'forest'},
   breeder:{name:'Breeder',icon:'🧬',desc:'Nursery mastery',xpSrc:['breed','chimera'],
     abilities:{
       1:{name:'Patient Hand',desc:'+1 nursery slot'},
       2:{name:'Purebred',desc:'+20% chimera purity'},
-      3:{name:'Web Weaver',desc:'Garden Spider doubles pollen on breed'}
+      3:{name:'Web Weaver',desc:'+50% breed reward · 2× with Garden Spider'}
     },companion:37,biome:'garden'},
   cartographer:{name:'Cartographer',icon:'🧭',desc:'Map & movement',xpSrc:['biome','steps'],
     abilities:{
-      1:{name:'Surefoot',desc:'+10% step bonus'},
+      1:{name:'Surefoot',desc:'+25% step XP'},
       2:{name:'Biome Sense',desc:'Reveal biome on compass tap'},
-      3:{name:'Sky Watcher',desc:'Great Blue Heron doubles biome bonus'}
+      3:{name:'Sky Watcher',desc:'+10% biome bonus · doubled with Heron'}
     },companion:36,biome:'mountain'},
   tender:{name:'Tender',icon:'💧',desc:'Plant longevity',xpSrc:['tend','dew'],
     abilities:{
@@ -53734,10 +53754,15 @@ window._LW_classXP=function(source,amount){
   }
   // Biome bonus: +25% XP when in matching biome
   if(_lwBiomeMatch())mult*=1.25;
-  // Cartographer Master + Heron synergy: biome XP bonus rises from
-  // 1.25× to 1.5× (doubles the +0.25 bonus contribution to +0.50).
-  // Code + spec + description now all agree on 1.5× total.
-  if(_lwBiomeMatch()&&cls==='cartographer'&&window._LW_hasSynergy&&window._LW_hasSynergy())mult*=1.2;
+  // Cartographer Sky Watcher (Master) — biome bonus rises with fallback:
+  //   L3 base: 1.25 × 1.10 = 1.375× (always-on at Master)
+  //   With Heron in greenhouse: 1.25 × 1.20 = 1.50× total
+  // Heron is 2.27% Legendary; the half-strength fallback keeps the
+  // ability worth grinding even if you never roll Heron.
+  if(_lwBiomeMatch()&&cls==='cartographer'&&_lwGetClassLevel('cartographer')>=3){
+    if(window._LW_hasSynergy&&window._LW_hasSynergy())mult*=1.20;
+    else mult*=1.10;
+  }
   var gain=Math.ceil(amount*mult);
   var x=_lwGetClassXP();
   var was=x[cls]||0;
@@ -53781,7 +53806,11 @@ window._LW_classBonus=function(kind){
   // Additive: extra nursery slots granted by current class. Breeder L1 +1.
   if(kind==='nurserySlotPlus'){if(cls==='breeder')return 1;return 0;}
   if(kind==='chimeraPurity'&&cls==='breeder'&&lvl>=2)return 1.20+keeper;
-  if(kind==='stepBonus'&&cls==='cartographer')return 1.10+keeper;
+  // Cartographer Surefoot: +25% step XP at L1 (was +10% — too small to
+  // feel). Scales with Keeper Attuned where applicable, like other class
+  // bonuses. Step XP is Cartographer's primary source so this also
+  // accelerates levelling.
+  if(kind==='stepBonus'&&cls==='cartographer')return 1.25+keeper;
   if(kind==='plantLongevity'&&cls==='tender')return 2+keeper; // L1 Green Thumb baseline; Master no longer adds longevity (replaced by active Phoenix Bloom)
   if(kind==='dewRate'&&cls==='tender'&&lvl>=2)return 1.20+keeper;
   return 1+keeper;
