@@ -40244,13 +40244,17 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      onboarding via the .ob-active body class so testers don't tap it before
      they have an account. -->
 <button id="lw-fb-btn" onclick="window._lwOpenFeedback&&window._lwOpenFeedback()" title="Share feedback" style="position:fixed;bottom:calc(var(--nav-h, 58px) + env(safe-area-inset-bottom, 0px) + 6px);right:8px;z-index:999998;background:rgba(122,179,86,0.12);color:rgba(122,179,86,0.7);padding:5px 10px;font-family:'DM Mono',monospace;font-size:0.5rem;letter-spacing:0.05em;border-radius:6px;border:1px solid rgba(122,179,86,0.25);cursor:pointer;">📝 FEEDBACK</button>
+<!-- Contextual suggestion button — "What could I do right now?" — ambient,
+     never blocking. Hidden during onboarding via the .ob-active body class.
+     Parallel to the feedback ribbon: bottom-left mirror to bottom-right. -->
+<button id="lw-whatnow-btn" onclick="window._lwOpenWhatNow&&window._lwOpenWhatNow()" title="What could I do right now?" style="position:fixed;bottom:calc(var(--nav-h, 58px) + env(safe-area-inset-bottom, 0px) + 6px);left:8px;z-index:999998;background:rgba(200,168,75,0.14);color:rgba(200,168,75,0.85);padding:5px 10px;font-family:'DM Mono',monospace;font-size:0.5rem;letter-spacing:0.05em;border-radius:6px;border:1px solid rgba(200,168,75,0.3);cursor:pointer;">✧ WHAT NOW?</button>
 <style>
   /* Hide feedback button during onboarding AND any time a major overlay
      is open — don't let it cover or compete with celebrations, modals,
      or the cinematic reveal. Uses :has() (iOS 15.4+, Chrome 105+).
      Fallback: when :has() is unsupported the button just stays visible —
      not a bug, just slightly busy. */
-  body.ob-active #lw-fb-btn{display:none !important;}
+  body.ob-active #lw-fb-btn, body.ob-active #lw-whatnow-btn{display:none !important;}
   body:has(.lu-overlay.open) #lw-fb-btn,
   body:has(#pw-win-overlay) #lw-fb-btn,
   body:has(#cinematic-reveal.open) #lw-fb-btn,
@@ -56611,6 +56615,164 @@ window.LW_Comp = (function(){
   function use(){return null;}
 
   return {observeWin:observeWin, friendship:friendship, titleFor:titleFor, registry:registry, active:activeSlug, peek:peek, use:use, IDX:IDX, NAMES:NAMES, ICONS:ICONS};
+})();
+</script>
+
+<!-- ═══ "WHAT NOW?" — CONTEXTUAL SUGGESTIONS ═══════════════════════════
+     Reads the player's state and returns a ranked list of 2-5 things
+     they could do right now. Evergreen replacement for a classic forced
+     tutorial — the same button works at L1 and L40. Keeps the Lucid
+     Winds aesthetic intact (no flashing arrows, no forced focus).
+     Triggered by the floating "✧ WHAT NOW?" button near the bottom nav.
+═══════════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  'use strict';
+
+  // Build the full suggestion list, sorted by priority (higher = more urgent).
+  // Each suggestion returns { icon, title, body, priority, action } where
+  // action is a zero-arg function the player taps to execute.
+  function buildSuggestions(){
+    var out = [];
+    var xp=0; try{xp=parseInt(localStorage.getItem('pw_xp')||'0',10);}catch(e){}
+    var lvl=1; try{ for(var R=window.RANKS||[];R.length;){break;} lvl = (window._getRank? _getRank(xp):{level:1}).level || 1; }catch(e){}
+    // Fall back if _getRank isn't exposed — derive from rough thresholds.
+    if(!lvl||lvl<1){
+      var thr=[0,25,75,175,350,600,950,1400,2000,2800,3800];
+      lvl=1; for(var li=0;li<thr.length;li++)if(xp>=thr[li])lvl=li+1;
+    }
+
+    var gh=[]; try{gh=window.loadGreenhouse?loadGreenhouse():JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+    var nur=[]; try{nur=(window.FG_Data&&FG_Data.getNursery)?FG_Data.getNursery():[];}catch(e){}
+    var wild=[]; try{wild=JSON.parse(localStorage.getItem('sws_wild')||'[]');}catch(e){}
+    var sunbeamProg=0; try{sunbeamProg=window._getHashProgress?_getHashProgress():0;}catch(e){}
+    var dew=0; try{dew=window.getTotalDew?getTotalDew():0;}catch(e){}
+    var cls=null; try{cls=localStorage.getItem('lw_class');}catch(e){}
+    var comp=null; try{comp=JSON.parse(localStorage.getItem('pw_active_companion')||'null');}catch(e){}
+    var today=new Date().toISOString().slice(0,10);
+
+    // ─── PRIORITY 100+ — time-critical / missed opportunities ───
+    // Bloom Day is live right now
+    try{
+      var bd=window._lwGetActiveBloomDay&&window._lwGetActiveBloomDay();
+      if(bd&&bd.active){
+        out.push({icon:'🌸',title:'Bloom Day is live',body:'Rare seeds tilt in your favor for the next '+Math.ceil(bd.hoursLeft)+'h. Plant in the wild or forage.',priority:110,action:function(){if(window.switchTab)switchTab('wild');}});
+      }
+    }catch(e){}
+
+    // Nursery seed ready to bloom
+    for(var ns=0;ns<nur.length;ns++){
+      var s=nur[ns];
+      if(s&&s.status==='growing'&&(s.waterLog||[]).length>=3){
+        out.push({icon:'✨',title:'A seed is ready to bloom',body:'Tap the nursery to mint your new plant.',priority:100,action:function(){if(window.switchTab)switchTab('nursery');}});
+        break;
+      }
+    }
+
+    // Nursery seed unwatered today
+    for(var nw=0;nw<nur.length;nw++){
+      var sw=nur[nw];
+      if(sw&&sw.status==='growing'&&(sw.waterLog||[]).indexOf(today)<0){
+        out.push({icon:'💧',title:'Water your seed',body:'Seeds bloom after 3 waterings on 3 different days.',priority:85,action:function(){if(window.switchTab)switchTab('nursery');}});
+        break;
+      }
+    }
+
+    // ─── PRIORITY 60-90 — onboarding milestones ───
+    // Sunbeam meter is full → mint
+    if(sunbeamProg>=30){
+      out.push({icon:'☀️',title:'Mint a new plant',body:'You\u2019ve filled the Sunbeam meter — head to the Game tab and claim your plant.',priority:90,action:function(){if(window.switchTab)switchTab('game');}});
+    }
+    // Level 7 reached, class not picked
+    if(lvl>=7&&!cls){
+      out.push({icon:'🌿',title:'Choose your keeper class',body:'Five paths unlocked at L7. Open the Book of Secrets → CLASS.',priority:80,action:function(){if(window._openCompendiumUI)_openCompendiumUI();}});
+    }
+    // Level 3 reached, never visited Wild
+    if(lvl>=3&&wild.length===0){
+      out.push({icon:'🗺️',title:'Explore the Wild tab',body:'Walk to real-world locations and drop plants in the world.',priority:70,action:function(){if(window.switchTab)switchTab('wild');}});
+    }
+
+    // ─── PRIORITY 40-60 — growth activities ───
+    // Has 2+ plants → can cross-pollinate
+    if(gh.length>=2){
+      out.push({icon:'🧬',title:'Cross-pollinate two plants',body:'Breed a chimera seed in the greenhouse. Each cross shifts traits and rewards XP or Dew.',priority:55,action:function(){if(window.switchTab)switchTab('greenhouse');}});
+    }
+    // Has plants, no companion equipped
+    if(gh.length>=1&&!comp){
+      // Check if any plant has a companion trait — otherwise the prompt is useless.
+      var hasComp=false;
+      for(var gi=0;gi<gh.length&&!hasComp;gi++){
+        try{var t=window.hashToTraits&&window.hashToTraits(gh[gi].hash);if(t&&t.companion>=20)hasComp=true;}catch(e){}
+      }
+      if(hasComp){
+        out.push({icon:'🦋',title:'Equip a companion',body:'Tap the companion card on your character sheet. Keep them equipped 7 days to reach L2.',priority:50,action:function(){if(window.PW_UI&&PW_UI.equipCompanion)PW_UI.equipCompanion();}});
+      }
+    }
+    // Dew balance > 21 → nursery acceleration available
+    if(dew>=21&&nur.length>=1){
+      out.push({icon:'⚡',title:'Speed up a seed',body:'21 Dew skips one growth day. Tap a seed in the nursery to spend.',priority:45,action:function(){if(window.switchTab)switchTab('nursery');}});
+    }
+
+    // ─── PRIORITY 20-40 — passive / exploratory ───
+    // First plant — read the haiku
+    if(gh.length===1){
+      out.push({icon:'📜',title:'Read your plant\u2019s haiku',body:'Every plant has a unique 7-5-7 poem born from its hash. Tap the card.',priority:40,action:function(){if(window.switchTab)switchTab('greenhouse');}});
+    }
+    // No sunbeam progress, no plants → play a game
+    if(sunbeamProg===0&&gh.length===0){
+      out.push({icon:'🎮',title:'Play your first game',body:'Pattern-matching games earn Sunbeams. 30 Sunbeams = one unique plant, yours forever.',priority:100,action:function(){if(window.switchTab)switchTab('game');}});
+    }
+    // Book of Secrets unlock prompt
+    if(lvl>=7){
+      out.push({icon:'📖',title:'Open the Book of Secrets',body:'Your diary of discoveries, companion bonds, and weekly herbarium goals.',priority:30,action:function(){if(window._openCompendiumUI)_openCompendiumUI();}});
+    }
+
+    // ─── fallback: if nothing specific fits, suggest the core loop ───
+    if(out.length===0){
+      out.push({icon:'🎮',title:'Play a game, earn Sunbeams',body:'The steady loop: 30 Sunbeams → one new plant. Everything else grows from there.',priority:10,action:function(){if(window.switchTab)switchTab('game');}});
+      out.push({icon:'🌿',title:'Tend your greenhouse',body:'Your plants are waiting. Open the greenhouse to read their haiku or breed two together.',priority:5,action:function(){if(window.switchTab)switchTab('greenhouse');}});
+    }
+
+    // Sort highest-priority first; return top 5
+    out.sort(function(a,b){return b.priority-a.priority;});
+    return out.slice(0,5);
+  }
+
+  window._lwOpenWhatNow=function(){
+    var old=document.getElementById('lw-whatnow-modal');if(old)old.remove();
+    var items=buildSuggestions();
+    var ov=document.createElement('div');
+    ov.id='lw-whatnow-modal';
+    ov.style.cssText='position:fixed;inset:0;z-index:999999;display:flex;align-items:flex-end;justify-content:center;background:rgba(5,8,4,0.6);backdrop-filter:blur(6px);padding:1rem 1rem calc(var(--nav-h, 58px) + env(safe-area-inset-bottom, 0px) + 60px);animation:panelFadeIn 0.25s ease;';
+    ov.onclick=function(e){if(e.target===ov)ov.remove();};
+    var h='<div style="max-width:380px;width:100%;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.3);border-radius:14px;padding:0.9rem;box-shadow:0 16px 50px rgba(0,0,0,0.7);">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">';
+    h+='<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--gold);font-style:italic;">What could you do?</div>';
+    h+='<button onclick="var m=document.getElementById(\'lw-whatnow-modal\');if(m)m.remove();" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(138,145,120,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:0.7rem;cursor:pointer;min-height:44px;min-width:44px;">✕</button>';
+    h+='</div>';
+    for(var i=0;i<items.length;i++){
+      var it=items[i];
+      h+='<button data-wn-idx="'+i+'" style="display:flex;align-items:flex-start;gap:0.55rem;width:100%;padding:0.6rem;margin-bottom:0.35rem;background:rgba(18,22,16,0.6);border:1px solid rgba(122,179,86,0.18);border-radius:10px;color:var(--cream);cursor:pointer;text-align:left;min-height:56px;">';
+      h+='<div style="font-size:1.2rem;flex-shrink:0;margin-top:2px;">'+it.icon+'</div>';
+      h+='<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.06em;color:var(--gold);">'+it.title+'</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);margin-top:3px;line-height:1.45;">'+it.body+'</div></div>';
+      h+='</button>';
+    }
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);text-align:center;margin-top:0.4rem;opacity:0.7;">Suggestions change as you play.</div>';
+    h+='</div>';
+    ov.innerHTML=h;
+    document.body.appendChild(ov);
+    // Wire the action onClicks after DOM append so closures capture items[i].
+    var btns=ov.querySelectorAll('button[data-wn-idx]');
+    for(var b=0;b<btns.length;b++){
+      (function(idx){
+        btns[idx].onclick=function(){
+          ov.remove();
+          try{if(items[idx]&&items[idx].action)items[idx].action();}catch(e){}
+        };
+      })(b);
+    }
+  };
 })();
 </script>
 
