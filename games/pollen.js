@@ -726,14 +726,13 @@ window._gameFns.pollen = function PN(a){
     var aff=canAfford(me(),card);
     var border=aff.affordable?'2px solid #7ab356':'2px solid rgba(110,96,81,0.55)';
     var bgShade=card.tier===1?'#4a7c35':card.tier===2?'#c8a84b':'#ffd700';
-    var W=96, H=132;
-    // Cost bar height + chip size scale with how many chips need to
-    // fit. Tier 1 caps at 4 chips, Tier 3 can hit 7. Bumped chip
-    // sizes up so the painted seeds actually read — was 14/12/10,
-    // now 18/16/14. Bar height grows to match.
+    var W=96, H=120;
+    // CSS chips read clean at small sizes (no painted seed art any
+    // more) so the cost bar can be tighter than the seed-era 30-42px
+    // range. Cards stay shorter; art gets more vertical space.
     var costCount=0;for(var ck in card.cost)costCount+=card.cost[ck];
-    var CHIP=costCount<=4?18:costCount<=6?16:14;
-    var BARH=costCount<=4?30:costCount<=6?36:42;
+    var CHIP=costCount<=4?14:costCount<=6?12:10;
+    var BARH=costCount<=4?22:costCount<=6?26:30;
     var GP_PILL=card.gp>0?
       '<div style="position:absolute;top:3px;left:4px;width:24px;height:24px;border-radius:50%;background:linear-gradient(180deg,#fff5d4,#e8c860);color:#2a1f0a;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;z-index:3;box-shadow:0 2px 5px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.5);border:1px solid rgba(120,90,20,0.6);">'+card.gp+'</div>'
       :'';
