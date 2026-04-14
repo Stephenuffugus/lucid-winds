@@ -4400,7 +4400,10 @@ body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 275px)!important;righ
 #bpp{position:fixed;top:calc(120px + env(safe-area-inset-top,0px));right:10px;width:68px;max-height:calc(100vh - 240px);overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:8px;padding:4px;z-index:999;opacity:0;transform:translateY(-24px);transition:opacity 0.3s ease 0.05s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.05s;scrollbar-width:none;}
 #bpp::-webkit-scrollbar{display:none;}
 #bpe.open #bpp{opacity:1;transform:translateY(0);}
-#bps{position:fixed;top:calc(68px + env(safe-area-inset-top,0px));right:70px;left:12px;height:48px;overflow-x:auto;overflow-y:hidden;display:flex;gap:6px;align-items:center;padding:2px 6px;z-index:999;opacity:0;transform:translateX(24px);transition:opacity 0.3s ease 0.15s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.15s;scrollbar-width:none;}
+/* Seed panel: vertical strip just left of the backpack plant column so
+   seeds sit next to the backpack instead of drifting to the top corner.
+   3x-ish larger than the old 42px tiles — reads as real inventory now. */
+#bps{position:fixed;top:calc(120px + env(safe-area-inset-top,0px));right:88px;width:108px;max-height:calc(100vh - 240px);overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:10px;align-items:center;padding:6px 4px;z-index:999;opacity:0;transform:translateX(24px);transition:opacity 0.3s ease 0.15s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.15s;scrollbar-width:none;}
 #bps::-webkit-scrollbar{display:none;}
 #bpe.open #bps{opacity:1;transform:translateX(0);}
 /* Return to Base button */
@@ -4452,14 +4455,14 @@ body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 275px)!important;righ
 .lk{width:64px;height:64px;flex-shrink:0;border-radius:10px;border:2px dashed rgba(74,124,53,0.12);background:rgba(26,36,22,0.06);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;opacity:0.35;}
 .lk .lh{font-family:'DM Mono',monospace;font-size:7px;color:var(--muted);text-align:center;line-height:1.2;padding:0 4px;}
 
-/* Seed slot */
-.ss{width:42px;height:42px;flex-shrink:0;position:relative;cursor:pointer;transition:transform 0.15s;}
-.ss:active{transform:scale(0.88);}
-.sd-icon{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(200,168,75,0.2);background:rgba(26,36,22,0.2);}
-.sd-icon svg{width:26px;height:26px;}
-.ss.rare .sd-icon{border-color:rgba(200,168,75,0.5);animation:sg 2s ease-in-out infinite;}
-@keyframes sg{0%,100%{box-shadow:0 0 4px rgba(200,168,75,0.15)}50%{box-shadow:0 0 12px rgba(200,168,75,0.4)}}
-.se{width:42px;height:42px;flex-shrink:0;border-radius:50%;border:1.5px dashed rgba(200,168,75,0.08);opacity:0.2;}
+/* Seed slot — 3x the old 42px chip so seeds read as real inventory next to the backpack. */
+.ss{width:100px;height:100px;flex-shrink:0;position:relative;cursor:pointer;transition:transform 0.15s;}
+.ss:active{transform:scale(0.92);}
+.sd-icon{width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid rgba(200,168,75,0.3);background:rgba(26,36,22,0.35);box-shadow:0 2px 10px rgba(0,0,0,0.4);}
+.sd-icon svg{width:64px;height:64px;}
+.ss.rare .sd-icon{border-color:rgba(200,168,75,0.6);animation:sg 2s ease-in-out infinite;}
+@keyframes sg{0%,100%{box-shadow:0 0 8px rgba(200,168,75,0.25)}50%{box-shadow:0 0 20px rgba(200,168,75,0.55)}}
+.se{width:100px;height:100px;flex-shrink:0;border-radius:50%;border:2px dashed rgba(200,168,75,0.1);opacity:0.25;}
 
 /* Drop FAB */
 /* Plant FAB sits directly under the backpack on the Wild tab.
@@ -4524,12 +4527,14 @@ body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 275px)!important;righ
 .wild-log-stat:active{background:rgba(18,22,16,0.85);border-color:rgba(200,168,75,0.3);}
 .wild-log-val{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;color:var(--cream);line-height:1;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,.6)}
 .wild-log-lbl{font-family:'DM Mono',monospace;font-size:0.55rem;color:rgba(200,168,75,0.7);letter-spacing:0.08em;text-transform:uppercase;margin-top:1px;}
-.wild-log-wind{grid-area:cp;align-self:center;justify-self:center;width:72px;height:72px;display:flex;align-items:center;justify-content:center;position:relative;font-size:2rem;color:var(--gold);}
+.wild-log-wind{grid-area:cp;align-self:center;justify-self:center;width:80px;min-height:92px;display:flex;align-items:center;justify-content:center;flex-direction:column;position:relative;font-size:2rem;color:var(--gold);gap:2px;}
+.wl-wind-top{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--cream);letter-spacing:0.06em;text-shadow:0 1px 2px rgba(0,0,0,0.9);line-height:1;}
+.wl-wind-bottom{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--cream);letter-spacing:0.06em;text-shadow:0 1px 2px rgba(0,0,0,0.9);line-height:1.2;}
+.wl-wind-bottom b{color:var(--gold);font-weight:700;}
 /* Compass arrow: tall thin needle, scaled by height so the leaf-vine arrow
    keeps its proportions inside the square cell. Transform-origin centered
    so device-orientation rotation pivots on the midpoint. */
-.wild-log-wind img{height:64px!important;width:auto!important;max-width:none!important;filter:drop-shadow(0 2px 6px rgba(122,179,86,0.55));transform-origin:50% 50%;transition:transform 0.25s ease-out;}
-.wild-log-wind span{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--gold);white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1);}
+.wild-log-wind img{height:48px!important;width:auto!important;max-width:none!important;filter:drop-shadow(0 2px 6px rgba(122,179,86,0.55));transform-origin:50% 50%;transition:transform 0.25s ease-out;}
 
 /* ── Trait Panel v2 (bottom sheet) ── */
 .wtp2{position:fixed;bottom:0;left:0;right:0;z-index:99998;background:linear-gradient(180deg,rgba(13,16,12,.97) 0%,rgba(8,12,6,.99) 100%);border-top:1px solid rgba(74,124,53,.12);border-radius:16px 16px 0 0;padding:0;max-width:680px;margin:0 auto;box-shadow:0 -8px 40px rgba(0,0,0,.6);transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.56,.64,1);overflow:hidden}
@@ -5464,7 +5469,7 @@ window._addSwitchTabHook = function(fn){
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Meters walked. Keep moving to find feral seeds!')"><div class="wild-log-val" style="color:var(--sage)" id="w-steps">0</div><div class="wild-log-lbl">meters</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Your biome — detected from real geography. Affects feral rarity and mutations.')"><div class="wild-log-val" style="font-size:0.7rem;" id="w-biome">🏡</div><div class="wild-log-lbl" id="w-biome-name">scanning</div></div>
       <div class="wild-log-stat" id="w-class-stat" onclick="if(window._LW_openClassPicker)_LW_openClassPicker();else if(window._openCompendiumUI)_openCompendiumUI();" style="cursor:pointer;"><div class="wild-log-val" style="font-size:0.85rem;" id="w-class-icon">—</div><div class="wild-log-lbl" id="w-class-lbl">no class</div></div>
-      <div class="wild-log-wind" id="w-wind" onclick="if(window._lwCompassTap)window._lwCompassTap();" style="cursor:pointer;"><img src="assets/compasses/compass-arrow.png" alt="compass" draggable="false"><span></span></div>
+      <div class="wild-log-wind" id="w-wind" onclick="if(window._lwCompassTap)window._lwCompassTap();" style="cursor:pointer;"><div class="wl-wind-top">Points North</div><img src="assets/compasses/compass-arrow.png" alt="compass" draggable="false"><div class="wl-wind-bottom">You face <b id="w-wind-facing">—</b></div></div>
     </div>
     <!-- TERRITORY OVERVIEW (tap planted count to expand) -->
     <div id="w-territory" style="display:none;position:fixed;top:60px;left:8px;right:8px;z-index:998;background:rgba(13,16,12,0.94);border:1px solid rgba(122,179,86,0.12);border-radius:10px;padding:0.5rem;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:panelFadeIn 0.2s ease;max-width:360px;margin:0 auto;">
@@ -35061,9 +35066,8 @@ function _initCompass(){
   function _updateCompass(heading){
     if(compassImg)compassImg.style.transform='rotate('+(180-heading)+'deg)';
     var idx=Math.round(heading/45)%8;
-    var txt=windEl.querySelector('span');
-    if(!txt){txt=document.createElement('span');txt.style.cssText='font-family:Bebas Neue,sans-serif;font-size:0.4rem;color:var(--cream);letter-spacing:0.06em;';windEl.appendChild(txt);}
-    txt.textContent=cardinals[idx];
+    var facing=document.getElementById('w-wind-facing');
+    if(facing)facing.textContent=cardinals[idx];
   }
   _updateCompass(0); // default: tip up = north
   if(!window.DeviceOrientationEvent)return;
@@ -38638,7 +38642,11 @@ function _checkPendingRewards(){
 }
 function _toast(m){var e=document.getElementById('w-toast');if(!e)return;e.textContent=m;e.style.opacity='1';e.style.transform='translate(-50%,-50%) scale(1)';clearTimeout(_tt);_tt=setTimeout(function(){e.style.opacity='0';e.style.transform='translate(-50%,-50%) scale(0.95)';},3500);}
 
-var _wd=45;setInterval(function(){_wd=(_wd+(Math.random()>0.5?12:-8)+360)%360;var w=document.getElementById('w-wind');if(w){var ds=['N','NE','E','SE','S','SW','W','NW'];var span=w.querySelector('span');if(span)span.textContent=ds[Math.round(_wd/45)%8]+' '+(5+Math.round(Math.random()*10))+'mph';}},8000);
+// Simulated wind direction retained for dispersal math (_wd is read by
+// reproduction's wind-weighted target selection). The old span-write was
+// removed because the compass widget now reports the keeper's FACING
+// cardinal, not simulated wind. Wind will surface in the climate UI.
+var _wd=45;setInterval(function(){_wd=(_wd+(Math.random()>0.5?12:-8)+360)%360;},8000);
 // Cache grade lookups so we don't call hashToTraits every 60s
 var _wildGradeCache={};
 function _getWildGrade(hash){

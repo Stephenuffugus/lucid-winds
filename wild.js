@@ -1515,6 +1515,16 @@ function _doClimateTick(weather) {
   if (window._swsLog && totalBreaches > 0) {
     _swsLog('Climate tick: ' + plantsDamaged + ' plants took damage (' + totalBreaches + ' breaches, ' + Math.round(temp) + '°C, ' + rain.toFixed(1) + 'mm)', 'info');
   }
+  // Player-visible summary — one toast per tick, not per plant. Silent
+  // if nothing got hit. Wind/temp readout lets keepers understand
+  // why their plants took damage today.
+  if (plantsDamaged > 0 && window._toast) {
+    var tempStr = Math.round(temp) + '\u00b0C';
+    var rainStr = rain > 0 ? rain.toFixed(1) + 'mm' : 'dry';
+    var windStr = wind > 0 ? Math.round(wind) + 'mph' : '';
+    var weatherStr = tempStr + ' \u00b7 ' + rainStr + (windStr ? ' \u00b7 ' + windStr : '');
+    window._toast('\ud83c\udf25\ufe0f ' + plantsDamaged + ' plant' + (plantsDamaged !== 1 ? 's' : '') + ' hit by weather (' + weatherStr + '). Check Book of Secrets.');
+  }
 }
 
 window._wildReproduction = function(simMode){ return _wildReproduction(simMode); };
