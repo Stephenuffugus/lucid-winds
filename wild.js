@@ -1317,7 +1317,26 @@ function _collectFeralFromZone(zk, zonePlants) {
   // loaded yet (shouldn't happen in current builds).
   if (window.LW_FORAGING && window.LW_FORAGING.openPanel) {
     window.LW_FORAGING.openPanel(zk, info.grade, function(success){
-      if (success) _awardFeral(feralHash, parentA.hash, parentB.hash, zk, info);
+      if (success) {
+        _awardFeral(feralHash, parentA.hash, parentB.hash, zk, info);
+        // Foraging bonus — 15% chance a random element card drops on top
+        // of the seed reward. Makes successful forage runs meaningful
+        // even when the seed itself is common.
+        try {
+          if (Math.random() < 0.15 && window.LW_FORAGING) {
+            var _inv = window.LW_FORAGING.loadInventory();
+            if (window.LW_FORAGING.totalCards(_inv) < window.LW_FORAGING.cardCapacity()) {
+              var _pool = ['sun','shade','rain','dry','wind','still'];
+              var _pick = _pool[Math.floor(Math.random() * _pool.length)];
+              window.LW_FORAGING.addCard(_pick, 1);
+              var _el = window.LW_FORAGING.EL[_pick];
+              if (_el && window._toast) setTimeout(function(){
+                window._toast('\ud83c\udfb4 Bonus card: ' + _el.icon + ' ' + _el.label + ' added to your inventory.');
+              }, 1500);
+            }
+          }
+        } catch(e) {}
+      }
       // No toast on fail — the panel itself shows "HEX LOCKED" messaging.
     });
   } else if (window.FG_Challenge) {
@@ -1974,6 +1993,9 @@ function _doReproduction(weather, simMode) {
                   // It's MY lineage spreading — earn pollen!
                   var _dynPollen = {Common:1, Uncommon:2, Rare:3, Epic:5, Legendary:8, Mythic:12, Cosmic:20};
                   var _reward = _dynPollen[dd.grade] || 1;
+                  // Pollinator companion boost — small +3% scales with
+                  // class affinity + level (up to +12.5% at L3 Breeder/Tender).
+                  try { if (window.LW_COMPANION) _reward = Math.max(1, Math.round(_reward * window.LW_COMPANION.getCompanionMult('pollen'))); } catch(e) {}
                   var _curPol = parseInt(localStorage.getItem('fg_pollen') || '0');
                   localStorage.setItem('fg_pollen', String(_curPol + _reward));
                   if (window._logWildEvent) window._logWildEvent({
