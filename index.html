@@ -4320,6 +4320,54 @@
     .cs-companion-card{display:flex;align-items:center;gap:0.5rem;padding:0.4rem;background:rgba(26,36,22,0.3);border-radius:8px;}
     .cs-companion-icon{width:48px;height:48px;border-radius:50%;border:2px solid rgba(200,168,75,0.2);background:rgba(17,22,17,0.7);display:flex;align-items:center;justify-content:center;font-size:1.4rem;}
     .cs-close{position:fixed;top:calc(0.5rem + env(safe-area-inset-top, 0px));right:0.5rem;width:36px;height:36px;border-radius:50%;border:2px solid rgba(74,124,53,0.15);background:rgba(26,36,22,0.6);color:var(--muted);font-size:0.75rem;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:99999;}
+
+    /* ═══ CHARACTER SHEET V2 — CLASS · TOOLS · ACTIVE EFFECTS ═══ */
+    /* Level pips: ● active / ○ empty. Master adds gold glow. */
+    .cs-pips{display:inline-flex;gap:4px;vertical-align:middle;margin-left:6px;}
+    .cs-pip{width:8px;height:8px;border-radius:50%;background:rgba(122,179,86,0.12);border:1px solid rgba(122,179,86,0.25);}
+    .cs-pip.on{background:var(--sage);border-color:var(--sage);box-shadow:0 0 4px rgba(122,179,86,0.4);}
+    .cs-pip.master{background:var(--gold);border-color:var(--gold);box-shadow:0 0 6px rgba(200,168,75,0.6);animation:csPulse 2.4s ease-in-out infinite;}
+    @keyframes csPulse{0%,100%{box-shadow:0 0 6px rgba(200,168,75,0.5);}50%{box-shadow:0 0 12px rgba(200,168,75,0.9);}}
+
+    /* CLASS section */
+    .cs-class-row{display:flex;align-items:center;gap:0.7rem;}
+    .cs-class-emblem{width:64px;height:64px;flex-shrink:0;border-radius:12px;border:1.5px solid rgba(200,168,75,0.25);background:radial-gradient(circle at 40% 35%,rgba(42,54,34,0.9),rgba(13,16,12,0.95));display:flex;align-items:center;justify-content:center;font-size:1.8rem;overflow:hidden;}
+    .cs-class-emblem img{width:100%;height:100%;object-fit:cover;display:block;}
+    .cs-class-emblem.synergy{border-color:var(--gold);box-shadow:0 0 10px rgba(200,168,75,0.45);animation:csPulse 2.4s ease-in-out infinite;}
+    .cs-class-info{flex:1;min-width:0;}
+    .cs-class-name{font-family:'Playfair Display',serif;font-size:0.9rem;font-weight:700;color:var(--cream);}
+    .cs-class-ability{font-family:'DM Mono',monospace;font-size:0.45rem;color:var(--sage);margin-top:3px;line-height:1.5;}
+    .cs-badges{display:flex;gap:0.3rem;margin-top:6px;flex-wrap:wrap;}
+    .cs-badge{font-family:'Bebas Neue',sans-serif;font-size:0.42rem;letter-spacing:0.08em;padding:2px 7px;border-radius:10px;border:1px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);}
+    .cs-badge.on{border-color:rgba(200,168,75,0.5);background:rgba(200,168,75,0.12);color:var(--gold);}
+    .cs-badge.synergy{border-color:var(--gold);color:var(--gold);box-shadow:0 0 6px rgba(200,168,75,0.35);}
+    .cs-class-pick-btn{display:block;width:100%;margin-top:0.5rem;padding:0.45rem;border-radius:8px;border:1.5px solid rgba(200,168,75,0.3);background:linear-gradient(180deg,rgba(46,38,18,0.55),rgba(28,24,12,0.7));color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;}
+    .cs-class-none{font-family:'DM Mono',monospace;font-size:0.45rem;color:var(--muted);line-height:1.6;text-align:center;padding:0.4rem 0;}
+
+    /* XP mini-bar for class */
+    .cs-class-xp{margin-top:6px;}
+    .cs-class-xp-bar{height:4px;background:rgba(42,48,37,0.6);border-radius:2px;overflow:hidden;}
+    .cs-class-xp-fill{height:100%;background:linear-gradient(90deg,var(--sage),var(--gold));}
+    .cs-class-xp-text{font-family:'DM Mono',monospace;font-size:0.36rem;color:var(--muted);margin-top:2px;}
+
+    /* TOOLS 2×2 grid */
+    .cs-tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;}
+    .cs-tool-card{display:flex;align-items:center;gap:0.4rem;padding:0.4rem;background:rgba(17,22,17,0.6);border:1px solid rgba(74,124,53,0.12);border-radius:8px;}
+    .cs-tool-emblem{width:40px;height:40px;flex-shrink:0;border-radius:8px;border:1px solid rgba(200,168,75,0.2);background:rgba(26,36,22,0.6);display:flex;align-items:center;justify-content:center;font-size:1.1rem;overflow:hidden;}
+    .cs-tool-emblem img{width:100%;height:100%;object-fit:cover;display:block;}
+    .cs-tool-info{flex:1;min-width:0;}
+    .cs-tool-name{font-family:'Bebas Neue',sans-serif;font-size:0.55rem;color:var(--cream);letter-spacing:0.06em;}
+    .cs-tool-effect{font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--muted);line-height:1.4;margin-top:2px;}
+
+    /* ACTIVE EFFECTS */
+    .cs-effect-row{display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0.5rem;margin-bottom:0.3rem;background:rgba(26,36,22,0.3);border-left:2px solid var(--gold);border-radius:6px;}
+    .cs-effect-row.title{border-left-color:var(--sage);}
+    .cs-effect-icon{font-size:1rem;flex-shrink:0;}
+    .cs-effect-info{flex:1;min-width:0;}
+    .cs-effect-name{font-family:'Bebas Neue',sans-serif;font-size:0.55rem;color:var(--cream);letter-spacing:0.05em;}
+    .cs-effect-blurb{font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--muted);line-height:1.4;}
+    .cs-effect-timer{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--gold);white-space:nowrap;}
+    .cs-effect-empty{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);text-align:center;padding:0.4rem 0;line-height:1.6;}
     /* ═══ BACKPACK SYSTEM CSS (from demo) ═══ */
 /* ═══ BACKPACK ═══ */
 /* Backpack: greenhouse/nursery — 96x96 (top:65, right:10) */
@@ -5580,6 +5628,9 @@ window._addSwitchTabHook = function(fn){
   <div id="pw-character">
     <button class="cs-close" onclick="PW_UI.closeCharacter()">✕</button>
     <div class="cs-header"><div class="cs-avatar" id="cs-avatar">🌱</div><div style="flex:1;min-width:0;"><div class="cs-name" id="cs-name" onclick="PW_UI.editName()" style="cursor:pointer;" title="Tap to edit">Keeper</div><div class="cs-title" id="cs-title">◈ Seedling · Level 1</div><div class="cs-xp-bar"><div class="cs-xp-fill" id="cs-xp-fill" style="width:0%;"></div></div><div class="cs-xp-text" id="cs-xp-text">0 / 25 XP → Level 2</div></div></div>
+    <div class="cs-section"><div class="cs-section-title">CLASS</div><div id="cs-class-body"></div></div>
+    <div class="cs-section"><div class="cs-section-title">TOOLS</div><div id="cs-tool-body" class="cs-tool-grid"></div></div>
+    <div class="cs-section"><div class="cs-section-title">ACTIVE EFFECTS</div><div id="cs-effects-body"></div></div>
     <div class="cs-section"><div class="cs-section-title">ACTIVE COMPANION</div><div class="cs-companion-card" onclick="PW_UI.equipCompanion()" style="cursor:pointer;min-height:64px;" title="Tap to change"><div class="cs-companion-icon" id="cs-companion-icon">❓</div><div style="flex:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--cream);letter-spacing:0.04em;" id="cs-companion-name">None Equipped</div><div style="font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--sage);line-height:1.5;margin-top:2px;" id="cs-companion-buff">Tap to equip a companion</div></div></div></div>
     <div class="cs-section"><div class="cs-section-title">SHOWCASE</div><div class="cs-showcase-grid"><div class="cs-showcase-slot empty" onclick="PW_UI.editShowcase(0)"><div>+ Add Plant</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div></div></div>
     <div class="cs-section"><div class="cs-section-title">FEATURED HAIKU</div><div class="cs-haiku" id="cs-haiku"><em style="color:var(--muted);">Bloom your first plant to feature its haiku here</em></div></div>
@@ -45882,10 +45933,29 @@ window.lwCheckEarnedTitles = function(){
     // mulch_50: 50 lifetime mulches
     var mulchCount = parseInt(localStorage.getItem('lw_mulches_applied') || '0', 10);
     if (mulchCount >= 50) add('steward');
-    // hermit_30: at least one wild plant survived 30+ consecutive days alone
-    // Tracked via lw_hermit_progress object (computed elsewhere when applicable)
-    var hermitDone = localStorage.getItem('lw_hermit_30_done') === '1';
-    if (hermitDone) add('hermit');
+    // hermit_30: any of the player's wild plants has existed 30+ days.
+    // fg_wild_plants is the local mirror of this user's wildDrops; droppedAt
+    // is a millisecond timestamp (wild.js:209-217 normalizes legacy strings).
+    // We flip the flag the first time the threshold crosses so recompute is cheap.
+    try {
+      if (localStorage.getItem('lw_hermit_30_done') !== '1') {
+        var wraw = localStorage.getItem('fg_wild_plants');
+        if (wraw) {
+          var wps = JSON.parse(wraw) || [];
+          var thirtyMs = 30 * 24 * 60 * 60 * 1000;
+          var nowMs = Date.now();
+          for (var hi = 0; hi < wps.length; hi++) {
+            var dAt = wps[hi] && wps[hi].droppedAt;
+            if (typeof dAt === 'string') dAt = new Date(dAt).getTime();
+            if (typeof dAt === 'number' && !isNaN(dAt) && (nowMs - dAt) >= thirtyMs) {
+              try { localStorage.setItem('lw_hermit_30_done', '1'); } catch(e) {}
+              break;
+            }
+          }
+        }
+      }
+    } catch(e) {}
+    if (localStorage.getItem('lw_hermit_30_done') === '1') add('hermit');
     // pollinate_25: 25 lifetime cross-pollinations
     var polCount = parseInt(localStorage.getItem('lw_pollinations') || '0', 10);
     if (polCount >= 25) add('pollinator');
@@ -46348,14 +46418,156 @@ function setLBTab(el,tab){
 }
 
 // ═══ CHARACTER SHEET ═══
+// Helper: render art with emoji fallback (onerror hides img, span shows emoji).
+function _csArt(src,emoji,size){
+  return '<img src="'+src+'" alt="" onerror="this.style.display=\'none\';var s=this.nextSibling;if(s)s.style.display=\'flex\';" style="width:100%;height:100%;object-fit:cover;"><span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:'+(size||'1.5rem')+';">'+emoji+'</span>';
+}
+function _csFmtTime(ms){
+  if(ms<=0)return '—';
+  var s=Math.floor(ms/1000);
+  if(s<60)return s+'s';
+  var m=Math.floor(s/60);if(m<60)return m+'m';
+  var h=Math.floor(m/60);m=m%60;
+  if(h<24)return h+'h '+(m?m+'m':'0m');
+  var d=Math.floor(h/24);h=h%24;
+  return d+'d '+(h?h+'h':'0h');
+}
+function _csPips(active,level){
+  var html='<span class="cs-pips">';
+  for(var i=1;i<=3;i++){
+    var cls='cs-pip';
+    if(i<=level){cls+=(level>=3?' master':' on');}
+    html+='<span class="'+cls+'"></span>';
+  }
+  return html+'</span>';
+}
+function _renderClassSection(){
+  var el=document.getElementById('cs-class-body');if(!el)return;
+  var cls=(window._lwGetClass&&window._lwGetClass())||null;
+  if(!cls||typeof LW_CLASSES==='undefined'||!LW_CLASSES[cls]){
+    // No class yet — show gate message or pick prompt based on level
+    var curLvl=(window.canSee&&window.canSee.currentLevel)?window.canSee.currentLevel():1;
+    if(curLvl<7){
+      el.innerHTML='<div class="cs-class-none">Pick a class at Keeper Level 7.<br>(Currently '+curLvl+'.)</div>';
+    } else {
+      el.innerHTML='<div class="cs-class-none">Ready to choose a path.</div>'
+        +'<button class="cs-class-pick-btn" onclick="if(window._LW_openClassPicker)window._LW_openClassPicker()">\u270e CHOOSE A CLASS</button>';
+    }
+    return;
+  }
+  var def=LW_CLASSES[cls];
+  var lvl=window._lwGetClassLevel?window._lwGetClassLevel(cls):1;
+  var syn=window._LW_hasSynergy?window._LW_hasSynergy():false;
+  var biomeMatch=window._lwBiomeMatch?window._lwBiomeMatch():false;
+  // Class XP to next tier
+  var xpObj={};try{xpObj=JSON.parse(localStorage.getItem('lw_class_xp')||'{}');}catch(e){}
+  var curXP=xpObj[cls]||0;
+  var nextThreshold=lvl>=3?null:(lvl>=2?500:100);
+  var prevThreshold=lvl>=3?500:(lvl>=2?100:0);
+  var xpBar=nextThreshold?Math.max(0,Math.min(100,Math.round(((curXP-prevThreshold)/(nextThreshold-prevThreshold))*100))):100;
+  var xpText=nextThreshold?(curXP+' / '+nextThreshold+' XP'):('MASTER · '+curXP+' XP');
+  // Current ability
+  var ability=def.abilities&&def.abilities[lvl]?def.abilities[lvl]:null;
+  var abilityHtml=ability?('<b style="color:var(--cream);">'+ability.name+'</b> — '+ability.desc):'';
+  // Art path
+  var artSrc='assets/character-sheet/classes/'+cls+'.png';
+  var emblemCls='cs-class-emblem'+(syn?' synergy':'');
+  var h='<div class="cs-class-row">';
+  h+='<div class="'+emblemCls+'">'+_csArt(artSrc,def.icon,'2rem')+'</div>';
+  h+='<div class="cs-class-info">';
+  h+='<div class="cs-class-name">'+def.name+_csPips(true,lvl)+'</div>';
+  h+='<div class="cs-class-ability">'+abilityHtml+'</div>';
+  h+='<div class="cs-badges">';
+  h+='<span class="cs-badge'+(biomeMatch?' on':'')+'">'+(def.biome?def.biome.toUpperCase():'—')+(biomeMatch?' ✓':'')+'</span>';
+  if(lvl>=3){h+='<span class="cs-badge'+(syn?' synergy':'')+'">'+(syn?'SYNERGY ACTIVE':'L3 SYNERGY')+'</span>';}
+  h+='</div></div></div>';
+  h+='<div class="cs-class-xp"><div class="cs-class-xp-bar"><div class="cs-class-xp-fill" style="width:'+xpBar+'%;"></div></div><div class="cs-class-xp-text">'+xpText+(biomeMatch?' · +25% in biome':'')+'</div></div>';
+  el.innerHTML=h;
+}
+function _renderToolSection(){
+  var el=document.getElementById('cs-tool-body');if(!el)return;
+  if(typeof LW_TOOLS==='undefined'){el.innerHTML='';return;}
+  var order=['shears','can','pouch','compass'];
+  var h='';
+  for(var i=0;i<order.length;i++){
+    var tid=order[i];var def=LW_TOOLS[tid];if(!def)continue;
+    var lvl=window._lwGetToolLevel?window._lwGetToolLevel(tid):1;
+    var effect=def.levels&&def.levels[lvl]?def.levels[lvl]:'—';
+    var artSrc='assets/character-sheet/tools/'+tid+'.png';
+    h+='<div class="cs-tool-card">';
+    h+='<div class="cs-tool-emblem">'+_csArt(artSrc,def.icon,'1.1rem')+'</div>';
+    h+='<div class="cs-tool-info">';
+    h+='<div class="cs-tool-name">'+def.name+_csPips(true,lvl)+'</div>';
+    h+='<div class="cs-tool-effect">'+effect+'</div>';
+    h+='</div></div>';
+  }
+  el.innerHTML=h;
+}
+function _renderEffectsSection(){
+  var el=document.getElementById('cs-effects-body');if(!el)return;
+  var rows=[];
+  var now=Date.now();
+  // Boosters
+  try{
+    var boosters=window.lwLoadBoosters?window.lwLoadBoosters():{};
+    if(window.LW_BOOSTERS){
+      for(var bid in boosters){
+        if(!boosters.hasOwnProperty(bid))continue;
+        var def=window.LW_BOOSTERS[bid];if(!def)continue;
+        var remain=boosters[bid]-now;
+        if(remain<=0)continue;
+        rows.push({icon:def.icon,name:def.name,blurb:def.blurb,timer:_csFmtTime(remain),cls:''});
+      }
+      // Class items with durations also live in boosters
+      if(window.LW_CLASS_ITEMS){
+        for(var cik in window.LW_CLASS_ITEMS){
+          var ci=window.LW_CLASS_ITEMS[cik];
+          if(!ci||!ci.id||!boosters[ci.id])continue;
+          // Skip if already rendered via LW_BOOSTERS
+          if(window.LW_BOOSTERS[ci.id])continue;
+          var r2=boosters[ci.id]-now;if(r2<=0)continue;
+          rows.push({icon:ci.icon,name:ci.name,blurb:ci.blurb,timer:_csFmtTime(r2),cls:''});
+        }
+      }
+    }
+  }catch(e){}
+  // Active title
+  try{
+    var tid=localStorage.getItem('lw_active_title');
+    if(tid&&window.LW_TITLES&&window.LW_TITLES[tid]){
+      var t=window.LW_TITLES[tid];
+      rows.push({icon:'\u2728',name:'the '+t.word,blurb:t.desc,timer:'',cls:'title'});
+    }
+  }catch(e){}
+  if(!rows.length){
+    el.innerHTML='<div class="cs-effect-empty">No active effects.<br>Buy a booster from the Pot Shop to see it here.</div>';
+    return;
+  }
+  var h='';
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i];
+    h+='<div class="cs-effect-row '+r.cls+'">';
+    h+='<div class="cs-effect-icon">'+r.icon+'</div>';
+    h+='<div class="cs-effect-info"><div class="cs-effect-name">'+r.name+'</div><div class="cs-effect-blurb">'+r.blurb+'</div></div>';
+    if(r.timer)h+='<div class="cs-effect-timer">'+r.timer+'</div>';
+    h+='</div>';
+  }
+  el.innerHTML=h;
+}
+var _csEffectTimer=null;
 function openCharacter(){
   _csOpen=true;
   updateKeeperBar();updateStats();loadFriendsUI();
   _loadCompanion();_renderShowcase();_loadFeaturedHaiku();
+  _renderClassSection();_renderToolSection();_renderEffectsSection();
   document.getElementById('pw-character').classList.add('open');
+  // Tick booster timers every 30s while open
+  if(_csEffectTimer)clearInterval(_csEffectTimer);
+  _csEffectTimer=setInterval(function(){if(_csOpen)_renderEffectsSection();else{clearInterval(_csEffectTimer);_csEffectTimer=null;}},30000);
 }
 function closeCharacter(){
   _csOpen=false;
+  if(_csEffectTimer){clearInterval(_csEffectTimer);_csEffectTimer=null;}
   document.getElementById('pw-character').classList.remove('open');
 }
 function editShowcase(slot){
