@@ -5652,6 +5652,7 @@ window._addSwitchTabHook = function(fn){
     <div class="cs-header"><div class="cs-avatar" id="cs-avatar">🌱</div><div style="flex:1;min-width:0;"><div class="cs-name" id="cs-name" onclick="PW_UI.editName()" style="cursor:pointer;" title="Tap to edit">Keeper</div><div class="cs-title" id="cs-title">◈ Seedling · Level 1</div><div class="cs-xp-bar"><div class="cs-xp-fill" id="cs-xp-fill" style="width:0%;"></div></div><div class="cs-xp-text" id="cs-xp-text">0 / 25 XP → Level 2</div></div></div>
     <div class="cs-section"><div class="cs-section-title">CLASS</div><div id="cs-class-body"></div></div>
     <div class="cs-section"><div class="cs-section-title">TOOLS</div><div id="cs-tool-body" class="cs-tool-grid"></div></div>
+    <div class="cs-section"><div class="cs-section-title">FORAGING HAND <button onclick="window._lwOpenDeckEditor()" style="float:right;background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.3);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.5rem;padding:2px 8px;border-radius:4px;cursor:pointer;">EDIT DECK</button></div><div id="cs-forage-body"></div></div>
     <div class="cs-section"><div class="cs-section-title">ACTIVE EFFECTS</div><div id="cs-effects-body"></div></div>
     <div class="cs-section"><div class="cs-section-title">ACTIVE COMPANION</div><div class="cs-companion-card" onclick="PW_UI.equipCompanion()" style="cursor:pointer;min-height:64px;" title="Tap to change"><div class="cs-companion-icon" id="cs-companion-icon">❓</div><div style="flex:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--cream);letter-spacing:0.04em;" id="cs-companion-name">None Equipped</div><div style="font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--sage);line-height:1.5;margin-top:2px;" id="cs-companion-buff">Tap to equip a companion</div></div></div></div>
     <div class="cs-section"><div class="cs-section-title">SHOWCASE</div><div class="cs-showcase-grid"><div class="cs-showcase-slot empty" onclick="PW_UI.editShowcase(0)"><div>+ Add Plant</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div></div></div>
@@ -46697,6 +46698,91 @@ function _renderClassSection(){
   h+='<div class="cs-class-xp"><div class="cs-class-xp-bar"><div class="cs-class-xp-fill" style="width:'+xpBar+'%;"></div></div><div class="cs-class-xp-text">'+xpText+(biomeMatch?' · +25% in biome':'')+'</div></div>';
   el.innerHTML=h;
 }
+function _renderForageSection(){
+  var el=document.getElementById('cs-forage-body');if(!el)return;
+  if(!window.LW_FORAGING){el.innerHTML='<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);">Foraging system loading...</div>';return;}
+  var inv=window.LW_FORAGING.loadInventory();
+  var deck=window.LW_FORAGING.getActiveDeck();
+  var cap=window.LW_FORAGING.cardCapacity();
+  var total=window.LW_FORAGING.totalCards(inv);
+  var h='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-bottom:0.4rem;">Inventory '+total+'/'+cap+' \u00b7 Active deck: '+deck.name+'</div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;">';
+  var order=['sun','shade','rain','dry','wind','still'];
+  for(var i=0;i<order.length;i++){
+    var k=order[i];var el2=window.LW_FORAGING.EL[k];var n=inv[k]||0;
+    h+='<div style="background:rgba(18,22,16,'+(n>0?'0.7':'0.35')+');border:1px solid rgba(74,124,53,'+(n>0?'0.25':'0.1')+');border-radius:6px;padding:4px 2px;text-align:center;'+(n===0?'opacity:0.4;':'')+'">';
+    h+='<div style="font-size:0.8rem;">'+el2.icon+'</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.4rem;color:var(--cream);letter-spacing:0.04em;">'+el2.label+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:'+(n>0?'var(--gold)':'var(--muted)')+';margin-top:1px;">'+n+'</div>';
+    h+='</div>';
+  }
+  h+='</div>';
+  el.innerHTML=h;
+}
+window._lwOpenDeckEditor=function(){
+  if(!window.LW_FORAGING){return;}
+  var inv=window.LW_FORAGING.loadInventory();
+  var deck=window.LW_FORAGING.getActiveDeck();
+  var picked=(deck.cards||[]).slice(0,5);
+  var ov=document.createElement('div');
+  ov.id='lw-deck-editor';
+  ov.style.cssText='position:fixed;inset:0;z-index:100001;background:rgba(5,8,4,0.94);backdrop-filter:blur(10px);display:flex;flex-direction:column;align-items:center;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch;';
+  function render(){
+    var h='<div style="max-width:400px;width:100%;margin:0 auto;">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.7rem;">';
+    h+='<div><div style="font-family:Playfair Display,serif;font-size:1rem;color:var(--gold);font-style:italic;">Foraging Deck</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:2px;">Pick up to 5 cards for your hand</div></div>';
+    h+='<button onclick="document.getElementById(\'lw-deck-editor\').remove()" style="width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:0.9rem;cursor:pointer;">\u2715</button>';
+    h+='</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:var(--gold);margin:0.6rem 0 0.3rem;">YOUR HAND '+picked.length+'/5</div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:0.4rem;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.25);border-radius:10px;min-height:70px;">';
+    for(var p=0;p<5;p++){
+      if(p<picked.length){
+        var pel=window.LW_FORAGING.EL[picked[p]];
+        h+='<div onclick="window._lwDeckUnpick('+p+')" style="cursor:pointer;background:rgba(200,168,75,0.15);border:1.5px solid var(--gold);border-radius:8px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;">';
+        h+='<div style="font-size:1.2rem;">'+pel.icon+'</div>';
+        h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.4rem;color:var(--gold);">'+pel.label+'</div>';
+        h+='</div>';
+      } else {
+        h+='<div style="border:1.5px dashed rgba(200,168,75,0.15);border-radius:8px;aspect-ratio:1;opacity:0.3;"></div>';
+      }
+    }
+    h+='</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:var(--sage);margin:0.8rem 0 0.3rem;">AVAILABLE CARDS</div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">';
+    var order=['sun','shade','rain','dry','wind','still'];
+    for(var i=0;i<order.length;i++){
+      var k=order[i];var el2=window.LW_FORAGING.EL[k];var n=inv[k]||0;
+      var used=0;for(var q=0;q<picked.length;q++)if(picked[q]===k)used++;
+      var avail=n-used;
+      var canPick=avail>0&&picked.length<5;
+      h+='<div '+(canPick?'onclick="window._lwDeckPick(\''+k+'\')"':'')+' style="'+(canPick?'cursor:pointer;':'')+'background:rgba(18,22,16,'+(n>0?'0.7':'0.35')+');border:1.5px solid rgba(74,124,53,'+(canPick?'0.35':'0.1')+');border-radius:8px;padding:8px 4px;text-align:center;'+(n===0?'opacity:0.35;':canPick?'':'opacity:0.5;')+'">';
+      h+='<div style="font-size:1.2rem;">'+el2.icon+'</div>';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;color:var(--cream);letter-spacing:0.05em;margin-top:2px;">'+el2.label+'</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:'+(avail>0?'var(--gold)':'var(--muted)')+';margin-top:2px;">'+avail+' / '+n+'</div>';
+      h+='</div>';
+    }
+    h+='</div>';
+    h+='<button onclick="window._lwDeckSave()" style="display:block;width:100%;margin-top:1rem;padding:12px;border-radius:10px;border:1.5px solid var(--sage);background:linear-gradient(180deg,rgba(122,179,86,0.25),rgba(122,179,86,0.12));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:54px;">SAVE DECK</button>';
+    h+='</div>';
+    ov.innerHTML=h;
+  }
+  window._lwDeckPick=function(k){if(picked.length<5){picked.push(k);render();}};
+  window._lwDeckUnpick=function(i){picked.splice(i,1);render();};
+  window._lwDeckSave=function(){
+    var decks=window.LW_FORAGING.loadDecks();
+    if(!decks.length)decks=[{name:'Default',cards:picked.slice()}];
+    else decks[0]={name:decks[0].name||'Default',cards:picked.slice()};
+    window.LW_FORAGING.saveDecks(decks);
+    try{localStorage.setItem('lw_forage_deck_active','0');}catch(e){}
+    var p=document.getElementById('lw-deck-editor');if(p)p.remove();
+    if(window._toast)_toast('\ud83c\udf3f Deck saved. ' + picked.length + ' cards ready for foraging.');
+    if(window._renderForageSection)_renderForageSection();
+  };
+  document.body.appendChild(ov);
+  render();
+};
+
 function _renderToolSection(){
   var el=document.getElementById('cs-tool-body');if(!el)return;
   if(typeof LW_TOOLS==='undefined'){el.innerHTML='';return;}
@@ -46772,7 +46858,7 @@ function openCharacter(){
   _csOpen=true;
   updateKeeperBar();updateStats();loadFriendsUI();
   _loadCompanion();_renderShowcase();_loadFeaturedHaiku();
-  _renderClassSection();_renderToolSection();_renderEffectsSection();
+  _renderClassSection();_renderToolSection();_renderEffectsSection();_renderForageSection();
   document.getElementById('pw-character').classList.add('open');
   // Tick booster timers every 30s while open
   if(_csEffectTimer)clearInterval(_csEffectTimer);
