@@ -213,7 +213,13 @@ window._gameFns.pollen = function PN(a){
             id:id++, tier:tierNum,
             gp:row[3], produces:col,
             cost:_expandCost(row[2]),
-            slug:row[0], name:row[1]
+            slug:row[0], name:row[1],
+            // Optional 5th element: a flag object. Currently used only
+            // for {hideName:true} on real flowers whose common names
+            // aren't kid-safe (e.g. Hookers Lips / Psychotria elata).
+            // Inspect modal shows "Mystery Bloom" instead of the real
+            // name when this is set.
+            hideName: !!(row[4]&&row[4].hideName)
           });
         });
       }
@@ -706,15 +712,23 @@ window._gameFns.pollen = function PN(a){
     // Cost bar — solid band pinned to bottom, full width, with chips.
     var costChips='';
     for(var c in card.cost){for(var i=0;i<card.cost[c];i++)costChips+=tokDot(c,10);}
-    var nameStrip=card.name?
-      '<div style="position:absolute;left:0;right:0;bottom:'+(BARH-2)+'px;text-align:center;font-family:DM Mono,monospace;font-size:6px;letter-spacing:0.04em;color:#2a2218;text-transform:uppercase;text-shadow:0 1px 1px rgba(255,255,255,0.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:3;padding:0 3px;">'+esc(card.name)+'</div>'
-      :'';
+    // No name strip on the card — cards stay art-only per Stephen's
+    // direction. Name + flower facts live behind the inspect button.
     var costBar=
       '<div style="position:absolute;left:0;right:0;bottom:0;height:'+BARH+'px;background:linear-gradient(180deg,rgba(248,242,224,0.94),rgba(232,222,188,0.96));border-top:1px solid rgba(120,100,60,0.4);display:flex;align-items:center;justify-content:center;gap:2px;flex-wrap:wrap;padding:2px 3px;z-index:2;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);">'+costChips+'</div>';
+    // Tiny info button — bottom-left of card, fixed corner, opens the
+    // inspect modal without triggering the buy/reserve action. Stops
+    // event propagation so a tap on the (i) doesn't also tap the card.
+    var infoBtn=
+      '<button onclick="event.stopPropagation();_PNinspect('+card.id+')" '
+      +'style="position:absolute;bottom:1px;left:1px;width:16px;height:16px;border-radius:50%;'
+      +'background:rgba(13,16,12,0.65);border:1px solid rgba(200,168,75,0.55);color:#f0e0a8;'
+      +'font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:10px;line-height:14px;'
+      +'text-align:center;padding:0;cursor:pointer;z-index:4;box-shadow:0 1px 2px rgba(0,0,0,0.5);">i</button>';
     var fallbackEmoji=
       '<div style="position:absolute;left:0;right:0;top:14px;bottom:'+(BARH+4)+'px;display:flex;align-items:center;justify-content:center;font-size:24px;opacity:0.55;z-index:0;">'+TIER_ICONS[card.tier-1]+'</div>';
     var h='<div class="pn-card'+(aff.affordable?' aff':'')+'" style="width:'+W+'px;height:'+H+'px;border-radius:8px;border:'+border+';border-left:4px solid '+bgShade+';display:inline-block;vertical-align:top;margin:3px;position:relative;cursor:pointer;color:#1a1f17;box-shadow:0 2px 6px rgba(0,0,0,0.32);overflow:hidden;background:linear-gradient(180deg,#fbf6e6,#f0e8ce);" onclick="_PNtap('+card.id+','+(isReserved?'true':'false')+')">';
-    h+=fallbackEmoji+artImg+GP_PILL+USE_PILL+nameStrip+costBar+'</div>';
+    h+=fallbackEmoji+artImg+GP_PILL+USE_PILL+infoBtn+costBar+'</div>';
     return h;
   }
 
@@ -923,6 +937,61 @@ window._gameFns.pollen = function PN(a){
     var card=findCard(id);if(!card)return;
     reserveCard(card,md.market,md.deck);
     sm('Reserved · +1 gold');
+  };
+
+  // ─── INSPECT MODAL ──────────────────────────────────────────────────
+  // Tap the (i) on any card → opens a zoomed-art modal with the
+  // flower's name (educational moment). Cards with hideName:true in the
+  // catalog show "Mystery Bloom" instead — used for real flowers whose
+  // common names aren't kid-safe (e.g. Hookers Lips / Psychotria elata).
+  // No buy/reserve action here — pure information. Tap outside or the
+  // CLOSE button to dismiss.
+  window._PNinspect=function(id){
+    var card=findCard(id);if(!card)return;
+    var existing=document.getElementById('PNinspectOV');if(existing)existing.remove();
+    var ov=document.createElement('div');ov.id='PNinspectOV';
+    ov.style.cssText='position:fixed;inset:0;z-index:200000;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.86);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:20px;animation:pnFadeIn 0.22s ease;';
+    ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
+    var bgShade=card.tier===1?'#4a7c35':card.tier===2?'#c8a84b':'#ffd700';
+    var artTier='assets/games/masterpollinator/tier'+card.tier+'/'+card.slug+'.png';
+    var artFlat='assets/games/masterpollinator/'+card.slug+'.png';
+    var displayName=card.hideName?'Mystery Bloom':esc(card.name||'');
+    var tierName=TIER_NAMES[card.tier-1]||'';
+    var costRow='';
+    for(var c in card.cost){for(var i=0;i<card.cost[c];i++)costRow+=tokDot(c,18);}
+    var h='<div class="pn-modal" style="max-width:340px;width:100%;padding:18px 16px;font-family:DM Mono,monospace;text-align:center;">';
+    // Tier ribbon at top
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.18em;color:'+bgShade+';margin-bottom:8px;">'+tierName.toUpperCase()+'</div>';
+    // Big art (or emoji fallback if PNG missing)
+    h+='<div style="position:relative;width:100%;height:240px;background:linear-gradient(180deg,#fbf6e6,#f0e8ce);border-radius:10px;border:2px solid '+bgShade+';overflow:hidden;margin-bottom:12px;">';
+    h+='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:80px;opacity:0.45;">'+TIER_ICONS[card.tier-1]+'</div>';
+    if(card.slug){
+      h+='<img src="'+artTier+'" alt="" '
+        +'onerror="if(this.src.indexOf(\'/tier\')>=0){this.src=\''+artFlat+'\';}else{this.style.display=\'none\';}" '
+        +'style="position:absolute;inset:6px;width:calc(100% - 12px);height:calc(100% - 12px);object-fit:contain;">';
+    }
+    h+='</div>';
+    // Flower name (educational)
+    h+='<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.2rem;color:var(--cream);margin-bottom:4px;">'+displayName+'</div>';
+    if(card.hideName){
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-bottom:8px;">— scientific name kept hidden —</div>';
+    }
+    // Stats row: GP + produces + cost
+    h+='<div style="display:flex;gap:14px;justify-content:center;align-items:center;margin:10px 0;font-family:DM Mono,monospace;font-size:0.7rem;color:var(--cream);">';
+    if(card.gp>0)h+='<span><span style="color:var(--gold);font-size:1rem;font-weight:800;">'+card.gp+'</span> <span style="color:var(--muted);font-size:0.55rem;">GP</span></span>';
+    h+='<span style="display:inline-flex;align-items:center;gap:4px;">'+tokDot(card.produces,16)+'<span style="color:var(--muted);font-size:0.55rem;">produces</span></span>';
+    h+='</div>';
+    // Cost row
+    if(costRow){
+      h+='<div style="background:linear-gradient(180deg,rgba(248,242,224,0.18),rgba(232,222,188,0.12));border:1px solid rgba(200,168,75,0.25);border-radius:8px;padding:8px;margin:8px 0;">';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.12em;color:var(--muted);margin-bottom:4px;">COST</div>';
+      h+='<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">'+costRow+'</div>';
+      h+='</div>';
+    }
+    h+='<button class="gb" onclick="document.getElementById(\'PNinspectOV\').remove()" style="width:100%;min-height:48px;padding:10px;font-size:0.7rem;letter-spacing:0.1em;color:var(--cream);margin-top:6px;">CLOSE</button>';
+    h+='</div>';
+    ov.innerHTML=h;
+    document.body.appendChild(ov);
   };
   window._PNact=function(act){if(GS.phase!=='player'||me().isAI)return;GS.action=act;GS.selectedTokens=[];render();};
   window._PNsup=function(c){
