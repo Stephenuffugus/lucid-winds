@@ -156,21 +156,26 @@ window._gameFns.seedtoss2=function ST(a){
     var pts=100*level+(streak>1?(streak-1)*25:0);
     var dist=Math.abs(seed.x-pot.x);
     if(dist<5)pts+=50;else if(dist<15)pts+=25;
-    // ── HEIGHT BONUS — continuous, every pixel of arc counts ──
-    // arcTop = pixels above pot rim that the seed peaked at. peakHeight
-    // can go NEGATIVE (above canvas top) — we score that too, since the
-    // bars extend off-screen. 1 point per 4 pixels of height, capped at
-    // 1000 so a monstrous arc doesn't dwarf the core scoring.
+    // ── PRECISION BONUS — flatter arcs score more ──
+    // Design intent (Stephen): a long low toss that barely clears the
+    // rim is HARDER and should be worth MORE than a towering lob. So
+    // the reward is inversely proportional to arc height above the
+    // rim. A straight-in at the rim pins the max (+200); higher peaks
+    // earn less, and anything above the ceiling earns the floor.
+    //
+    //   bonus = clamp( MAX - floor(arcTop / STEP), MIN, MAX )
+    //   STEP=2 → every 2px of arc peels 1 pt off the bonus.
     var potTop=pot.y-pot.height-4;
-    var arcTop=Math.max(0,potTop-peakHeight); // can exceed potTop if peak was above canvas
-    var heightBonus=Math.min(1000,Math.floor(arcTop/2));
-    // Rough label for the toast so the player sees what tier they hit.
+    var arcTop=Math.max(0,potTop-peakHeight);
+    var MAX_BONUS=200,MIN_BONUS=0;
+    var heightBonus=Math.max(MIN_BONUS,MAX_BONUS-Math.floor(arcTop/2));
+    // Rough label for the toast.
     var heightLabel='';
-    if(arcTop>=potTop+150)heightLabel=' · STRATOSPHERE!';
-    else if(arcTop>=potTop)heightLabel=' · SKY!';
-    else if(arcTop>potTop*0.75)heightLabel=' · HIGH';
-    else if(arcTop>potTop*0.45)heightLabel=' · GOOD';
-    else if(arcTop>potTop*0.15)heightLabel=' · OK';
+    if(heightBonus>=180)heightLabel=' · BULLSEYE!';
+    else if(heightBonus>=140)heightLabel=' · SHARP';
+    else if(heightBonus>=90)heightLabel=' · CLEAN';
+    else if(heightBonus>=40)heightLabel=' · LOB';
+    else if(heightBonus>0)heightLabel=' · MOON SHOT';
     pts+=heightBonus;
     if(heightBonus>0)heightLabel=' (+'+heightBonus+')'+heightLabel;
     score+=pts;
@@ -215,36 +220,37 @@ window._gameFns.seedtoss2=function ST(a){
 
   function draw(){
     ctx.fillStyle='#0d100c';ctx.fillRect(0,0,W,H);
-    // ── MEASUREMENT LADDER — every 4 pixels of height = +1 point. ──
-    // Scoring is continuous, so we draw a ladder of reference bars so
-    // the player can read their peak at a glance. Bars rise from the
-    // pot rim straight up, clearing the canvas top with an arrow chip
-    // signalling "still scoring above here." A subtle gradient fills
-    // the scoring region so the player *feels* height earning points.
+    // ── PRECISION LADDER — bigger bonus the closer to the rim. ──
+    // Design: a flat, sharp toss that barely clears the rim is the
+    // skilled shot. Lobs are easier. So the max bonus sits right at
+    // the pot rim and peels off the higher the peak goes.
+    //
+    //   y = potTop - (MAX_BONUS - pts) * 2
+    //
+    // With MAX_BONUS=200 and STEP=2, +200 sits at the rim and +25
+    // sits 350 px above it.
     if(pot){
       var potTop=pot.y-pot.height-4;
-      // Gradient fill: dim at pot level → brightest sage/gold near top.
+      // Warm gradient pinned to the rim — brightest at potTop, fading
+      // up so the richest zone reads warmest near the pot.
       var grd=ctx.createLinearGradient(0,0,0,potTop);
-      grd.addColorStop(0,'rgba(91,155,213,0.10)');
-      grd.addColorStop(0.5,'rgba(200,168,75,0.055)');
-      grd.addColorStop(1,'rgba(13,16,12,0)');
+      grd.addColorStop(0,'rgba(91,155,213,0.0)');
+      grd.addColorStop(0.6,'rgba(200,168,75,0.08)');
+      grd.addColorStop(1,'rgba(232,160,191,0.22)');
       ctx.fillStyle=grd;ctx.fillRect(0,0,W,potTop);
-      // Labelled ladder. Positions derived from pts → y = potTop - pts*4.
-      // Picked round-number point values that give visible spacing on
-      // a typical 480px canvas.
-      // pts * 2 = pixels above potTop (matches the arcTop/2 scoring).
+      var MAX=200;
       var ladder=[
-        {pts:25,  label:'+25',  color:'rgba(122,179,86,0.45)'},
-        {pts:50,  label:'+50',  color:'rgba(122,179,86,0.55)'},
-        {pts:100, label:'+100', color:'rgba(200,168,75,0.55)'},
-        {pts:150, label:'+150 · SKY', color:'rgba(232,160,191,0.7)'},
-        {pts:200, label:'+200 · STRATOSPHERE', color:'rgba(91,155,213,0.75)'}
+        {pts:200, label:'+200 · BULLSEYE',  color:'rgba(232,160,191,0.85)'},
+        {pts:150, label:'+150 · SHARP',     color:'rgba(200,168,75,0.7)'},
+        {pts:100, label:'+100 · CLEAN',     color:'rgba(200,168,75,0.55)'},
+        {pts:50,  label:'+50 · LOB',        color:'rgba(122,179,86,0.55)'},
+        {pts:25,  label:'+25',              color:'rgba(122,179,86,0.4)'}
       ];
       ctx.save();
       ctx.setLineDash([6,4]);
       for(var zi=0;zi<ladder.length;zi++){
-        var zY=potTop-ladder[zi].pts*2;
-        if(zY<-10)continue; // would render above canvas; handled by arrow below
+        var zY=potTop-(MAX-ladder[zi].pts)*2;
+        if(zY<-10)continue;
         ctx.strokeStyle=ladder[zi].color;
         ctx.lineWidth=1;
         ctx.beginPath();ctx.moveTo(8,zY);ctx.lineTo(W-8,zY);ctx.stroke();
@@ -255,11 +261,10 @@ window._gameFns.seedtoss2=function ST(a){
         ctx.fillText(ladder[zi].label,W-12,zY-2);
       }
       ctx.restore();
-      // "Keep climbing" arrow at the very top — signals the scoring
-      // continues above the visible canvas. Max cap is +1000 per shot.
-      ctx.fillStyle='rgba(232,220,200,0.7)';
+      // Top-of-canvas header: anything arcing above the top earns 0 bonus.
+      ctx.fillStyle='rgba(232,220,200,0.65)';
       ctx.font='bold 9px monospace';ctx.textAlign='center';ctx.textBaseline='top';
-      ctx.fillText('▲ +1 pt every 2 px above the rim · cap +1000',W/2,2);
+      ctx.fillText('△ MOON SHOT · higher arcs earn less · aim flat & sharp',W/2,2);
       ctx.textBaseline='alphabetic';
     }
     // Ground
