@@ -5737,6 +5737,16 @@ window._addSwitchTabHook = function(fn){
     <div class="dev-section"><div class="dev-section-title">ACCELERATE (BETA TEST)</div><button class="dev-btn" onclick="PW_Dev.accelFerals()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⚡ FORCE FERAL SPAWN</button><button class="dev-btn" onclick="PW_Dev.accelRepro()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🌱 FORCE WILD REPRODUCTION</button><button class="dev-btn" onclick="PW_Dev.accelClimate()" style="border-color:rgba(255,120,80,0.4);color:#ff9060;">🔥 FORCE CLIMATE TICK</button><button class="dev-btn" onclick="PW_Dev.accelKillOldest()" style="border-color:rgba(200,90,90,0.4);color:#d08080;">💀 KILL OLDEST (climate)</button><button class="dev-btn" onclick="PW_Dev.accelGerminate()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌱 INSTANT GERMINATE SPROUTS</button><button class="dev-btn" onclick="PW_Dev.accelFullCycle()" style="border-color:rgba(200,168,75,0.7);color:var(--gold);background:rgba(200,168,75,0.12);">🔄 FULL LIFE CYCLE (repro→kill→sprout→germinate)</button><button class="dev-btn" onclick="PW_Dev.accelNursery()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💧 INSTANT BLOOM ALL SEEDS</button><button class="dev-btn" onclick="PW_Dev.accelBackpack()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🎒 CLEAR BP COOLDOWNS</button><button class="dev-btn" onclick="PW_Dev.grantHashes(100)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">☀️ +100 SUNBEAMS</button><button class="dev-btn" onclick="PW_Dev.grantDew(100)" style="border-color:rgba(91,175,220,0.4);color:#8bd0e8;">💧 +100 DEW</button><button class="dev-btn" onclick="PW_Dev.accelAll()" style="border-color:rgba(255,110,199,0.4);color:#ff6ec7;">🚀 ACCELERATE EVERYTHING</button></div>
     <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button><button class="dev-btn" onclick="PW_Dev.spawnChimeras()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🧬 SPAWN 4 CHIMERAS (dual borders)</button><button class="dev-btn" onclick="PW_Dev.grantDew(500)" style="border-color:rgba(91,175,220,0.4);color:rgba(91,175,220,0.9);">💧 +500 DEW DROPS</button></div>
     <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button><button class="dev-btn" onclick="try{PW_Dev.cardFrontAligner()}catch(e){alert(e.message)}">🃏 CARD FRONT ALIGNMENT</button><button class="dev-btn" onclick="try{PW_Dev.cardBackViewer()}catch(e){alert(e.message)}">🔙 CARD BACK NAMEPLATES</button><button class="dev-btn" onclick="try{PW_Dev.leafBloomEditor()}catch(e){alert(e.message)}">🌿 LEAF & BLOOM EDITOR</button></div>
+    <div class="dev-section"><div class="dev-section-title">KEEPER LEVEL JUMP (TESTERS)</div>
+      <button class="dev-btn" onclick="PW_Dev.setKeeperLevel(3)">⬆ JUMP TO L3 (Wild tab)</button>
+      <button class="dev-btn" onclick="PW_Dev.setKeeperLevel(5)">⬆ JUMP TO L5 (stranger tend)</button>
+      <button class="dev-btn" onclick="PW_Dev.setKeeperLevel(7)" style="border-color:rgba(200,168,75,0.5);color:var(--gold);">⬆ JUMP TO L7 (class + breeding)</button>
+      <button class="dev-btn" onclick="PW_Dev.setKeeperLevel(10)" style="border-color:rgba(200,168,75,0.5);color:var(--gold);">⬆ JUMP TO L10 (pots + boosters)</button>
+      <button class="dev-btn" onclick="PW_Dev.setKeeperLevel(19)">⬆ JUMP TO L19 (Book pages)</button>
+      <button class="dev-btn" onclick="var l=prompt('Jump to Keeper level (1-50):','7');if(l)PW_Dev.setKeeperLevel(l);">🎯 JUMP TO LEVEL…</button>
+      <button class="dev-btn" onclick="PW_Dev.fastCompanionL2()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">⚡ FAST COMPANION → L2 (7d skip)</button>
+      <button class="dev-btn" onclick="PW_Dev.fastCompanionL3()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">⚡ FAST COMPANION → L3 (30d skip)</button>
+    </div>
     <div class="dev-section"><div class="dev-section-title">GREENHOUSE SLOTS</div><button class="dev-btn" onclick="var c=parseInt(localStorage.getItem('sws_greenhouse_slots')||'10');var n=prompt('Current: '+c+' slots. New value (10-60):',c);if(n){n=Math.max(10,Math.min(60,parseInt(n)||10));localStorage.setItem('sws_greenhouse_slots',String(n));alert('Slots set to '+n+'. Refresh greenhouse.');if(window.renderGreenhouse)renderGreenhouse();}">🏡 SET GREENHOUSE SLOTS</button><button class="dev-btn" onclick="var c=parseInt(localStorage.getItem('sws_greenhouse_slots')||'10');var n=Math.min(60,c+5);localStorage.setItem('sws_greenhouse_slots',String(n));alert('Slots: '+c+' → '+n);if(window.renderGreenhouse)renderGreenhouse();">+5 SLOTS</button></div>
     <div class="dev-section"><div class="dev-section-title">CLASS SYSTEM TEST</div>
       <button class="dev-btn" onclick="PW_Dev.classStatus()">🌿 SHOW CURRENT CLASS STATE</button>
@@ -6828,6 +6838,65 @@ window._addSwitchTabHook = function(fn){
         if(window.updateDashboard)updateDashboard();
         alert('+'+n+' Sunbeams granted! Total earned: '+ledger.earned);
       }catch(e){alert('Error: '+e.message);}
+    },
+    setKeeperLevel:function(lvl){
+      // Fast-forward Keeper XP to the exact threshold for a target level so
+      // testers can walk through the L1→L10 unlock journey in minutes instead
+      // of hours. Does NOT trigger level-up celebrations for each level
+      // crossed — we just set the XP and refresh the UI. The level-up toast
+      // still fires for the final destination level via PW_grantXP.
+      lvl=parseInt(lvl,10);if(!lvl||lvl<1||lvl>50){alert('Usage: setKeeperLevel(1..50)');return;}
+      try{
+        // Resolve target XP from the RANKS table by dispatching a no-op grantXP
+        // with the delta. This reuses the level-up queue so the player still
+        // sees the "you just unlocked X" overlay at their new level.
+        var curXP=parseInt(localStorage.getItem('pw_xp')||'0',10);
+        // RANKS lives inside the PW_Social IIFE — read via a scratch probe.
+        // If the probe fails (shouldn't after init), fall back to a table copy.
+        var targets={1:0,2:25,3:75,4:175,5:350,6:600,7:950,8:1400,9:2000,10:2800,11:3800,12:5000,13:6500,14:8500,15:11000,16:14000,17:17500,18:22000,19:27500,20:34000,25:100000,30:290000,40:1840000,50:8115000};
+        var targetXP=targets[lvl];
+        if(typeof targetXP==='undefined'){alert('Level '+lvl+' not in the quick-jump table. Pick one of: '+Object.keys(targets).join(', '));return;}
+        if(targetXP<=curXP){
+          // Cannot move backward without wiping the entire level-up trail.
+          // Ask the tester to confirm they want a clean reset.
+          if(!confirm('You are already at L'+(window._getRank?_getRank(curXP).level:'?')+' ('+curXP+' XP). Reset XP to '+targetXP+'? This skips intermediate level-up celebrations.'))return;
+          localStorage.setItem('pw_xp',String(targetXP));
+          if(window.updateKeeperBar)window.updateKeeperBar();
+          alert('XP reset to '+targetXP+' (L'+lvl+'). Refresh or switch tabs to see unlocks.');
+          return;
+        }
+        var delta=targetXP-curXP;
+        if(window.PW_grantXP)window.PW_grantXP(delta,'dev_jump_L'+lvl);
+        else{localStorage.setItem('pw_xp',String(targetXP));if(window.updateKeeperBar)window.updateKeeperBar();}
+        // Toast lands via PW_grantXP's own level-up queue. No alert.
+      }catch(e){alert('setKeeperLevel failed: '+e.message);}
+    },
+    fastCompanionL2:function(){
+      // Skip the 7-day equipped timer for the currently equipped companion.
+      // Sets activeSinceMs to 7 days ago so getTotalMs crosses the threshold.
+      try{
+        var idx=null;try{idx=parseInt(localStorage.getItem('lw_companion_active_idx')||'-1',10);}catch(e){}
+        if(!idx||idx<0){alert('No active companion — equip one from the character sheet first.');return;}
+        var timer=JSON.parse(localStorage.getItem('lw_companion_timer')||'{}');
+        if(!timer[idx])timer[idx]={totalMs:0,activeSinceMs:null};
+        timer[idx].totalMs=7*86400000+60000; // just over 7 days
+        timer[idx].activeSinceMs=Date.now();
+        localStorage.setItem('lw_companion_timer',JSON.stringify(timer));
+        alert('Companion idx '+idx+' fast-forwarded to L2 (7-day mark).');
+      }catch(e){alert('fastCompanionL2 failed: '+e.message);}
+    },
+    fastCompanionL3:function(){
+      try{
+        var idx=null;try{idx=parseInt(localStorage.getItem('lw_companion_active_idx')||'-1',10);}catch(e){}
+        if(!idx||idx<0){alert('No active companion — equip one first.');return;}
+        var timer=JSON.parse(localStorage.getItem('lw_companion_timer')||'{}');
+        if(!timer[idx])timer[idx]={totalMs:0,activeSinceMs:null};
+        timer[idx].totalMs=30*86400000+60000;
+        timer[idx].activeSinceMs=Date.now();
+        localStorage.setItem('lw_companion_timer',JSON.stringify(timer));
+        if(window.LW_COMPANION&&window.LW_COMPANION.checkL3Unlocks)window.LW_COMPANION.checkL3Unlocks();
+        alert('Companion idx '+idx+' fast-forwarded to L3 Master (30-day mark).');
+      }catch(e){alert('fastCompanionL3 failed: '+e.message);}
     },
     accelAll:function(){
       // One button to reset everything for immediate testing
