@@ -3888,6 +3888,11 @@
 @keyframes feralHexPulse{0%,100%{stroke:rgba(200,168,75,0.4);fill:rgba(200,168,75,0.06);}50%{stroke:rgba(200,168,75,0.7);fill:rgba(200,168,75,0.14);}}
 /* Zone hex — flat static fills, zero animation, zero GPU churn */
 .zone-hex-dim path,.zone-hex-mod path,.zone-hex-hot path,.zone-hex-seed path,.zone-hex-locked path{animation:none!important;}
+/* Rare hex glow — Legendary+ plants present. Pulses gold so the player
+   can spot high-rarity territory at a glance. Makes rarity visible on
+   the Wild map, addressing the "rarity is cosmetic" retention risk. */
+.zone-hex-rare path{animation:rareHexPulse 3s ease-in-out infinite!important;filter:drop-shadow(0 0 6px rgba(241,196,15,0.55));}
+@keyframes rareHexPulse{0%,100%{filter:drop-shadow(0 0 6px rgba(241,196,15,0.45));}50%{filter:drop-shadow(0 0 12px rgba(241,196,15,0.8));}}
 /* ═══ HEX BADGE SCANNER — divIcon dots floating over hex centers ═══ */
 .lw-badge-icon{background:transparent!important;border:0!important;pointer-events:none;}
 .lw-badge-stack{display:flex;gap:3px;justify-content:center;align-items:center;}
@@ -5467,7 +5472,7 @@ window._addSwitchTabHook = function(fn){
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Dew \u2014 produced by your wild plants and earned from participation. Spend on nursery acceleration and wild plant cuttings.')"><div class="wild-log-val" style="color:rgba(91,175,220,0.9)" id="w-dew">0</div><div class="wild-log-lbl">dew <span id="w-dew-rate" style="font-size:0.28rem;color:var(--muted);"></span></div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Keeper XP \u2014 your lifetime experience. Pollen is the energy that grows your rank. Every kind act, wild drop, and bloom contributes.')"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl">xp</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Meters walked. Keep moving to find feral seeds!')"><div class="wild-log-val" style="color:var(--sage)" id="w-steps">0</div><div class="wild-log-lbl">meters</div></div>
-      <div class="wild-log-stat" onclick="FG_Wild._logTip('Your biome — detected from real geography. Affects feral rarity and mutations.')"><div class="wild-log-val" style="font-size:0.7rem;" id="w-biome">🏡</div><div class="wild-log-lbl" id="w-biome-name">scanning</div></div>
+      <div class="wild-log-stat" onclick="FG_Wild._logTip('Your biome + today\'s weather. Both shape what ferals spawn here.')"><div class="wild-log-val" style="font-size:0.7rem;" id="w-biome">🏡</div><div class="wild-log-lbl"><span id="w-biome-name">scanning</span> <span id="w-weather-chip" style="color:var(--gold);"></span></div></div>
       <div class="wild-log-stat" id="w-class-stat" onclick="if(window._LW_openClassPicker)_LW_openClassPicker();else if(window._openCompendiumUI)_openCompendiumUI();" style="cursor:pointer;"><div class="wild-log-val" style="font-size:0.85rem;" id="w-class-icon">—</div><div class="wild-log-lbl" id="w-class-lbl">no class</div></div>
       <div class="wild-log-wind" id="w-wind" onclick="if(window._lwCompassTap)window._lwCompassTap();" style="cursor:pointer;"><div class="wl-wind-top">Points North</div><img src="assets/compasses/compass-arrow.png" alt="compass" draggable="false"><div class="wl-wind-bottom">You face <b id="w-wind-facing">—</b></div></div>
     </div>
@@ -34703,6 +34708,18 @@ function activate(){
           var _bIc=document.getElementById('w-biome');if(_bIc)_bIc.textContent=_bInf.icon;
           var _bNm=document.getElementById('w-biome-name');if(_bNm)_bNm.textContent=_bInf.name;
         }
+        // Weather chip — compact today's weather + element tilt for foraging.
+        try {
+          var _wChip=document.getElementById('w-weather-chip');
+          if(_wChip){
+            var _w=window._reproWeather;
+            var _tilt=window.LW_FORAGING&&window.LW_FORAGING.currentTilt?window.LW_FORAGING.currentTilt():null;
+            if(_w){
+              var _tEmoji = _tilt==='sun'?'\u2600\ufe0f':_tilt==='rain'?'\ud83d\udca7':_tilt==='wind'?'\ud83d\udca8':_tilt==='still'?'\u2728':_tilt==='dry'?'\ud83c\udfdc\ufe0f':_tilt==='shade'?'\ud83c\udf11':'';
+              _wChip.textContent=' \u00b7 '+Math.round(_w.temp||0)+'\u00b0 '+(_tEmoji||'');
+            } else {_wChip.textContent='';}
+          }
+        } catch(e) {}
         var _biShow=localStorage.getItem('lw_biome_shown');
         if(_biShow!==b&&window.getBiomeInfo){
           var _bInfo=getBiomeInfo(b);
@@ -35494,10 +35511,31 @@ function _drawZoneHexes(){
     var seedAvail=_isSeedAvailable(zone.key)&&zone.count>=1;
     var wild=_getWild(),hasOwn=false;
     for(var ow=0;ow<wild.length;ow++){if(wild[ow]&&_zoneKey(wild[ow].lat,wild[ow].lng)===zone.key){hasOwn=true;break;}}
-    var base=hasOwn?'rgba(122,179,86,':'rgba(200,168,75,';
-    var sa=inRange?'0.45)':'0.15)',fa=inRange?'0.07)':'0.03)';
+    // Compute highest rarity in zone — legendary+ gets a gold tint.
+    // Makes rare plants visually distinct on the map (retention lever).
+    var _topTier = 0; // 0=common/uncommon/rare/epic, 1=Legendary, 2=Mythic, 3=Cosmic
+    try {
+      if (window.hashToTraits && window.getTerraGrade) {
+        var _zp = zones[zone.key] || [];
+        for (var _zi = 0; _zi < _zp.length; _zi++) {
+          var _tz; try { _tz = window.hashToTraits(_zp[_zi].hash); } catch(e) { continue; }
+          if (!_tz) continue;
+          var _tgz = window.getTerraGrade(_tz);
+          var _tnz = _tgz && (_tgz.name || _tgz.label) || 'Common';
+          var _tier = _tnz === 'Cosmic' ? 3 : _tnz === 'Mythic' ? 2 : _tnz === 'Legendary' ? 1 : 0;
+          if (_tier > _topTier) _topTier = _tier;
+        }
+      }
+    } catch(e) {}
+    var base = _topTier === 3 ? 'rgba(255,110,199,' :  // Cosmic pink
+               _topTier === 2 ? 'rgba(231,76,60,' :    // Mythic red
+               _topTier === 1 ? 'rgba(241,196,15,' :   // Legendary gold-yellow
+               hasOwn ? 'rgba(122,179,86,' : 'rgba(200,168,75,';
+    var sa=inRange?'0.55)':'0.18)';
+    var fa=inRange?(_topTier>=1?'0.12)':'0.07)'):'0.03)';
     var cls=inRange?(zone.count>=4?'zone-hex-hot':zone.count>=2?'zone-hex-mod':'zone-hex-dim'):'zone-hex-locked';
     if(seedAvail&&inRange)cls+=' zone-hex-seed';
+    if(_topTier>=1&&inRange)cls+=' zone-hex-rare';
     var hexPts=[];
     for(var a=0;a<6;a++){var angle=(a*60-30)*Math.PI/180;hexPts.push([zone.lat+half*Math.sin(angle),zone.lng+half*1.15*Math.cos(angle)]);}
     var hex=L.polygon(hexPts,{color:base+sa,weight:1.5,fillColor:base+fa,fillOpacity:1,interactive:true,className:cls}).addTo(_map);
