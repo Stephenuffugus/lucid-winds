@@ -669,7 +669,11 @@ window._gameFns.pollen = function PN(a){
     document.head.appendChild(st);
   }
   var pan=document.createElement('div');pan.id='PNpan';
-  pan.style.cssText='max-width:440px;margin:0 auto;padding:6px;user-select:none;';
+  // Panel grows to use available real estate. On landscape / tablet
+  // viewports we let it stretch to 760px so the 4-card tier rows lay
+  // out comfortably without horizontal scroll. Portrait phones still
+  // get the tighter 440px to keep cards thumb-tappable.
+  pan.style.cssText='max-width:min(760px,calc(100vw - 16px));margin:0 auto;padding:6px;user-select:none;';
   a.appendChild(pan);
   mc(a).innerHTML='<button class="gb-new" onclick="_PNnew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
@@ -716,19 +720,22 @@ window._gameFns.pollen = function PN(a){
     var aff=canAfford(me(),card);
     var border=aff.affordable?'2px solid #7ab356':'2px solid rgba(110,96,81,0.55)';
     var bgShade=card.tier===1?'#4a7c35':card.tier===2?'#c8a84b':'#ffd700';
-    var W=84, H=114;
+    var W=96, H=132;
     // Cost bar height + chip size scale with how many chips need to
-    // fit. Tier 1 caps at 4 chips, Tier 3 can hit 7. Wide chips read
-    // far better than tiny ones, so we expand the bar (and shrink the
-    // art frame slightly) when needed.
+    // fit. Tier 1 caps at 4 chips, Tier 3 can hit 7. Bumped chip
+    // sizes up so the painted seeds actually read — was 14/12/10,
+    // now 18/16/14. Bar height grows to match.
     var costCount=0;for(var ck in card.cost)costCount+=card.cost[ck];
-    var CHIP=costCount<=4?14:costCount<=6?12:10;
-    var BARH=costCount<=4?24:costCount<=6?28:34;
+    var CHIP=costCount<=4?18:costCount<=6?16:14;
+    var BARH=costCount<=4?30:costCount<=6?36:42;
     var GP_PILL=card.gp>0?
-      '<div style="position:absolute;top:2px;left:3px;width:18px;height:18px;border-radius:50%;background:linear-gradient(180deg,#fff5d4,#e8c860);color:#2a1f0a;font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;z-index:3;box-shadow:0 1px 3px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.5);border:1px solid rgba(120,90,20,0.6);">'+card.gp+'</div>'
+      '<div style="position:absolute;top:3px;left:4px;width:24px;height:24px;border-radius:50%;background:linear-gradient(180deg,#fff5d4,#e8c860);color:#2a1f0a;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;z-index:3;box-shadow:0 2px 5px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.5);border:1px solid rgba(120,90,20,0.6);">'+card.gp+'</div>'
       :'';
+    // Use indicator now actually shows the seed art (token chip),
+    // not just a flat color circle — much more obvious which color
+    // this card produces. tokDot already uses Stephen's seed PNG.
     var USE_PILL=
-      '<div style="position:absolute;top:2px;right:3px;width:18px;height:18px;border-radius:50%;background:'+COLOR_HEX[card.produces]+';z-index:3;box-shadow:0 1px 3px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.4);border:1px solid rgba(0,0,0,0.3);"></div>';
+      '<div style="position:absolute;top:3px;right:4px;z-index:3;box-shadow:0 2px 5px rgba(0,0,0,0.5);border-radius:50%;">'+tokDot(card.produces,24)+'</div>';
     // Two-stage art lookup: tier folder first, then flat fallback.
     var artTier='assets/games/masterpollinator/tier'+card.tier+'/'+card.slug+'.png';
     var artFlat='assets/games/masterpollinator/'+card.slug+'.png';
@@ -744,18 +751,22 @@ window._gameFns.pollen = function PN(a){
     // direction. Name + flower facts live behind the inspect button.
     var costBar=
       '<div style="position:absolute;left:0;right:0;bottom:0;height:'+BARH+'px;background:linear-gradient(180deg,rgba(248,242,224,0.94),rgba(232,222,188,0.96));border-top:1px solid rgba(120,100,60,0.4);display:flex;align-items:center;justify-content:center;gap:2px;flex-wrap:wrap;padding:2px 3px;z-index:2;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);">'+costChips+'</div>';
-    // Tiny info button — bottom-left of card, fixed corner, opens the
-    // inspect modal without triggering the buy/reserve action. Stops
-    // event propagation so a tap on the (i) doesn't also tap the card.
-    var infoBtn=
-      '<button onclick="event.stopPropagation();_PNinspect('+card.id+')" '
-      +'style="position:absolute;bottom:1px;left:1px;width:16px;height:16px;border-radius:50%;'
-      +'background:rgba(13,16,12,0.65);border:1px solid rgba(200,168,75,0.55);color:#f0e0a8;'
-      +'font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:10px;line-height:14px;'
-      +'text-align:center;padding:0;cursor:pointer;z-index:4;box-shadow:0 1px 2px rgba(0,0,0,0.5);">i</button>';
+    // No (i) icon — long-press the card to inspect (handler attached
+    // via _PNlongPress on touchstart/mousedown). Cleaner card face.
+    var infoBtn='';
     var fallbackEmoji=
       '<div style="position:absolute;left:0;right:0;top:14px;bottom:'+(BARH+4)+'px;display:flex;align-items:center;justify-content:center;font-size:24px;opacity:0.55;z-index:0;">'+TIER_ICONS[card.tier-1]+'</div>';
-    var h='<div class="pn-card'+(aff.affordable?' aff':'')+'" style="width:'+W+'px;height:'+H+'px;border-radius:8px;border:'+border+';border-left:4px solid '+bgShade+';display:inline-block;vertical-align:top;margin:3px;position:relative;cursor:pointer;color:#1a1f17;box-shadow:0 2px 6px rgba(0,0,0,0.32);overflow:hidden;background:linear-gradient(180deg,#fbf6e6,#f0e8ce);" onclick="_PNtap('+card.id+','+(isReserved?'true':'false')+')">';
+    // Long-press handlers run inline. touchstart/mousedown start a
+    // 480ms timer; if the player releases before then, the regular
+    // tap fires (buy/reserve). Past 480ms = inspect modal opens and
+    // the tap is consumed so they don't accidentally buy.
+    var lpStart='var t=this;t.__lp=setTimeout(function(){t.__inspect=true;_PNinspect('+card.id+');},480);';
+    var lpEnd='if(this.__lp)clearTimeout(this.__lp);this.__lp=null;';
+    var tapBody='if(this.__inspect){this.__inspect=false;return;}_PNtap('+card.id+','+(isReserved?'true':'false')+')';
+    var h='<div class="pn-card'+(aff.affordable?' aff':'')+'" style="width:'+W+'px;height:'+H+'px;border-radius:8px;border:'+border+';border-left:4px solid '+bgShade+';display:inline-block;vertical-align:top;margin:3px;position:relative;cursor:pointer;color:#1a1f17;box-shadow:0 2px 6px rgba(0,0,0,0.32);overflow:hidden;background:linear-gradient(180deg,#fbf6e6,#f0e8ce);" '
+      +'ontouchstart="'+lpStart+'" ontouchend="'+lpEnd+'" ontouchcancel="'+lpEnd+'" '
+      +'onmousedown="'+lpStart+'" onmouseup="'+lpEnd+'" onmouseleave="'+lpEnd+'" '
+      +'onclick="'+tapBody+'">';
     h+=fallbackEmoji+artImg+GP_PILL+USE_PILL+infoBtn+costBar+'</div>';
     return h;
   }
@@ -809,8 +820,8 @@ window._gameFns.pollen = function PN(a){
     if(GS.phase==='player')h+='<div style="text-align:center;color:var(--sage);font-size:0.7rem;padding:2px;">— '+esc(active.name)+"'s turn —</div>";
     else if(GS.phase==='ai')h+='<div style="text-align:center;color:#c47a7a;font-size:0.7rem;padding:2px;">— '+esc(active.name)+' thinking —</div>';
     // Pollinators
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.1em;margin:8px 0 4px;">POLLINATORS</div>';
-    h+='<div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:3px;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.1em;margin:8px 0 4px;text-align:center;">POLLINATORS</div>';
+    h+='<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:3px;justify-content:center;">';
     GS.pollinators.forEach(function(p){
       var claimedBy=null;
       if(p.claimedBy!==null&&p.claimedBy!==undefined){
@@ -850,16 +861,17 @@ window._gameFns.pollen = function PN(a){
     h+='</div>';
     // Market
     [[3,GS.market3,GS.deck3],[2,GS.market2,GS.deck2],[1,GS.market1,GS.deck1]].forEach(function(t){
-      h+='<div style="display:flex;align-items:center;gap:3px;margin:4px 0;">';
-      h+='<div style="width:16px;font-family:Bebas Neue,sans-serif;color:var(--muted);text-align:center;font-size:9px;flex-shrink:0;">T'+t[0]+'</div>';
-      // Cards in a horizontally scrollable strip — guarantees all 4
-      // market cards fit no matter how narrow the viewport. Card
-      // width grew slightly (78→84) so the 4-card row needs ~360px.
-      // overflow-x:auto keeps everyone reachable on a small screen.
-      h+='<div style="flex:1;overflow-x:auto;-webkit-overflow-scrolling:touch;display:flex;gap:0;align-items:flex-start;padding-bottom:2px;">';
+      h+='<div style="display:flex;align-items:center;gap:6px;margin:6px 0;">';
+      h+='<div style="width:18px;font-family:Bebas Neue,sans-serif;color:var(--muted);text-align:center;font-size:10px;flex-shrink:0;">T'+t[0]+'</div>';
+      // Cards lay out left-to-right. On wide viewports (landscape /
+      // tablet) the row has plenty of space and shows all 4 cards
+      // without scrolling. On narrow phones it falls back to scroll.
+      // justify-content:flex-start aligns the 4th card at the right
+      // end of the row when there are gaps.
+      h+='<div style="flex:1;overflow-x:auto;-webkit-overflow-scrolling:touch;display:flex;gap:6px;align-items:flex-start;justify-content:flex-start;padding-bottom:2px;">';
       t[1].forEach(function(c){if(c)h+=renderCard(c,false);});
       h+='</div>';
-      h+='<div style="width:30px;height:44px;background:rgba(26,31,23,0.6);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);flex-shrink:0;">'+t[2].length+'</div>';
+      h+='<div style="width:36px;min-height:48px;background:rgba(26,31,23,0.6);border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:var(--cream);flex-shrink:0;font-family:DM Mono,monospace;"><div style="font-size:0.45rem;color:var(--muted);">DECK</div><div style="font-weight:700;">'+t[2].length+'</div></div>';
       h+='</div>';
     });
     // Supply
@@ -867,7 +879,7 @@ window._gameFns.pollen = function PN(a){
     h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">';
     COLORS.concat(['gold']).forEach(function(c){
       var sel=GS.selectedTokens.indexOf(c)>=0;
-      var sty='padding:6px 10px;background:'+(sel?'rgba(122,179,86,0.2)':'rgba(26,31,23,0.6)')+';border:1px solid '+(sel?'#7ab356':'rgba(122,179,86,0.2)')+';border-radius:8px;font-size:12px;min-height:40px;display:inline-flex;align-items:center;gap:4px;cursor:pointer;';
+      var sty='padding:8px 14px;background:'+(sel?'rgba(122,179,86,0.2)':'rgba(26,31,23,0.6)')+';border:1px solid '+(sel?'#7ab356':'rgba(122,179,86,0.2)')+';border-radius:10px;font-size:15px;font-weight:700;min-height:52px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;';
       h+='<div class="pn-tok'+(sel?' sel':'')+'" style="'+sty+'" onclick="_PNsup(\''+c+'\')">'+tokDot(c,14)+' '+GS.supply[c]+'</div>';
     });
     h+='</div>';
@@ -881,7 +893,7 @@ window._gameFns.pollen = function PN(a){
     h+='</div>';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.1em;">PLANTS</div>';
     h+='<div style="display:flex;gap:2px;flex-wrap:wrap;">';
-    COLORS.forEach(function(c){for(var i=0;i<(meRef.production[c]||0);i++)h+=tokDot(c,14);});
+    COLORS.forEach(function(c){for(var i=0;i<(meRef.production[c]||0);i++)h+=tokDot(c,22);});
     if(meRef.cards.length===0)h+='<span style="font-size:10px;color:var(--muted);">None yet</span>';
     h+='</div>';
     if(meRef.reserved.length>0){
