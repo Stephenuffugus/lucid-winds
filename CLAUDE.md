@@ -474,9 +474,9 @@ window._doCrossPollination(wild, mate) — Wild tab breed execution
 1. Merge Garden slide animation (tiles jump instead of sliding)
 2. Word Search found-word feedback
 3. Lights Out illumination animation (CSS glow)
-4. Connect 4 drop animation (pieces fall from top)
+4. ~~Connect 4 drop animation~~ DONE — games/c4.js c4drop keyframe w/ cubic-bezier bounce
 5. Card games — bigger cards, clearer boundaries
-6. Difficulty selectors for Sudoku, Word Search, Picross
+6. ~~Difficulty selectors for Sudoku, Word Search, Picross~~ DONE — all three ship selectors (Ud, Wd, Xd)
 7. Sokoban re-theme
 
 ### Systems
