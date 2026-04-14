@@ -6679,17 +6679,32 @@ window._addSwitchTabHook = function(fn){
     },
     accelKillOldest:function(){
       // Force the oldest local wild plant to die with a climate flag so
-      // it becomes sprout-eligible, then prune. Use to test the death →
-      // sprout → germinate cycle without waiting 3 real days.
+      // it becomes sprout-eligible, then FORCE the prune directly.
+      // Previously only marked the plant dead and relied on the user
+      // switching tabs to trigger pruning — which sometimes never ran.
       var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
       if(!wild.length){alert('No local wild plants to kill. Drop some first!');return;}
-      wild.sort(function(a,b){return (a.droppedAt||0)-(b.droppedAt||0);});
+      wild.sort(function(a,b){
+        var ad=a.droppedAt;if(typeof ad==='string')ad=new Date(ad).getTime();
+        var bd=b.droppedAt;if(typeof bd==='string')bd=new Date(bd).getTime();
+        return (ad||0)-(bd||0);
+      });
       var victim=wild[0];
+      // Stamp death AND climate cause. Write both decayAt and decayAtMs
+      // because _ensureVitality prefers decayAtMs if present, so setting
+      // only decayAt used to get restored from the numeric field.
       victim.decayAt=Date.now()-1000;
+      victim.decayAtMs=Date.now()-1000;
       victim.lastClimateHitAt=Date.now();
       victim.lastClimateKind='heat';
       localStorage.setItem('fg_wild_plants',JSON.stringify(wild));
-      alert('Killed oldest wild plant ('+(victim.hash||'').slice(0,8)+') with climate cause. Switch to Wild tab to prune and seed a sprout.');
+      // Force prune now (exposed on window as of Apr 14 2026)
+      if(window._pruneWild){
+        try{window._pruneWild();}catch(e){alert('Prune error: '+e.message);return;}
+        alert('Killed and pruned '+(victim.hash||'').slice(0,8)+'. If the hex is empty now a sprout should be in Firestore — use INSTANT GERMINATE SPROUTS to activate.');
+      } else {
+        alert('Marked '+(victim.hash||'').slice(0,8)+' dead. _pruneWild not exposed — switch to Wild tab to prune manually.');
+      }
     },
     accelGerminate:function(){
       // Find all sprout docs and set germinateAt to now so the next
@@ -53007,6 +53022,7 @@ function _bosSetTab(tab) {
   else if (tab === 'secrets') body.innerHTML = _bosSecretsContent();
   else if (tab === 'events') body.innerHTML = _bosEventsContent();
   else if (tab === 'class') body.innerHTML = _bosClassContent();
+  else if (tab === 'activity') body.innerHTML = _bosActivityContent();
   var tabs = document.querySelectorAll('.bos-tab');
   for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('active', tabs[i].getAttribute('data-tab') === tab);
   // Update the active style for tabs (override gold for active, muted for inactive)
@@ -53136,6 +53152,87 @@ function _bosClassContent() {
 }
 window._bosClassContent = _bosClassContent;
 window._bosSetTab = _bosSetTab;
+
+// ─── ACTIVITY TAB — raw events feed from lw_wild_events ───
+// The "missing messages" — every _logWildEvent() write flows here so
+// keepers can actually see what their ecosystem is doing (births,
+// climate damage, sprouts, germination, invasions). Newest first.
+function _bosActivityContent() {
+  var evts = [];
+  try { evts = JSON.parse(localStorage.getItem('lw_wild_events') || '[]'); } catch(e) {}
+  if (!evts.length) {
+    return '<div style="padding:2rem 1rem;text-align:center;color:var(--muted);font-family:DM Mono,monospace;font-size:0.55rem;line-height:1.7;">Nothing has happened in the wild yet.<br>Drop a plant to start the ecosystem.</div>';
+  }
+  evts.sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+  var h = '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-bottom:0.6rem;">' + evts.length + ' recent events \u00b7 newest first</div>';
+  var cutoff = Date.now() - 7 * 86400000;
+  for (var i = 0; i < Math.min(evts.length, 120); i++) {
+    var e = evts[i];
+    if ((e.ts || 0) < cutoff) break;
+    var icon = '\u2022', color = 'var(--cream)', title = e.type || 'event', body = '';
+    switch (e.type) {
+      case 'birth':
+        icon = '\ud83c\udf31'; color = 'var(--sage)';
+        title = 'New plant born';
+        body = (e.grade || 'Common') + ' \u00b7 EA ' + (e.ea || '?') + (e.name ? ' \u00b7 ' + e.name : '');
+        break;
+      case 'climate':
+        icon = '\ud83c\udf25\ufe0f'; color = '#c07060';
+        title = 'Climate damage';
+        body = (e.name || 'A plant') + ' \u2014 ' + (e.event || 'breach') + ' (' + (e.breaches || []).join(', ') + ') \u00b7 ' + Math.round(e.hoursLost || 0) + 'h lost';
+        break;
+      case 'sprout':
+        icon = '\ud83c\udf31'; color = '#c8a84b';
+        title = 'Sprout seeded';
+        body = 'A hex re-seeds after climate death. Germinates in ' + (e.germinateInHours || '~24') + 'h.';
+        break;
+      case 'germinate':
+        icon = '\ud83c\udf3f'; color = 'var(--sage)';
+        title = 'Sprout germinated';
+        body = 'A sprout activated into a new wild plant. ' + (e.grade || 'Common') + '.';
+        break;
+      case 'invaded':
+        icon = '\u2694\ufe0f'; color = '#e0a060';
+        title = 'Invasion';
+        body = (e.defenderName || 'A plant') + ' was displaced by an invader (EA ' + (e.invaderEA || '?') + ').';
+        break;
+      case 'weather':
+        icon = '\u2601\ufe0f'; color = '#6a90b0';
+        title = 'Weather: ' + (e.name || e.event || 'event');
+        body = Math.round(e.temp || 0) + '\u00b0C \u00b7 ' + (e.rain || 0).toFixed(1) + 'mm';
+        break;
+      case 'trigger':
+      case 'rare':
+        icon = '\u2728'; color = 'var(--gold)';
+        title = e.event || 'Rare event';
+        body = e.name || '';
+        break;
+      case 'companion':
+        icon = '\ud83d\udc3e'; color = '#c8a8ff';
+        title = (e.companion || 'Companion') + ' \u00b7 ' + (e.event || '');
+        body = e.text || '';
+        break;
+      default:
+        body = e.name || e.event || '';
+    }
+    var when = e.ts ? _bosFormatWhen(e.ts) : '';
+    h += '<div style="padding:0.5rem 0.6rem;margin-bottom:0.35rem;background:rgba(18,22,16,0.65);border-left:2px solid ' + color + ';border-radius:6px;display:flex;gap:0.55rem;align-items:flex-start;">';
+    h += '<span style="font-size:0.9rem;flex-shrink:0;">' + icon + '</span>';
+    h += '<div style="flex:1;min-width:0;">';
+    h += '<div style="display:flex;justify-content:space-between;gap:0.5rem;"><span style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:' + color + ';letter-spacing:0.06em;">' + title + '</span><span style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);white-space:nowrap;">' + when + '</span></div>';
+    if (body) h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--cream);margin-top:2px;line-height:1.5;">' + body + '</div>';
+    h += '</div></div>';
+  }
+  return h;
+}
+function _bosFormatWhen(ts) {
+  var delta = Date.now() - ts;
+  if (delta < 60000) return 'just now';
+  if (delta < 3600000) return Math.floor(delta / 60000) + 'm ago';
+  if (delta < 86400000) return Math.floor(delta / 3600000) + 'h ago';
+  return Math.floor(delta / 86400000) + 'd ago';
+}
+window._bosActivityContent = _bosActivityContent;
 
 var _bosReportRange = 'today';
 var _bosReportFilter = 'all';
@@ -53797,6 +53894,7 @@ window._openCompendiumUI=function(){
       // Tabs
       '<div style="display:flex;gap:0.25rem;padding:0.4rem 0.6rem 0.5rem;flex-shrink:0;flex-wrap:wrap;">'+
         '<button class="bos-tab" data-tab="report" onclick="_bosSetTab(\'report\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">REPORT</button>'+
+        '<button class="bos-tab" data-tab="activity" onclick="_bosSetTab(\'activity\')" style="position:relative;flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">ACTIVITY'+ ((window._getBookUnreadCount&&window._getBookUnreadCount()>0)?'<span style="position:absolute;top:4px;right:4px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.38rem;display:inline-flex;align-items:center;justify-content:center;">'+window._getBookUnreadCount()+'</span>':'') +'</button>'+
         '<button class="bos-tab active" data-tab="secrets" onclick="_bosSetTab(\'secrets\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(200,168,75,0.5);background:rgba(200,168,75,0.1);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">SECRETS</button>'+
         '<button class="bos-tab" data-tab="events" onclick="_bosSetTab(\'events\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">EVENTS</button>'+
         '<button class="bos-tab" data-tab="class" onclick="_bosSetTab(\'class\')" style="position:relative;flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">CLASS'+ ((!localStorage.getItem('lw_class')&&window.canSee&&window.canSee.classPick&&window.canSee.classPick())?'<span style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px rgba(200,168,75,0.8);"></span>':'') +'</button>'+
@@ -53805,8 +53903,12 @@ window._openCompendiumUI=function(){
       '<div id="bos-body" style="flex:1;overflow-y:auto;padding:0.6rem 1rem 1.5rem;-webkit-overflow-scrolling:touch;"></div>'+
     '</div>';
   document.body.appendChild(ov);
-  // Set initial tab content — auto-open CLASS tab if unpicked AND eligible (Lv 7+)
+  // Set initial tab content — priority order:
+  //   1. Class unpicked & eligible → CLASS (onboarding prompt)
+  //   2. Unread activity → ACTIVITY (what's new)
+  //   3. Last-used tab
   if(!localStorage.getItem('lw_class')&&window.canSee&&window.canSee.classPick&&window.canSee.classPick())_bosTab='class';
+  else if(window._getBookUnreadCount&&window._getBookUnreadCount()>0)_bosTab='activity';
   _bosSetTab(_bosTab);
   // Mark report as read
   if(window._setLastRead)_setLastRead(Date.now());

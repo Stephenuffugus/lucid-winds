@@ -273,6 +273,7 @@ function _diedFromClimate(plant){
   return sinceHit < 24*3600000;
 }
 
+window._pruneWild = function(){ return _pruneWild(); };
 function _pruneWild(){
   var wild=_getWild();if(!wild.length)return wild;
   // Ensure every plant has vitality fields before comparing (migrates legacy)
