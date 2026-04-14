@@ -5753,6 +5753,8 @@ window._addSwitchTabHook = function(fn){
       <button class="dev-btn" onclick="PW_Dev.toolLevel('can',3)">💧 CAN L3 (RAIN)</button>
       <button class="dev-btn" onclick="PW_Dev.toolLevel('pouch',3)">🎒 POUCH L3 (7 SLOTS)</button>
       <button class="dev-btn" onclick="PW_Dev.toolLevel('compass',3)">🧭 COMPASS L3</button>
+      <button class="dev-btn" onclick="PW_Dev.accelCompanion()" style="border-color:rgba(200,168,75,0.5);color:var(--gold);">🐾 COMPANION L3 + MEMENTO</button>
+      <button class="dev-btn" onclick="PW_Dev.accelHerbarium()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌿 RESET HERBARIUM CLAIMS</button>
     </div>
     <div class="dev-section"><div class="dev-section-title">NUCLEAR</div><button class="dev-btn danger" onclick="PW_Dev.fullReset()">☢ WIPE EVERYTHING</button></div>
     <div class="dev-log" id="dev-log">Ready.\n</div>
@@ -6733,6 +6735,39 @@ window._addSwitchTabHook = function(fn){
           })
           .catch(function(e){alert('Query error: '+e.message);});
       }catch(e){alert(e.message);}
+    },
+    accelCompanion:function(){
+      // Fast-forward the active companion's equipped timer to L3.
+      try {
+        var active = JSON.parse(localStorage.getItem('pw_active_companion')||'null');
+        if (!active || typeof active.idx !== 'number') { alert('Equip a companion first.'); return; }
+        var timer = {};
+        try { timer = JSON.parse(localStorage.getItem('lw_companion_timer')||'{}'); } catch(e) {}
+        timer[active.idx] = { totalMs: 31 * 86400000, activeSinceMs: Date.now() };
+        localStorage.setItem('lw_companion_timer', JSON.stringify(timer));
+        // Also fast-forward memento eligibility
+        try {
+          var eq = JSON.parse(localStorage.getItem('lw_companion_first_equipped')||'{}');
+          eq[active.idx] = Date.now() - 31 * 86400000;
+          localStorage.setItem('lw_companion_first_equipped', JSON.stringify(eq));
+        } catch(e) {}
+        if (window.LW_COMPANION) window.LW_COMPANION.checkL3Unlocks();
+        if (window._lwCheckMementos) window._lwCheckMementos();
+        alert('Companion ' + active.name + ' fast-forwarded to L3 + memento eligible. Reopen character sheet to see.');
+      } catch(e) { alert('Error: ' + e.message); }
+    },
+    accelHerbarium:function(){
+      // Clear this week's claim markers so bundles can be re-tested.
+      try {
+        var wk = window.LW_HERBARIUM ? window.LW_HERBARIUM.weekKey() : '';
+        var prefix = 'lw_bundle_claimed_' + wk + '_';
+        var cleared = 0;
+        for (var i = localStorage.length - 1; i >= 0; i--) {
+          var k = localStorage.key(i);
+          if (k && k.indexOf(prefix) === 0) { localStorage.removeItem(k); cleared++; }
+        }
+        alert('Cleared ' + cleared + ' bundle claims for ' + wk + '. Open Book of Secrets → HERBARIUM to retry.');
+      } catch(e) { alert('Error: ' + e.message); }
     },
     accelFullCycle:function(){
       // End-to-end test cycle: repro → kill oldest → prune/sprout →
