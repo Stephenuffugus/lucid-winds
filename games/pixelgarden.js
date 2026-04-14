@@ -57,6 +57,7 @@ window._gameFns.pixelgarden = function PG(a){
     +'<button class="gb" onclick="_PGUN()">UNDO</button>'
     +'<button class="gb" onclick="_PGSV()">SAVE</button>'
     +'<button class="gb" onclick="_PGGal()">📂 GALLERY</button>'
+    +'<button class="gb" onclick="_PGCompose()">🧩 COMPOSE</button>'
     +'<button class="gb" onclick="_PGExport()">⬇ PNG</button>';
 
   function initGrid(){
@@ -341,6 +342,244 @@ window._gameFns.pixelgarden = function PG(a){
     var szEl=document.getElementById('PGsz');if(szEl)szEl.textContent=GRID+'×'+GRID;
     initGrid();initCanvas();buildPalette();buildTools();render();
     sm('Canvas: '+GRID+'×'+GRID);
+  };
+
+  // ─── COMPOSE: stitch saved squares into a bigger canvas ─────────────
+  // State lives on the overlay while it's open. Slots is a 2D array of
+  // gallery entries (or null). All squares in a composition must share
+  // the same grid size — enforced at assign time with a friendly nudge.
+  var cmpRows=2,cmpCols=2,cmpSlots=null,cmpUnit=null;
+  function _cmpInitSlots(){
+    cmpSlots=[];
+    for(var r=0;r<cmpRows;r++){cmpSlots[r]=[];for(var c=0;c<cmpCols;c++)cmpSlots[r][c]=null;}
+  }
+  function _cmpAnyAssigned(){
+    if(!cmpSlots)return false;
+    for(var r=0;r<cmpRows;r++)for(var c=0;c<cmpCols;c++)if(cmpSlots[r][c])return true;
+    return false;
+  }
+  // Build a pixel grid from the assigned slots. Empty slots render as
+  // checkerboard dark-gray. Returns {grid, pixels} for saving/export.
+  function _cmpBuildPixels(){
+    var unit=cmpUnit||16;
+    var W=unit*cmpCols,H=unit*cmpRows;
+    var out=[];
+    for(var y=0;y<H;y++){out[y]=[];for(var x=0;x<W;x++)out[y][x]=null;}
+    for(var r=0;r<cmpRows;r++){
+      for(var c=0;c<cmpCols;c++){
+        var e=cmpSlots[r][c];if(!e)continue;
+        for(var yr=0;yr<unit;yr++){
+          for(var xc=0;xc<unit;xc++){
+            var src=e.pixels[yr]&&e.pixels[yr][xc];
+            if(src)out[r*unit+yr][c*unit+xc]=src;
+          }
+        }
+      }
+    }
+    return{grid:Math.max(W,H),pixels:out,w:W,h:H};
+  }
+  function _cmpThumb(){
+    var unit=cmpUnit||16;
+    var tileSize=Math.floor(200/Math.max(cmpRows,cmpCols));
+    var W=tileSize*cmpCols,H=tileSize*cmpRows;
+    var sc=document.createElement('canvas');sc.width=W;sc.height=H;
+    var sx=sc.getContext('2d');sx.imageSmoothingEnabled=false;
+    sx.fillStyle='#0d100c';sx.fillRect(0,0,W,H);
+    for(var r=0;r<cmpRows;r++){
+      for(var c=0;c<cmpCols;c++){
+        var e=cmpSlots[r][c];
+        var x0=c*tileSize,y0=r*tileSize;
+        if(!e){
+          // empty slot — checker pattern
+          for(var yy=0;yy<tileSize;yy+=6){
+            for(var xx=0;xx<tileSize;xx+=6){
+              sx.fillStyle=((xx+yy)%12===0)?'#1a1a1a':'#222222';
+              sx.fillRect(x0+xx,y0+yy,6,6);
+            }
+          }
+          sx.strokeStyle='rgba(200,168,75,0.25)';sx.lineWidth=1;
+          sx.strokeRect(x0+0.5,y0+0.5,tileSize-1,tileSize-1);
+          continue;
+        }
+        var cell=tileSize/unit;
+        for(var yr=0;yr<unit;yr++){
+          for(var xc=0;xc<unit;xc++){
+            var col=e.pixels[yr]&&e.pixels[yr][xc];
+            if(col){sx.fillStyle=col;sx.fillRect(x0+Math.floor(xc*cell),y0+Math.floor(yr*cell),Math.ceil(cell),Math.ceil(cell));}
+          }
+        }
+      }
+    }
+    // Slot separators for clarity
+    sx.strokeStyle='rgba(13,16,12,0.75)';sx.lineWidth=2;
+    for(var rr=1;rr<cmpRows;rr++){sx.beginPath();sx.moveTo(0,rr*tileSize);sx.lineTo(W,rr*tileSize);sx.stroke();}
+    for(var cc=1;cc<cmpCols;cc++){sx.beginPath();sx.moveTo(cc*tileSize,0);sx.lineTo(cc*tileSize,H);sx.stroke();}
+    return sc.toDataURL('image/png');
+  }
+  window._PGCompose=function(){
+    var ov=document.getElementById('PGcmpOV');
+    if(ov){ov.remove();return;}
+    cmpUnit=null;_cmpInitSlots();
+    ov=document.createElement('div');
+    ov.id='PGcmpOV';
+    ov.style.cssText='position:fixed;inset:0;z-index:99993;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.94);backdrop-filter:blur(10px);padding:12px;animation:panelFadeIn 0.3s ease;overflow-y:auto;';
+    ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
+    document.body.appendChild(ov);
+    _renderCompose();
+  };
+  function _renderCompose(){
+    var ov=document.getElementById('PGcmpOV');if(!ov)return;
+    var h='<div style="max-width:440px;width:100%;background:rgba(15,20,12,0.96);border:1px solid rgba(200,168,75,0.35);border-radius:12px;padding:16px;font-family:DM Mono,monospace;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:0.12em;color:var(--gold);">🧩 COMPOSE</div>';
+    h+='<button class="gb" onclick="document.getElementById(\'PGcmpOV\').remove()" style="min-height:44px;padding:6px 14px;">CLOSE</button>';
+    h+='</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);line-height:1.5;margin-bottom:10px;">Stitch saved squares into a bigger canvas. All slots must share the same grid size — the first one you drop in locks the size.</div>';
+    // Layout picker
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.1em;color:var(--sage);margin-bottom:4px;">LAYOUT</div>';
+    var layouts=[[2,2],[3,2],[2,3],[3,3],[4,4]];
+    h+='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">';
+    for(var i=0;i<layouts.length;i++){
+      var L=layouts[i],sel=(L[0]===cmpCols&&L[1]===cmpRows);
+      h+='<button class="gb" onclick="_PGCmpLay('+L[0]+','+L[1]+')" style="min-height:44px;padding:6px 10px;font-size:0.62rem;letter-spacing:0.05em;'
+        +(sel?'background:rgba(200,168,75,0.25);border-color:var(--gold);color:var(--gold);':'')+'">'+L[0]+'×'+L[1]+'</button>';
+    }
+    h+='</div>';
+    // Slot grid preview — tap any slot to assign
+    var tileSize=Math.max(48,Math.floor(320/Math.max(cmpCols,cmpRows)));
+    h+='<div style="display:grid;grid-template-columns:repeat('+cmpCols+',1fr);gap:2px;margin:0 auto 12px;max-width:'+(tileSize*cmpCols+12)+'px;">';
+    for(var r=0;r<cmpRows;r++){
+      for(var c=0;c<cmpCols;c++){
+        var entry=cmpSlots[r][c];
+        var thumb=entry?thumbDataURL(entry,tileSize):'';
+        h+='<button class="gb" onclick="_PGCmpSlot('+r+','+c+')" '
+          +'style="padding:0;min-height:0;height:'+tileSize+'px;width:'+tileSize+'px;background:'+(entry?'transparent':'rgba(18,22,14,0.6)')+';border:1px dashed rgba(200,168,75,0.35);overflow:hidden;position:relative;">';
+        if(entry){
+          h+='<img src="'+thumb+'" style="width:100%;height:100%;image-rendering:pixelated;display:block;">';
+        } else {
+          h+='<div style="color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.8rem;">+</div>';
+        }
+        h+='</button>';
+      }
+    }
+    h+='</div>';
+    // Preview render (full composition)
+    if(_cmpAnyAssigned()){
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.1em;color:var(--sage);margin-bottom:6px;">PREVIEW '+(cmpUnit?'('+(cmpUnit*cmpCols)+'×'+(cmpUnit*cmpRows)+')':'')+'</div>';
+      h+='<img src="'+_cmpThumb()+'" style="display:block;max-width:100%;margin:0 auto 12px;image-rendering:pixelated;border:1px solid rgba(200,168,75,0.2);border-radius:4px;">';
+    }
+    // Actions
+    h+='<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">';
+    h+='<button class="gb" onclick="_PGCmpSave()" style="min-height:48px;padding:10px 14px;color:var(--sage);border-color:var(--sage);" '+(_cmpAnyAssigned()?'':'disabled')+'>SAVE COMPOSITION</button>';
+    h+='<button class="gb" onclick="_PGCmpExport()" style="min-height:48px;padding:10px 14px;" '+(_cmpAnyAssigned()?'':'disabled')+'>⬇ PNG</button>';
+    h+='<button class="gb" onclick="_PGCmpReset()" style="min-height:48px;padding:10px 14px;color:var(--muted);border-color:rgba(138,145,120,0.25);">RESET</button>';
+    h+='</div>';
+    h+='</div>';
+    ov.innerHTML=h;
+  }
+  window._PGCmpLay=function(cols,rows){cmpCols=cols;cmpRows=rows;cmpUnit=null;_cmpInitSlots();_renderCompose();};
+  window._PGCmpReset=function(){cmpUnit=null;_cmpInitSlots();_renderCompose();};
+  window._PGCmpSlot=function(r,c){
+    // Open a mini gallery picker inside the compose overlay
+    var ov=document.getElementById('PGcmpOV');if(!ov)return;
+    var gal=galLoad();
+    var h='<div style="max-width:440px;width:100%;background:rgba(15,20,12,0.96);border:1px solid rgba(200,168,75,0.35);border-radius:12px;padding:16px;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:DM Mono,monospace;">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.08em;color:var(--gold);">Pick a square for slot ('+(r+1)+','+(c+1)+')</div>';
+    h+='<button class="gb" onclick="_renderComposeBack()" style="min-height:44px;padding:6px 14px;">BACK</button>';
+    h+='</div>';
+    if(gal.length===0){
+      h+='<div style="color:var(--muted);text-align:center;font-style:italic;padding:30px 0;font-size:0.72rem;">No saved squares yet. Paint something, hit SAVE, then come back.</div>';
+    } else {
+      var locked=cmpUnit; // only allow squares of matching grid once one is picked
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:6px;">'+(locked?'Must match '+locked+'×'+locked:'First pick locks the grid size')+'</div>';
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+      for(var i=gal.length-1;i>=0;i--){
+        var e=gal[i];
+        var compatible=!locked||e.grid===locked;
+        var thumb=thumbDataURL(e,80);
+        h+='<div style="background:rgba(26,31,23,0.7);border:1px solid rgba(74,124,53,0.2);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:3px;'+(compatible?'':'opacity:0.35;')+'">';
+        h+='<img src="'+thumb+'" style="width:100%;aspect-ratio:1;border-radius:4px;image-rendering:pixelated;background:#0d100c;">';
+        h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;color:var(--cream);word-break:break-word;">'+e.name+'</div>';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:var(--muted);">'+e.grid+'×'+e.grid+'</div>';
+        if(compatible){
+          h+='<button class="gb" onclick="_PGCmpAssign('+r+','+c+',\''+e.id+'\')" style="min-height:40px;padding:6px;font-size:0.58rem;color:var(--sage);border-color:rgba(122,179,86,0.35);">USE</button>';
+        } else {
+          h+='<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:var(--muted);text-align:center;padding:6px;">different size</div>';
+        }
+        h+='</div>';
+      }
+      h+='</div>';
+      if(locked){
+        h+='<div style="text-align:center;margin-top:10px;"><button class="gb" onclick="_PGCmpClearSlot('+r+','+c+')" style="min-height:44px;color:var(--muted);border-color:rgba(138,145,120,0.25);">CLEAR SLOT</button></div>';
+      }
+    }
+    h+='</div>';
+    ov.innerHTML=h;
+  };
+  window._renderComposeBack=function(){_renderCompose();};
+  window._PGCmpAssign=function(r,c,id){
+    var gal=galLoad();
+    var e=null;for(var i=0;i<gal.length;i++)if(gal[i].id===id){e=gal[i];break;}
+    if(!e)return;
+    if(cmpUnit&&e.grid!==cmpUnit)return;
+    if(!cmpUnit)cmpUnit=e.grid;
+    cmpSlots[r][c]=e;
+    _renderCompose();
+  };
+  window._PGCmpClearSlot=function(r,c){
+    cmpSlots[r][c]=null;
+    // If no slots remain, unlock the grid size.
+    if(!_cmpAnyAssigned())cmpUnit=null;
+    _renderCompose();
+  };
+  window._PGCmpSave=function(){
+    if(!_cmpAnyAssigned())return;
+    var built=_cmpBuildPixels();
+    var defName='Composition '+(new Date()).toLocaleDateString();
+    var name=(window.prompt&&window.prompt('Name this composition:',defName))||defName;
+    name=String(name).slice(0,40);
+    // Save with a rectangular grid (width!=height). Store pixels as
+    // rows of length w. Existing gallery code treats entry.grid as both
+    // rows and cols, so we save with grid = max(w,h) and the pixels
+    // extend only to the actual w/h. Load will clip to available data.
+    var gal=galLoad();
+    gal.push({
+      id:'pg_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
+      name:name,
+      grid:Math.max(built.w,built.h),
+      w:built.w,h:built.h,
+      pixels:built.pixels,
+      created:Date.now(),
+      composition:true
+    });
+    if(gal.length>GAL_MAX)gal.splice(0,gal.length-GAL_MAX);
+    galWrite(gal);
+    sm('Composition saved: '+name);
+    _playWin();
+    _e('milestone');
+  };
+  window._PGCmpExport=function(){
+    if(!_cmpAnyAssigned())return;
+    var built=_cmpBuildPixels();
+    var scale=built.w<=32?16:built.w<=64?8:4;
+    var sc=document.createElement('canvas');
+    sc.width=built.w*scale;sc.height=built.h*scale;
+    var sx=sc.getContext('2d');sx.imageSmoothingEnabled=false;
+    sx.fillStyle='#0d100c';sx.fillRect(0,0,sc.width,sc.height);
+    for(var y=0;y<built.h;y++){
+      for(var x=0;x<built.w;x++){
+        var col=built.pixels[y]&&built.pixels[y][x];
+        if(col){sx.fillStyle=col;sx.fillRect(x*scale,y*scale,scale,scale);}
+      }
+    }
+    sx.fillStyle='rgba(232,220,200,0.25)';sx.font=(scale*0.8)+'px sans-serif';sx.textAlign='right';
+    sx.fillText('Lucid Winds',sc.width-6,sc.height-6);
+    var link=document.createElement('a');
+    link.download='pixel-compose-'+built.w+'x'+built.h+'-'+Date.now()+'.png';
+    link.href=sc.toDataURL('image/png');
+    link.click();
+    sm('Composition PNG exported');
   };
 
   _PGSZ(16);
