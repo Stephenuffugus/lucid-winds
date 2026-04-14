@@ -20,19 +20,21 @@ window._gameFns.pollen = function PN(a){
   // 10-pollinator pool (matches user's "100 pieces total" design).
   // Draw scales by player count: N+1, min 3. Each pollinator rewards
   // 3 GP and requires production (not tokens) to attract.
-  // Pollinators — names + slugs so art drops in as
-  // assets/games/masterpollinator/pollinator-<slug>.png
+  // Pollinators — wired to Stephen's 2026-04-14 art drop (11 PNGs in
+  // assets/games/masterpollinator/pollinators/<slug>.png).
+  // Production-threshold reqs preserved from earlier balance pass.
   var ALL_POLLINATORS=[
-    {slug:'monarch',     name:'Monarch',     icon:'🦋', req:{green:3,blue:3},          gp:3},
-    {slug:'honeybee',    name:'Honeybee',    icon:'🐝', req:{rose:3,amber:3},          gp:3},
-    {slug:'hummingbird', name:'Hummingbird', icon:'🐦', req:{blue:3,spore:3},          gp:3},
-    {slug:'luna-moth',   name:'Luna Moth',   icon:'🌙', req:{green:3,rose:3},          gp:3},
-    {slug:'bumblebee',   name:'Bumblebee',   icon:'🐝', req:{amber:3,spore:3},         gp:3},
-    {slug:'dragonfly',   name:'Dragonfly',   icon:'🜸', req:{green:4,blue:2},          gp:3},
-    {slug:'firefly',     name:'Firefly',     icon:'✨', req:{amber:4,green:2},         gp:3},
-    {slug:'sphinx-moth', name:'Sphinx Moth', icon:'🌙', req:{blue:4,amber:2},          gp:3},
-    {slug:'scarab',      name:'Scarab',      icon:'🪲', req:{spore:4,rose:2},          gp:3},
-    {slug:'orchid-bee',  name:'Orchid Bee',  icon:'🐝', req:{green:2,rose:2,blue:2},   gp:3}
+    {slug:'monarch-butterfly',     name:'Monarch Butterfly',  icon:'🦋', req:{green:3,blue:3},        gp:3},
+    {slug:'honey-bee',             name:'Honey Bee',           icon:'🐝', req:{rose:3,amber:3},        gp:3},
+    {slug:'bumblebee',             name:'Bumblebee',           icon:'🐝', req:{amber:3,spore:3},       gp:3},
+    {slug:'hummingbird',           name:'Hummingbird',         icon:'🐦', req:{blue:3,spore:3},        gp:3},
+    {slug:'sphinx-moth',           name:'Sphinx Moth',         icon:'🌙', req:{green:3,rose:3},        gp:3},
+    {slug:'hoverfly',              name:'Hoverfly',            icon:'🪰', req:{green:4,blue:2},        gp:3},
+    {slug:'fig-wasp',              name:'Fig Wasp',            icon:'🐝', req:{amber:4,green:2},       gp:3},
+    {slug:'blue-tailed-damselfly', name:'Blue-Tailed Damselfly',icon:'🜸', req:{blue:4,amber:2},        gp:3},
+    {slug:'fruit-bat',             name:'Fruit Bat',           icon:'🦇', req:{spore:4,rose:2},        gp:3},
+    {slug:'honey-possum',          name:'Honey Possum',        icon:'🐭', req:{green:2,rose:2,blue:2}, gp:3},
+    {slug:'black-and-white-pollinator',name:'Lesser Long-Nosed Bat',icon:'🦇', req:{rose:2,amber:2,spore:2}, gp:3}
   ];
   // Pollinators visible this game.
   function pollinatorCount(numPlayers){
@@ -71,131 +73,137 @@ window._gameFns.pollen = function PN(a){
   //   <slug>.png  (e.g. dandelion.png, wild-rose.png, black-bat-flower.png)
   // If the PNG is missing the card falls back to emoji + tier icon so
   // the game plays cleanly while art is still being drawn.
+  // Catalog wired to Stephen's 2026-04-14 art drop. Slugs match exactly
+  // the filenames Jessie painted (40 + 30 + 20 PNGs in the tier1/tier2/
+  // tier3 folders). Costs/GP per slot preserved from the previous
+  // Splendor-balanced distribution. 5th element = optional flag object;
+  // {hideName:true} hides the common name in the inspect modal (used
+  // for hookers-lips since the slang name isn't kid-safe).
   var CATALOG={
     tier1:{
       green:[
-        ['fern',            'Fern',             {a:2},0],
-        ['clover',          'Clover',           {r:2},0],
-        ['ivy',             'Ivy',              {b:3},0],
-        ['wood-sorrel',     'Wood Sorrel',      {r:1,a:1},0],
-        ['ladys-mantle',    "Lady's Mantle",    {a:2,s:1},0],
-        ['moss-campion',    'Moss Campion',     {r:1,b:1,s:1},0],
-        ['plantain',        'Plantain',         {b:2,a:2},1],
-        ['sweet-woodruff',  'Sweet Woodruff',   {r:2,a:1,s:1},1]
+        ['bleeding-heart',  'Bleeding Heart',   {a:2},0],
+        ['columbine',       'Columbine',        {r:2},0],
+        ['echinacea',       'Echinacea',        {b:3},0],
+        ['foxglove',        'Foxglove',         {r:1,a:1},0],
+        ['geranium',        'Geranium',         {a:2,s:1},0],
+        ['impatiens',       'Impatiens',        {r:1,b:1,s:1},0],
+        ['petunia',         'Petunia',          {b:2,a:2},1],
+        ['snapdragon',      'Snapdragon',       {r:2,a:1,s:1},1]
       ],
       rose:[
-        ['wild-rose',       'Wild Rose',        {g:2},0],
-        ['cosmos',          'Cosmos',           {a:2},0],
-        ['bee-balm',         'Bee Balm',         {s:3},0],
-        ['wild-columbine',  'Wild Columbine',   {g:1,b:1},0],
-        ['pink-clover',     'Pink Clover',      {g:2,a:1},0],
-        ['dogwood',         'Dogwood',          {g:1,b:1,s:1},0],
-        ['lupine',          'Lupine',           {g:2,b:2},1],
-        ['pink-foxglove',   'Pink Foxglove',    {g:2,a:1,s:1},1]
+        ['rose',            'Rose',             {g:2},0],
+        ['peony',           'Peony',            {a:2},0],
+        ['dahlia',          'Dahlia',           {s:3},0],
+        ['hibiscus',        'Hibiscus',         {g:1,b:1},0],
+        ['cosmos',          'Cosmos',           {g:2,a:1},0],
+        ['gladiolus',       'Gladiolus',        {g:1,b:1,s:1},0],
+        ['ranunculus',      'Ranunculus',       {g:2,b:2},1],
+        ['begonia',         'Begonia',          {g:2,a:1,s:1},1]
       ],
       blue:[
         ['bluebell',        'Bluebell',         {g:2},0],
-        ['cornflower',      'Cornflower',       {s:2},0],
+        ['hyacinth',        'Hyacinth',         {s:2},0],
         ['forget-me-not',   'Forget-Me-Not',    {r:3},0],
-        ['morning-glory',   'Morning Glory',    {g:1,s:1},0],
-        ['blue-flax',       'Blue Flax',        {g:1,r:1,a:1},0],
-        ['chicory',         'Chicory',          {r:2,a:1},0],
-        ['lobelia',         'Lobelia',          {g:3,r:1},1],
-        ['borage',          'Borage',           {r:2,a:1,s:1},1]
+        ['delphinium',      'Delphinium',       {g:1,s:1},0],
+        ['iris',            'Iris',             {g:1,r:1,a:1},0],
+        ['morning-glory',   'Morning Glory',    {r:2,a:1},0],
+        ['lupine',          'Lupine',           {g:3,r:1},1],
+        ['lilac',           'Lilac',            {r:2,a:1,s:1},1]
       ],
       amber:[
         ['dandelion',       'Dandelion',        {g:2},0],
-        ['buttercup',       'Buttercup',        {r:2},0],
-        ['black-eyed-susan','Black-Eyed Susan', {b:3},0],
-        ['marigold',        'Marigold',         {g:1,r:1},0],
-        ['goldenrod',       'Goldenrod',        {g:1,b:1,s:1},0],
-        ['calendula',       'Calendula',        {r:1,b:2},0],
-        ['yarrow',          'Yarrow',           {g:2,s:2},1],
-        ['wild-sunflower',  'Wild Sunflower',   {g:1,b:2,s:1},1]
+        ['sunflower',       'Sunflower',        {r:2},0],
+        ['marigold',        'Marigold',         {b:3},0],
+        ['daffodil',        'Daffodil',         {g:1,r:1},0],
+        ['freesia',         'Freesia',          {g:1,b:1,s:1},0],
+        ['coreopsis',       'Coreopsis',        {r:1,b:2},0],
+        ['zinnia',          'Zinnia',           {g:2,s:2},1],
+        ['crocus',          'Crocus',           {g:1,b:2,s:1},1]
       ],
       spore:[
-        ['daisy',           'Daisy',            {g:2},0],
-        ['lily-of-valley',  'Lily of the Valley',{b:2},0],
-        ['babys-breath',    "Baby's Breath",    {r:3},0],
-        ['queen-annes-lace','Queen Anne\u2019s Lace',{g:1,a:1},0],
-        ['snowdrop',        'Snowdrop',         {g:1,r:1,b:1},0],
-        ['alyssum',         'Sweet Alyssum',    {b:2,a:1},0],
-        ['elderflower',     'Elderflower',      {r:1,a:3},1],
-        ['white-clover',    'White Clover',     {g:2,b:1,a:1},1]
+        ['orchid',          'Orchid',           {g:2},0],
+        ['lily',            'Lily',             {b:2},0],
+        ['snowdrop',        'Snowdrop',         {r:3},0],
+        ['pansy',           'Pansy',            {g:1,a:1},0],
+        ['chrysanthemum',   'Chrysanthemum',    {g:1,r:1,b:1},0],
+        ['aster',           'Aster',            {b:2,a:1},0],
+        ['hydrangea',       'Hydrangea',        {r:1,a:3},1],
+        ['poppy',           'Poppy',            {g:2,b:1,a:1},1]
       ]
     },
     tier2:{
       green:[
-        ['hosta',           'Hosta',            {a:3,s:2},1],
-        ['hellebore',       'Hellebore',        {r:2,b:2,s:1},2],
-        ['coleus',          'Coleus',           {r:3,a:2},2],
-        ['lady-fern',       'Lady Fern',        {b:3,a:2,s:1},2],
-        ['maidenhair-fern', 'Maidenhair Fern',  {r:2,b:2,s:2},3],
-        ['boxwood',         'Boxwood',          {r:3,a:3,s:1},3]
+        ['pitcher-plant',   'Pitcher Plant',    {a:3,s:2},1],
+        ['venus-flytrap',   'Venus Flytrap',    {r:2,b:2,s:1},2],
+        ['sundew',          'Sundew',           {r:3,a:2},2],
+        ['trillium',        'Trillium',         {b:3,a:2,s:1},2],
+        ['spider-lily',     'Spider Lily',      {r:2,b:2,s:2},3],
+        ['sea-holly',       'Sea Holly',        {r:3,a:3,s:1},3]
       ],
       rose:[
-        ['peony',           'Peony',            {g:3,s:2},1],
-        ['camellia',        'Camellia',         {g:2,b:2,a:1},2],
-        ['hydrangea-pink',  'Pink Hydrangea',   {g:3,b:2},2],
-        ['tea-rose',        'Tea Rose',         {g:2,b:2,s:2},2],
-        ['hibiscus',        'Hibiscus',         {g:2,a:2,s:2},3],
-        ['bleeding-heart',  'Bleeding Heart',   {g:3,b:3,s:1},3]
+        ['camellia',        'Camellia',         {g:3,s:2},1],
+        ['plumeria',        'Plumeria',         {g:2,b:2,a:1},2],
+        ['fuchsia',         'Fuchsia',          {g:3,b:2},2],
+        ['bougainvillea',   'Bougainvillea',    {g:2,b:2,s:2},2],
+        ['tuberose',        'Tuberose',         {g:2,a:2,s:2},3],
+        ['gardenia',        'Gardenia',         {g:3,b:3,s:1},3]
       ],
       blue:[
-        ['delphinium',      'Delphinium',       {g:3,s:2},1],
-        ['iris',            'Iris',             {g:2,r:2,s:1},2],
-        ['hydrangea-blue',  'Blue Hydrangea',   {g:3,r:2},2],
-        ['larkspur',        'Larkspur',         {g:2,r:2,a:2},2],
-        ['gentian',         'Gentian',          {g:2,a:2,s:2},3],
-        ['periwinkle',      'Periwinkle',       {g:3,r:3,s:1},3]
+        ['agapanthus',      'Agapanthus',       {g:3,s:2},1],
+        ['fringed-gentian', 'Fringed Gentian',  {g:2,r:2,s:1},2],
+        ['lotus',           'Lotus',            {g:3,r:2},2],
+        ['meconopsis',      'Meconopsis',       {g:2,r:2,a:2},2],
+        ['wisteria',        'Wisteria',         {g:2,a:2,s:2},3],
+        ['allium',          'Allium',           {g:3,r:3,s:1},3]
       ],
       amber:[
-        ['zinnia',          'Zinnia',           {g:3,b:2},1],
-        ['chrysanthemum',   'Chrysanthemum',    {g:2,r:2,s:1},2],
-        ['gerbera',         'Gerbera Daisy',    {r:3,s:2},2],
-        ['tiger-lily',      'Tiger Lily',       {g:2,r:2,b:2},2],
-        ['nasturtium',      'Nasturtium',       {g:2,r:2,s:2},3],
-        ['gazania',         'Gazania',          {g:3,r:3,s:1},3]
+        ['bird-of-paradise','Bird of Paradise', {g:3,b:2},1],
+        ['blazing-star',    'Blazing Star',     {g:2,r:2,s:1},2],
+        ['eremurus-foxtail-lily','Eremurus',    {r:3,s:2},2],
+        ['kniphofia',       'Kniphofia',        {g:2,r:2,b:2},2],
+        ['anthurium',       'Anthurium',        {g:2,r:2,s:2},3],
+        ['lady-slipper-orchid','Lady Slipper Orchid',{g:3,r:3,s:1},3]
       ],
       spore:[
-        ['gardenia',        'Gardenia',         {g:3,r:2},1],
-        ['jasmine',         'Jasmine',          {g:2,b:2,a:1},2],
-        ['calla-lily',      'Calla Lily',       {g:3,a:2},2],
-        ['magnolia',        'Magnolia',         {r:2,b:2,a:2},2],
-        ['stephanotis',     'Stephanotis',      {g:2,r:2,a:2},3],
-        ['angels-trumpet',  "Angel\u2019s Trumpet",{g:3,b:3,a:1},3]
+        ['calla-lily',      'Calla Lily',       {g:3,r:2},1],
+        ['clematis',        'Clematis',         {g:2,b:2,a:1},2],
+        ['fritillaria',     'Fritillaria',      {g:3,a:2},2],
+        ['globe-thistle',   'Globe Thistle',    {r:2,b:2,a:2},2],
+        ['passionflower',   'Passionflower',    {g:2,r:2,a:2},3],
+        ['bee-balm',        'Bee Balm',         {g:3,b:3,a:1},3]
       ]
     },
     tier3:{
       green:[
-        ['corpse-flower',   'Corpse Flower',    {r:5,b:3},3],
-        ['dragon-arum',     'Dragon Arum',      {r:3,b:3,a:3},4],
-        ['ghost-fern',      'Ghost Fern',       {r:3,b:3,s:3},4],
-        ['black-bat-flower','Black Bat Flower', {r:3,b:7},5]
+        ['jade-vine',       'Jade Vine',        {r:5,b:3},3],
+        ['welwitschia',     'Welwitschia',      {r:3,b:3,a:3},4],
+        ['ghost-orchid',    'Ghost Orchid',     {r:3,b:3,s:3},4],
+        ['kokia-cookei',    'Kokia Cookei',     {r:3,b:7},5]
       ],
       rose:[
-        ['chocolate-cosmos','Chocolate Cosmos', {g:5,a:3},3],
-        ['parrot-flower',   'Parrot Flower',    {g:3,b:3,a:3},4],
-        ['bat-face-cuphea', 'Bat-Face Cuphea',  {g:3,b:3,s:3},4],
-        ['rafflesia',       'Rafflesia',        {g:7,s:3},5]
+        ['black-bat-flower','Black Bat Flower', {g:5,a:3},3],
+        ['pelican-flower',  'Pelican Flower',   {g:3,b:3,a:3},4],
+        ['hookers-lips',    'Mystery Bloom',    {g:3,b:3,s:3},4, {hideName:true}],
+        ['queen-of-the-andes','Queen of the Andes',{g:7,s:3},5]
       ],
       blue:[
-        ['blue-poppy',      'Himalayan Blue Poppy',{g:5,r:3},3],
-        ['meconopsis',      'Meconopsis',       {g:3,r:3,a:3},4],
-        ['sea-holly',       'Sea Holly',        {g:3,r:3,s:3},4],
-        ['ghost-orchid',    'Blue Ghost Orchid',{g:7,r:3},5]
+        ['draculas-orchid', "Dracula's Orchid", {g:5,r:3},3],
+        ['darwins-orchid',  "Darwin's Orchid",  {g:3,r:3,a:3},4],
+        ['pelican-flower-2','Pelican Flower',   {g:3,r:3,s:3},4],
+        ['welwitschia-2',   'Welwitschia',      {g:7,r:3},5]
       ],
       amber:[
-        ['saffron-crocus',  'Saffron Crocus',   {g:3,r:5},3],
-        ['middlemist',      "Middlemist\u2019s Red",{g:3,r:3,b:3},4],
-        ['gold-medal-rose', 'Gold Medal Rose',  {r:3,b:3,s:3},4],
-        ['kadupul',         'Kadupul',          {r:7,s:3},5]
+        ['titan-arum',      'Titan Arum',       {g:3,r:5},3],
+        ['kadupul',         'Kadupul',          {g:3,r:3,b:3},4],
+        ['stinking-corpse-lily','Stinking Corpse Lily',{r:3,b:3,s:3},4],
+        ['pelican-flower-3','Pelican Flower',   {r:7,s:3},5]
       ],
       spore:[
-        ['youtan-poluo',    'Youtan Poluo',     {g:3,b:5},3],
-        ['jade-vine',       'Jade Vine',        {g:3,r:3,a:3},4],
-        ['ghost-plant',     'Ghost Plant',      {g:3,b:3,a:3},4],
-        ['franklin-tree',   'Franklin Tree',    {b:7,a:3},5]
+        ['franklin-tree',   'Franklin Tree',    {g:3,b:5},3],
+        ['night-blooming-cereus','Night-Blooming Cereus',{g:3,r:3,a:3},4],
+        ['rafflesia',       'Rafflesia',        {g:3,b:3,a:3},4],
+        ['welwitschia-3',   'Welwitschia',      {b:7,a:3},5]
       ]
     }
   };
