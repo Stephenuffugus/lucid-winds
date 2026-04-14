@@ -673,15 +673,19 @@ window._gameFns.pollen = function PN(a){
   a.appendChild(pan);
   mc(a).innerHTML='<button class="gb-new" onclick="_PNnew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
-  // Token chip — uses Stephen's seed art (assets/games/masterpollinator/
-  // tokens/<color>.png) with a CSS-dot fallback if the PNG is missing.
-  // The img + bg-color combo means even if the PNG never loads, the
-  // chip still reads as the right color (no broken-image icon).
+  // Token chip — Stephen's seed art with a CSS-color fallback. The
+  // painted seeds are subtle, so we boost saturation/contrast and
+  // slightly shrink the img inset so the bg color rims the seed —
+  // makes the color obvious even at tiny sizes (the cost bar runs at
+  // ~14px and seeds are nearly identical without this).
+  // 'gold' is the wild kintsugi vase — it's distinctive enough on its
+  // own and skips the saturation boost so the lacquer reads correctly.
   function tokDot(c,sz){
     var src='assets/games/masterpollinator/tokens/'+c+'.png';
-    return '<span style="position:relative;display:inline-block;width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+COLOR_HEX[c]+';border:1px solid rgba(0,0,0,0.2);vertical-align:middle;overflow:hidden;">'
+    var filt=c==='gold'?'':'filter:saturate(1.6) contrast(1.15);';
+    return '<span style="position:relative;display:inline-block;width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+COLOR_HEX[c]+';border:1px solid rgba(0,0,0,0.35);vertical-align:middle;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.18);">'
       +'<img src="'+src+'" alt="" onerror="this.style.display=\'none\'" '
-      +'style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;pointer-events:none;">'
+      +'style="position:absolute;inset:'+(sz>=18?'1px':'0')+';width:calc(100% - '+(sz>=18?2:0)+'px);height:calc(100% - '+(sz>=18?2:0)+'px);object-fit:cover;border-radius:50%;pointer-events:none;'+filt+'">'
       +'</span>';
   }
 
@@ -712,8 +716,14 @@ window._gameFns.pollen = function PN(a){
     var aff=canAfford(me(),card);
     var border=aff.affordable?'2px solid #7ab356':'2px solid rgba(110,96,81,0.55)';
     var bgShade=card.tier===1?'#4a7c35':card.tier===2?'#c8a84b':'#ffd700';
-    var W=78, H=108;
-    var BARH=22; // bottom cost bar height
+    var W=84, H=114;
+    // Cost bar height + chip size scale with how many chips need to
+    // fit. Tier 1 caps at 4 chips, Tier 3 can hit 7. Wide chips read
+    // far better than tiny ones, so we expand the bar (and shrink the
+    // art frame slightly) when needed.
+    var costCount=0;for(var ck in card.cost)costCount+=card.cost[ck];
+    var CHIP=costCount<=4?14:costCount<=6?12:10;
+    var BARH=costCount<=4?24:costCount<=6?28:34;
     var GP_PILL=card.gp>0?
       '<div style="position:absolute;top:2px;left:3px;width:18px;height:18px;border-radius:50%;background:linear-gradient(180deg,#fff5d4,#e8c860);color:#2a1f0a;font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;z-index:3;box-shadow:0 1px 3px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.5);border:1px solid rgba(120,90,20,0.6);">'+card.gp+'</div>'
       :'';
@@ -729,7 +739,7 @@ window._gameFns.pollen = function PN(a){
     ):'';
     // Cost bar — solid band pinned to bottom, full width, with chips.
     var costChips='';
-    for(var c in card.cost){for(var i=0;i<card.cost[c];i++)costChips+=tokDot(c,10);}
+    for(var c in card.cost){for(var i=0;i<card.cost[c];i++)costChips+=tokDot(c,CHIP);}
     // No name strip on the card — cards stay art-only per Stephen's
     // direction. Name + flower facts live behind the inspect button.
     var costBar=
@@ -840,12 +850,16 @@ window._gameFns.pollen = function PN(a){
     h+='</div>';
     // Market
     [[3,GS.market3,GS.deck3],[2,GS.market2,GS.deck2],[1,GS.market1,GS.deck1]].forEach(function(t){
-      h+='<div style="display:flex;align-items:center;gap:3px;margin:3px 0;">';
-      h+='<div style="width:16px;font-family:Bebas Neue,sans-serif;color:var(--muted);text-align:center;font-size:9px;">T'+t[0]+'</div>';
-      h+='<div style="flex:1;">';
+      h+='<div style="display:flex;align-items:center;gap:3px;margin:4px 0;">';
+      h+='<div style="width:16px;font-family:Bebas Neue,sans-serif;color:var(--muted);text-align:center;font-size:9px;flex-shrink:0;">T'+t[0]+'</div>';
+      // Cards in a horizontally scrollable strip — guarantees all 4
+      // market cards fit no matter how narrow the viewport. Card
+      // width grew slightly (78→84) so the 4-card row needs ~360px.
+      // overflow-x:auto keeps everyone reachable on a small screen.
+      h+='<div style="flex:1;overflow-x:auto;-webkit-overflow-scrolling:touch;display:flex;gap:0;align-items:flex-start;padding-bottom:2px;">';
       t[1].forEach(function(c){if(c)h+=renderCard(c,false);});
       h+='</div>';
-      h+='<div style="width:30px;height:44px;background:rgba(26,31,23,0.6);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);">'+t[2].length+'</div>';
+      h+='<div style="width:30px;height:44px;background:rgba(26,31,23,0.6);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);flex-shrink:0;">'+t[2].length+'</div>';
       h+='</div>';
     });
     // Supply
