@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.14.79';
+  var LW_VERSION='2026.04.14.80';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -54682,9 +54682,19 @@ window.LW_Comp = (function(){
     if(_lastGameId !== gameId){_used = {}; _lastGameId = gameId;}
   }
 
+  // ── MULTIPLAYER HARD-GATE ─────────────────────────────────────────────
+  // Any game that can be played by 2+ humans on the same device MUST set
+  // window._LW_inMultiplayer=true at the start of a multi-human run and
+  // clear it when that run ends. While the flag is true, peek() / use()
+  // return null — no companion boost of ANY kind fires in multiplayer.
+  // This guarantees no asymmetric advantage between players sharing one
+  // device. Solo vs AI is NOT multiplayer (the player IS the only human).
+  window._LW_inMultiplayer = window._LW_inMultiplayer || false;
+
   // Read what's available without consuming.
   function peek(gameId){
     _syncSession(gameId);
+    if(window._LW_inMultiplayer)return null; // hard gate
     var slug=activeSlug();if(!slug)return null;
     var b=BOOSTS[slug];if(!b||!b.games[gameId])return null;
     var fr=friendship(slug);
@@ -54701,6 +54711,7 @@ window.LW_Comp = (function(){
   // firing should use peek() instead.
   function use(gameId){
     _syncSession(gameId);
+    if(window._LW_inMultiplayer)return null; // hard gate
     var slug=activeSlug();if(!slug)return null;
     var b=BOOSTS[slug];if(!b||!b.games[gameId])return null;
     var key=slug+':'+gameId;
@@ -54740,6 +54751,7 @@ window.LW_Comp = (function(){
   // boost registered for it. This is what makes companions feel like
   // pets — you grow a bond by playing with them equipped.
   function observeWin(gameId){
+    if(window._LW_inMultiplayer)return; // no friendship XP in multiplayer either
     var slug=activeSlug();if(!slug)return;
     // If the companion has a registered boost for THIS game, that boost's
     // use() already granted +1 on its fire — skip to prevent double-dip.

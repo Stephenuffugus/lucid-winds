@@ -345,6 +345,12 @@ window._gameFns.pollen = function PN(a){
     var all=generateCards();
     var n=setup.seats.length;
     var pool=poolSize(n);
+    // Multiplayer-guard for companion boosts: if 2+ humans are seated
+    // in this run, lock out every companion boost for its duration so
+    // no seat has asymmetric advantage. Solo and vs-AI runs leave the
+    // flag false — the human IS the only human.
+    var humanCount=0;for(var si=0;si<setup.seats.length;si++)if(!setup.seats[si].isAI)humanCount++;
+    try{window._LW_inMultiplayer=(humanCount>=2);}catch(e){}
     // Draw N+1 pollinators from the 10-card pool — matches Splendor's
     // nobles rule (2p → 3, 3p → 4, 4p → 5). Solo falls to 3.
     var pcount=pollinatorCount(n);
@@ -375,7 +381,13 @@ window._gameFns.pollen = function PN(a){
     if(me().isAI)setTimeout(aiTurn,600);
   }
   function me(){return GS.players[GS.activeIdx];}
-  function newGame(){showSetup();}
+  function newGame(){
+    // Clear the multiplayer lock on any exit back to setup — covers
+    // tapping NEW GAME or MENU mid-run. The flag re-arms in startGame
+    // if the player picks another multi-human config.
+    try{window._LW_inMultiplayer=false;}catch(e){}
+    showSetup();
+  }
 
   function collectTokens(cs){
     var who=me();
@@ -458,6 +470,9 @@ window._gameFns.pollen = function PN(a){
   function countHumans(){var n=0;for(var i=0;i<GS.players.length;i++)if(!GS.players[i].isAI)n++;return n;}
   function finishGame(){
     GS.phase='gameover';
+    // Clear the multiplayer lock so companion boosts re-enable in the
+    // next solo / vs-AI game the player starts.
+    try{window._LW_inMultiplayer=false;}catch(e){}
     // Winner = highest gp, tie-break on fewer cards.
     var winner=GS.players[0];
     for(var i=1;i<GS.players.length;i++){
