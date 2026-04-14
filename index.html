@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.14.78';
+  var LW_VERSION='2026.04.14.79';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -40649,6 +40649,12 @@ function _e(v){
   if(window.updateFocusPlant)window.updateFocusPlant();
   // Win celebration for game_complete (skipped if mint celebration showing)
   if(v==='game_win'&&_a!=='sokoban')_showWinCelebration();
+  // Companion friendship: every game win grows your bond with the
+  // equipped companion, regardless of whether their specific boost
+  // applies. Keeps companions feeling like pets you raise through play.
+  if(v==='game_win'&&window.LW_Comp&&LW_Comp.observeWin){
+    try{LW_Comp.observeWin(_a);}catch(e){}
+  }
 }
 window._e=_e;
 
@@ -54642,8 +54648,12 @@ window.LW_Comp = (function(){
       value:function(lv){return lv<=1?1:lv===2?3:99;}
     }
   };
-  // Level thresholds in uses. Index = level number.
-  var LV_XP = [0, 5, 15];
+  // Friendship thresholds — raised from the original 5/15 so companions
+  // feel like pets you raise over weeks of play, not trophies you max
+  // in a single session. XP comes from two sources:
+  //   +1 per game won while this companion is equipped (any game)
+  //   +1 bonus when this companion's specific boost fires
+  var LV_XP = [0, 15, 40];
   var FRIEND_KEY = 'lw_companion_friendship';
 
   function loadFriends(){try{return JSON.parse(localStorage.getItem(FRIEND_KEY)||'{}');}catch(e){return{};}}
@@ -54725,7 +54735,30 @@ window.LW_Comp = (function(){
     }return out;
   }
 
-  return {peek:peek, use:use, friendship:friendship, registry:registry, active:activeSlug, BOOSTS:BOOSTS, IDX:IDX};
+  // General-play XP grant. Called from _e() on game_win. Any equipped
+  // companion gets +1 XP from any game, whether or not they have a
+  // boost registered for it. This is what makes companions feel like
+  // pets — you grow a bond by playing with them equipped.
+  function observeWin(gameId){
+    var slug=activeSlug();if(!slug)return;
+    // If the companion has a registered boost for THIS game, that boost's
+    // use() already granted +1 on its fire — skip to prevent double-dip.
+    var b=BOOSTS[slug];
+    if(b&&b.games[gameId])return;
+    var f=loadFriends();var rec=f[slug]||{xp:0};
+    var prevLv=levelFrom(rec.xp);
+    rec.xp=(rec.xp||0)+1;
+    var newLv=levelFrom(rec.xp);
+    f[slug]=rec;saveFriends(f);
+    if(newLv>prevLv&&b){
+      try{
+        if(window._toast)window._toast('✨ '+b.name+' grew to Lv '+newLv+' — '+b.scaling[newLv-1]);
+        if(window.LW_Log)window.LW_Log.write('companion_friendship_up',{slug:slug,lv:newLv,xp:rec.xp,src:'play'});
+      }catch(e){}
+    }
+  }
+
+  return {peek:peek, use:use, observeWin:observeWin, friendship:friendship, registry:registry, active:activeSlug, BOOSTS:BOOSTS, IDX:IDX};
 })();
 </script>
 
