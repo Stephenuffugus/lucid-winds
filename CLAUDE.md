@@ -235,7 +235,7 @@ Uncommon
 Rare       — golden pot OR glow flower OR crystal base OR any mutation
 Epic
 Legendary
-Mythic     — The Toad, The Phoenix companions
+Mythic     — The Toad, The Cicada companions
 Cosmic     — The Beholder companion (0.39%)
 ```
 
@@ -284,7 +284,7 @@ hb(18) >= 0xFE   → Garden Spider      (idx 37)   LEGENDARY  0.39%
 hb(18) >= 0xFC   → Great Blue Heron   (idx 36)   LEGENDARY  0.78%
 hb(18) >= 0xF8   → Raccoon            (idx 35)   LEGENDARY  1.56%
 hb(18) >= 0xF4   → Baby Mammoth       (idx 34)   LEGENDARY  1.56%
-hb(18) >= 0xE0   → The Phoenix        (idx 33)   MYTHIC     7.81%
+hb(18) >= 0xE0   → The Cicada         (idx 33)   MYTHIC     7.81%
 hb(18) >= 0xD0   → The Toad           (idx 32)   MYTHIC     6.25%
 else              → hb(21) % 82                  ~41% base creature rate
 ```

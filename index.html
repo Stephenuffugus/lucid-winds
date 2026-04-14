@@ -7561,7 +7561,7 @@ document.addEventListener('keydown', function(e) {
     //   0xFC-0xFD  → Storm Wraith       (2/256 = 0.78%)   LEGENDARY
     //   0xF8-0xFB  → Raccoon (4/256 = 1.56%)   LEGENDARY
     //   0xF4-0xF7  → Biolum Pulse       (4/256 = 1.56%)   LEGENDARY
-    //   0xE0-0xF3  → The Phoenix         (20/256 = 7.81%)  MYTHIC
+    //   0xE0-0xF3  → The Cicada          (20/256 = 7.81%)  MYTHIC
     //   0xD0-0xDF  → The Toad           (16/256 = 6.25%)  MYTHIC
     //   0x00-0xCF  → None               (208/256 = 81.25%)
     var mythName =
@@ -7570,7 +7570,7 @@ document.addEventListener('keydown', function(e) {
       mythByte >= 0xFC  ? 'Great Blue Heron'          :
       mythByte >= 0xF8  ? 'Raccoon'    :
       mythByte >= 0xF4  ? 'Woolly Mammoth'  :
-      mythByte >= 0xE0  ? 'The Phoenix'          :
+      mythByte >= 0xE0  ? 'The Cicada'           :
       mythByte >= 0xD0  ? 'The Toad'              : 'None';
 
     var goldenPot   = hc(0)  === 15;
@@ -7603,7 +7603,7 @@ document.addEventListener('keydown', function(e) {
         if (_mb >= 0xFC) return 36;  // Great Blue Heron (0.78%)
         if (_mb >= 0xF8) return 35;  // Raccoon (1.56%)
         if (_mb >= 0xF4) return 34;  // Woolly Mammoth (1.56%)
-        if (_mb >= 0xE0) return 33;  // Phoenix (7.81%)
+        if (_mb >= 0xE0) return 33;  // Cicada (7.81%)
         if (_mb >= 0xD0) return 32;  // Toad (6.25%)
         return hb(21) % 82;          // 82 slots: 48 None + 34 creatures = ~41% base rate
       })(),
@@ -7711,10 +7711,8 @@ document.addEventListener('keydown', function(e) {
     }
     // POT (0-1)
     if (traits.pot === 15 || traits.pot >= 20) ea += 1;
-    // COMPANION (0-5) — Phoenix gating: if the plant has phoenixSuppressed,
-    // the +3 EA bonus from companion 33 doesn't apply (no companion at all).
+    // COMPANION (0-5) — Cicada replaced Phoenix at idx 33. No suppression gate.
     var comp = traits.companion;
-    if (plant && plant.phoenixSuppressed && comp === 33) comp = -1;
     if (comp === 38) ea += 5; else if (comp === 37) ea += 4;
     else if (comp >= 34 && comp <= 36) ea += 3; else if (comp >= 32) ea += 3;
     else if (comp >= 20) ea += 1;
@@ -7749,10 +7747,14 @@ document.addEventListener('keydown', function(e) {
     if (gen > 0) {
       var _penalty = gen * 2;
       try{if(window._LW_classBonus){_penalty = _penalty / window._LW_classBonus('chimeraPurity');}}catch(e){}
+      // Weavers family also mends chimeric lineage — stacks with Breeder class.
+      try{if(window.LW_COMPANION){_penalty = _penalty / window.LW_COMPANION.getCompanionMult('chimeraPurity');}}catch(e){}
       ea -= _penalty;
     }
     // POT BONUS: Moonstone Cradle bakes a permanent +1 EA on the bloomed plant
     if (plant && plant.eaBonus) ea += plant.eaBonus;
+    // Mycelium family eaFloor — gently boosts low-EA plants so weaker lines stay viable.
+    try{if(window.LW_COMPANION){var _floorMult=window.LW_COMPANION.getCompanionMult('eaFloor');if(_floorMult>1&&ea<8){ea=Math.round(ea*_floorMult);}}}catch(e){}
     return Math.max(0, ea);
   };
   window.eaBadge = function(ea, gc) {
@@ -7809,7 +7811,7 @@ document.addEventListener('keydown', function(e) {
     {id:36,name:'Dragon Keep',       a:function(t){return t.flower%71===35;},     b:function(t){return t.pot%71===56;},       ea:2, theme:'mythical', fx:'amphora glows with firelight, dragon casts shadows'},
     {id:37,name:"Alchemist's Rose",  a:function(t){return t.pot%71===15;},        b:function(t){return t.flower%71===1;},     ea:1, theme:'mythical', fx:'rose petals shift to metallic gold at tips'},
     {id:38,name:"Beholder's Gaze",   a:function(t){return t.companion===38;},     b:function(t){return t.leafType%71===62;},  ea:2, theme:'mythical', fx:'beholder eye tracks largest frond with green scan'},
-    {id:39,name:'Phoenix Pyre',      a:function(t){return t.companion===33;},     b:function(t){return t.stem%24===10;},      ea:2, theme:'mythical', fx:'phoenix perches on succulent, embers drift upward'},
+    {id:39,name:'Cicada Chorus',     a:function(t){return t.companion===33;},     b:function(t){return t.stem%24===10;},      ea:2, theme:'mythical', fx:'cicada clings to succulent, chorus rings pulse outward'},
     {id:40,name:'Wise Owl Roost',    a:function(t){return t.companion===57;},     b:function(t){return t.stem%24===5;},       ea:1, theme:'mythical', fx:'owl perches in braid junction, golden eye blink'},
     // ── BOTANICAL (set-apr8) — based on real plant biology ──
     {id:41,name:'Mycorrhizal Web',   a:function(t){return t.base%71===29;},       b:function(t){return t.leafType%71>=60;},   ea:2, theme:'nature', fx:'fungal threads connect mycelium to crystal roots'},
@@ -7825,7 +7827,7 @@ document.addEventListener('keydown', function(e) {
     {id:51,name:'Toad Stool',        a:function(t){return t.companion===32;},     b:function(t){return t.base%71===18;},      ea:2, theme:'nature', fx:'toad sits in mushroom compost, content and mossy'},
     {id:52,name:'Terrarium World',   a:function(t){return t.pot%60===7;},         b:function(t){return t.companion>=20&&t.companion<=31;}, ea:1, theme:'nature', fx:'glass terrarium frames tiny companion in miniature world'},
     {id:53,name:'Meteor Orchid',     a:function(t){return t.base%71===28;},       b:function(t){return t.flower%71===10;},    ea:2, theme:'cosmic', fx:'orchid roots weave through meteorite, stardust on petals'},
-    {id:54,name:'Phoenix Ash Bed',   a:function(t){return t.base%71===57;},       b:function(t){return t.companion===33;},    ea:3, theme:'mythical', fx:'phoenix nests in its own ash, renewal cycle complete'},
+    {id:54,name:'Final Chorus',      a:function(t){return t.base%71===57;},       b:function(t){return t.companion===33;},    ea:3, theme:'mythical', fx:'cicada sings from the ashes — last song of the brood'},
     {id:55,name:'Crystal Beetle',    a:function(t){return t.companion===78;},     b:function(t){return t.base%71===15;},      ea:2, theme:'cosmic', fx:'beetle carapace refracts crystal matrix light'},
     {id:56,name:'Lantern Firefly',   a:function(t){return t.pot%60===21;},        b:function(t){return t.companion===23;},    ea:1, theme:'nature', fx:'firefly drifts into lantern pot, warm glow intensifies'},
     {id:57,name:'Needle Rain',       a:function(t){return t.leafType%71===9;},    b:function(t){return t.season===2;},        ea:1, theme:'nature', fx:'autumn needles drift down like copper rain'},
@@ -10793,7 +10795,7 @@ document.addEventListener('keydown', function(e) {
       {name:'Caterpillar',temp:'symbiote'}, // idx 30
       {name:'Spider',temp:'guardian'},      // idx 31
       {name:'Toad',temp:'guardian',ability:'rainCaller'},        // idx 32 (mythic path)
-      {name:'Phoenix',temp:'symbiote',ability:'herdImmunity'},  // idx 33 (mythic path — Phoenix, art needs polish)
+      {name:'Cicada',temp:'symbiote',ability:'herdImmunity'},   // idx 33 — Cicada (replaced Phoenix; same family buff)
       {name:'Baby Mammoth',temp:'guardian',ability:'permafrost'}, // idx 34
       {name:'Raccoon',temp:'forager',ability:'scavenger'},   // idx 35
       {name:'Great Blue Heron',temp:'wanderer',ability:'precisionStrike'},         // idx 36
@@ -10858,7 +10860,7 @@ document.addEventListener('keydown', function(e) {
       {name:'None'},{name:'None'},{name:'None'},{name:'None'},
       {name:'None'},
       {name:'The Toad'},     // D — ~6.25%
-      {name:'The Phoenix'}, // E — ~6.25%
+      {name:'The Cicada'},  // E — ~7.81% (replaced The Phoenix)
       {name:'Starfall'}      // F — ~6.25%
     ],
     substrates: [
@@ -11011,8 +11013,7 @@ document.addEventListener('keydown', function(e) {
         for (var _ovI = 0; _ovI < _ovGh.length; _ovI++) {
           if (_ovGh[_ovI].hash === hash) {
             var _ovP = _ovGh[_ovI];
-            // Phoenix gating: rolled Phoenix but compost gate failed at mint
-            if (_ovP.phoenixSuppressed && t0.companion === 33) t0.companion = -1;
+            // Phoenix retired — no companion suppression.
             // Velvet Bowl: forces hasFlower on the bloomed plant
             if (_ovP.forceFlower) t0.hasFlower = true;
             break;
@@ -23043,52 +23044,45 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M42.2,67.5 Q41.5,69.5 42.2,71.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
         s += '</g>';
         break;
-      case 33: // The Phoenix — MYTHIC, noble perched bird with flowing plumes
-        // Noble proportions: elongated neck, slim body, flowing tail, swept-back crown
-        // Perched on pot rim, three-quarter view, head tilted upward
-        s += '<g opacity="0.95" transform="translate(0,-42)">';
-        // Inner warmth glow
-        s += '<radialGradient id="phxGlow"><stop offset="0%" stop-color="#E8922A" stop-opacity="0.15"/><stop offset="100%" stop-color="#E8922A" stop-opacity="0"/></radialGradient>';
-        s += '<ellipse cx="55" cy="82" rx="10" ry="8" fill="url(#phxGlow)"><animate attributeName="opacity" values="0.6;1;0.6" dur="4s" repeatCount="indefinite"/></ellipse>';
-        // ── TAIL PLUMES — 4 flowing calligraphy strokes cascading down ──
-        s += '<path d="M53,86 C50,89 48,93 46,97 C45,99 44,98 45,96 C46,93 49,89 52,86" fill="none" stroke="#8B1A1A" stroke-width="1.8" stroke-linecap="round" opacity="0.8"/>';
-        s += '<path d="M54,87 C52,91 50,95 49,99 C48.5,100 48,99 49,97 C50,94 52,90 54,87" fill="none" stroke="#D4541A" stroke-width="1.4" stroke-linecap="round" opacity="0.65">';
-        s += '<animate attributeName="d" values="M54,87 C52,91 50,95 49,99 C48.5,100 48,99 49,97;M54,87 C51,91 49,95 48,99 C47.5,100 47,99 48,97;M54,87 C52,91 50,95 49,99 C48.5,100 48,99 49,97" dur="3s" repeatCount="indefinite"/></path>';
-        s += '<path d="M54.5,87 C53,90 52,93 51,96 C50.5,97 50.5,96 51.5,94 C52,92 53,89 54,87" fill="none" stroke="#C8A84B" stroke-width="1" stroke-linecap="round" opacity="0.5"/>';
-        s += '<path d="M55,86 C54,89 53.5,91 53,93 C52.8,93.5 53,93 53.5,91.5" fill="none" stroke="#C8A84B" stroke-width="0.7" opacity="0.35"/>';
-        // ── BODY — slim teardrop, crimson with gradient ──
-        s += '<path d="M52,82 C52,79 54,77 55,77 C56,77 58,79 58,82 C58,85 56.5,87 55,87 C53.5,87 52,85 52,82 Z" fill="#8B1A1A"/>';
-        s += '<path d="M53,81 C53,79.5 54.5,78 55,78 C55.5,78 57,79.5 57,81 C57,83 56,84.5 55,84.5 C54,84.5 53,83 53,81 Z" fill="#D4541A" opacity="0.5"/>';
-        // Chest warmth — breathing glow
-        s += '<ellipse cx="55" cy="81" rx="2" ry="2.5" fill="#E8922A" opacity="0.12"><animate attributeName="opacity" values="0.1;0.25;0.1" dur="4s" repeatCount="indefinite"/></ellipse>';
-        // ── NECK — elegant S-curve rising from body ──
-        s += '<path d="M54.5,78 C54,76 53.5,74 54,72 C54.3,71 55,70.5 55.5,71 C56,72 55.5,74 55.5,76 C55.5,77 55.5,78 55.5,78" fill="#8B1A1A"/>';
-        s += '<path d="M54.8,77 C54.5,75.5 54.2,74 54.5,72.5 C54.7,71.5 55.2,71.5 55.3,72.5 C55.4,74 55.2,75.5 55.2,77" fill="#D4541A" opacity="0.4"/>';
-        // ── HEAD — small, dignified, tilted upward ──
-        s += '<ellipse cx="54.5" cy="70.5" rx="2" ry="1.8" fill="#8B1A1A" transform="rotate(-10,54.5,70.5)"/>';
-        s += '<ellipse cx="54.5" cy="70.5" rx="1.5" ry="1.3" fill="#D4541A" opacity="0.3" transform="rotate(-10,54.5,70.5)"/>';
-        // Eye — golden ring, calm and knowing
-        s += '<circle cx="53.8" cy="70" r="0.55" fill="#C8A84B"/>';
-        s += '<circle cx="53.8" cy="70" r="0.2" fill="#1A0A00"/>';
-        // Beak — slender, curved, not hooked like a rooster
-        s += '<path d="M52.8,70.5 C52,70.2 51.5,70.5 52,70.8" fill="none" stroke="#A82810" stroke-width="0.6" stroke-linecap="round"/>';
-        // ── CROWN — 4 swept-back plumes (NOT upright like a comb) ──
-        s += '<path d="M55,69.5 C55.5,67.5 56,66 57,65" fill="none" stroke="#C8A84B" stroke-width="0.9" stroke-linecap="round" opacity="0.85"/>';
-        s += '<path d="M55.5,69 C56.5,67 57.5,65.5 58.5,65" fill="none" stroke="#E8922A" stroke-width="0.7" stroke-linecap="round" opacity="0.7"/>';
-        s += '<path d="M55.8,69.5 C57,68 58,67 59,66.5" fill="none" stroke="#D4541A" stroke-width="0.5" stroke-linecap="round" opacity="0.55"/>';
-        s += '<path d="M54.5,69.5 C55,68 55.5,67 56,66" fill="none" stroke="#C8A84B" stroke-width="0.6" stroke-linecap="round" opacity="0.4"/>';
-        // ── WING (folded against body) — layered leaf shapes ──
-        s += '<path d="M56,80 C58,79 60,78 61,77 C60,79 58,81 56,82 Z" fill="#8B1A1A" opacity="0.8"/>';
-        s += '<path d="M56.5,80.5 C58,80 59.5,79 60,78 C59,80 57.5,81.5 56.5,82 Z" fill="#D4541A" opacity="0.5"/>';
-        s += '<path d="M57,81 C58.5,80.5 59,80 59.5,79.5" fill="none" stroke="#C8A84B" stroke-width="0.3" opacity="0.4"/>';
-        // ── TALON — gripping pot rim ──
-        s += '<path d="M54,87 L53,88.5 L52.5,87.5 M55,87 L55.5,88.5 L56,87.5" fill="none" stroke="#3A1A0A" stroke-width="0.6" stroke-linecap="round"/>';
-        // ── RISING EMBERS — gentle, sparse ──
-        s += '<circle cx="50" cy="78" r="0.4" fill="#E8922A" opacity="0"><animate attributeName="cy" values="78;68;58" dur="4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.6;0" dur="4s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="60" cy="80" r="0.3" fill="#C8A84B" opacity="0"><animate attributeName="cy" values="80;70;60" dur="5s" begin="1.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.5;0" dur="5s" begin="1.5s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="55" cy="76" r="0.25" fill="#D4541A" opacity="0"><animate attributeName="cy" values="76;66;56" dur="3.5s" begin="0.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.4;0" dur="3.5s" begin="0.8s" repeatCount="indefinite"/></circle>';
+      case 33: // The Cicada — MYTHIC, patient emergence spirit clinging to the stem
+        // PLACEHOLDER ART: compact translucent insect with four veined wings.
+        // Deserves a proper quality pass alongside other Mythic art; this is
+        // a functional stand-in so idx 33 renders without looking broken.
+        s += '<g opacity="0.95" transform="translate(0,-40)">';
+        // Faint sage glow — dusk light behind the wings
+        s += '<radialGradient id="cicGlow"><stop offset="0%" stop-color="#A8B872" stop-opacity="0.18"/><stop offset="100%" stop-color="#A8B872" stop-opacity="0"/></radialGradient>';
+        s += '<ellipse cx="55" cy="81" rx="11" ry="7" fill="url(#cicGlow)"><animate attributeName="opacity" values="0.5;0.9;0.5" dur="5s" repeatCount="indefinite"/></ellipse>';
+        // ── BACK WINGS (longer, translucent, behind) ──
+        s += '<path d="M52,79 C47,78 44,81 44,84 C44,87 48,88 53,86 Z" fill="rgba(220,232,200,0.25)" stroke="rgba(180,200,150,0.45)" stroke-width="0.35"/>';
+        s += '<path d="M58,79 C63,78 66,81 66,84 C66,87 62,88 57,86 Z" fill="rgba(220,232,200,0.25)" stroke="rgba(180,200,150,0.45)" stroke-width="0.35"/>';
+        // Wing veins — fine branching, slightly darker
+        s += '<path d="M46,83 L51,84 M47,85 L52,85" stroke="rgba(80,100,60,0.6)" stroke-width="0.18" fill="none"/>';
+        s += '<path d="M64,83 L59,84 M63,85 L58,85" stroke="rgba(80,100,60,0.6)" stroke-width="0.18" fill="none"/>';
+        // ── FRONT WINGS (shorter, layered over back) ──
+        s += '<path d="M53,79 C49,78.5 47,80 47,82.5 C47,84.5 50,85 54,84 Z" fill="rgba(230,240,215,0.35)" stroke="rgba(120,140,90,0.5)" stroke-width="0.35"/>';
+        s += '<path d="M57,79 C61,78.5 63,80 63,82.5 C63,84.5 60,85 56,84 Z" fill="rgba(230,240,215,0.35)" stroke="rgba(120,140,90,0.5)" stroke-width="0.35"/>';
+        // ── THORAX — segmented olive-gold body ──
+        s += '<ellipse cx="55" cy="80" rx="2.4" ry="3.2" fill="#6B7A3A"/>';
+        s += '<ellipse cx="55" cy="80" rx="1.8" ry="2.6" fill="#A8B872" opacity="0.55"/>';
+        // Segment divisions
+        s += '<path d="M53,80 L57,80 M53.2,81.2 L56.8,81.2 M53.4,82.3 L56.6,82.3" stroke="#4A5628" stroke-width="0.22"/>';
+        // ── HEAD with compound eyes ──
+        s += '<ellipse cx="55" cy="77" rx="2.2" ry="1.6" fill="#5A6A2E"/>';
+        s += '<circle cx="53.4" cy="76.8" r="0.8" fill="#2A1A0A"/>';
+        s += '<circle cx="56.6" cy="76.8" r="0.8" fill="#2A1A0A"/>';
+        s += '<circle cx="53.4" cy="76.6" r="0.25" fill="#C8A84B" opacity="0.7"/>';
+        s += '<circle cx="56.6" cy="76.6" r="0.25" fill="#C8A84B" opacity="0.7"/>';
+        // Antennae — fine, curved
+        s += '<path d="M54,75.5 C53.5,73.5 52.5,72.5 51.5,72" stroke="#4A5628" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M56,75.5 C56.5,73.5 57.5,72.5 58.5,72" stroke="#4A5628" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        // Front legs clinging to stem
+        s += '<path d="M53.5,81 L51.5,82.5 L51,84" stroke="#4A5628" stroke-width="0.28" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M56.5,81 L58.5,82.5 L59,84" stroke="#4A5628" stroke-width="0.28" fill="none" stroke-linecap="round"/>';
+        // ── CHORUS RING — pulsing rings suggesting song ──
+        s += '<circle cx="55" cy="80" r="5" fill="none" stroke="rgba(200,184,110,0.3)" stroke-width="0.2"><animate attributeName="r" values="5;9;5" dur="4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.3;0;0.3" dur="4s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="55" cy="80" r="5" fill="none" stroke="rgba(200,184,110,0.25)" stroke-width="0.18"><animate attributeName="r" values="5;11;5" dur="5s" begin="1.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.25;0;0.25" dur="5s" begin="1.5s" repeatCount="indefinite"/></circle>';
         // Overall breathing pulse
-        s += '<animate attributeName="opacity" values="0.93;1;0.93" dur="4s" repeatCount="indefinite"/>';
+        s += '<animate attributeName="opacity" values="0.93;1;0.93" dur="5s" repeatCount="indefinite"/>';
         s += '</g>';
         break;
       case 34: // Baby Mammoth — LEGENDARY, side profile facing left
@@ -25935,7 +25929,7 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="49.5" cy="73.5" rx="2" ry="1.2" fill="#8FBC8F" opacity="0.2"/>';
         s += '</g>';
         break;
-      case 'The Phoenix':
+      case 'The Cicada':
         // Rendered as normal companion (case 33), not mythic overlay
         break;
       case 'Garden Spider':
@@ -26017,7 +26011,7 @@ document.addEventListener('keydown', function(e) {
 
     var TITLES_MYTHIC = {
       'The Toad':             'of the Toad',
-      'The Phoenix':         'of the Phoenix',
+      'The Cicada':          'of the Cicada',
       'Garden Spider':        'of the Spider',
       'Woolly Mammoth': 'of the Mammoth',
       'Raccoon':   'of the Raccoon',
@@ -26047,7 +26041,7 @@ document.addEventListener('keydown', function(e) {
     var noun = NAME_NOUN[nounIdx];
 
     var TITLES_MYTHIC = {
-      'The Toad':'of the Toad','The Phoenix':'of the Phoenix',
+      'The Toad':'of the Toad','The Cicada':'of the Cicada',
       'Garden Spider':'of the Spider','Woolly Mammoth':'of the Mammoth',
       'Raccoon':'of the Raccoon','Great Blue Heron':'of the Heron',
       'The Beholder':'of the Beholder'
@@ -26069,7 +26063,7 @@ document.addEventListener('keydown', function(e) {
     // Mythic plants get their mythic title instead of realm
     var TITLES_MYTHIC = {
       'The Toad':             'of the Toad',
-      'The Phoenix':         'of the Phoenix',
+      'The Cicada':          'of the Cicada',
       'Garden Spider':        'of the Spider',
       'Woolly Mammoth': 'of the Mammoth',
       'Raccoon':   'of the Raccoon',
@@ -26609,10 +26603,8 @@ document.addEventListener('keydown', function(e) {
       traits: getTraitSummary(hash),
       breedCount: 0,
       generation: 1,
-      // Phoenix gating: non-cross mint paths (game wins, gift plant, feral
-      // collection) have no compost history, so a Phoenix-rolled hash gets
-      // suppressed by default. Only the cross-bloom path can manifest one.
-      phoenixSuppressed: (traits.companion === 33)
+      // Phoenix removed — companion 33 is Cicada now; no suppression gate.
+      phoenixSuppressed: false
     };
     if (opts && opts.isCross) entry.isCross = true;
     // PLANT SEAL — cryptographic signature
@@ -30707,7 +30699,7 @@ document.addEventListener('keydown', function(e) {
     } else {
       if (window._releaseWakeLock) _releaseWakeLock();
     }
-    if (tab === 'wild') { if(window.FG_Wild&&FG_Wild._afMarkWildEntry)FG_Wild._afMarkWildEntry(); }
+    if (tab === 'wild') { if(window.FG_Wild&&FG_Wild._afMarkWildEntry)FG_Wild._afMarkWildEntry(); if(window._primeWildWeather)setTimeout(function(){window._primeWildWeather(false);},1500); }
     // Map overlays — show on Wild tab regardless of backpack state
     var vig=document.querySelector('.map-vignette');
     var glass=document.querySelector('.map-glass-highlight');
@@ -31899,6 +31891,9 @@ document.addEventListener('keydown', function(e) {
     if (_potId === 'crystal') _fertCount = _fertCount + 5;
     if (_potId === 'phoenix') _fertCount = _fertCount * 2;
     if (_potId === 'starlight') _fertCount = _fertCount + 3;
+    // Watchers family revealTrait: small additive nudge to mutation RNG so
+    // hidden traits surface more often. Multiplier 1.03 at L1 → +3 fert; L3 → ~+10.
+    try{if(window.LW_COMPANION){var _rtMult=window.LW_COMPANION.getCompanionMult('revealTrait');_fertCount+=Math.floor((_rtMult-1)*100);}}catch(e){}
     var mut = applyMutationRNG(spliced, _fertCount);
     var newHash = mut.hash;
     // World Seed Bowl: if the rolled grade is Common, retry with a higher
@@ -31990,17 +31985,8 @@ document.addEventListener('keydown', function(e) {
     var _clCount = Object.keys(_compostLayers).length;
     if (_clCount >= 3) _compostLayers.deepRoot = true;
 
-    // PHOENIX GATING (Phoenix from the Ashes):
-    // The hash may roll Phoenix at the existing rate, but it ONLY manifests
-    // if the seed had 10+ fertilizer/compost applied at bloom. Otherwise the
-    // companion slot is empty — no fallback creature, just nothing. The
-    // narrative: a phoenix can only rise from real ashes.
-    var _bloomTraits = null; try { _bloomTraits = window.hashToTraits(newHash); } catch(e) {}
+    // Phoenix gating removed — Cicada now occupies idx 33 with no compost gate.
     var _phoenixSuppressed = false;
-    if (_bloomTraits && _bloomTraits.companion === 33) {
-      var _bloomFert = (seed.fertApplied || 0);
-      if (_bloomFert < 10) _phoenixSuppressed = true;
-    }
     var newPlant = {
       hash:      newHash,
       isCross:   true,
@@ -32022,8 +32008,8 @@ document.addEventListener('keydown', function(e) {
       eaBonus: (_potId === 'moonstone') ? 1 : (_potId === 'iron') ? 2 : (_potId === 'starlight') ? 1 : 0,
       forceFlower: (_potId === 'velvet') ? true : false,
       birthPot:  _potId || null,
-      // Phoenix suppressed flag — true if hash rolled Phoenix but compost gate failed
-      phoenixSuppressed: _phoenixSuppressed,
+      // Kept for storage shape compatibility with existing plants; always false now.
+      phoenixSuppressed: false,
       traits:    (typeof getTraitSummary === 'function'
                   ? (function(){ try { return getTraitSummary(newHash); } catch(e) { return ''; } })()
                   : '')
@@ -32666,7 +32652,7 @@ document.addEventListener('keydown', function(e) {
     { id:'all_seasons',   icon:'🌍', name:'Four Seasons',        desc:'Own plants from all 4 seasons',        check: function(gh){ var s={};gh.forEach(function(p){try{var t=hashToTraits(p.hash);s[t.season%4]=true;}catch(e){}});return Object.keys(s).length>=4; } },
     // ── Companions ──
     { id:'first_companion',icon:'🐾', name:'Animal Friend',      desc:'Own a Plant with a companion',         check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);return t.companion<60&&(t.companion%5===0);}catch(e){return false;} }); } },
-    { id:'first_mythic_c', icon:'🔥', name:'Mythic Bond',        desc:'Own a Toad or Phoenix companion',      check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18>=0xD0;}catch(e){return false;} }); } },
+    { id:'first_mythic_c', icon:'🪲', name:'Mythic Bond',        desc:'Own a Toad or Cicada companion',       check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18>=0xD0;}catch(e){return false;} }); } },
     { id:'beholder',       icon:'👁', name:'The Beholder',       desc:'Own The Beholder companion (0.39%)',   check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18===0xFF;}catch(e){return false;} }); } },
     // ── Mutations ──
     { id:'first_mutation', icon:'⚡', name:'Mutant',              desc:'Own a mutated Plant',                  check: function(gh){ return gh.some(function(p){ try{var hb16=parseInt(p.hash.slice(32,34),16);return hb16>=0xD0;}catch(e){return false;} }); } },
@@ -35662,6 +35648,8 @@ function _adjustOffspringRarity(hash, gradeA, gradeB) {
   else targetIdx = Math.round(avg);
   // Forager L2+ rareOdds: small upward nudge on tier
   try{if(window._LW_classBonus){var _ro=window._LW_classBonus('rareOdds');if(_ro>1.1&&Math.random()<(_ro-1)){targetIdx=Math.min(6,targetIdx+1);}}}catch(e){}
+  // Scatterers family feralRarity: additional small chance of tier bump.
+  try{if(window.LW_COMPANION){var _fr=window.LW_COMPANION.getCompanionMult('feralRarity');if(_fr>1.01&&Math.random()<(_fr-1)){targetIdx=Math.min(6,targetIdx+1);}}}catch(e){}
   var chars = hash.split('');
   if (targetIdx >= 5) { chars[32] = 'f'; chars[33] = 'e'; }
   else if (targetIdx >= 3) { chars[32] = 'c'; chars[33] = Math.floor(Math.random() * 4).toString(16); }
@@ -35789,8 +35777,17 @@ function _collectFeralFromZone(zk, zonePlants) {
     info = { nm: typeof getPlantName === 'function' ? getPlantName(feralHash) : feralHash.slice(0, 8), grade: tg ? tg.name : 'Common' };
   } catch (e) { info = { nm: feralHash.slice(0, 8), grade: 'Common' }; }
 
-  // Challenge gate
-  if (window.FG_Challenge) {
+  // Foraging gate (signature mini-game). Falls back to legacy challenge if module missing.
+  if (window._primeWildWeather) window._primeWildWeather(false);
+  if (window.LW_FORAGING && window.LW_FORAGING.openPanel) {
+    window.LW_FORAGING.openPanel(zk, info.grade, function(success) {
+      if (success) {
+        _awardFeral(feralHash, parentA.hash, parentB.hash, zk, info);
+      } else {
+        _toast('The hex kept its secret. Try another zone.');
+      }
+    });
+  } else if (window.FG_Challenge) {
     FG_Challenge.start(info.grade, function(success) {
       if (success) {
         _awardFeral(feralHash, parentA.hash, parentB.hash, zk, info);
@@ -35860,6 +35857,13 @@ var REPRO_LINEAGE_CAP = 12; // max hexes per genetic line
 function _popScale(count) { return Math.min(1.4, 0.5 + count * 0.125); }
 var _reproTimer = null;
 var _reproWeather = null; // cached weather data {temp, rain, fetched}
+
+// Exposed so foraging / Wild-entry can prime the cache for currentTilt().
+window._primeWildWeather = function(force) {
+  if (!_uLat || !_uLng) return;
+  if (!force && _reproWeather && (Date.now() - _reproWeather.fetched) < 3600000) return;
+  try { _fetchReproWeather(_uLat, _uLng, function(){}); } catch(e) {}
+};
 
 // Fetch real weather from Open-Meteo (free, no API key)
 function _fetchReproWeather(lat, lng, cb) {
@@ -36636,9 +36640,24 @@ function _collectFeral(f,mk){
   // Roll hash NOW from plants currently in this zone
   _rollFeralHash(f);
 
-  // Launch challenge (grade based on rolled hash)
-  if(window.FG_Challenge){
-    var info=_buildInfo(f.hash);
+  // Launch foraging panel (signature). Fallback to legacy challenge if module missing.
+  var info=_buildInfo(f.hash);
+  if(window._primeWildWeather) window._primeWildWeather(false);
+  var _zkForage = f.zone || (f.lat.toFixed(4)+','+f.lng.toFixed(4));
+  if(window.LW_FORAGING && window.LW_FORAGING.openPanel){
+    window.LW_FORAGING.openPanel(_zkForage, info.grade, function(success){
+      if(success){
+        _doCollectFeral(f,mk);
+        _play('match');
+      } else {
+        f._cooldown=Date.now()+120000;
+        try{var _fc=JSON.parse(localStorage.getItem('fg_feral_cd')||'{}');_fc[cdKey]=f._cooldown;localStorage.setItem('fg_feral_cd',JSON.stringify(_fc));}catch(e){}
+        _play('buzz');
+        // Re-roll hash on next attempt so player gets a different combo
+        f.hash=null;f.parentA=null;f.parentB=null;
+      }
+    });
+  } else if(window.FG_Challenge){
     FG_Challenge.start(info.grade,function(success){
       if(success){
         _doCollectFeral(f,mk);
@@ -36648,7 +36667,6 @@ function _collectFeral(f,mk){
         try{var _fc=JSON.parse(localStorage.getItem('fg_feral_cd')||'{}');_fc[cdKey]=f._cooldown;localStorage.setItem('fg_feral_cd',JSON.stringify(_fc));}catch(e){}
         _play('buzz');
         _toast('Almost! Try again in 2 minutes.');
-        // Re-roll hash on next attempt so player gets a different combo
         f.hash=null;f.parentA=null;f.parentB=null;
       }
     });
@@ -37446,7 +37464,9 @@ function _waterOwnPlant(p,mk){
   // Visual feedback — sound + toast + water particle burst on marker
   _play('match');
   // Watering grants pollen XP as a caretaker reward (direct XP, no Dew earn)
-  var _waterXP=3;if(window.PW_grantXP)PW_grantXP(_waterXP,'water_care');
+  var _waterXP=3;
+  try{if(window.LW_COMPANION){_waterXP=Math.ceil(_waterXP*window.LW_COMPANION.getCompanionMult('waterEfficiency'));}}catch(e){}
+  if(window.PW_grantXP)PW_grantXP(_waterXP,'water_care');
   try{if(window.LW_XP)window.LW_XP.grantOnce('first_water',10,'first_of_kind','💧 +10 XP — first watering. Plants remember kindness.');}catch(e){}
   if(window._LW_toolXP)window._LW_toolXP('can',3);
   if(window.LW_Log)window.LW_Log.write('wild_watered',{hash:p.hash});
@@ -37514,19 +37534,22 @@ function _doCrossPollination(wildPlant,matePlant){
         else _spiderBonus=1.5;
       }
     }catch(e){}
+    // Companion family bonuses — Pollinators boost XP/pollen, Weavers boost all breed rewards.
+    var _breedMult=1;
+    try{if(window.LW_COMPANION){_breedMult=window.LW_COMPANION.getCompanionMult('pollen')*window.LW_COMPANION.getCompanionMult('breedReward');}}catch(e){}
     if(roll<0.6){
       // 60% — XP reward (monotonic pollen, no spend)
-      var xpBonus=(5+Math.floor(Math.random()*10))*_spiderBonus;
+      var xpBonus=Math.ceil((5+Math.floor(Math.random()*10))*_spiderBonus*_breedMult);
       if(window.PW_grantXP)PW_grantXP(xpBonus,'cross_pollinate');
       rewardMsg='+'+xpBonus+' XP!';
     } else if(roll<0.9){
       // 30% — Dew reward (spendable on acceleration + cuttings)
-      var dewBonus=(2+Math.floor(Math.random()*4))*_spiderBonus;
+      var dewBonus=Math.ceil((2+Math.floor(Math.random()*4))*_spiderBonus*_breedMult);
       if(window.earnDew)window.earnDew(dewBonus,'cross_pollinate');
       rewardMsg='+'+dewBonus+' Dew!';
     } else {
       // 10% — Sunbeams reward (toward next plant mint)
-      var sbBonus=(3+Math.floor(Math.random()*5))*_spiderBonus;
+      var sbBonus=Math.ceil((3+Math.floor(Math.random()*5))*_spiderBonus*_breedMult);
       if(window.earnHashes)window.earnHashes(sbBonus);
       rewardMsg='+'+sbBonus+' Sunbeams toward a new plant!';
     }
@@ -39462,26 +39485,9 @@ function _selectHexPlant(idx,p){
       _pruneBtn='<button class="hi-action-btn locked" title="Need 3 hashes to prune">\u2702 PRUNE (need 3\u26a1)</button>';
     }
   }
-  // Phoenix Bloom button — visible only on own plants when player is Tender L3
-  // AND has at least one Phoenix-bearing plant in the greenhouse AND this
-  // wild plant is wilting (≤25% vitality) or already dead. Each tap consumes
-  // one Phoenix permanently from its source card.
+  // Phoenix Bloom removed (companion retired). Placeholder kept so downstream
+  // layout that reads _phxBtn continues to no-op cleanly.
   var _phxBtn='';
-  try{
-    if(isOwn&&window._lwGetClass&&window._lwGetClass()==='tender'&&window._lwGetClassLevel&&window._lwGetClassLevel('tender')>=3){
-      var _phxPlants=window._lwGetPhoenixPlants?window._lwGetPhoenixPlants():[];
-      var _phxLocalWild=_getWild();
-      var _vitality=null;
-      for(var _vi=0;_vi<_phxLocalWild.length;_vi++){if(_phxLocalWild[_vi].hash===p.hash){_vitality=_getWildVitality(_phxLocalWild[_vi]);break;}}
-      var _isWilting=_vitality&&(_vitality.dead||_vitality.pct<=0.25);
-      if(_phxPlants.length>0&&_isWilting){
-        _phxBtn='<button class="hi-action-btn" onclick="window._hexAction(\'phoenix\')" style="border-color:rgba(232,140,80,0.6);background:linear-gradient(180deg,rgba(232,140,80,0.15),rgba(180,80,40,0.18));color:#f0a878;" title="Sacrifice one Phoenix ('+_phxPlants.length+' available) to revive this plant to full vitality">\ud83d\udd25 PHOENIX BLOOM ('+_phxPlants.length+')</button>';
-      } else if(_phxPlants.length===0&&_isWilting){
-        // Phoenix-less Tender Master: locked tooltip explains the requirement
-        _phxBtn='<button class="hi-action-btn locked" title="Phoenix Bloom needs a plant with the Phoenix companion. Mint plants until one bears it." style="opacity:0.45;">\ud83d\udd25 PHOENIX BLOOM (0)</button>';
-      }
-    }
-  }catch(e){}
   if(isOwn){
     actions+='<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
     actions+=_inspectBtn;
@@ -40079,116 +40085,8 @@ window._hexAction=function(action){
     if(typeof _changeDefense==='function'){window._closeHexInspector();_changeDefense(p);}
     else{_toast('Defense picker unavailable.');}
   }else if(action==='phoenix'){
-    // Phoenix Bloom — Tender L3 sacrifices a Phoenix-bearing plant from the
-    // greenhouse to revive THIS wild plant. The Phoenix is permanently
-    // consumed (phoenixConsumed=true + phoenixSuppressed=true so it stops
-    // rendering on the source card).
-    if(!p.own){_toast('Phoenix Bloom only works on your own wild plants.');return;}
-    if(!window._lwGetClass||window._lwGetClass()!=='tender'||!window._lwGetClassLevel||window._lwGetClassLevel('tender')<3){
-      _toast('Phoenix Bloom unlocks at Tender Master.');return;
-    }
-    var _phxList=window._lwGetPhoenixPlants?window._lwGetPhoenixPlants():[];
-    if(_phxList.length===0){_toast('No Phoenix companions in your greenhouse.');return;}
-    // Locate the wild plant (only own plants live in local cache).
-    var _pbWild=_getWild();
-    var _pbHit=null,_pbHitIdx=-1;
-    for(var _pbi=0;_pbi<_pbWild.length;_pbi++){
-      if(_pbWild[_pbi].hash===p.hash){_pbHit=_pbWild[_pbi];_pbHitIdx=_pbi;break;}
-    }
-    if(!_pbHit){_toast('Plant not found in your local wild cache.');return;}
-    // Pick the Phoenix to sacrifice. If the player has more than one,
-    // open a chooser. Otherwise consume the only one immediately.
-    function _doPhoenixBloom(srcPlant){
-      _ensureVitality(_pbHit);
-      _pbHit.lastWateredAt=Date.now();
-      _pbHit.decayAt=Date.now()+_pbHit.lifespanMs;
-      _pbWild[_pbHitIdx]=_pbHit;_saveWild(_pbWild);
-      // Mark the Phoenix consumed on the greenhouse plant.
-      var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
-      for(var gi=0;gi<gh.length;gi++){
-        if(gh[gi].hash===srcPlant.hash){
-          gh[gi].phoenixConsumed=true;
-          gh[gi].phoenixSuppressed=true;
-          gh[gi].phoenixConsumedAt=Date.now();
-          break;
-        }
-      }
-      if(window.saveGreenhouse)window.saveGreenhouse(gh);
-      else localStorage.setItem('sws_greenhouse',JSON.stringify(gh));
-      // Log + reward + UI
-      var _srcName=window.getPlantName?window.getPlantName(srcPlant.hash):srcPlant.hash.slice(0,8);
-      if(window.LW_Log)window.LW_Log.write('phoenix_bloom',{wildHash:p.hash,sourceHash:srcPlant.hash,sourceName:_srcName});
-      if(window.PW_grantXP)PW_grantXP(20,'phoenix_bloom');
-      try{if(window._haptic)window._haptic('bloom');}catch(e){}
-      try{if(window._playWin)window._playWin();}catch(e){}
-      // Phoenix Bloom celebration — embers rise from below, sparkles burst,
-      // ring of warm gold expands. Lasts ~3s then auto-cleans up.
-      try{
-        if(window._lwSpawnParticles){
-          var fxOv=document.createElement('div');
-          fxOv.style.cssText='position:fixed;inset:0;z-index:99996;pointer-events:none;background:radial-gradient(circle at center,rgba(232,140,80,0.18),transparent 60%);animation:lwFxFadeOut 3s ease forwards;';
-          if(!document.getElementById('lw-fx-fadeout-style')){
-            var fos=document.createElement('style');fos.id='lw-fx-fadeout-style';
-            fos.textContent='@keyframes lwFxFadeOut{0%,40%{opacity:1;}100%{opacity:0;}}';
-            document.head.appendChild(fos);
-          }
-          document.body.appendChild(fxOv);
-          window._lwSpawnParticles(fxOv,{embers:24,sparkles:14,rings:2});
-          setTimeout(function(){if(fxOv.parentNode)fxOv.parentNode.removeChild(fxOv);},3500);
-        }
-      }catch(e){}
-      _toast('🔥 Phoenix Bloom! '+_srcName+' burned to revive your wild plant.');
-      // Refresh the hex inspector to show updated vitality.
-      if(_hexInspZone&&window.FG_Wild&&window.FG_Wild._openHexInspector){
-        setTimeout(function(){window.FG_Wild._openHexInspector(_hexInspZone);},250);
-      }
-    }
-    if(_phxList.length===1){
-      var _onlyPhx=_phxList[0];
-      var _onlyName=window.getPlantName?window.getPlantName(_onlyPhx.hash):_onlyPhx.hash.slice(0,8);
-      if(window._lwConfirm){
-        window._lwConfirm({
-          title:'BURN THE PHOENIX',
-          body:'Sacrifice <b>'+_onlyName+'</b>\u2019s Phoenix to revive this wild plant? The Phoenix will be permanently removed from the card.',
-          yes:'\ud83d\udd25 BURN & REVIVE',
-          no:'CANCEL'
-        },function(){_doPhoenixBloom(_onlyPhx);});
-      } else if(confirm('Sacrifice '+_onlyName+'\u2019s Phoenix to revive this wild plant? Permanent.')){
-        _doPhoenixBloom(_onlyPhx);
-      }
-    } else {
-      // Multiple Phoenixes — open a chooser. Built inline so we don't need
-      // a new modal element. List highest-EA first (player likely wants to
-      // keep the strongest one alive).
-      try{_phxList.sort(function(a,b){var ea=function(pl){try{var t=window.hashToTraits(pl.hash);if(pl.generation)t.chimerGen=pl.generation;return window.computeEA?window.computeEA(t,0,pl):0;}catch(e){return 0;}};return ea(a)-ea(b);});}catch(e){}
-      var _ov=document.createElement('div');
-      _ov.style.cssText='position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.9);backdrop-filter:blur(10px);padding:1rem;';
-      var _h='<div style="max-width:360px;width:100%;background:linear-gradient(180deg,rgba(40,22,12,0.97),rgba(20,12,8,0.99));border:1.5px solid rgba(232,140,80,0.5);border-radius:14px;padding:1rem;box-shadow:0 16px 50px rgba(0,0,0,0.7),0 0 32px rgba(232,140,80,0.15);">';
-      _h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:#f0a878;letter-spacing:0.1em;text-align:center;margin-bottom:0.4rem;">\ud83d\udd25 BURN A PHOENIX</div>';
-      _h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;margin-bottom:0.7rem;line-height:1.5;">Pick which Phoenix to sacrifice. The Phoenix is consumed permanently from the chosen plant — they keep the rest of their traits, but the Phoenix is gone.</div>';
-      for(var _pi=0;_pi<_phxList.length;_pi++){
-        var _pp=_phxList[_pi];
-        var _pn=window.getPlantName?window.getPlantName(_pp.hash):_pp.hash.slice(0,8);
-        var _pgrade='';try{var _pt=window.hashToTraits(_pp.hash);if(_pp.generation)_pt.chimerGen=_pp.generation;var _ptg=window.getTerraGrade(_pt);_pgrade=_ptg.name||'';}catch(e){}
-        _h+='<button onclick="window._lwBurnPhoenix(\''+_pp.hash+'\')" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.6rem;margin-bottom:0.4rem;background:rgba(60,28,16,0.5);border:1.5px solid rgba(232,140,80,0.3);border-radius:10px;color:var(--cream);cursor:pointer;text-align:left;min-height:48px;">';
-        _h+='<div style="font-size:1.2rem;">\ud83d\udd25</div>';
-        _h+='<div style="flex:1;"><div style="font-family:Playfair Display,serif;font-size:0.78rem;font-style:italic;">'+_pn+'</div>';
-        _h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">'+_pgrade+'</div></div>';
-        _h+='</button>';
-      }
-      _h+='<button onclick="document.getElementById(\'lw-phx-chooser\').remove();" style="width:100%;padding:0.5rem;margin-top:0.3rem;background:rgba(40,40,30,0.5);border:1px solid rgba(122,179,86,0.15);border-radius:8px;color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;min-height:44px;">CANCEL</button>';
-      _h+='</div>';
-      _ov.id='lw-phx-chooser';_ov.innerHTML=_h;
-      document.body.appendChild(_ov);
-      // One-shot global so the inline onclick can find this scope.
-      window._lwBurnPhoenix=function(hash){
-        var picked=null;for(var pp=0;pp<_phxList.length;pp++)if(_phxList[pp].hash===hash){picked=_phxList[pp];break;}
-        var picker=document.getElementById('lw-phx-chooser');if(picker)picker.remove();
-        if(!picked){_toast('Phoenix not found.');return;}
-        _doPhoenixBloom(picked);
-        try{delete window._lwBurnPhoenix;}catch(e){}
-      };
-    }
+    // Phoenix Bloom removed — revive mechanic was OP and created hoarding pressure.
+    // Cicada is the new idx-33 creature and is purely cosmetic/buff-based.
   }
 };
 
@@ -47270,7 +47168,7 @@ var LW_MEMENTOS = {
   30:{name:'Silk Cocoon', text:'A perfect cocoon, unopened. It feels warm in your palm.'},
   31:{name:'Web Lattice', text:'A spider-silk lattice that catches morning dew in perfect patterns.'},
   32:{name:'Rain Stone', text:'A smooth river stone the toad guarded. It sings when wet.'},
-  33:{name:'Phoenix Feather', text:'A feather that smolders without burning. A gift beyond price.'},
+  33:{name:'Cicada Shell',    text:'An empty shell left behind after a seventeen-year wait. Still warm.'},
   34:{name:'Mammoth Tusk', text:'A small carved ice-tusk. Cold to the touch, always.'},
   35:{name:'Bright Button', text:'A collection of 9 shiny objects. You don\u2019t remember losing any of them.'},
   36:{name:'Long Feather', text:'A heron feather twice the length of your hand.'},
@@ -54131,14 +54029,14 @@ window._lwClaimHerbarium = function(id){
     37:'weavers', 31:'weavers', 41:'weavers', 62:'weavers', 65:'weavers', 70:'weavers',
     // Wayfinders
     36:'wayfinders', 29:'wayfinders', 51:'wayfinders', 57:'wayfinders', 63:'wayfinders', 49:'wayfinders', 66:'wayfinders', 69:'wayfinders', 34:'wayfinders',
-    // Guardians (after rebalance moves)
-    32:'guardians', 33:'guardians', 22:'guardians', 42:'guardians', 45:'guardians', 53:'guardians', 43:'guardians', 48:'guardians', 50:'guardians',
+    // Guardians (after rebalance moves). Cicada (idx 33) moved to Watchers.
+    32:'guardians', 22:'guardians', 42:'guardians', 45:'guardians', 53:'guardians', 43:'guardians', 48:'guardians', 50:'guardians',
     // Conduits
     60:'conduits', 71:'conduits', 47:'conduits', 27:'conduits', 72:'conduits', 30:'conduits', 52:'conduits', 68:'conduits',
     // Mycelium (universal)
     73:'mycelium', 74:'mycelium', 61:'mycelium', 81:'mycelium',
-    // Watchers (universal)
-    23:'watchers', 38:'watchers', 39:'watchers', 54:'watchers', 56:'watchers', 75:'watchers', 79:'watchers', 20:'watchers'
+    // Watchers (universal). Cicada (33) sits here — seventeen-year observer.
+    23:'watchers', 38:'watchers', 39:'watchers', 54:'watchers', 56:'watchers', 75:'watchers', 79:'watchers', 20:'watchers', 33:'watchers'
   };
   var CLASS_STRONG = {
     forager:      ['scatterers', 'wayfinders'],
@@ -54267,7 +54165,7 @@ window._lwClaimHerbarium = function(id){
     scatterers:  'Dream Seed',
     weavers:     'Chimera Mend',
     wayfinders:  'Pathfinder',
-    guardians:   'Phoenix Revive',
+    guardians:   'Deep Root',
     conduits:    'Compost Song',
     mycelium:    'Kin Network',
     watchers:    'Hidden Trait'
@@ -54545,7 +54443,7 @@ function _bosEventsContent() {
     { name: 'EPIC',      color: '#9B59B6', desc: 'Demands mastery', events: [
       { name: 'The Alchemist', hint: 'Discover 20 synergies', riddle: 'Twenty threads woven from the same loom.' },
       { name: 'Territorial', hint: 'Hold 3 wild zones for 7 days', riddle: 'The grove expands when no one pushes back.' },
-      { name: 'Phoenix Rising', hint: 'Own a Phoenix companion', riddle: 'From ashes, gold feathers unfurl.' }
+      { name: 'Cicada Chorus', hint: 'Own a Cicada companion', riddle: 'Silent for seasons, loud at summer — who waits to sing?' }
     ]},
     { name: 'LEGENDARY', color: '#C8A84B', desc: 'The rarest achievements', events: [
       { name: 'The Beholder\'s Gaze', hint: 'Own a Cosmic plant with The Beholder', riddle: 'An eye that has seen every seed that ever fell.' },
@@ -54653,9 +54551,9 @@ function _bosSecretsContent() {
       { idx: 32, name: 'The Toad',           tier: 'Mythic',    icon: '\ud83d\udc38', color: '#A87285',
         lore: 'Croaks beneath three leaves. Calls rain when the plant goes dry.',
         riddle: 'A keeper wet and slow, who knows the storm before it breaks.' },
-      { idx: 33, name: 'The Phoenix',        tier: 'Mythic',    icon: '\ud83d\udd25', color: '#A87285',
-        lore: 'Wings of ember. Grants herd immunity — one phoenix guards every nearby bloom.',
-        riddle: 'Gold feathers burn and fall, yet rise again before the dawn.' },
+      { idx: 33, name: 'The Cicada',         tier: 'Mythic',    icon: '\ud83e\udea6', color: '#A8B872',
+        lore: 'Buried years, then a chorus at dusk. Its song steadies every nearby bloom.',
+        riddle: 'Silent for seasons, loud at summer — who waits seventeen years to sing?' },
       { idx: 34, name: 'Baby Mammoth',       tier: 'Legendary', icon: '\ud83e\udd8f', color: '#C8A84B',
         lore: 'A woolly calf that ignores seasonal stress. Permafrost walks with it.',
         riddle: 'Small but warm enough to survive every winter it meets.' },
@@ -55370,11 +55268,10 @@ var LW_CLASSES={
     abilities:{
       1:{name:'Green Thumb',desc:'Wild plants live 2× longer'},
       2:{name:'Dew Touched',desc:'+20% dew generation'},
-      // Phoenix Bloom: tap any wilting/dead own wild plant, sacrifice a
-      // Phoenix companion (consumed permanently from its card) to revive
-      // the wild plant to full vitality. Each Phoenix is a single-use
-      // resurrection — scarcity creates real choice.
-      3:{name:'Phoenix Bloom',desc:'Sacrifice a Phoenix to revive a wild plant'}
+      // Phoenix Bloom retired — Tender Master now deepens Green Thumb
+      // instead (2.5× longevity). Passive, no active sacrifice, no
+      // companion dependency. Avoids the "must-own Phoenix" hoarding trap.
+      3:{name:'Deep Green',desc:'Wild plants live 2.5× longer (passive)'}
     },companion:33,biome:'wetland'},
   keeper:{name:'Keeper',icon:'🌿',desc:'Balanced generalist',xpSrc:['all'],
     abilities:{
@@ -55591,7 +55488,7 @@ window._LW_classBonus=function(kind){
   // bonuses. Step XP is Cartographer's primary source so this also
   // accelerates levelling.
   if(kind==='stepBonus'&&cls==='cartographer')return 1.25+keeper;
-  if(kind==='plantLongevity'&&cls==='tender')return 2+keeper; // L1 Green Thumb baseline; Master no longer adds longevity (replaced by active Phoenix Bloom)
+  if(kind==='plantLongevity'&&cls==='tender')return (lvl>=3?2.5:2)+keeper; // Green Thumb: L1 2x, L3 Master 2.5x (Phoenix Bloom retired; folded back into passive longevity)
   if(kind==='dewRate'&&cls==='tender'&&lvl>=2)return 1.20+keeper;
   return 1+keeper;
 };
@@ -55624,22 +55521,9 @@ window._LW_toolMod=function(tool){
   if(tool==='compass')return lvl;
   return null;
 };
-// Phoenix Bloom (Tender L3) — count the player's available Phoenix-bearing
-// plants. A "consumed" Phoenix has plant.phoenixConsumed=true and is filtered
-// out so the same Phoenix can't revive twice.
-window._lwGetPhoenixPlants=function(){
-  var out=[];
-  try{
-    var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
-    for(var i=0;i<gh.length;i++){
-      var p=gh[i];if(!p||!p.hash)continue;
-      if(p.phoenixConsumed)continue;
-      var t=window.hashToTraits?window.hashToTraits(p.hash):null;
-      if(t&&t.companion===33)out.push(p);
-    }
-  }catch(e){}
-  return out;
-};
+// Phoenix removed — helper retained as empty stub so any stragglers still
+// resolve to an empty list without throwing. Safe to delete after a release.
+window._lwGetPhoenixPlants=function(){return [];};
 // Check if companion synergy active (player has Master class + bound companion)
 window._LW_hasSynergy=function(){
   var cls=_lwGetClass();if(!cls)return false;
@@ -56440,16 +56324,16 @@ window.LW_Comp = (function(){
   // Now used purely as a key for friendship XP storage — no gameplay
   // effect attached to any of these.
   var IDX = {
-    32:'toad', 33:'phoenix', 34:'mammoth', 35:'raccoon',
+    32:'toad', 33:'cicada', 34:'mammoth', 35:'raccoon',
     36:'heron', 37:'spider', 38:'beholder'
   };
   var NAMES = {
-    toad:'The Toad', phoenix:'The Phoenix', mammoth:'Baby Mammoth',
+    toad:'The Toad', cicada:'The Cicada', mammoth:'Baby Mammoth',
     raccoon:'Raccoon', heron:'Great Blue Heron',
     spider:'Garden Spider', beholder:'The Beholder'
   };
   var ICONS = {
-    toad:'🐸', phoenix:'🔥', mammoth:'🦣', raccoon:'🦝',
+    toad:'🐸', cicada:'🪲', mammoth:'🦣', raccoon:'🦝',
     heron:'🕊', spider:'🕷', beholder:'👁'
   };
   // Friendship thresholds — slow, pet-like progression. ~15 game-sessions
