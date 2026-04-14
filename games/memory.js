@@ -3,7 +3,7 @@
 'use strict';
 var G=window._G;
 // Aliases for shared utilities
-var _e=G.e,_play=G.play,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.sh,_sr=G.sr,_st=G.st,_xt=G.xt;
+var _e=G.e,_play=G.play,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.sh,_sr=G.sr,_st=G.st,_xt=G.xt,_setDiff=G.setDiff;
 
 function GM(a){var IC=[
 '<img src="assets/games/memory/01-moonflower-card.png" width="56" height="56" alt="Moonflower" style="border-radius:6px;">',

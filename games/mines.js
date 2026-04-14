@@ -2,7 +2,7 @@
 (function(){
 'use strict';
 var G=window._G;
-var _e=G.e,_play=G.play,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.sh,_sr=G.sr,_st=G.st,_xt=G.xt;
+var _e=G.e,_play=G.play,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.sh,_sr=G.sr,_st=G.st,_xt=G.xt,_setDiff=G.setDiff;
 
 function GN(a){var rw=10,cl=10,mn=15,bd=[],ov=false,fi=true,fm=false,rv=0,fg=0,sf=0;
   ms(a,'🦠<strong id="Nn">15</strong> · 🚩<strong id="Nf">0</strong> · 🌿<strong id="Nr">0</strong>/<strong id="Ns">85</strong>');mm(a);
