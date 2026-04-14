@@ -677,20 +677,26 @@ window._gameFns.pollen = function PN(a){
   a.appendChild(pan);
   mc(a).innerHTML='<button class="gb-new" onclick="_PNnew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
-  // Token chip — Stephen's seed art with a CSS-color fallback. The
-  // painted seeds are subtle, so we boost saturation/contrast and
-  // slightly shrink the img inset so the bg color rims the seed —
-  // makes the color obvious even at tiny sizes (the cost bar runs at
-  // ~14px and seeds are nearly identical without this).
-  // 'gold' is the wild kintsugi vase — it's distinctive enough on its
-  // own and skips the saturation boost so the lacquer reads correctly.
+  // Token chip — pure CSS opaque circle. Seed PNGs were too painterly
+  // to read at game-time sizes (per Stephen). Vivid hex with a small
+  // gradient + inset shadow so chips look tactile and never blend into
+  // card art behind them.
+  var TOK_PALETTE = {
+    green: {top:'#7ae07a', mid:'#3da643', edge:'#1e6b25'},
+    rose:  {top:'#ff7892', mid:'#d8345b', edge:'#891e36'},
+    blue:  {top:'#74b9ff', mid:'#2a78d8', edge:'#10416f'},
+    amber: {top:'#ffd770', mid:'#e89a1c', edge:'#7e4a0a'},
+    spore: {top:'#fbf6e6', mid:'#d8c9a8', edge:'#6f6448'},
+    gold:  {top:'#fff2a8', mid:'#e0b830', edge:'#8a5a0c'}
+  };
   function tokDot(c,sz){
-    var src='assets/games/masterpollinator/tokens/'+c+'.png';
-    var filt=c==='gold'?'':'filter:saturate(1.6) contrast(1.15);';
-    return '<span style="position:relative;display:inline-block;width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+COLOR_HEX[c]+';border:1px solid rgba(0,0,0,0.35);vertical-align:middle;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.18);">'
-      +'<img src="'+src+'" alt="" onerror="this.style.display=\'none\'" '
-      +'style="position:absolute;inset:'+(sz>=18?'1px':'0')+';width:calc(100% - '+(sz>=18?2:0)+'px);height:calc(100% - '+(sz>=18?2:0)+'px);object-fit:cover;border-radius:50%;pointer-events:none;'+filt+'">'
-      +'</span>';
+    var p = TOK_PALETTE[c] || TOK_PALETTE.spore;
+    var rim = sz >= 22 ? 2 : 1;
+    return '<span style="display:inline-block;width:'+sz+'px;height:'+sz+'px;border-radius:50%;'
+      +'background:radial-gradient(circle at 35% 28%, '+p.top+' 0%, '+p.mid+' 60%, '+p.edge+' 100%);'
+      +'border:'+rim+'px solid '+p.edge+';'
+      +'box-shadow:inset 0 -1px 2px rgba(0,0,0,0.35), inset 0 1px 1px rgba(255,255,255,0.45), 0 1px 2px rgba(0,0,0,0.4);'
+      +'vertical-align:middle;flex-shrink:0;"></span>';
   }
 
   // Art-first renderer: if assets/games/masterpollinator/<slug>.png loads,
@@ -756,17 +762,12 @@ window._gameFns.pollen = function PN(a){
     var infoBtn='';
     var fallbackEmoji=
       '<div style="position:absolute;left:0;right:0;top:14px;bottom:'+(BARH+4)+'px;display:flex;align-items:center;justify-content:center;font-size:24px;opacity:0.55;z-index:0;">'+TIER_ICONS[card.tier-1]+'</div>';
-    // Long-press handlers run inline. touchstart/mousedown start a
-    // 480ms timer; if the player releases before then, the regular
-    // tap fires (buy/reserve). Past 480ms = inspect modal opens and
-    // the tap is consumed so they don't accidentally buy.
-    var lpStart='var t=this;t.__lp=setTimeout(function(){t.__inspect=true;_PNinspect('+card.id+');},480);';
-    var lpEnd='if(this.__lp)clearTimeout(this.__lp);this.__lp=null;';
-    var tapBody='if(this.__inspect){this.__inspect=false;return;}_PNtap('+card.id+','+(isReserved?'true':'false')+')';
+    // Tap any card -> opens inspect modal with action buttons (BUY /
+    // RESERVE / BACK). No more insta-buy on affordable cards. Stephen
+    // explicitly wants the zoom-in moment first so you can read the
+    // flower name + see the art big before committing.
     var h='<div class="pn-card'+(aff.affordable?' aff':'')+'" style="width:'+W+'px;height:'+H+'px;border-radius:8px;border:'+border+';border-left:4px solid '+bgShade+';display:inline-block;vertical-align:top;margin:3px;position:relative;cursor:pointer;color:#1a1f17;box-shadow:0 2px 6px rgba(0,0,0,0.32);overflow:hidden;background:linear-gradient(180deg,#fbf6e6,#f0e8ce);" '
-      +'ontouchstart="'+lpStart+'" ontouchend="'+lpEnd+'" ontouchcancel="'+lpEnd+'" '
-      +'onmousedown="'+lpStart+'" onmouseup="'+lpEnd+'" onmouseleave="'+lpEnd+'" '
-      +'onclick="'+tapBody+'">';
+      +'onclick="_PNinspect('+card.id+','+(isReserved?'true':'false')+')">';
     h+=fallbackEmoji+artImg+GP_PILL+USE_PILL+infoBtn+costBar+'</div>';
     return h;
   }
@@ -851,9 +852,9 @@ window._gameFns.pollen = function PN(a){
       h+='<div style="position:absolute;top:2px;right:3px;width:18px;height:18px;border-radius:50%;background:linear-gradient(180deg,#fff5d4,#e8c860);color:#2a1f0a;font-weight:800;font-size:10px;display:flex;align-items:center;justify-content:center;z-index:3;border:1px solid rgba(120,90,20,0.6);box-shadow:0 1px 3px rgba(0,0,0,0.4);">'+p.gp+'</div>';
       // Name strip
       h+='<div style="position:absolute;left:0;right:0;bottom:18px;font-family:DM Mono,monospace;font-size:6.5px;letter-spacing:0.04em;color:var(--cream);text-transform:uppercase;text-shadow:0 1px 2px rgba(0,0,0,0.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 3px;z-index:3;">'+esc(p.name)+'</div>';
-      // Requirement bar at bottom
-      h+='<div style="position:absolute;left:0;right:0;bottom:0;height:18px;background:linear-gradient(180deg,rgba(13,16,12,0.6),rgba(13,16,12,0.85));display:flex;align-items:center;justify-content:center;gap:3px;z-index:3;border-top:1px solid rgba(122,179,86,0.2);">';
-      for(var c in p.req)h+='<span style="display:inline-flex;align-items:center;gap:2px;color:'+COLOR_HEX[c]+';font-weight:700;font-size:9px;">'+tokDot(c,9)+p.req[c]+'</span>';
+      // Requirement bar at bottom — bigger so seeds read.
+      h+='<div style="position:absolute;left:0;right:0;bottom:0;height:30px;background:linear-gradient(180deg,rgba(13,16,12,0.6),rgba(13,16,12,0.88));display:flex;align-items:center;justify-content:center;gap:6px;z-index:3;border-top:1px solid rgba(122,179,86,0.2);">';
+      for(var c in p.req)h+='<span style="display:inline-flex;align-items:center;gap:3px;color:'+COLOR_HEX[c]+';font-weight:800;font-size:13px;">'+tokDot(c,20)+p.req[c]+'</span>';
       h+='</div>';
       if(tag){h+='<div style="position:absolute;top:2px;left:3px;font-size:0.5rem;color:var(--gold);background:rgba(13,16,12,0.7);border-radius:4px;padding:1px 4px;z-index:3;">'+esc(claimedBy.name)+'</div>';}
       h+='</div>';
@@ -879,8 +880,11 @@ window._gameFns.pollen = function PN(a){
     h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">';
     COLORS.concat(['gold']).forEach(function(c){
       var sel=GS.selectedTokens.indexOf(c)>=0;
-      var sty='padding:8px 14px;background:'+(sel?'rgba(122,179,86,0.2)':'rgba(26,31,23,0.6)')+';border:1px solid '+(sel?'#7ab356':'rgba(122,179,86,0.2)')+';border-radius:10px;font-size:15px;font-weight:700;min-height:52px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;';
-      h+='<div class="pn-tok'+(sel?' sel':'')+'" style="'+sty+'" onclick="_PNsup(\''+c+'\')">'+tokDot(c,14)+' '+GS.supply[c]+'</div>';
+      // Supply pills — primary view of currency. Big enough that the
+      // painted seed art actually shows. Stacks chip ABOVE count so
+      // both read clearly without a horizontal squeeze.
+      var sty='padding:10px 14px;background:'+(sel?'rgba(122,179,86,0.22)':'rgba(26,31,23,0.65)')+';border:2px solid '+(sel?'#7ab356':'rgba(122,179,86,0.22)')+';border-radius:14px;min-height:78px;min-width:74px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;';
+      h+='<div class="pn-tok'+(sel?' sel':'')+'" style="'+sty+'" onclick="_PNsup(\''+c+'\')">'+tokDot(c,46)+'<span style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:var(--cream);line-height:1;font-weight:800;">'+GS.supply[c]+'</span></div>';
     });
     h+='</div>';
     // Active player area — shows whoever's turn it is (hides others'
@@ -990,52 +994,97 @@ window._gameFns.pollen = function PN(a){
   // common names aren't kid-safe (e.g. Hookers Lips / Psychotria elata).
   // No buy/reserve action here — pure information. Tap outside or the
   // CLOSE button to dismiss.
-  window._PNinspect=function(id){
+  window._PNinspect=function(id, isReserved){
     var card=findCard(id);if(!card)return;
+    isReserved=(isReserved===true||isReserved==='true');
     var existing=document.getElementById('PNinspectOV');if(existing)existing.remove();
     var ov=document.createElement('div');ov.id='PNinspectOV';
-    ov.style.cssText='position:fixed;inset:0;z-index:200000;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.86);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:20px;animation:pnFadeIn 0.22s ease;';
+    ov.style.cssText='position:fixed;inset:0;z-index:200000;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.86);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:16px;animation:pnFadeIn 0.22s ease;';
     ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
     var bgShade=card.tier===1?'#4a7c35':card.tier===2?'#c8a84b':'#ffd700';
     var artTier='assets/games/masterpollinator/tier'+card.tier+'/'+card.slug+'.png';
     var artFlat='assets/games/masterpollinator/'+card.slug+'.png';
     var displayName=card.hideName?'Mystery Bloom':esc(card.name||'');
     var tierName=TIER_NAMES[card.tier-1]||'';
+    var aff = me() && !me().isAI ? canAfford(me(),card) : {affordable:false};
+    var canRes = me() && !me().isAI && me().reserved.length<3 && !isReserved && GS.phase==='player';
+    var canAct = me() && !me().isAI && GS.phase==='player';
+    // Cost row uses LARGE chips so the seeds are clearly visible.
     var costRow='';
-    for(var c in card.cost){for(var i=0;i<card.cost[c];i++)costRow+=tokDot(c,18);}
-    var h='<div class="pn-modal" style="max-width:340px;width:100%;padding:18px 16px;font-family:DM Mono,monospace;text-align:center;">';
+    for(var c in card.cost){for(var i=0;i<card.cost[c];i++)costRow+=tokDot(c,28);}
+    var h='<div class="pn-modal" style="max-width:380px;width:100%;padding:18px 16px;font-family:DM Mono,monospace;text-align:center;">';
     // Tier ribbon at top
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.18em;color:'+bgShade+';margin-bottom:8px;">'+tierName.toUpperCase()+'</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.18em;color:'+bgShade+';margin-bottom:8px;">'+tierName.toUpperCase()+'</div>';
     // Big art (or emoji fallback if PNG missing)
-    h+='<div style="position:relative;width:100%;height:240px;background:linear-gradient(180deg,#fbf6e6,#f0e8ce);border-radius:10px;border:2px solid '+bgShade+';overflow:hidden;margin-bottom:12px;">';
-    h+='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:80px;opacity:0.45;">'+TIER_ICONS[card.tier-1]+'</div>';
+    h+='<div style="position:relative;width:100%;height:280px;background:linear-gradient(180deg,#fbf6e6,#f0e8ce);border-radius:10px;border:2px solid '+bgShade+';overflow:hidden;margin-bottom:12px;">';
+    // Emoji fallback — only visible if the art img fails to load.
+    // Was always visible at 45% opacity behind the art and fighting
+    // for attention. Now it's hidden by default and only the onerror
+    // path reveals it.
+    h+='<div class="pn-fallback-emoji" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;font-size:120px;opacity:0.5;">'+TIER_ICONS[card.tier-1]+'</div>';
     if(card.slug){
+      var fbShow="this.style.display='none';var fb=this.parentNode.querySelector('.pn-fallback-emoji');if(fb)fb.style.display='flex';";
       h+='<img src="'+artTier+'" alt="" '
-        +'onerror="if(this.src.indexOf(\'/tier\')>=0){this.src=\''+artFlat+'\';}else{this.style.display=\'none\';}" '
+        +'onerror="if(this.src.indexOf(\'/tier\')>=0){this.src=\''+artFlat+'\';}else{'+fbShow+'}" '
         +'style="position:absolute;inset:6px;width:calc(100% - 12px);height:calc(100% - 12px);object-fit:contain;">';
+    } else {
+      // No slug at all — show emoji directly
+      h+='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:120px;opacity:0.5;">'+TIER_ICONS[card.tier-1]+'</div>';
     }
     h+='</div>';
     // Flower name (educational)
-    h+='<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.2rem;color:var(--cream);margin-bottom:4px;">'+displayName+'</div>';
+    h+='<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.4rem;color:var(--cream);margin-bottom:4px;">'+displayName+'</div>';
     if(card.hideName){
       h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-bottom:8px;">— scientific name kept hidden —</div>';
     }
-    // Stats row: GP + produces + cost
-    h+='<div style="display:flex;gap:14px;justify-content:center;align-items:center;margin:10px 0;font-family:DM Mono,monospace;font-size:0.7rem;color:var(--cream);">';
-    if(card.gp>0)h+='<span><span style="color:var(--gold);font-size:1rem;font-weight:800;">'+card.gp+'</span> <span style="color:var(--muted);font-size:0.55rem;">GP</span></span>';
-    h+='<span style="display:inline-flex;align-items:center;gap:4px;">'+tokDot(card.produces,16)+'<span style="color:var(--muted);font-size:0.55rem;">produces</span></span>';
+    // Stats row: GP + produces (large)
+    h+='<div style="display:flex;gap:18px;justify-content:center;align-items:center;margin:10px 0;font-family:DM Mono,monospace;color:var(--cream);">';
+    if(card.gp>0)h+='<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:var(--gold);font-size:1.4rem;font-weight:800;">'+card.gp+'</span><span style="color:var(--muted);font-size:0.6rem;">GP</span></span>';
+    h+='<span style="display:inline-flex;align-items:center;gap:6px;">'+tokDot(card.produces,28)+'<span style="color:var(--muted);font-size:0.6rem;">produces</span></span>';
     h+='</div>';
-    // Cost row
+    // Cost row — big chips
     if(costRow){
-      h+='<div style="background:linear-gradient(180deg,rgba(248,242,224,0.18),rgba(232,222,188,0.12));border:1px solid rgba(200,168,75,0.25);border-radius:8px;padding:8px;margin:8px 0;">';
-      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.12em;color:var(--muted);margin-bottom:4px;">COST</div>';
-      h+='<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">'+costRow+'</div>';
+      h+='<div style="background:linear-gradient(180deg,rgba(248,242,224,0.18),rgba(232,222,188,0.12));border:1px solid rgba(200,168,75,0.3);border-radius:10px;padding:10px;margin:10px 0;">';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.14em;color:var(--muted);margin-bottom:6px;">COST</div>';
+      h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">'+costRow+'</div>';
       h+='</div>';
     }
-    h+='<button class="gb" onclick="document.getElementById(\'PNinspectOV\').remove()" style="width:100%;min-height:48px;padding:10px;font-size:0.7rem;letter-spacing:0.1em;color:var(--cream);margin-top:6px;">CLOSE</button>';
+    // Action buttons — buy / reserve / back
+    h+='<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:12px;">';
+    if(canAct && aff.affordable){
+      var buyAction=isReserved?'_PNinspectBuyReserved('+card.id+')':'_PNinspectBuy('+card.id+')';
+      h+='<button class="gb" onclick="'+buyAction+'" style="flex:1 1 120px;min-height:54px;padding:12px;font-size:0.85rem;letter-spacing:0.1em;color:var(--sage);border-color:var(--sage);background:rgba(122,179,86,0.18);">🌱 BUY</button>';
+    }
+    if(canAct && canRes){
+      h+='<button class="gb" onclick="_PNinspectReserve('+card.id+')" style="flex:1 1 120px;min-height:54px;padding:12px;font-size:0.8rem;letter-spacing:0.1em;color:var(--gold);border-color:var(--gold);background:rgba(200,168,75,0.18);">🔒 RESERVE</button>';
+    }
+    if(canAct && !aff.affordable && !canRes && !isReserved && me().reserved.length>=3){
+      h+='<div style="flex:1;color:var(--muted);font-size:0.6rem;padding:14px;">Hand is full · buy a reserved card first</div>';
+    }
+    h+='<button class="gb" onclick="document.getElementById(\'PNinspectOV\').remove()" style="flex:1 1 100px;min-height:54px;padding:12px;font-size:0.7rem;letter-spacing:0.1em;color:var(--cream);">BACK</button>';
+    h+='</div>';
     h+='</div>';
     ov.innerHTML=h;
     document.body.appendChild(ov);
+  };
+  // Inspect-modal action handlers — close modal, then run the action.
+  window._PNinspectBuy=function(id){
+    var card=findCard(id);if(!card)return;
+    var md=findMD(id);if(!md)return;
+    document.getElementById('PNinspectOV').remove();
+    buyCard(card, md.market, md.deck);
+  };
+  window._PNinspectBuyReserved=function(id){
+    var card=findCard(id);if(!card)return;
+    document.getElementById('PNinspectOV').remove();
+    buyReserved(card);
+  };
+  window._PNinspectReserve=function(id){
+    var card=findCard(id);if(!card)return;
+    var md=findMD(id);if(!md)return;
+    document.getElementById('PNinspectOV').remove();
+    reserveCard(card, md.market, md.deck);
+    sm('Reserved · +1 gold');
   };
   window._PNact=function(act){if(GS.phase!=='player'||me().isAI)return;GS.action=act;GS.selectedTokens=[];render();};
   window._PNsup=function(c){
