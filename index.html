@@ -53393,6 +53393,7 @@ function _bosSetTab(tab) {
   else if (tab === 'class') body.innerHTML = _bosClassContent();
   else if (tab === 'activity') body.innerHTML = _bosActivityContent();
   else if (tab === 'mementos') body.innerHTML = _bosMementosContent();
+  else if (tab === 'herbarium') body.innerHTML = _bosHerbariumContent();
   var tabs = document.querySelectorAll('.bos-tab');
   for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('active', tabs[i].getAttribute('data-tab') === tab);
   // Update the active style for tabs (override gold for active, muted for inactive)
@@ -53670,6 +53671,43 @@ function _bosMementosContent() {
   return h;
 }
 window._bosMementosContent = _bosMementosContent;
+
+// ─── HERBARIUM TAB — weekly rotating bundles ───
+function _bosHerbariumContent() {
+  if (!window.LW_HERBARIUM) return '<div style="padding:2rem;text-align:center;color:var(--muted);">Herbarium loading...</div>';
+  var bundles = window.LW_HERBARIUM.pickBundlesForWeek();
+  var h = '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);margin-bottom:0.7rem;line-height:1.6;">Weekly rotating challenges. Complete any of the 3 with plants already in your greenhouse \u2014 no submission, no consumption, just earn the reward.</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin-bottom:0.5rem;">Week ' + window.LW_HERBARIUM.weekKey() + '</div>';
+  for (var i = 0; i < bundles.length; i++) {
+    var b = bundles[i];
+    var prog = window.LW_HERBARIUM.getProgress(b);
+    var claimed = window.LW_HERBARIUM.isClaimed(b.id);
+    var pct = Math.min(100, Math.round((prog.count / prog.required) * 100));
+    var statusColor = claimed ? 'var(--muted)' : prog.complete ? 'var(--gold)' : 'var(--sage)';
+    h += '<div style="padding:0.7rem;margin-bottom:0.5rem;background:' + (claimed ? 'rgba(26,36,22,0.4)' : prog.complete ? 'linear-gradient(180deg,rgba(200,168,75,0.15),rgba(74,124,53,0.1))' : 'rgba(18,22,16,0.65)') + ';border:1.5px solid ' + (claimed ? 'rgba(74,124,53,0.15)' : prog.complete ? 'var(--gold)' : 'rgba(122,179,86,0.25)') + ';border-radius:10px;' + (claimed ? 'opacity:0.55;' : '') + '">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;">';
+    h += '<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:' + statusColor + ';letter-spacing:0.06em;">' + b.name + (claimed ? ' \u2713' : '') + '</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);margin-top:3px;line-height:1.5;">' + b.blurb + '</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin-top:3px;">' + (b.rewardKind === 'dew' ? '+' + b.rewardAmt + ' Dew' : 'Title: ' + b.rewardAmt) + '</div></div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:' + statusColor + ';white-space:nowrap;">' + prog.count + ' / ' + prog.required + '</div>';
+    h += '</div>';
+    if (!claimed) {
+      h += '<div style="height:4px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;margin-top:6px;"><div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,var(--sage),var(--gold));"></div></div>';
+      if (prog.complete) {
+        h += '<button onclick="window._lwClaimHerbarium(\'' + b.id + '\')" style="display:block;width:100%;margin-top:8px;padding:9px;border:1.5px solid var(--gold);border-radius:8px;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(122,179,86,0.12));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;">CLAIM REWARD</button>';
+      }
+    }
+    h += '</div>';
+  }
+  return h;
+}
+window._bosHerbariumContent = _bosHerbariumContent;
+window._lwClaimHerbarium = function(id){
+  if (window.LW_HERBARIUM && window.LW_HERBARIUM.claim(id)) {
+    // Refresh the tab
+    if (window._bosSetTab) window._bosSetTab('herbarium');
+  }
+};
 
 // ═══ FORAGING GAME — data layer (Session 1 per spec) ═══
 // 6-element RPS-cycle deckbuilding for hex foraging. Replaces the 6
@@ -54251,6 +54289,139 @@ window._bosMementosContent = _bosMementosContent;
     getLevelMult: getLevelMult,
     onEquip: onEquip,
     checkL3Unlocks: checkL3Unlocks
+  };
+})();
+
+// ═══ HERBARIUM BUNDLES — goal-directed breeding ═══
+// Stardew-style rotating challenges. 3 active bundles at a time,
+// rotates weekly (Mon-Sun), progress auto-tracked against greenhouse.
+// Reward: title unlock or currency. Skeleton v1 — 12 bundle templates.
+// "Take our time" per Stephen — will need more bundle types + balance.
+(function(){
+  var BUNDLES = [
+    { id:'bloom3',      name:'Three Blooms',      req:{tag:'hasFlower', count:3},       rewardKind:'dew',  rewardAmt:30,  blurb:'Show the herbarium 3 flower-bearing plants' },
+    { id:'rare3',       name:'Rare Collection',   req:{tag:'rarePlus', count:3},        rewardKind:'title',rewardAmt:'curator',blurb:'Collect 3 Rare+ plants' },
+    { id:'winter2',     name:'Winter Keeper',     req:{tag:'season', value:3, count:2}, rewardKind:'dew',  rewardAmt:45,  blurb:'Tend 2 plants of the Winter season' },
+    { id:'spring2',     name:'Spring Chorus',     req:{tag:'season', value:0, count:2}, rewardKind:'dew',  rewardAmt:45,  blurb:'Tend 2 Spring plants' },
+    { id:'summer2',     name:'Summer Canopy',     req:{tag:'season', value:1, count:2}, rewardKind:'dew',  rewardAmt:45,  blurb:'Tend 2 Summer plants' },
+    { id:'autumn2',     name:'Autumn Quilt',      req:{tag:'season', value:2, count:2}, rewardKind:'dew',  rewardAmt:45,  blurb:'Tend 2 Autumn plants' },
+    { id:'comp3',       name:'Three Friends',     req:{tag:'hasCompanion', count:3},    rewardKind:'dew',  rewardAmt:40,  blurb:'Befriend 3 plants with companions' },
+    { id:'chimera1',    name:'Blended Line',      req:{tag:'chimera', count:1},         rewardKind:'title',rewardAmt:'blender',blurb:'Breed a chimera (Gen 2+)' },
+    { id:'legendary1',  name:'Legendary Bloom',   req:{tag:'legendaryPlus', count:1},   rewardKind:'title',rewardAmt:'legendary',blurb:'Mint or earn 1 Legendary+ plant' },
+    { id:'allseason',   name:'Full Seasons',      req:{tag:'oneOfEachSeason', count:4}, rewardKind:'title',rewardAmt:'allseasons',blurb:'One plant from each of the 4 seasons' },
+    { id:'mutated1',    name:'Wild Mutation',     req:{tag:'mutated', count:1},         rewardKind:'title',rewardAmt:'mutation',blurb:'Own 1 mutated plant' },
+    { id:'greenhouse10',name:'Full House',        req:{tag:'anyPlant', count:10},       rewardKind:'dew',  rewardAmt:100, blurb:'Fill the greenhouse with 10 plants' }
+  ];
+  // Titles auto-registered if missing (cosmetic only)
+  var BUNDLE_TITLES = {
+    curator:    { word:'Curator',    desc:'Kept a Rare Collection.' },
+    blender:    { word:'Blender',    desc:'First chimera bloomed.' },
+    legendary:  { word:'Legendary',  desc:'Owned a Legendary bloom.' },
+    allseasons: { word:'Seasonless', desc:'Tends through every season.' },
+    mutation:   { word:'Mutated',    desc:'Collected a natural mutation.' }
+  };
+  function weekKey() {
+    // ISO week number — all players see the same 3 bundles during a given week
+    var d = new Date(Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()));
+    var dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    var week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return d.getUTCFullYear() + '-W' + week;
+  }
+  function pickBundlesForWeek() {
+    var key = weekKey();
+    // Deterministic per-week pick of 3 from BUNDLES
+    var seed = 0;
+    for (var i = 0; i < key.length; i++) seed = ((seed << 5) - seed + key.charCodeAt(i)) | 0;
+    var rng = function() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    var pool = BUNDLES.slice();
+    var pick = [];
+    for (var p = 0; p < 3 && pool.length; p++) {
+      var idx = Math.floor(rng() * pool.length);
+      pick.push(pool[idx]);
+      pool.splice(idx, 1);
+    }
+    return pick;
+  }
+  function checkPlantAgainst(plant, req) {
+    try {
+      var t = window.hashToTraits ? window.hashToTraits(plant.hash) : null;
+      if (!t) return false;
+      if (req.tag === 'anyPlant') return true;
+      if (req.tag === 'hasFlower') return !!t.hasFlower;
+      if (req.tag === 'hasCompanion') return t.companion && t.companion < 82 && (window.TRAIT_BANK ? (window.TRAIT_BANK.companions[t.companion] || {}).name !== 'None' : true);
+      if (req.tag === 'mutated') return t.mutationName && t.mutationName !== 'None';
+      if (req.tag === 'chimera') return (t.chimerGen || 1) >= 2;
+      if (req.tag === 'season') return t.season === req.value;
+      if (req.tag === 'rarePlus' || req.tag === 'legendaryPlus') {
+        if (!window.getTerraGrade) return false;
+        var tg = window.getTerraGrade(t);
+        var name = tg && (tg.name || tg.label) || 'Common';
+        var tierRank = { Common:0, Uncommon:1, Rare:2, Epic:3, Legendary:4, Mythic:5, Cosmic:6 };
+        var threshold = req.tag === 'legendaryPlus' ? 4 : 2;
+        return (tierRank[name] || 0) >= threshold;
+      }
+      return false;
+    } catch(e) { return false; }
+  }
+  function getProgress(bundle) {
+    var gh = [];
+    try { gh = JSON.parse((window._secureGet ? window._secureGet('sws_greenhouse') : localStorage.getItem('sws_greenhouse')) || '[]'); } catch(e) {}
+    var count = 0;
+    if (bundle.req.tag === 'oneOfEachSeason') {
+      var seen = {};
+      for (var i = 0; i < gh.length; i++) {
+        try { var t = window.hashToTraits(gh[i].hash); if (t) seen[t.season] = true; } catch(e) {}
+      }
+      count = Object.keys(seen).length;
+    } else {
+      for (var j = 0; j < gh.length; j++) {
+        if (checkPlantAgainst(gh[j], bundle.req)) count++;
+      }
+    }
+    return { count: count, required: bundle.req.count, complete: count >= bundle.req.count };
+  }
+  function getClaimedKey(bundleId) { return 'lw_bundle_claimed_' + weekKey() + '_' + bundleId; }
+  function isClaimed(bundleId) {
+    try { return localStorage.getItem(getClaimedKey(bundleId)) === '1'; } catch(e) { return false; }
+  }
+  function claim(bundleId) {
+    var bundle = null;
+    var active = pickBundlesForWeek();
+    for (var i = 0; i < active.length; i++) if (active[i].id === bundleId) { bundle = active[i]; break; }
+    if (!bundle) return false;
+    if (isClaimed(bundleId)) return false;
+    var prog = getProgress(bundle);
+    if (!prog.complete) return false;
+    try { localStorage.setItem(getClaimedKey(bundleId), '1'); } catch(e) {}
+    if (bundle.rewardKind === 'dew') {
+      if (window.earnDew) window.earnDew(bundle.rewardAmt, 'herbarium_bundle');
+      if (window._toast) window._toast('\ud83c\udf3f Herbarium: ' + bundle.name + ' complete! +' + bundle.rewardAmt + ' Dew.');
+    } else if (bundle.rewardKind === 'title') {
+      try {
+        var owned = JSON.parse(localStorage.getItem('lw_titles_owned') || '[]');
+        if (owned.indexOf(bundle.rewardAmt) < 0) {
+          owned.push(bundle.rewardAmt);
+          localStorage.setItem('lw_titles_owned', JSON.stringify(owned));
+        }
+        var t = BUNDLE_TITLES[bundle.rewardAmt];
+        if (t && window.LW_TITLES && !window.LW_TITLES[bundle.rewardAmt]) {
+          window.LW_TITLES[bundle.rewardAmt] = { tier:4, cost:0, word:t.word, desc:t.desc, earnedBy:'herbarium' };
+        }
+        if (window._toast) window._toast('\u2728 Herbarium title unlocked: ' + bundle.name + '! "' + (t?t.word:bundle.rewardAmt) + '"');
+      } catch(e) {}
+    }
+    if (window._logWildEvent) window._logWildEvent({ type:'herbarium', name:bundle.name, reward:bundle.rewardKind });
+    return true;
+  }
+  window.LW_HERBARIUM = {
+    BUNDLES: BUNDLES,
+    weekKey: weekKey,
+    pickBundlesForWeek: pickBundlesForWeek,
+    getProgress: getProgress,
+    isClaimed: isClaimed,
+    claim: claim
   };
 })();
 
@@ -54918,6 +55089,7 @@ window._openCompendiumUI=function(){
         '<button class="bos-tab active" data-tab="secrets" onclick="_bosSetTab(\'secrets\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(200,168,75,0.5);background:rgba(200,168,75,0.1);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">SECRETS</button>'+
         '<button class="bos-tab" data-tab="events" onclick="_bosSetTab(\'events\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">EVENTS</button>'+
         '<button class="bos-tab" data-tab="mementos" onclick="_bosSetTab(\'mementos\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">MEMENTOS</button>'+
+        '<button class="bos-tab" data-tab="herbarium" onclick="_bosSetTab(\'herbarium\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">HERBARIUM</button>'+
         '<button class="bos-tab" data-tab="class" onclick="_bosSetTab(\'class\')" style="position:relative;flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">CLASS'+ ((!localStorage.getItem('lw_class')&&window.canSee&&window.canSee.classPick&&window.canSee.classPick())?'<span style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px rgba(200,168,75,0.8);"></span>':'') +'</button>'+
       '</div>'+
       // Body
