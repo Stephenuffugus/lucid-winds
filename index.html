@@ -53618,6 +53618,26 @@ function _bosActivityContent() {
         title = (e.companion || 'Companion') + ' \u00b7 ' + (e.event || '');
         body = e.text || '';
         break;
+      case 'memento':
+        icon = '\u2728'; color = 'var(--gold)';
+        title = 'Keepsake: ' + (e.name || 'Memento');
+        body = e.text || 'A companion left you something to remember them by.';
+        break;
+      case 'bloom_day':
+        icon = '\ud83c\udf38'; color = 'var(--gold)';
+        title = 'Bloom Day: ' + (e.name || 'Event');
+        body = e.theme || 'A monthly community event — 2\u00d7 rare ferals today.';
+        break;
+      case 'companion_l3':
+        icon = '\u2728'; color = 'var(--gold)';
+        title = (e.name || 'Companion') + ' reached MASTER';
+        body = 'Unlocked: ' + (e.signature || 'L3 signature') + (e.family ? ' (' + e.family + ')' : '');
+        break;
+      case 'herbarium':
+        icon = '\ud83c\udf3f'; color = 'var(--sage)';
+        title = 'Herbarium: ' + (e.name || 'Bundle');
+        body = 'Weekly bundle completed \u00b7 ' + (e.reward === 'title' ? 'title unlocked' : 'Dew earned');
+        break;
       default:
         body = e.name || e.event || '';
     }
