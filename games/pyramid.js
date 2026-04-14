@@ -13,12 +13,12 @@ function GPY(a){
   var pyr=[],stock=[],waste=[],sel=null,gameOver=false,moves=0,removed={};
   ms(a,'Cleared: <strong id="PYcl">0</strong>/28 · Moves: <strong id="PYmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='PYgd';a.appendChild(gd);
-  var _pyStyleLbl=(window._cdStyle&&window._cdStyle()==='classic')?'🃏 Classic':'🃏 Garden';
+  var _pyStyleLbl='🃏 '+(window._cdStyleLabel?window._cdStyleLabel():'Garden');
   mc(a).innerHTML='<button class="gb" onclick="_PYN()">🔄 New</button> <button class="gb" id="PYstyle" onclick="_PYToggleStyle()" style="font-size:0.7rem;">'+_pyStyleLbl+'</button>';
   window._PYToggleStyle=function(){
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('PYstyle');
-    if(b)b.textContent=nxt==='classic'?'🃏 Classic':'🃏 Garden';
+    if(b)b.textContent='🃏 '+(window._cdStyleLabel?window._cdStyleLabel(nxt):'Garden');
     rn();
   };
 

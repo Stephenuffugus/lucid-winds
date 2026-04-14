@@ -20,12 +20,24 @@ var _SUIT_NAME=['shroom','flower','bee','bird'];
 var _CD_BASE='assets/games/cards/';
 var _CD_BACK=_CD_BASE+'playing-card-backs.png';
 
-// Style: 'lw' (default Lucid Winds botanical) or 'classic' (standard pips)
+// ─── Floral deck (hand-drawn line-art: 4 suit pips + J/Q/K/A in red & black) ─
+var _FL_BASE='assets/decks/floral/';
+// Suit pip filenames by idx (0=spades, 1=hearts, 2=diamonds, 3=clubs)
+var _FL_SUIT=['suit-spade.png','suit-heart.png','suit-diamond.png','suit-club.png'];
+
+// Style: 'lw' (botanical) | 'classic' (standard pips) | 'floral' (hand-drawn)
+var _STYLE_CYCLE=['lw','classic','floral'];
 function _cdStyle(){
-  try{var s=localStorage.getItem('lw_card_style');return s==='classic'?'classic':'lw';}catch(e){return 'lw';}
+  try{
+    var s=localStorage.getItem('lw_card_style');
+    if(s==='classic'||s==='floral'||s==='lw')return s;
+    return 'lw';
+  }catch(e){return 'lw';}
 }
 function _cdSetStyle(s){
-  try{localStorage.setItem('lw_card_style',s==='classic'?'classic':'lw');}catch(e){}
+  if(s!=='classic'&&s!=='floral'&&s!=='lw')s='lw';
+  try{localStorage.setItem('lw_card_style',s);}catch(e){}
+  if(s==='floral')_preloadFloral();
 }
 
 // Preload card images (only relevant for LW style — classic is pure CSS)
@@ -38,6 +50,24 @@ for(var i=0;i<files.length;i++){
   var img=new Image();
   img.src=_CD_BASE+files[i]+'.png';
 }
+// Floral set filenames (4 suit pips + 8 face cards = 12 PNGs; full-res so
+// they stay crisp when used as thumbnails elsewhere). 26MB total, so only
+// preload when the user has actually selected Floral to avoid hammering
+// mobile data for people on other styles.
+var _FL_FILES=['suit-spade','suit-heart','suit-diamond','suit-club',
+  'ace-red','jack-red','queen-red','king-red',
+  'ace-black','jack-black','queen-black','king-black'];
+var _flPreloaded=false;
+function _preloadFloral(){
+  if(_flPreloaded)return;_flPreloaded=true;
+  for(var fi=0;fi<_FL_FILES.length;fi++){
+    var fimg=new Image();
+    fimg.src=_FL_BASE+_FL_FILES[fi]+'.png';
+  }
+}
+// Fire at module load if the user is already on floral, otherwise defer
+// until they toggle to it.
+try{if(localStorage.getItem('lw_card_style')==='floral')_preloadFloral();}catch(e){}
 
 function _cdArt(s,r){
   var sn=_SUIT_NAME[s];
@@ -51,9 +81,20 @@ function _cdArt(s,r){
 function _cdMk(){var d=[];for(var s=0;s<4;s++)for(var r=0;r<13;r++)d.push({s:s,r:r,up:false});return d}
 function _cdSh(d){return G.sh(d)}
 function _cdRnk(r){return _RANK_SYM[r]}
+// Inline img tag sized to the surrounding font-size — works anywhere
+// a caller concatenates _cdSuit(s) into innerHTML. object-fit:contain
+// keeps the pip's aspect ratio inside the 1em square.
+function _cdFloralPipImg(s,extra){
+  return '<img src="'+_FL_BASE+_FL_SUIT[s]+'" alt="" '
+    +'style="display:inline-block;height:1em;width:1em;vertical-align:-0.15em;object-fit:contain;'
+    +(extra||'')+'">';
+}
 function _cdSuit(s){
   // Style-aware: returns the appropriate symbol set
-  return _cdStyle()==='classic'?_CL_SYM[s]:_SUIT_SYM[s];
+  var style=_cdStyle();
+  if(style==='classic')return _CL_SYM[s];
+  if(style==='floral')return _cdFloralPipImg(s,'');
+  return _SUIT_SYM[s];
 }
 // Trick games (Hearts/Bower/Cribbage/Spades/Juniper) use string suit names.
 // Map name → numeric idx → style-aware symbol.
@@ -67,11 +108,21 @@ function _cdPipFor(suitName){
 function _cdIsRed(s){return s===1||s===2}
 
 function _cdBackStyle(el){
-  if(_cdStyle()==='classic'){
+  var style=_cdStyle();
+  if(style==='classic'){
     // Classic card back: navy diagonal weave pattern via CSS gradients
     el.style.backgroundImage='repeating-linear-gradient(45deg,#1a3a6a 0,#1a3a6a 8px,#244a7a 8px,#244a7a 16px),linear-gradient(135deg,#1a3a6a,#244a7a)';
     el.style.backgroundColor='#1a3a6a';
     el.style.backgroundSize='auto, auto';
+  }else if(style==='floral'){
+    // Floral card back: cream with a soft botanical cross-hatch, echoing
+    // the line-art set. No dedicated card-back art in the floral pack yet,
+    // so we synthesise one from layered gradients tinted with burgundy.
+    el.style.backgroundColor='#efe5cf';
+    el.style.backgroundImage='repeating-linear-gradient(45deg,rgba(180,42,42,0.12) 0,rgba(180,42,42,0.12) 2px,transparent 2px,transparent 8px),'
+      +'repeating-linear-gradient(-45deg,rgba(180,42,42,0.10) 0,rgba(180,42,42,0.10) 2px,transparent 2px,transparent 8px),'
+      +'linear-gradient(135deg,#f4ead2,#e8ddbd)';
+    el.style.backgroundSize='auto, auto, auto';
   }else{
     el.style.backgroundImage="url('"+_CD_BACK+"')";
   }
@@ -127,26 +178,97 @@ function _cdElClassic(d,card){
   }
 }
 
+// ═══ FLORAL DECK RENDERER ═══
+// Cream card background like classic. Corner = rank + small suit pip PNG.
+// Center:
+//   • A  → colored Ace letter art (ace-red.png / ace-black.png)
+//   • J/Q/K → face art (jack-red.png / queen-black.png / king-red.png / …)
+//   • 2–10 → big centered suit pip (same PNG, larger)
+// Face art has only 2 color variants (red vs black), matching the source set.
+function _cdElFloral(d,card){
+  if(card.up){
+    d.className+=' gc-up gc-floral';
+    var isRed=_cdIsRed(card.s);
+    if(isRed)d.className+=' gc-red';
+    var rnk=_cdRnk(card.r);
+    var suitPng=_FL_BASE+_FL_SUIT[card.s];
+    var rankClr=isRed?'#b42a2a':'#1a1a1a';
+    d.style.backgroundImage='';
+    d.style.background='linear-gradient(180deg,#faf6ec,#ede5d0)';
+    d.style.color=rankClr;
+    d.style.border='1px solid rgba(0,0,0,0.2)';
+    // Center art: Ace/J/Q/K get the floral face art, 2-10 get a big pip.
+    var centerHtml;
+    var color=isRed?'red':'black';
+    if(card.r===0){
+      // Ace — decorative "A" art, color-matched
+      centerHtml='<img src="'+_FL_BASE+'ace-'+color+'.png" alt="" '
+        +'style="position:absolute;inset:8% 10%;width:80%;height:84%;'
+        +'object-fit:contain;pointer-events:none;">';
+    }else if(card.r>=10){
+      // Jack/Queen/King face art
+      var face=card.r===10?'jack':(card.r===11?'queen':'king');
+      centerHtml='<img src="'+_FL_BASE+face+'-'+color+'.png" alt="" '
+        +'style="position:absolute;inset:8% 10%;width:80%;height:84%;'
+        +'object-fit:contain;pointer-events:none;">';
+    }else{
+      // 2–10: big centered suit pip
+      centerHtml='<img src="'+suitPng+'" alt="" '
+        +'style="position:absolute;inset:18% 22%;width:56%;height:64%;'
+        +'object-fit:contain;pointer-events:none;opacity:0.92;">';
+    }
+    // Small corner rank + pip (top-left upright, bottom-right inverted)
+    var corner=function(pos){
+      var rot=pos==='br'?'transform:rotate(180deg);transform-origin:center;':'';
+      var loc=pos==='br'?'bottom:3px;right:5px;':'top:3px;left:5px;';
+      return '<div style="position:absolute;'+loc+'line-height:1;text-align:center;'
+        +'font-family:Georgia,serif;color:'+rankClr+';pointer-events:none;z-index:2;'+rot+'">'
+        +'<div style="font-size:clamp(.85rem,2.6vw,1.15rem);font-weight:700;">'+rnk+'</div>'
+        +'<img src="'+suitPng+'" alt="" style="display:block;height:clamp(10px,2.6vw,16px);'
+        +'width:clamp(10px,2.6vw,16px);object-fit:contain;margin:1px auto 0;"></div>';
+    };
+    d.innerHTML=centerHtml+corner('tl')+corner('br');
+  }else{
+    d.className+=' gc-dn gc-floral';
+    _cdBackStyle(d);
+    d.style.color='';
+    d.style.border='1px solid rgba(0,0,0,0.3)';
+    d.innerHTML='';
+  }
+}
+
 function _cdEl(card){
   var d=document.createElement('div');
   d.className='gc';
-  if(_cdStyle()==='classic')_cdElClassic(d,card);
+  var style=_cdStyle();
+  if(style==='classic')_cdElClassic(d,card);
+  else if(style==='floral')_cdElFloral(d,card);
   else _cdElLW(d,card);
   d.setAttribute('data-s',card.s);
   d.setAttribute('data-r',card.r);
   return d;
 }
 
-// Toggle helper that any card game can wire into a button. Re-renders
-// the current game by dispatching a custom event the game can listen
-// for, OR by calling the game's New-Game handler if that's simpler.
+// Toggle helper that any card game can wire into a button. Cycles
+// lw → classic → floral → lw. Existing callers that just want "next
+// style" keep working; callers that want a specific style can use
+// _cdSetStyle directly.
 function _cdToggleStyle(){
   var cur=_cdStyle();
-  var nxt=cur==='classic'?'lw':'classic';
+  var idx=_STYLE_CYCLE.indexOf(cur);
+  if(idx<0)idx=0;
+  var nxt=_STYLE_CYCLE[(idx+1)%_STYLE_CYCLE.length];
   _cdSetStyle(nxt);
   // Notify any listening game to re-render
   try{document.dispatchEvent(new CustomEvent('lw-card-style-change',{detail:{style:nxt}}));}catch(e){}
   return nxt;
+}
+// Label for UI buttons — what the user sees on the style toggle.
+function _cdStyleLabel(s){
+  s=s||_cdStyle();
+  if(s==='classic')return 'Classic';
+  if(s==='floral')return 'Floral';
+  return 'Garden';
 }
 
 // Expose on window for game scripts
@@ -161,7 +283,9 @@ window._cdArt=_cdArt;
 window._cdStyle=_cdStyle;
 window._cdSetStyle=_cdSetStyle;
 window._cdToggleStyle=_cdToggleStyle;
+window._cdStyleLabel=_cdStyleLabel;
 window._cdPipFor=_cdPipFor;
+window._cdFloralPipImg=_cdFloralPipImg;
 window._SUIT_SYM=_SUIT_SYM;
 window._SUIT_CLR=_SUIT_CLR;
 window._SUIT_GRP=_SUIT_GRP;

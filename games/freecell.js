@@ -13,12 +13,12 @@ function GFC(a){
   var tab=[],free=[null,null,null,null],fnd=[[],[],[],[]],sel=null,gameOver=false,moves=0;
   ms(a,'Moves: <strong id="FCmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='FCgd';a.appendChild(gd);
-  var _fcStyleLbl=(window._cdStyle&&window._cdStyle()==='classic')?'🃏 Classic':'🃏 Garden';
+  var _fcStyleLbl='🃏 '+(window._cdStyleLabel?window._cdStyleLabel():'Garden');
   mc(a).innerHTML='<button class="gb" onclick="_FCN()">🔄 New</button> <button class="gb" id="FCstyle" onclick="_FCToggleStyle()" style="font-size:0.7rem;">'+_fcStyleLbl+'</button>';
   window._FCToggleStyle=function(){
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('FCstyle');
-    if(b)b.textContent=nxt==='classic'?'🃏 Classic':'🃏 Garden';
+    if(b)b.textContent='🃏 '+(window._cdStyleLabel?window._cdStyleLabel(nxt):'Garden');
     rn();
   };
 

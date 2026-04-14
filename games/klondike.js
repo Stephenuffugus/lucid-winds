@@ -14,12 +14,12 @@ function GKL(a){
   // sel = {src:'tab'|'waste', col:N, idx:N} or null
   ms(a,'Moves: <strong id="KLmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='KLgd';a.appendChild(gd);
-  var _kStyleLbl=(window._cdStyle&&window._cdStyle()==='classic')?'🃏 Classic':'🃏 Garden';
+  var _kStyleLbl='🃏 '+(window._cdStyleLabel?window._cdStyleLabel():'Garden');
   mc(a).innerHTML='<select class="gsl" id="KLdraw" onchange="_KLDraw(this.value)"><option value="1" selected>Draw 1</option><option value="3">Draw 3</option></select> <button class="gb" onclick="_KLN()">🔄 New</button> <button class="gb" id="KLstyle" onclick="_KLToggleStyle()" style="font-size:0.7rem;">'+_kStyleLbl+'</button>';
   window._KLToggleStyle=function(){
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('KLstyle');
-    if(b)b.textContent=nxt==='classic'?'🃏 Classic':'🃏 Garden';
+    if(b)b.textContent='🃏 '+(window._cdStyleLabel?window._cdStyleLabel(nxt):'Garden');
     rn();
   };
 

@@ -54,12 +54,12 @@ window._gameFns.bowergarden = function BG(a){
   pan.style.cssText='max-width:540px;margin:0 auto;padding:6px;user-select:none;';
   a.appendChild(pan);
   function _pip(suitName){return (window._cdPipFor)?window._cdPipFor(suitName):SUIT_ICONS[suitName];}
-  var _bgStyleLbl=(window._cdStyle&&window._cdStyle()==='classic')?'🃏 Classic':'🃏 Garden';
+  var _bgStyleLbl='🃏 '+(window._cdStyleLabel?window._cdStyleLabel():'Garden');
   mc(a).innerHTML='<button class="gb-new" onclick="_BGN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="BGstyle" onclick="_BGToggleStyle()" style="font-size:0.7rem;">'+_bgStyleLbl+'</button>';
   window._BGToggleStyle=function(){
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('BGstyle');
-    if(b)b.textContent=nxt==='classic'?'🃏 Classic':'🃏 Garden';
+    if(b)b.textContent='🃏 '+(window._cdStyleLabel?window._cdStyleLabel(nxt):'Garden');
     if(typeof render==='function')render();
   };
 
