@@ -4227,6 +4227,33 @@ function _renderHabitatInfo(zk, lat, lng) {
     }
   }
 
+  // Density pressure — explains to the keeper why a dense zone has stopped
+  // producing babies. Reproduction density tiers: 3+=0.35x, 5+=0.10x, 7+=0.
+  // Counts include plants in this zone AND all adjacent zones (the wider
+  // pool reproduction reads). Cheap to compute.
+  try {
+    var _zDensityTotal = 0;
+    if (window._getAllZonePlants) {
+      var _allZones = window._getAllZonePlants();
+      var _zkParts = zk.split(',');
+      var _zLat = parseFloat(_zkParts[0]), _zLng = parseFloat(_zkParts[1]);
+      var _zStep = (typeof ZONE_SIZE === 'number' ? ZONE_SIZE : 0.001);
+      for (var _dx = -1; _dx <= 1; _dx++) {
+        for (var _dy = -1; _dy <= 1; _dy++) {
+          var _zKey = (Math.round((_zLat + _dx * _zStep) / _zStep) * _zStep).toFixed(4) + ',' + (Math.round((_zLng + _dy * _zStep) / _zStep) * _zStep).toFixed(4);
+          if (_allZones[_zKey]) _zDensityTotal += _allZones[_zKey].length;
+        }
+      }
+    }
+    if (_zDensityTotal >= 7) {
+      chips += '<div class="hi-hab-chip" style="background:rgba(216,112,96,0.15);border-color:rgba(216,112,96,0.45);color:#e0a090;">\ud83c\udf32 <b>Saturated</b> — ' + _zDensityTotal + ' plants here, no new spread</div>';
+    } else if (_zDensityTotal >= 5) {
+      chips += '<div class="hi-hab-chip" style="background:rgba(200,168,75,0.12);border-color:rgba(200,168,75,0.35);color:#d4b25a;">\ud83c\udf3f Dense — ' + _zDensityTotal + ' plants, spread is slow</div>';
+    } else if (_zDensityTotal >= 3) {
+      chips += '<div class="hi-hab-chip">Density: <b>' + _zDensityTotal + ' nearby</b></div>';
+    }
+  } catch(e) {}
+
   el.innerHTML = chips || '<div class="hi-hab-chip">No habitat data yet</div>';
 }
 
@@ -4626,6 +4653,7 @@ window._hexAction = function(action) {
         // Stranger water: +2h onto the shared marker's decayAt. Still
         // respects the WILD_TEND_BONUS_CAP so a single plant can't get
         // infinite tending across all visitors (raised to 30d earlier).
+        var _waterCapped = false;
         try {
           if (_sharedMarkers && _sharedMarkers[p.hash] && _sharedMarkers[p.hash].data) {
             var _wSmd = _sharedMarkers[p.hash].data;
@@ -4633,9 +4661,15 @@ window._hexAction = function(action) {
             if ((_wSmd.strangerTendAddMs || 0) < WILD_TEND_BONUS_CAP) {
               _wSmd.strangerTendAddMs = (_wSmd.strangerTendAddMs || 0) + WILD_WATER_BONUS_MS;
               _wSmd.decayAt = (_wSmd.decayAt || Date.now()) + WILD_WATER_BONUS_MS;
+            } else {
+              _waterCapped = true;
             }
           }
         } catch(e) {}
+        if (_waterCapped) {
+          _toast('\ud83d\udca7 This plant is already at max community tending. Your kindness is noted.');
+          break;
+        }
         if (window.PW_grantXP) PW_grantXP(5, 'wild_water_stranger');
         if (window.LW_Log) window.LW_Log.write('wild_watered_stranger', { hash: p.hash, ownerName: p.ownerName || 'Keeper' });
         _toast('\ud83d\udca7 Watered a keeper\u2019s plant. +2h \u00b7 +5 XP.');
@@ -4700,6 +4734,7 @@ window._hexAction = function(action) {
       // Bump the locally-cached shared marker so the inspector reflects
       // the new vitality immediately. Server source-of-truth update will
       // come with the Firestore transaction landing in Phase 2 finish.
+      var _tendCapped = false;
       try {
         if (_sharedMarkers && _sharedMarkers[p.hash] && _sharedMarkers[p.hash].data) {
           var _smd = _sharedMarkers[p.hash].data;
@@ -4707,9 +4742,15 @@ window._hexAction = function(action) {
           if ((_smd.strangerTendAddMs || 0) < WILD_TEND_BONUS_CAP) {
             _smd.strangerTendAddMs = (_smd.strangerTendAddMs || 0) + WILD_TEND_BONUS_MS;
             _smd.decayAt = (_smd.decayAt || Date.now()) + WILD_TEND_BONUS_MS;
+          } else {
+            _tendCapped = true;
           }
         }
       } catch(e) {}
+      if (_tendCapped) {
+        _toast('\ud83c\udf3f This plant is already at max community tending. Your kindness is noted but won\u2019t extend it further.');
+        break;
+      }
       if (window.earnDew) window.earnDew(2, 'wild_tend_stranger');
       if (window.PW_grantXP) PW_grantXP(10, 'wild_tend_stranger');
       if (window.LW_Log) window.LW_Log.write('wild_tended_stranger', { hash: p.hash, ownerName: p.ownerName || 'Keeper' });
