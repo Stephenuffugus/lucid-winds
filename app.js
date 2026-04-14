@@ -1487,7 +1487,7 @@
       {name:'Pangolin',rare:true,temp:'guardian'},    // idx 43
       {name:'Luna Moth',rare:true,temp:'mystic'},   // idx 44
       {name:'Porcupine',temp:'guardian',ability:'shellShift'}, // idx 45
-      {name:'Glow Snail',rare:true,temp:'mystic'},  // idx 46
+      {name:'None'},  // idx 46 — was Glow Snail, cut Apr 14 2026 to rarity-tune companions under 40% total rate
       {name:'Axolotl',rare:true,temp:'symbiote'}, // idx 47
       {name:'Scorpion',rare:true,temp:'guardian'},// idx 48
       {name:'Origami Crane',rare:true,temp:'wanderer'}, // idx 49
@@ -1517,11 +1517,11 @@
       {name:'Mushroom Sprite',temp:'symbiote'}, // idx 73
       {name:'Deer Fawn',temp:'wanderer'},   // idx 74
       {name:'Raven',rare:true,temp:'forager'}, // idx 75
-      {name:'Garden Snake',temp:'guardian'}, // idx 76
-      {name:'Centipede',temp:'forager'},   // idx 77
-      {name:'Crystal Beetle',rare:true,temp:'mystic'}, // idx 78
+      {name:'None'}, // idx 76 — was Garden Snake, cut for rarity-tune
+      {name:'None'}, // idx 77 — was Centipede, cut for rarity-tune
+      {name:'None'}, // idx 78 — was Crystal Beetle, cut for rarity-tune
       {name:'Will-o-Wisp',rare:true,temp:'mystic'}, // idx 79
-      {name:'Paper Butterfly',temp:'wanderer'}, // idx 80
+      {name:'None'}, // idx 80 — was Paper Butterfly, cut for rarity-tune
       {name:'Panda',temp:'guardian'}  // idx 81
     ],
     mutations: [
