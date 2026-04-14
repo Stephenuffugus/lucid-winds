@@ -35341,6 +35341,25 @@ function _lwHexBadges(zk){
     // ── FORAGE: what you can collect here ────────────────────────────
     if(_isSeedAvailable(zk)&&plantsHere.length>=1){
       out.push({category:'forage',icon:'\ud83c\udf31',label:'Feral seed available',priority:6});
+      // Foraging meta-info — only show if there's a seed here to forage.
+      try{
+        if(window.LW_FORAGING){
+          // Attempt counter / lock — reads lw_forage_attempts for this zone today.
+          var _fMap=JSON.parse(localStorage.getItem('lw_forage_attempts')||'{}');
+          var _today=new Date().toISOString().slice(0,10);
+          var _fRec=_fMap[zk];var _used=(_fRec&&_fRec.date===_today)?(_fRec.count||0):0;
+          if(_used>=3){
+            out.push({category:'forage',icon:'\ud83d\udd12',label:'Hex locked \u00b7 try tomorrow',priority:10});
+          } else if(_used>0){
+            out.push({category:'forage',icon:(_used===1?'\u2460':'\u2461'),label:(3-_used)+' foraging attempts left',priority:4});
+          }
+          // Weather tilt — today's favored element shown as a hint.
+          var _tilt=window.LW_FORAGING.currentTilt?window.LW_FORAGING.currentTilt():null;
+          if(_tilt&&window.LW_FORAGING.EL&&window.LW_FORAGING.EL[_tilt]){
+            out.push({category:'forage',icon:window.LW_FORAGING.EL[_tilt].icon,label:'Weather favors '+window.LW_FORAGING.EL[_tilt].label,priority:3});
+          }
+        }
+      }catch(e){}
     }
     // Drift seed already landed at this zone (lw_drift sets fg_ferals with origin='drift')
     try{
@@ -53989,8 +54008,40 @@ window._lwClaimHerbarium = function(id){
       if (resolved || selected.length !== 3) return;
       var cardsPlayed = selected.map(function(si){return hand[si];});
       resolved = resolveAttempt(comp.elements, cardsPlayed);
-      bumpAttempts(zoneKey);
+      var attemptNumber = bumpAttempts(zoneKey);
       if (window._haptic) window._haptic(resolved.success ? 'bloom' : 'tap');
+      // Book of Secrets diary entry — logs biome / weather / outcome per spec §8.
+      try {
+        if (window.LW_Log) {
+          window.LW_Log.write('forage_attempt', {
+            zone: zoneKey.slice(0,10),
+            biome: comp.biome,
+            weather: comp.weather || 'calm',
+            attempt: attemptNumber,
+            matches: resolved.matches,
+            counters: resolved.counters,
+            success: resolved.success,
+            grade: grade || ''
+          });
+        }
+      } catch(e) {}
+      // Bloom Day 2x — if today is a Bloom Day and the forage succeeds,
+      // award a bonus element card so the cadence has a real payoff.
+      try {
+        if (resolved.success && window._lwGetActiveBloomDay && window._lwGetActiveBloomDay()) {
+          var _blInv = loadInventory();
+          if (totalCards(_blInv) < cardCapacity()) {
+            var _blPool = ['sun','shade','rain','dry','wind','still'];
+            var _blPick = _blPool[Math.floor(Math.random() * _blPool.length)];
+            addCard(_blPick, 1);
+            if (EL[_blPick] && window._toast) {
+              setTimeout(function(){
+                window._toast('\ud83c\udf38 Bloom Day bonus: ' + EL[_blPick].icon + ' ' + EL[_blPick].label + ' card.');
+              }, 600);
+            }
+          }
+        }
+      } catch(e) {}
       render();
     };
     window._lwForageNext = function() {
