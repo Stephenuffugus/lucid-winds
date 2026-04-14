@@ -30805,6 +30805,7 @@ document.addEventListener('keydown', function(e) {
       if (window._releaseWakeLock) _releaseWakeLock();
     }
     if (tab === 'wild') { if(window.FG_Wild&&FG_Wild._afMarkWildEntry)FG_Wild._afMarkWildEntry(); if(window._primeWildWeather)setTimeout(function(){window._primeWildWeather(false);},1500); }
+    if (tab === 'game' && window._lwCheckFirstGamePulse) setTimeout(window._lwCheckFirstGamePulse, 600);
     // Map overlays — show on Wild tab regardless of backpack state
     var vig=document.querySelector('.map-vignette');
     var glass=document.querySelector('.map-glass-highlight');
@@ -40255,6 +40256,16 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      Fallback: when :has() is unsupported the button just stays visible —
      not a bug, just slightly busy. */
   body.ob-active #lw-fb-btn, body.ob-active #lw-whatnow-btn{display:none !important;}
+  /* Light-touch hint pulse — soft sage/gold glow that breathes on the
+     highlighted element for ~8 seconds then self-removes. Used sparingly
+     at three critical moments (first game visit, first-qualifying WHAT
+     NOW suggestion, L7 class picker) to nudge without forcing focus. */
+  @keyframes lwPulseHint{
+    0%{box-shadow:0 0 0 0 rgba(200,168,75,0.55), 0 0 14px 2px rgba(200,168,75,0.25);}
+    50%{box-shadow:0 0 0 8px rgba(200,168,75,0), 0 0 22px 6px rgba(200,168,75,0.45);}
+    100%{box-shadow:0 0 0 0 rgba(200,168,75,0), 0 0 14px 2px rgba(200,168,75,0.25);}
+  }
+  .lw-pulse-hint{animation:lwPulseHint 1.6s ease-in-out infinite;border-radius:inherit;position:relative;}
   body:has(.lu-overlay.open) #lw-fb-btn,
   body:has(#pw-win-overlay) #lw-fb-btn,
   body:has(#cinematic-reveal.open) #lw-fb-btn,
@@ -56737,6 +56748,69 @@ window.LW_Comp = (function(){
     out.sort(function(a,b){return b.priority-a.priority;});
     return out.slice(0,5);
   }
+
+  // Pulse a DOM element with soft glow. One-shot via optional localStorage key.
+  window._lwPulseHint=function(el, durationMs, oneShotKey){
+    try {
+      if (!el) return;
+      if (oneShotKey && localStorage.getItem(oneShotKey)) return;
+      el.classList.add('lw-pulse-hint');
+      setTimeout(function(){
+        try { el.classList.remove('lw-pulse-hint'); } catch(e){}
+      }, durationMs || 8000);
+      if (oneShotKey) {
+        try { localStorage.setItem(oneShotKey, '1'); } catch(e){}
+      }
+    } catch(e){}
+  };
+
+  // Trigger: L7 with no class picked → pulse Book of Secrets button.
+  window._lwCheckL7ClassPulse=function(){
+    try {
+      var xp=parseInt(localStorage.getItem('pw_xp')||'0',10);
+      if (xp < 950) return;
+      if (localStorage.getItem('lw_class')) return;
+      var btn=document.getElementById('kb-compendium');
+      if (btn) window._lwPulseHint(btn, 10000, 'lw_pulse_l7class');
+    } catch(e){}
+  };
+  setTimeout(window._lwCheckL7ClassPulse, 4000);
+  setInterval(window._lwCheckL7ClassPulse, 30000);
+
+  // Trigger: first game tab visit with no sunbeam progress and no plants →
+  // pulse the WHAT NOW button so they know help is there.
+  window._lwCheckFirstGamePulse=function(){
+    try {
+      if (localStorage.getItem('lw_pulse_firstgame_v1')) return;
+      var prog=window._getHashProgress?_getHashProgress():0;
+      var gh=[]; try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+      if (prog>0 || gh.length>0) {
+        // Player already has mint progress or plants — skip the pulse
+        // but consume the one-shot so we don't fire later.
+        localStorage.setItem('lw_pulse_firstgame_v1','1');
+        return;
+      }
+      var btn=document.getElementById('lw-whatnow-btn');
+      if (btn) window._lwPulseHint(btn, 12000, 'lw_pulse_firstgame_v1');
+    } catch(e){}
+  };
+
+  // Trigger: first time a high-priority suggestion (priority >= 90) exists
+  // → pulse the WHAT NOW button to draw attention. One-shot so it doesn't
+  // repeat every time Bloom Day comes back or a seed is bloom-ready.
+  window._lwCheckHighPrioPulse=function(){
+    try {
+      if (localStorage.getItem('lw_pulse_highprio_v1')) return;
+      var items=buildSuggestions();
+      if (!items.length || items[0].priority < 90) return;
+      var btn=document.getElementById('lw-whatnow-btn');
+      if (btn) window._lwPulseHint(btn, 10000, 'lw_pulse_highprio_v1');
+    } catch(e){}
+  };
+  // Check high-priority pulse every 45s — catches bloom days, ready seeds
+  // etc. without hammering the state readers.
+  setInterval(window._lwCheckHighPrioPulse, 45000);
+  setTimeout(window._lwCheckHighPrioPulse, 8000);
 
   window._lwOpenWhatNow=function(){
     var old=document.getElementById('lw-whatnow-modal');if(old)old.remove();
