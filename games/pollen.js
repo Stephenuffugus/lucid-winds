@@ -354,7 +354,7 @@ window._gameFns.pollen = function PN(a){
     // Draw N+1 pollinators from the 10-card pool — matches Splendor's
     // nobles rule (2p → 3, 3p → 4, 4p → 5). Solo falls to 3.
     var pcount=pollinatorCount(n);
-    var pls=shuffle(ALL_POLLINATORS.slice()).slice(0,pcount).map(function(p){return{name:p.name,icon:p.icon,req:p.req,gp:p.gp,claimedBy:null};});
+    var pls=shuffle(ALL_POLLINATORS.slice()).slice(0,pcount).map(function(p){return{slug:p.slug,name:p.name,icon:p.icon,req:p.req,gp:p.gp,claimedBy:null};});
     var players=[];
     for(var i=0;i<n;i++){
       var s=setup.seats[i];
@@ -665,27 +665,56 @@ window._gameFns.pollen = function PN(a){
   // it fills the centre of the card. On 404 the img element is removed
   // and the emoji tier icon shows through underneath. Flower name sits
   // under the art in small caps so players can read it at a glance.
+  // Card layout — art is the focal point. Three layers sit on a cream
+  // card face:
+  //   • Top-left badge = GP value (only if >0). Filled gold pill, dark
+  //     numeral, drop-shadow so it lifts off the art beneath.
+  //   • Top-right badge = "use" indicator = the produces-color token,
+  //     the same chip you'll spend on future buys.
+  //   • Center (~70% of card height) = ART. <img> with object-fit:
+  //     contain so any aspect ratio renders without distortion. PNG
+  //     missing? Tier-icon emoji shows behind it as a graceful fallback.
+  //   • Bottom strip = the COST BAR. Solid translucent band across the
+  //     full width, costs rendered as colored chips. Always pinned to
+  //     the bottom edge so the bar reads as a foundation under the art.
+  //   • Flower name in the cost bar in tiny caps so it's legible without
+  //     fighting the art for attention.
+  //
+  // Tier-aware art path: assets/games/masterpollinator/tier{N}/<slug>.png
+  // matches the folder structure Stephen ships art in. Fallback to flat
+  // assets/games/masterpollinator/<slug>.png is checked too via two img
+  // tags chained by onerror.
   function renderCard(card,isReserved){
     var aff=canAfford(me(),card);
-    var border=aff.affordable?'2px solid #7ab356':'2px solid #6a6051';
+    var border=aff.affordable?'2px solid #7ab356':'2px solid rgba(110,96,81,0.55)';
     var bgShade=card.tier===1?'#4a7c35':card.tier===2?'#c8a84b':'#ffd700';
-    var artSrc=card.slug?('assets/games/masterpollinator/'+card.slug+'.png'):'';
-    var h='<div class="pn-card'+(aff.affordable?' aff':'')+'" style="width:72px;height:100px;border-radius:8px;padding:4px;border:'+border+';border-left:4px solid '+bgShade+';display:inline-block;vertical-align:top;margin:3px;position:relative;cursor:pointer;color:#1a1f17;box-shadow:0 2px 4px rgba(0,0,0,0.25);overflow:hidden;" onclick="_PNtap('+card.id+','+(isReserved?'true':'false')+')">';
-    h+='<div style="position:absolute;top:2px;left:4px;font-size:12px;font-weight:800;z-index:2;text-shadow:0 1px 2px rgba(255,255,255,0.8);">'+(card.gp>0?card.gp:'')+'</div>';
-    h+='<div style="position:absolute;top:3px;right:4px;z-index:2;">'+tokDot(card.produces,12)+'</div>';
-    // Emoji fallback sits behind art.
-    h+='<div style="position:absolute;inset:18px 4px 26px;display:flex;align-items:center;justify-content:center;font-size:22px;opacity:0.7;z-index:0;">'+TIER_ICONS[card.tier-1]+'</div>';
-    if(artSrc){
-      h+='<img src="'+artSrc+'" alt="" onerror="this.style.display=\'none\'" '
-        +'style="position:absolute;inset:14px 3px 24px;width:calc(100% - 6px);height:calc(100% - 38px);object-fit:contain;z-index:1;pointer-events:none;">';
-    }
-    // Flower name strip — tiny caps, readable at all zoom levels.
-    if(card.name){
-      h+='<div style="position:absolute;left:3px;right:3px;bottom:14px;text-align:center;font-family:DM Mono,monospace;font-size:6.5px;letter-spacing:0.04em;color:#2a2218;text-transform:uppercase;text-shadow:0 1px 1px rgba(255,255,255,0.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2;">'+esc(card.name)+'</div>';
-    }
-    h+='<div style="position:absolute;bottom:2px;left:3px;right:3px;display:flex;gap:1px;flex-wrap:wrap;z-index:2;">';
-    for(var c in card.cost){for(var i=0;i<card.cost[c];i++)h+=tokDot(c,9);}
-    h+='</div></div>';
+    var W=78, H=108;
+    var BARH=22; // bottom cost bar height
+    var GP_PILL=card.gp>0?
+      '<div style="position:absolute;top:2px;left:3px;width:18px;height:18px;border-radius:50%;background:linear-gradient(180deg,#fff5d4,#e8c860);color:#2a1f0a;font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;z-index:3;box-shadow:0 1px 3px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.5);border:1px solid rgba(120,90,20,0.6);">'+card.gp+'</div>'
+      :'';
+    var USE_PILL=
+      '<div style="position:absolute;top:2px;right:3px;width:18px;height:18px;border-radius:50%;background:'+COLOR_HEX[card.produces]+';z-index:3;box-shadow:0 1px 3px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.4);border:1px solid rgba(0,0,0,0.3);"></div>';
+    // Two-stage art lookup: tier folder first, then flat fallback.
+    var artTier='assets/games/masterpollinator/tier'+card.tier+'/'+card.slug+'.png';
+    var artFlat='assets/games/masterpollinator/'+card.slug+'.png';
+    var artImg=card.slug?(
+      '<img src="'+artTier+'" alt="" '
+      +'onerror="if(this.src.indexOf(\'/tier\')>=0){this.src=\''+artFlat+'\';}else{this.style.display=\'none\';}" '
+      +'style="position:absolute;left:2px;right:2px;top:2px;bottom:'+BARH+'px;width:calc(100% - 4px);height:calc(100% - '+(BARH+2)+'px);object-fit:contain;z-index:1;pointer-events:none;">'
+    ):'';
+    // Cost bar — solid band pinned to bottom, full width, with chips.
+    var costChips='';
+    for(var c in card.cost){for(var i=0;i<card.cost[c];i++)costChips+=tokDot(c,10);}
+    var nameStrip=card.name?
+      '<div style="position:absolute;left:0;right:0;bottom:'+(BARH-2)+'px;text-align:center;font-family:DM Mono,monospace;font-size:6px;letter-spacing:0.04em;color:#2a2218;text-transform:uppercase;text-shadow:0 1px 1px rgba(255,255,255,0.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:3;padding:0 3px;">'+esc(card.name)+'</div>'
+      :'';
+    var costBar=
+      '<div style="position:absolute;left:0;right:0;bottom:0;height:'+BARH+'px;background:linear-gradient(180deg,rgba(248,242,224,0.94),rgba(232,222,188,0.96));border-top:1px solid rgba(120,100,60,0.4);display:flex;align-items:center;justify-content:center;gap:2px;flex-wrap:wrap;padding:2px 3px;z-index:2;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);">'+costChips+'</div>';
+    var fallbackEmoji=
+      '<div style="position:absolute;left:0;right:0;top:14px;bottom:'+(BARH+4)+'px;display:flex;align-items:center;justify-content:center;font-size:24px;opacity:0.55;z-index:0;">'+TIER_ICONS[card.tier-1]+'</div>';
+    var h='<div class="pn-card'+(aff.affordable?' aff':'')+'" style="width:'+W+'px;height:'+H+'px;border-radius:8px;border:'+border+';border-left:4px solid '+bgShade+';display:inline-block;vertical-align:top;margin:3px;position:relative;cursor:pointer;color:#1a1f17;box-shadow:0 2px 6px rgba(0,0,0,0.32);overflow:hidden;background:linear-gradient(180deg,#fbf6e6,#f0e8ce);" onclick="_PNtap('+card.id+','+(isReserved?'true':'false')+')">';
+    h+=fallbackEmoji+artImg+GP_PILL+USE_PILL+nameStrip+costBar+'</div>';
     return h;
   }
 
@@ -752,11 +781,29 @@ window._gameFns.pollen = function PN(a){
       } else {
         bg='rgba(26,31,23,0.5);border-color:rgba(122,179,86,0.2)';
       }
-      h+='<div class="pn-poll" style="min-width:78px;padding:6px;background:'+bg+';border:1px solid;border-radius:8px;text-align:center;font-size:10px;flex-shrink:0;">';
-      h+='<div style="font-size:16px;">'+p.icon+'</div><div style="font-weight:700;">'+p.name+'</div>';
-      h+='<div style="color:var(--muted);">';
-      for(var c in p.req)h+='<span style="color:'+COLOR_HEX[c]+'">'+p.req[c]+'</span> ';
-      h+='</div>'+tag+'</div>';
+      // Pollinator card — same art-first treatment as plant cards.
+      // Tier-aware path: assets/games/masterpollinator/pollinators/<slug>.png
+      // Falls back to flat pollinator-<slug>.png, then to emoji on miss.
+      var pTier='assets/games/masterpollinator/pollinators/'+(p.slug||'')+'.png';
+      var pFlat='assets/games/masterpollinator/pollinator-'+(p.slug||'')+'.png';
+      var pArt=p.slug?(
+        '<img src="'+pTier+'" alt="" '
+        +'onerror="if(this.src.indexOf(\'/pollinators/\')>=0){this.src=\''+pFlat+'\';}else{this.style.display=\'none\';}" '
+        +'style="position:absolute;left:2px;right:2px;top:2px;bottom:36px;width:calc(100% - 4px);height:calc(100% - 38px);object-fit:contain;z-index:1;pointer-events:none;">'
+      ):'';
+      var pEmoji='<div style="position:absolute;inset:6px 0 38px;display:flex;align-items:center;justify-content:center;font-size:24px;opacity:0.55;z-index:0;">'+p.icon+'</div>';
+      h+='<div class="pn-poll" style="position:relative;width:88px;height:108px;background:'+bg+';border:1px solid;border-radius:8px;text-align:center;font-size:10px;flex-shrink:0;overflow:hidden;">';
+      h+=pEmoji+pArt;
+      // GP badge top-right
+      h+='<div style="position:absolute;top:2px;right:3px;width:18px;height:18px;border-radius:50%;background:linear-gradient(180deg,#fff5d4,#e8c860);color:#2a1f0a;font-weight:800;font-size:10px;display:flex;align-items:center;justify-content:center;z-index:3;border:1px solid rgba(120,90,20,0.6);box-shadow:0 1px 3px rgba(0,0,0,0.4);">'+p.gp+'</div>';
+      // Name strip
+      h+='<div style="position:absolute;left:0;right:0;bottom:18px;font-family:DM Mono,monospace;font-size:6.5px;letter-spacing:0.04em;color:var(--cream);text-transform:uppercase;text-shadow:0 1px 2px rgba(0,0,0,0.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 3px;z-index:3;">'+esc(p.name)+'</div>';
+      // Requirement bar at bottom
+      h+='<div style="position:absolute;left:0;right:0;bottom:0;height:18px;background:linear-gradient(180deg,rgba(13,16,12,0.6),rgba(13,16,12,0.85));display:flex;align-items:center;justify-content:center;gap:3px;z-index:3;border-top:1px solid rgba(122,179,86,0.2);">';
+      for(var c in p.req)h+='<span style="display:inline-flex;align-items:center;gap:2px;color:'+COLOR_HEX[c]+';font-weight:700;font-size:9px;">'+tokDot(c,9)+p.req[c]+'</span>';
+      h+='</div>';
+      if(tag){h+='<div style="position:absolute;top:2px;left:3px;font-size:0.5rem;color:var(--gold);background:rgba(13,16,12,0.7);border-radius:4px;padding:1px 4px;z-index:3;">'+esc(claimedBy.name)+'</div>';}
+      h+='</div>';
     });
     h+='</div>';
     // Market
