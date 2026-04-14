@@ -6604,9 +6604,18 @@ window._addSwitchTabHook = function(fn){
       alert('Feral timers reset! Switch to Wild tab — ferals will spawn from all occupied zones.');
     },
     accelRepro:function(){
-      // Clear reproduction zone checks so it runs immediately
+      // Clear every gate that blocks a repro re-run: per-zone checks, the
+      // global daily lock, and the weather-event lock. Then fire directly.
+      // Previously switching tabs still hit the daily lock so nothing ran.
       localStorage.removeItem('fg_repro_zones');
-      alert('Reproduction timers reset! Switch to Wild tab — breeding pairs will attempt reproduction.');
+      localStorage.removeItem('lw_repro_today');
+      localStorage.removeItem('lw_weather_logged');
+      if(window._wildReproduction){
+        try{window._wildReproduction();alert('Reproduction fired. Watch the map + console for births.');}
+        catch(e){alert('Repro error: '+e.message);}
+      } else {
+        alert('Repro gates cleared. Switch to Wild tab to trigger.');
+      }
     },
     accelNursery:function(){
       // Set all nursery seeds to 3 unique water days so they can bloom instantly
@@ -34920,7 +34929,7 @@ function _initCompass(){
   // heading=0 (facing N) → rotation 0  → tip up
   // heading=90 (facing E) → rotation -90 → tip points to device's left = world N
   function _updateCompass(heading){
-    if(compassImg)compassImg.style.transform='rotate('+(-heading)+'deg)';
+    if(compassImg)compassImg.style.transform='rotate('+(180-heading)+'deg)';
     var idx=Math.round(heading/45)%8;
     var txt=windEl.querySelector('span');
     if(!txt){txt=document.createElement('span');txt.style.cssText='font-family:Bebas Neue,sans-serif;font-size:0.4rem;color:var(--cream);letter-spacing:0.06em;';windEl.appendChild(txt);}

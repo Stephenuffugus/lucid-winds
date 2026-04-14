@@ -805,7 +805,7 @@ function _initCompass(){
   var compassImg=windEl.querySelector('img');
   var cardinals=['N','NE','E','SE','S','SW','W','NW'];
   function _updateCompass(heading){
-    if(compassImg)compassImg.style.transform='rotate('+(-heading)+'deg)';
+    if(compassImg)compassImg.style.transform='rotate('+(180-heading)+'deg)';
     var idx=Math.round(heading/45)%8;
     var txt=windEl.querySelector('span');
     if(!txt){txt=document.createElement('span');txt.style.cssText='font-family:Bebas Neue,sans-serif;font-size:0.4rem;color:var(--cream);letter-spacing:0.06em;';windEl.appendChild(txt);}
@@ -1244,6 +1244,7 @@ function _fetchReproWeather(lat, lng, cb) {
   }).catch(function() { cb({ rain: 0, temp: 20, fetched: Date.now() }); });
 }
 
+window._wildReproduction = function(simMode){ return _wildReproduction(simMode); };
 function _wildReproduction(simMode) {
   if (!_uLat || !_map) return;
   var user = window.firebase && firebase.auth() && firebase.auth().currentUser;
