@@ -47094,11 +47094,28 @@ function _loadCompanion(){
     var name=document.getElementById('cs-companion-name');
     var buff=document.getElementById('cs-companion-buff');
     if(icon)icon.textContent=comp.icon||'🐾';
-    if(name)name.textContent=comp.name||'Unknown';
-    // Show ability + temperament
+    // Companion name with level — L1/L2/L3 (M) from time-equipped ladder
+    var _lvlSuffix='';
+    try {
+      if (window.LW_COMPANION && typeof comp.idx === 'number') {
+        var _cLvl = window.LW_COMPANION.getLevel(comp.idx);
+        var _cMs = window.LW_COMPANION.getTotalMs(comp.idx);
+        var _cDays = Math.floor(_cMs / 86400000);
+        _lvlSuffix = ' <span style="color:'+( _cLvl===3?'var(--gold)':_cLvl===2?'var(--sage)':'var(--muted)')+';font-family:DM Mono,monospace;font-size:0.4rem;">\u00b7 L'+_cLvl+(_cLvl===3?' MASTER':'')+' ('+_cDays+'d)</span>';
+      }
+    } catch(e) {}
+    if(name)name.innerHTML=(comp.name||'Unknown')+_lvlSuffix;
+    // Show ability + temperament + family
     var _buffText='';
     if(comp.ability)_buffText=comp.ability;
     if(comp.temperament)_buffText+=(_buffText?' · ':'')+comp.tempIcon+' '+comp.temperament;
+    // Family chip
+    try {
+      if (window.LW_COMPANION && typeof comp.idx === 'number') {
+        var _fam = window.LW_COMPANION.getFamily(comp.idx);
+        if (_fam) _buffText += (_buffText?' · ':'') + '\ud83c\udf43 ' + _fam;
+      }
+    } catch(e) {}
     if(!_buffText)_buffText='Passive companion';
     // Append friendship bar — cosmetic title progression, no gameplay
     // effect. Bar fills from prior threshold to next; at max shows the
@@ -47190,6 +47207,9 @@ function _pickCompanion(idx){
       localStorage.setItem('lw_companion_first_equipped', JSON.stringify(_equipLog));
     }
   } catch(e) {}
+  // LEVELING TIMER — pause previous companion, start this one's clock.
+  // Pure time-equipped progression, no grinding exploits.
+  try { if (window.LW_COMPANION && window.LW_COMPANION.onEquip) window.LW_COMPANION.onEquip(f.idx); } catch(e) {}
   _loadCompanion();
   var pk=document.getElementById('cs-comp-picker');if(pk)pk.remove();
   if(window._toast)window._toast(f.name+' equipped!');
@@ -54084,15 +54104,153 @@ window._bosMementosContent = _bosMementosContent;
     var delta = base - 1.0;
     return 1.0 + (delta * aff);
   }
+  // ═══ COMPANION LEVELING V2 — time-equipped ladder ═══
+  // Pure calendar-time equipped progression. No power-level exploits.
+  // L1: equipped (default)
+  // L2: 7 days cumulative equipped time (level multiplier 2.0x base)
+  // L3: 30 days cumulative equipped time (level multiplier 3.33x + L3 signature)
+  //
+  // Timer storage: lw_companion_timer = { idx: { totalMs, activeSinceMs }, ... }
+  // activeSinceMs is the timestamp when companion was equipped (paused as null
+  // when unequipped). totalMs is frozen accumulator.
+  var TIMER_KEY = 'lw_companion_timer';
+  var ACTIVE_KEY = 'lw_companion_active_idx';
+  var L3_KEY = 'lw_companion_l3_unlocked';
+  var L2_MS = 7 * 86400000;
+  var L3_MS = 30 * 86400000;
+
+  function loadTimer() {
+    try { return JSON.parse(localStorage.getItem(TIMER_KEY) || '{}'); }
+    catch(e) { return {}; }
+  }
+  function saveTimer(t) {
+    try { localStorage.setItem(TIMER_KEY, JSON.stringify(t)); } catch(e) {}
+  }
+  function getTotalMs(idx) {
+    var timer = loadTimer();
+    var t = timer[idx];
+    if (!t) return 0;
+    var live = t.activeSinceMs ? (Date.now() - t.activeSinceMs) : 0;
+    return (t.totalMs || 0) + live;
+  }
+  function getLevel(idx) {
+    var ms = getTotalMs(idx);
+    if (ms >= L3_MS) return 3;
+    if (ms >= L2_MS) return 2;
+    return 1;
+  }
+  // Pause the active companion's clock — accumulates elapsed time into totalMs.
+  function pauseActive() {
+    var activeIdx = null;
+    try { activeIdx = parseInt(localStorage.getItem(ACTIVE_KEY) || '-1', 10); } catch(e) {}
+    if (!activeIdx || activeIdx < 0) return;
+    var timer = loadTimer();
+    var t = timer[activeIdx];
+    if (t && t.activeSinceMs) {
+      t.totalMs = (t.totalMs || 0) + (Date.now() - t.activeSinceMs);
+      t.activeSinceMs = null;
+      saveTimer(timer);
+    }
+  }
+  // Resume (or start) a companion's clock. Called when equipping.
+  function resumeActive(idx) {
+    pauseActive();
+    var timer = loadTimer();
+    if (!timer[idx]) timer[idx] = { totalMs: 0, activeSinceMs: null };
+    timer[idx].activeSinceMs = Date.now();
+    saveTimer(timer);
+    try { localStorage.setItem(ACTIVE_KEY, String(idx)); } catch(e) {}
+  }
+  // Level multiplier applied on top of base buff + class affinity.
+  // L1=1x, L2=2x, L3=3.33x (matches small→medium→large ladder)
+  function getLevelMult(idx) {
+    var lvl = getLevel(idx);
+    return lvl === 3 ? 3.33 : lvl === 2 ? 2.0 : 1.0;
+  }
+  // L3 signature unlock checker — fires one-time toast + event when a
+  // companion crosses 30-day threshold. Call periodically.
+  var L3_SIGNATURES = {
+    pollinators: 'Twin Bloom',
+    scatterers:  'Dream Seed',
+    weavers:     'Chimera Mend',
+    wayfinders:  'Pathfinder',
+    guardians:   'Phoenix Revive',
+    conduits:    'Compost Song',
+    mycelium:    'Kin Network',
+    watchers:    'Hidden Trait'
+  };
+  function checkL3Unlocks() {
+    try {
+      var unlocked = JSON.parse(localStorage.getItem(L3_KEY) || '{}');
+      var timer = loadTimer();
+      var touched = false;
+      for (var idxStr in timer) {
+        if (unlocked[idxStr]) continue;
+        if (getTotalMs(idxStr) >= L3_MS) {
+          unlocked[idxStr] = Date.now();
+          touched = true;
+          var family = FAMILY_OF[idxStr];
+          var sig = family ? L3_SIGNATURES[family] : '';
+          var compName = 'Companion';
+          try {
+            if (window.TRAIT_BANK && window.TRAIT_BANK.companions && window.TRAIT_BANK.companions[idxStr]) {
+              compName = window.TRAIT_BANK.companions[idxStr].name;
+            }
+          } catch(e) {}
+          if (window._toast && sig) {
+            setTimeout(function(cn, sg){return function(){
+              window._toast('\u2728 ' + cn + ' reached MASTER. Unlocked: ' + sg + '.');
+            };}(compName, sig), 2000);
+          }
+          if (window._logWildEvent) {
+            window._logWildEvent({ type: 'companion_l3', idx: parseInt(idxStr, 10), name: compName, family: family, signature: sig });
+          }
+        }
+      }
+      if (touched) localStorage.setItem(L3_KEY, JSON.stringify(unlocked));
+    } catch(e) {}
+  }
+
+  // Rewrite getCompanionMult to multiply by level. Keeps the same
+  // signature so existing call sites don't need changes.
+  var _origGetCompanionMult = getCompanionMult;
+  function getCompanionMultWithLevel(buffKind) {
+    var idx = getActiveCompanionIdx();
+    if (idx === null) return 1.0;
+    var base = _origGetCompanionMult(buffKind);
+    if (base === 1.0) return 1.0;
+    var delta = base - 1.0;
+    return 1.0 + (delta * getLevelMult(idx));
+  }
+  // Overwrite the exposed function so all callers pick up leveling.
+  getCompanionMult = getCompanionMultWithLevel;
+
+  // Equip hook: any call from PW_UI._pickCompanion should trigger
+  // resumeActive. Expose helpers so the picker can wire in.
+  function onEquip(idx) {
+    if (typeof idx === 'number' && idx >= 0) resumeActive(idx);
+    checkL3Unlocks();
+  }
+  // Periodic L3 check — runs every 30min in case player hit the
+  // threshold while the app was backgrounded.
+  setInterval(checkL3Unlocks, 30 * 60 * 1000);
+  setTimeout(checkL3Unlocks, 15000);
+
   window.LW_COMPANION = {
     FAMILY_OF: FAMILY_OF,
     CLASS_STRONG: CLASS_STRONG,
     UNIVERSAL: UNIVERSAL,
     FAMILY_BUFFS: FAMILY_BUFFS,
+    L3_SIGNATURES: L3_SIGNATURES,
     getActiveCompanionIdx: getActiveCompanionIdx,
     getFamily: getFamily,
     getAffinityMult: getAffinityMult,
-    getCompanionMult: getCompanionMult
+    getCompanionMult: getCompanionMultWithLevel,
+    getLevel: getLevel,
+    getTotalMs: getTotalMs,
+    getLevelMult: getLevelMult,
+    onEquip: onEquip,
+    checkL3Unlocks: checkL3Unlocks
   };
 })();
 
