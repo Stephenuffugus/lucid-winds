@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.14.71';
+  var LW_VERSION='2026.04.14.72';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -9329,13 +9329,15 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>Plays must:</strong> Form a continuous word, connect to existing tiles (after first move), and create only valid words in all directions.</p>'+
       '<p><strong style="color:var(--gold);">Bingo:</strong> Use all 7 tiles in one play → +50 bonus.</p>';
     R.pollen = ''+
-      '<p><strong>Goal:</strong> First to <strong style="color:var(--gold);">15 Growth Points</strong> (GP) wins.</p>'+
-      '<p><strong>Each turn pick ONE:</strong></p>'+
-      '<p>• <strong>Collect</strong> 3 different pollen tokens (or 2 of same if 4+ available)</p>'+
-      '<p>• <strong>Buy a plant card</strong> using your tokens. Plant adds permanent pollen production toward future buys.</p>'+
-      '<p>• <strong>Reserve a plant</strong> for later, gain a wild gold token.</p>'+
-      '<p><strong>Pollinators</strong> are claimed automatically when you reach the production thresholds shown — they grant their bonus GP.</p>'+
-      '<p><strong>Token cap:</strong> Max 10 in hand. Excess returns to supply.</p>';
+      '<p><strong>Goal:</strong> First player to <strong style="color:var(--gold);">15 Growth Points</strong> (GP) triggers the end of the round — once play returns to seat 1, whoever has the most GP wins. Ties broken by fewest cards bought.</p>'+
+      '<p><strong>Each turn pick ONE action:</strong></p>'+
+      '<p>• <strong>Collect pollen</strong> — 3 different-color tokens, OR 2 of the same color if 4+ are available in the supply.</p>'+
+      '<p>• <strong>Buy a plant card</strong> using your tokens (plus permanent production from plants you already own). Pay tokens back to supply. Plants give you permanent production for future buys.</p>'+
+      '<p>• <strong>Reserve a plant</strong> — tap a card, confirm the pick-up, and it goes into your <strong style="color:var(--gold);">hand</strong>. You also gain a wild <strong style="color:var(--gold);">gold</strong> token if any remain. Gold acts as any color when buying.</p>'+
+      '<p><strong>Hand limit:</strong> Maximum <strong>3 cards reserved</strong> at once. The only way to free a hand slot is to <em>buy</em> a reserved card on your turn — you can\'t discard a reserved card.</p>'+
+      '<p><strong>Token cap:</strong> 10 tokens max at end of turn. You <em>can</em> pick up or reserve even if it pushes you over 10 mid-turn, but before your turn ends you\'ll be prompted to return excess tokens of your choice to the supply until you\'re at 10.</p>'+
+      '<p><strong>Pollinators</strong> are claimed automatically the first time a player\'s permanent production meets all the thresholds shown on the card — they grant their bonus GP on sight.</p>'+
+      '<p><strong>Token pool scales with player count:</strong> 2p = 4 of each color · 3p = 5 · 4p = 7. Gold is always 5.</p>';
     R.jade = ''+
       '<p><strong>Goal:</strong> Clear all 144 tiles by matching pairs.</p>'+
       '<p><strong>Free tile:</strong> A tile is free if (a) nothing is on top of it AND (b) at least one of its left or right sides is open.</p>'+

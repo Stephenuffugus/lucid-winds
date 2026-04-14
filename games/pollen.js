@@ -17,29 +17,32 @@ window._gameFns.pollen = function PN(a){
   var COLOR_HEX={green:'#7ab356',rose:'#c47a7a',blue:'#5b9bd5',amber:'#c8a84b',spore:'#e8dcc8',gold:'#ffd700'};
   var TIER_ICONS=['🌱','🌿','🌳'];
   var TIER_NAMES=['Seedling','Sapling','Ancient'];
-  // Expanded pollinator pool — 14 total; 5 show each game so the mix
-  // varies noticeably between runs. Each pollinator rewards 3 GP and
-  // requires production (not tokens) to attract.
+  // 10-pollinator pool (matches user's "100 pieces total" design).
+  // Draw scales by player count: N+1, min 3. Each pollinator rewards
+  // 3 GP and requires production (not tokens) to attract.
   var ALL_POLLINATORS=[
-    {name:'Monarch',     icon:'🦋', req:{green:3,blue:3},   gp:3},
-    {name:'Honeybee',    icon:'🐝', req:{rose:3,amber:3},   gp:3},
-    {name:'Hummingbird', icon:'🐦', req:{blue:3,spore:3},   gp:3},
-    {name:'Luna Moth',   icon:'🌙', req:{green:3,rose:3},   gp:3},
-    {name:'Bumblebee',   icon:'🐝', req:{amber:3,spore:3},  gp:3},
-    {name:'Dragonfly',   icon:'🜸', req:{green:4,blue:2},   gp:3},
-    {name:'Firefly',     icon:'✨', req:{amber:4,green:2},  gp:3},
-    {name:'Scarab',      icon:'🪲', req:{spore:4,rose:2},   gp:3},
-    {name:'Swallowtail', icon:'🦋', req:{rose:4,blue:2},    gp:3},
-    {name:'Orchid Bee',  icon:'🐝', req:{green:2,rose:2,blue:2}, gp:3},
-    {name:'Sphinx Moth', icon:'🌙', req:{blue:4,amber:2},   gp:3},
-    {name:'Sunbird',     icon:'🐦', req:{amber:3,green:3},  gp:3},
-    {name:'Painted Lady',icon:'🦋', req:{rose:3,spore:3},   gp:3},
-    {name:'Jewel Wasp',  icon:'🪲', req:{blue:3,amber:3},   gp:3}
+    {name:'Monarch',     icon:'🦋', req:{green:3,blue:3},           gp:3},
+    {name:'Honeybee',    icon:'🐝', req:{rose:3,amber:3},           gp:3},
+    {name:'Hummingbird', icon:'🐦', req:{blue:3,spore:3},           gp:3},
+    {name:'Luna Moth',   icon:'🌙', req:{green:3,rose:3},           gp:3},
+    {name:'Bumblebee',   icon:'🐝', req:{amber:3,spore:3},          gp:3},
+    {name:'Dragonfly',   icon:'🜸', req:{green:4,blue:2},           gp:3},
+    {name:'Firefly',     icon:'✨', req:{amber:4,green:2},          gp:3},
+    {name:'Sphinx Moth', icon:'🌙', req:{blue:4,amber:2},           gp:3},
+    {name:'Scarab',      icon:'🪲', req:{spore:4,rose:2},           gp:3},
+    {name:'Orchid Bee',  icon:'🐝', req:{green:2,rose:2,blue:2},    gp:3}
   ];
+  // Pollinators visible this game.
+  function pollinatorCount(numPlayers){
+    return Math.max(3,Math.min(5,(numPlayers||1)+1));
+  }
 
   var GS=null;
 
   function shuffle(ar){for(var i=ar.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ar[i];ar[i]=ar[j];ar[j]=t;}return ar;}
+  // HTML/attr escape for player-typed names — prevents a name like
+  // `O"Malley` or `Bob<3` from breaking the setup input or scoreboard.
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
   function totalTok(t){var s=0;for(var i=0;i<COLORS.length;i++)s+=t[COLORS[i]];s+=t.gold||0;return s;}
 
   function makeCost(avail,total,num){
@@ -52,28 +55,41 @@ window._gameFns.pollen = function PN(a){
     }
     return c;
   }
+  // Full deck sizes — ~tournament Splendor proportions:
+  //   Tier 1 (common plants):   40 cards (8 per color × 5 colors)
+  //   Tier 2 (uncommon plants): 30 cards (6 per color × 5 colors)
+  //   Tier 3 (rare plants):     20 cards (4 per color × 5 colors)
+  //   Pollinators:              10 cards (drawn down to N+1 each game)
   function generateCards(){
     var cards={tier1:[],tier2:[],tier3:[]},id=0;
     COLORS.forEach(function(col){
       var oth=COLORS.filter(function(c){return c!==col;});
+      // 8 tier-1 cards per color — mostly 0 GP, a few with 1 GP.
       cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(oth,2,1)});
-      cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(oth,3,2)});
+      cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(oth,2,2)});
       cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(oth,3,1)});
+      cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(oth,3,2)});
+      cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(oth,3,3)});
       cards.tier1.push({id:id++,tier:1,gp:0,produces:col,cost:makeCost(oth,4,2)});
       cards.tier1.push({id:id++,tier:1,gp:1,produces:col,cost:makeCost(oth,4,2)});
-      cards.tier1.push({id:id++,tier:1,gp:1,produces:col,cost:makeCost(oth,3,2)});
+      cards.tier1.push({id:id++,tier:1,gp:1,produces:col,cost:makeCost(oth,4,3)});
     });
     COLORS.forEach(function(col){
       var oth=COLORS.filter(function(c){return c!==col;});
+      // 6 tier-2 cards per color — 1-3 GP range.
       cards.tier2.push({id:id++,tier:2,gp:1,produces:col,cost:makeCost(oth,5,2)});
       cards.tier2.push({id:id++,tier:2,gp:2,produces:col,cost:makeCost(oth,5,3)});
+      cards.tier2.push({id:id++,tier:2,gp:2,produces:col,cost:makeCost(oth,6,2)});
       cards.tier2.push({id:id++,tier:2,gp:2,produces:col,cost:makeCost(oth,6,3)});
       cards.tier2.push({id:id++,tier:2,gp:3,produces:col,cost:makeCost(oth,6,3)});
+      cards.tier2.push({id:id++,tier:2,gp:3,produces:col,cost:makeCost(oth,7,3)});
     });
     COLORS.forEach(function(col){
       var oth=COLORS.filter(function(c){return c!==col;});
+      // 4 tier-3 cards per color — 3-5 GP range, chunky costs.
       cards.tier3.push({id:id++,tier:3,gp:3,produces:col,cost:makeCost(oth,7,2)});
       cards.tier3.push({id:id++,tier:3,gp:4,produces:col,cost:makeCost(oth,8,3)});
+      cards.tier3.push({id:id++,tier:3,gp:4,produces:col,cost:makeCost(oth,9,3)});
       cards.tier3.push({id:id++,tier:3,gp:5,produces:col,cost:makeCost(oth,10,3)});
     });
     return cards;
@@ -166,7 +182,7 @@ window._gameFns.pollen = function PN(a){
       var s=st.seats[i];
       h+='<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;background:rgba(26,31,23,0.5);border:1px solid rgba(122,179,86,0.15);border-radius:10px;padding:8px 10px;">';
       h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);width:40px;">P'+(i+1)+'</div>';
-      h+='<input type="text" value="'+(s.name||'')+'" oninput="_PNsetName('+i+',this.value)" maxlength="12" style="flex:1;min-width:0;background:rgba(13,16,12,0.7);border:1px solid rgba(122,179,86,0.2);border-radius:6px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.7rem;padding:6px 8px;min-height:40px;">';
+      h+='<input type="text" value="'+esc(s.name||'')+'" oninput="_PNsetName('+i+',this.value)" maxlength="12" style="flex:1;min-width:0;background:rgba(13,16,12,0.7);border:1px solid rgba(122,179,86,0.2);border-radius:6px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.7rem;padding:6px 8px;min-height:40px;">';
       h+='<button class="gb" onclick="_PNsetAI('+i+',false)" style="min-height:40px;padding:6px 10px;font-size:0.58rem;'+(!s.isAI?'background:rgba(122,179,86,0.25);border-color:var(--sage);color:var(--sage);':'')+'">HUMAN</button>';
       h+='<button class="gb" onclick="_PNsetAI('+i+',true)" style="min-height:40px;padding:6px 10px;font-size:0.58rem;'+(s.isAI?'background:rgba(196,122,122,0.22);border-color:#c47a7a;color:#c47a7a;':'')+'">AI</button>';
       if(st.seats.length>1)h+='<button class="gb" onclick="_PNdropSeat('+i+')" style="min-height:40px;padding:6px 8px;font-size:0.55rem;color:var(--muted);">✕</button>';
@@ -198,9 +214,12 @@ window._gameFns.pollen = function PN(a){
 
   function startGame(setup){
     var all=generateCards();
-    var pls=shuffle(ALL_POLLINATORS.slice()).slice(0,5).map(function(p){return{name:p.name,icon:p.icon,req:p.req,gp:p.gp,claimedBy:null};});
     var n=setup.seats.length;
     var pool=poolSize(n);
+    // Draw N+1 pollinators from the 10-card pool — matches Splendor's
+    // nobles rule (2p → 3, 3p → 4, 4p → 5). Solo falls to 3.
+    var pcount=pollinatorCount(n);
+    var pls=shuffle(ALL_POLLINATORS.slice()).slice(0,pcount).map(function(p){return{name:p.name,icon:p.icon,req:p.req,gp:p.gp,claimedBy:null};});
     var players=[];
     for(var i=0;i<n;i++){
       var s=setup.seats[i];
@@ -371,7 +390,7 @@ window._gameFns.pollen = function PN(a){
     var excess=totalTok(who.tokens)-10;
     var h='<div style="max-width:360px;width:100%;background:rgba(15,20,12,0.97);border:1px solid rgba(200,168,75,0.45);border-radius:14px;padding:20px;font-family:DM Mono,monospace;text-align:center;">';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.18em;color:var(--muted);">RETURN '+excess+' TOKEN'+(excess===1?'':'S')+'</div>';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;letter-spacing:0.08em;color:var(--gold);margin:4px 0 6px;">'+who.name+'</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;letter-spacing:0.08em;color:var(--gold);margin:4px 0 6px;">'+esc(who.name)+'</div>';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--cream);opacity:0.8;margin-bottom:16px;line-height:1.5;">You\'re at '+totalTok(who.tokens)+'/10. Tap tokens in your pool to return them to supply until you\'re at 10.</div>';
     h+='<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;">';
     COLORS.concat(['gold']).forEach(function(c){
@@ -406,7 +425,7 @@ window._gameFns.pollen = function PN(a){
     ov.innerHTML=
       '<div style="text-align:center;font-family:DM Mono,monospace;">'
       +'<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.18em;color:var(--muted);">PASS TO</div>'
-      +'<div style="font-family:Bebas Neue,sans-serif;font-size:2rem;letter-spacing:0.1em;color:var(--gold);margin:8px 0;">'+nextSeat.name+'</div>'
+      +'<div style="font-family:Bebas Neue,sans-serif;font-size:2rem;letter-spacing:0.1em;color:var(--gold);margin:8px 0;">'+esc(nextSeat.name)+'</div>'
       +'<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--cream);opacity:0.7;margin-bottom:16px;">tap to continue</div>'
       +'<div style="font-size:2.5rem;opacity:0.6;">👆</div>'
       +'</div>';
@@ -467,13 +486,13 @@ window._gameFns.pollen = function PN(a){
       var p=standings[i];
       var isWin=(p.id===winner.id);
       rows+='<div style="display:flex;justify-content:space-between;padding:6px 8px;background:'+(isWin?'rgba(200,168,75,0.18)':'rgba(26,31,23,0.5)')+';border:1px solid '+(isWin?'rgba(200,168,75,0.45)':'rgba(122,179,86,0.1)')+';border-radius:6px;margin-bottom:4px;font-family:DM Mono,monospace;font-size:0.68rem;">'
-        +'<span style="color:'+(isWin?'var(--gold)':'var(--cream)')+';">'+(isWin?'🏆 ':'')+(i+1)+'. '+p.name+(p.isAI?' <span style="color:var(--muted);font-size:0.55rem;">AI</span>':'')+'</span>'
+        +'<span style="color:'+(isWin?'var(--gold)':'var(--cream)')+';">'+(isWin?'🏆 ':'')+(i+1)+'. '+esc(p.name)+(p.isAI?' <span style="color:var(--muted);font-size:0.55rem;">AI</span>':'')+'</span>'
         +'<span style="color:'+(isWin?'var(--gold)':'var(--sage)')+';font-weight:700;">'+p.gp+' GP</span>'
         +'</div>';
     }
     card.innerHTML='<div style="background:linear-gradient(160deg,#1a1f17,#0d100c);border:2px solid '+(humanWon?'rgba(200,168,75,0.5)':'rgba(199,80,80,0.35)')+';border-radius:16px;padding:2rem 1.5rem;max-width:360px;width:100%;text-align:center;box-shadow:0 12px 48px rgba(0,0,0,0.8),0 0 32px '+(humanWon?'rgba(200,168,75,0.25)':'rgba(0,0,0,0.3)')+';">'+
       '<div style="font-size:3rem;margin-bottom:0.5rem;">'+(humanWon?'🌸':'🐝')+'</div>'+
-      '<div style="font-family:Bebas Neue,sans-serif;font-size:1.5rem;color:'+(humanWon?'var(--gold)':'var(--cream)')+';letter-spacing:0.12em;margin-bottom:0.6rem;">'+winner.name.toUpperCase()+' WINS</div>'+
+      '<div style="font-family:Bebas Neue,sans-serif;font-size:1.5rem;color:'+(humanWon?'var(--gold)':'var(--cream)')+';letter-spacing:0.12em;margin-bottom:0.6rem;">'+esc(winner.name.toUpperCase())+' WINS</div>'+
       '<div style="text-align:left;margin:14px 0;">'+rows+'</div>'+
       '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);margin-bottom:14px;">'+GS.turn+' turns played</div>'+
       '<button onclick="this.parentNode.parentNode.remove();_PNnew();" style="padding:12px 28px;font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.1em;background:rgba(122,179,86,0.2);border:1.5px solid var(--sage);color:var(--sage);border-radius:10px;cursor:pointer;min-height:48px;">PLAY AGAIN</button>'+
@@ -496,14 +515,14 @@ window._gameFns.pollen = function PN(a){
       var bd=isActive?'var(--gold)':'rgba(122,179,86,0.15)';
       var nameClr=isActive?'var(--gold)':'var(--cream)';
       h+='<div style="background:'+bg+';border:1px solid '+bd+';border-radius:6px;padding:4px 6px;text-align:center;font-family:DM Mono,monospace;">'
-        +'<div style="font-size:0.55rem;color:'+nameClr+';letter-spacing:0.05em;word-break:break-word;">'+p.name+(p.isAI?' 🤖':'')+'</div>'
+        +'<div style="font-size:0.55rem;color:'+nameClr+';letter-spacing:0.05em;word-break:break-word;">'+esc(p.name)+(p.isAI?' 🤖':'')+'</div>'
         +'<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:'+nameClr+';">'+p.gp+'</div>'
         +'</div>';
     }
     h+='</div>';
     var active=me();
-    if(GS.phase==='player')h+='<div style="text-align:center;color:var(--sage);font-size:0.7rem;padding:2px;">— '+active.name+"'s turn —</div>";
-    else if(GS.phase==='ai')h+='<div style="text-align:center;color:#c47a7a;font-size:0.7rem;padding:2px;">— '+active.name+' thinking —</div>';
+    if(GS.phase==='player')h+='<div style="text-align:center;color:var(--sage);font-size:0.7rem;padding:2px;">— '+esc(active.name)+"'s turn —</div>";
+    else if(GS.phase==='ai')h+='<div style="text-align:center;color:#c47a7a;font-size:0.7rem;padding:2px;">— '+esc(active.name)+' thinking —</div>';
     // Pollinators
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.1em;margin:8px 0 4px;">POLLINATORS</div>';
     h+='<div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:3px;">';
@@ -515,7 +534,7 @@ window._gameFns.pollen = function PN(a){
       var bg,tag='';
       if(claimedBy){
         bg='rgba(200,168,75,0.18);border-color:var(--gold)';
-        tag='<div style="font-size:0.45rem;color:var(--gold);margin-top:2px;">'+claimedBy.name+'</div>';
+        tag='<div style="font-size:0.45rem;color:var(--gold);margin-top:2px;">'+esc(claimedBy.name)+'</div>';
       } else {
         bg='rgba(26,31,23,0.5);border-color:rgba(122,179,86,0.2)';
       }
@@ -549,7 +568,7 @@ window._gameFns.pollen = function PN(a){
     // reserved cards, which the pass-curtain also reinforces).
     var meRef=me();
     h+='<div style="background:rgba(26,31,23,0.4);border:1px solid rgba(200,168,75,0.12);border-radius:8px;padding:6px;margin:6px 0;">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--gold);letter-spacing:0.1em;">'+meRef.name.toUpperCase()+' · POLLEN ('+totalTok(meRef.tokens)+'/10)</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--gold);letter-spacing:0.1em;">'+esc(meRef.name.toUpperCase())+' · POLLEN ('+totalTok(meRef.tokens)+'/10)</div>';
     h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin:3px 0;">';
     COLORS.concat(['gold']).forEach(function(c){if(meRef.tokens[c]>0)h+='<span style="font-size:12px;">'+tokDot(c,12)+' '+meRef.tokens[c]+'</span>';});
     h+='</div>';
