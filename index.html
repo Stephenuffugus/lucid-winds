@@ -28179,6 +28179,8 @@ document.addEventListener('keydown', function(e) {
     if (!amount || amount < 0) return;
     // Tender class bonus: L2+ multiplies dew income
     try{if(window._LW_classBonus){amount=Math.ceil(amount*window._LW_classBonus('dewRate'));}}catch(e){}
+    // Companion family bonus: Conduits grant +3% dewRate (+25% affinity for Cartographer)
+    try{if(window.LW_COMPANION){amount=Math.ceil(amount*window.LW_COMPANION.getCompanionMult('dewRate'));}}catch(e){}
     // Dew Cache booster: +50% for 3h
     try{if(window.lwIsBoostActive&&window.lwIsBoostActive('dewCache'))amount=Math.ceil(amount*1.5);}catch(e){}
     // Dawn Anthem (Keeper class item): +10% all bonuses — applies to dew income
@@ -32037,6 +32039,25 @@ document.addEventListener('keydown', function(e) {
       window.LW_Log.write('seed_bloomed', { hash: newHash, name: typeof getPlantName === 'function' ? getPlantName(newHash) : '', tier: _bloomTier, mystery: !!seed.mystery, mutated: !!mut.mutated });
     }
 
+    // Foraging card grant: every bloom rewards a random element card,
+    // capped at card capacity. Encourages nursery use + gives players
+    // a reason to come back after their 3-day wait.
+    try {
+      if (window.LW_FORAGING) {
+        var _inv = window.LW_FORAGING.loadInventory();
+        if (window.LW_FORAGING.totalCards(_inv) < window.LW_FORAGING.cardCapacity()) {
+          var _pool = ['sun','shade','rain','dry','wind','still'];
+          var _pick = _pool[Math.floor(Math.random() * _pool.length)];
+          window.LW_FORAGING.addCard(_pick, 1);
+          if (window.LW_FORAGING.EL[_pick] && window._toast) {
+            setTimeout(function(){
+              window._toast('\ud83c\udf3f Bloom gift: ' + window.LW_FORAGING.EL[_pick].icon + ' ' + window.LW_FORAGING.EL[_pick].label + ' card added to foraging hand.');
+            }, 2500);
+          }
+        }
+      }
+    } catch(e) {}
+
     // 8. UI refresh then cinematic reveal
     renderNursery();
     renderGreenhouse();
@@ -34327,6 +34348,8 @@ function _getCollectRange(){
   }catch(e){}
   // Forager class: multiplies collect range (1.25x L1, +keeper stacking)
   try{if(window._LW_classBonus){range=Math.round(range*window._LW_classBonus('feralRange'));}}catch(e){}
+  // Companion family bonus: Scatterers grant +3% feralRange (+25% for Forager)
+  try{if(window.LW_COMPANION){range=Math.round(range*window.LW_COMPANION.getCompanionMult('feralRange'));}}catch(e){}
   return range;
 }
 // ═══ ANTI-FARMING: server-side economy protection ═══
@@ -34514,6 +34537,8 @@ function _ensureVitality(plant){
   // Tender class bonus: extend lifespan for plants owned by Tender (applied once at ensure time)
   if(!plant.lifespanMs){
     try{if(window._LW_classBonus&&plant.own){lifeMs=Math.round(lifeMs*window._LW_classBonus('plantLongevity'));}}catch(e){}
+    // Companion family bonus: Guardians grant +3% plantLifespan (+25% for Tender)
+    try{if(window.LW_COMPANION&&plant.own){lifeMs=Math.round(lifeMs*window.LW_COMPANION.getCompanionMult('plantLifespan'));}}catch(e){}
   }
   plant.lifespanMs=lifeMs;
   // Prefer the numeric droppedAtMs/decayAtMs fields written by the new
@@ -34931,6 +34956,8 @@ function _addSteps(meters){
   if(!meters||meters<=0)return;
   // Cartographer class: multiplies step distance credit
   try{if(window._LW_classBonus){meters=meters*window._LW_classBonus('stepBonus');}}catch(e){}
+  // Companion family bonus: Wayfinders grant +3% stepXp (+25% for Forager/Cartographer)
+  try{if(window.LW_COMPANION){meters=meters*window.LW_COMPANION.getCompanionMult('stepXp');}}catch(e){}
   // Cartographer XP: 1 XP per 10 meters walked
   try{if(window._LW_classXP){window._LW_classXP('steps',Math.ceil(meters/10));}}catch(e){}
   var s=_loadSteps();
@@ -53616,8 +53643,9 @@ window._bosMementosContent = _bosMementosContent;
   }
   function saveInventory(inv) { try { localStorage.setItem('lw_forage_cards', JSON.stringify(inv)); } catch(e) {} }
   function defaultInventory() {
-    // Starter: 1 Sun, 1 Rain, 1 Wind = each axis of the cycle
-    return { sun:1, rain:1, wind:1, shade:0, dry:0, still:0 };
+    // Starter: one of each element so every new keeper can strategize
+    // from day one. Six cards, fits under 8-card capacity.
+    return { sun:1, shade:1, rain:1, dry:1, wind:1, still:1 };
   }
   function addCard(elId, n) {
     var inv = loadInventory();
@@ -53847,6 +53875,101 @@ window._bosMementosContent = _bosMementosContent;
     render();
   }
   window.LW_FORAGING.openPanel = openForagePanel;
+})();
+
+// ═══ COMPANION FAMILIES V1 — base buffs + class affinity ═══
+// Leveling system (L2/L3) deferred to v2. For now: every equipped
+// companion with a family grants a small base buff. Class affinity
+// bumps it 1.25x, Keeper gets mini 1.10x on class-tied families,
+// universal families get mild 1.05x for everyone.
+(function(){
+  // Post-rebalance family assignments (from docs/COMPANION_FAMILIES_DRAFT)
+  // + 5 cuts removed. Apr 14 2026.
+  var FAMILY_OF = {
+    // Pollinators
+    21:'pollinators', 24:'pollinators', 25:'pollinators', 26:'pollinators', 28:'pollinators', 44:'pollinators',
+    // Scatterers
+    35:'scatterers', 55:'scatterers', 67:'scatterers', 64:'scatterers', 40:'scatterers',
+    // Weavers
+    37:'weavers', 31:'weavers', 41:'weavers', 62:'weavers', 65:'weavers', 70:'weavers',
+    // Wayfinders
+    36:'wayfinders', 29:'wayfinders', 51:'wayfinders', 57:'wayfinders', 63:'wayfinders', 49:'wayfinders', 66:'wayfinders', 69:'wayfinders', 34:'wayfinders',
+    // Guardians (after rebalance moves)
+    32:'guardians', 33:'guardians', 22:'guardians', 42:'guardians', 45:'guardians', 53:'guardians', 43:'guardians', 48:'guardians', 50:'guardians',
+    // Conduits
+    60:'conduits', 71:'conduits', 47:'conduits', 27:'conduits', 72:'conduits', 30:'conduits', 52:'conduits', 68:'conduits',
+    // Mycelium (universal)
+    73:'mycelium', 74:'mycelium', 61:'mycelium', 81:'mycelium',
+    // Watchers (universal)
+    23:'watchers', 38:'watchers', 39:'watchers', 54:'watchers', 56:'watchers', 75:'watchers', 79:'watchers', 20:'watchers'
+  };
+  var CLASS_STRONG = {
+    forager:      ['scatterers', 'wayfinders'],
+    breeder:      ['pollinators', 'weavers'],
+    cartographer: ['wayfinders', 'conduits'],
+    tender:       ['pollinators', 'guardians'],
+    keeper:       []
+  };
+  var UNIVERSAL = ['mycelium', 'watchers'];
+  // Base buff per family (v1 — small). Keyed by buff-kind so the
+  // magnitude fn can answer any ability-lookup. Magnitudes as multipliers
+  // over base (1.03 = +3%).
+  var FAMILY_BUFFS = {
+    pollinators: { pollen: 1.03 },
+    scatterers:  { feralRange: 1.03, feralRarity: 1.03 },
+    weavers:     { chimeraPurity: 1.03, breedReward: 1.03 },
+    wayfinders:  { stepXp: 1.03, biomeReveal: 1.03 },
+    guardians:   { plantLifespan: 1.03, defenseEA: 1.03 },
+    conduits:    { dewRate: 1.03, waterEfficiency: 1.03 },
+    mycelium:    { eaFloor: 1.03 },
+    watchers:    { bookEntryRate: 1.03, revealTrait: 1.03 }
+  };
+  function getActiveCompanionIdx() {
+    try {
+      var raw = localStorage.getItem('pw_active_companion');
+      if (!raw) return null;
+      var c = JSON.parse(raw);
+      return (c && typeof c.idx === 'number') ? c.idx : null;
+    } catch(e) { return null; }
+  }
+  function getFamily(idx) { return FAMILY_OF[idx] || null; }
+  function getAffinityMult(family, cls) {
+    if (!family) return 1.0;
+    var strong = CLASS_STRONG[cls] || [];
+    if (strong.indexOf(family) >= 0) return 1.25;
+    if (cls === 'keeper' && UNIVERSAL.indexOf(family) === -1) return 1.10;
+    if (UNIVERSAL.indexOf(family) >= 0) return 1.05;
+    return 1.0;
+  }
+  // Get the magnitude multiplier for a specific buff-kind from the
+  // currently-equipped companion. Returns 1.0 if no match or no active
+  // companion. Stackable with other multipliers at call site.
+  function getCompanionMult(buffKind) {
+    var idx = getActiveCompanionIdx();
+    if (idx === null) return 1.0;
+    var family = FAMILY_OF[idx];
+    if (!family) return 1.0;
+    var buffs = FAMILY_BUFFS[family];
+    if (!buffs || !buffs[buffKind]) return 1.0;
+    var base = buffs[buffKind];
+    var cls = null;
+    try { cls = localStorage.getItem('lw_class'); } catch(e) {}
+    var aff = getAffinityMult(family, cls);
+    // Compose: base is a multiplier like 1.03; to scale it by affinity
+    // we compute the delta (0.03) and amplify.
+    var delta = base - 1.0;
+    return 1.0 + (delta * aff);
+  }
+  window.LW_COMPANION = {
+    FAMILY_OF: FAMILY_OF,
+    CLASS_STRONG: CLASS_STRONG,
+    UNIVERSAL: UNIVERSAL,
+    FAMILY_BUFFS: FAMILY_BUFFS,
+    getActiveCompanionIdx: getActiveCompanionIdx,
+    getFamily: getFamily,
+    getAffinityMult: getAffinityMult,
+    getCompanionMult: getCompanionMult
+  };
 })();
 
 var _bosReportRange = 'today';
