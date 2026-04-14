@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.14.80';
+  var LW_VERSION='2026.04.14.81';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -31229,6 +31229,10 @@ document.addEventListener('keydown', function(e) {
         if (typeof gtag!=='undefined') gtag('event','pollination_event',{ nonce:result.nonce, parentA:selA.hash.slice(0,8), parentB:selB.hash.slice(0,8) });
         if(window._updateNextStep)_updateNextStep();
         if(window.PW_grantXP) PW_grantXP(5,'cross_pollinate');
+        // Class XP — was missing on this greenhouse cross-pollinate path,
+        // making Breeder unreachable for players who breed via greenhouse
+        // UI vs the wild cross-pollinate. Same grant as the wild path.
+        if(window._LW_classXP){window._LW_classXP('breed',30);if(result&&result.nonce>=2)window._LW_classXP('chimera',15);}
         try{if(window.LW_XP)window.LW_XP.grantOnce('first_cross',15,'first_of_kind','🧬 +15 XP — first cross-pollination. Two lineages become one.');}catch(e){}
         if(window.LW_Log) window.LW_Log.write('plant_bred', {
           parentAHash: selA.hash,
@@ -36410,7 +36414,7 @@ function _doCollectFeral(f,mk){
   if(window.FG_Audio&&FG_Audio.enabled)try{FG_Audio.playCollectChime();}catch(e){}
   if(typeof gtag!=='undefined') gtag('event','feral_collected',{grade:info.grade,dew_reward:reward});
   if(window._LW_classXP)window._LW_classXP('feral',10);
-  if(window._LW_toolXP)window._LW_toolXP('pouch',2);
+  if(window._LW_toolXP)window._LW_toolXP('pouch',5);
   // Tutorial-proxy: first feral collection is a milestone.
   try{if(window.LW_XP)window.LW_XP.grantOnce('first_feral',10,'first_of_kind','🌿 +10 XP — first feral seed. They grow different from garden stock.');}catch(e){}
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
@@ -37000,6 +37004,11 @@ function _harvestApplyLocal(p,plantObj,reward){
   } else {
     _pouch.push({hash:p.hash,name:p.name,type:'harvest',grade:p.grade,gc:p.gc});_savePouch();
   }
+  // Pouch tool XP — was only granted on feral collection, leaving the
+  // tool effectively unleveled for players who mostly harvest. Adds
+  // a flat 4 XP per harvest so Pouch can actually reach Lv 3 in
+  // realistic play (was ~100h at the old rate; now ~30h).
+  if(window._LW_toolXP)window._LW_toolXP('pouch',4);
   var wild=_getWild().filter(function(w){return w.hash!==p.hash;});
   _saveWild(wild);
   if(_selMk&&_map)_map.removeLayer(_selMk);
@@ -50738,7 +50747,7 @@ window.bsExecuteBreed=function(){
           var res=window.FG_Data.addSeed({seedHash:offHash,parentAHash:_bsA.hash,parentBHash:_bsM.hash,nonce:offGen});
           if(!res.ok){if(window._toast)window._toast('Nursery full. Bloom or abandon a seed first.');return;}
         }
-        if(window._LW_classXP){window._LW_classXP('breed',20);if(offGen>=2)window._LW_classXP('chimera',10);}
+        if(window._LW_classXP){window._LW_classXP('breed',30);if(offGen>=2)window._LW_classXP('chimera',15);}
         // Use breed charges on both parents (handles cooldown, charges, breedCount)
         if(window.FG_Data&&FG_Data.useBreedCharge){
           FG_Data.useBreedCharge(_bsA.hash);
@@ -53633,6 +53642,14 @@ setTimeout(function(){try{window._lwRefreshAvatar();}catch(e){}},500);
 // (Was Master-only — that gated experimentation. Now anyone, any level.)
 window._lwRespec=function(){
   var cur=_lwGetClass();if(!cur)return;
+  // Defense-in-depth gate: the picker UI only shows the respec button
+  // at L3, but _lwRespec() is on window and callable from console / dev.
+  // Enforce the same gate here so commitment to a class actually means
+  // something — you have to master one before walking another.
+  if(_lwGetClassLevel(cur)<3){
+    if(window._toast)_toast('Master your current path before walking another (Lv 3 required).');
+    return;
+  }
   if(!confirm('Walk a new path?\n\nYou keep your ' + (LW_CLASSES[cur]?LW_CLASSES[cur].name:'current') + ' progress so you can return any time. You\u2019ll be able to choose a different class. Companion synergy will follow whichever class you\u2019re walking.'))return;
   try{localStorage.removeItem('lw_class');}catch(e){}
   if(window._toast)_toast('\ud83c\udf3f The path is yours to choose again.');
