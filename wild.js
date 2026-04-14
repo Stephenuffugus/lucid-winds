@@ -1657,11 +1657,16 @@ function _doReproduction(weather, simMode) {
       var _meshStage = Math.max(_mA.highestStage || 0, _mB.highestStage || 0);
       if (_meshStage >= 3) meshMod = 1.3; else if (_meshStage >= 2) meshMod = 1.15;
     }
-    // Soil bonus: mature soil boosts reproduction
+    // Soil bonus: mature soil boosts reproduction. Bug fix (Apr 14 2026):
+    // was reading baseLat/baseLng which are declared later in the loop
+    // (line ~1716 for wind dispersal), so this branch ALWAYS short-
+    // circuited to false — soil bonuses have never applied. Use the
+    // zone-center values computed at line 1583.
     var soilMod = 1.0;
-    if (window.getSoilInfo && baseLat) {
-      var _soilInfo = getSoilInfo(baseLat, baseLng);
-      if (_soilInfo.maturity >= 60) soilMod = 1.3; else if (_soilInfo.maturity >= 30) soilMod = 1.15;
+    if (window.getSoilInfo && !isNaN(_zkLat)) {
+      var _soilInfo = getSoilInfo(_zkLat, _zkLng);
+      if (_soilInfo && _soilInfo.maturity >= 60) soilMod = 1.3;
+      else if (_soilInfo && _soilInfo.maturity >= 30) soilMod = 1.15;
     }
     // Companion ability modifier
     var compMod = 1.0;
