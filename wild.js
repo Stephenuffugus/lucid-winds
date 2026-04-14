@@ -4208,6 +4208,87 @@ function _selectHexPlant(idx, plantData) {
     }
   } catch(e) {}
 
+  // ── CLIMATE profile ──
+  // Shows the plant's 5 hash-derived thresholds vs today's weather, so a
+  // keeper can see at a glance what's currently hurting their plant and
+  // decide whether to tend or let nature take it. Uses the already-fetched
+  // _reproWeather cache so the hex-tap doesn't hit open-meteo again.
+  var climateHtml = '';
+  if (traits && typeof traits.heatMax === 'number') {
+    var _cw = _reproWeather || null;
+    var _curTemp = _cw ? _cw.temp : null;
+    var _curRain = _cw ? _cw.rain : null;
+    var _curDry = 0;
+    try {
+      var _dryMap = JSON.parse(localStorage.getItem('lw_dry_days') || '{}');
+      var _pzk = _zoneKey(p.lat, p.lng);
+      _curDry = _dryMap[_pzk] || 0;
+    } catch(e) {}
+    // Season multiplier for this plant today — shown as a badge
+    var _curMonth = new Date().getMonth();
+    var _curSeason = _curMonth < 3 ? 3 : _curMonth < 6 ? 0 : _curMonth < 9 ? 1 : 2;
+    var _ps = traits.season || 0;
+    var _sDelta = Math.abs(_ps - _curSeason); if (_sDelta === 3) _sDelta = 1;
+    var _sMultTxt = _sDelta === 0 ? 'PEAK (-50% dmg)' : _sDelta === 2 ? 'OPPOSITE (+75% dmg)' : 'IN-BETWEEN';
+    var _sMultColor = _sDelta === 0 ? 'var(--sage)' : _sDelta === 2 ? '#c07060' : '#c8a84b';
+    // Threshold rows — status: safe/near/breached
+    function _climateRow(icon, label, thresholdTxt, curTxt, breached, near) {
+      var dotColor = breached ? '#c07060' : (near ? '#c8a84b' : 'var(--sage)');
+      var valColor = breached ? '#c07060' : 'var(--cream)';
+      return '<div class="hi-climate-row">' +
+        '<span class="hi-climate-icon">' + icon + '</span>' +
+        '<span class="hi-climate-label">' + label + '</span>' +
+        '<span class="hi-climate-thr">' + thresholdTxt + '</span>' +
+        '<span class="hi-climate-cur" style="color:' + valColor + ';">' + curTxt + '</span>' +
+        '<span class="hi-climate-dot" style="background:' + dotColor + ';"></span>' +
+      '</div>';
+    }
+    climateHtml = '<div class="hi-climate">' +
+      '<div class="hi-climate-head"><span class="hi-climate-title">CLIMATE</span>' +
+      '<span class="hi-climate-season" style="color:' + _sMultColor + ';">' + _sMultTxt + '</span></div>';
+    // Heat
+    climateHtml += _climateRow(
+      '\ud83d\udd25', 'HEAT',
+      '\u2264 ' + traits.heatMax + '\u00b0C',
+      _curTemp !== null ? Math.round(_curTemp) + '\u00b0C' : '\u2014',
+      _curTemp !== null && _curTemp > traits.heatMax,
+      _curTemp !== null && _curTemp > traits.heatMax - 3 && _curTemp <= traits.heatMax
+    );
+    // Cold
+    climateHtml += _climateRow(
+      '\u2744\ufe0f', 'COLD',
+      '\u2265 ' + traits.coldMin + '\u00b0C',
+      _curTemp !== null ? Math.round(_curTemp) + '\u00b0C' : '\u2014',
+      _curTemp !== null && _curTemp < traits.coldMin,
+      _curTemp !== null && _curTemp < traits.coldMin + 3 && _curTemp >= traits.coldMin
+    );
+    // Drought
+    climateHtml += _climateRow(
+      '\ud83c\udfdc\ufe0f', 'DROUGHT',
+      '\u2264 ' + traits.droughtDays + 'd dry',
+      _curDry + 'd dry',
+      _curDry > traits.droughtDays,
+      _curDry >= traits.droughtDays - 1 && _curDry <= traits.droughtDays
+    );
+    // Flood
+    climateHtml += _climateRow(
+      '\ud83c\udf27\ufe0f', 'FLOOD',
+      '\u2264 ' + traits.floodMm + 'mm',
+      _curRain !== null ? (Math.round(_curRain * 10) / 10) + 'mm' : '\u2014',
+      _curRain !== null && _curRain > traits.floodMm,
+      _curRain !== null && _curRain > traits.floodMm * 0.8 && _curRain <= traits.floodMm
+    );
+    // Wind (data not yet fetched — always "—" until windspeed capture ships)
+    climateHtml += _climateRow(
+      '\ud83d\udca8', 'WIND',
+      '\u2264 ' + traits.windMax + 'mph',
+      '\u2014',
+      false,
+      false
+    );
+    climateHtml += '</div>';
+  }
+
   // Trait summary — visible for ALL plants in Wild v3 (the old hide-rarity
   // rule was reversed now that harvest/theft is gone — strangers' plants
   // become social landmarks players can aspire to tend, not targets).
@@ -4257,6 +4338,7 @@ function _selectHexPlant(idx, plantData) {
     '<div class="hi-detail-name">' + name + '</div>' +
     '<div class="hi-detail-grade" style="color:' + gradeColor + ';">' + grade + '</div>' +
     vitalityHtml +
+    climateHtml +
     traitHtml +
     '<div class="hi-actions">' + actions + '</div>';
 
