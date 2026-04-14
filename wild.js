@@ -1391,21 +1391,23 @@ function _doReproduction(weather, simMode) {
     } catch (e) {}
 
     // Pick target hex — wind-biased dispersal with empty-hex preference.
-    // Old behavior picked ONE target and invaded if occupied. In a tight
-    // cluster of own plants this meant nearly every baby hit a populated
-    // hex, failed EA invasion, or displaced an existing plant — no net
-    // discovery. Now we roll up to 8 candidates and take the first EMPTY
-    // one (wind-weighted). If all rolls land on populated hexes we fall
-    // back to the last roll so the invasion path still exists for
-    // legitimate takeovers.
+    // Dispersal distance grows with each failed attempt so a baby from a
+    // plant deep inside a tight cluster can eventually reach fresh ground.
+    // Passes 1-4: 1-2 zones out (neighbor). Passes 5-8: 2-4 zones (second
+    // ring). Passes 9-12: 3-6 zones (escape radius for dense clusters).
+    // If still nothing empty, fall back to the last roll so the invasion
+    // path still exists for legitimate takeovers.
     var parts = zk.split(',');
     var baseLat = parseFloat(parts[0]), baseLng = parseFloat(parts[1]);
     var targetLat, targetLng, targetZone, emptyFound = false;
-    for (var dt = 0; dt < 8; dt++) {
+    for (var dt = 0; dt < 12; dt++) {
       var windRad = ((_wd || 0) + Math.random() * 180 - 90) * Math.PI / 180;
       var windStr = 0.2 + Math.random() * 0.3;
       var randStr = 1 - windStr;
-      var dist = ZONE_SIZE * (1 + Math.random());
+      // Escape-radius scaling — grow search out past the cluster.
+      var rangeBase = dt < 4 ? 1 : dt < 8 ? 2 : 3;
+      var rangeSpan = dt < 4 ? 1 : dt < 8 ? 2 : 3;
+      var dist = ZONE_SIZE * (rangeBase + Math.random() * rangeSpan);
       targetLat = baseLat + Math.cos(windRad) * dist * windStr + (Math.random() - 0.5) * dist * randStr;
       targetLng = baseLng + Math.sin(windRad) * dist * windStr + (Math.random() - 0.5) * dist * randStr;
       targetZone = _zoneKey(targetLat, targetLng);

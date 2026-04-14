@@ -52582,13 +52582,56 @@ function _saveEvents(evts){
 }
 
 // Log a new event
+// One-time migration: existing events (before read-tracking shipped) get
+// marked as already-read so the badge starts at a clean zero rather than
+// showing hundreds of pre-existing entries.
+(function _bookReadMigration(){
+  try{
+    if(localStorage.getItem('lw_book_read_migrated')==='1')return;
+    var evts=_loadEvents();
+    var touched=false;
+    for(var i=0;i<evts.length;i++){if(typeof evts[i].read!=='boolean'){evts[i].read=true;touched=true;}}
+    if(touched)_saveEvents(evts);
+    localStorage.setItem('lw_book_read_migrated','1');
+  }catch(e){}
+})();
 window._logWildEvent=function(evt){
   if(!evt||!evt.type)return;
   evt.date=evt.date||new Date().toISOString();
   evt.ts=Date.now();
+  // Unread tracking: every event arrives unread. _markBookRead() flips
+  // these false when the player opens the Book of Secrets. Badge count
+  // reads this flag so the book cleanly hits 0 once acknowledged.
+  if(typeof evt.read!=='boolean')evt.read=false;
   var evts=_loadEvents();
   evts.push(evt);
   _saveEvents(evts);
+  // Surface the new unread to the badge immediately so Stephen doesn't
+  // have to wait for the 30s poll. setTimeout keeps this async-safe.
+  setTimeout(function(){if(window._updateBookBadge)window._updateBookBadge();},0);
+};
+window._markBookRead=function(){
+  try{
+    var evts=_loadEvents();
+    var changed=false;
+    for(var i=0;i<evts.length;i++){if(!evts[i].read){evts[i].read=true;changed=true;}}
+    if(changed)_saveEvents(evts);
+  }catch(e){}
+  if(window._updateBookBadge)window._updateBookBadge();
+};
+window._getBookUnreadCount=function(){
+  try{
+    var evts=_loadEvents();
+    var n=0;
+    for(var i=0;i<evts.length;i++){if(!evts[i].read)n++;}
+    return n;
+  }catch(e){return 0;}
+};
+window._updateBookBadge=function(){
+  var el=document.getElementById('kb-comp-count');if(!el)return;
+  var n=window._getBookUnreadCount?window._getBookUnreadCount():0;
+  if(n<=0){el.textContent='';el.style.display='none';}
+  else {el.textContent=n>99?'99+':String(n);el.style.display='';}
 };
 
 // ── MORNING REPORT ──
@@ -53628,6 +53671,9 @@ function _bosSecretsContent() {
 
 window._openCompendiumUI=function(){
   try{if(window.LW_XP)window.LW_XP.grantOnce('disc_book',5,'discover_book','📖 +5 XP — Book of Secrets. Everything you\'ve discovered lives here.');}catch(e){}
+  // Mark every wild event as read so the book badge clears. Fires before
+  // overlay build so the badge update is atomic with the open gesture.
+  if(window._markBookRead)window._markBookRead();
   // Remove old overlay if present
   var old=document.getElementById('bos-overlay');if(old)old.remove();
 
@@ -53692,8 +53738,16 @@ function _updateCompCount(){
     }catch(e){}
   }
   el.textContent=(progress.found+Object.keys(synSet).length);
+  // Override with unread-only count (hides badge at zero). Runs after the
+  // lifetime assignment so _updateBookBadge() wins. This keeps has-entries
+  // gating tied to compendium progress but the *number shown* is unread.
+  if(window._updateBookBadge)window._updateBookBadge();
 }
 setTimeout(_updateCompCount,3000);
+// Refresh unread badge on interval — events log asynchronously and the
+// existing 3s delayed call only fires once. This poll is cheap (one
+// localStorage read) and keeps the count fresh while the user plays.
+setInterval(function(){if(window._updateBookBadge)window._updateBookBadge();},15000);
 
 // ═══ PROGRESSIVE UNLOCK LADDER — hide tabs / sinks until level-gated ═══
 // Mirrors docs/TUTORIAL_PROGRESSION.md. Each gated surface hides or degrades
