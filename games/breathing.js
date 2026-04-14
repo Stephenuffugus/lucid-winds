@@ -40,6 +40,14 @@ var PATTERNS={
     cat:'calm',
     cue:'A little more out than in.'
   },
+  golden:{
+    name:'GOLDEN 3-5-8',
+    phases:[{name:'INHALE',dur:3},{name:'HOLD',dur:5},{name:'EXHALE',dur:8}],
+    tag:'Mental reset · Fibonacci proportions',
+    origin:'φ-ratio breath (3:5:8 = Fibonacci → golden ratio)',
+    cat:'calm',
+    cue:'In for 3, hold for 5, out for 8. Let each phase stretch into the next.'
+  },
   relax:{
     name:'4-7-8 RELAX',
     phases:[{name:'INHALE',dur:4},{name:'HOLD',dur:7},{name:'EXHALE',dur:8}],
@@ -151,9 +159,9 @@ var QUIZ=[
   {
     q:'What feels most true right now?',
     opts:[
-      {label:'I feel wired or anxious',       picks:['relax','physsigh','calm','coherent']},
+      {label:'I feel wired or anxious',       picks:['relax','physsigh','golden','calm','coherent']},
       {label:'I feel tired or flat',           picks:['energy','kapalabhati','lion']},
-      {label:'My mind is scattered',           picks:['box','coherent','triangle','ujjayi']},
+      {label:'My mind is scattered',           picks:['golden','box','coherent','triangle','ujjayi']},
       {label:"I can't sleep",                  picks:['relax','bhramari','calm']},
       {label:'I feel overheated or frustrated',picks:['sitali','lion','calm']},
       {label:'I just want to practice',        picks:['nadi','coherent','ujjayi','box']}
