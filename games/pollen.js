@@ -174,7 +174,7 @@ window._gameFns.pollen = function PN(a){
   }
   function _renderSetup(st){
     var ov=document.getElementById('PNsetupOV');if(!ov)return;
-    var h='<div style="max-width:420px;width:100%;background:rgba(15,20,12,0.97);border:1px solid rgba(200,168,75,0.45);border-radius:14px;padding:20px;font-family:DM Mono,monospace;">';
+    var h='<div class="pn-modal" style="max-width:420px;width:100%;padding:22px 20px;font-family:DM Mono,monospace;">';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;letter-spacing:0.16em;color:var(--gold);margin-bottom:4px;">MASTER POLLINATOR</div>';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:var(--muted);margin-bottom:16px;">1–4 players. Pass-and-play. First to 15 GP wins.</div>';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.12em;color:var(--sage);margin-bottom:8px;">SEATS</div>';
@@ -300,7 +300,13 @@ window._gameFns.pollen = function PN(a){
   // points wins (ties broken by fewest cards bought).
   function endTurn(){
     GS.turn++;GS.selectedTokens=[];GS.action=null;
-    // Mark this seat's "has hit 15" for end-of-round check.
+    // Stalemate safety: absolute hard cap. Shouldn't ever hit in real
+    // play, but prevents a locked game where e.g. supply is empty and
+    // every AI keeps passing.
+    if(GS.turn>300*GS.numPlayers){
+      sm('Stalemate — ending game');
+      return finishGame();
+    }
     var current=GS.activeIdx;
     var nextIdx=(current+1)%GS.numPlayers;
     // If we're wrapping back to seat 0, check winners.
@@ -388,7 +394,7 @@ window._gameFns.pollen = function PN(a){
     var ov=document.getElementById('PNreturnOV');if(!ov)return;
     var who=me();
     var excess=totalTok(who.tokens)-10;
-    var h='<div style="max-width:360px;width:100%;background:rgba(15,20,12,0.97);border:1px solid rgba(200,168,75,0.45);border-radius:14px;padding:20px;font-family:DM Mono,monospace;text-align:center;">';
+    var h='<div class="pn-modal" style="max-width:360px;width:100%;padding:22px 20px;font-family:DM Mono,monospace;text-align:center;">';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.18em;color:var(--muted);">RETURN '+excess+' TOKEN'+(excess===1?'':'S')+'</div>';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;letter-spacing:0.08em;color:var(--gold);margin:4px 0 6px;">'+esc(who.name)+'</div>';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--cream);opacity:0.8;margin-bottom:16px;line-height:1.5;">You\'re at '+totalTok(who.tokens)+'/10. Tap tokens in your pool to return them to supply until you\'re at 10.</div>';
@@ -440,18 +446,68 @@ window._gameFns.pollen = function PN(a){
   if(!document.getElementById('pn-style')){
     var st=document.createElement('style');
     st.id='pn-style';
-    st.textContent=
-      '@keyframes pnFadeIn{from{opacity:0}to{opacity:1}}'
-      +'@keyframes pnLift{0%{transform:translateY(40px) scale(0.8);opacity:0;box-shadow:0 4px 12px rgba(0,0,0,0.2)}60%{transform:translateY(-8px) scale(1.04);opacity:1}100%{transform:translateY(0) scale(1)}}'
-      +'@keyframes pnCardHover{from{transform:translateY(0)}to{transform:translateY(-3px)}}'
-      +'.pn-card{transition:transform 0.18s cubic-bezier(.25,.46,.45,.94), box-shadow 0.18s ease, filter 0.18s ease;}'
-      +'.pn-card:hover,.pn-card:active{transform:translateY(-2px) scale(1.03);box-shadow:0 10px 18px rgba(0,0,0,0.45),0 2px 4px rgba(0,0,0,0.25);filter:brightness(1.05);z-index:5;}'
-      +'.pn-card.aff{border-color:#7ab356!important;box-shadow:0 0 0 1px rgba(122,179,86,0.45),0 3px 6px rgba(0,0,0,0.25);}'
-      +'.pn-card.aff:hover{box-shadow:0 0 0 1px rgba(122,179,86,0.7),0 10px 20px rgba(122,179,86,0.25),0 4px 8px rgba(0,0,0,0.3);}'
-      +'.pn-tok{transition:transform 0.15s ease, background 0.15s ease;min-height:40px;}'
-      +'.pn-tok:hover{transform:scale(1.08);}'
-      +'.pn-tok.sel{box-shadow:inset 0 0 0 2px #7ab356,0 0 10px rgba(122,179,86,0.4);}'
-      +'.pn-poll{transition:border-color 0.2s ease, background 0.2s ease;}';
+    // Paper-texture SVG encoded as a data URI so the card face gets a
+    // subtle warm grain instead of flat fill. Small enough to inline.
+    var paper="url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.15 0 0 0 0 0.1 0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")";
+    st.textContent=''
+      // ─── keyframes ────────────────────────────────────────────────────
+      +'@keyframes pnFadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}'
+      +'@keyframes pnLift{0%{transform:translateY(40px) scale(0.82);opacity:0;box-shadow:0 4px 12px rgba(0,0,0,0.2)}60%{transform:translateY(-10px) scale(1.05);opacity:1}100%{transform:translateY(0) scale(1)}}'
+      +'@keyframes pnSeatGlow{0%,100%{box-shadow:0 0 0 1px rgba(200,168,75,0.45),0 0 14px rgba(200,168,75,0.18)}50%{box-shadow:0 0 0 1px rgba(200,168,75,0.7),0 0 22px rgba(200,168,75,0.35)}}'
+      +'@keyframes pnTokIn{0%{transform:scale(0.7);opacity:0}100%{transform:scale(1);opacity:1}}'
+      +'@keyframes pnPollClaim{0%{box-shadow:0 0 0 2px rgba(200,168,75,0.6),0 0 16px rgba(200,168,75,0.45)}100%{box-shadow:0 0 0 1px rgba(200,168,75,0.3),0 0 0 rgba(200,168,75,0)}}'
+      +'@keyframes pnAmbient{0%{background-position:0% 0%}100%{background-position:200px 200px}}'
+      // ─── panel ambience ───────────────────────────────────────────────
+      +'#PNpan{position:relative;border-radius:14px;padding:10px 8px 14px;background:'
+      +'radial-gradient(ellipse at top left,rgba(122,179,86,0.07),transparent 60%),'
+      +'radial-gradient(ellipse at bottom right,rgba(200,168,75,0.05),transparent 60%),'
+      +'linear-gradient(180deg,rgba(14,18,12,0.85),rgba(8,10,6,0.92));'
+      +'box-shadow:inset 0 1px 0 rgba(255,220,140,0.04),0 4px 24px rgba(0,0,0,0.35);}'
+      +'#PNpan::before{content:"";position:absolute;inset:0;border-radius:14px;pointer-events:none;background:'+paper+';opacity:0.35;mix-blend-mode:overlay;}'
+      // ─── cards ────────────────────────────────────────────────────────
+      +'.pn-card{transition:transform 0.22s cubic-bezier(.25,.46,.45,.94),box-shadow 0.22s ease,filter 0.22s ease;will-change:transform;'
+      +'background-image:'+paper+',linear-gradient(178deg,#fbf6e6,#f0e8ce)!important;background-blend-mode:overlay,normal;}'
+      +'.pn-card:hover,.pn-card:active{transform:translateY(-3px) scale(1.04);box-shadow:0 12px 22px rgba(0,0,0,0.5),0 2px 4px rgba(0,0,0,0.25),inset 0 1px 0 rgba(255,255,255,0.5);filter:brightness(1.06);z-index:5;}'
+      +'.pn-card.aff{border-color:#7ab356!important;box-shadow:0 0 0 1px rgba(122,179,86,0.55),0 3px 8px rgba(122,179,86,0.18),0 2px 4px rgba(0,0,0,0.3);}'
+      +'.pn-card.aff:hover{box-shadow:0 0 0 1px rgba(122,179,86,0.8),0 14px 28px rgba(122,179,86,0.3),0 4px 10px rgba(0,0,0,0.35);}'
+      // ─── tokens (supply pills + in-hand pips) ─────────────────────────
+      +'.pn-tok{transition:transform 0.16s cubic-bezier(.34,1.56,.64,1),background 0.16s ease,box-shadow 0.16s ease;min-height:40px;'
+      +'background:linear-gradient(180deg,rgba(36,42,30,0.65),rgba(20,24,18,0.65))!important;'
+      +'box-shadow:inset 0 1px 0 rgba(255,220,140,0.06),inset 0 -2px 4px rgba(0,0,0,0.35),0 1px 2px rgba(0,0,0,0.25);}'
+      +'.pn-tok:hover{transform:translateY(-1px) scale(1.08);background:linear-gradient(180deg,rgba(46,54,38,0.8),rgba(26,32,22,0.8))!important;}'
+      +'.pn-tok:active{transform:translateY(0) scale(0.97);}'
+      +'.pn-tok.sel{box-shadow:inset 0 0 0 2px #7ab356,0 0 12px rgba(122,179,86,0.55),inset 0 1px 0 rgba(255,255,255,0.1)!important;}'
+      // ─── pollinators ──────────────────────────────────────────────────
+      +'.pn-poll{transition:border-color 0.24s ease,background 0.24s ease,box-shadow 0.24s ease;'
+      +'background-image:linear-gradient(180deg,rgba(36,42,30,0.6),rgba(20,24,18,0.6));'
+      +'box-shadow:inset 0 1px 0 rgba(255,220,140,0.05),0 2px 4px rgba(0,0,0,0.25);}'
+      +'.pn-poll.claimed{animation:pnPollClaim 0.6s ease-out;}'
+      // ─── seats ────────────────────────────────────────────────────────
+      +'.pn-seat{transition:background 0.3s ease,border-color 0.3s ease;border-radius:8px;}'
+      +'.pn-seat.active{animation:pnSeatGlow 2.4s ease-in-out infinite;}'
+      // ─── setup / modal shells ─────────────────────────────────────────
+      +'.pn-modal{background:'
+      +'radial-gradient(ellipse at top,rgba(200,168,75,0.08),transparent 60%),'
+      +'linear-gradient(180deg,rgba(18,22,14,0.98),rgba(10,12,8,0.98));'
+      +'box-shadow:0 32px 64px rgba(0,0,0,0.7),0 0 0 1px rgba(200,168,75,0.18),inset 0 1px 0 rgba(255,220,140,0.08);'
+      +'border-radius:16px;position:relative;overflow:hidden;}'
+      +'.pn-modal::before{content:"";position:absolute;inset:0;border-radius:16px;pointer-events:none;background:'+paper+';opacity:0.3;mix-blend-mode:overlay;}'
+      +'.pn-modal>*{position:relative;z-index:1;}'
+      // ─── buttons inside game (play nicely with .gb) ──────────────────
+      +'#PNpan .gb,#PNsetupOV .gb,#PNreserveOV .gb,#PNreturnOV .gb,#PNpassOV .gb{transition:all 0.16s cubic-bezier(.25,.46,.45,.94);letter-spacing:0.06em;}'
+      +'#PNpan .gb:active,#PNsetupOV .gb:active,#PNreserveOV .gb:active,#PNreturnOV .gb:active{transform:translateY(1px) scale(0.98);}'
+      // ─── setup input focus ───────────────────────────────────────────
+      +'#PNsetupOV input:focus{outline:none;border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(200,168,75,0.2);}'
+      // ─── reserved card band ──────────────────────────────────────────
+      +'.pn-reserved-band{background:linear-gradient(90deg,rgba(200,168,75,0.08),rgba(200,168,75,0.02));border:1px solid rgba(200,168,75,0.15);border-radius:8px;padding:6px;}'
+      // ─── end-card row animation ──────────────────────────────────────
+      +'.pn-standing{animation:pnFadeIn 0.4s ease backwards;}'
+      +'.pn-standing:nth-child(1){animation-delay:0.05s}.pn-standing:nth-child(2){animation-delay:0.1s}.pn-standing:nth-child(3){animation-delay:0.15s}.pn-standing:nth-child(4){animation-delay:0.2s}'
+      // ─── pass curtain feel ───────────────────────────────────────────
+      +'#PNpassOV{background:radial-gradient(ellipse at center,rgba(8,10,6,0.96),rgba(3,4,2,1))!important;}'
+      +'#PNpassOV:active{background:radial-gradient(ellipse at center,rgba(18,22,14,0.98),rgba(8,10,6,1))!important;}'
+      // ─── respect reduced-motion preference ──────────────────────────
+      +'@media (prefers-reduced-motion:reduce){.pn-card,.pn-tok,.pn-poll,.pn-seat{transition:none!important;animation:none!important}.pn-seat.active{animation:none!important;box-shadow:0 0 0 1px var(--gold)!important}}';
     document.head.appendChild(st);
   }
   var pan=document.createElement('div');pan.id='PNpan';
@@ -485,12 +541,12 @@ window._gameFns.pollen = function PN(a){
     for(var i=0;i<standings.length;i++){
       var p=standings[i];
       var isWin=(p.id===winner.id);
-      rows+='<div style="display:flex;justify-content:space-between;padding:6px 8px;background:'+(isWin?'rgba(200,168,75,0.18)':'rgba(26,31,23,0.5)')+';border:1px solid '+(isWin?'rgba(200,168,75,0.45)':'rgba(122,179,86,0.1)')+';border-radius:6px;margin-bottom:4px;font-family:DM Mono,monospace;font-size:0.68rem;">'
+      rows+='<div class="pn-standing" style="display:flex;justify-content:space-between;padding:8px 10px;background:'+(isWin?'rgba(200,168,75,0.18)':'rgba(26,31,23,0.5)')+';border:1px solid '+(isWin?'rgba(200,168,75,0.45)':'rgba(122,179,86,0.1)')+';border-radius:8px;margin-bottom:4px;font-family:DM Mono,monospace;font-size:0.68rem;">'
         +'<span style="color:'+(isWin?'var(--gold)':'var(--cream)')+';">'+(isWin?'🏆 ':'')+(i+1)+'. '+esc(p.name)+(p.isAI?' <span style="color:var(--muted);font-size:0.55rem;">AI</span>':'')+'</span>'
         +'<span style="color:'+(isWin?'var(--gold)':'var(--sage)')+';font-weight:700;">'+p.gp+' GP</span>'
         +'</div>';
     }
-    card.innerHTML='<div style="background:linear-gradient(160deg,#1a1f17,#0d100c);border:2px solid '+(humanWon?'rgba(200,168,75,0.5)':'rgba(199,80,80,0.35)')+';border-radius:16px;padding:2rem 1.5rem;max-width:360px;width:100%;text-align:center;box-shadow:0 12px 48px rgba(0,0,0,0.8),0 0 32px '+(humanWon?'rgba(200,168,75,0.25)':'rgba(0,0,0,0.3)')+';">'+
+    card.innerHTML='<div class="pn-modal" style="padding:2rem 1.5rem;max-width:360px;width:100%;text-align:center;'+(humanWon?'box-shadow:0 32px 64px rgba(0,0,0,0.7),0 0 0 1px rgba(200,168,75,0.45),0 0 40px rgba(200,168,75,0.25),inset 0 1px 0 rgba(255,220,140,0.1);':'')+'">'+
       '<div style="font-size:3rem;margin-bottom:0.5rem;">'+(humanWon?'🌸':'🐝')+'</div>'+
       '<div style="font-family:Bebas Neue,sans-serif;font-size:1.5rem;color:'+(humanWon?'var(--gold)':'var(--cream)')+';letter-spacing:0.12em;margin-bottom:0.6rem;">'+esc(winner.name.toUpperCase())+' WINS</div>'+
       '<div style="text-align:left;margin:14px 0;">'+rows+'</div>'+
@@ -514,7 +570,7 @@ window._gameFns.pollen = function PN(a){
       var bg=isActive?'rgba(200,168,75,0.22)':'rgba(26,31,23,0.5)';
       var bd=isActive?'var(--gold)':'rgba(122,179,86,0.15)';
       var nameClr=isActive?'var(--gold)':'var(--cream)';
-      h+='<div style="background:'+bg+';border:1px solid '+bd+';border-radius:6px;padding:4px 6px;text-align:center;font-family:DM Mono,monospace;">'
+      h+='<div class="pn-seat'+(isActive?' active':'')+'" style="background:'+bg+';border:1px solid '+bd+';padding:4px 6px;text-align:center;font-family:DM Mono,monospace;">'
         +'<div style="font-size:0.55rem;color:'+nameClr+';letter-spacing:0.05em;word-break:break-word;">'+esc(p.name)+(p.isAI?' 🤖':'')+'</div>'
         +'<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:'+nameClr+';">'+p.gp+'</div>'
         +'</div>';
@@ -578,8 +634,10 @@ window._gameFns.pollen = function PN(a){
     if(meRef.cards.length===0)h+='<span style="font-size:10px;color:var(--muted);">None yet</span>';
     h+='</div>';
     if(meRef.reserved.length>0){
-      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--gold);letter-spacing:0.1em;margin-top:6px;">RESERVED</div>';
+      h+='<div class="pn-reserved-band" style="margin-top:8px;">';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:4px;">HAND · '+meRef.reserved.length+'/3</div>';
       h+='<div>';meRef.reserved.forEach(function(c){h+=renderCard(c,true);});h+='</div>';
+      h+='</div>';
     }
     h+='</div>';
     // Actions
@@ -635,7 +693,7 @@ window._gameFns.pollen = function PN(a){
     ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
     // Build the big card using the same renderer logic, scaled 3×.
     var bgShade=card.tier===1?'#4a7c35':card.tier===2?'#c8a84b':'#ffd700';
-    var h='<div style="display:flex;flex-direction:column;align-items:center;gap:16px;">';
+    var h='<div class="pn-modal" style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:22px 20px;max-width:300px;width:100%;">';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.18em;color:var(--muted);">RESERVE THIS CARD?</div>';
     h+='<div class="pn-big-card" style="width:220px;height:300px;background:#f5f0e1;border-radius:12px;padding:14px;border:2px solid #7ab356;border-left:10px solid '+bgShade+';position:relative;color:#1a1f17;box-shadow:0 24px 48px rgba(0,0,0,0.6),0 4px 12px rgba(0,0,0,0.3);animation:pnLift 0.35s cubic-bezier(.34,1.56,.64,1);">';
     h+='<div style="position:absolute;top:8px;left:14px;font-size:40px;font-weight:800;">'+(card.gp>0?card.gp:'')+'</div>';
