@@ -26908,6 +26908,9 @@ document.addEventListener('keydown', function(e) {
     var modes = ['newest', 'rarest', 'name', 'season', 'ea'];
     var idx = modes.indexOf(mode);
     if (idx >= 0 && btns[idx]) btns[idx].classList.add('active');
+    // Cache key includes realIdx (sort-dependent) — must invalidate before
+    // re-render or cards render with stale slot numbers tied to old order.
+    if (window._invalidateGHCache) window._invalidateGHCache();
     renderGreenhouse();
   };
 
@@ -29790,13 +29793,28 @@ document.addEventListener('keydown', function(e) {
     }
 
     // Step 5: remove plant from sws_greenhouse
-    // Phase 32: use saveGreenhouse() so cloud sync fires via interceptor
+    // Phase 32: use saveGreenhouse() so cloud sync fires via interceptor.
+    // We keep a snapshot of the removed plant so a save failure can restore
+    // it — old code rolled back inventory but left the plant gone from gh.
+    var _removedPlant = gh[plantIndex];
     gh.splice(plantIndex, 1);
     var ghOk = false;
     try { saveGreenhouse(gh); ghOk = true; } catch(e) {}
 
     if (!ghOk) {
-      // Rollback: restore inventory to pre-compost state
+      // Restore the plant we just spliced out — both in our local gh array
+      // (in case anything else still has a ref) and rebuild the storage
+      // entry from the original list.
+      gh.splice(plantIndex, 0, _removedPlant);
+      try {
+        var _restoreList = (window._secureGet ? window._secureGet(GH_KEY) : null);
+        if (!_restoreList) {
+          // Cache wipe + direct write since saveGreenhouse just failed.
+          if (window._invalidateGHCache) window._invalidateGHCache();
+          try { localStorage.setItem(GH_KEY, JSON.stringify(gh)); } catch(e2) {}
+        }
+      } catch(e3) {}
+      // Rollback inventory to pre-compost state
       inv.dnaFragments -= dnaReward;
       inv.fertilizer = Math.max(0, (inv.fertilizer || 0) - fertReward);
       inv.substrate[substrateKey] = Math.max(0, (inv.substrate[substrateKey] || 1) - 1);
@@ -30983,7 +31001,7 @@ document.addEventListener('keydown', function(e) {
       }
     }
 
-    var _fertInfo = (seed.fertApplied || 0) > 0 ? '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--gold);margin-top:2px;">🌿 ' + (seed.fertApplied || 0) + '/15 fertilizer (+' + (seed.fertApplied || 0) + '% rarity)</div>' : '';
+    var _fertInfo = (seed.fertApplied || 0) > 0 ? '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--gold);margin-top:2px;">🌿 ' + (seed.fertApplied || 0) + '/25 fertilizer (+' + (seed.fertApplied || 0) + '% rarity)</div>' : '';
 
     // Mystery seeds get a small "sealed" plate. Bred seeds get NOTHING here —
     // showing offspring name/grade/EA/companion before bloom destroys the
@@ -31981,8 +31999,10 @@ document.addEventListener('keydown', function(e) {
     if (seedIndex < 0) { _setNurMsg('Seed not found.'); return; }
     var seed = nur[seedIndex];
     var applied = seed.fertApplied || 0;
-    if (applied >= 15) {
-      _setNurMsg('Max fertilizer reached (15/15).');
+    // Spec/mutation engine cap is 25 (max 1% rarity per fertilizer).
+    // Was capping at 15 here — wall hit halfway up.
+    if (applied >= 25) {
+      _setNurMsg('Max fertilizer reached (25/25).');
       return;
     }
     // Apply 1 unit
@@ -32004,7 +32024,7 @@ document.addEventListener('keydown', function(e) {
     _haptic('tab');
     renderNursery();
     updateDashboard();
-    _setNurMsg('🌿 Fertilizer applied. ' + seed.fertApplied + '/15 (+' + seed.fertApplied + '% rarity boost).');
+    _setNurMsg('🌿 Fertilizer applied. ' + seed.fertApplied + '/25 (+' + seed.fertApplied + '% rarity boost).');
   };
 
   // ── Bloom Reveal (legacy flip-card — kept for non-nursery hash reveals) ──
@@ -37173,19 +37193,28 @@ function _doCrossPollination(wildPlant,matePlant){
     setTimeout(function(){if(_wildBreedOv.parentNode){_wildBreedOv.style.transition='opacity 0.5s';_wildBreedOv.style.opacity='0';setTimeout(function(){if(_wildBreedOv.parentNode)_wildBreedOv.remove();},500);}},2200);
     FG_Data.crossPollinateHashes(wildPlant.hash,matePlant.hash).then(function(result){
       var offHash=result.childHash;
-      // Compute generation BEFORE addSeed so seed stores correct value
+      // Read parent generations WITHOUT mutating yet — atomic order:
+      // 1. compute offGen, 2. addSeed (can fail), 3. THEN bump breedCount.
+      // Old order bumped breedCount first; nursery-full failure left both
+      // parents with phantom breeds and no child seed.
       var _wpGen=1,_mpGen=1;
       var _bcGh3=[];try{_bcGh3=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
-      var _bcDirty3=false;
       _bcGh3.forEach(function(p){
-        if(p.hash===wildPlant.hash){_wpGen=p.generation||1;p.breedCount=(p.breedCount||0)+1;_bcDirty3=true;}
-        if(p.hash===matePlant.hash){_mpGen=p.generation||1;p.breedCount=(p.breedCount||0)+1;_bcDirty3=true;}
+        if(p.hash===wildPlant.hash)_wpGen=p.generation||1;
+        if(p.hash===matePlant.hash)_mpGen=p.generation||1;
       });
       var offGen=Math.max(_wpGen,_mpGen)+1;
       if(window.FG_Data&&FG_Data.addSeed){
         var addResult=FG_Data.addSeed({seedHash:offHash,parentAHash:wildPlant.hash,parentBHash:matePlant.hash,nonce:offGen});
         if(!addResult.ok){_toast('Nursery full. Bloom or abandon a seed first.');return;}
       }
+      // Seed landed — NOW bump breedCount on both parents.
+      var _bcDirty3=false;
+      _bcGh3.forEach(function(p){
+        if(p.hash===wildPlant.hash||p.hash===matePlant.hash){
+          p.breedCount=(p.breedCount||0)+1;_bcDirty3=true;
+        }
+      });
       if(_bcDirty3&&window.saveGreenhouse)saveGreenhouse(_bcGh3);
       if(window.renderNursery)renderNursery();
       // Event log: record the cross-pollinate for Root Report / lineage trace
@@ -39635,6 +39664,25 @@ window._hexAction=function(action){
       no:'LEAVE IT ALONE',
       danger:true
     },function(){
+      // Atomicity fix: try addSeed FIRST. Only wound the parent + log
+      // the cutting if the seed actually landed in the nursery. The old
+      // order wounded the parent then checked, so a full nursery left
+      // the parent permanently scarred with no seed to show for it.
+      if(!window.FG_Data||!window.FG_Data.addSeed){
+        _toast('Nursery engine not available — try again.');return;
+      }
+      var _addResult=window.FG_Data.addSeed({
+        seedHash:p.hash,
+        parentAHash:p.hash,
+        parentBHash:p.hash,
+        nonce:0,
+        mystery:false
+      });
+      if(!_addResult||!_addResult.ok){
+        _toast('Cutting failed to land in nursery. Parent plant was spared.');
+        return;
+      }
+      // Seed landed. Now apply the wound + log.
       try{
         if(_sharedMarkers&&_sharedMarkers[p.hash]&&_sharedMarkers[p.hash].data){
           var _cSmd=_sharedMarkers[p.hash].data;
@@ -39647,21 +39695,6 @@ window._hexAction=function(action){
       }catch(e){}
       _cutLog[p.hash]=Date.now();
       try{localStorage.setItem(_cutKey,JSON.stringify(_cutLog));}catch(e){}
-      if(window.FG_Data&&window.FG_Data.addSeed){
-        var _addResult=window.FG_Data.addSeed({
-          seedHash:p.hash,
-          parentAHash:p.hash,
-          parentBHash:p.hash,
-          nonce:0,
-          mystery:false
-        });
-        if(!_addResult||!_addResult.ok){
-          _toast('Cutting failed to land in nursery. Parent plant was spared.');
-          delete _cutLog[p.hash];
-          try{localStorage.setItem(_cutKey,JSON.stringify(_cutLog));}catch(e){}
-          return;
-        }
-      }
       if(window.PW_grantXP)PW_grantXP(15,'wild_cutting');
       if(window.LW_Log)window.LW_Log.write('wild_cutting_taken',{
         hash:p.hash,
