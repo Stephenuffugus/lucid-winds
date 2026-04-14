@@ -21,16 +21,32 @@ window._gameFns.stonegarden=function SG(a){
   var ARC_GAP_MAX=14;     // max gap between neighbors to count as arc
 
   // ─── SHAPE CLASSES ───────────────────────────────────────────────────
-  // Each class has: label (HUD), pts (score), a shape function that returns
-  // {w, h, verts[]}. Harder-to-stack shapes are worth more.
+  // Each class has: label (HUD), pts (score), weight (tray spawn rarity),
+  // a shape function that returns {w, h, verts[]}. Harder-to-stack shapes
+  // are worth more; rarer shapes have lower weights.
   var SHAPES={
-    slab:    {label:'SLAB',    pts:1},
-    pebble:  {label:'PEBBLE',  pts:2},
-    boulder: {label:'BOULDER', pts:3},
-    spire:   {label:'SPIRE',   pts:4},
-    wedge:   {label:'WEDGE',   pts:5},
-    crescent:{label:'CRESCENT',pts:7}
+    moss:    {label:'MOSS',    pts:1, weight:10, tint:'moss'},
+    slab:    {label:'SLAB',    pts:1, weight:12},
+    coin:    {label:'COIN',    pts:2, weight:9},
+    pebble:  {label:'PEBBLE',  pts:2, weight:12},
+    drift:   {label:'DRIFT',   pts:3, weight:8, tint:'wood'},
+    boulder: {label:'BOULDER', pts:3, weight:9},
+    spire:   {label:'SPIRE',   pts:4, weight:7},
+    wedge:   {label:'WEDGE',   pts:5, weight:6},
+    crystal: {label:'CRYSTAL', pts:6, weight:3, tint:'crystal'},
+    crescent:{label:'CRESCENT',pts:7, weight:3}
   };
+  // Weighted random key based on `weight` fields.
+  function pickShapeKey(){
+    var keys=Object.keys(SHAPES),total=0;
+    for(var i=0;i<keys.length;i++)total+=SHAPES[keys[i]].weight||1;
+    var r=Math.random()*total;
+    for(var j=0;j<keys.length;j++){
+      r-=SHAPES[keys[j]].weight||1;
+      if(r<=0)return keys[j];
+    }
+    return keys[0];
+  }
   function _genSlab(){
     var w=70+Math.random()*28,h=12+Math.random()*8;
     return{w:w,h:h,verts:_oval(w,h,6,0.08)};
@@ -63,18 +79,44 @@ window._gameFns.stonegarden=function SG(a){
     // moon-crescent polygon. Hardest to balance.
     var w=60+Math.random()*28,h=36+Math.random()*14;
     var verts=[],N=10;
-    // Top arc (outer curve)
     for(var i=0;i<=N;i++){
       var t=i/N,x=-w/2+w*t;
       var y=-h/2+(1-Math.sin(Math.PI*t))*h*0.12;
       verts.push({x:x,y:y});
     }
-    // Bottom arc (inner curve, dipping up in the middle)
     for(var j=N;j>=0;j--){
       var t2=j/N,x2=-w/2+w*t2;
       var y2=h/2-(1-Math.sin(Math.PI*t2))*h*0.55;
       verts.push({x:x2,y:y2});
     }
+    return{w:w,h:h,verts:verts};
+  }
+  function _genMoss(){
+    // Low wide soft clump. Very stable foundation.
+    var w=60+Math.random()*28,h=8+Math.random()*5;
+    return{w:w,h:h,verts:_oval(w,h,8,0.25)};
+  }
+  function _genCoin(){
+    // Tiny round, great for perching on top of stacks or filling gaps.
+    var r=12+Math.random()*6;
+    return{w:r*2,h:r*2,verts:_oval(r*2,r*2,10,0.04)};
+  }
+  function _genDrift(){
+    // Long thin horizontal bar, like a piece of driftwood. Reads
+    // asymmetric so it rolls if not well placed.
+    var w=75+Math.random()*30,h=10+Math.random()*6;
+    return{w:w,h:h,verts:_oval(w,h,6,0.18)};
+  }
+  function _genCrystal(){
+    // Sharp angled prism. Narrow base = tippy but worth more.
+    var w=28+Math.random()*10,h=52+Math.random()*20;
+    var verts=[
+      {x:0,       y:-h/2},
+      {x:w/2,     y:-h/4},
+      {x:w/2*0.7, y: h/2},
+      {x:-w/2*0.7,y: h/2},
+      {x:-w/2,    y:-h/4}
+    ];
     return{w:w,h:h,verts:verts};
   }
   function _oval(w,h,N,jitter){
@@ -134,11 +176,11 @@ window._gameFns.stonegarden=function SG(a){
 
   // ─── TRAY ────────────────────────────────────────────────────────────
   function newTrayStone(){
-    var keys=Object.keys(SHAPES);
-    // Weight toward easier early, wider variety later.
-    var k=keys[Math.floor(Math.random()*keys.length)];
-    return makeStone(k);
+    return makeStone(pickShapeKey());
   }
+  // Track recent shape placements for the "run chain" bonus:
+  // three in a row of the same shape awards double points on that third.
+  var recentShapes=[];
   function fillTrays(){
     trayL=[];trayR=[];
     for(var i=0;i<TRAY_SLOTS;i++){trayL.push(newTrayStone());trayR.push(newTrayStone());}
@@ -160,16 +202,38 @@ window._gameFns.stonegarden=function SG(a){
     else if(shapeKey==='boulder')g=_genBoulder();
     else if(shapeKey==='spire')g=_genSpire();
     else if(shapeKey==='wedge')g=_genWedge();
-    else g=_genCrescent();
+    else if(shapeKey==='crescent')g=_genCrescent();
+    else if(shapeKey==='moss')g=_genMoss();
+    else if(shapeKey==='coin')g=_genCoin();
+    else if(shapeKey==='drift')g=_genDrift();
+    else g=_genCrystal();
     var mass=g.w*g.h*0.01,inertia=mass*(g.w*g.w+g.h*g.h)/12;
+    // Tint palette per material so moss looks mossy, wood looks woody, etc.
+    var color,darkColor;
     var gray=92+Math.floor(Math.random()*35),warm=Math.floor(Math.random()*14)-5;
+    if(shape.tint==='moss'){
+      var gr=70+Math.floor(Math.random()*25);
+      color='rgb('+(gr*0.55)+','+(gr+20)+','+(gr*0.5)+')';
+      darkColor='rgb('+(gr*0.35)+','+(gr-5)+','+(gr*0.35)+')';
+    } else if(shape.tint==='wood'){
+      var br=88+Math.floor(Math.random()*22);
+      color='rgb('+(br+20)+','+(br-10)+','+(br-40)+')';
+      darkColor='rgb('+(br-10)+','+(br-30)+','+(br-55)+')';
+    } else if(shape.tint==='crystal'){
+      // Cool lavender/pale blue translucent look.
+      var bl=140+Math.floor(Math.random()*40);
+      color='rgb('+(bl-30)+','+(bl-10)+','+(bl+10)+')';
+      darkColor='rgb('+(bl-60)+','+(bl-40)+','+(bl-15)+')';
+    } else {
+      color='rgb('+(gray+warm)+','+(gray+Math.floor(warm*0.5))+','+(gray-warm)+')';
+      darkColor='rgb('+(gray-22+warm)+','+(gray-22)+','+(gray-22-warm)+')';
+    }
     return{
       shape:shapeKey,pts:shape.pts,
       x:0,y:0,vx:0,vy:0,angle:0,angVel:0,
       w:g.w,h:g.h,hw:g.w/2,hh:g.h/2,verts:g.verts,
       mass:mass,invMass:1/mass,inertia:inertia,invInertia:1/inertia,
-      color:'rgb('+(gray+warm)+','+(gray+Math.floor(warm*0.5))+','+(gray-warm)+')',
-      darkColor:'rgb('+(gray-22+warm)+','+(gray-22)+','+(gray-22-warm)+')',
+      color:color,darkColor:darkColor,
       settled:false,settleTimer:0,inFlight:false
     };
   }
@@ -320,7 +384,15 @@ window._gameFns.stonegarden=function SG(a){
 
   function onStoneSettled(s){
     if(s.__scored)return;s.__scored=true;
-    score+=s.pts;
+    var gained=s.pts;
+    // Run-chain: three of the same shape in a row doubles the third's pts.
+    recentShapes.push(s.shape);if(recentShapes.length>3)recentShapes.shift();
+    if(recentShapes.length===3&&recentShapes[0]===recentShapes[1]&&recentShapes[1]===recentShapes[2]){
+      gained*=2;
+      _flash('RUN x3 +'+gained,'#7ab356');
+      recentShapes=[]; // reset so it doesn't pop again on next same-shape
+    }
+    score+=gained;
     stonesPlaced++;
     var h=measureHeight();
     if(h>maxHeight)maxHeight=h;
