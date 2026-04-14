@@ -1457,8 +1457,12 @@ function _doReproduction(weather, simMode) {
     }
 
     // Build offspring drop data
+    // docId includes the source zone so each zone's attempt is a distinct
+    // Firestore write. Previously collisions between zones rolling the same
+    // "best pair" overwrote each other, capping clusters at ~1 birth/day.
     var pairKey = [parentA.hash.slice(0, 8), parentB.hash.slice(0, 8)].sort().join('');
-    var docId = 'wild_' + pairKey + '_' + td.replace(/-/g, '');
+    var zoneTag = zk.replace(/[^0-9A-Za-z]/g, '');
+    var docId = 'wild_' + pairKey + '_' + td.replace(/-/g, '') + '_' + zoneTag;
 
     // ── RARE EVENT ROLLS ──
     var rareEvents = [];
