@@ -7480,7 +7480,17 @@ document.addEventListener('keydown', function(e) {
       mythic:       mythByte,
       mythicName:   mythName,
       isRare: goldenPot||glowFlower||crystalBase||mutName!=='None'||mythName!=='None',
-      season: hb(22) % 4  // 0=Spring, 1=Summer, 2=Autumn, 3=Winter
+      season: hb(22) % 4,  // 0=Spring, 1=Summer, 2=Autumn, 3=Winter
+      // Climate resistance profile — deterministic from hash bytes 23-27.
+      // Used by the wild climate-damage tick to decide which plants suffer
+      // when real weather breaches their tolerance range. Shown in plant
+      // detail so keepers know what to protect against. Ranges tuned to
+      // produce a spread of fragile vs hardy individuals.
+      heatMax:     28 + (hb(23) % 13),      // 28-40 °C
+      coldMin:     -5 + (hb(24) % 18),      // -5 to +12 °C
+      droughtDays:  3 + (hb(25) % 8),       // 3-10 dry days before stress
+      floodMm:     20 + (hb(26) % 45),      // 20-64 mm/day rain ceiling
+      windMax:     18 + (hb(27) % 28)       // 18-45 mph gust ceiling
     };
     // Cache result — traits are deterministic from hash. Cap at 200 entries.
     if (_traitCacheSize < 200) { _traitCache[hash] = _result; _traitCacheSize++; }

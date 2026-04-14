@@ -507,6 +507,13 @@ function activate(){
     localStorage.setItem('lw_repro_today',_todayStr);
     setTimeout(function(){if(window._wildReproduction)_wildReproduction();},window._perfLite?8000:2000);
   }
+  // Daily climate damage check — independent lock so it runs even when
+  // reproduction is rate-limited. Same weather cache is reused.
+  var _climateToday=localStorage.getItem('lw_climate_today');
+  if(_climateToday!==_todayStr){
+    localStorage.setItem('lw_climate_today',_todayStr);
+    setTimeout(function(){if(window._wildClimateTick)_wildClimateTick();},window._perfLite?10000:3500);
+  }
   // First-visit onboarding
   if(!localStorage.getItem('lw_wild_onboarded')){
     localStorage.setItem('lw_wild_onboarded','1');
@@ -1246,6 +1253,129 @@ function _fetchReproWeather(lat, lng, cb) {
     _reproWeather = { rain: rain, temp: temp, fetched: Date.now() };
     cb(_reproWeather);
   }).catch(function() { cb({ rain: 0, temp: 20, fetched: Date.now() }); });
+}
+
+// ═══ WILD CLIMATE DAMAGE TICK ═══
+// Runs once per day on Wild-tab entry. For every plant in view (own +
+// shared markers), compare today's weather to the plant's hash-derived
+// climate thresholds. Each breached threshold subtracts hours from
+// decayAt. Season multiplier amplifies damage for plants out-of-season.
+// Events log silently to the Book of Secrets — no toast spam.
+//
+// Storage:
+//   lw_climate_today  — ISO date string, rate-limits to 1x/day
+//   lw_dry_days       — { zoneKey: consecutive dry-days count } for drought
+//                       detection; reset when rain>1mm lands on the zone.
+function _wildClimateTick() {
+  if (!_uLat) return;
+  _fetchReproWeather(_uLat, _uLng, function(weather) {
+    _doClimateTick(weather);
+  });
+}
+window._wildClimateTick = _wildClimateTick;
+
+function _doClimateTick(weather) {
+  var zones = _getAllZonePlants();
+  var zoneKeys = Object.keys(zones);
+  if (!zoneKeys.length) return;
+  var temp = weather.temp || 20;
+  var rain = weather.rain || 0;
+  var wind = weather.wind || 0; // open-meteo current_weather.windspeed (may not be fetched; default 0)
+  // Wind estimate: open-meteo returns windspeed with current_weather but the
+  // existing fetcher doesn't capture it. Treat 0 as "no data" — skip wind
+  // checks until a future fetch upgrade. See _fetchReproWeather.
+  // Dry-day tracking per zone
+  var dryMap = {};
+  try { dryMap = JSON.parse(localStorage.getItem('lw_dry_days') || '{}'); } catch(e) {}
+  var currentMonth = new Date().getMonth();
+  var curSeason = currentMonth < 3 ? 3 : currentMonth < 6 ? 0 : currentMonth < 9 ? 1 : 2;
+  // Update local wild array for persistence at end
+  var localWild = _getWild();
+  var localChanged = false;
+  var totalBreaches = 0, plantsDamaged = 0;
+
+  for (var zk in zones) {
+    // Drought counter: increment dry days, reset on rain
+    if (rain > 1) dryMap[zk] = 0;
+    else dryMap[zk] = (dryMap[zk] || 0) + 1;
+    var zDry = dryMap[zk];
+
+    var plants = zones[zk];
+    for (var pi = 0; pi < plants.length; pi++) {
+      var p = plants[pi];
+      if (!p || !p.hash) continue;
+      var t; try { t = window.hashToTraits ? window.hashToTraits(p.hash) : null; } catch(e) { continue; }
+      if (!t) continue;
+      // Legacy plants minted before thresholds shipped may lack fields.
+      // Fill with safe defaults so they don't instantly die.
+      var heatMax = typeof t.heatMax === 'number' ? t.heatMax : 32;
+      var coldMin = typeof t.coldMin === 'number' ? t.coldMin : 5;
+      var droughtDays = typeof t.droughtDays === 'number' ? t.droughtDays : 6;
+      var floodMm = typeof t.floodMm === 'number' ? t.floodMm : 40;
+
+      var breaches = [];
+      if (temp > heatMax) breaches.push({ kind: 'heat', cur: temp, thr: heatMax });
+      if (temp < coldMin) breaches.push({ kind: 'cold', cur: temp, thr: coldMin });
+      if (rain > floodMm) breaches.push({ kind: 'flood', cur: rain, thr: floodMm });
+      if (zDry > droughtDays) breaches.push({ kind: 'drought', cur: zDry, thr: droughtDays });
+      if (!breaches.length) continue;
+
+      // Season multiplier: peak 0.5x, adjacent 1.0x, opposite 1.75x
+      var plantSeason = t.season || 0;
+      var seasonDelta = Math.abs(plantSeason - curSeason);
+      if (seasonDelta === 3) seasonDelta = 1;
+      var seasonMult = seasonDelta === 0 ? 0.5 : seasonDelta === 2 ? 1.75 : 1.0;
+
+      // 8 hours per breach × season mult. Cap at 3 days lifespan lost per day.
+      var hoursLost = Math.min(72, breaches.length * 8 * seasonMult);
+      var msLost = hoursLost * 3600 * 1000;
+
+      // Apply damage: only to plants tracked in local wild (own). Shared
+      // markers are driven by their owners' clients — we log the event for
+      // the ecosystem view but don't mutate someone else's plant state here.
+      var localIdx = -1;
+      for (var lw = 0; lw < localWild.length; lw++) {
+        if (localWild[lw] && localWild[lw].hash === p.hash) { localIdx = lw; break; }
+      }
+      if (localIdx >= 0) {
+        var lp = localWild[localIdx];
+        _ensureVitality(lp);
+        lp.decayAt = (lp.decayAt || Date.now()) - msLost;
+        lp.lastClimateHitAt = Date.now();
+        lp.lastClimateKind = breaches[0].kind;
+        localChanged = true;
+      }
+      plantsDamaged++;
+      totalBreaches += breaches.length;
+
+      // Silent Book of Secrets entry — one per damaged plant per day
+      if (window._logWildEvent) {
+        var breachLabels = breaches.map(function(b) { return b.kind; }).join('+');
+        var plantName = '';
+        try { plantName = window.getPlantName ? window.getPlantName(p.hash) : ''; } catch(e) {}
+        window._logWildEvent({
+          type: 'climate',
+          event: breachLabels,
+          hash: p.hash,
+          name: plantName,
+          temp: temp,
+          rain: rain,
+          dryDays: zDry,
+          seasonMult: seasonMult,
+          hoursLost: hoursLost,
+          breaches: breaches.map(function(b){return b.kind+':'+Math.round(b.cur*10)/10+'/'+b.thr;})
+        });
+      }
+    }
+  }
+
+  // Persist dry-day tracking and damaged plants
+  try { localStorage.setItem('lw_dry_days', JSON.stringify(dryMap)); } catch(e) {}
+  if (localChanged) _saveWild(localWild);
+
+  if (window._swsLog && totalBreaches > 0) {
+    _swsLog('Climate tick: ' + plantsDamaged + ' plants took damage (' + totalBreaches + ' breaches, ' + Math.round(temp) + '°C, ' + rain.toFixed(1) + 'mm)', 'info');
+  }
 }
 
 window._wildReproduction = function(simMode){ return _wildReproduction(simMode); };
