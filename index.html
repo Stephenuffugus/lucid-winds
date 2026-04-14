@@ -6603,6 +6603,32 @@ window._addSwitchTabHook = function(fn){
       localStorage.setItem('fg_ferals',JSON.stringify(data));
       alert('Feral timers reset! Switch to Wild tab — ferals will spawn from all occupied zones.');
     },
+    wildDiag:function(){
+      // Diagnostic: show what's in each wild-plant source so we can tell
+      // why Beholder/counters disagree with what's visible on the map.
+      var localWild=[];try{localWild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+      var shared=window._sharedMarkers?Object.keys(window._sharedMarkers).length:0;
+      var sharedOwn=0,sharedOther=0;
+      try{
+        var uid=firebase.auth().currentUser&&firebase.auth().currentUser.uid;
+        if(window._sharedMarkers){
+          for(var k in window._sharedMarkers){
+            var sm=window._sharedMarkers[k];if(!sm||!sm.data)continue;
+            if(uid&&sm.data.ownerUid===uid)sharedOwn++;else sharedOther++;
+          }
+        }
+      }catch(e){}
+      var msg='WILD PLANT DIAGNOSTIC\n\n';
+      msg+='fg_wild_plants (local own): '+localWild.length+'\n';
+      msg+='_sharedMarkers total: '+shared+'\n';
+      msg+='  - owned by you (shared path): '+sharedOwn+'\n';
+      msg+='  - owned by others: '+sharedOther+'\n\n';
+      msg+='Beholder would count: '+(localWild.length+shared)+' wild plants\n\n';
+      if(localWild.length<3){
+        msg+='LIKELY ISSUE: your local fg_wild_plants has fewer entries than what shows on the map. Old drops may still be in Firestore but not cached locally (different device / cleared storage / old UID). Force Hydrate from the dev panel may pull them back.';
+      }
+      alert(msg);
+    },
     accelRepro:function(){
       // Clear every gate that blocks a repro re-run: per-zone checks, the
       // global daily lock, and the weather-event lock. Then fire directly.
@@ -48935,9 +48961,15 @@ window.FG_Backpack.show = function() {
   var glass = document.querySelector('.map-glass-highlight');
   if (vig) vig.style.display = 'block';
   if (glass) glass.style.display = 'block';
-  // Inject SVG icons if not already there
+  // Inject SVG icons if not already there. Guard: only inject if the
+  // sprite is actual SVG markup — otherwise we end up rendering an emoji
+  // fallback on top of the FAB's PNG background.
   var dfi = document.getElementById('dfi');
-  if (dfi && !dfi.querySelector('svg') && window._BP_UI) dfi.innerHTML = window._BP_UI.spr || '';
+  if (dfi && !dfi.querySelector('svg') && window._BP_UI && typeof _BP_UI.spr === 'string' && _BP_UI.spr.indexOf('<svg') === 0) {
+    dfi.innerHTML = _BP_UI.spr;
+  } else if (dfi) {
+    dfi.innerHTML = '';
+  }
   var sdhi = document.getElementById('sdhi');
   if (sdhi && !sdhi.querySelector('svg') && window._BP_UI) sdhi.innerHTML = window._BP_UI.hx || '';
   // Show return-to-base button + start cooldown timer

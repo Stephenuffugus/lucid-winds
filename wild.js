@@ -1390,16 +1390,28 @@ function _doReproduction(weather, simMode) {
       offGrade = otg ? otg.name : 'Common';
     } catch (e) {}
 
-    // Pick target hex — wind-influenced dispersal
+    // Pick target hex — wind-biased dispersal with empty-hex preference.
+    // Old behavior picked ONE target and invaded if occupied. In a tight
+    // cluster of own plants this meant nearly every baby hit a populated
+    // hex, failed EA invasion, or displaced an existing plant — no net
+    // discovery. Now we roll up to 8 candidates and take the first EMPTY
+    // one (wind-weighted). If all rolls land on populated hexes we fall
+    // back to the last roll so the invasion path still exists for
+    // legitimate takeovers.
     var parts = zk.split(',');
     var baseLat = parseFloat(parts[0]), baseLng = parseFloat(parts[1]);
-    var windRad = ((_wd || 0) + Math.random() * 180 - 90) * Math.PI / 180;
-    var windStr = 0.2 + Math.random() * 0.3;
-    var randStr = 1 - windStr;
-    var dist = ZONE_SIZE * (1 + Math.random());
-    var targetLat = baseLat + Math.cos(windRad) * dist * windStr + (Math.random() - 0.5) * dist * randStr;
-    var targetLng = baseLng + Math.sin(windRad) * dist * windStr + (Math.random() - 0.5) * dist * randStr;
-    var targetZone = _zoneKey(targetLat, targetLng);
+    var targetLat, targetLng, targetZone, emptyFound = false;
+    for (var dt = 0; dt < 8; dt++) {
+      var windRad = ((_wd || 0) + Math.random() * 180 - 90) * Math.PI / 180;
+      var windStr = 0.2 + Math.random() * 0.3;
+      var randStr = 1 - windStr;
+      var dist = ZONE_SIZE * (1 + Math.random());
+      targetLat = baseLat + Math.cos(windRad) * dist * windStr + (Math.random() - 0.5) * dist * randStr;
+      targetLng = baseLng + Math.sin(windRad) * dist * windStr + (Math.random() - 0.5) * dist * randStr;
+      targetZone = _zoneKey(targetLat, targetLng);
+      if (targetZone === zk) continue; // don't land on own source zone
+      if (!zones[targetZone] || zones[targetZone].length === 0) { emptyFound = true; break; }
+    }
 
     // EA-based invasion check
     var targetPlants = zones[targetZone] || [];
