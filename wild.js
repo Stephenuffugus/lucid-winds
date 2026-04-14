@@ -522,6 +522,40 @@ function activate(){
     console.log('[Wild.activate] '+diag);
     if(!window.L)_toast('Error: Leaflet not loaded. Check internet connection.');
   }catch(e){}
+  // MORNING SUMMARY — what happened since last Wild visit. Surfaces
+  // silent events so a keeper returning after a day feels the reward
+  // of their garden's overnight activity. Silent-births was the #1
+  // retention risk in the ecosystem audit. Uses lw_wild_last_visit
+  // as the cutoff; groups recent events by type; skips if nothing new.
+  try {
+    var _lastVisit = parseInt(localStorage.getItem('lw_wild_last_visit') || '0', 10);
+    var _now = Date.now();
+    // Require at least 5 min gap so tab-hopping doesn't spam the toast
+    if (_now - _lastVisit > 5 * 60 * 1000) {
+      var _evts = [];
+      try { _evts = JSON.parse(localStorage.getItem('lw_wild_events') || '[]'); } catch(e) {}
+      var _since = _evts.filter(function(e){return (e.ts||0) > _lastVisit;});
+      if (_since.length > 0 && _lastVisit > 0) {
+        var _counts = {};
+        for (var _si = 0; _si < _since.length; _si++) {
+          var _et = _since[_si].type || 'event';
+          _counts[_et] = (_counts[_et] || 0) + 1;
+        }
+        var _parts = [];
+        if (_counts.birth) _parts.push(_counts.birth + ' new plant' + (_counts.birth>1?'s':'') + ' born');
+        if (_counts.sprout) _parts.push(_counts.sprout + ' sprout' + (_counts.sprout>1?'s':'') + ' seeded');
+        if (_counts.germinate) _parts.push(_counts.germinate + ' sprout' + (_counts.germinate>1?'s':'') + ' germinated');
+        if (_counts.climate) _parts.push(_counts.climate + ' climate event' + (_counts.climate>1?'s':''));
+        if (_counts.invaded) _parts.push(_counts.invaded + ' invasion' + (_counts.invaded>1?'s':''));
+        if (_parts.length > 0) {
+          setTimeout(function(){
+            _toast('\ud83c\udf3e Since your last visit: ' + _parts.join(' \u00b7 ') + '. Tap \ud83d\udcd6 for details.');
+          }, 2500);
+        }
+      }
+    }
+    localStorage.setItem('lw_wild_last_visit', String(_now));
+  } catch(e) {}
   if(!_inited){_initMap();_initGeo();_inited=true;}
   // Prune expired wild plants before loading
   _pruneWild();
