@@ -1,6 +1,11 @@
-// ═══ POLLEN — Splendor-like engine builder ═══
-// Collect pollen tokens, buy plant cards that produce permanent pollen, attract pollinators.
-// First to 15 Growth Points wins.
+// ═══ MASTER POLLINATOR — Splendor-style engine builder ═══
+// Collect pollen tokens, grow plant cards that produce permanent pollen,
+// attract pollinators. First to 15 Growth Points wins. Rebranded from
+// "Queen Bee" / "Pollen" since the game stands on its own and we're
+// building toward full custom art + expansions.
+//
+// Art roadmap: assets/games/masterpollinator/ holds per-card art.
+// Names/requirements are stable so art can drop in without code changes.
 (function(){
 'use strict';
 var G=window._G;
@@ -12,15 +17,24 @@ window._gameFns.pollen = function PN(a){
   var COLOR_HEX={green:'#7ab356',rose:'#c47a7a',blue:'#5b9bd5',amber:'#c8a84b',spore:'#e8dcc8',gold:'#ffd700'};
   var TIER_ICONS=['🌱','🌿','🌳'];
   var TIER_NAMES=['Seedling','Sapling','Ancient'];
+  // Expanded pollinator pool — 14 total; 5 show each game so the mix
+  // varies noticeably between runs. Each pollinator rewards 3 GP and
+  // requires production (not tokens) to attract.
   var ALL_POLLINATORS=[
-    {name:'Monarch',icon:'🦋',req:{green:3,blue:3},gp:3},
-    {name:'Honeybee',icon:'🐝',req:{rose:3,amber:3},gp:3},
-    {name:'Hummingbird',icon:'🐦',req:{blue:3,spore:3},gp:3},
-    {name:'Luna Moth',icon:'🌙',req:{green:3,rose:3},gp:3},
-    {name:'Bumblebee',icon:'🐝',req:{amber:3,spore:3},gp:3},
-    {name:'Dragonfly',icon:'🜸',req:{green:4,blue:2},gp:3},
-    {name:'Firefly',icon:'✨',req:{amber:4,green:2},gp:3},
-    {name:'Scarab',icon:'🪲',req:{spore:4,rose:2},gp:3}
+    {name:'Monarch',     icon:'🦋', req:{green:3,blue:3},   gp:3},
+    {name:'Honeybee',    icon:'🐝', req:{rose:3,amber:3},   gp:3},
+    {name:'Hummingbird', icon:'🐦', req:{blue:3,spore:3},   gp:3},
+    {name:'Luna Moth',   icon:'🌙', req:{green:3,rose:3},   gp:3},
+    {name:'Bumblebee',   icon:'🐝', req:{amber:3,spore:3},  gp:3},
+    {name:'Dragonfly',   icon:'🜸', req:{green:4,blue:2},   gp:3},
+    {name:'Firefly',     icon:'✨', req:{amber:4,green:2},  gp:3},
+    {name:'Scarab',      icon:'🪲', req:{spore:4,rose:2},   gp:3},
+    {name:'Swallowtail', icon:'🦋', req:{rose:4,blue:2},    gp:3},
+    {name:'Orchid Bee',  icon:'🐝', req:{green:2,rose:2,blue:2}, gp:3},
+    {name:'Sphinx Moth', icon:'🌙', req:{blue:4,amber:2},   gp:3},
+    {name:'Sunbird',     icon:'🐦', req:{amber:3,green:3},  gp:3},
+    {name:'Painted Lady',icon:'🦋', req:{rose:3,spore:3},   gp:3},
+    {name:'Jewel Wasp',  icon:'🪲', req:{blue:3,amber:3},   gp:3}
   ];
 
   var GS=null;
@@ -200,10 +214,29 @@ window._gameFns.pollen = function PN(a){
     GS.phase='player';render();
   }
 
-  ms(a,'<strong id="PNt">Pollen</strong>');
+  ms(a,'<strong id="PNt">Master Pollinator</strong>');
   mm(a);
+  // One-time stylesheet — keeps the animations + card polish scoped
+  // to this game without bloating the main stylesheet.
+  if(!document.getElementById('pn-style')){
+    var st=document.createElement('style');
+    st.id='pn-style';
+    st.textContent=
+      '@keyframes pnFadeIn{from{opacity:0}to{opacity:1}}'
+      +'@keyframes pnLift{0%{transform:translateY(40px) scale(0.8);opacity:0;box-shadow:0 4px 12px rgba(0,0,0,0.2)}60%{transform:translateY(-8px) scale(1.04);opacity:1}100%{transform:translateY(0) scale(1)}}'
+      +'@keyframes pnCardHover{from{transform:translateY(0)}to{transform:translateY(-3px)}}'
+      +'.pn-card{transition:transform 0.18s cubic-bezier(.25,.46,.45,.94), box-shadow 0.18s ease, filter 0.18s ease;}'
+      +'.pn-card:hover,.pn-card:active{transform:translateY(-2px) scale(1.03);box-shadow:0 10px 18px rgba(0,0,0,0.45),0 2px 4px rgba(0,0,0,0.25);filter:brightness(1.05);z-index:5;}'
+      +'.pn-card.aff{border-color:#7ab356!important;box-shadow:0 0 0 1px rgba(122,179,86,0.45),0 3px 6px rgba(0,0,0,0.25);}'
+      +'.pn-card.aff:hover{box-shadow:0 0 0 1px rgba(122,179,86,0.7),0 10px 20px rgba(122,179,86,0.25),0 4px 8px rgba(0,0,0,0.3);}'
+      +'.pn-tok{transition:transform 0.15s ease, background 0.15s ease;min-height:40px;}'
+      +'.pn-tok:hover{transform:scale(1.08);}'
+      +'.pn-tok.sel{box-shadow:inset 0 0 0 2px #7ab356,0 0 10px rgba(122,179,86,0.4);}'
+      +'.pn-poll{transition:border-color 0.2s ease, background 0.2s ease;}';
+    document.head.appendChild(st);
+  }
   var pan=document.createElement('div');pan.id='PNpan';
-  pan.style.cssText='max-width:420px;margin:0 auto;padding:4px;user-select:none;';
+  pan.style.cssText='max-width:440px;margin:0 auto;padding:6px;user-select:none;';
   a.appendChild(pan);
   mc(a).innerHTML='<button class="gb-new" onclick="_PNnew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
@@ -213,7 +246,7 @@ window._gameFns.pollen = function PN(a){
     var aff=canAfford(GS.player,card);
     var border=aff.affordable?'2px solid #7ab356':'2px solid #6a6051';
     var bgShade=card.tier===1?'#4a7c35':card.tier===2?'#c8a84b':'#ffd700';
-    var h='<div style="width:70px;height:96px;background:#f5f0e1;border-radius:6px;padding:4px;border:'+border+';border-left:3px solid '+bgShade+';display:inline-block;vertical-align:top;margin:2px;position:relative;cursor:pointer;color:#1a1f17;" onclick="_PNtap('+card.id+','+(isReserved?'true':'false')+')">';
+    var h='<div class="pn-card'+(aff.affordable?' aff':'')+'" style="width:72px;height:100px;background:#faf5e4;border-radius:8px;padding:4px;border:'+border+';border-left:4px solid '+bgShade+';display:inline-block;vertical-align:top;margin:3px;position:relative;cursor:pointer;color:#1a1f17;box-shadow:0 2px 4px rgba(0,0,0,0.25);" onclick="_PNtap('+card.id+','+(isReserved?'true':'false')+')">';
     h+='<div style="position:absolute;top:2px;left:4px;font-size:12px;font-weight:800;">'+(card.gp>0?card.gp:'')+'</div>';
     h+='<div style="position:absolute;top:3px;right:4px;">'+tokDot(card.produces,12)+'</div>';
     h+='<div style="text-align:center;font-size:18px;margin-top:20px;">'+TIER_ICONS[card.tier-1]+'</div>';
@@ -261,7 +294,7 @@ window._gameFns.pollen = function PN(a){
     h+='<div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:3px;">';
     GS.pollinators.forEach(function(p){
       var bg=p.claimedBy==='player'?'rgba(122,179,86,0.15);border-color:#7ab356':p.claimedBy==='ai'?'rgba(196,122,122,0.15);border-color:#c47a7a':'rgba(26,31,23,0.5);border-color:rgba(122,179,86,0.2)';
-      h+='<div style="min-width:70px;padding:4px;background:'+bg+';border:1px solid;border-radius:6px;text-align:center;font-size:10px;flex-shrink:0;">';
+      h+='<div class="pn-poll" style="min-width:78px;padding:6px;background:'+bg+';border:1px solid;border-radius:8px;text-align:center;font-size:10px;flex-shrink:0;">';
       h+='<div style="font-size:16px;">'+p.icon+'</div><div style="font-weight:700;">'+p.name+'</div>';
       h+='<div style="color:var(--muted);">';
       for(var c in p.req)h+='<span style="color:'+COLOR_HEX[c]+'">'+p.req[c]+'</span> ';
@@ -283,8 +316,8 @@ window._gameFns.pollen = function PN(a){
     h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">';
     COLORS.concat(['gold']).forEach(function(c){
       var sel=GS.selectedTokens.indexOf(c)>=0;
-      var sty='padding:4px 8px;background:'+(sel?'rgba(122,179,86,0.2)':'rgba(26,31,23,0.5)')+';border:1px solid '+(sel?'#7ab356':'rgba(122,179,86,0.2)')+';border-radius:6px;font-size:12px;min-height:36px;display:inline-flex;align-items:center;gap:3px;cursor:pointer;';
-      h+='<div style="'+sty+'" onclick="_PNsup(\''+c+'\')">'+tokDot(c,12)+' '+GS.supply[c]+'</div>';
+      var sty='padding:6px 10px;background:'+(sel?'rgba(122,179,86,0.2)':'rgba(26,31,23,0.6)')+';border:1px solid '+(sel?'#7ab356':'rgba(122,179,86,0.2)')+';border-radius:8px;font-size:12px;min-height:40px;display:inline-flex;align-items:center;gap:4px;cursor:pointer;';
+      h+='<div class="pn-tok'+(sel?' sel':'')+'" style="'+sty+'" onclick="_PNsup(\''+c+'\')">'+tokDot(c,14)+' '+GS.supply[c]+'</div>';
     });
     h+='</div>';
     // Player area
@@ -337,9 +370,49 @@ window._gameFns.pollen = function PN(a){
       if(isRes)buyReserved(card);
       else{var md=findMD(id);if(md)buyCard(card,md.market,md.deck);}
     }else if(!isRes&&GS.player.reserved.length<3){
-      var md2=findMD(id);if(md2)reserveCard(card,md2.market,md2.deck);
-      sm('Reserved (can\'t afford yet) +1 gold');
+      // Show a confirm overlay with the card enlarged — the "pick it up
+      // and look at it" feel Stephen asked for. Nothing happens until
+      // the player taps RESERVE or BACK.
+      _showReserveConfirm(id);
     }else sm('Can\'t afford that');
+  };
+  // Enlarged inspect + confirm reserve. Lifts the card, adds a soft
+  // drop-shadow so it reads as held, and shows YES / BACK buttons.
+  function _showReserveConfirm(id){
+    var card=findCard(id);if(!card)return;
+    var existing=document.getElementById('PNreserveOV');
+    if(existing)existing.remove();
+    var ov=document.createElement('div');
+    ov.id='PNreserveOV';
+    ov.style.cssText='position:fixed;inset:0;z-index:200000;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.84);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:20px;animation:pnFadeIn 0.25s ease;';
+    ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
+    // Build the big card using the same renderer logic, scaled 3×.
+    var bgShade=card.tier===1?'#4a7c35':card.tier===2?'#c8a84b':'#ffd700';
+    var h='<div style="display:flex;flex-direction:column;align-items:center;gap:16px;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.18em;color:var(--muted);">RESERVE THIS CARD?</div>';
+    h+='<div class="pn-big-card" style="width:220px;height:300px;background:#f5f0e1;border-radius:12px;padding:14px;border:2px solid #7ab356;border-left:10px solid '+bgShade+';position:relative;color:#1a1f17;box-shadow:0 24px 48px rgba(0,0,0,0.6),0 4px 12px rgba(0,0,0,0.3);animation:pnLift 0.35s cubic-bezier(.34,1.56,.64,1);">';
+    h+='<div style="position:absolute;top:8px;left:14px;font-size:40px;font-weight:800;">'+(card.gp>0?card.gp:'')+'</div>';
+    h+='<div style="position:absolute;top:14px;right:14px;">'+tokDot(card.produces,32)+'</div>';
+    h+='<div style="text-align:center;font-size:80px;margin-top:70px;">'+TIER_ICONS[card.tier-1]+'</div>';
+    h+='<div style="position:absolute;bottom:56px;left:14px;right:14px;text-align:center;font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.18em;color:#4a7c35;">'+TIER_NAMES[card.tier-1].toUpperCase()+'</div>';
+    h+='<div style="position:absolute;bottom:14px;left:14px;right:14px;display:flex;gap:4px;flex-wrap:wrap;justify-content:center;">';
+    for(var c in card.cost){for(var i=0;i<card.cost[c];i++)h+=tokDot(c,18);}
+    h+='</div></div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);opacity:0.8;max-width:260px;text-align:center;line-height:1.5;">Reserving holds this card and grants <span style="color:#ffd700;">1 gold</span>. Max 3 reserved at a time.</div>';
+    h+='<div style="display:flex;gap:12px;">';
+    h+='<button class="gb" onclick="_PNconfirmReserve('+id+')" style="min-height:52px;padding:12px 22px;font-size:0.8rem;letter-spacing:0.1em;color:var(--sage);border-color:var(--sage);background:rgba(122,179,86,0.18);">RESERVE</button>';
+    h+='<button class="gb" onclick="document.getElementById(\'PNreserveOV\').remove()" style="min-height:52px;padding:12px 22px;font-size:0.8rem;letter-spacing:0.1em;color:var(--muted);border-color:rgba(138,145,120,0.3);">BACK</button>';
+    h+='</div>';
+    h+='</div>';
+    ov.innerHTML=h;
+    document.body.appendChild(ov);
+  }
+  window._PNconfirmReserve=function(id){
+    var ov=document.getElementById('PNreserveOV');if(ov)ov.remove();
+    var md=findMD(id);if(!md)return;
+    var card=findCard(id);if(!card)return;
+    reserveCard(card,md.market,md.deck);
+    sm('Reserved · +1 gold');
   };
   window._PNact=function(act){if(GS.phase!=='player')return;GS.action=act;GS.selectedTokens=[];render();};
   window._PNsup=function(c){
