@@ -467,31 +467,14 @@ function _formatRollToast(r){
   var icon=r.attackerWins?'\u2694\ufe0f':'\ud83d\udee1\ufe0f';
   return icon+' '+attStr+'='+r.attTotal+' vs '+defStr+'='+r.defTotal+' \u2014 '+verdict;
 }
-// Wild v3 balance: per-player spatial cap. Max 3 of YOUR OWN plants
-// within 700m of any drop point. Forces geographic spread so one
-// player can't lock down a neighborhood.
-var WILD_SELF_RADIUS_M=700;
-var WILD_SELF_MAX=3;
-function _checkSelfRadius(lat,lng){
-  var mine=0;
-  try{
-    var myUid='';try{var _u=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_u)myUid=_u.uid;}catch(e){}
-    var local=_getWild();
-    for(var i=0;i<local.length;i++){
-      var lp=local[i];if(!lp||!lp.lat||!lp.lng)continue;
-      if(_dist(lat,lng,lp.lat,lp.lng)<WILD_SELF_RADIUS_M)mine++;
-    }
-    if(_sharedMarkers){
-      for(var h in _sharedMarkers){
-        var sm=_sharedMarkers[h];if(!sm||!sm.data)continue;
-        var sd=sm.data;if(!sd.lat||!sd.lng)continue;
-        if(!(sd.own||(myUid&&sd.ownerUid===myUid)))continue;
-        if(_dist(lat,lng,sd.lat,sd.lng)<WILD_SELF_RADIUS_M)mine++;
-      }
-    }
-  }catch(e){}
-  return mine>=WILD_SELF_MAX?mine:0;
-}
+// Per-player spatial cap REMOVED (Apr 14 2026). The one-plant-per-hex
+// rule + EA invasion + climate damage are enough to prevent lockdown.
+// Keepers can now build a proper garden around their home without
+// having to walk 700m between drops. If a neighbor wants the spot,
+// they can out-EA or wait for climate to take it.
+var WILD_SELF_RADIUS_M=0;
+var WILD_SELF_MAX=0;
+function _checkSelfRadius(lat,lng){ return 0; }
 // Prefers stored .ea (from Firestore/shared markers), falls back to trait compute.
 function _wildEA(w){
   if(w&&typeof w.ea==='number'&&w.ea>0)return w.ea;
