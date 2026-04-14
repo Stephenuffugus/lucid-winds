@@ -804,7 +804,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.14.76';
+  var LW_VERSION='2026.04.14.77';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -54539,6 +54539,162 @@ window.switchTab = function(tab) {
     _doSwitch();
   }
 };
+})();
+</script>
+
+<!-- ═══ COMPANION BOOST SYSTEM ═══════════════════════════════════════════
+  Each equipped companion grants ONE passive gameplay boost tied to a
+  specific game or set of games. Boosts scale with a friendship level
+  (Lv 1–3) earned by USING the boost: each firing grants 1 XP. Lv 2
+  at 5 uses, Lv 3 at 15. Nothing gates a companion being equipped —
+  friendship is rewarded engagement, not required.
+
+  Games opt in by calling LW_Comp.peek(gameId) to read current value
+  and LW_Comp.use(gameId) to fire the effect (consumes the per-session
+  one-use flag and grants XP).
+═════════════════════════════════════════════════════════════════════ -->
+<script>
+window.LW_Comp = (function(){
+  'use strict';
+  // Companion idx → boost slug. Indices match CLAUDE.md mythic table:
+  //   32 Toad · 33 Phoenix · 34 Mammoth · 35 Raccoon · 36 Heron · 37 Spider · 38 Beholder
+  var IDX = {32:'toad', 33:'phoenix', 34:'mammoth', 35:'raccoon', 36:'heron', 37:'spider', 38:'beholder'};
+  // scaling[] is human-readable; value() is the game-side number.
+  var BOOSTS = {
+    toad: {
+      name:'The Toad', icon:'🐸',
+      desc:'Patient. Gives you more time on timer games.',
+      scaling:['+10s','+15s','+25s'],
+      games:{numbergarden:true},
+      value:function(lv){return lv<=1?10:lv===2?15:25;}
+    },
+    phoenix: {
+      name:'The Phoenix', icon:'🔥',
+      desc:'Rebirth. Revives you when you fall in Challenge mode.',
+      scaling:['1 revive / run','2 revives / run','2 revives + restore'],
+      games:{stonegarden:true},
+      value:function(lv){return lv<=1?1:lv===2?2:3;}
+    },
+    mammoth: {
+      name:'Baby Mammoth', icon:'🦣',
+      desc:'Ponderous. Makes stones sit heavier on the pile.',
+      scaling:['+15% stability','+25% stability','+40% stability'],
+      games:{stonegarden:true},
+      value:function(lv){return lv<=1?0.15:lv===2?0.25:0.40;}
+    },
+    beholder: {
+      name:'The Beholder', icon:'👁',
+      desc:'Sees through soil. Reveals safe cells on your first dig.',
+      scaling:['3 safe cells','5 safe cells','7 safe cells'],
+      games:{mines:true},
+      value:function(lv){return lv<=1?3:lv===2?5:7;}
+    },
+    heron: {
+      name:'Great Blue Heron', icon:'🕊',
+      desc:'Patient eye. Grants free undos per session.',
+      scaling:['+1 undo','+2 undos','+3 undos'],
+      games:{sudoku:true, chess:true, picross:true},
+      value:function(lv){return lv<=1?1:lv===2?2:3;}
+    },
+    spider: {
+      name:'Garden Spider', icon:'🕷',
+      desc:'Weaves hints in word games.',
+      scaling:['+1 hint','+2 hints','+3 hints'],
+      games:{wordsearch:true, vinewords:true, sprout:true},
+      value:function(lv){return lv<=1?1:lv===2?2:3;}
+    },
+    raccoon: {
+      name:'Raccoon', icon:'🦝',
+      desc:'Sneaky. Peeks at upcoming pieces.',
+      scaling:['peek next 1','peek next 3','peek all'],
+      games:{merge:true, petalfall:true},
+      value:function(lv){return lv<=1?1:lv===2?3:99;}
+    }
+  };
+  // Level thresholds in uses. Index = level number.
+  var LV_XP = [0, 5, 15];
+  var FRIEND_KEY = 'lw_companion_friendship';
+
+  function loadFriends(){try{return JSON.parse(localStorage.getItem(FRIEND_KEY)||'{}');}catch(e){return{};}}
+  function saveFriends(f){try{localStorage.setItem(FRIEND_KEY,JSON.stringify(f));}catch(e){}}
+  function levelFrom(xp){if(xp>=LV_XP[2])return 3;if(xp>=LV_XP[1])return 2;return 1;}
+
+  function activeSlug(){
+    try{
+      var raw=localStorage.getItem('pw_active_companion');if(!raw)return null;
+      var c=JSON.parse(raw);return IDX[c.companion]||null;
+    }catch(e){return null;}
+  }
+
+  function friendship(slug){
+    var f=loadFriends();var rec=f[slug]||{xp:0};
+    var lv=levelFrom(rec.xp);
+    var nextTarget=lv<3?LV_XP[lv]:null;
+    return {xp:rec.xp, lv:lv, nextAt:nextTarget};
+  }
+
+  // Per-session used flags — reset when gameId changes. No dependency
+  // on _sg existing yet; the check itself is the reset trigger.
+  var _used = {};
+  var _lastGameId = null;
+  function _syncSession(gameId){
+    if(_lastGameId !== gameId){_used = {}; _lastGameId = gameId;}
+  }
+
+  // Read what's available without consuming.
+  function peek(gameId){
+    _syncSession(gameId);
+    var slug=activeSlug();if(!slug)return null;
+    var b=BOOSTS[slug];if(!b||!b.games[gameId])return null;
+    var fr=friendship(slug);
+    return {
+      slug:slug, name:b.name, icon:b.icon, desc:b.desc,
+      scaling:b.scaling[fr.lv-1], level:fr.lv, value:b.value(fr.lv),
+      used: !!_used[slug+':'+gameId]
+    };
+  }
+
+  // Fire the boost — grants +1 XP and toasts, ONCE per session. Repeat
+  // calls during the same session are no-ops (return the current value
+  // without granting XP). Callers that want the current value without
+  // firing should use peek() instead.
+  function use(gameId){
+    _syncSession(gameId);
+    var slug=activeSlug();if(!slug)return null;
+    var b=BOOSTS[slug];if(!b||!b.games[gameId])return null;
+    var key=slug+':'+gameId;
+    // Already fired this session — return value for passive reads, no XP.
+    if(_used[key]){
+      var fr=friendship(slug);
+      return b.value(fr.lv);
+    }
+    _used[key]=true;
+    var f=loadFriends();var rec=f[slug]||{xp:0};
+    var prevLv=levelFrom(rec.xp);
+    rec.xp=(rec.xp||0)+1;
+    var newLv=levelFrom(rec.xp);
+    f[slug]=rec;saveFriends(f);
+    try{
+      if(window._toast){
+        var msg=b.icon+' '+b.name+' · '+b.scaling[newLv-1];
+        if(newLv>prevLv)msg='✨ '+b.name+' grew to Lv '+newLv+' — '+b.scaling[newLv-1];
+        window._toast(msg);
+      }
+      if(newLv>prevLv&&window.LW_Log)window.LW_Log.write('companion_friendship_up',{slug:slug,lv:newLv,xp:rec.xp});
+    }catch(e){}
+    return b.value(newLv);
+  }
+
+  // Expose a short list for UI (Book / character sheet) — one entry
+  // per companion with current friendship.
+  function registry(){
+    var out=[];for(var slug in BOOSTS){if(!BOOSTS.hasOwnProperty(slug))continue;
+      var b=BOOSTS[slug];var fr=friendship(slug);
+      out.push({slug:slug, name:b.name, icon:b.icon, desc:b.desc, scaling:b.scaling, level:fr.lv, xp:fr.xp, nextAt:fr.nextAt, games:Object.keys(b.games)});
+    }return out;
+  }
+
+  return {peek:peek, use:use, friendship:friendship, registry:registry, active:activeSlug, BOOSTS:BOOSTS, IDX:IDX};
 })();
 </script>
 

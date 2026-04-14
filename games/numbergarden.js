@@ -167,11 +167,17 @@ window._gameFns.numbergarden = function NG(a){
   window._NGMD=function(m){mode=m;buildModes();_play('tap');};
   window._NGN=function(){
     correct=0;total=0;streak=0;bestStreak=0;difficulty=1;totalSolveTime=0;answer='';
+    sessionTime=60;
+    // ── TOAD BOOST — extra seconds on the drill (+10/+15/+25 by level) ──
+    try{
+      var bonus=window.LW_Comp&&LW_Comp.use('numbergarden');
+      if(bonus){sessionTime=60+bonus;}
+    }catch(e){}
     running=true;startTime=Date.now();
     updateHUD();generateProblem();
     if(timerInterval)clearInterval(timerInterval);
     timerInterval=setInterval(tickTimer,200);
-    sm('GO! 60 seconds');
+    sm('GO! '+sessionTime+' seconds');
   };
 };
 })();
