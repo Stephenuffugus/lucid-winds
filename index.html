@@ -4879,6 +4879,18 @@ window.onerror=function(msg,url,line,col,err){
 </script>
 
 <script>
+// ── SWITCHTAB HOOK BOOTSTRAP — must exist before any caller registers ────
+// The final wrapper (bottom of file) reads window._switchTabHooks dynamically,
+// so registrations can happen any time AFTER this point. Previously defined
+// at ~L54296, which was AFTER registrations at L52186/L54034 — those silently
+// no-op'd their `if(window._addSwitchTabHook)` guards.
+window._switchTabHooks = window._switchTabHooks || [];
+window._addSwitchTabHook = function(fn){
+  if (typeof fn === 'function') window._switchTabHooks.push(fn);
+};
+</script>
+
+<script>
 // ── OFFLINE WARNING BANNER — detect Firebase unavailability ──────────────
 (function(){
   window._showOfflineBanner = function() {
@@ -54290,12 +54302,8 @@ window.addEventListener('load', function() {
 <script>
 (function(){
 'use strict';
-// Register hooks instead of wrapping switchTab repeatedly
-// Hooks fire AFTER the original switchTab completes
-window._switchTabHooks=[];
-window._addSwitchTabHook=function(fn){
-  if(typeof fn==='function')window._switchTabHooks.push(fn);
-};
+// Hook system bootstrapped early (see top-of-file).
+// This IIFE is kept as a no-op marker so block numbering stays stable.
 // Applied at end of file as the FINAL wrapper
 })();
 </script>
