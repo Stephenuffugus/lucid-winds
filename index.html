@@ -27724,7 +27724,14 @@ document.addEventListener('keydown', function(e) {
   };
 
   // ═══ EXPOSE CRITICAL FUNCTIONS ON WINDOW ═══
-  window.mintPlant = mintPlant;
+  // Wrap mintPlant to invalidate the rarity-hash-multiplier cache so a
+  // new Legendary+ plant kicks in the multiplier on next game event
+  // instead of waiting up to 60 seconds for natural cache expiry.
+  var _origMint = mintPlant;
+  window.mintPlant = function(){
+    window._rarityMultCacheAt = 0;
+    return _origMint.apply(this, arguments);
+  };
   window.renderGreenhouse = renderGreenhouse;
   window._chimeraDualClass = _chimeraDualClass;
   window.loadGreenhouse = loadGreenhouse;
@@ -40813,7 +40820,33 @@ function _e(v){
       _afLastComplete=now;
     }
   }
-  var amt=Math.round(base*_dm);
+  // RARITY HASH MULTIPLIER — owning Legendary+ plants boosts hash income
+  // from every mini-game. Small enough not to break economy, big enough
+  // to make high-tier mints feel genuinely valuable for daily play.
+  //   Legendary plant in greenhouse: 1.10×
+  //   Mythic plant:                  1.15×
+  //   Cosmic plant:                  1.20×
+  // Only the HIGHEST tier in greenhouse counts (no stacking from 50 Commons).
+  var _rarityMult = 1.0;
+  try {
+    if (!window._rarityMultCache || Date.now() - window._rarityMultCacheAt > 60000) {
+      var _top = 0;
+      var _ghr = JSON.parse((window._secureGet ? window._secureGet('sws_greenhouse') : localStorage.getItem('sws_greenhouse')) || '[]');
+      for (var _rri = 0; _rri < _ghr.length; _rri++) {
+        var _t; try { _t = window.hashToTraits ? window.hashToTraits(_ghr[_rri].hash) : null; } catch(e) { continue; }
+        if (!_t || !window.getTerraGrade) continue;
+        var _tg = window.getTerraGrade(_t);
+        var _tn = _tg && (_tg.name || _tg.label) || 'Common';
+        var _tier = _tn === 'Cosmic' ? 3 : _tn === 'Mythic' ? 2 : _tn === 'Legendary' ? 1 : 0;
+        if (_tier > _top) _top = _tier;
+        if (_top >= 3) break;
+      }
+      window._rarityMultCache = _top === 3 ? 1.20 : _top === 2 ? 1.15 : _top === 1 ? 1.10 : 1.0;
+      window._rarityMultCacheAt = Date.now();
+    }
+    _rarityMult = window._rarityMultCache;
+  } catch(e) {}
+  var amt=Math.round(base*_dm*_rarityMult);
   if(amt>0){
     if(window.earnHashes)window.earnHashes(amt);
     _mTotal+=amt;
