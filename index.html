@@ -54427,6 +54427,28 @@ window._lwClaimHerbarium = function(id){
       h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--sage);margin-top:2px;">Attempt ' + (attempts + 1) + ' of 3</div></div>';
       h += '<button onclick="window._lwForageClose(false)" style="width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:0.9rem;cursor:pointer;">\u2715</button>';
       h += '</div>';
+      // Deck selector — one-tap swap between the player's saved decks
+      // (spec §5: "including mid-trip"). Only shown if >1 deck has cards.
+      // Disabled once the player has committed to an attempt (selected
+      // cards or resolved attempt) so swapping can't cheat the puzzle.
+      try {
+        var _curDecks = (window.LW_FORAGING && window.LW_FORAGING.loadDecks) ? window.LW_FORAGING.loadDecks() : [];
+        var _savedCount = 0;
+        for (var _sc = 0; _sc < _curDecks.length; _sc++) if (_curDecks[_sc] && (_curDecks[_sc].cards || []).length >= 3) _savedCount++;
+        if (_savedCount > 1 && !resolved && selected.length === 0) {
+          var _actIdx = parseInt(localStorage.getItem('lw_forage_deck_active')||'0',10) || 0;
+          h += '<div style="margin-bottom:0.7rem;padding:0.5rem;background:rgba(18,22,16,0.55);border:1px solid rgba(122,179,86,0.15);border-radius:10px;">';
+          h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.48rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:4px;">DECK</div>';
+          h += '<div style="display:flex;gap:4px;flex-wrap:wrap;">';
+          for (var _di = 0; _di < _curDecks.length; _di++) {
+            var _dd = _curDecks[_di];
+            if (!_dd || !(_dd.cards||[]).length) continue;
+            var _da = _di === _actIdx;
+            h += '<button onclick="window._lwForageSwapDeck(' + _di + ')" style="flex:1;min-width:70px;padding:6px 4px;background:' + (_da ? 'rgba(200,168,75,0.18)' : 'rgba(26,36,22,0.5)') + ';border:1px solid ' + (_da ? 'var(--gold)' : 'rgba(122,179,86,0.2)') + ';color:' + (_da ? 'var(--gold)' : 'var(--cream)') + ';font-family:Bebas Neue,sans-serif;font-size:0.45rem;letter-spacing:0.05em;border-radius:6px;cursor:pointer;min-height:36px;">' + ((_dd.name || ('Deck ' + (_di+1))).toUpperCase()) + '</button>';
+          }
+          h += '</div></div>';
+        }
+      } catch(e) {}
 
       // Hex slots
       h += '<div style="padding:0.8rem;background:linear-gradient(180deg,rgba(26,36,22,0.5),rgba(13,16,12,0.7));border:1.5px solid rgba(200,168,75,0.25);border-radius:12px;margin-bottom:0.9rem;">';
@@ -54519,6 +54541,17 @@ window._lwClaimHerbarium = function(id){
       ov.innerHTML = h;
     }
 
+    window._lwForageSwapDeck = function(n) {
+      // Mid-trip deck swap — only valid before a card is selected or an
+      // attempt resolves. Persist the choice so subsequent attempts on
+      // this hex pick up the same deck. Keeps learned + lastPlay since
+      // those describe the hex, not the player's hand.
+      if (resolved || selected.length > 0) return;
+      try { localStorage.setItem('lw_forage_deck_active', String(n)); } catch(e) {}
+      hand = buildHand();
+      selected = [];
+      render();
+    };
     window._lwForagePick = function(ci) {
       if (resolved) return;
       var idx = selected.indexOf(ci);
@@ -54584,7 +54617,8 @@ window._lwClaimHerbarium = function(id){
     };
     window._lwForageClose = function(awarded) {
       try { delete window._lwForagePick; delete window._lwForagePlay;
-            delete window._lwForageNext; delete window._lwForageClose; } catch(e) {}
+            delete window._lwForageNext; delete window._lwForageClose;
+            delete window._lwForageSwapDeck; } catch(e) {}
       var pk = document.getElementById('lw-forage-panel'); if (pk) pk.remove();
       onDone(!!awarded);
     };
