@@ -29413,6 +29413,15 @@ document.addEventListener('keydown', function(e) {
     }
     galleryPlant = null;
     _carousel.arr = []; _carousel.busy = false;
+    // First time closing the carousel — teach the long-press action menu.
+    try {
+      if (!localStorage.getItem('lw_tut_longpress_v1')) {
+        localStorage.setItem('lw_tut_longpress_v1', '1');
+        setTimeout(function(){
+          if (window._toast) window._toast('\ud83c\udf3f Long-press any plant card for actions \u2014 breed, compost, share, download.');
+        }, 600);
+      }
+    } catch(e) {}
     // Reset flipped state on every card slot so the next carousel open
     // doesn't show a stale back-face (was a real bug — flipped class
     // persisted on .cs-flip-wrap elements across closes).
@@ -47543,8 +47552,34 @@ window._lwCheckMementos = function() {
       localStorage.setItem('lw_companion_mementos', JSON.stringify(collected));
       for (var nm = 0; nm < newMementos.length; nm++) {
         var nmE = newMementos[nm];
-        if (window._toast) window._toast('\u2728 Keepsake received: ' + nmE.name);
         if (window._logWildEvent) window._logWildEvent({ type: 'memento', source: 'companion', name: nmE.name, text: nmE.text });
+        // Celebration modal — the 30-day mark is a real emotional beat,
+        // a toast alone disappears too fast. Stagger multiple mementos
+        // so they don't stack on top of each other.
+        (function(entry, delay){
+          setTimeout(function(){
+            if (window._lwConfirm) {
+              var compName = '';
+              try {
+                if (window.TRAIT_BANK && window.TRAIT_BANK.companions && window.TRAIT_BANK.companions[entry.idx]) {
+                  compName = window.TRAIT_BANK.companions[entry.idx].name;
+                }
+              } catch(e) {}
+              window._lwConfirm({
+                title: '\u2728 A KEEPSAKE',
+                body: (compName ? '<b>' + compName + '</b> left you something after thirty days.<br><br>' : '') +
+                      '<div style="font-family:Playfair Display,serif;font-style:italic;color:var(--gold);font-size:0.9rem;margin:0.5rem 0;">' + entry.name + '</div>' +
+                      '<div style="color:var(--cream);line-height:1.6;">' + entry.text + '</div><br>' +
+                      '<div style="font-size:0.45rem;color:var(--muted);">Kept forever in the Book of Secrets \u00b7 Companions tab.</div>',
+                yes: 'TREASURED',
+                no: ''
+              }, function(){});
+            } else if (window._toast) {
+              window._toast('\u2728 Keepsake received: ' + entry.name);
+            }
+            if (window._haptic) window._haptic('bloom');
+          }, delay);
+        })(nmE, nm * 1500);
       }
     }
     return newMementos;
