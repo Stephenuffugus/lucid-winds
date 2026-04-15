@@ -54316,6 +54316,14 @@ window._lwClaimHerbarium = function(id){
 
     var selected = []; // card ids in play order
     var resolved = null; // attempt result after resolve
+    // Persist what each slot revealed across attempts so attempt 2 and 3
+    // genuinely feel more informed than attempt 1. learned[s] = {hex,verdict}
+    // when the player revealed that slot on a prior attempt; undefined if
+    // they played a neutral card on it (still unknown).
+    var learned = {};
+    // Remember what the player played last attempt so the next attempt
+    // can surface it in a "LAST PLAY" strip — closes the feedback loop.
+    var lastPlay = null; // array of {card, hex, verdict} from prior attempt
 
     var ov = document.createElement('div');
     ov.id = 'lw-forage-panel';
@@ -54344,6 +54352,15 @@ window._lwClaimHerbarium = function(id){
         var slotContent = '?';
         var slotColor = 'var(--muted)';
         var slotBg = 'rgba(18,22,16,0.8)';
+        // Persistent reveal from prior attempts — shows element + a dim tint.
+        if (!resolved && learned[s]) {
+          var _le = EL[learned[s].hex];
+          if (_le) {
+            slotContent = _le.icon + '<br><span style="font-size:0.45rem;opacity:0.7;">' + _le.label + '</span>';
+            slotColor = 'rgba(200,168,75,0.5)';
+            slotBg = 'rgba(26,36,22,0.5)';
+          }
+        }
         if (resolved) {
           var r = resolved.reveal[s];
           var el = EL[r.hex];
@@ -54365,6 +54382,26 @@ window._lwClaimHerbarium = function(id){
       }
       h += '</div>';
 
+      // LAST PLAY strip — shown only on attempts 2/3, summarizes what the
+      // player tried last round so attempt 2 genuinely feels more informed
+      // rather than just a retry. Neutrals stay greyed; matches/counters
+      // highlight so the player can see which of their picks landed.
+      if (!resolved && lastPlay && lastPlay.length === 3) {
+        h += '<div style="padding:0.55rem;background:rgba(18,22,16,0.55);border:1px dashed rgba(122,179,86,0.2);border-radius:10px;margin-bottom:0.7rem;">';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:4px;">LAST PLAY</div>';
+        h += '<div style="display:flex;justify-content:space-around;gap:4px;">';
+        for (var _lp = 0; _lp < lastPlay.length; _lp++) {
+          var _lr = lastPlay[_lp];
+          var _lCard = EL[_lr.card]; var _lHex = EL[_lr.hex];
+          var _vColor = resolveVerdictColor(_lr.verdict);
+          var _vLbl = _lr.verdict === 'match' ? '\u2728' : _lr.verdict === 'counter' ? '\u2694\ufe0f' : '\u2014';
+          h += '<div style="flex:1;text-align:center;padding:4px;background:rgba(13,16,12,0.5);border:1px solid ' + _vColor + '55;border-radius:6px;">';
+          h += '<div style="font-size:0.9rem;">' + (_lCard ? _lCard.icon : '?') + '</div>';
+          h += '<div style="font-size:0.45rem;color:' + _vColor + ';font-family:DM Mono,monospace;">' + _vLbl + '</div>';
+          h += '</div>';
+        }
+        h += '</div></div>';
+      }
       // Hand / selected
       h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.4rem;">YOUR HAND \u00b7 PICK ' + (3 - selected.length) + ' MORE</div>';
       h += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.35rem;margin-bottom:0.9rem;">';
@@ -54409,6 +54446,16 @@ window._lwClaimHerbarium = function(id){
       if (resolved || selected.length !== 3) return;
       var cardsPlayed = selected.map(function(si){return hand[si];});
       resolved = resolveAttempt(comp.elements, cardsPlayed);
+      // Persist any match/counter slots — those reveal the hex element.
+      // Neutral slots stay hidden (the player guessed wrong for that slot).
+      for (var _r = 0; _r < resolved.reveal.length; _r++) {
+        var _rv = resolved.reveal[_r];
+        if (_rv.verdict === 'match' || _rv.verdict === 'counter') {
+          learned[_r] = { hex: _rv.hex, verdict: _rv.verdict };
+        }
+      }
+      // Stash the full attempt for the "LAST PLAY" strip on the next screen.
+      lastPlay = resolved.reveal.slice();
       var attemptNumber = bumpAttempts(zoneKey);
       if (window._haptic) window._haptic(resolved.success ? 'bloom' : 'tap');
       // Book of Secrets diary entry — logs biome / weather / outcome per spec §8.
