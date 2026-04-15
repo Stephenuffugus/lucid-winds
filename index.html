@@ -28353,7 +28353,18 @@ document.addEventListener('keydown', function(e) {
       default:
         body = '<span style="color:var(--muted);">' + e.type.replace(/_/g, ' ') + '</span>';
     }
-    return '<div class="rr-entry"><div class="rr-icon" style="color:' + color + ';">' + icon + '</div><div class="rr-body">' + body + '<div class="rr-time">' + _formatEventTime(e.ts) + '</div></div></div>';
+    // Tap-through: some entry types have a Reader page. Wire the click
+    // directly on the entry so the keeper can jump from the log into the
+    // lore. Others stay passive (still show the entry, just not tappable).
+    var _onclick = '';
+    if (e.type === 'event_discovered' && d.name) {
+      _onclick = ' onclick="if(window._lwShowEventDetail)_lwShowEventDetail(\'' + String(d.name).replace(/'/g,"\\'") + '\')" style="cursor:pointer;"';
+    } else if (e.type === 'synergy_discovered' && d.name) {
+      _onclick = ' onclick="if(window._lwShowSynergyDetail)_lwShowSynergyDetail(\'' + String(d.name).replace(/'/g,"\\'") + '\')" style="cursor:pointer;"';
+    } else if (e.type === 'achievement_unlock' && d.id) {
+      _onclick = ' onclick="if(window._lwShowAchievementDetail)_lwShowAchievementDetail(\'' + String(d.id).replace(/'/g,"\\'") + '\')" style="cursor:pointer;"';
+    }
+    return '<div class="rr-entry"' + _onclick + '><div class="rr-icon" style="color:' + color + ';">' + icon + '</div><div class="rr-body">' + body + '<div class="rr-time">' + _formatEventTime(e.ts) + '</div></div></div>';
   }
   // Event category map — groups event types into filter buckets
   var _RR_CATEGORIES = {
