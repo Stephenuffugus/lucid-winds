@@ -3338,6 +3338,10 @@
     #game-exit-btn:active{transform:scale(0.94);background:rgba(74,124,53,0.35);}
     @keyframes classPrompt{0%,100%{filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7))}50%{filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 10px rgba(200,168,75,0.6))}}
     #kb-compendium.class-prompt{animation:classPrompt 2.4s ease-in-out infinite;}
+    /* Unread pulse — gentle gold glow when there's unread content.
+       Slower + softer than classPrompt so it reads as "noted" not "urgent". */
+    @keyframes bookUnreadPulse{0%,100%{filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7))}50%{filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 14px rgba(200,168,75,0.45))}}
+    #kb-compendium.has-unread{animation:bookUnreadPulse 3.6s ease-in-out infinite;}
     /* Back-to-games button inside game area */
     .game-back-btn{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(13,16,12,0.9);border:1px solid rgba(74,124,53,0.25);border-radius:0 0 10px 10px;color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.06em;cursor:pointer;width:fit-content;min-height:44px;-webkit-tap-highlight-color:transparent;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
     .game-back-btn:active{transform:scale(0.95);}
@@ -54056,6 +54060,7 @@ window._getBookUnreadCount=function(){
 };
 window._updateBookBadge=function(){
   var el=document.getElementById('kb-comp-count');if(!el)return;
+  var book=document.getElementById('kb-compendium');
   // Sum of per-tab unreads — one quiet number on the book icon showing
   // total things the keeper hasn't read yet across every tab.
   var n = 0;
@@ -54066,8 +54071,13 @@ window._updateBookBadge=function(){
     // Fallback during boot before _bosGetTabUnread is wired
     n = window._getBookUnreadCount ? window._getBookUnreadCount() : 0;
   }
-  if(n<=0){el.textContent='';el.style.display='none';}
-  else {el.textContent=n>99?'99+':String(n);el.style.display='';}
+  if(n<=0){
+    el.textContent='';el.style.display='none';
+    if(book)book.classList.remove('has-unread');
+  } else {
+    el.textContent=n>99?'99+':String(n);el.style.display='';
+    if(book)book.classList.add('has-unread');
+  }
 };
 
 // ── MORNING REPORT ──
@@ -54333,6 +54343,21 @@ var CATEGORIES=[
 // Tab 3: WILD EVENTS — tiered discovery challenges (color-coded difficulty)
 var _bosTab = 'secrets';
 // ═══ PER-TAB UNREAD TRACKING ═══
+// One-time migration: existing keepers who installed the silent-unread
+// system after they already had content should NOT get a flood of NEW
+// markers on their first open. Stamp every tab as read right now.
+(function(){
+  try {
+    if (localStorage.getItem('lw_bos_tab_reads_migrated') === '1') return;
+    var r = {};
+    var now = Date.now();
+    var allTabs = ['report','activity','secrets','events','mementos','herbarium','class'];
+    for (var i = 0; i < allTabs.length; i++) r[allTabs[i]] = now;
+    localStorage.setItem('lw_bos_tab_reads', JSON.stringify(r));
+    localStorage.setItem('lw_bos_tab_reads_migrated', '1');
+  } catch(e){}
+})();
+
 // Each BoS tab has a last-read timestamp. New discoveries (events, synergies,
 // mementos, bundles, etc.) are counted against the tab's last-read. Opening
 // a tab stamps "now" and the badge drops to 0 for that tab. No toasts, no
