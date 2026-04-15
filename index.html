@@ -7884,6 +7884,8 @@ document.addEventListener('keydown', function(e) {
       try{if(window._LW_classBonus){_penalty = _penalty / window._LW_classBonus('chimeraPurity');}}catch(e){}
       // Weavers family also mends chimeric lineage — stacks with Breeder class.
       try{if(window.LW_COMPANION){_penalty = _penalty / window.LW_COMPANION.getCompanionMult('chimeraPurity');}}catch(e){}
+      // Weavers T3 RITUAL "Chimera Mend" — shaves 1 EA off the penalty flat.
+      try{if(window._LW_hasFamilyRitual&&window._LW_hasFamilyRitual('weavers'))_penalty=Math.max(0,_penalty-1);}catch(e){}
       ea -= _penalty;
     }
     // POT BONUS: Moonstone Cradle bakes a permanent +1 EA on the bloomed plant
@@ -40041,6 +40043,10 @@ window._lwCompassTap=function(){
   // Cartographer L2 Biome Sense: grants biome reveal even at Compass L1.
   // At Compass L2+ ALSO reveals adjacent biomes within 300m (Heron's Eye combo).
   var cartoL2=false;try{cartoL2=(window._lwGetClass&&_lwGetClass()==='cartographer'&&window._lwGetClassLevel&&_lwGetClassLevel('cartographer')>=2);}catch(e){}
+  // Wayfinders T3 RITUAL "Pathfinder" — compass always shows feral bearing
+  // regardless of tool level. Treats as if compass is at L3+.
+  var pathfinderL3=false;try{pathfinderL3=window._LW_hasFamilyRitual&&window._LW_hasFamilyRitual('wayfinders');}catch(e){}
+  if(pathfinderL3)lvl=Math.max(lvl,3);
   if(lvl<2 && !cartoL2){_toast('\ud83e\udded Compass L1 \u2014 wind only. Discover biomes to level up.');return;}
   if(lvl<3){
     // Reveal biome (tool L2, or class L2 early-unlock)
@@ -57093,13 +57099,40 @@ window._lwCheckSecondBloom=function(){
     return true;
   }catch(e){return false;}
 };
+// Scatterers T3 RITUAL "Dream Seed" — extra daily feral at player GPS.
+// Stacks with Second Bloom milestone (Lv 25+) so a Scatterer-L3 Keeper
+// gets TWO guaranteed ferals per day. Separate date key so they don't
+// collide. Same jitter pattern as Second Bloom.
+window._lwCheckDreamSeed=function(){
+  try{
+    if(!window._LW_hasFamilyRitual||!window._LW_hasFamilyRitual('scatterers'))return false;
+    var today=new Date().toISOString().slice(0,10);
+    if(localStorage.getItem('lw_dream_seed_claimed')===today)return false;
+    if(!window._uLat||!window._uLng)return false;
+    var jLat=window._uLat+(Math.random()-0.5)*0.0006;
+    var jLng=window._uLng+(Math.random()-0.5)*0.0006;
+    var h='';for(var i=0;i<64;i++)h+='0123456789abcdef'[Math.floor(Math.random()*16)];
+    var feral={lat:jLat,lng:jLng,hash:h,date:today,collected:false,parentA:'dream_seed',parentB:'ritual',source:'dream_seed'};
+    var data=[];try{data=JSON.parse(localStorage.getItem('fg_ferals')||'[]');}catch(e){}
+    data.push(feral);
+    localStorage.setItem('fg_ferals',JSON.stringify(data));
+    localStorage.setItem('lw_dream_seed_claimed',today);
+    if(window._toast)setTimeout(function(){window._toast('\ud83c\udf43 Dream Seed \u2014 a feral stirs nearby.');},1800);
+    try{if(window._haptic)_haptic();}catch(e){}
+    try{if(window.FG_Wild&&FG_Wild._drawZoneHexes)FG_Wild._drawZoneHexes();}catch(e){}
+    return true;
+  }catch(e){return false;}
+};
 // Hook: fire on every Wild tab entry (idempotent via date check)
 (function(){
   var _prevST=window.switchTab;
   if(typeof _prevST==='function'){
     window.switchTab=function(tab){
       var r=_prevST.apply(this,arguments);
-      if(tab==='wild'){setTimeout(function(){try{window._lwCheckSecondBloom&&window._lwCheckSecondBloom();}catch(e){}},2500);}
+      if(tab==='wild'){
+        setTimeout(function(){try{window._lwCheckSecondBloom&&window._lwCheckSecondBloom();}catch(e){}},2500);
+        setTimeout(function(){try{window._lwCheckDreamSeed&&window._lwCheckDreamSeed();}catch(e){}},3500);
+      }
       return r;
     };
   }
