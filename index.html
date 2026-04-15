@@ -54853,6 +54853,129 @@ window._bosActivityContent = _bosActivityContent;
   window.LW_Reader = { open: open, close: close };
 })();
 
+// ═══ MUTATION DETAIL PAGE via LW_Reader ═══
+// 13 mutations at ~1.6% each. Tap a plant's mutation chip → Reader.
+var LW_MUTATION_LORE = {
+  'Glitch':         { theme:'cosmic',    rate:'~1.6%', lore:'A plant whose textures fracture in motion. Leaves flicker between states — existing in three frames at once. Either a rendering error in the universe or an intentional glimpse behind the veil. The game takes no position.' },
+  'Glass Stem':     { theme:'dark',      rate:'~1.6%', lore:'The stem becomes transparent — literal glass. Brittle, beautiful, and a liability: fragile plants die easier. But the aesthetic is undeniable, and Obsidian Mirror substrate pairs with it into something unforgettable.' },
+  'Wireframe':      { theme:'cosmic',    rate:'~1.6%', lore:'A plant drawn in bright edges, all geometry, no fill. Like a CAD rendering that forgot to become solid. The garden\u2019s way of saying: even architecture is alive if you draw it carefully enough.' },
+  'Holographic':    { theme:'cosmic',    rate:'~1.6%', lore:'Light refracts across every surface — rainbow ghosts chase the plant\u2019s contours whenever the view shifts. Pairs with Needle leaves into Holographic Prism, a full-spectrum spectacle.' },
+  'Neon':           { theme:'cosmic',    rate:'~1.6%', lore:'Stem and petals glow in hot pink or cyan — sometimes both, alternating. An aesthetic choice by the universe. Reads as artificial until you realize it\u2019s been bioluminescing this entire time.' },
+  'Ink Wash':       { theme:'dark',      rate:'~1.6%', lore:'The plant renders in watercolor — soft, bleeding edges, paper texture underneath. An accident that looked so right the universe made it canonical.' },
+  'Golden':         { theme:'mythical',  rate:'~1.6%', lore:'Every surface tinted in warm metallic gold. Not just the color — the sheen, the way it catches light from above. The old alchemists would have called this the final cultivar.' },
+  'Porcelain':      { theme:'nature',    rate:'~1.6%', lore:'The plant looks glazed and fired. Pale, smooth, cool to look at. Like garden sculpture that forgot to be stone. Often mistaken for ceramic by strangers on the wild map.' },
+  'Bioluminescent': { theme:'nature',    rate:'~1.6%', lore:'Leaves and blooms emit their own soft light. Most visible at night, on night-bloom plants. A reminder that the garden doesn\u2019t sleep — some of it simply waits for the sun to leave.' },
+  'Pixel Art':      { theme:'cosmic',    rate:'~1.6%', lore:'A plant rendered in deliberate, chunky pixels — like an old video-game sprite that escaped into three dimensions. The garden has a sense of humor. This is one of its jokes.' },
+  'Silhouette':     { theme:'dark',      rate:'~1.6%', lore:'No interior detail. Just shape — deep void-black against the background, sometimes with a star-field texture where the inside should be. Pairs with Void Petal leaves into Shadow Loom.' },
+  'Albino':         { theme:'nature',    rate:'~1.6%', lore:'No pigment. Pure white stem, pale petals, ghostly leaves. In real botanical terms, albino plants rarely survive — they can\u2019t photosynthesize. In this garden they thrive, and that\u2019s the gift.' },
+  'Fossil':         { theme:'dark',      rate:'~1.6%', lore:'The plant looks petrified — stone-gray, textures hinting at ancient imprint. Pairs with Fossil Bed substrate into Fossil Memory. A living thing remembering the first version of itself.' }
+};
+window._lwShowMutationDetail = function(mutName) {
+  var m = LW_MUTATION_LORE[mutName];
+  if (!m) return;
+  // Count your mutated plants of this type
+  var myCount = 0;
+  try {
+    var gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+    for (var i = 0; i < gh.length; i++) {
+      try { var t = window.hashToTraits(gh[i].hash); if (t && t.mutationName === mutName) myCount++; } catch(e){}
+    }
+  } catch(e){}
+  var body = [];
+  body.push({type:'quote', text: m.lore});
+  body.push({type:'section-head', text:'Rarity'});
+  body.push({type:'stat', label:'Appearance rate', value: m.rate});
+  body.push({type:'stat', label:'Tier', value:'Mythic byte'});
+  body.push({type:'divider'});
+  body.push({type:'section-head', text:'Your collection'});
+  body.push({type:'stat', label:'Plants with this mutation', value: myCount});
+  window.LW_Reader.open({
+    eyebrow: 'MUTATION',
+    title: mutName,
+    subtitle: null,
+    theme: m.theme,
+    chips: ['MUTATION', m.rate],
+    body: body,
+    actions: [{label:'CLOSE', kind:'ghost'}]
+  });
+};
+
+// ═══ TOOL DETAIL PAGE via LW_Reader ═══
+// 4 tools (shears/can/pouch/compass). Tap a tool row on the character sheet → Reader.
+var LW_TOOL_LORE = {
+  shears:  'A clean cut is quiet respect. The shears let you take cuttings from stranger plants in the wild — genetic samples without harm to the original. Cooldown reduces as you level the tool. At L3 the shears find their rhythm.',
+  can:     'Water is the oldest commitment. The can begins with one plant at a time; by L3 it waters six and calls a gentle rain. Tenders will tell you this is the tool that teaches you the garden\u2019s routine better than any other.',
+  pouch:   'The Field Pouch carries what you find in the wild. Three slots to start; five by L2; seven by L3. The deeper the pouch, the longer the walk you can take — the farther from home you can go and still bring something back.',
+  compass: 'The compass points differently depending on how much you\u2019ve leveled it. At L1 it reads wind. At L2 it names the biome under your feet. At L3 it predicts where the next feral seed will sprout — a kind of botanical weather forecast.'
+};
+window._lwShowToolDetail = function(toolId) {
+  if (!window.LW_TOOLS || !window.LW_TOOLS[toolId]) return;
+  var def = window.LW_TOOLS[toolId];
+  var lore = LW_TOOL_LORE[toolId] || '';
+  var xp = 0;
+  try { xp = parseInt(localStorage.getItem('lw_tool_xp_' + toolId) || '0', 10) || 0; } catch(e){}
+  var lvl = xp >= 200 ? 3 : xp >= 50 ? 2 : 1;
+  var nextXP = lvl >= 3 ? 'MAX' : lvl >= 2 ? 200 : 50;
+  var body = [];
+  body.push({type:'quote', text: lore});
+  body.push({type:'section-head', text:'Tier effects'});
+  for (var L = 1; L <= 3; L++) {
+    var pref = (lvl >= L) ? '\u2713 ' : '\u00b7 ';
+    body.push({type:'stat', label: pref + 'L' + L, value: def.levels[L] });
+  }
+  body.push({type:'divider'});
+  body.push({type:'section-head', text:'Progress'});
+  body.push({type:'stat', label:'Current level', value:'L' + lvl});
+  body.push({type:'stat', label:'Tool XP', value: xp + (nextXP !== 'MAX' ? ' / ' + nextXP : ' (MAX)')});
+  window.LW_Reader.open({
+    eyebrow: 'TOOL',
+    title: def.icon + ' ' + def.name,
+    subtitle: null,
+    theme: 'sage',
+    chips: ['L' + lvl, def.desc],
+    body: body,
+    actions: [{label:'CLOSE', kind:'ghost'}]
+  });
+};
+
+// ═══ CLASS DETAIL PAGE via LW_Reader ═══
+// Tap the class row on the character sheet → Reader with the full ability
+// ladder, biome affinity, signature synergy, and companion pairing.
+window._lwShowClassDetail = function(classId) {
+  if (!window.LW_CLASSES || !window.LW_CLASSES[classId]) return;
+  var def = window.LW_CLASSES[classId];
+  var cur = typeof _lwGetClass === 'function' ? _lwGetClass() : null;
+  var isYou = cur === classId;
+  var lvl = isYou && typeof _lwGetClassLevel === 'function' ? _lwGetClassLevel(classId) : 0;
+  var body = [];
+  if (def.lore) body.push({type:'quote', text: def.lore});
+  body.push({type:'section-head', text:'Your path'});
+  var titles = ['','Apprentice','Journeyman','Master'];
+  for (var L = 1; L <= 3; L++) {
+    var ab = def.abilities[L];
+    if (!ab) continue;
+    var earned = isYou && lvl >= L;
+    var pref = earned ? '\u2713 ' : '\u00b7 ';
+    body.push({type:'stat', label: pref + 'L' + L + ' \u00b7 ' + titles[L], value: ab.name });
+    body.push({type:'para', text: ab.desc});
+  }
+  body.push({type:'divider'});
+  if (def.biome) body.push({type:'stat', label:'Affinity biome', value: def.biome.charAt(0).toUpperCase()+def.biome.slice(1)});
+  if (def.companion) body.push({type:'stat', label:'Signature companion', value:'idx ' + def.companion});
+  body.push({type:'stat', label:'XP sources', value: (def.xpSrc||[]).join(' \u00b7 ')});
+  window.LW_Reader.open({
+    eyebrow: isYou ? ('YOUR CLASS \u00b7 L' + lvl) : 'CLASS',
+    title: def.name,
+    subtitle: null,
+    theme: 'gold',
+    hero: 'assets/classes/class-' + classId + '.png',
+    heroStyle: 'inline',
+    chips: [def.name.toUpperCase(), isYou ? ('LEVEL ' + lvl) : 'NOT PICKED'],
+    body: body,
+    actions: [{label:'CLOSE', kind:'ghost'}]
+  });
+};
+
 // ═══ RARITY TIER DETAIL PAGE via LW_Reader ═══
 // Tap a Terra Grade chip anywhere → Reader explains the tier's meaning,
 // rarity band, score threshold, and flavor lore. Named instead of numeric
