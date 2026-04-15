@@ -47292,6 +47292,26 @@ function _saveName(){
 }
 
 // ═══ COMPANION EQUIPPING ═══
+// Optional companion portrait lookup — idx → PNG path. Falls back to emoji
+// when a companion has no art yet. Extend this map as Midjourney renders
+// land in assets/companions/.
+var LW_COMPANION_IMG = {
+  33: 'assets/companions/cicada-v1-b.png'
+};
+window.LW_COMPANION_IMG = LW_COMPANION_IMG;
+// Render helper — returns an <img> string when art exists, emoji otherwise.
+// Caller supplies size (px). onerror falls back to emoji inline so a missing
+// file never leaves a hollow circle.
+function _compPortrait(idx, emoji, sizePx) {
+  var sz = sizePx || 32;
+  var src = LW_COMPANION_IMG[idx];
+  if (src) {
+    return '<img src="'+src+'" alt="" onerror="this.outerHTML=\'<span style=&quot;font-size:'+Math.round(sz*0.7)+'px;display:inline-flex;align-items:center;justify-content:center;width:'+sz+'px;height:'+sz+'px;&quot;>'+(emoji||'?')+'</span>\'" style="width:'+sz+'px;height:'+sz+'px;object-fit:cover;border-radius:'+Math.round(sz*0.18)+'px;border:1px solid rgba(200,168,75,0.35);display:inline-block;vertical-align:middle;">';
+  }
+  return '<span style="font-size:'+Math.round(sz*0.72)+'px;display:inline-flex;align-items:center;justify-content:center;width:'+sz+'px;height:'+sz+'px;">'+(emoji||'?')+'</span>';
+}
+window._compPortrait = _compPortrait;
+
 function _loadCompanion(){
   var activeComp=localStorage.getItem('pw_active_companion');
   if(!activeComp)return;
@@ -47300,7 +47320,15 @@ function _loadCompanion(){
     var icon=document.getElementById('cs-companion-icon');
     var name=document.getElementById('cs-companion-name');
     var buff=document.getElementById('cs-companion-buff');
-    if(icon)icon.textContent=comp.icon||'🐾';
+    if(icon){
+      // Portrait when available, emoji fallback. Slot is ~48px on the
+      // character-sheet card so we size the image accordingly.
+      if (typeof comp.idx === 'number' && LW_COMPANION_IMG[comp.idx]) {
+        icon.innerHTML = _compPortrait(comp.idx, comp.icon||'\ud83d\udc3e', 48);
+      } else {
+        icon.textContent = comp.icon || '\ud83d\udc3e';
+      }
+    }
     // Companion name with level — L1/L2/L3 (M) from time-equipped ladder
     var _lvlSuffix='';
     try {
@@ -47419,7 +47447,7 @@ function equipCompanion(){
     var f=found[j];
     var active=f.idx===curIdx;
     h+='<div onclick="PW_UI._pickCompanion('+j+')" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;padding:0.5rem;margin-bottom:4px;background:rgba(18,22,16,'+(active?'0.8':'0.5')+');border:1.5px solid '+(active?'rgba(200,168,75,0.4)':'rgba(122,179,86,0.12)')+';border-radius:8px;min-height:48px;">';
-    h+='<div style="font-size:1.2rem;width:32px;text-align:center;">'+f.icon+'</div>';
+    h+='<div style="width:44px;text-align:center;flex-shrink:0;">'+_compPortrait(f.idx, f.icon, 40)+'</div>';
     h+='<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--cream);">'+f.name+(active?' <span style="color:var(--gold);">★ ACTIVE</span>':'')+'</div>';
     if(f.ability)h+='<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--sage);margin-top:2px;">'+f.ability+'</div>';
     if(f.temperament)h+='<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);margin-top:1px;">'+f.tempIcon+' '+f.temperament+'</div>';
