@@ -55142,6 +55142,15 @@ window._bosActivityContent = _bosActivityContent;
     if (m) try { m.remove(); } catch(e){}
   }
   window.LW_Reader = { open: open, close: close };
+  // ESC key closes the topmost Reader. One listener for the life of the page.
+  try {
+    document.addEventListener('keydown', function(e){
+      if (e && e.key === 'Escape') {
+        var m = document.getElementById('lw-reader');
+        if (m) { e.preventDefault(); close(); }
+      }
+    }, false);
+  } catch(e){}
 })();
 
 // ═══ NURSERY SHOP BOOSTER DETAIL via LW_Reader ═══
