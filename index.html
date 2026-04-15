@@ -54104,6 +54104,19 @@ function _bosTreeContent() {
     h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin-top:3px;line-height:1.4;">Max your ' + (def ? def.name : 'path') + ' path (' + classSpent + '/' + classMax + ') to unlock 4 more tool nodes.</div>';
     h += '</div>';
   }
+  // Gilding card — Lv 50 milestone. Shows current chosen hour + change button.
+  if (lvl >= 50 && window._LW_getGildingHour) {
+    var gh = window._LW_getGildingHour();
+    var curHr = new Date().getHours();
+    var active = (gh !== null && curHr === gh);
+    var gildLabel = (gh === null) ? 'Not yet set' : ((gh%12||12) + (gh<12?':00 AM':':00 PM'));
+    h += '<div style="margin-bottom:0.7rem;padding:0.6rem 0.7rem;background:linear-gradient(180deg,rgba(200,168,75,' + (active?'0.18':'0.07') + '),rgba(26,36,22,0.4));border:1.5px solid rgba(200,168,75,' + (active?'0.55':'0.3') + ');border-radius:10px;">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;">';
+    h += '<div style="min-width:0;"><div style="font-family:Playfair Display,serif;font-size:0.8rem;color:var(--gold);font-style:italic;">The Gilding' + (active?' \u2728':'') + '</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:' + (active?'var(--gold)':'var(--muted)') + ';margin-top:2px;">' + gildLabel + ' \u00b7 ' + (active?'ACTIVE NOW \u2014 all bonuses \u00d72':'your 2\u00d7 hour') + '</div></div>';
+    h += '<button onclick="window._lwOpenGildingPicker&&_lwOpenGildingPicker()" style="flex-shrink:0;padding:0 10px;height:32px;min-height:32px;border-radius:6px;border:1.5px solid rgba(200,168,75,0.4);background:rgba(13,16,12,0.5);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.08em;cursor:pointer;">CHANGE</button>';
+    h += '</div></div>';
+  }
   // Universal branches unlocked by Keeper level. Render unlocked first,
   // locked below as teasers (concrete door, not blank wall).
   var UNIVERSAL_ORDER = ['heartwood','bower','longwatch'];
@@ -57276,9 +57289,36 @@ window._LW_getGildingHour = function(){
 window._LW_setGildingHour = function(h){
   if (typeof h !== 'number' || h < 0 || h > 23) return false;
   try { localStorage.setItem('lw_gilding_hour', String(h)); } catch(e) {}
+  // Invalidate gilding memo so the next bonus lookup reflects the new hour
+  try { _gildingCache = { at:0, val:false }; } catch(e) {}
   if (window._toast) _toast('\u2728 The Gilding set to ' + ((h%12||12) + (h<12?' AM':' PM')) + '.');
   try { if (window.syncVaultToCloud) setTimeout(window.syncVaultToCloud, 400); } catch(e) {}
   return true;
+};
+window._lwOpenGildingPicker = function(){
+  var ex = document.getElementById('lw-gild-picker'); if (ex) ex.remove();
+  var cur = window._LW_getGildingHour();
+  var ov = document.createElement('div');
+  ov.id = 'lw-gild-picker';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(5,8,4,0.95);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);overflow-y:auto;padding:1rem;-webkit-overflow-scrolling:touch;';
+  ov.onclick = function(e){ if (e.target === ov) ov.remove(); };
+  var h = '<div style="max-width:380px;margin:1rem auto;background:linear-gradient(180deg,rgba(26,36,22,0.95),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;padding:1rem;">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">';
+  h += '<div style="font-family:Playfair Display,serif;font-size:1rem;color:var(--gold);font-style:italic;">The Gilding</div>';
+  h += '<button onclick="document.getElementById(\'lw-gild-picker\').remove()" style="width:40px;height:40px;border-radius:50%;border:1px solid rgba(138,145,120,0.25);background:rgba(13,16,12,0.5);color:var(--cream);font-size:0.9rem;cursor:pointer;min-height:40px;">\u2715</button>';
+  h += '</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);line-height:1.6;margin-bottom:0.8rem;">Pick the hour of your day when every bonus doubles. Tap any hour to choose.</div>';
+  // 24-hour grid, 6 columns
+  h += '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;">';
+  for (var i = 0; i < 24; i++) {
+    var label = (i%12||12) + (i<12?' AM':' PM');
+    var isSel = (cur === i);
+    h += '<button onclick="window._LW_setGildingHour(' + i + ');document.getElementById(\'lw-gild-picker\').remove();if(window._bosSetTab)_bosSetTab(\'class\');" style="min-height:44px;padding:6px 4px;border-radius:6px;border:1px solid ' + (isSel?'var(--gold)':'rgba(122,179,86,0.2)') + ';background:' + (isSel?'rgba(200,168,75,0.25)':'rgba(13,16,12,0.5)') + ';color:' + (isSel?'var(--gold)':'var(--cream)') + ';font-family:DM Mono,monospace;font-size:0.45rem;cursor:pointer;">' + label + '</button>';
+  }
+  h += '</div>';
+  h += '</div>';
+  ov.innerHTML = h;
+  document.body.appendChild(ov);
 };
 // Memoized — called from the hot _LW_classBonus wrapper. Hour can't change
 // within 60s of being checked, so cache that long. Kills the per-call Date
