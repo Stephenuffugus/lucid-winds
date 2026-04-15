@@ -53925,68 +53925,82 @@ function _bosSetTab(tab) {
   }
 }
 
-// Keeper's Tree — 20-node passive tree. Every Keeper level = 1 point.
-// Rendered at the top of the class tab. Small increments (0.25%/pt) so
-// every level moves the needle without breaking balance.
+// Keeper's Path — class-specific fractional tree. Every Keeper level = 1 point
+// spendable inside your chosen class's 4 nodes. No respec (nothing to regret —
+// every point is tiny and every node fills eventually). At class Lv 20 your 4
+// nodes max; further points flow into the shared TOOLS branch (4 nodes).
 function _bosTreeContent() {
   if (typeof LW_TREE_NODES === 'undefined' || !window._LW_treeEarned) return '';
+  var cls = (window._lwGetClass && window._lwGetClass()) || null;
   var lvl = (window.canSee && window.canSee.currentLevel) ? window.canSee.currentLevel() : 1;
   var earned = window._LW_treeEarned();
-  var spent = window._LW_treeSpent();
-  var avail = earned - spent;
   var pts = window._LW_treePoints();
-  var canRespec = window._LW_treeCanRespec();
+  // Spent-in-class vs spent-in-tools
+  var spent = 0;
+  for (var k in pts) { if (pts.hasOwnProperty(k)) spent += pts[k] || 0; }
+  var avail = earned - spent;
+  // Count points in current class branch to know if the class branch is maxed
+  var classSpent = 0; var classMax = 0;
+  if (cls) {
+    for (var k2 in LW_TREE_NODES) {
+      if (!LW_TREE_NODES.hasOwnProperty(k2)) continue;
+      var nd2 = LW_TREE_NODES[k2]; if (nd2.branch !== cls) continue;
+      classSpent += pts[k2] || 0; classMax += nd2.max;
+    }
+  }
+  var classMaxed = cls && classSpent >= classMax;
   var h = '';
-  // Header
-  h += '<div style="margin-bottom:0.8rem;padding:0.7rem 0.8rem;background:linear-gradient(180deg,rgba(200,168,75,0.10),rgba(26,36,22,0.4));border:1.5px solid rgba(200,168,75,0.35);border-radius:12px;">';
+  // If no class chosen — gentle prompt
+  if (!cls) {
+    h += '<div style="margin-bottom:0.8rem;padding:0.9rem 0.8rem;background:linear-gradient(180deg,rgba(200,168,75,0.08),rgba(26,36,22,0.4));border:1.5px solid rgba(200,168,75,0.25);border-radius:12px;text-align:center;">';
+    h += '<div style="font-family:Playfair Display,serif;font-size:0.95rem;color:var(--gold);font-style:italic;margin-bottom:0.35rem;">Your Path Awaits</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.5;">Pick a class below to begin spending your Keeper levels. Every level grants 1 point that gently strengthens your path \u2014 no respec, no regret.</div>';
+    h += '</div>';
+    return h;
+  }
+  var def = LW_CLASSES[cls]; var branchDef = LW_TREE_BRANCHES[cls];
+  // Header — class-themed
+  h += '<div style="margin-bottom:0.7rem;padding:0.7rem 0.8rem;background:linear-gradient(180deg,rgba(200,168,75,0.10),rgba(26,36,22,0.4));border:1.5px solid rgba(200,168,75,0.35);border-radius:12px;">';
   h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;">';
-  h += '<div><div style="font-family:Playfair Display,serif;font-size:0.95rem;color:var(--gold);font-style:italic;">The Keeper\'s Tree</div>';
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:2px;">Lv ' + lvl + ' \u00b7 ' + spent + ' / ' + earned + ' spent</div></div>';
+  h += '<div style="min-width:0;"><div style="font-family:Playfair Display,serif;font-size:0.95rem;color:var(--gold);font-style:italic;">' + (def ? def.name : cls) + '\u2019s Path</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:2px;">Lv ' + lvl + ' \u00b7 ' + classSpent + ' / ' + classMax + ' in path' + (classMaxed ? ' \u2014 tools unlocked' : '') + '</div></div>';
   h += '<div style="text-align:right;"><div style="font-family:Bebas Neue,sans-serif;font-size:1.3rem;color:' + (avail > 0 ? 'var(--sage)' : 'var(--muted)') + ';letter-spacing:0.06em;">' + avail + '</div>';
   h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);">POINTS</div></div>';
-  h += '</div>';
-  // Respec button
-  h += '<button onclick="window._LW_treeRespec()" ' + (canRespec ? '' : 'disabled ') + 'style="width:100%;margin-top:0.5rem;min-height:36px;padding:6px;font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.1em;background:' + (canRespec ? 'rgba(122,179,86,0.15)' : 'rgba(60,60,60,0.2)') + ';border:1px solid ' + (canRespec ? 'rgba(122,179,86,0.4)' : 'rgba(138,145,120,0.2)') + ';color:' + (canRespec ? 'var(--sage)' : 'var(--muted)') + ';border-radius:6px;cursor:' + (canRespec ? 'pointer' : 'default') + ';">\ud83c\udf3f ' + (canRespec ? 'FREE RESPEC AVAILABLE' : 'RESPEC ON 24h COOLDOWN') + '</button>';
-  h += '</div>';
-  // Milestones strip
-  h += '<div style="display:flex;gap:4px;margin-bottom:0.7rem;">';
-  var ms = [10,25,50,75,100];
-  for (var mi = 0; mi < ms.length; mi++) {
-    var mLv = ms[mi]; var mDef = LW_TREE_MILESTONES[mLv]; var unlocked = lvl >= mLv;
-    h += '<div title="' + mDef.name + ' \u2014 ' + mDef.desc + '" style="flex:1;padding:4px 2px;text-align:center;background:' + (unlocked ? 'rgba(200,168,75,0.15)' : 'rgba(26,36,22,0.3)') + ';border:1px solid ' + (unlocked ? 'rgba(200,168,75,0.45)' : 'rgba(74,124,53,0.12)') + ';border-radius:6px;">';
-    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:' + (unlocked ? 'var(--gold)' : 'var(--muted)') + ';letter-spacing:0.05em;">L' + mLv + '</div>';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:' + (unlocked ? 'var(--cream)' : 'var(--muted)') + ';margin-top:1px;line-height:1.1;">' + mDef.name + '</div>';
+  h += '</div></div>';
+  // Render the current class's branch
+  h += _bosTreeBranchHtml(cls, pts, avail);
+  // Tools branch — unlocks when class path is maxed
+  if (classMaxed) {
+    h += _bosTreeBranchHtml('tools', pts, avail);
+  } else {
+    h += '<div style="margin-bottom:0.7rem;padding:0.55rem 0.7rem;background:rgba(13,16,12,0.5);border:1px dashed rgba(74,124,53,0.2);border-radius:10px;opacity:0.55;">';
+    h += '<div style="display:flex;align-items:center;gap:0.4rem;"><span style="font-size:0.9rem;">\ud83d\udd27</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;">TOOLS \u2014 LOCKED</span></div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin-top:3px;line-height:1.4;">Max your ' + (def ? def.name : 'path') + ' path (' + classSpent + '/' + classMax + ') to unlock 4 more tool nodes.</div>';
+    h += '</div>';
+  }
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin:0.3rem 0 0.8rem;line-height:1.5;text-align:center;">Every point moves the needle. Max 5 per node \u00b7 1.25% cap per stat \u00b7 each level makes you a little stronger.</div>';
+  return h;
+}
+// Render one branch (used for class branch + tools branch)
+function _bosTreeBranchHtml(bId, pts, avail) {
+  var b = LW_TREE_BRANCHES[bId]; if (!b) return '';
+  var h = '<div style="margin-bottom:0.7rem;padding:0.5rem 0.6rem;background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.15);border-radius:10px;">';
+  h += '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.4rem;"><span style="font-size:0.9rem;">' + b.icon + '</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:' + b.color + ';letter-spacing:0.1em;">' + b.name.toUpperCase() + '</span></div>';
+  for (var nId in LW_TREE_NODES) {
+    if (!LW_TREE_NODES.hasOwnProperty(nId)) continue;
+    var nd = LW_TREE_NODES[nId]; if (nd.branch !== bId) continue;
+    var cur = pts[nId] || 0;
+    var canAdd = avail > 0 && cur < nd.max;
+    h += '<div style="display:flex;align-items:center;gap:0.4rem;padding:5px 0;border-top:1px dashed rgba(74,124,53,0.08);">';
+    h += '<div style="flex:1;min-width:0;"><div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);font-weight:500;">' + nd.name + '</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);line-height:1.3;">' + nd.desc + '</div></div>';
+    var pips = '';
+    for (var pi = 0; pi < nd.max; pi++) pips += '<span style="width:6px;height:6px;border-radius:50%;background:' + (pi < cur ? b.color : 'rgba(74,124,53,0.15)') + ';display:inline-block;margin:0 1px;"></span>';
+    h += '<div style="display:flex;align-items:center;gap:2px;">' + pips + '</div>';
+    h += '<button onclick="window._LW_treeAlloc(\'' + nId + '\',1);window._bosSetTab(\'class\');" ' + (canAdd ? '' : 'disabled ') + 'style="width:30px;height:30px;padding:0;font-size:0.75rem;background:' + (canAdd ? 'rgba(122,179,86,0.2)' : 'rgba(40,40,40,0.2)') + ';border:1px solid ' + (canAdd ? 'rgba(122,179,86,0.4)' : 'rgba(138,145,120,0.15)') + ';color:' + (canAdd ? 'var(--sage)' : 'var(--muted)') + ';border-radius:5px;cursor:' + (canAdd ? 'pointer' : 'default') + ';">+</button>';
     h += '</div>';
   }
   h += '</div>';
-  // Branches
-  for (var bId in LW_TREE_BRANCHES) {
-    if (!LW_TREE_BRANCHES.hasOwnProperty(bId)) continue;
-    var b = LW_TREE_BRANCHES[bId];
-    h += '<div style="margin-bottom:0.7rem;padding:0.5rem 0.6rem;background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.15);border-radius:10px;">';
-    h += '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.4rem;"><span style="font-size:0.9rem;">' + b.icon + '</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:' + b.color + ';letter-spacing:0.1em;">' + b.name.toUpperCase() + '</span></div>';
-    // Nodes in this branch
-    for (var nId in LW_TREE_NODES) {
-      if (!LW_TREE_NODES.hasOwnProperty(nId)) continue;
-      var nd = LW_TREE_NODES[nId]; if (nd.branch !== bId) continue;
-      var cur = pts[nId] || 0;
-      var canAdd = avail > 0 && cur < nd.max;
-      var canSub = cur > 0 && canRespec;
-      h += '<div style="display:flex;align-items:center;gap:0.4rem;padding:5px 0;border-top:1px dashed rgba(74,124,53,0.08);">';
-      h += '<div style="flex:1;min-width:0;"><div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);font-weight:500;">' + nd.name + '</div>';
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);line-height:1.3;">' + nd.desc + '</div></div>';
-      // Pip display 0-5
-      var pips = '';
-      for (var pi = 0; pi < nd.max; pi++) pips += '<span style="width:6px;height:6px;border-radius:50%;background:' + (pi < cur ? b.color : 'rgba(74,124,53,0.15)') + ';display:inline-block;margin:0 1px;"></span>';
-      h += '<div style="display:flex;align-items:center;gap:2px;">' + pips + '</div>';
-      // +/- buttons
-      h += '<button onclick="window._LW_treeAlloc(\'' + nId + '\',-1);window._bosSetTab(\'class\');" ' + (canSub ? '' : 'disabled ') + 'style="width:28px;height:28px;padding:0;font-size:0.7rem;background:' + (canSub ? 'rgba(217,107,75,0.15)' : 'rgba(40,40,40,0.2)') + ';border:1px solid ' + (canSub ? 'rgba(217,107,75,0.35)' : 'rgba(138,145,120,0.15)') + ';color:' + (canSub ? '#d96b4b' : 'var(--muted)') + ';border-radius:5px;cursor:' + (canSub ? 'pointer' : 'default') + ';">\u2212</button>';
-      h += '<button onclick="window._LW_treeAlloc(\'' + nId + '\',1);window._bosSetTab(\'class\');" ' + (canAdd ? '' : 'disabled ') + 'style="width:28px;height:28px;padding:0;font-size:0.7rem;background:' + (canAdd ? 'rgba(122,179,86,0.2)' : 'rgba(40,40,40,0.2)') + ';border:1px solid ' + (canAdd ? 'rgba(122,179,86,0.4)' : 'rgba(138,145,120,0.15)') + ';color:' + (canAdd ? 'var(--sage)' : 'var(--muted)') + ';border-radius:5px;cursor:' + (canAdd ? 'pointer' : 'default') + ';">+</button>';
-      h += '</div>';
-    }
-    h += '</div>';
-  }
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin:0.3rem 0 0.8rem;line-height:1.5;text-align:center;">Every point moves the needle. Max 5 per node \u00b7 1.25% cap per stat \u00b7 100 points = Lv 100 = all maxed.</div>';
   return h;
 }
 window._bosTreeContent = _bosTreeContent;
@@ -56516,7 +56530,8 @@ var LW_TREE_BRANCHES={
   breeder:{name:'Breeder',icon:'\ud83e\uddec',color:'#a88fbf'},
   cartographer:{name:'Cartographer',icon:'\ud83e\udded',color:'#7ab3d4'},
   tender:{name:'Tender',icon:'\ud83d\udca7',color:'#7ab356'},
-  keeper:{name:'Keeper',icon:'\ud83c\udf3f',color:'#c8a84b'}
+  keeper:{name:'Keeper',icon:'\ud83c\udf3f',color:'#c8a84b'},
+  tools:{name:'Tools',icon:'\ud83d\udd27',color:'#c8a84b'}
 };
 var LW_TREE_NODES={
   // Forager
@@ -56543,7 +56558,12 @@ var LW_TREE_NODES={
   classXp:{branch:'keeper',name:'Attuned',desc:'+0.25% class XP / pt',max:5,per:0.0025},
   defenseEa:{branch:'keeper',name:'Steady',desc:'+0.25% defense EA / pt',max:5,per:0.0025},
   pollenRate:{branch:'keeper',name:'Abundance',desc:'+0.25% pollen rate / pt',max:5,per:0.0025},
-  nurseryGrow:{branch:'keeper',name:'Patient',desc:'+0.25% nursery growth / pt',max:5,per:0.0025}
+  nurseryGrow:{branch:'keeper',name:'Patient',desc:'+0.25% nursery growth / pt',max:5,per:0.0025},
+  // Tools branch — unlocks when class path is fully maxed
+  shearsEdge:{branch:'tools',name:'Sharp Shears',desc:'-0.25% shears cooldown / pt',max:5,per:-0.0025},
+  canFlow:{branch:'tools',name:'Steady Flow',desc:'+0.25% watering effect / pt',max:5,per:0.0025},
+  pouchSpace:{branch:'tools',name:'Deep Pouch',desc:'+0.25% pouch auto-sort / pt',max:5,per:0.0025},
+  compassEdge:{branch:'tools',name:'True North',desc:'+0.25% compass range / pt',max:5,per:0.0025}
 };
 var LW_TREE_MILESTONES={
   10:{name:'Path Opened',desc:'+5 bonus tree points'},
@@ -56572,41 +56592,30 @@ window._LW_treeBonus=function(kind){
   if(!n||!p[kind])return 1;
   return 1+(n.per*p[kind]);
 };
+// Allocate a tree point. Only forward motion — no respec, no regret.
+// Tools branch is gated behind class-path-maxed.
 window._LW_treeAlloc=function(nodeId,delta){
   var n=LW_TREE_NODES[nodeId];if(!n)return false;
+  if(delta<=0)return false; // no minus button — tree is one-way
   var p=_lwTreePoints();var cur=p[nodeId]||0;
-  if(delta>0){
-    if(window._LW_treeAvailable()<delta)return false;
-    if(cur+delta>n.max)return false;
-    p[nodeId]=cur+delta;
-  } else {
-    if(!window._LW_treeCanRespec()){
-      if(window._toast){var h=Math.ceil((24*3600000-(Date.now()-(parseInt(localStorage.getItem('lw_tree_respec_at')||'0',10))))/3600000);_toast('\u23f3 Respec ready in '+h+'h');}
-      return false;
-    }
-    if(cur+delta<0)return false;
-    p[nodeId]=cur+delta;
+  if(window._LW_treeAvailable()<delta)return false;
+  if(cur+delta>n.max)return false;
+  // Gate tools branch — must max current class path first
+  if(n.branch==='tools'){
+    var cls=window._lwGetClass&&window._lwGetClass();if(!cls)return false;
+    var classSpent=0,classMax=0;
+    for(var k in LW_TREE_NODES){if(!LW_TREE_NODES.hasOwnProperty(k))continue;var nd=LW_TREE_NODES[k];if(nd.branch!==cls)continue;classSpent+=p[k]||0;classMax+=nd.max;}
+    if(classSpent<classMax)return false;
   }
+  p[nodeId]=cur+delta;
   _lwTreeSetPoints(p);
-  return true;
-};
-window._LW_treeCanRespec=function(){
-  var last=parseInt(localStorage.getItem('lw_tree_respec_at')||'0',10);
-  return !last||(Date.now()-last>=24*3600000);
-};
-window._LW_treeRespec=function(){
-  if(!window._LW_treeCanRespec()){
-    if(window._toast){var h=Math.ceil((24*3600000-(Date.now()-parseInt(localStorage.getItem('lw_tree_respec_at')||'0',10)))/3600000);_toast('\u23f3 Respec ready in '+h+'h');}
-    return false;
-  }
-  if(!confirm('Reset all tree points?\n\nYou keep your earned points — free respec available once every 24h.'))return false;
-  _lwTreeSetPoints({});
-  try{localStorage.setItem('lw_tree_respec_at',String(Date.now()));}catch(e){}
+  try{if(window.syncVaultToCloud)setTimeout(window.syncVaultToCloud,400);}catch(e){}
   if(window._haptic)window._haptic();
-  if(window._toast)_toast('\ud83c\udf3f Tree reset. Walk a new path.');
-  try{if(window._bosSetTab)window._bosSetTab('class');}catch(e){}
   return true;
 };
+// Legacy respec helpers — retained as no-ops to keep any stragglers safe.
+window._LW_treeCanRespec=function(){return false;};
+window._LW_treeRespec=function(){return false;};
 // Fold tree bonus into existing _LW_classBonus so all consumers benefit
 // without touching 7+ call sites. Tree multiplier stacks on top of class.
 (function(){
