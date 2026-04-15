@@ -47158,11 +47158,43 @@ function _renderToolSection(){
     var lvl=window._lwGetToolLevel?window._lwGetToolLevel(tid):1;
     var effect=def.levels&&def.levels[lvl]?def.levels[lvl]:'—';
     var artSrc='assets/character-sheet/tools/'+tid+'.png';
+    // Cooldown chip — shears is the only cooldown-bearing tool today.
+    // Looks across the player's own wild plants to find the soonest
+    // ready shear; shows "READY" if at least one plant is off cooldown.
+    var cdChip = '';
+    if (tid === 'shears') {
+      try {
+        var cdCfg = (window._LW_toolMod && window._LW_toolMod('shears')) || (6*3600000);
+        var cds = {}; try { cds = JSON.parse(localStorage.getItem('fg_bp_clipCDs')||'{}'); } catch(e){}
+        var wildPlants = [];
+        try { wildPlants = JSON.parse(localStorage.getItem('sws_wild')||'[]'); } catch(e){}
+        var ownWild = wildPlants.filter(function(p){return p&&p.own;});
+        if (ownWild.length === 0) {
+          cdChip = '<span style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);margin-left:6px;">\u00b7 needs own wild plant</span>';
+        } else {
+          var soonestReady = Infinity; var anyReady = false;
+          for (var oi = 0; oi < ownWild.length; oi++) {
+            var cdKey = (ownWild[oi].hash||'') + '|cut';
+            var last = cds[cdKey] || 0;
+            var remaining = cdCfg - (Date.now() - last);
+            if (!last || remaining <= 0) { anyReady = true; break; }
+            if (remaining < soonestReady) soonestReady = remaining;
+          }
+          if (anyReady) {
+            cdChip = '<span style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--sage);margin-left:6px;">\u00b7 READY</span>';
+          } else {
+            var mins = Math.ceil(soonestReady / 60000);
+            var lbl = mins >= 60 ? Math.floor(mins/60)+'h '+(mins%60)+'m' : mins+'m';
+            cdChip = '<span style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--gold);margin-left:6px;">\u00b7 soonest in '+lbl+'</span>';
+          }
+        }
+      } catch(e){}
+    }
     h+='<div class="cs-tool-card">';
     h+='<div class="cs-tool-emblem">'+_csArt(artSrc,def.icon,'1.1rem')+'</div>';
     h+='<div class="cs-tool-info">';
     h+='<div class="cs-tool-name">'+def.name+_csPips(true,lvl)+'</div>';
-    h+='<div class="cs-tool-effect">'+effect+'</div>';
+    h+='<div class="cs-tool-effect">'+effect+cdChip+'</div>';
     h+='</div></div>';
   }
   el.innerHTML=h;
