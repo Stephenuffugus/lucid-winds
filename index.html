@@ -54380,6 +54380,73 @@ function _bosMementosContent() {
     }
   }
 
+  // ─── YOUR ROSTER — all companions discovered across greenhouse plants ───
+  // Grouped by family. Each card taps into the profile modal. Independent of
+  // equipped/30d state — shows the full bestiary the player has encountered.
+  try {
+    var rosterIdxs = {};
+    var gh = [];
+    try { gh = JSON.parse(localStorage.getItem('sws_greenhouse') || '[]'); } catch(e) {}
+    for (var gi = 0; gi < gh.length; gi++) {
+      try {
+        var gt = window.hashToTraits ? window.hashToTraits(gh[gi].hash) : null;
+        if (gt && typeof gt.companion === 'number') rosterIdxs[gt.companion] = true;
+      } catch(e) {}
+    }
+    // Also include any companion the player has ever equipped (from equipLog)
+    for (var ek in equipLog) { if (equipLog.hasOwnProperty(ek)) rosterIdxs[parseInt(ek, 10)] = true; }
+    var rosterList = Object.keys(rosterIdxs).map(function(k){return parseInt(k,10);}).filter(function(n){return !isNaN(n)&&n>=0;});
+    if (rosterList.length) {
+      // Group by family
+      var byFamily = {};
+      for (var ri = 0; ri < rosterList.length; ri++) {
+        var rIdx = rosterList[ri];
+        var rFam = (window.LW_COMPANION && LW_COMPANION.FAMILY_OF[rIdx]) ? LW_COMPANION.FAMILY_OF[rIdx] : 'unlinked';
+        if (!byFamily[rFam]) byFamily[rFam] = [];
+        byFamily[rFam].push(rIdx);
+      }
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:var(--cream);letter-spacing:0.08em;margin:1rem 0 0.4rem;">YOUR ROSTER \u00b7 ' + rosterList.length + '</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin-bottom:0.5rem;line-height:1.5;">Every companion you\u2019ve seen in your garden. Tap for profile + bond status.</div>';
+      // Family order — signature/class-aligned first, universals last
+      var FAM_ORDER = ['pollinators','scatterers','weavers','wayfinders','guardians','conduits','mycelium','watchers','unlinked'];
+      var FAM_META = {
+        pollinators:{name:'Pollinators',icon:'\ud83d\udc1d',color:'#e8a843'},
+        scatterers:{name:'Scatterers',icon:'\ud83d\udc3f',color:'#d4842a'},
+        weavers:{name:'Weavers',icon:'\ud83d\udd78',color:'#a88fbf'},
+        wayfinders:{name:'Wayfinders',icon:'\ud83e\udd85',color:'#7ab3d4'},
+        guardians:{name:'Guardians',icon:'\ud83d\udee1',color:'#c8a84b'},
+        conduits:{name:'Conduits',icon:'\ud83d\udca7',color:'#7ab356'},
+        mycelium:{name:'Mycelium',icon:'\ud83c\udf44',color:'#c07a9a'},
+        watchers:{name:'Watchers',icon:'\ud83d\udc41',color:'#8a9178'},
+        unlinked:{name:'Unlinked',icon:'\ud83c\udf3e',color:'#8a9178'}
+      };
+      for (var fo = 0; fo < FAM_ORDER.length; fo++) {
+        var famKey = FAM_ORDER[fo];
+        if (!byFamily[famKey] || !byFamily[famKey].length) continue;
+        var fm = FAM_META[famKey];
+        h += '<div style="margin-bottom:0.7rem;padding:0.5rem 0.55rem;background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.15);border-radius:9px;">';
+        h += '<div style="display:flex;align-items:center;gap:4px;margin-bottom:0.35rem;"><span style="font-size:0.75rem;">' + fm.icon + '</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:' + fm.color + ';letter-spacing:0.1em;">' + fm.name.toUpperCase() + ' \u00b7 ' + byFamily[famKey].length + '</span></div>';
+        h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:5px;">';
+        byFamily[famKey].sort(function(a,b){return a-b;});
+        for (var bi = 0; bi < byFamily[famKey].length; bi++) {
+          var bIdx = byFamily[famKey][bi];
+          var bName = 'C#' + bIdx;
+          var bIcon = '\ud83d\udc3e';
+          try { if (window.TRAIT_BANK && window.TRAIT_BANK.companions && window.TRAIT_BANK.companions[bIdx]) { bName = window.TRAIT_BANK.companions[bIdx].name; bIcon = window.TRAIT_BANK.companions[bIdx].icon || bIcon; } } catch(e) {}
+          var bLvl = window.LW_COMPANION ? LW_COMPANION.getLevel(bIdx) : 1;
+          var bPort = window._compPortrait ? window._compPortrait(bIdx, bIcon, 48) : '';
+          var lvlColor = bLvl === 3 ? 'var(--gold)' : (bLvl === 2 ? 'var(--sage)' : 'var(--muted)');
+          h += '<div onclick="window._lwOpenCompanionProfile&&_lwOpenCompanionProfile(' + bIdx + ')" style="cursor:pointer;padding:5px;background:rgba(18,22,16,0.55);border:1px solid rgba(74,124,53,0.15);border-radius:7px;text-align:center;min-height:44px;position:relative;">';
+          h += '<div style="display:flex;justify-content:center;align-items:center;height:48px;">' + bPort + '</div>';
+          h += '<div style="font-family:DM Mono,monospace;font-size:0.36rem;color:var(--cream);margin-top:2px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + bName + '</div>';
+          h += '<div style="position:absolute;top:2px;right:3px;font-family:Bebas Neue,sans-serif;font-size:0.42rem;color:' + lvlColor + ';letter-spacing:0.04em;">L' + bLvl + '</div>';
+          h += '</div>';
+        }
+        h += '</div></div>';
+      }
+    }
+  } catch(e) {}
+
   return h;
 }
 window._bosMementosContent = _bosMementosContent;
