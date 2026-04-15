@@ -38231,6 +38231,15 @@ function _doCrossPollination(wildPlant,matePlant){
       }
       // Book of Secrets: Pollen Trail (3 cross-pollinations in one week)
       try { if (window.LW_Events) window.LW_Events.incCounter('pollen_trail', 3, 'Pollen Trail', 'week'); } catch(e){}
+      // Wanderer's Child — cross-pollinated with a stranger's wild plant.
+      // Wild plant ownerUid differs from the player's uid → stranger cross.
+      try {
+        if (window.LW_Events && wildPlant && wildPlant.ownerUid) {
+          var _myUid = '';
+          try { var _u = window.firebase && firebase.auth() && firebase.auth().currentUser; if (_u) _myUid = _u.uid; } catch(e){}
+          if (_myUid && wildPlant.ownerUid !== _myUid) window.LW_Events.fire("Wanderer's Child");
+        }
+      } catch(e){}
       _cpReward(offGen);
     });
   } else {
@@ -39358,6 +39367,8 @@ function _checkPendingRewards(){
         if(r.type==='harvest_reward'){
           msgs.push(r.plantName+' was harvested! +'+r.amount+' Dew');
           totalDew+=r.amount;
+          // Turned Tide — a stranger harvested one of your wild plants
+          try { if (window.LW_Events) window.LW_Events.fire('Turned Tide'); } catch(e){}
         } else if(r.type==='takeover_reward'){
           msgs.push(r.plantName+' was displaced! +'+r.amount+' Dew');
           totalDew+=r.amount;
@@ -40472,6 +40483,19 @@ window._hexAction=function(action){
         }
       }catch(e){}
       if(window.PW_grantXP)PW_grantXP(5,'wild_water_stranger');
+      // Shared Garden — water 3 different keepers' plants (all-time counter)
+      try {
+        if (window.LW_Events) {
+          var _sgKey='lw_shared_garden_uids';
+          var _sgSeen={};
+          try { _sgSeen=JSON.parse(localStorage.getItem(_sgKey)||'{}'); } catch(e){}
+          if (p.ownerUid && !_sgSeen[p.ownerUid]) {
+            _sgSeen[p.ownerUid]=1;
+            try { localStorage.setItem(_sgKey, JSON.stringify(_sgSeen)); } catch(e){}
+            if (Object.keys(_sgSeen).length >= 3) window.LW_Events.fire('Shared Garden');
+          }
+        }
+      } catch(e){}
       if(window.LW_Log)window.LW_Log.write('wild_watered_stranger',{hash:p.hash,ownerName:p.ownerName||'Keeper'});
       _writeWitnessFee(p,'water');
       _toast('\ud83d\udca7 Watered a keeper\u2019s plant. +2h \u00b7 +5 XP. '+(5-wb.count)+' left today.');
@@ -57163,6 +57187,126 @@ function _bosReportContent() {
           if (heldLong >= 3) fire('Territorial');
         } catch(e){}
       }
+      // ═══ BIOME × COMPANION PAIRINGS ═══
+      // For each event, check if any plant has the companion AND is currently
+      // in a qualifying biome. Uses plant.biome if set, else current biome.
+      var currentBiome = window._lastDetectedBiome || null;
+      var _biomeMatch = function(p, keys) {
+        var b = p.biome || currentBiome;
+        if (!b) return false;
+        for (var k = 0; k < keys.length; k++) if (b === keys[k]) return true;
+        return false;
+      };
+      if (!fired("Raccoon's Pantry") || !fired('Heron Vigil') || !fired('Bog Choir') ||
+          !fired('Garden Web') || !fired('Summer Chorus') || !fired('Thaw Witness') ||
+          !fired('Old Eye, Deep Ground')) {
+        for (var bi = 0; bi < gh.length; bi++) {
+          try {
+            var bt = window.hashToTraits(gh[bi].hash);
+            if (!bt) continue;
+            var p = gh[bi];
+            if (bt.companion === 35 && _biomeMatch(p, ['suburban'])) fire("Raccoon's Pantry");
+            if (bt.companion === 36 && _biomeMatch(p, ['wetland','riverside'])) fire('Heron Vigil');
+            if (bt.companion === 32 && _biomeMatch(p, ['wetland','riverside'])) fire('Bog Choir');
+            if (bt.companion === 37 && _biomeMatch(p, ['garden','farmland'])) fire('Garden Web');
+            if (bt.companion === 38 && _biomeMatch(p, ['mountain'])) fire('Old Eye, Deep Ground');
+            // Summer Chorus / Thaw Witness — season-gated
+            var curSeason = null;
+            try { if (window.getSeasonInfo) { var si = window.getSeasonInfo(); if (si && si.name) curSeason = si.name; } } catch(e){}
+            if (bt.companion === 33 && curSeason === 'Summer') fire('Summer Chorus');
+            if (bt.companion === 34 && curSeason === 'Winter') fire('Thaw Witness');
+          } catch(e){}
+        }
+      }
+      // ═══ LAYER COMBINATIONS ═══
+      if (!fired('All That Glitters') || !fired('Prism Root') || !fired('Ink Dusk') ||
+          !fired('Fossil Archive') || !fired('Abyss Bloom')) {
+        for (var li = 0; li < gh.length; li++) {
+          try {
+            var lt = window.hashToTraits(gh[li].hash);
+            if (!lt) continue;
+            // Golden mutation + Golden pot (pot idx 15)
+            if (lt.mutationName === 'Golden' && (lt.pot % 60) === 15) fire('All That Glitters');
+            // Glass Stem + crystal substrate (base 15 Crystal / 56 Stardust / 58 Quicksilver)
+            var _lb = lt.base % 71;
+            if (lt.mutationName === 'Glass Stem' && (_lb === 15 || _lb === 56 || _lb === 58)) fire('Prism Root');
+            // Ink Wash + Moonlit aura (aura idx 7)
+            if (lt.mutationName === 'Ink Wash' && (lt.aura % 36) === 7) fire('Ink Dusk');
+            // Fossil mutation + Stone pot (idx 28) OR Fossil Bed substrate (idx 55)
+            if (lt.mutationName === 'Fossil' && ((lt.pot % 60) === 28 || _lb === 55)) fire('Fossil Archive');
+            // Bioluminescent + Deep Sea aura (idx 28)
+            if (lt.mutationName === 'Bioluminescent' && (lt.aura % 36) === 28) fire('Abyss Bloom');
+          } catch(e){}
+        }
+      }
+      // ═══ GROVE-SCALE ═══
+      // Cardinal Chorus — 3+ plants share the SAME synergy
+      if (!fired('Cardinal Chorus') && gh.length >= 3 && window.getSynergy) {
+        var synCounts = {};
+        for (var ci = 0; ci < gh.length; ci++) {
+          try {
+            var ct = window.hashToTraits(gh[ci].hash);
+            if (!ct) continue;
+            var csyn = window.getSynergy(ct);
+            if (csyn) {
+              if (csyn.all) {
+                for (var ca = 0; ca < csyn.all.length; ca++) synCounts[csyn.all[ca].name] = (synCounts[csyn.all[ca].name] || 0) + 1;
+              } else {
+                synCounts[csyn.name] = (synCounts[csyn.name] || 0) + 1;
+              }
+            }
+          } catch(e){}
+        }
+        for (var sk in synCounts) if (synCounts[sk] >= 3) { fire('Cardinal Chorus'); break; }
+      }
+      // Storyline — sum of chimerGen across greenhouse >= 10
+      if (!fired('Storyline') && gh.length) {
+        var genSum = 0;
+        for (var gi2 = 0; gi2 < gh.length; gi2++) {
+          try {
+            var _gen = gh[gi2].generation || 1;
+            if (_gen < 2 && window.hashToTraits) {
+              var _gt = window.hashToTraits(gh[gi2].hash);
+              if (_gt && _gt.chimerGen) _gen = _gt.chimerGen;
+            }
+            genSum += _gen;
+          } catch(e){}
+        }
+        if (genSum >= 10) fire('Storyline');
+      }
+      // Grove of Grounds — plants from all 4 seasons + visited 5+ biomes
+      if (!fired('Grove of Grounds') && gh.length) {
+        var seasonsOwned = {};
+        for (var soi = 0; soi < gh.length; soi++) {
+          try {
+            var _st = window.hashToTraits(gh[soi].hash);
+            if (_st && typeof _st.season === 'number') seasonsOwned[_st.season] = true;
+          } catch(e){}
+        }
+        if (Object.keys(seasonsOwned).length >= 4) {
+          var biomeVisits = {};
+          try {
+            var _bc = JSON.parse(localStorage.getItem('lw_biome_cache')||'{}');
+            for (var _bck in _bc) { if (_bc[_bck] && _bc[_bck].biome) biomeVisits[_bc[_bck].biome] = true; }
+          } catch(e){}
+          if (window._lastDetectedBiome) biomeVisits[window._lastDetectedBiome] = true;
+          if (Object.keys(biomeVisits).length >= 5) fire('Grove of Grounds');
+        }
+      }
+      // Sister Grove — 2+ of your own wild plants in the same H3 zone
+      if (!fired('Sister Grove')) {
+        try {
+          var myWildZ = JSON.parse(localStorage.getItem('fg_wild_plants') || '[]');
+          var zoneCount = {};
+          for (var _zi = 0; _zi < myWildZ.length; _zi++) {
+            var _zp = myWildZ[_zi];
+            if (!_zp) continue;
+            var _zk = _zp.zone || (_zp.lat && _zp.lng ? (Math.round(_zp.lat*1000)+','+Math.round(_zp.lng*1000)) : null);
+            if (_zk) zoneCount[_zk] = (zoneCount[_zk] || 0) + 1;
+          }
+          for (var _zck in zoneCount) if (zoneCount[_zck] >= 2) { fire('Sister Grove'); break; }
+        } catch(e){}
+      }
       // Chimera's Wake — any Gen 3+ chimera in greenhouse
       // Deep Roots — any plant alive >= 30 days
       // Dual Bloom — 2+ plants with the same mint date
@@ -57259,7 +57403,63 @@ window.LW_EVENT_CATALOG = [
     { name: 'Full Grove', hint: 'Fill all 60 greenhouse slots', riddle: 'No empty pot. No bare shelf. A forest indoors.',
       lore: 'Sixty plants. No empty pots, no placeholders. An entire ecosystem in the space of a studio apartment. This is what old horticulturists meant when they said "the garden is complete only when you stop wanting more room." (They were lying. But only gently.)' },
     { name: 'Century Keeper', hint: '100-day login streak', riddle: 'The sun rose a hundred times and found you still tending.',
-      lore: "A hundred consecutive days. Storms, travel, hard weeks, good ones. The plants don't know you had a rough Tuesday; they only know you showed up. Few titles in this game are older or harder than this one." }
+      lore: "A hundred consecutive days. Storms, travel, hard weeks, good ones. The plants don't know you had a rough Tuesday; they only know you showed up. Few titles in this game are older or harder than this one." },
+    { name: 'Old Eye, Deep Ground', hint: 'Own a Beholder plant while standing in a mountain biome', riddle: 'The stone remembers the eye. The eye remembers everything.',
+      lore: 'When an ancient companion meets ancient terrain, the grove settles. Nothing happens. Nothing needs to. This is one of the few moments the game gives you with no mechanical reward — just the acknowledgment that you were here, with this, in this place.' }
+  ]},
+  // ═══ BIOME × COMPANION PAIRINGS ═══
+  // Fire when a companion's spirit aligns with the land. Mostly uncommon — a
+  // keeper will stumble into one or two naturally during normal play.
+  { name: 'COMPANION', color: '#a88fd4', desc: 'Creature + place alignments', events: [
+    { name: "Raccoon's Pantry", hint: 'Own a plant with Raccoon companion in a suburban biome', riddle: 'Nimble hands find the garbage cans full of treasure.',
+      lore: "The Raccoon is most at home on the edge of human life. In the suburbs it thrives — clever, nocturnal, adaptable. Your plant's companion has found its country." },
+    { name: 'Heron Vigil', hint: 'Own a plant with Great Blue Heron in a wetland biome', riddle: 'Still as stone by the water\u2019s edge, waiting for what the tide brings.',
+      lore: "Herons are wetland-born. Stand a Heron-plant in reeds and the creature remembers what it was shaped for. Fishing has not changed in ten thousand years." },
+    { name: 'Bog Choir', hint: 'Own a plant with The Toad in a wetland biome', riddle: 'Every frog\u2019s throat is a small drum in a larger song.',
+      lore: "Toads are among the oldest singers. Put one in its native wetland and the song answers back — other toads, unseen, from every direction. Your plant becomes a node in a chorus older than language." },
+    { name: 'Summer Chorus', hint: 'Own a plant with The Cicada during the summer season', riddle: 'Seventeen years of silence, then a whole sky humming.',
+      lore: "Cicadas belong to summer. Keep one long enough for the season to come around and the garden suddenly makes sense — what the Cicada was waiting for was this." },
+    { name: 'Thaw Witness', hint: 'Own a plant with Baby Mammoth during the winter season', riddle: 'The ice does not forget who walked it first.',
+      lore: "Mammoths are creatures of cold. A winter-aligned Mammoth plant carries its true timeline — a small impossible animal walking through a season that used to be its home." },
+    { name: 'Garden Web', hint: 'Own a plant with Garden Spider in a garden biome', riddle: 'Silk and dew — a chandelier the gardener never hangs.',
+      lore: "Garden Spiders are architects. In an actual garden, with morning dew, their work is visible — every web a private cathedral. One of yours has arrived home." }
+  ]},
+  // ═══ LAYER COMBINATIONS ═══
+  // When two trait layers align in rare ways on a single plant. These are
+  // largely stumble-on-them-by-accident events.
+  { name: 'CONJUNCTION', color: '#8CB86E', desc: 'Layer-on-layer alignments', events: [
+    { name: 'All That Glitters', hint: 'Own a plant with both Golden mutation and Golden pot', riddle: 'Two kinds of gold meet. They argue, then agree.',
+      lore: "A Golden mutation on a plant already in a Golden pot is, mathematically, ~0.4% × ~1.7% = one in fifteen thousand mints. Unlike most synergy events, this one isn't subtle. It just glows." },
+    { name: 'Prism Root', hint: 'Own a plant with Glass Stem mutation on a crystal substrate', riddle: 'Stem of glass, root of crystal — light passes through everything.',
+      lore: "Glass Stem plus crystalline substrate is a plant that effectively has no shadow. Light enters from any angle and leaves brighter. Old gardeners would have called this kind of plant a 'lantern.'" },
+    { name: 'Ink Dusk', hint: 'Own a plant with Ink Wash mutation and Moonlit aura', riddle: 'Paper bleeding slowly in starlight.',
+      lore: "Ink Wash is watercolor bleed; Moonlit aura is cool silver. Together the plant renders like a Chinese scroll painting held up to moonlight. Reverent. Temporary-feeling. You want to look longer than you have time for." },
+    { name: 'Fossil Archive', hint: 'Own a plant with Fossil mutation on a Fossil Bed substrate', riddle: 'A memory of a memory of a leaf.',
+      lore: "Two deep-time signatures on the same plant. The Fossil mutation embeds the leaf in stone; the substrate extends the imprint into the ground. Half-alive, half-remembered — which is the point." },
+    { name: 'Abyss Bloom', hint: 'Own a plant with Bioluminescent mutation and Deep Sea aura', riddle: 'The dark is not empty if you bring your own light.',
+      lore: "Bioluminescent blooms in a Deep Sea aura recreate the way deep-ocean creatures actually are — brief, self-illuminated, entirely alone and entirely fine with that. An anglerfish in a pot." }
+  ]},
+  // ═══ GROVE-SCALE EVENTS ═══
+  // Fire when your whole collection aligns in a way no single plant could.
+  { name: 'CONFLUENCE', color: '#9B59B6', desc: 'Grove-scale alignments', events: [
+    { name: 'Cardinal Chorus', hint: 'Own 3+ plants sharing the same synergy', riddle: 'Three voices, one word.',
+      lore: "Most synergies fire on a single plant. When three of your plants share the same synergy, they become a chord — a long-held note you can walk past and hear humming. Rare because you have to breed and collect with intention." },
+    { name: 'Storyline', hint: 'Your chimera generations sum to 10 or more across all plants', riddle: 'Every plant is a chapter. Yours is becoming a book.',
+      lore: "Generations accumulate. A Gen 3 plus a Gen 4 plus a Gen 3 is ten generations of breeding history in a single greenhouse. Your lineage has depth. Someone reading your collection could trace a plot." },
+    { name: 'Grove of Grounds', hint: 'Own plants from all 4 seasons and visit 5+ biomes', riddle: 'The garden has learned every season and every ground.',
+      lore: "Most keepers specialize. A Grove of Grounds is the opposite — plants of every season, feet that have walked across five different biomes. Horizontal mastery. The kind of gardener who plants tomatoes AND alpine asters." },
+    { name: 'Sister Grove', hint: 'Drop two of your own plants in the same wild zone', riddle: 'Two roots share a neighborhood. They learn each other\u2019s signals.',
+      lore: "Plants within the same H3 zone can sense each other's rhythms. Two of yours in one zone is a small declaration: this patch of the world is yours." }
+  ]},
+  // ═══ SOCIAL EVENTS ═══
+  // Fire when the keeper's actions involve another keeper's garden.
+  { name: 'SOCIAL', color: '#5b8fb9', desc: 'Moments shared between keepers', events: [
+    { name: 'Shared Garden', hint: 'Water 3 different keepers\u2019 wild plants', riddle: 'Three strangers\u2019 plants. One watering can. No one asked.',
+      lore: "Watering another keeper's plant costs you nothing and helps them. It's the quietest form of community in the game. Three different strangers means you've done it on purpose more than once." },
+    { name: "Wanderer's Child", hint: 'Cross-pollinate with a stranger\u2019s wild plant', riddle: 'A lineage that started in someone else\u2019s greenhouse now lives in yours.',
+      lore: "Cross-pollinating with a stranger's wild plant weaves two unrelated gardens together. Your offspring carries traits from a keeper you may never meet. It is one of the few ways the game makes you porous." },
+    { name: 'Turned Tide', hint: 'A stranger harvested one of your wild plants', riddle: 'Someone unknown to you is growing what was yours.',
+      lore: "The plant you dropped into the world has been taken. You lose the drop but gain its story — a stranger, somewhere, saw it and pulled it into their collection. The grove is bigger than your garden." }
   ]}
 ];
 
