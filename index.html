@@ -57432,6 +57432,32 @@ window.LW_Comp = (function(){
     if(lvl>=7){
       out.push({icon:'📖',title:'Open the Book of Secrets',body:'Your diary of discoveries, companion bonds, and weekly herbarium goals.',priority:30,action:function(){if(window._openCompendiumUI)_openCompendiumUI();}});
     }
+    // Tool XP close to next tier — shows which tool is about to level up.
+    // Only surfaces when the player has picked a class (tools are a class-era
+    // mechanic) and the closest tool is ≥70% toward its next level.
+    try {
+      if (cls) {
+        var _toolXP = JSON.parse(localStorage.getItem('lw_tool_xp')||'{}');
+        var _nearestTool = null; var _nearestPct = 0; var _nearestRem = 0; var _nearestLvl = 0;
+        var _tids = ['shears','can','pouch','compass'];
+        for (var _ti = 0; _ti < _tids.length; _ti++) {
+          var _ttid = _tids[_ti];
+          var _txp = _toolXP[_ttid] || 0;
+          var _next = null; var _nextLvl = 0;
+          if (_txp < 50) { _next = 50; _nextLvl = 2; }
+          else if (_txp < 200) { _next = 200; _nextLvl = 3; }
+          else continue;
+          var _pct = _txp / _next;
+          if (_pct >= 0.7 && _pct > _nearestPct) {
+            _nearestPct = _pct; _nearestTool = _ttid; _nearestRem = _next - _txp; _nearestLvl = _nextLvl;
+          }
+        }
+        if (_nearestTool && window.LW_TOOLS && window.LW_TOOLS[_nearestTool]) {
+          var _toolNm = window.LW_TOOLS[_nearestTool].name;
+          out.push({icon:'\ud83d\udd27',title:_nearestRem+' XP to ' + _toolNm + ' L' + _nearestLvl,body:'Use your ' + _toolNm.toLowerCase() + ' to push it to the next tier.',priority:34,action:function(){if(window._openCompendiumUI)_openCompendiumUI();setTimeout(function(){if(window._bosSetTab)window._bosSetTab('class');},250);}});
+        }
+      }
+    } catch(e) {}
     // Class XP close to next level — poke the player toward their class XP source
     try {
       if (cls && window.LW_CLASSES && window.LW_CLASSES[cls]) {
