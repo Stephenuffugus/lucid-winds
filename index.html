@@ -55040,6 +55040,9 @@ var _LW_LAYER_FLAVOR = {
   companion: { eyebrow:'COMPANION',theme:'mythical',flavor:'A creature that has chosen to live alongside this plant. Some are common, some are once-in-a-year finds.' }
 };
 
+// Slug helper: "Glass Stem" → "glass-stem"
+function _lwTraitSlug(name) { return String(name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+
 window._lwShowTraitDetail = function(layer, idx) {
   if (!window.TRAIT_BANK) return;
   var flavor = _LW_LAYER_FLAVOR[layer];
@@ -55051,6 +55054,18 @@ window._lwShowTraitDetail = function(layer, idx) {
   var entry = bank[idx];
   if (entry.name === 'None') return;
   var myCount = _lwTraitCountIn(layer, idx);
+  // Auto-load Jessie's art when/if it lands. Folder convention:
+  //   assets/pots/pot-{slug}.png
+  //   assets/auras/aura-{slug}.png
+  //   assets/substrates/substrate-{slug}.png
+  //   assets/leaves/leaf-{slug}.png
+  //   assets/flowers/flower-{slug}.png
+  //   assets/stems/stem-{slug}.png
+  //   assets/companions/companion-{slug}.png
+  // Reader.open handles the 404 gracefully via <img onerror>
+  var folder = layer === 'base' ? 'substrates' : layer === 'leafType' ? 'leaves' : layer === 'companion' ? 'companions' : layer === 'flower' ? 'flowers' : layer === 'stem' ? 'stems' : layer === 'aura' ? 'auras' : 'pots';
+  var filePrefix = layer === 'base' ? 'substrate' : layer === 'leafType' ? 'leaf' : layer;
+  var heroPath = 'assets/' + folder + '/' + filePrefix + '-' + _lwTraitSlug(entry.name) + '.png';
   var body = [];
   body.push({type:'quote', text: flavor.flavor});
   body.push({type:'section-head', text:'This ' + flavor.eyebrow.toLowerCase()});
@@ -55063,6 +55078,8 @@ window._lwShowTraitDetail = function(layer, idx) {
     title: entry.name,
     subtitle: null,
     theme: entry.rare ? 'gold' : flavor.theme,
+    hero: heroPath,
+    heroStyle: 'inline',
     chips: [flavor.eyebrow, entry.rare ? 'RARE' : 'STANDARD'],
     body: body,
     actions: [{label:'CLOSE', kind:'ghost'}]
@@ -58078,7 +58095,16 @@ window._openCompendiumUI=function(){
       if (window._lwConfirm) {
         window._lwConfirm({
           title: 'THE BOOK OF SECRETS',
-          body: 'Everything you discover lives here. Seven tabs \u2014 most fill in as you play.<br><br>\u2728 <b>REPORT</b> \u2014 your morning briefing<br>\u270f\ufe0f <b>ACTIVITY</b> \u2014 a diary of what you\u2019ve done<br>\ud83d\udd2e <b>SECRETS</b> \u2014 synergies, riddles, rare creatures<br>\ud83c\udf28\ufe0f <b>EVENTS</b> \u2014 weather, climate, sprouts<br>\u269c\ufe0f <b>MEMENTOS</b> \u2014 30-day companion keepsakes<br>\ud83c\udf3f <b>HERBARIUM</b> \u2014 weekly collection goals<br>\ud83e\uddec <b>CLASS</b> \u2014 pick or change your keeper class + tools<br><br>Tap anything for details.',
+          body: 'Everything you discover lives here. Seven tabs \u2014 most fill in as you play.<br><br>' +
+                '\u2728 <b>REPORT</b> \u2014 your morning briefing<br>' +
+                '\u270f\ufe0f <b>ACTIVITY</b> \u2014 a diary of what you\u2019ve done<br>' +
+                '\ud83d\udd2e <b>SECRETS</b> \u2014 synergies, mutations, achievements, and more<br>' +
+                '\ud83c\udf28\ufe0f <b>EVENTS</b> \u2014 rare moments and riddles to solve<br>' +
+                '\u269c\ufe0f <b>MEMENTOS</b> \u2014 30-day companion keepsakes<br>' +
+                '\ud83c\udf3f <b>HERBARIUM</b> \u2014 weekly collection goals<br>' +
+                '\ud83e\uddec <b>CLASS</b> \u2014 pick or change your keeper path<br><br>' +
+                '<b style="color:var(--gold);">A small gold number</b> will appear on any tab when something new is waiting. Reading the page clears it. No pop-ups \u2014 the book just quietly remembers.<br><br>' +
+                'Tap anything for its full story.',
           yes: 'OPEN THE BOOK',
           no: ''
         }, function(){});
