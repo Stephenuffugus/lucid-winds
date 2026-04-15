@@ -28677,6 +28677,9 @@ document.addEventListener('keydown', function(e) {
     } catch(e) {}
     // Tender class bonus: L2+ multiplies dew income
     try{if(window._LW_classBonus){amount=Math.ceil(amount*window._LW_classBonus('dewRate'));}}catch(e){}
+    // Tender tree node Dawn Tending — +0.25%/pt dew generation. Stacks
+    // multiplicatively with class + companion bonuses.
+    try{if(window._LW_treeBonus){var _drm=window._LW_treeBonus('dewRate');if(_drm>1)amount=Math.ceil(amount*_drm);}}catch(e){}
     // Companion family bonus: Conduits grant +3% dewRate (+25% affinity for Cartographer)
     try{if(window.LW_COMPANION){amount=Math.ceil(amount*window.LW_COMPANION.getCompanionMult('dewRate'));}}catch(e){}
     // Dew Cache booster: +50% for 3h
