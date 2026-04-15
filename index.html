@@ -38114,7 +38114,7 @@ function _waterOwnPlant(p,mk){
   try{if(window.LW_XP)window.LW_XP.grantOnce('first_water',10,'first_of_kind','💧 +10 XP — first watering. Plants remember kindness.');}catch(e){}
   if(window._LW_toolXP)window._LW_toolXP('can',3);
   if(window.LW_Log)window.LW_Log.write('wild_watered',{hash:p.hash});
-  try { if (window.LW_Events) window.LW_Events.incCounter('rainfall', 3, 'Rainfall', 'session'); } catch(e){}
+  try { if (window.LW_Events) window.LW_Events.incCounter('rainfall', 3, 'Rainfall', 'day'); } catch(e){}
   // Hour-based events: Night Bloom (midnight-3am) + Morning Dew (4-7am)
   try {
     if (window.LW_Events) {
@@ -40554,7 +40554,7 @@ window._hexAction=function(action){
       if(window._haptic)_haptic('bloom');
       if(window._trackQuest)_trackQuest('plantsWatered',1);
       if(window.LW_Log)window.LW_Log.write('wild_watered',{hash:p.hash});
-      try { if (window.LW_Events) window.LW_Events.incCounter('rainfall', 3, 'Rainfall', 'session'); } catch(e){}
+      try { if (window.LW_Events) window.LW_Events.incCounter('rainfall', 3, 'Rainfall', 'day'); } catch(e){}
     }else{
       // Water a stranger's plant — budgeted kindness, +2h via shared marker.
       var wk='lw_water_budget',wb={};try{wb=JSON.parse(localStorage.getItem(wk)||'{}');}catch(e){}
