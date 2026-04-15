@@ -33154,6 +33154,9 @@ document.addEventListener('keydown', function(e) {
     try{ return JSON.parse(localStorage.getItem(ACH_KEY)||'{}'); }catch(e){ return {}; }
   }
   function saveAchievements(a){ try{localStorage.setItem(ACH_KEY,JSON.stringify(a));}catch(e){} }
+  // Expose for LW_Reader pages, BoS Secrets grid, and any external consumer
+  window.LW_ACHIEVEMENTS = ACHIEVEMENTS;
+  window.loadAchievements = loadAchievements;
 
   function checkAchievements(){
     var unlocked = loadAchievements();
@@ -54984,6 +54987,40 @@ window._bosActivityContent = _bosActivityContent;
   window.LW_Reader = { open: open, close: close };
 })();
 
+// ═══ ACHIEVEMENT DETAIL PAGE via LW_Reader ═══
+// Tap any achievement in the BoS Secrets grid → Reader with the
+// icon enlarged, desc, reward chip, unlock state.
+window._lwShowAchievementDetail = function(achId) {
+  if (!window.LW_ACHIEVEMENTS) return;
+  var ach = null;
+  for (var i = 0; i < window.LW_ACHIEVEMENTS.length; i++) {
+    if (window.LW_ACHIEVEMENTS[i].id === achId) { ach = window.LW_ACHIEVEMENTS[i]; break; }
+  }
+  if (!ach) return;
+  var unlocked = window.loadAchievements ? window.loadAchievements() : {};
+  var got = !!unlocked[ach.id];
+  var body = [];
+  body.push({type:'quote', text: ach.desc});
+  body.push({type:'section-head', text:'Reward'});
+  body.push({type:'stat', label:'Sunbeams', value:'+25 \u26a1'});
+  body.push({type:'divider'});
+  body.push({type:'section-head', text:'Status'});
+  body.push({type:'stat', label:'Unlocked', value: got ? 'Yes' : 'Not yet'});
+  if (got && unlocked[ach.id] && unlocked[ach.id].ts) {
+    var d = new Date(unlocked[ach.id].ts);
+    body.push({type:'stat', label:'When', value: d.toISOString().split('T')[0]});
+  }
+  window.LW_Reader.open({
+    eyebrow: 'ACHIEVEMENT',
+    title: ach.icon + ' ' + ach.name,
+    subtitle: null,
+    theme: got ? 'gold' : 'sage',
+    chips: [got ? 'UNLOCKED' : 'LOCKED', '+25 \u26a1'],
+    body: body,
+    actions: [{label:'CLOSE', kind:'ghost'}]
+  });
+};
+
 // ═══ MUTATION DETAIL PAGE via LW_Reader ═══
 // 13 mutations at ~1.6% each. Tap a plant's mutation chip → Reader.
 var LW_MUTATION_LORE = {
@@ -57273,6 +57310,33 @@ function _bosSecretsContent() {
     }
   }
   h+='</div></div>';
+
+  // ─── ACHIEVEMENTS ─────────────────────────────────────────────
+  // All 29 achievements in a dense tile grid. Unlocked = full color,
+  // locked = muted question mark. Tap → Reader page.
+  try {
+    if (window.LW_ACHIEVEMENTS && window.loadAchievements) {
+      var achs = window.LW_ACHIEVEMENTS;
+      var achUnlock = window.loadAchievements();
+      var achGot = 0;
+      for (var _agi = 0; _agi < achs.length; _agi++) if (achUnlock[achs[_agi].id]) achGot++;
+      h += '<div style="margin-bottom:0.8rem;">';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.4rem;">\u2605 ACHIEVEMENTS <span style="color:var(--muted);font-size:0.5rem;">' + achGot + ' / ' + achs.length + '</span></div>';
+      h += '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;">';
+      for (var ai = 0; ai < achs.length; ai++) {
+        var a = achs[ai];
+        var gotIt = !!achUnlock[a.id];
+        var bg = gotIt ? 'rgba(74,124,53,0.15)' : 'rgba(26,36,22,0.3)';
+        var bd = gotIt ? 'rgba(122,179,86,0.3)' : 'rgba(74,124,53,0.06)';
+        var op = gotIt ? '' : 'opacity:0.4;';
+        h += '<div onclick="if(window._lwShowAchievementDetail)_lwShowAchievementDetail(\''+a.id+'\')" style="padding:4px 2px;background:'+bg+';border:1px solid '+bd+';border-radius:5px;text-align:center;min-height:42px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;'+op+'" title="'+a.name+' \u2014 '+a.desc+'">';
+        h += '<div style="font-size:0.85rem;line-height:1;">'+(gotIt?a.icon:'?')+'</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.26rem;color:'+(gotIt?'var(--cream)':'var(--muted)')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;margin-top:1px;">'+(gotIt?a.name:'???')+'</div>';
+        h += '</div>';
+      }
+      h += '</div></div>';
+    }
+  } catch(e){}
 
   // ─── TERRA GRADES ──────────────────────────────────────────────
   // 7 rarity tiers. Each tile shows your count of plants at that tier.
