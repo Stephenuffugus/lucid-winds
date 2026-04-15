@@ -27753,24 +27753,38 @@ document.addEventListener('keydown', function(e) {
         if (_crownCount > 0) _spotFacts.push('Crown heritage: ' + _crownCount + ' plant' + (_crownCount > 1 ? 's' : ''));
         var _crossCount = 0; gh.forEach(function(p) { if (p.isCross) _crossCount++; });
         if (_crossCount > 0) _spotFacts.push('Bred: ' + _crossCount + ' · Minted: ' + (gh.length - _crossCount));
+        // Pre-compute traits once per plant — used by rarity tier, companion,
+        // synergy, and season loops below. Cuts hashToTraits calls 4x→1x.
+        var _spotTraits = [];
+        if (window.hashToTraits) {
+          gh.forEach(function(p) {
+            try {
+              var t = hashToTraits(p.hash);
+              if (p.generation) t.chimerGen = p.generation;
+              if (p.breedLayers) t.breedLayers = p.breedLayers;
+              if (p.compostLayers) t.compostLayers = p.compostLayers;
+              _spotTraits.push(t);
+            } catch(e) { _spotTraits.push(null); }
+          });
+        }
         // Rarity tier breakdown
-        if (window.hashToTraits && window.getTerraGrade) {
+        if (window.getTerraGrade && _spotTraits.length) {
           var _tierCounts = {};
-          gh.forEach(function(p) { try { var t = hashToTraits(p.hash); if(p.generation)t.chimerGen=p.generation; if(p.breedLayers)t.breedLayers=p.breedLayers; if(p.compostLayers)t.compostLayers=p.compostLayers; var g = getTerraGrade(t); _tierCounts[g.name] = (_tierCounts[g.name]||0)+1; } catch(e){} });
+          _spotTraits.forEach(function(t) { if(t) try { var g = getTerraGrade(t); _tierCounts[g.name] = (_tierCounts[g.name]||0)+1; } catch(e){} });
           var _tierStr = [];
           ['Cosmic','Mythic','Legendary','Epic','Rare','Uncommon'].forEach(function(tn) { if(_tierCounts[tn]) _tierStr.push(_tierCounts[tn]+' '+tn); });
           if (_tierStr.length > 0) _spotFacts.push(_tierStr.join(' · '));
         }
         // Companion count
         var _compCount = 0;
-        gh.forEach(function(p) { try { var t = hashToTraits(p.hash); if(t.companion >= 20) _compCount++; } catch(e){} });
+        _spotTraits.forEach(function(t) { if(t && t.companion >= 20) _compCount++; });
         if (_compCount > 0) _spotFacts.push(_compCount + ' companion' + (_compCount>1?'s':'') + ' discovered');
         // Synergy count
         var _synCount = 0;
-        gh.forEach(function(p) { try { var t = hashToTraits(p.hash); var s = window.getSynergy ? getSynergy(t) : null; if(s) _synCount++; } catch(e){} });
+        if (window.getSynergy) _spotTraits.forEach(function(t) { if(t) try { if(getSynergy(t)) _synCount++; } catch(e){} });
         if (_synCount > 0) _spotFacts.push(_synCount + ' synerg' + (_synCount>1?'ies':'y') + ' active');
         // Season diversity
-        var _seasons = {}; gh.forEach(function(p) { try { var t = hashToTraits(p.hash); _seasons[t.season] = true; } catch(e){} });
+        var _seasons = {}; _spotTraits.forEach(function(t) { if(t) _seasons[t.season] = true; });
         var _sCount = Object.keys(_seasons).length;
         if (_sCount === 4) _spotFacts.push('All 4 seasons represented — perfect diversity');
         else if (_sCount >= 2) _spotFacts.push(_sCount + '/4 seasons collected');
