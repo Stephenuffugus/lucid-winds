@@ -46187,10 +46187,13 @@ var RANKS=[
 ];
 // Level-gated Wild v3 unlocks. Shown in the level-up celebration card.
 var LEVEL_UNLOCKS={
+  2:  {key:'nurseryTab',   title:'Nursery tab',          desc:'Your seeds live here. Water a seed on 3 different days and it blooms into a new plant.'},
   3:  {key:'wildTab',      title:'Wild tab',             desc:'Walk the world. Drop plants in the wild, collect feral seeds, meet strangers\u2019 gardens.'},
+  4:  {key:'feralCollect', title:'Feral seeds',          desc:'Glowing hexes on the Wild map hold wild seeds. Tap one within 75m to start a foraging attempt.'},
   5:  {key:'strangerTend', title:'Tend stranger plants', desc:'You can now tend other keepers\u2019 wild plants within 75m for +2 Dew each.'},
   6:  {key:'classPreview', title:'A path is forming',    desc:'Next level you\u2019ll choose a Keeper class \u2014 Forager, Breeder, Cartographer, Tender, or Keeper. Each shapes how you play.'},
   7:  {key:'breed',        title:'Greenhouse breeding',  desc:'Cross-pollinate two of your own plants to grow a chimera seed. Choose your Keeper class in the Book of Secrets.'},
+  9:  {key:'potShop',      title:'Pot Shop',             desc:'Ritual vessels unlock in the Nursery \u2014 each one bakes a unique bonus into the plant at bloom.'},
   10: {key:'fruitHarvest', title:'Fruit harvest',        desc:'Take ripe fruit from stranger wild plants for Dew (small bloom delay).'},
   12: {key:'mergeBreed',   title:'Nursery merge breed',  desc:'Merge two nursery seeds into one for trait selection.'},
   15: {key:'cutting',      title:'Wild cuttings',        desc:'Take a cutting from a stranger wild plant — sample breeding seed.'},
@@ -47217,6 +47220,39 @@ function _loadCompanion(){
       }
     } catch(e) {}
     if(!_buffText)_buffText='Passive companion';
+    // Active-effects panel — surfaces the invisible family multipliers so
+    // the companion ladder actually FEELS like it's doing something. Reads
+    // FAMILY_BUFFS for the companion's family, runs each buff kind through
+    // getCompanionMult (which stacks base × class affinity × level mult),
+    // and prints only the ones that ended up > 1.0.
+    try {
+      if (window.LW_COMPANION && typeof comp.idx === 'number') {
+        var _famK = window.LW_COMPANION.getFamily(comp.idx);
+        var _fbAll = window.LW_COMPANION.FAMILY_BUFFS || {};
+        var _famBuffs = _fbAll[_famK];
+        if (_famBuffs) {
+          var _BUFF_LABELS = {
+            dewRate:'Dew income', feralRange:'Feral range', feralRarity:'Rare feral odds',
+            pollen:'Pollen/XP', chimeraPurity:'Chimera purity', breedReward:'Breed reward',
+            plantLifespan:'Plant lifespan', defenseEA:'Defense EA', stepXp:'Step XP',
+            biomeReveal:'Biome reveal', waterEfficiency:'Water XP', eaFloor:'EA floor',
+            bookEntryRate:'Book entries', revealTrait:'Trait reveal'
+          };
+          var _chips = '';
+          for (var _bk in _famBuffs) {
+            var _mult = window.LW_COMPANION.getCompanionMult(_bk);
+            if (_mult > 1.0) {
+              var _pct = Math.round((_mult - 1) * 100);
+              var _lbl = _BUFF_LABELS[_bk] || _bk;
+              _chips += '<span style="display:inline-block;margin:2px 3px 2px 0;padding:2px 6px;background:rgba(74,124,53,0.18);border:1px solid rgba(122,179,86,0.3);border-radius:10px;font-family:DM Mono,monospace;font-size:0.4rem;color:var(--sage);">'+_lbl+' +' + _pct + '%</span>';
+            }
+          }
+          if (_chips) {
+            _buffText += '<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(200,168,75,0.12);"><div style="font-family:Bebas Neue,sans-serif;font-size:0.48rem;letter-spacing:0.1em;color:var(--gold);margin-bottom:3px;">ACTIVE EFFECTS</div>' + _chips + '</div>';
+          }
+        }
+      }
+    } catch(e) {}
     // Append friendship bar — cosmetic title progression, no gameplay
     // effect. Bar fills from prior threshold to next; at max shows the
     // beloved title in gold.
@@ -56802,6 +56838,53 @@ window.LW_Comp = (function(){
     if(lvl>=7){
       out.push({icon:'📖',title:'Open the Book of Secrets',body:'Your diary of discoveries, companion bonds, and weekly herbarium goals.',priority:30,action:function(){if(window._openCompendiumUI)_openCompendiumUI();}});
     }
+    // Class XP close to next level — poke the player toward their class XP source
+    try {
+      if (cls && window.LW_CLASSES && window.LW_CLASSES[cls]) {
+        var _cxp = JSON.parse(localStorage.getItem('lw_class_xp')||'{}');
+        var _xCur = _cxp[cls] || 0;
+        var _nextL=null,_nextT=null;
+        if (_xCur < 100) { _nextL = 'Journeyman'; _nextT = 100; }
+        else if (_xCur < 500) { _nextL = 'Master'; _nextT = 500; }
+        if (_nextT) {
+          var _remaining = _nextT - _xCur;
+          var _pct = _xCur / _nextT;
+          if (_pct >= 0.7) {
+            out.push({icon:'\ud83c\udf3f',title:_remaining+' XP to '+_nextL,body:'Your '+window.LW_CLASSES[cls].name+' rank is close to the next tier. Do what your class rewards to push it over.',priority:38,action:function(){if(window._openCompendiumUI)_openCompendiumUI();setTimeout(function(){if(window._bosSetTab)window._bosSetTab('class');},250);}});
+          }
+        }
+      }
+    } catch(e) {}
+    // Tool cooldown — shears is the only cooldown-bearing tool today
+    try {
+      if (cls && window._LW_toolMod) {
+        var _shearMod = window._LW_toolMod('shears');
+        var _shearLast = parseInt(localStorage.getItem('lw_tool_shears_last')||'0',10);
+        if (_shearMod && _shearLast && (Date.now() - _shearLast) >= _shearMod) {
+          // Shears are ready — worth surfacing only if the player has
+          // at least one own wild plant to prune.
+          var _ownWild = (wild||[]).filter(function(w){return w&&w.own;});
+          if (_ownWild.length > 0) {
+            out.push({icon:'\u2702\ufe0f',title:'Shears ready',body:'Your shears cooled down. Prune an own wild plant to tune its fruit cycle.',priority:35,action:function(){if(window.switchTab)switchTab('wild');}});
+          }
+        }
+      }
+    } catch(e) {}
+    // Foraging — if player has used 1-2 attempts on a zone today and is still near it
+    try {
+      if (lvl>=4 && window.LW_FORAGING) {
+        var _fMap = JSON.parse(localStorage.getItem('lw_forage_attempts')||'{}');
+        var _today2 = new Date().toISOString().slice(0,10);
+        for (var _fz in _fMap) {
+          var _fRec = _fMap[_fz];
+          if (!_fRec || _fRec.date !== _today2) continue;
+          if (_fRec.count >= 1 && _fRec.count < 3) {
+            out.push({icon:'\ud83c\udf31',title:(3-_fRec.count)+' forage attempt'+(3-_fRec.count===1?'':'s')+' left nearby',body:'You started a foraging attempt on a hex today. Tap it again \u2014 each attempt reveals more info than the last.',priority:36,action:function(){if(window.switchTab)switchTab('wild');}});
+            break;
+          }
+        }
+      }
+    } catch(e) {}
 
     // ─── fallback: if nothing specific fits, suggest the core loop ───
     if(out.length===0){
