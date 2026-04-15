@@ -26824,6 +26824,8 @@ document.addEventListener('keydown', function(e) {
     saveGreenhouse(gh);
     // Check achievements
     setTimeout(checkAchievements, 200);
+    // Book of Secrets passive event scan (Full Grove, Collector, Cicada, Beholder, etc.)
+    try { if (window.LW_Events) setTimeout(function(){ window.LW_Events.scanPassive(); }, 400); } catch(e) {}
     // First-time synergy discovery — fires only for new-to-player synergies.
     try { if (window._lwCheckSynergyDiscovery) setTimeout(function(){ window._lwCheckSynergyDiscovery(hash); }, 3000); } catch(e) {}
     // First plant ever minted by this keeper — one-shot celebration.
@@ -37729,6 +37731,8 @@ function _harvestApplyLocal(p,plantObj,reward){
   } else {
     _pouch.push({hash:p.hash,name:p.name,type:'harvest',grade:p.grade,gc:p.gc});_savePouch();
   }
+  // Book of Secrets: Full Moon Harvest (harvest between 6pm–11pm)
+  try { if (window.LW_Events) window.LW_Events.checkEveningHarvest(); } catch(e){}
   // Pouch tool XP — was only granted on feral collection, leaving the
   // tool effectively unleveled for players who mostly harvest. Adds
   // a flat 4 XP per harvest so Pouch can actually reach Lv 3 in
@@ -37848,6 +37852,7 @@ function _waterOwnPlant(p,mk){
   try{if(window.LW_XP)window.LW_XP.grantOnce('first_water',10,'first_of_kind','💧 +10 XP — first watering. Plants remember kindness.');}catch(e){}
   if(window._LW_toolXP)window._LW_toolXP('can',3);
   if(window.LW_Log)window.LW_Log.write('wild_watered',{hash:p.hash});
+  try { if (window.LW_Events) window.LW_Events.incCounter('rainfall', 3, 'Rainfall', 'session'); } catch(e){}
   _play('water');
   _toast('\ud83d\udca7 Watered! Lifespan reset. (-5 Dew, +'+_waterXP+' XP)');
   if(mk&&mk._icon){
@@ -39029,6 +39034,8 @@ function _finishDrop(defenderGame){
       displaced:pd.displaced?pd.displaced.hash:null
     });
   }
+  // Book of Secrets: Root Down (first wild plant ever)
+  try { if (window.LW_Events) window.LW_Events.fire('Root Down'); } catch(e){}
 }
 
 // ═══ STATE ═══
@@ -40228,6 +40235,7 @@ window._hexAction=function(action){
       if(window._haptic)_haptic('bloom');
       if(window._trackQuest)_trackQuest('plantsWatered',1);
       if(window.LW_Log)window.LW_Log.write('wild_watered',{hash:p.hash});
+      try { if (window.LW_Events) window.LW_Events.incCounter('rainfall', 3, 'Rainfall', 'session'); } catch(e){}
     }else{
       // Water a stranger's plant — budgeted kindness, +2h via shared marker.
       var wk='lw_water_budget',wb={};try{wb=JSON.parse(localStorage.getItem(wk)||'{}');}catch(e){}
@@ -51402,6 +51410,8 @@ function _showDailyReward() {
   // Haptic + analytics
   try { if (window._haptic) _haptic('sync'); } catch(e) {}
   if (typeof gtag !== 'undefined') gtag('event', 'daily_login', { streak: daily.streak, reward: dayReward, day: dayOfMonth, logged: loggedDays });
+  // Book of Secrets: First Light (dawn 5-7am) + Century Keeper (100-day streak)
+  try { if (window.LW_Events) { window.LW_Events.checkFirstLight(); window.LW_Events.checkLoginStreak(daily.streak || 0); window.LW_Events.scanPassive(); } } catch(e){}
 }
 
 // Expose for triggering after vault loads
@@ -55916,6 +55926,163 @@ function _bosReportContent() {
   }
   return h;
 }
+
+// ═══ LW_EVENTS — Book of Secrets discovery engine ═══
+// Fires when a named event unlocks. Stamps localStorage['lw_wild_events'],
+// toasts the keeper, writes to the activity log, sends a GA beacon. Safe to
+// call from any gameplay hook — idempotent (no-op if already discovered).
+// Counter helpers support cumulative events (Rainfall = 3 waters/session,
+// Pollen Trail = 3 cross-pol/week, etc.). All event-name strings match the
+// catalog in _bosEventsContent exactly — changing one requires changing both.
+(function(){
+  'use strict';
+  var LS_KEY = 'lw_wild_events';
+  var CTR_KEY = 'lw_wild_events_ctr';
+  function _read(){ try { return JSON.parse(localStorage.getItem(LS_KEY)||'{}'); } catch(e){ return {}; } }
+  function _write(o){ try { localStorage.setItem(LS_KEY, JSON.stringify(o)); } catch(e){} }
+  function _readCtr(){ try { return JSON.parse(localStorage.getItem(CTR_KEY)||'{}'); } catch(e){ return {}; } }
+  function _writeCtr(o){ try { localStorage.setItem(CTR_KEY, JSON.stringify(o)); } catch(e){} }
+  function _todayKey(){ return new Date().toISOString().split('T')[0]; }
+  function _weekKey(){
+    var d = new Date(); var jan1 = new Date(d.getFullYear(),0,1);
+    var wk = Math.ceil((((d - jan1) / 86400000) + jan1.getDay() + 1) / 7);
+    return d.getFullYear() + '-W' + wk;
+  }
+
+  function fire(name){
+    if (!name) return false;
+    var u = _read();
+    if (u[name]) return false;
+    u[name] = { t: Date.now(), d: _todayKey() };
+    _write(u);
+    // Toast — keep it short, the event name is the payload
+    try { if (window._toast) window._toast('\ud83d\udcdc DISCOVERED: ' + name); } catch(e){}
+    try { if (window._haptic) window._haptic('ok'); } catch(e){}
+    // Activity log
+    try {
+      if (window.LW_Log && window.LW_Log.write) {
+        window.LW_Log.write('event_discovered', { name: name });
+      }
+    } catch(e){}
+    // GA funnel beacon — event discoveries are a top-of-funnel engagement signal
+    try { if (typeof gtag !== 'undefined') gtag('event', 'bos_event_discovered', { event_name: name }); } catch(e){}
+    return true;
+  }
+
+  // Increment a session/day/week counter. Fires eventName when threshold hit.
+  // scope: 'session' (in-memory), 'day', 'week', 'all' (default).
+  var _sessionCtrs = {};
+  function incCounter(key, threshold, eventName, scope){
+    scope = scope || 'all';
+    var val = 0;
+    if (scope === 'session') {
+      val = (_sessionCtrs[key] = (_sessionCtrs[key] || 0) + 1);
+    } else {
+      var ctrs = _readCtr();
+      var entry = ctrs[key] || { n: 0, k: '' };
+      var currentK = scope === 'day' ? _todayKey() : scope === 'week' ? _weekKey() : 'all';
+      if (entry.k !== currentK) entry = { n: 0, k: currentK };
+      entry.n = (entry.n || 0) + 1;
+      ctrs[key] = entry; _writeCtr(ctrs);
+      val = entry.n;
+    }
+    if (val >= threshold) return fire(eventName);
+    return false;
+  }
+
+  function fired(name){ return !!_read()[name]; }
+  function resetAll(){ _write({}); _writeCtr({}); _sessionCtrs = {}; }
+
+  // Passive scan — call after greenhouse/companion changes. Checks events
+  // that depend on collection state rather than a single action.
+  function scanPassive(){
+    try {
+      var gh = [];
+      try { gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]'); } catch(e){}
+      // Full Grove — 60 slots filled
+      if (gh.length >= 60) fire('Full Grove');
+      // The Collector — own one of every rarity tier (need all 7 grades)
+      if (!fired('The Collector') && window.hashToTraits && window.getTerraGrade) {
+        var tiers = {};
+        for (var i = 0; i < gh.length; i++) {
+          try {
+            var t = window.hashToTraits(gh[i].hash);
+            var g = window.getTerraGrade(t);
+            if (g && g.name) tiers[g.name] = true;
+          } catch(e){}
+        }
+        var need = ['Common','Uncommon','Rare','Epic','Legendary','Mythic','Cosmic'];
+        var allSeven = true;
+        for (var ni = 0; ni < need.length; ni++) if (!tiers[need[ni]]) { allSeven = false; break; }
+        if (allSeven) fire('The Collector');
+      }
+      // Cicada Chorus — any plant with Cicada companion (idx 33)
+      // Beholder's Gaze — Cosmic plant (Beholder idx 38)
+      if ((!fired('Cicada Chorus') || !fired("The Beholder's Gaze")) && window.hashToTraits) {
+        for (var j = 0; j < gh.length; j++) {
+          try {
+            var tr = window.hashToTraits(gh[j].hash);
+            if (!tr) continue;
+            if (tr.companion === 33) fire('Cicada Chorus');
+            if (tr.companion === 38) fire("The Beholder's Gaze");
+          } catch(e){}
+        }
+      }
+      // The Alchemist — 20 synergies discovered
+      if (!fired('The Alchemist') && window.getCompendiumProgress) {
+        try {
+          var p = window.getCompendiumProgress();
+          if (p && p.found >= 20) fire('The Alchemist');
+        } catch(e){}
+      }
+      // Chimera's Wake — any Gen 3+ chimera in greenhouse
+      // Deep Roots — any plant alive >= 30 days
+      // Dual Bloom — 2+ plants with the same mint date
+      if ((!fired("Chimera's Wake") || !fired('Deep Roots') || !fired('Dual Bloom')) && gh.length) {
+        var now = Date.now();
+        var THIRTY = 30 * 86400000;
+        var dateCount = {};
+        for (var k = 0; k < gh.length; k++) {
+          var pl = gh[k];
+          // Chimera gen — prefer plant.generation (set by breed), fallback to traits
+          var gen = pl.generation || 1;
+          if (gen < 3 && window.hashToTraits) {
+            try { var trG = window.hashToTraits(pl.hash); if (trG && trG.chimerGen) gen = trG.chimerGen; } catch(e){}
+          }
+          if (gen >= 3) fire("Chimera's Wake");
+          if (pl.born && (now - pl.born) >= THIRTY) fire('Deep Roots');
+          if (pl.date) dateCount[pl.date] = (dateCount[pl.date] || 0) + 1;
+        }
+        for (var dk in dateCount) { if (dateCount[dk] >= 2) { fire('Dual Bloom'); break; } }
+      }
+    } catch(e){}
+  }
+
+  // Time-of-day checks — First Light (dawn 5-7am), Full Moon Harvest (18-23).
+  // Caller supplies what happened; we only decide whether to fire.
+  function checkFirstLight(){
+    var h = new Date().getHours();
+    if (h >= 5 && h <= 7) fire('First Light');
+  }
+  function checkEveningHarvest(){
+    var h = new Date().getHours();
+    if (h >= 18 && h <= 23) fire('Full Moon Harvest');
+  }
+  function checkLoginStreak(streakDays){
+    if (streakDays >= 100) fire('Century Keeper');
+  }
+
+  window.LW_Events = {
+    fire: fire,
+    fired: fired,
+    incCounter: incCounter,
+    scanPassive: scanPassive,
+    checkFirstLight: checkFirstLight,
+    checkEveningHarvest: checkEveningHarvest,
+    checkLoginStreak: checkLoginStreak,
+    resetAll: resetAll
+  };
+})();
 
 function _bosEventsContent() {
   var h = '';
