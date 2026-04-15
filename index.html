@@ -33203,13 +33203,19 @@ document.addEventListener('keydown', function(e) {
       newlyUnlocked.forEach(function(ach){
         // Grant +25 Sunbeams via the proper earnHashes path
         if (typeof earnHashes === 'function') earnHashes(25);
-        _showAchToast(ach);
+        // Silent — no toast. The Sunbeam counter's visible tick is the
+        // reward confirmation. Achievement unlock surfaces through the
+        // BoS SECRETS tab badge; keeper reads it when they open the book.
+        try { if (window._haptic) window._haptic('bloom'); } catch(e){}
         if (window.LW_Log) window.LW_Log.write('achievement_unlock', {
           id: ach.id, name: ach.name, icon: ach.icon, reward: 25
         });
         if(typeof gtag!=='undefined') gtag('event','achievement_unlock',{id:ach.id});
       });
       updateDashboard();
+      // Refresh the book badge so the keeper sees the number roll up on
+      // the keeper-bar icon immediately, even with the book closed.
+      try { if (window._bosRefreshBadges) window._bosRefreshBadges(); } catch(e){}
     }
     renderAchievements();
   }
@@ -54428,8 +54434,10 @@ window._bosGetTabUnread = function(tab) {
       for (var k in unlocked) { if (unlocked[k] && unlocked[k].t && unlocked[k].t > lastRead) n++; }
       return n;
     }
-    // SECRETS — count new synergies + new mutations + new grade/season/biome
-    // firsts since last-read. Uses the LW_Log stream as the canonical source.
+    // SECRETS — count new synergies + new achievements since last-read.
+    // (Mutations/biomes/seasons/grades are visible in this tab too but
+    // their "firsts" are best captured via the synergy/achievement stream
+    // rather than scanning every plant trait — would be noisy.)
     if (tab === 'secrets') {
       if (!window.LW_Log) return 0;
       var all = window.LW_Log.all();
@@ -54437,6 +54445,7 @@ window._bosGetTabUnread = function(tab) {
       for (var i = 0; i < all.length; i++) {
         if (all[i].ts <= lastRead) continue;
         if (all[i].type === 'synergy_discovered') c++;
+        else if (all[i].type === 'achievement_unlock') c++;
       }
       return c;
     }
@@ -57708,25 +57717,42 @@ function _bosSecretsContent() {
 
   // ─── ACHIEVEMENTS ─────────────────────────────────────────────
   // All 29 achievements in a dense tile grid. Unlocked = full color,
-  // locked = muted question mark. Tap → Reader page.
+  // locked = muted question mark. Tap → Reader page. NEW dot for any
+  // achievement unlocked since the keeper's last visit.
   try {
     if (window.LW_ACHIEVEMENTS && window.loadAchievements) {
       var achs = window.LW_ACHIEVEMENTS;
       var achUnlock = window.loadAchievements();
       var achGot = 0;
       for (var _agi = 0; _agi < achs.length; _agi++) if (achUnlock[achs[_agi].id]) achGot++;
+      // Build NEW set from log entries since last SECRETS visit
+      var achNewSet = {};
+      try {
+        if (window.LW_Log && window._bosPrevReadTs != null) {
+          var _achLog = window.LW_Log.all();
+          for (var _ali = 0; _ali < _achLog.length; _ali++) {
+            var _ale = _achLog[_ali];
+            if (_ale.type === 'achievement_unlock' && _ale.ts > window._bosPrevReadTs && _ale.data && _ale.data.id) {
+              achNewSet[_ale.data.id] = true;
+            }
+          }
+        }
+      } catch(e){}
       h += '<div style="margin-bottom:0.8rem;">';
       h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.4rem;">\u2605 ACHIEVEMENTS <span style="color:var(--muted);font-size:0.5rem;">' + achGot + ' / ' + achs.length + '</span></div>';
       h += '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;">';
       for (var ai = 0; ai < achs.length; ai++) {
         var a = achs[ai];
         var gotIt = !!achUnlock[a.id];
-        var bg = gotIt ? 'rgba(74,124,53,0.15)' : 'rgba(26,36,22,0.3)';
-        var bd = gotIt ? 'rgba(122,179,86,0.3)' : 'rgba(74,124,53,0.06)';
+        var isFresh = !!achNewSet[a.id];
+        var bg = gotIt ? (isFresh ? 'rgba(200,168,75,0.18)' : 'rgba(74,124,53,0.15)') : 'rgba(26,36,22,0.3)';
+        var bd = isFresh ? 'var(--gold)' : (gotIt ? 'rgba(122,179,86,0.3)' : 'rgba(74,124,53,0.06)');
         var op = gotIt ? '' : 'opacity:0.4;';
-        h += '<div onclick="if(window._lwShowAchievementDetail)_lwShowAchievementDetail(\''+a.id+'\')" style="padding:4px 2px;background:'+bg+';border:1px solid '+bd+';border-radius:5px;text-align:center;min-height:42px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;'+op+'" title="'+a.name+' \u2014 '+a.desc+'">';
+        var glow = isFresh ? 'box-shadow:0 0 8px rgba(200,168,75,0.4);' : '';
+        h += '<div onclick="if(window._lwShowAchievementDetail)_lwShowAchievementDetail(\''+a.id+'\')" style="position:relative;padding:4px 2px;background:'+bg+';border:1px solid '+bd+';border-radius:5px;text-align:center;min-height:42px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;'+op+glow+'" title="'+a.name+(isFresh?' (new)':'')+' \u2014 '+a.desc+'">';
+        if (isFresh) h += '<span style="position:absolute;top:2px;right:2px;width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 4px rgba(200,168,75,0.9);"></span>';
         h += '<div style="font-size:0.85rem;line-height:1;">'+(gotIt?a.icon:'?')+'</div>';
-        h += '<div style="font-family:DM Mono,monospace;font-size:0.26rem;color:'+(gotIt?'var(--cream)':'var(--muted)')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;margin-top:1px;">'+(gotIt?a.name:'???')+'</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.26rem;color:'+(isFresh?'var(--gold)':(gotIt?'var(--cream)':'var(--muted)'))+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;margin-top:1px;">'+(gotIt?a.name:'???')+'</div>';
         h += '</div>';
       }
       h += '</div></div>';
