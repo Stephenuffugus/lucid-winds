@@ -2755,6 +2755,49 @@
     .lw-modal-btn.danger{border-color:rgba(200,80,60,0.48);background:linear-gradient(180deg,rgba(180,60,40,0.3),rgba(120,30,20,0.42));color:#e8a0a0;}
     .lw-modal-btn.ghost{min-height:40px;font-size:0.58rem;border-color:rgba(122,179,86,0.14);background:rgba(26,36,22,0.2);color:var(--muted);}
 
+    /* ── LW_READER — unified lore / detail modal ── */
+    /* Full-screen scrolling "journal page" used for every in-game detail:
+       synergy, companion, event, biome, plant, class, milestone. Shares the
+       .lw-modal-backdrop from the modal frame. Theme prop tints the hero
+       band, chips, and CTA border. Sections = para / quote / plants / stat /
+       divider / hero-art. Drop in copy, no new UI code per page. */
+    .lw-reader{position:relative;max-width:440px;width:100%;max-height:92vh;display:flex;flex-direction:column;border-radius:16px;background:linear-gradient(165deg,rgba(20,24,17,0.98) 0%,rgba(26,36,22,0.95) 50%,rgba(13,16,12,0.98) 100%);border:1.5px solid var(--reader-accent,rgba(200,168,75,0.35));box-shadow:inset 0 1px 0 rgba(240,235,216,0.06),inset 0 -1px 0 rgba(0,0,0,0.3),0 24px 60px rgba(0,0,0,0.7),0 0 0 0.5px var(--reader-accent,rgba(200,168,75,0.15));overflow:hidden;animation:drawerIn 0.38s cubic-bezier(0.2,0.9,0.3,1);}
+    .lw-reader.theme-elemental{--reader-accent:rgba(212,168,67,0.5);--reader-accent-soft:rgba(212,168,67,0.15);}
+    .lw-reader.theme-nature{--reader-accent:rgba(122,179,86,0.5);--reader-accent-soft:rgba(122,179,86,0.15);}
+    .lw-reader.theme-cosmic{--reader-accent:rgba(168,143,212,0.5);--reader-accent-soft:rgba(168,143,212,0.15);}
+    .lw-reader.theme-dark{--reader-accent:rgba(176,112,112,0.5);--reader-accent-soft:rgba(176,112,112,0.15);}
+    .lw-reader.theme-mythical{--reader-accent:rgba(200,168,75,0.55);--reader-accent-soft:rgba(200,168,75,0.18);}
+    .lw-reader.theme-gold{--reader-accent:rgba(200,168,75,0.55);--reader-accent-soft:rgba(200,168,75,0.18);}
+    .lw-reader.theme-sage{--reader-accent:rgba(122,179,86,0.5);--reader-accent-soft:rgba(122,179,86,0.15);}
+    .lw-reader.theme-blue{--reader-accent:rgba(91,143,185,0.5);--reader-accent-soft:rgba(91,143,185,0.15);}
+    .lw-reader-hero{position:relative;height:140px;overflow:hidden;background:var(--reader-accent-soft,rgba(26,36,22,0.4));flex-shrink:0;}
+    .lw-reader-hero img{width:100%;height:100%;object-fit:cover;opacity:0.82;}
+    .lw-reader-hero::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(13,16,12,0.15) 0%,rgba(13,16,12,0.85) 100%);pointer-events:none;}
+    .lw-reader-hero-inline{text-align:center;padding:18px 0 6px;}
+    .lw-reader-hero-inline img{width:140px;height:140px;object-fit:contain;filter:drop-shadow(0 6px 16px rgba(0,0,0,0.6)) drop-shadow(0 0 20px var(--reader-accent-soft,rgba(200,168,75,0.2)));}
+    .lw-reader-close{position:absolute;top:10px;right:10px;width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(13,16,12,0.7);color:var(--cream);font-size:0.85rem;cursor:pointer;z-index:2;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+    .lw-reader-head{padding:14px 20px 8px;border-bottom:1px solid var(--reader-accent-soft);}
+    .lw-reader-eyebrow{font-family:'Bebas Neue',sans-serif;font-size:0.52rem;letter-spacing:0.22em;color:var(--reader-accent,var(--gold));margin-bottom:3px;}
+    .lw-reader-title{font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--cream);line-height:1.2;margin-bottom:3px;}
+    .lw-reader-subtitle{font-family:'Playfair Display',serif;font-style:italic;font-size:0.68rem;color:var(--muted);margin-bottom:6px;}
+    .lw-reader-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;}
+    .lw-reader-chip{font-family:'DM Mono',monospace;font-size:0.4rem;letter-spacing:0.06em;color:var(--reader-accent,var(--gold));background:var(--reader-accent-soft,rgba(200,168,75,0.1));border:1px solid var(--reader-accent-soft,rgba(200,168,75,0.2));border-radius:10px;padding:3px 8px;}
+    .lw-reader-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 20px 18px;}
+    .lw-reader-body>*+*{margin-top:12px;}
+    .lw-reader-para{font-family:'DM Sans',sans-serif;font-size:0.68rem;line-height:1.7;color:var(--cream);letter-spacing:0.01em;}
+    .lw-reader-quote{font-family:'Playfair Display',serif;font-style:italic;font-size:0.72rem;line-height:1.6;color:var(--reader-accent,var(--gold));border-left:2px solid var(--reader-accent,var(--gold));padding:4px 0 4px 12px;margin-left:4px;}
+    .lw-reader-stat{display:flex;justify-content:space-between;align-items:baseline;padding:6px 10px;background:rgba(13,16,12,0.5);border:1px solid var(--reader-accent-soft);border-radius:7px;}
+    .lw-reader-stat-label{font-family:'Bebas Neue',sans-serif;font-size:0.5rem;letter-spacing:0.14em;color:var(--muted);}
+    .lw-reader-stat-value{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--reader-accent,var(--gold));}
+    .lw-reader-divider{height:1px;background:linear-gradient(90deg,transparent,var(--reader-accent-soft),transparent);margin:8px 0;}
+    .lw-reader-section-head{font-family:'Bebas Neue',sans-serif;font-size:0.58rem;letter-spacing:0.16em;color:var(--reader-accent,var(--gold));margin-bottom:4px;text-transform:uppercase;}
+    .lw-reader-plants{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:6px;}
+    .lw-reader-plant{background:rgba(13,16,12,0.55);border:1px solid var(--reader-accent-soft);border-radius:8px;padding:5px;text-align:center;}
+    .lw-reader-plant-svg{width:48px;height:48px;margin:0 auto;display:block;}
+    .lw-reader-plant-name{font-family:'DM Mono',monospace;font-size:0.35rem;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px;}
+    .lw-reader-actions{display:flex;gap:6px;padding:10px 20px 14px;border-top:1px solid var(--reader-accent-soft);flex-shrink:0;}
+    .lw-reader-actions .lw-modal-btn{flex:1;}
+
     /* ── P3 · 3D CARD FLIP ── */
     .flip-container{perspective:800px;width:160px;aspect-ratio:2.5/3.5;margin:0 auto;}
     .flip-card{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform 0.72s cubic-bezier(0.45,0.05,0.55,0.95);will-change:transform;}
@@ -54701,48 +54744,140 @@ function _bosFormatWhen(ts) {
 window._bosActivityContent = _bosActivityContent;
 
 // ─── MEMENTOS TAB — permanent companion keepsakes ───
-// Tap handler for the synergy grid — shows the synergy's name, fx, EA bonus,
-// and which of the player's plants contribute to it (with thumbnail SVGs
-// so the player can jump to them). Uses the shared lw-modal-frame.
+// ═══ LW_READER — unified lore / detail page ═══
+// One entry point for every "here's what this thing is" view in the game.
+// Sections: para | quote | plants | stat | divider | section-head | html.
+// Theme: elemental | nature | cosmic | dark | mythical | gold | sage | blue.
+// Hero: a painting (cover) or a centered illustration (inline) or nothing.
+// Actions: array of {label, onclick, kind:'primary'|'gold'|'ghost'|'danger'}.
+// Re-used across synergy detail, companion profile, event detail, biome
+// detail, plant lore, class path, milestone deep-dive. New content pages
+// become pure data, not code.
+(function(){
+  function _esc(s){ if (s == null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function _renderSection(sec){
+    if (!sec || !sec.type) return '';
+    switch (sec.type) {
+      case 'para':         return '<div class="lw-reader-para">' + (sec.raw ? sec.text : _esc(sec.text||'')) + '</div>';
+      case 'quote':        return '<div class="lw-reader-quote">' + (sec.raw ? sec.text : _esc(sec.text||'')) + '</div>';
+      case 'divider':      return '<div class="lw-reader-divider"></div>';
+      case 'section-head': return '<div class="lw-reader-section-head">' + _esc(sec.text||'') + '</div>';
+      case 'stat':
+        return '<div class="lw-reader-stat"><span class="lw-reader-stat-label">' + _esc(sec.label||'') + '</span><span class="lw-reader-stat-value">' + _esc(sec.value||'') + '</span></div>';
+      case 'plants':
+        if (!sec.plants || !sec.plants.length) return '';
+        var ph = '<div class="lw-reader-plants">';
+        for (var i = 0; i < sec.plants.length; i++) {
+          var p = sec.plants[i];
+          var svg = '';
+          try { if (window._generatePlantSVG && p.hash) svg = window._generatePlantSVG(p.hash, 46, 1.0); } catch(e){}
+          ph += '<div class="lw-reader-plant"><div class="lw-reader-plant-svg">' + svg + '</div><div class="lw-reader-plant-name">' + _esc(p.name||'Plant') + '</div></div>';
+        }
+        ph += '</div>';
+        return ph;
+      case 'html':         return sec.html || '';
+    }
+    return '';
+  }
+  function open(opts){
+    opts = opts || {};
+    var prev = document.getElementById('lw-reader'); if (prev) try { prev.remove(); } catch(e){}
+    var m = document.createElement('div');
+    m.id = 'lw-reader';
+    m.className = 'lw-modal-backdrop';
+    var theme = opts.theme || 'gold';
+    var heroHtml = '';
+    if (opts.hero) {
+      if (opts.heroStyle === 'inline') {
+        heroHtml = '<div class="lw-reader-hero-inline"><img src="' + _esc(opts.hero) + '" alt="" onerror="this.style.display=\'none\';"/></div>';
+      } else {
+        heroHtml = '<div class="lw-reader-hero"><img src="' + _esc(opts.hero) + '" alt="" onerror="this.parentNode.style.display=\'none\';"/></div>';
+      }
+    }
+    var headHtml = '<div class="lw-reader-head">';
+    if (opts.eyebrow) headHtml += '<div class="lw-reader-eyebrow">' + _esc(opts.eyebrow) + '</div>';
+    if (opts.title)   headHtml += '<div class="lw-reader-title">' + _esc(opts.title) + '</div>';
+    if (opts.subtitle)headHtml += '<div class="lw-reader-subtitle">' + _esc(opts.subtitle) + '</div>';
+    if (opts.chips && opts.chips.length) {
+      headHtml += '<div class="lw-reader-chips">';
+      for (var ci = 0; ci < opts.chips.length; ci++) {
+        var chip = opts.chips[ci];
+        var label = typeof chip === 'string' ? chip : chip.label;
+        headHtml += '<span class="lw-reader-chip">' + _esc(label) + '</span>';
+      }
+      headHtml += '</div>';
+    }
+    headHtml += '</div>';
+    var bodyHtml = '<div class="lw-reader-body">';
+    if (opts.body && opts.body.length) {
+      for (var bi = 0; bi < opts.body.length; bi++) bodyHtml += _renderSection(opts.body[bi]);
+    }
+    bodyHtml += '</div>';
+    var actionsHtml = '';
+    var actions = opts.actions && opts.actions.length ? opts.actions : [{label:'CLOSE', kind:'ghost'}];
+    actionsHtml = '<div class="lw-reader-actions">';
+    for (var ai = 0; ai < actions.length; ai++) {
+      var a = actions[ai];
+      var kind = a.kind || (ai === 0 ? 'primary' : 'ghost');
+      var id = 'lw-reader-act-' + ai;
+      actionsHtml += '<button id="' + id + '" class="lw-modal-btn ' + kind + '">' + _esc(a.label||'OK') + '</button>';
+    }
+    actionsHtml += '</div>';
+    var html = '<div class="lw-reader theme-' + theme + '">' +
+      '<button class="lw-reader-close" aria-label="Close">\u2715</button>' +
+      heroHtml + headHtml + bodyHtml + actionsHtml + '</div>';
+    m.innerHTML = html;
+    m.onclick = function(e){ if (e.target === m) close(); };
+    m.querySelector('.lw-reader-close').onclick = close;
+    // Wire action handlers
+    for (var ai2 = 0; ai2 < actions.length; ai2++) {
+      (function(act, idx){
+        var btn = m.querySelector('#lw-reader-act-' + idx);
+        if (btn) btn.onclick = function(){ var r = act.onclick ? act.onclick() : null; if (r !== false) close(); };
+      })(actions[ai2], ai2);
+    }
+    document.body.appendChild(m);
+    try { if (window._haptic) window._haptic('tab'); } catch(e){}
+  }
+  function close(){
+    var m = document.getElementById('lw-reader');
+    if (m) try { m.remove(); } catch(e){}
+  }
+  window.LW_Reader = { open: open, close: close };
+})();
+
+// Synergy detail now uses LW_Reader — proves the pattern.
 window._lwShowSynergyDetail = function(synName) {
   var defs = window._lwSynergyDefs || {};
   var plants = window._lwSynergyPlants || {};
   var def = defs[synName];
   var contribs = plants[synName] || [];
   if (!def) { if (window._toast) _toast('Synergy not found.'); return; }
-  var prev = document.getElementById('lw-syn-detail'); if (prev) try { prev.remove(); } catch(e){}
-  var m = document.createElement('div');
-  m.id = 'lw-syn-detail';
-  m.className = 'lw-modal-backdrop';
-  var themeColors = { elemental:'#d4a843', nature:'#7ab356', cosmic:'#a88fd4', dark:'#b07070', mythical:'#c8a84b' };
-  var themeColor = themeColors[def.theme] || 'var(--gold)';
-  var h = '<div class="lw-modal-frame with-bottom-knots" style="max-width:380px;">';
-  h += '<span class="lw-modal-knot-bl"></span><span class="lw-modal-knot-br"></span>';
-  h += '<div class="lw-modal-title" style="color:' + themeColor + ';">\u2726 ' + def.name + '</div>';
-  h += '<div class="lw-modal-subtitle" style="color:var(--muted);font-size:0.48rem;letter-spacing:0.12em;text-transform:uppercase;font-style:normal;font-family:Bebas Neue,sans-serif;">' + (def.theme || 'secret') + ' \u00b7 +' + (def.ea || 1) + ' EA</div>';
-  h += '<div class="lw-modal-body" style="text-align:left;">';
-  h += '<p style="font-family:Playfair Display,serif;font-style:italic;color:var(--cream);font-size:0.6rem;line-height:1.6;margin-bottom:0.6rem;">' + (def.fx || '') + '</p>';
+  var body = [];
+  if (def.fx) body.push({type:'quote', text:def.fx});
+  body.push({type:'stat', label:'Theme', value:(def.theme||'secret').toUpperCase()});
+  body.push({type:'stat', label:'Bonus', value:'+' + (def.ea||1) + ' EA'});
+  body.push({type:'divider'});
+  body.push({type:'section-head', text: contribs.length ? ('Your plants \u00b7 ' + contribs.length) : 'No contributors yet'});
   if (contribs.length) {
-    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:0.4rem;">YOUR PLANTS \u00b7 ' + contribs.length + '</div>';
-    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;margin-bottom:0.3rem;">';
-    for (var ci = 0; ci < contribs.length; ci++) {
-      var c = contribs[ci];
-      var svg = ''; try { if (window._generatePlantSVG) svg = window._generatePlantSVG(c.hash, 42, 1.0); } catch(e){}
-      h += '<div style="background:rgba(18,22,16,0.65);border:1px solid ' + themeColor + '33;border-radius:6px;padding:5px;text-align:center;">';
-      h += '<div style="width:48px;height:48px;margin:0 auto;">' + svg + '</div>';
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px;">' + (c.name || 'Plant') + '</div>';
-      h += '</div>';
-    }
-    h += '</div>';
+    body.push({type:'plants', plants: contribs});
   } else {
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);font-style:italic;">No contributors in this greenhouse.</div>';
+    body.push({type:'para', text:'No plants in your greenhouse currently trigger this synergy. Breed, mint, or search ferals that match its conditions.'});
   }
-  h += '</div>';
-  h += '<div class="lw-modal-actions"><button class="lw-modal-btn primary" onclick="var m=document.getElementById(\'lw-syn-detail\');if(m)m.remove();">CLOSE</button></div>';
-  h += '</div>';
-  m.innerHTML = h;
-  m.onclick = function(e){ if (e.target === m) m.remove(); };
-  document.body.appendChild(m);
+  var validThemes = {elemental:1,nature:1,cosmic:1,dark:1,mythical:1};
+  var theme = validThemes[def.theme] ? def.theme : 'gold';
+  window.LW_Reader.open({
+    eyebrow: 'SYNERGY',
+    title: def.name,
+    subtitle: def.fx ? null : 'a hidden combination',
+    theme: theme,
+    chips: [
+      { label: (def.theme||'secret').toUpperCase() },
+      { label: '+' + (def.ea||1) + ' EA' }
+    ],
+    body: body,
+    actions: [{label:'CLOSE', kind:'ghost'}]
+  });
 };
 
 function _bosMementosContent() {
