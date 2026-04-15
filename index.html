@@ -60065,11 +60065,13 @@ window._LW_updateWildClassStat=function(){
   var lEl=document.getElementById('w-class-lbl');
   if(!iEl||!lEl)return;
   var cls=_lwGetClass();
-  if(!cls){iEl.textContent='—';iEl.style.color='var(--muted)';lEl.textContent='no class';return;}
-  var def=LW_CLASSES[cls];if(!def){iEl.textContent='?';return;}
+  if(!cls){iEl.textContent='—';iEl.style.color='var(--muted)';iEl.style.backgroundImage='';lEl.textContent='no class';return;}
+  var def=LW_CLASSES[cls];if(!def){iEl.textContent='?';iEl.style.backgroundImage='';return;}
   var match=_lwBiomeMatch();
-  iEl.textContent=def.icon||'·';
-  iEl.style.color=match?'var(--gold)':'var(--cream)';
+  // Render the painted class emblem as a small circular badge; fall back
+  // to the emoji icon if the img can't be loaded.
+  iEl.textContent='';
+  iEl.style.cssText='font-size:0.85rem;width:30px;height:30px;margin:0 auto;border-radius:50%;background-image:url("assets/character-sheet/classes/'+cls+'.png");background-size:cover;background-position:center;border:1.5px solid '+(match?'var(--gold)':'rgba(122,179,86,0.35)')+';box-shadow:'+(match?'0 0 8px rgba(200,168,75,0.45)':'none')+';';
   lEl.textContent=def.name+(match?' ✓':'');
   lEl.style.color=match?'var(--gold)':'var(--muted)';
 };
