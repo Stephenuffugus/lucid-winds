@@ -57517,6 +57517,39 @@ window._lwShowEventDetail = function(eventName) {
 
 function _bosEventsContent() {
   var h = '';
+  // ─── RAREST FIND SPOTLIGHT ─────────────────────────────────────
+  // Surfaces the player's most rare discovered event — the tier badge
+  // at the top of their shelf. Falls back to most-recent if nothing
+  // rare found yet. Only shows when at least one event is discovered.
+  try {
+    var unlockedS = {};
+    try { unlockedS = JSON.parse(localStorage.getItem('lw_wild_events') || '{}'); } catch(e){}
+    var _tierRank = {COMMON:1,UNCOMMON:2,RARE:3,EPIC:4,LEGENDARY:5,COMPANION:3,CONJUNCTION:3,CONFLUENCE:4,SOCIAL:2};
+    var bestRank = 0, bestEv = null, bestTier = null, mostRecent = null, mostRecentTier = null;
+    for (var ti0 = 0; ti0 < window.LW_EVENT_CATALOG.length; ti0++) {
+      var t0 = window.LW_EVENT_CATALOG[ti0];
+      var rank = _tierRank[t0.name] || 1;
+      for (var ei0 = 0; ei0 < t0.events.length; ei0++) {
+        var eDef = t0.events[ei0];
+        var entry = unlockedS[eDef.name];
+        if (!entry) continue;
+        if (rank > bestRank) { bestRank = rank; bestEv = eDef; bestTier = t0; }
+        if (!mostRecent || (entry.t && entry.t > mostRecent.t)) { mostRecent = entry; mostRecent.__ev = eDef; mostRecentTier = t0; }
+      }
+    }
+    var show = bestEv || (mostRecent && mostRecent.__ev);
+    if (show) {
+      var spotEv = bestEv || mostRecent.__ev;
+      var spotTier = bestTier || mostRecentTier;
+      var _evSpotEsc = spotEv.name.replace(/'/g, "\\'");
+      h += '<div onclick="window._lwShowEventDetail(\'' + _evSpotEsc + '\')" style="cursor:pointer;padding:0.8rem 0.9rem;margin-bottom:0.9rem;background:linear-gradient(135deg,rgba(18,22,16,0.75),rgba(42,54,34,0.6));border:1.5px solid ' + spotTier.color + 'aa;border-radius:11px;position:relative;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,0.35),inset 0 1px 0 rgba(240,235,216,0.06);">';
+      h += '<div style="position:absolute;top:-30%;right:-20%;width:140px;height:140px;background:radial-gradient(circle,' + spotTier.color + '33 0%,transparent 70%);pointer-events:none;"></div>';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.2em;color:' + spotTier.color + ';margin-bottom:3px;position:relative;">' + (bestEv ? 'YOUR RAREST FIND' : 'MOST RECENT') + '</div>';
+      h += '<div style="font-family:Playfair Display,serif;font-size:1.1rem;color:var(--cream);font-style:italic;margin-bottom:4px;position:relative;">' + spotEv.name + '</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);line-height:1.5;position:relative;">' + spotTier.name + ' \u00b7 ' + spotEv.hint + '</div>';
+      h += '</div>';
+    }
+  } catch(e){}
   // 30-day discovery sparkline — one bar per day, bar height = events discovered
   // that day. Lets the player see their streak at a glance above the catalog.
   try {
