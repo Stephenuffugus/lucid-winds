@@ -5720,7 +5720,7 @@ window._addSwitchTabHook = function(fn){
       <div id="ob-haiku" class="ob-haiku"></div>
       <div id="ob-creature" class="ob-creature-text"></div>
       <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:rgba(240,235,216,0.7);line-height:1.8;margin-top:0.6rem;max-width:300px;opacity:0;transition:opacity 1.5s ease 0.3s;" id="ob-manifesto">Every plant here is born from attention.<br>No two are the same.<br>Care for yours, and it will shape the world around you.</div>
-      <div class="ob-auth" id="ob-auth"><div id="ob-auth-new"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.3rem;">CLAIM YOUR FIRST PLANT</div><div style="margin-bottom:0.7rem;font-family:'DM Mono',monospace;font-size:0.48rem;color:var(--muted);"><span onclick="PW_Onboard.showLogin()" style="color:var(--gold);cursor:pointer;text-decoration:underline;min-height:44px;display:inline-block;padding:6px 0;">Already have an account? Sign in</span></div><input type="text" id="ob-name-input" placeholder="What should we call you, Keeper?" maxlength="24" autocomplete="off" /><input type="email" id="ob-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-pass" placeholder="Password (6+ characters)" autocomplete="new-password" /><div class="ob-auth-err" id="ob-auth-err"></div><button class="ob-auth-btn" id="ob-auth-btn" onclick="PW_Onboard.submitAuth()">🌱 CLAIM THIS PLANT</button></div><div id="ob-auth-login" style="display:none;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.3rem;">WELCOME BACK, KEEPER</div><div style="margin-bottom:0.7rem;font-family:'DM Mono',monospace;font-size:0.48rem;color:var(--muted);"><span onclick="PW_Onboard.showSignup()" style="color:var(--sage);cursor:pointer;text-decoration:underline;min-height:44px;display:inline-block;padding:6px 0;">New here? Create an account</span></div><input type="email" id="ob-login-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-login-pass" placeholder="Password" autocomplete="current-password" /><div class="ob-auth-err" id="ob-login-err"></div><button class="ob-auth-btn" id="ob-login-btn" onclick="PW_Onboard.submitLogin()" style="background:linear-gradient(145deg,var(--gold),#8a6e2f);">SIGN IN</button><div style="margin-top:0.5rem;text-align:center;"><span onclick="PW_Onboard.forgotPassword()" style="font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--muted);cursor:pointer;text-decoration:underline;min-height:44px;display:inline-block;padding:6px 0;">Forgot password?</span></div></div></div>
+      <div class="ob-auth" id="ob-auth"><div id="ob-auth-new"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.3rem;">CLAIM YOUR FIRST PLANT</div><div style="margin-bottom:0.7rem;font-family:'DM Mono',monospace;font-size:0.48rem;color:var(--muted);"><span onclick="PW_Onboard.showLogin()" style="color:var(--gold);cursor:pointer;text-decoration:underline;min-height:48px;display:inline-block;padding:8px 4px;">Already have an account? Sign in</span></div><input type="text" id="ob-name-input" placeholder="What should we call you, Keeper?" maxlength="24" autocomplete="off" /><input type="email" id="ob-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-pass" placeholder="Password (6+ characters)" autocomplete="new-password" /><div class="ob-auth-err" id="ob-auth-err"></div><button class="ob-auth-btn" id="ob-auth-btn" onclick="PW_Onboard.submitAuth()">🌱 CLAIM THIS PLANT</button></div><div id="ob-auth-login" style="display:none;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.3rem;">WELCOME BACK, KEEPER</div><div style="margin-bottom:0.7rem;font-family:'DM Mono',monospace;font-size:0.48rem;color:var(--muted);"><span onclick="PW_Onboard.showSignup()" style="color:var(--sage);cursor:pointer;text-decoration:underline;min-height:48px;display:inline-block;padding:8px 4px;">New here? Create an account</span></div><input type="email" id="ob-login-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-login-pass" placeholder="Password" autocomplete="current-password" /><div class="ob-auth-err" id="ob-login-err"></div><button class="ob-auth-btn" id="ob-login-btn" onclick="PW_Onboard.submitLogin()" style="background:linear-gradient(145deg,var(--gold),#8a6e2f);">SIGN IN</button><div style="margin-top:0.5rem;text-align:center;"><span onclick="PW_Onboard.forgotPassword()" style="font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--muted);cursor:pointer;text-decoration:underline;min-height:44px;display:inline-block;padding:6px 0;">Forgot password?</span></div></div></div>
       <button class="ob-continue" id="ob-continue" onclick="PW_Onboard.finish()">ENTER YOUR GREENHOUSE →</button>
     </div>
     <div class="ob-skip" id="ob-skip" onclick="PW_Onboard.skip()">skip →</div>
@@ -33745,6 +33745,12 @@ document.addEventListener('keydown', function(e) {
       // on reinstall.
       classInventory: JSON.parse(localStorage.getItem('lw_class_inventory') || 'null'),
       boosters: JSON.parse(localStorage.getItem('lw_boosters') || 'null'),
+      // Keeper's Tree + milestone claims + companion ability cooldowns.
+      // Without these, a player who spent points on phone sees a blank tree on
+      // tablet, and Second Bloom double-claims across devices.
+      treePoints: JSON.parse(localStorage.getItem('lw_tree_points') || 'null'),
+      secondBloomClaimed: localStorage.getItem('lw_second_bloom_claimed') || null,
+      guardianNextDrop: localStorage.getItem('lw_guardian_next_drop') || null,
       lastSync: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
   }
@@ -33822,6 +33828,11 @@ document.addEventListener('keydown', function(e) {
               if (d.toolXP) localStorage.setItem('lw_tool_xp', JSON.stringify(d.toolXP));
               if (d.classInventory) localStorage.setItem('lw_class_inventory', JSON.stringify(d.classInventory));
               if (d.boosters) localStorage.setItem('lw_boosters', JSON.stringify(d.boosters));
+              // Tree + milestone state (new). Invalidate memo caches so the
+              // next _lwTreePoints read picks up cloud values.
+              if (d.treePoints) { localStorage.setItem('lw_tree_points', JSON.stringify(d.treePoints)); try{_lwTreePtsCache=null;_lwTreeSpentCache=null;_lwTreeSpentCacheKey=null;}catch(e){} }
+              if (d.secondBloomClaimed) localStorage.setItem('lw_second_bloom_claimed', d.secondBloomClaimed);
+              if (d.guardianNextDrop) localStorage.setItem('lw_guardian_next_drop', d.guardianNextDrop);
             }
           });
           // ── Claim pending rewards (harvest rewards from displaced plants) ──
@@ -55124,7 +55135,11 @@ window._lwClaimHerbarium = function(id){
   var TIMER_KEY = 'lw_companion_timer';
   var ACTIVE_KEY = 'lw_companion_active_idx';
   var L3_KEY = 'lw_companion_l3_unlocked';
-  var L2_MS = 7 * 86400000;
+  // Focus group recommendation (Apr 15): L2 at 7d was "homework" for cozy
+  // players and didn't deliver a doubled buff within week 1. Dropped to 3d
+  // so first major bond milestone lands inside a typical week of play.
+  // Bond progress already pauses (not resets) on swap via totalMs accumulator.
+  var L2_MS = 3 * 86400000;
   var L3_MS = 30 * 86400000;
 
   function loadTimer() {
@@ -55263,6 +55278,35 @@ window._lwClaimHerbarium = function(id){
     L3_MS: L3_MS
   };
 })();
+
+// ═══ COMPANION T3 SIGNATURE RITUALS ═══
+// Research Team B: T3 should be a unique always-on passive ritual, not just
+// a bigger multiplier. L3 = Kindred = 30d equipped time. Once unlocked,
+// the ritual is PERMANENT (doesn't require re-equipping) — rewards the grind.
+// Helper reads the lw_companion_l3_unlocked blob set by LW_COMPANION.checkL3Unlocks.
+window._LW_hasFamilyRitual = function(family) {
+  if (!family) return false;
+  try {
+    var unlocked = JSON.parse(localStorage.getItem('lw_companion_l3_unlocked') || '{}');
+    if (!window.LW_COMPANION || !LW_COMPANION.FAMILY_OF) return false;
+    for (var k in unlocked) {
+      if (!unlocked.hasOwnProperty(k)) continue;
+      if (LW_COMPANION.FAMILY_OF[k] === family) return true;
+    }
+  } catch(e) {}
+  return false;
+};
+// T3 ritual descriptions (shown in profile modal when L3 achieved).
+window.LW_FAMILY_T3 = {
+  pollinators: { name:'Twin Bloom',    desc:'Every breed has a 10% chance to produce a second seed.' },
+  scatterers:  { name:'Dream Seed',    desc:'A feral appears at your location each day, on top of all limits.' },
+  weavers:     { name:'Chimera Mend',  desc:'All your chimeras carry -1 EA of lineage wound.' },
+  wayfinders:  { name:'Pathfinder',    desc:'Compass always points to the nearest feral, regardless of tool level.' },
+  guardians:   { name:'Deep Root',     desc:'All your wild drops compute with +2 flat EA.' },
+  conduits:    { name:'Compost Song',  desc:'Composting returns +1 Dew per Terra Grade tier.' },
+  mycelium:    { name:'Kin Network',   desc:'The mesh bonus cap rises from +3 to +5 EA.' },
+  watchers:    { name:'Hidden Trait',  desc:'Companion reveal on new plants drops from 3 blooms to 1.' }
+};
 
 // ═══ COMPANION T2 ACTIVE ABILITIES ═══
 // Research Team B's key missing piece: T2 should unlock an ACTIVE ability
@@ -55428,12 +55472,12 @@ window._lwClaimHerbarium = function(id){
     h+='</div>';
     if(fam)h+='<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);line-height:1.6;text-align:center;margin-bottom:0.8rem;font-style:italic;padding:0 0.4rem;">'+fam.blurb+'</div>';
     // Bond meter with named tier
-    var tierLabel=lvl===1?'Trusted':(lvl===2?'Bonded':'Kindred');
+    var tierLabel=lvl===1?'Noticed':(lvl===2?'Tended':'Kindred');
     h+='<div style="padding:0.6rem 0.7rem;background:rgba(13,16,12,0.6);border:1px solid rgba(74,124,53,0.2);border-radius:10px;margin-bottom:0.7rem;">';
     h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.3rem;">';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;">'+tierLabel+' \u00b7 L'+lvl+'</div>';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);">';
-    h+=(lvl<3?('to '+(lvl===1?'BONDED':'KINDRED')+': '+_fmtTime(nextMs-ms)):'MASTERED');
+    h+=(lvl<3?('to '+(lvl===1?'TENDED':'KINDRED')+': '+_fmtTime(nextMs-ms)):'MASTERED');
     h+='</div></div>';
     h+='<div style="height:5px;background:rgba(122,179,86,0.1);border-radius:3px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,var(--sage),var(--gold));transition:width 0.5s ease;"></div></div>';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);margin-top:4px;text-align:center;">Equipped total: '+_fmtTime(ms)+'</div>';
@@ -55442,8 +55486,8 @@ window._lwClaimHerbarium = function(id){
     h+='<div style="padding:0.6rem 0.7rem;background:rgba(13,16,12,0.6);border:1px solid rgba(74,124,53,0.2);border-radius:10px;margin-bottom:0.7rem;">';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:0.5rem;">THE LADDER</div>';
     var tiers=[
-      {lvl:1,name:'Trusted',desc:'Equipped \u2014 base family buff granted.'},
-      {lvl:2,name:'Bonded',desc:'7 days together \u2014 buff doubles.'},
+      {lvl:1,name:'Noticed',desc:'Equipped \u2014 base family buff granted.'},
+      {lvl:2,name:'Tended',desc:'3 days together \u2014 buff doubles, active ability unlocked.'},
       {lvl:3,name:'Kindred',desc:'30 days together \u2014 buff triples'+(signature?' \u00b7 Unlocks '+signature+'.':'.')}
     ];
     for(var ti=0;ti<tiers.length;ti++){
@@ -55471,7 +55515,7 @@ window._lwClaimHerbarium = function(id){
       var ad = abilState.def;
       var btnLabel, btnDisabled = false, btnBg, btnBorder, btnColor;
       if (abilState.locked === 'LOCKED_TIER') {
-        btnLabel = '\ud83d\udd12 UNLOCKS AT BONDED (L2)';
+        btnLabel = '\ud83d\udd12 UNLOCKS AT TENDED (L2)';
         btnDisabled = true; btnBg = 'rgba(40,40,40,0.3)'; btnBorder = 'rgba(138,145,120,0.2)'; btnColor = 'var(--muted)';
       } else if (abilState.locked === 'NOT_EQUIPPED') {
         btnLabel = 'EQUIP TO USE \u00b7 ' + ad.name.toUpperCase();
@@ -56875,7 +56919,7 @@ var LW_TREE_NODES={
   harvestHash:{branch:'forager',name:'Harvest Moon',desc:'Every reaping gives a little more. +0.25% harvest hashes / pt',max:5,per:0.0025},
   // Breeder — the lineage-weaver's rituals
   breedReward:{branch:'breeder',name:'Gentle Graft',desc:'Crossings bless you back. +0.25% breed reward / pt',max:5,per:0.0025},
-  chimeraPurity:{branch:'breeder',name:'Pure Lineage',desc:'Chimeras carry less of the wound. +0.25% chimera purity / pt',max:5,per:0.0025},
+  chimeraPurity:{branch:'breeder',name:'Clean Cross',desc:'Chimeras carry less of the wound. +0.25% chimera purity / pt',max:5,per:0.0025},
   pollenFlow:{branch:'breeder',name:'Pollen Song',desc:'The bees answer you louder. +0.25% cross-pollinate reward / pt',max:5,per:0.0025},
   compostReturn:{branch:'breeder',name:'Old Earth',desc:'What returns, returns richer. +0.25% fertilizer return / pt',max:5,per:0.0025},
   // Cartographer — the walker's rituals
@@ -56885,26 +56929,26 @@ var LW_TREE_NODES={
   toolCd:{branch:'cartographer',name:'Well-Oiled',desc:'Nothing in your pack rusts. -0.25% tool cooldown / pt',max:5,per:-0.0025},
   // Tender — the caretaker's rituals
   plantLongevity:{branch:'tender',name:'Evergreen Vow',desc:'Your plants outlive the wind. +0.25% plant longevity / pt',max:5,per:0.0025},
-  dewRate:{branch:'tender',name:'Morning Hymn',desc:'The dew answers you first. +0.25% dew generation / pt',max:5,per:0.0025},
+  dewRate:{branch:'tender',name:'Dawn Tending',desc:'The dew answers you first. +0.25% dew generation / pt',max:5,per:0.0025},
   waterStreak:{branch:'tender',name:'Ritual Watering',desc:'Each day\u2019s return compounds. +0.25% streak bonus / pt',max:5,per:0.0025},
   massWater:{branch:'tender',name:'Blessing Rain',desc:'Your watering reaches wider. +0.25% mass-water boost / pt',max:5,per:0.0025},
   // Keeper — the patient one's rituals
   classXp:{branch:'keeper',name:'Listening Stone',desc:'Every lesson lingers. +0.25% class XP / pt',max:5,per:0.0025},
   defenseEa:{branch:'keeper',name:'Rooted Heart',desc:'Your plants stand truer. +0.25% defense EA / pt',max:5,per:0.0025},
-  pollenRate:{branch:'keeper',name:'Full Bloom',desc:'The world gives a little more. +0.25% pollen rate / pt',max:5,per:0.0025},
+  pollenRate:{branch:'keeper',name:'Whole Canopy',desc:'The world gives a little more. +0.25% pollen rate / pt',max:5,per:0.0025},
   nurseryGrow:{branch:'keeper',name:'Slow Awakening',desc:'Seeds stretch toward you. +0.25% nursery growth / pt',max:5,per:0.0025},
   // Tools branch — unlocks at class path max
   shearsEdge:{branch:'tools',name:'Sharpened Edge',desc:'Shears remember the whetstone. -0.25% shears cooldown / pt',max:5,per:-0.0025},
   canFlow:{branch:'tools',name:'Steady Pour',desc:'Not a drop wasted. +0.25% watering effect / pt',max:5,per:0.0025},
   pouchSpace:{branch:'tools',name:'Bottomless Satchel',desc:'More fits than seems possible. +0.25% pouch auto-sort / pt',max:5,per:0.0025},
-  compassEdge:{branch:'tools',name:'True North',desc:'The arrow never hesitates. +0.25% compass range / pt',max:5,per:0.0025}
+  compassEdge:{branch:'tools',name:'Deadreckon',desc:'The arrow never hesitates. +0.25% compass range / pt',max:5,per:0.0025}
 };
 var LW_TREE_MILESTONES={
-  10:{name:'Path Opened',desc:'+5 bonus tree points'},
-  25:{name:'Second Bloom',desc:'Guaranteed 1 feral / day (ignores cap)'},
-  50:{name:'Golden Hour',desc:'Pick 1 hour / day: all bonuses \u00d72'},
-  75:{name:'Near Horizon',desc:'Equip a second companion'},
-  100:{name:'Keeper Crown',desc:'Biome match applies everywhere'}
+  10:{name:'Path Opened',desc:'+5 bonus tree points',built:true},
+  25:{name:'Second Bloom',desc:'Guaranteed 1 feral / day (ignores cap)',built:true},
+  50:{name:'The Gilding',desc:'Pick 1 hour / day: all bonuses \u00d72',built:false},
+  75:{name:'Near Horizon',desc:'Equip a second companion',built:false},
+  100:{name:'The Long Watch',desc:'Biome match applies everywhere',built:false}
 };
 
 // Memoized — tree points are read on every _LW_classBonus call which fires
@@ -56917,7 +56961,7 @@ function _lwTreePoints(){
   try{_lwTreePtsCache=JSON.parse(localStorage.getItem('lw_tree_points')||'{}');}catch(e){_lwTreePtsCache={};}
   return _lwTreePtsCache;
 }
-function _lwTreeSetPoints(p){_lwTreePtsCache=p;try{localStorage.setItem('lw_tree_points',JSON.stringify(p));}catch(e){}}
+function _lwTreeSetPoints(p){_lwTreePtsCache=p;_lwTreeSpentCache=null;_lwTreeSpentCacheKey=null;try{localStorage.setItem('lw_tree_points',JSON.stringify(p));}catch(e){}}
 // Spent count — also memoized, computed once per cache refresh
 var _lwTreeSpentCache=null;var _lwTreeSpentCacheKey=null;
 function _lwTreeSpent(){
