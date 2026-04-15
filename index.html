@@ -55144,6 +55144,102 @@ window._bosActivityContent = _bosActivityContent;
   window.LW_Reader = { open: open, close: close };
 })();
 
+// ═══ NURSERY SHOP BOOSTER DETAIL via LW_Reader ═══
+// Timed multipliers (pollenRush / bloomTonic / dewCache).
+var LW_BOOSTER_LORE = {
+  pollenRush: 'A burst of intention. For an hour, every sliver of Pollen you earn arrives doubled. Useful when you know you\u2019re about to play a lot — less useful when you\u2019re grinding casually.',
+  bloomTonic: 'A 24-hour nursery accelerator. Seeds grow 50% faster. Does not bypass the 3-waters-on-3-days rule, but the in-between hours move more generously.',
+  dewCache:   'Three hours of 50% more Dew on every action that earns it. Pair with a watering-heavy session for maximum return.'
+};
+window._lwShowShopBoosterDetail = function(bId) {
+  if (!window.LW_BOOSTERS || !window.LW_BOOSTERS[bId]) return;
+  var b = window.LW_BOOSTERS[bId];
+  var lore = LW_BOOSTER_LORE[bId] || b.blurb;
+  var curLvl = (window.canSee && window.canSee.currentLevel) ? window.canSee.currentLevel() : 1;
+  var dew = window.getTotalDew ? window.getTotalDew() : 0;
+  var hrs = Math.round((b.durationMs||0) / 3600000);
+  var active = false, remainingMs = 0;
+  try {
+    var actives = JSON.parse(localStorage.getItem('lw_boosters')||'{}');
+    if (actives[bId] && actives[bId] > Date.now()) { active = true; remainingMs = actives[bId] - Date.now(); }
+  } catch(e){}
+  var body = [];
+  body.push({type:'quote', text: lore});
+  body.push({type:'section-head', text:'Effect'});
+  body.push({type:'para', text: b.blurb});
+  body.push({type:'stat', label:'Duration', value: hrs + ' hour' + (hrs===1?'':'s')});
+  body.push({type:'divider'});
+  body.push({type:'section-head', text:'Details'});
+  body.push({type:'stat', label:'Cost', value: b.cost + ' Dew'});
+  body.push({type:'stat', label:'Unlocks at', value:'Keeper Lv ' + b.levelRequired});
+  if (active) {
+    var rh = Math.floor(remainingMs / 3600000);
+    var rm = Math.floor((remainingMs % 3600000) / 60000);
+    body.push({type:'stat', label:'Currently active', value: (rh > 0 ? rh + 'h ' : '') + rm + 'm remaining'});
+  }
+  var canBuy = curLvl >= b.levelRequired && dew >= b.cost;
+  var actions = [{ label: 'CLOSE', kind: 'ghost' }];
+  if (canBuy && window._lwBuyBooster) {
+    actions.unshift({ label: (active ? 'EXTEND' : 'ACTIVATE') + ' \u00b7 ' + b.cost + ' Dew', kind: 'primary', onclick: function(){ try { window._lwBuyBooster(bId); } catch(e){} return true; } });
+  }
+  window.LW_Reader.open({
+    eyebrow: 'BOOSTER',
+    title: b.icon + ' ' + b.name,
+    subtitle: null,
+    theme: 'gold',
+    chips: [b.cost + ' Dew', hrs + 'h', curLvl >= b.levelRequired ? 'AVAILABLE' : 'LOCKED'],
+    body: body,
+    actions: actions
+  });
+};
+
+// ═══ NURSERY SHOP CLASS ITEM DETAIL via LW_Reader ═══
+// Class-specific consumables (forester/breeder/cartographer/tender/keeper).
+var LW_CLASS_ITEM_LORE = {
+  forester:      'A tincture that sharpens sight. For thirty minutes, every feral seed within a half-kilometer is visible on the map. Foragers swear by it.',
+  breeder:       'A breeder\u2019s quiet tool. Lets you reroll a single inherited trait on your next bloomed chimera. The plant never forgets the rerolled version existed.',
+  cartographer:  'A polish worked into the brass of the compass. The next time you step into a biome you\u2019ve never mapped, the tool earns three times the usual XP.',
+  tender:        'A single moisture offering. Auto-waters every wild plant you own exactly once, no Dew cost. Useful when you\u2019re about to be away.',
+  keeper:        'A song sung at dawn. Every class-XP event for the next hour counts doubly. The Keeper path is slower than others; this is its compensation.'
+};
+window._lwShowShopClassItemDetail = function(ciKey) {
+  if (!window.LW_CLASS_ITEMS || !window.LW_CLASS_ITEMS[ciKey]) return;
+  var c = window.LW_CLASS_ITEMS[ciKey];
+  var lore = LW_CLASS_ITEM_LORE[ciKey] || c.blurb;
+  var dew = window.getTotalDew ? window.getTotalDew() : 0;
+  var myClass = (typeof _lwGetClass === 'function') ? _lwGetClass() : null;
+  var matches = myClass === c.class;
+  var body = [];
+  body.push({type:'quote', text: lore});
+  body.push({type:'section-head', text:'Effect'});
+  body.push({type:'para', text: c.blurb});
+  if (c.durationMs) {
+    var hrs2 = Math.round(c.durationMs / 3600000);
+    var mins2 = Math.round(c.durationMs / 60000);
+    body.push({type:'stat', label:'Duration', value: hrs2 > 0 ? hrs2 + 'h' : mins2 + 'min'});
+  }
+  if (c.oneShot) body.push({type:'stat', label:'Use', value:'One-shot'});
+  body.push({type:'divider'});
+  body.push({type:'section-head', text:'Details'});
+  body.push({type:'stat', label:'Cost', value: c.cost + ' Dew'});
+  body.push({type:'stat', label:'Class', value: c.class.charAt(0).toUpperCase() + c.class.slice(1)});
+  body.push({type:'stat', label:'You can use this', value: matches ? 'Yes' : 'No (requires ' + c.class + ')'});
+  var canBuy = matches && dew >= c.cost;
+  var actions = [{ label: 'CLOSE', kind: 'ghost' }];
+  if (canBuy && window._lwBuyClassItem) {
+    actions.unshift({ label: 'BUY \u00b7 ' + c.cost + ' Dew', kind: 'primary', onclick: function(){ try { window._lwBuyClassItem(ciKey); } catch(e){} return true; } });
+  }
+  window.LW_Reader.open({
+    eyebrow: 'CLASS ITEM \u00b7 ' + c.class.toUpperCase(),
+    title: c.icon + ' ' + c.name,
+    subtitle: null,
+    theme: matches ? 'gold' : 'sage',
+    chips: [c.cost + ' Dew', c.class.toUpperCase(), matches ? 'YOUR CLASS' : 'DIFFERENT CLASS'],
+    body: body,
+    actions: actions
+  });
+};
+
 // ═══ NURSERY SHOP POT DETAIL via LW_Reader ═══
 // These are the purchasable nursery pots (LW_POTS), NOT the generative pot
 // trait (TRAIT_BANK.pots). Each has a mechanical effect + a lore paragraph.
