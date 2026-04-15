@@ -105,6 +105,24 @@ Each entry: **slot** · **subject** · **dimensions** · **destination path** ·
 - 3:2 landscape ~400×260, `assets/herbarium/bundle-{idx}.png`
 - Painterly pressed-flower composition per bundle theme
 
+### Trait-layer art (optional — code auto-loads when present)
+Reader pages for every plant trait currently render without a hero image
+(just title + flavor + stats). The moment you drop a PNG at the convention
+path, it becomes the hero of that page. Entirely optional — the page
+works cleanly without. Good way to add art incrementally without planning.
+
+**Paths** (lowercase-hyphenated slug = trait name):
+- `assets/pots/pot-{slug}.png` — 60 pots (e.g. `pot-golden.png`, `pot-amphora.png`)
+- `assets/auras/aura-{slug}.png` — 36 auras (e.g. `aura-aurora-borealis.png`)
+- `assets/substrates/substrate-{slug}.png` — 71 substrates (e.g. `substrate-stardust.png`)
+- `assets/leaves/leaf-{slug}.png` — 71 leaves (e.g. `leaf-crown-laurel.png`)
+- `assets/flowers/flower-{slug}.png` — 71 flowers
+- `assets/stems/stem-{slug}.png` — 24 stems
+- `assets/companions/companion-{slug}.png` — 62 companions
+
+Format: 256×256 square, transparent PNG preferred. No urgency — every Reader
+page without an image still looks complete.
+
 ### Celebration FX sprites
 - Stephen has Midjourney prompts saved (memory: `project_celebration_art_prompts.md`)
 - Sparkle · petal · leaf · ring — 4 PNG sprite sheets 128×128 each

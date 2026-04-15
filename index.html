@@ -54941,9 +54941,10 @@ window._bosActivityContent = _bosActivityContent;
     var heroHtml = '';
     if (opts.hero) {
       if (opts.heroStyle === 'inline') {
-        heroHtml = '<div class="lw-reader-hero-inline"><img src="' + _esc(opts.hero) + '" alt="" onerror="this.style.display=\'none\';"/></div>';
+        // onerror collapses the wrapper so Reader body flows naturally
+        heroHtml = '<div class="lw-reader-hero-inline"><img src="' + _esc(opts.hero) + '" alt="" onerror="var p=this.parentNode;if(p)p.style.display=\'none\';"/></div>';
       } else {
-        heroHtml = '<div class="lw-reader-hero"><img src="' + _esc(opts.hero) + '" alt="" onerror="this.parentNode.style.display=\'none\';"/></div>';
+        heroHtml = '<div class="lw-reader-hero"><img src="' + _esc(opts.hero) + '" alt="" onerror="var p=this.parentNode;if(p)p.style.display=\'none\';"/></div>';
       }
     }
     var headHtml = '<div class="lw-reader-head">';
