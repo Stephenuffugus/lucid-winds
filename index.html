@@ -54975,7 +54975,7 @@ window._lwShowClassDetail = function(classId) {
     title: def.name,
     subtitle: null,
     theme: 'gold',
-    hero: 'assets/classes/class-' + classId + '.png',
+    hero: 'assets/character-sheet/classes/' + classId + '.png',
     heroStyle: 'inline',
     chips: [def.name.toUpperCase(), isYou ? ('LEVEL ' + lvl) : 'NOT PICKED'],
     body: body,
@@ -57124,6 +57124,48 @@ function _bosSecretsContent() {
   }
   h+='</div></div>';
 
+  // ─── MUTATIONS ────────────────────────────────────────────────
+  // 13 mutations. Lock state = whether you own any plant with this mutation.
+  // Each tile taps into the existing _lwShowMutationDetail Reader page.
+  // Art slot per mutation falls back to the theme glyph when PNG missing.
+  try {
+    var mutNames = ['Glitch','Glass Stem','Wireframe','Holographic','Neon','Ink Wash','Golden','Porcelain','Bioluminescent','Pixel Art','Silhouette','Albino','Fossil'];
+    var mutSeen = {};
+    for (var mgi = 0; mgi < gh.length; mgi++) {
+      try {
+        var _mgt = window.hashToTraits(gh[mgi].hash);
+        if (_mgt && _mgt.mutationName && _mgt.mutationName !== 'None') mutSeen[_mgt.mutationName] = true;
+      } catch(e){}
+    }
+    var mutFound = 0;
+    for (var _mfi = 0; _mfi < mutNames.length; _mfi++) if (mutSeen[mutNames[_mfi]]) mutFound++;
+    h += '<div style="margin-bottom:0.8rem;">';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:#c07ac8;letter-spacing:0.1em;margin-bottom:0.4rem;">\u2746 MUTATIONS <span style="color:var(--muted);font-size:0.5rem;">' + mutFound + ' / ' + mutNames.length + '</span></div>';
+    h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">';
+    // Visual hint glyphs per mutation — tiny emoji/symbol while custom badge
+    // art is still in flight. Swap to <img src="assets/mutations/..."> when ready.
+    var mutGlyph = {
+      'Glitch':         '\ud83d\udca5', 'Glass Stem': '\ud83d\udd2e', 'Wireframe': '\u25a0',
+      'Holographic':    '\ud83c\udf08', 'Neon':       '\u26a1',       'Ink Wash':  '\ud83d\udd8b\ufe0f',
+      'Golden':         '\u2728',        'Porcelain':  '\u26aa',       'Bioluminescent': '\ud83d\udca1',
+      'Pixel Art':      '\u25a3',        'Silhouette': '\u25cf',       'Albino':    '\u26aa',
+      'Fossil':         '\ud83e\uddb4'
+    };
+    for (var mi = 0; mi < mutNames.length; mi++) {
+      var mn = mutNames[mi];
+      var mnSeen = !!mutSeen[mn];
+      var mnEsc = mn.replace(/'/g,"\\'");
+      var cardBg = mnSeen ? 'rgba(192,122,200,0.08)' : 'rgba(26,36,22,0.3)';
+      var cardBorder = mnSeen ? 'rgba(192,122,200,0.2)' : 'rgba(74,124,53,0.06)';
+      var cardOpacity = mnSeen ? '' : 'opacity:0.4;';
+      h += '<div onclick="if(window._lwShowMutationDetail)_lwShowMutationDetail(\''+mnEsc+'\')" style="padding:4px;background:'+cardBg+';border:1px solid '+cardBorder+';border-radius:6px;text-align:center;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;'+cardOpacity+'" title="'+mn+(mnSeen?' \u2014 discovered':' \u2014 locked')+'">';
+      h += '<div style="font-size:0.75rem;line-height:1;">'+(mnSeen?(mutGlyph[mn]||'\u2746'):'?')+'</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:'+(mnSeen?'#c07ac8':'var(--muted)')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;margin-top:2px;">'+(mnSeen?mn:'???')+'</div>';
+      h += '</div>';
+    }
+    h += '</div></div>';
+  } catch(e){}
+
   // ─── MYTHIC HALL ──────────────────────────────────────────────
   // Dedicated showcase for the 7 Legendary/Mythic/Cosmic companions
   // that override the normal companion slot via hb(18) in hashToTraits.
@@ -58552,7 +58594,7 @@ window._LW_openClassPicker=function(){
     var cTitles = ['', 'Apprentice', 'Journeyman', 'Master'];
     h += '<div style="position:relative;display:flex;flex-direction:column;align-items:center;padding:1rem 1rem 1.1rem;margin-bottom:1rem;background:radial-gradient(ellipse at 50% 20%,rgba(200,168,75,0.1) 0%,rgba(26,36,22,0.4) 60%);border:1.5px solid rgba(200,168,75,0.3);border-radius:14px;box-shadow:inset 0 1px 0 rgba(240,235,216,0.06),0 8px 24px rgba(0,0,0,0.4);">';
     h += '<div style="width:160px;height:160px;margin-bottom:0.6rem;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.6)) drop-shadow(0 0 18px rgba(200,168,75,0.2));">';
-    h += '<img src="assets/classes/class-' + cur + '.png" alt="" style="width:100%;height:100%;object-fit:contain;" onerror="this.outerHTML=\'<div style=&quot;font-size:6rem;line-height:1;&quot;>' + cDef.icon + '</div>\'">';
+    h += '<img src="assets/character-sheet/classes/' + cur + '.png" alt="" style="width:100%;height:100%;object-fit:contain;" onerror="this.outerHTML=\'<div style=&quot;font-size:6rem;line-height:1;&quot;>' + cDef.icon + '</div>\'">';
     h += '</div>';
     h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.52rem;color:var(--gold);letter-spacing:0.2em;margin-bottom:2px;">' + cTitles[cLvl].toUpperCase() + ' \u00b7 L' + cLvl + '</div>';
     h += '<div style="font-family:Playfair Display,serif;font-size:1.4rem;color:var(--cream);margin-bottom:6px;">' + cDef.name + '</div>';
