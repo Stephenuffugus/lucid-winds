@@ -35362,7 +35362,7 @@ function activate(){
   setTimeout(function(){if(_map)_map.invalidateSize();},100);
   setTimeout(function(){if(_map)_map.invalidateSize();},500);
   setTimeout(function(){if(_map)_map.invalidateSize();},1500);
-  _gpsFallbackTimer=setTimeout(function(){if(!_uLat&&_map){_uLat=FALLBACK[0];_uLng=FALLBACK[1];_map.setView(FALLBACK,16);_placeUser();_loadAll();_showGpsBanner();}},5000);
+  _gpsFallbackTimer=setTimeout(function(){if(!_uLat&&_map){_uLat=FALLBACK[0];_uLng=FALLBACK[1];window._uLat=_uLat;window._uLng=_uLng;_map.setView(FALLBACK,16);_placeUser();_loadAll();_showGpsBanner();}},5000);
   // Init backpack display
   if(window.FG_Backpack){FG_Backpack.init();FG_Backpack.render();}
 }
@@ -35680,14 +35680,16 @@ window._retryGps=function(){
 };
 
 function _initGeo(){
-  if(!navigator.geolocation){_uLat=FALLBACK[0];_uLng=FALLBACK[1];_showGpsBanner();setTimeout(function(){if(_map){_map.setView(FALLBACK,16);_placeUser();_loadAll();}},500);return;}
+  if(!navigator.geolocation){_uLat=FALLBACK[0];_uLng=FALLBACK[1];window._uLat=_uLat;window._uLng=_uLng;_showGpsBanner();setTimeout(function(){if(_map){_map.setView(FALLBACK,16);_placeUser();_loadAll();}},500);return;}
   navigator.geolocation.getCurrentPosition(function(p){
     if(_gpsFallbackTimer){clearTimeout(_gpsFallbackTimer);_gpsFallbackTimer=null;}
     _uLat=p.coords.latitude;_uLng=p.coords.longitude;
+    window._uLat=_uLat;window._uLng=_uLng;
     _map.setView([_uLat,_uLng],16);_placeUser();_loadAll();
     _toast('Location locked! Tap \ud83c\udf31 to plant.');
   },function(){
     _uLat=FALLBACK[0];_uLng=FALLBACK[1];
+    window._uLat=_uLat;window._uLng=_uLng;
     _map.setView(FALLBACK,16);_placeUser();_loadAll();
     _showGpsBanner();
   },{enableHighAccuracy:true,timeout:8000,maximumAge:30000});
@@ -35695,6 +35697,7 @@ function _initGeo(){
     var nL=p.coords.latitude,nN=p.coords.longitude;
     if(_uLat&&_uLng){var d=_dist(_uLat,_uLng,nL,nN);if(d>0.7&&d<50){_addSteps(Math.round(d));}}
     _uLat=nL;_uLng=nN;
+    window._uLat=_uLat;window._uLng=_uLng;
     // Speed tracking
     var _now=Date.now();
     if(_lastGeoTime>0&&_lastGeoLat){var _sd=_dist(_lastGeoLat,_lastGeoLng,nL,nN);var _dt=(_now-_lastGeoTime)/1000;if(_dt>0)_speedKmh=(_sd/_dt)*3.6;}
@@ -36179,6 +36182,8 @@ function _drawZoneHexes(){
 
 function _loadAll(){
   if(!_map||!_uLat)return;
+  // Prefetch weather so hex-tap finds a warm cache. Async, silent fail.
+  try{if(window._lwFetchWeather)window._lwFetchWeather(_uLat,_uLng);}catch(e){}
   var saved=_pruneWild();
   for(var i=0;i<saved.length;i++){var w=saved[i];if(!w||!w.hash)continue;var d=w.date?Math.floor((Date.now()-new Date(w.date).getTime())/86400000):0;_addPlant({lat:w.lat,lng:w.lng,hash:w.hash,own:w.own!==false,days:d,pollen:d*3,status:d>7?'Thriving':d>2?'Growing':'Young',ownerUid:w.ownerUid||'',ownerName:w.ownerName||'Keeper',defenderGame:w.defenderGame||'set'});}
   _drawZoneHexes();_updateCounts();
@@ -56303,6 +56308,9 @@ window._lwClaimHerbarium = function(id){
       })
       .catch(function(){ return null; });
   }
+  // Expose for cross-IIFE prefetch (FG_Wild calls this on Wild tab open
+  // to warm the cache before any hex is tapped).
+  window._lwFetchWeather = fetchWeather;
   // Synchronous accessor — returns cached weather or null, never fetches.
   // Used by hexComposition to apply a tilt if weather is already known.
   function getCachedWeather(lat, lng) {
