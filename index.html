@@ -8331,6 +8331,51 @@ document.addEventListener('keydown', function(e) {
   window.checkSynergies = checkSynergies;
   window.SYNERGY_META = SYNERGY_META;
 
+  // Discovery tracker — records the FIRST time the player sees each
+  // synergy and fires a celebration modal. Called from mint/bloom paths.
+  // Stores seen ids in lw_synergies_discovered so the celebration is
+  // truly one-time per synergy per keeper.
+  window._lwCheckSynergyDiscovery = function(hash) {
+    try {
+      if (!hash) return [];
+      var t = (typeof getTraitSummary === 'function') ? null : null;
+      try { t = window.hashToTraits && window.hashToTraits(hash); } catch(e) {}
+      if (!t) return [];
+      var synergies = checkSynergies(t);
+      if (!synergies || !synergies.length) return [];
+      var seen = {}; try { seen = JSON.parse(localStorage.getItem('lw_synergies_discovered') || '{}'); } catch(e) {}
+      var fresh = [];
+      for (var i = 0; i < synergies.length; i++) {
+        var s = synergies[i];
+        if (!seen[s.id]) { seen[s.id] = Date.now(); fresh.push(s); }
+      }
+      if (fresh.length) {
+        try { localStorage.setItem('lw_synergies_discovered', JSON.stringify(seen)); } catch(e) {}
+        // Celebration for each new synergy, staggered.
+        for (var fi = 0; fi < fresh.length; fi++) {
+          (function(syn, delay){
+            setTimeout(function(){
+              if (window._lwConfirm) {
+                window._lwConfirm({
+                  title: '\u2728 NEW SYNERGY DISCOVERED',
+                  body: '<div style="font-size:2rem;margin-bottom:0.3rem;">' + syn.emoji + '</div>' +
+                        '<div style="font-family:Playfair Display,serif;font-style:italic;color:var(--gold);font-size:0.95rem;margin-bottom:0.4rem;">' + syn.name + '</div>' +
+                        '<div style="color:var(--cream);font-family:DM Mono,monospace;font-size:0.55rem;line-height:1.6;">' + syn.desc + '</div>' +
+                        '<div style="color:var(--muted);font-family:DM Mono,monospace;font-size:0.45rem;margin-top:0.4rem;">Logged to the Book of Secrets.</div>',
+                  yes: 'WITNESSED',
+                  no: ''
+                }, function(){});
+                try { if (window._haptic) window._haptic('bloom'); } catch(e) {}
+              }
+              if (window.LW_Log) window.LW_Log.write('synergy_discovered', { id: syn.id, name: syn.name, emoji: syn.emoji });
+            }, delay);
+          })(fresh[fi], fi * 1600);
+        }
+      }
+      return fresh;
+    } catch(e) { return []; }
+  };
+
   // ─────────────────────────────────────────────────────────────────────────
   // Cross-Pollination Engine
   // ─────────────────────────────────────────────────────────────────────────
@@ -26777,6 +26822,8 @@ document.addEventListener('keydown', function(e) {
     saveGreenhouse(gh);
     // Check achievements
     setTimeout(checkAchievements, 200);
+    // First-time synergy discovery — fires only for new-to-player synergies.
+    try { if (window._lwCheckSynergyDiscovery) setTimeout(function(){ window._lwCheckSynergyDiscovery(hash); }, 3000); } catch(e) {}
     // P2 — Mint drone (deep botanical)
     if (window.FG_Audio && FG_Audio.enabled) FG_Audio.playMintDrone();
     renderGreenhouse();
@@ -32298,6 +32345,8 @@ document.addEventListener('keydown', function(e) {
       try { var _bT = hashToTraits(newHash); if (_bT && window.getTerraGrade) _bloomTier = (getTerraGrade(_bT) || {}).name || ''; } catch(e) {}
       window.LW_Log.write('seed_bloomed', { hash: newHash, name: typeof getPlantName === 'function' ? getPlantName(newHash) : '', tier: _bloomTier, mystery: !!seed.mystery, mutated: !!mut.mutated });
     }
+    // Check for first-discovery celebrations — new synergies fire a modal.
+    try { if (window._lwCheckSynergyDiscovery) setTimeout(function(){ window._lwCheckSynergyDiscovery(newHash); }, 2500); } catch(e) {}
 
     // Foraging card grant: every bloom rewards a random element card,
     // capped at card capacity. Encourages nursery use + gives players
