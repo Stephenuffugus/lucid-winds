@@ -39988,12 +39988,17 @@ window._lwCompassTap=function(){
       if(window._LW_toolXP)window._LW_toolXP('compass',1);
     }
   }catch(e){}
-  if(lvl<2){_toast('\ud83e\udded Compass L1 \u2014 wind only. Discover biomes to level up.');return;}
-  if(lvl===2){
-    // Reveal biome
+  // Cartographer L2 Biome Sense: grants biome reveal even at Compass L1.
+  // At Compass L2+ ALSO reveals adjacent biomes within 300m (Heron's Eye combo).
+  var cartoL2=false;try{cartoL2=(window._lwGetClass&&_lwGetClass()==='cartographer'&&window._lwGetClassLevel&&_lwGetClassLevel('cartographer')>=2);}catch(e){}
+  if(lvl<2 && !cartoL2){_toast('\ud83e\udded Compass L1 \u2014 wind only. Discover biomes to level up.');return;}
+  if(lvl<3){
+    // Reveal biome (tool L2, or class L2 early-unlock)
     var bInfo=null;try{if(window._lastDetectedBiome&&window.getBiomeInfo)bInfo=window.getBiomeInfo(window._lastDetectedBiome);}catch(e){}
-    if(bInfo)_toast(bInfo.icon+' '+bInfo.name+(bInfo.mutation?' \u2014 '+bInfo.mutation:''));
-    else _toast('\ud83e\udded Biome: scanning\u2026');
+    var msg=bInfo?(bInfo.icon+' '+bInfo.name+(bInfo.mutation?' \u2014 '+bInfo.mutation:'')):'\ud83e\udded Biome: scanning\u2026';
+    // Heron's Eye: Cartographer L2 + Compass L2 → adjacent biome hint
+    if(cartoL2&&lvl>=2){try{if(window._lwAdjacentBiomes){var adj=window._lwAdjacentBiomes();if(adj&&adj.length)msg+=' \u00b7 near: '+adj.slice(0,2).join(', ');}}catch(e){}}
+    _toast(msg);
     return;
   }
   // L3: point to nearest uncollected feral
@@ -53920,9 +53925,82 @@ function _bosSetTab(tab) {
   }
 }
 
-// Build CLASS tab content — uses the same engine as _LW_openClassPicker but inline
+// Keeper's Tree — 20-node passive tree. Every Keeper level = 1 point.
+// Rendered at the top of the class tab. Small increments (0.25%/pt) so
+// every level moves the needle without breaking balance.
+function _bosTreeContent() {
+  if (typeof LW_TREE_NODES === 'undefined' || !window._LW_treeEarned) return '';
+  var lvl = (window.canSee && window.canSee.currentLevel) ? window.canSee.currentLevel() : 1;
+  var earned = window._LW_treeEarned();
+  var spent = window._LW_treeSpent();
+  var avail = earned - spent;
+  var pts = window._LW_treePoints();
+  var canRespec = window._LW_treeCanRespec();
+  var h = '';
+  // Header
+  h += '<div style="margin-bottom:0.8rem;padding:0.7rem 0.8rem;background:linear-gradient(180deg,rgba(200,168,75,0.10),rgba(26,36,22,0.4));border:1.5px solid rgba(200,168,75,0.35);border-radius:12px;">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;">';
+  h += '<div><div style="font-family:Playfair Display,serif;font-size:0.95rem;color:var(--gold);font-style:italic;">The Keeper\'s Tree</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:2px;">Lv ' + lvl + ' \u00b7 ' + spent + ' / ' + earned + ' spent</div></div>';
+  h += '<div style="text-align:right;"><div style="font-family:Bebas Neue,sans-serif;font-size:1.3rem;color:' + (avail > 0 ? 'var(--sage)' : 'var(--muted)') + ';letter-spacing:0.06em;">' + avail + '</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);">POINTS</div></div>';
+  h += '</div>';
+  // Respec button
+  h += '<button onclick="window._LW_treeRespec()" ' + (canRespec ? '' : 'disabled ') + 'style="width:100%;margin-top:0.5rem;min-height:36px;padding:6px;font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.1em;background:' + (canRespec ? 'rgba(122,179,86,0.15)' : 'rgba(60,60,60,0.2)') + ';border:1px solid ' + (canRespec ? 'rgba(122,179,86,0.4)' : 'rgba(138,145,120,0.2)') + ';color:' + (canRespec ? 'var(--sage)' : 'var(--muted)') + ';border-radius:6px;cursor:' + (canRespec ? 'pointer' : 'default') + ';">\ud83c\udf3f ' + (canRespec ? 'FREE RESPEC AVAILABLE' : 'RESPEC ON 24h COOLDOWN') + '</button>';
+  h += '</div>';
+  // Milestones strip
+  h += '<div style="display:flex;gap:4px;margin-bottom:0.7rem;">';
+  var ms = [10,25,50,75,100];
+  for (var mi = 0; mi < ms.length; mi++) {
+    var mLv = ms[mi]; var mDef = LW_TREE_MILESTONES[mLv]; var unlocked = lvl >= mLv;
+    h += '<div title="' + mDef.name + ' \u2014 ' + mDef.desc + '" style="flex:1;padding:4px 2px;text-align:center;background:' + (unlocked ? 'rgba(200,168,75,0.15)' : 'rgba(26,36,22,0.3)') + ';border:1px solid ' + (unlocked ? 'rgba(200,168,75,0.45)' : 'rgba(74,124,53,0.12)') + ';border-radius:6px;">';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:' + (unlocked ? 'var(--gold)' : 'var(--muted)') + ';letter-spacing:0.05em;">L' + mLv + '</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:' + (unlocked ? 'var(--cream)' : 'var(--muted)') + ';margin-top:1px;line-height:1.1;">' + mDef.name + '</div>';
+    h += '</div>';
+  }
+  h += '</div>';
+  // Branches
+  for (var bId in LW_TREE_BRANCHES) {
+    if (!LW_TREE_BRANCHES.hasOwnProperty(bId)) continue;
+    var b = LW_TREE_BRANCHES[bId];
+    h += '<div style="margin-bottom:0.7rem;padding:0.5rem 0.6rem;background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.15);border-radius:10px;">';
+    h += '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.4rem;"><span style="font-size:0.9rem;">' + b.icon + '</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:' + b.color + ';letter-spacing:0.1em;">' + b.name.toUpperCase() + '</span></div>';
+    // Nodes in this branch
+    for (var nId in LW_TREE_NODES) {
+      if (!LW_TREE_NODES.hasOwnProperty(nId)) continue;
+      var nd = LW_TREE_NODES[nId]; if (nd.branch !== bId) continue;
+      var cur = pts[nId] || 0;
+      var canAdd = avail > 0 && cur < nd.max;
+      var canSub = cur > 0 && canRespec;
+      h += '<div style="display:flex;align-items:center;gap:0.4rem;padding:5px 0;border-top:1px dashed rgba(74,124,53,0.08);">';
+      h += '<div style="flex:1;min-width:0;"><div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);font-weight:500;">' + nd.name + '</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);line-height:1.3;">' + nd.desc + '</div></div>';
+      // Pip display 0-5
+      var pips = '';
+      for (var pi = 0; pi < nd.max; pi++) pips += '<span style="width:6px;height:6px;border-radius:50%;background:' + (pi < cur ? b.color : 'rgba(74,124,53,0.15)') + ';display:inline-block;margin:0 1px;"></span>';
+      h += '<div style="display:flex;align-items:center;gap:2px;">' + pips + '</div>';
+      // +/- buttons
+      h += '<button onclick="window._LW_treeAlloc(\'' + nId + '\',-1);window._bosSetTab(\'class\');" ' + (canSub ? '' : 'disabled ') + 'style="width:28px;height:28px;padding:0;font-size:0.7rem;background:' + (canSub ? 'rgba(217,107,75,0.15)' : 'rgba(40,40,40,0.2)') + ';border:1px solid ' + (canSub ? 'rgba(217,107,75,0.35)' : 'rgba(138,145,120,0.15)') + ';color:' + (canSub ? '#d96b4b' : 'var(--muted)') + ';border-radius:5px;cursor:' + (canSub ? 'pointer' : 'default') + ';">\u2212</button>';
+      h += '<button onclick="window._LW_treeAlloc(\'' + nId + '\',1);window._bosSetTab(\'class\');" ' + (canAdd ? '' : 'disabled ') + 'style="width:28px;height:28px;padding:0;font-size:0.7rem;background:' + (canAdd ? 'rgba(122,179,86,0.2)' : 'rgba(40,40,40,0.2)') + ';border:1px solid ' + (canAdd ? 'rgba(122,179,86,0.4)' : 'rgba(138,145,120,0.15)') + ';color:' + (canAdd ? 'var(--sage)' : 'var(--muted)') + ';border-radius:5px;cursor:' + (canAdd ? 'pointer' : 'default') + ';">+</button>';
+      h += '</div>';
+    }
+    h += '</div>';
+  }
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin:0.3rem 0 0.8rem;line-height:1.5;text-align:center;">Every point moves the needle. Max 5 per node \u00b7 1.25% cap per stat \u00b7 100 points = Lv 100 = all maxed.</div>';
+  return h;
+}
+window._bosTreeContent = _bosTreeContent;
+
+// Build CLASS tab content — tree on top, class picker below
 function _bosClassContent() {
   if (typeof LW_CLASSES === 'undefined') return '<div style="padding:2rem;text-align:center;color:var(--muted);">Class system loading...</div>';
+  // Tree renders first — it's the primary progression surface now
+  var treeHtml = (typeof _bosTreeContent === 'function') ? _bosTreeContent() : '';
+  var _origRet = _bosClassContentLegacy();
+  return treeHtml + '<div style="border-top:1px solid rgba(74,124,53,0.15);margin:1rem 0 0.6rem;padding-top:0.6rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:0.4rem;">CLASS \u00b7 BIOME \u00b7 COMPANIONS</div></div>' + _origRet;
+}
+function _bosClassContentLegacy() {
+  if (typeof LW_CLASSES === 'undefined') return '';
   var cur = localStorage.getItem('lw_class') || null;
   var classXP = {}; try { classXP = JSON.parse(localStorage.getItem('lw_class_xp') || '{}'); } catch(e) {}
   var toolXP = {}; try { toolXP = JSON.parse(localStorage.getItem('lw_tool_xp') || '{}'); } catch(e) {}
@@ -56114,7 +56192,7 @@ var LW_CLASSES={
   cartographer:{name:'Cartographer',icon:'🧭',desc:'Steps become XP. Biomes reveal themselves and feral patterns emerge on the map. Pairs with the Compass — built for walkers.',xpSrc:['biome','steps'],
     abilities:{
       1:{name:'Surefoot',desc:'+25% step XP'},
-      2:{name:'Biome Sense',desc:'Reveal biome on compass tap'},
+      2:{name:'Biome Sense',desc:'Compass reveals biome at L1 · L2+ also shows adjacent biomes within 300m'},
       3:{name:'Sky Watcher',desc:'+10% biome bonus · doubled with Heron'}
     },companion:36,biome:'mountain'},
   tender:{name:'Tender',icon:'💧',desc:'Your wild plants outlive everyone else\u2019s. Dew flows stronger, watering deepens your bond. Pairs with the Watering Can — the caretaker path.',xpSrc:['tend','dew'],
@@ -56138,7 +56216,7 @@ var LW_CLASSES={
 };
 var LW_TOOLS={
   shears:{name:'Shears',icon:'✂️',desc:'Clipping cooldown reducer',levels:{1:'6h cooldown',2:'4h cooldown',3:'2h cooldown'}},
-  can:{name:'Watering Can',icon:'💧',desc:'Batch watering',levels:{1:'1 plant',2:'Mass water 3',3:'Mass water 6 + rain'}},
+  can:{name:'Watering Can',icon:'💧',desc:'Batch watering',levels:{1:'Single tap-water',2:'Mass water 3',3:'Mass water 6 + rain'}},
   pouch:{name:'Field Pouch',icon:'🎒',desc:'Backpack capacity',levels:{1:'3 slots',2:'5 slots',3:'7 slots'}},
   compass:{name:'Compass',icon:'🧭',desc:'Wayfinding',levels:{1:'Wind direction',2:'Tap reveals biome',3:'Predicts next feral'}}
 };
@@ -56428,6 +56506,119 @@ window._LW_hasSynergy=function(){
   }catch(e){}
   return false;
 };
+
+// ═══ KEEPER'S TREE v1 ═══
+// 20 nodes, 5 branches, 5 pts/node, 0.25% per point. Max 100 pts = Lv 100.
+// Every point does SOMETHING (however small) — "every level is active."
+// Respec free once per 24h. Milestones at 10/25/50/75/100 give extras.
+var LW_TREE_BRANCHES={
+  forager:{name:'Forager',icon:'\ud83c\udf42',color:'#d4842a'},
+  breeder:{name:'Breeder',icon:'\ud83e\uddec',color:'#a88fbf'},
+  cartographer:{name:'Cartographer',icon:'\ud83e\udded',color:'#7ab3d4'},
+  tender:{name:'Tender',icon:'\ud83d\udca7',color:'#7ab356'},
+  keeper:{name:'Keeper',icon:'\ud83c\udf3f',color:'#c8a84b'}
+};
+var LW_TREE_NODES={
+  // Forager
+  feralRange:{branch:'forager',name:'Keen Path',desc:'+0.25% feral seed range / pt',max:5,per:0.0025},
+  rareOdds:{branch:'forager',name:'Lucky Find',desc:'+0.25% rare drop odds / pt',max:5,per:0.0025},
+  feralCd:{branch:'forager',name:'Quick Steps',desc:'-0.25% feral cooldown / pt',max:5,per:-0.0025},
+  harvestHash:{branch:'forager',name:'Sure Hand',desc:'+0.25% harvest hashes / pt',max:5,per:0.0025},
+  // Breeder
+  breedReward:{branch:'breeder',name:'Patient Hand',desc:'+0.25% breed reward / pt',max:5,per:0.0025},
+  chimeraPurity:{branch:'breeder',name:'Clean Blood',desc:'+0.25% chimera purity / pt',max:5,per:0.0025},
+  pollenFlow:{branch:'breeder',name:'Pollen Flow',desc:'+0.25% cross-pollinate reward / pt',max:5,per:0.0025},
+  compostReturn:{branch:'breeder',name:'Rich Compost',desc:'+0.25% fertilizer return / pt',max:5,per:0.0025},
+  // Cartographer
+  stepBonus:{branch:'cartographer',name:'Surefoot',desc:'+0.25% step XP / pt',max:5,per:0.0025},
+  biomeXp:{branch:'cartographer',name:'Wayfinder',desc:'+0.25% biome XP / pt',max:5,per:0.0025},
+  toolXp:{branch:'cartographer',name:'Keen Tool',desc:'+0.25% tool XP / pt',max:5,per:0.0025},
+  toolCd:{branch:'cartographer',name:'Light Pack',desc:'-0.25% tool cooldown / pt',max:5,per:-0.0025},
+  // Tender
+  plantLongevity:{branch:'tender',name:'Green Thumb',desc:'+0.25% plant longevity / pt',max:5,per:0.0025},
+  dewRate:{branch:'tender',name:'Dew Touched',desc:'+0.25% dew generation / pt',max:5,per:0.0025},
+  waterStreak:{branch:'tender',name:'Deep Root',desc:'+0.25% water streak bonus / pt',max:5,per:0.0025},
+  massWater:{branch:'tender',name:'Gentle Hand',desc:'+0.25% mass-water boost / pt',max:5,per:0.0025},
+  // Keeper
+  classXp:{branch:'keeper',name:'Attuned',desc:'+0.25% class XP / pt',max:5,per:0.0025},
+  defenseEa:{branch:'keeper',name:'Steady',desc:'+0.25% defense EA / pt',max:5,per:0.0025},
+  pollenRate:{branch:'keeper',name:'Abundance',desc:'+0.25% pollen rate / pt',max:5,per:0.0025},
+  nurseryGrow:{branch:'keeper',name:'Patient',desc:'+0.25% nursery growth / pt',max:5,per:0.0025}
+};
+var LW_TREE_MILESTONES={
+  10:{name:'Path Opened',desc:'+5 bonus tree points'},
+  25:{name:'Second Bloom',desc:'Guaranteed 1 feral / day (ignores cap)'},
+  50:{name:'Golden Hour',desc:'Pick 1 hour / day: all bonuses \u00d72'},
+  75:{name:'Near Horizon',desc:'Equip a second companion'},
+  100:{name:'Keeper Crown',desc:'Biome match applies everywhere'}
+};
+
+function _lwTreePoints(){try{return JSON.parse(localStorage.getItem('lw_tree_points')||'{}');}catch(e){return {};}}
+function _lwTreeSetPoints(p){try{localStorage.setItem('lw_tree_points',JSON.stringify(p));}catch(e){}}
+function _lwTreeSpent(){var p=_lwTreePoints(),s=0;for(var k in p)if(p.hasOwnProperty(k))s+=p[k]||0;return s;}
+window._LW_treeSpent=_lwTreeSpent;
+window._LW_treePoints=_lwTreePoints;
+window._LW_treeEarned=function(){
+  var lvl=(window.canSee&&window.canSee.currentLevel)?window.canSee.currentLevel():1;
+  var base=Math.min(100,lvl);
+  var bonus=(lvl>=10?5:0);  // Lv 10 milestone bonus
+  return base+bonus;
+};
+window._LW_treeAvailable=function(){return window._LW_treeEarned()-_lwTreeSpent();};
+// Tree bonus multiplier — called in class-bonus engine so existing
+// consumers auto-benefit. Kind strings must match LW_TREE_NODES keys.
+window._LW_treeBonus=function(kind){
+  var p=_lwTreePoints(),n=LW_TREE_NODES[kind];
+  if(!n||!p[kind])return 1;
+  return 1+(n.per*p[kind]);
+};
+window._LW_treeAlloc=function(nodeId,delta){
+  var n=LW_TREE_NODES[nodeId];if(!n)return false;
+  var p=_lwTreePoints();var cur=p[nodeId]||0;
+  if(delta>0){
+    if(window._LW_treeAvailable()<delta)return false;
+    if(cur+delta>n.max)return false;
+    p[nodeId]=cur+delta;
+  } else {
+    if(!window._LW_treeCanRespec()){
+      if(window._toast){var h=Math.ceil((24*3600000-(Date.now()-(parseInt(localStorage.getItem('lw_tree_respec_at')||'0',10))))/3600000);_toast('\u23f3 Respec ready in '+h+'h');}
+      return false;
+    }
+    if(cur+delta<0)return false;
+    p[nodeId]=cur+delta;
+  }
+  _lwTreeSetPoints(p);
+  return true;
+};
+window._LW_treeCanRespec=function(){
+  var last=parseInt(localStorage.getItem('lw_tree_respec_at')||'0',10);
+  return !last||(Date.now()-last>=24*3600000);
+};
+window._LW_treeRespec=function(){
+  if(!window._LW_treeCanRespec()){
+    if(window._toast){var h=Math.ceil((24*3600000-(Date.now()-parseInt(localStorage.getItem('lw_tree_respec_at')||'0',10)))/3600000);_toast('\u23f3 Respec ready in '+h+'h');}
+    return false;
+  }
+  if(!confirm('Reset all tree points?\n\nYou keep your earned points — free respec available once every 24h.'))return false;
+  _lwTreeSetPoints({});
+  try{localStorage.setItem('lw_tree_respec_at',String(Date.now()));}catch(e){}
+  if(window._haptic)window._haptic();
+  if(window._toast)_toast('\ud83c\udf3f Tree reset. Walk a new path.');
+  try{if(window._bosSetTab)window._bosSetTab('class');}catch(e){}
+  return true;
+};
+// Fold tree bonus into existing _LW_classBonus so all consumers benefit
+// without touching 7+ call sites. Tree multiplier stacks on top of class.
+(function(){
+  var _orig=window._LW_classBonus;
+  if(typeof _orig==='function'){
+    window._LW_classBonus=function(kind){
+      var cm=_orig(kind);
+      var tm=window._LW_treeBonus?window._LW_treeBonus(kind):1;
+      return cm*tm;
+    };
+  }
+})();
 
 // Class picker UI — opens from Book of Secrets
 window._LW_openClassPicker=function(){
