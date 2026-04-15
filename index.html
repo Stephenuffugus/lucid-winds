@@ -59973,6 +59973,12 @@ window._LW_toolMod=function(tool){
   // cooldowns inherit it automatically.
   var keeperCdMult=1;
   try{if(_lwGetClass()==='keeper'&&_lwGetClassLevel('keeper')>=2)keeperCdMult=0.9;}catch(e){}
+  // Tree node Well-Oiled (cartographer) + Gathered Hours (bower) — both
+  // -0.25%/pt tool cooldown. Multiplicative stack across branches.
+  try{if(window._LW_treeBonus){
+    var _tcm=window._LW_treeBonus('toolCd');if(_tcm&&_tcm<1)keeperCdMult*=_tcm;
+    var _ghm=window._LW_treeBonus('gatheredHours');if(_ghm&&_ghm<1)keeperCdMult*=_ghm;
+  }}catch(e){}
   if(tool==='shears'){var base=lvl>=3?2*60*60*1000:lvl>=2?4*60*60*1000:6*60*60*1000;return Math.round((base*keeperCdMult)/biomeBoost);}
   // Pouch: slots scale by level. Biome match was additive (+1) — now
   // multiplicative (×1.5) to match Shears so the "biome boost = 1.5×
