@@ -55827,7 +55827,48 @@ window._lwPickClass=function(cid,nm,icon){
     if(window._toast)_toast('Reach Keeper Level 7 to choose your path.');
     return;
   }
-  if(!confirm('Walk the path of the '+nm+'?\n\nYou can change paths later once you\u2019ve mastered a class.'))return;
+  // Richer confirmation — preview abilities + tools paired with this
+  // class so the L7 pick feels informed instead of blind. Falls back to
+  // the plain confirm() if _lwConfirm isn't loaded yet (shouldn't happen
+  // in practice since _lwConfirm lives in the main IIFE that loads before
+  // class picker is reachable).
+  var _def = LW_CLASSES[cid];
+  if (window._lwConfirm) {
+    var _body = '<div style="text-align:left;">';
+    _body += '<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--cream);margin-bottom:0.5rem;line-height:1.6;">' + (_def.desc || '') + '</div>';
+    _body += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.1em;color:var(--gold);margin:0.5rem 0 0.3rem;">ABILITIES</div>';
+    var _titles = ['','Apprentice','Journeyman','Master'];
+    for (var _ai = 1; _ai <= 3; _ai++) {
+      var _ab = _def.abilities && _def.abilities[_ai];
+      if (!_ab) continue;
+      var _hidden = _ai === 3;
+      _body += '<div style="padding:4px 0;font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);"><span style="color:var(--sage);">L' + _ai + ' ' + _titles[_ai] + '</span> \u00b7 ';
+      _body += _hidden
+        ? '<em>Revealed at Master.</em>'
+        : '<strong style="color:var(--cream);">' + _ab.name + '</strong> \u2014 ' + _ab.desc;
+      _body += '</div>';
+    }
+    _body += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);margin-top:0.55rem;line-height:1.5;">You can walk a new path any time \u2014 your XP is kept per-class.</div>';
+    _body += '</div>';
+    window._lwConfirm({
+      title: 'WALK THE PATH OF THE ' + nm.toUpperCase(),
+      body: _body,
+      yes: 'BEGIN THE PATH',
+      no: 'NOT YET'
+    }, function(){
+      try{localStorage.setItem('lw_class',cid);}catch(e){}
+      try{if(window._haptic)window._haptic();}catch(e){}
+      try{if(window._toast)window._toast(icon+' You chose '+nm+'. Begin your path.');}catch(e){}
+      try{if(window._playWin)window._playWin();}catch(e){}
+      try{if(window.syncVaultToCloud)setTimeout(window.syncVaultToCloud,400);}catch(e){}
+      try{if(typeof gtag!=='undefined')gtag('event','class_picked',{cls:cid});}catch(e){}
+      try{window._lwRefreshAvatar();}catch(e){}
+      try{if(window._updateCompCount)window._updateCompCount();}catch(e){}
+      if(window._bosSetTab)window._bosSetTab('class');
+    });
+    return;
+  }
+  if(!confirm('Walk the path of the '+nm+'?\n\nYou can change paths later.'))return;
   try{localStorage.setItem('lw_class',cid);}catch(e){}
   try{if(window._haptic)window._haptic();}catch(e){}
   try{if(window._toast)window._toast(icon+' You chose '+nm+'. Begin your path.');}catch(e){}
@@ -57020,17 +57061,24 @@ window.LW_Comp = (function(){
         }
       }
     } catch(e) {}
-    // Tool cooldown — shears is the only cooldown-bearing tool today
+    // Shears cooldown — per-plant keyed on fg_bp_clipCDs. Suggest pruning
+    // only when the player has an own wild plant AND at least one of them
+    // is off cooldown.
     try {
       if (cls && window._LW_toolMod) {
-        var _shearMod = window._LW_toolMod('shears');
-        var _shearLast = parseInt(localStorage.getItem('lw_tool_shears_last')||'0',10);
-        if (_shearMod && _shearLast && (Date.now() - _shearLast) >= _shearMod) {
-          // Shears are ready — worth surfacing only if the player has
-          // at least one own wild plant to prune.
-          var _ownWild = (wild||[]).filter(function(w){return w&&w.own;});
-          if (_ownWild.length > 0) {
-            out.push({icon:'\u2702\ufe0f',title:'Shears ready',body:'Your shears cooled down. Prune an own wild plant to tune its fruit cycle.',priority:35,action:function(){if(window.switchTab)switchTab('wild');}});
+        var _ownWild = (wild||[]).filter(function(w){return w&&w.own;});
+        if (_ownWild.length > 0) {
+          var _shearCD = window._LW_toolMod('shears') || (6*3600000);
+          var _cds = {}; try{_cds=JSON.parse(localStorage.getItem('fg_bp_clipCDs')||'{}');}catch(e){}
+          var _anyReady = false;
+          for (var _wi = 0; _wi < _ownWild.length; _wi++) {
+            var _cdKey = (_ownWild[_wi].hash || '') + '|cut';
+            var _last = _cds[_cdKey] || 0;
+            // Never-used OR cooldown elapsed counts as ready
+            if (!_last || (Date.now() - _last) >= _shearCD) { _anyReady = true; break; }
+          }
+          if (_anyReady) {
+            out.push({icon:'\u2702\ufe0f',title:'Shears ready',body:'At least one own wild plant is off cooldown. Take a clipping to send a seed to the nursery.',priority:35,action:function(){if(window.switchTab)switchTab('wild');}});
           }
         }
       }
