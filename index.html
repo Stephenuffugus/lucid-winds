@@ -57728,25 +57728,33 @@ window._updateCompCount=_updateCompCount;
 // Pick one class, level 1→3, each level unlocks abilities. Tools level separately.
 // XP hooks fire via window._LW_classXP(source, amount).
 var LW_CLASSES={
-  forager:{name:'Forager',icon:'🍂',desc:'Walk further. Feral seeds find you more often and rare drops tilt in your favor. Pairs with the Field Pouch and Compass — the path-finder build.',xpSrc:['feral','harvest'],
+  forager:{name:'Forager',icon:'🍂',desc:'Walk further. Feral seeds find you more often and rare drops tilt in your favor. Pairs with the Field Pouch and Compass — the path-finder build.',
+    lore:'The Forager reads landscape the way a cartographer reads a map — not with charts, but with shoes. Patient hunters. Masters of noticing. Where most keepers see a hedge, a Forager sees three seeds.',
+    xpSrc:['feral','harvest'],
     abilities:{
       1:{name:'Keen Eye',desc:'+25% feral seed range'},
       2:{name:'Bountiful',desc:'+15% rare drop odds'},
       3:{name:'Wild Kin',desc:'+50% feral drops · 2× when Raccoon equipped'}
     },companion:35,biome:'forest'},
-  breeder:{name:'Breeder',icon:'🧬',desc:'Blend lineages in the greenhouse. Extra nursery slot, cleaner chimera EA, and every cross-pollinate rewards more. Pairs with Watering Can and the Nursery.',xpSrc:['breed','chimera'],
+  breeder:{name:'Breeder',icon:'🧬',desc:'Blend lineages in the greenhouse. Extra nursery slot, cleaner chimera EA, and every cross-pollinate rewards more. Pairs with Watering Can and the Nursery.',
+    lore:'The Breeder thinks in generations. Where others see two plants, a Breeder sees a third line waiting to emerge. This is less craft than composition — every cross is a sentence finished by the grandchildren.',
+    xpSrc:['breed','chimera'],
     abilities:{
       1:{name:'Patient Hand',desc:'+1 nursery slot'},
       2:{name:'Purebred',desc:'+20% chimera purity'},
       3:{name:'Web Weaver',desc:'+50% breed reward · 2× with Garden Spider'}
     },companion:37,biome:'garden'},
-  cartographer:{name:'Cartographer',icon:'🧭',desc:'Steps become XP. Biomes reveal themselves and feral patterns emerge on the map. Pairs with the Compass — built for walkers.',xpSrc:['biome','steps'],
+  cartographer:{name:'Cartographer',icon:'🧭',desc:'Steps become XP. Biomes reveal themselves and feral patterns emerge on the map. Pairs with the Compass — built for walkers.',
+    lore:'The Cartographer turns movement into meaning. Biomes become legible. Feral patterns resolve into routes. The world reveals itself to walkers who stay curious long enough to notice the second and third time they pass the same hedge.',
+    xpSrc:['biome','steps'],
     abilities:{
       1:{name:'Surefoot',desc:'+25% step XP'},
       2:{name:'Biome Sense',desc:'Compass reveals biome at L1 · L2+ also shows adjacent biomes within 300m'},
       3:{name:'Sky Watcher',desc:'+10% biome bonus · doubled with Heron'}
     },companion:36,biome:'mountain'},
-  tender:{name:'Tender',icon:'💧',desc:'Your wild plants outlive everyone else\u2019s. Dew flows stronger, watering deepens your bond. Pairs with the Watering Can — the caretaker path.',xpSrc:['tend','dew'],
+  tender:{name:'Tender',icon:'💧',desc:'Your wild plants outlive everyone else\u2019s. Dew flows stronger, watering deepens your bond. Pairs with the Watering Can — the caretaker path.',
+    lore:'The Tender measures time in watering rounds. Plants they touch live longer — not by magic, but by attention. A Tender\u2019s greenhouse feels different because its oldest plants have been witnessed every single day.',
+    xpSrc:['tend','dew'],
     abilities:{
       1:{name:'Green Thumb',desc:'Wild plants live 2× longer'},
       2:{name:'Dew Touched',desc:'+20% dew generation'},
@@ -57755,7 +57763,9 @@ var LW_CLASSES={
       // companion dependency. Avoids the "must-own Phoenix" hoarding trap.
       3:{name:'Deep Green',desc:'Wild plants live 2.5× longer (passive)'}
     },companion:33,biome:'wetland'},
-  keeper:{name:'Keeper',icon:'🌿',desc:'The patient path. Every XP source counts, every tool cools faster, no weakness. Pairs with all tools — slow and steady through every biome.',xpSrc:['all'],
+  keeper:{name:'Keeper',icon:'🌿',desc:'The patient path. Every XP source counts, every tool cools faster, no weakness. Pairs with all tools — slow and steady through every biome.',
+    lore:'The Keeper is the sun of the garden — not dominant, but constant. No single talent; no single weakness. Every biome, every tool, every season yields equally. The long path. The one most often walked by the people who stay longest.',
+    xpSrc:['all'],
     abilities:{
       1:{name:'Attuned',desc:'+5% to all bonuses'},
       2:{name:'Versatile',desc:'All tool cooldowns -10%'},
@@ -58402,6 +58412,30 @@ window._LW_openClassPicker=function(){
   h+='<div style="font-family:Playfair Display,serif;font-size:1.1rem;color:var(--gold);font-style:italic;">The Keeper\'s Path</div>';
   h+='<button onclick="document.getElementById(\'lw-class-overlay\').remove()" style="width:48px;height:48px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:1rem;cursor:pointer;">✕</button>';
   h+='</div>';
+  // ═══ HERO BANNER ═══
+  // Showcases the equipped class's art at 160px so Jessie's emblem work has
+  // a real canvas. When no class is picked, shows an evocative prompt that
+  // matches the frame so the shape stays consistent.
+  if (cur && LW_CLASSES[cur]) {
+    var cDef = LW_CLASSES[cur];
+    var cLvl = _lwGetClassLevel(cur);
+    var cTitles = ['', 'Apprentice', 'Journeyman', 'Master'];
+    h += '<div style="position:relative;display:flex;flex-direction:column;align-items:center;padding:1rem 1rem 1.1rem;margin-bottom:1rem;background:radial-gradient(ellipse at 50% 20%,rgba(200,168,75,0.1) 0%,rgba(26,36,22,0.4) 60%);border:1.5px solid rgba(200,168,75,0.3);border-radius:14px;box-shadow:inset 0 1px 0 rgba(240,235,216,0.06),0 8px 24px rgba(0,0,0,0.4);">';
+    h += '<div style="width:160px;height:160px;margin-bottom:0.6rem;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.6)) drop-shadow(0 0 18px rgba(200,168,75,0.2));">';
+    h += '<img src="assets/classes/class-' + cur + '.png" alt="" style="width:100%;height:100%;object-fit:contain;" onerror="this.outerHTML=\'<div style=&quot;font-size:6rem;line-height:1;&quot;>' + cDef.icon + '</div>\'">';
+    h += '</div>';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.52rem;color:var(--gold);letter-spacing:0.2em;margin-bottom:2px;">' + cTitles[cLvl].toUpperCase() + ' \u00b7 L' + cLvl + '</div>';
+    h += '<div style="font-family:Playfair Display,serif;font-size:1.4rem;color:var(--cream);margin-bottom:6px;">' + cDef.name + '</div>';
+    if (cDef.lore) h += '<div style="font-family:DM Sans,sans-serif;font-size:0.62rem;color:var(--cream);line-height:1.65;text-align:center;max-width:340px;opacity:0.9;">' + cDef.lore + '</div>';
+    h += '</div>';
+  } else {
+    // No class picked — prompt state keeps the same 160px footprint for layout consistency
+    h += '<div style="position:relative;display:flex;flex-direction:column;align-items:center;padding:1rem 1rem 1.1rem;margin-bottom:1rem;background:radial-gradient(ellipse at 50% 20%,rgba(122,179,86,0.08) 0%,rgba(26,36,22,0.4) 60%);border:1.5px dashed rgba(122,179,86,0.3);border-radius:14px;">';
+    h += '<div style="width:160px;height:160px;margin-bottom:0.6rem;display:flex;align-items:center;justify-content:center;font-size:4rem;color:var(--muted);opacity:0.6;">\u269c\ufe0f</div>';
+    h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1rem;color:var(--sage);margin-bottom:4px;">Choose a path</div>';
+    h += '<div style="font-family:DM Sans,sans-serif;font-size:0.6rem;color:var(--muted);line-height:1.6;text-align:center;max-width:320px;">Five paths unfold below. Each shapes what the garden rewards you for. You can change later, but only once.</div>';
+    h += '</div>';
+  }
   h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);margin-bottom:1rem;line-height:1.5;">Choose one path. Each level unlocks an ability. Master rank unlocks companion synergy. Progress is slow — play long-term.</div>';
   for(var cid in LW_CLASSES){
     var def=LW_CLASSES[cid];
