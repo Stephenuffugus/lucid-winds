@@ -8,9 +8,6 @@ Source resolution, never resize. Most slots are optional — code falls back cle
   - glitch, glass-stem, wireframe, holographic, neon, ink-wash, golden, porcelain, bioluminescent, pixel-art, silhouette, albino, fossil
 
 ## READY TO START (P1)
-- [ ] Event discovery scroll icon → `assets/bos/event-scroll-icon.png` (64×64 or 128×128, gold-ink scroll + wax seal)
-- [ ] 6 foraging element card faces → `assets/foraging/el-{sun,shade,rain,dry,wind,still}.png` (512×512 transparent, tarot-style)
-- [ ] 3 rare foraging wild-cards → `assets/foraging/el-{moonlight,thunder,dust}.png` (same format)
 - [ ] 4 weather cast plates → `assets/weather/weather-{sun,rain,wind,calm}.png` (128×128)
 - [ ] 2 Reader corner flourishes → `assets/ui/reader-flourish-{tl,tr}.png` (128×128 gold Celtic leaf, transparent)
 
@@ -51,6 +48,8 @@ Already have Cicada v1 placeholder. Priority mythic+: toad, cicada, baby-mammoth
 - 5 keeper milestone hero cards (hero-cards/)
 - Book of Secrets spellbook cover (bos/)
 - 5 class emblems (character-sheet/classes/)
+- 6 event scroll sigils (bos/scroll-{keeper,tender,forager,breeder,cartographer,listeners}.png)
+- 9 foraging element cards (foraging/el-{sun,shade,rain,dry,wind,still,moonlight,thunder,aurora}.png)
 - 15 FLUX tab backgrounds + onboarding beats
 - 21-card Trios deck + card backs
 
