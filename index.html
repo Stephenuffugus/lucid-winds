@@ -47585,6 +47585,7 @@ function _csPips(active,level){
   }
   return html+'</span>';
 }
+window._renderClassSection = _renderClassSection;
 function _renderClassSection(){
   var el=document.getElementById('cs-class-body');if(!el)return;
   var cls=(window._lwGetClass&&window._lwGetClass())||null;
@@ -59964,6 +59965,11 @@ window._lwPickClass=function(cid,nm,icon){
       try{if(typeof gtag!=='undefined')gtag('event','class_picked',{cls:cid});}catch(e){}
       try{window._lwRefreshAvatar();}catch(e){}
       try{if(window._updateCompCount)window._updateCompCount();}catch(e){}
+      // Close the class picker overlay so the player sees the updated
+      // character sheet (or Book of Secrets class tab) instead of the
+      // picker list still sitting underneath.
+      try{var _ov=document.getElementById('lw-class-overlay');if(_ov)_ov.remove();}catch(e){}
+      try{if(window._renderClassSection)_renderClassSection();}catch(e){}
       if(window._bosSetTab)window._bosSetTab('class');
     });
     return;
@@ -60493,7 +60499,7 @@ window._LW_openClassPicker=function(){
   var cur=_lwGetClass();
   var ov=document.createElement('div');
   ov.id='lw-class-overlay';
-  ov.style.cssText='position:fixed;inset:0;z-index:99997;background:rgba(5,8,4,0.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);overflow-y:auto;padding:1rem;-webkit-overflow-scrolling:touch;';
+  ov.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(5,8,4,0.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);overflow-y:auto;padding:1rem;-webkit-overflow-scrolling:touch;';
   var h='<div style="max-width:420px;margin:0 auto;">';
   h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">';
   h+='<div style="font-family:Playfair Display,serif;font-size:1.1rem;color:var(--gold);font-style:italic;">The Keeper\'s Path</div>';
@@ -60533,13 +60539,15 @@ window._LW_openClassPicker=function(){
     var picked=cur===cid;
     var lockedCur=cur&&cur!==cid;
     h+='<div style="margin-bottom:0.7rem;padding:0.8rem;background:'+(picked?'rgba(200,168,75,0.1)':'rgba(26,36,22,0.4)')+';border:1.5px solid '+(picked?'rgba(200,168,75,0.5)':'rgba(74,124,53,0.15)')+';border-radius:12px;'+(lockedCur?'opacity:0.4;':'')+'">';
-    h+='<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.4rem;">';
-    h+='<div style="font-size:1.8rem;">'+def.icon+'</div>';
-    h+='<div style="flex:1;">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:'+(picked?'var(--gold)':'var(--cream)')+';letter-spacing:0.08em;">'+def.name.toUpperCase()+(picked?' · L'+lvl:'')+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">'+def.desc+'</div>';
+    h+='<div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.4rem;">';
+    h+='<div style="width:72px;height:72px;flex-shrink:0;border-radius:14px;overflow:hidden;border:1.5px solid '+(picked?'rgba(200,168,75,0.5)':'rgba(122,179,86,0.2)')+';background:radial-gradient(circle at 40% 35%,rgba(42,54,34,0.9),rgba(13,16,12,0.95));">';
+    h+='<img src="assets/character-sheet/classes/'+cid+'.png" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.outerHTML=\'<div style=&quot;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.2rem;&quot;>'+def.icon+'</div>\'">';
     h+='</div>';
-    if(!cur)h+='<button onclick="if(window._lwPickClass)_lwPickClass(\''+cid+'\',\''+def.name+'\',\''+def.icon+'\');" style="min-height:40px;padding:8px 12px;font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;background:rgba(122,179,86,0.2);border:1.5px solid var(--sage);color:var(--sage);border-radius:8px;cursor:pointer;">CHOOSE</button>';
+    h+='<div style="flex:1;min-width:0;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:'+(picked?'var(--gold)':'var(--cream)')+';letter-spacing:0.08em;">'+def.name.toUpperCase()+(picked?' · L'+lvl:'')+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.4;margin-top:2px;">'+def.desc+'</div>';
+    h+='</div>';
+    if(!cur)h+='<button onclick="if(window._lwPickClass)_lwPickClass(\''+cid+'\',\''+def.name+'\',\''+def.icon+'\');" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(122,179,86,0.15));border:1.5px solid var(--gold);color:var(--gold);border-radius:8px;cursor:pointer;flex-shrink:0;">CHOOSE</button>';
     h+='</div>';
     if(picked){
       h+='<div style="margin:0.3rem 0;"><div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);"><span>XP: '+xp+'</span><span>Next: '+nextXP+'</span></div>';
