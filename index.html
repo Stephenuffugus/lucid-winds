@@ -39886,13 +39886,14 @@ function _openHexInspector(zk){
     if(window._lastDetectedBiome&&window.getBiomeInfo){
       var bi=getBiomeInfo(window._lastDetectedBiome);
       if(bi&&bi.img){
-        banner='<div style="position:relative;height:64px;margin:-6px -6px 6px;border-radius:8px 8px 0 0;overflow:hidden;background:#0d100c;">'+
+        banner='<div onclick="if(window._lwShowBiomeDetail)_lwShowBiomeDetail(\''+window._lastDetectedBiome+'\')" style="position:relative;height:64px;margin:-6px -6px 6px;border-radius:8px 8px 0 0;overflow:hidden;background:#0d100c;cursor:pointer;">'+
           '<img src="'+bi.img+'" alt="" style="width:100%;height:100%;object-fit:cover;opacity:0.72;" onerror="this.style.display=\'none\';">'+
           '<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(13,16,12,0.25) 0%,rgba(13,16,12,0.85) 100%);"></div>'+
           '<div style="position:absolute;left:10px;bottom:6px;font-family:Playfair Display,serif;font-style:italic;color:'+(bi.color||'var(--cream)')+';font-size:0.85rem;text-shadow:0 2px 6px rgba(0,0,0,0.8);">'+(bi.icon||'')+' '+(bi.name||'Unknown')+'</div>'+
+          '<div style="position:absolute;right:8px;bottom:6px;font-family:DM Mono,monospace;font-size:0.32rem;color:rgba(255,235,195,0.75);letter-spacing:0.1em;">TAP \u2192</div>'+
           '</div>';
-      } else {
-        chips+='<div class="hi-hab-chip">'+(bi.icon||'')+' <b>'+(bi.name||'Unknown')+'</b></div>';
+      } else if(bi){
+        chips+='<div class="hi-hab-chip" onclick="if(window._lwShowBiomeDetail)_lwShowBiomeDetail(\''+window._lastDetectedBiome+'\')" style="cursor:pointer;">'+(bi.icon||'')+' <b>'+(bi.name||'Unknown')+'</b></div>';
       }
     }
     if(window.getSoilInfo){var soi=getSoilInfo(lat,lng);if(soi)chips+='<div class="hi-hab-chip">Soil: <b>'+soi.name+'</b> ('+soi.maturity+'%)</div>';}
@@ -47379,7 +47380,7 @@ function _renderMilestoneSection(){
       ? 'linear-gradient(180deg,rgba(46,38,18,0.45),rgba(26,22,12,0.6))'
       : 'rgba(18,22,16,0.4)';
     var labelColor=unlocked?'var(--gold)':'var(--muted)';
-    h+='<div title="'+(unlocked?m.name:'Locked \u2014 Lv '+lv)+'" style="position:relative;background:'+cardBg+';border:1.5px solid '+cardBorder+';border-radius:8px;padding:4px;text-align:center;overflow:hidden;aspect-ratio:3/4;">';
+    h+='<div onclick="window._lwShowMilestoneDetail('+lv+')" title="'+(unlocked?m.name:'Locked \u2014 Lv '+lv)+'" style="position:relative;background:'+cardBg+';border:1.5px solid '+cardBorder+';border-radius:8px;padding:4px;text-align:center;overflow:hidden;aspect-ratio:3/4;cursor:pointer;">';
     if(m.hero){
       h+='<img src="'+m.hero+'" alt="" style="width:100%;height:72%;object-fit:cover;border-radius:5px;'+imgStyle+'" onerror="this.style.display=\'none\';">';
     } else {
@@ -54846,6 +54847,100 @@ window._bosActivityContent = _bosActivityContent;
   window.LW_Reader = { open: open, close: close };
 })();
 
+// ═══ MILESTONE DETAIL PAGE via LW_Reader ═══
+// Tap a milestone card on the character sheet → opens the hero art + lore.
+var LW_MILESTONE_LORE = {
+  10:  'Ten levels in. Enough motion to call it a practice. A tree opens for you — a small one, branches still quiet, five bonus points waiting to be spent.',
+  25:  'The garden is watching back. A feral seed now arrives each day, regardless of cap or caution. This is the universe acknowledging you showed up.',
+  50:  'Midway through the long walk. One hour each day now runs at double. Pick the hour you love most — sunrise, lunch, bedtime — and the garden matches your rhythm.',
+  75:  'A second companion can walk with you now. Pairings begin: who pairs well with whom, who wants solitude, who the garden assigns to a task only they can hear.',
+  100: 'No biome is foreign anymore. Wherever you stand, the garden treats you as native. The Long Watch is less an achievement than a posture: present, patient, unhurried.'
+};
+window._lwShowMilestoneDetail = function(level) {
+  var mile = window.LW_TREE_MILESTONES && window.LW_TREE_MILESTONES[level];
+  if (!mile) return;
+  var currentLvl = 0;
+  try { var r = _getRank(_getXP()); currentLvl = r.level || 0; } catch(e){}
+  var unlocked = currentLvl >= level;
+  var body = [];
+  if (mile.subtitle) body.push({type:'quote', text: mile.subtitle});
+  if (unlocked && LW_MILESTONE_LORE[level]) body.push({type:'para', text: LW_MILESTONE_LORE[level]});
+  body.push({type:'section-head', text:'Mechanics'});
+  body.push({type:'para', text: mile.desc});
+  body.push({type:'divider'});
+  body.push({type:'stat', label:'Unlocks at', value:'Level ' + level});
+  body.push({type:'stat', label:'Status', value: unlocked ? 'Unlocked' : (currentLvl + ' / ' + level)});
+  if (!unlocked) {
+    body.push({type:'para', text: 'Keep tending. The game is long; milestones are markers of the path, not gates to rush.'});
+  }
+  window.LW_Reader.open({
+    eyebrow: 'MILESTONE \u00b7 L' + level,
+    title: mile.name,
+    subtitle: null,
+    theme: 'gold',
+    hero: unlocked ? mile.hero : null,
+    heroStyle: 'inline',
+    chips: ['LEVEL ' + level, unlocked ? 'UNLOCKED' : 'LOCKED'],
+    body: body,
+    actions: [{label:'CLOSE', kind:'ghost'}]
+  });
+};
+
+// ═══ BIOME DETAIL PAGE via LW_Reader ═══
+// Deep lore + mechanics view for any biome. Reads BIOMES catalog, shows the
+// painting as hero, lists the rarity boost / spawn modifier / mutation flavor.
+// Called from biome chip taps and from the Wild tab hex inspector.
+window._lwShowBiomeDetail = function(biomeKey) {
+  if (!window.BIOMES || !window.BIOMES[biomeKey]) return;
+  var b = window.BIOMES[biomeKey];
+  // Count plants already in your greenhouse that bloomed from this biome
+  var seedOfThisBiome = 0;
+  try {
+    var gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+    for (var i = 0; i < gh.length; i++) { if (gh[i].biome === biomeKey) seedOfThisBiome++; }
+  } catch(e){}
+  var isCurrent = (window._lastDetectedBiome === biomeKey);
+  var BIOME_LORE = {
+    wetland:  'Water-logged and generous. The soil here is always thirsty but rarely dry. Root-rot is a way of life, and plants that survive it inherit a quiet immunity.',
+    riverside:'Where the ground meets the current. Seeds drift in from upstream, roots knit in pebble beds. The water writes memory into everything it touches.',
+    coastal:  'Salt in the air, sand underfoot. The plants that make it here are the stubborn ones, crowned in crystal, unbothered by wind.',
+    forest:   'The canopy remembers everything. Moss hides what it tends. Growth is slow, layered, and patient — the soil is thick with old intentions.',
+    mountain: 'High and thin and cold. Only the hardiest make it. What they lack in abundance they carry in rarity — alpine frost leaves a permanent mark.',
+    desert:   'The sun is the only clock. Water is a rumor. Every bloom here is a small act of defiance, and thorn-crowned plants carry the story in their skin.',
+    farmland: 'Tended earth, turned in rows. Cultivars thrive here where wildness would fail. Not glamorous, but endlessly productive.',
+    garden:   'Where human hands have taught the soil. Blooms are brighter, breeds are bolder. Cultivar Bloom is the inheritance of care.',
+    park:     'Tamed wilderness. Half a forest, half a promise. Children and keepers alike come to sit in its shade.',
+    suburban: 'Hedge, lawn, driveway. Quiet domesticity. Not every story needs a dramatic backdrop — some gardens just grow where you live.'
+  };
+  var body = [];
+  body.push({type:'quote', text: BIOME_LORE[biomeKey] || 'A biome of its own making.'});
+  body.push({type:'section-head', text:'Mechanics'});
+  if (b.rarityBoost) body.push({type:'stat', label:'Rarity bonus', value:'+' + Math.round(b.rarityBoost*100) + '%'});
+  if (typeof b.spawnMod === 'number') body.push({type:'stat', label:'Spawn rate', value:'\u00d7' + b.spawnMod});
+  if (b.mutation) body.push({type:'stat', label:'Biome mutation', value:b.mutation});
+  body.push({type:'divider'});
+  body.push({type:'section-head', text:'Your connection'});
+  body.push({type:'stat', label:'Plants born here', value:seedOfThisBiome});
+  body.push({type:'stat', label:'Currently standing in', value:isCurrent ? 'Yes' : 'No'});
+  if (isCurrent) {
+    body.push({type:'para', text:'You are here now. Every plant you drop in this biome inherits a trace of it.'});
+  }
+  var chips = [];
+  chips.push(b.name);
+  if (b.rarityBoost) chips.push('+' + Math.round(b.rarityBoost*100) + '% rare');
+  if (b.mutation) chips.push(b.mutation);
+  window.LW_Reader.open({
+    eyebrow: isCurrent ? 'YOU ARE HERE' : 'BIOME',
+    title: b.name,
+    subtitle: null,
+    theme: 'sage',
+    hero: b.img || null,
+    chips: chips,
+    body: body,
+    actions: [{label:'CLOSE', kind:'ghost'}]
+  });
+};
+
 // Synergy detail now uses LW_Reader — proves the pattern.
 window._lwShowSynergyDetail = function(synName) {
   var defs = window._lwSynergyDefs || {};
@@ -56543,6 +56638,109 @@ function _bosReportContent() {
   };
 })();
 
+// ═══ WILD EVENT CATALOG ═══
+// Hoisted to window so the Events tab AND the Reader detail pages share one
+// source of truth. Each event: name, hint (action to unlock), riddle (shown
+// while locked), lore (deeper flavor shown in Reader after unlock).
+window.LW_EVENT_CATALOG = [
+  { name: 'COMMON',    color: '#959588', desc: 'Everyday occurrences', events: [
+    { name: 'First Light', hint: 'Open the app at dawn', riddle: 'The keeper who greets the morning star.',
+      lore: 'Every keeper has a dawn they remember. Not the first one they ever saw — the first one they saw on purpose. This is that one. Spring, winter, tired or not, you showed up for the light.' },
+    { name: 'Root Down', hint: 'Drop your first wild plant', riddle: 'A seed finds soil far from home.',
+      lore: 'The first plant you set loose in the world. It will not be your last, but it will always be the one that taught you nobody owns a garden — we just borrow the soil for a while.' },
+    { name: 'Rainfall', hint: 'Water 3 plants in one session', riddle: 'Three drinks from the same cloud.',
+      lore: 'Routine is its own form of care. Three plants, one session, no ceremony. The word for this in old gardening almanacs was simply "rounds."' },
+    { name: 'Neighbor', hint: "See another player's plant", riddle: "A stranger's garden, glimpsed through the hedge.",
+      lore: 'You thought you were alone out here. You are not. Someone else is tending, somewhere, right now. Their plant is proof of a life you will never see the rest of — and that is enough.' }
+  ]},
+  { name: 'UNCOMMON',  color: '#8CB86E', desc: 'Takes patience and attention', events: [
+    { name: 'Full Moon Harvest', hint: 'Harvest during evening hours', riddle: "Silver light guides the reaper's hand.",
+      lore: 'Old-world gardeners timed harvests to the moon. Was it real? The science is thin. But standing under that silver light, picking something ripe — whether the moon helps or not, *you* feel more alive.' },
+    { name: 'Dual Bloom', hint: 'Two plants bloom on the same day', riddle: 'Twins born of different seeds, same sun.',
+      lore: 'Two plants crossing into maturity on the same day is statistical coincidence. It is also the universe showing you a pattern. Both readings are valid. Pick the one that makes the garden feel more magical.' },
+    { name: 'Pollen Trail', hint: 'Cross-pollinate 3 times in one week', riddle: 'The wind carries gold from grove to grove.',
+      lore: 'A breeder who crosses three lines in a week is not experimenting — they are composing. Every pollen brush is a word in a sentence only you know the ending of.' },
+    { name: 'Deep Roots', hint: 'Keep a plant alive for 30 days', riddle: 'What grows slow holds the earth together.',
+      lore: 'Thirty days is nothing to an oak and everything to a keeper. The plant has learned your rhythms. You have learned its name. This is what old gardeners called a "friend in the pot."' }
+  ]},
+  { name: 'RARE',      color: '#5b8fb9', desc: 'Requires dedication', events: [
+    { name: "Chimera's Wake", hint: 'Breed a Gen 3+ chimera', riddle: 'Three bloodlines twisted into one vine.',
+      lore: "A third-generation chimera carries three ancestral seasons in a single stem. Cross-pollinators who reach this depth are rewriting a lineage that wasn't supposed to exist." },
+    { name: 'The Collector', hint: 'Own one of every rarity tier', riddle: 'From common clay to cosmic light — all seven gathered.',
+      lore: 'Seven tiers. Seven voices. A collection this complete is a kind of library — common is not the opposite of cosmic, it is its foundation. Both deserve a shelf.' },
+    { name: 'Storm Walker', hint: 'Summon all 4 weather types', riddle: 'The keeper who commands the sky.',
+      lore: 'Sun, rain, wind, still. The four classical conditions of plant growth, now each at your command. This is not control — it is conversation. The sky answered when you asked.' }
+  ]},
+  { name: 'EPIC',      color: '#9B59B6', desc: 'Demands mastery', events: [
+    { name: 'The Alchemist', hint: 'Discover 20 synergies', riddle: 'Twenty threads woven from the same loom.',
+      lore: "Twenty synergies is not luck. You are reading the trait table as poetry — season against companion, mutation against pot. Somewhere between breeder and botanist is a third word, older, and you've become it." },
+    { name: 'Territorial', hint: 'Hold 3 wild zones for 7 days', riddle: 'The grove expands when no one pushes back.',
+      lore: "Three zones, seven days apiece. You have built something stable in a world that rewards motion. Other keepers are walking past your plants right now and deciding not to harvest. That's territory." },
+    { name: 'Cicada Chorus', hint: 'Own a Cicada companion', riddle: 'Silent for seasons, loud at summer — who waits to sing?',
+      lore: "Cicadas wait 13 or 17 years underground for a reason no biologist has fully explained. When they finally emerge, they sing together — the only way any of them survive. You've earned one's company. That's no small thing." }
+  ]},
+  { name: 'LEGENDARY', color: '#C8A84B', desc: 'The rarest achievements', events: [
+    { name: "The Beholder's Gaze", hint: 'Own a Cosmic plant with The Beholder', riddle: 'An eye that has seen every seed that ever fell.',
+      lore: 'A Cosmic-tier plant carrying the Beholder occurs in roughly 0.04% of mints. The creature is ancient — it remembers every bloom that came before, even ones that never bloomed. To own one is to be witnessed by something older than the garden itself.' },
+    { name: 'Full Grove', hint: 'Fill all 60 greenhouse slots', riddle: 'No empty pot. No bare shelf. A forest indoors.',
+      lore: 'Sixty plants. No empty pots, no placeholders. An entire ecosystem in the space of a studio apartment. This is what old horticulturists meant when they said "the garden is complete only when you stop wanting more room." (They were lying. But only gently.)' },
+    { name: 'Century Keeper', hint: '100-day login streak', riddle: 'The sun rose a hundred times and found you still tending.',
+      lore: "A hundred consecutive days. Storms, travel, hard weeks, good ones. The plants don't know you had a rough Tuesday; they only know you showed up. Few titles in this game are older or harder than this one." }
+  ]}
+];
+
+// Name → {event, tier} lookup for quick detail page opens.
+window.LW_EVENT_LOOKUP = (function(){
+  var m = {};
+  for (var ti = 0; ti < window.LW_EVENT_CATALOG.length; ti++) {
+    var t = window.LW_EVENT_CATALOG[ti];
+    for (var ei = 0; ei < t.events.length; ei++) {
+      m[t.events[ei].name] = { event: t.events[ei], tier: t };
+    }
+  }
+  return m;
+})();
+
+// Event detail Reader page.
+window._lwShowEventDetail = function(eventName) {
+  var rec = window.LW_EVENT_LOOKUP[eventName];
+  if (!rec) return;
+  var ev = rec.event, tier = rec.tier;
+  var unlocked = {};
+  try { unlocked = JSON.parse(localStorage.getItem('lw_wild_events') || '{}'); } catch(e){}
+  var entry = unlocked[eventName];
+  var found = !!entry;
+  var body = [];
+  if (found) {
+    if (ev.lore) body.push({type:'quote', text: ev.lore});
+    body.push({type:'section-head', text:'How you earned it'});
+    body.push({type:'para', text: ev.hint});
+    body.push({type:'divider'});
+    if (entry && entry.d) body.push({type:'stat', label:'Discovered', value: entry.d});
+    if (entry && entry.t) {
+      var days = Math.floor((Date.now() - entry.t) / 86400000);
+      body.push({type:'stat', label:'Days ago', value: days === 0 ? 'today' : (days === 1 ? 'yesterday' : days + ' days')});
+    }
+  } else {
+    body.push({type:'quote', text: '"' + ev.riddle + '"'});
+    body.push({type:'divider'});
+    body.push({type:'section-head', text: 'A hint'});
+    body.push({type:'para', text: ev.hint});
+    body.push({type:'para', text: 'This page will fill in with deeper lore once you discover it.'});
+  }
+  // Map tier color to theme
+  var tierThemeMap = { COMMON:'sage', UNCOMMON:'sage', RARE:'blue', EPIC:'cosmic', LEGENDARY:'gold' };
+  window.LW_Reader.open({
+    eyebrow: 'EVENT \u00b7 ' + tier.name,
+    title: found ? ev.name : '??? ??? ???',
+    subtitle: found ? null : 'a secret you haven\u2019t found yet',
+    theme: tierThemeMap[tier.name] || 'gold',
+    chips: [tier.name, found ? 'DISCOVERED' : 'LOCKED'],
+    body: body,
+    actions: [{label:'CLOSE', kind:'ghost'}]
+  });
+};
+
 function _bosEventsContent() {
   var h = '';
   // 30-day discovery sparkline — one bar per day, bar height = events discovered
@@ -56578,36 +56776,8 @@ function _bosEventsContent() {
       h += '</div>';
     }
   } catch(e){}
-  // Wild event tiers — color-coded by difficulty
-  var tiers = [
-    { name: 'COMMON',    color: '#959588', desc: 'Everyday occurrences', events: [
-      { name: 'First Light', hint: 'Open the app at dawn', riddle: 'The keeper who greets the morning star.' },
-      { name: 'Root Down', hint: 'Drop your first wild plant', riddle: 'A seed finds soil far from home.' },
-      { name: 'Rainfall', hint: 'Water 3 plants in one session', riddle: 'Three drinks from the same cloud.' },
-      { name: 'Neighbor', hint: 'See another player\'s plant', riddle: 'A stranger\'s garden, glimpsed through the hedge.' }
-    ]},
-    { name: 'UNCOMMON',  color: '#8CB86E', desc: 'Takes patience and attention', events: [
-      { name: 'Full Moon Harvest', hint: 'Harvest during evening hours', riddle: 'Silver light guides the reaper\'s hand.' },
-      { name: 'Dual Bloom', hint: 'Two plants bloom on the same day', riddle: 'Twins born of different seeds, same sun.' },
-      { name: 'Pollen Trail', hint: 'Cross-pollinate 3 times in one week', riddle: 'The wind carries gold from grove to grove.' },
-      { name: 'Deep Roots', hint: 'Keep a plant alive for 30 days', riddle: 'What grows slow holds the earth together.' }
-    ]},
-    { name: 'RARE',      color: '#5b8fb9', desc: 'Requires dedication', events: [
-      { name: 'Chimera\'s Wake', hint: 'Breed a Gen 3+ chimera', riddle: 'Three bloodlines twisted into one vine.' },
-      { name: 'The Collector', hint: 'Own one of every rarity tier', riddle: 'From common clay to cosmic light — all seven gathered.' },
-      { name: 'Storm Walker', hint: 'Summon all 4 weather types', riddle: 'The keeper who commands the sky.' }
-    ]},
-    { name: 'EPIC',      color: '#9B59B6', desc: 'Demands mastery', events: [
-      { name: 'The Alchemist', hint: 'Discover 20 synergies', riddle: 'Twenty threads woven from the same loom.' },
-      { name: 'Territorial', hint: 'Hold 3 wild zones for 7 days', riddle: 'The grove expands when no one pushes back.' },
-      { name: 'Cicada Chorus', hint: 'Own a Cicada companion', riddle: 'Silent for seasons, loud at summer — who waits to sing?' }
-    ]},
-    { name: 'LEGENDARY', color: '#C8A84B', desc: 'The rarest achievements', events: [
-      { name: 'The Beholder\'s Gaze', hint: 'Own a Cosmic plant with The Beholder', riddle: 'An eye that has seen every seed that ever fell.' },
-      { name: 'Full Grove', hint: 'Fill all 60 greenhouse slots', riddle: 'No empty pot. No bare shelf. A forest indoors.' },
-      { name: 'Century Keeper', hint: '100-day login streak', riddle: 'The sun rose a hundred times and found you still tending.' }
-    ]}
-  ];
+  // Wild event tiers — now sourced from hoisted catalog (single source of truth)
+  var tiers = window.LW_EVENT_CATALOG;
 
   // Check which events are unlocked
   var unlocked = {};
@@ -56630,13 +56800,14 @@ function _bosEventsContent() {
     for (var ei2 = 0; ei2 < tier.events.length; ei2++) {
       var ev = tier.events[ei2];
       var found = !!unlocked[ev.name];
+      var _evNameEsc = ev.name.replace(/'/g, "\\'");
       if (found) {
-        h += '<div style="padding:0.55rem 0.7rem;margin-bottom:4px;background:linear-gradient(180deg,rgba(18,22,16,0.7),rgba(13,16,12,0.8));border:1px solid ' + tier.color + '44;border-left:3px solid ' + tier.color + ';border-radius:8px;">';
+        h += '<div onclick="window._lwShowEventDetail(\'' + _evNameEsc + '\')" style="padding:0.55rem 0.7rem;margin-bottom:4px;background:linear-gradient(180deg,rgba(18,22,16,0.7),rgba(13,16,12,0.8));border:1px solid ' + tier.color + '44;border-left:3px solid ' + tier.color + ';border-radius:8px;cursor:pointer;transition:background 0.15s ease;" onmouseover="this.style.background=\'linear-gradient(180deg,rgba(28,36,22,0.8),rgba(18,24,14,0.9))\'" onmouseout="this.style.background=\'linear-gradient(180deg,rgba(18,22,16,0.7),rgba(13,16,12,0.8))\'">';
         h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:' + tier.color + ';letter-spacing:0.06em;">' + ev.name + '</div>';
         h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);margin-top:2px;">' + ev.hint + '</div>';
         h += '</div>';
       } else {
-        h += '<div style="padding:0.55rem 0.7rem;margin-bottom:4px;background:rgba(13,16,12,0.4);border:1px solid rgba(74,124,53,0.08);border-left:3px solid rgba(138,145,120,0.15);border-radius:8px;">';
+        h += '<div onclick="window._lwShowEventDetail(\'' + _evNameEsc + '\')" style="padding:0.55rem 0.7rem;margin-bottom:4px;background:rgba(13,16,12,0.4);border:1px solid rgba(74,124,53,0.08);border-left:3px solid rgba(138,145,120,0.15);border-radius:8px;cursor:pointer;">';
         h += '<div style="font-family:DM Mono,monospace;font-style:italic;font-size:0.5rem;color:var(--muted);line-height:1.4;">"' + ev.riddle + '"</div>';
         h += '</div>';
       }
