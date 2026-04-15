@@ -40477,12 +40477,16 @@ function _lwMassWaterDoIt(eligibleIdx, cost){
   var wild = _getWild();
   var now = Date.now();
   var watered = 0;
+  // Tender tree node Blessing Rain — extends lifespan reset by the bonus.
+  // Silent. Player notices their mass-watered plants outlast neighbors'.
+  var _mwBoost = 1;
+  try{if(window._LW_treeBonus){var _mwm=window._LW_treeBonus('massWater');if(_mwm>1)_mwBoost=_mwm;}}catch(e){}
   for (var i=0;i<eligibleIdx.length;i++){
     var w = wild[eligibleIdx[i]];
     if (!w) continue;
     _ensureVitality(w);
     w.lastWateredAt = now;
-    w.decayAt = now + (w.lifespanMs || (7*86400000));
+    w.decayAt = now + Math.round((w.lifespanMs || (7*86400000)) * _mwBoost);
     watered++;
   }
   _saveWild(wild);
