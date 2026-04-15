@@ -30316,6 +30316,16 @@ document.addEventListener('keydown', function(e) {
     var inv = loadInventory();
     // Tree node Rich Compost (+0.25%/pt fertilizer return)
     try{if(window._LW_treeBonus){var _cm=window._LW_treeBonus('compostReturn');if(_cm>1)fertReward=Math.ceil(fertReward*_cm);}}catch(e){}
+    // Conduit T3 RITUAL "Compost Song" — Dew refund by Terra Grade tier.
+    // Common=1, Uncommon=2, Rare=3, Epic=4, Legendary=5, Mythic=6, Cosmic=7.
+    try{
+      if(window._LW_hasFamilyRitual&&window._LW_hasFamilyRitual('conduits')&&plant&&plant.grade){
+        var _tg={Common:1,Uncommon:2,Rare:3,Epic:4,Legendary:5,Mythic:6,Cosmic:7};
+        var _dr=_tg[plant.grade]||1;
+        if(window.earnDew)window.earnDew(_dr,'compost_song');
+        if(window._toast)setTimeout(function(){window._toast('\ud83d\udca7 Compost Song \u2014 +'+_dr+' Dew from the song of decay');},1400);
+      }
+    }catch(e){}
     inv.dnaFragments = (inv.dnaFragments || 0) + dnaReward;
     inv.fertilizer = (inv.fertilizer || 0) + fertReward;
     inv.lastCompostSource = _srcTraits;
@@ -37903,6 +37913,9 @@ function _doCrossPollination(wildPlant,matePlant){
     try{if(window.LW_COMPANION){_breedMult=window.LW_COMPANION.getCompanionMult('pollen')*window.LW_COMPANION.getCompanionMult('breedReward');}}catch(e){}
     // Tree nodes Patient Hand (breedReward) + Pollen Flow (pollenFlow) stack
     try{if(window._LW_treeBonus){_breedMult*=window._LW_treeBonus('breedReward');_breedMult*=window._LW_treeBonus('pollenFlow');}}catch(e){}
+    // Pollinator T3 RITUAL "Twin Bloom" — 10% chance to double the reward roll
+    var _twinBloom=false;
+    try{if(window._LW_hasFamilyRitual&&window._LW_hasFamilyRitual('pollinators')&&Math.random()<0.10){_twinBloom=true;_breedMult*=2;}}catch(e){}
     if(roll<0.6){
       // 60% — XP reward (monotonic pollen, no spend)
       var xpBonus=Math.ceil((5+Math.floor(Math.random()*10))*_spiderBonus*_breedMult);
@@ -37922,6 +37935,7 @@ function _doCrossPollination(wildPlant,matePlant){
     if(_spiderFired&&window._toast)setTimeout(function(){
       window._toast(_spiderFull?'🕷 Web Weaver: Spider doubled the reward.':'🕷 Web Weaver: +50% reward (find a Garden Spider for 2×)');
     },250);
+    if(_twinBloom&&window._toast)setTimeout(function(){window._toast('\ud83c\udf3c Twin Bloom \u2014 the ritual doubled your reward.');},500);
     _play('match');
     var parentInfo=_buildInfo(wildPlant.hash);
     var mateInfo=_buildInfo(matePlant.hash);
@@ -38904,6 +38918,8 @@ function _finishDrop(defenderGame){
   try{if(window._LW_treeBonus){var _dm=window._LW_treeBonus('defenseEa');if(_dm>1)dropEA=Math.ceil(dropEA*_dm);}}catch(e){}
   // Guardian T2 "Stand Watch" ability — consume flag, +1 EA once
   try{if(localStorage.getItem('lw_guardian_next_drop')==='1'){dropEA+=1;localStorage.removeItem('lw_guardian_next_drop');if(window._toast)setTimeout(function(){window._toast('\ud83d\udee1 Stand Watch applied: +1 EA');},800);}}catch(e){}
+  // Guardian T3 RITUAL "Deep Root" — all your drops permanently +2 EA
+  try{if(window._LW_hasFamilyRitual&&window._LW_hasFamilyRitual('guardians'))dropEA+=2;}catch(e){}
   // Overcrowding penalty: -1 EA on both the new plant and the matching neighbor
   if(pd.crowdPenaltyHash){
     dropEA=Math.max(0,dropEA-1);
@@ -55508,6 +55524,22 @@ window.LW_FAMILY_T3 = {
         h+='<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.5rem;padding:3px 0;color:var(--cream);"><span>'+_prettyKind(bk)+'</span><span style="color:var(--sage);">+'+(delta*100).toFixed(1)+'%</span></div>';
       }
       h+='</div>';
+    }
+    // T3 Ritual — Kindred, signature passive, PERMANENT once earned.
+    // Shows green-lit when this companion has reached L3; shows "the gift
+    // at Kindred" hint when not. Description pulls from LW_FAMILY_T3.
+    var ritualDef = (family && window.LW_FAMILY_T3) ? LW_FAMILY_T3[family] : null;
+    if (ritualDef) {
+      var ritualEarned = lvl >= 3;
+      h += '<div style="padding:0.6rem 0.7rem;background:rgba(13,16,12,0.6);border:1px solid ' + (ritualEarned ? 'rgba(200,168,75,0.45)' : 'rgba(74,124,53,0.2)') + ';border-radius:10px;margin-bottom:0.7rem;">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.3rem;">';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:' + (ritualEarned ? 'var(--gold)' : 'var(--muted)') + ';letter-spacing:0.12em;">RITUAL \u00b7 KINDRED</div>';
+      if (ritualEarned) h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--sage);">ACTIVE \u2713</div>';
+      h += '</div>';
+      h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.82rem;color:' + (ritualEarned ? 'var(--gold)' : 'var(--muted)') + ';margin-bottom:0.2rem;">' + ritualDef.name + '</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:' + (ritualEarned ? 'var(--cream)' : 'var(--muted)') + ';line-height:1.45;">' + ritualDef.desc + '</div>';
+      if (!ritualEarned) h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);margin-top:4px;font-style:italic;">30 days together \u2014 unlocks permanently.</div>';
+      h += '</div>';
     }
     // T2 Active Ability — Bonded unlock, tap to fire, cooldown-gated
     var abilState = window._LW_companionAbilityState ? window._LW_companionAbilityState(idx) : null;
