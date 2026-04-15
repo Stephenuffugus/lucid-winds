@@ -58661,14 +58661,25 @@ function _bosEventsContent() {
   h += '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:8px;"><span>' + foundEvents + ' / ' + totalEvents + ' discovered</span><span>' + Math.round(foundEvents / totalEvents * 100) + '%</span></div>';
   h += '<div style="height:4px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;margin-bottom:1rem;"><div style="height:100%;width:' + Math.round(foundEvents / totalEvents * 100) + '%;background:linear-gradient(90deg,rgba(122,179,86,0.6),rgba(200,168,75,0.7));border-radius:2px;"></div></div>';
 
+  // Scroll-sigil art by event-family theme. Each tier maps to one of the six
+  // class-themed scrolls (keeper/tender/forager/breeder/cartographer/listeners).
+  var _scrollByTier = {
+    COMMON:'keeper', CRAFT:'keeper',
+    BOND:'tender', COMPANION:'tender',
+    UNCOMMON:'forager', RARE:'forager',
+    CONJUNCTION:'breeder', CONFLUENCE:'breeder',
+    SEASONAL:'cartographer', EPIC:'cartographer', LEGENDARY:'cartographer',
+    HOUR:'listeners', SOCIAL:'listeners'
+  };
   for (var ti2 = 0; ti2 < tiers.length; ti2++) {
     var tier = tiers[ti2];
     var tierFound = 0;
     for (var ei = 0; ei < tier.events.length; ei++) if (unlocked[tier.events[ei].name]) tierFound++;
+    var _scrollKey = _scrollByTier[tier.name] || 'keeper';
     h += '<div style="margin-bottom:1rem;">';
-    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:' + tier.color + ';letter-spacing:0.1em;margin-bottom:0.3rem;display:flex;align-items:center;gap:0.4rem;">';
-    h += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + tier.color + ';"></span>';
-    h += tier.name + ' <span style="font-size:0.5rem;color:var(--muted);">' + tierFound + '/' + tier.events.length + ' \u00b7 ' + tier.desc + '</span></div>';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:' + tier.color + ';letter-spacing:0.1em;margin-bottom:0.3rem;display:flex;align-items:center;gap:0.5rem;">';
+    h += '<img src="assets/bos/scroll-' + _scrollKey + '.png" alt="" style="width:34px;height:34px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 2px 5px rgba(0,0,0,0.55));" onerror="this.outerHTML=\'<span style=&quot;display:inline-block;width:10px;height:10px;border-radius:50%;background:' + tier.color + ';&quot;></span>\'">';
+    h += '<span>' + tier.name + ' <span style="font-size:0.5rem;color:var(--muted);">' + tierFound + '/' + tier.events.length + ' \u00b7 ' + tier.desc + '</span></span></div>';
     for (var ei2 = 0; ei2 < tier.events.length; ei2++) {
       var ev = tier.events[ei2];
       var found = !!unlocked[ev.name];
