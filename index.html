@@ -57319,11 +57319,15 @@ window._lwClaimHerbarium = function(id){
       if (resolved || selected.length !== diff.cards) return;
       var cardsPlayed = selected.map(function(si){return hand[si];});
       resolved = resolveAttempt(comp.elements, cardsPlayed, diff.scoreNeeded);
-      // Persist any match/counter slots — those reveal the hex element.
-      // Neutral slots stay hidden (the player guessed wrong for that slot).
+      // Only EXACT hits (match / wild-exact) reveal a slot's true element —
+      // those are the slots the player actually solved. ELSEWHERE (counter)
+      // means the player's card is SOMEWHERE in the hex, not at this slot,
+      // so revealing the hex element here would give away information the
+      // player hasn't earned. The LAST-PLAY strip already tells them their
+      // card was elsewhere; that's the full Mastermind feedback loop.
       for (var _r = 0; _r < resolved.reveal.length; _r++) {
         var _rv = resolved.reveal[_r];
-        if (_rv.verdict === 'match' || _rv.verdict === 'counter') {
+        if (_rv.verdict === 'match' || _rv.verdict === 'wild-exact') {
           learned[_r] = { hex: _rv.hex, verdict: _rv.verdict };
         }
       }
