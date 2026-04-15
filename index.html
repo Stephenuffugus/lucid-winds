@@ -47711,18 +47711,32 @@ function equipCompanion(){
   h+='<div style="width:100%;max-width:340px;">';
   var cur=localStorage.getItem('pw_active_companion');
   var curIdx=-1;try{if(cur)curIdx=JSON.parse(cur).idx;}catch(e){}
+  var cur2=localStorage.getItem('pw_active_companion_2');
+  var curIdx2=-1;try{if(cur2)curIdx2=JSON.parse(cur2).idx;}catch(e){}
+  var nearHorizon=!!(window.LW_COMPANION&&LW_COMPANION.nearHorizonUnlocked&&LW_COMPANION.nearHorizonUnlocked());
+  if(nearHorizon)h+='<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--sage);margin-bottom:0.4rem;line-height:1.5;text-align:center;">\ud83c\udf19 Near Horizon \u2014 equip two companions. Tap 1 or 2 on each row.</div>';
   for(var j=0;j<found.length;j++){
     var f=found[j];
     var active=f.idx===curIdx;
-    h+='<div onclick="PW_UI._pickCompanion('+j+')" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;padding:0.5rem;margin-bottom:4px;background:rgba(18,22,16,'+(active?'0.8':'0.5')+');border:1.5px solid '+(active?'rgba(200,168,75,0.4)':'rgba(122,179,86,0.12)')+';border-radius:8px;min-height:48px;">';
+    var active2=f.idx===curIdx2;
+    var anyActive=active||active2;
+    var activeLabel=active?' <span style="color:var(--gold);">\u2605 SLOT 1</span>':(active2?' <span style="color:var(--gold);">\u2605 SLOT 2</span>':'');
+    h+='<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;margin-bottom:4px;background:rgba(18,22,16,'+(anyActive?'0.8':'0.5')+');border:1.5px solid '+(anyActive?'rgba(200,168,75,0.4)':'rgba(122,179,86,0.12)')+';border-radius:8px;min-height:48px;">';
     h+='<div style="width:44px;text-align:center;flex-shrink:0;">'+_compPortrait(f.idx, f.icon, 40)+'</div>';
-    h+='<div style="flex:1;min-width:0;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--cream);">'+f.name+(active?' <span style="color:var(--gold);">\u2605 ACTIVE</span>':'')+'</div>';
+    h+='<div style="flex:1;min-width:0;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--cream);">'+f.name+activeLabel+'</div>';
     if(f.ability)h+='<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--sage);margin-top:2px;">'+f.ability+'</div>';
     if(f.temperament)h+='<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);margin-top:1px;">'+f.tempIcon+' '+f.temperament+'</div>';
     if(!f.ability&&!f.temperament)h+='<div style="font-size:0.35rem;color:var(--muted);">Passive companion</div>';
     h+='</div>';
-    // Info button — opens profile without equipping. stopPropagation prevents the row\'s pick.
+    // Info button — opens profile without equipping.
     h+='<button onclick="event.stopPropagation();window._lwOpenCompanionProfile&&_lwOpenCompanionProfile('+f.idx+')" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;border:1px solid rgba(200,168,75,0.3);background:rgba(13,16,12,0.7);color:var(--gold);font-family:DM Mono,monospace;font-size:0.55rem;font-weight:bold;cursor:pointer;padding:0;" title="View profile">\u24d8</button>';
+    // Slot buttons
+    if(nearHorizon){
+      h+='<button onclick="PW_UI._pickCompanion('+j+',1)" style="flex-shrink:0;width:32px;height:32px;border-radius:6px;border:1.5px solid '+(active?'var(--gold)':'rgba(122,179,86,0.3)')+';background:'+(active?'rgba(200,168,75,0.25)':'rgba(13,16,12,0.6)')+';color:'+(active?'var(--gold)':'var(--sage)')+';font-family:Bebas Neue,sans-serif;font-size:0.7rem;cursor:pointer;padding:0;" title="Equip to slot 1">1</button>';
+      h+='<button onclick="PW_UI._pickCompanion('+j+',2)" style="flex-shrink:0;width:32px;height:32px;border-radius:6px;border:1.5px solid '+(active2?'var(--gold)':'rgba(122,179,86,0.3)')+';background:'+(active2?'rgba(200,168,75,0.25)':'rgba(13,16,12,0.6)')+';color:'+(active2?'var(--gold)':'var(--sage)')+';font-family:Bebas Neue,sans-serif;font-size:0.7rem;cursor:pointer;padding:0;" title="Equip to slot 2">2</button>';
+    } else {
+      h+='<button onclick="PW_UI._pickCompanion('+j+',1)" style="flex-shrink:0;padding:0 10px;height:32px;border-radius:6px;border:1.5px solid '+(active?'var(--gold)':'rgba(122,179,86,0.3)')+';background:'+(active?'rgba(200,168,75,0.25)':'rgba(13,16,12,0.6)')+';color:'+(active?'var(--gold)':'var(--sage)')+';font-family:Bebas Neue,sans-serif;font-size:0.55rem;cursor:pointer;letter-spacing:0.08em;">'+(active?'ACTIVE':'EQUIP')+'</button>';
+    }
     h+='</div>';
   }
   h+='</div>';
@@ -47732,10 +47746,38 @@ function equipCompanion(){
   window._csCompFound=found;
   document.body.appendChild(ov);
 }
-function _pickCompanion(idx){
+function _pickCompanion(idx, slot){
   var f=window._csCompFound?window._csCompFound[idx]:null;if(!f)return;
   var compData={idx:f.idx,name:f.name,icon:f.icon,ability:f.ability,temperament:f.temperament,tempIcon:f.tempIcon};
-  localStorage.setItem('pw_active_companion',JSON.stringify(compData));
+  // Slot routing: slot=2 → Near Horizon slot. Default/omitted → slot 1.
+  var targetSlot = (slot===2) ? 2 : 1;
+  if (targetSlot === 2) {
+    // Near Horizon guard — shouldn't happen from UI (gated above), but defend
+    if (!(window.LW_COMPANION && LW_COMPANION.nearHorizonUnlocked && LW_COMPANION.nearHorizonUnlocked())) {
+      if (window._toast) _toast('Near Horizon unlocks at Lv 75.');
+      return;
+    }
+    // Prevent same companion in both slots — clear from slot 1 if it's there
+    try {
+      var prim = JSON.parse(localStorage.getItem('pw_active_companion')||'null');
+      if (prim && prim.idx === f.idx) {
+        localStorage.removeItem('pw_active_companion');
+      }
+    } catch(e) {}
+    localStorage.setItem('pw_active_companion_2', JSON.stringify(compData));
+    try { if (window.LW_COMPANION && window.LW_COMPANION.onEquip2) window.LW_COMPANION.onEquip2(f.idx); } catch(e) {}
+  } else {
+    // Slot 1 — but if this companion is in slot 2, clear that
+    try {
+      var sec = JSON.parse(localStorage.getItem('pw_active_companion_2')||'null');
+      if (sec && sec.idx === f.idx) {
+        localStorage.removeItem('pw_active_companion_2');
+        if (window.LW_COMPANION && window.LW_COMPANION.pauseActive2) window.LW_COMPANION.pauseActive2();
+      }
+    } catch(e) {}
+    localStorage.setItem('pw_active_companion',JSON.stringify(compData));
+    try { if (window.LW_COMPANION && window.LW_COMPANION.onEquip) window.LW_COMPANION.onEquip(f.idx); } catch(e) {}
+  }
   // MEMENTO TIMER — record first-equip timestamp per companion idx so
   // the 30-day keepsake can be awarded later. Never overwrites existing
   // timestamp (so swapping away and back doesn't reset the clock).
@@ -47746,9 +47788,6 @@ function _pickCompanion(idx){
       localStorage.setItem('lw_companion_first_equipped', JSON.stringify(_equipLog));
     }
   } catch(e) {}
-  // LEVELING TIMER — pause previous companion, start this one's clock.
-  // Pure time-equipped progression, no grinding exploits.
-  try { if (window.LW_COMPANION && window.LW_COMPANION.onEquip) window.LW_COMPANION.onEquip(f.idx); } catch(e) {}
   _loadCompanion();
   var pk=document.getElementById('cs-comp-picker');if(pk)pk.remove();
   if(window._toast)window._toast(f.name+' equipped!');
@@ -55295,6 +55334,73 @@ window._lwClaimHerbarium = function(id){
     if (typeof idx === 'number' && idx >= 0) resumeActive(idx);
     checkL3Unlocks();
   }
+  // ═══ NEAR HORIZON (Keeper Lv 75) — SECOND COMPANION SLOT ═══
+  // Players at Lv 75+ can equip two companions simultaneously. Both tick
+  // their bond clocks in parallel; both family buffs stack multiplicatively;
+  // both T2 abilities are available via their profile modals.
+  var ACTIVE_KEY_2 = 'lw_companion_active_idx_2';
+  function nearHorizonUnlocked() {
+    try { return ((window.canSee && window.canSee.currentLevel) ? window.canSee.currentLevel() : 0) >= 75; }
+    catch(e) { return false; }
+  }
+  function getActiveCompanionIdx2() {
+    if (!nearHorizonUnlocked()) return null;
+    try {
+      var raw = localStorage.getItem('pw_active_companion_2');
+      if (!raw) return null;
+      var c = JSON.parse(raw);
+      return (c && typeof c.idx === 'number') ? c.idx : null;
+    } catch(e) { return null; }
+  }
+  function pauseActive2() {
+    var activeIdx = null;
+    try { activeIdx = parseInt(localStorage.getItem(ACTIVE_KEY_2) || '-1', 10); } catch(e) {}
+    if (!activeIdx || activeIdx < 0) return;
+    var timer = loadTimer();
+    var t = timer[activeIdx];
+    if (t && t.activeSinceMs) {
+      t.totalMs = (t.totalMs || 0) + (Date.now() - t.activeSinceMs);
+      t.activeSinceMs = null;
+      saveTimer(timer);
+    }
+  }
+  function resumeActive2(idx) {
+    pauseActive2();
+    var timer = loadTimer();
+    if (!timer[idx]) timer[idx] = { totalMs: 0, activeSinceMs: null };
+    // Don't double-set if this idx is also in slot 1 (only primary counts)
+    var primary = getActiveCompanionIdx();
+    if (idx === primary) return;
+    timer[idx].activeSinceMs = Date.now();
+    saveTimer(timer);
+    try { localStorage.setItem(ACTIVE_KEY_2, String(idx)); } catch(e) {}
+  }
+  function onEquip2(idx) {
+    if (!nearHorizonUnlocked()) return;
+    if (typeof idx === 'number' && idx >= 0) resumeActive2(idx);
+    checkL3Unlocks();
+  }
+  // Stack slot-1 + slot-2 family buffs. Each slot contributes its delta;
+  // multiplicative composition so one strong + one weak = slightly more
+  // than either alone. No double-dip when both slots are same family.
+  var _origGetCompanionMultLvl = getCompanionMultWithLevel;
+  function getCompanionMultDual(buffKind) {
+    var m1 = _origGetCompanionMultLvl(buffKind);
+    if (!nearHorizonUnlocked()) return m1;
+    var idx2 = getActiveCompanionIdx2();
+    if (idx2 === null) return m1;
+    // Compute slot-2's contribution
+    var fam2 = FAMILY_OF[idx2];
+    if (!fam2) return m1;
+    var buffs2 = FAMILY_BUFFS[fam2];
+    if (!buffs2 || !buffs2[buffKind]) return m1;
+    var cls = null;
+    try { cls = localStorage.getItem('lw_class'); } catch(e) {}
+    var aff2 = getAffinityMult(fam2, cls);
+    var delta2 = (buffs2[buffKind] - 1.0) * aff2 * getLevelMult(idx2);
+    return m1 * (1 + delta2);
+  }
+  getCompanionMult = getCompanionMultDual;
   // Periodic L3 check — runs every 30min in case player hit the
   // threshold while the app was backgrounded.
   setInterval(checkL3Unlocks, 30 * 60 * 1000);
@@ -55307,13 +55413,17 @@ window._lwClaimHerbarium = function(id){
     FAMILY_BUFFS: FAMILY_BUFFS,
     L3_SIGNATURES: L3_SIGNATURES,
     getActiveCompanionIdx: getActiveCompanionIdx,
+    getActiveCompanionIdx2: getActiveCompanionIdx2,
     getFamily: getFamily,
     getAffinityMult: getAffinityMult,
-    getCompanionMult: getCompanionMultWithLevel,
+    getCompanionMult: getCompanionMultDual,
     getLevel: getLevel,
     getTotalMs: getTotalMs,
     getLevelMult: getLevelMult,
     onEquip: onEquip,
+    onEquip2: onEquip2,
+    pauseActive2: pauseActive2,
+    nearHorizonUnlocked: nearHorizonUnlocked,
     checkL3Unlocks: checkL3Unlocks,
     L2_MS: L2_MS,
     L3_MS: L3_MS
@@ -57022,7 +57132,7 @@ var LW_TREE_MILESTONES={
   10:{name:'Path Opened',desc:'+5 bonus tree points',built:true},
   25:{name:'Second Bloom',desc:'Guaranteed 1 feral / day (ignores cap)',built:true},
   50:{name:'The Gilding',desc:'Pick 1 hour / day: all bonuses \u00d72',built:true},
-  75:{name:'Near Horizon',desc:'Equip a second companion',built:false},
+  75:{name:'Near Horizon',desc:'Equip a second companion',built:true},
   100:{name:'The Long Watch',desc:'Biome match applies everywhere',built:false}
 };
 
