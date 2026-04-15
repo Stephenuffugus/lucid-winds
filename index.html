@@ -56898,10 +56898,23 @@ window._lwPickClass=function(cid,nm,icon){
   try{if(window._updateCompCount)window._updateCompCount();}catch(e){}
   if(window._bosSetTab)window._bosSetTab('class');
 };
-// Biome match: +25% class XP, 1.5x tool effect when playing Wild in class biome
+// Biome match: +25% class XP, 1.5x tool effect when playing Wild in class biome.
+// Lv 100 milestone THE LONG WATCH makes biome-match always-on regardless of
+// actual detected biome. Cached 60s so biome toggling doesn't thrash.
+var _longWatchCache = { at:0, val:false };
+function _lwLongWatchActive(){
+  var now = Date.now();
+  if (now - _longWatchCache.at < 60000) return _longWatchCache.val;
+  var lvl = 0;
+  try { lvl = (window.canSee && window.canSee.currentLevel) ? window.canSee.currentLevel() : 0; } catch(e) {}
+  var active = lvl >= 100;
+  _longWatchCache = { at:now, val:active };
+  return active;
+}
 function _lwBiomeMatch(){
   var cls=_lwGetClass();if(!cls)return false;
   var def=LW_CLASSES[cls];if(!def||!def.biome)return false;
+  if(_lwLongWatchActive())return true; // Lv 100 — biome match everywhere
   try{return window._lastDetectedBiome===def.biome;}catch(e){return false;}
 }
 window._LW_biomeMatch=_lwBiomeMatch;
@@ -57133,7 +57146,7 @@ var LW_TREE_MILESTONES={
   25:{name:'Second Bloom',desc:'Guaranteed 1 feral / day (ignores cap)',built:true},
   50:{name:'The Gilding',desc:'Pick 1 hour / day: all bonuses \u00d72',built:true},
   75:{name:'Near Horizon',desc:'Equip a second companion',built:true},
-  100:{name:'The Long Watch',desc:'Biome match applies everywhere',built:false}
+  100:{name:'The Long Watch',desc:'Biome match applies everywhere',built:true}
 };
 
 // Memoized — tree points are read on every _LW_classBonus call which fires
