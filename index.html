@@ -55144,6 +55144,61 @@ window._bosActivityContent = _bosActivityContent;
   window.LW_Reader = { open: open, close: close };
 })();
 
+// ═══ NURSERY SHOP POT DETAIL via LW_Reader ═══
+// These are the purchasable nursery pots (LW_POTS), NOT the generative pot
+// trait (TRAIT_BANK.pots). Each has a mechanical effect + a lore paragraph.
+// Call via _lwShowShopPotDetail('crystal'), 'glasswort', etc.
+var LW_POT_SHOP_LORE = {
+  crystal:   'A vessel grown, not made. Crystal nursery pots boost rarity by a small margin on every bloom — the seed remembers being held in something clear.',
+  glasswort: 'A vessel that forgets. Glasswort resets chimera generation to 1, stripping prior lineage so the plant blooms as a fresh line. Useful when you want purity over ancestry.',
+  moonstone: 'A vessel that listens. Moonstone gives the bloomed plant +1 EA, permanently. A small night-side blessing that stacks with everything.',
+  iron:      'A vessel that refuses. Iron doubles the peak-season EA bonus — if the plant is in its true season on bloom day, it arrives twice as acclimatized.',
+  phoenix:   'A vessel that multiplies. Phoenix Ash makes every fertilizer applied to this seed count twice. The more you feed it, the more that feeding lands.',
+  velvet:    'A vessel that insists on bloom. Velvet forces hasFlower=true — the plant will bloom a flower regardless of what the hash rolled. Useful for bloom-specific synergies.',
+  worldSeed: 'A vessel with no patience for Common. World Seed auto-rerolls any Common result, guaranteeing at least Uncommon on bloom. The garden does not hand you mediocre seeds in this one.',
+  starlight: 'A vessel that magnifies. Starlight doubles aura intensity and guarantees an aura if the hash rolls one. Does not conjure auras from nothing — it amplifies what was already there.'
+};
+window._lwShowShopPotDetail = function(potId) {
+  if (!window.LW_POTS || !window.LW_POTS[potId]) return;
+  var p = window.LW_POTS[potId];
+  var lore = LW_POT_SHOP_LORE[potId] || p.blurb;
+  var curLvl = (window.canSee && window.canSee.currentLevel) ? window.canSee.currentLevel() : 1;
+  var dew = window.getTotalDew ? window.getTotalDew() : 0;
+  var owned = 0;
+  try {
+    var inv = JSON.parse(localStorage.getItem('sws_inventory')||'{}');
+    owned = (inv.pots && inv.pots[potId]) || 0;
+  } catch(e){}
+  var canBuy = curLvl >= p.levelRequired && dew >= p.cost;
+  var body = [];
+  body.push({type:'quote', text: lore});
+  body.push({type:'section-head', text:'Effect'});
+  body.push({type:'para', text: p.blurb});
+  body.push({type:'divider'});
+  body.push({type:'section-head', text:'Details'});
+  body.push({type:'stat', label:'Cost', value: p.cost + ' Dew'});
+  body.push({type:'stat', label:'Unlocks at', value:'Keeper Lv ' + p.levelRequired});
+  body.push({type:'stat', label:'You own', value: owned});
+  if (curLvl < p.levelRequired) {
+    body.push({type:'para', text:'You\u2019re ' + (p.levelRequired - curLvl) + ' level' + ((p.levelRequired - curLvl)===1?'':'s') + ' away from this vessel.'});
+  } else if (dew < p.cost) {
+    body.push({type:'para', text:'You\u2019re ' + (p.cost - dew) + ' Dew short.'});
+  }
+  var actions = [{ label: 'CLOSE', kind: 'ghost' }];
+  if (canBuy && window._lwBuyPot) {
+    actions.unshift({ label: 'BUY \u00b7 ' + p.cost + ' Dew', kind: 'primary', onclick: function(){ try { window._lwBuyPot(potId); } catch(e){} return true; } });
+  }
+  window.LW_Reader.open({
+    eyebrow: 'NURSERY VESSEL',
+    title: p.icon + ' ' + p.name,
+    subtitle: null,
+    theme: 'gold',
+    chips: [p.cost + ' Dew', 'Lv ' + p.levelRequired, curLvl >= p.levelRequired ? 'AVAILABLE' : 'LOCKED'],
+    body: body,
+    actions: actions
+  });
+};
+
 // ═══ TRAIT-LAYER READER PAGES (pot / aura / substrate) ═══
 // Every plant has these layers. Tapping any of them on the DNA ledger
 // or on any BoS grid opens a consistent Reader page: trait name, its
