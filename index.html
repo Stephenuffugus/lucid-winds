@@ -46570,13 +46570,27 @@ function updateKeeperBar(){
   var xp=_getXP(),r=_getRank(xp);
   var pct=Math.min(100,Math.round(((xp-RANKS[r.level-1].xp)/(r.nextXP-RANKS[r.level-1].xp))*100));
   var fill=document.getElementById('kb-xp-fill');if(fill)fill.style.width=pct+'%';
-  var rank=document.getElementById('kb-rank');if(rank)rank.textContent='Lvl '+r.level+' · '+r.title+' · '+xp+' / '+r.nextXP+' XP';
+  // Rank line — when a class is picked, append "· Forager Apprentice L2" so
+  // the active class + rank is visible without opening the Book of Secrets.
+  var rankExtra = '';
+  try {
+    var _cls = localStorage.getItem('lw_class');
+    if (_cls && window.LW_CLASSES && window.LW_CLASSES[_cls] && window._lwGetClassLevel) {
+      var _cLvl = window._lwGetClassLevel(_cls);
+      var _cTitles = ['','Apprentice','Journeyman','Master'];
+      rankExtra = ' \u00b7 ' + window.LW_CLASSES[_cls].name + ' ' + _cTitles[_cLvl];
+    }
+  } catch(e) {}
+  var rank=document.getElementById('kb-rank');if(rank)rank.textContent='Lvl '+r.level+' \u00b7 '+r.title+' \u00b7 '+xp+' / '+r.nextXP+' XP'+rankExtra;
   var name=document.getElementById('kb-name');if(name)name.textContent=_getDisplayName();
+  // Keep the avatar badge + class icon in sync with every keeper-bar
+  // refresh — fires on class pick, level-up, respec, etc.
+  try { if (window._lwRefreshAvatar) window._lwRefreshAvatar(); } catch(e) {}
   // Character sheet mirror
   var cf=document.getElementById('cs-xp-fill');if(cf)cf.style.width=pct+'%';
-  var ct=document.getElementById('cs-xp-text');if(ct)ct.textContent=xp+' / '+r.nextXP+' XP → Level '+(r.level+1);
+  var ct=document.getElementById('cs-xp-text');if(ct)ct.textContent=xp+' / '+r.nextXP+' XP \u2192 Level '+(r.level+1);
   var cn=document.getElementById('cs-name');if(cn)cn.textContent=_getDisplayName();
-  var ti=document.getElementById('cs-title');if(ti)ti.textContent='◈ '+r.title+' · Level '+r.level;
+  var ti=document.getElementById('cs-title');if(ti)ti.textContent='\u25c8 '+r.title+' \u00b7 Level '+r.level;
   var fc=document.getElementById('cs-friend-code');if(fc)fc.textContent=_getFriendCode();
 }
 
