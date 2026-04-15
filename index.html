@@ -30826,6 +30826,25 @@ document.addEventListener('keydown', function(e) {
       if (window._releaseWakeLock) _releaseWakeLock();
     }
     if (tab === 'wild') { if(window.FG_Wild&&FG_Wild._afMarkWildEntry)FG_Wild._afMarkWildEntry(); if(window._primeWildWeather)setTimeout(function(){window._primeWildWeather(false);},1500); }
+    // First-ever Wild tab entry — explain the map before they stare at it
+    // confused. Fires only if they actually have the Wild tab unlocked (L3+).
+    if (tab === 'wild') {
+      try {
+        if (!localStorage.getItem('lw_tut_wild_v1')) {
+          localStorage.setItem('lw_tut_wild_v1', '1');
+          setTimeout(function(){
+            if (window._lwConfirm) {
+              window._lwConfirm({
+                title: 'THE WILD',
+                body: 'This is a real-world map of plants \u2014 yours, other keepers\u2019, and wild hexes.<br><br>\ud83c\udf3f <b>Glowing hexes</b> hold ferals you can forage (L4+, within 75m).<br>\ud83c\udf31 <b>Your backpack</b> lets you drop plants into the world \u2014 they live there, age there, feed the ecosystem.<br>\ud83d\udca7 <b>Tend strangers\u2019 plants</b> (L5+) within 75m for Dew.<br><br>Walk. The map rewards keepers who move.',
+                yes: 'I\u2019LL WALK',
+                no: ''
+              }, function(){});
+            }
+          }, 1000);
+        }
+      } catch(e) {}
+    }
     if (tab === 'game' && window._lwCheckFirstGamePulse) setTimeout(window._lwCheckFirstGamePulse, 600);
     // Map overlays — show on Wild tab regardless of backpack state
     var vig=document.querySelector('.map-vignette');
@@ -55884,9 +55903,20 @@ window._LW_openClassPicker=function(){
     for(var abl=1;abl<=3;abl++){
       var ab=def.abilities[abl];var unlocked=picked&&lvl>=abl;
       var titles=['','Apprentice','Journeyman','Master'];
+      var _masterHidden = (abl===3) && !unlocked;
       h+='<div style="padding:5px 8px;margin-top:4px;background:'+(unlocked?'rgba(74,124,53,0.12)':'rgba(13,16,12,0.4)')+';border-left:3px solid '+(unlocked?'var(--sage)':'rgba(74,124,53,0.1)')+';border-radius:4px;">';
       h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:'+(unlocked?'var(--sage)':'var(--muted)')+';letter-spacing:0.06em;">L'+abl+' '+titles[abl].toUpperCase()+'</div>';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+(unlocked?'var(--cream)':'var(--muted)')+';margin-top:2px;"><strong>'+ab.name+'</strong> — '+ab.desc+'</div>';
+      if (_masterHidden) {
+        // Hide L3 Master ability details until actually earned — prevents
+        // a first-time L7 picker from seeing Raccoon / Spider / Heron /
+        // Cicada names with no context. Let it be a discovery.
+        var _hint = (cid === 'keeper')
+          ? 'Mastery of every craft awaits those who walk this path to Master.'
+          : 'A companion bond awaits those who walk this path to Master.';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);margin-top:2px;"><em style="opacity:0.6;">'+_hint+'</em></div>';
+      } else {
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+(unlocked?'var(--cream)':'var(--muted)')+';margin-top:2px;"><strong>'+ab.name+'</strong> \u2014 '+ab.desc+'</div>';
+      }
       h+='</div>';
     }
     h+='</div>';
