@@ -4393,7 +4393,9 @@
     #pw-keeper-bar{position:fixed;top:0;left:0;right:0;z-index:997;display:none;flex-direction:column;gap:0.45rem;padding:0.55rem 0.7rem 0.55rem 0.7rem;padding-top:calc(0.55rem + env(safe-area-inset-top, 0px));background:linear-gradient(180deg,rgba(13,16,12,0.97),rgba(13,16,12,0.92));border-bottom:1px solid rgba(74,124,53,0.08);backdrop-filter:blur(8px);max-width:680px;margin:0 auto;}
     #pw-keeper-bar .kb-row1{display:flex;align-items:center;gap:0.6rem;}
     #pw-keeper-bar .kb-row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.4rem;max-width:220px;}
-    #pw-keeper-bar .kb-avatar{width:48px;height:48px;border-radius:50%;border:2px solid rgba(122,179,86,0.35);background:rgba(26,36,22,0.6);display:flex;align-items:center;justify-content:center;font-size:1.4rem;cursor:pointer;flex-shrink:0;overflow:hidden;}
+    #pw-keeper-bar .kb-avatar{width:48px;height:48px;border-radius:50%;border:2px solid rgba(122,179,86,0.35);background:rgba(26,36,22,0.6);display:flex;align-items:center;justify-content:center;font-size:1.4rem;cursor:pointer;flex-shrink:0;position:relative;}
+    #pw-keeper-bar .kb-avatar > img,#pw-keeper-bar .kb-avatar > span#kb-avatar-art{border-radius:50%;}
+    #pw-keeper-bar .kb-avatar > img{clip-path:circle(50%);}
     #pw-keeper-bar .kb-info{flex:1;min-width:0;}
     #pw-keeper-bar .kb-name{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--cream);letter-spacing:0.06em;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1;}
     #pw-keeper-bar .kb-xp-wrap{height:7px;background:rgba(42,48,37,0.7);border-radius:4px;margin-top:4px;overflow:hidden;cursor:pointer;border:1px solid rgba(74,124,53,0.2);}
@@ -11714,7 +11716,16 @@ document.addEventListener('keydown', function(e) {
 
   // DEV hooks — cache clear + re-render for chimera toggle
   window._clearSVGCache = function() { _svgCacheKeys.length = 0; for (var k in _svgCache) delete _svgCache[k]; };
-  window._reRenderAll = function() { try { renderGreenhouse(); } catch(e){} try { updateDashboard(); } catch(e){} try { renderBoard(); } catch(e){} };
+  // Yield between the three heavy renders so we don't stall the UI for
+  // ~500ms on old iPads with 10+ plants. First render runs immediately
+  // (so the user sees the change right away); the lighter two follow on
+  // next frames.
+  window._reRenderAll = function() {
+    try { renderGreenhouse(); } catch(e){}
+    var raf = window.requestAnimationFrame || function(fn){ setTimeout(fn, 16); };
+    raf(function(){ try { updateDashboard(); } catch(e){} });
+    raf(function(){ raf(function(){ try { renderBoard(); } catch(e){} }); });
+  };
   window.buildAttentionPayload = buildAttentionPayload;
   window.updateFocusPlant = updateFocusPlant;
 

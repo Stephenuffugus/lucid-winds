@@ -14,7 +14,9 @@ Each entry: **slot** · **subject** · **dimensions** · **destination path** ·
 - **10 biome paintings** — `assets/wild-biomes/biome-{african,asian,coastal,desert,mountain,rainforest,suburban,temperate,tundra,wetland}.png` — wired into Wild hex inspector banner + BIOMES catalog
 - **5 Keeper hero-milestone cards** — `assets/hero-cards/hero-{path-opened,second-bloom,gilding,near-horizon,long-watch}.png`
 - **Book of Secrets spellbook cover** — `assets/bos/spellbook-cover.png`
-- **5 class emblems** — `assets/character-sheet/classes/{forager,breeder,cartographer,tender,keeper}.png` — cut out at source res, render at 64/160px
+- **5 class emblems** — `assets/character-sheet/classes/{forager,breeder,cartographer,tender,keeper}.png` — cut out at source res, render at 120/160px
+- **6 event scroll sigils** — `assets/bos/scroll-{keeper,tender,forager,breeder,cartographer,listeners}.png` — wired into Book of Secrets Events tab headers
+- **9 foraging element cards** — `assets/foraging/el-{sun,shade,rain,dry,wind,still,moonlight,thunder,aurora}.png` (aurora replaces original `dust` plan; wiring is slug-driven so no code change needed)
 - 15 FLUX backgrounds (tab bgs, onboarding beats, splash)
 - 21-card deck + card backs (per memory)
 
@@ -47,33 +49,6 @@ Each entry: **slot** · **subject** · **dimensions** · **destination path** ·
 ---
 
 ## P1 — Next priority when you're free
-
-### Event discovery scroll icon
-- **64×64 or 128×128 flat icon**, transparent PNG
-- Destination: `assets/bos/event-scroll-icon.png`
-- Unfurled scroll with a wax seal stamped with a botanical sigil, warm gold ink
-- Replaces 📜 emoji everywhere event discovery shows up (currently unused — system went silent)
-- Could be repurposed: a small decorative flourish in the BoS sparkline header
-
-### 6 Foraging Element Card Faces
-- **512×512 PNG transparent**, symbol-only (card frame is already built in CSS)
-- Destination: `assets/foraging/el-{slug}.png`
-- Think medieval tarot minor arcana — one bold center glyph per card
-
-| Slug | Element | Core motif |
-|---|---|---|
-| sun | Sun | radiant sun with botanical rays, or a single sunflower facing forward |
-| shade | Shade | crescent moon behind a fern frond, or a dappled-leaf silhouette |
-| rain | Rain | three falling droplets making concentric ripples |
-| dry | Dry | a seed-pod cracked open in heat, or agave spear in silhouette |
-| wind | Wind | dandelion seeds mid-release, or a whorl of leaves |
-| still | Still | a single lotus on flat water, reflection visible |
-
-### 3 Rare Wild-Cards
-- Same format + destination pattern, `.rare` variant in CSS adds gold glow
-- moonlight: full moon with pale blue botanical etching on its face
-- thunder: lightning bolt splitting a seed pod
-- dust: geometric spiral of fine particles
 
 ### 4 Weather Cast Button Art
 - **128×128 plate-style illustration**, transparent background
