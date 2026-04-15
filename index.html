@@ -56214,6 +56214,116 @@ window._lwClaimHerbarium = function(id){
   // a consistent puzzle. Generates 3 attributes from 6 elements.
   // Bias: biome dominant = 2x weight, rare = 0.5x, neutral = 1x.
   // Weather tilt adds +1 weight to the tilted element.
+  // ═══ WEATHER INTEGRATION (hybrid, Team C design) ═══
+  // Open-Meteo fetch + 60-min H3 cache + 3-state bucket.
+  // Fails silently — if the API is down or GPS unavailable, returns null
+  // and hexComposition falls back to pure biome weighting.
+  //
+  // KILL SWITCH: localStorage 'lw_weather_off' === '1' disables weather
+  // entirely. Stephen can A/B test by flipping this.
+  var WEATHER_CACHE_KEY = 'lw_weather_cache';
+  var WEATHER_CACHE_MS = 60 * 60 * 1000; // 1hr — matches the Mastermind seed window
+  function _weatherDisabled() {
+    try { return localStorage.getItem('lw_weather_off') === '1'; } catch(e){ return false; }
+  }
+  function _weatherBucketKey(lat, lng) {
+    // H3-style but without the lib — round to ~1km precision so neighbors
+    // share a weather cell. This matches the H3 cell granularity the Wild
+    // tab already uses elsewhere.
+    return Math.round(lat * 100) + ',' + Math.round(lng * 100);
+  }
+  function _weatherCacheGet(key) {
+    try {
+      var c = JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY) || '{}');
+      var e = c[key];
+      if (!e || !e.ts) return null;
+      if (Date.now() - e.ts > WEATHER_CACHE_MS) return null;
+      return e;
+    } catch(e){ return null; }
+  }
+  function _weatherCacheSet(key, data) {
+    try {
+      var c = JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY) || '{}');
+      c[key] = { ts: Date.now(), data: data };
+      // Trim cache to 20 most recent entries so localStorage doesn't bloat
+      var keys = Object.keys(c).sort(function(a, b){ return (c[b].ts || 0) - (c[a].ts || 0); });
+      if (keys.length > 20) {
+        var trimmed = {};
+        for (var i = 0; i < 20; i++) trimmed[keys[i]] = c[keys[i]];
+        c = trimmed;
+      }
+      localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(c));
+    } catch(e){}
+  }
+  // Classify raw Open-Meteo current-weather into one of 4 states.
+  // States match the element cycle — wet/dry/windy/calm, each biases
+  // the hex element pool toward the matching element + thematic neighbors.
+  function _weatherClassify(w) {
+    if (!w) return null;
+    var precip = w.precipitation || 0;
+    var humidity = w.relativehumidity_2m || 50;
+    var wind = w.windspeed_10m || 0;
+    var cloud = w.cloudcover || 0;
+    var code = w.weathercode || 0;
+    // Thunder/rain/snow codes
+    var isWet = precip >= 0.3 || (code >= 51 && code <= 77) || (code >= 80 && code <= 99);
+    var isWindy = wind >= 15; // km/h
+    var isArid = !isWet && humidity < 35;
+    // Priority: wet > windy > dry > calm. Wet-and-windy still reads as wet
+    // for element tilt (rain dominates the feel).
+    var state = isWet ? 'wet' : isWindy ? 'windy' : isArid ? 'dry' : 'calm';
+    return {
+      state: state,
+      precip: precip,
+      humidity: humidity,
+      wind: wind,
+      cloud: cloud,
+      code: code,
+      temp: w.temperature_2m,
+      raw: w
+    };
+  }
+  // Fetch weather for lat/lng. Returns a Promise resolving to a classified
+  // weather object, or null on any failure. Cached per H3-ish cell per hour.
+  function fetchWeather(lat, lng) {
+    if (_weatherDisabled()) return Promise.resolve(null);
+    if (typeof lat !== 'number' || typeof lng !== 'number') return Promise.resolve(null);
+    var key = _weatherBucketKey(lat, lng);
+    var cached = _weatherCacheGet(key);
+    if (cached) return Promise.resolve(cached.data);
+    if (typeof fetch === 'undefined') return Promise.resolve(null);
+    var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat.toFixed(3) + '&longitude=' + lng.toFixed(3) + '&current=temperature_2m,relativehumidity_2m,precipitation,weathercode,cloudcover,windspeed_10m&timezone=auto';
+    return fetch(url, { method: 'GET' })
+      .then(function(r){ return r && r.ok ? r.json() : null; })
+      .then(function(j){
+        if (!j || !j.current) return null;
+        var classified = _weatherClassify(j.current);
+        _weatherCacheSet(key, classified);
+        return classified;
+      })
+      .catch(function(){ return null; });
+  }
+  // Synchronous accessor — returns cached weather or null, never fetches.
+  // Used by hexComposition to apply a tilt if weather is already known.
+  function getCachedWeather(lat, lng) {
+    if (_weatherDisabled()) return null;
+    if (typeof lat !== 'number' || typeof lng !== 'number') return null;
+    var cached = _weatherCacheGet(_weatherBucketKey(lat, lng));
+    return cached ? cached.data : null;
+  }
+  // Map classified weather state → element weight multipliers. Three rules
+  // per state, applied on top of biome weighting. Shipped from Team B's
+  // 20-rule table, compressed to the essentials for MVP.
+  var _WEATHER_TILT = {
+    wet:   { rain:  3.0, dry:   0.3, sun:   0.5, still: 1.0, wind: 1.0, shade: 1.5 },
+    windy: { wind:  3.0, still: 0.25, rain: 1.0, sun: 1.0, shade: 1.0, dry: 1.2 },
+    dry:   { dry:   2.8, rain:  0.25, sun: 2.0, shade: 0.8, wind: 1.0, still: 1.0 },
+    calm:  { still: 2.0, wind:  0.5, sun: 1.2, shade: 1.2, rain: 1.0, dry: 1.0 }
+  };
+  // Returns the dominant element for a weather state — used as the pre-
+  // revealed "weather-hint" slot in hexComposition.
+  var _WEATHER_DOMINANT = { wet: 'rain', windy: 'wind', dry: 'dry', calm: 'still' };
+
   // Seed-rarity → puzzle shape. Each rarity pulls more slots + a higher
   // score threshold. Common is beginner-friendly; Cosmic demands near-perfect
   // play. Score math: match=2, counter=1, wild=1 (first wild/attempt=2).
@@ -56254,11 +56364,22 @@ window._lwClaimHerbarium = function(id){
     var tilt = currentTilt();
     var diff = hexDifficulty(grade || 'common');
     var slots = diff.slots;
+    // Pull cached weather if we have GPS. Fails to null silently. The seed
+    // also mixes in the weather state so the same hex rerolls when the
+    // weather changes — two players at the same spot at the same hour get
+    // the same composition because they share the same cached weather.
+    var weather = null;
+    try {
+      if (typeof window._uLat === 'number' && typeof window._uLng === 'number') {
+        weather = getCachedWeather(window._uLat, window._uLng);
+      }
+    } catch(e){}
     var today = new Date().toISOString().slice(0, 10);
-    // Seed a PRNG from zoneKey + today + biome + slots so composition is
-    // stable per day, and differs cleanly when difficulty scales up.
+    var hour = (new Date()).getUTCHours();
+    // Seed a PRNG from zoneKey + today + biome + slots + weather-state-hour
+    var weatherSeedBit = weather ? (weather.state + '-' + hour) : 'none';
     var seed = 0;
-    var src = zoneKey + '|' + today + '|' + biomeId + '|' + slots;
+    var src = zoneKey + '|' + today + '|' + biomeId + '|' + slots + '|' + weatherSeedBit;
     for (var i = 0; i < src.length; i++) seed = ((seed << 5) - seed + src.charCodeAt(i)) | 0;
     var rng = function() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
     var weights = {};
@@ -56266,6 +56387,11 @@ window._lwClaimHerbarium = function(id){
     for (var di = 0; di < def.dom.length; di++) if (weights[def.dom[di]] !== undefined) weights[def.dom[di]] *= 2;
     for (var ri = 0; ri < def.rare.length; ri++) if (weights[def.rare[ri]] !== undefined) weights[def.rare[ri]] *= 0.5;
     if (tilt && weights[tilt] !== undefined) weights[tilt] += 1;
+    // Weather tilt — applied on TOP of biome. Three-way multiplier per state.
+    if (weather && _WEATHER_TILT[weather.state]) {
+      var wt = _WEATHER_TILT[weather.state];
+      for (var wk in wt) if (weights[wk] !== undefined) weights[wk] *= wt[wk];
+    }
     // Weighted pick `slots` elements without replacement. With 6 base elements
     // and up to 5 slots we won't exhaust the pool.
     var picked = [];
@@ -56284,7 +56410,26 @@ window._lwClaimHerbarium = function(id){
         }
       }
     }
-    return { elements: picked, biome: biomeId, weather: tilt, grade: grade || 'Common', scoreNeeded: diff.scoreNeeded };
+    // Weather-hint slot — if weather is known and its dominant element is in
+    // the hex, we mark one slot (deterministic per zone/day) as the "free
+    // hint" slot. Rendered as pre-revealed in the UI on attempt 1.
+    var hintSlot = null;
+    if (weather && _WEATHER_DOMINANT[weather.state]) {
+      var dominantEl = _WEATHER_DOMINANT[weather.state];
+      for (var hi = 0; hi < picked.length; hi++) {
+        if (picked[hi] === dominantEl) { hintSlot = hi; break; }
+      }
+    }
+    return {
+      elements: picked,
+      biome: biomeId,
+      weather: tilt,
+      weatherState: weather ? weather.state : null,
+      weatherData: weather,
+      hintSlot: hintSlot,
+      grade: grade || 'Common',
+      scoreNeeded: diff.scoreNeeded
+    };
   }
 
   // Resolve a foraging attempt — variable length (3-5 cards).
@@ -56600,6 +56745,8 @@ window._lwClaimHerbarium = function(id){
     if (v === 'match' || v === 'wild-exact') return 'var(--sage)';
     if (v === 'counter') return 'var(--gold)';
     if (v === 'wild') return '#c07ac8'; // soft violet for rare wilds at half-strength
+    if (v === 'safety') return '#87a3c2'; // attempt-3 safety net — pale blue
+    if (v === 'weather-hint') return '#5b9bd5'; // sky-blue — "the weather told you this"
     return 'var(--muted)';
   }
   function resolveVerdictLabel(v) {
@@ -56607,6 +56754,8 @@ window._lwClaimHerbarium = function(id){
     if (v === 'wild-exact') return 'WILD \u00b7 EXACT';
     if (v === 'counter') return 'COUNTER';
     if (v === 'wild') return 'WILD';
+    if (v === 'safety') return 'REVEALED';
+    if (v === 'weather-hint') return 'WEATHER';
     return 'NEUTRAL';
   }
   // Build a 5-card hand from the active deck (using inventory to validate)
@@ -56674,7 +56823,22 @@ window._lwClaimHerbarium = function(id){
     // can level into it. "That's the spirit" — Stephen.
     var effGrade = effectiveGrade(grade || 'Common');
     var diff = hexDifficulty(effGrade);
+    // Kick off a background weather fetch before composition. If it resolves
+    // in time, hexComposition gets the tilt + hint slot. If not, next open
+    // will pick it up from cache. Either way: no spinner, no visible delay.
+    try {
+      if (typeof window._uLat === 'number' && typeof window._uLng === 'number') {
+        fetchWeather(window._uLat, window._uLng);
+      }
+    } catch(e){}
     var comp = hexComposition(zoneKey, null, effGrade);
+    // If the hex composition identified a weather-hint slot, pre-reveal it
+    // so the player sees the "free" slot on attempt 1. Matches the attempt-3
+    // safety-net pattern for Legendary+ hexes, same `learned` map.
+    var initialLearned = {};
+    if (comp.hintSlot != null && comp.elements[comp.hintSlot]) {
+      initialLearned[comp.hintSlot] = { hex: comp.elements[comp.hintSlot], verdict: 'weather-hint' };
+    }
     var hand = buildHand(diff.cards + 2); // hand shows N+2 so there's a choice
     if (hand.length < diff.cards) {
       if (window._toast) _toast('You need at least ' + diff.cards + ' cards. Starter cards were granted.');
@@ -56688,7 +56852,7 @@ window._lwClaimHerbarium = function(id){
     // genuinely feel more informed than attempt 1. learned[s] = {hex,verdict}
     // when the player revealed that slot on a prior attempt; undefined if
     // they played a neutral card on it (still unknown).
-    var learned = {};
+    var learned = initialLearned || {};
     // Remember what the player played last attempt so the next attempt
     // can surface it in a "LAST PLAY" strip — closes the feedback loop.
     var lastPlay = null; // array of {card, hex, verdict} from prior attempt
@@ -56702,6 +56866,16 @@ window._lwClaimHerbarium = function(id){
       var biomeIcon = (window.getBiomeInfo && window._lastDetectedBiome) ? (getBiomeInfo(window._lastDetectedBiome).icon || '\ud83c\udf3f') : '\ud83c\udf3f';
       var weatherIcon = comp.weather ? (EL[comp.weather] ? EL[comp.weather].icon : '') : '';
       var weatherLbl = comp.weather ? ('Weather favors ' + EL[comp.weather].label) : 'Calm conditions';
+      // Real-weather indicator — 3 glyphs, one-glance parseable. Reads the
+      // classified weather state from comp.weatherData (if Open-Meteo returned
+      // before composition). Maps state → elemental glyph + short hint.
+      var wxGlyph = '', wxText = '';
+      if (comp.weatherState && comp.weatherData) {
+        var wxMap = { wet: '\u2614', windy: '\ud83d\udca8', dry: '\u2600\ufe0f', calm: '\u2728' };
+        wxGlyph = wxMap[comp.weatherState] || '';
+        var temp = comp.weatherData.temp != null ? Math.round(comp.weatherData.temp) + '\u00b0' : '';
+        wxText = (comp.weatherState.toUpperCase()) + (temp ? ' \u00b7 ' + temp : '');
+      }
       var h = '';
       h += '<div style="max-width:420px;width:100%;margin:0 auto;">';
       // Header
@@ -56711,6 +56885,17 @@ window._lwClaimHerbarium = function(id){
       h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--sage);margin-top:2px;">Attempt ' + (attempts + 1) + ' of 3</div></div>';
       h += '<button onclick="window._lwForageClose(false)" style="width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:0.9rem;cursor:pointer;">\u2715</button>';
       h += '</div>';
+      // Weather strip — only if real weather data is available. Soft blue
+      // glow telegraphs "this came from the actual world, not a dice roll."
+      if (wxGlyph) {
+        h += '<div style="padding:7px 10px;margin-bottom:0.7rem;background:rgba(91,155,213,0.08);border:1px solid rgba(91,155,213,0.25);border-radius:8px;display:flex;align-items:center;gap:8px;font-family:DM Mono,monospace;font-size:0.55rem;color:#87a3c2;">';
+        h += '<div style="font-size:1rem;">' + wxGlyph + '</div>';
+        h += '<div>' + wxText + '</div>';
+        if (comp.hintSlot != null) {
+          h += '<div style="margin-left:auto;font-family:Bebas Neue,sans-serif;font-size:0.48rem;letter-spacing:0.1em;color:#5b9bd5;">1 SLOT REVEALED</div>';
+        }
+        h += '</div>';
+      }
       // Deck selector — one-tap swap between the player's saved decks
       // (spec §5: "including mid-trip"). Only shown if >1 deck has cards.
       // Disabled once the player has committed to an attempt (selected
