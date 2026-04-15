@@ -30538,6 +30538,14 @@ document.addEventListener('keydown', function(e) {
       if(window._LW_hasFamilyRitual&&window._LW_hasFamilyRitual('conduits')&&plant&&plant.grade){
         var _tg={Common:1,Uncommon:2,Rare:3,Epic:4,Legendary:5,Mythic:6,Cosmic:7};
         var _dr=_tg[plant.grade]||1;
+        // Wet weather amplifies the song — silent bonus, no UI tell. Player
+        // notices over time that rainy composts return more.
+        try{
+          if(typeof getCachedWeather==='function'&&typeof window._uLat==='number'){
+            var _wxC=getCachedWeather(window._uLat,window._uLng);
+            if(_wxC&&_wxC.state==='wet')_dr*=2;
+          }
+        }catch(e){}
         if(window.earnDew)window.earnDew(_dr,'compost_song');
         if(window._toast)setTimeout(function(){window._toast('\ud83d\udca7 Compost Song \u2014 +'+_dr+' Dew from the song of decay');},1400);
       }
