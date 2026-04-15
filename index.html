@@ -41599,12 +41599,19 @@ function _opCat(catKey){
 function _op(){var o=document.getElementById('fg-ov'),rc=_gr();
   // Build categorized accordion picker with thumbnails
   var h='<div style="max-width:460px;margin:0 auto;padding:0.5rem">';
-  // Header banner — full-width image that replaces the old Bebas text.
-  // Falls back to the text treatment if the file is missing.
-  h+='<div style="position:relative;margin:0 -0.5rem 14px;">';
-  h+='<img id="gp-header-banner" src="assets/games/category-banners/header.png" alt="Choose Your Game" style="display:block;width:100%;height:auto;border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,0.45);" onerror="this.style.display=\'none\';var tf=document.getElementById(\'gp-header-fallback\');if(tf)tf.style.display=\'block\';">';
-  h+='<div id="gp-header-fallback" style="display:none;font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:var(--gold);letter-spacing:.1em;text-align:center;padding:12px 0;">CHOOSE YOUR GAME</div>';
-  h+='<button class="gb" onclick="_cp();if(window.switchTab)switchTab(\'greenhouse\');" style="position:absolute;top:8px;right:8px;min-height:40px;padding:0.35rem 0.75rem;background:rgba(8,10,6,0.85);border:1.5px solid rgba(200,168,75,0.35);border-radius:8px;color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;cursor:pointer;">CLOSE</button>';
+  // Header banner — full-width image with "CHOOSE YOUR GAME" overlaid as
+  // stacked large type. Text and image live in the same relative container
+  // so the title scales with the banner. Text shadow keeps it readable
+  // regardless of banner color. Fallback = text-only strip if the image
+  // ever 404s.
+  h+='<div style="position:relative;margin:0 -0.5rem 14px;border-radius:12px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,0.45);">';
+  h+='<img id="gp-header-banner" src="assets/games/category-banners/header.png?v=2" alt="Choose Your Game" style="display:block;width:100%;height:auto;" onerror="this.style.display=\'none\';this.parentElement.style.background=\'linear-gradient(180deg,rgba(22,28,18,0.9),rgba(13,16,12,0.95))\';this.parentElement.style.paddingTop=\'40px\';this.parentElement.style.paddingBottom=\'40px\';">';
+  // Stacked title over the banner — two Bebas lines, heavy shadow for contrast.
+  h+='<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:clamp(1.8rem,7vw,3rem);color:var(--cream);letter-spacing:0.14em;line-height:0.95;text-shadow:0 3px 12px rgba(0,0,0,0.85),0 0 24px rgba(0,0,0,0.6);">CHOOSE</div>';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:clamp(1.3rem,5.4vw,2.3rem);color:var(--gold);letter-spacing:0.24em;line-height:0.95;margin-top:2px;text-shadow:0 3px 12px rgba(0,0,0,0.85),0 0 24px rgba(0,0,0,0.6);">YOUR GAME</div>';
+  h+='</div>';
+  h+='<button class="gb" onclick="_cp();if(window.switchTab)switchTab(\'greenhouse\');" style="position:absolute;top:8px;right:8px;min-height:40px;padding:0.35rem 0.75rem;background:rgba(8,10,6,0.85);border:1.5px solid rgba(200,168,75,0.35);border-radius:8px;color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;cursor:pointer;z-index:2;">CLOSE</button>';
   h+='</div>';
   // Category accordions
   var gi=0;
@@ -55051,6 +55058,7 @@ function _bosSecretsContent() {
         lore: 'Croaks beneath three leaves. Calls rain when the plant goes dry.',
         riddle: 'A keeper wet and slow, who knows the storm before it breaks.' },
       { idx: 33, name: 'The Cicada',         tier: 'Mythic',    icon: '\ud83e\udea6', color: '#A8B872',
+        img: 'assets/companions/cicada-v1-a.png',
         lore: 'Buried years, then a chorus at dusk. Its song steadies every nearby bloom.',
         riddle: 'Silent for seasons, loud at summer — who waits seventeen years to sing?' },
       { idx: 34, name: 'Baby Mammoth',       tier: 'Legendary', icon: '\ud83e\udd8f', color: '#C8A84B',
@@ -55091,7 +55099,14 @@ function _bosSecretsContent() {
       if (_mcFound) {
         h+='<div style="padding:0.55rem 0.75rem;margin-bottom:4px;background:linear-gradient(180deg,rgba(26,18,22,0.7),rgba(13,10,16,0.8));border:1px solid '+_mc.color+'55;border-left:3px solid '+_mc.color+';border-radius:8px;">';
         h+='<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;">';
-        h+='<div style="font-size:1.1rem;">'+_mc.icon+'</div>';
+        // Image portrait when available, emoji fallback otherwise. onerror
+        // reveals the emoji span so missing art never leaves a gap.
+        if (_mc.img) {
+          h+='<img src="'+_mc.img+'" alt="'+_mc.name+'" onerror="this.style.display=\'none\';var n=this.nextSibling;if(n)n.style.display=\'inline-block\';" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid '+_mc.color+'66;flex-shrink:0;">';
+          h+='<div style="font-size:1.1rem;display:none;">'+_mc.icon+'</div>';
+        } else {
+          h+='<div style="font-size:1.1rem;">'+_mc.icon+'</div>';
+        }
         h+='<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:'+_mc.color+';letter-spacing:0.06em;">'+_mc.name+'</div>';
         h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);letter-spacing:0.05em;">'+_mc.tier+'</div></div>';
         h+='</div>';
