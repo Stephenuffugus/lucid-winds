@@ -56386,6 +56386,192 @@ window._lwClaimHerbarium = function(id){
     getActiveDeck: getActiveDeck
   };
 
+  // ═══ LW_SIMULATOR — Foraging practice / playtest harness ═══
+  // Open from console: LW_simulator.open()
+  // Override every parameter to test difficulty, biome tilt, weather, and
+  // rare wild card behavior without waiting for real world conditions.
+  (function(){
+    var S = { grade:'Common', biome:'forest', weather:'', attempt:1, hex:null, hand:null, reveal:false, resolved:null, selected:[], learned:{} };
+    function genHex() {
+      var effGrade = S.grade; // simulator bypasses silent-downgrade so you see the ceiling
+      var diff = hexDifficulty(effGrade);
+      var tiltBackup = null;
+      if (S.weather) {
+        // Temporarily override currentTilt for the composition call
+        tiltBackup = window._simWeatherOverride;
+        window._simWeatherOverride = S.weather;
+      }
+      var origTilt = currentTilt;
+      if (S.weather) {
+        // Can't monkey-patch currentTilt inside a closure; instead, build the
+        // composition manually mirroring hexComposition's weight logic but with
+        // the forced tilt.
+        var def = BIOME[S.biome] || BIOME.forest;
+        var seed = Date.now() + Math.floor(Math.random() * 1e6);
+        var rng = function(){ seed = (seed*9301+49297)%233280; return seed/233280; };
+        var weights = {};
+        for (var k in EL) if (!EL[k].rare) weights[k] = 1;
+        for (var di = 0; di < def.dom.length; di++) if (weights[def.dom[di]] !== undefined) weights[def.dom[di]] *= 2;
+        for (var ri = 0; ri < def.rare.length; ri++) if (weights[def.rare[ri]] !== undefined) weights[def.rare[ri]] *= 0.5;
+        if (S.weather && weights[S.weather] !== undefined) weights[S.weather] += 1;
+        var picked = [];
+        var pool = Object.keys(weights);
+        for (var p = 0; p < diff.slots && pool.length; p++) {
+          var total = 0; for (var pi = 0; pi < pool.length; pi++) total += weights[pool[pi]];
+          var roll = rng() * total;
+          var acc = 0;
+          for (var pk = 0; pk < pool.length; pk++) {
+            acc += weights[pool[pk]];
+            if (roll <= acc) { picked.push(pool[pk]); pool.splice(pk, 1); break; }
+          }
+        }
+        S.hex = { elements: picked, biome: S.biome, weather: S.weather, grade: S.grade, scoreNeeded: diff.scoreNeeded, weights: weights };
+      } else {
+        // Use real composition pipeline with a random zone key
+        S.hex = hexComposition('sim-' + Math.random().toString(36).slice(2), S.biome, S.grade);
+      }
+      S.diff = diff;
+      S.attempt = 1; S.resolved = null; S.selected = []; S.learned = {};
+      genHand();
+    }
+    function genHand() {
+      // Full hand mode — draw diff.cards + 2 from a "max inventory" so the
+      // simulator shows the player's BEST case. Includes all 6 base + 3 rare.
+      var simInv = { sun:9, shade:9, rain:9, dry:9, wind:9, still:9, moonlight:3, thunder:3, aurora:3 };
+      var invBackup = loadInventory();
+      saveInventory(simInv);
+      try { S.hand = buildHand(S.diff.cards + 2); } finally { saveInventory(invBackup); }
+    }
+    function open() {
+      if (document.getElementById('lw-sim-overlay')) return;
+      S.grade = S.grade || 'Common';
+      genHex();
+      var ov = document.createElement('div');
+      ov.id = 'lw-sim-overlay';
+      ov.style.cssText = 'position:fixed;inset:0;z-index:100005;background:rgba(5,8,4,0.96);backdrop-filter:blur(10px);overflow-y:auto;padding:1rem;-webkit-overflow-scrolling:touch;';
+      document.body.appendChild(ov);
+      render();
+    }
+    function close() { var ov = document.getElementById('lw-sim-overlay'); if (ov) ov.remove(); }
+    function verdictLabel(v){return v==='match'?'MATCH':v==='wild-exact'?'WILD EXACT':v==='counter'?'COUNTER':v==='wild'?'WILD ½':v==='safety'?'SAFETY REVEAL':'MISS';}
+    function verdictColor(v){return (v==='match'||v==='wild-exact')?'var(--sage)':v==='counter'?'var(--gold)':v==='wild'?'#c07ac8':v==='safety'?'#87a3c2':'var(--muted)';}
+    function elHtml(k, sz){ sz=sz||48; var el=EL[k]||{icon:'?',label:k}; return '<div style="width:'+sz+'px;text-align:center;"><img src="assets/foraging/el-'+k+'.png" alt="" style="width:100%;max-width:'+sz+'px;aspect-ratio:1/1;object-fit:contain;" onerror="this.outerHTML=\'<div style=&quot;font-size:'+Math.round(sz*0.5)+'px;&quot;>'+el.icon+'</div>\';"><div style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;color:var(--cream);margin-top:2px;letter-spacing:0.06em;">'+el.label+'</div></div>'; }
+    function render() {
+      var ov = document.getElementById('lw-sim-overlay'); if (!ov) return;
+      var diff = S.diff;
+      var h = '<div style="max-width:480px;margin:0 auto;">';
+      // Header
+      h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">';
+      h += '<div><div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.1rem;color:var(--gold);">Foraging Simulator</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">Practice harness \u00b7 tweak every variable</div></div>';
+      h += '<button onclick="LW_simulator.close()" style="width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:1rem;cursor:pointer;">\u2715</button>';
+      h += '</div>';
+      // Controls panel
+      h += '<div style="padding:0.8rem;background:rgba(18,22,16,0.7);border:1px solid rgba(122,179,86,0.2);border-radius:10px;margin-bottom:0.8rem;">';
+      h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.55rem;">';
+      // Rarity select
+      h += '<label style="display:flex;flex-direction:column;gap:2px;font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);">RARITY';
+      h += '<select onchange="LW_simulator.setGrade(this.value)" style="background:rgba(13,16,12,0.9);color:var(--cream);border:1px solid rgba(122,179,86,0.25);border-radius:6px;padding:6px;font-family:DM Mono,monospace;font-size:0.6rem;">';
+      var _gr = ['Common','Uncommon','Rare','Epic','Legendary','Mythic','Cosmic'];
+      for (var g=0;g<_gr.length;g++) h += '<option value="'+_gr[g]+'"'+(S.grade===_gr[g]?' selected':'')+'>'+_gr[g]+'</option>';
+      h += '</select></label>';
+      // Biome select
+      h += '<label style="display:flex;flex-direction:column;gap:2px;font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);">BIOME';
+      h += '<select onchange="LW_simulator.setBiome(this.value)" style="background:rgba(13,16,12,0.9);color:var(--cream);border:1px solid rgba(122,179,86,0.25);border-radius:6px;padding:6px;font-family:DM Mono,monospace;font-size:0.6rem;">';
+      var _bk = Object.keys(BIOME);
+      for (var b=0;b<_bk.length;b++) h += '<option value="'+_bk[b]+'"'+(S.biome===_bk[b]?' selected':'')+'>'+_bk[b]+'</option>';
+      h += '</select></label>';
+      // Weather override
+      h += '<label style="display:flex;flex-direction:column;gap:2px;font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);">WEATHER TILT';
+      h += '<select onchange="LW_simulator.setWeather(this.value)" style="background:rgba(13,16,12,0.9);color:var(--cream);border:1px solid rgba(122,179,86,0.25);border-radius:6px;padding:6px;font-family:DM Mono,monospace;font-size:0.6rem;">';
+      h += '<option value=""'+(!S.weather?' selected':'')+'>— none —</option>';
+      var _el6 = ['sun','shade','rain','dry','wind','still'];
+      for (var el2=0;el2<_el6.length;el2++) h += '<option value="'+_el6[el2]+'"'+(S.weather===_el6[el2]?' selected':'')+'>'+_el6[el2]+'</option>';
+      h += '</select></label>';
+      // Reveal toggle
+      h += '<label style="display:flex;flex-direction:column;gap:2px;font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);">HEX VISIBILITY<button onclick="LW_simulator.toggleReveal()" style="background:'+(S.reveal?'rgba(200,168,75,0.2)':'rgba(26,36,22,0.6)')+';color:'+(S.reveal?'var(--gold)':'var(--cream)')+';border:1px solid '+(S.reveal?'var(--gold)':'rgba(122,179,86,0.25)')+';border-radius:6px;padding:6px;font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;min-height:34px;">'+(S.reveal?'\u2713 REVEALED':'\u2715 HIDDEN')+'</button></label>';
+      h += '</div>';
+      h += '<div style="display:flex;gap:0.4rem;margin-top:0.55rem;">';
+      h += '<button onclick="LW_simulator.newHex()" style="flex:1;background:linear-gradient(180deg,rgba(74,124,53,0.35),rgba(46,80,34,0.5));border:1.5px solid var(--sage);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;border-radius:8px;padding:8px;cursor:pointer;min-height:42px;">\u21bb NEW HEX</button>';
+      h += '<button onclick="LW_simulator.newHand()" style="flex:1;background:rgba(26,36,22,0.5);border:1.5px solid rgba(122,179,86,0.25);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;border-radius:8px;padding:8px;cursor:pointer;min-height:42px;">\u21bb NEW HAND</button>';
+      h += '</div></div>';
+      // Difficulty breakdown
+      h += '<div style="padding:0.6rem 0.8rem;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.25);border-radius:10px;margin-bottom:0.8rem;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);">';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:4px;">DIFFICULTY · ' + S.grade.toUpperCase() + '</div>';
+      h += 'Slots: <b>' + diff.slots + '</b> · Cards: <b>' + diff.cards + '</b> · Score needed: <b>' + diff.scoreNeeded + '</b> · Attempt <b>' + S.attempt + ' / 3</b></div>';
+      // Hex row
+      h += '<div style="padding:0.8rem;background:linear-gradient(180deg,rgba(26,36,22,0.5),rgba(13,16,12,0.7));border:1.5px solid rgba(200,168,75,0.25);border-radius:12px;margin-bottom:0.8rem;">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.5rem;">';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:var(--muted);">THE HEX</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);">biome: ' + S.biome + (S.weather ? ' · tilt: ' + S.weather : '') + '</div>';
+      h += '</div>';
+      h += '<div style="display:flex;justify-content:space-around;gap:0.4rem;">';
+      for (var si = 0; si < S.hex.elements.length; si++) {
+        var hexEl = S.hex.elements[si];
+        var shown = S.reveal || (S.resolved && S.resolved.reveal[si]);
+        var slotContent = shown ? elHtml(hexEl, 42) : '<div style="font-size:1.5rem;color:var(--muted);">?</div>';
+        var slotColor = 'rgba(200,168,75,0.3)';
+        if (S.resolved && S.resolved.reveal[si]) slotColor = verdictColor(S.resolved.reveal[si].verdict);
+        h += '<div style="flex:1;aspect-ratio:1;background:rgba(18,22,16,0.8);border:1.5px solid ' + slotColor + ';border-radius:10px;display:flex;align-items:center;justify-content:center;">' + slotContent + '</div>';
+      }
+      h += '</div>';
+      if (S.resolved) {
+        h += '<div style="margin-top:0.55rem;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);">';
+        h += 'Score: <b style="color:' + (S.resolved.success ? 'var(--sage)' : '#c07060') + ';">' + S.resolved.score + ' / ' + S.resolved.scoreNeeded + '</b> · ';
+        h += 'Matches ' + S.resolved.matches + ' · Counters ' + S.resolved.counters + ' · Wild-exact ' + S.resolved.wildExact + ' · Wild ' + S.resolved.wilds + ' · Miss ' + S.resolved.neutrals;
+        h += '</div>';
+      }
+      h += '</div>';
+      // Hand
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.58rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.4rem;">YOUR HAND \u00b7 PICK ' + (diff.cards - S.selected.length) + ' MORE</div>';
+      h += '<div style="display:grid;grid-template-columns:repeat(' + Math.min(S.hand.length, 6) + ',1fr);gap:0.35rem;margin-bottom:0.8rem;">';
+      for (var ci = 0; ci < S.hand.length; ci++) {
+        var c = S.hand[ci];
+        var isSel = S.selected.indexOf(ci) >= 0;
+        var bg = isSel ? 'rgba(200,168,75,0.22)' : 'rgba(18,22,16,0.7)';
+        var brd = isSel ? '1.5px solid var(--gold)' : '1.5px solid rgba(74,124,53,0.2)';
+        var el3 = EL[c];
+        var isRare = el3 && el3.rare;
+        h += '<div onclick="LW_simulator.pick(' + ci + ')" style="cursor:pointer;aspect-ratio:1;background:' + bg + ';border:' + brd + ';border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;' + (S.resolved ? 'pointer-events:none;opacity:0.5;' : '') + (isRare ? 'box-shadow:0 0 8px rgba(200,168,75,0.25);' : '') + '">';
+        h += '<img src="assets/foraging/el-' + c + '.png" alt="" style="width:100%;max-width:42px;aspect-ratio:1/1;object-fit:contain;" onerror="this.outerHTML=\'<div style=&quot;font-size:1.1rem;&quot;>' + el3.icon + '</div>\';">';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;color:' + (isSel ? 'var(--gold)' : 'var(--cream)') + ';margin-top:2px;letter-spacing:0.05em;">' + el3.label + (isRare?' ★':'') + '</div>';
+        if (isSel) h += '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--gold);">' + (S.selected.indexOf(ci) + 1) + '</div>';
+        h += '</div>';
+      }
+      h += '</div>';
+      // Play row
+      if (!S.resolved) {
+        var canPlay = S.selected.length === diff.cards;
+        h += '<button onclick="LW_simulator.play()" ' + (canPlay?'':'disabled') + ' style="display:block;width:100%;padding:12px;border-radius:10px;border:1.5px solid ' + (canPlay?'var(--gold)':'rgba(138,145,120,0.25)') + ';background:' + (canPlay?'linear-gradient(180deg,rgba(200,168,75,0.25),rgba(122,179,86,0.15))':'rgba(26,36,22,0.4)') + ';color:' + (canPlay?'var(--gold)':'var(--muted)') + ';font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.12em;cursor:' + (canPlay?'pointer':'not-allowed') + ';min-height:54px;">PLAY CARDS</button>';
+      } else {
+        h += '<div style="display:flex;gap:0.5rem;">';
+        h += '<button onclick="LW_simulator.nextAttempt()" style="flex:1;padding:12px;border-radius:10px;border:1.5px solid rgba(122,179,86,0.4);background:rgba(74,124,53,0.2);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:50px;">NEXT ATTEMPT</button>';
+        h += '<button onclick="LW_simulator.newHex()" style="flex:1;padding:12px;border-radius:10px;border:1.5px solid rgba(200,168,75,0.35);background:rgba(200,168,75,0.12);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:50px;">NEW HEX</button>';
+        h += '</div>';
+      }
+      h += '</div>';
+      ov.innerHTML = h;
+    }
+    window.LW_simulator = {
+      open: open,
+      close: close,
+      setGrade: function(g){ S.grade = g; genHex(); render(); },
+      setBiome: function(b){ S.biome = b; genHex(); render(); },
+      setWeather: function(w){ S.weather = w; genHex(); render(); },
+      toggleReveal: function(){ S.reveal = !S.reveal; render(); },
+      newHex: function(){ genHex(); render(); },
+      newHand: function(){ genHand(); S.selected = []; render(); },
+      pick: function(i){ if (S.resolved) return; var pos = S.selected.indexOf(i); if (pos>=0) S.selected.splice(pos,1); else if (S.selected.length < S.diff.cards) S.selected.push(i); render(); },
+      play: function(){
+        if (S.resolved || S.selected.length !== S.diff.cards) return;
+        var cards = S.selected.map(function(si){ return S.hand[si]; });
+        S.resolved = resolveAttempt(S.hex.elements, cards, S.diff.scoreNeeded);
+        render();
+      },
+      nextAttempt: function(){ if (S.attempt < 3) S.attempt++; S.resolved = null; S.selected = []; render(); }
+    };
+  })();
+
   // ── FORAGING UI — hex card-deckbuilding panel (Session 2) ──
   // Opens when the player collects a feral. Player picks 3 of 5 cards
   // from active hand, plays against hex's 3 hidden elements, gets info
@@ -57880,6 +58066,8 @@ function _bosReportContent() {
     }
     return out;
   };
+  // Open the foraging simulator (practice harness)
+  window.LW_debug.sim = function(){ if (window.LW_simulator) window.LW_simulator.open(); };
   window.LW_debug.resetSilent = function(){
     try {
       localStorage.removeItem('lw_wild_events');
