@@ -56214,25 +56214,63 @@ window._lwClaimHerbarium = function(id){
   // a consistent puzzle. Generates 3 attributes from 6 elements.
   // Bias: biome dominant = 2x weight, rare = 0.5x, neutral = 1x.
   // Weather tilt adds +1 weight to the tilted element.
-  function hexComposition(zoneKey, biomeId) {
+  // Seed-rarity → puzzle shape. Each rarity pulls more slots + a higher
+  // score threshold. Common is beginner-friendly; Cosmic demands near-perfect
+  // play. Score math: match=2, counter=1, wild=1 (first wild/attempt=2).
+  function hexDifficulty(grade) {
+    var g = String(grade || 'Common').toLowerCase();
+    var map = {
+      common:    { slots: 3, cards: 3, scoreNeeded: 4 },
+      uncommon:  { slots: 3, cards: 3, scoreNeeded: 5 },
+      rare:      { slots: 4, cards: 4, scoreNeeded: 5 },
+      epic:      { slots: 4, cards: 4, scoreNeeded: 7 },
+      legendary: { slots: 5, cards: 5, scoreNeeded: 8 },
+      mythic:    { slots: 5, cards: 5, scoreNeeded: 9 },
+      cosmic:    { slots: 5, cards: 5, scoreNeeded: 10 }
+    };
+    return map[g] || map.common;
+  }
+
+  // Silent downgrade guard: if the player doesn't own enough cards to possibly
+  // solve a hex at its assigned rarity, step down one rarity at a time until
+  // their hand can support it. Prevents impossible lockouts for new keepers.
+  function effectiveGrade(grade) {
+    var order = ['cosmic','mythic','legendary','epic','rare','uncommon','common'];
+    var g = String(grade || 'Common').toLowerCase();
+    var idx = order.indexOf(g);
+    if (idx < 0) return 'common';
+    var inv = loadInventory();
+    var total = totalCards(inv);
+    for (var i = idx; i < order.length; i++) {
+      var need = hexDifficulty(order[i]).cards;
+      if (total >= need) return order[i];
+    }
+    return 'common';
+  }
+
+  function hexComposition(zoneKey, biomeId, grade) {
     if (!biomeId) biomeId = (window._lastDetectedBiome || 'forest');
     var def = BIOME[biomeId] || BIOME.forest;
     var tilt = currentTilt();
+    var diff = hexDifficulty(grade || 'common');
+    var slots = diff.slots;
     var today = new Date().toISOString().slice(0, 10);
-    // Seed a PRNG from zoneKey + today + biome so composition is stable per day
+    // Seed a PRNG from zoneKey + today + biome + slots so composition is
+    // stable per day, and differs cleanly when difficulty scales up.
     var seed = 0;
-    var src = zoneKey + '|' + today + '|' + biomeId;
+    var src = zoneKey + '|' + today + '|' + biomeId + '|' + slots;
     for (var i = 0; i < src.length; i++) seed = ((seed << 5) - seed + src.charCodeAt(i)) | 0;
     var rng = function() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
     var weights = {};
-    for (var k in EL) weights[k] = 1;
-    for (var di = 0; di < def.dom.length; di++) weights[def.dom[di]] *= 2;
-    for (var ri = 0; ri < def.rare.length; ri++) weights[def.rare[ri]] *= 0.5;
+    for (var k in EL) if (!EL[k].rare) weights[k] = 1; // pool only non-rare base elements
+    for (var di = 0; di < def.dom.length; di++) if (weights[def.dom[di]] !== undefined) weights[def.dom[di]] *= 2;
+    for (var ri = 0; ri < def.rare.length; ri++) if (weights[def.rare[ri]] !== undefined) weights[def.rare[ri]] *= 0.5;
     if (tilt && weights[tilt] !== undefined) weights[tilt] += 1;
-    // Weighted pick 3 without replacement
+    // Weighted pick `slots` elements without replacement. With 6 base elements
+    // and up to 5 slots we won't exhaust the pool.
     var picked = [];
     var pool = Object.keys(weights);
-    for (var p = 0; p < 3; p++) {
+    for (var p = 0; p < slots && pool.length; p++) {
       var total = 0;
       for (var pi = 0; pi < pool.length; pi++) total += weights[pool[pi]];
       var roll = rng() * total;
@@ -56246,38 +56284,45 @@ window._lwClaimHerbarium = function(id){
         }
       }
     }
-    return { elements: picked, biome: biomeId, weather: tilt };
+    return { elements: picked, biome: biomeId, weather: tilt, grade: grade || 'Common', scoreNeeded: diff.scoreNeeded };
   }
 
-  // Resolve a foraging attempt — 3 cards played against hex's 3 elements.
-  // Returns { matches, counters, neutrals, score, success, reveal }.
-  // reveal[i] = {card, hex, verdict: 'match'|'counter'|'neutral'}
-  function resolveAttempt(hexElements, cardsPlayed) {
-    if (!cardsPlayed || cardsPlayed.length !== 3) return null;
-    if (!hexElements || hexElements.length !== 3) return null;
+  // Resolve a foraging attempt — variable length (3-5 cards).
+  // Returns { matches, counters, neutrals, wilds, wildExact, score, success, reveal }.
+  // reveal[i] = {card, hex, verdict: 'match'|'counter'|'neutral'|'wild'|'wild-exact'}
+  //
+  // Rare wild-card cap rule: the FIRST rare wild card played in an attempt
+  // counts as an EXACT match (score 2). Subsequent rare wilds revert to
+  // standard half-strength (score 1). Prevents rare cards from becoming a
+  // 5-copy auto-win button while preserving their payoff.
+  function resolveAttempt(hexElements, cardsPlayed, scoreNeeded) {
+    if (!cardsPlayed || !hexElements) return null;
+    if (cardsPlayed.length !== hexElements.length) return null;
+    if (!scoreNeeded) scoreNeeded = 3; // legacy default
     var reveal = [];
-    var matches = 0, counters = 0, neutrals = 0, wilds = 0;
-    // Each card pairs with hex element at same index for deterministic
-    // reveal (player sees exactly which card hit which slot).
-    for (var i = 0; i < 3; i++) {
+    var matches = 0, counters = 0, neutrals = 0, wilds = 0, wildExact = 0;
+    var wildUsed = false;
+    for (var i = 0; i < hexElements.length; i++) {
       var card = cardsPlayed[i], hex = hexElements[i];
       var verdict;
       var isRare = EL[card] && EL[card].rare;
       if (isRare) {
-        // Rare wild cards are universal counters at half strength. They
-        // always reveal the hex element (info bonus) and contribute 1
-        // to score (vs 2 for match, 1 for counter). Treated as a
-        // distinct verdict so the reveal can theme them differently.
-        verdict = 'wild'; wilds++;
+        if (!wildUsed) {
+          // First rare wild this attempt — EXACT hit on this slot
+          verdict = 'wild-exact'; wildExact++; wildUsed = true;
+        } else {
+          // Any additional rare cards fall back to half-strength wild
+          verdict = 'wild'; wilds++;
+        }
       } else if (card === hex) { verdict = 'match'; matches++; }
       else if (countered(card, hex)) { verdict = 'counter'; counters++; }
       else { verdict = 'neutral'; neutrals++; }
       reveal.push({ card: card, hex: hex, verdict: verdict });
     }
-    // match=2, counter=1, wild=1 (universal counter half-strength)
-    var score = matches * 2 + counters + wilds;
-    var success = score >= 3;
-    return { matches: matches, counters: counters, neutrals: neutrals, wilds: wilds, score: score, success: success, reveal: reveal };
+    // match=2, wild-exact=2, counter=1, wild=1, neutral=0
+    var score = (matches + wildExact) * 2 + counters + wilds;
+    var success = score >= scoreNeeded;
+    return { matches: matches, counters: counters, neutrals: neutrals, wilds: wilds, wildExact: wildExact, score: score, success: success, scoreNeeded: scoreNeeded, reveal: reveal };
   }
 
   // Inventory helpers
@@ -56328,6 +56373,8 @@ window._lwClaimHerbarium = function(id){
     countered: countered,
     currentTilt: currentTilt,
     hexComposition: hexComposition,
+    hexDifficulty: hexDifficulty,
+    effectiveGrade: effectiveGrade,
     resolveAttempt: resolveAttempt,
     loadInventory: loadInventory,
     saveInventory: saveInventory,
@@ -56364,33 +56411,42 @@ window._lwClaimHerbarium = function(id){
     } catch(e) { return 1; }
   }
   function resolveVerdictColor(v) {
-    if (v === 'match') return 'var(--sage)';
+    if (v === 'match' || v === 'wild-exact') return 'var(--sage)';
     if (v === 'counter') return 'var(--gold)';
-    if (v === 'wild') return '#c07ac8'; // soft violet for rare wilds
+    if (v === 'wild') return '#c07ac8'; // soft violet for rare wilds at half-strength
     return 'var(--muted)';
   }
   function resolveVerdictLabel(v) {
     if (v === 'match') return 'MATCH';
+    if (v === 'wild-exact') return 'WILD \u00b7 EXACT';
     if (v === 'counter') return 'COUNTER';
     if (v === 'wild') return 'WILD';
     return 'NEUTRAL';
   }
   // Build a 5-card hand from the active deck (using inventory to validate)
-  function buildHand() {
+  // Build a hand up to `size` cards (defaults to 5 for backwards compat).
+  // Deck-first, then fills remaining from inventory so harder hexes can
+  // still find a workable hand. Rare wild cards are eligible too.
+  function buildHand(size) {
+    if (!size || size < 3) size = 5;
+    if (size > 7) size = 7;
     var inv = loadInventory();
     var deck = getActiveDeck();
     var want = deck && deck.cards && deck.cards.length ? deck.cards : ['sun','rain','wind','shade','dry'];
     var available = [];
     var remaining = {};
     for (var k in inv) remaining[k] = inv[k] || 0;
-    for (var i = 0; i < want.length && available.length < 5; i++) {
+    for (var i = 0; i < want.length && available.length < size; i++) {
       var c = want[i];
       if (remaining[c] > 0) { available.push(c); remaining[c]--; }
     }
-    // If deck short (player lost cards), fill from inventory
-    var all = ['sun','shade','rain','dry','wind','still'];
-    for (var j = 0; j < all.length && available.length < 5; j++) {
-      if (remaining[all[j]] > 0) { available.push(all[j]); remaining[all[j]]--; }
+    // Fill from all inventory (including rare wild cards) until the hand
+    // reaches `size` or the player's collection is exhausted.
+    var all = ['sun','shade','rain','dry','wind','still','moonlight','thunder','aurora'];
+    for (var j = 0; j < all.length && available.length < size; j++) {
+      while (remaining[all[j]] > 0 && available.length < size) {
+        available.push(all[j]); remaining[all[j]]--;
+      }
     }
     return available;
   }
@@ -56427,10 +56483,15 @@ window._lwClaimHerbarium = function(id){
         }, _step2);
       }
     } catch(e) {}
-    var comp = hexComposition(zoneKey);
-    var hand = buildHand();
-    if (hand.length < 3) {
-      if (window._toast) _toast('You need at least 3 cards. Starter cards were granted.');
+    // Apply silent-downgrade guard — a hex scheduled at grade X becomes
+    // grade Y if the player's hand can't cover X. Never tell them; they
+    // can level into it. "That's the spirit" — Stephen.
+    var effGrade = effectiveGrade(grade || 'Common');
+    var diff = hexDifficulty(effGrade);
+    var comp = hexComposition(zoneKey, null, effGrade);
+    var hand = buildHand(diff.cards + 2); // hand shows N+2 so there's a choice
+    if (hand.length < diff.cards) {
+      if (window._toast) _toast('You need at least ' + diff.cards + ' cards. Starter cards were granted.');
       onDone(false);
       return;
     }
@@ -56490,8 +56551,24 @@ window._lwClaimHerbarium = function(id){
       // Hex slots
       h += '<div style="padding:0.8rem;background:linear-gradient(180deg,rgba(26,36,22,0.5),rgba(13,16,12,0.7));border:1.5px solid rgba(200,168,75,0.25);border-radius:12px;margin-bottom:0.9rem;">';
       h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:var(--muted);text-align:center;margin-bottom:0.6rem;">THE HEX</div>';
+      // Attempt-3 safety net: on the 3rd attempt at Legendary+ hexes, auto-
+      // reveal one random slot (if none are learned yet). Gives the keeper
+      // a guaranteed lead-in so the final attempt isn't a blind swing.
+      try {
+        var _hardTiers = {legendary:1, mythic:1, cosmic:1};
+        if (!resolved && attempts >= 2 && _hardTiers[String(effGrade).toLowerCase()]) {
+          var _learnedCount = 0; for (var _lk in learned) if (learned[_lk]) _learnedCount++;
+          if (_learnedCount === 0) {
+            // Pick a slot deterministically from zoneKey so same hex always
+            // reveals the same helper slot (stable if the keeper reloads).
+            var _rseed = 0; for (var _rsi = 0; _rsi < zoneKey.length; _rsi++) _rseed = ((_rseed<<5)-_rseed + zoneKey.charCodeAt(_rsi))|0;
+            var _rpick = Math.abs(_rseed) % comp.elements.length;
+            learned[_rpick] = { hex: comp.elements[_rpick], verdict: 'safety' };
+          }
+        }
+      } catch(e){}
       h += '<div style="display:flex;justify-content:space-around;gap:0.4rem;">';
-      for (var s = 0; s < 3; s++) {
+      for (var s = 0; s < diff.slots; s++) {
         var slotContent = '?';
         var slotColor = 'var(--muted)';
         var slotBg = 'rgba(18,22,16,0.8)';
@@ -56529,7 +56606,7 @@ window._lwClaimHerbarium = function(id){
       // player tried last round so attempt 2 genuinely feels more informed
       // rather than just a retry. Neutrals stay greyed; matches/counters
       // highlight so the player can see which of their picks landed.
-      if (!resolved && lastPlay && lastPlay.length === 3) {
+      if (!resolved && lastPlay && lastPlay.length === diff.slots) {
         h += '<div style="padding:0.55rem;background:rgba(18,22,16,0.55);border:1px dashed rgba(122,179,86,0.2);border-radius:10px;margin-bottom:0.7rem;">';
         h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:4px;">LAST PLAY</div>';
         h += '<div style="display:flex;justify-content:space-around;gap:4px;">';
@@ -56545,9 +56622,13 @@ window._lwClaimHerbarium = function(id){
         }
         h += '</div></div>';
       }
-      // Hand / selected
-      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.4rem;">YOUR HAND \u00b7 PICK ' + (3 - selected.length) + ' MORE</div>';
-      h += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.35rem;margin-bottom:0.9rem;">';
+      // Hand / selected — show required card count + score target
+      var pickMsg = diff.cards - selected.length;
+      h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.4rem;font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;">';
+      h += '<span style="color:var(--muted);">YOUR HAND \u00b7 PICK ' + (pickMsg>0?pickMsg+' MORE':'READY') + '</span>';
+      h += '<span style="color:var(--gold);">TARGET ' + diff.scoreNeeded + ' \u00b7 ' + (diff.slots) + ' SLOTS</span>';
+      h += '</div>';
+      h += '<div style="display:grid;grid-template-columns:repeat(' + Math.min(hand.length, 6) + ',1fr);gap:0.35rem;margin-bottom:0.9rem;">';
       for (var ci = 0; ci < hand.length; ci++) {
         var c = hand[ci];
         var el = EL[c];
@@ -56564,7 +56645,7 @@ window._lwClaimHerbarium = function(id){
 
       // Play / confirm buttons
       if (!resolved) {
-        var canPlay = selected.length === 3;
+        var canPlay = selected.length === diff.cards;
         h += '<button onclick="window._lwForagePlay()" ' + (canPlay ? '' : 'disabled') + ' style="display:block;width:100%;padding:12px;border-radius:10px;border:1.5px solid ' + (canPlay ? 'var(--gold)' : 'rgba(138,145,120,0.25)') + ';background:' + (canPlay ? 'linear-gradient(180deg,rgba(200,168,75,0.25),rgba(122,179,86,0.15))' : 'rgba(26,36,22,0.4)') + ';color:' + (canPlay ? 'var(--gold)' : 'var(--muted)') + ';font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.12em;cursor:' + (canPlay ? 'pointer' : 'not-allowed') + ';min-height:54px;">PLAY CARDS</button>';
       } else if (resolved.success) {
         h += '<button onclick="window._lwForageClose(true)" style="display:block;width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--sage);background:linear-gradient(180deg,rgba(122,179,86,0.25),rgba(122,179,86,0.12));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.12em;cursor:pointer;min-height:54px;">\u2728 COLLECT SEED</button>';
@@ -56585,7 +56666,7 @@ window._lwClaimHerbarium = function(id){
       // those describe the hex, not the player's hand.
       if (resolved || selected.length > 0) return;
       try { localStorage.setItem('lw_forage_deck_active', String(n)); } catch(e) {}
-      hand = buildHand();
+      hand = buildHand(diff.cards + 2);
       selected = [];
       render();
     };
@@ -56593,13 +56674,13 @@ window._lwClaimHerbarium = function(id){
       if (resolved) return;
       var idx = selected.indexOf(ci);
       if (idx >= 0) selected.splice(idx, 1);
-      else if (selected.length < 3) selected.push(ci);
+      else if (selected.length < diff.cards) selected.push(ci);
       render();
     };
     window._lwForagePlay = function() {
-      if (resolved || selected.length !== 3) return;
+      if (resolved || selected.length !== diff.cards) return;
       var cardsPlayed = selected.map(function(si){return hand[si];});
-      resolved = resolveAttempt(comp.elements, cardsPlayed);
+      resolved = resolveAttempt(comp.elements, cardsPlayed, diff.scoreNeeded);
       // Persist any match/counter slots — those reveal the hex element.
       // Neutral slots stay hidden (the player guessed wrong for that slot).
       for (var _r = 0; _r < resolved.reveal.length; _r++) {
