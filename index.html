@@ -31457,7 +31457,8 @@ document.addEventListener('keydown', function(e) {
         h += '<div style="display:flex;gap:0.65rem;padding:0.7rem 0.55rem;margin-bottom:0.45rem;background:rgba(13,16,12,0.55);border:1px solid '+borderCol+';border-radius:9px;align-items:center;opacity:'+rowOpacity+';">';
         h += '<div style="font-size:1.6rem;width:42px;text-align:center;flex-shrink:0;'+(locked?'filter:grayscale(1) brightness(0.7);':'')+'">'+b.icon+'</div>';
         h += '<div style="flex:1;min-width:0;">';
-        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+(locked?'rgba(160,160,160,0.75)':b.color)+';letter-spacing:0.06em;">'+b.name+'</div>';
+        h += '<div style="display:flex;align-items:center;gap:0.3rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+(locked?'rgba(160,160,160,0.75)':b.color)+';letter-spacing:0.06em;">'+b.name+'</div>';
+        h += '<span onclick="event.stopPropagation();if(window._lwShowShopBoosterDetail)_lwShowShopBoosterDetail(\''+b.id+'\')" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid rgba(200,168,75,0.35);color:var(--gold);font-family:DM Mono,monospace;font-size:0.45rem;cursor:pointer;flex-shrink:0;" title="Lore + details">\u2139</span></div>';
         h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);line-height:1.35;margin-top:0.18rem;">'+b.blurb+'</div>';
         var line='';
         if (active) { var mins=Math.ceil((expireTs-Date.now())/60000); line='\u2728 Active \u00b7 '+(mins>=60?Math.floor(mins/60)+'h '+(mins%60)+'m':mins+'m')+' left'; }
@@ -31494,7 +31495,8 @@ document.addEventListener('keydown', function(e) {
           h += '<div style="display:flex;gap:0.65rem;padding:0.7rem 0.55rem;margin-bottom:0.45rem;background:rgba(13,16,12,0.55);border:1px solid '+bCol+';border-radius:9px;align-items:center;opacity:'+(mineCls?'1':'0.6')+';">';
           h += '<div style="font-size:1.6rem;width:42px;text-align:center;flex-shrink:0;'+(mineCls?'':'filter:grayscale(0.6);')+'">'+item.icon+'</div>';
           h += '<div style="flex:1;min-width:0;">';
-          h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+(mineCls?item.color:'rgba(180,180,180,0.85)')+';letter-spacing:0.06em;">'+item.name+'</div>';
+          h += '<div style="display:flex;align-items:center;gap:0.3rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+(mineCls?item.color:'rgba(180,180,180,0.85)')+';letter-spacing:0.06em;">'+item.name+'</div>';
+          h += '<span onclick="event.stopPropagation();if(window._lwShowShopClassItemDetail)_lwShowShopClassItemDetail(\''+cks[ci]+'\')" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid rgba(200,168,75,0.35);color:var(--gold);font-family:DM Mono,monospace;font-size:0.45rem;cursor:pointer;flex-shrink:0;" title="Lore + details">\u2139</span></div>';
           h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);line-height:1.35;margin-top:0.18rem;">'+item.blurb+'</div>';
           var statusL='Class: <b style="color:'+(mineCls?'var(--sage)':'#d96b4b')+';">'+item.class.toUpperCase()+'</b> \u00b7 Owned: '+owned;
           if (mineCls && !canAff) statusL += ' \u00b7 <span style="color:var(--gold);">Save '+(item.cost-dew)+' Dew</span>';
@@ -31532,7 +31534,8 @@ document.addEventListener('keydown', function(e) {
       h += '<div style="' + iconStyle + '">' + pot.icon + '</div>';
       h += '<div style="flex:1;min-width:0;">';
       var nameCol = levelLocked ? 'rgba(160,160,160,0.75)' : pot.color;
-      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:' + nameCol + ';letter-spacing:0.06em;">' + pot.name + '</div>';
+      h += '<div style="display:flex;align-items:center;gap:0.3rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:' + nameCol + ';letter-spacing:0.06em;">' + pot.name + '</div>';
+      h += '<span onclick="event.stopPropagation();if(window._lwShowShopPotDetail)_lwShowShopPotDetail(\'' + pot.id + '\')" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid rgba(200,168,75,0.35);color:var(--gold);font-family:DM Mono,monospace;font-size:0.45rem;cursor:pointer;flex-shrink:0;" title="Lore + details">\u2139</span></div>';
       h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);line-height:1.35;margin-top:0.18rem;">' + pot.blurb + '</div>';
       // Footer line: owned count + (locked / saving / ready) status
       var statusLine = 'Owned: ' + owned;
