@@ -29215,7 +29215,7 @@ document.addEventListener('keydown', function(e) {
     var _seasonColors = ['#E8A0BF','#D4A843','#C4763A','#A0C4E8'];
     // Carousel SVG — cached by hash+generation to avoid expensive re-renders on swipe
     var _csOv = (plant.generation && plant.generation > 1) ? {chimerGen: plant.generation} : null;
-    var _csCacheKey = plant.hash + '|' + (plant.generation||1);
+    var _csCacheKey = plant.hash + '|' + (plant.generation||1) + (window._perfLite ? '|lite' : '');
     if (!window._csPlantSvgCache) window._csPlantSvgCache = {};
     var svgHtml = window._csPlantSvgCache[_csCacheKey];
     if (!svgHtml) {
@@ -55009,10 +55009,12 @@ function _bosClassContentLegacy() {
     var picked = cur === cid;
     var lockedCur = cur && cur !== cid;
     h += '<div style="margin-bottom:0.7rem;padding:0.7rem;background:' + (picked ? 'rgba(200,168,75,0.1)' : 'rgba(26,36,22,0.4)') + ';border:1.5px solid ' + (picked ? 'rgba(200,168,75,0.5)' : 'rgba(74,124,53,0.15)') + ';border-radius:12px;' + (lockedCur ? 'opacity:0.4;' : '') + '">';
-    h += '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;">';
-    h += '<div style="font-size:1.6rem;">' + def.icon + '</div>';
-    h += '<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:' + (picked ? 'var(--gold)' : 'var(--cream)') + ';letter-spacing:0.08em;">' + def.name.toUpperCase() + (picked ? ' · L' + lvl : '') + '</div>';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">' + def.desc + '</div></div>';
+    h += '<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.4rem;">';
+    h += '<div style="width:64px;height:64px;flex-shrink:0;border-radius:12px;overflow:hidden;border:1.5px solid ' + (picked ? 'rgba(200,168,75,0.5)' : 'rgba(122,179,86,0.2)') + ';background:radial-gradient(circle at 40% 35%,rgba(42,54,34,0.9),rgba(13,16,12,0.95));">';
+    h += '<img src="assets/character-sheet/classes/' + cid + '.png" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.outerHTML=\'<div style=&quot;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;&quot;>' + def.icon + '</div>\'">';
+    h += '</div>';
+    h += '<div style="flex:1;min-width:0;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:' + (picked ? 'var(--gold)' : 'var(--cream)') + ';letter-spacing:0.08em;">' + def.name.toUpperCase() + (picked ? ' · L' + lvl : '') + '</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.4;">' + def.desc + '</div></div>';
     if (!cur) {
       if (canPick) {
         h += '<button onclick="window._lwPickClass(\'' + cid + '\',\'' + def.name + '\',\'' + def.icon + '\')" style="min-height:40px;padding:6px 10px;font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;background:rgba(122,179,86,0.2);border:1.5px solid var(--sage);color:var(--sage);border-radius:8px;cursor:pointer;">CHOOSE</button>';
