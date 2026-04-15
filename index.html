@@ -51415,8 +51415,12 @@ function _renderWeatherOpts() {
     var t = WEATHER_TYPES[key];
     var affordable = balance >= t.cost;
     var disabled = !affordable ? ' disabled' : '';
+    // Icon slot: try Jessie's weather plate if shipped, fall back to emoji.
+    // Convention: assets/weather/weather-{sun,rain,wind,calm}.png
+    var _wImgKey = (t.id === 'sun' ? 'sun' : t.id === 'rain' ? 'rain' : t.id === 'wind' ? 'wind' : t.id === 'calm' ? 'calm' : t.id);
+    var _wIconHtml = '<img src="assets/weather/weather-' + _wImgKey + '.png" alt="" style="width:56px;height:56px;object-fit:contain;" onerror="this.outerHTML=\'<div class=&quot;w-opt-icon&quot;>' + t.icon + '</div>\';">';
     html += '<button class="w-opt"' + disabled + ' onclick="window._castWeather(\'' + t.id + '\')">' +
-      '<div class="w-opt-icon">' + t.icon + '</div>' +
+      _wIconHtml +
       '<div class="w-opt-name">' + t.name + '</div>' +
       '<div class="w-opt-desc">' + t.desc + '</div>' +
       '<div class="w-opt-cost">' + t.cost + ' \ud83d\udca7</div>' +
