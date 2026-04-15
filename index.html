@@ -2398,6 +2398,7 @@
     @keyframes luScrimIn{from{opacity:0;}to{opacity:1;}}
     .lu-overlay .lu-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;max-width:340px;padding:0 1.2rem;animation:luPanelIn 0.6s cubic-bezier(0.2,0.8,0.3,1.1);}
     @keyframes luPanelIn{from{opacity:0;transform:translate(-50%,-40%) scale(0.85);}to{opacity:1;transform:translate(-50%,-50%) scale(1);}}
+    @keyframes luHeroIn{0%{opacity:0;transform:translateY(18px) scale(0.92);}60%{opacity:1;transform:translateY(-2px) scale(1.02);}100%{opacity:1;transform:translateY(0) scale(1);}}
     .lu-overlay .lu-label{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.22em;color:var(--gold);margin-bottom:0.3rem;text-shadow:0 0 12px rgba(200,168,75,0.5);}
     .lu-overlay .lu-level{font-family:'Bebas Neue',sans-serif;font-size:5.5rem;line-height:1;color:#f5dc95;margin-bottom:0.3rem;text-shadow:0 0 30px rgba(255,220,140,0.5),0 4px 18px rgba(0,0,0,0.6);letter-spacing:-0.02em;}
     .lu-overlay .lu-title{font-family:'Playfair Display',serif;font-size:1.3rem;font-style:italic;color:var(--cream);margin-bottom:1rem;letter-spacing:0.04em;}
@@ -47005,9 +47006,11 @@ function _luProcessQueue(){
     ov.innerHTML=
       '<div class="lu-scrim"></div>'+
       '<div class="lu-panel">'+
-        '<div class="lu-label">LEVEL UP</div>'+
+        '<img id="lu-hero-img" style="display:none;width:220px;height:auto;max-height:260px;object-fit:contain;margin:0 auto 0.6rem;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.7)) drop-shadow(0 0 28px rgba(200,168,75,0.25));animation:luHeroIn 0.9s cubic-bezier(0.2,0.85,0.3,1.1) 0.15s both;" alt=""/>'+
+        '<div class="lu-label" id="lu-label-txt">LEVEL UP</div>'+
         '<div class="lu-level" id="lu-level-num">1</div>'+
         '<div class="lu-title" id="lu-title-text">Seedling</div>'+
+        '<div class="lu-subtitle" id="lu-subtitle-text" style="display:none;font-family:\'Playfair Display\',serif;font-style:italic;font-size:0.85rem;color:rgba(232,220,200,0.8);margin-top:-0.3rem;margin-bottom:0.7rem;letter-spacing:0.04em;"></div>'+
         '<div class="lu-unlock" id="lu-unlock-card" style="display:none;">'+
           '<div class="lu-unlock-label">NEW UNLOCK</div>'+
           '<div class="lu-unlock-name" id="lu-unlock-name"></div>'+
@@ -47021,10 +47024,31 @@ function _luProcessQueue(){
   }
   document.getElementById('lu-level-num').textContent=item.level;
   document.getElementById('lu-title-text').textContent=item.title;
+  // Keeper milestone hero card — Lv 10/25/50/75/100 each have Jessie art + tagline.
+  // Overrides the "LEVEL UP" label with "A MILESTONE" and swaps in the subtitle.
+  var mileHero=document.getElementById('lu-hero-img');
+  var mileSubtitle=document.getElementById('lu-subtitle-text');
+  var mileLabel=document.getElementById('lu-label-txt');
+  var mile=(window.LW_TREE_MILESTONES&&window.LW_TREE_MILESTONES[item.level])||null;
+  if(mile&&mile.hero){
+    if(mileHero){mileHero.src=mile.hero;mileHero.style.display='block';}
+    if(mileLabel)mileLabel.textContent='A MILESTONE';
+    if(mileSubtitle&&mile.subtitle){mileSubtitle.textContent=mile.subtitle;mileSubtitle.style.display='block';}
+    else if(mileSubtitle)mileSubtitle.style.display='none';
+  } else {
+    if(mileHero){mileHero.style.display='none';mileHero.removeAttribute('src');}
+    if(mileLabel)mileLabel.textContent='LEVEL UP';
+    if(mileSubtitle)mileSubtitle.style.display='none';
+  }
   var unlockCard=document.getElementById('lu-unlock-card');
   if(item.unlock){
     document.getElementById('lu-unlock-name').textContent=item.unlock.title;
     document.getElementById('lu-unlock-desc').textContent=item.unlock.desc;
+    unlockCard.style.display='block';
+  } else if(mile){
+    // Milestone without LEVEL_UNLOCKS entry — show the milestone's own unlock card
+    document.getElementById('lu-unlock-name').textContent=mile.name;
+    document.getElementById('lu-unlock-desc').textContent=mile.desc;
     unlockCard.style.display='block';
   } else {
     unlockCard.style.display='none';
@@ -47051,7 +47075,9 @@ function _luProcessQueue(){
     }
   }catch(e){}
   clearTimeout(_luTimer);
-  _luTimer=setTimeout(function(){_luDismiss();},4500);
+  // Milestones hold 2.5s longer — the hero card deserves a beat.
+  var _luHold=mile?7000:4500;
+  _luTimer=setTimeout(function(){_luDismiss();},_luHold);
 }
 function _luDismiss(){
   clearTimeout(_luTimer);
@@ -56754,13 +56780,16 @@ window._openCompendiumUI=function(){
   ov.innerHTML=
     '<div style="position:absolute;inset:0;background:rgba(5,8,4,0.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);"></div>'+
     '<div style="position:relative;flex:1;display:flex;flex-direction:column;max-width:480px;margin:0 auto;width:100%;overflow:hidden;">'+
-      // Header
-      '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.9rem 1rem 0.5rem;flex-shrink:0;">'+
-        '<div style="display:flex;align-items:center;gap:0.5rem;">'+
-          '<img src="assets/btn-compendium.png" alt="" style="width:40px;height:40px;border-radius:8px;object-fit:cover;">'+
-          '<div style="font-family:Playfair Display,serif;font-size:1rem;color:var(--gold);font-style:italic;">Book of Secrets</div>'+
+      // Header — spellbook cover anchors the visual, title + close button align to its baseline
+      '<div style="display:flex;align-items:flex-end;justify-content:space-between;padding:0.9rem 1rem 0.5rem;flex-shrink:0;gap:0.7rem;">'+
+        '<div style="display:flex;align-items:flex-end;gap:0.7rem;min-width:0;">'+
+          '<img src="assets/bos/spellbook-cover.png" alt="" style="width:72px;height:100px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 6px 14px rgba(0,0,0,0.65)) drop-shadow(0 0 18px rgba(200,168,75,0.15));">'+
+          '<div style="padding-bottom:4px;min-width:0;">'+
+            '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--muted);letter-spacing:0.14em;margin-bottom:2px;">A KEEPER\u2019S JOURNAL</div>'+
+            '<div style="font-family:Playfair Display,serif;font-size:1.15rem;color:var(--gold);font-style:italic;line-height:1.1;">Book of Secrets</div>'+
+          '</div>'+
         '</div>'+
-        '<button onclick="var bo=document.getElementById(\'bos-overlay\');if(bo)bo.remove();" style="width:48px;height:48px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">\u2715</button>'+
+        '<button onclick="var bo=document.getElementById(\'bos-overlay\');if(bo)bo.remove();" style="width:48px;height:48px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">\u2715</button>'+
       '</div>'+
       // Tabs
       '<div style="display:flex;gap:0.25rem;padding:0.4rem 0.6rem 0.5rem;flex-shrink:0;flex-wrap:wrap;">'+
@@ -57383,12 +57412,13 @@ var LW_TREE_NODES={
   seedKeeper:     {branch:'longwatch',name:'Seed Keeper',      desc:'The vault fills itself. +0.25% fertilizer return / pt',max:5,per:0.0025}
 };
 var LW_TREE_MILESTONES={
-  10:{name:'Path Opened',desc:'+5 bonus tree points',built:true},
-  25:{name:'Second Bloom',desc:'Guaranteed 1 feral / day (ignores cap)',built:true},
-  50:{name:'The Gilding',desc:'Pick 1 hour / day: all bonuses \u00d72',built:true},
-  75:{name:'Near Horizon',desc:'Equip a second companion',built:true},
-  100:{name:'The Long Watch',desc:'Biome match applies everywhere',built:true}
+  10:{name:'Path Opened',desc:'+5 bonus tree points',built:true,hero:'assets/hero-cards/hero-path-opened.png',subtitle:'a way unfolds'},
+  25:{name:'Second Bloom',desc:'Guaranteed 1 feral / day (ignores cap)',built:true,hero:'assets/hero-cards/hero-second-bloom.png',subtitle:'twin stems find the light'},
+  50:{name:'The Gilding',desc:'Pick 1 hour / day: all bonuses \u00d72',built:true,hero:'assets/hero-cards/hero-gilding.png',subtitle:'one hour turned to gold'},
+  75:{name:'Near Horizon',desc:'Equip a second companion',built:true,hero:'assets/hero-cards/hero-near-horizon.png',subtitle:'the future peers back'},
+  100:{name:'The Long Watch',desc:'Biome match applies everywhere',built:true,hero:'assets/hero-cards/hero-long-watch.png',subtitle:'the keeper who never leaves'}
 };
+window.LW_TREE_MILESTONES=LW_TREE_MILESTONES;
 
 // Memoized — tree points are read on every _LW_classBonus call which fires
 // inside XP/EA/dew hot paths. Without cache: a 50-XP game session = 50 JSON.parse
