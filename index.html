@@ -47356,7 +47356,7 @@ function _renderClassSection(){
   // Art path
   var artSrc='assets/character-sheet/classes/'+cls+'.png';
   var emblemCls='cs-class-emblem'+(syn?' synergy':'');
-  var h='<div class="cs-class-row">';
+  var h='<div class="cs-class-row" onclick="if(window._lwShowClassDetail)_lwShowClassDetail(\''+cls+'\')" style="cursor:pointer;">';
   h+='<div class="'+emblemCls+'">'+_csArt(artSrc,def.icon,'2rem')+'</div>';
   h+='<div class="cs-class-info">';
   h+='<div class="cs-class-name">'+def.name+_csPips(true,lvl)+'</div>';
@@ -47597,7 +47597,7 @@ function _renderToolSection(){
         }
       } catch(e){}
     }
-    h+='<div class="cs-tool-card">';
+    h+='<div class="cs-tool-card" onclick="if(window._lwShowToolDetail)_lwShowToolDetail(\''+tid+'\')" style="cursor:pointer;">';
     h+='<div class="cs-tool-emblem">'+_csArt(artSrc,def.icon,'1.1rem')+'</div>';
     h+='<div class="cs-tool-info">';
     h+='<div class="cs-tool-name">'+def.name+_csPips(true,lvl)+'</div>';
