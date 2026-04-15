@@ -56954,6 +56954,46 @@ window._bosRF = function(filter) {
 };
 function _bosReportContent() {
   var h = '';
+  // ─── SINCE YOUR LAST VISIT ─────────────────────────────────────
+  // Summary card at the top showing what happened across all categories
+  // since the keeper's previous opening of the REPORT tab. Only shows if
+  // there's anything to report. Mirrors the silent-badge philosophy —
+  // no pressure, just a quiet "here's what you missed."
+  try {
+    if (window._bosPrevReadTs != null && window.LW_Log) {
+      var log = window.LW_Log.all();
+      var since = window._bosPrevReadTs;
+      var counts = { plants:0, wild:0, breeding:0, events:0, synergies:0, achievements:0 };
+      for (var li = 0; li < log.length; li++) {
+        var e = log[li];
+        if (!e || e.ts <= since) continue;
+        var t = e.type;
+        if (t === 'plant_mint' || t === 'seed_bloomed' || t === 'plant_composted') counts.plants++;
+        else if (t === 'wild_drop' || t === 'wild_watered' || t === 'wild_watered_stranger' || t === 'wild_tended_stranger' || t === 'wild_cutting_taken' || t === 'wild_withered' || t === 'feral_collected' || t === 'weather_cast') counts.wild++;
+        else if (t === 'plant_bred' || t === 'cross_pollinate') counts.breeding++;
+        else if (t === 'event_discovered') counts.events++;
+        else if (t === 'synergy_discovered') counts.synergies++;
+        else if (t === 'achievement_unlock') counts.achievements++;
+      }
+      var total = counts.plants + counts.wild + counts.breeding + counts.events + counts.synergies + counts.achievements;
+      if (total > 0) {
+        h += '<div style="padding:0.7rem 0.8rem;margin-bottom:0.7rem;background:linear-gradient(160deg,rgba(42,54,34,0.55),rgba(18,22,16,0.7));border:1.5px solid rgba(200,168,75,0.3);border-radius:10px;box-shadow:inset 0 1px 0 rgba(240,235,216,0.06),0 6px 18px rgba(0,0,0,0.3);">';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);letter-spacing:0.16em;margin-bottom:0.45rem;">SINCE YOUR LAST VISIT</div>';
+        h += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+        var chip = function(label, n, color) {
+          if (!n) return '';
+          return '<div style="padding:3px 9px;background:rgba(13,16,12,0.5);border:1px solid ' + color + '66;border-radius:12px;font-family:DM Mono,monospace;font-size:0.46rem;color:' + color + ';"><b>' + n + '</b> <span style="opacity:0.8;">' + label + '</span></div>';
+        };
+        h += chip('plant events', counts.plants, 'var(--sage)');
+        h += chip('wild actions', counts.wild, 'var(--sage)');
+        h += chip('breeds', counts.breeding, 'var(--gold)');
+        h += chip('discoveries', counts.events, 'var(--gold)');
+        h += chip('synergies', counts.synergies, '#c07ac8');
+        h += chip('achievements', counts.achievements, 'var(--gold)');
+        h += '</div></div>';
+      }
+    }
+  } catch(e){}
   // Time range sub-tabs
   var ranges = [['today','TODAY'],['week','THIS WEEK'],['all','ALL TIME']];
   h += '<div style="display:flex;gap:0.3rem;margin-bottom:0.5rem;">';
