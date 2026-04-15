@@ -2400,6 +2400,31 @@
     @keyframes luPanelIn{from{opacity:0;transform:translate(-50%,-40%) scale(0.85);}to{opacity:1;transform:translate(-50%,-50%) scale(1);}}
     @keyframes luHeroIn{0%{opacity:0;transform:translateY(18px) scale(0.92);}60%{opacity:1;transform:translateY(-2px) scale(1.02);}100%{opacity:1;transform:translateY(0) scale(1);}}
 
+    /* ── FORAGING CARDS ── */
+    /* Element card treatment — a real deck feel without sprite art. Top band
+       carries the element hue, bottom pool is charcoal, a thin gold seam runs
+       between. Celtic-leaf flourish in both corners. Used in the character
+       sheet hand and anywhere the 6 element chips render. */
+    .lw-forage-card{position:relative;aspect-ratio:3/4;min-height:72px;border-radius:7px;overflow:hidden;border:1px solid rgba(200,168,75,0.28);background:linear-gradient(180deg,var(--el-top,#3a4a2e) 0%,var(--el-mid,#1f2a18) 52%,#0f1409 100%);box-shadow:inset 0 1px 0 rgba(255,220,140,0.12),inset 0 -1px 0 rgba(0,0,0,0.4),0 1px 3px rgba(0,0,0,0.4);padding:5px 3px 3px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;}
+    .lw-forage-card.empty{opacity:0.3;filter:grayscale(0.6);}
+    .lw-forage-card::before,.lw-forage-card::after{content:'';position:absolute;width:10px;height:10px;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M1,1 Q6,3 11,1 Q9,6 11,11 Q6,9 1,11 Q3,6 1,1 Z' fill='none' stroke='%23c8a84b' stroke-width='0.8' opacity='0.7'/></svg>");background-size:contain;background-repeat:no-repeat;pointer-events:none;}
+    .lw-forage-card::before{top:2px;left:2px;}
+    .lw-forage-card::after{bottom:2px;right:2px;transform:rotate(180deg);}
+    .lw-forage-card .fc-icon{font-size:1.15rem;line-height:1;margin-top:6px;text-shadow:0 1px 2px rgba(0,0,0,0.6);}
+    .lw-forage-card .fc-label{font-family:'Bebas Neue',sans-serif;font-size:0.42rem;letter-spacing:0.1em;color:rgba(255,235,195,0.88);margin-top:2px;}
+    .lw-forage-card .fc-count{font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--gold);background:rgba(0,0,0,0.35);border:1px solid rgba(200,168,75,0.25);border-radius:6px;padding:1px 5px;margin-bottom:1px;min-width:18px;}
+    .lw-forage-card.empty .fc-count{color:var(--muted);background:rgba(0,0,0,0.2);border-color:rgba(74,124,53,0.1);}
+    .lw-forage-card.el-sun{--el-top:#7a5a1e;--el-mid:#2a1f0a;}
+    .lw-forage-card.el-shade{--el-top:#3d3658;--el-mid:#1a1526;}
+    .lw-forage-card.el-rain{--el-top:#1f4a6a;--el-mid:#0f2030;}
+    .lw-forage-card.el-dry{--el-top:#6a4f2e;--el-mid:#2a1f10;}
+    .lw-forage-card.el-wind{--el-top:#3a5a28;--el-mid:#15200f;}
+    .lw-forage-card.el-still{--el-top:#3a4246;--el-mid:#15191c;}
+    .lw-forage-card.el-moonlight{--el-top:#4e5a7a;--el-mid:#1e2235;}
+    .lw-forage-card.el-thunder{--el-top:#7a6618;--el-mid:#2a2208;}
+    .lw-forage-card.el-dust{--el-top:#5a4c38;--el-mid:#201a12;}
+    .lw-forage-card.rare::before,.lw-forage-card.rare::after{filter:drop-shadow(0 0 3px rgba(200,168,75,0.6));}
+
     /* ── BOS TAB — bookmark ribbon on active ── */
     /* Gold silk strip dangles from the top of the active tab like a real
        spellbook bookmark. Non-active tabs get nothing. */
@@ -47324,17 +47349,36 @@ function _renderForageSection(){
   var cap=window.LW_FORAGING.cardCapacity();
   var total=window.LW_FORAGING.totalCards(inv);
   var h='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-bottom:0.4rem;">Inventory '+total+'/'+cap+' \u00b7 Active deck: '+deck.name+'</div>';
-  h+='<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;">';
+  h+='<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:5px;">';
   var order=['sun','shade','rain','dry','wind','still'];
   for(var i=0;i<order.length;i++){
     var k=order[i];var el2=window.LW_FORAGING.EL[k];var n=inv[k]||0;
-    h+='<div style="background:rgba(18,22,16,'+(n>0?'0.7':'0.35')+');border:1px solid rgba(74,124,53,'+(n>0?'0.25':'0.1')+');border-radius:6px;padding:4px 2px;text-align:center;'+(n===0?'opacity:0.4;':'')+'">';
-    h+='<div style="font-size:0.8rem;">'+el2.icon+'</div>';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.4rem;color:var(--cream);letter-spacing:0.04em;">'+el2.label+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:'+(n>0?'var(--gold)':'var(--muted)')+';margin-top:1px;">'+n+'</div>';
+    h+='<div class="lw-forage-card el-'+k+(n===0?' empty':'')+'" title="'+el2.label+(n>0?' \u00b7 '+n+' in inventory':' \u00b7 empty')+'">';
+    h+='<div class="fc-icon">'+el2.icon+'</div>';
+    h+='<div class="fc-label">'+el2.label+'</div>';
+    h+='<div class="fc-count">'+n+'</div>';
     h+='</div>';
   }
   h+='</div>';
+  // Rare wild-card row — only shown if the player has any. Keeps the common
+  // hand tidy until Bloom Day starts dropping these.
+  var rareOrder=['moonlight','thunder','dust'];
+  var hasRare=false;
+  for(var ri=0;ri<rareOrder.length;ri++){ if((inv[rareOrder[ri]]||0)>0){hasRare=true;break;} }
+  if(hasRare){
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.45rem;color:var(--gold);letter-spacing:0.12em;margin-top:0.55rem;margin-bottom:0.3rem;">WILD CARDS</div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:5px;">';
+    for(var rj=0;rj<rareOrder.length;rj++){
+      var rk=rareOrder[rj];var rel=window.LW_FORAGING.EL[rk];var rn=inv[rk]||0;
+      if(rn===0)continue;
+      h+='<div class="lw-forage-card el-'+rk+' rare" title="'+rel.label+' \u00b7 wild card \u00b7 '+rn+' left">';
+      h+='<div class="fc-icon">'+rel.icon+'</div>';
+      h+='<div class="fc-label">'+rel.label+'</div>';
+      h+='<div class="fc-count">'+rn+'</div>';
+      h+='</div>';
+    }
+    h+='</div>';
+  }
   el.innerHTML=h;
 }
 window._lwOpenDeckEditor=function(){
