@@ -37262,7 +37262,9 @@ function _collectFeral(f,mk){
         _doCollectFeral(f,mk);
         _play('match');
       } else {
-        f._cooldown=Date.now()+120000;
+        var _fcd=120000;
+        try{if(window._LW_treeBonus){var _fcm=window._LW_treeBonus('feralCd');if(_fcm&&_fcm<1)_fcd=Math.round(120000*_fcm);}}catch(e){}
+        f._cooldown=Date.now()+_fcd;
         try{var _fc=JSON.parse(localStorage.getItem('fg_feral_cd')||'{}');_fc[cdKey]=f._cooldown;localStorage.setItem('fg_feral_cd',JSON.stringify(_fc));}catch(e){}
         _play('buzz');
         // Re-roll hash on next attempt so player gets a different combo
@@ -37275,7 +37277,9 @@ function _collectFeral(f,mk){
         _doCollectFeral(f,mk);
         _play('match');
       } else {
-        f._cooldown=Date.now()+120000;
+        var _fcd2=120000;
+        try{if(window._LW_treeBonus){var _fcm2=window._LW_treeBonus('feralCd');if(_fcm2&&_fcm2<1)_fcd2=Math.round(120000*_fcm2);}}catch(e){}
+        f._cooldown=Date.now()+_fcd2;
         try{var _fc=JSON.parse(localStorage.getItem('fg_feral_cd')||'{}');_fc[cdKey]=f._cooldown;localStorage.setItem('fg_feral_cd',JSON.stringify(_fc));}catch(e){}
         _play('buzz');
         _toast('Almost! Try again in 2 minutes.');
