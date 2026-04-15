@@ -8071,7 +8071,7 @@ document.addEventListener('keydown', function(e) {
     {id:42,name:'Carnivore Bog',     a:function(t){return t.base%71===18;},       b:function(t){return t.flower%71===34;},    ea:2, theme:'nature', fx:'pitcher bloom drips into mushroom compost below'},
     {id:43,name:'Dew Collector',     a:function(t){return t.base%71===9;},        b:function(t){return t.leafType%71===22;},  ea:1, theme:'nature', fx:'morning fog pools on elephant ears above living moss'},
     {id:44,name:'Sun Carpet',        a:function(t){return t.base%71===11;},       b:function(t){return t.season===1;},        ea:1, theme:'nature', fx:'desert sand shimmers in summer heat'},
-    {id:45,name:'Fern Hollow',       a:function(t){return t.leafType%71===6;},    b:function(t){return t.companion===73;},    ea:1, theme:'nature', fx:'fern fronds shelter mushroom sprite in dappled shade'},
+    {id:45,name:'Mushroom Shelter',  a:function(t){return t.leafType%71===6;},    b:function(t){return t.companion===73;},    ea:1, theme:'nature', fx:'fern fronds shelter mushroom sprite in dappled shade'},
     {id:46,name:'Volcanic Orchid',   a:function(t){return t.base%71===10;},       b:function(t){return t.flower%71===10;},    ea:2, theme:'nature', fx:'orchid roots grip volcanic rock, steam wisps rise'},
     {id:47,name:'Moonlit Lotus',     a:function(t){return t.flower%71===3;},      b:function(t){return t.base%71===59;},      ea:2, theme:'cosmic', fx:'lotus glows silver on moonstone dust, water rings expand'},
     {id:48,name:'Frost Fern',        a:function(t){return t.leafType%71===6;},    b:function(t){return t.season===3;},        ea:1, theme:'elemental', fx:'ice crystals trace fern fractal pattern on fronds'},
@@ -8081,7 +8081,10 @@ document.addEventListener('keydown', function(e) {
     {id:52,name:'Terrarium World',   a:function(t){return t.pot%60===7;},         b:function(t){return t.companion>=20&&t.companion<=31;}, ea:1, theme:'nature', fx:'glass terrarium frames tiny companion in miniature world'},
     {id:53,name:'Meteor Orchid',     a:function(t){return t.base%71===28;},       b:function(t){return t.flower%71===10;},    ea:2, theme:'cosmic', fx:'orchid roots weave through meteorite, stardust on petals'},
     {id:54,name:'Final Chorus',      a:function(t){return t.base%71===57;},       b:function(t){return t.companion===33;},    ea:3, theme:'mythical', fx:'cicada sings from the ashes — last song of the brood'},
-    {id:55,name:'Crystal Beetle',    a:function(t){return t.companion===78;},     b:function(t){return t.base%71===15;},      ea:2, theme:'cosmic', fx:'beetle carapace refracts crystal matrix light'},
+    // id:55 was Crystal Beetle; companion idx 78 was cut (see TRAIT_BANK
+    // companions[78] = 'None'). Repointed to a reachable pairing so the
+    // slot stays live rather than being silently unachievable.
+    {id:55,name:'Prism Scarab',      a:function(t){return t.mutationName==='Holographic';}, b:function(t){return t.base%71===15;}, ea:2, theme:'cosmic', fx:'crystal matrix refracts rainbow across the holographic leaves'},
     {id:56,name:'Lantern Firefly',   a:function(t){return t.pot%60===21;},        b:function(t){return t.companion===23;},    ea:1, theme:'nature', fx:'firefly drifts into lantern pot, warm glow intensifies'},
     {id:57,name:'Needle Rain',       a:function(t){return t.leafType%71===9;},    b:function(t){return t.season===2;},        ea:1, theme:'nature', fx:'autumn needles drift down like copper rain'},
     {id:58,name:'Dragon Egg Hatch',  a:function(t){return t.pot%60===51;},        b:function(t){return t.flower%71===35;},    ea:2, theme:'mythical', fx:'dragon arum unfurls from cracked egg, steam and spice'},
@@ -27077,7 +27080,11 @@ document.addEventListener('keydown', function(e) {
           collection_25: 150,
           collection_50: 400
         };
-        if(gh.length===1&&!_mile.first_plant){PW_grantXP(_milestoneTable.first_plant,'milestone_first_plant');_mile.first_plant=true;}
+        // First EARNED plant milestone — gh.length === 2 because the gift
+        // plant is plant #1. Firing at length===1 meant new keepers jumped
+        // to Lv 2 on the free gift before doing anything. The milestone
+        // should celebrate the first plant they actually minted by playing.
+        if(gh.length===2&&!_mile.first_plant){PW_grantXP(_milestoneTable.first_plant,'milestone_first_plant');_mile.first_plant=true;}
         var _mkey='first_'+_mg;
         if(_mg!=='Common'&&_milestoneTable[_mkey]&&!_mile[_mkey]){PW_grantXP(_milestoneTable[_mkey],'milestone_'+_mkey);_mile[_mkey]=true;}
         if(gh.length===5&&!_mile.collection_5){PW_grantXP(_milestoneTable.collection_5,'milestone_5_plants');_mile.collection_5=true;}
@@ -35691,12 +35698,19 @@ function _checkStepMilestone(){
   var s=_loadSteps();
   var meters=s.today||0;
   var milestones=[500,1000,2500,5000,10000];
+  // Per-milestone Dew rewards — walking should pay out visibly so the
+  // player feels the loop. Scales with distance: farther walks matter more.
+  var rewards={500:3,1000:6,2500:12,5000:25,10000:60};
+  var labels={500:'500m walked',1000:'1km explorer',2500:'2.5km trekker',5000:'5km ranger',10000:'10km legend'};
   for(var i=milestones.length-1;i>=0;i--){
     if(meters>=milestones[i]&&_lastStepMilestone<milestones[i]){
       _lastStepMilestone=milestones[i];
-      var labels={500:'500m walked!',1000:'1km explorer!',2500:'2.5km trekker!',5000:'5km ranger!',10000:'10km legend!'};
-      // Silent — logged to Book of Secrets. Stops step-milestones from spamming on Wild entry.
-      if(window._logWildEvent)_logWildEvent({type:'step_milestone',meters:milestones[i],label:labels[milestones[i]]});
+      var _reward=rewards[milestones[i]]||0;
+      if(_reward>0&&window.earnDew)earnDew(_reward,'step_milestone');
+      // Visible toast so the player knows they were rewarded for walking.
+      if(window._toast)_toast('\u2728 '+labels[milestones[i]]+' \u2014 +'+_reward+' Dew');
+      try{if(window._haptic)window._haptic('ok');}catch(e){}
+      if(window._logWildEvent)_logWildEvent({type:'step_milestone',meters:milestones[i],label:labels[milestones[i]],reward:_reward});
       break;
     }
   }
@@ -58301,7 +58315,13 @@ function _bosReportContent() {
             var tr = window.hashToTraits(gh[j].hash);
             if (!tr) continue;
             if (tr.companion === 33) fire('Cicada Chorus');
-            if (tr.companion === 38) fire("The Beholder's Gaze");
+            // Beholder's Gaze hint says Cosmic+Beholder — enforce the
+            // Cosmic rarity check so a Common/Uncommon Beholder doesn't
+            // fire a Legendary-tier event unearned.
+            if (tr.companion === 38) {
+              var _bgg = window.getTerraGrade ? window.getTerraGrade(tr) : null;
+              if (_bgg && _bgg.name === 'Cosmic') fire("The Beholder's Gaze");
+            }
           } catch(e){}
         }
       }
