@@ -26824,6 +26824,25 @@ document.addEventListener('keydown', function(e) {
     setTimeout(checkAchievements, 200);
     // First-time synergy discovery — fires only for new-to-player synergies.
     try { if (window._lwCheckSynergyDiscovery) setTimeout(function(){ window._lwCheckSynergyDiscovery(hash); }, 3000); } catch(e) {}
+    // First plant ever minted by this keeper — one-shot celebration.
+    // Skips if greenhouse already had plants (common on signup: gift
+    // plant pre-populates greenhouse so the real first player-mint is
+    // the second plant).
+    try {
+      if (gh.length >= 2 && !localStorage.getItem('lw_first_mint_v1')) {
+        localStorage.setItem('lw_first_mint_v1', '1');
+        setTimeout(function(){
+          if (window._lwConfirm) {
+            window._lwConfirm({
+              title: '\u2728 A PLANT FROM YOUR ATTENTION',
+              body: 'You played. You paid attention. This plant is the shape those thirty sunbeams took.<br><br>No other keeper will ever mint this one \u2014 the hash is unique to this minute.<br><br>Long-press the card for breeding, sharing, or composting options.',
+              yes: 'WELCOME IT IN',
+              no: ''
+            }, function(){});
+          }
+        }, 1800);
+      }
+    } catch(e) {}
     // P2 — Mint drone (deep botanical)
     if (window.FG_Audio && FG_Audio.enabled) FG_Audio.playMintDrone();
     renderGreenhouse();
@@ -36131,6 +36150,22 @@ function _awardFeral(hash, parentA, parentB, zk, info) {
   }
 
   _toast('\ud83c\udf30 Mystery seed pocketed. +' + dewReward + ' Dew \u00b7 sprout it to see what it is');
+  // First-ever feral celebration — meatier than a toast.
+  try {
+    if (!localStorage.getItem('lw_first_feral_v1')) {
+      localStorage.setItem('lw_first_feral_v1', '1');
+      setTimeout(function(){
+        if (window._lwConfirm) {
+          window._lwConfirm({
+            title: '\ud83c\udf30 YOUR FIRST WILD SEED',
+            body: 'This seed grew somewhere you walked. Not in any greenhouse, no keeper\u2019s hand on its pot. You don\u2019t know what it\u2019ll be yet \u2014 neither does it.<br><br>Water it three days in the <b>Nursery</b> to see what bloomed out of the wild for you.',
+            yes: 'CARRY IT HOME',
+            no: ''
+          }, function(){});
+        }
+      }, 800);
+    }
+  } catch(e) {}
   try { navigator.vibrate && navigator.vibrate([15, 30, 15]); } catch (e) {}
   if (typeof gtag !== 'undefined') gtag('event', 'feral_collected', { mystery: 1, zone: zk.slice(0, 10) });
 
@@ -37867,6 +37902,22 @@ function _doCrossPollination(wildPlant,matePlant){
     try {
       var _polCt = parseInt(localStorage.getItem('lw_pollinations')||'0',10) + 1;
       localStorage.setItem('lw_pollinations', String(_polCt));
+    } catch(e) {}
+    // First-ever cross-pollinate celebration.
+    try {
+      if (!localStorage.getItem('lw_first_cross_v1')) {
+        localStorage.setItem('lw_first_cross_v1', '1');
+        setTimeout(function(){
+          if (window._lwConfirm) {
+            window._lwConfirm({
+              title: '\ud83e\uddec YOUR FIRST CROSS',
+              body: 'Two lineages, one new seed. The offspring carries traits from both parents \u2014 plus a chimera generation marker that stacks as you keep breeding.<br><br>Each cross adds veins to the leaves, climate immunity, and a chance at rare traits you couldn\u2019t roll otherwise.<br><br>The seed is in the <b>Nursery</b>. Water it three days and meet what you made.',
+              yes: 'EXCITING',
+              no: ''
+            }, function(){});
+          }
+        }, 1500);
+      }
     } catch(e) {}
     if(window.lwCheckEarnedTitles)window.lwCheckEarnedTitles();
     if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
