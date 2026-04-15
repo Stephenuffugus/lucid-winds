@@ -53992,6 +53992,7 @@ function _bosActivityContent() {
     if (t === 'forage_attempt' || t === 'feral_collected') return 'forage';
     if (t === 'wild_drop' || t === 'wild_watered' || t === 'wild_watered_stranger' || t === 'wild_tended_stranger' || t === 'wild_withered' || t === 'invaded' || t === 'climate' || t === 'weather' || t === 'weather_cast' || t === 'drift_pollen' || t === 'drift_seed' || t === 'lineage_spread') return 'wild';
     if (t === 'memento' || t === 'companion_l3' || t === 'companion' || t === 'level_up' || t === 'achievement_unlock') return 'bonds';
+    if (t === 'synergy_discovered' || t === 'biome_mutation' || t === 'rare') return 'discovery';
     return 'other';
   }
   var _actCats = [
@@ -54000,7 +54001,8 @@ function _bosActivityContent() {
     {k:'breeding', label:'BREED', color:'#c07ac8'},
     {k:'forage', label:'FORAGE', color:'#d0b46c'},
     {k:'wild', label:'WILD', color:'#5baddc'},
-    {k:'bonds', label:'BONDS', color:'#e8a0bf'}
+    {k:'bonds', label:'BONDS', color:'#e8a0bf'},
+    {k:'discovery', label:'DISCOVERY', color:'#c07ac8'}
   ];
   var h = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:0.55rem;">';
   for (var _c = 0; _c < _actCats.length; _c++) {
@@ -54074,6 +54076,11 @@ function _bosActivityContent() {
         icon = '\u2728'; color = 'var(--gold)';
         title = (e.name || 'Companion') + ' reached MASTER';
         body = 'Unlocked: ' + (e.signature || 'L3 signature') + (e.family ? ' (' + e.family + ')' : '');
+        break;
+      case 'synergy_discovered':
+        icon = e.emoji || '\u2728'; color = '#c07ac8';
+        title = 'Synergy: ' + (e.name || 'New synergy');
+        body = 'First time you\u2019ve seen this combination. Logged to the compendium.';
         break;
       case 'herbarium':
         icon = '\ud83c\udf3f'; color = 'var(--sage)';
