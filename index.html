@@ -54197,8 +54197,15 @@ function _bosMementosContent() {
       } catch(e) {}
       var daysLeft = Math.ceil(p.remaining / 86400000);
       var pct = Math.round((p.elapsed / THIRTY) * 100);
+      // Portrait thumbnail when companion art exists; emoji fallback.
+      var compIcon = '';
+      try { if (window.TRAIT_BANK && window.TRAIT_BANK.companions && window.TRAIT_BANK.companions[p.idx]) { compIcon = window.TRAIT_BANK.companions[p.idx].icon || '\ud83d\udc3e'; } } catch(e) {}
+      var portrait = (window._compPortrait) ? window._compPortrait(p.idx, compIcon, 32) : '';
       h += '<div style="padding:0.55rem;margin-bottom:0.35rem;background:rgba(18,22,16,0.55);border:1px solid rgba(74,124,53,0.18);border-radius:7px;">';
-      h += '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);margin-bottom:4px;"><span>' + compName + '</span><span style="color:var(--muted);">' + daysLeft + 'd to keepsake</span></div>';
+      h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">';
+      if (portrait) h += '<div style="flex-shrink:0;">' + portrait + '</div>';
+      h += '<div style="flex:1;display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);"><span>' + compName + '</span><span style="color:var(--muted);">' + daysLeft + 'd to keepsake</span></div>';
+      h += '</div>';
       h += '<div style="height:3px;background:rgba(122,179,86,0.1);border-radius:2px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,var(--sage),var(--gold));"></div></div>';
       h += '</div>';
     }
