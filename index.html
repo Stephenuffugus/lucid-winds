@@ -56645,6 +56645,48 @@ window._LW_treeRespec=function(){return false;};
   }
 })();
 
+// ═══ MILESTONE: SECOND BLOOM (Keeper Lv 25) ═══
+// Guaranteed 1 feral / day, dropped at player's current GPS. Ignores the
+// daily cap and zone cooldowns — this is the milestone's gift. Fires once
+// per day when the player switches to Wild (so GPS + biome are loaded).
+window._lwCheckSecondBloom=function(){
+  try{
+    var lvl=(window.canSee&&window.canSee.currentLevel)?window.canSee.currentLevel():0;
+    if(lvl<25)return false;
+    var today=new Date().toISOString().slice(0,10);
+    if(localStorage.getItem('lw_second_bloom_claimed')===today)return false;
+    if(!window._uLat||!window._uLng)return false;
+    // Jitter ~30-60m from player so they still walk a few steps
+    var jLat=window._uLat+(Math.random()-0.5)*0.0006;
+    var jLng=window._uLng+(Math.random()-0.5)*0.0006;
+    var h='';for(var i=0;i<64;i++)h+='0123456789abcdef'[Math.floor(Math.random()*16)];
+    // Bias byte 8 toward rarer to make it feel special (not wasted)
+    var hArr=h.split('');hArr[8]='c';h=hArr.join('');
+    var feral={lat:jLat,lng:jLng,hash:h,date:today,collected:false,parentA:'second_bloom',parentB:'milestone',source:'second_bloom'};
+    var data=[];try{data=JSON.parse(localStorage.getItem('fg_ferals')||'[]');}catch(e){}
+    data.push(feral);
+    localStorage.setItem('fg_ferals',JSON.stringify(data));
+    localStorage.setItem('lw_second_bloom_claimed',today);
+    if(window._toast)setTimeout(function(){window._toast('\ud83c\udf3f Second Bloom \u2014 a feral awaits nearby.');},1200);
+    try{if(window._haptic)_haptic();}catch(e){}
+    try{if(typeof gtag!=='undefined')gtag('event','milestone_second_bloom',{lvl:lvl});}catch(e){}
+    // Redraw zones so the new feral shows up
+    try{if(window.FG_Wild&&FG_Wild._drawZoneHexes)FG_Wild._drawZoneHexes();}catch(e){}
+    return true;
+  }catch(e){return false;}
+};
+// Hook: fire on every Wild tab entry (idempotent via date check)
+(function(){
+  var _prevST=window.switchTab;
+  if(typeof _prevST==='function'){
+    window.switchTab=function(tab){
+      var r=_prevST.apply(this,arguments);
+      if(tab==='wild'){setTimeout(function(){try{window._lwCheckSecondBloom&&window._lwCheckSecondBloom();}catch(e){}},2500);}
+      return r;
+    };
+  }
+})();
+
 // Class picker UI — opens from Book of Secrets
 window._LW_openClassPicker=function(){
   var cur=_lwGetClass();
