@@ -32683,12 +32683,33 @@ document.addEventListener('keydown', function(e) {
       if (window.LW_FORAGING) {
         var _inv = window.LW_FORAGING.loadInventory();
         if (window.LW_FORAGING.totalCards(_inv) < window.LW_FORAGING.cardCapacity()) {
-          var _pool = ['sun','shade','rain','dry','wind','still'];
-          var _pick = _pool[Math.floor(Math.random() * _pool.length)];
+          // Resolve the bloomed plant's grade so rarer plants have a shot
+          // at dropping a rare wild-card (moonlight / thunder / aurora).
+          var _bloomGrade = 'Common';
+          try {
+            if (window.hashToTraits && window.getTerraGrade && plant && plant.hash) {
+              var _bt = hashToTraits(plant.hash);
+              var _bg = getTerraGrade(_bt);
+              if (_bg && _bg.name) _bloomGrade = _bg.name;
+            }
+          } catch(eG){}
+          // Rare wild-card chance scales with bloom rarity. Roll once — if
+          // it hits we drop a rare; otherwise a basic element card.
+          var _rareChance = ({ Legendary:0.25, Mythic:0.55, Cosmic:0.85 })[_bloomGrade] || 0;
+          var _rolledRare = (Math.random() < _rareChance);
+          var _pick;
+          if (_rolledRare) {
+            var _rarePool = ['moonlight','thunder','aurora'];
+            _pick = _rarePool[Math.floor(Math.random() * _rarePool.length)];
+          } else {
+            var _pool = ['sun','shade','rain','dry','wind','still'];
+            _pick = _pool[Math.floor(Math.random() * _pool.length)];
+          }
           window.LW_FORAGING.addCard(_pick, 1);
           if (window.LW_FORAGING.EL[_pick] && window._toast) {
+            var _rareTag = _rolledRare ? ' \u2605 RARE WILD' : '';
             setTimeout(function(){
-              window._toast('\ud83c\udf3f Bloom gift: ' + window.LW_FORAGING.EL[_pick].icon + ' ' + window.LW_FORAGING.EL[_pick].label + ' card added to foraging hand.');
+              window._toast('\ud83c\udf3f Bloom gift: ' + window.LW_FORAGING.EL[_pick].icon + ' ' + window.LW_FORAGING.EL[_pick].label + _rareTag + ' card added to foraging hand.');
             }, 2500);
           }
         }
@@ -56471,13 +56492,14 @@ window._lwClaimHerbarium = function(id){
   function hexDifficulty(grade) {
     var g = String(grade || 'Common').toLowerCase();
     var map = {
+      // Mastermind scoring: exact=2, present=1, miss=0 → max per attempt = slots*2
       common:    { slots: 3, cards: 3, handSize: 5,  attempts: 3, scoreNeeded: 4 },
       uncommon:  { slots: 3, cards: 3, handSize: 6,  attempts: 3, scoreNeeded: 5 },
       rare:      { slots: 4, cards: 4, handSize: 7,  attempts: 4, scoreNeeded: 6 },
-      epic:      { slots: 4, cards: 4, handSize: 8,  attempts: 4, scoreNeeded: 8 },
-      legendary: { slots: 5, cards: 5, handSize: 9,  attempts: 5, scoreNeeded: 10 },
-      mythic:    { slots: 6, cards: 6, handSize: 10, attempts: 5, scoreNeeded: 12 },
-      cosmic:    { slots: 6, cards: 6, handSize: 12, attempts: 6, scoreNeeded: 14 }
+      epic:      { slots: 4, cards: 4, handSize: 8,  attempts: 4, scoreNeeded: 7 },
+      legendary: { slots: 5, cards: 5, handSize: 9,  attempts: 5, scoreNeeded: 8 },
+      mythic:    { slots: 6, cards: 6, handSize: 10, attempts: 5, scoreNeeded: 10 },
+      cosmic:    { slots: 6, cards: 6, handSize: 12, attempts: 6, scoreNeeded: 11 }
     };
     return map[g] || map.common;
   }
@@ -56573,37 +56595,57 @@ window._lwClaimHerbarium = function(id){
     };
   }
 
-  // Resolve a foraging attempt — variable length (3-5 cards).
-  // Returns { matches, counters, neutrals, wilds, wildExact, score, success, reveal }.
-  // reveal[i] = {card, hex, verdict: 'match'|'counter'|'neutral'|'wild'|'wild-exact'}
+  // Resolve a foraging attempt — Mastermind semantics.
+  //   match   (green):  card element == hex element at same slot (EXACT)
+  //   counter (yellow): card element appears somewhere in hex but at a
+  //                     different slot (ELSEWHERE) — Wordle-style "right
+  //                     card, wrong place"
+  //   neutral (grey):   card element not present in the hex at all (MISS)
   //
-  // Rare wild-card cap rule: the FIRST rare wild card played in an attempt
-  // counts as an EXACT match (score 2). Subsequent rare wilds revert to
-  // standard half-strength (score 1). Prevents rare cards from becoming a
-  // 5-copy auto-win button while preserving their payoff.
+  // Rare wild-card: first rare played counts as an EXACT match regardless
+  // of hex contents. Subsequent rares fall to half-strength wild.
+  //
+  // Two-pass Mastermind accounting so duplicate cards don't double-count.
   function resolveAttempt(hexElements, cardsPlayed, scoreNeeded) {
     if (!cardsPlayed || !hexElements) return null;
     if (cardsPlayed.length !== hexElements.length) return null;
-    if (!scoreNeeded) scoreNeeded = 3; // legacy default
-    var reveal = [];
+    if (!scoreNeeded) scoreNeeded = 3;
+    var reveal = new Array(hexElements.length);
     var matches = 0, counters = 0, neutrals = 0, wilds = 0, wildExact = 0;
     var wildUsed = false;
+    // Tally of unmatched hex elements, so we don't award 'counter' against
+    // a hex slot that was already matched exactly.
+    var hexRemaining = {};
+    // Pass 1: exacts + wilds
     for (var i = 0; i < hexElements.length; i++) {
       var card = cardsPlayed[i], hex = hexElements[i];
-      var verdict;
       var isRare = EL[card] && EL[card].rare;
-      if (isRare) {
-        if (!wildUsed) {
-          // First rare wild this attempt — EXACT hit on this slot
-          verdict = 'wild-exact'; wildExact++; wildUsed = true;
-        } else {
-          // Any additional rare cards fall back to half-strength wild
-          verdict = 'wild'; wilds++;
-        }
-      } else if (card === hex) { verdict = 'match'; matches++; }
-      else if (countered(card, hex)) { verdict = 'counter'; counters++; }
-      else { verdict = 'neutral'; neutrals++; }
-      reveal.push({ card: card, hex: hex, verdict: verdict });
+      if (isRare && !wildUsed) {
+        reveal[i] = { card: card, hex: hex, verdict: 'wild-exact' };
+        wildExact++; wildUsed = true;
+      } else if (isRare) {
+        reveal[i] = { card: card, hex: hex, verdict: 'wild' };
+        wilds++;
+      } else if (card === hex) {
+        reveal[i] = { card: card, hex: hex, verdict: 'match' };
+        matches++;
+      } else {
+        reveal[i] = null; // decide in pass 2
+        hexRemaining[hex] = (hexRemaining[hex] || 0) + 1;
+      }
+    }
+    // Pass 2: counter (elsewhere) or neutral, consuming remaining hex tally.
+    for (var j = 0; j < hexElements.length; j++) {
+      if (reveal[j]) continue;
+      var c2 = cardsPlayed[j], h2 = hexElements[j];
+      if (hexRemaining[c2] > 0) {
+        reveal[j] = { card: c2, hex: h2, verdict: 'counter' };
+        hexRemaining[c2]--;
+        counters++;
+      } else {
+        reveal[j] = { card: c2, hex: h2, verdict: 'neutral' };
+        neutrals++;
+      }
     }
     // match=2, wild-exact=2, counter=1, wild=1, neutral=0
     var score = (matches + wildExact) * 2 + counters + wilds;
@@ -56739,7 +56781,7 @@ window._lwClaimHerbarium = function(id){
       render();
     }
     function close() { var ov = document.getElementById('lw-sim-overlay'); if (ov) ov.remove(); }
-    function verdictLabel(v){return v==='match'?'MATCH':v==='wild-exact'?'WILD EXACT':v==='counter'?'COUNTER':v==='wild'?'WILD ½':v==='safety'?'SAFETY REVEAL':'MISS';}
+    function verdictLabel(v){return v==='match'?'EXACT':v==='wild-exact'?'WILD EXACT':v==='counter'?'ELSEWHERE':v==='wild'?'WILD ½':v==='safety'?'SAFETY REVEAL':'MISS';}
     function verdictColor(v){return (v==='match'||v==='wild-exact')?'var(--sage)':v==='counter'?'var(--gold)':v==='wild'?'#c07ac8':v==='safety'?'#87a3c2':'var(--muted)';}
     function elHtml(k, sz){ sz=sz||48; var el=EL[k]||{icon:'?',label:k}; return '<div style="width:'+sz+'px;text-align:center;"><img src="assets/foraging/el-'+k+'.png" alt="" style="width:100%;max-width:'+sz+'px;aspect-ratio:1/1;object-fit:contain;" onerror="this.outerHTML=\'<div style=&quot;font-size:'+Math.round(sz*0.5)+'px;&quot;>'+el.icon+'</div>\';"><div style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;color:var(--cream);margin-top:2px;letter-spacing:0.06em;">'+el.label+'</div></div>'; }
     function render() {
@@ -56944,20 +56986,20 @@ window._lwClaimHerbarium = function(id){
         localStorage.setItem('lw_tut_forage_v1', '1');
         var _step2 = function(){
           window._lwConfirm({
-            title: 'MATCH · COUNTER · LEARN',
-            body: '<p>\u2728 <b>Match</b> (same element) \u2014 full hit.</p>' +
-                  '<p>\u2694\ufe0f <b>Counter</b> (one step back in the cycle) \u2014 partial hit.</p>' +
-                  '<p>\u2022 Anything else \u2014 no hit, but the slot is <i>revealed</i> next attempt.</p>' +
-                  '<p style="color:var(--gold);margin-top:0.6rem;">Score 3+ across the three slots to claim the seed.</p>',
+            title: 'EXACT \u00b7 ELSEWHERE \u00b7 MISS',
+            body: '<p><span style="color:#7ab356;">\u25a0</span> <b>EXACT</b> (green) \u2014 right card in the right slot.</p>' +
+                  '<p><span style="color:#c8a84b;">\u25a0</span> <b>ELSEWHERE</b> (gold) \u2014 right card, wrong slot. The element is in the hex somewhere else.</p>' +
+                  '<p><span style="color:#8a9178;">\u25a0</span> <b>MISS</b> (grey) \u2014 that element isn\u2019t in the hex.</p>' +
+                  '<p style="color:var(--gold);margin-top:0.6rem;">Use each attempt to narrow which elements belong and where they go. Hit the score target to claim the seed.</p>',
             yes: 'START FORAGING',
             no: ''
           }, function(){});
         };
         window._lwConfirm({
           title: 'FORAGING \u2014 A QUIET PUZZLE',
-          body: '<p>Every wild hex hides <b>3 elements</b> \u2014 Sun, Shade, Rain, Dry, Wind, Still.</p>' +
-                '<p>Play 3 cards from your hand. Each card covers one slot.</p>' +
-                '<p style="color:var(--sage);">Higher-rarity hexes give you more cards, more slots, and more attempts. Each attempt teaches you more.</p>',
+          body: '<p>Every wild hex hides a sequence of <b>elements</b> \u2014 Sun, Shade, Rain, Dry, Wind, Still.</p>' +
+                '<p>Play cards from your hand into the slots. Try to match the hex\u2019s hidden order.</p>' +
+                '<p style="color:var(--sage);">Higher-rarity hexes have more slots, bigger hands, and more attempts. Each attempt teaches you more.</p>',
           yes: 'NEXT \u2192',
           no: ''
         }, _step2);
@@ -57081,28 +57123,41 @@ window._lwClaimHerbarium = function(id){
         var placedEl = placedCard ? EL[placedCard] : null;
         if (resolved) {
           var r = resolved.reveal[s];
-          var hexEl = EL[r.hex];
+          // For 'match'/'wild-exact', the reveal shows the hex element the player
+          // got right. For 'counter'/'neutral', show the CARD THEY PLAYED (so
+          // they learn which of their cards missed) plus an ELSEWHERE/MISS tag.
+          var showCardKey = (r.verdict === 'match' || r.verdict === 'wild-exact') ? r.hex : r.card;
+          var showEl = EL[showCardKey];
           var vColor = resolveVerdictColor(r.verdict);
-          var vBg = r.verdict === 'match' ? 'rgba(122,179,86,0.25)' : r.verdict === 'counter' ? 'rgba(200,168,75,0.2)' : 'rgba(30,18,14,0.5)';
-          var vLbl = r.verdict === 'match' ? 'MATCH' : r.verdict === 'counter' ? 'COUNTER' : r.verdict === 'wild' ? 'WILD' : '—';
-          h += '<div style="position:relative;aspect-ratio:3/4;background:' + vBg + ';border:2px solid ' + vColor + ';border-radius:10px;overflow:hidden;">';
-          if (hexEl) h += '<img src="assets/foraging/el-' + r.hex + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem;&quot;>' + hexEl.icon + '</div>\'">';
-          h += '<div style="position:absolute;left:0;right:0;bottom:0;padding:16px 4px 4px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.9));text-align:center;text-shadow:0 1px 2px rgba(0,0,0,0.9);">';
-          h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:' + vColor + ';letter-spacing:0.08em;">' + vLbl + '</div>';
-          h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--cream);margin-top:1px;">' + (hexEl ? hexEl.label : '?') + '</div>';
+          var vBg, vBorderW, vShadow;
+          if (r.verdict === 'match' || r.verdict === 'wild-exact') {
+            vBg = 'rgba(122,179,86,0.32)'; vBorderW = '4px'; vShadow = '0 0 14px rgba(122,179,86,0.55), inset 0 0 12px rgba(122,179,86,0.2)';
+          } else if (r.verdict === 'counter') {
+            vBg = 'rgba(200,168,75,0.25)'; vBorderW = '4px'; vShadow = '0 0 12px rgba(200,168,75,0.5), inset 0 0 10px rgba(200,168,75,0.18)';
+          } else if (r.verdict === 'wild') {
+            vBg = 'rgba(192,122,200,0.22)'; vBorderW = '3px'; vShadow = '0 0 10px rgba(192,122,200,0.5)';
+          } else {
+            vBg = 'rgba(30,18,14,0.55)'; vBorderW = '1.5px'; vShadow = 'none';
+          }
+          var vLbl = r.verdict === 'match' ? 'EXACT' : r.verdict === 'wild-exact' ? 'WILD EXACT' : r.verdict === 'counter' ? 'ELSEWHERE' : r.verdict === 'wild' ? 'WILD \u00bd' : 'MISS';
+          h += '<div style="position:relative;aspect-ratio:3/4;min-height:140px;background:' + vBg + ';border:' + vBorderW + ' solid ' + vColor + ';border-radius:12px;overflow:hidden;box-shadow:' + vShadow + ';">';
+          if (showEl) h += '<img src="assets/foraging/el-' + showCardKey + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;' + (r.verdict === 'neutral' ? 'filter:grayscale(0.7) brightness(0.65);' : '') + '" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2.5rem;&quot;>' + showEl.icon + '</div>\'">';
+          h += '<div style="position:absolute;left:0;right:0;bottom:0;padding:18px 4px 5px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.92));text-align:center;text-shadow:0 1px 2px rgba(0,0,0,0.9);">';
+          h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;color:' + vColor + ';letter-spacing:0.1em;">' + vLbl + '</div>';
+          h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--cream);margin-top:2px;">' + (showEl ? showEl.label : '?') + '</div>';
           h += '</div></div>';
         } else if (placedEl) {
           // Filled — show the placed card, click to return to hand.
-          h += '<div onclick="window._lwForageUnplace(' + s + ')" style="position:relative;aspect-ratio:3/4;background:rgba(18,22,16,0.7);border:2px solid var(--gold);border-radius:10px;overflow:hidden;cursor:pointer;box-shadow:0 0 10px rgba(200,168,75,0.25);">';
-          h += '<img src="assets/foraging/el-' + placedCard + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem;&quot;>' + placedEl.icon + '</div>\'">';
-          h += '<div style="position:absolute;left:0;right:0;bottom:0;padding:14px 4px 4px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.9));text-align:center;">';
-          h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--gold);letter-spacing:0.08em;text-shadow:0 1px 2px rgba(0,0,0,0.9);">' + placedEl.label + '</div>';
+          h += '<div onclick="window._lwForageUnplace(' + s + ')" style="position:relative;aspect-ratio:3/4;min-height:140px;background:rgba(18,22,16,0.7);border:3px solid var(--gold);border-radius:12px;overflow:hidden;cursor:pointer;box-shadow:0 0 14px rgba(200,168,75,0.4);">';
+          h += '<img src="assets/foraging/el-' + placedCard + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2.5rem;&quot;>' + placedEl.icon + '</div>\'">';
+          h += '<div style="position:absolute;left:0;right:0;bottom:0;padding:18px 4px 5px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.9));text-align:center;">';
+          h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.68rem;color:var(--gold);letter-spacing:0.1em;text-shadow:0 1px 2px rgba(0,0,0,0.9);">' + placedEl.label + '</div>';
           h += '</div></div>';
         } else {
           // Empty slot — show learned hint if any.
           var hint = learned[s] ? EL[learned[s].hex] : null;
           var hintOp = hint ? 0.45 : 0;
-          h += '<div style="position:relative;aspect-ratio:3/4;background:rgba(13,16,12,0.55);border:1.5px dashed rgba(122,179,86,0.35);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;">';
+          h += '<div style="position:relative;aspect-ratio:3/4;min-height:140px;background:rgba(13,16,12,0.55);border:1.5px dashed rgba(122,179,86,0.35);border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;">';
           if (hint) {
             h += '<img src="assets/foraging/el-' + learned[s].hex + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:' + hintOp + ';filter:saturate(0.4);" onerror="this.style.display=\'none\';">';
             h += '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;background:rgba(13,16,12,0.35);">';
@@ -57164,7 +57219,7 @@ window._lwClaimHerbarium = function(id){
         var border = isSelected ? '2px solid rgba(200,168,75,0.45)' : '1.5px solid rgba(74,124,53,0.25)';
         var opacity = isSelected ? 0.35 : 1;
         var hintTxt = isSelected ? 'PLACED \u2191' : 'TAP TO PLACE';
-        h += '<div onclick="window._lwForagePick(' + ci + ')" style="position:relative;cursor:pointer;width:132px;aspect-ratio:3/4;flex-shrink:0;background:' + bg + ';border:' + border + ';border-radius:12px;overflow:hidden;opacity:' + opacity + ';' + (resolved ? 'pointer-events:none;opacity:0.4;' : '') + 'transition:opacity 0.18s ease;box-shadow:0 4px 12px rgba(0,0,0,0.4);">';
+        h += '<div onclick="window._lwForagePick(' + ci + ')" style="position:relative;cursor:pointer;width:168px;aspect-ratio:3/4;flex-shrink:0;background:' + bg + ';border:' + border + ';border-radius:14px;overflow:hidden;opacity:' + opacity + ';' + (resolved ? 'pointer-events:none;opacity:0.4;' : '') + 'transition:opacity 0.18s ease;box-shadow:0 6px 16px rgba(0,0,0,0.5);">';
         h += '<img src="assets/foraging/el-' + c + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2.6rem;&quot;>' + el.icon + '</div>\';">';
         h += '<div style="position:absolute;left:0;right:0;bottom:0;padding:22px 6px 6px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.9));text-align:center;text-shadow:0 1px 2px rgba(0,0,0,0.9);">';
         h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;letter-spacing:0.06em;color:' + (isSelected ? 'var(--gold)' : 'var(--cream)') + ';">' + el.label + '</div>';
