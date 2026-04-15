@@ -54240,7 +54240,7 @@ var MAX_EVENTS=500; // Capped for localStorage safety — FIFO eviction
 // feral: { type:'feral', hash, name, collectedBy, date }
 
 function _loadEvents(){
-  try{return JSON.parse(localStorage.getItem(EVT_KEY)||'[]');}catch(e){return[];}
+  try{var p=JSON.parse(localStorage.getItem(EVT_KEY)||'[]');return Array.isArray(p)?p:[];}catch(e){return[];}
 }
 function _saveEvents(evts){
   if(evts.length>MAX_EVENTS)evts=evts.slice(evts.length-MAX_EVENTS);
@@ -57773,7 +57773,13 @@ window.LW_FAMILY_T3 = {
       if (!t) return false;
       if (req.tag === 'anyPlant') return true;
       if (req.tag === 'hasFlower') return !!t.hasFlower;
-      if (req.tag === 'hasCompanion') return t.companion && t.companion < 82 && (window.TRAIT_BANK ? (window.TRAIT_BANK.companions[t.companion] || {}).name !== 'None' : true);
+      if (req.tag === 'hasCompanion') {
+        if (!t.companion || t.companion >= 82) return false;
+        var _bank = window.TRAIT_BANK;
+        if (!_bank || !_bank.companions || !Array.isArray(_bank.companions)) return true;
+        var _comp = _bank.companions[t.companion];
+        return !!(_comp && _comp.name && _comp.name !== 'None');
+      }
       if (req.tag === 'mutated') return t.mutationName && t.mutationName !== 'None';
       if (req.tag === 'chimera') return (t.chimerGen || 1) >= 2;
       if (req.tag === 'season') return t.season === req.value;
