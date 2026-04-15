@@ -2694,6 +2694,34 @@
     .drawer-panel{backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);background:linear-gradient(135deg,rgba(13,16,12,0.84) 0%,rgba(26,36,22,0.76) 50%,rgba(13,16,12,0.88) 100%);border:1px solid rgba(122,179,86,0.12);box-shadow:inset 0 1px 0 rgba(240,235,216,0.06),inset 0 -1px 0 rgba(0,0,0,0.22),0 28px 52px rgba(0,0,0,0.55),0 0 0 0.5px rgba(122,179,86,0.07);border-radius:14px;}
     @keyframes drawerIn{from{transform:translateY(-14px);opacity:0}to{transform:translateY(0);opacity:1}}
 
+    /* ── SHARED MODAL FRAME ── */
+    /* Reusable overlay + card for any confirm/tutorial/prompt modal. Midnight-
+       greenhouse palette, triquetra corner knots in gold, soft glass backdrop.
+       Any inline-created modal should use .lw-modal-backdrop > .lw-modal-frame
+       > (.lw-modal-title, .lw-modal-body, .lw-modal-actions > .lw-modal-btn). */
+    .lw-modal-backdrop{position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:rgba(5,8,4,0.88);backdrop-filter:blur(14px) saturate(1.1);-webkit-backdrop-filter:blur(14px) saturate(1.1);animation:panelFadeIn 0.3s ease;}
+    .lw-modal-frame{position:relative;max-width:340px;width:100%;padding:1.4rem 1.2rem 1.1rem;border-radius:14px;background:linear-gradient(160deg,rgba(18,22,16,0.96) 0%,rgba(26,36,22,0.92) 55%,rgba(13,16,12,0.96) 100%);border:1.5px solid rgba(200,168,75,0.32);box-shadow:inset 0 1px 0 rgba(240,235,216,0.06),inset 0 -1px 0 rgba(0,0,0,0.25),0 22px 52px rgba(0,0,0,0.6),0 0 0 0.5px rgba(122,179,86,0.08);animation:drawerIn 0.32s cubic-bezier(0.2,0.9,0.3,1);overflow:visible;}
+    /* Triquetra corner knots — gold on transparent, 28x28px inset */
+    .lw-modal-frame::before,.lw-modal-frame::after{content:'';position:absolute;width:28px;height:28px;background-repeat:no-repeat;background-size:contain;pointer-events:none;opacity:0.85;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><g fill='none' stroke='%23c8a84b' stroke-width='1.3' stroke-linecap='round'><circle cx='16' cy='11' r='5.2'/><circle cx='11' cy='19' r='5.2'/><circle cx='21' cy='19' r='5.2'/></g></svg>");}
+    .lw-modal-frame::before{top:-6px;left:-6px;}
+    .lw-modal-frame::after{top:-6px;right:-6px;transform:scaleX(-1);}
+    .lw-modal-frame.with-bottom-knots>.lw-modal-knot-bl,.lw-modal-frame.with-bottom-knots>.lw-modal-knot-br{content:'';position:absolute;width:28px;height:28px;background-repeat:no-repeat;background-size:contain;pointer-events:none;opacity:0.85;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><g fill='none' stroke='%23c8a84b' stroke-width='1.3' stroke-linecap='round'><circle cx='16' cy='11' r='5.2'/><circle cx='11' cy='19' r='5.2'/><circle cx='21' cy='19' r='5.2'/></g></svg>");}
+    .lw-modal-frame.with-bottom-knots>.lw-modal-knot-bl{bottom:-6px;left:-6px;transform:scaleY(-1);}
+    .lw-modal-frame.with-bottom-knots>.lw-modal-knot-br{bottom:-6px;right:-6px;transform:scale(-1,-1);}
+    .lw-modal-title{font-family:'Bebas Neue',sans-serif;font-size:0.72rem;color:var(--gold);letter-spacing:0.16em;text-align:center;margin-bottom:0.55rem;text-shadow:0 1px 0 rgba(0,0,0,0.4);}
+    .lw-modal-subtitle{font-family:'Playfair Display',serif;font-style:italic;font-size:0.62rem;color:var(--sage);text-align:center;margin:-0.2rem 0 0.6rem;opacity:0.88;}
+    .lw-modal-body{font-family:'DM Mono',monospace;font-size:0.52rem;color:var(--cream);line-height:1.65;text-align:center;margin-bottom:0.9rem;}
+    .lw-modal-body p{margin:0 0 0.5rem;}
+    .lw-modal-body p:last-child{margin-bottom:0;}
+    .lw-modal-actions{display:flex;flex-direction:column;gap:0.35rem;}
+    .lw-modal-btn{width:100%;min-height:48px;padding:0.55rem 0.8rem;border-radius:9px;font-family:'Bebas Neue',sans-serif;font-size:0.72rem;letter-spacing:0.12em;cursor:pointer;transition:transform 0.12s ease,box-shadow 0.12s ease;border:1.5px solid rgba(122,179,86,0.22);background:rgba(46,60,38,0.28);color:var(--cream);}
+    .lw-modal-btn:hover{transform:translateY(-1px);}
+    .lw-modal-btn:active{transform:translateY(0);}
+    .lw-modal-btn.primary{border-color:rgba(122,179,86,0.5);background:linear-gradient(180deg,rgba(74,124,53,0.38),rgba(26,60,22,0.48));color:var(--sage);box-shadow:0 0 0 0.5px rgba(122,179,86,0.12) inset,0 1px 0 rgba(240,235,216,0.06) inset;}
+    .lw-modal-btn.gold{border-color:rgba(200,168,75,0.55);background:linear-gradient(180deg,rgba(200,168,75,0.32),rgba(120,90,30,0.42));color:var(--gold);}
+    .lw-modal-btn.danger{border-color:rgba(200,80,60,0.48);background:linear-gradient(180deg,rgba(180,60,40,0.3),rgba(120,30,20,0.42));color:#e8a0a0;}
+    .lw-modal-btn.ghost{min-height:40px;font-size:0.58rem;border-color:rgba(122,179,86,0.14);background:rgba(26,36,22,0.2);color:var(--muted);}
+
     /* ── P3 · 3D CARD FLIP ── */
     .flip-container{perspective:800px;width:160px;aspect-ratio:2.5/3.5;margin:0 auto;}
     .flip-card{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform 0.72s cubic-bezier(0.45,0.05,0.55,0.95);will-change:transform;}
@@ -30781,16 +30809,16 @@ document.addEventListener('keydown', function(e) {
     var danger = opts.danger || false;
     var m = document.createElement('div');
     m.id = 'lw-confirm-modal';
-    m.style.cssText = 'position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
-    var h = '<div style="text-align:center;max-width:320px;background:rgba(18,22,16,0.95);border:1.5px solid rgba(200,168,75,0.25);border-radius:14px;padding:1.2rem 1rem;box-shadow:0 12px 40px rgba(0,0,0,0.6);">';
-    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);letter-spacing:0.15em;margin-bottom:0.3rem;">' + title + '</div>';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--cream);line-height:1.6;margin-bottom:0.6rem;">' + body + '</div>';
-    var yBorder = danger ? 'rgba(200,80,60,0.4)' : 'rgba(122,179,86,0.35)';
-    var yBg = danger ? 'linear-gradient(180deg,rgba(180,60,40,0.25),rgba(120,30,20,0.35))' : 'linear-gradient(180deg,rgba(74,124,53,0.3),rgba(26,60,22,0.4))';
-    var yColor = danger ? '#e8a0a0' : 'var(--sage)';
-    h += '<button class="lw-confirm-yes" style="width:100%;padding:0.5rem;margin-bottom:0.3rem;border:1.5px solid ' + yBorder + ';border-radius:8px;background:' + yBg + ';color:' + yColor + ';font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">' + yes + '</button>';
-    if (!hideNo) h += '<button class="lw-confirm-no" style="width:100%;padding:0.4rem;border:1px solid rgba(122,179,86,0.15);border-radius:8px;background:rgba(46,60,38,0.15);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;">' + no + '</button>';
-    h += '</div>';
+    m.className = 'lw-modal-backdrop';
+    var primaryClass = danger ? 'danger' : 'primary';
+    var h = '<div class="lw-modal-frame with-bottom-knots">';
+    h += '<span class="lw-modal-knot-bl"></span><span class="lw-modal-knot-br"></span>';
+    h += '<div class="lw-modal-title">' + title + '</div>';
+    h += '<div class="lw-modal-body">' + body + '</div>';
+    h += '<div class="lw-modal-actions">';
+    h += '<button class="lw-confirm-yes lw-modal-btn ' + primaryClass + '">' + yes + '</button>';
+    if (!hideNo) h += '<button class="lw-confirm-no lw-modal-btn ghost">' + no + '</button>';
+    h += '</div></div>';
     m.innerHTML = h;
     document.body.appendChild(m);
     try { _haptic('tab'); } catch(e) {}
@@ -54911,18 +54939,29 @@ window._lwClaimHerbarium = function(id){
       return;
     }
     // First-time foraging tutorial — one-shot per device so veterans aren't
-    // nagged. Explains the core idea before dropping them into the UI cold.
+    // nagged. Two-step walkthrough: the puzzle shape, then the resolution rules.
     try {
-      if (!localStorage.getItem('lw_tut_forage_v1')) {
+      if (!localStorage.getItem('lw_tut_forage_v1') && window._lwConfirm) {
         localStorage.setItem('lw_tut_forage_v1', '1');
-        if (window._lwConfirm) {
+        var _step2 = function(){
           window._lwConfirm({
-            title: 'FORAGING — HOW IT WORKS',
-            body: 'This hex hides <b>3 elements</b> (Sun, Rain, Wind\u2026). Play 3 cards from your hand to match or counter them.<br><br>\u2728 <b>Match</b> same element = full hit.<br>\u2694\ufe0f <b>Counter</b> the element one step back in the cycle = partial hit.<br><br>Score 3+ to win the seed. You get <b>3 attempts</b> — each reveals more info than the last.',
-            yes: 'BEGIN',
+            title: 'MATCH · COUNTER · LEARN',
+            body: '<p>\u2728 <b>Match</b> (same element) \u2014 full hit.</p>' +
+                  '<p>\u2694\ufe0f <b>Counter</b> (one step back in the cycle) \u2014 partial hit.</p>' +
+                  '<p>\u2022 Anything else \u2014 no hit, but the slot is <i>revealed</i> next attempt.</p>' +
+                  '<p style="color:var(--gold);margin-top:0.6rem;">Score 3+ across the three slots to claim the seed.</p>',
+            yes: 'START FORAGING',
             no: ''
           }, function(){});
-        }
+        };
+        window._lwConfirm({
+          title: 'FORAGING \u2014 A QUIET PUZZLE',
+          body: '<p>Every wild hex hides <b>3 elements</b> \u2014 Sun, Shade, Rain, Dry, Wind, Still.</p>' +
+                '<p>Play 3 cards from your hand. Each card covers one slot.</p>' +
+                '<p style="color:var(--sage);">You get 3 attempts per hex per day. Each attempt teaches you more.</p>',
+          yes: 'NEXT \u2192',
+          no: ''
+        }, _step2);
       }
     } catch(e) {}
     var comp = hexComposition(zoneKey);
