@@ -57057,28 +57057,50 @@ window._lwClaimHerbarium = function(id){
           }
         }
       } catch(e){}
-      h += '<div style="display:flex;justify-content:space-around;gap:0.4rem;">';
+      // Slot row — one tile per hex slot, tall enough to show the placed
+      // card art full-bleed (aspect 3/4). Tap a filled slot to return
+      // its card to the hand; tap a hand card to auto-fill the next
+      // empty slot.
+      h += '<div style="display:grid;grid-template-columns:repeat(' + diff.slots + ',1fr);gap:0.4rem;">';
       for (var s = 0; s < diff.slots; s++) {
-        var slotContent = '?';
-        var slotColor = 'var(--muted)';
-        var slotBg = 'rgba(18,22,16,0.8)';
-        // Persistent reveal from prior attempts — shows element + a dim tint.
-        if (!resolved && learned[s]) {
-          var _le = EL[learned[s].hex];
-          if (_le) {
-            slotContent = _le.icon + '<br><span style="font-size:0.45rem;opacity:0.7;">' + _le.label + '</span>';
-            slotColor = 'rgba(200,168,75,0.5)';
-            slotBg = 'rgba(26,36,22,0.5)';
-          }
-        }
+        var placedCardIdx = (selected.length > s) ? selected[s] : null;
+        var placedCard = (placedCardIdx != null) ? hand[placedCardIdx] : null;
+        var placedEl = placedCard ? EL[placedCard] : null;
         if (resolved) {
           var r = resolved.reveal[s];
-          var el = EL[r.hex];
-          slotContent = el ? (el.icon + '<br><span style="font-size:0.5rem;">' + el.label + '</span>') : '?';
-          slotColor = resolveVerdictColor(r.verdict);
-          slotBg = r.verdict === 'match' ? 'rgba(122,179,86,0.2)' : r.verdict === 'counter' ? 'rgba(200,168,75,0.18)' : 'rgba(18,22,16,0.8)';
+          var hexEl = EL[r.hex];
+          var vColor = resolveVerdictColor(r.verdict);
+          var vBg = r.verdict === 'match' ? 'rgba(122,179,86,0.25)' : r.verdict === 'counter' ? 'rgba(200,168,75,0.2)' : 'rgba(30,18,14,0.5)';
+          var vLbl = r.verdict === 'match' ? 'MATCH' : r.verdict === 'counter' ? 'COUNTER' : r.verdict === 'wild' ? 'WILD' : '—';
+          h += '<div style="position:relative;aspect-ratio:3/4;background:' + vBg + ';border:2px solid ' + vColor + ';border-radius:10px;overflow:hidden;">';
+          if (hexEl) h += '<img src="assets/foraging/el-' + r.hex + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem;&quot;>' + hexEl.icon + '</div>\'">';
+          h += '<div style="position:absolute;left:0;right:0;bottom:0;padding:16px 4px 4px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.9));text-align:center;text-shadow:0 1px 2px rgba(0,0,0,0.9);">';
+          h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:' + vColor + ';letter-spacing:0.08em;">' + vLbl + '</div>';
+          h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--cream);margin-top:1px;">' + (hexEl ? hexEl.label : '?') + '</div>';
+          h += '</div></div>';
+        } else if (placedEl) {
+          // Filled — show the placed card, click to return to hand.
+          h += '<div onclick="window._lwForageUnplace(' + s + ')" style="position:relative;aspect-ratio:3/4;background:rgba(18,22,16,0.7);border:2px solid var(--gold);border-radius:10px;overflow:hidden;cursor:pointer;box-shadow:0 0 10px rgba(200,168,75,0.25);">';
+          h += '<img src="assets/foraging/el-' + placedCard + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem;&quot;>' + placedEl.icon + '</div>\'">';
+          h += '<div style="position:absolute;left:0;right:0;bottom:0;padding:14px 4px 4px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.9));text-align:center;">';
+          h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--gold);letter-spacing:0.08em;text-shadow:0 1px 2px rgba(0,0,0,0.9);">' + placedEl.label + '</div>';
+          h += '</div></div>';
+        } else {
+          // Empty slot — show learned hint if any.
+          var hint = learned[s] ? EL[learned[s].hex] : null;
+          var hintOp = hint ? 0.45 : 0;
+          h += '<div style="position:relative;aspect-ratio:3/4;background:rgba(13,16,12,0.55);border:1.5px dashed rgba(122,179,86,0.35);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;">';
+          if (hint) {
+            h += '<img src="assets/foraging/el-' + learned[s].hex + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:' + hintOp + ';filter:saturate(0.4);" onerror="this.style.display=\'none\';">';
+            h += '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;background:rgba(13,16,12,0.35);">';
+            h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:rgba(200,168,75,0.75);letter-spacing:0.08em;text-shadow:0 1px 2px rgba(0,0,0,0.9);">HINT</div>';
+            h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;color:rgba(232,220,200,0.85);letter-spacing:0.06em;text-shadow:0 1px 2px rgba(0,0,0,0.9);">' + hint.label + '</div>';
+            h += '</div>';
+          } else {
+            h += '<div style="font-size:1.2rem;color:rgba(138,145,120,0.5);">?</div>';
+          }
+          h += '</div>';
         }
-        h += '<div style="flex:1;aspect-ratio:1;background:' + slotBg + ';border:1.5px solid ' + slotColor + ';border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:1.4rem;color:' + slotColor + ';">' + slotContent + '</div>';
       }
       h += '</div>';
       if (resolved) {
@@ -57112,33 +57134,37 @@ window._lwClaimHerbarium = function(id){
         }
         h += '</div></div>';
       }
-      // Hand / selected — show required card count + score target
+      // Hand — horizontal scroll, bigger cards. Selected cards are dimmed
+      // and visually lifted so the player sees what's already placed.
       var pickMsg = diff.cards - selected.length;
-      h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.4rem;font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;">';
-      h += '<span style="color:var(--muted);">YOUR HAND \u00b7 PICK ' + (pickMsg>0?pickMsg+' MORE':'READY') + '</span>';
-      h += '<span style="color:var(--gold);">TARGET ' + diff.scoreNeeded + ' \u00b7 ' + (diff.slots) + ' SLOTS</span>';
+      h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin:0.8rem 0 0.4rem;font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;">';
+      h += '<span style="color:var(--muted);">YOUR HAND \u00b7 ' + (pickMsg>0?'PICK '+pickMsg+' MORE':'READY TO FORAGE') + '</span>';
+      h += '<span style="color:var(--gold);">TARGET ' + diff.scoreNeeded + '</span>';
       h += '</div>';
-      h += '<div style="display:grid;grid-template-columns:repeat(' + Math.min(hand.length, 6) + ',1fr);gap:0.35rem;margin-bottom:0.9rem;">';
+      h += '<div style="overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:0.4rem 0.2rem 0.6rem;margin:0 -0.2rem 0.9rem;scrollbar-width:thin;">';
+      h += '<div style="display:inline-flex;gap:0.5rem;padding-right:0.5rem;">';
       for (var ci = 0; ci < hand.length; ci++) {
         var c = hand[ci];
         var el = EL[c];
         var isSelected = selected.indexOf(ci) >= 0;
-        var bg = isSelected ? 'rgba(200,168,75,0.25)' : 'rgba(18,22,16,0.7)';
-        var border = isSelected ? '1.5px solid var(--gold)' : '1.5px solid rgba(74,124,53,0.2)';
-        h += '<div onclick="window._lwForagePick(' + ci + ')" style="position:relative;cursor:pointer;aspect-ratio:3/4;min-height:110px;background:' + bg + ';border:' + border + ';border-radius:10px;overflow:hidden;' + (resolved ? 'pointer-events:none;opacity:0.5;' : '') + '">';
-        h += '<img src="assets/foraging/el-' + c + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem;&quot;>' + el.icon + '</div>\';">';
-        h += '<div style="position:absolute;left:0;right:0;bottom:0;padding:14px 4px 4px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.85));text-align:center;text-shadow:0 1px 2px rgba(0,0,0,0.9);">';
-        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.58rem;letter-spacing:0.05em;color:' + (isSelected ? 'var(--gold)' : 'var(--cream)') + ';">' + el.label + '</div>';
-        if (isSelected) h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--gold);margin-top:1px;">' + (selected.indexOf(ci) + 1) + '</div>';
+        var bg = isSelected ? 'rgba(200,168,75,0.15)' : 'rgba(18,22,16,0.7)';
+        var border = isSelected ? '2px solid rgba(200,168,75,0.45)' : '1.5px solid rgba(74,124,53,0.25)';
+        var opacity = isSelected ? 0.35 : 1;
+        var hintTxt = isSelected ? 'PLACED \u2191' : 'TAP TO PLACE';
+        h += '<div onclick="window._lwForagePick(' + ci + ')" style="position:relative;cursor:pointer;width:132px;aspect-ratio:3/4;flex-shrink:0;background:' + bg + ';border:' + border + ';border-radius:12px;overflow:hidden;opacity:' + opacity + ';' + (resolved ? 'pointer-events:none;opacity:0.4;' : '') + 'transition:opacity 0.18s ease;box-shadow:0 4px 12px rgba(0,0,0,0.4);">';
+        h += '<img src="assets/foraging/el-' + c + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2.6rem;&quot;>' + el.icon + '</div>\';">';
+        h += '<div style="position:absolute;left:0;right:0;bottom:0;padding:22px 6px 6px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.9));text-align:center;text-shadow:0 1px 2px rgba(0,0,0,0.9);">';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;letter-spacing:0.06em;color:' + (isSelected ? 'var(--gold)' : 'var(--cream)') + ';">' + el.label + '</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:rgba(200,168,75,0.85);margin-top:2px;letter-spacing:0.04em;">' + hintTxt + '</div>';
         h += '</div>';
         h += '</div>';
       }
-      h += '</div>';
+      h += '</div></div>';
 
       // Play / confirm buttons
       if (!resolved) {
         var canPlay = selected.length === diff.cards;
-        h += '<button onclick="window._lwForagePlay()" ' + (canPlay ? '' : 'disabled') + ' style="display:block;width:100%;padding:12px;border-radius:10px;border:1.5px solid ' + (canPlay ? 'var(--gold)' : 'rgba(138,145,120,0.25)') + ';background:' + (canPlay ? 'linear-gradient(180deg,rgba(200,168,75,0.25),rgba(122,179,86,0.15))' : 'rgba(26,36,22,0.4)') + ';color:' + (canPlay ? 'var(--gold)' : 'var(--muted)') + ';font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.12em;cursor:' + (canPlay ? 'pointer' : 'not-allowed') + ';min-height:54px;">PLAY CARDS</button>';
+        h += '<button onclick="window._lwForagePlay()" ' + (canPlay ? '' : 'disabled') + ' style="display:block;width:100%;padding:14px;border-radius:12px;border:2px solid ' + (canPlay ? 'var(--gold)' : 'rgba(138,145,120,0.25)') + ';background:' + (canPlay ? 'linear-gradient(180deg,rgba(200,168,75,0.3),rgba(122,179,86,0.18))' : 'rgba(26,36,22,0.4)') + ';color:' + (canPlay ? 'var(--gold)' : 'var(--muted)') + ';font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.14em;cursor:' + (canPlay ? 'pointer' : 'not-allowed') + ';min-height:60px;' + (canPlay ? 'box-shadow:0 0 16px rgba(200,168,75,0.3);' : '') + '">\u2728 FORAGE</button>';
       } else if (resolved.success) {
         h += '<button onclick="window._lwForageClose(true)" style="display:block;width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--sage);background:linear-gradient(180deg,rgba(122,179,86,0.25),rgba(122,179,86,0.12));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.12em;cursor:pointer;min-height:54px;">\u2728 COLLECT SEED</button>';
       } else if (attempts + 1 < diff.attempts) {
@@ -57165,9 +57191,23 @@ window._lwClaimHerbarium = function(id){
     window._lwForagePick = function(ci) {
       if (resolved) return;
       var idx = selected.indexOf(ci);
-      if (idx >= 0) selected.splice(idx, 1);
-      else if (selected.length < diff.cards) selected.push(ci);
+      if (idx >= 0) {
+        // Tapping an already-placed card returns it to the hand.
+        selected.splice(idx, 1);
+      } else if (selected.length < diff.cards) {
+        // Auto-fill the next empty slot in order.
+        selected.push(ci);
+      }
       render();
+    };
+    // Tap a filled slot to return that card to the hand (same as tapping
+    // the card below — gives two natural places to un-place).
+    window._lwForageUnplace = function(slotIdx) {
+      if (resolved) return;
+      if (slotIdx >= 0 && slotIdx < selected.length) {
+        selected.splice(slotIdx, 1);
+        render();
+      }
     };
     window._lwForagePlay = function() {
       if (resolved || selected.length !== diff.cards) return;
@@ -57229,7 +57269,7 @@ window._lwClaimHerbarium = function(id){
     window._lwForageClose = function(awarded) {
       try { delete window._lwForagePick; delete window._lwForagePlay;
             delete window._lwForageNext; delete window._lwForageClose;
-            delete window._lwForageSwapDeck; } catch(e) {}
+            delete window._lwForageSwapDeck; delete window._lwForageUnplace; } catch(e) {}
       var pk = document.getElementById('lw-forage-panel'); if (pk) pk.remove();
       onDone(!!awarded);
     };
