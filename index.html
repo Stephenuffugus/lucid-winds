@@ -30314,6 +30314,8 @@ document.addEventListener('keydown', function(e) {
 
     // Step 4: add reward to sws_inventory
     var inv = loadInventory();
+    // Tree node Rich Compost (+0.25%/pt fertilizer return)
+    try{if(window._LW_treeBonus){var _cm=window._LW_treeBonus('compostReturn');if(_cm>1)fertReward=Math.ceil(fertReward*_cm);}}catch(e){}
     inv.dnaFragments = (inv.dnaFragments || 0) + dnaReward;
     inv.fertilizer = (inv.fertilizer || 0) + fertReward;
     inv.lastCompostSource = _srcTraits;
@@ -37647,9 +37649,11 @@ function _doHarvest(p){
         tx.delete(dropRef);
         // Write reward for the displaced planter
         if(p.ownerUid&&p.ownerUid!==myUid){
+          // Tree node Sure Hand (+0.25%/pt harvest hashes)
+          var _hr=reward;try{if(window._LW_treeBonus){var _hm=window._LW_treeBonus('harvestHash');if(_hm>1)_hr=Math.ceil(reward*_hm);}}catch(e){}
           var rewardRef=window.db.collection('vaults').doc(p.ownerUid).collection('pendingRewards').doc();
           tx.set(rewardRef,{
-            type:'harvest_reward',amount:reward,grade:p.grade||'Common',
+            type:'harvest_reward',amount:_hr,grade:p.grade||'Common',
             plantName:p.name||'Plant',harvesterUid:myUid,
             timestamp:firebase.firestore.FieldValue.serverTimestamp()
           });
@@ -37873,6 +37877,8 @@ function _doCrossPollination(wildPlant,matePlant){
     // Companion family bonuses — Pollinators boost XP/pollen, Weavers boost all breed rewards.
     var _breedMult=1;
     try{if(window.LW_COMPANION){_breedMult=window.LW_COMPANION.getCompanionMult('pollen')*window.LW_COMPANION.getCompanionMult('breedReward');}}catch(e){}
+    // Tree nodes Patient Hand (breedReward) + Pollen Flow (pollenFlow) stack
+    try{if(window._LW_treeBonus){_breedMult*=window._LW_treeBonus('breedReward');_breedMult*=window._LW_treeBonus('pollenFlow');}}catch(e){}
     if(roll<0.6){
       // 60% — XP reward (monotonic pollen, no spend)
       var xpBonus=Math.ceil((5+Math.floor(Math.random()*10))*_spiderBonus*_breedMult);
@@ -56422,6 +56428,8 @@ window._LW_classXP=function(source,amount){
     if(window._LW_hasSynergy&&window._LW_hasSynergy())mult*=1.20;
     else mult*=1.10;
   }
+  // Tree node Attuned (+0.25%/pt class XP) — small but always-on
+  try{if(window._LW_treeBonus)mult*=window._LW_treeBonus('classXp');}catch(e){}
   var gain=Math.ceil(amount*mult);
   var x=_lwGetClassXP();
   var was=x[cls]||0;
@@ -56440,6 +56448,8 @@ window._LW_classXP=function(source,amount){
 };
 // Award tool XP
 window._LW_toolXP=function(tool,amount){
+  // Tree node Keen Tool (+0.25%/pt tool XP gain)
+  try{if(window._LW_treeBonus)amount=Math.ceil(amount*window._LW_treeBonus('toolXp'));}catch(e){}
   var x=_lwGetToolXP();
   var was=x[tool]||0;
   x[tool]=was+amount;
