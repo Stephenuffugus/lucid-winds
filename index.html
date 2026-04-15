@@ -54466,8 +54466,13 @@ window._bosGetTabUnread = function(tab) {
   } catch(e) { return 0; }
 };
 window._bosRefreshBadges = function() {
+  // Always refresh the keeper-bar book icon badge first — it's visible
+  // regardless of whether the book overlay is open. This was the missing
+  // link: discoveries firing while the book was closed didn't roll the
+  // counter until the next book-open.
+  if (window._updateBookBadge) window._updateBookBadge();
   var bar = document.getElementById('bos-overlay');
-  if (!bar) return; // Book isn't open
+  if (!bar) return; // Book not open — per-tab badges only render inside overlay
   var tabs = bar.querySelectorAll('.bos-tab');
   for (var i = 0; i < tabs.length; i++) {
     var tabKey = tabs[i].getAttribute('data-tab');
@@ -54485,8 +54490,6 @@ window._bosRefreshBadges = function() {
       tabs[i].appendChild(b);
     }
   }
-  // Also refresh the top-level book icon badge
-  if (window._updateBookBadge) window._updateBookBadge();
 };
 
 function _bosSetTab(tab) {
