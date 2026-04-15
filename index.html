@@ -54146,6 +54146,29 @@ function _bosHerbariumContent() {
 window._bosHerbariumContent = _bosHerbariumContent;
 window._lwClaimHerbarium = function(id){
   if (window.LW_HERBARIUM && window.LW_HERBARIUM.claim(id)) {
+    // Celebration modal — the toast from claim() is easy to miss. A
+    // proper overlay with the bundle name + reward feels like an
+    // earned moment.
+    try {
+      var bundles = window.LW_HERBARIUM.BUNDLES || [];
+      var b = null;
+      for (var i = 0; i < bundles.length; i++) if (bundles[i].id === id) { b = bundles[i]; break; }
+      if (b && window._lwConfirm) {
+        var reward = b.rewardKind === 'dew'
+          ? '+' + b.rewardAmt + ' Dew'
+          : 'Title: <b>' + (b.rewardAmt || 'unknown') + '</b>';
+        window._lwConfirm({
+          title: '\u2728 BUNDLE COMPLETE',
+          body: '<div style="font-family:Playfair Display,serif;font-style:italic;color:var(--gold);font-size:0.95rem;margin-bottom:0.4rem;">' + b.name + '</div>' +
+                '<div style="color:var(--cream);font-family:DM Mono,monospace;font-size:0.55rem;line-height:1.6;margin-bottom:0.5rem;">' + (b.blurb || '') + '</div>' +
+                '<div style="padding:6px 10px;background:rgba(200,168,75,0.15);border:1px solid rgba(200,168,75,0.3);border-radius:8px;font-family:Bebas Neue,sans-serif;color:var(--gold);letter-spacing:0.08em;font-size:0.7rem;display:inline-block;">' + reward + '</div>',
+          yes: 'WONDERFUL',
+          no: ''
+        }, function(){});
+        try { if (window._haptic) window._haptic('bloom'); } catch(e){}
+        try { if (window._playWin) window._playWin(); } catch(e){}
+      }
+    } catch(e) {}
     // Refresh the tab
     if (window._bosSetTab) window._bosSetTab('herbarium');
   }
