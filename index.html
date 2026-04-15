@@ -47676,6 +47676,28 @@ function _loadCompanion(){
         }
       }
     }catch(e){}
+    // Near Horizon — append slot-2 card inline when unlocked and assigned
+    try {
+      if (window.LW_COMPANION && LW_COMPANION.nearHorizonUnlocked && LW_COMPANION.nearHorizonUnlocked()) {
+        var raw2 = localStorage.getItem('pw_active_companion_2');
+        if (raw2) {
+          var comp2 = JSON.parse(raw2);
+          var c2Lvl = window.LW_COMPANION.getLevel(comp2.idx);
+          var c2Days = Math.floor(window.LW_COMPANION.getTotalMs(comp2.idx) / 86400000);
+          var c2Fam = window.LW_COMPANION.getFamily(comp2.idx);
+          var c2Port = window._compPortrait ? window._compPortrait(comp2.idx, comp2.icon||'\ud83d\udc3e', 36) : '';
+          var lvlClr = c2Lvl===3?'var(--gold)':c2Lvl===2?'var(--sage)':'var(--muted)';
+          _buffText += '<div onclick="window._lwOpenCompanionProfile&&_lwOpenCompanionProfile(' + comp2.idx + ')" style="margin-top:8px;padding:6px 8px;background:rgba(13,16,12,0.5);border:1px solid rgba(200,168,75,0.25);border-radius:6px;display:flex;align-items:center;gap:6px;cursor:pointer;min-height:44px;">';
+          _buffText += '<div style="flex-shrink:0;">' + c2Port + '</div>';
+          _buffText += '<div style="flex:1;min-width:0;">';
+          _buffText += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.52rem;color:var(--cream);letter-spacing:0.06em;">\ud83c\udf19 SLOT 2 \u00b7 ' + (comp2.name||'Unknown') + '</div>';
+          _buffText += '<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:' + lvlClr + ';margin-top:1px;">L' + c2Lvl + (c2Lvl===3?' MASTER':'') + ' \u00b7 ' + c2Days + 'd' + (c2Fam?' \u00b7 '+c2Fam:'') + '</div>';
+          _buffText += '</div></div>';
+        } else {
+          _buffText += '<div style="margin-top:8px;padding:6px 8px;background:rgba(13,16,12,0.4);border:1px dashed rgba(200,168,75,0.25);border-radius:6px;font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);text-align:center;">\ud83c\udf19 Slot 2 open \u2014 tap above to equip a second companion.</div>';
+        }
+      }
+    } catch(e) {}
     if(buff)buff.innerHTML=_buffText;
   }catch(e){}
 }
