@@ -27294,7 +27294,16 @@ document.addEventListener('keydown', function(e) {
       if (seenNames[result.name] && DNA_DEDUPE_KEYS.indexOf(cat.key) >= 0) return;
       seenNames[result.name] = true;
       var _lt = _layerTier(cat.key, t);
-      rows.push({ cat: cat.key, name: result.name, rare: result.rare, tier: result.tier || (result.rare ? 'rare' : 'standard'), layerTier: _lt });
+      // Capture the trait index so the Reader can look up the right entry
+      var _idx = null, _layerKey = null;
+      if (cat.key === 'VESSEL') { _idx = t.pot; _layerKey = 'pot'; }
+      else if (cat.key === 'STRUCTURE' || cat.key === 'GROWTH PATH') { _idx = t.stem % 24; _layerKey = 'stem'; }
+      else if (cat.key === 'FOLIAGE') { _idx = t.leafType % 71; _layerKey = 'leafType'; }
+      else if (cat.key === 'FLOWER') { _idx = t.flower % 71; _layerKey = 'flower'; }
+      else if (cat.key === 'AURA') { _idx = t.aura; _layerKey = 'aura'; }
+      else if (cat.key === 'SUBSTRATE') { _idx = t.base; _layerKey = 'base'; }
+      else if (cat.key === 'COMPANION') { _idx = t.companion; _layerKey = 'companion'; }
+      rows.push({ cat: cat.key, name: result.name, rare: result.rare, tier: result.tier || (result.rare ? 'rare' : 'standard'), layerTier: _lt, idx: _idx, layerKey: _layerKey });
     });
 
     if (!rows.length) return '';
@@ -27322,10 +27331,12 @@ document.addEventListener('keydown', function(e) {
       var _lc = row.layerTier;
       var _valColor = _lc ? _lc.color : '';
       var _tierLabel = _lc && _lc.tier !== 'common' ? '<span style="font-size:0.28rem;opacity:0.7;margin-left:4px;text-transform:uppercase;letter-spacing:0.06em;">' + _lc.tier + '</span>' : '';
-      // Mutation rows are tappable — open the mutation Reader page
+      // Tappable rows — each trait layer opens its Reader page
       var _rowAttr = '';
       if (row.cat === 'MUTATION' && row.name && row.name !== 'None') {
         _rowAttr = ' onclick="event.stopPropagation();if(window._lwShowMutationDetail)_lwShowMutationDetail(\''+row.name.replace(/'/g,"\\'")+'\')" style="cursor:pointer;' + (_valColor ? 'color:'+_valColor+';' : '') + '"';
+      } else if (row.layerKey && row.idx != null) {
+        _rowAttr = ' onclick="event.stopPropagation();if(window._lwShowTraitDetail)_lwShowTraitDetail(\''+row.layerKey+'\','+row.idx+')" style="cursor:pointer;' + (_valColor ? 'color:'+_valColor+';' : '') + '"';
       } else if (_valColor) {
         _rowAttr = ' style="color:'+_valColor+';"';
       }
@@ -54986,6 +54997,85 @@ window._bosActivityContent = _bosActivityContent;
   }
   window.LW_Reader = { open: open, close: close };
 })();
+
+// ═══ TRAIT-LAYER READER PAGES (pot / aura / substrate) ═══
+// Every plant has these layers. Tapping any of them on the DNA ledger
+// or on any BoS grid opens a consistent Reader page: trait name, its
+// rarity flag, the count of your plants with this trait, a short flavor
+// line (generic — plant-specific copy would be 100s of entries; we keep
+// it tight). Each handler shares the same shape so adding a new layer
+// later is copy-paste.
+
+function _lwTraitCountIn(layer, idx) {
+  // layer: 'pot' | 'aura' | 'base' | 'leafType' | 'flower' | 'stem' | 'companion'
+  var count = 0;
+  try {
+    var gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+    for (var i = 0; i < gh.length; i++) {
+      try {
+        var t = window.hashToTraits(gh[i].hash);
+        if (!t) continue;
+        if (layer === 'pot' && (t.pot % 60) === idx) count++;
+        else if (layer === 'aura' && (t.aura % 36) === idx) count++;
+        else if (layer === 'base' && (t.base % 71) === idx) count++;
+        else if (layer === 'leafType' && (t.leafType % 71) === idx) count++;
+        else if (layer === 'flower' && (t.flower % 71) === idx) count++;
+        else if (layer === 'stem' && (t.stem % 24) === idx) count++;
+        else if (layer === 'companion' && t.companion === idx) count++;
+      } catch(e){}
+    }
+  } catch(e){}
+  return count;
+}
+
+// Small tone-setters for generic flavor. "A vessel. A substrate. An aura."
+// Layer-level blurbs — the SPECIFIC trait name always appears in the title.
+var _LW_LAYER_FLAVOR = {
+  pot:       { eyebrow:'VESSEL',   theme:'gold',    flavor:'The container. Every plant begins here — a shape to hold its roots, a silhouette to the world.' },
+  aura:      { eyebrow:'AURA',     theme:'cosmic',  flavor:'The ambient field around the plant. Most plants carry none; the ones that do shift the light for everything near them.' },
+  base:      { eyebrow:'SUBSTRATE',theme:'sage',    flavor:'The ground beneath the roots. Soil, ash, crystal, or something stranger. Substrate shapes what a plant can draw from the earth.' },
+  leafType:  { eyebrow:'LEAF',     theme:'nature',  flavor:'The solar collector. How a plant drinks light and converts it to growth.' },
+  flower:    { eyebrow:'BLOOM',    theme:'gold',    flavor:'The reproductive signature. Every flower is an invitation — to a pollinator, a season, or a specific kind of weather.' },
+  stem:      { eyebrow:'STEM',     theme:'nature',  flavor:'The spine. What holds the plant upright, what channels water, what gives it silhouette.' },
+  companion: { eyebrow:'COMPANION',theme:'mythical',flavor:'A creature that has chosen to live alongside this plant. Some are common, some are once-in-a-year finds.' }
+};
+
+window._lwShowTraitDetail = function(layer, idx) {
+  if (!window.TRAIT_BANK) return;
+  var flavor = _LW_LAYER_FLAVOR[layer];
+  if (!flavor) return;
+  // Map layer → TRAIT_BANK key
+  var bankKey = layer === 'base' ? 'substrates' : layer === 'leafType' ? 'leaves' : layer === 'companion' ? 'companions' : layer === 'flower' ? 'flowers' : layer === 'stem' ? 'stems' : 'pots';
+  var bank = window.TRAIT_BANK[bankKey];
+  if (!bank || !bank[idx]) return;
+  var entry = bank[idx];
+  if (entry.name === 'None') return;
+  var myCount = _lwTraitCountIn(layer, idx);
+  var body = [];
+  body.push({type:'quote', text: flavor.flavor});
+  body.push({type:'section-head', text:'This ' + flavor.eyebrow.toLowerCase()});
+  body.push({type:'stat', label:'Rarity flag', value: entry.rare ? 'Rare' : 'Standard'});
+  body.push({type:'divider'});
+  body.push({type:'section-head', text:'Your collection'});
+  body.push({type:'stat', label:'Plants with this ' + flavor.eyebrow.toLowerCase(), value: myCount});
+  window.LW_Reader.open({
+    eyebrow: flavor.eyebrow,
+    title: entry.name,
+    subtitle: null,
+    theme: entry.rare ? 'gold' : flavor.theme,
+    chips: [flavor.eyebrow, entry.rare ? 'RARE' : 'STANDARD'],
+    body: body,
+    actions: [{label:'CLOSE', kind:'ghost'}]
+  });
+};
+
+// Thin convenience wrappers for clarity in calling sites + future customization.
+window._lwShowPotDetail       = function(i){ window._lwShowTraitDetail('pot', i); };
+window._lwShowAuraDetail      = function(i){ window._lwShowTraitDetail('aura', i); };
+window._lwShowSubstrateDetail = function(i){ window._lwShowTraitDetail('base', i); };
+window._lwShowLeafDetail      = function(i){ window._lwShowTraitDetail('leafType', i); };
+window._lwShowFlowerDetail    = function(i){ window._lwShowTraitDetail('flower', i); };
+window._lwShowStemDetail      = function(i){ window._lwShowTraitDetail('stem', i); };
 
 // ═══ ACHIEVEMENT DETAIL PAGE via LW_Reader ═══
 // Tap any achievement in the BoS Secrets grid → Reader with the
