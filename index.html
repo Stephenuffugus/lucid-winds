@@ -29494,9 +29494,15 @@ document.addEventListener('keydown', function(e) {
     var html = '';
     html += renderDNALedger(plant);
     html += '<div style="display:flex;align-items:center;justify-content:center;gap:0.35rem;padding-top:0.35rem;margin-top:0.3rem;border-top:1px solid rgba(74,124,53,0.08);">';
-    html += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.54rem;letter-spacing:0.06em;display:flex;gap:0.3rem;"><span style="color:' + sColor + ';">EA ' + _ea + '</span><span style="color:var(--muted);">' + seasonEmblems[_season] + '</span><span style="color:var(--muted);">Gen ' + (_t ? _t.chimerGen || 1 : 1) + '</span></div>';
+    var _seasonName = (window.SEASON_DATA && window.SEASON_DATA[_season]) ? window.SEASON_DATA[_season].name : '';
+    html += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.54rem;letter-spacing:0.06em;display:flex;gap:0.3rem;">';
+    html += '<span style="color:' + sColor + ';">EA ' + _ea + '</span>';
+    html += '<span style="color:var(--muted);cursor:pointer;" onclick="event.stopPropagation();if(window._lwShowSeasonDetail)_lwShowSeasonDetail(\'' + _seasonName + '\')">' + seasonEmblems[_season] + '</span>';
+    html += '<span style="color:var(--muted);">Gen ' + (_t ? _t.chimerGen || 1 : 1) + '</span>';
     html += '</div>';
-    html += '<div class="cb-rarity" style="color:' + sColor + ';">' + (_tg ? _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon : 'COMMON') + '</div>';
+    html += '</div>';
+    var _rarityName = _tg ? _tg.name : 'Common';
+    html += '<div class="cb-rarity" onclick="event.stopPropagation();if(window._lwShowGradeDetail)_lwShowGradeDetail(\'' + _rarityName + '\')" style="color:' + sColor + ';cursor:pointer;" title="Tap for details">' + (_tg ? _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon : 'COMMON') + '</div>';
     // Hash + mint date sit above the LINEAGE & DETAILS nameplate. The
     // nameplate (.cb-nameplate[data-pdh]) is the lineage entry point —
     // it lives on the back face and uses a capture-phase click listener
