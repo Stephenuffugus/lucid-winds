@@ -31831,6 +31831,7 @@ document.addEventListener('keydown', function(e) {
         if (typeof gtag!=='undefined') gtag('event','pollination_event',{ nonce:result.nonce, parentA:selA.hash.slice(0,8), parentB:selB.hash.slice(0,8) });
         if(window._updateNextStep)_updateNextStep();
         if(window.PW_grantXP) PW_grantXP(5,'cross_pollinate');
+        try { if (window.LW_Events) window.LW_Events.incCounter('pollen_trail', 3, 'Pollen Trail', 'week'); } catch(e){}
         // Class XP — was missing on this greenhouse cross-pollinate path,
         // making Breeder unreachable for players who breed via greenhouse
         // UI vs the wild cross-pollinate. Same grant as the wild path.
@@ -38060,6 +38061,8 @@ function _doCrossPollination(wildPlant,matePlant){
           context:'wild'
         });
       }
+      // Book of Secrets: Pollen Trail (3 cross-pollinations in one week)
+      try { if (window.LW_Events) window.LW_Events.incCounter('pollen_trail', 3, 'Pollen Trail', 'week'); } catch(e){}
       _cpReward(offGen);
     });
   } else {
@@ -39491,6 +39494,8 @@ function _subscribeSharedDrops(){
 
           var mk=_addSharedMarker(pd);
           _sharedMarkers[d.hash]={marker:mk,data:pd};
+          // Book of Secrets: Neighbor — see another player's plant
+          if(!isOwn && window.LW_Events) { try { window.LW_Events.fire('Neighbor'); } catch(e){} }
         });
 
         // Remove markers for plants that disappeared (harvested by another player)
@@ -51123,6 +51128,15 @@ window._castWeather = function(typeId) {
   if (window._toast) _toast(t.icon + ' ' + t.name + ' cast! ' + t.log);
   if (window._haptic) _haptic('bloom');
   if (typeof gtag !== 'undefined') gtag('event', 'weather_cast', { type: t.id, cost: t.cost });
+  // Book of Secrets: Storm Walker — cast all 4 weather types (unique set)
+  try {
+    var _wkey = 'lw_weather_cast_set';
+    var _wset = {};
+    try { _wset = JSON.parse(localStorage.getItem(_wkey) || '{}'); } catch(e){}
+    _wset[t.id] = 1;
+    localStorage.setItem(_wkey, JSON.stringify(_wset));
+    if (Object.keys(_wset).length >= 4 && window.LW_Events) window.LW_Events.fire('Storm Walker');
+  } catch(e){}
   _renderWeatherOpts();
   if (window._updateDewDisplay) window._updateDewDisplay();
 };
@@ -52234,6 +52248,7 @@ window.bsExecuteBreed=function(){
         if(window.switchTab)switchTab('nursery');
         if(window._toast)window._toast('🌱 Seed planted! Water 3 days to bloom.');
         if(window.PW_grantXP)PW_grantXP(5,'cross_pollinate');
+        try { if (window.LW_Events) window.LW_Events.incCounter('pollen_trail', 3, 'Pollen Trail', 'week'); } catch(e){}
         if(window.LW_Log)window.LW_Log.write('plant_bred',{
           parentAHash:_bsA.hash,parentBHash:_bsM.hash,seedHash:offHash,
           parentAName:(window.getPlantName?getPlantName(_bsA.hash):''),
