@@ -48376,7 +48376,8 @@ function _loadFeaturedHaiku(){
   if(!hash){haikuEl.innerHTML='<em style="color:var(--muted);">Bloom your first plant to feature its haiku here</em>';return;}
   if(window.getHaiku){
     var hk=window.getHaiku(hash);
-    haikuEl.innerHTML='<div style="color:var(--cream);font-style:italic;line-height:1.8;font-size:0.48rem;">'+hk.line1+'<br>'+hk.line2+'<br>'+hk.line3+'</div>';
+    // Tappable — opens the plant's shrine Reader page (haiku big, SVG, stats)
+    haikuEl.innerHTML='<div onclick="if(window._lwShowPlantShrine)_lwShowPlantShrine(\''+hash+'\')" style="color:var(--cream);font-style:italic;line-height:1.8;font-size:0.48rem;cursor:pointer;" title="Tap for shrine view">'+hk.line1+'<br>'+hk.line2+'<br>'+hk.line3+'</div>';
   }
 }
 
@@ -55141,6 +55142,91 @@ window._lwShowSubstrateDetail = function(i){ window._lwShowTraitDetail('base', i
 window._lwShowLeafDetail      = function(i){ window._lwShowTraitDetail('leafType', i); };
 window._lwShowFlowerDetail    = function(i){ window._lwShowTraitDetail('flower', i); };
 window._lwShowStemDetail      = function(i){ window._lwShowTraitDetail('stem', i); };
+
+// ═══ PLANT SHRINE PAGE via LW_Reader ═══
+// A quiet "read this plant's story" view. Plant name + haiku + Terra Grade
+// + season + biome + breeding origin, all in Reader's unified voice. This
+// complements (doesn't replace) the existing _openPlantDetails modal — the
+// shrine is for the story, the details modal is for mechanics.
+window._lwShowPlantShrine = function(plantHash) {
+  if (!plantHash) return;
+  // Find the plant across greenhouse / wild / shared
+  var plant = null, source = 'unknown';
+  try {
+    var gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+    for (var i = 0; i < gh.length; i++) if (gh[i].hash === plantHash) { plant = gh[i]; source = 'greenhouse'; break; }
+  } catch(e){}
+  if (!plant) {
+    try {
+      var wild = JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');
+      for (var j = 0; j < wild.length; j++) if (wild[j].hash === plantHash) { plant = wild[j]; source = 'wild'; break; }
+    } catch(e){}
+  }
+  if (!plant) plant = { hash: plantHash };
+  var t = null, tg = null;
+  try { t = window.hashToTraits(plant.hash); } catch(e){}
+  try { tg = t && window.getTerraGrade ? window.getTerraGrade(t) : null; } catch(e){}
+  var name = window.getPlantName ? window.getPlantName(plant.hash) : plant.hash.slice(0,8);
+  var haiku = null; try { if (window.getHaiku) haiku = window.getHaiku(plant.hash); } catch(e){}
+  var seasonName = (t && window.SEASON_DATA && typeof t.season==='number' && window.SEASON_DATA[t.season]) ? window.SEASON_DATA[t.season].name : null;
+  var generation = plant.generation || (t && t.chimerGen) || 1;
+  var body = [];
+  if (haiku) {
+    body.push({type:'quote', raw:true, text:
+      '<div style="font-family:Playfair Display,serif;font-style:italic;color:var(--gold);font-size:0.85rem;line-height:1.9;text-align:center;">' +
+      (haiku.line1 || '') + '<br>' + (haiku.line2 || '') + '<br>' + (haiku.line3 || '') + '</div>'
+    });
+  }
+  body.push({type:'section-head', text:'Reading'});
+  if (tg) body.push({type:'stat', label:'Terra grade', value: (tg.icon || '') + ' ' + tg.name});
+  if (seasonName) body.push({type:'stat', label:'Season', value: seasonName});
+  if (generation > 1) body.push({type:'stat', label:'Chimera gen', value:'Gen ' + generation});
+  if (plant.born) {
+    var days = Math.floor((Date.now() - plant.born) / 86400000);
+    body.push({type:'stat', label:'Age', value: days === 0 ? 'today' : (days === 1 ? 'one day' : days + ' days')});
+  }
+  if (plant.biome) body.push({type:'stat', label:'Biome of birth', value: plant.biome});
+  body.push({type:'divider'});
+  body.push({type:'section-head', text:'Lineage'});
+  if (plant.parentAHash && plant.parentBHash) {
+    body.push({type:'para', text:'A bred plant — the twine of two lineages. Its parents wrote its first syllable.'});
+    body.push({type:'stat', label:'Origin', value:'Cross-pollinated'});
+  } else if (plant.origin === 'cross') {
+    body.push({type:'stat', label:'Origin', value:'Cross-pollinated'});
+  } else if (plant.origin === 'wild') {
+    body.push({type:'para', text:'A feral seed, found at rest in the wild. You were the first to read its shape.'});
+    body.push({type:'stat', label:'Origin', value:'Wild feral'});
+  } else {
+    body.push({type:'stat', label:'Origin', value:'Minted'});
+  }
+  body.push({type:'divider'});
+  body.push({type:'section-head', text:'Signature'});
+  body.push({type:'html', html:'<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);word-break:break-all;line-height:1.6;opacity:0.75;">' + plant.hash + '</div>'});
+  if (plant.date) body.push({type:'stat', label:'Minted', value: plant.date});
+  // Plant SVG as a centered hero via the html section (no image file to load)
+  var svg = '';
+  try { if (window._generatePlantSVG) svg = window._generatePlantSVG(plant.hash, 140, 1.0); } catch(e){}
+  var heroSection = '';
+  if (svg) {
+    heroSection = '<div style="display:flex;justify-content:center;padding:14px 0 0;"><div style="width:150px;height:150px;filter:drop-shadow(0 6px 20px rgba(0,0,0,0.6));">' + svg + '</div></div>';
+  }
+  var theme = tg && tg.name ? (tg.name === 'Cosmic' ? 'cosmic' : tg.name === 'Mythic' ? 'dark' : tg.name === 'Legendary' ? 'gold' : tg.name === 'Epic' ? 'cosmic' : tg.name === 'Rare' ? 'blue' : 'sage') : 'sage';
+  window.LW_Reader.open({
+    eyebrow: 'PLANT SHRINE',
+    title: name,
+    subtitle: tg ? tg.name : null,
+    theme: theme,
+    // Inject the SVG as the hero via the 'html' body position (Reader's
+    // body flows immediately after the head, so we prepend it before
+    // content via the custom Reader section.)
+    chips: [tg ? tg.name : 'Plant', seasonName || '—', 'Gen ' + generation],
+    body: [{type:'html', html: heroSection}].concat(body),
+    actions: [
+      { label:'INSPECT DETAILS', kind:'primary', onclick: function(){ try { if (window._openPlantDetails) window._openPlantDetails(plantHash); } catch(e){} return true; } },
+      { label:'CLOSE', kind:'ghost' }
+    ]
+  });
+};
 
 // ═══ ACHIEVEMENT DETAIL PAGE via LW_Reader ═══
 // Tap any achievement in the BoS Secrets grid → Reader with the
