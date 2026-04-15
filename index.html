@@ -36508,6 +36508,44 @@ function _awardFeral(hash, parentA, parentB, zk, info) {
   var dewReward = 1;
   if (window.earnDew) earnDew(dewReward, 'feral_collect');
 
+  // Foraging success card drops — the hex itself pays out a card scaled
+  // by its grade. Ensures rare wild-cards (moonlight / thunder / aurora)
+  // actually reach the player from the game they came out of, not only
+  // from nursery blooms later. Skips if the hand is already at capacity.
+  try {
+    if (window.LW_FORAGING && info && info.grade) {
+      var _fInv = window.LW_FORAGING.loadInventory();
+      if (window.LW_FORAGING.totalCards(_fInv) < window.LW_FORAGING.cardCapacity()) {
+        var _rareByGrade = {
+          Common:    0,
+          Uncommon:  0.05,
+          Rare:      0.12,
+          Epic:      0.25,
+          Legendary: 0.50,
+          Mythic:    0.80,
+          Cosmic:    1.00
+        };
+        var _chance = _rareByGrade[info.grade] != null ? _rareByGrade[info.grade] : 0;
+        var _drop;
+        if (Math.random() < _chance) {
+          var _rarePool = ['moonlight','thunder','aurora'];
+          _drop = _rarePool[Math.floor(Math.random() * _rarePool.length)];
+        } else {
+          var _basicPool = ['sun','shade','rain','dry','wind','still'];
+          _drop = _basicPool[Math.floor(Math.random() * _basicPool.length)];
+        }
+        window.LW_FORAGING.addCard(_drop, 1);
+        var _elDef = window.LW_FORAGING.EL[_drop];
+        if (_elDef && window._toast) {
+          var _rareTag = _elDef.rare ? ' \u2605 RARE WILD' : '';
+          setTimeout(function(){
+            window._toast('\ud83c\udf3f Forage reward: ' + _elDef.icon + ' ' + _elDef.label + _rareTag);
+          }, 600);
+        }
+      }
+    }
+  } catch(eC) {}
+
   // Event log: a mystery seed joining the pouch is a Root Report entry.
   // The bloom moment reveals it — both beats show up in the journal.
   if (window.LW_Log) {
@@ -56949,7 +56987,7 @@ window._lwClaimHerbarium = function(id){
   // still find a workable hand. Rare wild cards are eligible too.
   function buildHand(size) {
     if (!size || size < 3) size = 5;
-    if (size > 7) size = 7;
+    if (size > 14) size = 14;
     var inv = loadInventory();
     var deck = getActiveDeck();
     var want = deck && deck.cards && deck.cards.length ? deck.cards : ['sun','rain','wind','shade','dry'];
@@ -57140,7 +57178,7 @@ window._lwClaimHerbarium = function(id){
             vBg = 'rgba(30,18,14,0.55)'; vBorderW = '1.5px'; vShadow = 'none';
           }
           var vLbl = r.verdict === 'match' ? 'EXACT' : r.verdict === 'wild-exact' ? 'WILD EXACT' : r.verdict === 'counter' ? 'ELSEWHERE' : r.verdict === 'wild' ? 'WILD \u00bd' : 'MISS';
-          h += '<div style="position:relative;aspect-ratio:3/4;min-height:140px;background:' + vBg + ';border:' + vBorderW + ' solid ' + vColor + ';border-radius:12px;overflow:hidden;box-shadow:' + vShadow + ';">';
+          h += '<div style="position:relative;aspect-ratio:3/4;min-height:108px;background:' + vBg + ';border:' + vBorderW + ' solid ' + vColor + ';border-radius:12px;overflow:hidden;box-shadow:' + vShadow + ';">';
           if (showEl) h += '<img src="assets/foraging/el-' + showCardKey + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;' + (r.verdict === 'neutral' ? 'filter:grayscale(0.7) brightness(0.65);' : '') + '" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2.5rem;&quot;>' + showEl.icon + '</div>\'">';
           h += '<div style="position:absolute;left:0;right:0;bottom:0;padding:18px 4px 5px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.92));text-align:center;text-shadow:0 1px 2px rgba(0,0,0,0.9);">';
           h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;color:' + vColor + ';letter-spacing:0.1em;">' + vLbl + '</div>';
@@ -57148,7 +57186,7 @@ window._lwClaimHerbarium = function(id){
           h += '</div></div>';
         } else if (placedEl) {
           // Filled — show the placed card, click to return to hand.
-          h += '<div onclick="window._lwForageUnplace(' + s + ')" style="position:relative;aspect-ratio:3/4;min-height:140px;background:rgba(18,22,16,0.7);border:3px solid var(--gold);border-radius:12px;overflow:hidden;cursor:pointer;box-shadow:0 0 14px rgba(200,168,75,0.4);">';
+          h += '<div onclick="window._lwForageUnplace(' + s + ')" style="position:relative;aspect-ratio:3/4;min-height:108px;background:rgba(18,22,16,0.7);border:3px solid var(--gold);border-radius:12px;overflow:hidden;cursor:pointer;box-shadow:0 0 14px rgba(200,168,75,0.4);">';
           h += '<img src="assets/foraging/el-' + placedCard + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2.5rem;&quot;>' + placedEl.icon + '</div>\'">';
           h += '<div style="position:absolute;left:0;right:0;bottom:0;padding:18px 4px 5px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.9));text-align:center;">';
           h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.68rem;color:var(--gold);letter-spacing:0.1em;text-shadow:0 1px 2px rgba(0,0,0,0.9);">' + placedEl.label + '</div>';
@@ -57157,7 +57195,7 @@ window._lwClaimHerbarium = function(id){
           // Empty slot — show learned hint if any.
           var hint = learned[s] ? EL[learned[s].hex] : null;
           var hintOp = hint ? 0.45 : 0;
-          h += '<div style="position:relative;aspect-ratio:3/4;min-height:140px;background:rgba(13,16,12,0.55);border:1.5px dashed rgba(122,179,86,0.35);border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;">';
+          h += '<div style="position:relative;aspect-ratio:3/4;min-height:108px;background:rgba(13,16,12,0.55);border:1.5px dashed rgba(122,179,86,0.35);border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;">';
           if (hint) {
             h += '<img src="assets/foraging/el-' + learned[s].hex + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:' + hintOp + ';filter:saturate(0.4);" onerror="this.style.display=\'none\';">';
             h += '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;background:rgba(13,16,12,0.35);">';
