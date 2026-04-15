@@ -35672,7 +35672,7 @@ function _addSteps(meters){
   s.today=(s.today||0)+meters;
   _saveSteps(s);
   var el=document.getElementById('w-steps');
-  if(el)el.textContent=s.today;
+  if(el)el.textContent=Math.round(s.today||0);
   _checkStepMilestone();
   // Walker title check — only fire on the milestone crossing
   if(prevLifetime<10000&&s.lifetime>=10000&&window.lwCheckEarnedTitles)window.lwCheckEarnedTitles();
@@ -35680,7 +35680,7 @@ function _addSteps(meters){
 function _hydrateStepsUI(){
   var s=_loadSteps();
   var el=document.getElementById('w-steps');
-  if(el)el.textContent=s.today||0;
+  if(el)el.textContent=Math.round(s.today||0);
   // Recompute the milestone watermark from lifetime so we don't re-toast
   var milestones=[500,1000,2500,5000,10000];
   for(var i=milestones.length-1;i>=0;i--){
@@ -60161,16 +60161,18 @@ window._LW_updateWildClassStat=function(){
   var iEl=document.getElementById('w-class-icon');
   var lEl=document.getElementById('w-class-lbl');
   if(!iEl||!lEl)return;
+  // Also enlarge the containing stat cell so the emblem can breathe.
+  var cell=document.getElementById('w-class-stat');
   var cls=_lwGetClass();
-  if(!cls){iEl.textContent='—';iEl.style.color='var(--muted)';iEl.style.backgroundImage='';lEl.textContent='no class';return;}
-  var def=LW_CLASSES[cls];if(!def){iEl.textContent='?';iEl.style.backgroundImage='';return;}
+  if(!cls){iEl.textContent='—';iEl.style.cssText='font-size:0.85rem;';lEl.textContent='no class';if(cell)cell.style.cssText='cursor:pointer;grid-column:span 1;';return;}
+  var def=LW_CLASSES[cls];if(!def){iEl.textContent='?';return;}
   var match=_lwBiomeMatch();
-  // Render the painted class emblem as a small circular badge; fall back
-  // to the emoji icon if the img can't be loaded.
+  // Full-tile emblem — the class art is the main visual in this cell.
   iEl.textContent='';
-  iEl.style.cssText='font-size:0.85rem;width:30px;height:30px;margin:0 auto;border-radius:50%;background-image:url("assets/character-sheet/classes/'+cls+'.png");background-size:cover;background-position:center;border:1.5px solid '+(match?'var(--gold)':'rgba(122,179,86,0.35)')+';box-shadow:'+(match?'0 0 8px rgba(200,168,75,0.45)':'none')+';';
+  iEl.style.cssText='width:64px;height:64px;margin:0 auto 2px;border-radius:50%;background-image:url("assets/character-sheet/classes/'+cls+'.png");background-size:cover;background-position:center;border:2px solid '+(match?'var(--gold)':'rgba(122,179,86,0.45)')+';box-shadow:'+(match?'0 0 14px rgba(200,168,75,0.55), inset 0 0 8px rgba(200,168,75,0.25)':'0 2px 6px rgba(0,0,0,0.45)')+';';
+  if(cell)cell.style.cssText='cursor:pointer;grid-column:span 1;min-height:96px;';
   lEl.textContent=def.name+(match?' ✓':'');
-  lEl.style.color=match?'var(--gold)':'var(--muted)';
+  lEl.style.cssText='color:'+(match?'var(--gold)':'var(--cream)')+';font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.08em;';
 };
 // Re-run on tab switch
 (function(){var p=window.switchTab;if(typeof p==='function'){window.switchTab=function(){try{window._LW_updateWildClassStat&&window._LW_updateWildClassStat();}catch(e){}return p.apply(this,arguments);};}})();
