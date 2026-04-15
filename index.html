@@ -2119,6 +2119,7 @@
     .grove-panel.active{display:block;}
     @keyframes _tabIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
     @keyframes panelFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes spinSlow{from{transform:rotate(0deg) scale(0.9);opacity:0.4;}50%{transform:rotate(540deg) scale(1.2);opacity:1;}to{transform:rotate(1080deg) scale(1);opacity:1;}}
     /* Botanical loading spinner — three rotating leaves */
     .lw-spinner{display:flex;align-items:center;justify-content:center;gap:0.3rem;padding:1rem;}
     .lw-spinner-leaf{width:8px;height:8px;border-radius:50% 0;background:var(--sage);opacity:0.3;animation:spinPulse 1.2s ease infinite;}
@@ -57799,7 +57800,7 @@ window._lwClaimHerbarium = function(id){
       art:'assets/items/wanderers-map.png', icon:'\ud83d\uddfa\ufe0f',
       desc:'The wind decides. Carries you to a random real biome hex to forage once.',
       lore:'Release the map to the wind. It carries you somewhere you\u2019d never have chosen \u2014 and that is the gift.',
-      usage:'open and release', wired:false },
+      usage:'open and release', wired:true },
     delegateToken: { key:'delegateToken', name:'Delegate Token', category:'remote', rarity:'Epic',
       art:'assets/items/delegate-token.png', icon:'\ud83e\udd1d',
       desc:'Send to a friend \u2014 they forage one of your hexes. You split the reward.',
@@ -58058,6 +58059,75 @@ window._lwClaimHerbarium = function(id){
     _closePanel();
     return false;
   }
+  // Wanderer's Map — "The wind decides." Pick a random biome from the
+  // catalog, run a forage panel over a synthetic zone key. Grade is
+  // Rare+ since the item itself is Epic rarity; no point earning a
+  // Common feral from a map this rare.
+  function useMap(){
+    if (count('wanderersMap') <= 0) { if(window._toast)window._toast('No Wanderer\u2019s Map in your pouch.'); return false; }
+    _closePanel();
+    _runWindDecides();
+    return true;
+  }
+  function _runWindDecides(){
+    var B = window.BIOMES || {};
+    var keys = [];
+    for (var k in B) keys.push(k);
+    if (!keys.length) { if(window._toast)window._toast('The wind is still. Try again once the map knows the land.'); return; }
+    var pickedBiome = keys[Math.floor(Math.random()*keys.length)];
+    var biomeDef = B[pickedBiome];
+    // Cinematic: fullscreen wind animation → biome name reveal → start forage
+    var ov = document.createElement('div');
+    ov.id = 'lw-wind-decides';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:100020;background:radial-gradient(ellipse at 50% 40%,rgba(20,30,10,0.97) 0%,rgba(5,8,4,0.98) 70%);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;padding:1rem;';
+    ov.innerHTML =
+      '<div style="max-width:360px;text-align:center;animation:panelFadeIn 0.4s ease;">' +
+        '<div style="font-family:Playfair Display,serif;font-size:1.15rem;color:var(--cream);font-style:italic;margin-bottom:1.2rem;line-height:1.6;">The wind decides\u2026</div>' +
+        '<div style="font-size:4rem;margin-bottom:1rem;animation:spinSlow 2.2s linear;">\ud83c\udf43</div>' +
+        '<div id="lw-wind-biome" style="font-family:Playfair Display,serif;font-size:1.5rem;color:var(--gold);font-style:italic;margin-bottom:0.4rem;opacity:0;transition:opacity 0.8s ease;"></div>' +
+        '<div id="lw-wind-note"  style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);line-height:1.7;margin-bottom:1.4rem;opacity:0;transition:opacity 0.8s ease;"></div>' +
+        '<button id="lw-wind-go" style="display:none;padding:14px 30px;border-radius:12px;border:2px solid var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.3),rgba(122,179,86,0.15));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.14em;cursor:pointer;min-height:52px;">\u2728 BEGIN THE FORAGE</button>' +
+      '</div>';
+    document.body.appendChild(ov);
+    // Reveal after animation beat
+    setTimeout(function(){
+      var bn = document.getElementById('lw-wind-biome');
+      var nt = document.getElementById('lw-wind-note');
+      var go = document.getElementById('lw-wind-go');
+      if (bn) { bn.textContent = (biomeDef.icon||'\u25cf')+' '+(biomeDef.name||pickedBiome); bn.style.opacity = '1'; }
+      if (nt) { nt.textContent = 'You are carried to a '+(biomeDef.name||pickedBiome).toLowerCase()+' you would never have chosen.'; nt.style.opacity = '1'; }
+      if (go) { go.style.display = 'inline-block'; go.onclick = function(){ ov.remove(); _wanderStartForage(pickedBiome, biomeDef); }; }
+    }, 2200);
+  }
+  function _wanderStartForage(biomeKey, biomeDef){
+    if (!spend('wanderersMap')) return;
+    // Synthetic zone key so hexComposition seeds uniquely. Use timestamp
+    // so each map yields a fresh hex.
+    var zk = 'wander-' + biomeKey + '-' + Date.now();
+    // Biome override: hexComposition reads window._lastDetectedBiome when
+    // biomeId arg is null. We temporarily force it for this forage.
+    var prevBiome = window._lastDetectedBiome;
+    window._lastDetectedBiome = biomeKey;
+    // Bias grade toward Rare+ since this is an Epic-rarity item use.
+    var grades = ['Rare','Rare','Epic','Epic','Legendary','Mythic'];
+    var grade = grades[Math.floor(Math.random()*grades.length)];
+    if (!window.LW_FORAGING || !window.LW_FORAGING.openPanel) {
+      window._lastDetectedBiome = prevBiome;
+      if (window._toast) window._toast('Foraging unavailable right now — the map returned to your pouch.');
+      add('wanderersMap', 1); // refund
+      return;
+    }
+    window.LW_FORAGING.openPanel(zk, grade, function(success){
+      window._lastDetectedBiome = prevBiome;
+      if (success) {
+        // Log the journey so biomes-visited tracking picks it up.
+        try { if (window._logWildEvent) window._logWildEvent({type:'wander_forage', biome:biomeKey, grade:grade, success:true}); } catch(e){}
+        if (window._toast) setTimeout(function(){ window._toast('\ud83c\udf43 The wind returns. Your pouch is heavier than before.'); }, 900);
+      } else {
+        if (window._toast) window._toast('The wind scatters. Another map, another day.');
+      }
+    });
+  }
 
   // === Main items panel ===
   function openPanel(){
@@ -58104,7 +58174,7 @@ window._lwClaimHerbarium = function(id){
           foragersLens:'useLens', compassShard:'useShard', tetherMoss:'useMoss', divinersGlass:'useGlass',
           mulchWard:'useWard', brambleThicket:'useBramble', shellgourd:'useShellgourd', moonwake:'useMoonwake',
           foragersTorch:'useTorch', dustStorm:'useDustStorm', uprootCharm:'useUproot',
-          scryingStone:'useScry'
+          scryingStone:'useScry', wanderersMap:'useMap'
         };
         var handler = handlerMap[it.key] || null;
         if (handler && !disabled) {
@@ -58136,7 +58206,7 @@ window._lwClaimHerbarium = function(id){
     count: count, add: add, spend: spend, total: total,
     useLens: useLens, useShard: useShard, useMoss: useMoss, useGlass: useGlass,
     useWard: useWard, useBramble: useBramble, useShellgourd: useShellgourd, useMoonwake: useMoonwake,
-    useTorch: useTorch, useDustStorm: useDustStorm, useUproot: useUproot, useScry: useScry,
+    useTorch: useTorch, useDustStorm: useDustStorm, useUproot: useUproot, useScry: useScry, useMap: useMap,
     _confirmWard: _confirmWard, _commitPick: null,
     hasWard: hasWard, consumeWard: consumeWard,
     hasBramble: hasBramble, hasShellgourd: hasShellgourd, hasMoonwake: hasMoonwake,
