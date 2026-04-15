@@ -57470,15 +57470,25 @@ function _bosSecretsContent() {
       'Pixel Art':      '\u25a3',        'Silhouette': '\u25cf',       'Albino':    '\u26aa',
       'Fossil':         '\ud83e\uddb4'
     };
+    // Slug-ify mutation names for filename lookup: "Glass Stem" → "glass-stem"
+    var _mutSlug = function(n){ return n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); };
     for (var mi = 0; mi < mutNames.length; mi++) {
       var mn = mutNames[mi];
       var mnSeen = !!mutSeen[mn];
       var mnEsc = mn.replace(/'/g,"\\'");
+      var mnSlug = _mutSlug(mn);
       var cardBg = mnSeen ? 'rgba(192,122,200,0.08)' : 'rgba(26,36,22,0.3)';
       var cardBorder = mnSeen ? 'rgba(192,122,200,0.2)' : 'rgba(74,124,53,0.06)';
       var cardOpacity = mnSeen ? '' : 'opacity:0.4;';
       h += '<div onclick="if(window._lwShowMutationDetail)_lwShowMutationDetail(\''+mnEsc+'\')" style="padding:4px;background:'+cardBg+';border:1px solid '+cardBorder+';border-radius:6px;text-align:center;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;'+cardOpacity+'" title="'+mn+(mnSeen?' \u2014 discovered':' \u2014 locked')+'">';
-      h += '<div style="font-size:0.75rem;line-height:1;">'+(mnSeen?(mutGlyph[mn]||'\u2746'):'?')+'</div>';
+      // Visual slot: try Jessie's PNG first, fall back to the emoji glyph
+      // if no asset file exists yet. onerror swaps cleanly with no flicker.
+      if (mnSeen) {
+        var _glyph = mutGlyph[mn] || '\u2746';
+        h += '<img src="assets/mutations/mutation-'+mnSlug+'.png" alt="" style="width:28px;height:28px;object-fit:contain;" onerror="this.outerHTML=\'<div style=&quot;font-size:0.8rem;line-height:1;&quot;>'+_glyph+'</div>\'">';
+      } else {
+        h += '<div style="font-size:0.75rem;line-height:1;">?</div>';
+      }
       h += '<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:'+(mnSeen?'#c07ac8':'var(--muted)')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;margin-top:2px;">'+(mnSeen?mn:'???')+'</div>';
       h += '</div>';
     }

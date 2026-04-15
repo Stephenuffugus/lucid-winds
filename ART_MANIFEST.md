@@ -3,113 +3,126 @@
 **Maintainer:** Claude (auto-updated during sessions)
 **For:** Jessie + Stephen's Midjourney/ChatGPT/Gemini pipelines
 **Aesthetic anchor:** midnight-greenhouse — deep blacks (#0d100c), sage greens (#7ab356), warm gold (#c8a84b), cream (#e8dcc8), painterly botanical, no text on art, transparent or near-black backgrounds unless otherwise noted.
+**Image handling rule:** drop at source resolution. Never resize, never compress. Code scales down.
 
 Each entry: **slot** · **subject** · **dimensions** · **destination path** · **priority (P0=blocker, P1=next, P2=polish)**
 
 ---
 
-## P0 — Blocking or near-blocking
+## ✅ Shipped / wired (do NOT regenerate)
 
-### Biome headers (Wild tab) — 10 banners
-- 4:1 aspect, ~1600×400 preferred, PNG with alpha OR full-bleed painterly
-- Destination: `assets/wild-biomes/biome-{slug}.png`
-- **No text in the art** — the code composites biome name in Playfair
-
-| Slug | Biome | Notes |
-|---|---|---|
-| african | African savanna | acacia silhouettes, tall grass, warm ochre in the gold accent |
-| asian | Asian bamboo forest | bamboo, ferns, mist, cooler green-teal |
-| desert | Desert (succulents / agave) | cracked earth, prickly pear, agave spears |
-| rainforest | Rainforest canopy | dense layered foliage, bromeliads, deep emerald |
-| tundra | Tundra (lichen + moss) | rock, frost-touched grass, pale sage |
-| temperate | Temperate deciduous forest | oak + maple, dappled light, autumn hints acceptable |
-| wetland | Freshwater wetland | reeds, lily pads, mirror-still water |
-| mountain | Alpine mountain scree | hardy wildflowers, scree slope, distant peak |
-| suburban | Suburban garden | fence, planter boxes, gardening tools |
-| coastal | Coastal dunes | beach grass, driftwood, washed silver-green |
-
-### Companion art — Cicada polish + full roster
-Cicada (idx 33) currently `cicada-v1-a.png` placeholder. **Stephen's direction**: use SVG for in-game, but add REAL photos in the Book of Secrets when someone taps a companion's profile.
-- **Cicada** — one hero macro-photo-style illustration · `assets/companions/cicada.png` · 1:1 square, 512×512 min
-- **60+ standard companions** (idx 20–31, 39–81) — currently emoji fallback. Bio-book portraits only, low urgency per Stephen's note. Hold until P2.
+- **10 biome paintings** — `assets/wild-biomes/biome-{african,asian,coastal,desert,mountain,rainforest,suburban,temperate,tundra,wetland}.png` — wired into Wild hex inspector banner + BIOMES catalog
+- **5 Keeper hero-milestone cards** — `assets/hero-cards/hero-{path-opened,second-bloom,gilding,near-horizon,long-watch}.png`
+- **Book of Secrets spellbook cover** — `assets/bos/spellbook-cover.png`
+- **5 class emblems** — `assets/character-sheet/classes/{forager,breeder,cartographer,tender,keeper}.png` — cut out at source res, render at 64/160px
+- 15 FLUX backgrounds (tab bgs, onboarding beats, splash)
+- 21-card deck + card backs (per memory)
 
 ---
 
-## P1 — Next priority (UI skinning / milestone polish)
+## P0 — Active priorities
 
-### Class emblem icons (replaces emoji 🍂🧬🧭💧🌿)
-- 1:1, transparent PNG, 256×256, ornate heraldic circular emblem
-- Destination: `assets/classes/class-{slug}.png`
-- Current: each class uses its emoji in the keeper bar, class picker, avatar badge
+### ⚜️ 13 Mutation Symbols (you're making now)
+- Format: **96×96 PNG**, transparent background, simple pictogram style
+- Destination: `assets/mutations/mutation-{slug}.png`
+- Code automatically uses these when they land — falls back to emoji glyph until then
+- Slug = lowercase-hyphenated: "Glass Stem" → `glass-stem`, "Pixel Art" → `pixel-art`
 
-| Slug | Class | Symbol direction |
+| Slug | Mutation | Core visual idea |
 |---|---|---|
-| forager | Forager | oak leaf + acorn inside a woven-basket ring |
-| breeder | Breeder | double helix of two flowering vines crossing |
-| cartographer | Cartographer | compass rose made of fern fronds |
-| tender | Tender | watering can pouring a single dewdrop |
-| keeper | Keeper | small sun over a greenhouse dome |
+| glitch | Glitch | a leaf fractured into 3 offset copies, RGB shift |
+| glass-stem | Glass Stem | a translucent glass cylinder with a plant inside |
+| wireframe | Wireframe | a leaf outline made of bright edges only, no fill |
+| holographic | Holographic | a prism refracting light into a spectrum |
+| neon | Neon | a bloom silhouette in hot pink + electric cyan glow |
+| ink-wash | Ink Wash | a single brush-stroke leaf with bleed marks |
+| golden | Golden | a leaf dipped in liquid gold, sheen visible |
+| porcelain | Porcelain | a glazed white ceramic leaf with hairline crackle |
+| bioluminescent | Bioluminescent | a leaf glowing against pure black |
+| pixel-art | Pixel Art | a chunky low-res 8-bit leaf sprite |
+| silhouette | Silhouette | a pure black leaf with a starfield interior |
+| albino | Albino | a pale ghostly leaf with faint white vein tracery |
+| fossil | Fossil | a leaf imprint in cracked stone |
 
-### Onboarding scroll-sized hero variants (if we add Lv 5/15/35 mini-beats)
-Deferred. Only queue if we decide to expand milestones.
+---
 
-### Event discovery toast icon
-- 64×64 or 128×128, transparent PNG · `assets/bos/event-discovery-icon.png`
-- Unfurled scroll with wax seal (botanical sigil, warm gold ink, sage accents)
-- Replaces 📜 emoji in the `LW_Events.fire()` toast
+## P1 — Next priority when you're free
 
-### Active Foraging deck card-back art
-- Foraging inventory cards currently render as colored pills. Want a real "card back" per element.
-- 5:7 portrait, 256×360, transparent PNG · `assets/foraging/card-back-{element}.png`
-- Elements: sun, shade, rain, dry, wind, still
-- Subject: stylized elemental glyph with botanical frame, matches Celtic-knot border in greenhouse
+### Event discovery scroll icon
+- **64×64 or 128×128 flat icon**, transparent PNG
+- Destination: `assets/bos/event-scroll-icon.png`
+- Unfurled scroll with a wax seal stamped with a botanical sigil, warm gold ink
+- Replaces 📜 emoji everywhere event discovery shows up (currently unused — system went silent)
+- Could be repurposed: a small decorative flourish in the BoS sparkline header
+
+### 6 Foraging Element Card Faces
+- **512×512 PNG transparent**, symbol-only (card frame is already built in CSS)
+- Destination: `assets/foraging/el-{slug}.png`
+- Think medieval tarot minor arcana — one bold center glyph per card
+
+| Slug | Element | Core motif |
+|---|---|---|
+| sun | Sun | radiant sun with botanical rays, or a single sunflower facing forward |
+| shade | Shade | crescent moon behind a fern frond, or a dappled-leaf silhouette |
+| rain | Rain | three falling droplets making concentric ripples |
+| dry | Dry | a seed-pod cracked open in heat, or agave spear in silhouette |
+| wind | Wind | dandelion seeds mid-release, or a whorl of leaves |
+| still | Still | a single lotus on flat water, reflection visible |
+
+### 3 Rare Wild-Cards
+- Same format + destination pattern, `.rare` variant in CSS adds gold glow
+- moonlight: full moon with pale blue botanical etching on its face
+- thunder: lightning bolt splitting a seed pod
+- dust: geometric spiral of fine particles
+
+### 4 Weather Cast Button Art
+- **128×128 plate-style illustration**, transparent background
+- Destination: `assets/weather/weather-{slug}.png`
+
+| Slug | Weather | Visual direction |
+|---|---|---|
+| sun | Sun / Shine | full sun over a bowl of sprouts, warm amber |
+| rain | Rain | three clouds releasing diagonal rain over seedlings |
+| wind | Wind | curved wind-line streams pushing a seed-puff |
+| calm | Calm | still pond reflection with a single lily, absolute quiet |
 
 ---
 
 ## P2 — Polish (do last)
 
-### Pot Shop vessel art refresh
-- Current pots work but feel placeholder. Check `PW_UI.pots` data for the 8 pot types and render each as a 256×256 hero image with gold/sage palette.
-- Destination: `assets/pots/pot-{slug}.png`
-- **⚠️ FEEDBACK MEMORY: dice 5/6 are locked — check similar locks before any pot replacement**
+### Reader Component Corner Flourishes
+- **2 PNGs**, 128×128 transparent background, gold ink
+- Destination: `assets/ui/reader-flourish-{tl,tr}.png`
+- Simple Celtic leaf flourish — one facing top-left, mirror for top-right
+- Replaces the triquetra placeholder in the shared modal frame
 
-### Herbarium bundle cover cards
-- 12 weekly bundles in Book of Secrets → Herbarium tab
-- 3:2 landscape, ~400×260, painterly pressed-flower composition per bundle theme
-- Destination: `assets/herbarium/bundle-{idx}.png`
+### Pot Shop vessel art refresh (60 pots)
+- 256×256 per pot, `assets/pots/pot-{slug}.png`
+- Check `PW_UI.pots` data for the slug list
+- ⚠️ **Dice 5/6 lock reminder**: check similar asset locks before any replacement
 
-### Celebration FX (for mint/breed/milestone)
-- Stephen has Midjourney prompts saved (see memory `project_celebration_art_prompts.md`)
+### Herbarium bundle cover cards (12)
+- 3:2 landscape ~400×260, `assets/herbarium/bundle-{idx}.png`
+- Painterly pressed-flower composition per bundle theme
+
+### Celebration FX sprites
+- Stephen has Midjourney prompts saved (memory: `project_celebration_art_prompts.md`)
 - Sparkle · petal · leaf · ring — 4 PNG sprite sheets 128×128 each
 - Destination: `assets/celebrations/{element}-sprite.png`
 
-### Repello board + pieces (not started yet, blocked on Stephen's design drop)
-- 13×13 grid background, 7×7 start zone overlay, scoring tokens, pest pieces
-- Deferred until Stephen delivers board close-ups and color→number mapping
+---
 
-### Standard companion portraits (Book of Secrets real-photo tab)
-- Per Stephen's direction: tapping a companion shows a real-photo illustration
-- 60+ companions, 1:1 square, 400×400 min, painterly macro style
-- Destination: `assets/companions/real/{idx}-{slug}.png`
-- Low urgency — SVG fallback ships fine
+## Deferred (dedicated session later)
+
+- **Full SVG art audit** — companions, leaves, flowers, stems. Stephen wants to perfect all procedural art in a focused pass.
+- **62 companion portraits (real-photo style)** — Book of Secrets tap-for-real-photo view. Defer until SVG audit is done.
+- **Repello board + pieces** — waiting on Stephen's board close-ups + color→number mapping
 
 ---
 
-## Already wired (for reference — do not re-generate)
-
-- 15 FLUX backgrounds (tab backgrounds, onboarding beats, splash)
-- 5 Keeper hero-milestone cards: `assets/hero-cards/hero-{path-opened,second-bloom,gilding,near-horizon,long-watch}.png`
-- Book of Secrets spellbook cover: `assets/bos/spellbook-cover.png`
-- All 15 CLAUDE.md-tracked core assets
-- 21-card full deck (done per memory)
-- Card backs (done)
-- Cicada v1-a placeholder (needs replacement — see P0)
-
----
-
-## Naming convention notes for Jessie
+## Naming convention notes
 
 - Lowercase, hyphenated, descriptive
-- Slug matches the code key when possible (e.g. `forager` not `Forager_v3_final`)
+- Slug matches the code key when possible
 - Drop at source resolution — code resizes, Claude never compresses originals (see `feedback_never_overshrink.md`)
 - Use `scripts/cutout-bg.py` for Midjourney bg removal (see `reference_cutout_script.md`)
