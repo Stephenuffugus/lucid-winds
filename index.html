@@ -11349,16 +11349,21 @@ document.addEventListener('keydown', function(e) {
     // — only run if the caller didn't explicitly override and we have a hash
     if (hash && (!traitOverrides || (traitOverrides.companion === undefined && traitOverrides.hasFlower === undefined))) {
       try {
-        var _ovGh = JSON.parse(localStorage.getItem('sws_greenhouse') || '[]');
-        for (var _ovI = 0; _ovI < _ovGh.length; _ovI++) {
-          if (_ovGh[_ovI].hash === hash) {
-            var _ovP = _ovGh[_ovI];
-            // Phoenix retired — no companion suppression.
-            // Velvet Bowl: forces hasFlower on the bloomed plant
-            if (_ovP.forceFlower) t0.hasFlower = true;
-            break;
+        // Cache a forceFlower lookup map. Fingerprint the raw greenhouse
+        // string so we only reparse when it actually changes (runs on
+        // every carousel swipe / grid render otherwise).
+        var _ghRaw = localStorage.getItem('sws_greenhouse') || '[]';
+        var _ghFp = _ghRaw.length + ':' + _ghRaw.slice(0, 32);
+        if (!window._ffMap || window._ffMapFp !== _ghFp) {
+          var _ovGhCache = JSON.parse(_ghRaw);
+          var _ff = {};
+          for (var _ovI2 = 0; _ovI2 < _ovGhCache.length; _ovI2++) {
+            if (_ovGhCache[_ovI2].forceFlower) _ff[_ovGhCache[_ovI2].hash] = true;
           }
+          window._ffMap = _ff;
+          window._ffMapFp = _ghFp;
         }
+        if (window._ffMap[hash]) t0.hasFlower = true;
       } catch(e) {}
     }
     var _cacheKey = (hash || 'x') + '|' + s + '|' + prog.toFixed(2) + (traitOverrides ? '|ov' : '') + (t0.companion === -1 ? '|sup' : '') + (t0.hasFlower ? '|f' : '|nf');
@@ -31107,6 +31112,9 @@ document.addEventListener('keydown', function(e) {
     if (window._perfLite) return;
     // Lighter base pollen (fewer, smaller — seasonal particles carry the theme)
     _pollenInterval = setInterval(function() {
+      // Don't spawn particles when the tab is backgrounded — drains battery
+      // on old iPads for no visible benefit.
+      if (document.hidden) return;
       var p = document.createElement('div');
       p.className = 'pollen-particle';
       var x = 10 + Math.random() * 80;
