@@ -32925,6 +32925,18 @@ document.addEventListener('keydown', function(e) {
     if (!result.ok) { closeBloomModal(); _setNurMsg('Could not bloom: '+result.reason); return; }
     FG_Data.logAncestry(result.ancestry.parentAHash, result.ancestry.parentBHash, result.ancestry.nonce, result.seedHash);
     mintPlant(result.seedHash, { isCross: true });
+    // Keeper tree node Slow Awakening — patient tending pays out on bloom.
+    // +1 Dew per tree pt, max +5. Surfaces as a quiet toast so the player
+    // notices the reward without it feeling like a notification.
+    try{
+      if(window._LW_treePoints){
+        var _ngPts = (window._LW_treePoints() || {}).nurseryGrow || 0;
+        if(_ngPts > 0 && window.earnDew){
+          window.earnDew(_ngPts, 'nursery_grow');
+          if(typeof _toast === 'function') setTimeout(function(){ _toast('\ud83c\udf31 Slow Awakening \u2014 +' + _ngPts + ' Dew for patient tending'); }, 1800);
+        }
+      }
+    }catch(e){}
     closeBloomModal();
     renderNursery();
     if (typeof gtag!=='undefined') gtag('event','nursery_bloom',{ seedHash:result.seedHash.slice(0,8) });
@@ -38130,6 +38142,12 @@ function _waterOwnPlant(p,mk){
   if(window._LW_toolXP)window._LW_toolXP('can',3);
   if(window.LW_Log)window.LW_Log.write('wild_watered',{hash:p.hash});
   try { if (window.LW_Events) window.LW_Events.incCounter('rainfall', 3, 'Rainfall', 'day'); } catch(e){}
+  // Tender tree node Ritual Watering — daily streak grants bonus Dew per
+  // water, capped at 5 (default) + 1/pt extension. Streak counts ANY water
+  // action (single or mass) and persists across reload via localStorage.
+  try{
+    if(window._lwWaterStreakGrant)window._lwWaterStreakGrant();
+  }catch(e){}
   // Hour-based events: Night Bloom (midnight-3am) + Morning Dew (4-7am)
   try {
     if (window.LW_Events) {
@@ -40475,6 +40493,42 @@ window._lwMassWater = function(){
     _lwMassWaterDoIt(eligible, cost);
   }
 };
+// Daily-water streak. Tracks consecutive days the player watered (any path).
+// Grants +1 Dew per streak day, capped at 5 + (waterStreak tree pts) days.
+// Toast surfaces on day-2+ so the player learns the rhythm without a tutorial.
+window._lwWaterStreakGrant = function(){
+  try{
+    var today = new Date().toISOString().slice(0,10);
+    var raw = localStorage.getItem('lw_water_streak') || '{}';
+    var s = {};
+    try{ s = JSON.parse(raw) || {}; }catch(e){ s = {}; }
+    if (s.lastDate === today) {
+      // Already counted today — still grant the streak bonus per water action
+    } else {
+      var y = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+      if (s.lastDate === y) s.count = (s.count || 0) + 1;
+      else s.count = 1;
+      s.lastDate = today;
+      localStorage.setItem('lw_water_streak', JSON.stringify(s));
+    }
+    var streak = s.count || 1;
+    var cap = 5;
+    try{ if (window._LW_treePoints) { var pts = (window._LW_treePoints() || {}).waterStreak || 0; cap += pts; } }catch(e){}
+    var bonus = Math.min(streak, cap);
+    if (bonus > 1) {
+      if (window.earnDew) window.earnDew(bonus, 'water_streak');
+      // Soft reveal — only on day 2+ so day 1 doesn't toast every water
+      if (typeof _toast === 'function' && !s._toastedToday) {
+        s._toastedToday = today;
+        localStorage.setItem('lw_water_streak', JSON.stringify(s));
+        setTimeout(function(){ _toast('\ud83d\udcab Tending streak: day ' + streak + ' \u00b7 +' + bonus + ' Dew'); }, 600);
+      } else if (s._toastedToday !== today) {
+        s._toastedToday = today;
+        localStorage.setItem('lw_water_streak', JSON.stringify(s));
+      }
+    }
+  }catch(e){}
+};
 function _lwMassWaterDoIt(eligibleIdx, cost){
   if (cost > 0 && !window.spendDew(cost)) { _toast('Could not spend Dew.'); return; }
   var wild = _getWild();
@@ -40495,6 +40549,8 @@ function _lwMassWaterDoIt(eligibleIdx, cost){
   _saveWild(wild);
   _lwMassWaterRecord();
   if (window.PW_grantXP) PW_grantXP(watered, 'mass_water');
+  // Tender Ritual Watering streak — single grant per mass-water action, not per plant
+  try{if(window._lwWaterStreakGrant)window._lwWaterStreakGrant();}catch(e){}
   // Award Watering Can tool XP — its signature L2/L3 feature was granting
   // zero tool XP. Capped per call so a single mass-water with 6+ plants
   // can't grant L2→L3 in one tap.
