@@ -5770,7 +5770,7 @@ window._addSwitchTabHook = function(fn){
     <div class="cs-header"><div class="cs-avatar" id="cs-avatar">🌱</div><div style="flex:1;min-width:0;"><div class="cs-name" id="cs-name" onclick="PW_UI.editName()" style="cursor:pointer;" title="Tap to edit">Keeper</div><div class="cs-title" id="cs-title">◈ Seedling · Level 1</div><div class="cs-xp-bar"><div class="cs-xp-fill" id="cs-xp-fill" style="width:0%;"></div></div><div class="cs-xp-text" id="cs-xp-text">0 / 25 XP → Level 2</div></div></div>
     <div class="cs-section"><div class="cs-section-title">CLASS</div><div id="cs-class-body"></div></div>
     <div class="cs-section"><div class="cs-section-title">TOOLS</div><div id="cs-tool-body" class="cs-tool-grid"></div></div>
-    <div class="cs-section"><div class="cs-section-title">FORAGING HAND <button onclick="window._lwOpenDeckEditor()" style="float:right;background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.3);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.5rem;padding:2px 8px;border-radius:4px;cursor:pointer;">EDIT DECK</button></div><div id="cs-forage-body"></div></div>
+    <div class="cs-section"><div class="cs-section-title">FORAGING HAND</div><div id="cs-forage-body"></div></div>
     <div class="cs-section"><div class="cs-section-title">ACTIVE EFFECTS</div><div id="cs-effects-body"></div></div>
     <div class="cs-section"><div class="cs-section-title">ACTIVE COMPANION</div><div class="cs-companion-card" onclick="PW_UI.equipCompanion()" style="cursor:pointer;min-height:64px;position:relative;" title="Tap to change"><div class="cs-companion-icon" id="cs-companion-icon">❓</div><div style="flex:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--cream);letter-spacing:0.04em;" id="cs-companion-name">None Equipped</div><div style="font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--sage);line-height:1.5;margin-top:2px;" id="cs-companion-buff">Tap to equip a companion</div></div><button id="cs-companion-info" onclick="event.stopPropagation();try{var c=JSON.parse(localStorage.getItem('pw_active_companion')||'{}');if(typeof c.idx==='number'&&window._lwOpenCompanionProfile)_lwOpenCompanionProfile(c.idx);}catch(e){}" style="position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;border:1px solid rgba(200,168,75,0.3);background:rgba(13,16,12,0.7);color:var(--gold);font-family:DM Mono,monospace;font-size:0.55rem;font-weight:bold;cursor:pointer;padding:0;z-index:2;" title="View profile">ⓘ</button></div></div>
     <div class="cs-section"><div class="cs-section-title">SHOWCASE</div><div class="cs-showcase-grid"><div class="cs-showcase-slot empty" onclick="PW_UI.editShowcase(0)"><div>+ Add Plant</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div></div></div>
@@ -56418,13 +56418,13 @@ window._lwClaimHerbarium = function(id){
   function hexDifficulty(grade) {
     var g = String(grade || 'Common').toLowerCase();
     var map = {
-      common:    { slots: 3, cards: 3, scoreNeeded: 4 },
-      uncommon:  { slots: 3, cards: 3, scoreNeeded: 5 },
-      rare:      { slots: 4, cards: 4, scoreNeeded: 5 },
-      epic:      { slots: 4, cards: 4, scoreNeeded: 7 },
-      legendary: { slots: 5, cards: 5, scoreNeeded: 8 },
-      mythic:    { slots: 5, cards: 5, scoreNeeded: 9 },
-      cosmic:    { slots: 5, cards: 5, scoreNeeded: 10 }
+      common:    { slots: 3, cards: 3, handSize: 5,  attempts: 3, scoreNeeded: 4 },
+      uncommon:  { slots: 3, cards: 3, handSize: 6,  attempts: 3, scoreNeeded: 5 },
+      rare:      { slots: 4, cards: 4, handSize: 7,  attempts: 4, scoreNeeded: 6 },
+      epic:      { slots: 4, cards: 4, handSize: 8,  attempts: 4, scoreNeeded: 8 },
+      legendary: { slots: 5, cards: 5, handSize: 9,  attempts: 5, scoreNeeded: 10 },
+      mythic:    { slots: 6, cards: 6, handSize: 10, attempts: 5, scoreNeeded: 12 },
+      cosmic:    { slots: 6, cards: 6, handSize: 12, attempts: 6, scoreNeeded: 14 }
     };
     return map[g] || map.common;
   }
@@ -56731,7 +56731,7 @@ window._lwClaimHerbarium = function(id){
       // Difficulty breakdown
       h += '<div style="padding:0.6rem 0.8rem;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.25);border-radius:10px;margin-bottom:0.8rem;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);">';
       h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:4px;">DIFFICULTY · ' + S.grade.toUpperCase() + '</div>';
-      h += 'Slots: <b>' + diff.slots + '</b> · Cards: <b>' + diff.cards + '</b> · Score needed: <b>' + diff.scoreNeeded + '</b> · Attempt <b>' + S.attempt + ' / 3</b></div>';
+      h += 'Slots: <b>' + diff.slots + '</b> · Cards: <b>' + diff.cards + '</b> · Score needed: <b>' + diff.scoreNeeded + '</b> · Attempt <b>' + S.attempt + ' / ' + diff.attempts + '</b></div>';
       // Hex row
       h += '<div style="padding:0.8rem;background:linear-gradient(180deg,rgba(26,36,22,0.5),rgba(13,16,12,0.7));border:1.5px solid rgba(200,168,75,0.25);border-radius:12px;margin-bottom:0.8rem;">';
       h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.5rem;">';
@@ -56877,7 +56877,9 @@ window._lwClaimHerbarium = function(id){
   }
   function openForagePanel(zoneKey, grade, onDone) {
     var attempts = getAttempts(zoneKey);
-    if (attempts >= 3) {
+    // Hard cap at the highest-tier attempt allowance so no grade ever gets locked
+    // less charitably than Cosmic. Per-grade cap enforced below after effGrade resolves.
+    if (attempts >= 6) {
       if (window._toast) _toast('This hex is locked until tomorrow. Try another.');
       onDone(false);
       return;
@@ -56902,7 +56904,7 @@ window._lwClaimHerbarium = function(id){
           title: 'FORAGING \u2014 A QUIET PUZZLE',
           body: '<p>Every wild hex hides <b>3 elements</b> \u2014 Sun, Shade, Rain, Dry, Wind, Still.</p>' +
                 '<p>Play 3 cards from your hand. Each card covers one slot.</p>' +
-                '<p style="color:var(--sage);">You get 3 attempts per hex per day. Each attempt teaches you more.</p>',
+                '<p style="color:var(--sage);">Higher-rarity hexes give you more cards, more slots, and more attempts. Each attempt teaches you more.</p>',
           yes: 'NEXT \u2192',
           no: ''
         }, _step2);
@@ -56913,6 +56915,12 @@ window._lwClaimHerbarium = function(id){
     // can level into it. "That's the spirit" — Stephen.
     var effGrade = effectiveGrade(grade || 'Common');
     var diff = hexDifficulty(effGrade);
+    // Per-grade attempt cap — higher rarity gets more chances.
+    if (attempts >= diff.attempts) {
+      if (window._toast) _toast('This hex is locked until tomorrow. Try another.');
+      onDone(false);
+      return;
+    }
     // Kick off a background weather fetch before composition. If it resolves
     // in time, hexComposition gets the tilt + hint slot. If not, next open
     // will pick it up from cache. Either way: no spinner, no visible delay.
@@ -56929,7 +56937,7 @@ window._lwClaimHerbarium = function(id){
     if (comp.hintSlot != null && comp.elements[comp.hintSlot]) {
       initialLearned[comp.hintSlot] = { hex: comp.elements[comp.hintSlot], verdict: 'weather-hint' };
     }
-    var hand = buildHand(diff.cards + 2); // hand shows N+2 so there's a choice
+    var hand = buildHand(diff.handSize || (diff.cards + 2)); // hand size scales with rarity
     if (hand.length < diff.cards) {
       if (window._toast) _toast('You need at least ' + diff.cards + ' cards. Starter cards were granted.');
       onDone(false);
@@ -56964,7 +56972,7 @@ window._lwClaimHerbarium = function(id){
       h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.7rem;">';
       h += '<div><div style="font-family:Playfair Display,serif;font-size:1rem;color:var(--gold);font-style:italic;">Foraging</div>';
       h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:2px;">' + biomeIcon + ' ' + biomeName + ' \u00b7 ' + weatherIcon + ' ' + weatherLbl + '</div>';
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--sage);margin-top:2px;">Attempt ' + (attempts + 1) + ' of 3</div></div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--sage);margin-top:2px;">Attempt ' + (attempts + 1) + ' of ' + diff.attempts + '</div></div>';
       h += '<button onclick="window._lwForageClose(false)" style="width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:0.9rem;cursor:pointer;">\u2715</button>';
       h += '</div>';
       // Deck selector — one-tap swap between the player's saved decks
@@ -57093,8 +57101,8 @@ window._lwClaimHerbarium = function(id){
         h += '<button onclick="window._lwForagePlay()" ' + (canPlay ? '' : 'disabled') + ' style="display:block;width:100%;padding:12px;border-radius:10px;border:1.5px solid ' + (canPlay ? 'var(--gold)' : 'rgba(138,145,120,0.25)') + ';background:' + (canPlay ? 'linear-gradient(180deg,rgba(200,168,75,0.25),rgba(122,179,86,0.15))' : 'rgba(26,36,22,0.4)') + ';color:' + (canPlay ? 'var(--gold)' : 'var(--muted)') + ';font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.12em;cursor:' + (canPlay ? 'pointer' : 'not-allowed') + ';min-height:54px;">PLAY CARDS</button>';
       } else if (resolved.success) {
         h += '<button onclick="window._lwForageClose(true)" style="display:block;width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--sage);background:linear-gradient(180deg,rgba(122,179,86,0.25),rgba(122,179,86,0.12));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.12em;cursor:pointer;min-height:54px;">\u2728 COLLECT SEED</button>';
-      } else if (attempts + 1 < 3) {
-        h += '<button onclick="window._lwForageNext()" style="display:block;width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(74,124,53,0.12));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:54px;">TRY AGAIN (' + (2 - attempts) + ' left)</button>';
+      } else if (attempts + 1 < diff.attempts) {
+        h += '<button onclick="window._lwForageNext()" style="display:block;width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(74,124,53,0.12));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:54px;">TRY AGAIN (' + (diff.attempts - 1 - attempts) + ' left)</button>';
       } else {
         h += '<button onclick="window._lwForageClose(false)" style="display:block;width:100%;padding:12px;border-radius:10px;border:1.5px solid rgba(192,112,96,0.35);background:rgba(30,18,14,0.6);color:#c07060;font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:54px;">HEX LOCKED \u00b7 WALK ON</button>';
       }
