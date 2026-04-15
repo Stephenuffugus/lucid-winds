@@ -53818,8 +53818,9 @@ function _bosClassContent() {
     var tpct = tlvl >= 3 ? 100 : tlvl >= 2 ? ((txp - LW_TOOL_XP_L2) / (LW_TOOL_XP_L3 - LW_TOOL_XP_L2)) * 100 : (txp / LW_TOOL_XP_L2) * 100;
     h += '<div style="margin-bottom:0.5rem;padding:0.55rem;background:rgba(26,36,22,0.4);border:1px solid rgba(74,124,53,0.15);border-radius:10px;">';
     h += '<div style="display:flex;align-items:center;gap:0.5rem;">';
-    h += '<div style="font-size:1.3rem;">' + tdef.icon + '</div>';
-    h += '<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--cream);letter-spacing:0.06em;">' + tdef.name.toUpperCase() + ' · L' + tlvl + '</div>';
+    // Tool hero art — matches the character-sheet tool emblem render.
+    h += '<img src="assets/character-sheet/tools/' + tid + '.png" alt="" onerror="this.outerHTML=\'<span style=&quot;font-size:1.3rem;width:44px;text-align:center;&quot;>' + tdef.icon + '</span>\'" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid rgba(200,168,75,0.25);flex-shrink:0;">';
+    h += '<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--cream);letter-spacing:0.06em;">' + tdef.name.toUpperCase() + ' \u00b7 L' + tlvl + '</div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--gold);">' + tdef.levels[tlvl] + '</div></div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);">' + txp + ' / ' + tnextXP + '</div>';
     h += '</div>';
@@ -56195,8 +56196,10 @@ window._LW_openClassPicker=function(){
     var txp=_lwGetToolXP()[tid]||0;
     h+='<div style="margin-bottom:0.5rem;padding:0.6rem;background:rgba(26,36,22,0.4);border:1px solid rgba(74,124,53,0.15);border-radius:10px;">';
     h+='<div style="display:flex;align-items:center;gap:0.5rem;">';
-    h+='<div style="font-size:1.3rem;">'+tdef.icon+'</div>';
-    h+='<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--cream);letter-spacing:0.06em;">'+tdef.name.toUpperCase()+' · L'+tlvl+'</div>';
+    // Tool hero art — same assets the character sheet uses. onerror falls
+    // back to the emoji so a missing file never leaves a hole.
+    h+='<img src="assets/character-sheet/tools/'+tid+'.png" alt="" onerror="this.outerHTML=\'<span style=&quot;font-size:1.3rem;width:44px;text-align:center;&quot;>'+tdef.icon+'</span>\'" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid rgba(200,168,75,0.25);flex-shrink:0;">';
+    h+='<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--cream);letter-spacing:0.06em;">'+tdef.name.toUpperCase()+' \u00b7 L'+tlvl+'</div>';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--gold);">'+tdef.levels[tlvl]+'</div></div>';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">'+txp+' xp</div>';
     h+='</div></div>';
