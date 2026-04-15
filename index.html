@@ -35711,6 +35711,8 @@ function _checkStepMilestone(){
       if(window._toast)_toast('\u2728 '+labels[milestones[i]]+' \u2014 +'+_reward+' Dew');
       try{if(window._haptic)window._haptic('ok');}catch(e){}
       if(window._logWildEvent)_logWildEvent({type:'step_milestone',meters:milestones[i],label:labels[milestones[i]],reward:_reward});
+      // First Steps BoS event — fires once when the 500m milestone crosses.
+      if(milestones[i]===500)try{if(window.LW_Events)window.LW_Events.fire('First Steps');}catch(e){}
       break;
     }
   }
@@ -36521,6 +36523,8 @@ function _awardFeral(hash, parentA, parentB, zk, info) {
   // Flat 1-Dew reward at collection; rarity surprise is unlocked at bloom.
   var dewReward = 1;
   if (window.earnDew) earnDew(dewReward, 'feral_collect');
+  // 'Elsewhere Eyes' BoS event — first successful forage of a feral.
+  try { if (window.LW_Events) window.LW_Events.fire('Elsewhere Eyes'); } catch(e) {}
 
   // Foraging success card drops — the hex itself pays out a card scaled
   // by its grade. Ensures rare wild-cards (moonlight / thunder / aurora)
@@ -58452,7 +58456,7 @@ function _bosReportContent() {
             for (var _bck in _bc) { if (_bc[_bck] && _bc[_bck].biome) biomeVisits[_bc[_bck].biome] = true; }
           } catch(e){}
           if (window._lastDetectedBiome) biomeVisits[window._lastDetectedBiome] = true;
-          if (Object.keys(biomeVisits).length >= 5) fire('Grove of Grounds');
+          if (Object.keys(biomeVisits).length >= 4) fire('Grove of Grounds');
         }
       }
       // ═══ SEASONAL MEGA-EVENTS ═══
@@ -58579,15 +58583,17 @@ window.LW_EVENT_CATALOG = [
     { name: 'Rainfall', hint: 'Water 3 plants in one session', riddle: 'Three drinks from the same cloud.',
       lore: 'Routine is its own form of care. Three plants, one session, no ceremony. The word for this in old gardening almanacs was simply "rounds."' },
     { name: 'Neighbor', hint: "See another player's plant", riddle: "A stranger's garden, glimpsed through the hedge.",
-      lore: 'You thought you were alone out here. You are not. Someone else is tending, somewhere, right now. Their plant is proof of a life you will never see the rest of — and that is enough.' }
+      lore: 'You thought you were alone out here. You are not. Someone else is tending, somewhere, right now. Their plant is proof of a life you will never see the rest of — and that is enough.' },
+    { name: 'First Steps', hint: 'Walk 500m on the Wild map', riddle: 'The garden begins where your feet do.',
+      lore: 'Five hundred meters is not far. It is the end of a block, the length of a pond, the walk to a neighbor. But it is the first time the game knew where you were going. Every keeper crosses this line. Most forget they did.' },
+    { name: 'Elsewhere Eyes', hint: 'Claim your first feral seed from a wild hex', riddle: 'The hex kept a secret, then didn\u2019t.',
+      lore: 'Foraging is the quietest game in the garden. You play it against a sequence only the soil knows, and when you solve it, you take a mystery home. Your first feral is the moment the map stops being scenery and starts being a partner.' }
   ]},
   { name: 'UNCOMMON',  color: '#8CB86E', desc: 'Takes patience and attention', events: [
     { name: 'Full Moon Harvest', hint: 'Harvest during evening hours', riddle: "Silver light guides the reaper's hand.",
       lore: 'Old-world gardeners timed harvests to the moon. Was it real? The science is thin. But standing under that silver light, picking something ripe — whether the moon helps or not, *you* feel more alive.' },
     { name: 'Dual Bloom', hint: 'Two plants bloom on the same day', riddle: 'Twins born of different seeds, same sun.',
       lore: 'Two plants crossing into maturity on the same day is statistical coincidence. It is also the universe showing you a pattern. Both readings are valid. Pick the one that makes the garden feel more magical.' },
-    { name: 'Pollen Trail', hint: 'Cross-pollinate 3 times in one week', riddle: 'The wind carries gold from grove to grove.',
-      lore: 'A breeder who crosses three lines in a week is not experimenting — they are composing. Every pollen brush is a word in a sentence only you know the ending of.' },
     { name: 'Deep Roots', hint: 'Keep a plant alive for 30 days', riddle: 'What grows slow holds the earth together.',
       lore: 'Thirty days is nothing to an oak and everything to a keeper. The plant has learned your rhythms. You have learned its name. This is what old gardeners called a "friend in the pot."' }
   ]},
@@ -58597,14 +58603,16 @@ window.LW_EVENT_CATALOG = [
     { name: 'The Collector', hint: 'Own one of every rarity tier', riddle: 'From common clay to cosmic light — all seven gathered.',
       lore: 'Seven tiers. Seven voices. A collection this complete is a kind of library — common is not the opposite of cosmic, it is its foundation. Both deserve a shelf.' },
     { name: 'Storm Walker', hint: 'Summon all 4 weather types', riddle: 'The keeper who commands the sky.',
-      lore: 'Sun, rain, wind, still. The four classical conditions of plant growth, now each at your command. This is not control — it is conversation. The sky answered when you asked.' }
+      lore: 'Sun, rain, wind, still. The four classical conditions of plant growth, now each at your command. This is not control — it is conversation. The sky answered when you asked.' },
+    { name: 'Pollen Trail', hint: 'Cross-pollinate 3 times in one week', riddle: 'The wind carries gold from grove to grove.',
+      lore: 'A breeder who crosses three lines in a week is not experimenting — they are composing. Every pollen brush is a word in a sentence only you know the ending of.' }
   ]},
   { name: 'EPIC',      color: '#9B59B6', desc: 'Demands mastery', events: [
     { name: 'The Alchemist', hint: 'Discover 20 synergies', riddle: 'Twenty threads woven from the same loom.',
       lore: "Twenty synergies is not luck. You are reading the trait table as poetry — season against companion, mutation against pot. Somewhere between breeder and botanist is a third word, older, and you've become it." },
     { name: 'Territorial', hint: 'Hold 3 wild zones for 7 days', riddle: 'The grove expands when no one pushes back.',
       lore: "Three zones, seven days apiece. You have built something stable in a world that rewards motion. Other keepers are walking past your plants right now and deciding not to harvest. That's territory." },
-    { name: 'Cicada Chorus', hint: 'Own a Cicada companion', riddle: 'Silent for seasons, loud at summer — who waits to sing?',
+    { name: 'Cicada Chorus', hint: 'Own a plant with the Cicada companion (any season)', riddle: 'Silent for seasons, loud at summer — who waits to sing?',
       lore: "Cicadas wait 13 or 17 years underground for a reason no biologist has fully explained. When they finally emerge, they sing together — the only way any of them survive. You've earned one's company. That's no small thing." }
   ]},
   { name: 'LEGENDARY', color: '#C8A84B', desc: 'The rarest achievements', events: [
@@ -58615,7 +58623,7 @@ window.LW_EVENT_CATALOG = [
     { name: 'Century Keeper', hint: '100-day login streak', riddle: 'The sun rose a hundred times and found you still tending.',
       lore: "A hundred consecutive days. Storms, travel, hard weeks, good ones. The plants don't know you had a rough Tuesday; they only know you showed up. Few titles in this game are older or harder than this one." },
     { name: 'Old Eye, Deep Ground', hint: 'Own a Beholder plant while standing in a mountain biome', riddle: 'The stone remembers the eye. The eye remembers everything.',
-      lore: 'When an ancient companion meets ancient terrain, the grove settles. Nothing happens. Nothing needs to. This is one of the few moments the game gives you with no mechanical reward — just the acknowledgment that you were here, with this, in this place.' }
+      lore: 'Two ancient things in one place: a mountain biome older than memory, a Beholder companion older than sight. The alignment is so rare it doesn\'t need a reward — the game simply witnesses you being there. Some achievements are just a quiet nod between keeper and world.' }
   ]},
   // ═══ BIOME × COMPANION PAIRINGS ═══
   // Fire when a companion's spirit aligns with the land. Mostly uncommon — a
@@ -58656,7 +58664,7 @@ window.LW_EVENT_CATALOG = [
       lore: "Most synergies fire on a single plant. When three of your plants share the same synergy, they become a chord — a long-held note you can walk past and hear humming. Rare because you have to breed and collect with intention." },
     { name: 'Storyline', hint: 'Your chimera generations sum to 10 or more across all plants', riddle: 'Every plant is a chapter. Yours is becoming a book.',
       lore: "Generations accumulate. A Gen 3 plus a Gen 4 plus a Gen 3 is ten generations of breeding history in a single greenhouse. Your lineage has depth. Someone reading your collection could trace a plot." },
-    { name: 'Grove of Grounds', hint: 'Own plants from all 4 seasons and visit 5+ biomes', riddle: 'The garden has learned every season and every ground.',
+    { name: 'Grove of Grounds', hint: 'Own plants from all 4 seasons and visit 4+ biomes', riddle: 'The garden has learned every season and every ground.',
       lore: "Most keepers specialize. A Grove of Grounds is the opposite — plants of every season, feet that have walked across five different biomes. Horizontal mastery. The kind of gardener who plants tomatoes AND alpine asters." },
     { name: 'Sister Grove', hint: 'Drop two of your own plants in the same wild zone', riddle: 'Two roots share a neighborhood. They learn each other\u2019s signals.',
       lore: "Plants within the same H3 zone can sense each other's rhythms. Two of yours in one zone is a small declaration: this patch of the world is yours." }
@@ -58723,7 +58731,7 @@ window.LW_EVENT_CATALOG = [
     { name: 'Faithful Tender', hint: 'Water the same wild plant 10 times', riddle: 'Some plants are not for harvest. Some are for the ritual.',
       lore: "Ten waterings on a single plant is a ritual, not a routine. The plant has earned the kind of attention that other plants don't get. Whether you realize it or not, you have made a friend." },
     { name: 'The Keeper Remembers', hint: 'Compost 25 plants across your lifetime', riddle: 'Every gone thing was once tended.',
-      lore: "Twenty-five composts is a small history of letting go. A keeper who has composted this much has made peace with the cycle. The garden marks you as someone who understands endings." },
+      lore: "You've buried a small forest by now. Each one taught you something: when to hold on, when to let the cycle take its turn. The plants you let go are still here — they become the soil that grows the next." },
     { name: 'Kindred Spirit', hint: 'Keep the same companion equipped for 30 days', riddle: 'A creature you chose once, and keep choosing.',
       lore: "Thirty days of the same companion is when the relationship tips from habit into kin. The creature knows your rhythms. You know theirs. The word companions and kindred share a root — it\u2019s etymologically earned." }
   ]}
