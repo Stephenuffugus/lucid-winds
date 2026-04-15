@@ -35051,7 +35051,9 @@ function activate(){
           if(window._logWildEvent)_logWildEvent({type:'biome',biome:b,name:_bInfo.name,icon:_bInfo.icon,mutation:_bInfo.mutation||null});
           localStorage.setItem('lw_biome_shown',b);
           // New biome discovery: Cartographer XP + Compass XP
-          try{if(window._LW_classXP)window._LW_classXP('biome',25);}catch(e){}
+          // Tree node Wayfinder (+0.25%/pt biome XP) — stacks on discovery awards.
+          var _bxp=25;try{if(window._LW_treeBonus)_bxp=Math.ceil(25*window._LW_treeBonus('biomeXp'));}catch(e){}
+          try{if(window._LW_classXP)window._LW_classXP('biome',_bxp);}catch(e){}
           try{if(window._LW_toolXP)window._LW_toolXP('compass',15);}catch(e){}
         }
       });
@@ -38876,6 +38878,8 @@ function _finishDrop(defenderGame){
   // Compute EA at drop time
   var dropTraits=null;try{dropTraits=window.hashToTraits(pl.hash);}catch(e){}
   var dropEA=window.computeEA?window.computeEA(dropTraits,0):0;
+  // Tree node Steady (+0.25%/pt defense EA) — scales YOUR plants' durability
+  try{if(window._LW_treeBonus){var _dm=window._LW_treeBonus('defenseEa');if(_dm>1)dropEA=Math.ceil(dropEA*_dm);}}catch(e){}
   // Overcrowding penalty: -1 EA on both the new plant and the matching neighbor
   if(pd.crowdPenaltyHash){
     dropEA=Math.max(0,dropEA-1);
