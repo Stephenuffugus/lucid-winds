@@ -8471,26 +8471,13 @@ document.addEventListener('keydown', function(e) {
       }
       if (fresh.length) {
         try { localStorage.setItem('lw_synergies_discovered', JSON.stringify(seen)); } catch(e){}
-        // Only celebrate the first 3; the rest log silently to avoid modal spam
+        // Silent — all new discoveries from the rescan log silently. The
+        // SECRETS tab badge will count them next time the book is opened.
+        try { if (window._haptic) window._haptic('bloom'); } catch(e){}
         for (var fi = 0; fi < fresh.length; fi++) {
-          (function(syn, delay, celebrate){
-            setTimeout(function(){
-              if (celebrate && window._lwConfirm) {
-                window._lwConfirm({
-                  title: '\u2728 SYNERGY REVEALED',
-                  body: '<div style="font-size:2rem;margin-bottom:0.3rem;">' + syn.emoji + '</div>' +
-                        '<div style="font-family:Playfair Display,serif;font-style:italic;color:var(--gold);font-size:0.95rem;margin-bottom:0.4rem;">' + syn.name + '</div>' +
-                        '<div style="color:var(--cream);font-family:DM Mono,monospace;font-size:0.55rem;line-height:1.6;">' + syn.desc + '</div>' +
-                        '<div style="color:var(--muted);font-family:DM Mono,monospace;font-size:0.45rem;margin-top:0.4rem;">The season shifted, and this was waiting.</div>',
-                  yes: 'WITNESSED',
-                  no: ''
-                }, function(){});
-                try { if (window._haptic) window._haptic('bloom'); } catch(e){}
-              }
-              if (window.LW_Log) window.LW_Log.write('synergy_discovered', { id: syn.id, name: syn.name, emoji: syn.emoji });
-            }, delay);
-          })(fresh[fi], fi < 3 ? fi * 1600 : 0, fi < 3);
+          if (window.LW_Log) window.LW_Log.write('synergy_discovered', { id: fresh[fi].id, name: fresh[fi].name, emoji: fresh[fi].emoji });
         }
+        try { if (window._bosRefreshBadges) window._bosRefreshBadges(); } catch(e){}
       }
       return fresh.length;
     } catch(e){ return 0; }
@@ -8512,26 +8499,14 @@ document.addEventListener('keydown', function(e) {
       }
       if (fresh.length) {
         try { localStorage.setItem('lw_synergies_discovered', JSON.stringify(seen)); } catch(e) {}
-        // Celebration for each new synergy, staggered.
+        // Silent discovery — no modal pop. Just a quiet log + haptic tick
+        // so the player feels *something* happened. They'll see the count
+        // on the SECRETS tab badge next time they open the book.
+        try { if (window._haptic) window._haptic('bloom'); } catch(e){}
         for (var fi = 0; fi < fresh.length; fi++) {
-          (function(syn, delay){
-            setTimeout(function(){
-              if (window._lwConfirm) {
-                window._lwConfirm({
-                  title: '\u2728 NEW SYNERGY DISCOVERED',
-                  body: '<div style="font-size:2rem;margin-bottom:0.3rem;">' + syn.emoji + '</div>' +
-                        '<div style="font-family:Playfair Display,serif;font-style:italic;color:var(--gold);font-size:0.95rem;margin-bottom:0.4rem;">' + syn.name + '</div>' +
-                        '<div style="color:var(--cream);font-family:DM Mono,monospace;font-size:0.55rem;line-height:1.6;">' + syn.desc + '</div>' +
-                        '<div style="color:var(--muted);font-family:DM Mono,monospace;font-size:0.45rem;margin-top:0.4rem;">Logged to the Book of Secrets.</div>',
-                  yes: 'WITNESSED',
-                  no: ''
-                }, function(){});
-                try { if (window._haptic) window._haptic('bloom'); } catch(e) {}
-              }
-              if (window.LW_Log) window.LW_Log.write('synergy_discovered', { id: syn.id, name: syn.name, emoji: syn.emoji });
-            }, delay);
-          })(fresh[fi], fi * 1600);
+          if (window.LW_Log) window.LW_Log.write('synergy_discovered', { id: fresh[fi].id, name: fresh[fi].name, emoji: fresh[fi].emoji });
         }
+        try { if (window._bosRefreshBadges) window._bosRefreshBadges(); } catch(e){}
       }
       return fresh;
     } catch(e) { return []; }
@@ -54081,7 +54056,16 @@ window._getBookUnreadCount=function(){
 };
 window._updateBookBadge=function(){
   var el=document.getElementById('kb-comp-count');if(!el)return;
-  var n=window._getBookUnreadCount?window._getBookUnreadCount():0;
+  // Sum of per-tab unreads — one quiet number on the book icon showing
+  // total things the keeper hasn't read yet across every tab.
+  var n = 0;
+  if (window._bosGetTabUnread) {
+    var tabs = ['report','activity','secrets','events','mementos','herbarium','class'];
+    for (var i = 0; i < tabs.length; i++) n += window._bosGetTabUnread(tabs[i]);
+  } else {
+    // Fallback during boot before _bosGetTabUnread is wired
+    n = window._getBookUnreadCount ? window._getBookUnreadCount() : 0;
+  }
   if(n<=0){el.textContent='';el.style.display='none';}
   else {el.textContent=n>99?'99+':String(n);el.style.display='';}
 };
@@ -54348,8 +54332,117 @@ var CATEGORIES=[
 // Tab 2: SECRETS — synergies, mythic hall, trait diversity, companions
 // Tab 3: WILD EVENTS — tiered discovery challenges (color-coded difficulty)
 var _bosTab = 'secrets';
+// ═══ PER-TAB UNREAD TRACKING ═══
+// Each BoS tab has a last-read timestamp. New discoveries (events, synergies,
+// mementos, bundles, etc.) are counted against the tab's last-read. Opening
+// a tab stamps "now" and the badge drops to 0 for that tab. No toasts, no
+// modals — just a subtle number on the tab that clears when you read the
+// page. Player-driven, quiet, dignified.
+var _BOS_TAB_READ_KEY = 'lw_bos_tab_reads';
+function _bosLoadReads() { try { return JSON.parse(localStorage.getItem(_BOS_TAB_READ_KEY) || '{}'); } catch(e) { return {}; } }
+function _bosSaveReads(r) { try { localStorage.setItem(_BOS_TAB_READ_KEY, JSON.stringify(r)); } catch(e){} }
+function _bosGetTabRead(tab) { return _bosLoadReads()[tab] || 0; }
+function _bosStampTabRead(tab) { var r = _bosLoadReads(); r[tab] = Date.now(); _bosSaveReads(r); }
+window._bosGetTabUnread = function(tab) {
+  try {
+    var lastRead = _bosGetTabRead(tab);
+    // EVENTS — count wild-event discoveries since last-read
+    if (tab === 'events') {
+      var unlocked = {};
+      try { unlocked = JSON.parse(localStorage.getItem('lw_wild_events') || '{}'); } catch(e){}
+      var n = 0;
+      for (var k in unlocked) { if (unlocked[k] && unlocked[k].t && unlocked[k].t > lastRead) n++; }
+      return n;
+    }
+    // SECRETS — count new synergies + new mutations + new grade/season/biome
+    // firsts since last-read. Uses the LW_Log stream as the canonical source.
+    if (tab === 'secrets') {
+      if (!window.LW_Log) return 0;
+      var all = window.LW_Log.all();
+      var c = 0;
+      for (var i = 0; i < all.length; i++) {
+        if (all[i].ts <= lastRead) continue;
+        if (all[i].type === 'synergy_discovered') c++;
+      }
+      return c;
+    }
+    // ACTIVITY — count log entries since last-read (any category)
+    if (tab === 'activity') {
+      if (!window.LW_Log) return 0;
+      var allA = window.LW_Log.all();
+      var ca = 0;
+      for (var ia = 0; ia < allA.length; ia++) { if (allA[ia].ts > lastRead) ca++; }
+      return ca;
+    }
+    // MEMENTOS — count collected mementos with ts > lastRead
+    if (tab === 'mementos') {
+      var mem = [];
+      try { mem = JSON.parse(localStorage.getItem('lw_companion_mementos') || '[]'); } catch(e){}
+      var cm = 0;
+      for (var im = 0; im < mem.length; im++) { if (mem[im] && mem[im].ts && mem[im].ts > lastRead) cm++; }
+      return cm;
+    }
+    // HERBARIUM — 1 if any bundle is claimable right now and unseen
+    if (tab === 'herbarium') {
+      if (!window.LW_HERBARIUM || !window.LW_HERBARIUM.getProgress) return 0;
+      try {
+        var bundles = window.LW_HERBARIUM.pickBundlesForWeek();
+        var ch = 0;
+        for (var bi = 0; bi < bundles.length; bi++) {
+          var p = window.LW_HERBARIUM.getProgress(bundles[bi]);
+          if (p.complete && !window.LW_HERBARIUM.isClaimed(bundles[bi].id)) ch++;
+        }
+        return ch;
+      } catch(e){ return 0; }
+    }
+    // REPORT — count log entries since last-read (mirrors activity for now)
+    if (tab === 'report') {
+      if (!window.LW_Log) return 0;
+      var allR = window.LW_Log.all();
+      var cr = 0;
+      for (var ir = 0; ir < allR.length; ir++) { if (allR[ir].ts > lastRead) cr++; }
+      return cr;
+    }
+    // CLASS — 1 if class unpicked and player is L7+ and never opened this tab
+    if (tab === 'class') {
+      try {
+        if (localStorage.getItem('lw_class')) return 0;
+        if (lastRead > 0) return 0;
+        if (window.canSee && window.canSee.classPick && window.canSee.classPick()) return 1;
+      } catch(e){}
+      return 0;
+    }
+    return 0;
+  } catch(e) { return 0; }
+};
+window._bosRefreshBadges = function() {
+  var bar = document.getElementById('bos-overlay');
+  if (!bar) return; // Book isn't open
+  var tabs = bar.querySelectorAll('.bos-tab');
+  for (var i = 0; i < tabs.length; i++) {
+    var tabKey = tabs[i].getAttribute('data-tab');
+    var n = window._bosGetTabUnread(tabKey);
+    // Remove any existing badge
+    var oldBadge = tabs[i].querySelector('.bos-tab-badge');
+    if (oldBadge) oldBadge.remove();
+    if (n > 0) {
+      var b = document.createElement('span');
+      b.className = 'bos-tab-badge';
+      b.textContent = n > 9 ? '9+' : String(n);
+      b.style.cssText = 'position:absolute;top:2px;right:4px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.4rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(200,168,75,0.5);';
+      tabs[i].style.position = 'relative';
+      tabs[i].style.overflow = 'visible';
+      tabs[i].appendChild(b);
+    }
+  }
+  // Also refresh the top-level book icon badge
+  if (window._updateBookBadge) window._updateBookBadge();
+};
+
 function _bosSetTab(tab) {
   _bosTab = tab;
+  // Stamp the tab as read the moment it opens — subtle, no confirmation needed
+  _bosStampTabRead(tab);
   var body = document.getElementById('bos-body');
   if (!body) return;
   if (tab === 'report') body.innerHTML = _bosReportContent();
@@ -54368,6 +54461,8 @@ function _bosSetTab(tab) {
     tabs[j].style.borderColor = active ? 'rgba(200,168,75,0.5)' : 'rgba(122,179,86,0.2)';
     tabs[j].style.color = active ? 'var(--gold)' : 'var(--muted)';
   }
+  // Refresh all tab badges after read-stamping the current one
+  setTimeout(function(){ if (window._bosRefreshBadges) window._bosRefreshBadges(); }, 50);
 }
 
 // Keeper's Path — class-specific fractional tree. Every Keeper level = 1 point
@@ -56740,15 +56835,18 @@ function _bosReportContent() {
     if (u[name]) return false;
     u[name] = { t: Date.now(), d: _todayKey() };
     _write(u);
-    // Toast — keep it short, the event name is the payload
-    try { if (window._toast) window._toast('\ud83d\udcdc DISCOVERED: ' + name); } catch(e){}
+    // Silent discovery — no toast, no modal. A subtle number appears on the
+    // Book of Secrets EVENTS tab. Reading the tab clears it. Player-driven,
+    // not pushy. A single quiet haptic tick is the only sensory cue.
     try { if (window._haptic) window._haptic('ok'); } catch(e){}
-    // Activity log
+    // Activity log (still recorded so it shows up in BoS ACTIVITY tab)
     try {
       if (window.LW_Log && window.LW_Log.write) {
         window.LW_Log.write('event_discovered', { name: name });
       }
     } catch(e){}
+    // Nudge the BoS tab badges to refresh
+    try { if (window._bosRefreshBadges) window._bosRefreshBadges(); } catch(e){}
     // GA funnel beacon — event discoveries are a top-of-funnel engagement signal
     try { if (typeof gtag !== 'undefined') gtag('event', 'bos_event_discovered', { event_name: name }); } catch(e){}
     return true;
@@ -57771,9 +57869,10 @@ window._openCompendiumUI=function(){
       }
     }
   } catch(e) {}
-  // Mark every wild event as read so the book badge clears. Fires before
-  // overlay build so the badge update is atomic with the open gesture.
-  if(window._markBookRead)window._markBookRead();
+  // Legacy wild-event stream — only drains when the player opens a tab that
+  // surfaces them (events/activity/secrets). Kept running for the old log.
+  // Do NOT mark book read at open — per-tab read tracking handles this now.
+  // Badges stay until the specific tab is viewed.
   // Remove old overlay if present
   var old=document.getElementById('bos-overlay');if(old)old.remove();
 
@@ -57818,6 +57917,8 @@ window._openCompendiumUI=function(){
   // Mark report as read
   if(window._setLastRead)_setLastRead(Date.now());
   if(window._updateRootReportBadge)_updateRootReportBadge();
+  // Render per-tab unread badges for any tabs the player hasn't read yet
+  setTimeout(function(){ if (window._bosRefreshBadges) window._bosRefreshBadges(); }, 100);
 };
 
 // Update compendium count in keeper bar
