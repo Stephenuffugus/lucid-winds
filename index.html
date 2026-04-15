@@ -54642,6 +54642,50 @@ function _bosFormatWhen(ts) {
 window._bosActivityContent = _bosActivityContent;
 
 // ─── MEMENTOS TAB — permanent companion keepsakes ───
+// Tap handler for the synergy grid — shows the synergy's name, fx, EA bonus,
+// and which of the player's plants contribute to it (with thumbnail SVGs
+// so the player can jump to them). Uses the shared lw-modal-frame.
+window._lwShowSynergyDetail = function(synName) {
+  var defs = window._lwSynergyDefs || {};
+  var plants = window._lwSynergyPlants || {};
+  var def = defs[synName];
+  var contribs = plants[synName] || [];
+  if (!def) { if (window._toast) _toast('Synergy not found.'); return; }
+  var prev = document.getElementById('lw-syn-detail'); if (prev) try { prev.remove(); } catch(e){}
+  var m = document.createElement('div');
+  m.id = 'lw-syn-detail';
+  m.className = 'lw-modal-backdrop';
+  var themeColors = { elemental:'#d4a843', nature:'#7ab356', cosmic:'#a88fd4', dark:'#b07070', mythical:'#c8a84b' };
+  var themeColor = themeColors[def.theme] || 'var(--gold)';
+  var h = '<div class="lw-modal-frame with-bottom-knots" style="max-width:380px;">';
+  h += '<span class="lw-modal-knot-bl"></span><span class="lw-modal-knot-br"></span>';
+  h += '<div class="lw-modal-title" style="color:' + themeColor + ';">\u2726 ' + def.name + '</div>';
+  h += '<div class="lw-modal-subtitle" style="color:var(--muted);font-size:0.48rem;letter-spacing:0.12em;text-transform:uppercase;font-style:normal;font-family:Bebas Neue,sans-serif;">' + (def.theme || 'secret') + ' \u00b7 +' + (def.ea || 1) + ' EA</div>';
+  h += '<div class="lw-modal-body" style="text-align:left;">';
+  h += '<p style="font-family:Playfair Display,serif;font-style:italic;color:var(--cream);font-size:0.6rem;line-height:1.6;margin-bottom:0.6rem;">' + (def.fx || '') + '</p>';
+  if (contribs.length) {
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:0.4rem;">YOUR PLANTS \u00b7 ' + contribs.length + '</div>';
+    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;margin-bottom:0.3rem;">';
+    for (var ci = 0; ci < contribs.length; ci++) {
+      var c = contribs[ci];
+      var svg = ''; try { if (window._generatePlantSVG) svg = window._generatePlantSVG(c.hash, 42, 1.0); } catch(e){}
+      h += '<div style="background:rgba(18,22,16,0.65);border:1px solid ' + themeColor + '33;border-radius:6px;padding:5px;text-align:center;">';
+      h += '<div style="width:48px;height:48px;margin:0 auto;">' + svg + '</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px;">' + (c.name || 'Plant') + '</div>';
+      h += '</div>';
+    }
+    h += '</div>';
+  } else {
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);font-style:italic;">No contributors in this greenhouse.</div>';
+  }
+  h += '</div>';
+  h += '<div class="lw-modal-actions"><button class="lw-modal-btn primary" onclick="var m=document.getElementById(\'lw-syn-detail\');if(m)m.remove();">CLOSE</button></div>';
+  h += '</div>';
+  m.innerHTML = h;
+  m.onclick = function(e){ if (e.target === m) m.remove(); };
+  document.body.appendChild(m);
+};
+
 function _bosMementosContent() {
   var collected = [];
   try { collected = JSON.parse(localStorage.getItem('lw_companion_mementos') || '[]'); } catch(e) {}
@@ -56413,16 +56457,25 @@ function _bosSecretsContent() {
   var progress=window.getCompendiumProgress?window.getCompendiumProgress():{found:0,total:0,pct:0};
   var gh=[];try{gh=JSON.parse((window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse'))||'[]');}catch(e){}
   var foundSynergies={};
+  // Track which of the player's plants contribute to each synergy — powers
+  // the tap-for-detail modal so "a synergy" stops being abstract.
+  var synergyPlants={};
   for(var si=0;si<gh.length;si++){
     try{
       var t=window.hashToTraits?window.hashToTraits(gh[si].hash):null;
       if(!t)continue;
       var syn=window.getSynergy?window.getSynergy(t):null;
+      var addContributor=function(synDef){
+        if(!synergyPlants[synDef.name])synergyPlants[synDef.name]=[];
+        synergyPlants[synDef.name].push({hash:gh[si].hash,idx:si,name:(window.getPlantName?getPlantName(gh[si].hash):'Plant #'+(si+1))});
+      };
       if(syn&&syn.all){
-        for(var sj=0;sj<syn.all.length;sj++)foundSynergies[syn.all[sj].name]=syn.all[sj];
-      }else if(syn){foundSynergies[syn.name]=syn;}
+        for(var sj=0;sj<syn.all.length;sj++){foundSynergies[syn.all[sj].name]=syn.all[sj];addContributor(syn.all[sj]);}
+      }else if(syn){foundSynergies[syn.name]=syn;addContributor(syn);}
     }catch(e){}
   }
+  window._lwSynergyPlants=synergyPlants;
+  window._lwSynergyDefs=foundSynergies;
   var synCount=Object.keys(foundSynergies).length;
   var totalDiscovered=progress.found+synCount;
   var totalAll=60+progress.total;
@@ -56443,8 +56496,9 @@ function _bosSecretsContent() {
     var synKeys=Object.keys(foundSynergies);
     for(var sk=0;sk<Math.min(synKeys.length,60);sk++){
       var s=foundSynergies[synKeys[sk]];
-      h+='<div style="padding:4px;background:rgba(122,179,86,0.08);border:1px solid rgba(122,179,86,0.15);border-radius:6px;text-align:center;min-height:36px;display:flex;flex-direction:column;align-items:center;justify-content:center;" title="'+s.name+': '+s.fx+'">';
-      h+='<div style="font-size:0.5rem;">✦</div>';
+      var _synNameEsc=s.name.replace(/'/g,"\\'");
+      h+='<div onclick="window._lwShowSynergyDetail(\''+_synNameEsc+'\')" style="padding:4px;background:rgba(122,179,86,0.08);border:1px solid rgba(122,179,86,0.15);border-radius:6px;text-align:center;min-height:36px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background 0.15s ease;" onmouseover="this.style.background=\'rgba(122,179,86,0.16)\'" onmouseout="this.style.background=\'rgba(122,179,86,0.08)\'" title="'+s.name+': '+s.fx+'">';
+      h+='<div style="font-size:0.5rem;">\u2726</div>';
       h+='<div style="font-family:DM Mono,monospace;font-size:0.25rem;color:var(--sage);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">'+s.name+'</div>';
       h+='</div>';
     }
