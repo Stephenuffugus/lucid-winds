@@ -8683,6 +8683,21 @@ document.addEventListener('keydown', function(e) {
     var bloomReady=seed.waterLog.length>=3;
     nursery[idx]=seed;
     _saveNursery(nursery);
+    // Nursery Song — same seed watered 3 consecutive days. Check by
+    // looking at the last 3 entries of waterLog for consecutive dates.
+    try {
+      if (window.LW_Events && seed.waterLog.length >= 3) {
+        var wl = seed.waterLog.slice(-3);
+        var _d1 = new Date(wl[0]).getTime();
+        var _d2 = new Date(wl[1]).getTime();
+        var _d3 = new Date(wl[2]).getTime();
+        var day = 86400000;
+        if ((_d2 - _d1) >= day*0.5 && (_d2 - _d1) <= day*1.5 &&
+            (_d3 - _d2) >= day*0.5 && (_d3 - _d2) <= day*1.5) {
+          window.LW_Events.fire('Nursery Song');
+        }
+      }
+    } catch(e){}
     return {ok:true,seed:seed,bloomReady:bloomReady};
   }
 
@@ -26964,6 +26979,13 @@ document.addEventListener('keydown', function(e) {
     setTimeout(checkAchievements, 200);
     // Book of Secrets passive event scan (Full Grove, Collector, Cicada, Beholder, etc.)
     try { if (window.LW_Events) setTimeout(function(){ window.LW_Events.scanPassive(); }, 400); } catch(e) {}
+    // Golden Hour Witness — mint happened 6pm-7pm
+    try {
+      if (window.LW_Events) {
+        var _gh2 = new Date().getHours();
+        if (_gh2 === 18) window.LW_Events.fire('Golden Hour Witness');
+      }
+    } catch(e){}
     // First-time synergy discovery — fires only for new-to-player synergies.
     try { if (window._lwCheckSynergyDiscovery) setTimeout(function(){ window._lwCheckSynergyDiscovery(hash); }, 3000); } catch(e) {}
     // First plant ever minted by this keeper — one-shot celebration.
@@ -30584,6 +30606,8 @@ document.addEventListener('keydown', function(e) {
     if (typeof gtag !== 'undefined') gtag('event', 'plant_composted', { hash: plant.hash.slice(0,8), dna: dnaReward });
     if (window._trackQuest) window._trackQuest('composted', 1);
     if (window.LW_Log) window.LW_Log.write('plant_composted', { hash: plant.hash, name: typeof getPlantName === 'function' ? getPlantName(plant.hash) : '', tier: _tg.name, fertilizer: fertReward });
+    // Compost Cycle — 3 composts in a single day
+    try { if (window.LW_Events) window.LW_Events.incCounter('compost_cycle', 3, 'Compost Cycle', 'day'); } catch(e){}
     // Compost ghost — remember the fallen for 24 hours
     try {
       var _ghosts = JSON.parse(localStorage.getItem('lw_compost_ghosts') || '[]');
@@ -37616,6 +37640,13 @@ function showTP(p,mk){
   if(p.own){
     if(otherAct)otherAct.style.display='none';
     if(ownActions)ownActions.style.display='flex';
+    // Stranger's Kindness — a stranger tended or watered this plant. The
+    // strangerTendAddMs marker gets set by _waterStranger / _tendStranger.
+    try {
+      if (window.LW_Events && p.strangerTendAddMs && p.strangerTendAddMs > 0) {
+        window.LW_Events.fire("Stranger's Kindness");
+      }
+    } catch(e){}
     // Pollen rate info
     var _polRates={Common:1,Uncommon:2,Rare:4,Epic:6,Legendary:9,Mythic:12,Cosmic:15};
     var _polRate=_polRates[p.grade]||1;
@@ -38065,6 +38096,14 @@ function _waterOwnPlant(p,mk){
   if(window._LW_toolXP)window._LW_toolXP('can',3);
   if(window.LW_Log)window.LW_Log.write('wild_watered',{hash:p.hash});
   try { if (window.LW_Events) window.LW_Events.incCounter('rainfall', 3, 'Rainfall', 'session'); } catch(e){}
+  // Hour-based events: Night Bloom (midnight-3am) + Morning Dew (4-7am)
+  try {
+    if (window.LW_Events) {
+      var _nh = new Date().getHours();
+      if (_nh >= 0 && _nh < 3) window.LW_Events.fire('Night Bloom');
+      else if (_nh >= 4 && _nh < 7) window.LW_Events.fire('Morning Dew');
+    }
+  } catch(e){}
   // Book of Secrets: Sunstroke Summit — 3 plants watered during a summer evening
   try {
     if (window.LW_Events && window.getSeasonInfo) {
@@ -40762,6 +40801,14 @@ window._hexAction=function(action){
         name:typeof getPlantName==='function'?getPlantName(p.hash):'',
         ownerName:p.ownerName||'Keeper'
       });
+      // Cutting Shared — a cutting from a stranger (plant owned by someone else)
+      try {
+        if (window.LW_Events && p.ownerUid) {
+          var _cMyUid='';
+          try { var _uu = window.firebase && firebase.auth() && firebase.auth().currentUser; if (_uu) _cMyUid = _uu.uid; } catch(e){}
+          if (_cMyUid && p.ownerUid !== _cMyUid) window.LW_Events.fire('Cutting Shared');
+        }
+      } catch(e){}
       if(window.renderNursery)renderNursery();
       if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
       _toast('\u2702\ufe0f Clone seed added to the nursery. The parent weakened.');
@@ -41617,6 +41664,15 @@ function _e(v){
   // applies. Keeps companions feeling like pets you raise through play.
   if(v==='game_win'&&window.LW_Comp&&LW_Comp.observeWin){
     try{LW_Comp.observeWin(_a);}catch(e){}
+  }
+  // Hour of the Wolf — game won between 2am and 5am
+  if(v==='game_win'){
+    try {
+      if(window.LW_Events){
+        var _hwh=new Date().getHours();
+        if(_hwh>=2 && _hwh<5) window.LW_Events.fire('Hour of the Wolf');
+      }
+    } catch(e){}
   }
 }
 window._e=_e;
@@ -51424,6 +51480,13 @@ window._castWeather = function(typeId) {
     localStorage.setItem(_wkey, JSON.stringify(_wset));
     if (Object.keys(_wset).length >= 4 && window.LW_Events) window.LW_Events.fire('Storm Walker');
   } catch(e){}
+  // Frost Touch — cast Rain during Winter
+  try {
+    if (window.LW_Events && t.id === 'rain' && window.getSeasonInfo) {
+      var _ftsi = window.getSeasonInfo();
+      if (_ftsi && _ftsi.name === 'Winter') window.LW_Events.fire('Frost Touch');
+    }
+  } catch(e){}
   _renderWeatherOpts();
   if (window._updateDewDisplay) window._updateDewDisplay();
 };
@@ -57604,7 +57667,34 @@ window.LW_EVENT_CATALOG = [
     { name: "Wanderer's Child", hint: 'Cross-pollinate with a stranger\u2019s wild plant', riddle: 'A lineage that started in someone else\u2019s greenhouse now lives in yours.',
       lore: "Cross-pollinating with a stranger's wild plant weaves two unrelated gardens together. Your offspring carries traits from a keeper you may never meet. It is one of the few ways the game makes you porous." },
     { name: 'Turned Tide', hint: 'A stranger harvested one of your wild plants', riddle: 'Someone unknown to you is growing what was yours.',
-      lore: "The plant you dropped into the world has been taken. You lose the drop but gain its story — a stranger, somewhere, saw it and pulled it into their collection. The grove is bigger than your garden." }
+      lore: "The plant you dropped into the world has been taken. You lose the drop but gain its story — a stranger, somewhere, saw it and pulled it into their collection. The grove is bigger than your garden." },
+    { name: "Stranger's Kindness", hint: 'Receive a tend/water from another keeper', riddle: 'A watering can you didn\u2019t hear, on a plant you didn\u2019t know was thirsty.',
+      lore: "Someone tended one of your wild plants. You may never know who. The garden does, though — the plant holds the memory of their kindness. Pay it forward, or don't. Either way, the loop closed." },
+    { name: 'Cutting Shared', hint: 'Take your first cutting from a stranger\u2019s wild plant', riddle: 'Stem of someone else\u2019s story, rooted in yours.',
+      lore: "A cutting is a graft of narrative. You took a piece of someone else's plant home — not to steal, but to continue. Old gardeners did this constantly. It's how half of garden history propagates." }
+  ]},
+  // ═══ HOUR / TIME-OF-DAY EVENTS ═══
+  // Fire when the keeper is playing at specific times. Rewards the kind of
+  // keeper who opens the app at unusual hours.
+  { name: 'HOUR', color: '#7b6b9d', desc: 'Moments in specific hours', events: [
+    { name: 'Night Bloom', hint: 'Tend a plant between midnight and 3am', riddle: 'The garden never truly sleeps — only the keeper does.',
+      lore: "Some keepers tend their plants in the small hours of the morning. The world is still. The plants don't know what time it is, but they know you came anyway. A quiet devotion." },
+    { name: 'Morning Dew', hint: 'Tend a plant between 4am and 7am', riddle: 'First light, first water, first breath of the day.',
+      lore: "Pre-dawn tending is a kind of monastic act. The grove is literally wet — dew has fallen overnight — and you meet it on its terms. This is how sage gardeners start a good day." },
+    { name: 'Golden Hour Witness', hint: 'Mint a plant between 6pm and 7pm', riddle: 'Photographers know this light. Gardeners know this feeling.',
+      lore: "Golden hour is a sliver of the day when everything photographs well. Plants bloom here with a kind of cinematic dignity. A mint in this window is the garden's way of posing for the camera." },
+    { name: 'Hour of the Wolf', hint: 'Complete a game between 2am and 5am', riddle: 'The hour named for when dreams come hardest.',
+      lore: "The hour of the wolf is the deepest stretch of night — when most humans sleep badly if at all. Playing through it takes a specific kind of mind. The garden is fine with it. It is, in fact, impressed." }
+  ]},
+  // ═══ CRAFT EVENTS ═══
+  // The daily/weekly work of keeping a garden. Quiet rewards for routine.
+  { name: 'CRAFT', color: '#8CB86E', desc: 'The daily work of tending', events: [
+    { name: 'Compost Cycle', hint: 'Compost 3 plants in one day', riddle: 'Three returnings in a single turning of the sun.',
+      lore: "Three composts in one day is a lot of letting go. This is the craft side of keeping — knowing when a plant has given what it will give, and making room for the next." },
+    { name: 'Nursery Song', hint: 'Water the same nursery seed on 3 consecutive days', riddle: 'A song the seed has learned by heart.',
+      lore: "Three days of water on a single seed is a small ritual. No seed NEEDS three consecutive days — they just grow better when they get them. This is the difference between tending and merely watering." },
+    { name: 'Frost Touch', hint: 'Cast Rain weather during Winter', riddle: 'Water in the cold is a second kind of snow.',
+      lore: "Rain cast in winter freezes on the leaf. Pretty, stern, a little risky. You knew the season and did it anyway — the garden reads this as confidence." }
   ]}
 ];
 
