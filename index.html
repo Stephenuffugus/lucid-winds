@@ -46798,6 +46798,8 @@ window.PW_grantXP=function(amount,reason){
   // Pollen Rush booster: 2x XP for 1h
   try{if(window.lwIsBoostActive&&window.lwIsBoostActive('pollenRush'))amount=amount*2;}catch(e){}
   try{if(window.lwIsBoostActive&&window.lwIsBoostActive('dawnAnthem'))amount=Math.ceil(amount*1.1);}catch(e){}
+  // Tree node Abundance (+0.25%/pt pollen/XP rate) — tiny but always-on
+  try{if(window._LW_treeBonus){var _pm=window._LW_treeBonus('pollenRate');if(_pm>1)amount=Math.ceil(amount*_pm);}}catch(e){}
   var xp=_getXP();
   var oldR=_getRank(xp);
   xp+=amount;_saveXP(xp);
