@@ -33763,6 +33763,7 @@ document.addEventListener('keydown', function(e) {
       treePoints: JSON.parse(localStorage.getItem('lw_tree_points') || 'null'),
       secondBloomClaimed: localStorage.getItem('lw_second_bloom_claimed') || null,
       guardianNextDrop: localStorage.getItem('lw_guardian_next_drop') || null,
+      gildingHour: localStorage.getItem('lw_gilding_hour') || null,
       lastSync: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
   }
@@ -33845,6 +33846,7 @@ document.addEventListener('keydown', function(e) {
               if (d.treePoints) { localStorage.setItem('lw_tree_points', JSON.stringify(d.treePoints)); try{_lwTreePtsCache=null;_lwTreeSpentCache=null;_lwTreeSpentCacheKey=null;}catch(e){} }
               if (d.secondBloomClaimed) localStorage.setItem('lw_second_bloom_claimed', d.secondBloomClaimed);
               if (d.guardianNextDrop) localStorage.setItem('lw_guardian_next_drop', d.guardianNextDrop);
+              if (d.gildingHour) localStorage.setItem('lw_gilding_hour', d.gildingHour);
             }
           });
           // ── Claim pending rewards (harvest rewards from displaced plants) ──
@@ -57129,15 +57131,59 @@ window._LW_treeAlloc=function(nodeId,delta){
 // Legacy respec helpers — retained as no-ops to keep any stragglers safe.
 window._LW_treeCanRespec=function(){return false;};
 window._LW_treeRespec=function(){return false;};
+// ═══ MILESTONE: THE GILDING (Keeper Lv 50) ═══
+// Pick one hour of your day. During that hour, all tree + class bonuses
+// get a 2× multiplier. Set once when player first crosses Lv 50 (auto to
+// current hour), user-changeable afterward via Book of Secrets card.
+window._LW_getGildingHour = function(){
+  var v = localStorage.getItem('lw_gilding_hour');
+  if (v === null || v === '') return null;
+  var n = parseInt(v, 10);
+  return (isNaN(n) || n < 0 || n > 23) ? null : n;
+};
+window._LW_setGildingHour = function(h){
+  if (typeof h !== 'number' || h < 0 || h > 23) return false;
+  try { localStorage.setItem('lw_gilding_hour', String(h)); } catch(e) {}
+  if (window._toast) _toast('\u2728 The Gilding set to ' + ((h%12||12) + (h<12?' AM':' PM')) + '.');
+  try { if (window.syncVaultToCloud) setTimeout(window.syncVaultToCloud, 400); } catch(e) {}
+  return true;
+};
+// Memoized — called from the hot _LW_classBonus wrapper. Hour can't change
+// within 60s of being checked, so cache that long. Kills the per-call Date
+// allocation + canSee.currentLevel lookup overhead.
+var _gildingCache = { at:0, val:false };
+window._LW_isGilding = function(){
+  try {
+    var now = Date.now();
+    if (now - _gildingCache.at < 60000) return _gildingCache.val;
+    var lvl = (window.canSee && window.canSee.currentLevel) ? window.canSee.currentLevel() : 0;
+    if (lvl < 50) { _gildingCache = { at:now, val:false }; return false; }
+    var h = window._LW_getGildingHour();
+    if (h === null) {
+      h = new Date().getHours();
+      try { localStorage.setItem('lw_gilding_hour', String(h)); } catch(e) {}
+      if (window._toast) setTimeout(function(){ window._toast('\u2728 The Gilding has begun. Your chosen hour: ' + ((h%12||12) + (h<12?' AM':' PM')) + '.'); }, 1500);
+    }
+    var active = (new Date().getHours() === h);
+    _gildingCache = { at:now, val:active };
+    return active;
+  } catch(e) { return false; }
+};
+
 // Fold tree bonus into existing _LW_classBonus so all consumers benefit
 // without touching 7+ call sites. Tree multiplier stacks on top of class.
+// Gilding hour doubles the composed bonus.
 (function(){
   var _orig=window._LW_classBonus;
   if(typeof _orig==='function'){
     window._LW_classBonus=function(kind){
       var cm=_orig(kind);
       var tm=window._LW_treeBonus?window._LW_treeBonus(kind):1;
-      return cm*tm;
+      var total=cm*tm;
+      // The Gilding — Lv 50 milestone. Doubles ALL bonuses during the
+      // chosen hour. Check lazily to avoid per-call date math when inactive.
+      try{if(window._LW_isGilding&&window._LW_isGilding())total*=2;}catch(e){}
+      return total;
     };
   }
 })();
