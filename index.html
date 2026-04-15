@@ -28747,7 +28747,24 @@ document.addEventListener('keydown', function(e) {
   window.earnHashes = earnHashes;
   window.getTotalHashes = getTotalHashes;
   window.spendHashes = spendHashes;
-  window.updateDashboard = updateDashboard;
+  // Debounced wrapper — callers fire updateDashboard many times during
+  // rapid state changes (plant action, breed, etc). Burst-coalesce to one
+  // render per ~300ms; immediate call if last ran > 500ms ago.
+  var _dashLastRun = 0, _dashTimer = null;
+  window.updateDashboard = function() {
+    var now = Date.now();
+    if (now - _dashLastRun > 500) {
+      _dashLastRun = now;
+      if (_dashTimer) { clearTimeout(_dashTimer); _dashTimer = null; }
+      return updateDashboard();
+    }
+    if (_dashTimer) return;
+    _dashTimer = setTimeout(function() {
+      _dashTimer = null;
+      _dashLastRun = Date.now();
+      try { updateDashboard(); } catch(e){}
+    }, 300);
+  };
 
   // ═══ DASHBOARD ═══
   function updateDashboard() {
