@@ -32722,6 +32722,22 @@ document.addEventListener('keydown', function(e) {
         }
       }
     } catch(e) {}
+    // Mystery box drop — Uncommon+ bloom rarity-scaled. Locked spec:
+    // Uncommon 8%, Rare 20%, Epic 40%, Legendary 65%, Mythic 85%, Cosmic 100%.
+    try {
+      if (window.LW_BOXES) {
+        var _boxGrade = 'Common';
+        try {
+          if (window.hashToTraits && window.getTerraGrade && plant && plant.hash) {
+            var _bt2 = hashToTraits(plant.hash);
+            var _bg2 = getTerraGrade(_bt2);
+            if (_bg2 && _bg2.name) _boxGrade = _bg2.name;
+          }
+        } catch(eBG){}
+        var _boxChance = ({Uncommon:0.08,Rare:0.20,Epic:0.40,Legendary:0.65,Mythic:0.85,Cosmic:1.00})[_boxGrade] || 0;
+        if (Math.random() < _boxChance) window.LW_BOXES.add(1);
+      }
+    } catch(eB){}
 
     // 8. UI refresh then cinematic reveal
     renderNursery();
@@ -35713,6 +35729,8 @@ function _checkStepMilestone(){
       if(window._logWildEvent)_logWildEvent({type:'step_milestone',meters:milestones[i],label:labels[milestones[i]],reward:_reward});
       // First Steps BoS event — fires once when the 500m milestone crosses.
       if(milestones[i]===500)try{if(window.LW_Events)window.LW_Events.fire('First Steps');}catch(e){}
+      // Mystery box drop on 5km + 10km
+      if((milestones[i]===5000||milestones[i]===10000)&&window.LW_BOXES)window.LW_BOXES.add(1);
       break;
     }
   }
@@ -36489,6 +36507,31 @@ function _collectFeralFromZone(zk, zonePlants) {
   if (window.LW_FORAGING && window.LW_FORAGING.openPanel) {
     window.LW_FORAGING.openPanel(zk, info.grade, function(success) {
       if (success) {
+        // Tether Moss — guarantees a Rare+ feral on this award. Reroll the
+        // hash until we get Rare+, bounded to avoid infinite loops.
+        try {
+          if (window.LW_ITEMS && window.LW_ITEMS.consumeTetherRarePlus && window.LW_ITEMS.consumeTetherRarePlus()) {
+            var _rareOrder = {Common:0,Uncommon:1,Rare:2,Epic:3,Legendary:4,Mythic:5,Cosmic:6};
+            var _curRank = _rareOrder[info.grade] != null ? _rareOrder[info.grade] : 0;
+            if (_curRank < 2) {
+              for (var _tmTry = 0; _tmTry < 200; _tmTry++) {
+                var _newHash = '';
+                for (var _bi = 0; _bi < 64; _bi++) _newHash += Math.floor(Math.random()*16).toString(16);
+                try {
+                  var _newT = window.hashToTraits(_newHash);
+                  var _newG = window.getTerraGrade(_newT);
+                  if (_newG && _rareOrder[_newG.name] >= 2) {
+                    feralHash = _newHash;
+                    info.grade = _newG.name;
+                    info.nm = window.getPlantName ? getPlantName(_newHash) : _newHash.slice(0,8);
+                    if (window._toast) window._toast('\ud83c\udf3f Tether Moss took hold \u2014 this seed carries rare blood.');
+                    break;
+                  }
+                } catch(eT){}
+              }
+            }
+          }
+        } catch(eTM){}
         _awardFeral(feralHash, parentA.hash, parentB.hash, zk, info);
       } else {
         _toast('The hex kept its secret. Try another zone.');
@@ -38540,22 +38583,27 @@ var MAX_PER_ZONE=3;
 // — 4-point gap: 10% (underdog has a shot)
 // — With Forager companion: 34% at 4-point gap (swingable!)
 // — 10-point gap: <1% (rare plants stay meaningful)
-function _rollTakeover(attackerPlant,defenderPlant){
+function _rollTakeover(attackerPlant,defenderPlant,opts){
+  opts = opts || {};
   function _d(n,sides){var t=0;for(var i=0;i<n;i++)t+=Math.floor(Math.random()*sides)+1;return t;}
+  function _dKeepBest(rolls,sides,keep){
+    var arr=[];for(var i=0;i<rolls;i++)arr.push(Math.floor(Math.random()*sides)+1);
+    arr.sort(function(a,b){return b-a;});
+    var t=0;for(var j=0;j<keep&&j<arr.length;j++)t+=arr[j];return t;
+  }
   function _tempBonus(plant,side){
     try{
       var t=window.hashToTraits?window.hashToTraits(plant.hash):null;
       if(!t)return 0;
       var info=window.getCompanionInfo?window.getCompanionInfo(t):null;
       if(!info||!info.tempKey)return 0;
-      // All 5 temperaments covered (guardian/forager/wanderer/mystic/symbiote)
       if(side==='attacker'){
         if(info.tempKey==='forager')return 3;
         if(info.tempKey==='wanderer')return 2;
         if(info.tempKey==='mystic')return 1;
       }else{
         if(info.tempKey==='guardian')return 2;
-        if(info.tempKey==='symbiote')return 1;  // community support shields the plant
+        if(info.tempKey==='symbiote')return 1;
         if(info.tempKey==='mystic')return 1;
       }
     }catch(e){}
@@ -38563,22 +38611,27 @@ function _rollTakeover(attackerPlant,defenderPlant){
   }
   var attEA=(attackerPlant&&attackerPlant.ea)||0;
   var defEA=(defenderPlant&&defenderPlant.ea)||0;
-  var attRoll=_d(2,6);
-  var defRoll=_d(2,6);
+  // Attacker: Forager's Torch → 3d6 keep best 2. Default 2d6.
+  var attRoll = opts.attackerTorch ? _dKeepBest(3,6,2) : _d(2,6);
+  // Defender: Bramble Thicket → 1d6 instead of 2d6.
+  var defRoll = opts.defenderBramble ? _d(1,6) : _d(2,6);
   var attComp=_tempBonus(attackerPlant,'attacker');
-  var defComp=_tempBonus(defenderPlant,'defender');
-  // Weather: Sun Flare gives attacker +3 (stacks with companion)
+  // Defender companion bonus zeroed by attacker's Dust Storm.
+  var defComp = opts.attackerDustStorm ? 0 : _tempBonus(defenderPlant,'defender');
   var attWeather=0;
   try{if(window.isWeatherSun&&window.isWeatherSun())attWeather=3;}catch(e){}
+  // Defender: Moonwake → +3 flat EA bonus on this contest.
+  var defMoonwake = opts.defenderMoonwake ? 3 : 0;
   var attTotal=attEA+attRoll+attComp+attWeather;
-  var defTotal=defEA+defRoll+defComp;
+  var defTotal=defEA+defRoll+defComp+defMoonwake;
   return{
     attEA:attEA,defEA:defEA,
     attRoll:attRoll,defRoll:defRoll,
     attComp:attComp,defComp:defComp,
-    attWeather:attWeather,
+    attWeather:attWeather,defMoonwake:defMoonwake,
     attTotal:attTotal,defTotal:defTotal,
-    attackerWins:attTotal>defTotal
+    attackerWins:attTotal>defTotal,
+    itemsApplied: opts
   };
 }
 window._rollTakeover=_rollTakeover;
@@ -38746,18 +38799,36 @@ function _drop(pl){
     if(window._openContestInspector){
       window._openContestInspector(pl,myEA,inZone,function(targetPlant){
         if(!targetPlant){_toast('Contest cancelled.');return;}
-        // Mulch Ward — if the defender has been warded, attacker loses
-        // automatically regardless of EA / roll. Consumes one ward.
-        if(window.LW_ITEMS&&window.LW_ITEMS.hasWard&&window.LW_ITEMS.hasWard(targetPlant.hash)){
-          window.LW_ITEMS.consumeWard(targetPlant.hash);
-          _toast('\ud83d\udee1\ufe0f Mulch Ward held the line. The wards consume themselves when they do their work.');
+        // Shellgourd — zone locked, no roll even happens. Burns the gourd.
+        if(window.LW_ITEMS&&window.LW_ITEMS.hasShellgourd&&window.LW_ITEMS.hasShellgourd(targetPlant.hash)){
+          window.LW_ITEMS.consumeShellgourd(targetPlant.hash);
+          _toast('\ud83e\uddc9 Shellgourd refused the challenge. The zone is sealed.');
           return;
         }
+        // Mulch Ward — auto-fail the attack, burn one ward.
+        if(window.LW_ITEMS&&window.LW_ITEMS.hasWard&&window.LW_ITEMS.hasWard(targetPlant.hash)){
+          window.LW_ITEMS.consumeWard(targetPlant.hash);
+          _toast('\ud83d\udee1\ufe0f Mulch Ward held the line.');
+          return;
+        }
+        // Read attacker's primed items + defender's timed buffs.
+        var iq = (window.LW_ITEMS&&window.LW_ITEMS.consumeContestQueue)?window.LW_ITEMS.consumeContestQueue():{};
+        var rollOpts = {
+          attackerTorch:    !!iq.torch,
+          attackerDustStorm:!!iq.dustStorm,
+          defenderBramble:  !!(window.LW_ITEMS&&window.LW_ITEMS.hasBramble&&window.LW_ITEMS.hasBramble(targetPlant.hash)),
+          defenderMoonwake: !!(window.LW_ITEMS&&window.LW_ITEMS.hasMoonwake&&window.LW_ITEMS.hasMoonwake(targetPlant.hash))
+        };
         var tEA=_wildEA(targetPlant);
-        var _att={hash:pl.hash,ea:myEA};
-        var _def={hash:targetPlant.hash,ea:tEA};
-        var _roll=_rollTakeover(_att,_def);
+        var _roll=_rollTakeover({hash:pl.hash,ea:myEA},{hash:targetPlant.hash,ea:tEA},rollOpts);
+        // Moonwake burns on the contest whether attacker wins or loses.
+        if(rollOpts.defenderMoonwake&&window.LW_ITEMS&&window.LW_ITEMS.consumeMoonwake) window.LW_ITEMS.consumeMoonwake(targetPlant.hash);
         if(!_roll.attackerWins){
+          // Uproot Charm — plant returns to attacker, no penalty. Burns queued.
+          if(iq.uprootCharm){
+            _toast('\ud83c\udf38 Uproot Charm pulled your plant home. '+_formatRollToast(_roll));
+            return;
+          }
           _toast('Held the line. \ud83c\udfb2 '+_formatRollToast(_roll));
           return;
         }
@@ -50606,11 +50677,13 @@ function render(){
   }
   for(var j=st.plants.length;j<mx;j++){h+='<div class="ps"><div class="tr" data-g="Common" style="opacity:0.2;">'+I.ter+'<div class="pm" style="opacity:0.12;color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;">+</div></div></div>';}
   var sh=0;for(var k=1;k<SL.length&&sh<2;k++){if(SL[k].k&&!st.unlocks[SL[k].k]){h+='<div class="lk">'+UI.lk+'<div class="lh">'+SL[k].h+'</div></div>';sh++;}}
-  // Return to Base + Items buttons inside backpack panel
-  h+='<div style="grid-column:1/-1;margin-top:8px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;">';
-  h+='<button id="bp-rtb-inner" onclick="window.FG_Backpack&&FG_Backpack.returnToBase&&FG_Backpack.returnToBase();" style="min-height:44px;padding:10px 18px;font-family:Bebas Neue,sans-serif;font-size:0.72rem;letter-spacing:0.1em;color:var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(200,168,75,0.04));border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;cursor:pointer;">🏠 RETURN TO BASE</button>';
+  // Return to Base + Items + Boxes buttons inside backpack panel
+  h+='<div style="grid-column:1/-1;margin-top:8px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">';
+  h+='<button id="bp-rtb-inner" onclick="window.FG_Backpack&&FG_Backpack.returnToBase&&FG_Backpack.returnToBase();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(200,168,75,0.04));border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;cursor:pointer;">🏠 BASE</button>';
   var _itemTotal=0;try{if(window.LW_ITEMS)_itemTotal=window.LW_ITEMS.total();}catch(e){}
-  h+='<button onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" style="min-height:44px;padding:10px 18px;font-family:Bebas Neue,sans-serif;font-size:0.72rem;letter-spacing:0.1em;color:var(--sage);background:linear-gradient(180deg,rgba(122,179,86,0.18),rgba(122,179,86,0.05));border:1.5px solid rgba(122,179,86,0.4);border-radius:10px;cursor:pointer;">\ud83c\udf31 ITEMS'+(_itemTotal>0?' ('+_itemTotal+')':'')+'</button>';
+  h+='<button onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--sage);background:linear-gradient(180deg,rgba(122,179,86,0.18),rgba(122,179,86,0.05));border:1.5px solid rgba(122,179,86,0.4);border-radius:10px;cursor:pointer;">\ud83c\udf31 ITEMS'+(_itemTotal>0?' ('+_itemTotal+')':'')+'</button>';
+  var _boxTotal=0;try{if(window.LW_BOXES)_boxTotal=window.LW_BOXES.count();}catch(e){}
+  h+='<button onclick="if(window.LW_BOXES)LW_BOXES.openPanel();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_boxTotal>0?'var(--gold)':'var(--muted)')+';background:linear-gradient(180deg,rgba(232,160,191,0.15),rgba(200,168,75,0.04));border:1.5px solid '+(_boxTotal>0?'rgba(232,160,191,0.6)':'rgba(232,160,191,0.25)')+';border-radius:10px;cursor:pointer;'+(_boxTotal>0?'box-shadow:0 0 10px rgba(232,160,191,0.35);':'')+'">\ud83c\udf81 BOXES'+(_boxTotal>0?' ('+_boxTotal+')':'')+'</button>';
   h+='</div>';
   pe.innerHTML=h;
   var se=document.getElementById('bps');var cp=xc();h='';
@@ -57453,6 +57526,23 @@ window._lwClaimHerbarium = function(id){
       if (resolved || selected.length !== diff.cards) return;
       var cardsPlayed = selected.map(function(si){return hand[si];});
       resolved = resolveAttempt(comp.elements, cardsPlayed, diff.scoreNeeded);
+      // Diviner's Glass — one-shot conversion of MISS → ELSEWHERE for this
+      // resolved attempt. Applied BEFORE the learned[] write + score roll-up
+      // so counters count.
+      try {
+        if (window.LW_ITEMS && window.LW_ITEMS.consumeDiviner && window.LW_ITEMS.consumeDiviner()) {
+          for (var _dg = 0; _dg < resolved.reveal.length; _dg++) {
+            var _dv = resolved.reveal[_dg];
+            if (_dv.verdict === 'neutral') {
+              _dv.verdict = 'counter';
+              resolved.neutrals--; resolved.counters++;
+            }
+          }
+          resolved.score = (resolved.matches + resolved.wildExact) * 2 + resolved.counters + resolved.wilds;
+          resolved.success = resolved.score >= resolved.scoreNeeded;
+          if (window._toast) window._toast('\ud83d\udd0d Diviner\u2019s Glass lifts the fog \u2014 every close guess counted.');
+        }
+      } catch(eDG){}
       // Only EXACT hits (match / wild-exact) reveal a slot's true element —
       // those are the slots the player actually solved. ELSEWHERE (counter)
       // means the player's card is SOMEWHERE in the hex, not at this slot,
@@ -57534,52 +57624,99 @@ window._lwClaimHerbarium = function(id){
   var STORE = 'sws_items';
   var PENDING = 'sws_items_pending'; // queued effects for next forage/contest
 
-  // Catalog — only 4 items in Phase 1. Expand per plan.
+  // Full 17-item catalog. Metadata drives the items panel + BoS tab.
+  // 'wired':true means the effect actually runs in-game right now.
+  // Unwired items are visible in the panel + BoS but don't yet alter play.
   var CATALOG = {
-    foragersLens: {
-      key: 'foragersLens',
-      name: "Forager's Lens",
-      category: 'foraging',
-      rarity: 'Common',
-      art: 'assets/items/foragers-lens.png',
-      icon: '\ud83d\udd2e',
-      desc: 'Reveal one hex slot before you begin.',
-      lore: 'A drop of dew held in a petal, angled just so. For a breath, the hex shows you one of its answers.',
-      usage: 'tap before starting a forage'
-    },
-    compassShard: {
-      key: 'compassShard',
-      name: 'Compass Shard',
-      category: 'foraging',
-      rarity: 'Uncommon',
-      art: 'assets/items/compass-shard.png',
-      icon: '\ud83e\udded',
-      desc: '+1 attempt on the next hex you forage.',
-      lore: 'Broken glass from an old pocket compass. The needle still twitches toward the thing you are looking for.',
-      usage: 'tap before starting a forage'
-    },
-    mulchWard: {
-      key: 'mulchWard',
-      name: 'Mulch Ward',
-      category: 'defense',
-      rarity: 'Rare',
-      art: 'assets/items/mulch-ward.png',
-      icon: '\ud83d\udee1\ufe0f',
-      desc: 'Protect one of your wild plants. Auto-wins its next contest.',
-      lore: 'Damp, dense, full of the year\u2019s letting-go. Attackers arrive tired and leave more tired.',
-      usage: 'tap a wild plant of yours to ward it'
-    },
-    scryingStone: {
-      key: 'scryingStone',
-      name: 'Scrying Stone',
-      category: 'remote',
-      rarity: 'Uncommon',
-      art: 'assets/items/scrying-stone.png',
-      icon: '\ud83d\udd2e',
-      desc: 'Forage a hex within 1km without walking there.',
-      lore: 'Hold it to your brow. The far hex leans closer. One attempt, as if you had walked to it.',
-      usage: 'tap a hex on the map when this is primed'
-    }
+    // ─── FORAGING AIDS ───
+    foragersLens: { key:'foragersLens', name:"Forager's Lens", category:'foraging', rarity:'Common',
+      art:'assets/items/foragers-lens.png', icon:'\ud83d\udd2e',
+      desc:'Reveal one hex slot before you begin.',
+      lore:'A drop of dew held in a petal, angled just so. For a breath, the hex shows you one of its answers.',
+      usage:'tap before starting a forage', wired:true },
+    compassShard: { key:'compassShard', name:'Compass Shard', category:'foraging', rarity:'Uncommon',
+      art:'assets/items/compass-shard.png', icon:'\ud83e\udded',
+      desc:'+1 attempt on the next hex you forage.',
+      lore:'Broken glass from an old pocket compass. The needle still twitches toward the thing you are looking for.',
+      usage:'tap before starting a forage', wired:true },
+    tetherMoss: { key:'tetherMoss', name:'Tether Moss', category:'foraging', rarity:'Rare',
+      art:'assets/items/tether-moss.png', icon:'\ud83c\udf3f',
+      desc:'Next feral you forage is guaranteed Rare+ grade.',
+      lore:'Hair-fine green, pulled from the north side of an old stump. It roots where you root. Rare things catch on it.',
+      usage:'tap before a forage', wired:true },
+    divinersGlass: { key:'divinersGlass', name:"Diviner\u2019s Glass", category:'foraging', rarity:'Epic',
+      art:'assets/items/diviners-glass.png', icon:'\ud83d\udd0d',
+      desc:'One attempt: all your MISS cards count as ELSEWHERE instead.',
+      lore:'A lens ground from river quartz. Looking through it, every near-miss becomes a clue.',
+      usage:'tap during a forage, before the attempt', wired:true },
+    // ─── DEFENSE ───
+    mulchWard: { key:'mulchWard', name:'Mulch Ward', category:'defense', rarity:'Rare',
+      art:'assets/items/mulch-ward.png', icon:'\ud83d\udee1\ufe0f',
+      desc:'Protect a wild plant. Auto-wins its next contest.',
+      lore:'Damp, dense, full of the year\u2019s letting-go. Attackers arrive tired and leave more tired.',
+      usage:'tap a wild plant of yours to ward it', wired:true },
+    brambleThicket: { key:'brambleThicket', name:'Bramble Thicket', category:'defense', rarity:'Rare',
+      art:'assets/items/bramble-thicket.png', icon:'\ud83c\udf31',
+      desc:'For 24h, attackers roll only 1d6 against this plant. Brutal.',
+      lore:'A living wall of thorn laid down overnight. Bullies find somewhere easier to bother.',
+      usage:'tap a wild plant of yours', wired:true },
+    shellgourd: { key:'shellgourd', name:'Shellgourd', category:'defense', rarity:'Epic',
+      art:'assets/items/shellgourd.png', icon:'\ud83e\uddc9',
+      desc:'Zone locked for 48h \u2014 one contest blocks entirely, no roll.',
+      lore:'Hollow gourd harder than ceramic. Place it at the foot of a plant and the zone itself refuses company.',
+      usage:'tap a wild plant of yours', wired:true },
+    moonwake: { key:'moonwake', name:'Moonwake', category:'defense', rarity:'Uncommon',
+      art:'assets/items/moonwake.png', icon:'\ud83c\udf19',
+      desc:'+3 EA + a guardian bonus on your plant\u2019s next contest.',
+      lore:'A silver-blue sprig that only opens at midnight. The plant it touches remembers being dangerous.',
+      usage:'tap a wild plant of yours', wired:true },
+    // ─── OFFENSE ───
+    foragersTorch: { key:'foragersTorch', name:"Forager's Torch", category:'offense', rarity:'Rare',
+      art:'assets/items/foragers-torch.png', icon:'\ud83d\udd25',
+      desc:'Your next contest: roll 3d6, keep the best two.',
+      lore:'Torchwood soaked in resin. Attackers carrying it see the seams in a defender\u2019s roots.',
+      usage:'prime before your next contest', wired:true },
+    dustStorm: { key:'dustStorm', name:'Dust Storm', category:'offense', rarity:'Rare',
+      art:'assets/items/dust-storm.png', icon:'\ud83c\udf2a\ufe0f',
+      desc:'Your next contest: defender\u2019s companion bonus is zero.',
+      lore:'Ground quartz and pollen, tossed in an arc. The defender\u2019s familiar looks away at the wrong moment.',
+      usage:'prime before your next contest', wired:true },
+    uprootCharm: { key:'uprootCharm', name:'Uproot Charm', category:'offense', rarity:'Uncommon',
+      art:'assets/items/uproot-charm.png', icon:'\ud83c\udf38',
+      desc:'Lose your next contest? Plant returns to you, unharmed.',
+      lore:'A braided knot that remembers home. If the roll goes against you, your plant finds its way back.',
+      usage:'prime before your next contest', wired:true },
+    // ─── REMOTE FORAGING ───
+    scryingStone: { key:'scryingStone', name:'Scrying Stone', category:'remote', rarity:'Uncommon',
+      art:'assets/items/scrying-stone.png', icon:'\ud83d\udd2e',
+      desc:'Forage a hex within 1km without walking there.',
+      lore:'Hold it to your brow. The far hex leans closer. One attempt, as if you had walked to it.',
+      usage:'tap a nearby hex on the map', wired:false },
+    ravenEye: { key:'ravenEye', name:"Raven\u2019s Eye", category:'remote', rarity:'Rare',
+      art:'assets/items/ravens-eye.png', icon:'\ud83d\udc26',
+      desc:'Forage any hex within 10km.',
+      lore:'Borrowed sight. The raven flies, the keeper stays \u2014 and the hex still gets foraged.',
+      usage:'tap any hex on the map', wired:false },
+    slowArrow: { key:'slowArrow', name:'Slow Arrow', category:'remote', rarity:'Rare',
+      art:'assets/items/slow-arrow.png', icon:'\ud83c\udff9',
+      desc:'Pin a hex for 6 hours. Attempt it from anywhere in that window.',
+      lore:'Loosed at moss, not at a heart. The arrow waits where it fell and the hex stays open to you.',
+      usage:'pick a hex, return to it any time in 6h', wired:false },
+    whisperVine: { key:'whisperVine', name:'Whisper Vine', category:'remote', rarity:'Common',
+      art:'assets/items/whisper-vine.png', icon:'\ud83c\udf43',
+      desc:'Get notified when a tagged hex reseeds (7 days).',
+      lore:'A creeper laid across a hex. It tugs your sleeve when the seed inside turns over.',
+      usage:'tap a hex to start listening', wired:false },
+    wanderersMap: { key:'wanderersMap', name:"Wanderer\u2019s Map", category:'remote', rarity:'Epic',
+      art:'assets/items/wanderers-map.png', icon:'\ud83d\uddfa\ufe0f',
+      desc:'The wind decides. Carries you to a random real biome hex to forage once.',
+      lore:'Release the map to the wind. It carries you somewhere you\u2019d never have chosen \u2014 and that is the gift.',
+      usage:'open and release', wired:false },
+    delegateToken: { key:'delegateToken', name:'Delegate Token', category:'remote', rarity:'Epic',
+      art:'assets/items/delegate-token.png', icon:'\ud83e\udd1d',
+      desc:'Send to a friend \u2014 they forage one of your hexes. You split the reward.',
+      lore:'A coin stamped with two clasped vines. Proof that a garden can have more than one keeper.',
+      usage:'open, pick a hex, pick a friend', wired:false }
   };
   window.LW_ITEMS_CATALOG = CATALOG;
 
@@ -57622,6 +57759,142 @@ window._lwClaimHerbarium = function(id){
     if (window._toast) window._toast('\ud83e\udded Compass primed. +1 attempt on your next hex.');
     _closePanel();
     return true;
+  }
+  // Tether Moss — next feral guaranteed Rare+
+  function useMoss(){
+    if (!spend('tetherMoss')) { if(window._toast)window._toast('No Tether Moss in your pouch.'); return false; }
+    var p = _loadPending(); p.tetherRarePlus = true; _savePending(p);
+    if (window._toast) window._toast('\ud83c\udf3f Tether Moss primed. Your next feral will carry rare blood.');
+    _closePanel();
+    return true;
+  }
+  // Diviner's Glass — MISS→ELSEWHERE for the next resolved attempt
+  function useGlass(){
+    if (!spend('divinersGlass')) { if(window._toast)window._toast('No Diviner\u2019s Glass in your pouch.'); return false; }
+    var p = _loadPending(); p.divinerGlass = true; _savePending(p);
+    if (window._toast) window._toast('\ud83d\udd0d Glass primed. Your next attempt turns MISS into ELSEWHERE.');
+    _closePanel();
+    return true;
+  }
+  // Forager's Torch — 3d6 keep best 2 on next contest
+  function useTorch(){
+    if (!spend('foragersTorch')) { if(window._toast)window._toast('No Forager\u2019s Torch in your pouch.'); return false; }
+    var p = _loadPending(); p.torch = true; _savePending(p);
+    if (window._toast) window._toast('\ud83d\udd25 Torch primed. 3d6 keep best on your next contest.');
+    _closePanel();
+    return true;
+  }
+  // Dust Storm — zero defender companion bonus on next contest
+  function useDustStorm(){
+    if (!spend('dustStorm')) { if(window._toast)window._toast('No Dust Storm in your pouch.'); return false; }
+    var p = _loadPending(); p.dustStorm = true; _savePending(p);
+    if (window._toast) window._toast('\ud83c\udf2a\ufe0f Dust primed. Defender\u2019s companion will look away.');
+    _closePanel();
+    return true;
+  }
+  // Uproot Charm — plant returns on loss
+  function useUproot(){
+    if (!spend('uprootCharm')) { if(window._toast)window._toast('No Uproot Charm in your pouch.'); return false; }
+    var p = _loadPending(); p.uprootCharm = true; _savePending(p);
+    if (window._toast) window._toast('\ud83c\udf38 Charm primed. Your plant will find its way back if you lose.');
+    _closePanel();
+    return true;
+  }
+  // Bramble / Shellgourd / Moonwake — applied to a specific wild plant by hash.
+  // Picker mirrors the Mulch Ward flow.
+  function _applyPlantBuff(itemKey, buffKey, durationMs, toastMsg){
+    var mine = [];
+    try {
+      var all = JSON.parse(localStorage.getItem('fg_wild_plants') || '[]');
+      for (var i=0;i<all.length;i++) if (all[i] && all[i].hash && all[i].alive !== false) mine.push(all[i]);
+    } catch(e){}
+    if (!mine.length) { if(window._toast)window._toast('You have no wild plants. Drop one first.'); return false; }
+    var commit = function(hash){
+      if (!spend(itemKey)) return;
+      var p = _loadPending(); p[buffKey] = p[buffKey] || {};
+      p[buffKey][hash] = durationMs ? (Date.now() + durationMs) : true;
+      _savePending(p);
+      var nm = window.getPlantName?window.getPlantName(hash):'your plant';
+      if (window._toast) window._toast(toastMsg.replace('{name}', nm));
+      try { document.getElementById('lw-items-ward-picker').remove(); } catch(e){}
+      _closePanel();
+    };
+    if (mine.length === 1) { commit(mine[0].hash); return true; }
+    // Reuse the ward picker with a per-item commit handler
+    window.LW_ITEMS._commitPick = commit;
+    _openBuffPicker(mine, itemKey);
+    return true;
+  }
+  function _openBuffPicker(plants, itemKey){
+    var it = CATALOG[itemKey];
+    var ov = document.createElement('div');
+    ov.id = 'lw-items-ward-picker';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:100002;background:rgba(5,8,4,0.96);backdrop-filter:blur(10px);overflow-y:auto;padding:1rem;';
+    var h = '<div style="max-width:420px;margin:0 auto;">';
+    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">';
+    h += '<div style="font-family:Playfair Display,serif;font-size:1rem;color:var(--gold);font-style:italic;">Apply '+it.name+' to which plant?</div>';
+    h += '<button onclick="document.getElementById(\'lw-items-ward-picker\').remove()" style="width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.5);color:var(--cream);font-size:0.9rem;cursor:pointer;">\u2715</button>';
+    h += '</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.8rem;">'+it.desc+'</div>';
+    for (var i=0;i<plants.length;i++){
+      var p = plants[i];
+      var svg = ''; try { if (window._generatePlantSVG) svg = window._generatePlantSVG(p.hash, 80, 1); } catch(e){}
+      var nm = (window.getPlantName?window.getPlantName(p.hash):p.hash.slice(0,8));
+      h += '<div onclick="window.LW_ITEMS._commitPick(\''+p.hash+'\')" style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.6rem;padding:0.7rem;background:rgba(18,22,16,0.7);border:1.5px solid rgba(122,179,86,0.2);border-radius:10px;cursor:pointer;">';
+      h += '<div style="width:70px;height:70px;flex-shrink:0;">'+svg+'</div>';
+      h += '<div style="flex:1;font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.06em;">'+nm+'</div>';
+      h += '</div>';
+    }
+    h += '</div>';
+    ov.innerHTML = h;
+    document.body.appendChild(ov);
+  }
+  function useBramble(){ return _applyPlantBuff('brambleThicket','bramble', 86400000, '\ud83c\udf31 Bramble laid around {name}. Attackers roll 1d6 for 24h.'); }
+  function useShellgourd(){ return _applyPlantBuff('shellgourd','shellgourd', 172800000, '\ud83e\uddc9 Shellgourd placed at {name}. One contest blocked, 48h.'); }
+  function useMoonwake(){ return _applyPlantBuff('moonwake','moonwake', 0, '\ud83c\udf19 Moonwake on {name}. +3 EA next contest.'); }
+  // Per-plant buff lookups — called by contest inspector / takeover roll
+  function _getPlantBuff(hash, key){
+    var p = _loadPending(); if (!p[key]) return null;
+    var b = p[key][hash]; if (!b) return null;
+    if (b !== true && Date.now() > b) { delete p[key][hash]; _savePending(p); return null; }
+    return b;
+  }
+  function hasBramble(hash){ return !!_getPlantBuff(hash,'bramble'); }
+  function hasShellgourd(hash){ return !!_getPlantBuff(hash,'shellgourd'); }
+  function hasMoonwake(hash){ return !!_getPlantBuff(hash,'moonwake'); }
+  function consumeShellgourd(hash){
+    var p = _loadPending(); if (!p.shellgourd || !p.shellgourd[hash]) return false;
+    delete p.shellgourd[hash]; _savePending(p); return true;
+  }
+  function consumeMoonwake(hash){
+    var p = _loadPending(); if (!p.moonwake || !p.moonwake[hash]) return false;
+    delete p.moonwake[hash]; _savePending(p); return true;
+  }
+  // Contest-queue consumer for attacker's own primed items (torch / dust / uproot)
+  function consumeContestQueue(){
+    var p = _loadPending();
+    var out = { torch: !!p.torch, dustStorm: !!p.dustStorm, uprootCharm: !!p.uprootCharm };
+    if (p.torch) delete p.torch;
+    if (p.dustStorm) delete p.dustStorm;
+    if (p.uprootCharm) delete p.uprootCharm;
+    _savePending(p);
+    return out;
+  }
+  // Feral-rarity upgrade consumer — read once and flushed.
+  function consumeTetherRarePlus(){
+    var p = _loadPending();
+    var fired = !!p.tetherRarePlus;
+    if (fired) delete p.tetherRarePlus;
+    _savePending(p);
+    return fired;
+  }
+  // Diviner's Glass consumer — flushed on attempt resolve.
+  function consumeDiviner(){
+    var p = _loadPending();
+    var fired = !!p.divinerGlass;
+    if (fired) delete p.divinerGlass;
+    _savePending(p);
+    return fired;
   }
   // Mulch Ward — player taps a wild plant to ward it (Phase 1: just toggle
   // via a confirm that takes the FIRST of their wild plants; real plant-
@@ -57739,7 +58012,13 @@ window._lwClaimHerbarium = function(id){
         h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--gold);">\u00d7'+n+'</div></div>';
         h += '<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);line-height:1.5;margin-top:2px;">'+it.desc+'</div>';
         h += '</div>';
-        var handler = it.key==='foragersLens'?'useLens':it.key==='compassShard'?'useShard':it.key==='mulchWard'?'useWard':it.key==='scryingStone'?'useScry':null;
+        var handlerMap = {
+          foragersLens:'useLens', compassShard:'useShard', tetherMoss:'useMoss', divinersGlass:'useGlass',
+          mulchWard:'useWard', brambleThicket:'useBramble', shellgourd:'useShellgourd', moonwake:'useMoonwake',
+          foragersTorch:'useTorch', dustStorm:'useDustStorm', uprootCharm:'useUproot',
+          scryingStone:'useScry'
+        };
+        var handler = handlerMap[it.key] || null;
         if (handler && !disabled) {
           h += '<button onclick="window.LW_ITEMS.'+handler+'()" style="min-height:40px;padding:8px 14px;font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;background:rgba(200,168,75,0.18);border:1.5px solid var(--gold);color:var(--gold);border-radius:8px;cursor:pointer;flex-shrink:0;">USE</button>';
         }
@@ -57767,10 +58046,17 @@ window._lwClaimHerbarium = function(id){
   window.LW_ITEMS = {
     CATALOG: CATALOG,
     count: count, add: add, spend: spend, total: total,
-    useLens: useLens, useShard: useShard, useWard: useWard, useScry: useScry,
-    _confirmWard: _confirmWard,
+    useLens: useLens, useShard: useShard, useMoss: useMoss, useGlass: useGlass,
+    useWard: useWard, useBramble: useBramble, useShellgourd: useShellgourd, useMoonwake: useMoonwake,
+    useTorch: useTorch, useDustStorm: useDustStorm, useUproot: useUproot, useScry: useScry,
+    _confirmWard: _confirmWard, _commitPick: null,
     hasWard: hasWard, consumeWard: consumeWard,
+    hasBramble: hasBramble, hasShellgourd: hasShellgourd, hasMoonwake: hasMoonwake,
+    consumeShellgourd: consumeShellgourd, consumeMoonwake: consumeMoonwake,
     consumeForageQueue: consumeForageQueue,
+    consumeContestQueue: consumeContestQueue,
+    consumeTetherRarePlus: consumeTetherRarePlus,
+    consumeDiviner: consumeDiviner,
     openPanel: openPanel, _closePanel: _closePanel
   };
 
@@ -57787,6 +58073,204 @@ window._lwClaimHerbarium = function(id){
       add('compassShard', 1);
     }
   } catch(e){}
+})();
+
+// ═══ LW_BOXES — mystery boxes that drop LW_ITEMS ═══
+// Earned from nursery blooms (Uncommon+ ~20%), step milestones, daily
+// streaks, and Pi shop (later). Opens with pity: every 8 boxes
+// guarantees Rare+, every 25 guarantees Epic+. Counter visible.
+(function(){
+  'use strict';
+  var STORE = 'sws_boxes';          // { count: 3 }
+  var PITY  = 'sws_boxes_pity';     // { sinceRare: 0, sinceEpic: 0 }
+
+  function _load(){ try { return JSON.parse(localStorage.getItem(STORE)||'{"count":0}'); } catch(e){ return {count:0}; } }
+  function _save(s){ try { localStorage.setItem(STORE, JSON.stringify(s)); } catch(e){} }
+  function _loadPity(){ try { return JSON.parse(localStorage.getItem(PITY)||'{"sinceRare":0,"sinceEpic":0}'); } catch(e){ return {sinceRare:0,sinceEpic:0}; } }
+  function _savePity(p){ try { localStorage.setItem(PITY, JSON.stringify(p)); } catch(e){} }
+
+  function count(){ return _load().count || 0; }
+  function add(n){
+    var s = _load(); s.count = (s.count||0) + (n||1); _save(s);
+    if (window._toast) window._toast('\ud83c\udf81 Mystery box \u2014 +'+(n||1)+' in your pouch. Open from items menu.');
+    try { if (window._haptic) window._haptic('ok'); } catch(e){}
+    return true;
+  }
+
+  var RARITY_ORDER = ['Common','Uncommon','Rare','Epic','Legendary'];
+  var RARITY_RANK  = {Common:0,Uncommon:1,Rare:2,Epic:3,Legendary:4};
+  // Locked-spec weights (sum 100)
+  var WEIGHTS = { Common:48, Uncommon:30, Rare:15, Epic:6, Legendary:1 };
+
+  function _pickRarity(minRank){
+    // Build weighted pool, filtered to >= minRank
+    var pool = [];
+    for (var r in WEIGHTS) if (RARITY_RANK[r] >= minRank) {
+      for (var i = 0; i < WEIGHTS[r]; i++) pool.push(r);
+    }
+    if (!pool.length) return 'Legendary';
+    return pool[Math.floor(Math.random()*pool.length)];
+  }
+
+  function _pickItemOfRarity(rarity){
+    var keys = [];
+    var CAT = window.LW_ITEMS_CATALOG || {};
+    for (var k in CAT) if (CAT[k].rarity === rarity) keys.push(k);
+    if (!keys.length) {
+      // Fallback: pick from any rarity at or below
+      for (var k2 in CAT) keys.push(k2);
+    }
+    return keys[Math.floor(Math.random()*keys.length)];
+  }
+
+  // Open one box. Applies pity counter, selects an item, grants it.
+  // Returns the awarded item key + rarity so the UI can render a reveal.
+  function openOne(){
+    var s = _load(); if (!s.count || s.count <= 0) return null;
+    s.count--; _save(s);
+    var p = _loadPity();
+    var minRank = 0;
+    if ((p.sinceEpic || 0) >= 24) minRank = Math.max(minRank, 3); // 25th = guaranteed Epic+
+    if ((p.sinceRare || 0) >= 7)  minRank = Math.max(minRank, 2); // 8th = guaranteed Rare+
+    var rarity = _pickRarity(minRank);
+    var rank = RARITY_RANK[rarity];
+    // Update pity counters
+    p.sinceRare = (rank >= 2) ? 0 : (p.sinceRare || 0) + 1;
+    p.sinceEpic = (rank >= 3) ? 0 : (p.sinceEpic || 0) + 1;
+    _savePity(p);
+    var itemKey = _pickItemOfRarity(rarity);
+    if (window.LW_ITEMS && window.LW_ITEMS.add) {
+      // Don't let LW_ITEMS.add toast — our reveal UI handles that.
+      var inv = {};
+      try { inv = JSON.parse(localStorage.getItem('sws_items')||'{}'); } catch(e){}
+      inv[itemKey] = (inv[itemKey]||0) + 1;
+      try { localStorage.setItem('sws_items', JSON.stringify(inv)); } catch(e){}
+    }
+    return { itemKey: itemKey, rarity: rarity };
+  }
+
+  function pityStatus(){
+    var p = _loadPity();
+    return {
+      nextRareIn: Math.max(0, 7 - (p.sinceRare || 0)),
+      nextEpicIn: Math.max(0, 24 - (p.sinceEpic || 0))
+    };
+  }
+
+  // ── Reveal UI ──
+  function openPanel(){
+    var existing = document.getElementById('lw-boxes-panel');
+    if (existing) { existing.remove(); return; }
+    var n = count();
+    var ov = document.createElement('div');
+    ov.id = 'lw-boxes-panel';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:100003;background:rgba(5,8,4,0.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);overflow-y:auto;padding:1rem;animation:panelFadeIn 0.25s ease;';
+    var pity = pityStatus();
+    var h = '<div style="max-width:420px;margin:0 auto;">';
+    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">';
+    h += '<div><div style="font-family:Playfair Display,serif;font-size:1.15rem;color:var(--gold);font-style:italic;">Mystery Boxes</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:2px;">'+n+' to open.</div></div>';
+    h += '<button onclick="window.LW_BOXES.close()" style="width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.5);color:var(--cream);font-size:1rem;cursor:pointer;">\u2715</button>';
+    h += '</div>';
+    // Pity strip
+    h += '<div style="padding:0.7rem;background:rgba(18,22,16,0.6);border:1.5px solid rgba(122,179,86,0.15);border-radius:12px;margin-bottom:0.9rem;">';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.12em;color:var(--muted);margin-bottom:0.4rem;">LUCK CARRIES</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--cream);line-height:1.6;">';
+    h += pity.nextRareIn === 0 ? '\u2605 Your next box guarantees <b style="color:var(--gold);">Rare+</b>.<br>' : (pity.nextRareIn === 1 ? '\u2605 Next box guarantees <b style="color:var(--gold);">Rare+</b>.<br>' : '\u2605 Rare+ guaranteed in <b>'+pity.nextRareIn+'</b> boxes.<br>');
+    h += pity.nextEpicIn === 0 ? '\u2605 Your next box guarantees <b style="color:#c07ac8;">Epic+</b>.' : (pity.nextEpicIn === 1 ? '\u2605 Next box guarantees <b style="color:#c07ac8;">Epic+</b>.' : '\u2605 Epic+ guaranteed in <b>'+pity.nextEpicIn+'</b> boxes.');
+    h += '</div></div>';
+    if (n > 0) {
+      h += '<button id="lw-box-open-btn" onclick="window.LW_BOXES.openNext()" style="display:block;width:100%;padding:18px;border-radius:14px;border:2px solid var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.3),rgba(122,179,86,0.18));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.14em;cursor:pointer;min-height:64px;box-shadow:0 0 20px rgba(200,168,75,0.3);">\ud83c\udf81 OPEN BOX ('+n+')</button>';
+      if (n >= 2) h += '<button onclick="window.LW_BOXES.openAll()" style="display:block;width:100%;margin-top:0.6rem;padding:12px;border-radius:12px;border:1.5px solid rgba(122,179,86,0.4);background:rgba(26,36,22,0.5);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">OPEN ALL '+n+'</button>';
+    } else {
+      h += '<div style="padding:2rem 1rem;text-align:center;font-family:DM Mono,monospace;font-size:0.65rem;color:var(--muted);line-height:1.6;">No boxes yet.<br><br>Earn them from Uncommon+ blooms, step milestones, and login streaks.</div>';
+    }
+    h += '</div>';
+    ov.innerHTML = h;
+    document.body.appendChild(ov);
+  }
+
+  function close(){
+    try { var p=document.getElementById('lw-boxes-panel'); if(p)p.remove(); } catch(e){}
+    try { var r=document.getElementById('lw-box-reveal'); if(r)r.remove(); } catch(e){}
+  }
+
+  function _renderReveal(result, thenRefresh){
+    var CAT = window.LW_ITEMS_CATALOG || {};
+    var it = CAT[result.itemKey] || { name:'?', icon:'?', desc:'' };
+    var rColor = result.rarity==='Legendary'?'#ff8ab0':result.rarity==='Epic'?'#c07ac8':result.rarity==='Rare'?'var(--gold)':result.rarity==='Uncommon'?'var(--sage)':'var(--muted)';
+    var r = document.createElement('div');
+    r.id = 'lw-box-reveal';
+    r.style.cssText = 'position:fixed;inset:0;z-index:100010;background:radial-gradient(ellipse at 50% 40%,rgba(40,30,15,0.95) 0%,rgba(5,8,4,0.97) 70%);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;padding:1rem;animation:panelFadeIn 0.3s ease;';
+    var h = '<div style="max-width:320px;text-align:center;">';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;letter-spacing:0.2em;color:'+rColor+';margin-bottom:0.6rem;">'+result.rarity.toUpperCase()+'</div>';
+    h += '<div style="width:180px;height:180px;margin:0 auto 1rem;border-radius:20px;background:rgba(18,22,16,0.85);border:3px solid '+rColor+';overflow:hidden;box-shadow:0 0 30px '+rColor+';display:flex;align-items:center;justify-content:center;">';
+    h += '<img src="'+it.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;font-size:4.5rem;&quot;>'+it.icon+'</div>\';">';
+    h += '</div>';
+    h += '<div style="font-family:Playfair Display,serif;font-size:1.3rem;color:var(--cream);font-style:italic;margin-bottom:0.4rem;">'+it.name+'</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);line-height:1.6;margin-bottom:1.2rem;">'+it.desc+'</div>';
+    h += '<button onclick="window.LW_BOXES._dismissReveal()" style="padding:12px 28px;border-radius:12px;border:1.5px solid var(--sage);background:rgba(122,179,86,0.18);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.12em;cursor:pointer;min-height:48px;">TAKE IT</button>';
+    h += '</div>';
+    r.innerHTML = h;
+    document.body.appendChild(r);
+    try { if (window._haptic) window._haptic('bloom'); } catch(e){}
+    window.LW_BOXES._dismissReveal = function(){
+      try { r.remove(); } catch(e){}
+      if (thenRefresh) openPanel();
+    };
+  }
+
+  function openNext(){
+    if (count() <= 0) return;
+    var result = openOne();
+    if (!result) return;
+    // Re-render panel behind reveal so count updates
+    try { var prev = document.getElementById('lw-boxes-panel'); if (prev) prev.remove(); } catch(e){}
+    openPanel();
+    _renderReveal(result, false);
+  }
+
+  function openAll(){
+    var all = [];
+    while (count() > 0) {
+      var r = openOne(); if (!r) break;
+      all.push(r);
+    }
+    if (!all.length) return;
+    try { var prev = document.getElementById('lw-boxes-panel'); if (prev) prev.remove(); } catch(e){}
+    // Summary modal
+    var r = document.createElement('div');
+    r.id = 'lw-box-reveal';
+    r.style.cssText = 'position:fixed;inset:0;z-index:100010;background:rgba(5,8,4,0.97);backdrop-filter:blur(14px);overflow-y:auto;padding:1rem;animation:panelFadeIn 0.3s ease;';
+    var CAT = window.LW_ITEMS_CATALOG || {};
+    var h = '<div style="max-width:420px;margin:0 auto;">';
+    h += '<div style="font-family:Playfair Display,serif;font-size:1.25rem;color:var(--gold);font-style:italic;text-align:center;margin-bottom:1rem;">The pouch opens</div>';
+    for (var i = 0; i < all.length; i++) {
+      var it = CAT[all[i].itemKey] || {};
+      var rc = all[i].rarity==='Legendary'?'#ff8ab0':all[i].rarity==='Epic'?'#c07ac8':all[i].rarity==='Rare'?'var(--gold)':all[i].rarity==='Uncommon'?'var(--sage)':'var(--muted)';
+      h += '<div style="display:flex;align-items:center;gap:0.7rem;padding:0.7rem;margin-bottom:0.5rem;background:rgba(18,22,16,0.7);border:1.5px solid '+rc+';border-radius:12px;">';
+      h += '<div style="width:60px;height:60px;flex-shrink:0;border-radius:10px;overflow:hidden;background:rgba(5,8,4,0.6);display:flex;align-items:center;justify-content:center;"><img src="'+(it.art||'')+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;font-size:1.8rem;&quot;>'+(it.icon||'?')+'</div>\';"></div>';
+      h += '<div style="flex:1;min-width:0;">';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--cream);letter-spacing:0.06em;">'+(it.name||'?')+'</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:'+rc+';letter-spacing:0.08em;">'+all[i].rarity.toUpperCase()+'</div>';
+      h += '</div></div>';
+    }
+    h += '<button onclick="window.LW_BOXES._dismissReveal()" style="display:block;width:100%;margin-top:0.8rem;padding:14px;border-radius:12px;border:1.5px solid var(--sage);background:rgba(122,179,86,0.18);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.12em;cursor:pointer;min-height:52px;">PACK IT ALL AWAY</button>';
+    h += '</div>';
+    r.innerHTML = h;
+    document.body.appendChild(r);
+    window.LW_BOXES._dismissReveal = function(){ try{r.remove();}catch(e){} };
+  }
+
+  window.LW_BOXES = {
+    count: count, add: add, openOne: openOne, pityStatus: pityStatus,
+    openPanel: openPanel, openNext: openNext, openAll: openAll, close: close,
+    _dismissReveal: function(){}
+  };
+
+  window.LW_debug = window.LW_debug || {};
+  window.LW_debug.grantBox = function(n){ return add(n||1); };
+  window.LW_debug.openBoxes = function(){ openPanel(); };
 })();
 
 // ═══ COMPANION FAMILIES V1 — base buffs + class affinity ═══
