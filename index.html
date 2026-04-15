@@ -31501,10 +31501,19 @@ document.addEventListener('keydown', function(e) {
     // surprise (and the user explicitly asked us to kill that preview).
     var _offPreview = '';
     var _isMystery = !!seed.mystery;
+    var _isClipping = seed.origin === 'cutting' || seed.origin === 'clipping';
     if (_isMystery) {
       _offPreview = '<div style="margin-top:0.3rem;padding:0.45rem 0.55rem;background:rgba(200,168,75,0.06);border:1px dashed rgba(200,168,75,0.35);border-radius:7px;">' +
         '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:var(--gold);margin-bottom:0.2rem;">\u2753 MYSTERY SEED</div>' +
         '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.4;">Pulled from a feral zone. Water it for three days to see what you\u2019ve got.</div>' +
+      '</div>';
+    } else if (_isClipping) {
+      // Clipping seeds inherit plant genetics only (leaf/stem/flower/
+      // season). No pot, substrate, aura, or companion — those stayed
+      // with the parent. Messaging should reflect that.
+      _offPreview = '<div style="margin-top:0.3rem;padding:0.45rem 0.55rem;background:rgba(122,179,86,0.06);border:1px dashed rgba(122,179,86,0.3);border-radius:7px;">' +
+        '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:var(--sage);margin-bottom:0.2rem;">\u2702\ufe0f CLIPPING</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.4;">Genetic clone of the parent. No pot, substrate, aura, or companion \u2014 just the plant. Water three days to root it.</div>' +
       '</div>';
     } else {
       _offPreview = '<div style="margin-top:0.3rem;padding:0.4rem 0.55rem;background:rgba(74,124,53,0.05);border:1px dashed rgba(122,179,86,0.3);border-radius:7px;">' +
