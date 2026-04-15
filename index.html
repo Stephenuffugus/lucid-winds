@@ -38891,6 +38891,8 @@ function _finishDrop(defenderGame){
   var dropEA=window.computeEA?window.computeEA(dropTraits,0):0;
   // Tree node Steady (+0.25%/pt defense EA) — scales YOUR plants' durability
   try{if(window._LW_treeBonus){var _dm=window._LW_treeBonus('defenseEa');if(_dm>1)dropEA=Math.ceil(dropEA*_dm);}}catch(e){}
+  // Guardian T2 "Stand Watch" ability — consume flag, +1 EA once
+  try{if(localStorage.getItem('lw_guardian_next_drop')==='1'){dropEA+=1;localStorage.removeItem('lw_guardian_next_drop');if(window._toast)setTimeout(function(){window._toast('\ud83d\udee1 Stand Watch applied: +1 EA');},800);}}catch(e){}
   // Overcrowding penalty: -1 EA on both the new plant and the matching neighbor
   if(pd.crowdPenaltyHash){
     dropEA=Math.max(0,dropEA-1);
@@ -55262,6 +55264,110 @@ window._lwClaimHerbarium = function(id){
   };
 })();
 
+// ═══ COMPANION T2 ACTIVE ABILITIES ═══
+// Research Team B's key missing piece: T2 should unlock an ACTIVE ability
+// on a cooldown, not just a bigger passive multiplier. One small-but-distinct
+// effect per family, gated behind (Bonded + equipped + CD clear). T3 rituals
+// are still passive (bigger/always-on) — that's a future slice.
+(function(){
+  var FAMILY_T2 = {
+    pollinators: { name:'Nectar Gift',  cdMs: 30 * 60000,  icon:'\ud83c\udf6f', desc:'Earn +3 Dew now, with the hum of the hive.' },
+    scatterers:  { name:'Scout Call',   cdMs: 20 * 60000,  icon:'\ud83c\udf43', desc:'A helper runs ahead \u2014 reveals your nearest feral bearing.' },
+    weavers:     { name:'Soft Thread',  cdMs: 120 * 60000, icon:'\ud83e\uddf5', desc:'Earn +1 Fertilizer, woven from patience.' },
+    wayfinders:  { name:'Wind Read',    cdMs: 15 * 60000,  icon:'\ud83c\udf2c',  desc:'Sense the biome + season around you right now.' },
+    guardians:   { name:'Stand Watch',  cdMs: 60 * 60000,  icon:'\ud83d\udee1', desc:'Your next wild drop gets +1 EA.' },
+    conduits:    { name:'Dew Call',     cdMs: 60 * 60000,  icon:'\ud83d\udca7', desc:'Earn +5 Dew now, pulled from the root.' },
+    mycelium:    { name:'Root Whisper', cdMs: 60 * 60000,  icon:'\ud83c\udf44', desc:'Earn +2 Dew + +1 Sunbeam from the underground network.' },
+    watchers:    { name:'Long Gaze',    cdMs: 30 * 60000,  icon:'\ud83d\udc41', desc:'Earn +1 Sunbeam and glimpse your strongest plant.' }
+  };
+  window.LW_FAMILY_T2 = FAMILY_T2;
+  function _cdKey(idx){return 'lw_comp_ability_cd_'+idx;}
+  window._LW_companionAbilityState = function(idx){
+    var lvl = window.LW_COMPANION ? LW_COMPANION.getLevel(idx) : 1;
+    var family = window.LW_COMPANION ? LW_COMPANION.FAMILY_OF[idx] : null;
+    var def = family ? FAMILY_T2[family] : null;
+    var active = window.LW_COMPANION && LW_COMPANION.getActiveCompanionIdx() === idx;
+    if (!def) return { def:null };
+    if (lvl < 2) return { def:def, family:family, locked:'LOCKED_TIER' };
+    if (!active) return { def:def, family:family, locked:'NOT_EQUIPPED' };
+    var last = 0;
+    try { last = parseInt(localStorage.getItem(_cdKey(idx)) || '0', 10); } catch(e) {}
+    var remainMs = def.cdMs - (Date.now() - last);
+    if (remainMs > 0) return { def:def, family:family, locked:'COOLDOWN', remainMs:remainMs };
+    return { def:def, family:family, ready:true };
+  };
+  window._LW_useCompanionAbility = function(idx){
+    var s = window._LW_companionAbilityState(idx);
+    if (!s || !s.ready) return false;
+    // Stamp cooldown first so double-tap can't double-fire
+    try { localStorage.setItem(_cdKey(idx), String(Date.now())); } catch(e) {}
+    var family = s.family;
+    var msg = '';
+    try {
+      if (family === 'pollinators') {
+        if (window.earnDew) window.earnDew(3, 'ability_nectar');
+        msg = '\ud83c\udf6f Nectar Gift \u2014 +3 Dew';
+      } else if (family === 'scatterers') {
+        if (window.earnHashes) window.earnHashes(1);
+        var ferals = [];
+        try { ferals = JSON.parse(localStorage.getItem('fg_ferals') || '[]'); } catch(e) {}
+        var near = null, nearD = Infinity;
+        if (window._uLat && window._uLng) {
+          for (var fi = 0; fi < ferals.length; fi++) {
+            var f = ferals[fi];
+            if (!f || f.collected || !f.lat) continue;
+            var _x=(f.lat-window._uLat)*Math.PI/180,_y=(f.lng-window._uLng)*Math.PI/180;
+            var _z=Math.sin(_x/2)*Math.sin(_x/2)+Math.cos(window._uLat*Math.PI/180)*Math.cos(f.lat*Math.PI/180)*Math.sin(_y/2)*Math.sin(_y/2);
+            var d=6371000*2*Math.atan2(Math.sqrt(_z),Math.sqrt(1-_z));
+            if (d < nearD) { nearD = d; near = f; }
+          }
+        }
+        msg = near ? ('\ud83c\udf43 Scout Call \u2014 nearest feral: ' + Math.round(nearD) + 'm \u00b7 +1 Sunbeam') : '\ud83c\udf43 Scout Call \u2014 no ferals in range \u00b7 +1 Sunbeam';
+      } else if (family === 'weavers') {
+        try {
+          var inv = null; try { inv = JSON.parse(localStorage.getItem('sws_inventory') || '{}'); } catch(e) {}
+          if (inv) { inv.fertilizer = (inv.fertilizer || 0) + 1; localStorage.setItem('sws_inventory', JSON.stringify(inv)); }
+        } catch(e) {}
+        msg = '\ud83e\uddf5 Soft Thread \u2014 +1 Fertilizer';
+      } else if (family === 'wayfinders') {
+        var biomeName = 'unknown terrain';
+        try { if (window._lastDetectedBiome && window.getBiomeInfo) { var bi = getBiomeInfo(window._lastDetectedBiome); if (bi) biomeName = bi.icon + ' ' + bi.name; } } catch(e) {}
+        var sInfo = null; try { if (window.getSeasonInfo) sInfo = getSeasonInfo(); } catch(e) {}
+        var seasonTxt = sInfo ? (sInfo.emoji + ' ' + sInfo.name) : '';
+        if (window.earnHashes) window.earnHashes(1);
+        msg = '\ud83c\udf2c Wind Read \u2014 ' + biomeName + (seasonTxt ? ' \u00b7 ' + seasonTxt : '') + ' \u00b7 +1 Sunbeam';
+      } else if (family === 'guardians') {
+        try { localStorage.setItem('lw_guardian_next_drop', '1'); } catch(e) {}
+        msg = '\ud83d\udee1 Stand Watch \u2014 your next wild drop: +1 EA';
+      } else if (family === 'conduits') {
+        if (window.earnDew) window.earnDew(5, 'ability_dewcall');
+        msg = '\ud83d\udca7 Dew Call \u2014 +5 Dew';
+      } else if (family === 'mycelium') {
+        if (window.earnDew) window.earnDew(2, 'ability_roots');
+        if (window.earnHashes) window.earnHashes(1);
+        msg = '\ud83c\udf44 Root Whisper \u2014 +2 Dew +1 Sunbeam';
+      } else if (family === 'watchers') {
+        if (window.earnHashes) window.earnHashes(1);
+        var topName = '—', topEA = 0;
+        try {
+          var gh = JSON.parse(localStorage.getItem('sws_greenhouse') || '[]');
+          for (var gj = 0; gj < gh.length; gj++) {
+            var ea = gh[gj].ea || 0;
+            if (ea > topEA) { topEA = ea; topName = gh[gj].name || ('Plant #' + gj); }
+          }
+        } catch(e) {}
+        msg = '\ud83d\udc41 Long Gaze \u2014 strongest: ' + topName + ' (EA ' + topEA + ') \u00b7 +1 Sunbeam';
+      }
+    } catch(e) {}
+    if (window._toast && msg) window._toast(msg);
+    try { if (window._haptic) window._haptic(); } catch(e) {}
+    try { if (typeof gtag !== 'undefined') gtag('event', 'companion_ability', { family:family, idx:idx }); } catch(e) {}
+    // Re-render profile so button flips to cooldown state immediately
+    try { window._lwOpenCompanionProfile(idx); } catch(e) {}
+    return true;
+  };
+})();
+
 // ═══ COMPANION PROFILE MODAL ═══
 // Research Team B flagged: bond progress was invisible math. Fix — tap any
 // companion portrait to open a profile showing SVG, family blurb, named
@@ -55351,13 +55457,39 @@ window._lwClaimHerbarium = function(id){
     // Current magnified buff values
     if(buffs){
       var mult=lvl===3?3.33:(lvl===2?2.0:1.0);
-      h+='<div style="padding:0.6rem 0.7rem;background:rgba(13,16,12,0.6);border:1px solid rgba(74,124,53,0.2);border-radius:10px;">';
+      h+='<div style="padding:0.6rem 0.7rem;background:rgba(13,16,12,0.6);border:1px solid rgba(74,124,53,0.2);border-radius:10px;margin-bottom:0.7rem;">';
       h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:0.4rem;">WHILE EQUIPPED</div>';
       for(var bk in buffs){if(!buffs.hasOwnProperty(bk))continue;
         var delta=(buffs[bk]-1)*mult;
         h+='<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.5rem;padding:3px 0;color:var(--cream);"><span>'+_prettyKind(bk)+'</span><span style="color:var(--sage);">+'+(delta*100).toFixed(1)+'%</span></div>';
       }
       h+='</div>';
+    }
+    // T2 Active Ability — Bonded unlock, tap to fire, cooldown-gated
+    var abilState = window._LW_companionAbilityState ? window._LW_companionAbilityState(idx) : null;
+    if (abilState && abilState.def) {
+      var ad = abilState.def;
+      var btnLabel, btnDisabled = false, btnBg, btnBorder, btnColor;
+      if (abilState.locked === 'LOCKED_TIER') {
+        btnLabel = '\ud83d\udd12 UNLOCKS AT BONDED (L2)';
+        btnDisabled = true; btnBg = 'rgba(40,40,40,0.3)'; btnBorder = 'rgba(138,145,120,0.2)'; btnColor = 'var(--muted)';
+      } else if (abilState.locked === 'NOT_EQUIPPED') {
+        btnLabel = 'EQUIP TO USE \u00b7 ' + ad.name.toUpperCase();
+        btnDisabled = true; btnBg = 'rgba(46,60,38,0.25)'; btnBorder = 'rgba(122,179,86,0.2)'; btnColor = 'var(--muted)';
+      } else if (abilState.locked === 'COOLDOWN') {
+        var mins = Math.ceil(abilState.remainMs / 60000);
+        btnLabel = 'READY IN ' + (mins >= 60 ? (Math.ceil(mins/60)+'h') : (mins+'m'));
+        btnDisabled = true; btnBg = 'rgba(46,60,38,0.25)'; btnBorder = 'rgba(122,179,86,0.2)'; btnColor = 'var(--muted)';
+      } else {
+        btnLabel = ad.icon + ' USE \u2014 ' + ad.name.toUpperCase();
+        btnBg = 'linear-gradient(180deg,rgba(200,168,75,0.25),rgba(74,124,53,0.2))';
+        btnBorder = 'rgba(200,168,75,0.55)'; btnColor = 'var(--gold)';
+      }
+      h += '<div style="padding:0.6rem 0.7rem;background:rgba(13,16,12,0.6);border:1px solid rgba(200,168,75,0.25);border-radius:10px;">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.3rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);letter-spacing:0.12em;">ACTIVE ABILITY</div><div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);">CD: ' + (ad.cdMs >= 3600000 ? (ad.cdMs/3600000)+'h' : (ad.cdMs/60000)+'m') + '</div></div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--cream);line-height:1.5;margin-bottom:0.5rem;"><strong>' + ad.name + '</strong> \u2014 ' + ad.desc + '</div>';
+      h += '<button onclick="window._LW_useCompanionAbility&&_LW_useCompanionAbility(' + idx + ')" ' + (btnDisabled ? 'disabled ' : '') + 'style="width:100%;min-height:44px;padding:8px;font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;background:' + btnBg + ';border:1.5px solid ' + btnBorder + ';color:' + btnColor + ';border-radius:8px;cursor:' + (btnDisabled ? 'default' : 'pointer') + ';">' + btnLabel + '</button>';
+      h += '</div>';
     }
     h+='</div>';
     ov.innerHTML=h;
