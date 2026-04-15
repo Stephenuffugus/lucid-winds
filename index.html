@@ -2405,14 +2405,15 @@
        carries the element hue, bottom pool is charcoal, a thin gold seam runs
        between. Celtic-leaf flourish in both corners. Used in the character
        sheet hand and anywhere the 6 element chips render. */
-    .lw-forage-card{position:relative;aspect-ratio:3/4;min-height:72px;border-radius:7px;overflow:hidden;border:1px solid rgba(200,168,75,0.28);background:linear-gradient(180deg,var(--el-top,#3a4a2e) 0%,var(--el-mid,#1f2a18) 52%,#0f1409 100%);box-shadow:inset 0 1px 0 rgba(255,220,140,0.12),inset 0 -1px 0 rgba(0,0,0,0.4),0 1px 3px rgba(0,0,0,0.4);padding:5px 3px 3px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;}
+    .lw-forage-card{position:relative;aspect-ratio:3/4;min-height:96px;border-radius:7px;overflow:hidden;border:1px solid rgba(200,168,75,0.28);background:linear-gradient(180deg,var(--el-top,#3a4a2e) 0%,var(--el-mid,#1f2a18) 52%,#0f1409 100%);box-shadow:inset 0 1px 0 rgba(255,220,140,0.12),inset 0 -1px 0 rgba(0,0,0,0.4),0 1px 3px rgba(0,0,0,0.4);padding:0;}
     .lw-forage-card.empty{opacity:0.3;filter:grayscale(0.6);}
-    .lw-forage-card::before,.lw-forage-card::after{content:'';position:absolute;width:10px;height:10px;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M1,1 Q6,3 11,1 Q9,6 11,11 Q6,9 1,11 Q3,6 1,1 Z' fill='none' stroke='%23c8a84b' stroke-width='0.8' opacity='0.7'/></svg>");background-size:contain;background-repeat:no-repeat;pointer-events:none;}
+    .lw-forage-card::before,.lw-forage-card::after{content:'';position:absolute;width:10px;height:10px;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M1,1 Q6,3 11,1 Q9,6 11,11 Q6,9 1,11 Q3,6 1,1 Z' fill='none' stroke='%23c8a84b' stroke-width='0.8' opacity='0.7'/></svg>");background-size:contain;background-repeat:no-repeat;pointer-events:none;z-index:2;}
     .lw-forage-card::before{top:2px;left:2px;}
     .lw-forage-card::after{bottom:2px;right:2px;transform:rotate(180deg);}
-    .lw-forage-card .fc-icon{font-size:1.15rem;line-height:1;margin-top:6px;text-shadow:0 1px 2px rgba(0,0,0,0.6);}
-    .lw-forage-card .fc-label{font-family:'Bebas Neue',sans-serif;font-size:0.42rem;letter-spacing:0.1em;color:rgba(255,235,195,0.88);margin-top:2px;}
-    .lw-forage-card .fc-count{font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--gold);background:rgba(0,0,0,0.35);border:1px solid rgba(200,168,75,0.25);border-radius:6px;padding:1px 5px;margin-bottom:1px;min-width:18px;}
+    .lw-forage-card .fc-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;display:block;}
+    .lw-forage-card .fc-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);font-size:1.6rem;line-height:1;text-shadow:0 1px 2px rgba(0,0,0,0.6);z-index:1;}
+    .lw-forage-card .fc-label{position:absolute;left:0;right:0;bottom:0;font-family:'Bebas Neue',sans-serif;font-size:0.48rem;letter-spacing:0.1em;color:rgba(255,235,195,0.95);padding:8px 2px 3px;text-align:center;background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,0.7) 70%);z-index:1;text-shadow:0 1px 2px rgba(0,0,0,0.9);}
+    .lw-forage-card .fc-count{position:absolute;top:3px;right:3px;font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--gold);background:rgba(0,0,0,0.6);border:1px solid rgba(200,168,75,0.4);border-radius:6px;padding:1px 5px;min-width:18px;text-align:center;z-index:2;}
     .lw-forage-card.empty .fc-count{color:var(--muted);background:rgba(0,0,0,0.2);border-color:rgba(74,124,53,0.1);}
     .lw-forage-card.el-sun{--el-top:#7a5a1e;--el-mid:#2a1f0a;}
     .lw-forage-card.el-shade{--el-top:#3d3658;--el-mid:#1a1526;}
@@ -4462,7 +4463,7 @@
 
     /* CLASS section */
     .cs-class-row{display:flex;align-items:center;gap:0.7rem;}
-    .cs-class-emblem{width:64px;height:64px;flex-shrink:0;border-radius:12px;border:1.5px solid rgba(200,168,75,0.25);background:radial-gradient(circle at 40% 35%,rgba(42,54,34,0.9),rgba(13,16,12,0.95));display:flex;align-items:center;justify-content:center;font-size:1.8rem;overflow:hidden;}
+    .cs-class-emblem{width:120px;height:120px;flex-shrink:0;border-radius:16px;border:1.5px solid rgba(200,168,75,0.25);background:radial-gradient(circle at 40% 35%,rgba(42,54,34,0.9),rgba(13,16,12,0.95));display:flex;align-items:center;justify-content:center;font-size:2.6rem;overflow:hidden;}
     .cs-class-emblem img{width:100%;height:100%;object-fit:cover;display:block;}
     .cs-class-emblem.synergy{border-color:var(--gold);box-shadow:0 0 10px rgba(200,168,75,0.45);animation:csPulse 2.4s ease-in-out infinite;}
     .cs-class-info{flex:1;min-width:0;}
@@ -47593,7 +47594,7 @@ function _renderMilestoneSection(){
   var mile=window.LW_TREE_MILESTONES||{};
   var lvl=0;try{var r=_getRank(_getXP());lvl=r.level||0;}catch(e){}
   var lvls=[10,25,50,75,100];
-  var h='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">';
+  var h='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">';
   for(var i=0;i<lvls.length;i++){
     var lv=lvls[i]; var m=mile[lv]||{name:'—',hero:''};
     var unlocked=(lvl>=lv);
@@ -47606,14 +47607,16 @@ function _renderMilestoneSection(){
       ? 'linear-gradient(180deg,rgba(46,38,18,0.45),rgba(26,22,12,0.6))'
       : 'rgba(18,22,16,0.4)';
     var labelColor=unlocked?'var(--gold)':'var(--muted)';
-    h+='<div onclick="window._lwShowMilestoneDetail('+lv+')" title="'+(unlocked?m.name:'Locked \u2014 Lv '+lv)+'" style="position:relative;background:'+cardBg+';border:1.5px solid '+cardBorder+';border-radius:8px;padding:4px;text-align:center;overflow:hidden;aspect-ratio:3/4;cursor:pointer;">';
+    h+='<div onclick="window._lwShowMilestoneDetail('+lv+')" title="'+(unlocked?m.name:'Locked \u2014 Lv '+lv)+'" style="position:relative;background:'+cardBg+';border:1.5px solid '+cardBorder+';border-radius:10px;padding:0;text-align:center;overflow:hidden;aspect-ratio:3/4;cursor:pointer;">';
     if(m.hero){
-      h+='<img src="'+m.hero+'" alt="" style="width:100%;height:72%;object-fit:cover;border-radius:5px;'+imgStyle+'" onerror="this.style.display=\'none\';">';
+      h+='<img src="'+m.hero+'" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;'+imgStyle+'" onerror="this.style.display=\'none\';">';
     } else {
-      h+='<div style="width:100%;height:72%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;opacity:'+(unlocked?'1':'0.3')+';">\u2728</div>';
+      h+='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:3rem;opacity:'+(unlocked?'1':'0.3')+';">\u2728</div>';
     }
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;color:'+labelColor+';letter-spacing:0.06em;margin-top:3px;line-height:1.1;">L'+lv+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:'+(unlocked?'var(--cream)':'var(--muted)')+';line-height:1.1;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+m.name+'</div>';
+    h+='<div style="position:absolute;left:0;right:0;bottom:0;padding:18px 6px 6px;background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,0.85) 70%);text-shadow:0 1px 2px rgba(0,0,0,0.9);">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:'+labelColor+';letter-spacing:0.08em;line-height:1.1;">L'+lv+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:'+(unlocked?'var(--cream)':'var(--muted)')+';line-height:1.1;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+m.name+'</div>';
+    h+='</div>';
     if(!unlocked){
       h+='<div style="position:absolute;left:4px;right:4px;bottom:3px;height:3px;background:rgba(122,179,86,0.1);border-radius:2px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,rgba(122,179,86,0.55),rgba(200,168,75,0.6));"></div></div>';
     }
@@ -47637,7 +47640,7 @@ function _renderForageSection(){
     var k=order[i];var el2=window.LW_FORAGING.EL[k];var n=inv[k]||0;
     h+='<div class="lw-forage-card el-'+k+(n===0?' empty':'')+'" title="'+el2.label+(n>0?' \u00b7 '+n+' in inventory':' \u00b7 empty')+'">';
     // Auto-load Jessie's card face if present; fall back to emoji on 404.
-    h+='<img src="assets/foraging/el-'+k+'.png" alt="" class="fc-art" style="width:100%;max-width:46px;aspect-ratio:1/1;object-fit:contain;margin-top:4px;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.4));" onerror="var p=this.parentNode;this.outerHTML=\'<div class=&quot;fc-icon&quot;>'+el2.icon+'</div>\';">';
+    h+='<img src="assets/foraging/el-'+k+'.png" alt="" class="fc-art" onerror="var p=this.parentNode;this.outerHTML=\'<div class=&quot;fc-icon&quot;>'+el2.icon+'</div>\';">';
     h+='<div class="fc-label">'+el2.label+'</div>';
     h+='<div class="fc-count">'+n+'</div>';
     h+='</div>';
@@ -47655,7 +47658,7 @@ function _renderForageSection(){
       var rk=rareOrder[rj];var rel=window.LW_FORAGING.EL[rk];var rn=inv[rk]||0;
       if(rn===0)continue;
       h+='<div class="lw-forage-card el-'+rk+' rare" title="'+rel.label+' \u00b7 wild card \u00b7 '+rn+' left">';
-      h+='<img src="assets/foraging/el-'+rk+'.png" alt="" class="fc-art" style="width:100%;max-width:46px;aspect-ratio:1/1;object-fit:contain;margin-top:4px;filter:drop-shadow(0 2px 6px rgba(200,168,75,0.4));" onerror="var p=this.parentNode;this.outerHTML=\'<div class=&quot;fc-icon&quot;>'+rel.icon+'</div>\';">';
+      h+='<img src="assets/foraging/el-'+rk+'.png" alt="" class="fc-art" onerror="var p=this.parentNode;this.outerHTML=\'<div class=&quot;fc-icon&quot;>'+rel.icon+'</div>\';">';
       h+='<div class="fc-label">'+rel.label+'</div>';
       h+='<div class="fc-count">'+rn+'</div>';
       h+='</div>';
@@ -47734,10 +47737,12 @@ window._lwOpenDeckEditor=function(){
       var used=0;for(var q=0;q<picked.length;q++)if(picked[q]===k)used++;
       var avail=n-used;
       var canPick=avail>0&&picked.length<5;
-      h+='<div '+(canPick?'onclick="window._lwDeckPick(\''+k+'\')"':'')+' style="'+(canPick?'cursor:pointer;':'')+'background:rgba(18,22,16,'+(n>0?'0.7':'0.35')+');border:1.5px solid rgba(74,124,53,'+(canPick?'0.35':'0.1')+');border-radius:8px;padding:8px 4px;text-align:center;'+(n===0?'opacity:0.35;':canPick?'':'opacity:0.5;')+'">';
-      h+='<img src="assets/foraging/el-'+k+'.png" alt="" style="width:100%;max-width:38px;aspect-ratio:1/1;object-fit:contain;" onerror="this.outerHTML=\'<div style=&quot;font-size:1.2rem;&quot;>'+el2.icon+'</div>\';">';
-      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;color:var(--cream);letter-spacing:0.05em;margin-top:2px;">'+el2.label+'</div>';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:'+(avail>0?'var(--gold)':'var(--muted)')+';margin-top:2px;">'+avail+' / '+n+'</div>';
+      h+='<div '+(canPick?'onclick="window._lwDeckPick(\''+k+'\')"':'')+' style="position:relative;'+(canPick?'cursor:pointer;':'')+'background:rgba(18,22,16,'+(n>0?'0.7':'0.35')+');border:1.5px solid rgba(74,124,53,'+(canPick?'0.35':'0.1')+');border-radius:8px;overflow:hidden;aspect-ratio:3/4;min-height:110px;'+(n===0?'opacity:0.35;':canPick?'':'opacity:0.5;')+'">';
+      h+='<img src="assets/foraging/el-'+k+'.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem;&quot;>'+el2.icon+'</div>\';">';
+      h+='<div style="position:absolute;left:0;right:0;bottom:0;padding:14px 4px 4px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.85));text-align:center;text-shadow:0 1px 2px rgba(0,0,0,0.9);">';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.58rem;color:var(--cream);letter-spacing:0.05em;">'+el2.label+'</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:'+(avail>0?'var(--gold)':'var(--muted)')+';margin-top:1px;">'+avail+' / '+n+'</div>';
+      h+='</div>';
       h+='</div>';
     }
     h+='</div>';
@@ -56760,10 +56765,12 @@ window._lwClaimHerbarium = function(id){
         var brd = isSel ? '1.5px solid var(--gold)' : '1.5px solid rgba(74,124,53,0.2)';
         var el3 = EL[c];
         var isRare = el3 && el3.rare;
-        h += '<div onclick="LW_simulator.pick(' + ci + ')" style="cursor:pointer;aspect-ratio:1;background:' + bg + ';border:' + brd + ';border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;' + (S.resolved ? 'pointer-events:none;opacity:0.5;' : '') + (isRare ? 'box-shadow:0 0 8px rgba(200,168,75,0.25);' : '') + '">';
-        h += '<img src="assets/foraging/el-' + c + '.png" alt="" style="width:100%;max-width:42px;aspect-ratio:1/1;object-fit:contain;" onerror="this.outerHTML=\'<div style=&quot;font-size:1.1rem;&quot;>' + el3.icon + '</div>\';">';
-        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;color:' + (isSel ? 'var(--gold)' : 'var(--cream)') + ';margin-top:2px;letter-spacing:0.05em;">' + el3.label + (isRare?' ★':'') + '</div>';
-        if (isSel) h += '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--gold);">' + (S.selected.indexOf(ci) + 1) + '</div>';
+        h += '<div onclick="LW_simulator.pick(' + ci + ')" style="position:relative;cursor:pointer;aspect-ratio:3/4;min-height:110px;background:' + bg + ';border:' + brd + ';border-radius:10px;overflow:hidden;' + (S.resolved ? 'pointer-events:none;opacity:0.5;' : '') + (isRare ? 'box-shadow:0 0 8px rgba(200,168,75,0.25);' : '') + '">';
+        h += '<img src="assets/foraging/el-' + c + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem;&quot;>' + el3.icon + '</div>\';">';
+        h += '<div style="position:absolute;left:0;right:0;bottom:0;padding:14px 4px 4px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.85));text-align:center;text-shadow:0 1px 2px rgba(0,0,0,0.9);">';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:' + (isSel ? 'var(--gold)' : 'var(--cream)') + ';letter-spacing:0.05em;">' + el3.label + (isRare?' \u2605':'') + '</div>';
+        if (isSel) h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--gold);margin-top:1px;">' + (S.selected.indexOf(ci) + 1) + '</div>';
+        h += '</div>';
         h += '</div>';
       }
       h += '</div>';
@@ -57070,10 +57077,12 @@ window._lwClaimHerbarium = function(id){
         var isSelected = selected.indexOf(ci) >= 0;
         var bg = isSelected ? 'rgba(200,168,75,0.25)' : 'rgba(18,22,16,0.7)';
         var border = isSelected ? '1.5px solid var(--gold)' : '1.5px solid rgba(74,124,53,0.2)';
-        h += '<div onclick="window._lwForagePick(' + ci + ')" style="cursor:pointer;aspect-ratio:1;background:' + bg + ';border:' + border + ';border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;' + (resolved ? 'pointer-events:none;opacity:0.5;' : '') + '">';
-        h += '<img src="assets/foraging/el-' + c + '.png" alt="" style="width:100%;max-width:44px;aspect-ratio:1/1;object-fit:contain;" onerror="this.outerHTML=\'<div style=&quot;font-size:1.2rem;&quot;>' + el.icon + '</div>\';">';
-        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.48rem;letter-spacing:0.05em;color:' + (isSelected ? 'var(--gold)' : 'var(--cream)') + ';margin-top:2px;">' + el.label + '</div>';
-        if (isSelected) h += '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--gold);margin-top:1px;">' + (selected.indexOf(ci) + 1) + '</div>';
+        h += '<div onclick="window._lwForagePick(' + ci + ')" style="position:relative;cursor:pointer;aspect-ratio:3/4;min-height:110px;background:' + bg + ';border:' + border + ';border-radius:10px;overflow:hidden;' + (resolved ? 'pointer-events:none;opacity:0.5;' : '') + '">';
+        h += '<img src="assets/foraging/el-' + c + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem;&quot;>' + el.icon + '</div>\';">';
+        h += '<div style="position:absolute;left:0;right:0;bottom:0;padding:14px 4px 4px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.85));text-align:center;text-shadow:0 1px 2px rgba(0,0,0,0.9);">';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.58rem;letter-spacing:0.05em;color:' + (isSelected ? 'var(--gold)' : 'var(--cream)') + ';">' + el.label + '</div>';
+        if (isSelected) h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--gold);margin-top:1px;">' + (selected.indexOf(ci) + 1) + '</div>';
+        h += '</div>';
         h += '</div>';
       }
       h += '</div>';
