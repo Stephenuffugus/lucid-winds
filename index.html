@@ -52996,8 +52996,10 @@ function getMeshBonus(plantHash){
       bonus.eaBonus+=(stage.eaBonus||0);
     }
   }
-  // Cap EA bonus from mesh at +3
-  bonus.eaBonus=Math.min(3,bonus.eaBonus);
+  // Cap EA bonus from mesh at +3 — Mycelium T3 RITUAL "Kin Network" raises to +5.
+  var _meshCap=3;
+  try{if(window._LW_hasFamilyRitual&&window._LW_hasFamilyRitual('mycelium'))_meshCap=5;}catch(e){}
+  bonus.eaBonus=Math.min(_meshCap,bonus.eaBonus);
   return bonus;
 }
 
