@@ -32448,7 +32448,7 @@ document.addEventListener('keydown', function(e) {
     if (_potId === 'crystal') _fertCount = _fertCount + 5;
     if (_potId === 'phoenix') _fertCount = _fertCount * 2;
     if (_potId === 'starlight') _fertCount = _fertCount + 3;
-    // Watchers family revealTrait: small additive nudge to mutation RNG so
+    // Listeners family revealTrait: small additive nudge to mutation RNG so
     // hidden traits surface more often. Multiplier 1.03 at L1 → +3 fert; L3 → ~+10.
     try{if(window.LW_COMPANION){var _rtMult=window.LW_COMPANION.getCompanionMult('revealTrait');_fertCount+=Math.floor((_rtMult-1)*100);}}catch(e){}
     var mut = applyMutationRNG(spliced, _fertCount);
@@ -48430,7 +48430,7 @@ var LW_BLOOM_DAYS = {
   6:  { name: 'Wild Heat',      theme: 'desert biome bonuses + Dry elements', seasonBias: 1, rareMult: 2.0 },
   7:  { name: 'Late Bloom',     theme: 'mature plants + autumn transitions',  seasonBias: 2, rareMult: 2.0 },
   8:  { name: 'Harvest Moon',   theme: 'copper & bronze + Scatterer companions', seasonBias: 2, rareMult: 2.5, familyBoost: 'scatterers' },
-  9:  { name: 'Leaf Fall',      theme: 'warm autumn colors + Watcher companions', seasonBias: 2, rareMult: 2.0, familyBoost: 'watchers' },
+  9:  { name: 'Leaf Fall',      theme: 'warm autumn colors + Watcher companions', seasonBias: 2, rareMult: 2.0, familyBoost: 'listeners' },
   10: { name: 'Equinox Dusk',   theme: 'Mystic plants + night-active',         seasonBias: 3, rareMult: 2.0 },
   11: { name: 'Winter\u2019s Gift',  theme: 'Guardian companions + silver leaves', seasonBias: 3, rareMult: 2.5, familyBoost: 'guardians' }
 };
@@ -56061,7 +56061,7 @@ function _bosMementosContent() {
       h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:var(--cream);letter-spacing:0.08em;margin:1rem 0 0.4rem;">YOUR ROSTER \u00b7 ' + rosterList.length + '</div>';
       h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin-bottom:0.5rem;line-height:1.5;">Every companion you\u2019ve seen in your garden. Tap for profile + bond status.</div>';
       // Family order — signature/class-aligned first, universals last
-      var FAM_ORDER = ['pollinators','scatterers','weavers','wayfinders','guardians','conduits','mycelium','watchers','unlinked'];
+      var FAM_ORDER = ['pollinators','scatterers','weavers','wayfinders','guardians','conduits','mycelium','listeners','unlinked'];
       var FAM_META = {
         pollinators:{name:'Pollinators',icon:'\ud83d\udc1d',color:'#e8a843'},
         scatterers:{name:'Scatterers',icon:'\ud83d\udc3f',color:'#d4842a'},
@@ -56070,7 +56070,7 @@ function _bosMementosContent() {
         guardians:{name:'Guardians',icon:'\ud83d\udee1',color:'#c8a84b'},
         conduits:{name:'Conduits',icon:'\ud83d\udca7',color:'#7ab356'},
         mycelium:{name:'Mycelium',icon:'\ud83c\udf44',color:'#c07a9a'},
-        watchers:{name:'Watchers',icon:'\ud83d\udc41',color:'#8a9178'},
+        listeners:{name:'Listeners',icon:'\ud83d\udc42',color:'#8a9178'},
         unlinked:{name:'Unlinked',icon:'\ud83c\udf3e',color:'#8a9178'}
       };
       for (var fo = 0; fo < FAM_ORDER.length; fo++) {
@@ -57144,14 +57144,14 @@ window._lwClaimHerbarium = function(id){
     37:'weavers', 31:'weavers', 41:'weavers', 62:'weavers', 65:'weavers', 70:'weavers',
     // Wayfinders
     36:'wayfinders', 29:'wayfinders', 51:'wayfinders', 57:'wayfinders', 63:'wayfinders', 49:'wayfinders', 66:'wayfinders', 69:'wayfinders', 34:'wayfinders',
-    // Guardians (after rebalance moves). Cicada (idx 33) moved to Watchers.
+    // Guardians (after rebalance moves). Cicada (idx 33) moved to Listeners.
     32:'guardians', 22:'guardians', 42:'guardians', 45:'guardians', 53:'guardians', 43:'guardians', 48:'guardians', 50:'guardians',
     // Conduits
     60:'conduits', 71:'conduits', 47:'conduits', 27:'conduits', 72:'conduits', 30:'conduits', 52:'conduits', 68:'conduits',
     // Mycelium (universal)
     73:'mycelium', 74:'mycelium', 61:'mycelium', 81:'mycelium',
-    // Watchers (universal). Cicada (33) sits here — seventeen-year observer.
-    23:'watchers', 38:'watchers', 39:'watchers', 54:'watchers', 56:'watchers', 75:'watchers', 79:'watchers', 20:'watchers', 33:'watchers'
+    // Listeners (universal). Cicada (33) sits here — seventeen-year observer.
+    23:'listeners', 38:'listeners', 39:'listeners', 54:'listeners', 56:'listeners', 75:'listeners', 79:'listeners', 20:'listeners', 33:'listeners'
   };
   var CLASS_STRONG = {
     forager:      ['scatterers', 'wayfinders'],
@@ -57160,7 +57160,7 @@ window._lwClaimHerbarium = function(id){
     tender:       ['pollinators', 'guardians'],
     keeper:       []
   };
-  var UNIVERSAL = ['mycelium', 'watchers'];
+  var UNIVERSAL = ['mycelium', 'listeners'];
   // Base buff per family (v1 — small). Keyed by buff-kind so the
   // magnitude fn can answer any ability-lookup. Magnitudes as multipliers
   // over base (1.03 = +3%).
@@ -57172,7 +57172,7 @@ window._lwClaimHerbarium = function(id){
     guardians:   { plantLifespan: 1.03, defenseEA: 1.03 },
     conduits:    { dewRate: 1.03, waterEfficiency: 1.03 },
     mycelium:    { eaFloor: 1.03 },
-    watchers:    { bookEntryRate: 1.03, revealTrait: 1.03 }
+    listeners:    { bookEntryRate: 1.03, revealTrait: 1.03 }
   };
   function getActiveCompanionIdx() {
     try {
@@ -57287,7 +57287,7 @@ window._lwClaimHerbarium = function(id){
     guardians:   'Deep Root',
     conduits:    'Compost Song',
     mycelium:    'Kin Network',
-    watchers:    'Hidden Trait'
+    listeners:    'Hidden Trait'
   };
   function checkL3Unlocks() {
     try {
@@ -57463,7 +57463,7 @@ window.LW_FAMILY_T3 = {
   guardians:   { name:'Deep Root',     desc:'All your wild drops compute with +2 flat EA.' },
   conduits:    { name:'Compost Song',  desc:'Composting returns +1 Dew per Terra Grade tier.' },
   mycelium:    { name:'Kin Network',   desc:'The mesh bonus cap rises from +3 to +5 EA.' },
-  watchers:    { name:'Hidden Trait',  desc:'Companion reveal on new plants drops from 3 blooms to 1.' }
+  listeners:    { name:'Hidden Trait',  desc:'Companion reveal on new plants drops from 3 blooms to 1.' }
 };
 
 // ═══ COMPANION T2 ACTIVE ABILITIES ═══
@@ -57480,7 +57480,7 @@ window.LW_FAMILY_T3 = {
     guardians:   { name:'Stand Watch',  cdMs: 60 * 60000,  icon:'\ud83d\udee1', desc:'Your next wild drop gets +1 EA.' },
     conduits:    { name:'Dew Call',     cdMs: 60 * 60000,  icon:'\ud83d\udca7', desc:'Earn +5 Dew now, pulled from the root.' },
     mycelium:    { name:'Root Whisper', cdMs: 60 * 60000,  icon:'\ud83c\udf44', desc:'Earn +2 Dew + +1 Sunbeam from the underground network.' },
-    watchers:    { name:'Long Gaze',    cdMs: 30 * 60000,  icon:'\ud83d\udc41', desc:'Earn +1 Sunbeam and glimpse your strongest plant.' }
+    listeners:    { name:'Long Listen',  cdMs: 30 * 60000,  icon:'\ud83d\udc42', desc:'Earn +1 Sunbeam and hear which plant sings loudest.' }
   };
   window.LW_FAMILY_T2 = FAMILY_T2;
   function _cdKey(idx){return 'lw_comp_ability_cd_'+idx;}
@@ -57548,7 +57548,7 @@ window.LW_FAMILY_T3 = {
         if (window.earnDew) window.earnDew(2, 'ability_roots');
         if (window.earnHashes) window.earnHashes(1);
         msg = '\ud83c\udf44 Root Whisper \u2014 +2 Dew +1 Sunbeam';
-      } else if (family === 'watchers') {
+      } else if (family === 'listeners') {
         if (window.earnHashes) window.earnHashes(1);
         var topName = '—', topEA = 0;
         try {
@@ -57558,7 +57558,7 @@ window.LW_FAMILY_T3 = {
             if (ea > topEA) { topEA = ea; topName = gh[gj].name || ('Plant #' + gj); }
           }
         } catch(e) {}
-        msg = '\ud83d\udc41 Long Gaze \u2014 strongest: ' + topName + ' (EA ' + topEA + ') \u00b7 +1 Sunbeam';
+        msg = '\ud83d\udc42 Long Listen \u2014 loudest: ' + topName + ' (EA ' + topEA + ') \u00b7 +1 Sunbeam';
       }
     } catch(e) {}
     if (window._toast && msg) window._toast(msg);
@@ -57585,7 +57585,7 @@ window.LW_FAMILY_T3 = {
     guardians:{icon:'\ud83d\udee1',blurb:'Guardians stand watch \u2014 your plants last longer, stand firmer.'},
     conduits:{icon:'\ud83d\udca7',blurb:'Conduits channel the dew \u2014 your garden drinks deeper.'},
     mycelium:{icon:'\ud83c\udf44',blurb:'Mycelium connects all your plants \u2014 no single weak one.'},
-    watchers:{icon:'\ud83d\udc41',blurb:'Watchers see what others miss \u2014 hidden traits reveal sooner.'}
+    listeners:{icon:'\ud83d\udc42',blurb:'Listeners hear what others miss \u2014 hidden traits reveal sooner.'}
   };
   function _fmtTime(ms){
     if(ms<=0)return 'ready';
