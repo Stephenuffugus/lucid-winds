@@ -46967,19 +46967,52 @@ function _renderForageSection(){
 window._lwOpenDeckEditor=function(){
   if(!window.LW_FORAGING){return;}
   var inv=window.LW_FORAGING.loadInventory();
-  var deck=window.LW_FORAGING.getActiveDeck();
-  var picked=(deck.cards||[]).slice(0,5);
+  // Multi-slot support — 4 saved decks unlock at Keeper Lv 5 per spec §5.
+  // Storage shape: array of {name, cards[]}. We normalize on load so any
+  // older single-slot users get a 4-entry array the first time they open
+  // the editor.
+  var decks = window.LW_FORAGING.loadDecks() || [];
+  var DEFAULT_NAMES = ['Forest Deck','Desert Deck','Coastal Deck','Custom'];
+  for (var _d = 0; _d < 4; _d++) {
+    if (!decks[_d]) decks[_d] = { name: DEFAULT_NAMES[_d], cards: [] };
+    if (!decks[_d].cards) decks[_d].cards = [];
+  }
+  var activeIdx = parseInt(localStorage.getItem('lw_forage_deck_active')||'0',10) || 0;
+  if (activeIdx < 0 || activeIdx > 3) activeIdx = 0;
+  var picked = decks[activeIdx].cards.slice(0, 5);
+  // Unlock gate — players below L5 see only slot 0.
+  var lvl = (window.canSee && window.canSee.currentLevel) ? window.canSee.currentLevel() : 1;
+  var multiUnlocked = lvl >= 5;
   var ov=document.createElement('div');
   ov.id='lw-deck-editor';
   ov.style.cssText='position:fixed;inset:0;z-index:100001;background:rgba(5,8,4,0.94);backdrop-filter:blur(10px);display:flex;flex-direction:column;align-items:center;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch;';
   function render(){
     var h='<div style="max-width:400px;width:100%;margin:0 auto;">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.7rem;">';
-    h+='<div><div style="font-family:Playfair Display,serif;font-size:1rem;color:var(--gold);font-style:italic;">Foraging Deck</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:2px;">Pick up to 5 cards for your hand</div></div>';
+    h+='<div><div style="font-family:Playfair Display,serif;font-size:1rem;color:var(--gold);font-style:italic;">Foraging Decks</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:2px;">'+(multiUnlocked?'4 saved decks \u00b7 swap any time':'1 deck \u00b7 3 more slots unlock at Keeper Lv 5')+'</div></div>';
     h+='<button onclick="document.getElementById(\'lw-deck-editor\').remove()" style="width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:0.9rem;cursor:pointer;">\u2715</button>';
     h+='</div>';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:var(--gold);margin:0.6rem 0 0.3rem;">YOUR HAND '+picked.length+'/5</div>';
+    // Deck slot switcher — 4 tabs. Inactive slots show count only so the
+    // player can see which ones have saved decks. Renaming lives on the
+    // active slot row.
+    h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:0.6rem;">';
+    for (var _si = 0; _si < 4; _si++) {
+      var _d = decks[_si];
+      var _active = _si === activeIdx;
+      var _locked = _si > 0 && !multiUnlocked;
+      var _count = (_d.cards || []).length;
+      h += '<button ' + (_locked ? '' : 'onclick="window._lwDeckSlot(' + _si + ')"') + ' style="padding:8px 4px;border-radius:8px;border:1.5px solid ' + (_active ? 'var(--gold)' : 'rgba(122,179,86,0.2)') + ';background:' + (_active ? 'rgba(200,168,75,0.18)' : 'rgba(18,22,16,0.5)') + ';color:' + (_active ? 'var(--gold)' : _locked ? 'rgba(138,145,120,0.4)' : 'var(--cream)') + ';font-family:Bebas Neue,sans-serif;font-size:0.48rem;letter-spacing:0.04em;cursor:' + (_locked ? 'not-allowed' : 'pointer') + ';min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;">';
+      h += '<div>' + (_locked ? '\ud83d\udd12' : (_d.name || ('Deck ' + (_si+1))).toUpperCase()) + '</div>';
+      h += '<div style="font-size:0.4rem;opacity:0.7;margin-top:2px;">' + (_locked ? 'Lv 5' : (_count + '/5')) + '</div>';
+      h += '</button>';
+    }
+    h+='</div>';
+    // Rename input for the active slot — inline edit, debounced save.
+    h += '<div style="margin-bottom:0.6rem;">';
+    h += '<input type="text" id="lw-deck-name-input" value="' + (decks[activeIdx].name || '').replace(/"/g,'&quot;') + '" maxlength="18" placeholder="Deck name" oninput="window._lwDeckRename(this.value)" style="width:100%;padding:6px 8px;background:rgba(18,22,16,0.7);border:1px solid rgba(122,179,86,0.2);border-radius:6px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.55rem;outline:none;">';
+    h += '</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:var(--gold);margin:0.6rem 0 0.3rem;">HAND \u00b7 '+picked.length+'/5</div>';
     h+='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:0.4rem;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.25);border-radius:10px;min-height:70px;">';
     for(var p=0;p<5;p++){
       if(p<picked.length){
@@ -47014,14 +47047,29 @@ window._lwOpenDeckEditor=function(){
   }
   window._lwDeckPick=function(k){if(picked.length<5){picked.push(k);render();}};
   window._lwDeckUnpick=function(i){picked.splice(i,1);render();};
+  window._lwDeckSlot=function(n){
+    // Switch the editor view to a different saved slot. Persist the in-flight
+    // edits to the current slot first so the tester doesn't lose work.
+    if (n < 0 || n > 3) return;
+    if (!multiUnlocked && n > 0) return;
+    decks[activeIdx].cards = picked.slice();
+    activeIdx = n;
+    picked = (decks[activeIdx].cards || []).slice(0, 5);
+    render();
+  };
+  window._lwDeckRename=function(v){
+    decks[activeIdx].name = (v || '').slice(0, 18).trim() || ('Deck ' + (activeIdx+1));
+    // Re-render would steal focus from the input — update just the button label.
+    // Cheap: no tab rerender needed unless switcher shown. Keep render() silent here;
+    // next slot-switch or save will persist.
+  };
   window._lwDeckSave=function(){
-    var decks=window.LW_FORAGING.loadDecks();
-    if(!decks.length)decks=[{name:'Default',cards:picked.slice()}];
-    else decks[0]={name:decks[0].name||'Default',cards:picked.slice()};
+    // Persist the current slot's edits, then flush the full 4-slot array.
+    decks[activeIdx].cards = picked.slice();
     window.LW_FORAGING.saveDecks(decks);
-    try{localStorage.setItem('lw_forage_deck_active','0');}catch(e){}
+    try{localStorage.setItem('lw_forage_deck_active', String(activeIdx));}catch(e){}
     var p=document.getElementById('lw-deck-editor');if(p)p.remove();
-    if(window._toast)_toast('\ud83c\udf3f Deck saved. ' + picked.length + ' cards ready for foraging.');
+    if(window._toast)_toast('\ud83c\udf3f ' + (decks[activeIdx].name || 'Deck') + ' saved \u00b7 ' + picked.length + '/5 cards');
     if(window._renderForageSection)_renderForageSection();
   };
   document.body.appendChild(ov);
