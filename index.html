@@ -37937,6 +37937,14 @@ function _harvestApplyLocal(p,plantObj,reward){
   }
   // Book of Secrets: Full Moon Harvest (harvest between 6pm–11pm)
   try { if (window.LW_Events) window.LW_Events.checkEveningHarvest(); } catch(e){}
+  // Book of Secrets: Harvest Moon (Autumn evening harvest — 5pm–10pm)
+  try {
+    if (window.LW_Events && window.getSeasonInfo) {
+      var _hsi = window.getSeasonInfo();
+      var _hh = new Date().getHours();
+      if (_hsi && _hsi.name === 'Autumn' && _hh >= 17 && _hh <= 22) window.LW_Events.fire('Harvest Moon');
+    }
+  } catch(e){}
   // Pouch tool XP — was only granted on feral collection, leaving the
   // tool effectively unleveled for players who mostly harvest. Adds
   // a flat 4 XP per harvest so Pouch can actually reach Lv 3 in
@@ -38057,6 +38065,16 @@ function _waterOwnPlant(p,mk){
   if(window._LW_toolXP)window._LW_toolXP('can',3);
   if(window.LW_Log)window.LW_Log.write('wild_watered',{hash:p.hash});
   try { if (window.LW_Events) window.LW_Events.incCounter('rainfall', 3, 'Rainfall', 'session'); } catch(e){}
+  // Book of Secrets: Sunstroke Summit — 3 plants watered during a summer evening
+  try {
+    if (window.LW_Events && window.getSeasonInfo) {
+      var _sisi = window.getSeasonInfo();
+      var _sih = new Date().getHours();
+      if (_sisi && _sisi.name === 'Summer' && _sih >= 17 && _sih <= 21) {
+        window.LW_Events.incCounter('sunstroke_summit', 3, 'Sunstroke Summit', 'session');
+      }
+    }
+  } catch(e){}
   _play('water');
   _toast('\ud83d\udca7 Watered! Lifespan reset. (-5 Dew, +'+_waterXP+' XP)');
   if(mk&&mk._icon){
@@ -57388,6 +57406,24 @@ function _bosReportContent() {
           if (Object.keys(biomeVisits).length >= 5) fire('Grove of Grounds');
         }
       }
+      // ═══ SEASONAL MEGA-EVENTS ═══
+      // Vernal Tide + Solstice Garden — count plants matching season, check current season
+      try {
+        var cs = null; if (window.getSeasonInfo) { var _si = window.getSeasonInfo(); if (_si && _si.name) cs = _si.name; }
+        if (cs && gh.length) {
+          var seasonMap = { Spring:0, Summer:1, Autumn:2, Winter:3 };
+          var csIdx = seasonMap[cs];
+          var matching = 0;
+          for (var vti = 0; vti < gh.length; vti++) {
+            try {
+              var vtt = window.hashToTraits(gh[vti].hash);
+              if (vtt && vtt.season === csIdx) matching++;
+            } catch(e){}
+          }
+          if (cs === 'Spring' && matching >= 3 && !fired('Vernal Tide')) fire('Vernal Tide');
+          if (cs === 'Winter' && matching >= 5 && !fired('Solstice Garden')) fire('Solstice Garden');
+        }
+      } catch(e){}
       // Sister Grove — 2+ of your own wild plants in the same H3 zone
       if (!fired('Sister Grove')) {
         try {
@@ -57546,6 +57582,20 @@ window.LW_EVENT_CATALOG = [
     { name: 'Sister Grove', hint: 'Drop two of your own plants in the same wild zone', riddle: 'Two roots share a neighborhood. They learn each other\u2019s signals.',
       lore: "Plants within the same H3 zone can sense each other's rhythms. Two of yours in one zone is a small declaration: this patch of the world is yours." }
   ]},
+  // ═══ SEASONAL MEGA-EVENTS ═══
+  // The four deepest events the game offers — one per season. Require
+  // genuine alignment with the time of year. Most keepers will unlock one
+  // per year if they keep playing through all four seasons.
+  { name: 'SEASONAL', color: '#C8A84B', desc: 'Year-long alignments', events: [
+    { name: 'Vernal Tide', hint: '3+ Spring plants bloom during Spring', riddle: 'The year opens, and all your waiting opens with it.',
+      lore: "Spring plants coming into their peak together is a small coordinated miracle. Three or more means a garden you've been tending for a while has chosen this season to answer you." },
+    { name: 'Sunstroke Summit', hint: 'Water 3 plants during a summer evening', riddle: 'Amber light, three cans tipped, the garden learns your hour.',
+      lore: "Summer waterings in the long-shadow hours are the kind of act a keeper becomes by doing. You are no longer new here; the plants recognize your footfall." },
+    { name: 'Harvest Moon', hint: 'Harvest a plant during an Autumn evening', riddle: 'The year tilts. The moon is bigger. Your basket feels full.',
+      lore: "Autumn harvests under evening light are what the whole year has been preparing for. Old gardeners marked these days in red ink on kitchen calendars. Now so do you." },
+    { name: 'Solstice Garden', hint: 'Own 5+ Winter plants during the Winter season', riddle: 'Five quiet singers in one long cold.',
+      lore: "A Winter garden with five or more winter-aligned plants holds steady against the short days. This is not endurance — it's conversation. The garden says: we're here, still." }
+  ]},
   // ═══ SOCIAL EVENTS ═══
   // Fire when the keeper's actions involve another keeper's garden.
   { name: 'SOCIAL', color: '#5b8fb9', desc: 'Moments shared between keepers', events: [
@@ -57633,6 +57683,15 @@ function _bosEventsContent() {
       }
     }
     var show = bestEv || (mostRecent && mostRecent.__ev);
+    if (!show) {
+      // Empty state — first time on this tab with no discoveries yet.
+      // A gentle invitation, not instructions. Tells them the system
+      // watches quietly — no pressure to go find something.
+      h += '<div style="padding:1rem 1.1rem;margin-bottom:1rem;background:rgba(18,22,16,0.5);border:1px dashed rgba(122,179,86,0.2);border-radius:10px;text-align:center;">';
+      h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.95rem;color:var(--sage);margin-bottom:6px;">No events discovered yet.</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);line-height:1.7;max-width:320px;margin:0 auto;">Play the wild, open the game at different hours, meet your plants through the seasons. The book will fill itself in its own time.</div>';
+      h += '</div>';
+    }
     if (show) {
       var spotEv = bestEv || mostRecent.__ev;
       var spotTier = bestTier || mostRecentTier;
