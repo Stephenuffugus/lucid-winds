@@ -56589,9 +56589,26 @@ var LW_TREE_MILESTONES={
   100:{name:'Keeper Crown',desc:'Biome match applies everywhere'}
 };
 
-function _lwTreePoints(){try{return JSON.parse(localStorage.getItem('lw_tree_points')||'{}');}catch(e){return {};}}
-function _lwTreeSetPoints(p){try{localStorage.setItem('lw_tree_points',JSON.stringify(p));}catch(e){}}
-function _lwTreeSpent(){var p=_lwTreePoints(),s=0;for(var k in p)if(p.hasOwnProperty(k))s+=p[k]||0;return s;}
+// Memoized — tree points are read on every _LW_classBonus call which fires
+// inside XP/EA/dew hot paths. Without cache: a 50-XP game session = 50 JSON.parse
+// + 50 localStorage reads just for tree lookups. With cache: one read per alloc.
+// Invalidated by _lwTreeSetPoints below.
+var _lwTreePtsCache=null;
+function _lwTreePoints(){
+  if(_lwTreePtsCache)return _lwTreePtsCache;
+  try{_lwTreePtsCache=JSON.parse(localStorage.getItem('lw_tree_points')||'{}');}catch(e){_lwTreePtsCache={};}
+  return _lwTreePtsCache;
+}
+function _lwTreeSetPoints(p){_lwTreePtsCache=p;try{localStorage.setItem('lw_tree_points',JSON.stringify(p));}catch(e){}}
+// Spent count — also memoized, computed once per cache refresh
+var _lwTreeSpentCache=null;var _lwTreeSpentCacheKey=null;
+function _lwTreeSpent(){
+  var p=_lwTreePoints();
+  if(_lwTreeSpentCache!==null&&_lwTreeSpentCacheKey===p)return _lwTreeSpentCache;
+  var s=0;for(var k in p)if(p.hasOwnProperty(k))s+=p[k]||0;
+  _lwTreeSpentCache=s;_lwTreeSpentCacheKey=p;
+  return s;
+}
 window._LW_treeSpent=_lwTreeSpent;
 window._LW_treePoints=_lwTreePoints;
 window._LW_treeEarned=function(){
@@ -56603,9 +56620,16 @@ window._LW_treeEarned=function(){
 window._LW_treeAvailable=function(){return window._LW_treeEarned()-_lwTreeSpent();};
 // Tree bonus multiplier — called in class-bonus engine so existing
 // consumers auto-benefit. Kind strings must match LW_TREE_NODES keys.
+// Only nodes whose branch matches the CURRENT class (or 'tools') count —
+// points in a previous class's branch stay preserved for return visits but
+// don't apply while walking a different path.
 window._LW_treeBonus=function(kind){
   var p=_lwTreePoints(),n=LW_TREE_NODES[kind];
   if(!n||!p[kind])return 1;
+  if(n.branch!=='tools'){
+    var cls=_lwGetClass();
+    if(!cls||cls!==n.branch)return 1;
+  }
   return 1+(n.per*p[kind]);
 };
 // Allocate a tree point. Only forward motion — no respec, no regret.
