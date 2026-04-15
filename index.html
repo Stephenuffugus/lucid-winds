@@ -56754,7 +56754,7 @@ window._lwClaimHerbarium = function(id){
     if (v === 'counter') return 'var(--gold)';
     if (v === 'wild') return '#c07ac8'; // soft violet for rare wilds at half-strength
     if (v === 'safety') return '#87a3c2'; // attempt-3 safety net — pale blue
-    if (v === 'weather-hint') return '#5b9bd5'; // sky-blue — "the weather told you this"
+    if (v === 'weather-hint') return '#87a3c2'; // same as safety — never tip the weather hand
     return 'var(--muted)';
   }
   function resolveVerdictLabel(v) {
@@ -56763,7 +56763,7 @@ window._lwClaimHerbarium = function(id){
     if (v === 'counter') return 'COUNTER';
     if (v === 'wild') return 'WILD';
     if (v === 'safety') return 'REVEALED';
-    if (v === 'weather-hint') return 'WEATHER';
+    if (v === 'weather-hint') return 'REVEALED'; // never tell them weather is the source
     return 'NEUTRAL';
   }
   // Build a 5-card hand from the active deck (using inventory to validate)
@@ -56874,16 +56874,8 @@ window._lwClaimHerbarium = function(id){
       var biomeIcon = (window.getBiomeInfo && window._lastDetectedBiome) ? (getBiomeInfo(window._lastDetectedBiome).icon || '\ud83c\udf3f') : '\ud83c\udf3f';
       var weatherIcon = comp.weather ? (EL[comp.weather] ? EL[comp.weather].icon : '') : '';
       var weatherLbl = comp.weather ? ('Weather favors ' + EL[comp.weather].label) : 'Calm conditions';
-      // Real-weather indicator — 3 glyphs, one-glance parseable. Reads the
-      // classified weather state from comp.weatherData (if Open-Meteo returned
-      // before composition). Maps state → elemental glyph + short hint.
-      var wxGlyph = '', wxText = '';
-      if (comp.weatherState && comp.weatherData) {
-        var wxMap = { wet: '\u2614', windy: '\ud83d\udca8', dry: '\u2600\ufe0f', calm: '\u2728' };
-        wxGlyph = wxMap[comp.weatherState] || '';
-        var temp = comp.weatherData.temp != null ? Math.round(comp.weatherData.temp) + '\u00b0' : '';
-        wxText = (comp.weatherState.toUpperCase()) + (temp ? ' \u00b7 ' + temp : '');
-      }
+      // Weather is a SILENT signal — it tilts the deck and reveals one slot
+      // but never displays. Keeps the puzzle as Mastermind, not as weather-app.
       var h = '';
       h += '<div style="max-width:420px;width:100%;margin:0 auto;">';
       // Header
@@ -56893,17 +56885,6 @@ window._lwClaimHerbarium = function(id){
       h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--sage);margin-top:2px;">Attempt ' + (attempts + 1) + ' of 3</div></div>';
       h += '<button onclick="window._lwForageClose(false)" style="width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:0.9rem;cursor:pointer;">\u2715</button>';
       h += '</div>';
-      // Weather strip — only if real weather data is available. Soft blue
-      // glow telegraphs "this came from the actual world, not a dice roll."
-      if (wxGlyph) {
-        h += '<div style="padding:7px 10px;margin-bottom:0.7rem;background:rgba(91,155,213,0.08);border:1px solid rgba(91,155,213,0.25);border-radius:8px;display:flex;align-items:center;gap:8px;font-family:DM Mono,monospace;font-size:0.55rem;color:#87a3c2;">';
-        h += '<div style="font-size:1rem;">' + wxGlyph + '</div>';
-        h += '<div>' + wxText + '</div>';
-        if (comp.hintSlot != null) {
-          h += '<div style="margin-left:auto;font-family:Bebas Neue,sans-serif;font-size:0.48rem;letter-spacing:0.1em;color:#5b9bd5;">1 SLOT REVEALED</div>';
-        }
-        h += '</div>';
-      }
       // Deck selector — one-tap swap between the player's saved decks
       // (spec §5: "including mid-trip"). Only shown if >1 deck has cards.
       // Disabled once the player has committed to an attempt (selected
