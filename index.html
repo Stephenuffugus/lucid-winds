@@ -59979,7 +59979,13 @@ window._LW_toolMod=function(tool){
     var _tcm=window._LW_treeBonus('toolCd');if(_tcm&&_tcm<1)keeperCdMult*=_tcm;
     var _ghm=window._LW_treeBonus('gatheredHours');if(_ghm&&_ghm<1)keeperCdMult*=_ghm;
   }}catch(e){}
-  if(tool==='shears'){var base=lvl>=3?2*60*60*1000:lvl>=2?4*60*60*1000:6*60*60*1000;return Math.round((base*keeperCdMult)/biomeBoost);}
+  if(tool==='shears'){
+    var base=lvl>=3?2*60*60*1000:lvl>=2?4*60*60*1000:6*60*60*1000;
+    var shearsMult=keeperCdMult;
+    // Tools-branch Sharpened Edge — extra shears-only cooldown reduction.
+    try{if(window._LW_treeBonus){var _sem=window._LW_treeBonus('shearsEdge');if(_sem&&_sem<1)shearsMult*=_sem;}}catch(e){}
+    return Math.round((base*shearsMult)/biomeBoost);
+  }
   // Pouch: slots scale by level. Biome match was additive (+1) — now
   // multiplicative (×1.5) to match Shears so the "biome boost = 1.5×
   // tool effect" promise is uniform across tools.
