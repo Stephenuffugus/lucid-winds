@@ -30613,6 +30613,8 @@ document.addEventListener('keydown', function(e) {
     if (window.LW_Log) window.LW_Log.write('plant_composted', { hash: plant.hash, name: typeof getPlantName === 'function' ? getPlantName(plant.hash) : '', tier: _tg.name, fertilizer: fertReward });
     // Compost Cycle — 3 composts in a single day
     try { if (window.LW_Events) window.LW_Events.incCounter('compost_cycle', 3, 'Compost Cycle', 'day'); } catch(e){}
+    // The Keeper Remembers — 25 lifetime composts
+    try { if (window.LW_Events) window.LW_Events.incCounter('keeper_remembers', 25, 'The Keeper Remembers', 'all'); } catch(e){}
     // Compost ghost — remember the fallen for 24 hours
     try {
       var _ghosts = JSON.parse(localStorage.getItem('lw_compost_ghosts') || '[]');
@@ -38107,6 +38109,17 @@ function _waterOwnPlant(p,mk){
       var _nh = new Date().getHours();
       if (_nh >= 0 && _nh < 3) window.LW_Events.fire('Night Bloom');
       else if (_nh >= 4 && _nh < 7) window.LW_Events.fire('Morning Dew');
+    }
+  } catch(e){}
+  // Faithful Tender — 10 waterings on the same wild plant
+  try {
+    if (window.LW_Events && p.hash) {
+      var _ftKey = 'lw_wild_water_count';
+      var _ftMap = {};
+      try { _ftMap = JSON.parse(localStorage.getItem(_ftKey) || '{}'); } catch(e){}
+      _ftMap[p.hash] = (_ftMap[p.hash] || 0) + 1;
+      try { localStorage.setItem(_ftKey, JSON.stringify(_ftMap)); } catch(e){}
+      if (_ftMap[p.hash] >= 10) window.LW_Events.fire('Faithful Tender');
     }
   } catch(e){}
   // Book of Secrets: Sunstroke Summit — 3 plants watered during a summer evening
@@ -51844,6 +51857,40 @@ function _showDailyReward() {
       window.LW_Events.checkLoginStreak(daily.streak || 0);
       var _lastMintTs = (window.__LW_lastMintTs || 0);
       if (Date.now() - _lastMintTs > 2000) window.LW_Events.scanPassive();
+      // Quiet Morning — weekend (Sat=6 / Sun=0) before 6am
+      var _qmNow = new Date();
+      var _qmDay = _qmNow.getDay();
+      if ((_qmDay === 0 || _qmDay === 6) && _qmNow.getHours() < 6) window.LW_Events.fire('Quiet Morning');
+      // Second Nature — tracked months of play, fires when 4+ distinct months
+      // and 30+ total days logged in the month-set.
+      try {
+        var _snKey = 'lw_months_played';
+        var _snDayKey = 'lw_days_in_months';
+        var _snMap = {}; try { _snMap = JSON.parse(localStorage.getItem(_snKey) || '{}'); } catch(e){}
+        var _snDays = {}; try { _snDays = JSON.parse(localStorage.getItem(_snDayKey) || '{}'); } catch(e){}
+        var _ymKey = _qmNow.getFullYear() + '-' + (_qmNow.getMonth()+1);
+        var _todayKeyStr = _qmNow.toISOString().split('T')[0];
+        _snMap[_ymKey] = 1;
+        if (!_snDays[_todayKeyStr]) { _snDays[_todayKeyStr] = 1; }
+        try {
+          localStorage.setItem(_snKey, JSON.stringify(_snMap));
+          localStorage.setItem(_snDayKey, JSON.stringify(_snDays));
+        } catch(e){}
+        if (Object.keys(_snMap).length >= 4 && Object.keys(_snDays).length >= 30) {
+          window.LW_Events.fire('Second Nature');
+        }
+      } catch(e){}
+      // Kindred Spirit — currently-equipped companion first-equipped 30+ days ago
+      try {
+        var _ks = JSON.parse(localStorage.getItem('pw_active_companion') || 'null');
+        if (_ks && typeof _ks.idx === 'number') {
+          var _ksLog = JSON.parse(localStorage.getItem('lw_companion_first_equipped') || '{}');
+          var _ksTs = _ksLog[_ks.idx] || 0;
+          if (_ksTs > 0 && (Date.now() - _ksTs) >= 30 * 86400000) {
+            window.LW_Events.fire('Kindred Spirit');
+          }
+        }
+      } catch(e){}
     }
   } catch(e){}
   // Seasonal synergies — a daily rescan catches any whose conditions
@@ -57870,7 +57917,22 @@ window.LW_EVENT_CATALOG = [
     { name: 'Nursery Song', hint: 'Water the same nursery seed on 3 consecutive days', riddle: 'A song the seed has learned by heart.',
       lore: "Three days of water on a single seed is a small ritual. No seed NEEDS three consecutive days — they just grow better when they get them. This is the difference between tending and merely watering." },
     { name: 'Frost Touch', hint: 'Cast Rain weather during Winter', riddle: 'Water in the cold is a second kind of snow.',
-      lore: "Rain cast in winter freezes on the leaf. Pretty, stern, a little risky. You knew the season and did it anyway — the garden reads this as confidence." }
+      lore: "Rain cast in winter freezes on the leaf. Pretty, stern, a little risky. You knew the season and did it anyway — the garden reads this as confidence." },
+    { name: 'Second Nature', hint: 'Play 30 days across all of four different months', riddle: 'The garden has learned your rhythm, and you have learned its seasons.',
+      lore: "Consistency across a quarter of a year is a different discipline than a hundred-day streak. Broader, shallower, perhaps more sustainable. The garden recognizes both shapes of care." },
+    { name: 'Quiet Morning', hint: 'Open the app before 6am on a weekend', riddle: 'The world is asleep. You are in the greenhouse.',
+      lore: "Early weekend mornings are when the garden belongs entirely to the keeper. No one is watching. Nothing is asking. Just plants and first light and you." }
+  ]},
+  // ═══ BOND EVENTS ═══
+  // Fire on deepening relationships between the keeper and specific plants
+  // or companions. Slower events; reward attention rather than activity.
+  { name: 'BOND', color: '#d4a843', desc: 'Deepening relationships', events: [
+    { name: 'Faithful Tender', hint: 'Water the same wild plant 10 times', riddle: 'Some plants are not for harvest. Some are for the ritual.',
+      lore: "Ten waterings on a single plant is a ritual, not a routine. The plant has earned the kind of attention that other plants don't get. Whether you realize it or not, you have made a friend." },
+    { name: 'The Keeper Remembers', hint: 'Compost 25 plants across your lifetime', riddle: 'Every gone thing was once tended.',
+      lore: "Twenty-five composts is a small history of letting go. A keeper who has composted this much has made peace with the cycle. The garden marks you as someone who understands endings." },
+    { name: 'Kindred Spirit', hint: 'Keep the same companion equipped for 30 days', riddle: 'A creature you chose once, and keep choosing.',
+      lore: "Thirty days of the same companion is when the relationship tips from habit into kin. The creature knows your rhythms. You know theirs. The word companions and kindred share a root — it\u2019s etymologically earned." }
   ]}
 ];
 
