@@ -55084,6 +55084,7 @@ function _bosSetTab(tab) {
   else if (tab === 'activity') body.innerHTML = _bosActivityContent();
   else if (tab === 'mementos') body.innerHTML = _bosMementosContent();
   else if (tab === 'herbarium') body.innerHTML = _bosHerbariumContent();
+  else if (tab === 'items') body.innerHTML = _bosItemsContent();
   var tabs = document.querySelectorAll('.bos-tab');
   for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('active', tabs[i].getAttribute('data-tab') === tab);
   // Update the active style for tabs (override gold for active, muted for inactive)
@@ -55332,6 +55333,93 @@ function _bosClassContentLegacy() {
 }
 window._bosClassContent = _bosClassContent;
 window._bosSetTab = _bosSetTab;
+
+// ─── ITEMS TAB — catalog of mystery-box consumables ───
+// Discovery state: an item shows its full art + lore the first time
+// the player owns one. Before then, locked silhouette + rarity color
+// + the item's `usage` hint so the player knows it exists without
+// full spoiler.
+function _bosItemsContent(){
+  if (!window.LW_ITEMS_CATALOG) return '<div style="padding:1rem;font-family:DM Mono,monospace;color:var(--muted);">Items system loading...</div>';
+  var CAT = window.LW_ITEMS_CATALOG;
+  var discovered = {};
+  try { discovered = JSON.parse(localStorage.getItem('sws_items_discovered') || '{}'); } catch(e){}
+  // Auto-discover any item the player currently owns — keeps state honest
+  // even if we ship a catalog update after someone already had the item.
+  try {
+    var curInv = JSON.parse(localStorage.getItem('sws_items') || '{}');
+    for (var ik in curInv) if (curInv[ik] > 0 && !discovered[ik]) { discovered[ik] = Date.now(); }
+    localStorage.setItem('sws_items_discovered', JSON.stringify(discovered));
+  } catch(e){}
+  var total = 0, found = 0;
+  for (var k in CAT) { total++; if (discovered[k]) found++; }
+  var pct = total ? Math.round(found / total * 100) : 0;
+
+  var h = '';
+  h += '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:3px;"><span>'+found+' / '+total+' discovered</span><span>'+pct+'%</span></div>';
+  h += '<div style="height:4px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;margin-bottom:0.9rem;"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,rgba(122,179,86,0.6),rgba(200,168,75,0.7));border-radius:2px;"></div></div>';
+
+  // Quick pouch summary
+  try {
+    if (window.LW_ITEMS) {
+      var pouchN = window.LW_ITEMS.total();
+      var boxN = window.LW_BOXES ? window.LW_BOXES.count() : 0;
+      h += '<div style="display:flex;gap:0.5rem;margin-bottom:0.9rem;">';
+      h += '<button onclick="window.LW_ITEMS.openPanel()" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid rgba(122,179,86,0.4);background:rgba(122,179,86,0.1);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;min-height:42px;">\ud83c\udf31 POUCH ('+pouchN+')</button>';
+      h += '<button onclick="window.LW_BOXES&&window.LW_BOXES.openPanel()" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid '+(boxN>0?'rgba(232,160,191,0.6)':'rgba(232,160,191,0.25)')+';background:rgba(232,160,191,0.08);color:'+(boxN>0?'var(--gold)':'var(--muted)')+';font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;min-height:42px;">\ud83c\udf81 BOXES ('+boxN+')</button>';
+      h += '</div>';
+    }
+  } catch(e){}
+
+  var cats = [
+    {key:'foraging',label:'\ud83c\udf31 FORAGING AIDS',color:'var(--sage)',     desc:'Cards you tap before a forage. They bend the puzzle in your favor.'},
+    {key:'defense', label:'\ud83d\udee1\ufe0f DEFENSE',color:'var(--gold)',     desc:'Protect one of your wild plants against the next challenger.'},
+    {key:'offense', label:'\u2694\ufe0f OFFENSE',color:'#c07060',               desc:'Primed before you contest a hex. Bends the roll your way.'},
+    {key:'remote',  label:'\ud83e\udded REMOTE', color:'#87a3c2',               desc:'Forage hexes you can\u2019t walk to. The reason busy keepers keep playing.'}
+  ];
+  var rarityColor = function(r){
+    return r==='Legendary'?'#ff8ab0':r==='Epic'?'#c07ac8':r==='Rare'?'var(--gold)':r==='Uncommon'?'var(--sage)':'var(--muted)';
+  };
+  for (var ci = 0; ci < cats.length; ci++) {
+    var cat = cats[ci];
+    var keysInCat = [];
+    for (var ck in CAT) if (CAT[ck].category === cat.key) keysInCat.push(ck);
+    if (!keysInCat.length) continue;
+    var catFound = 0; for (var fi=0;fi<keysInCat.length;fi++) if (discovered[keysInCat[fi]]) catFound++;
+    h += '<div style="margin-top:1rem;margin-bottom:0.4rem;font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.12em;color:'+cat.color+';display:flex;align-items:center;gap:0.4rem;">';
+    h += '<span>'+cat.label+'</span><span style="font-size:0.5rem;color:var(--muted);">'+catFound+'/'+keysInCat.length+'</span></div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);line-height:1.5;margin-bottom:0.5rem;">'+cat.desc+'</div>';
+    for (var ki = 0; ki < keysInCat.length; ki++) {
+      var it = CAT[keysInCat[ki]];
+      var isFound = !!discovered[it.key];
+      var rc = rarityColor(it.rarity);
+      if (isFound) {
+        h += '<div style="margin-bottom:0.5rem;padding:0.7rem;background:linear-gradient(180deg,rgba(18,22,16,0.8),rgba(13,16,12,0.9));border:1px solid '+rc+'55;border-left:3px solid '+rc+';border-radius:10px;">';
+        h += '<div style="display:flex;align-items:flex-start;gap:0.7rem;">';
+        h += '<div style="width:56px;height:56px;flex-shrink:0;border-radius:10px;background:rgba(5,8,4,0.6);border:1px solid '+rc+'44;display:flex;align-items:center;justify-content:center;overflow:hidden;">';
+        h += '<img src="'+it.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;font-size:1.8rem;&quot;>'+it.icon+'</div>\';">';
+        h += '</div>';
+        h += '<div style="flex:1;min-width:0;">';
+        h += '<div style="display:flex;align-items:baseline;gap:0.4rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--cream);letter-spacing:0.06em;">'+it.name+'</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:'+rc+';letter-spacing:0.08em;">'+it.rarity.toUpperCase()+'</div></div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);line-height:1.6;margin-top:3px;">'+it.desc+'</div>';
+        h += '<div style="font-family:Playfair Display,serif;font-size:0.58rem;font-style:italic;color:var(--muted);line-height:1.6;margin-top:6px;">'+it.lore+'</div>';
+        h += '</div></div></div>';
+      } else {
+        h += '<div style="margin-bottom:0.5rem;padding:0.7rem;background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.1);border-left:3px solid rgba(138,145,120,0.2);border-radius:10px;">';
+        h += '<div style="display:flex;align-items:center;gap:0.7rem;">';
+        h += '<div style="width:48px;height:48px;flex-shrink:0;border-radius:10px;background:rgba(5,8,4,0.6);border:1px dashed rgba(138,145,120,0.3);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--muted);">?</div>';
+        h += '<div style="flex:1;min-width:0;">';
+        h += '<div style="font-family:DM Mono,monospace;font-style:italic;font-size:0.5rem;color:var(--muted);line-height:1.5;">'+it.usage+'</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:'+rc+';opacity:0.6;letter-spacing:0.08em;margin-top:3px;">'+it.rarity.toUpperCase()+' \u00b7 UNDISCOVERED</div>';
+        h += '</div></div></div>';
+      }
+    }
+  }
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);text-align:center;margin-top:1rem;line-height:1.6;">Items are earned from mystery boxes, slot jackpots, nursery blooms, step milestones, and login streaks. Burn on use \u2014 no permanent stacks.</div>';
+  return h;
+}
+window._bosItemsContent = _bosItemsContent;
 
 // ─── ACTIVITY TAB — raw events feed from lw_wild_events ───
 // The "missing messages" — every _logWildEvent() write flows here so
@@ -60625,6 +60713,7 @@ window._openCompendiumUI=function(){
         '<button class="bos-tab" data-tab="events" onclick="_bosSetTab(\'events\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">EVENTS</button>'+
         '<button class="bos-tab" data-tab="mementos" onclick="_bosSetTab(\'mementos\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">MEMENTOS</button>'+
         '<button class="bos-tab" data-tab="herbarium" onclick="_bosSetTab(\'herbarium\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">HERBARIUM</button>'+
+        '<button class="bos-tab" data-tab="items" onclick="_bosSetTab(\'items\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">ITEMS</button>'+
         '<button class="bos-tab" data-tab="class" onclick="_bosSetTab(\'class\')" style="position:relative;flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">CLASS'+ ((!localStorage.getItem('lw_class')&&window.canSee&&window.canSee.classPick&&window.canSee.classPick())?'<span style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px rgba(200,168,75,0.8);"></span>':'') +'</button>'+
       '</div>'+
       // Body
