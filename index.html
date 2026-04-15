@@ -54441,6 +54441,10 @@ window._bosRefreshBadges = function() {
 
 function _bosSetTab(tab) {
   _bosTab = tab;
+  // Capture previous read-time BEFORE stamping — this is what content
+  // functions compare against to decide whether to mark an item NEW.
+  // Available to any renderer as window._bosPrevReadTs.
+  window._bosPrevReadTs = _bosGetTabRead(tab);
   // Stamp the tab as read the moment it opens — subtle, no confirmation needed
   _bosStampTabRead(tab);
   var body = document.getElementById('bos-body');
@@ -57148,8 +57152,12 @@ function _bosEventsContent() {
       var found = !!unlocked[ev.name];
       var _evNameEsc = ev.name.replace(/'/g, "\\'");
       if (found) {
-        h += '<div onclick="window._lwShowEventDetail(\'' + _evNameEsc + '\')" style="padding:0.55rem 0.7rem;margin-bottom:4px;background:linear-gradient(180deg,rgba(18,22,16,0.7),rgba(13,16,12,0.8));border:1px solid ' + tier.color + '44;border-left:3px solid ' + tier.color + ';border-radius:8px;cursor:pointer;transition:background 0.15s ease;" onmouseover="this.style.background=\'linear-gradient(180deg,rgba(28,36,22,0.8),rgba(18,24,14,0.9))\'" onmouseout="this.style.background=\'linear-gradient(180deg,rgba(18,22,16,0.7),rgba(13,16,12,0.8))\'">';
-        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:' + tier.color + ';letter-spacing:0.06em;">' + ev.name + '</div>';
+        // NEW chip when the event was discovered after the keeper last
+        // visited the EVENTS tab. Fades out on next visit (prev-read rolls).
+        var _isNew = (window._bosPrevReadTs != null) && unlocked[ev.name] && unlocked[ev.name].t && unlocked[ev.name].t > window._bosPrevReadTs;
+        var _newChip = _isNew ? '<span style="margin-left:6px;padding:1px 6px;border-radius:8px;background:var(--gold);color:#0d100c;font-family:Bebas Neue,sans-serif;font-size:0.4rem;letter-spacing:0.1em;vertical-align:middle;box-shadow:0 0 6px rgba(200,168,75,0.5);">NEW</span>' : '';
+        h += '<div onclick="window._lwShowEventDetail(\'' + _evNameEsc + '\')" style="padding:0.55rem 0.7rem;margin-bottom:4px;background:linear-gradient(180deg,rgba(18,22,16,0.7),rgba(13,16,12,0.8));border:1px solid ' + (_isNew ? 'var(--gold)' : tier.color + '44') + ';border-left:3px solid ' + tier.color + ';border-radius:8px;cursor:pointer;transition:background 0.15s ease;' + (_isNew ? 'box-shadow:0 0 10px rgba(200,168,75,0.18);' : '') + '" onmouseover="this.style.background=\'linear-gradient(180deg,rgba(28,36,22,0.8),rgba(18,24,14,0.9))\'" onmouseout="this.style.background=\'linear-gradient(180deg,rgba(18,22,16,0.7),rgba(13,16,12,0.8))\'">';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:' + tier.color + ';letter-spacing:0.06em;">' + ev.name + _newChip + '</div>';
         h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);margin-top:2px;">' + ev.hint + '</div>';
         h += '</div>';
       } else {
@@ -57205,12 +57213,31 @@ function _bosSecretsContent() {
     // Can't access _SYNERGIES directly (inside IIFE), use getSynergy approach
     // Instead show discovered synergies
     var synKeys=Object.keys(foundSynergies);
+    // Build a set of synergy names discovered since last SECRETS visit
+    // (via LW_Log). These will get the NEW treatment — gold ring + dot.
+    var _synNewSet = {};
+    try {
+      if (window.LW_Log && window._bosPrevReadTs != null) {
+        var _allSynLog = window.LW_Log.all();
+        for (var _sli = 0; _sli < _allSynLog.length; _sli++) {
+          var _sle = _allSynLog[_sli];
+          if (_sle.type === 'synergy_discovered' && _sle.ts > window._bosPrevReadTs && _sle.data && _sle.data.name) {
+            _synNewSet[_sle.data.name] = true;
+          }
+        }
+      }
+    } catch(e){}
     for(var sk=0;sk<Math.min(synKeys.length,60);sk++){
       var s=foundSynergies[synKeys[sk]];
       var _synNameEsc=s.name.replace(/'/g,"\\'");
-      h+='<div onclick="window._lwShowSynergyDetail(\''+_synNameEsc+'\')" style="padding:4px;background:rgba(122,179,86,0.08);border:1px solid rgba(122,179,86,0.15);border-radius:6px;text-align:center;min-height:36px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background 0.15s ease;" onmouseover="this.style.background=\'rgba(122,179,86,0.16)\'" onmouseout="this.style.background=\'rgba(122,179,86,0.08)\'" title="'+s.name+': '+s.fx+'">';
+      var _synIsNew = _synNewSet[s.name];
+      var _synBorder = _synIsNew ? 'var(--gold)' : 'rgba(122,179,86,0.15)';
+      var _synBg = _synIsNew ? 'rgba(200,168,75,0.12)' : 'rgba(122,179,86,0.08)';
+      var _synShadow = _synIsNew ? 'box-shadow:0 0 8px rgba(200,168,75,0.35);' : '';
+      h+='<div onclick="window._lwShowSynergyDetail(\''+_synNameEsc+'\')" style="position:relative;padding:4px;background:'+_synBg+';border:1px solid '+_synBorder+';border-radius:6px;text-align:center;min-height:36px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background 0.15s ease;'+_synShadow+'" title="'+s.name+': '+s.fx+(_synIsNew?' (new)':'')+'">';
+      if (_synIsNew) h += '<span style="position:absolute;top:2px;right:2px;width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 4px rgba(200,168,75,0.9);"></span>';
       h+='<div style="font-size:0.5rem;">\u2726</div>';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.25rem;color:var(--sage);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">'+s.name+'</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.25rem;color:'+(_synIsNew?'var(--gold)':'var(--sage)')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">'+s.name+'</div>';
       h+='</div>';
     }
     // Fill remaining as locked
