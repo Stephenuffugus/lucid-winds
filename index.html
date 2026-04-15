@@ -57056,26 +57056,14 @@ window._LW_treeEarned=function(){
 };
 window._LW_treeAvailable=function(){return window._LW_treeEarned()-_lwTreeSpent();};
 // Tree bonus multiplier — called in class-bonus engine so existing
-// consumers auto-benefit. Kind strings must match LW_TREE_NODES keys.
+// consumers auto-benefit. Kind strings are consumer keys; some consumers
+// are fed by MULTIPLE nodes (e.g. dewRate by Tender Dawn Tending AND
+// Heartwood Slow Spring). TREE_CONSUMER_MAP composes them multiplicatively.
 // Class-branch nodes apply only when that class is walked. Universal
-// branches (tools/heartwood/bower/longwatch) apply regardless. Previous
-// class's points stay preserved but don't silently apply.
+// branches (tools/heartwood/bower/longwatch) apply regardless of class.
+// Previous class's points stay preserved but don't silently apply.
 var UNIVERSAL_BRANCHES={tools:1,heartwood:1,bower:1,longwatch:1};
-window._LW_treeBonus=function(kind){
-  var p=_lwTreePoints(),n=LW_TREE_NODES[kind];
-  if(!n||!p[kind])return 1;
-  if(!UNIVERSAL_BRANCHES[n.branch]){
-    var cls=_lwGetClass();
-    if(!cls||cls!==n.branch)return 1;
-  }
-  // Stack all points with the same consumer-kind mapping
-  return 1+(n.per*p[kind]);
-};
-// Some nodes share a consumer-kind with another (e.g. Tender dewRate AND
-// Heartwood slowSpring both boost dew). Compose them so both stack.
-// Helper iterates LW_TREE_NODES by the mapped consumer kind.
 var TREE_CONSUMER_MAP={
-  // consumer-kind → array of node IDs that feed it
   feralRange:['feralRange','pouchMemory'],
   rareOdds:['rareOdds','ancestralMemory'],
   harvestHash:['harvestHash','heartsEmber'],
@@ -57087,12 +57075,11 @@ var TREE_CONSUMER_MAP={
   dewRate:['dewRate','slowSpring'],
   plantLongevity:['plantLongevity','steadiness','centuryOak']
 };
-// Replace _LW_treeBonus with the composing version
 window._LW_treeBonus=function(kind){
   var ids=TREE_CONSUMER_MAP[kind]||[kind];
-  var mult=1;
   var p=_lwTreePoints();
   var cls=_lwGetClass();
+  var mult=1;
   for(var i=0;i<ids.length;i++){
     var id=ids[i],n=LW_TREE_NODES[id];
     if(!n||!p[id])continue;
