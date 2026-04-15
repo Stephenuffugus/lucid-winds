@@ -2399,6 +2399,13 @@
     .lu-overlay .lu-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;max-width:340px;padding:0 1.2rem;animation:luPanelIn 0.6s cubic-bezier(0.2,0.8,0.3,1.1);}
     @keyframes luPanelIn{from{opacity:0;transform:translate(-50%,-40%) scale(0.85);}to{opacity:1;transform:translate(-50%,-50%) scale(1);}}
     @keyframes luHeroIn{0%{opacity:0;transform:translateY(18px) scale(0.92);}60%{opacity:1;transform:translateY(-2px) scale(1.02);}100%{opacity:1;transform:translateY(0) scale(1);}}
+
+    /* ── BOS TAB — bookmark ribbon on active ── */
+    /* Gold silk strip dangles from the top of the active tab like a real
+       spellbook bookmark. Non-active tabs get nothing. */
+    .bos-tab{position:relative;overflow:visible!important;}
+    .bos-tab.active::before{content:'';position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:14px;height:18px;background:linear-gradient(180deg,#d4b867 0%,#c8a84b 50%,#a88a2f 100%);border-radius:2px 2px 0 0;box-shadow:0 2px 4px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,220,140,0.4);pointer-events:none;}
+    .bos-tab.active::after{content:'';position:absolute;top:-3px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:5px solid #a88a2f;pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,0.4));}
     .lu-overlay .lu-label{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.22em;color:var(--gold);margin-bottom:0.3rem;text-shadow:0 0 12px rgba(200,168,75,0.5);}
     .lu-overlay .lu-level{font-family:'Bebas Neue',sans-serif;font-size:5.5rem;line-height:1;color:#f5dc95;margin-bottom:0.3rem;text-shadow:0 0 30px rgba(255,220,140,0.5),0 4px 18px rgba(0,0,0,0.6);letter-spacing:-0.02em;}
     .lu-overlay .lu-title{font-family:'Playfair Display',serif;font-size:1.3rem;font-style:italic;color:var(--cream);margin-bottom:1rem;letter-spacing:0.04em;}
@@ -56150,6 +56157,23 @@ function _bosReportContent() {
         try {
           var p = window.getCompendiumProgress();
           if (p && p.found >= 20) fire('The Alchemist');
+        } catch(e){}
+      }
+      // Territorial — 3+ of your wild plants survived 7 days each. A "zone"
+      // is held if the drop still exists in fg_wild_plants (harvest/wither
+      // removes it). Age measured from droppedAt timestamp.
+      if (!fired('Territorial')) {
+        try {
+          var myWild = JSON.parse(localStorage.getItem('fg_wild_plants') || '[]');
+          var SEVEN = 7 * 86400000;
+          var nowT = Date.now();
+          var heldLong = 0;
+          for (var wi = 0; wi < myWild.length; wi++) {
+            var wp = myWild[wi];
+            var stamp = wp.droppedAt ? (new Date(wp.droppedAt)).getTime() : (wp.born || 0);
+            if (stamp && (nowT - stamp) >= SEVEN) heldLong++;
+          }
+          if (heldLong >= 3) fire('Territorial');
         } catch(e){}
       }
       // Chimera's Wake — any Gen 3+ chimera in greenhouse
