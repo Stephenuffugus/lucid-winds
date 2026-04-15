@@ -54208,8 +54208,14 @@ window._lwClaimHerbarium = function(id){
     rain:  { id:'rain',  icon:'\ud83d\udca7', label:'Rain' },
     dry:   { id:'dry',   icon:'\ud83c\udfdc\ufe0f', label:'Dry' },
     wind:  { id:'wind',  icon:'\ud83d\udca8', label:'Wind' },
-    still: { id:'still', icon:'\ud83d\udd47',  label:'Still' }
+    still: { id:'still', icon:'\ud83d\udd47',  label:'Still' },
+    // Rare wild cards (spec §5) — universal counters at half strength.
+    // Earned only from Bloom Day successes, not level-ups or nursery drops.
+    moonlight: { id:'moonlight', icon:'\ud83c\udf19', label:'Moonlight', rare:true },
+    thunder:   { id:'thunder',   icon:'\u26a1',         label:'Thunder',   rare:true },
+    dust:      { id:'dust',      icon:'\ud83c\udf2b\ufe0f', label:'Dust',      rare:true }
   };
+  var RARE_POOL = ['moonlight','thunder','dust'];
   // Counter cycle: Sun -> Dry -> Rain -> Still -> Wind -> Shade -> Sun
   // Each element BEATS the next. Each is BEATEN BY the previous.
   var CYCLE = ['sun','dry','rain','still','wind','shade'];
@@ -54290,20 +54296,28 @@ window._lwClaimHerbarium = function(id){
     if (!cardsPlayed || cardsPlayed.length !== 3) return null;
     if (!hexElements || hexElements.length !== 3) return null;
     var reveal = [];
-    var matches = 0, counters = 0, neutrals = 0;
+    var matches = 0, counters = 0, neutrals = 0, wilds = 0;
     // Each card pairs with hex element at same index for deterministic
     // reveal (player sees exactly which card hit which slot).
     for (var i = 0; i < 3; i++) {
       var card = cardsPlayed[i], hex = hexElements[i];
       var verdict;
-      if (card === hex) { verdict = 'match'; matches++; }
+      var isRare = EL[card] && EL[card].rare;
+      if (isRare) {
+        // Rare wild cards are universal counters at half strength. They
+        // always reveal the hex element (info bonus) and contribute 1
+        // to score (vs 2 for match, 1 for counter). Treated as a
+        // distinct verdict so the reveal can theme them differently.
+        verdict = 'wild'; wilds++;
+      } else if (card === hex) { verdict = 'match'; matches++; }
       else if (countered(card, hex)) { verdict = 'counter'; counters++; }
       else { verdict = 'neutral'; neutrals++; }
       reveal.push({ card: card, hex: hex, verdict: verdict });
     }
-    var score = matches * 2 + counters; // match worth 2, counter worth 1
-    var success = score >= 3; // 1 match + 1 counter = success, or 2 matches
-    return { matches: matches, counters: counters, neutrals: neutrals, score: score, success: success, reveal: reveal };
+    // match=2, counter=1, wild=1 (universal counter half-strength)
+    var score = matches * 2 + counters + wilds;
+    var success = score >= 3;
+    return { matches: matches, counters: counters, neutrals: neutrals, wilds: wilds, score: score, success: success, reveal: reveal };
   }
 
   // Inventory helpers
@@ -54390,10 +54404,16 @@ window._lwClaimHerbarium = function(id){
     } catch(e) { return 1; }
   }
   function resolveVerdictColor(v) {
-    return v === 'match' ? 'var(--sage)' : v === 'counter' ? 'var(--gold)' : 'var(--muted)';
+    if (v === 'match') return 'var(--sage)';
+    if (v === 'counter') return 'var(--gold)';
+    if (v === 'wild') return '#c07ac8'; // soft violet for rare wilds
+    return 'var(--muted)';
   }
   function resolveVerdictLabel(v) {
-    return v === 'match' ? 'MATCH' : v === 'counter' ? 'COUNTER' : 'NEUTRAL';
+    if (v === 'match') return 'MATCH';
+    if (v === 'counter') return 'COUNTER';
+    if (v === 'wild') return 'WILD';
+    return 'NEUTRAL';
   }
   // Build a 5-card hand from the active deck (using inventory to validate)
   function buildHand() {
@@ -54546,7 +54566,7 @@ window._lwClaimHerbarium = function(id){
           var _lr = lastPlay[_lp];
           var _lCard = EL[_lr.card]; var _lHex = EL[_lr.hex];
           var _vColor = resolveVerdictColor(_lr.verdict);
-          var _vLbl = _lr.verdict === 'match' ? '\u2728' : _lr.verdict === 'counter' ? '\u2694\ufe0f' : '\u2014';
+          var _vLbl = _lr.verdict === 'match' ? '\u2728' : _lr.verdict === 'counter' ? '\u2694\ufe0f' : _lr.verdict === 'wild' ? '\ud83c\udf1f' : '\u2014';
           h += '<div style="flex:1;text-align:center;padding:4px;background:rgba(13,16,12,0.5);border:1px solid ' + _vColor + '55;border-radius:6px;">';
           h += '<div style="font-size:0.9rem;">' + (_lCard ? _lCard.icon : '?') + '</div>';
           h += '<div style="font-size:0.45rem;color:' + _vColor + ';font-family:DM Mono,monospace;">' + _vLbl + '</div>';
@@ -54636,18 +54656,19 @@ window._lwClaimHerbarium = function(id){
           });
         }
       } catch(e) {}
-      // Bloom Day 2x — if today is a Bloom Day and the forage succeeds,
-      // award a bonus element card so the cadence has a real payoff.
+      // Bloom Day bonus — if today is a Bloom Day and the forage succeeds,
+      // award a RARE wild card (Moonlight / Thunder / Dust) per spec §5.
+      // These are universal half-strength counters, only earnable on
+      // Bloom Days. Falls back to an element card if capacity is tight.
       try {
         if (resolved.success && window._lwGetActiveBloomDay && window._lwGetActiveBloomDay()) {
           var _blInv = loadInventory();
           if (totalCards(_blInv) < cardCapacity()) {
-            var _blPool = ['sun','shade','rain','dry','wind','still'];
-            var _blPick = _blPool[Math.floor(Math.random() * _blPool.length)];
+            var _blPick = RARE_POOL[Math.floor(Math.random() * RARE_POOL.length)];
             addCard(_blPick, 1);
             if (EL[_blPick] && window._toast) {
               setTimeout(function(){
-                window._toast('\ud83c\udf38 Bloom Day bonus: ' + EL[_blPick].icon + ' ' + EL[_blPick].label + ' card.');
+                window._toast('\u2728 Bloom Day reward: ' + EL[_blPick].icon + ' ' + EL[_blPick].label + ' \u2014 a rare wild card. Works on any hex (half strength).');
               }, 600);
             }
           }
