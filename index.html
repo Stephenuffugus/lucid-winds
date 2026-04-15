@@ -27327,14 +27327,15 @@ document.addEventListener('keydown', function(e) {
     if (!opts.compact) {
       html += '<div class="dna-ledger-eyebrow">⬡ BOTANICAL BLUEPRINT</div>';
     }
-    // Terra Grade banner
+    // Terra Grade banner — tappable for the grade Reader page
     var _tg = window.getTerraGrade(t);
-    html += '<div style="text-align:center;padding:0.2rem 0 0.3rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.1em;font-size:0.55rem;color:'+_tg.color+';text-shadow:0 0 8px '+_tg.color+'44;">'
+    html += '<div onclick="event.stopPropagation();if(window._lwShowGradeDetail)_lwShowGradeDetail(\''+_tg.name+'\')" style="cursor:pointer;text-align:center;padding:0.2rem 0 0.3rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.1em;font-size:0.55rem;color:'+_tg.color+';text-shadow:0 0 8px '+_tg.color+'44;">'
           + _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon + '</div>';
-    // Synergy badge
+    // Synergy badge — tappable for the synergy Reader page
     var _dSyn = window.getSynergy ? window.getSynergy(t) : null;
     if (_dSyn) {
-      html += '<div style="text-align:center;padding:0.15rem 0 0.25rem;"><span style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;letter-spacing:0.08em;color:var(--gold);background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.25);border-radius:10px;padding:2px 8px;">\u2726 ' + _dSyn.name.toUpperCase() + ' SYNERGY</span></div>';
+      var _synSafe = _dSyn.name.replace(/'/g, "\\'");
+      html += '<div style="text-align:center;padding:0.15rem 0 0.25rem;"><span onclick="event.stopPropagation();if(window._lwShowSynergyDetail)_lwShowSynergyDetail(\''+_synSafe+'\')" style="cursor:pointer;font-family:Bebas Neue,sans-serif;font-size:0.42rem;letter-spacing:0.08em;color:var(--gold);background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.25);border-radius:10px;padding:2px 8px;">\u2726 ' + _dSyn.name.toUpperCase() + ' SYNERGY</span></div>';
     }
     html += '<div class="dna-ledger-grid">';
     rows.forEach(function(row) {
@@ -27342,9 +27343,15 @@ document.addEventListener('keydown', function(e) {
       var _lc = row.layerTier;
       var _valColor = _lc ? _lc.color : '';
       var _tierLabel = _lc && _lc.tier !== 'common' ? '<span style="font-size:0.28rem;opacity:0.7;margin-left:4px;text-transform:uppercase;letter-spacing:0.06em;">' + _lc.tier + '</span>' : '';
+      // Mutation rows are tappable — open the mutation Reader page
+      var _rowAttr = '';
+      if (row.cat === 'MUTATION' && row.name && row.name !== 'None') {
+        _rowAttr = ' onclick="event.stopPropagation();if(window._lwShowMutationDetail)_lwShowMutationDetail(\''+row.name.replace(/'/g,"\\'")+'\')" style="cursor:pointer;' + (_valColor ? 'color:'+_valColor+';' : '') + '"';
+      } else if (_valColor) {
+        _rowAttr = ' style="color:'+_valColor+';"';
+      }
       html += '<div class="dna-cat">' + row.cat + '</div>'
-            + '<div class="dna-val' + (tierClass ? ' '+tierClass : '') + '"'
-            + (_valColor ? ' style="color:'+_valColor+';"' : '') + '>'
+            + '<div class="dna-val' + (tierClass ? ' '+tierClass : '') + '"' + _rowAttr + '>'
             + row.name + _tierLabel + '</div>';
     });
     html += '</div></div>';
