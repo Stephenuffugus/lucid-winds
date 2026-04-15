@@ -38746,6 +38746,13 @@ function _drop(pl){
     if(window._openContestInspector){
       window._openContestInspector(pl,myEA,inZone,function(targetPlant){
         if(!targetPlant){_toast('Contest cancelled.');return;}
+        // Mulch Ward — if the defender has been warded, attacker loses
+        // automatically regardless of EA / roll. Consumes one ward.
+        if(window.LW_ITEMS&&window.LW_ITEMS.hasWard&&window.LW_ITEMS.hasWard(targetPlant.hash)){
+          window.LW_ITEMS.consumeWard(targetPlant.hash);
+          _toast('\ud83d\udee1\ufe0f Mulch Ward held the line. The wards consume themselves when they do their work.');
+          return;
+        }
         var tEA=_wildEA(targetPlant);
         var _att={hash:pl.hash,ea:myEA};
         var _def={hash:targetPlant.hash,ea:tEA};
@@ -50599,9 +50606,11 @@ function render(){
   }
   for(var j=st.plants.length;j<mx;j++){h+='<div class="ps"><div class="tr" data-g="Common" style="opacity:0.2;">'+I.ter+'<div class="pm" style="opacity:0.12;color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;">+</div></div></div>';}
   var sh=0;for(var k=1;k<SL.length&&sh<2;k++){if(SL[k].k&&!st.unlocks[SL[k].k]){h+='<div class="lk">'+UI.lk+'<div class="lh">'+SL[k].h+'</div></div>';sh++;}}
-  // Return to Base button inside backpack panel
-  h+='<div style="grid-column:1/-1;margin-top:8px;display:flex;justify-content:center;">';
-  h+='<button id="bp-rtb-inner" onclick="window.FG_Backpack&&FG_Backpack.returnToBase&&FG_Backpack.returnToBase();" style="min-height:44px;padding:10px 20px;font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.1em;color:var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(200,168,75,0.04));border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;cursor:pointer;">🏠 RETURN TO BASE</button>';
+  // Return to Base + Items buttons inside backpack panel
+  h+='<div style="grid-column:1/-1;margin-top:8px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;">';
+  h+='<button id="bp-rtb-inner" onclick="window.FG_Backpack&&FG_Backpack.returnToBase&&FG_Backpack.returnToBase();" style="min-height:44px;padding:10px 18px;font-family:Bebas Neue,sans-serif;font-size:0.72rem;letter-spacing:0.1em;color:var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(200,168,75,0.04));border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;cursor:pointer;">🏠 RETURN TO BASE</button>';
+  var _itemTotal=0;try{if(window.LW_ITEMS)_itemTotal=window.LW_ITEMS.total();}catch(e){}
+  h+='<button onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" style="min-height:44px;padding:10px 18px;font-family:Bebas Neue,sans-serif;font-size:0.72rem;letter-spacing:0.1em;color:var(--sage);background:linear-gradient(180deg,rgba(122,179,86,0.18),rgba(122,179,86,0.05));border:1.5px solid rgba(122,179,86,0.4);border-radius:10px;cursor:pointer;">\ud83c\udf31 ITEMS'+(_itemTotal>0?' ('+_itemTotal+')':'')+'</button>';
   h+='</div>';
   pe.innerHTML=h;
   var se=document.getElementById('bps');var cp=xc();h='';
@@ -57079,6 +57088,7 @@ window._lwClaimHerbarium = function(id){
     if (v === 'wild') return '#c07ac8'; // soft violet for rare wilds at half-strength
     if (v === 'safety') return '#87a3c2'; // attempt-3 safety net — pale blue
     if (v === 'weather-hint') return '#87a3c2'; // same as safety — never tip the weather hand
+    if (v === 'lens') return '#d7b14a'; // Forager's Lens — warm gold hint
     return 'var(--muted)';
   }
   function resolveVerdictLabel(v) {
@@ -57088,6 +57098,7 @@ window._lwClaimHerbarium = function(id){
     if (v === 'wild') return 'WILD';
     if (v === 'safety') return 'REVEALED';
     if (v === 'weather-hint') return 'REVEALED'; // never tell them weather is the source
+    if (v === 'lens') return 'LENS';
     return 'NEUTRAL';
   }
   // Build a 5-card hand from the active deck (using inventory to validate)
@@ -57157,6 +57168,11 @@ window._lwClaimHerbarium = function(id){
     // can level into it. "That's the spirit" — Stephen.
     var effGrade = effectiveGrade(grade || 'Common');
     var diff = hexDifficulty(effGrade);
+    // Consume any queued LW_ITEMS effects for this forage (Lens, Compass Shard).
+    // Lens pre-reveals one slot; Shard bumps attempts by 1.
+    var itemQ = { lens:false, extraAttempt:false };
+    try { if (window.LW_ITEMS) itemQ = window.LW_ITEMS.consumeForageQueue(); } catch(e){}
+    if (itemQ.extraAttempt) diff = { slots:diff.slots, cards:diff.cards, handSize:diff.handSize, attempts:diff.attempts+1, scoreNeeded:diff.scoreNeeded };
     // Per-grade attempt cap — higher rarity gets more chances.
     if (attempts >= diff.attempts) {
       if (window._toast) _toast('This hex is locked until tomorrow. Try another.');
@@ -57178,6 +57194,15 @@ window._lwClaimHerbarium = function(id){
     var initialLearned = {};
     if (comp.hintSlot != null && comp.elements[comp.hintSlot]) {
       initialLearned[comp.hintSlot] = { hex: comp.elements[comp.hintSlot], verdict: 'weather-hint' };
+    }
+    // Forager's Lens — reveal one slot (first unrevealed). Purely additive.
+    if (itemQ.lens) {
+      for (var _li = 0; _li < comp.elements.length; _li++) {
+        if (!initialLearned[_li]) {
+          initialLearned[_li] = { hex: comp.elements[_li], verdict: 'lens' };
+          break;
+        }
+      }
     }
     var hand = buildHand(diff.handSize || (diff.cards + 2)); // hand size scales with rarity
     if (hand.length < diff.cards) {
@@ -57497,6 +57522,271 @@ window._lwClaimHerbarium = function(id){
     render();
   }
   window.LW_FORAGING.openPanel = openForagePanel;
+})();
+
+// ═══ LW_ITEMS — consumable mystery-box item system (Phase 1) ═══
+// 17-item spec locked; Phase 1 ships the backbone + 4 items (one per
+// category). Burn-on-use, stored in sws_items, rendered via a modal
+// launched from the backpack. Effects hook into existing contest +
+// foraging panels via global flags read at the right decision points.
+(function(){
+  'use strict';
+  var STORE = 'sws_items';
+  var PENDING = 'sws_items_pending'; // queued effects for next forage/contest
+
+  // Catalog — only 4 items in Phase 1. Expand per plan.
+  var CATALOG = {
+    foragersLens: {
+      key: 'foragersLens',
+      name: "Forager's Lens",
+      category: 'foraging',
+      rarity: 'Common',
+      art: 'assets/items/foragers-lens.png',
+      icon: '\ud83d\udd2e',
+      desc: 'Reveal one hex slot before you begin.',
+      lore: 'A drop of dew held in a petal, angled just so. For a breath, the hex shows you one of its answers.',
+      usage: 'tap before starting a forage'
+    },
+    compassShard: {
+      key: 'compassShard',
+      name: 'Compass Shard',
+      category: 'foraging',
+      rarity: 'Uncommon',
+      art: 'assets/items/compass-shard.png',
+      icon: '\ud83e\udded',
+      desc: '+1 attempt on the next hex you forage.',
+      lore: 'Broken glass from an old pocket compass. The needle still twitches toward the thing you are looking for.',
+      usage: 'tap before starting a forage'
+    },
+    mulchWard: {
+      key: 'mulchWard',
+      name: 'Mulch Ward',
+      category: 'defense',
+      rarity: 'Rare',
+      art: 'assets/items/mulch-ward.png',
+      icon: '\ud83d\udee1\ufe0f',
+      desc: 'Protect one of your wild plants. Auto-wins its next contest.',
+      lore: 'Damp, dense, full of the year\u2019s letting-go. Attackers arrive tired and leave more tired.',
+      usage: 'tap a wild plant of yours to ward it'
+    },
+    scryingStone: {
+      key: 'scryingStone',
+      name: 'Scrying Stone',
+      category: 'remote',
+      rarity: 'Uncommon',
+      art: 'assets/items/scrying-stone.png',
+      icon: '\ud83d\udd2e',
+      desc: 'Forage a hex within 1km without walking there.',
+      lore: 'Hold it to your brow. The far hex leans closer. One attempt, as if you had walked to it.',
+      usage: 'tap a hex on the map when this is primed'
+    }
+  };
+  window.LW_ITEMS_CATALOG = CATALOG;
+
+  function _load(){ try { return JSON.parse(localStorage.getItem(STORE)||'{}'); } catch(e){ return {}; } }
+  function _save(inv){ try { localStorage.setItem(STORE, JSON.stringify(inv)); } catch(e){} }
+  function _loadPending(){ try { return JSON.parse(localStorage.getItem(PENDING)||'{}'); } catch(e){ return {}; } }
+  function _savePending(p){ try { localStorage.setItem(PENDING, JSON.stringify(p)); } catch(e){} }
+
+  function count(key){ return _load()[key] || 0; }
+  function add(key, n){
+    if (!CATALOG[key]) return false;
+    var inv = _load(); inv[key] = (inv[key]||0) + (n||1); _save(inv);
+    if (window._toast && CATALOG[key]) {
+      try { window._toast(CATALOG[key].icon + ' ' + CATALOG[key].name + ' ' + (n>0?'+'+n:n) + ' \u2014 in your pouch'); } catch(e){}
+    }
+    return true;
+  }
+  function spend(key){
+    var inv = _load(); if (!inv[key] || inv[key] <= 0) return false;
+    inv[key]--; if (!inv[key]) delete inv[key]; _save(inv); return true;
+  }
+  function total(){
+    var inv = _load(); var s=0; for (var k in inv) s += inv[k]; return s;
+  }
+
+  // === Phase 1 item effects — flag-based. Hooked from forage/contest code. ===
+
+  // Forager's Lens — queue a pre-reveal for the next forage panel open
+  function useLens(){
+    if (!spend('foragersLens')) { if(window._toast)window._toast('No Forager\u2019s Lens in your pouch.'); return false; }
+    var p = _loadPending(); p.lens = true; _savePending(p);
+    if (window._toast) window._toast('\ud83d\udd2e Lens primed. Your next forage will reveal one slot.');
+    _closePanel();
+    return true;
+  }
+  // Compass Shard — queue +1 attempt for the next forage
+  function useShard(){
+    if (!spend('compassShard')) { if(window._toast)window._toast('No Compass Shard in your pouch.'); return false; }
+    var p = _loadPending(); p.extraAttempt = true; _savePending(p);
+    if (window._toast) window._toast('\ud83e\udded Compass primed. +1 attempt on your next hex.');
+    _closePanel();
+    return true;
+  }
+  // Mulch Ward — player taps a wild plant to ward it (Phase 1: just toggle
+  // via a confirm that takes the FIRST of their wild plants; real plant-
+  // picker UI in Phase 2 when the backpack revamp lands)
+  function useWard(){
+    // Grab the player's own live wild plants
+    var mine = [];
+    try {
+      var all = JSON.parse(localStorage.getItem('fg_wild_plants') || '[]');
+      for (var i=0;i<all.length;i++) if (all[i] && all[i].hash && all[i].alive !== false) mine.push(all[i]);
+    } catch(e){}
+    if (!mine.length) { if(window._toast)window._toast('You have no wild plants to ward. Drop one first.'); return false; }
+    if (mine.length === 1) {
+      if (!spend('mulchWard')) return false;
+      _addWard(mine[0].hash);
+      if (window._toast) window._toast('\ud83d\udee1\ufe0f Mulch Ward applied to ' + (window.getPlantName?window.getPlantName(mine[0].hash):'your plant') + '.');
+      _closePanel();
+      return true;
+    }
+    // Multiple — let them pick
+    _openWardPicker(mine);
+    return true;
+  }
+  function _addWard(hash){
+    var p = _loadPending(); p.wards = p.wards || {}; p.wards[hash] = (p.wards[hash]||0) + 1; _savePending(p);
+  }
+  function consumeWard(hash){
+    var p = _loadPending(); if (!p.wards || !p.wards[hash]) return false;
+    p.wards[hash]--; if (p.wards[hash] <= 0) delete p.wards[hash]; _savePending(p);
+    return true;
+  }
+  function hasWard(hash){
+    var p = _loadPending(); return !!(p.wards && p.wards[hash]);
+  }
+
+  function _openWardPicker(plants){
+    var ov = document.createElement('div');
+    ov.id = 'lw-items-ward-picker';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:100002;background:rgba(5,8,4,0.96);backdrop-filter:blur(10px);overflow-y:auto;padding:1rem;';
+    var h = '<div style="max-width:420px;margin:0 auto;">';
+    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">';
+    h += '<div style="font-family:Playfair Display,serif;font-size:1rem;color:var(--gold);font-style:italic;">Protect which plant?</div>';
+    h += '<button onclick="document.getElementById(\'lw-items-ward-picker\').remove()" style="width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.5);color:var(--cream);font-size:0.9rem;cursor:pointer;">\u2715</button>';
+    h += '</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.8rem;">Auto-wins the plant\'s next contest. Burns on use.</div>';
+    for (var i=0;i<plants.length;i++){
+      var p = plants[i];
+      var svg = ''; try { if (window._generatePlantSVG) svg = window._generatePlantSVG(p.hash, 80, 1); } catch(e){}
+      var nm = (window.getPlantName?window.getPlantName(p.hash):p.hash.slice(0,8));
+      h += '<div onclick="window.LW_ITEMS._confirmWard(\''+p.hash+'\')" style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.6rem;padding:0.7rem;background:rgba(18,22,16,0.7);border:1.5px solid rgba(122,179,86,0.2);border-radius:10px;cursor:pointer;">';
+      h += '<div style="width:70px;height:70px;flex-shrink:0;">'+svg+'</div>';
+      h += '<div style="flex:1;font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.06em;">'+nm+'</div>';
+      h += '</div>';
+    }
+    h += '</div>';
+    ov.innerHTML = h;
+    document.body.appendChild(ov);
+  }
+  function _confirmWard(hash){
+    if (!spend('mulchWard')) return;
+    _addWard(hash);
+    var nm = window.getPlantName?window.getPlantName(hash):'your plant';
+    if (window._toast) window._toast('\ud83d\udee1\ufe0f Mulch Ward applied to ' + nm + '.');
+    try { document.getElementById('lw-items-ward-picker').remove(); } catch(e){}
+    _closePanel();
+  }
+
+  // Scrying Stone — Phase 1 stub: toasts instruction. Real GPS-bound
+  // hex picker lands with Phase 5 remote foraging UI.
+  function useScry(){
+    if (count('scryingStone') <= 0) { if(window._toast)window._toast('No Scrying Stone in your pouch.'); return false; }
+    if (window._toast) window._toast('\ud83d\udd2e Scrying Stone is ready — tap a hex within 1km on the map to use. (Remote targeting UI lands next patch.)');
+    _closePanel();
+    return false;
+  }
+
+  // === Main items panel ===
+  function openPanel(){
+    var existing = document.getElementById('lw-items-panel');
+    if (existing) { existing.remove(); return; }
+    var ov = document.createElement('div');
+    ov.id = 'lw-items-panel';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:100001;background:rgba(5,8,4,0.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);overflow-y:auto;padding:1rem;-webkit-overflow-scrolling:touch;animation:panelFadeIn 0.25s ease;';
+    var h = '<div style="max-width:460px;margin:0 auto;">';
+    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">';
+    h += '<div><div style="font-family:Playfair Display,serif;font-size:1.15rem;color:var(--gold);font-style:italic;">Field Items</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:2px;">Burn-on-use. '+total()+' in your pouch.</div></div>';
+    h += '<button onclick="window.LW_ITEMS._closePanel()" style="width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.5);color:var(--cream);font-size:1rem;cursor:pointer;">\u2715</button>';
+    h += '</div>';
+    var cats = [
+      {key:'foraging',label:'\ud83c\udf31 FORAGING AIDS',color:'var(--sage)'},
+      {key:'defense', label:'\ud83d\udee1\ufe0f DEFENSE',       color:'var(--gold)'},
+      {key:'offense', label:'\u2694\ufe0f OFFENSE',          color:'#c07060'},
+      {key:'remote',  label:'\ud83e\udded REMOTE',           color:'#87a3c2'}
+    ];
+    var inv = _load();
+    for (var ci=0;ci<cats.length;ci++){
+      var cat = cats[ci];
+      var keysInCat = [];
+      for (var ck in CATALOG) if (CATALOG[ck].category === cat.key) keysInCat.push(ck);
+      if (!keysInCat.length) continue;
+      h += '<div style="margin-top:0.9rem;margin-bottom:0.4rem;font-family:Bebas Neue,sans-serif;font-size:0.62rem;letter-spacing:0.12em;color:'+cat.color+';">'+cat.label+'</div>';
+      for (var ki=0;ki<keysInCat.length;ki++){
+        var it = CATALOG[keysInCat[ki]];
+        var n = inv[it.key] || 0;
+        var disabled = n <= 0;
+        var op = disabled ? 0.4 : 1;
+        h += '<div style="margin-bottom:0.5rem;padding:0.7rem;background:rgba(18,22,16,0.7);border:1.5px solid '+(disabled?'rgba(74,124,53,0.15)':'rgba(200,168,75,0.35)')+';border-radius:12px;opacity:'+op+';">';
+        h += '<div style="display:flex;align-items:center;gap:0.7rem;">';
+        h += '<div style="width:56px;height:56px;flex-shrink:0;border-radius:10px;background:rgba(5,8,4,0.6);border:1px solid rgba(122,179,86,0.2);display:flex;align-items:center;justify-content:center;overflow:hidden;">';
+        h += '<img src="'+it.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;font-size:1.8rem;&quot;>'+it.icon+'</div>\';">';
+        h += '</div>';
+        h += '<div style="flex:1;min-width:0;">';
+        h += '<div style="display:flex;align-items:center;gap:0.4rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.06em;color:'+(disabled?'var(--muted)':'var(--cream)')+';">'+it.name+'</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--gold);">\u00d7'+n+'</div></div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);line-height:1.5;margin-top:2px;">'+it.desc+'</div>';
+        h += '</div>';
+        var handler = it.key==='foragersLens'?'useLens':it.key==='compassShard'?'useShard':it.key==='mulchWard'?'useWard':it.key==='scryingStone'?'useScry':null;
+        if (handler && !disabled) {
+          h += '<button onclick="window.LW_ITEMS.'+handler+'()" style="min-height:40px;padding:8px 14px;font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;background:rgba(200,168,75,0.18);border:1.5px solid var(--gold);color:var(--gold);border-radius:8px;cursor:pointer;flex-shrink:0;">USE</button>';
+        }
+        h += '</div></div>';
+      }
+    }
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);text-align:center;margin-top:1rem;line-height:1.6;">More items coming \u2014 mystery boxes, slot-machine drops, quest rewards.</div>';
+    h += '</div>';
+    ov.innerHTML = h;
+    document.body.appendChild(ov);
+  }
+  function _closePanel(){ try { var p=document.getElementById('lw-items-panel'); if(p)p.remove(); } catch(e){} }
+
+  // === Queue consumers ===
+  // Pulled from the forage panel on open — one-shot, always cleared.
+  function consumeForageQueue(){
+    var p = _loadPending();
+    var out = { lens: !!p.lens, extraAttempt: !!p.extraAttempt };
+    if (p.lens) delete p.lens;
+    if (p.extraAttempt) delete p.extraAttempt;
+    _savePending(p);
+    return out;
+  }
+
+  window.LW_ITEMS = {
+    CATALOG: CATALOG,
+    count: count, add: add, spend: spend, total: total,
+    useLens: useLens, useShard: useShard, useWard: useWard, useScry: useScry,
+    _confirmWard: _confirmWard,
+    hasWard: hasWard, consumeWard: consumeWard,
+    consumeForageQueue: consumeForageQueue,
+    openPanel: openPanel, _closePanel: _closePanel
+  };
+
+  // Dev helper: LW_debug.grantItem('foragersLens', 3)
+  window.LW_debug = window.LW_debug || {};
+  window.LW_debug.grantItem = function(key, n){ return add(key, n||1); };
+  window.LW_debug.openItems = function(){ openPanel(); };
+
+  // Starter grant — every brand new keeper gets a taste of the system.
+  try {
+    if (!localStorage.getItem('lw_items_starter_v1')) {
+      localStorage.setItem('lw_items_starter_v1','1');
+      add('foragersLens', 2);
+      add('compassShard', 1);
+    }
+  } catch(e){}
 })();
 
 // ═══ COMPANION FAMILIES V1 — base buffs + class affinity ═══
