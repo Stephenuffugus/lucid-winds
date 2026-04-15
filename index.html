@@ -57124,6 +57124,111 @@ function _bosSecretsContent() {
   }
   h+='</div></div>';
 
+  // ─── TERRA GRADES ──────────────────────────────────────────────
+  // 7 rarity tiers. Each tile shows your count of plants at that tier.
+  // Tap → grade Reader page.
+  try {
+    var grades = [
+      {name:'Common', color:'#959588', icon:'\u25cb'},
+      {name:'Uncommon', color:'#8CB86E', icon:'\u25c8'},
+      {name:'Rare', color:'#5b8fb9', icon:'\u25c6'},
+      {name:'Epic', color:'#9B59B6', icon:'\u25c7'},
+      {name:'Legendary', color:'#C8A84B', icon:'\u2726'},
+      {name:'Mythic', color:'#A87285', icon:'\u2605'},
+      {name:'Cosmic', color:'#D94FFF', icon:'\u2727'}
+    ];
+    var tgCounts = {};
+    for (var tgi = 0; tgi < gh.length; tgi++) {
+      try {
+        var _tgt = window.hashToTraits(gh[tgi].hash);
+        var _tgg = window.getTerraGrade(_tgt);
+        if (_tgg) tgCounts[_tgg.name] = (tgCounts[_tgg.name] || 0) + 1;
+      } catch(e){}
+    }
+    var tgSeen = 0;
+    for (var _tci = 0; _tci < grades.length; _tci++) if (tgCounts[grades[_tci].name]) tgSeen++;
+    h += '<div style="margin-bottom:0.8rem;">';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.4rem;">\u2726 TERRA GRADES <span style="color:var(--muted);font-size:0.5rem;">' + tgSeen + ' / ' + grades.length + ' tiers seen</span></div>';
+    h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;">';
+    for (var gti = 0; gti < grades.length; gti++) {
+      var g = grades[gti];
+      var gc = tgCounts[g.name] || 0;
+      var has = gc > 0;
+      h += '<div onclick="if(window._lwShowGradeDetail)_lwShowGradeDetail(\''+g.name+'\')" style="padding:4px 2px;background:'+(has?'rgba(18,22,16,0.7)':'rgba(26,36,22,0.3)')+';border:1px solid '+g.color+(has?'44':'22')+';border-radius:5px;text-align:center;cursor:pointer;'+(has?'':'opacity:0.55;')+'" title="'+g.name+' \u00b7 '+gc+' owned">';
+      h += '<div style="font-size:0.7rem;color:'+g.color+';">'+g.icon+'</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:'+(has?'var(--cream)':'var(--muted)')+';margin-top:1px;">'+gc+'</div>';
+      h += '</div>';
+    }
+    h += '</div></div>';
+  } catch(e){}
+
+  // ─── SEASONS ──────────────────────────────────────────────────
+  // 4 seasons. Each tile shows your plants of that season + peak indicator.
+  try {
+    if (window.SEASON_DATA) {
+      var seasonCounts = {};
+      for (var sci = 0; sci < gh.length; sci++) {
+        try {
+          var _sct = window.hashToTraits(gh[sci].hash);
+          if (_sct && typeof _sct.season === 'number') {
+            var _scn = window.SEASON_DATA[_sct.season] && window.SEASON_DATA[_sct.season].name;
+            if (_scn) seasonCounts[_scn] = (seasonCounts[_scn] || 0) + 1;
+          }
+        } catch(e){}
+      }
+      var _cm = new Date().getMonth();
+      h += '<div style="margin-bottom:0.8rem;">';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:#7ab356;letter-spacing:0.1em;margin-bottom:0.4rem;">\u273f SEASONS</div>';
+      h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">';
+      for (var sdi = 0; sdi < window.SEASON_DATA.length; sdi++) {
+        var sd = window.SEASON_DATA[sdi];
+        var sdc = seasonCounts[sd.name] || 0;
+        var sdHas = sdc > 0;
+        var sdPeak = sd.months.indexOf(_cm) >= 0;
+        var sdBorder = sdPeak ? sd.color : (sdHas ? sd.color + '44' : 'rgba(74,124,53,0.08)');
+        var sdBg = sdPeak ? (sd.color + '22') : (sdHas ? 'rgba(18,22,16,0.65)' : 'rgba(26,36,22,0.3)');
+        h += '<div onclick="if(window._lwShowSeasonDetail)_lwShowSeasonDetail(\''+sd.name+'\')" style="padding:6px 4px;background:'+sdBg+';border:1.5px solid '+sdBorder+';border-radius:6px;text-align:center;cursor:pointer;'+(sdHas?'':'opacity:0.6;')+'" title="'+sd.name+(sdPeak?' \u2014 peak now':'')+'">';
+        h += '<div style="font-size:0.85rem;">'+sd.emblem+'</div>';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;color:'+sd.color+';letter-spacing:0.08em;margin-top:1px;">'+sd.name.toUpperCase()+'</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:'+(sdHas?'var(--cream)':'var(--muted)')+';">'+sdc+(sdPeak?' \u00b7 PEAK':'')+'</div>';
+        h += '</div>';
+      }
+      h += '</div></div>';
+    }
+  } catch(e){}
+
+  // ─── BIOMES VISITED ───────────────────────────────────────────
+  // 10 biomes. Each tile shows whether you've been there (cached detection).
+  try {
+    if (window.BIOMES) {
+      var bdKeys = ['wetland','riverside','coastal','forest','mountain','desert','farmland','garden','park','suburban'];
+      var visitedBiomes = {};
+      try {
+        var _bdCache = JSON.parse(localStorage.getItem('lw_biome_cache')||'{}');
+        for (var _bdk in _bdCache) { if (_bdCache[_bdk] && _bdCache[_bdk].biome) visitedBiomes[_bdCache[_bdk].biome] = true; }
+      } catch(e){}
+      if (window._lastDetectedBiome) visitedBiomes[window._lastDetectedBiome] = true;
+      var bdSeen = 0;
+      for (var _bdi = 0; _bdi < bdKeys.length; _bdi++) if (visitedBiomes[bdKeys[_bdi]]) bdSeen++;
+      h += '<div style="margin-bottom:0.8rem;">';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:#7ab356;letter-spacing:0.1em;margin-bottom:0.4rem;">\u26f0 BIOMES <span style="color:var(--muted);font-size:0.5rem;">' + bdSeen + ' / ' + bdKeys.length + ' visited</span></div>';
+      h += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px;">';
+      for (var bgi = 0; bgi < bdKeys.length; bgi++) {
+        var bk = bdKeys[bgi];
+        var bg = window.BIOMES[bk];
+        if (!bg) continue;
+        var bHas = visitedBiomes[bk];
+        var bCurrent = (window._lastDetectedBiome === bk);
+        var bBorder = bCurrent ? bg.color : (bHas ? bg.color + '44' : 'rgba(74,124,53,0.08)');
+        h += '<div onclick="if(window._lwShowBiomeDetail)_lwShowBiomeDetail(\''+bk+'\')" style="padding:4px 2px;background:rgba(18,22,16,'+(bHas?'0.7':'0.3')+');border:1.5px solid '+bBorder+';border-radius:5px;text-align:center;cursor:pointer;'+(bHas?'':'opacity:0.4;')+'" title="'+bg.name+(bCurrent?' \u2014 here now':(bHas?' \u2014 visited':' \u2014 unvisited'))+'">';
+        h += '<div style="font-size:0.65rem;">'+(bHas?bg.icon:'?')+'</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:'+(bHas?bg.color:'var(--muted)')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">'+(bHas?bg.name:'???')+'</div>';
+        h += '</div>';
+      }
+      h += '</div></div>';
+    }
+  } catch(e){}
+
   // ─── MUTATIONS ────────────────────────────────────────────────
   // 13 mutations. Lock state = whether you own any plant with this mutation.
   // Each tile taps into the existing _lwShowMutationDetail Reader page.
