@@ -54847,6 +54847,118 @@ window._bosActivityContent = _bosActivityContent;
   window.LW_Reader = { open: open, close: close };
 })();
 
+// ═══ RARITY TIER DETAIL PAGE via LW_Reader ═══
+// Tap a Terra Grade chip anywhere → Reader explains the tier's meaning,
+// rarity band, score threshold, and flavor lore. Named instead of numeric
+// because players think in names ("is this Rare?"), not scores.
+var LW_GRADE_LORE = {
+  Common:    { pct:'~50%', lore:'Common plants are the steady majority — the everyday blooms that make a garden feel full rather than curated. Every collection is anchored by them. A 60-slot greenhouse without any commons would feel like a trophy case, not a living place.' },
+  Uncommon:  { pct:'~25%', lore:'Uncommon plants carry one small mark of distinction — a rarer stem, a slightly unusual substrate. The quiet middle shelf. Players who look past them are missing the fact that most great synergies hinge on an uncommon partner.' },
+  Rare:      { pct:'~12%', lore:'Rare plants start making people stop and look. A golden pot, a crystal base, a meaningful mutation. They mark the point where collecting becomes composing — the first tier where the Trait Bank\u2019s shape becomes legible.' },
+  Epic:      { pct:'~7%',  lore:'Epic plants combine two or more rare layers. They tend to become the favorites — the ones you name. Epic is the tier where your greenhouse becomes a personality, not just an inventory.' },
+  Legendary: { pct:'~4%',  lore:'Legendary plants are uncommon enough to feel like events. Stardust substrate, ancient amphora, feather frond. These are the plants other keepers visit to see. A single Legendary changes how a greenhouse feels forever.' },
+  Mythic:    { pct:'~1.5%',lore:'Mythic plants are rare enough that most keepers encounter only a handful across a full year of play. Phoenix ash, void petal, world seed cradle. When one blooms in your nursery, the game remembers.' },
+  Cosmic:    { pct:'<0.5%',lore:'Cosmic plants are statistical anomalies. A Cosmic with the Beholder occurs in roughly 0.04% of mints. You will know when you see one — the garden itself behaves differently around it. Keep it. Future you will want this back.' }
+};
+window._lwShowGradeDetail = function(gradeName) {
+  var lore = LW_GRADE_LORE[gradeName];
+  if (!lore) return;
+  // Find the grade def for color/icon/minScore
+  var defs = [
+    { name:'Common',    minScore:0,  color:'#959588', icon:'\u25cb', theme:'sage' },
+    { name:'Uncommon',  minScore:2,  color:'#8CB86E', icon:'\u25c8', theme:'sage' },
+    { name:'Rare',      minScore:4,  color:'#5b8fb9', icon:'\u25c6', theme:'blue' },
+    { name:'Epic',      minScore:6,  color:'#9B59B6', icon:'\u25c7', theme:'cosmic' },
+    { name:'Legendary', minScore:8,  color:'#C8A84B', icon:'\u2726', theme:'gold' },
+    { name:'Mythic',    minScore:10, color:'#A87285', icon:'\u2605', theme:'dark' },
+    { name:'Cosmic',    minScore:12, color:'#D94FFF', icon:'\u2727', theme:'cosmic' }
+  ];
+  var def = null;
+  for (var di = 0; di < defs.length; di++) if (defs[di].name === gradeName) { def = defs[di]; break; }
+  if (!def) return;
+  // How many of this grade do YOU own?
+  var myCount = 0;
+  try {
+    var gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+    for (var gi = 0; gi < gh.length; gi++) {
+      try {
+        var t = window.hashToTraits(gh[gi].hash);
+        var g = window.getTerraGrade(t);
+        if (g && g.name === gradeName) myCount++;
+      } catch(e){}
+    }
+  } catch(e){}
+  var body = [];
+  body.push({type:'quote', text: lore.lore});
+  body.push({type:'section-head', text:'Mechanics'});
+  body.push({type:'stat', label:'Terra score', value:'\u2265 ' + def.minScore});
+  body.push({type:'stat', label:'Mint rate', value: lore.pct});
+  body.push({type:'divider'});
+  body.push({type:'section-head', text:'Your collection'});
+  body.push({type:'stat', label:'Plants at this tier', value: myCount});
+  window.LW_Reader.open({
+    eyebrow: 'TERRA GRADE',
+    title: def.icon + ' ' + def.name,
+    subtitle: null,
+    theme: def.theme,
+    chips: [def.name, 'score \u2265 ' + def.minScore, lore.pct],
+    body: body,
+    actions: [{label:'CLOSE', kind:'ghost'}]
+  });
+};
+
+// ═══ SEASON DETAIL PAGE via LW_Reader ═══
+var LW_SEASON_LORE = {
+  Spring: 'Spring plants wake early. Their peak is the long light of March through May — when their season is in flower, they grow bolder and more forgiving. Out of season they fade fast, especially in winter.',
+  Summer: 'Summer plants thrive in heat. The months of June through August are their kingdom. Autumn is kind to them; spring is distracted; winter is a test of patience more than anything else.',
+  Autumn: 'Autumn plants are the ones who slow down on purpose. They come into their own from September through November — when the world begins to close, they open. Winter treats them like kin; summer tries to outlast them.',
+  Winter: 'Winter plants prefer cold, dry, stubborn ground. December, January, February are when they bloom brightest. Summer is their opposite — direct warmth wilts them — and only autumn feels adjacent enough to stay standing.'
+};
+window._lwShowSeasonDetail = function(seasonName) {
+  if (!window.SEASON_DATA) return;
+  var sd = null;
+  for (var i = 0; i < window.SEASON_DATA.length; i++) {
+    if (window.SEASON_DATA[i].name === seasonName) { sd = window.SEASON_DATA[i]; break; }
+  }
+  if (!sd) return;
+  var currentMonth = new Date().getMonth();
+  var inPeak = sd.months.indexOf(currentMonth) >= 0;
+  var lore = LW_SEASON_LORE[seasonName] || '';
+  // Count your plants in this season
+  var myCount = 0;
+  try {
+    var gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+    for (var gi = 0; gi < gh.length; gi++) {
+      try {
+        var t = window.hashToTraits(gh[gi].hash);
+        if (window.SEASON_DATA[t.season] && window.SEASON_DATA[t.season].name === seasonName) myCount++;
+      } catch(e){}
+    }
+  } catch(e){}
+  var body = [];
+  body.push({type:'quote', text: lore});
+  body.push({type:'section-head', text:'Peak-season effects'});
+  body.push({type:'stat', label:'EA bonus', value:'+2'});
+  body.push({type:'stat', label:'Stress', value:'\u00d70.5 (halved)'});
+  body.push({type:'stat', label:'Pollen', value:'\u00d71.5'});
+  body.push({type:'divider'});
+  body.push({type:'section-head', text:'Off-peak'});
+  body.push({type:'para', text:'Adjacent seasons give +1 EA and normal stress. The opposite season is harsh — no EA bonus, +50% stress, half pollen. The garden is telling you when to plant what.'});
+  body.push({type:'divider'});
+  body.push({type:'section-head', text:'Your connection'});
+  body.push({type:'stat', label:'Plants of this season', value: myCount});
+  body.push({type:'stat', label:'Currently in peak', value: inPeak ? 'Yes' : 'No'});
+  window.LW_Reader.open({
+    eyebrow: 'SEASON',
+    title: sd.emblem + ' ' + sd.name,
+    subtitle: inPeak ? 'the world is in your season' : null,
+    theme: 'sage',
+    chips: [sd.name, inPeak ? 'PEAK NOW' : 'OFF-PEAK'],
+    body: body,
+    actions: [{label:'CLOSE', kind:'ghost'}]
+  });
+};
+
 // ═══ MILESTONE DETAIL PAGE via LW_Reader ═══
 // Tap a milestone card on the character sheet → opens the hero art + lore.
 var LW_MILESTONE_LORE = {
