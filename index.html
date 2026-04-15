@@ -53825,7 +53825,38 @@ function _bosActivityContent() {
       + '</div>';
   }
   evts.sort(function(a,b){return (b.ts||0)-(a.ts||0);});
-  var h = '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-bottom:0.6rem;">' + evts.length + ' recent events \u00b7 newest first</div>';
+  // Filter chips — let players focus on a slice of their diary. Read/persist
+  // the active filter from localStorage so tab-away/tab-back keeps context.
+  var _actFilter = 'all';
+  try { _actFilter = localStorage.getItem('lw_activity_filter') || 'all'; } catch(e) {}
+  // Map event types to category buckets — covers everything currently logged.
+  function _actCat(t) {
+    if (t === 'birth' || t === 'seed_bloomed' || t === 'plant_mint' || t === 'sprout' || t === 'germinate') return 'growth';
+    if (t === 'plant_bred' || t === 'cross_pollinate' || t === 'wild_cutting_taken') return 'breeding';
+    if (t === 'forage_attempt' || t === 'feral_collected') return 'forage';
+    if (t === 'wild_drop' || t === 'wild_watered' || t === 'wild_watered_stranger' || t === 'wild_tended_stranger' || t === 'wild_withered' || t === 'invaded' || t === 'climate' || t === 'weather' || t === 'weather_cast' || t === 'drift_pollen' || t === 'drift_seed' || t === 'lineage_spread') return 'wild';
+    if (t === 'memento' || t === 'companion_l3' || t === 'companion' || t === 'level_up' || t === 'achievement_unlock') return 'bonds';
+    return 'other';
+  }
+  var _actCats = [
+    {k:'all', label:'ALL', color:'var(--gold)'},
+    {k:'growth', label:'GROWTH', color:'var(--sage)'},
+    {k:'breeding', label:'BREED', color:'#c07ac8'},
+    {k:'forage', label:'FORAGE', color:'#d0b46c'},
+    {k:'wild', label:'WILD', color:'#5baddc'},
+    {k:'bonds', label:'BONDS', color:'#e8a0bf'}
+  ];
+  var h = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:0.55rem;">';
+  for (var _c = 0; _c < _actCats.length; _c++) {
+    var _cc = _actCats[_c]; var _active = _actFilter === _cc.k;
+    h += '<button onclick="try{localStorage.setItem(\'lw_activity_filter\',\'' + _cc.k + '\');}catch(e){}if(window._bosSetTab)window._bosSetTab(\'activity\');" style="padding:4px 8px;font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.08em;background:' + (_active ? 'rgba(200,168,75,0.18)' : 'rgba(26,36,22,0.5)') + ';color:' + (_active ? _cc.color : 'var(--muted)') + ';border:1px solid ' + (_active ? _cc.color : 'rgba(74,124,53,0.15)') + ';border-radius:6px;cursor:pointer;min-height:30px;">' + _cc.label + '</button>';
+  }
+  h += '</div>';
+  // Apply filter to event list — counted before filter so "N recent events" still reads true.
+  var _filteredEvts = (_actFilter === 'all') ? evts : evts.filter(function(e){return _actCat(e.type) === _actFilter;});
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-bottom:0.6rem;">' + _filteredEvts.length + (_actFilter==='all' ? ' recent events \u00b7 newest first' : ' ' + _actFilter + ' events \u00b7 newest first') + '</div>';
+  // Use filtered list for the render loop below.
+  evts = _filteredEvts;
   var cutoff = Date.now() - 7 * 86400000;
   for (var i = 0; i < Math.min(evts.length, 120); i++) {
     var e = evts[i];
