@@ -26978,6 +26978,8 @@ document.addEventListener('keydown', function(e) {
     // Check achievements
     setTimeout(checkAchievements, 200);
     // Book of Secrets passive event scan (Full Grove, Collector, Cicada, Beholder, etc.)
+    // Stamp __LW_lastMintTs so daily login can skip its redundant scan.
+    try { window.__LW_lastMintTs = Date.now(); } catch(e){}
     try { if (window.LW_Events) setTimeout(function(){ window.LW_Events.scanPassive(); }, 400); } catch(e) {}
     // Golden Hour Witness — mint happened 6pm-7pm
     try {
@@ -27339,7 +27341,8 @@ document.addEventListener('keydown', function(e) {
     }
     // Terra Grade banner — tappable for the grade Reader page
     var _tg = window.getTerraGrade(t);
-    html += '<div onclick="event.stopPropagation();if(window._lwShowGradeDetail)_lwShowGradeDetail(\''+_tg.name+'\')" style="cursor:pointer;text-align:center;padding:0.2rem 0 0.3rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.1em;font-size:0.55rem;color:'+_tg.color+';text-shadow:0 0 8px '+_tg.color+'44;">'
+    var _tgNameEsc = String(_tg.name).replace(/'/g,"\\'");
+    html += '<div onclick="event.stopPropagation();if(window._lwShowGradeDetail)_lwShowGradeDetail(\''+_tgNameEsc+'\')" style="cursor:pointer;text-align:center;padding:0.2rem 0 0.3rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.1em;font-size:0.55rem;color:'+_tg.color+';text-shadow:0 0 8px '+_tg.color+'44;">'
           + _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon + '</div>';
     // Synergy badge — tappable for the synergy Reader page
     var _dSyn = window.getSynergy ? window.getSynergy(t) : null;
@@ -29527,12 +29530,14 @@ document.addEventListener('keydown', function(e) {
     var _seasonName = (window.SEASON_DATA && window.SEASON_DATA[_season]) ? window.SEASON_DATA[_season].name : '';
     html += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.54rem;letter-spacing:0.06em;display:flex;gap:0.3rem;">';
     html += '<span style="color:' + sColor + ';">EA ' + _ea + '</span>';
-    html += '<span style="color:var(--muted);cursor:pointer;" onclick="event.stopPropagation();if(window._lwShowSeasonDetail)_lwShowSeasonDetail(\'' + _seasonName + '\')">' + seasonEmblems[_season] + '</span>';
+    var _seasonNameEsc = String(_seasonName||'').replace(/'/g,"\\'");
+    html += '<span style="color:var(--muted);cursor:pointer;" onclick="event.stopPropagation();if(window._lwShowSeasonDetail)_lwShowSeasonDetail(\'' + _seasonNameEsc + '\')">' + seasonEmblems[_season] + '</span>';
     html += '<span style="color:var(--muted);">Gen ' + (_t ? _t.chimerGen || 1 : 1) + '</span>';
     html += '</div>';
     html += '</div>';
     var _rarityName = _tg ? _tg.name : 'Common';
-    html += '<div class="cb-rarity" onclick="event.stopPropagation();if(window._lwShowGradeDetail)_lwShowGradeDetail(\'' + _rarityName + '\')" style="color:' + sColor + ';cursor:pointer;" title="Tap for details">' + (_tg ? _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon : 'COMMON') + '</div>';
+    var _rarityNameEsc = String(_rarityName).replace(/'/g,"\\'");
+    html += '<div class="cb-rarity" onclick="event.stopPropagation();if(window._lwShowGradeDetail)_lwShowGradeDetail(\'' + _rarityNameEsc + '\')" style="color:' + sColor + ';cursor:pointer;" title="Tap for details">' + (_tg ? _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon : 'COMMON') + '</div>';
     // Hash + mint date sit above the LINEAGE & DETAILS nameplate. The
     // nameplate (.cb-nameplate[data-pdh]) is the lineage entry point —
     // it lives on the back face and uses a capture-phase click listener
@@ -37420,7 +37425,7 @@ function _buildInfo(hash){
       var N=['Wisp','Bloom','Fern','Thorn','Crown','Root','Drift','Spiral','Haze','Phantom','Crest','Veil','Shard','Arch','Spire','Reed'];
       nm=A[parseInt(hash.substring(0,2),16)%A.length]+' '+N[parseInt(hash.substring(2,4),16)%N.length];
       if(t.mutationName&&t.mutationName!=='None') rarities.push(t.mutationName);
-      if(t.mythic>=0xD0){var m=t.mythic===0xFF?'Beholder':t.mythic>=0xFE?'Spider':t.mythic>=0xFC?'Heron':t.mythic>=0xF4?'Mammoth':t.mythic>=0xE0?'Phoenix':'Toad';rarities.push(m);}
+      if(t.mythic>=0xD0){var m=t.mythic===0xFF?'Beholder':t.mythic>=0xFE?'Spider':t.mythic>=0xFC?'Heron':t.mythic>=0xF8?'Raccoon':t.mythic>=0xF4?'Mammoth':t.mythic>=0xE0?'Cicada':'Toad';rarities.push(m);}
       if(t.hasFlower&&t.flower===15) rarities.push('Glow Flower');
       if(t.pot===15) rarities.push('Golden Pot');
       if(t.base===15) rarities.push('Crystal Base');
@@ -51829,7 +51834,17 @@ function _showDailyReward() {
   try { if (window._haptic) _haptic('sync'); } catch(e) {}
   if (typeof gtag !== 'undefined') gtag('event', 'daily_login', { streak: daily.streak, reward: dayReward, day: dayOfMonth, logged: loggedDays });
   // Book of Secrets: First Light (dawn 5-7am) + Century Keeper (100-day streak)
-  try { if (window.LW_Events) { window.LW_Events.checkFirstLight(); window.LW_Events.checkLoginStreak(daily.streak || 0); window.LW_Events.scanPassive(); } } catch(e){}
+  // scanPassive is debounced against recent mintPlant call (which runs its own
+  // scan at +400ms) — if a mint happened in the last 2s we skip. Idempotent
+  // either way thanks to fire() guards, this just avoids the wasted iteration.
+  try {
+    if (window.LW_Events) {
+      window.LW_Events.checkFirstLight();
+      window.LW_Events.checkLoginStreak(daily.streak || 0);
+      var _lastMintTs = (window.__LW_lastMintTs || 0);
+      if (Date.now() - _lastMintTs > 2000) window.LW_Events.scanPassive();
+    }
+  } catch(e){}
   // Seasonal synergies — a daily rescan catches any whose conditions
   // only become true today (season change, weekday/hour gates, etc.).
   try { if (window._lwScanAllSynergies) setTimeout(window._lwScanAllSynergies, 2500); } catch(e){}
@@ -55477,7 +55492,7 @@ var LW_GRADE_LORE = {
   Epic:      { pct:'~7%',  lore:'Epic plants combine two or more rare layers. They tend to become the favorites — the ones you name. Epic is the tier where your greenhouse becomes a personality, not just an inventory.' },
   Legendary: { pct:'~4%',  lore:'Legendary plants are uncommon enough to feel like events. Stardust substrate, ancient amphora, feather frond. These are the plants other keepers visit to see. A single Legendary changes how a greenhouse feels forever.' },
   Mythic:    { pct:'~1.5%',lore:'Mythic plants are rare enough that most keepers encounter only a handful across a full year of play. Phoenix ash, void petal, world seed cradle. When one blooms in your nursery, the game remembers.' },
-  Cosmic:    { pct:'<0.5%',lore:'Cosmic plants are statistical anomalies. A Cosmic with the Beholder occurs in roughly 0.04% of mints. You will know when you see one — the garden itself behaves differently around it. Keep it. Future you will want this back.' }
+  Cosmic:    { pct:'<0.5%',lore:'Cosmic plants are statistical anomalies. You will know when you see one — the garden itself behaves differently around it. Keep it. Future you will want this back.' }
 };
 window._lwShowGradeDetail = function(gradeName) {
   var lore = LW_GRADE_LORE[gradeName];
@@ -57593,7 +57608,7 @@ window.LW_EVENT_CATALOG = [
   ]},
   { name: 'LEGENDARY', color: '#C8A84B', desc: 'The rarest achievements', events: [
     { name: "The Beholder's Gaze", hint: 'Own a Cosmic plant with The Beholder', riddle: 'An eye that has seen every seed that ever fell.',
-      lore: 'A Cosmic-tier plant carrying the Beholder occurs in roughly 0.04% of mints. The creature is ancient — it remembers every bloom that came before, even ones that never bloomed. To own one is to be witnessed by something older than the garden itself.' },
+      lore: 'A Cosmic-tier plant carrying the Beholder is vanishingly rare — the intersection of two already-rare rolls. The creature is ancient; it remembers every bloom that came before, even ones that never bloomed. To own one is to be witnessed by something older than the garden itself.' },
     { name: 'Full Grove', hint: 'Fill all 60 greenhouse slots', riddle: 'No empty pot. No bare shelf. A forest indoors.',
       lore: 'Sixty plants. No empty pots, no placeholders. An entire ecosystem in the space of a studio apartment. This is what old horticulturists meant when they said "the garden is complete only when you stop wanting more room." (They were lying. But only gently.)' },
     { name: 'Century Keeper', hint: '100-day login streak', riddle: 'The sun rose a hundred times and found you still tending.',
