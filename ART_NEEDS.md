@@ -8,6 +8,8 @@ Source resolution, never resize. Most slots are optional — code falls back cle
   - glitch, glass-stem, wireframe, holographic, neon, ink-wash, golden, porcelain, bioluminescent, pixel-art, silhouette, albino, fossil
 
 ## READY TO START (P1)
+- [ ] Wild map hero banner → `assets/wild/wild-banner.png` (~1080×360 landscape, painterly world-at-your-feet composition, fits above the map)
+- [ ] Biome scanner skin → `assets/wild/biome-scanner.png` (96×96, compass-rose / reticle motif, replaces the 🏡 + "scanning" placeholder in the top-right stat cell)
 - [ ] 4 weather cast plates → `assets/weather/weather-{sun,rain,wind,calm}.png` (128×128)
 - [ ] 2 Reader corner flourishes → `assets/ui/reader-flourish-{tl,tr}.png` (128×128 gold Celtic leaf, transparent)
 
