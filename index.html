@@ -5690,6 +5690,7 @@ window._addSwitchTabHook = function(fn){
     <div class="cs-section"><div class="cs-section-title">ACTIVE EFFECTS</div><div id="cs-effects-body"></div></div>
     <div class="cs-section"><div class="cs-section-title">ACTIVE COMPANION</div><div class="cs-companion-card" onclick="PW_UI.equipCompanion()" style="cursor:pointer;min-height:64px;position:relative;" title="Tap to change"><div class="cs-companion-icon" id="cs-companion-icon">❓</div><div style="flex:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--cream);letter-spacing:0.04em;" id="cs-companion-name">None Equipped</div><div style="font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--sage);line-height:1.5;margin-top:2px;" id="cs-companion-buff">Tap to equip a companion</div></div><button id="cs-companion-info" onclick="event.stopPropagation();try{var c=JSON.parse(localStorage.getItem('pw_active_companion')||'{}');if(typeof c.idx==='number'&&window._lwOpenCompanionProfile)_lwOpenCompanionProfile(c.idx);}catch(e){}" style="position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;border:1px solid rgba(200,168,75,0.3);background:rgba(13,16,12,0.7);color:var(--gold);font-family:DM Mono,monospace;font-size:0.55rem;font-weight:bold;cursor:pointer;padding:0;z-index:2;" title="View profile">ⓘ</button></div></div>
     <div class="cs-section"><div class="cs-section-title">SHOWCASE</div><div class="cs-showcase-grid"><div class="cs-showcase-slot empty" onclick="PW_UI.editShowcase(0)"><div>+ Add Plant</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div></div></div>
+    <div class="cs-section"><div class="cs-section-title">MILESTONES</div><div id="cs-milestone-body"></div></div>
     <div class="cs-section"><div class="cs-section-title">FEATURED HAIKU</div><div class="cs-haiku" id="cs-haiku"><em style="color:var(--muted);">Bloom your first plant to feature its haiku here</em></div></div>
     <div class="cs-section"><div class="cs-section-title">KEEPER STATS</div><div class="cs-stats" id="cs-stats"><div>Plants Grown <b id="cs-s-plants">0</b></div><div>Pollen <b id="cs-s-pollen" style="color:var(--gold);">0</b></div><div>Seeds Found <b id="cs-s-seeds">0</b></div><div>Wild Active <b id="cs-s-wild">0</b></div><div>Games Played <b id="cs-s-games">0</b></div><div>Groves <b id="cs-s-groves">0</b></div><div>Compost Made <b id="cs-s-compost">0</b></div><div>Sunbeams <b id="cs-s-dew" style="color:var(--gold);">0</b></div><div>Rarest Grade <b id="cs-s-rarest">—</b></div><div>Creatures <b id="cs-s-creatures">0</b></div><div>Days Active <b id="cs-s-days">1</b></div><div>Friends <b id="cs-s-friends">0</b></div></div></div>
     <div class="cs-section"><div class="cs-section-title">FRIEND CODE</div><div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;"><div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--gold);letter-spacing:0.15em;" id="cs-friend-code">????-????</div><button onclick="PW_UI.copyFriendCode()" style="background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.2);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.5rem;padding:0.2rem 0.6rem;border-radius:4px;cursor:pointer;">COPY</button></div><div style="display:flex;gap:0.3rem;align-items:center;"><input type="text" id="cs-add-friend" placeholder="Enter friend code" maxlength="9" style="flex:1;padding:0.4rem;background:rgba(26,36,22,0.4);border:1.5px solid rgba(122,179,86,0.15);border-radius:6px;color:var(--cream);font-family:'DM Mono',monospace;font-size:0.5rem;outline:none;" /><button onclick="PW_UI.addFriend()" style="padding:0.4rem 0.6rem;border:1.5px solid rgba(122,179,86,0.2);border-radius:6px;background:rgba(26,36,22,0.3);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.5rem;cursor:pointer;min-height:36px;">ADD</button></div><div id="cs-friend-err" style="font-size:0.38rem;color:var(--muted);margin-top:0.25rem;min-height:0.8rem;"></div></div>
@@ -47198,6 +47199,41 @@ function _renderClassSection(){
   h+='<div class="cs-class-xp"><div class="cs-class-xp-bar"><div class="cs-class-xp-fill" style="width:'+xpBar+'%;"></div></div><div class="cs-class-xp-text">'+xpText+(biomeMatch?' · +25% in biome':'')+'</div></div>';
   el.innerHTML=h;
 }
+function _renderMilestoneSection(){
+  var el=document.getElementById('cs-milestone-body');if(!el)return;
+  var mile=window.LW_TREE_MILESTONES||{};
+  var lvl=0;try{var r=_getRank(_getXP());lvl=r.level||0;}catch(e){}
+  var lvls=[10,25,50,75,100];
+  var h='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">';
+  for(var i=0;i<lvls.length;i++){
+    var lv=lvls[i]; var m=mile[lv]||{name:'—',hero:''};
+    var unlocked=(lvl>=lv);
+    var pct=Math.min(100,Math.round((lvl/lv)*100));
+    var imgStyle=unlocked
+      ? 'opacity:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,0.55)) drop-shadow(0 0 12px rgba(200,168,75,0.2));'
+      : 'opacity:0.28;filter:grayscale(0.85) blur(0.5px);';
+    var cardBorder=unlocked?'rgba(200,168,75,0.4)':'rgba(74,124,53,0.15)';
+    var cardBg=unlocked
+      ? 'linear-gradient(180deg,rgba(46,38,18,0.45),rgba(26,22,12,0.6))'
+      : 'rgba(18,22,16,0.4)';
+    var labelColor=unlocked?'var(--gold)':'var(--muted)';
+    h+='<div title="'+(unlocked?m.name:'Locked \u2014 Lv '+lv)+'" style="position:relative;background:'+cardBg+';border:1.5px solid '+cardBorder+';border-radius:8px;padding:4px;text-align:center;overflow:hidden;aspect-ratio:3/4;">';
+    if(m.hero){
+      h+='<img src="'+m.hero+'" alt="" style="width:100%;height:72%;object-fit:cover;border-radius:5px;'+imgStyle+'" onerror="this.style.display=\'none\';">';
+    } else {
+      h+='<div style="width:100%;height:72%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;opacity:'+(unlocked?'1':'0.3')+';">\u2728</div>';
+    }
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;color:'+labelColor+';letter-spacing:0.06em;margin-top:3px;line-height:1.1;">L'+lv+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:'+(unlocked?'var(--cream)':'var(--muted)')+';line-height:1.1;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+m.name+'</div>';
+    if(!unlocked){
+      h+='<div style="position:absolute;left:4px;right:4px;bottom:3px;height:3px;background:rgba(122,179,86,0.1);border-radius:2px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,rgba(122,179,86,0.55),rgba(200,168,75,0.6));"></div></div>';
+    }
+    h+='</div>';
+  }
+  h+='</div>';
+  el.innerHTML=h;
+}
+
 function _renderForageSection(){
   var el=document.getElementById('cs-forage-body');if(!el)return;
   if(!window.LW_FORAGING){el.innerHTML='<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);">Foraging system loading...</div>';return;}
@@ -47439,6 +47475,7 @@ function openCharacter(){
   updateKeeperBar();updateStats();loadFriendsUI();
   _loadCompanion();_renderShowcase();_loadFeaturedHaiku();
   _renderClassSection();_renderToolSection();_renderEffectsSection();_renderForageSection();
+  _renderMilestoneSection();
   document.getElementById('pw-character').classList.add('open');
   // Tick booster timers every 30s while open
   if(_csEffectTimer)clearInterval(_csEffectTimer);
