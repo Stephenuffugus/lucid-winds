@@ -57781,6 +57781,34 @@ function _bosReportContent() {
     checkLoginStreak: checkLoginStreak,
     resetAll: resetAll
   };
+
+  // QA helper — from console: LW_debug.fireEvent('Golden Hour Witness')
+  // or LW_debug.listEvents() / LW_debug.resetSilent(). Pure dev aid.
+  window.LW_debug = window.LW_debug || {};
+  window.LW_debug.fireEvent = function(name){ return fire(name); };
+  window.LW_debug.listEvents = function(){
+    if (!window.LW_EVENT_CATALOG) return [];
+    var out = [];
+    for (var i=0;i<window.LW_EVENT_CATALOG.length;i++){
+      var t = window.LW_EVENT_CATALOG[i];
+      for (var j=0;j<t.events.length;j++) out.push(t.name + ' · ' + t.events[j].name);
+    }
+    return out;
+  };
+  window.LW_debug.resetSilent = function(){
+    try {
+      localStorage.removeItem('lw_wild_events');
+      localStorage.removeItem('lw_wild_events_ctr');
+      localStorage.removeItem('lw_bos_tab_reads');
+      localStorage.removeItem('lw_bos_tab_reads_migrated');
+      localStorage.removeItem('lw_weather_cast_set');
+      localStorage.removeItem('lw_shared_garden_uids');
+      localStorage.removeItem('lw_wild_water_count');
+      localStorage.removeItem('lw_months_played');
+      localStorage.removeItem('lw_days_in_months');
+      if (console && console.log) console.log('[LW_debug] Silent-BoS state cleared. Reload to see fresh badges.');
+    } catch(e){}
+  };
 })();
 
 // ═══ WILD EVENT CATALOG ═══
