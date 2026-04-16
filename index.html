@@ -42643,10 +42643,16 @@ window.openSunbeamModal=function(){
   var ready=_readyHashes.length;
   var prog=_hashFilled;
   var pct=Math.round(Math.min(prog/cost,1)*100);
-  // Tutorial-aware: during the first-mint walkthrough, strip every
-  // non-essential element. No background dismiss, no CLOSE, no info
-  // section. Just the BLOOM button. Keeps the flow unidirectional.
-  var _tutMint=document.body.classList.contains('lw-tut-mint-only');
+  // Tutorial-aware: during the entire guided flow (from First Focus
+  // through step 34's plant-XP unlock), strip every non-essential
+  // element. No background dismiss, no CLOSE, no info section. Just
+  // the BLOOM button. Keeps the flow unidirectional.
+  // Two layers: the step-16 class (lw-tut-mint-only) OR the persistent
+  // localStorage state — either signal triggers the stripped UI. The
+  // localStorage fallback catches the win-celebration MINT button path
+  // that can fire before _step16 has added the class.
+  var _tutMint=document.body.classList.contains('lw-tut-mint-only')||
+    (function(){try{return !!(localStorage.getItem('lw_first_focus_done')&&!localStorage.getItem('lw_plant_xp_unlocked'));}catch(e){return false;}})();
   var ov=document.createElement('div');ov.id='lw-sunbeam-modal';
   ov.style.cssText='position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);padding:1rem;animation:panelFadeIn 0.3s ease;';
   if(!_tutMint)ov.onclick=function(e){if(e.target===ov)ov.remove();};
