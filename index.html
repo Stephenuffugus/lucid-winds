@@ -30711,7 +30711,7 @@ document.addEventListener('keydown', function(e) {
           }
         }catch(e){}
         if(window.earnDew)window.earnDew(_dr,'compost_song');
-        if(window._toast)setTimeout(function(){window._toast('\ud83d\udca7 Compost Song \u2014 +'+_dr+' Dew from the song of decay');},1400);
+        if(window._toast)setTimeout(function(){window._toast('\ud83d\udca7 Compost Song. +'+_dr+' Dew from the song of decay');},1400);
       }
     }catch(e){}
     inv.dnaFragments = (inv.dnaFragments || 0) + dnaReward;
@@ -33187,7 +33187,7 @@ document.addEventListener('keydown', function(e) {
         var _ngPts = (window._LW_treePoints() || {}).nurseryGrow || 0;
         if(_ngPts > 0 && window.earnDew){
           window.earnDew(_ngPts, 'nursery_grow');
-          if(typeof _toast === 'function') setTimeout(function(){ _toast('\ud83c\udf31 Slow Awakening \u2014 +' + _ngPts + ' Dew for patient tending'); }, 1800);
+          if(typeof _toast === 'function') setTimeout(function(){ _toast('\ud83c\udf31 Slow Awakening. +' + _ngPts + ' Dew for patient tending'); }, 1800);
         }
       }
     }catch(e){}
@@ -35907,7 +35907,7 @@ function _checkStepMilestone(){
       var _reward=rewards[milestones[i]]||0;
       if(_reward>0&&window.earnDew)earnDew(_reward,'step_milestone');
       // Visible toast so the player knows they were rewarded for walking.
-      if(window._toast)_toast('\u2728 '+labels[milestones[i]]+' \u2014 +'+_reward+' Dew');
+      if(window._toast)_toast('\u2728 '+labels[milestones[i]]+'. +'+_reward+' Dew');
       try{if(window._haptic)window._haptic('ok');}catch(e){}
       if(window._logWildEvent)_logWildEvent({type:'step_milestone',meters:milestones[i],label:labels[milestones[i]],reward:_reward});
       // First Steps BoS event — fires once when the 500m milestone crosses.
@@ -39798,7 +39798,7 @@ function _finishDrop(defenderGame){
   if(_phenoNewlyRevealed>0&&wild[_newWildIdx].phenoRevealed){
     var _phn=_phenotypeOf(pl.hash);
     setTimeout(function(){
-      _toast('\ud83d\udd2e Phenotype revealed: '+_phn.name+' \u2014 '+_phn.flavor);
+      _toast('\ud83d\udd2e Phenotype revealed: '+_phn.name+'. '+_phn.flavor);
     },1800);
   }
   // Pattern detection — does this drop complete a Trefoil or Lining?
@@ -42464,7 +42464,7 @@ window.openSunbeamModal=function(){
   h+='<div style="border-top:1px solid rgba(74,124,53,0.1);padding-top:0.5rem;margin-top:0.3rem;">';
   h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.3rem;">HOW SUNBEAMS WORK</div>';
   h+='<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--cream);line-height:1.7;opacity:0.8;">';
-  h+='\u2600\ufe0f Earned by playing games \u2014 never bought<br>';
+  h+='\u2600\ufe0f Earned by playing games. Never bought.<br>';
   h+='\ud83c\udf31 '+cost+' Sunbeams = mint one unique plant<br>';
   h+='\ud83d\udcb0 Save up for events or spend on the wild<br>';
   h+='\ud83c\udf3f Every plant is one-of-one forever</div>';
@@ -42598,7 +42598,7 @@ function _showWinCelebration(){
   h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.6rem;color:var(--cream);letter-spacing:0.12em;margin-bottom:0.15rem;">WELL PLAYED!</div>';
   h+='<div style="font-family:DM Sans,sans-serif;font-size:0.6rem;color:var(--gold);margin-bottom:0.5rem;font-weight:500;">\u2600\ufe0f '+_winBal+' Sunbeams</div>';
   h+='<div style="width:100%;height:10px;background:rgba(42,48,37,0.6);border-radius:5px;overflow:hidden;margin-bottom:0.15rem;"><div class="'+(_winNear?'near-bloom':'')+'" style="width:'+pct+'%;height:100%;background:linear-gradient(90deg,var(--leaf),var(--sage)'+(_winNear?',var(--gold)':'')+');border-radius:5px;transition:width 0.8s ease;"></div></div>';
-  if(_winReady>0){h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);margin-bottom:0.4rem;animation:nearBloomPulse 1.5s ease infinite;">'+_winReady+' PLANT'+(_winReady>1?'S':'')+' READY \u2014 TAP \u2600\ufe0f TO MINT</div>';}
+  if(_winReady>0){h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);margin-bottom:0.4rem;animation:nearBloomPulse 1.5s ease infinite;">'+_winReady+' PLANT'+(_winReady>1?'S':'')+' READY. TAP SUNBEAM ICON TO MINT</div>';}
   else if(_winNear){h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);margin-bottom:0.4rem;animation:nearBloomPulse 1.5s ease infinite;">'+_winRemain+' MORE TO FULL BLOOM</div>';}
   else{h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);margin-bottom:0.5rem;">'+inPlant+' / '+_winCost+' to next plant</div>';}
   if(_winReady>0){
@@ -47690,7 +47690,7 @@ window.lwCheckEarnedTitles = function(){
       var t = window.LW_TITLES[key];
       if (t && window._toast) {
         setTimeout(function(){
-          window._toast('\u2728 EARNED TITLE: \u201c' + _getName() + ' the ' + t.word + '\u201d \u2014 ' + t.desc);
+          window._toast('\u2728 EARNED TITLE: \u201c' + _getName() + ' the ' + t.word + '\u201d. ' + t.desc);
         }, 1000);
       }
       if (window.LW_Log) window.LW_Log.write('title_earned', { key: key });
@@ -49317,7 +49317,7 @@ window._lwAnnounceBloomDay = function() {
   localStorage.setItem(seenKey, today);
   if (window._toast) {
     setTimeout(function(){
-      window._toast('\ud83c\udf38 BLOOM DAY: ' + b.def.name + ' \u2014 ' + b.def.theme + '. Forage today for 2\u00d7 rare seeds!');
+      window._toast('\ud83c\udf38 BLOOM DAY: ' + b.def.name + '. ' + b.def.theme + '. Forage today for 2\u00d7 rare seeds.');
     }, 3000);
   }
   if (window._logWildEvent) {
