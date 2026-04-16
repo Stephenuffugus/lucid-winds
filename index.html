@@ -29626,8 +29626,10 @@ document.addEventListener('keydown', function(e) {
     var _rarityName = _tg ? _tg.name : 'Common';
     var _rarityNameEsc = String(_rarityName).replace(/'/g,"\\'");
     html += '<div class="cb-rarity" onclick="event.stopPropagation();if(window._lwShowGradeDetail)_lwShowGradeDetail(\'' + _rarityNameEsc + '\')" style="color:' + sColor + ';cursor:pointer;" title="Tap for details">' + (_tg ? _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon : 'COMMON') + '</div>';
-    if (_syn) {
-      html += '<div style="text-align:center;margin-top:0.3rem;padding:4px 10px;background:rgba(200,168,75,0.06);border:1px solid rgba(200,168,75,0.2);border-radius:8px;"><span style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.08em;color:var(--gold);">\u2726 SYNERGY \u00b7 ' + _syn.name.toUpperCase() + '</span></div>';
+    var _synBack = null;
+    try { _synBack = window.getSynergy ? window.getSynergy(_t) : null; } catch(e) {}
+    if (_synBack) {
+      html += '<div style="text-align:center;margin-top:0.3rem;padding:4px 10px;background:rgba(200,168,75,0.06);border:1px solid rgba(200,168,75,0.2);border-radius:8px;"><span style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.08em;color:var(--gold);">\u2726 SYNERGY \u00b7 ' + _synBack.name.toUpperCase() + '</span></div>';
     }
     html += '<div style="text-align:center;margin-top:0.4rem;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);opacity:0.5;">\u2190 tap card to flip</div>';
 
