@@ -53700,10 +53700,9 @@ function _forceFirstFocusReward(){
     try{localStorage.setItem('pw_hashFilled','0');}catch(e){}
     if(typeof window._refreshHashState==='function')try{window._refreshHashState();}catch(e){}
     if(window._lwCompleteQuest)try{window._lwCompleteQuest('q_first_game');}catch(e){}
-    if(window.PW_grantXP){
-      var curXp=0;try{curXp=parseInt(localStorage.getItem('pw_xp')||'0',10);}catch(e){}
-      if(curXp<19){try{window.PW_grantXP(21-curXp,'first_focus_level');}catch(e){}}
-    }
+    // XP grant moved to _step16 so L2 ceremony fires AT the moment the
+    // tutorial returns the player to the greenhouse (narrative timing).
+    // Granting here fired ceremony 3s early, before the mint prompt.
     if(window._toast)try{window._toast('\ud83c\udf3f First Focus. The garden grows from attention.');}catch(e){}
   }catch(e){console.error('[firstFocus]',e);}
 }
