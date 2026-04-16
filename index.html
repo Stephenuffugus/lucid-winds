@@ -49443,19 +49443,19 @@ function start(){
   }
   // Text starts AFTER splash screen is gone (callback from splash dismiss)
   // If no splash, starts immediately
+  // Skip button visible early — player should always have an exit
+  setTimeout(function(){var sk=document.getElementById('ob-skip');if(sk)sk.classList.add('show');},2000);
   var hasSplash=!!document.getElementById('pw-splash');
   if(hasSplash){
     window._obTextReady=function(){
       console.log('[LW] Starting Beat 1 text playback');
       _playLines(1);
-      setTimeout(function(){var sk=document.getElementById('ob-skip');if(sk)sk.classList.add('show');},4000);
     };
   } else {
     setTimeout(function(){
       console.log('[LW] Starting Beat 1 text playback');
       _playLines(1);
     },2000);
-    setTimeout(function(){var sk=document.getElementById('ob-skip');if(sk)sk.classList.add('show');},6000);
   }
   // Track touch movement so swipes don't double-trigger as taps
   var _obTouchMoved=false,_obTouchStartX=0,_obTouchStartY=0,_obLastTouchEnd=0;
