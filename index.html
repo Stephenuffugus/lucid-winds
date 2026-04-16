@@ -52364,11 +52364,22 @@ function _finish(){
 <script>
 (function(){
 'use strict';
-// Pi SDK — gracefully degrades outside Pi Browser
+// Pi SDK — gracefully degrades outside Pi Browser.
+//
+// BETA SAFETY GATE — LW_PI_ENABLED. Default false until the
+// companion Firebase Cloud Functions (piApprove + piComplete) are
+// deployed. Without them a real Pi payment will fire against
+// undeployed endpoints and silently fail, leaving the player in
+// a limbo state. To enable: either set localStorage lw_pi_enabled=1
+// in the dev panel, or flip the default below to true.
+window.LW_PI_ENABLED=(function(){
+  try{return localStorage.getItem('lw_pi_enabled')==='1';}catch(e){return false;}
+})();
 var _piReady=false;
 var _piUser=null;
 
 function _initPi(){
+  if(!window.LW_PI_ENABLED){console.log('[Pi] Beta gate engaged (LW_PI_ENABLED=false). SDK init skipped.');return;}
   if(typeof Pi==='undefined'){console.log('[Pi] Not in Pi Browser — payments disabled.');return;}
   try{
     Pi.init({version:'2.0',sandbox:true}); // sandbox:true for testnet, false for mainnet
@@ -52393,8 +52404,14 @@ function authenticate(cb){
 }
 
 function createPayment(amount,memo,metadata,onSuccess,onCancel){
+  if(!window.LW_PI_ENABLED){
+    if(window._toast)window._toast('Pi payments arrive in the full launch. Thank you for testing.');
+    else if(window.showHexMsg)showHexMsg('Payments coming soon');
+    if(onCancel)onCancel();
+    return;
+  }
   if(!_piReady){
-    if(window.showHexMsg)showHexMsg('Pi payments not available — open in Pi Browser');
+    if(window.showHexMsg)showHexMsg('Pi payments not available. Open in Pi Browser.');
     return;
   }
   Pi.createPayment({amount:amount,memo:memo,metadata:metadata},{
