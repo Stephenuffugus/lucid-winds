@@ -41558,6 +41558,21 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
   body.lw-tut-active #bpi{pointer-events:none !important;opacity:0.4 !important;filter:saturate(0.35);transition:opacity 0.4s,filter 0.4s;}
   body.lw-tut-active.lw-tut-bp-on #bpi{pointer-events:auto !important;opacity:1 !important;filter:none;}
   body.lw-tut-active.lw-tut-bos-on #kb-compendium{pointer-events:auto !important;opacity:1 !important;filter:none;}
+  /* Tutorial: lock bottom-nav tabs except the one the current step is
+     directing attention toward. Class adds unlock individual tabs:
+       lw-tut-nav-focus    → FOCUS tab clickable (step 13 invite)
+       lw-tut-nav-nursery  → NURSERY tab clickable (step 22 water)
+       lw-tut-nav-wild     → WILD tab clickable (step 24 unlock)
+       lw-tut-nav-greenhouse → GREENHOUSE tab clickable (step 16 return)
+     GREENHOUSE gets unlocked by default so the carousel-return
+     navigation works. All unlocks combine — once step 24 fires
+     FOCUS/NURSERY/WILD/GREENHOUSE all stay tappable. */
+  body.lw-tut-active .fg-nav-btn{pointer-events:none !important;opacity:0.4 !important;filter:saturate(0.35);transition:opacity 0.4s,filter 0.4s;}
+  body.lw-tut-active .fg-nav-btn.active,
+  body.lw-tut-active.lw-tut-nav-greenhouse .fg-nav-btn[onclick*="greenhouse"],
+  body.lw-tut-active.lw-tut-nav-focus .fg-nav-btn[onclick*="'game'"],
+  body.lw-tut-active.lw-tut-nav-nursery .fg-nav-btn[onclick*="nursery"],
+  body.lw-tut-active.lw-tut-nav-wild #nav-btn-wild{pointer-events:auto !important;opacity:1 !important;filter:none;}
   /* Tutorial Step 9: only DETAILS and SHARE are tappable below the
      carousel card. The other .pgm-act-btn buttons fade and lose pointer
      events so the tester can't veer off. We target by onclick attribute
@@ -53190,7 +53205,11 @@ var _origDone=_done;
 _done=function(){
   _clearCardHighlights();
   try{
-    document.body.classList.remove('lw-tut-active','lw-tut-limit-actions','lw-tut-bp-on','lw-tut-bos-on');
+    document.body.classList.remove(
+      'lw-tut-active','lw-tut-limit-actions',
+      'lw-tut-bp-on','lw-tut-bos-on',
+      'lw-tut-nav-greenhouse','lw-tut-nav-focus','lw-tut-nav-nursery','lw-tut-nav-wild'
+    );
   }catch(e){}
   // Strip any residual pulse classes on UI elements the tutorial touches.
   try{
@@ -53232,8 +53251,10 @@ function _step1(retries){
       return;
     }
     // Tutorial-active body class hides the floating WHAT NOW button and
-    // any other chrome we want out of the way during the walkthrough.
-    try{document.body.classList.add('lw-tut-active');}catch(e){}
+    // gates nav tabs / avatar / book / backpack until each step unlocks
+    // them. Greenhouse tab stays unlocked by default so carousel return
+    // navigation works.
+    try{document.body.classList.add('lw-tut-active','lw-tut-nav-greenhouse');}catch(e){}
     _dialog(
       'You are currently in your <span style="color:var(--gold);">greenhouse</span>.',
       'OK', function(){ _clear(); setTimeout(_step1b, 300); }, 'center');
@@ -53451,6 +53472,7 @@ function _step12(){
 // ═══ STEP 13: invite player toward GAME tab (no overlay, no force) ═══
 function _stepGame(){
   _setStep(13);
+  try{document.body.classList.add('lw-tut-nav-focus');}catch(e){}
   setTimeout(function(){
     _dialog(
       'When you\u2019re ready, tap <span style="color:var(--gold);">FOCUS</span> at the bottom to earn Sunbeams.<br><br>' +
@@ -53719,6 +53741,7 @@ function _nurLen(){
 // ═══ STEP 22: nursery — water the seed ═══
 function _step22(){
   _setStep(22);
+  try{document.body.classList.add('lw-tut-nav-nursery');}catch(e){}
   if(window.switchTab)switchTab('nursery');
   setTimeout(function(){
     var waterBtn=document.querySelector('.nur-btn.water');
@@ -53768,6 +53791,7 @@ function _step23(){
 // ═══ STEP 24: Wild tab unlock — pulse nav + intro line ═══
 function _step24(){
   _setStep(24);
+  try{document.body.classList.add('lw-tut-nav-wild');}catch(e){}
   var wildBtn=document.getElementById('nav-btn-wild');
   if(!wildBtn){_done();return;}
   // Ensure the button is visible (in case canSee.wildTab hasn't applied yet)
