@@ -27677,24 +27677,36 @@ document.addEventListener('keydown', function(e) {
     }
 
     // ── Pi Payment Hook ──────────────────────────────────
-    // When Pi SDK is integrated, replace this block with:
-    //   Pi.createPayment({ amount: 1, memo: 'Greenhouse slot ' + (current+1) })
-    //     .then(function(payment) { ... complete payment ... setGHSlots(current+1); })
-    // For now: local expansion with confirmation
+    // When LW_PI_ENABLED is true (Cloud Functions deployed), payments
+    // route through window.LW_Pi.buySlot for real Pi charge. During
+    // beta (default) the expansion is free with a confirmation modal.
+    var _piOn = !!window.LW_PI_ENABLED;
+    var _bodyCopy = _piOn
+      ? 'Add slot ' + (current + 1) + ' for <b>1 Pi</b>?'
+      : 'Add slot ' + (current + 1) + '?<br><span style="color:var(--muted);font-size:0.35rem;">Pi payment required at launch. Free during beta.</span>';
     _lwConfirm({
       title: 'EXPAND GREENHOUSE',
-      body: 'Add slot ' + (current + 1) + '?<br><span style="color:var(--muted);font-size:0.35rem;">Pi payment required at launch. Free during beta.</span>',
-      yes: 'EXPAND',
+      body: _bodyCopy,
+      yes: _piOn ? 'PAY 1 PI' : 'EXPAND',
       no: 'NOT YET'
     }, function() {
-      var newSlots = setGHSlots(current + 1);
-      MAX_COLLECTION_SIZE = newSlots;
-      _haptic('tab');
-      renderGreenhouse();
-      showHexMsg('Greenhouse expanded to ' + newSlots + ' slots.');
-      if (typeof gtag !== 'undefined') gtag('event', 'gh_slot_expanded', { slots: newSlots });
-      // Auto-claim from reserve if plants are waiting
-      _claimFromReserve();
+      var _applyExpansion = function(){
+        var newSlots = setGHSlots(current + 1);
+        MAX_COLLECTION_SIZE = newSlots;
+        _haptic('tab');
+        renderGreenhouse();
+        showHexMsg('Greenhouse expanded to ' + newSlots + ' slots.');
+        if (typeof gtag !== 'undefined') gtag('event', 'gh_slot_expanded', { slots: newSlots });
+        _claimFromReserve();
+      };
+      if (_piOn && window.LW_Pi && window.LW_Pi.buySlot) {
+        // Pi path: the wrapper auto-increments slot count on success,
+        // so we only auto-claim reserve here. renderGreenhouse + hex
+        // message fire from inside buySlot.
+        window.LW_Pi.buySlot(current + 1, function(ok){ if (ok) _claimFromReserve(); });
+      } else {
+        _applyExpansion();
+      }
     });
   };
 
