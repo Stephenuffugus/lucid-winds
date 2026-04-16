@@ -51266,7 +51266,9 @@ function render(){
   var pe=document.getElementById('bpp');var mx=xp();var h='';
   // Player level gate for cutting-clippings feature
   var keeperLvl=0;try{if(window._getXP&&window._getRank){keeperLvl=window._getRank(window._getXP()).level;}}catch(e){}
-  var CLIPPING_UNLOCK_LEVEL=5, CLIPPING_CD_MS=(window._LW_toolMod&&window._LW_toolMod('shears'))||(6*60*60*1000);
+  // Lv3 unlock per Stephen's tutorial spec (was Lv5). Players encounter
+  // cuttings in the Phase 6 walkthrough, which fires around Lv3.
+  var CLIPPING_UNLOCK_LEVEL=3, CLIPPING_CD_MS=(window._LW_toolMod&&window._LW_toolMod('shears'))||(6*60*60*1000);
   var _clipHrs=Math.round(CLIPPING_CD_MS/3600000);
   var clipCDs={};try{clipCDs=JSON.parse(localStorage.getItem('fg_bp_clipCDs')||'{}');}catch(e){}
   var now=Date.now();
@@ -51698,8 +51700,8 @@ window.FG_Backpack.takeClipping = function(idx) {
   // Check keeper level
   var keeperLvl = 0;
   try { if (window._getXP && window._getRank) keeperLvl = window._getRank(window._getXP()).level; } catch(e){}
-  if (keeperLvl < 5) {
-    if (window._toast) window._toast('Unlocks at Keeper Level 5');
+  if (keeperLvl < 3) {
+    if (window._toast) window._toast('Unlocks at Keeper Level 3');
     return;
   }
   // Check cooldown
@@ -53543,13 +53545,67 @@ function _step26(){
     'NEXT',function(){_clear();setTimeout(_step27,300);},'bottom');
 }
 
-// ═══ STEP 27: wind-spread lore + closer ═══
+// ═══ STEP 27: wind-spread lore (hands off to Phase 6) ═══
 function _step27(){
   _setStep(27);
   _dialog(
     'Plants in adjacent hexes can <span style="color:var(--gold);">breed and spread</span>. Their children drift on the wind.<br><br>' +
-    'Name your wild plants with <span style="color:var(--sage);">where you placed them</span> \u2014 future-you will thank past-you when you\u2019re trying to remember what you protected.<br><br>' +
-    'Go explore.',
+    'Name your wild plants with <span style="color:var(--sage);">where you placed them</span> \u2014 future-you will thank past-you when you\u2019re trying to remember what you protected.',
+    'NEXT',function(){_clear();setTimeout(_step28,600);},'center');
+}
+
+// ═══ STEP 28: backpack intro — spotlight the pack icon ═══
+function _step28(){
+  _setStep(28);
+  var bpi=document.getElementById('bpi');
+  if(!bpi){_done();return;}
+  _overlay(function(){_done();});
+  _spotlight(bpi);
+  _dialog(
+    'Your <span style="color:var(--gold);">backpack</span> travels with you.<br><br>Tap it to see what you\u2019re carrying.',
+    '',null,'top');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  var polls=0;
+  var watch=function(){
+    var bpe=document.getElementById('bpe');
+    if(bpe&&bpe.classList.contains('open')){
+      _clear();bpi.style.zIndex='';
+      setTimeout(_step29,700);
+      return;
+    }
+    if(polls<600){polls++;setTimeout(watch,500);}
+    else {_done();}
+  };
+  watch();
+}
+
+// ═══ STEP 29: backpack interior — 3 sections explained ═══
+function _step29(){
+  _setStep(29);
+  _dialog(
+    'Three kinds of things live here:<br><br>' +
+    '<span style="color:var(--gold);">Cuttings</span> from wild plants \u2014 genetic clones ready for the nursery.<br>' +
+    '<span style="color:var(--sage);">Seeds</span> you forage in the wild.<br>' +
+    '<span style="color:#c07ac8;">Items</span> you find on your quests.',
+    'NEXT',function(){_clear();setTimeout(_step30,300);},'bottom');
+}
+
+// ═══ STEP 30: cuttings how-to + cooldown ═══
+function _step30(){
+  _setStep(30);
+  _dialog(
+    'Tap any wild plant you pass \u2014 yours or another Keeper\u2019s \u2014 to take a <span style="color:var(--gold);">cutting</span>.<br><br>' +
+    'Each plant allows one cutting every <span style="color:var(--gold);">6 hours</span>. The clipping lands in your nursery as a single-use seed you can bloom or breed.<br><br>' +
+    '<span style="color:var(--muted);font-size:0.85em;">Cuttings carry only the plant\u2019s genome \u2014 no pot, substrate, aura, or companion.</span>',
+    'GOT IT',function(){_clear();setTimeout(_step31,300);},'center');
+}
+
+// ═══ STEP 31: closer + prep for Phase 7 (Book of Secrets) ═══
+function _step31(){
+  _setStep(31);
+  _dialog(
+    'That\u2019s enough to begin. Wander, plant, forage, breed.<br><br>' +
+    'The rest unlocks as you go \u2014 a <span style="color:var(--gold);">Book of Secrets</span> opens once you\u2019re deeper in.',
     'LET\u2019S GO',function(){_clear();_done();},'center');
 }
 
