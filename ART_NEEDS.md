@@ -13,6 +13,48 @@ Source resolution, never resize. Most slots are optional — code falls back cle
 - [ ] 4 weather cast plates → `assets/weather/weather-{sun,rain,wind,calm}.png` (128×128)
 - [ ] 2 Reader corner flourishes → `assets/ui/reader-flourish-{tl,tr}.png` (128×128 gold Celtic leaf, transparent)
 
+## ITEMS + COCOONS + HUNT (new systems shipped Apr 15-16)
+
+### 17 Item PNGs → `assets/items/{slug}.png`
+Format: 256×256 transparent, painterly, midnight-greenhouse palette. Filename matches code slug — drops in and wires automatically.
+
+| Item | Slug | Rarity | Motif |
+|---|---|---|---|
+| Forager's Lens | foragers-lens | Common | dew drop held in petal, lens gleam |
+| Compass Shard | compass-shard | Uncommon | broken compass needle, metallic glint |
+| Tether Moss | tether-moss | Rare | hair-fine green threads, rooting fibers |
+| Diviner's Glass | diviners-glass | Epic | quartz lens refracting light spectrum |
+| Mulch Ward | mulch-ward | Rare | dense decaying leaves, protective mat |
+| Bramble Thicket | bramble-thicket | Rare | thorn-woven wall, layered shadow |
+| Shellgourd | shellgourd | Epic | hard ceramic gourd, pearlescent gloss |
+| Moonwake | moonwake | Uncommon | silver-blue sprig, night-opening petals |
+| Forager's Torch | foragers-torch | Rare | torchwood soaked in resin, warm glow |
+| Dust Storm | dust-storm | Rare | ground quartz + pollen cloud, swirl |
+| Uproot Charm | uproot-charm | Uncommon | braided knot, vine memory |
+| Scrying Stone | scrying-stone | Uncommon | polished dark stone, mirror surface |
+| Raven's Eye | ravens-eye | Rare | feathered orb, dark iridescent sheen |
+| Slow Arrow | slow-arrow | Rare | arrow fletched with moss |
+| Whisper Vine | whisper-vine | Common | creeping tendril, alert posture |
+| Wanderer's Map | wanderers-map | Epic | parchment map, torn edges, windswept |
+| Delegate Token | delegate-token | Epic | coin with clasped vines |
+
+Rarity color reference: Common #8a9178, Uncommon #7ab356, Rare #c8a84b, Epic #c07ac8, Legendary #ff8ab0.
+
+### 4 Cocoon PNGs → `assets/cocoons/cocoon-{slug}.png`
+512×512 transparent, same painterly vibe. Each tier is a chrysalis shape, not a seed — visually distinct from nursery art.
+
+| Tier | Slug | Distance | Visual |
+|---|---|---|---|
+| Gossamer | gossamer | 1 km | pale silk wisp, almost weightless |
+| Linen | linen | 2.5 km | tan woven cocoon, tightly spun |
+| Amber | amber | 5 km | gold-flecked pod, warm glow |
+| Obsidian | obsidian | 10 km | black iridescent shell |
+
+### Optional polish
+- [ ] Wind-decides leaf → `assets/items/wind-decides-leaf.png` (128×128) — replaces 🍃 emoji in Wanderer's Map cinematic
+- [ ] Mystery box closed art → `assets/boxes/box-closed.png` (128×128) — if we want a per-rarity variant pass, add box-common / box-rare / etc.
+- [ ] Firefly sprite → `assets/hunt/firefly.png` (64×64) — currently a radial-gradient div; PNG with faint wing motion blur would sell it
+
 ## OPTIONAL TRAIT ART (auto-loads to Reader pages)
 Drop any of these and that trait's Reader page gets a hero. Skip ones you don't want — no requirement. 256×256 transparent PNG preferred.
 
