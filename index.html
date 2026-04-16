@@ -3332,12 +3332,27 @@
     #fg-ag.sol-fs{padding-bottom:0;position:fixed;inset:0;z-index:1000;overflow-y:auto}
     body.sol-fs .fg-bottomnav,body.sol-fs .fg-pk,body.sol-fs .game-header,body.sol-fs #pw-keeper-bar,body.sol-fs #sws-auth-header{display:none!important}
     /* Hide HUD clutter when any game is active (not SET, which has its own UI) */
-    body.game-active .game-header{display:none!important}
-    body.game-active .fg-pk{display:none!important}
-    body.game-active #pw-keeper-bar{display:none!important}
-    body.game-active #kb-compendium,body.game-active #kb-compendium.has-entries{display:none!important}
-    body.game-active .rules-strip,body.game-active .attn-strip{display:none!important}
-    body.game-active #trios-dash .settings-dropdown-container,body.game-active #trios-dash > div:last-child{display:none!important}
+    body.game-active .game-header,
+    body.game-active .fg-pk,
+    body.game-active #pw-keeper-bar,
+    body.game-active .kb-row1,
+    body.game-active .kb-row2,
+    body.game-active #kb-sunbeams,
+    body.game-active #kb-dew,
+    body.game-active #kb-slots,
+    body.game-active #kb-mystery,
+    body.game-active #kb-weather,
+    body.game-active #kb-install,
+    body.game-active #pw-lb-toggle,
+    body.game-active #kb-compendium,
+    body.game-active #kb-compendium.has-entries,
+    body.game-active .fg-bottomnav,
+    body.game-active .rules-strip,
+    body.game-active .attn-strip,
+    body.game-active #trios-dash > div:last-child,
+    body.game-active #lw-fb-btn,
+    body.game-active #lw-whatnow-btn,
+    body.game-active #sws-debug-toggle{display:none!important}
     /* Universal EXIT button during game — returns to picker */
     #game-exit-btn{display:none;position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;z-index:999999;min-width:64px;min-height:44px;padding:8px 14px;background:rgba(13,16,12,0.92);border:1.5px solid rgba(122,179,86,0.45);color:var(--cream);font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:10px;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 3px 12px rgba(0,0,0,0.6);pointer-events:auto;}
     body.game-active #game-exit-btn{display:flex !important;align-items:center;justify-content:center;gap:4px;}
@@ -31224,8 +31239,11 @@ document.addEventListener('keydown', function(e) {
       var tabTeach={game:'Pattern games grow your garden.',greenhouse:'Your garden lives here.',nursery:'Seeds grow into plants here.',wild:'Walk real places. Plant seeds.',binder:'Companions you\'ve discovered.'};
       if(window.LW_XP&&tabTeach[tab])window.LW_XP.grantOnce('disc_tab_'+tab,5,'discover_tab','+5 XP — '+tabTeach[tab]);
     }catch(e){}
-    // Clear game-active HUD state when leaving game tab
-    document.body.classList.remove('game-active');
+    // Clear game-active HUD state ONLY when leaving game tab.
+    // (Used to fire on every switchTab call including tab=='game', which
+    // briefly stripped the class and let keeper-bar/bottomnav peek through
+    // in Three Sisters during re-enter.)
+    if (tab !== 'game') document.body.classList.remove('game-active');
     // Midnight backpack auto-deliver — check on every tab switch so it
     // fires reliably even if the player never visits Wild tab
     if(window.BP&&BP.checkMidnightDeliver)try{BP.checkMidnightDeliver();}catch(e){}
@@ -49648,17 +49666,26 @@ function start(){
   // If no splash, starts immediately
   // Skip button visible early — player should always have an exit
   setTimeout(function(){var sk=document.getElementById('ob-skip');if(sk)sk.classList.add('show');},2000);
+  // Pre-cinematic Simon-says tutorial: if a new keeper, run the pattern
+  // game BEFORE the story plays so their taps feel like they minted the
+  // plant that reveals at the end. Returning players skip it.
+  function _startOrTutorial(){
+    if (!localStorage.getItem('lw_onboard_tutorial_done') && typeof _runTutorial === 'function') {
+      _runTutorial(function(){
+        // Tutorial complete → now play the cinematic
+        console.log('[LW] Tutorial done → Beat 1 text playback');
+        _playLines(1);
+      });
+    } else {
+      console.log('[LW] Starting Beat 1 text playback (tutorial already done)');
+      _playLines(1);
+    }
+  }
   var hasSplash=!!document.getElementById('pw-splash');
   if(hasSplash){
-    window._obTextReady=function(){
-      console.log('[LW] Starting Beat 1 text playback');
-      _playLines(1);
-    };
+    window._obTextReady=_startOrTutorial;
   } else {
-    setTimeout(function(){
-      console.log('[LW] Starting Beat 1 text playback');
-      _playLines(1);
-    },2000);
+    setTimeout(_startOrTutorial,2000);
   }
   // Track touch movement so swipes don't double-trigger as taps
   var _obTouchMoved=false,_obTouchStartX=0,_obTouchStartY=0,_obLastTouchEnd=0;
@@ -49784,11 +49811,9 @@ function _showBeat(n){
     if(n===4){
       if(window.stopRain)window.stopRain();
       var _sk4=document.getElementById('ob-skip');if(_sk4)_sk4.style.display='none';
-      if (!localStorage.getItem('lw_onboard_tutorial_done')) {
-        _runTutorial(function(){ _renderGiftPlant(); });
-      } else {
-        _renderGiftPlant();
-      }
+      // Tutorial moved to pre-cinematic (start() calls _startOrTutorial
+      // before _playLines(1)). Beat 4 just reveals the gift plant now.
+      _renderGiftPlant();
     } else {
       setTimeout(function(){_playLines(n);},800);
     }
