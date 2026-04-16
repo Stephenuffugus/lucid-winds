@@ -41547,6 +41547,17 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      highlights). */
   body.lw-tut-active #lw-whatnow-btn,
   body.lw-tut-active #lw-fb-btn{display:none !important;}
+  /* Tutorial: lock the top-bar avatar, Book of Secrets, and backpack
+     until the tutorial walks through each one. Character sheet stays
+     locked through the whole tutorial (unlocks on _done). Backpack
+     unlocks when step 28 adds lw-tut-bp-on. Book of Secrets unlocks
+     when step 32 adds lw-tut-bos-on. Dim + disable so it's visible
+     but clearly not-yet-available. */
+  body.lw-tut-active #pw-keeper-bar .kb-avatar,
+  body.lw-tut-active #kb-compendium,
+  body.lw-tut-active #bpi{pointer-events:none !important;opacity:0.4 !important;filter:saturate(0.35);transition:opacity 0.4s,filter 0.4s;}
+  body.lw-tut-active.lw-tut-bp-on #bpi{pointer-events:auto !important;opacity:1 !important;filter:none;}
+  body.lw-tut-active.lw-tut-bos-on #kb-compendium{pointer-events:auto !important;opacity:1 !important;filter:none;}
   /* Tutorial Step 9: only DETAILS and SHARE are tappable below the
      carousel card. The other .pgm-act-btn buttons fade and lose pointer
      events so the tester can't veer off. We target by onclick attribute
@@ -53179,7 +53190,7 @@ var _origDone=_done;
 _done=function(){
   _clearCardHighlights();
   try{
-    document.body.classList.remove('lw-tut-active','lw-tut-limit-actions');
+    document.body.classList.remove('lw-tut-active','lw-tut-limit-actions','lw-tut-bp-on','lw-tut-bos-on');
   }catch(e){}
   // Strip any residual pulse classes on UI elements the tutorial touches.
   try{
@@ -53884,6 +53895,8 @@ function _step28(){
   _setStep(28);
   var bpi=document.getElementById('bpi');
   if(!bpi){_done();return;}
+  // Unlock the backpack icon now that the tutorial is pointing at it.
+  try{document.body.classList.add('lw-tut-bp-on');}catch(e){}
   _overlay(function(){_done();});
   _spotlight(bpi);
   _dialog(
@@ -53944,8 +53957,9 @@ function _step32(){
   var bos=document.getElementById('kb-compendium');
   if(!bos){setTimeout(_step34,300);return;}
   // Ensure visible during tutorial — the has-entries gate can lag behind
-  // the actual journal state.
+  // the actual journal state. Also unlock the button so tapping works.
   try{bos.style.display='flex';bos.classList.add('has-entries');}catch(e){}
+  try{document.body.classList.add('lw-tut-bos-on');}catch(e){}
   _overlay(function(){_done();});
   _spotlight(bos);
   _dialog(
