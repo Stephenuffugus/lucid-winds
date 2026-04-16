@@ -53473,15 +53473,107 @@ function _step22(){
   },1200);
 }
 
-// ═══ STEP 23: compost as boost — Phase 4 closer ═══
+// ═══ STEP 23: compost as boost — Phase 4 closer (hands off to Phase 5) ═══
 function _step23(){
   _setStep(23);
   _dialog(
     'Beautiful \u2014 come back tomorrow to water again.<br><br>' +
     'You can also <span style="color:var(--gold);">compost plants you don\u2019t want</span>. Each one gives fertilizer you can feed a growing seed.<br><br>' +
     '<span style="color:var(--muted);font-size:0.85em;">Still: save compost for when your greenhouse is full.</span>',
-    'GOT IT',function(){_clear();_done();},'center');
+    'GOT IT',function(){
+      _clear();
+      // Phase 5 requires L3 (canSee.wildTab). If reached, fire now.
+      // Otherwise park a pending flag — the level-ceremony hook will
+      // wake us back up at L3.
+      var lvl=1;
+      try{lvl=((window.canSee&&window.canSee.wildTab&&window.canSee.wildTab())?3:((window._getRank?_getRank(parseInt(localStorage.getItem('pw_xp')||'0',10)):{level:1}).level||1));}catch(e){}
+      if(lvl>=3){setTimeout(_step24,1200);}
+      else{
+        try{localStorage.setItem('lw_tut_wild_pending','1');}catch(e){}
+        _done();
+      }
+    },'center');
 }
+
+// ═══ STEP 24: Wild tab unlock — pulse nav + intro line ═══
+function _step24(){
+  _setStep(24);
+  var wildBtn=document.getElementById('nav-btn-wild');
+  if(!wildBtn){_done();return;}
+  // Ensure the button is visible (in case canSee.wildTab hasn't applied yet)
+  try{wildBtn.style.display='';wildBtn.classList.remove('gated');}catch(e){}
+  _overlay(function(){_done();});
+  _spotlight(wildBtn);
+  _dialog(
+    'The world opens.<br><br>' +
+    'Tap <span style="color:var(--gold);">WILD</span> \u2014 this is where you bring your garden back out into the world.',
+    '',null,'top');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  var polls=0;
+  var watch=function(){
+    var wn=document.getElementById('wild-nav');
+    var isWild=wn&&getComputedStyle(wn).display!=='none';
+    if(isWild){
+      _clear();wildBtn.style.zIndex='';
+      setTimeout(_step25,1600);
+      return;
+    }
+    if(polls<600){polls++;setTimeout(watch,500);}
+    else {_done();}
+  };
+  watch();
+}
+
+// ═══ STEP 25: Wild tab — lore + mechanics dump ═══
+function _step25(){
+  _setStep(25);
+  _dialog(
+    'Every place on the map is broken into <span style="color:var(--gold);">hexes</span> \u2014 honeycombs of possibility.<br><br>' +
+    'When you drop a plant into a hex, it\u2019s real. It has coordinates. It lives.',
+    'NEXT',function(){_clear();setTimeout(_step26,300);},'bottom');
+}
+
+// ═══ STEP 26: resistance + seasonal border callback ═══
+function _step26(){
+  _setStep(26);
+  _dialog(
+    'Every plant has five resistances: <span style="color:var(--sage);">heat, cold, wind, drought, water</span>.<br><br>' +
+    'Remember the <span style="color:var(--gold);">seasonal border</span> from your greenhouse? That tells you when your plant thrives \u2014 and when it\u2019s vulnerable.<br><br>' +
+    '<span style="color:var(--muted);font-size:0.85em;">Plants are always under attack \u2014 from weather, from competition, from time itself.</span>',
+    'NEXT',function(){_clear();setTimeout(_step27,300);},'bottom');
+}
+
+// ═══ STEP 27: wind-spread lore + closer ═══
+function _step27(){
+  _setStep(27);
+  _dialog(
+    'Plants in adjacent hexes can <span style="color:var(--gold);">breed and spread</span>. Their children drift on the wind.<br><br>' +
+    'Name your wild plants with <span style="color:var(--sage);">where you placed them</span> \u2014 future-you will thank past-you when you\u2019re trying to remember what you protected.<br><br>' +
+    'Go explore.',
+    'LET\u2019S GO',function(){_clear();_done();},'center');
+}
+
+// ═══ Level-ceremony hook: wake the tutorial at L3 if Phase 5 was parked ═══
+(function _installLvl3WakeHook(){
+  if(window._LW_TUT_LVLWRAPPED)return;
+  var waitForCeremony=function(){
+    if(typeof window._lwLevelCeremony!=='function'){setTimeout(waitForCeremony,500);return;}
+    var _orig=window._lwLevelCeremony;
+    window._lwLevelCeremony=function(newLvl){
+      var ret=_orig.apply(this,arguments);
+      try{
+        if(newLvl>=3&&localStorage.getItem('lw_tut_wild_pending')==='1'){
+          localStorage.removeItem('lw_tut_wild_pending');
+          // Let the L3 ceremony play for ~4s, then start Phase 5.
+          setTimeout(_step24,4500);
+        }
+      }catch(e){}
+      return ret;
+    };
+    window._LW_TUT_LVLWRAPPED=true;
+  };
+  waitForCeremony();
+})();
 
 // ═══ Wrap window._handleCardFlip to trigger Phase 4 on first-reveal ═══
 // When the 2nd plant is flipped-to-reveal and tutorial is at step 18,
