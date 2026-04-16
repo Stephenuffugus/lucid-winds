@@ -6061,7 +6061,7 @@ window._addSwitchTabHook = function(fn){
         'lw_tut_herbarium_v1','lw_tut_wild_v1','lw_pulse_firstgame_v1','lw_pulse_highprio_v1',
         'lw_pulse_l7class_v1','lw_pulse_first_plant_tap','lw_pulse_breed_first',
         'lw_pulse_wild_drop','lw_pulse_whatnow_first',
-        'lw_jit_boxes_v1','lw_jit_cutting_v1','lw_jit_class_v1','lw_jit_pollen_v1','lw_jit_daily_v1','lw_jit_prestige_v1','lw_first_mint_v1','lw_tut_force_restart',
+        'lw_jit_boxes_v1','lw_jit_cutting_v1','lw_jit_class_v1','lw_jit_pollen_v1','lw_jit_daily_v1','lw_jit_prestige_v1','lw_jit_territory_v1','lw_first_mint_v1','lw_tut_force_restart',
         'lw_first_focus_done','lw_quest_first_game'];
       for(var i=0;i<keys.length;i++){try{localStorage.removeItem(keys[i]);}catch(e){}}
       // Set force-restart flag so PW_Tutorial.start() ignores the
@@ -40019,7 +40019,7 @@ function _checkPendingRewards(){
       .orderBy('timestamp','desc').limit(10);
     rewardsRef.get().then(function(snap){
       if(snap.empty)return;
-      var msgs=[];var totalDew=0;
+      var msgs=[];var totalDew=0;var _sawTakeover=false;
       snap.forEach(function(doc){
         var r=doc.data();
         if(r.type==='harvest_reward'){
@@ -40030,6 +40030,7 @@ function _checkPendingRewards(){
         } else if(r.type==='takeover_reward'){
           msgs.push(r.plantName+' was displaced! +'+r.amount+' Dew');
           totalDew+=r.amount;
+          _sawTakeover=true;
         }
         doc.ref.delete().catch(function(){});
       });
@@ -40064,6 +40065,21 @@ function _checkPendingRewards(){
         ov.onclick=function(){ov.style.opacity='0';ov.style.transition='opacity 0.25s';setTimeout(function(){if(ov.parentNode)ov.remove();},300);};
         document.body.appendChild(ov);
         setTimeout(function(){if(ov.parentNode){ov.style.opacity='0';ov.style.transition='opacity 0.25s';setTimeout(function(){if(ov.parentNode)ov.remove();},300);}},6000);
+        // JIT: first time a plant gets displaced by a takeover, explain
+        // the mechanic. Fires after the notification overlay has had a
+        // few seconds on screen. Gated by lw_jit_territory_v1.
+        if(_sawTakeover&&!localStorage.getItem('lw_jit_territory_v1')&&window._lwConfirm){
+          try{localStorage.setItem('lw_jit_territory_v1','1');}catch(e){}
+          setTimeout(function(){
+            if(document.querySelector('#lw-confirm-modal,.lu-overlay'))return;
+            window._lwConfirm({
+              title:'YOUR GROUND WAS TESTED',
+              body:'Another Keeper tried to plant where you already stand. The stronger root wins a dice roll weighted by Evolutionary Advantage and companion bond. You get a share of Dew either way.<br><br>Raise EA on plants you want to hold. Tending, weather, and season all count.',
+              yes:'OK',
+              no:''
+            },function(){});
+          },7000);
+        }
       }
     }).catch(function(e){if(window._swsLog)_swsLog('Pending rewards err: '+e.message,'warn');});
   }catch(e){}
