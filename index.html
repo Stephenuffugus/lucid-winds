@@ -7367,7 +7367,7 @@ window._addSwitchTabHook = function(fn){
   <!-- PERSISTENT BOTTOM NAV — stone tablet v5 buttons -->
   <div class="fg-bottomnav">
     <button class="fg-nav-min" onclick="this.parentElement.classList.toggle('minimized')" title="Hide nav"><span class="nm-chev">▾</span><span>HIDE</span></button>
-    <button class="fg-nav-btn" onclick="switchTab('game')"><img src="assets/games/wild/nav-game-v5.png" alt="Game"><span class="fg-nav-label">GAME</span></button>
+    <button class="fg-nav-btn" onclick="switchTab('game')"><img src="assets/games/wild/nav-game-v5.png" alt="Focus"><span class="fg-nav-label">FOCUS</span></button>
     <button class="fg-nav-btn active" onclick="switchTab('greenhouse')" style="position:relative;"><img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse"><span class="fg-nav-label">GREENHOUSE</span><span id="nav-gh-badge" class="nav-badge" style="display:none;"></span></button>
     <button id="nav-btn-nursery" class="fg-nav-btn" onclick="if(window._lwNavTap)_lwNavTap('nursery',2);else switchTab('nursery');" style="position:relative;"><img src="assets/games/wild/nav-nursery-v5.png" alt="Nursery"><span class="fg-nav-label">NURSERY</span><span id="nav-nur-badge" class="nav-badge" style="display:none;"></span></button>
     <button id="nav-btn-wild" class="fg-nav-btn" onclick="if(window._lwNavTap)_lwNavTap('wild',3);else switchTab('wild');"><img src="assets/games/wild/nav-wild-v5.png" alt="Wild"><span class="fg-nav-label">WILD</span></button>
@@ -7377,7 +7377,7 @@ window._addSwitchTabHook = function(fn){
   <div id="wild-nav">
     <div class="wn-row">
       <button class="wn-btn" onclick="switchTab('game')" title="Game">
-        <img src="assets/games/wild/nav-game-v5.png" alt="Game"><span class="wn-lbl">GAME</span>
+        <img src="assets/games/wild/nav-game-v5.png" alt="Focus"><span class="wn-lbl">FOCUS</span>
       </button>
       <button class="wn-btn" onclick="switchTab('greenhouse')" title="Greenhouse">
         <img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse"><span class="wn-lbl">GREENHOUSE</span>
@@ -41540,6 +41540,19 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
   body:has(#cinematic-reveal.open) #lw-whatnow-btn,
   body:has(#daily-reward-modal) #lw-whatnow-btn,
   body:has(#lw-tab-teach) #lw-whatnow-btn{display:none !important;}
+  /* Tutorial: hide the floating WHAT NOW button so nothing draws focus
+     away from the step-by-step spotlight. Class is added in _step1 and
+     removed in _done (including the wrapped variant that strips card
+     highlights). */
+  body.lw-tut-active #lw-whatnow-btn,
+  body.lw-tut-active #lw-fb-btn{display:none !important;}
+  /* Tutorial Step 9: only DETAILS and SHARE are tappable below the
+     carousel card. The other .pgm-act-btn buttons fade and lose pointer
+     events so the tester can't veer off. We target by onclick attribute
+     because the buttons themselves have no stable id. */
+  body.lw-tut-limit-actions .pgm-act-btn:not([onclick*="carouselDetails"]):not([onclick*="_carouselDetails"]):not([onclick*="shareGalleryPlant"]){
+    opacity:0.25;pointer-events:none;filter:saturate(0.35);
+  }
 </style>
 <script>
 (function(){
@@ -53135,7 +53148,7 @@ function _findGameBtn(){
   var navBtns=document.querySelectorAll('.fg-nav-btn');
   for(var i=0;i<navBtns.length;i++){
     var img=navBtns[i].querySelector('img');
-    if(img&&img.alt==='Game')return navBtns[i];
+    if(img&&(img.alt==='Focus'||img.alt==='Game'))return navBtns[i];
   }
   return null;
 }
@@ -53150,9 +53163,16 @@ function _clearCardHighlights(){
   }catch(e){}
 }
 
-// Override _done to also strip card highlights (tutorial may die mid-flow)
+// Override _done to also strip card highlights AND any body flags the
+// tutorial sets during its run. Belt-and-suspenders for mid-flow exits.
 var _origDone=_done;
-_done=function(){_clearCardHighlights();_origDone();};
+_done=function(){
+  _clearCardHighlights();
+  try{
+    document.body.classList.remove('lw-tut-active','lw-tut-limit-actions');
+  }catch(e){}
+  _origDone();
+};
 
 // ═══ EMPTY GREENHOUSE PATH ═══
 // Player has no plants — skip collection tutorial, guide them to earn their first
@@ -53168,7 +53188,9 @@ function _stepEmpty(){
     },'center');
 }
 
-// ═══ STEP 1: greenhouse sign + spotlight + plant tap ═══
+// ═══ STEP 1a: greenhouse intro — no overlay yet, plain dialog ═══
+// Stephen: "it should say 'you are currently in your greenhouse' then fade
+// the background and say this is your first plant". Two beats, not one.
 function _step1(retries){
   if(typeof retries==='undefined')retries=0;
   _setStep(1);
@@ -53179,20 +53201,34 @@ function _step1(retries){
       _stepEmpty();
       return;
     }
-    var firstCard=cards[0];
-    _overlay(function(){_done();firstCard.style.zIndex='';});
-    _spotlight(firstCard);
+    // Tutorial-active body class hides the floating WHAT NOW button and
+    // any other chrome we want out of the way during the walkthrough.
+    try{document.body.classList.add('lw-tut-active');}catch(e){}
     _dialog(
-      'Here you can view the plants in your greenhouse.<br><br>' +
-      'Click on your plant to take a closer look.',
-      null,null,'center');
-    var origClick=firstCard.onclick;
-    firstCard.onclick=function(e){
-      _clear();firstCard.style.zIndex='';firstCard.onclick=origClick;
-      if(origClick)origClick.call(firstCard,e);
-      _setStep(2);_waitForCarousel(0);
-    };
+      'You are currently in your <span style="color:var(--gold);">greenhouse</span>.',
+      'OK', function(){ _clear(); setTimeout(_step1b, 300); }, 'center');
   },600);
+}
+
+// ═══ STEP 1b: fade in overlay + spotlight the plant ═══
+// Overlay click is NO-OP so tapping dark area doesn't dismiss or fall
+// through (the old behavior let the player tap through to the greenhouse).
+function _step1b(){
+  _setStep(1);
+  var cards=document.querySelectorAll('.greenhouse-plant:not(.undiscovered)');
+  if(!cards.length){_stepEmpty();return;}
+  var firstCard=cards[0];
+  _overlay(function(){/* no-op — overlay is a capture zone only */});
+  _spotlight(firstCard);
+  _dialog(
+    'This is your <span style="color:var(--gold);">first plant</span>.<br>Touch it to learn more.',
+    null,null,'top');
+  var origClick=firstCard.onclick;
+  firstCard.onclick=function(e){
+    _clear();firstCard.style.zIndex='';firstCard.onclick=origClick;
+    if(origClick)origClick.call(firstCard,e);
+    _setStep(2);_waitForCarousel(0);
+  };
 }
 
 function _waitForCarousel(attempts){
@@ -53227,7 +53263,7 @@ function _step4(){
   var fw=document.querySelector('.cs-flip-wrap');
   if(fw){fw.classList.add('cs-tut-dim','cs-tut-hi-name');}
   _dialog(
-    'Your plant\u2019s <span style="color:var(--gold);">name</span> is uniquely yours. It was also shaped by your specific timing and movements so far.',
+    'Your plant\u2019s <span style="color:var(--gold);">name</span> is unique to you. It was shaped by your specific timing and movements.',
     'NEXT',function(){
       var fw2=document.querySelector('.cs-flip-wrap');
       if(fw2)fw2.classList.remove('cs-tut-hi-name');
@@ -53241,7 +53277,7 @@ function _step5(){
   var fw=document.querySelector('.cs-flip-wrap');
   if(fw){fw.classList.add('cs-tut-dim','cs-tut-hi-haiku');fw.classList.remove('cs-tut-hi-name');}
   _dialog(
-    'And its <span style="color:var(--gold);">haiku</span>, composed just for this plant from the same pattern that shaped it.',
+    'A unique <span style="color:var(--gold);">haiku</span>, from the same timing and patterns that shaped your plant.',
     'NEXT',function(){
       var fw2=document.querySelector('.cs-flip-wrap');
       if(fw2)fw2.classList.remove('cs-tut-dim','cs-tut-hi-haiku');
@@ -53249,18 +53285,32 @@ function _step5(){
     },'top');
 }
 
-// ═══ STEP 6: EA badge pointer ═══
+// ═══ STEP 6: EA badge pointer — dialog tucked under the EA number ═══
+// Stephen: "the EA description can go up into the corner underneath the
+// number to draw their attention better up there." Anchor the dialog to
+// the EA badge via getBoundingClientRect so it lives right below it.
 function _step6(){
   _setStep(6);
   var fw=document.querySelector('.cs-flip-wrap');
   if(fw)fw.classList.add('cs-tut-hi-ea');
+  var badge=document.querySelector('.cs-flip-wrap .cf-ea');
   _dialog(
-    'The number in the top-right is your plant\u2019s <span style="color:var(--gold);">Evolutionary Advantage</span>.<br><br>Think of it as its power.',
+    'That number is your plant\u2019s <span style="color:var(--gold);">Evolutionary Advantage</span>. Think of it as its power.',
     'NEXT',function(){
       var fw2=document.querySelector('.cs-flip-wrap');
       if(fw2)fw2.classList.remove('cs-tut-hi-ea');
       _clear();setTimeout(_step7,300);
     },'bottom');
+  // Re-anchor to the EA badge corner (top-right of the card).
+  if(badge&&_dlg){
+    try{
+      var r=badge.getBoundingClientRect();
+      _dlg.style.left='';_dlg.style.bottom='';_dlg.style.transform='';
+      _dlg.style.top=(r.bottom+12)+'px';
+      _dlg.style.right='12px';
+      _dlg.style.maxWidth='min(280px,70vw)';
+    }catch(e){}
+  }
 }
 
 // ═══ STEP 7: rarity + flip prompt ═══
@@ -53291,13 +53341,21 @@ function _step8(){
     'NEXT',function(){_clear();setTimeout(_step9,300);},'top');
 }
 
-// ═══ STEP 9: button tour + compost warning ═══
+// ═══ STEP 9: button tour — only DETAILS + SHARE are active ═══
+// Stephen: "the buttons at the bottom should be greyed out except
+// details and share. tell them here they could show off their first
+// plant if theyd like and make sure it would bring them right back
+// to their spot in the tutorial."
 function _step9(){
   _setStep(9);
+  try{document.body.classList.add('lw-tut-limit-actions');}catch(e){}
   _dialog(
-    'Below the card are your <span style="color:var(--gold);">actions</span>.<br><br>' +
-    '<span style="color:#d08080;">Don\u2019t compost plants until you run out of space.</span> Come back to these later.',
-    'GOT IT',function(){_clear();setTimeout(_step10,300);},'bottom');
+    'Below the card are your <span style="color:var(--gold);">actions</span>. The rest unlock later. For now:<br><br>' +
+    '<span style="color:var(--sage);">DETAILS</span> opens your plant\u2019s full profile. <span style="color:var(--sage);">SHARE</span> lets you show it off. If you share, the native share sheet closes and you\u2019ll pick up right here.',
+    'GOT IT',function(){
+      try{document.body.classList.remove('lw-tut-limit-actions');}catch(e){}
+      _clear();setTimeout(_step10,300);
+    },'bottom');
 }
 
 // ═══ STEP 10: flip back prompt ═══
@@ -53318,18 +53376,32 @@ function _step10(){
   setTimeout(watch,500);
 }
 
-// ═══ STEP 11: rarity symbol on face — spell out "bottom left corner" ═══
+// ═══ STEP 11: rarity symbol on face — dialog anchored near the symbol ═══
+// Stephen: "the box describing the symbol in the bottom left corner
+// needs to be moved down closer to the symbol to draw the attention
+// to what we are talking about."
 function _step11(){
   _setStep(11);
   var fw=document.querySelector('.cs-flip-wrap');
   if(fw)fw.classList.add('cs-tut-hi-rarity');
+  var sym=document.querySelector('.cs-flip-wrap .cf-rarity-symbol');
   _dialog(
     'The symbol in the <span style="color:var(--gold);">bottom-left corner</span> marks your plant\u2019s rarity. You\u2019ll always see it there at a glance.',
     'NEXT',function(){
       var fw2=document.querySelector('.cs-flip-wrap');
       if(fw2)fw2.classList.remove('cs-tut-hi-rarity');
       _clear();setTimeout(_step12,300);
-    },'top');
+    },'bottom');
+  // Re-anchor close to the symbol — bottom-left edge of the card.
+  if(sym&&_dlg){
+    try{
+      var r=sym.getBoundingClientRect();
+      _dlg.style.right='';_dlg.style.bottom='';_dlg.style.transform='';
+      _dlg.style.top=(Math.max(8,r.bottom-220))+'px';
+      _dlg.style.left='12px';
+      _dlg.style.maxWidth='min(280px,70vw)';
+    }catch(e){}
+  }
 }
 
 // ═══ STEP 12: close + games tab ═══
@@ -53349,7 +53421,7 @@ function _stepGame(){
   _setStep(13);
   setTimeout(function(){
     _dialog(
-      'When you\u2019re ready, tap <span style="color:var(--gold);">GAME</span> at the bottom to earn Sunbeams.<br><br>' +
+      'When you\u2019re ready, tap <span style="color:var(--gold);">FOCUS</span> at the bottom to earn Sunbeams.<br><br>' +
       '<span style="color:var(--muted);font-size:0.85em;">If games aren\u2019t your thing, there are creative outlets too.</span>',
       null,null,'center');
     _watchGameTabSwitch(0);
@@ -53368,7 +53440,7 @@ function _watchGameTabSwitch(attempts){
   }
   // Also accept an explicit switchTab to game via DOM signal
   var gt=document.getElementById('game-dew-val');
-  var anyTab=document.querySelector('.fg-nav-btn.active img[alt="Game"]');
+  var anyTab=document.querySelector('.fg-nav-btn.active img[alt="Focus"], .fg-nav-btn.active img[alt="Game"]');
   if(anyTab){
     _clear();
     _setStep(15);
