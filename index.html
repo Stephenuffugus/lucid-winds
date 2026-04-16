@@ -6061,7 +6061,7 @@ window._addSwitchTabHook = function(fn){
         'lw_tut_herbarium_v1','lw_tut_wild_v1','lw_pulse_firstgame_v1','lw_pulse_highprio_v1',
         'lw_pulse_l7class_v1','lw_pulse_first_plant_tap','lw_pulse_breed_first',
         'lw_pulse_wild_drop','lw_pulse_whatnow_first',
-        'lw_jit_boxes_v1','lw_jit_cutting_v1','lw_jit_class_v1','lw_first_mint_v1','lw_tut_force_restart',
+        'lw_jit_boxes_v1','lw_jit_cutting_v1','lw_jit_class_v1','lw_jit_pollen_v1','lw_first_mint_v1','lw_tut_force_restart',
         'lw_first_focus_done','lw_quest_first_game'];
       for(var i=0;i<keys.length;i++){try{localStorage.removeItem(keys[i]);}catch(e){}}
       // Set force-restart flag so PW_Tutorial.start() ignores the
@@ -39968,7 +39968,25 @@ function _updateCounts(){
   // was renamed to XP in the Pollen = XP rework. fg_pollen is dead.
   var p=document.getElementById('w-pollen');
   if(p){
-    try{var _xpDisp=parseInt(localStorage.getItem('pw_xp')||'0');p.textContent=_xpDisp;}
+    try{var _xpDisp=parseInt(localStorage.getItem('pw_xp')||'0');p.textContent=_xpDisp;
+      // JIT: first time the Wild hero banner shows pollen > 0 while the
+      // player is on the Wild tab, explain what pollen is. Gated by
+      // lw_jit_pollen_v1 so it only fires once. Skipped if any overlay
+      // is active so it doesn't stack on a celebration.
+      if(_xpDisp>0&&!localStorage.getItem('lw_jit_pollen_v1')&&document.body.classList.contains('tab-wild')&&!localStorage.getItem('lw_tut')){
+        localStorage.setItem('lw_jit_pollen_v1','1');
+        setTimeout(function(){
+          if(document.querySelector('.lu-overlay,#pw-win-overlay,#lw-confirm-modal'))return;
+          if(!window._lwConfirm)return;
+          window._lwConfirm({
+            title:'POLLEN',
+            body:'What you see above is your Keeper XP in its wild form. Every plant you place, every forage, every small kindness carries a few grains on the breeze.<br><br>Levels unlock new corners of the map.',
+            yes:'OK',
+            no:''
+          },function(){});
+        },1800);
+      }
+    }
     catch(e){p.textContent=total;}
   }
   // Update Dew balance display — reads the REAL Dew ledger, not hash
