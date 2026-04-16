@@ -42389,6 +42389,10 @@ function _updateSunbeamBadge(){
       if(!localStorage.getItem('lw_tut_first_mint_ready')){
         (function _pollFirstMintHint(attempt){
           if(attempt>30)return; // give up after ~60s
+          // Re-check the flag at every tick — prevents double-fire when
+          // _updateSunbeamBadge is called by multiple sources in quick
+          // succession (earnHashes + mint flow can stack two pollers).
+          if(localStorage.getItem('lw_tut_first_mint_ready'))return;
           if(document.body.classList.contains('ob-active')||document.body.classList.contains('game-active')||document.getElementById('lw-confirm-modal')){
             setTimeout(function(){_pollFirstMintHint(attempt+1);},2000);
             return;
