@@ -6042,14 +6042,19 @@ window._addSwitchTabHook = function(fn){
         'lw_first_game_won','lw_first_game_bonus_given',
         'lw_tut_wild_pending','lw_tut_breed_pulse','lw_tut_bs_pulse',
         'lw_tut_water_pulse','lw_tut_tap_plant_v1','lw_tut_first_mint_ready',
+        'lw_tut_fab_pulse','lw_tut_wild_log_pulse','lw_tut_longpress_v1',
         'lw_tab_teach_game','lw_tab_teach_greenhouse','lw_tab_teach_nursery','lw_tab_teach_wild',
         'lw_tut_forage_v1','lw_tut_companion_v1','lw_tut_book_v1','lw_tut_currency_v1',
         'lw_tut_herbarium_v1','lw_tut_wild_v1','lw_pulse_firstgame_v1','lw_pulse_highprio_v1',
         'lw_pulse_l7class_v1','lw_pulse_first_plant_tap','lw_pulse_breed_first',
-        'lw_pulse_wild_drop','lw_pulse_whatnow_first','_LW_TUT_EWRAPPED',
-        '_LW_TUT_FLIPWRAPPED','_LW_TUT_LVLWRAPPED'];
+        'lw_pulse_wild_drop','lw_pulse_whatnow_first',
+        'lw_jit_boxes_v1','lw_first_mint_v1'];
       for(var i=0;i<keys.length;i++){try{localStorage.removeItem(keys[i]);}catch(e){}}
-      alert('Tutorial reset. Reload the page to retrigger.');
+      // Set force-restart flag so PW_Tutorial.start() ignores the
+      // returning-player bail (lw_vault_uid, greenhouse.length>1).
+      try{localStorage.setItem('lw_tut_force_restart','1');}catch(e){}
+      alert('Tutorial reset. Reloading to replay from step 1.');
+      setTimeout(function(){location.reload();},400);
     },
     forceSync:function(){
       if(window.syncVaultToCloud){
@@ -53931,18 +53936,47 @@ function checkBreed(){
 }
 
 function start(){
-  // Already completed or in-progress — bail
-  if(_getStep()!==0)return;
-  // Returning player detection: >1 plant means they've been playing
-  var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
-  if(gh.length>1){_done();return;}
-  // Cloud sync markers mean returning player
-  if(localStorage.getItem('lw_vault_uid')||localStorage.getItem('sws_totalHashes')){_done();return;}
-  // Start tutorial — _step1 handles both "has plants" and "no plants" paths
+  // Dev force-restart path — set by PW_Dev.resetTutorial() so a returning
+  // Keeper can replay the walkthrough without nuking their account. We
+  // consume the flag here so any subsequent normal start() still gets
+  // the returning-player bail.
+  var _forced=false;
+  try{
+    if(localStorage.getItem('lw_tut_force_restart')==='1'){
+      _forced=true;
+      localStorage.removeItem('lw_tut_force_restart');
+    }
+  }catch(e){}
+  if(!_forced){
+    if(_getStep()!==0)return;
+    var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+    if(gh.length>1){_done();return;}
+    if(localStorage.getItem('lw_vault_uid')||localStorage.getItem('sws_totalHashes')){_done();return;}
+  } else {
+    // Forced path: reset step counter too so _step1 runs from zero.
+    _setStep(0);
+  }
   _step1();
 }
 
 window.PW_Tutorial={start:start,checkNursery:checkNursery,checkBreed:checkBreed};
+
+// Auto-boot the force-restart path. Returning players who use DEV → RESET
+// TUTORIAL don't go through PW_Onboard.finish(), so nothing would normally
+// trigger start(). This fires once on page load if the flag is set.
+(function _lwForceRestartBoot(){
+  try{
+    if(localStorage.getItem('lw_tut_force_restart')!=='1')return;
+    var go=function(){
+      try{if(window.PW_Tutorial)window.PW_Tutorial.start();}catch(e){}
+    };
+    if(document.readyState==='complete'||document.readyState==='interactive'){
+      setTimeout(go,1200);
+    } else {
+      document.addEventListener('DOMContentLoaded',function(){setTimeout(go,1200);});
+    }
+  }catch(e){}
+})();
 })();
 </script>
 
