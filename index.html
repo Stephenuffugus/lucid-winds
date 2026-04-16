@@ -29831,7 +29831,7 @@ document.addEventListener('keydown', function(e) {
       if (!localStorage.getItem('lw_tut_longpress_v1')) {
         localStorage.setItem('lw_tut_longpress_v1', '1');
         setTimeout(function(){
-          if (window._toast) window._toast('\ud83c\udf3f Long-press any plant card for actions \u2014 breed, compost, share, download.');
+          if (window._toast) window._toast('\ud83c\udf3f Long-press any plant card for actions, breed, compost, share, download.');
         }, 600);
       }
     } catch(e) {}
@@ -31389,7 +31389,7 @@ document.addEventListener('keydown', function(e) {
             if (window._lwConfirm) {
               window._lwConfirm({
                 title: 'THE WILD',
-                body: 'This is a real-world map of plants \u2014 yours, other keepers\u2019, and wild hexes.<br><br>\ud83c\udf3f <b>Glowing hexes</b> hold ferals you can forage (L4+, within 75m).<br>\ud83c\udf31 <b>Your backpack</b> lets you drop plants into the world \u2014 they live there, age there, feed the ecosystem.<br>\ud83d\udca7 <b>Tend strangers\u2019 plants</b> (L5+) within 75m for Dew.<br><br>Walk. The map rewards keepers who move.',
+                body: 'This is a real-world map of plants, yours, other keepers\u2019, and wild hexes.<br><br>\ud83c\udf3f <b>Glowing hexes</b> hold ferals you can forage (L4+, within 75m).<br>\ud83c\udf31 <b>Your backpack</b> lets you drop plants into the world, they live there, age there, feed the ecosystem.<br>\ud83d\udca7 <b>Tend strangers\u2019 plants</b> (L5+) within 75m for Dew.<br><br>Walk. The map rewards keepers who move.',
                 yes: 'I\u2019LL WALK',
                 no: ''
               }, function(){});
@@ -32061,12 +32061,12 @@ document.addEventListener('keydown', function(e) {
       if (window._lwConfirm) {
         window._lwConfirm({
           title:'TWO PLANTS TO BREED',
-          body:'Breeding crosses two plants to create a unique chimera seed. You have '+gh.length+' plant'+(gh.length===1?'':'s')+' \u2014 play games to earn Sunbeams and grow more.',
+          body:'Breeding crosses two plants to create a unique chimera seed. You have '+gh.length+' plant'+(gh.length===1?'':'s')+', play games to earn Sunbeams and grow more.',
           yes:'PLAY GAMES',
           no:'LATER'
         },function(){if(window.switchTab)switchTab('game');},function(){});
       } else if (window._toast) {
-        window._toast('Need 2 plants to breed \u2014 play games to grow more.');
+        window._toast('Need 2 plants to breed, play games to grow more.');
       }
       return;
     }
@@ -36687,7 +36687,7 @@ function _collectFeralFromZone(zk, zonePlants) {
                     feralHash = _newHash;
                     info.grade = _newG.name;
                     info.nm = window.getPlantName ? getPlantName(_newHash) : _newHash.slice(0,8);
-                    if (window._toast) window._toast('\ud83c\udf3f Tether Moss took hold \u2014 this seed carries rare blood.');
+                    if (window._toast) window._toast('\ud83c\udf3f Tether Moss took hold, this seed carries rare blood.');
                     break;
                   }
                 } catch(eT){}
@@ -36791,7 +36791,7 @@ function _awardFeral(hash, parentA, parentB, zk, info) {
         if (window._lwConfirm) {
           window._lwConfirm({
             title: '\ud83c\udf30 YOUR FIRST WILD SEED',
-            body: 'This seed grew somewhere you walked. Not in any greenhouse, no keeper\u2019s hand on its pot. You don\u2019t know what it\u2019ll be yet \u2014 neither does it.<br><br>Water it three days in the <b>Nursery</b> to see what bloomed out of the wild for you.',
+            body: 'This seed grew somewhere you walked. Not in any greenhouse, no keeper\u2019s hand on its pot. You don\u2019t know what it\u2019ll be yet, neither does it.<br><br>Water it three days in the <b>Nursery</b> to see what bloomed out of the wild for you.',
             yes: 'CARRY IT HOME',
             no: ''
           }, function(){});
@@ -37597,7 +37597,7 @@ function _collectFeral(f,mk){
     _toast('🔒 Feral seeds respond to you at Keeper Level 4.');return;
   }
   if(!_uLat){_toast('Need location.');return;}
-  if(_gpsDenied){_toast('\u2316 Demo mode \u2014 enable GPS to collect ferals in your area.');return;}
+  if(_gpsDenied){_toast('\u2316 Demo mode, enable GPS to collect ferals in your area.');return;}
   var d=_dist(_uLat,_uLng,f.lat,f.lng);
   var _fcRange=typeof _getCollectRange==='function'?_getCollectRange():COLLECT_RANGE;
   if(d>_fcRange){_toast('Walk closer! '+Math.round(d*3.281)+' ft away. Need within '+Math.round(_fcRange*3.281)+' ft.');return;}
@@ -38606,7 +38606,7 @@ function _doCrossPollination(wildPlant,matePlant){
     if(_spiderFired&&window._toast)setTimeout(function(){
       window._toast(_spiderFull?'🕷 Web Weaver: Spider doubled the reward.':'🕷 Web Weaver: +50% reward (find a Garden Spider for 2×)');
     },250);
-    if(_twinBloom&&window._toast)setTimeout(function(){window._toast('\ud83c\udf3c Twin Bloom \u2014 the ritual doubled your reward.');},500);
+    if(_twinBloom&&window._toast)setTimeout(function(){window._toast('\ud83c\udf3c Twin Bloom, the ritual doubled your reward.');},500);
     _play('match');
     var parentInfo=_buildInfo(wildPlant.hash);
     var mateInfo=_buildInfo(matePlant.hash);
@@ -38626,7 +38626,7 @@ function _doCrossPollination(wildPlant,matePlant){
           if (window._lwConfirm) {
             window._lwConfirm({
               title: '\ud83e\uddec YOUR FIRST CROSS',
-              body: 'Two lineages, one new seed. The offspring carries traits from both parents \u2014 plus a chimera generation marker that stacks as you keep breeding.<br><br>Each cross adds veins to the leaves, climate immunity, and a chance at rare traits you couldn\u2019t roll otherwise.<br><br>The seed is in the <b>Nursery</b>. Water it three days and meet what you made.',
+              body: 'Two lineages, one new seed. The offspring carries traits from both parents, plus a chimera generation marker that stacks as you keep breeding.<br><br>Each cross adds veins to the leaves, climate immunity, and a chance at rare traits you couldn\u2019t roll otherwise.<br><br>The seed is in the <b>Nursery</b>. Water it three days and meet what you made.',
               yes: 'EXCITING',
               no: ''
             }, function(){});
@@ -38945,7 +38945,7 @@ function _allPlantsInZone(zoneKey){
 function _drop(pl){
   closePicker();
   if(!_uLat||!_uLng){_toast('No location.');return;}
-  if(_gpsDenied){_toast('\u2316 Demo mode \u2014 enable GPS to plant in the real world.');return;}
+  if(_gpsDenied){_toast('\u2316 Demo mode, enable GPS to plant in the real world.');return;}
   if((_getMaxDrops()-_drops)<=0)return;
   var wild=_getWild();
   var myUid='';try{var _cu=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_cu)myUid=_cu.uid;}catch(e){}
@@ -40896,7 +40896,7 @@ window._lwCompassTap=function(){
   // regardless of tool level. Treats as if compass is at L3+.
   var pathfinderL3=false;try{pathfinderL3=window._LW_hasFamilyRitual&&window._LW_hasFamilyRitual('wayfinders');}catch(e){}
   if(pathfinderL3)lvl=Math.max(lvl,3);
-  if(lvl<2 && !cartoL2){_toast('\ud83e\udded Compass L1 \u2014 wind only. Discover biomes to level up.');return;}
+  if(lvl<2 && !cartoL2){_toast('\ud83e\udded Compass L1, wind only. Discover biomes to level up.');return;}
   if(lvl<3){
     // Reveal biome (tool L2, or class L2 early-unlock)
     var bInfo=null;try{if(window._lastDetectedBiome&&window.getBiomeInfo)bInfo=window.getBiomeInfo(window._lastDetectedBiome);}catch(e){}
@@ -41087,7 +41087,7 @@ window._waterHoldEnd = function(btn){
   btn.classList.remove('holding');
   if(elapsed<holdMs){
     var sec=Math.round(holdMs/1000);
-    if(window._toast)window._toast('Released too soon \u2014 hold for '+sec+' seconds.');
+    if(window._toast)window._toast('Released too soon, hold for '+sec+' seconds.');
   }
 };
 
@@ -41252,7 +41252,7 @@ window._hexAction=function(action){
     if(_mCount<50)_msg+=' \u00b7 '+_mCount+'/50 Steward';
     _toast(_msg);
     if(_stewardJustEarned){
-      setTimeout(function(){_toast('\ud83c\udfc5 STEWARD BADGE EARNED! 50 mulches \u2014 you\u2019re a friend to every garden.');},1800);
+      setTimeout(function(){_toast('\ud83c\udfc5 STEWARD BADGE EARNED! 50 mulches, you\u2019re a friend to every garden.');},1800);
     }
     // Re-render the hex inspector so the vitality bar updates
     if(_hexInspZone&&window.FG_Wild&&FG_Wild._openHexInspector){
@@ -42280,9 +42280,9 @@ function _e(v){
     _checkDailyWelcome();
     var _mc=(_getMintCost?_getMintCost():30);
     if(prevFilled<10&&_hashFilled>=10&&_hashFilled<_mc){
-      _milestoneToast('Sprout','10/'+_mc+' \u2014 your seed is growing');
+      _milestoneToast('Sprout','10/'+_mc+', your seed is growing');
     }else if(prevFilled<20&&_hashFilled>=20&&_hashFilled<_mc){
-      _milestoneToast('Growing','20/'+_mc+' \u2014 leaves are forming');
+      _milestoneToast('Growing','20/'+_mc+', leaves are forming');
     }else if(prevFilled<25&&_hashFilled>=25&&_hashFilled<_mc){
       _milestoneToast('Almost!',(_mc-_hashFilled)+' more to Full Bloom');if(window._haptic)_haptic('tab');
     }
@@ -47552,9 +47552,9 @@ var LEVEL_UNLOCKS={
   3:  {key:'wildTab',      title:'Wild tab',             desc:'Walk the world. Drop plants in the wild, collect feral seeds, meet strangers\u2019 gardens.'},
   4:  {key:'feralCollect', title:'Feral seeds',          desc:'Glowing hexes on the Wild map hold wild seeds. Tap one within 75m to start a foraging attempt.'},
   5:  {key:'strangerTend', title:'Tend stranger plants', desc:'You can now tend other keepers\u2019 wild plants within 75m for +2 Dew each.'},
-  6:  {key:'classPreview', title:'A path is forming',    desc:'Next level you\u2019ll choose a Keeper class \u2014 Forager, Breeder, Cartographer, Tender, or Keeper. Each shapes how you play.'},
+  6:  {key:'classPreview', title:'A path is forming',    desc:'Next level you\u2019ll choose a Keeper class. Forager, Breeder, Cartographer, Tender, or Keeper. Each shapes how you play.'},
   7:  {key:'breed',        title:'Greenhouse breeding',  desc:'Cross-pollinate two of your own plants to grow a chimera seed. Choose your Keeper class in the Book of Secrets.'},
-  9:  {key:'potShop',      title:'Pot Shop',             desc:'Ritual vessels unlock in the Nursery \u2014 each one bakes a unique bonus into the plant at bloom.'},
+  9:  {key:'potShop',      title:'Pot Shop',             desc:'Ritual vessels unlock in the Nursery, each one bakes a unique bonus into the plant at bloom.'},
   10: {key:'fruitHarvest', title:'Fruit harvest',        desc:'Take ripe fruit from stranger wild plants for Dew (small bloom delay).'},
   12: {key:'mergeBreed',   title:'Nursery merge breed',  desc:'Merge two nursery seeds into one for trait selection.'},
   15: {key:'cutting',      title:'Wild cuttings',        desc:'Take a cutting from a stranger wild plant — sample breeding seed.'},
@@ -57971,7 +57971,7 @@ function _bosHerbariumContent() {
         if (window._lwConfirm) {
           window._lwConfirm({
             title: 'HERBARIUM BUNDLES',
-            body: 'Three bundles rotate every week \u2014 same three for every keeper, pulled from a pool of challenges.<br><br>\ud83c\udf3f Your <b>existing greenhouse</b> counts toward progress automatically. No submission, no consumption, no deadline-panic.<br><br>\u2728 Complete a bundle \u2192 claim it for <b>Dew</b> or an unlockable <b>title</b>. Uncaimed bundles reset each Monday.',
+            body: 'Three bundles rotate every week, same three for every keeper, pulled from a pool of challenges.<br><br>\ud83c\udf3f Your <b>existing greenhouse</b> counts toward progress automatically. No submission, no consumption, no deadline-panic.<br><br>\u2728 Complete a bundle \u2192 claim it for <b>Dew</b> or an unlockable <b>title</b>. Uncaimed bundles reset each Monday.',
             yes: 'LOOK AT THIS WEEK',
             no: ''
           }, function(){});
@@ -58692,7 +58692,7 @@ window._lwClaimHerbarium = function(id){
         var _step2 = function(){
           window._lwConfirm({
             title: 'EXACT \u00b7 ELSEWHERE \u00b7 MISS',
-            body: '<p><span style="color:#7ab356;">\u25a0</span> <b>EXACT</b> (green) \u2014 right card in the right slot.</p>' +
+            body: '<p><span style="color:#7ab356;">\u25a0</span> <b>EXACT</b> (green), right card in the right slot.</p>' +
                   '<p><span style="color:#c8a84b;">\u25a0</span> <b>ELSEWHERE</b> (gold) \u2014 right card, wrong slot. The element is in the hex somewhere else.</p>' +
                   '<p><span style="color:#8a9178;">\u25a0</span> <b>MISS</b> (grey) \u2014 that element isn\u2019t in the hex.</p>' +
                   '<p style="color:var(--gold);margin-top:0.6rem;">Use each attempt to narrow which elements belong and where they go. Hit the score target to claim the seed.</p>',
@@ -58701,8 +58701,8 @@ window._lwClaimHerbarium = function(id){
           }, function(){});
         };
         window._lwConfirm({
-          title: 'FORAGING \u2014 A QUIET PUZZLE',
-          body: '<p>Every wild hex hides a sequence of <b>elements</b> \u2014 Sun, Shade, Rain, Dry, Wind, Still.</p>' +
+          title: 'FORAGING. A QUIET PUZZLE',
+          body: '<p>Every wild hex hides a sequence of <b>elements</b>. Sun, Shade, Rain, Dry, Wind, Still.</p>' +
                 '<p>Play cards from your hand into the slots. Try to match the hex\u2019s hidden order.</p>' +
                 '<p style="color:var(--sage);">Higher-rarity hexes have more slots, bigger hands, and more attempts. Each attempt teaches you more.</p>',
           yes: 'NEXT \u2192',
@@ -59045,7 +59045,7 @@ window._lwClaimHerbarium = function(id){
           }
           resolved.score = (resolved.matches + resolved.wildExact) * 2 + resolved.counters + resolved.wilds;
           resolved.success = resolved.score >= resolved.scoreNeeded;
-          if (window._toast) window._toast('\ud83d\udd0d Diviner\u2019s Glass lifts the fog \u2014 every close guess counted.');
+          if (window._toast) window._toast('\ud83d\udd0d Diviner\u2019s Glass lifts the fog, every close guess counted.');
         }
       } catch(eDG){}
       // Only EXACT hits (match / wild-exact) reveal a slot's true element —
@@ -59092,7 +59092,7 @@ window._lwClaimHerbarium = function(id){
             addCard(_blPick, 1);
             if (EL[_blPick] && window._toast) {
               setTimeout(function(){
-                window._toast('\u2728 Bloom Day reward: ' + EL[_blPick].icon + ' ' + EL[_blPick].label + ' \u2014 a rare wild card. Works on any hex (half strength).');
+                window._toast('\u2728 Bloom Day reward: ' + EL[_blPick].icon + ' ' + EL[_blPick].label + ', a rare wild card. Works on any hex (half strength).');
               }, 600);
             }
           }
@@ -59236,7 +59236,7 @@ window._lwClaimHerbarium = function(id){
     if (!CATALOG[key]) return false;
     var inv = _load(); inv[key] = (inv[key]||0) + (n||1); _save(inv);
     if (window._toast && CATALOG[key]) {
-      try { window._toast(CATALOG[key].icon + ' ' + CATALOG[key].name + ' ' + (n>0?'+'+n:n) + ' \u2014 in your pouch'); } catch(e){}
+      try { window._toast(CATALOG[key].icon + ' ' + CATALOG[key].name + ' ' + (n>0?'+'+n:n) + ', in your pouch'); } catch(e){}
     }
     return true;
   }
@@ -59561,7 +59561,7 @@ window._lwClaimHerbarium = function(id){
     var grade = opts.grades[Math.floor(Math.random()*opts.grades.length)];
     if (!window.LW_FORAGING || !window.LW_FORAGING.openPanel) {
       window._lastDetectedBiome = prevBiome;
-      if (window._toast) window._toast('Foraging unavailable right now \u2014 item returned.');
+      if (window._toast) window._toast('Foraging unavailable right now, item returned.');
       add(opts.itemKey, 1); // refund
       return false;
     }
@@ -59671,7 +59671,7 @@ window._lwClaimHerbarium = function(id){
       }
       window.LW_FORAGING.openPanel(zk, grade, function(success){
         window._lastDetectedBiome = prevBiome;
-        if (window._toast) setTimeout(function(){ window._toast(success ? '\ud83c\udff9 The arrow found moss \u2014 a feral held where it fell.' : 'The pin was empty. The arrow returns.'); }, 900);
+        if (window._toast) setTimeout(function(){ window._toast(success ? '\ud83c\udff9 The arrow found moss, a feral held where it fell.' : 'The pin was empty. The arrow returns.'); }, 900);
       });
     });
   }
@@ -59706,7 +59706,7 @@ window._lwClaimHerbarium = function(id){
     v.nextPing = now + 24*3600000;
     try { localStorage.setItem('sws_whisper_vine', JSON.stringify(v)); } catch(e){}
     if (window.LW_ITEMS && window.LW_ITEMS.add) window.LW_ITEMS.add('compassShard', 1);
-    if (window._toast) window._toast('\ud83c\udf43 The vine tugs \u2014 the '+(v.biome||'spot')+' reseeded. +1 Compass Shard waits in your pouch.');
+    if (window._toast) window._toast('\ud83c\udf43 The vine tugs, the '+(v.biome||'spot')+' reseeded. +1 Compass Shard waits in your pouch.');
   }
   // Check once per session load (the vine wants daily engagement)
   setTimeout(_checkVinePing, 6000);
@@ -60108,7 +60108,7 @@ window._lwClaimHerbarium = function(id){
     }
     s.slots.push({ tier:tier, distance:0, target:TIERS[tier].distance, startedAt:Date.now() });
     _save(s);
-    if (window._toast) window._toast(TIERS[tier].icon + ' ' + TIERS[tier].name + ' \u2014 a new cocoon. Walk to hatch it.');
+    if (window._toast) window._toast(TIERS[tier].icon + ' ' + TIERS[tier].name + ', a new cocoon. Walk to hatch it.');
     try { if (window._haptic) window._haptic('ok'); } catch(e){}
     return true;
   }
@@ -60380,7 +60380,7 @@ window._lwClaimHerbarium = function(id){
     window._toast('\u2728 Firefly caught ('+p.caught+'/'+TOTAL_PER_SEASON+'): "'+lore+'"');
   }
   function _grantSeasonalPrize(){
-    if (window._toast) window._toast('\ud83c\udf1f Seasonal Hunt COMPLETE \u2014 your prize is in the Book of Secrets.');
+    if (window._toast) window._toast('\ud83c\udf1f Seasonal Hunt COMPLETE, your prize is in the Book of Secrets.');
     // Stub: future pass grants a unique pot / companion / cosmetic.
     // For now, 500 Dew + Legendary mystery box.
     if (window.earnDew) window.earnDew(500, 'hunt_complete');
@@ -63189,7 +63189,7 @@ window._openCompendiumUI=function(){
       if (window._lwConfirm) {
         window._lwConfirm({
           title: 'THE BOOK OF SECRETS',
-          body: 'Everything you discover lives here. Seven tabs \u2014 most fill in as you play.<br><br>' +
+          body: 'Everything you discover lives here. Seven tabs, most fill in as you play.<br><br>' +
                 '\u2728 <b>REPORT</b> \u2014 your morning briefing<br>' +
                 '\u270f\ufe0f <b>ACTIVITY</b> \u2014 a diary of what you\u2019ve done<br>' +
                 '\ud83d\udd2e <b>SECRETS</b> \u2014 synergies, mutations, achievements, and more<br>' +
@@ -64138,7 +64138,7 @@ window._lwCheckSecondBloom=function(){
     data.push(feral);
     localStorage.setItem('fg_ferals',JSON.stringify(data));
     localStorage.setItem('lw_second_bloom_claimed',today);
-    if(window._toast)setTimeout(function(){window._toast('\ud83c\udf3f Second Bloom \u2014 a feral awaits nearby.');},1200);
+    if(window._toast)setTimeout(function(){window._toast('\ud83c\udf3f Second Bloom, a feral awaits nearby.');},1200);
     try{if(window._haptic)_haptic();}catch(e){}
     try{if(typeof gtag!=='undefined')gtag('event','milestone_second_bloom',{lvl:lvl});}catch(e){}
     // Redraw zones so the new feral shows up
@@ -64164,7 +64164,7 @@ window._lwCheckDreamSeed=function(){
     data.push(feral);
     localStorage.setItem('fg_ferals',JSON.stringify(data));
     localStorage.setItem('lw_dream_seed_claimed',today);
-    if(window._toast)setTimeout(function(){window._toast('\ud83c\udf43 Dream Seed \u2014 a feral stirs nearby.');},1800);
+    if(window._toast)setTimeout(function(){window._toast('\ud83c\udf43 Dream Seed, a feral stirs nearby.');},1800);
     try{if(window._haptic)_haptic();}catch(e){}
     try{if(window.FG_Wild&&FG_Wild._drawZoneHexes)FG_Wild._drawZoneHexes();}catch(e){}
     return true;
@@ -65309,7 +65309,7 @@ window.LW_Comp = (function(){
           var _fRec = _fMap[_fz];
           if (!_fRec || _fRec.date !== _today2) continue;
           if (_fRec.count >= 1 && _fRec.count < 3) {
-            out.push({icon:'\ud83c\udf31',title:(3-_fRec.count)+' forage attempt'+(3-_fRec.count===1?'':'s')+' left nearby',body:'You started a foraging attempt on a hex today. Tap it again \u2014 each attempt reveals more info than the last.',priority:36,action:function(){if(window.switchTab)switchTab('wild');}});
+            out.push({icon:'\ud83c\udf31',title:(3-_fRec.count)+' forage attempt'+(3-_fRec.count===1?'':'s')+' left nearby',body:'You started a foraging attempt on a hex today. Tap it again, each attempt reveals more info than the last.',priority:36,action:function(){if(window.switchTab)switchTab('wild');}});
             break;
           }
         }
