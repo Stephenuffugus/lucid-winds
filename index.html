@@ -48153,6 +48153,11 @@ function _showAscendCeremony(p,mark,unlock){
   function _xpFrozen(reason){
     try{
       if(localStorage.getItem('lw_plant_xp_unlocked'))return false;
+      // Mirror the PW_grantXP wrapper: the freeze only engages when a
+      // reason string is present. Falsy/undefined reasons pass through
+      // the wrapper, so this helper must too or grantOnce/grantDaily
+      // divergence will introduce phantom blocks.
+      if(!reason)return false;
       return (reason!=='first_focus_level'&&reason!=='tut_unlock');
     }catch(e){return false;}
   }
