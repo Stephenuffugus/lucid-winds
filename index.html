@@ -3311,6 +3311,8 @@
     .gp-fill.near-bloom{background:linear-gradient(90deg,rgba(122,179,86,.8) 0%,rgba(200,168,78,.9) 60%,rgba(220,180,80,1) 100%);box-shadow:0 0 12px rgba(200,168,75,.35);animation:nearBloomPulse 1.5s ease infinite;}
     @keyframes nearBloomPulse{0%,100%{box-shadow:0 0 8px rgba(200,168,75,.25);}50%{box-shadow:0 0 18px rgba(200,168,75,.55);}}
     @keyframes ascendPulse{0%,100%{box-shadow:0 0 14px rgba(200,168,75,0.4),inset 0 1px 0 rgba(255,220,140,0.3);}50%{box-shadow:0 0 28px rgba(240,208,144,0.85),inset 0 1px 0 rgba(255,220,140,0.5);}}
+    @keyframes mintPipPulse{0%,100%{transform:scale(1);box-shadow:0 0 12px rgba(240,208,144,0.7),0 2px 6px rgba(0,0,0,0.5);}50%{transform:scale(1.15);box-shadow:0 0 22px rgba(255,220,140,0.95),0 2px 8px rgba(0,0,0,0.6);}}
+    @keyframes mintBadgeGlow{0%,100%{filter:drop-shadow(0 0 4px rgba(240,208,144,0));}50%{filter:drop-shadow(0 0 12px rgba(240,208,144,0.7));}}
     .gp-count{font-family:'DM Mono',monospace;font-size:clamp(.42rem,1.2vw,.52rem);color:var(--muted);margin-top:3px;letter-spacing:.02em}
     /* Hash toast — floats up from growth strip */
     .hash-toast{position:absolute;right:clamp(14px,4vw,22px);top:50%;font-family:'Bebas Neue',sans-serif;font-size:clamp(.7rem,2vw,.9rem);color:var(--gold);text-shadow:0 0 10px rgba(200,168,78,.3);pointer-events:none;animation:hashFloat 1.2s cubic-bezier(.25,.46,.45,.94) forwards;z-index:2}
@@ -42190,9 +42192,33 @@ function _updateSunbeamBadge(){
   if(kbsv)kbsv.textContent=bal;
   var pip=kbs.querySelector('.kb-mint-pip');
   if(_readyHashes.length>0){
-    if(!pip){pip=document.createElement('span');pip.className='kb-mint-pip';pip.style.cssText='position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;background:var(--gold);color:#0d100c;font-family:Bebas Neue,sans-serif;font-size:0.55rem;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:3;box-shadow:0 1px 4px rgba(0,0,0,0.4);';kbs.appendChild(pip);}
+    if(!pip){pip=document.createElement('span');pip.className='kb-mint-pip';pip.style.cssText='position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;background:linear-gradient(180deg,#f5dc95,#c8a84b);color:#0d100c;font-family:Bebas Neue,sans-serif;font-size:0.6rem;font-weight:700;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:3;box-shadow:0 0 12px rgba(240,208,144,0.7),0 2px 6px rgba(0,0,0,0.5);animation:mintPipPulse 1.4s ease infinite;';kbs.appendChild(pip);}
     pip.textContent=_readyHashes.length;pip.style.display='flex';
-  }else if(pip){pip.style.display='none';}
+    kbs.style.animation='mintBadgeGlow 2s ease infinite';
+    // First-time player hint — fire when they leave the game and return
+    // to a tab where keeper bar is visible. Don't interrupt active play.
+    try{
+      if(!localStorage.getItem('lw_tut_first_mint_ready')){
+        (function _pollFirstMintHint(attempt){
+          if(attempt>30)return; // give up after ~60s
+          if(document.body.classList.contains('ob-active')||document.body.classList.contains('game-active')||document.getElementById('lw-confirm-modal')){
+            setTimeout(function(){_pollFirstMintHint(attempt+1);},2000);
+            return;
+          }
+          if(_readyHashes.length===0)return; // player already minted
+          localStorage.setItem('lw_tut_first_mint_ready','1');
+          if(window._lwConfirm){
+            window._lwConfirm({
+              title:'\u2600\ufe0f A PLANT IS READY',
+              body:'Your first plant is ready to bloom! Tap the \u2600\ufe0f <b>Sunbeam icon</b> at the top of the screen, then tap <b>MINT</b> to grow your unique plant.<br><br>You minted it with your attention.',
+              yes:'MINT IT NOW',
+              no:'MAYBE LATER'
+            },function(){if(window.openSunbeamModal)openSunbeamModal();},function(){});
+          }
+        })(0);
+      }
+    }catch(e){}
+  }else if(pip){pip.style.display='none';kbs.style.animation='';}
 }
 window._updateSunbeamBadge=_updateSunbeamBadge;
 // ═══ SUNBEAM MODAL — replaces economy info with actionable mint UI ═══
