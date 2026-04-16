@@ -5740,7 +5740,7 @@ window._addSwitchTabHook = function(fn){
   <div id="pw-keeper-bar">
     <!-- Row 1: avatar + name/level + leaderboard toggle -->
     <div class="kb-row1">
-      <div class="kb-avatar" id="kb-avatar" onclick="PW_UI.openCharacter()" style="position:relative;">🌱<span id="kb-class-lvl" style="display:none;position:absolute;bottom:-2px;right:-2px;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.45rem;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,0.5);border:1px solid rgba(13,16,12,0.8);">L1</span></div>
+      <div class="kb-avatar" id="kb-avatar" onclick="PW_UI.openCharacter()" style="position:relative;">🌱<span id="kb-class-lvl" style="display:none;position:absolute;bottom:-2px;right:-2px;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.45rem;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,0.5);border:1px solid rgba(13,16,12,0.8);">L1</span><span id="kb-prestige-mark" style="display:none;position:absolute;top:-4px;left:-4px;min-width:18px;height:18px;padding:0 2px;border-radius:9px;background:linear-gradient(180deg,#f5dc95,#c8a84b);color:#0d100c;font-family:Bebas Neue,sans-serif;font-size:0.55rem;font-weight:700;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(240,208,144,0.6),0 1px 3px rgba(0,0,0,0.5);border:1px solid rgba(13,16,12,0.8);letter-spacing:0.04em;"></span></div>
       <div class="kb-info">
         <div class="kb-name" onclick="PW_UI.openCharacter()" id="kb-name">Keeper</div>
         <div class="kb-xp-wrap" onclick="PW_UI.openCharacter()"><div class="kb-xp-fill" id="kb-xp-fill" style="width:0%;"></div></div>
@@ -47639,6 +47639,16 @@ function updateKeeperBar(){
   var name=document.getElementById('kb-name');if(name)name.textContent=_getDisplayName();
   // Ascend button — shows when L100 hit
   _updateAscendBtn();
+  // Prestige mark on avatar
+  var pMark=document.getElementById('kb-prestige-mark');
+  if(pMark){
+    if(p>0){
+      pMark.textContent=p<=10?('P'+p):((p/1).toFixed(0));
+      pMark.style.display='flex';
+    }else{
+      pMark.style.display='none';
+    }
+  }
   try { if (window._lwRefreshAvatar) window._lwRefreshAvatar(); } catch(e) {}
   var cf=document.getElementById('cs-xp-fill');if(cf)cf.style.width=pct+'%';
   var ct=document.getElementById('cs-xp-text');if(ct)ct.textContent=xp+' / '+r.nextXP+' XP \u2192 Level '+(r.level+1);
