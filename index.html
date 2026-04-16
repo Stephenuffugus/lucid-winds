@@ -51367,6 +51367,41 @@ function render(){
     h+='<div class="ss'+(st.seeds[m].rare?' rare':'')+'" onclick="BP.ts('+m+')"><div class="sd-icon">'+_bpSeedInner+'</div></div>';
   }
   for(var n=st.seeds.length;n<cp;n++)h+='<div class="se"></div>';
+  // ═══ Inline items strip — Phase 6b ═══
+  // Stephen: "extra items theyll collect on their quests go in that
+  // other slot we just made or nee to." The LW_ITEMS button still
+  // exists in the plant panel for the full panel; this strip gives a
+  // visible in-backpack home so the 3-section tutorial narration maps
+  // to real UI. Tapping any tile opens the full items panel.
+  try{
+    var itemH='';
+    var ownedItems=[];
+    if(window.LW_ITEMS&&window.LW_ITEMS.CATALOG){
+      var cat=window.LW_ITEMS.CATALOG;
+      for(var ik in cat){
+        if(!Object.prototype.hasOwnProperty.call(cat,ik))continue;
+        var ct=window.LW_ITEMS.count(ik)||0;
+        if(ct>0)ownedItems.push({key:ik,count:ct,name:cat[ik].name||ik,icon:cat[ik].icon||'🌿'});
+      }
+    }
+    var itemCap=6;
+    itemH+='<div class="bp-items-row" style="grid-column:1/-1;margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">';
+    itemH+='<div style="width:100%;font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);letter-spacing:0.12em;text-align:center;margin-bottom:2px;opacity:0.7;">ITEMS</div>';
+    var show=Math.min(ownedItems.length,itemCap);
+    for(var ii=0;ii<show;ii++){
+      var it=ownedItems[ii];
+      itemH+='<div onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" title="'+(it.name||'')+'" style="width:44px;height:44px;border-radius:8px;border:1px solid rgba(192,122,200,0.3);background:rgba(32,22,38,0.6);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;font-size:1rem;">'+it.icon+'<div style="position:absolute;bottom:-2px;right:-2px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.4rem;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700;">'+it.count+'</div></div>';
+    }
+    // Pad with empty placeholder tiles so the row looks like a slot row
+    for(var ip=show;ip<itemCap;ip++){
+      itemH+='<div onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" style="width:44px;height:44px;border-radius:8px;border:1px dashed rgba(138,145,120,0.2);background:rgba(18,22,16,0.3);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0.35;font-size:0.8rem;color:var(--muted);">·</div>';
+    }
+    if(ownedItems.length>itemCap){
+      itemH+='<div onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" style="width:44px;height:44px;border-radius:8px;border:1px solid rgba(192,122,200,0.45);background:rgba(32,22,38,0.6);display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:DM Mono,monospace;font-size:0.45rem;color:var(--gold);">+'+(ownedItems.length-itemCap)+'</div>';
+    }
+    itemH+='</div>';
+    h+=itemH;
+  }catch(e){}
   se.innerHTML=h;
   // dbb badge is owned by FG_Wild._updateUI — do not overwrite here
   uab();
