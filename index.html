@@ -2868,6 +2868,11 @@
     .nur-seed-sprite svg,.nur-seed-sprite img{display:block;width:100%;height:100%;object-fit:contain;}
     .nur-seed-sprite.nur-seed-mystery::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:1.5px dashed rgba(200,168,75,0.55);pointer-events:none;animation:nurMystSpin 18s linear infinite;}
     .nur-seed-sprite.nur-seed-mystery::after{content:'?';position:absolute;top:0;right:-4px;font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--gold);text-shadow:0 0 6px rgba(200,168,75,0.6);pointer-events:none;}
+    /* Clipping seeds: genome-only, visually distinguished by desaturation +
+       subtle green tint. The ✂️ CLIPPING text label below the seed carries
+       the semantic weight; this filter makes the pile scannable at a glance. */
+    .nur-seed-sprite.nur-seed-clipping img{filter:saturate(0.35) hue-rotate(12deg) brightness(1.05);}
+    .nur-seed-sprite.nur-seed-clipping::after{content:'\u2702\ufe0f';position:absolute;top:-6px;right:-6px;font-size:0.85rem;text-shadow:0 2px 4px rgba(0,0,0,0.65);pointer-events:none;}
     @keyframes nurMystSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
     .nur-empty-slot{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.5rem;padding:1.4rem 0.7rem;background:rgba(13,16,12,0.3);border:1.5px dashed rgba(122,179,86,0.15);border-radius:12px;position:relative;}
     .nur-empty-icon{font-size:2rem;opacity:0.35;}
@@ -27086,7 +27091,7 @@ document.addEventListener('keydown', function(e) {
       if(tg&&tg.name==='Legendary')xpAmt=35;
       if(tg&&tg.name==='Mythic')xpAmt=60;
       if(tg&&tg.name==='Cosmic')xpAmt=120;
-      PW_grantXP(xpAmt,'bloom_'+(tg?tg.name:'Common'));
+      window.PW_grantXP(xpAmt,'bloom_'+(tg?tg.name:'Common'));
       // First-of-its-kind milestones — now prestige-aware via thesaurus.
       // Each prestige cycle re-earns these under a different name, scaled
       // by 80% per tier (P0=100%, P1=80%, P2=64%, etc.). This avoids the
@@ -29831,7 +29836,7 @@ document.addEventListener('keydown', function(e) {
       if (!localStorage.getItem('lw_tut_longpress_v1')) {
         localStorage.setItem('lw_tut_longpress_v1', '1');
         setTimeout(function(){
-          if (window._toast) window._toast('\ud83c\udf3f Long-press any plant card for actions, breed, compost, share, download.');
+          if (window._toast) window._toast('\ud83c\udf3f Long-press any plant card for actions: breed, compost, share, download.');
         }, 600);
       }
     } catch(e) {}
@@ -31389,7 +31394,7 @@ document.addEventListener('keydown', function(e) {
             if (window._lwConfirm) {
               window._lwConfirm({
                 title: 'THE WILD',
-                body: 'This is a real-world map of plants, yours, other keepers\u2019, and wild hexes.<br><br>\ud83c\udf3f <b>Glowing hexes</b> hold ferals you can forage (L4+, within 75m).<br>\ud83c\udf31 <b>Your backpack</b> lets you drop plants into the world, they live there, age there, feed the ecosystem.<br>\ud83d\udca7 <b>Tend strangers\u2019 plants</b> (L5+) within 75m for Dew.<br><br>Walk. The map rewards keepers who move.',
+                body: 'This is a real-world map of plants: yours, other keepers\u2019, and wild hexes.<br><br>\ud83c\udf3f <b>Glowing hexes</b> hold ferals you can forage (L4+, within 75m).<br>\ud83c\udf31 <b>Your backpack</b> lets you drop plants into the world. They live there, age there, feed the ecosystem.<br>\ud83d\udca7 <b>Tend strangers\u2019 plants</b> (L5+) within 75m for Dew.<br><br>Walk. The map rewards keepers who move.',
                 yes: 'I\u2019LL WALK',
                 no: ''
               }, function(){});
@@ -31893,6 +31898,10 @@ document.addEventListener('keydown', function(e) {
   function _seedSpriteHtml(stage, isMystery, seed) {
     if (stage < 0) stage = 0; if (stage > 3) stage = 3;
     var mysteryCls = isMystery ? ' nur-seed-mystery' : '';
+    // Clipping seeds are genome-only (no pot/substrate/aura/companion) — give
+    // them a desaturated + slightly hue-shifted filter so the seed pile reads
+    // as "the plant only" before bloom. Text label reinforces with ✂️ CLIPPING.
+    var clippingCls = (seed && (seed.origin === 'cutting' || seed.origin === 'clipping')) ? ' nur-seed-clipping' : '';
     // NEW: if we have a seed object, render its assigned art image at full
     // size — gives variety so seeds visually differ. Stage progression is
     // optional (commented out for now per Stephen's "single image per
@@ -31900,7 +31909,7 @@ document.addEventListener('keydown', function(e) {
     if (seed) {
       var p = _LW_seedImagePath(seed);
       if (p) {
-        return '<div class="nur-seed-sprite' + mysteryCls + '">' +
+        return '<div class="nur-seed-sprite' + mysteryCls + clippingCls + '">' +
           '<img src="' + p + '" alt="seed" style="width:100%;height:100%;object-fit:contain;display:block;">' +
         '</div>';
       }
@@ -32002,7 +32011,7 @@ document.addEventListener('keydown', function(e) {
       // with the parent. Messaging should reflect that.
       _offPreview = '<div style="margin-top:0.3rem;padding:0.45rem 0.55rem;background:rgba(122,179,86,0.06);border:1px dashed rgba(122,179,86,0.3);border-radius:7px;">' +
         '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:var(--sage);margin-bottom:0.2rem;">\u2702\ufe0f CLIPPING</div>' +
-        '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.4;">Genetic clone of the parent. No pot, substrate, aura, or companion \u2014 just the plant. Water three days to root it.</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.4;">Genetic clone of the parent. No pot, substrate, aura, or companion. Just the plant. Water three days to root it, then breed it with another plant to keep its line going.</div>' +
       '</div>';
     } else {
       _offPreview = '<div style="margin-top:0.3rem;padding:0.4rem 0.55rem;background:rgba(74,124,53,0.05);border:1px dashed rgba(122,179,86,0.3);border-radius:7px;">' +
@@ -32061,12 +32070,12 @@ document.addEventListener('keydown', function(e) {
       if (window._lwConfirm) {
         window._lwConfirm({
           title:'TWO PLANTS TO BREED',
-          body:'Breeding crosses two plants to create a unique chimera seed. You have '+gh.length+' plant'+(gh.length===1?'':'s')+', play games to earn Sunbeams and grow more.',
+          body:'Breeding crosses two plants to create a unique chimera seed. You have '+gh.length+' plant'+(gh.length===1?'':'s')+'. Play games to earn Sunbeams and grow more.',
           yes:'PLAY GAMES',
           no:'LATER'
         },function(){if(window.switchTab)switchTab('game');},function(){});
       } else if (window._toast) {
-        window._toast('Need 2 plants to breed, play games to grow more.');
+        window._toast('Need 2 plants to breed. Play games to grow more.');
       }
       return;
     }
@@ -36687,7 +36696,7 @@ function _collectFeralFromZone(zk, zonePlants) {
                     feralHash = _newHash;
                     info.grade = _newG.name;
                     info.nm = window.getPlantName ? getPlantName(_newHash) : _newHash.slice(0,8);
-                    if (window._toast) window._toast('\ud83c\udf3f Tether Moss took hold, this seed carries rare blood.');
+                    if (window._toast) window._toast('\ud83c\udf3f Tether Moss took hold. This seed carries rare blood.');
                     break;
                   }
                 } catch(eT){}
@@ -37597,7 +37606,7 @@ function _collectFeral(f,mk){
     _toast('🔒 Feral seeds respond to you at Keeper Level 4.');return;
   }
   if(!_uLat){_toast('Need location.');return;}
-  if(_gpsDenied){_toast('\u2316 Demo mode, enable GPS to collect ferals in your area.');return;}
+  if(_gpsDenied){_toast('\u2316 Demo mode. Enable GPS to collect ferals in your area.');return;}
   var d=_dist(_uLat,_uLng,f.lat,f.lng);
   var _fcRange=typeof _getCollectRange==='function'?_getCollectRange():COLLECT_RANGE;
   if(d>_fcRange){_toast('Walk closer! '+Math.round(d*3.281)+' ft away. Need within '+Math.round(_fcRange*3.281)+' ft.');return;}
@@ -38606,7 +38615,7 @@ function _doCrossPollination(wildPlant,matePlant){
     if(_spiderFired&&window._toast)setTimeout(function(){
       window._toast(_spiderFull?'🕷 Web Weaver: Spider doubled the reward.':'🕷 Web Weaver: +50% reward (find a Garden Spider for 2×)');
     },250);
-    if(_twinBloom&&window._toast)setTimeout(function(){window._toast('\ud83c\udf3c Twin Bloom, the ritual doubled your reward.');},500);
+    if(_twinBloom&&window._toast)setTimeout(function(){window._toast('\ud83c\udf3c Twin Bloom. The ritual doubled your reward.');},500);
     _play('match');
     var parentInfo=_buildInfo(wildPlant.hash);
     var mateInfo=_buildInfo(matePlant.hash);
@@ -38945,7 +38954,7 @@ function _allPlantsInZone(zoneKey){
 function _drop(pl){
   closePicker();
   if(!_uLat||!_uLng){_toast('No location.');return;}
-  if(_gpsDenied){_toast('\u2316 Demo mode, enable GPS to plant in the real world.');return;}
+  if(_gpsDenied){_toast('\u2316 Demo mode. Enable GPS to plant in the real world.');return;}
   if((_getMaxDrops()-_drops)<=0)return;
   var wild=_getWild();
   var myUid='';try{var _cu=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_cu)myUid=_cu.uid;}catch(e){}
@@ -41087,7 +41096,7 @@ window._waterHoldEnd = function(btn){
   btn.classList.remove('holding');
   if(elapsed<holdMs){
     var sec=Math.round(holdMs/1000);
-    if(window._toast)window._toast('Released too soon, hold for '+sec+' seconds.');
+    if(window._toast)window._toast('Released too soon. Hold for '+sec+' seconds.');
   }
 };
 
@@ -41252,7 +41261,7 @@ window._hexAction=function(action){
     if(_mCount<50)_msg+=' \u00b7 '+_mCount+'/50 Steward';
     _toast(_msg);
     if(_stewardJustEarned){
-      setTimeout(function(){_toast('\ud83c\udfc5 STEWARD BADGE EARNED! 50 mulches, you\u2019re a friend to every garden.');},1800);
+      setTimeout(function(){_toast('\ud83c\udfc5 STEWARD BADGE EARNED! 50 mulches. You\u2019re a friend to every garden.');},1800);
     }
     // Re-render the hex inspector so the vitality bar updates
     if(_hexInspZone&&window.FG_Wild&&FG_Wild._openHexInspector){
@@ -50319,7 +50328,7 @@ function _mintGiftPlant(){
   }catch(e){}
   if(window.PW_grantXP){
     var _gXp=_giftRarity==='Rare'?12:_giftRarity==='Epic'?25:_giftRarity==='Legendary'?40:10;
-    PW_grantXP(_gXp,'bloom_'+_giftRarity);
+    window.PW_grantXP(_gXp,'bloom_'+_giftRarity);
   }
   if(typeof earnDew==='function')earnDew(10,'plant_mint_gift');
   if(window.LW_Log){
@@ -59045,7 +59054,7 @@ window._lwClaimHerbarium = function(id){
           }
           resolved.score = (resolved.matches + resolved.wildExact) * 2 + resolved.counters + resolved.wilds;
           resolved.success = resolved.score >= resolved.scoreNeeded;
-          if (window._toast) window._toast('\ud83d\udd0d Diviner\u2019s Glass lifts the fog, every close guess counted.');
+          if (window._toast) window._toast('\ud83d\udd0d Diviner\u2019s Glass lifts the fog. Every close guess counted.');
         }
       } catch(eDG){}
       // Only EXACT hits (match / wild-exact) reveal a slot's true element —
@@ -59561,7 +59570,7 @@ window._lwClaimHerbarium = function(id){
     var grade = opts.grades[Math.floor(Math.random()*opts.grades.length)];
     if (!window.LW_FORAGING || !window.LW_FORAGING.openPanel) {
       window._lastDetectedBiome = prevBiome;
-      if (window._toast) window._toast('Foraging unavailable right now, item returned.');
+      if (window._toast) window._toast('Foraging unavailable right now. Item returned.');
       add(opts.itemKey, 1); // refund
       return false;
     }
@@ -60380,7 +60389,7 @@ window._lwClaimHerbarium = function(id){
     window._toast('\u2728 Firefly caught ('+p.caught+'/'+TOTAL_PER_SEASON+'): "'+lore+'"');
   }
   function _grantSeasonalPrize(){
-    if (window._toast) window._toast('\ud83c\udf1f Seasonal Hunt COMPLETE, your prize is in the Book of Secrets.');
+    if (window._toast) window._toast('\ud83c\udf1f Seasonal Hunt COMPLETE. Your prize is in the Book of Secrets.');
     // Stub: future pass grants a unique pot / companion / cosmetic.
     // For now, 500 Dew + Legendary mystery box.
     if (window.earnDew) window.earnDew(500, 'hunt_complete');
