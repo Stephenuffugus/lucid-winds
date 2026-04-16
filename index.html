@@ -29275,9 +29275,6 @@ document.addEventListener('keydown', function(e) {
     // Synergy badge (if any)
     var _syn = window.getSynergy ? window.getSynergy(_t) : null;
     front += '<div class="cf-haiku-zone">';
-    if (_syn) {
-      front += '<div style="text-align:center;margin-bottom:2px;"><span style="font-family:Bebas Neue,sans-serif;font-size:0.38rem;letter-spacing:0.08em;color:var(--gold);opacity:0.7;">\u2726 ' + _syn.name.toUpperCase() + '</span></div>';
-    }
     front += '<div class="cf-haiku" data-h1="' + (haiku.line1||'').replace(/"/g,'&quot;') + '" data-h2="' + (haiku.line2||'').replace(/"/g,'&quot;') + '" data-h3="' + (haiku.line3||'').replace(/"/g,'&quot;') + '">' + haiku.line1 + '<br>' + haiku.line2 + '<br>' + haiku.line3 + '</div></div>';
     front += '<div class="cs-flip-hint">tap to flip \u2192</div>';
     if (plant.revealed) {
@@ -29615,6 +29612,9 @@ document.addEventListener('keydown', function(e) {
     var _rarityName = _tg ? _tg.name : 'Common';
     var _rarityNameEsc = String(_rarityName).replace(/'/g,"\\'");
     html += '<div class="cb-rarity" onclick="event.stopPropagation();if(window._lwShowGradeDetail)_lwShowGradeDetail(\'' + _rarityNameEsc + '\')" style="color:' + sColor + ';cursor:pointer;" title="Tap for details">' + (_tg ? _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon : 'COMMON') + '</div>';
+    if (_syn) {
+      html += '<div style="text-align:center;margin-top:0.3rem;padding:4px 10px;background:rgba(200,168,75,0.06);border:1px solid rgba(200,168,75,0.2);border-radius:8px;cursor:pointer;" onclick="event.stopPropagation();if(window._toast)_toast(\'' + _syn.name + ': ' + (_syn.fx||'').replace(/'/g,"\\'") + '\');"><span style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.08em;color:var(--gold);">\u2726 SYNERGY \u00b7 ' + _syn.name.toUpperCase() + '</span></div>';
+    }
     html += '<div class="cb-nameplate" style="margin-top:0.5rem;text-align:center;cursor:pointer;padding:0.7rem 0.5rem;border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.12),rgba(120,100,40,0.18));border:1.5px solid rgba(200,168,75,0.4);min-height:52px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(200,168,75,0.1);" data-pdh="' + plant.hash + '"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.12em;color:var(--gold);">\u2b21 LINEAGE & DETAILS</div></div>';
     html += '<div class="cb-hash" style="margin-top:0.4rem;padding-top:0.3rem;border-top:1px solid rgba(74,124,53,0.06);">' + plant.hash + '</div>';
     html += '<div class="cb-date" style="margin-top:0.1rem;">Minted ' + (plant.date || '') + dateSuffix + '</div>';
