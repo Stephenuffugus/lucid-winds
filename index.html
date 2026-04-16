@@ -47254,8 +47254,11 @@ function GBW(a){
 
   ms(a,'<span id="BWbpm">90 BPM</span> · <span id="BWsym">8</span>-fold');mm(a);
 
-  // Canvas
-  canvas=document.createElement('canvas');canvas.style.cssText='display:block;width:100%;aspect-ratio:1;max-width:420px;margin:0 auto;border-radius:12px;touch-action:none;background:#0d100c';
+  // Canvas. touch-action:pan-y lets the browser claim vertical scroll
+  // gestures before the canvas sees them, so the Keeper can scroll the
+  // button panel below without fighting the draw handler. Horizontal
+  // strokes still draw; circular/mandala strokes work fine.
+  canvas=document.createElement('canvas');canvas.style.cssText='display:block;width:100%;aspect-ratio:1;max-width:420px;margin:0 auto;border-radius:12px;touch-action:pan-y;background:#0d100c';
   a.appendChild(canvas);ctx=canvas.getContext('2d');
   bufC=document.createElement('canvas');bufX=bufC.getContext('2d');
 
@@ -47344,13 +47347,19 @@ function GBW(a){
     }
   }
   function gtp(e){return e.touches&&e.touches.length?{x:e.touches[0].clientX,y:e.touches[0].clientY}:{x:e.clientX,y:e.clientY}}
-  function onD(e){e.preventDefault();var p=gtp(e);
+  // Draw handlers — do NOT preventDefault on touchstart so vertical
+  // scroll gestures can still reach the page. preventDefault only when
+  // we're already in an active stroke so the browser doesn't scroll
+  // mid-draw.
+  function onD(e){var p=gtp(e);
     if(_bwDrawingPath){var r=canvas.getBoundingClientRect();_bwCustomPath=[{x:(p.x-r.left)/W,y:(p.y-r.top)/H}];return}
     var l=toLocal(p.x,p.y);drawing=true;lastX=l.x;lastY=l.y;strokes++;if(!aCtx)initAudio()}
-  function onM(e){e.preventDefault();var p=gtp(e);
-    if(_bwDrawingPath){var r=canvas.getBoundingClientRect();_bwCustomPath.push({x:(p.x-r.left)/W,y:(p.y-r.top)/H});return}
-    if(!drawing)return;var l=toLocal(p.x,p.y);drawSym(lastX,lastY,l.x,l.y);lastX=l.x;lastY=l.y}
-  function onU(e){e.preventDefault();
+  function onM(e){var p=gtp(e);
+    if(_bwDrawingPath){e.preventDefault();var r=canvas.getBoundingClientRect();_bwCustomPath.push({x:(p.x-r.left)/W,y:(p.y-r.top)/H});return}
+    if(!drawing)return;
+    e.preventDefault();
+    var l=toLocal(p.x,p.y);drawSym(lastX,lastY,l.x,l.y);lastX=l.x;lastY=l.y}
+  function onU(e){
     if(_bwDrawingPath&&_bwCustomPath.length>2){_bwDrawingPath=false;sm('Custom path set! ('+_bwCustomPath.length+' points)');return}
     drawing=false}
   canvas.addEventListener('mousedown',onD);canvas.addEventListener('mousemove',onM);
@@ -47409,8 +47418,9 @@ function GBW(a){
   var _bwPaths=['circle','custom'];
   var _bwPathIdx=0,_bwCustomPath=[],_bwDrawingPath=false,_bwPathT=0;
   var _bwUserColor=null; // null = auto palette
-  // Mirror modes
-  var _bwMirrors=['freehand','mandala','radial','kaleidoscope','horizontal','quad'];
+  // Mirror modes — mandala is the default landing so the canvas looks
+  // alive the moment a stroke is drawn. Freehand is one tap away.
+  var _bwMirrors=['mandala','freehand','radial','kaleidoscope','horizontal','quad'];
   var _bwMirrorIdx=0;
 
   var _bbs='min-height:56px;min-width:clamp(72px,20vw,96px);padding:0.5rem 0.4rem;font-size:clamp(.55rem,1.6vw,.7rem);background:rgba(26,31,23,.9);border:1.5px solid rgba(74,124,53,.25);border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.03);text-align:center';
@@ -47433,12 +47443,23 @@ function GBW(a){
 
   var ctrlDiv=mc(a);
   var _bls='display:block;font-size:clamp(0.32rem,0.9vw,0.38rem);color:var(--muted);margin-top:2px;letter-spacing:0.04em';
+  // Primary controls — always visible. Petals, draw mode, brush. The
+  // stuff a Keeper reaches for every stroke. Mandala is the default
+  // highlighted draw mode since _bwMirrorIdx=0 now points at mandala.
+  // Secondary controls (BPM, music, path, freeze, clear, save) hide in
+  // a collapsible drawer to cut the visual clutter Stephen flagged.
   ctrlDiv.innerHTML='<div style="display:flex;gap:6px;padding:6px 0;flex-wrap:wrap;justify-content:center">'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWS(4)" id="BWs4">4<span style="'+_bls+'">PETALS</span></button>'
     +'<button class="gb gon" style="'+_bbs+'" onclick="_BWS(8)" id="BWs8">8<span style="'+_bls+'">PETALS</span></button>'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWS(12)" id="BWs12">12<span style="'+_bls+'">PETALS</span></button>'
-    +'<button class="gb" style="'+_bbs+';min-width:clamp(100px,28vw,130px)" onclick="_BWMirror()" id="BWmir">✎ FREEHAND<span style="'+_bls+'">DRAW MODE</span></button>'
+    +'<button class="gb gon" style="'+_bbs+';min-width:clamp(100px,28vw,130px)" onclick="_BWMirror()" id="BWmir">✿ MANDALA<span style="'+_bls+'">DRAW MODE</span></button>'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWBrush()" id="BWbr">● 3<span style="'+_bls+'">BRUSH</span></button>'
+    +'</div>'
+    // Accordion toggle + secondary drawer
+    +'<div style="text-align:center;margin:2px 0;">'
+    +'<button class="gb" style="min-height:40px;padding:0.35rem 0.9rem;font-size:0.55rem;letter-spacing:0.1em;background:rgba(26,31,23,.6);border:1px solid rgba(74,124,53,.2);border-radius:8px;" onclick="_BWMore()" id="BWmoreTog">▼ MORE OPTIONS</button>'
+    +'</div>'
+    +'<div id="BWmoreRow" style="display:none;gap:6px;padding:6px 0;flex-wrap:wrap;justify-content:center">'
     +'<button class="gb" style="'+_bbs+';min-width:clamp(88px,24vw,110px)" onclick="_BWPath()" id="BWpath">◯ SPIN<span style="'+_bls+'">PATH</span></button>'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWBpm(-10)">◀ SLOWER<span style="'+_bls+'">BPM</span></button>'
     +'<button class="gb" style="'+_bbs+'" onclick="_BWBpm(10)">FASTER ▶<span style="'+_bls+'">BPM</span></button>'
@@ -47447,6 +47468,13 @@ function GBW(a){
     +'<button class="gb" style="'+_bbs+'" onclick="_BWClear()">✕ CLEAR<span style="'+_bls+'">CANVAS</span></button>'
     +'<button class="gb" style="'+_bbs+';border-color:rgba(200,168,75,0.3);color:var(--gold)" onclick="_BWSave()">💾 SAVE<span style="'+_bls+'">IMAGE</span></button>'
     +'</div>';
+  window._BWMore=function(){
+    var r=document.getElementById('BWmoreRow');if(!r)return;
+    var on=r.style.display==='flex';
+    r.style.display=on?'none':'flex';
+    var tog=document.getElementById('BWmoreTog');
+    if(tog)tog.innerHTML=(on?'▼':'▲')+' MORE OPTIONS';
+  };
 
   window._BWS=function(n){symmetry=n;document.getElementById('BWsym').textContent=n;
     document.getElementById('BWs4').className='gb'+(n===4?' gon':'');
