@@ -31987,7 +31987,16 @@ document.addEventListener('keydown', function(e) {
     }
     var gh = loadGreenhouse();
     if (gh.length < 2) {
-      if (window._toast) window._toast('Need at least 2 plants in your greenhouse to breed.');
+      if (window._lwConfirm) {
+        window._lwConfirm({
+          title:'TWO PLANTS TO BREED',
+          body:'Breeding crosses two plants to create a unique chimera seed. You have '+gh.length+' plant'+(gh.length===1?'':'s')+' \u2014 play games to earn Sunbeams and grow more.',
+          yes:'PLAY GAMES',
+          no:'LATER'
+        },function(){if(window.switchTab)switchTab('game');},function(){});
+      } else if (window._toast) {
+        window._toast('Need 2 plants to breed \u2014 play games to grow more.');
+      }
       return;
     }
     var eligible;
@@ -31997,11 +32006,18 @@ document.addEventListener('keydown', function(e) {
         var immature = gh.filter(function(p) { var bs = FG_Data.getBreedStatus(p); return bs.reason === 'IMMATURE'; });
         var cooling = gh.filter(function(p) { var bs = FG_Data.getBreedStatus(p); return bs.reason === 'COOLDOWN'; });
         var resting = gh.filter(function(p) { var bs = FG_Data.getBreedStatus(p); return bs.reason === 'NO_CHARGES'; });
-        var msg = 'Need 2 breedable plants. You have ' + gh.length + ' total.';
-        if (immature.length) msg += '\n\ud83c\udf31 ' + immature.length + ' still maturing (' + (FG_Data.MATURITY_DAYS || 7) + ' days).';
-        if (cooling.length) msg += '\n\u23f3 ' + cooling.length + ' on breed cooldown.';
-        if (resting.length) msg += '\n\ud83d\udca4 ' + resting.length + ' resting (charges recover over 14 days).';
-        if (window._toast) window._toast(msg);
+        var body = 'You need 2 breedable plants. You have ' + gh.length + ' total, but only ' + eligible.length + ' ready to breed:';
+        if (immature.length) body += '<br>\ud83c\udf31 ' + immature.length + ' still maturing (' + (FG_Data.MATURITY_DAYS || 7) + ' days).';
+        if (cooling.length) body += '<br>\u23f3 ' + cooling.length + ' on breed cooldown.';
+        if (resting.length) body += '<br>\ud83d\udca4 ' + resting.length + ' resting (charges recover over 14 days).';
+        body += '<br><br>Play more games to earn Sunbeams and grow fresh plants.';
+        if (window._lwConfirm) {
+          window._lwConfirm({
+            title:'NO VIABLE PLANTS',body:body,yes:'PLAY GAMES',no:'LATER'
+          },function(){if(window.switchTab)switchTab('game');},function(){});
+        } else if (window._toast) {
+          window._toast(body.replace(/<br\/?>/g,' '));
+        }
         return;
       }
     } else {
@@ -41598,21 +41614,12 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
     },2200); // delay so it lands AFTER the feedback hint
   }
 
-  // "What now?" help card — persistent floating button on greenhouse for
-  // fresh players (until they mint their second plant). Opens a short
-  // tutorial card with the core loop in 5 lines.
+  // NO-OP: the permanent WHAT NOW button lives in the HTML at line 41377.
+  // This legacy function used to create/remove a DIFFERENT button with the
+  // same id, which was destroying the permanent one when ghLen >= 2.
+  // Stephen reported "not seeing the WHAT NOW button" — this was why.
   function _maybeShowWhatNowButton(tab){
-    if(tab!=='greenhouse')return;
-    var ghLen=0;try{ghLen=(JSON.parse(localStorage.getItem('sws_greenhouse')||'[]')||[]).length;}catch(e){}
-    var existing=document.getElementById('lw-whatnow-btn');
-    if(ghLen>=2){if(existing)existing.remove();return;} // hide once they've minted second plant
-    if(existing)return;
-    var btn=document.createElement('button');
-    btn.id='lw-whatnow-btn';
-    btn.innerHTML='💡 What now?';
-    btn.style.cssText='position:fixed;top:calc(env(safe-area-inset-top,0px) + 64px);left:8px;z-index:998;background:linear-gradient(180deg,rgba(200,168,75,0.85),rgba(150,120,40,0.95));color:#0d100c;padding:8px 14px;font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;border-radius:18px;border:1.5px solid rgba(255,220,120,0.6);cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.5);min-height:40px;animation:lwWhatNowPulse 2.5s ease-in-out infinite;';
-    btn.onclick=window._lwOpenWhatNow;
-    document.body.appendChild(btn);
+    // intentionally does nothing; permanent button is always present.
   }
   if(!document.getElementById('lw-whatnow-pulse')){
     var st3=document.createElement('style');st3.id='lw-whatnow-pulse';
@@ -55536,11 +55543,17 @@ function _bosSetTab(tab) {
   _bosStampTabRead(tab);
   var body = document.getElementById('bos-body');
   if (!body) return;
-  if (tab === 'report') body.innerHTML = _bosReportContent();
+  if (tab === 'report' || tab === 'activity') {
+    // Report + Activity combined into one JOURNAL tab — summary + recent entries
+    var _combined = '';
+    try { _combined += _bosReportContent ? _bosReportContent() : ''; } catch(e){}
+    try { _combined += _bosActivityContent ? _bosActivityContent() : ''; } catch(e){}
+    body.innerHTML = _combined || '';
+    _bosTab = 'activity';
+  }
   else if (tab === 'secrets') body.innerHTML = _bosSecretsContent();
   else if (tab === 'events') body.innerHTML = _bosEventsContent();
   else if (tab === 'class') body.innerHTML = _bosClassContent();
-  else if (tab === 'activity') body.innerHTML = _bosActivityContent();
   else if (tab === 'mementos') body.innerHTML = _bosMementosContent();
   else if (tab === 'herbarium') body.innerHTML = _bosHerbariumContent();
   else if (tab === 'items') body.innerHTML = _bosItemsContent();
@@ -62256,11 +62269,10 @@ window._openCompendiumUI=function(){
       '</div>'+
       // Tabs
       '<div style="display:flex;gap:0.25rem;padding:0.4rem 0.6rem 0.5rem;flex-shrink:0;flex-wrap:wrap;">'+
-        '<button class="bos-tab" data-tab="report" onclick="_bosSetTab(\'report\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">REPORT</button>'+
-        '<button class="bos-tab" data-tab="activity" onclick="_bosSetTab(\'activity\')" style="position:relative;flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">ACTIVITY'+ ((window._getBookUnreadCount&&window._getBookUnreadCount()>0)?'<span style="position:absolute;top:4px;right:4px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.38rem;display:inline-flex;align-items:center;justify-content:center;">'+window._getBookUnreadCount()+'</span>':'') +'</button>'+
+        '<button class="bos-tab" data-tab="activity" onclick="_bosSetTab(\'activity\')" style="position:relative;flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">JOURNAL'+ ((window._getBookUnreadCount&&window._getBookUnreadCount()>0)?'<span style="position:absolute;top:4px;right:4px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.38rem;display:inline-flex;align-items:center;justify-content:center;">'+window._getBookUnreadCount()+'</span>':'') +'</button>'+
         '<button class="bos-tab active" data-tab="secrets" onclick="_bosSetTab(\'secrets\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(200,168,75,0.5);background:rgba(200,168,75,0.1);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">SECRETS</button>'+
         '<button class="bos-tab" data-tab="events" onclick="_bosSetTab(\'events\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">EVENTS</button>'+
-        '<button class="bos-tab" data-tab="mementos" onclick="_bosSetTab(\'mementos\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">MEMENTOS</button>'+
+        '<button class="bos-tab" data-tab="mementos" onclick="_bosSetTab(\'mementos\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">COMPANIONS</button>'+
         '<button class="bos-tab" data-tab="herbarium" onclick="_bosSetTab(\'herbarium\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">HERBARIUM</button>'+
         '<button class="bos-tab" data-tab="items" onclick="_bosSetTab(\'items\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">ITEMS</button>'+
         '<button class="bos-tab" data-tab="hunt" onclick="_bosSetTab(\'hunt\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">HUNT</button>'+
