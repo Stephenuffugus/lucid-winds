@@ -27367,9 +27367,14 @@ document.addEventListener('keydown', function(e) {
       } else if (_valColor) {
         _rowAttr = ' style="color:'+_valColor+';"';
       }
+      var _mutSymbol = '';
+      if (row.cat === 'MUTATION' && row.name && row.name !== 'None') {
+        var _mSlug = String(row.name).toLowerCase().replace(/\s+/g,'-');
+        _mutSymbol = '<img src="assets/mutations/mutation-'+_mSlug+'.png" onerror="this.style.display=\'none\'" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:4px;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));">';
+      }
       html += '<div class="dna-cat">' + row.cat + '</div>'
             + '<div class="dna-val' + (tierClass ? ' '+tierClass : '') + '"' + _rowAttr + '>'
-            + row.name + _tierLabel + '</div>';
+            + _mutSymbol + row.name + _tierLabel + '</div>';
     });
     html += '</div></div>';
 
@@ -30865,13 +30870,15 @@ document.addEventListener('keydown', function(e) {
     }
 
     // Chimera gen moved to Enrichment History section below.
-    // Mutation — only if it exists and is notable
+    // Mutation — show the symbol art if available
     if (plant.mutated || (_t && _t.mutationName && _t.mutationName !== 'None')) {
+      var _mName = (_t && _t.mutationName) || 'Unknown';
+      var _mSlug = _mName.toLowerCase().replace(/\s+/g,'-');
       html += '<div class="pdm-section">';
       html += '<div class="pdm-section-title">MUTATION</div>';
-      html += '<div style="display:flex;align-items:center;gap:0.4rem;">';
-      html += '<span style="font-size:1rem;">\ud83e\uddec</span>';
-      html += '<span style="font-family:Playfair Display,serif;font-size:0.82rem;font-style:italic;color:#d8a0a0;">' + ((_t && _t.mutationName) || 'Unknown') + '</span>';
+      html += '<div style="display:flex;align-items:center;gap:0.6rem;">';
+      html += '<img src="assets/mutations/mutation-'+_mSlug+'.png" alt="'+_mName+'" onerror="this.outerHTML=\'<span style=&quot;font-size:1.4rem;&quot;>\ud83e\uddec</span>\'" style="width:56px;height:56px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4));">';
+      html += '<span style="font-family:Playfair Display,serif;font-size:0.95rem;font-style:italic;color:#d8a0a0;">' + _mName + '</span>';
       html += '</div>';
       html += '</div>';
     }
