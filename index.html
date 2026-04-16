@@ -41699,6 +41699,11 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      just to this window; removed when the sunbeam modal opens. */
   body.lw-tut-active.lw-tut-mint-only .greenhouse-plant,
   body.lw-tut-active.lw-tut-mint-only #lw-whatnow-btn{pointer-events:none !important;}
+  /* Step 18: only the newest plant tile is tappable so the Keeper
+     can't stumble into the old carousel. The marked target gets
+     full opacity and pointer-events; everything else dims. */
+  body.lw-tut-active.lw-tut-newplant-only .greenhouse-plant{pointer-events:none !important;opacity:0.45 !important;filter:saturate(0.5);}
+  body.lw-tut-active.lw-tut-newplant-only .greenhouse-plant.lw-tut-newplant-target{pointer-events:auto !important;opacity:1 !important;filter:none;animation:lwTutCardPulse 1.6s ease-in-out infinite;}
   /* Tutorial: lock the keeper-bar sunbeam + dew counters too. Player
      shouldn't be able to open sunbeam/dew modals by tapping the icons
      before the tutorial points at them. Sunbeams unlocks at step 16
@@ -53559,10 +53564,12 @@ _done=function(){
   try{
     document.body.classList.remove(
       'lw-tut-active','lw-tut-limit-actions',
-      'lw-tut-bp-on','lw-tut-bos-on','lw-tut-sb-on','lw-tut-mint-only',
+      'lw-tut-bp-on','lw-tut-bos-on','lw-tut-sb-on','lw-tut-mint-only','lw-tut-newplant-only',
       'lw-tut-carousel-lock','lw-tut-carousel-can-close','lw-tut-carousel-freeze',
       'lw-tut-nav-greenhouse','lw-tut-nav-focus','lw-tut-nav-nursery','lw-tut-nav-wild'
     );
+    // Strip any residual newplant-target class on greenhouse tiles.
+    try{var _nt=document.querySelectorAll('.greenhouse-plant.lw-tut-newplant-target');for(var _nti=0;_nti<_nt.length;_nti++)_nt[_nti].classList.remove('lw-tut-newplant-target');}catch(e){}
   }catch(e){}
   // Orphan arrow cleanup.
   try{var _a=document.getElementById('_lw-tut-arrow');if(_a)_a.remove();}catch(e){}
@@ -54102,7 +54109,9 @@ function _watchMintModal(attempts){
   if(document.getElementById('lw-sunbeam-modal')){
     var kbs=document.getElementById('kb-sunbeams');
     if(kbs)kbs.classList.remove('lw-pulse-hint');
-    try{document.body.classList.remove('lw-tut-mint-only');}catch(e){}
+    // DO NOT remove lw-tut-mint-only here — keep plant cards locked
+    // through step 17 so only BLOOM is reachable. Lock is released in
+    // _watchMintComplete when the second mint actually lands.
     _clear();
     setTimeout(_step17,500);
     return;
@@ -54130,6 +54139,10 @@ function _watchMintComplete(attempts){
   var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
   if(gh.length>=2){
     _clear();
+    // Second plant landed. Release the mint-only lock + sunbeam-on so
+    // step 18 can steer the Keeper to tap the new plant. Sunbeam icon
+    // no longer has a purpose from here through tutorial end.
+    try{document.body.classList.remove('lw-tut-mint-only','lw-tut-sb-on');}catch(e){}
     // Wait for the mint celebration overlay (#pw-win-overlay) to be
     // dismissed before showing step 18, otherwise two messages stack
     // on screen. Player dismisses via VIEW IN GREENHOUSE / KEEP PLAYING.
@@ -54152,6 +54165,18 @@ function _step18(){
   _setStep(18);
   if(window.switchTab)switchTab('greenhouse');
   setTimeout(function(){
+    // Lock every greenhouse tile EXCEPT the newest one. The last tile
+    // in the grid is the just-minted plant; mark it as the tutorial
+    // target. All other tiles dim + pointer-events:none via the
+    // lw-tut-newplant-only body class.
+    try{
+      document.body.classList.add('lw-tut-newplant-only');
+      var tiles=document.querySelectorAll('.greenhouse-plant:not(.undiscovered)');
+      if(tiles.length){
+        for(var ti=0;ti<tiles.length;ti++)tiles[ti].classList.remove('lw-tut-newplant-target');
+        tiles[tiles.length-1].classList.add('lw-tut-newplant-target');
+      }
+    }catch(e){}
     _dialog(
       'Your second plant is here.<br><br>' +
       '<span style="color:var(--gold);">Tap it</span> and flip it over to see what grew.',
@@ -54167,6 +54192,14 @@ function _step18(){
 function _step19(){
   _setStep(19);
   _clear();
+  // Release the step-18 newplant lock — the carousel is now open and
+  // the greenhouse grid is behind it. Target class cleared so no
+  // residual pulse on the tile.
+  try{
+    document.body.classList.remove('lw-tut-newplant-only');
+    var oldTarget=document.querySelector('.greenhouse-plant.lw-tut-newplant-target');
+    if(oldTarget)oldTarget.classList.remove('lw-tut-newplant-target');
+  }catch(e){}
   var breedBtn=null;
   var btns=document.querySelectorAll('.pgm-act-btn');
   for(var i=0;i<btns.length;i++){
