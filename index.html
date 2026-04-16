@@ -3310,6 +3310,7 @@
     .gp-fill{height:100%;background:linear-gradient(90deg,rgba(74,124,53,.6) 0%,rgba(122,179,86,.7) 50%,rgba(200,168,78,.6) 100%);border-radius:3px;transition:width .6s cubic-bezier(.25,.46,.45,.94);box-shadow:0 0 8px rgba(122,179,86,.15)}
     .gp-fill.near-bloom{background:linear-gradient(90deg,rgba(122,179,86,.8) 0%,rgba(200,168,78,.9) 60%,rgba(220,180,80,1) 100%);box-shadow:0 0 12px rgba(200,168,75,.35);animation:nearBloomPulse 1.5s ease infinite;}
     @keyframes nearBloomPulse{0%,100%{box-shadow:0 0 8px rgba(200,168,75,.25);}50%{box-shadow:0 0 18px rgba(200,168,75,.55);}}
+    @keyframes ascendPulse{0%,100%{box-shadow:0 0 14px rgba(200,168,75,0.4),inset 0 1px 0 rgba(255,220,140,0.3);}50%{box-shadow:0 0 28px rgba(240,208,144,0.85),inset 0 1px 0 rgba(255,220,140,0.5);}}
     .gp-count{font-family:'DM Mono',monospace;font-size:clamp(.42rem,1.2vw,.52rem);color:var(--muted);margin-top:3px;letter-spacing:.02em}
     /* Hash toast — floats up from growth strip */
     .hash-toast{position:absolute;right:clamp(14px,4vw,22px);top:50%;font-family:'Bebas Neue',sans-serif;font-size:clamp(.7rem,2vw,.9rem);color:var(--gold);text-shadow:0 0 10px rgba(200,168,78,.3);pointer-events:none;animation:hashFloat 1.2s cubic-bezier(.25,.46,.45,.94) forwards;z-index:2}
@@ -34082,6 +34083,7 @@ document.addEventListener('keydown', function(e) {
       readyHashes: JSON.parse(localStorage.getItem('pw_readyHashes') || '[]'),
       hashBuf: localStorage.getItem('pw_hashBuf') || '',
       hashFilled: parseInt(localStorage.getItem('pw_hashFilled') || '0', 10) || 0,
+      prestige: parseInt(localStorage.getItem('pw_prestige') || '0', 10) || 0,
       lastSync: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
   }
@@ -34168,6 +34170,11 @@ document.addEventListener('keydown', function(e) {
               if (d.readyHashes) localStorage.setItem('pw_readyHashes', JSON.stringify(d.readyHashes));
               if (d.hashBuf) localStorage.setItem('pw_hashBuf', d.hashBuf);
               if (typeof d.hashFilled === 'number') localStorage.setItem('pw_hashFilled', String(d.hashFilled));
+              // Prestige: take MAX to prevent regression on cross-device merges
+              if (typeof d.prestige === 'number') {
+                var _localP = parseInt(localStorage.getItem('pw_prestige') || '0', 10) || 0;
+                localStorage.setItem('pw_prestige', String(Math.max(_localP, d.prestige)));
+              }
             }
           });
           // ── Claim pending rewards (harvest rewards from displaced plants) ──
@@ -47193,59 +47200,32 @@ window.PW_UI=(function(){
 'use strict';
 var _bpOpen=false,_lbOpen=false,_csOpen=false;
 
-// ═══ KEEPER RANK DATA — 50 levels, Wild v3 curve ═══
-var RANKS=[
-  {lvl:1, title:'Seedling',         xp:0},
-  {lvl:2, title:'Sprout',           xp:25},
-  {lvl:3, title:'Young Shoot',      xp:75},
-  {lvl:4, title:'Budding',          xp:175},
-  {lvl:5, title:'Tender',           xp:350},
-  {lvl:6, title:'Grower',           xp:600},
-  {lvl:7, title:'Cultivator',       xp:950},
-  {lvl:8, title:'Forager',          xp:1400},
-  {lvl:9, title:'Gardener',         xp:2000},
-  {lvl:10,title:'Naturalist',       xp:2800},
-  {lvl:11,title:'Herbalist',        xp:3800},
-  {lvl:12,title:'Botanist',         xp:5000},
-  {lvl:13,title:'Warden',           xp:6500},
-  {lvl:14,title:'Rootwalker',       xp:8500},
-  {lvl:15,title:'Grove Tender',     xp:11000},
-  {lvl:16,title:'Pathfinder',       xp:14000},
-  {lvl:17,title:'Sage',             xp:17500},
-  {lvl:18,title:'Archivist',        xp:22000},
-  {lvl:19,title:'Curator',          xp:27500},
-  {lvl:20,title:'Verdant',          xp:34000},
-  {lvl:21,title:'Deeproot',         xp:42000},
-  {lvl:22,title:'Thornkeeper',      xp:52000},
-  {lvl:23,title:'Mossweaver',       xp:65000},
-  {lvl:24,title:'Fernscribe',       xp:80000},
-  {lvl:25,title:'Ancient',          xp:100000},
-  {lvl:26,title:'Canopy Walker',    xp:125000},
-  {lvl:27,title:'Bloomweaver',      xp:155000},
-  {lvl:28,title:'Petalsage',        xp:190000},
-  {lvl:29,title:'Moonleaf',         xp:235000},
-  {lvl:30,title:'Rootkeeper',       xp:290000},
-  {lvl:31,title:'Sunseeker',        xp:355000},
-  {lvl:32,title:'Dewspeaker',       xp:435000},
-  {lvl:33,title:'Grove Elder',      xp:530000},
-  {lvl:34,title:'Lucid Dreamer',    xp:640000},
-  {lvl:35,title:'Patternkeeper',    xp:770000},
-  {lvl:36,title:'Hexsage',          xp:920000},
-  {lvl:37,title:'Cycleward',        xp:1100000},
-  {lvl:38,title:'Chorusweaver',     xp:1310000},
-  {lvl:39,title:'Mycelial Tender',  xp:1555000},
-  {lvl:40,title:'Lineage Keeper',   xp:1840000},
-  {lvl:41,title:'Starbloom',        xp:2170000},
-  {lvl:42,title:'Deepvein',         xp:2550000},
-  {lvl:43,title:'Windsinger',       xp:2985000},
-  {lvl:44,title:'Drifttender',      xp:3480000},
-  {lvl:45,title:'Timekeeper',       xp:4040000},
-  {lvl:46,title:'Ancestral',        xp:4675000},
-  {lvl:47,title:'Mythseeker',       xp:5390000},
-  {lvl:48,title:'Starfield',        xp:6195000},
-  {lvl:49,title:'Infinite Bloom',   xp:7100000},
-  {lvl:50,title:'Lucid Keeper',     xp:8115000}
-];
+// ═══ KEEPER RANK DATA — 100 levels, prestige-enabled curve ═══
+// Curve: levelCost(L) = round(5 * L^1.15). Cumulative XP to L100 ≈ 35,000.
+// Moderate player (350 XP/day) ≈ 3-4 months per prestige cycle.
+// Infinite prestige past P10 → levels display as "Lvl 1.XXXk" continuous.
+var RANKS=(function(){
+  var titles=[
+    'Seedling','Sprout','Young Shoot','Budding','Tender','Grower','Cultivator','Forager','Gardener','Naturalist',
+    'Herbalist','Botanist','Warden','Rootwalker','Grove Tender','Pathfinder','Sage','Archivist','Curator','Verdant',
+    'Deeproot','Thornkeeper','Mossweaver','Fernscribe','Ancient','Canopy Walker','Bloomweaver','Petalsage','Moonleaf','Rootkeeper',
+    'Sunseeker','Dewspeaker','Grove Elder','Lucid Dreamer','Patternkeeper','Hexsage','Cycleward','Chorusweaver','Mycelial Tender','Lineage Keeper',
+    'Starbloom','Deepvein','Windsinger','Drifttender','Timekeeper','Ancestral','Mythseeker','Starfield','Infinite Bloom','Lucid Keeper',
+    'Bloomwright','Budmaster','Seedspeaker','Earthweaver','Greenhand','Lifeweaver','Sap-reader','Rootwhisperer','Leafmender','Thornmender',
+    'Wildkeeper','Fernweaver','Hearthkeeper','Stemsmith','Branching','Flowering','Rooted','Blossoming','Flourishing','Verdancy',
+    'Emerald Sentinel','Jade Keeper','Moss Guardian','Crystal Shepherd','Prism Keeper','Star Keeper','Aurora Keeper','Luminous Tender','Radiant Keeper','Golden Bloom',
+    'Silver Stem','Amethyst Tender','Opal Keeper','Pearl Guardian','Diamond Sentinel','Eternal Bloom','Ageless Root','Timeless Keeper','Everlasting Green','Primordial Tender',
+    'Ancient Keeper','Venerable Sage','Archon Keeper','Titan Keeper','Celestial Tender','Cosmic Bloom','Stellar Keeper','Infinite Root','Transcendent Keeper','Singularity'
+  ];
+  var arr=[],cum=0;
+  for(var i=0;i<100;i++){
+    var L=i+1;
+    var cost=L===1?0:Math.round(5*Math.pow(L,1.15));
+    cum+=cost;
+    arr.push({lvl:L,title:titles[i],xp:cum});
+  }
+  return arr;
+})();
 // Level-gated Wild v3 unlocks. Shown in the level-up celebration card.
 var LEVEL_UNLOCKS={
   2:  {key:'nurseryTab',   title:'Nursery tab',          desc:'Your seeds live here. Water a seed on 3 different days and it blooms into a new plant.'},
@@ -47265,12 +47245,35 @@ var LEVEL_UNLOCKS={
 
 function _getXP(){try{return parseInt(localStorage.getItem('pw_xp')||'0');}catch(e){return 0;}}
 function _saveXP(v){localStorage.setItem('pw_xp',String(v));}
+function _getPrestige(){try{return parseInt(localStorage.getItem('pw_prestige')||'0',10)||0;}catch(e){return 0;}}
+function _savePrestige(v){try{localStorage.setItem('pw_prestige',String(v));}catch(e){}}
+window._getPrestige=_getPrestige;
 function _getRank(xp){
   var r=RANKS[0];
   for(var i=RANKS.length-1;i>=0;i--){if(xp>=RANKS[i].xp){r=RANKS[i];break;}}
   var next=null;for(var j=0;j<RANKS.length;j++){if(RANKS[j].xp>xp){next=RANKS[j];break;}}
   return{level:r.lvl,title:r.title,xp:xp,nextXP:next?next.xp:r.xp+5000,nextTitle:next?next.title:'Legend'};
 }
+// Prestige display: P0 hidden, P1-P10 "Pn", P11+ rolls to "Level 1.XXXk"
+function _getEffectiveLevel(){
+  var xp=_getXP(),r=_getRank(xp),p=_getPrestige();
+  if(p<=10)return{level:r.level,prestige:p,title:r.title,rolled:false};
+  // P11+: roll into continuous "1.XXXk" display
+  var virtualLvl=p*100+r.level;
+  return{level:r.level,prestige:p,title:r.title,rolled:true,virtualLvl:virtualLvl};
+}
+window._getEffectiveLevel=_getEffectiveLevel;
+function _formatLevelDisplay(){
+  var e=_getEffectiveLevel();
+  if(!e.rolled){
+    if(e.prestige>0)return 'P'+e.prestige+' \u00b7 Lvl '+e.level;
+    return 'Lvl '+e.level;
+  }
+  var v=e.virtualLvl;
+  if(v>=1000)return 'Lvl '+(v/1000).toFixed(3).replace(/0+$/,'').replace(/\.$/,'')+'k';
+  return 'Lvl '+v;
+}
+window._formatLevelDisplay=_formatLevelDisplay;
 
 function _getName(){return localStorage.getItem('pw_keeper_name')||'Keeper';}
 function _getFriendCode(){
@@ -47516,10 +47519,9 @@ window._openTitleShop = function(){
 // ═══ XP BAR UPDATE ═══
 function updateKeeperBar(){
   var xp=_getXP(),r=_getRank(xp);
+  var p=_getPrestige();
   var pct=Math.min(100,Math.round(((xp-RANKS[r.level-1].xp)/(r.nextXP-RANKS[r.level-1].xp))*100));
   var fill=document.getElementById('kb-xp-fill');if(fill)fill.style.width=pct+'%';
-  // Rank line — when a class is picked, append "· Forager Apprentice L2" so
-  // the active class + rank is visible without opening the Book of Secrets.
   var rankExtra = '';
   try {
     var _cls = localStorage.getItem('lw_class');
@@ -47529,17 +47531,91 @@ function updateKeeperBar(){
       rankExtra = ' \u00b7 ' + window.LW_CLASSES[_cls].name + ' ' + _cTitles[_cLvl];
     }
   } catch(e) {}
-  var rank=document.getElementById('kb-rank');if(rank)rank.textContent='Lvl '+r.level+' \u00b7 '+r.title+' \u00b7 '+xp+' / '+r.nextXP+' XP'+rankExtra;
+  var lvlDisplay=_formatLevelDisplay();
+  var rank=document.getElementById('kb-rank');if(rank)rank.textContent=lvlDisplay+' \u00b7 '+r.title+' \u00b7 '+xp+' / '+r.nextXP+' XP'+rankExtra;
   var name=document.getElementById('kb-name');if(name)name.textContent=_getDisplayName();
-  // Keep the avatar badge + class icon in sync with every keeper-bar
-  // refresh — fires on class pick, level-up, respec, etc.
+  // Ascend button — shows when L100 hit
+  _updateAscendBtn();
   try { if (window._lwRefreshAvatar) window._lwRefreshAvatar(); } catch(e) {}
-  // Character sheet mirror
   var cf=document.getElementById('cs-xp-fill');if(cf)cf.style.width=pct+'%';
   var ct=document.getElementById('cs-xp-text');if(ct)ct.textContent=xp+' / '+r.nextXP+' XP \u2192 Level '+(r.level+1);
   var cn=document.getElementById('cs-name');if(cn)cn.textContent=_getDisplayName();
-  var ti=document.getElementById('cs-title');if(ti)ti.textContent='\u25c8 '+r.title+' \u00b7 Level '+r.level;
+  var prestigePrefix=p>0?(p<=10?'P'+p+' \u00b7 ':''):'';
+  var ti=document.getElementById('cs-title');if(ti)ti.textContent='\u25c8 '+prestigePrefix+r.title+' \u00b7 '+lvlDisplay;
   var fc=document.getElementById('cs-friend-code');if(fc)fc.textContent=_getFriendCode();
+}
+
+// ═══ ASCEND BUTTON — appears at L100 in keeper bar ═══
+function _updateAscendBtn(){
+  var xp=_getXP(),r=_getRank(xp),p=_getPrestige();
+  var bar=document.getElementById('pw-keeper-bar');if(!bar)return;
+  var btn=document.getElementById('kb-ascend');
+  // Show ascend only at L100 AND prestige < 10 (after P10, ascend still works but is continuous)
+  var shouldShow=r.level>=100;
+  if(shouldShow){
+    if(!btn){
+      btn=document.createElement('button');
+      btn.id='kb-ascend';
+      btn.textContent='\u2728 ASCEND';
+      btn.style.cssText='position:absolute;right:8px;top:50%;transform:translateY(-50%);z-index:10;background:linear-gradient(180deg,rgba(200,168,75,0.4),rgba(120,100,40,0.6));border:2px solid rgba(240,208,144,0.8);color:#f5dc95;font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;padding:8px 14px;border-radius:8px;cursor:pointer;min-height:40px;box-shadow:0 0 14px rgba(200,168,75,0.4),inset 0 1px 0 rgba(255,220,140,0.3);animation:ascendPulse 2s ease infinite;';
+      btn.onclick=function(){if(window._lwAscend)window._lwAscend();};
+      bar.style.position='relative';
+      bar.appendChild(btn);
+    }
+    btn.style.display='flex';
+  }else if(btn){btn.style.display='none';}
+}
+
+// ═══ ASCEND — reset level, increment prestige, show ceremony ═══
+window._lwAscend=function(){
+  var xp=_getXP(),r=_getRank(xp),p=_getPrestige();
+  if(r.level<100){if(window._toast)_toast('Reach Level 100 to Ascend.');return;}
+  if(!window._lwConfirm){return;}
+  var nextP=p+1;
+  var _marks=['','\ud83c\udf31 Sprout Mark','\ud83c\udf3f Sapling Mark','\ud83c\udf43 Vine Mark','\ud83c\udf38 Bloom Mark','\ud83c\udf33 Grove Mark','\ud83c\udf32 Forest Mark','\ud83c\udf34 Wildwood Mark','\u2728 Cosmic Mark','\u2600\ufe0f Eternal Mark','\u2727 Singularity Mark'];
+  var _unlocks=['','Legendary mutations enter your mint pool.','Mythic auras unlocked.','Mythic companions may appear.','+1 greenhouse slot per further prestige.','Wetlands biome unlocked.','+1 wild drop per day.','Volcanic biome unlocked.','Cosmic-tier events enabled.','Cosmic biome unlocked.','Infinite prestige \u2014 level continues past L100.'];
+  var markLabel=nextP<=10?_marks[nextP]:'Eternal Legacy (P'+nextP+')';
+  var unlock=nextP<=10?_unlocks[nextP]:'Your journey continues, Keeper.';
+  window._lwConfirm({
+    title:'\u2728 ASCEND TO P'+nextP,
+    body:'<div style="font-family:Playfair Display,serif;font-style:italic;color:var(--cream);margin-bottom:0.4rem;">Your garden stays. Your companions stay. Only your level resets.</div>'+
+         '<div style="padding:0.5rem;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.3);border-radius:8px;margin-bottom:0.3rem;">'+
+         '<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:4px;">'+markLabel+'</div>'+
+         '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);line-height:1.5;">'+unlock+'</div>'+
+         '</div>'+
+         '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);">Level 100 \u2192 Level 1</div>',
+    yes:'ASCEND',
+    no:'NOT YET'
+  },function(){
+    _saveXP(0);
+    _savePrestige(nextP);
+    _showAscendCeremony(nextP,markLabel,unlock);
+    updateKeeperBar();
+    if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,800);
+    try{if(typeof gtag!=='undefined')gtag('event','ascend',{prestige:nextP});}catch(e){}
+  },function(){});
+};
+
+function _showAscendCeremony(p,mark,unlock){
+  var ov=document.createElement('div');
+  ov.id='ascend-ceremony';
+  ov.style.cssText='position:fixed;inset:0;z-index:100002;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(200,168,75,0.25),rgba(5,8,4,0.98) 70%);backdrop-filter:blur(12px);animation:panelFadeIn 0.5s ease;padding:1.5rem;';
+  var h='<div style="text-align:center;max-width:360px;">';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.2em;margin-bottom:0.3rem;opacity:0;animation:tierFadeIn 0.5s ease 0.3s forwards;">YOU HAVE ASCENDED</div>';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:5rem;color:#f5dc95;line-height:1;text-shadow:0 0 30px rgba(255,220,140,0.6),0 4px 18px rgba(0,0,0,0.6);margin:0.3rem 0;opacity:0;animation:tierFadeIn 0.6s ease 0.6s forwards;">P'+p+'</div>';
+  h+='<div style="font-family:Playfair Display,serif;font-size:1.2rem;font-style:italic;color:var(--cream);margin-bottom:1rem;opacity:0;animation:tierFadeIn 0.5s ease 1.0s forwards;">'+mark+'</div>';
+  h+='<div style="padding:0.7rem 0.9rem;background:rgba(13,16,12,0.7);border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;margin-bottom:1rem;opacity:0;animation:tierFadeIn 0.5s ease 1.4s forwards;">';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--sage);letter-spacing:0.12em;margin-bottom:4px;">UNLOCKED</div>';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);line-height:1.5;">'+unlock+'</div>';
+  h+='</div>';
+  h+='<button onclick="document.getElementById(\'ascend-ceremony\').remove();" style="width:100%;padding:0.7rem;border:1.5px solid rgba(200,168,75,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.35));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;opacity:0;animation:tierFadeIn 0.5s ease 2.0s forwards;">BEGIN A NEW CYCLE</button>';
+  h+='</div>';
+  ov.innerHTML=h;
+  document.body.appendChild(ov);
+  try{if(window._lwSpawnParticles)window._lwSpawnParticles(ov,{rings:3,sparkles:30,leaves:6});}catch(e){}
+  try{if(window._playWin)window._playWin();}catch(e){}
+  try{if(window._haptic)_haptic('bloom');}catch(e){}
+  setTimeout(function(){if(document.getElementById('ascend-ceremony'))document.getElementById('ascend-ceremony').remove();},15000);
 }
 
 // ═══ LW_XP — dedup/cooldown/dwell primitives for new XP reward architecture ═══
