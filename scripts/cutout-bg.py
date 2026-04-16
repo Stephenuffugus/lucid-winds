@@ -4,7 +4,11 @@ cutout-bg.py — knock out cream/white backgrounds from Midjourney sprites
 without shrinking or destroying the artwork.
 
 Usage:
-    python3 scripts/cutout-bg.py SOURCE.png DEST.png
+    python3 scripts/cutout-bg.py SOURCE.png DEST.png [--keep-size]
+
+    --keep-size  Skip the final tight-crop. Canvas stays at source size,
+                 only background pixels are cleared. Use for sprites where
+                 the full source frame matters (mutation symbols, etc.).
 
 How it works:
 1. Flood fill from the 4 corners — only pixels CONNECTED to the corners
@@ -34,7 +38,7 @@ def is_bg(p):
     return brightness >= 215 and chroma <= 30
 
 
-def cutout(src_path, dst_path):
+def cutout(src_path, dst_path, keep_size=False):
     img = Image.open(src_path).convert("RGBA")
     w, h = img.size
     print(f"Source: {w}x{h}")
@@ -99,15 +103,20 @@ def cutout(src_path, dst_path):
                         break
         print(f"Halo pass {_pass+1} softened: {halo}")
 
-    bbox = out.getbbox()
-    trimmed = out.crop(bbox) if bbox else out
+    if keep_size:
+        trimmed = out
+    else:
+        bbox = out.getbbox()
+        trimmed = out.crop(bbox) if bbox else out
     print(f"Final: {trimmed.size}")
     trimmed.save(dst_path, "PNG", optimize=True)
     print(f"Saved: {dst_path}")
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python3 scripts/cutout-bg.py SOURCE.png DEST.png")
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    flags = [a for a in sys.argv[1:] if a.startswith("--")]
+    if len(args) != 2:
+        print("Usage: python3 scripts/cutout-bg.py SOURCE.png DEST.png [--keep-size]")
         sys.exit(1)
-    cutout(sys.argv[1], sys.argv[2])
+    cutout(args[0], args[1], keep_size=("--keep-size" in flags))
