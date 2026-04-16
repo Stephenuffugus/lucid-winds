@@ -41819,12 +41819,12 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
 // Categories: card, puzzle, board, pattern, creative
 // Thumbnails: assets/games/thumbs/{id}.png — 240x240 PNG, dark bg, single iconic element
 var G_CATS=[
+  {key:'creative',label:'CREATIVE',       icon:'\ud83c\udfb5'},
   {key:'card',    label:'CARD GAMES',     icon:'\ud83c\udca1'},
   {key:'puzzle',  label:'PUZZLES',        icon:'\ud83e\udde9'},
   {key:'board',   label:'BOARD GAMES',    icon:'\u265f'},
   {key:'pattern', label:'PATTERN & MEMORY',icon:'\ud83e\udde0'},
-  {key:'dice',    label:'DICE GAMES',     icon:'\ud83c\udfb2'},
-  {key:'creative',label:'CREATIVE',       icon:'\ud83c\udfb5'}
+  {key:'dice',    label:'DICE GAMES',     icon:'\ud83c\udfb2'}
 ];
 var G=[
 {id:'set',n:'Three Sisters',i:'\ud83c\udccf',r:'Tap 3 cards where each trait is ALL same or ALL different.',cat:'card',thumb:'assets/games/thumbs/threesisters.png'},
@@ -47426,8 +47426,8 @@ window.PW_UI=(function(){
 var _bpOpen=false,_lbOpen=false,_csOpen=false;
 
 // ═══ KEEPER RANK DATA — 100 levels, prestige-enabled curve ═══
-// Curve: levelCost(L) = round(8 * L^1.25). Cumulative XP to L100 ≈ 79,000.
-// Moderate player (400 XP/day) ≈ 6.5 months per prestige cycle.
+// Curve: levelCost(L) = round(8 * L^1.25). Cumulative XP to L100 ≈ 113,700.
+// Moderate player (400 XP/day) ≈ 9.5 months per prestige cycle.
 // Infinite prestige past P10 → levels display as "Lvl 1.XXXk" continuous.
 var RANKS=(function(){
   var titles=[
@@ -49705,20 +49705,12 @@ function start(){
   // If no splash, starts immediately
   // Skip button visible early — player should always have an exit
   setTimeout(function(){var sk=document.getElementById('ob-skip');if(sk)sk.classList.add('show');},2000);
-  // Pre-cinematic Simon-says tutorial: if a new keeper, run the pattern
-  // game BEFORE the story plays so their taps feel like they minted the
-  // plant that reveals at the end. Returning players skip it.
+  // Cinematic plays first. Simon-says tutorial fires between beat 3 and
+  // beat 4 (see _showBeat(4)) so the pattern taps lead directly into the
+  // gift plant reveal — "your attention minted this".
   function _startOrTutorial(){
-    if (!localStorage.getItem('lw_onboard_tutorial_done') && typeof _runTutorial === 'function') {
-      _runTutorial(function(){
-        // Tutorial complete → now play the cinematic
-        console.log('[LW] Tutorial done → Beat 1 text playback');
-        _playLines(1);
-      });
-    } else {
-      console.log('[LW] Starting Beat 1 text playback (tutorial already done)');
-      _playLines(1);
-    }
+    console.log('[LW] Starting Beat 1 text playback');
+    _playLines(1);
   }
   var hasSplash=!!document.getElementById('pw-splash');
   if(hasSplash){
@@ -49850,13 +49842,17 @@ function _showBeat(n){
     if(n===4){
       if(window.stopRain)window.stopRain();
       var _sk4=document.getElementById('ob-skip');if(_sk4)_sk4.style.display='none';
-      // Defensive: kill any lingering pre-cinematic tutorial overlay so
-      // it can't cover the auth form. Stephen reported a "black box
-      // covering half the password input".
+      // Defensive: kill any lingering tutorial overlay before we build a
+      // fresh one (in case player reached beat 4 twice via skip).
       var _tutLeft=document.getElementById('ob-tutorial');if(_tutLeft)_tutLeft.remove();
-      // Tutorial moved to pre-cinematic (start() calls _startOrTutorial
-      // before _playLines(1)). Beat 4 just reveals the gift plant now.
-      _renderGiftPlant();
+      // Simon-says tutorial fires HERE — between the story beats and the
+      // gift plant. Taps feel causal: pattern → +Sunbeams → plant reveals.
+      // First-time keepers only; returning players go straight to plant.
+      if(!localStorage.getItem('lw_onboard_tutorial_done')&&typeof _runTutorial==='function'){
+        _runTutorial(function(){ _renderGiftPlant(); });
+      }else{
+        _renderGiftPlant();
+      }
     } else {
       setTimeout(function(){_playLines(n);},800);
     }
@@ -49870,10 +49866,10 @@ function _showBeat(n){
 // On success: +10 Sunbeams awarded with a visible counter animation.
 function _runTutorial(onComplete){
   var SEASONS = [
-    { key:'spring', icon:'\ud83c\udf38', color:'#E8A0BF', label:'Spring' },
-    { key:'summer', icon:'\u2600\ufe0f', color:'#D4A843', label:'Summer' },
-    { key:'autumn', icon:'\ud83c\udf42', color:'#C4763A', label:'Autumn' },
-    { key:'winter', icon:'\u2744\ufe0f',  color:'#A0C4E8', label:'Winter' }
+    { key:'spring', art:'assets/games/simon/spring-btn.png', color:'#E8A0BF', label:'Spring' },
+    { key:'summer', art:'assets/games/simon/summer-btn.png', color:'#D4A843', label:'Summer' },
+    { key:'autumn', art:'assets/games/simon/autumn-btn.png', color:'#C4763A', label:'Autumn' },
+    { key:'winter', art:'assets/games/simon/winter-btn.png', color:'#A0C4E8', label:'Winter' }
   ];
   // 3-element sequence, random order, no repeats so it's unambiguous
   var pool = [0,1,2,3];
@@ -49891,8 +49887,8 @@ function _runTutorial(onComplete){
   h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);margin-bottom:1.4rem;text-align:center;line-height:1.6;max-width:320px;">Watch the sequence, then tap it back.<br>Three steps \u2014 earn your first Sunbeams.</div>';
   h += '<div id="ob-tut-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;width:min(300px,80vw);margin-bottom:1.2rem;">';
   for (var b=0;b<4;b++){
-    h += '<button data-ob-tut="'+b+'" style="aspect-ratio:1;border-radius:22px;border:2.5px solid '+SEASONS[b].color+'55;background:radial-gradient(circle at 40% 35%,rgba(26,36,22,0.95),rgba(5,8,4,0.95));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:all 0.15s ease;opacity:0.85;min-height:110px;-webkit-tap-highlight-color:transparent;">';
-    h += '<div style="font-size:2rem;filter:drop-shadow(0 0 6px '+SEASONS[b].color+'55);">'+SEASONS[b].icon+'</div>';
+    h += '<button data-ob-tut="'+b+'" style="aspect-ratio:1;border-radius:22px;border:2.5px solid '+SEASONS[b].color+'55;background:radial-gradient(circle at 40% 35%,rgba(26,36,22,0.95),rgba(5,8,4,0.95));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;transition:all 0.15s ease;opacity:0.85;min-height:110px;padding:10px;-webkit-tap-highlight-color:transparent;overflow:hidden;">';
+    h += '<img src="'+SEASONS[b].art+'" alt="'+SEASONS[b].label+'" style="width:72%;height:72%;object-fit:contain;filter:drop-shadow(0 0 6px '+SEASONS[b].color+'55);pointer-events:none;">';
     h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:'+SEASONS[b].color+';">'+SEASONS[b].label+'</div>';
     h += '</button>';
   }
@@ -62513,10 +62509,33 @@ window._lwApplyGates=function(){
     if(_origWeather)return _origWeather.apply(this,arguments);
   };
 })();
+// Plant-XP lock — new players don't level up from plant-related grants
+// during tutorial. Prevents power-leveling from gift plant + first mints.
+// Existing players (greenhouse already populated or tut completed) get
+// auto-unlocked on boot so this is invisible to them.
+(function _lwMigratePlantXpLock(){
+  try{
+    if(localStorage.getItem('lw_plant_xp_unlocked'))return;
+    var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+    if(gh.length>0||localStorage.getItem('lw_tut')||localStorage.getItem('lw_onboard_tutorial_done')){
+      localStorage.setItem('lw_plant_xp_unlocked','1');
+    }
+  }catch(e){}
+})();
 // Re-apply gates on level-up, tab switch, and boot.
 if(window.PW_grantXP){
   var _origGrant=window.PW_grantXP;
   window.PW_grantXP=function(amount,reason){
+    // Plant-XP lock: during early tutorial, plant-related grants are
+    // silenced so the player stays at Lv 1 until they win their first
+    // game. Reasons blocked: bloom_*, first_plant, milestone_*.
+    try{
+      if(!localStorage.getItem('lw_plant_xp_unlocked')&&reason){
+        if(reason.indexOf('bloom_')===0||reason==='first_plant'||reason.indexOf('milestone_')===0){
+          return;
+        }
+      }
+    }catch(e){}
     var before=(window.canSee&&window.canSee.currentLevel)?window.canSee.currentLevel():1;
     var ret=_origGrant.apply(this,arguments);
     var after=(window.canSee&&window.canSee.currentLevel)?window.canSee.currentLevel():1;
