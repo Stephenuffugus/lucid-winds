@@ -59178,6 +59178,45 @@ window._lwClaimHerbarium = function(id){
     wrap.style.cssText = 'position:fixed;bottom:'+(160 + Math.random()*80)+'px;left:'+(20 + Math.random()*70)+'%;width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 40% 40%,#fff2a8 0%,#e8c86a 40%,transparent 75%);box-shadow:0 0 18px rgba(232,200,106,0.95);cursor:pointer;z-index:990;animation:fireflyPulse 2.4s ease-in-out infinite, fireflyDrift 14s ease-in-out infinite alternate;';
     document.body.appendChild(wrap);
   }
+
+  // Attach an active firefly to a given DOM anchor if the active firefly's
+  // location matches. The anchor becomes position:relative and the firefly
+  // sits absolutely at its top-right corner.
+  function _placeOnAnchor(locationId, anchor){
+    if (!anchor) return;
+    var existing = anchor.querySelector('.lw-firefly-anchor');
+    if (existing) return;
+    var f = pickActiveFirefly(locationId);
+    if (!f) return;
+    // Ensure anchor is positioned
+    var cs = window.getComputedStyle(anchor);
+    if (cs.position === 'static') anchor.style.position = 'relative';
+    var sprite = document.createElement('div');
+    sprite.className = 'lw-firefly-anchor';
+    sprite.title = 'A firefly. Tap to catch.';
+    sprite.onclick = function(e){ e.stopPropagation(); catchFirefly(f.idx); try { sprite.remove(); } catch(er){} };
+    sprite.style.cssText = 'position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 40% 40%,#fff2a8 0%,#e8c86a 40%,transparent 75%);box-shadow:0 0 14px rgba(232,200,106,0.95);cursor:pointer;z-index:50;animation:fireflyPulse 2.4s ease-in-out infinite;pointer-events:auto;';
+    anchor.appendChild(sprite);
+  }
+
+  // Sweep: look at all known location -> selector mappings and attach
+  // the current firefly to whichever location is active. Called on tab
+  // switch + on a gentle timer so players who linger see it appear.
+  function sweepAnchors(){
+    var MAP = {
+      'keeper-bar':   function(){ return document.getElementById('pw-keeper-bar'); },
+      'backpack-flap':function(){ return document.getElementById('bpi'); },
+      'slot-machine': function(){ return document.getElementById('kb-slots'); },
+      'bos-items':    function(){ return document.querySelector('#bos-body button[data-tab="items"]') || document.querySelector('#bos-body'); },
+      'bos-report':   function(){ return document.querySelector('#bos-body button[data-tab="report"]') || document.querySelector('#bos-body'); },
+      'bos-events':   function(){ return document.querySelector('#bos-body button[data-tab="events"]') || document.querySelector('#bos-body'); },
+      'bos-herbarium':function(){ return document.querySelector('#bos-body button[data-tab="herbarium"]') || document.querySelector('#bos-body'); }
+    };
+    for (var loc in MAP){
+      try { _placeOnAnchor(loc, MAP[loc]()); } catch(e){}
+    }
+  }
+
   function catchByIdx(idx){ return catchFirefly(idx); }
 
   window.LW_HUNT = {
@@ -59185,6 +59224,7 @@ window._lwClaimHerbarium = function(id){
     catchByIdx: catchByIdx, catchFirefly: catchFirefly,
     pickActiveFirefly: pickActiveFirefly, spriteHTML: spriteHTML,
     _placeFloatingFirefly: _placeFloatingFirefly,
+    _placeOnAnchor: _placeOnAnchor, sweepAnchors: sweepAnchors,
     _bosContent: _bosContent
   };
   window.LW_debug = window.LW_debug || {};
@@ -59196,7 +59236,8 @@ window._lwClaimHerbarium = function(id){
   };
   window.LW_debug.huntStatus = function(){ return progress(); };
 
-  // Place a firefly on Wild-tab switch when one is active.
+  // Place a firefly on Wild-tab switch when one is active; sweep non-Wild
+  // anchors so keeper-bar / backpack / BoS fireflies appear too.
   (function(){
     var prev = window.switchTab;
     if (typeof prev !== 'function') return;
@@ -59207,10 +59248,15 @@ window._lwClaimHerbarium = function(id){
         else {
           var f = document.getElementById('lw-firefly-float'); if (f) f.remove();
         }
+        setTimeout(sweepAnchors, 1000);
       } catch(e){}
       return r;
     };
   })();
+  // Gentle timer — re-sweep every 45s so fireflies appear when the player
+  // opens BoS / backpack / etc. after the fact.
+  setTimeout(function(){ try { sweepAnchors(); } catch(e){} }, 4000);
+  setInterval(function(){ try { sweepAnchors(); } catch(e){} }, 45000);
 })();
 
 // ═══ LW_SIM — power-test harness for boxes, contests, forage, economy ═══
