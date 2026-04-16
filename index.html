@@ -49473,11 +49473,154 @@ function _showBeat(n){
 
     if(n===4){
       if(window.stopRain)window.stopRain();
-      _renderGiftPlant();
+      // First-active moment inserted before the gift-plant reveal. If the
+      // player hasn't done the pattern tutorial yet, detour through it.
+      // It grants +10 Sunbeams visibly so the gift plant feels earned
+      // rather than handed to them.
+      if (!localStorage.getItem('lw_onboard_tutorial_done')) {
+        _runTutorial(function(){ _renderGiftPlant(); });
+      } else {
+        _renderGiftPlant();
+      }
     } else {
       setTimeout(function(){_playLines(n);},800);
     }
   },1800);
+}
+
+// ─── ONBOARDING FIRST-ACTIVE MOMENT ───
+// A 20-30 second "repeat the pattern" tutorial. Teaches: attention
+// becomes Sunbeams, Sunbeams mint plants. Four seasonal buttons;
+// sequence flashes, player echoes it. Infinite retry, no fail state.
+// On success: +10 Sunbeams awarded with a visible counter animation.
+function _runTutorial(onComplete){
+  var SEASONS = [
+    { key:'spring', icon:'\ud83c\udf38', color:'#E8A0BF', label:'Spring' },
+    { key:'summer', icon:'\u2600\ufe0f', color:'#D4A843', label:'Summer' },
+    { key:'autumn', icon:'\ud83c\udf42', color:'#C4763A', label:'Autumn' },
+    { key:'winter', icon:'\u2744\ufe0f',  color:'#A0C4E8', label:'Winter' }
+  ];
+  // 3-element sequence, random order, no repeats so it's unambiguous
+  var pool = [0,1,2,3];
+  var seq = [];
+  for (var i=0;i<3;i++){ var ix = Math.floor(Math.random()*pool.length); seq.push(pool.splice(ix,1)[0]); }
+  var playerInput = [];
+  var accepting = false;
+
+  var host = document.getElementById('pw-onboard') || document.body;
+  var ov = document.createElement('div');
+  ov.id = 'ob-tutorial';
+  ov.style.cssText = 'position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.2rem;background:radial-gradient(ellipse at 50% 30%,rgba(26,36,22,0.92) 0%,rgba(5,8,4,0.98) 75%);animation:panelFadeIn 0.45s ease;';
+  var h = '';
+  h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.1rem;color:var(--cream);margin-bottom:0.4rem;text-align:center;">Attention makes light.</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);margin-bottom:1.4rem;text-align:center;line-height:1.6;max-width:320px;">Watch the sequence, then tap it back.<br>Three steps \u2014 earn your first Sunbeams.</div>';
+  h += '<div id="ob-tut-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;width:min(300px,80vw);margin-bottom:1.2rem;">';
+  for (var b=0;b<4;b++){
+    h += '<button data-ob-tut="'+b+'" style="aspect-ratio:1;border-radius:22px;border:2.5px solid '+SEASONS[b].color+'55;background:radial-gradient(circle at 40% 35%,rgba(26,36,22,0.95),rgba(5,8,4,0.95));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:all 0.15s ease;opacity:0.85;min-height:110px;-webkit-tap-highlight-color:transparent;">';
+    h += '<div style="font-size:2rem;filter:drop-shadow(0 0 6px '+SEASONS[b].color+'55);">'+SEASONS[b].icon+'</div>';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:'+SEASONS[b].color+';">'+SEASONS[b].label+'</div>';
+    h += '</button>';
+  }
+  h += '</div>';
+  h += '<div id="ob-tut-status" style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--sage);min-height:1.2rem;text-align:center;letter-spacing:0.06em;">Watch closely\u2026</div>';
+  // Progress pips
+  h += '<div id="ob-tut-pips" style="display:flex;gap:10px;margin-top:0.8rem;">';
+  for (var p=0;p<3;p++) h += '<div class="ob-tut-pip" data-pip="'+p+'" style="width:10px;height:10px;border-radius:50%;background:rgba(122,179,86,0.15);border:1px solid rgba(122,179,86,0.25);"></div>';
+  h += '</div>';
+  ov.innerHTML = h;
+  host.appendChild(ov);
+
+  function flashOne(idx, cb){
+    var btn = ov.querySelector('[data-ob-tut="'+idx+'"]'); if(!btn) return cb&&cb();
+    var color = SEASONS[idx].color;
+    btn.style.borderColor = color;
+    btn.style.opacity = '1';
+    btn.style.boxShadow = '0 0 30px '+color+', inset 0 0 16px '+color+'55';
+    btn.style.transform = 'scale(1.07)';
+    try { if (window._haptic) window._haptic('tap'); } catch(e){}
+    setTimeout(function(){
+      btn.style.borderColor = color + '55';
+      btn.style.opacity = '0.85';
+      btn.style.boxShadow = '';
+      btn.style.transform = '';
+      if (cb) setTimeout(cb, 220);
+    }, 520);
+  }
+  function playSequence(){
+    accepting = false;
+    document.getElementById('ob-tut-status').textContent = 'Watch closely\u2026';
+    var i = 0;
+    function step(){
+      if (i >= seq.length){
+        document.getElementById('ob-tut-status').textContent = 'Your turn.';
+        document.getElementById('ob-tut-status').style.color = 'var(--gold)';
+        accepting = true;
+        playerInput = [];
+        return;
+      }
+      flashOne(seq[i], function(){ i++; step(); });
+    }
+    setTimeout(step, 600);
+  }
+  function onTap(ev){
+    if (!accepting) return;
+    var btn = ev.currentTarget;
+    var idx = parseInt(btn.getAttribute('data-ob-tut'), 10);
+    // Flash the tapped button briefly for feedback
+    var color = SEASONS[idx].color;
+    btn.style.boxShadow = '0 0 20px '+color;
+    btn.style.transform = 'scale(1.07)';
+    try { if (window._haptic) window._haptic('tap'); } catch(e){}
+    setTimeout(function(){ btn.style.boxShadow=''; btn.style.transform=''; }, 250);
+    var pos = playerInput.length;
+    if (idx !== seq[pos]){
+      // Miss — gentle reset, no fail state
+      accepting = false;
+      document.getElementById('ob-tut-status').textContent = 'Not quite \u2014 try again.';
+      document.getElementById('ob-tut-status').style.color = '#c07060';
+      // Reset pips
+      var pips = ov.querySelectorAll('.ob-tut-pip');
+      for (var pi=0;pi<pips.length;pi++){ pips[pi].style.background='rgba(122,179,86,0.15)'; pips[pi].style.borderColor='rgba(122,179,86,0.25)'; }
+      setTimeout(playSequence, 900);
+      return;
+    }
+    // Correct tap — light the pip
+    playerInput.push(idx);
+    var pip = ov.querySelector('.ob-tut-pip[data-pip="'+pos+'"]');
+    if (pip){ pip.style.background = SEASONS[idx].color; pip.style.borderColor = SEASONS[idx].color; }
+    if (playerInput.length === seq.length){ accepting = false; win(); }
+  }
+  function win(){
+    document.getElementById('ob-tut-status').textContent = '\u2728 Light gathers.';
+    document.getElementById('ob-tut-status').style.color = 'var(--gold)';
+    try { if (window._haptic) window._haptic('bloom'); } catch(e){}
+    try { if (window._play) window._play('win'); } catch(e){}
+    // Grant 10 Sunbeams silently first
+    try { if (window.earnHashes) window.earnHashes(10); } catch(e){}
+    try { localStorage.setItem('lw_onboard_tutorial_done', '1'); } catch(e){}
+    // Visible reward — a +10 Sunbeams flare
+    var flare = document.createElement('div');
+    flare.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:Bebas Neue,sans-serif;font-size:2.2rem;letter-spacing:0.1em;color:var(--gold);text-shadow:0 0 20px rgba(200,168,75,0.8),0 0 40px rgba(200,168,75,0.4);opacity:0;transition:opacity 0.5s ease,transform 1s ease;z-index:20;pointer-events:none;';
+    flare.textContent = '+10 \u2600\ufe0f SUNBEAMS';
+    ov.appendChild(flare);
+    setTimeout(function(){ flare.style.opacity = '1'; flare.style.transform = 'translate(-50%,-120%)'; }, 50);
+    // After celebration, fade out overlay and continue
+    setTimeout(function(){
+      ov.style.transition = 'opacity 0.7s ease';
+      ov.style.opacity = '0';
+      setTimeout(function(){
+        try { ov.remove(); } catch(e){}
+        try { if (typeof gtag!=='undefined') gtag('event','onboard_tutorial_win'); } catch(e){}
+        if (typeof onComplete === 'function') onComplete();
+      }, 750);
+    }, 1600);
+  }
+  // Wire button taps
+  var btns = ov.querySelectorAll('[data-ob-tut]');
+  for (var bi=0;bi<btns.length;bi++) btns[bi].addEventListener('click', onTap);
+  try { if (typeof gtag!=='undefined') gtag('event','onboard_tutorial_start'); } catch(e){}
+  // Start the sequence after a short beat so the user sees the UI first
+  setTimeout(playSequence, 1400);
 }
 
 function _renderGiftPlant(){
