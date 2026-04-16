@@ -27021,13 +27021,15 @@ document.addEventListener('keydown', function(e) {
     // Grant Keeper XP for blooming
     if(window.PW_grantXP){
       var tg=window.getTerraGrade(traits);
-      var xpAmt=10;
-      if(tg&&tg.name==='Uncommon')xpAmt=15;
-      if(tg&&tg.name==='Rare')xpAmt=20;
-      if(tg&&tg.name==='Epic')xpAmt=25;
-      if(tg&&tg.name==='Legendary')xpAmt=40;
+      // Bloom XP rescaled for the new 100-level curve (was 8M, now 114K cum.)
+      // Old values were 7x too big — a Common bloom was giving a full level.
+      var xpAmt=3;
+      if(tg&&tg.name==='Uncommon')xpAmt=5;
+      if(tg&&tg.name==='Rare')xpAmt=10;
+      if(tg&&tg.name==='Epic')xpAmt=18;
+      if(tg&&tg.name==='Legendary')xpAmt=35;
       if(tg&&tg.name==='Mythic')xpAmt=60;
-      if(tg&&tg.name==='Cosmic')xpAmt=100;
+      if(tg&&tg.name==='Cosmic')xpAmt=120;
       PW_grantXP(xpAmt,'bloom_'+(tg?tg.name:'Common'));
       // First-of-its-kind milestones — now prestige-aware via thesaurus.
       // Each prestige cycle re-earns these under a different name, scaled
@@ -27041,18 +27043,20 @@ document.addEventListener('keydown', function(e) {
         // Thesaurus-variant names per prestige tier
         var _firstPlantNames=['First Plant','First Awakening','First Dawning','First Emergence','First Rising','First Kindling','First Stirring','First Blossoming','First Unfolding','First Flourishing','First Rebirth'];
         var _firstPlantName=_firstPlantNames[Math.min(_mP,_firstPlantNames.length-1)];
+        // Milestones rescaled for 114K-cumulative L100 curve.
+        // Each milestone targets ~1-2 levels of jump at the level it triggers.
         var _milestoneTable={
-          first_plant: 50,
-          first_Uncommon: 25,
-          first_Rare: 75,
-          first_Epic: 150,
-          first_Legendary: 300,
-          first_Mythic: 500,
-          first_Cosmic: 1000,
-          collection_5: 25,
-          collection_10: 50,
-          collection_25: 150,
-          collection_50: 400
+          first_plant: 15,
+          first_Uncommon: 8,
+          first_Rare: 25,
+          first_Epic: 50,
+          first_Legendary: 100,
+          first_Mythic: 200,
+          first_Cosmic: 400,
+          collection_5: 10,
+          collection_10: 20,
+          collection_25: 60,
+          collection_50: 150
         };
         // Prestige-scoped keys: "first_plant_p0", "first_plant_p1", etc.
         var _mpK=function(base){return base+'_p'+_mP;};
@@ -28620,7 +28624,8 @@ document.addEventListener('keydown', function(e) {
     ledger.earned = (ledger.earned || 0) + amount;
     _secureSet(HASH_LEDGER_KEY, ledger);
     if (window._LW_DEBUG) console.log('[earnHashes] ledger.earned now:', ledger.earned);
-    if(window.PW_grantXP) PW_grantXP(amount * 2, 'dew_drop');
+    // Game XP: 1 XP per sunbeam earned (was 2x). Rebalanced for new 114K curve.
+    if(window.PW_grantXP) PW_grantXP(amount, 'dew_drop');
     if(window._accumulateHash) window._accumulateHash(amount);
     _updateGameDew();
   }
@@ -64293,15 +64298,16 @@ window.LW_Comp = (function(){
 // One-shot XP grants that guide new players through feature unlocks.
 // Each quest fires exactly once, persisted in localStorage.
 (function(){
+  // Quest XP rescaled for 114K-cumulative curve (7x smaller rewards).
   var QUESTS = [
-    {id:'q_first_game',    xp:25,  flag:'lw_quest_first_game',    title:'First Victory', body:'You won your first game!'},
-    {id:'q_mint_second',   xp:60,  flag:'lw_quest_mint_second',   title:'Second Bloom', body:'Your collection is growing.'},
-    {id:'q_first_breed',   xp:50,  flag:'lw_quest_first_breed',   title:'First Chimera', body:'You created new life from two plants.'},
-    {id:'q_first_wild',    xp:60,  flag:'lw_quest_first_wild',    title:'Into the Wild', body:'Your plant now lives in the real world.'},
-    {id:'q_equip_comp',    xp:30,  flag:'lw_quest_equip_comp',    title:'Companion Bond', body:'A creature walks with you now.'},
-    {id:'q_five_plants',   xp:40,  flag:'lw_quest_five_plants',   title:'Growing Garden', body:'Five unique specimens in your greenhouse.'},
-    {id:'q_first_feral',   xp:50,  flag:'lw_quest_first_feral',   title:'Feral Found', body:'A wild seed — yours to nurture.'},
-    {id:'q_choose_class',  xp:80,  flag:'lw_quest_choose_class',  title:'Path Chosen', body:'Your keeper class shapes everything ahead.'}
+    {id:'q_first_game',    xp:8,   flag:'lw_quest_first_game',    title:'First Victory', body:'You won your first game!'},
+    {id:'q_mint_second',   xp:20,  flag:'lw_quest_mint_second',   title:'Second Bloom', body:'Your collection is growing.'},
+    {id:'q_first_breed',   xp:15,  flag:'lw_quest_first_breed',   title:'First Chimera', body:'You created new life from two plants.'},
+    {id:'q_first_wild',    xp:20,  flag:'lw_quest_first_wild',    title:'Into the Wild', body:'Your plant now lives in the real world.'},
+    {id:'q_equip_comp',    xp:10,  flag:'lw_quest_equip_comp',    title:'Companion Bond', body:'A creature walks with you now.'},
+    {id:'q_five_plants',   xp:12,  flag:'lw_quest_five_plants',   title:'Growing Garden', body:'Five unique specimens in your greenhouse.'},
+    {id:'q_first_feral',   xp:15,  flag:'lw_quest_first_feral',   title:'Feral Found', body:'A wild seed — yours to nurture.'},
+    {id:'q_choose_class',  xp:25,  flag:'lw_quest_choose_class',  title:'Path Chosen', body:'Your keeper class shapes everything ahead.'}
   ];
 
   function _getQuestFlag(q) {
