@@ -3349,7 +3349,7 @@
        on short viewports. -webkit-overflow-scrolling keeps momentum on
        iOS. touch-action:pan-y means child canvases that set their own
        touch-action:none still claim gestures from their surface. */
-    #fg-ag{display:none;flex-direction:column;padding:0 0 calc(var(--nav-h,58px) + var(--sb,0px)) 0;touch-action:pan-y;position:relative;z-index:1;max-height:calc(100vh - 58px);overflow-y:auto;-webkit-overflow-scrolling:touch;}
+    #fg-ag{display:none;flex-direction:column;padding:0 0 calc(var(--nav-h,58px) + var(--sb,0px)) 0;touch-action:pan-y;position:relative;z-index:1;max-height:calc(100vh - 58px);max-width:100vw;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;box-sizing:border-box;}
     /* Game backgrounds: clean solid by default. Art available as cosmetic toggle. */
     #fg-ag.on{display:flex}
     #fg-ag.sol{background:radial-gradient(ellipse at 50% 30%,rgba(18,32,14,.95) 0%,rgba(8,14,6,.98) 60%,rgba(4,8,3,1) 100%)}
@@ -3453,7 +3453,7 @@
        PRIORITY 2: SUDOKU
        ══════════════════════════════════════════════════════════════════════ */
 
-    .ug{display:grid;grid-template-columns:repeat(9,1fr);gap:0;width:min(92vw,420px);max-width:100%;box-sizing:border-box;margin:0 auto;border:2px solid rgba(74,124,53,.3);border-radius:clamp(6px,1.5vw,10px);background:rgba(13,16,12,.35);box-shadow:0 4px 24px rgba(0,0,0,.28),inset 0 0 40px rgba(74,124,53,.015);overflow:hidden;animation:boardFadeIn .4s cubic-bezier(.25,.46,.45,.94)}
+    .ug{display:grid;grid-template-columns:repeat(9,1fr);gap:0;width:min(calc(100vw - 24px),420px);max-width:calc(100vw - 24px);box-sizing:border-box;margin:0 auto;border:2px solid rgba(74,124,53,.3);border-radius:clamp(6px,1.5vw,10px);background:rgba(13,16,12,.35);box-shadow:0 4px 24px rgba(0,0,0,.28),inset 0 0 40px rgba(74,124,53,.015);overflow:hidden;animation:boardFadeIn .4s cubic-bezier(.25,.46,.45,.94)}
     .uc{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:clamp(1.65rem,5vw,2.3rem);font-weight:700;letter-spacing:.02em;cursor:pointer;border:.5px solid rgba(74,124,53,.08);color:var(--cream);-webkit-tap-highlight-color:transparent;background:rgba(26,31,23,.45);transition:background .2s ease,color .2s ease,box-shadow .2s ease;position:relative}
     .uc::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 35%,rgba(122,179,86,.025) 0%,transparent 65%);pointer-events:none}
     .uc:active{background:rgba(74,124,53,.12)}
@@ -3465,7 +3465,7 @@
     .uc:nth-child(n+19):nth-child(-n+27){border-bottom:2px solid rgba(74,124,53,.25)}
     .uc:nth-child(n+46):nth-child(-n+54){border-bottom:2px solid rgba(74,124,53,.25)}
     /* Number pad */
-    .up{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(4px,1.5vw,8px);width:min(92vw,420px);max-width:100%;box-sizing:border-box;margin:clamp(8px,2.5vw,14px) auto 0;padding:clamp(6px,2vw,10px)}
+    .up{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(4px,1.5vw,8px);width:min(calc(100vw - 24px),420px);max-width:calc(100vw - 24px);box-sizing:border-box;margin:clamp(8px,2.5vw,14px) auto 0;padding:clamp(6px,2vw,10px)}
     .upb{aspect-ratio:1.15;border-radius:clamp(8px,2vw,14px);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:clamp(1.1rem,3vw,1.4rem);cursor:pointer;background:rgba(26,31,23,.65);border:1.5px solid rgba(74,124,53,.18);color:var(--cream);-webkit-tap-highlight-color:transparent;min-height:48px;transition:all .15s cubic-bezier(.25,.46,.45,.94);box-shadow:0 2px 8px rgba(0,0,0,.18),inset 0 1px 0 rgba(122,179,86,.03)}
     .upb:active{background:rgba(74,124,53,.22);transform:scale(.93);box-shadow:0 0 10px rgba(74,124,53,.1);transition-duration:.06s}
     /* ══════════════════════════════════════════════════════════════════════
