@@ -49393,18 +49393,17 @@ function _playLines(beat){
   var lines=document.querySelectorAll('.ob-line[data-beat="'+beat+'"]');
   if(!lines.length){_advanceBeat();return;}
   var i=0;
+  // Cinematic compressed: was 3000ms/line + 2500ms tail. Now 1800ms/line
+  // + 1200ms tail. Trims ~60% off the cinematic without losing the feel.
   function showNext(){
     if(i>=lines.length){
-      // Hold last line, then advance
-      _lineTimer=setTimeout(function(){_advanceBeat();},2500);
+      _lineTimer=setTimeout(function(){_advanceBeat();},1200);
       return;
     }
-    // Fade out previous
     if(i>0){lines[i-1].classList.remove('on');lines[i-1].classList.add('off');}
-    // Fade in current
     lines[i].classList.add('on');lines[i].classList.remove('off');
     i++;
-    _lineTimer=setTimeout(showNext,3000);
+    _lineTimer=setTimeout(showNext,1800);
   }
   showNext();
 }
