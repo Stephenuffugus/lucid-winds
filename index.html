@@ -50384,6 +50384,19 @@ function _mintGiftPlant(){
 
 function finish(){
   _markOnboarded();
+  // Set the suppress flag + clear stale first-game flags BEFORE render.
+  // Previously the flag was set AFTER renderGreenhouse, so the legacy
+  // "WELCOME TO THE GREENHOUSE" modal fired 9s into the first render
+  // and stacked on top of the Phase 2 tutorial. Also device-local
+  // first-focus flags from a previous install could block the First
+  // Focus reward from firing for a fresh account on the same device.
+  try{
+    localStorage.setItem('lw_tut_tap_plant_v1','1');
+    localStorage.removeItem('lw_first_focus_done');
+    localStorage.removeItem('lw_first_game_bonus_given');
+    localStorage.removeItem('lw_first_game_won');
+    localStorage.removeItem('lw_quest_first_game');
+  }catch(e){}
   var el=document.getElementById('pw-onboard');
   if(el){el.style.display='none';el.style.pointerEvents='none';el.classList.remove('active');}document.body.classList.remove('ob-active');
   var dots=document.getElementById('ob-dots');if(dots)dots.style.display='none';
@@ -50393,10 +50406,6 @@ function finish(){
   if(window.renderGreenhouse)renderGreenhouse();
   if(window.updateDashboard)updateDashboard();
   if(window.switchTab)switchTab('greenhouse');
-  // Suppress the legacy "WELCOME TO THE GREENHOUSE" modal + toast that
-  // would otherwise fire 2s/9s into the first greenhouse render. Those
-  // pre-date the Phase 2 walkthrough and now overlap with it.
-  try{localStorage.setItem('lw_tut_tap_plant_v1','1');}catch(e){}
   // Fire the Phase 2 walkthrough once the greenhouse has painted.
   // PW_Tutorial.start() bails if the player isn't on step 0 or already
   // has >1 plant, so it's safe to call unconditionally.
@@ -53220,9 +53229,10 @@ function _step1(retries){
   },600);
 }
 
-// ═══ STEP 1b: fade in overlay + spotlight the plant ═══
+// ═══ STEP 1b: fade in overlay + spotlight the plant + arrow cue ═══
 // Overlay click is NO-OP so tapping dark area doesn't dismiss or fall
-// through (the old behavior let the player tap through to the greenhouse).
+// through. Stephen wanted a mid-screen arrow pointing LEFT at the plant
+// so the visual path is obvious without more text.
 function _step1b(){
   _setStep(1);
   var cards=document.querySelectorAll('.greenhouse-plant:not(.undiscovered)');
@@ -53231,8 +53241,9 @@ function _step1b(){
   _overlay(function(){/* no-op — overlay is a capture zone only */});
   _spotlight(firstCard);
   _dialog(
+    '<div style="font-size:3.2rem;margin-bottom:0.4rem;animation:_whPulse 1.5s ease infinite;color:var(--gold);line-height:1;">\u2190</div>' +
     'This is your <span style="color:var(--gold);">first plant</span>.<br>Touch it to learn more.',
-    null,null,'top');
+    null,null,'center');
   var origClick=firstCard.onclick;
   firstCard.onclick=function(e){
     _clear();firstCard.style.zIndex='';firstCard.onclick=origClick;
@@ -53253,7 +53264,7 @@ function _step2(){
   _setStep(2);
   _dialog(
     'Your attention shaped this plant in a way no one else ever will.<br><br>' +
-    '<span style="color:var(--gold);">It is yours. Completely unique.</span>',
+    '<span style="color:var(--gold);">It is yours and completely unique.</span>',
     'NEXT',function(){_clear();setTimeout(_step3,300);},'bottom');
 }
 
@@ -53477,14 +53488,18 @@ function _watchGameStart(attempts){
 // Listen for game-completed event (win OR loss) OR the player leaving
 // the game area without completing (quit/frustration). Any of the three
 // counts as "First Focus" complete and triggers the forced 30-sunbeam
-// rarity-capped setup + nursery handoff.
+// rarity-capped setup + nursery handoff. 800ms delay lets any natural
+// win reward (original _e's earnHashes call) land FIRST so we can
+// normalize over the top and end at exactly 30 Sunbeams.
 function _watchGameComplete(){
   var resolved=false;
   function resolve(){
     if(resolved)return;resolved=true;
     window.removeEventListener('game-completed',handler);
-    _forceFirstFocusReward();
-    setTimeout(_step16,3500);
+    setTimeout(function(){
+      _forceFirstFocusReward();
+      setTimeout(_step16,3000);
+    },800);
   }
   var handler=function(e){resolve();};
   window.addEventListener('game-completed',handler);
@@ -53551,8 +53566,12 @@ function _step16(){
     var kbs=document.getElementById('kb-sunbeams');
     if(kbs){kbs.classList.add('lw-pulse-hint');}
     var ready=(typeof window._getMintableCount==='function')?window._getMintableCount():0;
+    // Folded the legacy "WELCOME TO THE GREENHOUSE" modal content into
+    // this prompt per Stephen — greenhouse intro belongs here (after 30
+    // Sunbeams are earned and the Keeper has returned), not stacked on
+    // top of the Phase 2 carousel walkthrough.
     var msg=ready>0
-      ? 'You have <span style="color:var(--gold);">Sunbeams ready</span>.<br><br><span style="color:var(--sage);">Tap the Sunbeam icon up top to mint your next plant.</span>'
+      ? 'Welcome back. This is your <span style="color:var(--gold);">greenhouse</span> \u2014 where your one-of-a-kind plants live.<br><br>You have <span style="color:var(--gold);">30 Sunbeams</span> ready. <span style="color:var(--sage);">Tap the Sunbeam icon up top to mint your next plant.</span>'
       : 'Good play. Keep earning until the <span style="color:var(--gold);">Sunbeam icon up top glows.</span> That\u2019s 30 Sunbeams, enough for a new plant.<br><br>You can play another game or come back later.';
     _dialog(msg,'',null,'top');
     if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
@@ -54031,12 +54050,13 @@ function _step34(){
   waitForFlip();
 })();
 
-// ═══ Wrap window._e to dispatch a game-completed event + first-game bonus ═══
-// The tutorial and any future observers can listen for 'game-completed'.
-// First-game bonus (one-shot): +20 Sunbeams + 10 flat XP so that a brand
-// new Keeper clears L2 and has 30 Sunbeams for their second mint after
-// ONE game regardless of win/loss. Stephen: "win or lose or quit it
-// bumps them to the next level where they get enough sunbeams."
+// ═══ Wrap window._e to dispatch a game-completed event ═══
+// Tutorial's _watchGameComplete listens for this. The +20 Sunbeam /
+// +10 XP first-game bonus that used to live here was superseded by
+// _forceFirstFocusReward which normalizes to exactly 30 Sunbeams +
+// L2 threshold + a rarity-capped ready hash. Keeping the bonus too
+// produced overshoot (second plant queued on top of the tutorial's
+// intended one).
 // Idempotent via _LW_TUT_EWRAPPED flag.
 (function _installGameCompletedDispatch(){
   if(window._LW_TUT_EWRAPPED)return;
@@ -54047,11 +54067,6 @@ function _step34(){
       try{
         if(v==='game_win'||v==='game_loss'){
           window.dispatchEvent(new CustomEvent('game-completed',{detail:{result:v,gameId:window._a}}));
-          if(!localStorage.getItem('lw_first_game_bonus_given')){
-            localStorage.setItem('lw_first_game_bonus_given','1');
-            try{if(window.earnHashes)window.earnHashes(20);}catch(e){}
-            try{if(window.PW_grantXP)window.PW_grantXP(10,'first_game_flat');}catch(e){}
-          }
         }
       }catch(e){}
       return _orig.apply(this,arguments);
