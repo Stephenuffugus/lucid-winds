@@ -57947,24 +57947,24 @@ window._lwClaimHerbarium = function(id){
     // ─── REMOTE FORAGING ───
     scryingStone: { key:'scryingStone', name:'Scrying Stone', category:'remote', rarity:'Uncommon',
       art:'assets/items/scrying-stone.png', icon:'\ud83d\udd2e',
-      desc:'Forage a hex within 1km without walking there.',
+      desc:'Forage a hex in your current biome without walking there.',
       lore:'Hold it to your brow. The far hex leans closer. One attempt, as if you had walked to it.',
-      usage:'tap a nearby hex on the map', wired:false },
+      usage:'tap USE \u2014 counts 1 of 2 daily remote forages', wired:true },
     ravenEye: { key:'ravenEye', name:"Raven\u2019s Eye", category:'remote', rarity:'Rare',
       art:'assets/items/ravens-eye.png', icon:'\ud83d\udc26',
-      desc:'Forage any hex within 10km.',
+      desc:'The raven flies farther \u2014 forage a random distant biome.',
       lore:'Borrowed sight. The raven flies, the keeper stays \u2014 and the hex still gets foraged.',
-      usage:'tap any hex on the map', wired:false },
+      usage:'tap USE \u2014 counts 1 of 2 daily remote forages', wired:true },
     slowArrow: { key:'slowArrow', name:'Slow Arrow', category:'remote', rarity:'Rare',
       art:'assets/items/slow-arrow.png', icon:'\ud83c\udff9',
-      desc:'Pin a hex for 6 hours. Attempt it from anywhere in that window.',
+      desc:'Pin this spot for 6 hours. Return any time in that window to forage it from anywhere.',
       lore:'Loosed at moss, not at a heart. The arrow waits where it fell and the hex stays open to you.',
-      usage:'pick a hex, return to it any time in 6h', wired:false },
+      usage:'tap USE to pin, then again within 6h to forage', wired:true },
     whisperVine: { key:'whisperVine', name:'Whisper Vine', category:'remote', rarity:'Common',
       art:'assets/items/whisper-vine.png', icon:'\ud83c\udf43',
-      desc:'Get notified when a tagged hex reseeds (7 days).',
+      desc:'Tag this spot for 7 days. Once a day, a reseeded hex delivers a Compass Shard.',
       lore:'A creeper laid across a hex. It tugs your sleeve when the seed inside turns over.',
-      usage:'tap a hex to start listening', wired:false },
+      usage:'tap USE to start listening', wired:true },
     wanderersMap: { key:'wanderersMap', name:"Wanderer\u2019s Map", category:'remote', rarity:'Epic',
       art:'assets/items/wanderers-map.png', icon:'\ud83d\uddfa\ufe0f',
       desc:'The wind decides. Carries you to a random real biome hex to forage once.',
@@ -58269,34 +58269,199 @@ window._lwClaimHerbarium = function(id){
     }, 2200);
   }
   function _wanderStartForage(biomeKey, biomeDef){
-    if (!spend('wanderersMap')) return;
-    // Synthetic zone key so hexComposition seeds uniquely. Use timestamp
-    // so each map yields a fresh hex.
-    var zk = 'wander-' + biomeKey + '-' + Date.now();
-    // Biome override: hexComposition reads window._lastDetectedBiome when
-    // biomeId arg is null. We temporarily force it for this forage.
+    _runRemoteForage({
+      itemKey: 'wanderersMap',
+      biomeKey: biomeKey,
+      zonePrefix: 'wander',
+      grades: ['Rare','Rare','Epic','Epic','Legendary','Mythic'],
+      logType: 'wander_forage',
+      successMsg: '\ud83c\udf43 The wind returns. Your pouch is heavier than before.',
+      failMsg: 'The wind scatters. Another map, another day.'
+    });
+  }
+
+  // ─── Daily remote-forage cap ───
+  // Locked design: 2 remote forages / 24h, shared across Scrying, Raven,
+  // Slow Arrow, Wanderer. Keeps walking primary.
+  function _remoteTodayKey(){ return new Date().toISOString().slice(0,10); }
+  function _remoteDailyCount(){
+    var d={}; try { d = JSON.parse(localStorage.getItem('sws_remote_daily')||'{}'); } catch(e){}
+    return (d.date === _remoteTodayKey()) ? (d.count || 0) : 0;
+  }
+  function _remoteDailyBump(){
+    var c = _remoteDailyCount() + 1;
+    try { localStorage.setItem('sws_remote_daily', JSON.stringify({date:_remoteTodayKey(), count:c})); } catch(e){}
+    return c;
+  }
+  function _remoteDailyRemaining(){ return Math.max(0, 2 - _remoteDailyCount()); }
+
+  // Shared remote-forage runner. Every remote item (Scrying, Raven, Map,
+  // Slow Arrow) consumes one daily slot, spends its item, opens the forage
+  // panel with a synthetic zone key + biome override.
+  function _runRemoteForage(opts){
+    if (_remoteDailyRemaining() <= 0) {
+      if (window._toast) window._toast('\u26d4 Remote forage limit reached (2/day). Walk to more hexes or return tomorrow.');
+      return false;
+    }
+    if (!spend(opts.itemKey)) return false;
+    _remoteDailyBump();
+    var biomeKey = opts.biomeKey;
+    var biomeDef = (window.BIOMES || {})[biomeKey] || {};
+    var zk = (opts.zonePrefix||'remote') + '-' + biomeKey + '-' + Date.now();
     var prevBiome = window._lastDetectedBiome;
     window._lastDetectedBiome = biomeKey;
-    // Bias grade toward Rare+ since this is an Epic-rarity item use.
-    var grades = ['Rare','Rare','Epic','Epic','Legendary','Mythic'];
-    var grade = grades[Math.floor(Math.random()*grades.length)];
+    var grade = opts.grades[Math.floor(Math.random()*opts.grades.length)];
     if (!window.LW_FORAGING || !window.LW_FORAGING.openPanel) {
       window._lastDetectedBiome = prevBiome;
-      if (window._toast) window._toast('Foraging unavailable right now — the map returned to your pouch.');
-      add('wanderersMap', 1); // refund
-      return;
+      if (window._toast) window._toast('Foraging unavailable right now \u2014 item returned.');
+      add(opts.itemKey, 1); // refund
+      return false;
     }
     window.LW_FORAGING.openPanel(zk, grade, function(success){
       window._lastDetectedBiome = prevBiome;
-      if (success) {
-        // Log the journey so biomes-visited tracking picks it up.
-        try { if (window._logWildEvent) window._logWildEvent({type:'wander_forage', biome:biomeKey, grade:grade, success:true}); } catch(e){}
-        if (window._toast) setTimeout(function(){ window._toast('\ud83c\udf43 The wind returns. Your pouch is heavier than before.'); }, 900);
-      } else {
-        if (window._toast) window._toast('The wind scatters. Another map, another day.');
+      try { if (window._logWildEvent) window._logWildEvent({type:opts.logType||'remote_forage', item:opts.itemKey, biome:biomeKey, grade:grade, success:!!success}); } catch(e){}
+      if (window._toast) setTimeout(function(){ window._toast(success ? opts.successMsg : opts.failMsg); }, 900);
+    });
+    return true;
+  }
+
+  // ─── Scrying Stone (1km — current biome) ───
+  function useScryProper(){
+    if (count('scryingStone') <= 0) { if(window._toast)window._toast('No Scrying Stone in your pouch.'); return false; }
+    _closePanel();
+    // Use current GPS biome if known; otherwise default to 'suburban' (safe).
+    var biome = window._lastDetectedBiome || 'suburban';
+    var biomeDef = (window.BIOMES||{})[biome] || {};
+    _scryCinematic('Scrying Stone', 'The stone leans toward', biome, biomeDef, function(){
+      _runRemoteForage({
+        itemKey:'scryingStone', biomeKey:biome, zonePrefix:'scry',
+        grades:['Common','Common','Uncommon','Uncommon','Rare'],
+        logType:'scry_forage',
+        successMsg:'\ud83d\udd2e The stone goes cold \u2014 the feral is yours.',
+        failMsg:'The far hex resists. The stone cools.'
+      });
+    });
+    return true;
+  }
+
+  // ─── Raven's Eye (10km — random DIFFERENT biome) ───
+  function useRaven(){
+    if (count('ravenEye') <= 0) { if(window._toast)window._toast('No Raven\u2019s Eye in your pouch.'); return false; }
+    _closePanel();
+    var B = window.BIOMES || {};
+    var current = window._lastDetectedBiome || '';
+    var keys = [];
+    for (var k in B) if (k !== current) keys.push(k);
+    var biome = keys[Math.floor(Math.random()*keys.length)] || Object.keys(B)[0];
+    var biomeDef = B[biome] || {};
+    _scryCinematic("Raven\u2019s Eye", 'The raven flies to', biome, biomeDef, function(){
+      _runRemoteForage({
+        itemKey:'ravenEye', biomeKey:biome, zonePrefix:'raven',
+        grades:['Uncommon','Uncommon','Rare','Rare','Epic'],
+        logType:'raven_forage',
+        successMsg:'\ud83d\udc26 The raven returns \u2014 a feral in its beak.',
+        failMsg:'The raven circles, finds nothing, comes home.'
+      });
+    });
+    return true;
+  }
+
+  // Tiny shared cinematic for scry/raven. Not as long as Wanderer's Map.
+  function _scryCinematic(title, verb, biomeKey, biomeDef, then){
+    var ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:100020;background:radial-gradient(ellipse at 50% 40%,rgba(10,18,10,0.97) 0%,rgba(5,8,4,0.98) 70%);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;padding:1rem;animation:panelFadeIn 0.3s ease;';
+    ov.innerHTML =
+      '<div style="max-width:340px;text-align:center;">' +
+        '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.16em;color:#87a3c2;margin-bottom:0.5rem;">'+title.toUpperCase()+'</div>' +
+        '<div style="font-size:3.5rem;margin-bottom:0.8rem;animation:spinSlow 1.8s linear;">'+(biomeDef.icon||'\u25cf')+'</div>' +
+        '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.1rem;color:var(--cream);margin-bottom:0.3rem;">'+verb+' '+(biomeDef.name||biomeKey).toLowerCase()+'\u2026</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">'+_remoteDailyRemaining()+' remote forage left today</div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    setTimeout(function(){
+      try { ov.remove(); } catch(e){}
+      if (then) then();
+    }, 1700);
+  }
+
+  // ─── Slow Arrow (pin a hex, 6h window to attempt remotely) ───
+  // Storage: {pinnedAt, expiresAt, biome}
+  function useArrow(){
+    if (count('slowArrow') <= 0) { if(window._toast)window._toast('No Slow Arrow in your pouch.'); return false; }
+    // Already have an active pin? Let them forage it instead of pinning a new one.
+    var pin = _loadArrowPin();
+    if (pin && pin.expiresAt > Date.now()) {
+      _closePanel();
+      _resolveArrowPin(pin);
+      return true;
+    }
+    // Pin a new arrow: use current biome, expire in 6h
+    if (!spend('slowArrow')) return false;
+    var biome = window._lastDetectedBiome || 'suburban';
+    var newPin = { pinnedAt: Date.now(), expiresAt: Date.now() + 6*3600000, biome: biome };
+    try { localStorage.setItem('sws_slow_arrow', JSON.stringify(newPin)); } catch(e){}
+    if (window._toast) window._toast('\ud83c\udff9 Slow Arrow pinned to this '+(biome||'spot')+'. Return within 6 hours to forage from anywhere.');
+    _closePanel();
+    return true;
+  }
+  function _loadArrowPin(){
+    try { return JSON.parse(localStorage.getItem('sws_slow_arrow')||'null'); } catch(e){ return null; }
+  }
+  function _resolveArrowPin(pin){
+    try { localStorage.removeItem('sws_slow_arrow'); } catch(e){}
+    // Slow Arrow does NOT count against daily cap — it's its own earned attempt
+    var biomeDef = (window.BIOMES||{})[pin.biome] || {};
+    _scryCinematic('Slow Arrow', 'Returning to the pin in', pin.biome, biomeDef, function(){
+      var zk = 'arrow-' + pin.biome + '-' + pin.pinnedAt;
+      var prevBiome = window._lastDetectedBiome;
+      window._lastDetectedBiome = pin.biome;
+      var grades = ['Uncommon','Rare','Rare','Epic'];
+      var grade = grades[Math.floor(Math.random()*grades.length)];
+      if (!window.LW_FORAGING || !window.LW_FORAGING.openPanel) {
+        window._lastDetectedBiome = prevBiome;
+        return;
       }
+      window.LW_FORAGING.openPanel(zk, grade, function(success){
+        window._lastDetectedBiome = prevBiome;
+        if (window._toast) setTimeout(function(){ window._toast(success ? '\ud83c\udff9 The arrow found moss \u2014 a feral held where it fell.' : 'The pin was empty. The arrow returns.'); }, 900);
+      });
     });
   }
+
+  // ─── Whisper Vine (tag current hex for 7 days; daily check fires a
+  // notification toast when it reseeds) ───
+  function useVine(){
+    if (count('whisperVine') <= 0) { if(window._toast)window._toast('No Whisper Vine in your pouch.'); return false; }
+    // Already have an active vine? Tell them.
+    var v = _loadVine();
+    if (v && v.expiresAt > Date.now()) {
+      if (window._toast) window._toast('\ud83c\udf43 Whisper Vine is already listening. Only one at a time.');
+      return false;
+    }
+    if (!spend('whisperVine')) return false;
+    var biome = window._lastDetectedBiome || 'suburban';
+    var vine = { tagged: Date.now(), expiresAt: Date.now() + 7*86400000, biome: biome, nextPing: Date.now() + 24*3600000 };
+    try { localStorage.setItem('sws_whisper_vine', JSON.stringify(vine)); } catch(e){}
+    if (window._toast) window._toast('\ud83c\udf43 Whisper Vine tagged this '+biome+'. It\u2019ll nudge you when something reseeds (once a day, 7 days).');
+    _closePanel();
+    return true;
+  }
+  function _loadVine(){
+    try { return JSON.parse(localStorage.getItem('sws_whisper_vine')||'null'); } catch(e){ return null; }
+  }
+  function _checkVinePing(){
+    var v = _loadVine(); if (!v) return;
+    var now = Date.now();
+    if (now > v.expiresAt) { try { localStorage.removeItem('sws_whisper_vine'); } catch(e){} return; }
+    if (now < (v.nextPing||0)) return;
+    // Fire the ping. Reward: +1 Compass Shard (small, consistent).
+    v.nextPing = now + 24*3600000;
+    try { localStorage.setItem('sws_whisper_vine', JSON.stringify(v)); } catch(e){}
+    if (window.LW_ITEMS && window.LW_ITEMS.add) window.LW_ITEMS.add('compassShard', 1);
+    if (window._toast) window._toast('\ud83c\udf43 The vine tugs \u2014 the '+(v.biome||'spot')+' reseeded. +1 Compass Shard waits in your pouch.');
+  }
+  // Check once per session load (the vine wants daily engagement)
+  setTimeout(_checkVinePing, 6000);
 
   // === Main items panel ===
   function openPanel(){
@@ -58308,7 +58473,7 @@ window._lwClaimHerbarium = function(id){
     var h = '<div style="max-width:460px;margin:0 auto;">';
     h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">';
     h += '<div><div style="font-family:Playfair Display,serif;font-size:1.15rem;color:var(--gold);font-style:italic;">Field Items</div>';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:2px;">Burn-on-use. '+total()+' in your pouch.</div></div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:2px;">Burn-on-use. '+total()+' in your pouch. Remote forages: '+_remoteDailyRemaining()+'/2 today.</div></div>';
     h += '<button onclick="window.LW_ITEMS._closePanel()" style="width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.5);color:var(--cream);font-size:1rem;cursor:pointer;">\u2715</button>';
     h += '</div>';
     var cats = [
@@ -58343,7 +58508,8 @@ window._lwClaimHerbarium = function(id){
           foragersLens:'useLens', compassShard:'useShard', tetherMoss:'useMoss', divinersGlass:'useGlass',
           mulchWard:'useWard', brambleThicket:'useBramble', shellgourd:'useShellgourd', moonwake:'useMoonwake',
           foragersTorch:'useTorch', dustStorm:'useDustStorm', uprootCharm:'useUproot',
-          scryingStone:'useScry', wanderersMap:'useMap'
+          scryingStone:'useScryProper', ravenEye:'useRaven', slowArrow:'useArrow', whisperVine:'useVine',
+          wanderersMap:'useMap'
         };
         var handler = handlerMap[it.key] || null;
         if (handler && !disabled) {
@@ -58375,7 +58541,10 @@ window._lwClaimHerbarium = function(id){
     count: count, add: add, spend: spend, total: total,
     useLens: useLens, useShard: useShard, useMoss: useMoss, useGlass: useGlass,
     useWard: useWard, useBramble: useBramble, useShellgourd: useShellgourd, useMoonwake: useMoonwake,
-    useTorch: useTorch, useDustStorm: useDustStorm, useUproot: useUproot, useScry: useScry, useMap: useMap,
+    useTorch: useTorch, useDustStorm: useDustStorm, useUproot: useUproot,
+    useScry: useScry, useScryProper: useScryProper, useRaven: useRaven, useArrow: useArrow, useVine: useVine,
+    useMap: useMap,
+    _remoteDailyRemaining: _remoteDailyRemaining,
     _confirmWard: _confirmWard, _commitPick: null,
     hasWard: hasWard, consumeWard: consumeWard,
     hasBramble: hasBramble, hasShellgourd: hasShellgourd, hasMoonwake: hasMoonwake,
