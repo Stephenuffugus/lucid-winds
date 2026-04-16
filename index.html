@@ -53490,7 +53490,7 @@ function _watchGameComplete(){
     if(lastSeenActive&&!active){resolve();return;}
     lastSeenActive=active;
     var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
-    var ready=(window._readyHashes||[]).length;
+    var ready=(typeof window._getMintableCount==='function')?window._getMintableCount():0;
     if(ready>0||gh.length>=2){resolve();return;}
     if(polls<600){polls++;setTimeout(watchFallback,1000);}
   };
@@ -53541,9 +53541,9 @@ function _step16(){
   setTimeout(function(){
     var kbs=document.getElementById('kb-sunbeams');
     if(kbs){kbs.classList.add('lw-pulse-hint');}
-    var ready=(window._readyHashes||[]).length;
+    var ready=(typeof window._getMintableCount==='function')?window._getMintableCount():0;
     var msg=ready>0
-      ? 'You have <span style="color:var(--gold);">Sunbeams ready</span>.<br><br><span style="color:var(--sage);">Tap the \u2600\ufe0f up top to mint your next plant.</span>'
+      ? 'You have <span style="color:var(--gold);">Sunbeams ready</span>.<br><br><span style="color:var(--sage);">Tap the Sunbeam icon up top to mint your next plant.</span>'
       : 'Good play. Keep earning until the <span style="color:var(--gold);">Sunbeam icon up top glows.</span> That\u2019s 30 Sunbeams, enough for a new plant.<br><br>You can play another game or come back later.';
     _dialog(msg,'',null,'top');
     if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
