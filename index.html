@@ -7368,7 +7368,7 @@ window._addSwitchTabHook = function(fn){
   <!-- PERSISTENT BOTTOM NAV — stone tablet v5 buttons -->
   <div class="fg-bottomnav">
     <button class="fg-nav-min" onclick="this.parentElement.classList.toggle('minimized')" title="Hide nav"><span class="nm-chev">▾</span><span>HIDE</span></button>
-    <button class="fg-nav-btn" onclick="switchTab('game')"><img src="assets/games/wild/nav-game-v5.png" alt="Focus"><span class="fg-nav-label">FOCUS</span></button>
+    <button class="fg-nav-btn" onclick="switchTab('game')"><img src="assets/games/wild/nav-game-v5.png" alt="Games"><span class="fg-nav-label">GAMES</span></button>
     <button class="fg-nav-btn active" onclick="switchTab('greenhouse')" style="position:relative;"><img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse"><span class="fg-nav-label">GREENHOUSE</span><span id="nav-gh-badge" class="nav-badge" style="display:none;"></span></button>
     <button id="nav-btn-nursery" class="fg-nav-btn" onclick="if(window._lwNavTap)_lwNavTap('nursery',2);else switchTab('nursery');" style="position:relative;"><img src="assets/games/wild/nav-nursery-v5.png" alt="Nursery"><span class="fg-nav-label">NURSERY</span><span id="nav-nur-badge" class="nav-badge" style="display:none;"></span></button>
     <button id="nav-btn-wild" class="fg-nav-btn" onclick="if(window._lwNavTap)_lwNavTap('wild',3);else switchTab('wild');"><img src="assets/games/wild/nav-wild-v5.png" alt="Wild"><span class="fg-nav-label">WILD</span></button>
@@ -7378,7 +7378,7 @@ window._addSwitchTabHook = function(fn){
   <div id="wild-nav">
     <div class="wn-row">
       <button class="wn-btn" onclick="switchTab('game')" title="Game">
-        <img src="assets/games/wild/nav-game-v5.png" alt="Focus"><span class="wn-lbl">FOCUS</span>
+        <img src="assets/games/wild/nav-game-v5.png" alt="Games"><span class="wn-lbl">GAMES</span>
       </button>
       <button class="wn-btn" onclick="switchTab('greenhouse')" title="Greenhouse">
         <img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse"><span class="wn-lbl">GREENHOUSE</span>
@@ -53201,7 +53201,7 @@ function _findGameBtn(){
   var navBtns=document.querySelectorAll('.fg-nav-btn');
   for(var i=0;i<navBtns.length;i++){
     var img=navBtns[i].querySelector('img');
-    if(img&&(img.alt==='Focus'||img.alt==='Game'))return navBtns[i];
+    if(img&&(img.alt==='Games'||img.alt==='Game'||img.alt==='Focus'))return navBtns[i];
   }
   return null;
 }
@@ -53511,7 +53511,7 @@ function _stepGame(){
   try{document.body.classList.add('lw-tut-nav-focus');}catch(e){}
   setTimeout(function(){
     _dialog(
-      'When you\u2019re ready, tap <span style="color:var(--gold);">FOCUS</span> at the bottom to earn Sunbeams.<br><br>' +
+      'When you\u2019re ready, tap <span style="color:var(--gold);">GAMES</span> at the bottom to earn Sunbeams.<br><br>' +
       '<span style="color:var(--muted);font-size:0.85em;">If games aren\u2019t your thing, there are creative outlets too.</span>',
       null,null,'center');
     _watchGameTabSwitch(0);
@@ -53530,7 +53530,7 @@ function _watchGameTabSwitch(attempts){
   }
   // Also accept an explicit switchTab to game via DOM signal
   var gt=document.getElementById('game-dew-val');
-  var anyTab=document.querySelector('.fg-nav-btn.active img[alt="Focus"], .fg-nav-btn.active img[alt="Game"]');
+  var anyTab=document.querySelector('.fg-nav-btn.active img[alt="Games"], .fg-nav-btn.active img[alt="Game"]');
   if(anyTab){
     _clear();
     _setStep(15);
