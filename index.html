@@ -3333,7 +3333,9 @@
     body.game-active .game-header{display:none!important}
     body.game-active .fg-pk{display:none!important}
     body.game-active #pw-keeper-bar{display:none!important}
-    body.game-active #kb-compendium{display:none!important}
+    body.game-active #kb-compendium,body.game-active #kb-compendium.has-entries{display:none!important}
+    body.game-active .rules-strip,body.game-active .attn-strip{display:none!important}
+    body.game-active #trios-dash .settings-dropdown-container,body.game-active #trios-dash > div:last-child{display:none!important}
     /* Universal EXIT button during game — returns to picker */
     #game-exit-btn{display:none;position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;z-index:999999;min-width:64px;min-height:44px;padding:8px 14px;background:rgba(13,16,12,0.92);border:1.5px solid rgba(122,179,86,0.45);color:var(--cream);font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:10px;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 3px 12px rgba(0,0,0,0.6);pointer-events:auto;}
     body.game-active #game-exit-btn{display:flex !important;align-items:center;justify-content:center;gap:4px;}
@@ -27027,11 +27029,18 @@ document.addEventListener('keydown', function(e) {
       if(tg&&tg.name==='Mythic')xpAmt=60;
       if(tg&&tg.name==='Cosmic')xpAmt=100;
       PW_grantXP(xpAmt,'bloom_'+(tg?tg.name:'Common'));
-      // First-of-its-kind milestones — gives casual players real progression
-      // spikes without requiring wild/breed engagement. One-time grants.
+      // First-of-its-kind milestones — now prestige-aware via thesaurus.
+      // Each prestige cycle re-earns these under a different name, scaled
+      // by 80% per tier (P0=100%, P1=80%, P2=64%, etc.). This avoids the
+      // "prestige XP farm" exploit while still rewarding the cycle.
       try{
         var _mile=JSON.parse(localStorage.getItem('lw_mint_milestones')||'{}');
         var _mg=(tg&&tg.name)||'Common';
+        var _mP=0;try{_mP=parseInt(localStorage.getItem('pw_prestige')||'0',10)||0;}catch(e){}
+        var _mScale=Math.pow(0.8,_mP);
+        // Thesaurus-variant names per prestige tier
+        var _firstPlantNames=['First Plant','First Awakening','First Dawning','First Emergence','First Rising','First Kindling','First Stirring','First Blossoming','First Unfolding','First Flourishing','First Rebirth'];
+        var _firstPlantName=_firstPlantNames[Math.min(_mP,_firstPlantNames.length-1)];
         var _milestoneTable={
           first_plant: 50,
           first_Uncommon: 25,
@@ -27045,18 +27054,16 @@ document.addEventListener('keydown', function(e) {
           collection_25: 150,
           collection_50: 400
         };
-        // First EARNED plant milestone — gh.length === 2 because the gift
-        // plant is plant #1. Firing at length===1 meant new keepers jumped
-        // to Lv 2 on the free gift before doing anything. The milestone
-        // should celebrate the first plant they actually minted by playing.
-        if(gh.length===2&&!_mile.first_plant){PW_grantXP(_milestoneTable.first_plant,'milestone_first_plant');_mile.first_plant=true;}
+        // Prestige-scoped keys: "first_plant_p0", "first_plant_p1", etc.
+        var _mpK=function(base){return base+'_p'+_mP;};
+        if(gh.length===2&&!_mile[_mpK('first_plant')]){PW_grantXP(Math.round(_milestoneTable.first_plant*_mScale),'milestone_'+_mpK('first_plant'));_mile[_mpK('first_plant')]=true;}
         var _mkey='first_'+_mg;
-        if(_mg!=='Common'&&_milestoneTable[_mkey]&&!_mile[_mkey]){PW_grantXP(_milestoneTable[_mkey],'milestone_'+_mkey);_mile[_mkey]=true;}
-        if(gh.length===5&&!_mile.collection_5){PW_grantXP(_milestoneTable.collection_5,'milestone_5_plants');_mile.collection_5=true;}
+        if(_mg!=='Common'&&_milestoneTable[_mkey]&&!_mile[_mpK(_mkey)]){PW_grantXP(Math.round(_milestoneTable[_mkey]*_mScale),'milestone_'+_mpK(_mkey));_mile[_mpK(_mkey)]=true;}
+        if(gh.length===5&&!_mile[_mpK('collection_5')]){PW_grantXP(Math.round(_milestoneTable.collection_5*_mScale),'milestone_'+_mpK('5_plants'));_mile[_mpK('collection_5')]=true;}
         if(gh.length>=5&&window._lwCompleteQuest)window._lwCompleteQuest('q_five_plants');
-        if(gh.length===10&&!_mile.collection_10){PW_grantXP(_milestoneTable.collection_10,'milestone_10_plants');_mile.collection_10=true;}
-        if(gh.length===25&&!_mile.collection_25){PW_grantXP(_milestoneTable.collection_25,'milestone_25_plants');_mile.collection_25=true;}
-        if(gh.length===50&&!_mile.collection_50){PW_grantXP(_milestoneTable.collection_50,'milestone_50_plants');_mile.collection_50=true;}
+        if(gh.length===10&&!_mile[_mpK('collection_10')]){PW_grantXP(Math.round(_milestoneTable.collection_10*_mScale),'milestone_'+_mpK('10_plants'));_mile[_mpK('collection_10')]=true;}
+        if(gh.length===25&&!_mile[_mpK('collection_25')]){PW_grantXP(Math.round(_milestoneTable.collection_25*_mScale),'milestone_'+_mpK('25_plants'));_mile[_mpK('collection_25')]=true;}
+        if(gh.length===50&&!_mile[_mpK('collection_50')]){PW_grantXP(Math.round(_milestoneTable.collection_50*_mScale),'milestone_'+_mpK('50_plants'));_mile[_mpK('collection_50')]=true;}
         localStorage.setItem('lw_mint_milestones',JSON.stringify(_mile));
       }catch(e){}
     }
@@ -64290,27 +64297,40 @@ window.LW_Comp = (function(){
     {id:'q_choose_class',  xp:80,  flag:'lw_quest_choose_class',  title:'Path Chosen', body:'Your keeper class shapes everything ahead.'}
   ];
 
+  function _getQuestFlag(q) {
+    // Prestige-aware flag: "lw_quest_first_game_p0", "lw_quest_first_game_p1", etc.
+    var p = 0; try { p = parseInt(localStorage.getItem('pw_prestige') || '0', 10) || 0; } catch(e){}
+    return q.flag + '_p' + p;
+  }
   function _completeQuest(id) {
+    var p = 0; try { p = parseInt(localStorage.getItem('pw_prestige') || '0', 10) || 0; } catch(e){}
+    var scale = Math.pow(0.8, p);
     for (var i = 0; i < QUESTS.length; i++) {
       var q = QUESTS[i];
-      if (q.id === id && !localStorage.getItem(q.flag)) {
-        localStorage.setItem(q.flag, Date.now() + '');
-        if (window.PW_grantXP) window.PW_grantXP(q.xp, 'quest_' + id);
-        // Celebration toast — uses closure to capture q before loop moves on
-        (function(qq){
+      var pFlag = _getQuestFlag(q);
+      if (q.id === id && !localStorage.getItem(pFlag)) {
+        // Legacy flag check — migrate players already past these quests
+        if (p === 0 && localStorage.getItem(q.flag)) {
+          localStorage.setItem(pFlag, localStorage.getItem(q.flag));
+          return false;
+        }
+        localStorage.setItem(pFlag, Date.now() + '');
+        var scaledXp = Math.round(q.xp * scale);
+        if (window.PW_grantXP) window.PW_grantXP(scaledXp, 'quest_' + id + '_p' + p);
+        (function(qq, sxp){
           setTimeout(function(){
             if (window._lwConfirm) {
               window._lwConfirm({
                 title: '\u2727 QUEST COMPLETE',
                 body: '<div style="font-family:Playfair Display,serif;font-size:0.9rem;color:var(--gold);margin-bottom:0.3rem;">' + qq.title + '</div>' +
                       '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);margin-bottom:0.2rem;">' + qq.body + '</div>' +
-                      '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--sage);letter-spacing:0.1em;">+' + qq.xp + ' XP</div>',
+                      '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--sage);letter-spacing:0.1em;">+' + sxp + ' XP</div>',
                 yes: 'NICE',
                 no: ''
               }, function(){});
             }
           }, 600);
-        })(q);
+        })(q, scaledXp);
         return true;
       }
     }
@@ -64318,16 +64338,15 @@ window.LW_Comp = (function(){
   }
   window._lwCompleteQuest = _completeQuest;
 
-  // Expose quest state for What Now and other UI
   window._lwGetNextQuest = function() {
     for (var i = 0; i < QUESTS.length; i++) {
-      if (!localStorage.getItem(QUESTS[i].flag)) return QUESTS[i];
+      if (!localStorage.getItem(_getQuestFlag(QUESTS[i]))) return QUESTS[i];
     }
     return null;
   };
   window._lwIsQuestDone = function(id) {
     for (var i = 0; i < QUESTS.length; i++) {
-      if (QUESTS[i].id === id) return !!localStorage.getItem(QUESTS[i].flag);
+      if (QUESTS[i].id === id) return !!localStorage.getItem(_getQuestFlag(QUESTS[i]));
     }
     return false;
   };
