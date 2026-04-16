@@ -41530,6 +41530,11 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
   .cs-tut-hi-haiku .cf-haiku{opacity:1 !important;filter:none !important;box-shadow:0 0 22px rgba(200,168,75,0.75);border-radius:8px;padding:2px 6px;background:rgba(200,168,75,0.06);transition:all 0.4s;}
   .cs-tut-hi-ea .cf-ea{box-shadow:0 0 24px rgba(200,168,75,0.9),inset 0 0 10px rgba(200,168,75,0.4);animation:_whPulse 1.6s ease infinite;transition:box-shadow 0.4s;}
   .cs-tut-hi-rarity .cf-rarity-symbol{box-shadow:0 0 24px rgba(200,168,75,0.9);animation:_whPulse 1.6s ease infinite;border-radius:50%;transition:box-shadow 0.4s;}
+  /* Tutorial step 7: pulse the whole card so the tap-to-flip target reads
+     obvious. Scales gently + gold box-shadow glow. Removed the moment the
+     flip fires. */
+  @keyframes lwTutCardPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(200,168,75,0.55);}50%{transform:scale(1.025);box-shadow:0 0 32px 8px rgba(200,168,75,0.4);}}
+  .cs-tut-pulse-card{animation:lwTutCardPulse 1.6s ease-in-out infinite;}
   body:has(.lu-overlay.open) #lw-fb-btn,
   body:has(#pw-win-overlay) #lw-fb-btn,
   body:has(#cinematic-reveal.open) #lw-fb-btn,
@@ -41591,6 +41596,7 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      those steps. pgm-close-btn + swipe arrows also locked. Step 12
      opens the exit path via lw-tut-carousel-can-close class. */
   body.lw-tut-active.lw-tut-carousel-lock .pgm-act-btn,
+  body.lw-tut-active.lw-tut-carousel-lock .pgm-dl-btn,
   body.lw-tut-active.lw-tut-carousel-lock .pgm-close-btn,
   body.lw-tut-active.lw-tut-carousel-lock .cs-nav-arrow,
   body.lw-tut-active.lw-tut-carousel-lock .cs-nav-btn{pointer-events:none !important;opacity:0.3 !important;filter:saturate(0.35);}
@@ -41878,7 +41884,7 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
     game:{
       icon:'🎮',
       title:'GAMES',
-      body:'Pick any game from the picker. Each tap on a game card opens it. Win or progress to earn <b>Sunbeams</b>.<br><br>'+
+      body:'Find games you like or do something creative to progress and earn <b>Sunbeams</b>.<br><br>'+
         '<b>30 Sunbeams = a new plant</b> in your Greenhouse. Different games pay different amounts. Try them all to find your favorites.<br><br>'+
         'Tap the <b>?</b> in any game header for its rules.'
     }
@@ -49845,12 +49851,17 @@ function start(){
   // Set the legacy welcome suppress flag + clear first-game flags at the
   // earliest possible moment so no background render during the cinematic
   // or gift-plant mint triggers the old "WELCOME TO THE GREENHOUSE" modal.
+  // Also freeze XP at 18 — 1 below L2 threshold (19) — and make sure the
+  // plant-XP lock is ARMED (not unlocked) so the PW_grantXP wrapper
+  // silences every grant except the tutorial's explicit triggers.
   try{
     localStorage.setItem('lw_tut_tap_plant_v1','1');
     localStorage.removeItem('lw_first_focus_done');
     localStorage.removeItem('lw_first_game_bonus_given');
     localStorage.removeItem('lw_first_game_won');
     localStorage.removeItem('lw_quest_first_game');
+    localStorage.removeItem('lw_plant_xp_unlocked');
+    localStorage.setItem('pw_xp','18');
   }catch(e){}
   // PWA / installed-app users get a faster path — the cinematic is a
   // first-touch moment; returning-but-not-signed-in installs shouldn't
@@ -53371,7 +53382,7 @@ function _waitForCarousel(attempts){
 function _step2(){
   _setStep(2);
   _dialog(
-    'Your attention shaped this plant in a way no one else ever will.<br><br>' +
+    'Your attention shaped this plant in a way no one else ever could.<br><br>' +
     '<span style="color:var(--gold);">It is yours and completely unique.</span>',
     'NEXT',function(){_clear();setTimeout(_step3,300);},'bottom');
 }
@@ -53406,7 +53417,7 @@ function _step5(){
   var fw=document.querySelector('.cs-flip-wrap');
   if(fw){fw.classList.add('cs-tut-dim','cs-tut-hi-haiku');fw.classList.remove('cs-tut-hi-name');}
   _dialog(
-    'A unique <span style="color:var(--gold);">haiku</span>, from the same timing and patterns that shaped your plant.',
+    'A unique <span style="color:var(--gold);">haiku</span> is sung from the same timing and patterns that shaped your plant.',
     'NEXT',function(){
       var fw2=document.querySelector('.cs-flip-wrap');
       if(fw2)fw2.classList.remove('cs-tut-dim','cs-tut-hi-haiku');
@@ -53424,7 +53435,7 @@ function _step6(){
   if(fw)fw.classList.add('cs-tut-hi-ea');
   var badge=document.querySelector('.cs-flip-wrap .cf-ea');
   _dialog(
-    'That number is your plant\u2019s <span style="color:var(--gold);">Evolutionary Advantage</span>. Think of it as its power.',
+    'This number is your plant\u2019s <span style="color:var(--gold);">Evolutionary Advantage</span>. Think of it as its power.',
     'NEXT',function(){
       var fw2=document.querySelector('.cs-flip-wrap');
       if(fw2)fw2.classList.remove('cs-tut-hi-ea');
@@ -53443,6 +53454,11 @@ function _step6(){
 }
 
 // ═══ STEP 7: rarity + flip prompt ═══
+// Stephen's bug report: step 8 fired on its own without a flip because the
+// poll-based watch saw `flipped` class as true on first tick (possibly
+// stale state from a re-enter or race). Fixed by tracking the ACTUAL flip
+// transition via a one-shot click listener that advances only after the
+// user has tapped the card AND the reveal animation has started.
 function _step7(){
   _setStep(7);
   _dialog(
@@ -53452,13 +53468,28 @@ function _step7(){
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   var fw=document.querySelector('.cs-flip-wrap');
   if(!fw){_clear();setTimeout(_step8,300);return;}
-  var polls=0;
-  var watch=function(){
-    if(fw.classList.contains('flipped')){_clear();setTimeout(_step8,1400);}
-    else if(polls<180){polls++;setTimeout(watch,200);}
-    else {_clear();setTimeout(_step8,300);}
-  };
-  setTimeout(watch,500);
+  // Add a pulsing gold shimmer to the card so the tap target is obvious.
+  fw.classList.add('cs-tut-pulse-card');
+  var advanced=false;
+  function advance(){
+    if(advanced)return;advanced=true;
+    fw.classList.remove('cs-tut-pulse-card');
+    _clear();
+    // 1800ms lets the flip + rarity-reveal flash play fully so step 8
+    // lands AFTER the "first big reveal moment" Stephen wanted preserved.
+    setTimeout(_step8,1800);
+  }
+  function onFlip(){
+    if(!fw.classList.contains('flipped'))return;
+    fw.removeEventListener('click',onFlip,true);
+    advance();
+  }
+  // capture-phase so the listener runs BEFORE window._handleCardFlip's
+  // own class toggle; inside we re-check on next tick.
+  fw.addEventListener('click',function(){setTimeout(onFlip,50);},true);
+  // 3-minute safety: if the player never flips, advance anyway rather than
+  // leave the tutorial stranded.
+  setTimeout(function(){if(!advanced)advance();},180000);
 }
 
 // ═══ STEP 8: DNA layers (back of card) ═══
@@ -53466,7 +53497,7 @@ function _step8(){
   _setStep(8);
   _dialog(
     'These are the <span style="color:var(--gold);">genetic layers</span> shaping your plant.<br><br>' +
-    'Every trait came from the code that is uniquely your experience. There are literal <span style="color:var(--gold);">QUINTILLIONS</span> of possible combinations, and growing.',
+    'Every trait came from your unique touch, timing, and experience. There are literal <span style="color:var(--gold);">QUINTILLIONS</span> of possible combinations, and growing.',
     'NEXT',function(){_clear();setTimeout(_step9,300);},'top');
 }
 
@@ -53521,14 +53552,16 @@ function _step11(){
       if(fw2)fw2.classList.remove('cs-tut-hi-rarity');
       _clear();setTimeout(_step12,300);
     },'bottom');
-  // Re-anchor close to the symbol — bottom-left edge of the card.
+  // Re-anchor close to the symbol — dialog sits ABOVE the symbol so the
+  // glow ring is visible below it, not covered. Gap of ~140px above the
+  // symbol's top edge.
   if(sym&&_dlg){
     try{
       var r=sym.getBoundingClientRect();
       _dlg.style.right='';_dlg.style.bottom='';_dlg.style.transform='';
-      _dlg.style.top=(Math.max(8,r.bottom-220))+'px';
+      _dlg.style.top=(Math.max(8,r.top-170))+'px';
       _dlg.style.left='12px';
-      _dlg.style.maxWidth='min(280px,70vw)';
+      _dlg.style.maxWidth='min(320px,70vw)';
     }catch(e){}
   }
 }
@@ -53540,8 +53573,8 @@ function _step12(){
   // instead of the dialog button.
   try{document.body.classList.add('lw-tut-carousel-can-close');}catch(e){}
   _dialog(
-    'Now <span style="color:var(--gold);">close this plant</span> and return to your greenhouse.',
-    'CLOSE',function(){
+    'Now let\u2019s <span style="color:var(--gold);">return to your greenhouse</span>.',
+    'RETURN',function(){
       _clear();
       try{document.body.classList.remove('lw-tut-carousel-lock','lw-tut-carousel-can-close');}catch(e){}
       if(window.closePlantGallery)closePlantGallery();
@@ -53554,6 +53587,11 @@ function _stepGame(){
   _setStep(13);
   try{document.body.classList.add('lw-tut-nav-focus');}catch(e){}
   setTimeout(function(){
+    // Pulse the GAMES nav button so the highlighted tab matches what the
+    // dialog is pointing at. Previously the greenhouse tab was the active
+    // one and confused testers into thinking that was the target.
+    var gBtn=_findGameBtn();
+    if(gBtn&&window._lwPulseHint)window._lwPulseHint(gBtn,30000,'lw_tut_games_pulse');
     _dialog(
       'When you\u2019re ready, tap <span style="color:var(--gold);">GAMES</span> at the bottom to earn Sunbeams.<br><br>' +
       '<span style="color:var(--muted);font-size:0.85em;">If games aren\u2019t your thing, there are creative outlets too.</span>',
@@ -53672,10 +53710,25 @@ function _forceFirstFocusReward(){
 
 // ═══ STEP 16: return to greenhouse, sunbeam pip pulses ═══
 function _step16(){
-  if(_getStep()!==16){return;}
+  // Removed the old `if(_getStep()!==16)return;` guard — it was blocking
+  // first entry because step was 15 when _watchGameComplete scheduled this
+  // call. resolve() in _watchGameComplete is already resolved-once so we
+  // don't need a second re-entry guard.
   _setStep(16);
-  // Unlock the sunbeam button at the moment the tutorial invites a tap.
+  // Mechanical L2 moment: player had 18 XP frozen since tutorial start.
+  // Grant exactly 1 via the whitelisted reason 'first_focus_level' so the
+  // PW_grantXP wrapper lets it through and the L2 ceremony fires here —
+  // Stephen's plan: "1 xp away from level two... we will use that 1 xp
+  // later where we want."
+  try{
+    var curXp=parseInt(localStorage.getItem('pw_xp')||'0',10)||0;
+    if(curXp<19&&window.PW_grantXP){
+      window.PW_grantXP(19-curXp,'first_focus_level');
+    }
+  }catch(e){}
+  // Unlock the sunbeam button.
   try{document.body.classList.add('lw-tut-sb-on');}catch(e){}
+  // Force-switch to greenhouse so the mint prompt lands where the sun is.
   if(window.switchTab)switchTab('greenhouse');
   setTimeout(function(){
     var kbs=document.getElementById('kb-sunbeams');
@@ -53683,16 +53736,14 @@ function _step16(){
     var ready=(typeof window._getMintableCount==='function')?window._getMintableCount():0;
     // Folded the legacy "WELCOME TO THE GREENHOUSE" modal content into
     // this prompt per Stephen — greenhouse intro belongs here (after 30
-    // Sunbeams are earned and the Keeper has returned), not stacked on
-    // top of the Phase 2 carousel walkthrough.
+    // Sunbeams are earned and the Keeper has returned).
     var msg=ready>0
-      ? 'Welcome back. This is your <span style="color:var(--gold);">greenhouse</span> \u2014 where your one-of-a-kind plants live.<br><br>You have <span style="color:var(--gold);">30 Sunbeams</span> ready. <span style="color:var(--sage);">Tap the Sunbeam icon up top to mint your next plant.</span>'
+      ? 'Welcome back. This is your <span style="color:var(--gold);">greenhouse</span>. You have <span style="color:var(--gold);">30 Sunbeams</span> ready.<br><br><span style="color:var(--sage);">Tap the glowing Sunbeam icon at the top to sprout a new plant.</span>'
       : 'Good play. Keep earning until the <span style="color:var(--gold);">Sunbeam icon up top glows.</span> That\u2019s 30 Sunbeams, enough for a new plant.<br><br>You can play another game or come back later.';
     _dialog(msg,'',null,'top');
     if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
     if(ready>0){_watchMintModal(0);}
     else {
-      // Not enough sunbeams yet — end tutorial here, WHAT NOW takes over.
       setTimeout(function(){
         var kbs2=document.getElementById('kb-sunbeams');
         if(kbs2)kbs2.classList.remove('lw-pulse-hint');
@@ -63708,18 +63759,16 @@ window._lwApplyGates=function(){
 if(window.PW_grantXP){
   var _origGrant=window.PW_grantXP;
   window.PW_grantXP=function(amount,reason){
-    // Plant-XP lock: during early tutorial, plant-related grants are
-    // silenced so the player stays at Lv 1 until they win their first
-    // game. Reasons blocked: bloom_*, first_plant, milestone_*,
-    // plant_mint_gift (earnDew side-effect on _mintGiftPlant),
-    // first_creature (companion discovery on gift with creature).
+    // Full XP freeze during tutorial. Stephen's spec: "XP is locked and
+    // given just enough to level when needed to make this a mechanical
+    // system in the beginning so it cant be messed with." Every grant
+    // except the two explicit tutorial-trigger reasons is dropped while
+    // lw_plant_xp_unlocked is missing.
+    //   first_focus_level — the +1 XP that pushes Lv1 → Lv2 at step 16
+    //   tut_unlock        — the final unlock moment at step 34 end
     try{
       if(!localStorage.getItem('lw_plant_xp_unlocked')&&reason){
-        if(reason.indexOf('bloom_')===0
-          ||reason==='first_plant'
-          ||reason==='first_creature'
-          ||reason==='plant_mint_gift'
-          ||reason.indexOf('milestone_')===0){
+        if(reason!=='first_focus_level'&&reason!=='tut_unlock'){
           return;
         }
       }
@@ -65824,7 +65873,13 @@ window.LW_Comp = (function(){
         localStorage.setItem(pFlag, Date.now() + '');
         var scaledXp = Math.round(q.xp * scale);
         if (window.PW_grantXP) window.PW_grantXP(scaledXp, 'quest_' + id + '_p' + p);
+        // Suppress the QUEST COMPLETE modal while the tutorial is running
+        // (lw_plant_xp_unlocked not yet set). Stephen reported it stacking
+        // on top of step 16's mint prompt. Quest flag is still persisted
+        // so the player sees it in the Book of Secrets later.
+        var _tutRunning=!localStorage.getItem('lw_plant_xp_unlocked');
         (function(qq, sxp){
+          if(_tutRunning)return;
           setTimeout(function(){
             if (window._lwConfirm) {
               window._lwConfirm({
