@@ -53172,6 +53172,15 @@ _done=function(){
   try{
     document.body.classList.remove('lw-tut-active','lw-tut-limit-actions');
   }catch(e){}
+  // Strip any residual pulse classes on UI elements the tutorial touches.
+  try{
+    var _kbs=document.getElementById('kb-sunbeams');
+    if(_kbs)_kbs.classList.remove('lw-pulse-hint');
+    var _bpi=document.getElementById('bpi');
+    if(_bpi)_bpi.classList.remove('lw-pulse-hint');
+    var _bos=document.getElementById('kb-compendium');
+    if(_bos)_bos.classList.remove('lw-pulse-hint');
+  }catch(e){}
   _origDone();
 };
 
