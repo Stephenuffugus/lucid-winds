@@ -37196,11 +37196,13 @@ function _doReproduction(weather, simMode) {
           hash:_cp.hash,companion:_cInfo.name,text:_cInfo.name+' called rain — your plant was watered'});
       }
 
-      // Butterfly Drift Pollination — 20% free cross-pollinate to random ally
-      if (_cInfo.abilityKey === 'driftPollen' && Math.random() < 0.2 && _myWildComp.length > 1) {
+      // Butterfly Drift Pollination — rare free cross-pollinate to random ally.
+      // Was 20% chance per minute per plant → 780 XP/hr for 10-plant keeper.
+      // Tuned to 5% chance + 1-3 XP to align with the 114K-cumulative curve.
+      if (_cInfo.abilityKey === 'driftPollen' && Math.random() < 0.05 && _myWildComp.length > 1) {
         var _dTarget = _myWildComp[Math.floor(Math.random() * _myWildComp.length)];
         if (_dTarget.hash !== _cp.hash) {
-          var _polReward = 3 + Math.floor(Math.random() * 8);
+          var _polReward = 1 + Math.floor(Math.random() * 3);
           if (window.PW_grantXP) PW_grantXP(_polReward, 'butterfly_drift');
           if (window._logWildEvent) window._logWildEvent({type:'companion',event:'drift_pollen',
             hash:_cp.hash,companion:_cInfo.name,text:'Butterfly carried pollen to a distant ally — +'+_polReward+' XP'});
