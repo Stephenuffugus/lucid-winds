@@ -54069,6 +54069,12 @@ function _step16AfterCelebration(attempts){
   var ov=document.getElementById('pw-win-overlay');
   if(ov&&attempts<60){setTimeout(function(){_step16AfterCelebration(attempts+1);},500);return;}
   setTimeout(function(){
+    // Unidirectional lock engaged BEFORE the dialog renders so any
+    // click-through race is impossible. Plant cards, WHAT NOW, and
+    // any other greenhouse interactions are blocked — only the
+    // sunbeam icon is tappable. Removed in _watchMintModal once the
+    // mint modal opens.
+    try{document.body.classList.add('lw-tut-mint-only');}catch(e){}
     var kbs=document.getElementById('kb-sunbeams');
     if(kbs){kbs.classList.add('lw-pulse-hint');}
     var ready=(typeof window._getMintableCount==='function')?window._getMintableCount():0;
@@ -54080,11 +54086,6 @@ function _step16AfterCelebration(attempts){
       : 'Good play. Keep earning until the <span style="color:var(--gold);">Sunbeam icon up top glows.</span> That\u2019s 30 Sunbeams, enough for a new plant.<br><br>You can play another game or come back later.';
     _dialog(msg,'',null,'top');
     if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
-    // Unidirectional lock — ONLY the sunbeam icon is tappable. Plant
-    // cards, WHAT NOW, and any other greenhouse interactions are blocked
-    // so the Keeper can't wander off mid-prompt. Removed in
-    // _watchMintModal once the mint modal opens.
-    try{document.body.classList.add('lw-tut-mint-only');}catch(e){}
     if(ready>0){_watchMintModal(0);}
     else {
       setTimeout(function(){
