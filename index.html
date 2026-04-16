@@ -32725,20 +32725,35 @@ document.addEventListener('keydown', function(e) {
     } catch(e) {}
     // Mystery box drop — Uncommon+ bloom rarity-scaled. Locked spec:
     // Uncommon 8%, Rare 20%, Epic 40%, Legendary 65%, Mythic 85%, Cosmic 100%.
+    var _bloomGradeForDrops = 'Common';
+    try {
+      if (window.hashToTraits && window.getTerraGrade && plant && plant.hash) {
+        var _bt2 = hashToTraits(plant.hash);
+        var _bg2 = getTerraGrade(_bt2);
+        if (_bg2 && _bg2.name) _bloomGradeForDrops = _bg2.name;
+      }
+    } catch(eBG){}
     try {
       if (window.LW_BOXES) {
-        var _boxGrade = 'Common';
-        try {
-          if (window.hashToTraits && window.getTerraGrade && plant && plant.hash) {
-            var _bt2 = hashToTraits(plant.hash);
-            var _bg2 = getTerraGrade(_bt2);
-            if (_bg2 && _bg2.name) _boxGrade = _bg2.name;
-          }
-        } catch(eBG){}
-        var _boxChance = ({Uncommon:0.08,Rare:0.20,Epic:0.40,Legendary:0.65,Mythic:0.85,Cosmic:1.00})[_boxGrade] || 0;
+        var _boxChance = ({Uncommon:0.08,Rare:0.20,Epic:0.40,Legendary:0.65,Mythic:0.85,Cosmic:1.00})[_bloomGradeForDrops] || 0;
         if (Math.random() < _boxChance) window.LW_BOXES.add(1);
       }
     } catch(eB){}
+    // Cocoon drop — bloom rarity picks tier. Uncommon+ at 5% for Gossamer,
+    // scaling up through tiers. Rarer blooms drop rarer cocoons.
+    try {
+      if (window.LW_COCOONS) {
+        var _cocoonRoll = ({
+          Uncommon:  {chance:0.05, tier:'gossamer'},
+          Rare:      {chance:0.15, tier:'gossamer'},
+          Epic:      {chance:0.25, tier:'linen'},
+          Legendary: {chance:0.40, tier:'amber'},
+          Mythic:    {chance:0.60, tier:'amber'},
+          Cosmic:    {chance:0.85, tier:'obsidian'}
+        })[_bloomGradeForDrops];
+        if (_cocoonRoll && Math.random() < _cocoonRoll.chance) window.LW_COCOONS.add(_cocoonRoll.tier);
+      }
+    } catch(eC){}
 
     // 8. UI refresh then cinematic reveal
     renderNursery();
@@ -35698,6 +35713,8 @@ function _addSteps(meters){
   var el=document.getElementById('w-steps');
   if(el)el.textContent=Math.round(s.today||0);
   _checkStepMilestone();
+  // Credit the same walked meters to every incubating cocoon.
+  try { if (window.LW_COCOONS && window.LW_COCOONS.creditSteps) window.LW_COCOONS.creditSteps(meters); } catch(e){}
   // Walker title check — only fire on the milestone crossing
   if(prevLifetime<10000&&s.lifetime>=10000&&window.lwCheckEarnedTitles)window.lwCheckEarnedTitles();
 }
@@ -50685,6 +50702,8 @@ function render(){
   h+='<button onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--sage);background:linear-gradient(180deg,rgba(122,179,86,0.18),rgba(122,179,86,0.05));border:1.5px solid rgba(122,179,86,0.4);border-radius:10px;cursor:pointer;">\ud83c\udf31 ITEMS'+(_itemTotal>0?' ('+_itemTotal+')':'')+'</button>';
   var _boxTotal=0;try{if(window.LW_BOXES)_boxTotal=window.LW_BOXES.count();}catch(e){}
   h+='<button onclick="if(window.LW_BOXES)LW_BOXES.openPanel();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_boxTotal>0?'var(--gold)':'var(--muted)')+';background:linear-gradient(180deg,rgba(232,160,191,0.15),rgba(200,168,75,0.04));border:1.5px solid '+(_boxTotal>0?'rgba(232,160,191,0.6)':'rgba(232,160,191,0.25)')+';border-radius:10px;cursor:pointer;'+(_boxTotal>0?'box-shadow:0 0 10px rgba(232,160,191,0.35);':'')+'">\ud83c\udf81 BOXES'+(_boxTotal>0?' ('+_boxTotal+')':'')+'</button>';
+  var _cocoonTotal=0,_cocoonReady=0;try{if(window.LW_COCOONS){var _cs=window.LW_COCOONS.slots();_cocoonTotal=_cs.length;for(var _ci=0;_ci<_cs.length;_ci++)if(_cs[_ci]&&_cs[_ci].distance>=_cs[_ci].target)_cocoonReady++;}}catch(e){}
+  h+='<button onclick="if(window.LW_COCOONS)LW_COCOONS.openPanel();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_cocoonReady>0?'#c8a84b':(_cocoonTotal>0?'var(--sage)':'var(--muted)'))+';background:linear-gradient(180deg,rgba(200,168,75,0.12),rgba(91,143,185,0.08));border:1.5px solid '+(_cocoonReady>0?'rgba(200,168,75,0.7)':(_cocoonTotal>0?'rgba(122,179,86,0.4)':'rgba(122,179,86,0.2)'))+';border-radius:10px;cursor:pointer;'+(_cocoonReady>0?'box-shadow:0 0 12px rgba(200,168,75,0.4);':'')+'">\ud83e\uddf5 COCOONS'+(_cocoonTotal>0?' ('+_cocoonTotal+(_cocoonReady>0?' \u2022 '+_cocoonReady+' READY':'')+')':'')+'</button>';
   h+='</div>';
   pe.innerHTML=h;
   var se=document.getElementById('bps');var cp=xc();h='';
@@ -58429,6 +58448,224 @@ window._lwClaimHerbarium = function(id){
   window.LW_debug = window.LW_debug || {};
   window.LW_debug.grantBox = function(n){ return add(n||1); };
   window.LW_debug.openBoxes = function(){ openPanel(); };
+})();
+
+// ═══ LW_COCOONS — walk-to-open chrysalis system (PoGo-egg adaptation) ═══
+// Cocoons are NOT seeds (those grow plants in the nursery). They're moth
+// silk bundles you carry — walking warms them, at distance threshold they
+// hatch items, Dew, or boxes. 4 tiers scaled to LW's step milestones.
+// Daily free Gossamer appears at dawn and burns if unclaimed by next dawn.
+(function(){
+  'use strict';
+  var STORE = 'sws_cocoons';
+  var DAILY = 'sws_cocoons_daily'; // {lastGrantDate:'YYYY-MM-DD'}
+
+  var TIERS = {
+    gossamer: { key:'gossamer', name:'Gossamer Silk', distance:1000,  art:'assets/cocoons/cocoon-gossamer.png', icon:'\u272a',
+      color:'#e8dcc8', lore:'Pale, almost weightless. The easiest walk.' },
+    linen:    { key:'linen',    name:'Linen Cocoon',  distance:2500,  art:'assets/cocoons/cocoon-linen.png',    icon:'\ud83e\uddf5',
+      color:'#c8a884', lore:'Woven tight. Something is choosing to grow in there.' },
+    amber:    { key:'amber',    name:'Amber Pod',     distance:5000,  art:'assets/cocoons/cocoon-amber.png',    icon:'\ud83c\udf6f',
+      color:'#c8a84b', lore:'Gold flecked. You feel it warm in your pouch when you walk.' },
+    obsidian: { key:'obsidian', name:'Obsidian Shell',distance:10000, art:'assets/cocoons/cocoon-obsidian.png', icon:'\ud83d\udd75\ufe0f',
+      color:'#5b8fb9', lore:'Black and iridescent. Whatever is inside has been waiting a long time.' }
+  };
+  window.LW_COCOONS_TIERS = TIERS;
+
+  // Reward rolls. Each tier picks one reward from its pool.
+  function _rollReward(tier){
+    var r = Math.random();
+    if (tier==='gossamer'){
+      if (r < 0.60) return { dew: 20 };
+      if (r < 0.95) return { item: 'foragersLens' }; // Common
+      return { item: 'compassShard' };               // Uncommon
+    }
+    if (tier==='linen'){
+      if (r < 0.35) return { dew: 50 };
+      if (r < 0.65) return { box: 1 };
+      if (r < 0.90) return { item: 'compassShard' }; // Uncommon
+      return { item: 'uprootCharm' };                // Uncommon offense
+    }
+    if (tier==='amber'){
+      if (r < 0.50) return { box: 1 };
+      if (r < 0.75) return { dew: 120 };
+      if (r < 0.93) return { item: 'mulchWard' };     // Rare
+      return { item: 'foragersTorch' };              // Rare offense
+    }
+    if (tier==='obsidian'){
+      if (r < 0.50) return { box: 1, item: 'divinersGlass' }; // Epic forage + box
+      if (r < 0.75) return { item: 'shellgourd' };             // Epic defense
+      if (r < 0.95) return { item: 'wanderersMap' };           // Epic remote
+      return { item: 'wanderersMap', box: 1 };
+    }
+    return { dew: 10 };
+  }
+
+  function _load(){
+    try { return JSON.parse(localStorage.getItem(STORE) || '{"slots":[],"cap":3}'); }
+    catch(e){ return {slots:[], cap:3}; }
+  }
+  function _save(s){ try { localStorage.setItem(STORE, JSON.stringify(s)); } catch(e){} }
+
+  function cap(){ var s=_load(); return s.cap || 3; }
+  function slots(){ var s=_load(); return s.slots || []; }
+  function count(){ return (slots() || []).length; }
+  function setCap(n){ var s=_load(); s.cap=Math.max(3, Math.min(5, n)); _save(s); }
+
+  // Add a cocoon. Refuses if pouch is full.
+  function add(tier){
+    if (!TIERS[tier]) return false;
+    var s = _load();
+    if (!s.slots) s.slots = [];
+    if (s.slots.length >= (s.cap || 3)) {
+      if (window._toast) window._toast('\ud83e\uddf5 Cocoon pouch full. Hatch one to make room.');
+      return false;
+    }
+    s.slots.push({ tier:tier, distance:0, target:TIERS[tier].distance, startedAt:Date.now() });
+    _save(s);
+    if (window._toast) window._toast(TIERS[tier].icon + ' ' + TIERS[tier].name + ' \u2014 a new cocoon. Walk to hatch it.');
+    try { if (window._haptic) window._haptic('ok'); } catch(e){}
+    return true;
+  }
+
+  // Called from _addSteps on every step update. Credits distance to all
+  // incubating cocoons simultaneously (per design — PoGo does the same).
+  function creditSteps(meters){
+    if (!meters || meters <= 0) return;
+    var s = _load(); if (!s.slots || !s.slots.length) return;
+    var anyHatchable = false;
+    for (var i=0;i<s.slots.length;i++){
+      var c = s.slots[i]; if (!c || c.distance >= c.target) continue;
+      c.distance = Math.min(c.target, c.distance + meters);
+      if (c.distance >= c.target) anyHatchable = true;
+    }
+    _save(s);
+    if (anyHatchable && window._toast) {
+      if (window._haptic) try { window._haptic('bloom'); } catch(e){}
+      window._toast('\u2728 A cocoon is ready to hatch. Open your pouch.');
+    }
+  }
+  window._LW_COCOON_credit = creditSteps; // also expose on window for _addSteps hook
+
+  // Hatch a single cocoon at idx. Awards its reward, removes from pouch.
+  function hatch(idx){
+    var s = _load(); if (!s.slots || !s.slots[idx]) return null;
+    var c = s.slots[idx];
+    if (c.distance < c.target) return null;
+    var reward = _rollReward(c.tier);
+    s.slots.splice(idx, 1); _save(s);
+    if (reward.dew && window.earnDew) window.earnDew(reward.dew, 'cocoon_'+c.tier);
+    if (reward.box && window.LW_BOXES) window.LW_BOXES.add(reward.box);
+    if (reward.item && window.LW_ITEMS) window.LW_ITEMS.add(reward.item, 1);
+    return { tier:c.tier, reward:reward };
+  }
+
+  // Daily free Gossamer grant on first open per date. If previous day's
+  // grant wasn't caught (pouch was full), it's lost — encourages dailies.
+  function tryDailyGrant(){
+    var today = new Date().toISOString().slice(0,10);
+    var d = {}; try { d = JSON.parse(localStorage.getItem(DAILY)||'{}'); } catch(e){}
+    if (d.lastGrantDate === today) return false;
+    d.lastGrantDate = today;
+    try { localStorage.setItem(DAILY, JSON.stringify(d)); } catch(e){}
+    return add('gossamer');
+  }
+
+  // ── Panel ──
+  function openPanel(){
+    try { var old=document.getElementById('lw-cocoons-panel'); if(old){old.remove();return;} } catch(e){}
+    var s = _load();
+    var ov = document.createElement('div');
+    ov.id = 'lw-cocoons-panel';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:100004;background:rgba(5,8,4,0.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);overflow-y:auto;padding:1rem;animation:panelFadeIn 0.25s ease;';
+    var h = '<div style="max-width:460px;margin:0 auto;">';
+    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">';
+    h += '<div><div style="font-family:Playfair Display,serif;font-size:1.15rem;color:var(--gold);font-style:italic;">Cocoons</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:2px;">'+(s.slots?s.slots.length:0)+' / '+(s.cap||3)+' carried. Walking hatches them.</div></div>';
+    h += '<button onclick="window.LW_COCOONS.close()" style="width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.5);color:var(--cream);font-size:1rem;cursor:pointer;">\u2715</button>';
+    h += '</div>';
+    if (!s.slots || !s.slots.length){
+      h += '<div style="padding:2rem 1rem;text-align:center;font-family:DM Mono,monospace;font-size:0.62rem;color:var(--muted);line-height:1.7;">No cocoons yet.<br><br>They\u2019re drawn to wanderers. Walk the Wild tab, bloom a rare plant, or return tomorrow for your daily Gossamer.</div>';
+    } else {
+      for (var i=0;i<s.slots.length;i++){
+        var c = s.slots[i]; var t = TIERS[c.tier] || TIERS.gossamer;
+        var pct = Math.min(100, Math.round(100 * c.distance / c.target));
+        var ready = c.distance >= c.target;
+        var remaining = Math.max(0, c.target - c.distance);
+        h += '<div style="margin-bottom:0.7rem;padding:0.9rem;background:rgba(18,22,16,0.7);border:1.5px solid '+(ready?t.color:'rgba(74,124,53,0.2)')+';border-radius:14px;'+(ready?'box-shadow:0 0 16px '+t.color+'55;':'')+'">';
+        h += '<div style="display:flex;align-items:center;gap:0.9rem;">';
+        h += '<div style="width:80px;height:80px;flex-shrink:0;border-radius:50%;background:rgba(5,8,4,0.7);border:2.5px solid '+t.color+';position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;">';
+        h += '<img src="'+t.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;font-size:2.2rem;&quot;>'+t.icon+'</div>\';">';
+        h += '<div style="position:absolute;inset:0;border-radius:50%;border:3px solid transparent;border-top-color:'+t.color+';transform:rotate('+(pct*3.6-90)+'deg);transition:transform 0.4s ease;"></div>';
+        h += '</div>';
+        h += '<div style="flex:1;min-width:0;">';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.06em;">'+t.name+'</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);margin-top:3px;line-height:1.5;">'+t.lore+'</div>';
+        h += '<div style="height:5px;background:rgba(122,179,86,0.08);border-radius:3px;overflow:hidden;margin-top:6px;"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,rgba(122,179,86,0.6),'+t.color+');border-radius:3px;"></div></div>';
+        h += '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);margin-top:3px;"><span>'+c.distance.toLocaleString()+'m / '+c.target.toLocaleString()+'m</span><span>'+(ready?'<b style="color:'+t.color+';">READY TO HATCH</b>':(remaining.toLocaleString()+'m to go'))+'</span></div>';
+        h += '</div></div>';
+        if (ready) {
+          h += '<button onclick="window.LW_COCOONS.hatchClick('+i+')" style="display:block;width:100%;margin-top:0.7rem;padding:12px;border-radius:10px;border:1.5px solid '+t.color+';background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(122,179,86,0.12));color:'+t.color+';font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.12em;cursor:pointer;min-height:50px;">\u2728 HATCH</button>';
+        }
+        h += '</div>';
+      }
+    }
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);text-align:center;margin-top:1rem;line-height:1.6;">Walking credits every cocoon in your pouch at once. Rare cocoons come from the Wild \u2014 walking, blooms, and the daily dawn grant.</div>';
+    h += '</div>';
+    ov.innerHTML = h;
+    document.body.appendChild(ov);
+  }
+  function close(){ try { var p=document.getElementById('lw-cocoons-panel'); if(p)p.remove(); } catch(e){} }
+  function hatchClick(idx){
+    var result = hatch(idx);
+    if (!result) return;
+    // Reveal overlay
+    var t = TIERS[result.tier]; var r = result.reward;
+    var parts = [];
+    if (r.item && window.LW_ITEMS_CATALOG && window.LW_ITEMS_CATALOG[r.item]){
+      var it = window.LW_ITEMS_CATALOG[r.item];
+      parts.push({icon:it.icon, art:it.art, label:it.name});
+    }
+    if (r.box) parts.push({icon:'\ud83c\udf81', label:r.box+'× Mystery Box'});
+    if (r.dew) parts.push({icon:'\ud83d\udca7', label:r.dew+' Dew'});
+    var rv = document.createElement('div');
+    rv.id = 'lw-cocoon-reveal';
+    rv.style.cssText = 'position:fixed;inset:0;z-index:100011;background:radial-gradient(ellipse at 50% 40%,rgba(30,28,10,0.95) 0%,rgba(5,8,4,0.98) 70%);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;padding:1rem;animation:panelFadeIn 0.3s ease;';
+    var hh = '<div style="max-width:340px;text-align:center;">';
+    hh += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;letter-spacing:0.2em;color:'+t.color+';margin-bottom:0.5rem;">'+t.name.toUpperCase()+' HATCHES</div>';
+    hh += '<div style="width:160px;height:160px;margin:0 auto 1.2rem;border-radius:50%;border:3px solid '+t.color+';box-shadow:0 0 40px '+t.color+';background:rgba(18,22,16,0.7);overflow:hidden;display:flex;align-items:center;justify-content:center;animation:spinSlow 1.8s ease;"><img src="'+t.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;font-size:4rem;&quot;>'+t.icon+'</div>\';"></div>';
+    for (var pi=0; pi<parts.length; pi++){
+      hh += '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.7rem;margin-bottom:0.5rem;background:rgba(18,22,16,0.7);border:1.5px solid '+t.color+'55;border-radius:10px;">';
+      if (parts[pi].art) hh += '<div style="width:48px;height:48px;flex-shrink:0;border-radius:8px;overflow:hidden;background:rgba(5,8,4,0.6);display:flex;align-items:center;justify-content:center;"><img src="'+parts[pi].art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;font-size:1.6rem;&quot;>'+parts[pi].icon+'</div>\';"></div>';
+      else hh += '<div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0;">'+parts[pi].icon+'</div>';
+      hh += '<div style="flex:1;text-align:left;font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.06em;">'+parts[pi].label+'</div>';
+      hh += '</div>';
+    }
+    hh += '<button onclick="window.LW_COCOONS._dismiss()" style="margin-top:0.5rem;padding:12px 28px;border-radius:12px;border:1.5px solid var(--sage);background:rgba(122,179,86,0.18);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.12em;cursor:pointer;min-height:48px;">KEEP WALKING</button>';
+    hh += '</div>';
+    rv.innerHTML = hh;
+    document.body.appendChild(rv);
+    try { if (window._haptic) window._haptic('bloom'); } catch(e){}
+    window.LW_COCOONS._dismiss = function(){
+      try { rv.remove(); } catch(e){}
+      // Refresh panel behind
+      try { var p=document.getElementById('lw-cocoons-panel'); if(p)p.remove(); } catch(e){}
+      openPanel();
+    };
+  }
+
+  window.LW_COCOONS = {
+    TIERS: TIERS, add: add, count: count, cap: cap, slots: slots, setCap: setCap,
+    creditSteps: creditSteps, hatch: hatch, tryDailyGrant: tryDailyGrant,
+    openPanel: openPanel, hatchClick: hatchClick, close: close, _dismiss: function(){}
+  };
+  window.LW_debug = window.LW_debug || {};
+  window.LW_debug.grantCocoon = function(tier){ return add(tier || 'gossamer'); };
+  window.LW_debug.openCocoons = function(){ openPanel(); };
+  window.LW_debug.walkCocoons = function(m){ creditSteps(m || 1000); };
+
+  // Daily grant — try once per session load. A dawn cronish.
+  try { setTimeout(tryDailyGrant, 3000); } catch(e){}
 })();
 
 // ═══ LW_SIM — power-test harness for boxes, contests, forage, economy ═══
