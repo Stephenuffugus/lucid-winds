@@ -27067,9 +27067,12 @@ document.addEventListener('keydown', function(e) {
     // First plant ever minted by this keeper — one-shot celebration.
     // Skips if greenhouse already had plants (common on signup: gift
     // plant pre-populates greenhouse so the real first player-mint is
-    // the second plant).
+    // the second plant). Also skipped during active tutorial: step 18
+    // is already steering the Keeper and this modal would stack.
     try {
-      if (gh.length >= 2 && !localStorage.getItem('lw_first_mint_v1')) {
+      var _tutVal = localStorage.getItem('lw_tut');
+      var _tutActive = _tutVal && _tutVal !== 'done';
+      if (!_tutActive && gh.length >= 2 && !localStorage.getItem('lw_first_mint_v1')) {
         localStorage.setItem('lw_first_mint_v1', '1');
         setTimeout(function(){
           if (window._lwConfirm) {
@@ -54299,8 +54302,8 @@ function _step22(){
     var waterBtn=document.querySelector('.nur-btn.water');
     if(waterBtn&&window._lwPulseHint){window._lwPulseHint(waterBtn,30000,'lw_tut_water_pulse');}
     _dialog(
-      'Your seed is growing. Water it <span style="color:var(--gold);">once a day for 3 days</span> to bloom.<br><br>' +
-      '<span style="color:var(--sage);">Tap WATER to begin.</span>',
+      'Your seed is growing. Water it <span style="color:var(--gold);">once</span> to start it off.<br><br>' +
+      '<span style="color:var(--sage);">Tap WATER.</span>',
       '',null,'top');
     if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
     var polls=0;
@@ -54308,7 +54311,7 @@ function _step22(){
       try{
         var nur=(window.FG_Data&&FG_Data.getNursery)?FG_Data.getNursery():(JSON.parse(localStorage.getItem('sws_nursery')||'[]')||[]);
         if(nur.length>0&&(nur[0].waterLog||[]).length>0){
-          _clear();setTimeout(_step23,1500);return;
+          _clear();setTimeout(_step22b,1500);return;
         }
       }catch(e){}
       if(polls<300){polls++;setTimeout(watch,500);}
@@ -54318,24 +54321,96 @@ function _step22(){
   },1200);
 }
 
-// ═══ STEP 23: compost as boost — Phase 4 closer (hands off to Phase 5) ═══
+// ═══ STEP 22b: tutorial fast-forward — auto-water the remaining 2 days ═══
+// Stephen wants a full monorail after the second mint. Player waters
+// once; we explain that normally it's 3 days over real time, then
+// fill the remaining two entries ourselves so they SEE the bloom.
+function _step22b(){
+  _setStep(22);
+  _dialog(
+    'Normally a seed needs <span style="color:var(--gold);">2 more waterings over 3 days</span> to bloom.<br><br>' +
+    '<span style="color:var(--sage);">For your first one, we\u2019ll hook you up.</span>',
+    'BLOOM IT',function(){
+      _clear();
+      try{_tutFastForwardBloom();}catch(e){console.error('[tut bloom]',e);}
+      setTimeout(_step23,1800);
+    },'center');
+}
+
+// Directly seeds the nursery's first seed with 3 waterLog entries and
+// triggers the bloom modal. Bypasses the Dew cost + day-cooldown that
+// handleFertilize enforces, since the tutorial is covering the walk.
+function _tutFastForwardBloom(){
+  var nur=[];
+  try{nur=JSON.parse((window._secureGet?_secureGet('sws_nursery'):localStorage.getItem('sws_nursery'))||'[]');}catch(e){nur=[];}
+  if(!nur.length)return;
+  var seed=nur[0];
+  if(!seed.waterLog)seed.waterLog=[];
+  var lastDateStr=seed.waterLog.length>0?seed.waterLog[seed.waterLog.length-1]:new Date(Date.now()-86400000).toISOString().split('T')[0];
+  var lastDate=new Date(lastDateStr);
+  while(seed.waterLog.length<3){
+    lastDate=new Date(lastDate.getTime()+86400000);
+    var nd=lastDate.toISOString().split('T')[0];
+    if(seed.waterLog.indexOf(nd)<0)seed.waterLog.push(nd);
+    else break;
+  }
+  nur[0]=seed;
+  try{
+    if(window._secureSet)_secureSet('sws_nursery',JSON.stringify(nur));
+    else localStorage.setItem('sws_nursery',JSON.stringify(nur));
+  }catch(e){}
+  if(window.renderNursery)try{window.renderNursery();}catch(e){}
+  if(window._haptic)try{window._haptic('bloom');}catch(e){}
+  // Open the BLOOM confirm modal via handleWaterSeed semantics: the
+  // ready-to-bloom branch calls _lwConfirm with a BLOOM NOW button.
+  // Simpler: just call the bloom execution directly after a short
+  // beat so the player sees the nursery reflect the full waterLog.
+  setTimeout(function(){
+    try{
+      if(window._lwConfirm){
+        window._lwConfirm({
+          title:'READY TO BLOOM',
+          body:'Your seed is ready. Tap BLOOM NOW to bring it into the greenhouse.',
+          yes:'BLOOM NOW',
+          no:''
+        },function(){
+          // Find the seed again fresh and execute the bloom. _executeBloom
+          // is async + scoped inside the main IIFE; the public equivalent
+          // is the in-page handleBloom button click. Easiest: simulate it.
+          var btn=document.querySelector('.nur-btn.bloom');
+          if(btn)btn.click();
+        });
+      }
+    }catch(e){console.error('[tut bloom confirm]',e);}
+  },900);
+}
+
+// ═══ STEP 23: bloom celebration closer — grant L3 + route to Wild ═══
 function _step23(){
   _setStep(23);
-  // Watering landed — release the water-only lock so the Keeper can
-  // experiment with other nursery controls from here on.
+  // Watering landed + bloom kicked off. Release the water-only lock.
   try{document.body.classList.remove('lw-tut-water-only');}catch(e){}
+  // Grant enough XP to cross L3 so the Wild tab unlocks. Uses the
+  // whitelisted 'tut_unlock' reason to bypass the tutorial freeze.
+  try{
+    var curXp=parseInt(localStorage.getItem('pw_xp')||'0',10)||0;
+    if(curXp<36&&window.PW_grantXP){window.PW_grantXP(36-curXp,'tut_unlock');}
+  }catch(e){}
+  // Wait for any bloom celebration / level ceremony to clear.
+  _step23AfterCeremony(0);
+}
+function _step23AfterCeremony(attempts){
+  if(document.querySelector('#lu-overlay,.lu-overlay,#pw-win-overlay,#lw-confirm-modal')&&attempts<60){
+    setTimeout(function(){_step23AfterCeremony(attempts+1);},500);return;
+  }
   _dialog(
-    'Beautiful. Come back tomorrow to water again.<br><br>' +
-    'You can also <span style="color:var(--gold);">compost plants you don\u2019t want</span>. Each one gives fertilizer you can feed a growing seed.<br><br>' +
-    '<span style="color:var(--muted);font-size:0.85em;">Still, save compost for when your greenhouse is full.</span>',
-    'GOT IT',function(){
+    'Your first breed bloomed. You\u2019ve crossed <span style="color:var(--gold);">Keeper Lv 3</span>.<br><br>' +
+    'The <span style="color:var(--gold);">Wild</span> opens next. Your garden goes out into the world.',
+    'OPEN THE WILD',function(){
       _clear();
-      // Phase 5 requires L3 (canSee.wildTab). If reached, fire now.
-      // Otherwise park a pending flag — the level-ceremony hook will
-      // wake us back up at L3.
       var lvl=1;
       try{lvl=((window.canSee&&window.canSee.wildTab&&window.canSee.wildTab())?3:((window._getRank?_getRank(parseInt(localStorage.getItem('pw_xp')||'0',10)):{level:1}).level||1));}catch(e){}
-      if(lvl>=3){setTimeout(_step24,1200);}
+      if(lvl>=3){setTimeout(_step24,800);}
       else{
         try{localStorage.setItem('lw_tut_wild_pending','1');}catch(e){}
         _done();
