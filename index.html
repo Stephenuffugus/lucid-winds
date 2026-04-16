@@ -41461,6 +41461,21 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      Fallback: when :has() is unsupported the button just stays visible —
      not a bug, just slightly busy. */
   body.ob-active #lw-fb-btn, body.ob-active #lw-whatnow-btn, body.ob-active #sws-debug-toggle{display:none !important;}
+  /* During onboarding, hide ALL bottom-of-screen floating chrome so the
+     skip / dots / nav / keeper bar / drop FAB / backpack icon can't show
+     through the auth form and block the CLAIM button or password input.
+     Stephen flagged a "black bar blocking the bottom" on the skip path.
+     Brute-force hide everything that's position:fixed near the bottom. */
+  body.ob-active .fg-bottomnav,
+  body.ob-active .nav,
+  body.ob-active .drop-fab,
+  body.ob-active #dfb,
+  body.ob-active .bp2-icon,
+  body.ob-active #bpi,
+  body.ob-active #kb-compendium,
+  body.ob-active #pw-keeper-bar,
+  body.ob-active #sdi,
+  body.ob-active .lw-badge-chips{display:none !important;}
   /* Light-touch hint pulse — soft sage/gold glow that breathes on the
      highlighted element for ~8 seconds then self-removes. Used sparingly
      at three critical moments (first game visit, first-qualifying WHAT
