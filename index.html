@@ -59487,6 +59487,57 @@ window._lwClaimHerbarium = function(id){
     return { results:out, report:function(){return rep;} };
   }
 
+  // ─── 6. PLAYER-DAY ECONOMY SIM ───
+  // Simulate N days of three archetypes. Dew income, Sunbeams earned,
+  // items acquired, boxes + cocoons. No DOM — pure math.
+  function simPlayerDay(days, archetype){
+    days = days || 30; archetype = archetype || 'core';
+    // Archetype = games/day, km walked/day, blooms/day, foraging runs/day.
+    var A = {
+      casual: { games:1, km:0.5, blooms:0.5, forages:0.5 },
+      core:   { games:4, km:2.5, blooms:1.5, forages:2 },
+      whale:  { games:10, km:5, blooms:3, forages:4 }
+    }[archetype] || A['core'];
+    var dew=0, sunbeams=0, plants=1, items=0, boxes=0, cocoons=0;
+    var GAME_SB=3;           // avg sunbeams per game win
+    var MINT_COST_NEXT=30;   // after first plant
+    var HARVEST_DEW=3;       // per successful forage
+    var STEP_DEW_PER_KM=6;   // rough avg across milestones
+    var BLOOM_BOX_CH={Common:0,Uncommon:0.08,Rare:0.20,Epic:0.40,Legendary:0.65,Mythic:0.85,Cosmic:1.00};
+    var GD={Common:0.50,Uncommon:0.25,Rare:0.12,Epic:0.07,Legendary:0.04,Mythic:0.015,Cosmic:0.005};
+    var gKeys=Object.keys(GD);
+    function pickG(){ var r=Math.random(),acc=0; for(var i=0;i<gKeys.length;i++){acc+=GD[gKeys[i]];if(r<acc) return gKeys[i];} return 'Common'; }
+    for (var d=0; d<days; d++){
+      // Games
+      sunbeams += A.games * GAME_SB;
+      while (sunbeams >= MINT_COST_NEXT){ plants++; sunbeams -= MINT_COST_NEXT; }
+      // Walking
+      dew += A.km * STEP_DEW_PER_KM;
+      // Cocoons earned through walking — rough: 1/5 chance per km of a Gossamer
+      // (skipping deeper rules; this is ballpark)
+      if (Math.random() < A.km * 0.2) cocoons++;
+      // Foraging runs
+      for (var f=0;f<A.forages;f++){
+        if (Math.random() < 0.75) dew += HARVEST_DEW; // success rate rough
+      }
+      // Blooms
+      for (var b=0;b<A.blooms;b++){
+        var g=pickG();
+        if (Math.random() < (BLOOM_BOX_CH[g]||0)) boxes++;
+      }
+    }
+    // Open any accumulated boxes for item count
+    for (var bi=0;bi<boxes;bi++) items++;
+    var rep = 'PLAYER-DAY ECON  ('+archetype+', '+days+' days)\n';
+    rep += '  Dew earned:      '+Math.round(dew)+' ('+(dew/days).toFixed(1)+'/day)\n';
+    rep += '  Sunbeams flowed: '+(A.games*GAME_SB*days)+' ('+(A.games*GAME_SB)+'/day)\n';
+    rep += '  Plants owned:    '+plants+'\n';
+    rep += '  Boxes earned:    '+boxes+'\n';
+    rep += '  Items received:  '+items+'\n';
+    rep += '  Cocoons earned:  '+cocoons+'\n';
+    return { archetype:archetype, days:days, dew:Math.round(dew), plants:plants, boxes:boxes, items:items, cocoons:cocoons, report:function(){return rep;} };
+  }
+
   // ─── RUN ALL ───
   function runAll(){
     var start = Date.now();
@@ -59495,6 +59546,9 @@ window._lwClaimHerbarium = function(id){
     var r3 = simMulchWardAssert();
     var r4 = simDropPath(30, 1);
     var r5 = simForageSolvability(200);
+    var r6a = simPlayerDay(30, 'casual');
+    var r6b = simPlayerDay(30, 'core');
+    var r6c = simPlayerDay(30, 'whale');
     var elapsed = Date.now() - start;
     var asserts = [];
     // Box weights within ±3%
@@ -59519,6 +59573,7 @@ window._lwClaimHerbarium = function(id){
     rep += '  ASSERTS  '+passed+'/'+asserts.length+' passed\n';
     for (var bi=0;bi<asserts.length;bi++) rep += '    '+(asserts[bi].pass?'\u2713':'\u2717')+'  '+asserts[bi].name+'  '+asserts[bi].detail+'\n';
     rep += '\n' + r1.report() + '\n' + r2.report() + '\n' + r3.report() + '\n' + r4.report() + '\n' + r5.report();
+    rep += '\n' + r6a.report() + '\n' + r6b.report() + '\n' + r6c.report();
     if (typeof console !== 'undefined') console.log(rep);
     return rep;
   }
@@ -59529,6 +59584,7 @@ window._lwClaimHerbarium = function(id){
     simMulchWardAssert: simMulchWardAssert,
     simDropPath: simDropPath,
     simForageSolvability: simForageSolvability,
+    simPlayerDay: simPlayerDay,
     runAll: runAll
   };
   window.LW_debug = window.LW_debug || {};
