@@ -30368,15 +30368,32 @@ document.addEventListener('keydown', function(e) {
   window.lwSaveBoosters = function(b){try{localStorage.setItem('lw_boosters',JSON.stringify(b));}catch(e){}};
   window.lwIsBoostActive = function(id){var b=window.lwLoadBoosters();return (b[id]||0)>Date.now();};
 
+  // XP booster exclusivity — only one of the XP-multiplying boosters can be
+  // active at a time. Prevents multiplier stacking from trivializing
+  // prestige. Doesn't stop buying them; just enforces one-at-a-time use.
+  var XP_BOOSTERS=['dewCache','dawnAnthem','pollenRush'];
   window.lwBuyBooster = function(bid){
     var def=window.LW_BOOSTERS[bid];if(!def)return false;
     var dew=window.getTotalDew?window.getTotalDew():0;
     var curLvl=(window.canSee&&window.canSee.currentLevel)?window.canSee.currentLevel():1;
     if(curLvl<(def.levelRequired||1)){if(window._toast)_toast('Reach Lv '+(def.levelRequired||1)+' first.');return false;}
     if(dew<def.cost){if(window._toast)_toast('Need '+def.cost+' Dew ('+(def.cost-dew)+' more).');return false;}
+    // Booster exclusivity check — if activating an XP booster, ensure no
+    // other XP booster is currently active. Non-XP boosters (bloomTonic
+    // etc.) are not affected.
+    if(XP_BOOSTERS.indexOf(def.id)>=0){
+      var boosters=window.lwLoadBoosters();
+      for(var _xi=0;_xi<XP_BOOSTERS.length;_xi++){
+        var _oid=XP_BOOSTERS[_xi];
+        if(_oid!==def.id&&boosters[_oid]&&boosters[_oid]>Date.now()){
+          var _activeName=(window.LW_BOOSTERS[_oid]&&window.LW_BOOSTERS[_oid].name)||_oid;
+          if(window._toast)_toast(_activeName+' is already active. Only one XP booster at a time.');
+          return false;
+        }
+      }
+    }
     if(!window.spendDew(def.cost))return false;
     var boosters=window.lwLoadBoosters();
-    // If already active, extend from current expiry; else start from now
     var base=boosters[def.id]&&boosters[def.id]>Date.now()?boosters[def.id]:Date.now();
     boosters[def.id]=base+def.durationMs;
     window.lwSaveBoosters(boosters);
@@ -39850,14 +39867,29 @@ setInterval(function(){var w=_getWild();if(w.length>0){
   // Diminishing-returns tail after 5 plants — additional plants
   // contribute at half rate. Prevents whale armies from printing Dew.
   var pollenRates={Common:1,Uncommon:2,Rare:4,Epic:6,Legendary:9,Mythic:12,Cosmic:15};
+  // Lineage fade: deep-generation plants earn less passive Dew.
+  // Keeps your ancient lineage spiritually meaningful without letting
+  // whales farm infinite descendants for XP. Gen 1-2 full, then taper.
+  function _lineageFade(gen){
+    var g=gen||1;
+    if(g<=2)return 1.0;
+    if(g===3)return 0.75;
+    if(g===4)return 0.50;
+    if(g===5)return 0.25;
+    return 0.0; // Gen 6+ earn nothing passive — stories & challenges only
+  }
   var hourlyTotal=0;
-  // Sort plants by rate desc so the top 5 (highest-tier) get full rate
-  var sortedRates=[];
-  for(var si=0;si<w.length;si++)sortedRates.push(pollenRates[_getWildGrade(w[si].hash)]||1);
-  sortedRates.sort(function(a,b){return b-a;});
-  for(var i=0;i<sortedRates.length;i++){
+  // Apply lineage fade to each plant's rate, then sort + top-5 rule
+  var fadedRates=[];
+  for(var si=0;si<w.length;si++){
+    var _plantGen=w[si].generation||1;
+    var _faded=(pollenRates[_getWildGrade(w[si].hash)]||1)*_lineageFade(_plantGen);
+    if(_faded>0)fadedRates.push(_faded);
+  }
+  fadedRates.sort(function(a,b){return b-a;});
+  for(var i=0;i<fadedRates.length;i++){
     var mult=i<5?1.0:0.5;
-    hourlyTotal+=sortedRates[i]*mult;
+    hourlyTotal+=fadedRates[i]*mult;
   }
   // Weather: Dawn Mist doubles Dew generation while active
   try{if(window.isWeatherMist&&window.isWeatherMist())hourlyTotal*=2;}catch(e){}
@@ -47201,8 +47233,8 @@ window.PW_UI=(function(){
 var _bpOpen=false,_lbOpen=false,_csOpen=false;
 
 // ═══ KEEPER RANK DATA — 100 levels, prestige-enabled curve ═══
-// Curve: levelCost(L) = round(5 * L^1.15). Cumulative XP to L100 ≈ 35,000.
-// Moderate player (350 XP/day) ≈ 3-4 months per prestige cycle.
+// Curve: levelCost(L) = round(8 * L^1.25). Cumulative XP to L100 ≈ 79,000.
+// Moderate player (400 XP/day) ≈ 6.5 months per prestige cycle.
 // Infinite prestige past P10 → levels display as "Lvl 1.XXXk" continuous.
 var RANKS=(function(){
   var titles=[
@@ -47220,7 +47252,7 @@ var RANKS=(function(){
   var arr=[],cum=0;
   for(var i=0;i<100;i++){
     var L=i+1;
-    var cost=L===1?0:Math.round(5*Math.pow(L,1.15));
+    var cost=L===1?0:Math.round(8*Math.pow(L,1.25));
     cum+=cost;
     arr.push({lvl:L,title:titles[i],xp:cum});
   }
