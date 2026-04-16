@@ -48397,7 +48397,7 @@ window.PW_grantXP=function(amount,reason){
       if(newR.level>=7&&!localStorage.getItem('lw_class')&&!localStorage.getItem('lw_jit_class_v1')){
         localStorage.setItem('lw_jit_class_v1','1');
         var _classJITPoll=function(attempts){
-          if(document.querySelector('#lu-overlay,.lu-overlay,#lw-confirm-modal,#pw-win-overlay')&&attempts<60){setTimeout(function(){_classJITPoll(attempts+1);},500);return;}
+          if(document.querySelector('#lu-overlay.open,.lu-overlay.open,#lw-confirm-modal,#pw-win-overlay')&&attempts<60){setTimeout(function(){_classJITPoll(attempts+1);},500);return;}
           if(!window._lwConfirm)return;
           window._lwConfirm({
             title:'A PATH IS OPENING',
@@ -48420,7 +48420,7 @@ window.PW_grantXP=function(amount,reason){
       if(newR.level>=95&&_curP===0&&!localStorage.getItem('lw_jit_prestige_v1')){
         localStorage.setItem('lw_jit_prestige_v1','1');
         var _prestigeJITPoll=function(attempts){
-          if(document.querySelector('#lu-overlay,.lu-overlay,#lw-confirm-modal,#pw-win-overlay')&&attempts<60){setTimeout(function(){_prestigeJITPoll(attempts+1);},500);return;}
+          if(document.querySelector('#lu-overlay.open,.lu-overlay.open,#lw-confirm-modal,#pw-win-overlay')&&attempts<60){setTimeout(function(){_prestigeJITPoll(attempts+1);},500);return;}
           if(!window._lwConfirm)return;
           window._lwConfirm({
             title:'A CYCLE IS CLOSING',
@@ -54408,7 +54408,10 @@ function _step23(){
   _step23AfterCeremony(0);
 }
 function _step23AfterCeremony(attempts){
-  if(document.querySelector('#lu-overlay,.lu-overlay,#pw-win-overlay,#lw-confirm-modal')&&attempts<60){
+  // _luDismiss only strips .open; the #lu-overlay element lingers in
+  // the DOM. Match .open explicitly so this poll doesn't stall for 30s
+  // after the ceremony has actually faded.
+  if(document.querySelector('#lu-overlay.open,.lu-overlay.open,#pw-win-overlay,#lw-confirm-modal')&&attempts<60){
     setTimeout(function(){_step23AfterCeremony(attempts+1);},500);return;
   }
   _dialog(
