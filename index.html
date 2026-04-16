@@ -53561,20 +53561,23 @@ function _step1b(){
   var firstCard=cards[0];
   _overlay(function(){/* no-op — overlay is a capture zone only */});
   _spotlight(firstCard);
+  // Pulse the PLANT, not the arrow — Stephen's call. The spotlight cutout
+  // keeps the card lit while the rest of the UI stays dim; the pulse
+  // animation on the card itself draws the eye to what to tap.
+  firstCard.style.animation='_whPulse 1.4s ease-in-out infinite';
   _dialog(
     'This is your <span style="color:var(--gold);">first plant</span>.<br>Touch it to learn more.',
     null,null,'top');
-  // Standalone arrow — separate from the dialog so it doesn't cover the
-  // card. Centered vertically, pulses gold, points left. Removed when
-  // the card is tapped (see onclick override below).
+  // Minimal arrow — no box, no flash. Just a static gold glyph pointing
+  // at the card. The card itself carries the attention via its pulse.
   var arr=document.createElement('div');
   arr.id='_lw-tut-arrow';
-  arr.style.cssText='position:fixed;top:48%;left:50%;transform:translate(-50%,-50%);z-index:1000012;pointer-events:none;font-family:Playfair Display,serif;font-size:clamp(3.4rem,12vw,5rem);color:var(--gold);line-height:1;text-shadow:0 0 18px rgba(200,168,75,0.5);animation:_whPulse 1.4s ease-in-out infinite;background:rgba(18,24,16,0.82);border:1.5px solid rgba(200,168,75,0.3);border-radius:16px;padding:0.4rem 0.9rem;box-shadow:0 8px 32px rgba(0,0,0,0.55);';
+  arr.style.cssText='position:fixed;top:48%;left:50%;transform:translate(-50%,-50%);z-index:1000012;pointer-events:none;font-family:Playfair Display,serif;font-size:clamp(3.4rem,12vw,5rem);color:var(--gold);line-height:1;text-shadow:0 0 18px rgba(200,168,75,0.65),0 0 6px rgba(0,0,0,0.9);';
   arr.textContent='\u2190';
   document.body.appendChild(arr);
   var origClick=firstCard.onclick;
   firstCard.onclick=function(e){
-    _clear();firstCard.style.zIndex='';firstCard.onclick=origClick;
+    _clear();firstCard.style.zIndex='';firstCard.style.animation='';firstCard.onclick=origClick;
     var ar=document.getElementById('_lw-tut-arrow');if(ar)ar.remove();
     // Lock the carousel immediately so compost/breed/close/swipe can't
     // be triggered by the same tap that opens it.
