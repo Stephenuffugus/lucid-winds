@@ -53600,13 +53600,82 @@ function _step30(){
     'GOT IT',function(){_clear();setTimeout(_step31,300);},'center');
 }
 
-// ═══ STEP 31: closer + prep for Phase 7 (Book of Secrets) ═══
+// ═══ STEP 31: closer + hands off to Phase 7 ═══
 function _step31(){
   _setStep(31);
   _dialog(
-    'That\u2019s enough to begin. Wander, plant, forage, breed.<br><br>' +
-    'The rest unlocks as you go \u2014 a <span style="color:var(--gold);">Book of Secrets</span> opens once you\u2019re deeper in.',
-    'LET\u2019S GO',function(){_clear();_done();},'center');
+    'Close your backpack when you\u2019re done \u2014 then one last thing.',
+    'OK',function(){
+      _clear();
+      // Nudge the backpack closed so step 32 can spotlight BoS cleanly.
+      try{var bpe=document.getElementById('bpe');if(bpe&&bpe.classList.contains('open')&&window.FG_Backpack&&window.FG_Backpack.toggle)window.FG_Backpack.toggle();}catch(e){}
+      setTimeout(_step32,900);
+    },'center');
+}
+
+// ═══ STEP 32: Book of Secrets spotlight ═══
+function _step32(){
+  _setStep(32);
+  var bos=document.getElementById('kb-compendium');
+  if(!bos){setTimeout(_step34,300);return;}
+  // Ensure visible during tutorial — the has-entries gate can lag behind
+  // the actual journal state.
+  try{bos.style.display='flex';bos.classList.add('has-entries');}catch(e){}
+  _overlay(function(){_done();});
+  _spotlight(bos);
+  _dialog(
+    'Every discovery you ever make lives in the <span style="color:var(--gold);">Book of Secrets</span>.<br><br>Tap it once to take a look.',
+    '',null,'bottom');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  var polls=0;
+  var watch=function(){
+    var ov=document.getElementById('bos-overlay');
+    if(ov){
+      _clear();bos.style.zIndex='';
+      setTimeout(_step33,500);
+      return;
+    }
+    if(polls<600){polls++;setTimeout(watch,500);}
+    else {_done();}
+  };
+  watch();
+}
+
+// ═══ STEP 33: inside BoS — let them browse, watch for close ═══
+function _step33(){
+  _setStep(33);
+  _dialog(
+    'Take your time. Every tab fills in as you play.<br><br>' +
+    '<span style="color:var(--muted);font-size:0.85em;">Close when you\u2019re ready.</span>',
+    '',null,'top');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  var polls=0;
+  var watch=function(){
+    if(!document.getElementById('bos-overlay')){
+      _clear();
+      setTimeout(_step34,400);
+      return;
+    }
+    if(polls<1200){polls++;setTimeout(watch,500);}
+    else {_clear();setTimeout(_step34,400);}
+  };
+  watch();
+}
+
+// ═══ STEP 34: final lore send-off + plant-XP unlock ═══
+function _step34(){
+  _setStep(34);
+  _dialog(
+    '<span style="color:var(--gold);">You are the sun of your garden.</span><br><br>' +
+    'Your attention is what grows here. Every plant you keep alive \u2014 in your greenhouse and in the world \u2014 is a record of a moment you paid attention.<br><br>' +
+    'Go make beautiful things.',
+    'THANK YOU',function(){
+      _clear();
+      // Tutorial complete — release the plant-XP lock so future mints,
+      // blooms, and collection milestones grant XP normally.
+      try{localStorage.setItem('lw_plant_xp_unlocked','1');}catch(e){}
+      _done();
+    },'center');
 }
 
 // ═══ Level-ceremony hook: wake the tutorial at L3 if Phase 5 was parked ═══
