@@ -5798,7 +5798,7 @@ window._addSwitchTabHook = function(fn){
     </div>
     <!-- Row 2: currency badges (Sunbeams + Dew + optional Compendium + Install) -->
     <div class="kb-row2">
-      <div id="kb-sunbeams" title="Sunbeams" onclick="if(window.openSunbeamModal)openSunbeamModal();else if(window.openEconModal)openEconModal();" style="border:2px solid rgba(200,168,75,0.5);"><img src="assets/btn-sunbeams.png" alt="Sunbeams" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:8px;"><span class="kb-val">0</span></div>
+      <div id="kb-sunbeams" title="Sunbeams" onclick="if(window.openSunbeamModal)openSunbeamModal();else if(window.openEconModal)openEconModal();" style="border:2px solid rgba(200,168,75,0.5);"><img src="assets/btn-sunbeams.png" alt="Sunbeams" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"><span class="kb-val">0</span></div>
       <div id="kb-mystery" onclick="if(window._openMystery)_openMystery();" title="Mystery Box" style="border:2px solid rgba(232,160,191,0.5);"><img src="assets/btn-mystery.png" alt="Mystery" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
       <div id="kb-dew" title="Dew" onclick="if(window.openDewModal)openDewModal();" style="border:2px solid rgba(91,175,220,0.5);"><img src="assets/btn-dew.png" alt="Dew" style="width:150%;height:150%;object-fit:cover;display:block;margin:-25%;"><span class="kb-val">0</span></div>
       <div id="kb-weather" onclick="if(window._openWeather)_openWeather();" title="Summon Weather" style="border:2px solid rgba(91,175,220,0.5);"><img src="assets/btn-weather.png" alt="Weather" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
@@ -27734,32 +27734,15 @@ document.addEventListener('keydown', function(e) {
       else{var _bpi=document.getElementById('bpi');if(_bpi)_bpi.style.display='block';}
     }catch(e){}
     // First time the greenhouse has any plants — welcome the player and
-    // give them the core loop in one breath. Toast-then-modal so the
-    // haiku hint lands first, the longer explainer lands second.
+    // Legacy "WELCOME TO THE GREENHOUSE" modal + haiku toast were
+    // removed here — the Phase 2 tutorial delivers the same narrative
+    // in-context (step 16 folds in the welcome line). Stephen flagged
+    // seeing two popups on top of each other; suppressing via the
+    // lw_tut_tap_plant_v1 flag wasn't enough because the modal code
+    // could still race a render. Gone entirely now.
     try {
       if (gh.length >= 1 && !localStorage.getItem('lw_tut_tap_plant_v1')) {
         localStorage.setItem('lw_tut_tap_plant_v1', '1');
-        // Give the haiku/tap hint time to breathe. First toast at 2s, and
-        // the welcome modal now lands at 9s so players can look around
-        // before being pushed. 'Keep Looking' is primary to avoid feeling
-        // rushed — the Game tab is a suggestion, not a demand.
-        setTimeout(function(){
-          if (window._toast) window._toast('\ud83c\udf3f Tap your plant to read its haiku. Every plant has a unique 7-5-7 poem shaped by your attention.');
-        }, 2000);
-        (function _ghWelcome(attempt){
-          if(attempt>6)return;
-          setTimeout(function(){
-            if(document.querySelector('.lu-overlay')||document.getElementById('lw-confirm-modal')){_ghWelcome(attempt+1);return;}
-            if(window._lwConfirm){
-              window._lwConfirm({
-                title:'WELCOME TO THE GREENHOUSE',
-                body:'This is where your plants live. Each one unique, minted from your attention.<br><br><b>Sunbeams</b> come from playing games and tending the world. Tap the Sunbeam counter any time to <b>sprout a new plant</b> when you\u2019ve gathered enough.<br><br>No two keepers collect the same garden. Take your time.',
-                yes:'KEEP LOOKING',
-                no:'OPEN THE GAMES'
-              },function(){},function(){if(window.switchTab)switchTab('game');});
-            }
-          },attempt===0?9000:3000);
-        })(0);
       }
     } catch(e) {}
     // Pre-warm SVG cache from IndexedDB for all greenhouse plants
@@ -41573,6 +41556,29 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
   body.lw-tut-active.lw-tut-nav-focus .fg-nav-btn[onclick*="'game'"],
   body.lw-tut-active.lw-tut-nav-nursery .fg-nav-btn[onclick*="nursery"],
   body.lw-tut-active.lw-tut-nav-wild #nav-btn-wild{pointer-events:auto !important;opacity:1 !important;filter:none;}
+  /* Tutorial: lock the keeper-bar sunbeam + dew counters too. Player
+     shouldn't be able to open sunbeam/dew modals by tapping the icons
+     before the tutorial points at them. Sunbeams unlocks at step 16
+     (mint prompt) via lw-tut-sb-on. Dew stays locked through the
+     entire tutorial. */
+  body.lw-tut-active #kb-sunbeams,
+  body.lw-tut-active #kb-dew{pointer-events:none !important;opacity:0.5 !important;filter:saturate(0.45);transition:opacity 0.4s,filter 0.4s;}
+  body.lw-tut-active.lw-tut-sb-on #kb-sunbeams{pointer-events:auto !important;opacity:1 !important;filter:none;}
+  /* Tutorial: lock every carousel control EXCEPT the card itself (tap
+     to flip) during the walkthrough. pgm-act-btn buttons (DOWNLOAD,
+     BREED, COMPOST, DETAILS, SHARE, INSPECT) all blocked so the tester
+     can't sidetrack into compost or breed before the tutorial reaches
+     those steps. pgm-close-btn + swipe arrows also locked. Step 12
+     opens the exit path via lw-tut-carousel-can-close class. */
+  body.lw-tut-active.lw-tut-carousel-lock .pgm-act-btn,
+  body.lw-tut-active.lw-tut-carousel-lock .pgm-close-btn,
+  body.lw-tut-active.lw-tut-carousel-lock .cs-nav-arrow,
+  body.lw-tut-active.lw-tut-carousel-lock .cs-nav-btn{pointer-events:none !important;opacity:0.3 !important;filter:saturate(0.35);}
+  body.lw-tut-active.lw-tut-carousel-lock.lw-tut-carousel-can-close .pgm-close-btn{pointer-events:auto !important;opacity:1 !important;filter:none;}
+  /* Tutorial dialog — wider and lower-profile. Previous styling was
+     taller than wide which forced text into narrow lines and covered
+     the card behind it. */
+  #_dlg-tut-wide{max-width:min(92vw,480px);padding:0.9rem 1.2rem;line-height:1.5;}
   /* Tutorial Step 9: only DETAILS and SHARE are tappable below the
      carousel card. The other .pgm-act-btn buttons fade and lose pointer
      events so the tester can't veer off. We target by onclick attribute
@@ -49816,6 +49822,16 @@ function start(){
   if(_isOnboarded())return;
   var el=document.getElementById('pw-onboard');if(!el)return;
   el.classList.add('active');
+  // Set the legacy welcome suppress flag + clear first-game flags at the
+  // earliest possible moment so no background render during the cinematic
+  // or gift-plant mint triggers the old "WELCOME TO THE GREENHOUSE" modal.
+  try{
+    localStorage.setItem('lw_tut_tap_plant_v1','1');
+    localStorage.removeItem('lw_first_focus_done');
+    localStorage.removeItem('lw_first_game_bonus_given');
+    localStorage.removeItem('lw_first_game_won');
+    localStorage.removeItem('lw_quest_first_game');
+  }catch(e){}
   // PWA / installed-app users get a faster path — the cinematic is a
   // first-touch moment; returning-but-not-signed-in installs shouldn't
   // have to sit through it again.
@@ -49924,17 +49940,18 @@ function _playLines(beat){
   var lines=document.querySelectorAll('.ob-line[data-beat="'+beat+'"]');
   if(!lines.length){_advanceBeat();return;}
   var i=0;
-  // Cinematic compressed: was 3000ms/line + 2500ms tail. Now 1800ms/line
-  // + 1200ms tail. Trims ~60% off the cinematic without losing the feel.
+  // Cinematic compressed further: 1800→1400ms/line, 1200→900ms tail.
+  // Stephen's test: "the words on the second and third beats need to
+  // come in sooner." Applied to all beats for consistency.
   function showNext(){
     if(i>=lines.length){
-      _lineTimer=setTimeout(function(){_advanceBeat();},1200);
+      _lineTimer=setTimeout(function(){_advanceBeat();},900);
       return;
     }
     if(i>0){lines[i-1].classList.remove('on');lines[i-1].classList.add('off');}
     lines[i].classList.add('on');lines[i].classList.remove('off');
     i++;
-    _lineTimer=setTimeout(showNext,1800);
+    _lineTimer=setTimeout(showNext,1400);
   }
   showNext();
 }
@@ -50045,7 +50062,7 @@ function _runTutorial(onComplete){
   ov.id = 'ob-tutorial';
   ov.style.cssText = 'position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.2rem;background:radial-gradient(ellipse at 50% 30%,rgba(26,36,22,0.92) 0%,rgba(5,8,4,0.98) 75%);animation:panelFadeIn 0.45s ease;';
   var h = '';
-  h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.1rem;color:var(--cream);margin-bottom:0.4rem;text-align:center;">Attention makes light.</div>';
+  h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.1rem;color:var(--cream);margin-bottom:0.4rem;text-align:center;">Attention brings light.</div>';
   h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);margin-bottom:1.4rem;text-align:center;line-height:1.6;max-width:320px;">Watch the sequence, then tap it back.<br>Three steps \u2014 earn your first Sunbeams.</div>';
   h += '<div id="ob-tut-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;width:min(300px,80vw);margin-bottom:1.2rem;">';
   for (var b=0;b<4;b++){
@@ -53142,7 +53159,7 @@ function _dialog(text,btnLabel,btnCb,pos){
   // Opacity-only fade. panelFadeIn uses translateY which collides with the
   // translate(-50%,...) we need for horizontal centering — that was the
   // "jumps from the right into the middle" bug Stephen flagged.
-  _dlg.style.cssText='position:fixed;z-index:1000012;background:rgba(18,24,16,0.97);border:1.5px solid rgba(200,168,75,0.3);border-radius:16px;padding:1.2rem 1.4rem;max-width:min(340px,90vw);font-family:Playfair Display,serif;font-size:clamp(0.85rem,2.8vw,1.05rem);color:var(--cream);line-height:1.8;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.6);opacity:0;transition:opacity 0.35s ease;';
+  _dlg.style.cssText='position:fixed;z-index:1000012;background:rgba(18,24,16,0.97);border:1.5px solid rgba(200,168,75,0.3);border-radius:16px;padding:0.95rem 1.3rem;max-width:min(92vw,480px);width:max-content;font-family:Playfair Display,serif;font-size:clamp(0.88rem,2.8vw,1.05rem);color:var(--cream);line-height:1.55;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.6);opacity:0;transition:opacity 0.35s ease;';
   if(pos==='top'){_dlg.style.top='12%';_dlg.style.left='50%';_dlg.style.transform='translateX(-50%)';}
   else if(pos==='bottom'){_dlg.style.bottom='calc(90px + env(safe-area-inset-bottom,0px))';_dlg.style.left='50%';_dlg.style.transform='translateX(-50%)';}
   else{_dlg.style.top='40%';_dlg.style.left='50%';_dlg.style.transform='translate(-50%,-50%)';}
@@ -53207,10 +53224,13 @@ _done=function(){
   try{
     document.body.classList.remove(
       'lw-tut-active','lw-tut-limit-actions',
-      'lw-tut-bp-on','lw-tut-bos-on',
+      'lw-tut-bp-on','lw-tut-bos-on','lw-tut-sb-on',
+      'lw-tut-carousel-lock','lw-tut-carousel-can-close',
       'lw-tut-nav-greenhouse','lw-tut-nav-focus','lw-tut-nav-nursery','lw-tut-nav-wild'
     );
   }catch(e){}
+  // Orphan arrow cleanup.
+  try{var _a=document.getElementById('_lw-tut-arrow');if(_a)_a.remove();}catch(e){}
   // Strip any residual pulse classes on UI elements the tutorial touches.
   try{
     var _kbs=document.getElementById('kb-sunbeams');
@@ -53263,8 +53283,9 @@ function _step1(retries){
 
 // ═══ STEP 1b: fade in overlay + spotlight the plant + arrow cue ═══
 // Overlay click is NO-OP so tapping dark area doesn't dismiss or fall
-// through. Stephen wanted a mid-screen arrow pointing LEFT at the plant
-// so the visual path is obvious without more text.
+// through. Dialog sits at the top; arrow renders in its own separate
+// pulsing box in the middle of the screen pointing LEFT at the plant
+// (so neither element obscures the card).
 function _step1b(){
   _setStep(1);
   var cards=document.querySelectorAll('.greenhouse-plant:not(.undiscovered)');
@@ -53273,12 +53294,23 @@ function _step1b(){
   _overlay(function(){/* no-op — overlay is a capture zone only */});
   _spotlight(firstCard);
   _dialog(
-    '<div style="font-size:3.2rem;margin-bottom:0.4rem;animation:_whPulse 1.5s ease infinite;color:var(--gold);line-height:1;">\u2190</div>' +
     'This is your <span style="color:var(--gold);">first plant</span>.<br>Touch it to learn more.',
-    null,null,'center');
+    null,null,'top');
+  // Standalone arrow — separate from the dialog so it doesn't cover the
+  // card. Centered vertically, pulses gold, points left. Removed when
+  // the card is tapped (see onclick override below).
+  var arr=document.createElement('div');
+  arr.id='_lw-tut-arrow';
+  arr.style.cssText='position:fixed;top:48%;left:50%;transform:translate(-50%,-50%);z-index:1000012;pointer-events:none;font-family:Playfair Display,serif;font-size:clamp(3.4rem,12vw,5rem);color:var(--gold);line-height:1;text-shadow:0 0 18px rgba(200,168,75,0.5);animation:_whPulse 1.4s ease-in-out infinite;background:rgba(18,24,16,0.82);border:1.5px solid rgba(200,168,75,0.3);border-radius:16px;padding:0.4rem 0.9rem;box-shadow:0 8px 32px rgba(0,0,0,0.55);';
+  arr.textContent='\u2190';
+  document.body.appendChild(arr);
   var origClick=firstCard.onclick;
   firstCard.onclick=function(e){
     _clear();firstCard.style.zIndex='';firstCard.onclick=origClick;
+    var ar=document.getElementById('_lw-tut-arrow');if(ar)ar.remove();
+    // Lock the carousel immediately so compost/breed/close/swipe can't
+    // be triggered by the same tap that opens it.
+    try{document.body.classList.add('lw-tut-carousel-lock');}catch(e){}
     if(origClick)origClick.call(firstCard,e);
     _setStep(2);_waitForCarousel(0);
   };
@@ -53460,10 +53492,14 @@ function _step11(){
 // ═══ STEP 12: close + games tab ═══
 function _step12(){
   _setStep(12);
+  // Unlock the carousel X close button too, in case the tester taps it
+  // instead of the dialog button.
+  try{document.body.classList.add('lw-tut-carousel-can-close');}catch(e){}
   _dialog(
     'Now <span style="color:var(--gold);">close this plant</span> and return to your greenhouse.',
     'CLOSE',function(){
       _clear();
+      try{document.body.classList.remove('lw-tut-carousel-lock','lw-tut-carousel-can-close');}catch(e){}
       if(window.closePlantGallery)closePlantGallery();
       setTimeout(_stepGame,800);
     },'bottom');
@@ -53594,6 +53630,8 @@ function _forceFirstFocusReward(){
 function _step16(){
   if(_getStep()!==16){return;}
   _setStep(16);
+  // Unlock the sunbeam button at the moment the tutorial invites a tap.
+  try{document.body.classList.add('lw-tut-sb-on');}catch(e){}
   if(window.switchTab)switchTab('greenhouse');
   setTimeout(function(){
     var kbs=document.getElementById('kb-sunbeams');
