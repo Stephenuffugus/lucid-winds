@@ -50487,12 +50487,33 @@ function skip(){
   if(!_giftHash)_genGiftHash();
   if(!_giftHash){_giftHash='';for(var i=0;i<64;i++)_giftHash+='0123456789abcdef'[Math.floor(Math.random()*16)];}
   clearTimeout(_lineTimer);
-  // Jump straight to beat 4 which shows auth form + gift plant
+  // Force-hide EVERY prior beat before calling _showBeat(4). _showBeat
+  // only fades out one "prev" beat (based on _beat var), but the actual
+  // visible beat may differ — skip() sets _beat=3 below regardless of
+  // whether the player was on beat 1 or 2, so those beats kept their
+  // .show class and overlaid beat 4. This loop kills them all.
+  for(var _bi=1;_bi<=3;_bi++){
+    var _ob=document.getElementById('ob-beat'+_bi);
+    if(_ob){
+      _ob.classList.remove('show');
+      _ob.classList.add('fade-out');
+      // Also kill all line opacity so text fades immediately.
+      var _lines=_ob.querySelectorAll('.ob-line');
+      for(var _li=0;_li<_lines.length;_li++){_lines[_li].classList.remove('on');_lines[_li].classList.add('off');}
+    }
+  }
   _beat=3; // _showBeat increments from current
   _showBeat(4);
-  // Kill all bottom-of-screen chrome immediately (skip button, dots, any
-  // lingering tutorial overlay from a cached/previous session).
+  // Kill all bottom-of-screen chrome immediately.
   _lwCleanBeat4Chrome();
+  // Belt-and-suspenders: 50ms later the fade-out starts; 2000ms later
+  // make doubly sure every old beat is display:none.
+  setTimeout(function(){
+    for(var _bi2=1;_bi2<=3;_bi2++){
+      var _ob2=document.getElementById('ob-beat'+_bi2);
+      if(_ob2)_ob2.style.display='none';
+    }
+  },2000);
 }
 
 // ═══ CREATURE DISCOVERY TUTORIAL ═══
