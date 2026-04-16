@@ -42246,7 +42246,7 @@ function _e(v){
     }
     if(_readyHashes.length>prevReady){
       if(window._haptic)_haptic('bloom');
-      _milestoneToast('\u2600\ufe0f PLANT READY','Tap the Sunbeam icon to bloom it!');
+      _milestoneToast('PLANT READY','Tap the Sunbeam icon to bloom it!');
     }
   }
   _updateGP();
@@ -50023,7 +50023,7 @@ function _runTutorial(onComplete){
     // Visible reward — a +10 Sunbeams flare
     var flare = document.createElement('div');
     flare.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:Bebas Neue,sans-serif;font-size:2.2rem;letter-spacing:0.1em;color:var(--gold);text-shadow:0 0 20px rgba(200,168,75,0.8),0 0 40px rgba(200,168,75,0.4);opacity:0;transition:opacity 0.5s ease,transform 1s ease;z-index:20;pointer-events:none;';
-    flare.textContent = '+10 \u2600\ufe0f SUNBEAMS';
+    flare.textContent = '+10 SUNBEAMS';
     ov.appendChild(flare);
     setTimeout(function(){ flare.style.opacity = '1'; flare.style.transform = 'translate(-50%,-120%)'; }, 50);
     // After celebration, fade out overlay and continue
@@ -52978,10 +52978,15 @@ function _clear(){
 function _dialog(text,btnLabel,btnCb,pos){
   if(_dlg&&_dlg.parentNode)_dlg.remove();
   _dlg=document.createElement('div');
-  _dlg.style.cssText='position:fixed;z-index:1000012;background:rgba(18,24,16,0.97);border:1.5px solid rgba(200,168,75,0.3);border-radius:16px;padding:1.2rem 1.4rem;max-width:min(340px,90vw);font-family:Playfair Display,serif;font-size:clamp(0.85rem,2.8vw,1.05rem);color:var(--cream);line-height:1.8;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.6);animation:panelFadeIn 0.35s ease;';
+  // Opacity-only fade. panelFadeIn uses translateY which collides with the
+  // translate(-50%,...) we need for horizontal centering — that was the
+  // "jumps from the right into the middle" bug Stephen flagged.
+  _dlg.style.cssText='position:fixed;z-index:1000012;background:rgba(18,24,16,0.97);border:1.5px solid rgba(200,168,75,0.3);border-radius:16px;padding:1.2rem 1.4rem;max-width:min(340px,90vw);font-family:Playfair Display,serif;font-size:clamp(0.85rem,2.8vw,1.05rem);color:var(--cream);line-height:1.8;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.6);opacity:0;transition:opacity 0.35s ease;';
   if(pos==='top'){_dlg.style.top='12%';_dlg.style.left='50%';_dlg.style.transform='translateX(-50%)';}
   else if(pos==='bottom'){_dlg.style.bottom='calc(90px + env(safe-area-inset-bottom,0px))';_dlg.style.left='50%';_dlg.style.transform='translateX(-50%)';}
   else{_dlg.style.top='40%';_dlg.style.left='50%';_dlg.style.transform='translate(-50%,-50%)';}
+  // Kick in opacity on the next frame so the transition actually runs.
+  requestAnimationFrame(function(){if(_dlg)_dlg.style.opacity='1';});
   var h='<div style="margin-bottom:0.6rem;">'+text+'</div>';
   if(btnLabel){
     h+='<button onclick="void(0)" style="min-height:52px;min-width:140px;padding:0.5rem 1.4rem;border-radius:10px;border:1.5px solid rgba(200,168,75,0.35);background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(200,168,75,0.05));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;">'+btnLabel+'</button>';
@@ -53067,9 +53072,8 @@ function _step1(retries){
     _spotlight(firstCard);
     _dialog(
       'Here you can view the plants in your greenhouse.<br><br>' +
-      '<span style="color:var(--gold);">Tap your plant</span> to take a closer look.' +
-      '<div style="font-size:1.8rem;margin-top:0.3rem;animation:_whPulse 1.5s ease infinite;">\u2193</div>',
-      null,null,'top');
+      'Click on your plant to take a closer look.',
+      null,null,'center');
     var origClick=firstCard.onclick;
     firstCard.onclick=function(e){
       _clear();firstCard.style.zIndex='';firstCard.onclick=origClick;
@@ -53091,7 +53095,7 @@ function _step2(){
   _setStep(2);
   _dialog(
     'Your attention shaped this plant in a way no one else ever will.<br><br>' +
-    '<span style="color:var(--gold);">It is yours — completely unique.</span>',
+    '<span style="color:var(--gold);">It is yours. Completely unique.</span>',
     'NEXT',function(){_clear();setTimeout(_step3,300);},'bottom');
 }
 
@@ -53111,7 +53115,7 @@ function _step4(){
   var fw=document.querySelector('.cs-flip-wrap');
   if(fw){fw.classList.add('cs-tut-dim','cs-tut-hi-name');}
   _dialog(
-    'Your plant\u2019s <span style="color:var(--gold);">name</span> is uniquely yours \u2014 generated from its hash.',
+    'Your plant\u2019s <span style="color:var(--gold);">name</span> is uniquely yours. It was also shaped by your specific timing and movements so far.',
     'NEXT',function(){
       var fw2=document.querySelector('.cs-flip-wrap');
       if(fw2)fw2.classList.remove('cs-tut-hi-name');
@@ -53119,18 +53123,18 @@ function _step4(){
     },'bottom');
 }
 
-// ═══ STEP 5: haiku highlighted ═══
+// ═══ STEP 5: haiku highlighted (dialog at TOP so haiku is readable below) ═══
 function _step5(){
   _setStep(5);
   var fw=document.querySelector('.cs-flip-wrap');
   if(fw){fw.classList.add('cs-tut-dim','cs-tut-hi-haiku');fw.classList.remove('cs-tut-hi-name');}
   _dialog(
-    'And its <span style="color:var(--gold);">haiku</span> \u2014 composed from the exact shape of its DNA.',
+    'And its <span style="color:var(--gold);">haiku</span>, composed just for this plant from the same pattern that shaped it.',
     'NEXT',function(){
       var fw2=document.querySelector('.cs-flip-wrap');
       if(fw2)fw2.classList.remove('cs-tut-dim','cs-tut-hi-haiku');
       _clear();setTimeout(_step6,300);
-    },'bottom');
+    },'top');
 }
 
 // ═══ STEP 6: EA badge pointer ═══
@@ -53153,7 +53157,7 @@ function _step7(){
   _dialog(
     'Every plant has a <span style="color:var(--gold);">rarity</span>.<br><br>' +
     '<span style="color:var(--sage);">Tap the card to flip it and reveal yours.</span>',
-    '',null,'bottom');
+    '',null,'top');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   var fw=document.querySelector('.cs-flip-wrap');
   if(!fw){_clear();setTimeout(_step8,300);return;}
@@ -53171,7 +53175,7 @@ function _step8(){
   _setStep(8);
   _dialog(
     'These are the <span style="color:var(--gold);">genetic layers</span> shaping your plant.<br><br>' +
-    'Every trait came from the hash of your attention.',
+    'Every trait came from the code that is uniquely your experience. There are literal <span style="color:var(--gold);">QUINTILLIONS</span> of possible combinations, and growing.',
     'NEXT',function(){_clear();setTimeout(_step9,300);},'top');
 }
 
@@ -53180,7 +53184,7 @@ function _step9(){
   _setStep(9);
   _dialog(
     'Below the card are your <span style="color:var(--gold);">actions</span>.<br><br>' +
-    '<span style="color:#d08080;">Don\u2019t compost plants until you run out of space</span> \u2014 come back to these later.',
+    '<span style="color:#d08080;">Don\u2019t compost plants until you run out of space.</span> Come back to these later.',
     'GOT IT',function(){_clear();setTimeout(_step10,300);},'bottom');
 }
 
@@ -53202,18 +53206,18 @@ function _step10(){
   setTimeout(watch,500);
 }
 
-// ═══ STEP 11: rarity symbol on face ═══
+// ═══ STEP 11: rarity symbol on face — spell out "bottom left corner" ═══
 function _step11(){
   _setStep(11);
   var fw=document.querySelector('.cs-flip-wrap');
   if(fw)fw.classList.add('cs-tut-hi-rarity');
   _dialog(
-    'This symbol marks your plant\u2019s <span style="color:var(--gold);">rarity</span> at a glance \u2014 you\u2019ll always see it here.',
+    'The symbol in the <span style="color:var(--gold);">bottom-left corner</span> marks your plant\u2019s rarity. You\u2019ll always see it there at a glance.',
     'NEXT',function(){
       var fw2=document.querySelector('.cs-flip-wrap');
       if(fw2)fw2.classList.remove('cs-tut-hi-rarity');
       _clear();setTimeout(_step12,300);
-    },'bottom');
+    },'top');
 }
 
 // ═══ STEP 12: close + games tab ═══
@@ -53228,42 +53232,39 @@ function _step12(){
     },'bottom');
 }
 
-// ═══ STEP 13: point at GAME tab (ends Phase 2) ═══
+// ═══ STEP 13: invite player toward GAME tab (no overlay, no force) ═══
 function _stepGame(){
   _setStep(13);
   setTimeout(function(){
-    _overlay(function(){_done();});
-    var gameBtn=_findGameBtn();
-    if(gameBtn){
-      _spotlight(gameBtn);
-      _dialog(
-        'Earn more plants by playing a <span style="color:var(--sage);">game</span>.<br><br>' +
-        'If games aren\u2019t your thing, there are <span style="color:var(--sage);">creative outlets</span> too.',
-        'LET\u2019S GO',function(){
-          _clear();gameBtn.style.zIndex='';
-          if(window.switchTab)switchTab('game');
-          setTimeout(_step14,1500);
-        },'center');
-    } else {
-      _dialog('Tap GAME to start playing.','GOT IT',function(){
-        _clear();if(window.switchTab)switchTab('game');
-        setTimeout(_step14,1500);
-      },'center');
-    }
+    _dialog(
+      'When you\u2019re ready, tap <span style="color:var(--gold);">GAME</span> at the bottom to earn Sunbeams.<br><br>' +
+      '<span style="color:var(--muted);font-size:0.85em;">If games aren\u2019t your thing, there are creative outlets too.</span>',
+      null,null,'center');
+    _watchGameTabSwitch(0);
   },400);
 }
 
-// ═══ STEP 14: game picker — "pick one you like" ═══
-function _step14(){
-  _setStep(14);
-  _dialog(
-    'Pick any game that catches your eye.<br><br>' +
-    '<span style="color:var(--muted);font-size:0.85em;">You\u2019ll earn Sunbeams whether you win or lose.</span>',
-    'OK',function(){
-      _clear();
-      _setStep(15);
-      _watchGameStart(0);
-    },'bottom');
+// Watch for player tapping GAME tab. When we see the game picker, the
+// existing TAB_TEACHES.game one-shot teach fires (see line ~41774) — our
+// tutorial hands off to it and advances to step 15 on game start.
+function _watchGameTabSwitch(attempts){
+  if(document.body.classList.contains('tab-game')||document.body.classList.contains('game-active')){
+    _clear();
+    _setStep(15);
+    _watchGameStart(0);
+    return;
+  }
+  // Also accept an explicit switchTab to game via DOM signal
+  var gt=document.getElementById('game-dew-val');
+  var anyTab=document.querySelector('.fg-nav-btn.active img[alt="Game"]');
+  if(anyTab){
+    _clear();
+    _setStep(15);
+    _watchGameStart(0);
+    return;
+  }
+  if(attempts<600){setTimeout(function(){_watchGameTabSwitch(attempts+1);},500);}
+  else {_done();}
 }
 
 // Watch for body.game-active (user picked a game)
@@ -53282,7 +53283,7 @@ function _step15(){
   if(!document.body.classList.contains('game-active')){_done();return;}
   _setStep(15);
   _dialog(
-    '<span style="color:var(--sage);">Notice the irony</span> \u2014 you\u2019re playing a game inside a game meant to slow you down.<br><br>' +
+    '<span style="color:var(--sage);">Notice the irony.</span> You\u2019re playing a game inside a game meant to slow you down.<br><br>' +
     '<span style="color:var(--muted);font-size:0.85em;">It\u2019s the paradox of attention. Stick with it.</span>',
     'GOT IT',function(){
       _clear();
@@ -53325,7 +53326,7 @@ function _step16(){
     var ready=(window._readyHashes||[]).length;
     var msg=ready>0
       ? 'You have <span style="color:var(--gold);">Sunbeams ready</span>.<br><br><span style="color:var(--sage);">Tap the \u2600\ufe0f up top to mint your next plant.</span>'
-      : 'Good play. Keep earning until the <span style="color:var(--gold);">\u2600\ufe0f up top glows</span> \u2014 that\u2019s 30 Sunbeams, enough for a new plant.<br><br>You can play another game or come back later.';
+      : 'Good play. Keep earning until the <span style="color:var(--gold);">Sunbeam icon up top glows.</span> That\u2019s 30 Sunbeams, enough for a new plant.<br><br>You can play another game or come back later.';
     _dialog(msg,'',null,'top');
     if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
     if(ready>0){_watchMintModal(0);}
@@ -53479,9 +53480,9 @@ function _step22(){
 function _step23(){
   _setStep(23);
   _dialog(
-    'Beautiful \u2014 come back tomorrow to water again.<br><br>' +
+    'Beautiful. Come back tomorrow to water again.<br><br>' +
     'You can also <span style="color:var(--gold);">compost plants you don\u2019t want</span>. Each one gives fertilizer you can feed a growing seed.<br><br>' +
-    '<span style="color:var(--muted);font-size:0.85em;">Still: save compost for when your greenhouse is full.</span>',
+    '<span style="color:var(--muted);font-size:0.85em;">Still, save compost for when your greenhouse is full.</span>',
     'GOT IT',function(){
       _clear();
       // Phase 5 requires L3 (canSee.wildTab). If reached, fire now.
@@ -53508,7 +53509,7 @@ function _step24(){
   _spotlight(wildBtn);
   _dialog(
     'The world opens.<br><br>' +
-    'Tap <span style="color:var(--gold);">WILD</span> \u2014 this is where you bring your garden back out into the world.',
+    'Tap <span style="color:var(--gold);">WILD</span>. This is where you bring your garden back out into the world.',
     '',null,'top');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   var polls=0;
@@ -53530,7 +53531,7 @@ function _step24(){
 function _step25(){
   _setStep(25);
   _dialog(
-    'Every place on the map is broken into <span style="color:var(--gold);">hexes</span> \u2014 honeycombs of possibility.<br><br>' +
+    'Every place on the map is broken into <span style="color:var(--gold);">hexes</span>, honeycombs of possibility.<br><br>' +
     'When you drop a plant into a hex, it\u2019s real. It has coordinates. It lives.',
     'NEXT',function(){_clear();setTimeout(_step26,300);},'bottom');
 }
@@ -53540,8 +53541,8 @@ function _step26(){
   _setStep(26);
   _dialog(
     'Every plant has five resistances: <span style="color:var(--sage);">heat, cold, wind, drought, water</span>.<br><br>' +
-    'Remember the <span style="color:var(--gold);">seasonal border</span> from your greenhouse? That tells you when your plant thrives \u2014 and when it\u2019s vulnerable.<br><br>' +
-    '<span style="color:var(--muted);font-size:0.85em;">Plants are always under attack \u2014 from weather, from competition, from time itself.</span>',
+    'Remember the <span style="color:var(--gold);">seasonal border</span> from your greenhouse? That tells you when your plant thrives, and when it\u2019s vulnerable.<br><br>' +
+    '<span style="color:var(--muted);font-size:0.85em;">Plants are always under attack. From weather, from competition, from time itself.</span>',
     'NEXT',function(){_clear();setTimeout(_step27,300);},'bottom');
 }
 
@@ -53550,7 +53551,7 @@ function _step27(){
   _setStep(27);
   _dialog(
     'Plants in adjacent hexes can <span style="color:var(--gold);">breed and spread</span>. Their children drift on the wind.<br><br>' +
-    'Name your wild plants with <span style="color:var(--sage);">where you placed them</span> \u2014 future-you will thank past-you when you\u2019re trying to remember what you protected.',
+    'Name your wild plants with <span style="color:var(--sage);">where you placed them</span>. Future-you will thank past-you when you\u2019re trying to remember what you protected.',
     'NEXT',function(){_clear();setTimeout(_step28,600);},'center');
 }
 
@@ -53584,7 +53585,7 @@ function _step29(){
   _setStep(29);
   _dialog(
     'Three kinds of things live here:<br><br>' +
-    '<span style="color:var(--gold);">Cuttings</span> from wild plants \u2014 genetic clones ready for the nursery.<br>' +
+    '<span style="color:var(--gold);">Cuttings</span> from wild plants. Genetic clones ready for the nursery.<br>' +
     '<span style="color:var(--sage);">Seeds</span> you forage in the wild.<br>' +
     '<span style="color:#c07ac8;">Items</span> you find on your quests.',
     'NEXT',function(){_clear();setTimeout(_step30,300);},'bottom');
@@ -53594,9 +53595,9 @@ function _step29(){
 function _step30(){
   _setStep(30);
   _dialog(
-    'Tap any wild plant you pass \u2014 yours or another Keeper\u2019s \u2014 to take a <span style="color:var(--gold);">cutting</span>.<br><br>' +
+    'Tap any wild plant you pass, yours or another Keeper\u2019s, to take a <span style="color:var(--gold);">cutting</span>.<br><br>' +
     'Each plant allows one cutting every <span style="color:var(--gold);">6 hours</span>. The clipping lands in your nursery as a single-use seed you can bloom or breed.<br><br>' +
-    '<span style="color:var(--muted);font-size:0.85em;">Cuttings carry only the plant\u2019s genome \u2014 no pot, substrate, aura, or companion.</span>',
+    '<span style="color:var(--muted);font-size:0.85em;">Cuttings carry only the plant\u2019s genome. No pot, substrate, aura, or companion.</span>',
     'GOT IT',function(){_clear();setTimeout(_step31,300);},'center');
 }
 
@@ -53604,7 +53605,7 @@ function _step30(){
 function _step31(){
   _setStep(31);
   _dialog(
-    'Close your backpack when you\u2019re done \u2014 then one last thing.',
+    'Close your backpack when you\u2019re done. Then one last thing.',
     'OK',function(){
       _clear();
       // Nudge the backpack closed so step 32 can spotlight BoS cleanly.
@@ -53667,7 +53668,7 @@ function _step34(){
   _setStep(34);
   _dialog(
     '<span style="color:var(--gold);">You are the sun of your garden.</span><br><br>' +
-    'Your attention is what grows here. Every plant you keep alive \u2014 in your greenhouse and in the world \u2014 is a record of a moment you paid attention.<br><br>' +
+    'Your attention is what grows here. Every plant you keep alive, in your greenhouse and in the world, is a record of a moment you paid attention.<br><br>' +
     'Go make beautiful things.',
     'THANK YOU',function(){
       _clear();
@@ -53725,9 +53726,13 @@ function _step34(){
   waitForFlip();
 })();
 
-// ═══ Wrap window._e to dispatch a game-completed event ═══
+// ═══ Wrap window._e to dispatch a game-completed event + first-game bonus ═══
 // The tutorial and any future observers can listen for 'game-completed'.
-// Idempotent: only installs the wrapper once.
+// First-game bonus (one-shot): +20 Sunbeams + 10 flat XP so that a brand
+// new Keeper clears L2 and has 30 Sunbeams for their second mint after
+// ONE game regardless of win/loss. Stephen: "win or lose or quit it
+// bumps them to the next level where they get enough sunbeams."
+// Idempotent via _LW_TUT_EWRAPPED flag.
 (function _installGameCompletedDispatch(){
   if(window._LW_TUT_EWRAPPED)return;
   var waitForE=function(){
@@ -53737,6 +53742,11 @@ function _step34(){
       try{
         if(v==='game_win'||v==='game_loss'){
           window.dispatchEvent(new CustomEvent('game-completed',{detail:{result:v,gameId:window._a}}));
+          if(!localStorage.getItem('lw_first_game_bonus_given')){
+            localStorage.setItem('lw_first_game_bonus_given','1');
+            try{if(window.earnHashes)window.earnHashes(20);}catch(e){}
+            try{if(window.PW_grantXP)window.PW_grantXP(10,'first_game_flat');}catch(e){}
+          }
         }
       }catch(e){}
       return _orig.apply(this,arguments);
