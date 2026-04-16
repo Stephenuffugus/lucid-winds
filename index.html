@@ -28716,6 +28716,14 @@ document.addEventListener('keydown', function(e) {
   // Phase 28 fix: persist earned hashes immediately — force=true bypasses 2s debounce
   function earnHashes(amount) {
     if (window._LW_DEBUG) console.log('[earnHashes] amount:', amount);
+    // Tutorial freeze: after First Focus grants the deterministic 30
+    // Sunbeams, block every downstream hash grant (quest rewards,
+    // box loot, mystery openings) until plant XP unlocks at step 34.
+    try {
+      if (localStorage.getItem('lw_first_focus_done') && !localStorage.getItem('lw_plant_xp_unlocked')) {
+        return;
+      }
+    } catch(e){}
     var ledger = getHashLedger();
     ledger.earned = (ledger.earned || 0) + amount;
     _secureSet(HASH_LEDGER_KEY, ledger);
@@ -42415,6 +42423,18 @@ var _justMinted=false;
 function _e(v){
   var w=_aw[_a]||{};
   var base=w[v]||w[v.replace(/_\d+$/,'')]||w['default']||0;
+  // ── TUTORIAL SUNBEAM FREEZE ──
+  // After First Focus grants the deterministic 30 Sunbeams, no further
+  // hashes accrue from any game play until the tutorial finishes and
+  // plant XP unlocks at step 34. Keeps the guided flow exactly at
+  // 30 → 0 → grow-your-way-to-30-again without overflow. The game still
+  // runs, celebrations still fire, UI still updates — only the
+  // hash-accumulate path is zeroed.
+  try{
+    if(localStorage.getItem('lw_first_focus_done') && !localStorage.getItem('lw_plant_xp_unlocked')){
+      base=0;
+    }
+  }catch(e){}
   // ── ANTI-FARM GUARD 1: Progress/milestone cap per session ──
   var isProgress=(v==='progress'||v==='milestone'||v==='cleared'||v==='capture'||v==='flip'||v==='hit'||v==='sequence'||v==='pheno'||v==='puzzle_solved');
   if(isProgress){
@@ -42604,8 +42624,8 @@ function _updateSunbeamBadge(){
           if(window._lwConfirm){
             window._lwConfirm({
               title:'A PLANT IS READY',
-              body:'Your first plant is ready to bloom. Tap the <b>Sunbeam icon</b> at the top of the screen, then tap <b>MINT</b> to grow your unique plant.<br><br>You minted it with your attention.',
-              yes:'MINT IT NOW',
+              body:'Your first plant is ready to bloom. Tap the <b>Sunbeam icon</b> at the top of the screen, then tap <b>BLOOM</b> to grow your unique plant.<br><br>You grew it with your attention.',
+              yes:'BLOOM IT NOW',
               no:''
             },function(){if(window.openSunbeamModal)openSunbeamModal();});
           }
@@ -42623,35 +42643,45 @@ window.openSunbeamModal=function(){
   var ready=_readyHashes.length;
   var prog=_hashFilled;
   var pct=Math.round(Math.min(prog/cost,1)*100);
+  // Tutorial-aware: during the first-mint walkthrough, strip every
+  // non-essential element. No background dismiss, no CLOSE, no info
+  // section. Just the BLOOM button. Keeps the flow unidirectional.
+  var _tutMint=document.body.classList.contains('lw-tut-mint-only');
   var ov=document.createElement('div');ov.id='lw-sunbeam-modal';
   ov.style.cssText='position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);padding:1rem;animation:panelFadeIn 0.3s ease;';
-  ov.onclick=function(e){if(e.target===ov)ov.remove();};
+  if(!_tutMint)ov.onclick=function(e){if(e.target===ov)ov.remove();};
   var h='<div style="background:rgba(13,16,12,0.97);border:1.5px solid rgba(200,168,75,0.3);border-radius:14px;padding:1.2rem;max-width:320px;width:100%;max-height:80vh;overflow-y:auto;">';
   h+='<div style="text-align:center;margin-bottom:0.6rem;">';
   h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.8rem;color:var(--gold);letter-spacing:0.06em;">'+bal+'</div>';
   h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);opacity:0.7;">SUNBEAMS</div>';
   h+='</div>';
-  // Progress toward next plant
-  h+='<div style="margin-bottom:0.8rem;">';
-  h+='<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);margin-bottom:4px;">Next plant: '+prog+'/'+cost+'</div>';
-  h+='<div style="height:6px;background:rgba(122,179,86,0.08);border-radius:3px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,rgba(200,168,75,0.65),rgba(240,208,144,0.8));border-radius:3px;transition:width 0.3s;"></div></div>';
-  h+='</div>';
-  // Mint button
+  // Progress toward next plant (hidden during tutorial-mint to keep it clean)
+  if(!_tutMint){
+    h+='<div style="margin-bottom:0.8rem;">';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);margin-bottom:4px;">Next plant: '+prog+'/'+cost+'</div>';
+    h+='<div style="height:6px;background:rgba(122,179,86,0.08);border-radius:3px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,rgba(200,168,75,0.65),rgba(240,208,144,0.8));border-radius:3px;transition:width 0.3s;"></div></div>';
+    h+='</div>';
+  }
+  // Bloom button (plants bloom from sunlight — botanical verb replaces
+  // the old "mint" wording everywhere this modal is shown).
   if(ready>0){
-    h+='<button onclick="window._mintFromQueue();var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();" style="width:100%;padding:0.6rem;margin-bottom:0.4rem;border:1.5px solid rgba(200,168,75,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.35));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.1em;cursor:pointer;min-height:52px;">\ud83c\udf31 MINT A PLANT ('+cost+' \u2600\ufe0f)'+(ready>1?' \u00d7'+ready:'')+'</button>';
+    h+='<button onclick="window._mintFromQueue();var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();" style="width:100%;padding:0.6rem;margin-bottom:0.4rem;border:1.5px solid rgba(200,168,75,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.35));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.1em;cursor:pointer;min-height:52px;">\ud83c\udf31 BLOOM A PLANT ('+cost+' \u2600\ufe0f)'+(ready>1?' \u00d7'+ready:'')+'</button>';
   }else{
     h+='<div style="width:100%;padding:0.5rem;margin-bottom:0.4rem;border:1.5px solid rgba(122,179,86,0.15);border-radius:10px;background:rgba(26,31,23,0.5);text-align:center;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--muted);letter-spacing:0.08em;">KEEP PLAYING TO GROW A PLANT</div><div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);margin-top:2px;">'+cost+' Sunbeams = 1 unique plant</div></div>';
   }
-  // Info section
-  h+='<div style="border-top:1px solid rgba(74,124,53,0.1);padding-top:0.5rem;margin-top:0.3rem;">';
-  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.3rem;">HOW SUNBEAMS WORK</div>';
-  h+='<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--cream);line-height:1.7;opacity:0.8;">';
-  h+='\u2600\ufe0f Earned by playing games. Never bought.<br>';
-  h+='\ud83c\udf31 '+cost+' Sunbeams = mint one unique plant<br>';
-  h+='\ud83d\udcb0 Save up for events or spend on the wild<br>';
-  h+='\ud83c\udf3f Every plant is one-of-one forever</div>';
-  h+='</div>';
-  h+='<button onclick="var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();" style="width:100%;padding:0.45rem;margin-top:0.5rem;border:1.5px solid rgba(122,179,86,0.15);border-radius:8px;background:rgba(26,31,23,0.4);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;">CLOSE</button>';
+  // Info section + CLOSE (hidden during tutorial-mint; player is steered
+  // straight into the bloom flow with no exit).
+  if(!_tutMint){
+    h+='<div style="border-top:1px solid rgba(74,124,53,0.1);padding-top:0.5rem;margin-top:0.3rem;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.3rem;">HOW SUNBEAMS WORK</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--cream);line-height:1.7;opacity:0.8;">';
+    h+='\u2600\ufe0f Earned by playing games. Never bought.<br>';
+    h+='\ud83c\udf31 '+cost+' Sunbeams = bloom one unique plant<br>';
+    h+='\ud83d\udcb0 Save up for events or spend on the wild<br>';
+    h+='\ud83c\udf3f Every plant is one-of-one forever</div>';
+    h+='</div>';
+    h+='<button onclick="var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();" style="width:100%;padding:0.45rem;margin-top:0.5rem;border:1.5px solid rgba(122,179,86,0.15);border-radius:8px;background:rgba(26,31,23,0.4);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;">CLOSE</button>';
+  }
   h+='</div>';
   ov.innerHTML=h;document.body.appendChild(ov);
 };
@@ -53983,8 +54013,11 @@ function _step16(){
   }catch(e){}
   // Unlock the sunbeam button + re-unlock greenhouse nav (was locked at
   // step 13 to make GAMES the only highlighted tab). Now greenhouse is
-  // the destination so it comes back on.
+  // the destination so it comes back on. CRITICAL: explicitly strip
+  // lw-tut-nav-focus so the GAMES visual-lit fake turns off — otherwise
+  // the games button stays glowing after the player leaves step 13.
   try{
+    document.body.classList.remove('lw-tut-nav-focus');
     document.body.classList.add('lw-tut-sb-on','lw-tut-nav-greenhouse');
   }catch(e){}
   // Force-switch to greenhouse so the mint prompt lands where the sun is.
@@ -54044,11 +54077,11 @@ function _watchMintModal(attempts){
   }
 }
 
-// ═══ STEP 17: mint modal — point at MINT button ═══
+// ═══ STEP 17: bloom modal — point at BLOOM button ═══
 function _step17(){
   _setStep(17);
   _dialog(
-    'Tap <span style="color:var(--gold);">MINT</span> to bring your second plant into being.',
+    'Tap <span style="color:var(--gold);">BLOOM</span> to bring your second plant into being.',
     '',null,'bottom');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   _watchMintComplete(0);
@@ -54149,7 +54182,12 @@ function _nurLen(){
 // ═══ STEP 22: nursery — water the seed ═══
 function _step22(){
   _setStep(22);
-  try{document.body.classList.add('lw-tut-nav-nursery');}catch(e){}
+  // Unidirectional swap: nursery is the ONLY clickable nav now. Remove
+  // greenhouse unlock so the Keeper can't wander back mid-watering.
+  try{
+    document.body.classList.remove('lw-tut-nav-greenhouse');
+    document.body.classList.add('lw-tut-nav-nursery');
+  }catch(e){}
   if(window.switchTab)switchTab('nursery');
   setTimeout(function(){
     var waterBtn=document.querySelector('.nur-btn.water');
