@@ -29516,6 +29516,24 @@ document.addEventListener('keydown', function(e) {
     if (!arr || !arr.length) return;
     // Discovery XP — first time opening the plant inspector.
     try{if(window.LW_XP)window.LW_XP.grantOnce('disc_carousel',8,'discover_carousel','🔍 +8 XP — plant inspector unlocked. Swipe to browse, tap to flip.');}catch(e){}
+    // First-time 2+ plant keeper: pulse the BREED button to teach them
+    // breeding is ready. Only fires once, only for 2-3 plant keepers.
+    try{
+      if(arr.length>=2&&!localStorage.getItem('lw_pulse_breed_first')){
+        var _ghLen=0;try{_ghLen=(JSON.parse(localStorage.getItem('sws_greenhouse')||'[]')).length;}catch(e){}
+        if(_ghLen>=2&&_ghLen<=3){
+          setTimeout(function(){
+            var buttons=document.querySelectorAll('.pgm-act-btn');
+            for(var bi=0;bi<buttons.length;bi++){
+              if(/BREED/i.test(buttons[bi].textContent)){
+                if(window._lwPulseHint)window._lwPulseHint(buttons[bi],10000,'lw_pulse_breed_first');
+                break;
+              }
+            }
+          },1200);
+        }
+      }
+    }catch(e){}
     _carousel.arr       = arr;
     _carousel.idx       = Math.max(0, Math.min(startIdx, arr.length - 1));
     _carousel.source    = source || 'greenhouse';
