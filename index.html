@@ -30905,7 +30905,7 @@ document.addEventListener('keydown', function(e) {
   // Shows lineage + breeding history + trait deep-dive + mutation details.
   // Built dynamically on first open, reused thereafter.
   window._openPlantDetails = function(plantHash) {
-    if (!plantHash) { if (window._toast) _toast('No plant hash provided.'); return; }
+    if (!plantHash) { if (window._toast) _toast('No plant data provided.'); return; }
     try {
     var plant = null, source = 'unknown';
     try { var gh = loadGreenhouse(); for (var i = 0; i < gh.length; i++) { if (gh[i].hash === plantHash) { plant = gh[i]; source = 'greenhouse'; break; } } } catch(e) {}
@@ -33654,7 +33654,7 @@ document.addEventListener('keydown', function(e) {
     if (!galleryPlant) return;
     if (navigator.clipboard) {
       navigator.clipboard.writeText(galleryPlant.hash).then(function(){
-        showHexMsg('DNA hash copied.');
+        showHexMsg('DNA code copied.');
       });
     }
   };
@@ -39987,7 +39987,7 @@ function _updateCounts(){
       // player is on the Wild tab, explain what pollen is. Gated by
       // lw_jit_pollen_v1 so it only fires once. Skipped if any overlay
       // is active so it doesn't stack on a celebration.
-      if(_xpDisp>0&&!localStorage.getItem('lw_jit_pollen_v1')&&document.body.classList.contains('tab-wild')&&!localStorage.getItem('lw_tut')){
+      if(_xpDisp>0&&!localStorage.getItem('lw_jit_pollen_v1')&&document.body.classList.contains('tab-wild')&&(localStorage.getItem('lw_tut')||'done')==='done'){
         localStorage.setItem('lw_jit_pollen_v1','1');
         setTimeout(function(){
           if(document.querySelector('.lu-overlay,#pw-win-overlay,#lw-confirm-modal'))return;
@@ -53142,7 +53142,7 @@ function _showDailyReward() {
   // a relationship before the calendar modal opens. Single-fire via
   // lw_jit_daily_v1. Suppressed during tutorial so it doesn't stack.
   try {
-    if (!localStorage.getItem('lw_jit_daily_v1') && !localStorage.getItem('lw_tut') && window._lwConfirm) {
+    if (!localStorage.getItem('lw_jit_daily_v1') && (localStorage.getItem('lw_tut')||'done')==='done' && window._lwConfirm) {
       localStorage.setItem('lw_jit_daily_v1', '1');
       window._lwConfirm({
         title: 'THE GARDEN REMEMBERS',
