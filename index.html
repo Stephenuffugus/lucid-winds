@@ -41659,7 +41659,15 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      unlocks when step 28 adds lw-tut-bp-on. Book of Secrets unlocks
      when step 32 adds lw-tut-bos-on. Dim + disable so it's visible
      but clearly not-yet-available. */
+  /* Keeper bar: avatar + name + XP bar all open the Character Sheet
+     via PW_UI.openCharacter. Lock all three together during tutorial
+     — locking only the avatar let the Keeper tap the name or XP bar
+     to bypass. */
   body.lw-tut-active #pw-keeper-bar .kb-avatar,
+  body.lw-tut-active #pw-keeper-bar .kb-name,
+  body.lw-tut-active #pw-keeper-bar .kb-xp-wrap,
+  body.lw-tut-active #pw-keeper-bar .kb-rank,
+  body.lw-tut-active #pw-lb-toggle,
   body.lw-tut-active #kb-compendium,
   body.lw-tut-active #bpi{pointer-events:none !important;opacity:0.4 !important;filter:saturate(0.35);transition:opacity 0.4s,filter 0.4s;}
   body.lw-tut-active.lw-tut-bp-on #bpi{pointer-events:auto !important;opacity:1 !important;filter:none;}
@@ -54188,16 +54196,16 @@ function _step18(){
   _setStep(18);
   if(window.switchTab)switchTab('greenhouse');
   setTimeout(function(){
-    // Lock every greenhouse tile EXCEPT the newest one. The last tile
-    // in the grid is the just-minted plant; mark it as the tutorial
-    // target. All other tiles dim + pointer-events:none via the
-    // lw-tut-newplant-only body class.
+    // Lock every greenhouse tile EXCEPT the newest one. Default sort
+    // is newest-first (renderGreenhouse reverses), so index 0 is the
+    // just-minted plant. All other tiles dim + pointer-events:none
+    // via the lw-tut-newplant-only body class.
     try{
       document.body.classList.add('lw-tut-newplant-only');
       var tiles=document.querySelectorAll('.greenhouse-plant:not(.undiscovered)');
       if(tiles.length){
         for(var ti=0;ti<tiles.length;ti++)tiles[ti].classList.remove('lw-tut-newplant-target');
-        tiles[tiles.length-1].classList.add('lw-tut-newplant-target');
+        tiles[0].classList.add('lw-tut-newplant-target');
       }
     }catch(e){}
     _dialog(
