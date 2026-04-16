@@ -9662,11 +9662,12 @@ document.addEventListener('keydown', function(e) {
       var celebSub = '';
       if (result.newAllTime) celebSub = '🏆 NEW ALL-TIME RECORD!';
       else if (result.newDaily) celebSub = '⭐ NEW DAILY BEST!';
-      // Calculate progress toward next plant
       var _setInPlant = (typeof window._getHashProgress==='function') ? window._getHashProgress() : 0;
-      _setInPlant = Math.min(_setInPlant, 30);
-      var _setPct = Math.round((_setInPlant/30)*100);
-      var _setNear = _setInPlant >= 25;
+      var _setCost = (typeof window._getMintCost==='function') ? window._getMintCost() : 30;
+      _setInPlant = Math.min(_setInPlant, _setCost);
+      var _setPct = Math.round((_setInPlant/_setCost)*100);
+      var _setNear = _setInPlant >= Math.round(_setCost*0.83);
+      var _setReady = (typeof window._getMintableCount==='function') ? window._getMintableCount() : 0;
       var celeb = document.createElement('div');
       celeb.id = 'game-complete-celeb';
       celeb.style.cssText = 'position:fixed;inset:0;z-index:99997;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(10px);animation:panelFadeIn 0.4s ease;';
@@ -9678,7 +9679,7 @@ document.addEventListener('keydown', function(e) {
       // Progress bar toward next plant — the KEY addition
       ch += '<div style="margin:0.4rem 0 0.15rem;opacity:0;animation:tierFadeIn 0.4s ease 1s forwards;">';
       ch += '<div style="width:100%;height:8px;background:rgba(42,48,37,0.6);border-radius:4px;overflow:hidden;"><div class="' + (_setNear ? 'near-bloom' : '') + '" style="width:'+_setPct+'%;height:100%;background:linear-gradient(90deg,var(--leaf),var(--sage)' + (_setNear ? ',var(--gold)' : '') + ');border-radius:4px;transition:width 0.8s ease;"></div></div>';
-      ch += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:'+(_setNear?'var(--gold)':'var(--muted)')+';margin-top:0.1rem;">'+_setInPlant+' / 30 to next plant' + (_setNear ? ' — <b>almost there!</b>' : '') + '</div>';
+      ch += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:'+(_setNear?'var(--gold)':'var(--muted)')+';margin-top:0.1rem;">'+_setInPlant+' / '+_setCost+' to next plant'+(_setReady?' \u00b7 <b style="color:var(--gold);">'+_setReady+' ready to mint!</b>':(_setNear?' \u2014 <b>almost there!</b>':''))+'</div>';
       ch += '</div>';
       // Buttons
       ch += '<div style="margin-top:0.4rem;opacity:0;animation:tierFadeIn 0.4s ease 1.3s forwards;">';
@@ -27687,16 +27688,20 @@ document.addEventListener('keydown', function(e) {
         setTimeout(function(){
           if (window._toast) window._toast('\ud83c\udf3f Tap your plant to read its haiku \u2014 every plant has a unique 7-5-7 poem from its hash.');
         }, 2000);
-        setTimeout(function(){
-          if (window._lwConfirm) {
-            window._lwConfirm({
-              title: 'WELCOME TO THE GREENHOUSE',
-              body: 'This is where your plants live \u2014 each one unique, minted from your attention.<br><br>\u2600\ufe0f <b>Sunbeams</b> come from playing games and tending the world. Tap the Sunbeam counter any time to <b>sprout a new plant</b> when you\u2019ve gathered enough.<br><br>No two keepers collect the same garden. Take your time.',
-              yes: 'KEEP LOOKING',
-              no: 'OPEN THE GAMES'
-            }, function(){ /* primary = stay; do nothing */ }, function(){ if (window.switchTab) switchTab('game'); });
-          }
-        }, 9000);
+        (function _ghWelcome(attempt){
+          if(attempt>6)return;
+          setTimeout(function(){
+            if(document.querySelector('.lu-overlay')||document.getElementById('lw-confirm-modal')){_ghWelcome(attempt+1);return;}
+            if(window._lwConfirm){
+              window._lwConfirm({
+                title:'WELCOME TO THE GREENHOUSE',
+                body:'This is where your plants live \u2014 each one unique, minted from your attention.<br><br>\u2600\ufe0f <b>Sunbeams</b> come from playing games and tending the world. Tap the Sunbeam counter any time to <b>sprout a new plant</b> when you\u2019ve gathered enough.<br><br>No two keepers collect the same garden. Take your time.',
+                yes:'KEEP LOOKING',
+                no:'OPEN THE GAMES'
+              },function(){},function(){if(window.switchTab)switchTab('game');});
+            }
+          },attempt===0?9000:3000);
+        })(0);
       }
     } catch(e) {}
     // Pre-warm SVG cache from IndexedDB for all greenhouse plants
@@ -27736,16 +27741,21 @@ document.addEventListener('keydown', function(e) {
       _reserveEl.style.display = 'none';
     }
 
-    // Next bloom progress — shows hash accumulation toward next plant
     var _nbEl = document.getElementById('gh-next-bloom');
     if (_nbEl) {
       var _prog = typeof window._getHashProgress === 'function' ? window._getHashProgress() : 0;
-      var _nbPct = Math.round(Math.min(_prog, 30) / 30 * 100);
-      if (_prog > 0 && _prog < 30) {
+      var _nbCost = typeof window._getMintCost === 'function' ? window._getMintCost() : 30;
+      var _nbReady = typeof window._getMintableCount === 'function' ? window._getMintableCount() : 0;
+      var _nbBal = _nbReady * _nbCost + _prog;
+      var _nbPct = Math.round(Math.min(_prog, _nbCost) / _nbCost * 100);
+      if (_nbBal > 0) {
         _nbEl.style.display = 'flex';
-        _nbEl.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--muted);white-space:nowrap;">\u26a1 ' + _prog + '/30</div>' +
+        var _nbTxt = _nbReady > 0
+          ? '<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--gold);white-space:nowrap;cursor:pointer;" onclick="if(window.openSunbeamModal)openSunbeamModal();">\u2600\ufe0f ' + _nbBal + ' \u00b7 ' + _nbReady + ' plant' + (_nbReady > 1 ? 's' : '') + ' ready!</div>'
+          : '<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--muted);white-space:nowrap;">\u2600\ufe0f ' + _prog + '/' + _nbCost + '</div>';
+        _nbEl.innerHTML = _nbTxt +
           '<div style="flex:1;height:4px;background:rgba(42,48,37,0.6);border-radius:2px;overflow:hidden;"><div style="width:' + _nbPct + '%;height:100%;background:linear-gradient(90deg,var(--sage),var(--gold));border-radius:2px;transition:width 0.4s ease;"></div></div>' +
-          '<div style="font-family:DM Mono,monospace;font-size:0.3rem;color:var(--gold);">' + (30 - _prog) + ' to bloom</div>';
+          (_nbReady === 0 ? '<div style="font-family:DM Mono,monospace;font-size:0.3rem;color:var(--gold);">' + (_nbCost - _prog) + ' more</div>' : '');
       } else {
         _nbEl.style.display = 'none';
       }
@@ -28697,12 +28707,15 @@ document.addEventListener('keydown', function(e) {
   }
   function earnDew(amount, source) {
     if (!amount || amount < 0) return;
-    // First-ever Dew — teach the Dew vs Sunbeams split before the player
-    // has two silently-accumulating currencies with no idea which is which.
+    // First-ever Dew — teach the split, but NOT during onboarding.
+    // Gift plant grants Dew immediately; firing a modal 800ms later
+    // collides with level-up + greenhouse welcome. Defer until the
+    // player earns Dew from actual gameplay (source !== gift).
     try {
-      if (!localStorage.getItem('lw_tut_currency_v1')) {
+      if (!localStorage.getItem('lw_tut_currency_v1') && source !== 'plant_mint_gift') {
         localStorage.setItem('lw_tut_currency_v1', '1');
         setTimeout(function(){
+          if (document.querySelector('.lu-overlay')) return;
           if (window._lwConfirm) {
             window._lwConfirm({
               title: 'TWO CURRENCIES',
@@ -28711,7 +28724,7 @@ document.addEventListener('keydown', function(e) {
               no: ''
             }, function(){});
           }
-        }, 800);
+        }, 1500);
       }
     } catch(e) {}
     // Tender class bonus: L2+ multiplies dew income
@@ -42302,13 +42315,16 @@ function _showWinCelebration(){
   // Skip if mint celebration is already showing
   if(_justMinted){_justMinted=false;return;}
   _playWin();
-  var inPlant=Math.min(_hashFilled,30);
+  var _winCost=_getMintCost?_getMintCost():30;
+  var inPlant=Math.min(_hashFilled,_winCost);
+  var _winReady=_readyHashes.length;
+  var _winBal=_winReady*_winCost+_hashFilled;
   var ov=document.createElement('div');ov.id='pw-win-overlay';
   ov.style.cssText='position:fixed;inset:0;z-index:999990;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,8,4,0.92);backdrop-filter:blur(14px);animation:panelFadeIn 0.4s ease;padding:1.5rem;';
   _spawnLeafParticles(ov);
   var h='<div style="text-align:center;max-width:340px;">';
-  var pct=Math.round((inPlant/30)*100);
-  var _winNear=inPlant>=25;var _winRemain=30-inPlant;
+  var pct=Math.round((inPlant/_winCost)*100);
+  var _winNear=inPlant>=Math.round(_winCost*0.83);var _winRemain=_winCost-inPlant;
   // Replaced 🌿 emoji with inline SVG leaf — matches the unified celebration set.
   // When _winNear (≥25 hashes), the leaf glows gold to signal "almost there."
   var _winLeafColor=_winNear?'#f5dc95':'#7ab356';
@@ -42325,10 +42341,11 @@ function _showWinCelebration(){
       '</svg>'+
     '</div>';
   h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.6rem;color:var(--cream);letter-spacing:0.12em;margin-bottom:0.15rem;">WELL PLAYED!</div>';
-  h+='<div style="font-family:DM Sans,sans-serif;font-size:0.6rem;color:var(--gold);margin-bottom:0.5rem;font-weight:500;">'+inPlant+' / 30 Sunbeams</div>';
+  h+='<div style="font-family:DM Sans,sans-serif;font-size:0.6rem;color:var(--gold);margin-bottom:0.5rem;font-weight:500;">\u2600\ufe0f '+_winBal+' Sunbeams</div>';
   h+='<div style="width:100%;height:10px;background:rgba(42,48,37,0.6);border-radius:5px;overflow:hidden;margin-bottom:0.15rem;"><div class="'+(_winNear?'near-bloom':'')+'" style="width:'+pct+'%;height:100%;background:linear-gradient(90deg,var(--leaf),var(--sage)'+(_winNear?',var(--gold)':'')+');border-radius:5px;transition:width 0.8s ease;"></div></div>';
-  if(_winNear){h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);margin-bottom:0.4rem;animation:nearBloomPulse 1.5s ease infinite;">'+_winRemain+' MORE TO FULL BLOOM</div>';}
-  else{h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);margin-bottom:0.5rem;">'+inPlant+' / 30 to next plant</div>';}
+  if(_winReady>0){h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);margin-bottom:0.4rem;animation:nearBloomPulse 1.5s ease infinite;">'+_winReady+' PLANT'+(_winReady>1?'S':'')+' READY \u2014 TAP \u2600\ufe0f TO MINT</div>';}
+  else if(_winNear){h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);margin-bottom:0.4rem;animation:nearBloomPulse 1.5s ease infinite;">'+_winRemain+' MORE TO FULL BLOOM</div>';}
+  else{h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);margin-bottom:0.5rem;">'+inPlant+' / '+_winCost+' to next plant</div>';}
   h+='<button onclick="_dismissWin();_restartCurrentGame();" style="width:100%;padding:'+(_winNear?'0.65rem':'0.55rem')+';margin-bottom:0.3rem;border:1.5px solid '+(_winNear?'rgba(200,168,75,0.5)':'rgba(122,179,86,0.35)')+';border-radius:8px;background:linear-gradient(180deg,'+(_winNear?'rgba(200,168,75,0.25),rgba(120,100,40,0.35)':'rgba(74,124,53,0.3),rgba(26,60,22,0.4)')+');color:'+(_winNear?'var(--gold)':'var(--sage)')+';font-family:Bebas Neue,sans-serif;font-size:'+(_winNear?'0.95rem':'0.85rem')+';letter-spacing:0.1em;cursor:pointer;min-height:48px;">'+(_winNear?'ONE MORE GAME':'PLAY AGAIN')+'</button>';
   h+='<button onclick="_dismissWin();_openGamePicker();" style="width:100%;padding:0.55rem;margin-bottom:0.3rem;border:1.5px solid rgba(200,168,75,0.2);border-radius:8px;background:rgba(46,40,32,0.4);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.08em;cursor:pointer;min-height:48px;">🎮 TRY ANOTHER GAME</button>';
   h+='<button onclick="_dismissWin();switchTab(\'greenhouse\');" style="width:100%;padding:0.4rem;border:1px solid rgba(200,188,160,0.08);border-radius:8px;background:none;color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.06em;cursor:pointer;min-height:44px;">🌿 VIEW GREENHOUSE</button>';
