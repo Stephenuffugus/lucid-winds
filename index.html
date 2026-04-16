@@ -41662,11 +41662,28 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      navigation works. All unlocks combine — once step 24 fires
      FOCUS/NURSERY/WILD/GREENHOUSE all stay tappable. */
   body.lw-tut-active .fg-nav-btn{pointer-events:none !important;opacity:0.4 !important;filter:saturate(0.35);transition:opacity 0.4s,filter 0.4s;}
-  body.lw-tut-active .fg-nav-btn.active,
+  /* Explicit unlock by class — do NOT unlock the currently-.active tab by
+     default. At step 13 the player is still on greenhouse but we want
+     ONLY the GAMES tab tappable, so we must control unlock via the
+     tutorial's lw-tut-nav-* classes, not via the browser's active state. */
   body.lw-tut-active.lw-tut-nav-greenhouse .fg-nav-btn[onclick*="greenhouse"],
   body.lw-tut-active.lw-tut-nav-focus .fg-nav-btn[onclick*="'game'"],
   body.lw-tut-active.lw-tut-nav-nursery .fg-nav-btn[onclick*="nursery"],
   body.lw-tut-active.lw-tut-nav-wild #nav-btn-wild{pointer-events:auto !important;opacity:1 !important;filter:none;}
+  /* During step 13 (nav-focus): fake the GAMES tab into looking selected
+     AND force the currently-.active greenhouse tab to look inactive so
+     the lit tab matches the instruction. */
+  body.lw-tut-active.lw-tut-nav-focus .fg-nav-btn.active img{opacity:0.4 !important;filter:saturate(0.3) brightness(0.6) !important;}
+  body.lw-tut-active.lw-tut-nav-focus .fg-nav-btn.active::after{display:none !important;}
+  body.lw-tut-active.lw-tut-nav-focus .fg-nav-btn[onclick*="'game'"] img{opacity:1 !important;filter:brightness(1.05) drop-shadow(0 0 8px rgba(122,179,86,0.15)) !important;}
+  body.lw-tut-active.lw-tut-nav-focus .fg-nav-btn[onclick*="'game'"]::after{
+    content:'';position:absolute;bottom:2px;left:20%;right:20%;height:2px;
+    background:var(--sage);border-radius:1px;opacity:0.8;
+  }
+  /* At step 13, block plant-card taps in the greenhouse so the player
+     can't reopen the carousel and access action-bar buttons while we're
+     pointing at GAMES. Unidirectional per Stephen: only GAMES clickable. */
+  body.lw-tut-active.lw-tut-nav-focus .greenhouse-plant{pointer-events:none !important;}
   /* Tutorial: lock the keeper-bar sunbeam + dew counters too. Player
      shouldn't be able to open sunbeam/dew modals by tapping the icons
      before the tutorial points at them. Sunbeams unlocks at step 16
@@ -53772,14 +53789,13 @@ function _step11(){
       if(fw2)fw2.classList.remove('cs-tut-hi-rarity');
       _clear();setTimeout(_step12,300);
     },'bottom');
-  // Re-anchor close to the symbol — dialog sits ABOVE the symbol so the
-  // glow ring is visible below it, not covered. Gap of ~140px above the
-  // symbol's top edge.
+  // Anchor the dialog's BOTTOM 20px above the symbol's top edge so it
+  // never overlaps the glow ring regardless of dialog height.
   if(sym&&_dlg){
     try{
       var r=sym.getBoundingClientRect();
-      _dlg.style.right='';_dlg.style.bottom='';_dlg.style.transform='';
-      _dlg.style.top=(Math.max(8,r.top-170))+'px';
+      _dlg.style.top='';_dlg.style.right='';_dlg.style.transform='';
+      _dlg.style.bottom=Math.max(12,(window.innerHeight-r.top+20))+'px';
       _dlg.style.left='12px';
       _dlg.style.maxWidth='min(320px,70vw)';
     }catch(e){}
