@@ -28154,6 +28154,18 @@ document.addEventListener('keydown', function(e) {
 
       grid.appendChild(el);
     }
+    // New-player hint: pulse the first plant card so they know to tap it.
+    // Only fires for 1-plant greenhouses + never repeats (one-shot flag).
+    try{
+      if(gh.length===1&&!localStorage.getItem('lw_pulse_first_plant_tap')){
+        setTimeout(function(){
+          var firstCard=grid.querySelector('.greenhouse-plant:not(.undiscovered)');
+          if(firstCard&&window._lwPulseHint){
+            window._lwPulseHint(firstCard,12000,'lw_pulse_first_plant_tap');
+          }
+        },1500);
+      }
+    }catch(e){}
     // Lazy SVG rendering — IntersectionObserver fills in off-screen cards
     // Staggered: queue visible cards and render one per rAF to avoid blocking
     if ('IntersectionObserver' in window) {
@@ -31310,6 +31322,17 @@ document.addEventListener('keydown', function(e) {
               }, function(){});
             }
           }, 1000);
+        }
+        // Pulse the drop-plant FAB for new wild visitors with 2+ plants —
+        // teaches them they can drop a plant right away. One-shot.
+        if (!localStorage.getItem('lw_pulse_wild_drop')) {
+          var _wGh=0;try{_wGh=(JSON.parse(localStorage.getItem('sws_greenhouse')||'[]')).length;}catch(e){}
+          if (_wGh >= 2) {
+            setTimeout(function(){
+              var fab = document.getElementById('dfb') || document.querySelector('.drop-fab');
+              if (fab && window._lwPulseHint) window._lwPulseHint(fab, 12000, 'lw_pulse_wild_drop');
+            }, 2500);
+          }
         }
       } catch(e) {}
     }
