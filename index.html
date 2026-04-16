@@ -6054,7 +6054,8 @@ window._addSwitchTabHook = function(fn){
         'lw_tut_herbarium_v1','lw_tut_wild_v1','lw_pulse_firstgame_v1','lw_pulse_highprio_v1',
         'lw_pulse_l7class_v1','lw_pulse_first_plant_tap','lw_pulse_breed_first',
         'lw_pulse_wild_drop','lw_pulse_whatnow_first',
-        'lw_jit_boxes_v1','lw_first_mint_v1','lw_tut_force_restart'];
+        'lw_jit_boxes_v1','lw_first_mint_v1','lw_tut_force_restart',
+        'lw_first_focus_done','lw_quest_first_game'];
       for(var i=0;i<keys.length;i++){try{localStorage.removeItem(keys[i]);}catch(e){}}
       // Set force-restart flag so PW_Tutorial.start() ignores the
       // returning-player bail (lw_vault_uid, greenhouse.length>1).
@@ -53451,52 +53452,85 @@ function _watchGameTabSwitch(attempts){
   else {_done();}
 }
 
-// Watch for body.game-active (user picked a game)
+// Watch for body.game-active (user picked a game). No mid-game dialog —
+// Stephen pulled the "notice the irony" jab. Just silently wait for the
+// first completion event (win, loss, or quit back to picker).
 function _watchGameStart(attempts){
   if(document.body.classList.contains('game-active')){
-    // Let the game load in before interrupting
-    setTimeout(_step15,3500);
+    _setStep(15);
+    _watchGameComplete();
     return;
   }
   if(attempts<600){setTimeout(function(){_watchGameStart(attempts+1);},500);}
   else {/* timed out — tutorial self-heals on next trigger */ _done();}
 }
 
-// ═══ STEP 15: irony line mid-game ═══
-function _step15(){
-  if(!document.body.classList.contains('game-active')){_done();return;}
-  _setStep(15);
-  _dialog(
-    '<span style="color:var(--sage);">Notice the irony.</span> You\u2019re playing a game inside a game meant to slow you down.<br><br>' +
-    '<span style="color:var(--muted);font-size:0.85em;">It\u2019s the paradox of attention. Stick with it.</span>',
-    'GOT IT',function(){
-      _clear();
-      _setStep(16);
-      _watchGameComplete();
-    },'top');
-}
-
-// Listen for game-completed event (win OR loss)
+// Listen for game-completed event (win OR loss) OR the player leaving
+// the game area without completing (quit/frustration). Any of the three
+// counts as "First Focus" complete and triggers the forced 30-sunbeam
+// rarity-capped setup + nursery handoff.
 function _watchGameComplete(){
-  var handler=function(e){
+  var resolved=false;
+  function resolve(){
+    if(resolved)return;resolved=true;
     window.removeEventListener('game-completed',handler);
-    // Celebration/loss modal plays ~3s — wait for it to clear
+    _forceFirstFocusReward();
     setTimeout(_step16,3500);
-  };
+  }
+  var handler=function(e){resolve();};
   window.addEventListener('game-completed',handler);
-  // Safety fallback if event never fires: check periodically for gh >=1 plant + 30 sunbeams
+  // Quit detection: if body.game-active drops OFF (tab switch, back
+  // button, picker return) before a completion event fires, count it
+  // as completion too.
   var polls=0;
+  var lastSeenActive=document.body.classList.contains('game-active');
   var watchFallback=function(){
+    if(resolved)return;
+    var active=document.body.classList.contains('game-active');
+    if(lastSeenActive&&!active){resolve();return;}
+    lastSeenActive=active;
     var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
     var ready=(window._readyHashes||[]).length;
-    if(ready>0||gh.length>=2){
-      window.removeEventListener('game-completed',handler);
-      setTimeout(_step16,500);
-      return;
-    }
+    if(ready>0||gh.length>=2){resolve();return;}
     if(polls<600){polls++;setTimeout(watchFallback,1000);}
   };
-  watchFallback();
+  setTimeout(watchFallback,1000);
+}
+
+// ═══ First Focus: force exactly 30 Sunbeams + a rarity-capped plant ═══
+// Fires once per install (lw_first_focus_done flag) after the first game
+// completion. Generates a hash whose rarity is ≤ Rare (score ≤ 5) so the
+// tester's first-ever natural mint can't roll a Cosmic they don't yet
+// appreciate. Also clears partial hash progress so the sunbeam readout
+// lands on 30 exactly, not 30 + X.
+function _forceFirstFocusReward(){
+  try{
+    if(localStorage.getItem('lw_first_focus_done'))return;
+    localStorage.setItem('lw_first_focus_done','1');
+    var tutHash='';
+    for(var att=0;att<500;att++){
+      var h='';for(var i=0;i<64;i++)h+='0123456789abcdef'[Math.floor(Math.random()*16)];
+      try{
+        var t=window.hashToTraits?window.hashToTraits(h):null;
+        if(t&&t.mythic>=0xD0)continue; // no mythic companion overrides
+        var g=window.getTerraGrade?window.getTerraGrade(t):null;
+        if(g&&g.score<=5){tutHash=h;break;} // Common / Uncommon / Rare
+      }catch(e){continue;}
+    }
+    if(!tutHash){
+      for(var fi=0;fi<64;fi++)tutHash+='0123456789abcdef'[Math.floor(Math.random()*16)];
+    }
+    // Overwrite persisted sunbeam state to exactly 1 ready plant + 0 progress.
+    try{localStorage.setItem('pw_readyHashes',JSON.stringify([tutHash]));}catch(e){}
+    try{localStorage.setItem('pw_hashFilled','0');}catch(e){}
+    if(typeof window._refreshHashState==='function')try{window._refreshHashState();}catch(e){}
+    if(window._lwCompleteQuest)try{window._lwCompleteQuest('q_first_game');}catch(e){}
+    if(window.PW_grantXP){
+      var curXp=0;try{curXp=parseInt(localStorage.getItem('pw_xp')||'0',10);}catch(e){}
+      if(curXp<19){try{window.PW_grantXP(21-curXp,'first_focus_level');}catch(e){}}
+    }
+    if(window._toast)try{window._toast('\ud83c\udf3f First Focus. The garden grows from attention.');}catch(e){}
+  }catch(e){console.error('[firstFocus]',e);}
 }
 
 // ═══ STEP 16: return to greenhouse, sunbeam pip pulses ═══
@@ -65251,10 +65285,12 @@ window.LW_Comp = (function(){
     var _qDone = function(id){ return typeof window._lwIsQuestDone === 'function' && window._lwIsQuestDone(id); };
 
     // ─── PRIORITY 100+ — time-critical / missed opportunities ───
-    // First-run shortcut: only 1 plant, still Lv 1 → play your first game.
-    // Surfaced at priority 120 so it beats everything else while the new
-    // Keeper is still inside the tutorial.
-    if(gh.length===1&&!localStorage.getItem('lw_first_game_won')){
+    // First-run shortcut: only 1 plant and haven't finished a first game
+    // yet. Surfaced at priority 120 so it beats everything else while
+    // the new Keeper is still inside the tutorial. Gated by the broader
+    // lw_first_focus_done flag so it disappears the moment any game
+    // completes (win, loss, or quit) — not just on a win.
+    if(gh.length===1&&!localStorage.getItem('lw_first_focus_done')){
       out.push({icon:'\ud83c\udfae',title:'Play your first game',body:'Win or lose, you\u2019ll earn Sunbeams. 30 Sunbeams mints another plant.',priority:120,action:function(){if(window.switchTab)switchTab('game');}});
     }
 
@@ -65290,13 +65326,16 @@ window.LW_Comp = (function(){
     if(_wnReady>0){
       out.push({icon:'\u2600\ufe0f',title:'Mint a new plant',body:'You have '+_wnReady+' plant'+ (_wnReady>1?'s':'')+' ready. Tap the Sunbeam icon to bloom.',priority:95,action:function(){if(window.openSunbeamModal)openSunbeamModal();}});
     }
-    // Has 1 plant, low sunbeams → play games to earn more
+    // Has 1 plant, low sunbeams → play games to earn more. After First
+    // Focus lands (any game completion), the "first game" copy is
+    // replaced by the ongoing progress readout.
     if(gh.length>=1&&_wnReady===0){
       var _wnCost=window._getMintCost?_getMintCost():30;
       var _wnBal=_wnReady*_wnCost+sunbeamProg;
-      var _gameQPri=!_qDone('q_first_game')?90:75;
-      var _gameQBody=!_qDone('q_first_game')?'Win your first game to earn Sunbeams and complete a quest!':_wnBal+'/'+_wnCost+' toward your next plant.';
-      out.push({icon:'\ud83c\udfae',title:!_qDone('q_first_game')?'Win your first game':'Play games to earn Sunbeams',body:_gameQBody,priority:_gameQPri,action:function(){if(window.switchTab)switchTab('game');}});
+      var _firstFocus=!localStorage.getItem('lw_first_focus_done');
+      var _gameQPri=_firstFocus?90:75;
+      var _gameQBody=_firstFocus?'Win, lose, or quit — any first game completes the First Focus quest and gives you 30 Sunbeams.':_wnBal+'/'+_wnCost+' toward your next plant.';
+      out.push({icon:'\ud83c\udfae',title:_firstFocus?'Complete your First Focus':'Play games to earn Sunbeams',body:_gameQBody,priority:_gameQPri,action:function(){if(window.switchTab)switchTab('game');}});
     }
     // Has 2+ plants but hasn't bred → teach breeding
     if(gh.length>=2&&!_qDone('q_first_breed')){
@@ -65351,10 +65390,8 @@ window.LW_Comp = (function(){
     }
 
     // ─── PRIORITY 20-40 — passive / exploratory ───
-    // First plant — read the haiku (low priority, discovery not progression)
-    if(gh.length===1){
-      out.push({icon:'\ud83d\udcdc',title:'Read your plant\u2019s haiku',body:'Every plant has a unique 7-5-7 poem. Flip the card in your greenhouse.',priority:20,action:function(){if(window.switchTab)switchTab('greenhouse');}});
-    }
+    // Haiku-read suggestion removed per Stephen — it belongs in the Book
+    // of Secrets as a discovery, not in the WHAT NOW action list.
     // No sunbeam progress, no plants → play a game
     if(sunbeamProg===0&&gh.length===0){
       out.push({icon:'🎮',title:'Play your first game',body:'Pattern-matching games earn Sunbeams. 30 Sunbeams = one unique plant, yours forever.',priority:100,action:function(){if(window.switchTab)switchTab('game');}});
@@ -65603,7 +65640,7 @@ window.LW_Comp = (function(){
 (function(){
   // Quest XP rescaled for 114K-cumulative curve (7x smaller rewards).
   var QUESTS = [
-    {id:'q_first_game',    xp:8,   flag:'lw_quest_first_game',    title:'First Victory', body:'You won your first game!'},
+    {id:'q_first_game',    xp:8,   flag:'lw_quest_first_game',    title:'First Focus',   body:'You focused. The garden grows from attention.'},
     {id:'q_mint_second',   xp:20,  flag:'lw_quest_mint_second',   title:'Second Bloom', body:'Your collection is growing.'},
     {id:'q_first_breed',   xp:15,  flag:'lw_quest_first_breed',   title:'First Chimera', body:'You created new life from two plants.'},
     {id:'q_first_wild',    xp:20,  flag:'lw_quest_first_wild',    title:'Into the Wild', body:'Your plant now lives in the real world.'},
