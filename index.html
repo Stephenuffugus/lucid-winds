@@ -41852,10 +41852,11 @@ var _hashFilled=0;
 var _readyHashes=[]; // queued hex strings — each = 1 mintable plant
 // First mint costs 10 hashes, all subsequent mints cost 30
 function _getMintCost(){
-  var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
-  // Gift plant doesn't count — check for player-earned mints
-  var earned=gh.filter(function(p){return p.origin!=='gift'&&p.origin!=='onboarding';});
-  return earned.length===0?10:30;
+  // All plants cost 30 Sunbeams to mint. The old 10-Sunbeam first-plant
+  // discount combined with the tutorial's +10 reward created an instant
+  // queue-fill before the player even saw their greenhouse. Locked at 30
+  // so tutorial Sunbeams become meaningful progress, not insta-mint.
+  return 30;
 }
 window._getMintCost=_getMintCost;
 function _seedHashBuf(){_hashBuf=new Uint8Array(32);crypto.getRandomValues(_hashBuf);_hashFilled=0;_persistHashBuf();}
