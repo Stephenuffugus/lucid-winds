@@ -38631,10 +38631,15 @@ function _rollTakeover(attackerPlant,defenderPlant,opts){
   }
   var attEA=(attackerPlant&&attackerPlant.ea)||0;
   var defEA=(defenderPlant&&defenderPlant.ea)||0;
-  // Attacker: Forager's Torch → 3d6 keep best 2. Default 2d6.
-  var attRoll = opts.attackerTorch ? _dKeepBest(3,6,2) : _d(2,6);
-  // Defender: Bramble Thicket → 1d6 instead of 2d6.
-  var defRoll = opts.defenderBramble ? _d(1,6) : _d(2,6);
+  // Attacker's roll:
+  //   Torch = 3d6 keep best 2   (attacker buff)
+  //   Bramble = attacker rolls only 1d6 (defender buff — spec: "attackers
+  //     roll only 1d6 against this plant"). Both apply: Torch overrides
+  //     Bramble because Torch is explicitly invoked.
+  var attRoll = opts.attackerTorch ? _dKeepBest(3,6,2)
+              : opts.defenderBramble ? _d(1,6)
+              : _d(2,6);
+  var defRoll = _d(2,6);
   var attComp=_tempBonus(attackerPlant,'attacker');
   // Defender companion bonus zeroed by attacker's Dust Storm.
   var defComp = opts.attackerDustStorm ? 0 : _tempBonus(defenderPlant,'defender');
