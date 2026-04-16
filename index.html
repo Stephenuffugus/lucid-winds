@@ -2120,6 +2120,8 @@
     @keyframes _tabIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
     @keyframes panelFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
     @keyframes spinSlow{from{transform:rotate(0deg) scale(0.9);opacity:0.4;}50%{transform:rotate(540deg) scale(1.2);opacity:1;}to{transform:rotate(1080deg) scale(1);opacity:1;}}
+    @keyframes fireflyPulse{0%,100%{opacity:0.85;transform:scale(1);}50%{opacity:1;transform:scale(1.18);}}
+    @keyframes fireflyDrift{0%{transform:translate(0,0);}50%{transform:translate(20px,-16px);}100%{transform:translate(-12px,10px);}}
     /* Botanical loading spinner — three rotating leaves */
     .lw-spinner{display:flex;align-items:center;justify-content:center;gap:0.3rem;padding:1rem;}
     .lw-spinner-leaf{width:8px;height:8px;border-radius:50% 0;background:var(--sage);opacity:0.3;animation:spinPulse 1.2s ease infinite;}
@@ -55105,6 +55107,7 @@ function _bosSetTab(tab) {
   else if (tab === 'mementos') body.innerHTML = _bosMementosContent();
   else if (tab === 'herbarium') body.innerHTML = _bosHerbariumContent();
   else if (tab === 'items') body.innerHTML = _bosItemsContent();
+  else if (tab === 'hunt') body.innerHTML = (window.LW_HUNT && window.LW_HUNT._bosContent) ? window.LW_HUNT._bosContent() : '';
   var tabs = document.querySelectorAll('.bos-tab');
   for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('active', tabs[i].getAttribute('data-tab') === tab);
   // Update the active style for tabs (override gold for active, muted for inactive)
@@ -58668,6 +58671,232 @@ window._lwClaimHerbarium = function(id){
   try { setTimeout(tryDailyGrant, 3000); } catch(e){}
 })();
 
+// ═══ LW_HUNT — seasonal Firefly Hunt (scavenger hunt per season) ═══
+// Each real season, 12 fireflies drift through the UI. Catch them all
+// before the solstice for a unique seasonal prize. Design credit: L.
+// (Stephen's daughter). Copy voiced to stay playful inside the
+// midnight-greenhouse tone.
+(function(){
+  'use strict';
+  var TOTAL_PER_SEASON = 12;
+  // Spawn locations — where a firefly can appear in the UI. The code
+  // attaches a sprite to one of these hooks; tap collects. Each is
+  // checked during renders / tab switches by _tryPlaceFirefly().
+  var SPOTS = [
+    { id:'wild-map',      desc:'drifting over the Wild map' },
+    { id:'keeper-bar',    desc:'tucked beside the keeper name' },
+    { id:'nursery-pot',   desc:'on the rim of a nursery pot' },
+    { id:'greenhouse-knot', desc:'on a plant card\u2019s corner knot' },
+    { id:'bos-report',    desc:'hidden in the Book\u2019s opening page' },
+    { id:'bos-herbarium', desc:'on a biome stamp' },
+    { id:'bos-events',    desc:'curled inside an event scroll' },
+    { id:'bos-items',     desc:'on the pouch button' },
+    { id:'slot-machine',  desc:'on a reel frame' },
+    { id:'foraging-hex',  desc:'on a solved hex tile' },
+    { id:'backpack-flap', desc:'on the backpack flap' },
+    { id:'tree-node',     desc:'on a Keeper\u2019s Tree node' }
+  ];
+  // Lore written in daughter's voice — kept short, sensory, a little
+  // silly. Each caught firefly shows one of these when inspected.
+  var LORE = [
+    'It was pretending to be a raindrop. I almost missed it.',
+    'This one smells like rain on warm stone.',
+    'It winked at me first.',
+    'It was humming a song I almost knew.',
+    'It tried to hide behind the moon.',
+    'It rode a leaf down like a canoe.',
+    'It looked like it had been waiting all day.',
+    'It was the color of old honey.',
+    'It buzzed three times slow and then stopped.',
+    'It landed on my finger like it knew me.',
+    'It glowed when I looked away.',
+    'It smelled like sleep and hot cocoa.'
+  ];
+
+  function _currentSeason(){
+    var m = new Date().getMonth();
+    if (m < 3) return 'winter';
+    if (m < 6) return 'spring';
+    if (m < 9) return 'summer';
+    return 'autumn';
+  }
+  function _yearTag(){ return String(new Date().getFullYear()); }
+  function _stateKey(){ return 'lw_hunt_' + _yearTag() + '_' + _currentSeason(); }
+  function _loadState(){
+    try { return JSON.parse(localStorage.getItem(_stateKey()) || '{}'); }
+    catch(e){ return {}; }
+  }
+  function _saveState(s){ try { localStorage.setItem(_stateKey(), JSON.stringify(s)); } catch(e){} }
+
+  function _ensure(){
+    var s = _loadState();
+    if (!s.startedAt) {
+      s = {
+        season: _currentSeason(), year: _yearTag(), startedAt: Date.now(),
+        spawned: [], caught: [], prizeGranted: false
+      };
+      // Schedule spawns at roughly 7-day intervals across 90 days
+      var cadenceMs = 90 * 86400000 / TOTAL_PER_SEASON;
+      for (var i=0;i<TOTAL_PER_SEASON;i++) s.spawned.push({ idx:i, at:s.startedAt + i*cadenceMs, location:SPOTS[i%SPOTS.length].id, caught:false });
+      _saveState(s);
+    }
+    return s;
+  }
+
+  function currentSeason(){ return _currentSeason(); }
+  function progress(){
+    var s = _ensure();
+    var available = 0, caught = 0;
+    var now = Date.now();
+    for (var i=0;i<s.spawned.length;i++){
+      if (s.spawned[i].at <= now) available++;
+      if (s.spawned[i].caught) caught++;
+    }
+    return { total: TOTAL_PER_SEASON, caught: caught, available: available };
+  }
+  function pickActiveFirefly(locationId){
+    // Return the earliest-spawned, uncaught, currently-available firefly
+    // whose assigned location matches — so the same spot doesn't overlap
+    // two fireflies at once. Returns null if none.
+    var s = _ensure();
+    var now = Date.now();
+    for (var i=0;i<s.spawned.length;i++){
+      var f = s.spawned[i];
+      if (f.caught || f.at > now) continue;
+      if (locationId && f.location !== locationId) continue;
+      return f;
+    }
+    return null;
+  }
+  function catchFirefly(idx){
+    var s = _ensure();
+    var f = s.spawned[idx]; if (!f || f.caught) return null;
+    f.caught = true; f.caughtAt = Date.now();
+    if (!s.caught) s.caught = [];
+    s.caught.push(idx);
+    _saveState(s);
+    // Per-egg reward
+    if (window.earnDew) window.earnDew(30, 'firefly_catch');
+    if (window.LW_ITEMS) {
+      var commons = ['foragersLens','whisperVine']; // common items
+      window.LW_ITEMS.add(commons[Math.floor(Math.random()*commons.length)], 1);
+    }
+    var lore = LORE[idx % LORE.length];
+    _showCatchToast(idx, lore);
+    try { if (window._haptic) window._haptic('bloom'); } catch(e){}
+    // Full-hunt prize
+    var prog = progress();
+    if (prog.caught >= TOTAL_PER_SEASON && !s.prizeGranted) {
+      s.prizeGranted = true; _saveState(s);
+      _grantSeasonalPrize();
+    }
+    return f;
+  }
+  function _showCatchToast(idx, lore){
+    if (!window._toast) return;
+    var p = progress();
+    window._toast('\u2728 Firefly caught ('+p.caught+'/'+TOTAL_PER_SEASON+'): "'+lore+'"');
+  }
+  function _grantSeasonalPrize(){
+    if (window._toast) window._toast('\ud83c\udf1f Seasonal Hunt COMPLETE \u2014 your prize is in the Book of Secrets.');
+    // Stub: future pass grants a unique pot / companion / cosmetic.
+    // For now, 500 Dew + Legendary mystery box.
+    if (window.earnDew) window.earnDew(500, 'hunt_complete');
+    if (window.LW_BOXES) window.LW_BOXES.add(3);
+  }
+
+  // ── BoS HUNT tab content ──
+  function _bosContent(){
+    var s = _ensure();
+    var prog = progress();
+    var seasonEmblem = {spring:'\ud83c\udf38',summer:'\u2600\ufe0f',autumn:'\ud83c\udf42',winter:'\u2744\ufe0f'}[s.season] || '\u2728';
+    var h = '';
+    h += '<div style="padding:0.8rem;background:linear-gradient(180deg,rgba(46,38,18,0.4),rgba(18,22,16,0.7));border:1.5px solid rgba(200,168,75,0.3);border-radius:12px;margin-bottom:0.9rem;">';
+    h += '<div style="font-family:Playfair Display,serif;font-size:1.05rem;font-style:italic;color:var(--gold);margin-bottom:0.3rem;">'+seasonEmblem+' The '+s.season.charAt(0).toUpperCase()+s.season.slice(1)+' Hunt</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);line-height:1.7;">Twelve fireflies hide in the garden each season. Catch them all before the next solstice for a prize only found this way.</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin-top:0.5rem;font-style:italic;">\u2014 L., age 7</div>';
+    h += '</div>';
+    h += '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:3px;"><span>'+prog.caught+' / '+TOTAL_PER_SEASON+' caught</span><span>'+prog.available+' spawned so far</span></div>';
+    h += '<div style="height:4px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;margin-bottom:0.9rem;"><div style="height:100%;width:'+(100*prog.caught/TOTAL_PER_SEASON)+'%;background:linear-gradient(90deg,rgba(200,168,75,0.8),rgba(122,179,86,0.8));border-radius:2px;"></div></div>';
+    h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;">';
+    for (var i=0;i<TOTAL_PER_SEASON;i++){
+      var f = s.spawned[i] || {};
+      var isCaught = !!f.caught;
+      var isSpawned = f.at && f.at <= Date.now();
+      var bg = isCaught ? 'radial-gradient(circle at 50% 40%,rgba(200,168,75,0.35),rgba(26,36,22,0.8))' : 'rgba(13,16,12,0.55)';
+      var border = isCaught ? 'rgba(200,168,75,0.7)' : (isSpawned?'rgba(200,168,75,0.25)':'rgba(74,124,53,0.1)');
+      h += '<div style="aspect-ratio:1;background:'+bg+';border:1.5px solid '+border+';border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4px;'+(isCaught?'box-shadow:0 0 12px rgba(200,168,75,0.35);':'')+'">';
+      h += '<div style="font-size:1.5rem;opacity:'+(isCaught?1:(isSpawned?0.45:0.15))+';">'+(isCaught?'\u2728':'?')+'</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:'+(isCaught?'var(--gold)':'var(--muted)')+';letter-spacing:0.05em;margin-top:2px;">#'+(i+1)+'</div>';
+      h += '</div>';
+    }
+    h += '</div>';
+    if (prog.caught >= TOTAL_PER_SEASON) {
+      h += '<div style="margin-top:1rem;padding:0.8rem;background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(74,124,53,0.08));border:1.5px solid var(--gold);border-radius:12px;text-align:center;">';
+      h += '<div style="font-family:Playfair Display,serif;font-size:0.95rem;font-style:italic;color:var(--gold);">\u2728 Hunt complete.</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);margin-top:3px;">The season rewarded you. Come back next season — the prizes change every year.</div>';
+      h += '</div>';
+    } else {
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);text-align:center;margin-top:1rem;line-height:1.7;">Fireflies hide across the game \u2014 the Wild map, the nursery, the Book. Keep your eyes open. One spawns every 7\u20138 days.</div>';
+    }
+    return h;
+  }
+
+  // ── Sprite placement hook — call from UI renders with a location id ──
+  // Returns HTML you can inject; the caller is responsible for placement.
+  function spriteHTML(locationId){
+    var f = pickActiveFirefly(locationId);
+    if (!f) return '';
+    return '<div onclick="event.stopPropagation();window.LW_HUNT.catchByIdx('+f.idx+');this.remove();" style="position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 40% 40%,#fff2a8 0%,#e8c86a 40%,transparent 75%);box-shadow:0 0 12px rgba(232,200,106,0.9);cursor:pointer;z-index:5;animation:fireflyPulse 2.4s ease-in-out infinite;" title="A firefly. Tap to catch."></div>';
+  }
+  // Floating firefly on the Wild tab (the most-visited surface).
+  function _placeFloatingFirefly(){
+    var existing = document.getElementById('lw-firefly-float');
+    if (existing) return;
+    var f = pickActiveFirefly('wild-map');
+    if (!f) return;
+    var wrap = document.createElement('div');
+    wrap.id = 'lw-firefly-float';
+    wrap.onclick = function(e){ e.stopPropagation(); catchFirefly(f.idx); wrap.remove(); };
+    wrap.title = 'A firefly. Tap to catch.';
+    wrap.style.cssText = 'position:fixed;bottom:'+(160 + Math.random()*80)+'px;left:'+(20 + Math.random()*70)+'%;width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 40% 40%,#fff2a8 0%,#e8c86a 40%,transparent 75%);box-shadow:0 0 18px rgba(232,200,106,0.95);cursor:pointer;z-index:990;animation:fireflyPulse 2.4s ease-in-out infinite, fireflyDrift 14s ease-in-out infinite alternate;';
+    document.body.appendChild(wrap);
+  }
+  function catchByIdx(idx){ return catchFirefly(idx); }
+
+  window.LW_HUNT = {
+    currentSeason: currentSeason, progress: progress,
+    catchByIdx: catchByIdx, catchFirefly: catchFirefly,
+    pickActiveFirefly: pickActiveFirefly, spriteHTML: spriteHTML,
+    _placeFloatingFirefly: _placeFloatingFirefly,
+    _bosContent: _bosContent
+  };
+  window.LW_debug = window.LW_debug || {};
+  window.LW_debug.spawnFirefly = function(){
+    // Force next unspawned to be ready now
+    var s = _ensure();
+    for (var i=0;i<s.spawned.length;i++){ if (!s.spawned[i].caught && s.spawned[i].at>Date.now()){ s.spawned[i].at = Date.now() - 1000; _saveState(s); break; } }
+    _placeFloatingFirefly();
+  };
+  window.LW_debug.huntStatus = function(){ return progress(); };
+
+  // Place a firefly on Wild-tab switch when one is active.
+  (function(){
+    var prev = window.switchTab;
+    if (typeof prev !== 'function') return;
+    window.switchTab = function(tab){
+      var r = prev.apply(this, arguments);
+      try {
+        if (tab === 'wild') setTimeout(_placeFloatingFirefly, 800);
+        else {
+          var f = document.getElementById('lw-firefly-float'); if (f) f.remove();
+        }
+      } catch(e){}
+      return r;
+    };
+  })();
+})();
+
 // ═══ LW_SIM — power-test harness for boxes, contests, forage, economy ═══
 // Console-only. Usage: LW_SIM.runAll() returns a text report. Individual
 // sims expose raw numbers + .report() strings. Uses the REAL code paths
@@ -61297,6 +61526,7 @@ window._openCompendiumUI=function(){
         '<button class="bos-tab" data-tab="mementos" onclick="_bosSetTab(\'mementos\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">MEMENTOS</button>'+
         '<button class="bos-tab" data-tab="herbarium" onclick="_bosSetTab(\'herbarium\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">HERBARIUM</button>'+
         '<button class="bos-tab" data-tab="items" onclick="_bosSetTab(\'items\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">ITEMS</button>'+
+        '<button class="bos-tab" data-tab="hunt" onclick="_bosSetTab(\'hunt\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">HUNT</button>'+
         '<button class="bos-tab" data-tab="class" onclick="_bosSetTab(\'class\')" style="position:relative;flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">CLASS'+ ((!localStorage.getItem('lw_class')&&window.canSee&&window.canSee.classPick&&window.canSee.classPick())?'<span style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px rgba(200,168,75,0.8);"></span>':'') +'</button>'+
       '</div>'+
       // Body
