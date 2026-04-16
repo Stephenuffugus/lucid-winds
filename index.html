@@ -42402,7 +42402,22 @@ function _showWinCelebration(){
   }catch(e){}
   setTimeout(function(){if(document.getElementById('pw-win-overlay'))_dismissWin();},15000);
 }
-function _dismissWin(){var o=document.getElementById('pw-win-overlay');if(o)o.remove();}
+function _dismissWin(){
+  var o=document.getElementById('pw-win-overlay');if(o)o.remove();
+  // Post-mint nudge: pulse the WHAT NOW button so new players see
+  // they have a guide. Only fires for new players (<=3 plants) and
+  // only once per keeper so it never becomes spam.
+  try{
+    var _gh=[];try{_gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+    if(_gh.length>=1&&_gh.length<=3&&!localStorage.getItem('lw_pulse_whatnow_first')){
+      setTimeout(function(){
+        var btn=document.getElementById('lw-whatnow-btn');
+        if(btn&&window._lwPulseHint)window._lwPulseHint(btn,10000,'lw_pulse_whatnow_first');
+        if(window._toast)_toast('\u2728 Tap WHAT NOW for your next step');
+      },600);
+    }
+  }catch(e){}
+}
 window._dismissWin=_dismissWin;
 function _restartCurrentGame(){
   _xt();_m=_mTotal%30;
