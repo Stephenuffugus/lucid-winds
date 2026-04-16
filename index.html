@@ -31056,15 +31056,8 @@ document.addEventListener('keydown', function(e) {
   // ═══ REUSABLE IN-GAME CONFIRM MODAL ═══
   // Replaces raw browser confirm() for player-facing actions
   window._lwConfirm = function(opts, onYes, onNo) {
-    // Stephen reported: "TWO CURRENCIES" modal stuck open, GOT IT does nothing,
-    // Wild tab unreachable underneath. Root cause: if _lwConfirm is called twice
-    // before the first is dismissed (e.g. two earnDew events in quick succession),
-    // the second createElement gives the SAME id='lw-confirm-modal', and
-    // document.getElementById('lw-confirm-yes') returns the FIRST button in
-    // document order — so the second modal's button gets no handler. User sees
-    // the top modal, taps GOT IT, nothing happens, and the modal (z-index 100001)
-    // blocks every tap beneath it. Fix: dismiss any existing modal first, and
-    // scope button lookup to THIS modal via m.querySelector.
+    // Block modals while onboarding auth form is active
+    if (document.body.classList.contains('ob-active')) return;
     var prev = document.getElementById('lw-confirm-modal');
     if (prev) { try { prev.remove(); } catch(e) {} }
     var title = opts.title || 'CONFIRM';
@@ -47721,6 +47714,10 @@ window.PW_grantXP=function(amount,reason){
 // ═══ LEVEL-UP CELEBRATION OVERLAY ═══
 var _luQueue=[],_luBusy=false,_luTimer=null;
 function _showLevelUp(level,reason){
+  if(document.body.classList.contains('ob-active')){
+    setTimeout(function(){_showLevelUp(level,reason);},3000);
+    return;
+  }
   var rankEntry=null;
   for(var i=0;i<RANKS.length;i++){if(RANKS[i].lvl===level){rankEntry=RANKS[i];break;}}
   if(!rankEntry)return;
