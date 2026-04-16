@@ -41704,6 +41704,16 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      full opacity and pointer-events; everything else dims. */
   body.lw-tut-active.lw-tut-newplant-only .greenhouse-plant{pointer-events:none !important;opacity:0.45 !important;filter:saturate(0.5);}
   body.lw-tut-active.lw-tut-newplant-only .greenhouse-plant.lw-tut-newplant-target{pointer-events:auto !important;opacity:1 !important;filter:none;animation:lwTutCardPulse 1.6s ease-in-out infinite;}
+  /* Step 19: carousel-lock is active but BREED carved out. The broad
+     lock (.pgm-act-btn rule above) catches BREED too, so this rule
+     selects the BREED button by its inline onclick and re-enables it. */
+  body.lw-tut-active.lw-tut-carousel-breed-only .pgm-act-btn[onclick*="carouselBreed"]{pointer-events:auto !important;opacity:1 !important;filter:none !important;}
+  /* Step 20: inside the breed screen, only the CROSS-POLLINATE confirm
+     button is tappable. Close-X, partner cycler arrows, and self
+     cycler arrows dim + pointer-events:none. */
+  body.lw-tut-active.lw-tut-breed-only .bs-close,
+  body.lw-tut-active.lw-tut-breed-only .bs-nav-btn,
+  body.lw-tut-active.lw-tut-breed-only .bs-card-nav-btn{pointer-events:none !important;opacity:0.35 !important;filter:saturate(0.45);}
   /* Tutorial: lock the keeper-bar sunbeam + dew counters too. Player
      shouldn't be able to open sunbeam/dew modals by tapping the icons
      before the tutorial points at them. Sunbeams unlocks at step 16
@@ -53565,7 +53575,7 @@ _done=function(){
     document.body.classList.remove(
       'lw-tut-active','lw-tut-limit-actions',
       'lw-tut-bp-on','lw-tut-bos-on','lw-tut-sb-on','lw-tut-mint-only','lw-tut-newplant-only',
-      'lw-tut-carousel-lock','lw-tut-carousel-can-close','lw-tut-carousel-freeze',
+      'lw-tut-carousel-lock','lw-tut-carousel-can-close','lw-tut-carousel-freeze','lw-tut-carousel-breed-only','lw-tut-breed-only',
       'lw-tut-nav-greenhouse','lw-tut-nav-focus','lw-tut-nav-nursery','lw-tut-nav-wild'
     );
     // Strip any residual newplant-target class on greenhouse tiles.
@@ -54194,11 +54204,15 @@ function _step19(){
   _clear();
   // Release the step-18 newplant lock — the carousel is now open and
   // the greenhouse grid is behind it. Target class cleared so no
-  // residual pulse on the tile.
+  // residual pulse on the tile. Re-engage carousel-lock so every
+  // action button except BREED is frozen (DOWNLOAD / SHARE / COMPOST
+  // / DETAILS / close / swipe arrows). The breed carve-out is handled
+  // by the lw-tut-carousel-breed-only class below.
   try{
     document.body.classList.remove('lw-tut-newplant-only');
     var oldTarget=document.querySelector('.greenhouse-plant.lw-tut-newplant-target');
     if(oldTarget)oldTarget.classList.remove('lw-tut-newplant-target');
+    document.body.classList.add('lw-tut-carousel-lock','lw-tut-carousel-breed-only');
   }catch(e){}
   var breedBtn=null;
   var btns=document.querySelectorAll('.pgm-act-btn');
@@ -54225,6 +54239,14 @@ function _step19(){
 // ═══ STEP 20: inside breed screen — explain + watch for executed breed ═══
 function _step20(){
   _setStep(20);
+  // Release carousel-lock (carousel is now behind the breed-screen
+  // overlay) and engage the breed-screen lock so only the CROSS-
+  // POLLINATE confirm button is tappable. Close-X, partner arrows,
+  // self arrows, and the confirm CANCEL are all blocked.
+  try{
+    document.body.classList.remove('lw-tut-carousel-lock','lw-tut-carousel-breed-only');
+    document.body.classList.add('lw-tut-breed-only');
+  }catch(e){}
   var bsBtn=document.getElementById('bs-breed-btn');
   if(bsBtn&&window._lwPulseHint){window._lwPulseHint(bsBtn,60000,'lw_tut_bs_pulse');}
   _dialog(
@@ -54256,8 +54278,9 @@ function _step22(){
   _setStep(22);
   // Unidirectional swap: nursery is the ONLY clickable nav now. Remove
   // greenhouse unlock so the Keeper can't wander back mid-watering.
+  // Also strip any lingering breed-screen locks.
   try{
-    document.body.classList.remove('lw-tut-nav-greenhouse');
+    document.body.classList.remove('lw-tut-nav-greenhouse','lw-tut-breed-only','lw-tut-carousel-lock','lw-tut-carousel-breed-only');
     document.body.classList.add('lw-tut-nav-nursery');
   }catch(e){}
   if(window.switchTab)switchTab('nursery');
