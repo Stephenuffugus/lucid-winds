@@ -1190,6 +1190,22 @@
     /* Mythic back art has the "MYTHIC" label baked into the card higher than
        other tiers — nudge the rarity text down so it doesn't overlap the art. */
     .cs-card-back[data-tier="mythic"] .cb-rarity{margin-top:1.4rem;}
+    /* Book of Secrets — global font bump. Stephen reported text too small. */
+    #bos-body{font-size:14px;}
+    #bos-body [style*="font-size:0.35rem"]{font-size:0.52rem!important;}
+    #bos-body [style*="font-size:0.38rem"]{font-size:0.54rem!important;}
+    #bos-body [style*="font-size:0.4rem"]{font-size:0.56rem!important;}
+    #bos-body [style*="font-size:0.42rem"]{font-size:0.58rem!important;}
+    #bos-body [style*="font-size:0.45rem"]{font-size:0.6rem!important;}
+    #bos-body [style*="font-size:0.48rem"]{font-size:0.62rem!important;}
+    #bos-body [style*="font-size:0.5rem"]{font-size:0.66rem!important;}
+    #bos-body [style*="font-size:0.52rem"]{font-size:0.68rem!important;}
+    #bos-body [style*="font-size:0.55rem"]{font-size:0.72rem!important;}
+    #bos-body [style*="font-size:0.58rem"]{font-size:0.76rem!important;}
+    #bos-body [style*="font-size:0.6rem"]{font-size:0.78rem!important;}
+    #bos-body [style*="font-size:0.62rem"]{font-size:0.8rem!important;}
+    #bos-body [style*="font-size:0.65rem"]{font-size:0.85rem!important;}
+    #bos-body [style*="font-size:0.7rem"]{font-size:0.9rem!important;}
     .cb-ledger-label{font-family:'Outfit',sans-serif;font-size:0.55rem;font-weight:600;letter-spacing:0.06em;color:var(--muted);}
     .cb-ledger-value{font-family:'Outfit',sans-serif;font-size:0.55rem;font-weight:400;color:var(--cream);}
     .cb-haiku{font-family:'Playfair Display',serif;font-style:italic;font-size:1.0rem;color:rgba(212,207,188,0.90);line-height:1.7;text-align:center;}
@@ -28664,8 +28680,9 @@ document.addEventListener('keydown', function(e) {
     ledger.earned = (ledger.earned || 0) + amount;
     _secureSet(HASH_LEDGER_KEY, ledger);
     if (window._LW_DEBUG) console.log('[earnHashes] ledger.earned now:', ledger.earned);
-    // Game XP: 1 XP per sunbeam earned (was 2x). Rebalanced for new 114K curve.
-    if(window.PW_grantXP) PW_grantXP(amount, 'dew_drop');
+    // Game XP: half a level-XP per sunbeam earned. Stephen hit L11 in 10 min
+    // under 1:1; tuning to 0.5:1 slows the curve without capping active play.
+    if(window.PW_grantXP) PW_grantXP(Math.max(1, Math.floor(amount/2)), 'dew_drop');
     if(window._accumulateHash) window._accumulateHash(amount);
     _updateGameDew();
   }
@@ -28765,7 +28782,9 @@ document.addEventListener('keydown', function(e) {
     var ledger = getDewLedger();
     ledger.earned = (ledger.earned || 0) + amount;
     _secureSet(DEW_LEDGER_KEY, ledger);
-    if (window.PW_grantXP) PW_grantXP(amount, source || 'dew_earn');
+    // Dew → XP halved. Was 1:1 which made 10-dew mints (and wild ticks with
+    // 6+ plants) compound XP way too fast. Keeps Dew economy intact.
+    if (window.PW_grantXP) PW_grantXP(Math.max(1, Math.floor(amount/2)), source || 'dew_earn');
     _updateDewDisplay();
   }
   function spendDew(amount) {
@@ -42520,6 +42539,17 @@ function _restartCurrentGame(){
 }
 window._restartCurrentGame=_restartCurrentGame;
 function _openGamePicker(){
+  // Clear game-active state so HUD returns and re-show the picker/strips
+  // that were inline-hidden when a game launched.
+  document.body.classList.remove('game-active');
+  var _fgPk=document.getElementById('fg-pk');if(_fgPk)_fgPk.style.display='';
+  var _rs=document.getElementById('rules-strip');if(_rs)_rs.style.display='';
+  var _as=document.querySelector('.attn-strip');if(_as)_as.style.display='';
+  _a='';window._a='';
+  var ag=document.getElementById('fg-ag');if(ag){ag.classList.remove('on');ag.innerHTML='';}
+  var sw=document.getElementById('sw');if(sw)sw.style.display='none';
+  var _td=document.getElementById('trios-dash');if(_td)_td.style.display='none';
+  var _tw=document.getElementById('trios-wrap');if(_tw)_tw.style.display='none';
   _op();
 }
 window._openGamePicker=_openGamePicker;
@@ -42883,6 +42913,13 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;window._a
   _solClearFS();
   var _bnav=document.querySelector('.fg-bottomnav');
   var _td=document.getElementById('trios-dash');var _tw=document.getElementById('trios-wrap');
+  // Inline-hide picker + rules/attention strips whenever ANY game starts.
+  // CSS body.game-active hides these too, but we belt-and-suspenders it
+  // because Stephen kept seeing the ALL GAMES chips + category slider at
+  // the top of Three Sisters.
+  var _fgPk=document.getElementById('fg-pk');if(_fgPk)_fgPk.style.display='none';
+  var _rs=document.getElementById('rules-strip');if(_rs)_rs.style.display='none';
+  var _as=document.querySelector('.attn-strip');if(_as)_as.style.display='none';
   if(id==='set'){sw.style.display='';if(_td)_td.style.display='';if(_tw)_tw.style.display='';if(ssb)ssb.style.display='';ag.classList.remove('on');ag.classList.remove('sol');ag.innerHTML='';if(_bnav)_bnav.style.display='none';if(gps){gps.classList.add('on');}document.body.classList.add('game-active');try{_updateGP()}catch(e){}return}
   sw.style.display='none';if(_td)_td.style.display='none';if(_tw)_tw.style.display='none';if(ssb)ssb.style.display='none';ag.classList.add('on');ag.classList.toggle('sol',!!_solGames[id]);ag.innerHTML='';ag.setAttribute('data-game',id);document.body.classList.add('game-active');
   if(_bnav)_bnav.style.display='none';
@@ -56936,10 +56973,12 @@ function _bosMementosContent() {
   var now = Date.now();
   var THIRTY = 30 * 86400000;
 
-  var h = '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);margin-bottom:0.7rem;line-height:1.6;">Keepsakes from companions you\u2019ve tended for 30+ days. Each is unique, earned once, yours forever.</div>';
+  // Prominent EQUIP button at the top so players don't have to hunt for it
+  var h = '<button onclick="var _bos=document.getElementById(\'bos-overlay\');if(_bos)_bos.remove();setTimeout(function(){if(window.PW_UI&&PW_UI.equipCompanion)PW_UI.equipCompanion();},200);" style="width:100%;padding:0.75rem;margin-bottom:0.8rem;border:2px solid rgba(200,168,75,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.35));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;min-height:52px;box-shadow:0 2px 8px rgba(200,168,75,0.15);">\ud83d\udc3e EQUIP COMPANION</button>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:var(--cream);margin-bottom:0.7rem;line-height:1.6;">Keepsakes from companions you\u2019ve tended for 30+ days. Each is unique, earned once, yours forever.</div>';
 
   if (!collected.length && !Object.keys(equipLog).length) {
-    h += '<div style="padding:1.2rem;text-align:center;color:var(--muted);font-family:DM Mono,monospace;font-size:0.5rem;line-height:1.7;">Equip your first companion on your character sheet.<br>After 30 days, they\u2019ll leave a keepsake here.</div>';
+    h += '<div style="padding:1.2rem;text-align:center;color:var(--muted);font-family:DM Mono,monospace;font-size:0.58rem;line-height:1.7;">Tap EQUIP COMPANION above to start a bond.<br>After 30 days, they\u2019ll leave a keepsake here.</div>';
     return h;
   }
 
@@ -62334,7 +62373,7 @@ window._openCompendiumUI=function(){
         '<button class="bos-tab" data-tab="class" onclick="_bosSetTab(\'class\')" style="position:relative;flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">CLASS'+ ((!localStorage.getItem('lw_class')&&window.canSee&&window.canSee.classPick&&window.canSee.classPick())?'<span style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px rgba(200,168,75,0.8);"></span>':'') +'</button>'+
       '</div>'+
       // Body
-      '<div id="bos-body" style="flex:1;overflow-y:auto;padding:0.6rem 1rem 1.5rem;-webkit-overflow-scrolling:touch;"></div>'+
+      '<div id="bos-body" style="flex:1;overflow-y:auto;padding:0.6rem 1rem 1.5rem;-webkit-overflow-scrolling:touch;font-size:1.25em;"></div>'+
     '</div>';
   document.body.appendChild(ov);
   // Set initial tab content — priority order:
