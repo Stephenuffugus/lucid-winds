@@ -42716,11 +42716,11 @@ function _solExitFS(){
 }
 window._solExitFS=_solExitFS;
 function ms(a,x){
-  var isSol=document.body.classList.contains('sol-fs');
+  // Redundant "◀ GAMES" inside gu-bar removed — the external #game-exit-btn
+  // (position:fixed top-left) already handles back navigation for every game.
   var tb=document.createElement('div');
   tb.className='gu-bar';
-  tb.innerHTML=(isSol?'<button onclick="_solExitFS()" style="background:rgba(74,124,53,.2);border:1px solid rgba(74,124,53,.35);border-radius:6px;color:var(--sage);font-family:DM Sans,sans-serif;font-size:clamp(.6rem,1.6vw,.75rem);font-weight:700;padding:6px 12px;cursor:pointer;display:flex;align-items:center;gap:4px;min-height:44px;-webkit-tap-highlight-color:transparent">&#9664; GAMES</button>':'')
-    +'<div class="gu-left">'+(x||'')+'</div>'
+  tb.innerHTML='<div class="gu-left">'+(x||'')+'</div>'
     +'<div class="gu-right">'
     +'<span class="gh">\u26A1<strong id="_h">'+_m+'</strong></span>'
     +' \u00B7 \u23F1<span id="_tt">0:00</span>'
