@@ -48273,7 +48273,7 @@ window.PW_grantXP=function(amount,reason){
       if(newR.level>=7&&!localStorage.getItem('lw_class')&&!localStorage.getItem('lw_jit_class_v1')){
         localStorage.setItem('lw_jit_class_v1','1');
         var _classJITPoll=function(attempts){
-          if(document.querySelector('#lu-overlay,.lu-overlay')&&attempts<60){setTimeout(function(){_classJITPoll(attempts+1);},500);return;}
+          if(document.querySelector('#lu-overlay,.lu-overlay,#lw-confirm-modal,#pw-win-overlay')&&attempts<60){setTimeout(function(){_classJITPoll(attempts+1);},500);return;}
           if(!window._lwConfirm)return;
           window._lwConfirm({
             title:'A PATH IS OPENING',
@@ -48296,7 +48296,7 @@ window.PW_grantXP=function(amount,reason){
       if(newR.level>=95&&_curP===0&&!localStorage.getItem('lw_jit_prestige_v1')){
         localStorage.setItem('lw_jit_prestige_v1','1');
         var _prestigeJITPoll=function(attempts){
-          if(document.querySelector('#lu-overlay,.lu-overlay')&&attempts<60){setTimeout(function(){_prestigeJITPoll(attempts+1);},500);return;}
+          if(document.querySelector('#lu-overlay,.lu-overlay,#lw-confirm-modal,#pw-win-overlay')&&attempts<60){setTimeout(function(){_prestigeJITPoll(attempts+1);},500);return;}
           if(!window._lwConfirm)return;
           window._lwConfirm({
             title:'A CYCLE IS CLOSING',
@@ -53142,7 +53142,7 @@ function _showDailyReward() {
   // a relationship before the calendar modal opens. Single-fire via
   // lw_jit_daily_v1. Suppressed during tutorial so it doesn't stack.
   try {
-    if (!localStorage.getItem('lw_jit_daily_v1') && (localStorage.getItem('lw_tut')||'done')==='done' && window._lwConfirm) {
+    if (!localStorage.getItem('lw_jit_daily_v1') && (localStorage.getItem('lw_tut')||'done')==='done' && window._lwConfirm && !document.querySelector('#lw-confirm-modal,#lu-overlay,.lu-overlay,#pw-win-overlay')) {
       localStorage.setItem('lw_jit_daily_v1', '1');
       window._lwConfirm({
         title: 'THE GARDEN REMEMBERS',
