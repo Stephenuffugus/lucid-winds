@@ -41475,6 +41475,16 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
   .lw-sunbeam-overlay.moonlight .lw-sunbeam-sparkle{background:radial-gradient(circle,rgba(235,245,255,1) 0%,rgba(160,195,235,0.6) 40%,transparent 72%);}
   .lw-sunbeam-overlay.starlight .lw-sunbeam-ray{background:linear-gradient(180deg,rgba(255,220,255,0.68) 0%,rgba(200,180,255,0.42) 40%,rgba(160,220,255,0) 100%);}
   .lw-sunbeam-overlay.starlight .lw-sunbeam-sparkle{background:radial-gradient(circle,rgba(255,240,220,1) 0%,rgba(200,160,255,0.7) 40%,transparent 72%);}
+
+  /* ═══ TUTORIAL PHASE 2 CARD DIM + HIGHLIGHT ═══
+     During the carousel walkthrough, the name and haiku start dim.
+     The highlighted element (.cs-tut-hi-*) pulses with a gold glow.
+     EA + rarity symbol get a ring-glow when focused. */
+  .cs-tut-dim .cf-name,.cs-tut-dim .cf-haiku{opacity:0.18;filter:blur(2.5px);transition:opacity 0.5s,filter 0.5s;}
+  .cs-tut-hi-name .cf-name{opacity:1 !important;filter:none !important;box-shadow:0 0 22px rgba(200,168,75,0.75);border-radius:8px;padding:2px 6px;background:rgba(200,168,75,0.06);transition:all 0.4s;}
+  .cs-tut-hi-haiku .cf-haiku{opacity:1 !important;filter:none !important;box-shadow:0 0 22px rgba(200,168,75,0.75);border-radius:8px;padding:2px 6px;background:rgba(200,168,75,0.06);transition:all 0.4s;}
+  .cs-tut-hi-ea .cf-ea{box-shadow:0 0 24px rgba(200,168,75,0.9),inset 0 0 10px rgba(200,168,75,0.4);animation:_whPulse 1.6s ease infinite;transition:box-shadow 0.4s;}
+  .cs-tut-hi-rarity .cf-rarity-symbol{box-shadow:0 0 24px rgba(200,168,75,0.9);animation:_whPulse 1.6s ease infinite;border-radius:50%;transition:box-shadow 0.4s;}
   body:has(.lu-overlay.open) #lw-fb-btn,
   body:has(#pw-win-overlay) #lw-fb-btn,
   body:has(#cinematic-reveal.open) #lw-fb-btn,
@@ -50296,6 +50306,10 @@ function finish(){
   if(window.renderGreenhouse)renderGreenhouse();
   if(window.updateDashboard)updateDashboard();
   if(window.switchTab)switchTab('greenhouse');
+  // Fire the Phase 2 walkthrough once the greenhouse has painted.
+  // PW_Tutorial.start() bails if the player isn't on step 0 or already
+  // has >1 plant, so it's safe to call unconditionally.
+  setTimeout(function(){try{if(window.PW_Tutorial)window.PW_Tutorial.start();}catch(e){}},800);
 }
 
 function skip(){
@@ -53007,22 +53021,35 @@ function _findGameBtn(){
   return null;
 }
 
+// ═══ HELPER: strip all tutorial highlight classes off the carousel card ═══
+function _clearCardHighlights(){
+  try{
+    var fws=document.querySelectorAll('.cs-flip-wrap');
+    for(var i=0;i<fws.length;i++){
+      fws[i].classList.remove('cs-tut-dim','cs-tut-hi-name','cs-tut-hi-haiku','cs-tut-hi-ea','cs-tut-hi-rarity');
+    }
+  }catch(e){}
+}
+
+// Override _done to also strip card highlights (tutorial may die mid-flow)
+var _origDone=_done;
+_done=function(){_clearCardHighlights();_origDone();};
+
 // ═══ EMPTY GREENHOUSE PATH ═══
 // Player has no plants — skip collection tutorial, guide them to earn their first
 function _stepEmpty(){
   _overlay(function(){_done();});
   _dialog(
-    'Welcome to <span style="color:var(--gold);">Lucid Winds</span>!<br><br>' +
+    'Welcome to <span style="color:var(--gold);">Lucid Winds</span>.<br><br>' +
     'Your greenhouse is where your <span style="color:var(--sage);">one-of-a-kind plants</span> live.<br><br>' +
-    'Each one is a unique piece of art \u2014 grown from your attention.<br><br>' +
-    '<span style="color:var(--muted);font-size:0.85em;">Play games to earn Dew. Collect 30 Dew to bloom your first plant.</span>',
+    '<span style="color:var(--muted);font-size:0.85em;">Play games to earn Sunbeams. Every 30 mints a plant.</span>',
     'START PLAYING', function(){
       _done();
       if(window.switchTab)switchTab('game');
     },'center');
 }
 
-// ═══ STEP 1: "This is your first plant. Tap to view it." ═══
+// ═══ STEP 1: greenhouse sign + spotlight + plant tap ═══
 function _step1(retries){
   if(typeof retries==='undefined')retries=0;
   _setStep(1);
@@ -53030,93 +53057,192 @@ function _step1(retries){
     var cards=document.querySelectorAll('.greenhouse-plant:not(.undiscovered)');
     if(!cards.length){
       if(retries<6){setTimeout(function(){_step1(retries+1);},500);return;}
-      console.warn('[LW Tutorial] No plants found after retries, switching to empty path');
       _stepEmpty();
       return;
     }
     var firstCard=cards[0];
-    // Overlay dismisses tutorial if tapped (escape hatch for stuck states)
     _overlay(function(){_done();firstCard.style.zIndex='';});
     _spotlight(firstCard);
-    _dialog('This is your first plant.<br><br><span style="color:var(--gold);font-size:1.1em;">Tap it to take a closer look.</span><br><div style="font-size:1.8rem;margin-top:0.3rem;animation:_whPulse 1.5s ease infinite;">\u2193</div>',null,null,'top');
+    _dialog(
+      'Here you can view the plants in your greenhouse.<br><br>' +
+      '<span style="color:var(--gold);">Tap your plant</span> to take a closer look.' +
+      '<div style="font-size:1.8rem;margin-top:0.3rem;animation:_whPulse 1.5s ease infinite;">\u2193</div>',
+      null,null,'top');
     var origClick=firstCard.onclick;
     firstCard.onclick=function(e){
-      _clear();
-      firstCard.style.zIndex='';
-      firstCard.onclick=origClick;
+      _clear();firstCard.style.zIndex='';firstCard.onclick=origClick;
       if(origClick)origClick.call(firstCard,e);
-      _setStep(2);
-      _waitForCarousel(0);
+      _setStep(2);_waitForCarousel(0);
     };
   },600);
 }
 
-// Wait for carousel to open before showing step 2
 function _waitForCarousel(attempts){
   var gallery=document.getElementById('plant-gallery-modal');
-  if(gallery&&gallery.classList.contains('open')){
-    setTimeout(_step2,300);
-  } else if(attempts<20){
-    setTimeout(function(){_waitForCarousel(attempts+1);},200);
-  } else {
-    // Carousel never opened — skip to game step
-    console.warn('[LW Tutorial] Carousel did not open, skipping to step 4');
-    _stepGame();
-  }
+  if(gallery&&gallery.classList.contains('open')){setTimeout(_step2,500);}
+  else if(attempts<20){setTimeout(function(){_waitForCarousel(attempts+1);},200);}
+  else {_stepGame();}
 }
 
-// ═══ STEP 2: Carousel front — uniqueness + flip prompt ═══
+// ═══ STEP 2: uniqueness intro (front of card) ═══
 function _step2(){
   _setStep(2);
-  _dialog('Every plant is completely unique \u2014 created through your own interactions.<br><br>The <span style="color:var(--gold);">name</span> and <span style="color:var(--gold);">haiku</span> are generated just for you.<br><br><span style="color:var(--sage);font-size:1.1em;">Tap the card to flip it and see the layers \u2192</span>','',null,'bottom');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
-  var flipWrap=document.querySelector('.cs-flip-wrap');
-  if(flipWrap){
-    var _polls=0;
-    var _watchFlip=function(){
-      if(flipWrap.classList.contains('flipped')){
-        _clear();
-        setTimeout(_step3,500);
-      } else if(_polls<150){
-        _polls++;
-        setTimeout(_watchFlip,200);
-      } else {
-        _clear();
-        setTimeout(_step3,300);
-      }
-    };
-    setTimeout(_watchFlip,500);
-  } else {
-    _clear();
-    setTimeout(_step3,300);
-  }
+  _dialog(
+    'Your attention shaped this plant in a way no one else ever will.<br><br>' +
+    '<span style="color:var(--gold);">It is yours — completely unique.</span>',
+    'NEXT',function(){_clear();setTimeout(_step3,300);},'bottom');
 }
 
-// ═══ STEP 3: Carousel back — DNA ledger ═══
+// ═══ STEP 3: seasonal border teaser ═══
 function _step3(){
   _setStep(3);
-  _dialog('These are the <span style="color:var(--gold);">genetic layers</span> that make up your unique piece of art.<br><br>Each trait was shaped by the hash of your attention.','GOT IT',function(){
-    _clear();
-    if(window.closePlantGallery)closePlantGallery();
-    setTimeout(_stepGame,500);
-  },'top');
+  _dialog(
+    'Notice the <span style="color:var(--gold);">border around the card</span>.<br>' +
+    'It tells you which season your plant thrives in.<br><br>' +
+    '<span style="color:var(--muted);font-size:0.85em;">We will come back to this.</span>',
+    'OK',function(){_clear();setTimeout(_step4,300);},'bottom');
 }
 
-// ═══ FINAL STEP: Direct to Game tab ═══
-function _stepGame(){
+// ═══ STEP 4: name highlighted ═══
+function _step4(){
   _setStep(4);
+  var fw=document.querySelector('.cs-flip-wrap');
+  if(fw){fw.classList.add('cs-tut-dim','cs-tut-hi-name');}
+  _dialog(
+    'Your plant\u2019s <span style="color:var(--gold);">name</span> is uniquely yours \u2014 generated from its hash.',
+    'NEXT',function(){
+      var fw2=document.querySelector('.cs-flip-wrap');
+      if(fw2)fw2.classList.remove('cs-tut-hi-name');
+      _clear();setTimeout(_step5,300);
+    },'bottom');
+}
+
+// ═══ STEP 5: haiku highlighted ═══
+function _step5(){
+  _setStep(5);
+  var fw=document.querySelector('.cs-flip-wrap');
+  if(fw){fw.classList.add('cs-tut-dim','cs-tut-hi-haiku');fw.classList.remove('cs-tut-hi-name');}
+  _dialog(
+    'And its <span style="color:var(--gold);">haiku</span> \u2014 composed from the exact shape of its DNA.',
+    'NEXT',function(){
+      var fw2=document.querySelector('.cs-flip-wrap');
+      if(fw2)fw2.classList.remove('cs-tut-dim','cs-tut-hi-haiku');
+      _clear();setTimeout(_step6,300);
+    },'bottom');
+}
+
+// ═══ STEP 6: EA badge pointer ═══
+function _step6(){
+  _setStep(6);
+  var fw=document.querySelector('.cs-flip-wrap');
+  if(fw)fw.classList.add('cs-tut-hi-ea');
+  _dialog(
+    'The number in the top-right is your plant\u2019s <span style="color:var(--gold);">Evolutionary Advantage</span>.<br><br>Think of it as its power.',
+    'NEXT',function(){
+      var fw2=document.querySelector('.cs-flip-wrap');
+      if(fw2)fw2.classList.remove('cs-tut-hi-ea');
+      _clear();setTimeout(_step7,300);
+    },'bottom');
+}
+
+// ═══ STEP 7: rarity + flip prompt ═══
+function _step7(){
+  _setStep(7);
+  _dialog(
+    'Every plant has a <span style="color:var(--gold);">rarity</span>.<br><br>' +
+    '<span style="color:var(--sage);">Tap the card to flip it and reveal yours.</span>',
+    '',null,'bottom');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  var fw=document.querySelector('.cs-flip-wrap');
+  if(!fw){_clear();setTimeout(_step8,300);return;}
+  var polls=0;
+  var watch=function(){
+    if(fw.classList.contains('flipped')){_clear();setTimeout(_step8,1400);}
+    else if(polls<180){polls++;setTimeout(watch,200);}
+    else {_clear();setTimeout(_step8,300);}
+  };
+  setTimeout(watch,500);
+}
+
+// ═══ STEP 8: DNA layers (back of card) ═══
+function _step8(){
+  _setStep(8);
+  _dialog(
+    'These are the <span style="color:var(--gold);">genetic layers</span> shaping your plant.<br><br>' +
+    'Every trait came from the hash of your attention.',
+    'NEXT',function(){_clear();setTimeout(_step9,300);},'top');
+}
+
+// ═══ STEP 9: button tour + compost warning ═══
+function _step9(){
+  _setStep(9);
+  _dialog(
+    'Below the card are your <span style="color:var(--gold);">actions</span>.<br><br>' +
+    '<span style="color:#d08080;">Don\u2019t compost plants until you run out of space</span> \u2014 come back to these later.',
+    'GOT IT',function(){_clear();setTimeout(_step10,300);},'bottom');
+}
+
+// ═══ STEP 10: flip back prompt ═══
+function _step10(){
+  _setStep(10);
+  _dialog(
+    'Tap the card again to <span style="color:var(--gold);">flip it back</span>.',
+    '',null,'bottom');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  var fw=document.querySelector('.cs-flip-wrap');
+  if(!fw){_clear();setTimeout(_step11,300);return;}
+  var polls=0;
+  var watch=function(){
+    if(!fw.classList.contains('flipped')){_clear();setTimeout(_step11,1000);}
+    else if(polls<180){polls++;setTimeout(watch,200);}
+    else {_clear();setTimeout(_step11,300);}
+  };
+  setTimeout(watch,500);
+}
+
+// ═══ STEP 11: rarity symbol on face ═══
+function _step11(){
+  _setStep(11);
+  var fw=document.querySelector('.cs-flip-wrap');
+  if(fw)fw.classList.add('cs-tut-hi-rarity');
+  _dialog(
+    'This symbol marks your plant\u2019s <span style="color:var(--gold);">rarity</span> at a glance \u2014 you\u2019ll always see it here.',
+    'NEXT',function(){
+      var fw2=document.querySelector('.cs-flip-wrap');
+      if(fw2)fw2.classList.remove('cs-tut-hi-rarity');
+      _clear();setTimeout(_step12,300);
+    },'bottom');
+}
+
+// ═══ STEP 12: close + games tab ═══
+function _step12(){
+  _setStep(12);
+  _dialog(
+    'Now <span style="color:var(--gold);">close this plant</span> and return to your greenhouse.',
+    'CLOSE',function(){
+      _clear();
+      if(window.closePlantGallery)closePlantGallery();
+      setTimeout(_stepGame,800);
+    },'bottom');
+}
+
+// ═══ FINAL STEP: point at GAME tab ═══
+function _stepGame(){
+  _setStep(13);
   setTimeout(function(){
-    _overlay(function(){_done();}); // tap overlay to dismiss
+    _overlay(function(){_done();});
     var gameBtn=_findGameBtn();
     if(gameBtn){
       _spotlight(gameBtn);
-      _dialog('Earn more plants by <span style="color:var(--sage);">playing games</span>, <span style="color:var(--sage);">making art</span>, and <span style="color:var(--sage);">solving puzzles</span>.<br><br>Explore and find what you like!','TAP GAME TO START',function(){
-        _done();
-        gameBtn.style.zIndex='';
-        if(window.switchTab)switchTab('game');
-      },'center');
+      _dialog(
+        'Earn more plants by playing a <span style="color:var(--sage);">game</span>.<br><br>' +
+        'If games aren\u2019t your thing, there are <span style="color:var(--sage);">creative outlets</span> too.',
+        'LET\u2019S GO',function(){
+          _done();gameBtn.style.zIndex='';
+          if(window.switchTab)switchTab('game');
+        },'center');
     } else {
-      _dialog('Earn more plants by playing games, making art, and solving puzzles!','GOT IT',function(){_done();},'center');
+      _dialog('Tap GAME to start playing.','GOT IT',function(){_done();},'center');
     }
   },400);
 }
