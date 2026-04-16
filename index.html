@@ -6061,7 +6061,7 @@ window._addSwitchTabHook = function(fn){
         'lw_tut_herbarium_v1','lw_tut_wild_v1','lw_pulse_firstgame_v1','lw_pulse_highprio_v1',
         'lw_pulse_l7class_v1','lw_pulse_first_plant_tap','lw_pulse_breed_first',
         'lw_pulse_wild_drop','lw_pulse_whatnow_first',
-        'lw_jit_boxes_v1','lw_jit_cutting_v1','lw_jit_class_v1','lw_jit_pollen_v1','lw_first_mint_v1','lw_tut_force_restart',
+        'lw_jit_boxes_v1','lw_jit_cutting_v1','lw_jit_class_v1','lw_jit_pollen_v1','lw_jit_daily_v1','lw_first_mint_v1','lw_tut_force_restart',
         'lw_first_focus_done','lw_quest_first_game'];
       for(var i=0;i<keys.length;i++){try{localStorage.removeItem(keys[i]);}catch(e){}}
       // Set force-restart flag so PW_Tutorial.start() ignores the
@@ -53065,6 +53065,22 @@ function _showDailyReward() {
   if (daily.lastClaim === today) return;
   if (localStorage.getItem('lw_daily_claimed') === today) return;
   if (window._dailyClaimedThisSession) return;
+
+  // JIT: first time the daily reward fires, frame the mechanic as
+  // a relationship before the calendar modal opens. Single-fire via
+  // lw_jit_daily_v1. Suppressed during tutorial so it doesn't stack.
+  try {
+    if (!localStorage.getItem('lw_jit_daily_v1') && !localStorage.getItem('lw_tut') && window._lwConfirm) {
+      localStorage.setItem('lw_jit_daily_v1', '1');
+      window._lwConfirm({
+        title: 'THE GARDEN REMEMBERS',
+        body: 'Every day you return, a little Dew is already waiting. Streaks deepen it. Miss a day and it resets but never vanishes.<br><br>Consistency is the only magic the garden asks of you.',
+        yes: 'OK',
+        no: ''
+      }, function(){ setTimeout(_showDailyReward, 300); });
+      return;
+    }
+  } catch(e){}
 
   // Streak logic
   if (daily.lastClaim === _yesterday()) {
