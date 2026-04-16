@@ -42628,8 +42628,12 @@ function _updateSunbeamBadge(){
     kbs.style.animation='mintBadgeGlow 2s ease infinite';
     // First-time player hint — fire when they leave the game and return
     // to a tab where keeper bar is visible. Don't interrupt active play.
+    // Also skip during the first-run tutorial — step 16's dialog already
+    // surfaces the mint prompt, so this would stack on top.
     try{
-      if(!localStorage.getItem('lw_tut_first_mint_ready')){
+      var _tutVal=localStorage.getItem('lw_tut');
+      var _tutActive=_tutVal&&_tutVal!=='done';
+      if(!_tutActive&&!localStorage.getItem('lw_tut_first_mint_ready')){
         (function _pollFirstMintHint(attempt){
           if(attempt>30)return; // give up after ~60s
           // Re-check the flag at every tick — prevents double-fire when
@@ -54101,11 +54105,11 @@ function _step16AfterCelebration(attempts){
     var kbs=document.getElementById('kb-sunbeams');
     if(kbs){kbs.classList.add('lw-pulse-hint');}
     var ready=(typeof window._getMintableCount==='function')?window._getMintableCount():0;
-    // Folded the legacy "WELCOME TO THE GREENHOUSE" modal content into
-    // this prompt per Stephen — greenhouse intro belongs here (after 30
-    // Sunbeams are earned and the Keeper has returned).
+    // Lean copy: the A PLANT IS READY JIT modal is suppressed during
+    // tutorial, and the Keeper already knows they're back in the
+    // greenhouse. Straight to the mint prompt.
     var msg=ready>0
-      ? 'Welcome back. This is your <span style="color:var(--gold);">greenhouse</span>. You have <span style="color:var(--gold);">30 Sunbeams</span> ready.<br><br><span style="color:var(--sage);">Tap the glowing Sunbeam icon at the top to sprout a new plant.</span>'
+      ? 'You have <span style="color:var(--gold);">30 Sunbeams</span> ready.<br><br><span style="color:var(--sage);">Tap the glowing Sunbeam icon at the top to bloom a new plant.</span>'
       : 'Good play. Keep earning until the <span style="color:var(--gold);">Sunbeam icon up top glows.</span> That\u2019s 30 Sunbeams, enough for a new plant.<br><br>You can play another game or come back later.';
     _dialog(msg,'',null,'top');
     if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
