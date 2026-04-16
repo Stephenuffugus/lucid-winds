@@ -6061,7 +6061,7 @@ window._addSwitchTabHook = function(fn){
         'lw_tut_herbarium_v1','lw_tut_wild_v1','lw_pulse_firstgame_v1','lw_pulse_highprio_v1',
         'lw_pulse_l7class_v1','lw_pulse_first_plant_tap','lw_pulse_breed_first',
         'lw_pulse_wild_drop','lw_pulse_whatnow_first',
-        'lw_jit_boxes_v1','lw_jit_cutting_v1','lw_first_mint_v1','lw_tut_force_restart',
+        'lw_jit_boxes_v1','lw_jit_cutting_v1','lw_jit_class_v1','lw_first_mint_v1','lw_tut_force_restart',
         'lw_first_focus_done','lw_quest_first_game'];
       for(var i=0;i<keys.length;i++){try{localStorage.removeItem(keys[i]);}catch(e){}}
       // Set force-restart flag so PW_Tutorial.start() ignores the
@@ -48206,9 +48206,33 @@ window.PW_grantXP=function(amount,reason){
     // Funnel: hitting Lv 7 = class picker unlocks. Big checkpoint for
     // testers since most Master-path engagement starts here.
     try{
-      if(newR.level>=7&&!localStorage.getItem('lw_lv7_reached')&&typeof gtag!=='undefined'){
+      if(newR.level>=7&&!localStorage.getItem('lw_lv7_reached')){
         localStorage.setItem('lw_lv7_reached',Date.now()+'');
-        gtag('event','keeper_lv7_reached',{minutes_since_signup:_lwMinutesSinceFirstSignup()});
+        if(typeof gtag!=='undefined')gtag('event','keeper_lv7_reached',{minutes_since_signup:_lwMinutesSinceFirstSignup()});
+      }
+    }catch(e){}
+    // JIT: first time player crosses L7 without a class picked, fire
+    // a gentle invitation. One-shot via lw_jit_class_v1. Two buttons
+    // so LATER is a real choice, not a pressure tactic. Wait for the
+    // level-up ceremony to dismiss before firing so dialogs don't
+    // stack.
+    try{
+      if(newR.level>=7&&!localStorage.getItem('lw_class')&&!localStorage.getItem('lw_jit_class_v1')){
+        localStorage.setItem('lw_jit_class_v1','1');
+        var _classJITPoll=function(attempts){
+          if(document.querySelector('#lu-overlay,.lu-overlay')&&attempts<60){setTimeout(function(){_classJITPoll(attempts+1);},500);return;}
+          if(!window._lwConfirm)return;
+          window._lwConfirm({
+            title:'A PATH IS OPENING',
+            body:'Five ways to tend a garden, Keeper. Forager, Breeder, Cartographer, Tender, or the old-name Keeper. Pick one when you are ready. Your plants will still grow either way.',
+            yes:'READ MORE',
+            no:'LATER'
+          },function(){
+            if(window._LW_openClassPicker)window._LW_openClassPicker();
+            else if(window._openCompendiumUI){window._openCompendiumUI();setTimeout(function(){if(window._bosSetTab)window._bosSetTab('class');},400);}
+          });
+        };
+        setTimeout(function(){_classJITPoll(0);},2500);
       }
     }catch(e){}
   }
