@@ -28785,7 +28785,7 @@ document.addEventListener('keydown', function(e) {
           if (window._lwConfirm) {
             window._lwConfirm({
               title: 'TWO CURRENCIES',
-              body: '\u2600\ufe0f <b>Sunbeams</b> \u2014 earned by playing games. Tap the \u2600\ufe0f icon to spend them: 30 = mint one unique plant. Save up for events or the wild.<br><br>\ud83d\udca7 <b>Dew</b> \u2014 earned from the wild and watering. Use it to accelerate the nursery or take cuttings.<br><br>Both level up your keeper rank. They never convert into each other.',
+              body: '<b>Sunbeams</b> are earned by playing games. Tap the Sunbeam icon to spend them. 30 Sunbeams = one unique plant. Save up for events or the wild.<br><br>\ud83d\udca7 <b>Dew</b> is earned from the wild and from watering. Use it to accelerate the nursery or take cuttings.<br><br>Both level up your keeper rank. They never convert into each other.',
               yes: 'GOT IT',
               no: ''
             }, function(){});
@@ -37739,7 +37739,7 @@ function _doCollectFeral(f,mk){
   if(window._LW_classXP)window._LW_classXP('feral',10);
   if(window._LW_toolXP)window._LW_toolXP('pouch',5);
   // Tutorial-proxy: first feral collection is a milestone.
-  try{if(window.LW_XP)window.LW_XP.grantOnce('first_feral',10,'first_of_kind','🌿 +10 XP — first feral seed. They grow different from garden stock.');}catch(e){}
+  try{if(window.LW_XP)window.LW_XP.grantOnce('first_feral',10,'first_of_kind','🌿 +10 XP. First feral seed. They grow different from garden stock.');}catch(e){}
   if(window._lwCompleteQuest)window._lwCompleteQuest('q_first_feral');
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
 }
@@ -59835,8 +59835,26 @@ window._lwClaimHerbarium = function(id){
 
   function count(){ return _load().count || 0; }
   function add(n){
+    var prev=(_load().count||0);
     var s = _load(); s.count = (s.count||0) + (n||1); _save(s);
-    if (window._toast) window._toast('\ud83c\udf81 Mystery box \u2014 +'+(n||1)+' in your pouch. Open from items menu.');
+    // First-ever mystery box — teach the system instead of just toasting.
+    // Gated by lw_jit_boxes_v1 so it only ever fires once per device.
+    if(prev===0&&!localStorage.getItem('lw_jit_boxes_v1')){
+      try{localStorage.setItem('lw_jit_boxes_v1','1');}catch(e){}
+      setTimeout(function(){
+        if(document.querySelector('.lu-overlay'))return;
+        if(window._lwConfirm){
+          window._lwConfirm({
+            title:'\ud83c\udf81 A MYSTERY BOX',
+            body:'Mystery boxes drop items into your pouch. Some items reveal, guide, or protect your plants; others help you in foraging and contests.<br><br>Open them from your <b>Backpack</b> \u2192 <b>BOXES</b>. Pity keeps you from going dry on rares.',
+            yes:'OK',
+            no:''
+          },function(){});
+        }
+      },1400);
+    } else {
+      if (window._toast) window._toast('\ud83c\udf81 Mystery box. +'+(n||1)+' in your pouch. Open from the items menu.');
+    }
     try { if (window._haptic) window._haptic('ok'); } catch(e){}
     return true;
   }
