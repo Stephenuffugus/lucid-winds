@@ -53596,13 +53596,81 @@ function _step26(){
     'NEXT',function(){_clear();setTimeout(_step27,300);},'bottom');
 }
 
-// ═══ STEP 27: wind-spread lore (hands off to Phase 6) ═══
+// ═══ STEP 27: wind-spread lore → Phase 5b drop walkthrough ═══
 function _step27(){
   _setStep(27);
   _dialog(
     'Plants in adjacent hexes can <span style="color:var(--gold);">breed and spread</span>. Their children drift on the wind.<br><br>' +
     'Name your wild plants with <span style="color:var(--sage);">where you placed them</span>. Future-you will thank past-you when you\u2019re trying to remember what you protected.',
-    'NEXT',function(){_clear();setTimeout(_step28,600);},'center');
+    'PLACE MINE',function(){_clear();setTimeout(_step5bDrop,600);},'center');
+}
+
+// ═══ Phase 5b — guided first wild drop ═══
+// If the player already has wild plants OR lacks drops remaining OR can't
+// see the FAB, we skip cleanly to Phase 6. Safe by construction.
+function _step5bDrop(){
+  _setStep(275);
+  var fab=document.getElementById('dfb');
+  var alreadyDropped=false;
+  try{alreadyDropped=(JSON.parse(localStorage.getItem('fg_wild_plants')||'[]')||[]).length>0;}catch(e){}
+  if(!fab||alreadyDropped){setTimeout(_step28,600);return;}
+  if(window._lwPulseHint)window._lwPulseHint(fab,30000,'lw_tut_fab_pulse');
+  _dialog(
+    'See the <span style="color:var(--gold);">+</span> on the right? Tap it to drop one of your plants into the hex you\u2019re standing in.<br><br>' +
+    '<span style="color:var(--muted);font-size:0.85em;">Choose carefully. A wild plant is real, and it can be taken.</span>',
+    '',null,'top');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  var polls=0;
+  var watch=function(){
+    var picker=document.getElementById('w-picker');
+    if(picker&&getComputedStyle(picker).display!=='none'){
+      _clear();setTimeout(_step5bPicker,700);return;
+    }
+    if(polls<600){polls++;setTimeout(watch,500);}
+    else {setTimeout(_step28,300);}
+  };
+  watch();
+}
+
+function _step5bPicker(){
+  _setStep(276);
+  _dialog(
+    'Pick a plant from your greenhouse.<br><br>' +
+    '<span style="color:var(--muted);font-size:0.85em;">Rarer plants survive longer out there. Common ones still count; they just don\u2019t last as many seasons.</span>',
+    '',null,'top');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  var wildLen0=0;
+  try{wildLen0=(JSON.parse(localStorage.getItem('fg_wild_plants')||'[]')||[]).length;}catch(e){}
+  var polls=0;
+  var watch=function(){
+    var len=0;
+    try{len=(JSON.parse(localStorage.getItem('fg_wild_plants')||'[]')||[]).length;}catch(e){}
+    if(len>wildLen0){_clear();setTimeout(_step5bMap,2000);return;}
+    if(polls<900){polls++;setTimeout(watch,500);}
+    else {setTimeout(_step28,300);}
+  };
+  watch();
+}
+
+function _step5bMap(){
+  _setStep(277);
+  var banner=document.querySelector('.wild-log');
+  if(banner&&window._lwPulseHint){
+    // 18s gentle pulse on the whole hero banner
+    window._lwPulseHint(banner,18000,'lw_tut_wild_log_pulse');
+  }
+  _dialog(
+    'Your plant is real now. It has coordinates. It lives.<br><br>' +
+    'The numbers up top track your <span style="color:var(--gold);">dew</span>, <span style="color:var(--gold);">steps walked</span>, and your keeper <span style="color:var(--gold);">xp</span>. Watch them grow as you play.',
+    'NEXT',function(){_clear();setTimeout(_step5bForage,400);},'bottom');
+}
+
+function _step5bForage(){
+  _setStep(278);
+  _dialog(
+    'When you see a <span style="color:var(--gold);">glowing hex</span>, walk close to it. Forage what\u2019s inside and you may catch a feral seed for your nursery.<br><br>' +
+    '<span style="color:var(--muted);font-size:0.85em;">No glowing hex yet? Walk a little. The map rewards keepers who move.</span>',
+    'NEXT',function(){_clear();setTimeout(_step28,400);},'center');
 }
 
 // ═══ STEP 28: backpack intro — spotlight the pack icon ═══
