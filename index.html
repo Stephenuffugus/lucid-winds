@@ -51671,19 +51671,23 @@ function returnToBase(){
   var seeds=st.seeds.slice();
   if(plants.length===0&&seeds.length===0){toast('Backpack is empty!');return;}
 
-  // Deliver plants to greenhouse
+  // Deliver plants to greenhouse. Respect MAX_COLLECTION_SIZE cap —
+  // any plants that don't fit stay in the backpack for later delivery.
   var ghRaw=localStorage.getItem('sws_greenhouse')||'[]';
   var gh=[];try{gh=JSON.parse(ghRaw);}catch(e){}
-  var delivered=0;
+  var _ghCap=10;try{var _s=parseInt(localStorage.getItem('sws_greenhouse_slots'),10);if(_s>=10&&_s<=60)_ghCap=_s;}catch(e){}
+  var delivered=0,deferred=[];
   for(var i=0;i<plants.length;i++){
     var p=plants[i];
     if(gh.some(function(g){return g.hash===p.hash;}))continue;
+    if(gh.length>=_ghCap){deferred.push(p);continue;}
     gh.push({hash:p.hash,date:new Date().toISOString(),born:Date.now(),origin:p.origin||'wild',rare:false,traits:null,breedCount:0,generation:1});
     delivered++;
   }
   if(window.saveGreenhouse)window.saveGreenhouse(gh);
   else localStorage.setItem('sws_greenhouse',JSON.stringify(gh));
-  st.plants=[];
+  st.plants=deferred;
+  if(deferred.length>0)toast(deferred.length+' plant'+(deferred.length>1?'s':'')+' stayed in your backpack: greenhouse is full.');
 
   // Deliver seeds to nursery
   var seedCount=0;
@@ -51758,13 +51762,16 @@ function checkMidnightDeliver(){
   if(lastCheck===today)return; // already checked today
   localStorage.setItem(MIDNIGHT_KEY,today);
   if(st.plants.length===0&&st.seeds.length===0)return;
-  // Auto-deliver everything
+  // Auto-deliver everything. Respect MAX_COLLECTION_SIZE cap — any
+  // plants that don't fit stay in the backpack for the next delivery.
   var ghRaw=localStorage.getItem('sws_greenhouse')||'[]';
   var gh=[];try{gh=JSON.parse(ghRaw);}catch(e){}
-  var delivered=0;
+  var _ghCap=10;try{var _s=parseInt(localStorage.getItem('sws_greenhouse_slots'),10);if(_s>=10&&_s<=60)_ghCap=_s;}catch(e){}
+  var delivered=0,deferred=[];
   for(var i=0;i<st.plants.length;i++){
     var p=st.plants[i];
     if(gh.some(function(g){return g.hash===p.hash;}))continue;
+    if(gh.length>=_ghCap){deferred.push(p);continue;}
     gh.push({hash:p.hash,date:new Date().toISOString(),born:Date.now(),origin:p.origin||'wild',rare:false,traits:null,breedCount:0,generation:1});
     delivered++;
   }
@@ -51774,7 +51781,8 @@ function checkMidnightDeliver(){
   for(var j=0;j<st.seeds.length;j++){
     window.dispatchEvent(new CustomEvent('bp-seed-to-nursery',{detail:st.seeds[j]}));
   }
-  st.plants=[];st.seeds=[];render();
+  st.plants=deferred;st.seeds=[];render();
+  if(deferred.length>0)toast(deferred.length+' plant'+(deferred.length>1?'s':'')+' stayed in your backpack: greenhouse is full.');
   if(delivered>0||seedCount>0){
     var msg='Midnight delivery: ';
     if(delivered>0)msg+=delivered+' plant'+(delivered>1?'s':'');
