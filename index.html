@@ -53645,8 +53645,9 @@ function _step1b(){
     _clear();firstCard.style.zIndex='';firstCard.style.animation='';firstCard.onclick=origClick;
     var ar=document.getElementById('_lw-tut-arrow');if(ar)ar.remove();
     // Lock the carousel immediately so compost/breed/close/swipe can't
-    // be triggered by the same tap that opens it.
-    try{document.body.classList.add('lw-tut-carousel-lock');}catch(e){}
+    // be triggered by the same tap that opens it. Also freeze flips
+    // until step 7 explicitly invites the player to flip the card.
+    try{document.body.classList.add('lw-tut-carousel-lock','lw-tut-carousel-freeze');}catch(e){}
     if(origClick)origClick.call(firstCard,e);
     _setStep(2);_waitForCarousel(0);
   };
@@ -53742,6 +53743,9 @@ function _step6(){
 // user has tapped the card AND the reveal animation has started.
 function _step7(){
   _setStep(7);
+  // Step 7 is the moment the tutorial invites the flip — remove the
+  // freeze that was engaged at step 1b so the card becomes tappable.
+  try{document.body.classList.remove('lw-tut-carousel-freeze');}catch(e){}
   _dialog(
     'Every plant has a <span style="color:var(--gold);">rarity</span>.<br><br>' +
     '<span style="color:var(--sage);">Tap the card to flip it and reveal yours.</span>',
