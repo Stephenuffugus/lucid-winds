@@ -1187,6 +1187,9 @@
     .cb-nameplate[data-pdh]:active{background:rgba(200,168,75,0.15)!important;transform:scale(0.96);}
     .cb-name{font-family:'Playfair Display',serif;font-size:0.72rem;font-weight:700;text-align:center;letter-spacing:0.05em;text-shadow:0 1px 4px rgba(0,0,0,0.8),0 0 12px rgba(0,0,0,0.4);white-space:nowrap;display:block;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
     .cb-rarity{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:0.9rem;letter-spacing:0.12em;text-align:center;margin-top:0.15rem;}
+    /* Mythic back art has the "MYTHIC" label baked into the card higher than
+       other tiers — nudge the rarity text down so it doesn't overlap the art. */
+    .cs-card-back[data-tier="mythic"] .cb-rarity{margin-top:1.4rem;}
     .cb-ledger-label{font-family:'Outfit',sans-serif;font-size:0.55rem;font-weight:600;letter-spacing:0.06em;color:var(--muted);}
     .cb-ledger-value{font-family:'Outfit',sans-serif;font-size:0.55rem;font-weight:400;color:var(--cream);}
     .cb-haiku{font-family:'Playfair Display',serif;font-style:italic;font-size:1.0rem;color:rgba(212,207,188,0.90);line-height:1.7;text-align:center;}
@@ -4537,7 +4540,10 @@ body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 275px)!important;righ
 #bpe.open{display:block;pointer-events:auto;}
 #bpbk{position:absolute;inset:0;background:rgba(8,10,7,0.6);opacity:0;transition:opacity 0.3s;backdrop-filter:blur(3px);}
 #bpe.open #bpbk{opacity:1;}
-#bpp{position:fixed;top:calc(120px + env(safe-area-inset-top,0px));right:10px;width:68px;max-height:calc(100vh - 240px);overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:8px;padding:4px;z-index:999;opacity:0;transform:translateY(-24px);transition:opacity 0.3s ease 0.05s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.05s;scrollbar-width:none;}
+#bpp{position:fixed;top:calc(120px + env(safe-area-inset-top,0px));right:10px;width:68px;max-height:calc(100vh - 240px);overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:8px;padding:4px;z-index:1000;opacity:0;transform:translateY(-24px);transition:opacity 0.3s ease 0.05s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.05s;scrollbar-width:none;}
+/* Hide the Book of Secrets while backpack panel is open so seeds don't
+   render behind it. Backpack panel has z-index 1000 (above 999 book). */
+body:has(#bpe.open) #kb-compendium{display:none !important;}
 #bpp::-webkit-scrollbar{display:none;}
 #bpe.open #bpp{opacity:1;transform:translateY(0);}
 /* Seed panel: vertical strip just left of the backpack plant column so
@@ -27391,7 +27397,7 @@ document.addEventListener('keydown', function(e) {
       var _mutSymbol = '';
       if (row.cat === 'MUTATION' && row.name && row.name !== 'None') {
         var _mSlug = String(row.name).toLowerCase().replace(/\s+/g,'-');
-        _mutSymbol = '<img src="assets/mutations/mutation-'+_mSlug+'.png" onerror="this.style.display=\'none\'" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:4px;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));">';
+        _mutSymbol = '<img src="assets/mutations/mutation-'+_mSlug+'.png" onerror="this.style.display=\'none\'" style="width:30px;height:30px;object-fit:contain;vertical-align:middle;margin-right:6px;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.5));">';
       }
       html += '<div class="dna-cat">' + row.cat + '</div>'
             + '<div class="dna-val' + (tierClass ? ' '+tierClass : '') + '"' + _rowAttr + '>'
@@ -29646,11 +29652,7 @@ document.addEventListener('keydown', function(e) {
     var _rarityName = _tg ? _tg.name : 'Common';
     var _rarityNameEsc = String(_rarityName).replace(/'/g,"\\'");
     html += '<div class="cb-rarity" onclick="event.stopPropagation();if(window._lwShowGradeDetail)_lwShowGradeDetail(\'' + _rarityNameEsc + '\')" style="color:' + sColor + ';cursor:pointer;" title="Tap for details">' + (_tg ? _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon : 'COMMON') + '</div>';
-    var _synBack = null;
-    try { _synBack = window.getSynergy ? window.getSynergy(_t) : null; } catch(e) {}
-    if (_synBack) {
-      html += '<div style="text-align:center;margin-top:0.3rem;padding:4px 10px;background:rgba(200,168,75,0.06);border:1px solid rgba(200,168,75,0.2);border-radius:8px;"><span style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.08em;color:var(--gold);">\u2726 SYNERGY \u00b7 ' + _synBack.name.toUpperCase() + '</span></div>';
-    }
+    // Synergy moved off card back — lives only in the Details modal now.
     html += '<div style="text-align:center;margin-top:0.4rem;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);opacity:0.5;">\u2190 tap card to flip</div>';
 
     backEl.innerHTML = html;
@@ -30936,7 +30938,7 @@ document.addEventListener('keydown', function(e) {
       html += '<div class="pdm-section">';
       html += '<div class="pdm-section-title">MUTATION</div>';
       html += '<div style="display:flex;align-items:center;gap:0.6rem;">';
-      html += '<img src="assets/mutations/mutation-'+_mSlug+'.png" alt="'+_mName+'" onerror="this.outerHTML=\'<span style=&quot;font-size:1.4rem;&quot;>\ud83e\uddec</span>\'" style="width:56px;height:56px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4));">';
+      html += '<img src="assets/mutations/mutation-'+_mSlug+'.png" alt="'+_mName+'" onerror="this.outerHTML=\'<span style=&quot;font-size:1.4rem;&quot;>\ud83e\uddec</span>\'" style="width:110px;height:110px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));">';
       html += '<span style="font-family:Playfair Display,serif;font-size:0.95rem;font-style:italic;color:#d8a0a0;">' + _mName + '</span>';
       html += '</div>';
       html += '</div>';
@@ -57319,15 +57321,16 @@ window._lwClaimHerbarium = function(id){
   // play. Score math: match=2, counter=1, wild=1 (first wild/attempt=2).
   function hexDifficulty(grade) {
     var g = String(grade || 'Common').toLowerCase();
+    // Mastermind scoring: exact=2, present=1, miss=0 → max per attempt = slots*2.
+    // Tightened scoreNeeded so failure is a real possibility — was too lenient.
     var map = {
-      // Mastermind scoring: exact=2, present=1, miss=0 → max per attempt = slots*2
-      common:    { slots: 3, cards: 3, handSize: 5,  attempts: 3, scoreNeeded: 4 },
-      uncommon:  { slots: 3, cards: 3, handSize: 6,  attempts: 3, scoreNeeded: 5 },
-      rare:      { slots: 4, cards: 4, handSize: 7,  attempts: 4, scoreNeeded: 6 },
-      epic:      { slots: 4, cards: 4, handSize: 8,  attempts: 4, scoreNeeded: 7 },
-      legendary: { slots: 5, cards: 5, handSize: 9,  attempts: 5, scoreNeeded: 8 },
-      mythic:    { slots: 6, cards: 6, handSize: 10, attempts: 5, scoreNeeded: 10 },
-      cosmic:    { slots: 7, cards: 7, handSize: 10, attempts: 6, scoreNeeded: 13 }
+      common:    { slots: 3, cards: 3, handSize: 9, attempts: 3, scoreNeeded: 5 },   // max 6
+      uncommon:  { slots: 3, cards: 3, handSize: 9, attempts: 3, scoreNeeded: 6 },   // must be perfect
+      rare:      { slots: 4, cards: 4, handSize: 9, attempts: 3, scoreNeeded: 7 },   // max 8
+      epic:      { slots: 4, cards: 4, handSize: 9, attempts: 3, scoreNeeded: 8 },   // must be perfect
+      legendary: { slots: 5, cards: 5, handSize: 9, attempts: 4, scoreNeeded: 9 },   // max 10
+      mythic:    { slots: 6, cards: 6, handSize: 9, attempts: 4, scoreNeeded: 11 },  // max 12
+      cosmic:    { slots: 7, cards: 7, handSize: 9, attempts: 4, scoreNeeded: 13 }   // max 14
     };
     return map[g] || map.common;
   }
