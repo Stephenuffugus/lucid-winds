@@ -53534,7 +53534,7 @@ function _step1b(){
 function _waitForCarousel(attempts){
   var gallery=document.getElementById('plant-gallery-modal');
   if(gallery&&gallery.classList.contains('open')){setTimeout(_step2,500);}
-  else if(attempts<20){setTimeout(function(){_waitForCarousel(attempts+1);},200);}
+  else if(attempts<40){setTimeout(function(){_waitForCarousel(attempts+1);},200);}
   else {_stepGame();}
 }
 
@@ -53873,7 +53873,7 @@ function _forceFirstFocusReward(){
     if(localStorage.getItem('lw_first_focus_done'))return;
     localStorage.setItem('lw_first_focus_done','1');
     var tutHash='';
-    for(var att=0;att<500;att++){
+    for(var att=0;att<2000;att++){
       var h='';for(var i=0;i<64;i++)h+='0123456789abcdef'[Math.floor(Math.random()*16)];
       try{
         var t=window.hashToTraits?window.hashToTraits(h):null;
@@ -53882,9 +53882,13 @@ function _forceFirstFocusReward(){
         if(g&&g.score<=5){tutHash=h;break;} // Common / Uncommon / Rare
       }catch(e){continue;}
     }
-    if(!tutHash){
-      for(var fi=0;fi<64;fi++)tutHash+='0123456789abcdef'[Math.floor(Math.random()*16)];
-    }
+    // Hardcoded safe fallback. Every hex pair is 0x03 so all trait
+    // lookups land at index 3 across VESSEL/GROWTH/FOLIAGE/FLOWER/
+    // SUBSTRATE/COMPANION and the mythic byte is 0x03 (well below
+    // 0xD0) so no mythic override fires. Verified to resolve as
+    // Common. Keeps the tester off the mint roulette even if the
+    // 2000-attempt loop somehow fails.
+    if(!tutHash)tutHash='0303030303030303030303030303030303030303030303030303030303030303';
     // Overwrite persisted sunbeam state to exactly 1 ready plant + 0 progress.
     try{localStorage.setItem('pw_readyHashes',JSON.stringify([tutHash]));}catch(e){}
     try{localStorage.setItem('pw_hashFilled','0');}catch(e){}
