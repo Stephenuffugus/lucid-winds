@@ -7390,6 +7390,7 @@ window._addSwitchTabHook = function(fn){
       <div class="pgm-btn-row">
         <button class="pgm-dl-btn" id="gallery-download-btn" onclick="downloadPlantCard()">⬡ DOWNLOAD</button>
         <button class="pgm-act-btn" onclick="shareGalleryPlant()">↗ SHARE</button>
+        <button class="pgm-act-btn" onclick="window._carouselDetails()" style="border-color:rgba(200,168,75,0.3);color:var(--gold);">⬡ DETAILS</button>
         <button class="pgm-act-btn" onclick="carouselBreed()" style="border-color:rgba(200,168,75,0.3);color:var(--gold);">🧬 BREED</button>
         <button class="pgm-act-btn" onclick="carouselCompost()" style="border-color:rgba(139,46,46,0.3);color:rgba(192,112,112,0.9);">🧪 COMPOST</button>
       </div>
@@ -29613,33 +29614,12 @@ document.addEventListener('keydown', function(e) {
     var _rarityNameEsc = String(_rarityName).replace(/'/g,"\\'");
     html += '<div class="cb-rarity" onclick="event.stopPropagation();if(window._lwShowGradeDetail)_lwShowGradeDetail(\'' + _rarityNameEsc + '\')" style="color:' + sColor + ';cursor:pointer;" title="Tap for details">' + (_tg ? _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon : 'COMMON') + '</div>';
     if (_syn) {
-      html += '<div style="text-align:center;margin-top:0.3rem;padding:4px 10px;background:rgba(200,168,75,0.06);border:1px solid rgba(200,168,75,0.2);border-radius:8px;cursor:pointer;" onclick="event.stopPropagation();if(window._toast)_toast(\'' + _syn.name + ': ' + (_syn.fx||'').replace(/'/g,"\\'") + '\');"><span style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.08em;color:var(--gold);">\u2726 SYNERGY \u00b7 ' + _syn.name.toUpperCase() + '</span></div>';
+      html += '<div style="text-align:center;margin-top:0.3rem;padding:4px 10px;background:rgba(200,168,75,0.06);border:1px solid rgba(200,168,75,0.2);border-radius:8px;"><span style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.08em;color:var(--gold);">\u2726 SYNERGY \u00b7 ' + _syn.name.toUpperCase() + '</span></div>';
     }
-    html += '<div class="cb-nameplate" style="margin-top:0.5rem;text-align:center;cursor:pointer;padding:0.7rem 0.5rem;border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.12),rgba(120,100,40,0.18));border:1.5px solid rgba(200,168,75,0.4);min-height:52px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(200,168,75,0.1);" data-pdh="' + plant.hash + '"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.12em;color:var(--gold);">\u2b21 LINEAGE & DETAILS</div></div>';
-    html += '<div class="cb-hash" style="margin-top:0.4rem;padding-top:0.3rem;border-top:1px solid rgba(74,124,53,0.06);">' + plant.hash + '</div>';
-    html += '<div class="cb-date" style="margin-top:0.1rem;">Minted ' + (plant.date || '') + dateSuffix + '</div>';
-    html += '<div style="text-align:center;margin-top:0.3rem;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);opacity:0.5;">\u2190 tap card to flip</div>';
+    html += '<div style="text-align:center;margin-top:0.4rem;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);opacity:0.5;">\u2190 tap card to flip</div>';
 
     backEl.innerHTML = html;
     backEl.classList.remove('cs-back-lazy');
-    // CAPTURE-PHASE listener for LINEAGE & DETAILS nameplate.
-    // See memory: feedback_lineage_button_iOS.md — inline onclick is
-    // unreliable on iOS Safari when the button is inside a rotateY
-    // parent. Capture phase fires before bubble, stopping flip.
-    var npBtn = backEl.querySelector('.cb-nameplate[data-pdh]');
-    if (npBtn) {
-      npBtn.addEventListener('click', function(e) {
-        e.stopImmediatePropagation();
-        e.stopPropagation();
-        e.preventDefault();
-        var ph = npBtn.getAttribute('data-pdh');
-        if (ph && window._openPlantDetails) {
-          try { window._openPlantDetails(ph); } catch(err) {
-            if (window._toast) window._toast('Details failed: ' + (err && err.message || ''));
-          }
-        }
-      }, true); // ← capture phase
-    }
   }
 
   // ── Card flip handler: first-flip rarity reveal ────────────────────
@@ -30953,6 +30933,17 @@ document.addEventListener('keydown', function(e) {
     }
     html += '</div>';
 
+    var _detSyn = window.getSynergy ? window.getSynergy(_t) : null;
+    if (_detSyn) {
+      html += '<div class="pdm-section">';
+      html += '<div class="pdm-section-title">SYNERGY</div>';
+      html += '<div style="display:flex;align-items:center;gap:0.4rem;">';
+      html += '<span style="font-size:1rem;">\u2726</span>';
+      html += '<div><div style="font-family:Playfair Display,serif;font-size:0.82rem;font-style:italic;color:var(--gold);">' + _detSyn.name + '</div>';
+      if (_detSyn.fx) html += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);margin-top:2px;">' + _detSyn.fx + '</div>';
+      html += '</div></div>';
+      html += '</div>';
+    }
     html += '<div class="pdm-section pdm-meta">';
     html += '<div class="pdm-section-title">MINT RECORD</div>';
     html += '<div class="pdm-row"><span class="pdm-k">Minted</span><span class="pdm-v">' + (plant.date || 'unknown') + '</span></div>';
