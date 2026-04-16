@@ -9,7 +9,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0d100c;--sage:#7ab356;--gold:#c8a84b;--cream:#e8dcc8;--muted:#8a9178;--dark:#1a1e16;--cell:rgba(36,42,30,.6);--cell-db:rgba(50,58,42,.7);--cell-on:rgba(122,179,86,.85);--border:rgba(74,124,53,.2)}
-html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospace;height:100%;overflow-x:hidden;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospace;min-height:100%;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;-webkit-tap-highlight-color:transparent}
 
 /* Header */
 .gs-head{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid rgba(74,124,53,.1);background:rgba(13,16,12,.6)}
@@ -199,7 +199,7 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
   <div style="font-size:.65rem;color:var(--muted)">by Lucid Winds</div>
 </div>
 
-<!-- TRANSPORT: Play / BPM / Loop -->
+<!-- TRANSPORT: Play / BPM / Loop + single TOOLS toggle -->
 <div class="gs-transport" id="gs-transport">
   <button class="gs-btn play" id="gs-play" onclick="GS.toggle()">▶ Play</button>
   <button class="gs-btn" onclick="GS.stop()">⏹</button>
@@ -209,13 +209,21 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
     <strong id="gs-bpm">120</strong>
   </div>
   <button class="gs-btn" id="gs-loop" onclick="GS.toggleLoop()">🔁</button>
-  <button class="gs-btn" id="gs-metro" onclick="GS.toggleMetro()">🥁 Metro</button>
-  <button class="gs-btn on" id="gs-arr-mode" onclick="GS.toggleArrMode()">📋 Song</button>
+  <button class="gs-btn" id="gs-toolbar-tog" onclick="GS.toggleToolbar()">⚙ Tools</button>
 </div>
 <div id="gs-suggest" style="display:none;padding:6px 12px;background:rgba(16,20,14,.9);border-bottom:1px solid rgba(74,124,53,.1);max-height:120px;overflow-y:auto"></div>
 
-<!-- TOOLBAR: Organized into labeled groups -->
-<div class="gs-toolbar">
+<!-- TOOLBAR: Organized into labeled groups. Hidden by default; toggled
+     via the ⚙ Tools button in the transport row. Cuts first-viewport
+     button count dramatically so sections/layers/arrangement lands
+     right under transport. -->
+<div class="gs-toolbar" id="gs-toolbar" style="display:none">
+  <!-- PLAY -->
+  <div class="gs-group">
+    <div class="gs-group-label">PLAY</div>
+    <button class="gs-btn" id="gs-metro" onclick="GS.toggleMetro()">🥁 Metro</button>
+    <button class="gs-btn on" id="gs-arr-mode" onclick="GS.toggleArrMode()">📋 Song</button>
+  </div>
   <!-- KEY -->
   <div class="gs-group">
     <div class="gs-group-label">KEY</div>
@@ -1862,6 +1870,14 @@ var GS = (function(){
     toggleLoop: function(){
       looping = !looping;
       document.getElementById('gs-loop').classList.toggle('on', looping);
+    },
+    toggleToolbar: function(){
+      var tb = document.getElementById('gs-toolbar');
+      if(!tb) return;
+      var on = tb.style.display === 'flex';
+      tb.style.display = on ? 'none' : 'flex';
+      var btn = document.getElementById('gs-toolbar-tog');
+      if(btn) btn.classList.toggle('on', !on);
     },
     setRoot: function(v){rootIdx=parseInt(v);renderLayers();},
     setScale: function(v){scaleKey=v;renderLayers();},
