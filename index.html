@@ -41714,6 +41714,12 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
   body.lw-tut-active.lw-tut-breed-only .bs-close,
   body.lw-tut-active.lw-tut-breed-only .bs-nav-btn,
   body.lw-tut-active.lw-tut-breed-only .bs-card-nav-btn{pointer-events:none !important;opacity:0.35 !important;filter:saturate(0.45);}
+  /* Step 22: inside the nursery, only the WATER button is tappable.
+     Skip-day (paid Dew), boost (fertilizer), and abandon all dim
+     while the tutorial teaches first-watering. */
+  body.lw-tut-active.lw-tut-water-only .nur-btn.skipday,
+  body.lw-tut-active.lw-tut-water-only .nur-btn.boost,
+  body.lw-tut-active.lw-tut-water-only .nur-btn.abandon{pointer-events:none !important;opacity:0.35 !important;filter:saturate(0.45);}
   /* Tutorial: lock the keeper-bar sunbeam + dew counters too. Player
      shouldn't be able to open sunbeam/dew modals by tapping the icons
      before the tutorial points at them. Sunbeams unlocks at step 16
@@ -53575,7 +53581,7 @@ _done=function(){
     document.body.classList.remove(
       'lw-tut-active','lw-tut-limit-actions',
       'lw-tut-bp-on','lw-tut-bos-on','lw-tut-sb-on','lw-tut-mint-only','lw-tut-newplant-only',
-      'lw-tut-carousel-lock','lw-tut-carousel-can-close','lw-tut-carousel-freeze','lw-tut-carousel-breed-only','lw-tut-breed-only',
+      'lw-tut-carousel-lock','lw-tut-carousel-can-close','lw-tut-carousel-freeze','lw-tut-carousel-breed-only','lw-tut-breed-only','lw-tut-water-only',
       'lw-tut-nav-greenhouse','lw-tut-nav-focus','lw-tut-nav-nursery','lw-tut-nav-wild'
     );
     // Strip any residual newplant-target class on greenhouse tiles.
@@ -54278,10 +54284,11 @@ function _step22(){
   _setStep(22);
   // Unidirectional swap: nursery is the ONLY clickable nav now. Remove
   // greenhouse unlock so the Keeper can't wander back mid-watering.
-  // Also strip any lingering breed-screen locks.
+  // Also strip any lingering breed-screen locks. Engage water-only
+  // lock so skip-day / boost / abandon are dimmed.
   try{
     document.body.classList.remove('lw-tut-nav-greenhouse','lw-tut-breed-only','lw-tut-carousel-lock','lw-tut-carousel-breed-only');
-    document.body.classList.add('lw-tut-nav-nursery');
+    document.body.classList.add('lw-tut-nav-nursery','lw-tut-water-only');
   }catch(e){}
   if(window.switchTab)switchTab('nursery');
   setTimeout(function(){
@@ -54310,6 +54317,9 @@ function _step22(){
 // ═══ STEP 23: compost as boost — Phase 4 closer (hands off to Phase 5) ═══
 function _step23(){
   _setStep(23);
+  // Watering landed — release the water-only lock so the Keeper can
+  // experiment with other nursery controls from here on.
+  try{document.body.classList.remove('lw-tut-water-only');}catch(e){}
   _dialog(
     'Beautiful. Come back tomorrow to water again.<br><br>' +
     'You can also <span style="color:var(--gold);">compost plants you don\u2019t want</span>. Each one gives fertilizer you can feed a growing seed.<br><br>' +
@@ -54337,7 +54347,9 @@ function _step24(){
   if(!wildBtn){_done();return;}
   // Ensure the button is visible (in case canSee.wildTab hasn't applied yet)
   try{wildBtn.style.display='';wildBtn.classList.remove('gated');}catch(e){}
-  _overlay(function(){_done();});
+  // Overlay is a capture zone only — tapping the dim area must NOT exit
+  // the tutorial. Only the spotlighted affordance can advance the flow.
+  _overlay(function(){/* no-op */});
   _spotlight(wildBtn);
   _dialog(
     'The world opens.<br><br>' +
@@ -54462,7 +54474,8 @@ function _step28(){
   if(!bpi){_done();return;}
   // Unlock the backpack icon now that the tutorial is pointing at it.
   try{document.body.classList.add('lw-tut-bp-on');}catch(e){}
-  _overlay(function(){_done();});
+  // Overlay tap is a no-op; only the spotlighted backpack advances.
+  _overlay(function(){/* no-op */});
   _spotlight(bpi);
   _dialog(
     'Your <span style="color:var(--gold);">backpack</span> travels with you.<br><br>Tap it to see what you\u2019re carrying.',
@@ -54525,7 +54538,8 @@ function _step32(){
   // the actual journal state. Also unlock the button so tapping works.
   try{bos.style.display='flex';bos.classList.add('has-entries');}catch(e){}
   try{document.body.classList.add('lw-tut-bos-on');}catch(e){}
-  _overlay(function(){_done();});
+  // Overlay tap is a no-op; only the spotlighted Book of Secrets advances.
+  _overlay(function(){/* no-op */});
   _spotlight(bos);
   _dialog(
     'Every discovery you ever make lives in the <span style="color:var(--gold);">Book of Secrets</span>.<br><br>Tap it once to take a look.',
