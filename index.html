@@ -49994,9 +49994,20 @@ function _runTutorial(onComplete){
   setTimeout(playSequence, 1400);
 }
 
+// Aggressive beat-4 chrome cleanup. Called every time the auth form is
+// about to become visible or swap modes. Stephen reports a "black box
+// blocking the bottom of the screen" when making an account via skip —
+// most likely the tutorial overlay, skip button, or dots left behind.
+// We nuke all three at every touch-point below.
+function _lwCleanBeat4Chrome(){
+  try{var _t=document.getElementById('ob-tutorial');if(_t)_t.remove();}catch(e){}
+  try{var _sk=document.getElementById('ob-skip');if(_sk)_sk.style.display='none';}catch(e){}
+  try{var _d=document.getElementById('ob-dots');if(_d)_d.style.display='none';}catch(e){}
+}
+
 function _renderGiftPlant(){
   // Kill any tutorial overlay that might still exist (safety net).
-  var _lingering=document.getElementById('ob-tutorial');if(_lingering)_lingering.remove();
+  _lwCleanBeat4Chrome();
   var render=document.getElementById('ob-plant-render');
   if(!_giftHash){
     _giftHash='';
@@ -50016,6 +50027,9 @@ function _renderGiftPlant(){
     }
   }
   setTimeout(function(){
+    // Final sweep right before auth appears — nukes the tutorial overlay,
+    // skip button, and beat dots if any of them are still in the DOM.
+    _lwCleanBeat4Chrome();
     var auth=document.getElementById('ob-auth');if(auth)auth.classList.add('show');
     var man=document.getElementById('ob-manifesto');if(man)man.style.opacity='1';
   },1200);
@@ -50070,6 +50084,7 @@ function _revealPlant(){
 }
 
 function submitAuth(){
+  _lwCleanBeat4Chrome();
   var nameInput=document.getElementById('ob-name-input');
   var emailInput=document.getElementById('ob-email');
   var passInput=document.getElementById('ob-pass');
@@ -50254,8 +50269,9 @@ function skip(){
   // Jump straight to beat 4 which shows auth form + gift plant
   _beat=3; // _showBeat increments from current
   _showBeat(4);
-  // Hide skip button since we're already at the end
-  var sk=document.getElementById('ob-skip');if(sk)sk.style.display='none';
+  // Kill all bottom-of-screen chrome immediately (skip button, dots, any
+  // lingering tutorial overlay from a cached/previous session).
+  _lwCleanBeat4Chrome();
 }
 
 // ═══ CREATURE DISCOVERY TUTORIAL ═══
@@ -50335,6 +50351,7 @@ function goToBeat(n){
 
 // ═══ RETURNING PLAYER LOGIN ═══
 function showLogin(){
+  _lwCleanBeat4Chrome();
   var newForm=document.getElementById('ob-auth-new');
   var loginForm=document.getElementById('ob-auth-login');
   if(newForm)newForm.style.display='none';
@@ -50348,6 +50365,7 @@ function showLogin(){
 }
 
 function showSignup(){
+  _lwCleanBeat4Chrome();
   var newForm=document.getElementById('ob-auth-new');
   var loginForm=document.getElementById('ob-auth-login');
   if(newForm)newForm.style.display='block';
@@ -50361,6 +50379,7 @@ function showSignup(){
 }
 
 function submitLogin(){
+  _lwCleanBeat4Chrome();
   var email=(document.getElementById('ob-login-email').value||'').trim();
   var pass=document.getElementById('ob-login-pass').value||'';
   var errEl=document.getElementById('ob-login-err');
