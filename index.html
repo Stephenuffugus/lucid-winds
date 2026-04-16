@@ -53382,14 +53382,131 @@ function _step18(){
   setTimeout(function(){
     _dialog(
       'Your second plant is here.<br><br>' +
-      '<span style="color:var(--gold);">Tap it</span> to see what grew.',
+      '<span style="color:var(--gold);">Tap it</span> and flip it over to see what grew.',
       '',null,'bottom');
     if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
-    // This is currently the end — Phase 4 will pick up from the new plant flip.
-    // Auto-clear after 20s so the dialog doesn't stick around forever.
-    setTimeout(function(){if(_getStep()===18)_done();},20000);
+    // The flip-reveal hook below advances to _step19 on first-reveal of
+    // this (or any) card while at step 18. 10-min safety fallback.
+    setTimeout(function(){if(_getStep()===18)_done();},600000);
   },800);
 }
+
+// ═══ STEP 19: point at BREED button in the carousel ═══
+function _step19(){
+  _setStep(19);
+  _clear();
+  var breedBtn=null;
+  var btns=document.querySelectorAll('.pgm-act-btn');
+  for(var i=0;i<btns.length;i++){
+    if((btns[i].textContent||'').toUpperCase().indexOf('BREED')>=0){breedBtn=btns[i];break;}
+  }
+  if(breedBtn&&window._lwPulseHint){window._lwPulseHint(breedBtn,30000,'lw_tut_breed_pulse');}
+  _dialog(
+    'Your garden can grow. Tap <span style="color:var(--gold);">\ud83e\uddec BREED</span> below the card to cross-pollinate your two plants.',
+    '',null,'top');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  var polls=0;
+  var watch=function(){
+    var bs=document.getElementById('breed-screen');
+    if(bs&&getComputedStyle(bs).display!=='none'){
+      _clear();setTimeout(_step20,900);return;
+    }
+    if(polls<300){polls++;setTimeout(watch,500);}
+    else {_done();}
+  };
+  watch();
+}
+
+// ═══ STEP 20: inside breed screen — explain + watch for executed breed ═══
+function _step20(){
+  _setStep(20);
+  var bsBtn=document.getElementById('bs-breed-btn');
+  if(bsBtn&&window._lwPulseHint){window._lwPulseHint(bsBtn,60000,'lw_tut_bs_pulse');}
+  _dialog(
+    'Each plant can breed <span style="color:var(--gold);">up to 3 times</span>, recovering one charge every <span style="color:var(--gold);">14 days</span>.<br><br>' +
+    'Tap <span style="color:var(--gold);">CROSS-POLLINATE \u2192 NURSERY</span> when you\u2019re ready.',
+    '',null,'bottom');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  var nurLen0=_nurLen();
+  var polls=0;
+  var watch=function(){
+    if(_nurLen()>nurLen0){
+      _clear();setTimeout(_step22,2500);return;
+    }
+    if(polls<600){polls++;setTimeout(watch,500);}
+    else {_done();}
+  };
+  watch();
+}
+
+function _nurLen(){
+  try{
+    if(window.FG_Data&&FG_Data.getNursery)return FG_Data.getNursery().length||0;
+    return (JSON.parse(localStorage.getItem('sws_nursery')||'[]')||[]).length;
+  }catch(e){return 0;}
+}
+
+// ═══ STEP 22: nursery — water the seed ═══
+function _step22(){
+  _setStep(22);
+  if(window.switchTab)switchTab('nursery');
+  setTimeout(function(){
+    var waterBtn=document.querySelector('.nur-btn.water');
+    if(waterBtn&&window._lwPulseHint){window._lwPulseHint(waterBtn,30000,'lw_tut_water_pulse');}
+    _dialog(
+      'Your seed is growing. Water it <span style="color:var(--gold);">once a day for 3 days</span> to bloom.<br><br>' +
+      '<span style="color:var(--sage);">Tap WATER to begin.</span>',
+      '',null,'top');
+    if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    var polls=0;
+    var watch=function(){
+      try{
+        var nur=(window.FG_Data&&FG_Data.getNursery)?FG_Data.getNursery():(JSON.parse(localStorage.getItem('sws_nursery')||'[]')||[]);
+        if(nur.length>0&&(nur[0].waterLog||[]).length>0){
+          _clear();setTimeout(_step23,1500);return;
+        }
+      }catch(e){}
+      if(polls<300){polls++;setTimeout(watch,500);}
+      else {_done();}
+    };
+    watch();
+  },1200);
+}
+
+// ═══ STEP 23: compost as boost — Phase 4 closer ═══
+function _step23(){
+  _setStep(23);
+  _dialog(
+    'Beautiful \u2014 come back tomorrow to water again.<br><br>' +
+    'You can also <span style="color:var(--gold);">compost plants you don\u2019t want</span>. Each one gives fertilizer you can feed a growing seed.<br><br>' +
+    '<span style="color:var(--muted);font-size:0.85em;">Still: save compost for when your greenhouse is full.</span>',
+    'GOT IT',function(){_clear();_done();},'center');
+}
+
+// ═══ Wrap window._handleCardFlip to trigger Phase 4 on first-reveal ═══
+// When the 2nd plant is flipped-to-reveal and tutorial is at step 18,
+// advance to step 19. Idempotent via _LW_TUT_FLIPWRAPPED flag.
+(function _installFlipRevealTrigger(){
+  if(window._LW_TUT_FLIPWRAPPED)return;
+  var waitForFlip=function(){
+    if(typeof window._handleCardFlip!=='function'){setTimeout(waitForFlip,300);return;}
+    var _orig=window._handleCardFlip;
+    window._handleCardFlip=function(el,evt){
+      var wasRevealed=el&&el.getAttribute&&el.getAttribute('data-revealed')==='true';
+      var ret=_orig.apply(this,arguments);
+      try{
+        var nowRevealed=el&&el.getAttribute&&el.getAttribute('data-revealed')==='true';
+        if(!wasRevealed&&nowRevealed&&_getStep()===18){
+          // Wait for the reveal flash to play out before Phase 4 interrupts.
+          setTimeout(_step19,2400);
+        }
+      }catch(e){}
+      return ret;
+    };
+    window._LW_TUT_FLIPWRAPPED=true;
+  };
+  waitForFlip();
+})();
 
 // ═══ Wrap window._e to dispatch a game-completed event ═══
 // The tutorial and any future observers can listen for 'game-completed'.
