@@ -26698,13 +26698,17 @@ document.addEventListener('keydown', function(e) {
   function getGHSlots() {
     try {
       var stored = parseInt(localStorage.getItem(GH_SLOTS_KEY), 10);
-      if (stored >= GH_SLOTS_BASE && stored <= GH_SLOTS_MAX) return stored;
-      // Auto-adjust for existing players
-      var ghLen = 0;
-      try { ghLen = (JSON.parse(localStorage.getItem('sws_greenhouse')) || []).length; } catch(e2) {}
-      var autoSlots = Math.max(GH_SLOTS_BASE, Math.min(GH_SLOTS_MAX, ghLen + 2));
-      localStorage.setItem(GH_SLOTS_KEY, String(autoSlots));
-      return autoSlots;
+      var base = (stored >= GH_SLOTS_BASE && stored <= GH_SLOTS_MAX) ? stored : GH_SLOTS_BASE;
+      if (!(stored >= GH_SLOTS_BASE && stored <= GH_SLOTS_MAX)) {
+        var ghLen = 0;
+        try { ghLen = (JSON.parse(localStorage.getItem('sws_greenhouse')) || []).length; } catch(e2) {}
+        base = Math.max(GH_SLOTS_BASE, Math.min(GH_SLOTS_MAX, ghLen + 2));
+        localStorage.setItem(GH_SLOTS_KEY, String(base));
+      }
+      // Prestige bonus: P4+ grants +1 slot per additional prestige (P4=+1, P5=+2, ...)
+      var _p = 0; try { _p = parseInt(localStorage.getItem('pw_prestige') || '0', 10) || 0; } catch(e3) {}
+      if (_p >= 4) base += Math.min(20, _p - 3);
+      return Math.min(GH_SLOTS_MAX + 20, base);
     } catch(e) { return GH_SLOTS_BASE; }
   }
 
@@ -35045,6 +35049,12 @@ function _e(v){if(window._e)window._e(v);}
 function _play(id){if(window._play)window._play(id);}
 var TILES='https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 var MAX_DROPS=3,MAX_POUCH=3,COLLECT_RANGE=75,ZONE_SIZE=0.001;
+// Prestige bonus: P6+ grants +1 wild drop per day
+function _getMaxDrops(){
+  var base=MAX_DROPS;
+  try{var p=parseInt(localStorage.getItem('pw_prestige')||'0',10)||0;if(p>=6)base+=1;}catch(e){}
+  return base;
+}
 // Dynamic collect range — Wanderer temperament adds 50m
 function _getCollectRange(){
   var range=COLLECT_RANGE;
@@ -38552,8 +38562,9 @@ window._doCrossPollination=_doCrossPollination;
 function openPicker(){
   if(_speedKmh>25){_toast('\ud83c\udf3f Slow down to plant! Moving too fast.');return;}
   if(!_uLat){_toast('Getting location...');return;}
-  var rem=MAX_DROPS-_drops;
-  if(rem<=0){_toast('All 3 drops used today!');return;}
+  var _maxD=_getMaxDrops();
+  var rem=_maxD-_drops;
+  if(rem<=0){_toast('All '+_maxD+' drops used today!');return;}
   var gh=_getGH();
   if(!gh.length){_toast('No plants! Play the Grove game first.');return;}
   // Reset picker to drop mode
@@ -38778,7 +38789,7 @@ function _drop(pl){
   closePicker();
   if(!_uLat||!_uLng){_toast('No location.');return;}
   if(_gpsDenied){_toast('\u2316 Demo mode \u2014 enable GPS to plant in the real world.');return;}
-  if((MAX_DROPS-_drops)<=0)return;
+  if((_getMaxDrops()-_drops)<=0)return;
   var wild=_getWild();
   var myUid='';try{var _cu=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_cu)myUid=_cu.uid;}catch(e){}
   var la=_uLat+(Math.random()-0.5)*0.0005,lo=_uLng+(Math.random()-0.5)*0.0005;
@@ -39695,7 +39706,7 @@ function _savePouch(){localStorage.setItem('fg_pouch',JSON.stringify(_pouch));}
 
 // ═══ UI ═══
 function _updateUI(){
-  var rem=Math.max(0,MAX_DROPS-_drops);
+  var rem=Math.max(0,_getMaxDrops()-_drops);
   var b=document.getElementById('dbb');if(b){b.textContent=rem;b.classList.toggle('lo',rem<=1);}
   var f=document.getElementById('dfb');if(f)f.style.opacity=rem<=0?'0.4':'1';
   var dl=document.getElementById('w-drops-left');if(dl){dl.textContent=rem;dl.style.color=rem<=0?'var(--muted)':rem<=1?'var(--gold)':'var(--cream)';}
