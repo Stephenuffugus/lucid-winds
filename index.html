@@ -6048,7 +6048,7 @@ window._addSwitchTabHook = function(fn){
         'lw_tut_herbarium_v1','lw_tut_wild_v1','lw_pulse_firstgame_v1','lw_pulse_highprio_v1',
         'lw_pulse_l7class_v1','lw_pulse_first_plant_tap','lw_pulse_breed_first',
         'lw_pulse_wild_drop','lw_pulse_whatnow_first',
-        'lw_jit_boxes_v1','lw_first_mint_v1'];
+        'lw_jit_boxes_v1','lw_first_mint_v1','lw_tut_force_restart'];
       for(var i=0;i<keys.length;i++){try{localStorage.removeItem(keys[i]);}catch(e){}}
       // Set force-restart flag so PW_Tutorial.start() ignores the
       // returning-player bail (lw_vault_uid, greenhouse.length>1).
@@ -65203,7 +65203,7 @@ window.LW_Comp = (function(){
     // Plants ready to mint → tap sunbeam icon
     var _wnReady=0; try{_wnReady=window._getMintableCount?_getMintableCount():0;}catch(e){}
     if(_wnReady>0){
-      out.push({icon:'\u2600\ufe0f',title:'Mint a new plant',body:'You have '+_wnReady+' plant'+ (_wnReady>1?'s':'')+' ready! Tap the \u2600\ufe0f Sunbeam icon to bloom.',priority:95,action:function(){if(window.openSunbeamModal)openSunbeamModal();}});
+      out.push({icon:'\u2600\ufe0f',title:'Mint a new plant',body:'You have '+_wnReady+' plant'+ (_wnReady>1?'s':'')+' ready. Tap the Sunbeam icon to bloom.',priority:95,action:function(){if(window.openSunbeamModal)openSunbeamModal();}});
     }
     // Has 1 plant, low sunbeams → play games to earn more
     if(gh.length>=1&&_wnReady===0){
