@@ -53226,7 +53226,7 @@ function _step12(){
     },'bottom');
 }
 
-// ═══ FINAL STEP: point at GAME tab ═══
+// ═══ STEP 13: point at GAME tab (ends Phase 2) ═══
 function _stepGame(){
   _setStep(13);
   setTimeout(function(){
@@ -53238,14 +53238,179 @@ function _stepGame(){
         'Earn more plants by playing a <span style="color:var(--sage);">game</span>.<br><br>' +
         'If games aren\u2019t your thing, there are <span style="color:var(--sage);">creative outlets</span> too.',
         'LET\u2019S GO',function(){
-          _done();gameBtn.style.zIndex='';
+          _clear();gameBtn.style.zIndex='';
           if(window.switchTab)switchTab('game');
+          setTimeout(_step14,1500);
         },'center');
     } else {
-      _dialog('Tap GAME to start playing.','GOT IT',function(){_done();},'center');
+      _dialog('Tap GAME to start playing.','GOT IT',function(){
+        _clear();if(window.switchTab)switchTab('game');
+        setTimeout(_step14,1500);
+      },'center');
     }
   },400);
 }
+
+// ═══ STEP 14: game picker — "pick one you like" ═══
+function _step14(){
+  _setStep(14);
+  _dialog(
+    'Pick any game that catches your eye.<br><br>' +
+    '<span style="color:var(--muted);font-size:0.85em;">You\u2019ll earn Sunbeams whether you win or lose.</span>',
+    'OK',function(){
+      _clear();
+      _setStep(15);
+      _watchGameStart(0);
+    },'bottom');
+}
+
+// Watch for body.game-active (user picked a game)
+function _watchGameStart(attempts){
+  if(document.body.classList.contains('game-active')){
+    // Let the game load in before interrupting
+    setTimeout(_step15,3500);
+    return;
+  }
+  if(attempts<600){setTimeout(function(){_watchGameStart(attempts+1);},500);}
+  else {/* timed out — tutorial self-heals on next trigger */ _done();}
+}
+
+// ═══ STEP 15: irony line mid-game ═══
+function _step15(){
+  if(!document.body.classList.contains('game-active')){_done();return;}
+  _setStep(15);
+  _dialog(
+    '<span style="color:var(--sage);">Notice the irony</span> \u2014 you\u2019re playing a game inside a game meant to slow you down.<br><br>' +
+    '<span style="color:var(--muted);font-size:0.85em;">It\u2019s the paradox of attention. Stick with it.</span>',
+    'GOT IT',function(){
+      _clear();
+      _setStep(16);
+      _watchGameComplete();
+    },'top');
+}
+
+// Listen for game-completed event (win OR loss)
+function _watchGameComplete(){
+  var handler=function(e){
+    window.removeEventListener('game-completed',handler);
+    // Celebration/loss modal plays ~3s — wait for it to clear
+    setTimeout(_step16,3500);
+  };
+  window.addEventListener('game-completed',handler);
+  // Safety fallback if event never fires: check periodically for gh >=1 plant + 30 sunbeams
+  var polls=0;
+  var watchFallback=function(){
+    var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+    var ready=(window._readyHashes||[]).length;
+    if(ready>0||gh.length>=2){
+      window.removeEventListener('game-completed',handler);
+      setTimeout(_step16,500);
+      return;
+    }
+    if(polls<600){polls++;setTimeout(watchFallback,1000);}
+  };
+  watchFallback();
+}
+
+// ═══ STEP 16: return to greenhouse, sunbeam pip pulses ═══
+function _step16(){
+  if(_getStep()!==16){return;}
+  _setStep(16);
+  if(window.switchTab)switchTab('greenhouse');
+  setTimeout(function(){
+    var kbs=document.getElementById('kb-sunbeams');
+    if(kbs){kbs.classList.add('lw-pulse-hint');}
+    var ready=(window._readyHashes||[]).length;
+    var msg=ready>0
+      ? 'You have <span style="color:var(--gold);">Sunbeams ready</span>.<br><br><span style="color:var(--sage);">Tap the \u2600\ufe0f up top to mint your next plant.</span>'
+      : 'Good play. Keep earning until the <span style="color:var(--gold);">\u2600\ufe0f up top glows</span> \u2014 that\u2019s 30 Sunbeams, enough for a new plant.<br><br>You can play another game or come back later.';
+    _dialog(msg,'',null,'top');
+    if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    if(ready>0){_watchMintModal(0);}
+    else {
+      // Not enough sunbeams yet — end tutorial here, WHAT NOW takes over.
+      setTimeout(function(){
+        var kbs2=document.getElementById('kb-sunbeams');
+        if(kbs2)kbs2.classList.remove('lw-pulse-hint');
+        _done();
+      },8000);
+    }
+  },1500);
+}
+
+function _watchMintModal(attempts){
+  if(document.getElementById('lw-sunbeam-modal')){
+    var kbs=document.getElementById('kb-sunbeams');
+    if(kbs)kbs.classList.remove('lw-pulse-hint');
+    _clear();
+    setTimeout(_step17,500);
+    return;
+  }
+  if(attempts<240){setTimeout(function(){_watchMintModal(attempts+1);},500);}
+  else {
+    var kbs2=document.getElementById('kb-sunbeams');
+    if(kbs2)kbs2.classList.remove('lw-pulse-hint');
+    _done();
+  }
+}
+
+// ═══ STEP 17: mint modal — point at MINT button ═══
+function _step17(){
+  _setStep(17);
+  _dialog(
+    'Tap <span style="color:var(--gold);">MINT</span> to bring your second plant into being.',
+    '',null,'bottom');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  _watchMintComplete(0);
+}
+
+function _watchMintComplete(attempts){
+  var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+  if(gh.length>=2){
+    _clear();
+    setTimeout(_step18,2500);  // let the celebration play first
+    return;
+  }
+  if(attempts<240){setTimeout(function(){_watchMintComplete(attempts+1);},500);}
+  else {_done();}
+}
+
+// ═══ STEP 18: "go look at your new plant" (hands off to Phase 4) ═══
+function _step18(){
+  _setStep(18);
+  if(window.switchTab)switchTab('greenhouse');
+  setTimeout(function(){
+    _dialog(
+      'Your second plant is here.<br><br>' +
+      '<span style="color:var(--gold);">Tap it</span> to see what grew.',
+      '',null,'bottom');
+    if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    // This is currently the end — Phase 4 will pick up from the new plant flip.
+    // Auto-clear after 20s so the dialog doesn't stick around forever.
+    setTimeout(function(){if(_getStep()===18)_done();},20000);
+  },800);
+}
+
+// ═══ Wrap window._e to dispatch a game-completed event ═══
+// The tutorial and any future observers can listen for 'game-completed'.
+// Idempotent: only installs the wrapper once.
+(function _installGameCompletedDispatch(){
+  if(window._LW_TUT_EWRAPPED)return;
+  var waitForE=function(){
+    if(typeof window._e!=='function'){setTimeout(waitForE,300);return;}
+    var _orig=window._e;
+    window._e=function(v){
+      try{
+        if(v==='game_win'||v==='game_loss'){
+          window.dispatchEvent(new CustomEvent('game-completed',{detail:{result:v,gameId:window._a}}));
+        }
+      }catch(e){}
+      return _orig.apply(this,arguments);
+    };
+    window._LW_TUT_EWRAPPED=true;
+  };
+  waitForE();
+})();
 
 // ═══ DEFERRED: Nursery check ═══
 function checkNursery(){
@@ -64443,6 +64608,13 @@ window.LW_Comp = (function(){
     var _qDone = function(id){ return typeof window._lwIsQuestDone === 'function' && window._lwIsQuestDone(id); };
 
     // ─── PRIORITY 100+ — time-critical / missed opportunities ───
+    // First-run shortcut: only 1 plant, still Lv 1 → play your first game.
+    // Surfaced at priority 120 so it beats everything else while the new
+    // Keeper is still inside the tutorial.
+    if(gh.length===1&&!localStorage.getItem('lw_first_game_won')){
+      out.push({icon:'\ud83c\udfae',title:'Play your first game',body:'Win or lose, you\u2019ll earn Sunbeams. 30 Sunbeams mints another plant.',priority:120,action:function(){if(window.switchTab)switchTab('game');}});
+    }
+
     // Bloom Day is live right now
     try{
       var bd=window._lwGetActiveBloomDay&&window._lwGetActiveBloomDay();
