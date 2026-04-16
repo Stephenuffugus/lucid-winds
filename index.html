@@ -4874,7 +4874,7 @@ body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 275px)!important;righ
     .ob-auth-btn{width:100%;padding:0.8rem;border:none;border-radius:8px;background:linear-gradient(145deg,var(--leaf),var(--forest));color:var(--cream);font-family:'Bebas Neue',sans-serif;font-size:0.8rem;letter-spacing:0.1em;cursor:pointer;min-height:52px;}
     .ob-auth-btn:disabled{opacity:0.5;}
     .ob-auth-err{font-size:0.65rem;color:#c07070;min-height:1.2rem;margin-bottom:0.3rem;text-align:center;font-family:'DM Mono',monospace;line-height:1.4;}
-    .ob-skip{position:fixed;bottom:calc(1.5rem + env(safe-area-inset-bottom, 0px));right:1rem;font-family:'DM Mono',monospace;font-size:0.4rem;color:rgba(138,145,120,0.4);cursor:pointer;z-index:2147483647;opacity:0;transition:opacity 0.5s ease;}
+    .ob-skip{position:fixed;bottom:calc(1.8rem + env(safe-area-inset-bottom, 0px));right:1.2rem;font-family:'DM Mono',monospace;font-size:0.7rem;color:rgba(200,200,200,0.85);cursor:pointer;z-index:2147483647;opacity:0;transition:opacity 0.5s ease;padding:12px 18px;background:rgba(18,22,16,0.85);border:1.5px solid rgba(200,168,75,0.45);border-radius:10px;letter-spacing:0.12em;min-height:48px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.55);}
     .ob-skip.show{opacity:1;}
     .ob-continue{margin-top:1rem;margin-bottom:calc(2rem + env(safe-area-inset-bottom, 0px));padding:0.7rem 2rem;border:1.5px solid rgba(122,179,86,0.3);border-radius:8px;background:rgba(26,36,22,0.4);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;opacity:0;transition:opacity 0.8s ease;min-height:52px;pointer-events:none;position:relative;z-index:20;width:100%;max-width:300px;}
     .ob-continue.show{opacity:1;pointer-events:auto;}
@@ -5201,9 +5201,9 @@ window._addSwitchTabHook = function(fn){
     <div class="game-title">Lucid <em>Winds</em></div>
     <!-- Sunbeams progress bar — shows balance + progress to next plant -->
     <div id="game-dew-bar" style="display:flex;align-items:center;gap:8px;padding:4px 12px;margin-top:2px;">
-      <div style="font-family:DM Mono,monospace;font-size:clamp(.55rem,1.5vw,.7rem);color:rgba(240,208,144,0.95);white-space:nowrap;">☀️ <span id="game-dew-val">0</span> sunbeams</div>
+      <div onclick="if(window.openSunbeamModal)openSunbeamModal();" style="font-family:DM Mono,monospace;font-size:clamp(.55rem,1.5vw,.7rem);color:rgba(240,208,144,0.95);white-space:nowrap;cursor:pointer;">☀️ <span id="game-dew-val">0</span> sunbeams</div>
       <div style="flex:1;height:6px;background:rgba(122,179,86,0.08);border-radius:3px;overflow:hidden;position:relative;"><div id="game-dew-fill" style="height:100%;background:linear-gradient(90deg,rgba(200,168,75,0.65),rgba(240,208,144,0.8));border-radius:3px;width:0%;transition:width 0.4s ease;"></div></div>
-      <div style="font-family:DM Mono,monospace;font-size:clamp(.5rem,1.3vw,.65rem);color:var(--muted);white-space:nowrap;"><span id="game-dew-progress">0</span>/30</div>
+      <div style="font-family:DM Mono,monospace;font-size:clamp(.5rem,1.3vw,.65rem);color:var(--muted);white-space:nowrap;">next: <span id="game-dew-progress">0</span>/30</div>
       <div id="game-streak" style="font-family:DM Mono,monospace;font-size:clamp(.5rem,1.3vw,.65rem);color:var(--gold);white-space:nowrap;opacity:0.7;"></div>
       <button id="daily-quest-btn" onclick="if(window._openDailyQuests)_openDailyQuests();" style="display:none;font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.06em;color:var(--gold);background:rgba(200,168,75,0.08);border:1.5px solid rgba(200,168,75,0.25);border-radius:6px;padding:6px 12px;cursor:pointer;white-space:nowrap;min-height:44px;">QUESTS</button>
     </div>
@@ -5745,7 +5745,7 @@ window._addSwitchTabHook = function(fn){
     </div>
     <!-- Row 2: currency badges (Sunbeams + Dew + optional Compendium + Install) -->
     <div class="kb-row2">
-      <div id="kb-sunbeams" title="Sunbeams" onclick="if(window.openEconModal)openEconModal();" style="border:2px solid rgba(200,168,75,0.5);"><img src="assets/btn-sunbeams.png" alt="Sunbeams" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:8px;"><span class="kb-val">0</span></div>
+      <div id="kb-sunbeams" title="Sunbeams" onclick="if(window.openSunbeamModal)openSunbeamModal();else if(window.openEconModal)openEconModal();" style="border:2px solid rgba(200,168,75,0.5);"><img src="assets/btn-sunbeams.png" alt="Sunbeams" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:8px;"><span class="kb-val">0</span></div>
       <div id="kb-mystery" onclick="if(window._openMystery)_openMystery();" title="Mystery Box" style="border:2px solid rgba(232,160,191,0.5);"><img src="assets/btn-mystery.png" alt="Mystery" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
       <div id="kb-dew" title="Dew" onclick="if(window.openDewModal)openDewModal();" style="border:2px solid rgba(91,175,220,0.5);"><img src="assets/btn-dew.png" alt="Dew" style="width:150%;height:150%;object-fit:cover;display:block;margin:-25%;"><span class="kb-val">0</span></div>
       <div id="kb-weather" onclick="if(window._openWeather)_openWeather();" title="Summon Weather" style="border:2px solid rgba(91,175,220,0.5);"><img src="assets/btn-weather.png" alt="Weather" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
@@ -7322,7 +7322,7 @@ window._addSwitchTabHook = function(fn){
       <h3>How Lucid Winds Works</h3>
       <div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);line-height:1.7;">
         <div style="margin-bottom:0.5rem;"><span style="color:var(--sage);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">1. PLAY</span><br>Find patterns in card games. Each match gathers Sunbeams.</div>
-        <div style="margin-bottom:0.5rem;"><span style="color:rgba(91,175,220,0.9);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">2. BLOOM</span><br>Every 30 Sunbeams grows a unique plant. No two are alike — yours is one-of-one.</div>
+        <div style="margin-bottom:0.5rem;"><span style="color:rgba(91,175,220,0.9);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">2. BLOOM</span><br>Tap the ☀️ Sunbeam icon when you have 30+. Choose when to mint — save up or bloom now.</div>
         <div style="margin-bottom:0.5rem;"><span style="color:var(--gold);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">3. COLLECT</span><br>Plants live in your Greenhouse. Sort by rarity. Flip cards to see DNA + haiku.</div>
         <div style="margin-bottom:0.5rem;"><span style="color:#E8A0BF;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">4. BREED</span><br>Cross two plants to create a seed. Water it 3 days in the Nursery to bloom.</div>
         <div style="margin-bottom:0.5rem;"><span style="color:#D4842A;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">5. EXPLORE</span><br>Drop plants on a real-world map. Others can see and try to harvest them.</div>
@@ -7390,7 +7390,6 @@ window._addSwitchTabHook = function(fn){
       <div class="pgm-btn-row">
         <button class="pgm-dl-btn" id="gallery-download-btn" onclick="downloadPlantCard()">⬡ DOWNLOAD</button>
         <button class="pgm-act-btn" onclick="shareGalleryPlant()">↗ SHARE</button>
-        <button class="pgm-act-btn" onclick="window._carouselDetails()" style="border-color:rgba(200,168,75,0.3);color:var(--gold);">⬡ DETAILS</button>
         <button class="pgm-act-btn" onclick="carouselBreed()" style="border-color:rgba(200,168,75,0.3);color:var(--gold);">🧬 BREED</button>
         <button class="pgm-act-btn" onclick="carouselCompost()" style="border-color:rgba(139,46,46,0.3);color:rgba(192,112,112,0.9);">🧪 COMPOST</button>
       </div>
@@ -27681,19 +27680,23 @@ document.addEventListener('keydown', function(e) {
     try {
       if (gh.length >= 1 && !localStorage.getItem('lw_tut_tap_plant_v1')) {
         localStorage.setItem('lw_tut_tap_plant_v1', '1');
+        // Give the haiku/tap hint time to breathe. First toast at 2s, and
+        // the welcome modal now lands at 9s so players can look around
+        // before being pushed. 'Keep Looking' is primary to avoid feeling
+        // rushed — the Game tab is a suggestion, not a demand.
         setTimeout(function(){
           if (window._toast) window._toast('\ud83c\udf3f Tap your plant to read its haiku \u2014 every plant has a unique 7-5-7 poem from its hash.');
-        }, 1200);
+        }, 2000);
         setTimeout(function(){
           if (window._lwConfirm) {
             window._lwConfirm({
               title: 'WELCOME TO THE GREENHOUSE',
-              body: 'This is where your plants live \u2014 each one unique, minted from your attention.<br><br>\u2600\ufe0f To grow your collection, play <b>games</b> in the Game tab. Every game earns <b>Sunbeams</b>. Thirty Sunbeams mints one new plant, yours forever.<br><br>No two keepers collect the same garden. Take your time.',
-              yes: 'OPEN THE GAMES',
-              no: 'LATER'
-            }, function(){ if (window.switchTab) switchTab('game'); });
+              body: 'This is where your plants live \u2014 each one unique, minted from your attention.<br><br>\u2600\ufe0f <b>Sunbeams</b> come from playing games and tending the world. Tap the Sunbeam counter any time to <b>sprout a new plant</b> when you\u2019ve gathered enough.<br><br>No two keepers collect the same garden. Take your time.',
+              yes: 'KEEP LOOKING',
+              no: 'OPEN THE GAMES'
+            }, function(){ /* primary = stay; do nothing */ }, function(){ if (window.switchTab) switchTab('game'); });
           }
-        }, 5000);
+        }, 9000);
       }
     } catch(e) {}
     // Pre-warm SVG cache from IndexedDB for all greenhouse plants
@@ -28021,7 +28024,7 @@ document.addEventListener('keydown', function(e) {
         (_prog > 0 ? '<div style="display:flex;align-items:center;gap:6px;max-width:200px;margin:0 auto 0.5rem;">' +
           '<div style="flex:1;height:4px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;"><div style="width:'+_pct+'%;height:100%;background:linear-gradient(90deg,rgba(91,175,220,0.6),rgba(122,179,86,0.7));border-radius:2px;"></div></div>' +
           '<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--muted);">'+_prog+'/30</div></div>' : '') +
-        '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);line-height:1.6;max-width:240px;margin:0 auto 0.5rem;">Every 30 Sunbeams photosynthesize into a unique, one-of-one plant. No two are alike.</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);line-height:1.6;max-width:240px;margin:0 auto 0.5rem;">Tap the \u2600\ufe0f icon when you have 30+ Sunbeams to mint a unique, one-of-one plant.</div>' +
         '<button onclick="switchTab(\'game\')" style="padding:0.45rem 1.2rem;border:1.5px solid rgba(122,179,86,0.35);border-radius:8px;background:linear-gradient(180deg,rgba(74,124,53,0.2),rgba(26,60,22,0.3));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">START PLAYING</button>';
       grid.appendChild(_welcome);
     }
@@ -28636,23 +28639,18 @@ document.addEventListener('keydown', function(e) {
   }
   // Update game tab dew balance + mint progress bar + keeper bar dew
   function _updateGameDew() {
-    // Sunbeams are PROGRESS toward next plant (0-29), not a currency balance.
-    // Fill the meter, mint the plant, meter resets. No accumulation.
+    // Sunbeams are a BALANCE — player chooses when to spend on minting.
     var mintProg = typeof window._getHashProgress === 'function' ? window._getHashProgress() : 0;
     var _dewCost = window._getMintCost ? window._getMintCost() : 30;
-    var dv = document.getElementById('game-dew-val'); if (dv) dv.textContent = mintProg;
+    var _ready = typeof window._getMintableCount === 'function' ? window._getMintableCount() : 0;
+    var _totalBal = _ready * _dewCost + mintProg;
+    var dv = document.getElementById('game-dew-val'); if (dv) dv.textContent = _totalBal;
     var fill = document.getElementById('game-dew-fill'); if (fill) fill.style.width = Math.round(Math.min(mintProg, _dewCost) / _dewCost * 100) + '%';
     var pg = document.getElementById('game-dew-progress'); if (pg) pg.textContent = mintProg;
-    // Update the /30 label dynamically
     var pgParent = pg ? pg.parentNode : null;
     if (pgParent) { var spans = pgParent.querySelectorAll('span'); if (spans.length >= 2) { var last = spans[spans.length - 1]; if (last && last.textContent.indexOf('/') === 0) last.textContent = '/' + _dewCost; } }
-    // Keeper bar sunbeams badge — show progress, not balance
-    var kbs = document.getElementById('kb-sunbeams');
-    if (kbs) {
-      var kbsv = kbs.querySelector('.kb-val');
-      if (kbsv) kbsv.textContent = mintProg + '/' + _dewCost;
-      else kbs.textContent = mintProg + '/' + _dewCost;
-    }
+    // Keeper bar sunbeams badge — show total balance
+    if (typeof window._updateSunbeamBadge === 'function') window._updateSunbeamBadge();
     if (typeof _updateDewDisplay === 'function') _updateDewDisplay();
     // Streak display on game tab
     var gs = document.getElementById('game-streak');
@@ -28708,7 +28706,7 @@ document.addEventListener('keydown', function(e) {
           if (window._lwConfirm) {
             window._lwConfirm({
               title: 'TWO CURRENCIES',
-              body: '\u2600\ufe0f <b>Sunbeams</b> \u2014 progress toward your next plant. Earned by playing games. They fill the mint meter (30 = 1 new plant).<br><br>\ud83d\udca7 <b>Dew</b> \u2014 a spendable balance. Earned from the wild and watering. Use it to accelerate the nursery or take cuttings.<br><br>Both level up your keeper rank. They never convert into each other.',
+              body: '\u2600\ufe0f <b>Sunbeams</b> \u2014 earned by playing games. Tap the \u2600\ufe0f icon to spend them: 30 = mint one unique plant. Save up for events or the wild.<br><br>\ud83d\udca7 <b>Dew</b> \u2014 earned from the wild and watering. Use it to accelerate the nursery or take cuttings.<br><br>Both level up your keeper rank. They never convert into each other.',
               yes: 'GOT IT',
               no: ''
             }, function(){});
@@ -30763,8 +30761,6 @@ document.addEventListener('keydown', function(e) {
     } else {
       // greenhouse context
       var idx = (typeof plantIndex === 'number') ? plantIndex : -1;
-      btns += '<button class="pad-btn" onclick="viewPlantDetails('+idx+')" style="border-color:rgba(122,179,86,0.25);">' +
-              '<span class="pad-btn-icon">🔍</span><span class="pad-btn-label">INSPECT</span></button>';
       btns += '<button class="pad-btn" onclick="var _bp=window._padBreedPlant;closePlantActionDrawer();if(window.openBreedScreen&&_bp)openBreedScreen(_bp,\'greenhouse\');" style="border-color:rgba(200,168,75,0.25);">' +
               '<span class="pad-btn-icon">🧬</span><span class="pad-btn-label">BREED</span></button>';
       if(plant.parentAHash||plant.parentBHash||(plant.generation&&plant.generation>1)){
@@ -31046,7 +31042,7 @@ document.addEventListener('keydown', function(e) {
 
   // ═══ REUSABLE IN-GAME CONFIRM MODAL ═══
   // Replaces raw browser confirm() for player-facing actions
-  window._lwConfirm = function(opts, onYes) {
+  window._lwConfirm = function(opts, onYes, onNo) {
     // Stephen reported: "TWO CURRENCIES" modal stuck open, GOT IT does nothing,
     // Wild tab unreachable underneath. Root cause: if _lwConfirm is called twice
     // before the first is dismissed (e.g. two earnDew events in quick succession),
@@ -31083,7 +31079,7 @@ document.addEventListener('keydown', function(e) {
     var yBtn = m.querySelector('.lw-confirm-yes');
     if (yBtn) yBtn.onclick = function() { try { m.remove(); } catch(e) {} if (onYes) onYes(); };
     var nBtn = m.querySelector('.lw-confirm-no');
-    if (nBtn) nBtn.onclick = function() { try { m.remove(); } catch(e) {} };
+    if (nBtn) nBtn.onclick = function() { try { m.remove(); } catch(e) {} if (onNo) onNo(); };
   };
 
   window.shareDrawerPlant = function(plantIndex) {
@@ -34131,6 +34127,9 @@ document.addEventListener('keydown', function(e) {
       secondBloomClaimed: localStorage.getItem('lw_second_bloom_claimed') || null,
       guardianNextDrop: localStorage.getItem('lw_guardian_next_drop') || null,
       gildingHour: localStorage.getItem('lw_gilding_hour') || null,
+      readyHashes: JSON.parse(localStorage.getItem('pw_readyHashes') || '[]'),
+      hashBuf: localStorage.getItem('pw_hashBuf') || '',
+      hashFilled: parseInt(localStorage.getItem('pw_hashFilled') || '0', 10) || 0,
       lastSync: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
   }
@@ -34214,6 +34213,9 @@ document.addEventListener('keydown', function(e) {
               if (d.secondBloomClaimed) localStorage.setItem('lw_second_bloom_claimed', d.secondBloomClaimed);
               if (d.guardianNextDrop) localStorage.setItem('lw_guardian_next_drop', d.guardianNextDrop);
               if (d.gildingHour) localStorage.setItem('lw_gilding_hour', d.gildingHour);
+              if (d.readyHashes) localStorage.setItem('pw_readyHashes', JSON.stringify(d.readyHashes));
+              if (d.hashBuf) localStorage.setItem('pw_hashBuf', d.hashBuf);
+              if (typeof d.hashFilled === 'number') localStorage.setItem('pw_hashFilled', String(d.hashFilled));
             }
           });
           // ── Claim pending rewards (harvest rewards from displaced plants) ──
@@ -41558,7 +41560,7 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
         '<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:var(--cream,#e8dcc8);line-height:1.7;">'+
           '<div style="margin-bottom:0.7rem;color:var(--muted,#8a9178);font-style:italic;">The core loop — your first 10 minutes:</div>'+
           '<div style="margin-bottom:0.5rem;"><b style="color:var(--gold,#c8a84b);">1. PLAY</b> — Tap <b>GAMES</b> below. Win or progress to earn <b>Sunbeams ☀️</b>.</div>'+
-          '<div style="margin-bottom:0.5rem;"><b style="color:var(--gold,#c8a84b);">2. MINT</b> — 30 Sunbeams photosynthesize into a new plant in your <b>Greenhouse</b>.</div>'+
+          '<div style="margin-bottom:0.5rem;"><b style="color:var(--gold,#c8a84b);">2. MINT</b> — Tap the \u2600\ufe0f icon when ready \u2014 30 Sunbeams = 1 new plant in your <b>Greenhouse</b>.</div>'+
           '<div style="margin-bottom:0.5rem;"><b style="color:var(--gold,#c8a84b);">3. INSPECT</b> — Tap any plant to see its rarity, traits, lineage, and unique haiku.</div>'+
           '<div style="margin-bottom:0.5rem;"><b style="color:var(--gold,#c8a84b);">4. GROW</b> — Two plants? Cross-breed in the <b>Nursery</b>. Drop one in <b>Wild</b> to share with the world.</div>'+
           '<div style="margin-bottom:0.7rem;"><b style="color:var(--gold,#c8a84b);">5. EXPLORE</b> — More tabs unlock as you level up. The deeper you play, the more the world reveals.</div>'+
@@ -41776,6 +41778,7 @@ window._a=_a;        // keep window in sync for external readers (rules modal, s
 // At 30 filled blocks, buffer converts to plant hash → mint → reseed.
 var _hashBuf=new Uint8Array(32);
 var _hashFilled=0;
+var _readyHashes=[]; // queued hex strings — each = 1 mintable plant
 // First mint costs 10 hashes, all subsequent mints cost 30
 function _getMintCost(){
   var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
@@ -41805,18 +41808,22 @@ try{
       localStorage.setItem('pw_hashFilled',String(_hashFilled));
     }
   }
-  // Pending mint recovery
+  // Load ready-hash queue
+  try{_readyHashes=JSON.parse(localStorage.getItem('pw_readyHashes')||'[]');if(!Array.isArray(_readyHashes))_readyHashes=[];}catch(e2){_readyHashes=[];}
+  // Pending mint recovery — queue it instead of auto-minting
   var _pendingMint=localStorage.getItem('pw_pendingMint');
   if(_pendingMint&&_pendingMint.length===64){
-    if(window.mintPlant)window.mintPlant(_pendingMint);
+    _readyHashes.push(_pendingMint);
     localStorage.removeItem('pw_pendingMint');
+    try{localStorage.setItem('pw_readyHashes',JSON.stringify(_readyHashes));}catch(e3){}
   }
-}catch(e){_mTotal=0;_hashFilled=0;_hashBuf=new Uint8Array(32);crypto.getRandomValues(_hashBuf);}
+}catch(e){_mTotal=0;_hashFilled=0;_hashBuf=new Uint8Array(32);crypto.getRandomValues(_hashBuf);_readyHashes=[];}
 // ═══ HASH BUFFER PERSISTENCE ═══
 function _persistHashBuf(){
   var hex='';for(var j=0;j<32;j++)hex+=('0'+_hashBuf[j].toString(16)).slice(-2);
   try{localStorage.setItem('pw_hashBuf',hex);}catch(e){}
   try{localStorage.setItem('pw_hashFilled',String(_hashFilled));}catch(e){}
+  try{localStorage.setItem('pw_readyHashes',JSON.stringify(_readyHashes));}catch(e){}
 }
 // ═══ ACCUMULATE HASH ENTROPY ═══
 function _accumulateHash(amt){
@@ -42050,18 +42057,15 @@ function _e(v){
       var _mc3=(_getMintCost?_getMintCost():30);
       if(_hashFilled<_mc3){_milestoneToast('Almost!',(_mc3-_hashFilled)+' more to Full Bloom');if(window._haptic)_haptic('tab');}
     }
-    // MINT when buffer reaches target (10 for first plant, 30 thereafter)
+    // QUEUE hash when buffer reaches target — player chooses when to mint
     var _mintCost=(_getMintCost?_getMintCost():30);
     if(_hashFilled>=_mintCost){
       var overflow=_hashFilled-_mintCost;
-      // Extract the accumulated hash
       var hex='';for(var bi=0;bi<32;bi++)hex+=('0'+_hashBuf[bi].toString(16)).slice(-2);
-      // Save pending mint for crash recovery
-      try{localStorage.setItem('pw_pendingMint',hex);}catch(e){}
-      // Reseed buffer BEFORE minting (prevents double-mint, fresh random base)
+      _readyHashes.push(hex);
+      // Reseed buffer for next plant
       _hashBuf=new Uint8Array(32);crypto.getRandomValues(_hashBuf);
       _hashFilled=0;_m=0;
-      // Re-accumulate overflow into fresh seeded buffer
       if(overflow>0){
         var extraRnd=new Uint8Array(overflow);crypto.getRandomValues(extraRnd);
         var extraPos=new Uint8Array(overflow);crypto.getRandomValues(extraPos);
@@ -42069,17 +42073,10 @@ function _e(v){
         _hashFilled=overflow;_m=overflow;
       }
       _persistHashBuf();
-      // Mint the plant
-      if(window._LW_DEBUG)console.log('[_e] MINT triggered, hash:',hex);
-      try{
-        if(window.mintPlant)window.mintPlant(hex);
-      }catch(err){console.error('[_e] mintPlant error:',err);}
-      // Clear pending on success
-      try{localStorage.removeItem('pw_pendingMint');}catch(e){}
-      if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,800);
-      // Celebration
-      _justMinted=true;
-      _showMintCelebration(hex);
+      if(window._LW_DEBUG)console.log('[_e] Hash queued ('+_readyHashes.length+' ready), hash:',hex);
+      if(window._haptic)_haptic('bloom');
+      _milestoneToast('\u2600\ufe0f PLANT READY','Tap the Sunbeam icon to bloom it!');
+      _updateSunbeamBadge();
     }
   }
   _updateGP();
@@ -42146,6 +42143,75 @@ window._e=_e;
   }
 })();
 window._getHashProgress=function(){return _hashFilled;};
+window._getReadyHashes=function(){return _readyHashes;};
+window._getSunbeamBalance=function(){return _readyHashes.length*(_getMintCost?_getMintCost():30)+_hashFilled;};
+window._getMintableCount=function(){return _readyHashes.length;};
+// ═══ MINT FROM QUEUE — player-initiated mint ═══
+window._mintFromQueue=function(){
+  if(_readyHashes.length===0){if(window._toast)_toast('No plants ready yet. Keep playing!');return;}
+  var hex=_readyHashes.shift();
+  _persistHashBuf();
+  if(window._LW_DEBUG)console.log('[_mintFromQueue] minting:',hex,'remaining:',_readyHashes.length);
+  try{if(window.mintPlant)window.mintPlant(hex);}catch(err){console.error('[mintFromQueue] error:',err);}
+  if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,800);
+  _showMintCelebration(hex);
+  _updateSunbeamBadge();
+  if(window._updateGameDew)_updateGameDew();
+};
+// ═══ SUNBEAM BADGE — pip on keeper bar icon ═══
+function _updateSunbeamBadge(){
+  var kbs=document.getElementById('kb-sunbeams');
+  if(!kbs)return;
+  var bal=_readyHashes.length*(_getMintCost?_getMintCost():30)+_hashFilled;
+  var kbsv=kbs.querySelector('.kb-val');
+  if(kbsv)kbsv.textContent=bal;
+  var pip=kbs.querySelector('.kb-mint-pip');
+  if(_readyHashes.length>0){
+    if(!pip){pip=document.createElement('span');pip.className='kb-mint-pip';pip.style.cssText='position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;background:var(--gold);color:#0d100c;font-family:Bebas Neue,sans-serif;font-size:0.55rem;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:3;box-shadow:0 1px 4px rgba(0,0,0,0.4);';kbs.appendChild(pip);}
+    pip.textContent=_readyHashes.length;pip.style.display='flex';
+  }else if(pip){pip.style.display='none';}
+}
+window._updateSunbeamBadge=_updateSunbeamBadge;
+// ═══ SUNBEAM MODAL — replaces economy info with actionable mint UI ═══
+window.openSunbeamModal=function(){
+  var old=document.getElementById('lw-sunbeam-modal');if(old)old.remove();
+  var bal=_readyHashes.length*(_getMintCost?_getMintCost():30)+_hashFilled;
+  var cost=_getMintCost?_getMintCost():30;
+  var ready=_readyHashes.length;
+  var prog=_hashFilled;
+  var pct=Math.round(Math.min(prog/cost,1)*100);
+  var ov=document.createElement('div');ov.id='lw-sunbeam-modal';
+  ov.style.cssText='position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);padding:1rem;animation:panelFadeIn 0.3s ease;';
+  ov.onclick=function(e){if(e.target===ov)ov.remove();};
+  var h='<div style="background:rgba(13,16,12,0.97);border:1.5px solid rgba(200,168,75,0.3);border-radius:14px;padding:1.2rem;max-width:320px;width:100%;max-height:80vh;overflow-y:auto;">';
+  h+='<div style="text-align:center;margin-bottom:0.6rem;">';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.8rem;color:var(--gold);letter-spacing:0.06em;">'+bal+'</div>';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);opacity:0.7;">SUNBEAMS</div>';
+  h+='</div>';
+  // Progress toward next plant
+  h+='<div style="margin-bottom:0.8rem;">';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);margin-bottom:4px;">Next plant: '+prog+'/'+cost+'</div>';
+  h+='<div style="height:6px;background:rgba(122,179,86,0.08);border-radius:3px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,rgba(200,168,75,0.65),rgba(240,208,144,0.8));border-radius:3px;transition:width 0.3s;"></div></div>';
+  h+='</div>';
+  // Mint button
+  if(ready>0){
+    h+='<button onclick="window._mintFromQueue();var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();" style="width:100%;padding:0.6rem;margin-bottom:0.4rem;border:1.5px solid rgba(200,168,75,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.35));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.1em;cursor:pointer;min-height:52px;">\ud83c\udf31 MINT A PLANT ('+cost+' \u2600\ufe0f)'+(ready>1?' \u00d7'+ready:'')+'</button>';
+  }else{
+    h+='<div style="width:100%;padding:0.5rem;margin-bottom:0.4rem;border:1.5px solid rgba(122,179,86,0.15);border-radius:10px;background:rgba(26,31,23,0.5);text-align:center;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--muted);letter-spacing:0.08em;">KEEP PLAYING TO GROW A PLANT</div><div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);margin-top:2px;">'+cost+' Sunbeams = 1 unique plant</div></div>';
+  }
+  // Info section
+  h+='<div style="border-top:1px solid rgba(74,124,53,0.1);padding-top:0.5rem;margin-top:0.3rem;">';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.3rem;">HOW SUNBEAMS WORK</div>';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--cream);line-height:1.7;opacity:0.8;">';
+  h+='\u2600\ufe0f Earned by playing games \u2014 never bought<br>';
+  h+='\ud83c\udf31 '+cost+' Sunbeams = mint one unique plant<br>';
+  h+='\ud83d\udcb0 Save up for events or spend on the wild<br>';
+  h+='\ud83c\udf3f Every plant is one-of-one forever</div>';
+  h+='</div>';
+  h+='<button onclick="var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();" style="width:100%;padding:0.45rem;margin-top:0.5rem;border:1.5px solid rgba(122,179,86,0.15);border-radius:8px;background:rgba(26,31,23,0.4);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;">CLOSE</button>';
+  h+='</div>';
+  ov.innerHTML=h;document.body.appendChild(ov);
+};
 // ═══ MINT CELEBRATION — epic reveal when plant blooms ═══
 function _showMintCelebration(fullHash){
   _playWin();
@@ -42319,7 +42385,8 @@ function _spawnLeafParticles(container){
 function _hashToast(n){
   var s=document.getElementById('gp-strip');if(!s)return;
   var cost=window._getMintCost?window._getMintCost():30;
-  var t=document.createElement('div');t.className='hash-toast';t.textContent='+'+n+' ☀️ ('+_hashFilled+'/'+cost+')';
+  var bal=_readyHashes.length*cost+_hashFilled;
+  var t=document.createElement('div');t.className='hash-toast';t.textContent='+'+n+' \u2600\ufe0f ('+bal+')';
   s.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},1800);
 }
 function _guardToast(msg){
@@ -42361,22 +42428,24 @@ function _milestoneToast(title, sub){
 // ═══ Universal Growth Strip — plant + progress bar ═══
 function _updateGP(){
   var el=document.getElementById('gp-strip');if(!el)return;
-  var inPlant=Math.min(_hashFilled,30);
-  var prog=Math.min(inPlant/30,1.0);
+  var cost=_getMintCost?_getMintCost():30;
+  var inPlant=Math.min(_hashFilled,cost);
+  var prog=Math.min(inPlant/cost,1.0);
+  var ready=_readyHashes.length;
+  var totalBal=ready*cost+_hashFilled;
   var lbl=prog<=0.1?'Seed':prog<=0.3?'Sprout':prog<=0.6?'Seedling':prog<=0.9?'Growing':'Full Bloom';
-  // Preview plant from actual hash buffer — player sees REAL plant forming
   var pvh='';
   for(var pi=0;pi<32;pi++)pvh+=('0'+_hashBuf[pi].toString(16)).slice(-2);
   var svg=(typeof window._generatePlantSVG==='function'&&inPlant>0)?window._generatePlantSVG(pvh,48,prog):'<div style="font-size:1.5rem;text-align:center">\ud83c\udf31</div>';
   var pct=Math.round(prog*100);
-  var remain=30-inPlant;
+  var remain=cost-inPlant;
   var _nearCls=prog>=0.83&&prog<1?' near-bloom':'';
-  var _urgentLabel=prog>=0.83&&prog<1?' \u2014 <span style="color:var(--gold);">'+remain+' to bloom!</span>':'';
-  var _gpTxt='<span class="gp-count">'+inPlant+'/30</span>DEW<span class="gp-stage">· '+lbl+(prog>=0.83&&prog<1?' · '+remain+' TO BLOOM':'')+'</span>';
+  var balTxt='\u2600\ufe0f '+totalBal;
+  var readyTxt=ready>0?' \u00b7 <span style="color:var(--gold);">'+ready+' plant'+(ready>1?'s':'')+' ready!</span>':'';
+  var _gpTxt='<span class="gp-count">'+balTxt+'</span><span class="gp-stage">\u00b7 '+lbl+' ('+inPlant+'/'+cost+')'+readyTxt+'</span>';
   el.innerHTML='<div class="gp-lbl">'+_gpTxt+'</div><div style="flex:1;min-width:0"><div class="gp-bar"><div class="gp-fill'+_nearCls+'" style="width:'+pct+'%;transition:none"></div></div></div>';
   setTimeout(function(){var f=el.querySelector('.gp-fill');if(f)f.style.transition='';},60);
-  // Sync Trios dashboard hash bar
-  var thc=document.getElementById('th-count');if(thc)thc.textContent=inPlant;
+  var thc=document.getElementById('th-count');if(thc)thc.textContent=totalBal;
   var thf=document.getElementById('th-fill');if(thf)thf.style.width=pct+'%';
   var ths=document.getElementById('th-stage');if(ths)ths.textContent=lbl;
 }
@@ -46786,6 +46855,7 @@ function GBW(a){
   function render(ts){
     if(_a!=='bloomwheel'){_bwKillAudio();return}
     if(!ctx||!bufC){_bwKillAudio();return}
+    if(!bufC.width||!bufC.height||!W||!H){_bwRaf=requestAnimationFrame(render);return}
     var dt=lt?(ts-lt)/1000:0.016;lt=ts;
     if(spinOn){
       var speed=(Math.PI*2)/(beatInt*16);
@@ -49307,6 +49377,27 @@ function start(){
   if(_isOnboarded())return;
   var el=document.getElementById('pw-onboard');if(!el)return;
   el.classList.add('active');
+  // PWA / installed-app users get a faster path — the cinematic is a
+  // first-touch moment; returning-but-not-signed-in installs shouldn't
+  // have to sit through it again.
+  try {
+    var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+                    || (window.navigator && window.navigator.standalone === true);
+    if (isStandalone) {
+      // Fast-forward into Beat 4 (auth + gift plant) after a beat so the
+      // keeper bar / rain have a moment to settle.
+      setTimeout(function(){
+        try {
+          if (!_giftHash) _genGiftHash();
+          clearTimeout(_lineTimer);
+          _beat = 3; _showBeat(4);
+          if (window.stopRain) window.stopRain();
+          var sk = document.getElementById('ob-skip'); if (sk) sk.style.display = 'none';
+        } catch(e){}
+      }, 500);
+      // Still return here so the rest of start() doesn't unwind rain etc.
+    }
+  } catch(e){}
   document.body.classList.add('ob-active'); // hides feedback button until signup completes
   var kb=document.getElementById('pw-keeper-bar');if(kb)kb.style.display='none';
   if(window._LW_DEBUG)console.log('[LW] start() called');
