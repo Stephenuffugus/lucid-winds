@@ -29274,10 +29274,11 @@ document.addEventListener('keydown', function(e) {
     front += '<div class="cf-art-window">' + svgHtml + '</div>';
     // Synergy badge (if any)
     var _syn = window.getSynergy ? window.getSynergy(_t) : null;
+    front += '<div class="cf-haiku-zone">';
     if (_syn) {
-      front += '<div class="cf-synergy" style="position:absolute;bottom:26%;left:50%;transform:translateX(-50%);z-index:6;"><span style="font-family:Bebas Neue,sans-serif;font-size:0.45rem;letter-spacing:0.08em;color:var(--gold);background:rgba(13,16,12,0.8);border:1px solid rgba(200,168,75,0.35);border-radius:12px;padding:2px 10px;white-space:nowrap;backdrop-filter:blur(4px);">\u2726 ' + _syn.name.toUpperCase() + '</span></div>';
+      front += '<div style="text-align:center;margin-bottom:2px;"><span style="font-family:Bebas Neue,sans-serif;font-size:0.38rem;letter-spacing:0.08em;color:var(--gold);opacity:0.7;">\u2726 ' + _syn.name.toUpperCase() + '</span></div>';
     }
-    front += '<div class="cf-haiku-zone"><div class="cf-haiku" data-h1="' + (haiku.line1||'').replace(/"/g,'&quot;') + '" data-h2="' + (haiku.line2||'').replace(/"/g,'&quot;') + '" data-h3="' + (haiku.line3||'').replace(/"/g,'&quot;') + '">' + haiku.line1 + '<br>' + haiku.line2 + '<br>' + haiku.line3 + '</div></div>';
+    front += '<div class="cf-haiku" data-h1="' + (haiku.line1||'').replace(/"/g,'&quot;') + '" data-h2="' + (haiku.line2||'').replace(/"/g,'&quot;') + '" data-h3="' + (haiku.line3||'').replace(/"/g,'&quot;') + '">' + haiku.line1 + '<br>' + haiku.line2 + '<br>' + haiku.line3 + '</div></div>';
     front += '<div class="cs-flip-hint">tap to flip \u2192</div>';
     if (plant.revealed) {
       front += '<img class="cf-rarity-symbol" src="assets/symbols/symbol-' + _tierName + '.png" alt="' + _tierName + '">';
@@ -29614,14 +29615,9 @@ document.addEventListener('keydown', function(e) {
     var _rarityName = _tg ? _tg.name : 'Common';
     var _rarityNameEsc = String(_rarityName).replace(/'/g,"\\'");
     html += '<div class="cb-rarity" onclick="event.stopPropagation();if(window._lwShowGradeDetail)_lwShowGradeDetail(\'' + _rarityNameEsc + '\')" style="color:' + sColor + ';cursor:pointer;" title="Tap for details">' + (_tg ? _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon : 'COMMON') + '</div>';
-    // Hash + mint date sit above the LINEAGE & DETAILS nameplate. The
-    // nameplate (.cb-nameplate[data-pdh]) is the lineage entry point —
-    // it lives on the back face and uses a capture-phase click listener
-    // (see _populateBackLazy below) to route to _openPlantDetails before
-    // the bubble-phase _handleCardFlip can flip the card.
+    html += '<div class="cb-nameplate" style="margin-top:0.5rem;text-align:center;cursor:pointer;padding:0.7rem 0.5rem;border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.12),rgba(120,100,40,0.18));border:1.5px solid rgba(200,168,75,0.4);min-height:52px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(200,168,75,0.1);" data-pdh="' + plant.hash + '"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.12em;color:var(--gold);">\u2b21 LINEAGE & DETAILS</div></div>';
     html += '<div class="cb-hash" style="margin-top:0.4rem;padding-top:0.3rem;border-top:1px solid rgba(74,124,53,0.06);">' + plant.hash + '</div>';
     html += '<div class="cb-date" style="margin-top:0.1rem;">Minted ' + (plant.date || '') + dateSuffix + '</div>';
-    html += '<div class="cb-nameplate" style="margin-top:0.5rem;text-align:center;cursor:pointer;padding:0.6rem 0.5rem;border-radius:8px;background:rgba(200,168,75,0.08);border:1.5px solid rgba(200,168,75,0.3);min-height:48px;display:flex;align-items:center;justify-content:center;" data-pdh="' + plant.hash + '"><div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.12em;color:var(--gold);">\u2b21 LINEAGE & DETAILS</div></div>';
     html += '<div style="text-align:center;margin-top:0.3rem;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);opacity:0.5;">\u2190 tap card to flip</div>';
 
     backEl.innerHTML = html;
@@ -49580,10 +49576,7 @@ function _showBeat(n){
 
     if(n===4){
       if(window.stopRain)window.stopRain();
-      // First-active moment inserted before the gift-plant reveal. If the
-      // player hasn't done the pattern tutorial yet, detour through it.
-      // It grants +10 Sunbeams visibly so the gift plant feels earned
-      // rather than handed to them.
+      var _sk4=document.getElementById('ob-skip');if(_sk4)_sk4.style.display='none';
       if (!localStorage.getItem('lw_onboard_tutorial_done')) {
         _runTutorial(function(){ _renderGiftPlant(); });
       } else {
