@@ -29705,6 +29705,12 @@ document.addEventListener('keydown', function(e) {
     html += '<div class="cb-rarity" onclick="event.stopPropagation();if(window._lwShowGradeDetail)_lwShowGradeDetail(\'' + _rarityNameEsc + '\')" style="color:' + sColor + ';cursor:pointer;" title="Tap for details">' + (_tg ? _tg.icon + ' ' + _tg.name.toUpperCase() + ' ' + _tg.icon : 'COMMON') + '</div>';
     // Synergy moved off card back — lives only in the Details modal now.
     html += '<div style="text-align:center;margin-top:0.4rem;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);opacity:0.5;">\u2190 tap card to flip</div>';
+    // Nameplate — Stephen's call: "rarities on the back of the cards need
+    // to be placed at the exact coordinates per rarity where we had the
+    // names on the back but they didnt fit. rarity will though and it
+    // will fill that name plate nicely." Rarity word (short: LEGENDARY,
+    // MYTHIC, etc) goes in the per-tier-positioned nameplate region.
+    html += '<div class="cb-nameplate"><span class="cb-name" style="color:' + sColor + ';font-family:\'Playfair Display\',serif;font-style:italic;letter-spacing:0.08em;text-transform:uppercase;">' + _rarityName + '</span></div>';
 
     backEl.innerHTML = html;
     backEl.classList.remove('cs-back-lazy');
@@ -41535,6 +41541,11 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      flip fires. */
   @keyframes lwTutCardPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(200,168,75,0.55);}50%{transform:scale(1.025);box-shadow:0 0 32px 8px rgba(200,168,75,0.4);}}
   .cs-tut-pulse-card{animation:lwTutCardPulse 1.6s ease-in-out infinite;}
+  /* Steps 8-9 happen on the back face and must NOT let the player
+     accidentally flip the card back to front (which would un-reveal
+     the rarity and skip step 10's watch). Lock card taps until step
+     10 specifically invites a flip-back. Also applies to step 11. */
+  body.lw-tut-carousel-freeze .cs-flip-wrap{pointer-events:none !important;}
   body:has(.lu-overlay.open) #lw-fb-btn,
   body:has(#pw-win-overlay) #lw-fb-btn,
   body:has(#cinematic-reveal.open) #lw-fb-btn,
@@ -50266,7 +50277,10 @@ function _revealPlant(){
   var nameEl=document.getElementById('ob-plant-name');
   if(nameEl){nameEl.textContent=nm;nameEl.style.color='#F0EBD8';nameEl.style.opacity='1';}
   var gradeEl=document.getElementById('ob-plant-grade');
-  if(gradeEl){gradeEl.textContent='FLIP YOUR CARD TO REVEAL';gradeEl.style.color='#8a9178';gradeEl.style.opacity='1';}
+  // Stephen: "it says under the name 'flip your card to reveal' and that
+  // should be removed." Grade stays blank at reveal time — the tutorial
+  // will teach rarity via the flip in step 7.
+  if(gradeEl){gradeEl.textContent='';gradeEl.style.opacity='0';}
 
   // Type out haiku
   setTimeout(function(){
@@ -53280,7 +53294,7 @@ _done=function(){
     document.body.classList.remove(
       'lw-tut-active','lw-tut-limit-actions',
       'lw-tut-bp-on','lw-tut-bos-on','lw-tut-sb-on',
-      'lw-tut-carousel-lock','lw-tut-carousel-can-close',
+      'lw-tut-carousel-lock','lw-tut-carousel-can-close','lw-tut-carousel-freeze',
       'lw-tut-nav-greenhouse','lw-tut-nav-focus','lw-tut-nav-nursery','lw-tut-nav-wild'
     );
   }catch(e){}
@@ -53330,6 +53344,10 @@ function _step1(retries){
     // them. Greenhouse tab stays unlocked by default so carousel return
     // navigation works.
     try{document.body.classList.add('lw-tut-active','lw-tut-nav-greenhouse');}catch(e){}
+    // Stephen: "only the okay button on the prompt." Add overlay so
+    // tapping the greenhouse plants / tabs / anything else is blocked.
+    // OK button floats above the overlay via the dialog's z-index 1000012.
+    _overlay(function(){/* no-op */});
     _dialog(
       'You are currently in your <span style="color:var(--gold);">greenhouse</span>.',
       'OK', function(){ _clear(); setTimeout(_step1b, 300); }, 'center');
@@ -53493,8 +53511,13 @@ function _step7(){
 }
 
 // ═══ STEP 8: DNA layers (back of card) ═══
+// Lock card flips until step 10 explicitly invites the flip-back. Prevents
+// an accidental tap during step 8/9 from un-flipping the card and making
+// step 10's watcher fire prematurely (the bug Stephen saw: step 11 text
+// showing before flip-back actually happened).
 function _step8(){
   _setStep(8);
+  try{document.body.classList.add('lw-tut-carousel-freeze');}catch(e){}
   _dialog(
     'These are the <span style="color:var(--gold);">genetic layers</span> shaping your plant.<br><br>' +
     'Every trait came from your unique touch, timing, and experience. There are literal <span style="color:var(--gold);">QUINTILLIONS</span> of possible combinations, and growing.',
@@ -53519,21 +53542,37 @@ function _step9(){
 }
 
 // ═══ STEP 10: flip back prompt ═══
+// Unlocks card taps (was frozen during 8/9) and uses an explicit click
+// listener to advance only on the actual flip-back transition. Poll-based
+// watcher fired instantly if the card was somehow already un-flipped
+// (Stephen's bug: step 11 popping before flip-back happened).
 function _step10(){
   _setStep(10);
+  try{document.body.classList.remove('lw-tut-carousel-freeze');}catch(e){}
   _dialog(
     'Tap the card again to <span style="color:var(--gold);">flip it back</span>.',
     '',null,'bottom');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   var fw=document.querySelector('.cs-flip-wrap');
   if(!fw){_clear();setTimeout(_step11,300);return;}
-  var polls=0;
-  var watch=function(){
-    if(!fw.classList.contains('flipped')){_clear();setTimeout(_step11,1000);}
-    else if(polls<180){polls++;setTimeout(watch,200);}
-    else {_clear();setTimeout(_step11,300);}
-  };
-  setTimeout(watch,500);
+  // Re-add the pulse animation on the card so the tap target is obvious.
+  fw.classList.add('cs-tut-pulse-card');
+  var advanced=false;
+  function advance(){
+    if(advanced)return;advanced=true;
+    fw.classList.remove('cs-tut-pulse-card');
+    _clear();
+    setTimeout(_step11,1000);
+  }
+  function onTap(){
+    // A flip-back is detected by .flipped REMOVED after the tap.
+    setTimeout(function(){
+      if(!fw.classList.contains('flipped'))advance();
+    },50);
+  }
+  fw.addEventListener('click',onTap,true);
+  // 3-minute safety fallback.
+  setTimeout(function(){if(!advanced)advance();},180000);
 }
 
 // ═══ STEP 11: rarity symbol on face — dialog anchored near the symbol ═══
@@ -53542,6 +53581,9 @@ function _step10(){
 // to what we are talking about."
 function _step11(){
   _setStep(11);
+  // Refreeze so the player can't accidentally flip back while the rarity
+  // symbol is being explained.
+  try{document.body.classList.add('lw-tut-carousel-freeze');}catch(e){}
   var fw=document.querySelector('.cs-flip-wrap');
   if(fw)fw.classList.add('cs-tut-hi-rarity');
   var sym=document.querySelector('.cs-flip-wrap .cf-rarity-symbol');
@@ -53585,7 +53627,13 @@ function _step12(){
 // ═══ STEP 13: invite player toward GAME tab (no overlay, no force) ═══
 function _stepGame(){
   _setStep(13);
-  try{document.body.classList.add('lw-tut-nav-focus');}catch(e){}
+  // Swap nav lit state: unlock GAMES, LOCK greenhouse so the visual match
+  // the instruction. Greenhouse re-unlocks at step 16 when we return.
+  try{
+    document.body.classList.remove('lw-tut-nav-greenhouse');
+    document.body.classList.add('lw-tut-nav-focus');
+    document.body.classList.remove('lw-tut-carousel-freeze');
+  }catch(e){}
   setTimeout(function(){
     // Pulse the GAMES nav button so the highlighted tab matches what the
     // dialog is pointing at. Previously the greenhouse tab was the active
@@ -53725,8 +53773,12 @@ function _step16(){
       window.PW_grantXP(19-curXp,'first_focus_level');
     }
   }catch(e){}
-  // Unlock the sunbeam button.
-  try{document.body.classList.add('lw-tut-sb-on');}catch(e){}
+  // Unlock the sunbeam button + re-unlock greenhouse nav (was locked at
+  // step 13 to make GAMES the only highlighted tab). Now greenhouse is
+  // the destination so it comes back on.
+  try{
+    document.body.classList.add('lw-tut-sb-on','lw-tut-nav-greenhouse');
+  }catch(e){}
   // Force-switch to greenhouse so the mint prompt lands where the sun is.
   if(window.switchTab)switchTab('greenhouse');
   setTimeout(function(){
