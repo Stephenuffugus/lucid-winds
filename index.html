@@ -28602,6 +28602,7 @@ document.addEventListener('keydown', function(e) {
     _secureSet(HASH_LEDGER_KEY, ledger);
     if (window._LW_DEBUG) console.log('[earnHashes] ledger.earned now:', ledger.earned);
     if(window.PW_grantXP) PW_grantXP(amount * 2, 'dew_drop');
+    if(window._accumulateHash) window._accumulateHash(amount);
     _updateGameDew();
   }
   // Update game tab dew balance + mint progress bar + keeper bar dew
@@ -41785,8 +41786,26 @@ function _accumulateHash(amt){
     _hashBuf[pos]^=rnd[i];
   }
   _hashFilled+=amt;
+  // Queue hash when buffer reaches mint cost
+  var _mc=(_getMintCost?_getMintCost():30);
+  while(_hashFilled>=_mc){
+    var overflow=_hashFilled-_mc;
+    var hex='';for(var bi=0;bi<32;bi++)hex+=('0'+_hashBuf[bi].toString(16)).slice(-2);
+    _readyHashes.push(hex);
+    _hashBuf=new Uint8Array(32);crypto.getRandomValues(_hashBuf);
+    _hashFilled=0;
+    if(overflow>0){
+      var eRnd=new Uint8Array(overflow);crypto.getRandomValues(eRnd);
+      var ePos=new Uint8Array(overflow);crypto.getRandomValues(ePos);
+      for(var oi=0;oi<overflow;oi++){_hashBuf[ePos[oi]%32]^=eRnd[oi];}
+      _hashFilled=overflow;
+    }
+    _mc=(_getMintCost?_getMintCost():30);
+  }
   _persistHashBuf();
+  if(typeof _updateSunbeamBadge==='function')_updateSunbeamBadge();
 }
+window._accumulateHash=_accumulateHash;
 // ═══ ANTI-FARM GUARD SYSTEM ═══
 // Prevents speed-farming via: min play time, progress caps, completion cooldown
 var _afSessionProg=0;     // progress events earned this session
@@ -41984,48 +42003,26 @@ function _e(v){
   } catch(e) {}
   var amt=Math.round(base*_dm*_rarityMult);
   if(amt>0){
+    var prevFilled=_hashFilled;
+    var prevReady=_readyHashes.length;
     if(window.earnHashes)window.earnHashes(amt);
     _mTotal+=amt;
     try{localStorage.setItem('pw_mTotal',String(_mTotal));}catch(e){}
-    // Accumulate entropy into hash buffer
-    var prevFilled=_hashFilled;
-    _accumulateHash(amt);
-    // UI feedback
     _m=Math.min(_hashFilled,30);
     var hEl=document.getElementById('_h');if(hEl)hEl.textContent=_m;
     _hashToast(amt);_play('hash');
     _checkDailyWelcome();
-    // Milestone pings
-    if(prevFilled<10&&_hashFilled>=10&&_hashFilled<30){
-      var _mc=(_getMintCost?_getMintCost():30);
+    var _mc=(_getMintCost?_getMintCost():30);
+    if(prevFilled<10&&_hashFilled>=10&&_hashFilled<_mc){
       _milestoneToast('Sprout','10/'+_mc+' \u2014 your seed is growing');
-    }else if(prevFilled<20&&_hashFilled>=20){
-      var _mc2=(_getMintCost?_getMintCost():30);
-      if(_hashFilled<_mc2)_milestoneToast('Growing','20/'+_mc2+' \u2014 leaves are forming');
-    }else if(prevFilled<25&&_hashFilled>=25){
-      var _mc3=(_getMintCost?_getMintCost():30);
-      if(_hashFilled<_mc3){_milestoneToast('Almost!',(_mc3-_hashFilled)+' more to Full Bloom');if(window._haptic)_haptic('tab');}
+    }else if(prevFilled<20&&_hashFilled>=20&&_hashFilled<_mc){
+      _milestoneToast('Growing','20/'+_mc+' \u2014 leaves are forming');
+    }else if(prevFilled<25&&_hashFilled>=25&&_hashFilled<_mc){
+      _milestoneToast('Almost!',(_mc-_hashFilled)+' more to Full Bloom');if(window._haptic)_haptic('tab');
     }
-    // QUEUE hash when buffer reaches target — player chooses when to mint
-    var _mintCost=(_getMintCost?_getMintCost():30);
-    if(_hashFilled>=_mintCost){
-      var overflow=_hashFilled-_mintCost;
-      var hex='';for(var bi=0;bi<32;bi++)hex+=('0'+_hashBuf[bi].toString(16)).slice(-2);
-      _readyHashes.push(hex);
-      // Reseed buffer for next plant
-      _hashBuf=new Uint8Array(32);crypto.getRandomValues(_hashBuf);
-      _hashFilled=0;_m=0;
-      if(overflow>0){
-        var extraRnd=new Uint8Array(overflow);crypto.getRandomValues(extraRnd);
-        var extraPos=new Uint8Array(overflow);crypto.getRandomValues(extraPos);
-        for(var oi=0;oi<overflow;oi++){_hashBuf[extraPos[oi]%32]^=extraRnd[oi];}
-        _hashFilled=overflow;_m=overflow;
-      }
-      _persistHashBuf();
-      if(window._LW_DEBUG)console.log('[_e] Hash queued ('+_readyHashes.length+' ready), hash:',hex);
+    if(_readyHashes.length>prevReady){
       if(window._haptic)_haptic('bloom');
       _milestoneToast('\u2600\ufe0f PLANT READY','Tap the Sunbeam icon to bloom it!');
-      _updateSunbeamBadge();
     }
   }
   _updateGP();
