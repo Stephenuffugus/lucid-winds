@@ -6061,7 +6061,7 @@ window._addSwitchTabHook = function(fn){
         'lw_tut_herbarium_v1','lw_tut_wild_v1','lw_pulse_firstgame_v1','lw_pulse_highprio_v1',
         'lw_pulse_l7class_v1','lw_pulse_first_plant_tap','lw_pulse_breed_first',
         'lw_pulse_wild_drop','lw_pulse_whatnow_first',
-        'lw_jit_boxes_v1','lw_first_mint_v1','lw_tut_force_restart',
+        'lw_jit_boxes_v1','lw_jit_cutting_v1','lw_first_mint_v1','lw_tut_force_restart',
         'lw_first_focus_done','lw_quest_first_game'];
       for(var i=0;i<keys.length;i++){try{localStorage.removeItem(keys[i]);}catch(e){}}
       // Set force-restart flag so PW_Tutorial.start() ignores the
@@ -31190,6 +31190,30 @@ document.addEventListener('keydown', function(e) {
     if (nBtn) nBtn.onclick = function() { try { m.remove(); } catch(e) {} if (onNo) onNo(); };
   };
 
+  // ═══ JIT: first cutting / clipping lands in nursery ═══
+  // Single-fire micro-tutorial. Called from the wild cutting action
+  // (hex action in FG_Wild) and from the greenhouse takeClipping path
+  // (FG_Backpack.takeClipping). Explains that a clipping carries only
+  // the plant's genetics, is single-use, and needs to be crossed with
+  // another plant to continue the line.
+  window._lwJITCutting = function(source) {
+    try {
+      if (localStorage.getItem('lw_jit_cutting_v1')) return;
+      localStorage.setItem('lw_jit_cutting_v1', '1');
+    } catch(e){ return; }
+    setTimeout(function(){
+      if (document.querySelector('.lu-overlay')) return;
+      if (!window._lwConfirm) return;
+      var body = 'A <b>clipping</b> carries the plant\u2019s genetics only \u2014 its leaf, stem, flower, and season. Pot, substrate, aura, and companion stay with the parent.<br><br>Clippings are <b>single-use</b>. Cross it with another plant in the <b>Nursery</b> to keep the line going. On its own it will bloom a faint copy.';
+      window._lwConfirm({
+        title: '\u2702\ufe0f A CLIPPING',
+        body: body,
+        yes: 'OK',
+        no: ''
+      }, function(){});
+    }, 1400);
+  };
+
   window.shareDrawerPlant = function(plantIndex) {
     closePlantActionDrawer();
     var gh = loadGreenhouse();
@@ -41411,6 +41435,7 @@ window._hexAction=function(action){
         name:typeof getPlantName==='function'?getPlantName(p.hash):'',
         ownerName:p.ownerName||'Keeper'
       });
+      if(window._lwJITCutting)window._lwJITCutting('wild');
       // Cutting Shared — a cutting from a stranger (plant owned by someone else)
       try {
         if (window.LW_Events && p.ownerUid) {
@@ -51996,6 +52021,7 @@ window.FG_Backpack.takeClipping = function(idx) {
   if (window._toast) window._toast('✂️ Clipping sent to Nursery! '+_cdHrs+'h cooldown started.');
   if (window.renderNursery) setTimeout(window.renderNursery, 200);
   if (window.syncVaultToCloud) setTimeout(window.syncVaultToCloud, 500);
+  if (window._lwJITCutting) window._lwJITCutting('greenhouse');
 };
 
 // Expose returnToBase through window.FG_Backpack for the in-panel button
