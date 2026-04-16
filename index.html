@@ -57155,7 +57155,7 @@ window._lwClaimHerbarium = function(id){
     rain:  { id:'rain',  icon:'\ud83d\udca7', label:'Rain' },
     dry:   { id:'dry',   icon:'\ud83c\udfdc\ufe0f', label:'Dry' },
     wind:  { id:'wind',  icon:'\ud83d\udca8', label:'Wind' },
-    still: { id:'still', icon:'\ud83d\udd47',  label:'Still' },
+    still: { id:'still', icon:'\ud83d\udd47',  label:'Tranquility' },
     // Rare wild cards (spec §5) — universal counters at half strength.
     // Earned only from Bloom Day successes, not level-ups or nursery drops.
     moonlight: { id:'moonlight', icon:'\ud83c\udf19', label:'Moonlight', rare:true },
@@ -57778,27 +57778,10 @@ window._lwClaimHerbarium = function(id){
   // Deck-first, then fills remaining from inventory so harder hexes can
   // still find a workable hand. Rare wild cards are eligible too.
   function buildHand(size) {
-    if (!size || size < 3) size = 5;
-    if (size > 14) size = 14;
-    var inv = loadInventory();
-    var deck = getActiveDeck();
-    var want = deck && deck.cards && deck.cards.length ? deck.cards : ['sun','rain','wind','shade','dry'];
-    var available = [];
-    var remaining = {};
-    for (var k in inv) remaining[k] = inv[k] || 0;
-    for (var i = 0; i < want.length && available.length < size; i++) {
-      var c = want[i];
-      if (remaining[c] > 0) { available.push(c); remaining[c]--; }
-    }
-    // Fill from all inventory (including rare wild cards) until the hand
-    // reaches `size` or the player's collection is exhausted.
-    var all = ['sun','shade','rain','dry','wind','still','moonlight','thunder','aurora'];
-    for (var j = 0; j < all.length && available.length < size; j++) {
-      while (remaining[all[j]] > 0 && available.length < size) {
-        available.push(all[j]); remaining[all[j]]--;
-      }
-    }
-    return available;
+    // All 9 card types always available in the picker. Card inventory isn't
+    // a gating mechanic — forage difficulty comes from solving the pattern,
+    // not running out of cards. Stephen: "everyone should always have them all."
+    return ['sun','shade','rain','dry','wind','still','moonlight','thunder','aurora'];
   }
   function openForagePanel(zoneKey, grade, onDone) {
     var attempts = getAttempts(zoneKey);
@@ -57890,9 +57873,11 @@ window._lwClaimHerbarium = function(id){
     // when the player revealed that slot on a prior attempt; undefined if
     // they played a neutral card on it (still unknown).
     var learned = initialLearned || {};
-    // Remember what the player played last attempt so the next attempt
-    // can surface it in a "LAST PLAY" strip — closes the feedback loop.
-    var lastPlay = null; // array of {card, hex, verdict} from prior attempt
+    // Full history of every attempt so the player can see all prior
+    // rounds (Mastermind-style). Each entry is array of {card,hex,verdict}.
+    var allPlays = []; // push on every resolve
+    var lastPlay = null; // pointer to most recent (backcompat for some reads)
+    var _savedPickerScroll = 0;
 
     var ov = document.createElement('div');
     ov.id = 'lw-forage-panel';
@@ -57962,8 +57947,8 @@ window._lwClaimHerbarium = function(id){
       // empty slot.
       h += '<div style="display:grid;grid-template-columns:repeat(' + diff.slots + ',1fr);gap:0.4rem;">';
       for (var s = 0; s < diff.slots; s++) {
-        var placedCardIdx = (selected.length > s) ? selected[s] : null;
-        var placedCard = (placedCardIdx != null) ? hand[placedCardIdx] : null;
+        // selected now holds card IDs directly (not hand indices).
+        var placedCard = (selected.length > s) ? selected[s] : null;
         var placedEl = placedCard ? EL[placedCard] : null;
         if (resolved) {
           var r = resolved.reveal[s];
@@ -58026,25 +58011,31 @@ window._lwClaimHerbarium = function(id){
       }
       h += '</div>';
 
-      // LAST PLAY strip — shown only on attempts 2/3, summarizes what the
-      // player tried last round so attempt 2 genuinely feels more informed
-      // rather than just a retry. Neutrals stay greyed; matches/counters
-      // highlight so the player can see which of their picks landed.
-      if (!resolved && lastPlay && lastPlay.length === diff.slots) {
-        h += '<div style="padding:0.55rem;background:rgba(18,22,16,0.55);border:1px dashed rgba(122,179,86,0.2);border-radius:10px;margin-bottom:0.7rem;">';
-        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:4px;">LAST PLAY</div>';
-        h += '<div style="display:flex;justify-content:space-around;gap:4px;">';
-        for (var _lp = 0; _lp < lastPlay.length; _lp++) {
-          var _lr = lastPlay[_lp];
-          var _lCard = EL[_lr.card]; var _lHex = EL[_lr.hex];
-          var _vColor = resolveVerdictColor(_lr.verdict);
-          var _vLbl = _lr.verdict === 'match' ? '\u2728' : _lr.verdict === 'counter' ? '\u2694\ufe0f' : _lr.verdict === 'wild' ? '\ud83c\udf1f' : '\u2014';
-          h += '<div style="flex:1;text-align:center;padding:4px;background:rgba(13,16,12,0.5);border:1px solid ' + _vColor + '55;border-radius:6px;">';
-          h += '<div style="font-size:0.9rem;">' + (_lCard ? _lCard.icon : '?') + '</div>';
-          h += '<div style="font-size:0.45rem;color:' + _vColor + ';font-family:DM Mono,monospace;">' + _vLbl + '</div>';
-          h += '</div>';
+      // FULL HISTORY — render every attempt Mastermind-style with card art,
+      // so players don't have to keep prior plays in their head.
+      if (allPlays.length > 0) {
+        h += '<div style="padding:0.55rem;background:rgba(18,22,16,0.55);border:1px dashed rgba(122,179,86,0.25);border-radius:10px;margin-bottom:0.7rem;">';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:6px;">ATTEMPT HISTORY</div>';
+        for (var _ai = 0; _ai < allPlays.length; _ai++) {
+          var _ap = allPlays[_ai];
+          h += '<div style="display:flex;gap:6px;align-items:center;margin-bottom:5px;">';
+          h += '<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);min-width:14px;">'+(_ai+1)+'.</div>';
+          h += '<div style="display:flex;gap:4px;flex:1;">';
+          for (var _lp = 0; _lp < _ap.plays.length; _lp++) {
+            var _lr = _ap.plays[_lp];
+            var _lCard = EL[_lr.card];
+            var _vColor = resolveVerdictColor(_lr.verdict);
+            var _vLbl = _lr.verdict === 'match' ? '\u2728' : _lr.verdict === 'counter' ? '\u2694\ufe0f' : _lr.verdict === 'wild' ? '\ud83c\udf1f' : '\u00b7';
+            h += '<div style="flex:1;text-align:center;padding:3px 2px;background:rgba(13,16,12,0.6);border:1px solid ' + _vColor + '55;border-radius:6px;position:relative;min-width:0;">';
+            h += '<div style="position:relative;width:100%;aspect-ratio:3/4;border-radius:4px;overflow:hidden;margin-bottom:2px;background:rgba(0,0,0,0.3);">';
+            h += '<img src="assets/foraging/el-' + _lr.card + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1rem;&quot;>' + (_lCard ? _lCard.icon : '?') + '</div>\';">';
+            h += '</div>';
+            h += '<div style="font-size:0.55rem;color:' + _vColor + ';">' + _vLbl + '</div>';
+            h += '</div>';
+          }
+          h += '</div></div>';
         }
-        h += '</div></div>';
+        h += '</div>';
       }
       // Hand — horizontal scroll, bigger cards. Selected cards are dimmed
       // and visually lifted so the player sees what's already placed.
@@ -58053,18 +58044,29 @@ window._lwClaimHerbarium = function(id){
       h += '<span style="color:var(--muted);">YOUR HAND \u00b7 ' + (pickMsg>0?'PICK '+pickMsg+' MORE':'READY TO FORAGE') + '</span>';
       h += '<span style="color:var(--gold);">TARGET ' + diff.scoreNeeded + '</span>';
       h += '</div>';
-      h += '<div style="overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:0.4rem 0.2rem 0.6rem;margin:0 -0.2rem 0.9rem;scrollbar-width:thin;">';
+      h += '<div data-lwforage-hand="1" style="overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:0.4rem 0.2rem 0.6rem;margin:0 -0.2rem 0.9rem;scrollbar-width:thin;">';
       h += '<div style="display:inline-flex;gap:0.5rem;padding-right:0.5rem;">';
+      // Count placements per card id — lets the picker show "×2" when the
+      // player has tapped the same card twice. All 9 cards are always
+      // available; selection limit is the pattern length (diff.cards).
+      var _placedCount = {};
+      for (var _si = 0; _si < selected.length; _si++) {
+        var _sc = selected[_si];
+        _placedCount[_sc] = (_placedCount[_sc] || 0) + 1;
+      }
       for (var ci = 0; ci < hand.length; ci++) {
         var c = hand[ci];
         var el = EL[c];
-        var isSelected = selected.indexOf(ci) >= 0;
-        var bg = isSelected ? 'rgba(200,168,75,0.15)' : 'rgba(18,22,16,0.7)';
-        var border = isSelected ? '2px solid rgba(200,168,75,0.45)' : '1.5px solid rgba(74,124,53,0.25)';
-        var opacity = isSelected ? 0.35 : 1;
-        var hintTxt = isSelected ? 'PLACED \u2191' : 'TAP TO PLACE';
-        h += '<div onclick="window._lwForagePick(' + ci + ')" style="position:relative;cursor:pointer;width:168px;aspect-ratio:3/4;flex-shrink:0;background:' + bg + ';border:' + border + ';border-radius:14px;overflow:hidden;opacity:' + opacity + ';' + (resolved ? 'pointer-events:none;opacity:0.4;' : '') + 'transition:opacity 0.18s ease;box-shadow:0 6px 16px rgba(0,0,0,0.5);">';
+        var placedN = _placedCount[c] || 0;
+        var isSelected = placedN > 0;
+        var bg = isSelected ? 'rgba(200,168,75,0.18)' : 'rgba(18,22,16,0.7)';
+        var border = isSelected ? '2px solid rgba(200,168,75,0.5)' : '1.5px solid rgba(74,124,53,0.25)';
+        var hintTxt = isSelected ? ('PLACED \u00d7' + placedN) : 'TAP TO PLACE';
+        h += '<div onclick="window._lwForagePick(\'' + c + '\')" style="position:relative;cursor:pointer;width:168px;aspect-ratio:3/4;flex-shrink:0;background:' + bg + ';border:' + border + ';border-radius:14px;overflow:hidden;' + (resolved ? 'pointer-events:none;opacity:0.4;' : '') + 'transition:opacity 0.18s ease;box-shadow:0 6px 16px rgba(0,0,0,0.5);">';
         h += '<img src="assets/foraging/el-' + c + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2.6rem;&quot;>' + el.icon + '</div>\';">';
+        if (placedN > 0) {
+          h += '<div style="position:absolute;top:6px;right:6px;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:linear-gradient(180deg,#f5dc95,#c8a84b);color:#0d100c;font-family:Bebas Neue,sans-serif;font-size:0.7rem;display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(240,208,144,0.7);">\u00d7' + placedN + '</div>';
+        }
         h += '<div style="position:absolute;left:0;right:0;bottom:0;padding:22px 6px 6px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.9));text-align:center;text-shadow:0 1px 2px rgba(0,0,0,0.9);">';
         h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;letter-spacing:0.06em;color:' + (isSelected ? 'var(--gold)' : 'var(--cream)') + ';">' + el.label + '</div>';
         h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:rgba(200,168,75,0.85);margin-top:2px;letter-spacing:0.04em;">' + hintTxt + '</div>';
@@ -58086,7 +58088,17 @@ window._lwClaimHerbarium = function(id){
       }
 
       h += '</div>';
+      // Save scroll position of card picker before re-render, restore after.
+      // Prevents the scroll snapping back when player taps a card.
+      try {
+        var _prevScroll = ov.querySelector('[data-lwforage-hand]');
+        if (_prevScroll) _savedPickerScroll = _prevScroll.scrollLeft || 0;
+      } catch(e){}
       ov.innerHTML = h;
+      try {
+        var _newScroll = ov.querySelector('[data-lwforage-hand]');
+        if (_newScroll && _savedPickerScroll) _newScroll.scrollLeft = _savedPickerScroll;
+      } catch(e){}
     }
 
     window._lwForageSwapDeck = function(n) {
@@ -58100,16 +58112,17 @@ window._lwClaimHerbarium = function(id){
       selected = [];
       render();
     };
-    window._lwForagePick = function(ci) {
+    window._lwForagePick = function(cardId) {
       if (resolved) return;
-      var idx = selected.indexOf(ci);
-      if (idx >= 0) {
-        // Tapping an already-placed card returns it to the hand.
-        selected.splice(idx, 1);
-      } else if (selected.length < diff.cards) {
-        // Auto-fill the next empty slot in order.
-        selected.push(ci);
+      if (selected.length >= diff.cards) {
+        // Already full — tap removes the LAST occurrence of this card if any.
+        for (var _rr = selected.length - 1; _rr >= 0; _rr--) {
+          if (selected[_rr] === cardId) { selected.splice(_rr, 1); render(); return; }
+        }
+        return;
       }
+      // Room for another placement — push the card ID (duplicates allowed).
+      selected.push(cardId);
       render();
     };
     // Tap a filled slot to return that card to the hand (same as tapping
@@ -58123,7 +58136,8 @@ window._lwClaimHerbarium = function(id){
     };
     window._lwForagePlay = function() {
       if (resolved || selected.length !== diff.cards) return;
-      var cardsPlayed = selected.map(function(si){return hand[si];});
+      // selected now holds card IDs directly (change from hand indices).
+      var cardsPlayed = selected.slice();
       resolved = resolveAttempt(comp.elements, cardsPlayed, diff.scoreNeeded);
       // Diviner's Glass — one-shot conversion of MISS → ELSEWHERE for this
       // resolved attempt. Applied BEFORE the learned[] write + score roll-up
@@ -58154,8 +58168,9 @@ window._lwClaimHerbarium = function(id){
           learned[_r] = { hex: _rv.hex, verdict: _rv.verdict };
         }
       }
-      // Stash the full attempt for the "LAST PLAY" strip on the next screen.
+      // Stash every attempt — full history renders like Mastermind.
       lastPlay = resolved.reveal.slice();
+      allPlays.push({ plays: lastPlay, success: resolved.success });
       var attemptNumber = bumpAttempts(zoneKey);
       if (window._haptic) window._haptic(resolved.success ? 'bloom' : 'tap');
       // Book of Secrets diary entry — logs biome / weather / outcome per spec §8.
