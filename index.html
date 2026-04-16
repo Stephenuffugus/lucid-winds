@@ -2452,6 +2452,8 @@
     /* Gold silk strip dangles from the top of the active tab like a real
        spellbook bookmark. Non-active tabs get nothing. */
     .bos-tab{position:relative;overflow:visible!important;}
+    #bos-tabbar::-webkit-scrollbar{display:none;height:0;width:0;}
+    #bos-tabbar{-ms-overflow-style:none;}
     .bos-tab.active::before{content:'';position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:14px;height:18px;background:linear-gradient(180deg,#d4b867 0%,#c8a84b 50%,#a88a2f 100%);border-radius:2px 2px 0 0;box-shadow:0 2px 4px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,220,140,0.4);pointer-events:none;}
     .bos-tab.active::after{content:'';position:absolute;top:-3px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:5px solid #a88a2f;pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,0.4));}
     .lu-overlay .lu-label{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.22em;color:var(--gold);margin-bottom:0.3rem;text-shadow:0 0 12px rgba(200,168,75,0.5);}
@@ -56895,6 +56897,10 @@ function _bosSetTab(tab) {
     body.innerHTML = _combined || '';
     _bosTab = 'activity';
   }
+  else if (tab === 'today') {
+    body.innerHTML = (typeof _bosTodayContent === 'function') ? _bosTodayContent() : '';
+    try { localStorage.setItem('lw_bos_today_viewed', String(Date.now())); } catch(e){}
+  }
   else if (tab === 'secrets') body.innerHTML = _bosSecretsContent();
   else if (tab === 'events') body.innerHTML = _bosEventsContent();
   else if (tab === 'class') body.innerHTML = _bosClassContent();
@@ -62042,6 +62048,170 @@ window._bosRF = function(filter) {
   var body = document.getElementById('bos-body');
   if (body) body.innerHTML = _bosReportContent();
 };
+// ═══ TODAY — daily landing page for Book of Secrets ═══
+// Curates 3-5 highlights from the last 7 days of LW_Log activity. If
+// nothing notable happened, surfaces meditative prompts instead. Meant
+// as the first thing a returning keeper sees. No stats, no percentages —
+// observations in the voice of the garden.
+function _bosTodayContent() {
+  var h = '';
+  var now = Date.now();
+  var sevenDays = 7 * 86400000;
+  var oneDay = 86400000;
+  // ── Header greeting ─────────────────────────────────────────
+  var hr = new Date().getHours();
+  var greeting = 'Welcome back';
+  if (hr < 5) greeting = 'Before dawn';
+  else if (hr < 12) greeting = 'Morning, keeper';
+  else if (hr < 17) greeting = 'Afternoon light';
+  else if (hr < 21) greeting = 'Evening hush';
+  else greeting = 'Night keeper';
+  var dateStr = new Date().toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' });
+  h += '<div style="padding:0.8rem 0.9rem 0.9rem;margin-bottom:0.7rem;background:linear-gradient(160deg,rgba(42,54,34,0.55),rgba(18,22,16,0.7));border:1.5px solid rgba(200,168,75,0.3);border-radius:12px;box-shadow:inset 0 1px 0 rgba(240,235,216,0.06),0 6px 18px rgba(0,0,0,0.3);">';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--muted);letter-spacing:0.16em;margin-bottom:3px;">' + dateStr.toUpperCase() + '</div>';
+  h += '<div style="font-family:Playfair Display,serif;font-size:1.2rem;color:var(--gold);font-style:italic;line-height:1.15;">' + greeting + '.</div>';
+  h += '</div>';
+  // ── Gather recent activity ───────────────────────────────────
+  var log = [];
+  try { log = (window.LW_Log && window.LW_Log.all()) || []; } catch(e){}
+  var recent = [];
+  for (var i = 0; i < log.length; i++) {
+    if (log[i] && (now - log[i].ts) <= sevenDays) recent.push(log[i]);
+  }
+  // ── Streak counter ──────────────────────────────────────────
+  // Unique days in last 7 with any activity
+  var dayMap = {};
+  for (var di = 0; di < recent.length; di++) {
+    var d = new Date(recent[di].ts);
+    dayMap[d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate()] = 1;
+  }
+  var streakDays = 0;
+  var cur = new Date();
+  for (var s = 0; s < 7; s++) {
+    var k = cur.getFullYear()+'-'+cur.getMonth()+'-'+cur.getDate();
+    if (dayMap[k]) { streakDays++; cur = new Date(cur.getTime() - oneDay); }
+    else break;
+  }
+  // ── Build highlight cards ───────────────────────────────────
+  var cards = [];
+  // Card: rarest plant minted in last 7d
+  try {
+    var RARITY_ORDER = ['Common','Uncommon','Rare','Epic','Legendary','Mythic','Cosmic'];
+    var rarestHash = null, rarestGrade = null, rarestScore = -1, rarestTs = 0;
+    for (var m = 0; m < recent.length; m++) {
+      var e = recent[m];
+      if (e.type !== 'plant_mint' && e.type !== 'seed_bloomed') continue;
+      var hh = e.data && (e.data.hash || e.data.seedHash);
+      if (!hh) continue;
+      try {
+        var t = window.hashToTraits && window.hashToTraits(hh);
+        var g = t && window.getTerraGrade && window.getTerraGrade(t);
+        if (g && g.score > rarestScore) { rarestScore = g.score; rarestHash = hh; rarestGrade = g; rarestTs = e.ts; }
+      } catch(e2){}
+    }
+    if (rarestHash && rarestGrade && rarestGrade.score >= 2) {
+      var daysAgo = Math.max(1, Math.floor((now - rarestTs) / oneDay));
+      var when = (daysAgo === 1) ? 'yesterday' : (daysAgo + ' days ago');
+      cards.push({
+        glyph: '✦',
+        title: 'A ' + rarestGrade.name + ' awoke',
+        body: 'Your rarest recent bloom appeared ' + when + '. It still counts as a quiet win.',
+        tint: 'rgba(200,168,75,0.35)'
+      });
+    }
+  } catch(e){}
+  // Card: wild activity
+  try {
+    var wildCount = 0;
+    for (var w = 0; w < recent.length; w++) {
+      var wt = recent[w].type;
+      if (wt === 'wild_watered' || wt === 'wild_watered_stranger' || wt === 'wild_tended_stranger' || wt === 'wild_drop' || wt === 'feral_collected') wildCount++;
+    }
+    if (wildCount >= 3) {
+      cards.push({
+        glyph: '❦',
+        title: 'The wild remembers you',
+        body: wildCount + ' acts of tending in the last week. The map has grown used to your footsteps.',
+        tint: 'rgba(122,179,86,0.35)'
+      });
+    }
+  } catch(e){}
+  // Card: breeding
+  try {
+    var breedCount = 0;
+    for (var b = 0; b < recent.length; b++) {
+      var bt = recent[b].type;
+      if (bt === 'plant_bred' || bt === 'cross_pollinate' || bt === 'seed_bloomed') breedCount++;
+    }
+    if (breedCount >= 2) {
+      cards.push({
+        glyph: '❀',
+        title: 'Lineages are deepening',
+        body: breedCount + ' crossings noted. Each pairing adds a whisper to the pedigree.',
+        tint: 'rgba(192,122,200,0.3)'
+      });
+    }
+  } catch(e){}
+  // Card: discoveries
+  try {
+    var discCount = 0, lastDiscName = null;
+    for (var x = 0; x < recent.length; x++) {
+      if (recent[x].type === 'event_discovered' || recent[x].type === 'synergy_discovered' || recent[x].type === 'achievement_unlock') {
+        discCount++;
+        if (recent[x].data && recent[x].data.name) lastDiscName = recent[x].data.name;
+      }
+    }
+    if (discCount >= 1) {
+      cards.push({
+        glyph: '✧',
+        title: discCount === 1 ? 'One new secret' : discCount + ' new secrets',
+        body: lastDiscName ? ('Most recent: ' + lastDiscName + '. Check the Events page for the full ledger.') : 'Check the Events and Secrets pages to read them back.',
+        tint: 'rgba(200,168,75,0.3)'
+      });
+    }
+  } catch(e){}
+  // Card: streak acknowledgment
+  if (streakDays >= 2) {
+    cards.push({
+      glyph: '☀',
+      title: streakDays + ' days in a row',
+      body: 'A quiet rhythm. The garden notices consistency more than intensity.',
+      tint: 'rgba(200,168,75,0.35)'
+    });
+  }
+  // ── Render cards ────────────────────────────────────────────
+  if (cards.length === 0) {
+    // Meditative fallback — three prompts rotated by day-of-year
+    var PROMPTS = [
+      { glyph:'✦', title:'A still garden', body:'Nothing loud happened this week. Consider tending one plant you have not looked at in a while.' },
+      { glyph:'❦', title:'A slow return', body:'The soil keeps time differently than we do. Your next act is enough.' },
+      { glyph:'✧', title:'Begin small', body:'Play one game. Water one plant. The book will fill itself again.' },
+      { glyph:'❀', title:'An empty page', body:'The keeper\u2019s journal awaits its next entry. Breathe, then tend.' },
+      { glyph:'☀', title:'Light on the sill', body:'Every garden goes quiet sometimes. A pause is not a gap.' }
+    ];
+    var doy = Math.floor((now - new Date(new Date().getFullYear(),0,0)) / oneDay);
+    cards.push(PROMPTS[doy % PROMPTS.length]);
+    cards.push(PROMPTS[(doy+2) % PROMPTS.length]);
+    cards.push(PROMPTS[(doy+4) % PROMPTS.length]);
+  }
+  // Cap at 5 cards
+  if (cards.length > 5) cards = cards.slice(0, 5);
+  for (var c = 0; c < cards.length; c++) {
+    var card = cards[c];
+    h += '<div style="padding:0.75rem 0.85rem;margin-bottom:0.55rem;background:linear-gradient(160deg,rgba(42,54,34,0.45),rgba(18,22,16,0.6));border:1px solid ' + card.tint + ';border-radius:10px;display:flex;gap:0.65rem;align-items:flex-start;">';
+    h += '<div style="flex-shrink:0;font-family:Playfair Display,serif;font-size:1.4rem;color:var(--gold);line-height:1;margin-top:1px;">' + card.glyph + '</div>';
+    h += '<div style="min-width:0;flex:1;">';
+    h += '<div style="font-family:Playfair Display,serif;font-size:0.88rem;color:var(--cream);font-style:italic;line-height:1.2;margin-bottom:4px;">' + card.title + '</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);line-height:1.55;">' + card.body + '</div>';
+    h += '</div></div>';
+  }
+  // ── Quiet footer nav ────────────────────────────────────────
+  h += '<div style="margin-top:0.8rem;padding:0.6rem;text-align:center;border-top:1px dashed rgba(122,179,86,0.15);">';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);letter-spacing:0.1em;">Swipe the tabs above for the full ledger.</div>';
+  h += '</div>';
+  return h;
+}
+
 function _bosReportContent() {
   var h = '';
   // ─── SINCE YOUR LAST VISIT ─────────────────────────────────────
@@ -63647,16 +63817,18 @@ window._openCompendiumUI=function(){
         '</div>'+
         '<button onclick="var bo=document.getElementById(\'bos-overlay\');if(bo)bo.remove();" style="width:48px;height:48px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">\u2715</button>'+
       '</div>'+
-      // Tabs
-      '<div style="display:flex;gap:0.25rem;padding:0.4rem 0.6rem 0.5rem;flex-shrink:0;flex-wrap:wrap;">'+
-        '<button class="bos-tab" data-tab="activity" onclick="_bosSetTab(\'activity\')" style="position:relative;flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">JOURNAL'+ ((window._getBookUnreadCount&&window._getBookUnreadCount()>0)?'<span style="position:absolute;top:4px;right:4px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.38rem;display:inline-flex;align-items:center;justify-content:center;">'+window._getBookUnreadCount()+'</span>':'') +'</button>'+
-        '<button class="bos-tab active" data-tab="secrets" onclick="_bosSetTab(\'secrets\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(200,168,75,0.5);background:rgba(200,168,75,0.1);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">SECRETS</button>'+
-        '<button class="bos-tab" data-tab="events" onclick="_bosSetTab(\'events\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">EVENTS</button>'+
-        '<button class="bos-tab" data-tab="mementos" onclick="_bosSetTab(\'mementos\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">COMPANIONS</button>'+
-        '<button class="bos-tab" data-tab="herbarium" onclick="_bosSetTab(\'herbarium\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">HERBARIUM</button>'+
-        '<button class="bos-tab" data-tab="items" onclick="_bosSetTab(\'items\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">ITEMS</button>'+
-        '<button class="bos-tab" data-tab="hunt" onclick="_bosSetTab(\'hunt\')" style="flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">HUNT</button>'+
-        '<button class="bos-tab" data-tab="class" onclick="_bosSetTab(\'class\')" style="position:relative;flex:1;min-width:60px;padding:0.55rem 0.2rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;">CLASS'+ ((!localStorage.getItem('lw_class')&&window.canSee&&window.canSee.classPick&&window.canSee.classPick())?'<span style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px rgba(200,168,75,0.8);"></span>':'') +'</button>'+
+      // Tabs — horizontal scroll (one row, swipeable). TODAY tab first so
+      // daily-return keepers land in curated view without picking.
+      '<div id="bos-tabbar" style="display:flex;gap:0.3rem;padding:0.4rem 0.6rem 0.5rem;flex-shrink:0;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;">'+
+        '<button class="bos-tab active" data-tab="today" onclick="_bosSetTab(\'today\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(200,168,75,0.5);background:rgba(200,168,75,0.1);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">TODAY</button>'+
+        '<button class="bos-tab" data-tab="activity" onclick="_bosSetTab(\'activity\')" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">JOURNAL'+ ((window._getBookUnreadCount&&window._getBookUnreadCount()>0)?'<span style="position:absolute;top:4px;right:4px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.38rem;display:inline-flex;align-items:center;justify-content:center;">'+window._getBookUnreadCount()+'</span>':'') +'</button>'+
+        '<button class="bos-tab" data-tab="secrets" onclick="_bosSetTab(\'secrets\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">SECRETS</button>'+
+        '<button class="bos-tab" data-tab="events" onclick="_bosSetTab(\'events\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">EVENTS</button>'+
+        '<button class="bos-tab" data-tab="mementos" onclick="_bosSetTab(\'mementos\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">COMPANIONS</button>'+
+        '<button class="bos-tab" data-tab="herbarium" onclick="_bosSetTab(\'herbarium\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">HERBARIUM</button>'+
+        '<button class="bos-tab" data-tab="items" onclick="_bosSetTab(\'items\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">ITEMS</button>'+
+        '<button class="bos-tab" data-tab="hunt" onclick="_bosSetTab(\'hunt\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">HUNT</button>'+
+        '<button class="bos-tab" data-tab="class" onclick="_bosSetTab(\'class\')" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">CLASS'+ ((!localStorage.getItem('lw_class')&&window.canSee&&window.canSee.classPick&&window.canSee.classPick())?'<span style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px rgba(200,168,75,0.8);"></span>':'') +'</button>'+
       '</div>'+
       // Body
       '<div id="bos-body" style="flex:1;overflow-y:auto;padding:0.6rem 1rem 1.5rem;-webkit-overflow-scrolling:touch;font-size:1.25em;"></div>'+
@@ -63664,9 +63836,13 @@ window._openCompendiumUI=function(){
   document.body.appendChild(ov);
   // Set initial tab content — priority order:
   //   1. Class unpicked & eligible → CLASS (onboarding prompt)
-  //   2. Unread activity → ACTIVITY (what's new)
-  //   3. Last-used tab
+  //   2. Daily first-open (TODAY not viewed in last 20h) → TODAY
+  //   3. Unread activity → JOURNAL (what's new)
+  //   4. Last-used tab
+  var _todayViewTs = parseInt(localStorage.getItem('lw_bos_today_viewed')||'0',10)||0;
+  var _todayStale = (Date.now()-_todayViewTs) > 72000000; // ~20h
   if(!localStorage.getItem('lw_class')&&window.canSee&&window.canSee.classPick&&window.canSee.classPick())_bosTab='class';
+  else if(_todayStale)_bosTab='today';
   else if(window._getBookUnreadCount&&window._getBookUnreadCount()>0)_bosTab='activity';
   _bosSetTab(_bosTab);
   // Mark report as read
