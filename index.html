@@ -28685,6 +28685,16 @@ document.addEventListener('keydown', function(e) {
     if(window.PW_grantXP) PW_grantXP(Math.max(1, Math.floor(amount/2)), 'dew_drop');
     if(window._accumulateHash) window._accumulateHash(amount);
     _updateGameDew();
+    // Sunbeam absorption animation — plays whenever the keeper gains light.
+    // Throttled: only for grants >= 3 so 1-XP drips don't flicker the screen.
+    // Variant could later shift based on time of day / prestige tier.
+    try{
+      if(amount>=3&&window.lwSunbeamRain){
+        var _variant='sun';
+        if(window.lwPrestige&&window.lwPrestige()>=1)_variant='starlight';
+        window.lwSunbeamRain({variant:_variant,rays:Math.min(12,4+Math.floor(amount/3)),sparkles:Math.min(24,8+Math.floor(amount/2))});
+      }
+    }catch(e){}
   }
   // Update game tab dew balance + mint progress bar + keeper bar dew
   function _updateGameDew() {
@@ -41436,6 +41446,35 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
     100%{box-shadow:0 0 0 0 rgba(200,168,75,0), 0 0 14px 2px rgba(200,168,75,0.25);}
   }
   .lw-pulse-hint{animation:lwPulseHint 1.6s ease-in-out infinite;border-radius:inherit;position:relative;}
+
+  /* ═══ SUNBEAM RAIN — acquisition feedback ═══
+     Full-screen overlay that plays whenever the Keeper absorbs light.
+     Visually: 7 diagonal gold rays streaming down + sparkles rising
+     on upward-drifting paths. pointer-events:none so it never blocks
+     interaction. Self-removes after ~1.6s.
+     Variants (className on .lw-sunbeam-overlay):
+       default  — warm gold sun
+       .moonlight  — cool silver-blue (future: night plays / dream events)
+       .starlight  — iridescent prestige (post-L100 ascend) */
+  @keyframes lwSbRay{
+    0%{opacity:0;transform:translateY(-18%) scaleY(0.5);}
+    25%{opacity:1;}
+    75%{opacity:0.95;transform:translateY(0) scaleY(1);}
+    100%{opacity:0;transform:translateY(8%) scaleY(1);}
+  }
+  @keyframes lwSbSparkle{
+    0%{opacity:0;transform:translate(0, 40vh) scale(0.3);}
+    18%{opacity:1;}
+    80%{opacity:0.95;}
+    100%{opacity:0;transform:translate(var(--sbDrift,0px), -24vh) scale(1.25);}
+  }
+  .lw-sunbeam-overlay{position:fixed;inset:0;pointer-events:none;z-index:2147483646;overflow:hidden;will-change:contents;}
+  .lw-sunbeam-ray{position:absolute;top:-12%;height:125%;background:linear-gradient(180deg,rgba(255,228,140,0.75) 0%,rgba(255,200,90,0.38) 40%,rgba(255,220,120,0) 100%);filter:blur(2.5px);transform-origin:top center;animation:lwSbRay 1.3s cubic-bezier(0.25,0.1,0.25,1) forwards;mix-blend-mode:screen;}
+  .lw-sunbeam-sparkle{position:absolute;width:10px;height:10px;background:radial-gradient(circle,rgba(255,238,170,1) 0%,rgba(255,200,80,0.6) 40%,transparent 72%);border-radius:50%;animation:lwSbSparkle 1.6s ease-out forwards;mix-blend-mode:screen;}
+  .lw-sunbeam-overlay.moonlight .lw-sunbeam-ray{background:linear-gradient(180deg,rgba(205,225,255,0.75) 0%,rgba(160,195,235,0.38) 40%,rgba(210,225,255,0) 100%);}
+  .lw-sunbeam-overlay.moonlight .lw-sunbeam-sparkle{background:radial-gradient(circle,rgba(235,245,255,1) 0%,rgba(160,195,235,0.6) 40%,transparent 72%);}
+  .lw-sunbeam-overlay.starlight .lw-sunbeam-ray{background:linear-gradient(180deg,rgba(255,220,255,0.68) 0%,rgba(200,180,255,0.42) 40%,rgba(160,220,255,0) 100%);}
+  .lw-sunbeam-overlay.starlight .lw-sunbeam-sparkle{background:radial-gradient(circle,rgba(255,240,220,1) 0%,rgba(200,160,255,0.7) 40%,transparent 72%);}
   body:has(.lu-overlay.open) #lw-fb-btn,
   body:has(#pw-win-overlay) #lw-fb-btn,
   body:has(#cinematic-reveal.open) #lw-fb-btn,
@@ -49887,9 +49926,11 @@ function _runTutorial(onComplete){
   h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);margin-bottom:1.4rem;text-align:center;line-height:1.6;max-width:320px;">Watch the sequence, then tap it back.<br>Three steps \u2014 earn your first Sunbeams.</div>';
   h += '<div id="ob-tut-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;width:min(300px,80vw);margin-bottom:1.2rem;">';
   for (var b=0;b<4;b++){
-    h += '<button data-ob-tut="'+b+'" style="aspect-ratio:1;border-radius:22px;border:2.5px solid '+SEASONS[b].color+'55;background:radial-gradient(circle at 40% 35%,rgba(26,36,22,0.95),rgba(5,8,4,0.95));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;transition:all 0.15s ease;opacity:0.85;min-height:110px;padding:10px;-webkit-tap-highlight-color:transparent;overflow:hidden;">';
-    h += '<img src="'+SEASONS[b].art+'" alt="'+SEASONS[b].label+'" style="width:72%;height:72%;object-fit:contain;filter:drop-shadow(0 0 6px '+SEASONS[b].color+'55);pointer-events:none;">';
-    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:'+SEASONS[b].color+';">'+SEASONS[b].label+'</div>';
+    // Art fills the button — square art in square button with object-fit:
+    // contain preserves aspect (no stretching) and leaves zero dead space.
+    // Label removed: each season's art is visually distinct already.
+    h += '<button data-ob-tut="'+b+'" aria-label="'+SEASONS[b].label+'" style="aspect-ratio:1;border-radius:22px;border:2.5px solid '+SEASONS[b].color+'55;background:radial-gradient(circle at 40% 35%,rgba(26,36,22,0.95),rgba(5,8,4,0.95));display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s ease;opacity:0.85;min-height:110px;padding:0;-webkit-tap-highlight-color:transparent;overflow:hidden;">';
+    h += '<img src="'+SEASONS[b].art+'" alt="'+SEASONS[b].label+'" style="width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 8px '+SEASONS[b].color+'66);pointer-events:none;">';
     h += '</button>';
   }
   h += '</div>';
@@ -62547,10 +62588,16 @@ if(window.PW_grantXP){
   window.PW_grantXP=function(amount,reason){
     // Plant-XP lock: during early tutorial, plant-related grants are
     // silenced so the player stays at Lv 1 until they win their first
-    // game. Reasons blocked: bloom_*, first_plant, milestone_*.
+    // game. Reasons blocked: bloom_*, first_plant, milestone_*,
+    // plant_mint_gift (earnDew side-effect on _mintGiftPlant),
+    // first_creature (companion discovery on gift with creature).
     try{
       if(!localStorage.getItem('lw_plant_xp_unlocked')&&reason){
-        if(reason.indexOf('bloom_')===0||reason==='first_plant'||reason.indexOf('milestone_')===0){
+        if(reason.indexOf('bloom_')===0
+          ||reason==='first_plant'
+          ||reason==='first_creature'
+          ||reason==='plant_mint_gift'
+          ||reason.indexOf('milestone_')===0){
           return;
         }
       }
@@ -64466,6 +64513,46 @@ window.LW_Comp = (function(){
     out.sort(function(a,b){return b.priority-a.priority;});
     return out.slice(0,5);
   }
+
+  // Sunbeam Rain — full-screen light absorption effect. Call whenever the
+  // keeper acquires Sunbeams (or Moonlight, or Starlight).
+  //   window.lwSunbeamRain();                           // default gold
+  //   window.lwSunbeamRain({variant:'moonlight'});      // night variant
+  //   window.lwSunbeamRain({variant:'starlight'});      // prestige variant
+  //   window.lwSunbeamRain({rays:9,sparkles:20});       // tune intensity
+  window.lwSunbeamRain=function(opts){
+    try{
+      opts=opts||{};
+      var variant=opts.variant==='moonlight'?'moonlight':opts.variant==='starlight'?'starlight':'';
+      var rays=Math.max(3,Math.min(14,opts.rays||7));
+      var sparks=Math.max(4,Math.min(32,opts.sparkles||14));
+      var totalMs=opts.duration||1700;
+      var ov=document.createElement('div');
+      ov.className='lw-sunbeam-overlay'+(variant?' '+variant:'');
+      for(var i=0;i<rays;i++){
+        var r=document.createElement('div');
+        r.className='lw-sunbeam-ray';
+        r.style.left=(Math.random()*100)+'%';
+        r.style.width=(40+Math.random()*90)+'px';
+        r.style.transform='rotate('+(Math.random()*10-5)+'deg)';
+        r.style.animationDelay=(Math.random()*280)+'ms';
+        ov.appendChild(r);
+      }
+      for(var s=0;s<sparks;s++){
+        var sp=document.createElement('div');
+        sp.className='lw-sunbeam-sparkle';
+        sp.style.left=(Math.random()*100)+'%';
+        sp.style.top=(60+Math.random()*25)+'%';
+        sp.style.setProperty('--sbDrift',Math.round(Math.random()*160-80)+'px');
+        sp.style.animationDelay=(180+Math.random()*700)+'ms';
+        var sz=(6+Math.random()*10);
+        sp.style.width=sz+'px';sp.style.height=sz+'px';
+        ov.appendChild(sp);
+      }
+      document.body.appendChild(ov);
+      setTimeout(function(){try{ov.remove();}catch(e){}},totalMs+300);
+    }catch(e){}
+  };
 
   // Pulse a DOM element with soft glow. One-shot via optional localStorage key.
   window._lwPulseHint=function(el, durationMs, oneShotKey){
