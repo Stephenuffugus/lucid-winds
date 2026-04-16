@@ -10331,7 +10331,7 @@ document.addEventListener('keydown', function(e) {
       if (!tFindPheno() && tDeck.length > 0) {
         if (!tAddedOnce) {
           tAddedOnce = true;
-          document.getElementById('tut-msg').innerHTML = '<span style="color:var(--gold);">No patterns available — adding 3 cards automatically. In the real game this happens for you!</span>';
+          document.getElementById('tut-msg').innerHTML = '<span style="color:var(--gold);">No patterns available. Adding 3 cards automatically. In the real game this happens for you.</span>';
         }
         setTimeout(function() {
           for(var a=0;a<3&&tDeck.length>0;a++) tBoard.push(tDeck.pop());
@@ -10352,7 +10352,7 @@ document.addEventListener('keydown', function(e) {
           tScore++;
           var tmsg='';
           if(tScore===1)tmsg='<span style="color:var(--sage);font-size:0.7rem;font-weight:700;">\uD83C\uDF3F That\'s your first Pheno! You\'re getting it. Find another one!</span>';
-          else if(tScore===2)tmsg='<span style="color:var(--sage);">Nice \u2014 you\'re a natural! Keep going or tap I GOT IT when ready.</span>';
+          else if(tScore===2)tmsg='<span style="color:var(--sage);">Nice. You\'re a natural. Keep going or tap I GOT IT when ready.</span>';
           else if(tScore>=3)tmsg='<span style="color:var(--gold);">'+tScore+' Phenos! You\'ve got the hang of it. Ready to play for real?</span>';
           document.getElementById('tut-msg').innerHTML=tmsg;
           // Remove matched cards
@@ -10364,7 +10364,7 @@ document.addEventListener('keydown', function(e) {
           tSelected = [];
           setTimeout(tRenderGrid, 300);
         } else {
-          document.getElementById('tut-msg').innerHTML = '<span style="color:rgba(180,120,100,0.8);">Not a match — each feature must be all same or all different.</span>';
+          document.getElementById('tut-msg').innerHTML = '<span style="color:rgba(180,120,100,0.8);">Not a match. Each feature must be all same or all different.</span>';
           tSelected = [];
           tRenderGrid();
         }
@@ -29011,7 +29011,7 @@ document.addEventListener('keydown', function(e) {
   function toggleMidnight() {
     var active = document.body.classList.toggle('midnight-theme');
     localStorage.setItem('sws_theme', active ? 'midnight' : 'default');
-    showHexMsg(active ? '🌙 Midnight Tent activated.' : '☀️ Default theme restored.');
+    showHexMsg(active ? '🌙 Midnight Tent activated.' : 'Default theme restored.');
   }
 
   function renderBadges() {
@@ -29070,11 +29070,11 @@ document.addEventListener('keydown', function(e) {
       '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);line-height:1.7;">' +
         '<div style="margin-bottom:0.5rem;"><span style="color:var(--sage);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">HOW TO EARN</span><br>Wild plants generate dew passively over time. You also earn dew from daily login bonuses, plant minting, and quest rewards.</div>' +
         '<div style="margin-bottom:0.5rem;"><span style="color:var(--gold);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">WHAT TO SPEND ON</span><br>' +
-          '\u2022 Nursery acceleration — skip 1 day of watering (21 dew)<br>' +
-          '\u2022 Slot machine — gamble for fertilizer, sunbeams, and jackpots<br>' +
-          '\u2022 Weather summon — cast rain, sun flare, or mist over wild plants<br>' +
-          '\u2022 Mystery box — random loot (25 dew)<br>' +
-          '\u2022 Wild plant cuttings — coming soon</div>' +
+          '\u2022 Nursery acceleration: skip 1 day of watering (21 dew)<br>' +
+          '\u2022 Slot machine: gamble for fertilizer, sunbeams, and jackpots<br>' +
+          '\u2022 Weather summon: cast rain, sun flare, or mist over wild plants<br>' +
+          '\u2022 Mystery box: random loot (25 dew)<br>' +
+          '\u2022 Wild plant cuttings: coming soon</div>' +
         '<div style="margin-bottom:0.5rem;"><span style="color:#E8A0BF;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">TIPS</span><br>Drop plants in the Wild to generate passive dew income. More plants = more dew per hour. Check the dew rate on the Wild tab.</div>' +
       '</div>' +
       '<button class="econ-close" onclick="document.getElementById(\'dew-info-modal\').style.display=\'none\';">GOT IT</button>' +
@@ -30660,7 +30660,7 @@ document.addEventListener('keydown', function(e) {
     }
     // Step 1: verify
     if (plantIndex < 0 || plantIndex >= gh.length || !plant) {
-      showHexMsg('⚠ Plant not found — cannot compost.'); return;
+      showHexMsg('⚠ Plant not found. Cannot compost.'); return;
     }
     if (!plant.hash) {
       showHexMsg('⚠ Invalid plant data.'); return;
@@ -30687,7 +30687,7 @@ document.addEventListener('keydown', function(e) {
 
     // Step 3: write staging key BEFORE any production write
     try { localStorage.setItem(INV_STAGING, JSON.stringify({ reward: reward, plantIndex: plantIndex, plant: plant })); }
-    catch(e) { showHexMsg('⚠ Storage unavailable — compost aborted.'); return; }
+    catch(e) { showHexMsg('⚠ Storage unavailable. Compost aborted.'); return; }
 
     // Step 4: add reward to sws_inventory
     var inv = loadInventory();
@@ -30721,7 +30721,7 @@ document.addEventListener('keydown', function(e) {
 
     if (!invOk) {
       // Rollback: staging key preserved for recovery; abort
-      showHexMsg('⚠ Inventory write failed — plant preserved.'); return;
+      showHexMsg('⚠ Inventory write failed. Plant preserved.'); return;
     }
 
     // Step 5: remove plant from sws_greenhouse
@@ -30751,7 +30751,7 @@ document.addEventListener('keydown', function(e) {
       inv.fertilizer = Math.max(0, (inv.fertilizer || 0) - fertReward);
       inv.substrate[substrateKey] = Math.max(0, (inv.substrate[substrateKey] || 1) - 1);
       try { localStorage.setItem(INV_KEY, JSON.stringify(inv)); } catch(e2) {}
-      showHexMsg('⚠ Greenhouse write failed — transaction rolled back.'); return;
+      showHexMsg('⚠ Greenhouse write failed. Transaction rolled back.'); return;
     }
 
     // Step 6: delete staging key — full commit confirmed
@@ -31702,7 +31702,7 @@ document.addEventListener('keydown', function(e) {
       if (!playerClass) {
         h += '<div style="padding:1.5rem 0.5rem;text-align:center;font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);line-height:1.6;">Choose a class in the Book of Secrets to unlock class-specific items.</div>';
       } else {
-        h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);margin-bottom:0.85rem;line-height:1.5;">Items for every class — each only usable by its own class. Visible so you can aspire toward other paths.</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);margin-bottom:0.85rem;line-height:1.5;">Items for every class. Each is only usable by its own class, shown here so you can aspire toward other paths.</div>';
         var cks=Object.keys(window.LW_CLASS_ITEMS);
         for (var ci=0;ci<cks.length;ci++){
           var item=window.LW_CLASS_ITEMS[cks[ci]];
@@ -31734,7 +31734,7 @@ document.addEventListener('keydown', function(e) {
       return;
     }
     // Default = pots tab
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);margin-bottom:0.85rem;line-height:1.5;">Specialty pots are consumable. Apply one to a growing seed and it triggers at bloom — single use.</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);margin-bottom:0.85rem;line-height:1.5;">Specialty pots are consumable. Apply one to a growing seed and it triggers at bloom. Single use.</div>';
     var keys = Object.keys(window.LW_POTS);
     for (var i = 0; i < keys.length; i++) {
       var pot = window.LW_POTS[keys[i]];
@@ -32192,13 +32192,13 @@ document.addEventListener('keydown', function(e) {
     else if (_cpSelectedB && _cpSelectedB.index === idx) { _cpSelectedB = null; }
     else if (!_cpSelectedA) {
       var _bcP = loadGreenhouse()[idx];
-      if (_bcP && (_bcP.breedCount || 0) >= 3) { _setCPMsg('Genetics Exhausted — this plant has already been bred 3 times.'); return; }
+      if (_bcP && (_bcP.breedCount || 0) >= 3) { _setCPMsg('Genetics Exhausted. This plant has already been bred 3 times.'); return; }
       _cpSelectedA = { index:idx, hash:hash };
     }
     else if (!_cpSelectedB) {
       if (_cpSelectedA.hash === hash) { _setCPMsg('A plant cannot self-pollinate.'); return; }
       var _bcP2 = loadGreenhouse()[idx];
-      if (_bcP2 && (_bcP2.breedCount || 0) >= 3) { _setCPMsg('Genetics Exhausted — this plant has already been bred 3 times.'); return; }
+      if (_bcP2 && (_bcP2.breedCount || 0) >= 3) { _setCPMsg('Genetics Exhausted. This plant has already been bred 3 times.'); return; }
       _cpSelectedB = { index:idx, hash:hash };
     } else {
       if (_cpSelectedA.hash === hash) { _setCPMsg('Already selected as Parent A.'); return; }
@@ -33076,7 +33076,7 @@ document.addEventListener('keydown', function(e) {
 
     // BLOOM TRIGGER — fertilize makes bloom-ready; confirm before executing
     if (seed.waterLog.length >= 3) {
-      _setNurMsg('⚡ 21 Dew spent — third watering unlocked! Ready to bloom.');
+      _setNurMsg('⚡ 21 Dew spent. Third watering unlocked. Ready to bloom.');
       _throttledSave('sws_nursery', JSON.stringify(nur), true); // force-flush
       renderNursery();
       _haptic('sync');
@@ -33100,7 +33100,7 @@ document.addEventListener('keydown', function(e) {
       // handleWaterSeed). Without it, the pip stays unlit until next render.
       _throttledSave('sws_nursery', JSON.stringify(nur), true);
       renderNursery();
-      _setNurMsg('⚡ 21 Dew spent. Cooldown bypassed — ' + seed.waterLog.length + '/3 days done.');
+      _setNurMsg('⚡ 21 Dew spent. Cooldown bypassed. ' + seed.waterLog.length + '/3 days done.');
       _haptic('sync');
       _nurPulse(seedIndex, 'fertilize');
     }
@@ -34215,7 +34215,7 @@ document.addEventListener('keydown', function(e) {
         var msg = '+' + totalDew + ' Dew from your Wild plants';
         if (samples.length) {
           var firstSample = samples[0];
-          msg += ' — ' + firstSample.actor + ' ' + firstSample.action + 'ed your ' + firstSample.plant;
+          msg += '. ' + firstSample.actor + ' ' + firstSample.action + 'ed your ' + firstSample.plant;
           if (count > 1) msg += ' (and ' + (count - 1) + ' more)';
         }
         if (window.showHexMsg) showHexMsg(msg);
@@ -40252,7 +40252,7 @@ function _writeSharedDrop(lat,lng,hash,ea,defGame,traits,displaced){
         if(window._swsLog)_swsLog('Takeover TX OK — displaced '+oldDocId,'ok');
       }).catch(function(e){
         if(e.message==='EA_DEFENDED'){
-          _toast('Takeover failed — their plant grew stronger since you checked!');
+          _toast('Takeover failed. Their plant grew stronger since you checked.');
           if(window._swsLog)_swsLog('Takeover EA check failed server-side','warn');
         } else {
           if(window._swsLog)_swsLog('Takeover TX err: '+e.message,'err');
@@ -41048,7 +41048,7 @@ window._lwMassWater = function(){
   if (window._lwConfirm) {
     window._lwConfirm({
       title: 'WATER ALL PLANTS',
-      body: (isL3?'Summon <b>rain</b> — free watering!':'Water <b>' + eligible.length + '</b> plant' + (eligible.length===1?'':'s') + ' for <b>' + cost + ' Dew</b>?') + '<br><br>Each plant\u2019s lifespan resets to full. ' + (LW_MASS_WATER_DAILY_USES - _lwMassWaterUsesToday() - 1) + ' uses left after this.',
+      body: (isL3?'Summon <b>rain</b>. Free watering for every plant.':'Water <b>' + eligible.length + '</b> plant' + (eligible.length===1?'':'s') + ' for <b>' + cost + ' Dew</b>?') + '<br><br>Each plant\u2019s lifespan resets to full. ' + (LW_MASS_WATER_DAILY_USES - _lwMassWaterUsesToday() - 1) + ' uses left after this.',
       yes: isL3?'SUMMON RAIN':'WATER ALL',
       no: 'CANCEL'
     }, function(){ _lwMassWaterDoIt(eligible, cost); });
@@ -41239,7 +41239,7 @@ window._hexAction=function(action){
     // Wild v3 Phase 2: non-destructive stranger tend. +6h, 6h cooldown per plant.
     if(!window.canSee||!window.canSee.strangerTend||!window.canSee.strangerTend()){_toast('Tending unlocks at Keeper Level 5.');return;}
     if(_uLat&&p.lat){var _tendDist=_dist(_uLat,_uLng,p.lat,p.lng);if(_tendDist>COLLECT_RANGE){_toast('Walk closer! '+Math.round(_tendDist)+'m away.');return;}}
-    if(p.own){_toast('That\u2019s your own plant — water it instead.');return;}
+    if(p.own){_toast('That\u2019s your own plant. Water it instead.');return;}
     var _tendKey='lw_tend_cd',_tendCd={};try{_tendCd=JSON.parse(localStorage.getItem(_tendKey)||'{}');}catch(e){}
     if(_tendCd[p.hash]&&Date.now()-_tendCd[p.hash]<6*3600000){
       var _tendHrs=Math.ceil(6-(Date.now()-_tendCd[p.hash])/3600000);
@@ -41339,7 +41339,7 @@ window._hexAction=function(action){
     // know their plant is generating value out in the world.
     if(_uLat&&p.lat){var _bDist=_dist(_uLat,_uLng,p.lat,p.lng);if(_bDist>COLLECT_RANGE){_toast('Walk closer! '+Math.round(_bDist)+'m away.');return;}}
     var _bDew=_canReceiveBlessing(p);
-    if(_bDew<=0){_toast('No blessing available — already received today, or this plant is too common.');return;}
+    if(_bDew<=0){_toast('No blessing available. Already received today, or this plant is too common.');return;}
     var _bClaimed=_blessingsClaimedToday();
     _bClaimed.hashes[p.hash]=Date.now();
     _saveBlessingsClaimed(_bClaimed);
@@ -41412,7 +41412,7 @@ window._hexAction=function(action){
     // Once per player per plant, ever.
     if(!window.canSee||!window.canSee.wildCutting||!window.canSee.wildCutting()){_toast('Cuttings unlock at Keeper Level 15.');return;}
     if(_uLat&&p.lat){var _cutDist=_dist(_uLat,_uLng,p.lat,p.lng);if(_cutDist>COLLECT_RANGE){_toast('Walk closer! '+Math.round(_cutDist)+'m away.');return;}}
-    if(p.own){_toast('Cuttings from your own plants don\u2019t wound — just breed them normally.');return;}
+    if(p.own){_toast('Cuttings from your own plants don\u2019t wound. Just breed them normally.');return;}
     var _cutKey='lw_cuttings_taken',_cutLog={};try{_cutLog=JSON.parse(localStorage.getItem(_cutKey)||'{}');}catch(e){}
     if(_cutLog[p.hash]){_toast('You\u2019ve already taken a cutting from this plant. Each is a lifetime one-shot.');return;}
     var _nurMax=(window.FG_Data&&window.FG_Data.getNurSlots)?window.FG_Data.getNurSlots():3;
@@ -41430,7 +41430,7 @@ window._hexAction=function(action){
       // order wounded the parent then checked, so a full nursery left
       // the parent permanently scarred with no seed to show for it.
       if(!window.FG_Data||!window.FG_Data.addSeed){
-        _toast('Nursery engine not available — try again.');return;
+        _toast('Nursery engine not available. Try again.');return;
       }
       // A clipping carries only the plant's genetics (leaf, stem, flower,
       // season). Pot, substrate, aura, and companion are the parent's
@@ -41822,7 +41822,7 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
       }
       if(sent){
         document.getElementById('lw-fb-modal').remove();
-        if(window._toast)window._toast('🌿 Thanks — feedback sent!');
+        if(window._toast)window._toast('🌿 Thanks. Feedback sent.');
       } else {
         // Fallback: copy a formatted message to clipboard.
         var txt='Lucid Winds feedback — '+rating+'★ '+tags.join(', ')+'\n\n'+msg+'\n\n[ctx: '+c.tab+' · plants='+c.plants+' · sunbeams='+c.sunbeams+' · xp='+c.xp+' · class='+c.class+']';
@@ -41859,7 +41859,7 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
           btn.style.animation='';
         },7000);
       }
-      if(window._toast)window._toast('📝 Tap the FEEDBACK button anytime — your reactions help shape the game.');
+      if(window._toast)window._toast('📝 Tap the FEEDBACK button anytime. Your reactions help shape the game.');
     },1200); // small delay so the toast lands AFTER greenhouse renders
   }
   // Add pulse keyframes once
@@ -52093,7 +52093,7 @@ window.FG_Backpack.takeClipping = function(idx) {
   var nurMax = (window.FG_Data && FG_Data.getNurSlots) ? FG_Data.getNurSlots() : 3;
   var nurNow = (window.FG_Data && FG_Data.getNursery) ? FG_Data.getNursery().length : 0;
   if (nurNow >= nurMax) {
-    if (window._toast) window._toast('Nursery full — bloom a seed first');
+    if (window._toast) window._toast('Nursery full. Bloom a seed first.');
     return;
   }
   // Create seed with parent hash (auto-bloom will reuse that hash via breeding normally)
@@ -56701,14 +56701,14 @@ function _generateReport(){
   var chorusEvts=recent.filter(function(e){return e.type==='chorus';});
   if(chorusEvts.length>0){
     var ch=chorusEvts[0];
-    lines.push({icon:'🎵',text:'A Bloom Chorus formed — '+ch.plants+' flowers in harmony. Score: '+ch.score+'.',color:'rgba(232,160,191,0.9)'});
+    lines.push({icon:'🎵',text:'A Bloom Chorus formed. '+ch.plants+' flowers in harmony. Score: '+ch.score+'.',color:'rgba(232,160,191,0.9)'});
   }
 
   // Commons stories
   var commonsEvts=recent.filter(function(e){return e.type==='commons';});
   if(commonsEvts.length>0){
     var ce=commonsEvts[0];
-    lines.push({icon:'🌳',text:ce.name+' emerged — '+ce.plants+' plants from '+ce.owners+' keepers formed an ecosystem.',color:'var(--gold)'});
+    lines.push({icon:'🌳',text:ce.name+' emerged. '+ce.plants+' plants from '+ce.owners+' keepers formed an ecosystem.',color:'var(--gold)'});
   }
 
   // Mesh stories
@@ -60065,7 +60065,7 @@ window._lwClaimHerbarium = function(id){
   // hex picker lands with Phase 5 remote foraging UI.
   function useScry(){
     if (count('scryingStone') <= 0) { if(window._toast)window._toast('No Scrying Stone in your pouch.'); return false; }
-    if (window._toast) window._toast('\ud83d\udd2e Scrying Stone is ready — tap a hex within 1km on the map to use. (Remote targeting UI lands next patch.)');
+    if (window._toast) window._toast('\ud83d\udd2e Scrying Stone is ready. Tap a hex within 1km on the map to use. (Remote targeting UI lands next patch.)');
     _closePanel();
     return false;
   }
