@@ -27004,6 +27004,7 @@ document.addEventListener('keydown', function(e) {
       if(gh.length===2&&!localStorage.getItem('lw_second_mint')&&typeof gtag!=='undefined'){
         localStorage.setItem('lw_second_mint',Date.now()+'');
         gtag('event','second_plant_minted',{minutes_since_signup:_lwMinutesSinceFirstSignup()});
+        if(window._lwCompleteQuest)window._lwCompleteQuest('q_mint_second');
       }
     }catch(e){}
     if (window._LW_classXP) window._LW_classXP('harvest', traits.isRare ? 15 : 5);
@@ -27047,6 +27048,7 @@ document.addEventListener('keydown', function(e) {
         var _mkey='first_'+_mg;
         if(_mg!=='Common'&&_milestoneTable[_mkey]&&!_mile[_mkey]){PW_grantXP(_milestoneTable[_mkey],'milestone_'+_mkey);_mile[_mkey]=true;}
         if(gh.length===5&&!_mile.collection_5){PW_grantXP(_milestoneTable.collection_5,'milestone_5_plants');_mile.collection_5=true;}
+        if(gh.length>=5&&window._lwCompleteQuest)window._lwCompleteQuest('q_five_plants');
         if(gh.length===10&&!_mile.collection_10){PW_grantXP(_milestoneTable.collection_10,'milestone_10_plants');_mile.collection_10=true;}
         if(gh.length===25&&!_mile.collection_25){PW_grantXP(_milestoneTable.collection_25,'milestone_25_plants');_mile.collection_25=true;}
         if(gh.length===50&&!_mile.collection_50){PW_grantXP(_milestoneTable.collection_50,'milestone_50_plants');_mile.collection_50=true;}
@@ -36610,6 +36612,7 @@ function _awardFeral(hash, parentA, parentB, zk, info) {
   } catch(e) {}
   try { navigator.vibrate && navigator.vibrate([15, 30, 15]); } catch (e) {}
   if (typeof gtag !== 'undefined') gtag('event', 'feral_collected', { mystery: 1, zone: zk.slice(0, 10) });
+  if(window._lwCompleteQuest)window._lwCompleteQuest('q_first_feral');
 
   // Refresh zone hexes to remove the glow
   _drawZoneHexes();
@@ -37546,6 +37549,7 @@ function _doCollectFeral(f,mk){
   if(window._LW_toolXP)window._LW_toolXP('pouch',5);
   // Tutorial-proxy: first feral collection is a milestone.
   try{if(window.LW_XP)window.LW_XP.grantOnce('first_feral',10,'first_of_kind','🌿 +10 XP — first feral seed. They grow different from garden stock.');}catch(e){}
+  if(window._lwCompleteQuest)window._lwCompleteQuest('q_first_feral');
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
 }
 
@@ -38487,6 +38491,8 @@ function _doCrossPollination(wildPlant,matePlant){
         }
       });
       if(_bcDirty3&&window.saveGreenhouse)saveGreenhouse(_bcGh3);
+      localStorage.setItem('lw_first_breed','1');
+      if(window._lwCompleteQuest)window._lwCompleteQuest('q_first_breed');
       if(window.renderNursery)renderNursery();
       // Event log: record the cross-pollinate for Root Report / lineage trace
       if(window.LW_Log){
@@ -39597,6 +39603,7 @@ function _finishDrop(defenderGame){
   if(window.renderGreenhouse)renderGreenhouse();
   try{navigator.vibrate&&navigator.vibrate([30,55,30]);}catch(e){} // sync pulse — planted!
   _toast('\ud83c\udf31 Planted with '+defenderGame.toUpperCase()+' defense (EA: '+dropEA+')');
+  if(window._lwCompleteQuest)window._lwCompleteQuest('q_first_wild');
   // Drop burst — unified SVG particles anchored at the map point where
   // the plant landed. Builds a tiny invisible anchor div positioned at
   // the screen-space coordinate, spawns particles into it (the helper
@@ -42065,6 +42072,7 @@ window._e=_e;
           if(!localStorage.getItem('lw_first_game_won')&&typeof gtag!=='undefined'){
             localStorage.setItem('lw_first_game_won',(window._a||'?')+'|'+Date.now());
             gtag('event','first_game_completed',{game:window._a||'?'});
+            if(window._lwCompleteQuest)window._lwCompleteQuest('q_first_game');
           }
         }catch(e){}
         if(streak===3&&window.LW_XP)window.LW_XP.grantCooldown('streak_3',5,'mastery_streak3',600);
@@ -48666,6 +48674,7 @@ function _pickCompanion(idx, slot){
     } catch(e) {}
     localStorage.setItem('pw_active_companion',JSON.stringify(compData));
     try { if (window.LW_COMPANION && window.LW_COMPANION.onEquip) window.LW_COMPANION.onEquip(f.idx); } catch(e) {}
+    if(window._lwCompleteQuest)window._lwCompleteQuest('q_equip_comp');
   }
   // MEMENTO TIMER — record first-equip timestamp per companion idx so
   // the 30-day keepsake can be awarded later. Never overwrites existing
@@ -53271,6 +53280,7 @@ window.bsExecuteBreed=function(){
           if(window.saveGreenhouse)saveGreenhouse(_bcGh2);
         }
         localStorage.setItem('lw_first_breed','1');
+        if(window._lwCompleteQuest)window._lwCompleteQuest('q_first_breed');
         if(window.renderNursery)renderNursery();
         if(window.switchTab)switchTab('nursery');
         if(window._toast)window._toast('🌱 Seed planted! Water 3 days to bloom.');
@@ -62367,6 +62377,7 @@ window._lwPickClass=function(cid,nm,icon){
       no: 'NOT YET'
     }, function(){
       try{localStorage.setItem('lw_class',cid);}catch(e){}
+      if(window._lwCompleteQuest)window._lwCompleteQuest('q_choose_class');
       try{if(window._haptic)window._haptic();}catch(e){}
       try{if(window._toast)window._toast(icon+' You chose '+nm+'. Begin your path.');}catch(e){}
       try{if(window._playWin)window._playWin();}catch(e){}
@@ -62385,6 +62396,7 @@ window._lwPickClass=function(cid,nm,icon){
   }
   if(!confirm('Walk the path of the '+nm+'?\n\nYou can change paths later.'))return;
   try{localStorage.setItem('lw_class',cid);}catch(e){}
+  if(window._lwCompleteQuest)window._lwCompleteQuest('q_choose_class');
   try{if(window._haptic)window._haptic();}catch(e){}
   try{if(window._toast)window._toast(icon+' You chose '+nm+'. Begin your path.');}catch(e){}
   try{if(window._playWin)window._playWin();}catch(e){}
@@ -63842,6 +63854,7 @@ window.LW_Comp = (function(){
     var cls=null; try{cls=localStorage.getItem('lw_class');}catch(e){}
     var comp=null; try{comp=JSON.parse(localStorage.getItem('pw_active_companion')||'null');}catch(e){}
     var today=new Date().toISOString().slice(0,10);
+    var _qDone = function(id){ return typeof window._lwIsQuestDone === 'function' && window._lwIsQuestDone(id); };
 
     // ─── PRIORITY 100+ — time-critical / missed opportunities ───
     // Bloom Day is live right now
@@ -63877,22 +63890,24 @@ window.LW_Comp = (function(){
       out.push({icon:'\u2600\ufe0f',title:'Mint a new plant',body:'You have '+_wnReady+' plant'+ (_wnReady>1?'s':'')+' ready! Tap the \u2600\ufe0f Sunbeam icon to bloom.',priority:95,action:function(){if(window.openSunbeamModal)openSunbeamModal();}});
     }
     // Has 1 plant, low sunbeams → play games to earn more
-    if(gh.length>=1&&gh.length<3&&_wnReady===0){
+    if(gh.length>=1&&_wnReady===0){
       var _wnCost=window._getMintCost?_getMintCost():30;
       var _wnBal=_wnReady*_wnCost+sunbeamProg;
-      out.push({icon:'\ud83c\udfae',title:'Play games to earn Sunbeams',body:_wnBal+'/'+_wnCost+' toward your next plant. Each game win earns Sunbeams.',priority:75,action:function(){if(window.switchTab)switchTab('game');}});
+      var _gameQPri=!_qDone('q_first_game')?90:75;
+      var _gameQBody=!_qDone('q_first_game')?'Win your first game to earn Sunbeams and complete a quest!':_wnBal+'/'+_wnCost+' toward your next plant.';
+      out.push({icon:'\ud83c\udfae',title:!_qDone('q_first_game')?'Win your first game':'Play games to earn Sunbeams',body:_gameQBody,priority:_gameQPri,action:function(){if(window.switchTab)switchTab('game');}});
     }
     // Has 2+ plants but hasn't bred → teach breeding
-    if(gh.length>=2&&!localStorage.getItem('lw_first_breed')){
-      out.push({icon:'\ud83e\uddec',title:'Breed your first chimera',body:'Open a plant in the greenhouse, tap BREED to cross two plants and create a seed.',priority:70,action:function(){if(window.switchTab)switchTab('greenhouse');}});
+    if(gh.length>=2&&!_qDone('q_first_breed')){
+      out.push({icon:'\ud83e\uddec',title:'Breed your first chimera',body:'Open a plant, tap BREED. Create a seed that combines two plants\u2019 DNA. Quest reward!',priority:70,action:function(){if(window.switchTab)switchTab('greenhouse');}});
     }
     // Level 7 reached, class not picked
-    if(lvl>=7&&!cls){
-      out.push({icon:'\ud83c\udf3f',title:'Choose your keeper class',body:'Five paths unlocked at L7. Open the Book of Secrets \u2192 CLASS.',priority:80,action:function(){if(window._openCompendiumUI)_openCompendiumUI();}});
+    if(lvl>=7&&!cls&&!_qDone('q_choose_class')){
+      out.push({icon:'\ud83c\udf3f',title:'Choose your keeper class',body:'Five paths await. Each shapes your abilities. Complete this quest to unlock tools.',priority:80,action:function(){if(window._openCompendiumUI)_openCompendiumUI();}});
     }
-    // Level 3 reached, never visited Wild
-    if(lvl>=3&&wild.length===0&&gh.length>=2){
-      out.push({icon:'\ud83d\uddfa\ufe0f',title:'Explore the Wild tab',body:'Walk to real-world locations and drop plants in the world.',priority:60,action:function(){if(window.switchTab)switchTab('wild');}});
+    // Level 3 reached, Wild quest not done
+    if(lvl>=3&&!_qDone('q_first_wild')&&gh.length>=2){
+      out.push({icon:'\ud83d\uddfa\ufe0f',title:'Drop a plant in the Wild',body:'Place a plant on the real-world map. Others can find it. Quest reward!',priority:60,action:function(){if(window.switchTab)switchTab('wild');}});
     }
 
     // ─── PRIORITY 40-60 — growth activities ───
@@ -63901,14 +63916,14 @@ window.LW_Comp = (function(){
       out.push({icon:'🧬',title:'Cross-pollinate two plants',body:'Breed a chimera seed in the greenhouse. Each cross shifts traits and rewards XP or Dew.',priority:55,action:function(){if(window.switchTab)switchTab('greenhouse');}});
     }
     // Has plants, no companion equipped
-    if(gh.length>=1&&!comp){
+    if(gh.length>=1&&!comp&&!_qDone('q_equip_comp')){
       // Check if any plant has a companion trait — otherwise the prompt is useless.
       var hasComp=false;
       for(var gi=0;gi<gh.length&&!hasComp;gi++){
         try{var t=window.hashToTraits&&window.hashToTraits(gh[gi].hash);if(t&&t.companion>=20)hasComp=true;}catch(e){}
       }
       if(hasComp){
-        out.push({icon:'🦋',title:'Equip a companion',body:'Tap the companion card on your character sheet. Keep them equipped 7 days to reach L2.',priority:50,action:function(){if(window.PW_UI&&PW_UI.equipCompanion)PW_UI.equipCompanion();}});
+        out.push({icon:'\ud83e\udd8b',title:'Equip a companion',body:'Your plants have creatures. Equip one for buffs. Quest reward!',priority:50,action:function(){if(window.PW_UI&&PW_UI.equipCompanion)PW_UI.equipCompanion();}});
       }
     }
     // Herbarium bundle ready to claim or 80%+ complete
@@ -64136,6 +64151,66 @@ window.LW_Comp = (function(){
         };
       })(b);
     }
+  };
+})();
+</script>
+
+<script>
+// ═══ QUEST PROGRESSION SYSTEM ═══
+// One-shot XP grants that guide new players through feature unlocks.
+// Each quest fires exactly once, persisted in localStorage.
+(function(){
+  var QUESTS = [
+    {id:'q_first_game',    xp:25,  flag:'lw_quest_first_game',    title:'First Victory', body:'You won your first game!'},
+    {id:'q_mint_second',   xp:60,  flag:'lw_quest_mint_second',   title:'Second Bloom', body:'Your collection is growing.'},
+    {id:'q_first_breed',   xp:50,  flag:'lw_quest_first_breed',   title:'First Chimera', body:'You created new life from two plants.'},
+    {id:'q_first_wild',    xp:60,  flag:'lw_quest_first_wild',    title:'Into the Wild', body:'Your plant now lives in the real world.'},
+    {id:'q_equip_comp',    xp:30,  flag:'lw_quest_equip_comp',    title:'Companion Bond', body:'A creature walks with you now.'},
+    {id:'q_five_plants',   xp:40,  flag:'lw_quest_five_plants',   title:'Growing Garden', body:'Five unique specimens in your greenhouse.'},
+    {id:'q_first_feral',   xp:50,  flag:'lw_quest_first_feral',   title:'Feral Found', body:'A wild seed — yours to nurture.'},
+    {id:'q_choose_class',  xp:80,  flag:'lw_quest_choose_class',  title:'Path Chosen', body:'Your keeper class shapes everything ahead.'}
+  ];
+
+  function _completeQuest(id) {
+    for (var i = 0; i < QUESTS.length; i++) {
+      var q = QUESTS[i];
+      if (q.id === id && !localStorage.getItem(q.flag)) {
+        localStorage.setItem(q.flag, Date.now() + '');
+        if (window.PW_grantXP) window.PW_grantXP(q.xp, 'quest_' + id);
+        // Celebration toast — uses closure to capture q before loop moves on
+        (function(qq){
+          setTimeout(function(){
+            if (window._lwConfirm) {
+              window._lwConfirm({
+                title: '\u2727 QUEST COMPLETE',
+                body: '<div style="font-family:Playfair Display,serif;font-size:0.9rem;color:var(--gold);margin-bottom:0.3rem;">' + qq.title + '</div>' +
+                      '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);margin-bottom:0.2rem;">' + qq.body + '</div>' +
+                      '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--sage);letter-spacing:0.1em;">+' + qq.xp + ' XP</div>',
+                yes: 'NICE',
+                no: ''
+              }, function(){});
+            }
+          }, 600);
+        })(q);
+        return true;
+      }
+    }
+    return false;
+  }
+  window._lwCompleteQuest = _completeQuest;
+
+  // Expose quest state for What Now and other UI
+  window._lwGetNextQuest = function() {
+    for (var i = 0; i < QUESTS.length; i++) {
+      if (!localStorage.getItem(QUESTS[i].flag)) return QUESTS[i];
+    }
+    return null;
+  };
+  window._lwIsQuestDone = function(id) {
+    for (var i = 0; i < QUESTS.length; i++) {
+      if (QUESTS[i].id === id) return !!localStorage.getItem(QUESTS[i].flag);
+    }
+    return false;
   };
 })();
 </script>
