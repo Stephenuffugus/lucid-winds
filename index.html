@@ -1866,7 +1866,7 @@
     #sws-debug-log .log-ok{color:rgba(122,179,86,0.9);}
     #sws-debug-log .log-err{color:rgba(192,80,80,0.9);}
     #sws-debug-log .log-warn{color:rgba(200,168,75,0.9);}
-    #sws-debug-toggle{position:fixed;bottom:4px;left:4px;z-index:999999;background:rgba(200,168,75,0.1);color:rgba(200,168,75,0.5);padding:4px 8px;font-family:'DM Mono',monospace;font-size:0.4rem;border-radius:4px;border:1px solid rgba(200,168,75,0.15);cursor:pointer;}
+    #sws-debug-toggle{position:fixed;bottom:calc(var(--nav-h, 58px) + env(safe-area-inset-bottom, 0px) + 100px);left:4px;z-index:999999;background:rgba(200,168,75,0.1);color:rgba(200,168,75,0.5);padding:4px 8px;font-family:'DM Mono',monospace;font-size:0.4rem;border-radius:4px;border:1px solid rgba(200,168,75,0.15);cursor:pointer;}
     #sws-account-badge{
       position:fixed;top:0.6rem;right:0.7rem;z-index:9990;
       display:none;align-items:center;gap:0.3rem;
@@ -41231,11 +41231,11 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      of the iOS home indicator (env(safe-area-inset-bottom)). Hidden during
      onboarding via the .ob-active body class so testers don't tap it before
      they have an account. -->
-<button id="lw-fb-btn" onclick="window._lwOpenFeedback&&window._lwOpenFeedback()" title="Share feedback" style="position:fixed;bottom:calc(var(--nav-h, 58px) + env(safe-area-inset-bottom, 0px) + 6px);right:8px;z-index:999998;background:rgba(122,179,86,0.12);color:rgba(122,179,86,0.7);padding:5px 10px;font-family:'DM Mono',monospace;font-size:0.5rem;letter-spacing:0.05em;border-radius:6px;border:1px solid rgba(122,179,86,0.25);cursor:pointer;">📝 FEEDBACK</button>
+<button id="lw-fb-btn" onclick="window._lwOpenFeedback&&window._lwOpenFeedback()" title="Share feedback" style="position:fixed;bottom:calc(var(--nav-h, 58px) + env(safe-area-inset-bottom, 0px) + 52px);right:8px;z-index:999998;background:rgba(122,179,86,0.12);color:rgba(122,179,86,0.7);padding:5px 10px;font-family:'DM Mono',monospace;font-size:0.5rem;letter-spacing:0.05em;border-radius:6px;border:1px solid rgba(122,179,86,0.25);cursor:pointer;">📝 FEEDBACK</button>
 <!-- Contextual suggestion button — "What could I do right now?" — ambient,
      never blocking. Hidden during onboarding via the .ob-active body class.
      Parallel to the feedback ribbon: bottom-left mirror to bottom-right. -->
-<button id="lw-whatnow-btn" onclick="window._lwOpenWhatNow&&window._lwOpenWhatNow()" title="What could I do right now?" style="position:fixed;bottom:calc(var(--nav-h, 58px) + env(safe-area-inset-bottom, 0px) + 6px);left:8px;z-index:999998;background:rgba(200,168,75,0.14);color:rgba(200,168,75,0.85);padding:5px 10px;font-family:'DM Mono',monospace;font-size:0.5rem;letter-spacing:0.05em;border-radius:6px;border:1px solid rgba(200,168,75,0.3);cursor:pointer;">✧ WHAT NOW?</button>
+<button id="lw-whatnow-btn" onclick="window._lwOpenWhatNow&&window._lwOpenWhatNow()" title="What could I do right now?" style="position:fixed;bottom:calc(var(--nav-h, 58px) + env(safe-area-inset-bottom, 0px) + 52px);left:8px;z-index:999998;background:rgba(200,168,75,0.14);color:rgba(200,168,75,0.85);padding:5px 10px;font-family:'DM Mono',monospace;font-size:0.5rem;letter-spacing:0.05em;border-radius:6px;border:1px solid rgba(200,168,75,0.3);cursor:pointer;">✧ WHAT NOW?</button>
 <style>
   /* Hide feedback button during onboarding AND any time a major overlay
      is open — don't let it cover or compete with celebrations, modals,
@@ -63871,17 +63871,28 @@ window.LW_Comp = (function(){
     }
 
     // ─── PRIORITY 60-90 — onboarding milestones ───
-    // Sunbeam meter is full → mint
-    if(sunbeamProg>=30){
-      out.push({icon:'☀️',title:'Mint a new plant',body:'You\u2019ve filled the Sunbeam meter — head to the Game tab and claim your plant.',priority:90,action:function(){if(window.switchTab)switchTab('game');}});
+    // Plants ready to mint → tap sunbeam icon
+    var _wnReady=0; try{_wnReady=window._getMintableCount?_getMintableCount():0;}catch(e){}
+    if(_wnReady>0){
+      out.push({icon:'\u2600\ufe0f',title:'Mint a new plant',body:'You have '+_wnReady+' plant'+ (_wnReady>1?'s':'')+' ready! Tap the \u2600\ufe0f Sunbeam icon to bloom.',priority:95,action:function(){if(window.openSunbeamModal)openSunbeamModal();}});
+    }
+    // Has 1 plant, low sunbeams → play games to earn more
+    if(gh.length>=1&&gh.length<3&&_wnReady===0){
+      var _wnCost=window._getMintCost?_getMintCost():30;
+      var _wnBal=_wnReady*_wnCost+sunbeamProg;
+      out.push({icon:'\ud83c\udfae',title:'Play games to earn Sunbeams',body:_wnBal+'/'+_wnCost+' toward your next plant. Each game win earns Sunbeams.',priority:75,action:function(){if(window.switchTab)switchTab('game');}});
+    }
+    // Has 2+ plants but hasn't bred → teach breeding
+    if(gh.length>=2&&!localStorage.getItem('lw_first_breed')){
+      out.push({icon:'\ud83e\uddec',title:'Breed your first chimera',body:'Open a plant in the greenhouse, tap BREED to cross two plants and create a seed.',priority:70,action:function(){if(window.switchTab)switchTab('greenhouse');}});
     }
     // Level 7 reached, class not picked
     if(lvl>=7&&!cls){
-      out.push({icon:'🌿',title:'Choose your keeper class',body:'Five paths unlocked at L7. Open the Book of Secrets → CLASS.',priority:80,action:function(){if(window._openCompendiumUI)_openCompendiumUI();}});
+      out.push({icon:'\ud83c\udf3f',title:'Choose your keeper class',body:'Five paths unlocked at L7. Open the Book of Secrets \u2192 CLASS.',priority:80,action:function(){if(window._openCompendiumUI)_openCompendiumUI();}});
     }
     // Level 3 reached, never visited Wild
-    if(lvl>=3&&wild.length===0){
-      out.push({icon:'🗺️',title:'Explore the Wild tab',body:'Walk to real-world locations and drop plants in the world.',priority:70,action:function(){if(window.switchTab)switchTab('wild');}});
+    if(lvl>=3&&wild.length===0&&gh.length>=2){
+      out.push({icon:'\ud83d\uddfa\ufe0f',title:'Explore the Wild tab',body:'Walk to real-world locations and drop plants in the world.',priority:60,action:function(){if(window.switchTab)switchTab('wild');}});
     }
 
     // ─── PRIORITY 40-60 — growth activities ───
@@ -63924,9 +63935,9 @@ window.LW_Comp = (function(){
     }
 
     // ─── PRIORITY 20-40 — passive / exploratory ───
-    // First plant — read the haiku
+    // First plant — read the haiku (low priority, discovery not progression)
     if(gh.length===1){
-      out.push({icon:'📜',title:'Read your plant\u2019s haiku',body:'Every plant has a unique 7-5-7 poem born from its hash. Tap the card.',priority:40,action:function(){if(window.switchTab)switchTab('greenhouse');}});
+      out.push({icon:'\ud83d\udcdc',title:'Read your plant\u2019s haiku',body:'Every plant has a unique 7-5-7 poem. Flip the card in your greenhouse.',priority:20,action:function(){if(window.switchTab)switchTab('greenhouse');}});
     }
     // No sunbeam progress, no plants → play a game
     if(sunbeamProg===0&&gh.length===0){
