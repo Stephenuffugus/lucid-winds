@@ -49850,6 +49850,10 @@ function _showBeat(n){
     if(n===4){
       if(window.stopRain)window.stopRain();
       var _sk4=document.getElementById('ob-skip');if(_sk4)_sk4.style.display='none';
+      // Defensive: kill any lingering pre-cinematic tutorial overlay so
+      // it can't cover the auth form. Stephen reported a "black box
+      // covering half the password input".
+      var _tutLeft=document.getElementById('ob-tutorial');if(_tutLeft)_tutLeft.remove();
       // Tutorial moved to pre-cinematic (start() calls _startOrTutorial
       // before _playLines(1)). Beat 4 just reveals the gift plant now.
       _renderGiftPlant();
@@ -49995,6 +49999,8 @@ function _runTutorial(onComplete){
 }
 
 function _renderGiftPlant(){
+  // Kill any tutorial overlay that might still exist (safety net).
+  var _lingering=document.getElementById('ob-tutorial');if(_lingering)_lingering.remove();
   var render=document.getElementById('ob-plant-render');
   if(!_giftHash){
     _giftHash='';
