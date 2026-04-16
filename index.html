@@ -58431,6 +58431,282 @@ window._lwClaimHerbarium = function(id){
   window.LW_debug.openBoxes = function(){ openPanel(); };
 })();
 
+// ═══ LW_SIM — power-test harness for boxes, contests, forage, economy ═══
+// Console-only. Usage: LW_SIM.runAll() returns a text report. Individual
+// sims expose raw numbers + .report() strings. Uses the REAL code paths
+// where cheap (LW_BOXES.openOne for box weights, _rollTakeover for
+// contests). Backs up / restores player storage so tests don't pollute.
+(function(){
+  'use strict';
+  function _snap(keys){
+    var s={}; for (var i=0;i<keys.length;i++) s[keys[i]]=localStorage.getItem(keys[i]); return s;
+  }
+  function _restore(snap){
+    for (var k in snap) { if (snap[k]===null) localStorage.removeItem(k); else localStorage.setItem(k, snap[k]); }
+  }
+  function _asciiBar(pct, width){
+    width = width || 20; var n = Math.round(pct * width);
+    var s = ''; for (var i=0;i<width;i++) s += (i<n?'\u2588':'\u2591'); return s;
+  }
+  function _pct(n,total){ return total>0 ? (100*n/total) : 0; }
+
+  // ─── 1. BOX OPEN DISTRIBUTION ───
+  function simBoxOpens(n){
+    n = n || 1000;
+    if (!window.LW_BOXES) return { error:'LW_BOXES not loaded' };
+    var snap = _snap(['sws_boxes','sws_boxes_pity','sws_items','sws_items_pending']);
+    try {
+      // Seed N boxes, drain, count by rarity
+      localStorage.setItem('sws_boxes', JSON.stringify({count:n}));
+      localStorage.setItem('sws_boxes_pity', JSON.stringify({sinceRare:0,sinceEpic:0}));
+      localStorage.setItem('sws_items', '{}');
+      var counts = {Common:0,Uncommon:0,Rare:0,Epic:0,Legendary:0};
+      var itemCounts = {};
+      var sinceRareMax = 0, sinceEpicMax = 0, curSinceR=0, curSinceE=0;
+      var pityOK = true;
+      for (var i=0;i<n;i++){
+        var r = window.LW_BOXES.openOne();
+        if (!r) break;
+        counts[r.rarity]++;
+        itemCounts[r.itemKey] = (itemCounts[r.itemKey]||0)+1;
+        var rank = {Common:0,Uncommon:1,Rare:2,Epic:3,Legendary:4}[r.rarity];
+        // Track max dry streak for asserts
+        if (rank >= 2) { if (curSinceR>sinceRareMax) sinceRareMax=curSinceR; curSinceR=0; }
+        else { curSinceR++; if (curSinceR>7) pityOK=false; }
+        if (rank >= 3) { if (curSinceE>sinceEpicMax) sinceEpicMax=curSinceE; curSinceE=0; }
+        else { curSinceE++; }
+      }
+      var spec = {Common:48,Uncommon:30,Rare:15,Epic:6,Legendary:1};
+      var rep = 'BOX DISTRIBUTION  n='+n+'\n';
+      var keys = ['Common','Uncommon','Rare','Epic','Legendary'];
+      for (var ki=0;ki<keys.length;ki++){
+        var k = keys[ki], a = _pct(counts[k],n), e = spec[k];
+        var drift = (a-e).toFixed(1); var sign = drift>=0?'+':'';
+        rep += '  '+_asciiBar(a/100,24)+' '+k.padEnd(10)+' '+counts[k].toString().padStart(4)+'  '+a.toFixed(1)+'%  (spec '+e+'%, '+sign+drift+')\n';
+      }
+      rep += '  Max dry streak: '+sinceRareMax+' without Rare+ (cap 7), '+sinceEpicMax+' without Epic+ (cap 24)\n';
+      rep += '  Pity rule Rare+ at 8: '+(pityOK?'PASS':'FAIL')+'\n';
+      return { counts:counts, itemCounts:itemCounts, sinceRareMax:sinceRareMax, sinceEpicMax:sinceEpicMax, pityOK:pityOK, report:function(){return rep;} };
+    } finally { _restore(snap); }
+  }
+
+  // ─── 2. CONTEST MATCHUP MATRIX ───
+  function simContestMatrix(nPerCell){
+    nPerCell = nPerCell || 400;
+    if (!window._rollTakeover) return { error:'_rollTakeover not loaded' };
+    var eaGaps = [-8,-4,-2,0,2,4,8]; // defender vs attacker
+    var combos = [
+      { lbl:'base',     opts:{} },
+      { lbl:'+Torch',   opts:{attackerTorch:true} },
+      { lbl:'+Dust',    opts:{attackerDustStorm:true} },
+      { lbl:'vsBramble',opts:{defenderBramble:true} },
+      { lbl:'vsMoonwake',opts:{defenderMoonwake:true} }
+    ];
+    var grid = {};
+    for (var c=0;c<combos.length;c++){
+      grid[combos[c].lbl] = {};
+      for (var g=0;g<eaGaps.length;g++){
+        var gap = eaGaps[g];
+        var wins=0;
+        for (var i=0;i<nPerCell;i++){
+          var att = { hash:'a0', ea:10 };
+          var def = { hash:'b0', ea:10+gap };
+          if (window._rollTakeover(att,def,combos[c].opts).attackerWins) wins++;
+        }
+        grid[combos[c].lbl][gap] = Math.round(100*wins/nPerCell);
+      }
+    }
+    var rep = 'CONTEST WIN% MATRIX  n='+nPerCell+'  (attacker EA=10, defender EA = 10+gap)\n';
+    rep += '  gap:      '; for (var gi=0;gi<eaGaps.length;gi++) rep += (eaGaps[gi]>=0?'+'+eaGaps[gi]:eaGaps[gi]).toString().padStart(5); rep += '\n';
+    for (var ci=0;ci<combos.length;ci++){
+      var lbl = combos[ci].lbl;
+      rep += '  '+lbl.padEnd(11);
+      for (var gj=0;gj<eaGaps.length;gj++) rep += (grid[lbl][eaGaps[gj]]+'%').padStart(5);
+      rep += '\n';
+    }
+    return { grid:grid, report:function(){return rep;} };
+  }
+
+  // ─── 3. MULCH WARD AUTO-WIN ASSERT ───
+  function simMulchWardAssert(n){
+    n = n || 200;
+    if (!window.LW_ITEMS) return { error:'LW_ITEMS not loaded' };
+    var snap = _snap(['sws_items_pending']);
+    try {
+      var hash='w123';
+      // Apply ward directly via pending queue
+      var p = {wards:{}}; p.wards[hash]=1; localStorage.setItem('sws_items_pending', JSON.stringify(p));
+      // Reset LW_ITEMS internal by re-parsing — it reads fresh each call
+      var has = window.LW_ITEMS.hasWard(hash);
+      var consumed = window.LW_ITEMS.consumeWard(hash);
+      var after = window.LW_ITEMS.hasWard(hash);
+      var pass = (has===true && consumed===true && after===false);
+      return { pass:pass, report:function(){return 'MULCH WARD  set='+has+' consume='+consumed+' after='+after+'  '+(pass?'PASS':'FAIL')+'\n';} };
+    } finally { _restore(snap); }
+  }
+
+  // ─── 4. FORAGE ECONOMY DAY-SIM (lightweight) ───
+  // Models: M blooms/day -> box drops (grade-scaled) -> items. Reports
+  // days to first Epic, first Legendary.
+  function simDropPath(days, bloomsPerDay){
+    days = days || 30; bloomsPerDay = bloomsPerDay || 1;
+    var CH = {Uncommon:0.08,Rare:0.20,Epic:0.40,Legendary:0.65,Mythic:0.85,Cosmic:1.00};
+    // Natural Terra grade distribution
+    var GD = {Common:0.50,Uncommon:0.25,Rare:0.12,Epic:0.07,Legendary:0.04,Mythic:0.015,Cosmic:0.005};
+    var gradeKeys = Object.keys(GD);
+    function pickGrade(){
+      var r = Math.random(), acc=0;
+      for (var i=0;i<gradeKeys.length;i++){ acc+=GD[gradeKeys[i]]; if (r<acc) return gradeKeys[i]; }
+      return 'Common';
+    }
+    // Box open weights
+    var BW = {Common:48,Uncommon:30,Rare:15,Epic:6,Legendary:1};
+    var pool=[]; for (var k in BW) for (var j=0;j<BW[k];j++) pool.push(k);
+    var boxes=0, firstEpicDay=null, firstLegDay=null, boxRarities={Common:0,Uncommon:0,Rare:0,Epic:0,Legendary:0};
+    for (var d=0; d<days; d++){
+      for (var b=0;b<bloomsPerDay;b++){
+        var g = pickGrade();
+        if (CH[g] && Math.random() < CH[g]) {
+          boxes++;
+          // Open it
+          var r = pool[Math.floor(Math.random()*pool.length)];
+          boxRarities[r]++;
+          if (r==='Epic' && firstEpicDay===null) firstEpicDay=d+1;
+          if (r==='Legendary' && firstLegDay===null) firstLegDay=d+1;
+        }
+      }
+    }
+    var rep = 'DROP PATH  days='+days+' blooms/day='+bloomsPerDay+'\n';
+    rep += '  Total boxes: '+boxes+'  ('+(boxes/days).toFixed(2)+'/day)\n';
+    rep += '  First Epic item:      '+(firstEpicDay?('day '+firstEpicDay):'not reached')+'\n';
+    rep += '  First Legendary item: '+(firstLegDay?('day '+firstLegDay):'not reached')+'\n';
+    for (var rk in boxRarities) rep += '    '+rk.padEnd(10)+boxRarities[rk]+'\n';
+    return { boxes:boxes, firstEpicDay:firstEpicDay, firstLegDay:firstLegDay, report:function(){return rep;} };
+  }
+
+  // ─── 5. FORAGE SOLVABILITY (greedy heuristic, not optimal) ───
+  // Plays each grade M times with random hex + optimal-card play:
+  // attempt 1 random, attempt 2+ uses learned + last-play info.
+  function simForageSolvability(n){
+    n = n || 200;
+    var DIFFS = {
+      common:    { slots:3, cards:3, handSize:5, attempts:3, scoreNeeded:4 },
+      uncommon:  { slots:3, cards:3, handSize:6, attempts:3, scoreNeeded:5 },
+      rare:      { slots:4, cards:4, handSize:7, attempts:4, scoreNeeded:6 },
+      epic:      { slots:4, cards:4, handSize:8, attempts:4, scoreNeeded:7 },
+      legendary: { slots:5, cards:5, handSize:9, attempts:5, scoreNeeded:8 },
+      mythic:    { slots:6, cards:6, handSize:10,attempts:5, scoreNeeded:10 },
+      cosmic:    { slots:7, cards:7, handSize:10,attempts:6, scoreNeeded:13 }
+    };
+    var ELS = ['sun','shade','rain','dry','wind','still'];
+    function randHex(slots){
+      var pool = ELS.slice(), out = [];
+      for (var i=0;i<slots;i++){ var idx=Math.floor(Math.random()*pool.length); out.push(pool.splice(idx,1)[0]); }
+      return out;
+    }
+    function solveOne(diff){
+      var hex = randHex(diff.slots);
+      // Hand is N+handSize-slots random cards — ensure hex elements are SOMEWHERE reachable
+      var hand = hex.slice();
+      while (hand.length < diff.handSize) hand.push(ELS[Math.floor(Math.random()*ELS.length)]);
+      // Shuffle hand
+      for (var s=hand.length-1;s>0;s--){ var j=Math.floor(Math.random()*(s+1)); var t=hand[s];hand[s]=hand[j];hand[j]=t; }
+      var known = new Array(diff.slots).fill(null); // exact element at slot
+      var inPool = {}; // elements we know are IN the hex somewhere
+      for (var a=0;a<diff.attempts;a++){
+        // Play: fill known slots with known elements; fill rest with in-pool cards, else random from hand
+        var play = [];
+        var handLeft = hand.slice();
+        for (var sl=0; sl<diff.slots; sl++){
+          var pick;
+          if (known[sl]){
+            var idxK = handLeft.indexOf(known[sl]);
+            if (idxK>=0){ pick = handLeft.splice(idxK,1)[0]; } else { pick = handLeft.splice(0,1)[0]; }
+          } else {
+            // Prefer inPool elements not already placed
+            var chosen = null;
+            for (var ip in inPool){
+              var ix = handLeft.indexOf(ip);
+              if (ix>=0){ chosen = handLeft.splice(ix,1)[0]; break; }
+            }
+            pick = chosen || handLeft.splice(0,1)[0];
+          }
+          play.push(pick);
+        }
+        // Resolve
+        var matches=0, counters=0;
+        var remaining={}; for (var ri=0;ri<diff.slots;ri++){ if (play[ri]!==hex[ri]) remaining[hex[ri]]=(remaining[hex[ri]]||0)+1; }
+        for (var rj=0;rj<diff.slots;rj++){
+          if (play[rj]===hex[rj]){ matches++; known[rj]=hex[rj]; }
+          else if (remaining[play[rj]]>0){ counters++; remaining[play[rj]]--; inPool[play[rj]]=true; }
+        }
+        var score = matches*2 + counters;
+        if (score >= diff.scoreNeeded) return {won:true, attempts:a+1};
+      }
+      return {won:false, attempts:diff.attempts};
+    }
+    var out = {};
+    var rep = 'FORAGE SOLVABILITY  (greedy heuristic, n='+n+'/grade)\n';
+    var grades = Object.keys(DIFFS);
+    for (var gi=0;gi<grades.length;gi++){
+      var g = grades[gi]; var wins=0, totalAtt=0;
+      for (var i=0;i<n;i++){ var r = solveOne(DIFFS[g]); if (r.won) { wins++; totalAtt+=r.attempts; } }
+      var winRate = Math.round(100*wins/n);
+      var avgAtt = wins>0 ? (totalAtt/wins).toFixed(1) : '-';
+      out[g] = { winRate:winRate, avgAtt:avgAtt };
+      rep += '  '+_asciiBar(winRate/100,20)+' '+g.padEnd(10)+' '+winRate.toString().padStart(3)+'% win  avg '+avgAtt+' attempts\n';
+    }
+    return { results:out, report:function(){return rep;} };
+  }
+
+  // ─── RUN ALL ───
+  function runAll(){
+    var start = Date.now();
+    var r1 = simBoxOpens(1000);
+    var r2 = simContestMatrix(300);
+    var r3 = simMulchWardAssert();
+    var r4 = simDropPath(30, 1);
+    var r5 = simForageSolvability(200);
+    var elapsed = Date.now() - start;
+    var asserts = [];
+    // Box weights within ±3%
+    var spec={Common:48,Uncommon:30,Rare:15,Epic:6,Legendary:1};
+    for (var k in spec){
+      var pct = _pct(r1.counts[k], 1000);
+      var pass = Math.abs(pct - spec[k]) <= 3;
+      asserts.push({name:'Box '+k+' weight within 3%', pass:pass, detail:pct.toFixed(1)+'% vs '+spec[k]+'%'});
+    }
+    asserts.push({name:'Box pity Rare+ at 8', pass:r1.pityOK, detail:'max streak '+r1.sinceRareMax});
+    // Contest baseline 0-gap in 40-55% window
+    var base0 = r2.grid.base[0];
+    asserts.push({name:'Contest base 0-gap 40-55%', pass:(base0>=40&&base0<=55), detail:base0+'%'});
+    asserts.push({name:'Torch boosts win at 0-gap', pass:(r2.grid['+Torch'][0] > base0), detail:r2.grid['+Torch'][0]+'% vs '+base0+'%'});
+    asserts.push({name:'Bramble reduces win at 0-gap', pass:(r2.grid.vsBramble[0] < base0), detail:r2.grid.vsBramble[0]+'% vs '+base0+'%'});
+    asserts.push({name:'Mulch Ward lifecycle', pass:r3.pass, detail:''});
+    // Solvability
+    asserts.push({name:'Common solvable >=70%', pass:r5.results.common.winRate>=70, detail:r5.results.common.winRate+'%'});
+    asserts.push({name:'Mythic solvable 15-60%', pass:(r5.results.mythic.winRate>=15 && r5.results.mythic.winRate<=60), detail:r5.results.mythic.winRate+'%'});
+    var passed = 0; for (var ai=0;ai<asserts.length;ai++) if (asserts[ai].pass) passed++;
+    var rep = '\n═══ LW_SIM runAll  ('+elapsed+'ms) ═══\n\n';
+    rep += '  ASSERTS  '+passed+'/'+asserts.length+' passed\n';
+    for (var bi=0;bi<asserts.length;bi++) rep += '    '+(asserts[bi].pass?'\u2713':'\u2717')+'  '+asserts[bi].name+'  '+asserts[bi].detail+'\n';
+    rep += '\n' + r1.report() + '\n' + r2.report() + '\n' + r3.report() + '\n' + r4.report() + '\n' + r5.report();
+    if (typeof console !== 'undefined') console.log(rep);
+    return rep;
+  }
+
+  window.LW_SIM = {
+    simBoxOpens: simBoxOpens,
+    simContestMatrix: simContestMatrix,
+    simMulchWardAssert: simMulchWardAssert,
+    simDropPath: simDropPath,
+    simForageSolvability: simForageSolvability,
+    runAll: runAll
+  };
+  window.LW_debug = window.LW_debug || {};
+  window.LW_debug.sim = function(){ return runAll(); };
+})();
+
 // ═══ COMPANION FAMILIES V1 — base buffs + class affinity ═══
 // Leveling system (L2/L3) deferred to v2. For now: every equipped
 // companion with a family grants a small base buff. Class affinity
