@@ -4840,6 +4840,11 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
     #pw-onboard.active{display:block;}
     .ob-beat{display:none;position:absolute;inset:0;flex-direction:column;opacity:0;transition:opacity 1.8s ease;}
     .ob-beat.show{display:flex;opacity:1;}
+    /* fade-out keeps the beat laid out (display:flex) but opacity transitions
+       to 0. Without this rule, an old beat with .show+.fade-out classes
+       stayed at opacity 1 through the whole crossfade so its .ob-text-area
+       dark bar sat on top of beat 4 on the skip path. */
+    .ob-beat.fade-out{display:flex !important;opacity:0 !important;pointer-events:none;}
     .ob-beat.fade-out{opacity:0;transition:opacity 1.8s ease;}
     @keyframes obFlash{0%{opacity:0;}8%{opacity:0.04;}16%{opacity:0;}24%{opacity:0.02;}100%{opacity:0;}}
     .ob-flash{position:absolute;inset:0;background:#d4cfbc;z-index:10;pointer-events:none;animation:obFlash 1.2s ease forwards;}
@@ -50011,7 +50016,10 @@ function _showBeat(n){
   var oldBeat=document.getElementById('ob-beat'+prev);
   var newBeat=document.getElementById('ob-beat'+n);
 
-  // Start fading out old beat
+  // Start fading out old beat via .fade-out (CSS rule below drops opacity
+  // to 0 while keeping display:flex through the transition). Without this
+  // the .show class kept opacity at 1 and the old beat's dark
+  // .ob-text-area bar sat on top of beat 4's auth form on the skip path.
   if(oldBeat&&prev!==n){
     oldBeat.classList.add('fade-out');
   }
