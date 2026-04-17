@@ -4646,8 +4646,11 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
 #dfb:active{transform:scale(.92);}
 @keyframes fr{0%,100%{box-shadow:0 4px 20px rgba(42,92,42,0.5),0 0 0 3px rgba(122,179,86,0.08)}50%{box-shadow:0 6px 24px rgba(42,92,42,0.6),0 0 0 5px rgba(122,179,86,0.12)}}
 #dfb:active{transform:scale(0.9);animation:none;}
-#dbb{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;background:var(--sage);color:#0d100c;font-family:'Bebas Neue',sans-serif;font-size:13px;display:flex;align-items:center;justify-content:center;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.5);border:1.5px solid rgba(13,16,12,.6);}
+#dbb{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;background:#e8a0bf;color:#0d100c;font-family:'Bebas Neue',sans-serif;font-size:13px;display:flex;align-items:center;justify-content:center;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.5);border:1.5px solid rgba(13,16,12,.6);}
 #dbb.lo{background:var(--gold);animation:dw 1s ease-in-out infinite;}
+/* Affordance label so players know this button = release a greenhouse
+   plant into the wild. Lives just below the FAB sprite, gold pill. */
+#dfb::after{content:'SOW';position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);background:rgba(13,16,12,0.85);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.16em;padding:3px 10px;border-radius:6px;border:1px solid rgba(200,168,75,0.5);pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,0.7);}
 @keyframes dw{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
 
 /* ═══ PLANT INFO CARD (tap plant in backpack) ═══ */
@@ -4691,7 +4694,16 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
 /* ═══ WILD TAB v2 — Premium Redesign ═══ */
 
 /* ── Wild Log Bar (top navigation) ── */
-.wild-log{position:fixed;top:0;left:0;right:0;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top,0px));background:linear-gradient(180deg,rgba(20,16,10,0.96),rgba(13,10,6,0.96));border-bottom:2px solid rgba(200,168,75,0.2);z-index:460;box-shadow:0 8px 32px rgba(0,0,0,0.7);display:grid;grid-template-columns:repeat(3,1fr) auto;grid-template-rows:auto auto;grid-template-areas:'s1 s2 s3 cp' 's4 s5 s6 cp';gap:6px;}
+/* Biome hero strip — fixed across the very top, above the wild-log
+   stats. Painted with the current biome's image. Player taps it to
+   open the biome lore Reader. Z-index sits ABOVE the wild-log so the
+   stats sit BELOW the painting (the log gets a top offset to make room). */
+#w-biome-hero{position:fixed!important;top:0;left:0;right:0;z-index:461;}
+/* Wild log dropped below the biome hero. The 72px offset matches the
+   strip's height (84px nominal minus a tiny visual overlap so the log
+   border tucks into the strip's bottom shadow). Stays fixed so the map
+   can scroll under it. */
+.wild-log{position:fixed;top:calc(72px + env(safe-area-inset-top,0px));left:0;right:0;padding:10px 12px;background:linear-gradient(180deg,rgba(20,16,10,0.96),rgba(13,10,6,0.96));border-bottom:2px solid rgba(200,168,75,0.2);z-index:460;box-shadow:0 8px 32px rgba(0,0,0,0.7);display:grid;grid-template-columns:repeat(3,1fr) auto;grid-template-rows:auto auto;grid-template-areas:'s1 s2 s3 cp' 's4 s5 s6 cp';gap:6px;}
 .wild-log-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(5,6,4,0.75);padding:6px 4px;border-radius:8px;border:1px solid rgba(200,168,75,0.12);min-height:52px;cursor:pointer;transition:all 0.15s;}
 .wild-log-stat:nth-child(1){grid-area:s1;}
 .wild-log-stat:nth-child(2){grid-area:s2;}
@@ -5663,7 +5675,10 @@ window._addSwitchTabHook = function(fn){
     <!-- WILD LOG BAR -->
     <div class="wild-log">
       <div class="wild-log-stat" onclick="if(window._toggleTerritory)_toggleTerritory();"><div class="wild-log-val" style="color:#c8a86e" id="w-count">0</div><div class="wild-log-lbl" style="color:#c8a86e;">planted</div></div>
-      <div class="wild-log-stat" onclick="FG_Wild._logTip('Daily drops remaining. Resets at midnight.')"><div class="wild-log-val" style="color:#e8a0bf" id="w-drops-left">3</div><div class="wild-log-lbl" style="color:#e8a0bf;">drops</div></div>
+      <!-- 'drops' cell removed — same number lives on the SOW button (#dbb)
+           in pink, no need to duplicate it in the wild-log strip. Hidden
+           span keeps any code that updates #w-drops-left from breaking. -->
+      <span id="w-drops-left" style="display:none;">3</span>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Dew, produced by your wild plants and collected when helping others. Spend on nursery acceleration and on cuttings.')"><div class="wild-log-val" style="color:#5baddc" id="w-dew">0</div><div class="wild-log-lbl" style="color:#5baddc;">dew <span id="w-dew-rate" style="font-size:0.28rem;color:var(--muted);"></span></div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Pollen, your player XP. Walking, planting, and tending all add to it.')"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl" style="color:var(--gold);">pollen</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Meters walked. Keep moving to find feral seeds!')"><div class="wild-log-val" style="color:var(--sage)" id="w-steps">0</div><div class="wild-log-lbl" style="color:var(--sage);">meters</div></div>
@@ -52638,15 +52653,13 @@ window.FG_Backpack.show = function() {
   var glass = document.querySelector('.map-glass-highlight');
   if (vig) vig.style.display = 'block';
   if (glass) glass.style.display = 'block';
-  // Inject SVG icons if not already there. Guard: only inject if the
-  // sprite is actual SVG markup — otherwise we end up rendering an emoji
-  // fallback on top of the FAB's PNG background.
+  // Stephen test: 'shitty little green leaf emoji on top of the circle
+  // emblem that is the plant in the wild button. remove that emoji.'
+  // The PNG background art on #dfb already conveys the affordance — the
+  // SVG sprite injection just stacked a leaf on top. Keep dfi empty and
+  // leave the FAB to its background image + drop-count badge.
   var dfi = document.getElementById('dfi');
-  if (dfi && !dfi.querySelector('svg') && window._BP_UI && typeof _BP_UI.spr === 'string' && _BP_UI.spr.indexOf('<svg') === 0) {
-    dfi.innerHTML = _BP_UI.spr;
-  } else if (dfi) {
-    dfi.innerHTML = '';
-  }
+  if (dfi) dfi.innerHTML = '';
   var sdhi = document.getElementById('sdhi');
   if (sdhi && !sdhi.querySelector('svg') && window._BP_UI) sdhi.innerHTML = window._BP_UI.hx || '';
   // Show return-to-base button + start cooldown timer
