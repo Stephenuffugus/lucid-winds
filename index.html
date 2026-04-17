@@ -5936,6 +5936,12 @@ window._addSwitchTabHook = function(fn){
     <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="localStorage.removeItem('fg_ferals');localStorage.removeItem('fg_feral_zones');alert('Ferals cleared! Switch tabs to refresh.');">🧹 CLEAR FERALS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button><button class="dev-btn" onclick="PW_Dev.dropTestPair()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🧬 DROP BREEDING PAIR</button><button class="dev-btn" onclick="PW_Dev.simulateSpread()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌿 SIMULATE SPREAD</button></div>
     <div class="dev-section"><div class="dev-section-title">ACCELERATE (BETA TEST)</div><button class="dev-btn" onclick="PW_Dev.accelFerals()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⚡ FORCE FERAL SPAWN</button><button class="dev-btn" onclick="PW_Dev.accelRepro()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🌱 FORCE WILD REPRODUCTION</button><button class="dev-btn" onclick="PW_Dev.accelClimate()" style="border-color:rgba(255,120,80,0.4);color:#ff9060;">🔥 FORCE CLIMATE TICK</button><button class="dev-btn" onclick="PW_Dev.accelKillOldest()" style="border-color:rgba(200,90,90,0.4);color:#d08080;">💀 KILL OLDEST (climate)</button><button class="dev-btn" onclick="PW_Dev.accelGerminate()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌱 INSTANT GERMINATE SPROUTS</button><button class="dev-btn" onclick="PW_Dev.accelFullCycle()" style="border-color:rgba(200,168,75,0.7);color:var(--gold);background:rgba(200,168,75,0.12);">🔄 FULL LIFE CYCLE (repro→kill→sprout→germinate)</button><button class="dev-btn" onclick="PW_Dev.accelNursery()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💧 INSTANT BLOOM ALL SEEDS</button><button class="dev-btn" onclick="PW_Dev.accelBackpack()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🎒 CLEAR BP COOLDOWNS</button><button class="dev-btn" onclick="PW_Dev.grantHashes(100)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">☀️ +100 SUNBEAMS</button><button class="dev-btn" onclick="PW_Dev.grantDew(100)" style="border-color:rgba(91,175,220,0.4);color:#8bd0e8;">💧 +100 DEW</button><button class="dev-btn" onclick="PW_Dev.accelAll()" style="border-color:rgba(255,110,199,0.4);color:#ff6ec7;">🚀 ACCELERATE EVERYTHING</button></div>
     <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button><button class="dev-btn" onclick="PW_Dev.spawnChimeras()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🧬 SPAWN 4 CHIMERAS (dual borders)</button><button class="dev-btn" onclick="PW_Dev.grantDew(500)" style="border-color:rgba(91,175,220,0.4);color:rgba(91,175,220,0.9);">💧 +500 DEW DROPS</button></div>
+    <div class="dev-section"><div class="dev-section-title">TIME SKIP (WILD SIM)</div>
+      <button class="dev-btn" onclick="PW_Dev.backdateWilds(1)">⏩ BACKDATE WILDS 1 DAY</button>
+      <button class="dev-btn" onclick="PW_Dev.backdateWilds(3)">⏩ BACKDATE WILDS 3 DAYS</button>
+      <button class="dev-btn" onclick="PW_Dev.backdateWilds(7)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⏩ BACKDATE WILDS 1 WEEK</button>
+      <button class="dev-btn" onclick="PW_Dev.backdateWilds()">⏩ BACKDATE WILDS …</button>
+    </div>
     <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button><button class="dev-btn" onclick="try{PW_Dev.cardFrontAligner()}catch(e){alert(e.message)}">🃏 CARD FRONT ALIGNMENT</button><button class="dev-btn" onclick="try{PW_Dev.cardBackViewer()}catch(e){alert(e.message)}">🔙 CARD BACK NAMEPLATES</button><button class="dev-btn" onclick="try{PW_Dev.leafBloomEditor()}catch(e){alert(e.message)}">🌿 LEAF & BLOOM EDITOR</button></div>
     <div class="dev-section"><div class="dev-section-title">TESTER ONBOARDING</div>
       <button class="dev-btn danger" onclick="PW_Dev.replayOnboarding()" style="border-color:rgba(255,110,199,0.5);color:#ff6ec7;">🔄 REPLAY FULL ONBOARDING (wipe)</button>
@@ -6141,6 +6147,36 @@ window._addSwitchTabHook = function(fn){
       localStorage.removeItem('fg_rtb_last');
       alert('Wild data cleared. Reload to see clean map.');
       location.reload();
+    },
+    backdateWilds:function(days){
+      // Time-skip dev helper: shift every wild plant's age-related
+      // timestamps back N days so decay, wilting, dormant, vitality
+      // and tend cooldowns can be tested without waiting real days.
+      // Touches: droppedAt, decayAt, lastWatered, lastTended, date,
+      // dormantSince. Uses localStorage 'fg_wild_plants' (own plants).
+      // Stranger wild plants live in Firestore wildDrops and are not
+      // mutated here — that would require server-side write rules.
+      var d=parseInt(days,10);
+      if(!d||d<1){var p=prompt('Backdate all your wild plants by how many days?','7');d=parseInt(p,10);if(!d||d<1)return;}
+      var shift=d*86400000;
+      var raw='[]';try{raw=localStorage.getItem('fg_wild_plants')||'[]';}catch(e){}
+      var arr=[];try{arr=JSON.parse(raw);}catch(e){}
+      if(!arr.length){alert('No own wild plants to backdate.');return;}
+      var now=Date.now();
+      for(var i=0;i<arr.length;i++){
+        var w=arr[i];if(!w)continue;
+        if(typeof w.droppedAt==='number')w.droppedAt-=shift;
+        if(typeof w.droppedAtMs==='number')w.droppedAtMs-=shift;
+        if(typeof w.decayAt==='number')w.decayAt-=shift;
+        if(typeof w.decayAtMs==='number')w.decayAtMs-=shift;
+        if(typeof w.lastWateredAt==='number')w.lastWateredAt-=shift;
+        if(typeof w.dormantSince==='number')w.dormantSince-=shift;
+        // String-based fallback fields (legacy ISO dates)
+        if(typeof w.date==='string'){var t=new Date(w.date).getTime();if(!isNaN(t))w.date=new Date(t-shift).toISOString();}
+        if(typeof w.lastWatered==='string'){var lt=new Date(w.lastWatered).getTime();if(!isNaN(lt))w.lastWatered=new Date(lt-shift).toISOString();}
+      }
+      try{localStorage.setItem('fg_wild_plants',JSON.stringify(arr));}catch(e){}
+      alert('Backdated '+arr.length+' wild plant'+(arr.length===1?'':'s')+' by '+d+' day'+(d===1?'':'s')+'. Refresh Wild tab to see decay states.');
     },
     spawnFeral:function(){
       // Force-spawn a feral seed near the player's current GPS position
