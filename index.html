@@ -54317,6 +54317,15 @@ function _step20(){
   var nurLen0=_nurLen();
   var polls=0;
   var watch=function(){
+    // When the bs-confirm modal opens, drop the tutorial _dlg so it
+    // doesn't stack behind the confirm card. Cancel is locked in
+    // breed-only mode, so the only forward path is BREED → nurLen++.
+    try{
+      var cf=document.getElementById('bs-confirm');
+      if(cf&&cf.classList.contains('open')&&_dlg){
+        if(_dlg.parentNode)_dlg.remove();_dlg=null;
+      }
+    }catch(e){}
     if(_nurLen()>nurLen0){
       _clear();setTimeout(_step22,2500);return;
     }
