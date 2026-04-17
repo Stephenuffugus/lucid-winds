@@ -2182,11 +2182,11 @@
     .tut-card.tut-selected{border-color:var(--gold);box-shadow:0 0 14px rgba(200,168,75,0.35);background:rgba(200,168,75,0.08);}
 
     /* ── GREENHOUSE ── */
-    /* 2-wide default: Stephen test — 'plant on the far right gets cut off
-       by the edge of the screen. maybe we switch to a two wide sizing for
-       convenience and ease on the eyes.' Wider cards, cleaner art, no
-       clipping. */
-    .greenhouse-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0.6rem;}
+    /* Stephen reverted the 2-wide experiment — 'grid view is all fucked
+       up and cards arent fitting the borders. that looks bad! borders
+       arent rendering. just keep them the same size they were.' Back
+       to 3-wide default; mobile breakpoints restored below. */
+    .greenhouse-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.55rem;}
     /* ═══ CARD FRONT: Seasonal frames ═══ */
     .greenhouse-plant{border:1px solid rgba(122,179,86,0.12);border-radius:8px;padding:0.4rem 0.3rem;text-align:center;position:relative;overflow:visible;background-color:#050505;background-size:100% 100%;background-position:center;background-repeat:no-repeat;box-shadow:0 2px 6px rgba(0,0,0,0.4);aspect-ratio:544/736;display:flex;flex-direction:column;align-items:center;justify-content:center;contain:layout style paint;transition:box-shadow 0.2s ease,transform 0.15s ease;}
     .greenhouse-plant:active{transform:scale(0.97);}
@@ -2751,14 +2751,14 @@
       .card-grid{grid-template-columns:repeat(3,1fr);gap:min(0.3rem,0.8vmin);}
       .shape-svg{max-width:38px;}
       .game-title{font-size:1rem;}
-      .greenhouse-grid{grid-template-columns:repeat(2,1fr);gap:0.45rem;}
+      .greenhouse-grid{grid-template-columns:repeat(4,1fr);gap:0.3rem;}
     }
     @media(max-width:400px){
       .card-grid{gap:min(0.2rem,0.5vmin);}
       .grove-card{border-radius:6px;}
       .shape-svg{max-width:30px;}
       .shape-row{gap:0px;}
-      .greenhouse-grid{grid-template-columns:repeat(2,1fr);gap:0.35rem;}
+      .greenhouse-grid{grid-template-columns:repeat(3,1fr);gap:0.25rem;}
       .greenhouse-plant{padding:0.3rem 0.2rem;}
     }
 
@@ -6018,7 +6018,7 @@ window._addSwitchTabHook = function(fn){
       <button class="dev-btn" onclick="PW_Dev.pickClass('breeder')">🧬 SET BREEDER</button>
       <button class="dev-btn" onclick="PW_Dev.pickClass('cartographer')">🧭 SET CARTOGRAPHER</button>
       <button class="dev-btn" onclick="PW_Dev.pickClass('tender')">💧 SET TENDER</button>
-      <button class="dev-btn" onclick="PW_Dev.pickClass('keeper')">🌿 SET KEEPER</button>
+      <button class="dev-btn" onclick="PW_Dev.pickClass('keeper')">🌿 SET STEWARD</button>
       <button class="dev-btn" onclick="PW_Dev.classClear()">⊘ CLEAR CLASS</button>
       <button class="dev-btn" onclick="PW_Dev.classLevel(1)">⬇ FORCE L1</button>
       <button class="dev-btn" onclick="PW_Dev.classLevel(2)">→ FORCE L2 (Journeyman)</button>
@@ -55886,17 +55886,15 @@ function _step32(){
   watch();
 }
 
-// ═══ STEP 33: inside BoS — let them browse, OK button to dismiss prompt ═══
+// ═══ STEP 33: inside BoS — silently wait for book close ═══
+// Stephen test: 'there is also a prompt that pops up when you click on
+// the book and all it says is take your time. every tab fills as you
+// play with an okay button. we need to just erase this prompt its
+// unnecessary.' No dialog fires — the watch loop below advances to
+// step 34 the moment the player closes the book.
 function _step33(){
   _setStep(33);
-  _dialog(
-    'Take your time. Every tab fills in as you play.<br><br>' +
-    '<span style="color:var(--muted);font-size:0.85em;">Close the Book when you\u2019re ready.</span>',
-    'OKAY',function(){
-      // Dismiss the dialog so the player can browse without it blocking.
-      // The watch loop continues polling for #bos-overlay close → _step34.
-      if(_dlg&&_dlg.parentNode){_dlg.remove();_dlg=null;}
-    },'top');
+  _clear();
   var polls=0;
   var watch=function(){
     if(!document.getElementById('bos-overlay')){
@@ -66246,8 +66244,13 @@ var LW_CLASSES={
       // companion dependency. Avoids the "must-own Phoenix" hoarding trap.
       3:{name:'Deep Green',desc:'Wild plants live 2.5× longer (passive)'}
     },companion:33,biome:'wetland'},
-  keeper:{name:'Keeper',icon:'🌿',desc:'The patient path. Every XP source counts, every tool cools faster, no weakness. Pairs with all tools — slow and steady through every biome.',
-    lore:'The Keeper is the sun of the garden — not dominant, but constant. No single talent; no single weakness. Every biome, every tool, every season yields equally. The long path. The one most often walked by the people who stay longest.',
+  // Display-renamed Keeper → Steward. Every player is a "Keeper" (core
+  // narrative — the Keeper is the sun of the garden); the Steward is
+  // the CLASS that embodies the patient, all-sources path. Internal
+  // id stays 'keeper' so class-XP, tree branches, and ~20 other
+  // call-sites don't need updating.
+  keeper:{name:'Steward',icon:'🌿',desc:'The patient path. Every XP source counts, every tool cools faster, no weakness. Pairs with all tools — slow and steady through every biome.',
+    lore:'The Steward walks the patient path — not dominant, but constant. No single talent; no single weakness. Every biome, every tool, every season yields equally. The long road, most often walked by the keepers who stay longest.',
     xpSrc:['all'],
     abilities:{
       1:{name:'Attuned',desc:'+5% to all bonuses'},
@@ -68369,7 +68372,7 @@ window.LW_Comp = (function(){
     ov.style.cssText='position:fixed;inset:0;z-index:1000020;background:rgba(5,8,4,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:panelFadeIn 0.4s ease;';
     ov.innerHTML='<div style="max-width:340px;text-align:center;background:rgba(18,22,16,0.97);border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;padding:1.3rem 1.2rem;box-shadow:0 14px 44px rgba(0,0,0,0.7);">'+
       '<div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--gold);letter-spacing:0.2em;margin-bottom:0.5rem;">\u2726 BETA \u2726</div>'+
-      '<div style="font-family:Playfair Display,serif;font-size:1rem;color:var(--cream);line-height:1.45;margin-bottom:0.5rem;">Welcome, early gardener.</div>'+
+      '<div style="font-family:Playfair Display,serif;font-size:1rem;color:var(--cream);line-height:1.45;margin-bottom:0.5rem;">Welcome, early keeper.</div>'+
       '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);line-height:1.6;margin-bottom:0.9rem;">Lucid Winds is in beta. Plants, progress, and vaults may be reset before launch as we balance the economy and fix bugs. Thank you for testing.</div>'+
       '<button id="lw-beta-ack-btn" style="width:100%;padding:0.65rem;border:1.5px solid rgba(200,168,75,0.45);border-radius:8px;background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(120,100,40,0.32));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;cursor:pointer;min-height:52px;">I UNDERSTAND</button>'+
     '</div>';
