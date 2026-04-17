@@ -8860,7 +8860,12 @@ document.addEventListener('keydown', function(e) {
       seedHash:opts.seedHash, parentAHash:opts.parentAHash,
       parentBHash:opts.parentBHash, nonce:opts.nonce||0,
       plantedAt:today, waterLog:[], status:'growing', nickname:null,
-      mystery:!!opts.mystery
+      mystery:!!opts.mystery,
+      // origin was read everywhere in the UI (nursery cards, bloom path)
+      // but addSeed never actually persisted it — every cutting/clipping
+      // looked like a bred seed. Fixed here so wilt logic + UI badges fire.
+      origin:opts.origin||null,
+      bornAt:Date.now()
     };
     // Defensive: new seeds must NEVER inherit a pot from a sibling.
     // A pot bleed bug was reported where breeding created seeds with
@@ -8874,7 +8879,61 @@ document.addEventListener('keydown', function(e) {
       // (we can't know this — but we CAN ensure OUR new seed is clean)
     }
     _saveNursery(nursery);
+    // Nursery just got a seed — recompute wilt pressure on cuttings.
+    // If the new seed fills the last slot, existing cuttings start wilting.
+    try { _updateCuttingPressure(); } catch(e) {}
     return {ok:true,seed:seed};
+  }
+
+  // ═══ CUTTING WILT ══════════════════════════════════════════════════
+  // Cuttings (origin:'cutting' | 'clipping') wilt if the nursery stays
+  // full too long. Timer only runs while nursery is at capacity; opens
+  // a slot and every cutting's wilt timer pauses/clears. Anti-hoarding
+  // with a forgiving twist — players with open slots are never punished.
+  //
+  // Stephen: 'cuttings only last for like 6 hours too so if you never
+  // get the space in your nursery to breed in time, then it expires.
+  // thats an awesome way to make it so people cant overstock or solely
+  // stock up on stuff.'
+  var CUTTING_WILT_MS = 6 * 3600 * 1000;
+  function _updateCuttingPressure(){
+    var nursery = _loadNursery();
+    var maxSlots = getNurSlots();
+    var isFull = nursery.length >= maxSlots;
+    var now = Date.now();
+    var changed = false;
+    var wilted = [];
+    for (var i = nursery.length - 1; i >= 0; i--) {
+      var s = nursery[i];
+      if (s.origin !== 'cutting' && s.origin !== 'clipping') continue;
+      if (isFull) {
+        if (!s.wiltDeadline) { s.wiltDeadline = now + CUTTING_WILT_MS; changed = true; }
+        if (s.wiltDeadline <= now) {
+          var nm = (typeof window !== 'undefined' && typeof window.getPlantName === 'function')
+            ? window.getPlantName(s.seedHash) : s.seedHash.slice(0,8);
+          wilted.push(nm);
+          nursery.splice(i, 1);
+          changed = true;
+        }
+      } else {
+        if (s.wiltDeadline) { delete s.wiltDeadline; changed = true; }
+      }
+    }
+    if (changed) _saveNursery(nursery);
+    if (wilted.length && typeof window !== 'undefined' && window._toast) {
+      window._toast('\u2702\ufe0f ' + wilted.length + ' cutting' + (wilted.length > 1 ? 's' : '') + ' wilted \u2014 nursery stayed full too long.');
+      if (typeof window !== 'undefined' && typeof window.renderNursery === 'function') {
+        try { window.renderNursery(); } catch(e) {}
+      }
+    }
+    return {wilted:wilted.length, changed:changed};
+  }
+  // Expose so outside callers (bloom, remove, UI) can trigger re-checks.
+  window._lwUpdateCuttingPressure = _updateCuttingPressure;
+  // Periodic tick so wilt fires even if no UI action touches the nursery.
+  // Only starts once; idempotent on reload.
+  if (typeof window !== 'undefined' && !window._lwCuttingTicker) {
+    window._lwCuttingTicker = setInterval(_updateCuttingPressure, 60000);
   }
 
   function waterSeed(id){
@@ -8919,12 +8978,15 @@ document.addEventListener('keydown', function(e) {
     var result={ok:true,seedHash:seed.seedHash,ancestry:{parentAHash:seed.parentAHash,parentBHash:seed.parentBHash,nonce:seed.nonce}};
     nursery.splice(idx,1);
     _saveNursery(nursery);
+    // A slot just opened — any wilting cuttings get their timer cleared.
+    try { _updateCuttingPressure(); } catch(e) {}
     return result;
   }
 
   function removeSeed(id){
     var nursery=_loadNursery();
     _saveNursery(nursery.filter(function(s){return s.id!==id;}));
+    try { _updateCuttingPressure(); } catch(e) {}
     return {ok:true};
   }
 
@@ -31827,6 +31889,10 @@ document.addEventListener('keydown', function(e) {
 
   function renderNursery() {
     if (!window.FG_Data) return;
+    // Recompute cutting wilt pressure before reading nursery state —
+    // ensures stale cuttings wilt the instant the player opens nursery,
+    // not after a 60s tick.
+    try { if (window._lwUpdateCuttingPressure) window._lwUpdateCuttingPressure(); } catch(e) {}
     var nursery = FG_Data.getNursery();
     var streak  = FG_Data.getStreak();
     // Wallet balance
@@ -32358,9 +32424,23 @@ document.addEventListener('keydown', function(e) {
       // Clipping seeds inherit plant genetics only (leaf/stem/flower/
       // season). No pot, substrate, aura, or companion — those stayed
       // with the parent. Messaging should reflect that.
+      // Wilt-timer row: only shows when the nursery is full AND the
+      // seed has an active wilt deadline. Timer hides the moment a
+      // slot opens, matching the "pressure pauses" rule.
+      var _wiltRow = '';
+      if (seed.wiltDeadline) {
+        var _wMsLeft = Math.max(0, seed.wiltDeadline - Date.now());
+        var _wHrs = Math.floor(_wMsLeft / 3600000);
+        var _wMin = Math.floor((_wMsLeft % 3600000) / 60000);
+        var _wTxt = _wHrs > 0 ? (_wHrs + 'h ' + _wMin + 'm') : (_wMin + 'm');
+        var _wColor = _wMsLeft < 3600000 ? '#d96b4b' : 'var(--gold)';
+        _wiltRow = '<div style="margin-top:0.35rem;padding:0.3rem 0.5rem;background:rgba(217,107,75,0.07);border:1px solid rgba(217,107,75,0.25);border-radius:6px;font-family:DM Mono,monospace;font-size:0.5rem;color:' + _wColor + ';line-height:1.3;">\u23f3 Wilts in ' + _wTxt + ' \u2014 nursery is full.</div>';
+      }
       _offPreview = '<div style="margin-top:0.3rem;padding:0.45rem 0.55rem;background:rgba(122,179,86,0.06);border:1px dashed rgba(122,179,86,0.3);border-radius:7px;">' +
         '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:var(--sage);margin-bottom:0.2rem;">\u2702\ufe0f CLIPPING</div>' +
         '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.4;">Genetic clone of the parent. No pot, substrate, aura, or companion. Just the plant. Water three days to root it, then breed it with another plant to keep its line going.</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);margin-top:0.3rem;line-height:1.35;opacity:0.75;">\u26a0 Cuttings wilt after 6h if the nursery stays full. Open a slot to pause the timer.</div>' +
+        _wiltRow +
       '</div>';
     } else {
       _offPreview = '<div style="margin-top:0.3rem;padding:0.4rem 0.55rem;background:rgba(74,124,53,0.05);border:1px dashed rgba(122,179,86,0.3);border-radius:7px;">' +
