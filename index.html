@@ -49176,6 +49176,11 @@ var LEVEL_UNLOCKS={
   23: {key:'fourthDrop',   title:'4th daily Wild drop',  desc:'You can now drop 4 plants per day instead of 3.'},
   25: {key:'masterKeeper', title:'Master Keeper',        desc:'Cosmetic gold border on your keeper bar + profile.'}
 };
+// Exposed for the BoS YOU-ARE-HERE dashboard (reads cumulative XP
+// thresholds + unlock titles). Safe to expose — both are read-only
+// lookups.
+window.RANKS = RANKS;
+window.LEVEL_UNLOCKS = LEVEL_UNLOCKS;
 
 function _getXP(){try{return parseInt(localStorage.getItem('pw_xp')||'0');}catch(e){return 0;}}
 function _saveXP(v){localStorage.setItem('pw_xp',String(v));}
@@ -64523,6 +64528,62 @@ function _bosTodayContent() {
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--muted);letter-spacing:0.16em;margin-bottom:3px;">' + dateStr.toUpperCase() + '</div>';
   h += '<div style="font-family:Playfair Display,serif;font-size:1.2rem;color:var(--gold);font-style:italic;line-height:1.15;">' + greeting + '.</div>';
   h += '</div>';
+  // ── YOU ARE HERE dashboard — level, XP bar, next unlocks, top action ──
+  try {
+    var _xp = (window._getXP ? window._getXP() : (parseInt(localStorage.getItem('pw_xp')||'0',10)||0));
+    var _rk = window._getRank ? window._getRank(_xp) : null;
+    var _lvl = _rk ? _rk.level : 1;
+    var _title = _rk ? _rk.title : '';
+    // XP within current level: denominator = next threshold - current threshold
+    var _curThr = (window.RANKS && window.RANKS[_lvl-1]) ? window.RANKS[_lvl-1].xp : 0;
+    var _nxtThr = (_rk && _rk.nextXP) || (_curThr + 100);
+    var _span = Math.max(1, _nxtThr - _curThr);
+    var _into = Math.max(0, _xp - _curThr);
+    var _pct = Math.max(0, Math.min(100, Math.round((_into / _span) * 100)));
+    // Next 2 unlocks from the canon table
+    var _unlocks = [];
+    if (window.LEVEL_UNLOCKS) {
+      for (var _lk = _lvl + 1; _lk <= 30 && _unlocks.length < 2; _lk++) {
+        if (window.LEVEL_UNLOCKS[_lk]) _unlocks.push({lvl:_lk, info:window.LEVEL_UNLOCKS[_lk]});
+      }
+    }
+    // Top suggestion
+    var _sug = null;
+    try { _sug = window._lwTopSuggestion ? window._lwTopSuggestion() : null; } catch(e){}
+    h += '<div style="padding:0.85rem 0.9rem 0.9rem;margin-bottom:0.8rem;background:linear-gradient(180deg,rgba(200,168,75,0.08),rgba(18,22,16,0.55));border:1.5px solid rgba(200,168,75,0.38);border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.35);">';
+    h +=   '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">';
+    h +=     '<div style="font-family:Bebas Neue,sans-serif;font-size:0.58rem;letter-spacing:0.22em;color:var(--muted);">WHERE YOU ARE</div>';
+    h +=     '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);">' + _into + ' / ' + _span + ' XP</div>';
+    h +=   '</div>';
+    h +=   '<div style="font-family:Playfair Display,serif;font-size:1.05rem;color:var(--gold);font-style:italic;line-height:1.15;margin-bottom:3px;">Lvl ' + _lvl + (_title ? ' &middot; ' + _title : '') + '</div>';
+    // XP bar
+    h +=   '<div style="height:6px;border-radius:3px;background:rgba(13,16,12,0.7);border:1px solid rgba(200,168,75,0.25);overflow:hidden;margin:8px 0 10px;">';
+    h +=     '<div style="height:100%;width:' + _pct + '%;background:linear-gradient(90deg,rgba(122,179,86,0.8),var(--gold));transition:width 0.4s;"></div>';
+    h +=   '</div>';
+    // Next unlocks
+    if (_unlocks.length) {
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.52rem;letter-spacing:0.16em;color:var(--muted);margin:0.4rem 0 4px;">NEXT UNLOCKS</div>';
+      for (var _u = 0; _u < _unlocks.length; _u++) {
+        var _U = _unlocks[_u];
+        h += '<div style="display:flex;align-items:baseline;gap:0.5rem;padding:3px 0;">';
+        h +=   '<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;letter-spacing:0.08em;color:var(--gold);flex-shrink:0;min-width:30px;">Lv ' + _U.lvl + '</div>';
+        h +=   '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);line-height:1.3;">' + _U.info.title + '</div>';
+        h += '</div>';
+      }
+    }
+    // Top suggestion as a big DO THIS button
+    if (_sug && _sug.title) {
+      h += '<button onclick="var m=document.getElementById(\'bos-overlay\');if(m)m.remove();setTimeout(function(){if(window._lwQuestTap)window._lwQuestTap();else if(window._lwTopSuggestion){var s=window._lwTopSuggestion();if(s&&s.action)s.action();}},150);" style="display:flex;align-items:center;gap:9px;width:100%;margin-top:0.7rem;padding:10px 12px;border-radius:10px;border:1.5px solid rgba(200,168,75,0.5);background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(74,124,53,0.12));color:var(--cream);cursor:pointer;text-align:left;min-height:52px;">';
+      h +=   '<div style="font-size:1.15rem;line-height:1;flex-shrink:0;">' + (_sug.icon || '\ud83c\udf31') + '</div>';
+      h +=   '<div style="flex:1;min-width:0;">';
+      h +=     '<div style="font-family:Bebas Neue,sans-serif;font-size:0.54rem;letter-spacing:0.16em;color:var(--muted);margin-bottom:2px;">DO THIS NEXT</div>';
+      h +=     '<div style="font-family:Playfair Display,serif;font-size:0.78rem;color:var(--gold);font-style:italic;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _sug.title + '</div>';
+      h +=   '</div>';
+      h +=   '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:var(--gold);opacity:0.6;flex-shrink:0;">\u203a</div>';
+      h += '</button>';
+    }
+    h += '</div>';
+  } catch(e) {}
   // ── Gather recent activity ───────────────────────────────────
   var log = [];
   try { log = (window.LW_Log && window.LW_Log.all()) || []; } catch(e){}
