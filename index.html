@@ -41700,6 +41700,17 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
     content:'';position:absolute;bottom:2px;left:20%;right:20%;height:2px;
     background:var(--sage);border-radius:1px;opacity:0.8;
   }
+  /* Step 24 (nav-wild): fake the WILD tab as selected and dim the
+     currently-.active greenhouse tab so the lit tab matches the
+     instruction. Mirrors the nav-focus pattern above, gold-tinted so
+     the visual matches "the world opens" framing. */
+  body.lw-tut-active.lw-tut-nav-wild .fg-nav-btn.active img{opacity:0.4 !important;filter:saturate(0.3) brightness(0.6) !important;}
+  body.lw-tut-active.lw-tut-nav-wild .fg-nav-btn.active::after{display:none !important;}
+  body.lw-tut-active.lw-tut-nav-wild #nav-btn-wild img{opacity:1 !important;filter:brightness(1.05) drop-shadow(0 0 10px rgba(200,168,75,0.35)) !important;}
+  body.lw-tut-active.lw-tut-nav-wild #nav-btn-wild::after{
+    content:'';position:absolute;bottom:2px;left:20%;right:20%;height:2px;
+    background:var(--gold);border-radius:1px;opacity:0.9;
+  }
   /* At step 13, block plant-card taps in the greenhouse so the player
      can't reopen the carousel and access action-bar buttons while we're
      pointing at GAMES. Unidirectional per Stephen: only GAMES clickable. */
@@ -54505,8 +54516,14 @@ function _step23WaitForReveal(attempts){
 function _step23Celebrate(){
   _clear();
   try{
+    // Grant enough XP to cross L3 under BOTH level systems:
+    //   RANKS (used by PW_grantXP ceremony): L3 = 51 xp
+    //   _lwLevel (used by canSee.wildTab gate): L3 = 75 xp
+    // Grant to 75 so canSee.wildTab() returns true and step 24 fires.
+    // Without this the lvl<3 branch hits _done() and strips
+    // lw-tut-active — unlocking BP and BoS prematurely.
     var curXp=parseInt(localStorage.getItem('pw_xp')||'0',10)||0;
-    if(curXp<36&&window.PW_grantXP){window.PW_grantXP(36-curXp,'tut_unlock');}
+    if(curXp<75&&window.PW_grantXP){window.PW_grantXP(75-curXp,'tut_unlock');}
   }catch(e){}
   _step23AfterCeremony(0);
 }
