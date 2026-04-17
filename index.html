@@ -35556,19 +35556,104 @@ function _ensureVitality(plant){
   return plant;
 }
 function _getWildVitality(plant){
-  if(!plant||!plant.hash)return {pct:0,daysLeft:0,dead:true,lifeMs:0};
+  if(!plant||!plant.hash)return {pct:0,daysLeft:0,dead:true,lifeMs:0,wilting:false,dormant:false,graceLeftMs:0};
   _ensureVitality(plant);
   var now=Date.now();
   var remaining=plant.decayAt-now;
   var life=plant.lifespanMs||_lifespanMsFor(plant.rarity||'Common');
   var pct=Math.max(0,Math.min(1,remaining/life));
-  var dead=remaining<=0;
-  return {pct:pct,daysLeft:Math.max(0,remaining/86400000),dead:dead,lifeMs:life,remainingMs:Math.max(0,remaining)};
+  var wilting=pct<=0.25 && remaining>0;
+  // Dormant grace: when vitality hits 0, the plant enters a 72h
+  // dormant husk state before _pruneWild forfeits it. Owner can
+  // revive in that window via Sunbeam emergency rescue. Tracked via
+  // dormantSince (set lazily below the first time we see remaining<=0).
+  var GRACE_MS=72*3600000;
+  var dormant=false,graceLeftMs=0;
+  if(remaining<=0){
+    if(!plant.dormantSince){plant.dormantSince=now;}
+    var dormantElapsed=now-plant.dormantSince;
+    if(dormantElapsed<GRACE_MS){
+      dormant=true;
+      graceLeftMs=GRACE_MS-dormantElapsed;
+    }
+  } else if(plant.dormantSince){
+    // Plant was revived (decayAt extended past now) — clear the dormant marker.
+    delete plant.dormantSince;
+  }
+  var dead=remaining<=0 && !dormant;
+  return {pct:pct,daysLeft:Math.max(0,remaining/86400000),dead:dead,lifeMs:life,remainingMs:Math.max(0,remaining),wilting:wilting,dormant:dormant,graceLeftMs:graceLeftMs};
 }
 window._getWildVitality=_getWildVitality;
+
+// ═══ TEND CAPS ═══
+// Anti-farming caps from the upkeep design: 3 tends per plant per
+// day, 10 tends per player per day. Tracked in localStorage; resets
+// at midnight local. Used by both Dew tend and Sunbeam rescue.
+function _lwTendCaps(){
+  var today=new Date().toISOString().split('T')[0];
+  var raw='{}';try{raw=localStorage.getItem('lw_tend_caps')||'{}';}catch(e){}
+  var c={};try{c=JSON.parse(raw)||{};}catch(e){}
+  if(c.day!==today){c={day:today,total:0,perPlant:{}};}
+  return c;
+}
+function _lwTendSave(c){try{localStorage.setItem('lw_tend_caps',JSON.stringify(c));}catch(e){}}
+window._lwCanTend=function(hash){
+  var c=_lwTendCaps();
+  if((c.total||0)>=10)return {ok:false,reason:'You\u2019ve tended 10 plants today. Caps reset at midnight.'};
+  var p=(c.perPlant&&c.perPlant[hash])||0;
+  if(p>=3)return {ok:false,reason:'This plant has been tended 3 times today.'};
+  return {ok:true,playerLeft:10-(c.total||0),plantLeft:3-p};
+};
+window._lwRecordTend=function(hash){
+  var c=_lwTendCaps();
+  c.total=(c.total||0)+1;
+  if(!c.perPlant)c.perPlant={};
+  c.perPlant[hash]=(c.perPlant[hash]||0)+1;
+  _lwTendSave(c);
+};
+
+// ═══ SUNBEAM EMERGENCY RESCUE ═══
+// The 30-Sunbeam shock for Cosmic plants in trouble. Restores full
+// vitality (resets decayAt to droppedAt + lifespanMs * 1.0). Costs
+// scale with rarity per the design ladder.
+var SUNBEAM_RESCUE_COST = {
+  Common: 0, Uncommon: 0, Rare: 5, Epic: 10, Legendary: 15, Mythic: 20, Cosmic: 30
+};
+window._lwSunbeamRescueCost=function(rarity){return SUNBEAM_RESCUE_COST[rarity]||5;};
+window._lwSunbeamRescue=function(hash){
+  var wild=_getWild();
+  var idx=-1;for(var i=0;i<wild.length;i++)if(wild[i].hash===hash){idx=i;break;}
+  if(idx<0)return {ok:false,reason:'Plant not found locally.'};
+  var p=wild[idx];
+  _ensureVitality(p);
+  var rarity=p.rarity||'Common';
+  if(rarity==='Common'||rarity==='Uncommon')return {ok:false,reason:'Common and Uncommon plants don\u2019t need a Sunbeam rescue. Tend with Dew instead.'};
+  var cost=SUNBEAM_RESCUE_COST[rarity]||5;
+  // Spend Sunbeams via the existing currency.
+  var have=window.getTotalHashes?window.getTotalHashes():0;
+  if(have<cost)return {ok:false,reason:'Need '+cost+' Sunbeams. You have '+have+'.'};
+  // Tend cap check
+  var capChk=window._lwCanTend(hash);
+  if(!capChk.ok)return capChk;
+  // Spend Sunbeams. The earnHashes / queue system uses _readyHashes;
+  // there isn't a direct 'spend' helper, so we mark them spent via
+  // earnHashes(-cost) which the game already handles for shop purchases.
+  try{if(window.earnHashes)window.earnHashes(-cost,'wild_rescue');}catch(e){}
+  // Restore: extend decayAt by full lifespan from now.
+  p.decayAt=Date.now()+(p.lifespanMs||_lifespanMsFor(rarity));
+  if(p.dormantSince)delete p.dormantSince;
+  if(p.neglectDecay)p.neglectDecay=0;
+  if(p.status==='Wilting')p.status='Growing';
+  _saveWild(wild);
+  window._lwRecordTend(hash);
+  if(window._toast)window._toast('\u2728 '+(window.getPlantName?getPlantName(hash):'Plant')+' rescued. Vitality restored.');
+  return {ok:true,cost:cost};
+};
 function _getWild(){try{var j=window._secureGet?window._secureGet('fg_wild_plants'):localStorage.getItem('fg_wild_plants');return JSON.parse(j||'[]');}catch(e){return[];}}
 function _saveWild(a){if(window._secureSet){window._secureSet('fg_wild_plants',a);}else{localStorage.setItem('fg_wild_plants',JSON.stringify(a));}}
-// Prune withered wild plants using rarity-scaled vitality.
+// Prune withered wild plants using rarity-scaled vitality. Dormant
+// plants (within 72h grace after vitality hits 0) are preserved so
+// the owner can revive via Sunbeam emergency rescue.
 function _pruneWild(){
   var wild=_getWild();if(!wild.length)return wild;
   for(var i0=0;i0<wild.length;i0++)_ensureVitality(wild[i0]);
@@ -35576,6 +35661,7 @@ function _pruneWild(){
   var fresh=wild.filter(function(w){
     if(!w||!w.hash)return false;
     var v=_getWildVitality(w);
+    // dead is true only AFTER the dormant grace expires.
     if(v.dead){died.push(w);return false;}
     return true;
   });
@@ -40885,15 +40971,23 @@ function _selectHexPlant(idx,p){
       var _vit=_getWildVitality(_sourcePlant);
       var _vPct=Math.round(_vit.pct*100);
       var _vDays=_vit.daysLeft;
-      var _vLabel=_vDays>=1?Math.round(_vDays)+' days left':Math.round(_vDays*24)+'h left';
-      var _vColor=_vPct>66?'var(--sage)':_vPct>33?'#c8a84b':'#c07060';
+      var _vLabel=_vit.dormant?'\ud83d\udca4 DORMANT \u00b7 '+Math.round(_vit.graceLeftMs/3600000)+'h grace':(_vDays>=1?Math.round(_vDays)+' days left':Math.round(_vDays*24)+'h left');
+      var _vColor=_vit.dormant?'#8a6e2f':(_vPct>66?'var(--sage)':_vPct>33?'#c8a84b':'#c07060');
+      var _vTitle=_vit.dormant?'DORMANT HUSK':(_vit.wilting?'\u26a0 WILTING':'VITALITY');
       vitalityHtml='<div class="hi-vitality">'+
-        '<div class="hi-vitality-row"><span class="hi-vitality-label">VITALITY</span>'+
+        '<div class="hi-vitality-row"><span class="hi-vitality-label" style="color:'+_vColor+';">'+_vTitle+'</span>'+
           '<span class="hi-vitality-val" style="color:'+_vColor+';">'+_vPct+'% \u00b7 '+_vLabel+'</span>'+
         '</div>'+
-        '<div class="hi-vitality-bar"><div class="hi-vitality-fill" style="width:'+_vPct+'%;background:'+_vColor+';"></div></div>'+
-        '<div class="hi-vitality-caption">Lifespan '+Math.round((_sourcePlant.lifespanMs||0)/86400000)+'d \u00b7 '+(_sourcePlant.rarity||'Common')+(p.own?' \u00b7 Water to reset':' \u00b7 Tend to extend')+'</div>'+
-      '</div>';
+        '<div class="hi-vitality-bar"><div class="hi-vitality-fill" style="width:'+(Math.max(_vPct,_vit.dormant?6:_vPct))+'%;background:'+_vColor+';"></div></div>'+
+        '<div class="hi-vitality-caption">Lifespan '+Math.round((_sourcePlant.lifespanMs||0)/86400000)+'d \u00b7 '+(_sourcePlant.rarity||'Common')+(p.own?' \u00b7 Water to reset':' \u00b7 Tend to extend')+'</div>';
+      // EMERGENCY RESCUE button — Rare+ plants in wilt (<25%) or dormant
+      // can be fully restored for a Sunbeam payment scaled by rarity.
+      var _rescueRarity=_sourcePlant.rarity||'Common';
+      var _rescueCost=window._lwSunbeamRescueCost?window._lwSunbeamRescueCost(_rescueRarity):0;
+      if(_rescueCost>0&&(_vit.wilting||_vit.dormant)){
+        vitalityHtml+='<button class="hi-rescue-btn" onclick="(function(){var r=window._lwSunbeamRescue(\''+p.hash+'\');if(r&&!r.ok){if(window._toast)window._toast(r.reason);}else if(r&&r.ok){if(window.FG_Wild&&FG_Wild.refresh)FG_Wild.refresh();else if(window._selectHexPlant&&window._hexInspPlants){var _idx=0;for(var _i=0;_i<window._hexInspPlants.length;_i++)if(window._hexInspPlants[_i].hash===\''+p.hash+'\'){_idx=_i;break;}window._selectHexPlant(_idx,window._hexInspPlants[_idx]);}}})();" style="display:block;width:100%;margin-top:8px;padding:11px;border-radius:8px;border:1.5px solid rgba(200,168,75,0.55);background:linear-gradient(180deg,rgba(200,168,75,0.28),rgba(120,100,40,0.42));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:44px;">\u2728 EMERGENCY RESCUE \u00b7 '+_rescueCost+' SUNBEAMS</button>';
+      }
+      vitalityHtml+='</div>';
     }
   }catch(e){}
 
