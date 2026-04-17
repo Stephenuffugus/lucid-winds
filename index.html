@@ -54229,32 +54229,33 @@ function _waitForCelebrationDismiss(attempts){
   else {setTimeout(_step18,400);} // 60s safety — give up and overlap
 }
 
-// ═══ STEP 18: "go look at your new plant" (hands off to Phase 4) ═══
+// ═══ STEP 18: natural handoff — wait for player in greenhouse, then soft hint ═══
+// No force-switchTab, no tile-lock. The mint celebration's VIEW IN
+// GREENHOUSE / KEEP PLAYING choice is respected. If they pick VIEW IN
+// GREENHOUSE, they arrive naturally; if they pick KEEP PLAYING, we
+// wait until they eventually land on greenhouse. Inspect is the
+// natural progression — no need to force-dim every other tile.
 function _step18(){
   _setStep(18);
-  if(window.switchTab)switchTab('greenhouse');
-  setTimeout(function(){
-    // Lock every greenhouse tile EXCEPT the newest one. Default sort
-    // is newest-first (renderGreenhouse reverses), so index 0 is the
-    // just-minted plant. All other tiles dim + pointer-events:none
-    // via the lw-tut-newplant-only body class.
-    try{
-      document.body.classList.add('lw-tut-newplant-only');
-      var tiles=document.querySelectorAll('.greenhouse-plant:not(.undiscovered)');
-      if(tiles.length){
-        for(var ti=0;ti<tiles.length;ti++)tiles[ti].classList.remove('lw-tut-newplant-target');
-        tiles[0].classList.add('lw-tut-newplant-target');
-      }
-    }catch(e){}
-    _dialog(
-      'Your second plant is here.<br><br>' +
-      '<span style="color:var(--gold);">Tap it</span> and flip it over to see what grew.',
-      '',null,'bottom');
-    if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
-    // The flip-reveal hook below advances to _step19 on first-reveal of
-    // this (or any) card while at step 18. 10-min safety fallback.
-    setTimeout(function(){if(_getStep()===18)_done();},600000);
-  },800);
+  var polls=0;
+  var waitForGH=function(){
+    var ghTab=document.getElementById('tab-greenhouse');
+    var onGH=ghTab&&getComputedStyle(ghTab).display!=='none';
+    if(onGH){
+      _dialog(
+        'Your new plant is here.<br><br>' +
+        '<span style="color:var(--gold);">Tap any plant</span> to flip it over and see what grew.',
+        '',null,'bottom');
+      if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+      return;
+    }
+    if(polls<1200){polls++;setTimeout(waitForGH,500);} // 10 min grace
+    else {_done();}
+  };
+  waitForGH();
+  // The flip-reveal hook advances to _step19 on first-reveal of any card
+  // while at step 18. 10-min safety fallback.
+  setTimeout(function(){if(_getStep()===18)_done();},600000);
 }
 
 // ═══ STEP 19: point at BREED button in the carousel ═══
