@@ -4830,6 +4830,39 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
 #w-map-frame-l{left:0;}
 #w-map-frame-r{right:0;}
 
+/* Quest line — persistent "what to do now" pill. Reads from
+   _lwTopSuggestion. Lives on Greenhouse + Wild tabs. */
+.lw-quest-line{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 12px;
+  background:linear-gradient(180deg,rgba(200,168,75,0.14),rgba(26,36,22,0.55));
+  border:1px solid rgba(200,168,75,0.38);
+  border-radius:11px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.42),inset 0 1px 0 rgba(200,168,75,0.22);
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:transform 0.12s,background 0.15s;
+  min-height:48px;
+}
+.lw-quest-line:active{transform:scale(0.98);background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(26,36,22,0.65));}
+.lw-quest-glyph{font-size:1.05rem;line-height:1;flex-shrink:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));}
+.lw-quest-text{flex:1;min-width:0;}
+.lw-quest-title{font-family:'Bebas Neue',sans-serif;font-size:0.72rem;letter-spacing:0.1em;color:var(--gold);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lw-quest-body{font-family:'DM Mono',monospace;font-size:0.46rem;color:var(--cream);opacity:0.78;line-height:1.3;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lw-quest-arrow{font-family:'Bebas Neue',sans-serif;font-size:0.9rem;color:var(--gold);opacity:0.55;flex-shrink:0;padding-right:2px;}
+
+/* Wild-tab placement: fixed just below the stats bar, above the map. */
+#lw-quest-wild{
+  position:fixed;
+  top:calc(118px + 58px + env(safe-area-inset-top,0px) + 8px);
+  left:10px;right:10px;
+  z-index:458;
+  max-width:480px;margin:0 auto;
+}
+/* Greenhouse-tab placement: inline, between progress bar and season strip. */
+#lw-quest-gh{
+  margin:0.35rem 0.6rem 0.5rem;
+}
+
 /* ── Trait Panel v2 (bottom sheet) ── */
 .wtp2{position:fixed;bottom:0;left:0;right:0;z-index:99998;background:linear-gradient(180deg,rgba(13,16,12,.97) 0%,rgba(8,12,6,.99) 100%);border-top:1px solid rgba(74,124,53,.12);border-radius:16px 16px 0 0;padding:0;max-width:680px;margin:0 auto;box-shadow:0 -8px 40px rgba(0,0,0,.6);transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.56,.64,1);overflow:hidden}
 .wtp2.open{transform:translateY(0)}
@@ -5559,6 +5592,15 @@ window._addSwitchTabHook = function(fn){
       <div class="gh-progress-bar"><div class="gh-progress-fill" id="gh-progress-fill" style="width:0%"></div></div>
     </div>
     <div id="gh-next-bloom" style="display:flex;align-items:center;gap:0.4rem;padding:0.2rem 0.5rem;"></div>
+    <!-- Persistent quest line — "what should I do now?" Updated by _lwRefreshQuestLine. -->
+    <div id="lw-quest-gh" class="lw-quest-line" onclick="if(window._lwQuestTap)window._lwQuestTap();" style="display:none;">
+      <div class="lw-quest-glyph">&#127793;</div>
+      <div class="lw-quest-text">
+        <div class="lw-quest-title">Scanning&hellip;</div>
+        <div class="lw-quest-body"></div>
+      </div>
+      <div class="lw-quest-arrow">&rsaquo;</div>
+    </div>
     <div id="gh-season-strip" style="display:flex;justify-content:center;gap:0.5rem;padding:0.15rem 0.5rem;font-family:DM Mono,monospace;font-size:0.5rem;"></div>
     <div id="gh-spotlight" style="font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--muted);text-align:center;padding:0.15rem 0;min-height:1em;"></div>
     <div id="gh-collection-stats" style="display:none;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);text-align:center;padding:0.1rem 0.5rem;"></div>
@@ -5804,6 +5846,15 @@ window._addSwitchTabHook = function(fn){
     <!-- MAP FRAME PILLARS — thin gold rails down the map's left + right edges. -->
     <div id="w-map-frame-l"></div>
     <div id="w-map-frame-r"></div>
+    <!-- Persistent quest line — floats below stats bar, above map. -->
+    <div id="lw-quest-wild" class="lw-quest-line" onclick="if(window._lwQuestTap)window._lwQuestTap();" style="display:none;">
+      <div class="lw-quest-glyph">&#127793;</div>
+      <div class="lw-quest-text">
+        <div class="lw-quest-title">Scanning&hellip;</div>
+        <div class="lw-quest-body"></div>
+      </div>
+      <div class="lw-quest-arrow">&rsaquo;</div>
+    </div>
     <!-- TERRITORY OVERVIEW (tap planted count to expand) -->
     <div id="w-territory" style="display:none;position:fixed;top:60px;left:8px;right:8px;z-index:998;background:rgba(13,16,12,0.94);border:1px solid rgba(122,179,86,0.12);border-radius:10px;padding:0.5rem;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:panelFadeIn 0.2s ease;max-width:360px;margin:0 auto;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
@@ -68511,6 +68562,19 @@ window.LW_Comp = (function(){
       })(b);
     }
   };
+
+  // Public helpers consumed by the persistent quest line + BoS dashboard.
+  // _lwTopSuggestion → single highest-priority suggestion or null.
+  // _lwAllSuggestions → full priority-sorted list (max 5).
+  window._lwTopSuggestion = function(){
+    try {
+      var items = buildSuggestions();
+      return (items && items.length) ? items[0] : null;
+    } catch(e){ return null; }
+  };
+  window._lwAllSuggestions = function(){
+    try { return buildSuggestions() || []; } catch(e){ return []; }
+  };
 })();
 </script>
 
@@ -68701,6 +68765,73 @@ window.LW_Comp = (function(){
     }catch(e){}
   }
   setTimeout(maybeShowDisclaimer,1500);
+})();
+</script>
+
+<script>
+// ═══ PERSISTENT QUEST LINE ═══
+// Drives #lw-quest-gh (Greenhouse) and #lw-quest-wild (Wild). Reads
+// the top priority suggestion from _lwTopSuggestion() and surfaces
+// "what should I do now?" right on the tab the player is on. Tap =
+// run that suggestion's action. Hidden during tutorial so it doesn't
+// compete with the spotlight walkthrough.
+(function(){
+  'use strict';
+  var _currentAction = null;
+
+  function _setLine(el, sug){
+    if(!el)return;
+    if(!sug){el.style.display='none';return;}
+    var g = el.querySelector('.lw-quest-glyph');
+    var t = el.querySelector('.lw-quest-title');
+    var b = el.querySelector('.lw-quest-body');
+    if(g)g.textContent = sug.icon || '\ud83c\udf31';
+    if(t)t.textContent = sug.title || '';
+    if(b)b.textContent = sug.body || '';
+    el.style.display='flex';
+  }
+
+  function _refresh(){
+    try{
+      var tutActive = document.body.classList.contains('lw-tut-active') ||
+                      document.body.classList.contains('lw-tutorial-pending');
+      if(tutActive){
+        _setLine(document.getElementById('lw-quest-gh'), null);
+        _setLine(document.getElementById('lw-quest-wild'), null);
+        _currentAction = null;
+        return;
+      }
+      var s = window._lwTopSuggestion && window._lwTopSuggestion();
+      _currentAction = (s && typeof s.action === 'function') ? s.action : null;
+      _setLine(document.getElementById('lw-quest-gh'), s);
+      _setLine(document.getElementById('lw-quest-wild'), s);
+    }catch(e){}
+  }
+
+  window._lwRefreshQuestLine = _refresh;
+  window._lwQuestTap = function(){
+    try{ if(typeof _currentAction === 'function') _currentAction(); }catch(e){}
+  };
+
+  // Hook switchTab so the line refreshes right when the player lands
+  // on Greenhouse or Wild. Wrapped defensively — other modules also
+  // wrap switchTab, and _hookSwitchTab retries if it hasn't been
+  // defined yet.
+  function _hookSwitchTab(){
+    if(window._lwQuestLineSTHooked)return;
+    if(typeof window.switchTab !== 'function'){setTimeout(_hookSwitchTab,400);return;}
+    var _orig = window.switchTab;
+    window.switchTab = function(){
+      var ret = _orig.apply(this, arguments);
+      setTimeout(_refresh, 120);
+      return ret;
+    };
+    window._lwQuestLineSTHooked = true;
+  }
+  _hookSwitchTab();
+
+  setTimeout(_refresh, 900);
+  setInterval(_refresh, 9000);
 })();
 </script>
 
