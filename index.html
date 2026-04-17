@@ -54813,6 +54813,68 @@ window.PW_Tutorial={start:start,checkNursery:checkNursery,checkBreed:checkBreed}
     }
   }catch(e){}
 })();
+
+// Resume dispatch — maps a persisted mid-tutorial step back to the nearest
+// re-entry function whose step body can rebuild state from a cold boot.
+// Each step function re-applies its body classes, re-renders its dialog,
+// and re-watches for the advance condition, so re-calling is idempotent.
+function _resume(step){
+  var go=function(fn){setTimeout(fn,900);};
+  if(step===1)return go(_step1);
+  // Steps 2-12 all live inside the carousel on the first plant. Re-entering
+  // via _step1b prompts the player to re-tap the card so the carousel
+  // re-opens cleanly — they re-read a couple of prose beats.
+  if(step>=2&&step<=12)return go(_step1b);
+  // 13-15 span the first-game flow. Refresh drops them out of the game;
+  // re-pulse the GAMES nav and let them replay.
+  if(step>=13&&step<=15)return go(_stepGame);
+  if(step===16||step===17)return go(_step16);
+  // 18-20 are mint #2 → carousel-open → BREED → CROSS-POLLINATE. Re-entering
+  // via _step18 re-locks the newplant tile and the flip-reveal hook
+  // advances to step 19 on re-flip. (There is no step 21.)
+  if(step>=18&&step<=21)return go(_step18);
+  if(step===22)return go(_step22);
+  if(step===23)return go(_step23);
+  if(step===24)return go(_step24);
+  if(step===25)return go(_step25);
+  if(step===26)return go(_step26);
+  if(step===27)return go(_step27);
+  // 275-278 are transient sub-steps inside Phase 5b (guided wild drop).
+  // _step5bDrop self-skips to _step28 when a wild plant was already placed.
+  if(step>=275&&step<=278)return go(_step5bDrop);
+  if(step===28)return go(_step28);
+  if(step===29)return go(_step29);
+  if(step===30)return go(_step30);
+  if(step===31)return go(_step31);
+  if(step===32)return go(_step32);
+  if(step===33)return go(_step33);
+  if(step===34)return go(_step34);
+  // Unknown / corrupted step — safest fallback is start from 1.
+  go(_step1);
+}
+
+// ═══ Resume mid-tutorial on page refresh ═══
+// Stephen's friend crashed during tutorial and refreshed — the monorail
+// broke because PW_Onboard._isOnboarded() treats any mid-tutorial lw_tut
+// value as a returning player and skips start() entirely, while start()
+// itself bails on any non-zero step. This hook runs independently: it
+// detects a numeric mid-tutorial step on load and routes to _resume.
+// See project_tutorial_refresh_bug.md.
+(function _lwResumeBoot(){
+  try{
+    if(localStorage.getItem('lw_tut_force_restart')==='1')return;
+    var raw=localStorage.getItem('lw_tut');
+    if(!raw||raw==='done')return;
+    var step=parseInt(raw,10);
+    if(!step||step<1)return;
+    var go=function(){try{_resume(step);}catch(e){console.error('[tut resume]',e);}};
+    if(document.readyState==='complete'||document.readyState==='interactive'){
+      setTimeout(go,1500);
+    } else {
+      document.addEventListener('DOMContentLoaded',function(){setTimeout(go,1500);});
+    }
+  }catch(e){}
+})();
 })();
 </script>
 
