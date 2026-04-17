@@ -1122,11 +1122,14 @@
       contain: layout style paint;
       transform-style: preserve-3d;
     }
+    /* Buttery-smooth commit — easeOutCubic-ish curve reads as "glide".
+       Duration bumped from 0.28s → 0.34s so the card settles rather than
+       snaps; cubic keeps momentum feel without bouncing. */
     .pgm-track.animating {
-      transition: transform 0.28s cubic-bezier(0.22,0.61,0.36,1);
+      transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .pgm-track.spring-back {
-      transition: transform 0.36s cubic-bezier(0.34,1.05,0.5,1);
+      transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     /* ── Individual slot — 1/3 of track width ── */
@@ -2179,7 +2182,11 @@
     .tut-card.tut-selected{border-color:var(--gold);box-shadow:0 0 14px rgba(200,168,75,0.35);background:rgba(200,168,75,0.08);}
 
     /* ── GREENHOUSE ── */
-    .greenhouse-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.55rem;}
+    /* 2-wide default: Stephen test — 'plant on the far right gets cut off
+       by the edge of the screen. maybe we switch to a two wide sizing for
+       convenience and ease on the eyes.' Wider cards, cleaner art, no
+       clipping. */
+    .greenhouse-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0.6rem;}
     /* ═══ CARD FRONT: Seasonal frames ═══ */
     .greenhouse-plant{border:1px solid rgba(122,179,86,0.12);border-radius:8px;padding:0.4rem 0.3rem;text-align:center;position:relative;overflow:visible;background-color:#050505;background-size:100% 100%;background-position:center;background-repeat:no-repeat;box-shadow:0 2px 6px rgba(0,0,0,0.4);aspect-ratio:544/736;display:flex;flex-direction:column;align-items:center;justify-content:center;contain:layout style paint;transition:box-shadow 0.2s ease,transform 0.15s ease;}
     .greenhouse-plant:active{transform:scale(0.97);}
@@ -2744,14 +2751,14 @@
       .card-grid{grid-template-columns:repeat(3,1fr);gap:min(0.3rem,0.8vmin);}
       .shape-svg{max-width:38px;}
       .game-title{font-size:1rem;}
-      .greenhouse-grid{grid-template-columns:repeat(4,1fr);gap:0.3rem;}
+      .greenhouse-grid{grid-template-columns:repeat(2,1fr);gap:0.45rem;}
     }
     @media(max-width:400px){
       .card-grid{gap:min(0.2rem,0.5vmin);}
       .grove-card{border-radius:6px;}
       .shape-svg{max-width:30px;}
       .shape-row{gap:0px;}
-      .greenhouse-grid{grid-template-columns:repeat(3,1fr);gap:0.25rem;}
+      .greenhouse-grid{grid-template-columns:repeat(2,1fr);gap:0.35rem;}
       .greenhouse-plant{padding:0.3rem 0.2rem;}
     }
 
@@ -4729,7 +4736,7 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
    strip's height (84px nominal minus a tiny visual overlap so the log
    border tucks into the strip's bottom shadow). Stays fixed so the map
    can scroll under it. */
-.wild-log{position:fixed;top:calc(72px + env(safe-area-inset-top,0px));left:0;right:0;padding:10px 12px;background:linear-gradient(180deg,rgba(20,16,10,0.96),rgba(13,10,6,0.96));border-bottom:2px solid rgba(200,168,75,0.2);z-index:460;box-shadow:0 8px 32px rgba(0,0,0,0.7);display:grid;grid-template-columns:repeat(3,1fr) auto;grid-template-rows:auto auto;grid-template-areas:'s1 s2 s3 cp' 's4 s5 s6 cp';gap:6px;}
+.wild-log{position:fixed;top:calc(110px + env(safe-area-inset-top,0px));left:0;right:0;padding:10px 12px;background:linear-gradient(180deg,rgba(20,16,10,0.96),rgba(13,10,6,0.96));border-bottom:2px solid rgba(200,168,75,0.2);z-index:460;box-shadow:0 8px 32px rgba(0,0,0,0.7);display:grid;grid-template-columns:repeat(3,1fr) auto;grid-template-rows:auto auto;grid-template-areas:'s1 s2 s3 cp' 's4 s5 s6 cp';gap:6px;}
 .wild-log-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(5,6,4,0.75);padding:6px 4px;border-radius:8px;border:1px solid rgba(200,168,75,0.12);min-height:52px;cursor:pointer;transition:all 0.15s;}
 .wild-log-stat:nth-child(1){grid-area:s1;}
 .wild-log-stat:nth-child(2){grid-area:s2;}
@@ -5686,17 +5693,16 @@ window._addSwitchTabHook = function(fn){
 
   <!-- WILD MAP — placeholder panel -->
   <div class="grove-panel" id="panel-wild" style="padding:0!important;padding-bottom:0!important;">
-    <!-- BIOME HERO STRIP — current biome painting as a hero band at the top.
-         Filled by FG_Wild biome detection callback. Tapping opens the biome
-         detail Reader page. -->
-    <div id="w-biome-hero" onclick="if(window._lwShowBiomeDetail&&window._lastDetectedBiome)window._lwShowBiomeDetail(window._lastDetectedBiome);" style="position:relative;width:100%;height:84px;background-color:#0d100c;background-image:linear-gradient(180deg,rgba(13,16,12,0.45),rgba(13,16,12,0.88)),url('assets/bg-wild-540x960.jpg');background-size:cover,cover;background-position:center,center;background-repeat:no-repeat,no-repeat;border-bottom:2px solid rgba(200,168,75,0.35);overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent;">
-      <div style="position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:space-between;padding:8px 14px 10px;">
-        <div style="display:flex;flex-direction:column;gap:2px;text-shadow:0 2px 8px rgba(0,0,0,0.85);">
-          <div style="font-family:'DM Mono',monospace;font-size:0.42rem;color:rgba(200,168,75,0.85);letter-spacing:0.2em;">YOU ARE IN</div>
-          <div style="font-family:'Playfair Display',serif;font-style:italic;font-size:1.15rem;color:var(--cream);letter-spacing:0.02em;line-height:1;" id="w-biome-hero-name">Scanning…</div>
-        </div>
-        <div style="font-size:1.4rem;text-shadow:0 2px 6px rgba(0,0,0,0.7);" id="w-biome-hero-icon">🏡</div>
-      </div>
+    <!-- BIOME HERO STRIP — full-bleed biome art. Each biome ships its own
+         painted banner in assets/wild-biomes/; the banner IS the label,
+         no overlay text or emoji covering it. Tapping opens the biome
+         detail Reader page. Stephen test: 'REPLACE THE ENTIRE HERO BANNER
+         WITH THE SUBURBAN BIOME BANNER I MADE.' -->
+    <div id="w-biome-hero" onclick="if(window._lwShowBiomeDetail&&window._lastDetectedBiome)window._lwShowBiomeDetail(window._lastDetectedBiome);" style="position:relative;width:100%;height:110px;background-color:#0d100c;background-image:url('assets/wild-biomes/biome-suburban.png');background-size:cover;background-position:center;background-repeat:no-repeat;border-bottom:2px solid rgba(200,168,75,0.35);overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+      <!-- Overlay kept in DOM so detection code can still write the biome
+           name/icon; visually hidden because the art IS the label. -->
+      <span id="w-biome-hero-name" style="display:none;">Scanning…</span>
+      <span id="w-biome-hero-icon" style="display:none;"></span>
     </div>
     <!-- WILD LOG BAR -->
     <div class="wild-log">
@@ -5709,7 +5715,7 @@ window._addSwitchTabHook = function(fn){
       <span id="w-drops-left" style="display:none;">3</span>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Dew, produced by your wild plants and collected when helping others. Spend on nursery acceleration and on cuttings.')"><div class="wild-log-val" style="color:#5baddc" id="w-dew">0</div><div class="wild-log-lbl" style="color:#5baddc;">dew <span id="w-dew-rate" style="font-size:0.28rem;color:var(--muted);"></span></div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Pollen, your player XP. Walking, planting, and tending all add to it.')"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl" style="color:var(--gold);">pollen</div></div>
-      <div class="wild-log-stat" onclick="FG_Wild._logTip('Meters walked. Keep moving to find feral seeds!')"><div class="wild-log-val" style="color:var(--sage)" id="w-steps">0</div><div class="wild-log-lbl" style="color:var(--sage);">meters</div></div>
+      <div class="wild-log-stat" onclick="FG_Wild._logTip('Steps walked. Keep moving to find feral seeds!')"><div class="wild-log-val" style="color:#c89b68" id="w-steps">0</div><div class="wild-log-lbl" style="color:#c89b68;">steps</div></div>
       <div class="wild-log-stat" onclick="if(window._lwShowBiomeDetail&&window._lastDetectedBiome)window._lwShowBiomeDetail(window._lastDetectedBiome);else if(window.FG_Wild&&FG_Wild._logTip)FG_Wild._logTip('Your biome and today\'s weather. Both shape what ferals spawn here.')"><div class="wild-log-val" style="font-size:0.7rem;" id="w-biome">🏡</div><div class="wild-log-lbl"><span id="w-biome-name">scanning</span> <span id="w-weather-chip" style="color:var(--gold);"></span></div></div>
       <div class="wild-log-stat" id="w-class-stat" onclick="if(window._LW_openClassPicker)_LW_openClassPicker();else if(window._openCompendiumUI)_openCompendiumUI();" style="cursor:pointer;"><div class="wild-log-val" style="font-size:0.85rem;" id="w-class-icon">—</div><div class="wild-log-lbl" id="w-class-lbl">no class</div></div>
       <div class="wild-log-wind" id="w-wind" onclick="if(window._lwCompassTap)window._lwCompassTap();" style="cursor:pointer;"><div class="wl-wind-top">Points North</div><img src="assets/compasses/compass-arrow.png" alt="compass" draggable="false"><div class="wl-wind-bottom">You face <b id="w-wind-facing">—</b></div></div>
@@ -27261,10 +27267,26 @@ document.addEventListener('keydown', function(e) {
           if (window._lwConfirm) {
             window._lwConfirm({
               title: '\u2728 A PLANT FROM YOUR ATTENTION',
-              body: 'You played. You paid attention. This plant is the shape those thirty sunbeams took.<br><br>No other keeper will ever mint this one. The pattern that shaped it is unique to this minute.<br><br>Long-press the card for breeding, sharing, or composting options.',
+              body: 'You played. You paid attention. This plant is the shape those thirty sunbeams took.<br><br>No other keeper will ever mint this one. The pattern that shaped it is unique to this minute.<br><br><b style="color:var(--gold);">Tap the card to open it \u2014 then tap again to flip it and reveal its rarity, haiku, and DNA.</b>',
               yes: 'WELCOME IT IN',
               no: ''
-            }, function(){});
+            }, function(){
+              // Stephen test: 'i closed plant and was on greenhouse confused
+              // for a second.' If they haven't flipped any card yet, pulse
+              // the newest greenhouse card so the next step is visible.
+              try {
+                if (localStorage.getItem('lw_first_flip_v1')) return;
+                setTimeout(function(){
+                  var grid = document.getElementById('greenhouse-grid');
+                  if (!grid) return;
+                  var card = grid.querySelector('.greenhouse-plant:not(.undiscovered)');
+                  if (card && window._lwPulseHint) {
+                    window._lwPulseHint(card, 16000, 'lw_pulse_first_flip');
+                  }
+                  if (window._toast) window._toast('\ud83c\udf3f Tap your new plant, then tap again to flip it.');
+                }, 400);
+              } catch(e) {}
+            });
           }
         }, 1800);
       }
@@ -29679,10 +29701,13 @@ document.addEventListener('keydown', function(e) {
 
     // Animate track: direction=-1 (swipe left → next) → move left → -66.666%
     //                direction=+1 (swipe right → prev) → move right → 0%
+    // translate3d (not translateX) keeps the GPU layer hot — mixing 2D
+    // and 3D transforms forces a layer recomposition mid-swipe and was
+    // responsible for the stutter on the commit frame.
     var targetX = direction === -1 ? '-66.666%' : '0%';
     track.classList.add('animating');
     track.style.transition = '';
-    track.style.transform  = 'translateX(' + targetX + ')';
+    track.style.transform  = 'translate3d(' + targetX + ', 0, 0)';
 
     var _settled = false;
     function _onEnd(){
@@ -29794,9 +29819,14 @@ document.addEventListener('keydown', function(e) {
       _carouselBoundary(dx); return;
     }
 
-    // Intentional swipe
+    // Intentional swipe.
+    // During drag the track follows the finger: swipe LEFT (dx<0) reveals
+    // the NEXT slot on the right; swipe RIGHT (dx>0) reveals PREV on the
+    // left. Commit direction must match that drag direction so the track
+    // continues the same way it was already moving — otherwise the card
+    // snaps back through the player's finger (felt reversed to Stephen).
     if (Math.abs(dx) >= _SWIPE_THRESHOLD) {
-      _carouselCommit(dx > 0 ? -1 : 1); // dx>0 = swipe right = show next
+      _carouselCommit(dx > 0 ? 1 : -1); // dx>0 = swipe right = show prev
       return;
     }
 
@@ -30012,6 +30042,8 @@ document.addEventListener('keydown', function(e) {
 
     if (!isFlipped && !wasRevealed) {
       // First flip — Phase 1: flip card, mask hides content, shake builds suspense
+      // Also flag lw_first_flip_v1 so the post-2nd-mint nudge knows to stop.
+      try { localStorage.setItem('lw_first_flip_v1', '1'); } catch(e) {}
       el.classList.add('flipped');
       el.setAttribute('data-revealed', 'true');
       var flash = el.querySelector('.cs-reveal-flash');
@@ -36010,7 +36042,8 @@ function activate(){
           var _bHero=document.getElementById('w-biome-hero');
           if(_bHero){
             if(_bInf.img){
-              _bHero.style.backgroundImage='linear-gradient(180deg,rgba(13,16,12,0.4),rgba(13,16,12,0.85)),url("'+_bInf.img+'")';
+              // Full-bleed art — no gradient overlay. The banner IS the label.
+              _bHero.style.backgroundImage='url("'+_bInf.img+'")';
             }
             if(_bInf.color){
               _bHero.style.borderBottomColor=_bInf.color+'88';
@@ -55601,7 +55634,7 @@ function _step27Banner(){
     window._lwPulseHint(banner,15000,'lw_tut_wlog_pulse');
   }
   _dialog(
-    'These numbers up top: your <b style="color:#5baddc;">dew</b>, your <b style="color:var(--gold);">pollen</b> (player XP), and <b style="color:var(--sage);">meters</b> walked. The biome banner above shows where you stand and changes as you move; the compass on the right tracks which way you face.',
+    'These numbers up top: your <b style="color:#5baddc;">dew</b>, your <b style="color:var(--gold);">pollen</b> (player XP), and <b style="color:#c89b68;">steps</b> walked. The biome banner above shows where you stand and changes as you move; the compass on the right tracks which way you face.',
     'GOT IT',function(){_clear();setTimeout(_step28,400);},'bottom');
 }
 
