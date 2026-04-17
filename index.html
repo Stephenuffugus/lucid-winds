@@ -9318,6 +9318,42 @@ document.addEventListener('keydown', function(e) {
   }
 
   // ── Public API ──
+  // ── Simon-Says onboarding tone — A minor 7 arpeggio (one note per pad) ──
+  // 4 buttons → A4, C5, E5, G5. Tapping all four in sequence arpeggiates
+  // an Am7 chord. Triangle wave for warmth, short ADSR so it sits inside
+  // the 520ms flash window without bleeding into the next note.
+  // Stephen wanted m7 specifically — he's a music producer, this matters.
+  var SIMON_M7_FREQS = [440.00, 523.25, 659.25, 783.99]; // A4 C5 E5 G5
+  function playSimonNote(idx){
+    if(!_enabled) return;
+    if(typeof idx!=='number'||idx<0||idx>3) return;
+    var ctx=_getCtx();
+    if(ctx.state==='suspended') ctx.resume();
+    var now=ctx.currentTime;
+    var freq=SIMON_M7_FREQS[idx];
+    var maxGain=0.18*_volume;
+    // Fundamental — triangle wave (richer than sine, gentler than square)
+    var osc=ctx.createOscillator(); osc.type='triangle';
+    osc.frequency.value=freq;
+    var g=ctx.createGain();
+    g.gain.setValueAtTime(0,now);
+    g.gain.linearRampToValueAtTime(maxGain,now+0.005);    // 5ms attack
+    g.gain.exponentialRampToValueAtTime(maxGain*0.6,now+0.18); // decay to sustain
+    g.gain.setValueAtTime(maxGain*0.6,now+0.30);           // hold
+    g.gain.exponentialRampToValueAtTime(0.0001,now+0.55);  // 250ms release
+    osc.connect(g); g.connect(_masterGain);
+    osc.start(now); osc.stop(now+0.6);
+    // Octave-down sub for body — sine, very quiet
+    var sub=ctx.createOscillator(); sub.type='sine';
+    sub.frequency.value=freq/2;
+    var sg=ctx.createGain();
+    sg.gain.setValueAtTime(0,now);
+    sg.gain.linearRampToValueAtTime(maxGain*0.25,now+0.02);
+    sg.gain.exponentialRampToValueAtTime(0.0001,now+0.50);
+    sub.connect(sg); sg.connect(_masterGain);
+    sub.start(now); sub.stop(now+0.55);
+  }
+
   window.FG_Audio = {
     setEnabled: function(b){
       _enabled=b;
@@ -9334,6 +9370,7 @@ document.addEventListener('keydown', function(e) {
     playClick: playClick,
     playThud:  playThud,
     playMintDrone: playMintDrone,
+    playSimonNote: playSimonNote,
     setRarityTier: function(tier){
       _rarityTier=tier;
       if(_prewarmed) _applySoundscapeTier(tier);
@@ -50240,11 +50277,22 @@ function start(){
     console.log('[LW] Starting Beat 1 text playback');
     _playLines(1);
   }
+  // Beta-disclaimer gate. The disclaimer modal sits at z:1000020 above
+  // the cinematic and used to fire concurrently — players never saw the
+  // first beat. We hold the text playback (and any pending splash
+  // callback) until lw_beta_ack is set. The disclaimer poll lives in a
+  // sibling IIFE; we passively wait for it to surface and be acked.
+  function _gatedStart(){
+    try{
+      if(localStorage.getItem('lw_beta_ack')){_startOrTutorial();return;}
+    }catch(e){_startOrTutorial();return;}
+    setTimeout(_gatedStart,400);
+  }
   var hasSplash=!!document.getElementById('pw-splash');
   if(hasSplash){
-    window._obTextReady=_startOrTutorial;
+    window._obTextReady=_gatedStart;
   } else {
-    setTimeout(_startOrTutorial,2000);
+    setTimeout(_gatedStart,2000);
   }
   // Track touch movement so swipes don't double-trigger as taps
   var _obTouchMoved=false,_obTouchStartX=0,_obTouchStartY=0,_obLastTouchEnd=0;
@@ -50290,18 +50338,18 @@ function _playLines(beat){
   var lines=document.querySelectorAll('.ob-line[data-beat="'+beat+'"]');
   if(!lines.length){_advanceBeat();return;}
   var i=0;
-  // Cinematic compressed further: 1800→1400ms/line, 1200→900ms tail.
-  // Stephen's test: "the words on the second and third beats need to
-  // come in sooner." Applied to all beats for consistency.
+  // Line hold: 1900ms/line, 1300ms tail. Earlier we compressed to 1400/900
+  // because Stephen wanted snappier — but live testing showed words flick
+  // by before they can be read. New comfort target.
   function showNext(){
     if(i>=lines.length){
-      _lineTimer=setTimeout(function(){_advanceBeat();},900);
+      _lineTimer=setTimeout(function(){_advanceBeat();},1300);
       return;
     }
     if(i>0){lines[i-1].classList.remove('on');lines[i-1].classList.add('off');}
     lines[i].classList.add('on');lines[i].classList.remove('off');
     i++;
-    _lineTimer=setTimeout(showNext,1400);
+    _lineTimer=setTimeout(showNext,1900);
   }
   showNext();
 }
@@ -50443,6 +50491,7 @@ function _runTutorial(onComplete){
     btn.style.boxShadow = '0 0 30px '+color+', inset 0 0 16px '+color+'55';
     btn.style.transform = 'scale(1.07)';
     try { if (window._haptic) window._haptic('tap'); } catch(e){}
+    try { if (window.FG_Audio && FG_Audio.playSimonNote) FG_Audio.playSimonNote(idx); } catch(e){}
     setTimeout(function(){
       btn.style.borderColor = color + '55';
       btn.style.opacity = '0.85';
@@ -50476,6 +50525,7 @@ function _runTutorial(onComplete){
     btn.style.boxShadow = '0 0 20px '+color;
     btn.style.transform = 'scale(1.07)';
     try { if (window._haptic) window._haptic('tap'); } catch(e){}
+    try { if (window.FG_Audio && FG_Audio.playSimonNote) FG_Audio.playSimonNote(idx); } catch(e){}
     setTimeout(function(){ btn.style.boxShadow=''; btn.style.transform=''; }, 250);
     var pos = playerInput.length;
     if (idx !== seq[pos]){
