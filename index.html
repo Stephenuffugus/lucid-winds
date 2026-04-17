@@ -4732,20 +4732,21 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
    open the biome lore Reader. Z-index sits ABOVE the wild-log so the
    stats sit BELOW the painting (the log gets a top offset to make room). */
 #w-biome-hero{position:fixed!important;top:0;left:0;right:0;z-index:461;}
-/* Wild log OVERLAYS the biome hero banner now — sits on top of the
-   art rather than below it. 3 resource chips + compass, single row.
-   Transparent background lets the biome art bleed through; chips have
-   their own semi-transparent dark fill so values stay legible on any
-   biome. z-index above the banner (461 → 462). */
-.wild-log{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:0;right:0;padding:6px 10px;background:transparent;border-bottom:none;z-index:462;box-shadow:none;display:grid;grid-template-columns:repeat(3,1fr) auto;grid-template-rows:auto;grid-template-areas:'s1 s2 s3 cp';gap:6px;pointer-events:none;}
-.wild-log-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(5,6,4,0.78);padding:6px 4px;border-radius:8px;border:1px solid rgba(200,168,75,0.22);min-height:52px;cursor:pointer;transition:all 0.15s;pointer-events:auto;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
-.wild-log-stat:nth-child(1){grid-area:s1;}
-.wild-log-stat:nth-child(2){grid-area:s2;}
-.wild-log-stat:nth-child(3){grid-area:s3;}
-.wild-log-stat:active{background:rgba(18,22,16,0.85);border-color:rgba(200,168,75,0.3);}
-.wild-log-val{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;color:var(--cream);line-height:1;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,.6)}
-.wild-log-lbl{font-family:'DM Mono',monospace;font-size:0.55rem;color:rgba(200,168,75,0.7);letter-spacing:0.08em;text-transform:uppercase;margin-top:1px;}
-.wild-log-wind{grid-area:cp;align-self:center;justify-self:center;width:64px;min-height:52px;display:flex;align-items:center;justify-content:center;flex-direction:column;position:relative;font-size:1.4rem;color:var(--gold);gap:1px;pointer-events:auto;background:rgba(5,6,4,0.78);padding:4px 4px;border-radius:8px;border:1px solid rgba(200,168,75,0.22);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
+/* Banner-nested stats row. Lives inside #w-biome-hero, so no separate
+   fixed bar. Three resource chips + compass, floating on the biome
+   art with blurred-glass tiles. */
+.wbh-stats{position:absolute;top:calc(env(safe-area-inset-top,0px) + 6px);left:6px;right:6px;display:grid;grid-template-columns:repeat(3,1fr) auto;grid-template-areas:'s1 s2 s3 cp';gap:5px;pointer-events:none;}
+.wbh-chip{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:rgba(5,6,4,0.72);padding:4px 4px;border-radius:7px;border:1px solid rgba(200,168,75,0.22);min-height:46px;cursor:pointer;transition:all 0.15s;pointer-events:auto;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
+.wbh-chip:nth-child(1){grid-area:s1;}
+.wbh-chip:nth-child(2){grid-area:s2;}
+.wbh-chip:nth-child(3){grid-area:s3;}
+.wbh-chip:active{background:rgba(18,22,16,0.85);border-color:rgba(200,168,75,0.3);}
+.wbh-val{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;color:var(--cream);line-height:1;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,.6)}
+.wbh-lbl{font-family:'DM Mono',monospace;font-size:0.5rem;color:rgba(200,168,75,0.75);letter-spacing:0.06em;text-transform:uppercase;margin-top:1px;line-height:1;}
+.wbh-wind{grid-area:cp;align-self:center;justify-self:center;width:54px;min-height:46px;display:flex;align-items:center;justify-content:center;flex-direction:column;position:relative;font-size:1.2rem;color:var(--gold);gap:0;pointer-events:auto;background:rgba(5,6,4,0.72);padding:3px 3px;border-radius:7px;border:1px solid rgba(200,168,75,0.22);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
+.wbh-wind img{width:26px;height:26px;}
+.wbh-wind .wl-wind-top,.wbh-wind .wl-wind-bottom{font-family:'DM Mono',monospace;font-size:0.38rem;color:var(--cream);letter-spacing:0.05em;text-shadow:0 1px 2px rgba(0,0,0,0.9);line-height:1;}
+.wbh-wind .wl-wind-bottom b{color:var(--gold);font-weight:700;}
 .wl-wind-top{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--cream);letter-spacing:0.06em;text-shadow:0 1px 2px rgba(0,0,0,0.9);line-height:1;}
 .wl-wind-bottom{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--cream);letter-spacing:0.06em;text-shadow:0 1px 2px rgba(0,0,0,0.9);line-height:1.2;}
 .wl-wind-bottom b{color:var(--gold);font-weight:700;}
@@ -5694,26 +5695,15 @@ window._addSwitchTabHook = function(fn){
 
   <!-- WILD MAP — placeholder panel -->
   <div class="grove-panel" id="panel-wild" style="padding:0!important;padding-bottom:0!important;">
-    <!-- BIOME HERO STRIP — full-bleed biome art. Each biome ships its own
-         painted banner in assets/wild-biomes/; the banner IS the label,
-         no overlay text or emoji covering it. Tapping opens the biome
-         detail Reader page. Stephen test: 'REPLACE THE ENTIRE HERO BANNER
-         WITH THE SUBURBAN BIOME BANNER I MADE.' -->
-    <div id="w-biome-hero" onclick="if(window._lwShowBiomeDetail&&window._lastDetectedBiome)window._lwShowBiomeDetail(window._lastDetectedBiome);" style="position:relative;width:100%;height:110px;background-color:#0d100c;background-image:url('assets/wild-biomes/biome-suburban.png');background-size:cover;background-position:center;background-repeat:no-repeat;border-bottom:2px solid rgba(200,168,75,0.35);overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent;">
-      <!-- Overlay kept in DOM so detection code can still write the biome
-           name/icon; visually hidden because the art IS the label. -->
+    <!-- BIOME HERO STRIP — full-bleed biome art with the three core
+         resources + compass nested INSIDE so they sit on the art as
+         one unit. Stephen: 'erase the damn log. these numbers need to
+         sit in the biome comfortably.' Tapping the art (away from any
+         chip) opens biome detail; chips stop propagation. -->
+    <div id="w-biome-hero" onclick="if(event.target===this&&window._lwShowBiomeDetail&&window._lastDetectedBiome)window._lwShowBiomeDetail(window._lastDetectedBiome);" style="position:relative;width:100%;height:calc(130px + env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px);background-color:#0d100c;background-image:url('assets/wild-biomes/biome-suburban.png');background-size:cover;background-position:center;background-repeat:no-repeat;border-bottom:2px solid rgba(200,168,75,0.35);overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+      <!-- Hidden stubs so biome-detection writes don't throw. -->
       <span id="w-biome-hero-name" style="display:none;">Scanning…</span>
       <span id="w-biome-hero-icon" style="display:none;"></span>
-    </div>
-    <!-- WILD LOG BAR — overlays the biome hero banner. Just the 3 core
-         resources + compass. Biome chip + class chip were removed per
-         Stephen: 'pollen, steps, dew, and compass should be the only
-         things there anymore and they need to overlay on top of the
-         hero banner. remove the class, and suburban word and house.'
-         Biome name + class still surface elsewhere (banner tap opens
-         biome detail; class picker lives in Steward's panel). -->
-    <div class="wild-log">
-      <!-- Hidden spans: stale update code still writes here. -->
       <span id="w-count" style="display:none;">0</span>
       <span id="w-drops-left" style="display:none;">3</span>
       <span id="w-biome" style="display:none;"></span>
@@ -5721,10 +5711,13 @@ window._addSwitchTabHook = function(fn){
       <span id="w-weather-chip" style="display:none;"></span>
       <span id="w-class-icon" style="display:none;"></span>
       <span id="w-class-lbl" style="display:none;"></span>
-      <div class="wild-log-stat" onclick="FG_Wild._logTip('Dew, produced by your wild plants and collected when helping others. Spend on nursery acceleration and on cuttings.')"><div class="wild-log-val" style="color:#5baddc" id="w-dew">0</div><div class="wild-log-lbl" style="color:#5baddc;">dew <span id="w-dew-rate" style="font-size:0.28rem;color:var(--muted);"></span></div></div>
-      <div class="wild-log-stat" onclick="FG_Wild._logTip('Pollen, your player XP. Walking, planting, and tending all add to it.')"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl" style="color:var(--gold);">pollen</div></div>
-      <div class="wild-log-stat" onclick="FG_Wild._logTip('Steps walked. Keep moving to find feral seeds!')"><div class="wild-log-val" style="color:#c89b68" id="w-steps">0</div><div class="wild-log-lbl" style="color:#c89b68;">steps</div></div>
-      <div class="wild-log-wind" id="w-wind" onclick="if(window._lwCompassTap)window._lwCompassTap();" style="cursor:pointer;"><div class="wl-wind-top">Points North</div><img src="assets/compasses/compass-arrow.png" alt="compass" draggable="false"><div class="wl-wind-bottom">You face <b id="w-wind-facing">—</b></div></div>
+      <!-- Stats row nested inside the banner — floats on top of the art. -->
+      <div class="wbh-stats">
+        <div class="wbh-chip" onclick="event.stopPropagation();if(window.FG_Wild&&FG_Wild._logTip)FG_Wild._logTip('Dew, produced by your wild plants and collected when helping others. Spend on nursery acceleration and on cuttings.');"><div class="wbh-val" style="color:#5baddc" id="w-dew">0</div><div class="wbh-lbl" style="color:#5baddc;">dew <span id="w-dew-rate" style="font-size:0.28rem;color:var(--muted);"></span></div></div>
+        <div class="wbh-chip" onclick="event.stopPropagation();if(window.FG_Wild&&FG_Wild._logTip)FG_Wild._logTip('Pollen, your player XP. Walking, planting, and tending all add to it.');"><div class="wbh-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wbh-lbl" style="color:var(--gold);">pollen</div></div>
+        <div class="wbh-chip" onclick="event.stopPropagation();if(window.FG_Wild&&FG_Wild._logTip)FG_Wild._logTip('Steps walked. Keep moving to find feral seeds!');"><div class="wbh-val" style="color:#c89b68" id="w-steps">0</div><div class="wbh-lbl" style="color:#c89b68;">steps</div></div>
+        <div class="wbh-wind" id="w-wind" onclick="event.stopPropagation();if(window._lwCompassTap)window._lwCompassTap();" style="cursor:pointer;"><div class="wl-wind-top">Points North</div><img src="assets/compasses/compass-arrow.png" alt="compass" draggable="false"><div class="wl-wind-bottom">You face <b id="w-wind-facing">—</b></div></div>
+      </div>
     </div>
     <!-- TERRITORY OVERVIEW (tap planted count to expand) -->
     <div id="w-territory" style="display:none;position:fixed;top:60px;left:8px;right:8px;z-index:998;background:rgba(13,16,12,0.94);border:1px solid rgba(122,179,86,0.12);border-radius:10px;padding:0.5rem;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:panelFadeIn 0.2s ease;max-width:360px;margin:0 auto;">
@@ -7616,14 +7609,11 @@ window._addSwitchTabHook = function(fn){
              comparing plants for a drop or while inspecting a hex. -->
         <button class="pgm-act-btn pgm-wild-items" id="gallery-items-btn" onclick="if(window.LW_ITEMS&&LW_ITEMS.openPanel)LW_ITEMS.openPanel();" style="display:none;border-color:rgba(192,122,200,0.45);color:rgba(220,160,228,0.95);">🎒 ITEMS</button>
       </div>
-      <div class="pgm-btn-row pgm-more-row" id="pgm-more-row" style="display:none;">
-        <button class="pgm-act-btn" onclick="copyGalleryHash()">⧉ CODE</button>
-        <button class="pgm-act-btn" onclick="openVerifyLink()">🔍 VERIFY</button>
-        <button class="pgm-act-btn gold" onclick="openSWSIdModal()">⬡ SYNC</button>
-      </div>
-      <div style="text-align:center;margin-top:0.2rem;">
-        <button onclick="var r=document.getElementById('pgm-more-row');if(r){var v=r.style.display==='none';r.style.display=v?'flex':'none';this.textContent=v?'▲ LESS':'▼ MORE';}" style="background:none;border:none;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.55rem;cursor:pointer;padding:6px 14px;min-height:44px;">▼ MORE</button>
-      </div>
+      <!-- Stephen: 'coe and verify buttons seem to do same thing and
+           shouldnt exist. theres an old syn button under them remove
+           that completely.' CODE copied to clipboard; VERIFY copied the
+           same hash + toasted a coming-soon stub; SYNC opened the auth
+           modal (reachable from the Keeper bar). All three retired. -->
     </div>
 
   </div>
@@ -41249,7 +41239,18 @@ function _openHexInspector(zk){
       if(full&&typeof full.ea==='number'&&full.ea>0){_eaVal=full.ea;}
       else if(typeof _wildEA==='function'){try{_eaVal=_wildEA({hash:p.hash,ea:full&&full.ea,date:full&&full.date});}catch(e){_eaVal=0;}}
       var _pestStage=full?_pestStageOf(full):0;
-      augmented.push({hash:p.hash,lat:p.lat,lng:p.lng,own:isOwn,wildBorn:full?!!full.wildBorn:false,ownerName:full?(full.ownerName||'Keeper'):'Unknown',ownerUid:full?(full.ownerUid||''):'',defenderGame:full?(full.defenderGame||'set'):'set',date:full?full.date:null,days:full&&full.date?Math.floor((Date.now()-new Date(full.date).getTime())/86400000):0,ea:_eaVal,phenoRevealed:full?!!full.phenoRevealed:false,pestStage:_pestStage,pestedAt:full?full.pestedAt:null});
+      // Age compute: own plants store ISO `date`, shared markers store a
+       // pre-computed `days` field built from Firestore `droppedAt`.
+       // Either one is authoritative — previously we only read `date` so
+       // every stranger plant rendered as 0 days old. Fall through in
+       // order: pre-computed days → ISO date → droppedAt → 0.
+       var _ageDays = 0;
+       if (full) {
+         if (typeof full.days === 'number' && full.days >= 0) _ageDays = full.days;
+         else if (full.date) _ageDays = Math.floor((Date.now()-new Date(full.date).getTime())/86400000);
+         else if (full.droppedAt) _ageDays = Math.floor((Date.now()-new Date(full.droppedAt).getTime())/86400000);
+       }
+      augmented.push({hash:p.hash,lat:p.lat,lng:p.lng,own:isOwn,wildBorn:full?!!full.wildBorn:false,ownerName:full?(full.ownerName||'Keeper'):'Unknown',ownerUid:full?(full.ownerUid||''):'',defenderGame:full?(full.defenderGame||'set'):'set',date:full?(full.date||full.droppedAt||null):null,days:_ageDays,ea:_eaVal,phenoRevealed:full?!!full.phenoRevealed:false,pestStage:_pestStage,pestedAt:full?full.pestedAt:null});
     }
     // Display-level 3-per-zone cap — legacy drops from before the cap can
     // leave >3 plants in a zone. Client cannot delete remote plants (auth),
