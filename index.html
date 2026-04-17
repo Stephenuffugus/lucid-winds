@@ -55130,7 +55130,38 @@ window.PW_Tutorial={start:start,checkNursery:checkNursery,checkBreed:checkBreed}
 // re-entry function whose step body can rebuild state from a cold boot.
 // Each step function re-applies its body classes, re-renders its dialog,
 // and re-watches for the advance condition, so re-calling is idempotent.
+//
+// _applyResumeBaseClasses re-installs the persistent body classes that
+// individual step functions assume are already on. lw-tut-active is the
+// big one — without it, BoS + backpack lock CSS rules don't bind and
+// the player gets early access to systems that should still be gated.
+// Stephen hit this when Euchre crashed mid-tutorial: refresh routed to
+// _resume, but BoS/backpack were unlocked because the body class was
+// gone. Also re-stamps lw_tut_tap_plant_v1 so the legacy welcome modal
+// stays suppressed during the rest of the run.
+function _applyResumeBaseClasses(step){
+  try{document.body.classList.add('lw-tut-active');}catch(e){}
+  // Re-stamp the welcome-modal suppression flag every resume in case
+  // something cleared it. PW_Onboard.finish() set it originally.
+  try{localStorage.setItem('lw_tut_tap_plant_v1','1');}catch(e){}
+  // Nav highlight class follows the step's tab focus. The actual nav
+  // unlock CSS keys off these classes — without one, every nav button
+  // stays dimmed but tappable, which is the wrong default.
+  var nav=null;
+  if(step>=1&&step<=12)nav='lw-tut-nav-greenhouse';
+  else if(step>=13&&step<=15)nav='lw-tut-nav-focus';
+  else if(step>=16&&step<=21)nav='lw-tut-nav-greenhouse';
+  else if(step===22||step===23)nav='lw-tut-nav-nursery';
+  else if(step>=24)nav='lw-tut-nav-wild';
+  if(nav){try{document.body.classList.add(nav);}catch(e){}}
+  // Backpack + BoS unlock classes — only add once the tutorial has
+  // actually unlocked them. Steps before 28 must KEEP them locked, so
+  // we explicitly do nothing for those.
+  if(step>=28)try{document.body.classList.add('lw-tut-bp-on');}catch(e){}
+  if(step>=32)try{document.body.classList.add('lw-tut-bos-on');}catch(e){}
+}
 function _resume(step){
+  _applyResumeBaseClasses(step);
   var go=function(fn){setTimeout(fn,900);};
   if(step===1)return go(_step1);
   // Steps 2-12 all live inside the carousel on the first plant. Re-entering
@@ -64811,9 +64842,27 @@ window._lwApplyGates=function(){
 // auto-unlocked on boot so this is invisible to them.
 (function _lwMigratePlantXpLock(){
   try{
+    var lwTut=localStorage.getItem('lw_tut');
+    var tutInProgress = lwTut && lwTut!=='done';
+    // Self-heal: if a previous boot wrongly set the unlock flag while
+    // tutorial is still in progress, reverse it now. Without this,
+    // anyone Stephen tested before this fix landed would carry the
+    // broken state forward (flag persists in localStorage until the
+    // tutorial finishes naturally and re-stamps it at step 34).
+    if(tutInProgress && localStorage.getItem('lw_plant_xp_unlocked')==='1'){
+      localStorage.removeItem('lw_plant_xp_unlocked');
+    }
     if(localStorage.getItem('lw_plant_xp_unlocked'))return;
     var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
-    if(gh.length>0||localStorage.getItem('lw_tut')||localStorage.getItem('lw_onboard_tutorial_done')){
+    // Mid-tutorial check: a numeric lw_tut ('5', '18', etc.) means the
+    // player is partway through. We MUST NOT auto-unlock then — that
+    // killed the XP freeze on every refresh and let players run from
+    // L1 to L4 in a single game. Only 'done' or absent counts as
+    // 'tutorial complete'. Stephen hit this 2026-04-17 after a
+    // crash-refresh: lw_tut='17', this branch fired, freeze off,
+    // next game pushed him to L4.
+    if(tutInProgress)return;
+    if(gh.length>0||lwTut==='done'||localStorage.getItem('lw_onboard_tutorial_done')){
       localStorage.setItem('lw_plant_xp_unlocked','1');
     }
   }catch(e){}

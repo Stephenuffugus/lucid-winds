@@ -16,6 +16,7 @@ function GPY(a){
   var _pyStyleLbl='🃏 Style';
   mc(a).innerHTML='<button class="gb" onclick="_PYN()">🔄 New</button> <button class="gb" id="PYstyle" onclick="_PYToggleStyle()" style="font-size:0.7rem;">'+_pyStyleLbl+'</button>';
   window._PYToggleStyle=function(){
+    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('PYstyle');
     if(b)b.textContent='🃏 Style';

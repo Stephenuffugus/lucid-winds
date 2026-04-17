@@ -33,6 +33,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
   var _gsStyleLbl='🃏 Style';
   mc(a).innerHTML='<button class="gb-new" onclick="_GSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="GSstyle" onclick="_GSToggleStyle()" style="font-size:0.7rem;">'+_gsStyleLbl+'</button>';
   window._GSToggleStyle=function(){
+    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('GSstyle');
     if(b)b.textContent='🃏 Style';

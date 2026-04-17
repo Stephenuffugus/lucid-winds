@@ -23,6 +23,7 @@ window._gameFns.cribbage = function CRIB(a){
   var _cbStyleLbl='🃏 Style';
   mc(a).innerHTML='<button class="gb-new" onclick="_CBN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="CBstyle" onclick="_CBToggleStyle()" style="font-size:0.7rem;">'+_cbStyleLbl+'</button>';
   window._CBToggleStyle=function(){
+    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('CBstyle');
     if(b)b.textContent='🃏 Style';

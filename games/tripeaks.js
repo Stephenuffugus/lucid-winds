@@ -18,6 +18,7 @@ function GTP(a){
   var _tpStyleLbl='🃏 Style';
   mc(a).innerHTML='<button class="gb" onclick="_TPN()">🔄 New</button> <button class="gb" id="TPstyle" onclick="_TPToggleStyle()" style="font-size:0.7rem;">'+_tpStyleLbl+'</button>';
   window._TPToggleStyle=function(){
+    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('TPstyle');
     if(b)b.textContent='🃏 Style';

@@ -30,6 +30,7 @@ window._gameFns.bleedinghearts = function BH(a){
   var _bhStyleLbl='🃏 Style';
   mc(a).innerHTML='<button class="gb-new" onclick="_BHN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="BHstyle" onclick="_BHToggleStyle()" style="font-size:0.7rem;">'+_bhStyleLbl+'</button>';
   window._BHToggleStyle=function(){
+    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('BHstyle');
     if(b)b.textContent='🃏 Style';

@@ -57,7 +57,11 @@ window._gameFns.bowergarden = function BG(a){
   var _bgStyleLbl='🃏 Style';
   mc(a).innerHTML='<button class="gb-new" onclick="_BGN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="BGstyle" onclick="_BGToggleStyle()" style="font-size:0.7rem;">'+_bgStyleLbl+'</button>';
   window._BGToggleStyle=function(){
-    var nxt=window._cdToggleStyle();
+    if(typeof window._cdToggleStyle!=='function'){
+      if(window._toast)window._toast('Card styles loading — try again in a sec.');
+      return;
+    }
+    window._cdToggleStyle();
     var b=document.getElementById('BGstyle');
     if(b)b.textContent='🃏 Style';
     if(typeof render==='function')render();

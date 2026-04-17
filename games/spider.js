@@ -16,6 +16,7 @@ function GSP(a){
   var _spStyleLbl='🃏 Style';
   mc(a).innerHTML='<select class="gsl" id="SPsuit" onchange="_SPS(this.value)"><option value="1" selected>1 Suit</option><option value="2">2 Suits</option><option value="4">4 Suits</option></select> <button class="gb" onclick="_SPN()">🔄 New</button> <button class="gb" id="SPstyle" onclick="_SPToggleStyle()" style="font-size:0.7rem;">'+_spStyleLbl+'</button>';
   window._SPToggleStyle=function(){
+    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('SPstyle');
     if(b)b.textContent='🃏 Style';
