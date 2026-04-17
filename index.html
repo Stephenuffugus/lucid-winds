@@ -54155,7 +54155,12 @@ function _step16(){
   _step16AfterCelebration(0);
 }
 function _step16AfterCelebration(attempts){
-  var ov=document.getElementById('pw-win-overlay');
+  // Hold the "30 Sunbeams ready" prompt until BOTH the game-win
+  // overlay AND the L2 level-up ceremony (#lu-overlay) have
+  // dismissed. Previously we only waited on pw-win-overlay, so the
+  // mint prompt could collide with the L2 ceremony — Stephen wants
+  // the L2 moment to land uninterrupted first.
+  var ov=document.querySelector('#pw-win-overlay,#lu-overlay.open,.lu-overlay.open');
   if(ov&&attempts<60){setTimeout(function(){_step16AfterCelebration(attempts+1);},500);return;}
   setTimeout(function(){
     // Unidirectional lock engaged BEFORE the dialog renders so any
