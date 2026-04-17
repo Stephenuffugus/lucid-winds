@@ -54452,31 +54452,65 @@ function _tutFastForwardBloom(){
   },900);
 }
 
-// ═══ STEP 23: bloom celebration closer — grant L3 + route to Wild ═══
+// ═══ STEP 23: post-bloom — inspect new plant FIRST, then celebrate ═══
+// Flow:
+//   1. Wait for bloom cinematic-reveal to close (COLLECT SPECIMEN auto-
+//      switches to greenhouse).
+//   2. Prompt player to tap the new plant and flip it.
+//   3. Flip-reveal hook at step===23 → _step23Celebrate().
+//   4. _step23Celebrate grants L3 XP, waits for level-up ceremony,
+//      shows single "LET'S EXPLORE" dialog → step 24 (Wild unlock).
+// Rationale: splitting the "you bloomed + Lv 3 + Wild opens" triple-
+// announcement into two beats. Player inspects what they made first.
 function _step23(){
   _setStep(23);
-  // Watering landed + bloom kicked off. Release the water-only lock.
   try{document.body.classList.remove('lw-tut-water-only');}catch(e){}
-  // Grant enough XP to cross L3 so the Wild tab unlocks. Uses the
-  // whitelisted 'tut_unlock' reason to bypass the tutorial freeze.
+  _step23WaitForReveal(0);
+}
+
+function _step23WaitForReveal(attempts){
+  // Hold until the bloom cinematic + any stacked overlays are gone.
+  if(document.querySelector('#cinematic-reveal.open,#lu-overlay.open,.lu-overlay.open,#pw-win-overlay,#lw-confirm-modal')&&attempts<120){
+    setTimeout(function(){_step23WaitForReveal(attempts+1);},500);return;
+  }
+  // Belt-and-suspenders: the cinematic's COLLECT SPECIMEN path already
+  // switches to greenhouse, but run it again in case the player dismissed
+  // via a different route.
+  if(window.switchTab){try{switchTab('greenhouse');}catch(e){}}
+  setTimeout(function(){
+    _dialog(
+      '<span style="color:var(--sage);">First, let\u2019s go see what you bloomed.</span><br><br>' +
+      'Tap your new plant to <span style="color:var(--gold);">flip it over</span> and inspect it.',
+      '',null,'bottom');
+    if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    // Flip-reveal hook (wraps _handleCardFlip) advances on step===23.
+    // 10-min safety fallback.
+    setTimeout(function(){if(_getStep()===23)_done();},600000);
+  },800);
+}
+
+// Called by the flip-reveal hook after the player inspects the bloomed
+// plant. Grants L3 XP (unlocks Wild tab), waits for the level-up
+// ceremony, then shows the single-option "LET'S EXPLORE" prompt.
+function _step23Celebrate(){
+  _clear();
   try{
     var curXp=parseInt(localStorage.getItem('pw_xp')||'0',10)||0;
     if(curXp<36&&window.PW_grantXP){window.PW_grantXP(36-curXp,'tut_unlock');}
   }catch(e){}
-  // Wait for any bloom celebration / level ceremony to clear.
   _step23AfterCeremony(0);
 }
+
 function _step23AfterCeremony(attempts){
-  // _luDismiss only strips .open; the #lu-overlay element lingers in
-  // the DOM. Match .open explicitly so this poll doesn't stall for 30s
-  // after the ceremony has actually faded.
+  // _luDismiss strips .open but leaves #lu-overlay in the DOM, so match
+  // .open explicitly.
   if(document.querySelector('#lu-overlay.open,.lu-overlay.open,#pw-win-overlay,#lw-confirm-modal')&&attempts<60){
     setTimeout(function(){_step23AfterCeremony(attempts+1);},500);return;
   }
   _dialog(
-    'Your first breed bloomed. You\u2019ve crossed <span style="color:var(--gold);">Keeper Lv 3</span>.<br><br>' +
-    'The <span style="color:var(--gold);">Wild</span> opens next. Your garden goes out into the world.',
-    'OPEN THE WILD',function(){
+    'Your new plant has bloomed.<br><br>' +
+    'You\u2019ve crossed <span style="color:var(--gold);">Keeper Lv 3</span> — the <span style="color:var(--gold);">Wild</span> opens.',
+    'LET\u2019S EXPLORE',function(){
       _clear();
       var lvl=1;
       try{lvl=((window.canSee&&window.canSee.wildTab&&window.canSee.wildTab())?3:((window._getRank?_getRank(parseInt(localStorage.getItem('pw_xp')||'0',10)):{level:1}).level||1));}catch(e){}
@@ -54780,9 +54814,12 @@ function _step34(){
       var ret=_orig.apply(this,arguments);
       try{
         var nowRevealed=el&&el.getAttribute&&el.getAttribute('data-revealed')==='true';
-        if(!wasRevealed&&nowRevealed&&_getStep()===18){
-          // Wait for the reveal flash to play out before Phase 4 interrupts.
-          setTimeout(_step19,2400);
+        if(!wasRevealed&&nowRevealed){
+          var _st=_getStep();
+          // Step 18 = second mint inspect → advance to breed. Step 23 =
+          // third plant (first bred) inspect → celebrate L3 + Wild.
+          if(_st===18)setTimeout(_step19,2400);
+          else if(_st===23)setTimeout(_step23Celebrate,2400);
         }
       }catch(e){}
       return ret;
