@@ -7499,6 +7499,12 @@ window._addSwitchTabHook = function(fn){
         <button class="pgm-act-btn" onclick="window._carouselDetails()" style="border-color:rgba(200,168,75,0.3);color:var(--gold);">⬡ DETAILS</button>
         <button class="pgm-act-btn" onclick="carouselBreed()" style="border-color:rgba(200,168,75,0.3);color:var(--gold);">🧬 BREED</button>
         <button class="pgm-act-btn" onclick="carouselCompost()" style="border-color:rgba(139,46,46,0.3);color:rgba(192,112,112,0.9);">🧪 COMPOST</button>
+        <!-- Wild-inspect-only action buttons. Hidden by default; shown when
+             openCarousel is called with source='wild-inspect' so players
+             walking through a hex can water + take cuttings without
+             closing the carousel. -->
+        <button class="pgm-act-btn pgm-wild-act" id="gallery-water-btn" onclick="window._carouselWildAction&&_carouselWildAction('water')" style="display:none;border-color:rgba(91,173,220,0.45);color:rgba(91,173,220,0.95);">💧 WATER</button>
+        <button class="pgm-act-btn pgm-wild-act gold" id="gallery-cutting-btn" onclick="window._carouselWildAction&&_carouselWildAction('cutting')" style="display:none;border-color:rgba(200,168,75,0.45);color:var(--gold);">✂ CUTTING</button>
       </div>
       <div class="pgm-btn-row pgm-more-row" id="pgm-more-row" style="display:none;">
         <button class="pgm-act-btn" onclick="copyGalleryHash()">⧉ CODE</button>
@@ -29734,7 +29740,9 @@ document.addEventListener('keydown', function(e) {
       vp.addEventListener('touchend',   _onTouchEnd,   { passive: true });
     }
 
-    // Hide compost/breed for wild-inspect (can't compost or breed wild plants)
+    // Hide compost/breed for wild-inspect (can't compost or breed wild plants).
+    // Show wild-only WATER + CUTTING actions per slide so players walking
+    // through a hex can act without closing the carousel.
     var _actRow = document.querySelector('.pgm-actions .pgm-btn-row');
     if (_actRow) {
       var _actBtns = _actRow.querySelectorAll('.pgm-act-btn');
@@ -29745,10 +29753,40 @@ document.addEventListener('keydown', function(e) {
         }
       }
     }
+    // Toggle the wild-inspect action buttons.
+    var _wildBtns = document.querySelectorAll('.pgm-wild-act');
+    for (var _wb = 0; _wb < _wildBtns.length; _wb++) {
+      _wildBtns[_wb].style.display = (source === 'wild-inspect') ? '' : 'none';
+    }
+    // Hide DOWNLOAD + SHARE on wild plants — they're not your art to share,
+    // and exposing the source-plant card on a stranger's wild plant is
+    // exactly what Stephen wanted to lock down. Re-shown on non-wild use.
+    var _dlBtn = document.getElementById('gallery-download-btn');
+    if (_dlBtn) _dlBtn.style.display = (source === 'wild-inspect') ? 'none' : '';
+    var _shareBtn = _actRow ? _actRow.querySelector('.pgm-act-btn[onclick*="shareGalleryPlant"]') : null;
+    if (_shareBtn) _shareBtn.style.display = (source === 'wild-inspect') ? 'none' : '';
 
     _pushModal('plant-gallery-modal');
     document.getElementById('plant-gallery-modal').classList.add('open');
     if (typeof gtag !== 'undefined') gtag('event', 'carousel_open', { idx: _carousel.idx, src: source, total: arr.length });
+  };
+
+  // Carousel action dispatcher for wild-inspect mode. Player swipes to
+  // the plant they want, taps WATER or CUTTING. We sync window
+  // ._hexSelPlant to the current carousel slide and fire window
+  // ._hexAction — same handler the hex inspector uses, so all the
+  // existing rules (range checks, cooldowns, capacity, caps) apply.
+  // Stephen test: 'doing everything from the carousel while walking.'
+  window._carouselWildAction = function(action){
+    try {
+      if (!_carousel || !_carousel.arr || !_carousel.arr.length) return;
+      var p = _carousel.arr[_carousel.idx];
+      if (!p) return;
+      window._hexSelPlant = p;
+      if (typeof window._hexAction === 'function') {
+        window._hexAction(action);
+      }
+    } catch(e) { console.error('[carousel wild action]', e); }
   };
 
   // ── Lazy back-face builder: populates DNA ledger on first flip ─────
