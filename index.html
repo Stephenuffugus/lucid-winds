@@ -61109,14 +61109,18 @@ window._lwClaimHerbarium = function(id){
     };
     window._lwForagePick = function(cardId) {
       if (resolved) return;
-      if (selected.length >= diff.cards) {
-        // Already full — tap removes the LAST occurrence of this card if any.
-        for (var _rr = selected.length - 1; _rr >= 0; _rr--) {
-          if (selected[_rr] === cardId) { selected.splice(_rr, 1); render(); return; }
-        }
+      // No duplicates: a card already placed in this attempt is removed
+      // (toggle behavior), not added a second time. Stephen test: 'shouldnt
+      // have the same card twice in our game.' If he ever wants Mastermind-
+      // style duplicates again, drop this block — hex composition has no
+      // duplicates either way (picker is without-replacement).
+      var _existingIdx = selected.indexOf(cardId);
+      if (_existingIdx >= 0) {
+        selected.splice(_existingIdx, 1);
+        render();
         return;
       }
-      // Room for another placement — push the card ID (duplicates allowed).
+      if (selected.length >= diff.cards) return;
       selected.push(cardId);
       render();
     };
