@@ -6064,7 +6064,7 @@ window._addSwitchTabHook = function(fn){
         'lw_tut_herbarium_v1','lw_tut_wild_v1','lw_pulse_firstgame_v1','lw_pulse_highprio_v1',
         'lw_pulse_l7class_v1','lw_pulse_first_plant_tap','lw_pulse_breed_first',
         'lw_pulse_wild_drop','lw_pulse_whatnow_first',
-        'lw_jit_boxes_v1','lw_jit_cutting_v1','lw_jit_class_v1','lw_jit_pollen_v1','lw_jit_daily_v1','lw_jit_prestige_v1','lw_jit_territory_v1','lw_first_mint_v1','lw_tut_force_restart',
+        'lw_jit_boxes_v1','lw_jit_cutting_v1','lw_jit_class_v1','lw_jit_pollen_v1','lw_jit_daily_v1','lw_jit_prestige_v1','lw_jit_territory_v1','lw_first_mint_v1','lw_tut_force_restart','lw_wild_intro_seen',
         'lw_first_focus_done','lw_quest_first_game',
         'lw_first_breed','lw_first_feral_v1','lw_first_harvest','lw_first_cross_v1','lw_first_game_started',
         'lw_first_drop','lw_fb_hint_shown'];
@@ -42127,12 +42127,20 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
     }
   };
   function _maybeShowTabTeach(tab){
+    // Wild gets its own dedicated full-screen takeover via _lwShowWildIntro.
+    // The small tab-teach modal is wrong for Wild — too much to cover.
+    if(tab==='wild' && typeof window._lwShowWildIntro==='function'
+        && !localStorage.getItem('lw_wild_intro_seen')){
+      try{var _tutSt0=localStorage.getItem('lw_tut');if(_tutSt0&&_tutSt0!=='done')return;}catch(e){}
+      var ghLen0=0;try{ghLen0=(JSON.parse(localStorage.getItem('sws_greenhouse')||'[]')||[]).length;}catch(e){}
+      if(ghLen0<1)return;
+      setTimeout(function(){window._lwShowWildIntro();},700);
+      return;
+    }
     if(!TAB_TEACHES[tab])return;
     // Suppress TAB_TEACHES while the tutorial is running — the tutorial
     // has its own step-specific explanations for each tab (nursery
-    // step 22, wild steps 25-27, etc). Without this, the tab-teach
-    // modal would stack on top of the tutorial dialog and show
-    // contradictory copy.
+    // step 22, wild via _lwShowWildIntro, etc).
     try{var _tutSt=localStorage.getItem('lw_tut');if(_tutSt&&_tutSt!=='done')return;}catch(e){}
     var key='lw_tab_teach_'+tab;
     if(localStorage.getItem(key))return;
@@ -42171,6 +42179,96 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
       return _origSt.apply(this,arguments);
     };
   }
+
+  // ═══ THE WILD — full-screen intro takeover ═══
+  // Replaces the multi-prompt Wild walkthrough during tutorial AND the
+  // generic TAB_TEACHES.wild pop-up. Fires the first time the player
+  // lands on the Wild tab (or on demand from tutorial step 24). Player
+  // sees one cinematic landing page with the bg-wild art, scrollable
+  // sections covering every Wild rule, then a single EXPLORE THE WILD
+  // button. After that the Wild tab is theirs to discover.
+  // Stamps lw_tab_teach_wild so the small TAB_TEACHES modal never fires.
+  window._lwShowWildIntro = function(onClose){
+    if(document.getElementById('lw-wild-intro'))return;
+    var ov = document.createElement('div');
+    ov.id = 'lw-wild-intro';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:1000050;background:#0d100c url(\'assets/bg-wild-540x960.jpg\') center/cover no-repeat;display:flex;flex-direction:column;animation:panelFadeIn 0.6s ease;font-family:DM Sans,sans-serif;color:var(--cream,#e8dcc8);';
+    var sectionStyle = 'padding:0.85rem 1rem;margin-bottom:0.6rem;background:rgba(8,12,8,0.78);border:1px solid rgba(200,168,75,0.18);border-radius:10px;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);';
+    var titleStyle = 'font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--gold,#c8a84b);letter-spacing:0.16em;margin-bottom:0.35rem;';
+    var bodyStyle = 'font-family:DM Mono,monospace;font-size:0.6rem;line-height:1.7;color:rgba(232,220,200,0.92);';
+    var html = '';
+    // Hero header
+    html += '<div style="padding:calc(env(safe-area-inset-top,0px) + 1.6rem) 1rem 1rem;text-align:center;background:linear-gradient(180deg,rgba(5,8,4,0.85),rgba(5,8,4,0.35));">'+
+      '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:rgba(200,168,75,0.7);letter-spacing:0.3em;margin-bottom:0.4rem;">\u2756 LUCID WINDS \u2756</div>'+
+      '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:2.3rem;color:var(--cream);text-shadow:0 2px 12px rgba(0,0,0,0.85),0 0 24px rgba(200,168,75,0.25);letter-spacing:0.04em;line-height:1;">The Wild</div>'+
+      '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:rgba(232,220,200,0.75);letter-spacing:0.16em;margin-top:0.5rem;">THE WORLD UNDER YOUR FEET</div>'+
+    '</div>';
+    // Scrollable body
+    html += '<div style="flex:1;overflow-y:auto;padding:0.8rem 0.9rem 1.4rem;-webkit-overflow-scrolling:touch;">';
+    // Intro
+    html += '<div style="'+sectionStyle+'background:rgba(8,12,8,0.85);border-color:rgba(122,179,86,0.3);">'+
+      '<div style="'+bodyStyle+'font-style:italic;color:var(--cream);">You are a Keeper. The map below is real \u2014 your real coordinates, your real weather, your real time of day. The plants you place here live somewhere you can walk to.</div>'+
+    '</div>';
+    // PLANT
+    html += '<div style="'+sectionStyle+'">'+
+      '<div style="'+titleStyle+'\ud83c\udf31 PLANT</div>'+
+      '<div style="'+bodyStyle+'">Drop a Greenhouse plant into the hex you\u2019re standing in. It lives there for days or seasons depending on its rarity. <b>Three drops a day</b>, resets at midnight.</div>'+
+    '</div>';
+    // TEND
+    html += '<div style="'+sectionStyle+'">'+
+      '<div style="'+titleStyle+'\ud83d\udca7 TEND</div>'+
+      '<div style="'+bodyStyle+'">Walk near any wild plant \u2014 yours or another Keeper\u2019s \u2014 to <b>water</b> it or take a <b>cutting</b>. Cuttings carry the plant\u2019s genome only (no pot, substrate, aura, or companion). One cutting per plant every 6 hours. Bring them back to the Nursery to bloom or breed.</div>'+
+    '</div>';
+    // FORAGE
+    html += '<div style="'+sectionStyle+'">'+
+      '<div style="'+titleStyle+'\ud83c\udf42 FORAGE</div>'+
+      '<div style="'+bodyStyle+'">Some hexes glow gold. Walk within <b>75m</b> and tap one. A short foraging game shows you four cards \u2014 read the local weather and biome, pick the match. Win a feral seed for your Nursery.</div>'+
+    '</div>';
+    // CONTEST
+    html += '<div style="'+sectionStyle+'">'+
+      '<div style="'+titleStyle+'\u2694\ufe0f CONTEST</div>'+
+      '<div style="'+bodyStyle+'">Other Keepers can challenge for your hex. The fight is a dice roll: <b>2d6 + EA + companion bonus</b>. Stronger plants hold their ground. Items in your backpack can shift the odds.</div>'+
+    '</div>';
+    // WEATHER
+    html += '<div style="'+sectionStyle+'">'+
+      '<div style="'+titleStyle+'\u2600\ufe0f WEATHER + SEASON</div>'+
+      '<div style="'+bodyStyle+'">Every plant has five resistances: <span style="color:var(--sage);">heat, cold, wind, drought, water</span>. The seasonal border on your card tells you when it thrives and when it\u2019s vulnerable. Real-world weather here drives what survives.</div>'+
+    '</div>';
+    // GROW
+    html += '<div style="'+sectionStyle+'">'+
+      '<div style="'+titleStyle+'\u2728 GROW</div>'+
+      '<div style="'+bodyStyle+'"><b style="color:rgba(91,175,220,0.9);">Dew</b> drips from your wild plants and from helping other Keepers. Spend it on the Nursery and on cuttings. <b style="color:var(--gold);">Pollen</b> is your Keeper XP \u2014 walking, planting, tending all add to it.</div>'+
+    '</div>';
+    // BIOME
+    html += '<div style="'+sectionStyle+'">'+
+      '<div style="'+titleStyle+'\ud83c\udf0d BIOME</div>'+
+      '<div style="'+bodyStyle+'">Where you stand is a biome \u2014 forest, desert, wetland, mountain, suburban. The local biome shapes which feral seeds spawn for you, and your <b>class</b> may give bonuses in its preferred biome.</div>'+
+    '</div>';
+    // Closer
+    html += '<div style="padding:0.6rem 0.4rem 0.4rem;text-align:center;'+bodyStyle+'font-style:italic;color:rgba(232,220,200,0.7);">Plants live their own lives. You come back to read the story.</div>';
+    html += '</div>';
+    // Footer button
+    html += '<div style="padding:0.6rem 1rem calc(env(safe-area-inset-bottom,0px) + 0.85rem);background:linear-gradient(0deg,rgba(5,8,4,0.92),rgba(5,8,4,0.4));">'+
+      '<button id="lw-wild-intro-go" style="display:block;width:100%;padding:0.85rem;min-height:56px;border-radius:10px;border:1.5px solid rgba(200,168,75,0.55);background:linear-gradient(180deg,rgba(200,168,75,0.28),rgba(120,100,40,0.38));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.16em;cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,0.7);box-shadow:0 4px 16px rgba(0,0,0,0.55);">EXPLORE THE WILD</button>'+
+    '</div>';
+    ov.innerHTML = html;
+    document.body.appendChild(ov);
+    // Stamp the small-modal flag so TAB_TEACHES.wild never fires post-intro.
+    try{localStorage.setItem('lw_tab_teach_wild','1');}catch(e){}
+    try{localStorage.setItem('lw_wild_intro_seen','1');}catch(e){}
+    var btn = document.getElementById('lw-wild-intro-go');
+    if(btn){
+      btn.addEventListener('click',function(){
+        ov.style.transition='opacity 0.45s ease';
+        ov.style.opacity='0';
+        setTimeout(function(){
+          if(ov.parentNode)ov.remove();
+          if(typeof onClose==='function')onClose();
+        },470);
+      });
+    }
+    try{if(typeof gtag!=='undefined')gtag('event','wild_intro_shown');}catch(e){}
+  };
 })();
 </script>
 <script>
@@ -54743,12 +54841,13 @@ function _step24(){
     var isWild=wn&&getComputedStyle(wn).display!=='none';
     if(isWild){
       _clear();
-      // Wait for the map to actually render — the old 1600ms fixed
-      // delay fired walls of teaching text BEFORE Leaflet tiles even
-      // loaded, so the player saw a stack of prompts on a blank
-      // screen. Stephen's exact words: "wait till i get to the
-      // fuckin map." Poll for the first loaded tile, then start
-      // step 25.
+      // Wait for the map to render, then take over the screen with the
+      // dedicated "The Wild" intro page. ALL upfront Wild prompts
+      // (hexes / resistances / wind / drop walkthrough) are gone —
+      // the intro page covers everything in one scrollable read, and
+      // tapping EXPLORE THE WILD hands off straight to the backpack
+      // tour. Stephen test feedback: "stop all prompts from the wild
+      // at first."
       _step25WaitForMap(0);
       return;
     }
@@ -54761,103 +54860,47 @@ function _step24(){
 function _step25WaitForMap(attempts){
   var tile=document.querySelector('#wild-map .leaflet-tile-loaded')
         || document.querySelector('#wild-map img.leaflet-tile');
-  if(tile){setTimeout(_step25,800);return;}
+  if(tile){setTimeout(_step25,500);return;}
   if(attempts<30){setTimeout(function(){_step25WaitForMap(attempts+1);},400);return;}
-  // 12s budget — fall through anyway. Better to risk a too-early
-  // dialog than to strand the player with no prompt at all.
+  // 12s budget — fall through anyway.
   setTimeout(_step25,400);
 }
 
-// ═══ STEP 25: Wild tab — short opener + direct drop CTA ═══
-// Used to be three consecutive prompt walls (hexes / resistances /
-// wind-spread). Stephen flagged this as a wall-of-information stack
-// the player couldn't dismiss to see the map underneath. Collapsed
-// into one short opener + PLACE MINE button. Hexes become obvious
-// when you see them. Resistance info surfaces when you tap a wild
-// plant's inspector. Wind/breeding lore lives in _step5bClaim after
-// the drop, when it actually means something.
+// ═══ STEP 25: launch The Wild intro takeover ═══
+// Replaces the old multi-prompt walkthrough (steps 25/26/27 + 5b chain).
+// One full-screen scrollable page with the bg-wild art, all Wild rules
+// in named sections, and a single EXPLORE THE WILD button. Tapping it
+// hands off to the backpack tour at step 28.
 function _step25(){
   _setStep(25);
-  _dialog(
-    '<span style="color:var(--sage);">This is the wild.</span><br><br>' +
-    'Drop one of your plants into the world. It\u2019ll live somewhere real.',
-    'PLACE MINE',function(){_clear();setTimeout(_step5bDrop,500);},'center');
+  if(typeof window._lwShowWildIntro==='function'){
+    window._lwShowWildIntro(function(){
+      // Player tapped EXPLORE THE WILD → continue tutorial.
+      setTimeout(_step28,400);
+    });
+  } else {
+    // Fallback: if intro module didn't load for some reason, skip ahead.
+    setTimeout(_step28,400);
+  }
 }
 
-// ═══ Steps 26 + 27: deprecated — collapsed into step 25 ═══
-// Kept as pass-throughs so older _resume routes and any cached lw_tut
-// values land somewhere safe instead of dropping the player out.
+// ═══ Deprecated steps 26 + 27 + 5b chain: replaced by The Wild intro ═══
+// Kept as pass-throughs so any cached mid-flow lw_tut value (26, 27,
+// 275-279) on refresh lands somewhere safe instead of dropping out.
 function _step26(){_step25();}
 function _step27(){_step25();}
 
-// ═══ Phase 5b — guided first wild drop ═══
-// If the player already has wild plants OR lacks drops remaining OR can't
-// see the FAB, we skip cleanly to Phase 6. Safe by construction.
-function _step5bDrop(){
-  _setStep(275);
-  var fab=document.getElementById('dfb');
-  var alreadyDropped=false;
-  try{alreadyDropped=(JSON.parse(localStorage.getItem('fg_wild_plants')||'[]')||[]).length>0;}catch(e){}
-  if(!fab||alreadyDropped){setTimeout(_step28,600);return;}
-  if(window._lwPulseHint)window._lwPulseHint(fab,30000,'lw_tut_fab_pulse');
-  _dialog(
-    'See the <span style="color:var(--gold);">+</span> on the right? Tap it to drop one of your plants into the hex you\u2019re standing in.<br><br>' +
-    '<span style="color:var(--muted);font-size:0.85em;">Choose carefully. A wild plant is real, and it can be taken.</span>',
-    '',null,'top');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
-  var polls=0;
-  var watch=function(){
-    var picker=document.getElementById('w-picker');
-    if(picker&&getComputedStyle(picker).display!=='none'){
-      _clear();setTimeout(_step5bPicker,700);return;
-    }
-    if(polls<600){polls++;setTimeout(watch,500);}
-    else {setTimeout(_step28,300);}
-  };
-  watch();
-}
+// ═══ Phase 5b — DEPRECATED ═══
+// The Wild intro page (_lwShowWildIntro) replaces the entire 5b drop
+// walkthrough. Kept as pass-throughs so any cached lw_tut value
+// (275, 276, 279) on refresh resumes safely at the backpack tour.
+function _step5bDrop(){_setStep(28);setTimeout(_step28,400);}
+function _step5bPicker(){_setStep(28);setTimeout(_step28,400);}
 
-function _step5bPicker(){
-  _setStep(276);
-  _dialog(
-    'Pick a plant from your greenhouse.<br><br>' +
-    '<span style="color:var(--muted);font-size:0.85em;">Rarer plants survive longer out there.</span>',
-    '',null,'top');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
-  var wildLen0=0;
-  try{wildLen0=(JSON.parse(localStorage.getItem('fg_wild_plants')||'[]')||[]).length;}catch(e){}
-  var polls=0;
-  var watch=function(){
-    var len=0;
-    try{len=(JSON.parse(localStorage.getItem('fg_wild_plants')||'[]')||[]).length;}catch(e){}
-    if(len>wildLen0){_clear();setTimeout(_step5bDone,2000);return;}
-    if(polls<900){polls++;setTimeout(watch,500);}
-    else {setTimeout(_step28,300);}
-  };
-  watch();
-}
-
-// ═══ Phase 5b post-drop — ONE celebration beat, then handoff ═══
-// Was three consecutive prose dumps (banner stats / nickname-contest /
-// foraging hint). Stephen test feedback: "we need to go literally one
-// step at a time." JIT system already covers each of those topics
-// when they actually become relevant:
-//   - pollen banner explained by _lwJITPollen on first earn
-//   - nickname surfaces when player taps their wild plant inspector
-//   - foraging cue surfaces when first glowing hex appears
-//   - territory contest covered by _lwJITTerritory after first attack
-// One unified celebration line + direct handoff to backpack tour.
-function _step5bDone(){
-  _setStep(279);
-  _dialog(
-    '<span style="color:var(--sage);">Your plant lives somewhere real now.</span><br><br>' +
-    'Tend it. Walk near it. Watch what happens.',
-    'NEXT',function(){_clear();setTimeout(_step28,400);},'center');
-}
-
-// Deprecated: replaced by single _step5bDone celebration above.
-// Pass-throughs preserved so refresh-resume on stale step values
-// (277, 278, 279) lands at the unified done beat instead of dropping.
+// All Phase 5b post-drop beats DEPRECATED — The Wild intro page covers
+// all of this in one scrollable read. Pass-throughs route any cached
+// lw_tut value (277, 278, 279) directly to the backpack tour on resume.
+function _step5bDone(){_setStep(28);setTimeout(_step28,400);}
 function _step5bClaim(){_step5bDone();}
 function _step5bForage(){_step5bDone();}
 function _step5bMap(){_step5bDone();}
