@@ -10276,11 +10276,20 @@ document.addEventListener('keydown', function(e) {
     R.storyseeds = ''+
       '<p><strong>Pick a path:</strong> Each scene offers choices that branch the story.</p>'+
       '<p><strong>Reach the bloom:</strong> Some endings earn a plant pattern, others reveal a hidden petal.</p>';
+    R.set = ''+
+      '<p><strong>Goal:</strong> Spot a <em>Trio</em> — three cards that work together — and tap them.</p>'+
+      '<p><strong>Each card has four traits:</strong> color, shape, number, and shading. Each trait has three possible values.</p>'+
+      '<p><strong>The rule:</strong> For every trait, the three cards must be either <strong style="color:var(--gold);">all the same</strong> or <strong style="color:var(--gold);">all different</strong>. Two-same-one-different breaks the trio.</p>'+
+      '<p><strong>Example trio:</strong> three blue clovers, all solid, with 1 / 2 / 3 shapes. Same color, same shape, same shading, different numbers — all four traits pass.</p>'+
+      '<p><strong>Earn:</strong> Each trio fills your Sunbeam meter. Clear enough trios to mint a new plant.</p>'+
+      '<p style="color:var(--muted);font-size:0.7rem;font-style:italic;">Need hands-on? Tap PRACTICE MODE below for a no-stakes round.</p>';
   })();
 
   // Generic rules modal renderer. Shows registered rules HTML if
   // available, otherwise falls back to the short blurb from G[].r
-  // so every game gets at least a basic rules card.
+  // so every game gets at least a basic rules card. For Three Sisters
+  // (id 'set') a secondary PRACTICE MODE button drops the player into
+  // the no-stakes interactive sandbox.
   window._showGameRules = function(gameId){
     if (document.getElementById('tutorial-overlay')) { closeTutorial(); return; }
     var gameMeta=null;
@@ -10293,6 +10302,9 @@ document.addEventListener('keydown', function(e) {
     var detailedRules = window._gameRules[gameId] || null;
     var fallbackRules = gameMeta ? gameMeta.r : 'Detailed rules coming soon.';
     var bodyHTML = detailedRules || ('<p style="font-family:DM Sans,sans-serif;font-size:0.85rem;line-height:1.6;color:var(--cream);margin:0;">'+fallbackRules+'</p>');
+    var practiceBtn = (gameId === 'set' && typeof window._runSetPractice === 'function')
+      ? '<button onclick="closeTutorial();setTimeout(window._runSetPractice,150);" style="display:block;width:100%;margin-top:0.5rem;padding:0.65rem;min-height:48px;background:linear-gradient(180deg,rgba(74,124,53,0.45),rgba(46,80,36,0.55));border:1.5px solid rgba(122,179,86,0.5);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;border-radius:8px;cursor:pointer;">\u270b PRACTICE MODE</button>'
+      : '';
 
     var ov = document.createElement('div');
     ov.id = 'tutorial-overlay';
@@ -10304,20 +10316,24 @@ document.addEventListener('keydown', function(e) {
         '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;letter-spacing:0.1em;margin-bottom:1.1rem;">HOW TO PLAY</div>'+
         '<div style="font-size:0.78rem;line-height:1.65;">'+bodyHTML+'</div>'+
         '<button onclick="closeTutorial()" style="display:block;width:100%;margin-top:1.2rem;padding:0.65rem;min-height:48px;background:linear-gradient(180deg,rgba(46,40,32,0.7),rgba(32,30,24,0.8));border:1px solid rgba(200,168,75,0.25);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;border-radius:8px;cursor:pointer;">I GOT IT</button>'+
+        practiceBtn+
       '</div>';
     document.body.appendChild(ov);
   };
 
   window.triggerTutorialDemo = function() {
     if (document.getElementById('tutorial-overlay')) { closeTutorial(); return; }
-    // Route per-game help: if the active game has registered detailed
-    // rules OR if it's not Three Sisters, show a rules modal instead
-    // of the SET interactive demo (which is irrelevant to other games).
-    var activeId = window._a;
-    if (activeId && activeId !== 'set') {
-      window._showGameRules(activeId);
-      return;
-    }
+    // Always show the static rules card first — Three Sisters used to
+    // jump straight into the interactive sandbox, which gave new
+    // players no readable explanation. The rules modal now offers a
+    // PRACTICE MODE button that re-enters the sandbox on demand.
+    var activeId = window._a || 'set';
+    window._showGameRules(activeId);
+  };
+
+  // ── PRACTICE MODE — sandboxed Three Sisters round, no stakes ──
+  window._runSetPractice = function() {
+    if (document.getElementById('tutorial-overlay')) { closeTutorial(); return; }
 
     // ── TUTORIAL MINI-GAME — sandboxed, plays like real game ──
     var colors;
