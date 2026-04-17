@@ -31274,7 +31274,7 @@ document.addEventListener('keydown', function(e) {
     setTimeout(function(){
       if (document.querySelector('.lu-overlay')) return;
       if (!window._lwConfirm) return;
-      var body = 'A <b>clipping</b> carries the plant\u2019s genetics only: its leaf, stem, flower, and season. Pot, substrate, aura, and companion stay with the parent.<br><br>Clippings are <b>single-use</b>. Cross it with another plant in the <b>Nursery</b> to keep the line going. On its own it will bloom a faint copy.';
+      var body = 'A <b>clipping</b> carries the plant\u2019s genetics only: its leaf, stem, flower, and season. Pot, substrate, aura, and companion stay with the parent.<br><br>Clippings are <b>single-use</b>. They cannot bloom on their own. Cross it with another plant in the <b>Nursery</b> to keep the line going. After the cross, the clipping is gone.';
       window._lwConfirm({
         title: '\u2702\ufe0f A CLIPPING',
         body: body,
@@ -41695,8 +41695,11 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
   /* Tutorial: hide the floating WHAT NOW button so nothing draws focus
      away from the step-by-step spotlight. Class is added in _step1 and
      removed in _done (including the wrapped variant that strips card
-     highlights). */
+     highlights). The lw-tutorial-pending body class (set on boot when
+     lw_plant_xp_unlocked is missing) keeps the button hidden through
+     the inter-step transitions where lw-tut-active is briefly off. */
   body.lw-tut-active #lw-whatnow-btn,
+  body.lw-tutorial-pending #lw-whatnow-btn,
   body.lw-tut-active #lw-fb-btn{display:none !important;}
   /* Tutorial: lock the top-bar avatar, Book of Secrets, and backpack
      until the tutorial walks through each one. Character sheet stays
@@ -54935,13 +54938,29 @@ function _step25(){
   try{localStorage.setItem('lw_tab_teach_wild','1');}catch(e){}
   if(typeof window._lwShowWildIntro==='function'){
     window._lwShowWildIntro(function(){
-      // Player tapped EXPLORE THE WILD → continue tutorial.
-      setTimeout(_step28,400);
+      // Player tapped EXPLORE THE WILD → quick banner-numbers callout
+      // before the backpack tour, so the wild-log values aren't a mystery.
+      setTimeout(_step27Banner,400);
     });
   } else {
     // Fallback: if intro module didn't load for some reason, skip ahead.
     setTimeout(_step28,400);
   }
+}
+
+// ═══ STEP 27: brief wild-banner numbers callout ═══
+// Pulses the wild-log banner and names what the numbers mean. Quick
+// one-liner so the player isn't wondering what 'pollen' or 'dew' is
+// when they look at the top of the screen.
+function _step27Banner(){
+  _setStep(27);
+  var banner=document.querySelector('.wild-log');
+  if(banner&&window._lwPulseHint){
+    window._lwPulseHint(banner,15000,'lw_tut_wlog_pulse');
+  }
+  _dialog(
+    'These numbers up top: <b>drops</b> remaining today, your <b style="color:rgba(91,175,220,0.95);">dew</b>, your <b style="color:var(--gold);">pollen</b> (player XP), <b style="color:var(--sage);">meters</b> walked, plus your local <b>biome and weather</b>.',
+    'GOT IT',function(){_clear();setTimeout(_step28,400);},'bottom');
 }
 
 // ═══ Deprecated steps 26 + 27 + 5b chain: replaced by The Wild intro ═══
@@ -55026,8 +55045,8 @@ function _step29(){
 function _step30(){
   _setStep(30);
   _dialog(
-    'Tap any wild plant you pass, yours or another Keeper\u2019s, to take a <span style="color:var(--gold);">cutting</span>.<br><br>' +
-    'Each plant allows one cutting every <span style="color:var(--gold);">6 hours</span>. The clipping lands in your nursery as a single-use seed you can bloom or breed.<br><br>' +
+    'Tap any wild plant you pass, yours or another player\u2019s, to take a <span style="color:var(--gold);">cutting</span>.<br><br>' +
+    'A cutting can only be <b>bred</b> with another plant in your Nursery. It cannot bloom on its own, and it disappears after the cross.<br><br>' +
     '<span style="color:var(--muted);font-size:0.85em;">Cuttings carry only the plant\u2019s genome. No pot, substrate, aura, or companion.</span>',
     'GOT IT',function(){_clear();setTimeout(_step31,300);},'center');
 }
@@ -55075,14 +55094,17 @@ function _step32(){
   watch();
 }
 
-// ═══ STEP 33: inside BoS — let them browse, watch for close ═══
+// ═══ STEP 33: inside BoS — let them browse, OK button to dismiss prompt ═══
 function _step33(){
   _setStep(33);
   _dialog(
     'Take your time. Every tab fills in as you play.<br><br>' +
-    '<span style="color:var(--muted);font-size:0.85em;">Close when you\u2019re ready.</span>',
-    '',null,'top');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    '<span style="color:var(--muted);font-size:0.85em;">Close the Book when you\u2019re ready.</span>',
+    'OKAY',function(){
+      // Dismiss the dialog so the player can browse without it blocking.
+      // The watch loop continues polling for #bos-overlay close → _step34.
+      if(_dlg&&_dlg.parentNode){_dlg.remove();_dlg=null;}
+    },'top');
   var polls=0;
   var watch=function(){
     if(!document.getElementById('bos-overlay')){
@@ -55108,6 +55130,9 @@ function _step34(){
       // Tutorial complete — release the plant-XP lock so future mints,
       // blooms, and collection milestones grant XP normally.
       try{localStorage.setItem('lw_plant_xp_unlocked','1');}catch(e){}
+      // Drop the WHAT NOW gate now that the player has finished the
+      // walkthrough.
+      try{document.body.classList.remove('lw-tutorial-pending');}catch(e){}
       // Pre-stamp the four TAB_TEACHES flags so the post-tutorial tab-teach
       // modal doesn't double-explain Greenhouse / Games / Nursery / Wild
       // mechanics the player just walked through. _maybeShowTabTeach gates
@@ -55310,7 +55335,7 @@ function _resume(step){
   if(step===24)return go(_step24);
   if(step===25)return go(_step25);
   if(step===26)return go(_step26);
-  if(step===27)return go(_step27);
+  if(step===27)return go(_step27Banner);
   // 275-278 are transient sub-steps inside Phase 5b (guided wild drop).
   // _step5bDrop self-skips to _step28 when a wild plant was already placed.
   if(step>=275&&step<=278)return go(_step5bDrop);
@@ -64979,6 +65004,17 @@ window._lwApplyGates=function(){
     if(tutInProgress && localStorage.getItem('lw_plant_xp_unlocked')==='1'){
       localStorage.removeItem('lw_plant_xp_unlocked');
     }
+    // WHAT NOW gate: hide the floating button while the player is
+    // pre-tutorial-completion (no lw_plant_xp_unlocked yet). The CSS
+    // rule body.lw-tutorial-pending #lw-whatnow-btn{display:none}
+    // covers the inter-step transitions where lw-tut-active flickers.
+    try{
+      if(!localStorage.getItem('lw_plant_xp_unlocked')){
+        document.body && document.body.classList.add('lw-tutorial-pending');
+      } else {
+        document.body && document.body.classList.remove('lw-tutorial-pending');
+      }
+    }catch(e){}
     if(localStorage.getItem('lw_plant_xp_unlocked'))return;
     var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
     // Mid-tutorial check: a numeric lw_tut ('5', '18', etc.) means the
