@@ -5648,6 +5648,18 @@ window._addSwitchTabHook = function(fn){
 
   <!-- WILD MAP — placeholder panel -->
   <div class="grove-panel" id="panel-wild" style="padding:0!important;padding-bottom:0!important;">
+    <!-- BIOME HERO STRIP — current biome painting as a hero band at the top.
+         Filled by FG_Wild biome detection callback. Tapping opens the biome
+         detail Reader page. -->
+    <div id="w-biome-hero" onclick="if(window._lwShowBiomeDetail&&window._lastDetectedBiome)window._lwShowBiomeDetail(window._lastDetectedBiome);" style="position:relative;width:100%;height:84px;background:linear-gradient(180deg,rgba(13,16,12,0.4),rgba(13,16,12,0.85)),#0d100c center/cover no-repeat;border-bottom:1px solid rgba(200,168,75,0.18);overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+      <div style="position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:space-between;padding:8px 14px 10px;">
+        <div style="display:flex;flex-direction:column;gap:2px;text-shadow:0 2px 8px rgba(0,0,0,0.85);">
+          <div style="font-family:'DM Mono',monospace;font-size:0.42rem;color:rgba(200,168,75,0.75);letter-spacing:0.2em;">YOU ARE IN</div>
+          <div style="font-family:'Playfair Display',serif;font-style:italic;font-size:1.15rem;color:var(--cream);letter-spacing:0.02em;line-height:1;" id="w-biome-hero-name">Scanning…</div>
+        </div>
+        <div style="font-size:1.4rem;text-shadow:0 2px 6px rgba(0,0,0,0.7);" id="w-biome-hero-icon">🏡</div>
+      </div>
+    </div>
     <!-- WILD LOG BAR -->
     <div class="wild-log">
       <div class="wild-log-stat" onclick="if(window._toggleTerritory)_toggleTerritory();"><div class="wild-log-val" style="color:#c8a86e" id="w-count">0</div><div class="wild-log-lbl" style="color:#c8a86e;">planted</div></div>
@@ -35679,6 +35691,19 @@ function activate(){
           var _bInf=getBiomeInfo(b);
           var _bIc=document.getElementById('w-biome');if(_bIc)_bIc.textContent=_bInf.icon;
           var _bNm=document.getElementById('w-biome-name');if(_bNm)_bNm.textContent=_bInf.name;
+          // Update biome hero strip — paints current biome's art under
+          // the YOU ARE IN / [name] / [icon] header.
+          var _bHero=document.getElementById('w-biome-hero');
+          if(_bHero){
+            if(_bInf.img){
+              _bHero.style.backgroundImage='linear-gradient(180deg,rgba(13,16,12,0.4),rgba(13,16,12,0.85)),url("'+_bInf.img+'")';
+            }
+            if(_bInf.color){
+              _bHero.style.borderBottomColor=_bInf.color+'88';
+            }
+          }
+          var _bhName=document.getElementById('w-biome-hero-name');if(_bhName)_bhName.textContent=_bInf.name;
+          var _bhIcon=document.getElementById('w-biome-hero-icon');if(_bhIcon)_bhIcon.textContent=_bInf.icon;
         }
         // Weather chip — compact today's weather + element tilt for foraging.
         try {
