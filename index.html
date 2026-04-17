@@ -4923,8 +4923,13 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
     .ob-grade{font-family:'Bebas Neue',sans-serif;font-size:0.8rem;letter-spacing:0.12em;margin-top:0.3rem;}
     .ob-creature-text{font-size:0.75rem;color:var(--gold);margin-top:0.5rem;opacity:0;transition:opacity 1s ease;}
     .ob-creature-text.show{opacity:1;}
-    .ob-auth{width:100%;max-width:300px;margin:1rem auto 0;text-align:center;}
-    .ob-auth.show{opacity:1;}
+    /* Auth form must be invisible AND non-interactive until _renderGiftPlant
+       adds .show after Simon Says completes. Without the opacity:0 + pointer-
+       events:none baseline, the form is tappable the instant beat 4 starts
+       crossfading in — Stephen hit this: clicking the email input before
+       Simon Says popped up. */
+    .ob-auth{width:100%;max-width:300px;margin:1rem auto 0;text-align:center;opacity:0;pointer-events:none;transition:opacity 0.6s ease;}
+    .ob-auth.show{opacity:1;pointer-events:auto;}
     /* font-size 16px is the iOS Safari threshold — below it, tapping an input
        auto-zooms the viewport and obliterates onboarding layout. 16px kills
        the zoom. Padding bumped to hit the 48px touch-target minimum. */
