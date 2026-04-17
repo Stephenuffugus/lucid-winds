@@ -54716,8 +54716,22 @@ function _step5bMap(){
   }
   _dialog(
     'Your plant is real now. It has coordinates. It lives.<br><br>' +
-    'The numbers up top track your <span style="color:var(--gold);">dew</span>, <span style="color:var(--gold);">steps walked</span>, and your keeper <span style="color:var(--gold);">xp</span>. Watch them grow as you play.',
-    'NEXT',function(){_clear();setTimeout(_step5bForage,400);},'bottom');
+    'The banner up top tracks <span style="color:var(--gold);">drops</span> remaining, <span style="color:var(--gold);">dew</span>, your keeper <span style="color:var(--gold);">xp</span>, <span style="color:var(--gold);">meters</span> walked, and the local <span style="color:var(--gold);">biome + weather</span>. Watch them grow as you play.',
+    'NEXT',function(){_clear();setTimeout(_step5bClaim,400);},'bottom');
+}
+
+// ═══ Phase 5b — claim + contest primer ═══
+// Non-interactive prose beat: teaches the nickname affordance and warns
+// that other Keepers can challenge for the hex. Originally part of the
+// Phase 5 spec ("show nickname feature, recommend putting LOCATION in
+// the nickname"). Keeping it as a pure read-and-tap so we don't pile
+// more interactive polls on top of the drop walkthrough.
+function _step5bClaim(){
+  _setStep(279);
+  _dialog(
+    'Tap your plant on the map any time to give it a <span style="color:var(--gold);">nickname</span>. Most Keepers mark where they placed it.<br><br>' +
+    'Other Keepers passing through can challenge for the hex. <span style="color:var(--sage);">Stronger plants hold their ground.</span>',
+    'NEXT',function(){_clear();setTimeout(_step5bForage,400);},'center');
 }
 
 function _step5bForage(){
@@ -54783,7 +54797,7 @@ function _step31(){
   _setStep(31);
   _dialog(
     'Close your backpack when you\u2019re done. Then one last thing.',
-    'OK',function(){
+    'GOT IT',function(){
       _clear();
       // Nudge the backpack closed so step 32 can spotlight BoS cleanly.
       try{var bpe=document.getElementById('bpe');if(bpe&&bpe.classList.contains('open')&&window.FG_Backpack&&window.FG_Backpack.toggle)window.FG_Backpack.toggle();}catch(e){}
@@ -54854,6 +54868,18 @@ function _step34(){
       // Tutorial complete — release the plant-XP lock so future mints,
       // blooms, and collection milestones grant XP normally.
       try{localStorage.setItem('lw_plant_xp_unlocked','1');}catch(e){}
+      // Pre-stamp the four TAB_TEACHES flags so the post-tutorial tab-teach
+      // modal doesn't double-explain Greenhouse / Games / Nursery / Wild
+      // mechanics the player just walked through. _maybeShowTabTeach gates
+      // on lw_tut !== 'done', which becomes true the moment _done() runs
+      // below — without these flags, the next switchTab to any tab would
+      // fire the redundant teach.
+      try{
+        localStorage.setItem('lw_tab_teach_greenhouse','1');
+        localStorage.setItem('lw_tab_teach_game','1');
+        localStorage.setItem('lw_tab_teach_nursery','1');
+        localStorage.setItem('lw_tab_teach_wild','1');
+      }catch(e){}
       _done();
     },'center');
 }
@@ -55017,6 +55043,9 @@ function _resume(step){
   // 275-278 are transient sub-steps inside Phase 5b (guided wild drop).
   // _step5bDrop self-skips to _step28 when a wild plant was already placed.
   if(step>=275&&step<=278)return go(_step5bDrop);
+  // 279 is the post-drop claim/contest primer — pure prose, no DOM watch.
+  // Safe to re-enter from cold boot; just re-renders the dialog.
+  if(step===279)return go(_step5bClaim);
   if(step===28)return go(_step28);
   if(step===29)return go(_step29);
   if(step===30)return go(_step30);
