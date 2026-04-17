@@ -54028,10 +54028,14 @@ function _watchGameComplete(){
     // need to tap. Stephen hit this and got stuck on a "broken"
     // greenhouse showing only background + plants + backpack.
     try{document.body.classList.add('lw-tut-game-handoff');}catch(e){}
+    // Total delay from game end → L2 ceremony = 500ms + 900ms = 1.4s.
+    // Old values (800 + 3000 = 3.8s) felt sluggish — Stephen flagged
+    // "takes a little while to trigger level 2". XP grant still lands
+    // inside _step16 so the ceremony fires WITH the greenhouse return.
     setTimeout(function(){
       _forceFirstFocusReward();
-      setTimeout(_step16,3000);
-    },800);
+      setTimeout(_step16,900);
+    },500);
   }
   var handler=function(e){resolve();};
   window.addEventListener('game-completed',handler);
