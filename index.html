@@ -54536,15 +54536,22 @@ function _step18(){
   // can't compost or sidetrack when they tap the new plant. Card itself
   // stays tappable so they can flip it. Step 19 keeps the lock and adds
   // lw-tut-carousel-breed-only to carve out BREED.
-  try{document.body.classList.add('lw-tut-carousel-lock');}catch(e){}
+  try{document.body.classList.add('lw-tut-carousel-lock','lw-tut-newplant-only');}catch(e){}
   var polls=0;
   var waitForGH=function(){
     var ghTab=document.getElementById('tab-greenhouse');
     var onGH=ghTab&&getComputedStyle(ghTab).display!=='none';
     if(onGH){
+      // Highlight the new plant tile (tiles[0] = newest mint per render
+      // order) so the player can see at a glance which one to tap. Other
+      // tiles stay dimmed via lw-tut-newplant-only on body.
+      try{
+        var _tiles=document.querySelectorAll('.greenhouse-plant');
+        if(_tiles&&_tiles[0])_tiles[0].classList.add('lw-tut-newplant-target');
+      }catch(e){}
       _dialog(
-        'Your second plant is here.<br><br>' +
-        'Now let\u2019s <span style="color:var(--gold);">look at it</span> before we breed. Tap it to flip it over.',
+        '<span style="color:var(--gold);">Look at your new plant!</span><br><br>' +
+        'Tap it to open and flip it over \u2014 then we\u2019ll breed.',
         '',null,'bottom');
       if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
       return;
