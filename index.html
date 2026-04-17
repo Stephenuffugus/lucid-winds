@@ -1114,17 +1114,19 @@
     .pgm-track {
       display: flex; width: 300%; height: 100%;
       will-change: transform;
-      /* Default: center slot visible. No transition by default — set by JS */
-      transform: translateX(-33.333%);
+      /* Default: center slot visible. translate3d (not translateX) to
+         force GPU layer + smoother glide on Android Chrome. */
+      transform: translate3d(-33.333%, 0, 0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
-      contain: layout style;
+      contain: layout style paint;
+      transform-style: preserve-3d;
     }
     .pgm-track.animating {
-      transition: transform 0.32s cubic-bezier(0.25,0.46,0.45,0.94);
+      transition: transform 0.28s cubic-bezier(0.22,0.61,0.36,1);
     }
     .pgm-track.spring-back {
-      transition: transform 0.42s cubic-bezier(0.28,0.84,0.42,1);
+      transition: transform 0.36s cubic-bezier(0.34,1.05,0.5,1);
     }
 
     /* ── Individual slot — 1/3 of track width ── */
@@ -4656,7 +4658,7 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
 #dfb:active{transform:scale(.92);}
 @keyframes fr{0%,100%{box-shadow:0 4px 20px rgba(42,92,42,0.5),0 0 0 3px rgba(122,179,86,0.08)}50%{box-shadow:0 6px 24px rgba(42,92,42,0.6),0 0 0 5px rgba(122,179,86,0.12)}}
 #dfb:active{transform:scale(0.9);animation:none;}
-#dbb{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;background:#e8a0bf;color:#0d100c;font-family:'Bebas Neue',sans-serif;font-size:13px;display:flex;align-items:center;justify-content:center;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.5);border:1.5px solid rgba(13,16,12,.6);}
+#dbb{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;background:var(--sage);color:#0d100c;font-family:'Bebas Neue',sans-serif;font-size:13px;display:flex;align-items:center;justify-content:center;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.5);border:1.5px solid rgba(13,16,12,.6);}
 #dbb.lo{background:var(--gold);animation:dw 1s ease-in-out infinite;}
 /* Affordance label so players know this button = release a greenhouse
    plant into the wild. Lives just below the FAB sprite, gold pill. */
@@ -5684,10 +5686,12 @@ window._addSwitchTabHook = function(fn){
     </div>
     <!-- WILD LOG BAR -->
     <div class="wild-log">
-      <div class="wild-log-stat" onclick="if(window._toggleTerritory)_toggleTerritory();"><div class="wild-log-val" style="color:#c8a86e" id="w-count">0</div><div class="wild-log-lbl" style="color:#c8a86e;">planted</div></div>
-      <!-- 'drops' cell removed — same number lives on the SOW button (#dbb)
-           in pink, no need to duplicate it in the wild-log strip. Hidden
-           span keeps any code that updates #w-drops-left from breaking. -->
+      <!-- 'planted' cell removed — count of planted plants doesn't earn its
+           own banner cell, since the player can see them on the map.
+           Hidden span keeps update code from breaking. -->
+      <span id="w-count" style="display:none;">0</span>
+      <!-- 'drops' cell removed — same number lives on the SOW button (#dbb).
+           Hidden span keeps any code updating #w-drops-left from breaking. -->
       <span id="w-drops-left" style="display:none;">3</span>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Dew, produced by your wild plants and collected when helping others. Spend on nursery acceleration and on cuttings.')"><div class="wild-log-val" style="color:#5baddc" id="w-dew">0</div><div class="wild-log-lbl" style="color:#5baddc;">dew <span id="w-dew-rate" style="font-size:0.28rem;color:var(--muted);"></span></div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Pollen, your player XP. Walking, planting, and tending all add to it.')"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl" style="color:var(--gold);">pollen</div></div>
@@ -29632,7 +29636,7 @@ document.addEventListener('keydown', function(e) {
     if (track) {
       track.classList.remove('animating', 'spring-back');
       track.style.transition = 'none';
-      track.style.transform  = 'translateX(-33.333%)';
+      track.style.transform  = 'translate3d(-33.333%, 0, 0)';
     }
     _syncTopBar();
     _carousel.busy = false;
@@ -29691,13 +29695,13 @@ document.addEventListener('keydown', function(e) {
     var baseX    = -33.333; // percent
     var pxOffset = clamped + 'px';
     track.style.transition = 'none';
-    track.style.transform  = 'translateX(calc(' + baseX + '% + ' + pxOffset + '))';
+    track.style.transform  = 'translate3d(calc(' + baseX + '% + ' + pxOffset + '), 0, 0)';
 
     // Snap back after 16ms (one frame held)
     setTimeout(function() {
       track.classList.add('spring-back');
       track.style.transition = '';
-      track.style.transform  = 'translateX(-33.333%)';
+      track.style.transform  = 'translate3d(-33.333%, 0, 0)';
       _haptic('error'); // thud — single dull pulse, app physically answers
       if (viewport) {
         viewport.classList.add('boundary');
@@ -29758,7 +29762,7 @@ document.addEventListener('keydown', function(e) {
     if (atLeft || atRight) {
       pxOffset = (dx * 0.28) + 'px';
     }
-    track.style.transform = 'translateX(calc(' + baseX + '% + ' + pxOffset + '))';
+    track.style.transform = 'translate3d(calc(' + baseX + '% + ' + pxOffset + '), 0, 0)';
   }
 
   function _onTouchEnd() {
@@ -29784,7 +29788,7 @@ document.addEventListener('keydown', function(e) {
     if (track) {
       track.classList.add('spring-back');
       track.style.transition = '';
-      track.style.transform  = 'translateX(-33.333%)';
+      track.style.transform  = 'translate3d(-33.333%, 0, 0)';
       track.addEventListener('transitionend', function onSnap() {
         track.removeEventListener('transitionend', onSnap);
         track.classList.remove('spring-back');
@@ -36887,7 +36891,23 @@ function _drawZoneHexes(){
       if (window._LW_DEBUG) console.log('[HEX TAP] zone='+this._zoneKey+' dist='+Math.round(this._zoneDist)+'m plants='+this._zonePlantCount+' FG_Wild.inspector='+(!!window.FG_Wild&&!!FG_Wild._openHexInspector));
       var _dynR=typeof _getCollectRange==='function'?_getCollectRange():COLLECT_RANGE;
       if(window.FG_Wild&&FG_Wild._openHexInspector&&this._zoneDist<=_dynR){
+        // Stephen test: 'this is so redundant it opens the list with
+        // an open to swipe through plant. no just open the carosel
+        // only.' If the hex has plants, open the carousel directly
+        // and skip the inspector list entirely. Inspector still
+        // mounted for the SEARCH FOR SEEDS button — it sits behind
+        // the carousel so closing the carousel exposes it.
         FG_Wild._openHexInspector(this._zoneKey);
+        if(this._zonePlantCount>0){
+          setTimeout(function(){
+            try{
+              var _hex=document.querySelector('.hi-plant-row');
+              if(_hex&&window.FG_Wild&&FG_Wild._autoCarouselFromInspector){
+                FG_Wild._autoCarouselFromInspector();
+              }
+            }catch(err){}
+          },180);
+        }
       }else if(this._zoneDist>_dynR){
         // Out of range — show locked preview
         var _hlEl=document.getElementById('hex-locked');
@@ -41952,7 +41972,19 @@ window._hexAction=function(action){
 // nullability checks (the #w-toast element is position:fixed and
 // layered above everything, so it works from any tab).
 window._toast = _toast;
-return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_openHexInspector:_openHexInspector,_drawZoneHexes:_drawZoneHexes};
+// Helper: auto-launch the carousel for the currently-open hex
+// inspector. Called from the hex tap handler so a single tap on a
+// hex with plants opens the carousel directly (no list-then-button).
+function _autoCarouselFromInspector(){
+  if(!window.openCarousel||!_hexInspPlants||!_hexInspPlants.length)return;
+  try{
+    if(typeof closeTP==='function')closeTP();
+  }catch(e){}
+  setTimeout(function(){
+    window.openCarousel(_hexInspPlants.slice(),0,'wild-inspect');
+  },120);
+}
+return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_openHexInspector:_openHexInspector,_autoCarouselFromInspector:_autoCarouselFromInspector,_drawZoneHexes:_drawZoneHexes};
 })();
 </script>
 <!-- DEV: Spawn Mythic+Cosmic (hidden — requires dev panel password) -->
@@ -55456,7 +55488,7 @@ function _step27Banner(){
     window._lwPulseHint(banner,15000,'lw_tut_wlog_pulse');
   }
   _dialog(
-    'These numbers up top: <b style="color:#c8a86e;">planted</b>, <b style="color:#e8a0bf;">drops</b> remaining today, your <b style="color:#5baddc;">dew</b>, your <b style="color:var(--gold);">pollen</b> (player XP), <b style="color:var(--sage);">meters</b> walked, and your local <b>biome &amp; weather</b>.',
+    'These numbers up top: your <b style="color:#5baddc;">dew</b>, your <b style="color:var(--gold);">pollen</b> (player XP), and <b style="color:var(--sage);">meters</b> walked. The biome banner above shows where you stand and changes as you move; the compass on the right tracks which way you face.',
     'GOT IT',function(){_clear();setTimeout(_step28,400);},'bottom');
 }
 
