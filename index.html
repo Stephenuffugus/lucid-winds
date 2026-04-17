@@ -4732,22 +4732,20 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
    open the biome lore Reader. Z-index sits ABOVE the wild-log so the
    stats sit BELOW the painting (the log gets a top offset to make room). */
 #w-biome-hero{position:fixed!important;top:0;left:0;right:0;z-index:461;}
-/* Wild log dropped below the biome hero. The 72px offset matches the
-   strip's height (84px nominal minus a tiny visual overlap so the log
-   border tucks into the strip's bottom shadow). Stays fixed so the map
-   can scroll under it. */
-.wild-log{position:fixed;top:calc(110px + env(safe-area-inset-top,0px));left:0;right:0;padding:10px 12px;background:linear-gradient(180deg,rgba(20,16,10,0.96),rgba(13,10,6,0.96));border-bottom:2px solid rgba(200,168,75,0.2);z-index:460;box-shadow:0 8px 32px rgba(0,0,0,0.7);display:grid;grid-template-columns:repeat(3,1fr) auto;grid-template-rows:auto auto;grid-template-areas:'s1 s2 s3 cp' 's4 s5 s6 cp';gap:6px;}
-.wild-log-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(5,6,4,0.75);padding:6px 4px;border-radius:8px;border:1px solid rgba(200,168,75,0.12);min-height:52px;cursor:pointer;transition:all 0.15s;}
+/* Wild log OVERLAYS the biome hero banner now — sits on top of the
+   art rather than below it. 3 resource chips + compass, single row.
+   Transparent background lets the biome art bleed through; chips have
+   their own semi-transparent dark fill so values stay legible on any
+   biome. z-index above the banner (461 → 462). */
+.wild-log{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:0;right:0;padding:6px 10px;background:transparent;border-bottom:none;z-index:462;box-shadow:none;display:grid;grid-template-columns:repeat(3,1fr) auto;grid-template-rows:auto;grid-template-areas:'s1 s2 s3 cp';gap:6px;pointer-events:none;}
+.wild-log-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(5,6,4,0.78);padding:6px 4px;border-radius:8px;border:1px solid rgba(200,168,75,0.22);min-height:52px;cursor:pointer;transition:all 0.15s;pointer-events:auto;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
 .wild-log-stat:nth-child(1){grid-area:s1;}
 .wild-log-stat:nth-child(2){grid-area:s2;}
 .wild-log-stat:nth-child(3){grid-area:s3;}
-.wild-log-stat:nth-child(4){grid-area:s4;}
-.wild-log-stat:nth-child(5){grid-area:s5;}
-.wild-log-stat:nth-child(6){grid-area:s6;}
 .wild-log-stat:active{background:rgba(18,22,16,0.85);border-color:rgba(200,168,75,0.3);}
 .wild-log-val{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;color:var(--cream);line-height:1;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,.6)}
 .wild-log-lbl{font-family:'DM Mono',monospace;font-size:0.55rem;color:rgba(200,168,75,0.7);letter-spacing:0.08em;text-transform:uppercase;margin-top:1px;}
-.wild-log-wind{grid-area:cp;align-self:center;justify-self:center;width:80px;min-height:92px;display:flex;align-items:center;justify-content:center;flex-direction:column;position:relative;font-size:2rem;color:var(--gold);gap:2px;}
+.wild-log-wind{grid-area:cp;align-self:center;justify-self:center;width:64px;min-height:52px;display:flex;align-items:center;justify-content:center;flex-direction:column;position:relative;font-size:1.4rem;color:var(--gold);gap:1px;pointer-events:auto;background:rgba(5,6,4,0.78);padding:4px 4px;border-radius:8px;border:1px solid rgba(200,168,75,0.22);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
 .wl-wind-top{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--cream);letter-spacing:0.06em;text-shadow:0 1px 2px rgba(0,0,0,0.9);line-height:1;}
 .wl-wind-bottom{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--cream);letter-spacing:0.06em;text-shadow:0 1px 2px rgba(0,0,0,0.9);line-height:1.2;}
 .wl-wind-bottom b{color:var(--gold);font-weight:700;}
@@ -5707,20 +5705,25 @@ window._addSwitchTabHook = function(fn){
       <span id="w-biome-hero-name" style="display:none;">Scanning…</span>
       <span id="w-biome-hero-icon" style="display:none;"></span>
     </div>
-    <!-- WILD LOG BAR -->
+    <!-- WILD LOG BAR — overlays the biome hero banner. Just the 3 core
+         resources + compass. Biome chip + class chip were removed per
+         Stephen: 'pollen, steps, dew, and compass should be the only
+         things there anymore and they need to overlay on top of the
+         hero banner. remove the class, and suburban word and house.'
+         Biome name + class still surface elsewhere (banner tap opens
+         biome detail; class picker lives in Steward's panel). -->
     <div class="wild-log">
-      <!-- 'planted' cell removed — count of planted plants doesn't earn its
-           own banner cell, since the player can see them on the map.
-           Hidden span keeps update code from breaking. -->
+      <!-- Hidden spans: stale update code still writes here. -->
       <span id="w-count" style="display:none;">0</span>
-      <!-- 'drops' cell removed — same number lives on the SOW button (#dbb).
-           Hidden span keeps any code updating #w-drops-left from breaking. -->
       <span id="w-drops-left" style="display:none;">3</span>
+      <span id="w-biome" style="display:none;"></span>
+      <span id="w-biome-name" style="display:none;"></span>
+      <span id="w-weather-chip" style="display:none;"></span>
+      <span id="w-class-icon" style="display:none;"></span>
+      <span id="w-class-lbl" style="display:none;"></span>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Dew, produced by your wild plants and collected when helping others. Spend on nursery acceleration and on cuttings.')"><div class="wild-log-val" style="color:#5baddc" id="w-dew">0</div><div class="wild-log-lbl" style="color:#5baddc;">dew <span id="w-dew-rate" style="font-size:0.28rem;color:var(--muted);"></span></div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Pollen, your player XP. Walking, planting, and tending all add to it.')"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl" style="color:var(--gold);">pollen</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Steps walked. Keep moving to find feral seeds!')"><div class="wild-log-val" style="color:#c89b68" id="w-steps">0</div><div class="wild-log-lbl" style="color:#c89b68;">steps</div></div>
-      <div class="wild-log-stat" onclick="if(window._lwShowBiomeDetail&&window._lastDetectedBiome)window._lwShowBiomeDetail(window._lastDetectedBiome);else if(window.FG_Wild&&FG_Wild._logTip)FG_Wild._logTip('Your biome and today\'s weather. Both shape what ferals spawn here.')"><div class="wild-log-val" style="font-size:0.7rem;" id="w-biome">🏡</div><div class="wild-log-lbl"><span id="w-biome-name">scanning</span> <span id="w-weather-chip" style="color:var(--gold);"></span></div></div>
-      <div class="wild-log-stat" id="w-class-stat" onclick="if(window._LW_openClassPicker)_LW_openClassPicker();else if(window._openCompendiumUI)_openCompendiumUI();" style="cursor:pointer;"><div class="wild-log-val" style="font-size:0.85rem;" id="w-class-icon">—</div><div class="wild-log-lbl" id="w-class-lbl">no class</div></div>
       <div class="wild-log-wind" id="w-wind" onclick="if(window._lwCompassTap)window._lwCompassTap();" style="cursor:pointer;"><div class="wl-wind-top">Points North</div><img src="assets/compasses/compass-arrow.png" alt="compass" draggable="false"><div class="wl-wind-bottom">You face <b id="w-wind-facing">—</b></div></div>
     </div>
     <!-- TERRITORY OVERVIEW (tap planted count to expand) -->
