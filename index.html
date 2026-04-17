@@ -55678,6 +55678,7 @@ function _step18(){
         'Tap it to open and flip it over, then we\u2019ll breed.',
         '',null,'bottom');
       if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+      _step18CarouselSafety();
       return;
     }
     if(polls<1200){polls++;setTimeout(waitForGH,500);} // 10 min grace
@@ -55687,6 +55688,32 @@ function _step18(){
   // The flip-reveal hook advances to _step19 on first-reveal of any card
   // while at step 18. 10-min safety fallback.
   setTimeout(function(){if(_getStep()===18)_done();},600000);
+}
+
+// Safety net for step 18 → step 19. If the player opens the carousel
+// but doesn't flip (or the flip-hook misses because the card was
+// pre-revealed), advance to step 19 after 8s of open-carousel time so
+// BREED un-greys and they don't stall with no path forward. Jessie hit
+// this on 2026-04-17.
+function _step18CarouselSafety(){
+  var openSince=0;
+  var polls=0;
+  var tick=function(){
+    if(_getStep()!==18)return;
+    var m=document.getElementById('plant-gallery-modal');
+    var isOpen=m&&m.classList.contains('open');
+    if(isOpen){
+      if(openSince===0)openSince=Date.now();
+      if(Date.now()-openSince>=8000){
+        setTimeout(_step19,400);
+        return;
+      }
+    }else{
+      openSince=0;
+    }
+    if(polls<600){polls++;setTimeout(tick,500);}
+  };
+  setTimeout(tick,800);
 }
 
 // Find the newest plant tile by hash + add the gold pulse. Retries up
@@ -56331,13 +56358,19 @@ function _step34(){
       var ret=_orig.apply(this,arguments);
       try{
         var nowRevealed=el&&el.getAttribute&&el.getAttribute('data-revealed')==='true';
-        if(!wasRevealed&&nowRevealed){
-          var _st=_getStep();
-          // Step 18 = second mint inspect → advance to breed. Step 23 =
-          // third plant (first bred) inspect → celebrate L3 + Wild.
-          if(_st===18)setTimeout(_step19,2400);
-          else if(_st===23)setTimeout(_step23Celebrate,2400);
-        }
+        var nowFlipped=el&&el.classList&&el.classList.contains('flipped');
+        var _st=_getStep();
+        // Step 18 = second-mint inspect → advance to breed. Use the
+        // broader "is now flipped" signal (not just first-reveal) so a
+        // fresh mint that arrives with data-revealed="true" for any
+        // reason (pre-reveal, re-render race) still advances when the
+        // player actually interacts. Jessie got stuck 2026-04-17
+        // because her plant card was already revealed and the strict
+        // first-reveal check never fired → BREED stayed greyed.
+        if(_st===18&&nowFlipped)setTimeout(_step19,2400);
+        // Step 23 keeps strict first-reveal — celebrating the rarity
+        // reveal is the point of that beat.
+        else if(_st===23&&!wasRevealed&&nowRevealed)setTimeout(_step23Celebrate,2400);
       }catch(e){}
       return ret;
     };
