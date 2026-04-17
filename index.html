@@ -1070,6 +1070,16 @@
     }
     #plant-gallery-modal.open { display: flex; animation: carouselOpen 0.3s cubic-bezier(0.16,1,0.3,1); }
     @keyframes carouselOpen { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+    /* Wild-mode backdrop — when openCarousel is called from the Wild
+       tab (source 'wild-place' or 'wild-inspect'), paint the same
+       midnight-greenhouse-meets-wild background as the Wild intro
+       takeover. The card cards themselves render unchanged so the
+       UX feels uniform with the greenhouse carousel — Stephen test
+       request: 'this will let players have a uniform experience
+       between the greenhouse and the wild.' */
+    body.lw-carousel-wild-mode #plant-gallery-modal { background: #0d100c url('assets/bg-wild-540x960.jpg') center/cover no-repeat; }
+    body.lw-carousel-wild-mode #plant-gallery-modal::before { content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(5,8,4,0.65),rgba(5,8,4,0.92)); pointer-events:none; z-index:0; }
+    body.lw-carousel-wild-mode #plant-gallery-modal > * { position:relative; z-index:1; }
 
     /* ── Top bar: name + close + counter ── */
     .pgm-topbar {
@@ -7565,6 +7575,14 @@ window._addSwitchTabHook = function(fn){
              closing the carousel. -->
         <button class="pgm-act-btn pgm-wild-act" id="gallery-water-btn" onclick="window._carouselWildAction&&_carouselWildAction('water')" style="display:none;border-color:rgba(91,173,220,0.45);color:rgba(91,173,220,0.95);">💧 WATER</button>
         <button class="pgm-act-btn pgm-wild-act gold" id="gallery-cutting-btn" onclick="window._carouselWildAction&&_carouselWildAction('cutting')" style="display:none;border-color:rgba(200,168,75,0.45);color:var(--gold);">✂ CUTTING</button>
+        <!-- WILD-PLACE mode: drop the currently-shown plant into the
+             player's current hex. Hidden by default; shown in
+             wild-place mode by openCarousel. -->
+        <button class="pgm-act-btn pgm-wild-place" id="gallery-place-btn" onclick="window._wildPlaceFromCarousel&&window._wildPlaceFromCarousel()" style="display:none;border-color:rgba(122,179,86,0.55);color:var(--sage);background:linear-gradient(180deg,rgba(74,124,53,0.28),rgba(46,80,34,0.4));font-weight:bold;">🌱 PLACE HERE</button>
+        <!-- ITEMS access — visible on both wild modes. Opens the items
+             panel so players can apply seasonal/climate buffs while
+             comparing plants for a drop or while inspecting a hex. -->
+        <button class="pgm-act-btn pgm-wild-items" id="gallery-items-btn" onclick="if(window.LW_ITEMS&&LW_ITEMS.openPanel)LW_ITEMS.openPanel();" style="display:none;border-color:rgba(192,122,200,0.45);color:rgba(220,160,228,0.95);">🎒 ITEMS</button>
       </div>
       <div class="pgm-btn-row pgm-more-row" id="pgm-more-row" style="display:none;">
         <button class="pgm-act-btn" onclick="copyGalleryHash()">⧉ CODE</button>
@@ -29780,6 +29798,9 @@ document.addEventListener('keydown', function(e) {
     _carousel.source    = source || 'greenhouse';
     _carousel.hintShown = arr.length <= 1; // hide hints if only 1 plant
     _carousel.busy      = false;
+    // Expose so external helpers (e.g. _wildPlaceFromCarousel) can
+    // read the current slide.
+    window._carousel = _carousel;
 
     // Show/hide nav hints based on collection size
     var hl = document.getElementById('pgm-hint-left');
@@ -29800,31 +29821,49 @@ document.addEventListener('keydown', function(e) {
       vp.addEventListener('touchend',   _onTouchEnd,   { passive: true });
     }
 
-    // Hide compost/breed for wild-inspect (can't compost or breed wild plants).
-    // Show wild-only WATER + CUTTING actions per slide so players walking
-    // through a hex can act without closing the carousel.
+    // Wild modes: 'wild-inspect' (browsing plants in a hex) and
+    // 'wild-place' (picking a plant to drop). Both hide the standard
+    // greenhouse actions and surface wild-specific buttons + ITEMS
+    // access. Body class also paints a subtle bg-wild backdrop so the
+    // carousel feels like part of the Wild tab.
+    var _isWild = (source === 'wild-inspect' || source === 'wild-place');
+    try {
+      document.body.classList.toggle('lw-carousel-wild-mode', _isWild);
+    } catch(e){}
     var _actRow = document.querySelector('.pgm-actions .pgm-btn-row');
     if (_actRow) {
       var _actBtns = _actRow.querySelectorAll('.pgm-act-btn');
       for (var _ab = 0; _ab < _actBtns.length; _ab++) {
         var _btnText = _actBtns[_ab].textContent || '';
         if (_btnText.indexOf('BREED') >= 0 || _btnText.indexOf('COMPOST') >= 0) {
-          _actBtns[_ab].style.display = (source === 'wild-inspect') ? 'none' : '';
+          _actBtns[_ab].style.display = _isWild ? 'none' : '';
         }
       }
     }
-    // Toggle the wild-inspect action buttons.
-    var _wildBtns = document.querySelectorAll('.pgm-wild-act');
-    for (var _wb = 0; _wb < _wildBtns.length; _wb++) {
-      _wildBtns[_wb].style.display = (source === 'wild-inspect') ? '' : 'none';
+    // Toggle wild-inspect-only actions (water / cutting).
+    var _inspectBtns = document.querySelectorAll('.pgm-wild-act');
+    for (var _wb = 0; _wb < _inspectBtns.length; _wb++) {
+      _inspectBtns[_wb].style.display = (source === 'wild-inspect') ? '' : 'none';
     }
-    // Hide DOWNLOAD + SHARE on wild plants — they're not your art to share,
-    // and exposing the source-plant card on a stranger's wild plant is
-    // exactly what Stephen wanted to lock down. Re-shown on non-wild use.
+    // Toggle wild-place-only action (PLACE HERE).
+    var _placeBtns = document.querySelectorAll('.pgm-wild-place');
+    for (var _pb = 0; _pb < _placeBtns.length; _pb++) {
+      _placeBtns[_pb].style.display = (source === 'wild-place') ? '' : 'none';
+    }
+    // ITEMS button visible on both wild modes — players need to access
+    // their seasonal/climate items while comparing plants for placement
+    // or while deciding what to do with a wild plant.
+    var _itemsBtns = document.querySelectorAll('.pgm-wild-items');
+    for (var _ib = 0; _ib < _itemsBtns.length; _ib++) {
+      _itemsBtns[_ib].style.display = _isWild ? '' : 'none';
+    }
+    // Hide DOWNLOAD + SHARE on any wild mode — source plant data
+    // shouldn't be exportable from a hex view, and there's nothing
+    // to share yet on a plant the player is about to drop.
     var _dlBtn = document.getElementById('gallery-download-btn');
-    if (_dlBtn) _dlBtn.style.display = (source === 'wild-inspect') ? 'none' : '';
+    if (_dlBtn) _dlBtn.style.display = _isWild ? 'none' : '';
     var _shareBtn = _actRow ? _actRow.querySelector('.pgm-act-btn[onclick*="shareGalleryPlant"]') : null;
-    if (_shareBtn) _shareBtn.style.display = (source === 'wild-inspect') ? 'none' : '';
+    if (_shareBtn) _shareBtn.style.display = _isWild ? 'none' : '';
 
     _pushModal('plant-gallery-modal');
     document.getElementById('plant-gallery-modal').classList.add('open');
@@ -30011,6 +30050,9 @@ document.addEventListener('keydown', function(e) {
   window.closePlantGallery = function() {
     _clearModalHistory('plant-gallery-modal');
     document.getElementById('plant-gallery-modal').classList.remove('open');
+    // Drop the wild-mode backdrop class — restores default greenhouse
+    // gallery look on the next non-wild open.
+    try { document.body.classList.remove('lw-carousel-wild-mode'); } catch(e){}
     // Unbind touch events
     var vp = document.getElementById('pgm-viewport');
     if (vp) {
@@ -39092,7 +39134,19 @@ function openPicker(){
   if(rem<=0){_toast('All '+_maxD+' drops used today!');return;}
   var gh=_getGH();
   if(!gh.length){_toast('No plants! Play the Grove game first.');return;}
-  // Reset picker to drop mode
+  // STEPHEN'S DESIGN: drop-plant should feel like the greenhouse
+  // carousel, not a small grid. Players need to flip the card, read
+  // the haiku + DNA + EA + season before committing a real-world drop.
+  // Route through the existing carousel via the new 'wild-place'
+  // source — slides show the standard greenhouse cards but with
+  // greenhouse buttons hidden and a single PLACE HERE button that
+  // calls _drop on the current carousel slide.
+  if(window.openCarousel){
+    window._wildDropList = gh; // referenced by PLACE HERE handler
+    window.openCarousel(gh, 0, 'wild-place');
+    return;
+  }
+  // Legacy fallback — only fires if openCarousel module didn't load
   var title=document.getElementById('wpk-title');
   if(title){title.textContent='DROP A SPECIMEN';title.style.color='var(--sage)';}
   document.getElementById('wpk-lim').textContent=rem+' remaining';
@@ -39110,6 +39164,22 @@ function openPicker(){
   })(gh[i]);}
   document.getElementById('w-picker').classList.add('open');
 }
+// Window-exposed so the carousel's PLACE HERE button can drop the
+// currently-shown plant without needing access to FG_Wild internals.
+window._wildPlaceFromCarousel = function(){
+  try {
+    var arr = window._wildDropList;
+    if (!arr) return;
+    // The carousel exposes its current index via _carousel.idx in the
+    // main IIFE. We pull the plant from our own list to ensure parity.
+    var idx = (window._carousel && typeof window._carousel.idx === 'number') ? window._carousel.idx : 0;
+    var pl = arr[idx];
+    if (!pl) return;
+    // Close the carousel first so the drop-target hex is visible.
+    if (window.closePlantGallery) window.closePlantGallery();
+    setTimeout(function(){ _drop(pl); }, 200);
+  } catch(e) { console.error('[wildPlace]', e); }
+};
 function closePicker(){var pk=document.getElementById('w-picker');if(pk)pk.classList.remove('open');}
 
 var MAX_PER_ZONE=3;
