@@ -36331,6 +36331,11 @@ function _loadSteps(){
   }catch(e){return{lifetime:0,today:0,day:_afGetToday()};}
 }
 function _saveSteps(s){try{localStorage.setItem(LW_STEPS_KEY,JSON.stringify(s));}catch(e){}}
+// Internal tracking stays in meters (what the GPS returns). Display in
+// STEPS since most players (US especially) don't intuit meters. Avg
+// walking stride ~0.762m → 1 meter ≈ 1.312 steps. Stephen: 'in america
+// people are dumb and dont know how long a meter is lol.'
+function _metersToSteps(m){return Math.round((m||0)*1.312);}
 function _addSteps(meters){
   if(!meters||meters<=0)return;
   // Cartographer class: multiplies step distance credit
@@ -36345,7 +36350,7 @@ function _addSteps(meters){
   s.today=(s.today||0)+meters;
   _saveSteps(s);
   var el=document.getElementById('w-steps');
-  if(el)el.textContent=Math.round(s.today||0);
+  if(el)el.textContent=_metersToSteps(s.today);
   _checkStepMilestone();
   // Credit the same walked meters to every incubating cocoon.
   try { if (window.LW_COCOONS && window.LW_COCOONS.creditSteps) window.LW_COCOONS.creditSteps(meters); } catch(e){}
@@ -36355,7 +36360,7 @@ function _addSteps(meters){
 function _hydrateStepsUI(){
   var s=_loadSteps();
   var el=document.getElementById('w-steps');
-  if(el)el.textContent=Math.round(s.today||0);
+  if(el)el.textContent=_metersToSteps(s.today);
   // Recompute the milestone watermark from lifetime so we don't re-toast
   var milestones=[500,1000,2500,5000,10000];
   for(var i=milestones.length-1;i>=0;i--){
@@ -36368,8 +36373,10 @@ function _checkStepMilestone(){
   var milestones=[500,1000,2500,5000,10000];
   // Per-milestone Dew rewards — walking should pay out visibly so the
   // player feels the loop. Scales with distance: farther walks matter more.
+  // Thresholds stored in meters (what the GPS returns) but labels use
+  // steps so the player sees a unit they recognize.
   var rewards={500:3,1000:6,2500:12,5000:25,10000:60};
-  var labels={500:'500m walked',1000:'1km explorer',2500:'2.5km trekker',5000:'5km ranger',10000:'10km legend'};
+  var labels={500:'650 steps walked',1000:'1,300 steps \u2014 explorer',2500:'3,300 steps \u2014 trekker',5000:'6,500 steps \u2014 ranger',10000:'13,000 steps \u2014 legend'};
   for(var i=milestones.length-1;i>=0;i--){
     if(meters>=milestones[i]&&_lastStepMilestone<milestones[i]){
       _lastStepMilestone=milestones[i];
