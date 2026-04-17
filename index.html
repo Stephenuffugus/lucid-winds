@@ -39341,8 +39341,14 @@ window._openContestInspector = function(attackerPlant, attackerEA, defenders, on
   h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:2px;">Three plants hold this hex. Challenge one to claim the slot.</div></div>';
   h+='<button onclick="window._closeContestInspector(null)" style="width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.5);color:var(--cream);font-size:1rem;cursor:pointer;flex-shrink:0;">\u2715</button>';
   h+='</div>';
-  // Your attacker — shown once at top
-  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.14em;color:var(--sage);margin-bottom:0.3rem;">\u2726 YOUR CHALLENGER</div>';
+  // Your attacker — shown once at top with a CHANGE CHALLENGER button
+  // so players can swap to a different plant before committing.
+  // Stephen test: 'when you go to challenge and you pick a plant, you
+  // need to be able to click a button thats change challenger.'
+  h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.3rem;">';
+  h+=  '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.14em;color:var(--sage);">\u2726 YOUR CHALLENGER</div>';
+  h+=  '<button onclick="window._closeContestInspector(\'change\')" style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.1em;color:var(--gold);background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.4);border-radius:6px;padding:6px 10px;cursor:pointer;min-height:36px;">\u21bb CHANGE</button>';
+  h+='</div>';
   h+=_cardFor({hash:attackerPlant.hash,name:'',grade:''},true);
   // Defenders
   h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.14em;color:var(--gold);margin:1rem 0 0.3rem;">\u2694\ufe0f DEFENDERS \u00b7 PICK ONE TO CHALLENGE</div>';
@@ -39366,6 +39372,19 @@ window._openContestInspector = function(attackerPlant, attackerEA, defenders, on
   document.body.appendChild(ov);
   window._closeContestInspector=function(idx){
     try{var p=document.getElementById('lw-contest-inspector');if(p)p.remove();}catch(e){}
+    // 'change' sentinel — caller wants to re-pick the challenger,
+    // not commit to one of the defenders. Re-open the SOW carousel
+    // so the player can choose a different plant; their next
+    // PLACE HERE will re-trigger the contest path with the new
+    // attacker.
+    if (idx === 'change') {
+      try{delete window._closeContestInspector;window._ciDefenders=null;}catch(e){}
+      if(typeof onDone==='function')onDone({_changeChallenger:true});
+      setTimeout(function(){
+        try{if(window.FG_Wild&&FG_Wild.openPicker)FG_Wild.openPicker();}catch(e){}
+      },200);
+      return;
+    }
     var chosen=(idx==null||!window._ciDefenders)?null:window._ciDefenders[idx];
     try{delete window._closeContestInspector;window._ciDefenders=null;}catch(e){}
     if(typeof onDone==='function')onDone(chosen);
@@ -39457,6 +39476,10 @@ function _drop(pl){
     var myEA=window.computeEA?window.computeEA(myInfo.t,0):0;
     if(window._openContestInspector){
       window._openContestInspector(pl,myEA,inZone,function(targetPlant){
+        // CHANGE CHALLENGER sentinel — close silently, the inspector
+        // helper already re-opened the SOW carousel for the player to
+        // pick a different plant. No toast needed.
+        if(targetPlant&&targetPlant._changeChallenger)return;
         if(!targetPlant){_toast('Contest cancelled.');return;}
         // Shellgourd — zone locked, no roll even happens. Burns the gourd.
         if(window.LW_ITEMS&&window.LW_ITEMS.hasShellgourd&&window.LW_ITEMS.hasShellgourd(targetPlant.hash)){
