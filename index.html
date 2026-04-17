@@ -32079,7 +32079,15 @@ document.addEventListener('keydown', function(e) {
     var _canFert = _invFert > 0 && _seedFert < _fertMax && !bloomReady;
 
     var actionBtns;
-    if (bloomReady) {
+    if (_isClipping) {
+      // Clippings cannot bloom on their own. Their only purpose is to
+      // be crossed with another plant in the Nursery — that crossing
+      // consumes the clipping. Hides WATER / BLOOM / ACCELERATE so
+      // players can't waste resources or try to exploit the source
+      // plant. Stephen test: 'cant download, save, anything, not even
+      // see the hex cuz we don't want people to fuck with the system.'
+      actionBtns = '<button class="nur-btn water" data-sid="' + sid + '" onclick="window._nurStartBreed&&window._nurStartBreed()" style="background:rgba(122,179,86,0.18);border-color:rgba(122,179,86,0.5);color:var(--sage);">\u2702\ufe0f USE TO BREED</button>';
+    } else if (bloomReady) {
       actionBtns = '<button class="nur-btn bloom" data-sid="' + sid + '" onclick="handleBloomBtn(this.dataset.sid)">\ud83c\udf38 BLOOM</button>';
     } else {
       var waterBtn = '<button class="nur-btn water" data-sid="' + sid + '" onclick="handleWaterSeed(this.dataset.sid)"' + (wateredToday ? ' disabled style="opacity:0.5;"' : '') + '>' + (wateredToday ? '\u2713 WATERED' : '\ud83d\udca7 WATER') + '</button>';
@@ -33013,6 +33021,14 @@ document.addEventListener('keydown', function(e) {
     var seedIndex = nur.findIndex(function(s) { return s.id === seedId; });
     if (seedIndex < 0) { _setNurMsg('Seed not found. Please refresh.'); return; }
     var seed = nur[seedIndex];
+    // Anti-exploit: clippings can NEVER bloom alone. They must be used
+    // in a cross-pollination — that consumes the clipping and produces
+    // a new chimera lineage. Returning here with a clear message stops
+    // any stale UI or scripted call.
+    if (seed.origin === 'cutting' || seed.origin === 'clipping') {
+      _setNurMsg('A cutting can\u2019t bloom alone. Tap CROSS-POLLINATE and pair it with another plant.');
+      return;
+    }
     if (!seed.waterLog || seed.waterLog.length < 3) {
       _setNurMsg('Seed needs ' + (3 - (seed.waterLog ? seed.waterLog.length : 0)) + ' more watering(s).');
       return;
@@ -33034,6 +33050,14 @@ document.addEventListener('keydown', function(e) {
     if (seedIndex < 0) { _setNurMsg('Seed not found. Please refresh.'); return; }
 
     var seed = nur[seedIndex];
+
+    // Clippings can't be watered into bloom — same anti-exploit gate
+    // as handleBloomBtn. Players bred this from a wild plant; the only
+    // valid path is cross-pollination.
+    if (seed.origin === 'cutting' || seed.origin === 'clipping') {
+      _setNurMsg('A cutting only blooms through a cross. Tap CROSS-POLLINATE.');
+      return;
+    }
 
     if (seed.status !== 'growing') {
       _setNurMsg('Seed is no longer active.');
