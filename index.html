@@ -8838,14 +8838,18 @@ document.addEventListener('keydown', function(e) {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // BREEDING LIFECYCLE (set-apr8)
+  // BREEDING LIFECYCLE (Plan A — rarity cooldown only)
   // ─────────────────────────────────────────────────────────────────────────
+  // Two earlier systems (3-charge pool with 14d recovery + breedCount<3 hard
+  // cap) were redundant double-gating on top of this cooldown ladder. For
+  // most rarities the cooldown is the only binding constraint anyway, so
+  // the charge bucket added cognitive load without changing outcomes.
+  // Plan A: keep only the rarity cooldown. Plants can breed forever as
+  // long as they live in your greenhouse — limited by their cooldown.
   var BREED_COOLDOWNS = {
     Common:3, Uncommon:5, Rare:7, Epic:10, Legendary:14, Mythic:21, Cosmic:28
   };
   var MATURITY_DAYS = 0; // Disabled for beta testing — re-enable at launch (was 7)
-  var MAX_CHARGES = 3;
-  var CHARGE_RECOVERY_DAYS = 14;
 
   // Get a plant's current breed status
   function getBreedStatus(plant){
@@ -8857,31 +8861,10 @@ document.addEventListener('keydown', function(e) {
 
     // Maturity check (only for plants with known birth date)
     if(ageDays<MATURITY_DAYS){
-      return{canBreed:false,reason:'IMMATURE',daysLeft:MATURITY_DAYS-ageDays,ageDays:ageDays,charges:MAX_CHARGES};
+      return{canBreed:false,reason:'IMMATURE',daysLeft:MATURITY_DAYS-ageDays,ageDays:ageDays};
     }
 
-    // Compute current charges (recoverable system)
-    var charges=plant.breedCharges;
-    if(typeof charges==='undefined'||charges===null){
-      // Legacy plant: convert from old breedCount system
-      var used=plant.breedCount||0;
-      charges=Math.max(0,MAX_CHARGES-used);
-    }
-    // Recover charges over time
-    var lastRecovery=plant.breedChargeLastRecovery||plant.lastBreedDate||(born||now);
-    var daysSinceRecovery=Math.max(0,Math.floor((now-lastRecovery)/86400000));
-    var recovered=Math.floor(daysSinceRecovery/CHARGE_RECOVERY_DAYS);
-    if(recovered>0&&charges<MAX_CHARGES){
-      charges=Math.min(MAX_CHARGES,charges+recovered);
-    }
-
-    if(charges<=0){
-      // Calculate next recovery
-      var nextRecoveryDays=CHARGE_RECOVERY_DAYS-(daysSinceRecovery%CHARGE_RECOVERY_DAYS);
-      return{canBreed:false,reason:'NO_CHARGES',charges:0,nextRecoveryDays:nextRecoveryDays,ageDays:ageDays};
-    }
-
-    // Cooldown check
+    // Cooldown check — the only gate.
     var lastBreed=plant.lastBreedDate||0;
     if(lastBreed){
       var t=window.hashToTraits?window.hashToTraits(plant.hash):null;
@@ -8900,25 +8883,27 @@ document.addEventListener('keydown', function(e) {
       var elapsed=now-lastBreed;
       if(elapsed<cooldownMs){
         var hoursLeft=Math.ceil((cooldownMs-elapsed)/3600000);
-        return{canBreed:false,reason:'COOLDOWN',hoursLeft:hoursLeft,charges:charges,ageDays:ageDays,cooldownDays:Math.ceil(hoursLeft/24)};
+        return{canBreed:false,reason:'COOLDOWN',hoursLeft:hoursLeft,ageDays:ageDays,cooldownDays:Math.ceil(hoursLeft/24)};
       }
     }
 
-    return{canBreed:true,charges:charges,ageDays:ageDays};
+    return{canBreed:true,ageDays:ageDays};
   }
 
-  // Use a breed charge (call after successful breed)
+  // Record a breed (call after successful breed). Plan A: just stamp the
+  // timestamp + bump the lifetime counter. Kept as useBreedCharge() so
+  // existing callers don't need to change.
   function useBreedCharge(plantHash){
     var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){return;}
     var found=false;
     gh.forEach(function(p){
       if(p.hash===plantHash){
-        // Compute current charges first
-        var status=getBreedStatus(p);
-        p.breedCharges=Math.max(0,(status.charges||0)-1);
         p.lastBreedDate=Date.now();
-        p.breedChargeLastRecovery=Date.now();
         p.breedCount=(p.breedCount||0)+1;
+        // Strip dead fields from the legacy charge system so the vault
+        // stays tidy. Harmless if absent.
+        if('breedCharges' in p) delete p.breedCharges;
+        if('breedChargeLastRecovery' in p) delete p.breedChargeLastRecovery;
         found=true;
       }
     });
@@ -8929,9 +8914,8 @@ document.addEventListener('keydown', function(e) {
   function formatBreedStatus(status){
     if(!status)return'Unknown';
     if(status.reason==='IMMATURE')return'Seedling — '+status.daysLeft+' day'+(status.daysLeft!==1?'s':'')+' to maturity';
-    if(status.reason==='NO_CHARGES')return'Resting — charge recovers in '+status.nextRecoveryDays+' day'+(status.nextRecoveryDays!==1?'s':'');
     if(status.reason==='COOLDOWN')return'Cooldown — '+status.cooldownDays+' day'+(status.cooldownDays!==1?'s':'')+' remaining';
-    if(status.canBreed)return status.charges+'/'+MAX_CHARGES+' charges available';
+    if(status.canBreed)return'Ready to breed';
     return'Cannot breed';
   }
 
@@ -8957,8 +8941,7 @@ document.addEventListener('keydown', function(e) {
     getBreedStatus: getBreedStatus,
     useBreedCharge: useBreedCharge,
     formatBreedStatus: formatBreedStatus,
-    MATURITY_DAYS: MATURITY_DAYS,
-    MAX_CHARGES: MAX_CHARGES
+    MATURITY_DAYS: MATURITY_DAYS
   };
 
 }());
@@ -28251,7 +28234,7 @@ document.addEventListener('keydown', function(e) {
         // Grid card: art front only (flip lives in carousel)
         // perfLite: simplified card — skip EA knots/synergies but keep breed status
         // (it's a single text node, the cost is trivial)
-        var _breedTxt = (function(){var _gbs=window.FG_Data&&FG_Data.getBreedStatus?FG_Data.getBreedStatus(plant):null;if(!_gbs)return plant.breedCount>=3?'<div style="font-family:DM Mono,monospace;font-size:0.5rem;font-weight:600;color:rgba(216,140,140,0.95);margin-top:2px;letter-spacing:0.04em;">\u26a1 SPENT 3/3</div>':'';if(_gbs.reason==='IMMATURE')return'<div style="font-family:DM Mono,monospace;font-size:0.5rem;font-weight:600;color:rgba(120,190,230,0.95);margin-top:2px;letter-spacing:0.04em;">\ud83c\udf31 '+_gbs.daysLeft+'d to mature</div>';if(_gbs.reason==='COOLDOWN')return'<div style="font-family:DM Mono,monospace;font-size:0.5rem;font-weight:600;color:rgba(220,184,90,0.95);margin-top:2px;letter-spacing:0.04em;">\u23f3 '+_gbs.cooldownDays+'d cooldown</div>';if(_gbs.reason==='NO_CHARGES')return'<div style="font-family:DM Mono,monospace;font-size:0.5rem;font-weight:600;color:rgba(216,140,140,0.95);margin-top:2px;letter-spacing:0.04em;">\ud83d\udca4 Resting</div>';if(_gbs.canBreed){var _ch=_gbs.charges||0;return'<div style="font-family:DM Mono,monospace;font-size:0.5rem;font-weight:600;color:rgba(140,200,100,1);margin-top:2px;letter-spacing:0.04em;text-shadow:0 0 4px rgba(122,179,86,0.35);">\u26a1 '+_ch+'/3 ready</div>';}return'';})();
+        var _breedTxt = (function(){var _gbs=window.FG_Data&&FG_Data.getBreedStatus?FG_Data.getBreedStatus(plant):null;if(!_gbs)return '';if(_gbs.reason==='IMMATURE')return'<div style="font-family:DM Mono,monospace;font-size:0.5rem;font-weight:600;color:rgba(120,190,230,0.95);margin-top:2px;letter-spacing:0.04em;">\ud83c\udf31 '+_gbs.daysLeft+'d to mature</div>';if(_gbs.reason==='COOLDOWN')return'<div style="font-family:DM Mono,monospace;font-size:0.5rem;font-weight:600;color:rgba(220,184,90,0.95);margin-top:2px;letter-spacing:0.04em;">\u23f3 '+_gbs.cooldownDays+'d cooldown</div>';if(_gbs.canBreed)return'<div style="font-family:DM Mono,monospace;font-size:0.5rem;font-weight:600;color:rgba(140,200,100,1);margin-top:2px;letter-spacing:0.04em;text-shadow:0 0 4px rgba(122,179,86,0.35);">\u26a1 Ready to breed</div>';return'';})();
         if (window._perfLite) {
           el.innerHTML = plantSvg +
             '<div class="gh-name" style="color:var(--cream);">' + _pName + '</div>' +
@@ -31096,7 +31079,7 @@ document.addEventListener('keydown', function(e) {
     var _wildDrops = plant.wildDropCount || 0;
     if(!_wildDrops){try{var _pmRead=JSON.parse(localStorage.getItem('lw_plant_meta')||'{}');_wildDrops=(_pmRead[plant.hash]&&_pmRead[plant.hash].wildDropCount)||0;}catch(e){}}
     var _age = plant.date ? Math.floor((Date.now() - new Date(plant.date).getTime()) / 86400000) : 0;
-    html += '<div class="pdm-row"><span class="pdm-k">\ud83e\uddec Breed count</span><span class="pdm-v">' + _breedCount + (_breedCount >= 3 ? ' (prolific)' : '') + '</span></div>';
+    html += '<div class="pdm-row"><span class="pdm-k">\ud83e\uddec Bred</span><span class="pdm-v">' + _breedCount + '\u00d7' + (_breedCount >= 3 ? ' (prolific)' : '') + '</span></div>';
     if (_gen > 1) html += '<div class="pdm-row"><span class="pdm-k">\ud83e\uddea Chimera gen</span><span class="pdm-v">Gen ' + _gen + ' (\u2212' + ((_gen - 1) * 2) + ' EA, 2\u00d7 climate)</span></div>';
     if (_compostLay) html += '<div class="pdm-row"><span class="pdm-k">\ud83c\udf3f Compost layers</span><span class="pdm-v">' + _compostLay + '</span></div>';
     if (_breedLay) html += '<div class="pdm-row"><span class="pdm-k">\ud83c\udf31 Breed layers</span><span class="pdm-v">' + _breedLay + '</span></div>';
@@ -32199,11 +32182,9 @@ document.addEventListener('keydown', function(e) {
       if (eligible.length < 2) {
         var immature = gh.filter(function(p) { var bs = FG_Data.getBreedStatus(p); return bs.reason === 'IMMATURE'; });
         var cooling = gh.filter(function(p) { var bs = FG_Data.getBreedStatus(p); return bs.reason === 'COOLDOWN'; });
-        var resting = gh.filter(function(p) { var bs = FG_Data.getBreedStatus(p); return bs.reason === 'NO_CHARGES'; });
         var body = 'You need 2 breedable plants. You have ' + gh.length + ' total, but only ' + eligible.length + ' ready to breed:';
         if (immature.length) body += '<br>\ud83c\udf31 ' + immature.length + ' still maturing (' + (FG_Data.MATURITY_DAYS || 7) + ' days).';
         if (cooling.length) body += '<br>\u23f3 ' + cooling.length + ' on breed cooldown.';
-        if (resting.length) body += '<br>\ud83d\udca4 ' + resting.length + ' resting (charges recover over 14 days).';
         body += '<br><br>Play more games to earn Sunbeams and grow fresh plants.';
         if (window._lwConfirm) {
           window._lwConfirm({
@@ -32215,9 +32196,12 @@ document.addEventListener('keydown', function(e) {
         return;
       }
     } else {
-      eligible = gh.filter(function(p) { return (p.breedCount || 0) < 3; });
+      // Plan A: every plant is breedable, gated only by cooldown which the
+      // FG_Data path enforces. This fallback runs only when FG_Data hasn't
+      // loaded yet — accept all plants and let the breed flow re-validate.
+      eligible = gh.slice();
       if (eligible.length < 2) {
-        if (window._toast) window._toast('Need at least 2 plants with breeds remaining.');
+        if (window._toast) window._toast('Need at least 2 plants to breed.');
         return;
       }
     }
@@ -32273,14 +32257,10 @@ document.addEventListener('keydown', function(e) {
     if (_cpSelectedA && _cpSelectedA.index === idx) { _cpSelectedA = null; }
     else if (_cpSelectedB && _cpSelectedB.index === idx) { _cpSelectedB = null; }
     else if (!_cpSelectedA) {
-      var _bcP = loadGreenhouse()[idx];
-      if (_bcP && (_bcP.breedCount || 0) >= 3) { _setCPMsg('Genetics Exhausted. This plant has already been bred 3 times.'); return; }
       _cpSelectedA = { index:idx, hash:hash };
     }
     else if (!_cpSelectedB) {
       if (_cpSelectedA.hash === hash) { _setCPMsg('A plant cannot self-pollinate.'); return; }
-      var _bcP2 = loadGreenhouse()[idx];
-      if (_bcP2 && (_bcP2.breedCount || 0) >= 3) { _setCPMsg('Genetics Exhausted. This plant has already been bred 3 times.'); return; }
       _cpSelectedB = { index:idx, hash:hash };
     } else {
       if (_cpSelectedA.hash === hash) { _setCPMsg('Already selected as Parent A.'); return; }
@@ -54497,7 +54477,7 @@ function _step20(){
     },true);
   }
   _dialog(
-    'Each plant can breed <span style="color:var(--gold);">up to 3 times</span>, recovering one charge every <span style="color:var(--gold);">14 days</span>.<br><br>' +
+    'Each plant rests after a breed before it can breed again. Common plants are ready in <span style="color:var(--gold);">3 days</span>; rarer plants take longer.<br><br>' +
     'Take a look around the breed screen. Tap <span style="color:var(--gold);">CROSS-POLLINATE \u2192 NURSERY</span> when you\u2019re ready.',
     'OKAY',function(){
       // Dismiss the dialog so the player can study the breed screen
@@ -55347,12 +55327,11 @@ function _renderCard(el,plant,role,side){
     if(_bs){
       if(_bs.reason==='IMMATURE'){_bcLabel='\ud83c\udf31 '+_bs.daysLeft+'d to mature';_bcColor='rgba(91,175,220,0.8)';}
       else if(_bs.reason==='COOLDOWN'){_bcLabel='\u23f3 '+_bs.cooldownDays+'d cooldown';_bcColor='rgba(200,168,75,0.8)';}
-      else if(_bs.reason==='NO_CHARGES'){_bcLabel='\ud83d\udca4 Resting';_bcColor='rgba(192,112,112,0.8)';}
-      else if(_bs.canBreed){_bcLabel='\ud83e\uddec '+_bs.charges+'/3';_bcColor='var(--sage)';}
+      else if(_bs.canBreed){_bcLabel='\ud83e\uddec Ready';_bcColor='var(--sage)';}
     } else {
       var _bc=plant.breedCount||0;
-      _bcLabel=_bc>=3?'\u26a1 SPENT':'\ud83e\uddec '+_bc+'/3';
-      _bcColor=_bc>=3?'rgba(192,112,112,0.9)':'var(--muted)';
+      _bcLabel='\ud83e\uddec Bred '+_bc+'\u00d7';
+      _bcColor='var(--muted)';
     }
     h+='<div class="bs-meta"><span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">'+(i.tg?i.tg.icon:'')+' '+(i.tg?i.tg.name:'')+'</span>';
     h+='<span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">EA '+i.ea+'</span>';
@@ -55580,7 +55559,9 @@ window.openBreedScreen=function(plantA,context){
       var bs=FG_Data.getBreedStatus(p);
       return bs.canBreed;
     }
-    return (p.breedCount||0)<3; // Legacy fallback
+    // Plan A fallback: FG_Data not loaded yet — accept all, let downstream
+    // flow re-validate.
+    return true;
   });
 
   // Wild-other: wild plant is locked on side A, greenhouse plants are partners
@@ -55602,11 +55583,9 @@ window.openBreedScreen=function(plantA,context){
     // Give helpful message about WHY — use _lwConfirm so it's visible on any tab
     var immature=gh.filter(function(p){if(!FG_Data||!FG_Data.getBreedStatus)return false;var bs=FG_Data.getBreedStatus(p);return bs.reason==='IMMATURE';});
     var cooling=gh.filter(function(p){if(!FG_Data||!FG_Data.getBreedStatus)return false;var bs=FG_Data.getBreedStatus(p);return bs.reason==='COOLDOWN';});
-    var resting=gh.filter(function(p){if(!FG_Data||!FG_Data.getBreedStatus)return false;var bs=FG_Data.getBreedStatus(p);return bs.reason==='NO_CHARGES';});
-    var msg='You have '+gh.length+' plant'+(gh.length!==1?'s':'')+' but need 2 with available breed charges.';
+    var msg='You have '+gh.length+' plant'+(gh.length!==1?'s':'')+' but need 2 ready to breed.';
     if(immature.length)msg+='<br>'+immature.length+' still maturing.';
     if(cooling.length)msg+='<br>'+cooling.length+' on breed cooldown.';
-    if(resting.length)msg+='<br>'+resting.length+' out of charges (recover in 14 days).';
     if(_allEligible.length===1)msg+='<br><br>1 plant is ready — you need at least 1 more.';
     if(_allEligible.length===0)msg+='<br><br>No plants are currently breedable.';
     if(window._lwConfirm){
@@ -55627,7 +55606,6 @@ window.openBreedScreen=function(plantA,context){
     if(_reqStatus){
       if(_reqStatus.reason==='IMMATURE') _reqMsg = 'Not ready: '+_reqStatus.daysLeft+' day'+(_reqStatus.daysLeft===1?'':'s')+' until mature.';
       else if(_reqStatus.reason==='COOLDOWN') _reqMsg = 'Not ready: '+_reqStatus.cooldownDays+' day'+(_reqStatus.cooldownDays===1?'':'s')+' of breed cooldown remaining.';
-      else if(_reqStatus.reason==='NO_CHARGES') _reqMsg = 'Out of breed charges. Recovers over time (1 charge per 14 days).';
     }
     if(window._lwConfirm){
       window._lwConfirm({title:'CANNOT BREED THIS PLANT',body:_reqMsg,yes:'OK',no:''},function(){});
@@ -56771,7 +56749,7 @@ var TRIGGERS=[
     effect:'Reached Gardener territory rank',reward:{pollen:20}},
   {id:'elder_plant',name:'The Elder',riddle:'Three cycles complete. What remains is wiser.',category:'trait',
     check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');return gh.some(function(p){return(p.breedCount||0)>=3;});}catch(e){return false;}},
-    effect:'First plant used all breed charges',reward:{pollen:10}},
+    effect:'First plant bred three or more times',reward:{pollen:10}},
   {id:'night_watcher',name:'Night Watcher',riddle:'Some things only bloom when the sun is gone.',category:'weather',
     check:function(c){return c.hour>=22||c.hour<4;},
     effect:'Played between midnight and 4 AM',reward:{pollen:5}},
@@ -65962,7 +65940,7 @@ function _getNextStep(){
   if(gh.length>=2&&!localStorage.getItem('lw_first_breed')){
     var eligible=gh.filter(function(p){
       if(window.FG_Data&&FG_Data.getBreedStatus){return FG_Data.getBreedStatus(p).canBreed;}
-      return(p.breedCount||0)<3;
+      return true; // Plan A fallback — let downstream re-validate
     });
     if(eligible.length>=2){
       return{icon:'🧬',text:'You can breed! Open a plant and tap BREED to create offspring.',action:'greenhouse',color:'var(--gold)'};
