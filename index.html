@@ -42056,15 +42056,15 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
     nursery:{
       icon:'🌱',
       title:'NURSERY',
-      body:'Cross-pollinate two of your plants to grow a chimera seed. Tap CROSS-POLLINATE → pick two parents → water the seed 3 days → it blooms into a new plant with traits from both.<br><br>You can hold up to <b>3 seeds</b> at once (Breeder class adds +1).'
+      body:'Your seeds grow here. Water a seed once per day for 3 days and it blooms into a new plant in your Greenhouse.<br><br>Cross-pollinate two of your Greenhouse plants to grow a chimera seed. You can hold up to <b>3 seeds</b> at once (Breeder class adds +1).'
     },
     wild:{
       icon:'🌍',
       title:'WILD',
       body:'The real-world map. Three things to do here:<br><br>'+
-        '<b>1. DROP</b>. Tap the 🌱 button (right side) to plant one of your greenhouse plants in the real world. Lasts 7-60 days depending on rarity.<br>'+
-        '<b>2. COLLECT</b>. Tap glowing feral seed markers within 75m to add them to your pouch.<br>'+
-        '<b>3. TEND</b>. Tap any wild plant hex to inspect. Water your own plants to reset their lifespan; tend strangers\u2019 plants for Dew.'
+        '<b>1. DROP</b>. Tap the + button (right side) to plant one of your Greenhouse plants into the hex you\u2019re standing in. Lasts 7-60 days depending on rarity.<br>'+
+        '<b>2. FORAGE</b>. Walk to a glowing hex (within 75m) and play the foraging game inside to claim a feral seed.<br>'+
+        '<b>3. CLIPPING</b>. Tap any wild plant you pass, yours or another Keeper\u2019s, to take a cutting. One clipping per plant every 6 hours.'
     },
     game:{
       icon:'🎮',
@@ -42076,6 +42076,12 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
   };
   function _maybeShowTabTeach(tab){
     if(!TAB_TEACHES[tab])return;
+    // Suppress TAB_TEACHES while the tutorial is running — the tutorial
+    // has its own step-specific explanations for each tab (nursery
+    // step 22, wild steps 25-27, etc). Without this, the tab-teach
+    // modal would stack on top of the tutorial dialog and show
+    // contradictory copy.
+    try{var _tutSt=localStorage.getItem('lw_tut');if(_tutSt&&_tutSt!=='done')return;}catch(e){}
     var key='lw_tab_teach_'+tab;
     if(localStorage.getItem(key))return;
     // Don't fire on the very first switchTab — wait until player has a plant
@@ -54280,8 +54286,8 @@ function _step18(){
     var onGH=ghTab&&getComputedStyle(ghTab).display!=='none';
     if(onGH){
       _dialog(
-        'Your new plant is here.<br><br>' +
-        '<span style="color:var(--gold);">Tap any plant</span> to flip it over and see what grew.',
+        'Your second plant is here.<br><br>' +
+        'Now let\u2019s <span style="color:var(--gold);">look at it</span> before we breed. Tap it to flip it over.',
         '',null,'bottom');
       if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
       return;
@@ -54359,9 +54365,13 @@ function _step20(){
   }
   _dialog(
     'Each plant can breed <span style="color:var(--gold);">up to 3 times</span>, recovering one charge every <span style="color:var(--gold);">14 days</span>.<br><br>' +
-    'Tap <span style="color:var(--gold);">CROSS-POLLINATE \u2192 NURSERY</span> when you\u2019re ready.',
-    '',null,'bottom');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    'Take a look around the breed screen. Tap <span style="color:var(--gold);">CROSS-POLLINATE \u2192 NURSERY</span> when you\u2019re ready.',
+    'OKAY',function(){
+      // Dismiss the dialog so the player can study the breed screen
+      // without it blocking the view. The watch loop keeps polling for
+      // bs-confirm open + nurLen increase to advance to step 22.
+      if(_dlg&&_dlg.parentNode){_dlg.remove();_dlg=null;}
+    },'bottom');
   var nurLen0=_nurLen();
   var polls=0;
   var watch=function(){
@@ -54406,8 +54416,8 @@ function _step22(){
     var waterBtn=document.querySelector('.nur-btn.water');
     if(waterBtn&&window._lwPulseHint){window._lwPulseHint(waterBtn,30000,'lw_tut_water_pulse');}
     _dialog(
-      'Your seed is growing. Water it <span style="color:var(--gold);">once</span> to start it off.<br><br>' +
-      '<span style="color:var(--sage);">Tap WATER.</span>',
+      'Welcome to your <span style="color:var(--gold);">Nursery</span>. Your new seed lives here.<br><br>' +
+      'Water it <span style="color:var(--gold);">once</span> to start it off. <span style="color:var(--sage);">Tap WATER.</span>',
       '',null,'top');
     if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
     var polls=0;
@@ -54584,7 +54594,14 @@ function _step23AfterCeremony(attempts){
 // that fakes it as the active tab). Mirrors step 13's approach.
 function _step24(){
   _setStep(24);
-  try{document.body.classList.add('lw-tut-nav-wild');}catch(e){}
+  // Strip every other nav unlock so WILD is the ONLY lit tab. Without
+  // this, lw-tut-nav-nursery (carried over from step 22) and
+  // lw-tut-nav-greenhouse (from step 16) both kept the nursery and
+  // greenhouse buttons bright, competing with the Wild beacon.
+  try{
+    document.body.classList.remove('lw-tut-nav-greenhouse','lw-tut-nav-focus','lw-tut-nav-nursery');
+    document.body.classList.add('lw-tut-nav-wild');
+  }catch(e){}
   var wildBtn=document.getElementById('nav-btn-wild');
   if(!wildBtn){_done();return;}
   try{wildBtn.style.display='';wildBtn.classList.remove('gated');}catch(e){}
@@ -54700,7 +54717,8 @@ function _step5bMap(){
 function _step5bForage(){
   _setStep(278);
   _dialog(
-    'When you see a <span style="color:var(--gold);">glowing hex</span>, walk close to it. Forage what\u2019s inside and you may catch a feral seed for your nursery.<br><br>' +
+    'When you see a <span style="color:var(--gold);">glowing hex</span>, walk within 75m and tap it.<br><br>' +
+    'You\u2019ll play a short <span style="color:var(--gold);">foraging game</span> \u2014 read the weather, pick your guess, win a feral seed for your Nursery.<br><br>' +
     '<span style="color:var(--muted);font-size:0.85em;">No glowing hex yet? Walk a little. The map rewards keepers who move.</span>',
     'NEXT',function(){_clear();setTimeout(_step28,400);},'center');
 }
