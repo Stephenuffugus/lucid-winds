@@ -54309,6 +54309,17 @@ function _step20(){
   }catch(e){}
   var bsBtn=document.getElementById('bs-breed-btn');
   if(bsBtn&&window._lwPulseHint){window._lwPulseHint(bsBtn,60000,'lw_tut_bs_pulse');}
+  // Intercept the bs-breed-btn tap so the tutorial dialog clears the
+  // instant the confirm card opens — not on the next 500ms poll. Without
+  // this, the "CROSS-POLLINATE → NURSERY" copy briefly stacks behind
+  // the confirm card. Capture phase + one-shot.
+  if(bsBtn&&!bsBtn._lwTutClearBound){
+    bsBtn._lwTutClearBound=true;
+    bsBtn.addEventListener('click',function _bsClr(){
+      try{if(_dlg&&_dlg.parentNode){_dlg.remove();_dlg=null;}}catch(e){}
+      bsBtn.removeEventListener('click',_bsClr,true);
+    },true);
+  }
   _dialog(
     'Each plant can breed <span style="color:var(--gold);">up to 3 times</span>, recovering one charge every <span style="color:var(--gold);">14 days</span>.<br><br>' +
     'Tap <span style="color:var(--gold);">CROSS-POLLINATE \u2192 NURSERY</span> when you\u2019re ready.',
