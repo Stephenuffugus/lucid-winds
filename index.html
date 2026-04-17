@@ -65425,7 +65425,12 @@ function _bosSecretsContent() {
 }
 
 window._openCompendiumUI=function(){
-  try{if(window.LW_XP)window.LW_XP.grantOnce('disc_book',5,'discover_book','📖 +5 XP — Book of Secrets. Everything you\'ve discovered lives here.');}catch(e){}
+  // Discovery XP grant — keep the +5 XP, drop the toast text. The
+  // first-open modal below already covers the 'Book of Secrets,
+  // everything you discover lives here' framing; firing both at the
+  // same time read as a stutter (Stephen test catch). Empty toast
+  // string suppresses the surface flash but XP still grants.
+  try{if(window.LW_XP)window.LW_XP.grantOnce('disc_book',5,'discover_book','');}catch(e){}
   // First-open tutorial — explains the tabs so players don't land on a
   // blank synergies grid with zero context. Device-local one-shot.
   try {
