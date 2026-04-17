@@ -35727,11 +35727,12 @@ function activate(){
       if(window.FG_Wild&&FG_Wild._wildReproduction)FG_Wild._wildReproduction();
     },window._perfLite?8000:2000);
   }
-  // First-visit onboarding
-  if(!localStorage.getItem('lw_wild_onboarded')){
-    localStorage.setItem('lw_wild_onboarded','1');
-    _showWildOnboard();
-  }
+  // First-visit onboarding — DEPRECATED. The legacy _showWildOnboard
+  // 4-point splash (DROP/DEFEND/HARVEST/FERALS + backpack + EXPLORE
+  // THE WILD button) uses retired terminology (DEFEND, HARVEST) and
+  // is replaced by window._lwShowWildIntro. Stamp the legacy flag so
+  // it never fires again.
+  try{localStorage.setItem('lw_wild_onboarded','1');}catch(e){}
   // Night hour warning banner
   var _nh = new Date().getHours();
   var _nb = document.getElementById('w-night-banner');
@@ -42139,7 +42140,14 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
       try{var _tutSt0=localStorage.getItem('lw_tut');if(_tutSt0&&_tutSt0!=='done')return;}catch(e){}
       var ghLen0=0;try{ghLen0=(JSON.parse(localStorage.getItem('sws_greenhouse')||'[]')||[]).length;}catch(e){}
       if(ghLen0<1)return;
-      setTimeout(function(){window._lwShowWildIntro();},700);
+      setTimeout(function(){
+        // Race guard: re-check the seen flag AND existing-overlay inside the
+        // timeout. The tutorial path may have called the intro between
+        // schedule and fire, in which case we must NOT double-fire.
+        if(localStorage.getItem('lw_wild_intro_seen'))return;
+        if(document.getElementById('lw-wild-intro'))return;
+        window._lwShowWildIntro();
+      },700);
       return;
     }
     if(!TAB_TEACHES[tab])return;
@@ -42195,6 +42203,12 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
   // Stamps lw_tab_teach_wild so the small TAB_TEACHES modal never fires.
   window._lwShowWildIntro = function(onClose){
     if(document.getElementById('lw-wild-intro'))return;
+    // RACE FIX: stamp the flag SYNCHRONOUSLY here, before the overlay is
+    // built. _maybeShowTabTeach was reading the flag before this function
+    // ran, scheduling a duplicate intro 700ms later. By stamping at entry
+    // (not after innerHTML), every other code path sees the flag set.
+    try{localStorage.setItem('lw_wild_intro_seen','1');}catch(e){}
+    try{localStorage.setItem('lw_tab_teach_wild','1');}catch(e){}
     var ov = document.createElement('div');
     ov.id = 'lw-wild-intro';
     ov.style.cssText = 'position:fixed;inset:0;z-index:1000050;background:#0d100c url(\'assets/bg-wild-540x960.jpg\') center/cover no-repeat;display:flex;flex-direction:column;animation:panelFadeIn 0.6s ease;font-family:DM Sans,sans-serif;color:var(--cream,#e8dcc8);';
@@ -42217,17 +42231,22 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
     // PLANT
     html += '<div style="'+sectionStyle+'">'+
       '<div style="'+titleStyle+'\ud83c\udf31 PLANT</div>'+
-      '<div style="'+bodyStyle+'">Drop a Greenhouse plant into the hex you\u2019re standing in. It lives there for days or seasons depending on its rarity. <b>Three drops a day</b>, resets at midnight.</div>'+
+      '<div style="'+bodyStyle+'">Drop a Greenhouse plant into the hex you\u2019re standing in. How long it survives depends on its <b>health</b>, <b>resistances</b>, the local <b>weather</b>, and how many Keepers help tend it. <b>Three drops a day</b>, resets at midnight.</div>'+
     '</div>';
     // TEND
     html += '<div style="'+sectionStyle+'">'+
       '<div style="'+titleStyle+'\ud83d\udca7 TEND</div>'+
-      '<div style="'+bodyStyle+'">Walk near any wild plant \u2014 yours or another Keeper\u2019s \u2014 to <b>water</b> it or take a <b>cutting</b>. Cuttings carry the plant\u2019s genome only (no pot, substrate, aura, or companion). One cutting per plant every 6 hours. Bring them back to the Nursery to bloom or breed.</div>'+
+      '<div style="'+bodyStyle+'">Walk near any wild plant \u2014 yours or another Keeper\u2019s \u2014 to <b>water</b> it. Helping plants stay alive deepens the whole map. Anyone tending a plant can also forage in the hex around it.</div>'+
+    '</div>';
+    // CUTTINGS
+    html += '<div style="'+sectionStyle+'">'+
+      '<div style="'+titleStyle+'\u2702\ufe0f CUTTINGS</div>'+
+      '<div style="'+bodyStyle+'">Cuttings are <b>rare</b>. A plant only allows a new cutting on the same cooldown it would breed at: <b>3 days for Common, 28 days for Cosmic</b>. Want a second cutting from a Mythic? Your group will need to keep it alive in the wild for almost a month. The cutting carries the genome only \u2014 no pot, substrate, aura, or companion. Bloom or breed it in the Nursery.</div>'+
     '</div>';
     // FORAGE
-    html += '<div style="'+sectionStyle+'">'+
-      '<div style="'+titleStyle+'\ud83c\udf42 FORAGE</div>'+
-      '<div style="'+bodyStyle+'">Some hexes glow gold. Walk within <b>75m</b> and tap one. A short foraging game shows you four cards \u2014 read the local weather and biome, pick the match. Win a feral seed for your Nursery.</div>'+
+    html += '<div style="'+sectionStyle+'border-color:rgba(200,168,75,0.4);">'+
+      '<div style="'+titleStyle+'\ud83c\udf42 FORAGE \u2014 the heart of the Wild</div>'+
+      '<div style="'+bodyStyle+'">The plants around you <b>create feral seeds</b> in their own image. To find one, you read the elements in play \u2014 <span style="color:var(--gold);">drought</span>, <span style="color:rgba(170,180,200,0.95);">moonlight</span>, <span style="color:var(--sage);">shade</span>, rain, thunder, dust, wind, sun, stillness \u2014 and combine the right ones to call a seed up out of the soil. Different combinations call different families. The longer your group keeps a hex alive, the richer the ferals it offers. <b>This is the game most Keepers will spend most of their time on.</b></div>'+
     '</div>';
     // CONTEST
     html += '<div style="'+sectionStyle+'">'+
@@ -42247,7 +42266,7 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
     // BIOME
     html += '<div style="'+sectionStyle+'">'+
       '<div style="'+titleStyle+'\ud83c\udf0d BIOME</div>'+
-      '<div style="'+bodyStyle+'">Where you stand is a biome \u2014 forest, desert, wetland, mountain, suburban. The local biome shapes which feral seeds spawn for you, and your <b>class</b> may give bonuses in its preferred biome.</div>'+
+      '<div style="'+bodyStyle+'">Where you stand is a biome \u2014 forest, desert, wetland, mountain, suburban. The local biome shapes which elements show up in your foraging hand, and your <b>class</b> may give bonuses in its preferred biome.</div>'+
     '</div>';
     // Closer
     html += '<div style="padding:0.6rem 0.4rem 0.4rem;text-align:center;'+bodyStyle+'font-style:italic;color:rgba(232,220,200,0.7);">Plants live their own lives. You come back to read the story.</div>';
@@ -42258,9 +42277,6 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
     '</div>';
     ov.innerHTML = html;
     document.body.appendChild(ov);
-    // Stamp the small-modal flag so TAB_TEACHES.wild never fires post-intro.
-    try{localStorage.setItem('lw_tab_teach_wild','1');}catch(e){}
-    try{localStorage.setItem('lw_wild_intro_seen','1');}catch(e){}
     var btn = document.getElementById('lw-wild-intro-go');
     if(btn){
       btn.addEventListener('click',function(){
@@ -54878,6 +54894,11 @@ function _step25WaitForMap(attempts){
 // hands off to the backpack tour at step 28.
 function _step25(){
   _setStep(25);
+  // Pre-stamp the flag here too, in case _maybeShowTabTeach already
+  // scheduled a delayed intro call. Belt-and-suspenders against the
+  // race where two paths both think they need to show the intro.
+  try{localStorage.setItem('lw_wild_intro_seen','1');}catch(e){}
+  try{localStorage.setItem('lw_tab_teach_wild','1');}catch(e){}
   if(typeof window._lwShowWildIntro==='function'){
     window._lwShowWildIntro(function(){
       // Player tapped EXPLORE THE WILD → continue tutorial.
@@ -54917,6 +54938,15 @@ function _step28(){
   if(!bpi){_done();return;}
   // Unlock the backpack icon now that the tutorial is pointing at it.
   try{document.body.classList.add('lw-tut-bp-on');}catch(e){}
+  // If the backpack was already open from a prior tutorial run / refresh,
+  // close it first so the player has a real 'tap to open' moment instead
+  // of step 29 firing immediately on a stale .open class.
+  try{
+    var _bpePre=document.getElementById('bpe');
+    if(_bpePre&&_bpePre.classList.contains('open')&&window.FG_Backpack&&window.FG_Backpack.toggle){
+      window.FG_Backpack.toggle();
+    }
+  }catch(e){}
   // Overlay tap is a no-op; only the spotlighted backpack advances.
   _overlay(function(){/* no-op */});
   _spotlight(bpi);
@@ -54924,14 +54954,23 @@ function _step28(){
     'Your <span style="color:var(--gold);">backpack</span> travels with you.<br><br>Tap it to see what you\u2019re carrying.',
     '',null,'top');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  // Snapshot whether bpe was open at watch-start. Only fire step 29 on
+  // a closed→open transition, not on a state that was already open
+  // (which would race step 29 against the player tapping anything).
+  var _bpeStart=document.getElementById('bpe');
+  var _wasOpen=!!(_bpeStart&&_bpeStart.classList.contains('open'));
   var polls=0;
   var watch=function(){
     var bpe=document.getElementById('bpe');
-    if(bpe&&bpe.classList.contains('open')){
+    var nowOpen=!!(bpe&&bpe.classList.contains('open'));
+    if(nowOpen&&!_wasOpen){
       _clear();bpi.style.zIndex='';
       setTimeout(_step29,700);
       return;
     }
+    // Track the toggle: if it was open and is now closed, allow the next
+    // open transition to fire. (Player closed it without tapping the pulse.)
+    if(!nowOpen)_wasOpen=false;
     if(polls<600){polls++;setTimeout(watch,500);}
     else {_done();}
   };
