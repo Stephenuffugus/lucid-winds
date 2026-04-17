@@ -54893,14 +54893,22 @@ function _step23AfterCeremony(attempts){
   }
   _dialog(
     'Your new plant has bloomed.<br><br>' +
-    'You\u2019ve crossed <span style="color:var(--gold);">Keeper Lv 3</span> — the <span style="color:var(--gold);">Wild</span> opens.',
+    'You just hit <span style="color:var(--gold);">Lv 3</span>, the <span style="color:var(--gold);">Wild</span> opens.',
     'LET\u2019S EXPLORE',function(){
       _clear();
-      // Release the carousel lock set in _step23WaitForReveal.
+      // Release the carousel lock set in _step23WaitForReveal, then close
+      // the carousel so the player drops back to the greenhouse view.
+      // Without this, step 24 pulses the WILD nav button BEHIND the
+      // open carousel and the player can't see the cue. Stephen test
+      // feedback: 'i was still on my card so it should just take me
+      // back to the greenhouse.'
       try{document.body.classList.remove('lw-tut-carousel-lock');}catch(e){}
+      try{if(window.closePlantGallery)window.closePlantGallery();}catch(e){}
       var lvl=1;
       try{lvl=((window.canSee&&window.canSee.wildTab&&window.canSee.wildTab())?3:((window._getRank?_getRank(parseInt(localStorage.getItem('pw_xp')||'0',10)):{level:1}).level||1));}catch(e){}
-      if(lvl>=3){setTimeout(_step24,800);}
+      // Slightly longer beat (1100ms) so the carousel close animation
+      // finishes before WILD nav starts pulsing.
+      if(lvl>=3){setTimeout(_step24,1100);}
       else{
         try{localStorage.setItem('lw_tut_wild_pending','1');}catch(e){}
         _done();
