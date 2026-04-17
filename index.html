@@ -41700,16 +41700,18 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
     content:'';position:absolute;bottom:2px;left:20%;right:20%;height:2px;
     background:var(--sage);border-radius:1px;opacity:0.8;
   }
-  /* Step 24 (nav-wild): fake the WILD tab as selected and dim the
-     currently-.active greenhouse tab so the lit tab matches the
-     instruction. Mirrors the nav-focus pattern above, gold-tinted so
-     the visual matches "the world opens" framing. */
-  body.lw-tut-active.lw-tut-nav-wild .fg-nav-btn.active img{opacity:0.4 !important;filter:saturate(0.3) brightness(0.6) !important;}
+  /* Step 24 (nav-wild): fake WILD as the active tab and hard-dim the
+     actual .active greenhouse tab so the lit tab matches the dialog.
+     Must use body-level opacity on the greenhouse BUTTON (not the img)
+     because .fg-nav-btn base rule sets button-level opacity. */
+  body.lw-tut-active.lw-tut-nav-wild .fg-nav-btn.active{opacity:0.25 !important;filter:saturate(0.2) brightness(0.55) !important;}
   body.lw-tut-active.lw-tut-nav-wild .fg-nav-btn.active::after{display:none !important;}
-  body.lw-tut-active.lw-tut-nav-wild #nav-btn-wild img{opacity:1 !important;filter:brightness(1.05) drop-shadow(0 0 10px rgba(200,168,75,0.35)) !important;}
+  body.lw-tut-active.lw-tut-nav-wild #nav-btn-wild{opacity:1 !important;filter:none !important;}
+  body.lw-tut-active.lw-tut-nav-wild #nav-btn-wild img{opacity:1 !important;filter:brightness(1.15) drop-shadow(0 0 14px rgba(200,168,75,0.65)) !important;}
   body.lw-tut-active.lw-tut-nav-wild #nav-btn-wild::after{
-    content:'';position:absolute;bottom:2px;left:20%;right:20%;height:2px;
-    background:var(--gold);border-radius:1px;opacity:0.9;
+    content:'';position:absolute;bottom:2px;left:20%;right:20%;height:3px;
+    background:var(--gold);border-radius:1.5px;opacity:1;
+    box-shadow:0 0 8px rgba(200,168,75,0.7);
   }
   /* At step 13, block plant-card taps in the greenhouse so the player
      can't reopen the carousel and access action-bar buttons while we're
@@ -41763,8 +41765,12 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      (mint prompt) via lw-tut-sb-on. Dew stays locked through the
      entire tutorial. */
   body.lw-tut-active #kb-sunbeams,
-  body.lw-tut-active #kb-dew{pointer-events:none !important;opacity:0.5 !important;filter:saturate(0.45);transition:opacity 0.4s,filter 0.4s;}
-  body.lw-tut-active.lw-tut-sb-on #kb-sunbeams{pointer-events:auto !important;opacity:1 !important;filter:none;}
+  body.lw-tut-active #kb-dew,
+  body.lw-tut-active #kb-mystery,
+  body.lw-tut-active #kb-weather,
+  body.lw-tut-active #kb-slots,
+  body.lw-tut-active #kb-install{pointer-events:none !important;opacity:0.35 !important;filter:saturate(0.3) brightness(0.65) !important;transition:opacity 0.4s,filter 0.4s;}
+  body.lw-tut-active.lw-tut-sb-on #kb-sunbeams{pointer-events:auto !important;opacity:1 !important;filter:none !important;}
   /* Tutorial: lock every carousel control EXCEPT the card itself (tap
      to flip) during the walkthrough. pgm-act-btn buttons (DOWNLOAD,
      BREED, COMPOST, DETAILS, SHARE, INSPECT) all blocked so the tester
