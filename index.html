@@ -5864,10 +5864,11 @@ window._addSwitchTabHook = function(fn){
     <div class="cs-section"><div class="cs-section-title">KEEPER STATS</div><div class="cs-stats" id="cs-stats"><div>Plants Grown <b id="cs-s-plants">0</b></div><div>Pollen <b id="cs-s-pollen" style="color:var(--gold);">0</b></div><div>Seeds Found <b id="cs-s-seeds">0</b></div><div>Wild Active <b id="cs-s-wild">0</b></div><div>Games Played <b id="cs-s-games">0</b></div><div>Groves <b id="cs-s-groves">0</b></div><div>Compost Made <b id="cs-s-compost">0</b></div><div>Sunbeams <b id="cs-s-dew" style="color:var(--gold);">0</b></div><div>Rarest Grade <b id="cs-s-rarest">—</b></div><div>Creatures <b id="cs-s-creatures">0</b></div><div>Days Active <b id="cs-s-days">1</b></div><div>Friends <b id="cs-s-friends">0</b></div></div></div>
     <div class="cs-section"><div class="cs-section-title">FRIEND CODE</div><div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;"><div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--gold);letter-spacing:0.15em;" id="cs-friend-code">????-????</div><button onclick="PW_UI.copyFriendCode()" style="background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.2);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.5rem;padding:0.5rem 0.8rem;border-radius:6px;cursor:pointer;min-height:44px;">COPY</button></div><div style="display:flex;gap:0.3rem;align-items:center;"><input type="text" id="cs-add-friend" placeholder="Enter friend code" maxlength="9" style="flex:1;padding:0.4rem;background:rgba(26,36,22,0.4);border:1.5px solid rgba(122,179,86,0.15);border-radius:6px;color:var(--cream);font-family:'DM Mono',monospace;font-size:0.5rem;outline:none;" /><button onclick="PW_UI.addFriend()" style="padding:0.55rem 0.8rem;border:1.5px solid rgba(122,179,86,0.2);border-radius:6px;background:rgba(26,36,22,0.3);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.5rem;cursor:pointer;min-height:44px;">ADD</button></div><div id="cs-friend-err" style="font-size:0.38rem;color:var(--muted);margin-top:0.25rem;min-height:0.8rem;"></div></div>
     <div class="cs-section"><div class="cs-section-title">FRIENDS <span id="cs-friend-count" style="color:var(--muted);">(0)</span></div><div id="cs-pending-list"></div><div id="cs-friends-list" style="font-size:0.42rem;color:var(--muted);">No friends yet. Share your code!</div></div>
-    <div style="display:flex;gap:0.4rem;margin-top:0.3rem;">
-      <button onclick="window._openTitleShop()" style="flex:1;padding:0.5rem;border-radius:8px;border:2px solid rgba(200,168,75,0.35);background:linear-gradient(180deg,rgba(46,38,18,0.55),rgba(28,24,12,0.7));color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;cursor:pointer;min-height:48px;letter-spacing:0.06em;">&#10024; TITLES</button>
-      <button onclick="if(window._lwOpenFeedback){PW_UI.closeCharacter();setTimeout(window._lwOpenFeedback,250);}" style="flex:1;padding:0.5rem;border-radius:8px;border:2px solid rgba(122,179,86,0.3);background:linear-gradient(180deg,rgba(26,40,20,0.55),rgba(18,28,14,0.7));color:rgba(122,179,86,0.95);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;cursor:pointer;min-height:48px;letter-spacing:0.06em;">&#128221; FEEDBACK</button>
-      <button onclick="PW_UI.closeCharacter()" style="flex:1;padding:0.5rem;border-radius:8px;border:2px solid rgba(74,124,53,0.15);background:rgba(26,36,22,0.3);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;cursor:pointer;min-height:48px;">CLOSE</button>
+    <div style="display:flex;gap:0.4rem;margin-top:0.3rem;flex-wrap:wrap;">
+      <button onclick="window._openTitleShop()" style="flex:1 1 30%;padding:0.5rem;border-radius:8px;border:2px solid rgba(200,168,75,0.35);background:linear-gradient(180deg,rgba(46,38,18,0.55),rgba(28,24,12,0.7));color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;cursor:pointer;min-height:48px;letter-spacing:0.06em;">&#10024; TITLES</button>
+      <button onclick="if(window._lwOpenInviteModal)window._lwOpenInviteModal();" style="flex:1 1 30%;padding:0.5rem;border-radius:8px;border:2px solid rgba(232,160,191,0.4);background:linear-gradient(180deg,rgba(40,22,30,0.55),rgba(24,14,18,0.7));color:rgba(232,160,191,0.95);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;cursor:pointer;min-height:48px;letter-spacing:0.06em;">&#128106; INVITE</button>
+      <button onclick="if(window._lwOpenFeedback){PW_UI.closeCharacter();setTimeout(window._lwOpenFeedback,250);}" style="flex:1 1 30%;padding:0.5rem;border-radius:8px;border:2px solid rgba(122,179,86,0.3);background:linear-gradient(180deg,rgba(26,40,20,0.55),rgba(18,28,14,0.7));color:rgba(122,179,86,0.95);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;cursor:pointer;min-height:48px;letter-spacing:0.06em;">&#128221; FEEDBACK</button>
+      <button onclick="PW_UI.closeCharacter()" style="flex:1 1 100%;padding:0.5rem;border-radius:8px;border:2px solid rgba(74,124,53,0.15);background:rgba(26,36,22,0.3);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;cursor:pointer;min-height:48px;">CLOSE</button>
     </div>
   </div>
   <!-- ═══ ONBOARDING ═══ -->
@@ -59820,7 +59821,167 @@ function _bosAboutContent() {
 }
 window._bosAboutContent = _bosAboutContent;
 
-// ─── HERBARIUM TAB — weekly rotating bundles ───
+// ═══ REFERRAL BONUS v1 ═══
+// Players invite friends with their friend code. Both sides earn:
+//   Invitee on entering a valid code: +10 Sunbeams immediately
+//   Inviter on each invitee reaching Lv 2 (real play, not just signup):
+//     +20 Sunbeams via the periodic _lwCheckReferralPayouts hook
+// Anti-fraud: same device fingerprint can't refer itself; each code
+// counts once per invitee; max 10 successful invites per inviter.
+// Cross-account payout requires Firestore reads — for v1 we record
+// pending payouts in localStorage so a future Firestore sync can
+// settle them. Solo testing today: invitee gets the +10 instantly;
+// inviter sees their pending list grow but payouts wire in v2.
+var REFERRAL_INVITEE_BONUS = 10;
+var REFERRAL_INVITER_BONUS = 20;
+var REFERRAL_MAX_INVITES = 10;
+
+function _lwGetReferralState(){
+  try { return JSON.parse(localStorage.getItem('lw_referral_state') || '{}') || {}; }
+  catch(e) { return {}; }
+}
+function _lwSaveReferralState(s){
+  try { localStorage.setItem('lw_referral_state', JSON.stringify(s)); } catch(e){}
+}
+
+window._lwApplyReferralCode = function(rawCode){
+  var code = String(rawCode || '').trim().toUpperCase().replace(/[^A-Z0-9-]/g,'');
+  if (!code) return { ok:false, reason:'Enter a code.' };
+  var s = _lwGetReferralState();
+  if (s.referredBy) return { ok:false, reason:'You already used a code: ' + s.referredBy + '.' };
+  // Self-referral check: compare to your own friend code if loaded.
+  var myCode = '';
+  try { myCode = (localStorage.getItem('pw_friend_code') || '').toUpperCase(); } catch(e){}
+  if (myCode && code === myCode) return { ok:false, reason:'You can\u2019t use your own code.' };
+  // Format guard: friend codes are 9 chars (4-4 with dash). Be lenient
+  // on the dash so paste-with-or-without works.
+  var compact = code.replace(/-/g,'');
+  if (compact.length < 6) return { ok:false, reason:'That code looks too short.' };
+  s.referredBy = code;
+  s.referredAt = Date.now();
+  _lwSaveReferralState(s);
+  // Grant invitee bonus immediately.
+  try { if (window.earnHashes) window.earnHashes(REFERRAL_INVITEE_BONUS, 'referral_invitee'); } catch(e){}
+  if (window._toast) window._toast('\u2728 +' + REFERRAL_INVITEE_BONUS + ' Sunbeams! Welcome.');
+  // Write a pending payout to Firestore so the inviter can claim it.
+  // Skips silently if not signed in or rules block — the inviter still
+  // sees nothing on their side until the next sync. v2 will tighten.
+  try {
+    var user = window.firebase && firebase.auth && firebase.auth().currentUser;
+    if (user && window.db) {
+      window.db.collection('referrals').doc(code).collection('invitees').doc(user.uid).set({
+        inviteeUid: user.uid,
+        inviteeName: (localStorage.getItem('pw_keeper_name') || 'A Keeper'),
+        signedUpAt: Date.now(),
+        milestoneReached: false
+      }, { merge: true }).catch(function(){});
+    }
+  } catch(e){}
+  return { ok:true, bonus:REFERRAL_INVITEE_BONUS };
+};
+
+// Check for referral payouts (called on level-up and on demand). Reads
+// the inviter's referrals doc, finds invitees who've reached the
+// milestone (lv 2+) and haven't been claimed yet, grants the bonus,
+// caps total successful invites at REFERRAL_MAX_INVITES.
+window._lwCheckReferralPayouts = function(silent){
+  var s = _lwGetReferralState();
+  if (!s.claimedInvitees) s.claimedInvitees = [];
+  if (s.claimedInvitees.length >= REFERRAL_MAX_INVITES) return { granted:0, capped:true };
+  // Cross-account read needs the inviter's friend code + Firestore.
+  var myCode = '';
+  try { myCode = (localStorage.getItem('pw_friend_code') || '').toUpperCase(); } catch(e){}
+  if (!myCode) return { granted:0 };
+  if (!window.firebase || !window.db) return { granted:0 };
+  // Pull invitees who hit the milestone since last claim.
+  window.db.collection('referrals').doc(myCode).collection('invitees')
+    .where('milestoneReached','==',true).get().then(function(snap){
+      var newPayouts = 0;
+      snap.forEach(function(doc){
+        var uid = doc.id;
+        if (s.claimedInvitees.indexOf(uid) >= 0) return;
+        if (s.claimedInvitees.length >= REFERRAL_MAX_INVITES) return;
+        s.claimedInvitees.push(uid);
+        try { if (window.earnHashes) window.earnHashes(REFERRAL_INVITER_BONUS, 'referral_inviter'); } catch(e){}
+        newPayouts++;
+      });
+      if (newPayouts > 0) {
+        _lwSaveReferralState(s);
+        if (!silent && window._toast) {
+          window._toast('\u2728 +' + (newPayouts * REFERRAL_INVITER_BONUS) + ' Sunbeams from ' + newPayouts + ' friend' + (newPayouts===1?'':'s') + '!');
+        }
+      }
+    }).catch(function(){});
+  return { granted:0 }; // async — actual payout fires inside the .then
+};
+
+// Mark this player as having reached the milestone. Called from the
+// level-up ceremony at L2. Writes to your OWN entry in your inviter's
+// referrals collection so the inviter's next claim picks you up.
+window._lwMarkReferralMilestone = function(){
+  var s = _lwGetReferralState();
+  if (!s.referredBy) return;
+  if (s.milestoneMarked) return;
+  s.milestoneMarked = true;
+  _lwSaveReferralState(s);
+  try {
+    var user = window.firebase && firebase.auth && firebase.auth().currentUser;
+    if (user && window.db) {
+      window.db.collection('referrals').doc(s.referredBy).collection('invitees').doc(user.uid).set({
+        milestoneReached: true,
+        milestoneAt: Date.now()
+      }, { merge: true }).catch(function(){});
+    }
+  } catch(e){}
+};
+
+window._lwOpenInviteModal = function(){
+  var existing = document.getElementById('lw-invite-modal');
+  if (existing) { existing.remove(); return; }
+  var s = _lwGetReferralState();
+  var myCode = '';
+  try { myCode = (localStorage.getItem('pw_friend_code') || '').toUpperCase(); } catch(e){}
+  var ov = document.createElement('div');
+  ov.id = 'lw-invite-modal';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:1000010;background:rgba(5,8,4,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:DM Sans,sans-serif;';
+  ov.onclick = function(e){ if (e.target === ov) ov.remove(); };
+  var h = '<div style="max-width:420px;width:100%;margin-top:1rem;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(232,160,191,0.45);border-radius:14px;padding:1.2rem 1rem;box-shadow:0 16px 50px rgba(0,0,0,0.7);color:var(--cream);">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem;">';
+  h +=   '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:rgba(232,160,191,0.95);letter-spacing:0.16em;">\ud83d\udc6c INVITE FRIENDS</div>';
+  h +=   '<button onclick="document.getElementById(\'lw-invite-modal\').remove()" style="width:36px;height:36px;border-radius:50%;background:rgba(40,40,30,0.5);border:1px solid rgba(138,145,120,0.25);color:var(--cream);cursor:pointer;font-size:0.9rem;">\u2715</button>';
+  h += '</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:rgba(232,220,200,0.85);line-height:1.7;margin-bottom:0.9rem;">Share your code. When a friend uses it, you both get Sunbeams: <b>+' + REFERRAL_INVITEE_BONUS + '</b> for them on signup, <b>+' + REFERRAL_INVITER_BONUS + '</b> for you when they reach <b>Lv 2</b>. Up to <b>' + REFERRAL_MAX_INVITES + '</b> friends.</div>';
+  // Your code
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.3rem;">YOUR CODE</div>';
+  h += '<div style="display:flex;gap:0.5rem;align-items:center;padding:0.7rem 0.9rem;background:rgba(13,16,12,0.6);border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;margin-bottom:0.6rem;">';
+  h +=   '<div style="flex:1;font-family:DM Mono,monospace;font-size:1rem;color:var(--gold);letter-spacing:0.18em;">' + (myCode || '????-????') + '</div>';
+  h +=   '<button onclick="(function(){try{navigator.clipboard.writeText(\'' + myCode + '\').then(function(){if(window._toast)window._toast(\'Code copied!\');});}catch(e){}})();" style="padding:8px 12px;border:1px solid rgba(200,168,75,0.5);border-radius:6px;background:rgba(200,168,75,0.12);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;cursor:pointer;min-height:40px;">COPY</button>';
+  h += '</div>';
+  // Share template button
+  var shareText = 'Come grow plants in Lucid Winds with me. Use my code ' + myCode + ' when you sign up and we both get a bonus. https://lucidwinds.com';
+  var shareTextSafe = shareText.replace(/'/g,'&#39;');
+  h += '<button onclick="(function(){try{if(navigator.share){navigator.share({title:\'Lucid Winds\',text:\'' + shareTextSafe + '\'}).catch(function(){});}else{navigator.clipboard.writeText(\'' + shareTextSafe + '\').then(function(){if(window._toast)window._toast(\'Share text copied!\');});}}catch(e){}})();" style="display:block;width:100%;padding:0.7rem;margin-bottom:1rem;border:1.5px solid rgba(232,160,191,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(232,160,191,0.18),rgba(140,80,110,0.28));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">\ud83d\udce4 SHARE INVITE</button>';
+  // Apply someone else's code
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.3rem;">GOT A FRIEND\u2019S CODE?</div>';
+  if (s.referredBy) {
+    h += '<div style="padding:0.7rem 0.9rem;background:rgba(122,179,86,0.1);border:1px solid rgba(122,179,86,0.35);border-radius:10px;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--sage);line-height:1.5;">\u2728 You used code <b>' + s.referredBy + '</b>. Bonus already applied.</div>';
+  } else {
+    h += '<div style="display:flex;gap:0.4rem;">';
+    h +=   '<input type="text" id="lw-invite-input" placeholder="ABCD-1234" maxlength="9" style="flex:1;padding:0.6rem;background:rgba(13,16,12,0.7);border:1.5px solid rgba(122,179,86,0.35);border-radius:8px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.7rem;outline:none;letter-spacing:0.1em;text-transform:uppercase;min-height:44px;">';
+    h +=   '<button onclick="(function(){var v=document.getElementById(\'lw-invite-input\');if(!v)return;var r=window._lwApplyReferralCode(v.value);if(r&&!r.ok){var er=document.getElementById(\'lw-invite-err\');if(er){er.textContent=r.reason;er.style.color=\'#c07060\';}}else{document.getElementById(\'lw-invite-modal\').remove();setTimeout(function(){if(window._lwOpenInviteModal)window._lwOpenInviteModal();},300);}})();" style="padding:0.6rem 1rem;border:1.5px solid rgba(122,179,86,0.5);border-radius:8px;background:rgba(74,124,53,0.25);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;min-height:44px;">APPLY</button>';
+    h += '</div>';
+    h += '<div id="lw-invite-err" style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:0.4rem;min-height:1.2rem;"></div>';
+  }
+  // Pending payouts (your own invitees)
+  var claimed = (s.claimedInvitees || []).length;
+  h += '<div style="margin-top:1rem;padding:0.7rem 0.9rem;background:rgba(200,168,75,0.06);border:1px dashed rgba(200,168,75,0.3);border-radius:10px;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);line-height:1.7;">';
+  h += 'Successful invites: <b style="color:var(--gold);">' + claimed + ' / ' + REFERRAL_MAX_INVITES + '</b>';
+  h += '<br><span style="color:rgba(232,220,200,0.6);">Payouts arrive automatically as your friends reach Lv 2.</span>';
+  h += '</div>';
+  h += '</div>';
+  ov.innerHTML = h;
+  document.body.appendChild(ov);
+};
 function _bosHerbariumContent() {
   if (!window.LW_HERBARIUM) return '<div style="padding:2rem;text-align:center;color:var(--muted);">Herbarium loading...</div>';
   var bundles = window.LW_HERBARIUM.pickBundlesForWeek();
@@ -65480,7 +65641,15 @@ if(window.PW_grantXP){
 // for levels 2–10 with a specific unlock announcement.
 window._lwLevelCeremony=function(newLvl){
   var ceremonies={
-    2:{icon:'🌱',title:'SPROUT',body:'You\'re growing. Mint your second plant to keep going.'},
+    2:{icon:'🌱',title:'SPROUT',body:'You\'re growing. Mint your second plant to keep going.',_postHook:function(){
+      // Referral milestone trigger — if this player was invited by
+      // someone, write to the inviter's referrals collection so their
+      // next claim picks up the +20 SB payout. Idempotent.
+      try{if(window._lwMarkReferralMilestone)window._lwMarkReferralMilestone();}catch(e){}
+      // Also check if WE (the leveling player) have any pending payouts
+      // from people we invited who already hit L2 before our last open.
+      try{if(window._lwCheckReferralPayouts)window._lwCheckReferralPayouts(true);}catch(e){}
+    }},
     3:{icon:'🌳',title:'YOUNG SHOOT',body:'The world opens. Tap WILD to plant one of your garden\'s children somewhere real.'},
     4:{icon:'🍂',title:'BUDDING',body:'Wild seeds now respond to you. Walk close to any feral to collect it.'},
     5:{icon:'🤝',title:'TENDER',body:'You can now tend other keepers\' wild plants within 75m for Dew.'},
@@ -65491,6 +65660,8 @@ window._lwLevelCeremony=function(newLvl){
     10:{icon:'🔬',title:'NATURALIST',body:'Nursery Shop BOOSTERS unlocked. And you can now harvest fruit from strangers\' wild plants.'}
   };
   var c=ceremonies[newLvl];if(!c)return;
+  // Fire any post-ceremony hook (e.g., L2 → referral milestone trigger).
+  try{if(typeof c._postHook==='function')setTimeout(c._postHook,500);}catch(e){}
   if(window._toast)window._toast(c.icon+' '+c.title+'. '+c.body);
   try{if(window._playWin)window._playWin();}catch(e){}
   try{if(window._haptic)window._haptic('bloom');}catch(e){}
