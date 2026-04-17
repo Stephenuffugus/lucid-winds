@@ -4661,7 +4661,7 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
 /* Drop FAB */
 /* Plant FAB sits directly under the backpack on the Wild tab.
    Backpack is at top:275+sb with 100×100; FAB starts just below at top:385+sb. */
-#dfb{position:fixed;top:calc(env(safe-area-inset-top,0px) + 385px);right:8px;z-index:999;width:112px;height:112px;border-radius:0;border:none;cursor:pointer;background:url('assets/sow-fab-v1.png') center/contain no-repeat;filter:drop-shadow(0 4px 14px rgba(0,0,0,.6));display:flex;align-items:center;justify-content:center;transition:transform 0.15s;-webkit-tap-highlight-color:transparent;padding:0;}
+#dfb{position:fixed;top:calc(env(safe-area-inset-top,0px) + 395px);right:10px;z-index:999;width:92px;height:92px;border-radius:0;border:none;cursor:pointer;background:url('assets/sow-fab-v1.png') center/contain no-repeat;filter:drop-shadow(0 4px 14px rgba(0,0,0,.6));display:flex;align-items:center;justify-content:center;transition:transform 0.15s;-webkit-tap-highlight-color:transparent;padding:0;}
 #dfb:active{transform:scale(.92);}
 @keyframes fr{0%,100%{box-shadow:0 4px 20px rgba(42,92,42,0.5),0 0 0 3px rgba(122,179,86,0.08)}50%{box-shadow:0 6px 24px rgba(42,92,42,0.6),0 0 0 5px rgba(122,179,86,0.12)}}
 #dfb:active{transform:scale(0.9);animation:none;}
@@ -4678,7 +4678,7 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
    gold when there's something to collect. Foraging is the signature
    Wild moment — this button exists so players never have to hunt for
    it on the map. */
-#ffb{position:fixed;top:calc(env(safe-area-inset-top,0px) + 385px);left:8px;z-index:999;width:112px;height:112px;border-radius:0;border:none;cursor:pointer;background:url('assets/forage-fab-v1.png') center/contain no-repeat;filter:drop-shadow(0 4px 14px rgba(0,0,0,.6));display:flex;align-items:center;justify-content:center;transition:transform 0.15s,opacity 0.2s;-webkit-tap-highlight-color:transparent;padding:0;opacity:0.65;}
+#ffb{position:fixed;top:calc(env(safe-area-inset-top,0px) + 395px);left:10px;z-index:999;width:92px;height:92px;border-radius:0;border:none;cursor:pointer;background:url('assets/forage-fab-v1.png') center/contain no-repeat;filter:drop-shadow(0 4px 14px rgba(0,0,0,.6));display:flex;align-items:center;justify-content:center;transition:transform 0.15s,opacity 0.2s;-webkit-tap-highlight-color:transparent;padding:0;opacity:0.65;}
 #ffb.ready{opacity:1;animation:ffp 1.8s ease-in-out infinite;}
 #ffb:active{transform:scale(.92);animation:none;}
 @keyframes ffp{0%,100%{filter:drop-shadow(0 4px 14px rgba(0,0,0,.6)) drop-shadow(0 0 6px rgba(200,168,75,0.3));}50%{filter:drop-shadow(0 4px 14px rgba(0,0,0,.6)) drop-shadow(0 0 20px rgba(200,168,75,0.85));}}
@@ -4736,16 +4736,18 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
    fixed bar. Three resource chips + compass, floating on the biome
    art with blurred-glass tiles. */
 .wbh-stats{position:absolute;top:calc(env(safe-area-inset-top,0px) + 6px);left:6px;right:6px;display:grid;grid-template-columns:repeat(3,1fr) auto;grid-template-areas:'s1 s2 s3 cp';gap:5px;pointer-events:none;}
-.wbh-chip{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:rgba(5,6,4,0.72);padding:4px 4px;border-radius:7px;border:1px solid rgba(200,168,75,0.22);min-height:46px;cursor:pointer;transition:all 0.15s;pointer-events:auto;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
+.wbh-chip{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:transparent;padding:4px 4px;border-radius:7px;border:none;min-height:46px;cursor:pointer;transition:all 0.15s;pointer-events:auto;}
 .wbh-chip:nth-child(1){grid-area:s1;}
 .wbh-chip:nth-child(2){grid-area:s2;}
 .wbh-chip:nth-child(3){grid-area:s3;}
-.wbh-chip:active{background:rgba(18,22,16,0.85);border-color:rgba(200,168,75,0.3);}
-.wbh-val{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;color:var(--cream);line-height:1;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,.6)}
-.wbh-lbl{font-family:'DM Mono',monospace;font-size:0.5rem;color:rgba(200,168,75,0.75);letter-spacing:0.06em;text-transform:uppercase;margin-top:1px;line-height:1;}
-.wbh-wind{grid-area:cp;align-self:center;justify-self:center;width:54px;min-height:46px;display:flex;align-items:center;justify-content:center;flex-direction:column;position:relative;font-size:1.2rem;color:var(--gold);gap:0;pointer-events:auto;background:rgba(5,6,4,0.72);padding:3px 3px;border-radius:7px;border:1px solid rgba(200,168,75,0.22);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
+.wbh-chip:active{opacity:0.6;}
+/* Strong shadow on value + label so the stats stay legible directly
+   on top of the biome art without needing a dark chip backing. */
+.wbh-val{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;color:var(--cream);line-height:1;text-shadow:0 1px 2px rgba(0,0,0,0.95),0 0 8px rgba(0,0,0,0.8),0 0 14px rgba(0,0,0,0.6);}
+.wbh-lbl{font-family:'DM Mono',monospace;font-size:0.5rem;color:rgba(232,220,200,0.95);letter-spacing:0.06em;text-transform:uppercase;margin-top:1px;line-height:1;text-shadow:0 1px 2px rgba(0,0,0,0.95),0 0 6px rgba(0,0,0,0.7);}
+.wbh-wind{grid-area:cp;align-self:center;justify-self:center;width:54px;min-height:46px;display:flex;align-items:center;justify-content:center;flex-direction:column;position:relative;font-size:1.2rem;color:var(--gold);gap:0;pointer-events:auto;background:transparent;padding:3px 3px;border-radius:7px;border:none;}
 .wbh-wind img{width:26px;height:26px;}
-.wbh-wind .wl-wind-top,.wbh-wind .wl-wind-bottom{font-family:'DM Mono',monospace;font-size:0.38rem;color:var(--cream);letter-spacing:0.05em;text-shadow:0 1px 2px rgba(0,0,0,0.9);line-height:1;}
+.wbh-wind .wl-wind-top,.wbh-wind .wl-wind-bottom{font-family:'DM Mono',monospace;font-size:0.38rem;color:var(--cream);letter-spacing:0.05em;text-shadow:0 1px 2px rgba(0,0,0,0.95),0 0 6px rgba(0,0,0,0.75);line-height:1;}
 .wbh-wind .wl-wind-bottom b{color:var(--gold);font-weight:700;}
 .wl-wind-top{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--cream);letter-spacing:0.06em;text-shadow:0 1px 2px rgba(0,0,0,0.9);line-height:1;}
 .wl-wind-bottom{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--cream);letter-spacing:0.06em;text-shadow:0 1px 2px rgba(0,0,0,0.9);line-height:1.2;}
@@ -5728,7 +5730,7 @@ window._addSwitchTabHook = function(fn){
       <div id="w-territory-stats" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;font-family:DM Mono,monospace;font-size:0.5rem;text-align:center;"></div>
     </div>
     <!-- RECENTER BUTTON -->
-    <button id="w-recenter" onclick="if(window.FG_Wild&&window.FG_Wild._recenter)FG_Wild._recenter();" style="display:none;position:fixed;bottom:calc(240px + env(safe-area-inset-bottom,0px));left:12px;z-index:999;width:54px;height:54px;border-radius:50%;border:1.5px solid rgba(74,144,217,0.45);background:rgba(13,16,12,0.94);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.5);-webkit-tap-highlight-color:transparent;color:rgba(140,200,235,0.95);font-size:1.4rem;line-height:1;">&#8982;</button>
+    <button id="w-recenter" onclick="if(window.FG_Wild&&window.FG_Wild._recenter)FG_Wild._recenter();" style="display:none;position:fixed;bottom:calc(160px + env(safe-area-inset-bottom,0px));left:12px;z-index:999;width:54px;height:54px;border-radius:50%;border:1.5px solid rgba(74,144,217,0.45);background:rgba(13,16,12,0.94);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.5);-webkit-tap-highlight-color:transparent;color:rgba(140,200,235,0.95);font-size:1.4rem;line-height:1;">&#8982;</button>
     <!-- MASS WATER BUTTON — appears when player has 2+ wild plants needing water -->
     <button id="w-mass-water" onclick="window._lwMassWater();" style="display:none;position:fixed;bottom:calc(190px + env(safe-area-inset-bottom,0px));left:12px;z-index:999;min-width:46px;height:46px;padding:0 12px;border-radius:23px;border:1.5px solid rgba(91,143,185,0.5);background:rgba(13,18,24,0.94);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:none;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 14px rgba(0,0,0,0.5),0 0 12px rgba(91,143,185,0.2);-webkit-tap-highlight-color:transparent;color:#7ab3d4;font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.06em;white-space:nowrap;"><span id="w-mass-water-label">&#128167; WATER ALL</span></button>
     <!-- MAP -->
@@ -36281,6 +36283,9 @@ function _initMap(){
   var el=document.getElementById('wild-map');if(!el||!window.L)return;
   _map=L.map('wild-map',{center:[39.83,-98.58],zoom:4,zoomControl:false,attributionControl:false,tap:true,tapTolerance:15});
   L.tileLayer(TILES,{attribution:'&copy; OSM &copy; CARTO',subdomains:'abcd',maxZoom:19}).addTo(_map);
+  // If GPS resolved BEFORE _initMap ran (slow cold start), the setView
+  // in _initGeo was skipped behind its null-guard. Catch up now.
+  if(_uLat!=null&&_uLng!=null){try{_map.setView([_uLat,_uLng],16);_placeUser();_loadAll();}catch(e){}}
   _map.on('click',function(){closePicker();closeTP();});
   // Map skin: sync zoom for CSS data attribute
   _map.on('zoomend',function(){_map.getContainer().setAttribute('data-zoom',_map.getZoom());});
@@ -36549,12 +36554,16 @@ function _initGeo(){
     if(_gpsFallbackTimer){clearTimeout(_gpsFallbackTimer);_gpsFallbackTimer=null;}
     _uLat=p.coords.latitude;_uLng=p.coords.longitude;
     window._uLat=_uLat;window._uLng=_uLng;
-    _map.setView([_uLat,_uLng],16);_placeUser();_loadAll();
+    // Stephen crash: 'cannot read properties of null (reading setView)'.
+    // GPS can fire back before Leaflet has initialized the map on a slow
+    // cold start. Guard both paths so the handler stashes coords and
+    // defers the view call until the map object exists.
+    if(_map){_map.setView([_uLat,_uLng],16);_placeUser();_loadAll();}
     _toast('Location locked! Tap \ud83c\udf31 to plant.');
   },function(){
     _uLat=FALLBACK[0];_uLng=FALLBACK[1];
     window._uLat=_uLat;window._uLng=_uLng;
-    _map.setView(FALLBACK,16);_placeUser();_loadAll();
+    if(_map){_map.setView(FALLBACK,16);_placeUser();_loadAll();}
     _showGpsBanner();
   },{enableHighAccuracy:true,timeout:8000,maximumAge:30000});
   try{navigator.geolocation.watchPosition(function(p){
