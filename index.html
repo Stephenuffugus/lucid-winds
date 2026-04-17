@@ -54481,6 +54481,12 @@ function _step23WaitForReveal(attempts){
   // switches to greenhouse, but run it again in case the player dismissed
   // via a different route.
   if(window.switchTab){try{switchTab('greenhouse');}catch(e){}}
+  // Lock every carousel action button (DOWNLOAD / INSPECT / SHARE /
+  // COMPOST / BREED / close-X / swipe arrows) so the player can't
+  // sidetrack when they tap the plant tile and the carousel opens.
+  // Card itself stays tappable so they can flip it. Released at
+  // LET'S EXPLORE tap.
+  try{document.body.classList.add('lw-tut-carousel-lock');}catch(e){}
   setTimeout(function(){
     _dialog(
       '<span style="color:var(--sage);">First, let\u2019s go see what you bloomed.</span><br><br>' +
@@ -54516,6 +54522,8 @@ function _step23AfterCeremony(attempts){
     'You\u2019ve crossed <span style="color:var(--gold);">Keeper Lv 3</span> — the <span style="color:var(--gold);">Wild</span> opens.',
     'LET\u2019S EXPLORE',function(){
       _clear();
+      // Release the carousel lock set in _step23WaitForReveal.
+      try{document.body.classList.remove('lw-tut-carousel-lock');}catch(e){}
       var lvl=1;
       try{lvl=((window.canSee&&window.canSee.wildTab&&window.canSee.wildTab())?3:((window._getRank?_getRank(parseInt(localStorage.getItem('pw_xp')||'0',10)):{level:1}).level||1));}catch(e){}
       if(lvl>=3){setTimeout(_step24,800);}
