@@ -41593,10 +41593,10 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      onboarding via the .ob-active body class so testers don't tap it before
      they have an account. -->
 <button id="lw-fb-btn" onclick="window._lwOpenFeedback&&window._lwOpenFeedback()" title="Share feedback" style="position:fixed;bottom:calc(var(--nav-h, 58px) + env(safe-area-inset-bottom, 0px) + 52px);right:8px;z-index:999998;background:rgba(122,179,86,0.12);color:rgba(122,179,86,0.7);padding:5px 10px;font-family:'DM Mono',monospace;font-size:0.5rem;letter-spacing:0.05em;border-radius:6px;border:1px solid rgba(122,179,86,0.25);cursor:pointer;">📝 FEEDBACK</button>
-<!-- Contextual suggestion button — "What could I do right now?" — ambient,
-     never blocking. Hidden during onboarding via the .ob-active body class.
-     Parallel to the feedback ribbon: bottom-left mirror to bottom-right. -->
-<button id="lw-whatnow-btn" onclick="window._lwOpenWhatNow&&window._lwOpenWhatNow()" title="What could I do right now?" style="position:fixed;bottom:calc(var(--nav-h, 58px) + env(safe-area-inset-bottom, 0px) + 52px);left:8px;z-index:999998;background:linear-gradient(180deg,rgba(200,168,75,0.3),rgba(120,100,40,0.45));color:#f5dc95;padding:10px 16px;font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.1em;border-radius:10px;border:1.5px solid rgba(240,208,144,0.55);cursor:pointer;min-height:44px;box-shadow:0 3px 10px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,220,140,0.15);">✧ WHAT NOW?</button>
+<!-- WHAT NOW button retired 2026-04-17. Tutorial monorail covers what
+     it used to suggest. Kept as a hidden stub so any code that still
+     references the id doesn't crash. -->
+<button id="lw-whatnow-btn" style="display:none !important;" aria-hidden="true"></button>
 <style>
   /* Hide feedback button during onboarding AND any time a major overlay
      is open — don't let it cover or compete with celebrations, modals,
