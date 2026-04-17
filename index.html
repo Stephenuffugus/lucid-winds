@@ -40755,6 +40755,23 @@ function _openHexInspector(zk){
       note.innerHTML='\u26a0 Zone has '+(augmented.length+_overCapExcess)+' plants total \u2014 showing strongest 3 by EA ('+_overCapExcess+' legacy weaker plant'+(_overCapExcess===1?'':'s')+' hidden).';
       el.appendChild(note);
     }
+    // Carousel-view button — opens all hex plants in a swipeable
+    // large-format carousel so players walking through can browse
+    // without stopping. Each list row below still works as the
+    // action surface (water / cutting / defense). Stephen test
+    // request: 'large comfortable and convenient... walking through
+    // the hex without stopping.'
+    if(augmented.length>=1&&window.openCarousel){
+      var carBtn=document.createElement('button');
+      carBtn.style.cssText='display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;margin-bottom:0.6rem;border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(120,100,40,0.28));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:52px;';
+      carBtn.innerHTML='\u25a6 SWIPE THROUGH '+augmented.length+' PLANT'+(augmented.length===1?'':'S');
+      (function(arr){carBtn.addEventListener('click',function(){
+        try{if(typeof closeHI==='function')closeHI();}catch(e){}
+        try{if(typeof closeTP==='function')closeTP();}catch(e){}
+        setTimeout(function(){window.openCarousel(arr,0,'wild-inspect');},150);
+      });})(augmented.slice());
+      el.appendChild(carBtn);
+    }
     for(var j=0;j<augmented.length;j++){
       var ap=augmented[j];
       var row=document.createElement('div');row.className='hi-plant-row';row.setAttribute('data-idx',j);
