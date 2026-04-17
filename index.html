@@ -54158,7 +54158,9 @@ function _step16AfterCelebration(attempts){
     var msg=ready>0
       ? 'You have <span style="color:var(--gold);">30 Sunbeams</span> ready.<br><br><span style="color:var(--sage);">Tap the glowing Sunbeam icon at the top to bloom a new plant.</span>'
       : 'Good play. Keep earning until the <span style="color:var(--gold);">Sunbeam icon up top glows.</span> That\u2019s 30 Sunbeams, enough for a new plant.<br><br>You can play another game or come back later.';
-    _dialog(msg,'',null,'top');
+    // Bottom position so the dialog doesn't cover the sunbeam icon it's
+    // telling the player to tap (icon sits at the top of the greenhouse).
+    _dialog(msg,'',null,'bottom');
     if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
     if(ready>0){_watchMintModal(0);}
     else {
