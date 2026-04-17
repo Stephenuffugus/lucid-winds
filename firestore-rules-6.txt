@@ -1,6 +1,9 @@
 // LUCID WINDS — COMPLETE FIRESTORE SECURITY RULES
 // Based on: Petal Walk rules (March 13, 2026)
-// Updated: April 14, 2026
+// Updated: April 17, 2026
+// Changes from v6: ADD referrals/{code} + invitees/{uid} subcollection
+//                  (referral system — invitee writes their signup +
+//                  milestone, inviter reads invitees under their code)
 // Changes from v5: wildDrops create allows ownerUid='wild' when wildBorn=true
 //                  (previously wild-born offspring were blocked — reproduction
 //                  never spread because every baby write was permission-denied)
@@ -299,6 +302,51 @@ service cloud.firestore {
     match /contentRegistry/{docId} {
       allow read: if request.auth != null;
       allow write: if false;  // Admin SDK only
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // REFERRALS — inviter-owned referral state with shared subtree
+    // Inviter creates the parent doc with their inviterUid the first
+    // time they open the invite modal. Invitees write/update their
+    // own entry under invitees/{uid}. Inviter reads all invitees to
+    // settle payouts on level-up.
+    // ════════════════════════════════════════════════════════════
+    match /referrals/{code} {
+      // Inviter reads + writes their own referral doc
+      allow read: if request.auth != null
+        && resource != null
+        && resource.data.inviterUid == request.auth.uid;
+      // Inviter creates the doc (one-time, on opening invite modal)
+      allow create: if request.auth != null
+        && request.resource.data.inviterUid == request.auth.uid
+        && request.resource.data.keys().hasAll(['inviterUid', 'createdAt']);
+      // Inviter updates own doc (e.g. pause referrals later)
+      allow update: if request.auth != null
+        && resource.data.inviterUid == request.auth.uid
+        && request.resource.data.inviterUid == resource.data.inviterUid;
+      allow delete: if false;
+
+      // INVITEES SUBCOLLECTION — cross-account write model
+      match /invitees/{uid} {
+        // Invitee reads their own entry; inviter reads all invitees
+        allow read: if request.auth != null
+          && (request.auth.uid == uid
+              || (exists(/databases/$(database)/documents/referrals/$(code))
+                  && get(/databases/$(database)/documents/referrals/$(code)).data.inviterUid == request.auth.uid));
+        // Invitee creates their own entry (signup with this inviter's code)
+        allow create: if request.auth != null
+          && request.auth.uid == uid
+          && request.resource.data.inviteeUid == uid
+          && request.resource.data.keys().hasAll(['inviteeUid', 'inviteeName', 'signedUpAt'])
+          && request.resource.data.milestoneReached == false;
+        // Invitee updates milestoneReached + milestoneAt only (on Lv 2)
+        allow update: if request.auth != null
+          && request.auth.uid == uid
+          && request.resource.data.inviteeUid == resource.data.inviteeUid
+          && request.resource.data.signedUpAt == resource.data.signedUpAt
+          && request.resource.data.milestoneReached == true;
+        allow delete: if false;
+      }
     }
 
     // ════════════════════════════════════════════════════════════

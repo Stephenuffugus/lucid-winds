@@ -59986,6 +59986,19 @@ window._lwOpenInviteModal = function(){
   var s = _lwGetReferralState();
   var myCode = '';
   try { myCode = (localStorage.getItem('pw_friend_code') || '').toUpperCase(); } catch(e){}
+  // Ensure the parent referrals/{myCode} doc exists with our inviterUid
+  // — invitees can only write to invitees/{uid} after this doc exists
+  // because the rule's get() lookup requires it. Idempotent: merge:true
+  // on a doc that already has inviterUid is a safe no-op.
+  try {
+    var _user = window.firebase && firebase.auth && firebase.auth().currentUser;
+    if (_user && window.db && myCode) {
+      window.db.collection('referrals').doc(myCode).set({
+        inviterUid: _user.uid,
+        createdAt: Date.now()
+      }, { merge: true }).catch(function(){});
+    }
+  } catch(e){}
   var ov = document.createElement('div');
   ov.id = 'lw-invite-modal';
   ov.style.cssText = 'position:fixed;inset:0;z-index:1000010;background:rgba(5,8,4,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:DM Sans,sans-serif;';
