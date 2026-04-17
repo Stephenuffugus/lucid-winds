@@ -5804,7 +5804,7 @@ window._addSwitchTabHook = function(fn){
       <div class="kb-info">
         <div style="display:flex;align-items:center;gap:5px;">
           <div class="kb-name" onclick="PW_UI.openCharacter()" id="kb-name">Keeper</div>
-          <span id="kb-beta-badge" title="Beta — data may be reset before launch" style="display:inline-block;padding:1px 5px;border-radius:3px;background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.4);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.12em;line-height:1.1;">BETA</span>
+          <span id="kb-beta-badge" title="Beta — data may be reset before launch" style="display:inline-block;padding:1px 5px;border-radius:3px;background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.4);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.12em;line-height:1.1;cursor:pointer;" onclick="(function(){window._lwBetaTaps=(window._lwBetaTaps||0)+1;clearTimeout(window._lwBetaTapT);window._lwBetaTapT=setTimeout(function(){window._lwBetaTaps=0;},2500);if(window._lwBetaTaps>=5){window._lwBetaTaps=0;var pw=prompt('Dev password:');if(pw==='lucid2026')document.getElementById('pw-dev-admin').classList.add('open');}}).call(this);">BETA</span>
         </div>
         <div class="kb-xp-wrap" onclick="PW_UI.openCharacter()"><div class="kb-xp-fill" id="kb-xp-fill" style="width:0%;"></div></div>
         <div class="kb-rank" id="kb-rank">Lvl 1 · Seedling · 0 / 25 Pollen</div>
@@ -5854,6 +5854,7 @@ window._addSwitchTabHook = function(fn){
     <div class="cs-section"><div class="cs-section-title">FRIENDS <span id="cs-friend-count" style="color:var(--muted);">(0)</span></div><div id="cs-pending-list"></div><div id="cs-friends-list" style="font-size:0.42rem;color:var(--muted);">No friends yet. Share your code!</div></div>
     <div style="display:flex;gap:0.4rem;margin-top:0.3rem;">
       <button onclick="window._openTitleShop()" style="flex:1;padding:0.5rem;border-radius:8px;border:2px solid rgba(200,168,75,0.35);background:linear-gradient(180deg,rgba(46,38,18,0.55),rgba(28,24,12,0.7));color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;cursor:pointer;min-height:48px;letter-spacing:0.06em;">&#10024; TITLES</button>
+      <button onclick="if(window._lwOpenFeedback){PW_UI.closeCharacter();setTimeout(window._lwOpenFeedback,250);}" style="flex:1;padding:0.5rem;border-radius:8px;border:2px solid rgba(122,179,86,0.3);background:linear-gradient(180deg,rgba(26,40,20,0.55),rgba(18,28,14,0.7));color:rgba(122,179,86,0.95);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;cursor:pointer;min-height:48px;letter-spacing:0.06em;">&#128221; FEEDBACK</button>
       <button onclick="PW_UI.closeCharacter()" style="flex:1;padding:0.5rem;border-radius:8px;border:2px solid rgba(74,124,53,0.15);background:rgba(26,36,22,0.3);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;cursor:pointer;min-height:48px;">CLOSE</button>
     </div>
   </div>
@@ -41585,14 +41586,22 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
 <!-- DEV BUTTON — remove before production -->
 <!-- set-102: Firebase diagnostic log — shows EVERY auth + Firestore operation -->
 <div id="sws-debug-log"></div>
-<button id="sws-debug-toggle" onclick="(function(){var el=document.getElementById('sws-debug-log');el.classList.toggle('visible');this.textContent=el.classList.contains('visible')?'[×] Hide Log':'[🔍] Firebase Log';}).call(this)">[🔍] Firebase Log</button>
+<!-- Firebase Log toggle hidden from players. Dev access via the 5-tap
+     gate on the BETA badge in the keeper bar (see line ~5807) or via
+     the URL shortcut ?dev=lucid2026. The toggle is rendered as a
+     button so the existing 5-tap listener still has a target — the
+     button is just visually invisible. -->
+<button id="sws-debug-toggle" onclick="(function(){var el=document.getElementById('sws-debug-log');el.classList.toggle('visible');}).call(this)" style="display:none !important;" aria-hidden="true">[🔍] Firebase Log</button>
 
 <!-- Beta tester feedback button — small floating ribbon, low-impact -->
 <!-- bottom-right placement is above the bottom nav (var(--nav-h)) and clear
      of the iOS home indicator (env(safe-area-inset-bottom)). Hidden during
      onboarding via the .ob-active body class so testers don't tap it before
      they have an account. -->
-<button id="lw-fb-btn" onclick="window._lwOpenFeedback&&window._lwOpenFeedback()" title="Share feedback" style="position:fixed;bottom:calc(var(--nav-h, 58px) + env(safe-area-inset-bottom, 0px) + 52px);right:8px;z-index:999998;background:rgba(122,179,86,0.12);color:rgba(122,179,86,0.7);padding:5px 10px;font-family:'DM Mono',monospace;font-size:0.5rem;letter-spacing:0.05em;border-radius:6px;border:1px solid rgba(122,179,86,0.25);cursor:pointer;">📝 FEEDBACK</button>
+<!-- Feedback floating button retired 2026-04-17. Players reach feedback via
+     the FEEDBACK button at the bottom of the Character Sheet. Hidden stub
+     kept so legacy CSS / handlers don't crash. -->
+<button id="lw-fb-btn" style="display:none !important;" aria-hidden="true"></button>
 <!-- WHAT NOW button retired 2026-04-17. Tutorial monorail covers what
      it used to suggest. Kept as a hidden stub so any code that still
      references the id doesn't crash. -->
