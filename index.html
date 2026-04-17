@@ -42382,6 +42382,11 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
   body.lw-tut-active #bpi{pointer-events:none !important;opacity:0.4 !important;filter:saturate(0.35);transition:opacity 0.4s,filter 0.4s;}
   body.lw-tut-active.lw-tut-bp-on #bpi{pointer-events:auto !important;opacity:1 !important;filter:none;}
   body.lw-tut-active.lw-tut-bos-on #kb-compendium{pointer-events:auto !important;opacity:1 !important;filter:none;}
+  /* Backpack tour (steps 28-31): dim the Wild tab FORAGE + SOW FABs so they
+     don't pull focus while the Keeper learns what the pack holds. Unlocks
+     at step 32 when lw-tut-bos-on flips on. */
+  body.lw-tut-active.lw-tut-bp-on:not(.lw-tut-bos-on) #ffb,
+  body.lw-tut-active.lw-tut-bp-on:not(.lw-tut-bos-on) #dfb{pointer-events:none !important;opacity:0.22 !important;filter:saturate(0.25) brightness(0.55) !important;transition:opacity 0.4s,filter 0.4s;}
   /* Tutorial: lock bottom-nav tabs except the one the current step is
      directing attention toward. Class adds unlock individual tabs:
        lw-tut-nav-focus    → FOCUS tab clickable (step 13 invite)
