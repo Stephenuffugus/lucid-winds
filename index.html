@@ -39539,6 +39539,178 @@ function _formatRollToast(r){
   var icon=r.attackerWins?'\u2694\ufe0f':'\ud83d\udee1\ufe0f';
   return icon+' '+attStr+'='+r.attTotal+' vs '+defStr+'='+r.defTotal+' \u2014 '+verdict;
 }
+
+// ═══ CONTEST ROLL REVEAL — Yahtzee-style scoresheet with tumbling dice ═══
+// Shown between "player picked a defender" and "outcome resolves." Builds
+// suspense row-by-row: EA baseline, dice tumble (900ms) with real d1-d6
+// faces, companion bonus, weather, items, then the countup total and
+// verdict banner. CONTINUE button always tappable — no forced wait.
+window._showContestRoll = function(roll, attackerPlant, defenderPlant, onDone){
+  try{var old=document.getElementById('lw-contest-roll');if(old)old.remove();}catch(e){}
+  // Inject keyframes once.
+  if(!document.getElementById('lwcr-style')){
+    var st=document.createElement('style');
+    st.id='lwcr-style';
+    st.textContent='@keyframes lwcrDieLand{0%{transform:translateY(-14px) rotate(-8deg) scale(1.2);}60%{transform:translateY(3px) rotate(3deg) scale(0.94);}100%{transform:translateY(0) rotate(0) scale(1);}}'
+                 +'@keyframes lwcrVerdictIn{0%{opacity:0;transform:scale(0.7);}60%{opacity:1;transform:scale(1.08);}100%{opacity:1;transform:scale(1);}}';
+    document.head.appendChild(st);
+  }
+  function decompose2d6(total){
+    var t=Math.max(2,Math.min(12,total|0));
+    var lo=Math.max(1,t-6), hi=Math.min(6,t-1);
+    var a=lo+Math.floor(Math.random()*(hi-lo+1));
+    return [a, t-a];
+  }
+  function plantPortrait(plant){
+    var svg='';try{if(window._generatePlantSVG)svg=window._generatePlantSVG(plant.hash,78,1);}catch(e){}
+    return '<div style="width:78px;height:78px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 4px 10px rgba(0,0,0,0.5));margin:0 auto;">'+svg+'</div>';
+  }
+  function plantName(plant){
+    try{return window.getPlantName?window.getPlantName(plant.hash):plant.hash.slice(0,8);}catch(e){return plant.hash.slice(0,8);}
+  }
+  function compName(plant){
+    try{var t=window.hashToTraits?window.hashToTraits(plant.hash):null;if(!t||!window.getCompanionInfo)return '';var info=window.getCompanionInfo(t);return (info&&info.name)||'';}catch(e){return '';}
+  }
+  var ov=document.createElement('div');
+  ov.id='lw-contest-roll';
+  ov.style.cssText='position:fixed;inset:0;z-index:99998;background:radial-gradient(ellipse at center,rgba(20,30,18,0.97),rgba(5,8,4,0.99));backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch;opacity:0;transition:opacity 0.35s ease;';
+  var attCompName=compName(attackerPlant);
+  var defCompName=compName(defenderPlant);
+  var ia=roll.itemsApplied||{};
+  var itemBadges=[];
+  if(ia.attackerTorch)itemBadges.push('\ud83d\udd25 Torch');
+  if(ia.attackerDustStorm)itemBadges.push('\ud83c\udf2b Dust Storm');
+  if(ia.defenderBramble)itemBadges.push('\ud83c\udf3f Bramble');
+  var h='<div style="max-width:440px;width:100%;background:linear-gradient(180deg,rgba(26,36,22,0.95),rgba(13,16,12,0.97));border:1.5px solid rgba(200,168,75,0.4);border-radius:18px;padding:1.1rem;box-shadow:0 10px 40px rgba(0,0,0,0.75),inset 0 1px 0 rgba(200,168,75,0.2);">';
+  h+='<div style="text-align:center;margin-bottom:0.9rem;">';
+  h+= '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.22em;color:var(--muted);margin-bottom:3px;">\u2694\ufe0f CONTEST FOR THE HEX</div>';
+  h+= '<div style="font-family:Playfair Display,serif;font-size:0.95rem;color:var(--gold);font-style:italic;">The dice decide.</div>';
+  h+='</div>';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:0.4rem;margin-bottom:0.9rem;">';
+  h+= '<div style="flex:1;text-align:center;min-width:0;">'+plantPortrait(attackerPlant);
+  h+=  '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--sage);letter-spacing:0.1em;margin-top:4px;">YOUR CHALLENGER</div>';
+  h+=  '<div style="font-family:Playfair Display,serif;font-size:0.68rem;color:var(--cream);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+plantName(attackerPlant)+'</div></div>';
+  h+= '<div style="font-family:Bebas Neue,sans-serif;font-size:1.35rem;color:var(--gold);letter-spacing:0.12em;opacity:0.7;padding:0 0.2rem;">VS</div>';
+  h+= '<div style="flex:1;text-align:center;min-width:0;">'+plantPortrait(defenderPlant);
+  h+=  '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--gold);letter-spacing:0.1em;margin-top:4px;">DEFENDER</div>';
+  h+=  '<div style="font-family:Playfair Display,serif;font-size:0.68rem;color:var(--cream);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+plantName(defenderPlant)+'</div></div>';
+  h+='</div>';
+  h+='<div style="background:rgba(5,8,4,0.55);border:1px solid rgba(200,168,75,0.22);border-radius:10px;padding:0.5rem 0.8rem;margin-bottom:0.9rem;">';
+  h+= '<div id="lwcr-ea" style="display:grid;grid-template-columns:1fr 52px 52px;gap:0.4rem;align-items:center;padding:0.5rem 0;border-bottom:1px dashed rgba(200,168,75,0.14);opacity:0;transform:translateY(8px);transition:opacity 0.4s,transform 0.4s;">';
+  h+=   '<div style="font-family:DM Mono,monospace;font-size:0.56rem;color:var(--muted);letter-spacing:0.06em;">Evolutionary Advantage</div>';
+  h+=   '<div style="font-family:Playfair Display,serif;font-size:0.95rem;color:var(--sage);text-align:center;">'+roll.attEA+'</div>';
+  h+=   '<div style="font-family:Playfair Display,serif;font-size:0.95rem;color:var(--gold);text-align:center;">'+roll.defEA+'</div></div>';
+  h+= '<div id="lwcr-dice" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.4rem;align-items:center;padding:0.55rem 0;opacity:0;transition:opacity 0.4s;">';
+  h+=   '<div style="font-family:DM Mono,monospace;font-size:0.56rem;color:var(--muted);letter-spacing:0.06em;">Dice</div>';
+  h+=   '<div id="lwcr-attdice" style="display:flex;gap:4px;justify-content:center;align-items:center;min-height:42px;"></div>';
+  h+=   '<div id="lwcr-defdice" style="display:flex;gap:4px;justify-content:center;align-items:center;min-height:42px;"></div></div>';
+  h+= '<div id="lwcr-dicetot" style="display:grid;grid-template-columns:1fr 52px 52px;gap:0.4rem;align-items:center;padding:0.15rem 0 0.4rem;border-bottom:1px dashed rgba(200,168,75,0.14);opacity:0;transition:opacity 0.3s;">';
+  h+=   '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);font-style:italic;letter-spacing:0.06em;">rolled</div>';
+  h+=   '<div style="font-family:Playfair Display,serif;font-size:0.82rem;color:var(--sage);text-align:center;">+'+roll.attRoll+'</div>';
+  h+=   '<div style="font-family:Playfair Display,serif;font-size:0.82rem;color:var(--gold);text-align:center;">+'+roll.defRoll+'</div></div>';
+  if(roll.attComp||roll.defComp){
+    var cLabel='Companion';
+    if(roll.attComp&&attCompName)cLabel+=' <span style="color:var(--cream);opacity:0.65;">'+attCompName+'</span>';
+    else if(roll.defComp&&defCompName)cLabel+=' <span style="color:var(--cream);opacity:0.65;">'+defCompName+'</span>';
+    h+='<div id="lwcr-comp" style="display:grid;grid-template-columns:1fr 52px 52px;gap:0.4rem;align-items:center;padding:0.5rem 0;border-bottom:1px dashed rgba(200,168,75,0.14);opacity:0;transform:translateY(8px);transition:opacity 0.4s,transform 0.4s;">';
+    h+=  '<div style="font-family:DM Mono,monospace;font-size:0.54rem;color:var(--muted);letter-spacing:0.06em;">'+cLabel+'</div>';
+    h+=  '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:'+(roll.attComp?'var(--sage)':'var(--muted)')+';text-align:center;">'+(roll.attComp?'+'+roll.attComp:'\u2014')+'</div>';
+    h+=  '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:'+(roll.defComp?'var(--gold)':'var(--muted)')+';text-align:center;">'+(roll.defComp?'+'+roll.defComp:'\u2014')+'</div></div>';
+  }
+  if(roll.attWeather){
+    h+='<div id="lwcr-weather" style="display:grid;grid-template-columns:1fr 52px 52px;gap:0.4rem;align-items:center;padding:0.5rem 0;border-bottom:1px dashed rgba(200,168,75,0.14);opacity:0;transform:translateY(8px);transition:opacity 0.4s,transform 0.4s;">';
+    h+=  '<div style="font-family:DM Mono,monospace;font-size:0.54rem;color:var(--muted);letter-spacing:0.06em;">Weather \u2600 Sun</div>';
+    h+=  '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--sage);text-align:center;">+'+roll.attWeather+'</div>';
+    h+=  '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--muted);text-align:center;">\u2014</div></div>';
+  }
+  if(roll.defMoonwake){
+    h+='<div id="lwcr-moon" style="display:grid;grid-template-columns:1fr 52px 52px;gap:0.4rem;align-items:center;padding:0.5rem 0;border-bottom:1px dashed rgba(200,168,75,0.14);opacity:0;transform:translateY(8px);transition:opacity 0.4s,transform 0.4s;">';
+    h+=  '<div style="font-family:DM Mono,monospace;font-size:0.54rem;color:var(--muted);letter-spacing:0.06em;">Moonwake \ud83c\udf19</div>';
+    h+=  '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--muted);text-align:center;">\u2014</div>';
+    h+=  '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--gold);text-align:center;">+'+roll.defMoonwake+'</div></div>';
+  }
+  if(itemBadges.length){
+    h+='<div id="lwcr-items" style="padding:0.35rem 0;border-bottom:1px dashed rgba(200,168,75,0.14);opacity:0;transition:opacity 0.4s;">';
+    h+=  '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);letter-spacing:0.06em;text-align:center;">'+itemBadges.join('  \u00b7  ')+'</div></div>';
+  }
+  h+= '<div id="lwcr-total" style="display:grid;grid-template-columns:1fr 52px 52px;gap:0.4rem;align-items:center;padding:0.75rem 0 0.3rem;margin-top:0.15rem;border-top:1.5px solid rgba(200,168,75,0.4);opacity:0;transition:opacity 0.4s;">';
+  h+=   '<div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.14em;">TOTAL</div>';
+  h+=   '<div id="lwcr-atttot" style="font-family:Playfair Display,serif;font-size:1.3rem;color:var(--sage);text-align:center;font-weight:700;">0</div>';
+  h+=   '<div id="lwcr-deftot" style="font-family:Playfair Display,serif;font-size:1.3rem;color:var(--gold);text-align:center;font-weight:700;">0</div></div>';
+  h+='</div>';
+  h+='<div id="lwcr-verdict" style="text-align:center;opacity:0;margin-bottom:0.9rem;min-height:1px;"></div>';
+  h+='<button id="lwcr-continue" style="display:block;width:100%;padding:14px;border-radius:10px;border:1.5px solid rgba(200,168,75,0.45);background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(74,124,53,0.1));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.14em;cursor:pointer;min-height:52px;">CONTINUE</button>';
+  h+='</div>';
+  ov.innerHTML=h;
+  document.body.appendChild(ov);
+  requestAnimationFrame(function(){ov.style.opacity='1';});
+  var finished=false, tumble=null, tos=[];
+  function at(ms,fn){tos.push(setTimeout(fn,ms));}
+  function clearAll(){if(tumble){clearInterval(tumble);tumble=null;}for(var i=0;i<tos.length;i++)clearTimeout(tos[i]);tos=[];}
+  function haptic(n){try{window._haptic&&window._haptic(n);}catch(e){}}
+  at(280,function(){var r=document.getElementById('lwcr-ea');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(8);});
+  at(700,function(){
+    var dr=document.getElementById('lwcr-dice');if(dr)dr.style.opacity='1';
+    function render(wrap){if(!wrap)return;wrap.innerHTML='<img src="assets/dice/d1.png" style="width:42px;height:42px;image-rendering:pixelated;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));"><img src="assets/dice/d1.png" style="width:42px;height:42px;image-rendering:pixelated;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));">';}
+    render(document.getElementById('lwcr-attdice'));
+    render(document.getElementById('lwcr-defdice'));
+    var ticks=0;
+    tumble=setInterval(function(){
+      ticks++;
+      var imgs=document.querySelectorAll('#lwcr-dice img');
+      for(var i=0;i<imgs.length;i++)imgs[i].src='assets/dice/d'+(1+Math.floor(Math.random()*6))+'.png';
+      if(ticks%2===0)haptic(5);
+    },70);
+  });
+  at(1600,function(){
+    if(tumble){clearInterval(tumble);tumble=null;}
+    var aF=decompose2d6(roll.attRoll), dF=decompose2d6(roll.defRoll);
+    function paint(wrap,faces){if(!wrap)return;var s='';for(var i=0;i<faces.length;i++)s+='<img src="assets/dice/d'+faces[i]+'.png" style="width:42px;height:42px;image-rendering:pixelated;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));animation:lwcrDieLand 0.4s cubic-bezier(0.34,1.56,0.64,1);">';wrap.innerHTML=s;}
+    paint(document.getElementById('lwcr-attdice'),aF);
+    paint(document.getElementById('lwcr-defdice'),dF);
+    var t=document.getElementById('lwcr-dicetot');if(t)t.style.opacity='1';
+    haptic(35);
+  });
+  var tm=2050;
+  if(roll.attComp||roll.defComp){at(tm,function(){var r=document.getElementById('lwcr-comp');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
+  if(roll.attWeather){at(tm,function(){var r=document.getElementById('lwcr-weather');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
+  if(roll.defMoonwake){at(tm,function(){var r=document.getElementById('lwcr-moon');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
+  if(itemBadges.length){at(tm,function(){var r=document.getElementById('lwcr-items');if(r)r.style.opacity='1';});tm+=320;}
+  at(tm,function(){
+    var r=document.getElementById('lwcr-total');if(r)r.style.opacity='1';
+    var aT=document.getElementById('lwcr-atttot'), dT=document.getElementById('lwcr-deftot');
+    var steps=22, i=0, dur=520;
+    var iv=setInterval(function(){
+      i++;var p=i/steps;if(p>=1){p=1;clearInterval(iv);}
+      if(aT)aT.textContent=Math.round(roll.attTotal*p);
+      if(dT)dT.textContent=Math.round(roll.defTotal*p);
+    },dur/steps);
+    haptic(20);
+  });
+  tm+=780;
+  at(tm,function(){
+    var v=document.getElementById('lwcr-verdict');if(!v)return;
+    var won=roll.attackerWins;
+    var bg=won?'linear-gradient(180deg,rgba(200,168,75,0.32),rgba(122,179,86,0.18))':'linear-gradient(180deg,rgba(120,160,200,0.2),rgba(60,80,60,0.13))';
+    var brd=won?'rgba(200,168,75,0.72)':'rgba(138,145,120,0.5)';
+    var col=won?'var(--gold)':'var(--cream)';
+    v.innerHTML='<div style="background:'+bg+';border:1.5px solid '+brd+';border-radius:12px;padding:0.7rem 1rem;box-shadow:0 6px 22px rgba(0,0,0,0.5);animation:lwcrVerdictIn 0.55s cubic-bezier(0.34,1.56,0.64,1);">'
+              +'<div style="font-size:1.4rem;margin-bottom:2px;">'+(won?'\u2694\ufe0f':'\ud83d\udee1\ufe0f')+'</div>'
+              +'<div style="font-family:Bebas Neue,sans-serif;font-size:1.15rem;letter-spacing:0.18em;color:'+col+';">'+(won?'UPROOTED!':'HELD THE LINE')+'</div>'
+              +'<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.68rem;color:var(--muted);margin-top:4px;">'+(won?'The hex is yours.':'The defender stood firm.')+'</div></div>';
+    v.style.opacity='1';
+    haptic(won?65:30);
+  });
+  function close(){
+    if(finished)return;
+    finished=true;
+    clearAll();
+    try{ov.style.opacity='0';}catch(e){}
+    setTimeout(function(){try{if(ov.parentNode)ov.parentNode.removeChild(ov);}catch(e){}if(typeof onDone==='function')onDone();},300);
+  }
+  var btn=ov.querySelector('#lwcr-continue');
+  if(btn)btn.onclick=close;
+};
 // Per-player spatial cap REMOVED (Apr 14 2026). Players can now plant a
 // whole garden around their home. The one-plant-per-hex rule + EA
 // invasion + climate damage are enough to prevent neighborhood lockdown.
@@ -39646,25 +39818,40 @@ function _drop(pl){
         var _roll=_rollTakeover({hash:pl.hash,ea:myEA},{hash:targetPlant.hash,ea:tEA},rollOpts);
         // Moonwake burns on the contest whether attacker wins or loses.
         if(rollOpts.defenderMoonwake&&window.LW_ITEMS&&window.LW_ITEMS.consumeMoonwake) window.LW_ITEMS.consumeMoonwake(targetPlant.hash);
-        if(!_roll.attackerWins){
-          // Uproot Charm — plant returns to attacker, no penalty. Burns queued.
-          if(iq.uprootCharm){
-            _toast('\ud83c\udf38 Uproot Charm pulled your plant home. '+_formatRollToast(_roll));
+        // Route through the Yahtzee-style reveal modal. Outcome resolves
+        // when the player taps CONTINUE. Fallback to legacy toast flow if
+        // the reveal helper isn't loaded for some reason.
+        var _finishContest=function(){
+          if(!_roll.attackerWins){
+            if(iq.uprootCharm){_toast('\ud83c\udf38 Uproot Charm pulled your plant home.');return;}
             return;
           }
-          _toast('Held the line. \ud83c\udfb2 '+_formatRollToast(_roll));
-          return;
+          var _disp={ownerUid:targetPlant.ownerUid,hash:targetPlant.hash,grade:targetPlant.grade||'Common',name:targetPlant.name||'Plant'};
+          _pendingDrop={plant:pl,lat:la,lng:lo,wild:wild,displaced:_disp};
+          _finishDrop('none');
+        };
+        if(window._showContestRoll){
+          window._showContestRoll(_roll,{hash:pl.hash,ea:myEA},{hash:targetPlant.hash,ea:tEA},_finishContest);
+        } else {
+          _toast('\ud83c\udfb2 '+_formatRollToast(_roll));
+          _finishContest();
         }
-        var _disp={ownerUid:targetPlant.ownerUid,hash:targetPlant.hash,grade:targetPlant.grade||'Common',name:targetPlant.name||'Plant'};
-        _toast('\ud83c\udfb2 '+_formatRollToast(_roll));
-        _pendingDrop={plant:pl,lat:la,lng:lo,wild:wild,displaced:_disp};
-        _finishDrop('none');
       });
       return; // wait for inspector callback
     }
     // Fallback: no inspector available — legacy auto-weakest path.
     var w=_weakestInZone(inZone);
     var _roll=_rollTakeover({hash:pl.hash,ea:myEA},{hash:w.plant.hash,ea:w.ea});
+    var _onRoll=function(){
+      if(!_roll.attackerWins)return;
+      displaced={ownerUid:w.plant.ownerUid,hash:w.plant.hash,grade:w.plant.grade||'Common',name:w.plant.name||'Plant'};
+      _pendingDrop={plant:pl,lat:la,lng:lo,wild:wild,displaced:displaced};
+      _finishDrop('none');
+    };
+    if(window._showContestRoll){
+      window._showContestRoll(_roll,{hash:pl.hash,ea:myEA},{hash:w.plant.hash,ea:w.ea},_onRoll);
+      return;
+    }
     if(!_roll.attackerWins){_toast('Zone full. \ud83c\udfb2 '+_formatRollToast(_roll));return;}
     displaced={ownerUid:w.plant.ownerUid,hash:w.plant.hash,grade:w.plant.grade||'Common',name:w.plant.name||'Plant'};
     _toast('\ud83c\udfb2 '+_formatRollToast(_roll));
