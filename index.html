@@ -54252,6 +54252,12 @@ function _waitForCelebrationDismiss(attempts){
 // natural progression — no need to force-dim every other tile.
 function _step18(){
   _setStep(18);
+  // Lock carousel action buttons (DOWNLOAD / INSPECT / SHARE / COMPOST /
+  // BREED / close-X / arrows) the moment we enter step 18 so the player
+  // can't compost or sidetrack when they tap the new plant. Card itself
+  // stays tappable so they can flip it. Step 19 keeps the lock and adds
+  // lw-tut-carousel-breed-only to carve out BREED.
+  try{document.body.classList.add('lw-tut-carousel-lock');}catch(e){}
   var polls=0;
   var waitForGH=function(){
     var ghTab=document.getElementById('tab-greenhouse');
