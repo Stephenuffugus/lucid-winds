@@ -41773,6 +41773,12 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
   body.lw-tut-active #kb-weather,
   body.lw-tut-active #kb-slots,
   body.lw-tut-active #kb-install{pointer-events:none !important;opacity:0.35 !important;filter:saturate(0.3) brightness(0.65) !important;transition:opacity 0.4s,filter 0.4s;}
+  /* Tutorial: lock the greenhouse grid-sort buttons (New / Rare / A-Z /
+     Season / EA) at the top-right of the greenhouse panel. Their default
+     style is subtle against the midnight bg, Stephen kept accidentally
+     tapping them and re-sorting the grid mid-tutorial. Dim + disable
+     until tutorial completes. */
+  body.lw-tut-active #gh-sort-btns .gh-grid-btn{pointer-events:none !important;opacity:0.3 !important;filter:saturate(0.3);}
   body.lw-tut-active.lw-tut-sb-on #kb-sunbeams{pointer-events:auto !important;opacity:1 !important;filter:none !important;}
   /* Tutorial: lock every carousel control EXCEPT the card itself (tap
      to flip) during the walkthrough. pgm-act-btn buttons (DOWNLOAD,
