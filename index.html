@@ -54750,7 +54750,13 @@ function _step24(){
     var isWild=wn&&getComputedStyle(wn).display!=='none';
     if(isWild){
       _clear();
-      setTimeout(_step25,1600);
+      // Wait for the map to actually render — the old 1600ms fixed
+      // delay fired walls of teaching text BEFORE Leaflet tiles even
+      // loaded, so the player saw a stack of prompts on a blank
+      // screen. Stephen's exact words: "wait till i get to the
+      // fuckin map." Poll for the first loaded tile, then start
+      // step 25.
+      _step25WaitForMap(0);
       return;
     }
     if(polls<600){polls++;setTimeout(watch,500);}
@@ -54759,33 +54765,37 @@ function _step24(){
   watch();
 }
 
-// ═══ STEP 25: Wild tab — lore + mechanics dump ═══
+function _step25WaitForMap(attempts){
+  var tile=document.querySelector('#wild-map .leaflet-tile-loaded')
+        || document.querySelector('#wild-map img.leaflet-tile');
+  if(tile){setTimeout(_step25,800);return;}
+  if(attempts<30){setTimeout(function(){_step25WaitForMap(attempts+1);},400);return;}
+  // 12s budget — fall through anyway. Better to risk a too-early
+  // dialog than to strand the player with no prompt at all.
+  setTimeout(_step25,400);
+}
+
+// ═══ STEP 25: Wild tab — short opener + direct drop CTA ═══
+// Used to be three consecutive prompt walls (hexes / resistances /
+// wind-spread). Stephen flagged this as a wall-of-information stack
+// the player couldn't dismiss to see the map underneath. Collapsed
+// into one short opener + PLACE MINE button. Hexes become obvious
+// when you see them. Resistance info surfaces when you tap a wild
+// plant's inspector. Wind/breeding lore lives in _step5bClaim after
+// the drop, when it actually means something.
 function _step25(){
   _setStep(25);
   _dialog(
-    'Every place on the map is broken into <span style="color:var(--gold);">hexes</span>, honeycombs of possibility.<br><br>' +
-    'When you drop a plant into a hex, it\u2019s real. It has coordinates. It lives.',
-    'NEXT',function(){_clear();setTimeout(_step26,300);},'bottom');
+    '<span style="color:var(--sage);">This is the wild.</span><br><br>' +
+    'Drop one of your plants into the world. It\u2019ll live somewhere real.',
+    'PLACE MINE',function(){_clear();setTimeout(_step5bDrop,500);},'center');
 }
 
-// ═══ STEP 26: resistance + seasonal border callback ═══
-function _step26(){
-  _setStep(26);
-  _dialog(
-    'Every plant has five resistances: <span style="color:var(--sage);">heat, cold, wind, drought, water</span>.<br><br>' +
-    'Remember the <span style="color:var(--gold);">seasonal border</span> from your greenhouse? That tells you when your plant thrives, and when it\u2019s vulnerable.<br><br>' +
-    '<span style="color:var(--muted);font-size:0.85em;">Plants are always under attack. From weather, from competition, from time itself.</span>',
-    'NEXT',function(){_clear();setTimeout(_step27,300);},'bottom');
-}
-
-// ═══ STEP 27: wind-spread lore → Phase 5b drop walkthrough ═══
-function _step27(){
-  _setStep(27);
-  _dialog(
-    'Plants in adjacent hexes can <span style="color:var(--gold);">breed and spread</span>. Their children drift on the wind.<br><br>' +
-    'Name your wild plants with <span style="color:var(--sage);">where you placed them</span>. Future-you will thank past-you when you\u2019re trying to remember what you protected.',
-    'PLACE MINE',function(){_clear();setTimeout(_step5bDrop,600);},'center');
-}
+// ═══ Steps 26 + 27: deprecated — collapsed into step 25 ═══
+// Kept as pass-throughs so older _resume routes and any cached lw_tut
+// values land somewhere safe instead of dropping the player out.
+function _step26(){_step25();}
+function _step27(){_step25();}
 
 // ═══ Phase 5b — guided first wild drop ═══
 // If the player already has wild plants OR lacks drops remaining OR can't
