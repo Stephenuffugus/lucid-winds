@@ -1150,7 +1150,7 @@
     .cs-card-back[data-tier="cosmic"]{background-image:url('assets/cards/backs/back-cosmic.png');background-size:146% 110%;}
     /* Card back nameplate positions from alignment tool (set-39) */
     .cs-card-back[data-tier="common"] .cb-nameplate{left:28.3%!important;top:83%!important;width:44%!important;height:8.9%!important;}
-    .cs-card-back[data-tier="uncommon"] .cb-nameplate{left:34.7%!important;top:87.5%!important;width:31%!important;height:6.3%!important;}
+    .cs-card-back[data-tier="uncommon"] .cb-nameplate{left:34.7%!important;top:89.5%!important;width:31%!important;height:6.3%!important;}
     .cs-card-back[data-tier="rare"] .cb-nameplate{left:27.7%!important;top:77.8%!important;width:45.7%!important;height:9.3%!important;}
     .cs-card-back[data-tier="rare"] .cb-name{font-size:0.82rem!important;}
     .cs-card-back[data-tier="epic"] .cb-nameplate{left:32%!important;top:87%!important;width:36%!important;height:8%!important;}
@@ -31490,18 +31490,11 @@ document.addEventListener('keydown', function(e) {
     // confused. Fires only if they actually have the Wild tab unlocked (L3+).
     if (tab === 'wild') {
       try {
+        // Old "THE WILD" first-visit confirm modal DEPRECATED — replaced
+        // by the full-screen _lwShowWildIntro takeover. Stamp the legacy
+        // flag so it never re-fires and so any stale check passes.
         if (!localStorage.getItem('lw_tut_wild_v1')) {
           localStorage.setItem('lw_tut_wild_v1', '1');
-          setTimeout(function(){
-            if (window._lwConfirm) {
-              window._lwConfirm({
-                title: 'THE WILD',
-                body: 'This is a real-world map of plants: yours, other keepers\u2019, and wild hexes.<br><br>\ud83c\udf3f <b>Glowing hexes</b> hold ferals you can forage (L4+, within 75m).<br>\ud83c\udf31 <b>Your backpack</b> lets you drop plants into the world. They live there, age there, feed the ecosystem.<br>\ud83d\udca7 <b>Tend strangers\u2019 plants</b> (L5+) within 75m for Dew.<br><br>Walk. The map rewards keepers who move.',
-                yes: 'I\u2019LL WALK',
-                no: ''
-              }, function(){});
-            }
-          }, 1000);
         }
         // Pulse the drop-plant FAB for new wild visitors with 2+ plants —
         // teaches them they can drop a plant right away. One-shot.
@@ -35756,6 +35749,16 @@ function activate(){
 }
 
 function _showWildOnboard(){
+  // DEPRECATED — replaced by window._lwShowWildIntro (full-screen
+  // takeover with current copy + cuttings + foraging-as-element-game).
+  // Hard-stamped to no-op so any stray caller can't resurrect it.
+  try{localStorage.setItem('lw_wild_onboarded','1');}catch(e){}
+  try{localStorage.setItem('lw_wild_intro_seen','1');}catch(e){}
+  return;
+  // Original body kept below as dead code in case we ever need to ref
+  // the old layout. Never executed.
+  // eslint-disable-next-line no-unreachable
+  /* unreachable */
   var ov=document.createElement('div');
   ov.id='wild-onboard';
   ov.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(5,8,4,0.96);overflow-y:auto;-webkit-overflow-scrolling:touch;animation:panelFadeIn 0.4s ease;';
@@ -42256,7 +42259,7 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
     // WEATHER
     html += '<div style="'+sectionStyle+'">'+
       '<div style="'+titleStyle+'\u2600\ufe0f WEATHER + SEASON</div>'+
-      '<div style="'+bodyStyle+'">Every plant has five resistances: <span style="color:var(--sage);">heat, cold, wind, drought, water</span>. The seasonal border on your card tells you when it thrives and when it\u2019s vulnerable. Real-world weather here drives what survives.</div>'+
+      '<div style="'+bodyStyle+'">Every plant has five resistances: <span style="color:#e67a4a;">heat</span>, <span style="color:#7fcfd8;">cold</span>, <span style="color:#a8c8a0;">wind</span>, <span style="color:#d4a843;">drought</span>, <span style="color:#5baddc;">water</span>. The seasonal border on your card tells you when it thrives and when it\u2019s vulnerable. Real-world weather here drives what survives.</div>'+
     '</div>';
     // GROW
     html += '<div style="'+sectionStyle+'">'+
@@ -53488,6 +53491,15 @@ function _showDailyReward() {
   if (daily.lastClaim === today) return;
   if (localStorage.getItem('lw_daily_claimed') === today) return;
   if (window._dailyClaimedThisSession) return;
+
+  // TUTORIAL GATE: don't fire the calendar modal during the first-run
+  // tutorial. The reward defers cleanly until the player completes the
+  // tutorial; firing it mid-flow stacks behind step 28's backpack
+  // dialog and confuses the monorail. Stephen test feedback.
+  try {
+    var _tutSt = localStorage.getItem('lw_tut');
+    if (_tutSt && _tutSt !== 'done') return;
+  } catch(e) {}
 
   // JIT: first time the daily reward fires, frame the mechanic as
   // a relationship before the calendar modal opens. Single-fire via
