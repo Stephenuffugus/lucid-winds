@@ -54563,17 +54563,21 @@ function _step23AfterCeremony(attempts){
 }
 
 // ═══ STEP 24: Wild tab unlock — pulse nav + intro line ═══
+// DO NOT use _overlay() + _spotlight() here. The Wild nav button lives
+// inside .fg-bottomnav (position:fixed, z-index:999), which creates a
+// stacking context that traps its children at 999. A full-screen
+// overlay at z:1000010 renders ABOVE the button no matter what
+// z-index we set on the button itself — producing a black screen
+// with just the dialog floating. Stephen hit this 2026-04-17.
+// Instead: pulse the button (and rely on the nav-wild CSS highlight
+// that fakes it as the active tab). Mirrors step 13's approach.
 function _step24(){
   _setStep(24);
   try{document.body.classList.add('lw-tut-nav-wild');}catch(e){}
   var wildBtn=document.getElementById('nav-btn-wild');
   if(!wildBtn){_done();return;}
-  // Ensure the button is visible (in case canSee.wildTab hasn't applied yet)
   try{wildBtn.style.display='';wildBtn.classList.remove('gated');}catch(e){}
-  // Overlay is a capture zone only — tapping the dim area must NOT exit
-  // the tutorial. Only the spotlighted affordance can advance the flow.
-  _overlay(function(){/* no-op */});
-  _spotlight(wildBtn);
+  if(window._lwPulseHint)window._lwPulseHint(wildBtn,30000,'lw_tut_wild_pulse');
   _dialog(
     'The world opens.<br><br>' +
     'Tap <span style="color:var(--gold);">WILD</span>. This is where you bring your plants into the wild.',
@@ -54584,7 +54588,7 @@ function _step24(){
     var wn=document.getElementById('wild-nav');
     var isWild=wn&&getComputedStyle(wn).display!=='none';
     if(isWild){
-      _clear();wildBtn.style.zIndex='';
+      _clear();
       setTimeout(_step25,1600);
       return;
     }
