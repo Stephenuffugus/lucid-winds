@@ -30176,6 +30176,19 @@ document.addEventListener('keydown', function(e) {
         return;
       }
     }
+    // Wild mystery guard — when inspecting another Keeper's wild plant,
+    // the back face (DNA ledger, haiku, hash) stays sealed until the
+    // player takes a cutting. The front-only reveal is core to the Wild
+    // experience: you see what's growing, not who grew it. Cuttings
+    // unlock the full dossier in the Nursery/Greenhouse.
+    try {
+      var _srcGuard = window._carousel && window._carousel.source;
+      var _plantGuard = window._carousel && window._carousel.arr ? window._carousel.arr[window._carousel.idx] : null;
+      if (_srcGuard === 'wild-inspect' && _plantGuard && _plantGuard.own === false) {
+        if (window._toast) window._toast('A cutting reveals the genome. The front face is all a passerby sees.');
+        return;
+      }
+    } catch(e) {}
     // Lazy-load back face content on first flip
     var backFace = el.querySelector('.cs-back-lazy');
     if (backFace) _populateBackLazy(backFace);
