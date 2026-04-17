@@ -58186,6 +58186,7 @@ function _bosSetTab(tab) {
   else if (tab === 'herbarium') body.innerHTML = _bosHerbariumContent();
   else if (tab === 'items') body.innerHTML = _bosItemsContent();
   else if (tab === 'hunt') body.innerHTML = (window.LW_HUNT && window.LW_HUNT._bosContent) ? window.LW_HUNT._bosContent() : '';
+  else if (tab === 'about') body.innerHTML = (typeof _bosAboutContent === 'function') ? _bosAboutContent() : '';
   var tabs = document.querySelectorAll('.bos-tab');
   for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('active', tabs[i].getAttribute('data-tab') === tab);
   // Update the active style for tabs (override gold for active, muted for inactive)
@@ -59659,6 +59660,82 @@ function _bosMementosContent() {
   return h;
 }
 window._bosMementosContent = _bosMementosContent;
+
+// ═══ ABOUT THE CREATOR + TIP JAR ═══
+// In-game bio + tip jar for Lucid Winds. Pi address + crypto wallets
+// + Stripe Payment Link button. Renders inside the Book of Secrets
+// ABOUT tab. Update window.LW_CREATOR with your real addresses + bio
+// when you're ready to publish — page falls back to placeholder text
+// for fields left blank.
+window.LW_CREATOR = window.LW_CREATOR || {
+  name:        'Stephen — Lucid Winds',
+  bioLines: [
+    'Lucid Winds is a one-person studio. Every plant in this game is unique because every player\'s attention is unique.',
+    'I built this on the belief that quiet, slow play deserves the same craft a fast game gets. Thank you for being here for the early days.'
+  ],
+  pi:          '',     // Pi Network address — paste yours here
+  btc:         '',     // BTC address
+  eth:         '',     // ETH address
+  usdc:        '',     // USDC (any chain)
+  stripeUrl:   '',     // Stripe Payment Link URL
+  websiteUrl:  'https://lucidwinds.com'
+};
+
+function _bosAboutContent() {
+  var c = window.LW_CREATOR || {};
+  var h = '';
+
+  // Hero / bio
+  h += '<div style="padding:1rem;margin-bottom:0.8rem;background:linear-gradient(180deg,rgba(26,36,22,0.7),rgba(13,16,12,0.85));border:1.5px solid rgba(200,168,75,0.3);border-radius:12px;text-align:center;">';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:rgba(200,168,75,0.7);letter-spacing:0.25em;margin-bottom:0.4rem;">\u2756 ABOUT THE CREATOR \u2756</div>';
+  h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.15rem;color:var(--cream);margin-bottom:0.4rem;">' + (c.name || 'A Keeper') + '</div>';
+  if (c.bioLines && c.bioLines.length) {
+    for (var bi = 0; bi < c.bioLines.length; bi++) {
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:rgba(232,220,200,0.85);line-height:1.7;margin:0.4rem 0;">' + c.bioLines[bi] + '</div>';
+    }
+  }
+  if (c.websiteUrl) {
+    h += '<a href="' + c.websiteUrl + '" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:0.5rem;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--sage);letter-spacing:0.08em;text-decoration:underline;">' + c.websiteUrl.replace(/^https?:\/\//,'') + ' \u2197</a>';
+  }
+  h += '</div>';
+
+  // Tip jar header
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.12em;margin:0.6rem 0 0.4rem;text-align:center;">\u2728 TIP JAR \u2728</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;margin-bottom:0.7rem;line-height:1.6;">If Lucid Winds has given you something, the easiest way to give back is here. Anything is appreciated. Nothing is required, ever.</div>';
+
+  // Stripe button (cards)
+  if (c.stripeUrl) {
+    h += '<a href="' + c.stripeUrl + '" target="_blank" rel="noopener noreferrer" style="display:block;width:100%;padding:0.8rem;margin-bottom:0.7rem;border:1.5px solid rgba(122,179,86,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(74,124,53,0.32),rgba(46,80,34,0.45));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;text-align:center;text-decoration:none;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.4);">\ud83d\udcb3 SUPPORT WITH CARD</a>';
+  }
+
+  // Crypto address rows — each with a copy button. Skip blank ones.
+  function _addrRow(label, value, color) {
+    if (!value) return '';
+    var safe = String(value).replace(/'/g, '&#39;');
+    var row = '';
+    row += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.65rem 0.8rem;margin-bottom:0.4rem;background:rgba(13,16,12,0.55);border:1px solid rgba(200,168,75,0.2);border-radius:8px;">';
+    row +=   '<div style="flex:0 0 auto;font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:' + (color||'var(--gold)') + ';letter-spacing:0.1em;min-width:48px;">' + label + '</div>';
+    row +=   '<div style="flex:1;min-width:0;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + value + '</div>';
+    row +=   '<button onclick="(function(){try{navigator.clipboard.writeText(\'' + safe + '\').then(function(){if(window._toast)window._toast(\'Copied \u2014 thank you.\');});}catch(e){}})();" style="flex:0 0 auto;padding:6px 10px;border:1px solid rgba(122,179,86,0.4);border-radius:6px;background:rgba(122,179,86,0.1);color:var(--sage);font-family:DM Mono,monospace;font-size:0.5rem;cursor:pointer;letter-spacing:0.05em;min-height:36px;">COPY</button>';
+    row += '</div>';
+    return row;
+  }
+  h += _addrRow('PI',   c.pi,   '#a06ec0');
+  h += _addrRow('BTC',  c.btc,  '#f7931a');
+  h += _addrRow('ETH',  c.eth,  '#8a92b2');
+  h += _addrRow('USDC', c.usdc, '#2775ca');
+
+  // If everything is blank, show a soft placeholder so the page doesn't look broken
+  if (!c.stripeUrl && !c.pi && !c.btc && !c.eth && !c.usdc) {
+    h += '<div style="padding:0.8rem;text-align:center;color:var(--muted);font-family:DM Mono,monospace;font-size:0.55rem;line-height:1.6;font-style:italic;">Tip jar coming soon. The creator is setting up payment routes \u2014 check back in the next update.</div>';
+  }
+
+  // Closing
+  h += '<div style="margin-top:1rem;padding:0.8rem;text-align:center;font-family:Playfair Display,serif;font-style:italic;font-size:0.7rem;color:rgba(232,220,200,0.7);line-height:1.6;">A garden tended by attention.<br>Thank you for tending mine.</div>';
+
+  return h;
+}
+window._bosAboutContent = _bosAboutContent;
 
 // ─── HERBARIUM TAB — weekly rotating bundles ───
 function _bosHerbariumContent() {
@@ -65107,6 +65184,7 @@ window._openCompendiumUI=function(){
         '<button class="bos-tab" data-tab="items" onclick="_bosSetTab(\'items\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">ITEMS</button>'+
         '<button class="bos-tab" data-tab="hunt" onclick="_bosSetTab(\'hunt\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">HUNT</button>'+
         '<button class="bos-tab" data-tab="class" onclick="_bosSetTab(\'class\')" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">CLASS'+ ((!localStorage.getItem('lw_class')&&window.canSee&&window.canSee.classPick&&window.canSee.classPick())?'<span style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px rgba(200,168,75,0.8);"></span>':'') +'</button>'+
+        '<button class="bos-tab" data-tab="about" onclick="_bosSetTab(\'about\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">ABOUT</button>'+
       '</div>'+
       // Body
       '<div id="bos-body" style="flex:1;overflow-y:auto;padding:0.6rem 1rem 1.5rem;-webkit-overflow-scrolling:touch;font-size:1.25em;"></div>'+
