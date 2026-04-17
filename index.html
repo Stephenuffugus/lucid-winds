@@ -4665,6 +4665,20 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
 #dfb::after{content:'SOW';position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);background:rgba(13,16,12,0.85);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.16em;padding:3px 10px;border-radius:6px;border:1px solid rgba(200,168,75,0.5);pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,0.7);}
 @keyframes dw{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
 
+/* Forage FAB — mirror of #dfb on the LEFT side of the Wild map.
+   Scans the player's current zone set and opens the nearest in-range
+   forageable hex directly. Muted when no feral is in range; pulses
+   gold when there's something to collect. Foraging is the signature
+   Wild moment — this button exists so players never have to hunt for
+   it on the map. */
+#ffb{position:fixed;top:calc(env(safe-area-inset-top,0px) + 385px);left:8px;z-index:999;width:112px;height:112px;border-radius:0;border:none;cursor:pointer;background:url('assets/feral-zone-256.png') center/contain no-repeat;filter:drop-shadow(0 4px 14px rgba(0,0,0,.6));display:flex;align-items:center;justify-content:center;transition:transform 0.15s,opacity 0.2s;-webkit-tap-highlight-color:transparent;padding:0;opacity:0.5;}
+#ffb.ready{opacity:1;animation:ffp 1.8s ease-in-out infinite;}
+#ffb:active{transform:scale(.92);animation:none;}
+@keyframes ffp{0%,100%{filter:drop-shadow(0 4px 14px rgba(0,0,0,.6)) drop-shadow(0 0 6px rgba(200,168,75,0.3));}50%{filter:drop-shadow(0 4px 14px rgba(0,0,0,.6)) drop-shadow(0 0 20px rgba(200,168,75,0.85));}}
+#ffb::after{content:'FORAGE';position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);background:rgba(13,16,12,0.85);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.16em;padding:3px 10px;border-radius:6px;border:1px solid rgba(200,168,75,0.5);pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,0.7);}
+#ffm{position:absolute;top:4px;left:4px;min-width:26px;height:26px;padding:0 6px;border-radius:13px;background:rgba(13,16,12,0.88);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:12px;display:flex;align-items:center;justify-content:center;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.5);border:1.5px solid rgba(200,168,75,0.55);}
+#ffb:not(.ready) #ffm{background:rgba(13,16,12,0.7);color:var(--muted);border-color:rgba(138,145,120,0.35);}
+
 /* ═══ PLANT INFO CARD (tap plant in backpack) ═══ */
 #pic{position:fixed;top:calc(120px + env(safe-area-inset-top,0px));left:12px;right:80px;z-index:1002;background:rgba(13,16,12,0.97);border:1px solid rgba(74,124,53,0.12);border-radius:14px;padding:14px;box-shadow:0 16px 48px rgba(0,0,0,0.6);display:none;opacity:0;transition:opacity 0.2s,transform 0.2s;transform:translateY(10px);}
 #pic.show{display:block;opacity:1;transform:translateY(0);}
@@ -4817,7 +4831,7 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
 #fc-timer-text{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);margin-bottom:0.5rem;}
 #fc-result{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--gold);opacity:0;transition:opacity 0.3s;}
 #fc-result.show{opacity:1;}
-#stp{position:fixed;left:12px;top:50%;transform:translateY(-50%);z-index:90;background:rgba(13,16,12,0.85);border:1px solid rgba(74,124,53,0.1);border-radius:10px;padding:8px 10px;backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;gap:2px;}
+#stp{position:fixed;left:12px;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 12px);z-index:90;background:rgba(13,16,12,0.85);border:1px solid rgba(74,124,53,0.1);border-radius:10px;padding:6px 8px;backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;gap:2px;}
 .stp-num{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--cream);}
 .stp-lbl{font-family:'DM Mono',monospace;font-size:7px;color:var(--muted);}
 .stp-bar{width:40px;height:3px;border-radius:2px;background:rgba(74,124,53,0.12);overflow:hidden;margin-top:2px;}
@@ -5790,6 +5804,8 @@ window._addSwitchTabHook = function(fn){
   <div id="reveal-overlay"><div class="reveal-count" id="rev-count"></div><div class="reveal-card" id="rev-card"><div class="reveal-inner"><div class="reveal-front"></div><div class="reveal-back"><div class="reveal-glow" id="rev-glow"></div><div class="reveal-svg" id="rev-svg"></div><div class="reveal-name" id="rev-name"></div><div class="reveal-grade" id="rev-grade"></div><div class="reveal-haiku" id="rev-haiku"></div></div></div></div><div class="reveal-tap" id="rev-tap">tap to reveal</div></div>
   <!-- Drop FAB -->
   <button id="dfb" onclick="FG_Wild.openPicker()" style="display:none;"><span id="dfi"></span><div id="dbb">3</div></button>
+  <!-- Forage FAB -->
+  <button id="ffb" onclick="window._lwOpenNearestForage&&window._lwOpenNearestForage();" style="display:none;"><div id="ffm">0</div></button>
   <!-- Old drop picker removed — replaced by w-picker.dpk2 above -->
   <!-- ═══ HEX INSPECTOR — opens on zone hex tap ═══ -->
   <div id="hex-inspector" class="hex-insp">
@@ -41349,6 +41365,75 @@ window._hexSeedSearch=function(){
   },500);
 };
 
+// ═══ FORAGE FAB — one-tap "find the nearest forageable hex" ═══
+// Stephen: 'we are going to need to make a nice big foraging button because
+// its such a prominent feature we really want to showcase and show off.'
+// Walks the current zone set, picks the closest zone that (a) has plants
+// and (b) has an available feral today, and opens the forage panel on it
+// directly. Out-of-range? Toast the distance to the nearest. The button
+// sits on the left mirror of the SOW button and pulses gold when there
+// is something to forage.
+function _lwScanNearestForage(){
+  if(!_uLat||!_uLng)return{count:0};
+  var zones=_getAllZonePlants();var keys=Object.keys(zones);
+  var dynR=typeof _getCollectRange==='function'?_getCollectRange():COLLECT_RANGE;
+  var inRange=0,inRangeKey=null,inRangePlants=null;
+  var nearestOut=null,nearestOutDist=Infinity;
+  for(var i=0;i<keys.length;i++){
+    var zk=keys[i];var plants=zones[zk]||[];
+    if(plants.length<1)continue;
+    if(!_isSeedAvailable(zk))continue;
+    var p=zk.split(',');var lat=parseFloat(p[0]),lng=parseFloat(p[1]);
+    var d=_dist(_uLat,_uLng,lat,lng);
+    if(d<=dynR){
+      inRange++;
+      if(!inRangeKey||d<(inRangePlants._dist||Infinity)){
+        inRangeKey=zk;inRangePlants=plants.slice();inRangePlants._dist=d;
+      }
+    } else if(d<nearestOutDist){
+      nearestOutDist=d;nearestOut={zk:zk,dist:d};
+    }
+  }
+  return{count:inRange,key:inRangeKey,plants:inRangePlants,out:nearestOut};
+}
+window._lwUpdateForageFab=function(){
+  var btn=document.getElementById('ffb');if(!btn)return;
+  var mEl=document.getElementById('ffm');
+  var scan=_lwScanNearestForage();
+  if(scan.count>0){
+    btn.classList.add('ready');
+    if(mEl)mEl.textContent=scan.count>9?'9+':String(scan.count);
+  } else {
+    btn.classList.remove('ready');
+    if(mEl)mEl.textContent='0';
+  }
+};
+window._lwOpenNearestForage=function(){
+  if(!_uLat||!_uLng){if(window._toast)_toast('Need location.');return;}
+  if(_gpsDenied){if(window._toast)_toast('Enable GPS to forage.');return;}
+  if(window.canSee&&window.canSee.feralCollect&&!window.canSee.feralCollect()){
+    if(window._toast)_toast('🔒 Foraging unlocks at Keeper Level 4.');return;
+  }
+  var scan=_lwScanNearestForage();
+  if(scan.count>0&&scan.key){
+    _collectFeralFromZone(scan.key,scan.plants);
+    return;
+  }
+  if(scan.out){
+    var ft=Math.round(scan.out.dist*3.281);
+    if(window._toast)_toast('Nearest forage is ~'+ft+' ft away. Walk closer.');
+  } else {
+    if(window._toast)_toast('No forageable hexes found. Plant more or explore.');
+  }
+};
+// Hook into _drawZoneHexes via a monkey-patch wrapper so the badge
+// refreshes every time the map redraws. Keeps the fab in sync without
+// a separate poll loop burning battery.
+(function(){
+  var _orig=_drawZoneHexes;
+  _drawZoneHexes=function(){_orig.apply(this,arguments);try{if(window._lwUpdateForageFab)window._lwUpdateForageFab();}catch(e){}};
+})();
+
 // ═══ FRIEND NICKNAMES ═══
 // Local-only nicknames for other keepers. Stored in localStorage, never
 // synced to cloud. Your labels, your way.
@@ -42007,7 +42092,7 @@ function _autoCarouselFromInspector(){
     window.openCarousel(_hexInspPlants.slice(),0,'wild-inspect');
   },120);
 }
-return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_openHexInspector:_openHexInspector,_autoCarouselFromInspector:_autoCarouselFromInspector,_drawZoneHexes:_drawZoneHexes};
+return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_openHexInspector:_openHexInspector,_autoCarouselFromInspector:_autoCarouselFromInspector,_drawZoneHexes:_drawZoneHexes,_collectFeralFromZone:_collectFeralFromZone,_getAllZonePlants:_getAllZonePlants,_isSeedAvailable:_isSeedAvailable,_getCollectRange:typeof _getCollectRange==='function'?_getCollectRange:function(){return COLLECT_RANGE;},_getUserPos:function(){return{lat:_uLat,lng:_uLng};},_dist:_dist};
 })();
 </script>
 <!-- DEV: Spawn Mythic+Cosmic (hidden — requires dev panel password) -->
@@ -42053,6 +42138,7 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
   body.ob-active .nav,
   body.ob-active .drop-fab,
   body.ob-active #dfb,
+  body.ob-active #ffb,
   body.ob-active .bp2-icon,
   body.ob-active #bpi,
   body.ob-active #kb-compendium,
@@ -52797,6 +52883,8 @@ window.FG_Backpack.show = function() {
   var bpp = document.getElementById('bpp');
   if (bpp) bpp.style.top = '';
   if (fab) fab.style.display = 'flex';
+  var ffb = document.getElementById('ffb'); if (ffb) ffb.style.display = 'flex';
+  if (window._lwUpdateForageFab) try { window._lwUpdateForageFab(); } catch(e){}
   var stp = document.getElementById('stp');
   if (stp) stp.style.display = 'block';
   // Show map overlays
@@ -52828,6 +52916,7 @@ window.FG_Backpack.hide = function() {
   var rtb = document.getElementById('bp-rtb');
   if (el) el.style.display = 'none';
   if (fab) fab.style.display = 'none';
+  var ffb = document.getElementById('ffb'); if (ffb) ffb.style.display = 'none';
   if (rtb) rtb.style.display = 'none';
   var rc = document.getElementById('w-recenter'); if (rc) rc.style.display = 'none';
   var mw = document.getElementById('w-mass-water'); if (mw) mw.style.display = 'none';
@@ -52860,6 +52949,7 @@ window.FG_Backpack.showCompact = function(tab) {
   if (bpp) bpp.style.top = 'calc(168px + env(safe-area-inset-top, 0px))';
   // Hide wild-specific UI
   var fab = document.getElementById('dfb'); if (fab) fab.style.display = 'none';
+  var ffb = document.getElementById('ffb'); if (ffb) ffb.style.display = 'none';
   var rtb = document.getElementById('bp-rtb'); if (rtb) rtb.style.display = 'none';
   var rc = document.getElementById('w-recenter'); if (rc) rc.style.display = 'none';
   var stp = document.getElementById('stp'); if (stp) stp.style.display = 'none';
