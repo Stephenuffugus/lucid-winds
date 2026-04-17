@@ -8039,7 +8039,12 @@ document.addEventListener('keydown', function(e) {
       leafSpread:   7 + (hc(14) % 6),
       aura:         hb(15) % 36,  // 0-35 aura slots (0-4 = none)
       base:         crystalBase ? 15 : hb(20) % 71,
-      // Companion: base rate ~20% (48 None + 12 creatures), mythic creatures override
+      // Companion: base rate ~13% (only roll on first 100 indices of a
+      // 256-modulus, with everything ≥ 82 mapped to None). Mythic
+      // creature overrides (~18% combined) sit on top via the byte-18
+      // ladder. Net total companion presence: ~30% of mints. Stephen
+      // test catch: 'im getting a companion almost every plant' — was
+      // ~52% before this rebalance.
       companion:    (function(){
         var _mb = hb(18);
         if (_mb === 0xFF) return 38; // Beholder (0.39%)
@@ -8049,7 +8054,14 @@ document.addEventListener('keydown', function(e) {
         if (_mb >= 0xF4) return 34;  // Woolly Mammoth (1.56%)
         if (_mb >= 0xE0) return 33;  // Cicada (7.81%)
         if (_mb >= 0xD0) return 32;  // Toad (6.25%)
-        return hb(21) % 82;          // 82 slots: 48 None + 34 creatures = ~41% base rate
+        // Base roll on a wider pool — only indices 0..81 are real
+        // companion slots; >=82 is None. Pool of 256 → 82/256 = ~32%
+        // of base rolls hit the bank, of which 34/82 = ~41% are real
+        // creatures (others are 'None' entries inside the bank). Net
+        // ~13% base creature rate.
+        var _r21 = hb(21);
+        if (_r21 >= 82) return 0; // None
+        return _r21;
       })(),
       mutation:     mutByte,
       mutationName: mutName,
@@ -8755,6 +8767,16 @@ document.addEventListener('keydown', function(e) {
         // Different mythics — normal Mendelian: higher tier wins
         var yHigh = Math.max(yA, yB).toString(16).padStart(2, '0');
         child[18] = yHigh[0]; child[19] = yHigh[1];
+      } else if (yA >= 0xD0 || yB >= 0xD0) {
+        // ASYMMETRIC: only one parent is mythic. Companions don't
+        // inherit through breeding — Stephen test catch: 'companions
+        // arent supposed to breed... bred it and got a heron from
+        // that one too.' Force the child's mythic byte to come from
+        // the NON-mythic parent so the rare creature is killed in
+        // the cross. Keeps the byte structure intact for downstream
+        // hash use.
+        var _nonMythicHex = (yA >= 0xD0) ? b.slice(18, 20) : a.slice(18, 20);
+        child[18] = _nonMythicHex[0]; child[19] = _nonMythicHex[1];
       }
     }
 
