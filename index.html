@@ -6171,7 +6171,15 @@ window._addSwitchTabHook = function(fn){
         if(typeof w.decayAt==='number')w.decayAt-=shift;
         if(typeof w.decayAtMs==='number')w.decayAtMs-=shift;
         if(typeof w.lastWateredAt==='number')w.lastWateredAt-=shift;
-        if(typeof w.dormantSince==='number')w.dormantSince-=shift;
+        // dormantSince intentionally NOT shifted — keep grace window
+        // anchored to NOW for testing. Otherwise backdating 7+ days on
+        // a recently-dormant plant skips past the 72h grace and instantly
+        // forfeits it, breaking the rescue test path. If the plant just
+        // crossed into dormant via this backdate (decayAt now <= now),
+        // stamp dormantSince=now so grace starts fresh.
+        if(typeof w.decayAt==='number'&&w.decayAt<=Date.now()){
+          w.dormantSince=Date.now();
+        }
         // String-based fallback fields (legacy ISO dates)
         if(typeof w.date==='string'){var t=new Date(w.date).getTime();if(!isNaN(t))w.date=new Date(t-shift).toISOString();}
         if(typeof w.lastWatered==='string'){var lt=new Date(w.lastWatered).getTime();if(!isNaN(lt))w.lastWatered=new Date(lt-shift).toISOString();}
@@ -35747,16 +35755,19 @@ window._lwSunbeamRescue=function(hash){
   var rarity=p.rarity||'Common';
   if(rarity==='Common'||rarity==='Uncommon')return {ok:false,reason:'Common and Uncommon plants don\u2019t need a Sunbeam rescue. Tend with Dew instead.'};
   var cost=SUNBEAM_RESCUE_COST[rarity]||5;
-  // Spend Sunbeams via the existing currency.
-  var have=window.getTotalHashes?window.getTotalHashes():0;
-  if(have<cost)return {ok:false,reason:'Need '+cost+' Sunbeams. You have '+have+'.'};
+  // Spend Sunbeams via the proper buffer+queue helper. earnHashes(-cost)
+  // would corrupt ledger.earned without touching the visible balance —
+  // the audit caught that as a phantom-debt bug. _lwSpendSunbeams drains
+  // buffer first then ready hashes, returns false if balance insufficient.
+  var bal=window._getSunbeamBalance?window._getSunbeamBalance():0;
+  if(bal<cost)return {ok:false,reason:'Need '+cost+' Sunbeams. You have '+bal+'.'};
   // Tend cap check
   var capChk=window._lwCanTend(hash);
   if(!capChk.ok)return capChk;
-  // Spend Sunbeams. The earnHashes / queue system uses _readyHashes;
-  // there isn't a direct 'spend' helper, so we mark them spent via
-  // earnHashes(-cost) which the game already handles for shop purchases.
-  try{if(window.earnHashes)window.earnHashes(-cost,'wild_rescue');}catch(e){}
+  // Actual spend
+  if(!window._lwSpendSunbeams||!window._lwSpendSunbeams(cost,'wild_rescue')){
+    return {ok:false,reason:'Sunbeam spend failed. Try again.'};
+  }
   // Restore: extend decayAt by full lifespan from now.
   p.decayAt=Date.now()+(p.lifespanMs||_lifespanMsFor(rarity));
   if(p.dormantSince)delete p.dormantSince;
@@ -43115,6 +43126,40 @@ window._getHashProgress=function(){return _hashFilled;};
 window._getReadyHashes=function(){return _readyHashes;};
 window._getSunbeamBalance=function(){return _readyHashes.length*(_getMintCost?_getMintCost():30)+_hashFilled;};
 window._getMintableCount=function(){return _readyHashes.length;};
+// Spend sunbeams from buffer + queue. Drains the buffer first; if the
+// cost exceeds buffer, consumes ready hashes (worth 30 each) and any
+// overflow goes back into the buffer. Returns true on success, false
+// if balance < amount. Used by features like Wild emergency rescue
+// (rarity-scaled cost) — replaces the broken earnHashes(-cost) which
+// only mutated ledger.earned and never affected the visible balance.
+window._lwSpendSunbeams=function(amount,reason){
+  amount=parseInt(amount,10);if(!amount||amount<1)return false;
+  var COST=(_getMintCost?_getMintCost():30);
+  var bal=_readyHashes.length*COST+_hashFilled;
+  if(bal<amount)return false;
+  var remaining=amount;
+  // Drain buffer first
+  if(_hashFilled>=remaining){
+    _hashFilled-=remaining;
+    remaining=0;
+  } else {
+    remaining-=_hashFilled;
+    _hashFilled=0;
+  }
+  // Consume ready hashes (worth COST each) until remaining covered
+  while(remaining>0&&_readyHashes.length>0){
+    _readyHashes.shift();
+    remaining-=COST;
+  }
+  // Overshoot → push leftover back into the buffer
+  if(remaining<0){
+    _hashFilled=-remaining;
+  }
+  _persistHashBuf();
+  if(typeof _updateSunbeamBadge==='function')_updateSunbeamBadge();
+  if(typeof _updateGameDew==='function')_updateGameDew();
+  return true;
+};
 // ═══ MINT FROM QUEUE — player-initiated mint ═══
 window._mintFromQueue=function(){
   if(_readyHashes.length===0){if(window._toast)_toast('No plants ready yet. Keep playing!');return;}
