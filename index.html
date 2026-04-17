@@ -60064,6 +60064,7 @@ function _bosHerbariumContent() {
   h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin-bottom:0.5rem;">Week ' + window.LW_HERBARIUM.weekKey() + '</div>';
   for (var i = 0; i < bundles.length; i++) {
     var b = bundles[i];
+    if (!b || !b.req) { try { console.warn('[Herbarium] tab skipped bundle index ' + i, b); } catch(e){} continue; }
     var prog = window.LW_HERBARIUM.getProgress(b);
     var claimed = window.LW_HERBARIUM.isClaimed(b.id);
     var pct = Math.min(100, Math.round((prog.count / prog.required) * 100));
@@ -63608,6 +63609,9 @@ window.LW_FAMILY_T3 = {
   }
   function checkPlantAgainst(plant, req) {
     try {
+      // Defensive: bad req or missing plant shouldn't blow up the
+      // Herbarium tab. Returns false so progress just shows 0/N.
+      if (!plant || !plant.hash || !req || typeof req.tag !== 'string') return false;
       var t = window.hashToTraits ? window.hashToTraits(plant.hash) : null;
       if (!t) return false;
       if (req.tag === 'anyPlant') return true;
@@ -63634,6 +63638,15 @@ window.LW_FAMILY_T3 = {
     } catch(e) { return false; }
   }
   function getProgress(bundle) {
+    // Defensive: a missing or malformed bundle (e.g. corrupted week
+    // pick, schema drift) shouldn't blow up the whole Herbarium tab.
+    // Returns a 0/1 status that renders as an empty bar instead of
+    // a JS crash. Stephen test catch: 'L63627 Cannot read properties
+    // of undefined (reading req).'
+    if (!bundle || !bundle.req) {
+      try { console.warn('[Herbarium] getProgress called with bad bundle', bundle); } catch(e){}
+      return { count: 0, required: 1, complete: false };
+    }
     var gh = [];
     try { gh = JSON.parse((window._secureGet ? window._secureGet('sws_greenhouse') : localStorage.getItem('sws_greenhouse')) || '[]'); } catch(e) {}
     var count = 0;
