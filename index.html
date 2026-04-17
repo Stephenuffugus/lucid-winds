@@ -31439,6 +31439,25 @@ document.addEventListener('keydown', function(e) {
   window.switchTab = function(tab) {
     _haptic('tab');
     if(typeof gtag!=='undefined') gtag('event','tab_switch',{tab:tab});
+    // STUDIO AUDIO COEXISTENCE — kill any music-tool audio + tear down
+    // their iframes the moment the player navigates away from the game
+    // tab. Without this, Bloom Wheel keeps playing through the tab nav
+    // (Stephen reported sound continuing after closing the game). Fires
+    // lw-studio-close so the future background-music handler can resume.
+    try{
+      if(tab!=='game'){
+        var _wasA=window._a||'';
+        if(_wasA==='bloomwheel'||_wasA==='song'){
+          if(window._bwKillAudio){try{window._bwKillAudio();}catch(e){}}
+          var _ag=document.getElementById('fg-ag');
+          if(_ag){
+            var _frames=_ag.querySelectorAll('iframe');
+            for(var _fi=0;_fi<_frames.length;_fi++){try{_frames[_fi].src='about:blank';}catch(e){}}
+          }
+          try{window.dispatchEvent(new CustomEvent('lw-studio-close',{detail:{from:_wasA}}));}catch(e){}
+        }
+      }
+    }catch(e){}
     // Discovery XP — first touch of each tab (5 XP each, one-time).
     // Labels teach what the tab is for.
     try{
@@ -43747,12 +43766,40 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;window._a
   if(_bnav)_bnav.style.display='none';
   if(_solGames[id]){_solEnterFS()}
   if(gps){gps.classList.add('on');try{_updateGP()}catch(e){console.warn('[GP]',e)}}
-  // Back button — always present so player can exit any game
+  // Back button — always present so player can exit any game.
+  // Before navigating away, kill any noisy game audio + tear down music
+  // iframes so sound doesn't outlive the visible UI. Stephen test:
+  // 'you can close it [Bloom Wheel] and sound still plays.'
+  // Also fires lw-studio-close so any future background-music handler
+  // can resume per the Option-3 coexistence plan.
   var _backBtn=document.createElement('button');
   _backBtn.className='game-back-btn';
   _backBtn.innerHTML='◀ GAMES';
-  _backBtn.onclick=function(){if(window.switchTab)switchTab('greenhouse');};
+  _backBtn.onclick=function(){
+    try{if(window._bwKillAudio)window._bwKillAudio();}catch(e){}
+    try{
+      var _frames=ag.querySelectorAll('iframe');
+      for(var _fi=0;_fi<_frames.length;_fi++){
+        try{_frames[_fi].src='about:blank';}catch(e){}
+      }
+    }catch(e){}
+    try{
+      if(_a==='bloomwheel'||_a==='song'){
+        window.dispatchEvent(new CustomEvent('lw-studio-close',{detail:{from:_a}}));
+      }
+    }catch(e){}
+    if(window.switchTab)switchTab('greenhouse');
+  };
   ag.appendChild(_backBtn);
+  // Mount-time studio-open event for music tools. Fires AFTER ag is
+  // populated and the gameFn has run. Background-music handlers
+  // subscribe to lw-studio-open to auto-pause, lw-studio-close to
+  // resume. Plain Web Audio sound effects are unaffected.
+  if(id==='bloomwheel'||id==='song'){
+    setTimeout(function(){
+      try{window.dispatchEvent(new CustomEvent('lw-studio-open',{detail:{game:id}}));}catch(e){}
+    },100);
+  }
   var gi=null;for(var i=0;i<G.length;i++)if(G[i].id===id){gi=G[i];break}
   if(gi){var r=document.createElement('div');r.className='gr';r.textContent='📖 '+gi.r;ag.appendChild(r)}
   // ── Try: 1) already-loaded external, 2) lazy-load from games/ ──
