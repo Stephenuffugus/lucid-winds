@@ -54821,7 +54821,7 @@ function _step5bPicker(){
   _setStep(276);
   _dialog(
     'Pick a plant from your greenhouse.<br><br>' +
-    '<span style="color:var(--muted);font-size:0.85em;">Rarer plants survive longer out there. Common ones still count; they just don\u2019t last as many seasons.</span>',
+    '<span style="color:var(--muted);font-size:0.85em;">Rarer plants survive longer out there.</span>',
     '',null,'top');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   var wildLen0=0;
@@ -54830,48 +54830,37 @@ function _step5bPicker(){
   var watch=function(){
     var len=0;
     try{len=(JSON.parse(localStorage.getItem('fg_wild_plants')||'[]')||[]).length;}catch(e){}
-    if(len>wildLen0){_clear();setTimeout(_step5bMap,2000);return;}
+    if(len>wildLen0){_clear();setTimeout(_step5bDone,2000);return;}
     if(polls<900){polls++;setTimeout(watch,500);}
     else {setTimeout(_step28,300);}
   };
   watch();
 }
 
-function _step5bMap(){
-  _setStep(277);
-  var banner=document.querySelector('.wild-log');
-  if(banner&&window._lwPulseHint){
-    // 18s gentle pulse on the whole hero banner
-    window._lwPulseHint(banner,18000,'lw_tut_wild_log_pulse');
-  }
-  _dialog(
-    'Your plant is real now. It has coordinates. It lives.<br><br>' +
-    'The banner up top tracks <span style="color:var(--gold);">drops</span> remaining, <span style="color:var(--gold);">dew</span>, your keeper <span style="color:var(--gold);">xp</span>, <span style="color:var(--gold);">meters</span> walked, and the local <span style="color:var(--gold);">biome + weather</span>. Watch them grow as you play.',
-    'NEXT',function(){_clear();setTimeout(_step5bClaim,400);},'bottom');
-}
-
-// ═══ Phase 5b — claim + contest primer ═══
-// Non-interactive prose beat: teaches the nickname affordance and warns
-// that other Keepers can challenge for the hex. Originally part of the
-// Phase 5 spec ("show nickname feature, recommend putting LOCATION in
-// the nickname"). Keeping it as a pure read-and-tap so we don't pile
-// more interactive polls on top of the drop walkthrough.
-function _step5bClaim(){
+// ═══ Phase 5b post-drop — ONE celebration beat, then handoff ═══
+// Was three consecutive prose dumps (banner stats / nickname-contest /
+// foraging hint). Stephen test feedback: "we need to go literally one
+// step at a time." JIT system already covers each of those topics
+// when they actually become relevant:
+//   - pollen banner explained by _lwJITPollen on first earn
+//   - nickname surfaces when player taps their wild plant inspector
+//   - foraging cue surfaces when first glowing hex appears
+//   - territory contest covered by _lwJITTerritory after first attack
+// One unified celebration line + direct handoff to backpack tour.
+function _step5bDone(){
   _setStep(279);
   _dialog(
-    'Tap your plant on the map any time to give it a <span style="color:var(--gold);">nickname</span>. Most Keepers mark where they placed it.<br><br>' +
-    'Other Keepers passing through can challenge for the hex. <span style="color:var(--sage);">Stronger plants hold their ground.</span>',
-    'NEXT',function(){_clear();setTimeout(_step5bForage,400);},'center');
-}
-
-function _step5bForage(){
-  _setStep(278);
-  _dialog(
-    'When you see a <span style="color:var(--gold);">glowing hex</span>, walk within 75m and tap it.<br><br>' +
-    'You\u2019ll play a short <span style="color:var(--gold);">foraging game</span> \u2014 read the weather, pick your guess, win a feral seed for your Nursery.<br><br>' +
-    '<span style="color:var(--muted);font-size:0.85em;">No glowing hex yet? Walk a little. The map rewards keepers who move.</span>',
+    '<span style="color:var(--sage);">Your plant lives somewhere real now.</span><br><br>' +
+    'Tend it. Walk near it. Watch what happens.',
     'NEXT',function(){_clear();setTimeout(_step28,400);},'center');
 }
+
+// Deprecated: replaced by single _step5bDone celebration above.
+// Pass-throughs preserved so refresh-resume on stale step values
+// (277, 278, 279) lands at the unified done beat instead of dropping.
+function _step5bClaim(){_step5bDone();}
+function _step5bForage(){_step5bDone();}
+function _step5bMap(){_step5bDone();}
 
 // ═══ STEP 28: backpack intro — spotlight the pack icon ═══
 function _step28(){
