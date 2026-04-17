@@ -5797,7 +5797,10 @@ window._addSwitchTabHook = function(fn){
     <div class="kb-row1">
       <div class="kb-avatar" id="kb-avatar" onclick="PW_UI.openCharacter()" style="position:relative;">🌱<span id="kb-class-lvl" style="display:none;position:absolute;bottom:-2px;right:-2px;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.45rem;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,0.5);border:1px solid rgba(13,16,12,0.8);">L1</span><span id="kb-prestige-mark" style="display:none;position:absolute;top:-4px;left:-4px;min-width:18px;height:18px;padding:0 2px;border-radius:9px;background:linear-gradient(180deg,#f5dc95,#c8a84b);color:#0d100c;font-family:Bebas Neue,sans-serif;font-size:0.55rem;font-weight:700;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(240,208,144,0.6),0 1px 3px rgba(0,0,0,0.5);border:1px solid rgba(13,16,12,0.8);letter-spacing:0.04em;"></span></div>
       <div class="kb-info">
-        <div class="kb-name" onclick="PW_UI.openCharacter()" id="kb-name">Keeper</div>
+        <div style="display:flex;align-items:center;gap:5px;">
+          <div class="kb-name" onclick="PW_UI.openCharacter()" id="kb-name">Keeper</div>
+          <span id="kb-beta-badge" title="Beta — data may be reset before launch" style="display:inline-block;padding:1px 5px;border-radius:3px;background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.4);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.12em;line-height:1.1;">BETA</span>
+        </div>
         <div class="kb-xp-wrap" onclick="PW_UI.openCharacter()"><div class="kb-xp-fill" id="kb-xp-fill" style="width:0%;"></div></div>
         <div class="kb-rank" id="kb-rank">Lvl 1 · Seedling · 0 / 25 Pollen</div>
       </div>
@@ -49235,6 +49238,7 @@ function _saveName(){
   var name=inp.value.trim();
   if(!name||name.length<1){if(window._toast)window._toast('Name cannot be empty.');return;}
   if(name.length>20)name=name.substring(0,20);
+  if(window._lwCleanName){var _nc=window._lwCleanName(name);if(!_nc.ok){if(window._toast)window._toast(_nc.reason);return;}name=_nc.cleaned;}
   localStorage.setItem('pw_keeper_name',name);
   updateKeeperBar();
   var ne=document.getElementById('cs-name-editor');if(ne)ne.remove();
@@ -50616,6 +50620,7 @@ function submitAuth(){
   var pass=(passInput?passInput.value:'').trim();
 
   if(!name){if(errEl)errEl.textContent='Pick a name, Keeper.';return;}
+  if(window._lwCleanName){var _nc=window._lwCleanName(name);if(!_nc.ok){if(errEl)errEl.textContent=_nc.reason;return;}name=_nc.cleaned;}
   if(!email){if(errEl)errEl.textContent='Enter your email.';return;}
   if(pass.length<6){if(errEl)errEl.textContent='Password needs 6+ characters.';return;}
 
@@ -66806,6 +66811,117 @@ window.LW_Comp = (function(){
     }
     return false;
   };
+})();
+</script>
+
+<script>
+// ═══ BETA DISCLAIMER + NAME FILTER ═══
+// One-time beta modal on first install, and a profanity filter on
+// keeper-name inputs (onboarding + character-sheet rename). Added
+// 2026-04-17 per Stephen — pre-launch beta needs a data-may-be-reset
+// warning and name creation needs sanity checks before going public.
+(function(){
+  // ─── Name filter ───
+  // Strict mode: blocks submit with a friendly reason. Handles common
+  // leetspeak substitutions and compacted variants (f.u.c.k / f_u_c_k).
+  var BAD = {
+    fuck:1,fucker:1,fucking:1,motherfucker:1,mofo:1,
+    shit:1,shithead:1,shitty:1,bullshit:1,
+    bitch:1,bitches:1,cunt:1,twat:1,
+    ass:1,asshole:1,arsehole:1,jackass:1,dumbass:1,
+    bastard:1,damn:1,goddamn:1,
+    dick:1,dickhead:1,cock:1,pussy:1,tits:1,titties:1,boobs:1,
+    piss:1,pissed:1,wank:1,wanker:1,
+    whore:1,slut:1,skank:1,hoe:1,
+    faggot:1,fag:1,dyke:1,tranny:1,shemale:1,
+    nigger:1,nigga:1,chink:1,gook:1,kike:1,spic:1,wetback:1,
+    retard:1,retarded:1,spastic:1,
+    cum:1,cummies:1,jizz:1,semen:1,
+    porn:1,porno:1,xxx:1,sex:1,sexy:1,
+    rape:1,rapist:1,molest:1,pedo:1,pedophile:1,
+    nazi:1,hitler:1,kkk:1,
+    anus:1,rectum:1,butthole:1
+  };
+  // Also treat admin-ish impersonation as invalid.
+  var RESERVED = {admin:1,administrator:1,moderator:1,mod:1,staff:1,system:1,lucidwinds:1,anthropic:1,claude:1,null:1,undefined:1};
+
+  function leet(s){
+    return s
+      .replace(/[4@]/g,'a')
+      .replace(/[3]/g,'e')
+      .replace(/[1!|]/g,'i')
+      .replace(/[0]/g,'o')
+      .replace(/[5$]/g,'s')
+      .replace(/[7]/g,'t')
+      .replace(/[8]/g,'b')
+      .replace(/[9]/g,'g');
+  }
+
+  window._lwCleanName = function(name){
+    if(!name||typeof name!=='string')return {ok:false,reason:'Pick a name.'};
+    var trimmed=name.trim();
+    if(!trimmed)return {ok:false,reason:'Pick a name.'};
+    if(trimmed.length<2)return {ok:false,reason:'A little longer, Keeper.'};
+    if(trimmed.length>24)return {ok:false,reason:'Max 24 characters.'};
+    var norm=leet(trimmed.toLowerCase());
+    // Whole-word token check (safe for "classic" etc.)
+    var tokens=norm.split(/[^a-z]+/);
+    for(var i=0;i<tokens.length;i++){
+      var t=tokens[i];if(!t)continue;
+      if(BAD[t])return {ok:false,reason:'That name won\u2019t work. Try another.'};
+      if(RESERVED[t])return {ok:false,reason:'That name is reserved. Try another.'};
+    }
+    // Compacted check — catches "f.u.c.k" / "f_u_c_k" / "fuuck".
+    // Only for 4+ char words to avoid Scunthorpe-style false positives.
+    var compact=norm.replace(/[^a-z]/g,'');
+    for(var k in BAD){
+      if(k.length>=4&&compact.indexOf(k)>=0){
+        return {ok:false,reason:'That name won\u2019t work. Try another.'};
+      }
+    }
+    return {ok:true,cleaned:trimmed};
+  };
+
+  // ─── Beta disclaimer modal ───
+  // One-time: shown once per install, stored in localStorage.
+  // Fires after onboarding finishes so it doesn't stack with gift-plant
+  // flow. Returning players who already acked get nothing.
+  function showBetaDisclaimer(){
+    try{if(localStorage.getItem('lw_beta_ack'))return;}catch(e){return;}
+    if(document.getElementById('lw-beta-modal'))return;
+    var ov=document.createElement('div');
+    ov.id='lw-beta-modal';
+    ov.style.cssText='position:fixed;inset:0;z-index:1000020;background:rgba(5,8,4,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:panelFadeIn 0.4s ease;';
+    ov.innerHTML='<div style="max-width:340px;text-align:center;background:rgba(18,22,16,0.97);border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;padding:1.3rem 1.2rem;box-shadow:0 14px 44px rgba(0,0,0,0.7);">'+
+      '<div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--gold);letter-spacing:0.2em;margin-bottom:0.5rem;">\u2726 BETA \u2726</div>'+
+      '<div style="font-family:Playfair Display,serif;font-size:1rem;color:var(--cream);line-height:1.45;margin-bottom:0.5rem;">Welcome, early Keeper.</div>'+
+      '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);line-height:1.6;margin-bottom:0.9rem;">Lucid Winds is in beta. Plants, progress, and vaults may be reset before launch as we balance the economy and fix bugs. Thank you for testing.</div>'+
+      '<button id="lw-beta-ack-btn" style="width:100%;padding:0.65rem;border:1.5px solid rgba(200,168,75,0.45);border-radius:8px;background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(120,100,40,0.32));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;cursor:pointer;min-height:52px;">I UNDERSTAND</button>'+
+    '</div>';
+    document.body.appendChild(ov);
+    var btn=document.getElementById('lw-beta-ack-btn');
+    if(btn)btn.onclick=function(){
+      try{localStorage.setItem('lw_beta_ack','1');}catch(e){}
+      if(ov.parentNode)ov.remove();
+    };
+  }
+
+  // Boot: delay so it fires AFTER onboarding cinematic and any auth
+  // gate (we don't want it stacking with the gift-plant moment). If
+  // the tutorial is still active, wait for it to finish — otherwise
+  // fire immediately if the player has a vault already.
+  function maybeShowDisclaimer(){
+    try{
+      if(localStorage.getItem('lw_beta_ack'))return;
+      // Hold back if we're still in onboarding or a modal stack.
+      var ob=document.getElementById('onboard-overlay');
+      if(ob&&getComputedStyle(ob).display!=='none'){setTimeout(maybeShowDisclaimer,2000);return;}
+      var busy=document.querySelector('#cinematic-reveal.open,#lu-overlay.open,#pw-win-overlay,#lw-confirm-modal');
+      if(busy){setTimeout(maybeShowDisclaimer,2000);return;}
+      showBetaDisclaimer();
+    }catch(e){}
+  }
+  setTimeout(maybeShowDisclaimer,1500);
 })();
 </script>
 
