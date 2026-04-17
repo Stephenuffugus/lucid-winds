@@ -41724,7 +41724,22 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      cycler arrows dim + pointer-events:none. */
   body.lw-tut-active.lw-tut-breed-only .bs-close,
   body.lw-tut-active.lw-tut-breed-only .bs-nav-btn,
-  body.lw-tut-active.lw-tut-breed-only .bs-card-nav-btn{pointer-events:none !important;opacity:0.35 !important;filter:saturate(0.45);}
+  body.lw-tut-active.lw-tut-breed-only .bs-card-nav-btn,
+  body.lw-tut-active.lw-tut-breed-only .bs-cancel{pointer-events:none !important;opacity:0.35 !important;filter:saturate(0.45);}
+  /* Game-complete → mint handoff: between game-completed event firing
+     and _step16 actually switching to greenhouse, the player must not
+     be able to start a new game. A new game sets body.game-active,
+     and when switchTab('greenhouse') runs under that, CSS hides the
+     keeper bar + bottom nav + sunbeam icon — leaving only the
+     background, plants, and backpack visible. Lock the picker
+     instantly on resolve(); _step16 strips the class before it
+     renders the mint dialog. */
+  body.lw-tut-active.lw-tut-game-handoff #fg-pk,
+  body.lw-tut-active.lw-tut-game-handoff #fg-ov,
+  body.lw-tut-active.lw-tut-game-handoff #fg-sc,
+  body.lw-tut-active.lw-tut-game-handoff #lw-diff-ov,
+  body.lw-tut-active.lw-tut-game-handoff .fk2,
+  body.lw-tut-active.lw-tut-game-handoff .fg-c{pointer-events:none !important;}
   /* Step 22: inside the nursery, only the WATER button is tappable.
      Skip-day (paid Dew), boost (fertilizer), and abandon all dim
      while the tutorial teaches first-watering. */
@@ -53597,7 +53612,8 @@ _done=function(){
       'lw-tut-active','lw-tut-limit-actions',
       'lw-tut-bp-on','lw-tut-bos-on','lw-tut-sb-on','lw-tut-mint-only','lw-tut-newplant-only',
       'lw-tut-carousel-lock','lw-tut-carousel-can-close','lw-tut-carousel-freeze','lw-tut-carousel-breed-only','lw-tut-breed-only','lw-tut-water-only',
-      'lw-tut-nav-greenhouse','lw-tut-nav-focus','lw-tut-nav-nursery','lw-tut-nav-wild'
+      'lw-tut-nav-greenhouse','lw-tut-nav-focus','lw-tut-nav-nursery','lw-tut-nav-wild',
+      'lw-tut-game-handoff'
     );
     // Strip any residual newplant-target class on greenhouse tiles.
     try{var _nt=document.querySelectorAll('.greenhouse-plant.lw-tut-newplant-target');for(var _nti=0;_nti<_nt.length;_nti++)_nt[_nti].classList.remove('lw-tut-newplant-target');}catch(e){}
@@ -54005,6 +54021,13 @@ function _watchGameComplete(){
   function resolve(){
     if(resolved)return;resolved=true;
     window.removeEventListener('game-completed',handler);
+    // Lock the game picker INSTANTLY. Without this, the player can
+    // start a new game during the 3.8s gap before _step16 fires —
+    // _sg() sets body.game-active, switchTab('greenhouse') then
+    // runs under that flag, and CSS hides the sunbeam icon they
+    // need to tap. Stephen hit this and got stuck on a "broken"
+    // greenhouse showing only background + plants + backpack.
+    try{document.body.classList.add('lw-tut-game-handoff');}catch(e){}
     setTimeout(function(){
       _forceFirstFocusReward();
       setTimeout(_step16,3000);
@@ -54095,6 +54118,19 @@ function _step16(){
   try{
     document.body.classList.remove('lw-tut-nav-focus');
     document.body.classList.add('lw-tut-sb-on','lw-tut-nav-greenhouse');
+  }catch(e){}
+  // Defensively tear down any game state before we switch tabs. If
+  // the handoff lock leaked (or a click snuck in before the class
+  // applied), strip game-active, close any open picker overlay,
+  // close the difficulty overlay, and drop the handoff lock itself.
+  // Without this, body.game-active on top of tab-greenhouse hides
+  // the keeper bar / bottom nav / sunbeam icon and the player sees
+  // a broken greenhouse with only background + plants + backpack.
+  try{
+    document.body.classList.remove('game-active','lw-tut-game-handoff');
+    var _fgov=document.getElementById('fg-ov');if(_fgov)_fgov.classList.remove('open');
+    var _fgsc=document.getElementById('fg-sc');if(_fgsc)_fgsc.classList.remove('open');
+    var _diffov=document.getElementById('lw-diff-ov');if(_diffov)_diffov.style.display='none';
   }catch(e){}
   // Force-switch to greenhouse so the mint prompt lands where the sun is.
   if(window.switchTab)switchTab('greenhouse');
