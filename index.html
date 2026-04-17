@@ -5655,7 +5655,7 @@ window._addSwitchTabHook = function(fn){
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Dew \u2014 produced by your wild plants and earned from participation. Spend on nursery acceleration and wild plant cuttings.')"><div class="wild-log-val" style="color:rgba(91,175,220,0.9)" id="w-dew">0</div><div class="wild-log-lbl">dew <span id="w-dew-rate" style="font-size:0.28rem;color:var(--muted);"></span></div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Keeper XP \u2014 your lifetime experience. Pollen is the energy that grows your rank. Every kind act, wild drop, and bloom contributes.')"><div class="wild-log-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wild-log-lbl">xp</div></div>
       <div class="wild-log-stat" onclick="FG_Wild._logTip('Meters walked. Keep moving to find feral seeds!')"><div class="wild-log-val" style="color:var(--sage)" id="w-steps">0</div><div class="wild-log-lbl">meters</div></div>
-      <div class="wild-log-stat" onclick="FG_Wild._logTip('Your biome + today\'s weather. Both shape what ferals spawn here.')"><div class="wild-log-val" style="font-size:0.7rem;" id="w-biome">🏡</div><div class="wild-log-lbl"><span id="w-biome-name">scanning</span> <span id="w-weather-chip" style="color:var(--gold);"></span></div></div>
+      <div class="wild-log-stat" onclick="if(window._lwShowBiomeDetail&&window._lastDetectedBiome)window._lwShowBiomeDetail(window._lastDetectedBiome);else if(window.FG_Wild&&FG_Wild._logTip)FG_Wild._logTip('Your biome and today\'s weather. Both shape what ferals spawn here.')"><div class="wild-log-val" style="font-size:0.7rem;" id="w-biome">🏡</div><div class="wild-log-lbl"><span id="w-biome-name">scanning</span> <span id="w-weather-chip" style="color:var(--gold);"></span></div></div>
       <div class="wild-log-stat" id="w-class-stat" onclick="if(window._LW_openClassPicker)_LW_openClassPicker();else if(window._openCompendiumUI)_openCompendiumUI();" style="cursor:pointer;"><div class="wild-log-val" style="font-size:0.85rem;" id="w-class-icon">—</div><div class="wild-log-lbl" id="w-class-lbl">no class</div></div>
       <div class="wild-log-wind" id="w-wind" onclick="if(window._lwCompassTap)window._lwCompassTap();" style="cursor:pointer;"><div class="wl-wind-top">Points North</div><img src="assets/compasses/compass-arrow.png" alt="compass" draggable="false"><div class="wl-wind-bottom">You face <b id="w-wind-facing">—</b></div></div>
     </div>
@@ -41789,6 +41789,11 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      full opacity and pointer-events; everything else dims. */
   body.lw-tut-active.lw-tut-newplant-only .greenhouse-plant{pointer-events:none !important;opacity:0.45 !important;filter:saturate(0.5);}
   body.lw-tut-active.lw-tut-newplant-only .greenhouse-plant.lw-tut-newplant-target{pointer-events:auto !important;opacity:1 !important;filter:none;animation:lwTutCardPulse 1.6s ease-in-out infinite;}
+  /* Pulse the newest tile during step 18 even when lw-tut-newplant-only
+     is NOT applied (we dropped the dim-others approach because it raced
+     with renderGreenhouse). Both tiles stay tappable, only the new one
+     pulses. */
+  body.lw-tut-active .greenhouse-plant.lw-tut-newplant-target{animation:lwTutCardPulse 1.6s ease-in-out infinite;box-shadow:0 0 0 2px rgba(200,168,75,0.55),0 0 16px rgba(200,168,75,0.35);}
   /* Step 19: carousel-lock is active but BREED carved out. The broad
      lock (.pgm-act-btn rule above) catches BREED too, so this rule
      selects the BREED button by its inline onclick and re-enables it. */
@@ -54552,24 +54557,27 @@ function _step18(){
   // Lock carousel action buttons (DOWNLOAD / INSPECT / SHARE / COMPOST /
   // BREED / close-X / arrows) the moment we enter step 18 so the player
   // can't compost or sidetrack when they tap the new plant. Card itself
-  // stays tappable so they can flip it. Step 19 keeps the lock and adds
-  // lw-tut-carousel-breed-only to carve out BREED.
-  try{document.body.classList.add('lw-tut-carousel-lock','lw-tut-newplant-only');}catch(e){}
+  // stays tappable so they can flip it.
+  try{document.body.classList.add('lw-tut-carousel-lock');}catch(e){}
   var polls=0;
   var waitForGH=function(){
     var ghTab=document.getElementById('tab-greenhouse');
     var onGH=ghTab&&getComputedStyle(ghTab).display!=='none';
     if(onGH){
-      // Highlight the new plant tile (tiles[0] = newest mint per render
-      // order) so the player can see at a glance which one to tap. Other
-      // tiles stay dimmed via lw-tut-newplant-only on body.
-      try{
-        var _tiles=document.querySelectorAll('.greenhouse-plant');
-        if(_tiles&&_tiles[0])_tiles[0].classList.add('lw-tut-newplant-target');
-      }catch(e){}
+      // Pulse the new tile so it stands out. Old approach dimmed all
+      // other tiles via lw-tut-newplant-only — but that race-conditioned
+      // with renderGreenhouse: if the new tile hadn't painted yet,
+      // BOTH tiles ended up dimmed and the player was stuck for ~2min
+      // until the BREED step finally fired. Stephen hit this on
+      // 2026-04-17 fresh-account run. New approach: NO dim on others,
+      // just pulse the new tile when we can find it. If we can't find
+      // it, both tiles stay tappable — flip-reveal hook only advances
+      // on a card that was actually unrevealed, so the wrong tile is
+      // a soft no-op.
+      _step18PulseNewTile(0);
       _dialog(
         '<span style="color:var(--gold);">Look at your new plant!</span><br><br>' +
-        'Tap it to open and flip it over \u2014 then we\u2019ll breed.',
+        'Tap it to open and flip it over, then we\u2019ll breed.',
         '',null,'bottom');
       if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
       return;
@@ -54581,6 +54589,41 @@ function _step18(){
   // The flip-reveal hook advances to _step19 on first-reveal of any card
   // while at step 18. 10-min safety fallback.
   setTimeout(function(){if(_getStep()===18)_done();},600000);
+}
+
+// Find the newest plant tile by hash + add the gold pulse. Retries up
+// to 10s while the greenhouse re-renders. Idempotent — safe to call
+// repeatedly. Pure additive: never dims other tiles.
+function _step18PulseNewTile(attempts){
+  var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+  if(gh.length<2){
+    if(attempts<40)setTimeout(function(){_step18PulseNewTile(attempts+1);},250);
+    return;
+  }
+  // Newest plant: max born / mintedAt timestamp.
+  var newest=null,newestT=0;
+  for(var i=0;i<gh.length;i++){
+    var t=gh[i].born||gh[i].mintedAt||0;
+    if(t>=newestT){newestT=t;newest=gh[i];}
+  }
+  if(!newest||!newest.hash)return;
+  // Find the tile DOM node by data-hash. Tiles render with data-hash
+  // attributes via renderGreenhouse — see line ~28200 in main IIFE.
+  var tiles=document.querySelectorAll('.greenhouse-plant');
+  if(!tiles.length){
+    if(attempts<40)setTimeout(function(){_step18PulseNewTile(attempts+1);},250);
+    return;
+  }
+  var found=null;
+  for(var j=0;j<tiles.length;j++){
+    var h=tiles[j].getAttribute('data-hash')||(tiles[j].dataset?tiles[j].dataset.hash:'')||'';
+    if(h===newest.hash){found=tiles[j];break;}
+  }
+  if(found){
+    found.classList.add('lw-tut-newplant-target');
+  } else if(attempts<40){
+    setTimeout(function(){_step18PulseNewTile(attempts+1);},250);
+  }
 }
 
 // ═══ STEP 19: point at BREED button in the carousel ═══
