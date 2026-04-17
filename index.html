@@ -41744,6 +41744,19 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
   body.lw-tut-active.lw-tut-nav-wild .fg-nav-btn.active::after{display:none !important;}
   body.lw-tut-active.lw-tut-nav-wild #nav-btn-wild{opacity:1 !important;filter:none !important;}
   body.lw-tut-active.lw-tut-nav-wild #nav-btn-wild img{opacity:1 !important;filter:brightness(1.15) drop-shadow(0 0 14px rgba(200,168,75,0.65)) !important;}
+  /* Step 22 (nav-nursery): same fake-bright pattern as nav-wild so the
+     player can see at a glance that nursery is now the active tab.
+     Without this the nav button stayed at the base 'lw-tut-active'
+     dimming because no rule restored the .active brightness for the
+     nursery tab. Stephen flagged this on 2026-04-17 test run. */
+  body.lw-tut-active.lw-tut-nav-nursery .fg-nav-btn.active{opacity:0.25 !important;filter:saturate(0.2) brightness(0.55) !important;}
+  body.lw-tut-active.lw-tut-nav-nursery .fg-nav-btn.active::after{display:none !important;}
+  body.lw-tut-active.lw-tut-nav-nursery #nav-btn-nursery{opacity:1 !important;filter:none !important;}
+  body.lw-tut-active.lw-tut-nav-nursery #nav-btn-nursery img{opacity:1 !important;filter:brightness(1.15) drop-shadow(0 0 14px rgba(122,179,86,0.65)) !important;}
+  body.lw-tut-active.lw-tut-nav-nursery #nav-btn-nursery::after{
+    content:'';position:absolute;bottom:2px;left:20%;right:20%;height:3px;
+    background:var(--sage);border-radius:1px;opacity:0.9;
+  }
   body.lw-tut-active.lw-tut-nav-wild #nav-btn-wild::after{
     content:'';position:absolute;bottom:2px;left:20%;right:20%;height:3px;
     background:var(--gold);border-radius:1.5px;opacity:1;
@@ -54478,7 +54491,7 @@ function _step20(){
   }
   _dialog(
     'Each plant rests after a breed before it can breed again. Common plants are ready in <span style="color:var(--gold);">3 days</span>; rarer plants take longer.<br><br>' +
-    'Take a look around the breed screen. Tap <span style="color:var(--gold);">CROSS-POLLINATE \u2192 NURSERY</span> when you\u2019re ready.',
+    'Tap <span style="color:var(--gold);">BREED &amp; SEND TO NURSERY</span> \u2014 your new seed will land in the Nursery tab.',
     'OKAY',function(){
       // Dismiss the dialog so the player can study the breed screen
       // without it blocking the view. The watch loop keeps polling for
@@ -55246,15 +55259,15 @@ function _resume(step){
     <div class="bs-cb" id="bs-card-b"></div>
   </div>
   <div class="bs-forecast" id="bs-forecast"></div>
-  <button class="bs-breed-btn" id="bs-breed-btn" onclick="window.bsConfirmBreed()">🧬 CROSS-POLLINATE → NURSERY</button>
+  <button class="bs-breed-btn" id="bs-breed-btn" onclick="window.bsConfirmBreed()">🧬 BREED & SEND TO NURSERY</button>
 </div>
 <div class="bs-confirm" id="bs-confirm">
   <div class="bs-confirm-card">
-    <div class="bs-confirm-title">🧬 Cross-Pollinate?</div>
+    <div class="bs-confirm-title">🧬 Send seed to Nursery?</div>
     <div class="bs-confirm-text" id="bs-confirm-text"></div>
     <div class="bs-confirm-btns">
       <button class="bs-cancel" onclick="document.getElementById('bs-confirm').classList.remove('open')">CANCEL</button>
-      <button class="bs-go" id="bs-go-btn" onclick="window.bsExecuteBreed()">BREED</button>
+      <button class="bs-go" id="bs-go-btn" onclick="window.bsExecuteBreed()">SEND TO NURSERY</button>
     </div>
   </div>
 </div>
