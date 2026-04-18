@@ -8481,6 +8481,28 @@ document.addEventListener('keydown', function(e) {
     if (_compInfoEA && _compInfoEA.idx === 27 && plant && typeof plant.snailWins === 'number') {
       ea += Math.min(10, Math.max(0, plant.snailWins));
     }
+    // BEHOLDER Omniscient Defender — any of the player's wild plants
+    // gets +2 EA whenever a Beholder is in the player's greenhouse.
+    // Checks greenhouse once per computeEA call, cached briefly.
+    // Fires only for wild plants (skip greenhouse plants — their EA is
+    // display-only and the Beholder is already there).
+    if (plant && typeof plant.lat === 'number' && typeof plant.lng === 'number') {
+      try {
+        var _bCacheAt = window._beholderCacheAt || 0;
+        var _bCache = window._beholderCache;
+        if (Date.now() - _bCacheAt > 60000) {
+          var _gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+          _bCache = false;
+          for (var _bi = 0; _bi < _gh.length; _bi++) {
+            var _bt = window.hashToTraits ? window.hashToTraits(_gh[_bi].hash) : null;
+            if (_bt && _bt.companion === 38) { _bCache = true; break; }
+          }
+          window._beholderCache = _bCache;
+          window._beholderCacheAt = Date.now();
+        }
+        if (_bCache) ea += 2;
+      } catch(e){}
+    }
     // THORNED keyword debuff — attackers who failed against a Thorned
     // defender carry -1 EA for 24h. Stamped on contest loss.
     if (plant && plant.thornedUntil && plant.thornedUntil > Date.now()) {
@@ -41607,6 +41629,16 @@ function _finishDrop(defenderGame){
   var pl=pd.plant,la=pd.lat,lo=pd.lng,wild=pd.wild;
 
   _drops++;_saveState();_afRecordDrop();
+  // Attacker-side Snail — if player just won a contest with a Snail
+  // plant (displaced is set, meaning they contested to win), seed
+  // snailWins=1 on the plant's data so it starts accumulating. Also
+  // stamped on the new wild plant record below.
+  try {
+    var _atT = window.hashToTraits ? window.hashToTraits(pl.hash) : null;
+    if (_atT && _atT.companion === 27 && pd.displaced) {
+      pl.snailWins = (pl.snailWins || 0) + 1;
+    }
+  } catch(e){}
   // Track wild drop count in per-hash metadata (survives greenhouse removal)
   try{
     var _pm=JSON.parse(localStorage.getItem('lw_plant_meta')||'{}');
