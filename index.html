@@ -8834,6 +8834,10 @@ document.addEventListener('keydown', function(e) {
 
   window.checkSynergies = checkSynergies;
   window.SYNERGY_META = SYNERGY_META;
+  // Expose the raw catalog so the BoS Secrets tab can render locked
+  // slots with a theme hint ("? Elemental fusion") instead of bare
+  // question marks. Read-only consumer — never mutate.
+  window.LW_SYNERGIES = _SYNERGIES;
 
   // Discovery tracker — records the FIRST time the player sees each
   // synergy and fires a celebration modal. Called from mint/bloom paths.
@@ -66260,11 +66264,64 @@ function _bosSecretsContent() {
   // Synergies section
   h+='<div id="sec-synergies" style="margin-bottom:0.8rem;scroll-margin-top:8px;">';
   h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.4rem;">\u2726 SYNERGIES <span style="color:var(--muted);font-size:0.5rem;">'+synCount+' / 60</span></div>';
+  // Theme color + hint map — applied to both discovered + locked
+  // tiles so players can see "what kind of synergy am I chasing"
+  // without needing a riddle per entry. Audit: Events tab shows full
+  // riddles for locked entries; Synergies had bare '?' with no
+  // "what should I chase" signal.
+  var _synThemeMeta = {
+    elemental: { color:'#d4842a', icon:'\ud83d\udd25', hint:'Elemental fusion \u2014 fire, ice, storm, tide' },
+    nature:    { color:'#7ab356', icon:'\ud83c\udf3f', hint:'Natural alliance \u2014 creature + root + season' },
+    cosmic:    { color:'#a88fd4', icon:'\u2728',       hint:'Cosmic alignment \u2014 aura, star, time' },
+    dark:      { color:'#8a6b9d', icon:'\ud83c\udf11', hint:'Shadow work \u2014 void, bone, silhouette' }
+  };
   h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">';
-  // Build synergy grid from _SYNERGIES
-  if(window._SYNERGIES){
-    // Can't access _SYNERGIES directly (inside IIFE), use getSynergy approach
-    // Instead show discovered synergies
+  // Build synergy grid from LW_SYNERGIES (full catalog) so locked
+  // slots carry a theme hint instead of bare '?'. If the expose
+  // hasn't loaded yet, fall back to the legacy discovered-only view.
+  if(window.LW_SYNERGIES){
+    var _allSyns = window.LW_SYNERGIES;
+    // Build a set of synergy names discovered since last SECRETS visit
+    // (via LW_Log). These get the NEW treatment — gold ring + dot.
+    var _synNewSet = {};
+    try {
+      if (window.LW_Log && window._bosPrevReadTs != null) {
+        var _allSynLog = window.LW_Log.all();
+        for (var _sli = 0; _sli < _allSynLog.length; _sli++) {
+          var _sle = _allSynLog[_sli];
+          if (_sle.type === 'synergy_discovered' && _sle.ts > window._bosPrevReadTs && _sle.data && _sle.data.name) {
+            _synNewSet[_sle.data.name] = true;
+          }
+        }
+      }
+    } catch(e){}
+    for (var _asi = 0; _asi < _allSyns.length && _asi < 60; _asi++) {
+      var _asEntry = _allSyns[_asi];
+      if (!_asEntry || !_asEntry.name) continue;
+      var _asFound = !!foundSynergies[_asEntry.name];
+      var _asTheme = _synThemeMeta[_asEntry.theme] || { color:'rgba(122,179,86,0.35)', icon:'\u2726', hint:'Hidden alignment' };
+      var _asNew = _synNewSet[_asEntry.name];
+      if (_asFound) {
+        var _asBorder = _asNew ? 'var(--gold)' : _asTheme.color + '66';
+        var _asBg = _asNew ? 'rgba(200,168,75,0.12)' : _asTheme.color + '14';
+        var _asShadow = _asNew ? 'box-shadow:0 0 8px rgba(200,168,75,0.35);' : '';
+        var _asNameEsc = _asEntry.name.replace(/'/g,"\\'");
+        h += '<div onclick="window._lwShowSynergyDetail(\''+_asNameEsc+'\')" style="position:relative;padding:4px;background:'+_asBg+';border:1px solid '+_asBorder+';border-radius:6px;text-align:center;min-height:36px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background 0.15s ease;'+_asShadow+'" title="'+_asEntry.name+': '+(_asEntry.fx||'')+(_asNew?' (new)':'')+'">';
+        if (_asNew) h += '<span style="position:absolute;top:2px;right:2px;width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 4px rgba(200,168,75,0.9);"></span>';
+        h += '<div style="font-size:0.5rem;">'+_asTheme.icon+'</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.25rem;color:'+(_asNew?'var(--gold)':_asTheme.color)+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">'+_asEntry.name+'</div>';
+        h += '</div>';
+      } else {
+        // Locked — show theme hint, not bare '?'. Tooltip carries the
+        // fuller hint string for players who hover/long-press.
+        h += '<div style="padding:4px;background:rgba(26,36,22,0.3);border:1px dashed '+_asTheme.color+'44;border-radius:6px;text-align:center;min-height:36px;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0.55;" title="'+_asTheme.hint+'">';
+        h += '<div style="font-size:0.46rem;color:'+_asTheme.color+';opacity:0.7;">'+_asTheme.icon+'</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.24rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">'+_asEntry.theme+'</div>';
+        h += '</div>';
+      }
+    }
+  } else if(window._SYNERGIES){
+    // Legacy fallback — kept in case LW_SYNERGIES somehow missing.
     var synKeys=Object.keys(foundSynergies);
     // Build a set of synergy names discovered since last SECRETS visit
     // (via LW_Log). These will get the NEW treatment — gold ring + dot.
