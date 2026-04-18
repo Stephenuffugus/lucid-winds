@@ -30283,6 +30283,17 @@ document.addEventListener('keydown', function(e) {
   // (Haiku zoom removed — was interfering with card close/flip taps)
 
   window._handleCardFlip = function(el, evt) {
+    // Tutorial freeze guard — the CSS rule pointer-events:none on
+    // .cs-flip-wrap is unreliable on iOS Safari when the card is
+    // inside a 3D-transformed ancestor (.flip-container has
+    // perspective:800px). JS belt-and-suspenders: if body has the
+    // freeze class, early-return so the flip never fires even if the
+    // tap reached the handler.
+    try {
+      if (document.body && document.body.classList.contains('lw-tut-carousel-freeze')) {
+        return;
+      }
+    } catch (e) {}
     // Belt-and-suspenders: if the tap originated on the details button or any
     // other interactive child, don't toggle the flip — even when inline
     // stopPropagation has run. Some Android browsers re-fire click on the
