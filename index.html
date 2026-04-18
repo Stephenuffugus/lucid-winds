@@ -62976,12 +62976,12 @@ window._lwClaimHerbarium = function(id){
       art:'assets/items/slow-arrow.png', icon:'\ud83c\udff9',
       desc:'Pin this spot for 6 hours. Return any time in that window to forage it from anywhere.',
       lore:'Loosed at moss, not at a heart. The arrow waits where it fell and the hex stays open to you.',
-      usage:'tap USE to pin, then again within 6h to forage', wired:false },
+      usage:'tap USE to pin, then again within 6h to forage', wired:true },
     whisperVine: { key:'whisperVine', name:'Whisper Vine', category:'remote', rarity:'Common',
       art:'assets/items/whisper-vine.png', icon:'\ud83c\udf43',
       desc:'Tag this spot for 7 days. Once a day, a reseeded hex delivers a Compass Shard.',
       lore:'A creeper laid across a hex. It tugs your sleeve when the seed inside turns over.',
-      usage:'tap USE to start listening', wired:false },
+      usage:'tap USE to start listening', wired:true },
     wanderersMap: { key:'wanderersMap', name:"Wanderer\u2019s Map", category:'remote', rarity:'Epic',
       art:'assets/items/wanderers-map.png', icon:'\ud83d\uddfa\ufe0f',
       desc:'The wind decides. Carries you to a random real biome hex to forage once.',
@@ -63658,10 +63658,11 @@ window._lwClaimHerbarium = function(id){
   function _pickItemOfRarity(rarity){
     var keys = [];
     var CAT = window.LW_ITEMS_CATALOG || {};
-    for (var k in CAT) if (CAT[k].rarity === rarity) keys.push(k);
+    // Skip wired:false items so dead catalog rows can't drop into pouches
+    // and sit there as inert clutter (delegateToken until co-op is built).
+    for (var k in CAT) if (CAT[k].rarity === rarity && CAT[k].wired !== false) keys.push(k);
     if (!keys.length) {
-      // Fallback: pick from any rarity at or below
-      for (var k2 in CAT) keys.push(k2);
+      for (var k2 in CAT) if (CAT[k2].wired !== false) keys.push(k2);
     }
     return keys[Math.floor(Math.random()*keys.length)];
   }
