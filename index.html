@@ -8386,8 +8386,13 @@ document.addEventListener('keydown', function(e) {
     if (comp === 38) ea += 5; else if (comp === 37) ea += 4;
     else if (comp >= 34 && comp <= 36) ea += 3; else if (comp >= 32) ea += 3;
     else if (comp >= 20) ea += 1;
-    // AURA (0-3)
-    if (traits.aura >= 15) ea += 3; else if (traits.aura >= 8) ea += 2; else if (traits.aura >= 1) ea += 1;
+    // AURA (0-3) — Starlight Cradle pot doubles this contribution per
+    // its lore "doubles aura intensity." Reads plant.potAuraBoost (set
+    // at bloom when birthPot==='starlight').
+    var _auraEA = 0;
+    if (traits.aura >= 15) _auraEA = 3; else if (traits.aura >= 8) _auraEA = 2; else if (traits.aura >= 1) _auraEA = 1;
+    if (plant && plant.potAuraBoost && _auraEA > 0) _auraEA *= 2;
+    ea += _auraEA;
     // MUTATION: rare ≠ strong
     var mut = traits.mutationName;
     if (mut === 'Wireframe') ea += 1;
@@ -8397,7 +8402,11 @@ document.addEventListener('keydown', function(e) {
     var base = traits.base % 71;
     // Rare substrates (Crystal=15, Meteorite=28, Mycelium=29): +1 EA
     // Legendary+ substrates (56-61): +2 EA
-    if (base >= 56) ea += 2; else if (base === 15 || base === 28 || base === 29 || (base >= 52 && base <= 55)) ea += 1;
+    // Meteorite Dust (idx 28) — promoted to +2 EA per CLAUDE.md design note
+    // ("Meteorite Substrate: rare and +2 EA"). Audit flagged the mismatch;
+    // code previously put it in the +1 bucket with other rare substrates.
+    if (base >= 56 || base === 28) ea += 2;
+    else if (base === 15 || base === 29 || (base >= 52 && base <= 55)) ea += 1;
     // SEASON (0-2) — chimeras get dual immunity via plant param
     // Mammoth Permafrost: ignore seasonal stress, +2 in off-season
     var _compInfoEA = window.getCompanionInfo ? getCompanionInfo(traits) : null;
@@ -33391,8 +33400,12 @@ document.addEventListener('keydown', function(e) {
       compostLayers: Object.keys(_compostLayers).length > 0 ? _compostLayers : null,
       fertApplied: _fertCount || 0,
       // Pot-derived bonuses baked into the plant:
-      //   moonstone = +1 EA, iron = +2 EA (climate immunity), starlight = +1
+      //   moonstone  = +1 EA
+      //   iron       = +2 EA (climate immunity)
+      //   starlight  = +1 EA + potAuraBoost (doubles aura contribution
+      //                in computeEA per the lore "doubles aura intensity")
       eaBonus: (_potId === 'moonstone') ? 1 : (_potId === 'iron') ? 2 : (_potId === 'starlight') ? 1 : 0,
+      potAuraBoost: (_potId === 'starlight') ? true : false,
       forceFlower: (_potId === 'velvet') ? true : false,
       birthPot:  _potId || null,
       // Kept for storage shape compatibility with existing plants; always false now.
