@@ -9227,6 +9227,14 @@ document.addEventListener('keydown', function(e) {
     // Nursery just got a seed — recompute wilt pressure on cuttings.
     // If the new seed fills the last slot, existing cuttings start wilting.
     try { _updateCuttingPressure(); } catch(e) {}
+    // Leveling archetype: Pangolin (43) Action on chimera bred.
+    // Fires on any breed seed (bred seeds always carry chimera lineage).
+    // Non-bred origin seeds (cuttings, gifts) don't count.
+    try {
+      if (opts.parentAHash && opts.parentBHash && window._LW_companionXpBumpIfOwned) {
+        window._LW_companionXpBumpIfOwned([43], 1);
+      }
+    } catch(e){}
     return {ok:true,seed:seed};
   }
 
@@ -31520,6 +31528,8 @@ document.addEventListener('keydown', function(e) {
     if (typeof gtag !== 'undefined') gtag('event', 'plant_composted', { hash: plant.hash.slice(0,8), dna: dnaReward });
     if (window._trackQuest) window._trackQuest('composted', 1);
     if (window.LW_Log) window.LW_Log.write('plant_composted', { hash: plant.hash, name: typeof getPlantName === 'function' ? getPlantName(plant.hash) : '', tier: _tg.name, fertilizer: fertReward });
+    // Leveling archetype: Scarab Beetle (64) Action — +1 per compost.
+    try { if (window._LW_companionXpBumpIfOwned) window._LW_companionXpBumpIfOwned([64], 1); } catch(e){}
     // Compost Cycle — 3 composts in a single day
     try { if (window.LW_Events) window.LW_Events.incCounter('compost_cycle', 3, 'Compost Cycle', 'day'); } catch(e){}
     // The Keeper Remembers — 25 lifetime composts
@@ -39065,6 +39075,8 @@ function _doCollectFeral(f,mk){
   if(typeof gtag!=='undefined') gtag('event','feral_collected',{grade:info.grade,dew_reward:reward});
   if(window._LW_classXP)window._LW_classXP('feral',10);
   if(window._LW_toolXP)window._LW_toolXP('pouch',5);
+  // Leveling archetype: Hummingbird (28) + Mouse (55) Action on feral collect.
+  try { if (window._LW_companionXpBumpIfOwned) window._LW_companionXpBumpIfOwned([28, 55], 1); } catch(e){}
   // Tutorial-proxy: first feral collection is a milestone.
   try{if(window.LW_XP)window.LW_XP.grantOnce('first_feral',10,'first_of_kind','🌿 +10 XP. First feral seed. They grow different from garden stock.');}catch(e){}
   if(window._lwCompleteQuest)window._lwCompleteQuest('q_first_feral');
