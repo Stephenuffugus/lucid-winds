@@ -37934,10 +37934,26 @@ function _doReproduction(weather, simMode) {
       var _tZoneMap = _getAllZonePlants();
       var _tPlayerStats = {};
       try {
+        // watersToday / midnightWaters / samePairBreeds are checked by
+        // TRIGGERS ids rainfall / midnight_gardener / faithful_pairing
+        // respectively. Pulled from the LW_Events counter store + a
+        // lightweight count of today's wild-water log entries. Missing
+        // values default to 0 so unchecked TRIGGERS never throw.
+        var _waterCt = 0, _mwCt = 0, _samePair = 0;
+        try {
+          if (window.LW_Events && window.LW_Events.getCounter) {
+            _waterCt = window.LW_Events.getCounter('rainfall') || 0;
+            _mwCt = window.LW_Events.getCounter('midnightWaters') || 0;
+            _samePair = window.LW_Events.getCounter('samePairBreeds') || 0;
+          }
+        } catch (egc) {}
         _tPlayerStats = {
           ghCount: (JSON.parse(localStorage.getItem('sws_greenhouse') || '[]') || []).length,
           wildCount: _tWild.length,
-          dayCount: new Date().getDate()
+          dayCount: new Date().getDate(),
+          watersToday: _waterCt,
+          midnightWaters: _mwCt,
+          samePairBreeds: _samePair
         };
       } catch (eps) {}
       for (var _ti = 0; _ti < _tWild.length; _ti++) {
@@ -58647,7 +58663,10 @@ var TRIGGERS=[
     effect:'Plant can never die from seasonal mortality',reward:{ea:2,pollen:15}},
 
   // ── PLAYER ACTION ──
-  {id:'rainfall',name:'Rainfall',riddle:'Ten gardens tended by a stranger\'s hand.',category:'action',
+  // Riddle previously said "stranger's hand" but the check counts ALL
+  // waters (self + stranger). Riddle updated to match the real
+  // mechanic — ten waters in a single day, whoever they're for.
+  {id:'rainfall',name:'Rainfall',riddle:'Ten waters fall from one keeper\u2019s hand in a single day.',category:'action',
     check:function(c){return c.playerStats&&c.playerStats.watersToday>=10;},
     effect:'Your wild plants auto-watered 3 days',reward:{pollen:20}},
   {id:'midnight_gardener',name:'Midnight Gardener',riddle:'Who waters between the hours of twelve and four?',category:'action',
@@ -65536,6 +65555,20 @@ function _bosReportContent() {
   }
 
   function fired(name){ return !!_read()[name]; }
+  // Read a counter's current value, respecting day/week scope boundaries.
+  // Used by the Compendium trigger check to populate playerStats fields
+  // (watersToday, midnightWaters, samePairBreeds). Returns 0 if the
+  // counter's scope window has rolled over.
+  function getCounter(key, scope){
+    scope = scope || 'day';
+    if (scope === 'session') return _sessionCtrs[key] || 0;
+    var ctrs = _readCtr();
+    var entry = ctrs[key];
+    if (!entry) return 0;
+    var currentK = scope === 'day' ? _todayKey() : scope === 'week' ? _weekKey() : 'all';
+    if (entry.k !== currentK) return 0;
+    return entry.n || 0;
+  }
   function resetAll(){ _write({}); _writeCtr({}); _sessionCtrs = {}; }
 
   // Passive scan — call after greenhouse/companion changes. Checks events
@@ -65782,6 +65815,7 @@ function _bosReportContent() {
     fire: fire,
     fired: fired,
     incCounter: incCounter,
+    getCounter: getCounter,
     scanPassive: scanPassive,
     checkFirstLight: checkFirstLight,
     checkEveningHarvest: checkEveningHarvest,
