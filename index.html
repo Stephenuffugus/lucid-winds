@@ -37594,13 +37594,16 @@ window._primeWildWeather = function(force) {
 // Fetch real weather from Open-Meteo (free, no API key)
 function _fetchReproWeather(lat, lng, cb) {
   if (_reproWeather && (Date.now() - _reproWeather.fetched) < 3600000) { cb(_reproWeather); return; }
+  // windspeed_10m added for climate-damage wind breach check.
+  // Open-Meteo returns wind speed in km/h by default; we store as km/h.
   var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat.toFixed(4) + '&longitude=' + lng.toFixed(4) + '&current_weather=true&daily=precipitation_sum&timezone=auto&forecast_days=1';
   fetch(url).then(function(r) { return r.json(); }).then(function(d) {
     var rain = 0; try { rain = d.daily.precipitation_sum[0] || 0; } catch (e) {}
     var temp = 20; try { temp = d.current_weather.temperature || 20; } catch (e) {}
-    _reproWeather = { rain: rain, temp: temp, fetched: Date.now() };
+    var wind = 0; try { wind = d.current_weather.windspeed || 0; } catch (e) {}
+    _reproWeather = { rain: rain, temp: temp, wind: wind, fetched: Date.now() };
     cb(_reproWeather);
-  }).catch(function() { cb({ rain: 0, temp: 20, fetched: Date.now() }); });
+  }).catch(function() { cb({ rain: 0, temp: 20, wind: 0, fetched: Date.now() }); });
 }
 
 function _wildReproduction(simMode) {
@@ -37706,6 +37709,16 @@ function _wildClimateTick(weather) {
       breaches.push({ kind: 'flood', diff: Math.round(extraMm * 10) / 10, hours: dF });
       damageH += dF;
     }
+    // Wind: Open-Meteo returns km/h, plant.windMax is mph. Convert.
+    if (typeof t.windMax === 'number' && typeof weather.wind === 'number') {
+      var windMph = weather.wind / 1.609;
+      if (windMph > t.windMax) {
+        var overMph = windMph - t.windMax;
+        var dG = Math.min(24, Math.ceil(overMph / 5) * 6);
+        breaches.push({ kind: 'wind', diff: Math.round(overMph * 10) / 10, hours: dG });
+        damageH += dG;
+      }
+    }
     // Stamp regardless of whether we damaged — prevents re-checking
     // minutes later if the player reopens the app.
     p.lastClimateTick = now;
@@ -37715,6 +37728,13 @@ function _wildClimateTick(weather) {
       if (typeof p.decayAt === 'number' && p.decayAt > 0) {
         p.decayAt = Math.max(now, p.decayAt - damageMs);
       }
+      // Stash last breach summary so the trait panel can surface
+      // "🔥 Heat-stressed · -18h" without redoing the compare.
+      p.lastClimateBreach = {
+        at: now,
+        kinds: breaches.map(function(b){return b.kind;}),
+        damageH: damageH
+      };
       if (window._logWildEvent) {
         try {
           var plantName = window.getPlantName ? window.getPlantName(p.hash) : p.hash.slice(0, 8);
@@ -37726,7 +37746,8 @@ function _wildClimateTick(weather) {
             breaches: breaches,
             damageH: damageH,
             temp: weather.temp,
-            rain: weather.rain
+            rain: weather.rain,
+            wind: weather.wind
           });
         } catch (e) {}
       }
