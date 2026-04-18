@@ -39928,13 +39928,25 @@ function _rollTakeover(attackerPlant,defenderPlant,opts){
   try{if(window.isWeatherSun&&window.isWeatherSun())attWeather=3;}catch(e){}
   // Defender: Moonwake → +3 flat EA bonus on this contest.
   var defMoonwake = opts.defenderMoonwake ? 3 : 0;
+  // Herd Immunity — Cicada (companion idx 33) defender gets +1 EA per
+  // own-plant ally in the same zone, capped at +4. Requires the caller
+  // (see _drop) to pass opts.defenderAllyCount. Previously registered
+  // as a Mythic ability but had zero consumers.
+  var defHerd = 0;
+  try {
+    var _defTraits = window.hashToTraits ? window.hashToTraits(defenderPlant.hash) : null;
+    if (_defTraits && _defTraits.companion === 33 && typeof opts.defenderAllyCount === 'number') {
+      defHerd = Math.min(4, Math.max(0, opts.defenderAllyCount));
+    }
+  } catch (e) {}
   var attTotal=attEA+attRoll+attComp+attWeather;
-  var defTotal=defEA+defRoll+defComp+defMoonwake;
+  var defTotal=defEA+defRoll+defComp+defMoonwake+defHerd;
   return{
     attEA:attEA,defEA:defEA,
     attRoll:attRoll,defRoll:defRoll,
     attComp:attComp,defComp:defComp,
     attWeather:attWeather,defMoonwake:defMoonwake,
+    defHerd:defHerd,
     attTotal:attTotal,defTotal:defTotal,
     attackerWins:attTotal>defTotal,
     itemsApplied: opts
@@ -40135,6 +40147,12 @@ window._showContestRoll = function(roll, attackerPlant, defenderPlant, onDone){
     h+=  '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--muted);text-align:center;">\u2014</div>';
     h+=  '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--gold);text-align:center;">+'+roll.defMoonwake+'</div></div>';
   }
+  if(roll.defHerd){
+    h+='<div id="lwcr-herd" style="display:grid;grid-template-columns:1fr 52px 52px;gap:0.4rem;align-items:center;padding:0.5rem 0;border-bottom:1px dashed rgba(200,168,75,0.14);opacity:0;transform:translateY(8px);transition:opacity 0.4s,transform 0.4s;">';
+    h+=  '<div style="font-family:DM Mono,monospace;font-size:0.54rem;color:var(--muted);letter-spacing:0.06em;">Herd Immunity \ud83c\udfad</div>';
+    h+=  '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--muted);text-align:center;">\u2014</div>';
+    h+=  '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--gold);text-align:center;">+'+roll.defHerd+'</div></div>';
+  }
   if(itemBadges.length){
     h+='<div id="lwcr-items" style="padding:0.35rem 0;border-bottom:1px dashed rgba(200,168,75,0.14);opacity:0;transition:opacity 0.4s;">';
     h+=  '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);letter-spacing:0.06em;text-align:center;">'+itemBadges.join('  \u00b7  ')+'</div></div>';
@@ -40181,6 +40199,7 @@ window._showContestRoll = function(roll, attackerPlant, defenderPlant, onDone){
   if(roll.attComp||roll.defComp){at(tm,function(){var r=document.getElementById('lwcr-comp');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
   if(roll.attWeather){at(tm,function(){var r=document.getElementById('lwcr-weather');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
   if(roll.defMoonwake){at(tm,function(){var r=document.getElementById('lwcr-moon');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
+  if(roll.defHerd){at(tm,function(){var r=document.getElementById('lwcr-herd');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
   if(itemBadges.length){at(tm,function(){var r=document.getElementById('lwcr-items');if(r)r.style.opacity='1';});tm+=320;}
   at(tm,function(){
     var r=document.getElementById('lwcr-total');if(r)r.style.opacity='1';
@@ -40314,11 +40333,19 @@ function _drop(pl){
         }
         // Read attacker's primed items + defender's timed buffs.
         var iq = (window.LW_ITEMS&&window.LW_ITEMS.consumeContestQueue)?window.LW_ITEMS.consumeContestQueue():{};
+        // Herd Immunity — count defender's own-plant allies in this
+        // zone so _rollTakeover can apply Cicada's +1/ally bonus.
+        var _herdCount = 0;
+        for (var _hi = 0; _hi < inZone.length; _hi++) {
+          var _hz = inZone[_hi];
+          if (_hz && _hz.hash !== targetPlant.hash && _hz.ownerUid && _hz.ownerUid === targetPlant.ownerUid) _herdCount++;
+        }
         var rollOpts = {
           attackerTorch:    !!iq.torch,
           attackerDustStorm:!!iq.dustStorm,
           defenderBramble:  !!(window.LW_ITEMS&&window.LW_ITEMS.hasBramble&&window.LW_ITEMS.hasBramble(targetPlant.hash)),
-          defenderMoonwake: !!(window.LW_ITEMS&&window.LW_ITEMS.hasMoonwake&&window.LW_ITEMS.hasMoonwake(targetPlant.hash))
+          defenderMoonwake: !!(window.LW_ITEMS&&window.LW_ITEMS.hasMoonwake&&window.LW_ITEMS.hasMoonwake(targetPlant.hash)),
+          defenderAllyCount:_herdCount
         };
         var tEA=_wildEA(targetPlant);
         var _roll=_rollTakeover({hash:pl.hash,ea:myEA},{hash:targetPlant.hash,ea:tEA},rollOpts);
