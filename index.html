@@ -5906,6 +5906,9 @@ window._addSwitchTabHook = function(fn){
         <div class="wtp2-stat"><div class="wtp2-stat-val" id="wtp-status">—</div><div class="wtp2-stat-lbl">Status</div></div>
       </div>
       <div class="wtp2-prox" id="wtp-own-status"></div>
+      <!-- Climate stress readout — only populated when a recent _wildClimateTick
+           breach is stashed on the plant (.lastClimateBreach). Hidden otherwise. -->
+      <div id="wtp-climate" style="display:none;font-family:'DM Mono',monospace;font-size:clamp(.4rem,1.1vw,.5rem);text-align:center;padding:2px 16px 4px;letter-spacing:0.06em;"></div>
       <!-- Action buttons — other player's plant -->
       <div class="wtp2-actions" id="wtp-other-actions">
         <button class="wtp2-btn" onclick="FG_Wild.closeTP()"><div class="wtp2-btn-icon">✕</div><div class="wtp2-btn-lbl">Close</div></button>
@@ -38860,6 +38863,35 @@ function showTP(p,mk){
     } else {
       st.textContent=p.status||'\u2014';st.style.color=p.status==='Thriving'?'var(--sage)':'var(--cream)';
       st.parentNode.querySelector('.wtp2-stat-lbl').textContent='Status';
+    }
+  }
+
+  // Climate stress readout — shows recent breach kinds + total
+  // damage hours from last _wildClimateTick. Owned plants only in
+  // v2; stranger plants hide the line since their breach data
+  // isn't in our local store.
+  var _climEl = document.getElementById('wtp-climate');
+  if (_climEl) {
+    var _cb = null;
+    try {
+      if (p.own) {
+        var _wLst = _getWild();
+        for (var _wi = 0; _wi < _wLst.length; _wi++) {
+          if (_wLst[_wi] && _wLst[_wi].hash === p.hash) { _cb = _wLst[_wi].lastClimateBreach; break; }
+        }
+      }
+    } catch (e) {}
+    if (_cb && _cb.at && (Date.now() - _cb.at) < 26 * 3600000 && _cb.kinds && _cb.kinds.length) {
+      var _icons = { heat: '\ud83d\udd25', cold: '\u2744\ufe0f', flood: '\ud83d\udca6', wind: '\ud83d\udca8' };
+      var _labels = { heat: 'Heat-stressed', cold: 'Cold-shocked', flood: 'Flooded', wind: 'Wind-battered' };
+      var _multi = _cb.kinds.length > 1;
+      var _icon = _multi ? '\u26c8\ufe0f' : (_icons[_cb.kinds[0]] || '\u26a0');
+      var _label = _multi ? 'Multi-stress' : (_labels[_cb.kinds[0]] || 'Stress');
+      var _col = _cb.damageH >= 18 ? '#c87060' : (_cb.damageH >= 8 ? 'var(--gold)' : 'var(--muted)');
+      _climEl.innerHTML = _icon + ' <span style="color:' + _col + ';">' + _label + '</span> <span style="color:var(--muted);">\u00b7 -' + _cb.damageH + 'h today</span>';
+      _climEl.style.display = 'block';
+    } else {
+      _climEl.style.display = 'none';
     }
   }
 
