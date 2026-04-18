@@ -5319,6 +5319,33 @@ window._switchTabHooks = window._switchTabHooks || [];
 window._addSwitchTabHook = function(fn){
   if (typeof fn === 'function') window._switchTabHooks.push(fn);
 };
+
+// ── WILD EVENT LOG STUB — early buffer so pre-boot events don't vanish ──
+// The real window._logWildEvent installs near the bottom of the file
+// (~L58842). If a background tick fires before that script block has
+// parsed, events drop silently because every caller guards with
+// `if(window._logWildEvent)`. This stub catches them into a localStorage
+// buffer; the real logger drains it on first call. Both reads share
+// the same 'lw_wild_evt_buffer' key so nothing is orphaned.
+(function(){
+  if (window._logWildEvent) return;
+  var BUF_KEY = 'lw_wild_evt_buffer';
+  window._logWildEvent = function(evt){
+    if (!evt || !evt.type) return;
+    try {
+      var buf = [];
+      try { buf = JSON.parse(localStorage.getItem(BUF_KEY) || '[]'); } catch(e){}
+      if (!Array.isArray(buf)) buf = [];
+      evt.date = evt.date || new Date().toISOString();
+      evt.ts = Date.now();
+      if (typeof evt.read !== 'boolean') evt.read = false;
+      buf.push(evt);
+      if (buf.length > 200) buf = buf.slice(-200); // soft cap
+      localStorage.setItem(BUF_KEY, JSON.stringify(buf));
+    } catch(e){}
+  };
+  window._logWildEventIsStub = true;
+})();
 </script>
 
 <script>
@@ -58839,6 +58866,26 @@ function _saveEvents(evts){
     localStorage.setItem('lw_book_read_migrated','1');
   }catch(e){}
 })();
+// Drain any events buffered by the early-boot stub (see top-of-file
+// stub near the switchTab-hook bootstrap). Runs exactly once the first
+// time the real logger replaces the stub.
+(function _drainWildEventBuffer(){
+  try {
+    var raw = localStorage.getItem('lw_wild_evt_buffer');
+    if (!raw) return;
+    var buf = JSON.parse(raw);
+    if (!Array.isArray(buf) || !buf.length) {
+      localStorage.removeItem('lw_wild_evt_buffer');
+      return;
+    }
+    var evts = _loadEvents();
+    for (var i = 0; i < buf.length; i++) {
+      if (buf[i] && buf[i].type) evts.push(buf[i]);
+    }
+    _saveEvents(evts);
+    localStorage.removeItem('lw_wild_evt_buffer');
+  } catch (e) {}
+})();
 window._logWildEvent=function(evt){
   if(!evt||!evt.type)return;
   evt.date=evt.date||new Date().toISOString();
@@ -58854,6 +58901,8 @@ window._logWildEvent=function(evt){
   // have to wait for the 30s poll. setTimeout keeps this async-safe.
   setTimeout(function(){if(window._updateBookBadge)window._updateBookBadge();},0);
 };
+// Clear the stub flag so later code knows the real logger is active.
+try { window._logWildEventIsStub = false; } catch (e) {}
 window._markBookRead=function(){
   try{
     var evts=_loadEvents();
