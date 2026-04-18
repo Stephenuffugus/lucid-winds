@@ -57772,16 +57772,44 @@ window.breedingForecast=function(hashA,hashB){
   var tA=hashToTraits(hashA),tB=hashToTraits(hashB);
   if(!tA||!tB)return null;
 
+  // Forecast offspring generator that MIRRORS crossPollinateHashes at
+  // line ~8924 (Mendelian mix on 0-31, random on 32-63) instead of the
+  // old XOR-all-bytes shortcut. The shortcut produced near-uniform
+  // random hashes → Mythic/Cosmic showed at ~15% for Common+Common
+  // breeds when the real path gives ~1%. Sync-only (no SHA-256) but
+  // distribution-accurate: the statistical properties match what the
+  // real breed loop produces because both use Mendelian byte selection
+  // with the same dominance thresholds (dom<8→A, dom>=8→B, dom===15→
+  // seed pick). Skips the mutation/mythic special-case overrides from
+  // the real path since those only fire when BOTH parents carry those
+  // rare traits, which is rare enough to not materially shift the
+  // headline distribution.
+  function _fcOffHash(){
+    var a=hashA.toLowerCase().padEnd(64,'0');
+    var b=hashB.toLowerCase().padEnd(64,'0');
+    // Build a pseudo-seed (not SHA-256 — just Math.random hex stream).
+    var seed='';
+    for(var si=0;si<64;si++)seed+=((Math.random()*16)|0).toString(16);
+    var child=seed.split('');
+    // Mendelian mix: positions 0-31.
+    for(var mi=0;mi<32;mi++){
+      var dom=parseInt(seed[mi],16);
+      if(dom===15){child[mi]=seed[mi+32]||'0';} // hybrid vigor
+      else if(dom<8){child[mi]=a[mi];}
+      else{child[mi]=b[mi];}
+    }
+    // Mendelian recessive overrides for Golden Pot + Glow Flower, same
+    // as the real path — keeps those rare-but-reachable distributions.
+    if(a[0]==='f'&&b[0]==='f')child[0]='f';
+    if(a[11]==='f'&&b[11]==='f')child[11]='f';
+    // Positions 32-63 stay as fresh seed bytes (real path behavior).
+    return child.join('');
+  }
+
   // Simulate 20 potential offspring to build probability ranges
   var results={grades:{},seasons:{},companions:{},mutations:0,eaRange:[99,0],hasFlower:0};
   for(var sim=0;sim<20;sim++){
-    // Quick offspring hash simulation
-    var offHash='';
-    for(var i=0;i<64;i++){
-      var a=parseInt(hashA[i]||'0',16),b=parseInt(hashB[i]||'0',16);
-      var seed=(a^b^(sim*13+i*7))%16;
-      offHash+=seed.toString(16);
-    }
+    var offHash=_fcOffHash();
     var ot=hashToTraits(offHash);
     var og=window.getTerraGrade?getTerraGrade(ot):{name:'Common'};
     var oea=window.computeEA?computeEA(ot,0):0;
