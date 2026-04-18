@@ -4856,7 +4856,10 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
 .lw-quest-glyph{font-size:1.05rem;line-height:1;flex-shrink:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));}
 .lw-quest-text{flex:1;min-width:0;}
 .lw-quest-title{font-family:'Bebas Neue',sans-serif;font-size:0.72rem;letter-spacing:0.1em;color:var(--gold);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.lw-quest-body{font-family:'DM Mono',monospace;font-size:0.46rem;color:var(--cream);opacity:0.78;line-height:1.3;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* Body: 2-line clamp instead of 1-line ellipsis. Most buildSuggestions
+   copy is 1-2 sentences; clipping at ~30 chars was gutting useful
+   guidance like "Win, lose, or quit. Any first game completes..." */
+.lw-quest-body{font-family:'DM Mono',monospace;font-size:0.46rem;color:var(--cream);opacity:0.78;line-height:1.35;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .lw-quest-arrow{font-family:'Bebas Neue',sans-serif;font-size:0.9rem;color:var(--gold);opacity:0.55;flex-shrink:0;padding-right:2px;}
 
 /* Wild-tab placement: fixed just below the stats bar, above the map. */
@@ -68923,6 +68926,7 @@ window.LW_Comp = (function(){
 
   window._lwRefreshQuestLine = _refresh;
   window._lwQuestTap = function(){
+    try{ if(window._haptic) window._haptic(12); }catch(e){}
     try{ if(typeof _currentAction === 'function') _currentAction(); }catch(e){}
   };
 
