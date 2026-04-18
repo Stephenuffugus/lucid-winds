@@ -1,7 +1,7 @@
 
 # LUCID WINDS — CLAUDE.md
 # Claude Code reads this file automatically on startup. THIS IS THE SOURCE OF TRUTH.
-# Last updated: March 20, 2026 — post-rebrand, art integration build
+# Last updated: April 18, 2026 — Variant D rarity rebalance, climate audit, items system, terminology glossary
 
 ---
 
@@ -227,17 +227,63 @@ window._reRenderAll                  window._fgDeviceId
 
 ---
 
-## TERRA GRADE SYSTEM (7 tiers)
-Computed from trait rarity score. Each tier has name, icon, and color.
+## TERRA GRADE SYSTEM (7 tiers — Variant D, 2026-04-18)
+
+Computed from trait rarity score. The grade is the PLANT'S OVERALL rarity. Each layer has its own tier score that adds to the total.
+
+### Variant D scoring (index.html:8619, 8634)
 ```
-Common     — lowest
-Uncommon
-Rare       — golden pot OR glow flower OR crystal base OR any mutation
-Epic
-Legendary
-Mythic     — The Toad, The Cicada companions
-Cosmic     — The Beholder companion (0.39%)
+_TIER_SCORE = { common:0, uncommon:0, rare:2, epic:3, legendary:5, mythic:7, cosmic:10 }
+_TERRA_GRADES thresholds = [ 0, 2, 5, 9, 14, 20, 28 ]
 ```
+
+### Grade thresholds + theoretical signals
+```
+Common     — score 0-1   — all-common layers
+Uncommon   — score 2-4   — one rare-tier layer
+Rare       — score 5-8   — golden pot OR glow flower OR crystal base OR rare mutation
+Epic       — score 9-13  — multiple rare layers + breed bonus
+Legendary  — score 14-19 — legendary substrate + something else
+Mythic     — score 20-27 — mythic byte (Toad/Cicada) + multiple rare layers
+Cosmic     — score 28+   — Beholder + supporting rare layers
+```
+
+### Verified breed distribution (sim N=25k each, see project_rarity_audit_findings.md)
+```
+Common×Common      → 28% Common, 39% Uncommon, 26% Rare, 7% Epic, 0.6% Legendary, 0.02% Mythic
+Uncommon×Uncommon  → 9% / 34% / 41% / 15% / 1.6% / 0.04%
+Rare×Rare          → 4% / 17% / 44% / 30% / 4.8% / 0.13%
+Epic×Epic          → 1% / 8% / 30% / 45% / 15% / 0.74%
+Legendary×Legendary → 0.5% / 3% / 17% / 39% / 35% / 4.93% Mythic, 0.03% Cosmic
+```
+Mythic rate ~5× per tier-up. Cosmic essentially impossible until Legendary×Legendary. Highest tiers REACHABLE from any breed but earned, not given.
+
+### Bugs in scoring still parked (not blocking)
+- Mythic-byte spike still REPLACES companion-tier score (`if (compT && t.mythic < 0xD0)` at line 8663). A Beholder gets +8 spike OR +10 cosmic-tier, never both. Cosmetic; Beholder still grades Cosmic via spike alone.
+- First-mint Common% still ~8% vs spec 42%. Trait banks themselves are rare-heavy. Fix requires bank reorganization, not scoring.
+
+---
+
+## TERMINOLOGY GLOSSARY (read carefully — these words collide)
+
+| Word | Meaning |
+|---|---|
+| **Grade** | A plant's OVERALL rarity label (Common / Uncommon / … / Cosmic). Computed by `getTerraGrade`. One grade per plant. |
+| **Tier** | A LAYER'S own rarity level (common-tier / uncommon-tier / … / cosmic-tier). Each layer has its own. Computed by `_layerTier`. |
+| **Score** | The total integer `getTerraGrade` computes from summing layer tier scores + spike + breed layers. Drives grade. |
+| **Layer** | A trait category: VESSEL, SUBSTRATE, FOLIAGE, FLOWER, AURA, COMPANION, MUTATION, GROWTH PATH. 8 layers. `MYTHIC` is NOT a layer — removed long ago. |
+| **Mythic byte** | Hash byte 18 (`hb(18)`). Values ≥ 0xD0 override the COMPANION slot with creature indices 32-38 and add a "spike" to score. |
+| **Spike** | The +4 to +8 score bonus for high `mythic byte` values. Wires mythic creatures into score without needing a MYTHIC layer. |
+| **Mythic creature** | The Toad (0xD0+) or The Cicada (0xE0+). Render via COMPANION layer at mythic-tier. |
+| **Mythic-tier** | Any LAYER at mythic rarity (e.g., a mythic-tier substrate like Phoenix Ash, a mythic-tier companion). Not the same as Mythic grade. |
+| **Mythic grade** | A PLANT graded Mythic (score 20+). A plant can have mythic-tier layers without being Mythic grade if score is insufficient. |
+| **Mutation byte** | Hash byte 16 (`hb(16)`). Values ≥ 0xCC produce visible mutations (Glitch, Glass Stem, etc). Rendered via MUTATION layer. |
+| **Sunbeams** | Hash-earning currency. 30 Sunbeams = 1 ready-to-mint plant. Player clicks ☀️ to convert queue into plant. |
+| **Dew** | Secondary currency earned from wild tending. Spent on: slot machine, mystery box, nursery skip, weather summon. |
+
+When you see "mythic" in code, figure out which of the above it means. Byte? Creature? Layer tier? Grade? They are NOT interchangeable.
+
+---
 
 ## EVOLUTIONARY ADVANTAGE (EA)
 - Composite score from ALL trait layers
@@ -277,22 +323,23 @@ season:      hb(22) % 4
 
 ### Companion/Mythic Override Table
 Source of truth: `hashToTraits` in index.html (search for `mythByte ===`).
-Last verified against code: 2026-04-11.
+Last verified against code: 2026-04-18.
 ```
-hb(18) === 0xFF  → The Beholder       (idx 38)   COSMIC     0.39%
-hb(18) >= 0xFE   → Garden Spider      (idx 37)   LEGENDARY  0.39%
-hb(18) >= 0xFC   → Great Blue Heron   (idx 36)   LEGENDARY  0.78%
-hb(18) >= 0xF8   → Raccoon            (idx 35)   LEGENDARY  1.56%
-hb(18) >= 0xF4   → Baby Mammoth       (idx 34)   LEGENDARY  1.56%
-hb(18) >= 0xE0   → The Cicada         (idx 33)   MYTHIC     7.81%
-hb(18) >= 0xD0   → The Toad           (idx 32)   MYTHIC     6.25%
+hb(18) === 0xFF  → The Beholder       (idx 38)   COSMIC-tier      0.39%
+hb(18) >= 0xFE   → Garden Spider      (idx 37)   LEGENDARY-tier   0.39%
+hb(18) >= 0xFC   → Great Blue Heron   (idx 36)   LEGENDARY-tier   0.78%
+hb(18) >= 0xF8   → Raccoon            (idx 35)   LEGENDARY-tier   1.56%
+hb(18) >= 0xF4   → Woolly Mammoth     (idx 34)   LEGENDARY-tier   1.56%
+hb(18) >= 0xE0   → The Cicada         (idx 33)   MYTHIC-tier      7.81%
+hb(18) >= 0xD0   → The Toad           (idx 32)   MYTHIC-tier      6.25%
 else              → hb(21) % 82                  ~41% base creature rate
 ```
 
-Dead names that used to be in this table but are NOW AURAS, not
-companions (do not put these in mythic hall / showcase UIs):
-Starfall, Storm Wraith, Ancient Rune Field, Bioluminescent Pulse,
-The Capybara.
+Dead names / retired creatures (never reference these in new UI):
+- Starfall, Storm Wraith, Ancient Rune Field, Bioluminescent Pulse → these became AURAS, not companions
+- The Capybara → never existed
+- Phoenix → retired 2026-04-14, Cicada took its slot
+- Baby Mammoth → renamed to Woolly Mammoth
 
 ---
 
@@ -452,6 +499,153 @@ window._doCrossPollination(wild, mate) — Wild tab breed execution
 ## DEV PANEL
 - Tap Firebase Log button 5x to reveal
 - Password: lucid2026
+- `accelClimate` — fires synthetic extreme weather (50°C/100mm/80kmh) on every local wild plant. Bypassed if `lw_weather_off=1`.
+- `accelKillOldest` — kills + prunes oldest local wild plant
+
+---
+
+## ITEMS SYSTEM (SHIPPED v1 — 17 items, 16 wired)
+
+Module: `window.LW_ITEMS` (index.html:62892). Catalog: `window.LW_ITEMS_CATALOG`.
+
+### Catalog structure
+Each item has: `key, name, category, rarity, art, icon, desc, lore, usage, wired`. Hidden from UI if `wired:false`.
+
+### Active items by category
+- **Foraging:** foragersLens (C), compassShard (U), tetherMoss (R), divinersGlass (E)
+- **Defense:** moonwake (U), mulchWard (R), brambleThicket (R), shellgourd (E)
+- **Offense:** uprootCharm (U), foragersTorch (R), dustStorm (R)
+- **Remote:** whisperVine (C), scryingStone (U), slowArrow (R), ravenEye (R), wanderersMap (E)
+- **UNBUILT:** delegateToken (E) — co-op hex share, needs Firestore flow
+
+### Drop sources
+- Mystery boxes (LW_BOXES) — weighted roll
+- Daily login milestones — specific item per day
+- Whisper Vine daily ping — +1 Compass Shard
+- Perfect-month login — Wanderer's Map
+- Cocoon rewards
+- Seasonal hunt completion
+
+### Art
+Each item references `assets/items/<name>.png`. Folder does NOT exist yet — emoji fallback via `onerror` handler shows icon. Art day pending.
+
+---
+
+## MYSTERY BOXES vs SLOT MACHINE vs MYSTERY BOX HOME BUTTON
+
+Three DIFFERENT systems. Don't confuse:
+
+| System | Entry | Cost | Pays out |
+|---|---|---|---|
+| **`_openMystery`** (home button "MYSTERY BOX") | kb-mystery button (line 6060) | 25 Dew/pull | Fertilizer / Sunbeams / Dew / DNA — **NEVER items** |
+| **`_openSlots`** (home button "SLOTS") | kb-slots button | 15 Dew/pull | Dew + Fertilizer — **NEVER items** |
+| **`LW_BOXES`** (backpack → BOXES) | earned | free (spends 1 box) | LW_ITEMS with pity timer (8→Rare, 25→Epic) |
+
+LW_BOXES is the items path. The first two are pure Dew sinks.
+
+### LW_BOXES weights
+`Common 48% / Uncommon 30% / Rare 15% / Epic 6% / Legendary 1%`. Pity: 8th box → Rare+ guaranteed, 25th → Epic+ guaranteed. Unwired items (`wired:false`) excluded from pool.
+
+---
+
+## CLIMATE DAMAGE SYSTEM (SHIPPED v2)
+
+`_wildClimateTick(weather)` at index.html:37805. Runs once per day from `_doReproduction`. Kills plants over time when real weather breaches per-plant hash tolerances.
+
+### 5 vectors wired
+- Heat — `weather.temp > t.heatMax` (28-40°C range)
+- Cold — `weather.temp < t.coldMin` (-5 to +12°C)
+- Flood — `weather.rain > t.floodMm` (20-64mm/day)
+- Wind — `windMph > t.windMax` (18-45mph, converted from km/h)
+- Drought — `dryDays > t.droughtDays` (3-10 consecutive dry days)
+
+### Per-plant tolerances
+Derived from hash bytes 23-27 in `hashToTraits`. Each plant has a unique climate profile.
+
+### Damage math
+- 6h decay shave per breach magnitude, capped 24h per vector
+- Season modifier: peak ×0.5, opposite ×1.5
+- Chimera gen 2+ takes half damage (immunity shipped 2026-04-18)
+- Daily cap: 36h total
+- Kill switch: `localStorage.lw_weather_off='1'` disables Mastermind tilt AND climate damage
+
+### Real weather feed
+Open-Meteo (no API key), 1h cache. Silent fallback: temp=20, rain=0, wind=0 on fetch failure.
+
+### Stress visibility
+`#wtp-climate` in trait panel (line 39179). Shows icon + label + damage hours. 26h visibility window. Colors: ≥18h red, ≥8h gold, else muted.
+
+### Companion protection — PARKED
+No companion ability reduces climate damage. Future mapping: Toad→flood, Cicada→heat, Heron→flood, Mammoth→cold.
+
+---
+
+## PRESTIGE SYSTEM (SHIPPED Apr 16 — P4 + P6 wired)
+
+L100 prestige loop. Player ascends at L100, resets progress, keeps prestige levels. `project_prestige_system.md` for full spec.
+
+- **P4** — +1 greenhouse slot per prestige level (WIRED)
+- **P6** — +1 wild drop per day per prestige level (WIRED)
+- **P1/2/3/5/7/8/9/10** — narrative strings only, no game logic (see `project_prestige_placeholders_parked.md`)
+
+Unlock tiers + boosters documented in the prestige_system memory note.
+
+---
+
+## KEEPER'S TREE (SHIPPED Apr 15)
+
+100-point passive skill tree. 5 branches × 4 nodes × 5 pts/node = 100. Respec free once per 24h. 5 milestones at 10/25/50/75/100.
+
+### Branches
+- **Forager** (🍂) — feralRange, rareOdds, feralCd, harvestHash
+- **Breeder** (🧬) — breedReward, chimeraPurity, pollenFlow, compostReturn
+- **Cartographer** (🧭) — stepBonus, biomeXp, toolXp, toolCd
+- **Tender** (💧) — plantLongevity, dewRate, waterStreak, massWater
+- **Keeper** (🌿) — classXp, defenseEa, pollenRate, nurseryGrow
+- **Tools** (🔧) unlocks at class max
+- **Heartwood** (🌳) unlocks at L40
+- **The Bower** (🌿) unlocks at L60
+- **The Long Watch** (🌙) unlocks at L80
+
+### Milestones
+- 10: Path Opened (+5 bonus tree points)
+- 25: Second Bloom (guaranteed 1 feral/day)
+- 50: The Gilding (1hr/day all bonuses ×2)
+- 75: Near Horizon (equip 2nd companion)
+- 100: The Long Watch (biome match applies everywhere)
+
+### Reading tree bonus
+`window._LW_treeBonus(kind)` returns multiplier. Folded into `_LW_classBonus` for transparent consumption.
+
+---
+
+## SUNBEAM QUEUE (SHIPPED Apr 16)
+
+Auto-mint removed. Player manually converts ready Sunbeams into plants via ☀️ modal.
+
+- Ready-hash queue stored in localStorage + Firestore
+- 30 Sunbeams = 1 ready hash
+- Player clicks ☀️ to mint
+- Onboarding tutorial steps 16-17 gate on this
+
+---
+
+## CLASS SYSTEM (SHIPPED Apr 13 v1)
+
+5 classes, 3 levels each. Pick at L7.
+
+### Classes
+- **Forager** (🍂) — +25% feral range L1, +15% rare odds L2, Master: all tools +50% effect in biome match
+- **Breeder** (🧬) — +1 nursery slot L1, +20% chimera purity L2, Master: 2× pollen on breed action
+- **Cartographer** (🧭) — +25% step XP L1, biome reveal L2, Master: compass bearing points to pinned treasure
+- **Tender** (💧) — 2× plant longevity L1, +20% Dew rate L2, Master: 2.5× longevity (was Phoenix Bloom, retired)
+- **Keeper/Steward** (🌿) — Attuned: +5% per level stacks with all class bonuses. L2: Versatile (-10% tool cooldown). L3: Polymath (full XP)
+
+### Reading class bonus
+`window._LW_classBonus(kind)` returns multiplier. Consumers throughout code.
+
+### Class-bound companions (L3 Master synergy)
+Each class has a companion family. Holding any plant with matching companion unlocks T3 ritual.
 
 ---
 
@@ -468,29 +662,26 @@ window._doCrossPollination(wild, mate) — Wild tab breed execution
 
 ---
 
-## REMAINING BUILD PRIORITIES
+## REMAINING BUILD PRIORITIES (live list — see STATE.md in memory for most current)
 
-### Game Polish
-1. Merge Garden slide animation (tiles jump instead of sliding)
-2. Word Search found-word feedback
-3. Lights Out illumination animation (CSS glow)
-4. ~~Connect 4 drop animation~~ DONE — games/c4.js c4drop keyframe w/ cubic-bezier bounce
-5. Card games — bigger cards, clearer boundaries
-6. ~~Difficulty selectors for Sudoku, Word Search, Picross~~ DONE — all three ship selectors (Ud, Wd, Xd)
-7. Sokoban re-theme
+### Active work
+- **Items art** — all 17 item PNGs still need Midjourney generation into `assets/items/`
+- **delegateToken** — co-op friend-hex share, needs Firestore flow
+- **Balance pass on items** — Mulch Ward auto-win vs Shellgourd 48h-lock (same tier, different power)
+- **Pi SDK integration** — ALL payments through Pi
+- **First-mint Common %** — trait bank reorganization to hit 42% spec
 
-### Systems
-1. Midnight backpack reset
-2. Anti-farming measures
-3. Pi SDK integration
-4. Step counting testing
-5. Breeding balance pass (10K distribution)
-
-### Polish
-1. Map skin tuning
-2. Companion art audit (Hermit Crab idx 45 = snail)
-3. Onboarding safe-area padding
-4. Public greenhouse (post-MVP)
+### Parked design (see memory index)
+- EA Takeover spec (15-min async vote)
+- Hex Badge scanner (4-cat overlay)
+- Hex Flag idea (sanctuary flag)
+- Treasure compass / scratch game
+- Companion game-help system
+- Biome system (10 biomes)
+- Wild foraging signature game
+- Social features + friendship levels
+- Music station (DAW lite)
+- Public greenhouse (post-MVP)
 
 ---
 
