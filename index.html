@@ -6069,6 +6069,24 @@ window._addSwitchTabHook = function(fn){
     <img src="assets/btn-compendium.png?v=4" alt="Book of Secrets" style="width:100%;height:100%;object-fit:fill;display:block;">
     <span id="kb-comp-count" style="position:absolute;top:-6px;left:-6px;min-width:22px;height:22px;padding:0 5px;border-radius:11px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.55rem;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.5);">0</span>
   </div>
+  <script>
+    // Self-heal for Stephen's broken session: a pre-fix tutorial exit
+    // left position:relative stuck on kb-compendium, making it
+    // invisible in document flow. Force-restore fixed positioning +
+    // strip any tutorial-leftover inline styles once on DOM ready.
+    (function(){
+      var _bosHeal = function(){
+        var b = document.getElementById('kb-compendium');
+        if (!b) return;
+        b.style.position = 'fixed';
+        b.style.zIndex = '999';
+        b.style.willChange = '';
+        b.style.pointerEvents = '';
+      };
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _bosHeal);
+      else _bosHeal();
+    })();
+  </script>
   <div id="pw-lb-dropdown">
     <div class="lb-tabs"><div class="lb-tab active" onclick="PW_UI.setLBTab(this,'global')">GLOBAL</div><div class="lb-tab" onclick="PW_UI.setLBTab(this,'friends')">FRIENDS</div><div class="lb-tab" onclick="PW_UI.setLBTab(this,'region')">REGION</div></div>
     <div class="lb-list" id="lb-list">
@@ -55654,7 +55672,7 @@ window._checkDailyLogin = function() {
 (function(){
 'use strict';
 var TK='lw_tut';
-var _ov=null,_dlg=null,_spot=null,_spotEl=null;
+var _ov=null,_dlg=null,_spot=null,_spotEl=null,_spotElOrigPos=null;
 
 function _getStep(){var s=localStorage.getItem(TK);if(s==='done')return -1;return parseInt(s,10)||0;}
 function _setStep(n){localStorage.setItem(TK,String(n));}
@@ -55672,8 +55690,16 @@ function _clear(){
       _spotEl.style.zIndex='';
       _spotEl.style.willChange='';
       _spotEl.style.pointerEvents='';
+      // Restore original position — only reset if _spotlight touched it.
+      // Leaves fixed/absolute elements alone so they stay where CSS put
+      // them (BoS button was invisible because position:relative was
+      // stuck on it after tutorial exit).
+      if(typeof _spotElOrigPos === 'string' && (!_spotElOrigPos || _spotElOrigPos === 'static')){
+        _spotEl.style.position='';
+      }
     }catch(e){}
     _spotEl=null;
+    _spotElOrigPos=null;
   }
 }
 
@@ -55712,22 +55738,25 @@ function _spotlight(el){
   if(_spot&&_spot.parentNode)_spot.remove();
   var r=el.getBoundingClientRect();
   _spot=document.createElement('div');
-  // Spotlight sits at 1000011 — the plant below MUST be bumped to
-  // 1000012 so it renders above the spotlight mask. Previously both
-  // sat at 1000011 and DOM order gave the spotlight the win, making
-  // the plant visually covered; on iOS pointer-events:none on the
-  // mask doesn't reliably pass taps through a contain-layout stacking
-  // context (.greenhouse-plant uses contain:layout style paint), so
-  // Jessie's friend could see the spotlit plant but could not tap it.
+  // Spotlight sits at 1000011 — the target MUST be bumped to 1000012
+  // so it renders above the mask. iOS Safari also needs willChange to
+  // honor z-index on contain:layout elements (greenhouse plants).
   _spot.style.cssText='position:fixed;z-index:1000011;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,0.72);pointer-events:none;transition:all 0.3s ease;';
   _spot.style.top=(r.top-8)+'px';_spot.style.left=(r.left-8)+'px';
   _spot.style.width=(r.width+16)+'px';_spot.style.height=(r.height+16)+'px';
   document.body.appendChild(_spot);
-  el.style.position='relative';
+  // Remember the ORIGINAL inline position so _clear can restore it.
+  // The BoS button is position:fixed by inline style — unconditionally
+  // overwriting to 'relative' here pulled it out of fixed positioning
+  // and made it invisible (snapped into document flow behind other
+  // content). Only set position:relative if the element has no position
+  // set — then z-index can take effect for static elements too.
+  _spotElOrigPos = el.style.position || '';
+  if(!_spotElOrigPos || _spotElOrigPos === 'static'){
+    el.style.position='relative';
+  }
   el.style.zIndex='1000012';
   el.style.pointerEvents='auto';
-  // Force a GPU layer on iOS Safari so z-index on a contain:layout
-  // element is honored reliably over the fixed-positioned mask.
   el.style.willChange='transform';
   _spotEl=el;
 }
@@ -57061,7 +57090,7 @@ function _step32(){
   _overlay(function(){/* no-op */});
   _spotlight(bos);
   _dialog(
-    'Every discovery you ever make lives in the <span style="color:var(--gold);">Book of Secrets</span>.<br><br>Tap it once to take a look.',
+    'Every discovery you ever make lives in the <span style="color:var(--gold);">Book of Secrets</span>.<br><br>Tap it to take a look.',
     '',null,'bottom');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   var polls=0;
