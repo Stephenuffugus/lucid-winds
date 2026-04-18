@@ -38268,12 +38268,28 @@ function _doReproduction(weather, simMode) {
       var _cInfo = window.getCompanionInfo ? getCompanionInfo(_ct) : null;
       if (!_cInfo || !_cInfo.abilityKey) continue;
 
+      // Collect companion ability events so we can toast after the loop
+      // (prevents stacked setTimeout spam mid-iteration and lets us
+      // delay toasts to after localStorage + Firestore writes).
+      var _compUid = (window.firebase && firebase.auth && firebase.auth().currentUser && firebase.auth().currentUser.uid) || null;
+      var _compName = '';
+      try { _compName = window.getPlantName ? window.getPlantName(_cp.hash) : _cp.hash.slice(0,6); } catch(e){}
+
       // Toad Rain Caller — 30% auto-water chance
       if (_cInfo.abilityKey === 'rainCaller' && Math.random() < 0.3) {
         _cp.lastWatered = new Date().toISOString();
         _cp.neglectDecay = 0;
         if (window._logWildEvent) window._logWildEvent({type:'companion',event:'rain_caller',
           hash:_cp.hash,companion:_cInfo.name,text:_cInfo.name+' called rain — your plant was watered'});
+        // Sync watered state to Firestore so strangers viewing this
+        // plant see the real lastWatered, not a stale value.
+        try {
+          if (_compUid && window.db) {
+            var _rcDocId = _compUid + '_' + _cp.hash.slice(0,16);
+            window.db.collection('wildDrops').doc(_rcDocId).update({lastWatered: _cp.lastWatered}).catch(function(){});
+          }
+        } catch(e) {}
+        if (window._toast) window._toast('\ud83d\udc38 ' + _cInfo.name + ' called rain \u2014 ' + _compName + ' was watered.');
       }
 
       // Butterfly Drift Pollination — rare free cross-pollinate to random ally.
@@ -38286,6 +38302,7 @@ function _doReproduction(weather, simMode) {
           if (window.PW_grantXP) PW_grantXP(_polReward, 'butterfly_drift');
           if (window._logWildEvent) window._logWildEvent({type:'companion',event:'drift_pollen',
             hash:_cp.hash,companion:_cInfo.name,text:'Butterfly carried pollen to a distant ally. +'+_polReward+' XP'});
+          if (window._toast) window._toast('\ud83e\udd8b ' + _cInfo.name + ' drifted pollen from ' + _compName + ' \u2014 +' + _polReward + ' XP.');
         }
       }
 
@@ -38296,9 +38313,11 @@ function _doReproduction(weather, simMode) {
         if (_recentInvasions.length > 0) {
           var _fertBank = parseInt(localStorage.getItem('lw_raccoon_fert') || '0');
           if (_fertBank < 3) {
-            localStorage.setItem('lw_raccoon_fert', String(_fertBank + 1));
+            var _newFert = _fertBank + 1;
+            localStorage.setItem('lw_raccoon_fert', String(_newFert));
             if (window._logWildEvent) window._logWildEvent({type:'companion',event:'scavenger',
               hash:_cp.hash,companion:_cInfo.name,text:'Raccoon scavenged 1 fertilizer from a displaced plant'});
+            if (window._toast) window._toast('\ud83e\udd9d ' + _cInfo.name + ' scavenged fertilizer (' + _newFert + '/3 banked).');
           }
         }
       }
