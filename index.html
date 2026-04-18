@@ -39161,7 +39161,20 @@ function showTP(p,mk){
       } else {
         var _statusExtra=_heldBadge;
         // Add mesh info
-        if(window.getMeshBonus){var _mb=getMeshBonus(p.hash);if(_mb.connections>0)_statusExtra+='<br><span style="color:var(--sage);">\ud83c\udf44 Mesh: '+_mb.stageName+' ('+_mb.connections+' link'+ (_mb.connections>1?'s':'')+')</span>';}
+        if(window.getMeshBonus){
+          var _mb=getMeshBonus(p.hash);
+          if(_mb.connections>0){
+            _statusExtra+='<br><span style="color:var(--sage);">\ud83c\udf44 Mesh: '+_mb.stageName+' ('+_mb.connections+' link'+ (_mb.connections>1?'s':'')+')</span>';
+            // Legend line — explain what the current stage actually
+            // does, since "Nutrient Bridge" etc. is opaque.
+            var _mbLeg = '';
+            if (_mb.stageName === 'Root Contact') _mbLeg = 'Detection + 5% pollen';
+            else if (_mb.stageName === 'Nutrient Bridge') _mbLeg = '+15% pollen, 25% water sharing';
+            else if (_mb.stageName === 'Deep Network') _mbLeg = '+25% pollen, 50% water sharing';
+            else if (_mb.stageName === 'Old Growth') _mbLeg = '+40% pollen, 75% water sharing, +1 EA';
+            if (_mbLeg) _statusExtra += '<br><span style="color:var(--muted);font-size:0.8em;opacity:0.75;">\u2192 '+_mbLeg+'</span>';
+          }
+        }
         // Add soil info
         if(window.getSoilInfo&&p.lat){var _si=getSoilInfo(p.lat,p.lng);if(_si.maturity>0)_statusExtra+='<br><span style="color:rgba(200,168,75,0.7);">\ud83c\udf3f Soil: '+_si.name+' ('+_si.maturity+'/100)</span>';}
         // Biome info
