@@ -37922,6 +37922,35 @@ function _doReproduction(weather, simMode) {
   // in simMode so economy-simulation runs don't corrupt real state.
   if (!simMode) { try { _wildClimateTick(weather); } catch (e) {} }
 
+  // Compendium trigger check — fires the 29-event TRIGGERS registry
+  // (audit-flagged as shipped-but-unplugged). Runs once/day per local
+  // wild plant; internal cooldowns in checkTriggers enforce the
+  // 1-event-per-plant-per-day + 3-events-per-player-per-day caps, so
+  // calling unconditionally here is safe. Discoveries fire a
+  // _logWildEvent entry that surfaces in the Book of Secrets.
+  if (!simMode && window.checkTriggers) {
+    try {
+      var _tWild = _getWild();
+      var _tZoneMap = _getAllZonePlants();
+      var _tPlayerStats = {};
+      try {
+        _tPlayerStats = {
+          ghCount: (JSON.parse(localStorage.getItem('sws_greenhouse') || '[]') || []).length,
+          wildCount: _tWild.length,
+          dayCount: new Date().getDate()
+        };
+      } catch (eps) {}
+      for (var _ti = 0; _ti < _tWild.length; _ti++) {
+        var _tp = _tWild[_ti];
+        if (!_tp || !_tp.hash || !_tp.lat) continue;
+        // Nearby plants: same-zone allies, pulled from the zone map.
+        var _tZone = _zoneKey(_tp.lat, _tp.lng);
+        var _tNear = (_tZoneMap && _tZoneMap[_tZone]) ? _tZoneMap[_tZone].filter(function(z){ return z.hash !== _tp.hash; }) : [];
+        try { window.checkTriggers(_tp, _tNear, weather, _tPlayerStats); } catch (et) {}
+      }
+    } catch (e) {}
+  }
+
   // Weather modifiers
   var weatherMod = 1.0;
   var _weatherEvent = null;
