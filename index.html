@@ -8481,6 +8481,11 @@ document.addEventListener('keydown', function(e) {
     if (_compInfoEA && _compInfoEA.idx === 27 && plant && typeof plant.snailWins === 'number') {
       ea += Math.min(10, Math.max(0, plant.snailWins));
     }
+    // THORNED keyword debuff — attackers who failed against a Thorned
+    // defender carry -1 EA for 24h. Stamped on contest loss.
+    if (plant && plant.thornedUntil && plant.thornedUntil > Date.now()) {
+      ea -= 1;
+    }
     // TURTLE Ancient Shell — +1 EA per full day this plant has lived
     // in the wild, cap +14 (~2 weeks to max). Permanence-aligned:
     // no revival on eviction, the Turtle just becomes unusually hard
@@ -38013,6 +38018,19 @@ function _wildClimateTick(weather) {
       if (t.chimerGen && t.chimerGen >= 2) {
         damageH = Math.round(damageH * 0.5);
       }
+      // HARDY keyword — 50% chance to ignore climate damage, once per week.
+      // Track last-dodge timestamp on plant.hardyDodgedAt. If >7 days ago,
+      // eligible to dodge. 50% roll. Dodge = damageH set to 0 and stamp.
+      try {
+        if (window._LW_companionHasKeyword && window._LW_companionHasKeyword(t.companion, 'hardy')) {
+          var _hda = p.hardyDodgedAt || 0;
+          if (now - _hda > 7*86400000 && Math.random() < 0.5) {
+            damageH = 0;
+            p.hardyDodgedAt = now;
+            if (window._logWildEvent) window._logWildEvent({type:'companion',event:'hardy_dodge',hash:p.hash,text:'Hardy companion shrugged off the weather.'});
+          }
+        }
+      } catch(e){}
       if (damageH > 36) damageH = 36; // daily cap
     }
     if (damageH > 0) {
@@ -40101,6 +40119,14 @@ function _doCrossPollination(wildPlant,matePlant){
         }
       } catch(e){}
       _cpReward(offGen);
+      // LUSH keyword — +1 XP per cross-pollinate if the wild plant
+      // (cross-pollinator) has the keyword. Small bonus, compounds
+      // across many breeds.
+      try {
+        if (window._LW_plantHasKeyword && window._LW_plantHasKeyword(wildPlant.hash, 'lush')) {
+          if (window.PW_grantXP) window.PW_grantXP(1, 'lush_bonus');
+        }
+      } catch(e){}
     });
   } else {
     _toast('Breeding engine loading... trying again.');
@@ -40281,14 +40307,23 @@ function _rollTakeover(attackerPlant,defenderPlant,opts){
     var _attTraits = window.hashToTraits ? window.hashToTraits(attackerPlant.hash) : null;
     if (_attTraits && _attTraits.companion === 36) attHeron = 1;
   } catch (e) {}
-  var attTotal=attEA+attRoll+attComp+attWeather+attHeron;
-  var defTotal=defEA+defRoll+defComp+defMoonwake+defHerd+defSilk;
+  // EVERGREEN KEYWORDS — Rooted (defender +2 vs eviction) + Swift
+  // (attacker +2, rolls apply first). Read from companion's keywords
+  // array via the _LW_companionHasKeyword helper.
+  var defRooted = 0, attSwift = 0;
+  try {
+    if (window._LW_plantHasKeyword && defenderPlant && window._LW_plantHasKeyword(defenderPlant.hash, 'rooted')) defRooted = 2;
+    if (window._LW_plantHasKeyword && attackerPlant && window._LW_plantHasKeyword(attackerPlant.hash, 'swift')) attSwift = 2;
+  } catch(e){}
+  var attTotal=attEA+attRoll+attComp+attWeather+attHeron+attSwift;
+  var defTotal=defEA+defRoll+defComp+defMoonwake+defHerd+defSilk+defRooted;
   return{
     attEA:attEA,defEA:defEA,
     attRoll:attRoll,defRoll:defRoll,
     attComp:attComp,defComp:defComp,
     attWeather:attWeather,defMoonwake:defMoonwake,
     defHerd:defHerd,defSilk:defSilk,attHeron:attHeron,
+    defRooted:defRooted,attSwift:attSwift,
     attTotal:attTotal,defTotal:defTotal,
     attackerWins:attTotal>defTotal,
     itemsApplied: opts
@@ -40507,6 +40542,18 @@ window._showContestRoll = function(roll, attackerPlant, defenderPlant, onDone){
     h+=  '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--sage);text-align:center;">+'+roll.attHeron+'</div>';
     h+=  '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--muted);text-align:center;">\u2014</div></div>';
   }
+  if(roll.defRooted){
+    h+='<div id="lwcr-rooted" style="display:grid;grid-template-columns:1fr 52px 52px;gap:0.4rem;align-items:center;padding:0.5rem 0;border-bottom:1px dashed rgba(200,168,75,0.14);opacity:0;transform:translateY(8px);transition:opacity 0.4s,transform 0.4s;">';
+    h+=  '<div style="font-family:DM Mono,monospace;font-size:0.54rem;color:var(--muted);letter-spacing:0.06em;">Rooted \u2693</div>';
+    h+=  '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--muted);text-align:center;">\u2014</div>';
+    h+=  '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--gold);text-align:center;">+'+roll.defRooted+'</div></div>';
+  }
+  if(roll.attSwift){
+    h+='<div id="lwcr-swift" style="display:grid;grid-template-columns:1fr 52px 52px;gap:0.4rem;align-items:center;padding:0.5rem 0;border-bottom:1px dashed rgba(200,168,75,0.14);opacity:0;transform:translateY(8px);transition:opacity 0.4s,transform 0.4s;">';
+    h+=  '<div style="font-family:DM Mono,monospace;font-size:0.54rem;color:var(--muted);letter-spacing:0.06em;">Swift \ud83d\udca8</div>';
+    h+=  '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--sage);text-align:center;">+'+roll.attSwift+'</div>';
+    h+=  '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--muted);text-align:center;">\u2014</div></div>';
+  }
   if(roll.vowTarget){
     var vowColor = roll.vowHit ? 'var(--gold)' : '#c87060';
     var vowText = roll.vowHit ? ('Vow Kept +'+roll.vowBonus) : ('Vow Broken \u2264 '+roll.vowTarget);
@@ -40563,6 +40610,8 @@ window._showContestRoll = function(roll, attackerPlant, defenderPlant, onDone){
   if(roll.defHerd){at(tm,function(){var r=document.getElementById('lwcr-herd');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
   if(roll.defSilk){at(tm,function(){var r=document.getElementById('lwcr-silk');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(15);});tm+=420;}
   if(roll.attHeron){at(tm,function(){var r=document.getElementById('lwcr-heron');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
+  if(roll.defRooted){at(tm,function(){var r=document.getElementById('lwcr-rooted');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
+  if(roll.attSwift){at(tm,function(){var r=document.getElementById('lwcr-swift');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
   if(roll.vowTarget){at(tm,function(){var r=document.getElementById('lwcr-vow');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(roll.vowHit?25:15);});tm+=420;}
   if(itemBadges.length){at(tm,function(){var r=document.getElementById('lwcr-items');if(r)r.style.opacity='1';});tm+=320;}
   at(tm,function(){
@@ -40774,6 +40823,23 @@ function _drop(pl){
                   window.db.collection('wildDrops').doc(_snDocId).update({
                     snailWins: firebase.firestore.FieldValue.increment(1)
                   }).catch(function(){});
+                }
+              } catch(e){}
+              // Thorned keyword — if defender has thorned, stamp 24h
+              // -1 EA debuff on the attacker plant in greenhouse.
+              try {
+                if (window._LW_plantHasKeyword && window._LW_plantHasKeyword(targetPlant.hash, 'thorned')) {
+                  var _gh = JSON.parse(localStorage.getItem('sws_greenhouse') || '[]');
+                  var _stamped = false;
+                  for (var _gi=0; _gi<_gh.length; _gi++) {
+                    if (_gh[_gi].hash === pl.hash) {
+                      _gh[_gi].thornedUntil = Date.now() + 24*3600000;
+                      _stamped = true;
+                      break;
+                    }
+                  }
+                  if (_stamped) localStorage.setItem('sws_greenhouse', JSON.stringify(_gh));
+                  if (window._toast) setTimeout(function(){_toast('\ud83c\udf39 Thorned \u2014 your attacker plant carries -1 EA for 24h.');}, 600);
                 }
               } catch(e){}
               if (_roll.vowTarget && !_roll.vowHit && window._toast) {
@@ -41895,6 +41961,18 @@ setInterval(function(){var w=_getWild();if(w.length>0){
     var mult=i<5?1.0:0.5;
     hourlyTotal+=fadedRates[i]*mult;
   }
+  // RESTLESS keyword — each Restless plant adds +1 Dew per 24h to the
+  // total. hourlyTotal is in Dew-per-4h units, so +1/6 per plant = 1
+  // Dew/day per plant. Small trickle that compounds across a roster.
+  try {
+    if (window._LW_plantHasKeyword) {
+      for (var _ri=0; _ri<w.length; _ri++) {
+        if (w[_ri] && w[_ri].hash && window._LW_plantHasKeyword(w[_ri].hash, 'restless')) {
+          hourlyTotal += 1/6;
+        }
+      }
+    }
+  } catch(e){}
   // Weather: Dawn Mist doubles Dew generation while active
   try{if(window.isWeatherMist&&window.isWeatherMist())hourlyTotal*=2;}catch(e){}
   // Fractional accumulator — keep leftover under a minute until it rounds
@@ -68346,6 +68424,35 @@ window._LW_toolMod=function(tool){
 // Phoenix removed — helper retained as empty stub so any stragglers still
 // resolve to an empty list without throwing. Safe to delete after a release.
 window._lwGetPhoenixPlants=function(){return [];};
+
+// ═══ EVERGREEN KEYWORD SYSTEM ═══
+// Combinable ability keywords that attach to any companion via the
+// `keywords: []` field in TRAIT_BANK.companions. 6 keywords, each with
+// a simple mechanic. Most companions get 1-2 keywords for baseline
+// distinctiveness. Named-signature companions (Toad, Beholder, etc)
+// have unique abilities instead. Assignment happens in a later pass.
+(function(){
+  'use strict';
+  var KEYWORDS = {
+    restless: { name:'Restless', icon:'\u26a1',                 desc:'+1 Dew tick per day (passive)' },
+    hardy:    { name:'Hardy',    icon:'\u2728',                 desc:'50% chance to ignore one climate damage per week' },
+    rooted:   { name:'Rooted',   icon:'\u2693',                 desc:'+2 EA vs eviction attempts' },
+    swift:    { name:'Swift',    icon:'\ud83d\udca8',           desc:'+2 attacker total in contests' },
+    lush:     { name:'Lush',     icon:'\ud83c\udf3a',           desc:'+1 XP per cross-pollinate' },
+    thorned:  { name:'Thorned',  icon:'\ud83c\udf39',           desc:'Failed attacker loses 1 EA for 24h' }
+  };
+  window.LW_KEYWORDS = KEYWORDS;
+  window._LW_companionHasKeyword = function(idx, kw){
+    if (typeof idx !== 'number' || !window.TRAIT_BANK || !TRAIT_BANK.companions) return false;
+    var c = TRAIT_BANK.companions[idx];
+    if (!c || !c.keywords) return false;
+    return c.keywords.indexOf(kw) >= 0;
+  };
+  window._LW_plantHasKeyword = function(hash, kw){
+    try { var t = window.hashToTraits(hash); return window._LW_companionHasKeyword(t.companion, kw); }
+    catch(e){ return false; }
+  };
+})();
 
 // ═══ MULTIPLIER CAP + KIND ALIAS HELPER ═══
 // Centralizes per-kind stacking caps so new abilities can't silently push
