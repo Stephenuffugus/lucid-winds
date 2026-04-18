@@ -11747,68 +11747,72 @@ document.addEventListener('keydown', function(e) {
       {name:'None'},{name:'None'},{name:'None'},{name:'None'},
       {name:'None'},{name:'None'},{name:'None'},{name:'None'},
       // 12 creature slots → ~37.5% total (3.125% each)
-      {name:'Navi',temp:'mystic'},         // idx 20
-      {name:'Bee',temp:'symbiote'},         // idx 21
-      {name:'Pill Bug',temp:'guardian'},     // idx 22
-      {name:'Firefly',temp:'mystic',ability:'nightBloom'},     // idx 23
-      {name:'Butterfly',temp:'wanderer',ability:'driftPollen'},   // idx 24
-      {name:'Moth',temp:'mystic'},        // idx 25
-      {name:'Ladybug',temp:'guardian'},     // idx 26
-      {name:'Snail',temp:'guardian'},       // idx 27
-      {name:'Hummingbird',temp:'wanderer'}, // idx 28
-      {name:'Dragonfly',temp:'wanderer'},   // idx 29
-      {name:'Caterpillar',temp:'symbiote'}, // idx 30
-      {name:'Spider',temp:'guardian'},      // idx 31
-      {name:'Toad',temp:'guardian',ability:'rainCaller'},        // idx 32 (mythic path)
-      {name:'Cicada',temp:'symbiote',ability:'herdImmunity'},   // idx 33 — Cicada (replaced Phoenix; same family buff)
-      {name:'Baby Mammoth',temp:'guardian',ability:'permafrost'}, // idx 34
-      {name:'Raccoon',temp:'forager',ability:'scavenger'},   // idx 35
-      {name:'Great Blue Heron',temp:'wanderer',ability:'precisionStrike'},         // idx 36
-      {name:'Garden Spider',temp:'guardian',ability:'silkTrap'},         // idx 37
-      {name:'Beholder',rare:true,temp:'mystic',ability:'omnisight'},   // idx 38
-      {name:'Cat',temp:'wanderer'},         // idx 39
-      {name:'Platypus',rare:true,temp:'forager'},    // idx 40
-      {name:'Praying Mantis',temp:'guardian'}, // idx 41
-      {name:'Hedgehog',temp:'guardian'},    // idx 42
-      {name:'Pangolin',rare:true,temp:'guardian'},    // idx 43
-      {name:'Luna Moth',rare:true,temp:'mystic'},   // idx 44
-      {name:'Porcupine',temp:'guardian',ability:'shellShift'}, // idx 45
-      {name:'None'},  // idx 46 — was Glow Snail, cut Apr 14 2026 for rarity-tune
-      {name:'Axolotl',rare:true,temp:'symbiote'}, // idx 47
-      {name:'Scorpion',rare:true,temp:'guardian'},// idx 48
-      {name:'Origami Crane',rare:true,temp:'wanderer'}, // idx 49
-      {name:'Garden Gnome',rare:true,temp:'guardian'},  // idx 50
-      {name:'Robin',temp:'wanderer'},       // idx 51
-      {name:'Worm',temp:'symbiote'},        // idx 52
-      {name:'Turtle',temp:'guardian'},      // idx 53
-      {name:'Bat',temp:'mystic'},         // idx 54
-      {name:'Mouse',temp:'forager'},       // idx 55
-      {name:'Owl',temp:'mystic'},         // idx 56
-      {name:'Silly Goose',temp:'wanderer'}, // idx 57
-      {name:'None'},        // idx 58
-      {name:'None'},        // idx 59
-      {name:'Dart Frog',temp:'forager'},   // idx 60
-      {name:'Rabbit',temp:'wanderer'},      // idx 61
-      {name:'Cricket',temp:'symbiote'},     // idx 62
-      {name:'Puffin',temp:'wanderer'},      // idx 63
-      {name:'Scarab Beetle',temp:'forager'}, // idx 64
-      {name:'Ant Trail',temp:'symbiote'},   // idx 65
-      {name:'Red-Crowned Crane',temp:'mystic'}, // idx 66
-      {name:'Squirrel',temp:'forager'},    // idx 67
-      {name:'Koala',temp:'guardian'},        // idx 68
-      {name:'Flamingo',rare:true,temp:'wanderer'},  // idx 69
-      {name:'Seahorse',temp:'mystic'},    // idx 70
-      {name:'Koi Fish',temp:'symbiote'},    // idx 71
-      {name:'Jellyfish',rare:true,temp:'mystic'}, // idx 72
-      {name:'Mushroom Sprite',temp:'symbiote'}, // idx 73
-      {name:'Deer Fawn',temp:'wanderer'},   // idx 74
-      {name:'Raven',rare:true,temp:'forager'}, // idx 75
-      {name:'None'}, // idx 76 — was Garden Snake, cut for rarity-tune
-      {name:'None'}, // idx 77 — was Centipede, cut for rarity-tune
-      {name:'None'}, // idx 78 — was Crystal Beetle, cut for rarity-tune
-      {name:'Will-o-Wisp',rare:true,temp:'mystic'}, // idx 79
-      {name:'None'}, // idx 80 — was Paper Butterfly, cut for rarity-tune
-      {name:'Panda',temp:'guardian'}  // idx 81
+      // Keywords locked 2026-04-18 per reference_ability_pool_locked.md.
+      // Signature creatures get 1 keyword (signature ability is main identity).
+      // Non-signatures get 2 keywords for combo flavor.
+      // Beholder (Cosmic 0.39%) gets 0 keywords — signature purity.
+      {name:'Navi',temp:'mystic',keywords:['swift','lush']},                                      // idx 20
+      {name:'Bee',temp:'symbiote',keywords:['restless','lush']},                                  // idx 21
+      {name:'Pill Bug',temp:'guardian',keywords:['rooted','thorned']},                             // idx 22
+      {name:'Firefly',temp:'mystic',ability:'nightBloom',keywords:['lush']},                      // idx 23
+      {name:'Butterfly',temp:'wanderer',ability:'driftPollen',keywords:['swift']},                // idx 24
+      {name:'Moth',temp:'mystic',keywords:['hardy','lush']},                                     // idx 25
+      {name:'Ladybug',temp:'guardian',keywords:['restless','thorned']},                           // idx 26
+      {name:'Snail',temp:'guardian',keywords:['hardy']},                                         // idx 27 — Steady Shell signature
+      {name:'Hummingbird',temp:'wanderer',keywords:['swift']},                                   // idx 28 — Dash Wings signature
+      {name:'Dragonfly',temp:'wanderer',keywords:['swift','lush']},                               // idx 29
+      {name:'Caterpillar',temp:'symbiote',keywords:['lush','restless']},                          // idx 30
+      {name:'Spider',temp:'guardian',keywords:['rooted','thorned']},                              // idx 31
+      {name:'Toad',temp:'guardian',ability:'rainCaller',keywords:['rooted']},                    // idx 32 (mythic path)
+      {name:'Cicada',temp:'symbiote',ability:'herdImmunity',keywords:['hardy']},                 // idx 33 — Cicada (replaced Phoenix; same family buff)
+      {name:'Baby Mammoth',temp:'guardian',ability:'permafrost',keywords:['rooted']},            // idx 34
+      {name:'Raccoon',temp:'forager',ability:'scavenger',keywords:['swift']},                    // idx 35
+      {name:'Great Blue Heron',temp:'wanderer',ability:'precisionStrike',keywords:['swift']},    // idx 36
+      {name:'Garden Spider',temp:'guardian',ability:'silkTrap',keywords:['thorned']},            // idx 37
+      {name:'Beholder',rare:true,temp:'mystic',ability:'omnisight'},                             // idx 38 — Cosmic, no keywords (signature purity)
+      {name:'Cat',temp:'wanderer',keywords:['swift','restless']},                                 // idx 39
+      {name:'Platypus',rare:true,temp:'forager',keywords:['hardy','rooted']},                    // idx 40
+      {name:'Praying Mantis',temp:'guardian',keywords:['swift','thorned']},                       // idx 41
+      {name:'Hedgehog',temp:'guardian',keywords:['rooted','thorned']},                            // idx 42
+      {name:'Pangolin',rare:true,temp:'guardian',keywords:['hardy']},                            // idx 43
+      {name:'Luna Moth',rare:true,temp:'mystic',keywords:['hardy','lush']},                       // idx 44
+      {name:'Porcupine',temp:'guardian',ability:'shellShift',keywords:['thorned']},              // idx 45
+      {name:'None'},                                                                               // idx 46 — was Glow Snail, cut Apr 14 2026
+      {name:'Axolotl',rare:true,temp:'symbiote',keywords:['lush']},                              // idx 47
+      {name:'Scorpion',rare:true,temp:'guardian',keywords:['swift','thorned']},                   // idx 48
+      {name:'Origami Crane',rare:true,temp:'wanderer',keywords:['hardy','lush']},                 // idx 49
+      {name:'Garden Gnome',rare:true,temp:'guardian',keywords:['rooted','hardy']},                // idx 50
+      {name:'Robin',temp:'wanderer',keywords:['restless','lush']},                                // idx 51
+      {name:'Worm',temp:'symbiote',keywords:['lush','rooted']},                                   // idx 52
+      {name:'Turtle',temp:'guardian',keywords:['hardy']},                                         // idx 53 — Ancient Shell signature
+      {name:'Bat',temp:'mystic',keywords:['swift','restless']},                                   // idx 54
+      {name:'Mouse',temp:'forager',keywords:['restless','swift']},                                // idx 55
+      {name:'Owl',temp:'mystic',keywords:['hardy','swift']},                                      // idx 56
+      {name:'Silly Goose',temp:'wanderer',keywords:['swift','restless']},                         // idx 57
+      {name:'None'},                                                                               // idx 58
+      {name:'None'},                                                                               // idx 59
+      {name:'Dart Frog',temp:'forager',keywords:['thorned']},                                    // idx 60 — Oracle's Vow signature
+      {name:'Rabbit',temp:'wanderer',keywords:['restless','lush']},                                // idx 61
+      {name:'Cricket',temp:'symbiote',keywords:['restless','lush']},                               // idx 62
+      {name:'Puffin',temp:'wanderer',keywords:['hardy','swift']},                                  // idx 63
+      {name:'Scarab Beetle',temp:'forager',keywords:['hardy','rooted']},                          // idx 64
+      {name:'Ant Trail',temp:'symbiote',keywords:['restless','rooted']},                           // idx 65
+      {name:'Red-Crowned Crane',temp:'mystic',keywords:['hardy']},                                // idx 66
+      {name:'Squirrel',temp:'forager',keywords:['restless','swift']},                              // idx 67
+      {name:'Koala',temp:'guardian',keywords:['hardy','lush']},                                   // idx 68
+      {name:'Flamingo',rare:true,temp:'wanderer',keywords:['lush']},                              // idx 69
+      {name:'Seahorse',temp:'mystic',keywords:['hardy','lush']},                                   // idx 70
+      {name:'Koi Fish',temp:'symbiote',keywords:['lush','hardy']},                                // idx 71
+      {name:'Jellyfish',rare:true,temp:'mystic',keywords:['swift','thorned']},                     // idx 72
+      {name:'Mushroom Sprite',temp:'symbiote',keywords:['restless','lush']},                       // idx 73
+      {name:'Deer Fawn',temp:'wanderer',keywords:['hardy','swift']},                                // idx 74
+      {name:'Raven',rare:true,temp:'forager',keywords:['swift','restless']},                       // idx 75
+      {name:'None'},                                                                               // idx 76
+      {name:'None'},                                                                               // idx 77
+      {name:'None'},                                                                               // idx 78
+      {name:'Will-o-Wisp',rare:true,temp:'mystic',keywords:['swift']},                            // idx 79
+      {name:'None'},                                                                               // idx 80
+      {name:'Panda',temp:'guardian',keywords:['lush']}                                            // idx 81
     ],
     mutations: [
       {name:'None',tier:0}, {name:'Wireframe',tier:1},
