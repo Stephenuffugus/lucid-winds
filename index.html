@@ -61127,7 +61127,9 @@ function _bosMementosContent() {
       }
       h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:var(--cream);letter-spacing:0.08em;margin:1rem 0 0.4rem;">YOUR ROSTER \u00b7 ' + rosterList.length + '</div>';
       h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin-bottom:0.5rem;line-height:1.5;">Every companion you\u2019ve seen in your garden. Tap for profile + bond status.</div>';
-      h += '<button onclick="if(window.PW_UI&&PW_UI.equipCompanion)PW_UI.equipCompanion();" style="width:100%;padding:0.5rem;margin-bottom:0.6rem;border:1.5px solid rgba(200,168,75,0.35);border-radius:8px;background:linear-gradient(180deg,rgba(200,168,75,0.12),rgba(120,100,40,0.18));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">\ud83d\udc3e EQUIP COMPANION</button>';
+      // Second EQUIP COMPANION button removed — the prominent one at
+      // top of Mementos (line ~61041) covers this. Duplicate flagged
+      // in BoS audit.
       // Family order — signature/class-aligned first, universals last
       var FAM_ORDER = ['pollinators','scatterers','weavers','wayfinders','guardians','conduits','mycelium','listeners','unlinked'];
       var FAM_META = {
@@ -61455,7 +61457,18 @@ function _bosHerbariumContent() {
     h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;">';
     h += '<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:' + statusColor + ';letter-spacing:0.06em;">' + b.name + (claimed ? ' \u2713' : '') + '</div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);margin-top:3px;line-height:1.5;">' + b.blurb + '</div>';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin-top:3px;">' + (b.rewardKind === 'dew' ? '+' + b.rewardAmt + ' Dew' : 'Title: ' + b.rewardAmt) + '</div></div>';
+    // Resolve internal title key to its display word via BUNDLE_TITLES
+    // lookup — previously showed e.g. "Title: curator" instead of
+    // "Title: Curator." Falls back to the raw key if unmapped.
+    var _bRewardTxt;
+    if (b.rewardKind === 'dew') {
+      _bRewardTxt = '+' + b.rewardAmt + ' Dew';
+    } else {
+      var _bT = (window.LW_HERBARIUM && window.LW_HERBARIUM.BUNDLE_TITLES) ? window.LW_HERBARIUM.BUNDLE_TITLES[b.rewardAmt] : null;
+      var _bTWord = (_bT && _bT.word) ? _bT.word : (b.rewardAmt || 'Title');
+      _bRewardTxt = 'Title: ' + _bTWord;
+    }
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin-top:3px;">' + _bRewardTxt + '</div></div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:' + statusColor + ';white-space:nowrap;">' + prog.count + ' / ' + prog.required + '</div>';
     h += '</div>';
     if (!claimed) {
@@ -61479,9 +61492,11 @@ window._lwClaimHerbarium = function(id){
       var b = null;
       for (var i = 0; i < bundles.length; i++) if (bundles[i].id === id) { b = bundles[i]; break; }
       if (b && window._lwConfirm) {
+        var _claimT = (window.LW_HERBARIUM && window.LW_HERBARIUM.BUNDLE_TITLES) ? window.LW_HERBARIUM.BUNDLE_TITLES[b.rewardAmt] : null;
+        var _claimTWord = (_claimT && _claimT.word) ? _claimT.word : (b.rewardAmt || 'unknown');
         var reward = b.rewardKind === 'dew'
           ? '+' + b.rewardAmt + ' Dew'
-          : 'Title: <b>' + (b.rewardAmt || 'unknown') + '</b>';
+          : 'Title: <b>' + _claimTWord + '</b>';
         window._lwConfirm({
           title: '\u2728 BUNDLE COMPLETE',
           body: '<div style="font-family:Playfair Display,serif;font-style:italic;color:var(--gold);font-size:0.95rem;margin-bottom:0.4rem;">' + b.name + '</div>' +
@@ -65112,6 +65127,7 @@ window.LW_FAMILY_T3 = {
   }
   window.LW_HERBARIUM = {
     BUNDLES: BUNDLES,
+    BUNDLE_TITLES: BUNDLE_TITLES,
     weekKey: weekKey,
     pickBundlesForWeek: pickBundlesForWeek,
     getProgress: getProgress,
