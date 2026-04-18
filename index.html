@@ -8616,22 +8616,29 @@ document.addEventListener('keydown', function(e) {
   //   Mythic       10-11    #A87285   ~1.2%
   //   Cosmic       12+      #D94FFF   ~0.3%
   //
+  // Variant D — Apr 18 2026 rebalance. Old thresholds (0/2/4/6/8/10/12)
+  // gave 5%+ Mythic from common×common breeds — every plant past Common
+  // looked rare, killing the "rare is special" signal. New thresholds
+  // spread the scoring curve so highest tiers stay reachable from any
+  // breed but vanishingly rare from Common×Common (~0.02% Mythic) and
+  // earned at Legendary×Legendary (~5% Mythic). Re-grades every existing
+  // plant on next load.
   var _TERRA_GRADES = [
     { name:'Common',    minScore:0,  color:'#959588', icon:'○' },
     { name:'Uncommon',  minScore:2,  color:'#8CB86E', icon:'◈' },
-    { name:'Rare',      minScore:4,  color:'#5b8fb9', icon:'◆' },
-    { name:'Epic',      minScore:6,  color:'#9B59B6', icon:'◇' },
-    { name:'Legendary', minScore:8,  color:'#C8A84B', icon:'✦' },
-    { name:'Mythic',    minScore:10, color:'#A87285', icon:'★' },
-    { name:'Cosmic',    minScore:12, color:'#D94FFF', icon:'✧' }
+    { name:'Rare',      minScore:5,  color:'#5b8fb9', icon:'◆' },
+    { name:'Epic',      minScore:9,  color:'#9B59B6', icon:'◇' },
+    { name:'Legendary', minScore:14, color:'#C8A84B', icon:'✦' },
+    { name:'Mythic',    minScore:20, color:'#A87285', icon:'★' },
+    { name:'Cosmic',    minScore:28, color:'#D94FFF', icon:'✧' }
   ];
 
   // ═══ MODEL H SCORING ENGINE — Loot Distribution Master Spec ═══
   // 5 base slots (best-of pairing) + 2 spikes (mutation, mythic)
   // + earned layers (breed, compost, synergy)
-  // Inspired by D&D, Diablo 2, Path of Exile loot curves.
-  // Tier-to-score map — shared by all slots. Matches _layerTier output.
-  var _TIER_SCORE = {common:0,uncommon:0,rare:1,epic:2,legendary:3,mythic:4,cosmic:5};
+  // Variant D weights — high tiers get exponentially more score so a
+  // single Legendary substrate doesn't grade equal to two Rare layers.
+  var _TIER_SCORE = {common:0,uncommon:0,rare:2,epic:3,legendary:5,mythic:7,cosmic:10};
 
   window.getTerraGrade = function(t) {
     if (!t) return _TERRA_GRADES[0];
@@ -57508,7 +57515,7 @@ function _renderForecast(){
     var _fc=breedingForecast(_plantA.hash,_partners[_pIdx].hash);
     if(_fc){
       h+='<div style="margin-top:0.4rem;padding:0.4rem;background:rgba(18,22,16,0.5);border:1px solid rgba(200,168,75,0.1);border-radius:6px;">';
-      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;color:var(--gold);letter-spacing:0.08em;margin-bottom:0.2rem;">SIMULATION (20 offspring)</div>';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;color:var(--gold);letter-spacing:0.08em;margin-bottom:0.2rem;">SIMULATION (2000 offspring)</div>';
       // Grade breakdown bar
       h+='<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;margin-bottom:0.2rem;">';
       var _gcColors={Common:'rgba(138,145,120,0.6)',Uncommon:'rgba(122,179,86,0.7)',Rare:'rgba(91,175,220,0.8)',Epic:'rgba(153,89,182,0.8)',Legendary:'rgba(200,168,75,0.8)',Mythic:'rgba(232,160,191,0.8)',Cosmic:'rgba(255,110,199,0.9)'};
@@ -57865,11 +57872,32 @@ window.breedingForecast=function(hashA,hashB){
     return child.join('');
   }
 
-  // Simulate 20 potential offspring to build probability ranges
+  // Simulate 2000 potential offspring to build probability ranges.
+  // Old N=20 gave 5% display resolution — a single 0.5% Mythic roll in
+  // the sample showed as "5% Mythic" in the UI even though true odds
+  // were ~0.02%. Bumped to 2000 so rare grades show realistic decimals
+  // (or "<0.1%") and the forecast actually predicts what players see.
+  // Real breed layers (chimeraVein etc) also simulated now — they add
+  // 0-6 score that the old forecast ignored, structurally underestimating
+  // grade compared to the actual bloom.
+  var FCAST_N = 2000;
   var results={grades:{},seasons:{},companions:{},mutations:0,eaRange:[99,0],hasFlower:0};
-  for(var sim=0;sim<20;sim++){
+  // Realistic breed-layer rates per evaluateBreedLayers (line ~8730).
+  // Rates approximate the gate × probability product across random parents.
+  var _LAYER_P = { cv:0.55, vb:0.18, rt:0.18, cw:0.10, sl:0.06, tc:0.02, bs:0.005, ar:0.03 };
+  for(var sim=0;sim<FCAST_N;sim++){
     var offHash=_fcOffHash();
     var ot=hashToTraits(offHash);
+    var bl = {};
+    if(Math.random()<_LAYER_P.cv) bl.chimeraVein=true;
+    if(Math.random()<_LAYER_P.vb) bl.vigorBand=true;
+    if(Math.random()<_LAYER_P.rt) bl.rootTendrils=true;
+    if(Math.random()<_LAYER_P.cw) bl.canopyWeave=true;
+    if(Math.random()<_LAYER_P.sl) bl.spectrumLeaf=true;
+    if(Math.random()<_LAYER_P.tc) bl.thornedCrown=true;
+    if(Math.random()<_LAYER_P.bs) bl.biolumSpots=true;
+    if(Math.random()<_LAYER_P.ar) bl.aerialRoot=true;
+    ot.breedLayers = bl;
     var og=window.getTerraGrade?getTerraGrade(ot):{name:'Common'};
     var oea=window.computeEA?computeEA(ot,0):0;
     results.grades[og.name]=(results.grades[og.name]||0)+1;
@@ -57881,11 +57909,16 @@ window.breedingForecast=function(hashA,hashB){
     if(oea>results.eaRange[1])results.eaRange[1]=oea;
   }
 
-  // Convert to percentages
+  // Convert to percentages. For tiers under 1%, return the decimal (e.g.
+  // 0.3) instead of rounding to 0 — players need to know "Mythic is
+  // possible but rare" not "Mythic shows 0% so it can't happen."
   var gradesPct={};
   var gradeOrder=['Common','Uncommon','Rare','Epic','Legendary','Mythic','Cosmic'];
   for(var g=0;g<gradeOrder.length;g++){
-    if(results.grades[gradeOrder[g]])gradesPct[gradeOrder[g]]=Math.round(results.grades[gradeOrder[g]]/20*100);
+    var ct = results.grades[gradeOrder[g]] || 0;
+    if (ct === 0) continue;
+    var raw = ct / FCAST_N * 100;
+    gradesPct[gradeOrder[g]] = raw >= 1 ? Math.round(raw) : Math.round(raw * 10) / 10;
   }
 
   return{
