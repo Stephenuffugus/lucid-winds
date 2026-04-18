@@ -50026,7 +50026,25 @@ window._lwAscend=function(){
   if(!window._lwConfirm){return;}
   var nextP=p+1;
   var _marks=['','\ud83c\udf31 Sprout Mark','\ud83c\udf3f Sapling Mark','\ud83c\udf43 Vine Mark','\ud83c\udf38 Bloom Mark','\ud83c\udf33 Grove Mark','\ud83c\udf32 Forest Mark','\ud83c\udf34 Wildwood Mark','\u2728 Cosmic Mark','\u2600\ufe0f Eternal Mark','\u2727 Singularity Mark'];
-  var _unlocks=['','Legendary mutations enter your mint pool.','Mythic auras unlocked.','Mythic companions may appear.','+1 greenhouse slot per further prestige.','Wetlands biome unlocked.','+1 wild drop per day.','Volcanic biome unlocked.','Cosmic-tier events enabled.','Cosmic biome unlocked.','Infinite prestige \u2014 level continues past L100.'];
+  // Audit note (2026-04-18): only P4 / P6 / P10 have wired gameplay
+  // effects. The old strings promised Legendary mutations / Mythic
+  // auras / new biomes at P1-3/5/7-9 that no code gates on. Rewritten
+  // here as honest mark-upgrade flavor so the player isn't lied to.
+  // See project_prestige_placeholders_parked.md — real mechanics can
+  // be added later; these strings then get re-promoted.
+  var _unlocks=[
+    '',
+    'The Sprout Mark joins your keeper bar.',
+    'The Sapling Mark rises. You\u2019ve turned the wheel twice.',
+    'The Vine Mark announces your return.',
+    '+1 greenhouse slot per further prestige.',
+    'The Grove Mark carries weight \u2014 five cycles walked.',
+    '+1 wild drop per day.',
+    'The Forest Mark endures. Seven cycles is a rare thing.',
+    'The Wildwood Mark \u2014 nine cycles, no end in sight.',
+    'The Cosmic Mark. Few keepers reach here.',
+    'Infinite prestige \u2014 level continues past L100.'
+  ];
   var markLabel=nextP<=10?_marks[nextP]:'Eternal Legacy (P'+nextP+')';
   var unlock=nextP<=10?_unlocks[nextP]:'Your journey continues, Keeper.';
   window._lwConfirm({
