@@ -5933,6 +5933,9 @@ window._addSwitchTabHook = function(fn){
         <div class="wtp2-stat"><div class="wtp2-stat-val" id="wtp-status">—</div><div class="wtp2-stat-lbl">Status</div></div>
       </div>
       <div class="wtp2-prox" id="wtp-own-status"></div>
+      <!-- Neglect warning — shown for owned plants unwatered 7+ days.
+           Feral at 21+. Pulled from lastWatered on local wild record. -->
+      <div id="wtp-neglect" style="display:none;font-family:'DM Mono',monospace;font-size:clamp(.42rem,1.15vw,.52rem);text-align:center;padding:4px 16px 2px;letter-spacing:0.06em;"></div>
       <!-- Climate stress readout — only populated when a recent _wildClimateTick
            breach is stashed on the plant (.lastClimateBreach). Hidden otherwise. -->
       <div id="wtp-climate" style="display:none;font-family:'DM Mono',monospace;font-size:clamp(.4rem,1.1vw,.5rem);text-align:center;padding:2px 16px 4px;letter-spacing:0.06em;"></div>
@@ -38976,6 +38979,50 @@ function showTP(p,mk){
     } else {
       st.textContent=p.status||'\u2014';st.style.color=p.status==='Thriving'?'var(--sage)':'var(--cream)';
       st.parentNode.querySelector('.wtp2-stat-lbl').textContent='Status';
+    }
+  }
+
+  // Neglect warning — owned plants only. Reads lastWatered from
+  // local wild record, computes days-since-water on-the-fly (so it's
+  // current between daily ticks, not whatever the last neglect pass
+  // stamped). Escalates: thirsty → wilting → critical → feral-soon.
+  var _negEl = document.getElementById('wtp-neglect');
+  if (_negEl) {
+    _negEl.style.display = 'none';
+    if (p.own) {
+      try {
+        var _wLstN = _getWild();
+        var _rawPlant = null;
+        for (var _ni = 0; _ni < _wLstN.length; _ni++) {
+          if (_wLstN[_ni] && _wLstN[_ni].hash === p.hash) { _rawPlant = _wLstN[_ni]; break; }
+        }
+        if (_rawPlant) {
+          var _tendRef = _rawPlant.lastWatered || _rawPlant.date || null;
+          var _daysSince = 0;
+          if (_tendRef) {
+            _daysSince = Math.floor((Date.now() - new Date(_tendRef).getTime()) / 86400000);
+          }
+          // Show warning starting at 5d (giving a heads-up before 7d wilt).
+          if (_daysSince >= 5) {
+            var _negIcon, _negLabel, _negColor;
+            if (_daysSince >= 18) {
+              _negIcon = '\ud83d\udc80'; _negLabel = 'Feral in ' + Math.max(1, 21 - _daysSince) + 'd \u2014 water now!';
+              _negColor = '#d06060';
+            } else if (_daysSince >= 14) {
+              _negIcon = '\ud83e\udd40'; _negLabel = 'Critical \u2014 ' + _daysSince + 'd unwatered';
+              _negColor = '#d06060';
+            } else if (_daysSince >= 7) {
+              _negIcon = '\ud83e\udd40'; _negLabel = 'Wilting \u2014 ' + _daysSince + 'd unwatered';
+              _negColor = 'var(--gold)';
+            } else {
+              _negIcon = '\ud83d\udca7'; _negLabel = 'Thirsty \u2014 ' + _daysSince + 'd since water';
+              _negColor = 'var(--muted)';
+            }
+            _negEl.innerHTML = _negIcon + ' <span style="color:' + _negColor + ';font-weight:600;">' + _negLabel + '</span>';
+            _negEl.style.display = 'block';
+          }
+        }
+      } catch (e) {}
     }
   }
 
