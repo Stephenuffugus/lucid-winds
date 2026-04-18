@@ -38115,6 +38115,30 @@ function _doReproduction(weather, simMode) {
             var dpName = '';try{dpName=window.getPlantName?window.getPlantName(dp.hash||''):'Unknown';}catch(e){}
             window._logWildEvent({type:'invaded',defenderHash:dp.hash||'',defenderName:dpName,invaderHash:dd.hash,invaderEA:dd.ea});
           }
+          // Write a takeover-loss pendingReward doc to the defender's
+          // vault so they get a toast + consolation Dew on next login.
+          // Slots into the existing _claimPendingRewards flow at ~L34773;
+          // summary format "{actor} uprooted your {plant}" matches.
+          try {
+            if (dp.ownerUid && dp.ownerUid !== 'wild' && dp.ownerUid !== dd.ownerUid && window.db) {
+              var _toLoss = {Common:2,Uncommon:3,Rare:4,Epic:6,Legendary:9,Mythic:12,Cosmic:20};
+              var _tlAmt = _toLoss[dp.grade || 'Common'] || 2;
+              var _tlName = dpName || 'Plant';
+              var _tlInvaderName = dd.ownerName || 'An invader';
+              var _tlRef = window.db.collection('vaults').doc(dp.ownerUid).collection('pendingRewards').doc();
+              _tlRef.set({
+                type: 'takeover_loss',
+                amount: _tlAmt,
+                grade: dp.grade || 'Common',
+                plantName: _tlName,
+                actorName: _tlInvaderName,
+                action: 'uproot',
+                invaderHash: dd.hash || '',
+                invaderUid: dd.ownerUid || '',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+              }).catch(function(){});
+            }
+          } catch (e) {}
           if (dp.docId) window.db.collection('wildDrops').doc(dp.docId).delete().catch(function() {});
         }
         window.db.collection('wildDrops').doc(did).set(dd)
@@ -41519,6 +41543,26 @@ function _subscribeSharedDrops(){
           _sharedMarkers[d.hash]={marker:mk,data:pd};
           // Book of Secrets: Neighbor — see another player's plant
           if(!isOwn && window.LW_Events) { try { window.LW_Events.fire('Neighbor'); } catch(e){} }
+          // Live lineage-spread toast. When a fresh birth references me
+          // as the original dropper, surface it as a toast the first
+          // time we see it. Gated on droppedAt < 5 min old so the initial
+          // subscription load doesn't spam toasts for every pre-existing
+          // plant. Session-scoped seen set prevents replay across re-subs.
+          try {
+            var _myUidLT = user && user.uid;
+            var _myLineage = d.originDropperUid && _myUidLT && d.originDropperUid === _myUidLT;
+            if (_myLineage && !isOwn) {
+              var _droppedMs = d.droppedAt ? new Date(d.droppedAt).getTime() : 0;
+              var _fresh = _droppedMs && (Date.now() - _droppedMs) < 300000; // 5 min
+              if (!window._lwLineageSeen) window._lwLineageSeen = {};
+              if (_fresh && !window._lwLineageSeen[d.hash]) {
+                window._lwLineageSeen[d.hash] = true;
+                var _lnName = '';
+                try { _lnName = window.getPlantName ? window.getPlantName(d.hash) : d.hash.slice(0,6); } catch(e){}
+                if (window._toast) window._toast('\ud83c\udf31 Your lineage spread \u2014 a descendant bloomed as ' + (_lnName || 'a new wild plant') + '.');
+              }
+            }
+          } catch (e) {}
         });
 
         // Remove markers for plants that disappeared (harvested by another player)
