@@ -8454,15 +8454,19 @@ document.addEventListener('keydown', function(e) {
     // SYNERGY BONUS (cosmetic + EA only, never affects Terra Grade)
     var syn = window.getSynergy ? window.getSynergy(traits) : null;
     if (syn) ea += syn.ea;
-    // CHIMERA PENALTY: -2 per gen (Breeder L2+ reduces penalty via chimeraPurity)
+    // CHIMERA PENALTY: -2 per gen (Breeder L2+ reduces penalty via
+    // chimeraPurity). Floor at 1 EA per generation — fully stacked purity
+    // would otherwise reduce gen-6 penalty to ~1 EA total, trivializing
+    // generations and breaking the "each gen costs something" promise.
     var gen = (traits.chimerGen || 1) - 1;
     if (gen > 0) {
       var _penalty = gen * 2;
       try{if(window._LW_classBonus){_penalty = _penalty / window._LW_classBonus('chimeraPurity');}}catch(e){}
-      // Weavers family also mends chimeric lineage — stacks with Breeder class.
       try{if(window.LW_COMPANION){_penalty = _penalty / window.LW_COMPANION.getCompanionMult('chimeraPurity');}}catch(e){}
-      // Weavers T3 RITUAL "Chimera Mend" — shaves 1 EA off the penalty flat.
       try{if(window._LW_hasFamilyRitual&&window._LW_hasFamilyRitual('weavers'))_penalty=Math.max(0,_penalty-1);}catch(e){}
+      // Minimum floor: 1 EA per generation. Gen-6 chimera always costs at
+      // least 6 EA, no matter how much purity stacking.
+      _penalty = Math.max(gen, _penalty);
       ea -= _penalty;
     }
     // POT BONUS: Moonstone Cradle bakes a permanent +1 EA on the bloomed plant
@@ -29338,17 +29342,18 @@ document.addEventListener('keydown', function(e) {
         }, 1500);
       }
     } catch(e) {}
-    // Tender class bonus: L2+ multiplies dew income
-    try{if(window._LW_classBonus){amount=Math.ceil(amount*window._LW_classBonus('dewRate'));}}catch(e){}
-    // Tender tree node Dawn Tending — +0.25%/pt dew generation. Stacks
-    // multiplicatively with class + companion bonuses.
-    try{if(window._LW_treeBonus){var _drm=window._LW_treeBonus('dewRate');if(_drm>1)amount=Math.ceil(amount*_drm);}}catch(e){}
-    // Companion family bonus: Conduits grant +3% dewRate (+25% affinity for Cartographer)
-    try{if(window.LW_COMPANION){amount=Math.ceil(amount*window.LW_COMPANION.getCompanionMult('dewRate'));}}catch(e){}
-    // Dew Cache booster: +50% for 3h
-    try{if(window.lwIsBoostActive&&window.lwIsBoostActive('dewCache'))amount=Math.ceil(amount*1.5);}catch(e){}
-    // Dawn Anthem (Keeper class item): +10% all bonuses — applies to dew income
-    try{if(window.lwIsBoostActive&&window.lwIsBoostActive('dawnAnthem'))amount=Math.ceil(amount*1.1);}catch(e){}
+    // DEW RATE stack — class × tree × family × Dew Cache × Dawn Anthem.
+    // Composed into a single multiplier so _LW_capMultiplier can pin the
+    // ceiling. Without the cap, peak dew stacked to 2.54× (see stacking
+    // audit); capped at 2.5× so new abilities can't push it higher.
+    var _dewMult = 1;
+    try{if(window._LW_classBonus){_dewMult *= window._LW_classBonus('dewRate');}}catch(e){}
+    try{if(window._LW_treeBonus){var _drm=window._LW_treeBonus('dewRate');if(_drm>1)_dewMult *= _drm;}}catch(e){}
+    try{if(window.LW_COMPANION){_dewMult *= window.LW_COMPANION.getCompanionMult('dewRate');}}catch(e){}
+    try{if(window.lwIsBoostActive&&window.lwIsBoostActive('dewCache'))_dewMult *= 1.5;}catch(e){}
+    try{if(window.lwIsBoostActive&&window.lwIsBoostActive('dawnAnthem'))_dewMult *= 1.1;}catch(e){}
+    if(window._LW_capMultiplier) _dewMult = window._LW_capMultiplier('dewRate', _dewMult);
+    amount = Math.ceil(amount * _dewMult);
     // Tender XP: dew income feeds class XP (1 per 4 dew to prevent spam)
     try{if(window._LW_classXP&&amount>=4)window._LW_classXP('dew',Math.floor(amount/4));}catch(e){}
     var ledger = getDewLedger();
@@ -35954,13 +35959,16 @@ function _getCollectRange(){
       if(ci&&ci.temperament&&ci.temperament.feralRange){range+=ci.temperament.feralRange;}
     }
   }catch(e){}
-  // Beholder Omnisight: 2x collect range while a Beholder plant is in
-  // the greenhouse. Was logged but had no gameplay effect — now wired.
-  if(_hasBeholder)range*=2;
-  // Forager class: multiplies collect range (1.25x L1, +keeper stacking)
-  try{if(window._LW_classBonus){range=Math.round(range*window._LW_classBonus('feralRange'));}}catch(e){}
-  // Companion family bonus: Scatterers grant +3% feralRange (+25% for Forager)
-  try{if(window.LW_COMPANION){range=Math.round(range*window.LW_COMPANION.getCompanionMult('feralRange'));}}catch(e){}
+  // FERAL RANGE stack — Beholder × class × family. Capped at 3× so new
+  // abilities can't push the collection ring past a reasonable size.
+  // Beholder ×2 is the biggest single source (Cosmic 0.39%); class adds
+  // ~1.25× and family adds up to 1.38× at L6 dual. Composed mult capped.
+  var _frMult = 1;
+  if(_hasBeholder) _frMult *= 2;
+  try{if(window._LW_classBonus){_frMult *= window._LW_classBonus('feralRange');}}catch(e){}
+  try{if(window.LW_COMPANION){_frMult *= window.LW_COMPANION.getCompanionMult('feralRange');}}catch(e){}
+  if(window._LW_capMultiplier) _frMult = window._LW_capMultiplier('feralRange', _frMult);
+  range = Math.round(range * _frMult);
   // Expose for UI hooks (scanner-ring tint, feral marker glow, etc.)
   try{
     if(_hasBeholder)document.body.classList.add('lw-has-beholder');
@@ -36152,9 +36160,18 @@ function _ensureVitality(plant){
   var lifeMs=plant.lifespanMs||_lifespanMsFor(rarity);
   // Tender class bonus: extend lifespan for plants owned by Tender (applied once at ensure time)
   if(!plant.lifespanMs){
-    try{if(window._LW_classBonus&&plant.own){lifeMs=Math.round(lifeMs*window._LW_classBonus('plantLongevity'));}}catch(e){}
-    // Companion family bonus: Guardians grant +3% plantLifespan (+25% for Tender)
-    try{if(window.LW_COMPANION&&plant.own){lifeMs=Math.round(lifeMs*window.LW_COMPANION.getCompanionMult('plantLifespan'));}}catch(e){}
+    // PLANT LIFESPAN stack — Tender class × guardians family × (tree nodes
+    // fold in via _LW_treeBonus). plantLongevity (class) and plantLifespan
+    // (companion) alias to the same canonical kind. Capped at 3× so
+    // stacked Tenders don't leave immortal plants cluttering the map.
+    if (plant.own) {
+      var _lfMult = 1;
+      try{if(window._LW_classBonus){_lfMult *= window._LW_classBonus('plantLongevity');}}catch(e){}
+      try{if(window.LW_COMPANION){_lfMult *= window.LW_COMPANION.getCompanionMult('plantLifespan');}}catch(e){}
+      try{if(window._LW_treeBonus){var _ltm=window._LW_treeBonus('plantLongevity');if(_ltm>1)_lfMult *= _ltm;}}catch(e){}
+      if(window._LW_capMultiplier) _lfMult = window._LW_capMultiplier('plantLongevity', _lfMult);
+      lifeMs = Math.round(lifeMs * _lfMult);
+    }
   }
   plant.lifespanMs=lifeMs;
   // Prefer the numeric droppedAtMs/decayAtMs fields written by the new
@@ -36710,10 +36727,14 @@ function _saveSteps(s){try{localStorage.setItem(LW_STEPS_KEY,JSON.stringify(s));
 function _metersToSteps(m){return Math.round((m||0)*1.312);}
 function _addSteps(meters){
   if(!meters||meters<=0)return;
-  // Cartographer class: multiplies step distance credit
-  try{if(window._LW_classBonus){meters=meters*window._LW_classBonus('stepBonus');}}catch(e){}
-  // Companion family bonus: Wayfinders grant +3% stepXp (+25% for Forager/Cartographer)
-  try{if(window.LW_COMPANION){meters=meters*window.LW_COMPANION.getCompanionMult('stepXp');}}catch(e){}
+  // STEP BONUS stack — class × wayfinders family × (tree nodes). stepBonus
+  // (class) and stepXp (companion/tree) alias to same canonical kind.
+  // Capped at 2× to keep XP farming from trivializing progression.
+  var _stpMult = 1;
+  try{if(window._LW_classBonus){_stpMult *= window._LW_classBonus('stepBonus');}}catch(e){}
+  try{if(window.LW_COMPANION){_stpMult *= window.LW_COMPANION.getCompanionMult('stepXp');}}catch(e){}
+  if(window._LW_capMultiplier) _stpMult = window._LW_capMultiplier('stepBonus', _stpMult);
+  meters = meters * _stpMult;
   // Cartographer XP: 1 XP per 10 meters walked
   try{if(window._LW_classXP){window._LW_classXP('steps',Math.ceil(meters/10));}}catch(e){}
   var s=_loadSteps();
@@ -39876,12 +39897,15 @@ function _doCrossPollination(wildPlant,matePlant){
         else _spiderBonus=1.5;
       }
     }catch(e){}
-    // Companion family bonuses — Pollinators boost XP/pollen, Weavers boost all breed rewards.
+    // BREED REWARD stack — pollinators family × weavers family × tree ×
+    // Twin Bloom T3. Composed then capped at 3× so spider doubling +
+    // full tree + dual companion don't cascade past the intended ceiling.
+    // Twin Bloom's 10% double is applied AFTER cap since it's a binary
+    // random event, not a continuous multiplier.
     var _breedMult=1;
     try{if(window.LW_COMPANION){_breedMult=window.LW_COMPANION.getCompanionMult('pollen')*window.LW_COMPANION.getCompanionMult('breedReward');}}catch(e){}
-    // Tree nodes Patient Hand (breedReward) + Pollen Flow (pollenFlow) stack
     try{if(window._LW_treeBonus){_breedMult*=window._LW_treeBonus('breedReward');_breedMult*=window._LW_treeBonus('pollenFlow');}}catch(e){}
-    // Pollinator T3 RITUAL "Twin Bloom" — 10% chance to double the reward roll
+    if(window._LW_capMultiplier) _breedMult = window._LW_capMultiplier('breedReward', _breedMult);
     var _twinBloom=false;
     try{if(window._LW_hasFamilyRitual&&window._LW_hasFamilyRitual('pollinators')&&Math.random()<0.10){_twinBloom=true;_breedMult*=2;}}catch(e){}
     if(roll<0.6){
@@ -40127,8 +40151,9 @@ function _rollTakeover(attackerPlant,defenderPlant,opts){
   // (see _drop) to pass opts.defenderAllyCount.
   var defHerd = 0;
   // Silk Trap — Garden Spider (idx 37) defender. Spec: "beating defense 2x".
-  // Translated to +5 effective EA so attacker win rate roughly halves
-  // (matches the statistical "win twice in a row" interpretation).
+  // Tuned to +3 EA (was +5) so stacked defensive buffs — Silk + Herd +
+  // Moonwake + Guardian T3 Deep Root — don't lock attacker win rate to
+  // near-zero. +3 still roughly halves attacker win rate at similar EA.
   var defSilk = 0;
   // Precision Strike — Great Blue Heron (idx 36) attacker. +1 contest EA.
   // The 2x harvest payout half is applied at the displaced-reward site
@@ -40140,7 +40165,7 @@ function _rollTakeover(attackerPlant,defenderPlant,opts){
       if (_defTraits.companion === 33 && typeof opts.defenderAllyCount === 'number') {
         defHerd = Math.min(4, Math.max(0, opts.defenderAllyCount));
       }
-      if (_defTraits.companion === 37) defSilk = 5;
+      if (_defTraits.companion === 37) defSilk = 3;
     }
     var _attTraits = window.hashToTraits ? window.hashToTraits(attackerPlant.hash) : null;
     if (_attTraits && _attTraits.companion === 36) attHeron = 1;
@@ -50356,11 +50381,15 @@ function _showAscendCeremony(p,mark,unlock){
 
 // ═══ GRANT XP (called from game systems) ═══
 window.PW_grantXP=function(amount,reason){
-  // Pollen Rush booster: 2x XP for 1h
-  try{if(window.lwIsBoostActive&&window.lwIsBoostActive('pollenRush'))amount=amount*2;}catch(e){}
-  try{if(window.lwIsBoostActive&&window.lwIsBoostActive('dawnAnthem'))amount=Math.ceil(amount*1.1);}catch(e){}
-  // Tree node Abundance (+0.25%/pt pollen/XP rate) — tiny but always-on
-  try{if(window._LW_treeBonus){var _pm=window._LW_treeBonus('pollenRate');if(_pm>1)amount=Math.ceil(amount*_pm);}}catch(e){}
+  // POLLEN / XP stack — Pollen Rush × Dawn Anthem × tree × (nightBloom at
+  // pollen-display layer not here). Composed then capped at 6× so stacked
+  // night + peak season can't push XP throughput past the audited ceiling.
+  var _pMult = 1;
+  try{if(window.lwIsBoostActive&&window.lwIsBoostActive('pollenRush'))_pMult *= 2;}catch(e){}
+  try{if(window.lwIsBoostActive&&window.lwIsBoostActive('dawnAnthem'))_pMult *= 1.1;}catch(e){}
+  try{if(window._LW_treeBonus){var _pm=window._LW_treeBonus('pollenRate');if(_pm>1)_pMult *= _pm;}}catch(e){}
+  if(window._LW_capMultiplier) _pMult = window._LW_capMultiplier('pollen', _pMult);
+  amount = Math.ceil(amount * _pMult);
   var xp=_getXP();
   var oldR=_getRank(xp);
   xp+=amount;_saveXP(xp);
@@ -68113,6 +68142,53 @@ window._LW_toolMod=function(tool){
 // Phoenix removed — helper retained as empty stub so any stragglers still
 // resolve to an empty list without throwing. Safe to delete after a release.
 window._lwGetPhoenixPlants=function(){return [];};
+
+// ═══ MULTIPLIER CAP + KIND ALIAS HELPER ═══
+// Centralizes per-kind stacking caps so new abilities can't silently push
+// the ceiling. Without this, pollen rate hits 9.72× at night-peak-season
+// dual-companion with full tree+boosters. Caps pin worst case to stated
+// limits regardless of how many future multiplier sources compose.
+//
+// Also normalizes kind aliases: code uses plantLongevity (class) and
+// plantLifespan (companion) for the same effect, stepBonus (class) and
+// stepXp (companion/tree), rareOdds vs feralRarity, etc. The alias map
+// resolves to a canonical key before lookup so future balance changes
+// only need to touch one cap.
+(function(){
+  'use strict';
+  var CAPS = {
+    pollen:         6.0,   // was 9.72×
+    breedReward:    3.0,   // was 4.28×
+    dewRate:        2.5,   // was 2.54×
+    plantLongevity: 3.0,   // was 3.57×
+    feralRange:     3.0,   // was 1.76× class+comp, 3.48× with Beholder
+    feralRarity:    1.20,  // probabilistic, was 1.21
+    stepBonus:      2.0    // was 1.74×
+  };
+  // Map every kind-name the codebase uses onto a canonical key. If new
+  // code coins a new alias, add it here — don't add a new cap row.
+  var ALIASES = {
+    plantLifespan:  'plantLongevity',
+    stepXp:         'stepBonus',
+    rareOdds:       'feralRarity',
+    pollenFlow:     'breedReward',   // tree node actually affects breed, not pollen rate
+    pollenRate:     'pollen',
+    pollen:         'pollen'
+  };
+  window._LW_canonKind = function(kind){
+    return ALIASES[kind] || kind;
+  };
+  // Cap a composed multiplier. Returns the capped value (never exceeds
+  // the cap). If kind has no cap defined, returns value unchanged.
+  window._LW_capMultiplier = function(kind, value){
+    var canon = ALIASES[kind] || kind;
+    var cap = CAPS[canon];
+    if (!cap || typeof value !== 'number' || !isFinite(value)) return value;
+    return Math.min(cap, value);
+  };
+  // Expose the caps table so the dev panel / balance sim can read it.
+  window._LW_CAPS = CAPS;
+})();
 // Check if companion synergy active (player has Master class + bound companion)
 window._LW_hasSynergy=function(){
   var cls=_lwGetClass();if(!cls)return false;
