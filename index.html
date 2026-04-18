@@ -40142,6 +40142,15 @@ function _rollTakeover(attackerPlant,defenderPlant,opts){
     var t=0;for(var i=0;i<n;i++){var r=Math.floor(Math.random()*sides)+1;t+=(r<floor?floor:r);}
     return t;
   }
+  // Dice range — Hummingbird companion. Each die rolls in [floor..ceiling]
+  // uniformly. 2d(4-9) for Hummingbird: avg 6.5×2=13 stays close to 2d6
+  // avg 7, but removes both disaster (2-3) and miracle (10-12) tails.
+  // Dash archetype — consistent, never big swing either way.
+  function _dRange(n,floor,ceiling){
+    var span=ceiling-floor+1;
+    var t=0;for(var i=0;i<n;i++)t+=floor+Math.floor(Math.random()*span);
+    return t;
+  }
   function _hasCompanion(plant,idx){
     try{
       var t=window.hashToTraits?window.hashToTraits(plant.hash):null;
@@ -40178,12 +40187,21 @@ function _rollTakeover(attackerPlant,defenderPlant,opts){
   //     and overrides Bramble (Snail+Bramble = 1d6 with floor 3).
   var attHasSnail = attackerPlant && _hasCompanion(attackerPlant, 27);
   var defHasSnail = defenderPlant && _hasCompanion(defenderPlant, 27);
-  var attRoll = opts.attackerTorch
-                  ? (attHasSnail ? _dKeepBest(3,6,2) + 0 /* floor not applied to keep-best math; Torch covers the variance */ : _dKeepBest(3,6,2))
-              : opts.defenderBramble
-                  ? (attHasSnail ? _dFloor(1,6,3) : _d(1,6))
-              : (attHasSnail ? _dFloor(2,6,3) : _d(2,6));
-  var defRoll = defHasSnail ? _dFloor(2,6,3) : _d(2,6);
+  // Hummingbird (idx 28) — Dash Wings. Dice roll in [4..9] range per die
+  // instead of [1..6]. Precedence: Torch > Hummingbird > Snail > Bramble >
+  // default. Bramble (1d6) ignored when attacker has Hummingbird — their
+  // wings outpace the briars. Snail + Humming is impossible (one companion
+  // per plant) so the two never conflict on the same side.
+  var attHasHumming = attackerPlant && _hasCompanion(attackerPlant, 28);
+  var defHasHumming = defenderPlant && _hasCompanion(defenderPlant, 28);
+  var attRoll = opts.attackerTorch ? _dKeepBest(3,6,2)
+              : attHasHumming       ? _dRange(2,4,9)
+              : attHasSnail         ? _dFloor(2,6,3)
+              : opts.defenderBramble? _d(1,6)
+              :                       _d(2,6);
+  var defRoll = defHasHumming ? _dRange(2,4,9)
+              : defHasSnail   ? _dFloor(2,6,3)
+              :                 _d(2,6);
   var attComp=_tempBonus(attackerPlant,'attacker');
   // Defender companion bonus zeroed by attacker's Dust Storm.
   var defComp = opts.attackerDustStorm ? 0 : _tempBonus(defenderPlant,'defender');
