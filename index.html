@@ -7192,12 +7192,24 @@ window._addSwitchTabHook = function(fn){
       alert(msg);
     },
     accelClimate:function(){
-      // Clear daily climate lock, force damage tick now.
-      localStorage.removeItem('lw_climate_today');
-      if(window._wildClimateTick){
-        try{window._wildClimateTick();alert('Climate damage fired. Check Book of Secrets for breach events.');}
-        catch(e){alert('Climate error: '+e.message);}
-      } else alert('Climate tick not available — open Wild tab once first.');
+      // Force a climate damage tick on every local wild plant using a
+      // synthetic extreme-weather payload (50°C / 100mm / 80km/h) so we
+      // can SEE all 5 vectors fire on demand. Real weather rarely hits
+      // every tolerance at once. Previously called _wildClimateTick()
+      // with no weather arg → the function bailed on `if(!weather)return`
+      // and the dev tool silently no-op'd. Also cleared `lw_climate_today`
+      // which is a dead key (real throttle is per-plant lastClimateTick).
+      if(!window._wildClimateTick){alert('Climate tick not available — open Wild tab once first.');return;}
+      try{if(localStorage.getItem('lw_weather_off')==='1'){alert('Climate damage is OFF (lw_weather_off=1). Disable the kill switch first.');return;}}catch(e){}
+      var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+      if(!wild.length){alert('No local wild plants. Drop some first!');return;}
+      for(var i=0;i<wild.length;i++){if(wild[i])delete wild[i].lastClimateTick;}
+      try{localStorage.setItem('fg_wild_plants',JSON.stringify(wild));}catch(e){}
+      var extreme={temp:50,rain:100,wind:80};
+      try{
+        window._wildClimateTick(extreme);
+        alert('Climate damage fired on '+wild.length+' plant(s) with extreme weather (50°C, 100mm rain, 80km/h wind). Check trait panel for stress badges and Book of Secrets for breach events.');
+      }catch(e){alert('Climate error: '+e.message);}
     },
     accelKillOldest:function(){
       // Force the oldest local wild plant to die with a climate flag so
@@ -37804,6 +37816,11 @@ function _consecutiveDryDays() {
 // the same day is a no-op.
 function _wildClimateTick(weather) {
   if (!weather) return;
+  // Kill switch — lw_weather_off=1 disables Mastermind weather tilt AND
+  // climate damage. Was previously gated only at the Mastermind site, so
+  // players flipping the switch expecting "no weather" still got their
+  // wild plants stress-shaved.
+  try { if (localStorage.getItem('lw_weather_off') === '1') return; } catch(e){}
   var wild = _getWild();
   if (!wild.length) return;
   // Log today's rain BEFORE reading the dry-day count so today counts.
@@ -37871,6 +37888,12 @@ function _wildClimateTick(weather) {
           damageH = Math.round(damageH * _sInfo.stressMod);
         }
       } catch (e) {}
+      // Chimera 2× climate immunity — gen 2+ chimeras take half damage.
+      // Single threshold (no per-gen stacking) so a gen-5 chimera isn't
+      // weather-immune. Promised in CLAUDE.md but never wired until now.
+      if (t.chimerGen && t.chimerGen >= 2) {
+        damageH = Math.round(damageH * 0.5);
+      }
       if (damageH > 36) damageH = 36; // daily cap
     }
     if (damageH > 0) {
