@@ -37669,10 +37669,42 @@ window._reproDebug = function() {
   return out.join('\n');
 };
 
+// ═══ DROUGHT HISTORY ═══
+// Per-day rain log used by the drought branch of _wildClimateTick.
+// One entry per calendar day the player opens the app; trimmed to
+// the last 14 days. Limitation: if the player skips days, those
+// days aren't recorded and the consecutive-dry count is whatever
+// *was* logged, not real-world weather. Acceptable for v2.
+var _RAIN_HIST_KEY = 'lw_rain_hist';
+var _RAIN_HIST_MAX = 14;
+var _RAIN_DRY_THRESHOLD_MM = 1;
+function _logTodayRain(rainMm) {
+  var hist = [];
+  try { hist = JSON.parse(localStorage.getItem(_RAIN_HIST_KEY) || '[]'); } catch (e) {}
+  var today = new Date().toISOString().slice(0, 10);
+  for (var i = 0; i < hist.length; i++) {
+    if (hist[i].date === today) return; // already logged today
+  }
+  hist.push({ date: today, rain: Math.max(0, rainMm || 0) });
+  if (hist.length > _RAIN_HIST_MAX) hist = hist.slice(-_RAIN_HIST_MAX);
+  try { localStorage.setItem(_RAIN_HIST_KEY, JSON.stringify(hist)); } catch (e) {}
+}
+function _consecutiveDryDays() {
+  var hist = [];
+  try { hist = JSON.parse(localStorage.getItem(_RAIN_HIST_KEY) || '[]'); } catch (e) {}
+  var count = 0;
+  for (var i = hist.length - 1; i >= 0; i--) {
+    if (hist[i].rain < _RAIN_DRY_THRESHOLD_MM) count++;
+    else break;
+  }
+  return count;
+}
+
 // ═══ CLIMATE DAMAGE TICK ═══
 // Runs once per day from _doReproduction. For each LOCALLY-owned wild
-// plant, compares current weather.temp + weather.rain against the
-// hash-derived tolerances (heatMax, coldMin, floodMm at hashToTraits
+// plant, compares current weather.temp + weather.rain + weather.wind
+// + rolling drought count against the hash-derived tolerances
+// (heatMax, coldMin, floodMm, windMax, droughtDays at hashToTraits
 // line ~8247). Each breach shaves hours off .decayAt, capped so
 // climate alone can't kill a plant faster than ~2x natural decay.
 // Shared Firestore plants are skipped — each owner's app ticks their
@@ -37682,6 +37714,9 @@ function _wildClimateTick(weather) {
   if (!weather) return;
   var wild = _getWild();
   if (!wild.length) return;
+  // Log today's rain BEFORE reading the dry-day count so today counts.
+  _logTodayRain(weather.rain);
+  var dryDays = _consecutiveDryDays();
   var now = Date.now();
   var TTL = 20 * 3600000;
   var mutated = false;
@@ -37721,6 +37756,14 @@ function _wildClimateTick(weather) {
         breaches.push({ kind: 'wind', diff: Math.round(overMph * 10) / 10, hours: dG });
         damageH += dG;
       }
+    }
+    // Drought: consecutive dry days > plant's droughtDays tolerance.
+    // Each day beyond tolerance → -6h, cap -24h.
+    if (typeof t.droughtDays === 'number' && dryDays > t.droughtDays) {
+      var overDry = dryDays - t.droughtDays;
+      var dD = Math.min(24, overDry * 6);
+      breaches.push({ kind: 'drought', diff: overDry, hours: dD });
+      damageH += dD;
     }
     // Stamp regardless of whether we damaged — prevents re-checking
     // minutes later if the player reopens the app.
@@ -38882,8 +38925,8 @@ function showTP(p,mk){
       }
     } catch (e) {}
     if (_cb && _cb.at && (Date.now() - _cb.at) < 26 * 3600000 && _cb.kinds && _cb.kinds.length) {
-      var _icons = { heat: '\ud83d\udd25', cold: '\u2744\ufe0f', flood: '\ud83d\udca6', wind: '\ud83d\udca8' };
-      var _labels = { heat: 'Heat-stressed', cold: 'Cold-shocked', flood: 'Flooded', wind: 'Wind-battered' };
+      var _icons = { heat: '\ud83d\udd25', cold: '\u2744\ufe0f', flood: '\ud83d\udca6', wind: '\ud83d\udca8', drought: '\ud83c\udfdc\ufe0f' };
+      var _labels = { heat: 'Heat-stressed', cold: 'Cold-shocked', flood: 'Flooded', wind: 'Wind-battered', drought: 'Parched' };
       var _multi = _cb.kinds.length > 1;
       var _icon = _multi ? '\u26c8\ufe0f' : (_icons[_cb.kinds[0]] || '\u26a0');
       var _label = _multi ? 'Multi-stress' : (_labels[_cb.kinds[0]] || 'Stress');
