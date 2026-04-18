@@ -56597,11 +56597,22 @@ function _step23WaitForReveal(attempts){
   // LET'S EXPLORE tap.
   try{document.body.classList.add('lw-tut-carousel-lock');}catch(e){}
   setTimeout(function(){
+    // Dialog now has an explicit "CONTINUE" button so the player always
+    // has a manual escape hatch if the flip doesn't advance for some
+    // reason (Stephen got stuck here 2026-04-18 — "flip your new plant"
+    // prompt persisted even after interacting with the carousel).
+    // Tapping CONTINUE force-advances to _step23Celebrate via the same
+    // idempotent path the flip-hook uses.
     _dialog(
       '<span style="color:var(--sage);">First, let\u2019s go see what you bloomed.</span><br><br>' +
       'Tap your new plant to <span style="color:var(--gold);">flip it over</span> and inspect it.',
-      '',null,'bottom');
-    if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+      'CONTINUE',function(){
+        if(!window._LW_TUT_S23Q){
+          window._LW_TUT_S23Q=true;
+          _clear();
+          setTimeout(_step23Celebrate,400);
+        }
+      },'bottom');
     // Flip-reveal hook (wraps _handleCardFlip) advances on step===23
     // via nowFlipped check. Carousel-open safety watcher below force-
     // advances if the player opens the carousel but the flip doesn't
