@@ -37663,10 +37663,89 @@ window._reproDebug = function() {
   return out.join('\n');
 };
 
+// ═══ CLIMATE DAMAGE TICK ═══
+// Runs once per day from _doReproduction. For each LOCALLY-owned wild
+// plant, compares current weather.temp + weather.rain against the
+// hash-derived tolerances (heatMax, coldMin, floodMm at hashToTraits
+// line ~8247). Each breach shaves hours off .decayAt, capped so
+// climate alone can't kill a plant faster than ~2x natural decay.
+// Shared Firestore plants are skipped — each owner's app ticks their
+// own. Self-throttled via .lastClimateTick so a second app-open on
+// the same day is a no-op.
+function _wildClimateTick(weather) {
+  if (!weather) return;
+  var wild = _getWild();
+  if (!wild.length) return;
+  var now = Date.now();
+  var TTL = 20 * 3600000;
+  var mutated = false;
+  for (var i = 0; i < wild.length; i++) {
+    var p = wild[i];
+    if (!p || !p.hash) continue;
+    if (p.lastClimateTick && (now - p.lastClimateTick) < TTL) continue;
+    var t = null; try { t = window.hashToTraits(p.hash); } catch (e) {}
+    if (!t) continue;
+    if (typeof t.heatMax !== 'number' || typeof t.coldMin !== 'number') continue;
+    var breaches = [];
+    var damageH = 0;
+    if (weather.temp > t.heatMax) {
+      var over = weather.temp - t.heatMax;
+      var dH = Math.min(24, Math.ceil(over) * 6);
+      breaches.push({ kind: 'heat', diff: Math.round(over * 10) / 10, hours: dH });
+      damageH += dH;
+    }
+    if (weather.temp < t.coldMin) {
+      var under = t.coldMin - weather.temp;
+      var dC = Math.min(24, Math.ceil(under) * 6);
+      breaches.push({ kind: 'cold', diff: Math.round(under * 10) / 10, hours: dC });
+      damageH += dC;
+    }
+    if (typeof t.floodMm === 'number' && weather.rain > t.floodMm) {
+      var extraMm = weather.rain - t.floodMm;
+      var dF = Math.min(24, Math.ceil(extraMm) * 4);
+      breaches.push({ kind: 'flood', diff: Math.round(extraMm * 10) / 10, hours: dF });
+      damageH += dF;
+    }
+    // Stamp regardless of whether we damaged — prevents re-checking
+    // minutes later if the player reopens the app.
+    p.lastClimateTick = now;
+    if (damageH > 0) {
+      if (damageH > 36) damageH = 36; // daily cap
+      var damageMs = damageH * 3600000;
+      if (typeof p.decayAt === 'number' && p.decayAt > 0) {
+        p.decayAt = Math.max(now, p.decayAt - damageMs);
+      }
+      if (window._logWildEvent) {
+        try {
+          var plantName = window.getPlantName ? window.getPlantName(p.hash) : p.hash.slice(0, 8);
+          window._logWildEvent({
+            type: 'climate',
+            event: breaches.length > 1 ? 'multi_stress' : breaches[0].kind + '_stress',
+            hash: p.hash,
+            name: plantName,
+            breaches: breaches,
+            damageH: damageH,
+            temp: weather.temp,
+            rain: weather.rain
+          });
+        } catch (e) {}
+      }
+    }
+    mutated = true;
+  }
+  if (mutated) _saveWild(wild);
+}
+window._wildClimateTick = _wildClimateTick;
+
 function _doReproduction(weather, simMode) {
   var user = firebase.auth().currentUser;
   var td = simMode ? simMode.date : new Date().toISOString().slice(0, 10);
   var checked = {}; try { checked = JSON.parse(localStorage.getItem(REPRO_KEY) || '{}'); } catch (e) {}
+
+  // Climate damage tick — runs alongside reproduction, once per day.
+  // Mutates local wild plants in place; saves via _saveWild. Skipped
+  // in simMode so economy-simulation runs don't corrupt real state.
+  if (!simMode) { try { _wildClimateTick(weather); } catch (e) {} }
 
   // Weather modifiers
   var weatherMod = 1.0;
