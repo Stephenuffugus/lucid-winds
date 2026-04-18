@@ -55026,6 +55026,10 @@ _done=function(){
   }catch(e){}
   // Orphan arrow cleanup.
   try{var _a=document.getElementById('_lw-tut-arrow');if(_a)_a.remove();}catch(e){}
+  // Clear the step-19 advance-queued idempotency flag so the next
+  // tutorial run (reset, prestige, fresh account on same device)
+  // can arm its own step-18 → step-19 advance from scratch.
+  try{window._LW_TUT_S19Q=false;}catch(e){}
   // Strip any residual pulse classes on UI elements the tutorial touches.
   try{
     var _kbs=document.getElementById('kb-sunbeams');
@@ -55704,7 +55708,8 @@ function _step18CarouselSafety(){
     var isOpen=m&&m.classList.contains('open');
     if(isOpen){
       if(openSince===0)openSince=Date.now();
-      if(Date.now()-openSince>=8000){
+      if(Date.now()-openSince>=8000&&!window._LW_TUT_S19Q){
+        window._LW_TUT_S19Q=true;
         setTimeout(_step19,400);
         return;
       }
@@ -56367,7 +56372,12 @@ function _step34(){
         // player actually interacts. Jessie got stuck 2026-04-17
         // because her plant card was already revealed and the strict
         // first-reveal check never fired → BREED stayed greyed.
-        if(_st===18&&nowFlipped)setTimeout(_step19,2400);
+        // Idempotency flag: multiple flips (back-and-forth) would
+        // otherwise queue multiple _step19 calls.
+        if(_st===18&&nowFlipped&&!window._LW_TUT_S19Q){
+          window._LW_TUT_S19Q=true;
+          setTimeout(_step19,2400);
+        }
         // Step 23 keeps strict first-reveal — celebrating the rarity
         // reveal is the point of that beat.
         else if(_st===23&&!wasRevealed&&nowRevealed)setTimeout(_step23Celebrate,2400);
