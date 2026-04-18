@@ -43416,14 +43416,18 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
   body.lw-tut-active #pw-keeper-bar .kb-rank,
   body.lw-tut-active #pw-lb-toggle,
   body.lw-tut-active #kb-compendium,
-  body.lw-tut-active #bpi{pointer-events:none !important;opacity:0.4 !important;filter:saturate(0.35);transition:opacity 0.4s,filter 0.4s;}
-  body.lw-tut-active.lw-tut-bp-on #bpi{pointer-events:auto !important;opacity:1 !important;filter:none;}
-  body.lw-tut-active.lw-tut-bos-on #kb-compendium{pointer-events:auto !important;opacity:1 !important;filter:none;}
+  body.lw-tut-active #bpi{pointer-events:none !important;opacity:0.4 !important;transition:opacity 0.4s;}
+  body.lw-tut-active.lw-tut-bp-on #bpi{pointer-events:auto !important;opacity:1 !important;}
+  body.lw-tut-active.lw-tut-bos-on #kb-compendium{pointer-events:auto !important;opacity:1 !important;}
   /* Backpack tour (steps 28-31): dim the Wild tab FORAGE + SOW FABs so they
      don't pull focus while the Keeper learns what the pack holds. Unlocks
-     at step 32 when lw-tut-bos-on flips on. */
+     at step 32 when lw-tut-bos-on flips on. Filter-saturate removed
+     2026-04-18 — each tutorial-dimmed element was getting a GPU
+     compositor layer plus paint-on-every-frame from the animated filter
+     transition, which Stephen's old Mac was choking on. Opacity alone
+     reads the same visually and composites far cheaper. */
   body.lw-tut-active.lw-tut-bp-on:not(.lw-tut-bos-on) #ffb,
-  body.lw-tut-active.lw-tut-bp-on:not(.lw-tut-bos-on) #dfb{pointer-events:none !important;opacity:0.22 !important;filter:saturate(0.25) brightness(0.55) !important;transition:opacity 0.4s,filter 0.4s;}
+  body.lw-tut-active.lw-tut-bp-on:not(.lw-tut-bos-on) #dfb{pointer-events:none !important;opacity:0.22 !important;transition:opacity 0.4s;}
   /* Backpack bottom-row buttons (BASE / ITEMS / BOXES / COCOONS) hidden
      during the whole tutorial. Player hasn't earned a "base" yet and
      the items/boxes panels aren't part of early play. Returns at _done. */
@@ -43437,7 +43441,7 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      GREENHOUSE gets unlocked by default so the carousel-return
      navigation works. All unlocks combine — once step 24 fires
      FOCUS/NURSERY/WILD/GREENHOUSE all stay tappable. */
-  body.lw-tut-active .fg-nav-btn{pointer-events:none !important;opacity:0.4 !important;filter:saturate(0.35);transition:opacity 0.4s,filter 0.4s;}
+  body.lw-tut-active .fg-nav-btn{pointer-events:none !important;opacity:0.4 !important;transition:opacity 0.4s;}
   /* Explicit unlock by class — do NOT unlock the currently-.active tab by
      default. At step 13 the player is still on greenhouse but we want
      ONLY the GAMES tab tappable, so we must control unlock via the
@@ -43445,13 +43449,13 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
   body.lw-tut-active.lw-tut-nav-greenhouse .fg-nav-btn[onclick*="greenhouse"],
   body.lw-tut-active.lw-tut-nav-focus .fg-nav-btn[onclick*="'game'"],
   body.lw-tut-active.lw-tut-nav-nursery .fg-nav-btn[onclick*="nursery"],
-  body.lw-tut-active.lw-tut-nav-wild #nav-btn-wild{pointer-events:auto !important;opacity:1 !important;filter:none;}
+  body.lw-tut-active.lw-tut-nav-wild #nav-btn-wild{pointer-events:auto !important;opacity:1 !important;}
   /* During step 13 (nav-focus): fake the GAMES tab into looking selected
      AND force the currently-.active greenhouse tab to look inactive so
      the lit tab matches the instruction. */
-  body.lw-tut-active.lw-tut-nav-focus .fg-nav-btn.active img{opacity:0.4 !important;filter:saturate(0.3) brightness(0.6) !important;}
+  body.lw-tut-active.lw-tut-nav-focus .fg-nav-btn.active img{opacity:0.4 !important;}
   body.lw-tut-active.lw-tut-nav-focus .fg-nav-btn.active::after{display:none !important;}
-  body.lw-tut-active.lw-tut-nav-focus .fg-nav-btn[onclick*="'game'"] img{opacity:1 !important;filter:brightness(1.05) drop-shadow(0 0 8px rgba(122,179,86,0.15)) !important;}
+  body.lw-tut-active.lw-tut-nav-focus .fg-nav-btn[onclick*="'game'"] img{opacity:1 !important;}
   body.lw-tut-active.lw-tut-nav-focus .fg-nav-btn[onclick*="'game'"]::after{
     content:'';position:absolute;bottom:2px;left:20%;right:20%;height:2px;
     background:var(--sage);border-radius:1px;opacity:0.8;
@@ -43460,18 +43464,18 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      actual .active greenhouse tab so the lit tab matches the dialog.
      Must use body-level opacity on the greenhouse BUTTON (not the img)
      because .fg-nav-btn base rule sets button-level opacity. */
-  body.lw-tut-active.lw-tut-nav-wild .fg-nav-btn.active{opacity:0.25 !important;filter:saturate(0.2) brightness(0.55) !important;}
+  body.lw-tut-active.lw-tut-nav-wild .fg-nav-btn.active{opacity:0.25 !important;}
   body.lw-tut-active.lw-tut-nav-wild .fg-nav-btn.active::after{display:none !important;}
-  body.lw-tut-active.lw-tut-nav-wild #nav-btn-wild{opacity:1 !important;filter:none !important;}
-  body.lw-tut-active.lw-tut-nav-wild #nav-btn-wild img{opacity:1 !important;filter:brightness(1.15) drop-shadow(0 0 14px rgba(200,168,75,0.65)) !important;}
+  body.lw-tut-active.lw-tut-nav-wild #nav-btn-wild{opacity:1 !important;}
+  body.lw-tut-active.lw-tut-nav-wild #nav-btn-wild img{opacity:1 !important;filter:drop-shadow(0 0 10px rgba(200,168,75,0.55)) !important;}
   /* Step 22 (nav-nursery): same fake-bright pattern as nav-wild so the
      player can see at a glance that nursery is now the active tab.
      Without this the nav button stayed at the base 'lw-tut-active'
      dimming because no rule restored the .active brightness for the
      nursery tab. Stephen flagged this on 2026-04-17 test run. */
-  body.lw-tut-active.lw-tut-nav-nursery .fg-nav-btn.active{opacity:0.25 !important;filter:saturate(0.2) brightness(0.55) !important;}
+  body.lw-tut-active.lw-tut-nav-nursery .fg-nav-btn.active{opacity:0.25 !important;}
   body.lw-tut-active.lw-tut-nav-nursery .fg-nav-btn.active::after{display:none !important;}
-  body.lw-tut-active.lw-tut-nav-nursery #nav-btn-nursery{opacity:1 !important;filter:none !important;}
+  body.lw-tut-active.lw-tut-nav-nursery #nav-btn-nursery{opacity:1 !important;}
   body.lw-tut-active.lw-tut-nav-nursery #nav-btn-nursery img{opacity:1 !important;filter:brightness(1.15) drop-shadow(0 0 14px rgba(122,179,86,0.65)) !important;}
   body.lw-tut-active.lw-tut-nav-nursery #nav-btn-nursery::after{
     content:'';position:absolute;bottom:2px;left:20%;right:20%;height:3px;
