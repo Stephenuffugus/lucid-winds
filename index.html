@@ -55343,7 +55343,7 @@ window._checkDailyLogin = function() {
 (function(){
 'use strict';
 var TK='lw_tut';
-var _ov=null,_dlg=null,_spot=null;
+var _ov=null,_dlg=null,_spot=null,_spotEl=null;
 
 function _getStep(){var s=localStorage.getItem(TK);if(s==='done')return -1;return parseInt(s,10)||0;}
 function _setStep(n){localStorage.setItem(TK,String(n));}
@@ -55353,6 +55353,17 @@ function _clear(){
   if(_ov&&_ov.parentNode)_ov.remove();_ov=null;
   if(_dlg&&_dlg.parentNode)_dlg.remove();_dlg=null;
   if(_spot&&_spot.parentNode)_spot.remove();_spot=null;
+  // Reset the spotlighted element's inline style so a future render
+  // or step doesn't inherit elevated z-index / pointer-events /
+  // will-change from a prior tutorial beat.
+  if(_spotEl){
+    try{
+      _spotEl.style.zIndex='';
+      _spotEl.style.willChange='';
+      _spotEl.style.pointerEvents='';
+    }catch(e){}
+    _spotEl=null;
+  }
 }
 
 function _dialog(text,btnLabel,btnCb,pos){
@@ -55390,12 +55401,24 @@ function _spotlight(el){
   if(_spot&&_spot.parentNode)_spot.remove();
   var r=el.getBoundingClientRect();
   _spot=document.createElement('div');
+  // Spotlight sits at 1000011 — the plant below MUST be bumped to
+  // 1000012 so it renders above the spotlight mask. Previously both
+  // sat at 1000011 and DOM order gave the spotlight the win, making
+  // the plant visually covered; on iOS pointer-events:none on the
+  // mask doesn't reliably pass taps through a contain-layout stacking
+  // context (.greenhouse-plant uses contain:layout style paint), so
+  // Jessie's friend could see the spotlit plant but could not tap it.
   _spot.style.cssText='position:fixed;z-index:1000011;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,0.72);pointer-events:none;transition:all 0.3s ease;';
   _spot.style.top=(r.top-8)+'px';_spot.style.left=(r.left-8)+'px';
   _spot.style.width=(r.width+16)+'px';_spot.style.height=(r.height+16)+'px';
   document.body.appendChild(_spot);
-  el.style.position=el.style.position||'relative';
-  el.style.zIndex='1000011';
+  el.style.position='relative';
+  el.style.zIndex='1000012';
+  el.style.pointerEvents='auto';
+  // Force a GPU layer on iOS Safari so z-index on a contain:layout
+  // element is honored reliably over the fixed-positioned mask.
+  el.style.willChange='transform';
+  _spotEl=el;
 }
 
 // ═══ Find the Game nav button (used by multiple steps) ═══
