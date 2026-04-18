@@ -4811,10 +4811,19 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
   border:1px solid rgba(74,124,53,0.22);
   border-radius:9px;padding:6px 4px;min-height:44px;cursor:pointer;
   transition:all 0.15s;
+  min-width:0; /* let chip shrink inside the grid track on narrow phones */
 }
 .wsb-chip:active{background:rgba(74,124,53,0.18);transform:scale(0.97);}
 .wsb-val{font-family:'Bebas Neue',sans-serif;font-size:1.08rem;line-height:1;color:var(--cream);}
-.wsb-lbl{font-family:'DM Mono',monospace;font-size:0.46rem;letter-spacing:0.1em;text-transform:uppercase;line-height:1;opacity:0.92;margin-top:2px;}
+.wsb-lbl{font-family:'DM Mono',monospace;font-size:0.46rem;letter-spacing:0.1em;text-transform:uppercase;line-height:1;opacity:0.92;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+/* Tighten the strip on narrow phones (iPhone SE / Mini landscape,
+   Galaxy Fold closed). Three chips still fit without ellipsis. */
+@media (max-width:340px){
+  #w-stats-bar{padding:6px 6px;gap:5px;}
+  .wsb-chip{padding:5px 2px;}
+  .wsb-val{font-size:0.95rem;}
+  .wsb-lbl{font-size:0.4rem;letter-spacing:0.06em;}
+}
 
 /* Map frame — thin gold pillars down the left/right edges of the map
    so it reads as a framed window onto the real world, not a naked
