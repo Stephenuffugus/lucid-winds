@@ -8481,6 +8481,25 @@ document.addEventListener('keydown', function(e) {
     if (_compInfoEA && _compInfoEA.idx === 27 && plant && typeof plant.snailWins === 'number') {
       ea += Math.min(10, Math.max(0, plant.snailWins));
     }
+    // TURTLE Ancient Shell — +1 EA per full day this plant has lived
+    // in the wild, cap +14 (~2 weeks to max). Permanence-aligned:
+    // no revival on eviction, the Turtle just becomes unusually hard
+    // to dislodge while it's alive. Reads plant.droppedAt (set at the
+    // wild drop site) or falls back to plant.date.
+    if (_compInfoEA && _compInfoEA.idx === 53 && plant) {
+      var _turtleMs = 0;
+      try {
+        var _anchor = plant.droppedAt || plant.date;
+        if (_anchor) {
+          var _t0 = typeof _anchor === 'number' ? _anchor : new Date(_anchor).getTime();
+          if (_t0 > 0) _turtleMs = Date.now() - _t0;
+        }
+      } catch(e){}
+      if (_turtleMs > 0) {
+        var _turtleDays = Math.floor(_turtleMs / 86400000);
+        ea += Math.min(14, Math.max(0, _turtleDays));
+      }
+    }
     // CICADA Herd Immunity — +1 EA per other owned wild plant within 500m,
     // max +4. Only applies when this is a wild plant (has lat/lng); the
     // Cicada needs a chorus to defend a hex. Greenhouse plants get nothing.
