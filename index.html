@@ -28598,7 +28598,7 @@ document.addEventListener('keydown', function(e) {
         // v3 suffix busts the older v2 cache that missed age + revealed + idx.
         var _ghAgeDays = plant.born ? Math.floor((Date.now() - plant.born) / 86400000) : 0;
         var _ghAgeTier = _ghAgeDays >= 90 ? 3 : _ghAgeDays >= 30 ? 2 : _ghAgeDays >= 7 ? 1 : 0;
-        var _cacheKey = plant.hash + '|' + (plant.breedCount || 0) + '|' + (plant.mycelialCrown ? 1 : 0) + '|' + (plant.revealed ? 1 : 0) + '|' + realIdx + '|' + _ghAgeTier + '|v3';
+        var _cacheKey = plant.hash + '|' + (plant.breedCount || 0) + '|' + (plant.mycelialCrown ? 1 : 0) + '|' + (plant.revealed ? 1 : 0) + '|' + realIdx + '|' + _ghAgeTier + '|' + (plant.wildBorn ? 'w' : 'g') + '|v4';
         if (_ghCardCache[_cacheKey]) {
           el.innerHTML = _ghCardCache[_cacheKey];
           (function(idx) { el.onclick = function() { openCarousel(loadGreenhouse(), idx, 'greenhouse'); }; })(realIdx);
@@ -28640,8 +28640,13 @@ document.addEventListener('keydown', function(e) {
         // perfLite: simplified card — skip EA knots/synergies but keep breed status
         // (it's a single text node, the cost is trivial)
         var _breedTxt = (function(){var _gbs=window.FG_Data&&FG_Data.getBreedStatus?FG_Data.getBreedStatus(plant):null;if(!_gbs)return '';if(_gbs.reason==='IMMATURE')return'<div style="font-family:DM Mono,monospace;font-size:0.5rem;font-weight:600;color:rgba(120,190,230,0.95);margin-top:2px;letter-spacing:0.04em;">\ud83c\udf31 '+_gbs.daysLeft+'d to mature</div>';if(_gbs.reason==='COOLDOWN')return'<div style="font-family:DM Mono,monospace;font-size:0.5rem;font-weight:600;color:rgba(220,184,90,0.95);margin-top:2px;letter-spacing:0.04em;">\u23f3 '+_gbs.cooldownDays+'d cooldown</div>';if(_gbs.canBreed)return'<div style="font-family:DM Mono,monospace;font-size:0.5rem;font-weight:600;color:rgba(140,200,100,1);margin-top:2px;letter-spacing:0.04em;text-shadow:0 0 4px rgba(122,179,86,0.35);">\u26a1 Ready to breed</div>';return'';})();
+        // Wild-born badge — corner chip for plants hatched from a
+        // foraged feral seed (origin:'feral' + wildBorn:true stamped
+        // at _executeBloom). Distinguishes field-caught plants from
+        // bred ones at a glance.
+        var _wildBadge = plant.wildBorn ? '<div style="position:absolute;top:4px;left:4px;z-index:3;font-family:Bebas Neue,sans-serif;font-size:0.4rem;letter-spacing:0.08em;color:var(--sage);background:rgba(13,16,12,0.85);border:1px solid rgba(122,179,86,0.5);border-radius:6px;padding:2px 5px;text-shadow:0 1px 2px rgba(0,0,0,0.7);pointer-events:none;">\ud83c\udf3f WILD</div>' : '';
         if (window._perfLite) {
-          el.innerHTML = plantSvg +
+          el.innerHTML = _wildBadge + plantSvg +
             '<div class="gh-name" style="color:var(--cream);">' + _pName + '</div>' +
             _breedTxt;
         } else {
@@ -28650,6 +28655,7 @@ document.addEventListener('keydown', function(e) {
           el.innerHTML =
             _eaKnotHtml +
             '<div class="gh-slot">#' + (realIdx + 1) + '</div>' +
+            _wildBadge +
             plantSvg +
             '<div class="gh-name" style="color:var(--cream);">' + (typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : _pName) + '</div>' +
             _breedTxt +
@@ -33351,11 +33357,17 @@ document.addEventListener('keydown', function(e) {
 
     // Phoenix gating removed — Cicada now occupies idx 33 with no compost gate.
     var _phoenixSuppressed = false;
+    // Feral seed → greenhouse: preserve wildBorn lineage so the
+    // greenhouse UI can distinguish wild-foraged plants from bred
+    // ones. originDropperName='The Wild' is the narrative anchor.
+    var _seedIsFeral = (seed && (seed.origin === 'feral' || seed.type === 'feral'));
     var newPlant = {
       hash:      newHash,
-      isCross:   true,
+      isCross:   !_seedIsFeral,
       born:      Date.now(),
-      origin:    'cross',
+      origin:    _seedIsFeral ? 'feral' : 'cross',
+      wildBorn:  _seedIsFeral ? true : undefined,
+      originDropperName: _seedIsFeral ? 'The Wild' : undefined,
       parentAHash: parentA,
       parentBHash: parentB,
       timestamp: Date.now(),
@@ -54034,6 +54046,7 @@ window.addEventListener('bp-seed-to-nursery', function(e) {
   if (!e.detail) return;
   var seed = e.detail;
   var isMystery = !!seed.mystery || seed.type === 'feral';
+  var isFeral = seed.type === 'feral';
   // Use FG_Data.addSeed for correct nursery format
   if (window.FG_Data && FG_Data.addSeed) {
     var result = FG_Data.addSeed({
@@ -54041,7 +54054,11 @@ window.addEventListener('bp-seed-to-nursery', function(e) {
       parentAHash: seed.hash || '',
       parentBHash: 'feral_' + Date.now(),
       nonce: 0,
-      mystery: isMystery
+      mystery: isMystery,
+      // Propagate origin='feral' so the bloom path can stamp wildBorn
+      // on the resulting greenhouse plant. Lost previously → every
+      // feral bloom looked identical to a bred plant.
+      origin: isFeral ? 'feral' : undefined
     });
     if (result.ok) {
       if (window.renderNursery) renderNursery();
