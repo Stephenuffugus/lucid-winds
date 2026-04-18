@@ -8299,7 +8299,8 @@ document.addEventListener('keydown', function(e) {
 
   // Internal helper: season info for a single season index
   function _seasonInfoForIdx(sIdx) {
-    var sd = SEASON_DATA[sIdx % 4];
+    var ss = sIdx % 4;
+    var sd = SEASON_DATA[ss];
     var currentMonth = new Date().getMonth();
     var inPeak = sd.months.indexOf(currentMonth) >= 0;
     var adjMonths = [];
@@ -8308,9 +8309,19 @@ document.addEventListener('keydown', function(e) {
       adjMonths.push((sd.months[i] + 1) % 12);
     }
     var isAdjacent = !inPeak && adjMonths.indexOf(currentMonth) >= 0;
+    // Current real-world peak season index (0 Spring, 1 Summer, 2 Autumn,
+    // 3 Winter). Opposite = plant's season is two indices off (Spring↔
+    // Autumn, Summer↔Winter). Was missing — _getBreedStatus and the
+    // Wild v3 spec both refer to si.isOpposite but nothing was computing
+    // it, so opposite-season cooldown ×2 + +50% stress silently failed.
+    var curPeak = null;
+    for (var _ps = 0; _ps < 4; _ps++) {
+      if (SEASON_DATA[_ps].months.indexOf(currentMonth) >= 0) { curPeak = _ps; break; }
+    }
+    var isOpposite = (curPeak !== null) && (((curPeak - ss + 4) % 4) === 2);
     return {
       name: sd.name, emblem: sd.emblem, color: sd.color,
-      inPeak: inPeak, isAdjacent: isAdjacent,
+      inPeak: inPeak, isAdjacent: isAdjacent, isOpposite: isOpposite,
       eaBonus: inPeak ? 2 : (isAdjacent ? 1 : 0),
       stressMod: inPeak ? 0.5 : (isAdjacent ? 1.0 : 1.5),
       pollenMod: inPeak ? 1.5 : (isAdjacent ? 1.0 : 0.5)
@@ -37822,7 +37833,19 @@ function _wildClimateTick(weather) {
     // minutes later if the player reopens the app.
     p.lastClimateTick = now;
     if (damageH > 0) {
+      // Season stress modifier: peak ×0.5, adjacent ×1.0, opposite ×1.5.
+      // Was computed in getSeasonInfo but never consumed — climate
+      // damage ignored seasonal fit. Now a Spring plant in Spring takes
+      // half damage; a Spring plant in Autumn takes 50% more.
+      try {
+        var _sInfo = window.getSeasonInfo ? window.getSeasonInfo(t, p) : null;
+        if (_sInfo && typeof _sInfo.stressMod === 'number') {
+          damageH = Math.round(damageH * _sInfo.stressMod);
+        }
+      } catch (e) {}
       if (damageH > 36) damageH = 36; // daily cap
+    }
+    if (damageH > 0) {
       var damageMs = damageH * 3600000;
       if (typeof p.decayAt === 'number' && p.decayAt > 0) {
         p.decayAt = Math.max(now, p.decayAt - damageMs);
@@ -39143,6 +39166,14 @@ function showTP(p,mk){
         // Mystic temperament: +15% pollen
         var _pPolBonus=window.getCompanionPollenBonus?getCompanionPollenBonus(_pTraits):0;
         if(_pPolBonus>0)_polRate=Math.round(_polRate*(1+_pPolBonus));
+        // Season pollen modifier: peak ×1.5, adjacent ×1.0, opposite ×0.5.
+        // Was computed by getSeasonInfo but never consumed — plants
+        // produced the same pollen regardless of seasonal fit. Now the
+        // Wild v3 "peak season = 1.5x pollen" rule actually applies.
+        var _sPol = window.getSeasonInfo ? window.getSeasonInfo(_pTraits, p) : null;
+        if (_sPol && typeof _sPol.pollenMod === 'number' && _sPol.pollenMod !== 1) {
+          _polRate = Math.max(1, Math.round(_polRate * _sPol.pollenMod));
+        }
         // Bloom chorus bonus
         var _chBonus=window.getChorusBonus?getChorusBonus(p.hash):null;
         if(_chBonus&&_chBonus.inChorus)_polRate=Math.round(_polRate*(1+_chBonus.pollenBonus));
