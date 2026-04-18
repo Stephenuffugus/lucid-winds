@@ -62629,12 +62629,12 @@ window._lwClaimHerbarium = function(id){
       art:'assets/items/slow-arrow.png', icon:'\ud83c\udff9',
       desc:'Pin this spot for 6 hours. Return any time in that window to forage it from anywhere.',
       lore:'Loosed at moss, not at a heart. The arrow waits where it fell and the hex stays open to you.',
-      usage:'tap USE to pin, then again within 6h to forage', wired:true },
+      usage:'tap USE to pin, then again within 6h to forage', wired:false },
     whisperVine: { key:'whisperVine', name:'Whisper Vine', category:'remote', rarity:'Common',
       art:'assets/items/whisper-vine.png', icon:'\ud83c\udf43',
       desc:'Tag this spot for 7 days. Once a day, a reseeded hex delivers a Compass Shard.',
       lore:'A creeper laid across a hex. It tugs your sleeve when the seed inside turns over.',
-      usage:'tap USE to start listening', wired:true },
+      usage:'tap USE to start listening', wired:false },
     wanderersMap: { key:'wanderersMap', name:"Wanderer\u2019s Map", category:'remote', rarity:'Epic',
       art:'assets/items/wanderers-map.png', icon:'\ud83d\uddfa\ufe0f',
       desc:'The wind decides. Carries you to a random real biome hex to forage once.',
@@ -62847,7 +62847,16 @@ window._lwClaimHerbarium = function(id){
     return true;
   }
   function _addWard(hash){
-    var p = _loadPending(); p.wards = p.wards || {}; p.wards[hash] = (p.wards[hash]||0) + 1; _savePending(p);
+    var p = _loadPending(); p.wards = p.wards || {};
+    // Stack cap: max 3 wards on a single plant. Uncapped stacks were a
+    // theoretical infinite-block exploit flagged in the audit.
+    var cur = p.wards[hash] || 0;
+    if (cur >= 3) {
+      if (window._toast) window._toast('\ud83d\udee1\ufe0f Ward maxed on this plant (3/3).');
+      return;
+    }
+    p.wards[hash] = cur + 1;
+    _savePending(p);
   }
   function consumeWard(hash){
     var p = _loadPending(); if (!p.wards || !p.wards[hash]) return false;
@@ -63161,6 +63170,9 @@ window._lwClaimHerbarium = function(id){
       h += '<div style="margin-top:0.9rem;margin-bottom:0.4rem;font-family:Bebas Neue,sans-serif;font-size:0.62rem;letter-spacing:0.12em;color:'+cat.color+';">'+cat.label+'</div>';
       for (var ki=0;ki<keysInCat.length;ki++){
         var it = CATALOG[keysInCat[ki]];
+        // Skip items marked wired:false — stub handlers / unimplemented
+        // remote mechanics. Hidden from the UI until real logic lands.
+        if (it.wired === false) continue;
         var n = inv[it.key] || 0;
         var disabled = n <= 0;
         var op = disabled ? 0.4 : 1;
