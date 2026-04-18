@@ -65197,13 +65197,112 @@ window._lwClaimHerbarium = function(id){
     var live = t.activeSinceMs ? (Date.now() - t.activeSinceMs) : 0;
     return (t.totalMs || 0) + live;
   }
+  // ═══ LEVELING ARCHETYPES (6) — not every companion levels by time ═══
+  // Each companion picks an archetype that matches its character: a Toad
+  // levels via watering streaks, a Butterfly via cross-pollinations, a
+  // Cicada via allies clustered nearby. Locked in reference_ability_pool_locked.
+  // Counter lives in lw_companion_xp[idx] = {c: count}. Time archetype
+  // keeps using the existing ms-based timer (backwards compatible).
+  var LEVELING_ARCHETYPES = {
+    time:     { label:'Time',     thresholds: [null, L2_MS, L3_MS, L4_MS, L5_MS, L6_MS] },
+    action:   { label:'Action',   thresholds: [null, 10, 75, 200, 500, 1500] },
+    streak:   { label:'Streak',   thresholds: [null, 7, 30, 60, 120, 365] },
+    survival: { label:'Survival', thresholds: [null, 5, 20, 50, 100, 300] },
+    witness:  { label:'Witness',  thresholds: [null, 10, 50, 150, 400, 1000] },
+    kinship:  { label:'Kinship',  thresholds: [null, 2, 4, 7, 10, 8] }
+  };
+  // Per-companion archetype assignments. Missing entries default to 'time'
+  // (backwards compatible). Draws from reference_ability_pool_locked.md.
+  var COMPANION_ARCHETYPE = {
+    21:'action',   // Bee — cross-pollinations
+    22:'survival', // Pill Bug — invasions witnessed
+    23:'streak',   // Firefly — consecutive night sessions
+    24:'action',   // Butterfly — cross-pollinations
+    28:'action',   // Hummingbird — ferals collected
+    29:'action',   // Dragonfly — tabs switched in weather
+    32:'streak',   // Toad — consecutive watering days
+    33:'kinship',  // Cicada — ally plants clustered
+    34:'survival', // Mammoth — cold events weathered
+    35:'witness',  // Raccoon — invasions near plants
+    36:'action',   // Heron — contest wins + harvests
+    37:'survival', // Garden Spider — contests survived
+    38:'witness',  // Beholder — ferals + plants spotted
+    43:'action',   // Pangolin — chimeras bred
+    44:'streak',   // Luna Moth — consecutive bloom cycles
+    45:'survival', // Porcupine — invasions defended
+    47:'survival', // Axolotl — plants kept alive
+    53:'time',     // Turtle — ancient, slow
+    55:'action',   // Mouse — ferals collected
+    56:'witness',  // Owl — book entries
+    60:'streak',   // Dart Frog — days equipped
+    64:'action',   // Scarab Beetle — plants composted
+    66:'action',   // R-C Crane — biomes discovered
+    73:'kinship',  // Mushroom Sprite — mycelium family
+    79:'witness',  // Will-o-Wisp — mysteries revealed
+    81:'kinship'   // Panda — diverse family ownership
+    // All others default to 'time' (current behavior — safe migration)
+  };
+  window.LW_LEVELING_ARCHETYPES = LEVELING_ARCHETYPES;
+  window.LW_COMPANION_ARCHETYPE = COMPANION_ARCHETYPE;
+
+  // Counter storage for non-time archetypes.
+  function _loadXp(){ try { return JSON.parse(localStorage.getItem('lw_companion_xp')||'{}'); } catch(e){ return {}; } }
+  function _saveXp(x){ try { localStorage.setItem('lw_companion_xp', JSON.stringify(x)); } catch(e){} }
+  function _getXpCount(idx){
+    var x = _loadXp();
+    return (x[idx] && typeof x[idx].c === 'number') ? x[idx].c : 0;
+  }
+  function _bumpXp(idx, amount){
+    var x = _loadXp();
+    if (!x[idx]) x[idx] = { c:0 };
+    x[idx].c = (x[idx].c || 0) + (amount || 1);
+    _saveXp(x);
+    return x[idx].c;
+  }
+  // Live-compute kinship: count of unique companion-families currently
+  // owned across greenhouse + wild. Doesn't store a counter — reads
+  // fresh every level query.
+  function _kinshipCount() {
+    try {
+      var gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+      var wild = JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');
+      var all = gh.concat(wild);
+      var famSet = {};
+      for (var i=0; i<all.length; i++) {
+        try {
+          var t = window.hashToTraits ? window.hashToTraits(all[i].hash) : null;
+          if (t && t.companion != null && window.LW_COMPANION && LW_COMPANION.FAMILY_OF) {
+            var fam = LW_COMPANION.FAMILY_OF[t.companion];
+            if (fam) famSet[fam] = true;
+          }
+        } catch(e){}
+      }
+      return Object.keys(famSet).length;
+    } catch(e) { return 0; }
+  }
+  window._LW_companionXpBump = _bumpXp;
+  window._LW_companionXpGet  = _getXpCount;
+  window._LW_companionKinship = _kinshipCount;
+
   function getLevel(idx) {
-    var ms = getTotalMs(idx);
-    if (ms >= L6_MS) return 6;
-    if (ms >= L5_MS) return 5;
-    if (ms >= L4_MS) return 4;
-    if (ms >= L3_MS) return 3;
-    if (ms >= L2_MS) return 2;
+    var arch = COMPANION_ARCHETYPE[idx] || 'time';
+    if (arch === 'time') {
+      var ms = getTotalMs(idx);
+      if (ms >= L6_MS) return 6;
+      if (ms >= L5_MS) return 5;
+      if (ms >= L4_MS) return 4;
+      if (ms >= L3_MS) return 3;
+      if (ms >= L2_MS) return 2;
+      return 1;
+    }
+    // Non-time archetypes read a count and compare to thresholds.
+    var def = LEVELING_ARCHETYPES[arch];
+    if (!def) return 1;
+    var count = (arch === 'kinship') ? _kinshipCount() : _getXpCount(idx);
+    for (var lvl = 6; lvl >= 2; lvl--) {
+      var th = def.thresholds[lvl];
+      if (th != null && count >= th) return lvl;
+    }
     return 1;
   }
   // Pause the active companion's clock — accumulates elapsed time into totalMs.
