@@ -37827,7 +37827,26 @@ function _wildClimateTick(weather) {
     }
     mutated = true;
   }
-  if (mutated) _saveWild(wild);
+  if (mutated) {
+    _saveWild(wild);
+    // Sync damaged plants to Firestore so other keepers viewing our
+    // plants see the real decayAt + breach state, not stale markers.
+    // Only writes plants that took damage THIS tick (lastClimateBreach.at
+    // stamped with `now`). Undamaged plants have no new state to share.
+    try {
+      var _cu = window.firebase && firebase.auth && firebase.auth().currentUser;
+      if (_cu && _cu.uid && window.db) {
+        for (var _ci = 0; _ci < wild.length; _ci++) {
+          var _cp = wild[_ci];
+          if (!_cp || !_cp.hash || !_cp.lastClimateBreach) continue;
+          if (_cp.lastClimateBreach.at !== now) continue;
+          var _docId = _cu.uid + '_' + _cp.hash.slice(0, 16);
+          var _payload = { decayAt: _cp.decayAt || null, lastClimateBreach: _cp.lastClimateBreach };
+          window.db.collection('wildDrops').doc(_docId).update(_payload).catch(function(){});
+        }
+      }
+    } catch (e) {}
+  }
 }
 window._wildClimateTick = _wildClimateTick;
 
@@ -38961,9 +38980,9 @@ function showTP(p,mk){
   }
 
   // Climate stress readout — shows recent breach kinds + total
-  // damage hours from last _wildClimateTick. Owned plants only in
-  // v2; stranger plants hide the line since their breach data
-  // isn't in our local store.
+  // damage hours from last _wildClimateTick. Pulls from local wild for
+  // owned plants, or from the shared-marker Firestore data for
+  // strangers (now that #3 syncs owner's tick back to the cloud).
   var _climEl = document.getElementById('wtp-climate');
   if (_climEl) {
     var _cb = null;
@@ -38973,7 +38992,10 @@ function showTP(p,mk){
         for (var _wi = 0; _wi < _wLst.length; _wi++) {
           if (_wLst[_wi] && _wLst[_wi].hash === p.hash) { _cb = _wLst[_wi].lastClimateBreach; break; }
         }
+      } else if (_sharedMarkers && _sharedMarkers[p.hash] && _sharedMarkers[p.hash].data) {
+        _cb = _sharedMarkers[p.hash].data.lastClimateBreach || null;
       }
+      if (!_cb && p.lastClimateBreach) _cb = p.lastClimateBreach;
     } catch (e) {}
     if (_cb && _cb.at && (Date.now() - _cb.at) < 26 * 3600000 && _cb.kinds && _cb.kinds.length) {
       var _icons = { heat: '\ud83d\udd25', cold: '\u2744\ufe0f', flood: '\ud83d\udca6', wind: '\ud83d\udca8', drought: '\ud83c\udfdc\ufe0f' };
