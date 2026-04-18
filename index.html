@@ -8445,6 +8445,13 @@ document.addEventListener('keydown', function(e) {
     } else if (window.getSeasonInfo) {
       ea += window.getSeasonInfo(traits, plant).eaBonus;
     }
+    // SNAIL Steady Shell — +1 permanent EA per contest this plant has
+    // survived. Counter is stamped on plant.snailWins by the contest
+    // resolver. Caps at +10 so a single Snail can't grow unbounded; the
+    // ceiling is roughly a year of weekly defenses without losing.
+    if (_compInfoEA && _compInfoEA.idx === 27 && plant && typeof plant.snailWins === 'number') {
+      ea += Math.min(10, Math.max(0, plant.snailWins));
+    }
     // CICADA Herd Immunity — +1 EA per other owned wild plant within 500m,
     // max +4. Only applies when this is a wild plant (has lat/lng); the
     // Cicada needs a chorus to defend a hex. Greenhouse plants get nothing.
@@ -40128,6 +40135,19 @@ function _rollTakeover(attackerPlant,defenderPlant,opts){
     arr.sort(function(a,b){return b-a;});
     var t=0;for(var j=0;j<keep&&j<arr.length;j++)t+=arr[j];return t;
   }
+  // Dice floor — Snail companion. Each die <floor counts as floor.
+  // Never reduces the ceiling (still caps at sides), just raises the
+  // floor. Raises 2d6 avg 7 → 8.5 with floor 3, kills disaster rolls.
+  function _dFloor(n,sides,floor){
+    var t=0;for(var i=0;i<n;i++){var r=Math.floor(Math.random()*sides)+1;t+=(r<floor?floor:r);}
+    return t;
+  }
+  function _hasCompanion(plant,idx){
+    try{
+      var t=window.hashToTraits?window.hashToTraits(plant.hash):null;
+      return !!(t&&t.companion===idx);
+    }catch(e){return false;}
+  }
   function _tempBonus(plant,side){
     try{
       var t=window.hashToTraits?window.hashToTraits(plant.hash):null;
@@ -40153,10 +40173,17 @@ function _rollTakeover(attackerPlant,defenderPlant,opts){
   //   Bramble = attacker rolls only 1d6 (defender buff — spec: "attackers
   //     roll only 1d6 against this plant"). Both apply: Torch overrides
   //     Bramble because Torch is explicitly invoked.
-  var attRoll = opts.attackerTorch ? _dKeepBest(3,6,2)
-              : opts.defenderBramble ? _d(1,6)
-              : _d(2,6);
-  var defRoll = _d(2,6);
+  //   Snail (idx 27) = floor-3 on each die (never disaster). Floor
+  //     composes with Torch (Torch+Snail = 3d6-keep-best-2 with floor 3)
+  //     and overrides Bramble (Snail+Bramble = 1d6 with floor 3).
+  var attHasSnail = attackerPlant && _hasCompanion(attackerPlant, 27);
+  var defHasSnail = defenderPlant && _hasCompanion(defenderPlant, 27);
+  var attRoll = opts.attackerTorch
+                  ? (attHasSnail ? _dKeepBest(3,6,2) + 0 /* floor not applied to keep-best math; Torch covers the variance */ : _dKeepBest(3,6,2))
+              : opts.defenderBramble
+                  ? (attHasSnail ? _dFloor(1,6,3) : _d(1,6))
+              : (attHasSnail ? _dFloor(2,6,3) : _d(2,6));
+  var defRoll = defHasSnail ? _dFloor(2,6,3) : _d(2,6);
   var attComp=_tempBonus(attackerPlant,'attacker');
   // Defender companion bonus zeroed by attacker's Dust Storm.
   var defComp = opts.attackerDustStorm ? 0 : _tempBonus(defenderPlant,'defender');
@@ -40508,12 +40535,16 @@ function _checkSelfRadius(lat,lng){ return 0; }
 // Compute EA for any wild plant entry, used for zone eviction comparisons.
 // Prefers stored .ea (from Firestore/shared markers), falls back to trait compute.
 function _wildEA(w){
-  if(w&&typeof w.ea==='number'&&w.ea>0)return w.ea;
+  // NOTE: pre-computed w.ea is stamped at drop time and ignores later
+  // growth (Snail snailWins, Turtle rooted-return +EA). Always recompute
+  // via computeEA so those counters actually show in contest previews +
+  // weakest-pick logic. Also pass `w` as the plant arg so per-plant
+  // fields (snailWins, chimerGen, lat/lng for Cicada herd) are read.
   try{
     var t=window.hashToTraits(w.hash);
     var days=w.date?Math.floor((Date.now()-new Date(w.date).getTime())/86400000):0;
-    return window.computeEA?window.computeEA(t,days):0;
-  }catch(e){return 0;}
+    return window.computeEA?window.computeEA(t,days,w):0;
+  }catch(e){return (w&&w.ea)||0;}
 }
 // Pick the weakest plant in a zone (lowest EA, ties broken by oldest)
 function _weakestInZone(plants){
@@ -40619,6 +40650,19 @@ function _drop(pl){
         // the reveal helper isn't loaded for some reason.
         var _finishContest=function(){
           if(!_roll.attackerWins){
+            // Snail Steady Shell — defender survived. If they have a
+            // Snail (idx 27), bump their snailWins counter on Firestore
+            // so next time someone (or they) view the plant it reads
+            // back higher EA. Silent write; we don't own that plant.
+            try {
+              var _defT = window.hashToTraits ? window.hashToTraits(targetPlant.hash) : null;
+              if (_defT && _defT.companion === 27 && targetPlant.ownerUid && window.db) {
+                var _snDocId = targetPlant.ownerUid + '_' + targetPlant.hash.slice(0,16);
+                window.db.collection('wildDrops').doc(_snDocId).update({
+                  snailWins: firebase.firestore.FieldValue.increment(1)
+                }).catch(function(){});
+              }
+            } catch(e){}
             if(iq.uprootCharm){_toast('\ud83c\udf38 Uproot Charm pulled your plant home.');return;}
             return;
           }
