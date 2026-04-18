@@ -69244,37 +69244,59 @@ window.canSee = {
 })();
 </script>
 
-<!-- ═══ BEHOLDER OMNISIGHT (reveal ferals 1km) ═══ -->
+<!-- ═══ BEHOLDER OMNISIGHT (Cosmic 0.39% — global map reveal) ═══ -->
 <script>
 (function(){
 'use strict';
-// Beholder companion reveals feral seed locations within 1km (normally 500m/75m)
-// Checks once per Wild tab visit
+// Beholder companion — UPGRADED 2026-04-18. Now reveals:
+//   1. Feral rarity tier breakdown (was just count)
+//   2. Wild plant count — own + shared globally
+//   3. Stranger tend count (kindness witnessed)
+// Plus: +2 EA "omniscient defender" passive on any Beholder owner's
+// wild plant contests (wired at computeEA via companion check below).
+// Previous 1km range limit removed — this is Cosmic, it sees all.
 window._checkBeholderOmnisight=function(){
   // Does the player own a Beholder?
   var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
   var hasBeholder=false;
   for(var i=0;i<gh.length;i++){
-    try{var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;if(t&&t.companion===38)hasBeholder=true;}catch(e){}
+    try{var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;if(t&&t.companion===38){hasBeholder=true;break;}}catch(e){}
   }
   if(!hasBeholder)return;
 
-  // Show extended feral info toast
+  // Feral rarity tier breakdown — much richer than the old count.
   var ferals=[];try{ferals=JSON.parse(localStorage.getItem('fg_ferals')||'[]');}catch(e){}
-  var feralCount=ferals.filter(function(f){return!f.collected;}).length;
+  var uncollected = ferals.filter(function(f){return!f.collected;});
+  var feralCount = uncollected.length;
+  var feralByTier = {Common:0,Uncommon:0,Rare:0,Epic:0,Legendary:0};
+  for (var fi=0; fi<uncollected.length; fi++) {
+    var g = uncollected[fi].grade || uncollected[fi].tier || 'Common';
+    if (feralByTier[g] !== undefined) feralByTier[g]++;
+  }
+  var feralBreak = '';
+  ['Legendary','Epic','Rare','Uncommon','Common'].forEach(function(t){
+    if (feralByTier[t]>0) feralBreak += (feralBreak?' · ':'') + feralByTier[t]+' '+t;
+  });
 
-  // Count plants in extended range — own drops live in fg_wild_plants (local),
-  // other players' drops live in _sharedMarkers. The Beholder should count
-  // both; previously only shared was read, so a keeper with only own plants
-  // saw "0 wild plants nearby" despite standing in their own cluster.
+  // Global wild plant count — own + all shared markers.
   var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
   var ownCount=wild.length;
   var shared=0;
   if(window._sharedMarkers){shared=Object.keys(window._sharedMarkers).length;}
   var totalPlants=ownCount+shared;
 
-  if(feralCount>0||totalPlants>0){
-    if(window._toast)window._toast('👁️ Beholder sees: '+feralCount+' feral seed'+(feralCount!==1?'s':'')+' · '+totalPlants+' wild plant'+(totalPlants!==1?'s':'')+' nearby');
+  // Stranger kindness — count tended plants.
+  var strangerTendCount = 0;
+  for (var wi=0; wi<wild.length; wi++) {
+    if (wild[wi] && wild[wi].strangerTendAddMs && wild[wi].strangerTendAddMs > 0) strangerTendCount++;
+  }
+
+  var lines = [];
+  if (feralCount > 0) lines.push(feralCount + ' feral seed' + (feralCount>1?'s':'') + (feralBreak ? ' (' + feralBreak + ')' : ''));
+  if (totalPlants > 0) lines.push(totalPlants + ' wild plant' + (totalPlants>1?'s':'') + ' across the map');
+  if (strangerTendCount > 0) lines.push(strangerTendCount + ' plant' + (strangerTendCount>1?'s':'') + ' tended by strangers');
+  if (lines.length && window._toast) {
+    window._toast('\ud83d\udc41\ufe0f Beholder sees: ' + lines.join(' \u00b7 '));
   }
 
   // Log to compendium if first time
@@ -69282,7 +69304,7 @@ window._checkBeholderOmnisight=function(){
   if(!_bSeen){
     localStorage.setItem('lw_beholder_seen','1');
     if(window._logWildEvent)window._logWildEvent({type:'companion',event:'omnisight',companion:'Beholder',
-      text:'The Beholder\'s eye opened. It sees everything within 1km.'});
+      text:'The Beholder\'s eye opened. The whole map belongs to its gaze.'});
   }
 };
 })();
