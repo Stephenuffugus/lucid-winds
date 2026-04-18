@@ -41635,8 +41635,24 @@ function _subscribeSharedDrops(){
           if(_getWildVitality(d).dead)return;
           seenHashes[d.hash]=true;
 
-          // Skip if we already have this marker
-          if(_sharedMarkers[d.hash])return;
+          // Already have this marker? Patch its mutable fields so owner-
+          // side writes (climate tick, Rain Caller, stranger tending)
+          // propagate to our view. Previously this was `return` — any
+          // Firestore update after initial load was invisible to us.
+          if(_sharedMarkers[d.hash]) {
+            var _exData = _sharedMarkers[d.hash].data;
+            if (_exData) {
+              if (typeof d.ea === 'number') _exData.ea = d.ea;
+              if (d.decayAt) _exData.decayAt = d.decayAt;
+              if (typeof d.decayAtMs === 'number') _exData.decayAtMs = d.decayAtMs;
+              if (d.lastClimateBreach) _exData.lastClimateBreach = d.lastClimateBreach;
+              if (d.lastWatered) _exData.lastWatered = d.lastWatered;
+              if (typeof d.strangerTendAddMs === 'number') _exData.strangerTendAddMs = d.strangerTendAddMs;
+              if (d.defenderGame) _exData.defenderGame = d.defenderGame;
+              if (d.status) _exData.status = d.status;
+            }
+            return;
+          }
           // Cap total shared markers to prevent map lag
           if(_sharedCount>=30)return;
           _sharedCount++;
@@ -41650,7 +41666,13 @@ function _subscribeSharedDrops(){
             days:Math.floor((Date.now()-new Date(d.droppedAt||Date.now()).getTime())/86400000),
             pollen:0,status:isOwn?'Your Plant':'Wild',
             ownerName:d.ownerName||'Keeper',ownerUid:d.ownerUid,
-            ea:d.ea||0,defenderGame:d.defenderGame||'set',season:d.season||0,grade:d.grade||'Common'};
+            ea:d.ea||0,defenderGame:d.defenderGame||'set',season:d.season||0,grade:d.grade||'Common',
+            // Carry mutable state fresh from the Firestore doc so first-
+            // paint of a marker already reflects damage / watering state.
+            decayAt:d.decayAt||null,decayAtMs:d.decayAtMs||null,
+            lastClimateBreach:d.lastClimateBreach||null,
+            lastWatered:d.lastWatered||null,
+            strangerTendAddMs:d.strangerTendAddMs||0};
 
           var mk=_addSharedMarker(pd);
           _sharedMarkers[d.hash]={marker:mk,data:pd};
