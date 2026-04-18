@@ -7704,7 +7704,7 @@ window._addSwitchTabHook = function(fn){
       <h3>How Lucid Winds Works</h3>
       <div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);line-height:1.7;">
         <div style="margin-bottom:0.5rem;"><span style="color:var(--sage);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">1. PLAY</span><br>Find patterns in card games. Each match gathers Sunbeams.</div>
-        <div style="margin-bottom:0.5rem;"><span style="color:rgba(91,175,220,0.9);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">2. BLOOM</span><br>Tap the ☀️ Sunbeam icon when you have 30+. Choose when to mint — save up or bloom now.</div>
+        <div style="margin-bottom:0.5rem;"><span style="color:rgba(91,175,220,0.9);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">2. BLOOM</span><br>Tap the ☀️ Sunbeam icon when you have 30+. Choose when to bloom — save up or bloom now.</div>
         <div style="margin-bottom:0.5rem;"><span style="color:var(--gold);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">3. COLLECT</span><br>Plants live in your Greenhouse. Sort by rarity. Flip cards to see DNA + haiku.</div>
         <div style="margin-bottom:0.5rem;"><span style="color:#E8A0BF;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">4. BREED</span><br>Cross two plants to create a seed. Water it 3 days in the Nursery to bloom.</div>
         <div style="margin-bottom:0.5rem;"><span style="color:#D4842A;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">5. EXPLORE</span><br>Drop plants on a real-world map. Others can see and try to harvest them.</div>
@@ -10156,7 +10156,7 @@ document.addEventListener('keydown', function(e) {
       // Progress bar toward next plant — the KEY addition
       ch += '<div style="margin:0.4rem 0 0.15rem;opacity:0;animation:tierFadeIn 0.4s ease 1s forwards;">';
       ch += '<div style="width:100%;height:8px;background:rgba(42,48,37,0.6);border-radius:4px;overflow:hidden;"><div class="' + (_setNear ? 'near-bloom' : '') + '" style="width:'+_setPct+'%;height:100%;background:linear-gradient(90deg,var(--leaf),var(--sage)' + (_setNear ? ',var(--gold)' : '') + ');border-radius:4px;transition:width 0.8s ease;"></div></div>';
-      ch += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:'+(_setNear?'var(--gold)':'var(--muted)')+';margin-top:0.1rem;">'+_setInPlant+' / '+_setCost+' to next plant'+(_setReady?' \u00b7 <b style="color:var(--gold);">'+_setReady+' ready to mint!</b>':(_setNear?' \u2014 <b>almost there!</b>':''))+'</div>';
+      ch += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:'+(_setNear?'var(--gold)':'var(--muted)')+';margin-top:0.1rem;">'+_setInPlant+' / '+_setCost+' to next plant'+(_setReady?' \u00b7 <b style="color:var(--gold);">'+_setReady+' ready to bloom!</b>':(_setNear?' \u2014 <b>almost there!</b>':''))+'</div>';
       ch += '</div>';
       // Buttons
       ch += '<div style="margin-top:0.4rem;opacity:0;animation:tierFadeIn 0.4s ease 1.3s forwards;">';
@@ -10677,7 +10677,7 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>Each card has four traits:</strong> color, shape, number, and shading. Each trait has three possible values.</p>'+
       '<p><strong>The rule:</strong> For every trait, the three cards must be either <strong style="color:var(--gold);">all the same</strong> or <strong style="color:var(--gold);">all different</strong>. Two-same-one-different breaks the trio.</p>'+
       '<p><strong>Example trio:</strong> three blue clovers, all solid, with 1 / 2 / 3 shapes. Same color, same shape, same shading, different numbers — all four traits pass.</p>'+
-      '<p><strong>Earn:</strong> Each trio fills your Sunbeam meter. Clear enough trios to mint a new plant.</p>'+
+      '<p><strong>Earn:</strong> Each trio fills your Sunbeam meter. Clear enough trios to bloom a new plant.</p>'+
       '<p style="color:var(--muted);font-size:0.7rem;font-style:italic;">Need hands-on? Tap PRACTICE MODE below for a no-stakes round.</p>';
   })();
 
@@ -28569,7 +28569,7 @@ document.addEventListener('keydown', function(e) {
         (_prog > 0 ? '<div style="display:flex;align-items:center;gap:6px;max-width:200px;margin:0 auto 0.5rem;">' +
           '<div style="flex:1;height:4px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;"><div style="width:'+_pct+'%;height:100%;background:linear-gradient(90deg,rgba(91,175,220,0.6),rgba(122,179,86,0.7));border-radius:2px;"></div></div>' +
           '<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--muted);">'+_prog+'/30</div></div>' : '') +
-        '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);line-height:1.6;max-width:240px;margin:0 auto 0.5rem;">Tap the \u2600\ufe0f icon when you have 30+ Sunbeams to mint a unique, one-of-one plant.</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);line-height:1.6;max-width:240px;margin:0 auto 0.5rem;">Tap the \u2600\ufe0f icon when you have 30+ Sunbeams to bloom a unique, one-of-one plant.</div>' +
         '<button onclick="switchTab(\'game\')" style="padding:0.45rem 1.2rem;border:1.5px solid rgba(122,179,86,0.35);border-radius:8px;background:linear-gradient(180deg,rgba(74,124,53,0.2),rgba(26,60,22,0.3));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">START PLAYING</button>';
       grid.appendChild(_welcome);
     }
@@ -32790,7 +32790,7 @@ document.addEventListener('keydown', function(e) {
     var grid = document.getElementById('cp-plant-grid');
     if (!grid) return;
     if (gh.length === 0) {
-      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);padding:1rem 0.5rem;line-height:1.6;">No Plants yet.<br>Complete a game to mint your first plant.</div>';
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);padding:1rem 0.5rem;line-height:1.6;">No Plants yet.<br>Complete a game to bloom your first plant.</div>';
       return;
     }
     var html = '';
@@ -34224,7 +34224,7 @@ document.addEventListener('keydown', function(e) {
     if (!container) return;
     var gh = loadGreenhouse().slice();
     if (gh.length === 0) {
-      container.innerHTML = '<div class="binder-empty">No Plants yet.<br>Complete a game to mint your first.</div>';
+      container.innerHTML = '<div class="binder-empty">No Plants yet.<br>Complete a game to bloom your first.</div>';
       return;
     }
     var sel = document.getElementById('binder-sort-sel');
