@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Lucid Winds · Systems Reference</title>
+<style>
+:root {
+  --bg:#0d100c; --sage:#7ab356; --gold:#c8a84b; --cream:#e8dcc8; --muted:#8a9178;
+  --panel:#151a12; --border:rgba(200,168,75,0.18);
+  --rest:#c8a84b; --hard:#a0c4e8; --root:#7a5638; --swft:#7ab3d4; --lush:#e8a0bf; --thorn:#c87060;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--cream);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;line-height:1.55;padding:1.2rem 1rem 4rem;max-width:1280px;margin-left:auto;margin-right:auto;}
+h1,h2,h3{font-family:"Playfair Display",Georgia,serif;color:var(--gold);font-weight:500;letter-spacing:0.01em;}
+h1{font-size:1.8rem;border-bottom:1.5px solid var(--border);padding-bottom:0.6rem;margin-top:0;}
+h2{font-size:1.3rem;margin-top:2.2rem;border-bottom:1px solid var(--border);padding-bottom:0.35rem;}
+h3{font-size:1.05rem;margin-top:1.5rem;color:var(--sage);}
+a{color:var(--sage);}
+.intro{color:var(--muted);font-size:0.9rem;margin-bottom:0.5rem;}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:0.8rem 1rem;margin-bottom:1.5rem;}
+.toc a{display:inline-block;margin:0.25rem 0.7rem 0.25rem 0;color:var(--cream);text-decoration:none;font-size:0.85rem;padding:0.2rem 0.55rem;border-radius:6px;background:rgba(122,179,86,0.08);border:1px solid rgba(122,179,86,0.2);}
+.toc a:hover{background:rgba(200,168,75,0.12);border-color:var(--gold);color:var(--gold);}
+table{width:100%;border-collapse:collapse;margin:0.8rem 0 1.2rem;font-size:0.85rem;}
+th,td{padding:0.45rem 0.6rem;text-align:left;border-bottom:1px solid rgba(122,179,86,0.12);vertical-align:top;}
+th{background:rgba(200,168,75,0.08);color:var(--gold);font-family:"Playfair Display",Georgia,serif;font-weight:500;font-size:0.82rem;letter-spacing:0.04em;text-transform:uppercase;}
+tr:hover td{background:rgba(122,179,86,0.04);}
+.idx{color:var(--muted);font-family:"SF Mono",Consolas,monospace;font-size:0.75rem;width:32px;}
+.name{color:var(--cream);font-weight:600;}
+.sig{color:var(--gold);font-style:italic;}
+.fam{color:var(--muted);font-size:0.78rem;}
+.kw{display:inline-block;padding:1px 7px;border-radius:10px;font-size:0.72rem;margin:1px 2px;border:1px solid currentColor;white-space:nowrap;}
+.kw.restless{color:var(--rest);}
+.kw.hardy{color:var(--hard);}
+.kw.rooted{color:var(--root);background:rgba(122,86,56,0.15);}
+.kw.swift{color:var(--swft);}
+.kw.lush{color:var(--lush);}
+.kw.thorned{color:var(--thorn);}
+.tier{display:inline-block;padding:1px 6px;border-radius:4px;font-size:0.72rem;font-weight:600;font-family:"SF Mono",Consolas,monospace;}
+.t-C{background:rgba(149,149,136,0.25);color:#ccc;}
+.t-U{background:rgba(140,184,110,0.25);color:#8CB86E;}
+.t-R{background:rgba(91,143,185,0.25);color:#5b8fb9;}
+.t-E{background:rgba(155,89,182,0.25);color:#c08ee0;}
+.t-L{background:rgba(200,168,75,0.25);color:#e8c86b;}
+.t-M{background:rgba(168,114,133,0.25);color:#e8a0bf;}
+.t-X{background:rgba(217,79,255,0.25);color:#ff9eff;}
+.note{background:rgba(200,168,75,0.06);border-left:3px solid var(--gold);padding:0.55rem 0.85rem;margin:0.7rem 0;font-size:0.85rem;}
+.flag{background:rgba(200,112,96,0.08);border-left:3px solid var(--thorn);padding:0.55rem 0.85rem;margin:0.7rem 0;font-size:0.85rem;}
+code{background:rgba(122,179,86,0.1);color:var(--sage);padding:1px 5px;border-radius:3px;font-size:0.82em;font-family:"SF Mono",Consolas,monospace;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+@media(max-width:720px){.two-col{grid-template-columns:1fr;}table{font-size:0.78rem;}th,td{padding:0.4rem 0.4rem;}}
+.search{width:100%;max-width:420px;padding:0.55rem 0.8rem;margin:0.5rem 0 1rem;background:var(--panel);border:1.5px solid var(--border);border-radius:8px;color:var(--cream);font-family:inherit;font-size:0.9rem;}
+.search:focus{outline:none;border-color:var(--gold);}
+.meta{color:var(--muted);font-size:0.78rem;font-style:italic;}
+footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border);color:var(--muted);font-size:0.78rem;text-align:center;}
+</style>
+</head>
+<body>
+
+<h1>Lucid Winds · Systems Reference</h1>
+<p class="intro">Every ability, item, class, keyword, and companion in one place. Last updated 2026-04-18.</p>
+
+<div class="toc">
+<a href="#keywords">Keywords</a>
+<a href="#companions">Companions (48)</a>
+<a href="#signatures">Signature Abilities (14)</a>
+<a href="#families">Family Skills (T1/T2/T3)</a>
+<a href="#temperaments">Temperaments</a>
+<a href="#items">Items (17)</a>
+<a href="#classes">Classes</a>
+<a href="#tree">Keeper's Tree</a>
+<a href="#pots">Pots / Boosters / Class Items</a>
+<a href="#contest">Contest Math</a>
+<a href="#caps">Stacking Caps</a>
+<a href="#flags">Balance Flags</a>
+</div>
+
+<h2 id="keywords">Evergreen Keywords (6)</h2>
+<p class="meta">Combinable tags attached to most companions. Shipped 2026-04-18.</p>
+<table>
+<tr><th>Keyword</th><th>Mechanic</th><th>MTG analog</th></tr>
+<tr><td><span class="kw restless">⚡ Restless</span></td><td>+1 Dew tick per day (passive)</td><td>Vigilance</td></tr>
+<tr><td><span class="kw hardy">✨ Hardy</span></td><td>50% chance to ignore one climate damage event per week</td><td>Regenerate</td></tr>
+<tr><td><span class="kw rooted">⚓ Rooted</span></td><td>+2 EA for defender in contests (anti-eviction)</td><td>Protection</td></tr>
+<tr><td><span class="kw swift">💨 Swift</span></td><td>+2 EA for attacker in contests</td><td>First Strike</td></tr>
+<tr><td><span class="kw lush">🌺 Lush</span></td><td>+1 XP per cross-pollinate action</td><td>Lifelink</td></tr>
+<tr><td><span class="kw thorned">🌹 Thorned</span></td><td>Failed attacker loses 1 EA for 24h</td><td>Deathtouch</td></tr>
+</table>
+
+<h2 id="companions">Companions — All 48</h2>
+<p class="meta">Type to filter by name, family, keyword, or signature.</p>
+<input type="text" class="search" id="compSearch" placeholder="Search companions..." oninput="filterTable('compTable',this.value)">
+<table id="compTable">
+<thead><tr><th>#</th><th>Name</th><th>Family</th><th>Temp</th><th>Signature</th><th>Keywords</th></tr></thead>
+<tbody>
+<tr><td class="idx">20</td><td class="name">Navi</td><td class="fam">listeners</td><td>mystic</td><td>—</td><td><span class="kw swift">💨 Swift</span><span class="kw lush">🌺 Lush</span></td></tr>
+<tr><td class="idx">21</td><td class="name">Bee</td><td class="fam">pollinators</td><td>symbiote</td><td>—</td><td><span class="kw restless">⚡ Restless</span><span class="kw lush">🌺 Lush</span></td></tr>
+<tr><td class="idx">22</td><td class="name">Pill Bug</td><td class="fam">guardians</td><td>guardian</td><td>—</td><td><span class="kw rooted">⚓ Rooted</span><span class="kw thorned">🌹 Thorned</span></td></tr>
+<tr><td class="idx">23</td><td class="name">Firefly</td><td class="fam">listeners</td><td>mystic</td><td class="sig">nightBloom — 2× pollen + 2× repro at night</td><td><span class="kw lush">🌺 Lush</span></td></tr>
+<tr><td class="idx">24</td><td class="name">Butterfly</td><td class="fam">pollinators</td><td>wanderer</td><td class="sig">driftPollen — 5% daily free cross-pollinate</td><td><span class="kw swift">💨 Swift</span></td></tr>
+<tr><td class="idx">25</td><td class="name">Moth</td><td class="fam">pollinators</td><td>mystic</td><td>—</td><td><span class="kw hardy">✨ Hardy</span><span class="kw lush">🌺 Lush</span></td></tr>
+<tr><td class="idx">26</td><td class="name">Ladybug</td><td class="fam">pollinators</td><td>guardian</td><td>—</td><td><span class="kw restless">⚡ Restless</span><span class="kw thorned">🌹 Thorned</span></td></tr>
+<tr><td class="idx">27</td><td class="name">Snail</td><td class="fam">conduits</td><td>guardian</td><td class="sig">Steady Shell — dice floor 3 + EA per contest survived</td><td><span class="kw hardy">✨ Hardy</span></td></tr>
+<tr><td class="idx">28</td><td class="name">Hummingbird</td><td class="fam">pollinators</td><td>wanderer</td><td class="sig">Dash Wings — 2d(4-9) dice, never disaster/miracle</td><td><span class="kw swift">💨 Swift</span></td></tr>
+<tr><td class="idx">29</td><td class="name">Dragonfly</td><td class="fam">wayfinders</td><td>wanderer</td><td>—</td><td><span class="kw swift">💨 Swift</span><span class="kw lush">🌺 Lush</span></td></tr>
+<tr><td class="idx">30</td><td class="name">Caterpillar</td><td class="fam">conduits</td><td>symbiote</td><td>—</td><td><span class="kw lush">🌺 Lush</span><span class="kw restless">⚡ Restless</span></td></tr>
+<tr><td class="idx">31</td><td class="name">Spider</td><td class="fam">weavers</td><td>guardian</td><td>—</td><td><span class="kw rooted">⚓ Rooted</span><span class="kw thorned">🌹 Thorned</span></td></tr>
+<tr><td class="idx">32</td><td class="name">Toad</td><td class="fam">guardians</td><td>guardian</td><td class="sig">rainCaller — 30% auto-water daily in dry weather</td><td><span class="kw rooted">⚓ Rooted</span></td></tr>
+<tr><td class="idx">33</td><td class="name">Cicada</td><td class="fam">listeners</td><td>symbiote</td><td class="sig">herdImmunity — +1 EA per ally within 500m (max +4)</td><td><span class="kw hardy">✨ Hardy</span></td></tr>
+<tr><td class="idx">34</td><td class="name">Baby Mammoth</td><td class="fam">wayfinders</td><td>guardian</td><td class="sig">permafrost — +2 EA always (ignores seasonal stress)</td><td><span class="kw rooted">⚓ Rooted</span></td></tr>
+<tr><td class="idx">35</td><td class="name">Raccoon</td><td class="fam">scatterers</td><td>forager</td><td class="sig">scavenger — +1 fert/day from nearby invasions</td><td><span class="kw swift">💨 Swift</span></td></tr>
+<tr><td class="idx">36</td><td class="name">Great Blue Heron</td><td class="fam">wayfinders</td><td>wanderer</td><td class="sig">precisionStrike — +1 attacker EA, 2× displaced harvest</td><td><span class="kw swift">💨 Swift</span></td></tr>
+<tr><td class="idx">37</td><td class="name">Garden Spider</td><td class="fam">weavers</td><td>guardian</td><td class="sig">silkTrap — defender +3 EA</td><td><span class="kw thorned">🌹 Thorned</span></td></tr>
+<tr><td class="idx">38</td><td class="name" style="color:#ff9eff;">Beholder</td><td class="fam">listeners</td><td>mystic</td><td class="sig" style="color:#ff9eff;">omnisight — global map reveal + feral rarity + stranger-tend</td><td class="meta">— (Cosmic purity)</td></tr>
+<tr><td class="idx">39</td><td class="name">Cat</td><td class="fam">listeners</td><td>wanderer</td><td>—</td><td><span class="kw swift">💨 Swift</span><span class="kw restless">⚡ Restless</span></td></tr>
+<tr><td class="idx">40</td><td class="name">Platypus</td><td class="fam">scatterers</td><td>forager</td><td>—</td><td><span class="kw hardy">✨ Hardy</span><span class="kw rooted">⚓ Rooted</span></td></tr>
+<tr><td class="idx">41</td><td class="name">Praying Mantis</td><td class="fam">weavers</td><td>guardian</td><td>—</td><td><span class="kw swift">💨 Swift</span><span class="kw thorned">🌹 Thorned</span></td></tr>
+<tr><td class="idx">42</td><td class="name">Hedgehog</td><td class="fam">guardians</td><td>guardian</td><td>—</td><td><span class="kw rooted">⚓ Rooted</span><span class="kw thorned">🌹 Thorned</span></td></tr>
+<tr><td class="idx">43</td><td class="name">Pangolin</td><td class="fam">guardians</td><td>guardian</td><td>—</td><td><span class="kw hardy">✨ Hardy</span></td></tr>
+<tr><td class="idx">44</td><td class="name">Luna Moth</td><td class="fam">pollinators</td><td>mystic</td><td>—</td><td><span class="kw hardy">✨ Hardy</span><span class="kw lush">🌺 Lush</span></td></tr>
+<tr><td class="idx">45</td><td class="name">Porcupine</td><td class="fam">guardians</td><td>guardian</td><td class="sig">shellShift — 25% relocate on invasion</td><td><span class="kw thorned">🌹 Thorned</span></td></tr>
+<tr><td class="idx">47</td><td class="name">Axolotl</td><td class="fam">conduits</td><td>symbiote</td><td>—</td><td><span class="kw lush">🌺 Lush</span></td></tr>
+<tr><td class="idx">48</td><td class="name">Scorpion</td><td class="fam">guardians</td><td>guardian</td><td>—</td><td><span class="kw swift">💨 Swift</span><span class="kw thorned">🌹 Thorned</span></td></tr>
+<tr><td class="idx">49</td><td class="name">Origami Crane</td><td class="fam">wayfinders</td><td>wanderer</td><td>—</td><td><span class="kw hardy">✨ Hardy</span><span class="kw lush">🌺 Lush</span></td></tr>
+<tr><td class="idx">50</td><td class="name">Garden Gnome</td><td class="fam">guardians</td><td>guardian</td><td>—</td><td><span class="kw rooted">⚓ Rooted</span><span class="kw hardy">✨ Hardy</span></td></tr>
+<tr><td class="idx">51</td><td class="name">Robin</td><td class="fam">wayfinders</td><td>wanderer</td><td>—</td><td><span class="kw restless">⚡ Restless</span><span class="kw lush">🌺 Lush</span></td></tr>
+<tr><td class="idx">52</td><td class="name">Worm</td><td class="fam">conduits</td><td>symbiote</td><td>—</td><td><span class="kw lush">🌺 Lush</span><span class="kw rooted">⚓ Rooted</span></td></tr>
+<tr><td class="idx">53</td><td class="name">Turtle</td><td class="fam">guardians</td><td>guardian</td><td class="sig">Ancient Shell — +1 EA per day alive (cap +14)</td><td><span class="kw hardy">✨ Hardy</span></td></tr>
+<tr><td class="idx">54</td><td class="name">Bat</td><td class="fam">listeners</td><td>mystic</td><td>—</td><td><span class="kw swift">💨 Swift</span><span class="kw restless">⚡ Restless</span></td></tr>
+<tr><td class="idx">55</td><td class="name">Mouse</td><td class="fam">scatterers</td><td>forager</td><td>—</td><td><span class="kw restless">⚡ Restless</span><span class="kw swift">💨 Swift</span></td></tr>
+<tr><td class="idx">56</td><td class="name">Owl</td><td class="fam">listeners</td><td>mystic</td><td>—</td><td><span class="kw hardy">✨ Hardy</span><span class="kw swift">💨 Swift</span></td></tr>
+<tr><td class="idx">57</td><td class="name">Silly Goose</td><td class="fam">wayfinders</td><td>wanderer</td><td>—</td><td><span class="kw swift">💨 Swift</span><span class="kw restless">⚡ Restless</span></td></tr>
+<tr><td class="idx">60</td><td class="name">Dart Frog</td><td class="fam">conduits</td><td>forager</td><td class="sig">Oracle's Vow — pre-roll target, hit = 3× reward / miss = forfeit</td><td><span class="kw thorned">🌹 Thorned</span></td></tr>
+<tr><td class="idx">61</td><td class="name">Rabbit</td><td class="fam">mycelium</td><td>wanderer</td><td>—</td><td><span class="kw restless">⚡ Restless</span><span class="kw lush">🌺 Lush</span></td></tr>
+<tr><td class="idx">62</td><td class="name">Cricket</td><td class="fam">weavers</td><td>symbiote</td><td>—</td><td><span class="kw restless">⚡ Restless</span><span class="kw lush">🌺 Lush</span></td></tr>
+<tr><td class="idx">63</td><td class="name">Puffin</td><td class="fam">wayfinders</td><td>wanderer</td><td>—</td><td><span class="kw hardy">✨ Hardy</span><span class="kw swift">💨 Swift</span></td></tr>
+<tr><td class="idx">64</td><td class="name">Scarab Beetle</td><td class="fam">scatterers</td><td>forager</td><td>—</td><td><span class="kw hardy">✨ Hardy</span><span class="kw rooted">⚓ Rooted</span></td></tr>
+<tr><td class="idx">65</td><td class="name">Ant Trail</td><td class="fam">weavers</td><td>symbiote</td><td>—</td><td><span class="kw restless">⚡ Restless</span><span class="kw rooted">⚓ Rooted</span></td></tr>
+<tr><td class="idx">66</td><td class="name">Red-Crowned Crane</td><td class="fam">wayfinders</td><td>mystic</td><td>—</td><td><span class="kw hardy">✨ Hardy</span></td></tr>
+<tr><td class="idx">67</td><td class="name">Squirrel</td><td class="fam">scatterers</td><td>forager</td><td>—</td><td><span class="kw restless">⚡ Restless</span><span class="kw swift">💨 Swift</span></td></tr>
+<tr><td class="idx">68</td><td class="name">Koala</td><td class="fam">conduits</td><td>guardian</td><td>—</td><td><span class="kw hardy">✨ Hardy</span><span class="kw lush">🌺 Lush</span></td></tr>
+<tr><td class="idx">69</td><td class="name">Flamingo</td><td class="fam">wayfinders</td><td>wanderer</td><td>—</td><td><span class="kw lush">🌺 Lush</span></td></tr>
+<tr><td class="idx">70</td><td class="name">Seahorse</td><td class="fam">weavers</td><td>mystic</td><td>—</td><td><span class="kw hardy">✨ Hardy</span><span class="kw lush">🌺 Lush</span></td></tr>
+<tr><td class="idx">71</td><td class="name">Koi Fish</td><td class="fam">conduits</td><td>symbiote</td><td>—</td><td><span class="kw lush">🌺 Lush</span><span class="kw hardy">✨ Hardy</span></td></tr>
+<tr><td class="idx">72</td><td class="name">Jellyfish</td><td class="fam">conduits</td><td>mystic</td><td>—</td><td><span class="kw swift">💨 Swift</span><span class="kw thorned">🌹 Thorned</span></td></tr>
+<tr><td class="idx">73</td><td class="name">Mushroom Sprite</td><td class="fam">mycelium</td><td>symbiote</td><td>—</td><td><span class="kw restless">⚡ Restless</span><span class="kw lush">🌺 Lush</span></td></tr>
+<tr><td class="idx">74</td><td class="name">Deer Fawn</td><td class="fam">mycelium</td><td>wanderer</td><td>—</td><td><span class="kw hardy">✨ Hardy</span><span class="kw swift">💨 Swift</span></td></tr>
+<tr><td class="idx">75</td><td class="name">Raven</td><td class="fam">listeners</td><td>forager</td><td>—</td><td><span class="kw swift">💨 Swift</span><span class="kw restless">⚡ Restless</span></td></tr>
+<tr><td class="idx">79</td><td class="name">Will-o-Wisp</td><td class="fam">listeners</td><td>mystic</td><td>—</td><td><span class="kw swift">💨 Swift</span></td></tr>
+<tr><td class="idx">81</td><td class="name">Panda</td><td class="fam">mycelium</td><td>guardian</td><td>—</td><td><span class="kw lush">🌺 Lush</span></td></tr>
+</tbody>
+</table>
+
+<h2 id="signatures">Signature Abilities (14)</h2>
+<p class="meta">Unique, creature-specific. Not shared with family.</p>
+<table>
+<tr><th>Creature</th><th>Tier</th><th>Mechanic</th></tr>
+<tr><td>Firefly (23)</td><td><span class="tier t-R">R</span></td><td>nightBloom — 2× pollen + 2× repro at night (8PM-6AM)</td></tr>
+<tr><td>Butterfly (24)</td><td><span class="tier t-U">U</span></td><td>driftPollen — 5% daily free cross-pollinate + 1-3 XP</td></tr>
+<tr><td>Snail (27)</td><td><span class="tier t-R">R</span></td><td>Steady Shell — dice floor 3; +1 permanent EA per contest survived (cap +10)</td></tr>
+<tr><td>Hummingbird (28)</td><td><span class="tier t-R">R</span></td><td>Dash Wings — rolls 2d(4-9) instead of 2d6</td></tr>
+<tr><td>Toad (32)</td><td><span class="tier t-M">M</span></td><td>rainCaller — 30% daily auto-water + 1.3× repro in dry weather</td></tr>
+<tr><td>Cicada (33)</td><td><span class="tier t-M">M</span></td><td>herdImmunity — +1 EA per ally plant within 500m (max +4)</td></tr>
+<tr><td>Baby Mammoth (34)</td><td><span class="tier t-L">L</span></td><td>permafrost — +2 EA always (ignores seasonal stress)</td></tr>
+<tr><td>Raccoon (35)</td><td><span class="tier t-L">L</span></td><td>scavenger — +1 fertilizer/day from nearby invasions</td></tr>
+<tr><td>Great Blue Heron (36)</td><td><span class="tier t-L">L</span></td><td>precisionStrike — +1 attacker EA + 2× displaced harvest reward</td></tr>
+<tr><td>Garden Spider (37)</td><td><span class="tier t-L">L</span></td><td>silkTrap — defender +3 EA in contests</td></tr>
+<tr><td>Beholder (38)</td><td><span class="tier t-X">COSMIC</span></td><td>omnisight — global map reveal + feral rarity + stranger-tend count</td></tr>
+<tr><td>Porcupine (45)</td><td><span class="tier t-U">U</span></td><td>shellShift — 25% chance to relocate instead of die on invasion</td></tr>
+<tr><td>Turtle (53)</td><td><span class="tier t-R">R</span></td><td>Ancient Shell — +1 EA per day alive in wild (cap +14)</td></tr>
+<tr><td>Dart Frog (60)</td><td><span class="tier t-E">E</span></td><td>Oracle's Vow — pre-commit target; hit = +target Sunbeams, miss = forfeit</td></tr>
+</table>
+
+<h2 id="families">Family Skills — Universal within family (stays across all members)</h2>
+<p class="meta">Every member of a family gets its T1 buff + T2 active (at L2 bond) + T3 ritual (at L3 bond).</p>
+<table>
+<tr><th>Family</th><th>T1 Buff</th><th>T2 Active (L2)</th><th>T3 Ritual (L3)</th></tr>
+<tr><td>pollinators</td><td>+3% pollen</td><td>Nectar Gift — +3 Dew (30min CD)</td><td>Twin Bloom — 10% chance breed produces 2 seeds</td></tr>
+<tr><td>scatterers</td><td>+3% feral range + rarity</td><td>Scout Call — reveal nearest feral (20min CD)</td><td>Dream Seed — 1 free feral/day at your location</td></tr>
+<tr><td>weavers</td><td>+3% chimera purity + breed reward</td><td>Soft Thread — +1 fertilizer (120min CD)</td><td>Chimera Mend — chimera penalty -1 EA flat</td></tr>
+<tr><td>wayfinders</td><td>+3% step XP + biome reveal</td><td>Wind Read — biome + season reveal (15min CD)</td><td>Pathfinder — compass always points to nearest feral</td></tr>
+<tr><td>guardians</td><td>+3% plant lifespan + defense EA</td><td>Stand Watch — next drop +1 EA (60min CD)</td><td>Deep Root — all wild drops +2 flat EA</td></tr>
+<tr><td>conduits</td><td>+3% Dew + water efficiency</td><td>Dew Call — +5 Dew (60min CD)</td><td>Compost Song — +1 Dew per tier on compost</td></tr>
+<tr><td>mycelium</td><td>+3% EA floor (boosts weak plants)</td><td>Root Whisper — +2 Dew +1 Sunbeam (60min CD)</td><td>Kin Network — mesh bonus cap 3 → 5 EA</td></tr>
+<tr><td>listeners</td><td>+3% book entry rate + trait reveal</td><td>Long Listen — +1 Sunbeam, 30min CD</td><td>Hidden Trait — companion reveal in 1 bloom (was 3)</td></tr>
+</table>
+
+<h2 id="temperaments">Temperaments (5) — passive bonuses on all companions</h2>
+<table>
+<tr><th>Key</th><th>Mechanic</th><th>Contest bonus</th></tr>
+<tr><td>guardian 🛡️</td><td>+1 defense EA in contests</td><td>defender +2</td></tr>
+<tr><td>forager 🍂</td><td>+10% harvest Dew</td><td>attacker +3</td></tr>
+<tr><td>wanderer 🦋</td><td>+50m feral range</td><td>attacker +2</td></tr>
+<tr><td>mystic ✨</td><td>+15% pollen yield</td><td>attacker +1 · defender +1</td></tr>
+<tr><td>symbiote 🌿</td><td>25% shared watering</td><td>defender +1</td></tr>
+</table>
+
+<h2 id="items">Items (17 · 16 wired)</h2>
+<input type="text" class="search" id="itemSearch" placeholder="Search items..." oninput="filterTable('itemTable',this.value)">
+<table id="itemTable">
+<thead><tr><th>Item</th><th>Tier</th><th>Cat</th><th>Mechanic</th></tr></thead>
+<tbody>
+<tr><td>Forager's Lens 🔮</td><td><span class="tier t-C">C</span></td><td>foraging</td><td>Reveal one hex slot before you begin</td></tr>
+<tr><td>Compass Shard 🧭</td><td><span class="tier t-U">U</span></td><td>foraging</td><td>+1 attempt on next hex you forage</td></tr>
+<tr><td>Tether Moss 🌿</td><td><span class="tier t-R">R</span></td><td>foraging</td><td>Next feral guaranteed Rare+</td></tr>
+<tr><td>Diviner's Glass 🔍</td><td><span class="tier t-E">E</span></td><td>foraging</td><td>MISS cards count as ELSEWHERE for one attempt</td></tr>
+<tr><td>Moonwake 🌙</td><td><span class="tier t-U">U</span></td><td>defense</td><td>+3 EA + guardian bonus on next contest</td></tr>
+<tr><td>Mulch Ward 🛡️</td><td><span class="tier t-R">R</span></td><td>defense</td><td>Protect a wild plant — auto-wins next contest</td></tr>
+<tr><td>Bramble Thicket 🌱</td><td><span class="tier t-R">R</span></td><td>defense</td><td>Attackers roll only 1d6 for 24h</td></tr>
+<tr><td>Shellgourd 🥥</td><td><span class="tier t-E">E</span></td><td>defense</td><td>Zone locked 48h — no contest at all</td></tr>
+<tr><td>Uproot Charm 🌸</td><td><span class="tier t-U">U</span></td><td>offense</td><td>Lose next contest? Plant returns home</td></tr>
+<tr><td>Forager's Torch 🔥</td><td><span class="tier t-R">R</span></td><td>offense</td><td>Next contest: roll 3d6 keep best 2</td></tr>
+<tr><td>Dust Storm 🌪️</td><td><span class="tier t-R">R</span></td><td>offense</td><td>Next contest: defender companion bonus = 0</td></tr>
+<tr><td>Whisper Vine 🍃</td><td><span class="tier t-C">C</span></td><td>remote</td><td>Tag spot 7d, daily compass shard delivered</td></tr>
+<tr><td>Scrying Stone 🔮</td><td><span class="tier t-U">U</span></td><td>remote</td><td>Forage current biome hex remotely</td></tr>
+<tr><td>Slow Arrow 🏹</td><td><span class="tier t-R">R</span></td><td>remote</td><td>Pin 6h, return any time to forage</td></tr>
+<tr><td>Raven's Eye 🐦</td><td><span class="tier t-R">R</span></td><td>remote</td><td>Forage a random distant biome</td></tr>
+<tr><td>Wanderer's Map 🗺️</td><td><span class="tier t-E">E</span></td><td>remote</td><td>Wind decides — random biome, cinematic</td></tr>
+<tr><td>Delegate Token 🤝</td><td><span class="tier t-E">E</span></td><td>remote</td><td class="meta">UNBUILT — co-op friend hex share, needs Firestore flow</td></tr>
+</tbody>
+</table>
+
+<h2 id="classes">Classes (5) — pick at Level 7</h2>
+<table>
+<tr><th>Class</th><th>L1</th><th>L2</th><th>L3 Master</th><th>Companion</th></tr>
+<tr><td>Forager 🍂</td><td>+25% feral range</td><td>+15% rare drop odds</td><td>+50% feral drops · 2× with Raccoon</td><td>Raccoon</td></tr>
+<tr><td>Breeder 🧬</td><td>+1 nursery slot</td><td>+20% chimera purity</td><td>+50% breed reward · 2× with Garden Spider</td><td>Garden Spider</td></tr>
+<tr><td>Cartographer 🧭</td><td>+25% step XP</td><td>Compass reveals biome</td><td>+10% biome bonus · 2× with Heron</td><td>Great Blue Heron</td></tr>
+<tr><td>Tender 💧</td><td>Plants live 2× longer</td><td>+20% Dew generation</td><td>Plants live 2.5× longer</td><td>Cicada</td></tr>
+<tr><td>Steward 🌿 (Keeper)</td><td>+5% to all bonuses</td><td>-10% tool cooldowns</td><td>Full XP from every source</td><td>—</td></tr>
+</table>
+
+<h2 id="tree">Keeper's Tree — 24 nodes, 5 base branches + 4 unlock branches</h2>
+<p class="meta">Each node: 5 points × 0.25% = +1.25% max per node. 100 pts total, 0.25% per point.</p>
+<div class="two-col">
+<div>
+<h3>🍂 Forager</h3>
+<ul><li>Wanderer's Eye — +0.25% feral range</li><li>Serendipity — +0.25% rare odds</li><li>Restless Soil — -0.25% feral cooldown</li><li>Harvest Moon — +0.25% harvest hashes</li></ul>
+<h3>🧬 Breeder</h3>
+<ul><li>Gentle Graft — +0.25% breed reward</li><li>Clean Cross — +0.25% chimera purity</li><li>Pollen Song — +0.25% cross-pollinate reward</li><li>Old Earth — +0.25% fertilizer return</li></ul>
+<h3>🧭 Cartographer</h3>
+<ul><li>Long Stride — +0.25% step XP</li><li>First Footprints — +0.25% biome XP</li><li>Craftsense — +0.25% tool XP</li><li>Well-Oiled — -0.25% tool cooldown</li></ul>
+<h3>💧 Tender</h3>
+<ul><li>Evergreen Vow — +0.25% plant longevity</li><li>Dawn Tending — +0.25% dew generation</li><li>Ritual Watering — +0.25% streak bonus</li><li>Blessing Rain — +0.25% mass-water boost</li></ul>
+</div>
+<div>
+<h3>🌿 Keeper (Steward)</h3>
+<ul><li>Listening Stone — +0.25% class XP</li><li>Rooted Heart — +0.25% defense EA</li><li>Whole Canopy — +0.25% pollen rate</li><li>Slow Awakening — +0.25% nursery growth</li></ul>
+<h3>🔧 Tools (class max)</h3>
+<ul><li>Sharpened Edge — -0.25% shears cooldown</li><li>Steady Pour — +0.25% watering effect</li><li>Bottomless Satchel — +0.25% pouch auto-sort</li><li>Deadreckon — +0.25% compass range</li></ul>
+<h3>🌳 Heartwood (L40)</h3>
+<ul><li>Quiet Vow · Heart's Ember · Slow Spring · Steadiness</li></ul>
+<h3>🌿 The Bower (L60)</h3>
+<ul><li>Gathered Hours · Careful Shears · Pouch Memory · Deep Focus</li></ul>
+<h3>🌙 The Long Watch (L80)</h3>
+<ul><li>Ancestral Memory · Century Oak · Generational Bloom · Seed Keeper</li></ul>
+</div>
+</div>
+
+<h3>Tree Milestones</h3>
+<table>
+<tr><th>Pts</th><th>Unlock</th></tr>
+<tr><td>10</td><td>Path Opened — +5 bonus tree points</td></tr>
+<tr><td>25</td><td>Second Bloom — guaranteed 1 feral/day</td></tr>
+<tr><td>50</td><td>The Gilding — 1hr/day all bonuses 2×</td></tr>
+<tr><td>75</td><td>Near Horizon — equip 2 companions simultaneously</td></tr>
+<tr><td>100</td><td>The Long Watch — biome match applies everywhere</td></tr>
+</table>
+
+<h2 id="pots">Pots / Boosters / Class Items</h2>
+<h3>Pots / Cradles (8 — equipped per seed)</h3>
+<table>
+<tr><th>Pot</th><th>Cost</th><th>Lvl</th><th>Effect</th></tr>
+<tr><td>Crystal Nursery Pot ❄</td><td>200 Dew</td><td>1</td><td>+5% rarity boost on bloom</td></tr>
+<tr><td>Glasswort Vessel 🧊</td><td>250 Dew</td><td>3</td><td>Chimera generation resets to 1</td></tr>
+<tr><td>Moonstone Cradle 🌙</td><td>350 Dew</td><td>5</td><td>+1 EA permanent on bloomed plant</td></tr>
+<tr><td>Iron Urn ⚗</td><td>400 Dew</td><td>7</td><td>+2 climate immunity (peak season doubled)</td></tr>
+<tr><td>Phoenix Ash Urn 🔥</td><td>500 Dew</td><td>10</td><td>Doubles fertilizer effectiveness</td></tr>
+<tr><td>Velvet Bowl 🌸</td><td>600 Dew</td><td>12</td><td>Forces hasFlower=true</td></tr>
+<tr><td>World Seed Bowl 🌍</td><td>800 Dew</td><td>15</td><td>Guarantees Uncommon+</td></tr>
+<tr><td>Starlight Cradle ✨</td><td>1200 Dew</td><td>20</td><td>Doubles aura intensity</td></tr>
+</table>
+
+<h3>Boosters (3 — timed Dew sinks, XP boosters are mutex)</h3>
+<table>
+<tr><th>Booster</th><th>Cost</th><th>Duration</th><th>Effect</th></tr>
+<tr><td>Pollen Rush 🌼</td><td>120 Dew</td><td>1h</td><td>2× Pollen XP (XP-mutex)</td></tr>
+<tr><td>Bloom Tonic 🌸</td><td>180 Dew</td><td>24h</td><td>1.5× Nursery growth</td></tr>
+<tr><td>Dew Cache 💧</td><td>220 Dew</td><td>3h</td><td>+50% Dew income (XP-mutex)</td></tr>
+</table>
+
+<h3>Class Items (5 — one per class)</h3>
+<table>
+<tr><th>Class</th><th>Item</th><th>Effect</th></tr>
+<tr><td>Forager</td><td>Forest Sight Tincture 🍁</td><td>Reveal all feral seeds within 500m for 30min</td></tr>
+<tr><td>Breeder</td><td>Graft Kit 🧬</td><td>Next breed: reroll one inherited trait</td></tr>
+<tr><td>Cartographer</td><td>Sextant Polish 🧭</td><td>Next new-biome: 3× Compass XP</td></tr>
+<tr><td>Tender</td><td>Mist Vial 🌫</td><td>Auto-water all wild plants (free)</td></tr>
+<tr><td>Keeper</td><td>Dawn Anthem 🌅</td><td>+10% to ALL bonuses for 2h (XP-mutex)</td></tr>
+</table>
+
+<h2 id="contest">Contest Math — how a territory dispute resolves</h2>
+<table>
+<tr><th>Factor</th><th>Attacker adds</th><th>Defender adds</th></tr>
+<tr><td>Plant EA (base)</td><td>plant.ea</td><td>plant.ea</td></tr>
+<tr><td>Dice roll</td><td>2d6 default (modifiable)</td><td>2d6 default (modifiable)</td></tr>
+<tr><td>Temperament bonus</td><td>forager +3, wanderer +2, mystic +1</td><td>guardian +2, symbiote +1, mystic +1</td></tr>
+<tr><td>Weather (Sun Flare)</td><td>+3</td><td>—</td></tr>
+<tr><td>Moonwake (item)</td><td>—</td><td>+3</td></tr>
+<tr><td>Herd Immunity (Cicada)</td><td>—</td><td>+1 per ally within 500m (max +4)</td></tr>
+<tr><td>Silk Trap (Spider)</td><td>—</td><td>+3</td></tr>
+<tr><td>Precision Strike (Heron)</td><td>+1</td><td>—</td></tr>
+<tr><td>Rooted keyword</td><td>—</td><td>+2</td></tr>
+<tr><td>Swift keyword</td><td>+2</td><td>—</td></tr>
+<tr><td>Forager's Torch (item)</td><td>3d6 keep best 2 (≈+2 avg)</td><td>—</td></tr>
+<tr><td>Bramble Thicket (item)</td><td>attacker rolls 1d6 only (≈-3.5)</td><td>—</td></tr>
+<tr><td>Dust Storm (item)</td><td>—</td><td>defender temp bonus = 0</td></tr>
+<tr><td>Snail Steady Shell (dice)</td><td>floor 3 each die (if Snail)</td><td>floor 3 each die (if Snail)</td></tr>
+<tr><td>Hummingbird Dash Wings</td><td>2d(4-9) (if Hummingbird)</td><td>2d(4-9) (if Hummingbird)</td></tr>
+<tr><td>Oracle's Vow (Dart Frog)</td><td>pre-commit target for 3× reward or forfeit</td><td>—</td></tr>
+<tr><td>Thorned keyword</td><td class="meta">-1 EA for 24h on failed attack</td><td>—</td></tr>
+</table>
+
+<h2 id="caps">Stacking Caps — the ceilings players can't exceed</h2>
+<p class="meta">Applied centrally at each composer site. Prevents runaway multipliers.</p>
+<table>
+<tr><th>Kind</th><th>Cap</th><th>Why</th></tr>
+<tr><td>pollen</td><td>6.0×</td><td>Worst case stacked was 9.72× (night+peak+booster+dual-comp)</td></tr>
+<tr><td>breedReward</td><td>3.0×</td><td>Was 4.28× with Spider + Breeder L3 + family</td></tr>
+<tr><td>dewRate</td><td>2.5×</td><td>Was 2.54× with Tender L2 + Dew Cache + family</td></tr>
+<tr><td>plantLongevity</td><td>3.0×</td><td>Was 3.57× with Tender L3 + family</td></tr>
+<tr><td>feralRange</td><td>3.0×</td><td>Was 3.48× with Beholder + Forager + family</td></tr>
+<tr><td>feralRarity</td><td>1.20×</td><td>Probabilistic cap</td></tr>
+<tr><td>stepBonus</td><td>2.0×</td><td>Was 1.74× with Cartographer + family</td></tr>
+</table>
+
+<p class="note">Chimera penalty has a floor: always at least 1 EA per generation. Silk Trap tuned +5 → +3 so defender max doesn't lock out attackers.</p>
+
+<h2 id="flags">Balance Flags — things to tweak</h2>
+
+<div class="flag">
+<strong>3 redundant keyword clusters (6 creatures each):</strong><br>
+• Swift + Restless — Cat, Bat, Mouse, Silly Goose, Squirrel, Raven<br>
+• Hardy + Lush — Moth, Luna Moth, Origami Crane, Koala, Seahorse, Koi Fish<br>
+• Restless + Lush — Bee, Caterpillar, Robin, Rabbit, Cricket, Mushroom Sprite<br>
+These creatures differ only by family + temperament + art. Mechanically interchangeable. Fix: break up with Thorned or Rooted swaps — OR accept the redundancy since family + art carries identity.
+</div>
+
+<div class="flag">
+<strong>Domain thinness:</strong><br>
+• Climate signatures: 1 (Mammoth alone)<br>
+• Economy signatures: 1 (Raccoon alone)<br>
+• Mycelium family: 0 signatures (only family with zero)<br>
+Future pass: add signature creatures for each climate vector, more economy flavor, Mushroom Sprite signature.
+</div>
+
+<div class="flag">
+<strong>Unbuilt:</strong><br>
+• Delegate Token item (remote hex share — needs Firestore co-op flow)<br>
+• 8 of 10 prestige tiers (narrative only)<br>
+• Leveling archetypes (all creatures still time-bond only; 6 archetypes designed but not wired)
+</div>
+
+<footer>
+Lucid Winds Systems Reference · Built 2026-04-18 · <a href="/">Back to game</a>
+</footer>
+
+<script>
+function filterTable(id, val) {
+  var t = document.getElementById(id);
+  if (!t) return;
+  var v = (val || '').toLowerCase();
+  var rows = t.querySelectorAll('tbody tr');
+  for (var i = 0; i < rows.length; i++) {
+    rows[i].style.display = rows[i].textContent.toLowerCase().indexOf(v) >= 0 ? '' : 'none';
+  }
+}
+</script>
+</body>
+</html>
