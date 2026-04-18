@@ -63943,11 +63943,27 @@ window._lwClaimHerbarium = function(id){
     window._toast('\u2728 Firefly caught ('+p.caught+'/'+TOTAL_PER_SEASON+'): "'+lore+'"');
   }
   function _grantSeasonalPrize(){
-    if (window._toast) window._toast('\ud83c\udf1f Seasonal Hunt COMPLETE. Your prize is in the Book of Secrets.');
     // Stub: future pass grants a unique pot / companion / cosmetic.
-    // For now, 500 Dew + Legendary mystery box.
-    if (window.earnDew) window.earnDew(500, 'hunt_complete');
-    if (window.LW_BOXES) window.LW_BOXES.add(3);
+    // For now, 500 Dew + 3 Legendary mystery boxes.
+    var _hDew = 500, _hBoxes = 3;
+    if (window.earnDew) window.earnDew(_hDew, 'hunt_complete');
+    if (window.LW_BOXES) window.LW_BOXES.add(_hBoxes);
+    // Celebration modal — was just a vague toast promising "a prize in
+    // the Book of Secrets" that never materialized. Now tells the
+    // player what they actually won.
+    if (window._lwConfirm) {
+      window._lwConfirm({
+        title: '\u2728 SEASONAL HUNT COMPLETE',
+        body: '<div style="font-family:Playfair Display,serif;font-style:italic;color:var(--cream);margin-bottom:0.6rem;">You caught all twelve fireflies. The season pays its tribute.</div>' +
+              '<div style="padding:0.6rem;background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.35);border-radius:8px;margin-bottom:0.3rem;">' +
+              '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;color:var(--gold);margin-bottom:4px;">PRIZE</div>' +
+              '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);line-height:1.6;">+' + _hDew + ' Dew<br>\u00d7' + _hBoxes + ' Legendary Mystery Box</div>' +
+              '</div>',
+        yes: 'WONDERFUL', no: ''
+      }, function(){});
+    } else if (window._toast) {
+      window._toast('\u2728 Seasonal Hunt complete — +' + _hDew + ' Dew + ' + _hBoxes + ' Legendary Boxes.');
+    }
   }
 
   // ── BoS HUNT tab content ──
@@ -63979,7 +63995,14 @@ window._lwClaimHerbarium = function(id){
     if (prog.caught >= TOTAL_PER_SEASON) {
       h += '<div style="margin-top:1rem;padding:0.8rem;background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(74,124,53,0.08));border:1.5px solid var(--gold);border-radius:12px;text-align:center;">';
       h += '<div style="font-family:Playfair Display,serif;font-size:0.95rem;font-style:italic;color:var(--gold);">\u2728 Hunt complete.</div>';
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);margin-top:3px;">The season rewarded you. Come back next season — the prizes change every year.</div>';
+      // Prize contents — used to say "the season rewarded you" without
+      // naming the prize. Now lists what the player actually received.
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);margin-top:0.5rem;line-height:1.7;">';
+      h += '<div style="color:var(--muted);font-size:0.48rem;letter-spacing:0.1em;margin-bottom:4px;">YOU EARNED</div>';
+      h += '<div>+500 Dew</div>';
+      h += '<div>\u00d73 Legendary Mystery Box</div>';
+      h += '</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);margin-top:0.6rem;font-style:italic;">Come back next season \u2014 twelve new fireflies, new prizes.</div>';
       h += '</div>';
     } else {
       h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);text-align:center;margin-top:1rem;line-height:1.7;">Fireflies hide across the game \u2014 the Wild map, the nursery, the Book. Keep your eyes open. One spawns every 7\u20138 days.</div>';
