@@ -55636,10 +55636,11 @@ _done=function(){
   }catch(e){}
   // Orphan arrow cleanup.
   try{var _a=document.getElementById('_lw-tut-arrow');if(_a)_a.remove();}catch(e){}
-  // Clear the step-19 advance-queued idempotency flag so the next
-  // tutorial run (reset, prestige, fresh account on same device)
-  // can arm its own step-18 → step-19 advance from scratch.
+  // Clear the step-19 + step-23Celebrate advance-queued idempotency
+  // flags so the next tutorial run (reset, prestige, fresh account on
+  // same device) can arm its own advances from scratch.
   try{window._LW_TUT_S19Q=false;}catch(e){}
+  try{window._LW_TUT_S23Q=false;}catch(e){}
   // Strip any residual pulse classes on UI elements the tutorial touches.
   try{
     var _kbs=document.getElementById('kb-sunbeams');
@@ -56601,10 +56602,41 @@ function _step23WaitForReveal(attempts){
       'Tap your new plant to <span style="color:var(--gold);">flip it over</span> and inspect it.',
       '',null,'bottom');
     if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
-    // Flip-reveal hook (wraps _handleCardFlip) advances on step===23.
+    // Flip-reveal hook (wraps _handleCardFlip) advances on step===23
+    // via nowFlipped check. Carousel-open safety watcher below force-
+    // advances if the player opens the carousel but the flip doesn't
+    // register (iOS pointer-events quirks on 3D-transformed children).
+    _step23CarouselSafety();
     // 10-min safety fallback.
     setTimeout(function(){if(_getStep()===23)_done();},600000);
   },800);
+}
+
+// Safety net for step 23 → _step23Celebrate. Same pattern as step 18:
+// if the player opens the carousel but doesn't flip (or the flip-hook
+// misses because of iOS quirks or a pre-revealed card), advance after
+// 8s of continuous open-carousel time so the Wild unlock ceremony
+// fires. Belt-and-suspenders against the exact stall Stephen just hit.
+function _step23CarouselSafety(){
+  var openSince=0;
+  var polls=0;
+  var tick=function(){
+    if(_getStep()!==23)return;
+    var m=document.getElementById('plant-gallery-modal');
+    var isOpen=m&&m.classList.contains('open');
+    if(isOpen){
+      if(openSince===0)openSince=Date.now();
+      if(Date.now()-openSince>=8000&&!window._LW_TUT_S23Q){
+        window._LW_TUT_S23Q=true;
+        setTimeout(_step23Celebrate,400);
+        return;
+      }
+    }else{
+      openSince=0;
+    }
+    if(polls<600){polls++;setTimeout(tick,500);}
+  };
+  setTimeout(tick,800);
 }
 
 // Called by the flip-reveal hook after the player inspects the bloomed
@@ -56988,9 +57020,16 @@ function _step34(){
           window._LW_TUT_S19Q=true;
           setTimeout(_step19,2400);
         }
-        // Step 23 keeps strict first-reveal — celebrating the rarity
-        // reveal is the point of that beat.
-        else if(_st===23&&!wasRevealed&&nowRevealed)setTimeout(_step23Celebrate,2400);
+        // Step 23 — advance on any flip with idempotency guard.
+        // Was strict !wasRevealed && nowRevealed, but the bloom
+        // cinematic already sets data-revealed:true so the strict
+        // check never fired. Same failure mode as Jessie's step 18
+        // stall (fixed in 8bc8ab7). Player got stuck on "tap your
+        // new plant to flip it over" with no way forward.
+        else if(_st===23&&nowFlipped&&!window._LW_TUT_S23Q){
+          window._LW_TUT_S23Q=true;
+          setTimeout(_step23Celebrate,2400);
+        }
       }catch(e){}
       return ret;
     };
