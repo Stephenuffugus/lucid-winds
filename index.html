@@ -40507,6 +40507,13 @@ window._showContestRoll = function(roll, attackerPlant, defenderPlant, onDone){
     h+=  '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--sage);text-align:center;">+'+roll.attHeron+'</div>';
     h+=  '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--muted);text-align:center;">\u2014</div></div>';
   }
+  if(roll.vowTarget){
+    var vowColor = roll.vowHit ? 'var(--gold)' : '#c87060';
+    var vowText = roll.vowHit ? ('Vow Kept +'+roll.vowBonus) : ('Vow Broken \u2264 '+roll.vowTarget);
+    h+='<div id="lwcr-vow" style="display:grid;grid-template-columns:1fr 52px 52px;gap:0.4rem;align-items:center;padding:0.5rem 0;border-bottom:1px dashed rgba(200,168,75,0.14);opacity:0;transform:translateY(8px);transition:opacity 0.4s,transform 0.4s;">';
+    h+=  '<div style="font-family:DM Mono,monospace;font-size:0.54rem;color:var(--muted);letter-spacing:0.06em;">\ud83d\udc38 Oracle\u2019s Vow</div>';
+    h+=  '<div style="font-family:Playfair Display,serif;font-size:0.7rem;color:'+vowColor+';text-align:center;grid-column:span 2;">'+vowText+'</div></div>';
+  }
   if(itemBadges.length){
     h+='<div id="lwcr-items" style="padding:0.35rem 0;border-bottom:1px dashed rgba(200,168,75,0.14);opacity:0;transition:opacity 0.4s;">';
     h+=  '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);letter-spacing:0.06em;text-align:center;">'+itemBadges.join('  \u00b7  ')+'</div></div>';
@@ -40556,6 +40563,7 @@ window._showContestRoll = function(roll, attackerPlant, defenderPlant, onDone){
   if(roll.defHerd){at(tm,function(){var r=document.getElementById('lwcr-herd');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
   if(roll.defSilk){at(tm,function(){var r=document.getElementById('lwcr-silk');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(15);});tm+=420;}
   if(roll.attHeron){at(tm,function(){var r=document.getElementById('lwcr-heron');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
+  if(roll.vowTarget){at(tm,function(){var r=document.getElementById('lwcr-vow');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(roll.vowHit?25:15);});tm+=420;}
   if(itemBadges.length){at(tm,function(){var r=document.getElementById('lwcr-items');if(r)r.style.opacity='1';});tm+=320;}
   at(tm,function(){
     var r=document.getElementById('lwcr-total');if(r)r.style.opacity='1';
@@ -40643,6 +40651,29 @@ function _allPlantsInZone(zoneKey){
   return out;
 }
 
+// Oracle's Vow prompt — shown when a Dart Frog (idx 60) attacker
+// enters a contest. Minimal MVP modal with three risk tiers. Will
+// evolve per Stephen: "we can start the UI like that but will probably
+// evolve it for optimal fun and use."
+function _oracleVowPrompt(cb){
+  var ov = document.createElement('div');
+  ov.id = 'lw-vow-prompt';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:1000015;background:rgba(5,8,4,0.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:1rem;animation:panelFadeIn 0.3s ease;';
+  var pick = function(target){ try{ov.remove();}catch(e){} cb(target); };
+  window._lwVowPick = pick;
+  var h = '<div style="max-width:360px;width:100%;background:rgba(18,24,16,0.97);border:2px solid rgba(200,168,75,0.5);border-radius:16px;padding:1.3rem;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.7);">';
+  h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.15rem;color:var(--gold);margin-bottom:0.3rem;">\ud83d\udc38 Oracle\'s Vow</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.6;margin-bottom:1rem;">Commit a target total before the dice. Meet or exceed it and earn bonus Sunbeams. Fall short and you forfeit the contest.</div>';
+  h += '<div style="display:flex;flex-direction:column;gap:0.5rem;">';
+  h += '<button onclick="window._lwVowPick(9)" style="padding:12px;border-radius:10px;border:1.5px solid rgba(122,179,86,0.4);background:linear-gradient(180deg,rgba(122,179,86,0.15),rgba(122,179,86,0.05));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.12em;cursor:pointer;min-height:48px;">VOW 9 \u00b7 +9 Sunbeams</button>';
+  h += '<button onclick="window._lwVowPick(11)" style="padding:12px;border-radius:10px;border:1.5px solid rgba(200,168,75,0.45);background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(200,168,75,0.05));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.12em;cursor:pointer;min-height:48px;">VOW 11 \u00b7 +11 Sunbeams</button>';
+  h += '<button onclick="window._lwVowPick(13)" style="padding:12px;border-radius:10px;border:1.5px solid rgba(232,160,191,0.5);background:linear-gradient(180deg,rgba(232,160,191,0.18),rgba(232,160,191,0.05));color:#e8a0bf;font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.12em;cursor:pointer;min-height:48px;">VOW 13 \u00b7 +13 Sunbeams</button>';
+  h += '<button onclick="window._lwVowPick(null)" style="margin-top:0.4rem;padding:10px;border-radius:10px;border:1px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.5);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;min-height:44px;">Skip \u2014 normal contest</button>';
+  h += '</div></div>';
+  ov.innerHTML = h;
+  document.body.appendChild(ov);
+}
+
 function _drop(pl){
   closePicker();
   if(!_uLat||!_uLng){_toast('No location.');return;}
@@ -40708,39 +40739,69 @@ function _drop(pl){
           defenderAllyCount:_herdCount
         };
         var tEA=_wildEA(targetPlant);
-        var _roll=_rollTakeover({hash:pl.hash,ea:myEA},{hash:targetPlant.hash,ea:tEA},rollOpts);
-        // Moonwake burns on the contest whether attacker wins or loses.
-        if(rollOpts.defenderMoonwake&&window.LW_ITEMS&&window.LW_ITEMS.consumeMoonwake) window.LW_ITEMS.consumeMoonwake(targetPlant.hash);
-        // Route through the Yahtzee-style reveal modal. Outcome resolves
-        // when the player taps CONTINUE. Fallback to legacy toast flow if
-        // the reveal helper isn't loaded for some reason.
-        var _finishContest=function(){
-          if(!_roll.attackerWins){
-            // Snail Steady Shell — defender survived. If they have a
-            // Snail (idx 27), bump their snailWins counter on Firestore
-            // so next time someone (or they) view the plant it reads
-            // back higher EA. Silent write; we don't own that plant.
-            try {
-              var _defT = window.hashToTraits ? window.hashToTraits(targetPlant.hash) : null;
-              if (_defT && _defT.companion === 27 && targetPlant.ownerUid && window.db) {
-                var _snDocId = targetPlant.ownerUid + '_' + targetPlant.hash.slice(0,16);
-                window.db.collection('wildDrops').doc(_snDocId).update({
-                  snailWins: firebase.firestore.FieldValue.increment(1)
-                }).catch(function(){});
-              }
-            } catch(e){}
-            if(iq.uprootCharm){_toast('\ud83c\udf38 Uproot Charm pulled your plant home.');return;}
-            return;
+        // Dart Frog (idx 60) Oracle's Vow — attacker can pre-commit a
+        // target total before the dice roll. Meet/exceed = +target
+        // Sunbeams bonus. Miss = attacker auto-forfeits regardless of
+        // roll. Only the attacker gets this choice (defender never
+        // opts in). UI is minimal MVP — will evolve per Stephen.
+        var _attT=null; try{_attT=window.hashToTraits(pl.hash);}catch(e){}
+        var _hasDartFrog = _attT && _attT.companion === 60;
+        var _resolveContest = function(vowTarget){
+          var _roll=_rollTakeover({hash:pl.hash,ea:myEA},{hash:targetPlant.hash,ea:tEA},rollOpts);
+          if(rollOpts.defenderMoonwake&&window.LW_ITEMS&&window.LW_ITEMS.consumeMoonwake) window.LW_ITEMS.consumeMoonwake(targetPlant.hash);
+          // Oracle's Vow resolution — if attacker vowed and fell short,
+          // attackerWins is overridden to false. If they met the target,
+          // stash vowBonus on roll for the reveal modal to show + the
+          // finish path to grant.
+          if (vowTarget && typeof vowTarget === 'number') {
+            _roll.vowTarget = vowTarget;
+            if (_roll.attTotal >= vowTarget) {
+              _roll.vowHit = true;
+              _roll.vowBonus = vowTarget;
+            } else {
+              _roll.vowHit = false;
+              _roll.attackerWins = false; // forfeit on miss
+            }
           }
-          var _disp={ownerUid:targetPlant.ownerUid,hash:targetPlant.hash,grade:targetPlant.grade||'Common',name:targetPlant.name||'Plant'};
-          _pendingDrop={plant:pl,lat:la,lng:lo,wild:wild,displaced:_disp};
-          _finishDrop('none');
+          var _finishContest=function(){
+            if(!_roll.attackerWins){
+              // Snail Steady Shell — defender survived. Bump snailWins
+              // via Firestore increment if defender has Snail (idx 27).
+              try {
+                var _defT = window.hashToTraits ? window.hashToTraits(targetPlant.hash) : null;
+                if (_defT && _defT.companion === 27 && targetPlant.ownerUid && window.db) {
+                  var _snDocId = targetPlant.ownerUid + '_' + targetPlant.hash.slice(0,16);
+                  window.db.collection('wildDrops').doc(_snDocId).update({
+                    snailWins: firebase.firestore.FieldValue.increment(1)
+                  }).catch(function(){});
+                }
+              } catch(e){}
+              if (_roll.vowTarget && !_roll.vowHit && window._toast) {
+                setTimeout(function(){_toast('\ud83d\udc38 Oracle\u2019s Vow broken \u2014 forfeited on target '+_roll.vowTarget+'.');}, 400);
+              }
+              if(iq.uprootCharm){_toast('\ud83c\udf38 Uproot Charm pulled your plant home.');return;}
+              return;
+            }
+            // Attacker wins — grant Vow bonus Sunbeams before the drop.
+            if (_roll.vowHit && _roll.vowBonus && window.earnHashes) {
+              try { window.earnHashes(_roll.vowBonus); } catch(e){}
+              if (window._toast) setTimeout(function(){_toast('\ud83d\udc38 Oracle\u2019s Vow kept \u2014 +'+_roll.vowBonus+' Sunbeams.');}, 700);
+            }
+            var _disp={ownerUid:targetPlant.ownerUid,hash:targetPlant.hash,grade:targetPlant.grade||'Common',name:targetPlant.name||'Plant'};
+            _pendingDrop={plant:pl,lat:la,lng:lo,wild:wild,displaced:_disp};
+            _finishDrop('none');
+          };
+          if(window._showContestRoll){
+            window._showContestRoll(_roll,{hash:pl.hash,ea:myEA},{hash:targetPlant.hash,ea:tEA},_finishContest);
+          } else {
+            _toast('\ud83c\udfb2 '+_formatRollToast(_roll));
+            _finishContest();
+          }
         };
-        if(window._showContestRoll){
-          window._showContestRoll(_roll,{hash:pl.hash,ea:myEA},{hash:targetPlant.hash,ea:tEA},_finishContest);
+        if (_hasDartFrog) {
+          _oracleVowPrompt(function(vowTarget){ _resolveContest(vowTarget); });
         } else {
-          _toast('\ud83c\udfb2 '+_formatRollToast(_roll));
-          _finishContest();
+          _resolveContest(null);
         }
       });
       return; // wait for inspector callback
