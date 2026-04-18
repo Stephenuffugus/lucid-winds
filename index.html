@@ -69690,7 +69690,13 @@ window.LW_Comp = (function(){
   _hookSwitchTab();
 
   setTimeout(_refresh, 900);
-  setInterval(_refresh, 9000);
+  // Interval bumped from 9s → 45s. buildSuggestions() walks
+  // greenhouse + nursery + wild arrays + herbarium bundles + class +
+  // tools each call — 50-100ms on a loaded vault. 9s cadence was
+  // ~10%+ of a minute spent polling for state that mostly doesn't
+  // change. switchTab hook still fires refresh on tab change so the
+  // pill reflects state immediately where it matters.
+  setInterval(_refresh, 45000);
 })();
 </script>
 
