@@ -57849,6 +57849,87 @@ window.breedingForecast=function(hashA,hashB){
     companionChance:Object.keys(results.companions).length>0?Math.round(Object.keys(results.companions).length/20*100):0
   };
 };
+
+// ═══ BREED SIM HARNESS (dev) ═══
+// window._lwBreedSim(hashA, hashB, N) runs N Mendelian breed sims
+// using the same byte-dominance logic as crossPollinateHashes — but
+// sync (Math.random seed instead of SHA-256). Returns a stats object
+// with tier distribution + mutation/mythic/cosmic hit rates + avg EA.
+// Use to benchmark current breed rolls OR test proposed gating rules.
+// window._lwBreedSimReport logs a human-readable table to console.
+window._lwBreedSim = function(hashA, hashB, N) {
+  if (!hashA || !hashB || !window.hashToTraits) return null;
+  N = Math.max(1, Math.min(100000, N || 1000));
+  var a = hashA.toLowerCase().padEnd(64,'0');
+  var b = hashB.toLowerCase().padEnd(64,'0');
+  var tierCounts = {Common:0,Uncommon:0,Rare:0,Epic:0,Legendary:0,Mythic:0,Cosmic:0};
+  var mutationHits = 0, mythicCompHits = 0, cosmicCompHits = 0;
+  var flowerHits = 0, hybridVigorHits = 0;
+  var eaSum = 0, eaMin = 999, eaMax = 0;
+  for (var sim = 0; sim < N; sim++) {
+    // Build pseudo-seed — Math.random() hex stream.
+    var seed = '';
+    for (var si = 0; si < 64; si++) seed += ((Math.random()*16)|0).toString(16);
+    var child = seed.split('');
+    // Mendelian mix for positions 0-31.
+    for (var mi = 0; mi < 32; mi++) {
+      var dom = parseInt(seed[mi], 16);
+      if (dom === 15) { child[mi] = seed[mi+32] || '0'; hybridVigorHits++; }
+      else if (dom < 8) { child[mi] = a[mi]; }
+      else { child[mi] = b[mi]; }
+    }
+    // Recessive overrides — same as crossPollinateHashes.
+    if (a[0] === 'f' && b[0] === 'f') child[0] = 'f';
+    if (a[11] === 'f' && b[11] === 'f') child[11] = 'f';
+    // NOTE: skipping mutation/mythic inbreeding-depression special cases
+    // (they only fire for same-trait parents, not the baseline case).
+    var oh = child.join('');
+    try {
+      var ot = window.hashToTraits(oh);
+      var og = window.getTerraGrade ? window.getTerraGrade(ot) : {name:'Common'};
+      var oea = window.computeEA ? window.computeEA(ot, 0) : 0;
+      tierCounts[og.name] = (tierCounts[og.name] || 0) + 1;
+      if (ot.mutationName && ot.mutationName !== 'None') mutationHits++;
+      // Mythic companions: hb(18) >= 0xD0 (see hashToTraits override table)
+      var mythByte = parseInt(oh.slice(18,20), 16) || 0;
+      if (mythByte >= 0xD0) mythicCompHits++;
+      if (mythByte === 0xFF) cosmicCompHits++;
+      if (ot.hasFlower) flowerHits++;
+      eaSum += oea;
+      if (oea < eaMin) eaMin = oea;
+      if (oea > eaMax) eaMax = oea;
+    } catch (e) {}
+  }
+  var pct = function(n) { return Math.round(n / N * 10000) / 100; };
+  return {
+    N: N,
+    tiers: {
+      Common: pct(tierCounts.Common), Uncommon: pct(tierCounts.Uncommon),
+      Rare: pct(tierCounts.Rare), Epic: pct(tierCounts.Epic),
+      Legendary: pct(tierCounts.Legendary), Mythic: pct(tierCounts.Mythic),
+      Cosmic: pct(tierCounts.Cosmic)
+    },
+    rates: {
+      mutation: pct(mutationHits),
+      mythicCompanion: pct(mythicCompHits),
+      cosmicCompanion: pct(cosmicCompHits),
+      hasFlower: pct(flowerHits),
+      hybridVigor: pct(hybridVigorHits) // % of BYTES (not offspring) that hit hybrid vigor
+    },
+    ea: { avg: Math.round(eaSum / N * 100) / 100, min: eaMin, max: eaMax }
+  };
+};
+window._lwBreedSimReport = function(hashA, hashB, N) {
+  var r = window._lwBreedSim(hashA, hashB, N);
+  if (!r) { console.log('[BreedSim] invalid inputs'); return null; }
+  console.log('═══ Breed Sim · ' + r.N + ' offspring ═══');
+  console.log('Parent A: ' + hashA.slice(0,12) + '…');
+  console.log('Parent B: ' + hashB.slice(0,12) + '…');
+  console.table(r.tiers);
+  console.table(r.rates);
+  console.log('EA avg ' + r.ea.avg + ' (min ' + r.ea.min + ', max ' + r.ea.max + ')');
+  return r;
+};
 })();
 </script>
 
