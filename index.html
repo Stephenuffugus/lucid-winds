@@ -38032,6 +38032,12 @@ function _wildClimateTick(weather) {
             damageH = 0;
             p.hardyDodgedAt = now;
             if (window._logWildEvent) window._logWildEvent({type:'companion',event:'hardy_dodge',hash:p.hash,text:'Hardy companion shrugged off the weather.'});
+            // Leveling archetype bump: Mammoth (34), Axolotl (47),
+            // Garden Spider (37), Porcupine (45), Pill Bug (22) — all
+            // Survival archetypes. +1 for weathering a climate event.
+            try {
+              if (window._LW_companionXpBumpIfOwned) window._LW_companionXpBumpIfOwned([34, 47, 37, 45, 22], 1);
+            } catch(ee){}
           }
         }
       } catch(e){}
@@ -40131,6 +40137,13 @@ function _doCrossPollination(wildPlant,matePlant){
           if (window.PW_grantXP) window.PW_grantXP(1, 'lush_bonus');
         }
       } catch(e){}
+      // Leveling archetype bump: Action companions driven by cross-pollinate.
+      // Bee (21) + Butterfly (24) — if owned, +1 to their action counters.
+      try {
+        if (window._LW_companionXpBumpIfOwned) {
+          window._LW_companionXpBumpIfOwned([21, 24], 1);
+        }
+      } catch(e){}
     });
   } else {
     _toast('Breeding engine loading... trying again.');
@@ -40857,6 +40870,10 @@ function _drop(pl){
               try { window.earnHashes(_roll.vowBonus); } catch(e){}
               if (window._toast) setTimeout(function(){_toast('\ud83d\udc38 Oracle\u2019s Vow kept \u2014 +'+_roll.vowBonus+' Sunbeams.');}, 700);
             }
+            // Leveling archetype bump: Heron (36) Action — contest wins.
+            try {
+              if (window._LW_companionXpBumpIfOwned) window._LW_companionXpBumpIfOwned([36], 1);
+            } catch(e){}
             var _disp={ownerUid:targetPlant.ownerUid,hash:targetPlant.hash,grade:targetPlant.grade||'Common',name:targetPlant.name||'Plant'};
             _pendingDrop={plant:pl,lat:la,lng:lo,wild:wild,displaced:_disp};
             _finishDrop('none');
@@ -65284,6 +65301,31 @@ window._lwClaimHerbarium = function(id){
   window._LW_companionXpGet  = _getXpCount;
   window._LW_companionKinship = _kinshipCount;
 
+  // Ownership-gated bump helper. Only bumps the companion XP if the
+  // player actually owns one in greenhouse or wild. Prevents "already
+  // L5 on day 1 of acquisition" exploits.
+  function _ownsCompanion(idx) {
+    try {
+      var gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+      for (var i = 0; i < gh.length; i++) {
+        var t = window.hashToTraits ? window.hashToTraits(gh[i].hash) : null;
+        if (t && t.companion === idx) return true;
+      }
+      var wild = JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');
+      for (var j = 0; j < wild.length; j++) {
+        var tw = window.hashToTraits ? window.hashToTraits(wild[j].hash) : null;
+        if (tw && tw.companion === idx) return true;
+      }
+    } catch(e){}
+    return false;
+  }
+  window._LW_companionXpBumpIfOwned = function(idxList, amount) {
+    if (!Array.isArray(idxList)) idxList = [idxList];
+    for (var i = 0; i < idxList.length; i++) {
+      if (_ownsCompanion(idxList[i])) _bumpXp(idxList[i], amount || 1);
+    }
+  };
+
   function getLevel(idx) {
     var arch = COMPANION_ARCHETYPE[idx] || 'time';
     if (arch === 'time') {
@@ -69686,6 +69728,16 @@ window._checkBeholderOmnisight=function(){
   if (lines.length && window._toast) {
     window._toast('\ud83d\udc41\ufe0f Beholder sees: ' + lines.join(' \u00b7 '));
   }
+  // Leveling archetype bump: Beholder (38) Witness + Owl (56) Witness
+  // + Will-o-Wisp (79) Witness — +1 per Wild-tab observation. Rate
+  // limited to once per hour so rapid tab-switching doesn't grind.
+  try {
+    var _bLast = parseInt(localStorage.getItem('lw_witness_xp_last')||'0', 10);
+    if (Date.now() - _bLast > 3600000 && window._LW_companionXpBumpIfOwned) {
+      window._LW_companionXpBumpIfOwned([38, 56, 79], 1);
+      localStorage.setItem('lw_witness_xp_last', String(Date.now()));
+    }
+  } catch(e){}
 
   // Log to compendium if first time
   var _bSeen=localStorage.getItem('lw_beholder_seen');
