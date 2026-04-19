@@ -8518,11 +8518,10 @@ document.addEventListener('keydown', function(e) {
         if (_bCache) ea += 2;
       } catch(e){}
     }
-    // THORNED keyword debuff — attackers who failed against a Thorned
-    // defender carry -1 EA for 24h. Stamped on contest loss.
-    if (plant && plant.thornedUntil && plant.thornedUntil > Date.now()) {
-      ea -= 1;
-    }
+    // THORNED keyword removed Apr 19 — Director-rejected as punitive
+    // and unnecessary on top of Rooted (defender +2). The thornedUntil
+    // field on attacker plants is now ignored. Stale fields in vaults
+    // will simply not trigger anything; no migration needed.
     // TURTLE Ancient Shell — +1 EA per full day this plant has lived
     // in the wild, cap +14 (~2 weeks to max). Permanence-aligned:
     // no revival on eviction, the Turtle just becomes unusually hard
@@ -11798,33 +11797,33 @@ document.addEventListener('keydown', function(e) {
       // Beholder (Cosmic 0.39%) gets 0 keywords — signature purity.
       {name:'Navi',temp:'mystic',keywords:['swift','lush']},                                      // idx 20
       {name:'Bee',temp:'symbiote',keywords:['restless','lush']},                                  // idx 21
-      {name:'Pill Bug',temp:'guardian',keywords:['rooted','thorned']},                             // idx 22
+      {name:'Pill Bug',temp:'guardian',keywords:['rooted','hardy']},                              // idx 22 (was thorned, swapped Apr 19)
       {name:'Firefly',temp:'mystic',ability:'nightBloom',keywords:['lush']},                      // idx 23
       {name:'Butterfly',temp:'wanderer',ability:'driftPollen',keywords:['swift']},                // idx 24
       {name:'Moth',temp:'mystic',keywords:['hardy','lush']},                                     // idx 25
-      {name:'Ladybug',temp:'guardian',keywords:['restless','thorned']},                           // idx 26
+      {name:'Ladybug',temp:'guardian',keywords:['restless','lush']},                              // idx 26 (was thorned, swapped Apr 19)
       {name:'Snail',temp:'guardian',keywords:['hardy']},                                         // idx 27 — Steady Shell signature
       {name:'Hummingbird',temp:'wanderer',keywords:['swift']},                                   // idx 28 — Dash Wings signature
       {name:'Dragonfly',temp:'wanderer',keywords:['swift','lush']},                               // idx 29
       {name:'Caterpillar',temp:'symbiote',keywords:['lush','restless']},                          // idx 30
-      {name:'Spider',temp:'guardian',keywords:['rooted','thorned']},                              // idx 31
+      {name:'Spider',temp:'guardian',keywords:['rooted','swift']},                                // idx 31 (was thorned, swapped Apr 19)
       {name:'Toad',temp:'guardian',ability:'rainCaller',keywords:['rooted']},                    // idx 32 (mythic path)
       {name:'Cicada',temp:'symbiote',ability:'herdImmunity',keywords:['hardy']},                 // idx 33 — Cicada (replaced Phoenix; same family buff)
       {name:'Baby Mammoth',temp:'guardian',ability:'permafrost',keywords:['rooted']},            // idx 34
       {name:'Raccoon',temp:'forager',ability:'scavenger',keywords:['swift']},                    // idx 35
       {name:'Great Blue Heron',temp:'wanderer',ability:'precisionStrike',keywords:['swift']},    // idx 36
-      {name:'Garden Spider',temp:'guardian',ability:'silkTrap',keywords:['thorned']},            // idx 37
+      {name:'Garden Spider',temp:'guardian',ability:'silkTrap',keywords:['swift']},               // idx 37 (was thorned, swapped Apr 19)
       {name:'Beholder',rare:true,temp:'mystic',ability:'omnisight'},                             // idx 38 — Cosmic, no keywords (signature purity)
       {name:'Cat',temp:'wanderer',keywords:['swift','restless']},                                 // idx 39
       {name:'Platypus',rare:true,temp:'forager',keywords:['hardy','rooted']},                    // idx 40
-      {name:'Praying Mantis',temp:'guardian',keywords:['swift','thorned']},                       // idx 41
-      {name:'Hedgehog',temp:'guardian',keywords:['rooted','thorned']},                            // idx 42
+      {name:'Praying Mantis',temp:'guardian',keywords:['swift','hardy']},                         // idx 41 (was thorned, swapped Apr 19)
+      {name:'Hedgehog',temp:'guardian',keywords:['rooted','hardy']},                              // idx 42 (was thorned, swapped Apr 19)
       {name:'Pangolin',rare:true,temp:'guardian',keywords:['hardy']},                            // idx 43
       {name:'Luna Moth',rare:true,temp:'mystic',keywords:['hardy','lush']},                       // idx 44
-      {name:'Porcupine',temp:'guardian',ability:'shellShift',keywords:['thorned']},              // idx 45
+      {name:'Porcupine',temp:'guardian',ability:'shellShift',keywords:['rooted']},                // idx 45 (was thorned, swapped Apr 19)
       {name:'None'},                                                                               // idx 46 — was Glow Snail, cut Apr 14 2026
       {name:'Axolotl',rare:true,temp:'symbiote',keywords:['lush']},                              // idx 47
-      {name:'Scorpion',rare:true,temp:'guardian',keywords:['swift','thorned']},                   // idx 48
+      {name:'Scorpion',rare:true,temp:'guardian',keywords:['swift','hardy']},                     // idx 48 (was thorned, swapped Apr 19)
       {name:'Origami Crane',rare:true,temp:'wanderer',keywords:['hardy','lush']},                 // idx 49
       {name:'Garden Gnome',rare:true,temp:'guardian',keywords:['rooted','hardy']},                // idx 50
       {name:'Robin',temp:'wanderer',keywords:['restless','lush']},                                // idx 51
@@ -11836,7 +11835,7 @@ document.addEventListener('keydown', function(e) {
       {name:'Silly Goose',temp:'wanderer',keywords:['swift','restless']},                         // idx 57
       {name:'None'},                                                                               // idx 58
       {name:'None'},                                                                               // idx 59
-      {name:'Dart Frog',temp:'forager',keywords:['thorned']},                                    // idx 60 — Oracle's Vow signature
+      {name:'Dart Frog',temp:'forager',keywords:['swift']},                                       // idx 60 — Oracle's Vow signature (was thorned, swapped Apr 19)
       {name:'Rabbit',temp:'wanderer',keywords:['restless','lush']},                                // idx 61
       {name:'Cricket',temp:'symbiote',keywords:['restless','lush']},                               // idx 62
       {name:'Puffin',temp:'wanderer',keywords:['hardy','swift']},                                  // idx 63
@@ -11848,7 +11847,7 @@ document.addEventListener('keydown', function(e) {
       {name:'Flamingo',rare:true,temp:'wanderer',keywords:['lush']},                              // idx 69
       {name:'Seahorse',temp:'mystic',keywords:['hardy','lush']},                                   // idx 70
       {name:'Koi Fish',temp:'symbiote',keywords:['lush','hardy']},                                // idx 71
-      {name:'Jellyfish',rare:true,temp:'mystic',keywords:['swift','thorned']},                     // idx 72
+      {name:'Jellyfish',rare:true,temp:'mystic',keywords:['swift','lush']},                       // idx 72 (was thorned, swapped Apr 19)
       {name:'Mushroom Sprite',temp:'symbiote',keywords:['restless','lush']},                       // idx 73
       {name:'Deer Fawn',temp:'wanderer',keywords:['hardy','swift']},                                // idx 74
       {name:'Raven',rare:true,temp:'forager',keywords:['swift','restless']},                       // idx 75
@@ -41026,23 +41025,8 @@ function _drop(pl){
                   }).catch(function(){});
                 }
               } catch(e){}
-              // Thorned keyword — if defender has thorned, stamp 24h
-              // -1 EA debuff on the attacker plant in greenhouse.
-              try {
-                if (window._LW_plantHasKeyword && window._LW_plantHasKeyword(targetPlant.hash, 'thorned')) {
-                  var _gh = JSON.parse(localStorage.getItem('sws_greenhouse') || '[]');
-                  var _stamped = false;
-                  for (var _gi=0; _gi<_gh.length; _gi++) {
-                    if (_gh[_gi].hash === pl.hash) {
-                      _gh[_gi].thornedUntil = Date.now() + 24*3600000;
-                      _stamped = true;
-                      break;
-                    }
-                  }
-                  if (_stamped) localStorage.setItem('sws_greenhouse', JSON.stringify(_gh));
-                  if (window._toast) setTimeout(function(){_toast('\ud83c\udf39 Thorned \u2014 your attacker plant carries -1 EA for 24h.');}, 600);
-                }
-              } catch(e){}
+              // Thorned keyword removed Apr 19 — Director-rejected as
+              // punitive and overlapping with Rooted. Stamp block deleted.
               if (_roll.vowTarget && !_roll.vowHit && window._toast) {
                 setTimeout(function(){_toast('\ud83d\udc38 Oracle\u2019s Vow broken \u2014 forfeited on target '+_roll.vowTarget+'.');}, 400);
               }
@@ -69143,8 +69127,9 @@ window._lwGetPhoenixPlants=function(){return [];};
     hardy:    { name:'Hardy',    icon:'\u2728',                 desc:'50% chance to ignore one climate damage per week' },
     rooted:   { name:'Rooted',   icon:'\u2693',                 desc:'+2 EA vs eviction attempts' },
     swift:    { name:'Swift',    icon:'\ud83d\udca8',           desc:'+2 attacker total in contests' },
-    lush:     { name:'Lush',     icon:'\ud83c\udf3a',           desc:'+1 XP per cross-pollinate' },
-    thorned:  { name:'Thorned',  icon:'\ud83c\udf39',           desc:'Failed attacker loses 1 EA for 24h' }
+    lush:     { name:'Lush',     icon:'\ud83c\udf3a',           desc:'+1 XP per cross-pollinate' }
+    // Thorned removed Apr 19 — Director-rejected. 6th keyword slot
+    // intentionally empty per "park, stay at 5" decision.
   };
   window.LW_KEYWORDS = KEYWORDS;
   window._LW_companionHasKeyword = function(idx, kw){
