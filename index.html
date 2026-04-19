@@ -64005,6 +64005,11 @@ window._lwClaimHerbarium = function(id){
       desc:'Your next contest: defender\u2019s companion bonus is zero.',
       lore:'Ground quartz and pollen, tossed in an arc. The defender\u2019s familiar looks away at the wrong moment.',
       usage:'prime before your next contest', wired:true },
+    pollenStorm: { key:'pollenStorm', name:'Pollen Storm', category:'offense', rarity:'Epic',
+      art:'assets/items/pollen-storm.png', icon:'\ud83c\udf38',
+      desc:'Your next 3 contests: defender\u2019s companion bonus is zero.',
+      lore:'A golden cloud cracked open at the threshold. For three breaths, no familiar can look straight at anything.',
+      usage:'prime once \u2014 lasts 3 contests', wired:true },
     uprootCharm: { key:'uprootCharm', name:'Uproot Charm', category:'offense', rarity:'Uncommon',
       art:'assets/items/uproot-charm.png', icon:'\ud83c\udf38',
       desc:'Lose your next contest? Plant returns to you, unharmed.',
@@ -64118,6 +64123,19 @@ window._lwClaimHerbarium = function(id){
     _closePanel();
     return true;
   }
+  // Pollen Storm (Epic) — 3 charges of Dust-Storm-equivalent defender
+  // companion suppression. Each contest that fires while a charge is
+  // active zeroes the defender's companion bonus AND consumes one
+  // charge. Closes the 'no Epic Offense' slot flagged in the items
+  // audit. Counter pattern protects against the player burning all
+  // 3 on a single auto-resolve.
+  function usePollenStorm(){
+    if (!spend('pollenStorm')) { if(window._toast)window._toast('No Pollen Storm in your pouch.'); return false; }
+    var p = _loadPending(); p.pollenStorm = 3; _savePending(p);
+    if (window._toast) window._toast('\ud83c\udf38 Pollen Storm primed \u2014 next 3 contests nullify defender\'s companion.');
+    _closePanel();
+    return true;
+  }
   // Uproot Charm — plant returns on loss
   function useUproot(){
     if (!spend('uprootCharm')) { if(window._toast)window._toast('No Uproot Charm in your pouch.'); return false; }
@@ -64196,13 +64214,25 @@ window._lwClaimHerbarium = function(id){
     var p = _loadPending(); if (!p.moonwake || !p.moonwake[hash]) return false;
     delete p.moonwake[hash]; _savePending(p); return true;
   }
-  // Contest-queue consumer for attacker's own primed items (torch / dust / uproot)
+  // Contest-queue consumer for attacker's own primed items (torch / dust / uproot / pollen-storm)
   function consumeContestQueue(){
     var p = _loadPending();
-    var out = { torch: !!p.torch, dustStorm: !!p.dustStorm, uprootCharm: !!p.uprootCharm };
+    // Pollen Storm (3-charge): fire if any charges remain, decrement
+    // counter each consume. When 0, remove the entry entirely.
+    var _pollenStormActive = typeof p.pollenStorm === 'number' && p.pollenStorm > 0;
+    var out = {
+      torch: !!p.torch,
+      dustStorm: !!p.dustStorm || _pollenStormActive,
+      uprootCharm: !!p.uprootCharm,
+      pollenStorm: _pollenStormActive
+    };
     if (p.torch) delete p.torch;
     if (p.dustStorm) delete p.dustStorm;
     if (p.uprootCharm) delete p.uprootCharm;
+    if (_pollenStormActive) {
+      p.pollenStorm = p.pollenStorm - 1;
+      if (p.pollenStorm <= 0) delete p.pollenStorm;
+    }
     _savePending(p);
     return out;
   }
@@ -64628,7 +64658,7 @@ window._lwClaimHerbarium = function(id){
         var handlerMap = {
           foragersLens:'useLens', compassShard:'useShard', tetherMoss:'useMoss', divinersGlass:'useGlass',
           mulchWard:'useWard', brambleThicket:'useBramble', shellgourd:'useShellgourd', moonwake:'useMoonwake',
-          foragersTorch:'useTorch', dustStorm:'useDustStorm', uprootCharm:'useUproot',
+          foragersTorch:'useTorch', dustStorm:'useDustStorm', uprootCharm:'useUproot', pollenStorm:'usePollenStorm',
           scryingStone:'useScryProper', ravenEye:'useRaven', slowArrow:'useArrow', whisperVine:'useVine',
           wanderersMap:'useMap', lanternPath:'useLantern'
         };
@@ -64662,7 +64692,7 @@ window._lwClaimHerbarium = function(id){
     count: count, add: add, spend: spend, total: total,
     useLens: useLens, useShard: useShard, useMoss: useMoss, useGlass: useGlass,
     useWard: useWard, useBramble: useBramble, useShellgourd: useShellgourd, useMoonwake: useMoonwake,
-    useTorch: useTorch, useDustStorm: useDustStorm, useUproot: useUproot,
+    useTorch: useTorch, useDustStorm: useDustStorm, usePollenStorm: usePollenStorm, useUproot: useUproot,
     useScry: useScry, useScryProper: useScryProper, useRaven: useRaven, useArrow: useArrow, useVine: useVine, useLantern: useLantern,
     useMap: useMap,
     _remoteDailyRemaining: _remoteDailyRemaining,
