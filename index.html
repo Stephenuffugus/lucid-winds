@@ -40460,6 +40460,12 @@ function _rollTakeover(attackerPlant,defenderPlant,opts){
     var _attTraits = window.hashToTraits ? window.hashToTraits(attackerPlant.hash) : null;
     if (_attTraits && _attTraits.companion === 36) attHeron = 1;
   } catch (e) {}
+  // Items audit Apr 19: Torch (3d6-keep-best-2 dice) + Heron (precisionStrike
+  // +1 EA) = unranked challenger topples Cosmic in one tap. Mutually
+  // exclusive — player picks the dice boost OR the companion edge,
+  // not both. Torch is the item the player just paid for, so it wins;
+  // Heron's bonus zeroes out for this contest.
+  if (opts.attackerTorch && attHeron) attHeron = 0;
   // EVERGREEN KEYWORDS — Rooted (defender +2 vs eviction) + Swift
   // (attacker +2, rolls apply first). Read from companion's keywords
   // array via the _LW_companionHasKeyword helper.
