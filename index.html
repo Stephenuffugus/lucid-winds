@@ -34302,46 +34302,50 @@ document.addEventListener('keydown', function(e) {
   // ACHIEVEMENT SYSTEM
   // ═══════════════════════════════════════════════════════════════
   var ACH_KEY = 'sws_achievements';
+  // Achievement Sunbeam rewards tiered by difficulty so players EARN
+  // their plants instead of getting them handed over. 30 Sunbeams = 1
+  // plant. Early achievements give 5 each → 4-6 stack to a free plant.
+  // Hard milestones give 20-30 (one plant per chase moment).
   var ACHIEVEMENTS = [
     // ── Collection milestones ──
-    { id:'first_plant',   icon:'🌱', name:'First Harvest',       desc:'Bloom your first Plant',               check: function(gh){ return gh.length >= 1; } },
-    { id:'full_row',      icon:'🏛', name:'Full Row',             desc:'Collect 10 Plants',                    check: function(gh){ return gh.length >= 10; } },
-    { id:'half_house',    icon:'🏠', name:'Half House',           desc:'Collect 30 Plants',                    check: function(gh){ return gh.length >= 30; } },
-    { id:'full_house',    icon:'🏰', name:'Full House',           desc:'Fill all 60 greenhouse slots',         check: function(gh){ return gh.length >= 60; } },
+    { id:'first_plant',   icon:'🌱', name:'First Harvest',       desc:'Bloom your first Plant',               reward:5,  check: function(gh){ return gh.length >= 1; } },
+    { id:'full_row',      icon:'🏛', name:'Full Row',             desc:'Collect 10 Plants',                    reward:10, check: function(gh){ return gh.length >= 10; } },
+    { id:'half_house',    icon:'🏠', name:'Half House',           desc:'Collect 30 Plants',                    reward:20, check: function(gh){ return gh.length >= 30; } },
+    { id:'full_house',    icon:'🏰', name:'Full House',           desc:'Fill all 60 greenhouse slots',         reward:30, check: function(gh){ return gh.length >= 60; } },
     // ── Rarity ──
-    { id:'first_rare',    icon:'⭐', name:'Rare Find',            desc:'Bloom a Rare+ Plant',                  check: function(gh){ return gh.some(function(p){ return p.rare; }); } },
-    { id:'first_epic',    icon:'💎', name:'Epic Discovery',       desc:'Own an Epic+ Plant',                   check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=8;}catch(e){return false;} }); } },
-    { id:'first_legend',  icon:'👑', name:'Living Legend',        desc:'Own a Legendary+ Plant',               check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=12;}catch(e){return false;} }); } },
-    { id:'first_cosmic',  icon:'🌌', name:'Cosmic Gardener',     desc:'Own a Cosmic Plant',                   check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=18;}catch(e){return false;} }); } },
+    { id:'first_rare',    icon:'⭐', name:'Rare Find',            desc:'Bloom a Rare+ Plant',                  reward:10, check: function(gh){ return gh.some(function(p){ return p.rare; }); } },
+    { id:'first_epic',    icon:'💎', name:'Epic Discovery',       desc:'Own an Epic+ Plant',                   reward:20, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=8;}catch(e){return false;} }); } },
+    { id:'first_legend',  icon:'👑', name:'Living Legend',        desc:'Own a Legendary+ Plant',               reward:30, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=12;}catch(e){return false;} }); } },
+    { id:'first_cosmic',  icon:'🌌', name:'Cosmic Gardener',     desc:'Own a Cosmic Plant',                   reward:30, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=18;}catch(e){return false;} }); } },
     // ── Breeding ──
-    { id:'first_cross',   icon:'🧬', name:'Hybridist',           desc:'Bloom a Cross-Bred Plant',             check: function(gh){ return gh.some(function(p){ return p.isCross; }); } },
-    { id:'breed_5',       icon:'🧪', name:'Prolific Breeder',    desc:'Breed 5 Plants',                       check: function(gh){ return gh.filter(function(p){ return p.isCross; }).length >= 5; } },
-    { id:'breed_20',      icon:'🔬', name:'Genetic Pioneer',     desc:'Breed 20 Plants',                      check: function(gh){ return gh.filter(function(p){ return p.isCross; }).length >= 20; } },
-    { id:'chimera_gen3',  icon:'🐉', name:'Deep Chimera',        desc:'Own a Gen 3+ Chimera',                 check: function(gh){ return gh.some(function(p){ return (p.generation || 1) >= 3; }); } },
+    { id:'first_cross',   icon:'🧬', name:'Hybridist',           desc:'Bloom a Cross-Bred Plant',             reward:10, check: function(gh){ return gh.some(function(p){ return p.isCross; }); } },
+    { id:'breed_5',       icon:'🧪', name:'Prolific Breeder',    desc:'Breed 5 Plants',                       reward:10, check: function(gh){ return gh.filter(function(p){ return p.isCross; }).length >= 5; } },
+    { id:'breed_20',      icon:'🔬', name:'Genetic Pioneer',     desc:'Breed 20 Plants',                      reward:20, check: function(gh){ return gh.filter(function(p){ return p.isCross; }).length >= 20; } },
+    { id:'chimera_gen3',  icon:'🐉', name:'Deep Chimera',        desc:'Own a Gen 3+ Chimera',                 reward:20, check: function(gh){ return gh.some(function(p){ return (p.generation || 1) >= 3; }); } },
     // ── Compost ──
-    { id:'first_compost', icon:'🍂', name:'Return to Earth',     desc:'Compost your first Plant',             check: function(gh,r,l,cl){ return (cl || []).length >= 1; } },
-    { id:'compost_10',    icon:'♻️', name:'Cycle of Life',       desc:'Compost 10 Plants',                    check: function(gh,r,l,cl){ return (cl || []).length >= 10; } },
-    { id:'compost_crown', icon:'👸', name:'Crown Bearer',        desc:'Own a Plant with Mycelial Crown',      check: function(gh){ return gh.some(function(p){ return p.mycelialCrown; }); } },
-    { id:'compost_deep',  icon:'🌳', name:'Deep Roots',          desc:'Own a Plant with 3+ compost layers',   check: function(gh){ return gh.some(function(p){ return p.compostLayers && Object.keys(p.compostLayers).length >= 3; }); } },
+    { id:'first_compost', icon:'🍂', name:'Return to Earth',     desc:'Compost your first Plant',             reward:5,  check: function(gh,r,l,cl){ return (cl || []).length >= 1; } },
+    { id:'compost_10',    icon:'♻️', name:'Cycle of Life',       desc:'Compost 10 Plants',                    reward:10, check: function(gh,r,l,cl){ return (cl || []).length >= 10; } },
+    { id:'compost_crown', icon:'👸', name:'Crown Bearer',        desc:'Own a Plant with Mycelial Crown',      reward:20, check: function(gh){ return gh.some(function(p){ return p.mycelialCrown; }); } },
+    { id:'compost_deep',  icon:'🌳', name:'Deep Roots',          desc:'Own a Plant with 3+ compost layers',   reward:20, check: function(gh){ return gh.some(function(p){ return p.compostLayers && Object.keys(p.compostLayers).length >= 3; }); } },
     // ── Streaks ──
-    { id:'streak_7',      icon:'🔥', name:'7-Day Streak',        desc:'Play 7 days in a row',                 check: function(gh,r){ return r && r.currentStreak >= 7; } },
-    { id:'streak_30',     icon:'🔥', name:'Monthly Devotion',    desc:'30-day streak',                        check: function(gh,r){ return r && r.currentStreak >= 30; } },
-    { id:'streak_100',    icon:'🔥', name:'Centurion',           desc:'100-day streak',                       check: function(gh,r){ return r && r.currentStreak >= 100; } },
+    { id:'streak_7',      icon:'🔥', name:'7-Day Streak',        desc:'Play 7 days in a row',                 reward:10, check: function(gh,r){ return r && r.currentStreak >= 7; } },
+    { id:'streak_30',     icon:'🔥', name:'Monthly Devotion',    desc:'30-day streak',                        reward:20, check: function(gh,r){ return r && r.currentStreak >= 30; } },
+    { id:'streak_100',    icon:'🔥', name:'Centurion',           desc:'100-day streak',                       reward:30, check: function(gh,r){ return r && r.currentStreak >= 100; } },
     // ── Economy ──
-    { id:'spent_100',     icon:'💸', name:'Big Spender',         desc:'Spend 100 Sunbeams',                   check: function(gh,r,ledger){ return (ledger.spent||0) >= 100; } },
-    { id:'spent_1000',    icon:'💰', name:'Whale',               desc:'Spend 1000 Sunbeams',                  check: function(gh,r,ledger){ return (ledger.spent||0) >= 1000; } },
+    { id:'spent_100',     icon:'💸', name:'Big Spender',         desc:'Spend 100 Sunbeams',                   reward:10, check: function(gh,r,ledger){ return (ledger.spent||0) >= 100; } },
+    { id:'spent_1000',    icon:'💰', name:'Whale',               desc:'Spend 1000 Sunbeams',                  reward:30, check: function(gh,r,ledger){ return (ledger.spent||0) >= 1000; } },
     // ── Seasons ──
-    { id:'all_seasons',   icon:'🌍', name:'Four Seasons',        desc:'Own plants from all 4 seasons',        check: function(gh){ var s={};gh.forEach(function(p){try{var t=hashToTraits(p.hash);s[t.season%4]=true;}catch(e){}});return Object.keys(s).length>=4; } },
+    { id:'all_seasons',   icon:'🌍', name:'Four Seasons',        desc:'Own plants from all 4 seasons',        reward:10, check: function(gh){ var s={};gh.forEach(function(p){try{var t=hashToTraits(p.hash);s[t.season%4]=true;}catch(e){}});return Object.keys(s).length>=4; } },
     // ── Companions ──
-    { id:'first_companion',icon:'🐾', name:'Animal Friend',      desc:'Own a Plant with a companion',         check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);return t.companion<60&&(t.companion%5===0);}catch(e){return false;} }); } },
-    { id:'first_mythic_c', icon:'🪲', name:'Mythic Bond',        desc:'Own a Toad or Cicada companion',       check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18>=0xD0;}catch(e){return false;} }); } },
-    { id:'beholder',       icon:'👁', name:'The Beholder',       desc:'Own The Beholder companion (0.39%)',   check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18===0xFF;}catch(e){return false;} }); } },
+    { id:'first_companion',icon:'🐾', name:'Animal Friend',      desc:'Own a Plant with a companion',         reward:5,  check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);return t.companion<60&&(t.companion%5===0);}catch(e){return false;} }); } },
+    { id:'first_mythic_c', icon:'🪲', name:'Mythic Bond',        desc:'Own a Toad or Cicada companion',       reward:20, check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18>=0xD0;}catch(e){return false;} }); } },
+    { id:'beholder',       icon:'👁', name:'The Beholder',       desc:'Own The Beholder companion (0.39%)',   reward:30, check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18===0xFF;}catch(e){return false;} }); } },
     // ── Mutations ──
-    { id:'first_mutation', icon:'⚡', name:'Mutant',              desc:'Own a mutated Plant',                  check: function(gh){ return gh.some(function(p){ try{var hb16=parseInt(p.hash.slice(32,34),16);return hb16>=0xD0;}catch(e){return false;} }); } },
-    { id:'glitch_owner',   icon:'🌀', name:'Glitch in the Matrix',desc:'Own a Glitch mutation (0xF0+)',       check: function(gh){ return gh.some(function(p){ try{var hb16=parseInt(p.hash.slice(32,34),16);return hb16>=0xF0;}catch(e){return false;} }); } },
+    { id:'first_mutation', icon:'⚡', name:'Mutant',              desc:'Own a mutated Plant',                  reward:5,  check: function(gh){ return gh.some(function(p){ try{var hb16=parseInt(p.hash.slice(32,34),16);return hb16>=0xD0;}catch(e){return false;} }); } },
+    { id:'glitch_owner',   icon:'🌀', name:'Glitch in the Matrix',desc:'Own a Glitch mutation (0xF0+)',       reward:20, check: function(gh){ return gh.some(function(p){ try{var hb16=parseInt(p.hash.slice(32,34),16);return hb16>=0xF0;}catch(e){return false;} }); } },
     // ── Synergy (Spec 14 — checked after synergy engine lands) ──
-    { id:'first_synergy',  icon:'✨', name:'Resonance',           desc:'Own a Plant with a synergy bonus',     check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var syn=window.checkSynergies?window.checkSynergies(t):[];return syn.length>0;}catch(e){return false;} }); } },
-    { id:'triple_synergy', icon:'🌟', name:'Triple Resonance',   desc:'Own a Plant with 3+ synergies',        check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var syn=window.checkSynergies?window.checkSynergies(t):[];return syn.length>=3;}catch(e){return false;} }); } }
+    { id:'first_synergy',  icon:'✨', name:'Resonance',           desc:'Own a Plant with a synergy bonus',     reward:5,  check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var syn=window.checkSynergies?window.checkSynergies(t):[];return syn.length>0;}catch(e){return false;} }); } },
+    { id:'triple_synergy', icon:'🌟', name:'Triple Resonance',   desc:'Own a Plant with 3+ synergies',        reward:20, check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var syn=window.checkSynergies?window.checkSynergies(t):[];return syn.length>=3;}catch(e){return false;} }); } }
   ];
 
   function loadAchievements(){
@@ -34373,14 +34377,17 @@ document.addEventListener('keydown', function(e) {
     if (newlyUnlocked.length > 0){
       saveAchievements(unlocked);
       newlyUnlocked.forEach(function(ach){
-        // Grant +25 Sunbeams via the proper earnHashes path
-        if (typeof earnHashes === 'function') earnHashes(25);
+        // Per-achievement Sunbeam reward (5/10/20/30 by difficulty).
+        // 30 Sunbeams = 1 plant — early achievements stack toward earning
+        // the next mint, deeper milestones get richer payouts.
+        var _r = (typeof ach.reward === 'number') ? ach.reward : 5;
+        if (typeof earnHashes === 'function') earnHashes(_r);
         // Silent — no toast. The Sunbeam counter's visible tick is the
         // reward confirmation. Achievement unlock surfaces through the
         // BoS SECRETS tab badge; keeper reads it when they open the book.
         try { if (window._haptic) window._haptic('bloom'); } catch(e){}
         if (window.LW_Log) window.LW_Log.write('achievement_unlock', {
-          id: ach.id, name: ach.name, icon: ach.icon, reward: 25
+          id: ach.id, name: ach.name, icon: ach.icon, reward: _r
         });
         if(typeof gtag!=='undefined') gtag('event','achievement_unlock',{id:ach.id});
       });
@@ -34395,7 +34402,8 @@ document.addEventListener('keydown', function(e) {
   function _showAchToast(ach){
     var t = document.createElement('div');
     t.className = 'ach-toast';
-    t.textContent = ach.icon + '  ' + ach.name + '  +25 ⚡';
+    var _r = (typeof ach.reward === 'number') ? ach.reward : 5;
+    t.textContent = ach.icon + '  ' + ach.name + '  +' + _r + ' ⚡';
     document.body.appendChild(t);
     setTimeout(function(){ t.remove(); }, 3200);
   }
@@ -34406,11 +34414,12 @@ document.addEventListener('keydown', function(e) {
     var unlocked = loadAchievements();
     grid.innerHTML = ACHIEVEMENTS.map(function(ach){
       var cls = unlocked[ach.id] ? 'ach-card unlocked' : 'ach-card';
+      var _r = (typeof ach.reward === 'number') ? ach.reward : 5;
       return '<div class="'+cls+'">' +
         '<div class="ach-icon">'+ach.icon+'</div>' +
         '<div><div class="ach-name">'+ach.name+'</div>' +
         '<div class="ach-desc">'+ach.desc+'</div>' +
-        '<div class="ach-reward">'+( unlocked[ach.id] ? '✓ +25 ⚡ Claimed' : '+25 ⚡ on unlock' )+'</div></div>' +
+        '<div class="ach-reward">'+( unlocked[ach.id] ? '✓ +'+_r+' ⚡ Claimed' : '+'+_r+' ⚡ on unlock' )+'</div></div>' +
         '</div>';
     }).join('');
   }
