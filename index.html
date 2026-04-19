@@ -42933,7 +42933,9 @@ function _selectHexPlant(idx,p){
   var _mFert=_mInv.fertilizer||0;
   var _mulchTitle=_mFert>=1?'Spend 1 fertilizer for +24h lifespan + 1 EA':'Need 1 fertilizer (compost a greenhouse plant)';
   var _mulchCls=_mFert>=1?'':' locked';
-  var _mulchBtn='<button class="hi-action-btn'+_mulchCls+'"'+(_mFert>=1?' onclick="window._hexAction(\'mulch\')"':'')+' title="'+_mulchTitle+'">&#127807; MULCH ('+_mFert+')</button>';
+  // Locked MULCH gets a toast onclick instead of bare display so the
+  // tap surfaces the requirement. Was a silent fail before.
+  var _mulchBtn='<button class="hi-action-btn'+_mulchCls+'" onclick="'+(_mFert>=1?'window._hexAction(\'mulch\')':'window._toast&&window._toast(\'\\ud83d\\udd12 Need 1 fertilizer. Compost a greenhouse plant to get one.\')')+'" title="'+_mulchTitle+'">&#127807; MULCH ('+_mFert+')</button>';
   // BLESSING button — Rare+ plants generate a daily Dew gift, claimable
   // once per plant per day per player. Available on own AND stranger plants.
   var _blessBtn='';
@@ -42951,7 +42953,7 @@ function _selectHexPlant(idx,p){
       // pointerup + pointercancel are enough for cleanup.
       _pruneBtn='<button class="hi-action-btn hi-prune-hold" data-hold-action="prune" data-hold-ms="5000" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)" title="Hold 5 seconds, costs 3 sunbeams"><span class="hi-water-fill"></span><span class="hi-water-label">\u2702 HOLD TO PRUNE (\u22923\u26a1)</span></button>';
     } else {
-      _pruneBtn='<button class="hi-action-btn locked" title="Need 3 sunbeams to prune">\u2702 PRUNE (need 3\u26a1)</button>';
+      _pruneBtn='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'\\ud83d\\udd12 Need 3 Sunbeams to prune.\')" title="Need 3 sunbeams to prune">\u2702 PRUNE (need 3\u26a1)</button>';
     }
   }
   // Phoenix Bloom removed (companion retired). Placeholder kept so downstream
