@@ -43386,7 +43386,13 @@ window._hexAction=function(action){
   var p=_hexSelPlant;
   if(action==='water'){
     if(p.own){
-      // Water own plant — once per 24h, resets decayAt to full lifespan.
+      // Water own plant — once per 24h per plant, costs Dew + restores
+      // PARTIAL lifespan by rarity. Director redesign 2026-04-19:
+      // "they need to not be able to just full heal each plant each
+      // day because then there's no pressure to keep things alive."
+      // Higher rarity = more expensive + less restore, forcing players
+      // to combine items, stranger tends, and companion abilities to
+      // keep the legendary stuff alive.
       var _wild=_getWild();
       var _hit=null,_hitIdx=-1;
       for(var _wi=0;_wi<_wild.length;_wi++){
@@ -43399,15 +43405,51 @@ window._hexAction=function(action){
         var _hrs=Math.ceil(24-(Date.now()-_lastWater)/3600000);
         _toast('Already watered. Back in '+_hrs+'h.');return;
       }
-      _hit.lastWateredAt=Date.now();
-      _hit.decayAt=Date.now()+_hit.lifespanMs;
-      _wild[_hitIdx]=_hit;
-      _saveWild(_wild);
-      _toast('\ud83d\udca7 Watered! Lifespan reset to full.');
-      if(window._haptic)_haptic('bloom');
-      if(window._trackQuest)_trackQuest('plantsWatered',1);
-      if(window.LW_Log)window.LW_Log.write('wild_watered',{hash:p.hash});
-      try { if (window.LW_Events) window.LW_Events.incCounter('rainfall', 3, 'Rainfall', 'day'); } catch(e){}
+      // Resolve rarity → cost + restore. Falls through to Common values
+      // if the grade lookup fails for any reason.
+      var _wTraits=null;try{_wTraits=window.hashToTraits(p.hash);if(_hit.generation)_wTraits.chimerGen=_hit.generation;if(_hit.breedLayers)_wTraits.breedLayers=_hit.breedLayers;if(_hit.compostLayers)_wTraits.compostLayers=_hit.compostLayers;}catch(e){}
+      var _wGrade=(window.getTerraGrade&&_wTraits)?(window.getTerraGrade(_wTraits).name||'Common'):'Common';
+      var _waterTable={Common:{cost:0,h:12},Uncommon:{cost:2,h:10},Rare:{cost:5,h:8},Epic:{cost:10,h:6},Legendary:{cost:20,h:4},Mythic:{cost:35,h:3},Cosmic:{cost:60,h:2}};
+      var _wt=_waterTable[_wGrade]||_waterTable.Common;
+      var _cost=_wt.cost, _addH=_wt.h;
+      var _myDew=window.getTotalDew?window.getTotalDew():0;
+      if(_cost>0 && _myDew<_cost){_toast('Need '+_cost+' Dew to water this '+_wGrade+' plant. You have '+_myDew+'.');return;}
+      var _doOwnWater=function(){
+        if(_cost>0 && window.spendDew && !window.spendDew(_cost)){_toast('Could not spend Dew.');return;}
+        _hit.lastWateredAt=Date.now();
+        // Cap restore at the plant's max lifespan — never push decayAt
+        // past now+lifespanMs even if multiple sources stack.
+        var _addMs=_addH*3600000;
+        var _maxDecay=Date.now()+(_hit.lifespanMs||7*86400000);
+        _hit.decayAt=Math.min(_maxDecay,(_hit.decayAt||Date.now())+_addMs);
+        _wild[_hitIdx]=_hit;
+        _saveWild(_wild);
+        _toast('\ud83d\udca7 +'+_addH+'h lifespan'+(_cost>0?' ('+_cost+' Dew spent)':''));
+        if(window._haptic)_haptic('bloom');
+        if(window._trackQuest)_trackQuest('plantsWatered',1);
+        if(window.LW_Log)window.LW_Log.write('wild_watered',{hash:p.hash,addH:_addH,cost:_cost});
+        try { if (window.LW_Events) window.LW_Events.incCounter('rainfall', 3, 'Rainfall', 'day'); } catch(e){}
+        try { if (window._lwWaterStreakGrant) window._lwWaterStreakGrant(); } catch(e){}
+      };
+      // Confirmation modal — surface exact mechanics so players know
+      // the trade and can plan around it.
+      var _bodyOwn=
+        '<div style="font-family:DM Mono,monospace;font-size:0.62rem;line-height:1.7;color:var(--cream);text-align:left;">'+
+        '<div style="color:var(--gold);margin-bottom:6px;"><b>'+_wGrade+' plant</b></div>'+
+        '<div>\ud83d\udca7 <b>+'+_addH+'h lifespan</b></div>'+
+        '<div>'+(_cost>0?'\ud83d\udca7 Cost: <b>'+_cost+' Dew</b> (you have '+_myDew+')':'\u2728 Free')+'</div>'+
+        '<div style="color:var(--muted);margin-top:6px;">Once per 24h per plant. Higher rarity restores less \u2014 you\'ll need items, stranger tends, and companion abilities to keep the rarest alive.</div>'+
+        '</div>';
+      if (window._lwConfirm) {
+        window._lwConfirm({
+          title: '\ud83d\udca7 WATER YOUR '+_wGrade.toUpperCase()+'?',
+          body: _bodyOwn,
+          yes: _cost>0?('WATER ('+_cost+'\ud83d\udca7)'):'WATER',
+          no: 'CANCEL'
+        }, _doOwnWater);
+      } else {
+        _doOwnWater();
+      }
     }else{
       // Water a stranger's plant — budgeted kindness, +2h via shared marker.
       var wk='lw_water_budget',wb={};try{wb=JSON.parse(localStorage.getItem(wk)||'{}');}catch(e){}
