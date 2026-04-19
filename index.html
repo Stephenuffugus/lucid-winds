@@ -40902,6 +40902,18 @@ function _drop(pl){
         // pick a different plant. No toast needed.
         if(targetPlant&&targetPlant._changeChallenger)return;
         if(!targetPlant){_toast('Contest cancelled.');return;}
+        // ── COST GATE — consume 1 SOW the moment the player commits to
+        // an attack, win OR lose. Prevents the "spam 2% odds until you
+        // win" exploit. Director: "if you try to uproot a plant... it
+        // costs one of your sows for the day." Mark _pendingDrop so
+        // _finishDrop doesn't double-consume on win.
+        _drops++; _saveState(); _afRecordDrop();
+        var _sowsLeft = _getMaxDrops() - _drops;
+        if (window._toast) {
+          setTimeout(function(){
+            _toast('\ud83c\udf31 Attack committed \u00b7 1 sow used \u00b7 ' + _sowsLeft + ' left today');
+          }, 100);
+        }
         // Shellgourd — zone locked, no roll even happens. Burns the gourd.
         if(window.LW_ITEMS&&window.LW_ITEMS.hasShellgourd&&window.LW_ITEMS.hasShellgourd(targetPlant.hash)){
           window.LW_ITEMS.consumeShellgourd(targetPlant.hash);
@@ -41001,7 +41013,10 @@ function _drop(pl){
               if (window._LW_companionXpBumpIfOwned) window._LW_companionXpBumpIfOwned([36], 1);
             } catch(e){}
             var _disp={ownerUid:targetPlant.ownerUid,hash:targetPlant.hash,grade:targetPlant.grade||'Common',name:targetPlant.name||'Plant'};
-            _pendingDrop={plant:pl,lat:la,lng:lo,wild:wild,displaced:_disp};
+            // _sowAlreadyConsumed: SOW was charged at contest commit
+            // (see cost gate above). _finishDrop must skip its own
+            // increment so this win isn't double-charged.
+            _pendingDrop={plant:pl,lat:la,lng:lo,wild:wild,displaced:_disp,_sowAlreadyConsumed:true};
             _finishDrop('none');
           };
           if(window._showContestRoll){
@@ -41732,7 +41747,12 @@ function _finishDrop(defenderGame){
   var pd=_pendingDrop;_pendingDrop=null;
   var pl=pd.plant,la=pd.lat,lo=pd.lng,wild=pd.wild;
 
-  _drops++;_saveState();_afRecordDrop();
+  // Skip SOW consumption if already charged at contest commit. Without
+  // this guard, contest wins would pay double (once at commit, once
+  // here on the placement that follows the win).
+  if (!pd._sowAlreadyConsumed) {
+    _drops++;_saveState();_afRecordDrop();
+  }
   // Attacker-side Snail — if player just won a contest with a Snail
   // plant (displaced is set, meaning they contested to win), seed
   // snailWins=1 on the plant's data so it starts accumulating. Also
