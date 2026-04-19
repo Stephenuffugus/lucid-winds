@@ -57665,27 +57665,293 @@ function _step33(){
   watch();
 }
 
-// ═══ STEP 34: final lore send-off + plant-XP unlock ═══
+// ═══ STEP 34: BoS lore line — bridges into Phase 6 (Wild loop) ═══
 function _step34(){
   _setStep(34);
   _dialog(
     '<span style="color:var(--gold);">You are the sun of your garden.</span><br><br>' +
-    'Your attention is what grows here. Every plant you keep alive, in your greenhouse and in the world, is a record of a moment you paid attention.<br><br>' +
-    'Go make beautiful things.',
-    'THANK YOU',function(){
+    'Your attention grows everything here. Plants you keep alive, in your greenhouse and in the world, are records of moments you paid attention.<br><br>' +
+    '<b style="color:var(--gold);">Now \u2014 the Wild.</b>',
+    'CONTINUE',function(){_clear();setTimeout(_step35,400);},'center');
+}
+
+// ════════════════════════════════════════════════════════════════
+// PHASE 6 — Wild loop walkthrough (steps 35-42, Apr 19)
+// Director spec: "direct through the book a little... walk them
+// through dropping a plant in the wild... mock duel they're
+// guaranteed to win... show them the forage button and walk them
+// through an easy forage game."
+// ════════════════════════════════════════════════════════════════
+
+// Mock plant lifecycle — inject 3 weak plants in a nearby hex so
+// step 38 can guarantee the player encounters a contest. Mock owner
+// is '__tutorial_mock__' so we can filter cleanly on tutorial end.
+var _LW_TUT_MOCK_OWNER = '__tutorial_mock__';
+var _LW_TUT_MOCK_HASH_PREFIX = 'tut00ade';
+function _lwTutInjectMockHex(){
+  if (!window.FG_Wild || !window._uLat || !window._uLng) return null;
+  if (localStorage.getItem('lw_tut_mocks_v1') === '1') return null;
+  try {
+    var wild = JSON.parse(localStorage.getItem('fg_wild_plants') || '[]');
+    // Place mocks ~70m east + 50m north of player so the hex is
+    // visible and reachable inside collect range. ZONE_SIZE 0.001
+    // is roughly 110m; offset 0.0005 ≈ 55m.
+    var mLat = _uLat + 0.0005;
+    var mLng = _uLng + 0.0007;
+    var mocks = [];
+    for (var i=0;i<3;i++){
+      // Build a 64-char hex hash starting with our prefix so
+      // _rollTakeover patch can detect mocks reliably.
+      var suffix = '';
+      for (var j=0;j<56;j++){suffix += '0123456789abcdef'.charAt(Math.floor(Math.random()*16));}
+      var mHash = _LW_TUT_MOCK_HASH_PREFIX + suffix;
+      mocks.push({
+        hash: mHash,
+        lat: mLat,
+        lng: mLng,
+        ea: 1,
+        own: false,
+        ownerUid: _LW_TUT_MOCK_OWNER,
+        ownerName: 'Wisp Keeper',
+        date: new Date().toISOString(),
+        days: 0,
+        pollen: 0,
+        status: 'Wild',
+        defenderGame: 'set',
+        lifespanMs: 24*3600000,
+        decayAt: Date.now() + 24*3600000,
+        _tutorialMock: true
+      });
+    }
+    // Mocks are stored as own:false in fg_wild_plants so the wild
+    // map renderer treats them as stranger plants. They show up as
+    // gold hex polygons next to the player.
+    var newWild = wild.concat(mocks);
+    localStorage.setItem('fg_wild_plants', JSON.stringify(newWild));
+    localStorage.setItem('lw_tut_mocks_v1', '1');
+    localStorage.setItem('lw_tut_mock_lat', String(mLat));
+    localStorage.setItem('lw_tut_mock_lng', String(mLng));
+    // Force a redraw so the player sees the new hex appear.
+    try{if(window.FG_Wild&&FG_Wild._drawZoneHexes)FG_Wild._drawZoneHexes(true);}catch(e){}
+    return {lat: mLat, lng: mLng};
+  } catch(e) { return null; }
+}
+
+// Patch _rollTakeover so contests against tutorial mocks are
+// guaranteed wins. Restored to original in _step42 cleanup.
+function _lwTutPatchRoll(){
+  if (window._LW_TUT_ROLL_ORIG) return; // already patched
+  if (typeof window._rollTakeover !== 'function') return;
+  window._LW_TUT_ROLL_ORIG = window._rollTakeover;
+  window._rollTakeover = function(att, def, opts){
+    try {
+      if (def && def.hash && def.hash.indexOf(_LW_TUT_MOCK_HASH_PREFIX) === 0) {
+        // Mock target — return a guaranteed-win roll shape that the
+        // dice modal can still render normally.
+        var attEA = (att && att.ea) || 8;
+        return {
+          attEA: attEA, defEA: 1,
+          attRoll: 11, defRoll: 3,
+          attComp: 0, defComp: 0,
+          attWeather: 0, defMoonwake: 0,
+          defHerd: 0, defSilk: 0, attHeron: 0,
+          defRooted: 0, attSwift: 0, defMyco: 0,
+          attTotal: attEA + 11, defTotal: 1 + 3,
+          attackerWins: true, itemsApplied: opts || {}
+        };
+      }
+    } catch(e) {}
+    return window._LW_TUT_ROLL_ORIG.apply(this, arguments);
+  };
+}
+
+// Cleanup mocks + restore real roll. Called on step 42 + on tutorial
+// abort/skip safety nets so mock plants don't pollute the live map.
+function _lwTutCleanupMocks(){
+  try {
+    var wild = JSON.parse(localStorage.getItem('fg_wild_plants') || '[]');
+    var cleaned = [];
+    for (var i=0;i<wild.length;i++){
+      var w = wild[i];
+      if (w && w._tutorialMock) continue;
+      if (w && w.ownerUid === _LW_TUT_MOCK_OWNER) continue;
+      if (w && w.hash && w.hash.indexOf(_LW_TUT_MOCK_HASH_PREFIX) === 0) continue;
+      cleaned.push(w);
+    }
+    localStorage.setItem('fg_wild_plants', JSON.stringify(cleaned));
+    localStorage.removeItem('lw_tut_mocks_v1');
+    localStorage.removeItem('lw_tut_mock_lat');
+    localStorage.removeItem('lw_tut_mock_lng');
+    if (window._LW_TUT_ROLL_ORIG) {
+      window._rollTakeover = window._LW_TUT_ROLL_ORIG;
+      window._LW_TUT_ROLL_ORIG = null;
+    }
+    try{if(window.FG_Wild&&FG_Wild._drawZoneHexes)FG_Wild._drawZoneHexes(true);}catch(e){}
+  } catch(e) {}
+}
+window._lwTutCleanupMocks = _lwTutCleanupMocks;
+
+// ═══ STEP 35: Wild tab intro — switch tab + inject mocks ═══
+function _step35(){
+  _setStep(35);
+  try{if(window.switchTab)switchTab('wild');}catch(e){}
+  setTimeout(function(){
+    _lwTutInjectMockHex();
+    _lwTutPatchRoll();
+    _dialog(
+      'This is <span style="color:var(--gold);">the Wild.</span><br><br>' +
+      'Your plants live out here in the real world \u2014 they earn pollen, generate dew, and breed with their neighbors.<br><br>' +
+      'Time to plant your first one.',
+      'SHOW ME',function(){_clear();setTimeout(_step36,400);},'center');
+  }, 700);
+}
+
+// ═══ STEP 36: spotlight SOW button + wait for tap ═══
+function _step36(){
+  _setStep(36);
+  var sow = document.getElementById('dfb');
+  if(!sow){setTimeout(_step38,500);return;}
+  try{_spotlight&&_spotlight(sow);}catch(e){}
+  _dialog(
+    'Tap the <span style="color:var(--gold);">SOW</span> button to pick a plant from your greenhouse and place it.',
+    '',null,'bottom');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  // Wait for the SOW carousel to open (source = wild-place)
+  var polls=0;
+  var watch=function(){
+    var m=document.getElementById('plant-gallery-modal');
+    if(m&&m.classList.contains('open')&&document.body.classList.contains('lw-carousel-wild-mode')){
+      _clear();setTimeout(_step37,400);return;
+    }
+    if(polls<600){polls++;setTimeout(watch,500);}
+    else {setTimeout(_step38,400);}
+  };
+  watch();
+}
+
+// ═══ STEP 37: in carousel — spotlight PLACE HERE ═══
+function _step37(){
+  _setStep(37);
+  var place=document.getElementById('gallery-place-btn')||document.querySelector('.pgm-wild-place');
+  _dialog(
+    'Pick a plant and tap <span style="color:var(--gold);">PLACE HERE</span> to drop it.<br><br>The hex with three Wisp Keeper plants nearby is your training ground \u2014 plant near them.',
+    '',null,'bottom');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  if(place){try{_spotlight&&_spotlight(place);}catch(e){}}
+  // Wait for the contest inspector to open (full hex) OR for plant
+  // to land in wild (empty hex). Either way, advance.
+  var polls=0;
+  var watch=function(){
+    var ci=document.getElementById('lw-contest-inspector');
+    if(ci){_clear();setTimeout(_step38,400);return;}
+    // Carousel closed without contest = empty hex placement = skip duel
+    var m=document.getElementById('plant-gallery-modal');
+    var carouselOpen=m&&m.classList.contains('open');
+    if(!carouselOpen&&!document.body.classList.contains('lw-carousel-wild-mode')){
+      // Player closed without placing OR placed in empty hex
+      _clear();setTimeout(_step39,600);return;
+    }
+    if(polls<1200){polls++;setTimeout(watch,500);}
+    else {setTimeout(_step39,400);}
+  };
+  watch();
+}
+
+// ═══ STEP 38: contest inspector + dice walkthrough ═══
+function _step38(){
+  _setStep(38);
+  _dialog(
+    'A <span style="color:var(--gold);">contest!</span> The hex is full \u2014 pick a defender to challenge. Tap any of the Wisp Keeper plants.<br><br>This will cost <b>1 sow</b>, win or lose.',
+    '',null,'bottom');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  // Wait for the dice modal to open
+  var polls=0;
+  var watch=function(){
+    var dm=document.getElementById('lw-contest-roll');
+    if(dm){
       _clear();
+      setTimeout(function(){
+        _dialog(
+          'Tap <span style="color:var(--gold);">\ud83c\udfb2 TAP TO ROLL</span> when you\'re ready.<br><br>You roll <b>2d6 + your EA</b> against theirs. Their EA is 1 \u2014 you\'ll win this one.',
+          '',null,'top');
+        if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+      }, 400);
+      // Wait for verdict to appear, then advance
+      var subPolls=0;
+      var watchVerdict=function(){
+        var v=document.getElementById('lwcr-verdict');
+        if(v&&v.style.opacity==='1'){_clear();setTimeout(_step39,2200);return;}
+        if(subPolls<240){subPolls++;setTimeout(watchVerdict,500);}
+        else {setTimeout(_step39,400);}
+      };
+      watchVerdict();
+      return;
+    }
+    if(polls<600){polls++;setTimeout(watch,500);}
+    else {setTimeout(_step39,400);}
+  };
+  watch();
+}
+
+// ═══ STEP 39: post-contest explanation ═══
+function _step39(){
+  _setStep(39);
+  _dialog(
+    'Your plant lives in the world now.<br><br>' +
+    '\u2728 It earns <b>pollen per hour</b> based on its rarity.<br>' +
+    '\ud83d\udca7 It generates <b>dew</b> over time.<br>' +
+    '\ud83c\udf38 It cross-pollinates with nearby plants \u2014 you\'ll never know what surprises pop up around your rare ones.',
+    'CONTINUE',function(){_clear();setTimeout(_step40,400);},'center');
+}
+
+// ═══ STEP 40: spotlight FORAGE button ═══
+function _step40(){
+  _setStep(40);
+  var forage = document.getElementById('ffb');
+  if(!forage){setTimeout(_step41,400);return;}
+  try{_spotlight&&_spotlight(forage);}catch(e){}
+  // Force the forage button to look ready so the player can tap it.
+  try{forage.classList.add('ready');}catch(e){}
+  _dialog(
+    'Plants in the wild create <span style="color:var(--gold);">feral seeds</span> shaped by local DNA + the biome you\'re in.<br><br>Tap the <b>FORAGE</b> button to find one.',
+    '',null,'bottom');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  // Watch for the forage card minigame to open
+  var polls=0;
+  var watch=function(){
+    var fc=document.querySelector('.lw-forage-card')||document.getElementById('lw-forage-overlay')||document.querySelector('[class*="forage"]');
+    if(fc){_clear();setTimeout(_step41,500);return;}
+    if(polls<600){polls++;setTimeout(watch,500);}
+    else {setTimeout(_step41,400);}
+  };
+  watch();
+}
+
+// ═══ STEP 41: forage walkthrough + rarity scaling ═══
+function _step41(){
+  _setStep(41);
+  _dialog(
+    'A foraging round opens with cards \u2014 some hide a seed, some are misses.<br><br>' +
+    'Rarer seed potential = <b>more cards on the board + more attempts</b> to claim it.<br><br>Play through this one and see what you find.',
+    'GOT IT',function(){_clear();setTimeout(_step42,400);},'center');
+}
+
+// ═══ STEP 42: wrap + cleanup + _done ═══
+function _step42(){
+  _setStep(42);
+  _dialog(
+    '<span style="color:var(--gold);">That\'s the loop.</span><br><br>' +
+    'Play games, mint plants, place them in the wild, tend what you love, forage what you find. Everything else \u2014 breeding, climate, contests, the Book of Secrets \u2014 will fill in as you play.<br><br>' +
+    'Go make beautiful things.',
+    'BEGIN',function(){
+      _clear();
+      // Final cleanup — remove the tutorial mocks from the live wild
+      // map and restore the original _rollTakeover.
+      _lwTutCleanupMocks();
       // Tutorial complete — release the plant-XP lock so future mints,
       // blooms, and collection milestones grant XP normally.
       try{localStorage.setItem('lw_plant_xp_unlocked','1');}catch(e){}
-      // Drop the WHAT NOW gate now that the player has finished the
-      // walkthrough.
       try{document.body.classList.remove('lw-tutorial-pending');}catch(e){}
-      // Pre-stamp the four TAB_TEACHES flags so the post-tutorial tab-teach
-      // modal doesn't double-explain Greenhouse / Games / Nursery / Wild
-      // mechanics the player just walked through. _maybeShowTabTeach gates
-      // on lw_tut !== 'done', which becomes true the moment _done() runs
-      // below — without these flags, the next switchTab to any tab would
-      // fire the redundant teach.
       try{
         localStorage.setItem('lw_tab_teach_greenhouse','1');
         localStorage.setItem('lw_tab_teach_game','1');
