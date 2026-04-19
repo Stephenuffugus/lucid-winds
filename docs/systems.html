@@ -59,24 +59,53 @@ footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border);color
 <body>
 
 <h1>Lucid Winds · Systems Reference</h1>
-<p class="intro">Every ability, item, class, keyword, and companion in one place. Last updated <strong>2026-04-19</strong> (Apr 19 family pass + items balance + 3-way LLM cross-check).</p>
+<p class="intro">Every ability, item, class, keyword, companion, synergy, secret, and event in one place. Last updated <strong>2026-04-19</strong> (full rebuild reflecting all current shipped systems + draft proposals).</p>
 
 <div class="toc">
-<a href="#draft" style="background:rgba(232,160,191,0.18);border-color:#e8a0bf;color:#e8a0bf;">🆕 Apr 19 Draft Proposals</a>
-<a href="#keywords">Keywords (shipped)</a>
+<a href="#shipped" style="background:rgba(122,179,86,0.18);border-color:#7ab356;color:#7ab356;">🚀 Recently Shipped (Apr 19)</a>
+<a href="#draft" style="background:rgba(232,160,191,0.18);border-color:#e8a0bf;color:#e8a0bf;">🆕 Draft Proposals</a>
+<a href="#keywords">Keywords (5)</a>
 <a href="#companions">Companions (48)</a>
 <a href="#signatures">Signatures (14 shipped)</a>
 <a href="#families">Family Skills (T1/T2/T3)</a>
 <a href="#temperaments">Temperaments</a>
 <a href="#items">Items (17)</a>
+<a href="#water">Water Economy</a>
+<a href="#contest">Contest / Dueling</a>
+<a href="#pollen">Pollen Rates by Rarity</a>
+<a href="#achievements">Achievements (28)</a>
+<a href="#synergies">Synergies (60)</a>
+<a href="#phenotypes">Phenotypes (12)</a>
+<a href="#triggers">Interaction Triggers / Secrets (27)</a>
 <a href="#classes">Classes</a>
 <a href="#tree">Keeper's Tree</a>
 <a href="#pots">Pots / Boosters / Class Items</a>
-<a href="#contest">Contest Math</a>
 <a href="#leveling">Leveling Archetypes</a>
 <a href="#caps">Stacking Caps</a>
 <a href="#flags">Balance Flags</a>
 </div>
+
+<h2 id="shipped" style="color:#7ab356;">🚀 Recently Shipped (Apr 19)</h2>
+<p class="meta">Live on lucidwinds.com today.</p>
+<table>
+<tr><th>System</th><th>What changed</th></tr>
+<tr><td><strong>Water economy</strong></td><td>Free, +12h flat lifespan, once per 24h per plant. Confirmation modal shows the trade. Hardiness comes from EA/companion/climate, not rarity tier.</td></tr>
+<tr><td><strong>Common badge quiet</strong></td><td>"Water me" badge suppressed for Common-rarity own plants. Dying badge (&lt;20%) still fires for all rarities.</td></tr>
+<tr><td><strong>Pollen multiplier</strong></td><td>Already in code (line 39553): {Common:1, Uncommon:2, Rare:4, Epic:6, Legendary:9, Mythic:12, Cosmic:15} pollen/hr.</td></tr>
+<tr><td><strong>SOW-cost gate on contests</strong></td><td>Picking a contest target now charges 1 SOW immediately (win, lose, or item-block). Kills the 2% spam exploit. Cancel = free.</td></tr>
+<tr><td><strong>Manual TAP TO ROLL dice</strong></td><td>Contest reveal now waits for player tap. Concise explanation under tagline. CONTINUE button hidden until verdict lands.</td></tr>
+<tr><td><strong>Achievement reward tiers</strong></td><td>5/10/20/30 Sunbeams by difficulty (was flat 25). Early: 5 Sunbeams (4-6 stack to a plant). Legendary: 30 Sunbeams (one plant per chase moment).</td></tr>
+<tr><td><strong>_lwLevel unified with RANKS</strong></td><td>Single source of truth. Foraging gate + 16 other canSee gates now agree with the visible level. Closes "L4 but can't forage" bug.</td></tr>
+<tr><td><strong>Locked button toasts</strong></td><td>TEND, CUTTING, MULCH, PRUNE all now toast unlock requirements when tapped while locked. No more silent fails.</td></tr>
+<tr><td><strong>Stranger water modal</strong></td><td>Confirmation prompt with exact mechanics (+2h, +5 XP, X of 5 daily, distance) before the water fires.</td></tr>
+<tr><td><strong>Map UX</strong></td><td>Default zoom 17. _drawZoneHexes throttled to 250ms (no more stutter). 3-state hex visual (your/wild + dashed-when-open). "YOU ARE HERE" pill at top showing slot status.</td></tr>
+<tr><td><strong>Wild button positions</strong></td><td>Book at 180 / Backpack 295 / SOW+FORAGE 415 (Wild tab only). Greenhouse/nursery base positions restored.</td></tr>
+<tr><td><strong>Tutorial step 18 fix</strong></td><td>"Now go see what you got" prompt fires immediately, not after greenhouse polling. Fast players no longer skip to BREED.</td></tr>
+<tr><td><strong>BoS clickability heal</strong></td><td>_bosHeal now also re-adds lw-tut-bos-on body class if step ≥ 32. Self-heals every 10s + on tab switch — no more refresh-to-fix.</td></tr>
+<tr><td><strong>SVG pendant clip</strong></td><td>Foliage clip 77→90 so Wisteria/Angel's Trumpet/Lantern/Fuchsia/Bleeding Heart can dangle without being silently cut.</td></tr>
+<tr><td><strong>Mushroom substrate z-order</strong></td><td>Now renders AFTER the pot like its spec says. Was hidden behind pot rim.</td></tr>
+<tr><td><strong>Ready to bloom celeb</strong></td><td>Removed "X ready to bloom!" suffix from BOARD CLEARED progress line.</td></tr>
+</table>
 
 <h2 id="draft" style="color:#e8a0bf;">🆕 Apr 19 Draft Proposals — awaiting Director sign-off</h2>
 <p class="meta">From the family-by-family ability pass + 3-way critique (ChatGPT, Gemini, internal sub-agents). Every item below is DRAFT — nothing here is shipped yet.</p>
@@ -489,8 +518,223 @@ Future pass: add signature creatures for each climate vector, more economy flavo
 • Leveling archetypes (all creatures still time-bond only; 6 archetypes designed but not wired)
 </div>
 
+<h2 id="water">Water Economy</h2>
+<p class="meta">Final design (Apr 19). Hardiness comes from per-plant stats, not the rarity tier.</p>
+<table>
+<tr><th>Action</th><th>Cost</th><th>Effect</th><th>Cooldown</th></tr>
+<tr><td>Water own plant</td><td>Free</td><td>+12h lifespan (capped at max)</td><td>Once per 24h per plant</td></tr>
+<tr><td>Water stranger plant</td><td>Free + budget</td><td>+2h lifespan (shared marker), +5 XP to you</td><td>5 of 5 daily total across all stranger plants</td></tr>
+<tr><td>Tend stranger (L5+)</td><td>Free</td><td>+6h lifespan, +2 Dew, +10 XP</td><td>6h cooldown per plant</td></tr>
+<tr><td>Mass water (rain ability)</td><td>Dew/plant unless L3 rain</td><td>Reset all watered plants to full lifespan</td><td>Daily uses cap</td></tr>
+<tr><td>Mulch (own plant)</td><td>1 fertilizer</td><td>+24h lifespan + 1 EA</td><td>Per-plant only</td></tr>
+</table>
+<div class="note">Common badge nag suppressed — Common plants quietly accrue pollen until vitality &lt; 20%, then ONE "💔 dying" alert. Higher rarities still get the routine "💧 water me" badge at &lt; 60% vitality + 24h+ since last water. Pollen multiplier rewards rarity passively (see below).</div>
+
+<h2 id="contest">Contest / Dueling System</h2>
+<p class="meta">When you SOW a plant into a full hex (3 of 3 slots), you challenge a defender. Manual dice roll + cost gate (Apr 19).</p>
+<h3>Flow</h3>
+<table>
+<tr><th>Step</th><th>What happens</th></tr>
+<tr><td>1. Pick target</td><td>Inspector shows all 3 defenders with EA + companion + estimated win %.</td></tr>
+<tr><td>2. Commit</td><td><strong>1 SOW consumed</strong>, win or lose. Cancel/Change Challenger = free.</td></tr>
+<tr><td>3. Items resolve</td><td>Shellgourd → contest blocked, no roll. Mulch Ward → auto-fail. Bramble/Moonwake stamped on roll. Torch/Dust Storm stamp attacker side.</td></tr>
+<tr><td>4. Reveal modal</td><td>EA shown, dice as faded placeholders, <strong>🎲 TAP TO ROLL</strong> button.</td></tr>
+<tr><td>5. Roll</td><td>900ms tumble, dice land, bonus cascade (companion → weather → keywords → vow → items).</td></tr>
+<tr><td>6. Total + verdict</td><td>Counts up, then <strong>UPROOTED!</strong> or <strong>HELD THE LINE</strong>. CONTINUE button.</td></tr>
+</table>
+<h3>The Math (each side)</h3>
+<table>
+<tr><th>Component</th><th>Source</th><th>Range</th></tr>
+<tr><td>Base EA</td><td>plant.ea (computed from traits + age)</td><td>typically 5-25</td></tr>
+<tr><td>Dice roll</td><td>2d6 default; Torch=3d6 keep best 2; Bramble defender=1d6; Snail=2d6 floor-3; Hummingbird=2d(4-9)</td><td>2-12</td></tr>
+<tr><td>Companion temperament</td><td>guardian +2def · forager +3att · wanderer +2att · mystic +1att/+1def · symbiote +1def</td><td>0-3</td></tr>
+<tr><td>Weather</td><td>Sun → +3 attacker</td><td>0-3</td></tr>
+<tr><td>Heron precisionStrike</td><td>+1 attacker EA, 2× displaced harvest</td><td>0-1</td></tr>
+<tr><td>Cicada herdImmunity</td><td>+1 defender EA per ally in 500m, max +4</td><td>0-4</td></tr>
+<tr><td>Garden Spider silkTrap</td><td>+3 defender EA</td><td>0 or 3</td></tr>
+<tr><td>Rooted keyword</td><td>+2 defender EA</td><td>0 or 2</td></tr>
+<tr><td>Swift keyword</td><td>+2 attacker EA</td><td>0 or 2</td></tr>
+<tr><td>Moonwake item</td><td>+3 defender EA next contest</td><td>0 or 3</td></tr>
+<tr><td>Mycorrhizal (PARKED)</td><td>+0.5 defender per other owned wild plant, max +4</td><td>0-4 (revert pending)</td></tr>
+</table>
+
+<h2 id="pollen">Pollen Rates by Rarity</h2>
+<p class="meta">Passive pollen earned per hour from each placed wild plant. From index.html:39553. Rarity = passive reward.</p>
+<table>
+<tr><th>Rarity</th><th>Pollen/hr</th><th>Multiplier vs Common</th></tr>
+<tr><td><span class="tier t-C">C</span> Common</td><td>1</td><td>1×</td></tr>
+<tr><td><span class="tier t-U">U</span> Uncommon</td><td>2</td><td>2×</td></tr>
+<tr><td><span class="tier t-R">R</span> Rare</td><td>4</td><td>4×</td></tr>
+<tr><td><span class="tier t-E">E</span> Epic</td><td>6</td><td>6×</td></tr>
+<tr><td><span class="tier t-L">L</span> Legendary</td><td>9</td><td>9×</td></tr>
+<tr><td><span class="tier t-M">M</span> Mythic</td><td>12</td><td>12×</td></tr>
+<tr><td><span class="tier t-X">COSMIC</span></td><td>15</td><td>15×</td></tr>
+</table>
+<div class="note">Modifiers stack on top of the base rate: Firefly nightBloom 2× at night · season pollenMod (peak/opposite) · Cicada chorus pollenBonus · pollenFlow tree node · Lush keyword (+1 XP per cross-poll, separate channel).</div>
+
+<h2 id="achievements">Achievements (28) — Tiered Rewards</h2>
+<p class="meta">Apr 19: Sunbeam reward tiered by difficulty. 30 Sunbeams = 1 plant. Early achievements stack to a free mint; legendary milestones each grant one plant outright.</p>
+<input type="text" class="search" id="achSearch" placeholder="Search achievements..." oninput="filterTable('achTable',this.value)">
+<table id="achTable">
+<thead><tr><th>Icon</th><th>Name</th><th>Trigger</th><th>Reward</th></tr></thead>
+<tbody>
+<tr><td>🌱</td><td>First Harvest</td><td>Bloom your first Plant</td><td>5 ⚡</td></tr>
+<tr><td>🏛</td><td>Full Row</td><td>Collect 10 Plants</td><td>10 ⚡</td></tr>
+<tr><td>🏠</td><td>Half House</td><td>Collect 30 Plants</td><td>20 ⚡</td></tr>
+<tr><td>🏰</td><td>Full House</td><td>Fill all 60 greenhouse slots</td><td>30 ⚡</td></tr>
+<tr><td>⭐</td><td>Rare Find</td><td>Bloom a Rare+ Plant</td><td>10 ⚡</td></tr>
+<tr><td>💎</td><td>Epic Discovery</td><td>Own an Epic+ Plant</td><td>20 ⚡</td></tr>
+<tr><td>👑</td><td>Living Legend</td><td>Own a Legendary+ Plant</td><td>30 ⚡</td></tr>
+<tr><td>🌌</td><td>Cosmic Gardener</td><td>Own a Cosmic Plant</td><td>30 ⚡</td></tr>
+<tr><td>🧬</td><td>Hybridist</td><td>Bloom a Cross-Bred Plant</td><td>10 ⚡</td></tr>
+<tr><td>🧪</td><td>Prolific Breeder</td><td>Breed 5 Plants</td><td>10 ⚡</td></tr>
+<tr><td>🔬</td><td>Genetic Pioneer</td><td>Breed 20 Plants</td><td>20 ⚡</td></tr>
+<tr><td>🐉</td><td>Deep Chimera</td><td>Own a Gen 3+ Chimera</td><td>20 ⚡</td></tr>
+<tr><td>🍂</td><td>Return to Earth</td><td>Compost your first Plant</td><td>5 ⚡</td></tr>
+<tr><td>♻️</td><td>Cycle of Life</td><td>Compost 10 Plants</td><td>10 ⚡</td></tr>
+<tr><td>👸</td><td>Crown Bearer</td><td>Own a Plant with Mycelial Crown</td><td>20 ⚡</td></tr>
+<tr><td>🌳</td><td>Deep Roots</td><td>Own a Plant with 3+ compost layers</td><td>20 ⚡</td></tr>
+<tr><td>🔥</td><td>7-Day Streak</td><td>Play 7 days in a row</td><td>10 ⚡</td></tr>
+<tr><td>🔥</td><td>Monthly Devotion</td><td>30-day streak</td><td>20 ⚡</td></tr>
+<tr><td>🔥</td><td>Centurion</td><td>100-day streak</td><td>30 ⚡</td></tr>
+<tr><td>💸</td><td>Big Spender</td><td>Spend 100 Sunbeams</td><td>10 ⚡</td></tr>
+<tr><td>💰</td><td>Whale</td><td>Spend 1000 Sunbeams</td><td>30 ⚡</td></tr>
+<tr><td>🌍</td><td>Four Seasons</td><td>Own plants from all 4 seasons</td><td>10 ⚡</td></tr>
+<tr><td>🐾</td><td>Animal Friend</td><td>Own a Plant with a companion</td><td>5 ⚡</td></tr>
+<tr><td>🪲</td><td>Mythic Bond</td><td>Own a Toad or Cicada companion</td><td>20 ⚡</td></tr>
+<tr><td>👁</td><td>The Beholder</td><td>Own The Beholder companion (0.39%)</td><td>30 ⚡</td></tr>
+<tr><td>⚡</td><td>Mutant</td><td>Own a mutated Plant</td><td>5 ⚡</td></tr>
+<tr><td>🌀</td><td>Glitch in the Matrix</td><td>Own a Glitch mutation (0xF0+)</td><td>20 ⚡</td></tr>
+<tr><td>✨</td><td>Resonance</td><td>Own a Plant with a synergy bonus</td><td>5 ⚡</td></tr>
+<tr><td>🌟</td><td>Triple Resonance</td><td>Own a Plant with 3+ synergies</td><td>20 ⚡</td></tr>
+</tbody>
+</table>
+
+<h2 id="synergies">Synergies (60) — Trait Combos That Boost Plants</h2>
+<p class="meta">Each synergy fires when two specific traits coexist on the same plant. Up to 3 displayed per plant, max +4 EA total. From index.html:8603. Many synergies will surface in the Book of Secrets when discovered.</p>
+<input type="text" class="search" id="synSearch" placeholder="Search synergies..." oninput="filterTable('synTable',this.value)">
+<table id="synTable">
+<thead><tr><th>#</th><th>Name</th><th>Theme</th><th>EA</th><th>Trigger combo</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Frozen Flame</td><td>elemental</td><td>+2</td><td>flower 67 + leaf 61</td></tr>
+<tr><td>2</td><td>Magma Heart</td><td>elemental</td><td>+2</td><td>substrate 17 (Obsidian) + aura 20</td></tr>
+<tr><td>3</td><td>Permafrost</td><td>elemental</td><td>+1</td><td>Winter season + leaf 67</td></tr>
+<tr><td>4</td><td>Ember Drift</td><td>elemental</td><td>+2</td><td>flower 66 + Phoenix Ash substrate</td></tr>
+<tr><td>5</td><td>Stormglass</td><td>elemental</td><td>+2</td><td>stem 22 (Wireform) + aura 19</td></tr>
+<tr><td>6</td><td>Sunstroke</td><td>elemental</td><td>+1</td><td>Summer season + aura 6</td></tr>
+<tr><td>7</td><td>Monsoon Bloom</td><td>elemental</td><td>+1</td><td>Spring season + flower 3</td></tr>
+<tr><td>8</td><td>Bonfire Vigil</td><td>elemental</td><td>+1</td><td>Cauldron pot + Firefly</td></tr>
+<tr><td>9</td><td>Scorched Earth</td><td>elemental</td><td>+2</td><td>substrate 57 + stem 12</td></tr>
+<tr><td>10</td><td>Static Charge</td><td>elemental</td><td>+1</td><td>stem 6 + leaf 60</td></tr>
+<tr><td>11</td><td>Symbiosis</td><td>nature</td><td>+1</td><td>Mushroom Compost + Snail</td></tr>
+<tr><td>12</td><td>Pollinator's Crown</td><td>nature</td><td>+2</td><td>flower 10 + Hummingbird</td></tr>
+<tr><td>13</td><td>Old Growth</td><td>nature</td><td>+1</td><td>stem 4 + substrate 9 (Living Moss)</td></tr>
+<tr><td>14</td><td>Hedge Witch</td><td>nature</td><td>+2</td><td>Skull pot + Pangolin</td></tr>
+<tr><td>15</td><td>Nectar Tide</td><td>nature</td><td>+1</td><td>flower 2 + Butterfly</td></tr>
+<tr><td>16</td><td>Web Garden</td><td>nature</td><td>+2</td><td>aura 17 + Spider</td></tr>
+<tr><td>17</td><td>Bamboo Grove</td><td>nature</td><td>+1</td><td>stem 13 + leaf 4</td></tr>
+<tr><td>18</td><td>Fern Hollow</td><td>nature</td><td>+1</td><td>stem 14 + leaf 6</td></tr>
+<tr><td>19</td><td>Autumn Harvest</td><td>nature</td><td>+1</td><td>Autumn season + leaf 7</td></tr>
+<tr><td>20</td><td>Coral Reef</td><td>nature</td><td>+1</td><td>stem 9 + substrate 8 (Pebble)</td></tr>
+<tr><td>21</td><td>Stardust Crown</td><td>cosmic</td><td>+2</td><td>Stardust substrate + flower 15 (Golden Lotus)</td></tr>
+<tr><td>22</td><td>Meteor Garden</td><td>cosmic</td><td>+2</td><td>Meteorite + aura 8</td></tr>
+<tr><td>23</td><td>Lunar Tide</td><td>cosmic</td><td>+2</td><td>leaf 63 + aura 7</td></tr>
+<tr><td>24</td><td>Aurora Veil</td><td>cosmic</td><td>+1</td><td>aura 5 + flower 5</td></tr>
+<tr><td>25</td><td>Seed Nexus</td><td>cosmic</td><td>+2</td><td>aura 9 + Stardust pot 57</td></tr>
+<tr><td>26</td><td>Clock Garden</td><td>cosmic</td><td>+1</td><td>flower 69 + stem 3</td></tr>
+<tr><td>27</td><td>Holographic Prism</td><td>cosmic</td><td>+2</td><td>Holographic mutation + leaf 9</td></tr>
+<tr><td>28</td><td>Stained Vigil</td><td>cosmic</td><td>+2</td><td>aura 35 + stem 23 (Iron Trunk)</td></tr>
+<tr><td>29</td><td>Void Gate</td><td>cosmic</td><td>+2</td><td>flower 68 + aura 29</td></tr>
+<tr><td>30</td><td>Neon Pulse</td><td>cosmic</td><td>+1</td><td>Neon mutation + stem 7</td></tr>
+<tr><td>31</td><td>Miasma Pitcher</td><td>dark</td><td>+2</td><td>aura 18 + Pitcher flower 34</td></tr>
+<tr><td>32</td><td>Bone Altar</td><td>dark</td><td>+1</td><td>Bone pot 51 + Crystal substrate</td></tr>
+<tr><td>33</td><td>Titan's Maw</td><td>dark</td><td>+2</td><td>flower 36 + Toad</td></tr>
+<tr><td>34</td><td>Fossil Memory</td><td>dark</td><td>+1</td><td>Fossil mutation + Fossil substrate</td></tr>
+<tr><td>35</td><td>Shadow Loom</td><td>dark</td><td>+2</td><td>Silhouette mutation + leaf 68</td></tr>
+<tr><td>36</td><td>Dragon Keep</td><td>mythical</td><td>+2</td><td>flower 35 + Stardust pot</td></tr>
+<tr><td>37</td><td>Alchemist's Rose</td><td>mythical</td><td>+1</td><td>Golden pot + flower 1</td></tr>
+<tr><td>38</td><td>Beholder's Gaze</td><td>mythical</td><td>+2</td><td>Beholder + leaf 62</td></tr>
+<tr><td>39</td><td>Cicada Chorus</td><td>mythical</td><td>+2</td><td>Cicada + stem 10</td></tr>
+<tr><td>40</td><td>Wise Owl Roost</td><td>mythical</td><td>+1</td><td>Owl + stem 5</td></tr>
+<tr><td>41</td><td>Mycorrhizal Web</td><td>nature</td><td>+2</td><td>Mycelium substrate + leaf ≥60</td></tr>
+<tr><td>42</td><td>Carnivore Bog</td><td>nature</td><td>+2</td><td>Mushroom Compost + Pitcher flower</td></tr>
+<tr><td>43</td><td>Dew Collector</td><td>nature</td><td>+1</td><td>Living Moss + leaf 22</td></tr>
+<tr><td>44</td><td>Sun Carpet</td><td>nature</td><td>+1</td><td>Desert Sand + Summer</td></tr>
+<tr><td>45</td><td>Mushroom Shelter</td><td>nature</td><td>+1</td><td>leaf 6 + Mushroom Sprite</td></tr>
+<tr><td>46</td><td>Volcanic Orchid</td><td>nature</td><td>+2</td><td>Volcanic Rock + flower 10</td></tr>
+<tr><td>47</td><td>Moonlit Lotus</td><td>cosmic</td><td>+2</td><td>flower 3 + Moonstone Dust</td></tr>
+<tr><td>48</td><td>Frost Fern</td><td>elemental</td><td>+1</td><td>leaf 6 + Winter</td></tr>
+<tr><td>49</td><td>Obsidian Mirror</td><td>dark</td><td>+2</td><td>Obsidian + Glass Stem mutation</td></tr>
+<tr><td>50</td><td>Butterfly Garden</td><td>nature</td><td>+1</td><td>Butterfly + flower 2</td></tr>
+<tr><td>51</td><td>Toad Stool</td><td>nature</td><td>+2</td><td>Toad + Mushroom Compost</td></tr>
+<tr><td>52</td><td>Terrarium World</td><td>nature</td><td>+1</td><td>Hydroponic pot + companion 20-31</td></tr>
+<tr><td>53</td><td>Meteor Orchid</td><td>cosmic</td><td>+2</td><td>Meteorite + flower 10</td></tr>
+<tr><td>54</td><td>Final Chorus</td><td>mythical</td><td>+3</td><td>Phoenix Ash + Cicada</td></tr>
+<tr><td>55</td><td>Prism Scarab</td><td>cosmic</td><td>+2</td><td>Holographic mutation + Crystal Matrix</td></tr>
+<tr><td>56</td><td>Lantern Firefly</td><td>nature</td><td>+1</td><td>Lantern pot + Firefly</td></tr>
+<tr><td>57</td><td>Needle Rain</td><td>nature</td><td>+1</td><td>leaf 9 + Autumn</td></tr>
+<tr><td>58</td><td>Dragon Egg Hatch</td><td>mythical</td><td>+2</td><td>Bone pot + Dragon Arum flower</td></tr>
+<tr><td>59</td><td>Jellyfish Drift</td><td>cosmic</td><td>+2</td><td>Jellyfish + aura 5-10</td></tr>
+<tr><td>60</td><td>Will-o-Wisp Trail</td><td>dark</td><td>+2</td><td>Will-o-Wisp + Mycelium substrate</td></tr>
+</tbody>
+</table>
+
+<h2 id="phenotypes">Phenotypes (12) — Plant Personality Reveals</h2>
+<p class="meta">Each plant has a hidden phenotype derived from hash byte 23. Revealed when a complementary-season neighbor plants within ~200m. Surfaces in greenhouse cards + breed previews.</p>
+<table>
+<tr><th>Name</th><th>Color</th><th>Flavor</th></tr>
+<tr><td>Verdant</td><td><span style="color:#7ab356">●</span></td><td>Quick to root in any soil.</td></tr>
+<tr><td>Resilient</td><td><span style="color:#c8a84b">●</span></td><td>Bends but does not break.</td></tr>
+<tr><td>Whimsical</td><td><span style="color:#e8a0bf">●</span></td><td>Blooms when no one is watching.</td></tr>
+<tr><td>Etheric</td><td><span style="color:#a0c4e8">●</span></td><td>Drinks more moonlight than sun.</td></tr>
+<tr><td>Patient</td><td><span style="color:#8a9178">●</span></td><td>Knows the long season.</td></tr>
+<tr><td>Ardent</td><td><span style="color:#d4842a">●</span></td><td>Burns brighter near kin.</td></tr>
+<tr><td>Wandering</td><td><span style="color:#a87850">●</span></td><td>Sends roots toward strangers.</td></tr>
+<tr><td>Crystalline</td><td><span style="color:#c0d0e0">●</span></td><td>Sings to passing wind.</td></tr>
+<tr><td>Feral</td><td><span style="color:#5e8550">●</span></td><td>Refuses to be domesticated.</td></tr>
+<tr><td>Tender</td><td><span style="color:#e8dcc8">●</span></td><td>Lives only in good company.</td></tr>
+<tr><td>Auric</td><td><span style="color:#d4a843">●</span></td><td>Casts a thin gold halo at dusk.</td></tr>
+<tr><td>Briar</td><td><span style="color:#8b2e2e">●</span></td><td>Defends what it loves.</td></tr>
+</table>
+
+<h2 id="triggers">Interaction Triggers / Secrets (27) — Book of Secrets Discoveries</h2>
+<p class="meta">Special events that fire when conditions align. Each carries a riddle (the in-game hint), a check (silent server-side condition), and a reward. Max 1 event/plant/day, 3/player/day, 7-day per-trigger cooldown, 24h min plant age. From index.html:59524.</p>
+<input type="text" class="search" id="trigSearch" placeholder="Search secrets..." oninput="filterTable('trigTable',this.value)">
+<table id="trigTable">
+<thead><tr><th>Name</th><th>Category</th><th>Riddle</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>Prism</td><td>trait</td><td>Fragile light bends where rain meets glass.</td><td>+1 EA, rainbow particle (+5 pollen)</td></tr>
+<tr><td>Moonstone</td><td>trait</td><td>Crystal roots drink silver light.</td><td>Silver glow, 2× pollen until dawn (+15 pollen)</td></tr>
+<tr><td>Canopy Crown</td><td>trait</td><td>The tallest braids reach sunlight first.</td><td>+1 EA permanent for both braided neighbors</td></tr>
+<tr><td>Thornwall</td><td>trait</td><td>Two barbed sentinels share a border.</td><td>Both hexes defended (Hard difficulty min)</td></tr>
+<tr><td>Bloom Mirror</td><td>trait</td><td>Twin flowers face each other and forget which is which.</td><td>Cross-poll reward doubled (+10 pollen)</td></tr>
+<tr><td>Swamp Lantern</td><td>companion</td><td>The toad waits. The firefly answers.</td><td>Both plants glow on map at night (+8 pollen)</td></tr>
+<tr><td>Pollinator Highway</td><td>companion</td><td>The bee and the bird share the road.</td><td>Cross-poll rewards tripled by day (+12 pollen)</td></tr>
+<tr><td>Symbiont</td><td>companion</td><td>Mushroom and root share a secret language.</td><td>EA shared with nearby plants (+1 EA, +5 pollen)</td></tr>
+<tr><td>Lightning Scar</td><td>weather</td><td>The sky writes on the living wood.</td><td>+3 EA OR death (50/50)</td></tr>
+<tr><td>Wind Seed</td><td>weather</td><td>Strong gusts carry what roots cannot hold.</td><td>Free feral spawns 200-500m downwind (+3 pollen)</td></tr>
+<tr><td>Frost Glass</td><td>weather</td><td>Cold makes crystal of the morning dew.</td><td>Permanent seasonal stress immunity (+1 EA)</td></tr>
+<tr><td>Heat Bloom</td><td>weather</td><td>Desert flowers wait for exactly this.</td><td>3× pollen for duration (+20 pollen)</td></tr>
+<tr><td>Vernal Bloom</td><td>season</td><td>The equinox rewards those who arrived prepared.</td><td>Free guaranteed seed at spring equinox (+25 pollen)</td></tr>
+<tr><td>Evergreen</td><td>season</td><td>What survives the coldest night earns the title.</td><td>Plant immune to seasonal mortality (+2 EA, +15 pollen)</td></tr>
+<tr><td>Rainfall</td><td>action</td><td>Ten waters fall from one keeper's hand in a single day.</td><td>Auto-water your wild plants 3 days (+20 pollen)</td></tr>
+<tr><td>Midnight Gardener</td><td>action</td><td>Who waters between the hours of twelve and four?</td><td>Plants generate pollen at night (+10 pollen)</td></tr>
+<tr><td>The Graft</td><td>action</td><td>Breed the same pair twice and see what the second child knows.</td><td>Offspring +2 EA over RNG</td></tr>
+<tr><td>Root Contact</td><td>trait</td><td>Two strangers share the dark beneath.</td><td>First mycelial connection (+10 pollen)</td></tr>
+<tr><td>Deep Network</td><td>trait</td><td>Thirty days of patient roots.</td><td>Mesh reached Deep Network stage (+25 pollen)</td></tr>
+<tr><td>Named Ground</td><td>trait</td><td>When enough gather, the land finds its name.</td><td>First Commons ecosystem (+50 pollen)</td></tr>
+<tr><td>Complete Cycle</td><td>season</td><td>Spring, summer, autumn, winter — all present.</td><td>All four seasons in greenhouse (+15 pollen)</td></tr>
+<tr><td>Green Thumb</td><td>action</td><td>Fifty points of influence. The land knows your name.</td><td>Reached Gardener territory rank (+20 pollen)</td></tr>
+<tr><td>The Elder</td><td>trait</td><td>Three cycles complete. What remains is wiser.</td><td>First plant bred 3+ times (+10 pollen)</td></tr>
+<tr><td>Night Watcher</td><td>weather</td><td>Some things only bloom when the sun is gone.</td><td>Played midnight to 4 AM (+5 pollen)</td></tr>
+<tr><td>Storm Chaser</td><td>weather</td><td>Thunder rolls. The brave stay planted.</td><td>Played during heavy rain (+8 pollen)</td></tr>
+<tr><td>Biodiversity Scout</td><td>action</td><td>Where real flowers grow, rare seeds follow.</td><td>Visited a real-world biodiversity hotspot (+30 pollen)</td></tr>
+<tr><td>Full House (BoS)</td><td>action</td><td>Every slot filled. Every plant unique.</td><td>Greenhouse completely full (+15 pollen)</td></tr>
+</tbody>
+</table>
+
 <footer>
-Lucid Winds Systems Reference · Built 2026-04-18 · <a href="/">Back to game</a>
+Lucid Winds Systems Reference · Rebuilt 2026-04-19 · <a href="/">Back to game</a>
 </footer>
 
 <script>
