@@ -38133,6 +38133,12 @@ function _wildClimateTick(weather) {
     if (typeof t.droughtDays === 'number' && dryDays > t.droughtDays) {
       var overDry = dryDays - t.droughtDays;
       var dD = Math.min(24, overDry * 6);
+      // Worm (idx 52) Tilth signature — soil aerator. Halves drought
+      // damage on this plant's drought vector. Closes one of the 5
+      // climate-vector signature gaps the Apr 18 session flagged.
+      if (t.companion === 52) {
+        dD = Math.round(dD * 0.5);
+      }
       breaches.push({ kind: 'drought', diff: overDry, hours: dD });
       damageH += dD;
     }
