@@ -36143,6 +36143,24 @@ function _getCollectRange(){
   try{if(window.LW_COMPANION){_frMult *= window.LW_COMPANION.getCompanionMult('feralRange');}}catch(e){}
   if(window._LW_capMultiplier) _frMult = window._LW_capMultiplier('feralRange', _frMult);
   range = Math.round(range * _frMult);
+  // Cat (idx 39) Night Eyes signature — at night (8PM-6AM), extend
+  // the forage range so nearby ferals reveal within 200m instead of
+  // the standard 75m. Additive (not multiplicative) so it doesn't
+  // compound with Beholder's ×2 or class bonuses — bumps the
+  // effective floor during the night-tab window, that's it.
+  try {
+    var _gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+    var _hasCat = false;
+    for (var _cki=0;_cki<_gh.length;_cki++){
+      try { var _cat=window.hashToTraits(_gh[_cki].hash); if (_cat && _cat.companion === 39){_hasCat=true;break;} } catch(e){}
+    }
+    if (_hasCat) {
+      var _nightHour = new Date().getHours();
+      if (_nightHour >= 20 || _nightHour < 6) {
+        range = Math.max(range, 200);
+      }
+    }
+  } catch(e){}
   // Expose for UI hooks (scanner-ring tint, feral marker glow, etc.)
   try{
     if(_hasBeholder)document.body.classList.add('lw-has-beholder');
