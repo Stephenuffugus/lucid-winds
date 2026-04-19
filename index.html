@@ -63973,11 +63973,11 @@ window._lwClaimHerbarium = function(id){
       desc:'The wind decides. Carries you to a random real biome hex to forage once.',
       lore:'Release the map to the wind. It carries you somewhere you\u2019d never have chosen \u2014 and that is the gift.',
       usage:'open and release', wired:true },
-    delegateToken: { key:'delegateToken', name:'Delegate Token', category:'remote', rarity:'Epic',
-      art:'assets/items/delegate-token.png', icon:'\ud83e\udd1d',
-      desc:'Send to a friend \u2014 they forage one of your hexes. You split the reward.',
-      lore:'A coin stamped with two clasped vines. Proof that a garden can have more than one keeper.',
-      usage:'open, pick a hex, pick a friend', wired:false }
+    lanternPath: { key:'lanternPath', name:"Lantern Path", category:'remote', rarity:'Epic',
+      art:'assets/items/lantern-path.png', icon:'\ud83c\udfee',
+      desc:'A high-quality remote forage in your current biome. Rare floor.',
+      lore:'A pilgrim\u2019s lantern. Light it, and the path shows three places worth your attention.',
+      usage:'tap USE \u2014 counts 1 of 2 daily remote forages', wired:true }
   };
   window.LW_ITEMS_CATALOG = CATALOG;
 
@@ -64357,6 +64357,27 @@ window._lwClaimHerbarium = function(id){
   }
 
   // ─── Raven's Eye (10km — random DIFFERENT biome) ───
+  // ─── Lantern Path (Epic remote, current biome, RARE-floor grades) ───
+  // Replaces Delegate Token (cut Apr 19 — co-op flow not built). Higher
+  // ceiling than Scrying Stone (Rare floor vs Common floor) to justify
+  // its Epic rarity. Same daily-remote charge cost as the others.
+  function useLantern(){
+    if (count('lanternPath') <= 0) { if(window._toast)window._toast('No Lantern Path in your pouch.'); return false; }
+    _closePanel();
+    var biome = window._lastDetectedBiome || 'suburban';
+    var biomeDef = (window.BIOMES||{})[biome] || {};
+    _scryCinematic('Lantern Path', 'The lantern lights the way through', biome, biomeDef, function(){
+      _runRemoteForage({
+        itemKey:'lanternPath', biomeKey:biome, zonePrefix:'lantern',
+        grades:['Rare','Rare','Rare','Epic','Epic','Legendary'],
+        logType:'lantern_forage',
+        successMsg:'\ud83c\udfee The path opens \u2014 a worthy feral revealed.',
+        failMsg:'The lantern guttered. The path closes.'
+      });
+    });
+    return true;
+  }
+
   function useRaven(){
     if (count('ravenEye') <= 0) { if(window._toast)window._toast('No Raven\u2019s Eye in your pouch.'); return false; }
     _closePanel();
@@ -64524,7 +64545,7 @@ window._lwClaimHerbarium = function(id){
           mulchWard:'useWard', brambleThicket:'useBramble', shellgourd:'useShellgourd', moonwake:'useMoonwake',
           foragersTorch:'useTorch', dustStorm:'useDustStorm', uprootCharm:'useUproot',
           scryingStone:'useScryProper', ravenEye:'useRaven', slowArrow:'useArrow', whisperVine:'useVine',
-          wanderersMap:'useMap'
+          wanderersMap:'useMap', lanternPath:'useLantern'
         };
         var handler = handlerMap[it.key] || null;
         if (handler && !disabled) {
@@ -64557,7 +64578,7 @@ window._lwClaimHerbarium = function(id){
     useLens: useLens, useShard: useShard, useMoss: useMoss, useGlass: useGlass,
     useWard: useWard, useBramble: useBramble, useShellgourd: useShellgourd, useMoonwake: useMoonwake,
     useTorch: useTorch, useDustStorm: useDustStorm, useUproot: useUproot,
-    useScry: useScry, useScryProper: useScryProper, useRaven: useRaven, useArrow: useArrow, useVine: useVine,
+    useScry: useScry, useScryProper: useScryProper, useRaven: useRaven, useArrow: useArrow, useVine: useVine, useLantern: useLantern,
     useMap: useMap,
     _remoteDailyRemaining: _remoteDailyRemaining,
     _confirmWard: _confirmWard, _commitPick: null,
