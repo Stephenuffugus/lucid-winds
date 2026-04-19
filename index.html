@@ -57728,10 +57728,29 @@ function _lwTutInjectMockHex(){
     // gold hex polygons next to the player.
     var newWild = wild.concat(mocks);
     localStorage.setItem('fg_wild_plants', JSON.stringify(newWild));
+    // Also inject a tutorial-only feral seed at the SAME hex so the
+    // step 40 forage walkthrough has something real to forage. Fresh
+    // accounts won't have organic ferals (they spawn from neighbor
+    // plants over time). Tagged with the mock prefix for cleanup.
+    var feralSuffix = '';
+    for (var fj=0;fj<56;fj++){feralSuffix += '0123456789abcdef'.charAt(Math.floor(Math.random()*16));}
+    var feralHash = _LW_TUT_MOCK_HASH_PREFIX + feralSuffix;
+    var ferals = [];try{ferals = JSON.parse(localStorage.getItem('fg_ferals') || '[]');}catch(e){}
+    ferals.push({
+      lat: mLat + 0.00005,
+      lng: mLng + 0.00005,
+      hash: feralHash,
+      date: new Date().toISOString().slice(0,10),
+      collected: false,
+      parentA: _LW_TUT_MOCK_OWNER,
+      parentB: _LW_TUT_MOCK_OWNER,
+      _tutorialMock: true
+    });
+    localStorage.setItem('fg_ferals', JSON.stringify(ferals));
     localStorage.setItem('lw_tut_mocks_v1', '1');
     localStorage.setItem('lw_tut_mock_lat', String(mLat));
     localStorage.setItem('lw_tut_mock_lng', String(mLng));
-    // Force a redraw so the player sees the new hex appear.
+    // Force a redraw so the player sees the new hex + feral marker.
     try{if(window.FG_Wild&&FG_Wild._drawZoneHexes)FG_Wild._drawZoneHexes(true);}catch(e){}
     return {lat: mLat, lng: mLng};
   } catch(e) { return null; }
@@ -57779,6 +57798,19 @@ function _lwTutCleanupMocks(){
       cleaned.push(w);
     }
     localStorage.setItem('fg_wild_plants', JSON.stringify(cleaned));
+    // Clean any leftover tutorial ferals (collected or not).
+    try {
+      var ferals = JSON.parse(localStorage.getItem('fg_ferals') || '[]');
+      var fc = [];
+      for (var fi=0;fi<ferals.length;fi++){
+        var f = ferals[fi];
+        if (f && f._tutorialMock) continue;
+        if (f && f.hash && f.hash.indexOf(_LW_TUT_MOCK_HASH_PREFIX) === 0) continue;
+        if (f && (f.parentA === _LW_TUT_MOCK_OWNER || f.parentB === _LW_TUT_MOCK_OWNER)) continue;
+        fc.push(f);
+      }
+      localStorage.setItem('fg_ferals', JSON.stringify(fc));
+    } catch(e) {}
     localStorage.removeItem('lw_tut_mocks_v1');
     localStorage.removeItem('lw_tut_mock_lat');
     localStorage.removeItem('lw_tut_mock_lng');
