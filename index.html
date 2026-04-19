@@ -6101,6 +6101,19 @@ window._addSwitchTabHook = function(fn){
             b.style.display = 'block';
           }
         } catch(e){}
+        // Defensive: if mid-tutorial AND past step 32 (when BoS is
+        // supposed to be clickable), ensure the lw-tut-bos-on class
+        // is on body. Stephen 2026-04-19 hit a case where step 32
+        // fired but the class addition was lost — refreshing the page
+        // fixed it via the resume code's belt-and-suspenders flag set.
+        // This adds the heal to every interval/tab-switch tick.
+        try {
+          var _tutStep = parseInt(localStorage.getItem('lw_tut') || '0', 10);
+          if (_tutStep >= 32 && document.body.classList.contains('lw-tut-active')
+              && !document.body.classList.contains('lw-tut-bos-on')) {
+            document.body.classList.add('lw-tut-bos-on');
+          }
+        } catch(e){}
       };
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', window._bosHeal);
       else window._bosHeal();
@@ -10310,7 +10323,7 @@ document.addEventListener('keydown', function(e) {
       // Progress bar toward next plant — the KEY addition
       ch += '<div style="margin:0.4rem 0 0.15rem;opacity:0;animation:tierFadeIn 0.4s ease 1s forwards;">';
       ch += '<div style="width:100%;height:8px;background:rgba(42,48,37,0.6);border-radius:4px;overflow:hidden;"><div class="' + (_setNear ? 'near-bloom' : '') + '" style="width:'+_setPct+'%;height:100%;background:linear-gradient(90deg,var(--leaf),var(--sage)' + (_setNear ? ',var(--gold)' : '') + ');border-radius:4px;transition:width 0.8s ease;"></div></div>';
-      ch += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:'+(_setNear?'var(--gold)':'var(--muted)')+';margin-top:0.1rem;">'+_setInPlant+' / '+_setCost+' to next plant'+(_setReady?' \u00b7 <b style="color:var(--gold);">'+_setReady+' ready to bloom!</b>':(_setNear?' \u2014 <b>almost there!</b>':''))+'</div>';
+      ch += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:'+(_setNear?'var(--gold)':'var(--muted)')+';margin-top:0.1rem;">'+_setInPlant+' / '+_setCost+' to next plant'+(_setNear?' \u2014 <b>almost there!</b>':'')+'</div>';
       ch += '</div>';
       // Buttons
       ch += '<div style="margin-top:0.4rem;opacity:0;animation:tierFadeIn 0.4s ease 1.3s forwards;">';
