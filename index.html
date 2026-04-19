@@ -43413,10 +43413,20 @@ window._hexAction=function(action){
       var wk='lw_water_budget',wb={};try{wb=JSON.parse(localStorage.getItem(wk)||'{}');}catch(e){}
       var wt=new Date().toISOString().split('T')[0];if(wb.date!==wt)wb={date:wt,count:0};
       if(wb.count>=5){_toast('No waters left today (5/day).');return;}
+      var _wDistTxt='';
       if(_uLat&&p.lat){
         var _wDist=_dist(_uLat,_uLng,p.lat,p.lng);
         if(_wDist>COLLECT_RANGE){_toast('Walk closer! '+Math.round(_wDist)+'m away.');return;}
+        _wDistTxt=Math.round(_wDist)+'m away';
       }
+      // Confirmation modal — surfaces exact mechanics so players can
+      // coordinate kindness budgets and see the trade clearly.
+      // Stephen 2026-04-19: "Spend x dew and x sunlight to give this
+      // plant 20% health back... that way it can be calculated and
+      // coordinated with players." Costs today are free + budget-only;
+      // showing actual current mechanics for now, can layer Dew/Sunbeam
+      // costs later if the design moves that way.
+      var _doStrangerWater=function(){
       wb.count=(wb.count||0)+1;localStorage.setItem(wk,JSON.stringify(wb));
       try{
         if(_sharedMarkers&&_sharedMarkers[p.hash]&&_sharedMarkers[p.hash].data){
@@ -43447,6 +43457,29 @@ window._hexAction=function(action){
       _toast('\ud83d\udca7 Watered a keeper\u2019s plant. +2h \u00b7 +5 XP. '+(5-wb.count)+' left today.');
       if(window._haptic)_haptic('bloom');
       if(window._trackQuest)_trackQuest('plantsWatered',1);
+      };
+      // Show the confirmation modal with exact mechanics, then run
+      // _doStrangerWater on confirm. Falls through to direct execution
+      // if the confirm helper isn't loaded yet (defensive).
+      var _keeper = p.ownerName || 'a keeper';
+      var _waterLeft = 5 - (wb.count || 0);
+      var _body =
+        '<div style="font-family:DM Mono,monospace;font-size:0.62rem;line-height:1.7;color:var(--cream);text-align:left;">'+
+        '<div style="color:var(--gold);margin-bottom:6px;"><b>' + _keeper + '\u2019s plant</b>' + (_wDistTxt?' \u00b7 <span style="color:var(--muted);">'+_wDistTxt+'</span>':'') + '</div>'+
+        '<div>\ud83d\udca7 <b>+2h lifespan</b> added to this plant</div>'+
+        '<div>\u2728 <b>+5 XP</b> to you</div>'+
+        '<div style="color:var(--muted);margin-top:6px;">Free today \u00b7 ' + _waterLeft + ' of 5 daily waters remaining</div>'+
+        '</div>';
+      if (window._lwConfirm) {
+        window._lwConfirm({
+          title: '\ud83d\udca7 WATER THIS PLANT?',
+          body: _body,
+          yes: 'WATER',
+          no: 'CANCEL'
+        }, _doStrangerWater);
+      } else {
+        _doStrangerWater();
+      }
     }
   }else if(action==='harvest'){
     _toast('Harvest has been retired. Try TEND instead (unlocks at Lv 5).');
