@@ -63913,9 +63913,9 @@ window._lwClaimHerbarium = function(id){
       usage:'tap before a forage', wired:true },
     divinersGlass: { key:'divinersGlass', name:"Diviner\u2019s Glass", category:'foraging', rarity:'Epic',
       art:'assets/items/diviners-glass.png', icon:'\ud83d\udd0d',
-      desc:'One attempt: all your MISS cards count as ELSEWHERE instead.',
+      desc:'For 30 minutes: every MISS card counts as ELSEWHERE instead.',
       lore:'A lens ground from river quartz. Looking through it, every near-miss becomes a clue.',
-      usage:'tap during a forage, before the attempt', wired:true },
+      usage:'tap once \u2014 active for an entire hex session', wired:true },
     // ─── DEFENSE ───
     mulchWard: { key:'mulchWard', name:'Mulch Ward', category:'defense', rarity:'Rare',
       art:'assets/items/mulch-ward.png', icon:'\ud83d\udee1\ufe0f',
@@ -64038,7 +64038,9 @@ window._lwClaimHerbarium = function(id){
   // Diviner's Glass — MISS→ELSEWHERE for the next resolved attempt
   function useGlass(){
     if (!spend('divinersGlass')) { if(window._toast)window._toast('No Diviner\u2019s Glass in your pouch.'); return false; }
-    var p = _loadPending(); p.divinerGlass = true; _savePending(p);
+    // Stamp the activation time so consumeDiviner can enforce the
+    // 30-minute window. Was a bare boolean (1-attempt only).
+    var p = _loadPending(); p.divinerGlass = { startedAt: Date.now() }; _savePending(p);
     if (window._toast) window._toast('\ud83d\udd0d Glass primed. Your next attempt turns MISS into ELSEWHERE.');
     _closePanel();
     return true;
@@ -64155,13 +64157,33 @@ window._lwClaimHerbarium = function(id){
     _savePending(p);
     return fired;
   }
-  // Diviner's Glass consumer — flushed on attempt resolve.
+  // Diviner's Glass — Items audit Apr 19: previously a 1-attempt
+  // assist, which read as Rare-tier value despite being Epic. Now
+  // active for a 30-minute session window — every attempt within
+  // that window benefits, covering an entire hex's worth of plays
+  // and any retries. The pending value carries the activation
+  // timestamp; consumeDiviner returns true while still in window.
   function consumeDiviner(){
     var p = _loadPending();
-    var fired = !!p.divinerGlass;
-    if (fired) delete p.divinerGlass;
-    _savePending(p);
-    return fired;
+    var raw = p.divinerGlass;
+    if (!raw) return false;
+    var startedAt = (typeof raw === 'object') ? raw.startedAt : 0;
+    // Legacy boolean payload from prior versions: treat as just-activated
+    if (typeof raw !== 'object') {
+      p.divinerGlass = { startedAt: Date.now() };
+      _savePending(p);
+      return true;
+    }
+    if (Date.now() - startedAt > 30 * 60 * 1000) {
+      delete p.divinerGlass;
+      _savePending(p);
+      return false;
+    }
+    return true;
+  }
+  function clearDiviner(){
+    var p = _loadPending();
+    if (p.divinerGlass) { delete p.divinerGlass; _savePending(p); }
   }
   // Mulch Ward — player taps a wild plant to ward it (Phase 1: just toggle
   // via a confirm that takes the FIRST of their wild plants; real plant-
@@ -64594,7 +64616,7 @@ window._lwClaimHerbarium = function(id){
     consumeForageQueue: consumeForageQueue,
     consumeContestQueue: consumeContestQueue,
     consumeTetherRarePlus: consumeTetherRarePlus,
-    consumeDiviner: consumeDiviner,
+    consumeDiviner: consumeDiviner, clearDiviner: clearDiviner,
     openPanel: openPanel, _closePanel: _closePanel
   };
 
