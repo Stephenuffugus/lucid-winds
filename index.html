@@ -42978,8 +42978,11 @@ function _selectHexPlant(idx,p){
     actions+=_mulchBtn;
     if(_blessBtn)actions+=_blessBtn;
     if(_pruneBtn)actions+=_pruneBtn;
-    actions+='<button class="hi-action-btn'+(_canTend?'':' locked')+'"'+(_canTend?' onclick="window._hexAction(\'tend\')"':'')+' title="'+(_canTend?'Tend this plant — gives it +6h and grants you Dew':'Unlocks at Keeper Level 5')+'">&#127807; TEND'+(_canTend?'':' &#128274;')+'</button>';
-    actions+='<button class="hi-action-btn gold'+(_canCut?'':' locked')+'"'+(_canCut?' onclick="window._hexAction(\'cutting\')"':'')+' title="'+(_canCut?'Take a cutting — clone seed, parent loses 10% lifespan. One-time per plant':'Unlocks at Keeper Level 15')+'">&#9986; CUTTING'+(_canCut?'':' &#128274;')+'</button>';
+    // Locked buttons get a toast onclick instead of bare display so the
+    // tap surfaces the unlock requirement. Was a silent fail before
+    // (Stephen 2026-04-19: "nothing seems to happen" on cutting tap).
+    actions+='<button class="hi-action-btn'+(_canTend?'':' locked')+'" onclick="'+(_canTend?'window._hexAction(\'tend\')':'window._toast&&window._toast(\'\\ud83d\\udd12 Tending unlocks at Keeper Level 5.\')')+'" title="'+(_canTend?'Tend this plant — gives it +6h and grants you Dew':'Unlocks at Keeper Level 5')+'">&#127807; TEND'+(_canTend?'':' &#128274;')+'</button>';
+    actions+='<button class="hi-action-btn gold'+(_canCut?'':' locked')+'" onclick="'+(_canCut?'window._hexAction(\'cutting\')':'window._toast&&window._toast(\'\\ud83d\\udd12 Cuttings unlock at Keeper Level 15.\')')+'" title="'+(_canCut?'Take a cutting — clone seed, parent loses 10% lifespan. One-time per plant':'Unlocks at Keeper Level 15')+'">&#9986; CUTTING'+(_canCut?'':' &#128274;')+'</button>';
     // Nickname button — lets you label this keeper for easy identification
     if(p.ownerUid){
       var _curNick='';try{_curNick=(JSON.parse(localStorage.getItem('lw_friend_nicks')||'{}'))[p.ownerUid]||'';}catch(e){}
