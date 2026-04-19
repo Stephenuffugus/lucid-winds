@@ -38118,6 +38118,10 @@ function _wildClimateTick(weather) {
     if (typeof t.floodMm === 'number' && weather.rain > t.floodMm) {
       var extraMm = weather.rain - t.floodMm;
       var dF = Math.min(24, Math.ceil(extraMm) * 4);
+      // Koi Fish (idx 71) Flood Born signature — thrives in water.
+      // Halves flood damage. Closes the 5/5 climate-vector loop
+      // (alongside Mammoth/Worm/Pangolin/Scorpion).
+      if (t.companion === 71) dF = Math.round(dF * 0.5);
       breaches.push({ kind: 'flood', diff: Math.round(extraMm * 10) / 10, hours: dF });
       damageH += dF;
     }
