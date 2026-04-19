@@ -37218,19 +37218,30 @@ function _lwHexBadges(zk){
     for(var op=0;op<ownInZone.length;op++){
       var oP=ownInZone[op];
       var v=_getWildVitality(oP);
-      // Pest on your plant — highest urgency
+      // Resolve plant rarity to gate noisy badges. Director 2026-04-19:
+      // "we dont want commons to stress people out or there to be
+      // constant notifications about them." Commons skip the routine
+      // "water me" nudge, but ALL rarities still surface the dying +
+      // pest warnings so abandonment has visible consequences.
+      var _oGrade='Common';
+      try{var _oT=window.hashToTraits(oP.hash);if(oP.generation)_oT.chimerGen=oP.generation;if(oP.breedLayers)_oT.breedLayers=oP.breedLayers;if(oP.compostLayers)_oT.compostLayers=oP.compostLayers;_oGrade=window.getTerraGrade?(window.getTerraGrade(_oT).name||'Common'):'Common';}catch(e){}
+      var _oIsCommon=(_oGrade==='Common');
+      // Pest on your plant — highest urgency, all rarities
       if(oP.pestedAt&&!personalAdded.pest){
         out.push({category:'personal',icon:'\ud83e\udda0',label:'Your plant has pests',priority:10});
         personalAdded.pest=true;
       }
-      // Critical vitality (< 20%)
+      // Critical vitality (< 20%) — all rarities. Stephen explicitly
+      // wants Commons to die if abandoned, so this stays loud.
       if(v.pct<0.2&&!v.dead&&!personalAdded.dying){
         out.push({category:'personal',icon:'\ud83d\udc94',label:'Your plant is dying',priority:9});
         personalAdded.dying=true;
       }
-      // Needs water (> 24h since last water and vitality < 60%)
+      // Needs water (> 24h since last water and vitality < 60%) —
+      // SKIP for Common plants. They quietly accrue pollen until
+      // they're actually dying; no constant nag.
       var lastW=oP.lastWateredAt||0;
-      if(!personalAdded.water&&v.pct<0.6&&Date.now()-lastW>24*3600000){
+      if(!_oIsCommon&&!personalAdded.water&&v.pct<0.6&&Date.now()-lastW>24*3600000){
         out.push({category:'personal',icon:'\ud83d\udca7',label:'Water your plant',priority:7});
         personalAdded.water=true;
       }
