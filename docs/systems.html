@@ -59,12 +59,13 @@ footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border);color
 <body>
 
 <h1>Lucid Winds · Systems Reference</h1>
-<p class="intro">Every ability, item, class, keyword, and companion in one place. Last updated 2026-04-18.</p>
+<p class="intro">Every ability, item, class, keyword, and companion in one place. Last updated <strong>2026-04-19</strong> (Apr 19 family pass + items balance + 3-way LLM cross-check).</p>
 
 <div class="toc">
-<a href="#keywords">Keywords</a>
+<a href="#draft" style="background:rgba(232,160,191,0.18);border-color:#e8a0bf;color:#e8a0bf;">🆕 Apr 19 Draft Proposals</a>
+<a href="#keywords">Keywords (shipped)</a>
 <a href="#companions">Companions (48)</a>
-<a href="#signatures">Signature Abilities (14)</a>
+<a href="#signatures">Signatures (14 shipped)</a>
 <a href="#families">Family Skills (T1/T2/T3)</a>
 <a href="#temperaments">Temperaments</a>
 <a href="#items">Items (17)</a>
@@ -76,6 +77,107 @@ footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border);color
 <a href="#caps">Stacking Caps</a>
 <a href="#flags">Balance Flags</a>
 </div>
+
+<h2 id="draft" style="color:#e8a0bf;">🆕 Apr 19 Draft Proposals — awaiting Director sign-off</h2>
+<p class="meta">From the family-by-family ability pass + 3-way critique (ChatGPT, Gemini, internal sub-agents). Every item below is DRAFT — nothing here is shipped yet.</p>
+
+<h3 style="color:#e8a0bf;">⚠️ 5 Open Decisions for the Director</h3>
+<table>
+<tr><th>#</th><th>Decision</th><th>Recommendation</th></tr>
+<tr><td>A</td><td>Strict <strong>rare = ability</strong> rule? (5 more sigs: Jellyfish, Luna Moth, Wisp, Crane, Flamingo)</td><td><strong>YES</strong> — Gemini + sub-agent both vote yes; rare players will compare notes</td></tr>
+<tr><td>B</td><td><strong>Koi Fish Flood Born</strong> signature? (closes 5/5 climate vector loop)</td><td><strong>YES</strong> — trivial revision, completes the climate-resist build</td></tr>
+<tr><td>C</td><td>6th evergreen keyword? (alternatives: Echoing, Camouflage, Linked, Webbed, Bonded, Tethered)</td><td><strong>PARK</strong> — 5 keywords + signatures already cover the design space; if you must, <em>Camouflage</em> (Gemini) is most distinctive</td></tr>
+<tr><td>D</td><td>First-mint <strong>Common%</strong> spec target — keep 42% goal or accept ~20% as the architecture's natural floor?</td><td><strong>Update spec to 20%</strong> — sims show 42% is mathematically incompatible with the 7-layer architecture without massive rework</td></tr>
+<tr><td>E</td><td><strong>Shellgourd</strong> — buff to zone-wide protection so it's not dominated by Mulch Ward?</td><td><strong>YES</strong> — matches its lore ("the zone itself refuses company"), gives Epic an actual reason to chase</td></tr>
+</table>
+
+<h3 style="color:#e8a0bf;">12 Proposed New Signatures (confirmed)</h3>
+<table>
+<thead><tr><th>Animal</th><th>Family</th><th>Ability</th><th>Mechanic</th></tr></thead>
+<tbody>
+<tr><td>Bee (21)</td><td>pollinators</td><td class="sig">Honey Tax</td><td>Every cross-pollination earns +1 Dew bonus</td></tr>
+<tr><td>Cat (39)</td><td>listeners</td><td class="sig">Night Eyes</td><td>At night (8PM-6AM), nearby ferals (200m) auto-show on map</td></tr>
+<tr><td>Mushroom Sprite (73)</td><td>mycelium</td><td class="sig">Spore Web</td><td>When ANY of your wild plants survives a contest, all OTHER wild plants +0.5 EA for 24h (max +3)</td></tr>
+<tr><td>Worm (52)</td><td>conduits</td><td class="sig">Tilth</td><td>Wild plants take 50% less drought damage</td></tr>
+<tr><td>Pangolin (43)</td><td>guardians</td><td class="sig">Scale Coat</td><td>Wild plants take 50% less wind damage</td></tr>
+<tr><td>Scorpion (48)</td><td>guardians</td><td class="sig">Heatproof</td><td>Wild plants take 50% less heat damage</td></tr>
+<tr><td>Axolotl (47)</td><td>conduits</td><td class="sig">Regrow</td><td>When wild plant dies, recover 50% of harvest reward in Dew</td></tr>
+<tr><td>Scarab Beetle (64)</td><td>scatterers</td><td class="sig">Sacred Roll</td><td>Compost reward bumps one rarity tier (Cosmic stays Cosmic)</td></tr>
+<tr><td>Platypus (40)</td><td>scatterers</td><td class="sig">Static Sense</td><td>Rain or flood at your location → next forage gets +1 attempt</td></tr>
+<tr><td>Raven (75)</td><td>listeners</td><td class="sig">Tongue</td><td>Once daily, your active companion's T2 cooldown is halved</td></tr>
+<tr><td>Ant Trail (65)</td><td>weavers</td><td class="sig">March</td><td>Active wild plant +X EA today, X = floor(steps_today/500), cap +5</td></tr>
+<tr><td>Dragonfly (29)</td><td>wayfinders</td><td class="sig">Air Current</td><td>Active wild plant +1 EA per unique biome visited today, cap +5</td></tr>
+</tbody>
+</table>
+
+<h3 style="color:#e8a0bf;">5 Conditional Signatures — only if Decision A = YES</h3>
+<table>
+<thead><tr><th>Animal</th><th>Family</th><th>Ability</th><th>Mechanic</th></tr></thead>
+<tbody>
+<tr><td>Jellyfish (72)</td><td>conduits</td><td class="sig">Halo Bloom</td><td>When wild plant survives a contest, +3 Dew</td></tr>
+<tr><td>Luna Moth (44)</td><td>pollinators</td><td class="sig">Moon Tide</td><td>Night cross-poll (8PM-6AM) yields +50% pollen</td></tr>
+<tr><td>Will-o-Wisp (79)</td><td>listeners</td><td class="sig">Lead Astray</td><td>In dense zones (3+ players' plants nearby), 25% attacker miss</td></tr>
+<tr><td>Origami Crane (49)</td><td>wayfinders</td><td class="sig">Folded Wishes</td><td>Once weekly, all your wild plants +1 EA for 24h</td></tr>
+<tr><td>Flamingo (69)</td><td>wayfinders</td><td class="sig">Flock Leader</td><td>In zones with 3+ other-player plants, +1 Sunbeam/day</td></tr>
+</tbody>
+</table>
+
+<h3 style="color:#e8a0bf;">Climate Vector Signature Progress (5 vectors)</h3>
+<table>
+<tr><th>Vector</th><th>Animal</th><th>Status</th></tr>
+<tr><td>Cold</td><td>Mammoth — permafrost</td><td>✅ Shipped</td></tr>
+<tr><td>Drought</td><td>Worm — Tilth</td><td>🆕 Proposed</td></tr>
+<tr><td>Wind</td><td>Pangolin — Scale Coat</td><td>🆕 Proposed</td></tr>
+<tr><td>Heat</td><td>Scorpion — Heatproof</td><td>🆕 Proposed</td></tr>
+<tr><td>Flood</td><td>Koi Fish — Flood Born</td><td>❓ Decision B (recommend YES)</td></tr>
+</table>
+
+<h3 style="color:#e8a0bf;">Items — 3 Proposed Gap-fills + 1 Rebalance</h3>
+<table>
+<tr><th>Item</th><th>Tier · Cat</th><th>Mechanic</th><th>Why</th></tr>
+<tr><td>Loam Memory</td><td><span class="tier t-L">L</span> foraging</td><td>One feral hex this week guaranteed Mythic-tier; pity timer</td><td>Fills Legendary chase tier in foraging</td></tr>
+<tr><td>Heart Wood</td><td><span class="tier t-L">L</span> defense</td><td>All wild plants protected 24h, weekly cap</td><td>Fills Legendary chase tier in defense</td></tr>
+<tr><td>Pollen Storm</td><td><span class="tier t-E">E</span> offense</td><td>Next 3 contests: defender companion bonus = 0</td><td>Fills missing Epic Offense slot; counters Pollinator engine (per Gemini)</td></tr>
+<tr><td>Shellgourd 🥥 (rebalance)</td><td><span class="tier t-E">E</span> defense</td><td>BUFF: zone-wide protection (was 1 plant) — blocks ALL contests in zone for 48h</td><td>Currently dominated by Mulch Ward; lore + mechanic align after fix</td></tr>
+</table>
+
+<h3 style="color:#e8a0bf;">Per-Family Diversification Summary</h3>
+<table>
+<tr><th>Family</th><th>Current sigs</th><th>Proposed +sigs</th><th>Total after</th></tr>
+<tr><td>Scatterers (5)</td><td>1 (Raccoon)</td><td>+2 (Platypus, Scarab)</td><td>3 of 5</td></tr>
+<tr><td>Conduits (8)</td><td>2 (Snail, Dart Frog)</td><td>+2 (Axolotl, Worm) — or +3 with Koi Flood Born + Jellyfish strict</td><td>4-5 of 8</td></tr>
+<tr><td>Mycelium (4)</td><td>0</td><td>+1 (Mushroom Sprite)</td><td>1 of 4</td></tr>
+<tr><td>Pollinators (6)</td><td>2 (Butterfly, Hummingbird)</td><td>+1 (Bee) or +2 (Luna Moth strict)</td><td>3-4 of 6</td></tr>
+<tr><td>Weavers (6)</td><td>1 (Garden Spider)</td><td>+1 (Ant Trail)</td><td>2 of 6</td></tr>
+<tr><td>Guardians (8)</td><td>3 (Toad, Porcupine, Turtle)</td><td>+2 (Pangolin, Scorpion)</td><td>5 of 8</td></tr>
+<tr><td>Listeners (9)</td><td>3 (Firefly, Beholder, Cicada)</td><td>+2 (Cat, Raven) or +3 (Wisp strict)</td><td>5-6 of 9</td></tr>
+<tr><td>Wayfinders (9)</td><td>2 (Mammoth, Heron)</td><td>+1 (Dragonfly) or +3 (Crane, Flamingo strict)</td><td>3-5 of 9</td></tr>
+<tr><td><strong>Total</strong></td><td><strong>14</strong></td><td><strong>+12 = 26 (or +17 = 31 strict)</strong></td><td>~52% of 50 named animals</td></tr>
+</table>
+
+<h3 style="color:#e8a0bf;">Mycorrhizal Keyword Status</h3>
+<div class="note"><strong>Director feedback Apr 19:</strong> Mycorrhizal name is unpronounceable. Combined with the recommendation to PARK the 6th keyword entirely, the cleanest path is to drop it. The Mycorrhizal swap diff currently uncommitted in working tree just becomes obsolete when the diversification pass ships.<br><br>If a 6th keyword IS desired, simpler-named alternatives that fit the same network concept: <strong>Linked / Webbed / Bonded / Tethered / Knit / Woven</strong>. Stronger 6th-slot candidates from outside teams: <strong>Echoing</strong> (ChatGPT — 10% chance to repeat last effect) or <strong>Camouflage</strong> (Gemini — 24h invisibility on Wild map to non-allies).</div>
+
+<h3 style="color:#e8a0bf;">Cross-team Convergence — these were locked by ALL teams independently</h3>
+<table>
+<tr><th>Idea</th><th>Source</th><th>Action</th></tr>
+<tr><td>Strict rare = ability rule</td><td>Gemini explicit, Game Designer agent vote</td><td>Lock as Decision A=YES</td></tr>
+<tr><td>Hard +10 stat ceiling per contest</td><td>Gemini failsafe + Architect agent flag</td><td>Add as global cap when sigs land</td></tr>
+<tr><td>Trigger syntax: [Trigger] → [Effect] → [Cap]</td><td>Both ChatGPT + Gemini</td><td>Adopt as ability authoring grammar</td></tr>
+<tr><td>Visual signal per keyword (procedural SVG hook)</td><td>Gemini + Player agent ("passive numbers" critique)</td><td>Phase 2 polish — wire after abilities land</td></tr>
+<tr><td>isSubAction flag (Butterfly auto-pollinate can't infinitely chain)</td><td>Gemini failsafe</td><td>Critical safety pattern — implement before Pollinator engine ships</td></tr>
+</table>
+
+<h3 style="color:#e8a0bf;">New Ideas Worth Stealing (from outside teams)</h3>
+<table>
+<tr><th>Idea</th><th>Source</th><th>Why it matters</th></tr>
+<tr><td><strong>The World Tree</strong> (Exodia Assembly)</td><td>Gemini</td><td>Climate-resist build (5 of 5 vectors) on one hex over a week → drops guaranteed Mythic seed + permanently locks hex. Late-game win condition that emerges from existing systems.</td></tr>
+<tr><td>Vigor / Root Weight terminology</td><td>BOTH outside teams</td><td>Replaces "Attacking EA / Defending EA" — massive clarity upgrade</td></tr>
+<tr><td>Map garbage collection</td><td>Gemini</td><td>Inactive plants auto-compost after 48h — solves wild map clutter</td></tr>
+<tr><td>Cluster rule — 5+ plants in same area = -25% effectiveness</td><td>ChatGPT</td><td>Anti-clustering balance lever; counters defender-stack zone domination</td></tr>
+<tr><td>Counter-item-per-engine pattern</td><td>Gemini</td><td>Every overpowered combo gets a specific breaker item (already aligns with my Pollen Storm proposal)</td></tr>
+</table>
+
 
 <h2 id="keywords">Evergreen Keywords (6)</h2>
 <p class="meta">Combinable tags attached to most companions. Shipped 2026-04-18.</p>
