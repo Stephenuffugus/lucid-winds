@@ -38103,6 +38103,9 @@ function _wildClimateTick(weather) {
     if (weather.temp > t.heatMax) {
       var over = weather.temp - t.heatMax;
       var dH = Math.min(24, Math.ceil(over) * 6);
+      // Scorpion (idx 48) Heatproof signature — desert specialist.
+      // Halves heat damage on this plant. Closes the heat vector.
+      if (t.companion === 48) dH = Math.round(dH * 0.5);
       breaches.push({ kind: 'heat', diff: Math.round(over * 10) / 10, hours: dH });
       damageH += dH;
     }
@@ -38124,6 +38127,9 @@ function _wildClimateTick(weather) {
       if (windMph > t.windMax) {
         var overMph = windMph - t.windMax;
         var dG = Math.min(24, Math.ceil(overMph / 5) * 6);
+        // Pangolin (idx 43) Scale Coat signature — armored scales
+        // shed wind shear. Halves wind damage. Closes the wind vector.
+        if (t.companion === 43) dG = Math.round(dG * 0.5);
         breaches.push({ kind: 'wind', diff: Math.round(overMph * 10) / 10, hours: dG });
         damageH += dG;
       }
