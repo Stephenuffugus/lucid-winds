@@ -40623,6 +40623,7 @@ window._showContestRoll = function(roll, attackerPlant, defenderPlant, onDone){
   h+='<div style="text-align:center;margin-bottom:0.9rem;">';
   h+= '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.22em;color:var(--muted);margin-bottom:3px;">\u2694\ufe0f CONTEST FOR THE HEX</div>';
   h+= '<div style="font-family:Playfair Display,serif;font-size:0.95rem;color:var(--gold);font-style:italic;">The dice decide.</div>';
+  h+= '<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:var(--muted);letter-spacing:0.04em;margin-top:6px;line-height:1.5;">Each side rolls 2d6, then adds EA, companion bonuses, and item buffs.<br>Highest total wins.</div>';
   h+='</div>';
   h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:0.4rem;margin-bottom:0.9rem;">';
   h+= '<div style="flex:1;text-align:center;min-width:0;">'+plantPortrait(attackerPlant);
@@ -40714,7 +40715,10 @@ window._showContestRoll = function(roll, attackerPlant, defenderPlant, onDone){
   h+=   '<div id="lwcr-deftot" style="font-family:Playfair Display,serif;font-size:1.3rem;color:var(--gold);text-align:center;font-weight:700;">0</div></div>';
   h+='</div>';
   h+='<div id="lwcr-verdict" style="text-align:center;opacity:0;margin-bottom:0.9rem;min-height:1px;"></div>';
-  h+='<button id="lwcr-continue" style="display:block;width:100%;padding:14px;border-radius:10px;border:1.5px solid rgba(200,168,75,0.45);background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(74,124,53,0.1));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.14em;cursor:pointer;min-height:52px;">CONTINUE</button>';
+  // ROLL button — player triggers the dice tumble. Hidden after the
+  // first tap; CONTINUE replaces it once the verdict lands.
+  h+='<button id="lwcr-roll" style="display:block;width:100%;padding:16px;border-radius:10px;border:1.5px solid rgba(200,168,75,0.6);background:linear-gradient(180deg,rgba(200,168,75,0.32),rgba(122,179,86,0.16));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.18em;cursor:pointer;min-height:56px;box-shadow:0 4px 16px rgba(200,168,75,0.18),inset 0 1px 0 rgba(232,200,107,0.25);transition:all 0.18s ease;">\ud83c\udfb2 TAP TO ROLL</button>';
+  h+='<button id="lwcr-continue" style="display:none;width:100%;padding:14px;border-radius:10px;border:1.5px solid rgba(200,168,75,0.45);background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(74,124,53,0.1));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.14em;cursor:pointer;min-height:52px;">CONTINUE</button>';
   h+='</div>';
   ov.innerHTML=h;
   document.body.appendChild(ov);
@@ -40724,64 +40728,95 @@ window._showContestRoll = function(roll, attackerPlant, defenderPlant, onDone){
   function clearAll(){if(tumble){clearInterval(tumble);tumble=null;}for(var i=0;i<tos.length;i++)clearTimeout(tos[i]);tos=[];}
   function haptic(n){try{window._haptic&&window._haptic(n);}catch(e){}}
   at(280,function(){var r=document.getElementById('lwcr-ea');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(8);});
+  // Show dice as d1 placeholders + reveal the dice row; player taps
+  // ROLL to start the tumble. Manual control replaces auto-tumble so
+  // the moment of commit feels deliberate (Director: "i want to click
+  // a button to roll the dice when its my turn").
   at(700,function(){
     var dr=document.getElementById('lwcr-dice');if(dr)dr.style.opacity='1';
-    function render(wrap){if(!wrap)return;wrap.innerHTML='<img src="assets/dice/d1.png" style="width:42px;height:42px;image-rendering:pixelated;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));"><img src="assets/dice/d1.png" style="width:42px;height:42px;image-rendering:pixelated;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));">';}
+    function render(wrap){if(!wrap)return;wrap.innerHTML='<img src="assets/dice/d1.png" style="width:42px;height:42px;image-rendering:pixelated;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));opacity:0.55;"><img src="assets/dice/d1.png" style="width:42px;height:42px;image-rendering:pixelated;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));opacity:0.55;">';}
     render(document.getElementById('lwcr-attdice'));
     render(document.getElementById('lwcr-defdice'));
-    var ticks=0;
-    tumble=setInterval(function(){
-      ticks++;
-      var imgs=document.querySelectorAll('#lwcr-dice img');
-      for(var i=0;i<imgs.length;i++)imgs[i].src='assets/dice/d'+(1+Math.floor(Math.random()*6))+'.png';
-      if(ticks%2===0)haptic(5);
-    },70);
   });
-  at(1600,function(){
-    if(tumble){clearInterval(tumble);tumble=null;}
-    var aF=decompose2d6(roll.attRoll), dF=decompose2d6(roll.defRoll);
-    function paint(wrap,faces){if(!wrap)return;var s='';for(var i=0;i<faces.length;i++)s+='<img src="assets/dice/d'+faces[i]+'.png" style="width:42px;height:42px;image-rendering:pixelated;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));animation:lwcrDieLand 0.4s cubic-bezier(0.34,1.56,0.64,1);">';wrap.innerHTML=s;}
-    paint(document.getElementById('lwcr-attdice'),aF);
-    paint(document.getElementById('lwcr-defdice'),dF);
-    var t=document.getElementById('lwcr-dicetot');if(t)t.style.opacity='1';
-    haptic(35);
-  });
-  var tm=2050;
-  if(roll.attComp||roll.defComp){at(tm,function(){var r=document.getElementById('lwcr-comp');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
-  if(roll.attWeather){at(tm,function(){var r=document.getElementById('lwcr-weather');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
-  if(roll.defMoonwake){at(tm,function(){var r=document.getElementById('lwcr-moon');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
-  if(roll.defHerd){at(tm,function(){var r=document.getElementById('lwcr-herd');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
-  if(roll.defSilk){at(tm,function(){var r=document.getElementById('lwcr-silk');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(15);});tm+=420;}
-  if(roll.attHeron){at(tm,function(){var r=document.getElementById('lwcr-heron');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
-  if(roll.defRooted){at(tm,function(){var r=document.getElementById('lwcr-rooted');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
-  if(roll.attSwift){at(tm,function(){var r=document.getElementById('lwcr-swift');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
-  if(roll.vowTarget){at(tm,function(){var r=document.getElementById('lwcr-vow');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(roll.vowHit?25:15);});tm+=420;}
-  if(itemBadges.length){at(tm,function(){var r=document.getElementById('lwcr-items');if(r)r.style.opacity='1';});tm+=320;}
-  at(tm,function(){
-    var r=document.getElementById('lwcr-total');if(r)r.style.opacity='1';
-    var aT=document.getElementById('lwcr-atttot'), dT=document.getElementById('lwcr-deftot');
-    var steps=22, i=0, dur=520;
-    var iv=setInterval(function(){
-      i++;var p=i/steps;if(p>=1){p=1;clearInterval(iv);}
-      if(aT)aT.textContent=Math.round(roll.attTotal*p);
-      if(dT)dT.textContent=Math.round(roll.defTotal*p);
-    },dur/steps);
-    haptic(20);
-  });
-  tm+=780;
-  at(tm,function(){
-    var v=document.getElementById('lwcr-verdict');if(!v)return;
-    var won=roll.attackerWins;
-    var bg=won?'linear-gradient(180deg,rgba(200,168,75,0.32),rgba(122,179,86,0.18))':'linear-gradient(180deg,rgba(120,160,200,0.2),rgba(60,80,60,0.13))';
-    var brd=won?'rgba(200,168,75,0.72)':'rgba(138,145,120,0.5)';
-    var col=won?'var(--gold)':'var(--cream)';
-    v.innerHTML='<div style="background:'+bg+';border:1.5px solid '+brd+';border-radius:12px;padding:0.7rem 1rem;box-shadow:0 6px 22px rgba(0,0,0,0.5);animation:lwcrVerdictIn 0.55s cubic-bezier(0.34,1.56,0.64,1);">'
-              +'<div style="font-size:1.4rem;margin-bottom:2px;">'+(won?'\u2694\ufe0f':'\ud83d\udee1\ufe0f')+'</div>'
-              +'<div style="font-family:Bebas Neue,sans-serif;font-size:1.15rem;letter-spacing:0.18em;color:'+col+';">'+(won?'UPROOTED!':'HELD THE LINE')+'</div>'
-              +'<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.68rem;color:var(--muted);margin-top:4px;">'+(won?'The hex is yours.':'The defender stood firm.')+'</div></div>';
-    v.style.opacity='1';
-    haptic(won?65:30);
-  });
+  // Cascade timing — kicks in AFTER the dice land, not at modal-open.
+  // Variable populated when player taps ROLL.
+  var _cascadeStart=null;
+  function _scheduleCascade(){
+    var tm=550;
+    if(roll.attComp||roll.defComp){at(tm,function(){var r=document.getElementById('lwcr-comp');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
+    if(roll.attWeather){at(tm,function(){var r=document.getElementById('lwcr-weather');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
+    if(roll.defMoonwake){at(tm,function(){var r=document.getElementById('lwcr-moon');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
+    if(roll.defHerd){at(tm,function(){var r=document.getElementById('lwcr-herd');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
+    if(roll.defSilk){at(tm,function(){var r=document.getElementById('lwcr-silk');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(15);});tm+=420;}
+    if(roll.attHeron){at(tm,function(){var r=document.getElementById('lwcr-heron');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
+    if(roll.defRooted){at(tm,function(){var r=document.getElementById('lwcr-rooted');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
+    if(roll.attSwift){at(tm,function(){var r=document.getElementById('lwcr-swift');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(10);});tm+=420;}
+    if(roll.vowTarget){at(tm,function(){var r=document.getElementById('lwcr-vow');if(r){r.style.opacity='1';r.style.transform='translateY(0)';}haptic(roll.vowHit?25:15);});tm+=420;}
+    if(itemBadges.length){at(tm,function(){var r=document.getElementById('lwcr-items');if(r)r.style.opacity='1';});tm+=320;}
+    at(tm,function(){
+      var r=document.getElementById('lwcr-total');if(r)r.style.opacity='1';
+      var aT=document.getElementById('lwcr-atttot'), dT=document.getElementById('lwcr-deftot');
+      var steps=22, i=0, dur=520;
+      var iv=setInterval(function(){
+        i++;var p=i/steps;if(p>=1){p=1;clearInterval(iv);}
+        if(aT)aT.textContent=Math.round(roll.attTotal*p);
+        if(dT)dT.textContent=Math.round(roll.defTotal*p);
+      },dur/steps);
+      haptic(20);
+    });
+    tm+=780;
+    at(tm,function(){
+      var v=document.getElementById('lwcr-verdict');if(!v)return;
+      var won=roll.attackerWins;
+      var bg=won?'linear-gradient(180deg,rgba(200,168,75,0.32),rgba(122,179,86,0.18))':'linear-gradient(180deg,rgba(120,160,200,0.2),rgba(60,80,60,0.13))';
+      var brd=won?'rgba(200,168,75,0.72)':'rgba(138,145,120,0.5)';
+      var col=won?'var(--gold)':'var(--cream)';
+      v.innerHTML='<div style="background:'+bg+';border:1.5px solid '+brd+';border-radius:12px;padding:0.7rem 1rem;box-shadow:0 6px 22px rgba(0,0,0,0.5);animation:lwcrVerdictIn 0.55s cubic-bezier(0.34,1.56,0.64,1);">'
+                +'<div style="font-size:1.4rem;margin-bottom:2px;">'+(won?'\u2694\ufe0f':'\ud83d\udee1\ufe0f')+'</div>'
+                +'<div style="font-family:Bebas Neue,sans-serif;font-size:1.15rem;letter-spacing:0.18em;color:'+col+';">'+(won?'UPROOTED!':'HELD THE LINE')+'</div>'
+                +'<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.68rem;color:var(--muted);margin-top:4px;">'+(won?'The hex is yours.':'The defender stood firm.')+'</div></div>';
+      v.style.opacity='1';
+      haptic(won?65:30);
+    });
+    tm+=400;
+    // Reveal CONTINUE only after verdict lands.
+    at(tm,function(){var c=document.getElementById('lwcr-continue');if(c)c.style.display='block';});
+  }
+  // Wire ROLL button: tumble dice for 900ms, land on real faces, then
+  // cascade bonuses + total + verdict. Single-fire — guard with flag.
+  var _rolled=false;
+  setTimeout(function(){
+    var rb=document.getElementById('lwcr-roll');
+    if(!rb)return;
+    rb.onclick=function(){
+      if(_rolled)return;_rolled=true;
+      rb.style.transform='scale(0.96)';rb.style.opacity='0.55';
+      // Fade out the ROLL button after 200ms (during tumble).
+      setTimeout(function(){if(rb)rb.style.display='none';},200);
+      haptic(15);
+      var ticks=0;
+      tumble=setInterval(function(){
+        ticks++;
+        var imgs=document.querySelectorAll('#lwcr-dice img');
+        for(var i=0;i<imgs.length;i++){imgs[i].src='assets/dice/d'+(1+Math.floor(Math.random()*6))+'.png';imgs[i].style.opacity='1';}
+        if(ticks%2===0)haptic(5);
+      },70);
+      // Land the dice after 900ms tumble.
+      setTimeout(function(){
+        if(tumble){clearInterval(tumble);tumble=null;}
+        var aF=decompose2d6(roll.attRoll), dF=decompose2d6(roll.defRoll);
+        function paint(wrap,faces){if(!wrap)return;var s='';for(var i=0;i<faces.length;i++)s+='<img src="assets/dice/d'+faces[i]+'.png" style="width:42px;height:42px;image-rendering:pixelated;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));animation:lwcrDieLand 0.4s cubic-bezier(0.34,1.56,0.64,1);">';wrap.innerHTML=s;}
+        paint(document.getElementById('lwcr-attdice'),aF);
+        paint(document.getElementById('lwcr-defdice'),dF);
+        var t=document.getElementById('lwcr-dicetot');if(t)t.style.opacity='1';
+        haptic(35);
+        _cascadeStart=Date.now();
+        _scheduleCascade();
+      },900);
+    };
+  },720);
+  // Cascade + verdict logic moved into _scheduleCascade() above; it
+  // runs only after the player taps ROLL and dice land.
   function close(){
     if(finished)return;
     finished=true;
