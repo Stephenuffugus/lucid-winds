@@ -64646,7 +64646,7 @@ window._lwClaimHerbarium = function(id){
 
   function _load(){ try { return JSON.parse(localStorage.getItem(STORE)||'{"count":0}'); } catch(e){ return {count:0}; } }
   function _save(s){ try { localStorage.setItem(STORE, JSON.stringify(s)); } catch(e){} }
-  function _loadPity(){ try { return JSON.parse(localStorage.getItem(PITY)||'{"sinceRare":0,"sinceEpic":0}'); } catch(e){ return {sinceRare:0,sinceEpic:0}; } }
+  function _loadPity(){ try { var p = JSON.parse(localStorage.getItem(PITY)||'{"sinceRare":0,"sinceEpic":0,"sinceLegend":0}'); if (p.sinceLegend == null) p.sinceLegend = 0; return p; } catch(e){ return {sinceRare:0,sinceEpic:0,sinceLegend:0}; } }
   function _savePity(p){ try { localStorage.setItem(PITY, JSON.stringify(p)); } catch(e){} }
 
   function count(){ return _load().count || 0; }
@@ -64709,6 +64709,11 @@ window._lwClaimHerbarium = function(id){
     s.count--; _save(s);
     var p = _loadPity();
     var minRank = 0;
+    // Items audit Apr 19: 1% Legendary with no pity = months without
+    // a Legendary when they ship. Added a 60-box pity floor so
+    // dedicated players see a Legendary at least once every 5-8 weeks
+    // of regular box opening.
+    if ((p.sinceLegend || 0) >= 59) minRank = Math.max(minRank, 4); // 60th = guaranteed Legendary
     if ((p.sinceEpic || 0) >= 24) minRank = Math.max(minRank, 3); // 25th = guaranteed Epic+
     if ((p.sinceRare || 0) >= 7)  minRank = Math.max(minRank, 2); // 8th = guaranteed Rare+
     var rarity = _pickRarity(minRank);
@@ -64716,6 +64721,7 @@ window._lwClaimHerbarium = function(id){
     // Update pity counters
     p.sinceRare = (rank >= 2) ? 0 : (p.sinceRare || 0) + 1;
     p.sinceEpic = (rank >= 3) ? 0 : (p.sinceEpic || 0) + 1;
+    p.sinceLegend = (rank >= 4) ? 0 : (p.sinceLegend || 0) + 1;
     _savePity(p);
     var itemKey = _pickItemOfRarity(rarity);
     if (window.LW_ITEMS && window.LW_ITEMS.add) {
@@ -64732,7 +64738,8 @@ window._lwClaimHerbarium = function(id){
     var p = _loadPity();
     return {
       nextRareIn: Math.max(0, 7 - (p.sinceRare || 0)),
-      nextEpicIn: Math.max(0, 24 - (p.sinceEpic || 0))
+      nextEpicIn: Math.max(0, 24 - (p.sinceEpic || 0)),
+      nextLegendIn: Math.max(0, 59 - (p.sinceLegend || 0))
     };
   }
 
@@ -64756,7 +64763,8 @@ window._lwClaimHerbarium = function(id){
     h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.12em;color:var(--muted);margin-bottom:0.4rem;">LUCK CARRIES</div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--cream);line-height:1.6;">';
     h += pity.nextRareIn === 0 ? '\u2605 Your next box guarantees <b style="color:var(--gold);">Rare+</b>.<br>' : (pity.nextRareIn === 1 ? '\u2605 Next box guarantees <b style="color:var(--gold);">Rare+</b>.<br>' : '\u2605 Rare+ guaranteed in <b>'+pity.nextRareIn+'</b> boxes.<br>');
-    h += pity.nextEpicIn === 0 ? '\u2605 Your next box guarantees <b style="color:#c07ac8;">Epic+</b>.' : (pity.nextEpicIn === 1 ? '\u2605 Next box guarantees <b style="color:#c07ac8;">Epic+</b>.' : '\u2605 Epic+ guaranteed in <b>'+pity.nextEpicIn+'</b> boxes.');
+    h += pity.nextEpicIn === 0 ? '\u2605 Your next box guarantees <b style="color:#c07ac8;">Epic+</b>.<br>' : (pity.nextEpicIn === 1 ? '\u2605 Next box guarantees <b style="color:#c07ac8;">Epic+</b>.<br>' : '\u2605 Epic+ guaranteed in <b>'+pity.nextEpicIn+'</b> boxes.<br>');
+    h += pity.nextLegendIn === 0 ? '\u2605 Your next box guarantees <b style="color:#e8c86b;">Legendary</b>.' : (pity.nextLegendIn === 1 ? '\u2605 Next box guarantees <b style="color:#e8c86b;">Legendary</b>.' : '\u2605 Legendary guaranteed in <b>'+pity.nextLegendIn+'</b> boxes.');
     h += '</div></div>';
     if (n > 0) {
       h += '<button id="lw-box-open-btn" onclick="window.LW_BOXES.openNext()" style="display:block;width:100%;padding:18px;border-radius:14px;border:2px solid var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.3),rgba(122,179,86,0.18));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.14em;cursor:pointer;min-height:64px;box-shadow:0 0 20px rgba(200,168,75,0.3);">\ud83c\udf81 OPEN BOX ('+n+')</button>';
