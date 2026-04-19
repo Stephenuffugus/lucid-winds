@@ -31446,7 +31446,30 @@ document.addEventListener('keydown', function(e) {
     if (plant.compostLayers) t.compostLayers = plant.compostLayers;
     var _tg; try { _tg = getTerraGrade(t); } catch(e) { _tg = { name: 'Common' }; }
     var _fertTable = { Common: 1, Uncommon: 1, Rare: 2, Epic: 2, Legendary: 3, Mythic: 4, Cosmic: 5 };
-    var fertReward = _fertTable[_tg.name] || 1;
+    var _fertTierOrder = ['Common','Uncommon','Rare','Epic','Legendary','Mythic','Cosmic'];
+    var _gradeForFert = _tg.name;
+    // Scarab Beetle (idx 64) Sacred Roll signature — if the player owns
+    // ANY plant with Scarab companion (greenhouse), compost reward
+    // bumps one rarity tier. Cosmic stays Cosmic. Bump happens BEFORE
+    // Compost Song (Conduit T3) + tree bonus so the higher tier flows
+    // into both. Companions audit flagged this ordering.
+    try {
+      var _gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+      var _hasScarab = false;
+      for (var _sk=0;_sk<_gh.length;_sk++){
+        try {
+          var _sct = window.hashToTraits(_gh[_sk].hash);
+          if (_sct && _sct.companion === 64) { _hasScarab = true; break; }
+        } catch(e) {}
+      }
+      if (_hasScarab) {
+        var _curIdx = _fertTierOrder.indexOf(_gradeForFert);
+        if (_curIdx >= 0 && _curIdx < _fertTierOrder.length - 1) {
+          _gradeForFert = _fertTierOrder[_curIdx + 1];
+        }
+      }
+    } catch(e) {}
+    var fertReward = _fertTable[_gradeForFert] || 1;
     var dnaReward = fertReward;
     var substrateKey = String(t.base || 0);
     var _srcTraits = {
