@@ -58041,13 +58041,27 @@ function _step40(){
     'Plants in the wild create <span style="color:var(--gold);">feral seeds</span> shaped by local DNA + the biome you\'re in.<br><br>Tap the <b>FORAGE</b> button to find one.',
     '',null,'bottom');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
-  // Watch for the forage card minigame to open
+  // Tear down the dialog the INSTANT the player taps FORAGE — don't
+  // wait for the minigame overlay to appear via the poll. Stephen's
+  // report: "the stupid prompt is still in the front ruining the
+  // experience." Capture-phase listener runs before the button's
+  // own onclick, so _clear() lands before the forage round renders.
+  var _advanced=false;
+  var onForageTap=function(){
+    if(_advanced)return;_advanced=true;
+    forage.removeEventListener('click',onForageTap,true);
+    _clear();
+    setTimeout(_step41,500);
+  };
+  forage.addEventListener('click',onForageTap,true);
+  // Poll kept as a safety net only (e.g., programmatic minigame open).
   var polls=0;
   var watch=function(){
+    if(_advanced)return;
     var fc=document.querySelector('.lw-forage-card')||document.getElementById('lw-forage-overlay')||document.querySelector('[class*="forage"]');
-    if(fc){_clear();setTimeout(_step41,500);return;}
+    if(fc){_advanced=true;forage.removeEventListener('click',onForageTap,true);_clear();setTimeout(_step41,500);return;}
     if(polls<600){polls++;setTimeout(watch,500);}
-    else {setTimeout(_step41,400);}
+    else {forage.removeEventListener('click',onForageTap,true);setTimeout(_step41,400);}
   };
   watch();
 }
