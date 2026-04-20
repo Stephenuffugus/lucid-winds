@@ -57916,11 +57916,34 @@ function _lwTutCleanupMocks(){
 }
 window._lwTutCleanupMocks = _lwTutCleanupMocks;
 
+// Force Wild tab active + FABs visible. Called at the start of every
+// Wild-phase step (35-42) so if the player got bounced off the Wild
+// tab for any reason (refresh, backpack compact-mode, manual tab
+// switch) the SOW/FORAGE buttons reappear before the step runs.
+// Without this, _step36-40 would spotlight buttons that were hidden
+// via display:none by FG_Backpack.showCompact(), leaving the player
+// with a prompt but no target. Stephen 2026-04-20.
+function _ensureWildActive(cb){
+  var onWild=false;
+  try{
+    var wildTab=document.getElementById('tab-wild');
+    onWild=wildTab&&getComputedStyle(wildTab).display!=='none';
+  }catch(e){}
+  if(!onWild){
+    try{if(window.switchTab)window.switchTab('wild');}catch(e){}
+  }
+  // Belt-and-suspenders: force FG_Backpack.show() so the Wild FABs
+  // are definitely visible even if the tab was already marked active
+  // but compact-mode was applied earlier.
+  try{if(window.FG_Backpack&&window.FG_Backpack.show)window.FG_Backpack.show();}catch(e){}
+  // Give the tab a beat to render before running the next step.
+  setTimeout(cb||function(){}, onWild?100:700);
+}
+
 // ═══ STEP 35: Wild tab intro — switch tab + inject mocks ═══
 function _step35(){
   _setStep(35);
-  try{if(window.switchTab)switchTab('wild');}catch(e){}
-  setTimeout(function(){
+  _ensureWildActive(function(){
     _lwTutInjectMockHex();
     _lwTutPatchRoll();
     _dialog(
@@ -57928,14 +57951,31 @@ function _step35(){
       'Your plants live out here in the real world, they earn pollen, generate dew, and breed with their neighbors.<br><br>' +
       'Time to plant your first one.',
       'SHOW ME',function(){_clear();setTimeout(_step36,400);},'center');
-  }, 700);
+  });
 }
 
 // ═══ STEP 36: spotlight SOW button + wait for tap ═══
 function _step36(){
   _setStep(36);
+  _ensureWildActive(function(){
+    _step36Inner();
+  });
+}
+function _step36Inner(){
   var sow = document.getElementById('dfb');
-  if(!sow){setTimeout(_step38,500);return;}
+  // If FAB still hidden after _ensureWildActive (rare init race), wait
+  // briefly and retry once before giving up to _step38.
+  if(!sow||sow.style.display==='none'){
+    setTimeout(function(){
+      var sow2=document.getElementById('dfb');
+      if(!sow2||sow2.style.display==='none'){setTimeout(_step38,500);return;}
+      _step36Spotlight(sow2);
+    },800);
+    return;
+  }
+  _step36Spotlight(sow);
+}
+function _step36Spotlight(sow){
   try{_spotlight&&_spotlight(sow);}catch(e){}
   _dialog(
     'Tap the <span style="color:var(--gold);">SOW</span> button to pick a plant from your greenhouse and place it.',
@@ -58032,8 +58072,23 @@ function _step39(){
 // ═══ STEP 40: spotlight FORAGE button ═══
 function _step40(){
   _setStep(40);
+  _ensureWildActive(function(){_step40Inner();});
+}
+function _step40Inner(){
   var forage = document.getElementById('ffb');
-  if(!forage){setTimeout(_step41,400);return;}
+  // Same defense as step 36: if FAB still hidden, retry once before
+  // giving up. Prevents "button is gone" dead-end after a tab bounce.
+  if(!forage||forage.style.display==='none'){
+    setTimeout(function(){
+      var f2=document.getElementById('ffb');
+      if(!f2||f2.style.display==='none'){setTimeout(_step41,400);return;}
+      _step40Spotlight(f2);
+    },800);
+    return;
+  }
+  _step40Spotlight(forage);
+}
+function _step40Spotlight(forage){
   try{_spotlight&&_spotlight(forage);}catch(e){}
   // Force the forage button to look ready so the player can tap it.
   try{forage.classList.add('ready');}catch(e){}
@@ -58327,6 +58382,17 @@ function _resume(step){
   if(step===32)return go(_step32);
   if(step===33)return go(_step33);
   if(step===34)return go(_step34);
+  // Phase 6 — Wild loop (35-42). All of these require Wild tab + FABs
+  // visible; _ensureWildActive inside each step function handles the
+  // switch if the player landed on a different tab after refresh.
+  if(step===35)return go(_step35);
+  if(step===36)return go(_step36);
+  if(step===37)return go(_step37);
+  if(step===38)return go(_step38);
+  if(step===39)return go(_step39);
+  if(step===40)return go(_step40);
+  if(step===41)return go(_step41);
+  if(step===42)return go(_step42);
   // Unknown / corrupted step — safest fallback is start from 1.
   go(_step1);
 }
