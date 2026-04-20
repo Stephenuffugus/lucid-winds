@@ -58496,6 +58496,28 @@ window.lwUnstick=function(){
   _lwStripTutorialClassesIfDone();
   try{location.reload();}catch(e){}
 };
+// MutationObserver on body.classList — if anything adds a lw-tut-* class
+// after the tutorial is 'done', strip it within a tick. Any stray
+// setTimeout or forgotten polling watch from an earlier step that tries
+// to re-apply tutorial state post-completion gets reverted before the
+// user sees nav lock up. Stephen 2026-04-21: "as soon as i go back to
+// greenhouse the nursery and wild become locked" — symptom of a stale
+// class add after _done().
+(function _lwInstallClassWatcher(){
+  if(!window.MutationObserver)return;
+  var obs=new MutationObserver(function(mutations){
+    try{
+      var st=localStorage.getItem('lw_tut');
+      if(st&&st!=='done')return; // tutorial still legitimately active
+      _lwStripTutorialClassesIfDone();
+    }catch(e){}
+  });
+  var start=function(){
+    try{obs.observe(document.body,{attributes:true,attributeFilter:['class']});}catch(e){}
+  };
+  if(document.body){start();}
+  else{document.addEventListener('DOMContentLoaded',start);}
+})();
 // URL-parameter unstick for on-device use (no DevTools needed).
 // Visit lucidwinds.com/?unstick to end the tutorial cleanly and
 // strip every stale body class. Runs BEFORE the tutorial resume
