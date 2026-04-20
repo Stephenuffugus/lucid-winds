@@ -58481,6 +58481,20 @@ window.lwUnstick=function(){
   _lwStripTutorialClassesIfDone();
   try{location.reload();}catch(e){}
 };
+// URL-parameter unstick for on-device use (no DevTools needed).
+// Visit lucidwinds.com/?unstick to end the tutorial cleanly and
+// strip every stale body class. Runs BEFORE the tutorial resume
+// boot so it wins the race. Stephen 2026-04-20 — tests on Pixel 9,
+// can't run console commands.
+try{
+  if(typeof location!=='undefined'&&location.search&&location.search.indexOf('unstick')!==-1){
+    try{localStorage.setItem('lw_tut','done');}catch(e){}
+    try{localStorage.setItem('lw_plant_xp_unlocked','1');}catch(e){}
+    _lwStripTutorialClassesIfDone();
+    // Strip the query param so a later reload doesn't repeat.
+    try{history.replaceState({},'',location.pathname);}catch(e){}
+  }
+}catch(e){}
 })();
 </script>
 
