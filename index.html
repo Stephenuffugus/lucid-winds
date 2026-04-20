@@ -57964,16 +57964,28 @@ function _step36(){
 function _step36Inner(){
   var sow = document.getElementById('dfb');
   // If FAB still hidden after _ensureWildActive (rare init race), wait
-  // briefly and retry once before giving up to _step38.
+  // and retry up to 5 times (4s total) before surfacing a skip prompt.
+  // Previous fall-through jumped to _step38 (contest dice), which skipped
+  // steps 36 + 37 entirely and left the player at step 40 with no plant
+  // placed. Never skip past the SOW step — either recover or halt
+  // gracefully. Stephen 2026-04-20.
   if(!sow||sow.style.display==='none'){
-    setTimeout(function(){
-      var sow2=document.getElementById('dfb');
-      if(!sow2||sow2.style.display==='none'){setTimeout(_step38,500);return;}
-      _step36Spotlight(sow2);
-    },800);
+    _step36Retry(0);
     return;
   }
   _step36Spotlight(sow);
+}
+function _step36Retry(n){
+  // Give _ensureWildActive + FG_Backpack.show() more time to land the
+  // FAB. Force the show() every attempt in case it was overridden.
+  try{if(window.FG_Backpack&&window.FG_Backpack.show)window.FG_Backpack.show();}catch(e){}
+  var sow=document.getElementById('dfb');
+  if(sow&&sow.style.display!=='none'){_step36Spotlight(sow);return;}
+  if(n<5){setTimeout(function(){_step36Retry(n+1);},800);return;}
+  // Genuinely can't find the FAB. Show the player a manual dialog
+  // and end the tutorial's Wild loop rather than crash through to
+  // later steps. Skip link in the dialog provides a clean exit.
+  _dialog('The SOW button didn\u2019t load. Tap <b>skip tutorial</b> below, then drop plants in the Wild whenever you\u2019re ready.','',null,'center');
 }
 function _step36Spotlight(sow){
   try{_spotlight&&_spotlight(sow);}catch(e){}
@@ -57994,15 +58006,18 @@ function _step36Spotlight(sow){
   watch();
 }
 
-// ═══ STEP 37: in carousel — spotlight PLACE HERE ═══
+// ═══ STEP 37: in carousel — guide toward PLACE HERE ═══
+// No _spotlight here. The dark mask covers every plant card in the
+// carousel and makes them read as "greyed out" + locked, when they're
+// actually interactive. Stephen 2026-04-20: "plants are greyed out,
+// prompt in front, horrible UX." Just a dialog at the TOP of the
+// screen so the carousel below stays fully visible and tappable.
 function _step37(){
   _setStep(37);
-  var place=document.getElementById('gallery-place-btn')||document.querySelector('.pgm-wild-place');
   _dialog(
-    'Pick a plant and tap it to plant it in the wild.<br><br>The hex with three Wisp Keeper plants nearby is your training ground. Plant near them.',
-    '',null,'bottom');
+    'Pick a plant and tap <span style="color:var(--gold);">PLACE HERE</span> to plant it in the Wild.<br><br>The hex with three Wisp Keeper plants is your training ground.',
+    '',null,'top');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
-  if(place){try{_spotlight&&_spotlight(place);}catch(e){}}
   // Wait for the contest inspector to open (full hex) OR for plant
   // to land in wild (empty hex). Either way, advance.
   var polls=0;
