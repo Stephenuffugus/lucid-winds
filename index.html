@@ -58434,6 +58434,53 @@ function _resume(step){
     }
   }catch(e){}
 })();
+
+// ═══ DEFENSIVE CLEANUP — if tutorial state is 'done' or missing, strip
+// every lw-tut-* body class unconditionally. This is the last line of
+// defense against stale tutorial classes locking the nav after the
+// tutorial has already finished/skipped. Runs on boot + on every
+// switchTab. Stephen 2026-04-20: "nursery and wild locked themselves"
+// after exiting wild — body classes were carrying over despite
+// tutorial being done. ═══
+function _lwStripTutorialClassesIfDone(){
+  try{
+    var st=localStorage.getItem('lw_tut');
+    if(st&&st!=='done')return; // tutorial still active, leave classes alone
+    var b=document.body;if(!b)return;
+    var stale=['lw-tut-active','lw-tut-limit-actions',
+      'lw-tut-bp-on','lw-tut-bos-on','lw-tut-sb-on','lw-tut-mint-only','lw-tut-newplant-only',
+      'lw-tut-carousel-lock','lw-tut-carousel-can-close','lw-tut-carousel-freeze','lw-tut-carousel-breed-only','lw-tut-breed-only','lw-tut-water-only',
+      'lw-tut-nav-greenhouse','lw-tut-nav-focus','lw-tut-nav-nursery','lw-tut-nav-wild',
+      'lw-tut-game-handoff','lw-tutorial-pending'];
+    for(var i=0;i<stale.length;i++){b.classList.remove(stale[i]);}
+  }catch(e){}
+}
+// Boot pass — clear on load.
+if(document.readyState==='complete'||document.readyState==='interactive'){
+  setTimeout(_lwStripTutorialClassesIfDone,200);
+} else {
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(_lwStripTutorialClassesIfDone,200);});
+}
+// Tab-switch pass — catches the exact case Stephen hit. Wraps switchTab
+// so any tab change re-runs the check and strips stale classes before
+// the nav-rule CSS evaluates against the new tab state.
+(function(){
+  var _prev=window.switchTab;
+  if(typeof _prev==='function'){
+    window.switchTab=function(){
+      _lwStripTutorialClassesIfDone();
+      return _prev.apply(this,arguments);
+    };
+  }
+})();
+// Expose a manual unstick for the console in case a user ever hits
+// this again and needs a way out without DevTools knowledge.
+window.lwUnstick=function(){
+  try{localStorage.setItem('lw_tut','done');}catch(e){}
+  try{localStorage.setItem('lw_plant_xp_unlocked','1');}catch(e){}
+  _lwStripTutorialClassesIfDone();
+  try{location.reload();}catch(e){}
+};
 })();
 </script>
 
