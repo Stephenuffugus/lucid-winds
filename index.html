@@ -63215,15 +63215,22 @@ window._lwClaimHerbarium = function(id){
   function hexDifficulty(grade) {
     var g = String(grade || 'Common').toLowerCase();
     // Mastermind scoring: exact=2, present=1, miss=0 → max per attempt = slots*2.
-    // Tightened scoreNeeded so failure is a real possibility — was too lenient.
+    // handSize scales inversely with rarity — easier hunts start with the
+    // full alphabet (9 cards covers all 6 base elements + 3 rare wilds);
+    // harder hunts shrink the hand so the player has less slack and must
+    // deduce which elements belong. Cosmic forces a perfect solve with
+    // zero spare cards. Stephen 2026-04-21 — "this is our signature
+    // mechanic, it better be damn good." slots capped at 6 (the base
+    // element pool size) — old cosmic=7 was unwinnable because
+    // hexComposition picks without replacement from 6 base elements.
     var map = {
-      common:    { slots: 3, cards: 3, handSize: 9, attempts: 3, scoreNeeded: 5 },   // max 6
-      uncommon:  { slots: 3, cards: 3, handSize: 9, attempts: 3, scoreNeeded: 6 },   // must be perfect
-      rare:      { slots: 4, cards: 4, handSize: 9, attempts: 3, scoreNeeded: 7 },   // max 8
-      epic:      { slots: 4, cards: 4, handSize: 9, attempts: 3, scoreNeeded: 8 },   // must be perfect
-      legendary: { slots: 5, cards: 5, handSize: 9, attempts: 4, scoreNeeded: 9 },   // max 10
-      mythic:    { slots: 6, cards: 6, handSize: 9, attempts: 4, scoreNeeded: 11 },  // max 12
-      cosmic:    { slots: 7, cards: 7, handSize: 9, attempts: 4, scoreNeeded: 13 }   // max 14
+      common:    { slots: 3, cards: 3, handSize: 9, attempts: 3, scoreNeeded: 5 },   // max 6  · 3 extra cards
+      uncommon:  { slots: 3, cards: 3, handSize: 8, attempts: 3, scoreNeeded: 5 },   // max 6  · 2 spare wilds
+      rare:      { slots: 4, cards: 4, handSize: 8, attempts: 3, scoreNeeded: 7 },   // max 8  · 2 spare
+      epic:      { slots: 4, cards: 4, handSize: 7, attempts: 3, scoreNeeded: 7 },   // max 8  · 1 wild only
+      legendary: { slots: 5, cards: 5, handSize: 7, attempts: 4, scoreNeeded: 9 },   // max 10 · 1 wild, 4 attempts
+      mythic:    { slots: 6, cards: 6, handSize: 7, attempts: 4, scoreNeeded: 11 },  // max 12 · 1 wild to swap
+      cosmic:    { slots: 6, cards: 6, handSize: 6, attempts: 5, scoreNeeded: 12 }   // max 12 · PERFECT ONLY, no spare, 5 tries
     };
     return map[g] || map.common;
   }
@@ -63669,15 +63676,21 @@ window._lwClaimHerbarium = function(id){
     if (v === 'lens') return 'LENS';
     return 'NEUTRAL';
   }
-  // Build a 5-card hand from the active deck (using inventory to validate)
-  // Build a hand up to `size` cards (defaults to 5 for backwards compat).
-  // Deck-first, then fills remaining from inventory so harder hexes can
-  // still find a workable hand. Rare wild cards are eligible too.
+  // Build a hand of `size` cards. Always includes all 6 base elements
+  // (sun/shade/rain/dry/wind/still) so the hex is always solvable in
+  // principle — the hex picks without replacement from those 6, so
+  // missing any base element would make some hexes unwinnable. Extra
+  // slots beyond 6 get filled with rare wilds (moonlight/thunder/aurora)
+  // in order, so bigger hands have more wild-card safety nets.
+  // Stephen 2026-04-21 — rarity-scaled hand size is the signature
+  // balance knob for foraging.
   function buildHand(size) {
-    // All 9 card types always available in the picker. Card inventory isn't
-    // a gating mechanic — forage difficulty comes from solving the pattern,
-    // not running out of cards. Stephen: "everyone should always have them all."
-    return ['sun','shade','rain','dry','wind','still','moonlight','thunder','aurora'];
+    var base = ['sun','shade','rain','dry','wind','still'];
+    var rares = ['moonlight','thunder','aurora'];
+    if (!size || size < 6) return base.slice(); // never go below 6 base
+    var out = base.slice();
+    for (var i = 0; i < rares.length && out.length < size; i++) out.push(rares[i]);
+    return out;
   }
   function openForagePanel(zoneKey, grade, onDone) {
     var attempts = getAttempts(zoneKey);
