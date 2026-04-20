@@ -43108,7 +43108,15 @@ window._lwUpdateForageFab=function(){
 window._lwOpenNearestForage=function(){
   if(!_uLat||!_uLng){if(window._toast)_toast('Need location.');return;}
   if(_gpsDenied){if(window._toast)_toast('Enable GPS to forage.');return;}
-  if(window.canSee&&window.canSee.feralCollect&&!window.canSee.feralCollect()){
+  // Tutorial override — step 40 spotlights FORAGE and walks the player
+  // through their first foraging round. The L4 gate would otherwise
+  // reject the tap silently with a 🔒 toast and strand the tutorial.
+  // Honor the tap when the tutorial step is 40+ (detected via the
+  // persisted lw_tut state) so the guided round can proceed regardless
+  // of the player's natural level. Stephen 2026-04-20.
+  var _tutStep=0;try{_tutStep=parseInt(localStorage.getItem('lw_tut')||'0',10)||0;}catch(e){}
+  var _inForageTut=(_tutStep>=40&&_tutStep<=42);
+  if(!_inForageTut&&window.canSee&&window.canSee.feralCollect&&!window.canSee.feralCollect()){
     if(window._toast)_toast('🔒 Foraging unlocks at Keeper Level 4.');return;
   }
   var scan=_lwScanNearestForage();
@@ -57809,17 +57817,21 @@ function _lwTutInjectMockHex(){
     // gold hex polygons next to the player.
     var newWild = wild.concat(mocks);
     localStorage.setItem('fg_wild_plants', JSON.stringify(newWild));
-    // Also inject a tutorial-only feral seed at the SAME hex so the
-    // step 40 forage walkthrough has something real to forage. Fresh
-    // accounts won't have organic ferals (they spawn from neighbor
-    // plants over time). Tagged with the mock prefix for cleanup.
+    // Also inject a tutorial-only feral seed — placed at the PLAYER'S
+    // exact position so the step 40 forage walkthrough is guaranteed
+    // to land within COLLECT_RANGE (75m). The mock HEX (3 plants above)
+    // sits at the +55m/+60m offset for SOW visibility; the feral is
+    // independent from that hex and drops right on top of the player
+    // so the FORAGE button always has something to scan. Tagged with
+    // the mock prefix for cleanup. Stephen 2026-04-20 — earlier
+    // placement at mHex was ~82m out, outside range, forage was dead.
     var feralSuffix = '';
     for (var fj=0;fj<56;fj++){feralSuffix += '0123456789abcdef'.charAt(Math.floor(Math.random()*16));}
     var feralHash = _LW_TUT_MOCK_HASH_PREFIX + feralSuffix;
     var ferals = [];try{ferals = JSON.parse(localStorage.getItem('fg_ferals') || '[]');}catch(e){}
     ferals.push({
-      lat: mLat + 0.00005,
-      lng: mLng + 0.00005,
+      lat: _uLat,
+      lng: _uLng,
       hash: feralHash,
       date: new Date().toISOString().slice(0,10),
       collected: false,
@@ -57947,7 +57959,7 @@ function _step37(){
   _setStep(37);
   var place=document.getElementById('gallery-place-btn')||document.querySelector('.pgm-wild-place');
   _dialog(
-    'Pick a plant and tap <span style="color:var(--gold);">PLACE HERE</span> to drop it.<br><br>The hex with three Wisp Keeper plants nearby is your training ground \u2014 plant near them.',
+    'Pick a plant and tap it to plant it in the wild.<br><br>The hex with three Wisp Keeper plants nearby is your training ground. Plant near them.',
     '',null,'bottom');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   if(place){try{_spotlight&&_spotlight(place);}catch(e){}}
