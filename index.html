@@ -56321,10 +56321,30 @@ function _dialog(text,btnLabel,btnCb,pos){
   requestAnimationFrame(function(){if(_dlg)_dlg.style.opacity='1';});
   var h='<div style="margin-bottom:0.6rem;">'+text+'</div>';
   if(btnLabel){
-    h+='<button onclick="void(0)" style="min-height:52px;min-width:140px;padding:0.5rem 1.4rem;border-radius:10px;border:1.5px solid rgba(200,168,75,0.35);background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(200,168,75,0.05));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;">'+btnLabel+'</button>';
+    h+='<button class="_lw-tut-dlg-btn" onclick="void(0)" style="min-height:52px;min-width:140px;padding:0.5rem 1.4rem;border-radius:10px;border:1.5px solid rgba(200,168,75,0.35);background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(200,168,75,0.05));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;">'+btnLabel+'</button>';
   }
+  // Escape hatch — tiny "skip tutorial" link at the bottom of every
+  // dialog. If a step ever traps the player (invisible spotlight,
+  // locked nav, missing DOM target), they can bail cleanly without
+  // needing the dev panel. Confirms before exiting. Stephen 2026-04-20.
+  h+='<div style="margin-top:0.7rem;"><a href="#" class="_lw-tut-skip" style="font-family:DM Mono,monospace;font-size:0.6rem;color:rgba(232,220,200,0.45);letter-spacing:0.08em;text-decoration:underline dotted;text-underline-offset:3px;cursor:pointer;">skip tutorial</a></div>';
   _dlg.innerHTML=h;
-  if(btnCb){var btn=_dlg.querySelector('button');if(btn)btn.onclick=function(e){e.stopPropagation();btnCb();};}
+  if(btnCb){var btn=_dlg.querySelector('._lw-tut-dlg-btn');if(btn)btn.onclick=function(e){e.stopPropagation();btnCb();};}
+  var skipLink=_dlg.querySelector('._lw-tut-skip');
+  if(skipLink)skipLink.onclick=function(e){
+    e.preventDefault();e.stopPropagation();
+    if(!confirm('Skip the rest of the tutorial?\n\nYou\u2019ll keep everything you\u2019ve earned so far. You can replay it later from Settings \u2192 How to Play.'))return;
+    try{localStorage.setItem('lw_plant_xp_unlocked','1');}catch(e){}
+    try{
+      localStorage.setItem('lw_tab_teach_greenhouse','1');
+      localStorage.setItem('lw_tab_teach_game','1');
+      localStorage.setItem('lw_tab_teach_nursery','1');
+      localStorage.setItem('lw_tab_teach_wild','1');
+    }catch(e){}
+    try{document.body.classList.remove('lw-tutorial-pending');}catch(e){}
+    try{if(typeof _lwTutCleanupMocks==='function')_lwTutCleanupMocks();}catch(e){}
+    _done();
+  };
   document.body.appendChild(_dlg);
   return _dlg;
 }
@@ -56352,11 +56372,15 @@ function _spotlight(el){
   // Remember the ORIGINAL inline position so _clear can restore it.
   // The BoS button is position:fixed by inline style — unconditionally
   // overwriting to 'relative' here pulled it out of fixed positioning
-  // and made it invisible (snapped into document flow behind other
-  // content). Only set position:relative if the element has no position
-  // set — then z-index can take effect for static elements too.
+  // and made it invisible. Check COMPUTED style (not just inline) so
+  // stylesheet-applied position:fixed is respected too. SOW FAB (#dfb)
+  // gets position:fixed from a stylesheet rule; the old inline-only
+  // check missed it and the spotlight dropped the button into document
+  // flow off-screen. Stephen 2026-04-20.
   _spotElOrigPos = el.style.position || '';
-  if(!_spotElOrigPos || _spotElOrigPos === 'static'){
+  var _csPos='static';
+  try{_csPos=(window.getComputedStyle&&window.getComputedStyle(el).position)||'static';}catch(e){}
+  if(!_spotElOrigPos && _csPos==='static'){
     el.style.position='relative';
   }
   el.style.zIndex='1000012';
