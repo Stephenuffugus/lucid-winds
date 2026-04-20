@@ -58018,21 +58018,36 @@ function _step37(){
     'Pick a plant and tap <span style="color:var(--gold);">PLACE HERE</span> to plant it in the Wild.<br><br>The hex with three Wisp Keeper plants is your training ground.',
     '',null,'top');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
-  // Wait for the contest inspector to open (full hex) OR for plant
-  // to land in wild (empty hex). Either way, advance.
+  // Snapshot wild plant count so we can detect an ACTUAL placement
+  // (count increased) vs a bare carousel close (player cancelled).
+  // Previous logic treated any carousel close as "placed in empty hex"
+  // and fast-forwarded to _step39 → _step40 (forage prompt) before the
+  // player had actually sowed a plant. Stephen 2026-04-21: "telling me
+  // to click forage before I finish planting."
+  var startWildCount=0;
+  try{startWildCount=(JSON.parse(localStorage.getItem('fg_wild_plants')||'[]')).length;}catch(e){}
   var polls=0;
   var watch=function(){
+    // Contest inspector open = full hex → advance to step 38 duel.
     var ci=document.getElementById('lw-contest-inspector');
     if(ci){_clear();setTimeout(_step38,400);return;}
-    // Carousel closed without contest = empty hex placement = skip duel
+    // Did a new wild plant land in localStorage? That's the ONLY
+    // reliable signal for an empty-hex placement. Don't trust carousel
+    // state alone.
+    var nowCount=0;
+    try{nowCount=(JSON.parse(localStorage.getItem('fg_wild_plants')||'[]')).length;}catch(e){}
+    if(nowCount>startWildCount){
+      _clear();setTimeout(_step39,600);return;
+    }
+    // Carousel closed + no new plant = player cancelled. Go BACK to
+    // step 36 (re-pulse SOW) so the tutorial doesn't skip forward.
     var m=document.getElementById('plant-gallery-modal');
     var carouselOpen=m&&m.classList.contains('open');
     if(!carouselOpen&&!document.body.classList.contains('lw-carousel-wild-mode')){
-      // Player closed without placing OR placed in empty hex
-      _clear();setTimeout(_step39,600);return;
+      _clear();setTimeout(_step36,600);return;
     }
     if(polls<1200){polls++;setTimeout(watch,500);}
-    else {setTimeout(_step39,400);}
+    else {setTimeout(_step36,400);} // stall-out fallback: retry SOW, never skip past
   };
   watch();
 }
