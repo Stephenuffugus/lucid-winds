@@ -57428,24 +57428,13 @@ function _step23CarouselSafety(){
 // ceremony, then shows the single-option "LET'S EXPLORE" prompt.
 function _step23Celebrate(){
   _clear();
-  try{
-    // Land exactly on the L3 threshold. _lwLevel now reads RANKS (L3 = 51),
-    // so 51 XP is enough to open the Wild gate. Writing XP directly
-    // instead of via PW_grantXP because the wrapper multiplies by the
-    // pollen / Dawn Anthem / Keeper Tree pollenRate stack, and any
-    // active multiplier pushed the old 56-XP 'tut_unlock' grant past
-    // L4 (96 XP) — firing the "BUDDING · feral seeds" ceremony instead
-    // of "YOUNG SHOOT · the world opens" and leaving the player
-    // confused about which unlock just landed. Stephen 2026-04-20.
-    var curXp=parseInt(localStorage.getItem('pw_xp')||'0',10)||0;
-    var L3_XP=(window.RANKS&&window.RANKS[2]&&window.RANKS[2].xp)||51;
-    if(curXp<L3_XP){
-      try{localStorage.setItem('pw_xp',String(L3_XP));}catch(e){}
-      try{if(window._lwApplyGates)window._lwApplyGates();}catch(e){}
-      // Fire the L3 ceremony manually since we bypassed the wrapper.
-      try{if(window._lwLevelCeremony)window._lwLevelCeremony(3);}catch(e){}
-    }
-  }catch(e){}
+  // No XP write here — _step24 force-removes .gated from the Wild nav
+  // button and the lw-tut-nav-wild body class opens its pointer-events,
+  // so the tab unlocks via tutorial state, not level. The old path
+  // wrote pw_xp up to 51 so canSee.wildTab() would pass, but the
+  // _lwLevelCeremony(3) call claimed "Level 3" while the keeper bar
+  // still read L2 — the player was told they leveled up when they
+  // hadn't. Stephen 2026-04-20 b.
   _step23AfterCeremony(0);
 }
 
@@ -57457,7 +57446,7 @@ function _step23AfterCeremony(attempts){
   }
   _dialog(
     'Your new plant has bloomed.<br><br>' +
-    'You just hit <span style="color:var(--gold);">Lv 3</span>, the <span style="color:var(--gold);">Wild</span> opens.',
+    'The <span style="color:var(--gold);">Wild</span> opens.',
     'LET\u2019S EXPLORE',function(){
       _clear();
       // Release the carousel lock set in _step23WaitForReveal, then close
@@ -57468,27 +57457,17 @@ function _step23AfterCeremony(attempts){
       // back to the greenhouse.'
       try{document.body.classList.remove('lw-tut-carousel-lock');}catch(e){}
       try{if(window.closePlantGallery)window.closePlantGallery();}catch(e){}
-      var lvl=1;
-      try{lvl=((window.canSee&&window.canSee.wildTab&&window.canSee.wildTab())?3:((window._getRank?_getRank(parseInt(localStorage.getItem('pw_xp')||'0',10)):{level:1}).level||1));}catch(e){}
-      // Slightly longer beat (1100ms) so the carousel close animation
-      // finishes before WILD nav starts pulsing.
-      if(lvl>=3){
-        // Swap the nav-unlock class NOW so the Wild button unlocks the
-        // instant the player taps LET'S EXPLORE, not 1.1s later when
-        // _step24 runs. Without this, the 1.1s window left the player
-        // staring at a dimmed Wild tab with nursery still the only
-        // unlocked nav — reading as "every tab is locked". Idempotent
-        // with _step24's class swap. Stephen 2026-04-20.
-        try{
-          document.body.classList.remove('lw-tut-nav-greenhouse','lw-tut-nav-focus','lw-tut-nav-nursery');
-          document.body.classList.add('lw-tut-nav-wild');
-        }catch(e){}
-        setTimeout(_step24,1100);
-      }
-      else{
-        try{localStorage.setItem('lw_tut_wild_pending','1');}catch(e){}
-        _done();
-      }
+      // Always proceed to _step24. Level check was gating the Wild
+      // unlock behind XP that didn't actually get granted — strand
+      // case: the tutorial TOLD the player Wild was open but left
+      // nav locked because the hydration/sync race reverted pw_xp.
+      // _step24 force-unlocks the Wild nav via class swap + .gated
+      // removal, which works regardless of the actual level value.
+      try{
+        document.body.classList.remove('lw-tut-nav-greenhouse','lw-tut-nav-focus','lw-tut-nav-nursery');
+        document.body.classList.add('lw-tut-nav-wild');
+      }catch(e){}
+      setTimeout(_step24,1100);
     },'center');
 }
 
@@ -68694,6 +68673,24 @@ setInterval(function(){if(window._updateBookBadge)window._updateBookBadge();},15
 // until the player reaches the required Keeper Level, then lights up with a
 // ceremony toast (see _lwLevelCeremony).
 window._lwNavTap=function(tab,reqLvl){
+  // Tutorial override: when the tutorial has explicitly unlocked a
+  // nav tab via body.lw-tut-nav-*, honor the tap even if the player
+  // hasn't hit reqLvl naturally. Without this, step 24's "Tap WILD"
+  // prompt was stranded at L2 — the body class made the button look
+  // unlocked, but this gate fired a 🔒 toast and blocked the switch,
+  // leaving the tutorial dead-ended. Stephen 2026-04-20.
+  try{
+    var bcl=document.body&&document.body.classList;
+    if(bcl&&(
+      (tab==='wild'    &&bcl.contains('lw-tut-nav-wild'))||
+      (tab==='nursery' &&bcl.contains('lw-tut-nav-nursery'))||
+      (tab==='game'    &&bcl.contains('lw-tut-nav-focus'))||
+      (tab==='greenhouse'&&bcl.contains('lw-tut-nav-greenhouse'))
+    )){
+      if(window.switchTab)window.switchTab(tab);
+      return;
+    }
+  }catch(e){}
   var lvl=(window.canSee&&window.canSee.currentLevel)?window.canSee.currentLevel():1;
   if(lvl<reqLvl){
     if(window._toast){
