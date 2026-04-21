@@ -58184,9 +58184,41 @@ function _step41(){
     'GOT IT',function(){_clear();setTimeout(_step42,400);},'center');
 }
 
-// ═══ STEP 42: wrap + cleanup + _done ═══
+// ═══ STEP 42: foraged seed → backpack → nursery ═══
+// Stephen 2026-04-22: "after we forage we need to tell them to go to
+// their backpack and send the seed to their nursery." Advances on the
+// bp-seed-to-nursery CustomEvent dispatched by FG_Backpack.sendSeedToNursery.
 function _step42(){
   _setStep(42);
+  var bpi=document.getElementById('bpi');
+  if(bpi){try{_spotlight&&_spotlight(bpi);}catch(e){}}
+  _dialog(
+    'You found a <span style="color:var(--sage);">seed!</span><br><br>' +
+    'Open your <span style="color:var(--gold);">backpack</span>, then send the seed to your <b>nursery</b> to grow it into a new plant.',
+    '',null,'bottom');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  var _advanced=false;
+  var onSeedSent=function(){
+    if(_advanced)return;_advanced=true;
+    window.removeEventListener('bp-seed-to-nursery',onSeedSent);
+    _clear();
+    setTimeout(_step43,500);
+  };
+  window.addEventListener('bp-seed-to-nursery',onSeedSent);
+  // Safety timeout — if they don't send within 10 min, skip forward so
+  // the tutorial can't get permanently stranded here.
+  setTimeout(function(){
+    if(_advanced)return;
+    _advanced=true;
+    window.removeEventListener('bp-seed-to-nursery',onSeedSent);
+    _clear();
+    setTimeout(_step43,400);
+  },600000);
+}
+
+// ═══ STEP 43: wrap + cleanup + _done ═══
+function _step43(){
+  _setStep(43);
   _dialog(
     '<span style="color:var(--gold);">That\'s the loop.</span><br><br>' +
     'Play games, mint plants, place them in the wild, tend what you love, forage what you find. Everything else; breeding, climate, contests, the Book of Secrets; will fill in as you play.<br><br>' +
@@ -58447,6 +58479,7 @@ function _resume(step){
   if(step===40)return go(_step40);
   if(step===41)return go(_step41);
   if(step===42)return go(_step42);
+  if(step===43)return go(_step43);
   // Unknown / corrupted step — safest fallback is start from 1.
   go(_step1);
 }
