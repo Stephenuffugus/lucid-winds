@@ -58612,13 +58612,60 @@ function _step47(){
           var cls=null;try{cls=localStorage.getItem('lw_class');}catch(e){}
           if(cls){
             _clear();
-            setTimeout(_step48,900);
+            setTimeout(_step47b,1200);
             return;
           }
           if(polls<1200){polls++;setTimeout(watch,500);}
         };
         watch();
       },350);
+    },300);
+  },200);
+}
+
+// ═══ STEP 47b: spend one tree point ═══
+// Stephen Apr 22: "after a player picks a class they should get to
+// put their stat points in so they understand." Renders on top of
+// the existing BoS Class tab (which shows the tree right above the
+// class cards) so the + button is already visible — we just tell
+// them to tap one.
+function _step47b(){
+  _setStep(47);
+  _clear();
+  // Re-assert BoS + class tab in case the pick-confirm flow left us
+  // in a transitional state.
+  try{if(window._openCompendiumUI)window._openCompendiumUI();}catch(e){}
+  setTimeout(function(){
+    try{if(window._bosSetTab)window._bosSetTab('class');}catch(e){}
+    setTimeout(function(){
+      if(_getStep()!==47)return;
+      _dialog(
+        'Every Keeper level gives you <span style="color:var(--gold);">one point</span> to spend in your class path.<br><br>' +
+        'Tap a <span style="color:var(--sage);">+</span> next to any node above to feel how it works.',
+        '',null,'top');
+      if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+      // Snapshot total tree points spent. Watch for an increase.
+      var _startSpent=0;
+      try{
+        var _pts=(window._LW_treePoints&&window._LW_treePoints())||{};
+        for(var _k in _pts){if(_pts.hasOwnProperty(_k))_startSpent += _pts[_k]||0;}
+      }catch(e){}
+      var polls=0;
+      var watch=function(){
+        if(_getStep()!==47)return;
+        var nowSpent=0;
+        try{
+          var _p=(window._LW_treePoints&&window._LW_treePoints())||{};
+          for(var _k in _p){if(_p.hasOwnProperty(_k))nowSpent += _p[_k]||0;}
+        }catch(e){}
+        if(nowSpent>_startSpent){
+          _clear();
+          setTimeout(_step48,800);
+          return;
+        }
+        if(polls<1200){polls++;setTimeout(watch,500);}
+      };
+      watch();
     },300);
   },200);
 }
