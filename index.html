@@ -44004,6 +44004,7 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      flip fires. */
   @keyframes lwTutCardPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(200,168,75,0.55);}50%{transform:scale(1.025);box-shadow:0 0 32px 8px rgba(200,168,75,0.4);}}
   .cs-tut-pulse-card{animation:lwTutCardPulse 1.6s ease-in-out infinite;}
+  @keyframes lwTutMiniPulse{0%,100%{box-shadow:0 6px 24px rgba(0,0,0,0.75),0 0 20px rgba(200,168,75,0.3);}50%{box-shadow:0 6px 24px rgba(0,0,0,0.75),0 0 32px rgba(200,168,75,0.55);}}
   /* Steps 8-9 happen on the back face and must NOT let the player
      accidentally flip the card back to front (which would un-reveal
      the rarity and skip step 10's watch). Lock card taps until step
@@ -58393,8 +58394,8 @@ function _step42(){
     if (old) old.remove();
     var mini = document.createElement('div');
     mini.id = 'lw-tut-mini-prompt';
-    mini.style.cssText = 'position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:1000010;background:rgba(18,24,16,0.95);border:1px solid rgba(200,168,75,0.3);border-radius:10px;padding:0.45rem 0.9rem;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);letter-spacing:0.04em;max-width:92vw;white-space:nowrap;box-shadow:0 4px 18px rgba(0,0,0,0.6);';
-    mini.textContent = 'Tap your backpack, send the seed to your nursery.';
+    mini.style.cssText = 'position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:1000010;background:linear-gradient(180deg,rgba(32,40,24,0.98),rgba(18,24,16,0.98));border:2px solid rgba(200,168,75,0.6);border-radius:12px;padding:0.75rem 1.1rem;font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--gold);letter-spacing:0.08em;max-width:92vw;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,0.75),0 0 20px rgba(200,168,75,0.3);animation:lwTutMiniPulse 2s ease-in-out infinite;';
+    mini.textContent = 'TAP YOUR BACKPACK. SEND THE SEED TO YOUR NURSERY.';
     document.body.appendChild(mini);
   } catch(e) {}
   var _advanced=false;
@@ -58436,18 +58437,21 @@ function _step43(){
     }
   }catch(e){}
   // Allow the nursery nav button to light up + accept taps during
-  // this step. (canSee.nurseryTab already returns true, so nothing
-  // else to do here beyond spotlighting.)
+  // this step. Also add a pulsing glow via _lwPulseHint so the player
+  // sees WHICH button to tap. Stephen Apr 22: "you need to make the
+  // button light up and glow so people are aware they can click it."
   try{document.body.classList.add('lw-tut-nav-nursery');}catch(e){}
   var nav=document.getElementById('nav-btn-nursery');
-  if(nav){try{_spotlight&&_spotlight(nav);}catch(e){}}
-  // OK button included so the player can always advance manually if
-  // the detection signal misfires. Stephen Apr 22: "the prompt is
-  // stuck on the screen and the screen is dark ... this prompt needs
-  // to have an okay or something."
+  if(nav){
+    try{_spotlight&&_spotlight(nav);}catch(e){}
+    try{if(window._lwPulseHint)window._lwPulseHint(nav,60000,'lw_tut_nur_nav_pulse');}catch(e){}
+  }
+  // No OK button — action-required step. Detection is robust now
+  // (panel.active + nav.active dual signal). Player MUST tap nursery.
   _dialog(
     'Your seed is in the nursery now. Tap the <span style="color:var(--gold);">NURSERY</span> tab at the bottom.',
-    'OK',function(){_clear();setTimeout(_step44,400);},'top');
+    '',null,'top');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   var polls=0;
   var watch=function(){
     if(_getStep()!==43)return;
@@ -58537,15 +58541,17 @@ function _step45(){
 function _step46(){
   _setStep(46);
   _clear();
-  // Keeper-bar taps are CSS-locked during tutorial; inline !important
-  // on both name + avatar overrides that. Cleared in _done().
+  // Spotlight the WHOLE keeper bar so the player sees the full UI
+  // region that opens the profile, not just the tiny name text.
+  // Stephen Apr 22: "only the actual text lights up. the keeper bar
+  // should be highlighted to lead the player."
+  var bar = document.getElementById('pw-keeper-bar');
   var avEl = document.querySelector('#pw-keeper-bar .kb-avatar');
   var nmEl = document.querySelector('#pw-keeper-bar .kb-name');
-  var target = nmEl || avEl || document.getElementById('pw-keeper-bar');
-  // _spotlight() FIRST — it sets el.style.pointerEvents='auto' without
-  // !important, which would clear our priority flag if applied after
-  // our setProperty. Apply the !important overrides AFTER spotlight.
-  if(target){try{_spotlight&&_spotlight(target);}catch(e){}}
+  if(bar){try{_spotlight&&_spotlight(bar);}catch(e){}}
+  // Unlock taps on the tap-triggers AFTER _spotlight so the !important
+  // flag sticks (spotlight sets pointer-events='auto' without
+  // !important, which would clear our priority on subsequent writes).
   try{
     if(avEl){avEl.style.setProperty('pointer-events','auto','important');avEl.style.setProperty('opacity','1','important');}
     if(nmEl){nmEl.style.setProperty('pointer-events','auto','important');nmEl.style.setProperty('opacity','1','important');}
@@ -58588,8 +58594,8 @@ function _step47(){
         _dialog(
           'Pick your <span style="color:var(--gold);">specialization</span>.<br><br>' +
           'Forager, Breeder, Cartographer, Tender, or Keeper; each shapes how you play. Tap CHOOSE on the one that calls to you.',
-          'CONTINUE',function(){_clear();setTimeout(_step48,400);},'top');
-  // (tutorial: button kept for manual advance — audit Apr 22)
+          '',null,'top');
+        if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
         var polls=0;
         var watch=function(){
           if(_getStep()!==47)return;
@@ -58670,9 +58676,9 @@ function _step50(){
     if(ov)ov.remove();
   }catch(e){}
   _dialog(
-    '<span style="color:var(--gold);">That\'s the loop.</span><br><br>' +
+    '<span style="color:var(--gold);">You are the sun of your garden.</span><br><br>' +
     'Play games, mint plants, place them in the wild, tend what you love, forage what you find. Everything else; breeding, climate, contests, the Book of Secrets; will fill in as you play.<br><br>' +
-    'Go make beautiful things.',
+    '<span style="color:var(--sage);">Go make beautiful things.</span>',
     'BEGIN',function(){
       _clear();
       _lwTutCleanupMocks();
