@@ -58018,36 +58018,21 @@ function _step37(){
     'Pick a plant and tap <span style="color:var(--gold);">PLACE HERE</span> to plant it in the Wild.<br><br>The hex with three Wisp Keeper plants is your training ground.',
     '',null,'top');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
-  // Snapshot wild plant count so we can detect an ACTUAL placement
-  // (count increased) vs a bare carousel close (player cancelled).
-  // Previous logic treated any carousel close as "placed in empty hex"
-  // and fast-forwarded to _step39 → _step40 (forage prompt) before the
-  // player had actually sowed a plant. Stephen 2026-04-21: "telling me
-  // to click forage before I finish planting."
-  var startWildCount=0;
-  try{startWildCount=(JSON.parse(localStorage.getItem('fg_wild_plants')||'[]')).length;}catch(e){}
+  // Wait for the contest inspector to open (full hex) OR for plant
+  // to land in wild (empty hex). Either way, advance.
   var polls=0;
   var watch=function(){
-    // Contest inspector open = full hex → advance to step 38 duel.
     var ci=document.getElementById('lw-contest-inspector');
     if(ci){_clear();setTimeout(_step38,400);return;}
-    // Did a new wild plant land in localStorage? That's the ONLY
-    // reliable signal for an empty-hex placement. Don't trust carousel
-    // state alone.
-    var nowCount=0;
-    try{nowCount=(JSON.parse(localStorage.getItem('fg_wild_plants')||'[]')).length;}catch(e){}
-    if(nowCount>startWildCount){
-      _clear();setTimeout(_step39,600);return;
-    }
-    // Carousel closed + no new plant = player cancelled. Go BACK to
-    // step 36 (re-pulse SOW) so the tutorial doesn't skip forward.
+    // Carousel closed without contest = empty hex placement = skip duel
     var m=document.getElementById('plant-gallery-modal');
     var carouselOpen=m&&m.classList.contains('open');
     if(!carouselOpen&&!document.body.classList.contains('lw-carousel-wild-mode')){
-      _clear();setTimeout(_step36,600);return;
+      // Player closed without placing OR placed in empty hex
+      _clear();setTimeout(_step39,600);return;
     }
     if(polls<1200){polls++;setTimeout(watch,500);}
-    else {setTimeout(_step36,400);} // stall-out fallback: retry SOW, never skip past
+    else {setTimeout(_step39,400);}
   };
   watch();
 }
@@ -58449,95 +58434,6 @@ function _resume(step){
     }
   }catch(e){}
 })();
-
-// ═══ DEFENSIVE CLEANUP — if tutorial state is 'done' or missing, strip
-// every lw-tut-* body class unconditionally. This is the last line of
-// defense against stale tutorial classes locking the nav after the
-// tutorial has already finished/skipped. Runs on boot + on every
-// switchTab. Stephen 2026-04-20: "nursery and wild locked themselves"
-// after exiting wild — body classes were carrying over despite
-// tutorial being done. ═══
-function _lwStripTutorialClassesIfDone(){
-  try{
-    var st=localStorage.getItem('lw_tut');
-    // Only strip when tutorial is EXPLICITLY 'done'. First-time users
-    // (st===null) must be left alone — PW_Onboard adds tutorial classes
-    // during boot, and stripping them creates a ping-pong war with
-    // the MutationObserver that OOMs the renderer ("Aw snap") on
-    // Pixel 9. Stephen 2026-04-21. Prior guard `if(st&&st!=='done')`
-    // short-circuited on null → stripped → crash.
-    if(st!=='done')return;
-    var b=document.body;if(!b)return;
-    var stale=['lw-tut-active','lw-tut-limit-actions',
-      'lw-tut-bp-on','lw-tut-bos-on','lw-tut-sb-on','lw-tut-mint-only','lw-tut-newplant-only',
-      'lw-tut-carousel-lock','lw-tut-carousel-can-close','lw-tut-carousel-freeze','lw-tut-carousel-breed-only','lw-tut-breed-only','lw-tut-water-only',
-      'lw-tut-nav-greenhouse','lw-tut-nav-focus','lw-tut-nav-nursery','lw-tut-nav-wild',
-      'lw-tut-game-handoff','lw-tutorial-pending'];
-    for(var i=0;i<stale.length;i++){b.classList.remove(stale[i]);}
-  }catch(e){}
-}
-// Boot pass — clear on load.
-if(document.readyState==='complete'||document.readyState==='interactive'){
-  setTimeout(_lwStripTutorialClassesIfDone,200);
-} else {
-  document.addEventListener('DOMContentLoaded',function(){setTimeout(_lwStripTutorialClassesIfDone,200);});
-}
-// Tab-switch pass — catches the exact case Stephen hit. Wraps switchTab
-// so any tab change re-runs the check and strips stale classes before
-// the nav-rule CSS evaluates against the new tab state.
-(function(){
-  var _prev=window.switchTab;
-  if(typeof _prev==='function'){
-    window.switchTab=function(){
-      _lwStripTutorialClassesIfDone();
-      return _prev.apply(this,arguments);
-    };
-  }
-})();
-// Expose a manual unstick for the console in case a user ever hits
-// this again and needs a way out without DevTools knowledge.
-window.lwUnstick=function(){
-  try{localStorage.setItem('lw_tut','done');}catch(e){}
-  try{localStorage.setItem('lw_plant_xp_unlocked','1');}catch(e){}
-  _lwStripTutorialClassesIfDone();
-  try{location.reload();}catch(e){}
-};
-// MutationObserver on body.classList — if anything adds a lw-tut-* class
-// after the tutorial is 'done', strip it within a tick. Any stray
-// setTimeout or forgotten polling watch from an earlier step that tries
-// to re-apply tutorial state post-completion gets reverted before the
-// user sees nav lock up. Stephen 2026-04-21: "as soon as i go back to
-// greenhouse the nursery and wild become locked" — symptom of a stale
-// class add after _done().
-(function _lwInstallClassWatcher(){
-  if(!window.MutationObserver)return;
-  var obs=new MutationObserver(function(mutations){
-    try{
-      var st=localStorage.getItem('lw_tut');
-      if(st!=='done')return; // ONLY strip after tutorial explicitly done
-      _lwStripTutorialClassesIfDone();
-    }catch(e){}
-  });
-  var start=function(){
-    try{obs.observe(document.body,{attributes:true,attributeFilter:['class']});}catch(e){}
-  };
-  if(document.body){start();}
-  else{document.addEventListener('DOMContentLoaded',start);}
-})();
-// URL-parameter unstick for on-device use (no DevTools needed).
-// Visit lucidwinds.com/?unstick to end the tutorial cleanly and
-// strip every stale body class. Runs BEFORE the tutorial resume
-// boot so it wins the race. Stephen 2026-04-20 — tests on Pixel 9,
-// can't run console commands.
-try{
-  if(typeof location!=='undefined'&&location.search&&location.search.indexOf('unstick')!==-1){
-    try{localStorage.setItem('lw_tut','done');}catch(e){}
-    try{localStorage.setItem('lw_plant_xp_unlocked','1');}catch(e){}
-    _lwStripTutorialClassesIfDone();
-    // Strip the query param so a later reload doesn't repeat.
-    try{history.replaceState({},'',location.pathname);}catch(e){}
-  }
-}catch(e){}
 })();
 </script>
 
@@ -63243,22 +63139,15 @@ window._lwClaimHerbarium = function(id){
   function hexDifficulty(grade) {
     var g = String(grade || 'Common').toLowerCase();
     // Mastermind scoring: exact=2, present=1, miss=0 → max per attempt = slots*2.
-    // handSize scales inversely with rarity — easier hunts start with the
-    // full alphabet (9 cards covers all 6 base elements + 3 rare wilds);
-    // harder hunts shrink the hand so the player has less slack and must
-    // deduce which elements belong. Cosmic forces a perfect solve with
-    // zero spare cards. Stephen 2026-04-21 — "this is our signature
-    // mechanic, it better be damn good." slots capped at 6 (the base
-    // element pool size) — old cosmic=7 was unwinnable because
-    // hexComposition picks without replacement from 6 base elements.
+    // Tightened scoreNeeded so failure is a real possibility — was too lenient.
     var map = {
-      common:    { slots: 3, cards: 3, handSize: 9, attempts: 3, scoreNeeded: 5 },   // max 6  · 3 extra cards
-      uncommon:  { slots: 3, cards: 3, handSize: 8, attempts: 3, scoreNeeded: 5 },   // max 6  · 2 spare wilds
-      rare:      { slots: 4, cards: 4, handSize: 8, attempts: 3, scoreNeeded: 7 },   // max 8  · 2 spare
-      epic:      { slots: 4, cards: 4, handSize: 7, attempts: 3, scoreNeeded: 7 },   // max 8  · 1 wild only
-      legendary: { slots: 5, cards: 5, handSize: 7, attempts: 4, scoreNeeded: 9 },   // max 10 · 1 wild, 4 attempts
-      mythic:    { slots: 6, cards: 6, handSize: 7, attempts: 4, scoreNeeded: 11 },  // max 12 · 1 wild to swap
-      cosmic:    { slots: 6, cards: 6, handSize: 6, attempts: 5, scoreNeeded: 12 }   // max 12 · PERFECT ONLY, no spare, 5 tries
+      common:    { slots: 3, cards: 3, handSize: 9, attempts: 3, scoreNeeded: 5 },   // max 6
+      uncommon:  { slots: 3, cards: 3, handSize: 9, attempts: 3, scoreNeeded: 6 },   // must be perfect
+      rare:      { slots: 4, cards: 4, handSize: 9, attempts: 3, scoreNeeded: 7 },   // max 8
+      epic:      { slots: 4, cards: 4, handSize: 9, attempts: 3, scoreNeeded: 8 },   // must be perfect
+      legendary: { slots: 5, cards: 5, handSize: 9, attempts: 4, scoreNeeded: 9 },   // max 10
+      mythic:    { slots: 6, cards: 6, handSize: 9, attempts: 4, scoreNeeded: 11 },  // max 12
+      cosmic:    { slots: 7, cards: 7, handSize: 9, attempts: 4, scoreNeeded: 13 }   // max 14
     };
     return map[g] || map.common;
   }
@@ -63704,21 +63593,15 @@ window._lwClaimHerbarium = function(id){
     if (v === 'lens') return 'LENS';
     return 'NEUTRAL';
   }
-  // Build a hand of `size` cards. Always includes all 6 base elements
-  // (sun/shade/rain/dry/wind/still) so the hex is always solvable in
-  // principle — the hex picks without replacement from those 6, so
-  // missing any base element would make some hexes unwinnable. Extra
-  // slots beyond 6 get filled with rare wilds (moonlight/thunder/aurora)
-  // in order, so bigger hands have more wild-card safety nets.
-  // Stephen 2026-04-21 — rarity-scaled hand size is the signature
-  // balance knob for foraging.
+  // Build a 5-card hand from the active deck (using inventory to validate)
+  // Build a hand up to `size` cards (defaults to 5 for backwards compat).
+  // Deck-first, then fills remaining from inventory so harder hexes can
+  // still find a workable hand. Rare wild cards are eligible too.
   function buildHand(size) {
-    var base = ['sun','shade','rain','dry','wind','still'];
-    var rares = ['moonlight','thunder','aurora'];
-    if (!size || size < 6) return base.slice(); // never go below 6 base
-    var out = base.slice();
-    for (var i = 0; i < rares.length && out.length < size; i++) out.push(rares[i]);
-    return out;
+    // All 9 card types always available in the picker. Card inventory isn't
+    // a gating mechanic — forage difficulty comes from solving the pattern,
+    // not running out of cards. Stephen: "everyone should always have them all."
+    return ['sun','shade','rain','dry','wind','still','moonlight','thunder','aurora'];
   }
   function openForagePanel(zoneKey, grade, onDone) {
     var attempts = getAttempts(zoneKey);
