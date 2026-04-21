@@ -56451,7 +56451,13 @@ _done=function(){
     var _bpi=document.getElementById('bpi');
     if(_bpi)_bpi.classList.remove('lw-pulse-hint');
     var _bos=document.getElementById('kb-compendium');
-    if(_bos)_bos.classList.remove('lw-pulse-hint');
+    if(_bos){
+      _bos.classList.remove('lw-pulse-hint');
+      // Clear step-32 inline overrides so normal gating resumes
+      // post-tutorial.
+      _bos.style.removeProperty('pointer-events');
+      _bos.style.removeProperty('opacity');
+    }
   }catch(e){}
   // Grant XP to L5 on tutorial end (skip or natural finish). Unlocks
   // Nursery (L2), Wild (L3), feral (L4), stranger-tend (L5) in one move.
@@ -57725,6 +57731,12 @@ function _step32(){
   // the actual journal state. Also unlock the button so tapping works.
   try{bos.style.display='flex';bos.classList.add('has-entries');}catch(e){}
   try{document.body.classList.add('lw-tut-bos-on');}catch(e){}
+  // Inline !important bypasses any CSS specificity race on the
+  // lw-tut-bos-on body class. Cleared in _done() override.
+  try{
+    bos.style.setProperty('pointer-events','auto','important');
+    bos.style.setProperty('opacity','1','important');
+  }catch(e){}
   // Overlay tap is a no-op; only the spotlighted Book of Secrets advances.
   _overlay(function(){/* no-op */});
   _spotlight(bos);
