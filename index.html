@@ -37646,8 +37646,12 @@ function _loadAll(){
   for(var i=0;i<saved.length;i++){var w=saved[i];if(!w||!w.hash)continue;var d=w.date?Math.floor((Date.now()-new Date(w.date).getTime())/86400000):0;_addPlant({lat:w.lat,lng:w.lng,hash:w.hash,own:w.own!==false,days:d,pollen:d*3,status:d>7?'Thriving':d>2?'Growing':'Young',ownerUid:w.ownerUid||'',ownerName:w.ownerName||'Keeper',defenderGame:w.defenderGame||'set'});}
   _drawZoneHexes();_updateCounts();
   _subscribeSharedDrops();
-  // Empty-state: if no local wild plants, show drop hint after brief delay
-  if(saved.length===0&&!localStorage.getItem('lw_first_drop')){
+  // Empty-state: if no local wild plants, show drop hint after brief delay.
+  // Suppress during active tutorial — step 36 already has its own SOW
+  // prompt and this one stacks on top. Stephen 2026-04-21.
+  var _tutSt=localStorage.getItem('lw_tut');
+  var _tutMid=_tutSt&&_tutSt!=='done';
+  if(saved.length===0&&!localStorage.getItem('lw_first_drop')&&!_tutMid){
     setTimeout(function(){
       var existing=document.getElementById('w-empty-hint');if(existing)return;
       var hint=document.createElement('div');hint.id='w-empty-hint';
