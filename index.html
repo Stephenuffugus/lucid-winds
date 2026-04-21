@@ -58360,13 +58360,15 @@ function _step41(){
       return;
     }
     // Fail path: forage panel was open (player played the round) and
-    // has now closed without a seed collected. Skip past the bp→nursery
-    // step since there's nothing to send, advance straight to step 43
-    // (nursery tab) so the tutorial continues.
+    // has now closed without a seed collected. Skip past the ENTIRE
+    // nursery flow (steps 42-45 assume a seed exists) straight to
+    // step 46 (class intro). Stephen Apr 22: "i failed foraging and
+    // it told me my seed was in the nursery which was obviously not
+    // true." The nursery steps only make sense when there's a seed.
     var _panelNow = !!document.getElementById('lw-forage-panel');
     if (_panelNow) _panelWasOpen = true;
     if (_panelWasOpen && !_panelNow) {
-      setTimeout(_step43, 1200);
+      setTimeout(_step46, 1200);
       return;
     }
     if(polls<1200){polls++;setTimeout(watch,500);}
@@ -58539,12 +58541,15 @@ function _step46(){
   // on both name + avatar overrides that. Cleared in _done().
   var avEl = document.querySelector('#pw-keeper-bar .kb-avatar');
   var nmEl = document.querySelector('#pw-keeper-bar .kb-name');
+  var target = nmEl || avEl || document.getElementById('pw-keeper-bar');
+  // _spotlight() FIRST — it sets el.style.pointerEvents='auto' without
+  // !important, which would clear our priority flag if applied after
+  // our setProperty. Apply the !important overrides AFTER spotlight.
+  if(target){try{_spotlight&&_spotlight(target);}catch(e){}}
   try{
     if(avEl){avEl.style.setProperty('pointer-events','auto','important');avEl.style.setProperty('opacity','1','important');}
     if(nmEl){nmEl.style.setProperty('pointer-events','auto','important');nmEl.style.setProperty('opacity','1','important');}
   }catch(e){}
-  var target = nmEl || avEl || document.getElementById('pw-keeper-bar');
-  if(target){try{_spotlight&&_spotlight(target);}catch(e){}}
   _dialog(
     'Keepers walk one of five paths. Tap your <span style="color:var(--gold);">name</span> at the top to open your profile.',
     '',null,'bottom');
