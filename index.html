@@ -58460,7 +58460,13 @@ function _resume(step){
 function _lwStripTutorialClassesIfDone(){
   try{
     var st=localStorage.getItem('lw_tut');
-    if(st&&st!=='done')return; // tutorial still active, leave classes alone
+    // Only strip when tutorial is EXPLICITLY 'done'. First-time users
+    // (st===null) must be left alone — PW_Onboard adds tutorial classes
+    // during boot, and stripping them creates a ping-pong war with
+    // the MutationObserver that OOMs the renderer ("Aw snap") on
+    // Pixel 9. Stephen 2026-04-21. Prior guard `if(st&&st!=='done')`
+    // short-circuited on null → stripped → crash.
+    if(st!=='done')return;
     var b=document.body;if(!b)return;
     var stale=['lw-tut-active','lw-tut-limit-actions',
       'lw-tut-bp-on','lw-tut-bos-on','lw-tut-sb-on','lw-tut-mint-only','lw-tut-newplant-only',
@@ -58508,7 +58514,7 @@ window.lwUnstick=function(){
   var obs=new MutationObserver(function(mutations){
     try{
       var st=localStorage.getItem('lw_tut');
-      if(st&&st!=='done')return; // tutorial still legitimately active
+      if(st!=='done')return; // ONLY strip after tutorial explicitly done
       _lwStripTutorialClassesIfDone();
     }catch(e){}
   });
