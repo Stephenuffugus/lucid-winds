@@ -51385,9 +51385,12 @@ function _renderClassSection(){
   var el=document.getElementById('cs-class-body');if(!el)return;
   var cls=(window._lwGetClass&&window._lwGetClass())||null;
   if(!cls||typeof LW_CLASSES==='undefined'||!LW_CLASSES[cls]){
-    // No class yet — show gate message or pick prompt based on level
+    // Use canSee.classPick so the tutorial-done / guided-step override is
+    // honored here too. Hardcoded curLvl<7 was telling the player "pick
+    // a class at L7" even after completing or skipping the tutorial.
     var curLvl=(window.canSee&&window.canSee.currentLevel)?window.canSee.currentLevel():1;
-    if(curLvl<7){
+    var _canPick=(window.canSee&&window.canSee.classPick)?window.canSee.classPick():(curLvl>=7);
+    if(!_canPick){
       el.innerHTML='<div class="cs-class-none">Pick a class at Keeper Level 7.<br>(Currently '+curLvl+'.)</div>';
     } else {
       el.innerHTML='<div class="cs-class-none">Ready to choose a path.</div>'
