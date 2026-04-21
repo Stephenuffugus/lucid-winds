@@ -7750,8 +7750,8 @@ window._addSwitchTabHook = function(fn){
     <button class="fg-nav-min" onclick="this.parentElement.classList.toggle('minimized')" title="Hide nav"><span class="nm-chev">▾</span><span>HIDE</span></button>
     <button class="fg-nav-btn" onclick="switchTab('game')"><img src="assets/games/wild/nav-game-v5.png" alt="Games"><span class="fg-nav-label">GAMES</span></button>
     <button class="fg-nav-btn active" onclick="switchTab('greenhouse')" style="position:relative;"><img src="assets/games/wild/nav-greenhouse-v5.png" alt="Greenhouse"><span class="fg-nav-label">GREENHOUSE</span><span id="nav-gh-badge" class="nav-badge" style="display:none;"></span></button>
-    <button id="nav-btn-nursery" class="fg-nav-btn" onclick="if(window._lwNavTap)_lwNavTap('nursery',2);else switchTab('nursery');" style="position:relative;"><img src="assets/games/wild/nav-nursery-v5.png" alt="Nursery"><span class="fg-nav-label">NURSERY</span><span id="nav-nur-badge" class="nav-badge" style="display:none;"></span></button>
-    <button id="nav-btn-wild" class="fg-nav-btn" onclick="if(window._lwNavTap)_lwNavTap('wild',3);else switchTab('wild');"><img src="assets/games/wild/nav-wild-v5.png" alt="Wild"><span class="fg-nav-label">WILD</span></button>
+    <button id="nav-btn-nursery" class="fg-nav-btn" onclick="if(window._lwNavTap)_lwNavTap('nursery',0);else switchTab('nursery');" style="position:relative;"><img src="assets/games/wild/nav-nursery-v5.png" alt="Nursery"><span class="fg-nav-label">NURSERY</span><span id="nav-nur-badge" class="nav-badge" style="display:none;"></span></button>
+    <button id="nav-btn-wild" class="fg-nav-btn" onclick="if(window._lwNavTap)_lwNavTap('wild',0);else switchTab('wild');"><img src="assets/games/wild/nav-wild-v5.png" alt="Wild"><span class="fg-nav-label">WILD</span></button>
   </div>
 
   <!-- WILD TAB NAV — replaces bottom nav when on Wild tab -->
@@ -70490,8 +70490,13 @@ function _lwLevel(){
 // are folded in alongside existing activity-based gates.
 window.canSee = {
   // ═══ PROGRESSIVE UNLOCK LADDER (from docs/TUTORIAL_PROGRESSION.md) ═══
-  nurseryTab: function(){return _lwLevel()>=2;},
-  wildTab: function(){return _lwLevel()>=3;},
+  // Nursery + Wild are tutorial-unlocked. No level gate — the tutorial
+  // walks the player through both, and post-tutorial they should have
+  // full access regardless of XP state. Prevents the "finished tutorial
+  // but still locked out" bug when Track-A XP grant races with nav
+  // render or fails to fire.
+  nurseryTab: function(){return true;},
+  wildTab: function(){return true;},
   feralCollect: function(){return _lwLevel()>=4;},
   strangerTend: function(){return _lwLevel()>=5;},
   keeperBarSinks: function(){return _lwLevel()>=6;},  // mystery/slots/weather
