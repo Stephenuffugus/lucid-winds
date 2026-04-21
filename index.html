@@ -1264,8 +1264,8 @@
     .cf-name .np-top{display:block;font-size:0.8rem;font-style:italic;letter-spacing:0.06em;opacity:0.7;font-weight:400;}
     .cf-name .np-main{display:block;font-size:1.9rem;}
     .cf-name .np-title{display:block;font-size:0.7rem;font-style:italic;letter-spacing:0.05em;opacity:0.65;font-weight:400;margin-top:2px;}
-    .cf-art-window{display:flex;align-items:flex-end;justify-content:center;overflow:visible;min-height:0;background:transparent;border:none;padding-bottom:2%;}
-    .cf-art-window svg{max-height:100%;max-width:80%;height:auto;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));transform:none;}
+    .cf-art-window{display:flex;align-items:center;justify-content:center;overflow:visible;min-height:0;background:transparent;border:none;padding-bottom:2%;}
+    .cf-art-window svg{max-height:100%;max-width:90%;width:auto;height:100%;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));transform:none;}
     .cf-haiku-zone{display:flex;align-items:flex-start;justify-content:center;overflow:hidden;background:transparent;border:none;padding:2% 4% 0;}
     .cf-haiku{font-family:'Playfair Display',serif;font-style:italic;font-size:0.85rem;color:rgba(212,207,188,0.92);text-align:center;line-height:1.45;width:100%;}
     .cf-ea{position:absolute;top:4%;right:10%;font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--gold);background:rgba(10,10,8,0.75);border:1.5px solid rgba(200,168,75,0.3);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;z-index:5;backdrop-filter:blur(4px);}
@@ -6126,7 +6126,23 @@ window._addSwitchTabHook = function(fn){
         b.style.position = 'fixed';
         b.style.zIndex = '999';
         b.style.willChange = '';
-        b.style.pointerEvents = '';
+        // Determine tutorial state FIRST — we need to know whether
+        // to preserve step-32's inline pointer-events/opacity overrides
+        // or clear them. Previously this unconditionally cleared
+        // pointerEvents every 10s, wiping step 32's !important override
+        // and causing the BoS to grey out mid-tutorial (Stephen Apr 22).
+        var _tutStep = 0;
+        try { _tutStep = parseInt(localStorage.getItem('lw_tut') || '0', 10); } catch(e){}
+        var _tutActive = document.body.classList.contains('lw-tut-active');
+        if (_tutActive && _tutStep >= 32 && _tutStep < 35) {
+          // Mid-BoS-step: RE-APPLY the step 32 inline override instead
+          // of clearing it. Belt-and-suspenders if the CSS cascade
+          // misfires for any reason.
+          b.style.setProperty('pointer-events', 'auto', 'important');
+          b.style.setProperty('opacity', '1', 'important');
+        } else {
+          b.style.pointerEvents = '';
+        }
         // If tutorial is DONE, force display:block so stale inline
         // display:none (from any code path) is overridden.
         try {
@@ -6136,13 +6152,9 @@ window._addSwitchTabHook = function(fn){
         } catch(e){}
         // Defensive: if mid-tutorial AND past step 32 (when BoS is
         // supposed to be clickable), ensure the lw-tut-bos-on class
-        // is on body. Stephen 2026-04-19 hit a case where step 32
-        // fired but the class addition was lost — refreshing the page
-        // fixed it via the resume code's belt-and-suspenders flag set.
-        // This adds the heal to every interval/tab-switch tick.
+        // is on body.
         try {
-          var _tutStep = parseInt(localStorage.getItem('lw_tut') || '0', 10);
-          if (_tutStep >= 32 && document.body.classList.contains('lw-tut-active')
+          if (_tutStep >= 32 && _tutActive
               && !document.body.classList.contains('lw-tut-bos-on')) {
             document.body.classList.add('lw-tut-bos-on');
           }
@@ -64358,7 +64370,7 @@ window._lwClaimHerbarium = function(id){
         var bg = isSelected ? 'rgba(200,168,75,0.18)' : 'rgba(18,22,16,0.7)';
         var border = isSelected ? '2px solid rgba(200,168,75,0.5)' : '1.5px solid rgba(74,124,53,0.25)';
         var hintTxt = isSelected ? ('PLACED \u00d7' + placedN) : 'TAP TO PLACE';
-        h += '<div data-lwforage-drag="hand:' + c + '" onclick="if(!window._lwForageWasDrag)window._lwForagePick(\'' + c + '\');window._lwForageWasDrag=false;" style="position:relative;cursor:grab;width:168px;aspect-ratio:3/4;flex-shrink:0;background:' + bg + ';border:' + border + ';border-radius:14px;overflow:hidden;touch-action:none;' + (resolved ? 'pointer-events:none;opacity:0.4;' : '') + 'transition:opacity 0.18s ease;box-shadow:0 6px 16px rgba(0,0,0,0.5);">';
+        h += '<div data-lwforage-drag="hand:' + c + '" onclick="if(!window._lwForageWasDrag)window._lwForagePick(\'' + c + '\');window._lwForageWasDrag=false;" style="position:relative;cursor:grab;width:168px;aspect-ratio:3/4;flex-shrink:0;background:' + bg + ';border:' + border + ';border-radius:14px;overflow:hidden;touch-action:pan-x;' + (resolved ? 'pointer-events:none;opacity:0.4;' : '') + 'transition:opacity 0.18s ease;box-shadow:0 6px 16px rgba(0,0,0,0.5);">';
         h += '<img src="assets/foraging/el-' + c + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2.6rem;&quot;>' + el.icon + '</div>\';">';
         if (placedN > 0) {
           h += '<div style="position:absolute;top:6px;right:6px;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:linear-gradient(180deg,#f5dc95,#c8a84b);color:#0d100c;font-family:Bebas Neue,sans-serif;font-size:0.7rem;display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(240,208,144,0.7);">\u00d7' + placedN + '</div>';
