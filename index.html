@@ -57365,29 +57365,63 @@ function _step22(){
   }catch(e){}
   if(window.switchTab)switchTab('nursery');
   setTimeout(function(){
+    // Pre-check: if a seed is ALREADY watered today (prior tutorial
+    // run left the state behind), handleWaterSeed early-returns with
+    // "Already watered today" — watch would poll forever waiting for
+    // a change that can't happen. Skip straight to step 22b in that
+    // case so the tutorial isn't stuck.
+    var _todayStr = new Date().toISOString().split('T')[0];
+    var _alreadyWatered = false;
+    try {
+      var _nurNow = JSON.parse(localStorage.getItem('sws_nursery')||'[]');
+      for (var _ni=0; _ni<_nurNow.length; _ni++) {
+        var _s = _nurNow[_ni];
+        if (_s && _s.waterLog && _s.waterLog.indexOf(_todayStr) >= 0) {
+          _alreadyWatered = true;
+          break;
+        }
+      }
+    } catch(e){}
+    if (_alreadyWatered) {
+      _clear();
+      setTimeout(_step22b, 400);
+      return;
+    }
     // The .nur-btn.water class is reused for WATER, CROSS-POLLINATE,
     // and USE TO BREED buttons. Target the actual water action via
     // its onclick so the pulse + spotlight land on the right button.
     var waterBtn=document.querySelector('.nur-btn.water[onclick*="handleWaterSeed"]')
               ||document.querySelector('.nur-btn.water');
     if(waterBtn&&window._lwPulseHint){window._lwPulseHint(waterBtn,30000,'lw_tut_water_pulse');}
+    // Dialog now has an I WATERED IT button as a manual advance so
+    // a stuck watcher (e.g., throttled save delay, secure-storage
+    // quirk, already-watered-today early return) can't trap the
+    // player. Watch still auto-advances if state changes.
     _dialog(
       'Welcome to your <span style="color:var(--gold);">Nursery</span>. Your new seed lives here.<br><br>' +
       'Water it <span style="color:var(--gold);">once</span> to start it off. <span style="color:var(--sage);">Tap WATER.</span>',
-      '',null,'top');
-    if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
-    // Snapshot the full nursery state so ANY change (water on any
-    // seed, accelerate, fertilize, bloom) advances — matches step
-    // 44's permissive detection. Previous code only checked
-    // nur[0].waterLog which was fragile with multiple seeds.
+      'I WATERED IT',function(){_clear();setTimeout(_step22b,400);},'top');
+    // Snapshot nursery state so ANY change advances — water on any
+    // seed, accelerate, fertilize, bloom. Also snapshot total
+    // waterLog entries as a backup signal.
     var _startState='';
-    try{_startState=localStorage.getItem('sws_nursery')||'[]';}catch(e){}
+    var _startWater=0;
+    try{
+      _startState=localStorage.getItem('sws_nursery')||'[]';
+      var _startNur=JSON.parse(_startState);
+      for(var _si=0;_si<_startNur.length;_si++){_startWater += ((_startNur[_si]&&_startNur[_si].waterLog)||[]).length;}
+    }catch(e){}
     var polls=0;
     var watch=function(){
       if(_getStep()!==22)return;
       var nowState='';
-      try{nowState=localStorage.getItem('sws_nursery')||'[]';}catch(e){}
-      if(nowState!==_startState){
+      var nowWater=0;
+      try{
+        nowState=localStorage.getItem('sws_nursery')||'[]';
+        var _nowNur=JSON.parse(nowState);
+        for(var _ni=0;_ni<_nowNur.length;_ni++){nowWater += ((_nowNur[_ni]&&_nowNur[_ni].waterLog)||[]).length;}
+      }catch(e){}
+      if(nowState!==_startState || nowWater>_startWater){
         _clear();setTimeout(_step22b,1500);return;
       }
       // Re-spotlight / re-pulse in case the seed card re-rendered.
@@ -57397,7 +57431,7 @@ function _step22(){
         if(wb2&&window._lwPulseHint)window._lwPulseHint(wb2,30000,'lw_tut_water_pulse');
       }
       if(polls<300){polls++;setTimeout(watch,500);}
-      // No _done() auto-skip — player must actually water.
+      // No _done() auto-skip — player must actually water or tap I WATERED IT.
     };
     watch();
   },1200);
