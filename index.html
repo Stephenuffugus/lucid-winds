@@ -56444,6 +56444,11 @@ _done=function(){
       _bos.style.removeProperty('pointer-events');
       _bos.style.removeProperty('opacity');
     }
+    // Clear step-43 inline overrides on keeper-bar name + avatar.
+    var _kbAv=document.querySelector('#pw-keeper-bar .kb-avatar');
+    if(_kbAv){_kbAv.style.removeProperty('pointer-events');_kbAv.style.removeProperty('opacity');}
+    var _kbNm=document.querySelector('#pw-keeper-bar .kb-name');
+    if(_kbNm){_kbNm.style.removeProperty('pointer-events');_kbNm.style.removeProperty('opacity');}
   }catch(e){}
   // Grant XP to L5 on tutorial end (skip or natural finish). Unlocks
   // Nursery (L2), Wild (L3), feral (L4), stranger-tend (L5) in one move.
@@ -58216,9 +58221,96 @@ function _step42(){
   },600000);
 }
 
-// ═══ STEP 43: wrap + cleanup + _done ═══
+// ═══ STEP 43: tap your name → character sheet ═══
 function _step43(){
   _setStep(43);
+  // Tutorial CSS disables keeper-bar taps (body.lw-tut-active rule at
+  // ~44014). Override inline with !important on both name + avatar —
+  // either tap should open the character sheet. Cleared in _done().
+  var avEl = document.querySelector('#pw-keeper-bar .kb-avatar');
+  var nmEl = document.querySelector('#pw-keeper-bar .kb-name');
+  try{
+    if(avEl){avEl.style.setProperty('pointer-events','auto','important');avEl.style.setProperty('opacity','1','important');}
+    if(nmEl){nmEl.style.setProperty('pointer-events','auto','important');nmEl.style.setProperty('opacity','1','important');}
+  }catch(e){}
+  var target = nmEl || avEl || document.getElementById('pw-keeper-bar');
+  if(target){try{_spotlight&&_spotlight(target);}catch(e){}}
+  _dialog(
+    'Tap your <span style="color:var(--gold);">name</span> at the top to open your Keeper profile.',
+    '',null,'bottom');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  var polls=0;
+  var watch=function(){
+    var cs=document.getElementById('pw-character');
+    if(cs&&cs.classList.contains('open')){
+      _clear();
+      setTimeout(_step44,500);
+      return;
+    }
+    if(polls<1200){polls++;setTimeout(watch,500);}
+    else {setTimeout(_step44,400);}
+  };
+  watch();
+}
+
+// ═══ STEP 44: point out companion slot on character sheet ═══
+function _step44(){
+  _setStep(44);
+  // Re-open char sheet defensively — cold-boot resume may land here
+  // with the sheet closed. PW_UI.openCharacter is idempotent.
+  try{if(window.PW_UI&&PW_UI.openCharacter)PW_UI.openCharacter();}catch(e){}
+  setTimeout(function(){
+    var card = document.getElementById('cs-companion-card')
+            || document.querySelector('.cs-companion-card')
+            || document.querySelector('#pw-character [id*="companion"]');
+    if(card){try{_spotlight&&_spotlight(card);}catch(e){}}
+    _dialog(
+      'This is your <span style="color:var(--gold);">companion slot</span>.<br><br>' +
+      'Any plant with a companion trait can live here and grant passive bonuses. You can change it anytime.',
+      'NEXT',function(){
+        _clear();
+        // Close character sheet and open Book of Secrets Class tab
+        // so step 45 lands on the class picker with zero extra taps.
+        try{
+          var cs2=document.getElementById('pw-character');
+          if(cs2)cs2.classList.remove('open');
+        }catch(e){}
+        setTimeout(function(){
+          try{if(window._openCompendiumUI)window._openCompendiumUI();}catch(e){}
+          setTimeout(function(){
+            try{if(window._bosSetTab)window._bosSetTab('class');}catch(e){}
+            setTimeout(_step45,350);
+          },300);
+        },200);
+      },'bottom');
+  },400);
+}
+
+// ═══ STEP 45: pick your class ═══
+function _step45(){
+  _setStep(45);
+  _dialog(
+    'Pick your <span style="color:var(--gold);">Keeper class</span>.<br><br>' +
+    'Forager, Breeder, Cartographer, Tender, or Keeper — each shapes how you play. Tap CHOOSE on the one that calls to you.',
+    '',null,'top');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  var polls=0;
+  var watch=function(){
+    var cls=null;try{cls=localStorage.getItem('lw_class');}catch(e){}
+    if(cls){
+      _clear();
+      setTimeout(_step46,900);
+      return;
+    }
+    if(polls<1200){polls++;setTimeout(watch,500);}
+    else {setTimeout(_step46,400);}
+  };
+  watch();
+}
+
+// ═══ STEP 46: wrap + cleanup + _done ═══
+function _step46(){
+  _setStep(46);
   _dialog(
     '<span style="color:var(--gold);">That\'s the loop.</span><br><br>' +
     'Play games, mint plants, place them in the wild, tend what you love, forage what you find. Everything else; breeding, climate, contests, the Book of Secrets; will fill in as you play.<br><br>' +
@@ -58480,6 +58572,9 @@ function _resume(step){
   if(step===41)return go(_step41);
   if(step===42)return go(_step42);
   if(step===43)return go(_step43);
+  if(step===44)return go(_step44);
+  if(step===45)return go(_step45);
+  if(step===46)return go(_step46);
   // Unknown / corrupted step — safest fallback is start from 1.
   go(_step1);
 }
@@ -70557,7 +70652,18 @@ window.canSee = {
     return _lwLevel()>=5;
   },
   keeperBarSinks: function(){return _lwLevel()>=6;},  // mystery/slots/weather
-  classPick: function(){return _lwLevel()>=7;},
+  // Class pick is tutorial-unlocked at step 45. After tutorial
+  // completion (lw_plant_xp_unlocked='1'), stays open regardless of
+  // level. Prevents the L7 gate from blocking the guided class-pick
+  // step and keeps post-tutorial parity with feral/stranger/nursery/wild.
+  classPick: function(){
+    try {
+      var ts = parseInt(localStorage.getItem('lw_tut')||'0',10);
+      if (ts >= 45) return true;
+      if (localStorage.getItem('lw_plant_xp_unlocked') === '1') return true;
+    } catch(e){}
+    return _lwLevel()>=7;
+  },
   greenhouseBreed: function(){return _lwLevel()>=7;},
   nurseryShopPots: function(){return _lwLevel()>=9;},
   nurseryShopBoosters: function(){return _lwLevel()>=10;},
