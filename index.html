@@ -63170,13 +63170,13 @@ window._lwClaimHerbarium = function(id){
     // Mastermind scoring: exact=2, present=1, miss=0 → max per attempt = slots*2.
     // Tightened scoreNeeded so failure is a real possibility — was too lenient.
     var map = {
-      common:    { slots: 3, cards: 3, handSize: 9, attempts: 3, scoreNeeded: 5 },   // max 6
-      uncommon:  { slots: 3, cards: 3, handSize: 9, attempts: 3, scoreNeeded: 6 },   // must be perfect
-      rare:      { slots: 4, cards: 4, handSize: 9, attempts: 3, scoreNeeded: 7 },   // max 8
-      epic:      { slots: 4, cards: 4, handSize: 9, attempts: 3, scoreNeeded: 8 },   // must be perfect
-      legendary: { slots: 5, cards: 5, handSize: 9, attempts: 4, scoreNeeded: 9 },   // max 10
-      mythic:    { slots: 6, cards: 6, handSize: 9, attempts: 4, scoreNeeded: 11 },  // max 12
-      cosmic:    { slots: 7, cards: 7, handSize: 9, attempts: 4, scoreNeeded: 13 }   // max 14
+      common:    { slots: 3, cards: 3, handSize: 5,  attempts: 3, scoreNeeded: 5 },   // max 6
+      uncommon:  { slots: 3, cards: 3, handSize: 6,  attempts: 3, scoreNeeded: 6 },   // must be perfect
+      rare:      { slots: 4, cards: 4, handSize: 7,  attempts: 3, scoreNeeded: 7 },   // max 8
+      epic:      { slots: 4, cards: 4, handSize: 8,  attempts: 3, scoreNeeded: 8 },   // must be perfect
+      legendary: { slots: 5, cards: 5, handSize: 9,  attempts: 4, scoreNeeded: 9 },   // max 10
+      mythic:    { slots: 6, cards: 6, handSize: 10, attempts: 4, scoreNeeded: 11 },  // max 12
+      cosmic:    { slots: 7, cards: 7, handSize: 10, attempts: 4, scoreNeeded: 13 }   // max 14
     };
     return map[g] || map.common;
   }
