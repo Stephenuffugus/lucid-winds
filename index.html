@@ -58033,6 +58033,15 @@ function _step37(){
   var startWildCount=0;
   try{startWildCount=(JSON.parse(localStorage.getItem('fg_wild_plants')||'[]')).length;}catch(e){}
   var polls=0;
+  // Grace ticks for the "carousel closed → cancelled" path.
+  // _wildPlaceFromCarousel closes the carousel immediately then fires
+  // _drop() on a 200ms setTimeout, so there's a window where the
+  // carousel is closed but the new wild plant hasn't landed in
+  // fg_wild_plants yet. Without grace, the next poll tick sees
+  // "closed + no new plant" and bounces the player BACK to step 36 —
+  // tutorial then insists they sow again after they already did. Wait
+  // 3 poll ticks (1.5s) of confirmed-closed before declaring a cancel.
+  var closedTicks=0;
   var watch=function(){
     // Contest inspector open = full hex → advance to step 38 duel.
     var ci=document.getElementById('lw-contest-inspector');
@@ -58050,7 +58059,10 @@ function _step37(){
     var m=document.getElementById('plant-gallery-modal');
     var carouselOpen=m&&m.classList.contains('open');
     if(!carouselOpen&&!document.body.classList.contains('lw-carousel-wild-mode')){
-      _clear();setTimeout(_step36,600);return;
+      closedTicks++;
+      if(closedTicks>=3){_clear();setTimeout(_step36,600);return;}
+    } else {
+      closedTicks=0;
     }
     if(polls<1200){polls++;setTimeout(watch,500);}
     else {setTimeout(_step36,400);} // stall-out fallback: retry SOW, never skip past
