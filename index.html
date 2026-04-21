@@ -58277,19 +58277,40 @@ function _step41(){
 function _step42(){
   _setStep(42);
   _clear();
-  // No dialog, no spotlight. Stephen 2026-04-22: the "You found a
-  // seed!" prompt was covering the HOLD TO SEND TO NURSERY button no
-  // matter where it was positioned. The forage collection modal
-  // already has an OK button that acknowledges the seed. This step
-  // just waits silently for the bp-seed-to-nursery event to fire.
+  // Tiny banner at the very bottom of screen, well below the backpack's
+  // seed-info panel (which anchors at ~122px from bottom). No button,
+  // no dashes. Stephen 2026-04-22: "a little prompt at the bottom of
+  // the screen telling us to click on the backpack and send the seed
+  // to the nursery."
+  try {
+    var old = document.getElementById('lw-tut-mini-prompt');
+    if (old) old.remove();
+    var mini = document.createElement('div');
+    mini.id = 'lw-tut-mini-prompt';
+    mini.style.cssText = 'position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:1000010;background:rgba(18,24,16,0.95);border:1px solid rgba(200,168,75,0.3);border-radius:10px;padding:0.45rem 0.9rem;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);letter-spacing:0.04em;max-width:92vw;white-space:nowrap;box-shadow:0 4px 18px rgba(0,0,0,0.6);';
+    mini.textContent = 'Tap your backpack, send the seed to your nursery.';
+    document.body.appendChild(mini);
+  } catch(e) {}
   var _advanced=false;
+  var _cleanup=function(){
+    try{var m=document.getElementById('lw-tut-mini-prompt');if(m)m.remove();}catch(e){}
+  };
   var onSeedSent=function(){
     if(_advanced)return;
-    if(_getStep()!==42){window.removeEventListener('bp-seed-to-nursery',onSeedSent);return;}
+    if(_getStep()!==42){window.removeEventListener('bp-seed-to-nursery',onSeedSent);_cleanup();return;}
     _advanced=true;
     window.removeEventListener('bp-seed-to-nursery',onSeedSent);
-    _clear();
-    setTimeout(_step43,500);
+    _cleanup();
+    // Close the backpack so step 43's nav-tab spotlight isn't covered
+    // by the inset:0 #bpe panel.
+    try{
+      if(window.FG_Backpack&&window.FG_Backpack.close)window.FG_Backpack.close();
+      else {
+        var bpe=document.getElementById('bpe');
+        if(bpe)bpe.classList.remove('open');
+      }
+    }catch(e){}
+    setTimeout(_step43,600);
   };
   window.addEventListener('bp-seed-to-nursery',onSeedSent);
 }
@@ -58298,6 +58319,16 @@ function _step42(){
 function _step43(){
   _setStep(43);
   _clear();
+  // Defensive close: the backpack panel is inset:0 at z-index 998
+  // and covers the bottom nav. If step 42 didn't close it for any
+  // reason, close it now before spotlighting the nursery tab.
+  try{
+    if(window.FG_Backpack&&window.FG_Backpack.close)window.FG_Backpack.close();
+    else {
+      var bpe=document.getElementById('bpe');
+      if(bpe)bpe.classList.remove('open');
+    }
+  }catch(e){}
   // Allow the nursery nav button to light up + accept taps during
   // this step. (canSee.nurseryTab already returns true, so nothing
   // else to do here beyond spotlighting.)
