@@ -35024,6 +35024,12 @@ document.addEventListener('keydown', function(e) {
     if (data.backpack && window.FG_Backpack && FG_Backpack.loadFromCloud) FG_Backpack.loadFromCloud(data.backpack);
     // Force keeper bar re-render so the just-hydrated XP/level is visible
     if (window.PW_UI && PW_UI.updateKeeperBar) PW_UI.updateKeeperBar();
+    // Re-evaluate progressive-disclosure gates now that cloud XP has
+    // landed. _lwApplyGates first runs at 600ms boot when pw_xp is
+    // null — without this, feral/stranger/sinks gates stay visually
+    // locked until the next page reload. Nursery + Wild nav don't
+    // care anymore (always open), but the other gated surfaces do.
+    if (window._lwApplyGates) { try { window._lwApplyGates(); } catch(e) {} }
     return mGH;
   }
 
