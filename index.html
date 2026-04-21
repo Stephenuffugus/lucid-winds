@@ -37609,33 +37609,13 @@ function _drawZoneHexes(_force){
 
 // Update the persistent pill at top of map showing what's in the hex
 // the player is physically standing inside.
+// DISABLED 2026-04-22 — Stephen: "that needs to be inside the biome
+// when you click it". The biome sheet already has its own YOU ARE HERE
+// eyebrow (see biomeSheet render) + plant count. Keeping the function
+// defined as a no-op so nothing that calls it breaks.
 function _lwUpdateCurrentHexInfo(){
   var el=document.getElementById('lw-current-hex');
-  if(!el)return;
-  if(!_uLat||!_uLng){el.style.display='none';return;}
-  var zk=_zoneKey(_uLat,_uLng);
-  var zones=_getAllZonePlants();
-  var here=zones[zk]||[];
-  var maxSlots=(typeof MAX_PER_ZONE!=='undefined'?MAX_PER_ZONE:3);
-  var wild=_getWild()||[];
-  var yoursHere=0;
-  for(var qi=0;qi<wild.length;qi++){
-    if(wild[qi]&&_zoneKey(wild[qi].lat,wild[qi].lng)===zk)yoursHere++;
-  }
-  var open=Math.max(0,maxSlots-here.length);
-  var txt='';
-  if(here.length===0){
-    txt='\u00b7 Open hex \u00b7 '+maxSlots+' slots free';
-  }else{
-    var others=here.length-yoursHere;
-    var parts=[here.length+' plant'+(here.length!==1?'s':'')];
-    if(yoursHere>0)parts.push(yoursHere+' yours');
-    if(others>0)parts.push(others+' wild');
-    parts.push(open+' open');
-    txt='\u00b7 '+parts.join(' \u00b7 ');
-  }
-  el.textContent='YOU ARE HERE '+txt;
-  el.style.display='block';
+  if(el)el.style.display='none';
 }
 
 function _loadAll(){
@@ -71439,7 +71419,10 @@ window.LW_Comp = (function(){
       var s = window._lwTopSuggestion && window._lwTopSuggestion();
       _currentAction = (s && typeof s.action === 'function') ? s.action : null;
       _setLine(document.getElementById('lw-quest-gh'), s);
-      _setLine(document.getElementById('lw-quest-wild'), s);
+      // Wild tab intentionally skipped — quest pill was leaking
+      // cross-tab nags onto the map ("Play games to earn sunbeams"
+      // etc). Wild has its own HUD chrome; no quest line overlay.
+      _setLine(document.getElementById('lw-quest-wild'), null);
     }catch(e){}
   }
 
