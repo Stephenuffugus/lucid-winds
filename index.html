@@ -56453,6 +56453,16 @@ _done=function(){
     var _bos=document.getElementById('kb-compendium');
     if(_bos)_bos.classList.remove('lw-pulse-hint');
   }catch(e){}
+  // Grant XP to L5 on tutorial end (skip or natural finish). Unlocks
+  // Nursery (L2), Wild (L3), feral (L4), stranger-tend (L5) in one move.
+  try{
+    var _xp=parseInt(localStorage.getItem('pw_xp')||'0',10);
+    var _target=(window.RANKS&&window.RANKS[4]&&window.RANKS[4].xp)||156;
+    if(_xp<_target&&window.PW_grantXP){
+      window.PW_grantXP(_target-_xp,'tutorial_complete');
+    }
+  }catch(e){}
+  if(window._lwApplyGates){try{window._lwApplyGates();}catch(e){}}
   _origDone();
 };
 
