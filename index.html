@@ -58277,32 +58277,11 @@ function _step41(){
 function _step42(){
   _setStep(42);
   _clear();
-  var bpi=document.getElementById('bpi');
-  if(bpi){try{_spotlight&&_spotlight(bpi);}catch(e){}}
-  _dialog(
-    'You found a <span style="color:var(--sage);">seed!</span><br><br>' +
-    'Tap your <span style="color:var(--gold);">backpack</span>, tap the seed, then <b>hold</b> the green SEND TO NURSERY button.',
-    '',null,'top');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
-  // Clear the spotlight the moment the backpack panel opens. The
-  // backpack is z-index 998; the spotlight overlay sits at z-index
-  // 1000011 so the panel was rendering BEHIND the 72% dark overlay,
-  // making the seed LOOK greyed out and untappable (Stephen Apr 22).
-  // Dialog stays visible at its own z-index.
-  var _spotDropped=false;
-  var _dropSpotPoll=function(){
-    if(_spotDropped)return;
-    if(_getStep()!==42)return;
-    var bpe=document.getElementById('bpe');
-    if(bpe&&bpe.style.display!=='none'&&bpe.classList.contains('open')){
-      _spotDropped=true;
-      try{if(_spot&&_spot.parentNode)_spot.remove();}catch(e){}
-      _spot=null;
-      return;
-    }
-    setTimeout(_dropSpotPoll,200);
-  };
-  setTimeout(_dropSpotPoll,200);
+  // No dialog, no spotlight. Stephen 2026-04-22: the "You found a
+  // seed!" prompt was covering the HOLD TO SEND TO NURSERY button no
+  // matter where it was positioned. The forage collection modal
+  // already has an OK button that acknowledges the seed. This step
+  // just waits silently for the bp-seed-to-nursery event to fire.
   var _advanced=false;
   var onSeedSent=function(){
     if(_advanced)return;
