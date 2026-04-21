@@ -56450,13 +56450,19 @@ _done=function(){
     var _kbNm=document.querySelector('#pw-keeper-bar .kb-name');
     if(_kbNm){_kbNm.style.removeProperty('pointer-events');_kbNm.style.removeProperty('opacity');}
   }catch(e){}
-  // Grant XP to L5 on tutorial end (skip or natural finish). Unlocks
-  // Nursery (L2), Wild (L3), feral (L4), stranger-tend (L5) in one move.
+  // Grant XP to L5 ONLY on legitimate tutorial completion. The skip
+  // link + step-46 BEGIN both stamp lw_plant_xp_unlocked='1' BEFORE
+  // calling _done(); silent fallbacks (button-not-found, mid-step
+  // timeouts, resume bail) don't. Checking the flag keeps the XP
+  // grant from firing on every accidental _done() — which was
+  // jumping players from L2 to L5 on refresh.
   try{
-    var _xp=parseInt(localStorage.getItem('pw_xp')||'0',10);
-    var _target=(window.RANKS&&window.RANKS[4]&&window.RANKS[4].xp)||156;
-    if(_xp<_target&&window.PW_grantXP){
-      window.PW_grantXP(_target-_xp,'tutorial_complete');
+    if(localStorage.getItem('lw_plant_xp_unlocked')==='1'){
+      var _xp=parseInt(localStorage.getItem('pw_xp')||'0',10);
+      var _target=(window.RANKS&&window.RANKS[4]&&window.RANKS[4].xp)||156;
+      if(_xp<_target&&window.PW_grantXP){
+        window.PW_grantXP(_target-_xp,'tutorial_complete');
+      }
     }
   }catch(e){}
   if(window._lwApplyGates){try{window._lwApplyGates();}catch(e){}}
@@ -57130,7 +57136,7 @@ function _step18CarouselSafety(){
         try { if (_dlg && _dlg.parentNode) _dlg.remove(); _dlg = null; } catch(e){}
         _dialog(
           '<span style="color:var(--gold);">Look at the back.</span><br><br>' +
-          'Tap the card to flip it \u2014 every plant has a story on both sides.',
+          'Tap the card to flip it; every plant has a story on both sides.',
           '',null,'bottom');
         if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
       }
@@ -57247,7 +57253,7 @@ function _step20(){
   }
   _dialog(
     'Each plant rests after a breed before it can breed again. Common plants are ready in <span style="color:var(--gold);">3 days</span>; rarer plants take longer.<br><br>' +
-    'Tap <span style="color:var(--gold);">BREED &amp; SEND TO NURSERY</span> \u2014 your new seed will land in the Nursery tab.',
+    'Tap <span style="color:var(--gold);">BREED &amp; SEND TO NURSERY</span>; your new seed will land in the Nursery tab.',
     'OKAY',function(){
       // Dismiss the dialog so the player can study the breed screen
       // without it blocking the view. The watch loop keeps polling for
@@ -57777,7 +57783,7 @@ function _step34(){
   _dialog(
     '<span style="color:var(--gold);">You are the sun of your garden.</span><br><br>' +
     'Your attention grows everything here. Plants you keep alive, in your greenhouse and in the world, are records of moments you paid attention.<br><br>' +
-    '<b style="color:var(--gold);">Now \u2014 the Wild.</b>',
+    '<b style="color:var(--gold);">Now, the Wild.</b>',
     'CONTINUE',function(){_clear();setTimeout(_step35,400);},'center');
 }
 
@@ -58093,7 +58099,7 @@ function _step37(){
 function _step38(){
   _setStep(38);
   _dialog(
-    'A <span style="color:var(--gold);">contest!</span> The hex is full \u2014 pick a defender to challenge. Tap any of the Wisp Keeper plants.<br><br>This will cost <b>1 sow</b>, win or lose.',
+    'A <span style="color:var(--gold);">contest!</span> The hex is full; pick a defender to challenge. Tap any of the Wisp Keeper plants.<br><br>This will cost <b>1 sow</b>, win or lose.',
     '',null,'bottom');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   // Wait for the dice modal to open
@@ -58106,7 +58112,7 @@ function _step38(){
       setTimeout(function(){
         if(_getStep()!==38)return;
         _dialog(
-          'Tap <span style="color:var(--gold);">\ud83c\udfb2 TAP TO ROLL</span> when you\'re ready.<br><br>You roll <b>2d6 + your EA</b> against theirs. Their EA is 1 \u2014 you\'ll win this one.',
+          'Tap <span style="color:var(--gold);">\ud83c\udfb2 TAP TO ROLL</span> when you\'re ready.<br><br>You roll <b>2d6 + your EA</b> against theirs. Their EA is 1; you\'ll win this one.',
           '',null,'top');
         if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
       }, 400);
@@ -58136,7 +58142,7 @@ function _step39(){
     'Your plant lives in the world now.<br><br>' +
     '\u2728 It earns <b>pollen per hour</b> based on its rarity.<br>' +
     '\ud83d\udca7 It generates <b>dew</b> over time.<br>' +
-    '\ud83c\udf38 It cross-pollinates with nearby plants \u2014 you\'ll never know what surprises pop up around your rare ones.',
+    '\ud83c\udf38 It cross-pollinates with nearby plants; you\'ll never know what surprises pop up around your rare ones.',
     'CONTINUE',function(){_clear();setTimeout(_step40,400);},'center');
 }
 
@@ -58202,7 +58208,7 @@ function _step40Spotlight(forage){
 function _step41(){
   _setStep(41);
   _dialog(
-    'A foraging round opens with cards \u2014 some hide a seed, some are misses.<br><br>' +
+    'A foraging round opens with cards; some hide a seed, some are misses.<br><br>' +
     'Rarer seed potential = <b>more cards on the board + more attempts</b> to claim it.<br><br>Play through this one and see what you find.',
     'GOT IT',function(){_clear();setTimeout(_step42,400);},'center');
 }
