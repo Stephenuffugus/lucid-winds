@@ -58189,7 +58189,7 @@ function _step42(){
   _setStep(42);
   _dialog(
     '<span style="color:var(--gold);">That\'s the loop.</span><br><br>' +
-    'Play games, mint plants, place them in the wild, tend what you love, forage what you find. Everything else \u2014 breeding, climate, contests, the Book of Secrets \u2014 will fill in as you play.<br><br>' +
+    'Play games, mint plants, place them in the wild, tend what you love, forage what you find. Everything else; breeding, climate, contests, the Book of Secrets; will fill in as you play.<br><br>' +
     'Go make beautiful things.',
     'BEGIN',function(){
       _clear();
@@ -63637,10 +63637,13 @@ window._lwClaimHerbarium = function(id){
   // Deck-first, then fills remaining from inventory so harder hexes can
   // still find a workable hand. Rare wild cards are eligible too.
   function buildHand(size) {
-    // All 9 card types always available in the picker. Card inventory isn't
-    // a gating mechanic — forage difficulty comes from solving the pattern,
-    // not running out of cards. Stephen: "everyone should always have them all."
-    return ['sun','shade','rain','dry','wind','still','moonlight','thunder','aurora'];
+    // Hand size scales with puzzle difficulty per hexDifficulty.handSize.
+    // First 6 entries are the base elements; 7-9 are rare weather cards
+    // that unlock on harder hexes. Common (size 5) gets fewer types
+    // than Cosmic (size 10 → capped at 9 by the pool length).
+    var all = ['sun','shade','rain','dry','wind','still','moonlight','thunder','aurora'];
+    if (!size || size >= all.length) return all;
+    return all.slice(0, size);
   }
   function openForagePanel(zoneKey, grade, onDone) {
     var attempts = getAttempts(zoneKey);
@@ -68767,7 +68770,7 @@ window._openCompendiumUI=function(){
       // daily-return keepers land in curated view without picking.
       '<div id="bos-tabbar" style="display:flex;gap:0.3rem;padding:0.4rem 0.6rem 0.5rem;flex-shrink:0;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;">'+
         '<button class="bos-tab active" data-tab="today" onclick="_bosSetTab(\'today\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(200,168,75,0.5);background:rgba(200,168,75,0.1);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">TODAY</button>'+
-        '<button class="bos-tab" data-tab="activity" onclick="_bosSetTab(\'activity\')" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">JOURNAL'+ ((window._getBookUnreadCount&&window._getBookUnreadCount()>0)?'<span style="position:absolute;top:4px;right:4px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.38rem;display:inline-flex;align-items:center;justify-content:center;">'+window._getBookUnreadCount()+'</span>':'') +'</button>'+
+        '<button class="bos-tab" data-tab="activity" onclick="_bosSetTab(\'activity\')" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">JOURNAL</button>'+
         '<button class="bos-tab" data-tab="secrets" onclick="_bosSetTab(\'secrets\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">SECRETS</button>'+
         '<button class="bos-tab" data-tab="events" onclick="_bosSetTab(\'events\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">EVENTS</button>'+
         '<button class="bos-tab" data-tab="mementos" onclick="_bosSetTab(\'mementos\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">MEMENTOS</button>'+
@@ -70507,8 +70510,19 @@ window.canSee = {
   // render or fails to fire.
   nurseryTab: function(){return true;},
   wildTab: function(){return true;},
-  feralCollect: function(){return _lwLevel()>=4;},
-  strangerTend: function(){return _lwLevel()>=5;},
+  // Forage + stranger-tend are tutorial-unlocked. After tutorial
+  // completion (lw_plant_xp_unlocked='1'), both return true regardless
+  // of level — prevents "forage locked at L4" toast firing at L5 when
+  // Track-A XP grant races with the gate check, and keeps parity with
+  // canSee.compendium / nurseryTab / wildTab which use the same flag.
+  feralCollect: function(){
+    try { if (localStorage.getItem('lw_plant_xp_unlocked') === '1') return true; } catch(e){}
+    return _lwLevel()>=4;
+  },
+  strangerTend: function(){
+    try { if (localStorage.getItem('lw_plant_xp_unlocked') === '1') return true; } catch(e){}
+    return _lwLevel()>=5;
+  },
   keeperBarSinks: function(){return _lwLevel()>=6;},  // mystery/slots/weather
   classPick: function(){return _lwLevel()>=7;},
   greenhouseBreed: function(){return _lwLevel()>=7;},
