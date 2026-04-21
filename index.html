@@ -58281,9 +58281,28 @@ function _step42(){
   if(bpi){try{_spotlight&&_spotlight(bpi);}catch(e){}}
   _dialog(
     'You found a <span style="color:var(--sage);">seed!</span><br><br>' +
-    'Open your <span style="color:var(--gold);">backpack</span>, then send the seed to your <b>nursery</b>.',
+    'Tap your <span style="color:var(--gold);">backpack</span>, tap the seed, then <b>hold</b> the green SEND TO NURSERY button.',
     '',null,'bottom');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  // Clear the spotlight the moment the backpack panel opens. The
+  // backpack is z-index 998; the spotlight overlay sits at z-index
+  // 1000011 so the panel was rendering BEHIND the 72% dark overlay,
+  // making the seed LOOK greyed out and untappable (Stephen Apr 22).
+  // Dialog stays visible at its own z-index.
+  var _spotDropped=false;
+  var _dropSpotPoll=function(){
+    if(_spotDropped)return;
+    if(_getStep()!==42)return;
+    var bpe=document.getElementById('bpe');
+    if(bpe&&bpe.style.display!=='none'&&bpe.classList.contains('open')){
+      _spotDropped=true;
+      try{if(_spot&&_spot.parentNode)_spot.remove();}catch(e){}
+      _spot=null;
+      return;
+    }
+    setTimeout(_dropSpotPoll,200);
+  };
+  setTimeout(_dropSpotPoll,200);
   var _advanced=false;
   var onSeedSent=function(){
     if(_advanced)return;
