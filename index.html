@@ -57329,23 +57329,39 @@ function _step22(){
   }catch(e){}
   if(window.switchTab)switchTab('nursery');
   setTimeout(function(){
-    var waterBtn=document.querySelector('.nur-btn.water');
+    // The .nur-btn.water class is reused for WATER, CROSS-POLLINATE,
+    // and USE TO BREED buttons. Target the actual water action via
+    // its onclick so the pulse + spotlight land on the right button.
+    var waterBtn=document.querySelector('.nur-btn.water[onclick*="handleWaterSeed"]')
+              ||document.querySelector('.nur-btn.water');
     if(waterBtn&&window._lwPulseHint){window._lwPulseHint(waterBtn,30000,'lw_tut_water_pulse');}
     _dialog(
       'Welcome to your <span style="color:var(--gold);">Nursery</span>. Your new seed lives here.<br><br>' +
       'Water it <span style="color:var(--gold);">once</span> to start it off. <span style="color:var(--sage);">Tap WATER.</span>',
       '',null,'top');
     if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    // Snapshot the full nursery state so ANY change (water on any
+    // seed, accelerate, fertilize, bloom) advances — matches step
+    // 44's permissive detection. Previous code only checked
+    // nur[0].waterLog which was fragile with multiple seeds.
+    var _startState='';
+    try{_startState=localStorage.getItem('sws_nursery')||'[]';}catch(e){}
     var polls=0;
     var watch=function(){
-      try{
-        var nur=(window.FG_Data&&FG_Data.getNursery)?FG_Data.getNursery():(JSON.parse(localStorage.getItem('sws_nursery')||'[]')||[]);
-        if(nur.length>0&&(nur[0].waterLog||[]).length>0){
-          _clear();setTimeout(_step22b,1500);return;
-        }
-      }catch(e){}
+      if(_getStep()!==22)return;
+      var nowState='';
+      try{nowState=localStorage.getItem('sws_nursery')||'[]';}catch(e){}
+      if(nowState!==_startState){
+        _clear();setTimeout(_step22b,1500);return;
+      }
+      // Re-spotlight / re-pulse in case the seed card re-rendered.
+      if(!document.querySelector('.nur-btn.water.lw-pulse-hint')){
+        var wb2=document.querySelector('.nur-btn.water[onclick*="handleWaterSeed"]')
+             ||document.querySelector('.nur-btn.water');
+        if(wb2&&window._lwPulseHint)window._lwPulseHint(wb2,30000,'lw_tut_water_pulse');
+      }
       if(polls<300){polls++;setTimeout(watch,500);}
-      else {_done();}
+      // No _done() auto-skip — player must actually water.
     };
     watch();
   },1200);
@@ -58356,35 +58372,42 @@ function _step43(){
 function _step44(){
   _setStep(44);
   _clear();
-  // Snapshot total waterings across all seeds so any +1 triggers
-  // advance. More robust than tracking a specific seed hash.
-  var startWater=0;
-  try{
-    var nur=JSON.parse(localStorage.getItem('sws_nursery')||'[]');
-    for(var i=0;i<nur.length;i++){startWater+=((nur[i]&&nur[i].waterLog)||[]).length;}
-  }catch(e){}
-  var waterBtn=document.querySelector('.nur-btn.water');
+  // Snapshot the full nursery state. ANY change (water, accelerate,
+  // bloom, fertilize) counts as "player interacted with nursery" and
+  // advances the tutorial. Stephen Apr 22: watered and nothing
+  // happened — previous code required waterLog.length to strictly
+  // increase, which can't detect a water blocked by "already watered
+  // today" or an accelerate that skips a day. Permissive JSON diff
+  // catches every action. The .nur-btn.water selector is reused by
+  // CROSS-POLLINATE + USE TO BREED buttons, so target the specific
+  // water action via onclick attribute instead.
+  var _startState='';
+  try{_startState=localStorage.getItem('sws_nursery')||'[]';}catch(e){}
+  var _startGh='';
+  try{_startGh=localStorage.getItem('sws_greenhouse')||'[]';}catch(e){}
+  var waterBtn=document.querySelector('.nur-btn.water[onclick*="handleWaterSeed"]')
+            || document.querySelector('.nur-btn.water');
   if(waterBtn){try{_spotlight&&_spotlight(waterBtn);}catch(e){}}
   _dialog(
-    'Tap <span style="color:var(--gold);">WATER</span> on your seed to give it its first drink.',
+    'Tap <span style="color:var(--gold);">WATER</span> on your seed.',
     '',null,'bottom');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   var polls=0;
   var watch=function(){
     if(_getStep()!==44)return;
-    var nowWater=0;
-    try{
-      var nur=JSON.parse(localStorage.getItem('sws_nursery')||'[]');
-      for(var i=0;i<nur.length;i++){nowWater+=((nur[i]&&nur[i].waterLog)||[]).length;}
-    }catch(e){}
-    if(nowWater>startWater){
+    var nowState='';
+    try{nowState=localStorage.getItem('sws_nursery')||'[]';}catch(e){}
+    var nowGh='';
+    try{nowGh=localStorage.getItem('sws_greenhouse')||'[]';}catch(e){}
+    if(nowState!==_startState||nowGh!==_startGh){
       _clear();
       setTimeout(_step45,600);
       return;
     }
     // Re-spotlight the button in case the seed card re-rendered.
     if(!_spot){
-      var wb=document.querySelector('.nur-btn.water');
+      var wb=document.querySelector('.nur-btn.water[onclick*="handleWaterSeed"]')
+          || document.querySelector('.nur-btn.water');
       if(wb){try{_spotlight&&_spotlight(wb);}catch(e){}}
     }
     if(polls<1200){polls++;setTimeout(watch,500);}
