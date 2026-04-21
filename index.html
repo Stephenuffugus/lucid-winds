@@ -56710,8 +56710,8 @@ function _step7(){
   _dialog(
     'Every plant has a <span style="color:var(--gold);">rarity</span>.<br><br>' +
     '<span style="color:var(--sage);">Tap the card to flip it and reveal yours.</span>',
-    '',null,'top');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    'CONTINUE',function(){_clear();setTimeout(_step8,400);},'top');
+  // (tutorial: button kept for manual advance — audit Apr 22)
   var fw=document.querySelector('.cs-flip-wrap');
   if(!fw){_clear();setTimeout(_step8,300);return;}
   // Add a pulsing gold shimmer to the card so the tap target is obvious.
@@ -56779,8 +56779,8 @@ function _step10(){
   try{document.body.classList.remove('lw-tut-carousel-freeze');}catch(e){}
   _dialog(
     'Tap the card again to <span style="color:var(--gold);">flip it back</span>.',
-    '',null,'bottom');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    'CONTINUE',function(){_clear();setTimeout(_step11,400);},'bottom');
+  // (tutorial: button kept for manual advance — audit Apr 22)
   var fw=document.querySelector('.cs-flip-wrap');
   if(!fw){_clear();setTimeout(_step11,300);return;}
   // Re-add the pulse animation on the card so the tap target is obvious.
@@ -57070,8 +57070,8 @@ function _step16AfterCelebration(attempts){
       : 'Good play. Keep earning until the <span style="color:var(--gold);">Sunbeam icon up top glows.</span> That\u2019s 30 Sunbeams, enough for a new plant.<br><br>You can play another game or come back later.';
     // Bottom position so the dialog doesn't cover the sunbeam icon it's
     // telling the player to tap (icon sits at the top of the greenhouse).
-    _dialog(msg,'',null,'bottom');
-    if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    _dialog(msg,'CONTINUE',function(){_clear();setTimeout(_step17,400);},'bottom');
+  // (tutorial: button kept for manual advance — audit Apr 22)
     if(ready>0){_watchMintModal(0);}
     else {
       setTimeout(function(){
@@ -57109,8 +57109,8 @@ function _step17(){
   _setStep(17);
   _dialog(
     'Tap <span style="color:var(--gold);">BLOOM</span> to bring your second plant into being.',
-    '',null,'bottom');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    'CONTINUE',function(){_clear();setTimeout(_step18,400);},'bottom');
+  // (tutorial: button kept for manual advance — audit Apr 22)
   _watchMintComplete(0);
 }
 
@@ -57155,8 +57155,8 @@ function _step18(){
   _dialog(
     '<span style="color:var(--gold);">Now go see what you got.</span><br><br>' +
     'Tap your new plant to open it.',
-    '',null,'bottom');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    'CONTINUE',function(){_clear();setTimeout(_step19,400);},'bottom');
+  // (tutorial: button kept for manual advance — audit Apr 22)
   var polls=0;
   var waitForGH=function(){
     var ghTab=document.getElementById('tab-greenhouse');
@@ -57201,8 +57201,8 @@ function _step18CarouselSafety(){
         _dialog(
           '<span style="color:var(--gold);">Look at the back.</span><br><br>' +
           'Tap the card to flip it; every plant has a story on both sides.',
-          '',null,'bottom');
-        if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+          'CONTINUE',function(){_clear();setTimeout(_step19,400);},'bottom');
+  // (tutorial: button kept for manual advance — audit Apr 22)
       }
       // Hard safety: force advance if flip never lands.
       if(Date.now()-openSince>=15000&&!window._LW_TUT_S19Q){
@@ -57277,8 +57277,8 @@ function _step19(){
   if(breedBtn&&window._lwPulseHint){window._lwPulseHint(breedBtn,30000,'lw_tut_breed_pulse');}
   _dialog(
     'Your garden can grow. Tap <span style="color:var(--gold);">\ud83e\uddec BREED</span> below the card to cross-pollinate your two plants.',
-    '',null,'top');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    'CONTINUE',function(){_clear();setTimeout(_step20,400);},'top');
+  // (tutorial: button kept for manual advance — audit Apr 22)
   var polls=0;
   var watch=function(){
     var bs=document.getElementById('breed-screen');
@@ -57660,8 +57660,8 @@ function _step24(){
   _dialog(
     'The world opens.<br><br>' +
     'Tap <span style="color:var(--gold);">WILD</span>. This is where you bring your plants into the wild.',
-    '',null,'top');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    'CONTINUE',function(){_clear();setTimeout(_step25,400);},'top');
+  // (tutorial: button kept for manual advance — audit Apr 22)
   var polls=0;
   var watch=function(){
     var wn=document.getElementById('wild-nav');
@@ -57774,8 +57774,8 @@ function _step28(){
   _spotlight(bpi);
   _dialog(
     'Your <span style="color:var(--gold);">backpack</span> travels with you.<br><br>Tap it to see what you\u2019re carrying.',
-    '',null,'top');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    'CONTINUE',function(){_clear();setTimeout(_step29,400);},'top');
+  // (tutorial: button kept for manual advance — audit Apr 22)
   // Snapshot whether bpe was open at watch-start. Only fire step 29 on
   // a closed→open transition, not on a state that was already open
   // (which would race step 29 against the player tapping anything).
@@ -57853,8 +57853,8 @@ function _step32(){
   _spotlight(bos);
   _dialog(
     'Every discovery you ever make lives in the <span style="color:var(--gold);">Book of Secrets</span>.<br><br>Tap it to take a look.',
-    '',null,'bottom');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    'CONTINUE',function(){_clear();setTimeout(_step33,400);},'bottom');
+  // (tutorial: button kept for manual advance — audit Apr 22)
   var polls=0;
   var watch=function(){
     var ov=document.getElementById('bos-overlay');
@@ -58128,8 +58128,8 @@ function _step36Spotlight(sow){
   try{_spotlight&&_spotlight(sow);}catch(e){}
   _dialog(
     'Tap the <span style="color:var(--gold);">SOW</span> button to pick a plant from your greenhouse and place it.',
-    '',null,'bottom');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    'CONTINUE',function(){_clear();setTimeout(_step37,400);},'bottom');
+  // (tutorial: button kept for manual advance — audit Apr 22)
   // Wait for the SOW carousel to open (source = wild-place)
   var polls=0;
   var watch=function(){
@@ -58158,8 +58158,8 @@ function _step37(){
   _setStep(37);
   _dialog(
     'Pick a plant and tap <span style="color:var(--gold);">PLACE HERE</span> to plant it in the Wild.',
-    '',null,'top');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    'CONTINUE',function(){_clear();setTimeout(_step38,400);},'top');
+  // (tutorial: button kept for manual advance — audit Apr 22)
   // Snapshot wild plant count so we can detect an ACTUAL placement
   // (count increased) vs a bare carousel close (player cancelled).
   // Previous logic treated any carousel close as "placed in empty hex"
@@ -58214,8 +58214,8 @@ function _step38(){
   _setStep(38);
   _dialog(
     'A <span style="color:var(--gold);">contest!</span> The hex is full; pick a defender to challenge. Tap any plant in this hex.<br><br>This will cost <b>1 sow</b>, win or lose.',
-    '',null,'bottom');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    'CONTINUE',function(){_clear();setTimeout(_step39,400);},'bottom');
+  // (tutorial: button kept for manual advance — audit Apr 22)
   // Wait for the dice modal to open
   var polls=0;
   var watch=function(){
@@ -58227,8 +58227,8 @@ function _step38(){
         if(_getStep()!==38)return;
         _dialog(
           'Tap <span style="color:var(--gold);">\ud83c\udfb2 TAP TO ROLL</span> when you\'re ready.<br><br>You roll <b>2d6 + your EA</b> against theirs. Their EA is 1; you\'ll win this one.',
-          '',null,'top');
-        if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+          'CONTINUE',function(){_clear();setTimeout(_step39,400);},'top');
+  // (tutorial: button kept for manual advance — audit Apr 22)
       }, 400);
       // Wait for verdict to appear, then advance
       var subPolls=0;
@@ -58285,8 +58285,8 @@ function _step40Spotlight(forage){
   try{forage.classList.add('ready');}catch(e){}
   _dialog(
     'Plants in the wild create <span style="color:var(--gold);">feral seeds</span> shaped by local DNA + the biome you\'re in.<br><br>Tap the <b>FORAGE</b> button to find one.',
-    '',null,'bottom');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    'CONTINUE',function(){_clear();setTimeout(_step41,400);},'bottom');
+  // (tutorial: button kept for manual advance — audit Apr 22)
   // Tear down the dialog the INSTANT the player taps FORAGE — don't
   // wait for the minigame overlay to appear via the poll. Stephen's
   // report: "the stupid prompt is still in the front ruining the
@@ -58478,8 +58478,8 @@ function _step44(){
   if(waterBtn){try{_spotlight&&_spotlight(waterBtn);}catch(e){}}
   _dialog(
     'Tap <span style="color:var(--gold);">WATER</span> on your seed.',
-    '',null,'bottom');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    'CONTINUE',function(){_clear();setTimeout(_step45,400);},'bottom');
+  // (tutorial: button kept for manual advance — audit Apr 22)
   var polls=0;
   var watch=function(){
     if(_getStep()!==44)return;
@@ -58529,8 +58529,8 @@ function _step46(){
   if(target){try{_spotlight&&_spotlight(target);}catch(e){}}
   _dialog(
     'Keepers walk one of five paths. Tap your <span style="color:var(--gold);">name</span> at the top to open your profile.',
-    '',null,'bottom');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    'CONTINUE',function(){_clear();setTimeout(_step47,400);},'bottom');
+  // (tutorial: button kept for manual advance — audit Apr 22)
   var polls=0;
   var watch=function(){
     if(_getStep()!==46)return;
@@ -58565,8 +58565,8 @@ function _step47(){
         _dialog(
           'Pick your <span style="color:var(--gold);">specialization</span>.<br><br>' +
           'Forager, Breeder, Cartographer, Tender, or Keeper; each shapes how you play. Tap CHOOSE on the one that calls to you.',
-          '',null,'top');
-        if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+          'CONTINUE',function(){_clear();setTimeout(_step48,400);},'top');
+  // (tutorial: button kept for manual advance — audit Apr 22)
         var polls=0;
         var watch=function(){
           if(_getStep()!==47)return;
