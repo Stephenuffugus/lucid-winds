@@ -58255,7 +58255,7 @@ function _step38(){
 function _step39(){
   _setStep(39);
   _dialog(
-    'Your plant lives in the world now.<br><br>' +
+    'If your plant lives in the world now:<br><br>' +
     '\u2728 It earns <b>pollen per hour</b> based on its rarity.<br>' +
     '\ud83d\udca7 It generates <b>dew</b> over time.<br>' +
     '\ud83c\udf38 It cross-pollinates with nearby plants; you\'ll never know what surprises pop up around your rare ones.',
@@ -63693,12 +63693,22 @@ window._lwClaimHerbarium = function(id){
     return 'common';
   }
 
-  function hexComposition(zoneKey, biomeId, grade) {
+  function hexComposition(zoneKey, biomeId, grade, handPool) {
     if (!biomeId) biomeId = (window._lastDetectedBiome || 'forest');
     var def = BIOME[biomeId] || BIOME.forest;
     var tilt = currentTilt();
     var diff = hexDifficulty(grade || 'common');
     var slots = diff.slots;
+    // If handPool provided, constrain the hex's element pool to ONLY
+    // the elements in the player's hand. Stephen Apr 22: "my foraging
+    // puzzle was also impossible. i tried every card in my hand and
+    // it wasnt possible with what i had." Prevents the hex from
+    // requiring an element the player can't place.
+    var _handSet = null;
+    if (handPool && handPool.length) {
+      _handSet = {};
+      for (var _hh = 0; _hh < handPool.length; _hh++) _handSet[handPool[_hh]] = true;
+    }
     // Pull cached weather if we have GPS. Fails to null silently. The seed
     // also mixes in the weather state so the same hex rerolls when the
     // weather changes — two players at the same spot at the same hour get
@@ -63718,7 +63728,11 @@ window._lwClaimHerbarium = function(id){
     for (var i = 0; i < src.length; i++) seed = ((seed << 5) - seed + src.charCodeAt(i)) | 0;
     var rng = function() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
     var weights = {};
-    for (var k in EL) if (!EL[k].rare) weights[k] = 1; // pool only non-rare base elements
+    for (var k in EL) {
+      if (EL[k].rare) continue; // pool only non-rare base elements
+      if (_handSet && !_handSet[k]) continue; // constrain to hand if provided
+      weights[k] = 1;
+    }
     for (var di = 0; di < def.dom.length; di++) if (weights[def.dom[di]] !== undefined) weights[def.dom[di]] *= 2;
     for (var ri = 0; ri < def.rare.length; ri++) if (weights[def.rare[ri]] !== undefined) weights[def.rare[ri]] *= 0.5;
     if (tilt && weights[tilt] !== undefined) weights[tilt] += 1;
@@ -64189,7 +64203,12 @@ window._lwClaimHerbarium = function(id){
         fetchWeather(window._uLat, window._uLng);
       }
     } catch(e){}
-    var comp = hexComposition(zoneKey, null, effGrade);
+    // Build the hand FIRST so we can constrain the hex composition to
+    // elements the player actually has. Stephen Apr 22: puzzle was
+    // unsolvable because the hex picked 'still' at Common while the
+    // player's 5-card hand only had sun/shade/rain/dry/wind.
+    var hand = buildHand(diff.handSize || (diff.cards + 2));
+    var comp = hexComposition(zoneKey, null, effGrade, hand);
     // If the hex composition identified a weather-hint slot, pre-reveal it
     // so the player sees the "free" slot on attempt 1. Matches the attempt-3
     // safety-net pattern for Legendary+ hexes, same `learned` map.
@@ -64206,7 +64225,6 @@ window._lwClaimHerbarium = function(id){
         }
       }
     }
-    var hand = buildHand(diff.handSize || (diff.cards + 2)); // hand size scales with rarity
     if (hand.length < diff.cards) {
       if (window._toast) _toast('You need at least ' + diff.cards + ' cards. Starter cards were granted.');
       onDone(false);
