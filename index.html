@@ -64285,42 +64285,10 @@ window._lwClaimHerbarium = function(id){
       }
       h += '</div>';
 
-      // FULL HISTORY — render every attempt Mastermind-style with card art,
-      // so players don't have to keep prior plays in their head.
-      if (allPlays.length > 0) {
-        h += '<div style="padding:0.55rem;background:rgba(18,22,16,0.55);border:1px dashed rgba(122,179,86,0.25);border-radius:10px;margin-bottom:0.7rem;">';
-        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:6px;">ATTEMPT HISTORY</div>';
-        for (var _ai = 0; _ai < allPlays.length; _ai++) {
-          var _ap = allPlays[_ai];
-          h += '<div style="display:flex;gap:6px;align-items:center;margin-bottom:5px;">';
-          h += '<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);min-width:14px;">'+(_ai+1)+'.</div>';
-          h += '<div style="display:flex;gap:4px;flex:1;">';
-          for (var _lp = 0; _lp < _ap.plays.length; _lp++) {
-            var _lr = _ap.plays[_lp];
-            if (!_lr) continue;
-            var _lCard = EL[_lr.card];
-            var _vColor = resolveVerdictColor(_lr.verdict);
-            // Verdict labels — handle all 5 types instead of falling
-            // through to '·' for wild-exact/neutral. Stephen test flag.
-            var _vLbl = '\u00b7';
-            if (_lr.verdict === 'match') _vLbl = '\u2728';
-            else if (_lr.verdict === 'wild-exact') _vLbl = '\u2728';
-            else if (_lr.verdict === 'counter') _vLbl = '\u2694\ufe0f';
-            else if (_lr.verdict === 'wild') _vLbl = '\ud83c\udf1f';
-            else if (_lr.verdict === 'neutral') _vLbl = '\u00d7';
-            h += '<div style="flex:1;text-align:center;padding:3px 2px;background:rgba(13,16,12,0.6);border:1px solid ' + _vColor + '55;border-radius:6px;position:relative;min-width:0;">';
-            h += '<div style="position:relative;width:100%;aspect-ratio:3/4;border-radius:4px;overflow:hidden;margin-bottom:2px;background:rgba(0,0,0,0.3);">';
-            h += '<img src="assets/foraging/el-' + _lr.card + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1rem;&quot;>' + (_lCard ? _lCard.icon : '?') + '</div>\';">';
-            h += '</div>';
-            h += '<div style="font-size:0.55rem;color:' + _vColor + ';">' + _vLbl + '</div>';
-            h += '</div>';
-          }
-          h += '</div></div>';
-        }
-        h += '</div>';
-      }
-      // Hand — horizontal scroll, bigger cards. Selected cards are dimmed
-      // and visually lifted so the player sees what's already placed.
+      // ═══ HAND (directly under the hex — Stephen Apr 22 redesign) ═══
+      // Horizontal scroll of cards. Tap OR drag to place. History of
+      // earlier attempts lives BELOW the hand + play button so the
+      // newest guess is always directly below the hand.
       var pickMsg = diff.cards - selected.length;
       h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin:0.8rem 0 0.4rem;font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;">';
       h += '<span style="color:var(--muted);">YOUR HAND \u00b7 ' + (pickMsg>0?'PICK '+pickMsg+' MORE':'READY TO FORAGE') + '</span>';
@@ -64367,6 +64335,43 @@ window._lwClaimHerbarium = function(id){
         h += '<button onclick="window._lwForageNext()" style="display:block;width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(74,124,53,0.12));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:54px;">TRY AGAIN (' + (diff.attempts - 1 - attempts) + ' left)</button>';
       } else {
         h += '<button onclick="window._lwForageClose(false)" style="display:block;width:100%;padding:12px;border-radius:10px;border:1.5px solid rgba(192,112,96,0.35);background:rgba(30,18,14,0.6);color:#c07060;font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:54px;">HEX LOCKED \u00b7 WALK ON</button>';
+      }
+
+      // ═══ HISTORY — newest first (Stephen Apr 22 redesign) ═══
+      // "The most recently played combo is beneath your hand, then older
+      // guesses continuing down." Reversed iteration so the last attempt
+      // lands directly below the hand + play button, with earlier
+      // attempts falling below that. The newest entry gets a ★ marker.
+      if (allPlays.length > 0) {
+        h += '<div style="padding:0.55rem;background:rgba(18,22,16,0.55);border:1px dashed rgba(122,179,86,0.25);border-radius:10px;margin-top:0.9rem;">';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:6px;">ATTEMPT HISTORY</div>';
+        for (var _ai = allPlays.length - 1; _ai >= 0; _ai--) {
+          var _ap = allPlays[_ai];
+          var _isMostRecent = (_ai === allPlays.length - 1);
+          h += '<div style="display:flex;gap:6px;align-items:center;margin-bottom:5px;' + (_isMostRecent ? 'padding:3px 4px;background:rgba(200,168,75,0.08);border-left:2px solid rgba(200,168,75,0.5);border-radius:4px;' : '') + '">';
+          h += '<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:' + (_isMostRecent ? 'var(--gold)' : 'var(--muted)') + ';min-width:22px;">' + (_ai+1) + (_isMostRecent ? '\u2605' : '.') + '</div>';
+          h += '<div style="display:flex;gap:4px;flex:1;">';
+          for (var _lp = 0; _lp < _ap.plays.length; _lp++) {
+            var _lr = _ap.plays[_lp];
+            if (!_lr) continue;
+            var _lCard = EL[_lr.card];
+            var _vColor = resolveVerdictColor(_lr.verdict);
+            var _vLbl = '\u00b7';
+            if (_lr.verdict === 'match') _vLbl = '\u2728';
+            else if (_lr.verdict === 'wild-exact') _vLbl = '\u2728';
+            else if (_lr.verdict === 'counter') _vLbl = '\u2694\ufe0f';
+            else if (_lr.verdict === 'wild') _vLbl = '\ud83c\udf1f';
+            else if (_lr.verdict === 'neutral') _vLbl = '\u00d7';
+            h += '<div style="flex:1;text-align:center;padding:3px 2px;background:rgba(13,16,12,0.6);border:1px solid ' + _vColor + '55;border-radius:6px;position:relative;min-width:0;">';
+            h += '<div style="position:relative;width:100%;aspect-ratio:3/4;border-radius:4px;overflow:hidden;margin-bottom:2px;background:rgba(0,0,0,0.3);">';
+            h += '<img src="assets/foraging/el-' + _lr.card + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1rem;&quot;>' + (_lCard ? _lCard.icon : '?') + '</div>\';">';
+            h += '</div>';
+            h += '<div style="font-size:0.55rem;color:' + _vColor + ';">' + _vLbl + '</div>';
+            h += '</div>';
+          }
+          h += '</div></div>';
+        }
+        h += '</div>';
       }
 
       h += '</div>';
