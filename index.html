@@ -58071,7 +58071,7 @@ function _step36Spotlight(sow){
 function _step37(){
   _setStep(37);
   _dialog(
-    'Pick a plant and tap <span style="color:var(--gold);">PLACE HERE</span> to plant it in the Wild.<br><br>The hex with three Wisp Keeper plants is your training ground.',
+    'Pick a plant and tap <span style="color:var(--gold);">PLACE HERE</span> to plant it in the Wild.',
     '',null,'top');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   // Snapshot wild plant count so we can detect an ACTUAL placement
@@ -58127,7 +58127,7 @@ function _step37(){
 function _step38(){
   _setStep(38);
   _dialog(
-    'A <span style="color:var(--gold);">contest!</span> The hex is full; pick a defender to challenge. Tap any of the Wisp Keeper plants.<br><br>This will cost <b>1 sow</b>, win or lose.',
+    'A <span style="color:var(--gold);">contest!</span> The hex is full; pick a defender to challenge. Tap any plant in this hex.<br><br>This will cost <b>1 sow</b>, win or lose.',
     '',null,'bottom');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   // Wait for the dice modal to open
@@ -58232,13 +58232,42 @@ function _step40Spotlight(forage){
   watch();
 }
 
-// ═══ STEP 41: forage walkthrough + rarity scaling ═══
+// ═══ STEP 41: silently wait for forage win ═══
+// Stephen Apr 22: "i like that [_lwConfirm FORAGING A QUIET PUZZLE]
+// prompt but my backpack became highlighted over top of the prompt
+// before ven trying ot forage and says 'you found a seed'."
+// Root cause: old step 41 fired a tutorial dialog on top of the
+// forage panel's own _lwConfirm intro. Trying to dismiss the stack
+// hit the tutorial's GOT IT and prematurely advanced to step 42.
+// Fix: no dialog at step 41. Let the forage round's built-in intro
+// teach the mechanic. Tutorial stays silent until the player
+// actually collects a feral seed (backpack seed count increases).
 function _step41(){
   _setStep(41);
-  _dialog(
-    'A foraging round opens with cards; some hide a seed, some are misses.<br><br>' +
-    'Rarer seed potential = <b>more cards on the board + more attempts</b> to claim it.<br><br>Play through this one and see what you find.',
-    'GOT IT',function(){_clear();setTimeout(_step42,400);},'center');
+  _clear();
+  var _startSeeds=0;
+  try{
+    if(window.FG_Backpack&&FG_Backpack.getState){
+      _startSeeds=(FG_Backpack.getState().seeds||[]).length;
+    }
+  }catch(e){}
+  var polls=0;
+  var watch=function(){
+    if(_getStep()!==41)return;
+    var nowSeeds=0;
+    try{
+      if(window.FG_Backpack&&FG_Backpack.getState){
+        nowSeeds=(FG_Backpack.getState().seeds||[]).length;
+      }
+    }catch(e){}
+    if(nowSeeds>_startSeeds){
+      setTimeout(_step42,600);
+      return;
+    }
+    if(polls<1200){polls++;setTimeout(watch,500);}
+    // No auto-skip — player must actually win a forage round.
+  };
+  watch();
 }
 
 // ═══ STEP 42: foraged seed → backpack → nursery ═══
