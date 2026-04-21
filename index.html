@@ -58339,6 +58339,11 @@ function _step41(){
       _startSeeds=(FG_Backpack.getState().seeds||[]).length;
     }
   }catch(e){}
+  // Track whether forage panel has been seen open, so we can detect its
+  // CLOSE as a completion signal even if the player failed the round.
+  // Stephen Apr 22: "if player fails foraging or fails to plant their
+  // plant the tutorial needs to cleanly continue."
+  var _panelWasOpen = false;
   var polls=0;
   var watch=function(){
     if(_getStep()!==41)return;
@@ -58348,12 +58353,23 @@ function _step41(){
         nowSeeds=(FG_Backpack.getState().seeds||[]).length;
       }
     }catch(e){}
+    // Success path: seed collected (normal advance to step 42 for
+    // backpack → nursery flow).
     if(nowSeeds>_startSeeds){
       setTimeout(_step42,600);
       return;
     }
+    // Fail path: forage panel was open (player played the round) and
+    // has now closed without a seed collected. Skip past the bp→nursery
+    // step since there's nothing to send, advance straight to step 43
+    // (nursery tab) so the tutorial continues.
+    var _panelNow = !!document.getElementById('lw-forage-panel');
+    if (_panelNow) _panelWasOpen = true;
+    if (_panelWasOpen && !_panelNow) {
+      setTimeout(_step43, 1200);
+      return;
+    }
     if(polls<1200){polls++;setTimeout(watch,500);}
-    // No auto-skip — player must actually win a forage round.
   };
   watch();
 }
