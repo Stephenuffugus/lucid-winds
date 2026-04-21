@@ -58013,12 +58013,17 @@ function _step36Spotlight(sow){
   // Wait for the SOW carousel to open (source = wild-place)
   var polls=0;
   var watch=function(){
+    // Stale-watch guard: if the current tutorial step has advanced
+    // past 36 (e.g., we already handed off to step 37), this watch is
+    // a leftover and must not fire an advance or re-queue.
+    if(_getStep()!==36)return;
     var m=document.getElementById('plant-gallery-modal');
     if(m&&m.classList.contains('open')&&document.body.classList.contains('lw-carousel-wild-mode')){
       _clear();setTimeout(_step37,400);return;
     }
     if(polls<600){polls++;setTimeout(watch,500);}
-    else {setTimeout(_step38,400);}
+    // No fallback — if 5 min passes without the carousel opening,
+    // just halt. Jumping to step 38 skipped the whole SOW teaching.
   };
   watch();
 }
@@ -58054,6 +58059,9 @@ function _step37(){
   // 3 poll ticks (1.5s) of confirmed-closed before declaring a cancel.
   var closedTicks=0;
   var watch=function(){
+    // Stale-watch guard: leftover watch from a superseded step 37
+    // invocation must not chain-fire advances.
+    if(_getStep()!==37)return;
     // Contest inspector open = full hex → advance to step 38 duel.
     var ci=document.getElementById('lw-contest-inspector');
     if(ci){_clear();setTimeout(_step38,400);return;}
@@ -58091,10 +58099,12 @@ function _step38(){
   // Wait for the dice modal to open
   var polls=0;
   var watch=function(){
+    if(_getStep()!==38)return;
     var dm=document.getElementById('lw-contest-roll');
     if(dm){
       _clear();
       setTimeout(function(){
+        if(_getStep()!==38)return;
         _dialog(
           'Tap <span style="color:var(--gold);">\ud83c\udfb2 TAP TO ROLL</span> when you\'re ready.<br><br>You roll <b>2d6 + your EA</b> against theirs. Their EA is 1 \u2014 you\'ll win this one.',
           '',null,'top');
@@ -58103,16 +58113,18 @@ function _step38(){
       // Wait for verdict to appear, then advance
       var subPolls=0;
       var watchVerdict=function(){
+        if(_getStep()!==38)return;
         var v=document.getElementById('lwcr-verdict');
         if(v&&v.style.opacity==='1'){_clear();setTimeout(_step39,2200);return;}
         if(subPolls<240){subPolls++;setTimeout(watchVerdict,500);}
-        else {setTimeout(_step39,400);}
+        // No fallback advance — player must actually resolve the
+        // contest. Stranding is better than skipping the dice teach.
       };
       watchVerdict();
       return;
     }
     if(polls<600){polls++;setTimeout(watch,500);}
-    else {setTimeout(_step39,400);}
+    // No fallback — never auto-skip past the contest-inspector step.
   };
   watch();
 }
@@ -58162,20 +58174,26 @@ function _step40Spotlight(forage){
   // own onclick, so _clear() lands before the forage round renders.
   var _advanced=false;
   var onForageTap=function(){
-    if(_advanced)return;_advanced=true;
+    if(_advanced)return;
+    if(_getStep()!==40){forage.removeEventListener('click',onForageTap,true);return;}
+    _advanced=true;
     forage.removeEventListener('click',onForageTap,true);
     _clear();
     setTimeout(_step41,500);
   };
   forage.addEventListener('click',onForageTap,true);
   // Poll kept as a safety net only (e.g., programmatic minigame open).
+  // Only trust the actual forage-round overlay — #lw-forage-panel —
+  // not any '.lw-forage-card' which also renders inside the character
+  // sheet's FORAGING HAND section and would false-positive.
   var polls=0;
   var watch=function(){
     if(_advanced)return;
-    var fc=document.querySelector('.lw-forage-card')||document.getElementById('lw-forage-overlay')||document.querySelector('[class*="forage"]');
+    if(_getStep()!==40){forage.removeEventListener('click',onForageTap,true);return;}
+    var fc=document.getElementById('lw-forage-panel');
     if(fc){_advanced=true;forage.removeEventListener('click',onForageTap,true);_clear();setTimeout(_step41,500);return;}
     if(polls<600){polls++;setTimeout(watch,500);}
-    else {forage.removeEventListener('click',onForageTap,true);setTimeout(_step41,400);}
+    // No fallback advance — require an actual forage round to open.
   };
   watch();
 }
@@ -58204,21 +58222,20 @@ function _step42(){
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   var _advanced=false;
   var onSeedSent=function(){
-    if(_advanced)return;_advanced=true;
+    if(_advanced)return;
+    // Stale-listener guard: if the tutorial has moved past step 42
+    // for any reason, detach and do nothing. An orphan listener was
+    // the source of the "seed found" prompt appearing out of order.
+    if(_getStep()!==42){window.removeEventListener('bp-seed-to-nursery',onSeedSent);return;}
+    _advanced=true;
     window.removeEventListener('bp-seed-to-nursery',onSeedSent);
     _clear();
     setTimeout(_step43,500);
   };
   window.addEventListener('bp-seed-to-nursery',onSeedSent);
-  // Safety timeout — if they don't send within 10 min, skip forward so
-  // the tutorial can't get permanently stranded here.
-  setTimeout(function(){
-    if(_advanced)return;
-    _advanced=true;
-    window.removeEventListener('bp-seed-to-nursery',onSeedSent);
-    _clear();
-    setTimeout(_step43,400);
-  },600000);
+  // No auto-skip safety timeout — better to strand the player on a
+  // clear instruction than to silently advance without teaching the
+  // bp→nursery action.
 }
 
 // ═══ STEP 43: tap your name → character sheet ═══
@@ -58241,6 +58258,7 @@ function _step43(){
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   var polls=0;
   var watch=function(){
+    if(_getStep()!==43)return;
     var cs=document.getElementById('pw-character');
     if(cs&&cs.classList.contains('open')){
       _clear();
@@ -58248,7 +58266,7 @@ function _step43(){
       return;
     }
     if(polls<1200){polls++;setTimeout(watch,500);}
-    else {setTimeout(_step44,400);}
+    // No auto-skip — player must actually tap their name.
   };
   watch();
 }
@@ -58296,6 +58314,7 @@ function _step45(){
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   var polls=0;
   var watch=function(){
+    if(_getStep()!==45)return;
     var cls=null;try{cls=localStorage.getItem('lw_class');}catch(e){}
     if(cls){
       _clear();
@@ -58303,7 +58322,7 @@ function _step45(){
       return;
     }
     if(polls<1200){polls++;setTimeout(watch,500);}
-    else {setTimeout(_step46,400);}
+    // No auto-skip — player must pick a class.
   };
   watch();
 }
