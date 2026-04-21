@@ -58216,22 +58216,20 @@ function _step41(){
 // ═══ STEP 42: foraged seed → backpack → nursery ═══
 // Stephen 2026-04-22: "after we forage we need to tell them to go to
 // their backpack and send the seed to their nursery." Advances on the
-// bp-seed-to-nursery CustomEvent dispatched by FG_Backpack.sendSeedToNursery.
+// bp-seed-to-nursery CustomEvent.
 function _step42(){
   _setStep(42);
+  _clear();
   var bpi=document.getElementById('bpi');
   if(bpi){try{_spotlight&&_spotlight(bpi);}catch(e){}}
   _dialog(
     'You found a <span style="color:var(--sage);">seed!</span><br><br>' +
-    'Open your <span style="color:var(--gold);">backpack</span>, then send the seed to your <b>nursery</b> to grow it into a new plant.',
+    'Open your <span style="color:var(--gold);">backpack</span>, then send the seed to your <b>nursery</b>.',
     '',null,'bottom');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   var _advanced=false;
   var onSeedSent=function(){
     if(_advanced)return;
-    // Stale-listener guard: if the tutorial has moved past step 42
-    // for any reason, detach and do nothing. An orphan listener was
-    // the source of the "seed found" prompt appearing out of order.
     if(_getStep()!==42){window.removeEventListener('bp-seed-to-nursery',onSeedSent);return;}
     _advanced=true;
     window.removeEventListener('bp-seed-to-nursery',onSeedSent);
@@ -58239,17 +58237,91 @@ function _step42(){
     setTimeout(_step43,500);
   };
   window.addEventListener('bp-seed-to-nursery',onSeedSent);
-  // No auto-skip safety timeout — better to strand the player on a
-  // clear instruction than to silently advance without teaching the
-  // bp→nursery action.
 }
 
-// ═══ STEP 43: tap your name → character sheet ═══
+// ═══ STEP 43: tap the NURSERY tab ═══
 function _step43(){
   _setStep(43);
-  // Tutorial CSS disables keeper-bar taps (body.lw-tut-active rule at
-  // ~44014). Override inline with !important on both name + avatar —
-  // either tap should open the character sheet. Cleared in _done().
+  _clear();
+  // Allow the nursery nav button to light up + accept taps during
+  // this step. (canSee.nurseryTab already returns true, so nothing
+  // else to do here beyond spotlighting.)
+  try{document.body.classList.add('lw-tut-nav-nursery');}catch(e){}
+  var nav=document.getElementById('nav-btn-nursery');
+  if(nav){try{_spotlight&&_spotlight(nav);}catch(e){}}
+  _dialog(
+    'Your seed is in the nursery now. Tap the <span style="color:var(--gold);">NURSERY</span> tab at the bottom.',
+    '',null,'top');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  var polls=0;
+  var watch=function(){
+    if(_getStep()!==43)return;
+    if(document.body.classList.contains('tab-nursery')){
+      _clear();
+      setTimeout(_step44,500);
+      return;
+    }
+    if(polls<1200){polls++;setTimeout(watch,500);}
+  };
+  watch();
+}
+
+// ═══ STEP 44: water the seed once ═══
+function _step44(){
+  _setStep(44);
+  _clear();
+  // Snapshot total waterings across all seeds so any +1 triggers
+  // advance. More robust than tracking a specific seed hash.
+  var startWater=0;
+  try{
+    var nur=JSON.parse(localStorage.getItem('sws_nursery')||'[]');
+    for(var i=0;i<nur.length;i++){startWater+=((nur[i]&&nur[i].waterLog)||[]).length;}
+  }catch(e){}
+  var waterBtn=document.querySelector('.nur-btn.water');
+  if(waterBtn){try{_spotlight&&_spotlight(waterBtn);}catch(e){}}
+  _dialog(
+    'Tap <span style="color:var(--gold);">WATER</span> on your seed to give it its first drink.',
+    '',null,'bottom');
+  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  var polls=0;
+  var watch=function(){
+    if(_getStep()!==44)return;
+    var nowWater=0;
+    try{
+      var nur=JSON.parse(localStorage.getItem('sws_nursery')||'[]');
+      for(var i=0;i<nur.length;i++){nowWater+=((nur[i]&&nur[i].waterLog)||[]).length;}
+    }catch(e){}
+    if(nowWater>startWater){
+      _clear();
+      setTimeout(_step45,600);
+      return;
+    }
+    // Re-spotlight the button in case the seed card re-rendered.
+    if(!_spot){
+      var wb=document.querySelector('.nur-btn.water');
+      if(wb){try{_spotlight&&_spotlight(wb);}catch(e){}}
+    }
+    if(polls<1200){polls++;setTimeout(watch,500);}
+  };
+  watch();
+}
+
+// ═══ STEP 45: explain watering + dew accelerant ═══
+function _step45(){
+  _setStep(45);
+  _clear();
+  _dialog(
+    'Seeds need <b>three waterings on three separate days</b> to bloom.<br><br>' +
+    'Come back tomorrow and the day after, or spend <span style="color:#5baddc;">Dew</span> to accelerate it if you can\'t wait.',
+    'CONTINUE',function(){_clear();setTimeout(_step46,400);},'center');
+}
+
+// ═══ STEP 46: tap your name → character sheet ═══
+function _step46(){
+  _setStep(46);
+  _clear();
+  // Keeper-bar taps are CSS-locked during tutorial; inline !important
+  // on both name + avatar overrides that. Cleared in _done().
   var avEl = document.querySelector('#pw-keeper-bar .kb-avatar');
   var nmEl = document.querySelector('#pw-keeper-bar .kb-name');
   try{
@@ -58259,94 +58331,131 @@ function _step43(){
   var target = nmEl || avEl || document.getElementById('pw-keeper-bar');
   if(target){try{_spotlight&&_spotlight(target);}catch(e){}}
   _dialog(
-    'Tap your <span style="color:var(--gold);">name</span> at the top to open your Keeper profile.',
+    'Keepers walk one of five paths. Tap your <span style="color:var(--gold);">name</span> at the top to open your profile.',
     '',null,'bottom');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   var polls=0;
   var watch=function(){
-    if(_getStep()!==43)return;
+    if(_getStep()!==46)return;
     var cs=document.getElementById('pw-character');
     if(cs&&cs.classList.contains('open')){
       _clear();
-      setTimeout(_step44,500);
+      setTimeout(_step47,500);
       return;
     }
     if(polls<1200){polls++;setTimeout(watch,500);}
-    // No auto-skip — player must actually tap their name.
   };
   watch();
 }
 
-// ═══ STEP 44: point out companion slot on character sheet ═══
-function _step44(){
-  _setStep(44);
-  // Re-open char sheet defensively — cold-boot resume may land here
-  // with the sheet closed. PW_UI.openCharacter is idempotent.
-  try{if(window.PW_UI&&PW_UI.openCharacter)PW_UI.openCharacter();}catch(e){}
+// ═══ STEP 47: pick your class ═══
+function _step47(){
+  _setStep(47);
+  _clear();
+  // Close char sheet + open Book of Secrets Class tab. Class picker
+  // L7 gate is honored via canSee.classPick which returns true during
+  // tutorial step 47+ (and after tutorial completion).
+  try{
+    var cs=document.getElementById('pw-character');
+    if(cs)cs.classList.remove('open');
+  }catch(e){}
   setTimeout(function(){
-    var card = document.getElementById('cs-companion-card')
-            || document.querySelector('.cs-companion-card')
-            || document.querySelector('#pw-character [id*="companion"]');
-    if(card){try{_spotlight&&_spotlight(card);}catch(e){}}
-    _dialog(
-      'This is your <span style="color:var(--gold);">companion slot</span>.<br><br>' +
-      'Any plant with a companion trait can live here and grant passive bonuses. You can change it anytime.',
-      'NEXT',function(){
-        _clear();
-        // Close character sheet and open Book of Secrets Class tab
-        // so step 45 lands on the class picker with zero extra taps.
-        try{
-          var cs2=document.getElementById('pw-character');
-          if(cs2)cs2.classList.remove('open');
-        }catch(e){}
-        setTimeout(function(){
-          try{if(window._openCompendiumUI)window._openCompendiumUI();}catch(e){}
-          setTimeout(function(){
-            try{if(window._bosSetTab)window._bosSetTab('class');}catch(e){}
-            setTimeout(_step45,350);
-          },300);
-        },200);
-      },'bottom');
-  },400);
+    try{if(window._openCompendiumUI)window._openCompendiumUI();}catch(e){}
+    setTimeout(function(){
+      try{if(window._bosSetTab)window._bosSetTab('class');}catch(e){}
+      setTimeout(function(){
+        if(_getStep()!==47)return;
+        _dialog(
+          'Pick your <span style="color:var(--gold);">specialization</span>.<br><br>' +
+          'Forager, Breeder, Cartographer, Tender, or Keeper; each shapes how you play. Tap CHOOSE on the one that calls to you.',
+          '',null,'top');
+        if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+        var polls=0;
+        var watch=function(){
+          if(_getStep()!==47)return;
+          var cls=null;try{cls=localStorage.getItem('lw_class');}catch(e){}
+          if(cls){
+            _clear();
+            setTimeout(_step48,900);
+            return;
+          }
+          if(polls<1200){polls++;setTimeout(watch,500);}
+        };
+        watch();
+      },350);
+    },300);
+  },200);
 }
 
-// ═══ STEP 45: pick your class ═══
-function _step45(){
-  _setStep(45);
-  _dialog(
-    'Pick your <span style="color:var(--gold);">Keeper class</span>.<br><br>' +
-    'Forager, Breeder, Cartographer, Tender, or Keeper — each shapes how you play. Tap CHOOSE on the one that calls to you.',
-    '',null,'top');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
-  var polls=0;
-  var watch=function(){
-    if(_getStep()!==45)return;
-    var cls=null;try{cls=localStorage.getItem('lw_class');}catch(e){}
-    if(cls){
-      _clear();
-      setTimeout(_step46,900);
-      return;
+// ═══ STEP 48: point out companion slot ═══
+function _step48(){
+  _setStep(48);
+  _clear();
+  // Close BoS, re-open char sheet so companion card is visible.
+  try{
+    var ov=document.getElementById('bos-overlay');
+    if(ov)ov.remove();
+  }catch(e){}
+  setTimeout(function(){
+    try{if(window.PW_UI&&PW_UI.openCharacter)PW_UI.openCharacter();}catch(e){}
+    setTimeout(function(){
+      if(_getStep()!==48)return;
+      var card = document.getElementById('cs-companion-card')
+              || document.querySelector('.cs-companion-card')
+              || document.querySelector('#pw-character [id*="companion"]');
+      if(card){
+        try{card.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){}
+        setTimeout(function(){try{_spotlight&&_spotlight(card);}catch(e){}},350);
+      }
+      _dialog(
+        'This is your <span style="color:var(--gold);">companion slot</span>.<br><br>' +
+        'Plants with a companion trait can live here and grant passive bonuses. Come back anytime to change it.',
+        'NEXT',function(){_clear();setTimeout(_step49,400);},'bottom');
+    },500);
+  },250);
+}
+
+// ═══ STEP 49: invite friends + send gifts ═══
+function _step49(){
+  _setStep(49);
+  _clear();
+  // Char sheet is still open from step 48. Scroll down to friends
+  // section + spotlight it.
+  var scrollAndSpotlight=function(){
+    var friends=document.getElementById('cs-friends-list');
+    var target=friends
+            || document.querySelector('#pw-character button[onclick*="Invite"]')
+            || document.querySelector('#pw-character button[onclick*="_lwOpenInviteModal"]');
+    if(target){
+      try{target.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){}
+      setTimeout(function(){try{_spotlight&&_spotlight(target);}catch(e){}},400);
     }
-    if(polls<1200){polls++;setTimeout(watch,500);}
-    // No auto-skip — player must pick a class.
   };
-  watch();
+  scrollAndSpotlight();
+  _dialog(
+    'Scroll down in your profile to <span style="color:var(--gold);">invite friends</span> and send gifts.<br><br>' +
+    'Tending together makes the garden stronger.',
+    'NEXT',function(){_clear();setTimeout(_step50,400);},'bottom');
 }
 
-// ═══ STEP 46: wrap + cleanup + _done ═══
-function _step46(){
-  _setStep(46);
+// ═══ STEP 50: wrap + cleanup + _done ═══
+function _step50(){
+  _setStep(50);
+  _clear();
+  // Close any overlays the tutorial opened.
+  try{
+    var cs=document.getElementById('pw-character');
+    if(cs)cs.classList.remove('open');
+    var ov=document.getElementById('bos-overlay');
+    if(ov)ov.remove();
+  }catch(e){}
   _dialog(
     '<span style="color:var(--gold);">That\'s the loop.</span><br><br>' +
     'Play games, mint plants, place them in the wild, tend what you love, forage what you find. Everything else; breeding, climate, contests, the Book of Secrets; will fill in as you play.<br><br>' +
     'Go make beautiful things.',
     'BEGIN',function(){
       _clear();
-      // Final cleanup — remove the tutorial mocks from the live wild
-      // map and restore the original _rollTakeover.
       _lwTutCleanupMocks();
-      // Tutorial complete — release the plant-XP lock so future mints,
-      // blooms, and collection milestones grant XP normally.
       try{localStorage.setItem('lw_plant_xp_unlocked','1');}catch(e){}
       try{document.body.classList.remove('lw-tutorial-pending');}catch(e){}
       try{
@@ -58600,6 +58709,10 @@ function _resume(step){
   if(step===44)return go(_step44);
   if(step===45)return go(_step45);
   if(step===46)return go(_step46);
+  if(step===47)return go(_step47);
+  if(step===48)return go(_step48);
+  if(step===49)return go(_step49);
+  if(step===50)return go(_step50);
   // Unknown / corrupted step — safest fallback is start from 1.
   go(_step1);
 }
@@ -61488,7 +61601,11 @@ function _bosClassContentLegacy() {
 
   var h = '';
   var keeperLvl = (window.canSee && window.canSee.currentLevel) ? window.canSee.currentLevel() : 1;
-  var canPick = keeperLvl >= 7;
+  // Use canSee.classPick so the tutorial override (unlock at guided
+  // class-pick step + after tutorial completion) is honored here too.
+  // Hardcoded keeperLvl>=7 was bypassing the override and showing the
+  // "Lv 7" lock during the tutorial's class-pick step.
+  var canPick = (window.canSee && window.canSee.classPick) ? window.canSee.classPick() : (keeperLvl >= 7);
   if (!cur) {
     if (canPick) {
       h += '<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--cream);margin-bottom:0.8rem;line-height:1.6;">Five paths. Each shapes how you play — and how the world responds to you. Pick one that calls to you; you can walk a different path once you\u2019ve mastered this one.</div>';
@@ -70684,7 +70801,7 @@ window.canSee = {
   classPick: function(){
     try {
       var ts = parseInt(localStorage.getItem('lw_tut')||'0',10);
-      if (ts >= 45) return true;
+      if (ts >= 47) return true;
       if (localStorage.getItem('lw_plant_xp_unlocked') === '1') return true;
     } catch(e){}
     return _lwLevel()>=7;
