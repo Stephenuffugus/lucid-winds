@@ -58384,14 +58384,32 @@ function _step43(){
   try{document.body.classList.add('lw-tut-nav-nursery');}catch(e){}
   var nav=document.getElementById('nav-btn-nursery');
   if(nav){try{_spotlight&&_spotlight(nav);}catch(e){}}
+  // OK button included so the player can always advance manually if
+  // the detection signal misfires. Stephen Apr 22: "the prompt is
+  // stuck on the screen and the screen is dark ... this prompt needs
+  // to have an okay or something."
   _dialog(
     'Your seed is in the nursery now. Tap the <span style="color:var(--gold);">NURSERY</span> tab at the bottom.',
-    '',null,'top');
-  if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    'OK',function(){_clear();setTimeout(_step44,400);},'top');
   var polls=0;
   var watch=function(){
     if(_getStep()!==43)return;
-    if(document.body.classList.contains('tab-nursery')){
+    // Detection: body.tab-nursery is NEVER set — only tab-wild gets
+    // a body class. Use #panel-nursery.active instead, which IS set
+    // by switchTab for every tab. Also check the nav button's .active
+    // class as a second signal.
+    var panelActive = false;
+    try {
+      var p = document.getElementById('panel-nursery');
+      if (p && p.classList.contains('active')) panelActive = true;
+    } catch(e){}
+    if (!panelActive) {
+      try {
+        var nb = document.querySelector('.fg-nav-btn[onclick*="nursery"]');
+        if (nb && nb.classList.contains('active')) panelActive = true;
+      } catch(e){}
+    }
+    if(panelActive){
       _clear();
       setTimeout(_step44,500);
       return;
