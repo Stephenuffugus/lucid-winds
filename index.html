@@ -803,6 +803,39 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-XE58S4X6RX"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());</script>
   <script>
+  // ═══ ?reset=full — dev / test helper ═══
+  // Visit lucidwinds.com/?reset=full to wipe ALL game state in one shot.
+  // Preserves Firebase auth session + lw_version so no cache-bust loop.
+  // Strips the param from the URL so refresh after reset doesn't re-reset.
+  // Sets lw_tut_force_restart so the tutorial re-fires from step 1.
+  (function(){
+    try {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('reset') === 'full') {
+        var allKeys = [];
+        for (var i = 0; i < localStorage.length; i++) allKeys.push(localStorage.key(i));
+        for (var j = 0; j < allKeys.length; j++) {
+          var k = allKeys[j];
+          if (!k) continue;
+          if (k === 'lw_version') continue;
+          if (k === 'fg_intkey') continue;
+          if (k.indexOf('firebase:') === 0) continue;
+          if (k.indexOf('firebaseLocalStorage') === 0) continue;
+          localStorage.removeItem(k);
+        }
+        try { sessionStorage.clear(); } catch(e) {}
+        localStorage.setItem('lw_tut_force_restart', '1');
+        console.log('[LW] ?reset=full — wiped localStorage. Tutorial restarting.');
+        // Strip the ?reset param so refresh doesn't loop
+        try {
+          var cleanUrl = location.href.split('?')[0].split('#')[0];
+          history.replaceState(null, '', cleanUrl);
+        } catch(e) {}
+      }
+    } catch(e) { console.error('[reset=full]', e); }
+  })();
+  </script>
+  <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
   var LW_VERSION='2026.04.14.92';
   (function(){
