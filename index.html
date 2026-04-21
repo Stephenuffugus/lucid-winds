@@ -51053,6 +51053,34 @@ window.PW_grantXP=function(amount,reason){
         setTimeout(function(){_classJITPoll(0);},2500);
       }
     }catch(e){}
+    // JIT: tip jar / "meet the hermit" invite at L7. Fires after the
+    // player has had time to enjoy the game and already picked a class
+    // (tutorial picks it at step 47, so this doesn't collide with the
+    // class JIT above). Subtle one-shot via lw_jit_hermit_v1 — routes
+    // to the Book of Secrets About tab where the maker bio + tip jar
+    // live. Stephen 2026-04-22: "at a point where they've obviously
+    // played a little by themselves and must like it."
+    try{
+      if(newR.level>=7
+         && localStorage.getItem('lw_class')
+         && !localStorage.getItem('lw_jit_hermit_v1')){
+        localStorage.setItem('lw_jit_hermit_v1','1');
+        var _hermitJITPoll=function(attempts){
+          if(document.querySelector('#lu-overlay.open,.lu-overlay.open,#lw-confirm-modal,#pw-win-overlay')&&attempts<60){setTimeout(function(){_hermitJITPoll(attempts+1);},500);return;}
+          if(!window._lwConfirm)return;
+          window._lwConfirm({
+            title:'A NOTE FROM THE MAKER',
+            body:'If you want to learn about the lonely hermit who made this, their story lives in the Book of Secrets. A tip jar waits there too, if you’ve enjoyed the garden.',
+            yes:'MEET THEM',
+            no:'LATER'
+          },function(){
+            try{if(window._openCompendiumUI)window._openCompendiumUI();}catch(e){}
+            setTimeout(function(){try{if(window._bosSetTab)window._bosSetTab('about');}catch(e){}},400);
+          });
+        };
+        setTimeout(function(){_hermitJITPoll(0);},6000);
+      }
+    }catch(e){}
     // JIT: planting the prestige seed at L95. Five levels ahead of the
     // ASCEND button so the Keeper has time to sit with the idea before
     // the door opens at L100. Fires only for pre-prestige players.
