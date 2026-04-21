@@ -64271,17 +64271,18 @@ window._lwClaimHerbarium = function(id){
           h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--cream);margin-top:2px;">' + (showEl ? showEl.label : '?') + '</div>';
           h += '</div></div>';
         } else if (placedEl) {
-          // Filled — show the placed card, click to return to hand.
-          h += '<div onclick="window._lwForageUnplace(' + s + ')" style="position:relative;aspect-ratio:3/4;min-height:108px;background:rgba(18,22,16,0.7);border:3px solid var(--gold);border-radius:12px;overflow:hidden;cursor:pointer;box-shadow:0 0 14px rgba(200,168,75,0.4);">';
+          // Filled — drag-to-move OR tap to return to hand. Drag is
+          // handled by the document-level pointer listeners below.
+          h += '<div data-lwforage-drag="slot:' + s + '" data-lwforage-drop="slot:' + s + '" onclick="if(!window._lwForageWasDrag)window._lwForageUnplace(' + s + ');window._lwForageWasDrag=false;" style="position:relative;aspect-ratio:3/4;min-height:108px;background:rgba(18,22,16,0.7);border:3px solid var(--gold);border-radius:12px;overflow:hidden;cursor:grab;touch-action:none;box-shadow:0 0 14px rgba(200,168,75,0.4);">';
           h += '<img src="assets/foraging/el-' + placedCard + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2.5rem;&quot;>' + placedEl.icon + '</div>\'">';
           h += '<div style="position:absolute;left:0;right:0;bottom:0;padding:18px 4px 5px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.9));text-align:center;">';
           h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.68rem;color:var(--gold);letter-spacing:0.1em;text-shadow:0 1px 2px rgba(0,0,0,0.9);">' + placedEl.label + '</div>';
           h += '</div></div>';
         } else {
-          // Empty slot — show learned hint if any.
+          // Empty slot — drop target for dragged cards.
           var hint = learned[s] ? EL[learned[s].hex] : null;
           var hintOp = hint ? 0.45 : 0;
-          h += '<div style="position:relative;aspect-ratio:3/4;min-height:108px;background:rgba(13,16,12,0.55);border:1.5px dashed rgba(122,179,86,0.35);border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;">';
+          h += '<div data-lwforage-drop="slot:' + s + '" style="position:relative;aspect-ratio:3/4;min-height:108px;background:rgba(13,16,12,0.55);border:1.5px dashed rgba(122,179,86,0.35);border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;touch-action:none;">';
           if (hint) {
             h += '<img src="assets/foraging/el-' + learned[s].hex + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:' + hintOp + ';filter:saturate(0.4);" onerror="this.style.display=\'none\';">';
             h += '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;background:rgba(13,16,12,0.35);">';
@@ -64315,7 +64316,7 @@ window._lwClaimHerbarium = function(id){
       h += '<span style="color:var(--muted);">YOUR HAND \u00b7 ' + (pickMsg>0?'PICK '+pickMsg+' MORE':'READY TO FORAGE') + '</span>';
       h += '<span style="color:var(--gold);">TARGET ' + diff.scoreNeeded + '</span>';
       h += '</div>';
-      h += '<div data-lwforage-hand="1" style="overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:0.4rem 0.2rem 0.6rem;margin:0 -0.2rem 0.9rem;scrollbar-width:thin;">';
+      h += '<div data-lwforage-hand="1" data-lwforage-drop="hand" style="overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:0.4rem 0.2rem 0.6rem;margin:0 -0.2rem 0.9rem;scrollbar-width:thin;">';
       h += '<div style="display:inline-flex;gap:0.5rem;padding-right:0.5rem;">';
       // Count placements per card id — lets the picker show "×2" when the
       // player has tapped the same card twice. All 9 cards are always
@@ -64333,7 +64334,7 @@ window._lwClaimHerbarium = function(id){
         var bg = isSelected ? 'rgba(200,168,75,0.18)' : 'rgba(18,22,16,0.7)';
         var border = isSelected ? '2px solid rgba(200,168,75,0.5)' : '1.5px solid rgba(74,124,53,0.25)';
         var hintTxt = isSelected ? ('PLACED \u00d7' + placedN) : 'TAP TO PLACE';
-        h += '<div onclick="window._lwForagePick(\'' + c + '\')" style="position:relative;cursor:pointer;width:168px;aspect-ratio:3/4;flex-shrink:0;background:' + bg + ';border:' + border + ';border-radius:14px;overflow:hidden;' + (resolved ? 'pointer-events:none;opacity:0.4;' : '') + 'transition:opacity 0.18s ease;box-shadow:0 6px 16px rgba(0,0,0,0.5);">';
+        h += '<div data-lwforage-drag="hand:' + c + '" onclick="if(!window._lwForageWasDrag)window._lwForagePick(\'' + c + '\');window._lwForageWasDrag=false;" style="position:relative;cursor:grab;width:168px;aspect-ratio:3/4;flex-shrink:0;background:' + bg + ';border:' + border + ';border-radius:14px;overflow:hidden;touch-action:none;' + (resolved ? 'pointer-events:none;opacity:0.4;' : '') + 'transition:opacity 0.18s ease;box-shadow:0 6px 16px rgba(0,0,0,0.5);">';
         h += '<img src="assets/foraging/el-' + c + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2.6rem;&quot;>' + el.icon + '</div>\';">';
         if (placedN > 0) {
           h += '<div style="position:absolute;top:6px;right:6px;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:linear-gradient(180deg,#f5dc95,#c8a84b);color:#0d100c;font-family:Bebas Neue,sans-serif;font-size:0.7rem;display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(240,208,144,0.7);">\u00d7' + placedN + '</div>';
@@ -64446,6 +64447,115 @@ window._lwClaimHerbarium = function(id){
         render();
       }
     };
+    // Drag-drop: place a card at a SPECIFIC slot (not just next empty).
+    // If target slot already has a card, replace it. If cardId is
+    // already placed elsewhere, swap positions.
+    window._lwForagePickAt = function(cardId, slotIdx) {
+      if (resolved) return;
+      var existingIdx = selected.indexOf(cardId);
+      if (slotIdx >= selected.length) {
+        if (existingIdx >= 0) return;
+        if (selected.length >= diff.cards) return;
+        selected.push(cardId);
+        render();
+        return;
+      }
+      if (existingIdx === slotIdx) return;
+      if (existingIdx >= 0) {
+        var tmp = selected[slotIdx];
+        selected[slotIdx] = cardId;
+        selected[existingIdx] = tmp;
+      } else {
+        selected[slotIdx] = cardId;
+      }
+      render();
+    };
+    // Drag-drop: swap or move slot positions.
+    window._lwForageSwap = function(fromIdx, toIdx) {
+      if (resolved) return;
+      if (fromIdx < 0 || toIdx < 0) return;
+      if (fromIdx >= selected.length) return;
+      if (toIdx >= selected.length) {
+        var card = selected.splice(fromIdx, 1)[0];
+        selected.push(card);
+      } else if (fromIdx !== toIdx) {
+        var tmp = selected[fromIdx];
+        selected[fromIdx] = selected[toIdx];
+        selected[toIdx] = tmp;
+      }
+      render();
+    };
+    // Pointer-event drag-and-drop — mobile + desktop unified.
+    // Drag activates after 8px movement; shorter press = tap (onclick).
+    // Stephen Apr 22: "i also want the cards draggable."
+    var _lwForageDragState = null;
+    var _lwForageDragListenersAdded = false;
+    function _lwForageEnsureDocListeners() {
+      if (_lwForageDragListenersAdded) return;
+      _lwForageDragListenersAdded = true;
+      document.addEventListener('pointermove', _lwForageDragMove, { passive: false });
+      document.addEventListener('pointerup', _lwForageDragEnd);
+      document.addEventListener('pointercancel', _lwForageDragEnd);
+    }
+    function _lwForageDragStart(e) {
+      if (resolved) return;
+      if (e.button && e.button !== 0) return;
+      var target = e.target && e.target.closest && e.target.closest('[data-lwforage-drag]');
+      if (!target) return;
+      var src = target.getAttribute('data-lwforage-drag');
+      _lwForageDragState = { src: src, startX: e.clientX, startY: e.clientY, moved: false, ghost: null };
+      _lwForageEnsureDocListeners();
+    }
+    function _lwForageDragMove(e) {
+      var st = _lwForageDragState;
+      if (!st) return;
+      var dx = e.clientX - st.startX;
+      var dy = e.clientY - st.startY;
+      var dist = Math.sqrt(dx*dx + dy*dy);
+      if (!st.moved && dist > 8) {
+        st.moved = true;
+        var parts = st.src.split(':');
+        var cardId = parts[0] === 'hand' ? parts[1] : (selected[parseInt(parts[1],10)] || null);
+        if (cardId) {
+          var el = EL[cardId];
+          var ghost = document.createElement('div');
+          ghost.style.cssText = 'position:fixed;z-index:1000020;width:80px;aspect-ratio:3/4;pointer-events:none;border:2px solid #c8a84b;border-radius:10px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,0.7);opacity:0.92;';
+          ghost.innerHTML = '<img src="assets/foraging/el-' + cardId + '.png" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;background:rgba(18,22,16,0.9);&quot;>' + (el ? el.icon : '?') + '</div>\';">';
+          document.body.appendChild(ghost);
+          st.ghost = ghost;
+        }
+      }
+      if (st.moved) {
+        if (st.ghost) {
+          st.ghost.style.left = (e.clientX - 40) + 'px';
+          st.ghost.style.top = (e.clientY - 56) + 'px';
+        }
+        if (e.cancelable) e.preventDefault();
+      }
+    }
+    function _lwForageDragEnd(e) {
+      var st = _lwForageDragState;
+      if (!st) return;
+      _lwForageDragState = null;
+      if (st.ghost && st.ghost.parentNode) st.ghost.remove();
+      if (!st.moved) { window._lwForageWasDrag = false; return; }
+      window._lwForageWasDrag = true;
+      setTimeout(function(){ window._lwForageWasDrag = false; }, 200);
+      var dropEl = document.elementFromPoint(e.clientX, e.clientY);
+      var dropTarget = dropEl && dropEl.closest && dropEl.closest('[data-lwforage-drop]');
+      if (!dropTarget) return;
+      var dst = dropTarget.getAttribute('data-lwforage-drop');
+      var srcParts = st.src.split(':');
+      var dstParts = dst.split(':');
+      if (srcParts[0] === 'hand' && dstParts[0] === 'slot') {
+        window._lwForagePickAt(srcParts[1], parseInt(dstParts[1],10));
+      } else if (srcParts[0] === 'slot' && dstParts[0] === 'hand') {
+        window._lwForageUnplace(parseInt(srcParts[1],10));
+      } else if (srcParts[0] === 'slot' && dstParts[0] === 'slot') {
+        window._lwForageSwap(parseInt(srcParts[1],10), parseInt(dstParts[1],10));
+      }
+    }
+    ov.addEventListener('pointerdown', _lwForageDragStart);
     window._lwForagePlay = function() {
       if (resolved || selected.length !== diff.cards) return;
       // selected now holds card IDs directly (change from hand indices).
