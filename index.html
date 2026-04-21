@@ -56536,7 +56536,10 @@ _done=function(){
   try{
     if(localStorage.getItem('lw_plant_xp_unlocked')==='1'){
       var _xp=parseInt(localStorage.getItem('pw_xp')||'0',10);
-      var _target=(window.RANKS&&window.RANKS[4]&&window.RANKS[4].xp)||156;
+      // L3 cumulative XP (was L5). Stephen Apr 22: "at the end it
+      // shot me to level 5. that seemed unnecessary it could have
+      // just finished with me hitting level 3." RANKS[2] = level 3.
+      var _target=(window.RANKS&&window.RANKS[2]&&window.RANKS[2].xp)||51;
       if(_xp<_target&&window.PW_grantXP){
         window.PW_grantXP(_target-_xp,'tutorial_complete');
       }
@@ -58426,9 +58429,7 @@ function _step42(){
 function _step43(){
   _setStep(43);
   _clear();
-  // Defensive close: the backpack panel is inset:0 at z-index 998
-  // and covers the bottom nav. If step 42 didn't close it for any
-  // reason, close it now before spotlighting the nursery tab.
+  // Close the backpack panel (z-index 998, inset:0 covers the nav).
   try{
     if(window.FG_Backpack&&window.FG_Backpack.close)window.FG_Backpack.close();
     else {
@@ -58436,17 +58437,23 @@ function _step43(){
       if(bpe)bpe.classList.remove('open');
     }
   }catch(e){}
+  // Switch OFF the Wild tab first — Wild hides the standard bottom
+  // nav (stdNav.display='none' at line ~32202) in favor of the Wild
+  // medallion. So spotlighting nav-btn-nursery while on Wild was
+  // pointing at an invisible button. Stephen Apr 22: "it needs to
+  // light the nursery tab up to better guide the player."
+  try{if(window.switchTab)window.switchTab('greenhouse');}catch(e){}
   // Allow the nursery nav button to light up + accept taps during
-  // this step. Also add a pulsing glow via _lwPulseHint so the player
-  // sees WHICH button to tap. Stephen Apr 22: "you need to make the
-  // button light up and glow so people are aware they can click it."
+  // this step. Delay to let the tab switch settle.
   try{document.body.classList.add('lw-tut-nav-nursery');}catch(e){}
-  var nav=document.getElementById('nav-btn-nursery');
-  if(nav){
-    try{_spotlight&&_spotlight(nav);}catch(e){}
-    try{if(window._lwPulseHint)window._lwPulseHint(nav,60000,'lw_tut_nur_nav_pulse');}catch(e){}
-  }
-  // No OK button — action-required step. Detection is robust now
+  setTimeout(function(){
+    var nav=document.getElementById('nav-btn-nursery');
+    if(nav){
+      try{_spotlight&&_spotlight(nav);}catch(e){}
+      try{if(window._lwPulseHint)window._lwPulseHint(nav,60000,'lw_tut_nur_nav_pulse');}catch(e){}
+    }
+  },500);
+  // No OK button — action-required step. Detection is robust
   // (panel.active + nav.active dual signal). Player MUST tap nursery.
   _dialog(
     'Your seed is in the nursery now. Tap the <span style="color:var(--gold);">NURSERY</span> tab at the bottom.',
@@ -58502,7 +58509,7 @@ function _step44(){
   if(waterBtn){try{_spotlight&&_spotlight(waterBtn);}catch(e){}}
   _dialog(
     'Tap <span style="color:var(--gold);">WATER</span> on your seed.',
-    'CONTINUE',function(){_clear();setTimeout(_step45,400);},'bottom');
+    'CONTINUE',function(){_clear();setTimeout(_step45,400);},'top');
   // (tutorial: button kept for manual advance — audit Apr 22)
   var polls=0;
   var watch=function(){
@@ -58541,14 +58548,17 @@ function _step45(){
 function _step46(){
   _setStep(46);
   _clear();
-  // Spotlight the WHOLE keeper bar so the player sees the full UI
-  // region that opens the profile, not just the tiny name text.
-  // Stephen Apr 22: "only the actual text lights up. the keeper bar
-  // should be highlighted to lead the player."
+  // Spotlight + pulse the WHOLE keeper bar so the player sees the
+  // full UI region that opens the profile. Stephen Apr 22: "can we
+  // make the keeper bar glow when it says keepers walk one of five
+  // paths just to better guide them."
   var bar = document.getElementById('pw-keeper-bar');
   var avEl = document.querySelector('#pw-keeper-bar .kb-avatar');
   var nmEl = document.querySelector('#pw-keeper-bar .kb-name');
-  if(bar){try{_spotlight&&_spotlight(bar);}catch(e){}}
+  if(bar){
+    try{_spotlight&&_spotlight(bar);}catch(e){}
+    try{if(window._lwPulseHint)window._lwPulseHint(bar,60000,'lw_tut_kb_pulse');}catch(e){}
+  }
   // Unlock taps on the tap-triggers AFTER _spotlight so the !important
   // flag sticks (spotlight sets pointer-events='auto' without
   // !important, which would clear our priority on subsequent writes).
