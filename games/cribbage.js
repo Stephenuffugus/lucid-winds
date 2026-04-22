@@ -222,43 +222,91 @@ window._gameFns.cribbage = function CRIB(a){
   }
   function showPhase(){
     G.phase='show';
+    G.narration=null;
+    render();
     var order=G.dealer==='player'?['ai','player','crib']:['player','ai','crib'];
-    var delays=[0,1500,3000];
-    order.forEach(function(who,i){
-      setTimeout(function(){
-        var hand,label;
-        if(who==='player'){hand=G.pHand;label='Your hand';}
-        else if(who==='ai'){hand=G.aHand;label='AI hand';}
-        else{hand=G.crib;label=(G.dealer==='player'?'Your':'AI')+' crib';}
-        var result=scoreHand(hand,G.starter,who==='crib');
-        if(who==='player'||(who==='crib'&&G.dealer==='player'))addP(result.total);
-        else addA(result.total);
-        G.lastScoreBreakdown=label+': '+result.total+' pts — '+result.breakdown;
-        _e('milestone');
-        if(result.total>=24)_e('progress');
-        if(checkWin())return;
-        render();sm(label+' +'+result.total);
-      },delays[i]);
-    });
-    setTimeout(function(){
-      if(G.phase==='show'&&!checkWin())dealHand();
-    },4500);
+    // Sequential narrator: scores one hand at a time, beats out each combo.
+    function narrate(whoIdx){
+      if(whoIdx>=order.length){
+        // All three hands scored — brief pause, then next deal.
+        setTimeout(function(){
+          if(G.phase==='show'&&!checkWin()){
+            G.narration=null;dealHand();
+          }
+        },1400);
+        return;
+      }
+      var who=order[whoIdx];
+      var hand,label,tag;
+      if(who==='player'){hand=G.pHand;label='Your hand';tag='player';}
+      else if(who==='ai'){hand=G.aHand;label='AI hand';tag='ai';}
+      else{hand=G.crib;label=(G.dealer==='player'?'Your':'AI')+' crib';tag='crib';}
+      var result=scoreHand(hand,G.starter,who==='crib');
+      var scorer = (who==='player'||(who==='crib'&&G.dealer==='player')) ? 'player' : 'ai';
+      // Start narration for this hand.
+      G.narration={label:label,tag:tag,hand:hand,scorer:scorer,
+                   combos:result.combos,step:-1,running:0,total:result.total};
+      render();
+      // If there are no combos, display '0 pts' beat then move on.
+      if(result.combos.length===0){
+        G.narration.step=0;
+        render();
+        setTimeout(function(){
+          if(G.phase!=='show')return;
+          narrate(whoIdx+1);
+        },900);
+        return;
+      }
+      function stepCombo(i){
+        if(G.phase!=='show'||!G.narration)return;
+        G.narration.step=i;
+        G.narration.running += result.combos[i].points;
+        // Credit this combo to the scoring side so the peg advances live.
+        if(scorer==='player')addP(result.combos[i].points);
+        else addA(result.combos[i].points);
+        _play('tap');
+        render();
+        if(i+1<result.combos.length){
+          setTimeout(function(){stepCombo(i+1)},720);
+        }else{
+          // Held-beat on the final combo so the total settles.
+          if(result.total>=24)_e('progress');
+          _e('milestone');
+          if(checkWin())return;
+          setTimeout(function(){narrate(whoIdx+1)},1200);
+        }
+      }
+      setTimeout(function(){stepCombo(0)},600);
+    }
+    narrate(0);
   }
   function scoreHand(hand,starter,isCrib){
-    var all=hand.concat([starter]);var pts=0,bd=[];
+    // Returns {total, combos:[{type, points, label, indices:[...]}]} where
+    // each combo's indices point into all[] = hand(0-3) + starter(4). The
+    // show-phase narration walks this array one step at a time.
+    var all=hand.concat([starter]);var pts=0,combos=[];
+    // 15s — every subset summing to 15 scores 2.
     for(var mask=1;mask<32;mask++){
-      var sum=0;
-      for(var i=0;i<5;i++)if(mask&(1<<i))sum+=all[i].val;
-      if(sum===15){pts+=2;bd.push('15=2');}
+      var sum=0, ind=[];
+      for(var i=0;i<5;i++)if(mask&(1<<i)){sum+=all[i].val;ind.push(i);}
+      if(sum===15 && ind.length>=2){pts+=2;combos.push({type:'15',points:2,label:'Fifteen',indices:ind});}
     }
+    // Pairs — 2 pts each, pairs of pairs naturally scored as 3 individual pairs.
     for(var i2=0;i2<5;i2++)for(var j=i2+1;j<5;j++){
-      if(all[i2].rank===all[j].rank){pts+=2;bd.push('Pair=2');}
+      if(all[i2].rank===all[j].rank){pts+=2;combos.push({type:'pair',points:2,label:'Pair',indices:[i2,j]});}
     }
+    // Runs — longest run wins; duplicates multiply. Only one run combo is scored
+    // (the length × multiplier), representing the best run in the hand.
     var ranks=all.map(function(c){return c.rank;}).sort(function(a,b){return a-b;});
     var runFound=false;
     if(ranks[4]-ranks[0]===4){
       var uniq={};for(var ri=0;ri<5;ri++)uniq[ranks[ri]]=1;
-      if(Object.keys(uniq).length===5){pts+=5;bd.push('Run5=5');runFound=true;}
+      if(Object.keys(uniq).length===5){
+        pts+=5;
+        var allIdx=[0,1,2,3,4];
+        combos.push({type:'run',points:5,label:'Run of five',indices:allIdx});
+        runFound=true;
+      }
     }
     if(!runFound){
       for(var len=4;len>=3&&!runFound;len--){
@@ -267,25 +315,39 @@ window._gameFns.cribbage = function CRIB(a){
           var uq={};for(var ui=0;ui<sub.length;ui++)uq[sub[ui]]=1;
           if(sub[sub.length-1]-sub[0]===len-1&&Object.keys(uq).length===len){
             var mult=1;
+            var runIdx=[];
             for(var rk=0;rk<len;rk++){
-              var cnt=0;for(var rnk=0;rnk<ranks.length;rnk++)if(ranks[rnk]===sub[rk])cnt++;
+              var cnt=0;
+              for(var rnk=0;rnk<ranks.length;rnk++)if(ranks[rnk]===sub[rk])cnt++;
               mult*=cnt;
             }
-            pts+=len*mult;bd.push('Run'+len+'x'+mult+'='+(len*mult));
+            // Collect the indices of the run cards in all[]
+            for(var ai=0;ai<all.length;ai++){
+              if(all[ai].rank>=sub[0]&&all[ai].rank<=sub[sub.length-1])runIdx.push(ai);
+            }
+            var runPts=len*mult;
+            pts+=runPts;
+            var runLabel = mult>1 ? ('Run of '+len+' × '+mult) : ('Run of '+len);
+            combos.push({type:'run',points:runPts,label:runLabel,indices:runIdx});
             runFound=true;break;
           }
         }
       }
     }
+    // Flush — 4 or 5 of same suit. In the crib, must be all 5 (hand+starter).
     var hs=hand.map(function(c){return c.suit;});
     if(hs[0]===hs[1]&&hs[1]===hs[2]&&hs[2]===hs[3]){
-      if(starter.suit===hs[0]){pts+=5;bd.push('Flush5=5');}
-      else if(!isCrib){pts+=4;bd.push('Flush4=4');}
+      if(starter.suit===hs[0]){pts+=5;combos.push({type:'flush',points:5,label:'Flush (five)',indices:[0,1,2,3,4]});}
+      else if(!isCrib){pts+=4;combos.push({type:'flush',points:4,label:'Flush (four)',indices:[0,1,2,3]});}
     }
+    // Nobs — Jack in hand of same suit as starter scores 1.
     for(var n=0;n<hand.length;n++){
-      if(hand[n].rank===10&&hand[n].suit===starter.suit){pts+=1;bd.push('Nobs=1');break;}
+      if(hand[n].rank===10&&hand[n].suit===starter.suit){
+        pts+=1;combos.push({type:'nobs',points:1,label:'His Nobs',indices:[n,4]});
+        break;
+      }
     }
-    return{total:pts,breakdown:bd.join(' | ')};
+    return{total:pts,combos:combos};
   }
   function checkWin(){
     if(G.pScore>=121){G.phase='gameover';render();_e('game_win');_playWin();_sr('cribbage',{w:true,s:G.pScore});var skunk=G.aScore<91;if(skunk)_e('milestone');sm(skunk?'🃏 SKUNK WIN!':'🃏 You win!');return true;}
@@ -353,9 +415,9 @@ window._gameFns.cribbage = function CRIB(a){
       G.playArea.forEach(function(p){h+=_cardHtml(p.card,false,false,false,false,p.who);});
       h+='</div>';
     }
-    // ── SCORE BREAKDOWN (legacy dumped string — will become sequential narration in a later pass) ──
-    if(G.lastScoreBreakdown){
-      h+='<div style="font-family:Georgia,serif;font-size:0.78rem;color:#f5ebd0;text-align:center;padding:10px 12px;background:rgba(0,0,0,0.3);border:1px solid rgba(200,168,75,0.25);border-radius:6px;margin:6px 0;line-height:1.55;font-style:italic;">'+G.lastScoreBreakdown+'</div>';
+    // ── NARRATION — show phase steps through combos one at a time with card highlights ──
+    if(G.phase==='show'&&G.narration){
+      h+=_narrationHtml();
     }
     // ── YOUR HAND ──
     h+='<div style="background:rgba(8,35,22,0.45);border:1px solid rgba(122,179,86,0.3);border-radius:8px;padding:6px 8px;margin-top:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);">';
@@ -387,6 +449,52 @@ window._gameFns.cribbage = function CRIB(a){
     }
     h+='</div>';
     pan.innerHTML=h;
+  }
+  // Show-phase narration. Renders the hand + starter laid out, with the
+  // currently-called combo's cards glowing, plus the running callout text.
+  function _narrationHtml(){
+    var n=G.narration;if(!n)return '';
+    var step=n.step;
+    var currentCombo = (step>=0 && step<n.combos.length) ? n.combos[step] : null;
+    var highlight={};
+    if(currentCombo)currentCombo.indices.forEach(function(i){highlight[i]=1;});
+    var scorerColor = n.scorer==='player' ? '#7ab356' : '#dc8a8a';
+    var h='';
+    h+='<div style="background:rgba(0,0,0,0.4);border:1.5px solid '+scorerColor+';border-radius:10px;padding:12px 10px;margin:8px 0;box-shadow:0 2px 12px rgba(0,0,0,0.4);">';
+    h+='<div style="text-align:center;font-family:DM Mono,monospace;font-size:0.55rem;letter-spacing:0.16em;color:'+scorerColor+';text-transform:uppercase;margin-bottom:6px;">'+n.label+'</div>';
+    // Cards row (hand + starter). Highlight contributing cards.
+    h+='<div style="display:flex;gap:5px;justify-content:center;margin-bottom:10px;">';
+    var all=n.hand.concat([G.starter]);
+    for(var i=0;i<all.length;i++){
+      var hl=highlight[i]?1:0;
+      var isStarter=(i===4);
+      var card=all[i];
+      var redCol='#b42a2a', blackCol='#1a1a1a';
+      var color=isRed(card)?redCol:blackCol;
+      var bdr = hl?'#ffdc70':(isStarter?'#d4b86a':'#c4b998');
+      var shadow = hl
+        ? 'box-shadow:0 0 0 2px #ffdc70,0 0 18px rgba(255,220,112,0.55);transform:translateY(-6px);'
+        : 'box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 2px 4px rgba(0,0,0,0.45);';
+      h+='<div style="width:46px;height:64px;border-radius:6px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;border:2px solid '+bdr+';background:linear-gradient(180deg,#faf3dd,#f0e7c8);color:'+color+';position:relative;font-family:Georgia,serif;transition:transform .25s,box-shadow .25s;'+shadow+'">';
+      h+='<span style="font-size:12px;position:absolute;top:2px;left:4px;line-height:1;font-weight:700;">'+RANKS[card.rank]+'</span>';
+      h+='<span style="font-size:10px;position:absolute;top:13px;left:5px;line-height:1;">'+_pip(card.suit)+'</span>';
+      h+='<span style="font-size:22px;line-height:1;">'+_pip(card.suit)+'</span>';
+      h+='</div>';
+    }
+    h+='</div>';
+    // Running callout text
+    if(step<0){
+      h+='<div style="text-align:center;font-family:Georgia,serif;font-style:italic;font-size:0.9rem;color:#f5ebd0;">Counting…</div>';
+    }else if(currentCombo){
+      h+='<div style="text-align:center;font-family:Georgia,serif;font-size:1.05rem;color:#f5ebd0;line-height:1.3;">';
+      h+='<span style="color:#ffdc70;">'+currentCombo.label+'</span> for <strong style="font-size:1.3em;color:#ffdc70;">'+n.running+'</strong>';
+      h+='</div>';
+    }else{
+      // No combos — 0 pts
+      h+='<div style="text-align:center;font-family:Georgia,serif;font-style:italic;font-size:0.9rem;color:rgba(245,235,208,0.7);">No points</div>';
+    }
+    h+='</div>';
+    return h;
   }
   // Horizontal peg bar for one player. Renders a wooden track with 121
   // hole markers, a back peg (outlined, at previous score) and a front peg
