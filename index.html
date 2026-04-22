@@ -48751,11 +48751,12 @@ function GT(a){
   init();
 }
 
+// ═══ 15-PUZZLE SLIDER ═══
 function GD(a){var tl=[],mv=0;ms(a,'👆<strong id="Dm">0</strong>');mm(a);var gd=document.createElement('div');gd.className='dg';gd.id='Dg';a.appendChild(gd);mc(a).innerHTML='<button class="gb-new" onclick="_DN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function sv(ar){var inv=0;for(var i=0;i<ar.length;i++)for(var j=i+1;j<ar.length;j++)if(ar[i]&&ar[j]&&ar[i]>ar[j])inv++;return(Math.floor(ar.indexOf(0)/4)%2===0)!==(inv%2===0)}function wn(){for(var i=0;i<15;i++)if(tl[i]!==i+1)return false;return true}
   function rn(){gd.innerHTML='';tl.forEach(function(v,i){var d=document.createElement('div');if(!v){d.className='dc de'}else{d.className='dc df'+(v===i+1?' dk':'');d.textContent=v;d.onclick=function(){var vi=tl.indexOf(v),ei=tl.indexOf(0);if((Math.abs(Math.floor(vi/4)-Math.floor(ei/4))+Math.abs(vi%4-ei%4))!==1)return;_play('slide');tl[ei]=v;tl[vi]=0;mv++;document.getElementById('Dm').textContent=mv;if(mv%20===0)_e('milestone');if(wn()){_e('game_win');sm('🌿 '+mv+' moves!');_sr('slider',{w:true,s:mv})}rn()}}gd.appendChild(d)})}
   window._DN=function(){mv=0;document.getElementById('Dm').textContent='0';sm('');tl=[];for(var i=1;i<=15;i++)tl.push(i);tl.push(0);do{sh(tl)}while(!sv(tl)||wn());rn()};_DN();}
-// ═══ SUDOKU ═══
+// ═══ FARKLE ═══
 function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolling=false,busted=false;
   var numPlayers=1,curP=0,players=[{banked:0}],target=10000,gameOver=false,finalRound=false,finalStart=-1;
   var justRolled=new Array(6).fill(false);
@@ -49072,7 +49073,7 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolli
   };
   _FN();
 }
-// ═══ TRIPEAKS ═══
+// ═══ YAHTZEE ═══
 function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1,scores={},justRolled=new Array(5).fill(false);
   // Takeover overlay state. {kind:'yahtzee'|'gameover', ...}
   var overlay=null;
@@ -49497,7 +49498,7 @@ function GDS(a){
   };
   _DSN();
 }
-// ═══ HANOI ═══
+// ═══ PICROSS — BLOOM GRID ═══
 function GX(a){var SZ=5,sol=[],bd=[],rowC=[],colC=[];ms(a);mm(a);
   var w=document.createElement('div');w.id='Xw';w.style.cssText='padding:8px';a.appendChild(w);mc(a).innerHTML='<select class="gsl" id="Xd" onchange="_XN()"><option value="5" selected>5×5</option><option value="7">7×7</option><option value="10">10×10</option></select> <button class="gb-new" onclick="_XN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function gen(){sol=[];for(var i=0;i<SZ*SZ;i++)sol.push(Math.random()<.55?1:0);bd=new Array(SZ*SZ).fill(0);
@@ -49862,7 +49863,7 @@ function GMM(a){var code=[],guesses=[],cur=[],_mmMode='color';
     sm('');rn()
   };_MMN();
 }
-// ═══ FLOOD FILL ═══
+// ═══ COLOR SORT ═══
 function GCS(a){var tubes=[],numT=7,cap=4,sel=-1;var COLS=['#4a7c35','#C8A84B','#4a7aaa','#c76a30','#9b59b6'];
   ms(a,'');mm(a);var tw=document.createElement('div');tw.className='csw';tw.id='CS';a.appendChild(tw);mc(a).innerHTML='<button class="gb-new" onclick="_CSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function gen(){var colors=[];for(var c=0;c<5;c++)for(var i=0;i<cap;i++)colors.push(c);sh(colors);tubes=[];for(var t=0;t<5;t++){tubes[t]=[];for(var i=0;i<cap;i++)tubes[t].push(colors[t*cap+i])}tubes.push([]);tubes.push([]);sel=-1}
