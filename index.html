@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.37';
+  var LW_VERSION='2026.04.22.38';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3435,6 +3435,9 @@
     body.game-active #sws-debug-toggle{display:none!important}
     /* Three Sisters keeps its own rules strip visible — it has no inline gr rules div like the other games */
     body.game-active.game-set .rules-strip{display:block!important}
+    /* Cribbage — thinking pulse + banner pop-in */
+    @keyframes cbThink{0%,100%{opacity:0.35}50%{opacity:1}}
+    @keyframes cbBanner{0%{transform:translate(-50%,-40%) scale(.6);opacity:0}60%{transform:translate(-50%,-55%) scale(1.05);opacity:1}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
     /* Rotate-for-landscape hint — solitaire tableaus need ~640px to fit 7 columns without side-clipping */
     #sol-rotate-hint{display:none;position:fixed;inset:0;z-index:1000001;background:linear-gradient(180deg,rgba(8,12,6,0.98) 0%,rgba(4,8,3,1) 100%);align-items:center;justify-content:center;padding:1.5rem;text-align:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
     #sol-rotate-hint .srh-inner{max-width:360px;}

@@ -56,6 +56,15 @@ window._gameFns.cribbage = function CRIB(a){
   // to do G.pScore+=X now goes through these.
   function addP(pts){ G.pPrev=G.pScore; G.pScore+=pts; }
   function addA(pts){ G.aPrev=G.aScore; G.aScore+=pts; }
+  // Pegging banner — pops up briefly announcing FIFTEEN / PAIR / RUN etc.
+  var _bannerTimer=null;
+  function _showBanner(callouts, pts, color){
+    if(!callouts||callouts.length===0)return;
+    G.banner={text:callouts.join(' · '),pts:pts,color:color};
+    render();
+    if(_bannerTimer)clearTimeout(_bannerTimer);
+    _bannerTimer=setTimeout(function(){G.banner=null;render();},1100);
+  }
   function dealHand(){
     G.roundNum++;
     G.deck=makeDeck();
@@ -90,8 +99,12 @@ window._gameFns.cribbage = function CRIB(a){
       if(checkWin())return;
     }
     G.phase='peg';G.playArea=[];G.playCount=0;
-    if(G.dealer==='player')setTimeout(aiPeg,600);
-    render();
+    if(G.dealer==='player'){
+      G.aiThinking=true;render();
+      setTimeout(function(){G.aiThinking=false;aiPeg();},900);
+    }else{
+      render();
+    }
   }
   function aiChooseDiscard(){
     var best=null,bestVal=-1;
@@ -125,8 +138,8 @@ window._gameFns.cribbage = function CRIB(a){
     G.pPlayed.push(idx);
     G.playArea.push({card:card,who:'player'});
     G.playCount+=card.val;
-    var pts=scorePeg(G.playArea,G.playCount);
-    if(pts>0){addP(pts);sm('+'+pts);_e('progress');}
+    var r=scorePeg(G.playArea,G.playCount);
+    if(r.pts>0){addP(r.pts);sm('+'+r.pts);_e('progress');_showBanner(r.callouts,r.pts,'#7ab356');}
     if(checkWin())return;
     G.pPass=false;G.aPass=false;
     render();
@@ -182,8 +195,8 @@ window._gameFns.cribbage = function CRIB(a){
     G.aPlayed.push(bestIdx);
     G.playArea.push({card:card,who:'ai'});
     G.playCount+=card.val;
-    var pts=scorePeg(G.playArea,G.playCount);
-    if(pts>0){addA(pts);sm('AI +'+pts);}
+    var r=scorePeg(G.playArea,G.playCount);
+    if(r.pts>0){addA(r.pts);sm('AI +'+r.pts);_showBanner(r.callouts,r.pts,'#dc8a8a');}
     if(checkWin())return;
     if(G.playCount===31){
       setTimeout(function(){G.playCount=0;G.playArea=[];render();checkPegContinue();},800);
@@ -196,7 +209,7 @@ window._gameFns.cribbage = function CRIB(a){
       var lastWho=G.playArea.length>0?G.playArea[G.playArea.length-1].who:'player';
       if(lastWho==='player')addP(1);else addA(1);
       if(checkWin())return;
-      setTimeout(showPhase,800);return;
+      setTimeout(showPhase,900);return;
     }
     // Turn order based on last card + passes, not brittle parity math
     var lastWho=G.playArea.length>0?G.playArea[G.playArea.length-1].who:null;
@@ -206,19 +219,44 @@ window._gameFns.cribbage = function CRIB(a){
     else if(lastWho==='player')isPlayerNext=false; // player just played, AI's turn
     else if(lastWho==='ai')isPlayerNext=true;     // AI just played, player's turn
     else isPlayerNext=(G.dealer==='ai');            // fresh sequence: non-dealer leads
-    if(!isPlayerNext)setTimeout(aiPeg,500);
+    if(!isPlayerNext){
+      // AI "thinking" beat — 800-1200ms random so it feels like a human deciding
+      // rather than an instant robot. Indicator shows in the render.
+      G.aiThinking=true;render();
+      var delay=850+Math.floor(Math.random()*350);
+      setTimeout(function(){G.aiThinking=false;aiPeg();},delay);
+    }
   }
   function scorePeg(area,count){
-    var pts=0;
-    if(count===15)pts+=2;if(count===31)pts+=2;
+    // Returns {pts, callouts:[]} so the banner can name what happened.
+    var pts=0, callouts=[];
+    if(count===15){pts+=2;callouts.push('FIFTEEN');}
+    if(count===31){pts+=2;callouts.push('THIRTY-ONE');}
+    // Pairs / pair royal / double pair royal — tail match counts.
     if(area.length>=2){
-      var last=area[area.length-1].card;var prev=area[area.length-2].card;
+      var last=area[area.length-1].card, prev=area[area.length-2].card;
       if(last.rank===prev.rank){
-        pts+=2;
-        if(area.length>=3&&area[area.length-3].card.rank===last.rank)pts+=4;
+        if(area.length>=4 && area[area.length-3].card.rank===last.rank && area[area.length-4].card.rank===last.rank){
+          pts+=12;callouts.push('DOUBLE PAIR ROYAL');
+        }else if(area.length>=3 && area[area.length-3].card.rank===last.rank){
+          pts+=6;callouts.push('PAIR ROYAL');
+        }else{
+          pts+=2;callouts.push('PAIR');
+        }
       }
     }
-    return pts;
+    // Runs — longest tail that forms a consecutive run when sorted, min 3.
+    var cards=area.map(function(p){return p.card;});
+    for(var n=Math.min(cards.length,7);n>=3;n--){
+      var tail=cards.slice(cards.length-n);
+      var ranks=tail.map(function(c){return c.rank;}).sort(function(a,b){return a-b;});
+      var ok=true;
+      for(var i=1;i<ranks.length;i++){
+        if(ranks[i]!==ranks[i-1]+1){ok=false;break;}
+      }
+      if(ok){pts+=n;callouts.push('RUN OF '+n);break;}
+    }
+    return {pts:pts,callouts:callouts};
   }
   function showPhase(){
     G.phase='show';
@@ -377,7 +415,12 @@ window._gameFns.cribbage = function CRIB(a){
     h+='</div>';
     // ── AI HAND ──
     h+='<div style="background:rgba(8,35,22,0.45);border:1px solid rgba(220,138,138,0.25);border-radius:8px;padding:6px 8px;margin-bottom:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);">';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:rgba(220,138,138,0.85);letter-spacing:0.14em;margin-bottom:4px;text-transform:uppercase;">AI Hand</div>';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:rgba(220,138,138,0.85);letter-spacing:0.14em;text-transform:uppercase;">AI Hand</div>';
+    if(G.aiThinking){
+      h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.68rem;color:#ffdc70;animation:cbThink 1.2s ease-in-out infinite;">Thinking…</div>';
+    }
+    h+='</div>';
     h+='<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:64px;align-items:center;">';
     if(G.phase==='show'||G.phase==='gameover'){
       G.aHand.forEach(function(c){h+=_cardHtml(c,false,false,false,false);});
@@ -411,8 +454,14 @@ window._gameFns.cribbage = function CRIB(a){
     }
     // ── PLAY AREA — cards laid down during pegging ──
     if(G.phase==='peg'&&G.playArea.length>0){
-      h+='<div style="min-height:52px;display:flex;gap:3px;justify-content:center;align-items:center;flex-wrap:wrap;padding:6px;background:rgba(0,0,0,0.22);border-radius:6px;margin:4px 0;border:1px solid rgba(180,140,70,0.15);">';
+      h+='<div style="min-height:52px;display:flex;gap:3px;justify-content:center;align-items:center;flex-wrap:wrap;padding:6px;background:rgba(0,0,0,0.22);border-radius:6px;margin:4px 0;border:1px solid rgba(180,140,70,0.15);position:relative;">';
       G.playArea.forEach(function(p){h+=_cardHtml(p.card,false,false,false,false,p.who);});
+      // Floating banner announcing FIFTEEN / PAIR / RUN etc when a peg score fires.
+      if(G.banner){
+        h+='<div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);padding:6px 16px;background:linear-gradient(180deg,'+G.banner.color+',#0a0a0a);border:1.5px solid '+G.banner.color+';border-radius:6px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;color:#fff8e0;letter-spacing:0.1em;text-shadow:0 1px 2px rgba(0,0,0,0.7);box-shadow:0 4px 14px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.2);white-space:nowrap;animation:cbBanner .3s cubic-bezier(.2,1.6,.3,1) both;z-index:4;">'
+          +G.banner.text+' <span style="color:#ffdc70;">+'+G.banner.pts+'</span>'
+        +'</div>';
+      }
       h+='</div>';
     }
     // ── NARRATION — show phase steps through combos one at a time with card highlights ──
