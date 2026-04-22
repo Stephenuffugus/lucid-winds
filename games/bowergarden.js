@@ -416,13 +416,16 @@ window._gameFns.bowergarden = function BG(a){
     return h;
   }
   function _teamStrip(label, score, tricks, color, isCaller){
+    // Always render 5 pip placeholders so the strip height stays stable
+    // between hands. Pips are dim when trump hasn't been called yet.
+    var showFilled = !!trumpSuit;
     var tricksHtml='';
-    if(trumpSuit){
-      // 5 pips showing tricks won this hand
-      for(var i=0;i<5;i++){
-        var on=i<tricks;
-        tricksHtml+='<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin:0 1px;background:'+(on?color:'rgba(0,0,0,0.35)')+';border:1px solid '+(on?'rgba(0,0,0,0.4)':'rgba(0,0,0,0.55)')+';'+(on?'box-shadow:0 0 6px '+color+'aa;':'')+'"></span>';
-      }
+    for(var i=0;i<5;i++){
+      var on=showFilled&&i<tricks;
+      var bg = showFilled ? (on?color:'rgba(0,0,0,0.35)') : 'rgba(0,0,0,0.25)';
+      var bd = 'rgba(0,0,0,0.5)';
+      var glow = on?'box-shadow:0 0 6px '+color+'aa;':'';
+      tricksHtml+='<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin:0 1px;background:'+bg+';border:1px solid '+bd+';'+glow+'"></span>';
     }
     var callerTag = isCaller ? '<span style="display:inline-block;padding:1px 5px;margin-left:4px;font-size:0.45rem;font-family:Georgia,serif;font-style:italic;color:#ffdc70;border:1px solid #ffdc70;border-radius:3px;vertical-align:middle;">caller</span>' : '';
     return '<div style="flex:1;background:linear-gradient(180deg,rgba(0,0,0,0.35),rgba(0,0,0,0.5));border:1.5px solid '+color+';border-radius:8px;padding:6px 10px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.08),0 2px 6px rgba(0,0,0,0.35);">'
@@ -431,7 +434,10 @@ window._gameFns.bowergarden = function BG(a){
           +'<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;color:'+color+';text-transform:uppercase;">'+label+callerTag+'</div>'
           +'<div style="font-family:Georgia,serif;font-size:1.6rem;font-weight:700;color:#f5ebd0;line-height:1;margin-top:1px;text-shadow:0 2px 3px rgba(0,0,0,0.4);">'+score+'</div>'
         +'</div>'
-        +(tricksHtml?'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;"><div style="font-family:DM Mono,monospace;font-size:0.48rem;letter-spacing:0.1em;color:rgba(232,220,200,0.55);">tricks</div><div>'+tricksHtml+'</div></div>':'')
+        +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;opacity:'+(showFilled?'1':'0.45')+';">'
+          +'<div style="font-family:DM Mono,monospace;font-size:0.48rem;letter-spacing:0.1em;color:rgba(232,220,200,0.55);">tricks</div>'
+          +'<div>'+tricksHtml+'</div>'
+        +'</div>'
       +'</div>'
     +'</div>';
   }
@@ -440,7 +446,8 @@ window._gameFns.bowergarden = function BG(a){
     var h='<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;padding:4px 2px 10px;">';
     // Dealer name
     h+='<div style="font-family:DM Mono,monospace;font-size:0.52rem;letter-spacing:0.12em;color:rgba(232,220,200,0.6);text-transform:uppercase;">Dealer<br/><span style="color:#f5ebd0;font-family:Georgia,serif;font-size:0.85rem;letter-spacing:0;text-transform:none;">'+PLAYER_NAMES[dealer]+'</span></div>';
-    // Trump chip — the hero UI during the hand
+    // Trump/prompt chip — same pill shape either way so the header height
+    // stays stable between hands (no jumpy layout when the old trump clears).
     if(trumpSuit){
       var red=(trumpSuit==='hearts'||trumpSuit==='diamonds');
       var pipCol= red ? '#e63946' : '#f5ebd0';
@@ -455,8 +462,17 @@ window._gameFns.bowergarden = function BG(a){
       if(callerName)h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.6rem;color:'+borderCol+';padding-left:8px;border-left:1px solid rgba(255,255,255,0.15);">'+callerName+' called</div>';
       h+='</div>';
     }else{
-      h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.72rem;color:rgba(232,220,200,0.55);">';
-      h+=(phase==='call1'?'Order up '+_pip(upcard?upcard.suit:'')+'?':phase==='call2'?'Call a suit':'');
+      // Placeholder pill with identical dimensions to the trump chip.
+      var uc=upcard?upcard.suit:null;
+      var ucRed=(uc==='hearts'||uc==='diamonds');
+      var ucCol=uc?(ucRed?'#e63946':'#f5ebd0'):'rgba(232,220,200,0.35)';
+      var promptLine = phase==='call1' ? 'Order up?' : phase==='call2' ? 'Call a suit' : 'Awaiting call';
+      h+='<div style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border:2px dashed rgba(232,220,200,0.3);border-radius:999px;background:linear-gradient(180deg,rgba(0,0,0,0.3),rgba(0,0,0,0.45));">';
+      h+='<span style="font-size:1.6rem;line-height:1;color:'+ucCol+';opacity:'+(uc?'0.85':'0.4')+';">'+(uc?_pip(uc):'♠')+'</span>';
+      h+='<div style="font-family:Georgia,serif;line-height:1.1;">';
+      h+='<div style="font-size:0.52rem;font-style:italic;color:rgba(232,220,200,0.55);letter-spacing:0.06em;">Strong</div>';
+      h+='<div style="font-size:0.78rem;color:rgba(232,220,200,0.8);font-style:italic;">'+promptLine+'</div>';
+      h+='</div>';
       h+='</div>';
     }
     // Alone badge
