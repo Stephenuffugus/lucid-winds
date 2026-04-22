@@ -4,10 +4,12 @@ Reference: 2026-04-22 audit. See `reference_game_catalog.md` in memory for full 
 
 ## Spec
 
-- **Format:** PNG, 240×240 px
+- **Format:** PNG (JPG ok for dense illustration without hard edges)
+- **Resolution:** source resolution — Midjourney native (1024×1024 or 1122×1402 are typical in the existing set). Never manually shrink. Browser downscales to display size (~120px).
 - **Location:** `assets/games/thumbs/{canonical-key}.png`
 - **Style:** dark background, single iconic element, readable at ~120px displayed size
 - **Fallback:** picker auto-falls-back to the game's emoji (`i:` field) via `onerror`, so broken links just render the emoji — no crashes, just dull display
+- **If cutout needed:** run `python3 scripts/cutout-bg.py SOURCE DEST` (flood-fill bg remover, keeps dark outline)
 
 ## Art targets — 14 games with no thumbnail on disk
 
