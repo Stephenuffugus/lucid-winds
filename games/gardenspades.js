@@ -6,6 +6,20 @@
 var G=window._G;
 var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.sh,_sr=G.sr,_st=G.st,_xt=G.xt;
 
+// Inject Spades-specific keyframes once.
+if(!document.getElementById('gs-anim-style')){
+  var _gss=document.createElement('style');_gss.id='gs-anim-style';
+  _gss.textContent=
+    '@keyframes gsTurnRing{0%,100%{box-shadow:0 0 0 2px rgba(255,220,112,0.7),0 0 16px rgba(255,220,112,0.4)}50%{box-shadow:0 0 0 3px rgba(255,220,112,0.95),0 0 26px rgba(255,220,112,0.6)}}'+
+    '@keyframes gsBrokenFlash{0%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,220,112,0.9)}30%{transform:scale(1.15);box-shadow:0 0 0 12px rgba(255,220,112,0.4),0 0 28px rgba(255,220,112,0.7)}100%{transform:scale(1);box-shadow:0 0 10px rgba(255,220,112,0.25)}}'+
+    '@keyframes gsBagPulse{0%,100%{box-shadow:inset 0 0 0 1px rgba(255,180,80,0.4)}50%{box-shadow:inset 0 0 0 2px rgba(255,180,80,0.9),0 0 12px rgba(255,180,80,0.6)}}'+
+    '@keyframes gsBagDanger{0%,100%{box-shadow:inset 0 0 0 1px rgba(230,57,70,0.55),0 0 8px rgba(230,57,70,0.4)}50%{box-shadow:inset 0 0 0 2px rgba(230,57,70,1),0 0 18px rgba(230,57,70,0.8)}}'+
+    '.gs-seat{transition:opacity .3s ease,filter .3s ease;border-radius:10px;}'+
+    '.gs-seat.gs-active{animation:gsTurnRing 1.4s ease-in-out infinite;}'+
+    '.gs-seat.gs-inactive{opacity:0.55;}';
+  document.head.appendChild(_gss);
+}
+
 window._gameFns = window._gameFns || {};
 window._gameFns.gardenspades = function GardenSpades(a){
   var SUITS=['clubs','diamonds','hearts','spades'];
@@ -23,20 +37,44 @@ window._gameFns.gardenspades = function GardenSpades(a){
   var teamBids=[0,0];
   var trick=[],trickCards=[null,null,null,null];
   var leader=0,currentPlayer=0,phase='',spadesBroken=false,roundNum=0;
+  // One-shot flag — fires the spades-broken animation only on the render
+  // immediately after the break, not on every subsequent render.
+  var spadesJustBroke=false;
 
-  ms(a,'♠ Round <strong id="GSr">1</strong>');
+  ms(a,'<span style="font-family:Georgia,serif;letter-spacing:.06em;">♠ Round <strong id="GSr" style="color:#5b9bd1;font-size:1.2em;">1</strong></span>');
   mm(a);
   var pan=document.createElement('div');pan.id='GSpan';
-  pan.style.cssText='max-width:420px;margin:0 auto;padding:6px;user-select:none;';
+  // Felt table — deep teal/navy for spades, signature partnership-game palette.
+  var _GS_FELT="data:image/svg+xml;utf8,"+encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180">'
+      +'<filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="11"/>'
+      +'<feColorMatrix values="0 0 0 0 0.04  0 0 0 0 0.06  0 0 0 0 0.08  0 0 0 .08 0"/></filter>'
+      +'<rect width="100%" height="100%" filter="url(#n)"/>'
+    +'</svg>'
+  );
+  pan.style.cssText='max-width:min(96vw,760px);margin:0 auto;padding:12px 14px;user-select:none;box-sizing:border-box;'
+    +'background:'
+      +'url("'+_GS_FELT+'"),'
+      +'radial-gradient(ellipse at 50% 0%,rgba(255,255,255,0.05) 0%,transparent 50%),'
+      +'radial-gradient(circle at 50% 100%,rgba(0,0,0,0.3) 0%,transparent 65%),'
+      +'linear-gradient(135deg,#0e3a5c 0%,#0a2c46 55%,#062035 100%);'
+    +'background-size:180px 180px, auto, auto, auto;'
+    +'border-radius:14px;'
+    +'border:2px solid #6b4520;'
+    +'box-shadow:'
+      +'inset 0 0 0 1px rgba(180,140,70,0.25),'
+      +'inset 0 0 40px rgba(0,0,0,0.45),'
+      +'0 6px 22px rgba(0,0,0,0.55);';
   a.appendChild(pan);
   function _pip(suitName){return (window._cdPipFor)?window._cdPipFor(suitName):SI[suitName];}
-  var _gsStyleLbl='🃏 Style';
-  mc(a).innerHTML='<button class="gb-new" onclick="_GSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="GSstyle" onclick="_GSToggleStyle()" style="font-size:0.7rem;">'+_gsStyleLbl+'</button>';
+  // Per-team identity colors — spades is partnership so team-color, not seat.
+  var TEAM_COLORS=['#5b9bd1','#dc8a8a']; // us=blue, them=red
+  function _teamColor(p){return TEAM_COLORS[p%2];}
+  // mc(a) empty — controls go inside the pan via render().
+  mc(a);
   window._GSToggleStyle=function(){
     if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
-    var nxt=window._cdToggleStyle();
-    var b=document.getElementById('GSstyle');
-    if(b)b.textContent='🃏 Style';
+    window._cdToggleStyle();
     if(typeof render==='function')render();
   };
 
@@ -116,7 +154,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
     for(var i=0;i<52;i++)hands[i%4].push(deck[i]);
     for(i=0;i<4;i++)sortHand(hands[i]);
     bids=[-1,-1,-1,-1];tricksTaken=[0,0,0,0];trick=[];trickCards=[null,null,null,null];
-    spadesBroken=false;teamBids=[0,0];
+    spadesBroken=false;spadesJustBroke=false;teamBids=[0,0];
   }
   function newRound(){
     roundNum++;deal();phase='bidding';currentPlayer=S;
@@ -141,7 +179,10 @@ window._gameFns.gardenspades = function GardenSpades(a){
   function playCard(player,card){
     removeCard(hands[player],card);
     trick.push({player:player,card:card});trickCards[player]=card;
-    if(card.suit==='spades')spadesBroken=true;
+    if(card.suit==='spades' && !spadesBroken){
+      spadesBroken=true; spadesJustBroke=true;
+      setTimeout(function(){spadesJustBroke=false;render();},900);
+    }
     render();
     if(trick.length===4){
       var winner=trickWinner(trick);tricksTaken[winner]++;phase='trickDone';
@@ -203,39 +244,117 @@ window._gameFns.gardenspades = function GardenSpades(a){
     playCard(S,card);
   }
 
+  // Team strip helper — shows team score + bid/taken progress + bag pips.
+  function _teamStrip(label, teamIdx){
+    var color = TEAM_COLORS[teamIdx];
+    var p1=teamIdx===0?S:W, p2=teamIdx===0?N:E;
+    var teamBid = teamBids[teamIdx];
+    var teamTaken = tricksTaken[p1] + tricksTaken[p2];
+    var contractMet = teamBid>0 && teamTaken>=teamBid;
+    var bags = teamBags[teamIdx];
+    // Bag pips — first 7 grey/empty, 8/9 amber pulse, 10 = red danger
+    var bagPips='';
+    for(var i=0;i<10;i++){
+      var on=i<bags;
+      var bgPip='rgba(0,0,0,0.4)';
+      if(on){
+        if(bags>=10)bgPip='#e63946';
+        else if(bags>=8)bgPip='#ffa040';
+        else if(bags>=7)bgPip='#ffdc70';
+        else bgPip='rgba(232,220,200,0.5)';
+      }
+      bagPips+='<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:'+bgPip+';margin:0 1px;border:1px solid rgba(0,0,0,0.5);"></span>';
+    }
+    var bagAnim = bags>=9?'animation:gsBagDanger 1s ease-in-out infinite;':bags>=7?'animation:gsBagPulse 1.6s ease-in-out infinite;':'';
+    var bidLine = teamBid>0
+      ? '<span style="font-family:Georgia,serif;font-size:0.95rem;font-weight:700;color:'+(contractMet?'#7ab356':'#f5ebd0')+';">'+teamTaken+'</span><span style="font-family:DM Mono,monospace;font-size:0.55rem;color:rgba(232,220,200,0.55);"> / '+teamBid+'</span>'
+      : '<span style="font-family:Georgia,serif;font-style:italic;font-size:0.6rem;color:rgba(232,220,200,0.45);">awaiting bid</span>';
+    return '<div style="flex:1;background:linear-gradient(180deg,rgba(0,0,0,0.4),rgba(0,0,0,0.55));border:1.5px solid '+color+';border-radius:8px;padding:6px 10px;'+bagAnim+'box-shadow:inset 0 1px 0 rgba(255,255,255,0.06),0 2px 6px rgba(0,0,0,0.4);">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;">'
+        +'<div>'
+          +'<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;color:'+color+';text-transform:uppercase;line-height:1;">'+label+'</div>'
+          +'<div style="font-family:Georgia,serif;font-size:1.5rem;font-weight:700;color:#f5ebd0;line-height:1;margin-top:2px;text-shadow:0 2px 3px rgba(0,0,0,0.5);">'+teamScore[teamIdx]+'</div>'
+        +'</div>'
+        +'<div style="text-align:right;">'
+          +'<div style="line-height:1;">'+bidLine+'</div>'
+          +'<div style="margin-top:4px;line-height:1;">'+bagPips+'</div>'
+          +'<div style="font-family:DM Mono,monospace;font-size:0.42rem;letter-spacing:0.1em;color:rgba(232,220,200,0.4);margin-top:2px;">'+(bags>=10?'-100':(bags>=8?(10-bags)+' to penalty':'bags'))+'</div>'
+        +'</div>'
+      +'</div>'
+    +'</div>';
+  }
+  // Bid pill that floats next to each seat's name. NIL gets a distinct
+  // red-bordered treatment. Once trick play starts, the pill shows
+  // taken/bid (e.g. 4/3) so the player can see contract progress per seat.
+  function _bidPill(seat){
+    var b=bids[seat];
+    if(b<0){
+      // Pre-bid placeholder — only show when bidding is in progress.
+      if(phase!=='bidding')return '';
+      return '<span style="display:inline-block;padding:1px 5px;margin-left:5px;font-size:0.48rem;font-family:Georgia,serif;font-style:italic;color:rgba(232,220,200,0.4);background:rgba(0,0,0,0.3);border:1px dashed rgba(232,220,200,0.25);border-radius:3px;vertical-align:middle;">…</span>';
+    }
+    if(b===0){
+      var taken=tricksTaken[seat];
+      var nilBroken = taken>0;
+      return '<span style="display:inline-block;padding:1px 6px;margin-left:5px;font-size:0.48rem;font-family:Georgia,serif;font-weight:700;color:'+(nilBroken?'#e63946':'#ffdc70')+';background:rgba(0,0,0,0.45);border:1px solid '+(nilBroken?'#e63946':'#ffdc70')+';border-radius:3px;vertical-align:middle;letter-spacing:0.05em;">NIL'+(nilBroken?' BROKEN':'')+'</span>';
+    }
+    var t=tricksTaken[seat];
+    var contractMet = t>=b;
+    return '<span style="display:inline-block;padding:1px 6px;margin-left:5px;font-size:0.5rem;font-family:Georgia,serif;color:'+(contractMet?'#7ab356':'#f5ebd0')+';background:rgba(0,0,0,0.45);border:1px solid '+(contractMet?'#7ab356':'rgba(232,220,200,0.4)')+';border-radius:3px;vertical-align:middle;font-weight:700;">'+t+'/'+b+'</span>';
+  }
+  // Seat class — pulsing turn ring on active, dim on inactive during live phases.
+  function _seatCls(seat){
+    var isActive = (seat===currentPlayer && (phase==='play'||phase==='bidding'));
+    if(isActive)return 'gs-seat gs-active';
+    if(phase==='play'||phase==='bidding')return 'gs-seat gs-inactive';
+    return 'gs-seat';
+  }
+
   function render(){
     var h='';
-    // Score banner — readability pass to match Bower Garden
-    h+='<div style="background:linear-gradient(135deg,rgba(26,31,23,0.9),rgba(13,16,12,0.95));border:1.5px solid rgba(122,179,86,0.3);border-radius:12px;padding:10px 14px;margin:6px 0;font-family:Bebas Neue,sans-serif;">';
-    h+='<div style="display:flex;justify-content:space-around;align-items:baseline;">';
-    h+='<div style="text-align:center;"><div style="color:#7ab356;font-size:0.7rem;letter-spacing:0.08em;">YOUR TEAM</div><div style="color:#c8a84b;font-size:1.8rem;line-height:1;margin-top:2px;">'+teamScore[0]+'</div></div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);letter-spacing:0.1em;align-self:center;">to 250</div>';
-    h+='<div style="text-align:center;"><div style="color:#c47a7a;font-size:0.7rem;letter-spacing:0.08em;">OPPONENTS</div><div style="color:#c8a84b;font-size:1.8rem;line-height:1;margin-top:2px;">'+teamScore[1]+'</div></div>';
+    // ── CONTROLS BAR — top right, matching the other card games ──
+    var gsStyleName = (window._cdStyleLabel && typeof window._cdStyle==='function') ? window._cdStyleLabel(window._cdStyle()) : 'Floral';
+    h+='<div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
+    h+='<button class="gb" onclick="if(window._cdToggleStyle){window._cdToggleStyle();if(typeof render===\'function\')render();}" title="Cycle card style" style="display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:5px 12px;font-size:0.62rem;background:linear-gradient(180deg,rgba(180,140,70,0.25),rgba(120,90,40,0.35));border:1px solid rgba(220,180,120,0.45);color:#f5ebd0;font-family:Georgia,serif;font-style:italic;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">';
+    h+='<img src="assets/decks/floral/suit-spade.png" alt="" onerror="this.style.display=\'none\';" style="width:18px;height:18px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.7));">';
+    h+='<span style="color:rgba(232,220,200,0.6);font-style:normal;font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;text-transform:uppercase;margin-right:2px;">Deck</span>';
+    h+='<span>'+gsStyleName+'</span>';
+    h+='</button>';
+    h+='<button class="gb" onclick="_GSN()" title="New game" style="display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:5px 14px;font-size:0.65rem;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">↻ New Game</button>';
     h+='</div>';
-    h+='<div style="display:flex;justify-content:space-around;margin-top:8px;padding-top:8px;border-top:1px solid rgba(122,179,86,0.2);font-family:DM Mono,monospace;font-size:0.8rem;letter-spacing:0.05em;">';
-    h+='<div style="color:var(--cream);">Bid <strong style="color:#7ab356;font-size:1.05rem;">'+teamBids[0]+'</strong> · Bags <strong style="color:#e8dcc8;font-size:1.05rem;">'+teamBags[0]+'</strong></div>';
-    h+='<div style="color:var(--cream);">Bid <strong style="color:#e8a0a0;font-size:1.05rem;">'+teamBids[1]+'</strong> · Bags <strong style="color:#e8dcc8;font-size:1.05rem;">'+teamBags[1]+'</strong></div>';
+    // ── SCORE STRIP — twin team strips with bid/taken big numerals + bag pips ──
+    h+='<div style="display:flex;gap:6px;margin-bottom:8px;">';
+    h+=_teamStrip('YOUR TEAM',0);
+    h+=_teamStrip('OPPONENTS',1);
     h+='</div>';
-    h+='</div>';
-    if(spadesBroken)h+='<div style="text-align:center;font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:#c8a84b;letter-spacing:0.12em;padding:4px;background:rgba(200,168,75,0.08);border-radius:6px;margin:4px 0;">♠ SPADES BROKEN</div>';
-    // Per-player bid grid — bumped from 0.55rem to readable
-    h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:4px;">';
-    for(var p=0;p<4;p++){
-      var b=bids[p];
-      h+='<div style="text-align:center;padding:5px;background:rgba(13,16,12,0.5);border-radius:6px;'+(p===currentPlayer&&phase!=='gameOver'?'border:1.5px solid #c8a84b;box-shadow:0 0 8px rgba(200,168,75,0.3);':p===S?'border:1px solid rgba(122,179,86,0.4);':'')+'">';
-      h+='<div style="color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.06em;">'+NAMES[p]+'</div>';
-      h+='<div style="color:#c8a84b;font-family:Bebas Neue,sans-serif;font-size:1.1rem;line-height:1.1;">'+(b<0?'—':b===0?'NIL':b)+' <span style="color:var(--muted);font-size:0.7rem;">('+tricksTaken[p]+')</span></div>';
-      h+='</div>';
+    // ── SPADES-BROKEN PERSISTENT BADGE ──
+    h+='<div style="text-align:center;padding:3px 0 8px;">';
+    if(spadesBroken){
+      var brokenAnim = spadesJustBroke ? 'animation:gsBrokenFlash 0.9s ease-out;' : '';
+      h+='<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:linear-gradient(180deg,rgba(0,0,0,0.5),rgba(0,0,0,0.7));border:1px solid #ffdc70;border-radius:999px;font-family:Georgia,serif;font-size:0.68rem;color:#f5ebd0;letter-spacing:0.05em;box-shadow:0 0 10px rgba(255,220,112,0.3);'+brokenAnim+'">';
+      h+='<span style="color:#1a1a1a;font-size:0.95rem;line-height:1;background:#f5ebd0;border-radius:50%;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;font-size:0.7rem;">♠</span>Spades broken</span>';
+    }else{
+      h+='<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(0,0,0,0.3);border:1px dashed rgba(232,220,200,0.25);border-radius:999px;font-family:Georgia,serif;font-style:italic;font-size:0.62rem;color:rgba(232,220,200,0.55);letter-spacing:0.05em;">';
+      h+='<span style="opacity:0.5;font-size:0.85rem;line-height:1;">♠</span>Spades unbroken</span>';
     }
     h+='</div>';
-    // North (partner) — overlap horizontally
-    h+='<div style="text-align:center;padding:6px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:5px;">PARTNER</div><div style="display:inline-flex;justify-content:center;">';
-    for(var n=0;n<hands[N].length;n++)h+='<div style="width:30px;height:42px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-left:'+(n===0?'0':'-18px')+';"></div>';
+    // ── PARTNER (NORTH) ─────────────────────────────────────────
+    h+='<div class="'+_seatCls(N)+'" style="text-align:center;padding:6px;">'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+_teamColor(N)+';letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">'
+        +'PARTNER <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:4px;">×'+hands[N].length+'</span>'
+        +_bidPill(N)
+      +'</div>'
+      +'<div style="display:inline-flex;justify-content:center;">';
+    for(var n=0;n<hands[N].length;n++)h+='<div style="width:30px;height:42px;border-radius:5px;background:linear-gradient(135deg,#1a4a2e,#0c2a18);border:1.5px solid #051208;margin-left:'+(n===0?'0':'-22px')+';box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);"></div>';
     h+='</div></div>';
-    // West | Trick | East — overlap vertically for side hands
+    // ── MIDDLE ROW: WEST | TRICK | EAST ─────────────────────────
     h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;">';
-    h+='<div style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">WEST</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
-    for(var w=0;w<hands[W].length;w++)h+='<div style="width:30px;height:42px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-top:'+(w===0?'0':'-28px')+';"></div>';
+    h+='<div class="'+_seatCls(W)+'" style="padding:4px;">'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+_teamColor(W)+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">'
+        +'WEST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+hands[W].length+'</span>'+_bidPill(W)
+      +'</div>'
+      +'<div style="display:inline-flex;flex-direction:column;align-items:center;">';
+    for(var w=0;w<hands[W].length;w++)h+='<div style="width:30px;height:42px;border-radius:5px;background:linear-gradient(135deg,#1a4a2e,#0c2a18);border:1.5px solid #051208;margin-top:'+(w===0?'0':'-34px')+';box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);"></div>';
     h+='</div></div>';
     // Trick area
     h+='<div style="position:relative;min-height:160px;background:rgba(26,31,23,0.3);border-radius:8px;">';
@@ -247,8 +366,12 @@ window._gameFns.gardenspades = function GardenSpades(a){
       h+='<div style="font-size:0.85rem;">'+c.rank+'</div><div style="font-size:1.1rem;">'+_pip(c.suit)+'</div></div>';
     }
     h+='</div>';
-    h+='<div style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">EAST</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
-    for(var e=0;e<hands[E].length;e++)h+='<div style="width:30px;height:42px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-top:'+(e===0?'0':'-28px')+';"></div>';
+    h+='<div class="'+_seatCls(E)+'" style="padding:4px;">'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+_teamColor(E)+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">'
+        +'EAST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+hands[E].length+'</span>'+_bidPill(E)
+      +'</div>'
+      +'<div style="display:inline-flex;flex-direction:column;align-items:center;">';
+    for(var e=0;e<hands[E].length;e++)h+='<div style="width:30px;height:42px;border-radius:5px;background:linear-gradient(135deg,#1a4a2e,#0c2a18);border:1.5px solid #051208;margin-top:'+(e===0?'0':'-34px')+';box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);"></div>';
     h+='</div></div>';
     h+='</div>';
     // Bid UI
@@ -262,8 +385,11 @@ window._gameFns.gardenspades = function GardenSpades(a){
       }
       h+='</div></div>';
     }
-    // Player hand
-    h+='<div style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:6px;">YOUR HAND</div>';
+    // ── YOUR HAND (SOUTH) ───────────────────────────────────────
+    h+='<div class="'+_seatCls(S)+'" style="padding:4px;">'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:'+_teamColor(S)+';text-align:center;letter-spacing:0.14em;margin-bottom:6px;text-transform:uppercase;font-weight:700;">'
+        +'Your Hand'+_bidPill(S)
+      +'</div>';
     h+='<div style="display:flex;gap:3px;justify-content:center;flex-wrap:wrap;">';
     var leadS=trick.length>0?trick[0].card.suit:'';
     var playable=[];

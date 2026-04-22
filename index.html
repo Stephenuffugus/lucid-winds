@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.55';
+  var LW_VERSION='2026.04.22.56';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3444,11 +3444,15 @@
     body.game-active:has(#fg-ag[data-game="cribbage"]) #fg-ag > .gr,
     body.game-active:has(#fg-ag[data-game="bleedinghearts"]) .gp-strip,
     body.game-active:has(#fg-ag[data-game="bleedinghearts"]) #ab,
-    body.game-active:has(#fg-ag[data-game="bleedinghearts"]) #fg-ag > .gr{display:none!important;}
+    body.game-active:has(#fg-ag[data-game="bleedinghearts"]) #fg-ag > .gr,
+    body.game-active:has(#fg-ag[data-game="gardenspades"]) .gp-strip,
+    body.game-active:has(#fg-ag[data-game="gardenspades"]) #ab,
+    body.game-active:has(#fg-ag[data-game="gardenspades"]) #fg-ag > .gr{display:none!important;}
     /* Card-game containers get a solid matching background + overscroll lock so nothing behind bleeds through during bounce-scroll. Also use the full viewport: padding-bottom normally reserves 58+safe-area for the bottom nav, but for these games the nav is hidden, so every pixel of bottom padding just buries cards under the scroll line. */
     #fg-ag[data-game="bleedinghearts"],
     #fg-ag[data-game="cribbage"],
-    #fg-ag[data-game="bowergarden"]{
+    #fg-ag[data-game="bowergarden"],
+    #fg-ag[data-game="gardenspades"]{
       padding-bottom:env(safe-area-inset-bottom,0px)!important;
       max-height:100dvh!important;
       overscroll-behavior:contain;
@@ -3456,6 +3460,7 @@
     #fg-ag[data-game="bleedinghearts"]{background:#1a0510;}
     #fg-ag[data-game="cribbage"]{background:#083018;}
     #fg-ag[data-game="bowergarden"]{background:#083d22;}
+    #fg-ag[data-game="gardenspades"]{background:#062035;}
     /* Hearts — score danger pulse (player approaching 100 = losing). */
     @keyframes bhDanger{0%,100%{box-shadow:0 0 10px rgba(230,57,70,0.5)}50%{box-shadow:0 0 18px rgba(230,57,70,0.9),0 0 0 2px rgba(230,57,70,0.3)}}
     /* Cribbage — thinking pulse + banner pop-in + card interactions */
