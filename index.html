@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.31';
+  var LW_VERSION='2026.04.22.32';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3656,6 +3656,12 @@
     .gc-peek .gc-corner-tl{display:flex!important;flex-direction:row!important;align-items:center!important;gap:3px!important;top:2px!important;left:4px!important;}
     .gc-peek .gc-corner-tl > div,.gc-peek .gc-corner-tl > img{margin:0!important;line-height:1!important;}
     .gc-peek .gc-corner-tl > img{height:0.9em!important;width:0.9em!important;}
+    /* Narrow viewports (phone portrait): shrink corner rank+suit so small cards don't get swamped by text. Only affects the Classic/Floral decks; the LW deck's corners scale with an inline clamp already. */
+    @media (max-width:520px){
+      .gc-corner-tl>div:first-child,.gc-corner-br>div:first-child{font-size:0.72rem!important;}
+      .gc-corner-tl>div:nth-child(2),.gc-corner-br>div:nth-child(2){font-size:0.62rem!important;}
+      .gc-corner-tl>img,.gc-corner-br>img{height:10px!important;width:10px!important;}
+    }
     /* Smart-drop highlight. When a card is selected, legal drop targets glow green so the player sees every legal play at once. */
     .gc-legal{box-shadow:0 0 0 2px rgba(122,179,86,0.85),0 0 16px rgba(122,179,86,0.45),0 3px 8px rgba(0,0,0,.45)!important;border-color:rgba(122,179,86,0.9)!important;animation:gcLegalPulse 1.6s ease-in-out infinite;}
     @keyframes gcLegalPulse{0%,100%{box-shadow:0 0 0 2px rgba(122,179,86,0.85),0 0 14px rgba(122,179,86,0.35),0 3px 8px rgba(0,0,0,.45);}50%{box-shadow:0 0 0 2px rgba(122,179,86,1),0 0 22px rgba(122,179,86,0.65),0 3px 8px rgba(0,0,0,.45);}}

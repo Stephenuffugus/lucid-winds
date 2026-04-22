@@ -263,11 +263,11 @@ function GFC(a){
         (function(ci){em.onclick=function(){doSelect('tab',ci)}})(c);
         colDiv.appendChild(em);
       }else{
-        // Peek math: overlap all but the last card so deep piles fit. Shrinks
-        // with depth so even a long built-down run stays on-screen.
+        // Peek math: match Klondike/Spider/Golf at 28% reveal so suits on
+        // stacked cards stay readable. Compression kicks in past 8 cards.
         var depth=tab[c].length;
-        var depthMult=depth>12?0.55:depth>10?0.7:depth>7?0.85:1.0;
-        var peekOverlap=Math.round(fit.raw.h * (1 - 0.22*depthMult)); // negative margin offset
+        var depthMult=depth>14?0.5:depth>11?0.65:depth>8?0.8:1.0;
+        var peekOverlap=Math.round(fit.raw.h * (1 - 0.28*depthMult));
         for(var i=0;i<depth;i++){
           var cd=_cdEl(tab[c][i]);
           cd.style.width=fcW;cd.style.height=fcH;cd.style.fontSize=fcF;
