@@ -31,11 +31,23 @@ var SZ=10,grid=[],words=[],wordPaths={},found=[];
 var dragging=false,startI=-1,endI=-1,currentPath=[];
 var gd=null,wl=null;
 
-var BANK=[
-  ['FERN','MOSS','SAGE','BLOOM','PETAL','ROOT'],
-  ['LEAF','THORN','MAPLE','TULIP','DAISY','CEDAR'],
-  ['SOIL','WATER','MULCH','PRUNE','SPORE','FLORA']
+// Themed word packs — each puzzle draws from ONE theme for coherence.
+// Keep words 3-10 letters so they fit Easy (8x8) through Hard (13x13).
+var THEMES=[
+  {name:'Flora',         words:['FERN','MOSS','SAGE','BLOOM','PETAL','ROOT','SPORE','LEAF','FLORA','POLLEN','STEM','BUD','SHOOT','VINE']},
+  {name:'Trees',         words:['MAPLE','CEDAR','OAK','PINE','BIRCH','WILLOW','ALDER','ELM','BEECH','ASH','ASPEN','ELDER','SPRUCE','FIR']},
+  {name:'Flowers',       words:['TULIP','DAISY','ROSE','LILY','IRIS','ASTER','POPPY','PEONY','ORCHID','DAHLIA','LUPINE','VIOLET','ZINNIA']},
+  {name:'Garden',        words:['SOIL','WATER','MULCH','PRUNE','WEED','COMPOST','TROWEL','HOE','SPADE','RAKE','SHEARS','BED','MULCH','DIG']},
+  {name:'Weather',       words:['SUN','RAIN','MIST','DEW','FROST','STORM','CLOUD','BREEZE','HAIL','SLEET','FOG','DRIZZLE','WIND','SNOW']},
+  {name:'Seasons',       words:['SPRING','SUMMER','AUTUMN','WINTER','BLOOM','FADE','HARVEST','RENEW','THAW','EQUINOX','FROST','WARM']},
+  {name:'Herbs',         words:['BASIL','THYME','MINT','SAGE','OREGANO','DILL','PARSLEY','CHIVE','ROSEMARY','TARRAGON','LAVENDER']},
+  {name:'Wild',          words:['THORN','BRAMBLE','VINE','NETTLE','CLOVER','HEATHER','FERN','GORSE','RUSH','REED','BOG','MEADOW']},
+  {name:'Keeper',        words:['PLANT','GROW','BLOOM','TEND','PRUNE','SOW','HARVEST','NURTURE','BREED','WATER','WEED','MEND','TILL','GRAFT']},
+  {name:'Lucid Winds',   words:['KEEPER','SEED','POLLEN','DEW','SUNBEAM','BREED','NURSERY','WILD','COMPOST','HEX','BLOOM','FERAL','TEND']},
+  {name:'Fruits',        words:['APPLE','PEAR','PEACH','PLUM','CHERRY','GRAPE','BERRY','MELON','FIG','QUINCE','LEMON','LIME','GUAVA']},
+  {name:'Birds',         words:['ROBIN','WREN','FINCH','SPARROW','JAY','CROW','OWL','HERON','RAVEN','GOOSE','DOVE','MARTIN','HAWK']}
 ];
+var _curTheme=null;
 // 8 placement directions — horizontal, vertical, both diagonals, all reversible
 var DIRS=[[0,1],[0,-1],[1,0],[-1,0],[1,1],[-1,-1],[1,-1],[-1,1]];
 
@@ -157,7 +169,31 @@ function gen(){
   SZ=parseInt(dv[0])||10;
   var wc=parseInt(dv[1])||6;
   grid=[];for(var i=0;i<SZ*SZ;i++)grid.push('');
-  var pool=[];BANK.forEach(function(b){b.forEach(function(w){if(w.length<=SZ)pool.push(w);});});
+  // Pick a theme whose pool can support the requested word count at this size.
+  // Avoid repeating the previous theme twice in a row when alternatives exist.
+  var viable=[];
+  for(var ti=0;ti<THEMES.length;ti++){
+    var t=THEMES[ti];
+    var fits=0;
+    for(var wi=0;wi<t.words.length;wi++){
+      if(t.words[wi].length<=SZ)fits++;
+      if(fits>=wc)break;
+    }
+    if(fits>=wc)viable.push(t);
+  }
+  if(!viable.length)viable=THEMES;
+  var choice=null;
+  if(_curTheme&&viable.length>1){
+    var rotated=viable.filter(function(t){return t.name!==_curTheme.name;});
+    choice=rotated[Math.floor(Math.random()*rotated.length)];
+  } else {
+    choice=viable[Math.floor(Math.random()*viable.length)];
+  }
+  _curTheme=choice;
+  var pool=[];
+  // Dedupe within the theme — some packs have a repeat for poetic reasons
+  var seen={};
+  choice.words.forEach(function(w){if(w.length<=SZ&&!seen[w]){seen[w]=1;pool.push(w);}});
   words=sh(pool).slice(0,wc);
   found=[];wordPaths={};
   words.forEach(function(w){
@@ -234,7 +270,7 @@ document.addEventListener('touchend',function(){if(dragging)dragEnd();});
 document.addEventListener('touchcancel',function(){if(dragging)dragEnd();});
 
 function GW(a){
-  ms(a,'Found: <strong id="Wf">0</strong>/<strong id="Wt">6</strong>');mm(a);
+  ms(a,'<span id="Wtheme" style="color:var(--gold);font-family:Georgia,serif;font-style:italic;letter-spacing:.06em;">Flora</span> &middot; Found: <strong id="Wf">0</strong>/<strong id="Wt">6</strong>');mm(a);
   gd=document.createElement('div');gd.className='wg';gd.id='Wg';a.appendChild(gd);
   wl=document.createElement('div');wl.id='Wl';
   wl.style.cssText='display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:10px 8px;font-size:.6rem;max-width:min(calc(100vw - 24px),460px);margin:0 auto;';
@@ -248,6 +284,7 @@ window._WN=function(){
   gen();
   var wt=document.getElementById('Wt');if(wt)wt.textContent=words.length;
   var wf=document.getElementById('Wf');if(wf)wf.textContent='0';
+  var wth=document.getElementById('Wtheme');if(wth&&_curTheme)wth.textContent=_curTheme.name;
   sm('');rn();bindGrid();
 };
 
