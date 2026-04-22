@@ -656,7 +656,7 @@ function startGame(pan,a){
   }
   function begin(m){
     mode=m;state='playing';
-    score=0;stonesPlaced=0;maxHeight=0;lives=3;cameraY=0;targetCameraY=0;
+    score=0;stonesPlaced=0;maxHeight=0;lives=3;cameraY=0;
     stones=[];particles=[];carries={};rockToCarrier={};touchPos={};
     pan.innerHTML='';
     canvas=document.createElement('canvas');
