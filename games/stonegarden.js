@@ -162,10 +162,12 @@ function startGame(pan,a){
   var score=0,stonesPlaced=0,maxHeight=0;
   var lives=3,bestScore=0,bestHeight=0;
   var windActive=false,windRemaining=0,windDir=1;
-  var cameraY=0,targetCameraY=0;
+  var cameraY=0,viewScale=1;               // zoom-to-fit scale, 1 = no zoom
   var particles=[];
   var running=false,lastTime=0,rafId=null;
   var flashMsg='',flashTimer=0,flashColor='#e8dcc8';
+  var spinning=false;                      // true while ROTATE button held
+  var TRAY_SPIN_SPEED=1.2;                 // radians/sec
 
   try{bestScore=parseInt(localStorage.getItem('lw_sg_best_score')||'0',10)||0;}catch(e){}
   try{bestHeight=parseInt(localStorage.getItem('lw_sg_best')||'0',10)||0;}catch(e){}
@@ -224,11 +226,22 @@ function startGame(pan,a){
     return top+span*((idx+0.5)/TRAY_SLOTS);
   }
   function syncTrayPositions(){
+    // Keep tray rocks pinned to their slots but preserve angle — the
+    // ROTATE button drives angle externally so players can freeze a
+    // piece at a chosen orientation by grabbing it mid-spin.
     for(var i=0;i<trayL.length;i++){
-      if(trayL[i]){Body.setPosition(trayL[i].body,{x:TRAY_W/2,y:traySlotY(i)});Body.setAngle(trayL[i].body,0);}
+      if(trayL[i])Body.setPosition(trayL[i].body,{x:TRAY_W/2,y:traySlotY(i)});
     }
     for(var j=0;j<trayR.length;j++){
-      if(trayR[j]){Body.setPosition(trayR[j].body,{x:W-TRAY_W/2,y:traySlotY(j)});Body.setAngle(trayR[j].body,0);}
+      if(trayR[j])Body.setPosition(trayR[j].body,{x:W-TRAY_W/2,y:traySlotY(j)});
+    }
+  }
+  function spinTrayStones(dAngle){
+    for(var i=0;i<trayL.length;i++){
+      if(trayL[i])Body.setAngle(trayL[i].body,trayL[i].body.angle+dAngle);
+    }
+    for(var j=0;j<trayR.length;j++){
+      if(trayR[j])Body.setAngle(trayR[j].body,trayR[j].body.angle+dAngle);
     }
   }
 
@@ -276,42 +289,24 @@ function startGame(pan,a){
       var t=e.changedTouches[i];
       var pt=canvasPt(t.clientX,t.clientY);
       touchPos[t.identifier]={x:pt.x,y:pt.y};
-      // 1) Tray hit? Pick up a fresh rock as a new carrier.
+      // Tray hit? Pick up a rock. Rock keeps its current tray angle
+      // (set by the ROTATE button prior) so players can freeze a piece
+      // at a chosen orientation by grabbing mid-spin.
       var trayHit=hitTestTray(pt.x,pt.y);
-      if(trayHit){
-        var r=trayHit.rock;
-        // Remove from tray (slot becomes empty; will refill on release)
-        if(trayHit.side==='L')trayL[trayHit.idx]=null;
-        else trayR[trayHit.idx]=null;
-        // Move the rock to touch position, ghost-collide, keep static
-        Body.setStatic(r.body,true);
-        Body.setPosition(r.body,{x:pt.x,y:pt.y});
-        Body.setAngle(r.body,0);
-        // Ghost mode: collide with nothing while carried
-        r.body.collisionFilter.group=-1;
-        carries[t.identifier]={
-          rock:r,isCarrier:true,
-          rotatorTouchId:null,rotatorBaseAngle:0,rockBaseAngle:0,
-          trayFrom:trayHit.side,trayIdx:trayHit.idx
-        };
-        rockToCarrier[r._sgId]=t.identifier;
-        if(_play)try{_play('snap');}catch(e2){}
-        continue;
-      }
-      // 2) Touching a currently-carried rock? Become its rotator.
-      var hit=hitTestCarriedRock(pt.x,pt.y);
-      if(hit&&!hit.carry.rotatorTouchId){
-        var carTouchId=hit.carrierTouchId;
-        var carPos=touchPos[carTouchId];
-        if(!carPos)continue;
-        var dx=pt.x-carPos.x,dy=pt.y-carPos.y;
-        var dist=Math.sqrt(dx*dx+dy*dy);
-        if(dist<ROTATOR_MIN_DIST)continue; // too close, skip
-        hit.carry.rotatorTouchId=t.identifier;
-        hit.carry.rotatorBaseAngle=Math.atan2(dy,dx);
-        hit.carry.rockBaseAngle=hit.carry.rock.body.angle;
-      }
-      // else: noop (touch on empty playfield)
+      if(!trayHit)continue;
+      var r=trayHit.rock;
+      if(trayHit.side==='L')trayL[trayHit.idx]=null;
+      else trayR[trayHit.idx]=null;
+      Body.setStatic(r.body,true);
+      // Preserve angle; only move the position to finger
+      Body.setPosition(r.body,{x:pt.x,y:pt.y});
+      r.body.collisionFilter.group=-1;
+      carries[t.identifier]={
+        rock:r,isCarrier:true,
+        trayFrom:trayHit.side,trayIdx:trayHit.idx
+      };
+      rockToCarrier[r._sgId]=t.identifier;
+      if(_play)try{_play('snap');}catch(e2){}
     }
   }
 
@@ -323,44 +318,15 @@ function startGame(pan,a){
       var pt=canvasPt(t.clientX,t.clientY);
       touchPos[t.identifier]={x:pt.x,y:pt.y};
       var c=carries[t.identifier];
-      if(c&&c.isCarrier){
-        // Update rock position. Clamp within playfield.
-        var minX=c.rock.w/2+4,maxX=W-c.rock.w/2-4;
-        var minY=cameraY+c.rock.h/2+8;
-        var maxY=GROUND_Y-c.rock.h/2-4;
-        var nx=Math.max(minX,Math.min(maxX,pt.x));
-        var ny=Math.max(minY,Math.min(maxY,pt.y));
-        Body.setPosition(c.rock.body,{x:nx,y:ny});
-        // If there's a rotator for this carry, recompute rotation using cached rotator pos
-        if(c.rotatorTouchId!=null){
-          var rp=touchPos[c.rotatorTouchId];
-          if(rp){
-            var rdx=rp.x-nx,rdy=rp.y-ny;
-            var rdist=Math.sqrt(rdx*rdx+rdy*rdy);
-            if(rdist>=ROTATOR_MIN_DIST){
-              var cur=Math.atan2(rdy,rdx);
-              var delta=cur-c.rotatorBaseAngle;
-              Body.setAngle(c.rock.body,c.rockBaseAngle+delta);
-            }
-          }
-        }
-        continue;
-      }
-      // Maybe this is a rotator touch. Find which carry it belongs to.
-      for(var tid in carries){
-        if(!carries.hasOwnProperty(tid))continue;
-        var carry=carries[tid];
-        if(carry.rotatorTouchId!==t.identifier)continue;
-        var cp=touchPos[tid];
-        if(!cp)break;
-        var dx=pt.x-cp.x,dy=pt.y-cp.y;
-        var dist=Math.sqrt(dx*dx+dy*dy);
-        if(dist<ROTATOR_MIN_DIST)break;
-        var now=Math.atan2(dy,dx);
-        var delta2=now-carry.rotatorBaseAngle;
-        Body.setAngle(carry.rock.body,carry.rockBaseAngle+delta2);
-        break;
-      }
+      if(!c||!c.isCarrier)continue;
+      // Update rock position. Clamp within playfield (world coords).
+      var minX=c.rock.w/2+4,maxX=W-c.rock.w/2-4;
+      var viewTop=cameraY+c.rock.h/2+8;
+      var maxY=GROUND_Y-c.rock.h/2-4;
+      var nx=Math.max(minX,Math.min(maxX,pt.x));
+      var ny=Math.max(viewTop,Math.min(maxY,pt.y));
+      Body.setPosition(c.rock.body,{x:nx,y:ny});
+      // Angle unchanged — angle is set by ROTATE button while in tray
     }
   }
 
@@ -371,21 +337,7 @@ function startGame(pan,a){
       var t=e.changedTouches[i];
       delete touchPos[t.identifier];
       var c=carries[t.identifier];
-      if(c&&c.isCarrier){
-        // Release rock into physics
-        releaseCarry(t.identifier);
-        continue;
-      }
-      // If this was a rotator, clear it from whichever carry owned it
-      for(var tid in carries){
-        if(!carries.hasOwnProperty(tid))continue;
-        if(carries[tid].rotatorTouchId===t.identifier){
-          carries[tid].rotatorTouchId=null;
-          // Update baseline so if a new rotator joins later, it starts fresh
-          carries[tid].rockBaseAngle=carries[tid].rock.body.angle;
-          break;
-        }
-      }
+      if(c&&c.isCarrier)releaseCarry(t.identifier);
     }
   }
 
@@ -541,7 +493,7 @@ function startGame(pan,a){
       if(!carries.hasOwnProperty(tid))continue;
       var c=carries[tid];
       if(!c.isCarrier)continue;
-      // Ghost line to ground
+      // Dashed ghost line from held rock straight down to ground
       ctx.save();
       ctx.setLineDash([4,5]);
       ctx.strokeStyle='rgba(232,220,200,0.28)';
@@ -552,20 +504,6 @@ function startGame(pan,a){
       ctx.lineTo(px,GROUND_Y-cameraY);
       ctx.stroke();
       ctx.setLineDash([]);
-      // Rotation guide: line from carrier finger to rotator finger when active
-      if(c.rotatorTouchId!=null){
-        var cp=touchPos[tid],rp=touchPos[c.rotatorTouchId];
-        if(cp&&rp){
-          ctx.strokeStyle='rgba(200,168,75,0.5)';
-          ctx.lineWidth=2;
-          ctx.beginPath();
-          ctx.moveTo(cp.x,cp.y-cameraY);
-          ctx.lineTo(rp.x,rp.y-cameraY);
-          ctx.stroke();
-          ctx.fillStyle='rgba(200,168,75,0.7)';
-          ctx.beginPath();ctx.arc(rp.x,rp.y-cameraY,4,0,Math.PI*2);ctx.fill();
-        }
-      }
       ctx.restore();
       drawStoneBody(c.rock.body,c.rock.w,c.rock.h,c.rock.color,c.rock.shade,0.88);
     }
@@ -648,19 +586,15 @@ function startGame(pan,a){
   }
 
   // ─── CAMERA ─────────────────────────────────────────────────────
+  // Keep the ground pinned to the bottom of the view at all times.
+  // When the stack is taller than the canvas, the top portion simply
+  // scrolls out of view above — players will still always see the
+  // base of the cairn. (Earlier version scrolled camera up to follow
+  // the top and the ground fell off the bottom; Stephen flagged this.)
   function updateCamera(){
-    var topY=GROUND_Y;
-    for(var i=0;i<stones.length;i++){
-      if(!stones[i].settled)continue;
-      var vs=stones[i].body.vertices;
-      for(var v=0;v<vs.length;v++)if(vs[v].y<topY)topY=vs[v].y;
-    }
-    var screenY=topY-cameraY;
-    if(screenY<H*CAM_LEAD)targetCameraY=topY-H*CAM_LEAD;
-    else if(screenY>H*0.55)targetCameraY=Math.min(0,topY-H*CAM_LEAD);
-    if(targetCameraY>0)targetCameraY=0;
-    cameraY+=(targetCameraY-cameraY)*CAM_LERP;
-    if(Math.abs(cameraY-targetCameraY)<0.5)cameraY=targetCameraY;
+    cameraY=0;
+    // Future enhancement: if stack exceeds canvas height by a lot,
+    // could auto-scale view to fit. For now, keep simple + predictable.
   }
 
   // ─── LOOP ───────────────────────────────────────────────────────
@@ -687,6 +621,8 @@ function startGame(pan,a){
       p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=60*dt;p.life-=dt;
       if(p.life<=0)particles.splice(pi,1);
     }
+    // ROTATE button held: spin all tray pieces in sync
+    if(spinning)spinTrayStones(TRAY_SPIN_SPEED*dt);
     // Re-sync tray rock positions (kinematic bodies don't auto-stay put)
     syncTrayPositions();
     updateCamera();
@@ -733,13 +669,25 @@ function startGame(pan,a){
     var bar=document.createElement('div');
     bar.style.cssText='display:flex;gap:8px;justify-content:center;align-items:center;margin:4px 0 8px;flex-wrap:wrap;';
     bar.innerHTML=
-      '<button class="gb" onclick="_SGundo()" style="min-height:48px;" id="SGundo">↶ UNDO</button>'
-      +'<button class="gb" onclick="_SGmenu()" style="min-height:48px;">MENU</button>';
+      '<button class="gb" id="SGrotate" style="min-height:52px;min-width:92px;border-color:rgba(200,168,75,0.45);color:var(--gold,#c8a84b);">⟳ ROTATE</button>'
+      +'<button class="gb" onclick="_SGundo()" style="min-height:52px;" id="SGundo">↶ UNDO</button>'
+      +'<button class="gb" onclick="_SGmenu()" style="min-height:52px;">MENU</button>';
     pan.appendChild(bar);
+    // Hold ROTATE to spin all tray pieces. Grab a piece mid-spin to
+    // freeze it at that angle.
+    var rotateBtn=document.getElementById('SGrotate');
+    var rotStart=function(e){e.preventDefault();spinning=true;rotateBtn.style.background='rgba(200,168,75,0.2)';};
+    var rotStop=function(e){if(e)e.preventDefault();spinning=false;rotateBtn.style.background='';};
+    rotateBtn.addEventListener('mousedown',rotStart);
+    rotateBtn.addEventListener('mouseup',rotStop);
+    rotateBtn.addEventListener('mouseleave',rotStop);
+    rotateBtn.addEventListener('touchstart',rotStart,{passive:false});
+    rotateBtn.addEventListener('touchend',rotStop,{passive:false});
+    rotateBtn.addEventListener('touchcancel',rotStop,{passive:false});
     var tip=document.createElement('div');
     tip.style.cssText='font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);text-align:center;line-height:1.4;margin:0 8px 4px;';
     tip.innerHTML=mode==='zen'
-      ? 'Pick from either tray · second finger rotates · two hands, two stones'
+      ? 'Hold ⟳ to spin tray pieces · grab to freeze · two hands = two stones'
       : 'Reach '+CHALLENGE_TARGET+'px · 3 topples end the run';
     pan.appendChild(tip);
     // Input wiring — all multi-touch on the canvas
