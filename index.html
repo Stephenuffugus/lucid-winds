@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.23';
+  var LW_VERSION='2026.04.22.24';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3650,6 +3650,9 @@
     .gc-fnd{background-color:rgba(26,31,23,.5);background-size:50%;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(74,124,53,.2)}
     /* Peeked cards (Klondike tableau stack) show only a narrow strip. Hide the big center art + bottom-right corner so the top-left rank is the only glyph in that strip. */
     .gc-peek .gc-center, .gc-peek .gc-corner-br{display:none!important;}
+    /* Smart-drop highlight. When a card is selected, legal drop targets glow green so the player sees every legal play at once. */
+    .gc-legal{box-shadow:0 0 0 2px rgba(122,179,86,0.85),0 0 16px rgba(122,179,86,0.45),0 3px 8px rgba(0,0,0,.45)!important;border-color:rgba(122,179,86,0.9)!important;animation:gcLegalPulse 1.6s ease-in-out infinite;}
+    @keyframes gcLegalPulse{0%,100%{box-shadow:0 0 0 2px rgba(122,179,86,0.85),0 0 14px rgba(122,179,86,0.35),0 3px 8px rgba(0,0,0,.45);}50%{box-shadow:0 0 0 2px rgba(122,179,86,1),0 0 22px rgba(122,179,86,0.65),0 3px 8px rgba(0,0,0,.45);}}
     .gc-disc{box-shadow:inset 0 0 0 99px rgba(200,168,78,.12);border:2px solid rgba(200,168,78,.35);color:var(--gold);font-size:clamp(.8rem,2.5vw,1rem);font-weight:800}
     .gc-red{color:#daa520}
     .gc-stk{display:flex;flex-direction:column}

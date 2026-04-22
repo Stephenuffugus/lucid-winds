@@ -103,6 +103,35 @@ function GKL(a){
     }
     return -1;
   }
+  // Find first tableau column that accepts this card. Used as the fallback
+  // after foundation in the double-tap router.
+  function autoToTab(card, excludeCol){
+    for(var c=0;c<7;c++){
+      if(c===excludeCol)continue;
+      if(canPlaceOnTab(card,c))return c;
+    }
+    return -1;
+  }
+  // Microsoft's "don't strand" safety check. If sending this card to foundation
+  // would leave an opposite-color (r-1) card buried face-down somewhere it
+  // could still have needed us, refuse the auto-foundation and let the player
+  // do it manually via the foundation tap.
+  function safeToFnd(card){
+    if(card.r<=1)return true; // A, 2 always safe
+    var oppSuits=_cdIsRed(card.s)?[0,3]:[1,2]; // red→black (spades=0,clubs=3), black→red (hearts=1,diamonds=2)
+    var needR=card.r-1;
+    for(var s=0;s<oppSuits.length;s++){
+      var suit=oppSuits[s];
+      for(var c=0;c<7;c++){
+        var col=tableau[c];
+        for(var k=0;k<col.length;k++){
+          var tc=col[k];
+          if(tc.s===suit&&tc.r===needR&&!tc.up)return false;
+        }
+      }
+    }
+    return true;
+  }
 
   function doMove(){
     moves++;
@@ -136,15 +165,23 @@ function GKL(a){
     if(waste.length===0)return;
     var now=Date.now();
     var topCard=waste[waste.length-1];
-    // Double-tap auto-foundation
+    // Double-tap auto-route: foundation first (if safe), then tableau fallback.
     if(lastTapCard&&lastTapCard.s===topCard.s&&lastTapCard.r===topCard.r&&now-lastTap<400){
       var fi=autoToFnd(topCard);
-      if(fi>=0){
+      if(fi>=0&&safeToFnd(topCard)){
         snapshot();
         waste.pop();
         fnd[fi].push(topCard);
         sel=null;doMove();
         if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves});}
+        rn();lastTap=0;lastTapCard=null;return;
+      }
+      var tc=autoToTab(topCard);
+      if(tc>=0){
+        snapshot();
+        waste.pop();
+        tableau[tc].push(topCard);
+        sel=null;doMove();
         rn();lastTap=0;lastTapCard=null;return;
       }
     }
@@ -219,15 +256,23 @@ function GKL(a){
     }
 
     var now=Date.now();
-    // Double-tap auto-foundation (only for top card)
+    // Double-tap auto-route: foundation first (if safe), then tableau fallback.
     if(cardIdx===col.length-1&&lastTapCard&&lastTapCard.s===tappedCard.s&&lastTapCard.r===tappedCard.r&&now-lastTap<400){
       var fi=autoToFnd(tappedCard);
-      if(fi>=0){
+      if(fi>=0&&safeToFnd(tappedCard)){
         snapshot();
         col.pop();fnd[fi].push(tappedCard);
         if(col.length>0&&!col[col.length-1].up)col[col.length-1].up=true;
         sel=null;doMove();
         if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves});}
+        rn();lastTap=0;lastTapCard=null;return;
+      }
+      var tc2=autoToTab(tappedCard,ci);
+      if(tc2>=0){
+        snapshot();
+        col.pop();tableau[tc2].push(tappedCard);
+        if(col.length>0&&!col[col.length-1].up)col[col.length-1].up=true;
+        sel=null;doMove();
         rn();lastTap=0;lastTapCard=null;return;
       }
     }
@@ -270,6 +315,17 @@ function GKL(a){
 
   function rn(){
     gd.innerHTML='';
+    // Smart-drop highlight source. When a card/run is selected, every legal
+    // destination glows green so the player sees their options at a glance.
+    var srcCard=null, srcIsSingle=true, srcColIdx=-1;
+    if(sel){
+      if(sel.src==='waste'&&waste.length>0){srcCard=waste[waste.length-1];}
+      else if(sel.src==='tab'){
+        srcCard=tableau[sel.col][sel.idx];
+        srcIsSingle=(sel.idx===tableau[sel.col].length-1);
+        srcColIdx=sel.col;
+      }
+    }
 
     // Top row: stock, waste, spacer, 4 foundations
     var topRow=document.createElement('div');
@@ -338,6 +394,8 @@ function GKL(a){
       }
       fEl.style.width=klW;fEl.style.height=klH;fEl.style.fontSize=klF;
       fEl.style.cursor='pointer';
+      // Smart-drop: light up foundations that accept the selected single card.
+      if(srcCard&&srcIsSingle&&canPlaceOnFnd(srcCard,f))fEl.classList.add('gc-legal');
       (function(fi){fEl.onclick=function(){tapFnd(fi)}})(f);
       topRow.appendChild(fEl);
     }
@@ -354,10 +412,14 @@ function GKL(a){
     for(var c=0;c<7;c++){
       var colDiv=document.createElement('div');
       colDiv.style.cssText='display:flex;flex-direction:column;min-width:'+klW+';align-items:center';
+      // Smart-drop for this column — legal if source exists, column isn't the
+      // source column, and the run head can be placed here.
+      var colLegal = (srcCard && c!==srcColIdx && canPlaceOnTab(srcCard, c));
 
       if(tableau[c].length===0){
         var em=document.createElement('div');
         em.className='gc gc-empty';
+        if(colLegal)em.classList.add('gc-legal');
         em.style.width=klW;em.style.height=klH;
         em.style.cursor='pointer';
         (function(ci){em.onclick=function(){tapTab(ci,0)}})(c);
@@ -386,6 +448,8 @@ function GKL(a){
           if(sel&&sel.src==='tab'&&sel.col===c&&i>=sel.idx&&card.up){
             cdEl.className+=' gc-sel';
           }
+          // Smart-drop: last card of a legal column glows.
+          if(colLegal&&i===depth-1)cdEl.classList.add('gc-legal');
           if(card.up){
             cdEl.style.cursor='pointer';
             cdEl.style.position='relative';
