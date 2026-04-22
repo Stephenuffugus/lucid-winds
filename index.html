@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.45';
+  var LW_VERSION='2026.04.22.46';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3441,7 +3441,12 @@
     body.game-active:has(#fg-ag[data-game="bowergarden"]) #fg-ag > .gr,
     body.game-active:has(#fg-ag[data-game="cribbage"]) .gp-strip,
     body.game-active:has(#fg-ag[data-game="cribbage"]) #ab,
-    body.game-active:has(#fg-ag[data-game="cribbage"]) #fg-ag > .gr{display:none!important;}
+    body.game-active:has(#fg-ag[data-game="cribbage"]) #fg-ag > .gr,
+    body.game-active:has(#fg-ag[data-game="bleedinghearts"]) .gp-strip,
+    body.game-active:has(#fg-ag[data-game="bleedinghearts"]) #ab,
+    body.game-active:has(#fg-ag[data-game="bleedinghearts"]) #fg-ag > .gr{display:none!important;}
+    /* Hearts — score danger pulse (player approaching 100 = losing). */
+    @keyframes bhDanger{0%,100%{box-shadow:0 0 10px rgba(230,57,70,0.5)}50%{box-shadow:0 0 18px rgba(230,57,70,0.9),0 0 0 2px rgba(230,57,70,0.3)}}
     /* Cribbage — thinking pulse + banner pop-in + card interactions */
     @keyframes cbThink{0%,100%{opacity:0.35}50%{opacity:1}}
     @keyframes cbBanner{0%{transform:translate(-50%,-40%) scale(.6);opacity:0}60%{transform:translate(-50%,-55%) scale(1.05);opacity:1}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
