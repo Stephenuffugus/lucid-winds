@@ -190,37 +190,97 @@ function genPuzzle(targetClues){
 
 function GU(a){
   var bd=new Array(81).fill(0),sol=new Array(81).fill(0),fix=new Array(81).fill(false),sel=-1,_fc=0;
+  var _grade='medium',_startTs=0,_solvedTs=0,_won=false;
   _setDiff('medium');ms(a);mm(a);
   var gd=document.createElement('div');gd.className='ug';gd.id='Ug';a.appendChild(gd);
-  var pd=document.createElement('div');pd.className='up';
-  for(var n=1;n<=9;n++)pd.innerHTML+='<div class="upb" onclick="_UN('+n+')">'+n+'</div>';
-  pd.innerHTML+='<div class="upb" onclick="_UN(0)" style="color:var(--muted)">✕</div>';
-  a.appendChild(pd);
+  var pd=document.createElement('div');pd.className='up';pd.id='Upad';a.appendChild(pd);
   mc(a).innerHTML='<select class="gsl" id="Ud" onchange="_UG()"><option value="40">Easy</option><option value="32" selected>Medium</option><option value="26">Hard</option></select> <button class="gb" onclick="_UG()">🔄 New</button>';
   function gen(){
     var target=parseInt((document.getElementById('Ud')||{}).value,10)||32;
-    _setDiff(target>=40?'easy':target>=32?'medium':'hard');
+    _grade=target>=40?'easy':target>=32?'medium':'hard';
+    _setDiff(_grade);
     var result=genPuzzle(target);
     bd=result.puzzle.slice();
     sol=result.solution.slice();
     for(var i=0;i<81;i++)fix[i]=bd[i]!==0;
-    _fc=0;
+    _fc=0;_won=false;_startTs=Date.now();_solvedTs=0;
+  }
+  // Count how many of each digit 1-9 are already correctly placed
+  function digitCounts(){
+    var c=[0,0,0,0,0,0,0,0,0,0];
+    for(var i=0;i<81;i++){if(bd[i]&&bd[i]===sol[i])c[bd[i]]++;}
+    return c;
+  }
+  // True if cell j shares row, column, or 3x3 box with cell i
+  function related(i,j){
+    if(i===j)return false;
+    var r1=Math.floor(i/9),c1=i%9,b1r=Math.floor(r1/3),b1c=Math.floor(c1/3);
+    var r2=Math.floor(j/9),c2=j%9,b2r=Math.floor(r2/3),b2c=Math.floor(c2/3);
+    return r1===r2||c1===c2||(b1r===b2r&&b1c===b2c);
+  }
+  function renderPad(){
+    var counts=digitCounts();
+    var h='';
+    for(var n=1;n<=9;n++){
+      var done=counts[n]>=9;
+      h+='<div class="upb'+(done?' ud':'')+'" onclick="_UN('+n+')">'+n+'</div>';
+    }
+    h+='<div class="upb" onclick="_UN(0)" style="color:var(--muted)">✕</div>';
+    pd.innerHTML=h;
   }
   function rn(){
     gd.innerHTML='';
+    var selVal=sel>=0?bd[sel]:0;
     for(var i=0;i<81;i++){
       var d=document.createElement('div');
-      d.className='uc'+(fix[i]?' uf':'')+(i===sel?' us':'')+(bd[i]&&!fix[i]&&bd[i]!==sol[i]?' ue':'');
+      var cls='uc';
+      if(fix[i])cls+=' uf';
+      // Highlight order matters: row/col/box tint first, then same-number, then selected
+      if(sel>=0&&related(sel,i))cls+=' uh';
+      if(selVal&&bd[i]===selVal)cls+=' un';
+      if(i===sel)cls+=' us';
+      if(bd[i]&&!fix[i]&&bd[i]!==sol[i])cls+=' ue';
+      d.className=cls;
       d.textContent=bd[i]||'';
       d.setAttribute('data-i',i);
       if(!fix[i])d.onclick=function(){sel=parseInt(this.getAttribute('data-i'),10);rn();};
+      else d.onclick=function(){sel=parseInt(this.getAttribute('data-i'),10);rn();}; // fixed cells also select for same-number highlight
       gd.appendChild(d);
     }
+    renderPad();
+    if(_won)return;
     var done=true;
     for(var i=0;i<81;i++)if(bd[i]!==sol[i]){done=false;break;}
-    if(done&&bd[0]){_e('game_win');if(_playWin)_playWin();sm('🌿 Complete!');_sr('sudoku',{w:true,s:81});}
+    if(done&&bd[0]){
+      _won=true;_solvedTs=Date.now();
+      _e('game_win');if(_playWin)_playWin();_sr('sudoku',{w:true,s:81});
+      _sudokuVictory();
+    }
+  }
+  function _sudokuVictory(){
+    var secs=Math.max(1,Math.round((_solvedTs-_startTs)/1000));
+    var mm=Math.floor(secs/60),ss=secs%60;
+    var timeStr=mm+':'+(ss<10?'0':'')+ss;
+    var gradeLbl=_grade.charAt(0).toUpperCase()+_grade.slice(1);
+    // Wave-light the board once
+    var cells=gd.querySelectorAll('.uc');
+    for(var ci=0;ci<cells.length;ci++){
+      (function(cell,idx){setTimeout(function(){cell.style.background='rgba(122,179,86,0.55)';cell.style.color='#fff0d6';cell.style.transition='all .25s ease';setTimeout(function(){cell.style.background='';cell.style.color='';},700);},idx*8);})(cells[ci],ci);
+    }
+    setTimeout(function(){
+      var ov=document.createElement('div');
+      ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,rgba(122,179,86,0.32) 0%,rgba(13,16,12,0.94) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;animation:uSolveLine .3s ease;font-family:Georgia,serif;';
+      ov.innerHTML=
+        '<div style="font-size:5rem;line-height:1;margin-bottom:14px;animation:uSolvePop .7s cubic-bezier(.18,1.5,.3,1);filter:drop-shadow(0 0 24px rgba(122,179,86,0.8));">🌿</div>'+
+        '<div style="font-size:2.4rem;font-weight:700;color:#7ab356;letter-spacing:0.06em;text-shadow:0 0 22px rgba(122,179,86,0.7);animation:uSolvePop .7s cubic-bezier(.18,1.5,.3,1);">SOLVED</div>'+
+        '<div style="font-style:italic;font-size:0.9rem;color:#e8dcc8;margin-top:10px;animation:uSolveLine .5s ease-out .4s both;">'+gradeLbl+' · '+timeStr+'</div>'+
+        '<button onclick="this.parentElement.remove();_UG()" style="margin-top:26px;min-height:46px;padding:10px 26px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:8px;letter-spacing:0.05em;cursor:pointer;animation:uSolveLine .5s ease-out .7s both;">↻ Next Puzzle</button>';
+      ov.onclick=function(ev){if(ev.target===ov)ov.remove();};
+      document.body.appendChild(ov);
+    }, cells.length*8 + 200);
   }
   window._UN=function(n){
+    if(_won)return;
     if(sel<0||fix[sel])return;
     _play('tap');
     var prev=bd[sel];bd[sel]=n;
@@ -228,10 +288,8 @@ function GU(a){
     rn();
   };
   window._UG=function(){
-    sel=-1;_fc=0;
+    sel=-1;_fc=0;_won=false;
     sm('Generating…');
-    // Defer to next frame so the "Generating…" text actually paints
-    // before the synchronous solver burns a few hundred ms.
     setTimeout(function(){gen();sm('');rn();},20);
   };
   _UG();
