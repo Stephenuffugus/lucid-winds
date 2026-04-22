@@ -159,6 +159,10 @@ function GTP(a){
         }else{
           var cd=_cdEl(peaks[pi]);
           cd.style.width=tpW;cd.style.height=tpH;cd.style.fontSize=tpF;
+          // Peak rows (0-2) hide their big center art so adjacent cards don't
+          // look like a wall of overlapping suits. Only the base row (r=3)
+          // shows full face. Corner rank+suit stays visible on every card.
+          if(ri<3)cd.classList.add('gc-peek');
           if(!peaks[pi].up){cd.className='gc gc-dn';_cdBackStyle(cd);cd.style.width=tpW;cd.style.height=tpH;cd.innerHTML='';}
           else if(isExposed(pi)){cd.style.cursor='pointer';(function(ii){cd.onclick=function(){tapPeak(ii)}})(pi);}
           else{cd.style.opacity='.5';}
