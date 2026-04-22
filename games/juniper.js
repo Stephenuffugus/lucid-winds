@@ -11,7 +11,10 @@ if(!document.getElementById('ju-anim-style')){
   var _jus=document.createElement('style');_jus.id='ju-anim-style';
   _jus.textContent=
     '@keyframes juKnockPulse{0%,100%{box-shadow:0 0 14px rgba(255,220,112,0.45),inset 0 1px 0 rgba(255,255,255,0.15)}50%{box-shadow:0 0 22px rgba(255,220,112,0.75),inset 0 1px 0 rgba(255,255,255,0.2)}}'+
-    '@keyframes juGinPulse{0%,100%{box-shadow:0 0 22px rgba(255,220,112,0.7),inset 0 1px 0 rgba(255,255,255,0.5);transform:scale(1)}50%{box-shadow:0 0 36px rgba(255,232,150,1),inset 0 1px 0 rgba(255,255,255,0.5);transform:scale(1.06)}}';
+    '@keyframes juGinPulse{0%,100%{box-shadow:0 0 22px rgba(255,220,112,0.7),inset 0 1px 0 rgba(255,255,255,0.5);transform:scale(1)}50%{box-shadow:0 0 36px rgba(255,232,150,1),inset 0 1px 0 rgba(255,255,255,0.5);transform:scale(1.06)}}'+
+    '@keyframes juThink{0%,100%{opacity:0.4}50%{opacity:1}}'+
+    '@keyframes juWinIn{0%{opacity:0}100%{opacity:1}}'+
+    '@keyframes juWinPop{0%{transform:translateY(40px) scale(0.5);opacity:0}55%{transform:translateY(-6px) scale(1.15);opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}';
   document.head.appendChild(_jus);
 }
 
@@ -27,6 +30,10 @@ window._gameFns.juniper = function Juniper(a){
   var stock=[],discardPile=[];
   var playerScore=0,aiScore=0,playerWins=0,aiWins=0;
   var phase='',turnCount=0;
+  // AI feedback state — shown in render so the player sees the AI deciding.
+  var aiThinking=false, aiHoverDiscard=false;
+  // GIN/knock takeover overlay state. {kind:'gin'|'knock'|'undercut', winner, pts}
+  var winOverlay=null;
 
   ms(a,'<span style="font-family:Georgia,serif;letter-spacing:.06em;">🫐 <strong id="JUy" style="color:#7ab356;font-size:1.2em;">0</strong> <span style="color:rgba(232,220,200,0.5);font-size:0.8em;">vs</span> <strong id="JUa" style="color:#dc8a8a;font-size:1.2em;">0</strong></span>');
   mm(a);
@@ -150,28 +157,39 @@ window._gameFns.juniper = function Juniper(a){
   function aiShouldKnock(){var dw=getDeadwood(aiHand);if(dw===0)return 'gin';if(dw<=10)return 'knock';return 'none';}
 
   function aiTurn(){
-    phase='aiTurn';sm('Juniper is thinking...');
+    phase='aiTurn';sm('Juniper is thinking…');
+    aiThinking=true;render();
+    // Pre-decide so we can stage a discard-pile hover tell when AI considers it.
+    var choice=aiDecideDraw();
+    var faking = choice==='stock' && Math.random()<0.3 && discardPile.length>0;
+    if(faking){
+      aiHoverDiscard=true;render();
+      setTimeout(function(){aiHoverDiscard=false;render();},700);
+    }
+    // Thinking pause: 1200-2000ms before drawing so the AI feels deliberate.
+    var thinkMs = 1200 + Math.floor(Math.random()*800);
     setTimeout(function(){
-      var choice=aiDecideDraw();
+      aiThinking=false;
       if(choice==='discard'&&discardPile.length>0)aiHand.push(discardPile.pop());
       else{if(stock.length===0){drawRound();return;}aiHand.push(stock.pop());}
       render();
+      // Discard pause: 700-1100ms before tossing so the player can read.
       setTimeout(function(){
         var action=aiShouldKnock();
         if(action==='gin'){
           var di=aiDecideDiscard();var dc=aiHand.splice(di,1)[0];discardPile.push(dc);render();
-          setTimeout(function(){endRound('ai','gin');},400);return;
+          setTimeout(function(){endRound('ai','gin');},600);return;
         }
         if(action==='knock'&&turnCount>1){
           var di2=aiDecideDiscard();var dc2=aiHand.splice(di2,1)[0];discardPile.push(dc2);render();
-          setTimeout(function(){endRound('ai','knock');},400);return;
+          setTimeout(function(){endRound('ai','knock');},600);return;
         }
         var di3=aiDecideDiscard();var dc3=aiHand.splice(di3,1)[0];discardPile.push(dc3);
         sm('Your turn — draw a card');phase='draw';turnCount++;
         if(stock.length===0){drawRound();return;}
         render();
-      },400);
-    },500);
+      },700+Math.floor(Math.random()*400));
+    },thinkMs);
   }
 
   function deal(){
@@ -195,27 +213,30 @@ window._gameFns.juniper = function Juniper(a){
     var defenderHand=who==='player'?aiHand:playerHand;
     var kr=bestMeldCombination(knockerHand);var dr=bestMeldCombination(defenderHand);
     var kdw=kr.deadwood,ddw=dr.deadwood;
-    var pts=0,winner='',msg='';
+    var pts=0,winner='',msg='',kind=type;
     if(type==='gin'){pts=ddw+25;winner=who;msg=(who==='player'?'GIN! +':'AI GIN! +')+pts;}
     else{
-      if(ddw<=kdw){pts=(kdw-ddw)+25;winner=who==='player'?'ai':'player';msg='UNDERCUT! '+(winner==='player'?'You':'AI')+' +'+pts;}
+      if(ddw<=kdw){pts=(kdw-ddw)+25;winner=who==='player'?'ai':'player';kind='undercut';msg='UNDERCUT! '+(winner==='player'?'You':'AI')+' +'+pts;}
       else{pts=ddw-kdw;winner=who;msg=(who==='player'?'You':'AI')+' knock +'+pts;}
     }
     if(winner==='player'){playerScore+=pts;playerWins++;_e('milestone');}
     else{aiScore+=pts;aiWins++;_e('progress');}
     sm(msg);
+    // Fire the dramatic takeover overlay for ~2.4s before next deal.
+    winOverlay={kind:kind,winner:winner,pts:pts,kdw:kdw,ddw:ddw};
     render();
     setTimeout(function(){
+      winOverlay=null;
       if(playerScore>=100||aiScore>=100){
         var won=playerScore>=100;
         if(won){_e('game_win');_playWin();sm('🫐 You win! '+playerScore+' vs '+aiScore);}
         else{_e('game_loss');_play('lose');sm('You lose. '+playerScore+' vs '+aiScore);}
         _sr('juniper',{w:won,s:playerScore,r:playerWins+aiWins});
-        setTimeout(function(){playerScore=0;aiScore=0;playerWins=0;aiWins=0;newHand();},3000);
+        setTimeout(function(){playerScore=0;aiScore=0;playerWins=0;aiWins=0;newHand();},2200);
         return;
       }
       newHand();
-    },2000);
+    },2400);
   }
 
   function onDrawStock(){
@@ -269,7 +290,8 @@ window._gameFns.juniper = function Juniper(a){
     h+='</div>';
     // ── AI HAND (face-down fan) ─────────────────────────────────
     h+='<div style="text-align:center;padding:4px 6px 8px;">';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:#dc8a8a;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;margin-bottom:5px;">JUNIPER <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;">×'+aiHand.length+'</span></div>';
+    var thinkBadge = aiThinking ? ' <span style="margin-left:8px;font-family:Georgia,serif;font-style:italic;font-size:0.62rem;color:#ffdc70;animation:juThink 1.2s ease-in-out infinite;">thinking…</span>' : '';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:#dc8a8a;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;margin-bottom:5px;">JUNIPER <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;">×'+aiHand.length+'</span>'+thinkBadge+'</div>';
     h+='<div style="display:inline-flex;justify-content:center;">';
     for(var i=0;i<aiHand.length;i++)h+='<div style="width:28px;height:40px;border-radius:4px;background:linear-gradient(135deg,#1a4a2e,#0c2a18);border:1.5px solid #051208;margin-left:'+(i===0?'0':'-18px')+';box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);"></div>';
     h+='</div></div>';
@@ -286,7 +308,8 @@ window._gameFns.juniper = function Juniper(a){
     if(discardPile.length>0){
       var top=discardPile[discardPile.length-1];
       var col=top.suit==='hearts'||top.suit==='diamonds'?'#b42a2a':'#1a1a1a';
-      h+='<div onclick="_JUDD()" style="width:72px;height:100px;border-radius:8px;background:linear-gradient(180deg,#faf3dd,#f0e7c8);border:2px solid '+(canPickup?'#ffdc70':'#c4b998')+';display:flex;flex-direction:column;align-items:center;justify-content:center;'+(canPickup?'cursor:pointer;box-shadow:0 0 14px rgba(255,220,112,0.35),inset 0 1px 0 rgba(255,255,255,0.5);':'cursor:default;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 3px 6px rgba(0,0,0,0.5);')+'color:'+col+';font-weight:700;font-family:Georgia,serif;position:relative;">';
+      var hoverGlow = aiHoverDiscard ? 'box-shadow:0 0 18px rgba(220,138,138,0.7),inset 0 1px 0 rgba(255,255,255,0.5);transform:translateY(-4px);' : '';
+      h+='<div onclick="_JUDD()" style="width:72px;height:100px;border-radius:8px;background:linear-gradient(180deg,#faf3dd,#f0e7c8);border:2px solid '+(canPickup?'#ffdc70':aiHoverDiscard?'#dc8a8a':'#c4b998')+';display:flex;flex-direction:column;align-items:center;justify-content:center;'+(canPickup?'cursor:pointer;box-shadow:0 0 14px rgba(255,220,112,0.35),inset 0 1px 0 rgba(255,255,255,0.5);':'cursor:default;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 3px 6px rgba(0,0,0,0.5);')+hoverGlow+'transition:transform .2s,box-shadow .2s;color:'+col+';font-weight:700;font-family:Georgia,serif;position:relative;">';
       h+='<span style="font-size:0.78rem;position:absolute;top:3px;left:5px;line-height:1;">'+top.rank+'</span>';
       h+='<span style="font-size:1.7rem;line-height:1;">'+_pip(top.suit)+'</span>';
       h+='<span style="font-size:0.78rem;position:absolute;bottom:3px;right:5px;line-height:1;transform:rotate(180deg);">'+top.rank+'</span>';
@@ -342,6 +365,33 @@ window._gameFns.juniper = function Juniper(a){
       h+='</div>';
     }
     h+='</div>';
+    // ── WIN OVERLAY ─────────────────────────────────────────────
+    if(winOverlay){
+      var w=winOverlay;
+      var isYou = w.winner==='player';
+      var titleColor = isYou ? '#7ab356' : '#dc8a8a';
+      var bigText, sub;
+      if(w.kind==='gin'){
+        bigText = isYou ? 'GIN!' : 'JUNIPER GINS';
+        sub = '+ '+w.pts+' (deadwood '+w.ddw+' + 25 bonus)';
+      } else if(w.kind==='undercut'){
+        bigText = 'UNDERCUT';
+        sub = (isYou?'You':'Juniper')+' +'+w.pts;
+      } else {
+        bigText = isYou ? 'KNOCK' : 'JUNIPER KNOCKS';
+        sub = (isYou?'You':'Juniper')+' +'+w.pts+' (diff '+(w.ddw-w.kdw)+')';
+      }
+      var bgGrad = w.kind==='gin'
+        ? 'radial-gradient(ellipse at 50% 40%,rgba(255,220,112,0.35) 0%,rgba(10,5,20,0.95) 70%)'
+        : w.kind==='undercut'
+        ? 'radial-gradient(ellipse at 50% 40%,rgba(230,57,70,0.3) 0%,rgba(10,5,20,0.95) 70%)'
+        : 'radial-gradient(ellipse at 50% 40%,rgba(60,40,100,0.5) 0%,rgba(10,5,20,0.95) 70%)';
+      h+='<div style="position:fixed;inset:0;background:'+bgGrad+';z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;animation:juWinIn 0.5s ease-out;">';
+      h+='<div style="font-size:'+(w.kind==='gin'?'5rem':'3rem')+';line-height:1;margin-bottom:14px;animation:juWinPop 0.9s cubic-bezier(.2,1.4,.3,1);filter:drop-shadow(0 0 24px '+titleColor+'aa);">'+(w.kind==='gin'?'🎉':w.kind==='undercut'?'⚔️':'🪶')+'</div>';
+      h+='<div style="font-family:Georgia,serif;font-size:2.4rem;font-weight:700;color:'+titleColor+';letter-spacing:0.06em;text-shadow:0 0 26px '+titleColor+'aa;text-align:center;">'+bigText+'</div>';
+      h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.85rem;color:#f5ebd0;margin-top:10px;">'+sub+'</div>';
+      h+='</div>';
+    }
     pan.innerHTML=h;
   }
   // ── Per-player score strip ──────────────────────────────────
