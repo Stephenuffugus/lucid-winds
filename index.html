@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.69';
+  var LW_VERSION='2026.04.22.70';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -48721,6 +48721,8 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolli
   window._FN=function(){dice=new Array(6).fill(0);kept=new Array(6).fill(false);turn=0;rolling=false;busted=false;curP=0;gameOver=false;finalRound=false;finalStart=-1;players=[];for(var i=0;i<numPlayers;i++)players.push({banked:0});document.getElementById('Fs').textContent='0';sm(numPlayers>1?('P1 starts — 🎲 Roll! (First to '+target+')'):'🎲 Roll!');rn()};_FN();}
 // ═══ TRIPEAKS ═══
 function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1,scores={},justRolled=new Array(5).fill(false);
+  // Takeover overlay state. {kind:'yahtzee'|'gameover', ...}
+  var overlay=null;
   // Inject Yahtzee keyframes once.
   if(!document.getElementById('y-anim-style')){
     var _ys=document.createElement('style');_ys.id='y-anim-style';
@@ -48730,7 +48732,11 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
       '.yDie.rolling{animation:yDieRoll 0.85s cubic-bezier(.18,.7,.3,1) both;}'+
       '.yDie.held{transform:translateY(-6px) scale(0.96);filter:saturate(0.85);}'+
       '@keyframes yBestPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,220,112,0.4),inset 0 1px 0 rgba(255,255,255,0.08)}50%{box-shadow:0 0 12px rgba(255,220,112,0.55),inset 0 1px 0 rgba(255,255,255,0.12)}}'+
-      '.yBestPulse{animation:yBestPulse 1.4s ease-in-out infinite;}';
+      '.yBestPulse{animation:yBestPulse 1.4s ease-in-out infinite;}'+
+      '@keyframes yYahtzeeIn{0%{opacity:0}100%{opacity:1}}'+
+      '@keyframes yYahtzeeSlam{0%{transform:scale(0.3) rotate(-8deg);opacity:0}45%{transform:scale(1.25) rotate(2deg);opacity:1}70%{transform:scale(0.96) rotate(-1deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}'+
+      '@keyframes yEndPop{0%{transform:translateY(40px) scale(0.7);opacity:0}55%{transform:translateY(-6px) scale(1.08);opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}'+
+      '@keyframes yLineIn{0%{transform:translateX(-12px);opacity:0}100%{transform:translateX(0);opacity:1}}';
     document.head.appendChild(_ys);
   }
   // Botanical dice — paper-card PNGs (seed/dew/clover/sun/flower/moon)
@@ -48839,6 +48845,39 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
     }
     // Scorecard
     h+='<div id="Ysc"></div>';
+    // ── OVERLAYS ────────────────────────────────────────────────
+    if(overlay && overlay.kind==='yahtzee'){
+      h+='<div style="position:fixed;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(255,220,112,0.35) 0%,rgba(10,5,20,0.95) 70%);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;animation:yYahtzeeIn 0.2s ease-out;">';
+      h+='<div style="font-size:5.5rem;line-height:1;margin-bottom:14px;animation:yYahtzeeSlam 0.7s cubic-bezier(.18,1.5,.3,1);filter:drop-shadow(0 0 30px rgba(255,220,112,0.85));">🌟</div>';
+      h+='<div style="font-family:Georgia,serif;font-size:3rem;font-weight:700;color:#ffdc70;letter-spacing:0.06em;text-shadow:0 0 32px rgba(255,220,112,0.9);text-align:center;animation:yYahtzeeSlam 0.7s cubic-bezier(.18,1.5,.3,1);">YAHTZEE!</div>';
+      h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:1rem;color:#f5ebd0;margin-top:10px;animation:yLineIn 0.5s ease-out 0.4s both;">Five of a kind &middot; +50</div>';
+      h+='</div>';
+    }
+    if(overlay && overlay.kind==='gameover'){
+      h+='<div style="position:fixed;inset:0;background:radial-gradient(ellipse at 50% 40%,'+(overlay.won?'rgba(255,220,112,0.3)':'rgba(60,40,100,0.4)')+' 0%,rgba(10,5,20,0.96) 70%);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;animation:yYahtzeeIn 0.4s ease-out;">';
+      h+='<div style="font-size:'+(overlay.won?'4.5rem':'3rem')+';line-height:1;margin-bottom:10px;animation:yEndPop 0.9s cubic-bezier(.18,1.4,.3,1);filter:drop-shadow(0 0 24px '+(overlay.won?'rgba(255,220,112,0.7)':'rgba(140,100,200,0.6)')+');">'+(overlay.won?'🏆':'🌱')+'</div>';
+      h+='<div style="font-family:Georgia,serif;font-size:1.6rem;font-weight:700;color:'+(overlay.won?'#ffdc70':'#f5ebd0')+';letter-spacing:0.04em;text-shadow:0 0 22px '+(overlay.won?'rgba(255,220,112,0.7)':'rgba(0,0,0,0.6)')+';margin-bottom:18px;">'+(overlay.won?'GREAT GAME':'GAME OVER')+'</div>';
+      h+='<div style="display:flex;flex-direction:column;gap:8px;max-width:340px;width:90%;">';
+      for(var li=0;li<overlay.lines.length;li++){
+        var line=overlay.lines[li];
+        var visible=li<overlay.lineIdx;
+        if(!visible){h+='<div style="height:36px;"></div>';continue;}
+        var size=line.big?'1.6rem':'0.95rem';
+        var weight=line.big?'700':'400';
+        var bg=line.big?'linear-gradient(180deg,rgba(255,220,112,0.18),rgba(255,220,112,0.05))':'rgba(0,0,0,0.4)';
+        var bdr=line.big?'#ffdc70':'rgba(232,220,200,0.25)';
+        h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:'+bg+';border:1px solid '+bdr+';border-radius:8px;font-family:Georgia,serif;animation:yLineIn 0.45s cubic-bezier(.2,1.4,.3,1);">';
+        h+='<span style="font-style:italic;font-size:0.78rem;color:#f5ebd0;letter-spacing:0.04em;">'+line.label+'</span>';
+        h+='<span style="font-weight:'+weight+';font-size:'+size+';color:'+(line.color||'#f5ebd0')+';text-shadow:0 1px 2px rgba(0,0,0,0.6);">'+line.value+(line.medal?' '+line.medal:'')+'</span>';
+        h+='</div>';
+      }
+      h+='</div>';
+      // CTA after all lines reveal.
+      if(overlay.lineIdx>overlay.lines.length){
+        h+='<button class="gb" onclick="_YN()" style="margin-top:18px;min-height:46px;padding:8px 22px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:8px;letter-spacing:0.05em;cursor:pointer;animation:yLineIn 0.5s ease-out;">↻ Play Again</button>';
+      }
+      h+='</div>';
+    }
     pan.innerHTML=h;
     rnS();
   }
@@ -48925,27 +48964,53 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
   window._YS=function(cat){
     if(!rolls||scores[cat]!==undefined)return;
     _play('snap');var v=cs(cat);scores[cat]=v;
+    // YAHTZEE moment — five-of-a-kind into the Bloom slot for the full 50.
+    var isYahtzee = (cat===11 && v===50);
+    if(isYahtzee){
+      _e('milestone');_playWin();
+      overlay={kind:'yahtzee'};rn();
+      setTimeout(function(){overlay=null;_advanceTurn(cat,v);},2400);
+      return;
+    }
     sm(CATS[cat].name+': +'+v+' pts');
     if(v>=25)_e('progress');
+    _advanceTurn(cat,v);
+  };
+  function _advanceTurn(cat,v){
     turn++;document.getElementById('Yt').textContent=Math.min(turn,13);
     rolls=0;kept=new Array(5).fill(false);
     for(var _i=0;_i<5;_i++)dice[_i]=Math.floor(Math.random()*6)+1;
     document.getElementById('Yr').textContent='0';
     if(turn>13){
-      var tot=0;for(var k in scores)tot+=scores[k];
+      // Build staged end-of-game lines.
       var upperSum=0;for(var i=0;i<6;i++)if(scores[i]!==undefined)upperSum+=scores[i];
-      if(upperSum>=63)tot+=35;
-      // Was: fired game_win unconditionally even on a 0 score. Now only
-      // marks a win at a respectable threshold (≥150 = casual win line).
-      // Below threshold still records the run but as a non-win.
+      var bonus=upperSum>=63?35:0;
+      var lowerSum=0;for(var j=6;j<13;j++)if(scores[j]!==undefined)lowerSum+=scores[j];
+      var tot=upperSum+lowerSum+bonus;
       var won=tot>=150;
       if(won){_e('game_win');_playWin();}else{_e('game_loss');_play('lose');}
-      sm('Final score: '+tot+(won?' 🏆':''));
       _sr('yahtzee',{w:won,s:tot});
+      var lines=[
+        {label:'Upper section',value:upperSum,color:'#7ab356'},
+        {label:'Upper bonus',value:bonus?'+35':'—',color:bonus?'#ffdc70':'rgba(232,220,200,0.4)'},
+        {label:'Lower section',value:lowerSum,color:'#dc8a8a'},
+        {label:'TOTAL',value:tot,color:'#ffdc70',big:true,medal:won?'🏆':null}
+      ];
+      overlay={kind:'gameover',lines:lines,won:won,tot:tot,lineIdx:0};
+      rn();
+      function reveal(){
+        if(!overlay)return;
+        overlay.lineIdx++;
+        if(overlay.lineIdx<=lines.length){
+          _play('tap');rn();
+          setTimeout(reveal,800);
+        }
+      }
+      setTimeout(reveal,700);
     }else if(turn%3===0)_e('milestone');
     rn();
-  };
-  window._YN=function(){dice=[];for(var _i=0;_i<5;_i++)dice.push(Math.floor(Math.random()*6)+1);kept=new Array(5).fill(false);rolls=0;turn=1;scores={};document.getElementById('Yt').textContent='1';document.getElementById('Yr').textContent='0';sm('Tap ROLL to begin!');rn()};_YN();
+  }
+  window._YN=function(){dice=[];for(var _i=0;_i<5;_i++)dice.push(Math.floor(Math.random()*6)+1);kept=new Array(5).fill(false);rolls=0;turn=1;scores={};overlay=null;document.getElementById('Yt').textContent='1';document.getElementById('Yr').textContent='0';sm('Tap ROLL to begin!');rn()};_YN();
 }
 // ═══ DOUBLE SHUTTER — Strategy Shut the Box (two rows) ═══
 function GDS(a){
