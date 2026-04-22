@@ -55,6 +55,17 @@ window._gameFns.seedtoss2=function ST(a){
   var rafId=0,running=false;
   var currentSize=POT_SIZES[0];   // active pot size (LARGE by default)
   var scoreMult=1.0;                // multiplier applied to earned points
+  // Visible default on the size picker. Defaults to last-used (persisted)
+  // so returning players land on their preference, and the bottom NEW
+  // button can launch directly with this without a second tap.
+  var highlightedSize=(function(){
+    try{
+      var k=localStorage.getItem('lw_st_last_size')||'large';
+      for(var i=0;i<POT_SIZES.length;i++)if(POT_SIZES[i].key===k)return POT_SIZES[i];
+    }catch(e){}
+    return POT_SIZES[0];
+  })();
+  var pickerOpen=false;             // true while the pre-round size modal is showing
   // Skin layer state — weather, parallax, pot sway, bullseye flash
   var weatherType=null;             // 'rain' | 'snow' | 'leaves' | 'mist' | null
   var weatherPoints=[];
@@ -570,7 +581,12 @@ window._gameFns.seedtoss2=function ST(a){
     // Pre-round modal: three pot-size tiles with multipliers.
     // Unlock gate uses best-ever level so the player doesn't lose access
     // to previously-unlocked sizes just because this run started at L1.
+    pickerOpen=true;
+    // If the persisted highlight is now locked (shouldn't normally happen
+    // since best-level only grows), fall back to LARGE so NEW never
+    // points at a locked tile.
     var bestLvl=_STbestLevel();
+    if(bestLvl<highlightedSize.unlockAt)highlightedSize=POT_SIZES[0];
     pan.innerHTML='';
     var wrap=document.createElement('div');
     wrap.style.cssText='padding:14px 6px 4px;max-width:420px;margin:0 auto;';
@@ -587,8 +603,14 @@ window._gameFns.seedtoss2=function ST(a){
     for(var i=0;i<POT_SIZES.length;i++){
       (function(sz){
         var unlocked=bestLvl>=sz.unlockAt;
+        var isHi=unlocked&&sz.key===highlightedSize.key;
         var btn=document.createElement('button');
-        btn.style.cssText='flex:1;min-width:105px;max-width:130px;padding:12px 8px;border-radius:12px;border:1.5px solid '+(unlocked?'rgba(200,168,75,0.45)':'rgba(138,145,120,0.2)')+';background:'+(unlocked?'linear-gradient(180deg,rgba(74,124,53,0.22),rgba(26,36,22,0.6))':'rgba(26,31,23,0.35)')+';color:'+(unlocked?'var(--cream)':'var(--muted)')+';font-family:inherit;cursor:'+(unlocked?'pointer':'not-allowed')+';box-shadow:'+(unlocked?'0 3px 10px rgba(0,0,0,0.35)':'none')+';min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;';
+        var borderColor=isHi?'var(--gold)':(unlocked?'rgba(200,168,75,0.45)':'rgba(138,145,120,0.2)');
+        var bgColor=isHi?'linear-gradient(180deg,rgba(200,168,75,0.28),rgba(40,50,24,0.75))'
+                        :(unlocked?'linear-gradient(180deg,rgba(74,124,53,0.22),rgba(26,36,22,0.6))':'rgba(26,31,23,0.35)');
+        var boxShadow=isHi?'0 0 18px rgba(200,168,75,0.35),0 3px 10px rgba(0,0,0,0.4)'
+                          :(unlocked?'0 3px 10px rgba(0,0,0,0.35)':'none');
+        btn.style.cssText='flex:1;min-width:105px;max-width:130px;padding:12px 8px;border-radius:12px;border:'+(isHi?'2':'1.5')+'px solid '+borderColor+';background:'+bgColor+';color:'+(unlocked?'var(--cream)':'var(--muted)')+';font-family:inherit;cursor:'+(unlocked?'pointer':'not-allowed')+';box-shadow:'+boxShadow+';min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;position:relative;';
         btn.innerHTML=
           '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.1em;color:'+(unlocked?'var(--gold)':'var(--muted)')+';">'+sz.name+'</div>'+
           '<div style="font-family:DM Mono,monospace;font-size:1.2rem;color:'+(unlocked?'var(--cream)':'var(--muted)')+';font-weight:700;">'+sz.mult.toFixed(1).replace(/\.0$/,'')+'×</div>'+
@@ -598,10 +620,19 @@ window._gameFns.seedtoss2=function ST(a){
       })(POT_SIZES[i]);
     }
     wrap.appendChild(grid);
+    // Subtle hint under the grid so players know the bottom NEW button
+    // will launch with the highlighted tile.
+    var foot=document.createElement('div');
+    foot.style.cssText='font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);text-align:center;margin-top:10px;letter-spacing:0.05em;';
+    foot.textContent='Tap a pot or press NEW to play with the gold-highlighted one.';
+    wrap.appendChild(foot);
     pan.appendChild(wrap);
   }
   function beginRun(sz){
+    pickerOpen=false;
     currentSize=sz;
+    highlightedSize=sz;
+    try{localStorage.setItem('lw_st_last_size',sz.key);}catch(e){}
     scoreMult=sz.mult;
     if(rafId)cancelAnimationFrame(rafId);
     setup();
@@ -612,6 +643,16 @@ window._gameFns.seedtoss2=function ST(a){
     sm(sz.mult>1?'×'+sz.mult+' multiplier · flick it in':'Flick the seed into the pot');
   }
   window._STN=function(){
+    // If the size picker is already up, NEW commits to the highlighted
+    // tile instead of re-rendering the same picker (that felt
+    // unresponsive to Stephen). Falls back to LARGE if the highlight
+    // is somehow locked.
+    if(pickerOpen){
+      var bestLvl=_STbestLevel();
+      var pick=(bestLvl>=highlightedSize.unlockAt)?highlightedSize:POT_SIZES[0];
+      beginRun(pick);
+      return;
+    }
     if(rafId)cancelAnimationFrame(rafId);
     running=false;
     showSizePicker();
