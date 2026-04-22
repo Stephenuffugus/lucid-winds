@@ -12,9 +12,15 @@ if(!document.getElementById('bh-anim-style')){
   _bhs.textContent=
     '@keyframes bhTurnRing{0%,100%{box-shadow:0 0 0 2px rgba(255,220,112,0.7),0 0 18px rgba(255,220,112,0.4)}50%{box-shadow:0 0 0 3px rgba(255,220,112,0.95),0 0 26px rgba(255,220,112,0.6)}}'+
     '@keyframes bhArrowNudge{0%,100%{transform:translateX(0);opacity:1}50%{transform:translateX(6px);opacity:.6}}'+
+    '@keyframes bhBreakFlash{0%{transform:scale(1);box-shadow:0 0 0 0 rgba(230,57,70,0.9)}30%{transform:scale(1.15);box-shadow:0 0 0 12px rgba(230,57,70,0.45),0 0 30px rgba(230,57,70,0.75)}100%{transform:scale(1);box-shadow:0 0 10px rgba(220,138,138,0.25)}}'+
+    '@keyframes bhQSFlash{0%{transform:translate(-50%,0) scale(1)}25%{transform:translate(-50%,-4px) scale(1.35);filter:drop-shadow(0 0 14px rgba(230,57,70,0.9))}100%{transform:translate(-50%,0) scale(1.2);filter:drop-shadow(0 0 8px rgba(139,0,0,0.7))}}'+
+    '@keyframes bhWinGlow{0%,100%{box-shadow:0 0 0 2px #ffdc70,0 0 16px rgba(255,220,112,0.55)}50%{box-shadow:0 0 0 3px #ffe896,0 0 24px rgba(255,232,150,0.8)}}'+
     '.bh-seat{transition:opacity .3s ease,filter .3s ease;}'+
     '.bh-seat.bh-active{animation:bhTurnRing 1.4s ease-in-out infinite;}'+
-    '.bh-seat.bh-inactive{opacity:0.55;}';
+    '.bh-seat.bh-inactive{opacity:0.55;}'+
+    '.bh-qs-flash{animation:bhQSFlash 0.8s cubic-bezier(.2,1.4,.3,1) forwards;z-index:5;border-color:#8b0000!important;}'+
+    '.bh-win-glow{animation:bhWinGlow 0.55s ease-in-out infinite;z-index:4;}'+
+    '.bh-void-tag{display:inline-block;padding:0 3px;margin:0 1px;font-size:0.62rem;color:rgba(232,220,200,0.45);text-decoration:line-through;text-decoration-color:#e63946;text-decoration-thickness:1.5px;}';
   document.head.appendChild(_bhs);
 }
 
@@ -31,6 +37,17 @@ window._gameFns.bleedinghearts = function BH(a){
   var trick=[],trickCards=[null,null,null,null];
   var leader=0,currentPlayer=0,phase='',heartsBroken=false;
   var passDir=0,passSelection=[],roundNum=0,trickNum=0;
+  // Per-seat void tracking. Populated when a seat can't follow lead suit —
+  // subsequent tricks use voids[p][suit] to put a struck-through suit glyph
+  // under that player. Critical info for card-counting. Reset per hand.
+  var voids=[{},{},{},{}];
+  // Trick-end drama state. trickWinner keeps the winning seat glow on during
+  // the hold beat. qsInTrick flips true when the Queen of Spades lands in
+  // the current trick and lets the UI flash her.
+  var trickWinner=-1, qsInTrick=false;
+  // One-shot flag — hearts-broken moment animation fires only on the render
+  // right after the break.
+  var heartsJustBroke=false;
   // Per-player identity colors. Hearts is a free-for-all so each seat has its
   // own distinct accent (you=sage, west=sky, north=rose, east=gold).
   var PLAYER_COLORS=['#7ab356','#5b9bd1','#dc8a8a','#d4b86a'];
@@ -143,6 +160,7 @@ window._gameFns.bleedinghearts = function BH(a){
     for(var i=0;i<52;i++)hands[i%4].push(deck[i]);
     for(i=0;i<4;i++)sortHand(hands[i]);
     roundPts=[0,0,0,0];heartsBroken=false;trick=[];trickCards=[null,null,null,null];
+    voids=[{},{},{},{}];trickWinner=-1;qsInTrick=false;heartsJustBroke=false;
   }
   function newRound(){
     roundNum++;deal();passDir=(roundNum-1)%4;
@@ -177,30 +195,48 @@ window._gameFns.bleedinghearts = function BH(a){
     currentPlayer=leader;trick=[];trickCards=[null,null,null,null];
     sm(leader===S?'Lead the 2♣':NAMES[leader]+' leads');
     render();
-    if(currentPlayer!==S)setTimeout(function(){doAIPlay(true);},500);
+    if(currentPlayer!==S)setTimeout(function(){doAIPlay(true);},900);
   }
   function playCard(player,card){
     removeCard(hands[player],card);
+    // Void detection — did this player fail to follow the lead suit?
+    var leadSuit = trick.length>0 ? trick[0].card.suit : '';
+    if(leadSuit && card.suit!==leadSuit){
+      voids[player][leadSuit]=true;
+    }
     trick.push({player:player,card:card});trickCards[player]=card;
-    if(card.suit==='hearts')heartsBroken=true;
+    // Track the Q♠ for trick-end flash.
+    if(card.rank==='Q'&&card.suit==='spades')qsInTrick=true;
+    // Hearts-broken moment — one-shot flag so the badge flashes once.
+    if(card.suit==='hearts' && !heartsBroken){
+      heartsBroken=true;
+      heartsJustBroke=true;
+      setTimeout(function(){heartsJustBroke=false;render();},900);
+    }
     render();
     if(trick.length===4){
       var winner=trickWinner(trick);var pts=trickPoints(trick);
       roundPts[winner]+=pts;phase='trickDone';
+      // Beat 1: hold on the trick with winner glow + optional Q♠ flash.
       setTimeout(function(){
+        trickWinner=winner;
         sm(NAMES[winner]+' takes'+(pts>0?' ('+pts+' pts)':''));
         if(pts>0)_e('progress');
+        render();
+        // Beat 2: clear after 1100ms. Longer than before so the drama lands.
         setTimeout(function(){
+          trickWinner=-1;qsInTrick=false;
           trick=[];trickCards=[null,null,null,null];trickNum++;
           if(hands[0].length===0){scoreRound();return;}
           leader=winner;currentPlayer=leader;phase='play';render();
-          if(currentPlayer!==S)setTimeout(function(){doAIPlay(false);},400);
-        },600);
-      },500);
+          if(currentPlayer!==S)setTimeout(function(){doAIPlay(false);},750);
+        },1100);
+      },450);
       return;
     }
     currentPlayer=(currentPlayer+1)%4;render();
-    if(currentPlayer!==S)setTimeout(function(){doAIPlay(trickNum===0&&trick.length<4);},350);
+    // AI pacing bumped 350→800ms so plays read as deliberate.
+    if(currentPlayer!==S)setTimeout(function(){doAIPlay(trickNum===0&&trick.length<4);},800);
   }
   function doAIPlay(isFirst){
     if(phase!=='play'||currentPlayer===S)return;
@@ -256,6 +292,19 @@ window._gameFns.bleedinghearts = function BH(a){
     if(phase==='play'||phase==='passing')return 'bh-seat bh-inactive';
     return 'bh-seat';
   }
+  // Void tags for a seat — struck-through suit glyphs under the seat label.
+  // The player can see their own hand so we skip south.
+  function _voidTags(seat){
+    if(seat===S)return '';
+    var v=voids[seat];
+    var tags='';
+    if(v.clubs)tags+='<span class="bh-void-tag">♣</span>';
+    if(v.diamonds)tags+='<span class="bh-void-tag" style="color:rgba(180,42,42,0.5);">♦</span>';
+    if(v.spades)tags+='<span class="bh-void-tag">♠</span>';
+    if(v.hearts)tags+='<span class="bh-void-tag" style="color:rgba(180,42,42,0.5);">♥</span>';
+    if(!tags)return '';
+    return '<div style="display:inline-flex;align-items:center;gap:1px;margin-left:6px;line-height:1;vertical-align:middle;">'+tags+'</div>';
+  }
 
   function _cardHtml(c,faceDown,isPlayer,extraClass){
     if(faceDown){return '<div style="width:28px;height:40px;border-radius:4px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;display:inline-block;"></div>';}
@@ -297,7 +346,8 @@ window._gameFns.bleedinghearts = function BH(a){
     // Persistent hearts-broken badge — styled, not just a coloured bar
     h+='<div style="text-align:center;padding:3px 0 8px;">';
     if(heartsBroken){
-      h+='<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:linear-gradient(180deg,rgba(180,42,42,0.3),rgba(100,20,20,0.4));border:1px solid #dc8a8a;border-radius:999px;font-family:Georgia,serif;font-size:0.68rem;color:#f5d0d0;letter-spacing:0.05em;box-shadow:0 0 10px rgba(220,138,138,0.25);">';
+      var brokenAnim = heartsJustBroke ? 'animation:bhBreakFlash 0.9s ease-out;' : '';
+      h+='<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:linear-gradient(180deg,rgba(180,42,42,0.3),rgba(100,20,20,0.4));border:1px solid #dc8a8a;border-radius:999px;font-family:Georgia,serif;font-size:0.68rem;color:#f5d0d0;letter-spacing:0.05em;box-shadow:0 0 10px rgba(220,138,138,0.25);'+brokenAnim+'">';
       h+='<span style="color:#e63946;font-size:0.95rem;line-height:1;">♥</span>Hearts broken</span>';
     }else{
       h+='<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(0,0,0,0.3);border:1px dashed rgba(232,220,200,0.25);border-radius:999px;font-family:Georgia,serif;font-style:italic;font-size:0.62rem;color:rgba(232,220,200,0.55);letter-spacing:0.05em;">';
@@ -305,12 +355,12 @@ window._gameFns.bleedinghearts = function BH(a){
     }
     h+='</div>';
     // North — face-down cards with horizontal overlap for compactness
-    h+='<div class="'+_seatCls(N)+'" style="text-align:center;padding:6px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[N]+';letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">NORTH</div><div style="display:inline-flex;justify-content:center;">';
+    h+='<div class="'+_seatCls(N)+'" style="text-align:center;padding:6px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[N]+';letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">NORTH'+_voidTags(N)+'</div><div style="display:inline-flex;justify-content:center;">';
     for(var n=0;n<hands[N].length;n++)h+='<span style="margin-left:'+(n===0?'0':'-18px')+';">'+_cardHtml(null,true)+'</span>';
     h+='</div></div>';
     // West | Trick | East — vertical-overlap for side hands
     h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;">';
-    h+='<div class="'+_seatCls(W)+'" style="padding:4px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[W]+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">WEST</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
+    h+='<div class="'+_seatCls(W)+'" style="padding:4px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[W]+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">WEST'+_voidTags(W)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
     for(var w=0;w<hands[W].length;w++)h+='<span style="margin-top:'+(w===0?'0':'-26px')+';">'+_cardHtml(null,true)+'</span>';
     h+='</div></div>';
     // Trick
@@ -318,12 +368,19 @@ window._gameFns.bleedinghearts = function BH(a){
     var pos={};pos[S]='bottom:8px;left:50%;transform:translateX(-50%);';pos[W]='left:8px;top:50%;transform:translateY(-50%);';pos[N]='top:8px;left:50%;transform:translateX(-50%);';pos[E]='right:8px;top:50%;transform:translateY(-50%);';
     for(var pl=0;pl<4;pl++){
       var c=trickCards[pl];if(!c)continue;
-      var col=c.suit==='hearts'||c.suit==='diamonds'?'#c47a7a':'#1a1f17';
-      h+='<div style="position:absolute;'+pos[pl]+'background:#F5F0E1;color:'+col+';border:2px solid '+(pl===S?'#7AB956':'#C47A7A')+';border-radius:6px;padding:6px 9px;font-weight:700;min-width:38px;text-align:center;">';
-      h+='<div style="font-size:0.85rem;">'+c.rank+'</div><div style="font-size:1.1rem;">'+_pip(c.suit)+'</div></div>';
+      var col=c.suit==='hearts'||c.suit==='diamonds'?'#b42a2a':'#1a1a1a';
+      var isQS=(c.rank==='Q'&&c.suit==='spades');
+      var isWin=(pl===trickWinner);
+      var extraCls='';
+      if(isQS)extraCls+=' bh-qs-flash';
+      if(isWin)extraCls+=' bh-win-glow';
+      var dim=(trickWinner>=0 && pl!==trickWinner)?'filter:saturate(.55) brightness(.75);':'';
+      var seatColor = PLAYER_COLORS[pl];
+      h+='<div class="'+extraCls+'" style="position:absolute;'+pos[pl]+dim+'background:linear-gradient(180deg,#faf3dd,#f0e7c8);color:'+col+';border:2px solid '+seatColor+';border-radius:6px;padding:6px 9px;font-weight:700;min-width:40px;text-align:center;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 3px 6px rgba(0,0,0,0.55);">';
+      h+='<div style="font-size:0.9rem;">'+c.rank+'</div><div style="font-size:1.2rem;line-height:1;">'+_pip(c.suit)+'</div></div>';
     }
     h+='</div>';
-    h+='<div class="'+_seatCls(E)+'" style="padding:4px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[E]+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">EAST</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
+    h+='<div class="'+_seatCls(E)+'" style="padding:4px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[E]+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">EAST'+_voidTags(E)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
     for(var e=0;e<hands[E].length;e++)h+='<span style="margin-top:'+(e===0?'0':'-26px')+';">'+_cardHtml(null,true)+'</span>';
     h+='</div></div>';
     h+='</div>';
