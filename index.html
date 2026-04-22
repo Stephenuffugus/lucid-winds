@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.72';
+  var LW_VERSION='2026.04.22.73';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -71586,7 +71586,7 @@ function _getNextStep(){
   }
   // 4. No plants yet (besides gift)
   if(gh.length<=1){
-    return{icon:'🎮',text:'Play a game to earn sunbeams. '+_nsCost+' sunbeams = your next plant!',action:'game',color:'var(--sage)'};
+    return{icon:'☀️',text:'Play a game to earn sunbeams. '+_nsCost+' sunbeams bloom your next plant.',action:'game',color:'var(--sage)'};
   }
   // 5. Haven't dropped anything in wild yet
   if(gh.length>=3&&wild.length===0){
@@ -72452,7 +72452,7 @@ window.LW_Comp = (function(){
     // of Secrets as a discovery, not in the WHAT NOW action list.
     // No sunbeam progress, no plants → play a game
     if(sunbeamProg===0&&gh.length===0){
-      out.push({icon:'🎮',title:'Play your first game',body:'Pattern-matching games earn Sunbeams. 30 Sunbeams = one unique plant, yours forever.',priority:100,action:function(){if(window.switchTab)switchTab('game');}});
+      out.push({icon:'☀️',title:'Play your first game',body:'Pattern-matching games earn Sunbeams. 30 Sunbeams bloom one unique plant, yours forever.',priority:100,action:function(){if(window.switchTab)switchTab('game');}});
     }
     // Book of Secrets unlock prompt
     if(lvl>=7){
@@ -72541,7 +72541,7 @@ window.LW_Comp = (function(){
 
     // ─── fallback: if nothing specific fits, suggest the core loop ───
     if(out.length===0){
-      out.push({icon:'🎮',title:'Play a game, earn Sunbeams',body:'The steady loop: 30 Sunbeams → one new plant. Everything else grows from there.',priority:10,action:function(){if(window.switchTab)switchTab('game');}});
+      out.push({icon:'☀️',title:'Play a game, earn Sunbeams',body:'The steady loop. 30 Sunbeams bloom one new plant. Everything else grows from there.',priority:10,action:function(){if(window.switchTab)switchTab('game');}});
       out.push({icon:'🌿',title:'Tend your greenhouse',body:'Your plants are waiting. Open the greenhouse to read their haiku or breed two together.',priority:5,action:function(){if(window.switchTab)switchTab('greenhouse');}});
     }
 
