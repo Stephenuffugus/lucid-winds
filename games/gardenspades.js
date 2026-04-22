@@ -16,6 +16,7 @@ if(!document.getElementById('gs-anim-style')){
     '@keyframes gsBagDanger{0%,100%{box-shadow:inset 0 0 0 1px rgba(230,57,70,0.55),0 0 8px rgba(230,57,70,0.4)}50%{box-shadow:inset 0 0 0 2px rgba(230,57,70,1),0 0 18px rgba(230,57,70,0.8)}}'+
     '@keyframes gsWinGlow{0%,100%{box-shadow:0 0 0 2px #ffdc70,0 0 16px rgba(255,220,112,0.55),inset 0 1px 0 rgba(255,255,255,0.5),0 3px 6px rgba(0,0,0,0.55)}50%{box-shadow:0 0 0 3px #ffe896,0 0 24px rgba(255,232,150,0.8),inset 0 1px 0 rgba(255,255,255,0.5),0 3px 6px rgba(0,0,0,0.55)}}'+
     '@keyframes gsNilCrack{0%{transform:scale(1);box-shadow:0 0 0 0 rgba(230,57,70,0.95)}30%{transform:scale(1.18);box-shadow:0 0 0 16px rgba(230,57,70,0.4),0 0 36px rgba(230,57,70,0.85)}100%{transform:scale(1);box-shadow:0 0 0 0 rgba(230,57,70,0)}}'+
+    '@keyframes gsFlashIn{0%{opacity:0;transform:scale(0.6)}50%{opacity:1;transform:scale(1.1)}100%{opacity:0;transform:scale(1)}}'+
     '.gs-win-glow{animation:gsWinGlow 0.55s ease-in-out infinite;z-index:4;}'+
     '.gs-nil-broken{animation:gsNilCrack 1.2s ease-out forwards;}'+
     '.gs-seat{transition:opacity .3s ease,filter .3s ease;border-radius:10px;}'+
@@ -49,6 +50,12 @@ window._gameFns.gardenspades = function GardenSpades(a){
   var lastTrickWinner=-1;
   // NIL-in-play tracking. nilBrokenJust is a one-shot for the crack moment.
   var nilBrokenJust=-1;
+  // Round-by-round score history for the side-sheet review.
+  // Each entry: {round, usBid, usTook, usDelta, themBid, themTook, themDelta, usTotal, themTotal, usBags, themBags}
+  var history=[];
+  var showingHistory=false;
+  // One-shot: the team whose -100 sandbag penalty just hit, for screen flash.
+  var penaltyFlash=-1;
 
   ms(a,'<span style="font-family:Georgia,serif;letter-spacing:.06em;">♠ Round <strong id="GSr" style="color:#5b9bd1;font-size:1.2em;">1</strong></span>');
   mm(a);
@@ -236,6 +243,8 @@ window._gameFns.gardenspades = function GardenSpades(a){
   function doAIPlay(){if(phase!=='play'||currentPlayer===S)return;var c=aiPlay(currentPlayer);playCard(currentPlayer,c);}
   function scoreRound(){
     phase='scoring';
+    var preScores=[teamScore[0],teamScore[1]];
+    var roundEntry={round:roundNum,usBid:0,usTook:0,themBid:0,themTook:0};
     for(var team=0;team<2;team++){
       var p1=team===0?S:W,p2=team===0?N:E;
       for(var pi=0;pi<2;pi++){
@@ -249,10 +258,24 @@ window._gameFns.gardenspades = function GardenSpades(a){
         if(teamTook>=teamBid){
           teamScore[team]+=teamBid*10;
           var bags=teamTook-teamBid;teamBags[team]+=bags;teamScore[team]+=bags;
-          if(teamBags[team]>=10){teamScore[team]-=100;teamBags[team]-=10;}
+          if(teamBags[team]>=10){teamScore[team]-=100;teamBags[team]-=10;penaltyFlash=team;
+            setTimeout(function(){penaltyFlash=-1;render();},900);
+          }
         }else{teamScore[team]-=teamBid*10;}
       }
+      // Record round summary into history.
+      var totalBid = bids[p1]+(bids[p1]===0?0:0) + bids[p2]+(bids[p2]===0?0:0);
+      // Show partner-team bid as sum of both seats' explicit bids (NIL counts as 0).
+      var totBid=Math.max(0,bids[p1])+Math.max(0,bids[p2]);
+      var totTook=tricksTaken[p1]+tricksTaken[p2];
+      if(team===0){roundEntry.usBid=totBid;roundEntry.usTook=totTook;}
+      else{roundEntry.themBid=totBid;roundEntry.themTook=totTook;}
     }
+    roundEntry.usDelta=teamScore[0]-preScores[0];
+    roundEntry.themDelta=teamScore[1]-preScores[1];
+    roundEntry.usTotal=teamScore[0];roundEntry.themTotal=teamScore[1];
+    roundEntry.usBags=teamBags[0];roundEntry.themBags=teamBags[1];
+    history.push(roundEntry);
     _e('milestone');
     render();
     sm('Round over — You '+teamScore[0]+' vs '+teamScore[1]);
@@ -353,6 +376,9 @@ window._gameFns.gardenspades = function GardenSpades(a){
     h+='<span style="color:rgba(232,220,200,0.6);font-style:normal;font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;text-transform:uppercase;margin-right:2px;">Deck</span>';
     h+='<span>'+gsStyleName+'</span>';
     h+='</button>';
+    if(history.length>0){
+      h+='<button class="gb" onclick="_GShist()" title="Score history" style="display:inline-flex;align-items:center;gap:4px;min-height:34px;padding:5px 12px;font-size:0.6rem;background:rgba(0,0,0,0.4);border:1px solid rgba(232,220,200,0.3);color:rgba(232,220,200,0.85);font-family:Georgia,serif;font-style:italic;">📜 History</button>';
+    }
     h+='<button class="gb" onclick="_GSN()" title="New game" style="display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:5px 14px;font-size:0.65rem;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">↻ New Game</button>';
     h+='</div>';
     // ── SCORE STRIP — twin team strips with bid/taken big numerals + bag pips ──
@@ -472,12 +498,51 @@ window._gameFns.gardenspades = function GardenSpades(a){
       h+='<div style="'+sty+'" onclick="_GSCC(\''+cc.rank+'\',\''+cc.suit+'\')"><div style="font-size:0.8rem;position:absolute;top:3px;left:5px;">'+cc.rank+'</div><div style="font-size:1.35rem;">'+_pip(cc.suit)+'</div></div>';
     }
     h+='</div></div>';
+    // ── HISTORY OVERLAY ─────────────────────────────────────────
+    if(showingHistory){
+      h+='<div onclick="_GShistClose()" style="position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.2rem;cursor:pointer;backdrop-filter:blur(4px);overflow-y:auto;">';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.6rem;letter-spacing:0.2em;color:rgba(232,220,200,0.65);text-transform:uppercase;margin-bottom:14px;">Score History</div>';
+      h+='<div style="background:rgba(0,0,0,0.5);border:1px solid rgba(180,140,70,0.3);border-radius:10px;padding:12px;max-width:96vw;width:520px;box-shadow:0 6px 22px rgba(0,0,0,0.6);">';
+      h+='<div style="display:grid;grid-template-columns:48px 1fr 1fr;gap:6px;align-items:center;font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid rgba(232,220,200,0.2);margin-bottom:6px;">';
+      h+='<div style="color:rgba(232,220,200,0.6);">Round</div>';
+      h+='<div style="color:'+TEAM_COLORS[0]+';text-align:center;">YOU + PARTNER</div>';
+      h+='<div style="color:'+TEAM_COLORS[1]+';text-align:center;">OPPONENTS</div>';
+      h+='</div>';
+      for(var hi=0;hi<history.length;hi++){
+        var ent=history[hi];
+        var usMet = ent.usDelta>=0;
+        var themMet = ent.themDelta>=0;
+        h+='<div style="display:grid;grid-template-columns:48px 1fr 1fr;gap:6px;align-items:center;padding:7px 0;border-bottom:1px dashed rgba(232,220,200,0.15);">';
+        h+='<div style="font-family:Georgia,serif;font-style:italic;color:rgba(232,220,200,0.6);font-size:0.7rem;">'+ent.round+'</div>';
+        h+='<div style="text-align:center;">';
+        h+='<div style="font-family:Georgia,serif;font-size:0.7rem;color:'+(usMet?'#7ab356':'#dc8a8a')+';font-weight:700;">'+ent.usTook+' / '+ent.usBid+' &middot; '+(usMet?'+':'')+ent.usDelta+'</div>';
+        h+='<div style="font-family:Georgia,serif;font-size:0.95rem;font-weight:700;color:#f5ebd0;line-height:1;margin-top:2px;">'+ent.usTotal+'</div>';
+        h+='</div>';
+        h+='<div style="text-align:center;">';
+        h+='<div style="font-family:Georgia,serif;font-size:0.7rem;color:'+(themMet?'#7ab356':'#dc8a8a')+';font-weight:700;">'+ent.themTook+' / '+ent.themBid+' &middot; '+(themMet?'+':'')+ent.themDelta+'</div>';
+        h+='<div style="font-family:Georgia,serif;font-size:0.95rem;font-weight:700;color:#f5ebd0;line-height:1;margin-top:2px;">'+ent.themTotal+'</div>';
+        h+='</div>';
+        h+='</div>';
+      }
+      h+='</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.15em;color:rgba(232,220,200,0.4);margin-top:18px;">Tap anywhere to close</div>';
+      h+='</div>';
+    }
+    // ── SANDBAG -100 PENALTY FLASH ──────────────────────────────
+    if(penaltyFlash>=0){
+      var flashColor = TEAM_COLORS[penaltyFlash];
+      h+='<div style="position:fixed;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(230,57,70,0.22) 0%,transparent 60%);z-index:99998;pointer-events:none;animation:gsFlashIn 0.9s ease-out;display:flex;align-items:center;justify-content:center;">';
+      h+='<div style="font-family:Georgia,serif;font-size:1.6rem;font-weight:700;color:'+flashColor+';text-shadow:0 0 24px rgba(230,57,70,0.7);letter-spacing:0.06em;animation:gsFlashIn 0.9s cubic-bezier(.2,1.6,.3,1);">'+(penaltyFlash===0?'YOU':'OPPONENTS')+' &minus;100</div>';
+      h+='</div>';
+    }
     pan.innerHTML=h;
   }
 
   // Track the bidding phase we'll resume after the NIL confirm modal closes.
   var _phaseBeforeNil='';
-  window._GSN=function(){teamScore=[0,0];teamBags=[0,0];roundNum=0;newRound();};
+  window._GSN=function(){teamScore=[0,0];teamBags=[0,0];roundNum=0;history=[];newRound();};
+  window._GShist=function(){showingHistory=true;render();};
+  window._GShistClose=function(){showingHistory=false;render();};
   window._GSCC=function(r,s){onCardClick({rank:r,suit:s});};
   function commitBid(n){
     bids[S]=n;sm('You bid '+(n===0?'NIL':n));
