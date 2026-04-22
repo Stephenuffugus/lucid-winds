@@ -170,6 +170,7 @@ function GGF(a){
           var cd=_cdEl(cols[c][i]);
           cd.style.width=gfW;cd.style.height=gfH;cd.style.fontSize=gfF;
           if(i>0)cd.style.marginTop=(-peekOverlap)+'px';
+          if(i<depth-1)cd.classList.add('gc-peek');
           if(i===depth-1){
             cd.style.cursor='pointer';
             (function(ci){cd.onclick=function(){tapCol(ci)}})(c);

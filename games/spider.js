@@ -134,6 +134,10 @@ function GSP(a){
           var cd=_cdEl(tab[c][i]);
           cd.style.width=spW;cd.style.height=spH;cd.style.fontSize=spF;
           if(i>0)cd.style.marginTop=(-peekOverlap)+'px';
+          // Only the bottom (top-of-stack) card shows its full face.
+          // Every card under it should hide center art + bottom-right
+          // corner so they don't leak through via the overlap math.
+          if(i<depth-1)cd.classList.add('gc-peek');
           if(sel&&sel.col===c&&i>=sel.idx)cd.className+=' gc-sel';
           (function(ci,ii){cd.onclick=function(){tapCol(ci,ii)}})(c,i);
           colDiv.appendChild(cd);

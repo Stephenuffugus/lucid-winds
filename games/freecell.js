@@ -161,6 +161,7 @@ function GFC(a){
           var cd=_cdEl(tab[c][i]);
           cd.style.width=fcW;cd.style.height=fcH;cd.style.fontSize=fcF;
           if(i>0)cd.style.marginTop=(-peekOverlap)+'px';
+          if(i<depth-1)cd.classList.add('gc-peek');
           if(sel&&sel.type==='tab'&&sel.idx===c&&i>=sel.cardIdx)cd.className+=' gc-sel';
           (function(ci,ii){cd.onclick=function(){doSelect('tab',ci,ii)}})(c,i);
           cd.style.cursor='pointer';colDiv.appendChild(cd);
