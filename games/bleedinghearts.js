@@ -75,10 +75,6 @@ window._gameFns.bleedinghearts = function BH(a){
     +'</svg>'
   );
   pan.style.cssText='max-width:min(96vw,760px);margin:0 auto;padding:12px 14px;user-select:none;'
-    // Grow to fill the game container so the felt extends all the way to the
-    // nav bar instead of stopping when content runs out. Dark bar below the
-    // pan (reported by Stephen) was the app body showing through.
-    +'min-height:calc(100vh - 120px);'
     +'box-sizing:border-box;'
     +'background:'
       +'url("'+_BH_FELT+'"),'
