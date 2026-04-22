@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.61';
+  var LW_VERSION='2026.04.22.62';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3465,6 +3465,15 @@
       min-height:100dvh!important;
       max-height:100dvh!important;
       overscroll-behavior:contain;
+    }
+    /* Kill the .grove-panel top/bottom padding when a card game is active. Those paddings are 44px+safe-area at top and 5rem+safe-area at bottom — they reserve room for the global tab header + bottom nav, both of which are hidden during gameplay. They were the actual source of the black bar at the top and the un-scrollable hand at the bottom. */
+    body.game-active:has(#fg-ag[data-game="bleedinghearts"]) #panel-game,
+    body.game-active:has(#fg-ag[data-game="cribbage"]) #panel-game,
+    body.game-active:has(#fg-ag[data-game="bowergarden"]) #panel-game,
+    body.game-active:has(#fg-ag[data-game="gardenspades"]) #panel-game{
+      padding-top:0!important;
+      padding-bottom:0!important;
+      min-height:100dvh!important;
     }
     #fg-ag[data-game="bleedinghearts"]{background:#1a0510;}
     #fg-ag[data-game="cribbage"]{background:#083018;}
