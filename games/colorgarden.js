@@ -1,167 +1,257 @@
-// ═══ COLOR GARDEN — botanical tap-to-fill coloring ═══
-// Pick a color, tap regions. 3 pages. Milestone each save.
+// ═══ COLOR GARDEN — real line-art coloring book ═══
+// Tap a region to flood-fill with the selected color. 50 hand-drawn pages.
+// Preset palette + native color picker for unlimited colors. Undo, clear, save.
 (function(){
 'use strict';
-var G=window._G;
-var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G.sr,sh=G.sh,_st=G.st,_xt=G.xt,_setDiff=G.setDiff;
+var G=window._G||{};
+var _e=G.e||function(){},_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm||function(){},_sr=G.sr||function(){};
+
+// Base path for coloring pages. Swap to 'https://cdn.lucidwinds.com/coloring/'
+// once the subdomain is configured.
+var BASE='assets/coloring/';
+var MANIFEST_URL=BASE+'manifest.json';
+
+// 23 botanical palette. First row earthy, greens, golds, sky, purples, creams.
+var PAL=[
+  '#2d1810','#4A2C18','#8B4513','#c76a30','#e8a050','#f4c88a',
+  '#c8a84b','#e8cc70','#f0e0a0','#2d5020','#4A7C35','#7ab356',
+  '#a0cc80','#d8e8a0','#2a4a6a','#5bafd4','#90c0e8','#9b59b6',
+  '#c4a0d0','#8a3030','#c07070','#e8a0a0','#e8dcc8'
+];
+
 window._gameFns=window._gameFns||{};
 window._gameFns.colorgarden=function CG(a){
-  var canvas,ctx,W=340,H=340;
-  var currentColor='#7ab356';
-  var currentPage=0;
-  var regions=[],regionColors={};
+  var pages=[],currentIdx=0,currentColor='#7ab356';
+  var canvas,ctx,imgW=0,imgH=0;
+  var history=[];
+  var activeSw=null;
 
-  var COLORS=[
-    '#2d5020','#4A7C35','#7ab356','#a0cc80',
-    '#3d2a18','#6b4a2a','#8b6a3a','#b8a060',
-    '#8a3030','#c47a7a','#e8a0a0','#f0c8c8',
-    '#8a6a20','#c8a84b','#e8cc70','#f0e0a0',
-    '#2a4a6a','#5b9bd5','#90c0e8',
-    '#9b6ba3','#c4a0d0',
-    '#e8dcc8','#ffffff'
-  ];
+  if(ms)ms(a,'<span id="CGidx">Loading pages…</span>');
+  if(mm)mm(a);
 
-  function fPage(){
-    var rg=[],id=0;var cx=170,cy=170;
-    rg.push({id:id++,type:'rect',x:120,y:270,w:100,h:60,rx:8});
-    rg.push({id:id++,type:'rect',x:110,y:260,w:120,h:18,rx:4});
-    rg.push({id:id++,type:'rect',x:165,y:130,w:10,h:135,rx:2});
-    rg.push({id:id++,type:'ellipse',cx:140,cy:210,rx:28,ry:11,rot:-0.5});
-    rg.push({id:id++,type:'ellipse',cx:200,cy:180,rx:26,ry:10,rot:0.4});
-    for(var i=0;i<8;i++){
-      var ang=(Math.PI*2/8)*i-Math.PI/2;
-      rg.push({id:id++,type:'ellipse',cx:cx+Math.cos(ang)*48,cy:cy-60+Math.sin(ang)*48,rx:24,ry:13,rot:ang});
-    }
-    rg.push({id:id++,type:'circle',cx:cx,cy:cy-60,r:18});
-    return rg;
-  }
-  function tPage(){
-    var rg=[],id=0;
-    rg.push({id:id++,type:'rect',x:150,y:190,w:40,h:135,rx:4});
-    rg.push({id:id++,type:'ellipse',cx:130,cy:325,rx:28,ry:8,rot:-0.3});
-    rg.push({id:id++,type:'ellipse',cx:210,cy:325,rx:28,ry:8,rot:0.3});
-    var cl=[[170,115,52],[130,145,38],[210,135,40],[150,75,33],[190,85,36],[170,160,28]];
-    for(var i=0;i<cl.length;i++)rg.push({id:id++,type:'circle',cx:cl[i][0],cy:cl[i][1],r:cl[i][2]});
-    var fruits=[[145,95],[185,110],[175,140],[210,95],[130,120]];
-    for(i=0;i<fruits.length;i++)rg.push({id:id++,type:'circle',cx:fruits[i][0],cy:fruits[i][1],r:7});
-    return rg;
-  }
-  function sPage(){
-    var rg=[],id=0;
-    rg.push({id:id++,type:'rect',x:90,y:250,w:160,h:75,rx:10});
-    rg.push({id:id++,type:'rect',x:80,y:240,w:180,h:18,rx:6});
-    for(var layer=0;layer<3;layer++){
-      var petals=layer===0?5:layer===1?7:9;
-      var r=layer===0?18:layer===1?42:66;
-      for(var i=0;i<petals;i++){
-        var ang=(Math.PI*2/petals)*i-Math.PI/2+layer*0.3;
-        rg.push({id:id++,type:'ellipse',cx:170+Math.cos(ang)*r,cy:190+Math.sin(ang)*r*0.6,rx:21-layer*3,ry:12-layer*2,rot:ang});
-      }
-    }
-    rg.push({id:id++,type:'circle',cx:170,cy:190,r:11});
-    return rg;
-  }
-  var PAGES=[fPage,tPage,sPage];
-  var PAGE_NAMES=['Flower','Tree','Succulent'];
+  var loadingDiv=document.createElement('div');
+  loadingDiv.id='CGload';
+  loadingDiv.style.cssText='text-align:center;padding:2rem;color:var(--muted);font-family:DM Sans,sans-serif;';
+  loadingDiv.textContent='Loading coloring pages…';
+  a.appendChild(loadingDiv);
 
-  ms(a,'🎨 Color Garden — <strong id="CGp">Flower</strong>');
-  mm(a);
-  var pan=document.createElement('div');pan.id='CGpan';
-  pan.style.cssText='max-width:420px;margin:0 auto;padding:6px;user-select:none;text-align:center;';
-  a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb" onclick="_CGP(-1)">← PREV</button> <button class="gb" onclick="_CGC()">✕ CLEAR</button> <button class="gb" onclick="_CGS()">💾 SAVE</button> <button class="gb" onclick="_CGP(1)">NEXT →</button>';
+  var cWrap=document.createElement('div');
+  cWrap.style.cssText='max-width:480px;margin:0 auto;padding:4px;text-align:center;display:none;user-select:none;-webkit-user-select:none;';
+  a.appendChild(cWrap);
 
-  function build(){
-    var h='<canvas id="CGcv" width="'+W+'" height="'+H+'" style="display:block;margin:6px auto;border-radius:6px;border:1px solid rgba(122,179,86,0.15);background:#faf5ee;max-width:100%;touch-action:manipulation;"></canvas>';
-    h+='<div id="CGpal" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;padding:6px 4px;"></div>';
-    pan.innerHTML=h;
-    canvas=document.getElementById('CGcv');ctx=canvas.getContext('2d');
-    canvas.addEventListener('click',onTap);
-    canvas.addEventListener('touchstart',function(e){e.preventDefault();var t=e.touches[0];onTap({clientX:t.clientX,clientY:t.clientY});},{passive:false});
-    buildPal();
+  canvas=document.createElement('canvas');
+  canvas.style.cssText='display:block;width:100%;aspect-ratio:1;max-width:480px;margin:0 auto;background:#faf5ee;border-radius:8px;border:1px solid rgba(122,179,86,0.15);cursor:crosshair;touch-action:manipulation;';
+  cWrap.appendChild(canvas);
+  ctx=canvas.getContext('2d',{willReadFrequently:true});
+
+  // ─── Palette + color picker ─────────────────────────────────────────
+  var palWrap=document.createElement('div');
+  palWrap.style.cssText='display:flex;flex-wrap:wrap;gap:5px;justify-content:center;padding:8px 4px;max-width:480px;margin:0 auto;';
+  a.appendChild(palWrap);
+
+  function makeSwatch(c){
+    var sw=document.createElement('div');
+    sw.className='cg-sw';
+    sw.style.cssText='width:clamp(26px,7vw,32px);height:clamp(26px,7vw,32px);border-radius:50%;background:'+c+';cursor:pointer;border:2.5px solid transparent;transition:transform .12s,border-color .12s;box-shadow:0 1px 3px rgba(0,0,0,0.3);';
+    sw.onclick=function(){selectColor(c,sw);};
+    return sw;
   }
-  function buildPal(){
-    var el=document.getElementById('CGpal');var h='';
-    for(var i=0;i<COLORS.length;i++){
-      var act=COLORS[i]===currentColor;
-      h+='<div data-c="'+COLORS[i]+'" onclick="_CGK(\''+COLORS[i]+'\')" style="width:28px;height:28px;border-radius:50%;background:'+COLORS[i]+';cursor:pointer;border:2.5px solid '+(act?'#e8dcc8':'transparent')+';'+(act?'box-shadow:0 0 6px rgba(232,220,200,0.4);transform:scale(1.12);':'')+'"></div>';
-    }
-    el.innerHTML=h;
+
+  for(var i=0;i<PAL.length;i++){
+    palWrap.appendChild(makeSwatch(PAL[i]));
   }
+
+  // HTML5 native color picker — wrap in a label so the rainbow puck is tappable
+  var pkLabel=document.createElement('label');
+  pkLabel.style.cssText='position:relative;width:clamp(26px,7vw,32px);height:clamp(26px,7vw,32px);border-radius:50%;background:conic-gradient(#c07070,#e8a050,#c8a84b,#7ab356,#5bafd4,#9b59b6,#c07070);cursor:pointer;border:2.5px solid transparent;box-shadow:0 1px 3px rgba(0,0,0,0.3);display:block;';
+  pkLabel.title='Pick any color';
+  var pk=document.createElement('input');
+  pk.type='color';
+  pk.value='#7ab356';
+  pk.style.cssText='position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;';
+  pk.onchange=function(){currentColor=pk.value;pkLabel.style.background=pk.value;clearActive();pkLabel.style.borderColor='var(--gold,#c8a84b)';pkLabel.style.transform='scale(1.15)';activeSw=pkLabel;};
+  pkLabel.appendChild(pk);
+  palWrap.appendChild(pkLabel);
+
+  function clearActive(){
+    var els=palWrap.querySelectorAll('.cg-sw');
+    for(var k=0;k<els.length;k++){els[k].style.borderColor='transparent';els[k].style.transform='scale(1)';}
+    pkLabel.style.borderColor='transparent';
+    pkLabel.style.transform='scale(1)';
+    pkLabel.style.background='conic-gradient(#c07070,#e8a050,#c8a84b,#7ab356,#5bafd4,#9b59b6,#c07070)';
+  }
+  function selectColor(c,el){
+    currentColor=c;
+    clearActive();
+    if(el){el.style.borderColor='var(--gold,#c8a84b)';el.style.transform='scale(1.15)';activeSw=el;}
+  }
+  // Default-select the first leaf-green swatch
+  selectColor('#7ab356',palWrap.children[11]);
+
+  // ─── Controls ─────────────────────────────────────────────
+  if(mc){
+    var ctrl=mc(a);
+    ctrl.innerHTML=
+      '<button class="gb" onclick="_CGprev()">◀ PREV</button>'+
+      '<button class="gb" onclick="_CGundo()" id="CGundo" disabled style="opacity:.4">↶ UNDO</button>'+
+      '<button class="gb" onclick="_CGclear()" style="border-color:rgba(217,107,75,0.35);color:#e8a090">✕ CLEAR</button>'+
+      '<button class="gb" onclick="_CGsave()" style="border-color:rgba(200,168,75,0.4);color:var(--gold,#c8a84b)">💾 SAVE</button>'+
+      '<button class="gb" onclick="_CGnext()">NEXT ▶</button>';
+  }
+
+  // ─── Load manifest ─────────────────────────────────────────────
+  fetch(MANIFEST_URL,{cache:'default'})
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .then(function(j){
+      pages=(j&&j.pages)||[];
+      if(!pages.length)throw new Error('Empty manifest');
+      loadingDiv.style.display='none';
+      cWrap.style.display='block';
+      loadPage(0);
+    })
+    .catch(function(err){
+      loadingDiv.textContent='Failed to load pages: '+err.message;
+      loadingDiv.style.color='#c75050';
+    });
+
   function loadPage(idx){
-    currentPage=((idx%PAGES.length)+PAGES.length)%PAGES.length;
-    regions=PAGES[currentPage]();regionColors={};
-    var p=document.getElementById('CGp');if(p)p.textContent=PAGE_NAMES[currentPage];
-    render();
-  }
-  function drawRegion(r,fill,strokeOnly){
-    ctx.save();
-    if(r.type==='rect'){
-      var rx=r.rx||0;
-      ctx.beginPath();
-      ctx.moveTo(r.x+rx,r.y);
-      ctx.lineTo(r.x+r.w-rx,r.y);
-      ctx.quadraticCurveTo(r.x+r.w,r.y,r.x+r.w,r.y+rx);
-      ctx.lineTo(r.x+r.w,r.y+r.h-rx);
-      ctx.quadraticCurveTo(r.x+r.w,r.y+r.h,r.x+r.w-rx,r.y+r.h);
-      ctx.lineTo(r.x+rx,r.y+r.h);
-      ctx.quadraticCurveTo(r.x,r.y+r.h,r.x,r.y+r.h-rx);
-      ctx.lineTo(r.x,r.y+rx);
-      ctx.quadraticCurveTo(r.x,r.y,r.x+rx,r.y);
-      ctx.closePath();
-    } else if(r.type==='circle'){
-      ctx.beginPath();ctx.arc(r.cx,r.cy,r.r,0,Math.PI*2);ctx.closePath();
-    } else if(r.type==='ellipse'){
-      ctx.beginPath();ctx.ellipse(r.cx,r.cy,r.rx,r.ry,r.rot||0,0,Math.PI*2);ctx.closePath();
-    }
-    if(!strokeOnly&&fill){ctx.fillStyle=fill;ctx.fill();}
-    ctx.strokeStyle='rgba(80,60,30,0.7)';ctx.lineWidth=1.5;ctx.stroke();
-    ctx.restore();
-  }
-  function render(){
-    ctx.fillStyle='#faf5ee';ctx.fillRect(0,0,W,H);
-    for(var i=0;i<regions.length;i++){
-      var col=regionColors[regions[i].id]||null;
-      drawRegion(regions[i],col,false);
-    }
-    for(i=0;i<regions.length;i++)drawRegion(regions[i],null,true);
-  }
-  function hitTest(x,y){
-    for(var i=regions.length-1;i>=0;i--){
-      drawRegion(regions[i],null,true);
-      if(ctx.isPointInPath(x,y))return i;
-    }
-    return -1;
-  }
-  function onTap(e){
-    var rect=canvas.getBoundingClientRect();
-    var scale=canvas.width/rect.width;
-    var x=(e.clientX-rect.left)*scale;var y=(e.clientY-rect.top)*scale;
-    var idx=hitTest(x,y);
-    if(idx>=0){
-      regionColors[regions[idx].id]=currentColor;
-      render();
-      try{navigator.vibrate&&navigator.vibrate(8);}catch(e2){}
-      try{if(window._play)_play('tap');}catch(e2){}
-      if(Object.keys(regionColors).length===regions.length){
-        _e('game_win');if(_playWin)_playWin();sm('🌸 Page complete!');
-        _sr('colorgarden',{w:true,s:regions.length});
-      }
-    }
+    currentIdx=((idx%pages.length)+pages.length)%pages.length;
+    var p=pages[currentIdx];
+    var indic=document.getElementById('CGidx');
+    if(indic)indic.textContent='Page '+(currentIdx+1)+' / '+pages.length;
+    history=[];
+    updateUndoBtn();
+    var img=new Image();
+    img.onload=function(){
+      imgW=img.naturalWidth;
+      imgH=img.naturalHeight;
+      canvas.width=imgW;
+      canvas.height=imgH;
+      ctx.fillStyle='#faf5ee';
+      ctx.fillRect(0,0,imgW,imgH);
+      ctx.drawImage(img,0,0);
+    };
+    img.onerror=function(){sm('Failed to load '+p.file);};
+    img.src=BASE+p.file;
   }
 
-  window._CGP=function(d){loadPage(currentPage+d);sm('');};
-  window._CGC=function(){regionColors={};render();sm('Cleared.');};
-  window._CGS=function(){
+  // ─── Flood fill (scanline, in-place on canvas ImageData) ──────────
+  function hexToRgb(h){
+    var n=parseInt(h.slice(1),16);
+    return [(n>>16)&255,(n>>8)&255,n&255];
+  }
+  function isLine(r,g,b){ return (r+g+b) < 180; } // tight threshold: only near-black is line
+  function matchesStart(r,g,b,sr,sg,sb){
+    return Math.abs(r-sr)<28 && Math.abs(g-sg)<28 && Math.abs(b-sb)<28;
+  }
+
+  function floodFill(sx,sy,fillHex){
+    if(sx<0||sy<0||sx>=imgW||sy>=imgH)return 0;
+    var imd=ctx.getImageData(0,0,imgW,imgH);
+    var d=imd.data;
+    var sIdx=(sy*imgW+sx)*4;
+    var sR=d[sIdx],sG=d[sIdx+1],sB=d[sIdx+2];
+    if(isLine(sR,sG,sB))return 0; // tapped a line — skip
+    var fill=hexToRgb(fillHex);
+    if(sR===fill[0]&&sG===fill[1]&&sB===fill[2])return 0; // already that color
+
+    // Scanline fill: faster than naive pixel-queue BFS.
+    var stack=[[sx,sy]];
+    var painted=0;
+    while(stack.length){
+      var pt=stack.pop();
+      var x=pt[0],y=pt[1];
+      var ii=(y*imgW+x)*4;
+      if(!matchesStart(d[ii],d[ii+1],d[ii+2],sR,sG,sB))continue;
+      // Scan left to edge of matching run
+      var lx=x;
+      while(lx>=0){
+        var li=(y*imgW+lx)*4;
+        if(!matchesStart(d[li],d[li+1],d[li+2],sR,sG,sB))break;
+        lx--;
+      }
+      lx++;
+      // Scan right, fill the run, push new spans above/below
+      var topSpan=false,botSpan=false;
+      for(var rx=lx;rx<imgW;rx++){
+        var ri=(y*imgW+rx)*4;
+        if(!matchesStart(d[ri],d[ri+1],d[ri+2],sR,sG,sB))break;
+        d[ri]=fill[0];d[ri+1]=fill[1];d[ri+2]=fill[2];d[ri+3]=255;
+        painted++;
+        if(y>0){
+          var ti=((y-1)*imgW+rx)*4;
+          var tmatch=matchesStart(d[ti],d[ti+1],d[ti+2],sR,sG,sB);
+          if(tmatch&&!topSpan){stack.push([rx,y-1]);topSpan=true;}
+          else if(!tmatch)topSpan=false;
+        }
+        if(y<imgH-1){
+          var bi=((y+1)*imgW+rx)*4;
+          var bmatch=matchesStart(d[bi],d[bi+1],d[bi+2],sR,sG,sB);
+          if(bmatch&&!botSpan){stack.push([rx,y+1]);botSpan=true;}
+          else if(!bmatch)botSpan=false;
+        }
+      }
+      // Safety: runaway stack on huge images
+      if(painted>imgW*imgH)break;
+    }
+    ctx.putImageData(imd,0,0);
+    return painted;
+  }
+
+  // ─── Tap handling ─────────────────────────────────────────────
+  function onTap(clientX,clientY){
+    if(!imgW||!imgH)return;
+    var rect=canvas.getBoundingClientRect();
+    var x=Math.floor((clientX-rect.left)*(imgW/rect.width));
+    var y=Math.floor((clientY-rect.top)*(imgH/rect.height));
+    if(x<0||y<0||x>=imgW||y>=imgH)return;
+    // Snapshot BEFORE fill so undo can restore.
+    var snap=ctx.getImageData(0,0,imgW,imgH);
+    var filled=floodFill(x,y,currentColor);
+    if(filled>0){
+      history.push(snap);
+      if(history.length>15)history.shift();
+      updateUndoBtn();
+      try{if(navigator.vibrate)navigator.vibrate(8);}catch(e){}
+      if(_play)try{_play('tap');}catch(e){}
+    }
+  }
+  canvas.addEventListener('click',function(e){onTap(e.clientX,e.clientY);});
+  canvas.addEventListener('touchstart',function(e){
+    e.preventDefault();
+    if(!e.touches||!e.touches.length)return;
+    var t=e.touches[0];
+    onTap(t.clientX,t.clientY);
+  },{passive:false});
+
+  function updateUndoBtn(){
+    var b=document.getElementById('CGundo');
+    if(!b)return;
+    b.disabled=history.length===0;
+    b.style.opacity=history.length===0?'0.4':'1';
+  }
+
+  // ─── Window-exposed control handlers ──────────────────────────
+  window._CGprev=function(){if(pages.length)loadPage(currentIdx-1);};
+  window._CGnext=function(){if(pages.length)loadPage(currentIdx+1);};
+  window._CGundo=function(){
+    if(!history.length)return;
+    var snap=history.pop();
+    ctx.putImageData(snap,0,0);
+    updateUndoBtn();
+  };
+  window._CGclear=function(){if(pages.length)loadPage(currentIdx);};
+  window._CGsave=function(){
     try{
       var link=document.createElement('a');
-      link.download='color-garden-'+(currentPage+1)+'-'+Date.now()+'.png';
-      link.href=canvas.toDataURL('image/png');link.click();
-      _e('milestone');sm('💾 Saved.');
+      link.download='color-garden-page'+(currentIdx+1)+'-'+Date.now()+'.png';
+      link.href=canvas.toDataURL('image/png');
+      link.click();
+      if(_e)try{_e('milestone');}catch(e){}
+      if(_playWin)try{_playWin();}catch(e){}
+      sm('💾 Saved.');
+      _sr('colorgarden',{w:true,s:currentIdx+1});
     }catch(e){sm('Save failed.');}
   };
-  window._CGK=function(c){currentColor=c;buildPal();};
-
-  build();loadPage(0);
 };
 })();
