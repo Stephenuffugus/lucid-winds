@@ -116,6 +116,26 @@ function _cdPipFor(suitName){
 }
 function _cdIsRed(s){return s===1||s===2}
 
+// Foundation empty-slot art. Style-aware:
+//   lw     → shroom/flower/bee/bird PNG (original behavior)
+//   floral → the matching suit-pip PNG from Jessie's set
+//   classic→ a large faded pip character, since the classic style has no image art
+// Consumers: klondike.js foundations, freecell.js foundations.
+function _cdFndEmpty(el, suitIdx){
+  if(!el)return;
+  el.innerHTML='';
+  el.style.backgroundImage='';
+  var style=_cdStyle();
+  if(style==='classic'){
+    var color=_cdIsRed(suitIdx)?'rgba(200,52,52,0.30)':'rgba(232,220,200,0.22)';
+    el.innerHTML='<span style="font-size:2.6em;line-height:1;color:'+color+';pointer-events:none;">'+_CL_SYM[suitIdx]+'</span>';
+  }else if(style==='floral'){
+    el.style.backgroundImage="url('"+_FL_BASE+_FL_SUIT[suitIdx]+"')";
+  }else{
+    el.style.backgroundImage="url('"+_CD_BASE+_SUIT_NAME[suitIdx]+".png')";
+  }
+}
+
 function _cdBackStyle(el){
   var style=_cdStyle();
   if(style==='classic'){
@@ -361,6 +381,7 @@ window._cdMk=_cdMk;
 window._cdSh=_cdSh;
 window._cdRnk=_cdRnk;
 window._cdSuit=_cdSuit;
+window._cdFndEmpty=_cdFndEmpty;
 window._cdIsRed=_cdIsRed;
 window._cdBackStyle=_cdBackStyle;
 window._cdEl=_cdEl;

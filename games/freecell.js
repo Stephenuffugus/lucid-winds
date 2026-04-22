@@ -132,7 +132,7 @@ function GFC(a){
     for(var f=0;f<4;f++){
       var el;
       if(fnd[f].length>0){el=_cdEl(fnd[f][fnd[f].length-1]);}
-      else{el=document.createElement('div');el.className='gc gc-fnd';el.style.backgroundImage="url('"+_CD_BASE+_SUIT_NAME[f]+".png')";}
+      else{el=document.createElement('div');el.className='gc gc-fnd';if(window._cdFndEmpty)window._cdFndEmpty(el,f);else el.style.backgroundImage="url('"+_CD_BASE+_SUIT_NAME[f]+".png')";}
       el.style.width=fcW;el.style.height=fcH;el.style.fontSize=fcF;
       (function(fi){el.onclick=function(){doSelect('fnd',fi)}})(f);
       el.style.cursor='pointer';topRow.appendChild(el);

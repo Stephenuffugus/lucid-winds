@@ -293,7 +293,8 @@ function GKL(a){
         fEl.className+=' gc-fnd';
       }else{
         fEl.className='gc gc-fnd';
-        fEl.style.backgroundImage="url('"+_CD_BASE+_SUIT_NAME[f]+".png')";
+        if(window._cdFndEmpty)window._cdFndEmpty(fEl,f);
+        else fEl.style.backgroundImage="url('"+_CD_BASE+_SUIT_NAME[f]+".png')";
       }
       fEl.style.width=klW;fEl.style.height=klH;fEl.style.fontSize=klF;
       fEl.style.cursor='pointer';
