@@ -24,8 +24,15 @@ if(!document.getElementById('bg-anim-style')){
     '.bg-played-W{animation:bgSlideW .32s cubic-bezier(.4,1.4,.5,1) both}'+
     '.bg-played-E{animation:bgSlideE .32s cubic-bezier(.4,1.4,.5,1) both}'+
     '@keyframes bgPulse{0%{box-shadow:0 0 0 0 rgba(200,168,75,.6)}70%{box-shadow:0 0 0 8px rgba(200,168,75,0)}100%{box-shadow:0 0 0 0 rgba(200,168,75,0)}}'+
-    '.bg-dealer-badge{display:inline-block;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#c8a84b,#8a6a30);color:#0d100c;font-family:Bebas Neue,sans-serif;font-size:0.95rem;font-weight:700;text-align:center;line-height:24px;margin-left:6px;animation:bgPulse 2s ease-in-out infinite;vertical-align:middle;box-shadow:0 0 8px rgba(200,168,75,0.5);}'+
-    '.bg-active{outline:2px solid var(--gold,#c8a84b);outline-offset:2px;border-radius:8px;animation:bgPulse 1.4s ease-in-out infinite}';
+    '@keyframes bgTurnRing{0%,100%{box-shadow:0 0 0 3px rgba(255,220,112,0.75),0 0 22px rgba(255,220,112,0.45)}50%{box-shadow:0 0 0 4px rgba(255,220,112,0.9),0 0 30px rgba(255,220,112,0.65)}}'+
+    '.bg-dealer-badge{display:inline-block;width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff4c2 0%,#d4b86a 40%,#8b6a20 100%);color:#3a2a08;font-family:Georgia,serif;font-size:0.75rem;font-weight:700;text-align:center;line-height:20px;margin-left:6px;vertical-align:middle;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 2px 4px rgba(0,0,0,0.5);border:1.5px solid #5a4010;text-shadow:0 1px 0 rgba(255,255,255,0.4);}'+
+    '.bg-seat{transition:opacity .3s ease;border-radius:10px;}'+
+    '.bg-seat.bg-inactive{opacity:0.55;}'+
+    '.bg-active{animation:bgTurnRing 1.4s ease-in-out infinite;border-radius:10px;}'+
+    '.bg-seat-caller{position:relative}'+
+    '.bg-seat-caller::before{content:"";position:absolute;top:-4px;right:-4px;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff4c2,#d4b86a 50%,#8b6a20);border:1.5px solid #5a4010;box-shadow:0 2px 4px rgba(0,0,0,0.5);z-index:2;}'+
+    '.bg-team-us{color:#7ab356}'+
+    '.bg-team-them{color:#dc8a8a}';
   document.head.appendChild(_bgs);
 }
 
@@ -43,15 +50,35 @@ window._gameFns.bowergarden = function BG(a){
   var trick=[],trickCards=[null,null,null,null];
   var trumpSuit='',upcard=null,dealer=EAST,leader=0,currentPlayer=0;
   var teamScore=[0,0],teamTricks=[0,0];
-  var callingTeam=-1,phase='',roundNum=0;
+  var callingTeam=-1,callingSeat=-1,phase='',roundNum=0;
   var loner=false,sittingOut=-1; // loner = caller went alone, sittingOut = partner who sits out
 
-  ms(a,'🃏 <strong id="BGs">0</strong> - <strong id="BGo">0</strong>');
+  ms(a,'<span style="font-family:Georgia,serif;letter-spacing:.06em;">🃏 <strong id="BGs" style="color:#7ab356;font-size:1.2em;">0</strong> <span style="color:rgba(232,220,200,0.5);font-size:0.8em;">vs</span> <strong id="BGo" style="color:#dc8a8a;font-size:1.2em;">0</strong></span>');
   mm(a);
   var pan=document.createElement('div');
   pan.id='BGpan';
-  // Wider playfield — bumped from 420 to 540 so cards have room to breathe.
-  pan.style.cssText='max-width:540px;margin:0 auto;padding:6px;user-select:none;';
+  // Felt table background — signature card-game visual. Noise-textured green
+  // with brass-gold edge binding. Matches cribbage's treatment for consistency.
+  var _EU_FELT="data:image/svg+xml;utf8,"+encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180">'
+      +'<filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7"/>'
+      +'<feColorMatrix values="0 0 0 0 0.04  0 0 0 0 0.08  0 0 0 0 0.04  0 0 0 .08 0"/></filter>'
+      +'<rect width="100%" height="100%" filter="url(#n)"/>'
+    +'</svg>'
+  );
+  pan.style.cssText='max-width:560px;margin:0 auto;padding:12px 10px;user-select:none;'
+    +'background:'
+      +'url("'+_EU_FELT+'"),'
+      +'radial-gradient(ellipse at 50% 0%,rgba(255,255,255,0.06) 0%,transparent 50%),'
+      +'radial-gradient(circle at 50% 100%,rgba(0,0,0,0.25) 0%,transparent 65%),'
+      +'linear-gradient(135deg,#0f5c35 0%,#0b4d2c 55%,#083d22 100%);'
+    +'background-size:180px 180px, auto, auto, auto;'
+    +'border-radius:14px;'
+    +'border:2px solid #6b4520;'
+    +'box-shadow:'
+      +'inset 0 0 0 1px rgba(180,140,70,0.25),'
+      +'inset 0 0 38px rgba(0,0,0,0.4),'
+      +'0 6px 22px rgba(0,0,0,0.55);';
   a.appendChild(pan);
   function _pip(suitName){return (window._cdPipFor)?window._cdPipFor(suitName):SUIT_ICONS[suitName];}
   var _bgStyleLbl='🃏 Style';
@@ -78,7 +105,7 @@ window._gameFns.bowergarden = function BG(a){
     hands=[[],[],[],[]];
     for(var i=0;i<20;i++)hands[i%4].push(deck[i]);
     upcard=deck[20];
-    trumpSuit='';teamTricks=[0,0];callingTeam=-1;trick=[];trickCards=[null,null,null,null];
+    trumpSuit='';teamTricks=[0,0];callingTeam=-1;callingSeat=-1;trick=[];trickCards=[null,null,null,null];
     loner=false;sittingOut=-1;
   }
   // Heuristic: should THIS hand go alone?
@@ -235,7 +262,7 @@ window._gameFns.bowergarden = function BG(a){
     if(currentPlayer!==SOUTH)setTimeout(aiCall2,600);
   }
   function orderUp(p,goAlone){
-    trumpSuit=upcard.suit;callingTeam=p%2;
+    trumpSuit=upcard.suit;callingTeam=p%2;callingSeat=p;
     if(goAlone){loner=true;sittingOut=(p+2)%4;}
     sm(PLAYER_NAMES[p]+' calls '+_pip(trumpSuit)+' Strong'+(goAlone?' (alone)':''));
     var dh=hands[dealer];dh.push(upcard);
@@ -244,7 +271,7 @@ window._gameFns.bowergarden = function BG(a){
     startPlay();
   }
   function callTrump(p,suit,goAlone){
-    trumpSuit=suit;callingTeam=p%2;
+    trumpSuit=suit;callingTeam=p%2;callingSeat=p;
     if(goAlone){loner=true;sittingOut=(p+2)%4;}
     sm(PLAYER_NAMES[p]+' calls '+_pip(suit)+' Strong'+(goAlone?' (alone)':''));
     startPlay();
@@ -329,38 +356,93 @@ window._gameFns.bowergarden = function BG(a){
     if(!ok)return;
     playCard(SOUTH,card);
   }
+  // ── UI Helpers ──────────────────────────────────────────────
+  function _scoreBarHtml(){
+    var h='';
+    var pCol='#7ab356', oCol='#dc8a8a';
+    h+='<div style="display:flex;gap:6px;margin-bottom:8px;">';
+    h+=_teamStrip('YOU + PARTNER', teamScore[0], teamTricks[0], pCol, callingTeam===0);
+    h+=_teamStrip('OPPONENTS',     teamScore[1], teamTricks[1], oCol, callingTeam===1);
+    h+='</div>';
+    return h;
+  }
+  function _teamStrip(label, score, tricks, color, isCaller){
+    var tricksHtml='';
+    if(trumpSuit){
+      // 5 pips showing tricks won this hand
+      for(var i=0;i<5;i++){
+        var on=i<tricks;
+        tricksHtml+='<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin:0 1px;background:'+(on?color:'rgba(0,0,0,0.35)')+';border:1px solid '+(on?'rgba(0,0,0,0.4)':'rgba(0,0,0,0.55)')+';'+(on?'box-shadow:0 0 6px '+color+'aa;':'')+'"></span>';
+      }
+    }
+    var callerTag = isCaller ? '<span style="display:inline-block;padding:1px 5px;margin-left:4px;font-size:0.45rem;font-family:Georgia,serif;font-style:italic;color:#ffdc70;border:1px solid #ffdc70;border-radius:3px;vertical-align:middle;">caller</span>' : '';
+    return '<div style="flex:1;background:linear-gradient(180deg,rgba(0,0,0,0.35),rgba(0,0,0,0.5));border:1.5px solid '+color+';border-radius:8px;padding:6px 10px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.08),0 2px 6px rgba(0,0,0,0.35);">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;">'
+        +'<div>'
+          +'<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;color:'+color+';text-transform:uppercase;">'+label+callerTag+'</div>'
+          +'<div style="font-family:Georgia,serif;font-size:1.6rem;font-weight:700;color:#f5ebd0;line-height:1;margin-top:1px;text-shadow:0 2px 3px rgba(0,0,0,0.4);">'+score+'</div>'
+        +'</div>'
+        +(tricksHtml?'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;"><div style="font-family:DM Mono,monospace;font-size:0.48rem;letter-spacing:0.1em;color:rgba(232,220,200,0.55);">tricks</div><div>'+tricksHtml+'</div></div>':'')
+      +'</div>'
+    +'</div>';
+  }
+  function _headerHtml(){
+    // Persistent trump chip (center) + dealer name (left) + alone badge
+    var h='<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;padding:4px 2px 10px;">';
+    // Dealer name
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.52rem;letter-spacing:0.12em;color:rgba(232,220,200,0.6);text-transform:uppercase;">Dealer<br/><span style="color:#f5ebd0;font-family:Georgia,serif;font-size:0.85rem;letter-spacing:0;text-transform:none;">'+PLAYER_NAMES[dealer]+'</span></div>';
+    // Trump chip — the hero UI during the hand
+    if(trumpSuit){
+      var red=(trumpSuit==='hearts'||trumpSuit==='diamonds');
+      var pipCol= red ? '#e63946' : '#f5ebd0';
+      var borderCol = callingTeam===0 ? '#7ab356' : '#dc8a8a';
+      var callerName = callingTeam>=0 ? (callingTeam===0?'Your team':'Opponents') : '';
+      h+='<div style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border:2px solid '+borderCol+';border-radius:999px;background:linear-gradient(180deg,rgba(0,0,0,0.4),rgba(0,0,0,0.65));box-shadow:0 0 14px '+borderCol+'55,inset 0 1px 0 rgba(255,255,255,0.1);">';
+      h+='<span style="font-size:1.6rem;line-height:1;color:'+pipCol+';text-shadow:0 2px 4px rgba(0,0,0,0.6);">'+_pip(trumpSuit)+'</span>';
+      h+='<div style="font-family:Georgia,serif;line-height:1.1;">';
+      h+='<div style="font-size:0.52rem;font-style:italic;color:rgba(232,220,200,0.65);letter-spacing:0.06em;">Strong</div>';
+      h+='<div style="font-size:0.85rem;color:#f5ebd0;text-transform:capitalize;">'+trumpSuit+'</div>';
+      h+='</div>';
+      if(callerName)h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.6rem;color:'+borderCol+';padding-left:8px;border-left:1px solid rgba(255,255,255,0.15);">'+callerName+' called</div>';
+      h+='</div>';
+    }else{
+      h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.72rem;color:rgba(232,220,200,0.55);">';
+      h+=(phase==='call1'?'Order up '+_pip(upcard?upcard.suit:'')+'?':phase==='call2'?'Call a suit':'');
+      h+='</div>';
+    }
+    // Alone badge
+    if(loner){
+      h+='<div style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;background:linear-gradient(180deg,#ffdc70,#c48f1f);border:1px solid #8b6a20;border-radius:5px;font-family:Georgia,serif;font-weight:700;font-size:0.65rem;color:#3a2a08;text-shadow:0 1px 0 rgba(255,255,255,0.4);box-shadow:0 2px 5px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.5);letter-spacing:0.06em;">⚡ ALONE</div>';
+    }else{
+      h+='<div style="min-width:40px;"></div>'; // spacer to balance dealer
+    }
+    h+='</div>';
+    return h;
+  }
   function render(){
     var ps=document.getElementById('BGs');if(ps)ps.textContent=teamScore[0];
     var os=document.getElementById('BGo');if(os)os.textContent=teamScore[1];
     var h='';
     // Helper for the dealer badge so it's consistent everywhere
     function dealerBadge(seat){return seat===dealer?'<span class="bg-dealer-badge" title="Dealer">D</span>':'';}
-    function activeClass(seat){return (seat===currentPlayer&&(phase==='play'||phase==='call1'||phase==='call2'))?' bg-active':'';}
-    // Score banner — readability pass: scores are big, but tricks
-    // counters were 0.55rem and unreadable mid-game. Bumped to a
-    // dedicated row with its own visual weight.
-    h+='<div style="background:linear-gradient(135deg,rgba(26,31,23,0.9),rgba(13,16,12,0.95));border:1.5px solid rgba(122,179,86,0.3);border-radius:12px;padding:10px 14px;margin:6px 0;font-family:Bebas Neue,sans-serif;">';
-    h+='<div style="display:flex;justify-content:space-around;align-items:baseline;font-size:0.95rem;">';
-    h+='<div style="text-align:center;"><div style="color:var(--sage);font-size:0.7rem;letter-spacing:0.08em;">YOU + PARTNER</div><div style="color:var(--gold);font-size:1.8rem;line-height:1;margin-top:2px;">'+teamScore[0]+'</div></div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);letter-spacing:0.1em;align-self:center;">to 10</div>';
-    h+='<div style="text-align:center;"><div style="color:#c47a7a;font-size:0.7rem;letter-spacing:0.08em;">OPPONENTS</div><div style="color:var(--gold);font-size:1.8rem;line-height:1;margin-top:2px;">'+teamScore[1]+'</div></div>';
-    h+='</div>';
-    // Dedicated tricks row — visible without squinting
-    if(trumpSuit){
-      h+='<div style="display:flex;justify-content:space-around;margin-top:8px;padding-top:8px;border-top:1px solid rgba(122,179,86,0.2);font-family:DM Mono,monospace;font-size:0.85rem;letter-spacing:0.06em;">';
-      h+='<div style="color:var(--cream);">Tricks: <strong style="color:var(--sage);font-size:1.2rem;">'+teamTricks[0]+'</strong></div>';
-      h+='<div style="color:var(--cream);">Tricks: <strong style="color:#e8a0a0;font-size:1.2rem;">'+teamTricks[1]+'</strong></div>';
-      h+='</div>';
+    function seatClasses(seat){
+      var cls=' bg-seat';
+      var isActive=(seat===currentPlayer&&(phase==='play'||phase==='call1'||phase==='call2'));
+      if(isActive)cls+=' bg-active';
+      else if(phase==='play'||phase==='call1'||phase==='call2')cls+=' bg-inactive';
+      // Caller badge persists through the hand — marks whoever won the bid.
+      var isCaller = trumpSuit && callingTeam===seat%2 && phase!=='call1' && phase!=='call2';
+      // Only highlight the specific seat that CALLED, not both teammates.
+      // We track callingSeat separately via the orderUp/callTrump flow below.
+      if(isCaller && seat===callingSeat)cls+=' bg-seat-caller';
+      return cls;
     }
-    h+='</div>';
-    // Strong (called suit) + dealer name — bumped from 0.55/0.7 to 0.75/0.95
-    h+='<div style="display:flex;gap:14px;justify-content:center;align-items:center;padding:6px 4px;flex-wrap:wrap;">';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.75rem;color:var(--muted);letter-spacing:0.08em;">DEALER: <span style="color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.06em;">'+PLAYER_NAMES[dealer]+'</span></div>';
-    if(trumpSuit){
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.85rem;color:var(--gold);letter-spacing:0.08em;">STRONG: <span style="font-size:1.6rem;vertical-align:middle;color:'+(trumpSuit==='hearts'||trumpSuit==='diamonds'?'#c47a7a':'var(--cream)')+';">'+_pip(trumpSuit)+'</span></div>';
-    }
-    if(loner)h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--gold);letter-spacing:0.1em;background:rgba(200,168,75,0.15);padding:3px 10px;border-radius:6px;border:1px solid rgba(200,168,75,0.4);">⚡ LONER</div>';
-    h+='</div>';
+    // Legacy name — keep activeClass working for any older code paths.
+    var activeClass=seatClasses;
+    // ── SCORE BAR — twin team strips w/ color + score + 5-dot trick meter ──
+    h+=_scoreBarHtml();
+    // ── TRUMP CHIP + DEALER + CALLER — pinned top center throughout the hand ──
+    h+=_headerHtml();
     // North (partner) hand - face down. Bumped to 38x52 (was 32x44).
     var northSittingOut=(loner&&sittingOut===NORTH);
     h+='<div style="text-align:center;padding:6px;'+(northSittingOut?'opacity:0.35;':'')+'" class="bg-seat'+activeClass(NORTH)+'"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:5px;">PARTNER'+dealerBadge(NORTH)+(northSittingOut?' <span style="color:var(--gold);font-size:0.65rem;">(SITTING OUT)</span>':'')+'</div><div style="display:inline-flex;justify-content:center;">';
