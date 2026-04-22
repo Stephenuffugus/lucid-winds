@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.7';
+  var LW_VERSION='2026.04.22.8';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -63225,13 +63225,15 @@ window._bosMementosContent = _bosMementosContent;
 // for fields left blank.
 window.LW_CREATOR = window.LW_CREATOR || {
   name:        'Stephen — Lucid Winds',
+  hermitImg:   'assets/hermit-bio.jpg',
   bioLines: [
     'Lucid Winds is a one-person studio. Every plant in this game is unique because every player\'s attention is unique.',
     'I built this on the belief that quiet, slow play deserves the same craft a fast game gets. Thank you for being here for the early days.'
   ],
-  pi:          '',     // Pi Network address — paste yours here
-  btc:         '',     // BTC address
-  eth:         '',     // ETH address
+  pi:          'GBGJ2BJNGDF2RSUSLMODYMNFMCZZFTCE43L44F53CYWDTFTSAXT65TNI',
+  btc:         'bc1q0fjfk3n4mls49glen8sflfhrjxewncd8c9cfpy',
+  eth:         '0xba1F63F220DA4d5639c5EB0f7de8A4aFBd46828B',
+  sol:         'EEBqosHRfRoTM8u6AW3WxDeYvntuDTYeTEN2uVcWbaij',
   usdc:        '',     // USDC (any chain)
   stripeUrl:   '',     // Stripe Payment Link URL
   websiteUrl:  'https://lucidwinds.com'
@@ -63244,6 +63246,9 @@ function _bosAboutContent() {
   // Hero / bio
   h += '<div style="padding:1rem;margin-bottom:0.8rem;background:linear-gradient(180deg,rgba(26,36,22,0.7),rgba(13,16,12,0.85));border:1.5px solid rgba(200,168,75,0.3);border-radius:12px;text-align:center;">';
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:rgba(200,168,75,0.7);letter-spacing:0.25em;margin-bottom:0.4rem;">\u2756 ABOUT THE CREATOR \u2756</div>';
+  if (c.hermitImg) {
+    h += '<img src="' + c.hermitImg + '" alt="The Hermit" style="display:block;width:80%;max-width:260px;margin:0.4rem auto 0.6rem;border-radius:10px;border:1.5px solid rgba(200,168,75,0.35);box-shadow:0 4px 14px rgba(0,0,0,0.45);">';
+  }
   h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.15rem;color:var(--cream);margin-bottom:0.4rem;">' + (c.name || 'A Keeper') + '</div>';
   if (c.bioLines && c.bioLines.length) {
     for (var bi = 0; bi < c.bioLines.length; bi++) {
@@ -63279,10 +63284,11 @@ function _bosAboutContent() {
   h += _addrRow('PI',   c.pi,   '#a06ec0');
   h += _addrRow('BTC',  c.btc,  '#f7931a');
   h += _addrRow('ETH',  c.eth,  '#8a92b2');
+  h += _addrRow('SOL',  c.sol,  '#9945ff');
   h += _addrRow('USDC', c.usdc, '#2775ca');
 
   // If everything is blank, show a soft placeholder so the page doesn't look broken
-  if (!c.stripeUrl && !c.pi && !c.btc && !c.eth && !c.usdc) {
+  if (!c.stripeUrl && !c.pi && !c.btc && !c.eth && !c.sol && !c.usdc) {
     h += '<div style="padding:0.8rem;text-align:center;color:var(--muted);font-family:DM Mono,monospace;font-size:0.55rem;line-height:1.6;font-style:italic;">Tip jar coming soon. The creator is setting up payment routes \u2014 check back in the next update.</div>';
   }
 
