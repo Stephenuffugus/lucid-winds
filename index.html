@@ -71211,7 +71211,10 @@ window.canSee = {
     try { if (localStorage.getItem('lw_plant_xp_unlocked') === '1') return true; } catch(e){}
     return _lwLevel()>=5;
   },
-  keeperBarSinks: function(){return _lwLevel()>=6;},  // mystery/slots/weather
+  keeperBarSinks: function(){
+    try { if (localStorage.getItem('lw_plant_xp_unlocked') === '1') return true; } catch(e){}
+    return _lwLevel()>=6;
+  },  // mystery/slots/weather — open as soon as tutorial finishes
   // Class pick is tutorial-unlocked at step 45. After tutorial
   // completion (lw_plant_xp_unlocked='1'), stays open regardless of
   // level. Prevents the L7 gate from blocking the guided class-pick
