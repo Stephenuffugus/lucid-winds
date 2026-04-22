@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.14';
+  var LW_VERSION='2026.04.22.15';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -4509,7 +4509,11 @@
     #pw-keeper-bar .kb-xp-fill{height:100%;background:linear-gradient(90deg,var(--leaf),var(--sage));border-radius:3px;transition:width 0.5s ease;}
     #pw-keeper-bar .kb-rank{font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--muted);margin-top:3px;letter-spacing:0.03em;}
     /* Currency badges in row 2 — big, readable, thumb-friendly, ready for art drop-in */
-    #kb-sunbeams,#kb-dew{padding:0;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;width:64px;height:64px;border:none;background:none;overflow:hidden;flex-shrink:0;position:relative;}
+    /* overflow:hidden was eating the corner mint-pip (positioned at top:-4px, right:-4px).
+       Removed here; clip-path on the inner <img> preserves the 140%/150% zoom crop. */
+    #kb-sunbeams,#kb-dew{padding:0;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;width:64px;height:64px;border:none;background:none;flex-shrink:0;position:relative;}
+    #kb-sunbeams>img{clip-path:inset(14.28% round 8px);-webkit-clip-path:inset(14.28% round 8px);}
+    #kb-dew>img{clip-path:inset(16.67% round 8px);-webkit-clip-path:inset(16.67% round 8px);}
     #kb-sunbeams .kb-val,#kb-dew .kb-val{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--cream);text-shadow:0 1px 4px rgba(0,0,0,0.9),0 0 8px rgba(0,0,0,0.7);z-index:2;pointer-events:none;}
     #kb-dew .kb-icon{font-size:1.15rem;filter:drop-shadow(0 0 4px rgba(91,175,220,0.4));}
     /* Book positioning handled inline on element so nothing overrides it */
@@ -61302,7 +61306,10 @@ window._updateBookBadge=function(){
   // total things the keeper hasn't read yet across every tab.
   var n = 0;
   if (window._bosGetTabUnread) {
-    var tabs = ['report','activity','secrets','events','mementos','herbarium','class'];
+    // 'report' was double-counting the same log entries as 'activity' and
+    // never had a UI to clear (JOURNAL tab only stamps 'activity'), so the
+    // badge could never drop to zero. Activity alone covers the signal.
+    var tabs = ['activity','secrets','events','mementos','herbarium','class'];
     for (var i = 0; i < tabs.length; i++) n += window._bosGetTabUnread(tabs[i]);
   } else {
     // Fallback during boot before _bosGetTabUnread is wired
