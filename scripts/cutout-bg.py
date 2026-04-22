@@ -1,31 +1,39 @@
 #!/usr/bin/env python3
 """
-cutout-bg.py — knock out cream/white backgrounds from Midjourney sprites
-without shrinking or destroying the artwork.
+cutout-bg.py — knock out backgrounds from sprites that were drawn with a
+DARK outline around the artwork. The dark outline is the keep-line.
 
 Usage:
     python3 scripts/cutout-bg.py SOURCE.png DEST.png [--keep-size]
 
-    --keep-size  Skip the final tight-crop. Canvas stays at source size,
-                 only background pixels are cleared. Use for sprites where
-                 the full source frame matters (mutation symbols, etc.).
+    --keep-size  Skip the final tight-crop. Canvas stays at source size.
 
 How it works:
-1. Flood fill from the 4 corners — only pixels CONNECTED to the corners
-   that match the cream-background heuristic get cleared. Anything inside
-   the artwork is safe even if it shares a color with the background.
-2. After the flood, soften any pixel adjacent to the cleared region that's
-   still bright — kills the cream rim that remove.bg always leaves behind.
-3. Trim transparent borders so the sprite is tightly cropped, but the
-   resolution is otherwise preserved 1:1.
+1. Flood fill from the 4 corners. The flood keeps going through ANY pixel
+   that is not obviously dark artwork. Threshold: pixel is "not dark" when
+   brightness >= 140 AND chroma <= 55. This eats the whole halo of pale
+   cream / grey / near-white pixels right up to the dark border line.
+2. After the flood, a tidy-pass fades any still-bright low-chroma pixel
+   that's adjacent to cleared space, so the result has a hard alpha edge
+   instead of a feathered bright rim.
+3. Trim transparent borders. Artwork is preserved at source resolution.
 
-Background detection: brightness >= 225 AND chroma <= 22 (warm/cool greys
-and creams both qualify; saturated colors stay).
+Tune TRIM_BRIGHT/TRIM_CHROMA if the halo gets too aggressive — if the
+sprite has deliberately pale pastel interior that should stay, raise
+TRIM_BRIGHT. For most items we want it to eat until it hits the dark rim.
 """
 
 from PIL import Image
 from collections import deque
 import sys
+
+
+# The flood-fill "erase" predicate. Anything brighter than TRIM_BRIGHT
+# with low chroma is considered background-halo territory and gets
+# cleared. Stops at dark pixels (the artwork outline) and colorful
+# pixels (the artwork interior).
+TRIM_BRIGHT = 140
+TRIM_CHROMA = 55
 
 
 def is_bg(p):
@@ -34,8 +42,7 @@ def is_bg(p):
         return True
     brightness = (r + g + b) / 3
     chroma = max(r, g, b) - min(r, g, b)
-    # Tightened: catch warm cream rims as well as pure white
-    return brightness >= 215 and chroma <= 30
+    return brightness >= TRIM_BRIGHT and chroma <= TRIM_CHROMA
 
 
 def cutout(src_path, dst_path, keep_size=False):
@@ -75,10 +82,9 @@ def cutout(src_path, dst_path, keep_size=False):
         for x in range(w):
             op[x, y] = (0, 0, 0, 0) if visited[y][x] else px[x, y]
 
-    # Two-pass halo cleanup: any pixel adjacent to the cleared region that's
-    # still bright AND low-chroma gets faded out. Repeated once to catch the
-    # second-ring rim that single-pass softening leaves behind.
-    for _pass in range(2):
+    # Tidy-pass: any pixel next to cleared region that's still bright AND
+    # low-chroma gets faded out. Repeated so second-ring rim also dies.
+    for _pass in range(3):
         halo = 0
         for y in range(h):
             for x in range(w):
@@ -87,16 +93,16 @@ def cutout(src_path, dst_path, keep_size=False):
                 r, g, b, a = op[x, y]
                 brightness = (r + g + b) / 3
                 chroma = max(r, g, b) - min(r, g, b)
-                if brightness < 200 or chroma > 35:
+                # Loosened vs v1 — fades grey rim all the way to the dark outline
+                if brightness < 165 or chroma > 50:
                     continue
                 for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1),
                                (1, 1), (-1, -1), (1, -1), (-1, 1)):
                     nx, ny = x + dx, y + dy
                     if 0 <= nx < w and 0 <= ny < h and visited[ny][nx]:
-                        # Drop alpha aggressively and mark this pixel as bg too
-                        # so the next pass treats it as cleared territory
-                        op[x, y] = (r, g, b, a // 4)
-                        if a // 4 < 8:
+                        new_a = a // 6
+                        op[x, y] = (r, g, b, new_a)
+                        if new_a < 12:
                             visited[y][x] = True
                             op[x, y] = (0, 0, 0, 0)
                         halo += 1
