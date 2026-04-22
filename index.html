@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.63';
+  var LW_VERSION='2026.04.22.64';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3455,12 +3455,18 @@
     body.game-active:has(#fg-ag[data-game="gardenspades"]) #ab,
     body.game-active:has(#fg-ag[data-game="gardenspades"]) #fg-ag > .gr,
     body.game-active:has(#fg-ag[data-game="gardenspades"]) #fg-ag > .gu-bar,
-    body.game-active:has(#fg-ag[data-game="gardenspades"]) #fg-ag > #_gm{display:none!important;}
+    body.game-active:has(#fg-ag[data-game="gardenspades"]) #fg-ag > #_gm,
+    body.game-active:has(#fg-ag[data-game="juniper"]) .gp-strip,
+    body.game-active:has(#fg-ag[data-game="juniper"]) #ab,
+    body.game-active:has(#fg-ag[data-game="juniper"]) #fg-ag > .gr,
+    body.game-active:has(#fg-ag[data-game="juniper"]) #fg-ag > .gu-bar,
+    body.game-active:has(#fg-ag[data-game="juniper"]) #fg-ag > #_gm{display:none!important;}
     /* Card-game containers get a solid matching background + overscroll lock so nothing behind bleeds through during bounce-scroll. Also use the full viewport: padding-bottom normally reserves 58+safe-area for the bottom nav, but for these games the nav is hidden, so every pixel of bottom padding just buries cards under the scroll line. min-height fills the viewport so the solid container bg covers the whole screen even when pan content is short. */
     #fg-ag[data-game="bleedinghearts"],
     #fg-ag[data-game="cribbage"],
     #fg-ag[data-game="bowergarden"],
-    #fg-ag[data-game="gardenspades"]{
+    #fg-ag[data-game="gardenspades"],
+    #fg-ag[data-game="juniper"]{
       padding-bottom:env(safe-area-inset-bottom,0px)!important;
       min-height:100dvh!important;
       max-height:100dvh!important;
@@ -3470,7 +3476,8 @@
     body.game-active:has(#fg-ag[data-game="bleedinghearts"]) #panel-game,
     body.game-active:has(#fg-ag[data-game="cribbage"]) #panel-game,
     body.game-active:has(#fg-ag[data-game="bowergarden"]) #panel-game,
-    body.game-active:has(#fg-ag[data-game="gardenspades"]) #panel-game{
+    body.game-active:has(#fg-ag[data-game="gardenspades"]) #panel-game,
+    body.game-active:has(#fg-ag[data-game="juniper"]) #panel-game{
       padding-top:0!important;
       padding-bottom:0!important;
       min-height:100dvh!important;
@@ -3479,6 +3486,7 @@
     #fg-ag[data-game="cribbage"]{background:#083018;}
     #fg-ag[data-game="bowergarden"]{background:#083d22;}
     #fg-ag[data-game="gardenspades"]{background:#062035;}
+    #fg-ag[data-game="juniper"]{background:#15102a;}
     /* Hearts — score danger pulse (player approaching 100 = losing). */
     @keyframes bhDanger{0%,100%{box-shadow:0 0 10px rgba(230,57,70,0.5)}50%{box-shadow:0 0 18px rgba(230,57,70,0.9),0 0 0 2px rgba(230,57,70,0.3)}}
     /* Cribbage — thinking pulse + banner pop-in + card interactions */

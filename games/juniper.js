@@ -6,6 +6,15 @@
 var G=window._G;
 var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G.sr,sh=G.sh,_st=G.st,_xt=G.xt,_setDiff=G.setDiff;
 
+// Inject Juniper keyframes once.
+if(!document.getElementById('ju-anim-style')){
+  var _jus=document.createElement('style');_jus.id='ju-anim-style';
+  _jus.textContent=
+    '@keyframes juKnockPulse{0%,100%{box-shadow:0 0 14px rgba(255,220,112,0.45),inset 0 1px 0 rgba(255,255,255,0.15)}50%{box-shadow:0 0 22px rgba(255,220,112,0.75),inset 0 1px 0 rgba(255,255,255,0.2)}}'+
+    '@keyframes juGinPulse{0%,100%{box-shadow:0 0 22px rgba(255,220,112,0.7),inset 0 1px 0 rgba(255,255,255,0.5);transform:scale(1)}50%{box-shadow:0 0 36px rgba(255,232,150,1),inset 0 1px 0 rgba(255,255,255,0.5);transform:scale(1.06)}}';
+  document.head.appendChild(_jus);
+}
+
 window._gameFns = window._gameFns || {};
 window._gameFns.juniper = function Juniper(a){
   var SUITS=['clubs','diamonds','hearts','spades'];
@@ -19,19 +28,37 @@ window._gameFns.juniper = function Juniper(a){
   var playerScore=0,aiScore=0,playerWins=0,aiWins=0;
   var phase='',turnCount=0;
 
-  ms(a,'🫐 You <strong id="JUy">0</strong> — AI <strong id="JUa">0</strong>');
+  ms(a,'<span style="font-family:Georgia,serif;letter-spacing:.06em;">🫐 <strong id="JUy" style="color:#7ab356;font-size:1.2em;">0</strong> <span style="color:rgba(232,220,200,0.5);font-size:0.8em;">vs</span> <strong id="JUa" style="color:#dc8a8a;font-size:1.2em;">0</strong></span>');
   mm(a);
   var pan=document.createElement('div');pan.id='JUpan';
-  pan.style.cssText='max-width:420px;margin:0 auto;padding:6px;user-select:none;';
+  // Felt — deep berry/juniper tones for the gin rummy table.
+  var _JU_FELT="data:image/svg+xml;utf8,"+encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180">'
+      +'<filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="13"/>'
+      +'<feColorMatrix values="0 0 0 0 0.05  0 0 0 0 0.04  0 0 0 0 0.08  0 0 0 .08 0"/></filter>'
+      +'<rect width="100%" height="100%" filter="url(#n)"/>'
+    +'</svg>'
+  );
+  pan.style.cssText='max-width:min(96vw,560px);margin:0 auto;padding:6px 14px 14px;user-select:none;box-sizing:border-box;'
+    +'background:'
+      +'url("'+_JU_FELT+'"),'
+      +'radial-gradient(ellipse at 50% 0%,rgba(255,255,255,0.05) 0%,transparent 50%),'
+      +'radial-gradient(circle at 50% 100%,rgba(0,0,0,0.3) 0%,transparent 65%),'
+      +'linear-gradient(135deg,#2a1f48 0%,#1f1838 55%,#15102a 100%);'
+    +'background-size:180px 180px, auto, auto, auto;'
+    +'border-radius:14px;'
+    +'border:2px solid #6b4520;'
+    +'box-shadow:'
+      +'inset 0 0 0 1px rgba(180,140,70,0.25),'
+      +'inset 0 0 40px rgba(0,0,0,0.5),'
+      +'0 6px 22px rgba(0,0,0,0.6);';
   a.appendChild(pan);
   function _pip(suitName){return (window._cdPipFor)?window._cdPipFor(suitName):SI[suitName];}
-  var _juStyleLbl='🃏 Style';
-  mc(a).innerHTML='<button class="gb-new" onclick="_JUN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="JUstyle" onclick="_JUToggleStyle()" style="font-size:0.7rem;">'+_juStyleLbl+'</button>';
+  // mc(a) empty — controls render inside the pan.
+  mc(a);
   window._JUToggleStyle=function(){
     if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
-    var nxt=window._cdToggleStyle();
-    var b=document.getElementById('JUstyle');
-    if(b)b.textContent='🃏 Style';
+    window._cdToggleStyle();
     if(typeof render==='function')render();
   };
 
@@ -90,6 +117,21 @@ window._gameFns.juniper = function Juniper(a){
     return{melds:bestCombo,deadwood:bestDW};
   }
   function getDeadwood(hand){return bestMeldCombination(hand).deadwood;}
+  // Inspect a meld to label it 'set' (same rank) or 'run' (same suit consecutive).
+  function _meldKind(hand,meld){
+    var ranks={};for(var i=0;i<meld.length;i++)ranks[hand[meld[i]].rank]=true;
+    return Object.keys(ranks).length===1 ? 'set' : 'run';
+  }
+  // Build a per-card index map: returns {meldOf, kindOf, deadwood}.
+  function _handMeldMap(hand){
+    var r=bestMeldCombination(hand);
+    var meldOf={}, kindOf={};
+    for(var m=0;m<r.melds.length;m++){
+      var k=_meldKind(hand,r.melds[m]);
+      for(var j=0;j<r.melds[m].length;j++){meldOf[r.melds[m][j]]=m;kindOf[r.melds[m][j]]=k;}
+    }
+    return {meldOf:meldOf,kindOf:kindOf,deadwood:r.deadwood,melds:r.melds};
+  }
 
   function aiDecideDraw(){
     if(discardPile.length===0)return 'stock';
@@ -210,49 +252,112 @@ window._gameFns.juniper = function Juniper(a){
     var yscore=document.getElementById('JUy');if(yscore)yscore.textContent=playerScore;
     var ascore=document.getElementById('JUa');if(ascore)ascore.textContent=aiScore;
     var h='';
-    // AI hand
-    h+='<div style="display:flex;justify-content:center;padding:4px 8px;gap:1px;">';
-    for(var i=0;i<aiHand.length;i++)h+='<div style="width:22px;height:32px;border-radius:3px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1px solid #2d4a1e;"></div>';
+    // ── CONTROLS BAR ────────────────────────────────────────────
+    var juStyleName = (window._cdStyleLabel && typeof window._cdStyle==='function') ? window._cdStyleLabel(window._cdStyle()) : 'Floral';
+    h+='<div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
+    h+='<button class="gb" onclick="if(window._cdToggleStyle){window._cdToggleStyle();if(typeof render===\'function\')render();}" title="Cycle card style" style="display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:5px 12px;font-size:0.62rem;background:linear-gradient(180deg,rgba(180,140,70,0.25),rgba(120,90,40,0.35));border:1px solid rgba(220,180,120,0.45);color:#f5ebd0;font-family:Georgia,serif;font-style:italic;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">';
+    h+='<img src="assets/decks/floral/suit-diamond.png" alt="" onerror="this.style.display=\'none\';" style="width:18px;height:18px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.7));">';
+    h+='<span style="color:rgba(232,220,200,0.6);font-style:normal;font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;text-transform:uppercase;margin-right:2px;">Deck</span>';
+    h+='<span>'+juStyleName+'</span>';
+    h+='</button>';
+    h+='<button class="gb" onclick="_JUN()" title="New game" style="display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:5px 14px;font-size:0.65rem;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">↻ New Game</button>';
     h+='</div>';
-    // Piles
-    h+='<div style="display:flex;align-items:center;justify-content:center;gap:16px;padding:10px 20px;">';
-    h+='<div style="text-align:center;"><div onclick="_JUDS()" style="width:64px;height:90px;border-radius:8px;background:linear-gradient(135deg,#2a3a22,#1a2416);border:2px solid rgba(122,179,86,0.4);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;"><span style="font-size:1.6rem;opacity:0.5;">🂠</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:var(--gold);position:absolute;bottom:4px;text-shadow:0 1px 4px #000;">'+stock.length+'</span></div><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;color:var(--cream);margin-top:5px;">STOCK</div></div>';
+    // ── SCORE STRIP — twin player rows w/ wins ──────────────────
+    h+='<div style="display:flex;gap:6px;margin-bottom:8px;">';
+    h+=_scoreStrip('YOU',playerScore,playerWins,'#7ab356');
+    h+=_scoreStrip('JUNIPER',aiScore,aiWins,'#dc8a8a');
+    h+='</div>';
+    // ── AI HAND (face-down fan) ─────────────────────────────────
+    h+='<div style="text-align:center;padding:4px 6px 8px;">';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:#dc8a8a;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;margin-bottom:5px;">JUNIPER <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;">×'+aiHand.length+'</span></div>';
+    h+='<div style="display:inline-flex;justify-content:center;">';
+    for(var i=0;i<aiHand.length;i++)h+='<div style="width:28px;height:40px;border-radius:4px;background:linear-gradient(135deg,#1a4a2e,#0c2a18);border:1.5px solid #051208;margin-left:'+(i===0?'0':'-18px')+';box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);"></div>';
+    h+='</div></div>';
+    // ── STOCK + DISCARD ─────────────────────────────────────────
+    var canPickup = phase==='draw';
+    h+='<div style="display:flex;align-items:center;justify-content:center;gap:18px;padding:6px 8px 10px;">';
+    // Stock
+    h+='<div style="text-align:center;">';
+    h+='<div onclick="_JUDS()" style="width:72px;height:100px;border-radius:8px;background:linear-gradient(135deg,#1a4a2e,#0c2a18);border:2px solid '+(canPickup?'#ffdc70':'rgba(180,140,70,0.35)')+';display:flex;align-items:center;justify-content:center;'+(canPickup?'cursor:pointer;box-shadow:0 0 14px rgba(255,220,112,0.35),inset 0 1px 0 rgba(255,255,255,0.1);':'cursor:default;opacity:0.7;box-shadow:inset 0 1px 0 rgba(255,255,255,0.05);')+'position:relative;font-family:Georgia,serif;color:rgba(245,235,208,0.65);font-size:1.2rem;">🂠';
+    h+='<span style="font-family:DM Mono,monospace;font-size:0.55rem;color:#ffdc70;position:absolute;bottom:4px;left:0;right:0;text-shadow:0 1px 3px #000;letter-spacing:0.05em;">'+stock.length+' left</span></div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:rgba(232,220,200,0.6);margin-top:5px;text-transform:uppercase;">Stock</div></div>';
+    // Discard
     h+='<div style="text-align:center;">';
     if(discardPile.length>0){
       var top=discardPile[discardPile.length-1];
-      var col=top.suit==='hearts'||top.suit==='diamonds'?'#c47a7a':'#1a1f17';
-      h+='<div onclick="_JUDD()" style="width:64px;height:90px;border-radius:8px;background:#E8DCC8;border:2px solid #b8a878;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:'+col+';font-weight:700;"><div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;">'+top.rank+'</div><div style="font-size:1.3rem;">'+_pip(top.suit)+'</div></div>';
+      var col=top.suit==='hearts'||top.suit==='diamonds'?'#b42a2a':'#1a1a1a';
+      h+='<div onclick="_JUDD()" style="width:72px;height:100px;border-radius:8px;background:linear-gradient(180deg,#faf3dd,#f0e7c8);border:2px solid '+(canPickup?'#ffdc70':'#c4b998')+';display:flex;flex-direction:column;align-items:center;justify-content:center;'+(canPickup?'cursor:pointer;box-shadow:0 0 14px rgba(255,220,112,0.35),inset 0 1px 0 rgba(255,255,255,0.5);':'cursor:default;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 3px 6px rgba(0,0,0,0.5);')+'color:'+col+';font-weight:700;font-family:Georgia,serif;position:relative;">';
+      h+='<span style="font-size:0.78rem;position:absolute;top:3px;left:5px;line-height:1;">'+top.rank+'</span>';
+      h+='<span style="font-size:1.7rem;line-height:1;">'+_pip(top.suit)+'</span>';
+      h+='<span style="font-size:0.78rem;position:absolute;bottom:3px;right:5px;line-height:1;transform:rotate(180deg);">'+top.rank+'</span>';
+      h+='</div>';
     }else{
-      h+='<div style="width:64px;height:90px;border-radius:8px;background:rgba(26,36,22,0.3);border:2px dashed rgba(122,179,86,0.3);display:flex;align-items:center;justify-content:center;font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);">empty</div>';
+      h+='<div style="width:72px;height:100px;border-radius:8px;background:rgba(0,0,0,0.3);border:2px dashed rgba(232,220,200,0.25);display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-style:italic;font-size:0.6rem;color:rgba(232,220,200,0.4);">empty</div>';
     }
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;color:var(--cream);margin-top:5px;">DISCARD</div></div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:rgba(232,220,200,0.6);margin-top:5px;text-transform:uppercase;">Discard</div></div>';
     h+='</div>';
-    // Deadwood display — bumped from 0.65rem to readable
-    var dw=playerHand.length<=11?getDeadwood(playerHand):'—';
-    var dwColor=(typeof dw==='number'&&dw<=10)?'var(--gold)':'var(--cream)';
-    h+='<div style="text-align:center;font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.1em;color:var(--cream);padding:6px;background:rgba(26,31,23,0.4);border-radius:6px;margin:4px 16px;">DEADWOOD: <strong style="color:'+dwColor+';font-size:1.3rem;">'+dw+'</strong></div>';
-    // Controls
-    h+='<div style="display:flex;justify-content:center;gap:8px;padding:6px 12px;">';
-    var canKnock=phase==='discard'&&playerHand.length===10&&typeof dw==='number'&&dw<=10;
-    var canGin=phase==='discard'&&playerHand.length===10&&dw===0;
-    h+='<button onclick="_JUK()" '+(canKnock?'':'disabled')+' style="background:rgba(26,36,22,0.7);border:1px solid '+(canKnock?'#c8a84b':'rgba(122,179,86,0.3)')+';color:'+(canKnock?'#c8a84b':'#e8dcc8')+';padding:8px 16px;border-radius:8px;font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:1px;cursor:pointer;'+(canKnock?'':'opacity:0.35;')+'min-height:44px;">KNOCK</button>';
-    if(canGin)h+='<button onclick="_JUG()" style="background:rgba(26,36,22,0.7);border:1px solid #7ab356;color:#7ab356;padding:8px 16px;border-radius:8px;font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:1px;cursor:pointer;min-height:44px;">GIN!</button>';
-    h+='<button onclick="_JUS()" style="background:rgba(26,36,22,0.7);border:1px solid rgba(122,179,86,0.3);color:#e8dcc8;padding:8px 16px;border-radius:8px;font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:1px;cursor:pointer;min-height:44px;">SORT</button>';
+    // ── DEADWOOD + KNOCK BUTTON ─────────────────────────────────
+    var dw = playerHand.length<=11 ? getDeadwood(playerHand) : null;
+    var dwIsNum = typeof dw === 'number';
+    var dwColor = !dwIsNum ? '#f5ebd0'
+                : dw===0 ? '#ffdc70'
+                : dw<=3 ? '#7ab356'
+                : dw<=10 ? '#ffa040'
+                : '#e63946';
+    var canKnock = phase==='discard' && playerHand.length===10 && dwIsNum && dw<=10;
+    var isGin = canKnock && dw===0;
+    h+='<div style="display:flex;justify-content:center;align-items:center;gap:10px;padding:4px 8px 8px;flex-wrap:wrap;">';
+    h+='<div style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:rgba(0,0,0,0.4);border:1px solid rgba(180,140,70,0.3);border-radius:999px;font-family:Georgia,serif;">';
+    h+='<span style="font-family:DM Mono,monospace;font-size:0.5rem;color:rgba(232,220,200,0.55);letter-spacing:0.14em;text-transform:uppercase;">Deadwood</span>';
+    h+='<span style="font-size:1.4rem;font-weight:700;color:'+dwColor+';line-height:1;text-shadow:0 1px 3px rgba(0,0,0,0.5);">'+(dwIsNum?dw:'—')+'</span>';
     h+='</div>';
-    // Player hand
-    var result=playerHand.length<=11?bestMeldCombination(playerHand):null;
-    var meldIdx={};
-    if(result){for(var m=0;m<result.melds.length;m++)for(var mj=0;mj<result.melds[m].length;mj++)meldIdx[result.melds[m][mj]]=true;}
-    h+='<div style="display:flex;justify-content:center;padding:6px 4px;flex-wrap:wrap;gap:1px;">';
+    if(isGin){
+      h+='<button onclick="_JUG()" class="ju-gin-btn" style="min-height:42px;padding:6px 18px;font-family:Georgia,serif;font-weight:700;font-size:0.95rem;background:linear-gradient(180deg,#ffdc70,#c48f1f);border:2px solid #ffdc70;color:#3a2a08;letter-spacing:0.06em;border-radius:8px;text-shadow:0 1px 0 rgba(255,255,255,0.5);box-shadow:0 0 22px rgba(255,220,112,0.7),inset 0 1px 0 rgba(255,255,255,0.5);cursor:pointer;animation:juGinPulse 0.9s ease-in-out infinite;">GIN!</button>';
+    }else{
+      h+='<button onclick="_JUK()" '+(canKnock?'':'disabled')+' style="min-height:42px;padding:6px 16px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;background:'+(canKnock?'linear-gradient(180deg,rgba(255,220,112,0.3),rgba(200,168,75,0.4))':'rgba(0,0,0,0.4)')+';border:'+(canKnock?'2':'1.5')+'px solid '+(canKnock?'#ffdc70':'rgba(232,220,200,0.25)')+';color:'+(canKnock?'#f5ebd0':'rgba(232,220,200,0.4)')+';letter-spacing:0.06em;border-radius:8px;cursor:'+(canKnock?'pointer':'not-allowed')+';'+(canKnock?'box-shadow:0 0 14px rgba(255,220,112,0.45),inset 0 1px 0 rgba(255,255,255,0.15);animation:juKnockPulse 1.4s ease-in-out infinite;':'')+'">KNOCK'+(canKnock&&dwIsNum?' &middot; '+dw:'')+'</button>';
+    }
+    h+='<button onclick="_JUS()" title="Sort hand" style="min-height:36px;padding:4px 12px;font-family:Georgia,serif;font-style:italic;font-size:0.7rem;background:rgba(0,0,0,0.4);border:1px solid rgba(232,220,200,0.3);color:rgba(232,220,200,0.85);border-radius:8px;cursor:pointer;">↕ Sort</button>';
+    h+='</div>';
+    // ── PLAYER HAND with auto-meld tints ────────────────────────
+    var info = playerHand.length<=11 ? _handMeldMap(playerHand) : null;
+    h+='<div style="display:flex;justify-content:center;padding:6px 2px;flex-wrap:wrap;gap:3px;">';
     for(var k=0;k<playerHand.length;k++){
-      var c=playerHand[k];var inMeld=!!meldIdx[k];
-      var col=c.suit==='hearts'||c.suit==='diamonds'?'#c47a7a':'#1a1f17';
-      var bg=inMeld?'#d8e0c8':'#E8DCC8';
-      var bc=inMeld?'#7ab356':'#b8a878';
-      h+='<div onclick="_JUCC('+k+')" style="width:40px;height:56px;border-radius:6px;background:'+bg+';border:2px solid '+bc+';display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:'+col+';font-weight:700;"><div style="font-family:Bebas Neue,sans-serif;font-size:1rem;line-height:1;">'+c.rank+'</div><div style="font-size:1rem;">'+_pip(c.suit)+'</div></div>';
+      var c=playerHand[k];
+      var meldIdxNum = info ? info.meldOf[k] : undefined;
+      var meldKind = info ? info.kindOf[k] : null;
+      var inMeld = (meldIdxNum !== undefined);
+      var redCol = c.suit==='hearts'||c.suit==='diamonds';
+      var col = redCol ? '#b42a2a' : '#1a1a1a';
+      // Background tint: warm (set) / cool (run) / cream (deadwood)
+      var bgTop, bgBot, bdr;
+      if(meldKind==='set'){ bgTop='#fff0d0'; bgBot='#f3deaa'; bdr='#c48f3a'; }
+      else if(meldKind==='run'){ bgTop='#d6e6f5'; bgBot='#b9d4ec'; bdr='#5b9bd1'; }
+      else { bgTop='#faf3dd'; bgBot='#f0e7c8'; bdr='#b8a878'; }
+      var sty='width:46px;height:64px;border-radius:6px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-family:Georgia,serif;border:2px solid '+bdr+';background:linear-gradient(180deg,'+bgTop+','+bgBot+');color:'+col+';position:relative;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,0.55),0 2px 5px rgba(0,0,0,0.5);transition:transform .15s;';
+      h+='<div onclick="_JUCC('+k+')" style="'+sty+'">';
+      h+='<span style="font-size:0.78rem;position:absolute;top:2px;left:5px;line-height:1;">'+c.rank+'</span>';
+      h+='<span style="font-size:0.58rem;position:absolute;top:14px;left:6px;line-height:1;">'+_pip(c.suit)+'</span>';
+      h+='<span style="font-size:1.4rem;line-height:1;">'+_pip(c.suit)+'</span>';
+      h+='<span style="font-size:0.78rem;position:absolute;bottom:2px;right:5px;line-height:1;transform:rotate(180deg);">'+c.rank+'</span>';
+      h+='</div>';
     }
     h+='</div>';
     pan.innerHTML=h;
+  }
+  // ── Per-player score strip ──────────────────────────────────
+  function _scoreStrip(label, score, wins, color){
+    return '<div style="flex:1;background:linear-gradient(180deg,rgba(0,0,0,0.4),rgba(0,0,0,0.55));border:1.5px solid '+color+';border-radius:8px;padding:6px 10px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.06),0 2px 6px rgba(0,0,0,0.4);">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;">'
+        +'<div>'
+          +'<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;color:'+color+';text-transform:uppercase;line-height:1;">'+label+'</div>'
+          +'<div style="font-family:Georgia,serif;font-size:1.5rem;font-weight:700;color:#f5ebd0;line-height:1;margin-top:2px;text-shadow:0 2px 3px rgba(0,0,0,0.5);">'+score+'</div>'
+        +'</div>'
+        +'<div style="text-align:right;font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;color:rgba(232,220,200,0.55);">'
+          +'<div style="text-transform:uppercase;">hands won</div>'
+          +'<div style="font-family:Georgia,serif;font-size:1rem;font-weight:700;color:#f5ebd0;margin-top:2px;">'+wins+'</div>'
+        +'</div>'
+      +'</div>'
+    +'</div>';
   }
 
   window._JUN=function(){playerScore=0;aiScore=0;playerWins=0;aiWins=0;newHand();};
