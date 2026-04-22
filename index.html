@@ -50158,7 +50158,9 @@ function GBW(a){
     +'</div>'
     // Essentials row — CLEAR + SAVE promoted out of the accordion so
     // they're a single tap away. MORE OPTIONS toggle sits with them.
-    +'<div style="display:flex;gap:6px;padding:4px 0 6px;flex-wrap:wrap;justify-content:center;align-items:center">'
+    // position:sticky keeps this row pinned to the bottom of the game
+    // scroll container even when the canvas pushes other rows off-screen.
+    +'<div style="display:flex;gap:6px;padding:8px 4px;flex-wrap:wrap;justify-content:center;align-items:center;position:sticky;bottom:0;background:rgba(13,16,12,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid rgba(74,124,53,.15);z-index:4;margin:0 -12px">'
     +'<button class="gb" style="'+_bbs+';border-color:rgba(217,107,75,0.35);color:#e8a090" onclick="_BWClear()">✕ CLEAR<span style="'+_bls+'">CANVAS</span></button>'
     +'<button class="gb" style="'+_bbs+';border-color:rgba(200,168,75,0.4);color:var(--gold);background:rgba(200,168,75,0.08)" onclick="_BWSave()">💾 SAVE<span style="'+_bls+'">IMAGE</span></button>'
     +'<button class="gb" style="min-height:40px;padding:0.35rem 0.9rem;font-size:0.55rem;letter-spacing:0.1em;background:rgba(26,31,23,.6);border:1px solid rgba(74,124,53,.2);border-radius:8px;" onclick="_BWMore()" id="BWmoreTog">▼ MORE</button>'
