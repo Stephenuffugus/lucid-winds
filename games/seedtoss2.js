@@ -55,6 +55,11 @@ window._gameFns.seedtoss2=function ST(a){
   var rafId=0,running=false;
   var currentSize=POT_SIZES[0];   // active pot size (LARGE by default)
   var scoreMult=1.0;                // multiplier applied to earned points
+  // Skin layer state — weather, parallax, pot sway, bullseye flash
+  var weatherType=null;             // 'rain' | 'snow' | 'leaves' | 'mist' | null
+  var weatherPoints=[];
+  var parallaxT=0;
+  var bullseyeFlash=0;              // 0..1, decays after a dead-center toss
 
   ms(a,'Score <span id="STs">0</span> · Seeds <span id="STq">15</span> · L<span id="STl">1</span>');
   mm(a);
@@ -96,6 +101,7 @@ window._gameFns.seedtoss2=function ST(a){
     if(level>=4&&Math.random()<0.3)py=GROUND_Y-40-Math.random()*50;
     pot={x:px,y:py,width:pw,height:ph};
     wind=level>=3?(Math.random()-0.5)*60*Math.min(level*0.4,3):0;
+    pickWeather();
   }
 
   function resetSeed(){
@@ -193,11 +199,21 @@ window._gameFns.seedtoss2=function ST(a){
     pts=Math.round(pts*scoreMult);
     score+=pts;
     var multTag=scoreMult>1?' ×'+scoreMult:'';
-    setMsg('+'+pts+multTag+heightLabel);
-    // Pop particles in current seed tier colors
+    var isBullseye=dist<5;
+    setMsg((isBullseye?'BULLSEYE · +':'+')+pts+multTag+heightLabel);
+    // Pop particles — bigger burst + gold mix on bullseyes
     var seedTier=_STcurrentSeedTier(level);
-    for(var i=0;i<16;i++){var ang=Math.random()*Math.PI*2,sp=50+Math.random()*120;
-      particles.push({x:pot.x,y:pot.y-pot.height,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp-60,life:0.8,maxLife:0.8,size:2+Math.random()*3,color:seedTier.particles[Math.floor(Math.random()*3)]});}
+    var burstCount=isBullseye?32:16;
+    var burstSpeed=isBullseye?90:60;
+    for(var i=0;i<burstCount;i++){
+      var ang=Math.random()*Math.PI*2,sp=burstSpeed+Math.random()*120;
+      var pcol=isBullseye&&i%3===0?'#ffe080':seedTier.particles[Math.floor(Math.random()*3)];
+      particles.push({x:pot.x,y:pot.y-pot.height,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp-80,life:isBullseye?1.1:0.8,maxLife:isBullseye?1.1:0.8,size:2+Math.random()*(isBullseye?4:3),color:pcol});
+    }
+    if(isBullseye){
+      bullseyeFlash=1.0;
+      try{if(_playWin)_playWin();}catch(e){}
+    }
     _e('progress');
     if(streak%5===0)_e('milestone');
     if(totalMade%5===0){
@@ -235,9 +251,111 @@ window._gameFns.seedtoss2=function ST(a){
     if(s)s.textContent=score;if(q)q.textContent=seedsLeft;if(l)l.textContent=level;
   }
 
+  // ─── WEATHER ──────────────────────────────────────────────────
+  // Per-round ambient layer. Chosen when a new pot is generated so
+  // the player gets visual variety from round to round. `null` = clear.
+  function pickWeather(){
+    var types=[null,null,'rain','snow','leaves','mist']; // null weighted for clear rounds
+    weatherType=types[Math.floor(Math.random()*types.length)];
+    weatherPoints=[];
+    if(!weatherType)return;
+    var count=weatherType==='mist'?5:(weatherType==='leaves'?18:50);
+    for(var i=0;i<count;i++){
+      weatherPoints.push({
+        x:Math.random()*W,
+        y:Math.random()*H,
+        vx:weatherType==='rain'?-40:(weatherType==='leaves'?-30+Math.random()*60:-6+Math.random()*12),
+        vy:weatherType==='rain'?320:(weatherType==='snow'?22+Math.random()*14:(weatherType==='leaves'?40+Math.random()*30:0)),
+        size:1+Math.random()*2,
+        rot:Math.random()*Math.PI*2,
+        rotSpeed:(Math.random()-0.5)*2,
+        color:weatherType==='leaves'?['#c76a30','#e8a050','#c8a84b','#8a4320'][Math.floor(Math.random()*4)]:null
+      });
+    }
+  }
+  function updateWeather(dt){
+    if(!weatherType)return;
+    for(var i=0;i<weatherPoints.length;i++){
+      var p=weatherPoints[i];
+      p.x+=p.vx*dt;p.y+=p.vy*dt;
+      if(p.rotSpeed)p.rot+=p.rotSpeed*dt;
+      if(p.y>H+10){p.y=-10;p.x=Math.random()*W;}
+      if(p.x<-30)p.x=W+10;
+      if(p.x>W+30)p.x=-10;
+    }
+  }
+  function drawWeather(){
+    if(!weatherType)return;
+    ctx.save();
+    if(weatherType==='rain'){
+      ctx.strokeStyle='rgba(140,180,220,0.35)';ctx.lineWidth=1;
+      for(var i=0;i<weatherPoints.length;i++){
+        var p=weatherPoints[i];
+        ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-3,p.y+11);ctx.stroke();
+      }
+    } else if(weatherType==='snow'){
+      ctx.fillStyle='rgba(255,255,255,0.75)';
+      for(var s=0;s<weatherPoints.length;s++){
+        var sp=weatherPoints[s];
+        ctx.beginPath();ctx.arc(sp.x,sp.y,sp.size,0,Math.PI*2);ctx.fill();
+      }
+    } else if(weatherType==='leaves'){
+      for(var l=0;l<weatherPoints.length;l++){
+        var lp=weatherPoints[l];
+        ctx.save();ctx.translate(lp.x,lp.y);ctx.rotate(lp.rot);
+        ctx.fillStyle=lp.color;
+        ctx.beginPath();ctx.ellipse(0,0,5,2.5,0,0,Math.PI*2);ctx.fill();
+        ctx.restore();
+      }
+    } else if(weatherType==='mist'){
+      for(var m=0;m<weatherPoints.length;m++){
+        var mp=weatherPoints[m];
+        var grd=ctx.createRadialGradient(mp.x,mp.y,0,mp.x,mp.y,90);
+        grd.addColorStop(0,'rgba(200,214,224,0.18)');
+        grd.addColorStop(1,'rgba(200,214,224,0)');
+        ctx.fillStyle=grd;
+        ctx.fillRect(mp.x-90,mp.y-35,180,70);
+      }
+    }
+    ctx.restore();
+  }
+
+  // ─── PARALLAX — two silhouette layers drifting slowly ─────────
+  function drawParallax(){
+    // Distant hills
+    ctx.fillStyle='rgba(28,40,30,0.55)';
+    ctx.beginPath();
+    ctx.moveTo(0,GROUND_Y-60);
+    for(var x=0;x<=W;x+=24){
+      var y=GROUND_Y-60-Math.sin(x*0.018+parallaxT*0.04)*14-Math.sin(x*0.032)*9;
+      ctx.lineTo(x,y);
+    }
+    ctx.lineTo(W,GROUND_Y);ctx.lineTo(0,GROUND_Y);
+    ctx.closePath();ctx.fill();
+    // Mid tree line — jagged silhouette
+    ctx.fillStyle='rgba(12,22,15,0.78)';
+    ctx.beginPath();
+    ctx.moveTo(0,GROUND_Y-26);
+    for(var x2=0;x2<=W;x2+=14){
+      var y2=GROUND_Y-26-Math.abs(Math.sin(x2*0.045+parallaxT*0.12))*18-Math.abs(Math.cos(x2*0.11))*6;
+      ctx.lineTo(x2,y2);
+    }
+    ctx.lineTo(W,GROUND_Y);ctx.lineTo(0,GROUND_Y);
+    ctx.closePath();ctx.fill();
+  }
+
   function drawPotSkinned(px,py,pw,ph,tier){
     // Tapered flowerpot: narrower at the base, wider at the rim, with
     // an inner dark mouth, highlight strip, and ground shadow.
+    // Subtle wind-driven sway — the whole pot tilts 0-2° sinusoidally,
+    // scaled by current wind strength. Looks alive without being silly.
+    var swayAngle=Math.abs(wind)>5?Math.sin(Date.now()*0.004)*(Math.abs(wind)/200)*0.035:0;
+    ctx.save();
+    if(swayAngle!==0){
+      ctx.translate(px,py);
+      ctx.rotate(swayAngle);
+      ctx.translate(-px,-py);
+    }
     // Ground shadow
     ctx.save();
     ctx.fillStyle='rgba(0,0,0,0.35)';
@@ -299,6 +417,7 @@ window._gameFns.seedtoss2=function ST(a){
     ctx.beginPath();
     ctx.ellipse(px,py-ph-1,pw*0.28,2.5,0,0,Math.PI*2);
     ctx.fill();
+    ctx.restore(); // closes the sway transform
   }
   function drawSeedSkinned(x,y,r,tier){
     // Outer glow
@@ -376,6 +495,8 @@ window._gameFns.seedtoss2=function ST(a){
       ctx.fillText('▲ higher = more pts · keep climbing · cap +1000',W/2,2);
       ctx.textBaseline='alphabetic';
     }
+    // Parallax silhouettes BEFORE the ground strip so ground sits on top
+    drawParallax();
     // Ground
     ctx.fillStyle='rgba(40,35,25,0.4)';ctx.fillRect(0,GROUND_Y-3,W,H-GROUND_Y);
     ctx.strokeStyle='rgba(80,70,50,0.3)';ctx.lineWidth=1;
@@ -413,6 +534,13 @@ window._gameFns.seedtoss2=function ST(a){
       ctx.beginPath();ctx.arc(p.x,p.y,p.size*(p.life/p.maxLife),0,Math.PI*2);ctx.fill();
     }
     ctx.globalAlpha=1;
+    // Weather layer (on top of scene, below HUD text)
+    drawWeather();
+    // Bullseye gold flash — decays over the frames after a dead-center toss
+    if(bullseyeFlash>0){
+      ctx.fillStyle='rgba(200,168,75,'+(bullseyeFlash*0.28)+')';
+      ctx.fillRect(0,0,W,H);
+    }
     // Idle hint
     if(phase==='ready'&&totalThrown===0&&seed){
       ctx.fillStyle='rgba(232,220,200,0.5)';
@@ -428,6 +556,9 @@ window._gameFns.seedtoss2=function ST(a){
     // catch it otherwise and rAF would burn CPU on a dead canvas.
     if(!document.body.classList.contains('game-active')){running=false;return;}
     var dt=lastT?Math.min((ts-lastT)/1000,0.04):0.016;lastT=ts;
+    parallaxT+=dt;
+    updateWeather(dt);
+    if(bullseyeFlash>0)bullseyeFlash=Math.max(0,bullseyeFlash-dt*1.6);
     updateSeed(dt);
     if(seed&&seed.trail)for(var i=seed.trail.length-1;i>=0;i--){seed.trail[i].life-=dt*2;if(seed.trail[i].life<=0)seed.trail.splice(i,1);}
     for(i=particles.length-1;i>=0;i--){var p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=120*dt;p.life-=dt;if(p.life<=0)particles.splice(i,1);}
