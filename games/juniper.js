@@ -67,7 +67,7 @@ window._gameFns.juniper = function Juniper(a){
   // mc(a) empty — controls render inside the pan.
   mc(a);
   window._JUToggleStyle=function(){
-    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
+    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading, try again in a sec.');return;}
     window._cdToggleStyle();
     if(typeof render==='function')render();
   };
@@ -241,7 +241,7 @@ window._gameFns.juniper = function Juniper(a){
           setTimeout(function(){endRound('ai','knock');},600);return;
         }
         var di3=aiDecideDiscard();var dc3=aiHand.splice(di3,1)[0];discardPile.push(dc3);
-        sm('Your turn — draw a card');phase='draw';turnCount++;
+        sm('Your turn, draw a card');phase='draw';turnCount++;
         if(stock.length===0){drawRound();return;}
         render();
       },700+Math.floor(Math.random()*400));
@@ -255,9 +255,9 @@ window._gameFns.juniper = function Juniper(a){
     stock=deck.slice(20);discardPile=[stock.pop()];
     sortBySuit(playerHand);turnCount=0;phase='draw';
   }
-  function newHand(){deal();sm('Your turn — draw a card');render();}
+  function newHand(){deal();sm('Your turn, draw a card');render();}
   function drawRound(){
-    sm('Stock empty — round is a draw');
+    sm('Stock empty, round is a draw');
     setTimeout(function(){
       if(playerScore>=100||aiScore>=100)return;
       newHand();

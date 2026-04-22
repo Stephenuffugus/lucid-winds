@@ -11,68 +11,68 @@ window._gameFns.livingstones = function LS(a){
 
   var ALL_PUZZLES = {
     beginner: [
-      {size:5, goal:'BLACK — CAPTURE', hint:'Fill the last liberty',
+      {size:5, goal:'BLACK, CAPTURE', hint:'Fill the last liberty',
        B:[[1,1],[1,3],[2,0],[2,2],[3,1]], W:[[2,1]], solution:[[3,0]], check:'captured'},
-      {size:5, goal:'BLACK — SNAP-BACK', hint:'Sacrifice to capture more',
+      {size:5, goal:'BLACK, SNAP-BACK', hint:'Sacrifice to capture more',
        B:[[1,1],[1,2],[1,3],[2,0],[2,3],[3,1],[3,2],[3,3]], W:[[2,1],[2,2]], solution:[[2,3]], check:'captured'},
-      {size:7, goal:'BLACK — KILL THE GROUP', hint:'Find the vital point',
+      {size:7, goal:'BLACK, KILL THE GROUP', hint:'Find the vital point',
        B:[[0,3],[1,1],[1,4],[2,0],[2,4],[3,0],[3,1],[3,2],[3,3],[3,4]],
        W:[[0,1],[0,2],[1,2],[1,3],[2,1],[2,2],[2,3]], solution:[[0,0]], check:'dead'},
-      {size:7, goal:'BLACK — KILL WHITE', hint:'Play inside the eye space',
+      {size:7, goal:'BLACK, KILL WHITE', hint:'Play inside the eye space',
        B:[[1,0],[1,1],[1,2],[1,3],[1,4],[0,4]], W:[[0,0],[0,1],[0,2],[0,3]],
        solution:[[0,1]], check:'dead'},
-      {size:7, goal:'BLACK — KILL WHITE', hint:'Two eyes needed to live',
+      {size:7, goal:'BLACK, KILL WHITE', hint:'Two eyes needed to live',
        B:[[2,0],[2,1],[2,2],[2,3],[2,4],[2,5],[1,5],[0,5]],
        W:[[0,0],[0,1],[0,2],[0,3],[0,4],[1,0],[1,1],[1,2],[1,3],[1,4]],
        solution:[[0,2]], check:'dead'},
-      {size:5, goal:'BLACK — CAPTURE', hint:'Reduce liberties first',
+      {size:5, goal:'BLACK, CAPTURE', hint:'Reduce liberties first',
        B:[[0,0],[0,1],[1,2],[2,0],[2,1],[2,2]], W:[[1,0],[1,1]],
        solution:[[0,2]], check:'captured'},
-      {size:7, goal:'BLACK — EDGE CAPTURE', hint:'Edge stones have fewer liberties',
+      {size:7, goal:'BLACK, EDGE CAPTURE', hint:'Edge stones have fewer liberties',
        B:[[1,0],[1,1],[1,2],[0,2]], W:[[0,0],[0,1]], solution:[[0,0]], check:'captured'}
     ],
     intermediate: [
-      {size:7, goal:'BLACK — CAPTURE RACE', hint:'Count liberties carefully',
+      {size:7, goal:'BLACK, CAPTURE RACE', hint:'Count liberties carefully',
        B:[[0,3],[1,3],[2,3],[2,2],[2,1],[2,0]], W:[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2]],
        solution:[[0,0]], check:'captured'},
-      {size:7, goal:'BLACK — KILL BULKY FIVE', hint:'Play in the center',
+      {size:7, goal:'BLACK, KILL BULKY FIVE', hint:'Play in the center',
        B:[[3,0],[3,1],[3,2],[3,3],[3,4],[3,5],[2,5],[1,5],[0,5]],
        W:[[0,0],[0,1],[0,2],[0,3],[0,4],[1,0],[1,1],[1,2],[1,3],[1,4],[2,0],[2,1],[2,2],[2,3],[2,4]],
        solution:[[1,2]], check:'dead'},
-      {size:7, goal:'BLACK — THE HANE', hint:'Diagonal attachment is key',
+      {size:7, goal:'BLACK, THE HANE', hint:'Diagonal attachment is key',
        B:[[2,0],[2,1],[2,2],[2,3],[1,3],[0,3]], W:[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2]],
        solution:[[0,0]], check:'dead'},
-      {size:7, goal:'BLACK — UNDER THE STONES', hint:'The obvious move works',
+      {size:7, goal:'BLACK, UNDER THE STONES', hint:'The obvious move works',
        B:[[1,0],[1,1],[1,2],[1,3],[0,3]], W:[[0,0],[0,1],[0,2]],
        solution:[[0,0]], check:'captured'},
-      {size:7, goal:'BLACK — DOUBLE ATARI', hint:'One move threatens two groups',
+      {size:7, goal:'BLACK, DOUBLE ATARI', hint:'One move threatens two groups',
        B:[[0,0],[0,2],[1,1],[1,3],[2,0],[2,2],[2,4],[3,1],[3,3]], W:[[1,0],[1,2],[1,4]],
        solution:[[0,1]], check:'captured'},
-      {size:7, goal:'BLACK — SQUEEZE', hint:'Tighten the noose',
+      {size:7, goal:'BLACK, SQUEEZE', hint:'Tighten the noose',
        B:[[0,3],[1,0],[1,3],[2,0],[2,1],[2,2],[2,3]], W:[[0,0],[0,1],[0,2],[1,1],[1,2]],
        solution:[[0,0]], check:'captured'}
     ],
     advanced: [
-      {size:9, goal:'BLACK — KILL CORNER', hint:'The 1-1 point is vital',
+      {size:9, goal:'BLACK, KILL CORNER', hint:'The 1-1 point is vital',
        B:[[3,0],[3,1],[3,2],[3,3],[2,3],[1,3],[0,3]],
        W:[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]],
        solution:[[0,0]], check:'dead'},
-      {size:9, goal:'BLACK — KILL WHITE', hint:'Reduce to a false eye',
+      {size:9, goal:'BLACK, KILL WHITE', hint:'Reduce to a false eye',
        B:[[4,0],[4,1],[4,2],[4,3],[4,4],[3,4],[2,4],[1,4],[0,4]],
        W:[[0,0],[0,1],[0,2],[0,3],[1,0],[1,1],[1,2],[1,3],[2,0],[2,1],[2,2],[2,3],[3,0],[3,1],[3,2],[3,3]],
        solution:[[1,1]], check:'dead'},
-      {size:9, goal:'BLACK — WIN SEMEAI', hint:'Fill outside liberties first',
+      {size:9, goal:'BLACK, WIN SEMEAI', hint:'Fill outside liberties first',
        B:[[0,4],[1,4],[2,4],[2,3],[2,2],[2,1],[2,0]],
        W:[[0,0],[0,1],[0,2],[0,3],[1,0],[1,1],[1,2],[1,3]],
        solution:[[0,0]], check:'captured'},
-      {size:9, goal:'BLACK — KILL L+2 GROUP', hint:'Classic L-group',
+      {size:9, goal:'BLACK, KILL L+2 GROUP', hint:'Classic L-group',
        B:[[0,5],[1,5],[2,5],[2,4],[2,3],[2,2],[2,1],[2,0]],
        W:[[0,0],[0,1],[0,2],[0,3],[0,4],[1,0],[1,1],[1,2],[1,3],[1,4]],
        solution:[[0,2]], check:'dead'},
-      {size:7, goal:'BLACK — CAPTURE CUTTING STONES', hint:'Net them in',
+      {size:7, goal:'BLACK, CAPTURE CUTTING STONES', hint:'Net them in',
        B:[[0,0],[0,2],[1,3],[2,0],[2,2],[3,1]], W:[[1,1],[1,2]],
        solution:[[0,1]], check:'captured'},
-      {size:9, goal:'BLACK — KILL BIG GROUP', hint:'Center play defeats a five-row',
+      {size:9, goal:'BLACK, KILL BIG GROUP', hint:'Center play defeats a five-row',
        B:[[2,0],[2,1],[2,2],[2,3],[2,4],[2,5],[2,6],[1,6],[0,6]],
        W:[[0,0],[0,1],[0,2],[0,3],[0,4],[0,5],[1,0],[1,1],[1,2],[1,3],[1,4],[1,5]],
        solution:[[0,2]], check:'dead'}
@@ -233,7 +233,7 @@ window._gameFns.livingstones = function LS(a){
       _playWin();
       sm('✓ Solved!');
     }else{
-      sm('Not quite — try again');
+      sm('Not quite, try again');
       setTimeout(function(){if(!puzzleSolved&&moveHistory.length>0)undo();},1200);
     }
     renderBoard();
@@ -313,8 +313,8 @@ window._gameFns.livingstones = function LS(a){
       }
     }
     svg+='</svg>';
-    var h='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:1px;margin:6px 0;">YOU (Black) vs AI (White) — '+aiSize+'×'+aiSize+'</div>';
-    h+='<div style="font-size:0.78rem;color:var(--cream);margin-bottom:6px;">Captures — you: '+aiPlayerCaps+' · AI: '+aiOppCaps+'</div>';
+    var h='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:1px;margin:6px 0;">YOU (Black) vs AI (White), '+aiSize+'×'+aiSize+'</div>';
+    h+='<div style="font-size:0.78rem;color:var(--cream);margin-bottom:6px;">Captures, you: '+aiPlayerCaps+' · AI: '+aiOppCaps+'</div>';
     h+=svg;
     h+='<div style="font-style:italic;font-size:0.8rem;color:var(--cream);min-height:1.2em;margin:4px 0;">'+(aiStatus||'')+'</div>';
     h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:6px;">';
@@ -427,7 +427,7 @@ window._gameFns.livingstones = function LS(a){
     // Listener is now attached — kick off the handshake. Worker
     // responds with 'ready' which triggers boardsize → clear → start.
     aiWorker.postMessage({cmd:'ping'});
-    sm('Play AI — you are Black');
+    sm('Play AI, you are Black');
   };
   window._LSaiTap=function(r,c){
     if(aiThinking||aiGameOver)return;
@@ -449,7 +449,7 @@ window._gameFns.livingstones = function LS(a){
   };
   window._LSaiResign=function(){
     if(aiThinking||aiGameOver)return;
-    aiGameOver=true;aiStatus='You resigned — AI wins';
+    aiGameOver=true;aiStatus='You resigned, AI wins';
     _play('lose');
     _sr('livingstones',{w:false,s:0,lv:'ai'+aiSize,tp:0});
     aiRender();

@@ -94,7 +94,7 @@ window._gameFns.bleedinghearts = function BH(a){
   // controls row never overlaps the player's hand.
   mc(a);
   window._BHToggleStyle=function(){
-    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
+    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading, try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('BHstyle');
     if(b)b.textContent='🃏 Style';
@@ -383,7 +383,7 @@ window._gameFns.bleedinghearts = function BH(a){
       if(trumpRoundPts(p)){
         h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.58rem;color:#dc8a8a;margin-top:2px;line-height:1;">+'+roundPts[p]+'</div>';
       }else{
-        h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:rgba(232,220,200,0.35);margin-top:2px;line-height:1;">—</div>';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:rgba(232,220,200,0.35);margin-top:2px;line-height:1;">, </div>';
       }
       h+='</div>';
     }

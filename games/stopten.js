@@ -11,7 +11,7 @@ window._gameFns.stopten=function ST(a){
   var startMs=0,elapsed=0,running=false,rafId=0,attempts=0,best=Infinity;
   var sessionDone=false;
 
-  ms(a,'Stop at Ten · <span id="STa">0</span>/'+MAX_ATTEMPTS+' · best <span id="STb">—</span>');
+  ms(a,'Stop at Ten · <span id="STa">0</span>/'+MAX_ATTEMPTS+' · best <span id="STb">, </span>');
   mm(a);
   var pan=document.createElement('div');
   pan.style.cssText='max-width:420px;margin:0 auto;padding:24px 16px;text-align:center;';

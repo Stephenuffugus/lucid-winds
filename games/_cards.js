@@ -462,5 +462,5 @@ window._SUIT_NAME=_SUIT_NAME;
 window._CD_BASE=_CD_BASE;
 window._CD_BACK=_CD_BACK;
 
-console.log('[LW] Card utilities loaded — style:',_cdStyle());
+console.log('[LW] Card utilities loaded, style:',_cdStyle());
 })();

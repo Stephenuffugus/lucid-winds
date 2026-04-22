@@ -181,7 +181,7 @@ window._gameFns.rhythmvine=function RV(a){
       rafId=requestAnimationFrame(loop);
       var totalSec=chart.notes.length?chart.notes[chart.notes.length-1][0]+2:60;
       endTimerId=setTimeout(endRun,(totalSec+0.5)*1000);
-    },function(){sm('Audio blocked — tap screen to unlock');});
+    },function(){sm('Audio blocked, tap screen to unlock');});
   }
 
   function endRun(){

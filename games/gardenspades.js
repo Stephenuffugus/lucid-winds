@@ -89,7 +89,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
   // mc(a) empty — controls go inside the pan via render().
   mc(a);
   window._GSToggleStyle=function(){
-    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
+    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading, try again in a sec.');return;}
     window._cdToggleStyle();
     if(typeof render==='function')render();
   };
@@ -217,7 +217,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
         lastTrickWinner=winner;
         if(nilBroke){
           nilBrokenJust=winner;
-          sm('NIL BROKEN — '+NAMES[winner]+' took a trick');
+          sm('NIL BROKEN, '+NAMES[winner]+' took a trick');
           setTimeout(function(){nilBrokenJust=-1;render();},1200);
         }else{
           sm(NAMES[winner]+' takes the trick');
@@ -278,7 +278,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
     history.push(roundEntry);
     _e('milestone');
     render();
-    sm('Round over — You '+teamScore[0]+' vs '+teamScore[1]);
+    sm('Round over, You '+teamScore[0]+' vs '+teamScore[1]);
     if(teamScore[0]>=500||teamScore[1]>=500||teamScore[0]<=-200||teamScore[1]<=-200){
       var won=(teamScore[0]>=500&&teamScore[0]>teamScore[1])||(teamScore[1]<=-200&&teamScore[0]>teamScore[1]);
       if(won){_e('game_win');_playWin();sm('♠ You win! '+teamScore[0]);}

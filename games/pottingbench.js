@@ -128,7 +128,7 @@ window._gameFns.pottingbench=function PB(a){
     running=false;phase='done';
     if(timerId){clearInterval(timerId);timerId=0;}
     var secs=(elapsedMs/1000).toFixed(2);
-    sm('🍂 Stuck — no matches left in hand. '+secs+'s');
+    sm('🍂 Stuck, no matches left in hand. '+secs+'s');
     _sr('pottingbench',{w:false,s:Math.round(elapsedMs)});
     renderEnd(secs,false,true);
     return true;

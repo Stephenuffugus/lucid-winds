@@ -12,7 +12,7 @@ window._gameFns.dailybloom=function DB(a){
   var scores=[0,0,0,0,0];
   var exData={};
 
-  ms(a,'🌱 Daily Bloom — <strong id="DBd">'+exNames[0]+'</strong>');
+  ms(a,'🌱 Daily Bloom, <strong id="DBd">'+exNames[0]+'</strong>');
   mm(a);
   var pan=document.createElement('div');pan.id='DBpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:10px;user-select:none;text-align:center;color:#e8dcc8;';

@@ -450,7 +450,7 @@ window._gameFns.pixelgarden = function PG(a){
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:0.12em;color:var(--gold);">🧩 COMPOSE</div>';
     h+='<button class="gb" onclick="document.getElementById(\'PGcmpOV\').remove()" style="min-height:44px;padding:6px 14px;">CLOSE</button>';
     h+='</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);line-height:1.5;margin-bottom:10px;">Stitch saved squares into a bigger canvas. All slots must share the same grid size — the first one you drop in locks the size.</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);line-height:1.5;margin-bottom:10px;">Stitch saved squares into a bigger canvas. All slots must share the same grid size, the first one you drop in locks the size.</div>';
     // Layout picker
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.1em;color:var(--sage);margin-bottom:4px;">LAYOUT</div>';
     var layouts=[[2,2],[3,2],[2,3],[3,3],[4,4]];

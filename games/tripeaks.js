@@ -36,7 +36,7 @@ function GTP(a){
     upd();rn();refreshUndoBtn();
   };
   window._TPToggleStyle=function(){
-    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
+    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading, try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('TPstyle');
     if(b)b.textContent='🃏 Style';
@@ -114,13 +114,13 @@ function GTP(a){
     flipParents();
     if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('tripeaks',{w:true,s:moves});}
     upd();rn();refreshUndoBtn();
-    if(!gameOver&&checkLoss()){gameOver=true;var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;mm_up(left+' left — stuck');_e('game_loss');_play('lose');_sr('tripeaks',{w:false,s:28-left});}
+    if(!gameOver&&checkLoss()){gameOver=true;var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;mm_up(left+' left, stuck');_e('game_loss');_play('lose');_sr('tripeaks',{w:false,s:28-left});}
   }
   function tapStock(){
     if(gameOver||stock.length===0)return;
     snapshot();
     var cd=stock.pop();cd.up=true;waste.push(cd);streak=0;_play('tap');upd();rn();refreshUndoBtn();
-    if(checkLoss()){gameOver=true;var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;mm_up(left+' left — stuck');_e('game_loss');_play('lose');_sr('tripeaks',{w:false,s:28-left});}
+    if(checkLoss()){gameOver=true;var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;mm_up(left+' left, stuck');_e('game_loss');_play('lose');_sr('tripeaks',{w:false,s:28-left});}
   }
   function rn(){
     var _ag=document.getElementById('fg-ag');

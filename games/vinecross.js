@@ -10,7 +10,7 @@ window._gameFns.vinecross=function VC(a){
   var board,turn,moves,hist,gameOver,winner,lastMove,winLine,LVL=5,thinking=false;
   var cvs,ctx;
 
-  ms(a,'⚫ Vine Cross — <strong id="VCst">Your turn</strong>');
+  ms(a,'⚫ Vine Cross, <strong id="VCst">Your turn</strong>');
   mm(a);
   var pan=document.createElement('div');pan.id='VCpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:6px;user-select:none;text-align:center;';
@@ -115,7 +115,7 @@ window._gameFns.vinecross=function VC(a){
     var st=document.getElementById('VCst');
     if(w===1){sm('🟢 Vine complete! 5 in a row.');if(st)st.textContent='You win!';_e('game_win');try{_playWin();}catch(e){}_sr('vinecross',{w:true,s:moves});}
     else if(w===2){sm('🌸 The garden overgrew. Try again.');if(st)st.textContent='AI wins';_e('game_loss');try{_play('lose');}catch(e){}_sr('vinecross',{w:false,s:moves});}
-    else{sm('Draw — the board is full.');if(st)st.textContent='Draw';_sr('vinecross',{w:false,s:moves});}
+    else{sm('Draw, the board is full.');if(st)st.textContent='Draw';_sr('vinecross',{w:false,s:moves});}
   }
 
   function checkWin(r,c,who){

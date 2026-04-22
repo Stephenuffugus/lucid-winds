@@ -95,7 +95,7 @@ window._gameFns.bowergarden = function BG(a){
   mc(a);
   window._BGToggleStyle=function(){
     if(typeof window._cdToggleStyle!=='function'){
-      if(window._toast)window._toast('Card styles loading — try again in a sec.');
+      if(window._toast)window._toast('Card styles loading, try again in a sec.');
       return;
     }
     window._cdToggleStyle();

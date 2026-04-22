@@ -83,7 +83,7 @@ window._gameFns.jade=function JG(a){
 
   var positions,tiles,selected=null,undoStack=[],hintsLeft=5,shufflesLeft=3,moves=0,startTime=0,timerInt=null;
 
-  ms(a,'🀄 Jade Garden — <strong id="JGp">0/72</strong> pairs · <strong id="JGt">0:00</strong>');
+  ms(a,'🀄 Jade Garden, <strong id="JGp">0/72</strong> pairs · <strong id="JGt">0:00</strong>');
   mm(a);
   var pan=document.createElement('div');pan.id='JGpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:4px;user-select:none;text-align:center;overflow-x:auto;';
@@ -343,7 +343,7 @@ window._gameFns.jade=function JG(a){
         var cleared=0;for(var i=0;i<tiles.length;i++)if(tiles[i].removed)cleared++;
         _sr('jade',{w:false,s:secs,cleared:cleared});
       } else {
-        sm('No matches available — tap ♻ to shuffle ('+shufflesLeft+' left).');
+        sm('No matches available, tap ♻ to shuffle ('+shufflesLeft+' left).');
       }
     }
   }
@@ -380,7 +380,7 @@ window._gameFns.jade=function JG(a){
   window._JGH=function(){
     if(hintsLeft<=0){sm('No hints remaining.');return;}
     var m=findAnyMatch();
-    if(!m){sm('No valid matches — shuffle!');return;}
+    if(!m){sm('No valid matches, shuffle!');return;}
     hintsLeft--;
     startTime-=15000; // +15s penalty (add 15s to elapsed => subtract from startTime)
     selected=null;render();

@@ -460,7 +460,7 @@ window._gameFns.petalmatch = function PM(a){
       else _sr('petalmatch',{w:true,s:score,lv:level});
       return;
     }
-    if(!hasValidMove()){sm('No moves — shuffling!');initGrid();while(findMatches().length>0)initGrid();}
+    if(!hasValidMove()){sm('No moves, shuffling!');initGrid();while(findMatches().length>0)initGrid();}
   }
 
   function drawGem(cell,cx,cy,sz){

@@ -66,7 +66,7 @@ window._gameFns.pollen = function PN(a){
   // Costs are hand-tuned to mirror Splendor's base-game distribution
   // (tier 1 totals 2-4, tier 2 totals 5-7 with 1-3 GP, tier 3 totals
   // 7-10 with 3-5 GP). Costs use the other four colors (g=green,
-  // r=rose, b=blue, a=amber, s=spore) — a card never requires its own
+  // r=rose, b=blue, a=amber, s=spore), a card never requires its own
   // produces color.
   //
   // Art hook: the slug is the filename under assets/games/masterpollinator/.
@@ -291,12 +291,12 @@ window._gameFns.pollen = function PN(a){
     COLORS.forEach(function(c){s.production[c]=0;});
     return s;
   }
-  // Live alias for code that still reads GS.player — always points to
+  // Live alias for code that still reads GS.player, always points to
   // the active seat. Updated whenever activeIdx rotates.
   function setActive(idx){GS.activeIdx=idx;GS.player=GS.players[idx];}
 
   // ─── SETUP SCREEN ────────────────────────────────────────────────────
-  // Shown at game start (and via _PNnew). Pick 1–4 seats, mark each
+  // Shown at game start (and via _PNnew). Pick 1, 4 seats, mark each
   // human or AI. Persisted in localStorage so Stephen's preferred
   // config comes back next session.
   function defaultSetup(){
@@ -319,7 +319,7 @@ window._gameFns.pollen = function PN(a){
     var ov=document.getElementById('PNsetupOV');if(!ov)return;
     var h='<div class="pn-modal" style="max-width:420px;width:100%;padding:22px 20px;font-family:DM Mono,monospace;">';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;letter-spacing:0.16em;color:var(--gold);margin-bottom:4px;">MASTER POLLINATOR</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:var(--muted);margin-bottom:16px;">1–4 players. Pass-and-play. First to 15 GP wins.</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:var(--muted);margin-bottom:16px;">1, 4 players. Pass-and-play. First to 15 GP wins.</div>';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.12em;color:var(--sage);margin-bottom:8px;">SEATS</div>';
     for(var i=0;i<st.seats.length;i++){
       var s=st.seats[i];
@@ -362,10 +362,10 @@ window._gameFns.pollen = function PN(a){
     // Multiplayer-guard for companion boosts: if 2+ humans are seated
     // in this run, lock out every companion boost for its duration so
     // no seat has asymmetric advantage. Solo and vs-AI runs leave the
-    // flag false — the human IS the only human.
+    // flag false, the human IS the only human.
     var humanCount=0;for(var si=0;si<setup.seats.length;si++)if(!setup.seats[si].isAI)humanCount++;
     try{window._LW_inMultiplayer=(humanCount>=2);}catch(e){}
-    // Draw N+1 pollinators from the 10-card pool — matches Splendor's
+    // Draw N+1 pollinators from the 10-card pool, matches Splendor's
     // nobles rule (2p → 3, 3p → 4, 4p → 5). Solo falls to 3.
     var pcount=pollinatorCount(n);
     var pls=shuffle(ALL_POLLINATORS.slice()).slice(0,pcount).map(function(p){return{slug:p.slug,name:p.name,icon:p.icon,req:p.req,gp:p.gp,claimedBy:null};});
@@ -396,7 +396,7 @@ window._gameFns.pollen = function PN(a){
   }
   function me(){return GS.players[GS.activeIdx];}
   function newGame(){
-    // Clear the multiplayer lock on any exit back to setup — covers
+    // Clear the multiplayer lock on any exit back to setup, covers
     // tapping NEW GAME or MENU mid-run. The flag re-arms in startGame
     // if the player picks another multi-human config.
     try{window._LW_inMultiplayer=false;}catch(e){}
@@ -450,7 +450,7 @@ window._gameFns.pollen = function PN(a){
   }
 
   // Rotate to next seat. Checks for winners at the end of a FULL round
-  // — traditional Splendor rule: once any player hits 15, finish the
+  //, traditional Splendor rule: once any player hits 15, finish the
   // round so all seats have equal turns, then whoever has the most
   // points wins (ties broken by fewest cards bought).
   function endTurn(){
@@ -459,7 +459,7 @@ window._gameFns.pollen = function PN(a){
     // play, but prevents a locked game where e.g. supply is empty and
     // every AI keeps passing.
     if(GS.turn>300*GS.numPlayers){
-      sm('Stalemate — ending game');
+      sm('Stalemate, ending game');
       return finishGame();
     }
     var current=GS.activeIdx;
@@ -495,7 +495,7 @@ window._gameFns.pollen = function PN(a){
     }
     var won=!winner.isAI&&countHumans()>0;
     if(won){_e('game_win');_playWin();}else{_e('game_loss');_play('lose');}
-    sm(winner.name+' wins — '+winner.gp+' GP');
+    sm(winner.name+' wins, '+winner.gp+' GP');
     _sr('pollen',{w:won,s:winner.gp,t:GS.turn,n:GS.numPlayers});
     showEndCard(winner,won);
   }
@@ -817,8 +817,8 @@ window._gameFns.pollen = function PN(a){
     }
     h+='</div>';
     var active=me();
-    if(GS.phase==='player')h+='<div style="text-align:center;color:var(--sage);font-size:0.7rem;padding:2px;">— '+esc(active.name)+"'s turn —</div>";
-    else if(GS.phase==='ai')h+='<div style="text-align:center;color:#c47a7a;font-size:0.7rem;padding:2px;">— '+esc(active.name)+' thinking —</div>';
+    if(GS.phase==='player')h+='<div style="text-align:center;color:var(--sage);font-size:0.7rem;padding:2px;">, '+esc(active.name)+"'s turn,</div>";
+    else if(GS.phase==='ai')h+='<div style="text-align:center;color:#c47a7a;font-size:0.7rem;padding:2px;">, '+esc(active.name)+' thinking,</div>';
     // Pollinators
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.1em;margin:8px 0 4px;text-align:center;">POLLINATORS</div>';
     h+='<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:3px;justify-content:center;">';
@@ -1034,7 +1034,7 @@ window._gameFns.pollen = function PN(a){
     // Flower name (educational)
     h+='<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.4rem;color:var(--cream);margin-bottom:4px;">'+displayName+'</div>';
     if(card.hideName){
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-bottom:8px;">— scientific name kept hidden —</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-bottom:8px;">, scientific name kept hidden,</div>';
     }
     // Stats row: GP + produces (large)
     h+='<div style="display:flex;gap:18px;justify-content:center;align-items:center;margin:10px 0;font-family:DM Mono,monospace;color:var(--cream);">';

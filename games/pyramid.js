@@ -35,7 +35,7 @@ function GPY(a){
     upd();rn();refreshUndoBtn();
   };
   window._PYToggleStyle=function(){
-    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
+    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading, try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('PYstyle');
     if(b)b.textContent='🃏 Style';

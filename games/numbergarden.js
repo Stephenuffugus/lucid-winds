@@ -25,7 +25,7 @@ window._gameFns.numbergarden = function NG(a){
 
   var hud=document.createElement('div');
   hud.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:6px;background:rgba(26,31,23,0.5);border-radius:8px;margin:4px 0;font-family:DM Mono,monospace;';
-  hud.innerHTML='<div><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:#7ab356;letter-spacing:0.08em;">CORRECT</div><div id="NGc" style="font-size:1.1rem;color:#c8a84b;">0</div></div><div><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:#7ab356;letter-spacing:0.08em;">SPEED</div><div id="NGsp" style="font-size:1.1rem;color:#e8dcc8;">—</div></div><div><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:#7ab356;letter-spacing:0.08em;">STREAK</div><div id="NGst" style="font-size:1.1rem;color:#e8dcc8;">0</div></div>';
+  hud.innerHTML='<div><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:#7ab356;letter-spacing:0.08em;">CORRECT</div><div id="NGc" style="font-size:1.1rem;color:#c8a84b;">0</div></div><div><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:#7ab356;letter-spacing:0.08em;">SPEED</div><div id="NGsp" style="font-size:1.1rem;color:#e8dcc8;">, </div></div><div><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:#7ab356;letter-spacing:0.08em;">STREAK</div><div id="NGst" style="font-size:1.1rem;color:#e8dcc8;">0</div></div>';
   pan.appendChild(hud);
 
   var bar=document.createElement('div');

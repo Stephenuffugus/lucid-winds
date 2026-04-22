@@ -48,7 +48,7 @@ window._gameFns.cribbage = function CRIB(a){
   // we leave it empty — NEW + Style now live inside the pan.
   mc(a);
   window._CBToggleStyle=function(){
-    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
+    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading, try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('CBstyle');
     if(b)b.textContent='🃏 Style';
@@ -191,7 +191,7 @@ window._gameFns.cribbage = function CRIB(a){
         render();checkPegContinue();
       }else{
         // AI passes, player keeps playing
-        sm('AI "Go" — +1 to you');addP(1);
+        sm('AI "Go", +1 to you');addP(1);
         if(checkWin())return;
         render();
         // Player's turn (no auto-advance — wait for player card tap)

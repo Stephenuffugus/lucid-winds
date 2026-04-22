@@ -38,7 +38,7 @@ window._gameFns.mosaic = function MS(a){
     ov.innerHTML='<div style="max-width:380px;background:linear-gradient(180deg,rgba(20,28,18,0.97),rgba(13,16,12,0.98));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;padding:1.4rem 1.2rem;box-shadow:0 16px 48px rgba(0,0,0,0.7);font-family:DM Sans,sans-serif;color:var(--cream);font-size:0.78rem;line-height:1.6;">'+
       '<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:var(--gold);letter-spacing:0.12em;text-align:center;margin-bottom:6px;">MOSAIC GARDEN</div>'+
       '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;letter-spacing:0.1em;margin-bottom:1rem;">HOW TO PLAY</div>'+
-      '<p style="margin:0 0 0.7rem;"><strong style="color:var(--sage);">1. DRAFT.</strong> Tap any tile in a circular bed (factory) — you take ALL tiles of that color from that bed. The rest go to the center.</p>'+
+      '<p style="margin:0 0 0.7rem;"><strong style="color:var(--sage);">1. DRAFT.</strong> Tap any tile in a circular bed (factory), you take ALL tiles of that color from that bed. The rest go to the center.</p>'+
       '<p style="margin:0 0 0.7rem;"><strong style="color:var(--sage);">2. STAGE.</strong> Tap one of your 5 staging rows to place them. Rows fit 1, 2, 3, 4, or 5 tiles top-to-bottom. Excess tiles drop to your floor (penalty).</p>'+
       '<p style="margin:0 0 0.7rem;"><strong style="color:var(--sage);">3. SCORE.</strong> When all factories AND the center empty, full staging rows transfer to your wall. Adjacent tiles on the wall score points (1 alone, +1 per neighbor).</p>'+
       '<p style="margin:0 0 0.7rem;"><strong style="color:var(--gold);">END BONUS:</strong> +2 per full row, +7 per full column, +10 per all-5-of-a-color set.</p>'+
@@ -202,7 +202,7 @@ window._gameFns.mosaic = function MS(a){
     var rr=document.getElementById('MSr');if(rr)rr.textContent=G.round;
     var h='';
     h+='<div style="text-align:center;font-family:DM Mono,monospace;font-size:0.85rem;color:var(--cream);padding:6px 0;letter-spacing:0.04em;">'+
-      (G.phase==='draft'?(G.selected?'Selected '+G.selected.tiles.length+' '+ICONS[G.selected.color]+' — tap a staging row':'Tap tiles in a bed, or in the center'):(G.phase==='score'?'Scoring...':'Game over'))+'</div>';
+      (G.phase==='draft'?(G.selected?'Selected '+G.selected.tiles.length+' '+ICONS[G.selected.color]+', tap a staging row':'Tap tiles in a bed, or in the center'):(G.phase==='score'?'Scoring...':'Game over'))+'</div>';
     // Factories
     h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:4px 0;">';
     for(var f=0;f<5;f++){

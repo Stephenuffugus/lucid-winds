@@ -825,7 +825,7 @@
         }
         try { sessionStorage.clear(); } catch(e) {}
         localStorage.setItem('lw_tut_force_restart', '1');
-        console.log('[LW] ?reset=full — wiped localStorage. Tutorial restarting.');
+        console.log('[LW] ?reset=full, wiped localStorage. Tutorial restarting.');
         // Strip the ?reset param so refresh doesn't loop
         try {
           var cleanUrl = location.href.split('?')[0].split('#')[0];
@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.73';
+  var LW_VERSION='2026.04.22.74';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -855,7 +855,7 @@
       // v2026.04.01.5: Re-enable onboarding (was force-skipped during dev)
       if(!stored||stored<'2026.04.01.5'){
         localStorage.removeItem('pw_onboarded');
-        console.log('[LW] Reset onboarding flag — cinematic will play.');
+        console.log('[LW] Reset onboarding flag, cinematic will play.');
       }
       // v2026.04.01.18: Reset anti-farming timer (reduced from 2hr to 10min)
       if(!stored||stored<'2026.04.01.18'){
@@ -6855,7 +6855,7 @@ window._addSwitchTabHook = function(fn){
       }catch(e){alert(e.message);}
     },
     fullReset:function(){
-      if(!confirm('NUCLEAR: Wipe everything — local + cloud + sign out?'))return;
+      if(!confirm('NUCLEAR: Wipe everything, local + cloud + sign out?'))return;
       try{
         var user=firebase.auth().currentUser;
         if(user)firebase.firestore().collection('vaults').doc(user.uid).delete();
@@ -7401,7 +7401,7 @@ window._addSwitchTabHook = function(fn){
       // Mark all as uncollected
       for(var i=0;i<data.length;i++)data[i].collected=false;
       localStorage.setItem('fg_ferals',JSON.stringify(data));
-      alert('Feral timers reset! Switch to Wild tab — ferals will spawn from all occupied zones.');
+      alert('Feral timers reset! Switch to Wild tab, ferals will spawn from all occupied zones.');
     },
     wildDiag:function(){
       // Diagnostic: show what's in each wild-plant source so we can tell
@@ -7437,7 +7437,7 @@ window._addSwitchTabHook = function(fn){
       // with no weather arg → the function bailed on `if(!weather)return`
       // and the dev tool silently no-op'd. Also cleared `lw_climate_today`
       // which is a dead key (real throttle is per-plant lastClimateTick).
-      if(!window._wildClimateTick){alert('Climate tick not available — open Wild tab once first.');return;}
+      if(!window._wildClimateTick){alert('Climate tick not available, open Wild tab once first.');return;}
       try{if(localStorage.getItem('lw_weather_off')==='1'){alert('Climate damage is OFF (lw_weather_off=1). Disable the kill switch first.');return;}}catch(e){}
       var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
       if(!wild.length){alert('No local wild plants. Drop some first!');return;}
@@ -7473,9 +7473,9 @@ window._addSwitchTabHook = function(fn){
       // Force prune now (exposed on window as of Apr 14 2026)
       if(window._pruneWild){
         try{window._pruneWild();}catch(e){alert('Prune error: '+e.message);return;}
-        alert('Killed and pruned '+(victim.hash||'').slice(0,8)+'. If the hex is empty now a sprout should be in Firestore — use INSTANT GERMINATE SPROUTS to activate.');
+        alert('Killed and pruned '+(victim.hash||'').slice(0,8)+'. If the hex is empty now a sprout should be in Firestore, use INSTANT GERMINATE SPROUTS to activate.');
       } else {
-        alert('Marked '+(victim.hash||'').slice(0,8)+' dead. _pruneWild not exposed — switch to Wild tab to prune manually.');
+        alert('Marked '+(victim.hash||'').slice(0,8)+' dead. _pruneWild not exposed, switch to Wild tab to prune manually.');
       }
     },
     accelGerminate:function(){
@@ -7678,7 +7678,7 @@ window._addSwitchTabHook = function(fn){
       // Sets activeSinceMs to 7 days ago so getTotalMs crosses the threshold.
       try{
         var idx=null;try{idx=parseInt(localStorage.getItem('lw_companion_active_idx')||'-1',10);}catch(e){}
-        if(!idx||idx<0){alert('No active companion — equip one from the character sheet first.');return;}
+        if(!idx||idx<0){alert('No active companion, equip one from the character sheet first.');return;}
         var timer=JSON.parse(localStorage.getItem('lw_companion_timer')||'{}');
         if(!timer[idx])timer[idx]={totalMs:0,activeSinceMs:null};
         timer[idx].totalMs=7*86400000+60000; // just over 7 days
@@ -7690,7 +7690,7 @@ window._addSwitchTabHook = function(fn){
     fastCompanionL3:function(){
       try{
         var idx=null;try{idx=parseInt(localStorage.getItem('lw_companion_active_idx')||'-1',10);}catch(e){}
-        if(!idx||idx<0){alert('No active companion — equip one first.');return;}
+        if(!idx||idx<0){alert('No active companion, equip one first.');return;}
         var timer=JSON.parse(localStorage.getItem('lw_companion_timer')||'{}');
         if(!timer[idx])timer[idx]={totalMs:0,activeSinceMs:null};
         timer[idx].totalMs=30*86400000+60000;
@@ -7818,7 +7818,7 @@ window._addSwitchTabHook = function(fn){
       var log=window.LW_Log.all();
       var counts={};
       log.forEach(function(e){counts[e.type]=(counts[e.type]||0)+1;});
-      var summary='LW Event Log — '+log.length+' entries (cap 200)\n\n';
+      var summary='LW Event Log, '+log.length+' entries (cap 200)\n\n';
       summary+='BY TYPE:\n';
       Object.keys(counts).sort().forEach(function(k){summary+='  '+k+': '+counts[k]+'\n';});
       summary+='\nMOST RECENT 20:\n';
@@ -8835,7 +8835,7 @@ document.addEventListener('keydown', function(e) {
     {id:51,name:'Toad Stool',        a:function(t){return t.companion===32;},     b:function(t){return t.base%71===18;},      ea:2, theme:'nature', fx:'toad sits in mushroom compost, content and mossy'},
     {id:52,name:'Terrarium World',   a:function(t){return t.pot%60===7;},         b:function(t){return t.companion>=20&&t.companion<=31;}, ea:1, theme:'nature', fx:'glass terrarium frames tiny companion in miniature world'},
     {id:53,name:'Meteor Orchid',     a:function(t){return t.base%71===28;},       b:function(t){return t.flower%71===10;},    ea:2, theme:'cosmic', fx:'orchid roots weave through meteorite, stardust on petals'},
-    {id:54,name:'Final Chorus',      a:function(t){return t.base%71===57;},       b:function(t){return t.companion===33;},    ea:3, theme:'mythical', fx:'cicada sings from the ashes — last song of the brood'},
+    {id:54,name:'Final Chorus',      a:function(t){return t.base%71===57;},       b:function(t){return t.companion===33;},    ea:3, theme:'mythical', fx:'cicada sings from the ashes, last song of the brood'},
     // id:55 was Crystal Beetle; companion idx 78 was cut (see TRAIT_BANK
     // companions[78] = 'None'). Repointed to a reachable pairing so the
     // slot stays live rather than being silently unachievable.
@@ -9668,8 +9668,8 @@ document.addEventListener('keydown', function(e) {
   // Format breed status for UI display
   function formatBreedStatus(status){
     if(!status)return'Unknown';
-    if(status.reason==='IMMATURE')return'Seedling — '+status.daysLeft+' day'+(status.daysLeft!==1?'s':'')+' to maturity';
-    if(status.reason==='COOLDOWN')return'Cooldown — '+status.cooldownDays+' day'+(status.cooldownDays!==1?'s':'')+' remaining';
+    if(status.reason==='IMMATURE')return'Seedling, '+status.daysLeft+' day'+(status.daysLeft!==1?'s':'')+' to maturity';
+    if(status.reason==='COOLDOWN')return'Cooldown, '+status.cooldownDays+' day'+(status.cooldownDays!==1?'s':'')+' remaining';
     if(status.canBreed)return'Ready to breed';
     return'Cannot breed';
   }
@@ -10598,7 +10598,7 @@ document.addEventListener('keydown', function(e) {
         // Screen shake on wrong match
         var _sw=document.getElementById('sw');if(_sw){_sw.classList.add('shake-it');setTimeout(function(){_sw.classList.remove('shake-it');},420);}
         selected.forEach(function(i) { cards[i].classList.add('wrong'); });
-        setMsg('Not quite. Look again — one property doesn\'t align.', 'error');
+        setMsg('Not quite. Look again, one property doesn\'t align.', 'error');
         setTimeout(function() {
           selected.forEach(function(i) {
             if (cards[i]) { cards[i].classList.remove('wrong'); cards[i].classList.remove('selected'); }
@@ -10676,7 +10676,7 @@ document.addEventListener('keydown', function(e) {
           '<span>🌓 Shading (solid, striped, empty)</span>' +
         '</div>' +
       '</div>' +
-      '<button class="hint-close" onclick="clearHint()">Got it — let me look</button>' +
+      '<button class="hint-close" onclick="clearHint()">Got it, let me look</button>' +
     '</div>';
     document.body.appendChild(tip);
   };
@@ -10709,11 +10709,11 @@ document.addEventListener('keydown', function(e) {
     var R=window._gameRules;
     R.bowergarden = ''+
       '<p><strong>Goal:</strong> First team (You + Partner) to <strong style="color:var(--gold);">10 points</strong> wins.</p>'+
-      '<p><strong>Deck:</strong> 24 cards — 9 through Ace in 4 suits. Each player dealt 5.</p>'+
+      '<p><strong>Deck:</strong> 24 cards, 9 through Ace in 4 suits. Each player dealt 5.</p>'+
       '<p><strong>Strong suit:</strong> One suit each hand becomes the "Strong" suit (it beats all other suits). The dealer flips an upcard; players bid in turn to either CALL it as Strong or PASS. If all pass, second round picks any non-upcard suit.</p>'+
       '<p><strong>Bowers:</strong> The Jack of Strong = <strong>Right Bower</strong> (highest card). The Jack of the SAME-COLOR suit = <strong>Left Bower</strong> (second highest, counts as a Strong card). Other Strongs rank A,K,Q,10,9.</p>'+
       '<p><strong>Play:</strong> Caller leads first trick. Must follow lead suit if you can. Strong always beats non-Strong.</p>'+
-      '<p><strong>Score:</strong> Maker takes 3-4 = 1, all 5 (march) = 2. Defenders euchre maker (take 3+) = 2. <strong style="color:var(--gold);">Loner:</strong> caller goes alone, partner sits out — 3-4 = 1, all 5 alone = 4.</p>';
+      '<p><strong>Score:</strong> Maker takes 3-4 = 1, all 5 (march) = 2. Defenders euchre maker (take 3+) = 2. <strong style="color:var(--gold);">Loner:</strong> caller goes alone, partner sits out, 3-4 = 1, all 5 alone = 4.</p>';
     R.bleedinghearts = ''+
       '<p><strong>Goal:</strong> Lowest score wins. Game ends when someone hits <strong style="color:var(--gold);">100 points</strong>.</p>'+
       '<p><strong>Deal:</strong> 52 cards split 13 each. Pass 3 cards each round (left, right, across, then no-pass and repeat).</p>'+
@@ -10727,7 +10727,7 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>Play:</strong> Must follow suit if possible. Spades cannot be led until "broken" (played on an off-suit trick).</p>'+
       '<p><strong>Score:</strong> Make your team\'s combined bid: 10 × bid + 1 per overtrick (bag). Miss your bid: −10 × bid. Every 10 bags = −100 penalty.</p>';
     R.juniper = ''+
-      '<p><strong>Goal:</strong> Form sets (3+ of same rank) and runs (3+ in sequence, same suit) to reduce your "deadwood" — unmatched card values.</p>'+
+      '<p><strong>Goal:</strong> Form sets (3+ of same rank) and runs (3+ in sequence, same suit) to reduce your "deadwood", unmatched card values.</p>'+
       '<p><strong>Deal:</strong> 10 cards each. Top of stock pile is starter; deck below is draw pile.</p>'+
       '<p><strong>Turn:</strong> Draw 1 card (from stock or discard), then discard 1.</p>'+
       '<p><strong style="color:var(--gold);">Knock:</strong> When deadwood ≤ 10, end the round. Score = opponent\'s deadwood − yours.</p>'+
@@ -10744,14 +10744,14 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>Plays must:</strong> Form a continuous word, connect to existing tiles (after first move), and create only valid words in all directions.</p>'+
       '<p><strong style="color:var(--gold);">Bingo:</strong> Use all 7 tiles in one play → +50 bonus.</p>';
     R.pollen = ''+
-      '<p><strong>Goal:</strong> First player to <strong style="color:var(--gold);">15 Growth Points</strong> (GP) triggers the end of the round — once play returns to seat 1, whoever has the most GP wins. Ties broken by fewest cards bought.</p>'+
+      '<p><strong>Goal:</strong> First player to <strong style="color:var(--gold);">15 Growth Points</strong> (GP) triggers the end of the round, once play returns to seat 1, whoever has the most GP wins. Ties broken by fewest cards bought.</p>'+
       '<p><strong>Each turn pick ONE action:</strong></p>'+
-      '<p>• <strong>Collect pollen</strong> — 3 different-color tokens, OR 2 of the same color if 4+ are available in the supply.</p>'+
+      '<p>• <strong>Collect pollen</strong>, 3 different-color tokens, OR 2 of the same color if 4+ are available in the supply.</p>'+
       '<p>• <strong>Buy a plant card</strong> using your tokens (plus permanent production from plants you already own). Pay tokens back to supply. Plants give you permanent production for future buys.</p>'+
-      '<p>• <strong>Reserve a plant</strong> — tap a card, confirm the pick-up, and it goes into your <strong style="color:var(--gold);">hand</strong>. You also gain a wild <strong style="color:var(--gold);">gold</strong> token if any remain. Gold acts as any color when buying.</p>'+
-      '<p><strong>Hand limit:</strong> Maximum <strong>3 cards reserved</strong> at once. The only way to free a hand slot is to <em>buy</em> a reserved card on your turn — you can\'t discard a reserved card.</p>'+
+      '<p>• <strong>Reserve a plant</strong>, tap a card, confirm the pick-up, and it goes into your <strong style="color:var(--gold);">hand</strong>. You also gain a wild <strong style="color:var(--gold);">gold</strong> token if any remain. Gold acts as any color when buying.</p>'+
+      '<p><strong>Hand limit:</strong> Maximum <strong>3 cards reserved</strong> at once. The only way to free a hand slot is to <em>buy</em> a reserved card on your turn, you can\'t discard a reserved card.</p>'+
       '<p><strong>Token cap:</strong> 10 tokens max at end of turn. You <em>can</em> pick up or reserve even if it pushes you over 10 mid-turn, but before your turn ends you\'ll be prompted to return excess tokens of your choice to the supply until you\'re at 10.</p>'+
-      '<p><strong>Pollinators</strong> are claimed automatically the first time a player\'s permanent production meets all the thresholds shown on the card — they grant their bonus GP on sight.</p>'+
+      '<p><strong>Pollinators</strong> are claimed automatically the first time a player\'s permanent production meets all the thresholds shown on the card, they grant their bonus GP on sight.</p>'+
       '<p><strong>Token pool scales with player count:</strong> 2p = 4 of each color · 3p = 5 · 4p = 7. Gold is always 5.</p>';
     R.jade = ''+
       '<p><strong>Goal:</strong> Clear all 144 tiles by matching pairs.</p>'+
@@ -10764,9 +10764,9 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>Two eyes = life:</strong> A group with two separate empty interior points cannot be captured.</p>'+
       '<p><strong>One move:</strong> Each puzzle has a single correct first move. Wrong moves auto-undo after a moment.</p>';
     R.vinecross = ''+
-      '<p><strong>Goal:</strong> Get five of your stones in a row before the AI — horizontally, vertically, or diagonally.</p>'+
+      '<p><strong>Goal:</strong> Get five of your stones in a row before the AI, horizontally, vertically, or diagonally.</p>'+
       '<p><strong>Place:</strong> Tap any empty intersection. Stones cannot be moved or captured once placed.</p>'+
-      '<p><strong>Tip:</strong> Watch the AI\'s threats — three-in-a-row that\'s open on both sides is forcing.</p>'+
+      '<p><strong>Tip:</strong> Watch the AI\'s threats, three-in-a-row that\'s open on both sides is forcing.</p>'+
       '<p><strong>Boards:</strong> 9×9 (fast), 11×11 (standard), 13×13 (long).</p>';
     R.kakuro = ''+
       '<p><strong>Goal:</strong> Fill empty cells with digits 1-9 so each "run" (horizontal or vertical sequence of empty cells) sums to its clue.</p>'+
@@ -10786,13 +10786,13 @@ document.addEventListener('keydown', function(e) {
       '<p><strong style="color:var(--sage);">Capture:</strong> If your last seed lands in an empty pit on YOUR side, capture it AND all seeds in the AI\'s pit directly opposite.</p>'+
       '<p><strong>End:</strong> When one side is empty, the other side\'s remaining seeds go to that player\'s store.</p>';
     R.mosaic = ''+
-      '<p><strong>1. DRAFT:</strong> Tap a tile in any factory (circle) — take ALL of that color from that bed. The rest go to the center.</p>'+
+      '<p><strong>1. DRAFT:</strong> Tap a tile in any factory (circle), take ALL of that color from that bed. The rest go to the center.</p>'+
       '<p><strong>2. STAGE:</strong> Place them in one of your 5 staging rows (1, 2, 3, 4, or 5 wide). Excess drops to your floor (penalty).</p>'+
       '<p><strong>3. SCORE:</strong> When all factories + center empty, full staging rows transfer to your wall. Adjacent wall tiles score.</p>'+
       '<p><strong style="color:var(--gold);">End bonuses:</strong> +2 per full row, +7 per full column, +10 per all-5-of-color set. First completed wall row triggers final scoring.</p>';
     R.stopten = ''+
       '<p><strong>Goal:</strong> Stop the clock at exactly <strong style="color:var(--gold);">10.00 seconds</strong>.</p>'+
-      '<p><strong>Tap START</strong> — clock counts up. <strong>Tap STOP</strong> when you think it\'s 10.</p>'+
+      '<p><strong>Tap START</strong>, clock counts up. <strong>Tap STOP</strong> when you think it\'s 10.</p>'+
       '<p><strong>Tiers:</strong> Perfect (≤±0.005s = +3 SB) · So Close (±0.015s = +2 SB) · Nice (±0.035s = +1 SB) · Miss (beyond).</p>'+
       '<p><strong>Session:</strong> 3 attempts then a summary card with your best.</p>';
     R.rhythmvine = ''+
@@ -10821,7 +10821,7 @@ document.addEventListener('keydown', function(e) {
     R.lights = ''+
       '<p><strong>Goal:</strong> Turn off every light on the board.</p>'+
       '<p><strong>Tap a light:</strong> Toggles that cell AND its 4 orthogonal neighbors.</p>'+
-      '<p><strong>Strategy:</strong> Use the "chase the lights" method — solve top to bottom, then chase remaining bottom-row lights to the top by working a "pattern row".</p>';
+      '<p><strong>Strategy:</strong> Use the "chase the lights" method, solve top to bottom, then chase remaining bottom-row lights to the top by working a "pattern row".</p>';
     R.memory = ''+
       '<p><strong>Goal:</strong> Match all card pairs in the fewest moves.</p>'+
       '<p><strong>Each turn:</strong> Flip 2 cards. If they match, they stay revealed. If not, they flip back.</p>'+
@@ -10840,7 +10840,7 @@ document.addEventListener('keydown', function(e) {
     R.colorsort = ''+
       '<p><strong>Goal:</strong> Sort the colors so each tube holds only one color.</p>'+
       '<p><strong>Pour:</strong> Tap a source tube, then tap a destination. Color pours over IF the destination is empty OR its top color matches the source color (and there\'s room).</p>'+
-      '<p><strong>Tip:</strong> Empty tubes are gold — use them for temporary storage.</p>';
+      '<p><strong>Tip:</strong> Empty tubes are gold, use them for temporary storage.</p>';
     R.hanoi = ''+
       '<p><strong>Goal:</strong> Move all discs from the left peg to the right peg.</p>'+
       '<p><strong>Rules:</strong> Move only ONE disc at a time. Never place a larger disc on top of a smaller one.</p>'+
@@ -10851,7 +10851,7 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>Source/finish:</strong> Source has a green glow; finish has a gold glow that pulses while disconnected, lights up solid when the path completes.</p>';
     R.sokoban = ''+
       '<p><strong>Goal:</strong> Push every crate (🌱) onto a target (◯).</p>'+
-      '<p><strong>Move:</strong> Tap arrows or use D-pad. You can only PUSH crates, never pull. Plan ahead — a crate against a wall in the wrong spot is stuck.</p>'+
+      '<p><strong>Move:</strong> Tap arrows or use D-pad. You can only PUSH crates, never pull. Plan ahead, a crate against a wall in the wrong spot is stuck.</p>'+
       '<p><strong>Levels:</strong> 170 puzzles, escalating difficulty. Use 📋 Jump to Level to skip to a specific level (1-170).</p>'+
       '<p><strong>Helpers:</strong> ↩ Reset the level, ⬅️ Undo the last move.</p>';
     R.petalfall = ''+
@@ -10860,18 +10860,18 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>Lose:</strong> A new piece can\'t fit when it spawns.</p>';
     R.slider = ''+
       '<p><strong>Goal:</strong> Slide the 15 numbered tiles into 1-15 order, top-left to bottom-right.</p>'+
-      '<p><strong>Move:</strong> Tap a tile adjacent to the empty space — it slides into the gap.</p>'+
+      '<p><strong>Move:</strong> Tap a tile adjacent to the empty space, it slides into the gap.</p>'+
       '<p><strong>Tip:</strong> Solve top row first, then left column. Final 2×2 corner is solved by cycling.</p>';
     R.bloomwheel = ''+
       '<p><strong>Goal:</strong> Draw a botanical mandala on a slowly-spinning canvas.</p>'+
       '<p><strong>Touch:</strong> Drag to draw. The wheel rotates, creating spiral patterns automatically.</p>'+
-      '<p><strong>Symmetry:</strong> Choose 1× to 12× — strokes mirror around the center the chosen number of times.</p>'+
+      '<p><strong>Symmetry:</strong> Choose 1× to 12×, strokes mirror around the center the chosen number of times.</p>'+
       '<p><strong>SAVE:</strong> Earns a plant pattern and downloads your mandala as a PNG.</p>';
     R.farkle = ''+
       '<p><strong>Goal:</strong> First to 10,000 points wins.</p>'+
       '<p><strong>Each turn:</strong> Roll 6 dice. Set aside scoring dice (1s, 5s, three-of-a-kinds, runs). RE-ROLL the remaining dice for more points OR BANK to lock in your score this turn.</p>'+
       '<p><strong>Scoring:</strong> 1 = 100, 5 = 50, three 1s = 1000, three of any other = 100×face, four of a kind = 1000, run 1-6 = 1500, three pairs = 1500.</p>'+
-      '<p><strong>FARKLE:</strong> If a roll has zero scoring dice, you bust — lose this turn\'s points.</p>'+
+      '<p><strong>FARKLE:</strong> If a roll has zero scoring dice, you bust, lose this turn\'s points.</p>'+
       '<p><strong>Hot dice:</strong> Use ALL 6 in scoring? Roll all 6 again with stacked points.</p>';
     R.yahtzee = ''+
       '<p><strong>Goal:</strong> Highest total score across 13 rounds.</p>'+
@@ -10886,14 +10886,14 @@ document.addEventListener('keydown', function(e) {
     R.reversi = ''+
       '<p><strong>Goal:</strong> Have the most discs of your color when no more moves are possible.</p>'+
       '<p><strong>Move:</strong> Place a disc adjacent to one of your opponent\'s discs in a line where the other end is YOUR color. All trapped discs flip to your color.</p>'+
-      '<p><strong>Tip:</strong> Corners can\'t be flipped — fight for them.</p>';
+      '<p><strong>Tip:</strong> Corners can\'t be flipped, fight for them.</p>';
     R.backgammon = ''+
       '<p><strong>Goal:</strong> Move all 15 of your pieces home (your last quarter), then BEAR them OFF the board.</p>'+
       '<p><strong>Roll:</strong> Two dice = two move distances. (Doubles = four moves of that distance.)</p>'+
-      '<p><strong>Hit:</strong> Land on a single opponent piece (a "blot") to send it to the bar — they must re-enter from their start before doing anything else.</p>'+
+      '<p><strong>Hit:</strong> Land on a single opponent piece (a "blot") to send it to the bar, they must re-enter from their start before doing anything else.</p>'+
       '<p><strong>Block:</strong> 2+ of your pieces on a point = opponent can\'t land there.</p>';
     R.doubleshutter = ''+
-      '<p><strong>Goal:</strong> Shut every tile (1-9) by rolling 2 dice and flipping tiles that sum to your roll. Double-row variant — clear BOTH rows.</p>'+
+      '<p><strong>Goal:</strong> Shut every tile (1-9) by rolling 2 dice and flipping tiles that sum to your roll. Double-row variant, clear BOTH rows.</p>'+
       '<p><strong>Each turn:</strong> Roll 2 dice. Tap one or more open tiles whose sum equals your roll. Tap ROLL to roll again.</p>'+
       '<p><strong>Row 1 → Row 2:</strong> When the bottom row is cleared, the top row unlocks.</p>'+
       '<p><strong>End:</strong> Clear both rows = perfect game. If no valid combo can be made, the game ends.</p>';
@@ -10911,28 +10911,28 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>Combos:</strong> Swapping two specials triggers bigger detonations (VV/VB/BB/SV/SB/SS).</p>'+
       '<p><strong>Cascade:</strong> Tiles fall after a pop; new matches chain automatically for bonus score.</p>';
     R.seedtoss2 = ''+
-      '<p><strong>Goal:</strong> Flick seeds into the pot. Score by accuracy — bullseye is worth the most.</p>'+
+      '<p><strong>Goal:</strong> Flick seeds into the pot. Score by accuracy, bullseye is worth the most.</p>'+
       '<p><strong>Toss:</strong> Press, drag back, release. Longer drag = harder throw. Aim with the angle of the drag.</p>'+
       '<p><strong>Difficulty:</strong> Higher levels add wind drift and smaller targets.</p>';
     // ── Round 2 additions ──
     R.chess = ''+
-      '<p><strong>Goal:</strong> Checkmate the enemy king — attack it with no escape.</p>'+
+      '<p><strong>Goal:</strong> Checkmate the enemy king, attack it with no escape.</p>'+
       '<p><strong>Pieces:</strong> Pawn (1 forward, 2 from start, captures diagonal), Knight (L-shape, jumps), Bishop (diagonals), Rook (lines), Queen (any direction), King (1 square any way).</p>'+
       '<p><strong>Special:</strong> Castling (king+rook swap), En passant (pawn double-step capture), Promotion (pawn reaching last rank → queen).</p>'+
-      '<p><strong>AI:</strong> Powered by Stockfish — picks difficulty in the menu.</p>';
+      '<p><strong>AI:</strong> Powered by Stockfish, picks difficulty in the menu.</p>';
     R.c4 = R.connectfleur = ''+
-      '<p><strong>Goal:</strong> Get four of your discs in a row — horizontal, vertical, or diagonal — before the AI.</p>'+
+      '<p><strong>Goal:</strong> Get four of your discs in a row, horizontal, vertical, or diagonal, before the AI.</p>'+
       '<p><strong>Drop:</strong> Tap a column. Your disc falls to the lowest empty cell in that column.</p>'+
-      '<p><strong>Tip:</strong> Center column is strongest — control it. Watch for "double threats" (two ways to win at once).</p>';
+      '<p><strong>Tip:</strong> Center column is strongest, control it. Watch for "double threats" (two ways to win at once).</p>';
     R.flood = ''+
       '<p><strong>Goal:</strong> Flood the entire board with one color in the fewest moves.</p>'+
       '<p><strong>Each turn:</strong> Tap a color. Your top-left territory becomes that color and absorbs every connected same-color cell.</p>'+
-      '<p><strong>Move limit:</strong> Each board size has a target — beat it for the win.</p>';
+      '<p><strong>Move limit:</strong> Each board size has a target, beat it for the win.</p>';
     R.freecell = ''+
       '<p><strong>Goal:</strong> Build all four foundations up from Ace to King by suit.</p>'+
       '<p><strong>Tableau:</strong> Build down by alternating colors. Move single cards (or stacks of cards your free cells can support) to other tableaus or to free cells.</p>'+
       '<p><strong>Free cells:</strong> 4 single-card holding spots.</p>'+
-      '<p><strong>Tip:</strong> Solvable from almost any deal — plan moves that free up Aces and 2s first.</p>';
+      '<p><strong>Tip:</strong> Solvable from almost any deal, plan moves that free up Aces and 2s first.</p>';
     R.klondike = ''+
       '<p><strong>Goal:</strong> Build all four foundations from Ace to King by suit.</p>'+
       '<p><strong>Tableau:</strong> Build down by alternating colors (red on black, black on red). Move stacks together if they\'re a valid run.</p>'+
@@ -10950,11 +10950,11 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>Streaks:</strong> Consecutive clears without using the stock multiply your score.</p>';
     R.pyramid = ''+
       '<p><strong>Goal:</strong> Clear the pyramid by pairing cards that sum to 13 (K=13 alone, Q+A, J+2, 10+3, etc.).</p>'+
-      '<p><strong>Pair:</strong> Tap two uncovered cards that sum to 13 — both clear. Kings clear alone.</p>'+
+      '<p><strong>Pair:</strong> Tap two uncovered cards that sum to 13, both clear. Kings clear alone.</p>'+
       '<p><strong>Stock:</strong> Tap to flip a new waste card. Pair waste with pyramid cards too.</p>';
     R.golf = ''+
       '<p><strong>Goal:</strong> Clear all 7 tableau columns into the waste pile.</p>'+
-      '<p><strong>Tap:</strong> The bottom card of any column whose rank is ±1 from the waste top (no wrap — Aces don\'t pair with Kings).</p>'+
+      '<p><strong>Tap:</strong> The bottom card of any column whose rank is ±1 from the waste top (no wrap, Aces don\'t pair with Kings).</p>'+
       '<p><strong>Stock:</strong> Tap to deal a new waste card when stuck.</p>'+
       '<p><strong>Score:</strong> Lower remaining-card count = better. 0 left = clear.</p>';
     R.mines = ''+
@@ -10964,10 +10964,10 @@ document.addEventListener('keydown', function(e) {
     R.sudoku = ''+
       '<p><strong>Goal:</strong> Fill the grid so every row, column, and 3×3 box contains digits 1-9 with no repeats.</p>'+
       '<p><strong>Enter:</strong> Tap a cell, then tap a number. Long-press for pencil notes (small candidates).</p>'+
-      '<p><strong>Difficulty:</strong> Easy/Medium/Hard/Expert — uniqueness guaranteed. Hint button reveals one safe digit.</p>';
+      '<p><strong>Difficulty:</strong> Easy/Medium/Hard/Expert, uniqueness guaranteed. Hint button reveals one safe digit.</p>';
     R.wordsearch = ''+
       '<p><strong>Goal:</strong> Find every word in the list, hidden in the grid.</p>'+
-      '<p><strong>Select:</strong> Drag from a word\'s first letter to its last. Words run horizontal, vertical, or diagonal — forward or backward.</p>'+
+      '<p><strong>Select:</strong> Drag from a word\'s first letter to its last. Words run horizontal, vertical, or diagonal, forward or backward.</p>'+
       '<p><strong>Found words:</strong> Highlighted on the grid and crossed off the list.</p>';
     R.vinewords = ''+
       '<p><strong>Goal:</strong> Make as many valid words as you can from the 7 letters before time runs out.</p>'+
@@ -10975,7 +10975,7 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>Score:</strong> Longer words score more. Find the all-7-letter pangram for a bonus.</p>';
     R.sprout = ''+
       '<p><strong>Goal:</strong> Guess the 5-letter botanical word in 6 tries.</p>'+
-      '<p><strong>Each guess:</strong> Must be a real word. Tile colors after submit — <span style="color:#7ab356;">green</span> = right letter, right spot · <span style="color:#c8a84b;">gold</span> = right letter, wrong spot · gray = not in word.</p>';
+      '<p><strong>Each guess:</strong> Must be a real word. Tile colors after submit, <span style="color:#7ab356;">green</span> = right letter, right spot · <span style="color:#c8a84b;">gold</span> = right letter, wrong spot · gray = not in word.</p>';
     R.numbergarden = ''+
       '<p><strong>Goal:</strong> Match the target number using the dice shown.</p>'+
       '<p><strong>Tap dice + operators:</strong> Build an expression that evaluates to the target. Use +, −, ×, ÷ and parentheses.</p>'+
@@ -10986,7 +10986,7 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>Win:</strong> All pairs connected AND every cell of the grid used.</p>';
     R.rootmaze = ''+
       '<p><strong>Goal:</strong> Guide your sprout from the entrance to the bloom at the exit.</p>'+
-      '<p><strong>Move:</strong> Tap arrows or swipe. Walls block — find the open path.</p>';
+      '<p><strong>Move:</strong> Tap arrows or swipe. Walls block, find the open path.</p>';
     R.colorgarden = ''+
       '<p><strong>Goal:</strong> Color every region of the page so no two touching regions share a color.</p>'+
       '<p><strong>Tap a color, then tap a region.</strong> Page complete = no conflicts.</p>'+
@@ -11015,10 +11015,10 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>Pick a path:</strong> Each scene offers choices that branch the story.</p>'+
       '<p><strong>Reach the bloom:</strong> Some endings earn a plant pattern, others reveal a hidden petal.</p>';
     R.set = ''+
-      '<p><strong>Goal:</strong> Spot a <em>Trio</em> — three cards that work together — and tap them.</p>'+
+      '<p><strong>Goal:</strong> Spot a <em>Trio</em>, three cards that work together, and tap them.</p>'+
       '<p><strong>Each card has four traits:</strong> color, shape, number, and shading. Each trait has three possible values.</p>'+
       '<p><strong>The rule:</strong> For every trait, the three cards must be either <strong style="color:var(--gold);">all the same</strong> or <strong style="color:var(--gold);">all different</strong>. Two-same-one-different breaks the trio.</p>'+
-      '<p><strong>Example trio:</strong> three blue clovers, all solid, with 1 / 2 / 3 shapes. Same color, same shape, same shading, different numbers — all four traits pass.</p>'+
+      '<p><strong>Example trio:</strong> three blue clovers, all solid, with 1 / 2 / 3 shapes. Same color, same shape, same shading, different numbers, all four traits pass.</p>'+
       '<p><strong>Earn:</strong> Each trio fills your Sunbeam meter. Clear enough trios to bloom a new plant.</p>'+
       '<p style="color:var(--muted);font-size:0.7rem;font-style:italic;">Need hands-on? Tap PRACTICE MODE below for a no-stakes round.</p>';
   })();
@@ -11226,20 +11226,20 @@ document.addEventListener('keydown', function(e) {
       // THE GAME
       + '<div class="guide-section">'
       + '<div class="guide-heading">THE GAME</div>'
-      + '<p class="guide-text">Lucid Winds is a pattern-recognition card game. Find groups of 3 cards (called <strong>Phenos</strong>) where each feature — color, shape, count, and shading — is either all the same or all different across the three cards.</p>'
-      + '<p class="guide-text">Each correct Pheno earns you <strong>Sunbeams</strong> — focused attention that photosynthesizes into new plants.</p>'
+      + '<p class="guide-text">Lucid Winds is a pattern-recognition card game. Find groups of 3 cards (called <strong>Phenos</strong>) where each feature, color, shape, count, and shading, is either all the same or all different across the three cards.</p>'
+      + '<p class="guide-text">Each correct Pheno earns you <strong>Sunbeams</strong>, focused attention that photosynthesizes into new plants.</p>'
       + '</div>'
 
       // PLANTS
       + '<div class="guide-section">'
       + '<div class="guide-heading">YOUR PLANTS</div>'
-      + '<p class="guide-text">When you gather enough Sunbeams, a unique plant photosynthesizes into your <strong>Greenhouse</strong>. Every plant is procedurally generated from your gameplay — its leaves, bloom, pot, companion, and poem are all one-of-a-kind.</p>'
+      + '<p class="guide-text">When you gather enough Sunbeams, a unique plant photosynthesizes into your <strong>Greenhouse</strong>. Every plant is procedurally generated from your gameplay, its leaves, bloom, pot, companion, and poem are all one-of-a-kind.</p>'
       + '<p class="guide-text">Plants are stored in your <strong>Greenhouse</strong> (starts at 10 slots, expandable with Pi).</p>'
       + '</div>'
 
       // TERRA GRADE
       + '<div class="guide-section">'
-      + '<div class="guide-heading">TERRA GRADE — 7 RARITY TIERS</div>'
+      + '<div class="guide-heading">TERRA GRADE, 7 RARITY TIERS</div>'
       + '<p class="guide-text">Every plant gets a rarity score from its combined traits.</p>'
       + '<div style="display:grid;grid-template-columns:auto 1fr;gap:0.15rem 0.5rem;font-size:0.42rem;margin:0.3rem 0;">'
       + '<span style="color:#959588;">○ Common</span><span style="color:var(--muted);">Score 0+</span>'
@@ -11262,14 +11262,14 @@ document.addEventListener('keydown', function(e) {
       // BREEDING
       + '<div class="guide-section">'
       + '<div class="guide-heading">CROSS-POLLINATION</div>'
-      + '<p class="guide-text">Breed two plants to create an offspring with traits from both parents. Each plant can breed once. Offspring get <strong>chimera veins</strong> — visible cream patterns on their leaves that prove heritage.</p>'
+      + '<p class="guide-text">Breed two plants to create an offspring with traits from both parents. Each plant can breed once. Offspring get <strong>chimera veins</strong>, visible cream patterns on their leaves that prove heritage.</p>'
       + '<p class="guide-text">Each generation of chimera veins adds +1 climate hardiness, helping plants survive longer in the wild.</p>'
       + '</div>'
 
       // WILD & POLLEN
       + '<div class="guide-section">'
       + '<div class="guide-heading">THE WILD & POLLEN</div>'
-      + '<p class="guide-text">Place plants on a real-world map (1 per square per person). Every placed plant produces <strong>pollen</strong> passively — even Common plants. Higher Terra Grade + deeper lineage = more pollen.</p>'
+      + '<p class="guide-text">Place plants on a real-world map (1 per square per person). Every placed plant produces <strong>pollen</strong> passively, even Common plants. Higher Terra Grade + deeper lineage = more pollen.</p>'
       + '<p class="guide-text">Your total pollen is your <strong>Allergy Index</strong> score on the global leaderboard. Hit pollen milestones to unlock cosmetic card borders.</p>'
       + '<p class="guide-text">Real weather affects wild plants. Extreme heat, frost, and storms cause stress. Enough stress kills the plant. Bred plants with chimera veins survive longer.</p>'
       + '</div>'
@@ -11284,17 +11284,17 @@ document.addEventListener('keydown', function(e) {
       + '<div class="guide-section">'
       + '<div class="guide-heading">ECONOMY</div>'
       + '<div style="font-size:0.42rem;color:var(--cream);line-height:1.8;">'
-      + '<strong style="color:#e8c878;">Sunbeams</strong> — gathered from focused play. 30 = 1 new plant.<br>'
-      + '<strong style="color:#5baddc;">Dew</strong> — produced by your wild plants and earned from participation. Spent on nursery acceleration and wild plant cuttings.<br>'
-      + '<strong style="color:var(--sage);">Fertilizer</strong> — earned by composting. Applied to seeds before bloom.<br>'
-      + '<strong style="color:var(--sage);">Pollen</strong> — earned passively from wild plants. Never spent. Milestones unlock cosmetics.<br>'
-      + '<strong style="color:var(--gold);">Pi</strong> — optional. Buys greenhouse slots, feral pouch upgrades, cryo chambers. Never buys power.'
+      + '<strong style="color:#e8c878;">Sunbeams</strong>, gathered from focused play. 30 = 1 new plant.<br>'
+      + '<strong style="color:#5baddc;">Dew</strong>, produced by your wild plants and earned from participation. Spent on nursery acceleration and wild plant cuttings.<br>'
+      + '<strong style="color:var(--sage);">Fertilizer</strong>, earned by composting. Applied to seeds before bloom.<br>'
+      + '<strong style="color:var(--sage);">Pollen</strong>, earned passively from wild plants. Never spent. Milestones unlock cosmetics.<br>'
+      + '<strong style="color:var(--gold);">Pi</strong>, optional. Buys greenhouse slots, feral pouch upgrades, cryo chambers. Never buys power.'
       + '</div></div>'
 
       // FERAL POUCH
       + '<div class="guide-section">'
       + '<div class="guide-heading">FERAL COLLECTION</div>'
-      + '<p class="guide-text">Find wild plants while walking. Base: 2 per day (upgradeable to 5 with Pi). Ferals are <strong>sealed</strong> — they can\'t be removed once collected. Choose wisely.</p>'
+      + '<p class="guide-text">Find wild plants while walking. Base: 2 per day (upgradeable to 5 with Pi). Ferals are <strong>sealed</strong>, they can\'t be removed once collected. Choose wisely.</p>'
       + '<p class="guide-text"><strong>Cryo Chamber</strong> (5 Pi, one-time): emergency slot if your pouch is full and you find something incredible.</p>'
       + '</div>'
 
@@ -27731,7 +27731,7 @@ document.addEventListener('keydown', function(e) {
         localStorage.setItem(_QUARANTINE_KEY, JSON.stringify(q));
       } catch(e) {}
       localStorage.setItem(GH_KEY, JSON.stringify(clean));
-      showHexMsg('⬡ ' + dirty.length + ' PLANT' + (dirty.length > 1 ? 'S' : '') + ' QUARANTINED — INTEGRITY FAILURE');
+      showHexMsg('⬡ ' + dirty.length + ' PLANT' + (dirty.length > 1 ? 'S' : '') + ' QUARANTINED, INTEGRITY FAILURE');
       renderGreenhouse();
     } else if (upgraded) {
       // Save the legacy-upgraded plants with their new sigs
@@ -28309,7 +28309,7 @@ document.addEventListener('keydown', function(e) {
     return html;
   }
 
-  // ═══ LINEAGE TREE — 3-generation family tree from parent hashes ═══
+  // ═══ LINEAGE TREE, 3-generation family tree from parent hashes ═══
   function renderLineageTree(plant) {
     if (!plant || !plant.parentAHash || !plant.parentBHash) return '';
     var gh = loadGreenhouse();
@@ -28410,7 +28410,7 @@ document.addEventListener('keydown', function(e) {
     try { t = hashToTraits(plant.hash); } catch(e) { return ''; }
     var badges = '';
 
-    // ── GRAVEL BASE — low-poly stone, gold-leaf border ──────────────────
+    // ── GRAVEL BASE, low-poly stone, gold-leaf border ──────────────────
     // base trait case 10 maps to 'Gravel' in TRAIT_TABLE.bases
     if (t.base === 10) {
       badges += '<span class="substrate-badge" title="Gravel Substrate">'
@@ -28428,7 +28428,7 @@ document.addEventListener('keydown', function(e) {
         + '</svg></span>';
     }
 
-    // ── HANGING POT — suspension cable from pot apex to top ──────────────
+    // ── HANGING POT, suspension cable from pot apex to top ──────────────
     // pot case 4 maps to 'Hanging' in TRAIT_TABLE.pots
     if (t.pot === 4) {
       badges += '<span class="substrate-badge" title="Hanging Mount">'
@@ -28445,7 +28445,7 @@ document.addEventListener('keydown', function(e) {
         + '</svg></span>';
     }
 
-    // ── CURVE R STEM — growth vector arc (direction indicator) ───────────
+    // ── CURVE R STEM, growth vector arc (direction indicator) ───────────
     // stem % 15 === 2 maps to 'Curve R' / 'Deep curve right'
     if ((t.stem % 24) === 2) {
       badges += '<span class="substrate-badge" title="Curve R Growth Vector">'
@@ -28453,7 +28453,7 @@ document.addEventListener('keydown', function(e) {
         + '<defs>'
         + '<filter id="cvglow"><feGaussianBlur stdDeviation="0.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
         + '</defs>'
-        // Growth arc — curves rightward, indicating lean direction
+        // Growth arc, curves rightward, indicating lean direction
         + '<path d="M5,16 C7,12 13,10 14,5" fill="none" stroke="rgba(122,179,86,0.85)" stroke-width="1.2" stroke-linecap="round" filter="url(#cvglow)"/>'
         // Arrowhead at apex
         + '<polygon points="14,5 12,7 16,7" fill="rgba(122,179,86,0.9)" opacity="0.85"/>'
@@ -28495,7 +28495,7 @@ document.addEventListener('keydown', function(e) {
     var modes = ['newest', 'rarest', 'name', 'season', 'ea'];
     var idx = modes.indexOf(mode);
     if (idx >= 0 && btns[idx]) btns[idx].classList.add('active');
-    // Cache key includes realIdx (sort-dependent) — must invalidate before
+    // Cache key includes realIdx (sort-dependent), must invalidate before
     // re-render or cards render with stale slot numbers tied to old order.
     if (window._invalidateGHCache) window._invalidateGHCache();
     renderGreenhouse();
@@ -28558,7 +28558,7 @@ document.addEventListener('keydown', function(e) {
   }
   window._claimFromReserve = _claimFromReserve;
 
-  // ── ONE GAME PER DEVICE — device fingerprint lock ──
+  // ── ONE GAME PER DEVICE, device fingerprint lock ──
   (function() {
     var DEVICE_KEY = 'fg_device_id';
     var existing = localStorage.getItem(DEVICE_KEY);
@@ -28570,7 +28570,7 @@ document.addEventListener('keydown', function(e) {
     window._fgDeviceId = localStorage.getItem(DEVICE_KEY);
   })();
 
-  // Card HTML cache — avoid recomputing SVG/traits/names on every render
+  // Card HTML cache, avoid recomputing SVG/traits/names on every render
   var _ghCardCache = {};
   function _invalidateGHCache(hash) { if (hash) delete _ghCardCache[hash]; else _ghCardCache = {}; }
   window._invalidateGHCache = _invalidateGHCache;
@@ -28584,9 +28584,9 @@ document.addEventListener('keydown', function(e) {
       if(window.FG_Backpack&&window.FG_Backpack.showCompact){window.FG_Backpack.showCompact('greenhouse');}
       else{var _bpi=document.getElementById('bpi');if(_bpi)_bpi.style.display='block';}
     }catch(e){}
-    // First time the greenhouse has any plants — welcome the player and
+    // First time the greenhouse has any plants, welcome the player and
     // Legacy "WELCOME TO THE GREENHOUSE" modal + haiku toast were
-    // removed here — the Phase 2 tutorial delivers the same narrative
+    // removed here, the Phase 2 tutorial delivers the same narrative
     // in-context (step 16 folds in the welcome line). Stephen flagged
     // seeing two popups on top of each other; suppressing via the
     // lw_tut_tap_plant_v1 flag wasn't enough because the modal code
@@ -28712,13 +28712,13 @@ document.addEventListener('keydown', function(e) {
         // Season diversity
         var _seasons = {}; _spotTraits.forEach(function(t) { if(t) _seasons[t.season] = true; });
         var _sCount = Object.keys(_seasons).length;
-        if (_sCount === 4) _spotFacts.push('All 4 seasons represented — perfect diversity');
+        if (_sCount === 4) _spotFacts.push('All 4 seasons represented, perfect diversity');
         else if (_sCount >= 2) _spotFacts.push(_sCount + '/4 seasons collected');
         // Musical diversity
         if (window.getPlantSong) {
           var _modes = {}; gh.forEach(function(p) { try { var s = getPlantSong(p.hash); if(s) _modes[s.mode] = true; } catch(e){} });
           var _mCount = Object.keys(_modes).length;
-          if (_mCount >= 3) _spotFacts.push(_mCount + ' musical modes — your greenhouse is an orchestra');
+          if (_mCount >= 3) _spotFacts.push(_mCount + ' musical modes, your greenhouse is an orchestra');
         }
         // Compendium progress
         if (window.getCompendiumProgress) {
@@ -29359,7 +29359,7 @@ document.addEventListener('keydown', function(e) {
     }
     return '<div class="rr-entry"' + _onclick + '><div class="rr-icon" style="color:' + color + ';">' + icon + '</div><div class="rr-body">' + body + '<div class="rr-time">' + _formatEventTime(e.ts) + '</div></div></div>';
   }
-  // Event category map — groups event types into filter buckets
+  // Event category map, groups event types into filter buckets
   var _RR_CATEGORIES = {
     all:      function(t) { return true; },
     plants:   function(t) { return t === 'plant_mint' || t === 'seed_bloomed' || t === 'plant_composted' || t === 'achievement_unlock'; },
@@ -29966,7 +29966,7 @@ document.addEventListener('keydown', function(e) {
       } else {
         // Unlocked
         html += '<div class="pr-card unlocked" id="pr-' + reward.plants + '">' +
-          '<div class="pr-header"><span class="pr-icon">' + reward.icon + '</span><span class="pr-title">Partner Reward — Level ' + reward.plants + '</span></div>' +
+          '<div class="pr-header"><span class="pr-icon">' + reward.icon + '</span><span class="pr-title">Partner Reward, Level ' + reward.plants + '</span></div>' +
           '<div class="pr-desc" style="color:var(--muted);">Partner being finalized. Rewards unlock at ' + reward.plants + '+ Plants.</div>' +
           '<button class="pr-btn" disabled style="opacity:0.35;cursor:default;">COMING SOON</button>' +
           '</div>';
@@ -30216,7 +30216,7 @@ document.addEventListener('keydown', function(e) {
     }
     front += '</div>';
 
-    // ── BUILD BACK FACE (lazy — populated on first flip for performance) ──
+    // ── BUILD BACK FACE (lazy, populated on first flip for performance) ──
     var back = '<div class="cs-card-face cs-card-back cs-back-lazy" data-season="' + sk + '" data-tier="' + _tierName + '">';
     back += '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;opacity:0.4;">';
     back += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.12em;color:var(--sage);">TAP TO REVEAL</div>';
@@ -30296,7 +30296,7 @@ document.addEventListener('keydown', function(e) {
       });
     }
 
-    // Reset track to center — no animation
+    // Reset track to center, no animation
     var track = document.getElementById('pgm-track');
     if (track) {
       track.classList.remove('animating', 'spring-back');
@@ -30328,7 +30328,7 @@ document.addEventListener('keydown', function(e) {
 
     // Animate track: direction=-1 (swipe left → next) → move left → -66.666%
     //                direction=+1 (swipe right → prev) → move right → 0%
-    // translate3d (not translateX) keeps the GPU layer hot — mixing 2D
+    // translate3d (not translateX) keeps the GPU layer hot, mixing 2D
     // and 3D transforms forces a layer recomposition mid-swipe and was
     // responsible for the stutter on the commit frame.
     var targetX = direction === -1 ? '-66.666%' : '0%';
@@ -30473,7 +30473,7 @@ document.addEventListener('keydown', function(e) {
   window.openCarousel = function(arr, startIdx, source) {
     if (!arr || !arr.length) return;
     // Discovery XP — first time opening the plant inspector.
-    try{if(window.LW_XP)window.LW_XP.grantOnce('disc_carousel',8,'discover_carousel','🔍 +8 XP — plant inspector unlocked. Swipe to browse, tap to flip.');}catch(e){}
+    try{if(window.LW_XP)window.LW_XP.grantOnce('disc_carousel',8,'discover_carousel','🔍 +8 XP, plant inspector unlocked. Swipe to browse, tap to flip.');}catch(e){}
     // First-time 2+ plant keeper: pulse the BREED button to teach them
     // breeding is ready. Only fires once, only for 2-3 plant keepers.
     try{
@@ -30747,7 +30747,7 @@ document.addEventListener('keydown', function(e) {
             var dnaId='dna_'+plantHash.slice(0,8);
             window.LW_XP.grantDwell(dnaId,3,'dwell_dna',4000,function(){return el.classList.contains('flipped');});
           }
-          window.LW_XP.grantOnce('disc_flip',10,'discover_flip','🔄 +10 XP — card flip reveals haiku & DNA.');
+          window.LW_XP.grantOnce('disc_flip',10,'discover_flip','🔄 +10 XP, card flip reveals haiku & DNA.');
         }
       }catch(e){}
     }
@@ -31296,7 +31296,7 @@ document.addEventListener('keydown', function(e) {
       icon: '\ud83e\uddca',
       cost: 250,
       levelRequired: 3,
-      blurb: 'Gen 1 only — chimera generation resets to 1 on bloom',
+      blurb: 'Gen 1 only, chimera generation resets to 1 on bloom',
       color: '#b0e0e6'
     },
     moonstone: {
@@ -31350,7 +31350,7 @@ document.addEventListener('keydown', function(e) {
       icon: '\u2728',
       cost: 1200,
       levelRequired: 20,
-      blurb: 'Doubles aura intensity — guarantees an aura if rolled',
+      blurb: 'Doubles aura intensity, guarantees an aura if rolled',
       color: '#c8a84b'
     }
   };
@@ -31409,7 +31409,7 @@ document.addEventListener('keydown', function(e) {
       icon: '\ud83e\uddec',
       cost: 260,
       class: 'breeder',
-      blurb: 'Next breed — reroll one inherited trait after bloom',
+      blurb: 'Next breed, reroll one inherited trait after bloom',
       color: '#e8a0bf',
       oneShot: true
     },
@@ -31800,7 +31800,7 @@ document.addEventListener('keydown', function(e) {
   var _padDrawerCtx    = null; // 'greenhouse' | 'nursery'
 
   window.openPlantActionDrawer = function(plant, context, plantIndex) {
-    try{if(window.LW_XP)window.LW_XP.grantOnce('disc_drawer',5,'discover_drawer','⚙️ +5 XP — plant actions. Download, breed, share, compost.');}catch(e){}
+    try{if(window.LW_XP)window.LW_XP.grantOnce('disc_drawer',5,'discover_drawer','⚙️ +5 XP, plant actions. Download, breed, share, compost.');}catch(e){}
     _padDrawerPlant  = plant;
     window._padBreedPlant = plant; // Expose for inline onclick in breed button
     _padDrawerCtx    = context || 'greenhouse';
@@ -32241,7 +32241,7 @@ document.addEventListener('keydown', function(e) {
       if (statusEl) statusEl.textContent = 'Archiving to device…';
       downloadPlantCard();
       setTimeout(function() {
-        if (statusEl) statusEl.textContent = '⬡ ARCHIVED — Secured to local vault';
+        if (statusEl) statusEl.textContent = '⬡ ARCHIVED, Secured to local vault';
         if (plantWrap) plantWrap.classList.add('vault-slide');
         if (vaultEl)   vaultEl.classList.add('show');
         _haptic('sync'); // confirm pulse — asset secured
@@ -32314,7 +32314,7 @@ document.addEventListener('keydown', function(e) {
     // Labels teach what the tab is for.
     try{
       var tabTeach={game:'Pattern games grow your garden.',greenhouse:'Your garden lives here.',nursery:'Seeds grow into plants here.',wild:'Walk real places. Plant seeds.',binder:'Companions you\'ve discovered.'};
-      if(window.LW_XP&&tabTeach[tab])window.LW_XP.grantOnce('disc_tab_'+tab,5,'discover_tab','+5 XP — '+tabTeach[tab]);
+      if(window.LW_XP&&tabTeach[tab])window.LW_XP.grantOnce('disc_tab_'+tab,5,'discover_tab','+5 XP, '+tabTeach[tab]);
     }catch(e){}
     // Clear game-active HUD state ONLY when leaving game tab.
     // (Used to fire on every switchTab call including tab=='game', which
@@ -32969,7 +32969,7 @@ document.addEventListener('keydown', function(e) {
       var _now = new Date();
       var _midnight = new Date(_now);_midnight.setHours(24,0,0,0);
       var _hrsLeft = Math.ceil((_midnight.getTime() - _now.getTime()) / 3600000);
-      stateLabel = '\ud83d\udca4 Resting — water again in ' + _hrsLeft + 'h';
+      stateLabel = '\ud83d\udca4 Resting, water again in ' + _hrsLeft + 'h';
       stateColor = 'var(--muted)';
     } else {
       stateLabel = '💧 Needs water today';
@@ -33268,7 +33268,7 @@ document.addEventListener('keydown', function(e) {
         // making Breeder unreachable for players who breed via greenhouse
         // UI vs the wild cross-pollinate. Same grant as the wild path.
         if(window._LW_classXP){window._LW_classXP('breed',30);if(result&&result.nonce>=2)window._LW_classXP('chimera',15);}
-        try{if(window.LW_XP)window.LW_XP.grantOnce('first_cross',15,'first_of_kind','🧬 +15 XP — first cross-pollination. Two lineages become one.');}catch(e){}
+        try{if(window.LW_XP)window.LW_XP.grantOnce('first_cross',15,'first_of_kind','🧬 +15 XP, first cross-pollination. Two lineages become one.');}catch(e){}
         if(window.LW_Log) window.LW_Log.write('plant_bred', {
           parentAHash: selA.hash,
           parentBHash: selB.hash,
@@ -33525,7 +33525,7 @@ document.addEventListener('keydown', function(e) {
         _inherit.novel.forEach(function(item) {
           var color = item.mythic ? 'var(--gold)' : item.mutation ? 'rgba(192,112,112,0.9)' : 'var(--sage)';
           cascadeHtml += '<div style="font-family:DM Mono,monospace;font-size:0.36rem;color:' + color + ';margin:2px 0;opacity:0;">'
-            + '✦ <b>' + item.trait + '</b> <span style="color:var(--muted);font-size:0.3rem;">— new expression</span>'
+            + '✦ <b>' + item.trait + '</b> <span style="color:var(--muted);font-size:0.3rem;">, new expression</span>'
             + '</div>';
         });
         cascadeHtml += '</div>';
@@ -33832,7 +33832,7 @@ document.addEventListener('keydown', function(e) {
         newHash: newHash, nur: nur, gh: gh, ts: Date.now()
       }));
     } catch(e) {
-      console.warn('[Bloom] Could not write staging key — proceeding without guard:', e);
+      console.warn('[Bloom] Could not write staging key, proceeding without guard:', e);
     }
 
     // 6. Commit both production keys
@@ -33846,7 +33846,7 @@ document.addEventListener('keydown', function(e) {
       // Phase 32: route through saveGreenhouse so cloud sync fires via interceptor
       saveGreenhouse(gh);
     } else {
-      console.warn('[Bloom] Partial commit detected — staging key preserved for recovery.');
+      console.warn('[Bloom] Partial commit detected, staging key preserved for recovery.');
     }
 
     // Pity counter reset on rare/mutated
@@ -35217,9 +35217,9 @@ document.addEventListener('keydown', function(e) {
   }
   window._vhoEscape = function(){
     if (_vaultHydrated) return;
-    if (window._swsLog) _swsLog('⏱ User escaped hydration overlay — offline mode', 'warn');
+    if (window._swsLog) _swsLog('⏱ User escaped hydration overlay, offline mode', 'warn');
     _vaultHydrated = true;
-    _hideOverlay('Offline — local only');
+    _hideOverlay('Offline, local only');
     if (window._showOfflineBanner) window._showOfflineBanner();
     if (window.renderGreenhouse) try{renderGreenhouse();}catch(e){}
     if (window.updateDashboard)  try{updateDashboard();}catch(e){}
@@ -35230,7 +35230,7 @@ document.addEventListener('keydown', function(e) {
     // URL bypass: ?skiphydration=1 skips the overlay entirely (emergency)
     try {
       if (location.search && location.search.indexOf('skiphydration=1') >= 0) {
-        if (window._swsLog) _swsLog('URL bypass: skiphydration=1 — offline mode', 'warn');
+        if (window._swsLog) _swsLog('URL bypass: skiphydration=1, offline mode', 'warn');
         setTimeout(function(){ window._vhoEscape(); }, 0);
         return;
       }
@@ -35323,7 +35323,7 @@ document.addEventListener('keydown', function(e) {
   function _doFlushVaultToCloud(gh, fbUser) {
     var user = fbUser || (auth && auth.currentUser) || null;
     if (!_vaultHydrated || !user || !user.uid) {
-      if (window._swsLog) _swsLog('↑ WRITE BLOCKED — hydrated:' + _vaultHydrated + ' auth:' + !!(user&&user.uid), 'err');
+      if (window._swsLog) _swsLog('↑ WRITE BLOCKED, hydrated:' + _vaultHydrated + ' auth:' + !!(user&&user.uid), 'err');
       return;
     }
     // Build payload. If it's above 500KB, trim event log to stay under
@@ -35428,7 +35428,7 @@ document.addEventListener('keydown', function(e) {
   // ── _loadVaultForUser (set-102): diagnostic logging on every path ────────
   function _loadVaultForUser(user, onComplete) {
     if (!user || !user.uid) {
-      if (window._swsLog) _swsLog('loadVault: no user/uid — local only', 'warn');
+      if (window._swsLog) _swsLog('loadVault: no user/uid, local only', 'warn');
       _vaultHydrated = true; _hideOverlay('');
       if (onComplete) onComplete({source:'local', plantCount:0});
       return;
@@ -35486,7 +35486,7 @@ document.addEventListener('keydown', function(e) {
           if (onComplete) onComplete({source:'cloud', plantCount:mGH.length});
         } else {
           // New account or first time on this device — push local data up
-          if (window._swsLog) _swsLog('No vault doc. New account — pushing ' + localGH.length + ' local plants up.', 'ok');
+          if (window._swsLog) _swsLog('No vault doc. New account, pushing ' + localGH.length + ' local plants up.', 'ok');
           _vaultHydrated = true;
           if (window.renderGreenhouse) renderGreenhouse();
           if (window.updateDashboard)  updateDashboard();
@@ -38960,7 +38960,7 @@ function _doReproduction(weather, simMode) {
         _cp.lastWatered = new Date().toISOString();
         _cp.neglectDecay = 0;
         if (window._logWildEvent) window._logWildEvent({type:'companion',event:'rain_caller',
-          hash:_cp.hash,companion:_cInfo.name,text:_cInfo.name+' called rain — your plant was watered'});
+          hash:_cp.hash,companion:_cInfo.name,text:_cInfo.name+' called rain, your plant was watered'});
         // Sync watered state to Firestore so strangers viewing this
         // plant see the real lastWatered, not a stale value.
         try {
@@ -40292,7 +40292,7 @@ function _waterOwnPlant(p,mk){
   var _waterXP=3;
   try{if(window.LW_COMPANION){_waterXP=Math.ceil(_waterXP*window.LW_COMPANION.getCompanionMult('waterEfficiency'));}}catch(e){}
   if(window.PW_grantXP)PW_grantXP(_waterXP,'water_care');
-  try{if(window.LW_XP)window.LW_XP.grantOnce('first_water',10,'first_of_kind','💧 +10 XP — first watering. Plants remember kindness.');}catch(e){}
+  try{if(window.LW_XP)window.LW_XP.grantOnce('first_water',10,'first_of_kind','💧 +10 XP, first watering. Plants remember kindness.');}catch(e){}
   if(window._LW_toolXP)window._LW_toolXP('can',3);
   if(window.LW_Log)window.LW_Log.write('wild_watered',{hash:p.hash});
   try { if (window.LW_Events) window.LW_Events.incCounter('rainfall', 3, 'Rainfall', 'day'); } catch(e){}
@@ -40429,7 +40429,7 @@ function _doCrossPollination(wildPlant,matePlant){
     _play('match');
     var parentInfo=_buildInfo(wildPlant.hash);
     var mateInfo=_buildInfo(matePlant.hash);
-    var chimerMsg=offGen>1?' Gen '+offGen+' chimera — 2× climate immunity, -'+(offGen-1)*2+' EA':'';
+    var chimerMsg=offGen>1?' Gen '+offGen+' chimera, 2× climate immunity, -'+(offGen-1)*2+' EA':'';
     _toast('\ud83c\udf31 Cross-pollinated!\n'+parentInfo.nm+' × '+mateInfo.nm+'\nSeed → Nursery.'+chimerMsg+'\n'+rewardMsg);
     if(window.PW_grantXP)PW_grantXP(5,'cross_pollinate');
     // Pollinator title progress — bump lifetime counter and check
@@ -42472,7 +42472,7 @@ function _dropFromBP(p){
   if(!_uLat||!_uLng){_toast('Need GPS location to drop.');return;}
   if(typeof gtag!=='undefined') gtag('event','wild_plant_drop',{lat:_uLat.toFixed(3),lng:_uLng.toFixed(3)});
   // Tutorial-proxy: first wild drop is a massive milestone — the world opens.
-  try{if(window.LW_XP)window.LW_XP.grantOnce('first_wild_drop',15,'first_of_kind','🌎 +15 XP — your first wild planting. This plant lives in the real world now.');}catch(e){}
+  try{if(window.LW_XP)window.LW_XP.grantOnce('first_wild_drop',15,'first_of_kind','🌎 +15 XP, your first wild planting. This plant lives in the real world now.');}catch(e){}
   var wild=_getWild();
   var myUid='';try{var _cu=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_cu)myUid=_cu.uid;}catch(e){}
   var la=_uLat+(Math.random()-0.5)*0.0005,lo=_uLng+(Math.random()-0.5)*0.0005;
@@ -42570,7 +42570,7 @@ function _writeSharedDrop(lat,lng,hash,ea,defGame,traits,displaced){
           tx.set(newRef,newDropData);
         });
       }).then(function(){
-        if(window._swsLog)_swsLog('Takeover TX OK — displaced '+oldDocId,'ok');
+        if(window._swsLog)_swsLog('Takeover TX OK, displaced '+oldDocId,'ok');
       }).catch(function(e){
         if(e.message==='EA_DEFENDED'){
           _toast('Takeover failed. Their plant grew stronger since you checked.');
@@ -42751,7 +42751,7 @@ function _subscribeSharedDrops(){
         // Re-check feral spawns now that shared markers are updated
         _feralRespawnDebounced();
       },function(e){
-        if(window._swsLog)_swsLog('Snapshot err: '+(e.message||e)+' — using fallback','warn');
+        if(window._swsLog)_swsLog('Snapshot err: '+(e.message||e)+', using fallback','warn');
         _loadSharedDropsFallback(user);
         setTimeout(function(){if(Object.keys(_sharedMarkers).length===0)_seedDemoPlants();},3000);
       });
@@ -43245,8 +43245,8 @@ function _selectHexPlant(idx,p){
     // Locked buttons get a toast onclick instead of bare display so the
     // tap surfaces the unlock requirement. Was a silent fail before
     // (Stephen 2026-04-19: "nothing seems to happen" on cutting tap).
-    actions+='<button class="hi-action-btn'+(_canTend?'':' locked')+'" onclick="'+(_canTend?'window._hexAction(\'tend\')':'window._toast&&window._toast(\'\\ud83d\\udd12 Tending unlocks at Keeper Level 5.\')')+'" title="'+(_canTend?'Tend this plant — gives it +6h and grants you Dew':'Unlocks at Keeper Level 5')+'">&#127807; TEND'+(_canTend?'':' &#128274;')+'</button>';
-    actions+='<button class="hi-action-btn gold'+(_canCut?'':' locked')+'" onclick="'+(_canCut?'window._hexAction(\'cutting\')':'window._toast&&window._toast(\'\\ud83d\\udd12 Cuttings unlock at Keeper Level 15.\')')+'" title="'+(_canCut?'Take a cutting — clone seed, parent loses 10% lifespan. One-time per plant':'Unlocks at Keeper Level 15')+'">&#9986; CUTTING'+(_canCut?'':' &#128274;')+'</button>';
+    actions+='<button class="hi-action-btn'+(_canTend?'':' locked')+'" onclick="'+(_canTend?'window._hexAction(\'tend\')':'window._toast&&window._toast(\'\\ud83d\\udd12 Tending unlocks at Keeper Level 5.\')')+'" title="'+(_canTend?'Tend this plant, gives it +6h and grants you Dew':'Unlocks at Keeper Level 5')+'">&#127807; TEND'+(_canTend?'':' &#128274;')+'</button>';
+    actions+='<button class="hi-action-btn gold'+(_canCut?'':' locked')+'" onclick="'+(_canCut?'window._hexAction(\'cutting\')':'window._toast&&window._toast(\'\\ud83d\\udd12 Cuttings unlock at Keeper Level 15.\')')+'" title="'+(_canCut?'Take a cutting, clone seed, parent loses 10% lifespan. One-time per plant':'Unlocks at Keeper Level 15')+'">&#9986; CUTTING'+(_canCut?'':' &#128274;')+'</button>';
     // Nickname button — lets you label this keeper for easy identification
     if(p.ownerUid){
       var _curNick='';try{_curNick=(JSON.parse(localStorage.getItem('lw_friend_nicks')||'{}'))[p.ownerUid]||'';}catch(e){}
@@ -43266,7 +43266,7 @@ window._hexSeedSearch=function(){
   },500);
 };
 
-// ═══ FORAGE FAB — one-tap "find the nearest forageable hex" ═══
+// ═══ FORAGE FAB, one-tap "find the nearest forageable hex" ═══
 // Stephen: 'we are going to need to make a nice big foraging button because
 // its such a prominent feature we really want to showcase and show off.'
 // Walks the current zone set, picks the closest zone that (a) has plants
@@ -43809,7 +43809,7 @@ window._hexAction=function(action){
     }catch(e){}
     if(window.earnDew)window.earnDew(2,'wild_tend_stranger');
     if(window.PW_grantXP)PW_grantXP(10,'wild_tend_stranger');
-    try{if(window.LW_XP)window.LW_XP.grantOnce('first_tend',15,'first_of_kind','🤝 +15 XP — first stranger tended. You\'re part of something bigger.');}catch(e){}
+    try{if(window.LW_XP)window.LW_XP.grantOnce('first_tend',15,'first_of_kind','🤝 +15 XP, first stranger tended. You\'re part of something bigger.');}catch(e){}
     if(window.LW_Log)window.LW_Log.write('wild_tended_stranger',{hash:p.hash,ownerName:p.ownerName||'Keeper'});
     _writeWitnessFee(p,'tend');
     _toast('\ud83c\udf3f Tended '+(p.ownerName||'a keeper')+'\u2019s plant. +6h lifespan \u00b7 +2 Dew \u00b7 +10 XP');
@@ -44485,7 +44485,7 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
       _resetLink.onclick=function(e){
         e.preventDefault();
         if(!confirm('Start over?\n\nThis wipes your account on this device. Your cloud vault is also deleted. Onboarding will run again from scratch.'))return;
-        if(!confirm('Are you SURE? This cannot be undone.\n\n(Beta tester reset — only do this if you want to re-test the new-player flow.)'))return;
+        if(!confirm('Are you SURE? This cannot be undone.\n\n(Beta tester reset, only do this if you want to re-test the new-player flow.)'))return;
         // Final guard: type the word YES so a fat-finger can't blast through.
         var t=prompt('Type YES to confirm full reset:');
         if(!t||t.trim().toUpperCase()!=='YES'){alert('Reset cancelled.');return;}
@@ -44532,7 +44532,7 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
         if(window._toast)window._toast('🌿 Thanks. Feedback sent.');
       } else {
         // Fallback: copy a formatted message to clipboard.
-        var txt='Lucid Winds feedback — '+rating+'★ '+tags.join(', ')+'\n\n'+msg+'\n\n[ctx: '+c.tab+' · plants='+c.plants+' · sunbeams='+c.sunbeams+' · xp='+c.xp+' · class='+c.class+']';
+        var txt='Lucid Winds feedback, '+rating+'★ '+tags.join(', ')+'\n\n'+msg+'\n\n[ctx: '+c.tab+' · plants='+c.plants+' · sunbeams='+c.sunbeams+' · xp='+c.xp+' · class='+c.class+']';
         try{navigator.clipboard&&navigator.clipboard.writeText(txt);}catch(e){}
         document.getElementById('lw-fb-modal').remove();
         if(window._toast)window._toast('🌿 Feedback saved locally + copied. Send to Stephen!');
@@ -44623,7 +44623,7 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
           '<button onclick="document.getElementById(\'lw-whatnow-modal\').remove()" style="width:36px;height:36px;border-radius:50%;background:rgba(40,40,30,0.5);border:1px solid rgba(138,145,120,0.25);color:var(--cream,#e8dcc8);cursor:pointer;font-size:0.9rem;">✕</button>'+
         '</div>'+
         '<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:var(--cream,#e8dcc8);line-height:1.7;">'+
-          '<div style="margin-bottom:0.7rem;color:var(--muted,#8a9178);font-style:italic;">The core loop — your first 10 minutes:</div>'+
+          '<div style="margin-bottom:0.7rem;color:var(--muted,#8a9178);font-style:italic;">The core loop, your first 10 minutes:</div>'+
           '<div style="margin-bottom:0.5rem;"><b style="color:var(--gold,#c8a84b);">1. PLAY</b>. Tap <b>GAMES</b> below. Win or progress to earn <b>Sunbeams</b>.</div>'+
           '<div style="margin-bottom:0.5rem;"><b style="color:var(--gold,#c8a84b);">2. BLOOM</b>. Tap the Sunbeam icon when ready. 30 Sunbeams = 1 new plant in your <b>Greenhouse</b>.</div>'+
           '<div style="margin-bottom:0.5rem;"><b style="color:var(--gold,#c8a84b);">3. INSPECT</b>. Tap any plant to see its rarity, traits, lineage, and unique haiku.</div>'+
@@ -44959,7 +44959,7 @@ var G=[
 {id:'trellis',n:'Trellis',i:'\ud83d\udd24',r:'Word-builder on a 15x15 grid. Play words on premium squares for big scores. AI opponent.',cat:'board',thumb:'assets/games/thumbs/trellis.png'},
 {id:'petalmatch',n:'Petal Match',i:'\ud83c\udf38',r:'Swap botanical gems to make lines. Chain cascades for combos!',cat:'puzzle',thumb:'assets/games/thumbs/petalmatch.png'},
 {id:'pixelgarden',n:'Pixel Garden',i:'\ud83c\udfa8',r:'Pixel art painter. Draw with 24 botanical colors. Save as PNG!',cat:'creative',thumb:'assets/games/thumbs/pixelgarden.jpg'},
-{id:'numbergarden',n:'Fast Math',i:'\ud83d\udd22',r:'60-second arithmetic drill. Add, subtract, multiply — build your streak!',cat:'pattern',thumb:'assets/games/thumbs/numbergarden.png'},
+{id:'numbergarden',n:'Fast Math',i:'\ud83d\udd22',r:'60-second arithmetic drill. Add, subtract, multiply, build your streak!',cat:'pattern',thumb:'assets/games/thumbs/numbergarden.png'},
 {id:'sprout',n:'Sprout',i:'\ud83c\udf31',r:'Find the hidden 5-letter word in 6 guesses. Green = right spot, Gold = wrong spot.',cat:'puzzle',thumb:'assets/games/thumbs/sprout.png'},
 {id:'vinewords',n:'Vine Words',i:'\ud83d\udd24',r:'Find words by connecting adjacent letters. 2 minutes, longer = more points!',cat:'puzzle',thumb:'assets/games/thumbs/vinewords.png'},
 {id:'storyseeds',n:'Story Seeds',i:'\ud83d\udcdc',r:'Daily writing prompts. Plant a seed, watch the story grow. Save your entries!',cat:'creative',thumb:'assets/games/thumbs/storyseeds.jpg'},
@@ -45244,7 +45244,7 @@ function _e(v){
     var elapsed=Math.floor((Date.now()-_s)/1000);
     var gc2=_afClass[_afGameClass[_a]||'standard']||_afClass.standard;
     if(elapsed<gc2.minTime){
-      if(window._LW_DEBUG)console.log('[_e] BLOCKED — played '+elapsed+'s, need '+gc2.minTime+'s min');
+      if(window._LW_DEBUG)console.log('[_e] BLOCKED, played '+elapsed+'s, need '+gc2.minTime+'s min');
       if(v==='game_win')_guardToast('Play '+(gc2.minTime-elapsed)+'s more to earn');
       base=0;
     }
@@ -45253,7 +45253,7 @@ function _e(v){
   if(isComplete&&base>0){
     var now=Date.now();
     if(_afLastComplete>0&&(now-_afLastComplete)/1000<_afCompleteCd){
-      if(window._LW_DEBUG)console.log('[_e] BLOCKED — completion cooldown ('+Math.round(_afCompleteCd-(now-_afLastComplete)/1000)+'s left)');
+      if(window._LW_DEBUG)console.log('[_e] BLOCKED, completion cooldown ('+Math.round(_afCompleteCd-(now-_afLastComplete)/1000)+'s left)');
       base=0;
     }else{
       _afLastComplete=now;
@@ -45358,7 +45358,7 @@ window._e=_e;
         if(window._a){
           if(!sessionGames[window._a]){sessionGames[window._a]=true;
             var count=0;for(var k in sessionGames)if(sessionGames.hasOwnProperty(k))count++;
-            if(count===3&&window.LW_XP)window.LW_XP.grantDaily('three_games',10,'pattern_three_games','🎮 +10 XP — three games explored today.');
+            if(count===3&&window.LW_XP)window.LW_XP.grantDaily('three_games',10,'pattern_three_games','🎮 +10 XP, three games explored today.');
           }
         }
       } else if(v==='game_loss'){
@@ -45700,7 +45700,7 @@ function _restartCurrentGame(){
   var gi=null;for(var i=0;i<G.length;i++)if(G[i].id===_a){gi=G[i];break}
   if(gi){var r=document.createElement('div');r.className='gr';r.textContent='📖 '+gi.r;ag.appendChild(r)}
   var fn=window._gameFns||{};
-  try{if(fn[_a])fn[_a](ag);else{ag.innerHTML='<div style="padding:2rem;text-align:center;color:var(--muted);font-family:DM Mono,monospace;font-size:0.5rem;">Game not loaded yet. Tap another game.</div>';}}catch(e){console.error('[Game '+_a+']',e);ag.innerHTML+='<div style="padding:2rem;text-align:center;color:#c75050">Game error — tap 🔄 New to retry</div>'}
+  try{if(fn[_a])fn[_a](ag);else{ag.innerHTML='<div style="padding:2rem;text-align:center;color:var(--muted);font-family:DM Mono,monospace;font-size:0.5rem;">Game not loaded yet. Tap another game.</div>';}}catch(e){console.error('[Game '+_a+']',e);ag.innerHTML+='<div style="padding:2rem;text-align:center;color:#c75050">Game error, tap 🔄 New to retry</div>'}
   var gps=document.getElementById('gp-strip');if(gps&&gps.classList.contains('on')){try{_updateGP()}catch(e){}}
   _st();
 }
@@ -47743,7 +47743,7 @@ function GGO(a){
     }
     gameOver=true;
     var left=countLeft();score=left;
-    mm_up(left+' left — no moves');
+    mm_up(left+' left, no moves');
     _e('game_loss');_sr('golf',{w:false,s:35-left});
   }
 
@@ -48687,12 +48687,12 @@ function GT(a){
     flipParents();
     if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('tripeaks',{w:true,s:moves});}
     upd();rn();
-    if(!gameOver&&checkLoss()){gameOver=true;var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;mm_up(left+' left — stuck');_e('game_loss');_sr('tripeaks',{w:false,s:28-left});}
+    if(!gameOver&&checkLoss()){gameOver=true;var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;mm_up(left+' left, stuck');_e('game_loss');_sr('tripeaks',{w:false,s:28-left});}
   }
   function tapStock(){
     if(gameOver||stock.length===0)return;
     var cd=stock.pop();cd.up=true;waste.push(cd);streak=0;_play('tap');upd();rn();
-    if(checkLoss()){gameOver=true;var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;mm_up(left+' left — stuck');_e('game_loss');_sr('tripeaks',{w:false,s:28-left});}
+    if(checkLoss()){gameOver=true;var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;mm_up(left+' left, stuck');_e('game_loss');_sr('tripeaks',{w:false,s:28-left});}
   }
   function rn(){
     gd.innerHTML='';
@@ -48876,7 +48876,7 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolli
     h+=playerPicker();
     h+=scoreboardStrip();
     // Status + controls bar
-    var hint = busted ? '🍂 Farkle — lost this turn'
+    var hint = busted ? '🍂 Farkle, lost this turn'
              : gameOver ? 'Game over'
              : (turn===0 && score()===0) ? 'Tap ROLL to begin'
              : 'Tap dice to keep · bank or press your luck';
@@ -48905,7 +48905,7 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolli
       else h+='<span style="font-size:2rem;color:rgba(232,220,200,0.25);">·</span>';
       h+='</div>';
     }
-    if(!anyInRoll)h+='<div style="font-family:Georgia,serif;font-style:italic;color:rgba(232,220,200,0.5);align-self:center;padding:24px;">All six kept — roll for 🔥 hot dice</div>';
+    if(!anyInRoll)h+='<div style="font-family:Georgia,serif;font-style:italic;color:rgba(232,220,200,0.5);align-self:center;padding:24px;">All six kept, roll for 🔥 hot dice</div>';
     h+='</div></div>';
     // Kept tray
     var anyHeld=false;for(var hi=0;hi<6;hi++)if(kept[hi]){anyHeld=true;break;}
@@ -48979,7 +48979,7 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolli
   }
   window._FNP=function(n){numPlayers=n;_play('tap');_FN()};
   window._FHold=function(x){if(!dice[x]||gameOver||busted||rolling)return;_play('tap');kept[x]=!kept[x];rn();};
-  function nextPlayer(){turn=0;kept=new Array(6).fill(false);dice=new Array(6).fill(0);justRolled=new Array(6).fill(false);busted=false;rolling=false;if(finalRound){curP=(curP+1)%players.length;if(curP===finalStart){endGame();return}}else{curP=(curP+1)%players.length}rn();sm('P'+(curP+1)+" — 🎲 Roll")}
+  function nextPlayer(){turn=0;kept=new Array(6).fill(false);dice=new Array(6).fill(0);justRolled=new Array(6).fill(false);busted=false;rolling=false;if(finalRound){curP=(curP+1)%players.length;if(curP===finalStart){endGame();return}}else{curP=(curP+1)%players.length}rn();sm('P'+(curP+1)+", 🎲 Roll")}
   function endGame(){
     gameOver=true;
     var best=-1,winner=0;for(var i=0;i<players.length;i++)if(players[i].banked>best){best=players[i].banked;winner=i}
@@ -49068,7 +49068,7 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolli
     dice=new Array(6).fill(0);kept=new Array(6).fill(false);justRolled=new Array(6).fill(false);
     turn=0;rolling=false;busted=false;curP=0;gameOver=false;finalRound=false;finalStart=-1;overlay=null;
     players=[];for(var i=0;i<numPlayers;i++)players.push({banked:0});
-    sm(numPlayers>1?('P1 — 🎲 Roll (first to '+target+')'):'🎲 Roll!');
+    sm(numPlayers>1?('P1, 🎲 Roll (first to '+target+')'):'🎲 Roll!');
     rn();
   };
   _FN();
@@ -49178,7 +49178,7 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
       h+='</div>';
     }
     if(!anyInRoll){
-      h+='<div style="font-family:Georgia,serif;font-style:italic;color:rgba(232,220,200,0.45);align-self:center;padding:30px;">All dice held — score it</div>';
+      h+='<div style="font-family:Georgia,serif;font-style:italic;color:rgba(232,220,200,0.45);align-self:center;padding:30px;">All dice held, score it</div>';
     }
     h+='</div></div>';
     // Held tray — dice the player is keeping. Smaller, slightly tinted.
@@ -49186,7 +49186,7 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
     for(var hi=0;hi<5;hi++)if(kept[hi]){anyHeld=true;break;}
     if(anyHeld||rolls>0){
       h+='<div style="background:linear-gradient(180deg,rgba(180,140,70,0.18),rgba(120,90,40,0.25));border:1px solid rgba(220,180,120,0.3);border-radius:8px;padding:8px;margin-bottom:8px;box-shadow:inset 0 1px 0 rgba(255,220,140,0.1),0 2px 4px rgba(0,0,0,0.4);">';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:#ffdc70;text-align:center;text-transform:uppercase;margin-bottom:6px;">Held — '+(anyHeld?'tap to release':'tap a die above to keep')+'</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:#ffdc70;text-align:center;text-transform:uppercase;margin-bottom:6px;">Held, '+(anyHeld?'tap to release':'tap a die above to keep')+'</div>';
       h+='<div style="display:flex;gap:8px;justify-content:center;min-height:54px;align-items:center;">';
       for(var hj=0;hj<5;hj++){
         if(!kept[hj])continue;
@@ -49266,7 +49266,7 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
           rs = '<span style="font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(230,57,70,0.55);">0</span>';
         }
       } else {
-        rs = '<span style="color:rgba(232,220,200,0.3);font-family:DM Mono,monospace;font-size:0.65rem;">—</span>';
+        rs = '<span style="color:rgba(232,220,200,0.3);font-family:DM Mono,monospace;font-size:0.65rem;">, </span>';
       }
       var clickAttr = canScore ? 'onclick="_YS('+i+')" style="cursor:pointer;' : 'style="';
       return '<div class="'+animCls+'" '+clickAttr+'display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;margin:2px 0;background:'+rowBg+';border:'+rowBorder+';border-radius:6px;'+(done?'opacity:0.62;':'')+'">'
@@ -49404,7 +49404,7 @@ function GDS(a){
   function rn(){
     var ar=activeRow();
     // Row 2 stays visually locked until Row 1 is shut
-    r2Lbl.textContent=ar===1?'ROW 2 — UNLOCKED':'ROW 2 — locked until Row 1 is shut';
+    r2Lbl.textContent=ar===1?'ROW 2, UNLOCKED':'ROW 2, locked until Row 1 is shut';
     r2Lbl.style.color=ar===1?'var(--gold)':'var(--muted)';
     r2.style.opacity=ar===1?'1':'0.4';
     r2.style.filter=ar===1?'none':'grayscale(0.6)';
@@ -49438,7 +49438,7 @@ function GDS(a){
     // Info
     var target=(d1||0)+(d2||0);
     var ss=selSum();
-    if(phase==='roll'){info.textContent='Open: '+openSum()+' — tap ROLL to play';}
+    if(phase==='roll'){info.textContent='Open: '+openSum()+', tap ROLL to play';}
     else if(phase==='select'){info.innerHTML='Roll: <strong>'+target+'</strong> · Selected: <strong>'+ss+'</strong> / '+target;}
     // Buttons
     var b2=document.getElementById('DSroll2'),b1=document.getElementById('DSroll1'),bs=document.getElementById('DSshut');
@@ -49700,7 +49700,7 @@ function GRV(a){var bd=new Array(64).fill(0),tn=1,ov=false,lastMove=-1,flipCells
       gd.appendChild(d);
     }
     updateScore();
-    if(!ov&&!vm.length&&tn===1){sm('No moves — passing');tn=2;setTimeout(aiRV,500)}
+    if(!ov&&!vm.length&&tn===1){sm('No moves, passing');tn=2;setTimeout(aiRV,500)}
     checkEnd();
   }
   function doPlay(p,pos){
@@ -49976,9 +49976,9 @@ function GBS(a){
       var tray=renderFleetTray();
       var instr='';
       if(selShip>=0){
-        instr='<div style="font-family:DM Sans,sans-serif;font-size:0.6rem;color:var(--cream);line-height:1.4">Tap the grid to place <strong style="color:var(--gold)">'+SHIP_NAMES[selShip]+'</strong> — direction <strong style="color:var(--sage)">'+(shipDirs[selShip]==='h'?'→ Horizontal':'↓ Vertical')+'</strong></div>';
+        instr='<div style="font-family:DM Sans,sans-serif;font-size:0.6rem;color:var(--cream);line-height:1.4">Tap the grid to place <strong style="color:var(--gold)">'+SHIP_NAMES[selShip]+'</strong>, direction <strong style="color:var(--sage)">'+(shipDirs[selShip]==='h'?'→ Horizontal':'↓ Vertical')+'</strong></div>';
       } else if(allPlaced()){
-        instr='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--sage);letter-spacing:0.08em">ALL PLACED — TAP "I\'M READY" TO BATTLE</div>';
+        instr='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--sage);letter-spacing:0.08em">ALL PLACED, TAP "I\'M READY" TO BATTLE</div>';
       } else {
         instr='<div style="font-family:DM Sans,sans-serif;font-size:0.55rem;color:var(--muted);line-height:1.4">Tap a ship above to pick it up, then tap the grid. Tap a placed ship to move it.</div>';
       }
@@ -50003,7 +50003,7 @@ function GBS(a){
         if(selShip>=0){
           var len=SHIPS[selShip];
           var dir=shipDirs[selShip];
-          if(!canPlace(pGrid,r,c,len,dir)){sm('No room — rotate or pick another spot');return;}
+          if(!canPlace(pGrid,r,c,len,dir)){sm('No room, rotate or pick another spot');return;}
           placeShip(pGrid,r,c,len,dir,selShip+1);
           placements[selShip]={r:r,c:c,dir:dir};
           _play('tap');
@@ -50022,7 +50022,7 @@ function GBS(a){
       // Add a header for each board so the vertical stack reads clearly
       var enemyHdr=document.createElement('div');
       enemyHdr.style.cssText='font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:var(--gold);letter-spacing:0.12em;text-align:center;margin:4px 0 2px;';
-      enemyHdr.textContent='⚔ ENEMY WATERS — TAP TO ATTACK';
+      enemyHdr.textContent='⚔ ENEMY WATERS, TAP TO ATTACK';
       grids.appendChild(enemyHdr);
       // Wrap the enemy grid in a zoom container — gives player real
       // close-up of the opponent board for accurate tapping.
@@ -50052,7 +50052,7 @@ function GBS(a){
           if(_bsPendingShot===i){_bsCommitShot(i);return;}
           _bsPendingShot=i;
           var coord='ABCDEFGH'.charAt(i%SZ)+(Math.floor(i/SZ)+1);
-          sm('🎯 Aimed at '+coord+' — tap again to fire');
+          sm('🎯 Aimed at '+coord+', tap again to fire');
           // Clear ALL existing highlights first, then apply to the new
           // aim cell. Was leaving stale gold rings on previously-aimed
           // cells when player moved their aim.
@@ -50100,7 +50100,7 @@ function GBS(a){
       // Add adjacent cells to hunt stack
       var adj=[[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
       for(var j=0;j<adj.length;j++){var ar=adj[j][0],ac=adj[j][1];if(ar>=0&&ar<SZ&&ac>=0&&ac<SZ){var ai=idx(ar,ac);if(pGrid[ai]>=0)aiStack.push(ai)}}
-      if(allSunk(pGrid,SHIPS)){gameOver=true;sm('🍂 Fleet sunk — you lose');_e('game_loss');_sr('battleship',{w:false,s:0});rn();return}
+      if(allSunk(pGrid,SHIPS)){gameOver=true;sm('🍂 Fleet sunk, you lose');_e('game_loss');_sr('battleship',{w:false,s:0});rn();return}
     }else{pGrid[target]=-1;}
     turn='player';document.getElementById('BSph').innerHTML='Your turn';rn();
   }
@@ -50125,7 +50125,7 @@ function GBS(a){
     if(phase!=='place')return;
     if(!allPlaced()){sm('Place all ships first');return;}
     phase='battle';turn='player';selShip=-1;
-    document.getElementById('BSph').innerHTML='Your turn — tap enemy grid';
+    document.getElementById('BSph').innerHTML='Your turn, tap enemy grid';
     _play('win');
     rn();
   };
@@ -50140,7 +50140,7 @@ function GBS(a){
     confirmAttack=!confirmAttack;
     try{localStorage.setItem('lw_bs_confirm',confirmAttack?'on':'off');}catch(e){}
     _bsSyncCfm();
-    sm(confirmAttack?'🎯 Confirm-attack ON — tap once to aim, twice to fire':'⚡ Confirm-attack OFF — single-tap fires');
+    sm(confirmAttack?'🎯 Confirm-attack ON, tap once to aim, twice to fire':'⚡ Confirm-attack OFF, single-tap fires');
   };
   window._BSToggleZoom=function(){
     enemyZoom=enemyZoom>1?1:1.5;
@@ -50461,7 +50461,7 @@ function GSK(a){
     var v=prompt('Jump to level (1-'+LEVELS.length+'):',String(lvl+1));
     if(v===null)return;
     var n=parseInt(v,10);
-    if(isNaN(n)||n<1||n>LEVELS.length){sm('Invalid level — must be 1 to '+LEVELS.length);return;}
+    if(isNaN(n)||n<1||n>LEVELS.length){sm('Invalid level, must be 1 to '+LEVELS.length);return;}
     _skHist=[];lvl=n-1;localStorage.setItem('sk_lvl',String(lvl));load();sm('Level '+(lvl+1));rn();
   };
   // Bind keydown only ONCE — was attaching a fresh listener every
@@ -50848,7 +50848,7 @@ function GBW(a){
     if(p==='custom'){_bwCustomPath=[];_bwDrawingPath=true;sm('Draw a path on canvas, then tap DRAW PATH again')}
     else{_bwDrawingPath=false;cx=W/2;cy=H/2}
   };
-  window._BWFreeze=function(){spinOn=!spinOn;var btn=document.getElementById('BWfrz');if(btn){btn.textContent=spinOn?'❄ FREEZE':'▶ RESUME';btn.className='gb'+(spinOn?'':' gon')}sm(spinOn?'Spinning':'Frozen — screenshot or save!')};
+  window._BWFreeze=function(){spinOn=!spinOn;var btn=document.getElementById('BWfrz');if(btn){btn.textContent=spinOn?'❄ FREEZE':'▶ RESUME';btn.className='gb'+(spinOn?'':' gon')}sm(spinOn?'Spinning':'Frozen, screenshot or save!')};
   window._BWClear=function(){bufX.clearRect(0,0,bufC.width,bufC.height);rotAngle=0;strokes=0;_bwCustomPath=[];_bwDrawingPath=false;_bwPathIdx=0;_bwPathT=0;cx=W/2;cy=H/2;var pb=document.getElementById('BWpath');if(pb)pb.textContent='◯ SPIN';sm('Canvas cleared')};
   // Track whether this session has already minted a hash so save can't
   // be tap-farmed for unlimited Sunbeams. Same pattern as pixelgarden.
@@ -50857,7 +50857,7 @@ function GBW(a){
     var sc=document.createElement('canvas');sc.width=W*dpr;sc.height=H*dpr;var sx=sc.getContext('2d');sx.setTransform(dpr,0,0,dpr,0,0);
     sx.fillStyle='#0d100c';sx.fillRect(0,0,W,H);sx.save();sx.beginPath();sx.arc(cx,cy,radius,0,Math.PI*2);sx.clip();sx.drawImage(bufC,0,0,W,H);sx.restore();
     sx.beginPath();sx.arc(cx,cy,radius,0,Math.PI*2);sx.strokeStyle='rgba(74,124,53,0.3)';sx.lineWidth=2;sx.stroke();
-    sx.fillStyle='rgba(232,220,200,0.2)';sx.font='10px Bebas Neue,sans-serif';sx.textAlign='center';sx.fillText('BLOOM WHEEL — LUCID WINDS',cx,H-10);
+    sx.fillStyle='rgba(232,220,200,0.2)';sx.font='10px Bebas Neue,sans-serif';sx.textAlign='center';sx.fillText('BLOOM WHEEL, LUCID WINDS',cx,H-10);
     var lk=document.createElement('a');lk.download='bloom-wheel-'+Date.now()+'.png';lk.href=sc.toDataURL('image/png');lk.click();
     _playWin();sm('Mandala saved!');
     // First save per session mints; subsequent saves only milestone.
@@ -51079,7 +51079,7 @@ function GBG(a){
     h+='</div>';
     wrap.innerHTML=h;
   }
-  window._BGR=function(){if(PHASE!=='roll'||TURN!=='human')return;rollDice();_play('dice');var moves=getValidMoves('human');if(moves.length===0){sm('No valid moves — turn forfeited');MOVES_LEFT=[];rn();setTimeout(endTurn,1000);return}rn()};
+  window._BGR=function(){if(PHASE!=='roll'||TURN!=='human')return;rollDice();_play('dice');var moves=getValidMoves('human');if(moves.length===0){sm('No valid moves, turn forfeited');MOVES_LEFT=[];rn();setTimeout(endTurn,1000);return}rn()};
   window._BGS=function(p){selectPt(p)};
   window._BGB=function(from,die){var moves=getValidMoves('human');var mv=null;moves.forEach(function(m){if(m.from===from&&m.die===die&&m.to==='off')mv=m});if(!mv)return;applyMove(mv,'human');_play('tap');SEL=-1;VALID_DESTS=[];if(BO_H>=15){_e('game_win');_playWin();sm('All seeds home!');_sr('backgammon',{w:true,s:1});rn();return}if(MOVES_LEFT.length>0){var rem=getValidMoves('human');if(rem.length===0){MOVES_LEFT=[];endTurn()}else rn()}else endTurn()};
   window._BGN=function(){init()};
@@ -51127,7 +51127,7 @@ function _autoOpenPicker(){
 }
 setTimeout(_autoOpenPicker,400);
 setTimeout(_autoOpenPicker,1200); // safety retry after onboarding/splash
-console.log('[FG] Hub v4 — '+G.length+' games');
+console.log('[FG] Hub v4, '+G.length+' games');
 })();
 </script>
 
@@ -51174,7 +51174,7 @@ var LEVEL_UNLOCKS={
   9:  {key:'potShop',      title:'Pot Shop',             desc:'Ritual vessels unlock in the Nursery, each one bakes a unique bonus into the plant at bloom.'},
   10: {key:'fruitHarvest', title:'Fruit harvest',        desc:'Take ripe fruit from stranger wild plants for Dew (small bloom delay).'},
   12: {key:'mergeBreed',   title:'Nursery merge breed',  desc:'Merge two nursery seeds into one for trait selection.'},
-  15: {key:'cutting',      title:'Wild cuttings',        desc:'Take a cutting from a stranger wild plant — sample breeding seed.'},
+  15: {key:'cutting',      title:'Wild cuttings',        desc:'Take a cutting from a stranger wild plant, sample breeding seed.'},
   19: {key:'bookSecrets',  title:'Book of Secrets',      desc:'Unlock the Compendium of rare interactions and phenotype lore.'},
   23: {key:'fourthDrop',   title:'4th daily Wild drop',  desc:'You can now drop 4 plants per day instead of 3.'},
   25: {key:'masterKeeper', title:'Master Keeper',        desc:'Cosmetic gold border on your keeper bar + profile.'}
@@ -52072,7 +52072,7 @@ function _renderClassSection(){
   var xpText=nextThreshold?(curXP+' / '+nextThreshold+' XP'):('MASTER · '+curXP+' XP');
   // Current ability
   var ability=def.abilities&&def.abilities[lvl]?def.abilities[lvl]:null;
-  var abilityHtml=ability?('<b style="color:var(--cream);">'+ability.name+'</b> — '+ability.desc):'';
+  var abilityHtml=ability?('<b style="color:var(--cream);">'+ability.name+'</b>, '+ability.desc):'';
   // Art path
   var artSrc='assets/character-sheet/classes/'+cls+'.png';
   var emblemCls='cs-class-emblem'+(syn?' synergy':'');
@@ -52578,14 +52578,14 @@ function _saveName(){
 }
 
 // ═══ COMPANION EQUIPPING ═══
-// Optional companion portrait lookup — idx → PNG path. Falls back to emoji
+// Optional companion portrait lookup, idx → PNG path. Falls back to emoji
 // when a companion has no art yet. Extend this map as Midjourney renders
 // land in assets/companions/.
 var LW_COMPANION_IMG = {
   33: 'assets/companions/cicada-v1-b.png'
 };
 window.LW_COMPANION_IMG = LW_COMPANION_IMG;
-// Render helper — returns an <img> string when art exists, emoji otherwise.
+// Render helper, returns an <img> string when art exists, emoji otherwise.
 // Caller supplies size (px). onerror falls back to emoji inline so a missing
 // file never leaves a hollow circle.
 function _compPortrait(idx, emoji, sizePx) {
@@ -52615,7 +52615,7 @@ function _loadCompanion(){
         icon.textContent = comp.icon || '\ud83d\udc3e';
       }
     }
-    // Companion name with level — L1/L2/L3 (M) from time-equipped ladder
+    // Companion name with level, L1/L2/L3 (M) from time-equipped ladder
     var _lvlSuffix='';
     try {
       if (window.LW_COMPANION && typeof comp.idx === 'number') {
@@ -52638,7 +52638,7 @@ function _loadCompanion(){
       }
     } catch(e) {}
     if(!_buffText)_buffText='Passive companion';
-    // Active-effects panel — surfaces the invisible family multipliers so
+    // Active-effects panel, surfaces the invisible family multipliers so
     // the companion ladder actually FEELS like it's doing something. Reads
     // FAMILY_BUFFS for the companion's family, runs each buff kind through
     // getCompanionMult (which stacks base × class affinity × level mult),
@@ -54046,7 +54046,7 @@ function submitAuth(){
         // Account exists — try signing in (returning player used signup form)
         firebase.auth().signInWithEmailAndPassword(email,pass).then(function(){
           clearTimeout(_authTimeout);
-          console.log('[LW] Auth success (sign-in) — returning player via signup form');
+          console.log('[LW] Auth success (sign-in), returning player via signup form');
           // Do NOT mint gift plant — they already have an account
           _markOnboarded();
           var authEl=document.getElementById('ob-auth');if(authEl)authEl.style.display='none';
@@ -54331,7 +54331,7 @@ function submitLogin(){
   if(window.firebase&&firebase.auth){
     firebase.auth().signInWithEmailAndPassword(email,pass).then(function(){
       clearTimeout(_loginTimeout);
-      console.log('[LW] Login success — returning player');
+      console.log('[LW] Login success, returning player');
       if(typeof gtag!=='undefined')gtag('event','login',{method:'email'});
       // Do NOT mint gift plant — this is a returning player
       _markOnboarded();
@@ -54981,40 +54981,40 @@ function _setupChallenge(diff, grade) {
   if(_type==='set'){
     _state={cards:_genSetBoard(),sel:[]};
     if(title)title.textContent='QUICK TRIOS';
-    if(sub)sub.textContent=(grade||'Common')+' — Pick 3 cards where shape, color & count are each ALL SAME or ALL DIFFERENT';
+    if(sub)sub.textContent=(grade||'Common')+', Pick 3 cards where shape, color & count are each ALL SAME or ALL DIFFERENT';
     _renderSet();
   }else if(_type==='memory'){
     var seq=_genMemory(diff);
     var order=[];for(var i=0;i<seq.length;i++)order.push(i);
     _state={seq:seq,order:order,revealed:{},inputIdx:0,phase:'show'};
     if(title)title.textContent='PATTERN MEMORY';
-    if(sub)sub.textContent=(grade||'Common')+' — Watch the numbered dots, then tap them back in the same order';
+    if(sub)sub.textContent=(grade||'Common')+', Watch the numbered dots, then tap them back in the same order';
     _renderMemory();
     setTimeout(function(){if(!_solved){_state.phase='input';_renderMemory();}},2500);
   }else if(_type==='spot'){
     _state=_genGrowth(diff);
     if(title)title.textContent='GROWTH SEQUENCE';
-    if(sub)sub.textContent=(grade||'Common')+' — Tap the growth stages from smallest to largest';
+    if(sub)sub.textContent=(grade||'Common')+', Tap the growth stages from smallest to largest';
     _renderGrowth();
   }else if(_type==='color'){
     _state=_genColor(diff);
     if(title)title.textContent='COLOR MATCH';
-    if(sub)sub.textContent=(grade||'Common')+' — Tap the swatch that matches the target color above';
+    if(sub)sub.textContent=(grade||'Common')+', Tap the swatch that matches the target color above';
     _renderColor();
   }else if(_type==='math'){
     _state=_genMath(diff);
     if(title)title.textContent='MATH SPROUT';
-    if(sub)sub.textContent=(grade||'Common')+' — Tap the correct answer to the equation';
+    if(sub)sub.textContent=(grade||'Common')+', Tap the correct answer to the equation';
     _renderMath();
   }else if(_type==='word'){
     _state=_genWord(diff);
     if(title)title.textContent='WORD UNSCRAMBLE';
-    if(sub)sub.textContent=(grade||'Common')+' — Drag or tap the scrambled letters to spell the word';
+    if(sub)sub.textContent=(grade||'Common')+', Drag or tap the scrambled letters to spell the word';
     _renderWord();
   }else if(_type==='chess'){
     var isM2=diff>=1;
     if(title)title.textContent=isM2?'CHECKMATE IN 2':'CHECKMATE IN 1';
-    if(sub)sub.textContent=(grade||'Common')+' — Find the '+(isM2?'mate in 2 moves':'checkmate');
+    if(sub)sub.textContent=(grade||'Common')+', Find the '+(isM2?'mate in 2 moves':'checkmate');
     _setupChess(diff);
     // Chess gets a timer — 90s for mate-in-1, 120s for mate-in-2
     _timeMax=isM2?120000:90000;_timeLeft=_timeMax;
@@ -55029,7 +55029,7 @@ function _setupChallenge(diff, grade) {
   }else if(_type==='sliding'){
     var is4=diff>=1;
     if(title)title.textContent='SLIDE PUZZLE';
-    if(sub)sub.textContent=(grade||'Common')+' — Arrange tiles in order';
+    if(sub)sub.textContent=(grade||'Common')+', Arrange tiles in order';
     _setupSliding(diff);
     _timeMax=is4?90000:60000;_timeLeft=_timeMax;
     var fill=document.getElementById('fc-timer-fill');
@@ -55095,7 +55095,7 @@ function uab(){
   if(!window.BP)return;
   var s=BP.getState?BP.getState():{ph:0,pollen:0};
   if(s.ph<1){b.style.display='block';var p=document.getElementById('abp');var f=document.getElementById('abf');if(p)p.textContent=s.ph+'/1';if(f)f.style.width=Math.min(100,s.ph*100)+'%';}
-  else if(s.pollen<100){b.style.display='block';var t=b.querySelector('.abt');if(t)t.innerHTML='<span class="abv">'+s.pollen+'/100</span> pollen — slot 3 at 100';var f2=document.getElementById('abf');if(f2)f2.style.width=Math.min(100,s.pollen)+'%';}
+  else if(s.pollen<100){b.style.display='block';var t=b.querySelector('.abt');if(t)t.innerHTML='<span class="abv">'+s.pollen+'/100</span> pollen, slot 3 at 100';var f2=document.getElementById('abf');if(f2)f2.style.width=Math.min(100,s.pollen)+'%';}
   else{b.style.display='none';}
 }
 (function(){
@@ -55133,7 +55133,7 @@ var SC=[{c:1,k:'seed1'},{c:5,k:'seed5'},{c:10,k:'seed10'},{c:15,k:'seed15'},{c:2
 function xp(){var c=3;try{if(window._LW_toolMod){var _ps=window._LW_toolMod('pouch');if(_ps)c=_ps;}}catch(e){}for(var i=1;i<SL.length;i++){var s=SL[i];if(s.k==='slot2'||s.k==='slot3')continue;if(st.unlocks[s.k]){if(s.dy){var td=new Date().toISOString().split('T')[0];if(st.daily!==td)c++;}else c++;}}return Math.min(c,12);} // cap at 12 — prevents grid overflow when pouch L3 + biome + all unlocks stack
 function xc(){var c=1;for(var i=SC.length-1;i>=0;i--){if(st.unlocks[SC[i].k]){c=SC[i].c;break;}}return c;}
 function init(){var el=document.getElementById('bpi');if(el){var s=el.querySelector('svg');if(s)s.remove();}render();}
-function toggle(){if(_o)close();else{try{if(window.LW_XP)window.LW_XP.grantOnce('disc_backpack',5,'discover_backpack','🎒 +5 XP — Field Pouch. Carry seeds and plants here.');}catch(e){}open();}}
+function toggle(){if(_o)close();else{try{if(window.LW_XP)window.LW_XP.grantOnce('disc_backpack',5,'discover_backpack','🎒 +5 XP, Field Pouch. Carry seeds and plants here.');}catch(e){}open();}}
 function open(){_o=true;hap();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-open-v4.png')";}document.getElementById('bpe').classList.add('open');render();}
 function close(){_o=false;csi();cpi();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-closed-v4.png')";}document.getElementById('bpe').classList.remove('open');}
 function csi(){_ss=null;document.getElementById('sdi').classList.remove('show');}
@@ -55262,7 +55262,7 @@ function hts(){if(_sp===null)return;document.getElementById('htcf').style.transi
 if(window.FG_Wild&&window.FG_Wild._dropFromBP){
   FG_Wild._dropFromBP(p);
 } else {
-  toast(p.name+' released — open the map to see it!');
+  toast(p.name+' released, open the map to see it!');
 }}},300);}
 function hte(){clearTimeout(_ht);document.getElementById('htc-rel').classList.remove('holding');document.getElementById('htcf').style.transition='none';document.getElementById('htcf').style.width='0';}
 function ap(o){if(st.plants.length>=xp()){toast('Backpack full!');return false;}st.plants.push(o);st.ph++;render();_rtbRender();hap();cu();return true;}
@@ -55940,7 +55940,7 @@ var _piUser=null;
 
 function _initPi(){
   if(!window.LW_PI_ENABLED){console.log('[Pi] Beta gate engaged (LW_PI_ENABLED=false). SDK init skipped.');return;}
-  if(typeof Pi==='undefined'){console.log('[Pi] Not in Pi Browser — payments disabled.');return;}
+  if(typeof Pi==='undefined'){console.log('[Pi] Not in Pi Browser, payments disabled.');return;}
   try{
     Pi.init({version:'2.0',sandbox:true}); // sandbox:true for testnet, false for mainnet
     console.log('[Pi] SDK initialized (sandbox mode).');
@@ -56235,7 +56235,7 @@ function _resolveSlotResult(results) {
   } else if (results[0] === results[1] || results[1] === results[2] || results[0] === results[2]) {
     // Any pair
     wonDew = SLOT_PAIR_PAYOUT;
-    label = 'Pair — ' + SLOT_PAIR_PAYOUT + ' Dew back';
+    label = 'Pair, ' + SLOT_PAIR_PAYOUT + ' Dew back';
     isPair = true;
   }
   // Grant rewards
@@ -59891,7 +59891,7 @@ function _renderForecast(){
     h+='<span class="bs-sc'+(pct>=30?' hot':'')+'">'+_seasonEmblems[si]+' '+pct+'%</span>';
   }
   h+='</div>';
-  h+='<div class="bs-chimera">\ud83e\uddec <span>Gen '+offGen+' Chimera — <b>-'+(offGen-1)*2+' EA</b> but <b>2× climate immunity</b>.</span></div>';
+  h+='<div class="bs-chimera">\ud83e\uddec <span>Gen '+offGen+' Chimera, <b>-'+(offGen-1)*2+' EA</b> but <b>2× climate immunity</b>.</span></div>';
   // Monte Carlo simulation forecast
   if(window.breedingForecast&&_plantA&&_partners[_pIdx]){
     var _fc=breedingForecast(_plantA.hash,_partners[_pIdx].hash);
@@ -59985,7 +59985,7 @@ function _renderForecast(){
   h+='<div style="display:flex;gap:0.3rem;flex-wrap:wrap;">';
   h+='<div style="font-size:0.5rem;color:var(--sage);"><span class="bs-tag tag-dom">DOMINANT</span> Likely passes to offspring</div>';
   h+='<div style="font-size:0.5rem;color:var(--gold);"><span class="bs-tag tag-mix">BLENDS</span> Mixes traits from both parents</div>';
-  h+='<div style="font-size:0.5rem;color:#d8a0a0;"><span class="bs-tag tag-risk">RISKY</span> Unpredictable — may mutate or vanish</div>';
+  h+='<div style="font-size:0.5rem;color:#d8a0a0;"><span class="bs-tag tag-risk">RISKY</span> Unpredictable, may mutate or vanish</div>';
   h+='</div></div>';
   fc.innerHTML=h;
 }
@@ -60029,7 +60029,7 @@ window.openBreedScreen=function(plantA,context){
     var msg='You have '+gh.length+' plant'+(gh.length!==1?'s':'')+' but need 2 ready to breed.';
     if(immature.length)msg+='<br>'+immature.length+' still maturing.';
     if(cooling.length)msg+='<br>'+cooling.length+' on breed cooldown.';
-    if(_allEligible.length===1)msg+='<br><br>1 plant is ready — you need at least 1 more.';
+    if(_allEligible.length===1)msg+='<br><br>1 plant is ready, you need at least 1 more.';
     if(_allEligible.length===0)msg+='<br><br>No plants are currently breedable.';
     if(window._lwConfirm){
       window._lwConfirm({title:'CANNOT BREED',body:msg,yes:'OK',no:''},function(){});
@@ -61258,7 +61258,7 @@ var TRIGGERS=[
   {id:'thornwall',name:'Thornwall',riddle:'Two barbed sentinels share a border.',category:'trait',
     check:function(c){if(!c.plant||!c.nearbyPlants)return false;var lt=c.plant.leafType%71;var thorns=[5,12,18,25,33];
       if(thorns.indexOf(lt)<0)return false;return c.nearbyPlants.some(function(p){return p.traits&&thorns.indexOf(p.traits.leafType%71)>=0;});},
-    effect:'Both hexes defended — Hard difficulty minimum',reward:{pollen:3}},
+    effect:'Both hexes defended, Hard difficulty minimum',reward:{pollen:3}},
   {id:'bloom_mirror',name:'Bloom Mirror',riddle:'Twin flowers face each other and forget which is which.',category:'trait',
     check:function(c){if(!c.plant||!c.plant.hasFlower||!c.nearbyPlants)return false;
       return c.nearbyPlants.some(function(p){return p.traits&&p.traits.hasFlower&&(p.traits.flower%71)===(c.plant.flower%71)&&p.traits.flowerColor===c.plant.flowerColor;});},
@@ -61322,7 +61322,7 @@ var TRIGGERS=[
   {id:'first_commons',name:'Named Ground',riddle:'When enough gather, the land finds its name.',category:'trait',
     check:function(c){try{return JSON.parse(localStorage.getItem('lw_commons')||'[]').length>0;}catch(e){return false;}},
     effect:'First Commons ecosystem formed',reward:{pollen:50}},
-  {id:'four_seasons',name:'Complete Cycle',riddle:'Spring, summer, autumn, winter — all present.',category:'season',
+  {id:'four_seasons',name:'Complete Cycle',riddle:'Spring, summer, autumn, winter, all present.',category:'season',
     check:function(c){if(!c.plant)return false;try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');var s={};gh.forEach(function(p){try{var t=window.hashToTraits(p.hash);s[t.season]=true;}catch(e){}});return Object.keys(s).length>=4;}catch(e){return false;}},
     effect:'All four seasons in greenhouse',reward:{pollen:15}},
   {id:'territory_gardener',name:'Green Thumb',riddle:'Fifty points of influence. The land knows your name.',category:'action',
@@ -62542,15 +62542,15 @@ function _bosClassContentLegacy() {
   var canPick = (window.canSee && window.canSee.classPick) ? window.canSee.classPick() : (keeperLvl >= 7);
   if (!cur) {
     if (canPick) {
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--cream);margin-bottom:0.8rem;line-height:1.6;">Five paths. Each shapes how you play — and how the world responds to you. Pick one that calls to you; you can walk a different path once you\u2019ve mastered this one.</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--cream);margin-bottom:0.8rem;line-height:1.6;">Five paths. Each shapes how you play, and how the world responds to you. Pick one that calls to you; you can walk a different path once you\u2019ve mastered this one.</div>';
     } else {
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--muted);margin-bottom:0.8rem;line-height:1.6;">The five paths reveal themselves to you at <span style="color:var(--gold);">Keeper Level 7</span>. For now, tend your garden — let the world shape your leanings first. <span style="color:var(--cream);">(Currently Lv ' + keeperLvl + ')</span></div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--muted);margin-bottom:0.8rem;line-height:1.6;">The five paths reveal themselves to you at <span style="color:var(--gold);">Keeper Level 7</span>. For now, tend your garden, let the world shape your leanings first. <span style="color:var(--cream);">(Currently Lv ' + keeperLvl + ')</span></div>';
     }
   } else {
     // Keeper's Master is Polymath (no companion); other classes get companion synergy at L3.
     var _curIsKeeper = cur === 'keeper';
     var _masterCopy = _curIsKeeper
-      ? 'Each level earns an ability. Master rank lifts the keeper XP penalty — Polymath earns full XP from every source. Walk a new path any time.'
+      ? 'Each level earns an ability. Master rank lifts the keeper XP penalty, Polymath earns full XP from every source. Walk a new path any time.'
       : 'Each level earns an ability. Master rank unlocks your companion synergy. Walk a new path any time.';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--muted);margin-bottom:0.8rem;line-height:1.6;">' + _masterCopy + '</div>';
   }
@@ -62840,7 +62840,7 @@ function _bosActivityContent() {
       case 'bloom_day':
         icon = '\ud83c\udf38'; color = 'var(--gold)';
         title = 'Bloom Day: ' + (e.name || 'Event');
-        body = e.theme || 'A monthly community event — 2\u00d7 rare ferals today.';
+        body = e.theme || 'A monthly community event, 2\u00d7 rare ferals today.';
         break;
       case 'companion_l3':
         icon = '\u2728'; color = 'var(--gold)';
@@ -62995,7 +62995,7 @@ window._bosActivityContent = _bosActivityContent;
 // ═══ NURSERY SHOP BOOSTER DETAIL via LW_Reader ═══
 // Timed multipliers (pollenRush / bloomTonic / dewCache).
 var LW_BOOSTER_LORE = {
-  pollenRush: 'A burst of intention. For an hour, every sliver of Pollen you earn arrives doubled. Useful when you know you\u2019re about to play a lot — less useful when you\u2019re grinding casually.',
+  pollenRush: 'A burst of intention. For an hour, every sliver of Pollen you earn arrives doubled. Useful when you know you\u2019re about to play a lot, less useful when you\u2019re grinding casually.',
   bloomTonic: 'A 24-hour nursery accelerator. Seeds grow 50% faster. Does not bypass the 3-waters-on-3-days rule, but the in-between hours move more generously.',
   dewCache:   'Three hours of 50% more Dew on every action that earns it. Pair with a watering-heavy session for maximum return.'
 };
@@ -63093,10 +63093,10 @@ window._lwShowShopClassItemDetail = function(ciKey) {
 // trait (TRAIT_BANK.pots). Each has a mechanical effect + a lore paragraph.
 // Call via _lwShowShopPotDetail('crystal'), 'glasswort', etc.
 var LW_POT_SHOP_LORE = {
-  crystal:   'A vessel grown, not made. Crystal nursery pots boost rarity by a small margin on every bloom — the seed remembers being held in something clear.',
+  crystal:   'A vessel grown, not made. Crystal nursery pots boost rarity by a small margin on every bloom, the seed remembers being held in something clear.',
   glasswort: 'A vessel that forgets. Glasswort resets chimera generation to 1, stripping prior lineage so the plant blooms as a fresh line. Useful when you want purity over ancestry.',
   moonstone: 'A vessel that listens. Moonstone gives the bloomed plant +1 EA, permanently. A small night-side blessing that stacks with everything.',
-  iron:      'A vessel that refuses. Iron doubles the peak-season EA bonus — if the plant is in its true season on bloom day, it arrives twice as acclimatized.',
+  iron:      'A vessel that refuses. Iron doubles the peak-season EA bonus, if the plant is in its true season on bloom day, it arrives twice as acclimatized.',
   phoenix:   'A vessel that multiplies. Phoenix Ash makes every fertilizer applied to this seed count twice. The more you feed it, the more that feeding lands.',
   velvet:    'A vessel that insists on bloom. Velvet forces hasFlower=true so the plant blooms a flower regardless of what the pattern rolled. Useful for bloom-specific synergies.',
   worldSeed: 'A vessel with no patience for Common. World Seed auto-rerolls any Common result, guaranteeing at least Uncommon on bloom. The garden does not hand you mediocre seeds in this one.',
@@ -63176,11 +63176,11 @@ function _lwTraitCountIn(layer, idx) {
 // Small tone-setters for generic flavor. "A vessel. A substrate. An aura."
 // Layer-level blurbs — the SPECIFIC trait name always appears in the title.
 var _LW_LAYER_FLAVOR = {
-  pot:       { eyebrow:'VESSEL',   theme:'gold',    flavor:'The container. Every plant begins here — a shape to hold its roots, a silhouette to the world.' },
+  pot:       { eyebrow:'VESSEL',   theme:'gold',    flavor:'The container. Every plant begins here, a shape to hold its roots, a silhouette to the world.' },
   aura:      { eyebrow:'AURA',     theme:'cosmic',  flavor:'The ambient field around the plant. Most plants carry none; the ones that do shift the light for everything near them.' },
   base:      { eyebrow:'SUBSTRATE',theme:'sage',    flavor:'The ground beneath the roots. Soil, ash, crystal, or something stranger. Substrate shapes what a plant can draw from the earth.' },
   leafType:  { eyebrow:'LEAF',     theme:'nature',  flavor:'The solar collector. How a plant drinks light and converts it to growth.' },
-  flower:    { eyebrow:'BLOOM',    theme:'gold',    flavor:'The reproductive signature. Every flower is an invitation — to a pollinator, a season, or a specific kind of weather.' },
+  flower:    { eyebrow:'BLOOM',    theme:'gold',    flavor:'The reproductive signature. Every flower is an invitation, to a pollinator, a season, or a specific kind of weather.' },
   stem:      { eyebrow:'STEM',     theme:'nature',  flavor:'The spine. What holds the plant upright, what channels water, what gives it silhouette.' },
   companion: { eyebrow:'COMPANION',theme:'mythical',flavor:'A creature that has chosen to live alongside this plant. Some are common, some are once-in-a-year finds.' }
 };
@@ -63285,7 +63285,7 @@ window._lwShowPlantShrine = function(plantHash) {
   body.push({type:'divider'});
   body.push({type:'section-head', text:'Lineage'});
   if (plant.parentAHash && plant.parentBHash) {
-    body.push({type:'para', text:'A bred plant — the twine of two lineages. Its parents wrote its first syllable.'});
+    body.push({type:'para', text:'A bred plant, the twine of two lineages. Its parents wrote its first syllable.'});
     body.push({type:'stat', label:'Origin', value:'Cross-pollinated'});
   } else if (plant.origin === 'cross') {
     body.push({type:'stat', label:'Origin', value:'Cross-pollinated'});
@@ -63361,19 +63361,19 @@ window._lwShowAchievementDetail = function(achId) {
 // ═══ MUTATION DETAIL PAGE via LW_Reader ═══
 // 13 mutations at ~1.6% each. Tap a plant's mutation chip → Reader.
 var LW_MUTATION_LORE = {
-  'Glitch':         { theme:'cosmic',    rate:'~1.6%', lore:'A plant whose textures fracture in motion. Leaves flicker between states — existing in three frames at once. Either a rendering error in the universe or an intentional glimpse behind the veil. The game takes no position.' },
-  'Glass Stem':     { theme:'dark',      rate:'~1.6%', lore:'The stem becomes transparent — literal glass. Brittle, beautiful, and a liability: fragile plants die easier. But the aesthetic is undeniable, and Obsidian Mirror substrate pairs with it into something unforgettable.' },
+  'Glitch':         { theme:'cosmic',    rate:'~1.6%', lore:'A plant whose textures fracture in motion. Leaves flicker between states, existing in three frames at once. Either a rendering error in the universe or an intentional glimpse behind the veil. The game takes no position.' },
+  'Glass Stem':     { theme:'dark',      rate:'~1.6%', lore:'The stem becomes transparent, literal glass. Brittle, beautiful, and a liability: fragile plants die easier. But the aesthetic is undeniable, and Obsidian Mirror substrate pairs with it into something unforgettable.' },
   'Wireframe':      { theme:'cosmic',    rate:'~1.6%', lore:'A plant drawn in bright edges, all geometry, no fill. Like a CAD rendering that forgot to become solid. The garden\u2019s way of saying: even architecture is alive if you draw it carefully enough.' },
-  'Holographic':    { theme:'cosmic',    rate:'~1.6%', lore:'Light refracts across every surface — rainbow ghosts chase the plant\u2019s contours whenever the view shifts. Pairs with Needle leaves into Holographic Prism, a full-spectrum spectacle.' },
-  'Neon':           { theme:'cosmic',    rate:'~1.6%', lore:'Stem and petals glow in hot pink or cyan — sometimes both, alternating. An aesthetic choice by the universe. Reads as artificial until you realize it\u2019s been bioluminescing this entire time.' },
-  'Ink Wash':       { theme:'dark',      rate:'~1.6%', lore:'The plant renders in watercolor — soft, bleeding edges, paper texture underneath. An accident that looked so right the universe made it canonical.' },
-  'Golden':         { theme:'mythical',  rate:'~1.6%', lore:'Every surface tinted in warm metallic gold. Not just the color — the sheen, the way it catches light from above. The old alchemists would have called this the final cultivar.' },
+  'Holographic':    { theme:'cosmic',    rate:'~1.6%', lore:'Light refracts across every surface, rainbow ghosts chase the plant\u2019s contours whenever the view shifts. Pairs with Needle leaves into Holographic Prism, a full-spectrum spectacle.' },
+  'Neon':           { theme:'cosmic',    rate:'~1.6%', lore:'Stem and petals glow in hot pink or cyan, sometimes both, alternating. An aesthetic choice by the universe. Reads as artificial until you realize it\u2019s been bioluminescing this entire time.' },
+  'Ink Wash':       { theme:'dark',      rate:'~1.6%', lore:'The plant renders in watercolor, soft, bleeding edges, paper texture underneath. An accident that looked so right the universe made it canonical.' },
+  'Golden':         { theme:'mythical',  rate:'~1.6%', lore:'Every surface tinted in warm metallic gold. Not just the color, the sheen, the way it catches light from above. The old alchemists would have called this the final cultivar.' },
   'Porcelain':      { theme:'nature',    rate:'~1.6%', lore:'The plant looks glazed and fired. Pale, smooth, cool to look at. Like garden sculpture that forgot to be stone. Often mistaken for ceramic by strangers on the wild map.' },
-  'Bioluminescent': { theme:'nature',    rate:'~1.6%', lore:'Leaves and blooms emit their own soft light. Most visible at night, on night-bloom plants. A reminder that the garden doesn\u2019t sleep — some of it simply waits for the sun to leave.' },
-  'Pixel Art':      { theme:'cosmic',    rate:'~1.6%', lore:'A plant rendered in deliberate, chunky pixels — like an old video-game sprite that escaped into three dimensions. The garden has a sense of humor. This is one of its jokes.' },
-  'Silhouette':     { theme:'dark',      rate:'~1.6%', lore:'No interior detail. Just shape — deep void-black against the background, sometimes with a star-field texture where the inside should be. Pairs with Void Petal leaves into Shadow Loom.' },
-  'Albino':         { theme:'nature',    rate:'~1.6%', lore:'No pigment. Pure white stem, pale petals, ghostly leaves. In real botanical terms, albino plants rarely survive — they can\u2019t photosynthesize. In this garden they thrive, and that\u2019s the gift.' },
-  'Fossil':         { theme:'dark',      rate:'~1.6%', lore:'The plant looks petrified — stone-gray, textures hinting at ancient imprint. Pairs with Fossil Bed substrate into Fossil Memory. A living thing remembering the first version of itself.' }
+  'Bioluminescent': { theme:'nature',    rate:'~1.6%', lore:'Leaves and blooms emit their own soft light. Most visible at night, on night-bloom plants. A reminder that the garden doesn\u2019t sleep, some of it simply waits for the sun to leave.' },
+  'Pixel Art':      { theme:'cosmic',    rate:'~1.6%', lore:'A plant rendered in deliberate, chunky pixels, like an old video-game sprite that escaped into three dimensions. The garden has a sense of humor. This is one of its jokes.' },
+  'Silhouette':     { theme:'dark',      rate:'~1.6%', lore:'No interior detail. Just shape, deep void-black against the background, sometimes with a star-field texture where the inside should be. Pairs with Void Petal leaves into Shadow Loom.' },
+  'Albino':         { theme:'nature',    rate:'~1.6%', lore:'No pigment. Pure white stem, pale petals, ghostly leaves. In real botanical terms, albino plants rarely survive, they can\u2019t photosynthesize. In this garden they thrive, and that\u2019s the gift.' },
+  'Fossil':         { theme:'dark',      rate:'~1.6%', lore:'The plant looks petrified, stone-gray, textures hinting at ancient imprint. Pairs with Fossil Bed substrate into Fossil Memory. A living thing remembering the first version of itself.' }
 };
 window._lwShowMutationDetail = function(mutName) {
   var m = LW_MUTATION_LORE[mutName];
@@ -63408,10 +63408,10 @@ window._lwShowMutationDetail = function(mutName) {
 // ═══ TOOL DETAIL PAGE via LW_Reader ═══
 // 4 tools (shears/can/pouch/compass). Tap a tool row on the character sheet → Reader.
 var LW_TOOL_LORE = {
-  shears:  'A clean cut is quiet respect. The shears let you take cuttings from stranger plants in the wild — genetic samples without harm to the original. Cooldown reduces as you level the tool. At L3 the shears find their rhythm.',
+  shears:  'A clean cut is quiet respect. The shears let you take cuttings from stranger plants in the wild, genetic samples without harm to the original. Cooldown reduces as you level the tool. At L3 the shears find their rhythm.',
   can:     'Water is the oldest commitment. The can begins with one plant at a time; by L3 it waters six and calls a gentle rain. Tenders will tell you this is the tool that teaches you the garden\u2019s routine better than any other.',
-  pouch:   'The Field Pouch carries what you find in the wild. Three slots to start; five by L2; seven by L3. The deeper the pouch, the longer the walk you can take — the farther from home you can go and still bring something back.',
-  compass: 'The compass points differently depending on how much you\u2019ve leveled it. At L1 it reads wind. At L2 it names the biome under your feet. At L3 it predicts where the next feral seed will sprout — a kind of botanical weather forecast.'
+  pouch:   'The Field Pouch carries what you find in the wild. Three slots to start; five by L2; seven by L3. The deeper the pouch, the longer the walk you can take, the farther from home you can go and still bring something back.',
+  compass: 'The compass points differently depending on how much you\u2019ve leveled it. At L1 it reads wind. At L2 it names the biome under your feet. At L3 it predicts where the next feral seed will sprout, a kind of botanical weather forecast.'
 };
 window._lwShowToolDetail = function(toolId) {
   if (!window.LW_TOOLS || !window.LW_TOOLS[toolId]) return;
@@ -63486,13 +63486,13 @@ window._lwShowClassDetail = function(classId) {
 // rarity band, score threshold, and flavor lore. Named instead of numeric
 // because players think in names ("is this Rare?"), not scores.
 var LW_GRADE_LORE = {
-  Common:    { pct:'~50%', lore:'Common plants are the steady majority — the everyday blooms that make a garden feel full rather than curated. Every collection is anchored by them. A 60-slot greenhouse without any commons would feel like a trophy case, not a living place.' },
-  Uncommon:  { pct:'~25%', lore:'Uncommon plants carry one small mark of distinction — a rarer stem, a slightly unusual substrate. The quiet middle shelf. Players who look past them are missing the fact that most great synergies hinge on an uncommon partner.' },
-  Rare:      { pct:'~12%', lore:'Rare plants start making people stop and look. A golden pot, a crystal base, a meaningful mutation. They mark the point where collecting becomes composing — the first tier where the Trait Bank\u2019s shape becomes legible.' },
-  Epic:      { pct:'~7%',  lore:'Epic plants combine two or more rare layers. They tend to become the favorites — the ones you name. Epic is the tier where your greenhouse becomes a personality, not just an inventory.' },
+  Common:    { pct:'~50%', lore:'Common plants are the steady majority, the everyday blooms that make a garden feel full rather than curated. Every collection is anchored by them. A 60-slot greenhouse without any commons would feel like a trophy case, not a living place.' },
+  Uncommon:  { pct:'~25%', lore:'Uncommon plants carry one small mark of distinction, a rarer stem, a slightly unusual substrate. The quiet middle shelf. Players who look past them are missing the fact that most great synergies hinge on an uncommon partner.' },
+  Rare:      { pct:'~12%', lore:'Rare plants start making people stop and look. A golden pot, a crystal base, a meaningful mutation. They mark the point where collecting becomes composing, the first tier where the Trait Bank\u2019s shape becomes legible.' },
+  Epic:      { pct:'~7%',  lore:'Epic plants combine two or more rare layers. They tend to become the favorites, the ones you name. Epic is the tier where your greenhouse becomes a personality, not just an inventory.' },
   Legendary: { pct:'~4%',  lore:'Legendary plants are uncommon enough to feel like events. Stardust substrate, ancient amphora, feather frond. These are the plants other keepers visit to see. A single Legendary changes how a greenhouse feels forever.' },
   Mythic:    { pct:'~1.5%',lore:'Mythic plants are rare enough that most keepers encounter only a handful across a full year of play. Phoenix ash, void petal, world seed cradle. When one blooms in your nursery, the game remembers.' },
-  Cosmic:    { pct:'<0.5%',lore:'Cosmic plants are statistical anomalies. You will know when you see one — the garden itself behaves differently around it. Keep it. Future you will want this back.' }
+  Cosmic:    { pct:'<0.5%',lore:'Cosmic plants are statistical anomalies. You will know when you see one, the garden itself behaves differently around it. Keep it. Future you will want this back.' }
 };
 window._lwShowGradeDetail = function(gradeName) {
   var lore = LW_GRADE_LORE[gradeName];
@@ -63543,10 +63543,10 @@ window._lwShowGradeDetail = function(gradeName) {
 
 // ═══ SEASON DETAIL PAGE via LW_Reader ═══
 var LW_SEASON_LORE = {
-  Spring: 'Spring plants wake early. Their peak is the long light of March through May — when their season is in flower, they grow bolder and more forgiving. Out of season they fade fast, especially in winter.',
+  Spring: 'Spring plants wake early. Their peak is the long light of March through May, when their season is in flower, they grow bolder and more forgiving. Out of season they fade fast, especially in winter.',
   Summer: 'Summer plants thrive in heat. The months of June through August are their kingdom. Autumn is kind to them; spring is distracted; winter is a test of patience more than anything else.',
-  Autumn: 'Autumn plants are the ones who slow down on purpose. They come into their own from September through November — when the world begins to close, they open. Winter treats them like kin; summer tries to outlast them.',
-  Winter: 'Winter plants prefer cold, dry, stubborn ground. December, January, February are when they bloom brightest. Summer is their opposite — direct warmth wilts them — and only autumn feels adjacent enough to stay standing.'
+  Autumn: 'Autumn plants are the ones who slow down on purpose. They come into their own from September through November, when the world begins to close, they open. Winter treats them like kin; summer tries to outlast them.',
+  Winter: 'Winter plants prefer cold, dry, stubborn ground. December, January, February are when they bloom brightest. Summer is their opposite, direct warmth wilts them, and only autumn feels adjacent enough to stay standing.'
 };
 window._lwShowSeasonDetail = function(seasonName) {
   if (!window.SEASON_DATA) return;
@@ -63577,7 +63577,7 @@ window._lwShowSeasonDetail = function(seasonName) {
   body.push({type:'stat', label:'Pollen', value:'\u00d71.5'});
   body.push({type:'divider'});
   body.push({type:'section-head', text:'Off-peak'});
-  body.push({type:'para', text:'Adjacent seasons give +1 EA and normal stress. The opposite season is harsh — no EA bonus, +50% stress, half pollen. The garden is telling you when to plant what.'});
+  body.push({type:'para', text:'Adjacent seasons give +1 EA and normal stress. The opposite season is harsh, no EA bonus, +50% stress, half pollen. The garden is telling you when to plant what.'});
   body.push({type:'divider'});
   body.push({type:'section-head', text:'Your connection'});
   body.push({type:'stat', label:'Plants of this season', value: myCount});
@@ -63596,9 +63596,9 @@ window._lwShowSeasonDetail = function(seasonName) {
 // ═══ MILESTONE DETAIL PAGE via LW_Reader ═══
 // Tap a milestone card on the character sheet → opens the hero art + lore.
 var LW_MILESTONE_LORE = {
-  10:  'Ten levels in. Enough motion to call it a practice. A tree opens for you — a small one, branches still quiet, five bonus points waiting to be spent.',
+  10:  'Ten levels in. Enough motion to call it a practice. A tree opens for you, a small one, branches still quiet, five bonus points waiting to be spent.',
   25:  'The garden is watching back. A feral seed now arrives each day, regardless of cap or caution. This is the universe acknowledging you showed up.',
-  50:  'Midway through the long walk. One hour each day now runs at double. Pick the hour you love most — sunrise, lunch, bedtime — and the garden matches your rhythm.',
+  50:  'Midway through the long walk. One hour each day now runs at double. Pick the hour you love most, sunrise, lunch, bedtime, and the garden matches your rhythm.',
   75:  'A second companion can walk with you now. Pairings begin: who pairs well with whom, who wants solitude, who the garden assigns to a task only they can hear.',
   100: 'No biome is foreign anymore. Wherever you stand, the garden treats you as native. The Long Watch is less an achievement than a posture: present, patient, unhurried.'
 };
@@ -63650,13 +63650,13 @@ window._lwShowBiomeDetail = function(biomeKey) {
     wetland:  'Water-logged and generous. The soil here is always thirsty but rarely dry. Root-rot is a way of life, and plants that survive it inherit a quiet immunity.',
     riverside:'Where the ground meets the current. Seeds drift in from upstream, roots knit in pebble beds. The water writes memory into everything it touches.',
     coastal:  'Salt in the air, sand underfoot. The plants that make it here are the stubborn ones, crowned in crystal, unbothered by wind.',
-    forest:   'The canopy remembers everything. Moss hides what it tends. Growth is slow, layered, and patient — the soil is thick with old intentions.',
-    mountain: 'High and thin and cold. Only the hardiest make it. What they lack in abundance they carry in rarity — alpine frost leaves a permanent mark.',
+    forest:   'The canopy remembers everything. Moss hides what it tends. Growth is slow, layered, and patient, the soil is thick with old intentions.',
+    mountain: 'High and thin and cold. Only the hardiest make it. What they lack in abundance they carry in rarity, alpine frost leaves a permanent mark.',
     desert:   'The sun is the only clock. Water is a rumor. Every bloom here is a small act of defiance, and thorn-crowned plants carry the story in their skin.',
     farmland: 'Tended earth, turned in rows. Cultivars thrive here where wildness would fail. Not glamorous, but endlessly productive.',
     garden:   'Where human hands have taught the soil. Blooms are brighter, breeds are bolder. Cultivar Bloom is the inheritance of care.',
     park:     'Tamed wilderness. Half a forest, half a promise. Children and keepers alike come to sit in its shade.',
-    suburban: 'Hedge, lawn, driveway. Quiet domesticity. Not every story needs a dramatic backdrop — some gardens just grow where you live.'
+    suburban: 'Hedge, lawn, driveway. Quiet domesticity. Not every story needs a dramatic backdrop, some gardens just grow where you live.'
   };
   var body = [];
   body.push({type:'quote', text: BIOME_LORE[biomeKey] || 'A biome of its own making.'});
@@ -63873,7 +63873,7 @@ window._bosMementosContent = _bosMementosContent;
 // when you're ready to publish — page falls back to placeholder text
 // for fields left blank.
 window.LW_CREATOR = window.LW_CREATOR || {
-  name:        'Stephen — Lucid Winds',
+  name:        'Stephen, Lucid Winds',
   hermitImg:   'assets/hermit-bio.jpg',
   bioLines: [
     'Lucid Winds is a one-person studio. Every plant in this game is unique because every player\'s attention is unique.',
@@ -63947,7 +63947,7 @@ function _bosAboutContent() {
     var short = String(value).length > 18
       ? value.slice(0, 9) + '…' + value.slice(-7)
       : value;
-    var onClick = '(function(){try{navigator.clipboard.writeText(\'' + safe + '\').then(function(){if(window._toast)window._toast(\'Address copied — thank you.\');});}catch(e){if(window._toast)window._toast(\'Copy failed\');}})();';
+    var onClick = '(function(){try{navigator.clipboard.writeText(\'' + safe + '\').then(function(){if(window._toast)window._toast(\'Address copied, thank you.\');});}catch(e){if(window._toast)window._toast(\'Copy failed\');}})();';
     var row = '';
     row += '<button onclick="' + onClick + '" style="display:flex;align-items:center;gap:0.7rem;width:100%;padding:0.65rem 0.85rem;margin-bottom:0.5rem;background:linear-gradient(180deg,rgba(26,31,23,0.8),rgba(13,16,12,0.92));border:1px solid rgba(200,168,75,0.22);border-radius:12px;cursor:pointer;text-align:left;box-shadow:0 2px 6px rgba(0,0,0,0.3);transition:border-color .12s;-webkit-tap-highlight-color:transparent;color:inherit;">';
     row +=   _chainLogo(key);
@@ -64837,7 +64837,7 @@ window._lwClaimHerbarium = function(id){
       // Weather override
       h += '<label style="display:flex;flex-direction:column;gap:2px;font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);">WEATHER TILT';
       h += '<select onchange="LW_simulator.setWeather(this.value)" style="background:rgba(13,16,12,0.9);color:var(--cream);border:1px solid rgba(122,179,86,0.25);border-radius:6px;padding:6px;font-family:DM Mono,monospace;font-size:0.6rem;">';
-      h += '<option value=""'+(!S.weather?' selected':'')+'>— none —</option>';
+      h += '<option value=""'+(!S.weather?' selected':'')+'>, none,</option>';
       var _el6 = ['sun','shade','rain','dry','wind','still'];
       for (var el2=0;el2<_el6.length;el2++) h += '<option value="'+_el6[el2]+'"'+(S.weather===_el6[el2]?' selected':'')+'>'+_el6[el2]+'</option>';
       h += '</select></label>';
@@ -66940,7 +66940,7 @@ window._lwClaimHerbarium = function(id){
         yes: 'WONDERFUL', no: ''
       }, function(){});
     } else if (window._toast) {
-      window._toast('\u2728 Seasonal Hunt complete — +' + _hDew + ' Dew + ' + _hBoxes + ' Legendary Boxes.');
+      window._toast('\u2728 Seasonal Hunt complete, +' + _hDew + ' Dew + ' + _hBoxes + ' Legendary Boxes.');
     }
   }
 
@@ -68611,7 +68611,7 @@ function _bosReportContent() {
   } else {
     h += '<div style="padding:1.2rem 1.1rem;text-align:center;background:rgba(18,22,16,0.5);border:1px dashed rgba(122,179,86,0.2);border-radius:10px;">';
     h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.95rem;color:var(--sage);margin-bottom:6px;">The page is blank.</div>';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);line-height:1.7;max-width:320px;margin:0 auto;">A report writes itself when you play. Tend a plant, win a game, drop a seed — the book will start filling in by evening.</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);line-height:1.7;max-width:320px;margin:0 auto;">A report writes itself when you play. Tend a plant, win a game, drop a seed, the book will start filling in by evening.</div>';
     h += '</div>';
   }
   return h;
@@ -68990,13 +68990,13 @@ function _bosReportContent() {
 window.LW_EVENT_CATALOG = [
   { name: 'COMMON',    color: '#959588', desc: 'Everyday occurrences', events: [
     { name: 'First Light', hint: 'Open the app at dawn', riddle: 'The keeper who greets the morning star.',
-      lore: 'Every keeper has a dawn they remember. Not the first one they ever saw — the first one they saw on purpose. This is that one. Spring, winter, tired or not, you showed up for the light.' },
+      lore: 'Every keeper has a dawn they remember. Not the first one they ever saw, the first one they saw on purpose. This is that one. Spring, winter, tired or not, you showed up for the light.' },
     { name: 'Root Down', hint: 'Drop your first wild plant', riddle: 'A seed finds soil far from home.',
-      lore: 'The first plant you set loose in the world. It will not be your last, but it will always be the one that taught you nobody owns a garden — we just borrow the soil for a while.' },
+      lore: 'The first plant you set loose in the world. It will not be your last, but it will always be the one that taught you nobody owns a garden, we just borrow the soil for a while.' },
     { name: 'Rainfall', hint: 'Water 3 plants in one session', riddle: 'Three drinks from the same cloud.',
       lore: 'Routine is its own form of care. Three plants, one session, no ceremony. The word for this in old gardening almanacs was simply "rounds."' },
     { name: 'Neighbor', hint: "See another player's plant", riddle: "A stranger's garden, glimpsed through the hedge.",
-      lore: 'You thought you were alone out here. You are not. Someone else is tending, somewhere, right now. Their plant is proof of a life you will never see the rest of — and that is enough.' },
+      lore: 'You thought you were alone out here. You are not. Someone else is tending, somewhere, right now. Their plant is proof of a life you will never see the rest of, and that is enough.' },
     { name: 'First Steps', hint: 'Walk 500m on the Wild map', riddle: 'The garden begins where your feet do.',
       lore: 'Five hundred meters is not far. It is the end of a block, the length of a pond, the walk to a neighbor. But it is the first time the game knew where you were going. Every keeper crosses this line. Most forget they did.' },
     { name: 'Elsewhere Eyes', hint: 'Claim your first feral seed from a wild hex', riddle: 'The hex kept a secret, then didn\u2019t.',
@@ -69004,7 +69004,7 @@ window.LW_EVENT_CATALOG = [
   ]},
   { name: 'UNCOMMON',  color: '#8CB86E', desc: 'Takes patience and attention', events: [
     { name: 'Full Moon Harvest', hint: 'Harvest during evening hours', riddle: "Silver light guides the reaper's hand.",
-      lore: 'Old-world gardeners timed harvests to the moon. Was it real? The science is thin. But standing under that silver light, picking something ripe — whether the moon helps or not, *you* feel more alive.' },
+      lore: 'Old-world gardeners timed harvests to the moon. Was it real? The science is thin. But standing under that silver light, picking something ripe, whether the moon helps or not, *you* feel more alive.' },
     { name: 'Dual Bloom', hint: 'Two plants bloom on the same day', riddle: 'Twins born of different seeds, same sun.',
       lore: 'Two plants crossing into maturity on the same day is statistical coincidence. It is also the universe showing you a pattern. Both readings are valid. Pick the one that makes the garden feel more magical.' },
     { name: 'Deep Roots', hint: 'Keep a plant alive for 30 days', riddle: 'What grows slow holds the earth together.',
@@ -69013,47 +69013,47 @@ window.LW_EVENT_CATALOG = [
   { name: 'RARE',      color: '#5b8fb9', desc: 'Requires dedication', events: [
     { name: "Chimera's Wake", hint: 'Breed a Gen 3+ chimera', riddle: 'Three bloodlines twisted into one vine.',
       lore: "A third-generation chimera carries three ancestral seasons in a single stem. Cross-pollinators who reach this depth are rewriting a lineage that wasn't supposed to exist." },
-    { name: 'The Collector', hint: 'Own one of every rarity tier', riddle: 'From common clay to cosmic light — all seven gathered.',
-      lore: 'Seven tiers. Seven voices. A collection this complete is a kind of library — common is not the opposite of cosmic, it is its foundation. Both deserve a shelf.' },
+    { name: 'The Collector', hint: 'Own one of every rarity tier', riddle: 'From common clay to cosmic light, all seven gathered.',
+      lore: 'Seven tiers. Seven voices. A collection this complete is a kind of library, common is not the opposite of cosmic, it is its foundation. Both deserve a shelf.' },
     { name: 'Storm Walker', hint: 'Summon all 4 weather types', riddle: 'The keeper who commands the sky.',
-      lore: 'Sun, rain, wind, still. The four classical conditions of plant growth, now each at your command. This is not control — it is conversation. The sky answered when you asked.' },
+      lore: 'Sun, rain, wind, still. The four classical conditions of plant growth, now each at your command. This is not control, it is conversation. The sky answered when you asked.' },
     { name: 'Pollen Trail', hint: 'Cross-pollinate 3 times in one week', riddle: 'The wind carries gold from grove to grove.',
-      lore: 'A breeder who crosses three lines in a week is not experimenting — they are composing. Every pollen brush is a word in a sentence only you know the ending of.' }
+      lore: 'A breeder who crosses three lines in a week is not experimenting, they are composing. Every pollen brush is a word in a sentence only you know the ending of.' }
   ]},
   { name: 'EPIC',      color: '#9B59B6', desc: 'Demands mastery', events: [
     { name: 'The Alchemist', hint: 'Discover 20 synergies', riddle: 'Twenty threads woven from the same loom.',
-      lore: "Twenty synergies is not luck. You are reading the trait table as poetry — season against companion, mutation against pot. Somewhere between breeder and botanist is a third word, older, and you've become it." },
+      lore: "Twenty synergies is not luck. You are reading the trait table as poetry, season against companion, mutation against pot. Somewhere between breeder and botanist is a third word, older, and you've become it." },
     { name: 'Territorial', hint: 'Hold 3 wild zones for 7 days', riddle: 'The grove expands when no one pushes back.',
       lore: "Three zones, seven days apiece. You have built something stable in a world that rewards motion. Other keepers are walking past your plants right now and deciding not to harvest. That's territory." },
-    { name: 'Cicada Chorus', hint: 'Own a plant with the Cicada companion (any season)', riddle: 'Silent for seasons, loud at summer — who waits to sing?',
-      lore: "Cicadas wait 13 or 17 years underground for a reason no biologist has fully explained. When they finally emerge, they sing together — the only way any of them survive. You've earned one's company. That's no small thing." }
+    { name: 'Cicada Chorus', hint: 'Own a plant with the Cicada companion (any season)', riddle: 'Silent for seasons, loud at summer, who waits to sing?',
+      lore: "Cicadas wait 13 or 17 years underground for a reason no biologist has fully explained. When they finally emerge, they sing together, the only way any of them survive. You've earned one's company. That's no small thing." }
   ]},
   { name: 'LEGENDARY', color: '#C8A84B', desc: 'The rarest achievements', events: [
     { name: "The Beholder's Gaze", hint: 'Own a Cosmic plant with The Beholder', riddle: 'An eye that has seen every seed that ever fell.',
-      lore: 'A Cosmic-tier plant carrying the Beholder is vanishingly rare — the intersection of two already-rare rolls. The creature is ancient; it remembers every bloom that came before, even ones that never bloomed. To own one is to be witnessed by something older than the garden itself.' },
+      lore: 'A Cosmic-tier plant carrying the Beholder is vanishingly rare, the intersection of two already-rare rolls. The creature is ancient; it remembers every bloom that came before, even ones that never bloomed. To own one is to be witnessed by something older than the garden itself.' },
     { name: 'Full Grove', hint: 'Fill all 60 greenhouse slots', riddle: 'No empty pot. No bare shelf. A forest indoors.',
       lore: 'Sixty plants. No empty pots, no placeholders. An entire ecosystem in the space of a studio apartment. This is what old horticulturists meant when they said "the garden is complete only when you stop wanting more room." (They were lying. But only gently.)' },
     { name: 'Century Keeper', hint: '100-day login streak', riddle: 'The sun rose a hundred times and found you still tending.',
       lore: "A hundred consecutive days. Storms, travel, hard weeks, good ones. The plants don't know you had a rough Tuesday; they only know you showed up. Few titles in this game are older or harder than this one." },
     { name: 'Old Eye, Deep Ground', hint: 'Own a Beholder plant while standing in a mountain biome', riddle: 'The stone remembers the eye. The eye remembers everything.',
-      lore: 'Two ancient things in one place: a mountain biome older than memory, a Beholder companion older than sight. The alignment is so rare it doesn\'t need a reward — the game simply witnesses you being there. Some achievements are just a quiet nod between keeper and world.' }
+      lore: 'Two ancient things in one place: a mountain biome older than memory, a Beholder companion older than sight. The alignment is so rare it doesn\'t need a reward, the game simply witnesses you being there. Some achievements are just a quiet nod between keeper and world.' }
   ]},
   // ═══ BIOME × COMPANION PAIRINGS ═══
   // Fire when a companion's spirit aligns with the land. Mostly uncommon — a
   // keeper will stumble into one or two naturally during normal play.
   { name: 'COMPANION', color: '#a88fd4', desc: 'Creature + place alignments', events: [
     { name: "Raccoon's Pantry", hint: 'Own a plant with Raccoon companion in a suburban biome', riddle: 'Nimble hands find the garbage cans full of treasure.',
-      lore: "The Raccoon is most at home on the edge of human life. In the suburbs it thrives — clever, nocturnal, adaptable. Your plant's companion has found its country." },
+      lore: "The Raccoon is most at home on the edge of human life. In the suburbs it thrives, clever, nocturnal, adaptable. Your plant's companion has found its country." },
     { name: 'Heron Vigil', hint: 'Own a plant with Great Blue Heron in a wetland biome', riddle: 'Still as stone by the water\u2019s edge, waiting for what the tide brings.',
       lore: "Herons are wetland-born. Stand a Heron-plant in reeds and the creature remembers what it was shaped for. Fishing has not changed in ten thousand years." },
     { name: 'Bog Choir', hint: 'Own a plant with The Toad in a wetland biome', riddle: 'Every frog\u2019s throat is a small drum in a larger song.',
-      lore: "Toads are among the oldest singers. Put one in its native wetland and the song answers back — other toads, unseen, from every direction. Your plant becomes a node in a chorus older than language." },
+      lore: "Toads are among the oldest singers. Put one in its native wetland and the song answers back, other toads, unseen, from every direction. Your plant becomes a node in a chorus older than language." },
     { name: 'Summer Chorus', hint: 'Own a plant with The Cicada during the summer season', riddle: 'Seventeen years of silence, then a whole sky humming.',
-      lore: "Cicadas belong to summer. Keep one long enough for the season to come around and the garden suddenly makes sense — what the Cicada was waiting for was this." },
+      lore: "Cicadas belong to summer. Keep one long enough for the season to come around and the garden suddenly makes sense, what the Cicada was waiting for was this." },
     { name: 'Thaw Witness', hint: 'Own a plant with Baby Mammoth during the winter season', riddle: 'The ice does not forget who walked it first.',
-      lore: "Mammoths are creatures of cold. A winter-aligned Mammoth plant carries its true timeline — a small impossible animal walking through a season that used to be its home." },
-    { name: 'Garden Web', hint: 'Own a plant with Garden Spider in a garden biome', riddle: 'Silk and dew — a chandelier the gardener never hangs.',
-      lore: "Garden Spiders are architects. In an actual garden, with morning dew, their work is visible — every web a private cathedral. One of yours has arrived home." }
+      lore: "Mammoths are creatures of cold. A winter-aligned Mammoth plant carries its true timeline, a small impossible animal walking through a season that used to be its home." },
+    { name: 'Garden Web', hint: 'Own a plant with Garden Spider in a garden biome', riddle: 'Silk and dew, a chandelier the gardener never hangs.',
+      lore: "Garden Spiders are architects. In an actual garden, with morning dew, their work is visible, every web a private cathedral. One of yours has arrived home." }
   ]},
   // ═══ LAYER COMBINATIONS ═══
   // When two trait layers align in rare ways on a single plant. These are
@@ -69061,24 +69061,24 @@ window.LW_EVENT_CATALOG = [
   { name: 'CONJUNCTION', color: '#8CB86E', desc: 'Layer-on-layer alignments', events: [
     { name: 'All That Glitters', hint: 'Own a plant with both Golden mutation and Golden pot', riddle: 'Two kinds of gold meet. They argue, then agree.',
       lore: "A Golden mutation on a plant already in a Golden pot is, mathematically, ~0.4% × ~1.7% = one in fifteen thousand mints. Unlike most synergy events, this one isn't subtle. It just glows." },
-    { name: 'Prism Root', hint: 'Own a plant with Glass Stem mutation on a crystal substrate', riddle: 'Stem of glass, root of crystal — light passes through everything.',
+    { name: 'Prism Root', hint: 'Own a plant with Glass Stem mutation on a crystal substrate', riddle: 'Stem of glass, root of crystal, light passes through everything.',
       lore: "Glass Stem plus crystalline substrate is a plant that effectively has no shadow. Light enters from any angle and leaves brighter. Old gardeners would have called this kind of plant a 'lantern.'" },
     { name: 'Ink Dusk', hint: 'Own a plant with Ink Wash mutation and Moonlit aura', riddle: 'Paper bleeding slowly in starlight.',
       lore: "Ink Wash is watercolor bleed; Moonlit aura is cool silver. Together the plant renders like a Chinese scroll painting held up to moonlight. Reverent. Temporary-feeling. You want to look longer than you have time for." },
     { name: 'Fossil Archive', hint: 'Own a plant with Fossil mutation on a Fossil Bed substrate', riddle: 'A memory of a memory of a leaf.',
-      lore: "Two deep-time signatures on the same plant. The Fossil mutation embeds the leaf in stone; the substrate extends the imprint into the ground. Half-alive, half-remembered — which is the point." },
+      lore: "Two deep-time signatures on the same plant. The Fossil mutation embeds the leaf in stone; the substrate extends the imprint into the ground. Half-alive, half-remembered, which is the point." },
     { name: 'Abyss Bloom', hint: 'Own a plant with Bioluminescent mutation and Deep Sea aura', riddle: 'The dark is not empty if you bring your own light.',
-      lore: "Bioluminescent blooms in a Deep Sea aura recreate the way deep-ocean creatures actually are — brief, self-illuminated, entirely alone and entirely fine with that. An anglerfish in a pot." }
+      lore: "Bioluminescent blooms in a Deep Sea aura recreate the way deep-ocean creatures actually are, brief, self-illuminated, entirely alone and entirely fine with that. An anglerfish in a pot." }
   ]},
   // ═══ GROVE-SCALE EVENTS ═══
   // Fire when your whole collection aligns in a way no single plant could.
   { name: 'CONFLUENCE', color: '#9B59B6', desc: 'Grove-scale alignments', events: [
     { name: 'Cardinal Chorus', hint: 'Own 3+ plants sharing the same synergy', riddle: 'Three voices, one word.',
-      lore: "Most synergies fire on a single plant. When three of your plants share the same synergy, they become a chord — a long-held note you can walk past and hear humming. Rare because you have to breed and collect with intention." },
+      lore: "Most synergies fire on a single plant. When three of your plants share the same synergy, they become a chord, a long-held note you can walk past and hear humming. Rare because you have to breed and collect with intention." },
     { name: 'Storyline', hint: 'Your chimera generations sum to 10 or more across all plants', riddle: 'Every plant is a chapter. Yours is becoming a book.',
       lore: "Generations accumulate. A Gen 3 plus a Gen 4 plus a Gen 3 is ten generations of breeding history in a single greenhouse. Your lineage has depth. Someone reading your collection could trace a plot." },
     { name: 'Grove of Grounds', hint: 'Own plants from all 4 seasons and visit 4+ biomes', riddle: 'The garden has learned every season and every ground.',
-      lore: "Most keepers specialize. A Grove of Grounds is the opposite — plants of every season, feet that have walked across five different biomes. Horizontal mastery. The kind of gardener who plants tomatoes AND alpine asters." },
+      lore: "Most keepers specialize. A Grove of Grounds is the opposite, plants of every season, feet that have walked across five different biomes. Horizontal mastery. The kind of gardener who plants tomatoes AND alpine asters." },
     { name: 'Sister Grove', hint: 'Drop two of your own plants in the same wild zone', riddle: 'Two roots share a neighborhood. They learn each other\u2019s signals.',
       lore: "Plants within the same H3 zone can sense each other's rhythms. Two of yours in one zone is a small declaration: this patch of the world is yours." }
   ]},
@@ -69094,7 +69094,7 @@ window.LW_EVENT_CATALOG = [
     { name: 'Harvest Moon', hint: 'Harvest a plant during an Autumn evening', riddle: 'The year tilts. The moon is bigger. Your basket feels full.',
       lore: "Autumn harvests under evening light are what the whole year has been preparing for. Old gardeners marked these days in red ink on kitchen calendars. Now so do you." },
     { name: 'Solstice Garden', hint: 'Own 5+ Winter plants during the Winter season', riddle: 'Five quiet singers in one long cold.',
-      lore: "A Winter garden with five or more winter-aligned plants holds steady against the short days. This is not endurance — it's conversation. The garden says: we're here, still." }
+      lore: "A Winter garden with five or more winter-aligned plants holds steady against the short days. This is not endurance, it's conversation. The garden says: we're here, still." }
   ]},
   // ═══ SOCIAL EVENTS ═══
   // Fire when the keeper's actions involve another keeper's garden.
@@ -69104,11 +69104,11 @@ window.LW_EVENT_CATALOG = [
     { name: "Wanderer's Child", hint: 'Cross-pollinate with a stranger\u2019s wild plant', riddle: 'A lineage that started in someone else\u2019s greenhouse now lives in yours.',
       lore: "Cross-pollinating with a stranger's wild plant weaves two unrelated gardens together. Your offspring carries traits from a keeper you may never meet. It is one of the few ways the game makes you porous." },
     { name: 'Turned Tide', hint: 'A stranger harvested one of your wild plants', riddle: 'Someone unknown to you is growing what was yours.',
-      lore: "The plant you dropped into the world has been taken. You lose the drop but gain its story — a stranger, somewhere, saw it and pulled it into their collection. The grove is bigger than your garden." },
+      lore: "The plant you dropped into the world has been taken. You lose the drop but gain its story, a stranger, somewhere, saw it and pulled it into their collection. The grove is bigger than your garden." },
     { name: "Stranger's Kindness", hint: 'Receive a tend/water from another keeper', riddle: 'A watering can you didn\u2019t hear, on a plant you didn\u2019t know was thirsty.',
-      lore: "Someone tended one of your wild plants. You may never know who. The garden does, though — the plant holds the memory of their kindness. Pay it forward, or don't. Either way, the loop closed." },
+      lore: "Someone tended one of your wild plants. You may never know who. The garden does, though, the plant holds the memory of their kindness. Pay it forward, or don't. Either way, the loop closed." },
     { name: 'Cutting Shared', hint: 'Take your first cutting from a stranger\u2019s wild plant', riddle: 'Stem of someone else\u2019s story, rooted in yours.',
-      lore: "A cutting is a graft of narrative. You took a piece of someone else's plant home — not to steal, but to continue. Old gardeners did this constantly. It's how half of garden history propagates." }
+      lore: "A cutting is a graft of narrative. You took a piece of someone else's plant home, not to steal, but to continue. Old gardeners did this constantly. It's how half of garden history propagates." }
   ]},
   // ═══ HOUR / TIME-OF-DAY EVENTS ═══
   // Fire when the keeper is playing at specific times. Rewards the kind of
@@ -69117,21 +69117,21 @@ window.LW_EVENT_CATALOG = [
     { name: 'Night Bloom', hint: 'Tend a plant between midnight and 3am', riddle: 'The garden never truly sleeps. Only the keeper does.',
       lore: "Some keepers tend their plants in the small hours of the morning. The world is still. The plants don't know what time it is, but they know you came anyway. A quiet devotion." },
     { name: 'Morning Dew', hint: 'Tend a plant between 4am and 7am', riddle: 'First light, first water, first breath of the day.',
-      lore: "Pre-dawn tending is a kind of monastic act. The grove is literally wet — dew has fallen overnight — and you meet it on its terms. This is how sage gardeners start a good day." },
+      lore: "Pre-dawn tending is a kind of monastic act. The grove is literally wet, dew has fallen overnight, and you meet it on its terms. This is how sage gardeners start a good day." },
     { name: 'Golden Hour Witness', hint: 'Bloom a plant between 6pm and 7pm', riddle: 'Photographers know this light. Gardeners know this feeling.',
       lore: "Golden hour is a sliver of the day when everything photographs well. Plants bloom here with a kind of cinematic dignity. A bloom in this window is the garden's way of posing for the camera." },
     { name: 'Hour of the Wolf', hint: 'Complete a game between 2am and 5am', riddle: 'The hour named for when dreams come hardest.',
-      lore: "The hour of the wolf is the deepest stretch of night — when most humans sleep badly if at all. Playing through it takes a specific kind of mind. The garden is fine with it. It is, in fact, impressed." }
+      lore: "The hour of the wolf is the deepest stretch of night, when most humans sleep badly if at all. Playing through it takes a specific kind of mind. The garden is fine with it. It is, in fact, impressed." }
   ]},
   // ═══ CRAFT EVENTS ═══
   // The daily/weekly work of keeping a garden. Quiet rewards for routine.
   { name: 'CRAFT', color: '#8CB86E', desc: 'The daily work of tending', events: [
     { name: 'Compost Cycle', hint: 'Compost 3 plants in one day', riddle: 'Three returnings in a single turning of the sun.',
-      lore: "Three composts in one day is a lot of letting go. This is the craft side of keeping — knowing when a plant has given what it will give, and making room for the next." },
+      lore: "Three composts in one day is a lot of letting go. This is the craft side of keeping, knowing when a plant has given what it will give, and making room for the next." },
     { name: 'Nursery Song', hint: 'Water the same nursery seed on 3 consecutive days', riddle: 'A song the seed has learned by heart.',
-      lore: "Three days of water on a single seed is a small ritual. No seed NEEDS three consecutive days — they just grow better when they get them. This is the difference between tending and merely watering." },
+      lore: "Three days of water on a single seed is a small ritual. No seed NEEDS three consecutive days, they just grow better when they get them. This is the difference between tending and merely watering." },
     { name: 'Frost Touch', hint: 'Cast Rain weather during Winter', riddle: 'Water in the cold is a second kind of snow.',
-      lore: "Rain cast in winter freezes on the leaf. Pretty, stern, a little risky. You knew the season and did it anyway — the garden reads this as confidence." },
+      lore: "Rain cast in winter freezes on the leaf. Pretty, stern, a little risky. You knew the season and did it anyway, the garden reads this as confidence." },
     { name: 'Second Nature', hint: 'Play 30 days across all of four different months', riddle: 'The garden has learned your rhythm, and you have learned its seasons.',
       lore: "Consistency across a quarter of a year is a different discipline than a hundred-day streak. Broader, shallower, perhaps more sustainable. The garden recognizes both shapes of care." },
     { name: 'Quiet Morning', hint: 'Open the app before 6am on a weekend', riddle: 'The world is asleep. You are in the greenhouse.',
@@ -69144,9 +69144,9 @@ window.LW_EVENT_CATALOG = [
     { name: 'Faithful Tender', hint: 'Water the same wild plant 10 times', riddle: 'Some plants are not for harvest. Some are for the ritual.',
       lore: "Ten waterings on a single plant is a ritual, not a routine. The plant has earned the kind of attention that other plants don't get. Whether you realize it or not, you have made a friend." },
     { name: 'The Keeper Remembers', hint: 'Compost 25 plants across your lifetime', riddle: 'Every gone thing was once tended.',
-      lore: "You've buried a small forest by now. Each one taught you something: when to hold on, when to let the cycle take its turn. The plants you let go are still here — they become the soil that grows the next." },
+      lore: "You've buried a small forest by now. Each one taught you something: when to hold on, when to let the cycle take its turn. The plants you let go are still here, they become the soil that grows the next." },
     { name: 'Kindred Spirit', hint: 'Keep the same companion equipped for 30 days', riddle: 'A creature you chose once, and keep choosing.',
-      lore: "Thirty days of the same companion is when the relationship tips from habit into kin. The creature knows your rhythms. You know theirs. The word companions and kindred share a root — it\u2019s etymologically earned." }
+      lore: "Thirty days of the same companion is when the relationship tips from habit into kin. The creature knows your rhythms. You know theirs. The word companions and kindred share a root, it\u2019s etymologically earned." }
   ]}
 ];
 
@@ -69701,7 +69701,7 @@ function _bosSecretsContent() {
       { idx: 33, name: 'The Cicada',         tier: 'Mythic',    icon: '\ud83e\udea6', color: '#A8B872',
         img: 'assets/companions/cicada-v1-a.png',
         lore: 'Buried years, then a chorus at dusk. Its song steadies every nearby bloom.',
-        riddle: 'Silent for seasons, loud at summer — who waits seventeen years to sing?' },
+        riddle: 'Silent for seasons, loud at summer, who waits seventeen years to sing?' },
       { idx: 34, name: 'Baby Mammoth',       tier: 'Legendary', icon: '\ud83e\udd8f', color: '#C8A84B',
         lore: 'A woolly calf that ignores seasonal stress. Permafrost walks with it.',
         riddle: 'Small but warm enough to survive every winter it meets.' },
@@ -70529,7 +70529,7 @@ window._updateCompCount=_updateCompCount;
 // XP hooks fire via window._LW_classXP(source, amount).
 var LW_CLASSES={
   forager:{name:'Forager',icon:'🍂',desc:'Walk further. Feral seeds find you more often and rare drops tilt in your favor. Pairs with the Field Pouch and Compass. The path-finder build.',
-    lore:'The Forager reads landscape the way a cartographer reads a map — not with charts, but with shoes. Patient hunters. Masters of noticing. Where most keepers see a hedge, a Forager sees three seeds.',
+    lore:'The Forager reads landscape the way a cartographer reads a map, not with charts, but with shoes. Patient hunters. Masters of noticing. Where most keepers see a hedge, a Forager sees three seeds.',
     xpSrc:['feral','harvest'],
     abilities:{
       1:{name:'Keen Eye',desc:'+25% feral seed range'},
@@ -70537,14 +70537,14 @@ var LW_CLASSES={
       3:{name:'Wild Kin',desc:'+50% feral drops · 2× when Raccoon equipped'}
     },companion:35,biome:'forest'},
   breeder:{name:'Breeder',icon:'🧬',desc:'Blend lineages in the greenhouse. Extra nursery slot, cleaner chimera EA, and every cross-pollinate rewards more. Pairs with Watering Can and the Nursery.',
-    lore:'The Breeder thinks in generations. Where others see two plants, a Breeder sees a third line waiting to emerge. This is less craft than composition — every cross is a sentence finished by the grandchildren.',
+    lore:'The Breeder thinks in generations. Where others see two plants, a Breeder sees a third line waiting to emerge. This is less craft than composition, every cross is a sentence finished by the grandchildren.',
     xpSrc:['breed','chimera'],
     abilities:{
       1:{name:'Patient Hand',desc:'+1 nursery slot'},
       2:{name:'Purebred',desc:'+20% chimera purity'},
       3:{name:'Web Weaver',desc:'+50% breed reward · 2× with Garden Spider'}
     },companion:37,biome:'garden'},
-  cartographer:{name:'Cartographer',icon:'🧭',desc:'Steps become XP. Biomes reveal themselves and feral patterns emerge on the map. Pairs with the Compass — built for walkers.',
+  cartographer:{name:'Cartographer',icon:'🧭',desc:'Steps become XP. Biomes reveal themselves and feral patterns emerge on the map. Pairs with the Compass, built for walkers.',
     lore:'The Cartographer turns movement into meaning. Biomes become legible. Feral patterns resolve into routes. The world reveals itself to walkers who stay curious long enough to notice the second and third time they pass the same hedge.',
     xpSrc:['biome','steps'],
     abilities:{
@@ -70552,8 +70552,8 @@ var LW_CLASSES={
       2:{name:'Biome Sense',desc:'Compass reveals biome at L1 · L2+ also shows adjacent biomes within 300m'},
       3:{name:'Sky Watcher',desc:'+10% biome bonus · doubled with Heron'}
     },companion:36,biome:'mountain'},
-  tender:{name:'Tender',icon:'💧',desc:'Your wild plants outlive everyone else\u2019s. Dew flows stronger, watering deepens your bond. Pairs with the Watering Can — the caretaker path.',
-    lore:'The Tender measures time in watering rounds. Plants they touch live longer — not by magic, but by attention. A Tender\u2019s greenhouse feels different because its oldest plants have been witnessed every single day.',
+  tender:{name:'Tender',icon:'💧',desc:'Your wild plants outlive everyone else\u2019s. Dew flows stronger, watering deepens your bond. Pairs with the Watering Can, the caretaker path.',
+    lore:'The Tender measures time in watering rounds. Plants they touch live longer, not by magic, but by attention. A Tender\u2019s greenhouse feels different because its oldest plants have been witnessed every single day.',
     xpSrc:['tend','dew'],
     abilities:{
       1:{name:'Green Thumb',desc:'Wild plants live 2× longer'},
@@ -70568,8 +70568,8 @@ var LW_CLASSES={
   // the CLASS that embodies the patient, all-sources path. Internal
   // id stays 'keeper' so class-XP, tree branches, and ~20 other
   // call-sites don't need updating.
-  keeper:{name:'Steward',icon:'🌿',desc:'The patient path. Every XP source counts, every tool cools faster, no weakness. Pairs with all tools — slow and steady through every biome.',
-    lore:'The Steward walks the patient path — not dominant, but constant. No single talent; no single weakness. Every biome, every tool, every season yields equally. The long road, most often walked by the keepers who stay longest.',
+  keeper:{name:'Steward',icon:'🌿',desc:'The patient path. Every XP source counts, every tool cools faster, no weakness. Pairs with all tools, slow and steady through every biome.',
+    lore:'The Steward walks the patient path, not dominant, but constant. No single talent; no single weakness. Every biome, every tool, every season yields equally. The long road, most often walked by the keepers who stay longest.',
     xpSrc:['all'],
     abilities:{
       1:{name:'Attuned',desc:'+5% to all bonuses'},
@@ -71358,7 +71358,7 @@ window._LW_openClassPicker=function(){
     h += '<div style="font-family:DM Sans,sans-serif;font-size:0.6rem;color:var(--muted);line-height:1.6;text-align:center;max-width:320px;">Five paths unfold below. Each shapes what the garden rewards you for. You can change later, but only once.</div>';
     h += '</div>';
   }
-  h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);margin-bottom:1rem;line-height:1.5;">Choose one path. Each level unlocks an ability. Master rank unlocks companion synergy. Progress is slow — play long-term.</div>';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);margin-bottom:1rem;line-height:1.5;">Choose one path. Each level unlocks an ability. Master rank unlocks companion synergy. Progress is slow, play long-term.</div>';
   for(var cid in LW_CLASSES){
     var def=LW_CLASSES[cid];
     var lvl=_lwGetClassLevel(cid);
@@ -71493,7 +71493,7 @@ window.openAncestryViewer=function(plant){
     }
   }else{
     h+='<div style="text-align:center;padding:0.6rem;color:var(--muted);font-family:DM Mono,monospace;font-size:0.42rem;">';
-    h+='Gen 1 — Original mint, no parents.</div>';
+    h+='Gen 1, Original mint, no parents.</div>';
   }
 
   // Haiku

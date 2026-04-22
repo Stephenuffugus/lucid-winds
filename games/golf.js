@@ -35,7 +35,7 @@ function GGF(a){
     var el=document.getElementById('GFsc');if(el)el.textContent=countLeft();
   };
   window._GFToggleStyle=function(){
-    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
+    if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading, try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
     var b=document.getElementById('GFstyle');
     if(b)b.textContent='🃏 Style';
@@ -88,7 +88,7 @@ function GGF(a){
     }
     gameOver=true;
     var left=countLeft();score=left;
-    mm_up(left+' left — no moves');
+    mm_up(left+' left, no moves');
     _e('game_loss');_play('lose');_sr('golf',{w:false,s:35-left});
   }
 

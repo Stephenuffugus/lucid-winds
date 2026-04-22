@@ -71,7 +71,7 @@ var PATTERNS={
     origin:'Ancient vedic pranayama',
     cat:'sleep',
     audible:true,
-    cue:'Hum softly on every exhale — lips closed, gentle buzz.'
+    cue:'Hum softly on every exhale, lips closed, gentle buzz.'
   },
   sitali:{
     name:'SITALI · COOLING',
@@ -87,7 +87,7 @@ var PATTERNS={
     tag:'Warmth · focus',
     origin:'Hatha yoga',
     cat:'focus',
-    cue:'Slight constriction in the throat — an ocean sound.'
+    cue:'Slight constriction in the throat, an ocean sound.'
   },
   physsigh:{
     name:'PHYSIOLOGICAL SIGH',
@@ -171,15 +171,15 @@ var QUIZ=[
     q:'How much time do you have?',
     opts:[
       {label:'Under 2 minutes', maxDur:8},  // max phase cycle seconds
-      {label:'2–5 minutes',     maxDur:20},
+      {label:'2, 5 minutes',     maxDur:20},
       {label:'5+ minutes',      maxDur:999}
     ]
   },
   {
     q:'Can you make sound where you are?',
     opts:[
-      {label:'Yes — private or quiet',                 allowAudible:true},
-      {label:'No — I need to stay quiet',              allowAudible:false}
+      {label:'Yes, private or quiet',                 allowAudible:true},
+      {label:'No, I need to stay quiet',              allowAudible:false}
     ]
   }
 ];
@@ -276,7 +276,7 @@ window._gameFns.breathing=function BR(a){
     osc.stop(now+prof.dur+0.05);osc2.stop(now+prof.dur+0.05);
   }
 
-  ms(a,'🌸 Meditation — <strong id="BRt">0:00</strong>');
+  ms(a,'🌸 Meditation, <strong id="BRt">0:00</strong>');
   mm(a,'READY');
   var pan=document.createElement('div');pan.id='BRpan';
   pan.style.cssText='max-width:460px;margin:0 auto;padding:6px;user-select:none;text-align:center;';
