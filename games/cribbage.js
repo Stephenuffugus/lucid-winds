@@ -12,11 +12,20 @@ window._gameFns.cribbage = function CRIB(a){
   var VALS=[1,2,3,4,5,6,7,8,9,10,10,10,10];
   var G;
 
-  ms(a,'🃏 <strong id="CBp">0</strong> vs AI <strong id="CBa">0</strong>');
+  ms(a,'<span id="CBheader" style="font-family:Georgia,serif;letter-spacing:.06em;">🃏 <strong id="CBp" style="font-size:1.2em;color:#e8dcc8;">0</strong> vs AI <strong id="CBa" style="font-size:1.2em;color:#c47a7a;">0</strong></span>');
   mm(a);
   var pan=document.createElement('div');
   pan.id='CBpan';
-  pan.style.cssText='max-width:420px;margin:0 auto;padding:6px;user-select:none';
+  // Felt-table background — signature cribbage visual cue. Layered gradient
+  // creates a subtle weave effect over the dark green base.
+  pan.style.cssText='max-width:460px;margin:0 auto;padding:10px;user-select:none;'
+    +'background:'
+      +'radial-gradient(circle at 30% 20%,rgba(255,255,255,0.04) 0%,transparent 50%),'
+      +'radial-gradient(circle at 70% 80%,rgba(0,0,0,0.18) 0%,transparent 55%),'
+      +'linear-gradient(135deg,#0f5c35 0%,#0b4d2c 55%,#083d22 100%);'
+    +'border-radius:14px;'
+    +'border:1px solid rgba(180,140,70,0.35);'
+    +'box-shadow:inset 0 0 28px rgba(0,0,0,0.35),0 4px 18px rgba(0,0,0,0.4);';
   a.appendChild(pan);
   // Style-aware pip — Garden swaps ♠♥♦♣ for 🍄🌸🐝🐦
   function _pip(idx){return (window._cdSuit)?window._cdSuit(idx):SUITS[idx];}
@@ -282,52 +291,83 @@ window._gameFns.cribbage = function CRIB(a){
     var ps=document.getElementById('CBp');if(ps)ps.textContent=G.pScore;
     var as=document.getElementById('CBa');if(as)as.textContent=G.aScore;
     var h='';
-    h+='<div style="background:linear-gradient(135deg,rgba(139,105,20,.4),rgba(107,80,16,.5));border:1px solid rgba(200,168,75,0.3);border-radius:10px;padding:8px 12px;margin:4px 0;display:flex;justify-content:space-between;align-items:center;">';
-    h+='<span style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;color:var(--sage);">YOU '+G.pScore+'</span>';
-    h+='<div style="flex:1;height:10px;background:rgba(0,0,0,.4);border-radius:5px;margin:0 10px;position:relative;overflow:hidden;">';
-    h+='<div style="height:100%;width:'+Math.min(100,(G.pScore/121)*100)+'%;background:linear-gradient(90deg,rgba(122,179,86,.5),rgba(122,179,86,.9));border-radius:5px;transition:width .4s;"></div>';
-    h+='<div style="position:absolute;top:0;left:0;height:100%;width:'+Math.min(100,(G.aScore/121)*100)+'%;background:rgba(199,80,80,.4);border-radius:5px;"></div>';
+    // ── SCORE BAR — serif numerals + wooden border frame ──
+    h+='<div style="background:linear-gradient(180deg,rgba(155,115,45,0.25),rgba(95,70,20,0.35));border:1px solid rgba(200,168,75,0.45);border-radius:8px;padding:6px 10px;margin-bottom:6px;display:flex;align-items:center;gap:10px;box-shadow:inset 0 1px 0 rgba(255,220,140,0.15),0 2px 6px rgba(0,0,0,0.3);">';
+    h+='<div style="flex:0 0 auto;text-align:center;min-width:58px;">'
+      +'<div style="font-family:Georgia,serif;font-size:1.6rem;font-weight:700;color:#e8dcc8;line-height:1;text-shadow:0 2px 3px rgba(0,0,0,0.4);">'+G.pScore+'</div>'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:rgba(232,220,200,0.7);margin-top:2px;">YOU</div>'
+    +'</div>';
+    h+='<div style="flex:1;height:10px;background:rgba(0,0,0,.45);border-radius:5px;position:relative;overflow:hidden;border:1px solid rgba(0,0,0,0.5);box-shadow:inset 0 1px 2px rgba(0,0,0,0.6);">';
+    h+='<div style="position:absolute;top:0;left:0;height:100%;width:'+Math.min(100,(G.pScore/121)*100)+'%;background:linear-gradient(90deg,rgba(74,124,53,0.7),rgba(122,179,86,0.95));border-radius:5px;transition:width .4s;"></div>';
+    h+='<div style="position:absolute;top:0;right:0;height:100%;width:'+Math.min(100,(G.aScore/121)*100)+'%;background:linear-gradient(90deg,rgba(180,60,60,0.5),rgba(220,100,100,0.7));border-radius:5px;"></div>';
     h+='</div>';
-    h+='<span style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;color:#c47a7a;">AI '+G.aScore+'</span></div>';
+    h+='<div style="flex:0 0 auto;text-align:center;min-width:58px;">'
+      +'<div style="font-family:Georgia,serif;font-size:1.6rem;font-weight:700;color:#dc8a8a;line-height:1;text-shadow:0 2px 3px rgba(0,0,0,0.4);">'+G.aScore+'</div>'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:rgba(232,220,200,0.7);margin-top:2px;">AI</div>'
+    +'</div>';
+    h+='</div>';
+    // ── STATUS ROW — phase + round + dealer ──
     var st='';
-    if(G.phase==='discard')st='Select 2 cards → crib';
-    else if(G.phase==='peg')st='Pegging — Count: '+G.playCount+'/31';
-    else if(G.phase==='show')st='Scoring hands...';
+    if(G.phase==='discard')st='Select 2 for the crib';
+    else if(G.phase==='peg')st='The play';
+    else if(G.phase==='show')st='Scoring';
     else st='Game Over';
-    h+='<div style="display:flex;gap:14px;justify-content:center;align-items:center;padding:6px 4px;flex-wrap:wrap;font-family:DM Mono,monospace;font-size:0.85rem;letter-spacing:0.06em;">';
-    h+='<div style="color:var(--sage);">'+st+'</div>';
-    h+='<div style="color:var(--muted);">Round <strong style="color:var(--cream);">'+G.roundNum+'</strong></div>';
-    h+='<div style="color:var(--muted);">Dealer: <strong style="color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:1rem;">'+(G.dealer==='player'?'YOU':'AI')+'</strong></div>';
+    h+='<div style="display:flex;gap:14px;justify-content:center;align-items:center;padding:4px 4px 8px;flex-wrap:wrap;font-family:DM Mono,monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;">';
+    h+='<span style="color:#d4b86a;">'+st+'</span>';
+    h+='<span style="color:rgba(232,220,200,0.5);">Round <strong style="color:#e8dcc8;">'+G.roundNum+'</strong></span>';
+    h+='<span style="color:rgba(232,220,200,0.5);">Dealer <strong style="color:#d4b86a;font-family:Georgia,serif;font-size:0.9rem;text-transform:none;">'+(G.dealer==='player'?'You':'AI')+'</strong></span>';
     h+='</div>';
-    h+='<div style="background:rgba(26,31,23,.4);border:1px solid rgba(74,124,53,.12);border-radius:8px;padding:8px;margin:4px 0;">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:5px;">AI HAND</div>';
+    // ── AI HAND ──
+    h+='<div style="background:rgba(8,35,22,0.45);border:1px solid rgba(220,138,138,0.25);border-radius:8px;padding:6px 8px;margin-bottom:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);">';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:rgba(220,138,138,0.85);letter-spacing:0.14em;margin-bottom:4px;text-transform:uppercase;">AI Hand</div>';
     h+='<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:64px;align-items:center;">';
     if(G.phase==='show'||G.phase==='gameover'){
       G.aHand.forEach(function(c){h+=_cardHtml(c,false,false,false,false);});
     }else{
       for(var i=0;i<G.aHand.length;i++){
         var played=G.aPlayed.indexOf(i)>=0;
-        h+='<div style="width:46px;height:64px;border-radius:6px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:2px solid #2d4a1e;'+(played?'opacity:.4;':'')+'"></div>';
+        h+='<div style="width:46px;height:64px;border-radius:6px;background:'
+          +'linear-gradient(135deg,#4A7C35,#2c4d1e);border:2px solid #1a2f12;'
+          +'box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 2px 4px rgba(0,0,0,0.4);'
+          +(played?'opacity:.35;':'')+'"></div>';
       }
     }
     h+='</div></div>';
+    // ── STARTER CARD + PEGGING COUNT ──
     if(G.starter){
-      h+='<div style="text-align:center;padding:5px 0;"><span style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.1em;">STARTER:&nbsp;</span>';
+      h+='<div style="display:flex;gap:8px;justify-content:center;align-items:center;padding:4px 0 6px;">';
+      h+='<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:rgba(232,220,200,0.65);letter-spacing:0.18em;text-transform:uppercase;">Starter</div>';
       h+=_cardHtml(G.starter,false,false,false,true);
       h+='</div>';
+      // Giant centered count during peg phase
+      if(G.phase==='peg'){
+        var c=G.playCount;
+        var countColor = c===15||c===31 ? '#ffdc70' : c>=21 ? '#ffb060' : '#f5ebd0';
+        h+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 10px;">';
+        h+='<div id="CBcount" style="font-family:Georgia,serif;font-weight:700;font-size:3.2rem;line-height:1;color:'+countColor+';text-shadow:0 2px 8px rgba(0,0,0,0.6),0 0 24px rgba(255,220,140,0.18);">'+c+'</div>';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.2em;color:rgba(232,220,200,0.55);margin-top:2px;text-transform:uppercase;">of 31</div>';
+        h+='</div>';
+      }
+      h+='</div>';
     }
+    // ── PLAY AREA — cards laid down during pegging ──
     if(G.phase==='peg'&&G.playArea.length>0){
-      h+='<div style="text-align:center;font-size:1.1rem;font-weight:700;color:var(--gold);padding:2px 0;">Count: '+G.playCount+'</div>';
-      h+='<div style="min-height:50px;display:flex;gap:3px;justify-content:center;align-items:center;flex-wrap:wrap;padding:4px;background:rgba(26,31,23,.3);border-radius:6px;margin:4px 0;">';
+      h+='<div style="min-height:52px;display:flex;gap:3px;justify-content:center;align-items:center;flex-wrap:wrap;padding:6px;background:rgba(0,0,0,0.22);border-radius:6px;margin:4px 0;border:1px solid rgba(180,140,70,0.15);">';
       G.playArea.forEach(function(p){h+=_cardHtml(p.card,false,false,false,false,p.who);});
       h+='</div>';
     }
+    // ── SCORE BREAKDOWN (legacy dumped string — will become sequential narration in a later pass) ──
     if(G.lastScoreBreakdown){
-      h+='<div style="font-size:0.78rem;color:var(--cream);text-align:center;padding:8px;background:rgba(26,31,23,.5);border:1px solid rgba(122,179,86,0.2);border-radius:6px;margin:4px 0;line-height:1.5;">'+G.lastScoreBreakdown+'</div>';
+      h+='<div style="font-family:Georgia,serif;font-size:0.78rem;color:#f5ebd0;text-align:center;padding:10px 12px;background:rgba(0,0,0,0.3);border:1px solid rgba(200,168,75,0.25);border-radius:6px;margin:6px 0;line-height:1.55;font-style:italic;">'+G.lastScoreBreakdown+'</div>';
     }
-    h+='<div style="background:rgba(26,31,23,.4);border:1px solid rgba(74,124,53,.12);border-radius:8px;padding:8px;margin:4px 0;">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:5px;">YOUR HAND</div>';
-    h+='<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:64px;align-items:center;">';
+    // ── YOUR HAND ──
+    h+='<div style="background:rgba(8,35,22,0.45);border:1px solid rgba(122,179,86,0.3);border-radius:8px;padding:6px 8px;margin-top:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:rgba(122,179,86,0.95);letter-spacing:0.14em;text-transform:uppercase;">Your Hand</div>';
+    if(G.phase==='discard')h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.65rem;color:rgba(232,220,200,0.7);">'+(2-G.pSelected.length)+' more for the crib</div>';
+    h+='</div>';
+    h+='<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:72px;align-items:center;">';
     G.pHand.forEach(function(c,i){
       var isSel=G.pSelected.indexOf(i)>=0;
       var isPlayed=G.pPlayed.indexOf(i)>=0;
@@ -335,9 +375,10 @@ window._gameFns.cribbage = function CRIB(a){
       h+=_cardHtml(c,isSel,isPlayed,canPlay,false,null,i);
     });
     h+='</div></div>';
-    h+='<div style="display:flex;gap:6px;justify-content:center;padding:6px 0;flex-wrap:wrap;">';
+    // ── ACTION BUTTONS ──
+    h+='<div style="display:flex;gap:6px;justify-content:center;padding:8px 0 2px;flex-wrap:wrap;">';
     if(G.phase==='discard'&&G.pSelected.length===2){
-      h+='<button class="gb" onclick="_CBD()" style="min-height:44px;padding:10px 20px;font-size:0.8rem;">✓ DISCARD TO CRIB</button>';
+      h+='<button class="gb" onclick="_CBD()" style="min-height:44px;padding:10px 22px;font-size:0.8rem;background:rgba(122,179,86,0.2);border-color:rgba(122,179,86,0.6);color:#e8dcc8;">✓ Send to Crib</button>';
     }
     if(G.phase==='peg'){
       var canAny=false;
@@ -345,25 +386,40 @@ window._gameFns.cribbage = function CRIB(a){
         if(G.pPlayed.indexOf(ci)<0&&G.playCount+G.pHand[ci].val<=31){canAny=true;break;}
       }
       if(!canAny&&G.pPlayed.length<4){
-        h+='<button class="gb" onclick="_CBGO()" style="min-height:44px;padding:10px 20px;font-size:0.8rem;">Say "GO"</button>';
+        h+='<button class="gb" onclick="_CBGO()" style="min-height:44px;padding:10px 22px;font-size:0.8rem;background:rgba(200,168,75,0.2);border-color:rgba(200,168,75,0.6);color:#e8dcc8;font-family:Georgia,serif;font-style:italic;">Say "Go"</button>';
       }
     }
     h+='</div>';
     pan.innerHTML=h;
   }
   function _cardHtml(c,sel,played,canPlay,isStarter,who,idx){
-    var borderCol='#C4B998';
-    if(who==='player')borderCol='#4A7C35';
-    else if(who==='ai')borderCol='#C47A7A';
-    if(sel)borderCol='#7AB956';
-    var style='width:46px;height:64px;border-radius:6px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-size:15px;font-weight:700;border:2px solid '+borderCol+';background:#F5F0E1;color:'+(isRed(c)?'#C47A7A':'#1a1f17')+';position:relative;vertical-align:middle;';
-    if(sel)style+='transform:translateY(-8px);box-shadow:0 4px 12px rgba(122,185,86,.4);';
-    if(played)style+='opacity:.5;';
-    if(canPlay)style+='cursor:pointer;';
+    var borderCol='#c4b998';
+    if(who==='player')borderCol='#7ab356';
+    else if(who==='ai')borderCol='#dc8a8a';
+    if(sel)borderCol='#ffdc70';
+    if(isStarter)borderCol='#d4b86a';
+    var redCol='#b42a2a', blackCol='#1a1a1a';
+    var color=isRed(c)?redCol:blackCol;
+    var style='width:46px;height:64px;border-radius:6px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;'
+      +'border:2px solid '+borderCol+';'
+      +'background:linear-gradient(180deg,#faf3dd 0%,#f0e7c8 100%);'
+      +'color:'+color+';position:relative;vertical-align:middle;'
+      +'font-family:Georgia,serif;'
+      +'box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 2px 5px rgba(0,0,0,0.45);';
+    if(sel)style+='transform:translateY(-10px);box-shadow:0 0 0 2px #ffdc70,0 6px 14px rgba(255,220,112,0.4);';
+    if(played)style+='opacity:.45;';
+    if(canPlay)style+='cursor:pointer;transition:transform .14s ease;';
+    if(isStarter)style+='box-shadow:0 0 0 2px #d4b86a,0 3px 10px rgba(212,184,106,0.35);';
     var onclick='';
     if(G.phase==='discard'&&!played&&idx!==undefined)onclick='_CBTS('+idx+')';
     else if(G.phase==='peg'&&canPlay&&idx!==undefined)onclick='_CBPC('+idx+')';
-    return '<div style="'+style+'" '+(onclick?'onclick="'+onclick+'"':'')+'><span style="font-size:13px;position:absolute;top:2px;left:4px;">'+RANKS[c.rank]+'</span><span style="font-size:18px;">'+_pip(c.suit)+'</span></div>';
+    // Rank at top-left, big pip centered, rotated rank at bottom-right.
+    return '<div style="'+style+'" '+(onclick?'onclick="'+onclick+'"':'')+'>'
+      +'<span style="font-size:12px;position:absolute;top:2px;left:4px;line-height:1;font-weight:700;">'+RANKS[c.rank]+'</span>'
+      +'<span style="font-size:10px;position:absolute;top:13px;left:5px;line-height:1;">'+_pip(c.suit)+'</span>'
+      +'<span style="font-size:22px;line-height:1;">'+_pip(c.suit)+'</span>'
+      +'<span style="font-size:12px;position:absolute;bottom:2px;right:4px;line-height:1;transform:rotate(180deg);transform-origin:center;font-weight:700;">'+RANKS[c.rank]+'</span>'
+    +'</div>';
   }
 
   window._CBN=newGame;
