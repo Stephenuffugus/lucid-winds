@@ -58,7 +58,9 @@ function GFC(a){
   function emptyCols(){var n=0;for(var c=0;c<8;c++)if(tab[c].length===0)n++;return n;}
   function maxMove(){return (1+emptyFree())*Math.pow(2,emptyCols());}
   function canFnd(card,fi){
-    var pile=fnd[fi];if(pile.length===0)return card.r===0;
+    var pile=fnd[fi];
+    // Empty foundation slot is suit-locked by its art — only that suit's Ace seeds it.
+    if(pile.length===0)return card.r===0&&card.s===fi;
     return pile[pile.length-1].s===card.s&&card.r===pile[pile.length-1].r+1;
   }
   function canTab(card,ci){

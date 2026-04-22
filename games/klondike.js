@@ -154,7 +154,9 @@ function GKL(a){
 
   function canPlaceOnFnd(card,fi){
     var pile=fnd[fi];
-    if(pile.length===0)return card.r===0;
+    // Foundation index fi IS the suit — the empty slot shows that suit's art,
+    // so only that suit's Ace is legal to seed the pile.
+    if(pile.length===0)return card.r===0&&card.s===fi;
     var top=pile[pile.length-1];
     return top.s===card.s&&card.r===top.r+1;
   }
@@ -483,11 +485,11 @@ function GKL(a){
     var tabRow=document.createElement('div');
     tabRow.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center;padding:4px 0;width:100%;max-width:100vw;margin:0 auto;align-items:flex-start';
     // Peek via negative margin-top — each card keeps its full height + border-
-    // radius, only the next card's overlap hides the bottom. Face-up cards show
-    // their top-left rank/suit corner (~20% reveal). Face-down cards reveal
-    // less (~11%) so stacks stay tight and suits of lower cards stay legible.
-    var revealUp = 0.18; // % of h shown per face-up card under top
-    var revealDn = 0.11; // % of h shown per face-down card
+    // radius, only the next card's overlap hides the bottom. Match Golf's 28%
+    // reveal for face-up cards so the rank+suit is comfortable to read. Face-
+    // down cards stay tighter at 14% since there's nothing to read on the back.
+    var revealUp = 0.28;
+    var revealDn = 0.14;
 
     for(var c=0;c<7;c++){
       var colDiv=document.createElement('div');

@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.29';
+  var LW_VERSION='2026.04.22.30';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3409,6 +3409,8 @@
     #fg-ag.sol{background:radial-gradient(ellipse at 50% 30%,rgba(18,32,14,.95) 0%,rgba(8,14,6,.98) 60%,rgba(4,8,3,1) 100%)}
     #fg-ag.sol-fs{padding-bottom:0;position:fixed;inset:0;z-index:1000;overflow-y:auto}
     body.sol-fs .fg-bottomnav,body.sol-fs .fg-pk,body.sol-fs .game-header,body.sol-fs #pw-keeper-bar,body.sol-fs #sws-auth-header{display:none!important}
+    /* Hide the redundant fixed exit button in solitaire fullscreen — the internal sticky game-back-btn at the top of the game area already handles returning to the picker, and the fixed one crowds the top-left of the board in landscape. */
+    body.sol-fs #game-exit-btn{display:none!important}
     /* Hide HUD clutter when any game is active (not SET, which has its own UI) */
     body.game-active .game-header,
     body.game-active .fg-pk,
