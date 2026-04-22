@@ -11,11 +11,37 @@ var _SUIT_NAME=window._SUIT_NAME,_CD_BASE=window._CD_BASE,_CD_BACK=window._CD_BA
 
 function GKL(a){
   var tableau=[],stock=[],waste=[],fnd=[],sel=null,gameOver=false,moves=0,drawCount=1,lastTap=0,lastTapCard=null;
+  var history=[]; // LIFO stack of pre-move snapshots for undo
   // sel = {src:'tab'|'waste', col:N, idx:N} or null
   ms(a,'Moves: <strong id="KLmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='KLgd';a.appendChild(gd);
   var _kStyleLbl='🃏 Style';
-  mc(a).innerHTML='<select class="gsl" id="KLdraw" onchange="_KLDraw(this.value)"><option value="1" selected>Draw 1</option><option value="3">Draw 3</option></select> <button class="gb" onclick="_KLN()">🔄 New</button> <button class="gb" id="KLstyle" onclick="_KLToggleStyle()" style="font-size:0.7rem;">'+_kStyleLbl+'</button>';
+  mc(a).innerHTML='<select class="gsl" id="KLdraw" onchange="_KLDraw(this.value)"><option value="1" selected>Draw 1</option><option value="3">Draw 3</option></select> <button class="gb" id="KLundoBtn" onclick="_KLUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" onclick="_KLN()">🔄 New</button> <button class="gb" id="KLstyle" onclick="_KLToggleStyle()" style="font-size:0.7rem;">'+_kStyleLbl+'</button>';
+  // Snapshot the full game state so undo can restore it exactly. Plain JSON
+  // round-trip because every card is a flat {s,r,up} object. Called BEFORE
+  // any mutation — every move, stock draw, and stock recycle.
+  function snapshot(){
+    history.push(JSON.stringify({
+      tableau:tableau, stock:stock, waste:waste, fnd:fnd, moves:moves
+    }));
+    refreshUndoBtn();
+  }
+  function refreshUndoBtn(){
+    var b=document.getElementById('KLundoBtn');
+    if(!b)return;
+    if(history.length>0&&!gameOver){b.disabled=false;b.style.opacity='1';}
+    else{b.disabled=true;b.style.opacity='0.45';}
+  }
+  window._KLUndo=function(){
+    if(history.length===0||gameOver)return;
+    var snap=JSON.parse(history.pop());
+    tableau=snap.tableau; stock=snap.stock; waste=snap.waste; fnd=snap.fnd; moves=snap.moves;
+    sel=null; lastTap=0; lastTapCard=null;
+    var el=document.getElementById('KLmv');if(el)el.textContent=moves;
+    _play('tap');
+    rn();
+    refreshUndoBtn();
+  };
   window._KLToggleStyle=function(){
     if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
@@ -28,6 +54,7 @@ function GKL(a){
   function init(){
     var deck=_cdSh(_cdMk());
     tableau=[];stock=[];waste=[];sel=null;gameOver=false;moves=0;lastTap=0;lastTapCard=null;
+    history=[]; // reset undo stack — each new deal starts fresh
     fnd=[[],[],[],[]];
     for(var c=0;c<7;c++){
       tableau[c]=[];
@@ -82,17 +109,20 @@ function GKL(a){
     var el=document.getElementById('KLmv');if(el)el.textContent=moves;
     _play('tap');
     _e('progress');
+    refreshUndoBtn();
   }
 
   function tapStock(){
     sel=null;
     if(stock.length===0){
       if(waste.length===0)return;
+      snapshot();
       stock=waste.reverse();
       waste=[];
       for(var i=0;i<stock.length;i++)stock[i].up=false;
       rn();return;
     }
+    snapshot();
     var cnt=Math.min(drawCount,stock.length);
     for(var i=0;i<cnt;i++){
       var card=stock.pop();card.up=true;
@@ -110,6 +140,7 @@ function GKL(a){
     if(lastTapCard&&lastTapCard.s===topCard.s&&lastTapCard.r===topCard.r&&now-lastTap<400){
       var fi=autoToFnd(topCard);
       if(fi>=0){
+        snapshot();
         waste.pop();
         fnd[fi].push(topCard);
         sel=null;doMove();
@@ -129,6 +160,7 @@ function GKL(a){
     if(sel.src==='waste'){
       card=waste[waste.length-1];
       if(canPlaceOnFnd(card,fi)){
+        snapshot();
         waste.pop();fnd[fi].push(card);sel=null;doMove();
         if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves});}
         rn();return;
@@ -138,6 +170,7 @@ function GKL(a){
       if(sel.idx===col.length-1){
         card=col[col.length-1];
         if(canPlaceOnFnd(card,fi)){
+          snapshot();
           col.pop();fnd[fi].push(card);
           if(col.length>0&&!col[col.length-1].up)col[col.length-1].up=true;
           sel=null;doMove();
@@ -159,13 +192,14 @@ function GKL(a){
       // Move selected cards to empty column (only Kings)
       if(sel.src==='waste'){
         var wc=waste[waste.length-1];
-        if(wc.r===12){waste.pop();col.push(wc);sel=null;doMove();rn();return;}
+        if(wc.r===12){snapshot();waste.pop();col.push(wc);sel=null;doMove();rn();return;}
         sm('Only Kings on empty');sel=null;rn();return;
       }
       if(sel.src==='tab'){
         var srcCol=tableau[sel.col];
         var card=srcCol[sel.idx];
         if(card.r===12){
+          snapshot();
           var run=srcCol.splice(sel.idx);
           for(var ri=0;ri<run.length;ri++)col.push(run[ri]);
           if(srcCol.length>0&&!srcCol[srcCol.length-1].up)srcCol[srcCol.length-1].up=true;
@@ -180,7 +214,7 @@ function GKL(a){
 
     // Tap face-down card — flip it if it's the last
     if(!tappedCard.up){
-      if(cardIdx===col.length-1){tappedCard.up=true;rn();}
+      if(cardIdx===col.length-1){snapshot();tappedCard.up=true;rn();}
       return;
     }
 
@@ -189,6 +223,7 @@ function GKL(a){
     if(cardIdx===col.length-1&&lastTapCard&&lastTapCard.s===tappedCard.s&&lastTapCard.r===tappedCard.r&&now-lastTap<400){
       var fi=autoToFnd(tappedCard);
       if(fi>=0){
+        snapshot();
         col.pop();fnd[fi].push(tappedCard);
         if(col.length>0&&!col[col.length-1].up)col[col.length-1].up=true;
         sel=null;doMove();
@@ -214,12 +249,14 @@ function GKL(a){
     if(sel.src==='waste'){
       srcCard=waste[waste.length-1];
       if(canPlaceOnTab(srcCard,ci)){
+        snapshot();
         waste.pop();col.push(srcCard);sel=null;doMove();rn();return;
       }
     }else if(sel.src==='tab'){
       var srcCol=tableau[sel.col];
       srcCard=srcCol[sel.idx];
       if(canPlaceOnTab(srcCard,ci)){
+        snapshot();
         var run=srcCol.splice(sel.idx);
         for(var ri=0;ri<run.length;ri++)col.push(run[ri]);
         if(srcCol.length>0&&!srcCol[srcCol.length-1].up)srcCol[srcCol.length-1].up=true;
