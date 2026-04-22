@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.71';
+  var LW_VERSION='2026.04.22.72';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5552,11 +5552,23 @@ window._addSwitchTabHook = function(fn){
   }
   /* Shown only when user is NOT logged in — skip the wait */
   #vault-hydration-overlay.no-session { display: none; }
+  /* Escape hatch button — hidden until hydration is slow */
+  #vho-escape {
+    margin-top: 1.5rem; padding: 10px 22px; min-height: 44px;
+    font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.15em;
+    background: rgba(122,179,86,0.15); color: var(--sage, #7ab356);
+    border: 1.5px solid var(--sage, #7ab356); border-radius: 8px;
+    cursor: pointer; opacity: 0; visibility: hidden;
+    transition: opacity 0.4s ease;
+  }
+  #vho-escape.show { opacity: 1; visibility: visible; }
+  #vho-escape:active { background: rgba(122,179,86,0.3); }
 </style>
 <div id="vault-hydration-overlay" class="no-session">
   <div class="lw-spinner"><div class="lw-spinner-leaf"></div><div class="lw-spinner-leaf"></div><div class="lw-spinner-leaf"></div></div>
   <div class="vho-label">RECOVERING VAULT</div>
   <div class="vho-sub" id="vho-status">Connecting to cloud…</div>
+  <button id="vho-escape" onclick="window._vhoEscape&&window._vhoEscape()">↳ CONTINUE OFFLINE</button>
 </div>
 <!-- ═══ PHASE 25: UNIVERSAL AUTH HEADER ═══ -->
 <div id="sws-auth-header">
@@ -35198,13 +35210,51 @@ document.addEventListener('keydown', function(e) {
   }
 
   // ── Hydration overlay ─────────────────────────────────────────────────────
+  var _vhoEscapeTimers = [];
+  function _vhoClearEscape(){
+    for (var i=0;i<_vhoEscapeTimers.length;i++) clearTimeout(_vhoEscapeTimers[i]);
+    _vhoEscapeTimers = [];
+  }
+  window._vhoEscape = function(){
+    if (_vaultHydrated) return;
+    if (window._swsLog) _swsLog('⏱ User escaped hydration overlay — offline mode', 'warn');
+    _vaultHydrated = true;
+    _hideOverlay('Offline — local only');
+    if (window._showOfflineBanner) window._showOfflineBanner();
+    if (window.renderGreenhouse) try{renderGreenhouse();}catch(e){}
+    if (window.updateDashboard)  try{updateDashboard();}catch(e){}
+  };
   function _showOverlay() {
     var ov = document.getElementById('vault-hydration-overlay');
-    if (ov) ov.classList.remove('no-session');
+    if (!ov) return;
+    // URL bypass: ?skiphydration=1 skips the overlay entirely (emergency)
+    try {
+      if (location.search && location.search.indexOf('skiphydration=1') >= 0) {
+        if (window._swsLog) _swsLog('URL bypass: skiphydration=1 — offline mode', 'warn');
+        setTimeout(function(){ window._vhoEscape(); }, 0);
+        return;
+      }
+    } catch(e) {}
+    ov.classList.remove('no-session');
+    _vhoClearEscape();
+    // Reveal "Continue offline" button after 5s of waiting
+    _vhoEscapeTimers.push(setTimeout(function(){
+      var btn = document.getElementById('vho-escape');
+      if (btn && !_vaultHydrated) btn.classList.add('show');
+      var sub = document.getElementById('vho-status');
+      if (sub && !_vaultHydrated) sub.textContent = 'Still working… tap below to play offline';
+    }, 5000));
+    // Hard safety: auto-escape to offline mode after 15s
+    _vhoEscapeTimers.push(setTimeout(function(){
+      if (!_vaultHydrated) window._vhoEscape();
+    }, 15000));
   }
   function _hideOverlay(msg) {
     var ov  = document.getElementById('vault-hydration-overlay');
     var sub = document.getElementById('vho-status');
+    var btn = document.getElementById('vho-escape');
+    _vhoClearEscape();
+    if (btn) btn.classList.remove('show');
     if (sub && msg) sub.textContent = msg;
     setTimeout(function(){ if(ov) ov.classList.add('dismissed'); }, msg ? 600 : 0);
   }
