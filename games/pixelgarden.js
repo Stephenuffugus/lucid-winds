@@ -14,7 +14,8 @@ window._gameFns.pixelgarden = function PG(a){
   var mirrorMode=false,showGrid=true;
   var undoStack=[],maxUndo=30;
   var drawing=false,totalPixels=0;
-  var hashTimer=0;
+  var uniqueChanges=0;        // pixels that actually changed color
+  var lastProgressAt=0;       // ms timestamp of last XP award
   var COLORS=[
     '#2d5020','#7ab356','#6aaa4a','#a0cc80',
     '#3d2a18','#6b4a2a','#8b6a3a','#b8a060',
@@ -123,7 +124,13 @@ window._gameFns.pixelgarden = function PG(a){
       ctx.setLineDash([]);
     }
   }
-  function setPixel(r,c,color){if(r<0||r>=GRID||c<0||c>=GRID)return;pixels[r][c]=color;}
+  function setPixel(r,c,color){
+    if(r<0||r>=GRID||c<0||c>=GRID)return;
+    // Only count genuine color changes toward XP — repainting an
+    // already-that-color pixel doesn't count. Prevents swipe-farming.
+    if(pixels[r][c]!==color)uniqueChanges++;
+    pixels[r][c]=color;
+  }
   function floodFill(sr,sc,fc){
     var target=pixels[sr][sc];if(target===fc)return;
     var stack=[[sr,sc]],visited={};
@@ -152,8 +159,17 @@ window._gameFns.pixelgarden = function PG(a){
       if(pixels[r][c]){currentColor=pixels[r][c];buildPalette();}
     }
     render();
-    hashTimer++;
-    if(hashTimer>=40){hashTimer=0;_e('progress');}
+    // XP gate: require 120 unique color changes AND at least 30s
+    // since the last award. Large-grid swipe-farming used to hit the
+    // old (hashTimer>=40, any tap) threshold every couple seconds.
+    if(uniqueChanges>=120){
+      var now=Date.now();
+      if(now-lastProgressAt>=30000){
+        lastProgressAt=now;
+        uniqueChanges=0;
+        _e('progress');
+      }
+    }
   }
   function saveUndo(){
     var state=[];for(var r=0;r<GRID;r++)state[r]=pixels[r].slice();
