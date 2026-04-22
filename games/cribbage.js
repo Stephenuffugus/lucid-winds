@@ -44,13 +44,18 @@ window._gameFns.cribbage = function CRIB(a){
   function isRed(c){return c.suit===1||c.suit===2;}
 
   function newGame(){
-    G={pScore:0,aScore:0,dealer:'ai',phase:'deal',deck:[],
+    G={pScore:0,aScore:0,pPrev:0,aPrev:0,dealer:'ai',phase:'deal',deck:[],
        pHand:[],aHand:[],crib:[],starter:null,
        pSelected:[],playArea:[],playCount:0,
        pPlayed:[],aPlayed:[],pPass:false,aPass:false,
        lastScoreBreakdown:'',roundNum:0};
     dealHand();
   }
+  // Score helpers — capture the last score into pPrev/aPrev so the back peg
+  // can leapfrog forward when the front peg advances. Every place that used
+  // to do G.pScore+=X now goes through these.
+  function addP(pts){ G.pPrev=G.pScore; G.pScore+=pts; }
+  function addA(pts){ G.aPrev=G.aScore; G.aScore+=pts; }
   function dealHand(){
     G.roundNum++;
     G.deck=makeDeck();
@@ -80,8 +85,8 @@ window._gameFns.cribbage = function CRIB(a){
     aiDiscards.forEach(function(idx){G.crib.push(G.aHand.splice(idx,1)[0]);});
     G.starter=G.deck.pop();
     if(G.starter.rank===10){
-      if(G.dealer==='player'){G.pScore+=2;sm('Nibs! +2');}
-      else{G.aScore+=2;sm('AI nibs +2');}
+      if(G.dealer==='player'){addP(2);sm('Nibs! +2');}
+      else{addA(2);sm('AI nibs +2');}
       if(checkWin())return;
     }
     G.phase='peg';G.playArea=[];G.playCount=0;
@@ -121,7 +126,7 @@ window._gameFns.cribbage = function CRIB(a){
     G.playArea.push({card:card,who:'player'});
     G.playCount+=card.val;
     var pts=scorePeg(G.playArea,G.playCount);
-    if(pts>0){G.pScore+=pts;sm('+'+pts);_e('progress');}
+    if(pts>0){addP(pts);sm('+'+pts);_e('progress');}
     if(checkWin())return;
     G.pPass=false;G.aPass=false;
     render();
@@ -150,14 +155,14 @@ window._gameFns.cribbage = function CRIB(a){
       if(!pCanPlay){
         // Both passed — award last-card point, reset count
         var lastWho=G.playArea.length>0?G.playArea[G.playArea.length-1].who:'player';
-        if(lastWho==='ai')G.aScore+=1;else G.pScore+=1;
+        if(lastWho==='ai')addA(1);else addP(1);
         sm((lastWho==='ai'?'AI':'You')+' +1 (Go)');
         G.playCount=0;G.playArea=[];G.pPass=false;G.aPass=false;
         if(checkWin())return;
         render();checkPegContinue();
       }else{
         // AI passes, player keeps playing
-        sm('AI "Go" — +1 to you');G.pScore+=1;
+        sm('AI "Go" — +1 to you');addP(1);
         if(checkWin())return;
         render();
         // Player's turn (no auto-advance — wait for player card tap)
@@ -178,7 +183,7 @@ window._gameFns.cribbage = function CRIB(a){
     G.playArea.push({card:card,who:'ai'});
     G.playCount+=card.val;
     var pts=scorePeg(G.playArea,G.playCount);
-    if(pts>0){G.aScore+=pts;sm('AI +'+pts);}
+    if(pts>0){addA(pts);sm('AI +'+pts);}
     if(checkWin())return;
     if(G.playCount===31){
       setTimeout(function(){G.playCount=0;G.playArea=[];render();checkPegContinue();},800);
@@ -189,7 +194,7 @@ window._gameFns.cribbage = function CRIB(a){
   function checkPegContinue(){
     if(G.pPlayed.length>=4&&G.aPlayed.length>=4){
       var lastWho=G.playArea.length>0?G.playArea[G.playArea.length-1].who:'player';
-      if(lastWho==='player')G.pScore+=1;else G.aScore+=1;
+      if(lastWho==='player')addP(1);else addA(1);
       if(checkWin())return;
       setTimeout(showPhase,800);return;
     }
@@ -226,8 +231,8 @@ window._gameFns.cribbage = function CRIB(a){
         else if(who==='ai'){hand=G.aHand;label='AI hand';}
         else{hand=G.crib;label=(G.dealer==='player'?'Your':'AI')+' crib';}
         var result=scoreHand(hand,G.starter,who==='crib');
-        if(who==='player'||(who==='crib'&&G.dealer==='player'))G.pScore+=result.total;
-        else G.aScore+=result.total;
+        if(who==='player'||(who==='crib'&&G.dealer==='player'))addP(result.total);
+        else addA(result.total);
         G.lastScoreBreakdown=label+': '+result.total+' pts — '+result.breakdown;
         _e('milestone');
         if(result.total>=24)_e('progress');
@@ -291,20 +296,11 @@ window._gameFns.cribbage = function CRIB(a){
     var ps=document.getElementById('CBp');if(ps)ps.textContent=G.pScore;
     var as=document.getElementById('CBa');if(as)as.textContent=G.aScore;
     var h='';
-    // ── SCORE BAR — serif numerals + wooden border frame ──
-    h+='<div style="background:linear-gradient(180deg,rgba(155,115,45,0.25),rgba(95,70,20,0.35));border:1px solid rgba(200,168,75,0.45);border-radius:8px;padding:6px 10px;margin-bottom:6px;display:flex;align-items:center;gap:10px;box-shadow:inset 0 1px 0 rgba(255,220,140,0.15),0 2px 6px rgba(0,0,0,0.3);">';
-    h+='<div style="flex:0 0 auto;text-align:center;min-width:58px;">'
-      +'<div style="font-family:Georgia,serif;font-size:1.6rem;font-weight:700;color:#e8dcc8;line-height:1;text-shadow:0 2px 3px rgba(0,0,0,0.4);">'+G.pScore+'</div>'
-      +'<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:rgba(232,220,200,0.7);margin-top:2px;">YOU</div>'
-    +'</div>';
-    h+='<div style="flex:1;height:10px;background:rgba(0,0,0,.45);border-radius:5px;position:relative;overflow:hidden;border:1px solid rgba(0,0,0,0.5);box-shadow:inset 0 1px 2px rgba(0,0,0,0.6);">';
-    h+='<div style="position:absolute;top:0;left:0;height:100%;width:'+Math.min(100,(G.pScore/121)*100)+'%;background:linear-gradient(90deg,rgba(74,124,53,0.7),rgba(122,179,86,0.95));border-radius:5px;transition:width .4s;"></div>';
-    h+='<div style="position:absolute;top:0;right:0;height:100%;width:'+Math.min(100,(G.aScore/121)*100)+'%;background:linear-gradient(90deg,rgba(180,60,60,0.5),rgba(220,100,100,0.7));border-radius:5px;"></div>';
-    h+='</div>';
-    h+='<div style="flex:0 0 auto;text-align:center;min-width:58px;">'
-      +'<div style="font-family:Georgia,serif;font-size:1.6rem;font-weight:700;color:#dc8a8a;line-height:1;text-shadow:0 2px 3px rgba(0,0,0,0.4);">'+G.aScore+'</div>'
-      +'<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:rgba(232,220,200,0.7);margin-top:2px;">AI</div>'
-    +'</div>';
+    // ── PEG BOARD — two tracks stacked on a wood frame ──
+    h+='<div style="background:linear-gradient(135deg,#6b4520 0%,#4a2e14 50%,#3a2210 100%);border:1.5px solid rgba(0,0,0,0.6);border-radius:10px;padding:8px 10px;margin-bottom:8px;box-shadow:inset 0 1px 0 rgba(255,220,140,0.15),inset 0 -2px 4px rgba(0,0,0,0.5),0 3px 10px rgba(0,0,0,0.45);">';
+    h+=_pegBar('YOU',G.pScore,G.pPrev,'#7ab356');
+    h+='<div style="height:4px;"></div>';
+    h+=_pegBar('AI',G.aScore,G.aPrev,'#dc8a8a');
     h+='</div>';
     // ── STATUS ROW — phase + round + dealer ──
     var st='';
@@ -392,6 +388,42 @@ window._gameFns.cribbage = function CRIB(a){
     h+='</div>';
     pan.innerHTML=h;
   }
+  // Horizontal peg bar for one player. Renders a wooden track with 121
+  // hole markers, a back peg (outlined, at previous score) and a front peg
+  // (solid, at current score). Back peg appears only when it differs from
+  // the front — on first score, both share a spot.
+  function _pegBar(label, score, prevScore, color){
+    var pct = Math.min(100, score/121*100);
+    var prevPct = Math.min(100, prevScore/121*100);
+    var h='';
+    h+='<div style="display:flex;align-items:center;gap:8px;">';
+    h+='<div style="flex:0 0 auto;font-family:DM Mono,monospace;font-size:0.52rem;letter-spacing:0.18em;color:'+color+';width:24px;font-weight:700;">'+label+'</div>';
+    // Track — subtle gradient on the exposed board surface
+    h+='<div style="flex:1;position:relative;height:18px;background:linear-gradient(180deg,#2a1810,#1a0f08);border:1px solid rgba(0,0,0,0.65);border-radius:9px;box-shadow:inset 0 2px 4px rgba(0,0,0,0.65),inset 0 -1px 0 rgba(255,220,140,0.08);">';
+    // Hole dots every ~5 points (121/5 ≈ 24 holes) for texture
+    for(var m=5;m<=120;m+=5){
+      var mpct = m/121*100;
+      var isGroup = (m%10===0);
+      h+='<div style="position:absolute;top:6px;left:'+mpct+'%;width:3px;height:6px;margin-left:-1.5px;background:rgba(0,0,0,0.55);border-radius:50%;box-shadow:inset 0 1px 1px rgba(0,0,0,0.8);'+(isGroup?'opacity:1;':'opacity:0.55;')+'"></div>';
+    }
+    // Back peg — hollow, sits at the previous score
+    if(prevScore!==score){
+      h+='<div style="position:absolute;top:2px;left:'+prevPct+'%;transform:translateX(-50%);width:12px;height:14px;border-radius:6px 6px 4px 4px;background:linear-gradient(180deg,'+color+' 0%,'+_darken(color)+' 100%);border:1px solid rgba(0,0,0,0.5);opacity:0.55;box-shadow:0 1px 2px rgba(0,0,0,0.4);"></div>';
+    }
+    // Front peg — filled, sits at the current score
+    h+='<div style="position:absolute;top:2px;left:'+pct+'%;transform:translateX(-50%);width:12px;height:14px;border-radius:6px 6px 4px 4px;background:linear-gradient(180deg,'+color+' 0%,'+_darken(color)+' 100%);border:1px solid rgba(0,0,0,0.55);box-shadow:0 2px 4px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.35);transition:left .4s cubic-bezier(.2,.9,.35,1);"></div>';
+    h+='</div>';
+    h+='<div style="flex:0 0 auto;font-family:Georgia,serif;font-size:1rem;font-weight:700;color:#f5ebd0;min-width:32px;text-align:right;text-shadow:0 1px 2px rgba(0,0,0,0.5);">'+score+'</div>';
+    h+='</div>';
+    return h;
+  }
+  function _darken(hex){
+    // Quick hex shader for the peg gradient foot. Drops ~35% brightness.
+    var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+    r=Math.max(0,Math.round(r*0.55));g=Math.max(0,Math.round(g*0.55));b=Math.max(0,Math.round(b*0.55));
+    return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+  }
+
   function _cardHtml(c,sel,played,canPlay,isStarter,who,idx){
     var borderCol='#c4b998';
     if(who==='player')borderCol='#7ab356';
@@ -434,11 +466,11 @@ window._gameFns.cribbage = function CRIB(a){
       if(G.playCount+G.aHand[i].val<=31){aiHasCard=true;break;}
     }
     G.pPass=true;
-    if(aiHasCard){G.aScore+=1;sm('AI +1 (you said Go)');}
+    if(aiHasCard){addA(1);sm('AI +1 (you said Go)');}
     else{
       // Both can't play — count resets, last-card point
       var lastWho=G.playArea.length>0?G.playArea[G.playArea.length-1].who:'player';
-      if(lastWho==='ai')G.aScore+=1;else G.pScore+=1;
+      if(lastWho==='ai')addA(1);else addP(1);
       sm((lastWho==='ai'?'AI':'You')+' +1 (last card)');
       G.playCount=0;G.playArea=[];G.pPass=false;G.aPass=false;
     }
