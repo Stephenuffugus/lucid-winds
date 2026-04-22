@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.62';
+  var LW_VERSION='2026.04.22.63';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -71440,7 +71440,16 @@ window.canSee = {
     return _lwLevel()>=5;
   },
   keeperBarSinks: function(){
-    try { if (localStorage.getItem('lw_plant_xp_unlocked') === '1') return true; } catch(e){}
+    try {
+      if (localStorage.getItem('lw_plant_xp_unlocked') === '1') return true;
+      // Established-player bypass: if greenhouse has any plants, the player
+      // is past tutorial regardless of whether the flag was wiped by the
+      // self-heal at #69869 (tutorial flag may have gone wonky from a
+      // mid-flow restart). Don't grey out sinks for someone with a 50-plant
+      // greenhouse.
+      var gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+      if (gh.length >= 1) return true;
+    } catch(e){}
     return _lwLevel()>=6;
   },  // mystery/slots/weather — open as soon as tutorial finishes
   // Class pick is tutorial-unlocked at step 45. After tutorial
