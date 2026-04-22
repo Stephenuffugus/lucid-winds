@@ -338,6 +338,7 @@ function GKL(a){
             var depthMult = depth>12 ? 0.55 : depth>10 ? 0.7 : depth>7 ? 0.85 : 1.0;
             var peekUp = Math.max(9, Math.round(peekUpBase * depthMult))+'px';
             var peekDn = Math.max(6, Math.round(peekDnBase * depthMult))+'px';
+            cdEl.classList.add('gc-peek');
             cdEl.style.height=card.up?peekUp:peekDn;
             cdEl.style.overflow='hidden';
             cdEl.style.alignItems='flex-start';

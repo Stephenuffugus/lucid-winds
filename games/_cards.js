@@ -230,15 +230,15 @@ function _cdElClassic(d,card){
     d.style.color=clr;
     d.style.border='1px solid rgba(0,0,0,0.18)';
     d.innerHTML=
-      '<div style="position:absolute;top:3px;left:5px;line-height:1;text-align:center;color:'+clr+';font-family:Georgia,serif;pointer-events:none;">'
+      '<div class="gc-corner gc-corner-tl" style="position:absolute;top:3px;left:5px;line-height:1;text-align:center;color:'+clr+';font-family:Georgia,serif;pointer-events:none;">'
         +'<div style="font-size:clamp(.85rem,2.6vw,1.15rem);font-weight:700;">'+rnk+'</div>'
         +'<div style="font-size:clamp(.7rem,2vw,.95rem);line-height:1;margin-top:-1px;">'+sym+'</div>'
       +'</div>'
-      +'<div style="position:absolute;bottom:3px;right:5px;line-height:1;text-align:center;color:'+clr+';font-family:Georgia,serif;transform:rotate(180deg);transform-origin:center;pointer-events:none;">'
+      +'<div class="gc-corner gc-corner-br" style="position:absolute;bottom:3px;right:5px;line-height:1;text-align:center;color:'+clr+';font-family:Georgia,serif;transform:rotate(180deg);transform-origin:center;pointer-events:none;">'
         +'<div style="font-size:clamp(.85rem,2.6vw,1.15rem);font-weight:700;">'+rnk+'</div>'
         +'<div style="font-size:clamp(.7rem,2vw,.95rem);line-height:1;margin-top:-1px;">'+sym+'</div>'
       +'</div>'
-      +'<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:'+clr+';font-size:clamp(1.4rem,5vw,2.2rem);opacity:0.85;pointer-events:none;">'+sym+'</div>';
+      +'<div class="gc-center" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:'+clr+';font-size:clamp(1.4rem,5vw,2.2rem);opacity:0.85;pointer-events:none;">'+sym+'</div>';
   }else{
     d.className+=' gc-dn gc-classic';
     _cdBackStyle(d);
@@ -275,18 +275,18 @@ function _cdElFloral(d,card){
     var color=isRed?'red':'black';
     if(card.r===0){
       // Ace — decorative "A" art, color-matched
-      centerHtml='<img src="'+_FL_BASE+'ace-'+color+'.png" alt="" '
+      centerHtml='<img class="gc-center" src="'+_FL_BASE+'ace-'+color+'.png" alt="" '
         +'style="position:absolute;inset:8% 10%;width:80%;height:84%;'
         +'object-fit:contain;pointer-events:none;">';
     }else if(card.r>=10){
       // Jack/Queen/King face art
       var face=card.r===10?'jack':(card.r===11?'queen':'king');
-      centerHtml='<img src="'+_FL_BASE+face+'-'+color+'.png" alt="" '
+      centerHtml='<img class="gc-center" src="'+_FL_BASE+face+'-'+color+'.png" alt="" '
         +'style="position:absolute;inset:8% 10%;width:80%;height:84%;'
         +'object-fit:contain;pointer-events:none;">';
     }else{
       // 2–10: big centered suit pip
-      centerHtml='<img src="'+suitPng+'" alt="" '
+      centerHtml='<img class="gc-center" src="'+suitPng+'" alt="" '
         +'style="position:absolute;inset:18% 22%;width:56%;height:64%;'
         +'object-fit:contain;pointer-events:none;opacity:0.92;">';
     }
@@ -294,7 +294,8 @@ function _cdElFloral(d,card){
     var corner=function(pos){
       var rot=pos==='br'?'transform:rotate(180deg);transform-origin:center;':'';
       var loc=pos==='br'?'bottom:3px;right:5px;':'top:3px;left:5px;';
-      return '<div style="position:absolute;'+loc+'line-height:1;text-align:center;'
+      var cls=pos==='br'?'gc-corner gc-corner-br':'gc-corner gc-corner-tl';
+      return '<div class="'+cls+'" style="position:absolute;'+loc+'line-height:1;text-align:center;'
         +'font-family:Georgia,serif;color:'+rankClr+';pointer-events:none;z-index:2;'+rot+'">'
         +'<div style="font-size:clamp(.85rem,2.6vw,1.15rem);font-weight:700;">'+rnk+'</div>'
         +'<img src="'+suitPng+'" alt="" style="display:block;height:clamp(10px,2.6vw,16px);'
