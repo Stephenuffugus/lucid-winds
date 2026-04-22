@@ -427,9 +427,15 @@ window._cdFit=_cdFit;
 // Single debounced window-resize listener that re-renders whichever
 // solitaire is active. Games set window._cdActiveRn = their rn fn
 // during init; they can null it on teardown (optional).
+//
+// Mobile browsers fire resize when the address bar shows/hides on scroll —
+// that only changes innerHeight, not innerWidth. Skipping those events
+// avoids every tap triggering a full rerender and a visible screen jerk.
 (function(){
-  var t;
+  var t, lastW = window.innerWidth;
   function onResize(){
+    if(window.innerWidth === lastW)return; // width unchanged → ignore
+    lastW = window.innerWidth;
     clearTimeout(t);
     t = setTimeout(function(){
       try{ if(typeof window._cdActiveRn === 'function') window._cdActiveRn(); }catch(e){}

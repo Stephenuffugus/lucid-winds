@@ -403,7 +403,8 @@ function GKL(a){
     // Top row: stock, waste, spacer, 4 foundations
     var topRow=document.createElement('div');
     // Auto-fit: 7 tableau columns drive sizing; top-row spacer absorbs leftover.
-    var fit=window._cdFit?window._cdFit(7,{maxW:96,gap:4,pad:12}):{w:'clamp(56px,14.5vw,92px)',h:'clamp(78px,20.2vw,128px)',font:'clamp(.65rem,1.9vw,.9rem)',peek:'18px',raw:{h:128,peek:18}};
+    // Cap at 80 so landscape phones aren't swamped by huge cards.
+    var fit=window._cdFit?window._cdFit(7,{maxW:80,gap:4,pad:12}):{w:'clamp(56px,14.5vw,80px)',h:'clamp(78px,20.2vw,112px)',font:'clamp(.65rem,1.9vw,.85rem)',peek:'16px',raw:{h:112,peek:16}};
     var klW=fit.w,klH=fit.h,klF=fit.font;
     topRow.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center;padding:4px 0;width:100%;max-width:100vw;margin:0 auto;align-items:flex-start;flex-wrap:nowrap';
 
@@ -477,10 +478,12 @@ function GKL(a){
     // Tableau
     var tabRow=document.createElement('div');
     tabRow.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center;padding:4px 0;width:100%;max-width:100vw;margin:0 auto;align-items:flex-start';
-    // Peek shrinks with depth so a 14-card pile still fits vertically.
-    // Base peek-up ~ 14% of card height, peek-down ~ 9% (face-down shows less).
-    var peekUpBase = Math.round(fit.raw.h * 0.14);
-    var peekDnBase = Math.round(fit.raw.h * 0.09);
+    // Peek via negative margin-top — each card keeps its full height + border-
+    // radius, only the next card's overlap hides the bottom. Face-up cards show
+    // their top-left rank/suit corner (~20% reveal). Face-down cards reveal
+    // less (~11%) so stacks stay tight and suits of lower cards stay legible.
+    var revealUp = 0.18; // % of h shown per face-up card under top
+    var revealDn = 0.11; // % of h shown per face-down card
 
     for(var c=0;c<7;c++){
       var colDiv=document.createElement('div');
@@ -499,24 +502,23 @@ function GKL(a){
         colDiv.appendChild(em);
       }else{
         var depth=tableau[c].length;
+        // Compress peek when the pile grows deep so the bottom stays on-screen.
+        var depthMult = depth>14 ? 0.5 : depth>11 ? 0.65 : depth>8 ? 0.8 : 1.0;
         for(var i=0;i<depth;i++){
           var card=tableau[c][i];
           var cdEl=_cdEl(card);
           cdEl.style.width=klW;cdEl.style.height=klH;cdEl.style.fontSize=klF;
-
-          // Stacked cards: show peek only, last card full height
-          if(i<depth-1){
-            // Compress peek as stack grows past 7/10 cards so the bottom stays on-screen.
-            var depthMult = depth>12 ? 0.55 : depth>10 ? 0.7 : depth>7 ? 0.85 : 1.0;
-            var peekUp = Math.max(9, Math.round(peekUpBase * depthMult))+'px';
-            var peekDn = Math.max(6, Math.round(peekDnBase * depthMult))+'px';
-            cdEl.classList.add('gc-peek');
-            cdEl.style.height=card.up?peekUp:peekDn;
-            cdEl.style.overflow='hidden';
-            cdEl.style.alignItems='flex-start';
-            cdEl.style.paddingTop='2px';
-            cdEl.style.fontSize=klF;
+          cdEl.style.position='relative';
+          cdEl.style.zIndex=i;
+          // Overlap the previous card — reveal depends on face-up vs face-down.
+          if(i>0){
+            var prev=tableau[c][i-1];
+            var reveal = (prev.up?revealUp:revealDn) * depthMult;
+            var overlap = Math.round(fit.raw.h * (1 - reveal));
+            cdEl.style.marginTop = (-overlap)+'px';
           }
+          // All cards below the top hide their center art + bottom-right corner.
+          if(i<depth-1)cdEl.classList.add('gc-peek');
           // Selection highlight
           if(sel&&sel.src==='tab'&&sel.col===c&&i>=sel.idx&&card.up){
             cdEl.className+=' gc-sel';
@@ -525,8 +527,6 @@ function GKL(a){
           if(colLegal&&i===depth-1)cdEl.classList.add('gc-legal');
           if(card.up){
             cdEl.style.cursor='pointer';
-            cdEl.style.position='relative';
-            cdEl.style.zIndex=i;
             (function(ci,idx){cdEl.onclick=function(ev){ev.stopPropagation();tapTab(ci,idx)}})(c,i);
           }
           colDiv.appendChild(cdEl);
