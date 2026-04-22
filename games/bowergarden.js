@@ -90,8 +90,9 @@ window._gameFns.bowergarden = function BG(a){
       +'0 6px 22px rgba(0,0,0,0.55);';
   a.appendChild(pan);
   function _pip(suitName){return (window._cdPipFor)?window._cdPipFor(suitName):SUIT_ICONS[suitName];}
-  var _bgStyleLbl='🃏 Style';
-  mc(a).innerHTML='<button class="gb-new" onclick="_BGN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="BGstyle" onclick="_BGToggleStyle()" style="font-size:0.7rem;">'+_bgStyleLbl+'</button>';
+  // mc(a) still runs so downstream code finds the controls container, but
+  // we leave it empty — NEW + Style now live inside the pan.
+  mc(a);
   window._BGToggleStyle=function(){
     if(typeof window._cdToggleStyle!=='function'){
       if(window._toast)window._toast('Card styles loading — try again in a sec.');
@@ -507,6 +508,12 @@ window._gameFns.bowergarden = function BG(a){
     }
     // Legacy name — keep activeClass working for any older code paths.
     var activeClass=seatClasses;
+    // ── CONTROLS BAR — top right, unobtrusive ──
+    h+='<div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
+    h+='<button class="gb" onclick="if(window._cdToggleStyle){window._cdToggleStyle();if(typeof render===\'function\')render();}" title="Card style" style="display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:4px 10px;font-size:0.6rem;background:rgba(0,0,0,0.35);border:1px solid rgba(180,140,70,0.3);color:#f5ebd0;font-family:Georgia,serif;font-style:italic;">';
+    h+='<img src="assets/decks/floral/suit-club.png" alt="" style="width:16px;height:16px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6));">Style</button>';
+    h+='<button class="gb" onclick="_BGN()" title="New game" style="display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:4px 12px;font-size:0.62rem;background:linear-gradient(180deg,rgba(122,179,86,0.25),rgba(74,124,53,0.35));border:1px solid rgba(122,179,86,0.5);color:#e8dcc8;font-family:Georgia,serif;">↻ New Game</button>';
+    h+='</div>';
     // ── SCORE BAR — twin team strips w/ color + score + 5-dot trick meter ──
     h+=_scoreBarHtml();
     // ── TRUMP CHIP + DEALER + CALLER — pinned top center throughout the hand ──

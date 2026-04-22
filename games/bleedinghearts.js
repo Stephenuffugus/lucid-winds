@@ -93,8 +93,10 @@ window._gameFns.bleedinghearts = function BH(a){
       +'inset 0 0 40px rgba(0,0,0,0.5),'
       +'0 6px 22px rgba(0,0,0,0.6);';
   a.appendChild(pan);
-  var _bhStyleLbl='🃏 Style';
-  mc(a).innerHTML='<button class="gb-new" onclick="_BHN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="BHstyle" onclick="_BHToggleStyle()" style="font-size:0.7rem;">'+_bhStyleLbl+'</button>';
+  // mc(a) still runs so downstream code finds the controls container, but
+  // we leave it empty — NEW + Style now live inside the pan so the bottom
+  // controls row never overlaps the player's hand.
+  mc(a);
   window._BHToggleStyle=function(){
     if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
@@ -352,6 +354,12 @@ window._gameFns.bleedinghearts = function BH(a){
 
   function render(){
     var h='';
+    // ── CONTROLS BAR — floats above the score strip, small + unobtrusive ──
+    h+='<div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
+    h+='<button class="gb" onclick="_BHToggleStyle()" title="Card style" style="display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:4px 10px;font-size:0.6rem;background:rgba(0,0,0,0.35);border:1px solid rgba(180,140,70,0.3);color:#f5ebd0;font-family:Georgia,serif;font-style:italic;">';
+    h+='<img src="assets/decks/floral/suit-heart.png" alt="" style="width:16px;height:16px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6));">Style</button>';
+    h+='<button class="gb" onclick="_BHN()" title="New game" style="display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:4px 12px;font-size:0.62rem;background:linear-gradient(180deg,rgba(122,179,86,0.25),rgba(74,124,53,0.35));border:1px solid rgba(122,179,86,0.5);color:#e8dcc8;font-family:Georgia,serif;">↻ New Game</button>';
+    h+='</div>';
     // ── SCORE STRIP — 4 columns, each with player's identity color ──
     // Lowest running score is 'winning' (Hearts is a lose-to-highest game).
     // Players at 90+ get a red warning pulse — they're about to lose.

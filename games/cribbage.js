@@ -44,8 +44,9 @@ window._gameFns.cribbage = function CRIB(a){
   a.appendChild(pan);
   // Style-aware pip — Garden swaps ♠♥♦♣ for 🍄🌸🐝🐦
   function _pip(idx){return (window._cdSuit)?window._cdSuit(idx):SUITS[idx];}
-  var _cbStyleLbl='🃏 Style';
-  mc(a).innerHTML='<button class="gb-new" onclick="_CBN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="CBstyle" onclick="_CBToggleStyle()" style="font-size:0.7rem;">'+_cbStyleLbl+'</button>';
+  // mc(a) still runs so downstream code finds the controls container, but
+  // we leave it empty — NEW + Style now live inside the pan.
+  mc(a);
   window._CBToggleStyle=function(){
     if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
@@ -411,6 +412,12 @@ window._gameFns.cribbage = function CRIB(a){
     var ps=document.getElementById('CBp');if(ps)ps.textContent=G.pScore;
     var as=document.getElementById('CBa');if(as)as.textContent=G.aScore;
     var h='';
+    // ── CONTROLS BAR — top right, unobtrusive ──
+    h+='<div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
+    h+='<button class="gb" onclick="if(window._cdToggleStyle){window._cdToggleStyle();if(typeof render===\'function\')render();}" title="Card style" style="display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:4px 10px;font-size:0.6rem;background:rgba(0,0,0,0.35);border:1px solid rgba(180,140,70,0.3);color:#f5ebd0;font-family:Georgia,serif;font-style:italic;">';
+    h+='<img src="assets/decks/floral/suit-spade.png" alt="" style="width:16px;height:16px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6));">Style</button>';
+    h+='<button class="gb" onclick="_CBN()" title="New game" style="display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:4px 12px;font-size:0.62rem;background:linear-gradient(180deg,rgba(122,179,86,0.25),rgba(74,124,53,0.35));border:1px solid rgba(122,179,86,0.5);color:#e8dcc8;font-family:Georgia,serif;">↻ New Game</button>';
+    h+='</div>';
     // ── PEG BOARD — wood frame with two felt tracks ──
     h+='<div style="position:relative;background:'
       +'repeating-linear-gradient(92deg,rgba(0,0,0,0.12) 0 1px,transparent 1px 7px),'
