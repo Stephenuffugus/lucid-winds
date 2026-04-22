@@ -11,6 +11,7 @@ if(!document.getElementById('bh-anim-style')){
   var _bhs=document.createElement('style');_bhs.id='bh-anim-style';
   _bhs.textContent=
     '@keyframes bhTurnRing{0%,100%{box-shadow:0 0 0 2px rgba(255,220,112,0.7),0 0 18px rgba(255,220,112,0.4)}50%{box-shadow:0 0 0 3px rgba(255,220,112,0.95),0 0 26px rgba(255,220,112,0.6)}}'+
+    '@keyframes bhArrowNudge{0%,100%{transform:translateX(0);opacity:1}50%{transform:translateX(6px);opacity:.6}}'+
     '.bh-seat{transition:opacity .3s ease,filter .3s ease;}'+
     '.bh-seat.bh-active{animation:bhTurnRing 1.4s ease-in-out infinite;}'+
     '.bh-seat.bh-inactive{opacity:0.55;}';
@@ -326,12 +327,43 @@ window._gameFns.bleedinghearts = function BH(a){
     for(var e=0;e<hands[E].length;e++)h+='<span style="margin-top:'+(e===0?'0':'-26px')+';">'+_cardHtml(null,true)+'</span>';
     h+='</div></div>';
     h+='</div>';
-    // Pass UI
+    // Pass UI — dedicated screen with giant directional arrow + 3 ghost
+    // slots. When 3 are selected, the slots fill and the PASS button
+    // becomes active. Matches the Trickster / Hearts+ convention.
     if(phase==='passing'){
       var dirs=['LEFT','RIGHT','ACROSS'];
-      h+='<div style="text-align:center;padding:8px;background:rgba(26,31,23,0.5);border-radius:8px;margin:6px 0;">';
-      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:6px;">PASS 3 CARDS '+dirs[passDir]+'</div>';
-      h+='<button class="gb" onclick="_BHPASS()" '+(passSelection.length!==3?'disabled':'')+' style="min-height:44px;padding:10px 20px;'+(passSelection.length===3?'background:rgba(200,168,75,0.2);border-color:rgba(200,168,75,0.5);color:var(--gold);':'')+'">PASS ('+passSelection.length+'/3)</button>';
+      var arrows={LEFT:'◀',RIGHT:'▶',ACROSS:'▲'};
+      var dirLabel=dirs[passDir];
+      var arrow=arrows[dirLabel];
+      var targetName = dirLabel==='LEFT'?NAMES[W] : dirLabel==='RIGHT'?NAMES[E] : NAMES[N];
+      var targetColor = dirLabel==='LEFT'?PLAYER_COLORS[W] : dirLabel==='RIGHT'?PLAYER_COLORS[E] : PLAYER_COLORS[N];
+      h+='<div style="text-align:center;padding:12px 10px;background:radial-gradient(ellipse at 50% 50%,rgba(255,220,112,0.08) 0%,rgba(0,0,0,0.5) 70%);border:1.5px solid rgba(180,140,70,0.35);border-radius:12px;margin:6px 0;box-shadow:inset 0 0 18px rgba(0,0,0,0.4);">';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.52rem;letter-spacing:0.22em;color:rgba(232,220,200,0.6);text-transform:uppercase;margin-bottom:4px;">Pass 3 cards</div>';
+      h+='<div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:10px;">';
+      h+='<span style="font-size:2rem;line-height:1;color:#ffdc70;text-shadow:0 0 12px rgba(255,220,112,0.5);animation:bhArrowNudge 1.6s ease-in-out infinite;">'+arrow+'</span>';
+      h+='<div style="font-family:Georgia,serif;">';
+      h+='<div style="font-size:1.2rem;font-weight:700;color:#f5ebd0;letter-spacing:0.06em;">'+dirLabel+'</div>';
+      h+='<div style="font-size:0.65rem;font-style:italic;color:'+targetColor+';margin-top:1px;">to '+targetName+'</div>';
+      h+='</div>';
+      h+='<span style="font-size:2rem;line-height:1;color:#ffdc70;text-shadow:0 0 12px rgba(255,220,112,0.5);animation:bhArrowNudge 1.6s ease-in-out infinite;">'+arrow+'</span>';
+      h+='</div>';
+      // Ghost slots — fill as cards are selected
+      h+='<div style="display:flex;justify-content:center;gap:8px;margin-bottom:10px;">';
+      for(var ps=0;ps<3;ps++){
+        var card=passSelection[ps];
+        if(card){
+          var cCol=card.suit==='hearts'||card.suit==='diamonds'?'#b42a2a':'#1a1a1a';
+          h+='<div style="width:36px;height:52px;border-radius:5px;background:linear-gradient(180deg,#faf3dd,#f0e7c8);border:2px solid #ffdc70;color:'+cCol+';font-family:Georgia,serif;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(255,220,112,0.4);font-size:0.7rem;">';
+          h+=card.rank+'<span style="font-size:0.9rem;">'+_pip(card.suit)+'</span></div>';
+        }else{
+          h+='<div style="width:36px;height:52px;border-radius:5px;border:2px dashed rgba(232,220,200,0.35);background:rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-style:italic;font-size:0.6rem;color:rgba(232,220,200,0.35);">·</div>';
+        }
+      }
+      h+='</div>';
+      var ready=passSelection.length===3;
+      h+='<button class="gb" onclick="_BHPASS()" '+(ready?'':'disabled')+' style="min-height:44px;padding:10px 22px;font-family:Georgia,serif;font-size:0.85rem;'+(ready?'background:linear-gradient(180deg,rgba(255,220,112,0.25),rgba(200,168,75,0.3));border:2px solid #ffdc70;color:#f5ebd0;box-shadow:0 0 14px rgba(255,220,112,0.35);':'opacity:0.5;')+'">';
+      h+=ready ? 'Pass '+dirLabel.toLowerCase() : 'Tap '+(3-passSelection.length)+' more';
+      h+='</button>';
       h+='</div>';
     }
     // Player hand
