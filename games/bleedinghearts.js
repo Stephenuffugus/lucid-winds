@@ -13,6 +13,8 @@ if(!document.getElementById('bh-anim-style')){
     '@keyframes bhTurnRing{0%,100%{box-shadow:0 0 0 2px rgba(255,220,112,0.7),0 0 18px rgba(255,220,112,0.4)}50%{box-shadow:0 0 0 3px rgba(255,220,112,0.95),0 0 26px rgba(255,220,112,0.6)}}'+
     '@keyframes bhArrowNudge{0%,100%{transform:translateX(0);opacity:1}50%{transform:translateX(6px);opacity:.6}}'+
     '@keyframes bhBreakFlash{0%{transform:scale(1);box-shadow:0 0 0 0 rgba(230,57,70,0.9)}30%{transform:scale(1.15);box-shadow:0 0 0 12px rgba(230,57,70,0.45),0 0 30px rgba(230,57,70,0.75)}100%{transform:scale(1);box-shadow:0 0 10px rgba(220,138,138,0.25)}}'+
+    '@keyframes bhMoonIn{0%{opacity:0}100%{opacity:1}}'+
+    '@keyframes bhMoonRise{0%{transform:translateY(60px) scale(0.4);opacity:0}60%{transform:translateY(-8px) scale(1.1);opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}'+
     '@keyframes bhQSFlash{0%{transform:translate(-50%,0) scale(1)}25%{transform:translate(-50%,-4px) scale(1.35);filter:drop-shadow(0 0 14px rgba(230,57,70,0.9))}100%{transform:translate(-50%,0) scale(1.2);filter:drop-shadow(0 0 8px rgba(139,0,0,0.7))}}'+
     '@keyframes bhWinGlow{0%,100%{box-shadow:0 0 0 2px #ffdc70,0 0 16px rgba(255,220,112,0.55)}50%{box-shadow:0 0 0 3px #ffe896,0 0 24px rgba(255,232,150,0.8)}}'+
     '.bh-seat{transition:opacity .3s ease,filter .3s ease;}'+
@@ -48,6 +50,13 @@ window._gameFns.bleedinghearts = function BH(a){
   // One-shot flag — hearts-broken moment animation fires only on the render
   // right after the break.
   var heartsJustBroke=false;
+  // Last-trick history — the full 4-card stack from the trick that just
+  // closed. Tapping the 🕐 button near the player hand opens it in an
+  // overlay for review. Cleared at the top of each new hand.
+  var lastTrick=null, showingHistory=false;
+  // Shoot-the-moon takeover state. Set in scoreRound if someone collected
+  // all 26 points; render draws a full-screen dramatic reveal for ~2.5s.
+  var moonShot=null; // {seat, color}
   // Per-player identity colors. Hearts is a free-for-all so each seat has its
   // own distinct accent (you=sage, west=sky, north=rose, east=gold).
   var PLAYER_COLORS=['#7ab356','#5b9bd1','#dc8a8a','#d4b86a'];
@@ -161,6 +170,7 @@ window._gameFns.bleedinghearts = function BH(a){
     for(i=0;i<4;i++)sortHand(hands[i]);
     roundPts=[0,0,0,0];heartsBroken=false;trick=[];trickCards=[null,null,null,null];
     voids=[{},{},{},{}];trickWinner=-1;qsInTrick=false;heartsJustBroke=false;
+    lastTrick=null;showingHistory=false;moonShot=null;
   }
   function newRound(){
     roundNum++;deal();passDir=(roundNum-1)%4;
@@ -225,6 +235,8 @@ window._gameFns.bleedinghearts = function BH(a){
         render();
         // Beat 2: clear after 1100ms. Longer than before so the drama lands.
         setTimeout(function(){
+          // Snapshot the trick so the player can review it via the 🕐 button.
+          lastTrick={cards:trick.slice(),winner:winner,pts:pts};
           trickWinner=-1;qsInTrick=false;
           trick=[];trickCards=[null,null,null,null];trickNum++;
           if(hands[0].length===0){scoreRound();return;}
@@ -245,24 +257,43 @@ window._gameFns.bleedinghearts = function BH(a){
   }
   function scoreRound(){
     phase='scoring';
+    // Detect shoot-the-moon BEFORE applying the flip, so we can drive a
+    // full-screen reveal first.
+    var moonSeat=-1;
     for(var p=0;p<4;p++){
-      if(roundPts[p]===26){
-        for(var j=0;j<4;j++)if(j!==p)roundPts[j]=26;
-        roundPts[p]=0;sm(NAMES[p]+' shot the moon!');_e('milestone');
-        break;
+      if(roundPts[p]===26){moonSeat=p;break;}
+    }
+    function finalize(){
+      if(moonSeat>=0){
+        for(var j=0;j<4;j++)if(j!==moonSeat)roundPts[j]=26;
+        roundPts[moonSeat]=0;
+        sm(NAMES[moonSeat]+' shot the moon!');
+        _e('milestone');
       }
+      for(var pp=0;pp<4;pp++)scores[pp]+=roundPts[pp];
+      var maxScore=Math.max.apply(null,scores);
+      if(maxScore>=100){
+        var minScore=Math.min.apply(null,scores);var won=scores[S]===minScore;
+        if(won){_e('game_win');_playWin();sm('♥ You win! '+scores[S]+' pts');}
+        else{_e('game_loss');_play('lose');sm('You lose. '+scores[S]+' pts');}
+        _sr('bleedinghearts',{w:won,s:scores[S],r:roundNum});
+        setTimeout(function(){scores=[0,0,0,0];roundNum=0;trickNum=0;newRound();},3000);
+        return;
+      }
+      setTimeout(newRound,2000);
     }
-    for(p=0;p<4;p++)scores[p]+=roundPts[p];
-    var maxScore=Math.max.apply(null,scores);
-    if(maxScore>=100){
-      var minScore=Math.min.apply(null,scores);var won=scores[S]===minScore;
-      if(won){_e('game_win');_playWin();sm('♥ You win! '+scores[S]+' pts');}
-      else{_e('game_loss');_play('lose');sm('You lose. '+scores[S]+' pts');}
-      _sr('bleedinghearts',{w:won,s:scores[S],r:roundNum});
-      setTimeout(function(){scores=[0,0,0,0];roundNum=0;trickNum=0;newRound();},3000);
-      return;
+    if(moonSeat>=0){
+      // Full-screen moon takeover — 2.6s of drama before the score posts.
+      moonShot={seat:moonSeat,color:PLAYER_COLORS[moonSeat]};
+      render();
+      _e('progress');
+      setTimeout(function(){
+        moonShot=null;
+        finalize();
+      },2600);
+    }else{
+      finalize();
     }
-    setTimeout(newRound,2000);
   }
   function onCardClick(card){
     if(phase==='passing'){togglePassSel(card);return;}
@@ -453,9 +484,49 @@ window._gameFns.bleedinghearts = function BH(a){
       h+='</div>';
     }
     h+='</div></div>';
+    // History button — small 🕐 pinned at the bottom-right of the pan so the
+    // player can review the previous trick. Disabled until there is one.
+    if(lastTrick){
+      h+='<div style="text-align:right;padding:0 4px 4px;"><button class="gb" onclick="_BHhist()" style="min-height:32px;padding:4px 10px;font-size:0.6rem;background:rgba(0,0,0,0.4);border:1px solid rgba(232,220,200,0.25);color:rgba(232,220,200,0.75);font-family:Georgia,serif;font-style:italic;">🕐 Last trick</button></div>';
+    }
+    // Last-trick overlay — a translucent scrim with all four cards laid out.
+    if(showingHistory && lastTrick){
+      h+='<div onclick="_BHhistClose()" style="position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;cursor:pointer;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);">';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.6rem;letter-spacing:0.2em;color:rgba(232,220,200,0.65);text-transform:uppercase;margin-bottom:12px;">Previous trick</div>';
+      h+='<div style="display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;max-width:90vw;">';
+      for(var ht=0;ht<lastTrick.cards.length;ht++){
+        var ltc=lastTrick.cards[ht];
+        var ltRed=(ltc.card.suit==='hearts'||ltc.card.suit==='diamonds');
+        var ltCol=ltRed?'#b42a2a':'#1a1a1a';
+        var ltSeatCol=PLAYER_COLORS[ltc.player];
+        var ltWin=(ltc.player===lastTrick.winner);
+        h+='<div style="text-align:center;">';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;letter-spacing:0.14em;color:'+ltSeatCol+';text-transform:uppercase;margin-bottom:4px;font-weight:700;">'+NAMES[ltc.player]+(ltWin?' <span style="color:#ffdc70;">✦</span>':'')+'</div>';
+        h+='<div style="width:60px;height:84px;border-radius:8px;background:linear-gradient(180deg,#faf3dd,#f0e7c8);border:2px solid '+(ltWin?'#ffdc70':ltSeatCol)+';color:'+ltCol+';display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;font-size:0.9rem;box-shadow:'+(ltWin?'0 0 18px rgba(255,220,112,0.5),':'')+'0 3px 8px rgba(0,0,0,0.6);">';
+        h+='<span>'+ltc.card.rank+'</span><span style="font-size:1.6rem;line-height:1;">'+_pip(ltc.card.suit)+'</span>';
+        h+='</div></div>';
+      }
+      h+='</div>';
+      h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.85rem;color:#f5ebd0;margin-top:16px;">'+NAMES[lastTrick.winner]+' won'+(lastTrick.pts>0?' · +'+lastTrick.pts+' pts':'')+'</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.15em;color:rgba(232,220,200,0.4);margin-top:20px;">Tap anywhere to close</div>';
+      h+='</div>';
+    }
+    // Shoot-the-moon full-screen takeover. 2.6s of drama per scoreRound.
+    if(moonShot){
+      var mColor=moonShot.color, mName=NAMES[moonShot.seat];
+      var mIsYou = moonShot.seat===S;
+      h+='<div style="position:fixed;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(60,40,100,0.5) 0%,rgba(10,5,20,0.95) 70%);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;animation:bhMoonIn 0.6s ease-out;">';
+      h+='<div style="font-size:5rem;line-height:1;margin-bottom:16px;animation:bhMoonRise 1.2s cubic-bezier(.2,1.3,.3,1);filter:drop-shadow(0 0 32px rgba(255,230,160,0.7));">🌕</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.62rem;letter-spacing:0.28em;color:rgba(232,220,200,0.55);text-transform:uppercase;margin-bottom:10px;">'+(mIsYou?'You':'They')+'</div>';
+      h+='<div style="font-family:Georgia,serif;font-size:2rem;font-weight:700;color:'+mColor+';letter-spacing:0.04em;text-shadow:0 0 24px '+mColor+'aa;text-align:center;">'+(mIsYou?'SHOT THE MOON':mName.toUpperCase()+' SHOT THE MOON')+'</div>';
+      h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.85rem;color:'+(mIsYou?'#7ab356':'#dc8a8a')+';margin-top:12px;">'+(mIsYou?'+26 to everyone else':'+26 to you')+'</div>';
+      h+='</div>';
+    }
     pan.innerHTML=h;
   }
 
+  window._BHhist=function(){showingHistory=true;render();};
+  window._BHhistClose=function(){showingHistory=false;render();};
   window._BHN=function(){
     // Reset full state. Was missing phase/passSelection — pressing NEW
     // mid-pass left stale selections that bled into the new round.
