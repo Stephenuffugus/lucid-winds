@@ -25,6 +25,7 @@ if(!document.getElementById('bg-anim-style')){
     '.bg-played-E{animation:bgSlideE .32s cubic-bezier(.4,1.4,.5,1) both}'+
     '@keyframes bgPulse{0%{box-shadow:0 0 0 0 rgba(200,168,75,.6)}70%{box-shadow:0 0 0 8px rgba(200,168,75,0)}100%{box-shadow:0 0 0 0 rgba(200,168,75,0)}}'+
     '@keyframes bgTurnRing{0%,100%{box-shadow:0 0 0 3px rgba(255,220,112,0.75),0 0 22px rgba(255,220,112,0.45)}50%{box-shadow:0 0 0 4px rgba(255,220,112,0.9),0 0 30px rgba(255,220,112,0.65)}}'+
+    '@keyframes bgBidFlash{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:1}}'+
     '.bg-dealer-badge{display:inline-block;width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff4c2 0%,#d4b86a 40%,#8b6a20 100%);color:#3a2a08;font-family:Georgia,serif;font-size:0.75rem;font-weight:700;text-align:center;line-height:20px;margin-left:6px;vertical-align:middle;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 2px 4px rgba(0,0,0,0.5);border:1.5px solid #5a4010;text-shadow:0 1px 0 rgba(255,255,255,0.4);}'+
     '.bg-seat{transition:opacity .3s ease;border-radius:10px;}'+
     '.bg-seat.bg-inactive{opacity:0.55;}'+
@@ -52,6 +53,10 @@ window._gameFns.bowergarden = function BG(a){
   var teamScore=[0,0],teamTricks=[0,0];
   var callingTeam=-1,callingSeat=-1,phase='',roundNum=0;
   var loner=false,sittingOut=-1; // loner = caller went alone, sittingOut = partner who sits out
+  // Bidding ticker — persistent tag per seat (null | 'pass' | {kind:'order'|'call', suit, alone})
+  // So players can reconstruct who decided what without relying on a vanished toast.
+  var bidDecisions=[null,null,null,null];
+  var lastBidSeat=-1; // the most recent bidder (for a brief 'fresh' highlight)
 
   ms(a,'<span style="font-family:Georgia,serif;letter-spacing:.06em;">🃏 <strong id="BGs" style="color:#7ab356;font-size:1.2em;">0</strong> <span style="color:rgba(232,220,200,0.5);font-size:0.8em;">vs</span> <strong id="BGo" style="color:#dc8a8a;font-size:1.2em;">0</strong></span>');
   mm(a);
@@ -107,6 +112,7 @@ window._gameFns.bowergarden = function BG(a){
     upcard=deck[20];
     trumpSuit='';teamTricks=[0,0];callingTeam=-1;callingSeat=-1;trick=[];trickCards=[null,null,null,null];
     loner=false;sittingOut=-1;
+    bidDecisions=[null,null,null,null];lastBidSeat=-1;
   }
   // Heuristic: should THIS hand go alone?
   // Strong indicators: both bowers + ace of trump, OR right bower + 3 more trumps.
@@ -236,12 +242,19 @@ window._gameFns.bowergarden = function BG(a){
     if(phase!=='call1')return;
     if(aiOrderUp(currentPlayer,upcard)){
       var alone=aiShouldGoAlone(currentPlayer,upcard.suit);
+      bidDecisions[currentPlayer]={kind:'order',suit:upcard.suit,alone:alone};
+      lastBidSeat=currentPlayer;
       orderUp(currentPlayer,alone);return;
     }
+    bidDecisions[currentPlayer]='pass';lastBidSeat=currentPlayer;
     sm(PLAYER_NAMES[currentPlayer]+' passes');
     currentPlayer=(currentPlayer+1)%4;
-    if(currentPlayer===leader){phase='call2';currentPlayer=leader;
-      if(currentPlayer!==SOUTH)setTimeout(aiCall2,600);else render();return;}
+    if(currentPlayer===leader){
+      phase='call2';currentPlayer=leader;
+      // Clear pass tags from round 1 so round-2 decisions don't pile up.
+      bidDecisions=[null,null,null,null];lastBidSeat=-1;
+      if(currentPlayer!==SOUTH)setTimeout(aiCall2,600);else render();return;
+    }
     render();if(currentPlayer!==SOUTH)setTimeout(aiCall1,600);
   }
   function aiCall2(){
@@ -249,14 +262,19 @@ window._gameFns.bowergarden = function BG(a){
     var suit=aiPickTrump(currentPlayer);
     if(suit){
       var alone=aiShouldGoAlone(currentPlayer,suit);
+      bidDecisions[currentPlayer]={kind:'call',suit:suit,alone:alone};
+      lastBidSeat=currentPlayer;
       callTrump(currentPlayer,suit,alone);return;
     }
     if(currentPlayer===dealer){
       var fb=aiPickTrump(currentPlayer);
       if(!fb){var opts=SUITS.filter(function(x){return x!==upcard.suit;});fb=opts[Math.floor(Math.random()*opts.length)];}
       var alone2=aiShouldGoAlone(currentPlayer,fb);
+      bidDecisions[currentPlayer]={kind:'call',suit:fb,alone:alone2};
+      lastBidSeat=currentPlayer;
       callTrump(currentPlayer,fb,alone2);return;
     }
+    bidDecisions[currentPlayer]='pass';lastBidSeat=currentPlayer;
     sm(PLAYER_NAMES[currentPlayer]+' passes');
     currentPlayer=(currentPlayer+1)%4;render();
     if(currentPlayer!==SOUTH)setTimeout(aiCall2,600);
@@ -356,6 +374,26 @@ window._gameFns.bowergarden = function BG(a){
     if(!ok)return;
     playCard(SOUTH,card);
   }
+  // Bidding-ticker tag next to each seat's name. Shows the seat's most recent
+  // decision during call1/call2 so players can reconstruct the round without
+  // relying on a vanished toast.
+  function _bidTag(seat){
+    var d=bidDecisions[seat];if(!d)return '';
+    var fresh = (seat===lastBidSeat) ? ';animation:bgBidFlash .6s ease-out' : '';
+    if(d==='pass'){
+      return '<span class="bg-bidtag" style="display:inline-block;padding:1px 6px;margin-left:5px;font-size:0.48rem;font-family:Georgia,serif;font-style:italic;color:rgba(232,220,200,0.55);background:rgba(0,0,0,0.3);border:1px solid rgba(232,220,200,0.2);border-radius:3px;vertical-align:middle'+fresh+'">passed</span>';
+    }
+    if(d.kind==='order'||d.kind==='call'){
+      var red=(d.suit==='hearts'||d.suit==='diamonds');
+      var col=red?'#e63946':'#f5ebd0';
+      var label=d.kind==='order'?'ordered':'called';
+      return '<span class="bg-bidtag" style="display:inline-flex;align-items:center;gap:3px;padding:1px 5px 1px 3px;margin-left:5px;font-size:0.5rem;font-family:Georgia,serif;color:#ffdc70;background:rgba(0,0,0,0.4);border:1px solid #ffdc70;border-radius:3px;vertical-align:middle'+fresh+'">'
+        +'<span style="color:'+col+';font-size:0.7rem;line-height:1;">'+_pip(d.suit)+'</span>'
+        +label+(d.alone?' alone':'')
+      +'</span>';
+    }
+    return '';
+  }
   // ── UI Helpers ──────────────────────────────────────────────
   function _scoreBarHtml(){
     var h='';
@@ -445,13 +483,13 @@ window._gameFns.bowergarden = function BG(a){
     h+=_headerHtml();
     // North (partner) hand - face down. Bumped to 38x52 (was 32x44).
     var northSittingOut=(loner&&sittingOut===NORTH);
-    h+='<div style="text-align:center;padding:6px;'+(northSittingOut?'opacity:0.35;':'')+'" class="bg-seat'+activeClass(NORTH)+'"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:5px;">PARTNER'+dealerBadge(NORTH)+(northSittingOut?' <span style="color:var(--gold);font-size:0.65rem;">(SITTING OUT)</span>':'')+'</div><div style="display:inline-flex;justify-content:center;">';
+    h+='<div style="text-align:center;padding:6px;'+(northSittingOut?'opacity:0.35;':'')+'" class="'+activeClass(NORTH).replace(/^\s+/,'')+'"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:#7ab356;letter-spacing:0.1em;margin-bottom:5px;">PARTNER'+dealerBadge(NORTH)+_bidTag(NORTH)+(northSittingOut?' <span style="color:var(--gold);font-size:0.65rem;">(SITTING OUT)</span>':'')+'</div><div style="display:inline-flex;justify-content:center;">';
     for(var n=0;n<hands[NORTH].length;n++)h+='<div style="width:38px;height:52px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-left:'+(n===0?'0':'-22px')+';"></div>';
     h+='</div></div>';
     // Middle: West | Trick | East. Bumped min-height + side card sizes.
     h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;">';
     // West — bumped to 32x46 (was 28x40)
-    h+='<div class="bg-seat'+activeClass(WEST)+'" style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">WEST'+dealerBadge(WEST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
+    h+='<div class="'+activeClass(WEST).replace(/^\s+/,'')+'" style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:#dc8a8a;text-align:center;letter-spacing:0.1em;margin-bottom:5px;">WEST'+dealerBadge(WEST)+_bidTag(WEST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
     for(var w=0;w<hands[WEST].length;w++)h+='<div style="width:32px;height:46px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-top:'+(w===0?'0':'-32px')+';"></div>';
     h+='</div></div>';
     // Trick area — bumped min-height
@@ -474,12 +512,12 @@ window._gameFns.bowergarden = function BG(a){
     }
     h+='</div>';
     // East — bumped to 32x46
-    h+='<div class="bg-seat'+activeClass(EAST)+'" style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:5px;">EAST'+dealerBadge(EAST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
+    h+='<div class="'+activeClass(EAST).replace(/^\s+/,'')+'" style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:#dc8a8a;text-align:center;letter-spacing:0.1em;margin-bottom:5px;">EAST'+dealerBadge(EAST)+_bidTag(EAST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
     for(var e=0;e<hands[EAST].length;e++)h+='<div style="width:32px;height:46px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-top:'+(e===0?'0':'-32px')+';"></div>';
     h+='</div></div>';
     h+='</div>';
     // South (player) hand
-    h+='<div class="bg-seat'+activeClass(SOUTH)+'" style="padding:6px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);text-align:center;letter-spacing:0.1em;margin-bottom:6px;">YOUR HAND'+dealerBadge(SOUTH)+'</div>';
+    h+='<div class="'+activeClass(SOUTH).replace(/^\s+/,'')+'" style="padding:6px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:#7ab356;text-align:center;letter-spacing:0.1em;margin-bottom:6px;">YOUR HAND'+dealerBadge(SOUTH)+_bidTag(SOUTH)+'</div>';
     h+='<div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;">';
     var ls=trick.length>0?effSuit(trick[0].card,trumpSuit):'';
     var pl2=phase==='play'&&currentPlayer===SOUTH?playable(hands[SOUTH],trumpSuit,ls):[];
@@ -567,25 +605,36 @@ window._gameFns.bowergarden = function BG(a){
   window._BGCC=function(r,s){onCardClick({rank:r,suit:s});};
   window._BGORD=function(){
     if(phase!=='call1'||currentPlayer!==SOUTH)return;
-    askGoAlone(function(alone){orderUp(SOUTH,alone);});
+    askGoAlone(function(alone){
+      bidDecisions[SOUTH]={kind:'order',suit:upcard.suit,alone:alone};lastBidSeat=SOUTH;
+      orderUp(SOUTH,alone);
+    });
   };
   window._BGP1=function(){
     if(phase!=='call1'||currentPlayer!==SOUTH)return;
+    bidDecisions[SOUTH]='pass';lastBidSeat=SOUTH;
     sm('You pass');
     currentPlayer=(currentPlayer+1)%4;
-    if(currentPlayer===leader){phase='call2';currentPlayer=leader;}
+    if(currentPlayer===leader){
+      phase='call2';currentPlayer=leader;
+      bidDecisions=[null,null,null,null];lastBidSeat=-1;
+    }
     render();
     if(currentPlayer!==SOUTH)setTimeout(phase==='call1'?aiCall1:aiCall2,600);
   };
   window._BGP2=function(){
     if(phase!=='call2'||currentPlayer!==SOUTH)return;
+    bidDecisions[SOUTH]='pass';lastBidSeat=SOUTH;
     sm('You pass');
     currentPlayer=(currentPlayer+1)%4;render();
     if(currentPlayer!==SOUTH)setTimeout(aiCall2,600);
   };
   window._BGCT=function(suit){
     if(phase!=='call2'||currentPlayer!==SOUTH)return;
-    askGoAlone(function(alone){callTrump(SOUTH,suit,alone);});
+    askGoAlone(function(alone){
+      bidDecisions[SOUTH]={kind:'call',suit:suit,alone:alone};lastBidSeat=SOUTH;
+      callTrump(SOUTH,suit,alone);
+    });
   };
   window._BGalone=function(yes){
     if(phase!=='goalone'||!_pendingCall)return;
