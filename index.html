@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.8';
+  var LW_VERSION='2026.04.22.9';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -63269,23 +63269,44 @@ function _bosAboutContent() {
     h += '<a href="' + c.stripeUrl + '" target="_blank" rel="noopener noreferrer" style="display:block;width:100%;padding:0.8rem;margin-bottom:0.7rem;border:1.5px solid rgba(122,179,86,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(74,124,53,0.32),rgba(46,80,34,0.45));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;text-align:center;text-decoration:none;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.4);">\ud83d\udcb3 SUPPORT WITH CARD</a>';
   }
 
-  // Crypto address rows — each with a copy button. Skip blank ones.
-  function _addrRow(label, value, color) {
+  // Crypto tip buttons. Full-row tap target with chain logo on the
+  // left, name + truncated address in the middle, COPY hint on the
+  // right. Each chain has its recognizable brand color + glyph.
+  var _CHAIN_LOGOS = {
+    BTC: {bg:'#f7931a',glyph:'₿',name:'Bitcoin'},
+    ETH: {bg:'#627eea',glyph:'Ξ',name:'Ethereum'},
+    SOL: {bg:'#9945ff',glyph:'◎',name:'Solana'},
+    PI:  {bg:'#a06ec0',glyph:'π',name:'Pi Network'},
+    USDC:{bg:'#2775ca',glyph:'$',     name:'USDC'}
+  };
+  function _chainLogo(key) {
+    var l = _CHAIN_LOGOS[key] || {bg:'#888',glyph:'●',name:key};
+    return '<div style="flex:0 0 auto;width:40px;height:40px;border-radius:50%;background:' + l.bg + ';display:flex;align-items:center;justify-content:center;font-family:serif;font-size:22px;font-weight:700;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.2);">' + l.glyph + '</div>';
+  }
+  function _addrRow(key, value) {
     if (!value) return '';
+    var meta = _CHAIN_LOGOS[key] || {name:key};
     var safe = String(value).replace(/'/g, '&#39;');
+    var short = String(value).length > 18
+      ? value.slice(0, 9) + '…' + value.slice(-7)
+      : value;
+    var onClick = '(function(){try{navigator.clipboard.writeText(\'' + safe + '\').then(function(){if(window._toast)window._toast(\'Address copied — thank you.\');});}catch(e){if(window._toast)window._toast(\'Copy failed\');}})();';
     var row = '';
-    row += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.65rem 0.8rem;margin-bottom:0.4rem;background:rgba(13,16,12,0.55);border:1px solid rgba(200,168,75,0.2);border-radius:8px;">';
-    row +=   '<div style="flex:0 0 auto;font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:' + (color||'var(--gold)') + ';letter-spacing:0.1em;min-width:48px;">' + label + '</div>';
-    row +=   '<div style="flex:1;min-width:0;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + value + '</div>';
-    row +=   '<button onclick="(function(){try{navigator.clipboard.writeText(\'' + safe + '\').then(function(){if(window._toast)window._toast(\'Copied \u2014 thank you.\');});}catch(e){}})();" style="flex:0 0 auto;padding:6px 10px;border:1px solid rgba(122,179,86,0.4);border-radius:6px;background:rgba(122,179,86,0.1);color:var(--sage);font-family:DM Mono,monospace;font-size:0.5rem;cursor:pointer;letter-spacing:0.05em;min-height:36px;">COPY</button>';
-    row += '</div>';
+    row += '<button onclick="' + onClick + '" style="display:flex;align-items:center;gap:0.7rem;width:100%;padding:0.65rem 0.85rem;margin-bottom:0.5rem;background:linear-gradient(180deg,rgba(26,31,23,0.8),rgba(13,16,12,0.92));border:1px solid rgba(200,168,75,0.22);border-radius:12px;cursor:pointer;text-align:left;box-shadow:0 2px 6px rgba(0,0,0,0.3);transition:border-color .12s;-webkit-tap-highlight-color:transparent;color:inherit;">';
+    row +=   _chainLogo(key);
+    row +=   '<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">';
+    row +=     '<div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;letter-spacing:0.12em;color:var(--cream);">' + meta.name.toUpperCase() + '</div>';
+    row +=     '<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:rgba(232,220,200,0.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + short + '</div>';
+    row +=   '</div>';
+    row +=   '<div style="flex:0 0 auto;font-family:DM Mono,monospace;font-size:0.52rem;color:var(--sage);letter-spacing:0.08em;padding:6px 10px;border:1px solid rgba(122,179,86,0.3);border-radius:7px;background:rgba(122,179,86,0.08);">⎘ COPY</div>';
+    row += '</button>';
     return row;
   }
-  h += _addrRow('PI',   c.pi,   '#a06ec0');
-  h += _addrRow('BTC',  c.btc,  '#f7931a');
-  h += _addrRow('ETH',  c.eth,  '#8a92b2');
-  h += _addrRow('SOL',  c.sol,  '#9945ff');
-  h += _addrRow('USDC', c.usdc, '#2775ca');
+  h += _addrRow('PI',   c.pi);
+  h += _addrRow('BTC',  c.btc);
+  h += _addrRow('ETH',  c.eth);
+  h += _addrRow('SOL',  c.sol);
+  h += _addrRow('USDC', c.usdc);
 
   // If everything is blank, show a soft placeholder so the page doesn't look broken
   if (!c.stripeUrl && !c.pi && !c.btc && !c.eth && !c.sol && !c.usdc) {
