@@ -157,9 +157,14 @@ window._gameFns.gardenspades = function GardenSpades(a){
     spadesBroken=false;spadesJustBroke=false;teamBids=[0,0];
   }
   function newRound(){
-    roundNum++;deal();phase='bidding';currentPlayer=S;
+    roundNum++;deal();phase='bidding';
+    // Bidding now starts at WEST so all three AIs bid before SOUTH. The player
+    // sees every other bid land before deciding — matches real-life flow and
+    // gives the partner-pre-echo the research called for.
+    currentPlayer=W;
     var re=document.getElementById('GSr');if(re)re.textContent=roundNum;
     render();
+    setTimeout(aiBidTurn,800);
   }
   function aiBidTurn(){
     if(currentPlayer===S){render();return;}
@@ -168,7 +173,8 @@ window._gameFns.gardenspades = function GardenSpades(a){
     currentPlayer=(currentPlayer+1)%4;
     if(bids[S]!==-1&&bids[W]!==-1&&bids[N]!==-1&&bids[E]!==-1){finishBidding();return;}
     render();
-    if(currentPlayer!==S)setTimeout(aiBidTurn,500);
+    // Slower AI bid pacing — each bid pill should land with weight, not flicker.
+    if(currentPlayer!==S)setTimeout(aiBidTurn,800);
   }
   function finishBidding(){
     phase='play';
@@ -374,15 +380,45 @@ window._gameFns.gardenspades = function GardenSpades(a){
     for(var e=0;e<hands[E].length;e++)h+='<div style="width:30px;height:42px;border-radius:5px;background:linear-gradient(135deg,#1a4a2e,#0c2a18);border:1.5px solid #051208;margin-top:'+(e===0?'0':'-34px')+';box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);"></div>';
     h+='</div></div>';
     h+='</div>';
-    // Bid UI
+    // ── BID UI ──────────────────────────────────────────────────
     if(phase==='bidding'&&currentPlayer===S){
-      h+='<div style="text-align:center;padding:8px;background:rgba(26,31,23,0.5);border-radius:8px;margin:6px 0;">';
-      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:#c8a84b;letter-spacing:0.1em;margin-bottom:6px;">YOUR BID</div>';
-      h+='<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">';
-      h+='<div onclick="_GSB(0)" style="min-width:36px;min-height:44px;display:flex;align-items:center;justify-content:center;background:rgba(26,36,22,0.7);border:1px solid rgba(196,122,122,0.5);border-radius:6px;font-family:Bebas Neue,sans-serif;font-size:0.85rem;cursor:pointer;color:#c47a7a;padding:6px;letter-spacing:0.06em;">NIL</div>';
-      for(var bi=1;bi<=13;bi++){
-        h+='<div onclick="_GSB('+bi+')" style="min-width:36px;min-height:44px;display:flex;align-items:center;justify-content:center;background:rgba(26,36,22,0.7);border:1px solid rgba(122,179,86,0.3);border-radius:6px;font-family:Bebas Neue,sans-serif;font-size:0.85rem;cursor:pointer;color:#e8dcc8;">'+bi+'</div>';
+      var partnerBid = bids[N];
+      var partnerStr = partnerBid<0 ? 'still thinking' : partnerBid===0 ? 'NIL' : (''+partnerBid);
+      // Auto-suggest based on the same heuristic the AI uses.
+      var suggested = aiBid(S);
+      h+='<div style="text-align:center;padding:10px 8px;background:radial-gradient(ellipse at 50% 50%,rgba(255,220,112,0.06) 0%,rgba(0,0,0,0.5) 70%);border:1.5px solid rgba(180,140,70,0.35);border-radius:12px;margin:6px 0;box-shadow:inset 0 0 18px rgba(0,0,0,0.4);">';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.52rem;letter-spacing:0.22em;color:rgba(232,220,200,0.6);text-transform:uppercase;margin-bottom:4px;">Your bid</div>';
+      h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.65rem;color:'+_teamColor(N)+';margin-bottom:8px;">Partner bid <strong style="color:#f5ebd0;font-style:normal;">'+partnerStr+'</strong></div>';
+      // 2-row grid: 0-6 and 7-13. 0 cell is the NIL button (distinct).
+      h+='<div style="display:flex;flex-direction:column;gap:5px;align-items:center;">';
+      // Top row: NIL + 1-6
+      h+='<div style="display:flex;gap:4px;justify-content:center;">';
+      h+='<button class="gb" onclick="_GSBN()" style="min-width:50px;min-height:42px;padding:4px 8px;background:linear-gradient(180deg,rgba(180,42,42,0.35),rgba(120,20,20,0.5));border:1.5px solid #e63946;border-radius:6px;font-family:Georgia,serif;font-weight:700;font-size:0.72rem;color:#ffdc70;letter-spacing:0.04em;display:flex;flex-direction:column;align-items:center;line-height:1;">';
+      h+='NIL<span style="font-size:0.42rem;font-weight:400;color:rgba(245,235,208,0.65);margin-top:2px;">+100/-100</span></button>';
+      for(var bi=1;bi<=6;bi++){
+        var isS = (bi===suggested);
+        h+='<button class="gb" onclick="_GSB('+bi+')" style="min-width:38px;min-height:42px;padding:4px;background:'+(isS?'linear-gradient(180deg,rgba(255,220,112,0.25),rgba(200,168,75,0.35))':'rgba(0,0,0,0.4)')+';border:'+(isS?'2':'1.5')+'px solid '+(isS?'#ffdc70':'rgba(232,220,200,0.3)')+';border-radius:6px;font-family:Georgia,serif;font-weight:700;font-size:0.95rem;color:#f5ebd0;'+(isS?'box-shadow:0 0 12px rgba(255,220,112,0.4);':'')+'">'+bi+'</button>';
       }
+      h+='</div>';
+      // Bottom row: 7-13
+      h+='<div style="display:flex;gap:4px;justify-content:center;">';
+      for(var bj=7;bj<=13;bj++){
+        var isSj = (bj===suggested);
+        h+='<button class="gb" onclick="_GSB('+bj+')" style="min-width:38px;min-height:42px;padding:4px;background:'+(isSj?'linear-gradient(180deg,rgba(255,220,112,0.25),rgba(200,168,75,0.35))':'rgba(0,0,0,0.4)')+';border:'+(isSj?'2':'1.5')+'px solid '+(isSj?'#ffdc70':'rgba(232,220,200,0.3)')+';border-radius:6px;font-family:Georgia,serif;font-weight:700;font-size:0.95rem;color:#f5ebd0;'+(isSj?'box-shadow:0 0 12px rgba(255,220,112,0.4);':'')+'">'+bj+'</button>';
+      }
+      h+='</div>';
+      h+='<div style="margin-top:6px;font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.1em;color:rgba(232,220,200,0.4);">'+(suggested>0?'Suggested: '+suggested:'')+'</div>';
+      h+='</div>';
+      h+='</div>';
+    }
+    // NIL CONFIRM modal
+    if(phase==='nilConfirm'){
+      h+='<div onclick="_GSBNcancel()" style="position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;cursor:pointer;backdrop-filter:blur(4px);">';
+      h+='<div style="font-family:Georgia,serif;font-size:2.2rem;color:#ffdc70;letter-spacing:0.04em;text-shadow:0 0 24px rgba(255,220,112,0.5);margin-bottom:8px;">BID NIL?</div>';
+      h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.85rem;color:#f5ebd0;text-align:center;max-width:340px;line-height:1.5;margin-bottom:18px;">Pledge to take <strong>zero tricks</strong>. Take none = <span style="color:#7ab356;">+100</span>. Take any = <span style="color:#e63946;">-100</span>.</div>';
+      h+='<div style="display:flex;gap:10px;">';
+      h+='<button class="gb" onclick="event.stopPropagation();_GSBNconfirm()" style="min-height:48px;padding:10px 22px;font-family:Georgia,serif;font-weight:700;font-size:0.9rem;background:linear-gradient(180deg,rgba(180,42,42,0.4),rgba(100,20,20,0.55));border:2px solid #e63946;color:#ffdc70;letter-spacing:0.06em;">CALL NIL</button>';
+      h+='<button class="gb" onclick="event.stopPropagation();_GSBNcancel()" style="min-height:48px;padding:10px 22px;font-family:Georgia,serif;font-size:0.85rem;background:rgba(0,0,0,0.5);border:1px solid rgba(232,220,200,0.4);color:#f5ebd0;">Cancel</button>';
       h+='</div></div>';
     }
     // ── YOUR HAND (SOUTH) ───────────────────────────────────────
@@ -408,15 +444,35 @@ window._gameFns.gardenspades = function GardenSpades(a){
     pan.innerHTML=h;
   }
 
+  // Track the bidding phase we'll resume after the NIL confirm modal closes.
+  var _phaseBeforeNil='';
   window._GSN=function(){teamScore=[0,0];teamBags=[0,0];roundNum=0;newRound();};
   window._GSCC=function(r,s){onCardClick({rank:r,suit:s});};
-  window._GSB=function(n){
-    if(phase!=='bidding'||currentPlayer!==S)return;
+  function commitBid(n){
     bids[S]=n;sm('You bid '+(n===0?'NIL':n));
     currentPlayer=(currentPlayer+1)%4;
     render();
-    if(currentPlayer!==S)setTimeout(aiBidTurn,400);
-    else if(bids[W]!==-1&&bids[N]!==-1&&bids[E]!==-1)finishBidding();
+    if(bids[S]!==-1&&bids[W]!==-1&&bids[N]!==-1&&bids[E]!==-1){finishBidding();return;}
+    if(currentPlayer!==S)setTimeout(aiBidTurn,800);
+  }
+  window._GSB=function(n){
+    if(phase!=='bidding'||currentPlayer!==S)return;
+    commitBid(n);
+  };
+  // Two-step NIL flow — gate behind a confirmation modal so accidental taps
+  // don't cost 100 points.
+  window._GSBN=function(){
+    if(phase!=='bidding'||currentPlayer!==S)return;
+    _phaseBeforeNil=phase;phase='nilConfirm';render();
+  };
+  window._GSBNconfirm=function(){
+    if(phase!=='nilConfirm')return;
+    phase=_phaseBeforeNil;_phaseBeforeNil='';
+    commitBid(0);
+  };
+  window._GSBNcancel=function(){
+    if(phase!=='nilConfirm')return;
+    phase=_phaseBeforeNil;_phaseBeforeNil='';render();
   };
 
   _GSN();
