@@ -26,9 +26,12 @@ if(!document.getElementById('bg-anim-style')){
     '@keyframes bgPulse{0%{box-shadow:0 0 0 0 rgba(200,168,75,.6)}70%{box-shadow:0 0 0 8px rgba(200,168,75,0)}100%{box-shadow:0 0 0 0 rgba(200,168,75,0)}}'+
     '@keyframes bgTurnRing{0%,100%{box-shadow:0 0 0 3px rgba(255,220,112,0.75),0 0 22px rgba(255,220,112,0.45)}50%{box-shadow:0 0 0 4px rgba(255,220,112,0.9),0 0 30px rgba(255,220,112,0.65)}}'+
     '@keyframes bgBidFlash{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:1}}'+
+    '@keyframes bgWinPulse{0%,100%{box-shadow:0 0 0 2px #ffdc70,0 0 18px rgba(255,220,112,0.6)}50%{box-shadow:0 0 0 3px #ffe896,0 0 28px rgba(255,232,150,0.85)}}'+
+    '.bg-win-glow{animation:bgWinPulse 0.55s ease-in-out infinite;transform-origin:center;z-index:3;}'+
     '.bg-dealer-badge{display:inline-block;width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff4c2 0%,#d4b86a 40%,#8b6a20 100%);color:#3a2a08;font-family:Georgia,serif;font-size:0.75rem;font-weight:700;text-align:center;line-height:20px;margin-left:6px;vertical-align:middle;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 2px 4px rgba(0,0,0,0.5);border:1.5px solid #5a4010;text-shadow:0 1px 0 rgba(255,255,255,0.4);}'+
-    '.bg-seat{transition:opacity .3s ease;border-radius:10px;}'+
+    '.bg-seat{transition:opacity .3s ease,filter .3s ease;border-radius:10px;}'+
     '.bg-seat.bg-inactive{opacity:0.55;}'+
+    '.bg-seat.bg-sitting-out{opacity:0.3;filter:grayscale(0.7);}'+
     '.bg-active{animation:bgTurnRing 1.4s ease-in-out infinite;border-radius:10px;}'+
     '.bg-seat-caller{position:relative}'+
     '.bg-seat-caller::before{content:"";position:absolute;top:-4px;right:-4px;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff4c2,#d4b86a 50%,#8b6a20);border:1.5px solid #5a4010;box-shadow:0 2px 4px rgba(0,0,0,0.5);z-index:2;}'+
@@ -57,6 +60,7 @@ window._gameFns.bowergarden = function BG(a){
   // So players can reconstruct who decided what without relying on a vanished toast.
   var bidDecisions=[null,null,null,null];
   var lastBidSeat=-1; // the most recent bidder (for a brief 'fresh' highlight)
+  var trickWinner=-1; // during trick-complete pause, the seat whose card won
 
   ms(a,'<span style="font-family:Georgia,serif;letter-spacing:.06em;">🃏 <strong id="BGs" style="color:#7ab356;font-size:1.2em;">0</strong> <span style="color:rgba(232,220,200,0.5);font-size:0.8em;">vs</span> <strong id="BGo" style="color:#dc8a8a;font-size:1.2em;">0</strong></span>');
   mm(a);
@@ -319,19 +323,26 @@ window._gameFns.bowergarden = function BG(a){
     if(trickFull){
       phase='trickDone';
       var winner=trickWin(trick,trumpSuit);var wt=winner%2;teamTricks[wt]++;
+      // Beat 1: 400ms after the final card lands, declare the winner. The
+      // winning card glows via trickWinner state and stays on the table.
       setTimeout(function(){
+        trickWinner=winner;
         sm(PLAYER_NAMES[winner]+' wins the trick');
+        render();
+        // Beat 2: 1100ms hold on the winner glow, then sweep-out animation
+        // via opacity fade, then clear and proceed.
         setTimeout(function(){
+          trickWinner=-1;
           trick=[];trickCards=[null,null,null,null];lastPlayed=-1;
-          if(teamTricks[0]+teamTricks[1]>=5){scoreHand();return;}
+          if(teamTricks[0]+teamTricks[1]>=(loner?5:5)){scoreHand();return;}
           leader=winner;currentPlayer=leader;phase='play';render();
-          if(currentPlayer!==SOUTH)setTimeout(aiPlay,600);
-        },1100); // longer pause so player can read the trick before clear
-      },650);
+          if(currentPlayer!==SOUTH)setTimeout(aiPlay,700);
+        },1100);
+      },400);
       return;
     }
     currentPlayer=nextSeat(currentPlayer);render();
-    if(currentPlayer!==SOUTH)setTimeout(aiPlay,500);
+    if(currentPlayer!==SOUTH)setTimeout(aiPlay,550);
   }
   function scoreHand(){
     phase='handDone';
@@ -465,15 +476,18 @@ window._gameFns.bowergarden = function BG(a){
     function dealerBadge(seat){return seat===dealer?'<span class="bg-dealer-badge" title="Dealer">D</span>':'';}
     function seatClasses(seat){
       var cls=' bg-seat';
+      var isSittingOut = loner && sittingOut===seat;
+      if(isSittingOut){cls+=' bg-sitting-out';return cls;}
       var isActive=(seat===currentPlayer&&(phase==='play'||phase==='call1'||phase==='call2'));
       if(isActive)cls+=' bg-active';
       else if(phase==='play'||phase==='call1'||phase==='call2')cls+=' bg-inactive';
       // Caller badge persists through the hand — marks whoever won the bid.
       var isCaller = trumpSuit && callingTeam===seat%2 && phase!=='call1' && phase!=='call2';
-      // Only highlight the specific seat that CALLED, not both teammates.
-      // We track callingSeat separately via the orderUp/callTrump flow below.
       if(isCaller && seat===callingSeat)cls+=' bg-seat-caller';
       return cls;
+    }
+    function sittingOutBadge(seat){
+      return (loner && sittingOut===seat) ? ' <span style="display:inline-block;margin-left:4px;padding:1px 6px;font-size:0.5rem;font-family:Georgia,serif;font-style:italic;color:#c4b998;background:rgba(0,0,0,0.4);border:1px solid rgba(196,185,152,0.45);border-radius:3px;vertical-align:middle;">sitting out</span>' : '';
     }
     // Legacy name — keep activeClass working for any older code paths.
     var activeClass=seatClasses;
@@ -482,14 +496,13 @@ window._gameFns.bowergarden = function BG(a){
     // ── TRUMP CHIP + DEALER + CALLER — pinned top center throughout the hand ──
     h+=_headerHtml();
     // North (partner) hand - face down. Bumped to 38x52 (was 32x44).
-    var northSittingOut=(loner&&sittingOut===NORTH);
-    h+='<div style="text-align:center;padding:6px;'+(northSittingOut?'opacity:0.35;':'')+'" class="'+activeClass(NORTH).replace(/^\s+/,'')+'"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:#7ab356;letter-spacing:0.1em;margin-bottom:5px;">PARTNER'+dealerBadge(NORTH)+_bidTag(NORTH)+(northSittingOut?' <span style="color:var(--gold);font-size:0.65rem;">(SITTING OUT)</span>':'')+'</div><div style="display:inline-flex;justify-content:center;">';
+    h+='<div style="text-align:center;padding:6px;" class="'+activeClass(NORTH).replace(/^\s+/,'')+'"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:#7ab356;letter-spacing:0.1em;margin-bottom:5px;">PARTNER'+dealerBadge(NORTH)+_bidTag(NORTH)+sittingOutBadge(NORTH)+'</div><div style="display:inline-flex;justify-content:center;">';
     for(var n=0;n<hands[NORTH].length;n++)h+='<div style="width:38px;height:52px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-left:'+(n===0?'0':'-22px')+';"></div>';
     h+='</div></div>';
     // Middle: West | Trick | East. Bumped min-height + side card sizes.
     h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;">';
     // West — bumped to 32x46 (was 28x40)
-    h+='<div class="'+activeClass(WEST).replace(/^\s+/,'')+'" style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:#dc8a8a;text-align:center;letter-spacing:0.1em;margin-bottom:5px;">WEST'+dealerBadge(WEST)+_bidTag(WEST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
+    h+='<div class="'+activeClass(WEST).replace(/^\s+/,'')+'" style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:#dc8a8a;text-align:center;letter-spacing:0.1em;margin-bottom:5px;">WEST'+dealerBadge(WEST)+_bidTag(WEST)+sittingOutBadge(WEST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
     for(var w=0;w<hands[WEST].length;w++)h+='<div style="width:32px;height:46px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-top:'+(w===0?'0':'-32px')+';"></div>';
     h+='</div></div>';
     // Trick area — bumped min-height
@@ -507,17 +520,19 @@ window._gameFns.bowergarden = function BG(a){
       var c=trickCards[pl];if(!c)continue;
       var col=c.suit==='hearts'||c.suit==='diamonds'?'#c47a7a':'#1a1f17';
       var animCls=(pl===lastPlayed)?(' bg-played-'+SEAT_LETTER[pl]):'';
-      h+='<div class="bg-pcard'+animCls+'" style="position:absolute;'+pos[pl]+'background:#F5F0E1;color:'+col+';border:2px solid '+(pl%2===0?'#4A7C35':'#C47A7A')+';border-radius:6px;padding:6px 9px;font-weight:700;font-size:0.85rem;min-width:38px;">';
+      var winCls = (pl===trickWinner) ? ' bg-win-glow' : '';
+      var dim = (trickWinner>=0 && pl!==trickWinner) ? 'filter:saturate(.6) brightness(.75);' : '';
+      h+='<div class="bg-pcard'+animCls+winCls+'" style="position:absolute;'+pos[pl]+dim+'background:#F5F0E1;color:'+col+';border:2px solid '+(pl%2===0?'#4A7C35':'#C47A7A')+';border-radius:6px;padding:6px 9px;font-weight:700;font-size:0.85rem;min-width:38px;">';
       h+='<div>'+c.rank+'</div><div style="font-size:1.1rem;text-align:center;">'+_pip(c.suit)+'</div></div>';
     }
     h+='</div>';
     // East — bumped to 32x46
-    h+='<div class="'+activeClass(EAST).replace(/^\s+/,'')+'" style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:#dc8a8a;text-align:center;letter-spacing:0.1em;margin-bottom:5px;">EAST'+dealerBadge(EAST)+_bidTag(EAST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
+    h+='<div class="'+activeClass(EAST).replace(/^\s+/,'')+'" style="padding:4px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:#dc8a8a;text-align:center;letter-spacing:0.1em;margin-bottom:5px;">EAST'+dealerBadge(EAST)+_bidTag(EAST)+sittingOutBadge(EAST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
     for(var e=0;e<hands[EAST].length;e++)h+='<div style="width:32px;height:46px;border-radius:5px;background:linear-gradient(135deg,#4A7C35,#3a6028);border:1.5px solid #2d4a1e;margin-top:'+(e===0?'0':'-32px')+';"></div>';
     h+='</div></div>';
     h+='</div>';
     // South (player) hand
-    h+='<div class="'+activeClass(SOUTH).replace(/^\s+/,'')+'" style="padding:6px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:#7ab356;text-align:center;letter-spacing:0.1em;margin-bottom:6px;">YOUR HAND'+dealerBadge(SOUTH)+_bidTag(SOUTH)+'</div>';
+    h+='<div class="'+activeClass(SOUTH).replace(/^\s+/,'')+'" style="padding:6px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:#7ab356;text-align:center;letter-spacing:0.1em;margin-bottom:6px;">YOUR HAND'+dealerBadge(SOUTH)+_bidTag(SOUTH)+sittingOutBadge(SOUTH)+'</div>';
     h+='<div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;">';
     var ls=trick.length>0?effSuit(trick[0].card,trumpSuit):'';
     var pl2=phase==='play'&&currentPlayer===SOUTH?playable(hands[SOUTH],trumpSuit,ls):[];
