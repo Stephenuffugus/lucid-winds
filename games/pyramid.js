@@ -11,10 +11,29 @@ var _SUIT_NAME=window._SUIT_NAME,_CD_BASE=window._CD_BASE,_CD_BACK=window._CD_BA
 
 function GPY(a){
   var pyr=[],stock=[],waste=[],sel=null,gameOver=false,moves=0,removed={};
+  var history=[]; // LIFO stack of pre-move snapshots for undo
   ms(a,'Cleared: <strong id="PYcl">0</strong>/28 · Moves: <strong id="PYmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='PYgd';a.appendChild(gd);
   var _pyStyleLbl='🃏 Style';
-  mc(a).innerHTML='<button class="gb" onclick="_PYN()">🔄 New</button> <button class="gb" id="PYstyle" onclick="_PYToggleStyle()" style="font-size:0.7rem;">'+_pyStyleLbl+'</button>';
+  mc(a).innerHTML='<button class="gb" id="PYundoBtn" onclick="_PYUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" onclick="_PYN()">🔄 New</button> <button class="gb" id="PYstyle" onclick="_PYToggleStyle()" style="font-size:0.7rem;">'+_pyStyleLbl+'</button>';
+  function snapshot(){
+    history.push(JSON.stringify({stock:stock, waste:waste, moves:moves, removed:removed}));
+    refreshUndoBtn();
+  }
+  function refreshUndoBtn(){
+    var b=document.getElementById('PYundoBtn');
+    if(!b)return;
+    if(history.length>0&&!gameOver){b.disabled=false;b.style.opacity='1';}
+    else{b.disabled=true;b.style.opacity='0.45';}
+  }
+  window._PYUndo=function(){
+    if(history.length===0||gameOver)return;
+    var snap=JSON.parse(history.pop());
+    stock=snap.stock; waste=snap.waste; moves=snap.moves; removed=snap.removed;
+    sel=null;
+    _play('tap');
+    upd();rn();refreshUndoBtn();
+  };
   window._PYToggleStyle=function(){
     if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
@@ -27,6 +46,7 @@ function GPY(a){
   function init(){
     var deck=_cdSh(_cdMk());
     pyr=[];stock=[];waste=[];sel=null;gameOver=false;moves=0;removed={};
+    history=[];
     for(var i=0;i<28;i++){var cd=deck.pop();cd.up=true;pyr.push(cd);}
     stock=deck.slice();for(var i=0;i<stock.length;i++)stock[i].up=false;
     upd();rn();
@@ -73,19 +93,20 @@ function GPY(a){
   function tapPyr(idx){
     if(gameOver||removed[idx]||!isExposed(idx))return;
     var card=pyr[idx];
-    if(isKing(card)){removePyr(idx);moves++;_play('tap');_e('progress');
+    if(isKing(card)){snapshot();removePyr(idx);moves++;_play('tap');_e('progress');
       if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('pyramid',{w:true,s:moves});}
-      sel=null;upd();rn();return;
+      sel=null;upd();rn();refreshUndoBtn();return;
     }
     if(sel){
       if(sel.type==='pyr'&&sel.idx===idx){sel=null;rn();return;}
       var other=sel.type==='pyr'?pyr[sel.idx]:waste[waste.length-1];
       if(canPair(card,other)){
+        snapshot();
         removePyr(idx);
         if(sel.type==='pyr')removePyr(sel.idx);else waste.pop();
         moves++;_play('tap');_e('progress');
         if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('pyramid',{w:true,s:moves});}
-        sel=null;upd();rn();
+        sel=null;upd();rn();refreshUndoBtn();
         if(!gameOver&&checkLoss()){gameOver=true;mm_up('No moves left');_e('game_loss');_play('lose');_sr('pyramid',{w:false,s:moves});}
         return;
       }
@@ -96,19 +117,21 @@ function GPY(a){
   function tapWaste(){
     if(gameOver||waste.length===0)return;
     var card=waste[waste.length-1];
-    if(isKing(card)){waste.pop();moves++;_play('tap');_e('progress');sel=null;upd();rn();return;}
+    if(isKing(card)){snapshot();waste.pop();moves++;_play('tap');_e('progress');sel=null;upd();rn();refreshUndoBtn();return;}
     if(sel&&sel.type==='pyr'){
       if(canPair(pyr[sel.idx],card)){
+        snapshot();
         removePyr(sel.idx);waste.pop();moves++;_play('tap');_e('progress');
         if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('pyramid',{w:true,s:moves});}
-        sel=null;upd();rn();return;
+        sel=null;upd();rn();refreshUndoBtn();return;
       }
     }
     sel={type:'waste'};rn();
   }
   function tapStock(){
     if(gameOver||stock.length===0)return;
-    var cd=stock.pop();cd.up=true;waste.push(cd);_play('tap');sel=null;rn();
+    snapshot();
+    var cd=stock.pop();cd.up=true;waste.push(cd);_play('tap');sel=null;rn();refreshUndoBtn();
     if(checkLoss()){gameOver=true;mm_up('No moves left');_e('game_loss');_play('lose');_sr('pyramid',{w:false,s:moves});}
   }
   function rn(){

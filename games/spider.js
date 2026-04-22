@@ -11,10 +11,29 @@ var _SUIT_NAME=window._SUIT_NAME,_CD_BASE=window._CD_BASE,_CD_BACK=window._CD_BA
 
 function GSP(a){
   var tab=[],stock=[],completed=0,sel=null,gameOver=false,moves=0,suits=1;
+  var history=[]; // LIFO stack of pre-move snapshots for undo
   ms(a,'Runs: <strong id="SPrn">0</strong>/8 · Moves: <strong id="SPmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='SPgd';a.appendChild(gd);
   var _spStyleLbl='🃏 Style';
-  mc(a).innerHTML='<select class="gsl" id="SPsuit" onchange="_SPS(this.value)"><option value="1" selected>1 Suit</option><option value="2">2 Suits</option><option value="4">4 Suits</option></select> <button class="gb" onclick="_SPN()">🔄 New</button> <button class="gb" id="SPstyle" onclick="_SPToggleStyle()" style="font-size:0.7rem;">'+_spStyleLbl+'</button>';
+  mc(a).innerHTML='<select class="gsl" id="SPsuit" onchange="_SPS(this.value)"><option value="1" selected>1 Suit</option><option value="2">2 Suits</option><option value="4">4 Suits</option></select> <button class="gb" id="SPundoBtn" onclick="_SPUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" onclick="_SPN()">🔄 New</button> <button class="gb" id="SPstyle" onclick="_SPToggleStyle()" style="font-size:0.7rem;">'+_spStyleLbl+'</button>';
+  function snapshot(){
+    history.push(JSON.stringify({tab:tab, stock:stock, completed:completed, moves:moves}));
+    refreshUndoBtn();
+  }
+  function refreshUndoBtn(){
+    var b=document.getElementById('SPundoBtn');
+    if(!b)return;
+    if(history.length>0&&!gameOver){b.disabled=false;b.style.opacity='1';}
+    else{b.disabled=true;b.style.opacity='0.45';}
+  }
+  window._SPUndo=function(){
+    if(history.length===0||gameOver)return;
+    var snap=JSON.parse(history.pop());
+    tab=snap.tab; stock=snap.stock; completed=snap.completed; moves=snap.moves;
+    sel=null;
+    _play('tap');
+    upd();rn();refreshUndoBtn();
+  };
   window._SPToggleStyle=function(){
     if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
@@ -34,6 +53,7 @@ function GSP(a){
   function init(){
     var deck=mkDeck();
     tab=[];stock=[];completed=0;sel=null;gameOver=false;moves=0;
+    history=[];
     for(var c=0;c<10;c++){
       tab[c]=[];
       var cnt=c<4?6:5;
@@ -75,11 +95,12 @@ function GSP(a){
       var cards=tab[sel.col].slice(sel.idx);
       var bot=cards[0];
       if(col.length===0||bot.r===col[col.length-1].r-1){
+        snapshot();
         tab[sel.col].splice(sel.idx);
         for(var i=0;i<cards.length;i++)col.push(cards[i]);
         moves++;flipTops();
         while(checkRun(ci)){}
-        sel=null;upd();rn();
+        sel=null;upd();rn();refreshUndoBtn();
       }else{sel=null;rn();}
     }else{
       if(idx===undefined)idx=col.length-1;
@@ -92,13 +113,14 @@ function GSP(a){
   function dealStock(){
     if(gameOver||stock.length===0)return;
     for(var c=0;c<10;c++){if(tab[c].length===0){sm('Fill empty columns first');return;}}
+    snapshot();
     for(var c=0;c<10;c++){
       if(stock.length===0)break;
       var cd=stock.pop();cd.up=true;tab[c].push(cd);
     }
     moves++;_play('tap');
     for(var c=0;c<10;c++)while(checkRun(c)){}
-    flipTops();upd();rn();
+    flipTops();upd();rn();refreshUndoBtn();
   }
   function rn(){
     gd.innerHTML='';

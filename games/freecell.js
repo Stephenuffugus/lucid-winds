@@ -11,10 +11,29 @@ var _SUIT_NAME=window._SUIT_NAME,_CD_BASE=window._CD_BASE,_CD_BACK=window._CD_BA
 
 function GFC(a){
   var tab=[],free=[null,null,null,null],fnd=[[],[],[],[]],sel=null,gameOver=false,moves=0;
+  var history=[]; // LIFO stack of pre-move snapshots for undo
   ms(a,'Moves: <strong id="FCmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='FCgd';a.appendChild(gd);
   var _fcStyleLbl='🃏 Style';
-  mc(a).innerHTML='<button class="gb" onclick="_FCN()">🔄 New</button> <button class="gb" id="FCstyle" onclick="_FCToggleStyle()" style="font-size:0.7rem;">'+_fcStyleLbl+'</button>';
+  mc(a).innerHTML='<button class="gb" id="FCundoBtn" onclick="_FCUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" onclick="_FCN()">🔄 New</button> <button class="gb" id="FCstyle" onclick="_FCToggleStyle()" style="font-size:0.7rem;">'+_fcStyleLbl+'</button>';
+  function snapshot(){
+    history.push(JSON.stringify({tab:tab, free:free, fnd:fnd, moves:moves}));
+    refreshUndoBtn();
+  }
+  function refreshUndoBtn(){
+    var b=document.getElementById('FCundoBtn');
+    if(!b)return;
+    if(history.length>0&&!gameOver){b.disabled=false;b.style.opacity='1';}
+    else{b.disabled=true;b.style.opacity='0.45';}
+  }
+  window._FCUndo=function(){
+    if(history.length===0||gameOver)return;
+    var snap=JSON.parse(history.pop());
+    tab=snap.tab; free=snap.free; fnd=snap.fnd; moves=snap.moves;
+    sel=null;
+    _play('tap');
+    upd();rn();refreshUndoBtn();
+  };
   window._FCToggleStyle=function(){
     if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
@@ -27,6 +46,7 @@ function GFC(a){
   function init(){
     var deck=_cdSh(_cdMk());
     tab=[];free=[null,null,null,null];fnd=[[],[],[],[]];sel=null;gameOver=false;moves=0;
+    history=[];
     for(var c=0;c<8;c++){tab[c]=[];var cnt=c<4?7:6;for(var i=0;i<cnt;i++){var cd=deck.pop();cd.up=true;tab[c].push(cd);}}
     upd();rn();
   }
@@ -48,13 +68,14 @@ function GFC(a){
   function tryAutoFnd(card,src){
     for(var f=0;f<4;f++){
       if(canFnd(card,f)){
+        snapshot();
         fnd[f].push(card);
         if(src.type==='free')free[src.idx]=null;
         else if(src.type==='tab')tab[src.idx].pop();
         else if(src.type==='waste'){}
         moves++;_e('progress');
         if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('freecell',{w:true,s:moves});}
-        upd();rn();return true;
+        upd();rn();refreshUndoBtn();return true;
       }
     }
     return false;
@@ -67,16 +88,18 @@ function GFC(a){
         // Place on foundation
         var cards=getSel();
         if(cards.length===1&&canFnd(cards[0],idx)){
+          snapshot();
           removeSel();fnd[idx].push(cards[0]);moves++;_e('progress');
           if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('freecell',{w:true,s:moves});}
-          sel=null;upd();rn();return;
+          sel=null;upd();rn();refreshUndoBtn();return;
         }
         sel=null;rn();return;
       }
       if(type==='free'){
         var cards=getSel();
         if(cards.length===1&&!free[idx]){
-          removeSel();free[idx]=cards[0];moves++;sel=null;upd();rn();return;
+          snapshot();
+          removeSel();free[idx]=cards[0];moves++;sel=null;upd();rn();refreshUndoBtn();return;
         }
         if(free[idx]&&sel.type==='free'&&sel.idx===idx){sel=null;rn();return;}
         sel=null;rn();return;
@@ -84,8 +107,9 @@ function GFC(a){
       if(type==='tab'){
         var cards=getSel();
         if(cards.length<=maxMove()&&canTab(cards[0],idx)){
+          snapshot();
           removeSel();for(var i=0;i<cards.length;i++)tab[idx].push(cards[i]);moves++;
-          sel=null;upd();rn();return;
+          sel=null;upd();rn();refreshUndoBtn();return;
         }
         // Maybe selecting new source
         if(tab[idx].length>0&&tab[idx][cardIdx]&&tab[idx][cardIdx].up){

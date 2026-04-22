@@ -11,12 +11,30 @@ var _SUIT_NAME=window._SUIT_NAME,_CD_BASE=window._CD_BASE,_CD_BACK=window._CD_BA
 
 function GTP(a){
   var peaks=[],stock=[],waste=[],gameOver=false,moves=0,streak=0;
+  var history=[]; // LIFO stack of pre-move snapshots for undo
   // peaks: 28 slots. Rows 0-2 are face-down peaks, row 3 is 10 face-up cards
   // Layout: 3 mini-pyramids of 3 rows each (1+2+3=6 cards each = 18), plus 10 base cards
   ms(a,'Streak: <strong id="TPst">0</strong> · Left: <strong id="TPlf">28</strong>');mm(a);
   var gd=document.createElement('div');gd.id='TPgd';a.appendChild(gd);
   var _tpStyleLbl='🃏 Style';
-  mc(a).innerHTML='<button class="gb" onclick="_TPN()">🔄 New</button> <button class="gb" id="TPstyle" onclick="_TPToggleStyle()" style="font-size:0.7rem;">'+_tpStyleLbl+'</button>';
+  mc(a).innerHTML='<button class="gb" id="TPundoBtn" onclick="_TPUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" onclick="_TPN()">🔄 New</button> <button class="gb" id="TPstyle" onclick="_TPToggleStyle()" style="font-size:0.7rem;">'+_tpStyleLbl+'</button>';
+  function snapshot(){
+    history.push(JSON.stringify({peaks:peaks, stock:stock, waste:waste, moves:moves, streak:streak, removed:removed}));
+    refreshUndoBtn();
+  }
+  function refreshUndoBtn(){
+    var b=document.getElementById('TPundoBtn');
+    if(!b)return;
+    if(history.length>0&&!gameOver){b.disabled=false;b.style.opacity='1';}
+    else{b.disabled=true;b.style.opacity='0.45';}
+  }
+  window._TPUndo=function(){
+    if(history.length===0||gameOver)return;
+    var snap=JSON.parse(history.pop());
+    peaks=snap.peaks; stock=snap.stock; waste=snap.waste; moves=snap.moves; streak=snap.streak; removed=snap.removed;
+    _play('tap');
+    upd();rn();refreshUndoBtn();
+  };
   window._TPToggleStyle=function(){
     if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
@@ -36,6 +54,7 @@ function GTP(a){
   function init(){
     var deck=_cdSh(_cdMk());
     peaks=[];stock=[];waste=[];gameOver=false;moves=0;streak=0;removed={};
+    history=[];
     for(var i=0;i<28;i++){
       var cd=deck.pop();
       // Base row (18-27) is face-up, peak tops (0,6,12) face-down, etc.
@@ -90,15 +109,17 @@ function GTP(a){
   function tapPeak(idx){
     if(gameOver||removed[idx]||!isExposed(idx)||!peaks[idx].up)return;
     if(!canPlay(peaks[idx])){sm('Need ±1 from waste');return;}
+    snapshot();
     waste.push(peaks[idx]);removed[idx]=true;streak++;moves++;_play('tap');_e('progress');
     flipParents();
     if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('tripeaks',{w:true,s:moves});}
-    upd();rn();
+    upd();rn();refreshUndoBtn();
     if(!gameOver&&checkLoss()){gameOver=true;var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;mm_up(left+' left — stuck');_e('game_loss');_play('lose');_sr('tripeaks',{w:false,s:28-left});}
   }
   function tapStock(){
     if(gameOver||stock.length===0)return;
-    var cd=stock.pop();cd.up=true;waste.push(cd);streak=0;_play('tap');upd();rn();
+    snapshot();
+    var cd=stock.pop();cd.up=true;waste.push(cd);streak=0;_play('tap');upd();rn();refreshUndoBtn();
     if(checkLoss()){gameOver=true;var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;mm_up(left+' left — stuck');_e('game_loss');_play('lose');_sr('tripeaks',{w:false,s:28-left});}
   }
   function rn(){

@@ -11,10 +11,29 @@ var _SUIT_NAME=window._SUIT_NAME,_CD_BASE=window._CD_BASE,_CD_BACK=window._CD_BA
 
 function GGF(a){
   var cols=[],stock=[],waste=[],deck,gameOver=false,score=35;
+  var history=[]; // LIFO stack of pre-move snapshots for undo
   ms(a,'Left: <strong id="GFsc">35</strong>');mm(a);
   var gd=document.createElement('div');gd.id='GFgd';a.appendChild(gd);
   var _gfStyleLbl='🃏 Style';
-  mc(a).innerHTML='<button class="gb" onclick="_GFN()">🔄 New</button> <button class="gb" id="GFstyle" onclick="_GFToggleStyle()" style="font-size:0.7rem;">'+_gfStyleLbl+'</button>';
+  mc(a).innerHTML='<button class="gb" id="GFundoBtn" onclick="_GFUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" onclick="_GFN()">🔄 New</button> <button class="gb" id="GFstyle" onclick="_GFToggleStyle()" style="font-size:0.7rem;">'+_gfStyleLbl+'</button>';
+  function snapshot(){
+    history.push(JSON.stringify({cols:cols, stock:stock, waste:waste, score:score}));
+    refreshUndoBtn();
+  }
+  function refreshUndoBtn(){
+    var b=document.getElementById('GFundoBtn');
+    if(!b)return;
+    if(history.length>0&&!gameOver){b.disabled=false;b.style.opacity='1';}
+    else{b.disabled=true;b.style.opacity='0.45';}
+  }
+  window._GFUndo=function(){
+    if(history.length===0||gameOver)return;
+    var snap=JSON.parse(history.pop());
+    cols=snap.cols; stock=snap.stock; waste=snap.waste; score=snap.score;
+    _play('tap');
+    rn();refreshUndoBtn();
+    var el=document.getElementById('GFsc');if(el)el.textContent=countLeft();
+  };
   window._GFToggleStyle=function(){
     if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
@@ -27,6 +46,7 @@ function GGF(a){
   function init(){
     deck=_cdSh(_cdMk());
     cols=[];stock=[];waste=[];gameOver=false;score=35;
+    history=[];
     for(var c=0;c<7;c++){
       cols[c]=[];
       for(var i=0;i<5;i++){
@@ -83,22 +103,24 @@ function GGF(a){
     if(col.length===0)return;
     var card=col[col.length-1];
     if(!canPlay(card)){sm('Need ±1 rank');return}
+    snapshot();
     col.pop();
     waste.push(card);
     _play('tap');
     _e('progress');
     score=countLeft();
-    rn();
+    rn();refreshUndoBtn();
     checkEnd();
   }
 
   function tapStock(){
     if(gameOver)return;
     if(stock.length===0){sm('Stock empty');return}
+    snapshot();
     var card=stock.pop();card.up=true;
     waste.push(card);
     _play('tap');
-    rn();
+    rn();refreshUndoBtn();
     checkEnd();
   }
 
