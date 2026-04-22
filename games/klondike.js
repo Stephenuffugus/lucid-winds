@@ -16,7 +16,7 @@ function GKL(a){
   ms(a,'Moves: <strong id="KLmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='KLgd';a.appendChild(gd);
   var _kStyleLbl='🃏 Style';
-  mc(a).innerHTML='<select class="gsl" id="KLdraw" onchange="_KLDraw(this.value)"><option value="1" selected>Draw 1</option><option value="3">Draw 3</option></select> <button class="gb" id="KLundoBtn" onclick="_KLUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" onclick="_KLN()">🔄 New</button> <button class="gb" id="KLstyle" onclick="_KLToggleStyle()" style="font-size:0.7rem;">'+_kStyleLbl+'</button>';
+  mc(a).innerHTML='<select class="gsl" id="KLdraw" onchange="_KLDraw(this.value)"><option value="1" selected>Draw 1</option><option value="3">Draw 3</option></select> <button class="gb" id="KLundoBtn" onclick="_KLUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" id="KLautoBtn" onclick="_KLAuto()" style="display:none;background:rgba(200,168,75,0.18);border-color:rgba(200,168,75,0.5);color:var(--gold);">✨ Auto</button> <button class="gb" onclick="_KLN()">🔄 New</button> <button class="gb" id="KLstyle" onclick="_KLToggleStyle()" style="font-size:0.7rem;">'+_kStyleLbl+'</button>';
   // Snapshot the full game state so undo can restore it exactly. Plain JSON
   // round-trip because every card is a flat {s,r,up} object. Called BEFORE
   // any mutation — every move, stock draw, and stock recycle.
@@ -41,6 +41,78 @@ function GKL(a){
     _play('tap');
     rn();
     refreshUndoBtn();
+    refreshAutoBtn();
+  };
+  // Auto-complete eligibility — every tableau card must be face-up. Stock and
+  // waste can still have cards; the cascade will drain them too.
+  function autoEligible(){
+    if(gameOver)return false;
+    for(var c=0;c<7;c++){
+      var col=tableau[c];
+      for(var i=0;i<col.length;i++){if(!col[i].up)return false;}
+    }
+    return true;
+  }
+  function refreshAutoBtn(){
+    var b=document.getElementById('KLautoBtn');
+    if(!b)return;
+    b.style.display=autoEligible()?'':'none';
+  }
+  // Cascade: find the lowest-rank card among tableau tops + waste top + stock
+  // top that can go to any foundation, send it there, then schedule the next
+  // step 40ms later. Rising-pitch chime per step. Stops when nothing legal.
+  window._KLAuto=function(){
+    if(!autoEligible())return;
+    sel=null;
+    function step(){
+      if(gameOver)return;
+      // Candidates: waste top, stock top (if we flip it up), each tableau top.
+      var best=null; // {src, card, f}
+      function consider(card, f, src){
+        if(canPlaceOnFnd(card,f)){
+          if(!best||card.r<best.card.r)best={src:src,card:card,f:f};
+        }
+      }
+      if(waste.length>0){
+        for(var f=0;f<4;f++)consider(waste[waste.length-1], f, 'waste');
+      }
+      for(var c=0;c<7;c++){
+        if(tableau[c].length===0)continue;
+        var top=tableau[c][tableau[c].length-1];
+        if(!top.up)continue;
+        for(var f2=0;f2<4;f2++)consider(top, f2, 'tab:'+c);
+      }
+      if(!best){
+        // Nothing more to send. If stock has cards, draw one and try again;
+        // otherwise we're done.
+        if(stock.length>0){
+          var card=stock.pop();card.up=true;waste.push(card);
+          rn();
+          setTimeout(step, 40);
+          return;
+        }
+        return;
+      }
+      snapshot();
+      if(best.src==='waste')waste.pop();
+      else{
+        var ci=parseInt(best.src.split(':')[1],10);
+        tableau[ci].pop();
+      }
+      fnd[best.f].push(best.card);
+      moves++;
+      var el=document.getElementById('KLmv');if(el)el.textContent=moves;
+      _play('tap');
+      rn();
+      refreshUndoBtn();
+      if(checkWin()){
+        gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves});
+        refreshAutoBtn();
+        return;
+      }
+      setTimeout(step, 40);
+    }
+    step();
   };
   window._KLToggleStyle=function(){
     if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading — try again in a sec.');return;}
@@ -139,6 +211,7 @@ function GKL(a){
     _play('tap');
     _e('progress');
     refreshUndoBtn();
+    refreshAutoBtn();
   }
 
   function tapStock(){
@@ -462,6 +535,7 @@ function GKL(a){
       tabRow.appendChild(colDiv);
     }
     gd.appendChild(tabRow);
+    refreshAutoBtn();
   }
 
   window._KLN=function(){init()};
