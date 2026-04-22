@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.16';
+  var LW_VERSION='2026.04.22.17';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3431,6 +3431,20 @@
     body.game-active #lw-fb-btn,
     body.game-active #lw-whatnow-btn,
     body.game-active #sws-debug-toggle{display:none!important}
+    /* Three Sisters keeps its own rules strip visible — it has no inline gr rules div like the other games */
+    body.game-active.game-set .rules-strip{display:block!important}
+    /* Rotate-for-landscape hint — solitaire tableaus need ~640px to fit 7 columns without side-clipping */
+    #sol-rotate-hint{display:none;position:fixed;inset:0;z-index:1000001;background:linear-gradient(180deg,rgba(8,12,6,0.98) 0%,rgba(4,8,3,1) 100%);align-items:center;justify-content:center;padding:1.5rem;text-align:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+    #sol-rotate-hint .srh-inner{max-width:360px;}
+    #sol-rotate-hint .srh-icon{font-size:3.2rem;margin-bottom:0.6rem;animation:srhRotate 2.4s ease-in-out infinite;display:inline-block;}
+    #sol-rotate-hint .srh-title{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:0.5rem;}
+    #sol-rotate-hint .srh-body{font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--cream);line-height:1.6;letter-spacing:0.03em;margin-bottom:1.1rem;}
+    #sol-rotate-hint .srh-dismiss{background:rgba(26,31,23,0.8);border:1.5px solid rgba(122,179,86,0.3);color:var(--muted);font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;padding:10px 18px;border-radius:8px;cursor:pointer;min-height:44px;}
+    #sol-rotate-hint .srh-dismiss:active{background:rgba(74,124,53,0.2);transform:scale(0.96);}
+    @keyframes srhRotate{0%{transform:rotate(0deg)}40%{transform:rotate(-90deg)}60%{transform:rotate(-90deg)}100%{transform:rotate(0deg)}}
+    body.sol-fs #sol-rotate-hint{display:flex;}
+    @media (orientation:landscape){body.sol-fs #sol-rotate-hint{display:none!important;}}
+    body.sol-fs.srh-dismissed #sol-rotate-hint{display:none!important;}
     /* Universal EXIT button during game — returns to picker */
     #game-exit-btn{display:none;position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;z-index:999999;min-width:64px;min-height:44px;padding:8px 14px;background:rgba(13,16,12,0.92);border:1.5px solid rgba(122,179,86,0.45);color:var(--cream);font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:10px;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 3px 12px rgba(0,0,0,0.6);pointer-events:auto;}
     body.game-active #game-exit-btn{display:flex !important;align-items:center;justify-content:center;gap:4px;}
@@ -5510,6 +5524,14 @@ window._addSwitchTabHook = function(fn){
   </div>
   <div class="fg-pk" id="fg-pk"></div>
   <button id="game-exit-btn" onclick="if(window._openGamePicker)_openGamePicker();" title="Back to games">&larr; GAMES</button>
+  <div id="sol-rotate-hint" role="dialog" aria-label="Rotate for best experience">
+    <div class="srh-inner">
+      <div class="srh-icon">📱</div>
+      <div class="srh-title">ROTATE TO LANDSCAPE</div>
+      <div class="srh-body">Seven tableau columns need the wider screen. Turn your phone sideways and the cards will fit.</div>
+      <button class="srh-dismiss" onclick="document.body.classList.add('srh-dismissed')">Play in portrait anyway</button>
+    </div>
+  </div>
   <!-- Trios status bar removed — counters live inside #sw .fg-topbar now -->
   <div id="gp-strip" class="gp-strip"></div>
   <div id="fg-ag"></div>
@@ -44738,7 +44760,7 @@ var G_CATS=[
   {key:'dice',    label:'DICE GAMES',     icon:'\ud83c\udfb2'}
 ];
 var G=[
-{id:'set',n:'Three Sisters',i:'\ud83c\udccf',r:'Tap 3 cards where each trait is ALL same or ALL different.',cat:'card',thumb:'assets/games/thumbs/threesisters.png'},
+{id:'set',n:'Three Sisters',i:'\ud83c\udccf',r:'Tap 3 cards where each trait is ALL same or ALL different.',cat:'pattern',thumb:'assets/games/thumbs/threesisters.png'},
 {id:'stopten',n:'Stop at Ten',i:'\u23f1\ufe0f',r:'Start the clock. Stop it at exactly 10.00 seconds. Closer = better.',cat:'pattern',thumb:'assets/games/thumbs/stopten-trimmed.png'},
 {id:'memory',n:'Memory',i:'\ud83e\udde0',r:'Flip 2 cards per turn. Match all pairs to clear the board.',cat:'pattern',thumb:'assets/games/thumbs/memory.png'},
 {id:'merge',n:'2048',i:'\ud83c\udf3f',r:'Swipe or tap arrows to merge same-number tiles. Reach 2048!',cat:'puzzle',thumb:'assets/games/thumbs/merge.png'},
@@ -45544,6 +45566,10 @@ function _openGamePicker(){
   // Clear game-active state so HUD returns and re-show the picker/strips
   // that were inline-hidden when a game launched.
   document.body.classList.remove('game-active');
+  document.body.classList.remove('game-set');
+  // sol-fs leaks across game switches without this; the rotate hint would
+  // otherwise linger over the picker in portrait.
+  try{if(window._solClearFS)window._solClearFS();}catch(e){}
   var _fgPk=document.getElementById('fg-pk');if(_fgPk)_fgPk.style.display='';
   var _rs=document.getElementById('rules-strip');if(_rs)_rs.style.display='';
   var _as=document.querySelector('.attn-strip');if(_as)_as.style.display='';
@@ -45927,9 +45953,11 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;window._a
   // because Stephen kept seeing the ALL GAMES chips + category slider at
   // the top of Three Sisters.
   var _fgPk=document.getElementById('fg-pk');if(_fgPk)_fgPk.style.display='none';
-  var _rs=document.getElementById('rules-strip');if(_rs)_rs.style.display='none';
+  var _rs=document.getElementById('rules-strip');if(_rs)_rs.style.display=(id==='set'?'':'none');
   var _as=document.querySelector('.attn-strip');if(_as)_as.style.display='none';
-  if(id==='set'){sw.style.display='';if(_td)_td.style.display='';if(_tw)_tw.style.display='';if(ssb)ssb.style.display='';ag.classList.remove('on');ag.classList.remove('sol');ag.innerHTML='';if(_bnav)_bnav.style.display='none';if(gps){gps.classList.add('on');}document.body.classList.add('game-active');try{_updateGP()}catch(e){}return}
+  // Clear any lingering per-game body class from a previous switch.
+  document.body.classList.remove('game-set');
+  if(id==='set'){sw.style.display='';if(_td)_td.style.display='';if(_tw)_tw.style.display='';if(ssb)ssb.style.display='';ag.classList.remove('on');ag.classList.remove('sol');ag.innerHTML='';if(_bnav)_bnav.style.display='none';if(gps){gps.classList.add('on');}document.body.classList.add('game-active');document.body.classList.add('game-set');try{_updateGP()}catch(e){}return}
   sw.style.display='none';if(_td)_td.style.display='none';if(_tw)_tw.style.display='none';if(ssb)ssb.style.display='none';ag.classList.add('on');ag.classList.toggle('sol',!!_solGames[id]);ag.innerHTML='';ag.setAttribute('data-game',id);document.body.classList.add('game-active');
   if(_bnav)_bnav.style.display='none';
   if(_solGames[id]){_solEnterFS()}
