@@ -136,6 +136,12 @@ function GPY(a){
   }
   function rn(){
     gd.innerHTML='';
+    // Smart-drop source: any exposed card that pairs (sum to 13) with selected.
+    var srcCard=null;
+    if(sel){
+      if(sel.type==='pyr'&&!removed[sel.idx])srcCard=pyr[sel.idx];
+      else if(sel.type==='waste'&&waste.length>0)srcCard=waste[waste.length-1];
+    }
     // 7-wide base row drives sizing. The row-overlap shows ~60% of each card top.
     var fit=window._cdFit?window._cdFit(7,{maxW:84,gap:3,pad:10}):{w:'clamp(48px,13vw,84px)',h:'clamp(67px,18.2vw,117px)',font:'clamp(.65rem,1.8vw,.9rem)',gap:'3px',raw:{h:117}};
     var pyW=fit.w,pyH=fit.h,pyF=fit.font;
@@ -159,6 +165,12 @@ function GPY(a){
           if(!isExposed(pi))cd.style.opacity='.5';
           else cd.style.cursor='pointer';
           if(sel&&sel.type==='pyr'&&sel.idx===pi)cd.className+=' gc-sel';
+          // Smart-drop: this exposed card pairs with the selection → glow green.
+          // Kings glow whenever they're exposed (they remove alone).
+          if(isExposed(pi)){
+            if(srcCard&&!(sel&&sel.type==='pyr'&&sel.idx===pi)&&canPair(srcCard,pyr[pi]))cd.classList.add('gc-legal');
+            else if(!srcCard&&isKing(pyr[pi]))cd.classList.add('gc-legal');
+          }
           (function(ii){cd.onclick=function(){tapPyr(ii)}})(pi);
           rowDiv.appendChild(cd);
         }
@@ -175,7 +187,14 @@ function GPY(a){
     else{stEl.className='gc gc-empty';}
     botRow.appendChild(stEl);
     var wEl;
-    if(waste.length>0){wEl=_cdEl(waste[waste.length-1]);if(sel&&sel.type==='waste')wEl.className+=' gc-sel';wEl.style.cursor='pointer';wEl.onclick=function(){tapWaste()};}
+    if(waste.length>0){
+      wEl=_cdEl(waste[waste.length-1]);
+      if(sel&&sel.type==='waste')wEl.className+=' gc-sel';
+      // Waste highlights when it pairs with a selected pyr card, or when it's a King itself.
+      if(sel&&sel.type==='pyr'&&srcCard&&canPair(srcCard,waste[waste.length-1]))wEl.classList.add('gc-legal');
+      else if(!sel&&isKing(waste[waste.length-1]))wEl.classList.add('gc-legal');
+      wEl.style.cursor='pointer';wEl.onclick=function(){tapWaste()};
+    }
     else{wEl=document.createElement('div');wEl.className='gc gc-empty';}
     botRow.appendChild(wEl);
     gd.appendChild(botRow);

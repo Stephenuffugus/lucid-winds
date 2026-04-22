@@ -124,6 +124,9 @@ function GSP(a){
   }
   function rn(){
     gd.innerHTML='';
+    // Smart-drop source — the head (bottom, lowest-rank) of the selected run.
+    var srcHead=null, srcColIdx=-1;
+    if(sel){ srcHead=tab[sel.col][sel.idx]; srcColIdx=sel.col; }
     var topRow=document.createElement('div');
     topRow.style.cssText='display:flex;gap:clamp(4px,1.2vw,6px);justify-content:center;padding:clamp(2px,1vw,4px) 0;width:clamp(320px,100vw,700px);margin:0 auto;align-items:center';
     var stEl=document.createElement('div');
@@ -142,8 +145,15 @@ function GSP(a){
     for(var c=0;c<10;c++){
       var colDiv=document.createElement('div');colDiv.className='gc-stk';
       colDiv.style.minWidth=spW;
+      // Spider's drop rule: empty col OR top-of-col rank is srcHead.r+1. Any suit.
+      var colLegal = false;
+      if(srcHead && c!==srcColIdx){
+        if(tab[c].length===0)colLegal=true;
+        else{var topC=tab[c][tab[c].length-1];if(topC.up&&topC.r===srcHead.r+1)colLegal=true;}
+      }
       if(tab[c].length===0){
         var em=document.createElement('div');em.className='gc gc-empty';em.style.width=spW;em.style.height=spH;
+        if(colLegal)em.classList.add('gc-legal');
         (function(ci){em.onclick=function(){tapCol(ci)}})(c);
         colDiv.appendChild(em);
       }else{
@@ -161,6 +171,7 @@ function GSP(a){
           // corner so they don't leak through via the overlap math.
           if(i<depth-1)cd.classList.add('gc-peek');
           if(sel&&sel.col===c&&i>=sel.idx)cd.className+=' gc-sel';
+          if(colLegal&&i===depth-1)cd.classList.add('gc-legal');
           (function(ci,ii){cd.onclick=function(){tapCol(ci,ii)}})(c,i);
           colDiv.appendChild(cd);
         }

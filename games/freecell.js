@@ -140,28 +140,41 @@ function GFC(a){
   }
   function rn(){
     gd.innerHTML='';
+    // Smart-drop: compute the selected run's head.
+    var srcHead=null, srcIsSingle=true, srcFreeIdx=-1, srcTabIdx=-1;
+    if(sel){
+      var srcCards=getSel();
+      if(srcCards.length>0){
+        srcHead=srcCards[0];
+        srcIsSingle=(srcCards.length===1);
+      }
+      if(sel.type==='free')srcFreeIdx=sel.idx;
+      if(sel.type==='tab')srcTabIdx=sel.idx;
+    }
     var topRow=document.createElement('div');
     // Top row has 8 wide slots (4 free + spacer + 4 fnd). Tableau has 8
     // columns. Both fit on the same 8-col budget.
     var fit=window._cdFit?window._cdFit(8,{maxW:90,gap:3,pad:10}):{w:'clamp(48px,13vw,84px)',h:'clamp(67px,18.2vw,117px)',font:'clamp(.6rem,1.75vw,.85rem)',gap:'3px',raw:{h:117,peek:20}};
     var fcW=fit.w,fcH=fit.h,fcF=fit.font;
     topRow.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center;padding:4px 0;width:100%;max-width:100vw;margin:0 auto;align-items:flex-start';
-    // Free cells
+    // Free cells — legal target only if source is a single card and the cell is empty
     for(var i=0;i<4;i++){
       var el;
       if(free[i]){el=_cdEl(free[i]);if(sel&&sel.type==='free'&&sel.idx===i)el.className+=' gc-sel';}
       else{el=document.createElement('div');el.className='gc gc-empty';}
       el.style.width=fcW;el.style.height=fcH;el.style.fontSize=fcF;
+      if(srcHead&&srcIsSingle&&!free[i]&&i!==srcFreeIdx)el.classList.add('gc-legal');
       (function(ii){el.onclick=function(){doSelect('free',ii)}})(i);
       el.style.cursor='pointer';topRow.appendChild(el);
     }
     var sp=document.createElement('div');sp.style.cssText='width:clamp(4px,1.5vw,10px)';topRow.appendChild(sp);
-    // Foundations
+    // Foundations — legal only for single cards that can stack on the pile.
     for(var f=0;f<4;f++){
       var el;
       if(fnd[f].length>0){el=_cdEl(fnd[f][fnd[f].length-1]);}
       else{el=document.createElement('div');el.className='gc gc-fnd';if(window._cdFndEmpty)window._cdFndEmpty(el,f);else el.style.backgroundImage="url('"+_CD_BASE+_SUIT_NAME[f]+".png')";}
       el.style.width=fcW;el.style.height=fcH;el.style.fontSize=fcF;
+      if(srcHead&&srcIsSingle&&canFnd(srcHead,f))el.classList.add('gc-legal');
       (function(fi){el.onclick=function(){doSelect('fnd',fi)}})(f);
       el.style.cursor='pointer';topRow.appendChild(el);
     }
@@ -171,8 +184,15 @@ function GFC(a){
     tabRow.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center;padding:4px 0;width:100%;max-width:100vw;margin:0 auto';
     for(var c=0;c<8;c++){
       var colDiv=document.createElement('div');colDiv.className='gc-stk';colDiv.style.minWidth=fcW;
+      // Tableau legal: run fits within maxMove() and the top card accepts our head.
+      var colLegal=false;
+      if(srcHead && c!==srcTabIdx){
+        var runLen = srcIsSingle?1:(tab[srcTabIdx]?tab[srcTabIdx].length-sel.cardIdx:1);
+        if(runLen<=maxMove() && canTab(srcHead,c))colLegal=true;
+      }
       if(tab[c].length===0){
         var em=document.createElement('div');em.className='gc gc-empty';em.style.width=fcW;em.style.height=fcH;
+        if(colLegal)em.classList.add('gc-legal');
         (function(ci){em.onclick=function(){doSelect('tab',ci)}})(c);
         colDiv.appendChild(em);
       }else{
@@ -187,6 +207,7 @@ function GFC(a){
           if(i>0)cd.style.marginTop=(-peekOverlap)+'px';
           if(i<depth-1)cd.classList.add('gc-peek');
           if(sel&&sel.type==='tab'&&sel.idx===c&&i>=sel.cardIdx)cd.className+=' gc-sel';
+          if(colLegal&&i===depth-1)cd.classList.add('gc-legal');
           (function(ci,ii){cd.onclick=function(){doSelect('tab',ci,ii)}})(c,i);
           cd.style.cursor='pointer';colDiv.appendChild(cd);
         }
