@@ -124,6 +124,59 @@ window._gameFns.juniper = function Juniper(a){
     return{melds:bestCombo,deadwood:bestDW};
   }
   function getDeadwood(hand){return bestMeldCombination(hand).deadwood;}
+  // Layoff eligibility — can `card` extend `meldCards` (an array of card objs)?
+  // Sets: same rank as the meld. Runs: same suit and adjacent rank to either end.
+  function _layoffEligible(card, meldCards){
+    if(!meldCards || meldCards.length<2) return false;
+    var isSet = meldCards[0].rank === meldCards[1].rank;
+    if(isSet){
+      return card.rank === meldCards[0].rank;
+    }
+    // Run
+    if(card.suit !== meldCards[0].suit) return false;
+    var minOrd=Infinity, maxOrd=-Infinity;
+    for(var i=0;i<meldCards.length;i++){
+      var o = RORD[meldCards[i].rank];
+      if(o < minOrd) minOrd = o;
+      if(o > maxOrd) maxOrd = o;
+    }
+    var co = RORD[card.rank];
+    return co === minOrd - 1 || co === maxOrd + 1;
+  }
+  // Auto-lay-off: greedy multiple-pass pruning of defender's deadwood onto
+  // the knocker's melds. Returns the final deadwood point total.
+  function _autoLayoff(defenderHand, knockerHand, knockerMelds){
+    var meldCardLists = knockerMelds.map(function(meldIdxArr){
+      return meldIdxArr.map(function(idx){return knockerHand[idx];});
+    });
+    var defResult = bestMeldCombination(defenderHand);
+    var inMeld = {};
+    for(var m=0;m<defResult.melds.length;m++)
+      for(var j=0;j<defResult.melds[m].length;j++)
+        inMeld[defResult.melds[m][j]] = true;
+    var deadwoodCards = [];
+    for(var i=0;i<defenderHand.length;i++)
+      if(!inMeld[i]) deadwoodCards.push(defenderHand[i]);
+    var changed = true, laidOffCount = 0;
+    while(changed){
+      changed = false;
+      for(var di=deadwoodCards.length-1;di>=0;di--){
+        var card = deadwoodCards[di];
+        for(var mi=0;mi<meldCardLists.length;mi++){
+          if(_layoffEligible(card, meldCardLists[mi])){
+            meldCardLists[mi].push(card);
+            deadwoodCards.splice(di,1);
+            laidOffCount++;
+            changed = true;
+            break;
+          }
+        }
+      }
+    }
+    var newDw = 0;
+    for(var k=0;k<deadwoodCards.length;k++) newDw += RV[deadwoodCards[k].rank];
+    return {newDeadwood:newDw, laidOff:laidOffCount};
+  }
   // Inspect a meld to label it 'set' (same rank) or 'run' (same suit consecutive).
   function _meldKind(hand,meld){
     var ranks={};for(var i=0;i<meld.length;i++)ranks[hand[meld[i]].rank]=true;
@@ -213,6 +266,13 @@ window._gameFns.juniper = function Juniper(a){
     var defenderHand=who==='player'?aiHand:playerHand;
     var kr=bestMeldCombination(knockerHand);var dr=bestMeldCombination(defenderHand);
     var kdw=kr.deadwood,ddw=dr.deadwood;
+    var laidOff=0, ddwBefore=ddw;
+    // Layoff happens on knock only. GIN forbids layoff (rules).
+    if(type==='knock'){
+      var lo = _autoLayoff(defenderHand, knockerHand, kr.melds);
+      ddw = lo.newDeadwood;
+      laidOff = lo.laidOff;
+    }
     var pts=0,winner='',msg='',kind=type;
     if(type==='gin'){pts=ddw+25;winner=who;msg=(who==='player'?'GIN! +':'AI GIN! +')+pts;}
     else{
@@ -223,7 +283,7 @@ window._gameFns.juniper = function Juniper(a){
     else{aiScore+=pts;aiWins++;_e('progress');}
     sm(msg);
     // Fire the dramatic takeover overlay for ~2.4s before next deal.
-    winOverlay={kind:kind,winner:winner,pts:pts,kdw:kdw,ddw:ddw};
+    winOverlay={kind:kind,winner:winner,pts:pts,kdw:kdw,ddw:ddw,laidOff:laidOff,ddwBefore:ddwBefore};
     render();
     setTimeout(function(){
       winOverlay=null;
@@ -376,10 +436,12 @@ window._gameFns.juniper = function Juniper(a){
         sub = '+ '+w.pts+' (deadwood '+w.ddw+' + 25 bonus)';
       } else if(w.kind==='undercut'){
         bigText = 'UNDERCUT';
-        sub = (isYou?'You':'Juniper')+' +'+w.pts;
+        var loStr = w.laidOff>0 ? ' &middot; laid off '+w.laidOff : '';
+        sub = (isYou?'You':'Juniper')+' +'+w.pts+loStr;
       } else {
         bigText = isYou ? 'KNOCK' : 'JUNIPER KNOCKS';
-        sub = (isYou?'You':'Juniper')+' +'+w.pts+' (diff '+(w.ddw-w.kdw)+')';
+        var loStr2 = w.laidOff>0 ? ' &middot; laid off '+w.laidOff : '';
+        sub = (isYou?'You':'Juniper')+' +'+w.pts+' (diff '+(w.ddw-w.kdw)+')'+loStr2;
       }
       var bgGrad = w.kind==='gin'
         ? 'radial-gradient(ellipse at 50% 40%,rgba(255,220,112,0.35) 0%,rgba(10,5,20,0.95) 70%)'
