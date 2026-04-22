@@ -135,6 +135,8 @@ function GPY(a){
     if(checkLoss()){gameOver=true;mm_up('No moves left');_e('game_loss');_play('lose');_sr('pyramid',{w:false,s:moves});}
   }
   function rn(){
+    var _ag=document.getElementById('fg-ag');
+    var _scrollY=_ag?_ag.scrollTop:0;
     gd.innerHTML='';
     // Smart-drop source: any exposed card that pairs (sum to 13) with selected.
     var srcCard=null;
@@ -198,6 +200,7 @@ function GPY(a){
     else{wEl=document.createElement('div');wEl.className='gc gc-empty';}
     botRow.appendChild(wEl);
     gd.appendChild(botRow);
+    if(_ag)_ag.scrollTop=_scrollY;
   }
   window._PYN=function(){init()};
   init();

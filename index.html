@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.28';
+  var LW_VERSION='2026.04.22.29';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3648,8 +3648,12 @@
     .gc-sel{box-shadow:inset 0 0 0 99px rgba(200,168,78,.18),0 0 8px rgba(200,168,78,.4)!important;border-color:rgba(200,168,78,.5)!important}
     .gc-empty{background:rgba(14,20,12,.4);border:1.5px dashed rgba(74,124,53,.2);border-radius:clamp(5px,1.4vw,10px)}
     .gc-fnd{background-color:rgba(26,31,23,.5);background-size:50%;background-position:center;background-repeat:no-repeat;border:1.5px solid rgba(74,124,53,.2)}
-    /* Peeked cards (Klondike tableau stack) show only a narrow strip. Hide the big center art + bottom-right corner so the top-left rank is the only glyph in that strip. */
+    /* Peeked cards (Klondike tableau stack) show only a narrow strip. Hide the big center art + bottom-right corner so the top-left rank+suit are the only glyphs in that strip. */
     .gc-peek .gc-center, .gc-peek .gc-corner-br{display:none!important;}
+    /* Flatten the top-left corner for peeked cards so rank and suit sit on one line instead of stacked — Classic and Floral decks stack them vertically which won't fit in a 20px peek strip. */
+    .gc-peek .gc-corner-tl{display:flex!important;flex-direction:row!important;align-items:center!important;gap:3px!important;top:2px!important;left:4px!important;}
+    .gc-peek .gc-corner-tl > div,.gc-peek .gc-corner-tl > img{margin:0!important;line-height:1!important;}
+    .gc-peek .gc-corner-tl > img{height:0.9em!important;width:0.9em!important;}
     /* Smart-drop highlight. When a card is selected, legal drop targets glow green so the player sees every legal play at once. */
     .gc-legal{box-shadow:0 0 0 2px rgba(122,179,86,0.85),0 0 16px rgba(122,179,86,0.45),0 3px 8px rgba(0,0,0,.45)!important;border-color:rgba(122,179,86,0.9)!important;animation:gcLegalPulse 1.6s ease-in-out infinite;}
     @keyframes gcLegalPulse{0%,100%{box-shadow:0 0 0 2px rgba(122,179,86,0.85),0 0 14px rgba(122,179,86,0.35),0 3px 8px rgba(0,0,0,.45);}50%{box-shadow:0 0 0 2px rgba(122,179,86,1),0 0 22px rgba(122,179,86,0.65),0 3px 8px rgba(0,0,0,.45);}}

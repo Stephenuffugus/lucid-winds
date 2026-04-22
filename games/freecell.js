@@ -202,6 +202,8 @@ function GFC(a){
     if(sel.type==='tab')tab[sel.idx].splice(sel.cardIdx);
   }
   function rn(){
+    var _ag=document.getElementById('fg-ag');
+    var _scrollY=_ag?_ag.scrollTop:0;
     gd.innerHTML='';
     // Smart-drop: compute the selected run's head.
     var srcHead=null, srcIsSingle=true, srcFreeIdx=-1, srcTabIdx=-1;
@@ -278,6 +280,7 @@ function GFC(a){
       tabRow.appendChild(colDiv);
     }
     gd.appendChild(tabRow);
+    if(_ag)_ag.scrollTop=_scrollY;
   }
   window._FCN=function(){init()};
   init();

@@ -125,12 +125,14 @@ function GGF(a){
   }
 
   function rn(){
+    var _ag=document.getElementById('fg-ag');
+    var _scrollY=_ag?_ag.scrollTop:0;
     gd.innerHTML='';
     var sc=document.getElementById('GFsc');
     if(sc)sc.textContent=countLeft();
 
-    // Top row: stock, waste, score. Tableau is 7 columns — that's the binding constraint.
-    var fit=window._cdFit?window._cdFit(7,{maxW:96,gap:4,pad:12}):{w:'clamp(56px,14.5vw,92px)',h:'clamp(78px,20.2vw,128px)',font:'clamp(.65rem,1.9vw,.9rem)',gap:'4px',raw:{h:128}};
+    // Top row: stock, waste, score. Tableau is 7 columns.
+    var fit=window._cdFit?window._cdFit(7,{maxW:72,gap:3,pad:10}):{w:'clamp(52px,13.5vw,72px)',h:'clamp(72px,18.9vw,100px)',font:'clamp(.6rem,1.7vw,.8rem)',gap:'3px',raw:{h:100}};
     var gfW=fit.w,gfH=fit.h,gfF=fit.font;
     var topRow=document.createElement('div');
     topRow.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center;padding:4px 0;width:100%;max-width:100vw;margin:0 auto;align-items:center';
@@ -187,7 +189,10 @@ function GGF(a){
         colDiv.appendChild(em);
       }else{
         var depth=cols[c].length;
-        var peekOverlap=Math.round(fit.raw.h * 0.78); // shows ~22% of each card
+        // Reveal ~28% of each card so rank+suit on the peek strip stays readable
+        // even at smaller card sizes. 5 cards per column + 28% reveal fits a
+        // landscape phone comfortably.
+        var peekOverlap=Math.round(fit.raw.h * 0.72);
         for(var i=0;i<depth;i++){
           var cd=_cdEl(cols[c][i]);
           cd.style.width=gfW;cd.style.height=gfH;cd.style.fontSize=gfF;
@@ -203,6 +208,7 @@ function GGF(a){
       tabRow.appendChild(colDiv);
     }
     gd.appendChild(tabRow);
+    if(_ag)_ag.scrollTop=_scrollY;
   }
 
   window._GFN=function(){init()};

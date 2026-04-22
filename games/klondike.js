@@ -387,6 +387,10 @@ function GKL(a){
   }
 
   function rn(){
+    // Preserve the scrollable container's position across rebuilds — otherwise
+    // every click that triggers rn() snaps the viewport back to the top.
+    var _ag=document.getElementById('fg-ag');
+    var _scrollY=_ag?_ag.scrollTop:0;
     gd.innerHTML='';
     // Smart-drop highlight source. When a card/run is selected, every legal
     // destination glows green so the player sees their options at a glance.
@@ -403,8 +407,8 @@ function GKL(a){
     // Top row: stock, waste, spacer, 4 foundations
     var topRow=document.createElement('div');
     // Auto-fit: 7 tableau columns drive sizing; top-row spacer absorbs leftover.
-    // Cap at 80 so landscape phones aren't swamped by huge cards.
-    var fit=window._cdFit?window._cdFit(7,{maxW:80,gap:4,pad:12}):{w:'clamp(56px,14.5vw,80px)',h:'clamp(78px,20.2vw,112px)',font:'clamp(.65rem,1.9vw,.85rem)',peek:'16px',raw:{h:112,peek:16}};
+    // Cap at 72 so landscape phones aren't swamped by huge cards.
+    var fit=window._cdFit?window._cdFit(7,{maxW:72,gap:3,pad:10}):{w:'clamp(52px,13.5vw,72px)',h:'clamp(72px,18.9vw,100px)',font:'clamp(.6rem,1.7vw,.8rem)',peek:'14px',raw:{h:100,peek:14}};
     var klW=fit.w,klH=fit.h,klF=fit.font;
     topRow.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center;padding:4px 0;width:100%;max-width:100vw;margin:0 auto;align-items:flex-start;flex-wrap:nowrap';
 
@@ -536,6 +540,7 @@ function GKL(a){
     }
     gd.appendChild(tabRow);
     refreshAutoBtn();
+    if(_ag)_ag.scrollTop=_scrollY;
   }
 
   window._KLN=function(){init()};

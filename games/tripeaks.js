@@ -123,6 +123,8 @@ function GTP(a){
     if(checkLoss()){gameOver=true;var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;mm_up(left+' left — stuck');_e('game_loss');_play('lose');_sr('tripeaks',{w:false,s:28-left});}
   }
   function rn(){
+    var _ag=document.getElementById('fg-ag');
+    var _scrollY=_ag?_ag.scrollTop:0;
     gd.innerHTML='';
     // Peaks
     var peakDiv=document.createElement('div');
@@ -182,6 +184,7 @@ function GTP(a){
     var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;
     info.textContent='Streak: '+streak;botRow.appendChild(info);
     gd.appendChild(botRow);
+    if(_ag)_ag.scrollTop=_scrollY;
   }
   window._TPN=function(){init()};
   init();

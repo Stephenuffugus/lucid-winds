@@ -123,6 +123,8 @@ function GSP(a){
     flipTops();upd();rn();refreshUndoBtn();
   }
   function rn(){
+    var _ag=document.getElementById('fg-ag');
+    var _scrollY=_ag?_ag.scrollTop:0;
     gd.innerHTML='';
     // Smart-drop source — the head (bottom, lowest-rank) of the selected run.
     var srcHead=null, srcColIdx=-1;
@@ -179,6 +181,7 @@ function GSP(a){
       tabRow.appendChild(colDiv);
     }
     gd.appendChild(tabRow);
+    if(_ag)_ag.scrollTop=_scrollY;
   }
   window._SPN=function(){init()};
   window._SPS=function(v){suits=parseInt(v)||1;_setDiff(suits<=1?'easy':suits<=2?'medium':'hard');init()};
