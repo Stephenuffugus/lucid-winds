@@ -23,6 +23,7 @@ function GFC(a){
     rn();
   };
 
+  window._cdActiveRn=function(){try{rn()}catch(e){}};
   function init(){
     var deck=_cdSh(_cdMk());
     tab=[];free=[null,null,null,null];fnd=[[],[],[],[]];sel=null;gameOver=false;moves=0;
@@ -116,8 +117,11 @@ function GFC(a){
   function rn(){
     gd.innerHTML='';
     var topRow=document.createElement('div');
-    var fcW='clamp(48px,13vw,84px)',fcH='clamp(67px,18.2vw,117px)',fcF='clamp(.6rem,1.75vw,.85rem)';
-    topRow.style.cssText='display:flex;gap:clamp(2px,.6vw,4px);justify-content:center;padding:clamp(2px,1vw,4px) 0;width:clamp(320px,100vw,680px);margin:0 auto;align-items:flex-start';
+    // Top row has 8 wide slots (4 free + spacer + 4 fnd). Tableau has 8
+    // columns. Both fit on the same 8-col budget.
+    var fit=window._cdFit?window._cdFit(8,{maxW:90,gap:3,pad:10}):{w:'clamp(48px,13vw,84px)',h:'clamp(67px,18.2vw,117px)',font:'clamp(.6rem,1.75vw,.85rem)',gap:'3px',raw:{h:117,peek:20}};
+    var fcW=fit.w,fcH=fit.h,fcF=fit.font;
+    topRow.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center;padding:4px 0;width:100%;max-width:100vw;margin:0 auto;align-items:flex-start';
     // Free cells
     for(var i=0;i<4;i++){
       var el;
@@ -140,7 +144,7 @@ function GFC(a){
     gd.appendChild(topRow);
     // Tableau
     var tabRow=document.createElement('div');
-    tabRow.style.cssText='display:flex;gap:clamp(2px,.6vw,3px);justify-content:center;padding:clamp(2px,.8vw,3px) 0;width:clamp(320px,100vw,680px);margin:0 auto';
+    tabRow.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center;padding:4px 0;width:100%;max-width:100vw;margin:0 auto';
     for(var c=0;c<8;c++){
       var colDiv=document.createElement('div');colDiv.className='gc-stk';colDiv.style.minWidth=fcW;
       if(tab[c].length===0){
@@ -148,9 +152,15 @@ function GFC(a){
         (function(ci){em.onclick=function(){doSelect('tab',ci)}})(c);
         colDiv.appendChild(em);
       }else{
-        for(var i=0;i<tab[c].length;i++){
+        // Peek math: overlap all but the last card so deep piles fit. Shrinks
+        // with depth so even a long built-down run stays on-screen.
+        var depth=tab[c].length;
+        var depthMult=depth>12?0.55:depth>10?0.7:depth>7?0.85:1.0;
+        var peekOverlap=Math.round(fit.raw.h * (1 - 0.22*depthMult)); // negative margin offset
+        for(var i=0;i<depth;i++){
           var cd=_cdEl(tab[c][i]);
           cd.style.width=fcW;cd.style.height=fcH;cd.style.fontSize=fcF;
+          if(i>0)cd.style.marginTop=(-peekOverlap)+'px';
           if(sel&&sel.type==='tab'&&sel.idx===c&&i>=sel.cardIdx)cd.className+=' gc-sel';
           (function(ci,ii){cd.onclick=function(){doSelect('tab',ci,ii)}})(c,i);
           cd.style.cursor='pointer';colDiv.appendChild(cd);

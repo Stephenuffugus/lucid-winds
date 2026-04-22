@@ -23,6 +23,7 @@ function GPY(a){
     rn();
   };
 
+  window._cdActiveRn=function(){try{rn()}catch(e){}};
   function init(){
     var deck=_cdSh(_cdMk());
     pyr=[];stock=[];waste=[];sel=null;gameOver=false;moves=0;removed={};
@@ -112,22 +113,26 @@ function GPY(a){
   }
   function rn(){
     gd.innerHTML='';
+    // 7-wide base row drives sizing. The row-overlap shows ~60% of each card top.
+    var fit=window._cdFit?window._cdFit(7,{maxW:84,gap:3,pad:10}):{w:'clamp(48px,13vw,84px)',h:'clamp(67px,18.2vw,117px)',font:'clamp(.65rem,1.8vw,.9rem)',gap:'3px',raw:{h:117}};
+    var pyW=fit.w,pyH=fit.h,pyF=fit.font;
+    var rowOverlap = Math.round(fit.raw.h * 0.42); // negative margin between rows
     // Pyramid
     var pyrDiv=document.createElement('div');
-    pyrDiv.style.cssText='display:flex;flex-direction:column;align-items:center;padding:clamp(2px,1vw,4px) 0';
+    pyrDiv.style.cssText='display:flex;flex-direction:column;align-items:center;padding:4px 0';
     var idx=0;
     for(var r=0;r<7;r++){
       var rowDiv=document.createElement('div');
-      rowDiv.style.cssText='display:flex;gap:clamp(2px,.6vw,4px);justify-content:center';
-      if(r>0)rowDiv.style.marginTop='clamp(-18px,-5vw,-26px)';
+      rowDiv.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center';
+      if(r>0)rowDiv.style.marginTop=(-rowOverlap)+'px';
       for(var c=0;c<=r;c++){
         var pi=idx;
         if(removed[pi]){
-          var em=document.createElement('div');em.style.cssText='width:clamp(48px,13vw,84px);height:clamp(67px,18.2vw,117px)';
+          var em=document.createElement('div');em.style.cssText='width:'+pyW+';height:'+pyH;
           rowDiv.appendChild(em);
         }else{
           var cd=_cdEl(pyr[pi]);
-          cd.style.width='clamp(48px,13vw,84px)';cd.style.height='clamp(67px,18.2vw,117px)';cd.style.fontSize='clamp(.65rem,1.8vw,.9rem)';
+          cd.style.width=pyW;cd.style.height=pyH;cd.style.fontSize=pyF;
           if(!isExposed(pi))cd.style.opacity='.5';
           else cd.style.cursor='pointer';
           if(sel&&sel.type==='pyr'&&sel.idx===pi)cd.className+=' gc-sel';

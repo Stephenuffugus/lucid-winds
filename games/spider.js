@@ -30,6 +30,7 @@ function GSP(a){
     else{for(var i=0;i<2;i++)for(var s=0;s<4;s++)for(var r=0;r<13;r++)d.push({s:s,r:r,up:false});}
     return _cdSh(d);
   }
+  window._cdActiveRn=function(){try{rn()}catch(e){}};
   function init(){
     var deck=mkDeck();
     tab=[];stock=[];completed=0;sel=null;gameOver=false;moves=0;
@@ -112,8 +113,10 @@ function GSP(a){
     info.textContent=completed+'/8 runs';topRow.appendChild(info);
     gd.appendChild(topRow);
     var tabRow=document.createElement('div');
-    var spW='clamp(40px,10.5vw,70px)',spH='clamp(56px,14.7vw,98px)',spF='clamp(.55rem,1.5vw,.72rem)';
-    tabRow.style.cssText='display:flex;gap:clamp(1px,.3vw,2px);justify-content:flex-start;padding:clamp(2px,1vw,4px) 0;max-width:100vw;margin:0 auto;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin';
+    // 10-column Spider — tightest horizontal budget of any solitaire.
+    var fit=window._cdFit?window._cdFit(10,{maxW:72,gap:2,pad:6}):{w:'clamp(40px,10.5vw,70px)',h:'clamp(56px,14.7vw,98px)',font:'clamp(.55rem,1.5vw,.72rem)',gap:'2px',raw:{w:70,h:98}};
+    var spW=fit.w,spH=fit.h,spF=fit.font;
+    tabRow.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center;padding:4px 0;width:100%;max-width:100vw;margin:0 auto';
     for(var c=0;c<10;c++){
       var colDiv=document.createElement('div');colDiv.className='gc-stk';
       colDiv.style.minWidth=spW;
@@ -122,9 +125,15 @@ function GSP(a){
         (function(ci){em.onclick=function(){tapCol(ci)}})(c);
         colDiv.appendChild(em);
       }else{
-        for(var i=0;i<tab[c].length;i++){
+        // Peek math — Spider piles can grow very deep (up to ~20 cards
+        // mid-game), so overlap aggressively and shrink further when deep.
+        var depth=tab[c].length;
+        var depthMult=depth>15?0.45:depth>12?0.55:depth>9?0.7:depth>6?0.85:1.0;
+        var peekOverlap=Math.round(fit.raw.h * (1 - 0.22*depthMult));
+        for(var i=0;i<depth;i++){
           var cd=_cdEl(tab[c][i]);
           cd.style.width=spW;cd.style.height=spH;cd.style.fontSize=spF;
+          if(i>0)cd.style.marginTop=(-peekOverlap)+'px';
           if(sel&&sel.col===c&&i>=sel.idx)cd.className+=' gc-sel';
           (function(ci,ii){cd.onclick=function(){tapCol(ci,ii)}})(c,i);
           colDiv.appendChild(cd);

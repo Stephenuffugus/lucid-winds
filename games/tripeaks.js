@@ -32,6 +32,7 @@ function GTP(a){
   // Base row: indices 18-27 (10 cards)
   var removed={};
 
+  window._cdActiveRn=function(){try{rn()}catch(e){}};
   function init(){
     var deck=_cdSh(_cdMk());
     peaks=[];stock=[];waste=[];gameOver=false;moves=0;streak=0;removed={};
@@ -104,30 +105,38 @@ function GTP(a){
     gd.innerHTML='';
     // Peaks
     var peakDiv=document.createElement('div');
-    peakDiv.style.cssText='display:flex;flex-direction:column;align-items:center;padding:clamp(2px,1vw,4px) 0';
+    peakDiv.style.cssText='display:flex;flex-direction:column;align-items:center;padding:4px 0';
     // Row 0: 3 peak tops (indices 0,6,12) with gaps
     var rows=[[0,6,12],[1,2,7,8,13,14],[3,4,5,9,10,11,15,16,17],[18,19,20,21,22,23,24,25,26,27]];
+    // 10-column base row drives sizing.
+    var fit=window._cdFit?window._cdFit(10,{maxW:64,gap:2,pad:6}):{w:'clamp(42px,9.5vw,62px)',h:'clamp(59px,13.3vw,87px)',font:'clamp(.6rem,1.7vw,.8rem)',gap:'2px',raw:{w:62,h:87}};
+    var tpW=fit.w,tpH=fit.h,tpF=fit.font;
+    var rowOverlap = Math.round(fit.raw.h * 0.23); // overlap between rows
+    // Inter-peak gap scales with card width — wider at top, narrower at base.
+    var peakGap0 = (fit.raw.w * 1.3)+'px';
+    var peakGap1 = (fit.raw.w * 0.4)+'px';
+    var peakGap2 = fit.gap;
     for(var ri=0;ri<4;ri++){
       var rowDiv=document.createElement('div');
-      rowDiv.style.cssText='display:flex;gap:clamp(2px,.5vw,3px);justify-content:center';
-      if(ri>0)rowDiv.style.marginTop='clamp(-14px,-4vw,-20px)';
+      rowDiv.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center';
+      if(ri>0)rowDiv.style.marginTop=(-rowOverlap)+'px';
       // Add spacers between peaks for alignment
       for(var ci=0;ci<rows[ri].length;ci++){
         var pi=rows[ri][ci];
         // Add gap between peaks
         if(ri<3&&ci>0&&Math.floor(rows[ri][ci]/6)!==Math.floor(rows[ri][ci-1]/6)){
           var gap=document.createElement('div');
-          var gapW=ri===0?'clamp(60px,18vw,84px)':ri===1?'clamp(20px,5.5vw,28px)':'clamp(2px,.5vw,3px)';
+          var gapW=ri===0?peakGap0:ri===1?peakGap1:peakGap2;
           gap.style.cssText='width:'+gapW;
           rowDiv.appendChild(gap);
         }
         if(removed[pi]){
-          var em=document.createElement('div');em.style.cssText='width:clamp(46px,11vw,72px);height:clamp(64px,15.4vw,101px)';
+          var em=document.createElement('div');em.style.cssText='width:'+tpW+';height:'+tpH;
           rowDiv.appendChild(em);
         }else{
           var cd=_cdEl(peaks[pi]);
-          cd.style.width='clamp(42px,9.5vw,62px)';cd.style.height='clamp(59px,13.3vw,87px)';cd.style.fontSize='clamp(.6rem,1.7vw,.8rem)';
-          if(!peaks[pi].up){cd.className='gc gc-dn';_cdBackStyle(cd);cd.style.width='clamp(42px,9.5vw,62px)';cd.style.height='clamp(59px,13.3vw,87px)';cd.innerHTML='';}
+          cd.style.width=tpW;cd.style.height=tpH;cd.style.fontSize=tpF;
+          if(!peaks[pi].up){cd.className='gc gc-dn';_cdBackStyle(cd);cd.style.width=tpW;cd.style.height=tpH;cd.innerHTML='';}
           else if(isExposed(pi)){cd.style.cursor='pointer';(function(ii){cd.onclick=function(){tapPeak(ii)}})(pi);}
           else{cd.style.opacity='.5';}
           rowDiv.appendChild(cd);

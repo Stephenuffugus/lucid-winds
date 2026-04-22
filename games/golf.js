@@ -23,6 +23,7 @@ function GGF(a){
     rn();
   };
 
+  window._cdActiveRn=function(){try{rn()}catch(e){}};
   function init(){
     deck=_cdSh(_cdMk());
     cols=[];stock=[];waste=[];gameOver=false;score=35;
@@ -106,10 +107,11 @@ function GGF(a){
     var sc=document.getElementById('GFsc');
     if(sc)sc.textContent=countLeft();
 
-    // Top row: stock, waste, score
-    var gfW='clamp(56px,14.5vw,92px)',gfH='clamp(78px,20.2vw,128px)',gfF='clamp(.65rem,1.9vw,.9rem)';
+    // Top row: stock, waste, score. Tableau is 7 columns — that's the binding constraint.
+    var fit=window._cdFit?window._cdFit(7,{maxW:96,gap:4,pad:12}):{w:'clamp(56px,14.5vw,92px)',h:'clamp(78px,20.2vw,128px)',font:'clamp(.65rem,1.9vw,.9rem)',gap:'4px',raw:{h:128}};
+    var gfW=fit.w,gfH=fit.h,gfF=fit.font;
     var topRow=document.createElement('div');
-    topRow.style.cssText='display:flex;gap:clamp(2px,.8vw,4px);justify-content:center;padding:clamp(2px,1vw,4px) 0;width:clamp(320px,100vw,680px);margin:0 auto;align-items:center';
+    topRow.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center;padding:4px 0;width:100%;max-width:100vw;margin:0 auto;align-items:center';
 
     // Stock
     var stEl=document.createElement('div');
@@ -149,9 +151,9 @@ function GGF(a){
     topRow.appendChild(lbl);
     gd.appendChild(topRow);
 
-    // Tableau
+    // Tableau — 7 columns of 5 cards each, peek-stacked so the bottom row stays visible.
     var tabRow=document.createElement('div');
-    tabRow.style.cssText='display:flex;gap:clamp(2px,.8vw,4px);justify-content:center;padding:clamp(2px,.8vw,3px) 0;width:clamp(320px,100vw,680px);margin:0 auto';
+    tabRow.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center;padding:4px 0;width:100%;max-width:100vw;margin:0 auto';
 
     for(var c=0;c<7;c++){
       var colDiv=document.createElement('div');
@@ -162,10 +164,13 @@ function GGF(a){
         em.className='gc gc-empty';em.style.width=gfW;em.style.height=gfH;
         colDiv.appendChild(em);
       }else{
-        for(var i=0;i<cols[c].length;i++){
+        var depth=cols[c].length;
+        var peekOverlap=Math.round(fit.raw.h * 0.78); // shows ~22% of each card
+        for(var i=0;i<depth;i++){
           var cd=_cdEl(cols[c][i]);
           cd.style.width=gfW;cd.style.height=gfH;cd.style.fontSize=gfF;
-          if(i===cols[c].length-1){
+          if(i>0)cd.style.marginTop=(-peekOverlap)+'px';
+          if(i===depth-1){
             cd.style.cursor='pointer';
             (function(ci){cd.onclick=function(){tapCol(ci)}})(c);
           }

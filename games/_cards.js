@@ -116,6 +116,45 @@ function _cdPipFor(suitName){
 }
 function _cdIsRed(s){return s===1||s===2}
 
+// Auto-fit card sizing for solitaire tableaus.
+//
+// Google-solitaire behavior: the card is as big as it can be while the
+// whole row still fits on-screen. Each game calls this with its widest
+// row's column count and gets a concrete {w,h,peek,font} it can apply
+// directly to card elements.
+//
+//   cols      — widest row the game renders (Klondike=7, Spider=10, ...)
+//   opts.maxW — hard cap so tablets don't get comical cards (default 96)
+//   opts.minW — minimum readable width (default 38)
+//   opts.gap  — between-column gap in px (default 4)
+//   opts.pad  — total left+right padding of the container (default 16)
+//   opts.container — if passed, reads its clientWidth; else window.innerWidth
+//
+// Returns every dimension as a string with 'px' so the caller can
+// assign directly: el.style.width = fit.w.
+function _cdFit(cols, opts){
+  opts = opts || {};
+  var maxW = opts.maxW || 96;
+  var minW = opts.minW || 38;
+  var gapPx = (opts.gap===0||opts.gap)?opts.gap:4;
+  var padPx = (opts.pad===0||opts.pad)?opts.pad:16;
+  var vw = (opts.container&&opts.container.clientWidth)||window.innerWidth||360;
+  // For sol-fs mode the container goes to 100vw but the browser's
+  // reported innerWidth is already correct, so no adjustment needed.
+  var avail = vw - padPx - (cols - 1) * gapPx;
+  var wFromWidth = Math.floor(avail / cols);
+  var w = Math.max(minW, Math.min(maxW, wFromWidth));
+  var h = Math.round(w * 1.4);           // standard 2.5:3.5 poker aspect
+  var peek = Math.max(10, Math.round(h * 0.16));
+  var font = Math.max(10, Math.round(w * 0.22));
+  return {
+    w: w+'px', h: h+'px',
+    peek: peek+'px', font: font+'px',
+    gap: gapPx+'px',
+    raw: {w:w, h:h, peek:peek, font:font, gap:gapPx}
+  };
+}
+
 // Foundation empty-slot art. Style-aware:
 //   lw     → shroom/flower/bee/bird PNG (original behavior)
 //   floral → the matching suit-pip PNG from Jessie's set
@@ -382,6 +421,21 @@ window._cdSh=_cdSh;
 window._cdRnk=_cdRnk;
 window._cdSuit=_cdSuit;
 window._cdFndEmpty=_cdFndEmpty;
+window._cdFit=_cdFit;
+
+// Single debounced window-resize listener that re-renders whichever
+// solitaire is active. Games set window._cdActiveRn = their rn fn
+// during init; they can null it on teardown (optional).
+(function(){
+  var t;
+  function onResize(){
+    clearTimeout(t);
+    t = setTimeout(function(){
+      try{ if(typeof window._cdActiveRn === 'function') window._cdActiveRn(); }catch(e){}
+    }, 180);
+  }
+  window.addEventListener('resize', onResize);
+})();
 window._cdIsRed=_cdIsRed;
 window._cdBackStyle=_cdBackStyle;
 window._cdEl=_cdEl;

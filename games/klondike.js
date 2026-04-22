@@ -24,6 +24,7 @@ function GKL(a){
     rn();
   };
 
+  window._cdActiveRn=function(){try{rn()}catch(e){}};
   function init(){
     var deck=_cdSh(_cdMk());
     tableau=[];stock=[];waste=[];sel=null;gameOver=false;moves=0;lastTap=0;lastTapCard=null;
@@ -235,8 +236,10 @@ function GKL(a){
 
     // Top row: stock, waste, spacer, 4 foundations
     var topRow=document.createElement('div');
-    var klW='clamp(56px,14.5vw,92px)',klH='clamp(78px,20.2vw,128px)',klF='clamp(.65rem,1.9vw,.9rem)';
-    topRow.style.cssText='display:flex;gap:clamp(2px,.8vw,4px);justify-content:center;padding:clamp(2px,1vw,4px) 0;width:clamp(320px,100vw,680px);margin:0 auto;align-items:flex-start;flex-wrap:nowrap';
+    // Auto-fit: 7 tableau columns drive sizing; top-row spacer absorbs leftover.
+    var fit=window._cdFit?window._cdFit(7,{maxW:96,gap:4,pad:12}):{w:'clamp(56px,14.5vw,92px)',h:'clamp(78px,20.2vw,128px)',font:'clamp(.65rem,1.9vw,.9rem)',peek:'18px',raw:{h:128,peek:18}};
+    var klW=fit.w,klH=fit.h,klF=fit.font;
+    topRow.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center;padding:4px 0;width:100%;max-width:100vw;margin:0 auto;align-items:flex-start;flex-wrap:nowrap';
 
     // Stock
     var stEl=document.createElement('div');
@@ -305,7 +308,11 @@ function GKL(a){
 
     // Tableau
     var tabRow=document.createElement('div');
-    tabRow.style.cssText='display:flex;gap:clamp(2px,.8vw,4px);justify-content:center;padding:clamp(2px,.8vw,3px) 0;width:clamp(320px,100vw,680px);margin:0 auto;align-items:flex-start';
+    tabRow.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center;padding:4px 0;width:100%;max-width:100vw;margin:0 auto;align-items:flex-start';
+    // Peek shrinks with depth so a 14-card pile still fits vertically.
+    // Base peek-up ~ 14% of card height, peek-down ~ 9% (face-down shows less).
+    var peekUpBase = Math.round(fit.raw.h * 0.14);
+    var peekDnBase = Math.round(fit.raw.h * 0.09);
 
     for(var c=0;c<7;c++){
       var colDiv=document.createElement('div');
@@ -327,9 +334,10 @@ function GKL(a){
 
           // Stacked cards: show peek only, last card full height
           if(i<depth-1){
-            // Compress peek when stack is deep
-            var peekUp=depth>10?'clamp(12px,3.5vw,16px)':depth>7?'clamp(14px,4vw,18px)':'clamp(16px,4.5vw,22px)';
-            var peekDn=depth>10?'clamp(8px,2.5vw,12px)':depth>7?'clamp(10px,3vw,14px)':'clamp(12px,3.5vw,16px)';
+            // Compress peek as stack grows past 7/10 cards so the bottom stays on-screen.
+            var depthMult = depth>12 ? 0.55 : depth>10 ? 0.7 : depth>7 ? 0.85 : 1.0;
+            var peekUp = Math.max(9, Math.round(peekUpBase * depthMult))+'px';
+            var peekDn = Math.max(6, Math.round(peekDnBase * depthMult))+'px';
             cdEl.style.height=card.up?peekUp:peekDn;
             cdEl.style.overflow='hidden';
             cdEl.style.alignItems='flex-start';
