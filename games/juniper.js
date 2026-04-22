@@ -14,7 +14,8 @@ if(!document.getElementById('ju-anim-style')){
     '@keyframes juGinPulse{0%,100%{box-shadow:0 0 22px rgba(255,220,112,0.7),inset 0 1px 0 rgba(255,255,255,0.5);transform:scale(1)}50%{box-shadow:0 0 36px rgba(255,232,150,1),inset 0 1px 0 rgba(255,255,255,0.5);transform:scale(1.06)}}'+
     '@keyframes juThink{0%,100%{opacity:0.4}50%{opacity:1}}'+
     '@keyframes juWinIn{0%{opacity:0}100%{opacity:1}}'+
-    '@keyframes juWinPop{0%{transform:translateY(40px) scale(0.5);opacity:0}55%{transform:translateY(-6px) scale(1.15);opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}';
+    '@keyframes juWinPop{0%{transform:translateY(40px) scale(0.5);opacity:0}55%{transform:translateY(-6px) scale(1.15);opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}'+
+    '@keyframes juLineIn{0%{transform:translateX(-12px);opacity:0}100%{transform:translateX(0);opacity:1}}';
   document.head.appendChild(_jus);
 }
 
@@ -32,8 +33,10 @@ window._gameFns.juniper = function Juniper(a){
   var phase='',turnCount=0;
   // AI feedback state — shown in render so the player sees the AI deciding.
   var aiThinking=false, aiHoverDiscard=false;
-  // GIN/knock takeover overlay state. {kind:'gin'|'knock'|'undercut', winner, pts}
-  var winOverlay=null;
+  // GIN/knock takeover overlay state. {kind:'gin'|'knock'|'undercut', winner, pts, lines:[]}
+  // lines is a sequence of {label, value, color?} that staged-reveal one at a
+  // time so scoring narration feels like a tabletop count-up.
+  var winOverlay=null, winLineIdx=0;
 
   ms(a,'<span style="font-family:Georgia,serif;letter-spacing:.06em;">🫐 <strong id="JUy" style="color:#7ab356;font-size:1.2em;">0</strong> <span style="color:rgba(232,220,200,0.5);font-size:0.8em;">vs</span> <strong id="JUa" style="color:#dc8a8a;font-size:1.2em;">0</strong></span>');
   mm(a);
@@ -282,21 +285,51 @@ window._gameFns.juniper = function Juniper(a){
     if(winner==='player'){playerScore+=pts;playerWins++;_e('milestone');}
     else{aiScore+=pts;aiWins++;_e('progress');}
     sm(msg);
-    // Fire the dramatic takeover overlay for ~2.4s before next deal.
-    winOverlay={kind:kind,winner:winner,pts:pts,kdw:kdw,ddw:ddw,laidOff:laidOff,ddwBefore:ddwBefore};
+    // Build staged scoring lines for the overlay narration.
+    var lines = [];
+    if(type==='gin'){
+      lines.push({label:'Defender deadwood', value:ddw, color:'#dc8a8a'});
+      lines.push({label:'GIN bonus', value:'+25', color:'#ffdc70'});
+      lines.push({label:'TOTAL', value:'+'+pts, color:'#ffdc70', big:true});
+    } else if(kind==='undercut'){
+      lines.push({label:'Knocker deadwood', value:kdw, color:'#dc8a8a'});
+      lines.push({label:'Defender deadwood', value:ddw+(laidOff?' (after '+laidOff+' layoff)':''), color:'#7ab356'});
+      lines.push({label:'Difference', value:'+'+(kdw-ddw), color:'#f5ebd0'});
+      lines.push({label:'UNDERCUT bonus', value:'+25', color:'#ffdc70'});
+      lines.push({label:'TOTAL', value:'+'+pts, color:'#ffdc70', big:true});
+    } else { // knock
+      lines.push({label:'Your deadwood', value:kdw, color:'#7ab356'});
+      lines.push({label:'Defender deadwood', value:ddw+(laidOff?' (after '+laidOff+' layoff)':''), color:'#dc8a8a'});
+      lines.push({label:'TOTAL', value:'+'+pts, color:'#ffdc70', big:true});
+    }
+    winOverlay={kind:kind,winner:winner,pts:pts,kdw:kdw,ddw:ddw,laidOff:laidOff,ddwBefore:ddwBefore,lines:lines};
+    winLineIdx=0;
     render();
-    setTimeout(function(){
-      winOverlay=null;
-      if(playerScore>=100||aiScore>=100){
-        var won=playerScore>=100;
-        if(won){_e('game_win');_playWin();sm('🫐 You win! '+playerScore+' vs '+aiScore);}
-        else{_e('game_loss');_play('lose');sm('You lose. '+playerScore+' vs '+aiScore);}
-        _sr('juniper',{w:won,s:playerScore,r:playerWins+aiWins});
-        setTimeout(function(){playerScore=0;aiScore=0;playerWins=0;aiWins=0;newHand();},2200);
-        return;
+    // Stage each line in at 750ms intervals for the count-up rhythm.
+    function revealNext(){
+      if(!winOverlay)return;
+      winLineIdx++;
+      if(winLineIdx<=lines.length){
+        _play('tap');
+        render();
+        setTimeout(revealNext, 750);
+      } else {
+        // All lines shown — hold 1.6s then advance.
+        setTimeout(function(){
+          winOverlay=null;
+          if(playerScore>=100||aiScore>=100){
+            var won=playerScore>=100;
+            if(won){_e('game_win');_playWin();sm('🫐 You win! '+playerScore+' vs '+aiScore);}
+            else{_e('game_loss');_play('lose');sm('You lose. '+playerScore+' vs '+aiScore);}
+            _sr('juniper',{w:won,s:playerScore,r:playerWins+aiWins});
+            setTimeout(function(){playerScore=0;aiScore=0;playerWins=0;aiWins=0;newHand();},2200);
+            return;
+          }
+          newHand();
+        },1600);
       }
-      newHand();
-    },2400);
+    }
+    setTimeout(revealNext, 800);
   }
 
   function onDrawStock(){
@@ -425,33 +458,42 @@ window._gameFns.juniper = function Juniper(a){
       h+='</div>';
     }
     h+='</div>';
-    // ── WIN OVERLAY ─────────────────────────────────────────────
+    // ── WIN OVERLAY (staged scoring reveal) ─────────────────────
     if(winOverlay){
       var w=winOverlay;
       var isYou = w.winner==='player';
       var titleColor = isYou ? '#7ab356' : '#dc8a8a';
-      var bigText, sub;
-      if(w.kind==='gin'){
-        bigText = isYou ? 'GIN!' : 'JUNIPER GINS';
-        sub = '+ '+w.pts+' (deadwood '+w.ddw+' + 25 bonus)';
-      } else if(w.kind==='undercut'){
-        bigText = 'UNDERCUT';
-        var loStr = w.laidOff>0 ? ' &middot; laid off '+w.laidOff : '';
-        sub = (isYou?'You':'Juniper')+' +'+w.pts+loStr;
-      } else {
-        bigText = isYou ? 'KNOCK' : 'JUNIPER KNOCKS';
-        var loStr2 = w.laidOff>0 ? ' &middot; laid off '+w.laidOff : '';
-        sub = (isYou?'You':'Juniper')+' +'+w.pts+' (diff '+(w.ddw-w.kdw)+')'+loStr2;
-      }
+      var bigText;
+      if(w.kind==='gin') bigText = isYou ? 'GIN!' : 'JUNIPER GINS';
+      else if(w.kind==='undercut') bigText = 'UNDERCUT';
+      else bigText = isYou ? 'KNOCK' : 'JUNIPER KNOCKS';
       var bgGrad = w.kind==='gin'
         ? 'radial-gradient(ellipse at 50% 40%,rgba(255,220,112,0.35) 0%,rgba(10,5,20,0.95) 70%)'
         : w.kind==='undercut'
         ? 'radial-gradient(ellipse at 50% 40%,rgba(230,57,70,0.3) 0%,rgba(10,5,20,0.95) 70%)'
         : 'radial-gradient(ellipse at 50% 40%,rgba(60,40,100,0.5) 0%,rgba(10,5,20,0.95) 70%)';
       h+='<div style="position:fixed;inset:0;background:'+bgGrad+';z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;animation:juWinIn 0.5s ease-out;">';
-      h+='<div style="font-size:'+(w.kind==='gin'?'5rem':'3rem')+';line-height:1;margin-bottom:14px;animation:juWinPop 0.9s cubic-bezier(.2,1.4,.3,1);filter:drop-shadow(0 0 24px '+titleColor+'aa);">'+(w.kind==='gin'?'🎉':w.kind==='undercut'?'⚔️':'🪶')+'</div>';
-      h+='<div style="font-family:Georgia,serif;font-size:2.4rem;font-weight:700;color:'+titleColor+';letter-spacing:0.06em;text-shadow:0 0 26px '+titleColor+'aa;text-align:center;">'+bigText+'</div>';
-      h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.85rem;color:#f5ebd0;margin-top:10px;">'+sub+'</div>';
+      h+='<div style="font-size:'+(w.kind==='gin'?'4.5rem':'2.6rem')+';line-height:1;margin-bottom:10px;animation:juWinPop 0.9s cubic-bezier(.2,1.4,.3,1);filter:drop-shadow(0 0 24px '+titleColor+'aa);">'+(w.kind==='gin'?'🎉':w.kind==='undercut'?'⚔️':'🪶')+'</div>';
+      h+='<div style="font-family:Georgia,serif;font-size:2.2rem;font-weight:700;color:'+titleColor+';letter-spacing:0.06em;text-shadow:0 0 26px '+titleColor+'aa;text-align:center;margin-bottom:14px;">'+bigText+'</div>';
+      // Staged scoring lines — revealed one at a time as winLineIdx advances.
+      h+='<div style="display:flex;flex-direction:column;gap:8px;max-width:340px;width:90%;">';
+      for(var li=0;li<w.lines.length;li++){
+        var line = w.lines[li];
+        var visible = li < winLineIdx;
+        if(!visible){
+          h+='<div style="height:36px;"></div>'; // placeholder so layout doesn't jump
+          continue;
+        }
+        var size = line.big ? '1.5rem' : '0.95rem';
+        var weight = line.big ? '700' : '400';
+        var bg = line.big ? 'linear-gradient(180deg,rgba(255,220,112,0.18),rgba(255,220,112,0.05))' : 'rgba(0,0,0,0.4)';
+        var bdr = line.big ? '#ffdc70' : 'rgba(232,220,200,0.25)';
+        h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:'+bg+';border:1px solid '+bdr+';border-radius:8px;font-family:Georgia,serif;animation:juLineIn 0.45s cubic-bezier(.2,1.4,.3,1);">';
+        h+='<span style="font-style:italic;font-size:0.78rem;color:#f5ebd0;letter-spacing:0.04em;">'+line.label+'</span>';
+        h+='<span style="font-weight:'+weight+';font-size:'+size+';color:'+(line.color||'#f5ebd0')+';text-shadow:0 1px 2px rgba(0,0,0,0.6);">'+line.value+'</span>';
+        h+='</div>';
+      }
+      h+='</div>';
       h+='</div>';
     }
     pan.innerHTML=h;
