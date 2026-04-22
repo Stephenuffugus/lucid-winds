@@ -159,11 +159,12 @@ function GSP(a){
         (function(ci){em.onclick=function(){tapCol(ci)}})(c);
         colDiv.appendChild(em);
       }else{
-        // Peek math — Spider piles can grow very deep (up to ~20 cards
-        // mid-game), so overlap aggressively and shrink further when deep.
+        // Peek math — Spider piles can grow to 18+ cards, so the peek
+        // compresses with depth but starts at Klondike's 28% reveal so
+        // ranks and suits are legible on all but the deepest piles.
         var depth=tab[c].length;
-        var depthMult=depth>15?0.45:depth>12?0.55:depth>9?0.7:depth>6?0.85:1.0;
-        var peekOverlap=Math.round(fit.raw.h * (1 - 0.22*depthMult));
+        var depthMult=depth>14?0.5:depth>11?0.65:depth>8?0.8:1.0;
+        var peekOverlap=Math.round(fit.raw.h * (1 - 0.28*depthMult));
         for(var i=0;i<depth;i++){
           var cd=_cdEl(tab[c][i]);
           cd.style.width=spW;cd.style.height=spH;cd.style.fontSize=spF;
