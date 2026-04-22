@@ -192,10 +192,14 @@ function startGame(pan,a){
     var S=SHAPES[shapeKey];
     var g=S.gen();
     var colors=makeColors(S.tint||'warm');
-    var body=Bodies.fromVertices(x,y,[g.verts],{
-      friction:0.82,frictionStatic:1.1,restitution:0.06,density:0.0022,slop:0.02,sleepThreshold:60
-    },false);
-    if(!body)body=Bodies.circle(x,y,Math.max(g.w,g.h)/2,{friction:0.82,restitution:0.06,density:0.0022});
+    var opts={friction:0.82,frictionStatic:1.1,restitution:0.06,density:0.0022,slop:0.02,sleepThreshold:60};
+    var body=Bodies.fromVertices(x,y,[g.verts],opts,false);
+    // Matter.fromVertices can silently return a body with NaN centroid
+    // if the polygon is degenerate (collinear verts, zero area, etc).
+    // Validate and fall back to an ellipse approximation.
+    if(!body||!isFinite(body.position.x)||!isFinite(body.position.y)||!isFinite(body.mass)||body.mass===0){
+      body=Bodies.rectangle(x,y,Math.max(6,g.w),Math.max(6,g.h),opts);
+    }
     body._sgId=rockIdSeq++;
     return{
       body:body,shape:shapeKey,pts:S.pts,
@@ -482,13 +486,17 @@ function startGame(pan,a){
   // ─── RENDER ─────────────────────────────────────────────────────
   function drawStoneBody(body,w,h,color,shade,alpha){
     var vs=body.vertices;
+    var bx=body.position.x,by=body.position.y-cameraY;
+    // Defensive: skip render if any coordinate has gone non-finite.
+    // Matter.js can produce NaN positions on degenerate polygons or
+    // after freak collisions; a NaN crashes createLinearGradient.
+    if(!isFinite(bx)||!isFinite(by)||!vs||!vs.length||!isFinite(vs[0].x)||!isFinite(vs[0].y))return;
     ctx.save();
     ctx.globalAlpha=alpha||1;
     ctx.beginPath();
     ctx.moveTo(vs[0].x,vs[0].y-cameraY);
     for(var i=1;i<vs.length;i++)ctx.lineTo(vs[i].x,vs[i].y-cameraY);
     ctx.closePath();
-    var bx=body.position.x,by=body.position.y-cameraY;
     var grd=ctx.createLinearGradient(bx-w/2,by-h/2,bx+w/2,by+h/2);
     grd.addColorStop(0,color);grd.addColorStop(1,shade);
     ctx.fillStyle=grd;ctx.fill();
