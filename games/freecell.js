@@ -12,6 +12,7 @@ var _SUIT_NAME=window._SUIT_NAME,_CD_BASE=window._CD_BASE,_CD_BACK=window._CD_BA
 function GFC(a){
   var tab=[],free=[null,null,null,null],fnd=[[],[],[],[]],sel=null,gameOver=false,moves=0;
   var history=[]; // LIFO stack of pre-move snapshots for undo
+  var lastTap=0, lastTapKey=null; // double-tap detection for auto-route
   ms(a,'Moves: <strong id="FCmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='FCgd';a.appendChild(gd);
   var _fcStyleLbl='🃏 Style';
@@ -80,8 +81,70 @@ function GFC(a){
     }
     return false;
   }
+  // Auto-route a single card from the given source. Tries foundation first,
+  // then any empty free cell, then first legal tableau column. Returns true
+  // on success. Used by double-tap shortcut.
+  function autoRoute(src){
+    var card=null;
+    if(src.type==='free')card=free[src.idx];
+    else if(src.type==='tab'){
+      var col=tab[src.idx];
+      if(col.length===0||src.cardIdx!==col.length-1)return false; // only top card
+      card=col[col.length-1];
+    }
+    if(!card)return false;
+    // Foundation
+    for(var f=0;f<4;f++){
+      if(canFnd(card,f)){
+        snapshot();
+        if(src.type==='free')free[src.idx]=null;
+        else tab[src.idx].pop();
+        fnd[f].push(card);moves++;_e('progress');
+        if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('freecell',{w:true,s:moves});}
+        sel=null;upd();rn();refreshUndoBtn();return true;
+      }
+    }
+    // Legal tableau column
+    for(var c=0;c<8;c++){
+      if(src.type==='tab'&&src.idx===c)continue;
+      if(canTab(card,c)){
+        snapshot();
+        if(src.type==='free')free[src.idx]=null;
+        else tab[src.idx].pop();
+        tab[c].push(card);moves++;
+        sel=null;upd();rn();refreshUndoBtn();return true;
+      }
+    }
+    // Empty free cell (only from tableau — free→free is pointless)
+    if(src.type==='tab'){
+      for(var fi=0;fi<4;fi++){
+        if(!free[fi]){
+          snapshot();
+          tab[src.idx].pop();
+          free[fi]=card;moves++;
+          sel=null;upd();rn();refreshUndoBtn();return true;
+        }
+      }
+    }
+    return false;
+  }
   function doSelect(type,idx,cardIdx){
     if(gameOver)return;
+    // Double-tap detection — tapping the same card twice within 400ms triggers auto-route.
+    var key=type+':'+idx+':'+(cardIdx===undefined?'':cardIdx);
+    var now=Date.now();
+    var isDoubleTap = (lastTapKey===key && now-lastTap<400);
+    if(isDoubleTap){
+      lastTap=0; lastTapKey=null;
+      // Only auto-route single top cards.
+      if(type==='free'&&free[idx]){if(autoRoute({type:'free',idx:idx}))return;}
+      else if(type==='tab'&&tab[idx].length>0){
+        var ci=(cardIdx===undefined)?tab[idx].length-1:cardIdx;
+        if(ci===tab[idx].length-1&&tab[idx][ci].up){if(autoRoute({type:'tab',idx:idx,cardIdx:ci}))return;}
+      }
+      // Double-tap didn't route — fall through to normal tap handling.
+    }
+    lastTap=now; lastTapKey=key;
     if(sel){
       // Try to place
       if(type==='fnd'){
