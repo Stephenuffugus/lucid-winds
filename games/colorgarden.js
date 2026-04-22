@@ -64,13 +64,25 @@ window._gameFns.colorgarden=function CG(a){
   var resetBtn=document.createElement('button');
   resetBtn.textContent='⤢';
   resetBtn.title='Reset zoom';
-  resetBtn.style.cssText='position:absolute;top:6px;right:6px;width:36px;height:36px;border-radius:8px;background:rgba(13,16,12,0.72);border:1px solid rgba(200,168,75,0.35);color:var(--cream,#e8dcc8);font-size:1rem;cursor:pointer;display:none;z-index:2;-webkit-tap-highlight-color:transparent;';
+  resetBtn.style.cssText='position:absolute;top:6px;right:6px;width:40px;height:40px;border-radius:10px;background:rgba(13,16,12,0.78);border:1px solid rgba(200,168,75,0.4);color:var(--cream,#e8dcc8);font-size:1.1rem;cursor:pointer;display:none;z-index:2;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 6px rgba(0,0,0,0.4);';
   resetBtn.onclick=function(){
     zoom=1;panX=imgW/2;panY=imgH/2;
     renderView();
     updateResetBtn();
   };
   imgWrap.appendChild(resetBtn);
+
+  // Top-LEFT floating UNDO button — always accessible on canvas so
+  // player doesn't need to scroll down to reach the tool row
+  var floatUndoBtn=document.createElement('button');
+  floatUndoBtn.innerHTML='↶';
+  floatUndoBtn.title='Undo last fill';
+  floatUndoBtn.style.cssText='position:absolute;top:6px;left:6px;width:48px;height:48px;border-radius:10px;background:rgba(13,16,12,0.78);border:1px solid rgba(200,168,75,0.4);color:var(--gold,#c8a84b);font-size:1.6rem;cursor:pointer;z-index:2;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;padding:0;line-height:1;opacity:0.45;transition:opacity .15s;';
+  floatUndoBtn.onclick=function(e){
+    e.stopPropagation();
+    if(window._CGundo)window._CGundo();
+  };
+  imgWrap.appendChild(floatUndoBtn);
 
   function updateResetBtn(){resetBtn.style.display=(zoom>1.02?'block':'none');}
 
@@ -590,9 +602,13 @@ window._gameFns.colorgarden=function CG(a){
 
   function updateUndoBtn(){
     var b=document.getElementById('CGundo');
-    if(!b)return;
-    b.disabled=history.length===0;
-    b.style.opacity=history.length===0?'0.4':'1';
+    if(b){
+      b.disabled=history.length===0;
+      b.style.opacity=history.length===0?'0.4':'1';
+    }
+    if(floatUndoBtn){
+      floatUndoBtn.style.opacity=history.length===0?'0.45':'1';
+    }
   }
 
   // ─── CONTROL HANDLERS ─────────────────────────────────────────
