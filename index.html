@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.68';
+  var LW_VERSION='2026.04.22.69';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -48728,7 +48728,9 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
       '@keyframes yDieRoll{0%{transform:rotate(0) scale(1)}30%{transform:rotate(180deg) scale(0.9)}60%{transform:rotate(360deg) scale(1.1)}82%{transform:rotate(540deg) scale(1.08)}100%{transform:rotate(540deg) scale(1)}}'+
       '@keyframes yDieLift{0%{transform:translateY(0) scale(1)}100%{transform:translateY(-6px) scale(0.96)}}'+
       '.yDie.rolling{animation:yDieRoll 0.85s cubic-bezier(.18,.7,.3,1) both;}'+
-      '.yDie.held{transform:translateY(-6px) scale(0.96);filter:saturate(0.85);}';
+      '.yDie.held{transform:translateY(-6px) scale(0.96);filter:saturate(0.85);}'+
+      '@keyframes yBestPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,220,112,0.4),inset 0 1px 0 rgba(255,255,255,0.08)}50%{box-shadow:0 0 12px rgba(255,220,112,0.55),inset 0 1px 0 rgba(255,255,255,0.12)}}'+
+      '.yBestPulse{animation:yBestPulse 1.4s ease-in-out infinite;}';
     document.head.appendChild(_ys);
   }
   // Botanical dice — paper-card PNGs (seed/dew/clover/sun/flower/moon)
@@ -48843,30 +48845,71 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
   // Click handler exposed via window for inline onclick.
   window._YHold=function(x){if(rolls===0||rolls>=3)return;if(!dice[x])return;_play('tap');kept[x]=!kept[x];rn();};
   function rnS(){
-    var h='<table class="ysc">';
+    // Best-play detection — among unfilled cats with rolls>0, find highest score.
+    var bestIdx=-1, bestVal=0;
+    if(rolls>0){
+      for(var bi=0;bi<13;bi++){
+        if(scores[bi]!==undefined)continue;
+        var bv=cs(bi);
+        if(bv>bestVal){bestVal=bv;bestIdx=bi;}
+      }
+    }
     function row(i){
       var done=scores[i]!==undefined;
       var val=done?scores[i]:(rolls>0?cs(i):null);
       var canScore=!done&&rolls>0;
-      var ptsCell;
-      if(done){ptsCell='<td style="color:var(--muted);font-weight:700;text-align:right">'+val+'</td>';}
-      else if(canScore){
-        var good=val>0;
-        ptsCell='<td onclick="_YS('+i+')" style="text-align:right;cursor:pointer;padding:0 8px"><span class="yscBtn'+(good?' yscBtnOn':'')+'">'+(good?val:'0')+'</span></td>';
+      var isBest = canScore && i===bestIdx && bestVal>0;
+      var rowBg = done ? 'rgba(0,0,0,0.45)' : isBest ? 'linear-gradient(180deg,rgba(255,220,112,0.16),rgba(200,168,75,0.08))' : 'rgba(0,0,0,0.3)';
+      var rowBorder = done ? '1px solid rgba(232,220,200,0.15)' : isBest ? '1.5px solid #ffdc70' : '1px solid rgba(232,220,200,0.18)';
+      var animCls = isBest ? 'yBestPulse' : '';
+      var rs='';
+      if(done){
+        rs = '<span style="font-family:Georgia,serif;font-weight:700;font-size:0.95rem;color:rgba(232,220,200,0.45);">'+val+'</span>';
+      } else if(canScore){
+        if(val>0){
+          var c = isBest ? '#ffdc70' : '#7ab356';
+          rs = '<span style="font-family:Georgia,serif;font-weight:700;font-size:'+(isBest?'1.15rem':'0.95rem')+';color:'+c+';">'+val+'</span>';
+        } else {
+          rs = '<span style="font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(230,57,70,0.55);">0</span>';
+        }
+      } else {
+        rs = '<span style="color:rgba(232,220,200,0.3);font-family:DM Mono,monospace;font-size:0.65rem;">—</span>';
       }
-      else{ptsCell='<td style="color:var(--muted);text-align:right">&mdash;</td>';}
-      return '<tr class="'+(done?'yd':'')+'"><td class="yscName"><span class="yscIcon">'+CATS[i].icon+'</span><div class="yscNames"><div class="yscMain">'+CATS[i].name+'</div><div class="yscSub">'+CATS[i].sub+' &middot; '+CATS[i].desc+'</div></div></td>'+ptsCell+'</tr>';
+      var clickAttr = canScore ? 'onclick="_YS('+i+')" style="cursor:pointer;' : 'style="';
+      return '<div class="'+animCls+'" '+clickAttr+'display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;margin:2px 0;background:'+rowBg+';border:'+rowBorder+';border-radius:6px;'+(done?'opacity:0.62;':'')+'">'
+        +'<div style="display:flex;align-items:center;gap:8px;min-width:0;">'
+          +'<span style="font-size:1rem;line-height:1;flex-shrink:0;">'+CATS[i].icon+'</span>'
+          +'<div style="min-width:0;">'
+            +'<div style="font-family:Georgia,serif;font-size:0.75rem;font-weight:700;color:#f5ebd0;line-height:1.1;">'+CATS[i].name+'</div>'
+            +'<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:rgba(232,220,200,0.55);letter-spacing:0.06em;line-height:1.1;margin-top:1px;">'+CATS[i].desc+'</div>'
+          +'</div>'
+        +'</div>'
+        +'<div style="flex-shrink:0;text-align:right;min-width:42px;">'+rs+'</div>'
+      +'</div>';
     }
-    h+='<tr><th colspan="2" class="yscHdr">UPPER SECTION</th></tr>';
-    for(var i=0;i<6;i++)h+=row(i);
+    var h='';
+    // ── UPPER SECTION header + bonus tracker bar ─────────────────
     var upperSum=0;for(var i=0;i<6;i++)if(scores[i]!==undefined)upperSum+=scores[i];
     var bonus=upperSum>=63?35:0;
-    h+='<tr class="yscBonus"><td><div class="yscMain" style="color:var(--gold)">Upper Bonus</div><div class="yscSub">Reach 63 for +35</div></td><td style="text-align:right;color:var(--gold);font-weight:700">'+(upperSum>=63?'+35':upperSum+' / 63')+'</td></tr>';
-    h+='<tr><th colspan="2" class="yscHdr">LOWER SECTION</th></tr>';
+    var pct=Math.min(100,Math.round(upperSum/63*100));
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 4px;padding:0 4px;">';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:#7ab356;letter-spacing:0.18em;text-transform:uppercase;font-weight:700;">Upper</div>';
+    h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.62rem;color:'+(bonus?'#ffdc70':'rgba(232,220,200,0.55)')+';">'+(bonus?'BONUS +35':upperSum+' / 63 to bonus')+'</div>';
+    h+='</div>';
+    // Bonus progress bar
+    h+='<div style="height:4px;background:rgba(0,0,0,0.5);border-radius:2px;margin:0 4px 6px;overflow:hidden;border:1px solid rgba(0,0,0,0.5);">';
+    h+='<div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#7ab356,'+(bonus?'#ffdc70':'#a8d873')+');transition:width .4s;'+(bonus?'box-shadow:0 0 8px #ffdc7088;':'')+'"></div>';
+    h+='</div>';
+    for(var i=0;i<6;i++)h+=row(i);
+    // ── LOWER SECTION ────────────────────────────────────────────
+    h+='<div style="margin:10px 0 4px;padding:0 4px;font-family:DM Mono,monospace;font-size:0.55rem;color:#dc8a8a;letter-spacing:0.18em;text-transform:uppercase;font-weight:700;">Lower</div>';
     for(var i=6;i<13;i++)h+=row(i);
+    // ── TOTAL ────────────────────────────────────────────────────
     var total=bonus;for(var k in scores)total+=scores[k];
-    h+='<tr class="yscTotal"><td><strong>TOTAL</strong></td><td style="text-align:right"><strong style="color:var(--gold);font-size:clamp(1.1rem,3.2vw,1.4rem)">'+total+'</strong></td></tr>';
-    h+='</table>';
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;margin-top:10px;background:linear-gradient(180deg,rgba(255,220,112,0.18),rgba(200,168,75,0.08));border:2px solid #ffdc70;border-radius:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 0 14px rgba(255,220,112,0.25);">';
+    h+='<span style="font-family:Georgia,serif;font-weight:700;font-size:0.95rem;color:#f5ebd0;letter-spacing:0.04em;">TOTAL</span>';
+    h+='<span style="font-family:Georgia,serif;font-weight:700;font-size:1.6rem;color:#ffdc70;text-shadow:0 1px 3px rgba(0,0,0,0.6);">'+total+'</span>';
+    h+='</div>';
     document.getElementById('Ysc').innerHTML=h;
   }
   window._YR=function(){
