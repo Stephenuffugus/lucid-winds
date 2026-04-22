@@ -43,10 +43,11 @@ window._gameFns.bleedinghearts = function BH(a){
   // subsequent tricks use voids[p][suit] to put a struck-through suit glyph
   // under that player. Critical info for card-counting. Reset per hand.
   var voids=[{},{},{},{}];
-  // Trick-end drama state. trickWinner keeps the winning seat glow on during
-  // the hold beat. qsInTrick flips true when the Queen of Spades lands in
-  // the current trick and lets the UI flash her.
-  var trickWinner=-1, qsInTrick=false;
+  // Trick-end drama state. lastWinnerSeat keeps the winning seat glow on
+  // during the hold beat. qsInTrick flips true when the Queen of Spades
+  // lands in the current trick and lets the UI flash her.
+  // (Named lastWinnerSeat to avoid shadowing the trickWinner() function below.)
+  var lastWinnerSeat=-1, qsInTrick=false;
   // One-shot flag — hearts-broken moment animation fires only on the render
   // right after the break.
   var heartsJustBroke=false;
@@ -174,7 +175,7 @@ window._gameFns.bleedinghearts = function BH(a){
     for(var i=0;i<52;i++)hands[i%4].push(deck[i]);
     for(i=0;i<4;i++)sortHand(hands[i]);
     roundPts=[0,0,0,0];heartsBroken=false;trick=[];trickCards=[null,null,null,null];
-    voids=[{},{},{},{}];trickWinner=-1;qsInTrick=false;heartsJustBroke=false;
+    voids=[{},{},{},{}];lastWinnerSeat=-1;qsInTrick=false;heartsJustBroke=false;
     lastTrick=null;showingHistory=false;moonShot=null;
   }
   function newRound(){
@@ -234,7 +235,7 @@ window._gameFns.bleedinghearts = function BH(a){
       roundPts[winner]+=pts;phase='trickDone';
       // Beat 1: hold on the trick with winner glow + optional Q♠ flash.
       setTimeout(function(){
-        trickWinner=winner;
+        lastWinnerSeat=winner;
         sm(NAMES[winner]+' takes'+(pts>0?' ('+pts+' pts)':''));
         if(pts>0)_e('progress');
         render();
@@ -242,7 +243,7 @@ window._gameFns.bleedinghearts = function BH(a){
         setTimeout(function(){
           // Snapshot the trick so the player can review it via the 🕐 button.
           lastTrick={cards:trick.slice(),winner:winner,pts:pts};
-          trickWinner=-1;qsInTrick=false;
+          lastWinnerSeat=-1;qsInTrick=false;
           trick=[];trickCards=[null,null,null,null];trickNum++;
           if(hands[0].length===0){scoreRound();return;}
           leader=winner;currentPlayer=leader;phase='play';render();
@@ -391,13 +392,15 @@ window._gameFns.bleedinghearts = function BH(a){
     }
     h+='</div>';
     // North — face-down cards with horizontal overlap for compactness
-    h+='<div class="'+_seatCls(N)+'" style="text-align:center;padding:6px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[N]+';letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">NORTH'+_voidTags(N)+'</div><div style="display:inline-flex;justify-content:center;">';
-    for(var n=0;n<hands[N].length;n++)h+='<span style="margin-left:'+(n===0?'0':'-18px')+';">'+_cardHtml(null,true)+'</span>';
+    h+='<div class="'+_seatCls(N)+'" style="text-align:center;padding:6px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[N]+';letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">NORTH <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:4px;">×'+hands[N].length+'</span>'+_voidTags(N)+'</div><div style="display:inline-flex;justify-content:center;">';
+    // Tight overlap — 13 backs fanning horizontally shouldn't eat the whole row.
+    for(var n=0;n<hands[N].length;n++)h+='<span style="margin-left:'+(n===0?'0':'-22px')+';">'+_cardHtml(null,true)+'</span>';
     h+='</div></div>';
     // West | Trick | East — vertical-overlap for side hands
     h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;">';
-    h+='<div class="'+_seatCls(W)+'" style="padding:4px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[W]+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">WEST'+_voidTags(W)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
-    for(var w=0;w<hands[W].length;w++)h+='<span style="margin-top:'+(w===0?'0':'-26px')+';">'+_cardHtml(null,true)+'</span>';
+    h+='<div class="'+_seatCls(W)+'" style="padding:4px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[W]+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">WEST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+hands[W].length+'</span>'+_voidTags(W)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
+    // Aggressive overlap — 13 card backs show as a slim stack, not a tower.
+    for(var w=0;w<hands[W].length;w++)h+='<span style="margin-top:'+(w===0?'0':'-34px')+';">'+_cardHtml(null,true)+'</span>';
     h+='</div></div>';
     // Trick
     h+='<div style="position:relative;min-height:160px;background:rgba(26,31,23,0.3);border-radius:8px;">';
@@ -406,18 +409,18 @@ window._gameFns.bleedinghearts = function BH(a){
       var c=trickCards[pl];if(!c)continue;
       var col=c.suit==='hearts'||c.suit==='diamonds'?'#b42a2a':'#1a1a1a';
       var isQS=(c.rank==='Q'&&c.suit==='spades');
-      var isWin=(pl===trickWinner);
+      var isWin=(pl===lastWinnerSeat);
       var extraCls='';
       if(isQS)extraCls+=' bh-qs-flash';
       if(isWin)extraCls+=' bh-win-glow';
-      var dim=(trickWinner>=0 && pl!==trickWinner)?'filter:saturate(.55) brightness(.75);':'';
+      var dim=(lastWinnerSeat>=0 && pl!==lastWinnerSeat)?'filter:saturate(.55) brightness(.75);':'';
       var seatColor = PLAYER_COLORS[pl];
       h+='<div class="'+extraCls+'" style="position:absolute;'+pos[pl]+dim+'background:linear-gradient(180deg,#faf3dd,#f0e7c8);color:'+col+';border:2px solid '+seatColor+';border-radius:6px;padding:6px 9px;font-weight:700;min-width:40px;text-align:center;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 3px 6px rgba(0,0,0,0.55);">';
       h+='<div style="font-size:0.9rem;">'+c.rank+'</div><div style="font-size:1.2rem;line-height:1;">'+_pip(c.suit)+'</div></div>';
     }
     h+='</div>';
-    h+='<div class="'+_seatCls(E)+'" style="padding:4px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[E]+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">EAST'+_voidTags(E)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
-    for(var e=0;e<hands[E].length;e++)h+='<span style="margin-top:'+(e===0?'0':'-26px')+';">'+_cardHtml(null,true)+'</span>';
+    h+='<div class="'+_seatCls(E)+'" style="padding:4px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[E]+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">EAST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+hands[E].length+'</span>'+_voidTags(E)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
+    for(var e=0;e<hands[E].length;e++)h+='<span style="margin-top:'+(e===0?'0':'-34px')+';">'+_cardHtml(null,true)+'</span>';
     h+='</div></div>';
     h+='</div>';
     // Pass UI — dedicated screen with giant directional arrow + 3 ghost
