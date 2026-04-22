@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.10';
+  var LW_VERSION='2026.04.22.11';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -63264,9 +63264,17 @@ function _bosAboutContent() {
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.12em;margin:0.6rem 0 0.4rem;text-align:center;">\u2728 TIP JAR \u2728</div>';
   h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;margin-bottom:0.7rem;line-height:1.6;">If Lucid Winds has given you something, the easiest way to give back is here. Anything is appreciated. Nothing is required, ever.</div>';
 
-  // Stripe button (cards)
-  if (c.stripeUrl) {
-    h += '<a href="' + c.stripeUrl + '" target="_blank" rel="noopener noreferrer" style="display:block;width:100%;padding:0.8rem;margin-bottom:0.7rem;border:1.5px solid rgba(122,179,86,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(74,124,53,0.32),rgba(46,80,34,0.45));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;text-align:center;text-decoration:none;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.4);">\ud83d\udcb3 SUPPORT WITH CARD</a>';
+  // Custom-amount Stripe tip flow — tipper picks any amount, we POST
+  // it to our PHP endpoint which creates a Checkout Session and hands
+  // back the URL. Stripe gates "customer chooses price" in Payment
+  // Links for certain categories, so we bypass the dashboard and
+  // drive the Checkout API directly.
+  if (c.stripeCardEnabled !== false) {
+    h += '<button onclick="window._lwOpenTipModal()" style="display:block;width:100%;padding:0.85rem;margin-bottom:0.7rem;border:1.5px solid rgba(122,179,86,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(74,124,53,0.34),rgba(46,80,34,0.48));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.12em;text-align:center;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.4);-webkit-tap-highlight-color:transparent;">\ud83d\udcb3 SUPPORT WITH CARD</button>';
+  }
+  // Fallback: honor a static stripeUrl if someone prefers the old flow
+  else if (c.stripeUrl) {
+    h += '<a href="' + c.stripeUrl + '" target="_blank" rel="noopener noreferrer" style="display:block;width:100%;padding:0.85rem;margin-bottom:0.7rem;border:1.5px solid rgba(122,179,86,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(74,124,53,0.32),rgba(46,80,34,0.45));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.12em;text-align:center;text-decoration:none;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.4);">\ud83d\udcb3 SUPPORT WITH CARD</a>';
   }
 
   // Crypto tip buttons. Full-row tap target with chain logo on the
@@ -63319,6 +63327,91 @@ function _bosAboutContent() {
   return h;
 }
 window._bosAboutContent = _bosAboutContent;
+
+// ═══ CUSTOM-AMOUNT TIP MODAL — calls our PHP endpoint ═══
+// Stripe gates "customer chooses price" in Payment Links for many
+// account categories. Instead of forcing Stephen through that UI,
+// we drive Stripe Checkout directly via /api/create-tip-session.php.
+window._lwOpenTipModal = function() {
+  // Build modal overlay on demand so it doesn't live in DOM until used
+  var ov = document.createElement('div');
+  ov.id = 'lw-tip-modal';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.72);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);';
+  ov.onclick = function(e) { if (e.target === ov) close(); };
+  var card = document.createElement('div');
+  card.style.cssText = 'max-width:360px;width:100%;padding:1.4rem 1.2rem;background:linear-gradient(180deg,rgba(26,36,22,0.95),rgba(13,16,12,0.98));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,0.6);';
+  card.innerHTML =
+    '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:var(--gold);letter-spacing:0.15em;text-align:center;margin-bottom:0.3rem;">SUPPORT THE HERMIT</div>'+
+    '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:rgba(232,220,200,0.7);text-align:center;margin-bottom:1rem;line-height:1.5;">Pick any amount. Anything is appreciated.</div>'+
+    '<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:0.7rem;">'+
+      '<button class="lw-tip-preset" data-amt="3" style="padding:0.55rem 0.9rem;min-height:44px;min-width:60px;background:rgba(122,179,86,0.15);border:1px solid rgba(122,179,86,0.4);border-radius:8px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.7rem;cursor:pointer;">$3</button>'+
+      '<button class="lw-tip-preset" data-amt="5" style="padding:0.55rem 0.9rem;min-height:44px;min-width:60px;background:rgba(122,179,86,0.15);border:1px solid rgba(122,179,86,0.4);border-radius:8px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.7rem;cursor:pointer;">$5</button>'+
+      '<button class="lw-tip-preset" data-amt="10" style="padding:0.55rem 0.9rem;min-height:44px;min-width:60px;background:rgba(122,179,86,0.15);border:1px solid rgba(122,179,86,0.4);border-radius:8px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.7rem;cursor:pointer;">$10</button>'+
+      '<button class="lw-tip-preset" data-amt="25" style="padding:0.55rem 0.9rem;min-height:44px;min-width:60px;background:rgba(122,179,86,0.15);border:1px solid rgba(122,179,86,0.4);border-radius:8px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.7rem;cursor:pointer;">$25</button>'+
+    '</div>'+
+    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:1rem;background:rgba(13,16,12,0.6);border:1px solid rgba(200,168,75,0.3);border-radius:8px;padding:0.6rem 0.8rem;">'+
+      '<span style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:var(--gold);">$</span>'+
+      '<input id="lw-tip-amt" type="number" inputmode="decimal" step="0.01" min="1" placeholder="Other amount" style="flex:1;background:none;border:none;color:var(--cream);font-family:DM Mono,monospace;font-size:0.85rem;outline:none;width:100%;">'+
+    '</div>'+
+    '<div id="lw-tip-err" style="font-family:DM Mono,monospace;font-size:0.6rem;color:#e08070;text-align:center;margin-bottom:0.5rem;min-height:0.9rem;"></div>'+
+    '<button id="lw-tip-go" style="display:block;width:100%;padding:0.85rem;margin-bottom:0.5rem;border:1.5px solid rgba(122,179,86,0.55);border-radius:10px;background:linear-gradient(180deg,rgba(74,124,53,0.4),rgba(46,80,34,0.55));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.12em;cursor:pointer;">CONTINUE TO PAYMENT →</button>'+
+    '<button id="lw-tip-cancel" style="display:block;width:100%;padding:0.5rem;border:none;background:none;color:var(--muted);font-family:DM Mono,monospace;font-size:0.58rem;cursor:pointer;letter-spacing:0.08em;">CANCEL</button>';
+  ov.appendChild(card);
+  document.body.appendChild(ov);
+  var input = document.getElementById('lw-tip-amt');
+  var err = document.getElementById('lw-tip-err');
+  function setAmt(v) { input.value = v; err.textContent = ''; }
+  var presets = card.querySelectorAll('.lw-tip-preset');
+  for (var i = 0; i < presets.length; i++) {
+    presets[i].onclick = (function(btn){ return function(){ setAmt(btn.dataset.amt); };})(presets[i]);
+  }
+  document.getElementById('lw-tip-cancel').onclick = close;
+  document.getElementById('lw-tip-go').onclick = function() {
+    var v = parseFloat(input.value);
+    if (!(v >= 1)) { err.textContent = 'Minimum $1.'; input.focus(); return; }
+    var go = document.getElementById('lw-tip-go');
+    go.disabled = true;
+    go.textContent = 'REDIRECTING…';
+    fetch('/api/create-tip-session.php', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({amount: v})
+    }).then(function(r){
+      return r.json().then(function(j){ return {ok: r.ok, j: j}; });
+    }).then(function(x){
+      if (!x.ok || !x.j.url) {
+        err.textContent = x.j.error || 'Something went wrong.';
+        go.disabled = false;
+        go.textContent = 'CONTINUE TO PAYMENT →';
+        return;
+      }
+      window.location.href = x.j.url;
+    }).catch(function(e){
+      err.textContent = 'Network error. Try again.';
+      go.disabled = false;
+      go.textContent = 'CONTINUE TO PAYMENT →';
+    });
+  };
+  function close() { try { ov.remove(); } catch(e) {} }
+};
+
+// Show a thank-you toast on return from successful tip checkout
+(function(){
+  try {
+    var p = new URLSearchParams(window.location.search);
+    if (p.get('tip') === 'success') {
+      setTimeout(function(){
+        if (window._toast) window._toast('Thank you. Seriously.');
+      }, 600);
+      // Clean up the URL so a refresh doesn't re-toast
+      if (history.replaceState) {
+        p.delete('tip');
+        var q = p.toString();
+        history.replaceState({}, '', window.location.pathname + (q ? '?' + q : '') + window.location.hash);
+      }
+    }
+  } catch(e) {}
+})();
 
 // ═══ REFERRAL BONUS v1 ═══
 // Players invite friends with their friend code. Both sides earn:
