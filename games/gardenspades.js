@@ -14,6 +14,10 @@ if(!document.getElementById('gs-anim-style')){
     '@keyframes gsBrokenFlash{0%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,220,112,0.9)}30%{transform:scale(1.15);box-shadow:0 0 0 12px rgba(255,220,112,0.4),0 0 28px rgba(255,220,112,0.7)}100%{transform:scale(1);box-shadow:0 0 10px rgba(255,220,112,0.25)}}'+
     '@keyframes gsBagPulse{0%,100%{box-shadow:inset 0 0 0 1px rgba(255,180,80,0.4)}50%{box-shadow:inset 0 0 0 2px rgba(255,180,80,0.9),0 0 12px rgba(255,180,80,0.6)}}'+
     '@keyframes gsBagDanger{0%,100%{box-shadow:inset 0 0 0 1px rgba(230,57,70,0.55),0 0 8px rgba(230,57,70,0.4)}50%{box-shadow:inset 0 0 0 2px rgba(230,57,70,1),0 0 18px rgba(230,57,70,0.8)}}'+
+    '@keyframes gsWinGlow{0%,100%{box-shadow:0 0 0 2px #ffdc70,0 0 16px rgba(255,220,112,0.55),inset 0 1px 0 rgba(255,255,255,0.5),0 3px 6px rgba(0,0,0,0.55)}50%{box-shadow:0 0 0 3px #ffe896,0 0 24px rgba(255,232,150,0.8),inset 0 1px 0 rgba(255,255,255,0.5),0 3px 6px rgba(0,0,0,0.55)}}'+
+    '@keyframes gsNilCrack{0%{transform:scale(1);box-shadow:0 0 0 0 rgba(230,57,70,0.95)}30%{transform:scale(1.18);box-shadow:0 0 0 16px rgba(230,57,70,0.4),0 0 36px rgba(230,57,70,0.85)}100%{transform:scale(1);box-shadow:0 0 0 0 rgba(230,57,70,0)}}'+
+    '.gs-win-glow{animation:gsWinGlow 0.55s ease-in-out infinite;z-index:4;}'+
+    '.gs-nil-broken{animation:gsNilCrack 1.2s ease-out forwards;}'+
     '.gs-seat{transition:opacity .3s ease,filter .3s ease;border-radius:10px;}'+
     '.gs-seat.gs-active{animation:gsTurnRing 1.4s ease-in-out infinite;}'+
     '.gs-seat.gs-inactive{opacity:0.55;}';
@@ -40,6 +44,11 @@ window._gameFns.gardenspades = function GardenSpades(a){
   // One-shot flag — fires the spades-broken animation only on the render
   // immediately after the break, not on every subsequent render.
   var spadesJustBroke=false;
+  // Trick-end state. Holds the winning seat during the hold beat so render
+  // can glow that card + dim the others. Cleared when the trick clears.
+  var lastTrickWinner=-1;
+  // NIL-in-play tracking. nilBrokenJust is a one-shot for the crack moment.
+  var nilBrokenJust=-1;
 
   ms(a,'<span style="font-family:Georgia,serif;letter-spacing:.06em;">♠ Round <strong id="GSr" style="color:#5b9bd1;font-size:1.2em;">1</strong></span>');
   mm(a);
@@ -155,6 +164,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
     for(i=0;i<4;i++)sortHand(hands[i]);
     bids=[-1,-1,-1,-1];tricksTaken=[0,0,0,0];trick=[];trickCards=[null,null,null,null];
     spadesBroken=false;spadesJustBroke=false;teamBids=[0,0];
+    lastTrickWinner=-1;nilBrokenJust=-1;
   }
   function newRound(){
     roundNum++;deal();phase='bidding';
@@ -192,21 +202,36 @@ window._gameFns.gardenspades = function GardenSpades(a){
     render();
     if(trick.length===4){
       var winner=trickWinner(trick);tricksTaken[winner]++;phase='trickDone';
+      // NIL-broken detection — if the trick winner had bid 0 and just took
+      // their first trick, fire the crack-and-flash animation.
+      var nilBroke = (bids[winner]===0 && tricksTaken[winner]===1);
+      // Beat 1: 450ms with winner glow + losers dim.
       setTimeout(function(){
-        sm(NAMES[winner]+' takes the trick');
+        lastTrickWinner=winner;
+        if(nilBroke){
+          nilBrokenJust=winner;
+          sm('NIL BROKEN — '+NAMES[winner]+' took a trick');
+          setTimeout(function(){nilBrokenJust=-1;render();},1200);
+        }else{
+          sm(NAMES[winner]+' takes the trick');
+        }
         _e('progress');
+        render();
+        // Beat 2: 1100ms hold so the win lands. Was 600ms — too quick.
         setTimeout(function(){
+          lastTrickWinner=-1;
           trick=[];trickCards=[null,null,null,null];
           if(hands[0].length===0){scoreRound();return;}
           leader=winner;currentPlayer=leader;phase='play';render();
-          if(currentPlayer!==S)setTimeout(doAIPlay,400);
+          if(currentPlayer!==S)setTimeout(doAIPlay,750);
           else sm('Your lead');
-        },600);
-      },500);
+        },1100);
+      },450);
       return;
     }
     currentPlayer=(currentPlayer+1)%4;render();
-    if(currentPlayer!==S)setTimeout(doAIPlay,350);
+    // AI play pacing 350→750ms — matches the Trickster cadence.
+    if(currentPlayer!==S)setTimeout(doAIPlay,750);
   }
   function doAIPlay(){if(phase!=='play'||currentPlayer===S)return;var c=aiPlay(currentPlayer);playCard(currentPlayer,c);}
   function scoreRound(){
@@ -310,10 +335,12 @@ window._gameFns.gardenspades = function GardenSpades(a){
   }
   // Seat class — pulsing turn ring on active, dim on inactive during live phases.
   function _seatCls(seat){
+    var classes='gs-seat';
     var isActive = (seat===currentPlayer && (phase==='play'||phase==='bidding'));
-    if(isActive)return 'gs-seat gs-active';
-    if(phase==='play'||phase==='bidding')return 'gs-seat gs-inactive';
-    return 'gs-seat';
+    if(isActive)classes+=' gs-active';
+    else if(phase==='play'||phase==='bidding')classes+=' gs-inactive';
+    if(seat===nilBrokenJust)classes+=' gs-nil-broken';
+    return classes;
   }
 
   function render(){
@@ -362,14 +389,18 @@ window._gameFns.gardenspades = function GardenSpades(a){
       +'<div style="display:inline-flex;flex-direction:column;align-items:center;">';
     for(var w=0;w<hands[W].length;w++)h+='<div style="width:30px;height:42px;border-radius:5px;background:linear-gradient(135deg,#1a4a2e,#0c2a18);border:1.5px solid #051208;margin-top:'+(w===0?'0':'-34px')+';box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);"></div>';
     h+='</div></div>';
-    // Trick area
-    h+='<div style="position:relative;min-height:160px;background:rgba(26,31,23,0.3);border-radius:8px;">';
+    // ── TRICK AREA ──────────────────────────────────────────────
+    h+='<div style="position:relative;min-height:160px;background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0.18) 0%,rgba(0,0,0,0.4) 100%);border-radius:8px;border:1px solid rgba(0,0,0,0.5);box-shadow:inset 0 2px 8px rgba(0,0,0,0.45);">';
     var pos={};pos[S]='bottom:8px;left:50%;transform:translateX(-50%);';pos[W]='left:8px;top:50%;transform:translateY(-50%);';pos[N]='top:8px;left:50%;transform:translateX(-50%);';pos[E]='right:8px;top:50%;transform:translateY(-50%);';
     for(var pl=0;pl<4;pl++){
       var c=trickCards[pl];if(!c)continue;
-      var col=c.suit==='hearts'||c.suit==='diamonds'?'#c47a7a':'#1a1f17';
-      h+='<div style="position:absolute;'+pos[pl]+'background:#F5F0E1;color:'+col+';border:2px solid '+(pl===S?'#7ab356':'#c8a84b')+';border-radius:6px;padding:6px 9px;font-weight:700;min-width:38px;text-align:center;">';
-      h+='<div style="font-size:0.85rem;">'+c.rank+'</div><div style="font-size:1.1rem;">'+_pip(c.suit)+'</div></div>';
+      var col=c.suit==='hearts'||c.suit==='diamonds'?'#b42a2a':'#1a1a1a';
+      var seatCol=_teamColor(pl);
+      var isWin=(pl===lastTrickWinner);
+      var winCls=isWin?' gs-win-glow':'';
+      var dim=(lastTrickWinner>=0 && pl!==lastTrickWinner)?'filter:saturate(.55) brightness(.75);':'';
+      h+='<div class="'+winCls+'" style="position:absolute;'+pos[pl]+dim+'background:linear-gradient(180deg,#faf3dd,#f0e7c8);color:'+col+';border:2px solid '+seatCol+';border-radius:6px;padding:6px 9px;font-weight:700;min-width:42px;text-align:center;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 3px 6px rgba(0,0,0,0.55);">';
+      h+='<div style="font-size:0.92rem;line-height:1;">'+c.rank+'</div><div style="font-size:1.25rem;line-height:1;margin-top:2px;">'+_pip(c.suit)+'</div></div>';
     }
     h+='</div>';
     h+='<div class="'+_seatCls(E)+'" style="padding:4px;">'
