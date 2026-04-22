@@ -18,14 +18,29 @@ window._gameFns.cribbage = function CRIB(a){
   pan.id='CBpan';
   // Felt-table background — signature cribbage visual cue. Layered gradient
   // creates a subtle weave effect over the dark green base.
-  pan.style.cssText='max-width:460px;margin:0 auto;padding:10px;user-select:none;'
+  // Felt texture: an inline SVG of tiny random dots repeats under the gradient
+  // to give the green surface a real-world fabric graininess.
+  var _FELT_NOISE="data:image/svg+xml;utf8,"+encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180">'
+      +'<filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3"/>'
+      +'<feColorMatrix values="0 0 0 0 0.04  0 0 0 0 0.08  0 0 0 0 0.04  0 0 0 .08 0"/></filter>'
+      +'<rect width="100%" height="100%" filter="url(#n)"/>'
+    +'</svg>'
+  );
+  pan.style.cssText='max-width:460px;margin:0 auto;padding:12px;user-select:none;'
     +'background:'
-      +'radial-gradient(circle at 30% 20%,rgba(255,255,255,0.04) 0%,transparent 50%),'
-      +'radial-gradient(circle at 70% 80%,rgba(0,0,0,0.18) 0%,transparent 55%),'
+      +'url("'+_FELT_NOISE+'"),'
+      +'radial-gradient(ellipse at 50% 0%,rgba(255,255,255,0.06) 0%,transparent 55%),'
+      +'radial-gradient(circle at 30% 100%,rgba(0,0,0,0.22) 0%,transparent 60%),'
       +'linear-gradient(135deg,#0f5c35 0%,#0b4d2c 55%,#083d22 100%);'
-    +'border-radius:14px;'
-    +'border:1px solid rgba(180,140,70,0.35);'
-    +'box-shadow:inset 0 0 28px rgba(0,0,0,0.35),0 4px 18px rgba(0,0,0,0.4);';
+    +'background-size:180px 180px, auto, auto, auto;'
+    +'border-radius:16px;'
+    +'border:2px solid #6b4520;'
+    +'box-shadow:'
+      +'inset 0 0 0 1px rgba(180,140,70,0.25),'
+      +'inset 0 0 32px rgba(0,0,0,0.4),'
+      +'0 6px 24px rgba(0,0,0,0.55),'
+      +'0 1px 0 rgba(255,220,140,0.08);';
   a.appendChild(pan);
   // Style-aware pip — Garden swaps ♠♥♦♣ for 🍄🌸🐝🐦
   function _pip(idx){return (window._cdSuit)?window._cdSuit(idx):SUITS[idx];}
@@ -396,22 +411,41 @@ window._gameFns.cribbage = function CRIB(a){
     var ps=document.getElementById('CBp');if(ps)ps.textContent=G.pScore;
     var as=document.getElementById('CBa');if(as)as.textContent=G.aScore;
     var h='';
-    // ── PEG BOARD — two tracks stacked on a wood frame ──
-    h+='<div style="background:linear-gradient(135deg,#6b4520 0%,#4a2e14 50%,#3a2210 100%);border:1.5px solid rgba(0,0,0,0.6);border-radius:10px;padding:8px 10px;margin-bottom:8px;box-shadow:inset 0 1px 0 rgba(255,220,140,0.15),inset 0 -2px 4px rgba(0,0,0,0.5),0 3px 10px rgba(0,0,0,0.45);">';
+    // ── PEG BOARD — wood frame with two felt tracks ──
+    h+='<div style="position:relative;background:'
+      +'repeating-linear-gradient(92deg,rgba(0,0,0,0.12) 0 1px,transparent 1px 7px),'
+      +'repeating-linear-gradient(88deg,rgba(255,220,140,0.05) 0 2px,transparent 2px 11px),'
+      +'linear-gradient(135deg,#7a4f25 0%,#5a3818 50%,#3e2410 100%);'
+      +'border:2px solid #2a1808;border-radius:12px;padding:9px 10px;margin-bottom:10px;'
+      +'box-shadow:'
+        +'inset 0 0 0 1px rgba(180,140,70,0.35),'
+        +'inset 0 1px 0 rgba(255,220,140,0.22),'
+        +'inset 0 -2px 6px rgba(0,0,0,0.55),'
+        +'0 4px 14px rgba(0,0,0,0.5);">';
     h+=_pegBar('YOU',G.pScore,G.pPrev,'#7ab356');
-    h+='<div style="height:4px;"></div>';
+    h+='<div style="height:5px;"></div>';
     h+=_pegBar('AI',G.aScore,G.aPrev,'#dc8a8a');
     h+='</div>';
-    // ── STATUS ROW — phase + round + dealer ──
+    // ── STATUS ROW — phase + round + dealer chip ──
     var st='';
     if(G.phase==='discard')st='Select 2 for the crib';
     else if(G.phase==='peg')st='The play';
     else if(G.phase==='show')st='Scoring';
     else st='Game Over';
-    h+='<div style="display:flex;gap:14px;justify-content:center;align-items:center;padding:4px 4px 8px;flex-wrap:wrap;font-family:DM Mono,monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;">';
-    h+='<span style="color:#d4b86a;">'+st+'</span>';
+    h+='<div style="display:flex;gap:12px;justify-content:center;align-items:center;padding:4px 4px 10px;flex-wrap:wrap;font-family:DM Mono,monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;">';
+    h+='<span style="color:#ffdc70;">'+st+'</span>';
     h+='<span style="color:rgba(232,220,200,0.5);">Round <strong style="color:#e8dcc8;">'+G.roundNum+'</strong></span>';
-    h+='<span style="color:rgba(232,220,200,0.5);">Dealer <strong style="color:#d4b86a;font-family:Georgia,serif;font-size:0.9rem;text-transform:none;">'+(G.dealer==='player'?'You':'AI')+'</strong></span>';
+    // Dealer chip — the classic brass "D" token
+    h+='<span style="display:inline-flex;align-items:center;gap:6px;color:rgba(232,220,200,0.5);">Dealer'
+      +'<span title="Dealer" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;'
+        +'background:radial-gradient(circle at 35% 30%,#fff4c2 0%,#d4b86a 40%,#8b6a20 100%);'
+        +'border:1.5px solid #5a4010;'
+        +'font-family:Georgia,serif;font-size:0.78rem;font-weight:700;color:#3a2a08;'
+        +'text-shadow:0 1px 0 rgba(255,255,255,0.4);'
+        +'box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 2px 4px rgba(0,0,0,0.5);letter-spacing:0;">'
+        +(G.dealer==='player'?'Y':'A')
+      +'</span>'
+    +'</span>';
     h+='</div>';
     // ── AI HAND ──
     h+='<div style="background:rgba(8,35,22,0.45);border:1px solid rgba(220,138,138,0.25);border-radius:8px;padding:6px 8px;margin-bottom:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);">';
@@ -454,8 +488,19 @@ window._gameFns.cribbage = function CRIB(a){
     }
     // ── PLAY AREA — cards laid down during pegging ──
     if(G.phase==='peg'&&G.playArea.length>0){
-      h+='<div style="min-height:52px;display:flex;gap:3px;justify-content:center;align-items:center;flex-wrap:wrap;padding:6px;background:rgba(0,0,0,0.22);border-radius:6px;margin:4px 0;border:1px solid rgba(180,140,70,0.15);position:relative;">';
-      G.playArea.forEach(function(p){h+=_cardHtml(p.card,false,false,false,false,p.who);});
+      h+='<div style="min-height:72px;display:flex;gap:2px;justify-content:center;align-items:center;flex-wrap:wrap;padding:10px 8px;'
+        +'background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0.15) 0%,rgba(0,0,0,0.4) 100%);'
+        +'border-radius:8px;margin:6px 0;'
+        +'border:1px solid rgba(0,0,0,0.5);'
+        +'box-shadow:inset 0 2px 8px rgba(0,0,0,0.55);position:relative;">';
+      G.playArea.forEach(function(p,i){
+        // Lay played cards with a tiny alternating tilt so the pile reads as
+        // physical cards dropped on a table, not sterile grid cells.
+        var tilt = ((i*53)%9 - 4) * 0.8; // pseudo-random -3.2° to +3.2°
+        h+='<div style="display:inline-block;transform:rotate('+tilt.toFixed(2)+'deg);margin:0 -2px;">';
+        h+=_cardHtml(p.card,false,false,false,false,p.who);
+        h+='</div>';
+      });
       // Floating banner announcing FIFTEEN / PAIR / RUN etc when a peg score fires.
       if(G.banner){
         h+='<div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);padding:6px 16px;background:linear-gradient(180deg,'+G.banner.color+',#0a0a0a);border:1.5px solid '+G.banner.color+';border-radius:6px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;color:#fff8e0;letter-spacing:0.1em;text-shadow:0 1px 2px rgba(0,0,0,0.7);box-shadow:0 4px 14px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.2);white-space:nowrap;animation:cbBanner .3s cubic-bezier(.2,1.6,.3,1) both;z-index:4;">'
@@ -563,12 +608,18 @@ window._gameFns.cribbage = function CRIB(a){
       var isGroup = (m%10===0);
       h+='<div style="position:absolute;top:6px;left:'+mpct+'%;width:3px;height:6px;margin-left:-1.5px;background:rgba(0,0,0,0.55);border-radius:50%;box-shadow:inset 0 1px 1px rgba(0,0,0,0.8);'+(isGroup?'opacity:1;':'opacity:0.55;')+'"></div>';
     }
-    // Back peg — hollow, sits at the previous score
+    // Back peg — at previous score, dimmer and slightly smaller so the front
+    // peg reads as the leader visually.
     if(prevScore!==score){
-      h+='<div style="position:absolute;top:2px;left:'+prevPct+'%;transform:translateX(-50%);width:12px;height:14px;border-radius:6px 6px 4px 4px;background:linear-gradient(180deg,'+color+' 0%,'+_darken(color)+' 100%);border:1px solid rgba(0,0,0,0.5);opacity:0.55;box-shadow:0 1px 2px rgba(0,0,0,0.4);"></div>';
+      h+='<div style="position:absolute;top:2px;left:'+prevPct+'%;transform:translateX(-50%);width:11px;height:13px;border-radius:50% 50% 4px 4px;background:linear-gradient(180deg,'+color+' 0%,'+_darken(color)+' 100%);border:1px solid rgba(0,0,0,0.45);opacity:0.5;box-shadow:0 2px 3px rgba(0,0,0,0.35);"></div>';
     }
-    // Front peg — filled, sits at the current score
-    h+='<div style="position:absolute;top:2px;left:'+pct+'%;transform:translateX(-50%);width:12px;height:14px;border-radius:6px 6px 4px 4px;background:linear-gradient(180deg,'+color+' 0%,'+_darken(color)+' 100%);border:1px solid rgba(0,0,0,0.55);box-shadow:0 2px 4px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.35);transition:left .4s cubic-bezier(.2,.9,.35,1);"></div>';
+    // Front peg — filled, gradient, brass-like top highlight. Sits at current score.
+    h+='<div class="cb-peg" style="position:absolute;top:1px;left:'+pct+'%;transform:translateX(-50%);width:13px;height:15px;border-radius:50% 50% 4px 4px;background:'
+      +'radial-gradient(ellipse at 50% 20%,rgba(255,255,255,0.6) 0%,rgba(255,255,255,0) 40%),'
+      +'linear-gradient(180deg,'+color+' 0%,'+_darken(color)+' 100%);'
+      +'border:1px solid rgba(0,0,0,0.6);'
+      +'box-shadow:0 3px 5px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.5),0 0 10px '+color+'55;'
+      +'transition:left .45s cubic-bezier(.2,.9,.35,1);"></div>';
     h+='</div>';
     h+='<div style="flex:0 0 auto;font-family:Georgia,serif;font-size:1rem;font-weight:700;color:#f5ebd0;min-width:32px;text-align:right;text-shadow:0 1px 2px rgba(0,0,0,0.5);">'+score+'</div>';
     h+='</div>';
@@ -594,11 +645,12 @@ window._gameFns.cribbage = function CRIB(a){
       +'background:linear-gradient(180deg,#faf3dd 0%,#f0e7c8 100%);'
       +'color:'+color+';position:relative;vertical-align:middle;'
       +'font-family:Georgia,serif;'
-      +'box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 2px 5px rgba(0,0,0,0.45);';
-    if(sel)style+='transform:translateY(-10px);box-shadow:0 0 0 2px #ffdc70,0 6px 14px rgba(255,220,112,0.4);';
-    if(played)style+='opacity:.45;';
-    if(canPlay)style+='cursor:pointer;transition:transform .14s ease;';
-    if(isStarter)style+='box-shadow:0 0 0 2px #d4b86a,0 3px 10px rgba(212,184,106,0.35);';
+      +'box-shadow:inset 0 1px 0 rgba(255,255,255,0.6),0 3px 6px rgba(0,0,0,0.5),0 1px 0 rgba(0,0,0,0.3);'
+      +'transition:transform .16s cubic-bezier(.2,1.4,.3,1),box-shadow .16s ease;';
+    if(sel)style+='transform:translateY(-12px) rotate(-2deg);box-shadow:0 0 0 2px #ffdc70,0 10px 18px rgba(255,220,112,0.45),0 0 22px rgba(255,220,112,0.25);';
+    if(played)style+='opacity:.4;filter:saturate(0.5);';
+    if(canPlay)style+='cursor:pointer;';
+    if(isStarter)style+='box-shadow:0 0 0 2px #d4b86a,0 4px 12px rgba(212,184,106,0.4),inset 0 1px 0 rgba(255,255,255,0.55);';
     var onclick='';
     if(G.phase==='discard'&&!played&&idx!==undefined)onclick='_CBTS('+idx+')';
     else if(G.phase==='peg'&&canPlay&&idx!==undefined)onclick='_CBPC('+idx+')';
