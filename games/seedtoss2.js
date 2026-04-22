@@ -25,6 +25,18 @@ var POT_TIERS = [
   { lvl: 12, name: 'Golden Pot',    base:'#d4a843', rim:'#a07a20' },
   { lvl: 18, name: 'Cosmic Cradle', base:'#602080', rim:'#300a40' }
 ];
+// Pot SIZES (separate from pot art tiers). Smaller = higher multiplier.
+// Unlock cadence: LARGE is free, MEDIUM unlocks at a lifetime XP/level
+// milestone, SMALL later. We store the highest level the player has
+// ever reached in lw_st_best_lvl so they don't lose access if a run
+// ends at L1.
+var POT_SIZES=[
+  { key:'large',  name:'LARGE',  unlockAt:1, mult:1.0, minW:60, maxW:90, hint:'Easy target, standard reward' },
+  { key:'medium', name:'MEDIUM', unlockAt:4, mult:1.5, minW:40, maxW:60, hint:'1.5× score for every seed' },
+  { key:'small',  name:'SMALL',  unlockAt:8, mult:2.5, minW:26, maxW:40, hint:'2.5× score · precision mode' }
+];
+function _STbestLevel(){try{return parseInt(localStorage.getItem('lw_st_best_lvl')||'1',10)||1;}catch(e){return 1;}}
+function _STsaveBestLevel(n){try{var b=_STbestLevel();if(n>b)localStorage.setItem('lw_st_best_lvl',String(n));}catch(e){}}
 function _STcurrentSeedTier(lvl){var t=SEED_TIERS[0];for(var i=0;i<SEED_TIERS.length;i++)if(lvl>=SEED_TIERS[i].lvl)t=SEED_TIERS[i];return t;}
 function _STcurrentPotTier(lvl){var t=POT_TIERS[0];for(var i=0;i<POT_TIERS.length;i++)if(lvl>=POT_TIERS[i].lvl)t=POT_TIERS[i];return t;}
 function _STnextSeedUnlock(lvl){for(var i=0;i<SEED_TIERS.length;i++)if(SEED_TIERS[i].lvl>lvl)return SEED_TIERS[i];return null;}
@@ -41,6 +53,8 @@ window._gameFns.seedtoss2=function ST(a){
   var particles=[];
   var touchStart=null,touchHistory=[];
   var rafId=0,running=false;
+  var currentSize=POT_SIZES[0];   // active pot size (LARGE by default)
+  var scoreMult=1.0;                // multiplier applied to earned points
 
   ms(a,'Score <span id="STs">0</span> · Seeds <span id="STq">15</span> · L<span id="STl">1</span>');
   mm(a);
@@ -70,10 +84,10 @@ window._gameFns.seedtoss2=function ST(a){
 
   function genPot(){
     GROUND_Y=H*0.88;
-    var minW=50,maxW=90;
-    if(level>=3)maxW=80;
-    if(level>=5){maxW=70;minW=40;}
-    if(level>=8){maxW=60;minW=35;}
+    // Pot width range comes from the player-chosen size, not from level.
+    // Keeps the size contract honest: if they picked SMALL, every pot
+    // is small. Level still controls art tier, wind, and position spread.
+    var minW=currentSize.minW,maxW=currentSize.maxW;
     var pw=minW+Math.random()*(maxW-minW);
     var ph=pw*0.7;
     var baseX=W*0.5,spread=W*0.15+level*W*0.02;
@@ -175,8 +189,11 @@ window._gameFns.seedtoss2=function ST(a){
     else if(heightBonus>0)heightLabel=' · OK';
     pts+=heightBonus;
     if(heightBonus>0)heightLabel=' (+'+heightBonus+')'+heightLabel;
+    // Apply pot-size multiplier
+    pts=Math.round(pts*scoreMult);
     score+=pts;
-    setMsg('+'+pts+heightLabel);
+    var multTag=scoreMult>1?' ×'+scoreMult:'';
+    setMsg('+'+pts+multTag+heightLabel);
     // Pop particles in current seed tier colors
     var seedTier=_STcurrentSeedTier(level);
     for(var i=0;i<16;i++){var ang=Math.random()*Math.PI*2,sp=50+Math.random()*120;
@@ -185,10 +202,13 @@ window._gameFns.seedtoss2=function ST(a){
     if(streak%5===0)_e('milestone');
     if(totalMade%5===0){
       level++;
-      // Check for seed/pot unlocks at this new level
+      _STsaveBestLevel(level);
+      // Check for seed/pot art unlocks at this new level
       var unlockMsg='LEVEL '+level+'!';
       for(var u=0;u<SEED_TIERS.length;u++){if(SEED_TIERS[u].lvl===level){unlockMsg='🌱 '+SEED_TIERS[u].name.toUpperCase()+' UNLOCKED!';break;}}
       for(u=0;u<POT_TIERS.length;u++){if(POT_TIERS[u].lvl===level){unlockMsg='🏺 '+POT_TIERS[u].name.toUpperCase()+' UNLOCKED!';break;}}
+      // Announce pot-SIZE unlocks too (separate from art tiers)
+      for(u=0;u<POT_SIZES.length;u++){if(POT_SIZES[u].unlockAt===level){unlockMsg='🎯 '+POT_SIZES[u].name+' POT UNLOCKED · '+POT_SIZES[u].mult+'× score';break;}}
       setMsg(unlockMsg);
     }
     updateHUD();
@@ -215,8 +235,103 @@ window._gameFns.seedtoss2=function ST(a){
     if(s)s.textContent=score;if(q)q.textContent=seedsLeft;if(l)l.textContent=level;
   }
 
+  function drawPotSkinned(px,py,pw,ph,tier){
+    // Tapered flowerpot: narrower at the base, wider at the rim, with
+    // an inner dark mouth, highlight strip, and ground shadow.
+    // Ground shadow
+    ctx.save();
+    ctx.fillStyle='rgba(0,0,0,0.35)';
+    ctx.beginPath();
+    ctx.ellipse(px,py+2,pw*0.55,6,0,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+    // Body gradient for dimensionality
+    var bodyGrd=ctx.createLinearGradient(px-pw/2,py-ph,px+pw/2,py);
+    bodyGrd.addColorStop(0,tier.rim);
+    bodyGrd.addColorStop(0.35,tier.base);
+    bodyGrd.addColorStop(0.75,tier.base);
+    bodyGrd.addColorStop(1,tier.rim);
+    ctx.fillStyle=bodyGrd;
+    ctx.beginPath();
+    ctx.moveTo(px-pw/2,py);
+    ctx.lineTo(px-pw*0.38,py-ph);
+    ctx.lineTo(px+pw*0.38,py-ph);
+    ctx.lineTo(px+pw/2,py);
+    ctx.closePath();
+    ctx.fill();
+    // Highlight stroke on body's left edge for form
+    ctx.strokeStyle='rgba(255,255,255,0.09)';
+    ctx.lineWidth=1.2;
+    ctx.beginPath();
+    ctx.moveTo(px-pw/2+2,py-2);
+    ctx.lineTo(px-pw*0.38+1,py-ph+2);
+    ctx.stroke();
+    // Rim — thicker band
+    var rimGrd=ctx.createLinearGradient(px,py-ph-8,px,py-ph+4);
+    rimGrd.addColorStop(0,tier.rim);
+    rimGrd.addColorStop(0.5,tier.base);
+    rimGrd.addColorStop(1,tier.rim);
+    ctx.fillStyle=rimGrd;
+    ctx.beginPath();
+    ctx.moveTo(px-pw/2-4,py-ph+4);
+    ctx.lineTo(px-pw/2-4,py-ph-4);
+    ctx.lineTo(px+pw/2+4,py-ph-4);
+    ctx.lineTo(px+pw/2+4,py-ph+4);
+    ctx.closePath();
+    ctx.fill();
+    // Rim top highlight
+    ctx.strokeStyle='rgba(255,255,255,0.18)';
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(px-pw/2-3,py-ph-3.5);
+    ctx.lineTo(px+pw/2+3,py-ph-3.5);
+    ctx.stroke();
+    // Inner mouth — deeper shadow at center, softer at edges
+    var mouthGrd=ctx.createLinearGradient(px,py-ph-2,px,py-ph+6);
+    mouthGrd.addColorStop(0,'rgba(0,0,0,0.75)');
+    mouthGrd.addColorStop(1,'rgba(0,0,0,0.45)');
+    ctx.fillStyle=mouthGrd;
+    ctx.beginPath();
+    ctx.ellipse(px,py-ph-2,pw*0.34,4,0,0,Math.PI*2);
+    ctx.fill();
+    // A bit of soil peeking through
+    ctx.fillStyle='rgba(60,40,20,0.6)';
+    ctx.beginPath();
+    ctx.ellipse(px,py-ph-1,pw*0.28,2.5,0,0,Math.PI*2);
+    ctx.fill();
+  }
+  function drawSeedSkinned(x,y,r,tier){
+    // Outer glow
+    ctx.fillStyle=tier.glow;
+    ctx.beginPath();ctx.arc(x,y,r+5,0,Math.PI*2);ctx.fill();
+    // Body — radial gradient from highlight to rim
+    var gr=ctx.createRadialGradient(x-r*0.35,y-r*0.35,0,x,y,r);
+    gr.addColorStop(0,'rgba(255,255,255,0.5)');
+    gr.addColorStop(0.28,tier.inner);
+    gr.addColorStop(1,tier.outer);
+    ctx.fillStyle=gr;
+    ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+    // Dark rim to seat it
+    ctx.strokeStyle='rgba(0,0,0,0.45)';
+    ctx.lineWidth=0.8;
+    ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.stroke();
+    // Tiny specular dot
+    ctx.fillStyle='rgba(255,255,255,0.85)';
+    ctx.beginPath();ctx.arc(x-r*0.3,y-r*0.4,r*0.22,0,Math.PI*2);ctx.fill();
+  }
+
   function draw(){
-    ctx.fillStyle='#0d100c';ctx.fillRect(0,0,W,H);
+    // Dusk-to-night sky gradient background instead of flat black
+    var sky=ctx.createLinearGradient(0,0,0,H);
+    sky.addColorStop(0,'#0a1016');
+    sky.addColorStop(0.55,'#10160f');
+    sky.addColorStop(1,'#1a1810');
+    ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+    // Distant sparkle dots
+    ctx.fillStyle='rgba(232,220,200,0.08)';
+    for(var _s=0;_s<10;_s++){
+      ctx.fillRect((_s*73)%W,(_s*41)%(H*0.45),1,1);
+    }
     // ── HEIGHT LADDER — bigger bonus the higher the arc ──
     // Matches the scoring math: heightBonus = floor(arcTop / 2), so a
     // ladder bar labelled "+N" sits N×2 px above the pot rim. The
@@ -268,13 +383,7 @@ window._gameFns.seedtoss2=function ST(a){
     // Pot — uses current level's pot tier
     if(pot){
       var potTier=_STcurrentPotTier(level);
-      var px=pot.x,py=pot.y,pw=pot.width,ph=pot.height;
-      ctx.fillStyle=potTier.base;
-      ctx.beginPath();
-      ctx.moveTo(px-pw/2,py);ctx.lineTo(px-pw*0.35,py-ph);ctx.lineTo(px+pw*0.35,py-ph);ctx.lineTo(px+pw/2,py);
-      ctx.closePath();ctx.fill();
-      ctx.fillStyle=potTier.rim;ctx.fillRect(px-pw/2-6,py-ph-6,pw+12,8);
-      ctx.fillStyle='rgba(0,0,0,0.4)';ctx.fillRect(px-pw*0.3,py-ph-2,pw*0.6,6);
+      drawPotSkinned(pot.x,pot.y,pot.width,pot.height,potTier);
     }
     // Wind indicator
     if(Math.abs(wind)>5){
@@ -294,12 +403,7 @@ window._gameFns.seedtoss2=function ST(a){
     // Seed — uses current level's seed tier
     if(seed&&phase!=='scored'){
       var seedTier=_STcurrentSeedTier(level);
-      ctx.fillStyle=seedTier.glow;
-      ctx.beginPath();ctx.arc(seed.x,seed.y,SEED_RADIUS+5,0,Math.PI*2);ctx.fill();
-      var gr=ctx.createRadialGradient(seed.x-2,seed.y-2,0,seed.x,seed.y,SEED_RADIUS);
-      gr.addColorStop(0,seedTier.inner);gr.addColorStop(1,seedTier.outer);
-      ctx.fillStyle=gr;
-      ctx.beginPath();ctx.arc(seed.x,seed.y,SEED_RADIUS,0,Math.PI*2);ctx.fill();
+      drawSeedSkinned(seed.x,seed.y,SEED_RADIUS,seedTier);
     }
     // Particles
     for(i=0;i<particles.length;i++){
@@ -331,14 +435,55 @@ window._gameFns.seedtoss2=function ST(a){
     rafId=requestAnimationFrame(loop);
   }
 
-  window._STN=function(){
+  function showSizePicker(){
+    // Pre-round modal: three pot-size tiles with multipliers.
+    // Unlock gate uses best-ever level so the player doesn't lose access
+    // to previously-unlocked sizes just because this run started at L1.
+    var bestLvl=_STbestLevel();
+    pan.innerHTML='';
+    var wrap=document.createElement('div');
+    wrap.style.cssText='padding:14px 6px 4px;max-width:420px;margin:0 auto;';
+    var title=document.createElement('div');
+    title.style.cssText='font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:var(--gold);letter-spacing:0.14em;text-align:center;margin-bottom:4px;';
+    title.textContent='CHOOSE YOUR POT';
+    wrap.appendChild(title);
+    var sub=document.createElement('div');
+    sub.style.cssText='font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);text-align:center;margin-bottom:14px;letter-spacing:0.05em;line-height:1.5;';
+    sub.textContent='Smaller pots are harder but pay more per seed.';
+    wrap.appendChild(sub);
+    var grid=document.createElement('div');
+    grid.style.cssText='display:flex;gap:8px;justify-content:center;flex-wrap:wrap;';
+    for(var i=0;i<POT_SIZES.length;i++){
+      (function(sz){
+        var unlocked=bestLvl>=sz.unlockAt;
+        var btn=document.createElement('button');
+        btn.style.cssText='flex:1;min-width:105px;max-width:130px;padding:12px 8px;border-radius:12px;border:1.5px solid '+(unlocked?'rgba(200,168,75,0.45)':'rgba(138,145,120,0.2)')+';background:'+(unlocked?'linear-gradient(180deg,rgba(74,124,53,0.22),rgba(26,36,22,0.6))':'rgba(26,31,23,0.35)')+';color:'+(unlocked?'var(--cream)':'var(--muted)')+';font-family:inherit;cursor:'+(unlocked?'pointer':'not-allowed')+';box-shadow:'+(unlocked?'0 3px 10px rgba(0,0,0,0.35)':'none')+';min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;';
+        btn.innerHTML=
+          '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.1em;color:'+(unlocked?'var(--gold)':'var(--muted)')+';">'+sz.name+'</div>'+
+          '<div style="font-family:DM Mono,monospace;font-size:1.2rem;color:'+(unlocked?'var(--cream)':'var(--muted)')+';font-weight:700;">'+sz.mult.toFixed(1).replace(/\.0$/,'')+'×</div>'+
+          '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);line-height:1.35;padding:0 2px;">'+(unlocked?sz.hint:'Reach Lv '+sz.unlockAt+' to unlock')+'</div>';
+        if(unlocked){btn.onclick=function(){beginRun(sz);};}
+        grid.appendChild(btn);
+      })(POT_SIZES[i]);
+    }
+    wrap.appendChild(grid);
+    pan.appendChild(wrap);
+  }
+  function beginRun(sz){
+    currentSize=sz;
+    scoreMult=sz.mult;
     if(rafId)cancelAnimationFrame(rafId);
     setup();
     score=0;streak=0;bestStreak=0;level=1;seedsLeft=15;totalMade=0;totalThrown=0;particles=[];
     genPot();resetSeed();updateHUD();
     running=true;lastT=0;
     rafId=requestAnimationFrame(loop);
-    sm('Flick the seed into the pot');
+    sm(sz.mult>1?'×'+sz.mult+' multiplier · flick it in':'Flick the seed into the pot');
+  }
+  window._STN=function(){
+    if(rafId)cancelAnimationFrame(rafId);
+    running=false;
+    showSizePicker();
   };
 
   _STN();
