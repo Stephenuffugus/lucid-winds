@@ -605,6 +605,14 @@ window._gameFns.bowergarden = function BG(a){
       h+='</div></div>';
     }
     pan.innerHTML=h;
+    // One-shot animation flags: clear AFTER paint so the next render (which
+    // can fire for any reason — score change, turn advance, new card played)
+    // doesn't re-trigger the bid-flash or slide-in on elements that already
+    // animated. The CSS animation runs to completion on the already-mounted
+    // DOM node; the next render produces a fresh node without the class.
+    if(lastPlayed>=0||lastBidSeat>=0){
+      setTimeout(function(){ lastPlayed=-1; lastBidSeat=-1; }, 50);
+    }
   }
 
   // Two-step call flow when human calls: stash the pending call,

@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.43';
+  var LW_VERSION='2026.04.22.44';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3435,6 +3435,13 @@
     body.game-active #sws-debug-toggle{display:none!important}
     /* Three Sisters keeps its own rules strip visible — it has no inline gr rules div like the other games */
     body.game-active.game-set .rules-strip{display:block!important}
+    /* Euchre / Cribbage / other trick-taking games need the vertical space — hide the sunbeam strip, attention-bar tutorial hint, and the inline 📖 rules row so the felt table gets to use the full screen. */
+    body.game-active:has(#fg-ag[data-game="bowergarden"]) .gp-strip,
+    body.game-active:has(#fg-ag[data-game="bowergarden"]) #ab,
+    body.game-active:has(#fg-ag[data-game="bowergarden"]) #fg-ag > .gr,
+    body.game-active:has(#fg-ag[data-game="cribbage"]) .gp-strip,
+    body.game-active:has(#fg-ag[data-game="cribbage"]) #ab,
+    body.game-active:has(#fg-ag[data-game="cribbage"]) #fg-ag > .gr{display:none!important;}
     /* Cribbage — thinking pulse + banner pop-in + card interactions */
     @keyframes cbThink{0%,100%{opacity:0.35}50%{opacity:1}}
     @keyframes cbBanner{0%{transform:translate(-50%,-40%) scale(.6);opacity:0}60%{transform:translate(-50%,-55%) scale(1.05);opacity:1}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
