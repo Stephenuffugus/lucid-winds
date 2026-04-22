@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.22.67';
+  var LW_VERSION='2026.04.22.68';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3460,13 +3460,17 @@
     body.game-active:has(#fg-ag[data-game="juniper"]) #ab,
     body.game-active:has(#fg-ag[data-game="juniper"]) #fg-ag > .gr,
     body.game-active:has(#fg-ag[data-game="juniper"]) #fg-ag > .gu-bar,
-    body.game-active:has(#fg-ag[data-game="juniper"]) #fg-ag > #_gm{display:none!important;}
+    body.game-active:has(#fg-ag[data-game="juniper"]) #fg-ag > #_gm,
+    body.game-active:has(#fg-ag[data-game="yahtzee"]) .gp-strip,
+    body.game-active:has(#fg-ag[data-game="yahtzee"]) #ab,
+    body.game-active:has(#fg-ag[data-game="yahtzee"]) #fg-ag > .gr{display:none!important;}
     /* Card-game containers get a solid matching background + overscroll lock so nothing behind bleeds through during bounce-scroll. Also use the full viewport: padding-bottom normally reserves 58+safe-area for the bottom nav, but for these games the nav is hidden, so every pixel of bottom padding just buries cards under the scroll line. min-height fills the viewport so the solid container bg covers the whole screen even when pan content is short. */
     #fg-ag[data-game="bleedinghearts"],
     #fg-ag[data-game="cribbage"],
     #fg-ag[data-game="bowergarden"],
     #fg-ag[data-game="gardenspades"],
-    #fg-ag[data-game="juniper"]{
+    #fg-ag[data-game="juniper"],
+    #fg-ag[data-game="yahtzee"]{
       padding-bottom:env(safe-area-inset-bottom,0px)!important;
       min-height:100dvh!important;
       max-height:100dvh!important;
@@ -3477,7 +3481,8 @@
     body.game-active:has(#fg-ag[data-game="cribbage"]) #panel-game,
     body.game-active:has(#fg-ag[data-game="bowergarden"]) #panel-game,
     body.game-active:has(#fg-ag[data-game="gardenspades"]) #panel-game,
-    body.game-active:has(#fg-ag[data-game="juniper"]) #panel-game{
+    body.game-active:has(#fg-ag[data-game="juniper"]) #panel-game,
+    body.game-active:has(#fg-ag[data-game="yahtzee"]) #panel-game{
       padding-top:0!important;
       padding-bottom:0!important;
       min-height:100dvh!important;
@@ -3487,6 +3492,7 @@
     #fg-ag[data-game="bowergarden"]{background:#083d22;}
     #fg-ag[data-game="gardenspades"]{background:#062035;}
     #fg-ag[data-game="juniper"]{background:#15102a;}
+    #fg-ag[data-game="yahtzee"]{background:#1a2510;}
     /* Hearts — score danger pulse (player approaching 100 = losing). */
     @keyframes bhDanger{0%,100%{box-shadow:0 0 10px rgba(230,57,70,0.5)}50%{box-shadow:0 0 18px rgba(230,57,70,0.9),0 0 0 2px rgba(230,57,70,0.3)}}
     /* Cribbage — thinking pulse + banner pop-in + card interactions */
@@ -48715,6 +48721,16 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolli
   window._FN=function(){dice=new Array(6).fill(0);kept=new Array(6).fill(false);turn=0;rolling=false;busted=false;curP=0;gameOver=false;finalRound=false;finalStart=-1;players=[];for(var i=0;i<numPlayers;i++)players.push({banked:0});document.getElementById('Fs').textContent='0';sm(numPlayers>1?('P1 starts — 🎲 Roll! (First to '+target+')'):'🎲 Roll!');rn()};_FN();}
 // ═══ TRIPEAKS ═══
 function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1,scores={},justRolled=new Array(5).fill(false);
+  // Inject Yahtzee keyframes once.
+  if(!document.getElementById('y-anim-style')){
+    var _ys=document.createElement('style');_ys.id='y-anim-style';
+    _ys.textContent=
+      '@keyframes yDieRoll{0%{transform:rotate(0) scale(1)}30%{transform:rotate(180deg) scale(0.9)}60%{transform:rotate(360deg) scale(1.1)}82%{transform:rotate(540deg) scale(1.08)}100%{transform:rotate(540deg) scale(1)}}'+
+      '@keyframes yDieLift{0%{transform:translateY(0) scale(1)}100%{transform:translateY(-6px) scale(0.96)}}'+
+      '.yDie.rolling{animation:yDieRoll 0.85s cubic-bezier(.18,.7,.3,1) both;}'+
+      '.yDie.held{transform:translateY(-6px) scale(0.96);filter:saturate(0.85);}';
+    document.head.appendChild(_ys);
+  }
   // Botanical dice — paper-card PNGs (seed/dew/clover/sun/flower/moon)
   function seedDie(n){
     return '<img src="assets/dice/d'+n+'.png" alt="'+n+'" style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;-webkit-user-drag:none;border-radius:clamp(6px,2vw,12px)" draggable="false"/>';
@@ -48734,18 +48750,32 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
     {name:'Bloom',sub:'5 of a Kind',icon:'&#x2728;',desc:'All 5 match = 50'},
     {name:'Chance',sub:'Wild Growth',icon:'&#x1F3B2;',desc:'Sum of all dice'}
   ];
-  ms(a,'Turn: <strong id="Yt">1</strong>/13 &middot; Rolls: <strong id="Yr">0</strong>/3');mm(a);
-  // Directions
-  var dir=document.createElement('div');
-  dir.style.cssText='text-align:center;padding:0.4rem 0.8rem;margin:0.2rem auto;max-width:400px;font-family:DM Sans,sans-serif;font-size:clamp(0.6rem,1.8vw,0.75rem);color:var(--cream);line-height:1.4;opacity:0.8';
-  dir.innerHTML='Roll <strong style="color:var(--gold)">5 dice</strong> up to <strong>3 times</strong> per turn.<br>Tap dice to <strong>keep</strong> them between rolls.<br>When done, <strong>score</strong> your roll in any open category below — pairs, three of a kind, straights, or full house.<br>You get <strong>13 turns</strong> — fill every category for the highest total!';
-  a.appendChild(dir);
-  var dd=document.createElement('div');dd.className='fd';dd.id='Yd';dd.style.cssText='display:flex;gap:clamp(10px,3vw,18px);justify-content:center;flex-wrap:wrap;max-width:clamp(340px,92vw,460px);margin:0 auto;padding:clamp(10px,3vw,16px)';a.appendChild(dd);
-  // Buttons
-  var _bbs='min-height:52px;padding:0.5rem 1.2rem;font-size:clamp(.6rem,1.8vw,.75rem);flex:1';
-  mc(a).innerHTML='<div style="display:flex;gap:8px;padding:4px 0"><button class="gb-new" onclick="_YR()"><img src="assets/games/roll-btn.png" alt="Roll"></button><button class="gb-new" onclick="_YN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button></div>';
-  // Scorecard
-  var sc=document.createElement('div');sc.id='Ysc';sc.style.cssText='padding:4px 0';a.appendChild(sc);
+  ms(a,'<span style="font-family:Georgia,serif;letter-spacing:.06em;">🎲 Turn <strong id="Yt" style="color:#7ab356;font-size:1.2em;">1</strong>/13 &middot; Roll <strong id="Yr" style="color:#ffdc70;font-size:1.2em;">0</strong>/3</span>');mm(a);
+  // Felted pan — rolls + scoresheet inside a single dark-forest table.
+  var pan=document.createElement('div');pan.id='Ypan';
+  var _Y_FELT="data:image/svg+xml;utf8,"+encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180">'
+      +'<filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="17"/>'
+      +'<feColorMatrix values="0 0 0 0 0.05  0 0 0 0 0.07  0 0 0 0 0.04  0 0 0 .08 0"/></filter>'
+      +'<rect width="100%" height="100%" filter="url(#n)"/>'
+    +'</svg>'
+  );
+  pan.style.cssText='max-width:min(96vw,560px);margin:0 auto;padding:6px 14px 14px;user-select:none;box-sizing:border-box;'
+    +'background:'
+      +'url("'+_Y_FELT+'"),'
+      +'radial-gradient(ellipse at 50% 0%,rgba(255,255,255,0.05) 0%,transparent 50%),'
+      +'radial-gradient(circle at 50% 100%,rgba(0,0,0,0.3) 0%,transparent 65%),'
+      +'linear-gradient(135deg,#1f3818 0%,#162a11 55%,#0e1d09 100%);'
+    +'background-size:180px 180px, auto, auto, auto;'
+    +'border-radius:14px;'
+    +'border:2px solid #6b4520;'
+    +'box-shadow:'
+      +'inset 0 0 0 1px rgba(180,140,70,0.25),'
+      +'inset 0 0 38px rgba(0,0,0,0.45),'
+      +'0 6px 22px rgba(0,0,0,0.6);';
+  a.appendChild(pan);
+  // mc empty — controls go inside pan.
+  mc(a);
   // Scoring logic
   function cs(cat){
     var c=new Array(7).fill(0);dice.forEach(function(d){c[d]++});
@@ -48760,17 +48790,58 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
     return sum;
   }
   function rn(){
-    dd.innerHTML='';
+    var h='';
+    // Roll status + controls bar at top.
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">';
+    h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:rgba(232,220,200,0.65);">'+(rolls===0?'Tap ROLL to begin':rolls===3?'Pick a category':'Tap dice to keep')+'</div>';
+    h+='<div style="display:flex;gap:6px;">';
+    h+='<button class="gb" onclick="_YR()" '+(rolls>=3?'disabled':'')+' style="display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:5px 14px;font-size:0.7rem;background:'+(rolls>=3?'rgba(0,0,0,0.4)':'linear-gradient(180deg,rgba(255,220,112,0.3),rgba(200,168,75,0.4))')+';border:'+(rolls>=3?'1px solid rgba(232,220,200,0.25)':'2px solid #ffdc70')+';color:'+(rolls>=3?'rgba(232,220,200,0.4)':'#f5ebd0')+';font-family:Georgia,serif;'+(rolls>=3?'cursor:not-allowed;':'cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 2px 5px rgba(0,0,0,0.5);')+'">🎲 Roll '+(rolls<3?'('+(3-rolls)+' left)':'done')+'</button>';
+    h+='<button class="gb" onclick="_YN()" title="New game" style="display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:5px 12px;font-size:0.62rem;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;font-family:Georgia,serif;">↻ New</button>';
+    h+='</div>';
+    h+='</div>';
+    // Roll area — dice that are NOT held. Felted pocket inset.
+    h+='<div style="background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0.18) 0%,rgba(0,0,0,0.4) 100%);border:1px solid rgba(0,0,0,0.5);border-radius:10px;padding:10px;margin-bottom:6px;box-shadow:inset 0 2px 8px rgba(0,0,0,0.5);min-height:120px;">';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:rgba(232,220,200,0.45);text-align:center;text-transform:uppercase;margin-bottom:6px;">Roll Area</div>';
+    h+='<div style="display:flex;gap:clamp(6px,2vw,12px);justify-content:center;flex-wrap:wrap;">';
+    var anyRolling=false, anyInRoll=false;
     for(var i=0;i<5;i++){
-      var d=document.createElement('div');d.className='fdie'+(kept[i]?' fk':'')+(justRolled[i]?' diceRoll':'');
-      d.style.cssText='width:clamp(100px,28vw,140px);height:clamp(100px,28vw,140px);display:flex;align-items:center;justify-content:center;border-radius:clamp(14px,4vw,20px);background:transparent;border:3px solid transparent;box-shadow:none;box-sizing:border-box;cursor:pointer'+(kept[i]?';border-color:var(--gold);box-shadow:0 0 20px rgba(200,168,78,0.3),inset 0 0 12px rgba(200,168,78,0.08);background:rgba(200,168,78,0.05)':'');
-      if(dice[i]){d.innerHTML=seedDie(dice[i])}else{d.innerHTML='<span style="font-size:2.5rem;color:var(--muted);opacity:0.3">&middot;</span>'}
-      d.setAttribute('data-i',i);
-      d.addEventListener('click',function(){var x=parseInt(this.getAttribute('data-i'));if(dice[x]){_play('tap');kept[x]=!kept[x];rn()}});
-      dd.appendChild(d);
+      if(kept[i])continue;
+      anyInRoll=true;
+      var rolling=justRolled[i];
+      if(rolling)anyRolling=true;
+      var stagger = rolling ? ('animation-delay:'+(i*60)+'ms;') : '';
+      h+='<div onclick="_YHold('+i+')" class="yDie'+(rolling?' rolling':'')+'" data-i="'+i+'" style="width:clamp(78px,22vw,108px);height:clamp(78px,22vw,108px);display:flex;align-items:center;justify-content:center;border-radius:clamp(10px,3vw,14px);cursor:'+(dice[i]?'pointer':'default')+';'+stagger+'">';
+      if(dice[i])h+=seedDie(dice[i]);
+      else h+='<span style="font-size:2rem;color:rgba(232,220,200,0.25);">·</span>';
+      h+='</div>';
     }
+    if(!anyInRoll){
+      h+='<div style="font-family:Georgia,serif;font-style:italic;color:rgba(232,220,200,0.45);align-self:center;padding:30px;">All dice held — score it</div>';
+    }
+    h+='</div></div>';
+    // Held tray — dice the player is keeping. Smaller, slightly tinted.
+    var anyHeld=false;
+    for(var hi=0;hi<5;hi++)if(kept[hi]){anyHeld=true;break;}
+    if(anyHeld||rolls>0){
+      h+='<div style="background:linear-gradient(180deg,rgba(180,140,70,0.18),rgba(120,90,40,0.25));border:1px solid rgba(220,180,120,0.3);border-radius:8px;padding:8px;margin-bottom:8px;box-shadow:inset 0 1px 0 rgba(255,220,140,0.1),0 2px 4px rgba(0,0,0,0.4);">';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:#ffdc70;text-align:center;text-transform:uppercase;margin-bottom:6px;">Held — '+(anyHeld?'tap to release':'tap a die above to keep')+'</div>';
+      h+='<div style="display:flex;gap:8px;justify-content:center;min-height:54px;align-items:center;">';
+      for(var hj=0;hj<5;hj++){
+        if(!kept[hj])continue;
+        h+='<div onclick="_YHold('+hj+')" class="yDie held" style="width:clamp(48px,14vw,64px);height:clamp(48px,14vw,64px);display:flex;align-items:center;justify-content:center;border-radius:clamp(6px,2vw,10px);cursor:pointer;">';
+        h+=seedDie(dice[hj]);
+        h+='</div>';
+      }
+      if(!anyHeld)h+='<span style="font-family:Georgia,serif;font-style:italic;font-size:0.65rem;color:rgba(245,235,208,0.5);">none</span>';
+      h+='</div></div>';
+    }
+    // Scorecard
+    h+='<div id="Ysc"></div>';
+    pan.innerHTML=h;
     rnS();
   }
+  // Click handler exposed via window for inline onclick.
+  window._YHold=function(x){if(rolls===0||rolls>=3)return;if(!dice[x])return;_play('tap');kept[x]=!kept[x];rn();};
   function rnS(){
     var h='<table class="ysc">';
     function row(i){
