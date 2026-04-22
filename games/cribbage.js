@@ -27,7 +27,7 @@ window._gameFns.cribbage = function CRIB(a){
       +'<rect width="100%" height="100%" filter="url(#n)"/>'
     +'</svg>'
   );
-  pan.style.cssText='max-width:460px;margin:0 auto;padding:12px;user-select:none;box-sizing:border-box;'
+  pan.style.cssText='max-width:460px;margin:0 auto;padding:6px 12px 14px;user-select:none;box-sizing:border-box;'
     +'background:'
       +'url("'+_FELT_NOISE+'"),'
       +'radial-gradient(ellipse at 50% 0%,rgba(255,255,255,0.06) 0%,transparent 55%),'

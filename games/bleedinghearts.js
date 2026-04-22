@@ -74,7 +74,7 @@ window._gameFns.bleedinghearts = function BH(a){
       +'<rect width="100%" height="100%" filter="url(#n)"/>'
     +'</svg>'
   );
-  pan.style.cssText='max-width:min(96vw,760px);margin:0 auto;padding:12px 14px;user-select:none;'
+  pan.style.cssText='max-width:min(96vw,760px);margin:0 auto;padding:6px 14px 14px;user-select:none;'
     +'box-sizing:border-box;'
     +'background:'
       +'url("'+_BH_FELT+'"),'
