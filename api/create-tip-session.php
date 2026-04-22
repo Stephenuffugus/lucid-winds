@@ -67,6 +67,7 @@ $fields = [
   'line_items[0][price_data][currency]' => 'usd',
   'line_items[0][price_data][product_data][name]' => 'Support Lucid Winds',
   'line_items[0][price_data][product_data][description]' => 'A tip for the hermit who made this.',
+  'line_items[0][price_data][product_data][images][]' => $origin . '/assets/stripe-tip-image.jpg',
   'line_items[0][price_data][unit_amount]' => $cents,
   'line_items[0][quantity]' => 1,
   'success_url' => $origin . '/?tip=success',
