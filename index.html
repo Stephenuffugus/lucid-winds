@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.23.25';
+  var LW_VERSION='2026.04.23.26';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3483,7 +3483,10 @@
     body.game-active:has(#fg-ag[data-game="mosaic"]) #fg-ag > #_gm,
     body.game-active:has(#fg-ag[data-game="rootflow"]) #fg-ag > .gr,
     body.game-active:has(#fg-ag[data-game="rootflow"]) #fg-ag > .gu-bar,
-    body.game-active:has(#fg-ag[data-game="rootflow"]) #fg-ag > #_gm{display:none!important;}
+    body.game-active:has(#fg-ag[data-game="rootflow"]) #fg-ag > #_gm,
+    body.game-active:has(#fg-ag[data-game="rootmaze"]) #fg-ag > .gr,
+    body.game-active:has(#fg-ag[data-game="rootmaze"]) #fg-ag > .gu-bar,
+    body.game-active:has(#fg-ag[data-game="rootmaze"]) #fg-ag > #_gm{display:none!important;}
     /* Card-game containers get a solid matching background + overscroll lock so nothing behind bleeds through during bounce-scroll. Also use the full viewport: padding-bottom normally reserves 58+safe-area for the bottom nav, but for these games the nav is hidden, so every pixel of bottom padding just buries cards under the scroll line. min-height fills the viewport so the solid container bg covers the whole screen even when pan content is short. */
     #fg-ag[data-game="bleedinghearts"],
     #fg-ag[data-game="cribbage"],
