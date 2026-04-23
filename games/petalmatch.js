@@ -101,18 +101,18 @@ window._gameFns.petalmatch = function PM(a){
       return {kind:'dew',chapter:ch,moves:mv,dew:dewN,doubleLayer:dbl,label:'Clear '+dewN+' Dew tile'+(dewN===1?'':'s')+(dbl?' (double layer)':'')};
     }
     if(kind==='gather'){
-      var per=8+chapter*3;
-      var colors=Math.min(1+Math.floor(chapter/2)*1+(sub>3?1:0),3);
+      var per=Math.min(8+chapter*3,24);
+      var colors=Math.min(1+Math.floor(chapter/2)+(sub>3?1:0),3);
       if(colors<1)colors=1;
       return {kind:'gather',chapter:ch,moves:mv,perColor:per,colors:colors,label:'Gather '+per+' of '+colors+' flower'+(colors>1?' types':' type')};
     }
     if(kind==='thorns'){
-      var th=6+chapter*3;
-      var hits=1+Math.floor(chapter/2);
+      var th=Math.min(6+chapter*3,22);
+      var hits=Math.min(1+Math.floor(chapter/2),4);
       return {kind:'thorns',chapter:ch,moves:mv,thorns:th,hits:hits,label:'Break '+th+' Thorn'+(th===1?'':'s')+(hits>1?' ('+hits+' hits each)':'')};
     }
     // mix
-    return {kind:'mix',chapter:ch,moves:mv+4,dew:Math.min(8+chapter*4,20),thorns:3+chapter,target:700+lv*350,label:'Mixed: score + clear tiles + break thorns'};
+    return {kind:'mix',chapter:ch,moves:mv+4,dew:Math.min(8+chapter*4,20),thorns:Math.min(3+chapter,14),target:700+lv*350,label:'Mixed: score + clear tiles + break thorns'};
   }
 
   function resetObjState(){
@@ -480,33 +480,34 @@ window._gameFns.petalmatch = function PM(a){
     return false;
   }
 
+  function processSegment(c,top,bot){
+    if(top>bot)return;
+    var writeR=bot;
+    for(var r=bot;r>=top;r--){
+      if(grid[r][c]){
+        if(writeR!==r){grid[writeR][c]=grid[r][c];grid[writeR][c].targetY=writeR*CELL;grid[r][c]=null;}
+        writeR--;
+      }
+    }
+    for(var r2=writeR;r2>=top;r2--){
+      if(grid[r2][c])continue;
+      var t=Math.floor(Math.random()*TYPES);
+      grid[r2][c]={type:t,y:(r2-writeR-1)*CELL,targetY:r2*CELL,scale:1,special:null,stripeDir:null,spawnAnim:0,jelly:0,block:0};
+    }
+  }
   function collapseAndRefill(){
+    // Gems can't fall through thorns. Process each column as segments
+    // separated by thorns: [top of segment .. bottom of segment]. Each segment
+    // collapses + refills independently so gaps above a thorn get new gems.
     for(var c=0;c<COLS;c++){
-      var writeR=ROWS-1;
+      var segBottom=ROWS-1;
       for(var r=ROWS-1;r>=0;r--){
-        if(grid[r][c]){
-          // Thorns and jellies STAY in their row. Skip the write if this cell is a blocker.
-          if(grid[r][c].type===-2){
-            // Thorn — keep in place
-            if(writeR>r){
-              // Can't collapse over a thorn; write empties above, thorn is floor
-              // Shift nothing through this position; set writeR to r-1
-              writeR=r-1;
-            } else {
-              writeR=r-1;
-            }
-            continue;
-          }
-          if(writeR!==r){grid[writeR][c]=grid[r][c];grid[writeR][c].targetY=writeR*CELL;grid[r][c]=null;}
-          writeR--;
+        if(grid[r][c]&&grid[r][c].type===-2){
+          processSegment(c,r+1,segBottom);
+          segBottom=r-1;
         }
       }
-      for(var r2=writeR;r2>=0;r2--){
-        // only fill if this cell is still empty (could be under a thorn)
-        if(grid[r2][c])continue;
-        var t=Math.floor(Math.random()*TYPES);
-        grid[r2][c]={type:t,y:(r2-writeR-1)*CELL,targetY:r2*CELL,scale:1,special:null,stripeDir:null,spawnAnim:0,jelly:0,block:0};
-      }
+      processSegment(c,0,segBottom);
     }
   }
 
@@ -1072,8 +1073,8 @@ window._gameFns.petalmatch = function PM(a){
 
   window._PMN=function(){
     if(rafId)cancelAnimationFrame(rafId);
-    initCanvas();level=1;score=0;won=false;lost=false;animating=false;selected=null;fx=[];
-    objective=genLevel(1);moves=objective.moves;
+    initCanvas();level=bestLevel;score=0;won=false;lost=false;animating=false;selected=null;fx=[];
+    objective=genLevel(level);moves=objective.moves;
     resetObjState();
     initGrid();while(findMatches().length>0)initGrid();
     updateHUD();rafId=requestAnimationFrame(loop);
