@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.23.16';
+  var LW_VERSION='2026.04.23.17';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3411,6 +3411,8 @@
     body.sol-fs .fg-bottomnav,body.sol-fs .fg-pk,body.sol-fs .game-header,body.sol-fs #pw-keeper-bar,body.sol-fs #sws-auth-header{display:none!important}
     /* Hide the redundant fixed exit button in solitaire fullscreen — the internal sticky game-back-btn at the top of the game area already handles returning to the picker, and the fixed one crowds the top-left of the board in landscape. */
     body.sol-fs #game-exit-btn{display:none!important}
+    /* Every game now prepends .game-back-btn (sticky, prominent) inside #fg-ag. The fixed top-left #game-exit-btn is redundant during gameplay — hide it globally so every game shows exactly one back button. */
+    body.game-active #game-exit-btn{display:none!important}
     /* Hide HUD clutter when any game is active (not SET, which has its own UI) */
     body.game-active .game-header,
     body.game-active .fg-pk,
@@ -46173,6 +46175,7 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;window._a
         _gameLoading[id]=false;
         if(window._gameFns[id]&&_a===id){
           ag.innerHTML='';
+          ag.appendChild(_backBtn);
           if(gi){var r2=document.createElement('div');r2.className='gr';r2.textContent='📖 '+gi.r;ag.appendChild(r2)}
           try{window._gameFns[id](ag)}catch(e){console.error('[Game '+id+']',e);ag.innerHTML='<div style="padding:2rem;text-align:center;color:#c75050;font-size:16px">ERROR in '+id+': '+e.message+'</div>'}
         }
