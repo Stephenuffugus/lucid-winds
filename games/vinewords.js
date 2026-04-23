@@ -52,25 +52,51 @@ var DICE_NEW=[
   ['H','L','N','N','R','Z']
 ];
 
+// Inject CSS once for shake + timer-warn animations
+if(!document.getElementById('vw-styles')){
+  var _vws=document.createElement('style');_vws.id='vw-styles';
+  _vws.textContent='@keyframes vwShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}.vw-shake{animation:vwShake .34s ease both}@keyframes vwPulse{0%,100%{color:#d05050;text-shadow:0 0 8px rgba(208,80,80,0.5)}50%{color:#ffb0b0;text-shadow:0 0 14px rgba(255,176,176,0.8)}}.vw-urgent{animation:vwPulse 1s ease-in-out infinite}@keyframes vwSpawn{0%{transform:scale(0.7);opacity:0}100%{transform:scale(1);opacity:1}}.vw-spawn{animation:vwSpawn .35s cubic-bezier(.34,1.56,.64,1) both}';
+  document.head.appendChild(_vws);
+}
+
 // Helpers
 function shuffle(arr){for(var i=arr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=arr[i];arr[i]=arr[j];arr[j]=t;}return arr;}
 function padTime(n){return n<10?'0'+n:''+n;}
 function formatTime(sec){return Math.floor(sec/60)+':'+padTime(sec%60);}
 function scoreFor(len){return len<=4?1:len===5?2:len===6?3:len===7?5:len>=8?11:0;}
+function haptic(ms){try{if(navigator.vibrate)navigator.vibrate(ms);}catch(e){}}
+function loadStats(){
+  var s={best:0,bestWord:'',bestWordLen:0,gamesPlayed:0,totalWords:0};
+  try{var raw=localStorage.getItem('lw_vw_stats');if(raw){var p=JSON.parse(raw);for(var k in p)s[k]=p[k];}}catch(e){}
+  return s;
+}
+function saveStats(s){try{localStorage.setItem('lw_vw_stats',JSON.stringify(s));}catch(e){}}
+// Rank tiers based on % of maximum solvable score on this specific board
+function rankFor(pct){
+  if(pct>=0.50)return {name:'GARDEN MASTER',color:'#ffd86b'};
+  if(pct>=0.35)return {name:'WORDSMITH',color:'#c8a84b'};
+  if(pct>=0.22)return {name:'BOTANIST',color:'#a8c978'};
+  if(pct>=0.12)return {name:'SPROUT',color:'#7ab356'};
+  if(pct>=0.06)return {name:'SEEDLING',color:'rgba(232,220,200,0.85)'};
+  return {name:'FRESH SOIL',color:'rgba(232,220,200,0.6)'};
+}
 
 window._gameFns=window._gameFns||{};
 window._gameFns.vinewords=function VW(a){
   var DICT=getDictSet();
   var grid=[];                 // 4x4 of {letter:'A',display:'A'} — display handles 'QU'
+  var savedBoard=null;         // remembered at newGame so "Replay board" can restore
   var path=[];                 // [[r,c], ...]
   var foundSet={},foundList=[];
   var score=0,timeLeft=180,timerId=0,playing=false,paused=false;
   var duration=180;            // seconds
   var allWords=null;           // solver result at game end
+  var maxScore=0;              // cached from last solve for rank computation
   var draggingFromCanvas=false;
+  var stats=loadStats();
 
   // UI chrome
-  ms(a,'<span style="color:var(--gold)">Score <span id="VWs">0</span></span> · <span id="VWwords">0</span> words · <span id="VWt">3:00</span>');
+  ms(a,'<span style="color:var(--gold)">Score <span id="VWs">0</span></span> · <span id="VWwords">0</span> words · <span id="VWt">3:00</span> · best <span id="VWbest">'+stats.best+'</span>');
   mm(a);
   var pan=document.createElement('div');pan.id='VWpan';
   pan.style.cssText='max-width:460px;margin:0 auto;padding:6px;user-select:none;-webkit-user-select:none;';
@@ -135,7 +161,7 @@ window._gameFns.vinewords=function VW(a){
     var localX=dx-col*cw, localY=dy-row*ch;
     var cx=cw/2,cy=ch/2;
     var distSq=(localX-cx)*(localX-cx)+(localY-cy)*(localY-cy);
-    var radius=Math.min(cw,ch)*0.42;
+    var radius=Math.min(cw,ch)*0.48;
     if(distSq>radius*radius)return null;
     return [row,col];
   }
@@ -151,6 +177,12 @@ window._gameFns.vinewords=function VW(a){
         grid[r][c]={letter:face.toLowerCase(),display:face==='QU'?'Qu':face};
       }
     }
+    // Snapshot the board so "Replay" button can restore the exact same grid.
+    savedBoard=JSON.parse(JSON.stringify(grid));
+  }
+  function restoreBoard(){
+    if(!savedBoard)return;
+    grid=JSON.parse(JSON.stringify(savedBoard));
   }
 
   function renderCells(){
@@ -234,11 +266,17 @@ window._gameFns.vinewords=function VW(a){
     return false;
   }
 
+  function shakeBoard(){
+    boardWrap.classList.remove('vw-shake');
+    void boardWrap.offsetWidth;
+    boardWrap.classList.add('vw-shake');
+    setTimeout(function(){boardWrap.classList.remove('vw-shake');},360);
+  }
   function submitWord(){
     var w=pathWord();
-    if(w.length<3){sm('3 letter min');path=[];render();return;}
-    if(!DICT[w]){sm('Not a word: '+w.toUpperCase());_play('lose');path=[];render();return;}
-    if(foundSet[w]){sm('Already found');path=[];render();return;}
+    if(w.length<3){sm('3 letter min');shakeBoard();path=[];render();return;}
+    if(!DICT[w]){sm('Not a word: '+w.toUpperCase());_play('lose');shakeBoard();haptic(40);path=[];render();return;}
+    if(foundSet[w]){sm('Already found');shakeBoard();path=[];render();return;}
     foundSet[w]=1;foundList.unshift(w);
     var pts=scoreFor(w.length);
     score+=pts;
@@ -246,6 +284,7 @@ window._gameFns.vinewords=function VW(a){
     if(foundList.length%5===0)_e('milestone');
     sm('+'+pts+' '+w.toUpperCase());
     _play('snap');
+    haptic(w.length>=6?25:15);
     var el=document.getElementById('VWs');if(el)el.textContent=score;
     var we=document.getElementById('VWwords');if(we)we.textContent=foundList.length;
     renderFound();
@@ -350,7 +389,13 @@ window._gameFns.vinewords=function VW(a){
     if(paused)return;
     timeLeft--;
     var t=document.getElementById('VWt');
-    if(t)t.textContent=formatTime(timeLeft);
+    if(t){
+      t.textContent=formatTime(timeLeft);
+      if(timeLeft<=30&&timeLeft>0)t.classList.add('vw-urgent');
+      else t.classList.remove('vw-urgent');
+      // Gentle haptic tick at 10s countdown
+      if(timeLeft===30||timeLeft===10)haptic(30);
+    }
     if(timeLeft<=0){endGame();}
   }
 
@@ -387,14 +432,25 @@ window._gameFns.vinewords=function VW(a){
     if(!playing)return;
     playing=false;
     if(timerId)clearInterval(timerId);
+    var t=document.getElementById('VWt');if(t)t.classList.remove('vw-urgent');
     var totalAvailable=null;
     try{totalAvailable=solveBoard();}catch(e){console.error(e);}
     allWords=totalAvailable;
-    var maxScore=0;
+    maxScore=0;
     if(allWords){for(var i=0;i<allWords.length;i++)maxScore+=scoreFor(allWords[i].length);}
-    var won=score>=(maxScore*0.15); // 15% of max is "win" threshold — generous since max can be 500+
+    // Win bar scales with board size. 15% of a 600-word board is harder than of a 100-word board.
+    var won=score>=Math.max(10,maxScore*0.12);
     if(won){_e('game_win');if(_playWin)_playWin();}
     else{_e('game_loss');_play('lose');}
+    // Update persisted stats
+    stats.gamesPlayed++;
+    stats.totalWords+=foundList.length;
+    if(score>stats.best)stats.best=score;
+    for(var fi=0;fi<foundList.length;fi++){
+      if(foundList[fi].length>stats.bestWordLen){stats.bestWordLen=foundList[fi].length;stats.bestWord=foundList[fi];}
+    }
+    saveStats(stats);
+    var be=document.getElementById('VWbest');if(be)be.textContent=stats.best;
     sm('Time! Score '+score+' / '+maxScore);
     _sr('vinewords',{w:won,s:score});
     renderSummary(maxScore);
@@ -405,7 +461,6 @@ window._gameFns.vinewords=function VW(a){
     var sumEl=document.getElementById('VWsum');
     var missed=[];
     for(var i=0;i<allWords.length;i++){if(!foundSet[allWords[i]])missed.push(allWords[i]);}
-    // group found/missed by length
     function group(list){
       var buckets={};
       for(var i=0;i<list.length;i++){var L=list[i].length;if(!buckets[L])buckets[L]=[];buckets[L].push(list[i]);}
@@ -415,7 +470,7 @@ window._gameFns.vinewords=function VW(a){
       for(var ki=0;ki<keys.length;ki++){
         var L=keys[ki];var ws=buckets[L];
         var pts=scoreFor(L);
-        html+='<div style="margin:4px 0;"><span style="color:var(--gold);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;">'+L+' LETTERS · '+pts+' pt</span><br>';
+        html+='<div style="margin:4px 0;"><span style="color:var(--gold);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;">'+L+' LETTERS · '+pts+' pt · '+ws.length+'</span><br>';
         var parts=[];
         for(var wi=0;wi<ws.length;wi++){
           var col=L>=8?'#ffd86b':L===7?'#c8a84b':L===6?'#a8c978':'rgba(232,220,200,0.85)';
@@ -425,15 +480,22 @@ window._gameFns.vinewords=function VW(a){
       }
       return html||'<div>—</div>';
     }
+    var pct=maxScore?score/maxScore:0;
+    var rank=rankFor(pct);
     var html='';
-    html+='<div style="font-family:Bebas Neue,sans-serif;color:var(--gold);font-size:1rem;letter-spacing:0.14em;margin-bottom:6px;">TIME UP</div>';
+    html+='<div style="font-family:Bebas Neue,sans-serif;color:var(--gold);font-size:1.1rem;letter-spacing:0.14em;margin-bottom:4px;">TIME UP</div>';
+    html+='<div style="font-family:Bebas Neue,sans-serif;color:'+rank.color+';font-size:1.4rem;letter-spacing:0.14em;margin-bottom:6px;">'+rank.name+'</div>';
     html+='<div>Score <strong style="color:var(--gold);">'+score+'</strong> of <strong>'+maxScore+'</strong> possible · '+foundList.length+' of '+allWords.length+' findable words</div>';
-    var pct=maxScore?Math.round(score/maxScore*100):0;
-    html+='<div style="margin:4px 0 10px;height:6px;background:rgba(26,36,22,0.5);border-radius:3px;overflow:hidden;"><div style="height:100%;background:var(--sage);width:'+pct+'%;"></div></div>';
-    html+='<div style="font-family:Bebas Neue,sans-serif;color:var(--sage);font-size:0.88rem;letter-spacing:0.1em;margin-top:6px;">YOU FOUND ('+foundList.length+')</div>';
+    html+='<div style="margin:4px 0 10px;height:6px;background:rgba(26,36,22,0.5);border-radius:3px;overflow:hidden;"><div style="height:100%;background:'+rank.color+';width:'+Math.round(pct*100)+'%;"></div></div>';
+    // Action buttons at top so they don't get buried under the missed list
+    html+='<div style="display:flex;gap:6px;justify-content:center;margin:6px 0 10px;flex-wrap:wrap;">';
+    html+='<button class="gb" onclick="_VWreplay()" style="min-height:44px;padding:8px 14px;background:rgba(200,168,75,0.25);border-color:rgba(200,168,75,0.5);color:#c8a84b;font-size:0.78rem;letter-spacing:0.1em;">↻ REPLAY BOARD</button>';
+    html+='<button class="gb" onclick="_VWN()" style="min-height:44px;padding:8px 14px;background:rgba(122,179,86,0.25);border-color:rgba(122,179,86,0.5);color:#7ab356;font-size:0.78rem;letter-spacing:0.1em;">🌱 NEW BOARD</button>';
+    html+='</div>';
+    html+='<div style="font-family:Bebas Neue,sans-serif;color:var(--sage);font-size:0.9rem;letter-spacing:0.1em;margin-top:6px;">YOU FOUND · '+foundList.length+'</div>';
     html+=group(foundList);
-    html+='<div style="font-family:Bebas Neue,sans-serif;color:#d08060;font-size:0.88rem;letter-spacing:0.1em;margin-top:10px;">MISSED ('+missed.length+')</div>';
-    html+='<div style="max-height:220px;overflow-y:auto;padding-right:4px;">'+group(missed)+'</div>';
+    html+='<div style="font-family:Bebas Neue,sans-serif;color:#d08060;font-size:0.9rem;letter-spacing:0.1em;margin-top:12px;">MISSED · '+missed.length+'</div>';
+    html+='<div style="max-height:260px;overflow-y:auto;padding-right:4px;border-top:1px solid rgba(200,168,75,0.15);padding-top:6px;">'+group(missed)+'</div>';
     sumEl.innerHTML=html;
     sumEl.style.display='block';
   }
@@ -445,17 +507,21 @@ window._gameFns.vinewords=function VW(a){
   };
   window._VWsub=function(){if(playing)submitWord();};
   window._VWclr=function(){path=[];render();};
-  window._VWN=function(){
+  function startRound(sameBoard){
     if(timerId)clearInterval(timerId);
-    document.getElementById('VWsum').style.display='none';
-    buildGrid();path=[];foundSet={};foundList=[];score=0;timeLeft=duration;playing=true;paused=false;
+    var sumEl=document.getElementById('VWsum');if(sumEl)sumEl.style.display='none';
+    if(sameBoard&&savedBoard)restoreBoard();
+    else buildGrid();
+    path=[];foundSet={};foundList=[];score=0;timeLeft=duration;playing=true;paused=false;
     var pb=document.getElementById('VWpause');if(pb)pb.textContent='⏸ PAUSE';
     var se=document.getElementById('VWs');if(se)se.textContent='0';
     var we=document.getElementById('VWwords');if(we)we.textContent='0';
-    var te=document.getElementById('VWt');if(te)te.textContent=formatTime(duration);
+    var te=document.getElementById('VWt');if(te){te.textContent=formatTime(duration);te.classList.remove('vw-urgent');}
     renderFound();render();
     timerId=setInterval(tick,1000);
-  };
+  }
+  window._VWN=function(){startRound(false);};
+  window._VWreplay=function(){startRound(true);};
 
   _VWN();
 };
