@@ -544,6 +544,27 @@ var won=false;
 var timerId=null;
 var pan=null;
 var board=null;
+// Victory overlay + pending timer refs — used so we can cancel both if the
+// player exits the game (via ← GAMES) before the ceremony finishes.
+var _winTimer=null;
+var _animTimer=null;
+
+function _cleanupVictory(){
+  if(_winTimer){clearTimeout(_winTimer);_winTimer=null;}
+  if(_animTimer){clearTimeout(_animTimer);_animTimer=null;}
+  var ov=document.getElementById('RRwin');
+  if(ov&&ov.parentNode)ov.parentNode.removeChild(ov);
+}
+
+// Watch for body.game-active flipping off — the global tell that any game was
+// exited. Clears a stale SPROUT FREE overlay or cancels it mid-ceremony.
+(function installExitWatcher(){
+  if(!document.body||!window.MutationObserver)return;
+  var mo=new MutationObserver(function(){
+    if(!document.body.classList.contains('game-active'))_cleanupVictory();
+  });
+  mo.observe(document.body,{attributes:true,attributeFilter:['class']});
+})();
 
 // Level progress persistence
 function loadProgress(){try{return parseInt(localStorage.getItem('lw_rootrush_max')||'0',10)||0;}catch(e){return 0;}}
@@ -760,7 +781,7 @@ function checkWin(){
     _e('game_win');if(_playWin)_playWin();_sr('rootrush',{w:true,s:moves,lvl:levelIdx+1});
     var prog=loadProgress();
     if(levelIdx+1>prog)saveProgress(levelIdx+1);
-    setTimeout(function(){animateExit();},50);
+    _animTimer=setTimeout(function(){_animTimer=null;animateExit();},50);
   }
   renderBlocks();
 }
@@ -904,7 +925,7 @@ function animateExit(){
     el.style.transform='translateX(calc(100% + 20px))';
     el.style.opacity='0';
   }
-  setTimeout(victoryOverlay,700);
+  _winTimer=setTimeout(function(){_winTimer=null;victoryOverlay();},700);
 }
 
 function victoryOverlay(){
@@ -920,6 +941,7 @@ function victoryOverlay(){
   starRow+='</div>';
   var next=levelIdx<LEVELS.length-1?'<button onclick="this.parentElement.parentElement.remove();_RRnext()" style="min-height:46px;padding:10px 22px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:8px;letter-spacing:0.05em;cursor:pointer;margin-right:8px;">Next Level →</button>':'<div style="font-family:Georgia,serif;font-style:italic;color:#c8a84b;font-size:0.9rem;margin-right:8px;">Last level complete</div>';
   var ov=document.createElement('div');
+  ov.id='RRwin';
   ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,rgba(200,168,75,0.32) 0%,rgba(13,16,12,0.94) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;animation:rrPanIn .3s ease;font-family:Georgia,serif;';
   ov.innerHTML=
     '<div style="font-size:4.2rem;line-height:1;margin-bottom:6px;filter:drop-shadow(0 0 20px rgba(122,179,86,0.85));animation:rrPop .7s cubic-bezier(.18,1.4,.3,1);">🌱</div>'+
@@ -990,6 +1012,7 @@ function renderBoard(){
 }
 
 function GRR(a){
+  _cleanupVictory();
   ms(a,'Root Rush');mm(a);
   pan=document.createElement('div');pan.id='RRpan';a.appendChild(pan);
   mc(a);
