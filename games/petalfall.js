@@ -111,7 +111,14 @@ function seasonForLevel(lv){ return SEASONS[Math.floor((lv-1)/10)%SEASONS.length
     '.PFactBtn.gold{background:linear-gradient(180deg,rgba(200,168,75,0.28),rgba(160,130,50,0.32));border-color:#c8a84b;color:#ffdc70;font-weight:600}',
     '.PFactIcon{font-size:1.15rem;line-height:1}',
     '.PFactBtn.gold .PFactIcon{font-size:1.4rem}',
-    '.PFactLabel{font-size:0.58rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.14em}'
+    '.PFactLabel{font-size:0.58rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.14em}',
+    // Pause overlay
+    '#PFpause{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(13,16,12,0.78);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);border-radius:7px;z-index:5;animation:pfFade .2s ease}',
+    '.PFpauseTitle{font-family:Bebas Neue,sans-serif;font-size:clamp(1.8rem,6vw,2.4rem);letter-spacing:0.28em;color:#ffdc70;text-shadow:0 2px 12px rgba(0,0,0,0.8)}',
+    '.PFpauseBtn{min-width:160px;min-height:60px;padding:0.5rem 1.6rem;font-family:Georgia,serif;font-size:1rem;letter-spacing:0.18em;border-radius:12px;background:linear-gradient(180deg,rgba(200,168,75,0.32),rgba(160,130,50,0.38));border:1.5px solid #c8a84b;color:#ffdc70;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;font-weight:700}',
+    '.PFpauseBtn:active{transform:scale(0.97)}',
+    '.PFpauseBtnSm{min-width:140px;min-height:44px;padding:0.4rem 1rem;font-family:Georgia,serif;font-size:0.76rem;letter-spacing:0.16em;border-radius:10px;background:rgba(26,31,23,0.75);border:1.5px solid rgba(220,180,120,0.4);color:#e8dcc8;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}',
+    '.PFpauseBtnSm:active{transform:scale(0.97)}'
   ].join('');
   document.head.appendChild(s);
 })();
@@ -135,6 +142,7 @@ var lockTimer=0, lockResets=0, lockTouching=false;
 var freezeTimer=0;            // >0 while line-clear freeze is active
 var freezeRows=[];            // rows being cleared during freeze
 var pfOver=false;
+var paused=false;
 var dropTimer=0;
 var dropInterval=1000;
 var softDropping=false;
@@ -150,6 +158,7 @@ var holdBox=null, holdCanvas=null, holdCtx=null;
 var nextBox=null, nextCanvas=null, nextCtx=null;
 var scoreEl=null, linesEl=null, levelEl=null, bestEl=null;
 var splashEl=null, splashBig=null, splashSmall=null, comboEl=null;
+var pauseOverlay=null, pauseBtn=null;
 var CELL=24, dpr=1, SIDE_CELL=14;
 var NEXT_SLOT_GAP=6;
 
@@ -420,7 +429,7 @@ function applySeason(){
 
 // ── Movement / rotation ─────────────────────────────────────────────────
 function tryMove(dx,dy){
-  if(!current||pfOver||freezeTimer>0) return false;
+  if(!current||pfOver||paused||freezeTimer>0) return false;
   if(!collides(current.shape, current.x+dx, current.y+dy)){
     current.x+=dx; current.y+=dy;
     lastMoveWasRotate=false;
@@ -433,7 +442,7 @@ function tryMove(dx,dy){
 }
 
 function tryRotate(dir){
-  if(!current||pfOver||freezeTimer>0) return false;
+  if(!current||pfOver||paused||freezeTimer>0) return false;
   if(current.key==='O') return false; // O-piece doesn't rotate
   var from=current.rotation;
   var to=(from+(dir>0?1:3))%4;
@@ -459,7 +468,7 @@ function tryRotate(dir){
 }
 
 function hardDrop(){
-  if(!current||pfOver||freezeTimer>0) return;
+  if(!current||pfOver||paused||freezeTimer>0) return;
   var dy=0;
   while(!collides(current.shape, current.x, current.y+dy+1)) dy++;
   current.y+=dy;
@@ -470,7 +479,7 @@ function hardDrop(){
 }
 
 function softDropStep(){
-  if(!current||pfOver||freezeTimer>0) return;
+  if(!current||pfOver||paused||freezeTimer>0) return;
   if(!collides(current.shape, current.x, current.y+1)){
     current.y++;
     score+=1;
@@ -480,8 +489,31 @@ function softDropStep(){
 
 function setSoft(on){ softDropping = !!on; }
 
+function togglePause(force){
+  if(pfOver) return;
+  var want = (force===undefined) ? !paused : !!force;
+  if(want===paused) return;
+  paused = want;
+  if(paused){
+    softDropping=false;
+    keyHold.left=false; keyHold.right=false; keyHold.down=false;
+    lastTime=0; // reset so dt doesn't balloon on resume
+    if(pauseOverlay) pauseOverlay.style.display='flex';
+    if(pauseBtn){
+      var ic=pauseBtn.querySelector('.PFactIcon'); if(ic) ic.textContent='▶';
+      var lbl=pauseBtn.querySelector('.PFactLabel'); if(lbl) lbl.textContent='RESUME';
+    }
+  } else {
+    if(pauseOverlay) pauseOverlay.style.display='none';
+    if(pauseBtn){
+      var ic2=pauseBtn.querySelector('.PFactIcon'); if(ic2) ic2.textContent='⏸';
+      var lbl2=pauseBtn.querySelector('.PFactLabel'); if(lbl2) lbl2.textContent='PAUSE';
+    }
+  }
+}
+
 function hold(){
-  if(!current||pfOver||freezeTimer>0||!canHold) return;
+  if(!current||pfOver||paused||freezeTimer>0||!canHold) return;
   canHold=false;
   if(holdKey===null){
     holdKey=current.key;
@@ -554,6 +586,7 @@ function tickParticles(dt){
 function gameLoop(ts){
   if(!pan||!boardCtx) return;
   if(pfOver){ render(); return; }
+  if(paused){ render(); requestAnimationFrame(gameLoop); return; }
   var dt=lastTime? Math.min(0.05, (ts-lastTime)/1000) : 0.016;
   lastTime=ts;
   tickInput(dt);
@@ -757,6 +790,9 @@ function bindKeyboard(){
       case 'c':
       case 'C':
       case 'Shift':      if(!e.repeat) hold(); break;
+      case 'p':
+      case 'P':
+      case 'Escape':     if(!e.repeat) togglePause(); break;
       default: handled=false;
     }
     if(handled) e.preventDefault();
@@ -881,6 +917,7 @@ function wireActionButton(btn){
     if(e && e.preventDefault) e.preventDefault();
     if(act==='hold') hold();
     else if(act==='hard') hardDrop();
+    else if(act==='pause') togglePause();
     else if(act==='newgame') newGame();
   };
   btn.addEventListener('click', fire);
@@ -942,7 +979,19 @@ function buildLayout(a){
     '<button class="PFactBtn" data-act="hold"><span class="PFactIcon">⧉</span><span class="PFactLabel">HOLD</span></button>'+
     '<button class="PFactBtn gold" data-act="hard"><span class="PFactIcon">⏬</span><span class="PFactLabel">DROP</span></button>'+
     '<button class="PFactBtn" data-act="soft"><span class="PFactIcon">↓</span><span class="PFactLabel">FAST</span></button>'+
-    '<button class="PFactBtn" data-act="newgame"><span class="PFactIcon">↻</span><span class="PFactLabel">NEW</span></button>';
+    '<button class="PFactBtn" data-act="pause"><span class="PFactIcon">⏸</span><span class="PFactLabel">PAUSE</span></button>';
+  pauseBtn = actRow.querySelector('[data-act="pause"]');
+
+  // Pause overlay (inside board, shown when paused)
+  pauseOverlay = document.createElement('div'); pauseOverlay.id='PFpause'; pauseOverlay.style.display='none'; boardWrap.appendChild(pauseOverlay);
+  pauseOverlay.innerHTML=
+    '<div class="PFpauseTitle">PAUSED</div>'+
+    '<button class="PFpauseBtn" data-act="resume">RESUME</button>'+
+    '<button class="PFpauseBtnSm" data-act="newgame">NEW GAME</button>';
+  var resumeBtn = pauseOverlay.querySelector('[data-act="resume"]');
+  var newGameBtn = pauseOverlay.querySelector('[data-act="newgame"]');
+  resumeBtn.addEventListener('click', function(e){ e.preventDefault(); togglePause(false); });
+  newGameBtn.addEventListener('click', function(e){ e.preventDefault(); togglePause(false); newGame(); });
 
   // Wire side buttons (DAS/ARR for arrows, single-tap for rotates)
   var sideBtns=playzone.querySelectorAll('.PFbigBtn');
@@ -999,6 +1048,12 @@ function newGame(){
   nextQueue=[]; bag=[]; fillQueue();
   combo=-1; back2back=false;
   softDropping=false;
+  paused=false;
+  if(pauseOverlay) pauseOverlay.style.display='none';
+  if(pauseBtn){
+    var pbi=pauseBtn.querySelector('.PFactIcon'); if(pbi) pbi.textContent='⏸';
+    var pbl=pauseBtn.querySelector('.PFactLabel'); if(pbl) pbl.textContent='PAUSE';
+  }
   best=loadBest();
   lastTime=0;
   sizeCanvases();
