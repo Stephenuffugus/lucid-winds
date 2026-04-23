@@ -494,6 +494,47 @@ var LEVELS=[
     '..C.BA',
     'GF.KKA',
     'GF.II.'
+  ]},
+  // ── Expert tier — 21+ optimal moves, solver-verified via 15-min reverse hunt.
+  { name:'Expert 1', diff:'expert', optimal:21, grid:[
+    '.AAAH.',
+    '.DD.H.',
+    '..XXB.',
+    '..E.B.',
+    '.GE.FF',
+    '.GCCC.'
+  ]},
+  { name:'Expert 2', diff:'expert', optimal:21, grid:[
+    '..CCDG',
+    '....DG',
+    'BEXX.G',
+    'BEFAAA',
+    'H.FIJJ',
+    'H.FI..'
+  ]},
+  { name:'Expert 3', diff:'expert', optimal:26, grid:[
+    '..B.JJ',
+    '..B.I.',
+    '.FXXIG',
+    '.FAA.G',
+    'DDD.HE',
+    'CCC.HE'
+  ]},
+  { name:'Expert 4', diff:'expert', optimal:26, grid:[
+    'DDDC..',
+    'GH.CIB',
+    'GHXXIB',
+    'JJE.IB',
+    '..E.AA',
+    '.FFF..'
+  ]},
+  { name:'Expert 5', diff:'expert', optimal:22, grid:[
+    '..GFF.',
+    '..G.HH',
+    '.BXXCE',
+    '.B..CE',
+    'AAA.DE',
+    '..IID.'
   ]}
 ];
 
