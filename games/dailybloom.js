@@ -256,7 +256,7 @@ function startWordRecall(){
 function startMath(){
   var level=loadLevel('math', 1);  // 0=easy, 1=med, 2=hard
   level=clamp(level, 0, 2);
-  S.exData={correct:0,total:0,startTime:Date.now(),maxTime:20000,level:level};
+  S.exData={correct:0,total:0,startTime:Date.now(),maxTime:25000,level:level};
   showMath();
 }
 function showMath(){
@@ -311,7 +311,7 @@ function showMath(){
 
 // ── Reaction Time ───────────────────────────────────────────────────────
 function startReaction(){
-  S.exData={times:[], phase:'wait', attempts:0, max:5};
+  S.exData={times:[], phase:'wait', attempts:0, max:7};
   showReaction();
 }
 function showReaction(){
@@ -414,20 +414,20 @@ function showPattern(){
   h+='<div class="DBexDesc">Which grid matches the original? · '+S.exData.round+'/'+S.exData.max+'</div>';
   h+='<div style="margin:10px 0">'+renderPatternGrid(pat, cellOrig)+'</div>';
   h+='<div style="font-size:0.55rem;opacity:0.45;margin:4px 0">↑ ORIGINAL ↑</div>';
-  h+='<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0">';
+  h+='<div id="DBpatOpts" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0">';
   for(var k=0;k<opts.length;k++){
     h+='<div class="DBopt" style="padding:6px;min-height:auto" data-i="'+k+'" data-c="'+correctIdx+'">'+renderPatternGrid(opts[k],cellOpt)+'</div>';
   }
   h+='</div>'+dots(5, S.exIndex);
   pan.innerHTML=h;
-  pan.querySelector('.DBexDesc').nextElementSibling.parentElement.querySelectorAll('[data-i]').forEach(function(el){
-    el.addEventListener('click', function(){
-      if(el.dataset.done)return; el.dataset.done='1';
-      var picked=parseInt(el.getAttribute('data-i'),10), correct=parseInt(el.getAttribute('data-c'),10);
-      if(picked===correct){S.exData.correct++; el.classList.add('good'); try{navigator.vibrate&&navigator.vibrate(8);}catch(e){}}
-      else el.classList.add('bad');
-      setTimeout(function(){ if(alive()) showPattern(); }, 450);
-    });
+  pan.querySelector('#DBpatOpts').addEventListener('click', function(e){
+    var el=e.target.closest('[data-i]');
+    if(!el || el.dataset.done)return;
+    el.dataset.done='1';
+    var picked=parseInt(el.getAttribute('data-i'),10), correct=parseInt(el.getAttribute('data-c'),10);
+    if(picked===correct){S.exData.correct++; el.classList.add('good'); try{navigator.vibrate&&navigator.vibrate(8);}catch(ev){}}
+    else el.classList.add('bad');
+    setTimeout(function(){ if(alive()) showPattern(); }, 450);
   });
 }
 
@@ -435,7 +435,7 @@ function showPattern(){
 var STROOP_WORDS=['RED','GREEN','BLUE','YELLOW'];
 var STROOP_HEX  =['#c47a7a','#7ab356','#5b9bd5','#c8a84b'];
 function startStroop(){
-  S.exData={correct:0, total:0, startTime:Date.now(), maxTime:15000};
+  S.exData={correct:0, total:0, startTime:Date.now(), maxTime:20000};
   showStroop();
 }
 function showStroop(){
@@ -512,10 +512,13 @@ function nBackTick(){
   var d=S.exData;
   // End condition
   if(d.idx >= d.level + d.trials){
+    var nonMatch=d.trials - d.matchTotal;
     var acc = d.matchTotal>0 ? d.hits/d.matchTotal : 0;
-    var fa = d.falseAlarms/(d.trials - d.matchTotal || 1);
-    var scoreRaw = clamp(Math.round(100*(acc - 0.5*fa)), 0, 100);
-    adjustLevel('nback', acc - fa*0.5, 1, 3);
+    var correctReject = nonMatch>0 ? (nonMatch-d.falseAlarms)/nonMatch : 1;
+    // Composite accuracy weights hits and correct rejections equally
+    var composite = (acc + correctReject) / 2;
+    var scoreRaw = clamp(Math.round(100*composite), 0, 100);
+    adjustLevel('nback', composite, 1, 3);
     finishExercise(scoreRaw, 'working');
     return;
   }
@@ -525,28 +528,39 @@ function nBackTick(){
   d.answered=false;
   d.expectMatch=expectMatch;
   var h='<div class="DBexTitle">N-BACK · '+d.level+'-back</div>';
-  h+='<div class="DBexDesc">'+(d.idx < d.level ? 'Remember the positions' : 'Matches '+d.level+' ago?')+'</div>';
-  h+='<div style="display:flex;justify-content:center;margin:16px 0"><div style="display:inline-grid;grid-template-columns:repeat(3,56px);gap:4px">';
+  h+='<div class="DBexDesc">'+(d.idx < d.level ? 'Remember the positions' : 'Same spot as '+d.level+' ago?')+'</div>';
+  h+='<div style="display:flex;justify-content:center;margin:16px 0"><div style="display:inline-grid;grid-template-columns:repeat(3,56px);gap:4px" id="DBnbackGrid">';
   for(var i=0;i<9;i++) h+='<div class="DBgridCell '+(i===pos?'flash':'off')+'" style="width:56px;height:56px"></div>';
   h+='</div></div>';
   h+='<div class="DBopts">';
-  h+='<button class="DBopt" data-match="1" '+(d.idx<d.level?'disabled style="opacity:0.3"':'')+'>MATCH</button>';
+  var dis=d.idx<d.level?'disabled style="opacity:0.3"':'';
+  h+='<button class="DBopt" data-ans="match" '+dis+'>MATCH</button>';
+  h+='<button class="DBopt" data-ans="no" '+dis+'>NO MATCH</button>';
   h+='</div>';
-  h+='<div class="DBstatus">'+(d.idx+1)+'/'+(d.level+d.trials)+' · hits '+d.hits+'/'+d.matchTotal+'</div>'+dots(5, S.exIndex);
+  h+='<div class="DBstatus" id="DBnbackMsg">'+(d.idx+1)+'/'+(d.level+d.trials)+' · <span class="ok">'+d.hits+'</span> hits · <span style="color:#c47a7a">'+d.falseAlarms+'</span> false</div>'+dots(5, S.exIndex);
   pan.innerHTML=h;
-  pan.querySelector('[data-match]').addEventListener('click', function(){
-    if(d.answered)return; d.answered=true;
-    if(d.idx < d.level)return;
-    if(expectMatch) d.hits++;
-    else d.falseAlarms++;
+  pan.querySelectorAll('[data-ans]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      if(d.answered || d.idx < d.level)return;
+      d.answered=true;
+      var ans=btn.getAttribute('data-ans');
+      var correct = (ans==='match') === expectMatch;
+      if(ans==='match' && expectMatch) d.hits++;
+      else if(ans==='match' && !expectMatch) d.falseAlarms++;
+      // Visual feedback
+      btn.classList.add(correct?'good':'bad');
+      var msg=pan.querySelector('#DBnbackMsg');
+      if(msg)msg.innerHTML=correct?'<span class="ok">✓ correct</span>':'<span style="color:#c47a7a">✗ '+(expectMatch?'was a match':'was not a match')+'</span>';
+      try{navigator.vibrate&&navigator.vibrate(correct?8:[6,40,6]);}catch(ev){}
+    });
   });
   setTimeout(function(){
     if(!alive())return;
-    // End of this tile; if player didn't answer and expected a match, count as miss (implicit)
+    // Untimed no-answer = implicit miss (if expected match) or no-op
     if(!d.answered && isMatchTrial && expectMatch) d.misses++;
     d.idx++;
     nBackTick();
-  }, 1500);
+  }, 2200);  // 2.2s per tile gives time to look + decide
 }
 
 // ── Corsi Blocks (spatial working memory) ───────────────────────────────
@@ -574,8 +588,8 @@ function nextCorsiRound(){
   d.phase='show';
   d.showIdx=-1;
   renderCorsi();
-  // Animate sequence
-  var delay=600;
+  // Animate sequence — slower at higher spans so the sequence stays readable
+  var delay = d.level<=4 ? 650 : d.level<=6 ? 750 : 850;
   function step(){
     if(!alive()||d.phase!=='show')return;
     d.showIdx++;
@@ -626,7 +640,7 @@ function renderCorsi(){
 function startFlanker(){
   var level=loadLevel('flanker', 0);  // 0=5 trials, 1=8, 2=12
   level=clamp(level, 0, 2);
-  S.exData={level:level, trials:5+level*3, round:0, correct:0, startTime:0};
+  S.exData={level:level, trials:8+level*4, round:0, correct:0, startTime:0};
   nextFlankerTrial();
 }
 function nextFlankerTrial(){
