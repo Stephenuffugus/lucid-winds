@@ -9,13 +9,22 @@ var LWG=window._G;
 var _e=LWG.e,_play=LWG.play,_playWin=LWG.playWin,_setDiff=LWG.setDiff,sm=LWG.sm,_sr=LWG.sr;
 
 // ── Constants ───────────────────────────────────────────────────────────
+// SZ is mutable — set at game start from the chosen variant. All the
+// shift / reach / draw logic reads it as a module-level var, so larger
+// grids "just work" without a deeper refactor.
 var SZ=5;
-var TREASURES=['🌻','🌹','🌷','🍄','🪻','🌵','🎋','🍀','🌸','🪴','🌺','🍁'];
+var TREASURES=['🌻','🌹','🌷','🍄','🪻','🌵','🎋','🍀','🌸','🪴','🌺','🍁','🌾','🪷','🌿','🌱','🌳','🌲'];
 // Connection arrays: [N,E,S,W] booleans — does the path exit this side?
 var TYPES={
   S:[[1,0,1,0],[0,1,0,1]],           // Straight: two orientations
   C:[[1,1,0,0],[0,1,1,0],[0,0,1,1],[1,0,0,1]],  // Corner: four orientations
   T:[[1,1,1,0],[0,1,1,1],[1,0,1,1],[1,1,0,1]]   // T-junction: four orientations
+};
+// Variant = board shape. Each has a fixed size (odd) and a target count.
+var VARIANTS={
+  thicket:{size:5,treasuresEach:4,label:'THICKET',sub:'5×5 · 4 treasures · quick'},
+  grove:  {size:7,treasuresEach:6,label:'GROVE',  sub:'7×7 · 6 treasures · deeper'},
+  forest: {size:9,treasuresEach:8,label:'FOREST', sub:'9×9 · 8 treasures · long'}
 };
 var DIFF_META={
   easy:{label:'EASY MIRROR',sub:'Random shifts, greedy move.'},
@@ -288,23 +297,36 @@ function aiMove(){
   updateHUD();
 }
 
+function shiftSlots(){
+  // Odd indices only are shiftable — scales with SZ (5→[1,3], 7→[1,3,5], 9→[1,3,5,7])
+  var out=[];
+  for(var i=1;i<SZ;i+=2) out.push(i);
+  return out;
+}
+function allShiftMoves(){
+  var slots=shiftSlots();
+  var out=[];
+  slots.forEach(function(i){
+    out.push({axis:'row',idx:i,dir:1});
+    out.push({axis:'row',idx:i,dir:-1});
+    out.push({axis:'col',idx:i,dir:1});
+    out.push({axis:'col',idx:i,dir:-1});
+  });
+  return out;
+}
+
 function chooseAIPlan(){
   var diff=S.difficulty;
   if(diff==='easy'){
-    var axes=[['row',1],['row',3],['col',1],['col',3]];
-    var a=axes[Math.floor(Math.random()*axes.length)];
-    return {axis:a[0], idx:a[1], dir:Math.random()<0.5?1:-1, spareConn:S.spare.conn.slice()};
+    var moves=allShiftMoves();
+    var pick=moves[Math.floor(Math.random()*moves.length)];
+    return {axis:pick.axis, idx:pick.idx, dir:pick.dir, spareConn:S.spare.conn.slice()};
   }
   // Enumerate all possible (shift × spare rotation) combos, score each
   var tName=S.aiTIdx<S.aiTargets.length?S.aiTargets[S.aiTIdx]:null;
   if(!tName)return null;
   var best=null, bestScore=-Infinity;
-  var shifts=[
-    {axis:'row',idx:1,dir:1},{axis:'row',idx:1,dir:-1},
-    {axis:'row',idx:3,dir:1},{axis:'row',idx:3,dir:-1},
-    {axis:'col',idx:1,dir:1},{axis:'col',idx:1,dir:-1},
-    {axis:'col',idx:3,dir:1},{axis:'col',idx:3,dir:-1}
-  ];
+  var shifts=allShiftMoves();
   var rotations=rotationsFor(S.spare);
   shifts.forEach(function(sh){
     rotations.forEach(function(rotConn){
@@ -376,7 +398,7 @@ function gameOver(playerWon){
   if(playerWon){_e('game_win');_playWin();sm('Maze mastered! '+S.turns+' turns');
     _sr('rootmaze',{w:true,s:Math.max(1,120-S.turns),r:S.turns});
     try{
-      var bestKey='lw_rootmaze_best_'+S.difficulty;
+      var bestKey='lw_rootmaze_best_'+S.variant+'_'+S.difficulty;
       var prev=parseInt(localStorage.getItem(bestKey)||'9999',10);
       if(S.turns<prev)localStorage.setItem(bestKey, String(S.turns));
     }catch(e){}
@@ -684,8 +706,9 @@ function updateHUD(){
   if(!topEls.turns)return;
   topEls.turns.textContent=S.turns;
   var meta=DIFF_META[S.difficulty];
-  topEls.difficulty.textContent=meta?meta.label.replace(' MIRROR',''):'—';
-  var bestKey='lw_rootmaze_best_'+S.difficulty;
+  var vMeta=VARIANTS[S.variant];
+  topEls.difficulty.textContent=(vMeta?vMeta.label.charAt(0):'')+' · '+(meta?meta.label.replace(' MIRROR',''):'—');
+  var bestKey='lw_rootmaze_best_'+S.variant+'_'+S.difficulty;
   var best=parseInt(localStorage.getItem(bestKey)||'9999',10);
   topEls.best.textContent=(best>=9999)?'—':best+'t';
   // Quest queue
@@ -714,15 +737,20 @@ function updateHUD(){
 function showEndCard(won){
   if(endCard){endCard.remove();endCard=null;}
   endCard=document.createElement('div'); endCard.className='RMend'+(won?'':' lose');
-  var bestKey='lw_rootmaze_best_'+S.difficulty;
+  var bestKey='lw_rootmaze_best_'+S.variant+'_'+S.difficulty;
   var best=parseInt(localStorage.getItem(bestKey)||'9999',10);
   var bestStr=(best>=9999)?'—':best+' turns';
   endCard.innerHTML=
     '<div class="RMendTitle">'+(won?'MAZE MASTERED':'MIRROR WINS')+'</div>'+
     '<div class="RMendStats">'+S.turns+' turns  ·  best '+bestStr+'<br>'+S.playerTIdx+' / '+S.playerTargets.length+' treasures</div>';
-  endCard.appendChild(mkBtn('↻ NEW MAZE','primary',function(){ requestNewGame(); }));
+  // NEW MAZE = same variant + same difficulty, fresh board
+  var v=S.variant, d=S.difficulty;
+  endCard.appendChild(mkBtn('↻ NEW MAZE','primary',function(){
+    if(endCard){endCard.remove();endCard=null;}
+    startGame(v, d);
+  }));
   endCard.appendChild(document.createElement('br'));
-  endCard.appendChild(mkBtn('← PICK DIFFICULTY','default',function(){ requestNewGame(); }));
+  endCard.appendChild(mkBtn('← CHANGE SETTINGS','default',function(){ requestNewGame(); }));
   pan.appendChild(endCard);
 }
 function mkBtn(label, style, onClick){
@@ -733,27 +761,65 @@ function mkBtn(label, style, onClick){
   return b;
 }
 
-// ── Difficulty picker ───────────────────────────────────────────────────
-function showDifficultyPicker(){
+// ── Variant picker (step 1 of 2) ────────────────────────────────────────
+// Two-step flow so the variant × difficulty matrix (9 combos) stays
+// browsable without cramming them all into one screen. Best-turn-count
+// per (variant, difficulty) is tracked separately in localStorage.
+var pendingVariant=null;
+function showVariantPicker(){
+  pendingVariant=null;
   if(pan){pan.innerHTML='';}
   else {pan=document.createElement('div');pan.id='RMpan';hostEl.appendChild(pan);}
   var ov=document.createElement('div'); ov.className='RMdiffPick'; pan.appendChild(ov);
   var btnHtml='';
+  ['thicket','grove','forest'].forEach(function(k){
+    var m=VARIANTS[k];
+    // Show best time across any difficulty for this variant
+    var best=Infinity;
+    ['easy','steady','keen'].forEach(function(d){
+      var b=parseInt(localStorage.getItem('lw_rootmaze_best_'+k+'_'+d)||'9999',10);
+      if(b<best)best=b;
+    });
+    var bestStr=(best>=9999)?'':' · best '+best+'t';
+    btnHtml+='<button class="RMdiffBtn" data-variant="'+k+'"><div class="RMdlv">'+m.label+bestStr+'</div><div class="RMdsub">'+m.sub+'</div></button>';
+  });
+  ov.innerHTML=
+    '<div class="RMdiffTitle">ROOT MAZE</div>'+
+    '<div class="RMdiffSub">Rotate the spare tile, push it in from any edge, then walk through connected path tiles to reach your treasures before the Mirror does. Pick a board size.</div>'+
+    '<div class="RMdiffBtns">'+btnHtml+'</div>';
+  ov.addEventListener('click', function(e){
+    var b=e.target.closest('[data-variant]');
+    if(!b)return;
+    pendingVariant=b.getAttribute('data-variant');
+    showDifficultyPicker();
+  });
+}
+
+// Step 2 of 2: difficulty picker for the chosen variant
+function showDifficultyPicker(){
+  if(pan){pan.innerHTML='';}
+  else {pan=document.createElement('div');pan.id='RMpan';hostEl.appendChild(pan);}
+  var ov=document.createElement('div'); ov.className='RMdiffPick'; pan.appendChild(ov);
+  var variantMeta=VARIANTS[pendingVariant];
+  var btnHtml='';
   ['easy','steady','keen'].forEach(function(k){
     var m=DIFF_META[k];
-    var bestKey='lw_rootmaze_best_'+k;
+    var bestKey='lw_rootmaze_best_'+pendingVariant+'_'+k;
     var best=parseInt(localStorage.getItem(bestKey)||'9999',10);
     var bestStr=(best>=9999)?'':' · best '+best+'t';
     btnHtml+='<button class="RMdiffBtn" data-diff="'+k+'"><div class="RMdlv">'+m.label+bestStr+'</div><div class="RMdsub">'+m.sub+'</div></button>';
   });
+  btnHtml+='<button class="RMdiffBtn" data-back="1" style="border-color:rgba(232,220,200,0.25);color:rgba(232,220,200,0.6)"><div class="RMdlv">← BACK</div><div class="RMdsub">Pick a different board size</div></button>';
   ov.innerHTML=
-    '<div class="RMdiffTitle">ROOT MAZE</div>'+
-    '<div class="RMdiffSub">Rotate the spare tile, push it in from any edge, then walk through connected path tiles to reach your treasures before the Mirror does.</div>'+
+    '<div class="RMdiffTitle">'+variantMeta.label+'</div>'+
+    '<div class="RMdiffSub">'+variantMeta.sub+'. Pick a Mirror to play against.</div>'+
     '<div class="RMdiffBtns">'+btnHtml+'</div>';
   ov.addEventListener('click', function(e){
+    var back=e.target.closest('[data-back]');
+    if(back){ showVariantPicker(); return; }
     var b=e.target.closest('[data-diff]');
     if(!b)return;
-    startGame(b.getAttribute('data-diff'));
+    startGame(pendingVariant, b.getAttribute('data-diff'));
   });
 }
 
@@ -762,10 +828,14 @@ function requestNewGame(){
   if(animFrameId){cancelAnimationFrame(animFrameId);animFrameId=null;}
   animState=null;
   if(endCard){endCard.remove();endCard=null;}
-  showDifficultyPicker();
+  showVariantPicker();
 }
 
-function startGame(difficulty){
+function startGame(variant, difficulty){
+  var vMeta=VARIANTS[variant];
+  if(!vMeta){ sm('Unknown variant '+variant); return; }
+  SZ=vMeta.size;
+  var targetsEach=vMeta.treasuresEach;
   _setDiff(difficulty==='easy'?'easy':difficulty==='steady'?'medium':'hard');
   // Build board
   var board=[];
@@ -779,36 +849,44 @@ function startGame(difficulty){
       board[r][c]=tile;
     }
   }
-  // Scatter treasures: prefer fixed tiles, but also add to some non-fixed
+  // Treasures — need 2 * targetsEach distinct treasure tiles.
+  var totalNeeded=2*targetsEach;
   var fixedPos=[];
   for(var r2=0;r2<SZ;r2++)for(var c2=0;c2<SZ;c2++){
     if(board[r2][c2].fixed && !((r2===0||r2===SZ-1)&&(c2===0||c2===SZ-1))) fixedPos.push([r2,c2]);
   }
   shuf(fixedPos);
   var tList=shuf(TREASURES.slice());
-  var ti=0;
-  for(var t=0;t<Math.min(fixedPos.length,8);t++){
-    board[fixedPos[t][0]][fixedPos[t][1]].treasure=tList[ti++];
+  var placed=0;
+  // Place on fixed tiles first (canonical Labyrinth)
+  for(var t=0;t<fixedPos.length && placed<totalNeeded;t++){
+    board[fixedPos[t][0]][fixedPos[t][1]].treasure=tList[placed % tList.length];
+    placed++;
   }
-  // A couple more on random non-fixed tiles
-  var maxExtra=2;
-  for(var r3=0;r3<SZ && maxExtra>0;r3++) for(var c3=0;c3<SZ && maxExtra>0;c3++){
-    if(!board[r3][c3].fixed && !board[r3][c3].treasure && Math.random()<0.25){
-      board[r3][c3].treasure=tList[ti] || TREASURES[Math.floor(Math.random()*TREASURES.length)];
-      ti++; maxExtra--;
+  // Fill remaining on random non-fixed tiles
+  var guard=0;
+  while(placed<totalNeeded && guard<500){
+    guard++;
+    var rr=Math.floor(Math.random()*SZ);
+    var cc=Math.floor(Math.random()*SZ);
+    if(!board[rr][cc].fixed && !board[rr][cc].treasure){
+      board[rr][cc].treasure=tList[placed % tList.length];
+      placed++;
     }
   }
   var spare=randomTile();
+  // Collect all placed treasures and split evenly
   var all=[];
   for(var r4=0;r4<SZ;r4++)for(var c4=0;c4<SZ;c4++) if(board[r4][c4].treasure) all.push(board[r4][c4].treasure);
   shuf(all);
   var half=Math.floor(all.length/2);
-  var playerTargets=all.slice(0, Math.min(4, half));
-  var aiTargets=all.slice(half, half+Math.min(4, all.length-half));
+  var playerTargets=all.slice(0, Math.min(targetsEach, half));
+  var aiTargets=all.slice(half, half+Math.min(targetsEach, all.length-half));
   if(playerTargets.length===0) playerTargets=[TREASURES[0]];
   if(aiTargets.length===0) aiTargets=[TREASURES[1]];
 
   S={
+    variant:variant,
     difficulty:difficulty,
     board:board, spare:spare,
     playerPos:[0,0], aiPos:[SZ-1,SZ-1],
@@ -832,6 +910,6 @@ window._gameFns.rootmaze = function(a){
   if(animFrameId){cancelAnimationFrame(animFrameId);animFrameId=null;}
   animState=null;
   hostEl=a;
-  showDifficultyPicker();
+  showVariantPicker();
 };
 })();
