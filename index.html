@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.23.1';
+  var LW_VERSION='2026.04.23.2';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -44920,7 +44920,7 @@ var G=[
 {id:'sudoku',n:'Sudoku',i:'\ud83d\udd22',r:'Fill every row, column and 3\u00d73 box with digits 1-9.',cat:'puzzle',thumb:'assets/games/thumbs/sudoku.png'},
 {id:'wordsearch',n:'Word Search',i:'\ud83d\udd24',r:'Swipe across letters to spell a word. Any direction, forward or backward. Each puzzle draws from a themed word pack.',cat:'puzzle',thumb:'assets/games/thumbs/wordsearch.png'},
 {id:'hanoi',n:'Tower of Hanoi',i:'\ud83d\uddfc',r:'Stack every disc on the far peg. Only one disc moves at a time, and a big disc cannot land on a small one. Drag or tap to move. 3 or 4 pegs, 3 to 8 discs. Earn 3 stars by solving in the minimum moves.',cat:'puzzle',thumb:'assets/games/thumbs/hanoi.png'},
-{id:'slider',n:'15 Puzzle',i:'\ud83e\udde9',r:'Slide tiles into the empty space. Arrange them 1-15 in order.',cat:'puzzle',thumb:'assets/games/thumbs/slider.png'},
+{id:'slider',n:'15 Puzzle',i:'\ud83e\udde9',r:'Slide tiles into the empty space. Arrange them in order. Tap any tile in the same row or column as the empty slot to slide a whole segment at once. 3×3, 4×4, or 5×5.',cat:'puzzle',thumb:'assets/games/thumbs/slider.png'},
 {id:'picross',n:'Bloom Grid',i:'\ud83d\udd33',r:'Fill or cross squares from row/column clues to reveal a hidden picture.',cat:'puzzle',thumb:'assets/games/thumbs/picross.png'},
 {id:'colorsort',n:'Color Sort',i:'\ud83e\uddea',r:'Pour colors between tubes until each holds a single color. Match tops to pour.',cat:'puzzle',thumb:'assets/games/thumbs/colorsort.png'},
 {id:'battleship',n:'Tide Hunt',i:'\ud83c\udf0a',r:'Hunt hidden vessels on a 10\u00d710 grid. Sink them all in as few shots as you can.',cat:'board',thumb:'assets/games/thumbs/battleship.png'},
@@ -48758,11 +48758,7 @@ function GT(a){
   init();
 }
 
-// ═══ 15-PUZZLE SLIDER ═══
-function GD(a){var tl=[],mv=0;ms(a,'👆<strong id="Dm">0</strong>');mm(a);var gd=document.createElement('div');gd.className='dg';gd.id='Dg';a.appendChild(gd);mc(a).innerHTML='<button class="gb-new" onclick="_DN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
-  function sv(ar){var inv=0;for(var i=0;i<ar.length;i++)for(var j=i+1;j<ar.length;j++)if(ar[i]&&ar[j]&&ar[i]>ar[j])inv++;return(Math.floor(ar.indexOf(0)/4)%2===0)!==(inv%2===0)}function wn(){for(var i=0;i<15;i++)if(tl[i]!==i+1)return false;return true}
-  function rn(){gd.innerHTML='';tl.forEach(function(v,i){var d=document.createElement('div');if(!v){d.className='dc de'}else{d.className='dc df'+(v===i+1?' dk':'');d.textContent=v;d.onclick=function(){var vi=tl.indexOf(v),ei=tl.indexOf(0);if((Math.abs(Math.floor(vi/4)-Math.floor(ei/4))+Math.abs(vi%4-ei%4))!==1)return;_play('slide');tl[ei]=v;tl[vi]=0;mv++;document.getElementById('Dm').textContent=mv;if(mv%20===0)_e('milestone');if(wn()){_e('game_win');sm('🌿 '+mv+' moves!');_sr('slider',{w:true,s:mv})}rn()}}gd.appendChild(d)})}
-  window._DN=function(){mv=0;document.getElementById('Dm').textContent='0';sm('');tl=[];for(var i=1;i<=15;i++)tl.push(i);tl.push(0);do{sh(tl)}while(!sv(tl)||wn());rn()};_DN();}
+// ═══ 15-PUZZLE SLIDER — moved to games/slider.js ═══
 // ═══ FARKLE ═══
 function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolling=false,busted=false;
   var numPlayers=1,curP=0,players=[{banked:0}],target=10000,gameOver=false,finalRound=false,finalStart=-1;
@@ -51108,7 +51104,7 @@ function GBG(a){
 
 // Inline-only games (no file version in /games/) — register eagerly
 // so they're available without lazy-load.
-try{window._gameFns.slider=GD}catch(e){}        // 15 Puzzle
+// slider moved to games/slider.js — self-registers
 try{window._gameFns.farkle=GF}catch(e){}        // Farkle
 try{window._gameFns.yahtzee=GY}catch(e){}       // Yahtzee
 try{window._gameFns.picross=GX}catch(e){}       // Bloom Grid
