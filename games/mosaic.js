@@ -57,6 +57,14 @@ var DIFF_META={
     // Status line
     '.MSstatus{text-align:center;font-family:Georgia,serif;font-size:0.78rem;color:#e8dcc8;padding:4px 0 6px}',
     '.MSstatus em{color:#c8a84b;font-style:normal;font-weight:700}',
+    // Bag tracker
+    '.MSbagBar{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;padding:4px 4px 6px;font-family:Georgia,serif;font-size:0.66rem}',
+    '.MSbagLbl{font-family:Bebas Neue,sans-serif;font-size:0.58rem;letter-spacing:0.16em;color:rgba(232,220,200,0.55);margin-right:2px}',
+    '.MSbagChip{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:10px;border:1px solid;color:#e8dcc8;font-family:DM Mono,monospace}',
+    '.MSbagChip b{font-weight:700;color:#e8dcc8}',
+    '.MSbagTotal{font-family:DM Mono,monospace;font-size:0.6rem;color:rgba(232,220,200,0.5);letter-spacing:0.06em;margin-left:4px}',
+    // Endgame warning badge
+    '.MSboardTitle .warn{font-family:Bebas Neue,sans-serif;font-size:0.62rem;letter-spacing:0.14em;color:#ffb366;background:rgba(200,100,40,0.18);border:1px solid rgba(255,150,80,0.5);padding:1px 6px;border-radius:6px;margin-left:6px;animation:msFade .3s ease}',
     // Factories
     '.MSfactories{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin:4px 0}',
     '.MSfac{width:76px;height:76px;border-radius:50%;background:rgba(26,31,23,0.55);border:1.5px solid rgba(74,124,53,0.28);display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:3px;padding:10px;box-sizing:border-box;position:relative}',
@@ -120,7 +128,7 @@ var DIFF_META={
 var S=null;
 
 // DOM refs
-var hostEl=null, pan=null, topBar=null, statusEl=null, facRow=null, centerEl=null;
+var hostEl=null, pan=null, topBar=null, statusEl=null, bagEl=null, facRow=null, centerEl=null;
 var playerBoardEl=null, aiBoardEl=null, ctrlRow=null;
 var topEls={score:null, ai:null, round:null};
 var breakdownEl=null, endEl=null;
@@ -463,13 +471,17 @@ function scoringPhase(){
   S.phase='draft';
   // Figure out who goes first next round (whoever took first-player marker)
   // Floor tiles go to discard; first-player marker is re-added to center pool
-  if(S.player.floor.indexOf('first')>=0)S.turn='player';
-  else if(S.ai.floor.indexOf('first')>=0)S.turn='ai';
+  var nextTurn=null;
+  if(S.player.floor.indexOf('first')>=0)nextTurn='player';
+  else if(S.ai.floor.indexOf('first')>=0)nextTurn='ai';
+  if(nextTurn)S.turn=nextTurn;
   // else stays as-is (shouldn't happen normally)
   S.player.floor=[]; S.ai.floor=[];
   fillFactories();
   setTimeout(function(){
     updateAll();
+    if(nextTurn==='ai'){ sm('Mirror goes first'); }
+    else if(nextTurn==='player'){ sm('You go first'); }
     if(S.turn==='ai'){ aiBusy=true; setTimeout(aiTurn, 700); }
   }, 1200);
 }
@@ -539,6 +551,7 @@ function buildDOM(host){
   topEls.round=topBar.querySelector('#MSr');
   topEls.turn=topBar.querySelector('#MSt');
   statusEl=document.createElement('div'); statusEl.className='MSstatus'; pan.appendChild(statusEl);
+  bagEl=document.createElement('div'); bagEl.className='MSbagBar'; pan.appendChild(bagEl);
   facRow=document.createElement('div'); facRow.className='MSfactories'; pan.appendChild(facRow);
   facRow.addEventListener('click', function(e){
     if(S.selected || aiBusy || S.turn!=='player') return;
@@ -595,11 +608,29 @@ function updateAll(){
   if(!topBar)return;
   updateHUD();
   updateStatus();
+  updateBagBar();
   updateFactories();
   updateCenter();
   updateBoard(playerBoardEl, S.player, 'YOUR MOSAIC', true);
   updateBoard(aiBoardEl, S.ai, 'MIRROR', false);
   updateControls();
+}
+
+// Bag tracker — shows how many tiles of each color remain in the bag
+// (and unavailable supply). Digital Azul apps often omit this and serious
+// players want it for endgame planning.
+function updateBagBar(){
+  if(!bagEl)return;
+  var counts={petal:0,leaf:0,berry:0,sun:0,frost:0};
+  S.bag.forEach(function(c){counts[c]++;});
+  S.discard.forEach(function(c){if(counts[c]!==undefined)counts[c]++;});
+  var total=S.bag.length+S.discard.length;
+  var html='<span class="MSbagLbl">POOL</span>';
+  COLORS.forEach(function(c){
+    html+='<span class="MSbagChip" style="background:'+BG[c]+'33;border-color:'+BG[c]+'55">'+ICONS[c]+' <b>'+counts[c]+'</b></span>';
+  });
+  html+='<span class="MSbagTotal">'+total+' left</span>';
+  bagEl.innerHTML=html;
 }
 
 function updateHUD(){
@@ -679,7 +710,15 @@ function updateCenter(){
 function updateBoard(el, board, title, isPlayer){
   if(!el)return;
   var html='';
-  html+='<div class="MSboardTitle"><span>'+title+'</span><span class="pts">'+board.score+' pts</span></div>';
+  // Endgame-close warning: if any wall row has 4 tiles, one more completes
+  // that row and ends the game. Visual cue for both boards so the player
+  // sees when the opponent is about to trigger final scoring.
+  var closeToEnd=false;
+  for(var r=0;r<5;r++){
+    var count=0; for(var c=0;c<5;c++)if(board.wall[r][c])count++;
+    if(count>=4){closeToEnd=true;break;}
+  }
+  html+='<div class="MSboardTitle"><span>'+title+(closeToEnd?'<span class="warn">1 AWAY</span>':'')+'</span><span class="pts">'+board.score+' pts</span></div>';
   html+='<div class="MSrows">';
   for(var r=0;r<5;r++){
     var maxSize=r+1;
