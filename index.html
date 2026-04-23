@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.23.31';
+  var LW_VERSION='2026.04.23.32';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3492,7 +3492,10 @@
     body.game-active:has(#fg-ag[data-game="dailybloom"]) #fg-ag > #_gm,
     body.game-active:has(#fg-ag[data-game="jade"]) #fg-ag > .gr,
     body.game-active:has(#fg-ag[data-game="jade"]) #fg-ag > .gu-bar,
-    body.game-active:has(#fg-ag[data-game="jade"]) #fg-ag > #_gm{display:none!important;}
+    body.game-active:has(#fg-ag[data-game="jade"]) #fg-ag > #_gm,
+    body.game-active:has(#fg-ag[data-game="livingstones"]) #fg-ag > .gr,
+    body.game-active:has(#fg-ag[data-game="livingstones"]) #fg-ag > .gu-bar,
+    body.game-active:has(#fg-ag[data-game="livingstones"]) #fg-ag > #_gm{display:none!important;}
     /* Card-game containers get a solid matching background + overscroll lock so nothing behind bleeds through during bounce-scroll. Also use the full viewport: padding-bottom normally reserves 58+safe-area for the bottom nav, but for these games the nav is hidden, so every pixel of bottom padding just buries cards under the scroll line. min-height fills the viewport so the solid container bg covers the whole screen even when pan content is short. */
     #fg-ag[data-game="bleedinghearts"],
     #fg-ag[data-game="cribbage"],
@@ -44992,7 +44995,7 @@ var G=[
 {id:'jade',n:'Jade Garden',i:'\ud83c\udc04',r:'Match free pairs to clear the turtle. Hint and shuffle if stuck.',cat:'puzzle',thumb:'assets/games/thumbs/jade.png'},
 {id:'pollen',n:'Master Pollinator',sub:'Engine builder',i:'\ud83d\udc1d',r:'Collect pollen, grow plants that produce more pollen. Attract pollinators. Race to 15 Growth!',cat:'board',thumb:'assets/games/thumbs/pollen.png'},
 {id:'stonegarden',n:'Stone Garden',i:'\ud83e\udea8',r:'Stack stones in zen balance. Reach the target height without collapsing!',cat:'creative',thumb:'assets/games/thumbs/stonegarden.webp',wip:true},
-{id:'livingstones',n:'Living Stones',i:'\u26ab',r:'Life-and-death puzzles. Find the single move that kills or saves.',cat:'puzzle',thumb:'assets/games/thumbs/livingstones.png'},
+{id:'livingstones',n:'Living Stones',i:'\u26ab',r:'Go, the 4000-year-old strategy game. 12 verified life-and-death puzzles plus full play vs. an MCTS opponent on 9\u00d79 or 13\u00d713 with ko rule, komi, and undo.',cat:'board',thumb:'assets/games/thumbs/livingstones.png'},
 {id:'trellis',n:'Trellis',i:'\ud83d\udd24',r:'Word-builder on a 15x15 grid. Play words on premium squares for big scores. AI opponent.',cat:'board',thumb:'assets/games/thumbs/trellis.png'},
 {id:'petalmatch',n:'Petal Match',i:'\ud83c\udf38',r:'Swap botanical gems to make lines. Chain cascades for combos!',cat:'puzzle',thumb:'assets/games/thumbs/petalmatch.png'},
 {id:'pixelgarden',n:'Pixel Garden',i:'\ud83c\udfa8',r:'Pixel art painter. Draw with 24 botanical colors. Save as PNG!',cat:'creative',thumb:'assets/games/thumbs/pixelgarden.jpg'},

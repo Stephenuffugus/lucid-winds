@@ -193,7 +193,10 @@ function isEye(b, i, color) {
 
 // Random rollout from (b, color, ko). Returns +1 if BLACK wins area score, -1 else.
 // Uses Tromp-Taylor-ish area scoring with simple komi 7.5 (only relevant for W as player, but we use 0.5 here since Black has no komi in our UI).
-var KOMI = 0.5;
+// Canonical 9×9 komi is 7.5; 13×13 typically 6.5. Old 0.5 was wrong and
+// made AI systematically overvalue Black.
+var KOMI = 7.5;
+function currentKomi(){ return N<=9 ? 7.5 : 6.5; }
 var ROLLOUT_LIMIT = 240;
 
 function randomRollout(b, color, ko) {
@@ -262,7 +265,7 @@ function scoreBoard(b) {
       else if (borders === 2) wScore += region.length;
     }
   }
-  return bScore - wScore - KOMI;
+  return bScore - wScore - currentKomi();
 }
 
 // MCTS node (flat).
