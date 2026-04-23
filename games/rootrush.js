@@ -13,93 +13,95 @@ var EXIT_ROW=2;
 // Letters A-Z = other pieces. Same letter twice horizontally = horiz 2-cell, three times = horiz 3-cell.
 // Same column = vertical. '.' = empty.
 var LEVELS=[
+  // ── Easy 1-3: hand-picked tutorials, each teaching a distinct concept ───
   { name:'Easy 1', diff:'easy', optimal:3, grid:[
-    'JGGG..',
-    'J.II.A',
-    'E.XXBA',
-    'E.DDB.',
-    '.HH.FF',
-    'CCC...'
+    'CCC...',
+    '....AB',
+    '..XXAB',
+    '......',
+    'D..EEE',
+    'DFF...'
   ]},
   { name:'Easy 2', diff:'easy', optimal:3, grid:[
-    '......',
-    'CCC.AB',
-    '..XXAB',
-    'HG...E',
-    'HGFFDE',
-    'JJIID.'
+    'JJ...C',
+    '.....C',
+    '..XX.A',
+    '.....A',
+    '....MM',
+    '..KKK.'
   ]},
   { name:'Easy 3', diff:'easy', optimal:3, grid:[
-    '.HHH.F',
-    'J...AF',
-    'JDXXAB',
-    '.DGGGB',
-    '.EEECB',
-    '..IIC.'
+    '..HHH.',
+    '....A.',
+    '..XXA.',
+    '....B.',
+    '....B.',
+    '..GGGG'
   ]},
-  { name:'Easy 4', diff:'easy', optimal:3, grid:[
-    '..FF..',
-    'GE..AB',
-    'GEXXAB',
-    '.JJJH.',
-    'I...H.',
-    'IDDCCC'
+  // ── Easy 4-11: solver-verified 4-move puzzles, varied openings ──────────
+  { name:'Easy 4', diff:'easy', optimal:4, grid:[
+    'GBBEEF',
+    'G....F',
+    'AAXX.F',
+    '...CCC',
+    '......',
+    '...DDD'
   ]},
-  { name:'Easy 5', diff:'easy', optimal:3, grid:[
-    'IDDD..',
-    'IFF.B.',
-    'I.XXBA',
-    'J.CCCA',
-    'JGHH..',
-    '.GEEKK'
+  { name:'Easy 5', diff:'easy', optimal:4, grid:[
+    'EE....',
+    '....AC',
+    '..XXAC',
+    'D...A.',
+    'D...BB',
+    'D.....'
   ]},
-  { name:'Easy 6', diff:'easy', optimal:3, grid:[
-    'KEEE..',
-    'KFF.BA',
-    'CGXXBA',
-    'CG.IDH',
-    'CGJIDH',
-    'LLJID.'
+  { name:'Easy 6', diff:'easy', optimal:4, grid:[
+    '.F...C',
+    'GFEEAC',
+    'G.XXAC',
+    '...DDD',
+    '......',
+    '...BB.'
   ]},
-  { name:'Easy 7', diff:'easy', optimal:3, grid:[
-    'ID...H',
-    'IDEEEH',
-    'I.XXBA',
-    'GC..BA',
-    'GC..B.',
-    '.FFF..'
+  { name:'Easy 7', diff:'easy', optimal:4, grid:[
+    '......',
+    '.A..CB',
+    '.AXXCB',
+    '.AEEEB',
+    '......',
+    '....DD'
   ]},
-  { name:'Easy 8', diff:'easy', optimal:3, grid:[
-    'HHH.I.',
-    'CJ..I.',
-    'CJXXBA',
-    'CJGGBA',
-    'FFDK..',
-    'EEDK..'
+  { name:'Easy 8', diff:'easy', optimal:4, grid:[
+    '.....D',
+    '.BBB.D',
+    '..XXCD',
+    'AA..C.',
+    '....C.',
+    '...EE.'
   ]},
-  { name:'Easy 9', diff:'easy', optimal:3, grid:[
-    'HK.EEE',
-    'HK.JJJ',
-    '.GXXAB',
-    '.G.DAB',
-    'FFCDAB',
-    'IICD..'
+  { name:'Easy 9', diff:'easy', optimal:4, grid:[
+    'C.....',
+    'C...E.',
+    '..XXEF',
+    '.GGGEF',
+    'A.BB..',
+    'A..DDD'
   ]},
-  { name:'Easy 10', diff:'easy', optimal:3, grid:[
-    '.GGJJ.',
-    'ECC..B',
-    'EDXXAB',
-    'EDH.A.',
-    'KDHF..',
-    'KIIF..'
+  { name:'Easy 10', diff:'easy', optimal:4, grid:[
+    '......',
+    '......',
+    '..XXBD',
+    'CC..BD',
+    '.....D',
+    '...AAA'
   ]},
-  { name:'Easy 11', diff:'easy', optimal:3, grid:[
-    'EHHC..',
-    'EJ.CB.',
-    'EJXXBA',
-    'I.DD.A',
-    'IGGG..',
-    '...FF.'
+  { name:'Easy 11', diff:'easy', optimal:4, grid:[
+    '.C....',
+    '.C.AAA',
+    '.CXXDF',
+    '.E..DF',
+    '.E..DF',
+    '..BBB.'
   ]},
   { name:'Easy 12', diff:'easy', optimal:4, grid:[
     'E.CIII',
@@ -758,7 +760,7 @@ function checkWin(){
     _e('game_win');if(_playWin)_playWin();_sr('rootrush',{w:true,s:moves,lvl:levelIdx+1});
     var prog=loadProgress();
     if(levelIdx+1>prog)saveProgress(levelIdx+1);
-    setTimeout(function(){animateExit(special);},50);
+    setTimeout(function(){animateExit();},50);
   }
   renderBlocks();
 }
@@ -791,23 +793,21 @@ function tickTimer(){
 
 function renderBlocks(){
   if(!board)return;
-  var rect=board.getBoundingClientRect();
-  var innerPad=4;
-  var cellSize=(rect.width-innerPad*2)/SZ;
-  // Remove existing block nodes (keep grid overlay)
+  // Remove existing block nodes (keep grid overlay + exit glow)
   var prev=board.querySelectorAll('.RRblock');
   for(var i=0;i<prev.length;i++)prev[i].remove();
+  // Percentage positioning — cell size = (100% - 8px) / 6, inner pad 4px, gutter 3px each side.
+  // Auto-scales with board width so blocks never shrink on re-render when layout shifts.
   blocks.forEach(function(b,idx){
     var el=document.createElement('div');
     el.className='RRblock '+(b.orient==='h'?'horiz':'vert')+(b.special?' special':'');
     el.setAttribute('data-id',b.id);
-    var w=(b.orient==='h'?b.length:1)*cellSize-6;
-    var h=(b.orient==='v'?b.length:1)*cellSize-6;
-    var x=innerPad+b.col*cellSize+3;
-    var y=innerPad+b.row*cellSize+3;
-    el.style.width=w+'px';
-    el.style.height=h+'px';
-    el.style.transform='translate('+x+'px,'+y+'px)';
+    var wLen=(b.orient==='h'?b.length:1);
+    var hLen=(b.orient==='v'?b.length:1);
+    el.style.width='calc('+wLen+' * (100% - 8px) / 6 - 6px)';
+    el.style.height='calc('+hLen+' * (100% - 8px) / 6 - 6px)';
+    el.style.left='calc(4px + '+b.col+' * (100% - 8px) / 6 + 3px)';
+    el.style.top='calc(4px + '+b.row+' * (100% - 8px) / 6 + 3px)';
     var col=blockColor(idx,b.special);
     el.style.background='linear-gradient(180deg,'+col+' 0%,rgba(0,0,0,0.28) 100%)';
     if(b.special){
@@ -854,19 +854,13 @@ function onDragMove(e){
   else{cx=e.clientX;cy=e.clientY;}
   var cs=drag.cellSize;
   var dx=cx-drag.startX,dy=cy-drag.startY;
-  var deltaCells;
+  // transform now acts as a pure pixel delta on top of CSS left/top positioning.
   if(drag.block.orient==='h'){
-    deltaCells=dx/cs;
-    deltaCells=Math.max(drag.range.min,Math.min(drag.range.max,deltaCells));
-    var newX=4+(drag.origCol+deltaCells)*cs+3;
-    var newY=4+drag.origRow*cs+3;
-    drag.el.style.transform='translate('+newX+'px,'+newY+'px)';
+    var deltaCells=Math.max(drag.range.min,Math.min(drag.range.max,dx/cs));
+    drag.el.style.transform='translateX('+(deltaCells*cs)+'px)';
   } else {
-    deltaCells=dy/cs;
-    deltaCells=Math.max(drag.range.min,Math.min(drag.range.max,deltaCells));
-    var nx=4+drag.origCol*cs+3;
-    var ny=4+(drag.origRow+deltaCells)*cs+3;
-    drag.el.style.transform='translate('+nx+'px,'+ny+'px)';
+    var deltaCellsV=Math.max(drag.range.min,Math.min(drag.range.max,dy/cs));
+    drag.el.style.transform='translateY('+(deltaCellsV*cs)+'px)';
   }
 }
 
@@ -887,26 +881,27 @@ function onDragEnd(e){
   var snappedDelta=Math.round(deltaCells);
   drag.el.classList.remove('drag');
   var id=drag.id;
+  var dragEl=drag.el;
   drag=null;
   if(snappedDelta!==0){
+    // Clear the drag transform so renderBlocks' fresh node starts from 0
+    dragEl.style.transform='';
     moveBlock(id,snappedDelta);
   } else {
-    // Snap back to original position
-    renderBlocks();
+    // Snap back smoothly — transition is already on transform
+    dragEl.style.transform='';
   }
 }
 
 // ── Victory / animation ───────────────────────────────────────────────────
-function animateExit(special){
-  // Slide special block off the edge with CSS transform
+function animateExit(){
+  // Slide special block off the right edge. translateX(100%) moves by the block's
+  // own width — with our length-2 X that's exactly one cell-width of overshoot,
+  // plus a little extra to clear the board border.
   var el=board.querySelector('.RRblock.special');
   if(el){
-    var rect=board.getBoundingClientRect();
-    var cs=(rect.width-8)/SZ;
-    var finalX=4+(SZ+0.5)*cs+3;
-    var finalY=4+special.row*cs+3;
     el.style.transition='transform .7s cubic-bezier(.3,0,.2,1),opacity .7s ease';
-    el.style.transform='translate('+finalX+'px,'+finalY+'px)';
+    el.style.transform='translateX(calc(100% + 20px))';
     el.style.opacity='0';
   }
   setTimeout(victoryOverlay,700);
