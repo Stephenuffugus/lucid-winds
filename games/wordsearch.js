@@ -32,20 +32,34 @@ var dragging=false,startI=-1,endI=-1,currentPath=[];
 var gd=null,wl=null;
 
 // Themed word packs — each puzzle draws from ONE theme for coherence.
-// Keep words 3-10 letters so they fit Easy (8x8) through Hard (13x13).
+// Keep words 3-13 letters so they fit Easy (8x8) through Hard (13x13).
+// Each theme should have 15+ words with at least 5 that are <=8 chars so Easy
+// mode never fails to find enough fitting words.
 var THEMES=[
-  {name:'Flora',         words:['FERN','MOSS','SAGE','BLOOM','PETAL','ROOT','SPORE','LEAF','FLORA','POLLEN','STEM','BUD','SHOOT','VINE']},
-  {name:'Trees',         words:['MAPLE','CEDAR','OAK','PINE','BIRCH','WILLOW','ALDER','ELM','BEECH','ASH','ASPEN','ELDER','SPRUCE','FIR']},
-  {name:'Flowers',       words:['TULIP','DAISY','ROSE','LILY','IRIS','ASTER','POPPY','PEONY','ORCHID','DAHLIA','LUPINE','VIOLET','ZINNIA']},
-  {name:'Garden',        words:['SOIL','WATER','MULCH','PRUNE','WEED','COMPOST','TROWEL','HOE','SPADE','RAKE','SHEARS','BED','MULCH','DIG']},
-  {name:'Weather',       words:['SUN','RAIN','MIST','DEW','FROST','STORM','CLOUD','BREEZE','HAIL','SLEET','FOG','DRIZZLE','WIND','SNOW']},
-  {name:'Seasons',       words:['SPRING','SUMMER','AUTUMN','WINTER','BLOOM','FADE','HARVEST','RENEW','THAW','EQUINOX','FROST','WARM']},
-  {name:'Herbs',         words:['BASIL','THYME','MINT','SAGE','OREGANO','DILL','PARSLEY','CHIVE','ROSEMARY','TARRAGON','LAVENDER']},
-  {name:'Wild',          words:['THORN','BRAMBLE','VINE','NETTLE','CLOVER','HEATHER','FERN','GORSE','RUSH','REED','BOG','MEADOW']},
-  {name:'Keeper',        words:['PLANT','GROW','BLOOM','TEND','PRUNE','SOW','HARVEST','NURTURE','BREED','WATER','WEED','MEND','TILL','GRAFT']},
-  {name:'Lucid Winds',   words:['KEEPER','SEED','POLLEN','DEW','SUNBEAM','BREED','NURSERY','WILD','COMPOST','HEX','BLOOM','FERAL','TEND']},
-  {name:'Fruits',        words:['APPLE','PEAR','PEACH','PLUM','CHERRY','GRAPE','BERRY','MELON','FIG','QUINCE','LEMON','LIME','GUAVA']},
-  {name:'Birds',         words:['ROBIN','WREN','FINCH','SPARROW','JAY','CROW','OWL','HERON','RAVEN','GOOSE','DOVE','MARTIN','HAWK']}
+  {name:'Flora',         words:['FERN','MOSS','SAGE','BLOOM','PETAL','ROOT','SPORE','LEAF','FLORA','POLLEN','STEM','BUD','SHOOT','VINE','TENDRIL','FROND','BRACT','HUSK','POD','GRAIN','BERRY','SEED','SPROUT']},
+  {name:'Trees',         words:['MAPLE','CEDAR','OAK','PINE','BIRCH','WILLOW','ALDER','ELM','BEECH','ASH','ASPEN','ELDER','SPRUCE','FIR','WALNUT','HEMLOCK','SYCAMORE','MAGNOLIA','POPLAR','HAZEL','ROWAN','YEW','LINDEN','CHESTNUT']},
+  {name:'Flowers',       words:['TULIP','DAISY','ROSE','LILY','IRIS','ASTER','POPPY','PEONY','ORCHID','DAHLIA','LUPINE','VIOLET','ZINNIA','FOXGLOVE','JASMINE','MARIGOLD','PHLOX','CROCUS','HYACINTH','GARDENIA','CAMELLIA','AZALEA','BEGONIA']},
+  {name:'Garden',        words:['SOIL','WATER','MULCH','PRUNE','WEED','COMPOST','TROWEL','HOE','SPADE','RAKE','SHEARS','BED','DIG','PLOT','FENCE','TRELLIS','ARBOR','PATH','GATE','POND','SHED','POT','STAKE']},
+  {name:'Weather',       words:['SUN','RAIN','MIST','DEW','FROST','STORM','CLOUD','BREEZE','HAIL','SLEET','FOG','DRIZZLE','WIND','SNOW','THUNDER','RAINBOW','HUMID','CRISP','DRY','WET','GALE','SQUALL','HAZE']},
+  {name:'Seasons',       words:['SPRING','SUMMER','AUTUMN','WINTER','BLOOM','FADE','HARVEST','RENEW','THAW','EQUINOX','SOLSTICE','WARM','CHILL','GROWTH','DORMANCY','YIELD','TURN','RIPEN','BUDDING','CROP']},
+  {name:'Herbs',         words:['BASIL','THYME','MINT','SAGE','OREGANO','DILL','PARSLEY','CHIVE','ROSEMARY','TARRAGON','LAVENDER','BAY','CORIANDER','CUMIN','FENNEL','MARJORAM','SORREL','VERBENA','BORAGE','ANISE','CHERVIL']},
+  {name:'Wild',          words:['THORN','BRAMBLE','VINE','NETTLE','CLOVER','HEATHER','FERN','GORSE','RUSH','REED','BOG','MEADOW','MARSH','FEN','THICKET','HEATH','SCRUB','COPSE','GLEN','MOOR','HOLLOW','BRIAR']},
+  {name:'Keeper',        words:['PLANT','GROW','BLOOM','TEND','PRUNE','SOW','HARVEST','NURTURE','BREED','WATER','WEED','MEND','TILL','GRAFT','GUARD','PROTECT','LISTEN','COAX','GATHER','REST','OBSERVE','SHIELD','WITNESS']},
+  {name:'Lucid Winds',   words:['KEEPER','SEED','POLLEN','DEW','SUNBEAM','BREED','NURSERY','WILD','COMPOST','HEX','BLOOM','FERAL','TEND','GREENHOUSE','CHIMERA','MUTATION','AURA','COMPANION','MINT','HAIKU','GRADE']},
+  {name:'Fruits',        words:['APPLE','PEAR','PEACH','PLUM','CHERRY','GRAPE','BERRY','MELON','FIG','QUINCE','LEMON','LIME','GUAVA','MANGO','PAPAYA','KIWI','DATE','OLIVE','APRICOT','PERSIMMON','POMEGRANATE','CURRANT','LYCHEE']},
+  {name:'Birds',         words:['ROBIN','WREN','FINCH','SPARROW','JAY','CROW','OWL','HERON','RAVEN','GOOSE','DOVE','MARTIN','HAWK','SWALLOW','SWIFT','STARLING','BLACKBIRD','THRUSH','MAGPIE','FALCON','EAGLE','KESTREL','NUTHATCH']},
+  {name:'Mushrooms',     words:['MOREL','TRUFFLE','OYSTER','PORCINI','ENOKI','PUFFBALL','INKCAP','MILKCAP','BOLETE','MAITAKE','SHIITAKE','CHANTERELLE','CAP','STEM','GILLS','SPORE','FUNGUS','TOADSTOOL','AGARIC']},
+  {name:'Insects',       words:['BEE','ANT','WASP','MOTH','BEETLE','APHID','CRICKET','MANTIS','FIREFLY','CICADA','LADYBUG','GNAT','WEEVIL','HORNET','TERMITE','DRAGONFLY','MAYFLY','FLEA','MIDGE','BUTTERFLY']},
+  {name:'Bees',          words:['HONEY','HIVE','NECTAR','POLLEN','QUEEN','DRONE','WORKER','COMB','WAX','SWARM','ROYAL','LARVA','PUPA','FORAGE','WAGGLE','BROOD','APIARY','BUZZ','STING']},
+  {name:'Soil',          words:['LOAM','SILT','CLAY','SAND','PEAT','HUMUS','MINERAL','ORGANIC','TILTH','COMPOST','WORM','ROOT','LITTER','TOPSOIL','SUBSOIL','DUFF','FERTILE','ACIDIC','ALKALINE','MULCH']},
+  {name:'Roots',         words:['TAPROOT','TUBER','BULB','RHIZOME','CORM','RUNNER','SUCKER','STOLON','CROWN','NODE','LATERAL','FIBROUS','ANCHOR','PRIMARY','FEEDER','HAIR','RADICLE']},
+  {name:'Mythic',        words:['PHOENIX','DRAGON','GRIFFIN','UNICORN','KRAKEN','SPHINX','CENTAUR','CHIMERA','NYMPH','SPRITE','FAUN','DRYAD','SYLPH','PEGASUS','BASILISK','KIRIN','SELKIE','NAGA']},
+  {name:'Biomes',        words:['FOREST','DESERT','TUNDRA','PRAIRIE','MARSH','JUNGLE','SAVANNA','MEADOW','WETLAND','REEF','CANOPY','GROVE','GLEN','HEATH','MOOR','STEPPE','TAIGA','BOG']},
+  {name:'Astronomy',     words:['STAR','MOON','COMET','NEBULA','GALAXY','ORBIT','PLANET','SUN','ECLIPSE','AURORA','METEOR','COSMIC','LUNAR','SOLAR','ZENITH','DUSK','DAWN','NIGHT','CONSTELLATION']},
+  {name:'Stones',        words:['GRANITE','QUARTZ','SHALE','BASALT','SLATE','FLINT','AGATE','JADE','OPAL','ONYX','MARBLE','OBSIDIAN','LIMESTONE','SANDSTONE','PUMICE','GEODE','AMBER','CORAL']},
+  {name:'Butterflies',   words:['MONARCH','SWALLOWTAIL','FRITILLARY','SKIPPER','HAIRSTREAK','SULPHUR','ADMIRAL','PAINTED','LUNA','EMPEROR','BLUE','WHITE','COPPER','COMMA','RINGLET']},
+  {name:'Water',         words:['RIVER','LAKE','POND','STREAM','CREEK','BROOK','RAPIDS','DELTA','BAY','LAGOON','FJORD','TIDE','ESTUARY','OASIS','OCEAN','WAVE','CURRENT','SPRING','EDDY','BASIN']},
+  {name:'Festival',      words:['HARVEST','EQUINOX','SOLSTICE','LANTERN','LUNAR','BONFIRE','WREATH','GARLAND','FEAST','RITUAL','MASK','DANCE','GATHER','TOAST','CHIME','VIGIL','CAROL']}
 ];
 var _curTheme=null;
 // 8 placement directions — horizontal, vertical, both diagonals, all reversible
