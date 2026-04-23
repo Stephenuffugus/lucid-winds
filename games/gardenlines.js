@@ -379,32 +379,45 @@ function aiTurn(){
     }
     S.turn='player'; S.placed=[]; S.selIdx=-1; updateAll(); return;
   }
-  // Execute the plan
+  // Stagger the placements so the player sees each tile drop with the
+  // score ticking up, instead of all tiles appearing simultaneously.
   S.placed=[];
-  best.moves.forEach(function(m){
+  var savedAi=S.aScore;
+  var moves=best.moves.slice();
+  var idx=0;
+  function step(){
+    if(idx>=moves.length){
+      var turnScore=scoreTurn();
+      // S.aScore already updated incrementally as each placement went down
+      sm('Mirror +'+turnScore.pts);
+      var anyQ=turnScore.lines.some(function(l){return l.qwirkle;});
+      if(anyQ)showQwirkleSplash('MIRROR QWIRKLE');
+      // Remove used tiles from AI hand (descending to keep idx valid)
+      var usedIdxs=moves.map(function(m){return m.idx;}).sort(function(a,b){return b-a;});
+      usedIdxs.forEach(function(i){S.aHand.splice(i,1);});
+      while(S.aHand.length<6&&S.bag.length>0)S.aHand.push(S.bag.pop());
+      // Hold the highlight for a beat, then hand off
+      setTimeout(function(){
+        S.placed.forEach(function(p){p.justPlaced=false;});
+        S.placed=[];
+        if(S.aHand.length===0&&S.bag.length===0){
+          S.aScore+=6; S.phase='gameover'; updateAll(); setTimeout(showEnd,500); return;
+        }
+        S.turn='player'; S.selIdx=-1; updateAll();
+      }, 800);
+      updateAll();
+      return;
+    }
+    var m=moves[idx];
     put(m.r,m.c,m.tile);
     S.placed.push({r:m.r,c:m.c,tile:m.tile,slotIdx:m.idx,justPlaced:true});
-  });
-  var turnScore=scoreTurn();
-  S.aScore+=turnScore.pts;
-  // Remove used tiles from AI hand (descending idx to keep indices valid)
-  var usedIdxs=best.moves.map(function(m){return m.idx;}).sort(function(a,b){return b-a;});
-  usedIdxs.forEach(function(i){S.aHand.splice(i,1);});
-  // Refill
-  while(S.aHand.length<6&&S.bag.length>0)S.aHand.push(S.bag.pop());
-  sm('Mirror +'+turnScore.pts);
-  var anyQ=turnScore.lines.some(function(l){return l.qwirkle;});
-  if(anyQ)showQwirkleSplash('MIRROR QWIRKLE');
-  // Flash the placed tiles via justPlaced, then clear it for next turn
-  setTimeout(function(){
-    S.placed.forEach(function(p){p.justPlaced=false;});
-    S.placed=[];
-    if(S.aHand.length===0&&S.bag.length===0){
-      S.aScore+=6; S.phase='gameover'; updateAll(); setTimeout(showEnd,500); return;
-    }
-    S.turn='player'; S.selIdx=-1; updateAll();
-  }, 900);
-  updateAll();
+    S.aScore=savedAi+scoreTurn().pts;
+    _play('tap');
+    updateBoard(); updateHUD();
+    idx++;
+    setTimeout(step, 340);
+  }
+  step();
 }
 
 function aiFindBest(maxDepth){
