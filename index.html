@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.23.8';
+  var LW_VERSION='2026.04.23.9';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -10845,9 +10845,10 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>Tap once:</strong> Fill cell. <strong>Tap again:</strong> Mark with X (definitely empty). <strong>Tap third:</strong> Clear back to empty.</p>'+
       '<p><strong>Sizes:</strong> 5×5 (easy) · 7×7 (medium) · 10×10 (hard).</p>';
     R.colorsort = ''+
-      '<p><strong>Goal:</strong> Sort the colors so each tube holds only one color.</p>'+
-      '<p><strong>Pour:</strong> Tap a source tube, then tap a destination. Color pours over IF the destination is empty OR its top color matches the source color (and there\'s room).</p>'+
-      '<p><strong>Tip:</strong> Empty tubes are gold, use them for temporary storage.</p>';
+      '<p><strong>Goal:</strong> Sort the pollen so each vial holds a single color.</p>'+
+      '<p><strong>Pour:</strong> Tap a source vial, then tap a destination. Pollen pours IF the destination is empty OR its top color matches the source (with room to hold it).</p>'+
+      '<p><strong>The bee</strong> marks your selected vial. Tap Undo to take back a move. Hit Reset to reshuffle the current level.</p>'+
+      '<p><strong>60 levels</strong> — 3 colors to 8, two spare vials throughout.</p>';
     R.hanoi = ''+
       '<p><strong>Goal:</strong> Move all discs from the left peg to the right peg.</p>'+
       '<p><strong>Rules:</strong> Move only ONE disc at a time. Never place a larger disc on top of a smaller one.</p>'+
@@ -44923,7 +44924,7 @@ var G=[
 {id:'hanoi',n:'Tower of Hanoi',i:'\ud83d\uddfc',r:'Stack every disc on the far peg. Only one disc moves at a time, and a big disc cannot land on a small one. Drag or tap to move. 3 or 4 pegs, 3 to 8 discs. Earn 3 stars by solving in the minimum moves.',cat:'puzzle',thumb:'assets/games/thumbs/hanoi.png'},
 {id:'slider',n:'15 Puzzle',i:'\ud83e\udde9',r:'Slide tiles into the empty space. Arrange them in order. Tap any tile in the same row or column as the empty slot to slide a whole segment at once. 3×3, 4×4, or 5×5.',cat:'puzzle',thumb:'assets/games/thumbs/slider.png'},
 {id:'picross',n:'Bloom Grid',i:'\ud83d\udd33',r:'Fill or cross squares from row/column clues to reveal a hidden picture.',cat:'puzzle',thumb:'assets/games/thumbs/picross.png'},
-{id:'colorsort',n:'Color Sort',i:'\ud83e\uddea',r:'Pour colors between tubes until each holds a single color. Match tops to pour.',cat:'puzzle',thumb:'assets/games/thumbs/colorsort.png'},
+{id:'colorsort',n:"Bee's Pollen Sort",i:'\ud83d\udc1d',r:'Help the bee sort pollen into matching vials. Tap a source, tap a destination \u2014 if the top colors match (or the vial is empty) the pollen pours over. 60 levels ramp from 3 colors to 8. Free undo, reset any time, no timer pressure.',cat:'puzzle',thumb:'assets/games/thumbs/colorsort.png'},
 {id:'battleship',n:'Tide Hunt',i:'\ud83c\udf0a',r:'Hunt hidden vessels on a 10\u00d710 grid. Sink them all in as few shots as you can.',cat:'board',thumb:'assets/games/thumbs/battleship.png'},
 {id:'flood',n:'Flood Fill',i:'\ud83c\udf42',r:'Tap a color to flood from the top-left. Fill the whole board in one color!',cat:'puzzle',thumb:'assets/games/flood/leaf-crimson.png'},
 {id:'pipe',n:'Vine Puzzle',i:'\ud83c\udf3f',r:'Rotate vine tiles to connect the flow from source to end!',cat:'puzzle',thumb:'assets/games/thumbs/pipe.png'},
@@ -49879,15 +49880,7 @@ function GMM(a){var code=[],guesses=[],cur=[],_mmMode='color';
     sm('');rn()
   };_MMN();
 }
-// ═══ COLOR SORT ═══
-function GCS(a){var tubes=[],numT=7,cap=4,sel=-1;var COLS=['#4a7c35','#C8A84B','#4a7aaa','#c76a30','#9b59b6'];
-  ms(a,'');mm(a);var tw=document.createElement('div');tw.className='csw';tw.id='CS';a.appendChild(tw);mc(a).innerHTML='<button class="gb-new" onclick="_CSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
-  function gen(){var colors=[];for(var c=0;c<5;c++)for(var i=0;i<cap;i++)colors.push(c);sh(colors);tubes=[];for(var t=0;t<5;t++){tubes[t]=[];for(var i=0;i<cap;i++)tubes[t].push(colors[t*cap+i])}tubes.push([]);tubes.push([]);sel=-1}
-  function rn(){tw.innerHTML='';tubes.forEach(function(tube,ti){var t=document.createElement('div');t.className='cst'+(ti===sel?' cssel':'');t.setAttribute('data-t',ti);t.onclick=function(){var idx=parseInt(this.getAttribute('data-t'));
-    if(sel<0){if(tubes[idx].length)sel=idx;rn()}else{if(sel===idx){sel=-1;rn();return}if(tubes[idx].length>=cap){sel=-1;rn();return}if(tubes[idx].length&&tubes[idx][tubes[idx].length-1]!==tubes[sel][tubes[sel].length-1]){sel=-1;rn();return}tubes[idx].push(tubes[sel].pop());sel=-1;rn();chk()}};
-    for(var i=0;i<tube.length;i++){var l=document.createElement('div');l.className='csl';l.style.background=COLS[tube[i]];t.appendChild(l)}tw.appendChild(t)})}
-  function chk(){var complete=0;tubes.forEach(function(t){if(t.length===cap&&t.every(function(c){return c===t[0]}))complete++;});var done=tubes.every(function(t){return t.length===0||t.length===cap&&t.every(function(c){return c===t[0]})});if(complete>0&&!done)_e('progress');if(done){_e('game_win');_playWin();sm('🌿 Sorted!');_sr('colorsort',{w:true,s:1})}}
-  window._CSN=function(){gen();sm('');rn()};_CSN();}
+// ═══ BEE'S POLLEN SORT — moved to games/colorsort.js ═══
 // ═══ BATTLESHIP — Deep Water ═══
 function GBS(a){
   var SZ=8,SHIPS=[4,3,3,2,2],SHIP_NAMES=['Vine','Root','Branch','Sprout','Seed'];
@@ -51112,7 +51105,7 @@ try{window._gameFns.picross=GX}catch(e){}       // Bloom Grid
 try{window._gameFns.checkers=GCK}catch(e){}     // Checkers
 try{window._gameFns.reversi=GRV}catch(e){}      // Reversi
 try{window._gameFns.mastermind=GMM}catch(e){}   // Seed Code
-try{window._gameFns.colorsort=GCS}catch(e){}    // Color Sort
+// colorsort moved to games/colorsort.js — self-registers via lazy-load
 try{window._gameFns.battleship=GBS}catch(e){}   // Tide Hunt
 try{window._gameFns.sokoban=GSK}catch(e){}      // Sokoban
 try{window._gameFns.backgammon=GBG}catch(e){}   // Backgammon
