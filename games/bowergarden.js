@@ -52,7 +52,7 @@ window._gameFns.bowergarden = function BG(a){
 
   var hands=[[],[],[],[]];
   var trick=[],trickCards=[null,null,null,null];
-  var trumpSuit='',upcard=null,dealer=EAST,leader=0,currentPlayer=0;
+  var trumpSuit='',upcard=null,dealer=EAST,leader=0,currentPlayer=0,pickedUp=null;
   var teamScore=[0,0],teamTricks=[0,0];
   var callingTeam=-1,callingSeat=-1,phase='',roundNum=0;
   var loner=false,sittingOut=-1; // loner = caller went alone, sittingOut = partner who sits out
@@ -289,9 +289,29 @@ window._gameFns.bowergarden = function BG(a){
     if(goAlone){loner=true;sittingOut=(p+2)%4;}
     sm(PLAYER_NAMES[p]+' calls '+_pip(trumpSuit)+' Strong'+(goAlone?' (alone)':''));
     var dh=hands[dealer];dh.push(upcard);
+    // Human dealer picks up the turn card and chooses a discard by hand.
+    // AI dealer keeps the previous auto-discard-lowest behavior.
+    if(dealer===SOUTH){
+      pickedUp=upcard; // remember which card was picked up for the NEW badge
+      phase='discard';
+      render();
+      return;
+    }
     dh.sort(function(x,y){return cardVal(x,trumpSuit,'x')-cardVal(y,trumpSuit,'x');});
     dh.shift();
     startPlay();
+  }
+  function completeDiscard(card){
+    var dh=hands[SOUTH];
+    for(var i=0;i<dh.length;i++){
+      if(dh[i].rank===card.rank&&dh[i].suit===card.suit){
+        dh.splice(i,1);
+        sm('You discard '+card.rank+' '+_pip(card.suit));
+        pickedUp=null;
+        startPlay();
+        return;
+      }
+    }
   }
   function callTrump(p,suit,goAlone){
     trumpSuit=suit;callingTeam=p%2;callingSeat=p;
@@ -580,6 +600,7 @@ window._gameFns.bowergarden = function BG(a){
         return cardVal(b,trumpSuit,trumpSuit)-cardVal(a,trumpSuit,trumpSuit);
       });
     }
+    var isDiscardPhase=(phase==='discard');
     for(var k=0;k<sortedHand.length;k++){
       var cc=sortedHand[k];var canPlay=false;
       for(var m=0;m<pl2.length;m++)if(pl2[m].rank===cc.rank&&pl2[m].suit===cc.suit){canPlay=true;break;}
@@ -588,18 +609,35 @@ window._gameFns.bowergarden = function BG(a){
       var isLeftBower=trumpSuit&&cc.rank==='J'&&cc.suit===SAME_COLOR[trumpSuit];
       var isRightBower=trumpSuit&&cc.rank==='J'&&cc.suit===trumpSuit;
       var ccol=cc.suit==='hearts'||cc.suit==='diamonds'?'#c47a7a':'#1a1f17';
+      var isPickedUp=(isDiscardPhase&&pickedUp&&cc.rank===pickedUp.rank&&cc.suit===pickedUp.suit);
+      var canDiscard=isDiscardPhase;
       var bc=canPlay?'#7AB956':'#C4B998';
-      if(isLeftBower||isRightBower)bc='#c8a84b'; // gold border for bowers
+      if(canDiscard)bc='#c8a84b';
+      if(isPickedUp)bc='#ffdc70';
+      if((isLeftBower||isRightBower)&&!canDiscard)bc='#c8a84b';
       var sty='width:50px;height:70px;border-radius:6px;background:#F5F0E1;color:'+ccol+';border:2.5px solid '+bc+';display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;position:relative;';
-      if(canPlay)sty+='cursor:pointer;box-shadow:0 2px 10px rgba(122,179,86,0.35);';
-      if(isLeftBower||isRightBower)sty+='box-shadow:0 0 12px rgba(200,168,75,0.45);';
-      var oc=canPlay?' onclick="_BGCC(\''+cc.rank+'\',\''+cc.suit+'\')"':'';
+      if(canPlay||canDiscard)sty+='cursor:pointer;';
+      if(canPlay)sty+='box-shadow:0 2px 10px rgba(122,179,86,0.35);';
+      if(canDiscard)sty+='box-shadow:0 2px 10px rgba(200,168,75,0.35);';
+      if(isPickedUp)sty+='box-shadow:0 0 14px rgba(255,220,112,0.75);';
+      if((isLeftBower||isRightBower)&&!canDiscard)sty+='box-shadow:0 0 12px rgba(200,168,75,0.45);';
+      var oc='';
+      if(canDiscard)oc=' onclick="_BGDC(\''+cc.rank+'\',\''+cc.suit+'\')"';
+      else if(canPlay)oc=' onclick="_BGCC(\''+cc.rank+'\',\''+cc.suit+'\')"';
       h+='<div style="'+sty+'"'+oc+'><span style="font-size:0.78rem;position:absolute;top:2px;left:5px;">'+cc.rank+'</span>';
+      if(isPickedUp)h+='<span style="font-size:0.42rem;color:#3a2a08;background:#ffdc70;position:absolute;top:-8px;right:-6px;padding:1px 4px;border-radius:3px;font-family:Bebas Neue,sans-serif;letter-spacing:0.06em;box-shadow:0 1px 3px rgba(0,0,0,0.5);">NEW</span>';
       if(isLeftBower)h+='<span style="font-size:0.42rem;color:#c8a84b;position:absolute;top:2px;right:4px;font-family:Bebas Neue,sans-serif;letter-spacing:0.06em;">L</span>';
       if(isRightBower)h+='<span style="font-size:0.42rem;color:#c8a84b;position:absolute;top:2px;right:4px;font-family:Bebas Neue,sans-serif;letter-spacing:0.06em;">R</span>';
       h+='<span style="font-size:1.2rem;">'+_pip(cc.suit)+'</span></div>';
     }
-    h+='</div></div>';
+    h+='</div>';
+    if(isDiscardPhase){
+      h+='<div style="padding:8px 10px;margin-top:8px;text-align:center;background:rgba(200,168,75,0.12);border:1.5px solid rgba(200,168,75,0.4);border-radius:8px;">';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:3px;">PICK UP AND DISCARD</div>';
+      h+='<div style="font-size:0.55rem;color:var(--muted);line-height:1.5;">You picked up <strong style="color:#ffdc70;">'+(pickedUp?pickedUp.rank+' '+_pip(pickedUp.suit):'')+'</strong>. Tap any card in your hand to discard it face-down.</div>';
+      h+='</div>';
+    }
+    h+='</div>';
     // Go-alone prompt — shown after player commits to a call
     if(phase==='goalone'){
       h+='<div style="padding:10px;text-align:center;background:rgba(26,31,23,0.6);border:1.5px solid rgba(200,168,75,0.3);border-radius:8px;margin:6px 0;">';
@@ -690,6 +728,10 @@ window._gameFns.bowergarden = function BG(a){
     if(phase!=='goalone'||!_pendingCall)return;
     var fn=_pendingCall;_pendingCall=null;
     fn(!!yes);
+  };
+  window._BGDC=function(r,s){
+    if(phase!=='discard'||dealer!==SOUTH)return;
+    completeDiscard({rank:r,suit:s});
   };
 
   _BGN();
