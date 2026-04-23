@@ -27,6 +27,22 @@ var LAYOUTS={
       'BCWWWB',
       'BCWWWB',
       'BBCWWB'
+    ],
+    [
+      'BBCCBB',
+      'BCWWBB',
+      'CWWWCB',
+      'CWWCCB',
+      'BCWWWB',
+      'BBCWWB'
+    ],
+    [
+      'BCCCBB',
+      'CWWWBB',
+      'CWWWCB',
+      'CWWWCB',
+      'BBCWWB',
+      'BBCWWB'
     ]
   ],
   medium:[
@@ -215,10 +231,20 @@ function findVClue(grid,run){
   return null;
 }
 
-// ── Backtracking solver ─────────────────────────────────────────────────
+// ── Backtracking solver with a hard deadline ────────────────────────────
 // Fills `player` in place with digits 1-9 satisfying run/clue constraints.
-// Returns true if solved.
-function solve(grid,player,randomize){
+// Respects `deadline` (ms epoch) so no single solve ever locks up the UI.
+// If the deadline is hit the solver aborts — callers should treat that
+// as "no solution available right now".
+var _solveDeadline=0, _solveAborted=false;
+function solve(grid,player,randomize,deadline){
+  _solveDeadline=deadline||(Date.now()+350);
+  _solveAborted=false;
+  return _solveInner(grid,player,randomize);
+}
+function _solveInner(grid,player,randomize){
+  if(_solveAborted)return false;
+  if(Date.now()>_solveDeadline){_solveAborted=true;return false;}
   var size=grid.length;
   for(var r=0;r<size;r++){
     for(var c=0;c<size;c++){
@@ -229,8 +255,9 @@ function solve(grid,player,randomize){
         var n=digits[di];
         if(canAssign(grid,player,r,c,n)){
           player[r][c]=n;
-          if(solve(grid,player,randomize))return true;
+          if(_solveInner(grid,player,randomize))return true;
           player[r][c]=0;
+          if(_solveAborted)return false;
         }
       }
       return false;
@@ -239,36 +266,37 @@ function solve(grid,player,randomize){
   return true;
 }
 function canAssign(grid,player,r,c,n){
-  // Horizontal run check
+  // Horizontal run: dedup always, sum constraints only when clue is set
+  // (during generator fill, clues are derived AFTER the fill completes —
+  // so hClue will be null here and we rely on dedup alone).
   var hR=getHRun(grid,r,c);
   var hClue=findHClue(grid,hR);
+  var used=0, filledAll=true;
+  for(var i=0;i<hR.length;i++){
+    var pr=hR[i][0], pc=hR[i][1];
+    if(pr===r&&pc===c)continue;
+    var v=player[pr][pc];
+    if(v===n)return false;
+    if(v>0)used+=v;
+    else filledAll=false;
+  }
   if(hClue){
-    var used=0, filledAll=true;
-    for(var i=0;i<hR.length;i++){
-      var pr=hR[i][0], pc=hR[i][1];
-      if(pr===r&&pc===c)continue;
-      var v=player[pr][pc];
-      if(v===n)return false;
-      if(v>0)used+=v;
-      else filledAll=false;
-    }
     var sumAfter=used+n;
     if(sumAfter>hClue.a)return false;
     if(filledAll&&sumAfter!==hClue.a)return false;
   }
-  // Vertical
   var vR=getVRun(grid,r,c);
   var vClue=findVClue(grid,vR);
+  var vused=0, vfilled=true;
+  for(var j=0;j<vR.length;j++){
+    var pr2=vR[j][0], pc2=vR[j][1];
+    if(pr2===r&&pc2===c)continue;
+    var v2=player[pr2][pc2];
+    if(v2===n)return false;
+    if(v2>0)vused+=v2;
+    else vfilled=false;
+  }
   if(vClue){
-    var vused=0, vfilled=true;
-    for(var j=0;j<vR.length;j++){
-      var pr2=vR[j][0], pc2=vR[j][1];
-      if(pr2===r&&pc2===c)continue;
-      var v2=player[pr2][pc2];
-      if(v2===n)return false;
-      if(v2>0)vused+=v2;
-      else vfilled=false;
-    }
     var vsum=vused+n;
     if(vsum>vClue.d)return false;
     if(vfilled&&vsum!==vClue.d)return false;
@@ -493,16 +521,49 @@ function autoEliminatePencils(r,c,n){
   });
 }
 
-// Hint: reveal the selected cell. If none selected, prompt.
+// Hint: reveal the selected cell.
+//
+// Fast path: if all of the player's filled cells already match the
+// generator's solution, the generator's solution is still reachable
+// from their state — reveal from there (O(n) check, no solver call).
+//
+// Slow path: player has placed a digit that diverges from the stored
+// solution (allowed because some puzzles have multiple valid fills).
+// Re-solve from their state with a strict deadline so the UI can't
+// freeze; if that aborts, reveal from the stored solution anyway with
+// a nudge about the conflict.
 function useHint(){
   if(S.hints<=0){sm('No hints left');return;}
   if(!S.selected){sm('Tap a cell to hint');return;}
   var r=S.selected[0], c=S.selected[1];
   if(S.grid[r][c]!==-1){sm('Tap a white cell');return;}
-  if(S.player[r][c]===S.solution[r][c]){sm('Already correct');return;}
-  S.player[r][c]=S.solution[r][c];
+  var size=S.grid.length;
+  var agrees=true;
+  for(var rr=0;rr<size&&agrees;rr++){
+    for(var cc=0;cc<size;cc++){
+      if(S.grid[rr][cc]!==-1)continue;
+      var pv=S.player[rr][cc];
+      if(pv>0 && pv!==S.solution[rr][cc]){agrees=false;break;}
+    }
+  }
+  var hintVal;
+  if(agrees){
+    hintVal=S.solution[r][c];
+  } else {
+    var snap=[];
+    for(var rrr=0;rrr<size;rrr++)snap[rrr]=S.player[rrr].slice();
+    snap[r][c]=0;
+    if(solve(S.grid,snap,false)){
+      hintVal=snap[r][c];
+    } else {
+      hintVal=S.solution[r][c];
+      sm('Your path differs from mine — the hint may conflict with other cells');
+    }
+  }
+  if(S.player[r][c]===hintVal){sm('Already correct');return;}
+  S.player[r][c]=hintVal;
   for(var i=0;i<9;i++)S.pencils[r][c][i]=false;
-  autoEliminatePencils(r,c,S.solution[r][c]);
+  autoEliminatePencils(r,c,hintVal);
   S.hints--;
   _play('tap');
   refreshCells();
