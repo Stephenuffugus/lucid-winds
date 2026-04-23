@@ -13,88 +13,285 @@ var EXIT_ROW=2;
 // Letters A-Z = other pieces. Same letter twice horizontally = horiz 2-cell, three times = horiz 3-cell.
 // Same column = vertical. '.' = empty.
 var LEVELS=[
-  // ── Easy ──────────────────────────────────────────────────────────────
-  { name:'Sprout 1', diff:'easy', optimal:2, grid:[
+  { name:'Easy 1', diff:'easy', optimal:3, grid:[
+    '...GG.',
+    'ECC..B',
+    'E.XXAB',
+    '...HA.',
+    '.F.HAD',
+    '.F.H.D'
+  ]},
+  { name:'Easy 2', diff:'easy', optimal:3, grid:[
+    '.GICCC',
+    '.GIEE.',
+    '.GXXAB',
+    'FFF.AB',
+    'H....B',
+    'HDDD..'
+  ]},
+  { name:'Easy 3', diff:'easy', optimal:3, grid:[
+    '.GGG..',
+    'DDD.B.',
+    '.HXXBA',
+    'CHE.BA',
+    'C.EI..',
+    'FF.I..'
+  ]},
+  { name:'Easy 4', diff:'easy', optimal:3, grid:[
+    '...C..',
+    '...CA.',
+    '.XX.AB',
+    'FF..GB',
+    'DDD.GB',
+    'EEE.G.'
+  ]},
+  { name:'Easy 5', diff:'easy', optimal:3, grid:[
+    '.FF...',
+    'H..B.A',
+    'HXXB.A',
+    'HEED..',
+    '.CCD..',
+    '...DGG'
+  ]},
+  { name:'Easy 6', diff:'easy', optimal:3, grid:[
+    '..CCC.',
+    '.....A',
+    'GGXXBA',
+    '...EB.',
+    '...EBD',
+    '..FF.D'
+  ]},
+  { name:'Easy 7', diff:'easy', optimal:3, grid:[
+    '.C.DDD',
+    'FC....',
+    'FHXXAB',
+    'EHGIAB',
+    'EHGIA.',
+    '..G...'
+  ]},
+  { name:'Easy 8', diff:'easy', optimal:3, grid:[
+    'FFF.A.',
+    '.D..A.',
+    '.DXXAB',
+    '.GGG.B',
+    'HHCC.B',
+    '..EE..'
+  ]},
+  { name:'Easy 9', diff:'easy', optimal:4, grid:[
+    '..HHBA',
+    '.EEEBA',
+    '..XXBA',
+    'CDD...',
+    'C...GG',
+    'CFFF..'
+  ]},
+  { name:'Easy 10', diff:'easy', optimal:4, grid:[
+    '...FF.',
+    'EE..B.',
+    '.HXXBA',
+    '.H.GCA',
+    '.H.GC.',
+    '...DDD'
+  ]},
+  { name:'Easy 11', diff:'easy', optimal:4, grid:[
+    '.HH.DD',
+    '.....C',
+    '.XXBAC',
+    'GGFBAC',
+    'EIFBA.',
+    'EI....'
+  ]},
+  { name:'Easy 12', diff:'easy', optimal:4, grid:[
+    '...DD.',
+    'C...EE',
+    'CXX.AB',
+    '..HHAB',
+    '..GGG.',
+    'FFF...'
+  ]},
+  { name:'Medium 1', diff:'medium', optimal:5, grid:[
     '......',
+    'C....A',
+    'C.XXBA',
+    'G...BE',
+    'GD..BE',
+    'GDFFFE'
+  ]},
+  { name:'Medium 2', diff:'medium', optimal:5, grid:[
+    'FGHHH.',
+    'FG....',
+    'FXXACB',
+    '...ACB',
+    'EEEA.B',
+    '.DDD..'
+  ]},
+  { name:'Medium 3', diff:'medium', optimal:5, grid:[
+    '...J..',
+    'IDDJAB',
+    'I.XXAB',
+    'FFEEEB',
+    '.CC...',
+    '.GGHHH'
+  ]},
+  { name:'Medium 4', diff:'medium', optimal:5, grid:[
+    '.GD.A.',
+    '.GD.A.',
+    '.GXXAB',
+    '.E...B',
+    '.E...B',
+    '.CC.FF'
+  ]},
+  { name:'Medium 5', diff:'medium', optimal:6, grid:[
+    '..FFHH',
+    '...DDA',
+    '..XXBA',
+    'III.BG',
+    'EEE.BG',
+    '....CC'
+  ]},
+  { name:'Medium 6', diff:'medium', optimal:6, grid:[
+    '.G....',
+    'DG.CB.',
+    'DXXCBA',
+    'D..CBA',
+    'FE...A',
+    'FE.HH.'
+  ]},
+  { name:'Medium 7', diff:'medium', optimal:6, grid:[
+    '...HHH',
+    '..A..B',
+    'XXAECB',
+    '...EC.',
+    '....G.',
+    'DDFFG.'
+  ]},
+  { name:'Medium 8', diff:'medium', optimal:6, grid:[
+    '.DD..F',
+    '.....F',
+    'XXB.AF',
+    '..B.A.',
+    'E..GGG',
+    'E..CC.'
+  ]},
+  { name:'Medium 9', diff:'medium', optimal:6, grid:[
+    'C.GI.B',
+    'C.GI.B',
+    'CDXXAB',
+    '.DH.A.',
+    '.EH.A.',
+    '.E.FFF'
+  ]},
+  { name:'Medium 10', diff:'medium', optimal:6, grid:[
+    '..G...',
+    '..G.AC',
+    'XXGBAC',
+    '.DDBA.',
+    'F..B.E',
+    'F....E'
+  ]},
+  { name:'Medium 11', diff:'medium', optimal:7, grid:[
+    '....JJ',
+    '.KKAGG',
+    'DXXACB',
+    'D.HHCB',
+    'DIE.CF',
+    '.IE..F'
+  ]},
+  { name:'Medium 12', diff:'medium', optimal:7, grid:[
+    'HEG.A.',
+    'HEG.A.',
+    '.XXCAB',
+    'IIIC.B',
+    'F..CJJ',
+    'F.DD..'
+  ]},
+  { name:'Medium 13', diff:'medium', optimal:8, grid:[
+    'EDCCCA',
+    'EDI..A',
+    'XXIFBA',
+    'G..FB.',
+    'G..FB.',
+    'G..HHH'
+  ]},
+  { name:'Medium 14', diff:'medium', optimal:8, grid:[
+    '..DDII',
+    'FFFBC.',
+    '.XXBCA',
+    '.GGGCA',
+    'H.KKEE',
+    'HJJ...'
+  ]},
+  { name:'Medium 15', diff:'medium', optimal:9, grid:[
+    '....GB',
+    '..FFGB',
+    'XXA..B',
+    '..AI..',
+    'D.AIEE',
+    'D.CCHH'
+  ]},
+  { name:'Hard 1', diff:'hard', optimal:11, grid:[
+    '...DDD',
+    '..B.GJ',
+    'XXBAGJ',
+    'H..AE.',
+    'HIIAEC',
+    'FF..EC'
+  ]},
+  { name:'Hard 2', diff:'hard', optimal:11, grid:[
+    '..HHH.',
+    'F...CB',
+    'FXXACB',
+    'GGIA.B',
+    '..IADD',
+    '..IEE.'
+  ]},
+  { name:'Hard 3', diff:'hard', optimal:11, grid:[
+    '....B.',
+    '.EEAB.',
+    '.XXAB.',
+    '..C...',
+    'DFCII.',
+    'DFGGHH'
+  ]},
+  { name:'Hard 4', diff:'hard', optimal:11, grid:[
+    'EEGHH.',
+    '..GC.B',
+    '.XXCAB',
+    'DDDCA.',
+    'I..JJ.',
+    'IFFFKK'
+  ]},
+  { name:'Hard 5', diff:'hard', optimal:12, grid:[
+    '.G..HH',
+    '.G.EEC',
+    'JXXABC',
+    'JI.AB.',
+    '.IDFFF',
+    '..D...'
+  ]},
+  { name:'Hard 6', diff:'hard', optimal:13, grid:[
     '......',
-    'XX..A.',
-    '....A.',
-    '....A.',
-    '......'
+    '..ABGG',
+    'XXAB..',
+    'F.ABDH',
+    'FCC.DH',
+    '..EE.H'
   ]},
-  { name:'Sprout 2', diff:'easy', optimal:3, grid:[
-    '...AA.',
-    '......',
-    'XX..B.',
-    '..CCB.',
-    '......',
-    '......'
+  { name:'Hard 7', diff:'hard', optimal:13, grid:[
+    'F..KKJ',
+    'F.HH.J',
+    'DXXBAC',
+    'DEEBAC',
+    'D.GBAC',
+    '..G.II'
   ]},
-  { name:'Sprout 3', diff:'easy', optimal:4, grid:[
-    '..A...',
-    '..A...',
-    'XX.B..',
-    '...B..',
-    'CC....',
-    '..DD..'
-  ]},
-  // ── Medium ────────────────────────────────────────────────────────────
-  { name:'Tangle 1', diff:'medium', optimal:6, grid:[
-    'A.BBB.',
-    'A....C',
-    'XX...C',
-    'DD.EE.',
-    '....FF',
-    'GGHH..'
-  ]},
-  { name:'Tangle 2', diff:'medium', optimal:9, grid:[
-    'AABBC.',
-    '...DC.',
-    'XX.DC.',
-    'EEFFGG',
-    '.....H',
-    'IIJJ.H'
-  ]},
-  { name:'Tangle 3', diff:'medium', optimal:12, grid:[
-    'AAB.CC',
-    '..B.DD',
-    'XXB.E.',
-    'FFGGE.',
-    '....E.',
-    'HHII..'
-  ]},
-  // ── Hard ──────────────────────────────────────────────────────────────
-  { name:'Thicket 1', diff:'hard', optimal:16, grid:[
-    'A.BCCC',
-    'A.B..D',
-    'XX...D',
-    'EE.FGG',
-    '...FHH',
-    'IIJJJ.'
-  ]},
-  { name:'Thicket 2', diff:'hard', optimal:20, grid:[
-    'AABBB.',
-    'C..DDE',
-    'XXF..E',
-    'GGF.HH',
-    'II.JKK',
-    '...J..'
-  ]},
-  { name:'Thicket 3', diff:'hard', optimal:25, grid:[
-    'AAB.CC',
-    '..BD..',
-    'XXEDFF',
-    'G.E.HH',
-    'G.IIJJ',
-    'KKLLMM'
-  ]},
-  { name:'Thicket 4', diff:'hard', optimal:32, grid:[
-    'AABCCD',
-    '.EBFFD',
-    'XEB..D',
-    'XG.HII',
-    '.GJHKK',
-    'LLJ.MM'
+  { name:'Hard 8', diff:'hard', optimal:16, grid:[
+    '..JJJ.',
+    'H..CAB',
+    'HXXCAB',
+    'FE.C.G',
+    'FE.IIG',
+    'F.DDD.'
   ]}
 ];
 
