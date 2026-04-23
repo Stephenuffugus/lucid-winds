@@ -9,9 +9,9 @@ window._gameFns = window._gameFns || {};
 window._gameFns.livingstones = function LS(a){
   var EMPTY=0,BLACK=1,WHITE=2;
 
-  // 12 tsumego — every puzzle solution-verified by the engine.
+  // 24 tsumego — every puzzle solution-verified by the engine.
   // Old set had 17/18 broken (pre-captured W groups on setup, or
-  // solution coordinates that were already occupied). Full rewrite.
+  // solution coordinates already occupied). Full rewrite in two passes.
   var ALL_PUZZLES = {
     beginner: [
       {size:5, goal:'ATARI CAPTURE', hint:'White has one liberty. Fill it.',
@@ -21,7 +21,15 @@ window._gameFns.livingstones = function LS(a){
       {size:5, goal:'CORNER CAPTURE', hint:'Only one liberty remains.',
        B:[[1,0]], W:[[0,0]], solution:[[0,1]], check:'captured'},
       {size:5, goal:'PAIR IN ATARI', hint:'Two stones, one liberty — fill it.',
-       B:[[0,2],[1,0]], W:[[0,0],[0,1]], solution:[[1,1]], check:'captured'}
+       B:[[0,2],[1,0]], W:[[0,0],[0,1]], solution:[[1,1]], check:'captured'},
+      {size:7, goal:'CROSS CUT', hint:'Single center stone surrounded on three sides.',
+       B:[[1,3],[2,2],[2,4]], W:[[2,3]], solution:[[3,3]], check:'captured'},
+      {size:5, goal:'DIAGONAL DOUBLE', hint:'One point captures both groups.',
+       B:[[0,1],[1,0],[2,1],[2,3],[3,2]], W:[[1,1],[2,2]], solution:[[1,2]], check:'captured'},
+      {size:5, goal:'EDGE PAIR', hint:'Two on the edge, one liberty left.',
+       B:[[0,0],[0,3],[1,2]], W:[[0,1],[0,2]], solution:[[1,1]], check:'captured'},
+      {size:5, goal:'CORNER PAIR', hint:'Diagonal two-stone, single escape.',
+       B:[[0,2],[1,1],[2,0]], W:[[0,0],[1,0]], solution:[[0,1]], check:'captured'}
     ],
     intermediate: [
       {size:5, goal:'CAPTURE THE LINE', hint:'Three in a row with one liberty.',
@@ -31,7 +39,15 @@ window._gameFns.livingstones = function LS(a){
       {size:5, goal:'DOUBLE CAPTURE', hint:'One point takes two separate groups.',
        B:[[0,2],[1,1],[2,0]], W:[[0,1],[1,0]], solution:[[0,0]], check:'captured'},
       {size:7, goal:'CUTTING STONES', hint:'The two cutting stones are nearly surrounded.',
-       B:[[1,0],[1,1],[1,3],[2,0],[2,3],[3,1],[3,2]], W:[[2,1],[2,2]], solution:[[1,2]], check:'captured'}
+       B:[[1,0],[1,1],[1,3],[2,0],[2,3],[3,1],[3,2]], W:[[2,1],[2,2]], solution:[[1,2]], check:'captured'},
+      {size:7, goal:'CENTER TRIO', hint:'Three center stones, single escape below.',
+       B:[[1,2],[1,3],[1,4],[2,1],[2,5],[3,2],[3,4]], W:[[2,2],[2,3],[2,4]], solution:[[3,3]], check:'captured'},
+      {size:5, goal:'CORNER SQUARE', hint:'Corner 2×2 with one liberty.',
+       B:[[0,2],[1,2],[2,0]], W:[[0,0],[0,1],[1,0],[1,1]], solution:[[2,1]], check:'captured'},
+      {size:7, goal:'PLUS SHAPE', hint:'Five-stone plus, escape below.',
+       B:[[1,3],[2,2],[2,4],[3,1],[3,5],[4,2],[4,4]], W:[[2,3],[3,2],[3,3],[3,4],[4,3]], solution:[[5,3]], check:'captured'},
+      {size:5, goal:'BENT TRIO', hint:'L-shape, single escape below.',
+       B:[[0,2],[1,2],[2,1]], W:[[0,0],[0,1],[1,1]], solution:[[1,0]], check:'captured'}
     ],
     advanced: [
       {size:7, goal:'FIVE IN A ROW', hint:'The whole line has one liberty.',
@@ -41,7 +57,15 @@ window._gameFns.livingstones = function LS(a){
       {size:7, goal:'INSIDE THE FORTRESS', hint:'The only liberty is inside.',
        B:[[0,3],[1,3],[2,3],[3,0],[3,1],[3,2],[3,3]], W:[[0,0],[0,1],[0,2],[1,0],[1,2],[2,0],[2,1],[2,2]], solution:[[1,1]], check:'captured'},
       {size:7, goal:'SIX IN A ROW', hint:'Long line, single liberty.',
-       B:[[0,6],[1,0],[1,1],[1,2],[1,3],[1,4]], W:[[0,0],[0,1],[0,2],[0,3],[0,4],[0,5]], solution:[[1,5]], check:'captured'}
+       B:[[0,6],[1,0],[1,1],[1,2],[1,3],[1,4]], W:[[0,0],[0,1],[0,2],[0,3],[0,4],[0,5]], solution:[[1,5]], check:'captured'},
+      {size:7, goal:'T-SHAPE', hint:'Four-stone T with one liberty.',
+       B:[[0,1],[0,2],[0,3],[1,0],[1,4],[2,1],[2,3]], W:[[1,1],[1,2],[1,3],[2,2]], solution:[[3,2]], check:'captured'},
+      {size:7, goal:'RING CAPTURE', hint:'The only liberty is the ring\'s center.',
+       B:[[1,2],[1,3],[1,4],[2,1],[2,5],[3,1],[3,5],[4,1],[4,5],[5,2],[5,3],[5,4]], W:[[2,2],[2,3],[2,4],[3,2],[3,4],[4,2],[4,3],[4,4]], solution:[[3,3]], check:'captured'},
+      {size:9, goal:'SEVEN IN A ROW', hint:'Long edge line with one last liberty.',
+       B:[[0,7],[1,0],[1,1],[1,2],[1,3],[1,4],[1,5]], W:[[0,0],[0,1],[0,2],[0,3],[0,4],[0,5],[0,6]], solution:[[1,6]], check:'captured'},
+      {size:7, goal:'STAIRCASE', hint:'Stepping shape with one escape.',
+       B:[[0,1],[2,0],[2,2],[3,1]], W:[[0,0],[1,0],[1,1],[2,1]], solution:[[1,2]], check:'captured'}
     ]
   };
 
@@ -288,10 +312,36 @@ window._gameFns.livingstones = function LS(a){
   // ═══ PLAY AI MODE ═══
   var aiWorker=null,aiMode=false,aiSize=9,aiPlayouts=4000,aiThinking=false;
   var aiBoard=[],aiConsecPass=0,aiPlayerCaps=0,aiOppCaps=0,aiGameOver=false,aiStatus='';
+  var aiHandicap=0;  // 0 = even game, 2-9 = handicap stones for Black
   // Ko / move-history tracking for both rule enforcement and undo.
   var aiHashes=[]; // positional-superko
   var aiMoveHistory=[]; // [{board, hashes, playerCaps, oppCaps, consecPass, lastMove}]
   var aiLastMove=null; // {r,c,color} for last-move marker
+
+  // Standard handicap-stone placements on hoshi points.
+  function handicapPositions(size, count){
+    if(size===9){
+      var p9=[[2,2],[2,6],[6,2],[6,6],[4,2],[4,6],[2,4],[6,4],[4,4]];
+      if(count===2) return [[2,6],[6,2]];
+      if(count===3) return p9.slice(0,3);
+      if(count===4) return p9.slice(0,4);
+      if(count===5) return [[2,2],[2,6],[6,2],[6,6],[4,4]];
+      if(count===6) return [[2,2],[2,6],[6,2],[6,6],[4,2],[4,6]];
+      if(count===7) return [[2,2],[2,6],[6,2],[6,6],[4,2],[4,6],[4,4]];
+      if(count===8) return [[2,2],[2,6],[6,2],[6,6],[4,2],[4,6],[2,4],[6,4]];
+      if(count===9) return p9;
+    } else if(size===13){
+      if(count===2) return [[3,9],[9,3]];
+      if(count===3) return [[3,3],[3,9],[9,3]];
+      if(count===4) return [[3,3],[3,9],[9,3],[9,9]];
+      if(count===5) return [[3,3],[3,9],[9,3],[9,9],[6,6]];
+      if(count===6) return [[3,3],[3,9],[9,3],[9,9],[6,3],[6,9]];
+      if(count===7) return [[3,3],[3,9],[9,3],[9,9],[6,3],[6,9],[6,6]];
+      if(count===8) return [[3,3],[3,9],[9,3],[9,9],[3,6],[6,3],[6,9],[9,6]];
+      if(count===9) return [[3,3],[3,9],[9,3],[9,9],[3,6],[6,3],[6,9],[9,6],[6,6]];
+    }
+    return [];
+  }
   var COLS='ABCDEFGHJKLMNOPQRST';
   function aiCoordFromRC(r,c){return COLS.charAt(c)+(aiSize-r);}
   function aiRCFromCoord(s){
@@ -432,8 +482,9 @@ window._gameFns.livingstones = function LS(a){
       }
     }
     // Canonical 9×9 komi is 7.5 (7 points compensation + 0.5 tiebreak).
-    // 13×13 doesn't have a fully-standardized komi; 6.5 is common.
-    var komi = aiSize<=9 ? 7.5 : 6.5;
+    // 13×13 typically 6.5. With handicap, komi drops to 0.5 (Black's
+    // handicap stones are the compensation).
+    var komi = aiHandicap>0 ? 0.5 : (aiSize<=9 ? 7.5 : 6.5);
     return{black:bs,white:ws+komi,komi:komi};
   }
   function aiEndGame(msg){
@@ -452,9 +503,33 @@ window._gameFns.livingstones = function LS(a){
     aiThinking=true;aiStatus='AI thinking...';aiRender();
     aiWorker.postMessage({cmd:'genmove',color:'W',playouts:aiPlayouts});
   }
+  // Pre-AI: offer a handicap picker, then start. Handicap stones let a
+  // weaker player give themselves 2-9 Black stones up front; AI plays
+  // White and moves first.
+  var _pendingAI=null;
   window._LSai=function(size,playouts){
+    _pendingAI={size:size, playouts:playouts};
+    var h='<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:#c8a84b;letter-spacing:0.2em;margin:14px 0 4px;">HANDICAP</div>';
+    h+='<div style="font-style:italic;font-size:0.72rem;color:rgba(232,220,200,0.62);margin-bottom:10px;max-width:300px;margin-left:auto;margin-right:auto;line-height:1.5">Handicap gives Black (you) extra stones on the board before White moves. Start even, or choose 2–9 stones for a helping hand.</div>';
+    h+='<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:280px;margin:0 auto;">';
+    h+='<button class="gb" onclick="_LSaiStart(0)" style="min-width:72px;min-height:44px;padding:8px 14px;background:rgba(122,179,86,0.22);border-color:rgba(122,179,86,0.5);color:#8fc57a;">EVEN</button>';
+    [2,3,4,5,6,7,8,9].forEach(function(n){
+      h+='<button class="gb" onclick="_LSaiStart('+n+')" style="min-width:64px;min-height:44px;padding:8px 12px;">+'+n+'</button>';
+    });
+    h+='</div>';
+    h+='<button class="gb" onclick="_LSN()" style="display:block;margin:16px auto 6px;min-height:44px;padding:8px 22px;">← BACK</button>';
+    pan.innerHTML=h;
+  };
+  window._LSaiStart=function(handicap){
+    if(!_pendingAI)return;
+    var size=_pendingAI.size, playouts=_pendingAI.playouts;
+    _pendingAI=null;
     aiMode=true;aiSize=size;aiPlayouts=playouts;
+    aiHandicap=handicap;
     aiInitBoard();
+    // Place handicap stones for Black on standard hoshi points
+    var handicapPts=handicapPositions(size, handicap);
+    handicapPts.forEach(function(p){ aiBoard[p[0]][p[1]]=BLACK; });
     aiConsecPass=0;aiPlayerCaps=0;aiOppCaps=0;aiGameOver=false;
     aiHashes=[hashBoard(aiBoard)];
     aiMoveHistory=[];
@@ -478,7 +553,19 @@ window._gameFns.livingstones = function LS(a){
         }else if(readyCount===2){
           aiWorker.postMessage({cmd:'clear_board'});
         }else if(readyCount===3){
-          aiThinking=false;aiStatus='Your move.';aiRender();
+          // Place handicap stones in worker (Black), no-op if 0 handicap.
+          var handicapPts=handicapPositions(aiSize, aiHandicap);
+          handicapPts.forEach(function(p){
+            aiWorker.postMessage({cmd:'play', color:'B', move:aiCoordFromRC(p[0], p[1])});
+          });
+          if(aiHandicap>0){
+            // White (AI) moves first in a handicap game.
+            aiThinking=true; aiStatus='Mirror thinks first (handicap)...';
+            aiRender();
+            setTimeout(function(){ aiRequestMove(); }, 500);
+          } else {
+            aiThinking=false; aiStatus='Your move.'; aiRender();
+          }
         }
       }else if(m.type==='thinking'){
         aiStatus='AI thinking... '+Math.round(m.progress*100)+'%';
