@@ -204,7 +204,7 @@ var LAYOUTS={
     '.JGtopLbl{font-size:0.56rem;letter-spacing:0.16em;color:rgba(232,220,200,0.55)}',
     '.JGtopVal{font-family:DM Mono,monospace;font-size:0.82rem;color:#c8a84b;font-weight:700;margin-top:1px}',
     // Board scroll area
-    '.JGboardWrap{overflow:auto;-webkit-overflow-scrolling:touch;padding:8px 4px;background:rgba(12,16,10,0.4);border:1.5px solid rgba(74,124,53,0.22);border-radius:10px;max-height:62vh;touch-action:pan-x pan-y}',
+    '.JGboardWrap{overflow:auto;-webkit-overflow-scrolling:touch;padding:6px 2px;background:rgba(12,16,10,0.4);border:1.5px solid rgba(74,124,53,0.22);border-radius:10px;touch-action:pan-x pan-y}',
     '.JGboard{position:relative;margin:0 auto}',
     // Tile
     '.JGtile{position:absolute;background:linear-gradient(180deg,#f5f0e1,#e8dcc0);border:1.5px solid #b8a87a;border-radius:5px;box-shadow:2px 2px 0 0 #b8a87a,3px 3px 0 0 #a89868,4px 4px 6px rgba(0,0,0,0.45);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .1s ease,opacity .18s ease,filter .15s ease}',
@@ -393,11 +393,33 @@ function findAnyMatch(){
 
 // ── Rendering ───────────────────────────────────────────────────────────
 function sizeForLayout(){
-  // Fit tile sizes to viewport. Smaller grids fit larger tiles.
-  // Floor at 40px so the collision between 0.6×TW col spacing and the
-  // 44px touch-target rule keeps effective hitbox ≥44px.
-  var vw=Math.min(window.innerWidth-24, 640);
-  TILE_W=vw<400?40:vw<520?44:48;
+  // Fit tile sizes to the actual layout and available viewport.
+  // tilePos formula: x = col * TILE_W*0.6 - layer*5, so the layout's
+  // pixel width is (maxCol*0.6 + 1)*TILE_W. Same for height with *0.55.
+  // We derive TILE_W such that the layout fills available space.
+  var maxCol=0,maxRow=0,maxLayer=0;
+  if(S&&S.tiles&&S.tiles.length){
+    for(var i=0;i<S.tiles.length;i++){
+      var t=S.tiles[i];
+      if(t.col>maxCol)maxCol=t.col;
+      if(t.row>maxRow)maxRow=t.row;
+      if(t.layer>maxLayer)maxLayer=t.layer;
+    }
+  } else {
+    // Fallback for first call before tiles exist (shouldn't happen post-refactor)
+    maxCol=15;maxRow=8;maxLayer=4;
+  }
+  var colSpan=maxCol*0.6+1;         // in TILE_W units
+  var rowSpan=maxRow*0.55+1;        // in TILE_H units; TILE_H = 1.35*TILE_W
+  // Available space: subtract top HUD (~80px) + controls (~120px) + padding
+  var availW=Math.min(window.innerWidth-24, 720);
+  var availH=Math.min(Math.max(window.innerHeight-210, 360), 760);
+  // Solve for TILE_W under width constraint and height constraint, pick smaller
+  var byW=availW/colSpan;
+  var byH=availH/(rowSpan*1.35);
+  TILE_W=Math.floor(Math.min(byW,byH));
+  if(TILE_W<36)TILE_W=36;        // touch target floor
+  if(TILE_W>72)TILE_W=72;        // don't let tiles balloon on wide screens
   TILE_H=Math.floor(TILE_W*1.35);
 }
 

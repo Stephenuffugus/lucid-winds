@@ -681,8 +681,13 @@ function buildGridCells(){
   if(!gridEl)return;
   cellEls={};
   var size=S.grid.length;
-  // Cell size — tighten as grid grows
-  var cellSize=(size<=5)?44:(size<=6)?40:(size<=7)?36:30;
+  // Fill the viewport: derive cellSize so the full grid uses available width.
+  // Account for 1.5px gaps between cells + 4px internal padding + 4px wrapper.
+  var availW=Math.min(window.innerWidth-24, 560);
+  var gapsAndPad=1.5*(size-1)+8;
+  var cellSize=Math.floor((availW-gapsAndPad)/size);
+  if(cellSize<30)cellSize=30;       // minimum legibility
+  if(cellSize>64)cellSize=64;       // cap on wide screens
   gridEl.style.gridTemplateColumns='repeat('+size+','+cellSize+'px)';
   gridEl.innerHTML='';
   for(var r=0;r<size;r++){
