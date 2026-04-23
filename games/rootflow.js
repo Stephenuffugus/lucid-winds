@@ -641,3 +641,4 @@ window._gameFns.rootflow = function(a){
   showTierPicker();
 };
 })();
+// force-sync 1776961903
