@@ -188,6 +188,10 @@ window._gameFns.petalmatch = function PM(a){
     ctx.setTransform(dpr,0,0,dpr,0,0);
   }
 
+  function mkCell(type,r,c,opts){
+    opts=opts||{};
+    return {type:type,x:c*CELL,targetX:c*CELL,y:(opts.yStart!==undefined?opts.yStart:r*CELL),targetY:r*CELL,scale:1,special:null,stripeDir:null,spawnAnim:0,jelly:0,block:0,clearAt:0,bounceAt:0};
+  }
   function initGrid(){
     grid=[];
     for(var r=0;r<ROWS;r++){grid[r]=[];
@@ -196,7 +200,7 @@ window._gameFns.petalmatch = function PM(a){
         do{t=Math.floor(Math.random()*TYPES);}
         while((c>=2&&grid[r][c-1]&&grid[r][c-1].type===t&&grid[r][c-2]&&grid[r][c-2].type===t)||
               (r>=2&&grid[r-1][c]&&grid[r-1][c].type===t&&grid[r-2][c]&&grid[r-2][c].type===t));
-        grid[r][c]={type:t,y:r*CELL,targetY:r*CELL,scale:1,special:null,stripeDir:null,spawnAnim:0,jelly:0,block:0};
+        grid[r][c]=mkCell(t,r,c);
       }
     }
     seedObstacles();
@@ -228,7 +232,7 @@ window._gameFns.petalmatch = function PM(a){
         var rr=Math.floor(Math.random()*ROWS);
         var cc=Math.floor(Math.random()*COLS);
         if(grid[rr][cc]&&!grid[rr][cc].block&&grid[rr][cc].jelly===0){
-          grid[rr][cc]={type:-2,y:rr*CELL,targetY:rr*CELL,scale:1,special:null,stripeDir:null,spawnAnim:0,jelly:0,block:hp};
+          var th=mkCell(-2,rr,cc);th.block=hp;grid[rr][cc]=th;
           placed++;
         }
       }
@@ -386,7 +390,12 @@ window._gameFns.petalmatch = function PM(a){
     }
   }
 
-  function swap(r1,c1,r2,c2){var t=grid[r1][c1];grid[r1][c1]=grid[r2][c2];grid[r2][c2]=t;}
+  function swap(r1,c1,r2,c2){
+    var t=grid[r1][c1];grid[r1][c1]=grid[r2][c2];grid[r2][c2]=t;
+    // Preserve each cell's current pixel position so render can lerp toward the new grid pos.
+    if(grid[r1][c1]){grid[r1][c1].targetX=c1*CELL;grid[r1][c1].targetY=r1*CELL;}
+    if(grid[r2][c2]){grid[r2][c2].targetX=c2*CELL;grid[r2][c2].targetY=r2*CELL;}
+  }
 
   // Thorn blocks: can't be swapped, can't be part of a match.
   // Returns true if the cell is swappable.
@@ -485,14 +494,22 @@ window._gameFns.petalmatch = function PM(a){
     var writeR=bot;
     for(var r=bot;r>=top;r--){
       if(grid[r][c]){
-        if(writeR!==r){grid[writeR][c]=grid[r][c];grid[writeR][c].targetY=writeR*CELL;grid[r][c]=null;}
+        if(writeR!==r){
+          grid[writeR][c]=grid[r][c];
+          grid[writeR][c].targetY=writeR*CELL;
+          grid[writeR][c].targetX=c*CELL;
+          grid[writeR][c].bounceAt=Date.now()+Math.abs(writeR-r)*55; // stagger settle bounce
+          grid[r][c]=null;
+        }
         writeR--;
       }
     }
     for(var r2=writeR;r2>=top;r2--){
       if(grid[r2][c])continue;
       var t=Math.floor(Math.random()*TYPES);
-      grid[r2][c]={type:t,y:(r2-writeR-1)*CELL,targetY:r2*CELL,scale:1,special:null,stripeDir:null,spawnAnim:0,jelly:0,block:0};
+      var nc=mkCell(t,r2,c,{yStart:(r2-writeR-2)*CELL}); // drop from above
+      nc.bounceAt=Date.now()+(writeR-r2+2)*55;
+      grid[r2][c]=nc;
     }
   }
   function collapseAndRefill(){
@@ -588,9 +605,9 @@ window._gameFns.petalmatch = function PM(a){
         else if(sp.special==='burst'){spawnBonus+=100;banner('BLOOM BURST!','#c8a84b');}
         else if(sp.special==='spore'){spawnBonus+=200;banner('SPORE CLOUD!','#e8dcc8');}
       }
-      for(var ck in det.toClear){var cp=ck.split(',');if(grid[cp[0]][cp[1]]&&grid[cp[0]][cp[1]].type!==-2)grid[cp[0]][cp[1]].scale=0;}
+      for(var ck in det.toClear){var cp=ck.split(',');var _cc=grid[cp[0]][cp[1]];if(_cc&&_cc.type!==-2&&!_cc.clearAt)_cc.clearAt=Date.now();}
       setTimeout(function(){
-        var counts=applyClear(det.toClear);
+        var counts=applyClear(det.toClear);/* clear anim runs 280ms in render; we wait 300ms before actually nulling cells */
         var pts=(counts.p*10+counts.v*20+counts.b*30+counts.s*40+counts.dew*15+counts.thorns*25)*comboCount*level+spawnBonus;
         score+=pts;
         if(comboCount>1){sm(comboCount+'x COMBO! +'+pts);_play('snap');_e('milestone');
@@ -614,7 +631,7 @@ window._gameFns.petalmatch = function PM(a){
             }
             var newBurstPop=[];
             expandActivations(secondClear,newBurstPop);
-            for(var sk in secondClear){var sp2=sk.split(',');if(grid[sp2[0]][sp2[1]]&&grid[sp2[0]][sp2[1]].type!==-2)grid[sp2[0]][sp2[1]].scale=0;}
+            for(var sk in secondClear){var sp2=sk.split(',');var _cc2=grid[sp2[0]][sp2[1]];if(_cc2&&_cc2.type!==-2&&!_cc2.clearAt)_cc2.clearAt=Date.now();}
             setTimeout(function(){
               var cc2=applyClear(secondClear);
               var pp=(cc2.p*10+cc2.v*20+cc2.b*30+cc2.s*40+cc2.dew*15+cc2.thorns*25)*comboCount*level;
@@ -622,15 +639,15 @@ window._gameFns.petalmatch = function PM(a){
               collapseAndRefill();
               updateHUD();
               for(var np=0;np<newBurstPop.length;np++)pendingBurstPop.push(newBurstPop[np]);
-              setTimeout(step,250);
-            },200);
+              setTimeout(step,420); // give gravity time to settle
+            },320);
           } else {
-            setTimeout(step,250);
+            setTimeout(step,420);
           }
         }
-        if(pendingBurstPop.length>0){setTimeout(nextStep,120);}
-        else setTimeout(step,250);
-      },200);
+        if(pendingBurstPop.length>0){setTimeout(nextStep,200);}
+        else setTimeout(step,420);
+      },300);
     }
     step();
   }
@@ -965,19 +982,50 @@ window._gameFns.petalmatch = function PM(a){
       }
       ctx.restore();
     }
+    var now=Date.now();
     for(r=0;r<ROWS;r++){
       for(c=0;c<COLS;c++){
         var cell=grid[r][c];if(!cell)continue;
-        if(cell.y!==cell.targetY){cell.y+=(cell.targetY-cell.y)*0.3;if(Math.abs(cell.y-cell.targetY)<0.5)cell.y=cell.targetY;}
-        var cx=c*CELL+CELL/2,cy=cell.y+CELL/2;
+        // Lerp X and Y toward targets. 0.18 is the sweet spot — visible motion, no lag.
+        if(cell.x===undefined){cell.x=c*CELL;cell.targetX=c*CELL;}
+        if(cell.x!==cell.targetX){cell.x+=(cell.targetX-cell.x)*0.22;if(Math.abs(cell.x-cell.targetX)<0.5)cell.x=cell.targetX;}
+        if(cell.y!==cell.targetY){cell.y+=(cell.targetY-cell.y)*0.18;if(Math.abs(cell.y-cell.targetY)<0.5)cell.y=cell.targetY;}
+        var cx=cell.x+CELL/2,cy=cell.y+CELL/2;
+        // Clear animation: 0-90ms pop up 1.0 to 1.25, 90-280ms fade down to 0 with slight spin
+        var renderScale=cell.scale||1;
+        if(cell.clearAt){
+          var ca=now-cell.clearAt;
+          if(ca<90){renderScale=1+(ca/90)*0.25;}
+          else if(ca<280){renderScale=1.25*(1-(ca-90)/190);if(renderScale<0)renderScale=0;}
+          else{renderScale=0;}
+        }
+        // Settle bounce: when a cell lands, briefly scale 1.0 -> 1.08 -> 1.0 over 180ms
+        if(cell.bounceAt&&now>=cell.bounceAt&&cell.y===cell.targetY){
+          var ba=now-cell.bounceAt;
+          if(ba<180){renderScale=renderScale*(1+Math.sin(ba/180*Math.PI)*0.08);}
+          else{cell.bounceAt=0;}
+        }
         var spawnBoost=0;
         if(cell.spawnAnim){
-          var age=Date.now()-cell.spawnAnim;
-          if(age<200){var t=age/200;spawnBoost=Math.sin(t*Math.PI)*0.3;}
+          var age=now-cell.spawnAnim;
+          if(age<280){var t=age/280;spawnBoost=Math.sin(t*Math.PI)*0.3;}
           else cell.spawnAnim=0;
         }
-        var sz=CELL*0.4*cell.scale*(1+spawnBoost);
-        drawGem(cell,cx,cy,sz);
+        var sz=CELL*0.4*renderScale*(1+spawnBoost);
+        if(sz>0.5)drawGem(cell,cx,cy,sz);
+        // Clear-spark ring when pop peaks
+        if(cell.clearAt){
+          var ca2=now-cell.clearAt;
+          if(ca2>60&&ca2<220){
+            var ringA=1-(ca2-60)/160;
+            ctx.save();ctx.globalAlpha=ringA*0.7;
+            ctx.strokeStyle=cell.type===-1?'#e8dcc8':(GEMS[cell.type]?GEMS[cell.type].color:'#c8a84b');
+            ctx.lineWidth=2;
+            var rad=CELL*0.35+(ca2-60)/160*CELL*0.5;
+            ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.stroke();
+            ctx.restore();
+          }
+        }
         if(selected&&selected.r===r&&selected.c===c){
           ctx.strokeStyle='#e8dcc8';ctx.lineWidth=2;
           ctx.strokeRect(c*CELL+2,r*CELL+2,CELL-4,CELL-4);
@@ -1062,7 +1110,16 @@ window._gameFns.petalmatch = function PM(a){
     } else if(findMatches().length>0){
       moves--;updateHUD();animating=true;hintCells=null;lastInputAt=Date.now();
       resolveCascade({r:swapR,c:swapC},null,function(){animating=false;selected=null;checkState();});
-    } else {swap(tsR,tsC,swapR,swapC);selected=null;_play('tap');}
+    } else {
+      // Invalid swap: let the pieces visibly try and bump back so the player
+      // sees the rejection instead of the swap just vanishing.
+      animating=true;
+      var _tsR=tsR,_tsC=tsC,_swapR=swapR,_swapC=swapC;
+      setTimeout(function(){
+        swap(_tsR,_tsC,_swapR,_swapC);
+        animating=false;selected=null;_play('tap');
+      },160);
+    }
     tsR=-1;tsC=-1;
   }
 
