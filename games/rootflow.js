@@ -14,12 +14,18 @@ var COLORS=[
   '#B578C2','#6BC7D4','#E8A0BF','#E8DCC8','#8B5A2B'
 ];
 var TIERS={
-  seedling:{size:5,pairs:3,label:'SEEDLING',sub:'5×5, 3 paths',hints:3},
-  sprout:{size:6,pairs:4,label:'SPROUT',sub:'6×6, 4 paths',hints:3},
-  sapling:{size:7,pairs:5,label:'SAPLING',sub:'7×7, 5 paths',hints:2},
-  mature:{size:8,pairs:7,label:'MATURE',sub:'8×8, 7 paths',hints:2},
-  keeper:{size:9,pairs:8,label:'KEEPER',sub:'9×9, 8 paths',hints:1}
+  seedling:{size:5,pairs:4,label:'SEEDLING',sub:'5×5, 4 paths',hints:3},
+  sprout:{size:6,pairs:5,label:'SPROUT',sub:'6×6, 5 paths',hints:3},
+  sapling:{size:7,pairs:6,label:'SAPLING',sub:'7×7, 6 paths',hints:2},
+  mature:{size:8,pairs:8,label:'MATURE',sub:'8×8, 8 paths',hints:2},
+  keeper:{size:9,pairs:9,label:'KEEPER',sub:'9×9, 9 paths',hints:1}
 };
+// Minimum path length for a candidate puzzle to be considered "interesting"
+// (no trivial 2-cell direct connections). Scales with size so small grids
+// don't get unreasonably filtered.
+var MIN_PATH_LEN=3;
+// Candidates per puzzle — we generate this many, score each, pick the best.
+var CANDIDATES_PER_PUZZLE=25;
 
 // ── Styles ──────────────────────────────────────────────────────────────
 (function injectStyle(){
@@ -49,12 +55,20 @@ var TIERS={
     '.RFstatus em{color:#c8a84b;font-style:normal;font-weight:700}',
     // Board
     '.RFboardWrap{display:flex;justify-content:center;padding:4px 0}',
-    '.RFgrid{display:inline-grid;gap:3px;background:rgba(13,16,12,0.55);border:2px solid rgba(74,124,53,0.3);border-radius:10px;padding:6px;touch-action:none}',
-    '.RFcell{box-sizing:border-box;border-radius:5px;position:relative;background:rgba(13,16,12,0.5);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:none}',
-    '.RFcell.filled{border-radius:4px}',
-    '.RFcell.dot{border-radius:50%;border:2.5px solid rgba(0,0,0,0.35);box-shadow:0 0 10px var(--rfc,transparent),inset 0 2px 0 rgba(255,255,255,0.18),inset 0 -2px 0 rgba(0,0,0,0.22)}',
-    '.RFcell.dot.drawing{animation:rfGlow 1s ease-in-out infinite}',
-    '.RFcell.connected{box-shadow:0 0 12px var(--rfc,transparent),inset 0 2px 0 rgba(255,255,255,0.18),inset 0 -2px 0 rgba(0,0,0,0.22)}',
+    '.RFgrid{display:inline-grid;gap:2px;background:rgba(13,16,12,0.55);border:2px solid rgba(74,124,53,0.3);border-radius:10px;padding:6px;touch-action:none}',
+    '.RFcell{box-sizing:border-box;position:relative;background:rgba(13,16,12,0.45);border-radius:4px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:none}',
+    '.RFcell.filled{background:transparent}',
+    // Pipe arms extend from edge toward center with 10% overlap at the middle
+    // so straight pipes are continuous and L-turns blend cleanly.
+    '.RFarm{position:absolute;background:var(--rfc,#888);pointer-events:none}',
+    '.RFarmN{top:0;bottom:40%;left:28%;right:28%}',
+    '.RFarmS{top:40%;bottom:0;left:28%;right:28%}',
+    '.RFarmE{left:40%;right:0;top:28%;bottom:28%}',
+    '.RFarmW{left:0;right:40%;top:28%;bottom:28%}',
+    '.RFcore{position:absolute;top:28%;bottom:28%;left:28%;right:28%;background:var(--rfc,#888);border-radius:20%;pointer-events:none}',
+    '.RFcore.dot{top:10%;bottom:10%;left:10%;right:10%;border-radius:50%;border:2px solid rgba(0,0,0,0.32);box-shadow:0 0 10px var(--rfc,transparent),inset 0 2px 0 rgba(255,255,255,0.22),inset 0 -2px 0 rgba(0,0,0,0.22)}',
+    '.RFcell.drawing .RFcore.dot{animation:rfGlow 1s ease-in-out infinite}',
+    '.RFcell.connected .RFcore.dot{box-shadow:0 0 14px var(--rfc,transparent),inset 0 2px 0 rgba(255,255,255,0.25),inset 0 -2px 0 rgba(0,0,0,0.22)}',
     // Progress pips
     '.RFprog{display:flex;justify-content:center;gap:6px;padding:4px 0}',
     '.RFpip{width:14px;height:14px;border-radius:50%;background:rgba(40,48,36,0.8);border:1.5px solid rgba(74,124,53,0.3);transition:transform .2s ease,box-shadow .2s ease}',
@@ -82,13 +96,81 @@ var timerInterval=null;
 var drawingStateCaptured=false;
 
 // ── Generator (snake-carving) ──────────────────────────────────────────
+// Produces up to `candidates` valid puzzles, scores each for puzzle
+// interest (path length balance + turn count + endpoint spread), returns
+// the best one. Trivially-short paths (< MIN_PATH_LEN) are filtered out
+// before scoring.
 function generatePuzzle(size,pairs,maxAttempts){
   maxAttempts=maxAttempts||1500;
-  for(var a=0;a<maxAttempts;a++){
+  var best=null, bestScore=-Infinity, found=0;
+  var tries=0;
+  while(tries<maxAttempts && found<CANDIDATES_PER_PUZZLE){
+    tries++;
     var p=genAttempt(size,pairs);
-    if(p)return p;
+    if(!p)continue;
+    // Quality filter: minimum path length
+    var minLen=Infinity;
+    for(var i=0;i<p.solutionPaths.length;i++){
+      if(p.solutionPaths[i].length<minLen)minLen=p.solutionPaths[i].length;
+    }
+    if(minLen<MIN_PATH_LEN)continue;
+    found++;
+    var score=scorePuzzle(p, size);
+    if(score>bestScore){bestScore=score; best=p;}
   }
-  return null;
+  // If we never found a candidate meeting MIN_PATH_LEN, fall back to any
+  // valid attempt so the player always gets a puzzle.
+  if(!best){
+    for(var a=0;a<200;a++){
+      var fallback=genAttempt(size,pairs);
+      if(fallback){best=fallback;break;}
+    }
+  }
+  return best;
+}
+
+// Quality score: higher = more interesting puzzle.
+// Components:
+//   + sum of turns across all paths (paths that bend are fun)
+//   + balance bonus (prefer similarly-sized paths over one giant + several tiny)
+//   + endpoint spread (prefer dots distributed across the board)
+//   - penalty for adjacent same-color dots (trivial 1-move solves)
+function scorePuzzle(p, size){
+  var score=0;
+  var lengths=[];
+  for(var i=0;i<p.solutionPaths.length;i++){
+    var path=p.solutionPaths[i];
+    lengths.push(path.length);
+    // Turn count
+    var turns=0;
+    for(var k=1;k<path.length-1;k++){
+      var prev=path[k-1], cur=path[k], next=path[k+1];
+      var d1=[cur[0]-prev[0], cur[1]-prev[1]];
+      var d2=[next[0]-cur[0], next[1]-cur[1]];
+      if(d1[0]!==d2[0] || d1[1]!==d2[1]) turns++;
+    }
+    score += turns * 1.5;
+    // Adjacent-endpoint penalty
+    var a=path[0], b=path[path.length-1];
+    if(Math.abs(a[0]-b[0])+Math.abs(a[1]-b[1])===1) score -= 20;
+  }
+  // Length balance: penalize if ratio of longest to shortest > 3
+  var minL=Math.min.apply(null, lengths), maxL=Math.max.apply(null, lengths);
+  if(minL>0){
+    var ratio=maxL/minL;
+    if(ratio>3) score -= (ratio-3)*3;
+    else score += 2;
+  }
+  // Endpoint spread: measure variance of endpoint positions
+  var xs=[], ys=[];
+  p.dots.forEach(function(d){xs.push(d[1]); ys.push(d[0]);});
+  var xMean=xs.reduce(function(a,v){return a+v;},0)/xs.length;
+  var yMean=ys.reduce(function(a,v){return a+v;},0)/ys.length;
+  var xVar=xs.reduce(function(a,v){return a+Math.pow(v-xMean,2);},0)/xs.length;
+  var yVar=ys.reduce(function(a,v){return a+Math.pow(v-yMean,2);},0)/ys.length;
+  // Expect variance ~ (size-1)^2 / 12 for uniform distribution
+  score += Math.sqrt(xVar+yVar) * 0.8;
+  return score;
 }
 
 function genAttempt(size,pairs){
@@ -398,56 +480,93 @@ function buildGridCells(){
 }
 
 function refreshAll(){
-  for(var c=0;c<S.pairs;c++) refreshColor(c);
-  refreshEmpties();
+  for(var r=0;r<S.size;r++) for(var c=0;c<S.size;c++) renderCell(r,c);
 }
-
 function refreshColor(color){
-  var col=COLORS[color%COLORS.length];
-  for(var r=0;r<S.size;r++){
-    for(var c=0;c<S.size;c++){
-      var cell=S.cells[r][c];
-      if(cell.color===color || cell.isDot && cell.color===color){
-        var el=cellEls[r+','+c]; if(!el)continue;
-        el.style.setProperty('--rfc', col);
-        var classes='RFcell';
-        if(cell.isDot){
-          classes+=' dot';
-          if(S.drawing && S.drawing.color===color){
-            var p0=S.drawing.points[0];
-            if(p0[0]===r && p0[1]===c)classes+=' drawing';
-          }
-          el.style.background=col;
-        } else {
-          classes+=' filled';
-          // Semi-transparent for path cells
-          el.style.background=col+'c0';
-        }
-        // Check if this color is fully connected
-        var pl=S.paths[color];
-        if(pl.length>=2){
-          var first=pl[0], last=pl[pl.length-1];
-          if(S.cells[first[0]][first[1]].isDot && S.cells[last[0]][last[1]].isDot) classes+=' connected';
-        }
-        el.className=classes;
-      }
-    }
+  // Re-render every cell of the given color plus its immediate neighbors
+  // so arms pointing into/out of the color are accurate.
+  for(var r=0;r<S.size;r++) for(var c=0;c<S.size;c++){
+    var cell=S.cells[r][c];
+    if(cell.color===color) renderCell(r,c);
+    else if(cell.color===null && (S.cells[r][c].wasColor===color)) renderCell(r,c);
   }
-  refreshEmpties();
+  // Also re-render any cell whose color we just cleared (wasColor tracking
+  // is overkill; simpler to just re-render every cell whose displayed
+  // state might need to change). Use refreshAll when in doubt.
+  refreshAll();
 }
 
-function refreshEmpties(){
-  for(var r=0;r<S.size;r++){
-    for(var c=0;c<S.size;c++){
-      var cell=S.cells[r][c];
-      if(cell.color===null && !cell.isDot){
-        var el=cellEls[r+','+c]; if(!el)continue;
-        el.className='RFcell';
-        el.style.background='';
-        el.style.removeProperty('--rfc');
-      }
-    }
+// Is this path fully connecting the two dots?
+function pathIsClosed(color){
+  var pl=S.paths[color];
+  if(pl.length<2)return false;
+  var a=pl[0], b=pl[pl.length-1];
+  return S.cells[a[0]][a[1]].isDot && S.cells[b[0]][b[1]].isDot;
+}
+
+// Determine the ordered path that currently contains (r,c). Returns the
+// points array or null. Uses the in-progress drawing if the cell belongs
+// to the color being drawn, otherwise the committed path.
+function getDisplayPath(color){
+  if(S.drawing && S.drawing.color===color) return S.drawing.points;
+  return S.paths[color];
+}
+
+function findInPath(path, r, c){
+  if(!path)return -1;
+  for(var i=0;i<path.length;i++) if(path[i][0]===r && path[i][1]===c) return i;
+  return -1;
+}
+
+// Pipe arms: look at the neighbors of (r,c) in the path and render an
+// arm toward each. A dot shows a colored circle plus one arm. A middle
+// cell shows two arms (straight or L). An in-progress path endpoint
+// shows a single arm toward its predecessor.
+function renderCell(r,c){
+  var el=cellEls[r+','+c]; if(!el)return;
+  var cell=S.cells[r][c];
+  if(cell.color===null && !cell.isDot){
+    el.className='RFcell';
+    el.innerHTML='';
+    el.style.removeProperty('--rfc');
+    return;
   }
+  var color=cell.color;
+  var col=COLORS[color%COLORS.length];
+  el.style.setProperty('--rfc', col);
+  var classes='RFcell';
+  var path=getDisplayPath(color);
+  var idx=findInPath(path, r, c);
+  // Pipe arms
+  var armsHTML='';
+  if(idx>=0){
+    [-1,1].forEach(function(off){
+      var nIdx=idx+off;
+      if(nIdx<0||nIdx>=path.length)return;
+      var nbr=path[nIdx];
+      var dr=nbr[0]-r, dc=nbr[1]-c;
+      if(dr===-1 && dc===0) armsHTML+='<span class="RFarm RFarmN"></span>';
+      else if(dr===1 && dc===0) armsHTML+='<span class="RFarm RFarmS"></span>';
+      else if(dr===0 && dc===1) armsHTML+='<span class="RFarm RFarmE"></span>';
+      else if(dr===0 && dc===-1) armsHTML+='<span class="RFarm RFarmW"></span>';
+    });
+  }
+  // Core: dot circle for endpoints, small square for middle cells
+  var coreHTML;
+  if(cell.isDot){
+    coreHTML='<span class="RFcore dot"></span>';
+    classes+=' dot';
+    if(S.drawing && S.drawing.color===color){
+      var p0=S.drawing.points[0];
+      if(p0[0]===r && p0[1]===c) classes+=' drawing';
+    }
+    if(pathIsClosed(color)) classes+=' connected';
+  } else {
+    coreHTML='<span class="RFcore"></span>';
+    classes+=' filled';
+  }
+  el.className=classes;
+  el.innerHTML=armsHTML+coreHTML;
 }
 
 function updateHUD(){
@@ -641,4 +760,4 @@ window._gameFns.rootflow = function(a){
   showTierPicker();
 };
 })();
-// force-sync 1776961903
+// rebuild-sync1776961903
