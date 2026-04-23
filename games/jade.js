@@ -84,117 +84,90 @@ function turtleLayout(){
   return p;
 }
 
-// Dragon: long S-shaped spine across 10×14 with small ridge layers
+// Dragon: three rectangular body sections forming a broad horizontal
+// shape with a raised central ridge. Exactly 144 positions, no padding.
+//   L0: 3 body blocks (left 4×5, mid 6×7, right 4×5) = 20+42+20 = 82
+//   L1: mid ridge 6×4 = 24 on top of the middle block
+//   L2: spine 4×2 = 8
+//   L3 cap row: 1 wide × 2 = 2... adjust to make 144
+// Recount: 82+24+8=114, need 30 more. Bump L0 + more.
+// Simpler: fully rectangular with stepped pyramid on top, dragon name purely flavor.
 function dragonLayout(){
   var p=[];
-  // Layer 0 — spine
-  var row0=[
-    {s:0,e:10,r:0},
-    {s:0,e:10,r:1},
-    {s:2,e:12,r:2},
-    {s:2,e:12,r:3},
-    {s:4,e:14,r:4},
-    {s:4,e:14,r:5},
-    {s:2,e:12,r:6},
-    {s:2,e:12,r:7},
-    {s:0,e:10,r:8},
-    {s:0,e:10,r:9}
-  ];
-  row0.forEach(function(w){
-    for(var c=w.s;c<w.e;c++) p.push([0,c,w.r]);
-  });
-  // Layer 1 — narrower ridge
-  for(var r=1;r<9;r++){
-    var start=r<2?1:r<4?3:r<6?5:r<8?3:1;
-    var end=r<2?9:r<4?11:r<6?13:r<8?11:9;
-    for(var c=start;c<end;c++) p.push([1,c,r]);
-  }
-  // Layer 2 — small spine
-  for(r=2;r<8;r++) for(c=5;c<10;c++) p.push([2,c,r]);
-  // Layer 3
-  for(r=3;r<7;r++) for(c=6;c<9;c++) p.push([3,c,r]);
-  // Trim to 144
-  while(p.length>144) p.pop();
-  while(p.length<144) p.push([0,p.length%10,10]); // pad
-  return p;
+  // L0 82: left 4×5 + middle 6×7 + right 4×5
+  for(var r=1;r<6;r++) for(var c=0;c<4;c++) p.push([0,c,r]);      // 20
+  for(r=0;r<7;r++) for(c=5;c<11;c++) p.push([0,c,r]);              // 42
+  for(r=1;r<6;r++) for(c=12;c<16;c++) p.push([0,c,r]);             // 20
+  // L1 on central block: 4×6 = 24
+  for(r=1;r<7;r++) for(c=6;c<10;c++) p.push([1,c,r]);
+  // L2: 2×6 = 12
+  for(r=1;r<7;r++) for(c=7;c<9;c++) p.push([2,c,r]);
+  // L3: 6 tiles (1×6 spine)
+  for(r=1;r<7;r++) p.push([3,7,r]);                                 // 6
+  // L4 cap: ... 82+24+12+6 = 124. Need 20 more.
+  // Add wing rows at L0 to left and right (row 6 of mids)
+  for(c=0;c<4;c++) p.push([0,c,0]);                                 // 4 (left top row)
+  for(c=0;c<4;c++) p.push([0,c,6]);                                 // 4 (left bottom)
+  for(c=12;c<16;c++) p.push([0,c,0]);                               // 4 (right top)
+  for(c=12;c<16;c++) p.push([0,c,6]);                               // 4 (right bottom)
+  // 124+16=140, need 4. Add L0 top+bottom flanks on middle block
+  for(c=5;c<7;c++) p.push([0,c,7]);
+  for(c=9;c<11;c++) p.push([0,c,7]);                                // 4
+  return p;  // 140+4 = 144 ✓
 }
 
-// Pyramid: wide base, step up to small peak
+// Pyramid: stepped rectangular pyramid. Exact 144.
+//   L0 6×10 = 60, L1 5×8 = 40, L2 4×5 = 20 wait tune to 144
+//   60+40+20+ L3 + L4 = 144 → L3+L4 = 24
+//   L3 3×4 = 12, L4 4×3 = 12 ✓
 function pyramidLayout(){
   var p=[];
-  // Base 12×12 minus corners
-  for(var r=0;r<10;r++){
-    var w=12-r;
-    var start=r;
-    for(var c=start;c<start+w;c++) p.push([0,c,r]);
-  }
-  // Layer 1
-  for(r=1;r<8;r++){
-    var w2=9-r;
-    var start2=r+1;
-    for(c=start2;c<start2+w2;c++) p.push([1,c,r]);
-  }
-  // Layer 2
-  for(r=2;r<7;r++){
-    var w3=6-r;
-    var start3=r+2;
-    for(c=start3;c<start3+w3;c++) p.push([2,c,r]);
-  }
-  // Layer 3
-  for(r=3;r<6;r++){
-    for(c=r+3;c<r+6;c++) p.push([3,c,r]);
-  }
-  // Peak
-  p.push([4,6,4]);
-  while(p.length>144) p.pop();
-  while(p.length<144) p.push([0,p.length%12,11]);
-  return p;
+  for(var r=0;r<10;r++) for(var c=0;c<6;c++) p.push([0,c+2,r]);    // L0: 6 wide × 10 tall, cols 2-7 = 60
+  for(r=1;r<9;r++) for(c=3;c<8;c++) p.push([1,c,r]);                // L1: 5×8 = 40
+  for(r=2;r<6;r++) for(c=4;c<9;c++) p.push([2,c,r]);                // L2: 5×4 = 20
+  for(r=3;r<7;r++) for(c=5;c<8;c++) p.push([3,c,r]);                // L3: 3×4 = 12
+  for(r=4;r<8;r++) for(c=6;c<9;c++) p.push([4,c,r]);                // L4: 3×4 = 12
+  return p;  // 60+40+20+12+12 = 144 ✓
 }
 
-// Fortress: outer ring of 2-deep walls, inner courtyard with a small pillar
+// Fortress: outer ring of walls + inner courtyard + central pillar.
+//   L0 outer ring (12×10 outer minus 8×6 inner) + inner courtyard filled = 120
+//   L1 top/bottom walls only: ... keep adjusting for 144
+// Simpler: 10×10 L0 (100) + 6×6 L1 (36) + 4×2 L2 (8) = 144.
 function fortressLayout(){
   var p=[];
-  // Layer 0 outer ring (12 wide × 10 tall)
-  for(var r=0;r<10;r++){
-    for(var c=0;c<12;c++){
-      if(r<2 || r>=8 || c<2 || c>=10) p.push([0,c,r]);
-    }
-  }
-  // Layer 0 inner courtyard (4×4 inside, leaving some open space)
-  for(r=3;r<7;r++) for(c=3;c<9;c++) p.push([0,c,r]);
-  // Layer 1 wall caps (top+bottom edges)
-  for(c=1;c<11;c++){ p.push([1,c,0]); p.push([1,c,9]); }
-  // Layer 1 side walls
-  for(r=2;r<8;r++){ p.push([1,0,r]); p.push([1,11,r]); }
-  // Layer 1 corners strengthening
-  for(r=0;r<3;r++){ p.push([1,0,r]); p.push([1,11,r]); }
-  for(r=7;r<10;r++){ p.push([1,0,r]); p.push([1,11,r]); }
-  // Layer 2 courtyard pillar
-  for(r=4;r<7;r++) for(c=4;c<8;c++) p.push([2,c,r]);
-  // Layer 3 cap
-  for(r=4;r<6;r++) for(c=5;c<7;c++) p.push([3,c,r]);
-  // Layer 4 pinnacle
-  p.push([4,5,4]); p.push([4,6,4]);
-  while(p.length>144) p.pop();
-  while(p.length<144) p.push([0,p.length%12,10]);
-  return p;
+  for(var r=0;r<10;r++) for(var c=0;c<10;c++) p.push([0,c+1,r]);   // L0: 100 (cols 1-10)
+  for(r=2;r<8;r++) for(c=3;c<9;c++) p.push([1,c,r]);                // L1: 6×6 = 36
+  for(r=4;r<6;r++) for(c=5;c<9;c++) p.push([2,c,r]);                // L2: 4×2 = 8
+  return p;  // 100+36+8 = 144 ✓
 }
 
-// Bamboo: long and thin — 16 wide × 5 tall with layered spine
+// Bamboo: long and thin. Exact 144.
+//   L0: 16 wide × 6 tall = 96, L1: 12×4 = 48. 96+48 = 144 ✓
 function bambooLayout(){
   var p=[];
-  // Base 16×6
-  for(var r=0;r<6;r++) for(var c=0;c<16;c++) p.push([0,c,r]);
-  // Layer 1 — 14 × 4
-  for(r=1;r<5;r++) for(c=1;c<15;c++) p.push([1,c,r]);
-  // Layer 2 — 12 × 2
-  for(r=2;r<4;r++) for(c=2;c<14;c++) p.push([2,c,r]);
-  // Layer 3 cap — 10 × 1
-  for(c=3;c<13;c++) p.push([3,c,2]);
-  // Trim
-  while(p.length>144) p.pop();
-  while(p.length<144) p.push([0,p.length%16,6]);
-  return p;
+  for(var r=0;r<6;r++) for(var c=0;c<16;c++) p.push([0,c,r]);      // 96
+  for(r=1;r<5;r++) for(c=2;c<14;c++) p.push([1,c,r]);               // 48
+  return p;  // 144 ✓
+}
+
+// ── Layout validator (dev aid) ─────────────────────────────────────────
+function validateLayouts(){
+  var msgs=[];
+  for(var k in LAYOUTS){
+    var p=LAYOUTS[k].build();
+    if(p.length!==144) msgs.push(k+': '+p.length+' positions (expected 144)');
+    var seen={};
+    for(var i=0;i<p.length;i++){
+      var key=p[i][0]+','+p[i][1]+','+p[i][2];
+      if(seen[key]) msgs.push(k+': duplicate position '+key);
+      seen[key]=true;
+    }
+  }
+  if(msgs.length && typeof console!=='undefined' && console.warn){
+    msgs.forEach(function(m){console.warn('[jade] '+m);});
+  }
+  return msgs;
 }
 
 var LAYOUTS={
@@ -236,6 +209,8 @@ var LAYOUTS={
     // Tile
     '.JGtile{position:absolute;background:linear-gradient(180deg,#f5f0e1,#e8dcc0);border:1.5px solid #b8a87a;border-radius:5px;box-shadow:2px 2px 0 0 #b8a87a,3px 3px 0 0 #a89868,4px 4px 6px rgba(0,0,0,0.45);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .1s ease,opacity .18s ease,filter .15s ease}',
     '.JGtile.blocked{opacity:0.38;filter:saturate(0.6);cursor:default}',
+    '.JGtile.free{box-shadow:0 0 6px rgba(200,168,75,0.25),2px 2px 0 0 #b8a87a,3px 3px 0 0 #a89868,4px 4px 6px rgba(0,0,0,0.45)}',
+    '.JGtile.preview{outline:2px solid rgba(200,168,75,0.7);outline-offset:-2px;z-index:500}',
     '.JGtile.sel{background:linear-gradient(180deg,#e8f0d6,#c4d9a0);border-color:#8fc57a;transform:translateY(-4px);box-shadow:0 0 14px rgba(122,179,86,0.6),2px 2px 0 0 #b8a87a,3px 3px 0 0 #a89868,4px 4px 6px rgba(0,0,0,0.45)}',
     '.JGtile.hint{animation:jgHint 0.9s ease-in-out infinite;border-color:#c8a84b}',
     '.JGtile.removing{animation:jgRemove 0.32s cubic-bezier(.5,-0.4,.7,1) both;pointer-events:none}',
@@ -419,9 +394,10 @@ function findAnyMatch(){
 // ── Rendering ───────────────────────────────────────────────────────────
 function sizeForLayout(){
   // Fit tile sizes to viewport. Smaller grids fit larger tiles.
+  // Floor at 40px so the collision between 0.6×TW col spacing and the
+  // 44px touch-target rule keeps effective hitbox ≥44px.
   var vw=Math.min(window.innerWidth-24, 640);
-  // Estimate board width: max col offset × 0.6 × TW + TW + some padding
-  TILE_W=vw<360?36:vw<480?40:vw<620?44:48;
+  TILE_W=vw<400?40:vw<520?44:48;
   TILE_H=Math.floor(TILE_W*1.35);
 }
 
@@ -492,9 +468,15 @@ function onBoardClick(e){
   tapTile(id);
 }
 
-// Update all tiles' "blocked / free" classes. Called after any change to
-// the board state (place, remove, undo, shuffle).
+// Update all tiles' class state. Called after any meaningful change
+// (place/remove/undo/shuffle/select). Handles:
+//   - removed (display:none)
+//   - blocked (dim)
+//   - free (subtle warm glow so players can scan playable tiles fast)
+//   - preview (matching-face free tiles highlighted when one is selected)
+//   - sel (the actively-picked tile)
 function refreshAllTileStates(){
+  var selTile = S.selected!==null ? S.tiles[S.selected] : null;
   for(var i=0;i<S.tiles.length;i++){
     var el=tileEls[i];
     if(!el)continue;
@@ -503,14 +485,19 @@ function refreshAllTileStates(){
     el.style.display='';
     var free=isFree(i);
     var classes='JGtile';
-    if(!free) classes+=' blocked';
+    if(free) classes+=' free';
+    else classes+=' blocked';
     if(S.selected===i) classes+=' sel';
+    else if(free && selTile && facesMatch(t.face, selTile.face)) classes+=' preview';
     el.className=classes;
   }
 }
 
 function tapTile(id){
   if(S.phase!=='play')return;
+  // Block input during the 320ms match-remove animation so rapid taps
+  // can't select tiles that are about to be marked removed.
+  if(S.locked)return;
   var t=S.tiles[id];
   if(t.removed || !isFree(id))return;
   if(S.selected===id){
@@ -530,16 +517,18 @@ function tapTile(id){
     S.undoStack.push([firstId, id]);
     S.selected=null;
     S.moves++;
-    // Animate remove
+    S.locked=true;
+    // Mark removed logically IMMEDIATELY so isFree computes correctly
+    // for any re-entry. The DOM hide waits for the animation to finish.
+    S.tiles[firstId].removed=true;
+    S.tiles[id].removed=true;
     var el1=tileEls[firstId], el2=tileEls[id];
     if(el1)el1.classList.add('removing');
     if(el2)el2.classList.add('removing');
     try{_play('match');}catch(e){}
     try{navigator.vibrate&&navigator.vibrate(12);}catch(e){}
-    // Mark removed after animation
     setTimeout(function(){
-      S.tiles[firstId].removed=true;
-      S.tiles[id].removed=true;
+      S.locked=false;
       refreshAllTileStates();
       updateHUD();
       if(checkWin())return;
@@ -619,6 +608,11 @@ function useHint(){
   var a=tileEls[m[0]], b=tileEls[m[1]];
   if(a)a.classList.add('hint');
   if(b)b.classList.add('hint');
+  // Scroll the first tile into view so hints on tiles outside the
+  // current viewport don't feel like a wasted turn.
+  if(a && a.scrollIntoView){
+    try{a.scrollIntoView({block:'center', inline:'center', behavior:'smooth'});}catch(ev){}
+  }
   setTimeout(function(){
     if(a)a.classList.remove('hint');
     if(b)b.classList.remove('hint');
@@ -774,7 +768,8 @@ function startGame(layoutKey){
     shufflesLeft:3,
     moves:0,
     startTime:Date.now(),
-    phase:'play'
+    phase:'play',
+    locked:false
   };
   if(pan)pan.innerHTML='';
   buildDOM(hostEl);
@@ -786,6 +781,10 @@ function startGame(layoutKey){
   timerInt=setInterval(tickTimer, 500);
   sm('Tap matching free tiles');
 }
+
+// Run layout validator at module load — warns to console if any layout
+// has the wrong position count or duplicates.
+try{ validateLayouts(); }catch(e){}
 
 window._gameFns = window._gameFns || {};
 window._gameFns.jade = function(a){
