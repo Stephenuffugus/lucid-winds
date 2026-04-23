@@ -14,284 +14,484 @@ var EXIT_ROW=2;
 // Same column = vertical. '.' = empty.
 var LEVELS=[
   { name:'Easy 1', diff:'easy', optimal:3, grid:[
-    '...GG.',
-    'ECC..B',
-    'E.XXAB',
-    '...HA.',
-    '.F.HAD',
-    '.F.H.D'
+    'JGGG..',
+    'J.II.A',
+    'E.XXBA',
+    'E.DDB.',
+    '.HH.FF',
+    'CCC...'
   ]},
   { name:'Easy 2', diff:'easy', optimal:3, grid:[
-    '.GICCC',
-    '.GIEE.',
-    '.GXXAB',
-    'FFF.AB',
-    'H....B',
-    'HDDD..'
+    '......',
+    'CCC.AB',
+    '..XXAB',
+    'HG...E',
+    'HGFFDE',
+    'JJIID.'
   ]},
   { name:'Easy 3', diff:'easy', optimal:3, grid:[
-    '.GGG..',
-    'DDD.B.',
-    '.HXXBA',
-    'CHE.BA',
-    'C.EI..',
-    'FF.I..'
+    '.HHH.F',
+    'J...AF',
+    'JDXXAB',
+    '.DGGGB',
+    '.EEECB',
+    '..IIC.'
   ]},
   { name:'Easy 4', diff:'easy', optimal:3, grid:[
-    '...C..',
-    '...CA.',
-    '.XX.AB',
-    'FF..GB',
-    'DDD.GB',
-    'EEE.G.'
+    '..FF..',
+    'GE..AB',
+    'GEXXAB',
+    '.JJJH.',
+    'I...H.',
+    'IDDCCC'
   ]},
   { name:'Easy 5', diff:'easy', optimal:3, grid:[
-    '.FF...',
-    'H..B.A',
-    'HXXB.A',
-    'HEED..',
-    '.CCD..',
-    '...DGG'
+    'IDDD..',
+    'IFF.B.',
+    'I.XXBA',
+    'J.CCCA',
+    'JGHH..',
+    '.GEEKK'
   ]},
   { name:'Easy 6', diff:'easy', optimal:3, grid:[
-    '..CCC.',
-    '.....A',
-    'GGXXBA',
-    '...EB.',
-    '...EBD',
-    '..FF.D'
+    'KEEE..',
+    'KFF.BA',
+    'CGXXBA',
+    'CG.IDH',
+    'CGJIDH',
+    'LLJID.'
   ]},
   { name:'Easy 7', diff:'easy', optimal:3, grid:[
-    '.C.DDD',
-    'FC....',
-    'FHXXAB',
-    'EHGIAB',
-    'EHGIA.',
-    '..G...'
+    'ID...H',
+    'IDEEEH',
+    'I.XXBA',
+    'GC..BA',
+    'GC..B.',
+    '.FFF..'
   ]},
   { name:'Easy 8', diff:'easy', optimal:3, grid:[
-    'FFF.A.',
-    '.D..A.',
-    '.DXXAB',
-    '.GGG.B',
-    'HHCC.B',
-    '..EE..'
+    'HHH.I.',
+    'CJ..I.',
+    'CJXXBA',
+    'CJGGBA',
+    'FFDK..',
+    'EEDK..'
   ]},
-  { name:'Easy 9', diff:'easy', optimal:4, grid:[
-    '..HHBA',
-    '.EEEBA',
-    '..XXBA',
-    'CDD...',
-    'C...GG',
-    'CFFF..'
+  { name:'Easy 9', diff:'easy', optimal:3, grid:[
+    'HK.EEE',
+    'HK.JJJ',
+    '.GXXAB',
+    '.G.DAB',
+    'FFCDAB',
+    'IICD..'
   ]},
-  { name:'Easy 10', diff:'easy', optimal:4, grid:[
-    '...FF.',
-    'EE..B.',
-    '.HXXBA',
-    '.H.GCA',
-    '.H.GC.',
-    '...DDD'
+  { name:'Easy 10', diff:'easy', optimal:3, grid:[
+    '.GGJJ.',
+    'ECC..B',
+    'EDXXAB',
+    'EDH.A.',
+    'KDHF..',
+    'KIIF..'
   ]},
-  { name:'Easy 11', diff:'easy', optimal:4, grid:[
-    '.HH.DD',
-    '.....C',
-    '.XXBAC',
-    'GGFBAC',
-    'EIFBA.',
-    'EI....'
+  { name:'Easy 11', diff:'easy', optimal:3, grid:[
+    'EHHC..',
+    'EJ.CB.',
+    'EJXXBA',
+    'I.DD.A',
+    'IGGG..',
+    '...FF.'
   ]},
   { name:'Easy 12', diff:'easy', optimal:4, grid:[
-    '...DD.',
-    'C...EE',
-    'CXX.AB',
-    '..HHAB',
-    '..GGG.',
-    'FFF...'
+    'E.CIII',
+    'E.C.A.',
+    'EDXXAB',
+    '.D...B',
+    'H.GGG.',
+    'HFFF..'
   ]},
-  { name:'Medium 1', diff:'medium', optimal:5, grid:[
-    '......',
-    'C....A',
-    'C.XXBA',
-    'G...BE',
-    'GD..BE',
-    'GDFFFE'
+  { name:'Easy 13', diff:'easy', optimal:4, grid:[
+    'HHGG..',
+    'FF...B',
+    'KXXCAB',
+    'KD.CAJ',
+    'ID..AJ',
+    'IDEE.J'
   ]},
-  { name:'Medium 2', diff:'medium', optimal:5, grid:[
-    'FGHHH.',
-    'FG....',
-    'FXXACB',
-    '...ACB',
-    'EEEA.B',
-    '.DDD..'
-  ]},
-  { name:'Medium 3', diff:'medium', optimal:5, grid:[
-    '...J..',
-    'IDDJAB',
-    'I.XXAB',
-    'FFEEEB',
-    '.CC...',
-    '.GGHHH'
-  ]},
-  { name:'Medium 4', diff:'medium', optimal:5, grid:[
-    '.GD.A.',
-    '.GD.A.',
-    '.GXXAB',
-    '.E...B',
-    '.E...B',
-    '.CC.FF'
-  ]},
-  { name:'Medium 5', diff:'medium', optimal:6, grid:[
-    '..FFHH',
-    '...DDA',
-    '..XXBA',
-    'III.BG',
-    'EEE.BG',
-    '....CC'
-  ]},
-  { name:'Medium 6', diff:'medium', optimal:6, grid:[
-    '.G....',
-    'DG.CB.',
-    'DXXCBA',
-    'D..CBA',
-    'FE...A',
-    'FE.HH.'
-  ]},
-  { name:'Medium 7', diff:'medium', optimal:6, grid:[
-    '...HHH',
-    '..A..B',
-    'XXAECB',
-    '...EC.',
-    '....G.',
-    'DDFFG.'
-  ]},
-  { name:'Medium 8', diff:'medium', optimal:6, grid:[
-    '.DD..F',
-    '.....F',
-    'XXB.AF',
-    '..B.A.',
-    'E..GGG',
+  { name:'Easy 14', diff:'easy', optimal:4, grid:[
+    '.FFFII',
+    'HHJJA.',
+    'KKXXAB',
+    'DD..AB',
+    'E.GG.B',
     'E..CC.'
   ]},
+  { name:'Easy 15', diff:'easy', optimal:4, grid:[
+    'J..CCC',
+    'JGGGA.',
+    'KKXXAB',
+    '..DDDB',
+    'HE..IB',
+    'HEFFI.'
+  ]},
+  { name:'Easy 16', diff:'easy', optimal:4, grid:[
+    'C.GGG.',
+    'CHDD.B',
+    '.HXXAB',
+    'JJFFA.',
+    '....AI',
+    '...EEI'
+  ]},
+  { name:'Easy 17', diff:'easy', optimal:4, grid:[
+    'GE.DDD',
+    'GEKK.B',
+    '.EXXAB',
+    'CCJIAH',
+    'F.JIAH',
+    'F.JI..'
+  ]},
+  { name:'Easy 18', diff:'easy', optimal:4, grid:[
+    'JJ..G.',
+    'HH.CG.',
+    'LXXCAB',
+    'L.FFAB',
+    'IKEE.B',
+    'IK.DD.'
+  ]},
+  { name:'Easy 19', diff:'easy', optimal:4, grid:[
+    '.I..EE',
+    '.IHHB.',
+    'JIXXBA',
+    'JGGG.A',
+    'FFCCC.',
+    'DDD.KK'
+  ]},
+  { name:'Easy 20', diff:'easy', optimal:4, grid:[
+    'EE.DD.',
+    'CCC.JJ',
+    'G.XXBA',
+    'GF..BA',
+    '.F.II.',
+    '...HHH'
+  ]},
+  { name:'Medium 1', diff:'medium', optimal:5, grid:[
+    'KKE...',
+    'FFEB.A',
+    'XXCBDA',
+    '..C.DH',
+    'GG.IDH',
+    'JJJI.H'
+  ]},
+  { name:'Medium 2', diff:'medium', optimal:5, grid:[
+    '.GGII.',
+    'C...A.',
+    'C.XXAB',
+    '.DE..B',
+    '.DEFFJ',
+    '...HHJ'
+  ]},
+  { name:'Medium 3', diff:'medium', optimal:5, grid:[
+    'CC..GG',
+    'IIILLB',
+    'KKXXAB',
+    'DDD.A.',
+    'MF.EEH',
+    'MFJJ.H'
+  ]},
+  { name:'Medium 4', diff:'medium', optimal:5, grid:[
+    'J.EEKK',
+    'JFFFA.',
+    'J.XXAB',
+    'HCGIAB',
+    'HCGI.B',
+    '.CDDD.'
+  ]},
+  { name:'Medium 5', diff:'medium', optimal:5, grid:[
+    'J..II.',
+    'J.DDAC',
+    '.XXBAC',
+    '...BF.',
+    'HH..FK',
+    '.GGEEK'
+  ]},
+  { name:'Medium 6', diff:'medium', optimal:5, grid:[
+    'KCHDD.',
+    'KCHGGA',
+    'KCXXBA',
+    'FI.JB.',
+    'FILJB.',
+    'FIL.EE'
+  ]},
+  { name:'Medium 7', diff:'medium', optimal:5, grid:[
+    '.C....',
+    '.CHHGG',
+    'E.XXAB',
+    'ED..AB',
+    '.DFFA.',
+    '.IIJJ.'
+  ]},
+  { name:'Medium 8', diff:'medium', optimal:6, grid:[
+    '.I.FF.',
+    'EIGGB.',
+    'EXXCBA',
+    'JMLC.A',
+    'JMLHH.',
+    '.DDKKK'
+  ]},
   { name:'Medium 9', diff:'medium', optimal:6, grid:[
-    'C.GI.B',
-    'C.GI.B',
-    'CDXXAB',
-    '.DH.A.',
-    '.EH.A.',
-    '.E.FFF'
+    '..JJ..',
+    'IIACGG',
+    'XXACBF',
+    '..EEBF',
+    'H.KK.F',
+    'H..DD.'
   ]},
   { name:'Medium 10', diff:'medium', optimal:6, grid:[
-    '..G...',
-    '..G.AC',
-    'XXGBAC',
-    '.DDBA.',
-    'F..B.E',
-    'F....E'
+    '.GG.FF',
+    '..DDDA',
+    '.IXXBA',
+    'CIEEBL',
+    'C.KJJL',
+    'C.KHH.'
   ]},
-  { name:'Medium 11', diff:'medium', optimal:7, grid:[
-    '....JJ',
-    '.KKAGG',
-    'DXXACB',
-    'D.HHCB',
-    'DIE.CF',
-    '.IE..F'
+  { name:'Medium 11', diff:'medium', optimal:6, grid:[
+    'H.IIIK',
+    'HGGABK',
+    'HXXABC',
+    'D.JJ.C',
+    'D.LL.C',
+    'DEEFF.'
   ]},
-  { name:'Medium 12', diff:'medium', optimal:7, grid:[
-    'HEG.A.',
-    'HEG.A.',
+  { name:'Medium 12', diff:'medium', optimal:6, grid:[
+    '.DI.AG',
+    'FDIBAG',
+    'FXXBAC',
+    'F....C',
+    '.EEE.C',
+    '.JJHH.'
+  ]},
+  { name:'Medium 13', diff:'medium', optimal:6, grid:[
+    '.G.EEE',
+    'CGFFAB',
+    'C.XXAB',
+    'CDJJKB',
+    '.D..K.',
+    'HH.III'
+  ]},
+  { name:'Medium 14', diff:'medium', optimal:6, grid:[
+    '..GG..',
+    'FFFIIB',
     '.XXCAB',
-    'IIIC.B',
-    'F..CJJ',
-    'F.DD..'
+    'D.HCA.',
+    'D.HC.J',
+    'EEEKKJ'
   ]},
-  { name:'Medium 13', diff:'medium', optimal:8, grid:[
-    'EDCCCA',
-    'EDI..A',
-    'XXIFBA',
-    'G..FB.',
-    'G..FB.',
-    'G..HHH'
+  { name:'Medium 15', diff:'medium', optimal:7, grid:[
+    'FF.DD.',
+    'IIIACB',
+    'JXXACB',
+    'J..AKK',
+    '..LLHH',
+    'EE.GG.'
   ]},
-  { name:'Medium 14', diff:'medium', optimal:8, grid:[
-    '..DDII',
-    'FFFBC.',
-    '.XXBCA',
-    '.GGGCA',
-    'H.KKEE',
-    'HJJ...'
+  { name:'Medium 16', diff:'medium', optimal:7, grid:[
+    'MDDKK.',
+    'MEEEHH',
+    'M.XXAB',
+    'ICJJAB',
+    'ICFFFB',
+    'I.GGLL'
   ]},
-  { name:'Medium 15', diff:'medium', optimal:9, grid:[
-    '....GB',
-    '..FFGB',
-    'XXA..B',
-    '..AI..',
-    'D.AIEE',
-    'D.CCHH'
+  { name:'Medium 17', diff:'medium', optimal:7, grid:[
+    'G.JJH.',
+    'GDD.H.',
+    '.XXCBA',
+    'IMMCBA',
+    'IKKFBA',
+    'EE.FLL'
+  ]},
+  { name:'Medium 18', diff:'medium', optimal:7, grid:[
+    '..DDFF',
+    'HH.LLC',
+    '.XXABC',
+    'EMIAB.',
+    'EMI.GK',
+    '..JJGK'
+  ]},
+  { name:'Medium 19', diff:'medium', optimal:7, grid:[
+    'IG.HHJ',
+    'IG.CCJ',
+    '..XXBA',
+    'ED..BA',
+    'ED.KKA',
+    'EDFFLL'
+  ]},
+  { name:'Medium 20', diff:'medium', optimal:7, grid:[
+    'JJJ.II',
+    'D.KKGG',
+    'DXXABC',
+    'LLLABC',
+    '.FF.BH',
+    'MMEE.H'
+  ]},
+  { name:'Medium 21', diff:'medium', optimal:7, grid:[
+    'LEFHHA',
+    'LEF.BA',
+    'IIXXBA',
+    '.DD.JJ',
+    '...GG.',
+    '.CC.KK'
+  ]},
+  { name:'Medium 22', diff:'medium', optimal:7, grid:[
+    'JH.MM.',
+    'JH..EE',
+    'XXCBAD',
+    'GFCBAD',
+    'GF..KK',
+    '.LLIII'
+  ]},
+  { name:'Medium 23', diff:'medium', optimal:9, grid:[
+    '..HHGG',
+    'DD...A',
+    '.KXXBA',
+    '.KIIB.',
+    'CCCJB.',
+    '.EEJFF'
+  ]},
+  { name:'Medium 24', diff:'medium', optimal:10, grid:[
+    'DD....',
+    'HHEE..',
+    '.FXXAB',
+    '.F..AB',
+    'CG..AB',
+    'CGJJII'
+  ]},
+  { name:'Medium 25', diff:'medium', optimal:10, grid:[
+    'J.EE.F',
+    'JGGG.F',
+    '.DXXAB',
+    '.DIKAB',
+    '.DIKHH',
+    '..ICCC'
   ]},
   { name:'Hard 1', diff:'hard', optimal:11, grid:[
-    '...DDD',
-    '..B.GJ',
-    'XXBAGJ',
-    'H..AE.',
-    'HIIAEC',
-    'FF..EC'
+    '.KKFF.',
+    'GGCIII',
+    'XXCABD',
+    'LL.ABD',
+    'JJJ.BH',
+    '.EEMMH'
   ]},
   { name:'Hard 2', diff:'hard', optimal:11, grid:[
-    '..HHH.',
-    'F...CB',
-    'FXXACB',
-    'GGIA.B',
-    '..IADD',
-    '..IEE.'
+    '.DDD..',
+    'FFJJJB',
+    '.XXACB',
+    'GG.ACB',
+    '..HEEE',
+    'KKHIII'
   ]},
   { name:'Hard 3', diff:'hard', optimal:11, grid:[
-    '....B.',
-    '.EEAB.',
-    '.XXAB.',
-    '..C...',
-    'DFCII.',
-    'DFGGHH'
+    'HHHII.',
+    'K.DDCB',
+    'KXXACB',
+    'KLLA.B',
+    'GEFFF.',
+    'GE..JJ'
   ]},
   { name:'Hard 4', diff:'hard', optimal:11, grid:[
-    'EEGHH.',
-    '..GC.B',
-    '.XXCAB',
-    'DDDCA.',
-    'I..JJ.',
-    'IFFFKK'
-  ]},
-  { name:'Hard 5', diff:'hard', optimal:12, grid:[
-    '.G..HH',
-    '.G.EEC',
+    'DDEE..',
+    'J..AKK',
     'JXXABC',
-    'JI.AB.',
-    '.IDFFF',
-    '..D...'
+    '...ABC',
+    'HFFF.I',
+    'H.GG.I'
   ]},
-  { name:'Hard 6', diff:'hard', optimal:13, grid:[
-    '......',
-    '..ABGG',
-    'XXAB..',
-    'F.ABDH',
-    'FCC.DH',
-    '..EE.H'
+  { name:'Hard 5', diff:'hard', optimal:11, grid:[
+    'KEEE.H',
+    'KCC.AH',
+    'K.XXAB',
+    'JFIIAB',
+    'JFDG.B',
+    '.FDGLL'
   ]},
-  { name:'Hard 7', diff:'hard', optimal:13, grid:[
-    'F..KKJ',
-    'F.HH.J',
-    'DXXBAC',
-    'DEEBAC',
-    'D.GBAC',
-    '..G.II'
+  { name:'Hard 6', diff:'hard', optimal:11, grid:[
+    'E.DJJ.',
+    'E.DBKK',
+    'XXDBAC',
+    '.LL.AC',
+    'FF..H.',
+    'GGIIH.'
   ]},
-  { name:'Hard 8', diff:'hard', optimal:16, grid:[
-    '..JJJ.',
-    'H..CAB',
-    'HXXCAB',
-    'FE.C.G',
-    'FE.IIG',
-    'F.DDD.'
+  { name:'Hard 7', diff:'hard', optimal:11, grid:[
+    'HHH.BK',
+    '.GGGBK',
+    '.XXABC',
+    'FLLA.C',
+    'FIJJDD',
+    '.IEE..'
+  ]},
+  { name:'Hard 8', diff:'hard', optimal:11, grid:[
+    '...DDG',
+    '.FFFCG',
+    'XXABCE',
+    'IIAB.E',
+    'LLHHH.',
+    'JJ.KKK'
+  ]},
+  { name:'Hard 9', diff:'hard', optimal:12, grid:[
+    'HK.GG.',
+    'HK.ACD',
+    'XXBACD',
+    'NEB.II',
+    'NEFFMM',
+    'LLLJJ.'
+  ]},
+  { name:'Hard 10', diff:'hard', optimal:12, grid:[
+    '.LLLJJ',
+    'DDD.B.',
+    'IXXABC',
+    'IGGABC',
+    'F.HH.M',
+    'FEEKKM'
+  ]},
+  { name:'Hard 11', diff:'hard', optimal:13, grid:[
+    'GG.JFF',
+    'CHHJA.',
+    'C.XXAB',
+    'C.IIIB',
+    '.EEEDB',
+    'KK..D.'
+  ]},
+  { name:'Hard 12', diff:'hard', optimal:14, grid:[
+    'KKEE.A',
+    '..B.CA',
+    'XXB.CA',
+    'ID.FLL',
+    'ID.FJJ',
+    'IDHHGG'
+  ]},
+  { name:'Hard 13', diff:'hard', optimal:14, grid:[
+    '..EE..',
+    'HH.ABC',
+    'KXXABC',
+    'K...B.',
+    'GDJFF.',
+    'GDJ.II'
+  ]},
+  { name:'Hard 14', diff:'hard', optimal:17, grid:[
+    'FIIIB.',
+    'FGG.BA',
+    '.XXCBA',
+    'JL.C.A',
+    'JLH.EE',
+    'KKHDD.'
+  ]},
+  { name:'Hard 15', diff:'hard', optimal:19, grid:[
+    'HH.EE.',
+    'JJJD..',
+    'XXCDBA',
+    '..C.BA',
+    'GF.KKA',
+    'GF.II.'
   ]}
 ];
 
@@ -356,6 +556,81 @@ var WOOD_COLORS=['#7a5028','#8a5832','#6e4624','#94603a','#6b3c1e','#7f4a26','#8
 function blockColor(idx,special){
   if(special)return '#7ab356';
   return WOOD_COLORS[idx%WOOD_COLORS.length];
+}
+
+// ── BFS hint solver (browser-side) ─────────────────────────────────────────
+// Serialize blocks into a canonical state key
+function _serializeBlocks(blks){
+  var parts=blks.map(function(b){return b.id+b.row+b.col;});
+  parts.sort();
+  return parts.join(',');
+}
+function _isWonState(blks){
+  for(var i=0;i<blks.length;i++){
+    var b=blks[i];
+    if(b.special&&b.orient==='h'&&b.row===EXIT_ROW&&b.col+b.length>=SZ)return true;
+  }
+  return false;
+}
+function _genStateMoves(blks){
+  // Build occupancy grid for this state, return array of {blockIdx, delta}
+  var g=new Array(SZ*SZ).fill(null);
+  for(var bi=0;bi<blks.length;bi++){
+    var bb=blks[bi];
+    for(var k=0;k<bb.length;k++){
+      var cell=bb.orient==='h'?bb.row*SZ+bb.col+k:(bb.row+k)*SZ+bb.col;
+      g[cell]=bb.id;
+    }
+  }
+  var moves=[];
+  for(var idx=0;idx<blks.length;idx++){
+    var b=blks[idx];
+    var bcells=[];
+    for(var kk=0;kk<b.length;kk++){
+      var c=b.orient==='h'?b.row*SZ+b.col+kk:(b.row+kk)*SZ+b.col;
+      bcells.push(c);g[c]=null;
+    }
+    if(b.orient==='h'){
+      for(var l=1;b.col-l>=0;l++){if(g[b.row*SZ+b.col-l]!==null)break;moves.push({idx:idx,delta:-l});}
+      for(var rt=1;b.col+b.length-1+rt<SZ;rt++){if(g[b.row*SZ+b.col+b.length-1+rt]!==null)break;moves.push({idx:idx,delta:rt});}
+    } else {
+      for(var u=1;b.row-u>=0;u++){if(g[(b.row-u)*SZ+b.col]!==null)break;moves.push({idx:idx,delta:-u});}
+      for(var d=1;b.row+b.length-1+d<SZ;d++){if(g[(b.row+b.length-1+d)*SZ+b.col]!==null)break;moves.push({idx:idx,delta:d});}
+    }
+    for(var ri=0;ri<bcells.length;ri++)g[bcells[ri]]=b.id;
+  }
+  return moves;
+}
+function _applyStateMove(blks,move){
+  var out=blks.map(function(b){return{id:b.id,length:b.length,orient:b.orient,row:b.row,col:b.col,special:b.special};});
+  var nb=out[move.idx];
+  if(nb.orient==='h')nb.col+=move.delta;else nb.row+=move.delta;
+  return out;
+}
+// BFS to find next optimal move from the current board state.
+// Returns {blockId, delta} for the first move on a shortest path to win, or null.
+// Time-capped so we never freeze on a pathological state.
+function computeHint(){
+  var start=cloneBlocks();
+  if(_isWonState(start))return null;
+  var t0=Date.now();
+  var queue=[{blks:start,firstMove:null}];
+  var visited={};
+  visited[_serializeBlocks(start)]=true;
+  while(queue.length){
+    if(Date.now()-t0>1200)return null; // cap at ~1.2s
+    var node=queue.shift();
+    var nm=_genStateMoves(node.blks);
+    for(var i=0;i<nm.length;i++){
+      var mv=nm[i];
+      var nb=_applyStateMove(node.blks,mv);
+      var first=node.firstMove||{blockId:node.blks[mv.idx].id,delta:mv.delta};
+      if(_isWonState(nb))return first;
+      var key=_serializeBlocks(nb);
+      if(!visited[key]){visited[key]=true;queue.push({blks:nb,firstMove:first});}
+    }
+  }
+  return null;
 }
 
 // ── Parsing ───────────────────────────────────────────────────────────────
@@ -703,7 +978,8 @@ function renderBoard(){
     '</div>'+
     '<div class="RRbtn-row">'+
       '<button class="RRb" id="RRu" onclick="_RRundo()" disabled>↶ Undo</button>'+
-      '<button class="RRb" onclick="_RRreset()">↻ Reset</button>'+
+      '<button class="RRb" id="RRh" onclick="_RRhint()">💡 Hint</button>'+
+      '<button class="RRb" id="RRr" onmousedown="_RRresetStart()" onmouseup="_RRresetEnd()" onmouseleave="_RRresetEnd()" ontouchstart="_RRresetStart();event.preventDefault()" ontouchend="_RRresetEnd()" ontouchcancel="_RRresetEnd()">↻ Reset</button>'+
     '</div>';
   pan.appendChild(ctrl);
   var lvlRow=document.createElement('div');
@@ -727,6 +1003,50 @@ function GRR(a){
 }
 
 window._RRundo=function(){undoMove();};
+window._RRhint=function(){
+  if(won)return;
+  var btn=document.getElementById('RRh');
+  if(btn)btn.textContent='…';
+  setTimeout(function(){
+    var hint=computeHint();
+    if(btn)btn.textContent='💡 Hint';
+    if(!hint){sm('No hint available');return;}
+    var b=blocks.filter(function(x){return x.id===hint.blockId;})[0];
+    if(!b)return;
+    // Pulse the hinted block briefly so the player sees which to move
+    var target=document.querySelector('.RRblock[data-id="'+hint.blockId+'"]');
+    if(target){
+      target.style.transition='box-shadow .2s ease,transform .2s ease';
+      target.style.boxShadow='0 0 18px rgba(255,220,112,0.85),inset 0 1px 0 rgba(255,255,255,0.3)';
+      target.style.transform+=' scale(1.05)';
+      setTimeout(function(){target.style.boxShadow='';target.style.transform=target.style.transform.replace(' scale(1.05)','');},900);
+    }
+    var dir;
+    if(b.orient==='h')dir=hint.delta>0?'right':'left';
+    else dir=hint.delta>0?'down':'up';
+    sm('Move '+b.id+' '+dir+(Math.abs(hint.delta)>1?' '+Math.abs(hint.delta):''));
+    _play('tap');
+  },40);
+};
+
+// Hold-to-reset — prevents accidental taps during fast play
+var _rrResetT=null;
+window._RRresetStart=function(){
+  if(won)return;
+  var btn=document.getElementById('RRr');
+  if(btn){btn.textContent='HOLD…';btn.classList.add('gold');}
+  _rrResetT=setTimeout(function(){
+    _rrResetT=null;
+    resetLevel();
+    var b=document.getElementById('RRr');
+    if(b){b.textContent='↻ Reset';b.classList.remove('gold');}
+  },700);
+};
+window._RRresetEnd=function(){
+  if(_rrResetT){clearTimeout(_rrResetT);_rrResetT=null;}
+  var btn=document.getElementById('RRr');
+  if(btn){btn.textContent='↻ Reset';btn.classList.remove('gold');}
+};
 window._RRreset=function(){resetLevel();};
 window._RRprev=function(){if(levelIdx>0){if(timerId)clearInterval(timerId);loadLevel(levelIdx-1,false);}};
 window._RRnext=function(){if(levelIdx<LEVELS.length-1){if(timerId)clearInterval(timerId);loadLevel(levelIdx+1,false);}};
