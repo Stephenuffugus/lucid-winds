@@ -59,99 +59,87 @@ function _buildLevels(){
   }
   function randInt(n){return Math.floor(rand()*n);}
 
-  function solvedState(numColors){
-    var t=[];
-    for(var c=0;c<numColors;c++){
-      var col=[];for(var k=0;k<CAP;k++)col.push(c);
-      t.push(col);
-    }
-    // Two empty tubes — the standard genre count.
-    t.push([]);t.push([]);
-    return t;
-  }
-  function cloneTubes(t){return t.map(function(c){return c.slice();});}
-  function legalPour(t,from,to){
-    if(from===to)return false;
-    var src=t[from],dst=t[to];
-    if(!src.length)return false;
-    if(dst.length>=CAP)return false;
-    if(dst.length&&dst[dst.length-1]!==src[src.length-1])return false;
-    return true;
-  }
-  // Single-unit pour — used only by the scramble. The in-game pour rule still
-  // moves all contiguous top-of-color units; we scramble one unit at a time
-  // so that a full-tube-to-empty move doesn't trivially keep the state sorted.
-  // Single-unit moves are a subset of the legal multi-unit moves, so every
-  // state the scramble reaches is reachable (and thus solvable) via real play.
-  function pourOne(t,from,to){
-    t[to].push(t[from].pop());
-  }
   function isSolved(t){
     return t.every(function(col){
       return col.length===0||(col.length===CAP&&col.every(function(c){return c===col[0];}));
     });
   }
-  function scramble(numColors,numMoves){
-    var t=solvedState(numColors);
-    var last=-1;
-    for(var i=0;i<numMoves;i++){
-      var candidates=[];
-      for(var a=0;a<t.length;a++){
-        for(var b=0;b<t.length;b++){
-          if(a===b)continue;
-          if(legalPour(t,a,b)){
-            // Don't immediately reverse the previous single-unit move.
-            if(last!==-1&&a===lastTo&&b===lastFrom)continue;
-            candidates.push({from:a,to:b});
-          }
-        }
-      }
-      if(!candidates.length)break;
-      var pick=candidates[randInt(candidates.length)];
-      pourOne(t,pick.from,pick.to);
-      lastFrom=pick.from;lastTo=pick.to;last=i;
+  // How many tubes are "already home" — monochrome-full. Used to reject
+  // shuffles that accidentally sorted a color. Player didn't earn those.
+  function freebies(t){
+    var n=0;
+    for(var i=0;i<t.length;i++){
+      var col=t[i];
+      if(col.length===CAP&&col.every(function(c){return c===col[0];}))n++;
     }
+    return n;
+  }
+  // Full shuffle: pool every unit, Fisher-Yates, redistribute into tubes.
+  // This produces genuinely mixed states (old single-unit walk only
+  // nudged colors by 1 cell per step and left the board mostly sorted).
+  // Reject shuffles that land on a solved state or have too many
+  // already-finished color groups for the target difficulty.
+  function shuffledState(numColors,maxFreebies){
+    for(var attempt=0;attempt<80;attempt++){
+      var pool=[];
+      for(var c=0;c<numColors;c++)for(var k=0;k<CAP;k++)pool.push(c);
+      for(var i=pool.length-1;i>0;i--){
+        var j=randInt(i+1);
+        var tmp=pool[i];pool[i]=pool[j];pool[j]=tmp;
+      }
+      var t=[];
+      for(var tc=0;tc<numColors;tc++){
+        var tube=[];
+        for(var kk=0;kk<CAP;kk++)tube.push(pool[tc*CAP+kk]);
+        t.push(tube);
+      }
+      t.push([]);t.push([]);
+      if(isSolved(t))continue;
+      if(freebies(t)>maxFreebies)continue;
+      return t;
+    }
+    // Fallback — shouldn't happen but don't hang on it.
     return t;
   }
-  var lastFrom=-1,lastTo=-1;
 
   var levels=[];
-  // Difficulty spec (colors, extraEmpty, scrambleDepth, optimal cap)
+  // Difficulty spec (colors, maxFreebies, difficulty label).
+  // maxFreebies = the largest allowed number of tubes that start already
+  // monochrome-full. Tutorial levels may have 1 freebie for a gentle intro;
+  // harder levels require every tube to need real work.
   var SPEC=[
-    // 3 colors × 6 levels — tutorial
-    [3,2,8,'easy'],[3,2,10,'easy'],[3,2,12,'easy'],
-    [3,2,14,'easy'],[3,2,16,'easy'],[3,2,18,'easy'],
+    // 3 colors × 6 levels — tutorial (1 freebie OK for first few)
+    [3,1,'easy'],[3,1,'easy'],[3,0,'easy'],
+    [3,0,'easy'],[3,0,'easy'],[3,0,'easy'],
     // 4 colors × 8 levels
-    [4,2,14,'easy'],[4,2,17,'easy'],[4,2,20,'easy'],[4,2,23,'easy'],
-    [4,2,26,'easy'],[4,2,28,'medium'],[4,2,30,'medium'],[4,2,32,'medium'],
+    [4,1,'easy'],[4,0,'easy'],[4,0,'easy'],[4,0,'easy'],
+    [4,0,'easy'],[4,0,'medium'],[4,0,'medium'],[4,0,'medium'],
     // 5 colors × 10 levels
-    [5,2,22,'medium'],[5,2,25,'medium'],[5,2,28,'medium'],[5,2,31,'medium'],
-    [5,2,34,'medium'],[5,2,37,'medium'],[5,2,40,'medium'],[5,2,42,'medium'],
-    [5,2,44,'medium'],[5,2,46,'medium'],
+    [5,1,'medium'],[5,0,'medium'],[5,0,'medium'],[5,0,'medium'],
+    [5,0,'medium'],[5,0,'medium'],[5,0,'medium'],[5,0,'medium'],
+    [5,0,'medium'],[5,0,'medium'],
     // 6 colors × 10 levels
-    [6,2,30,'medium'],[6,2,34,'medium'],[6,2,38,'hard'],[6,2,42,'hard'],
-    [6,2,46,'hard'],[6,2,50,'hard'],[6,2,54,'hard'],[6,2,58,'hard'],
-    [6,2,62,'hard'],[6,2,66,'hard'],
+    [6,0,'medium'],[6,0,'medium'],[6,0,'hard'],[6,0,'hard'],
+    [6,0,'hard'],[6,0,'hard'],[6,0,'hard'],[6,0,'hard'],
+    [6,0,'hard'],[6,0,'hard'],
     // 7 colors × 14 levels
-    [7,2,40,'hard'],[7,2,44,'hard'],[7,2,48,'hard'],[7,2,52,'hard'],
-    [7,2,56,'hard'],[7,2,60,'hard'],[7,2,64,'hard'],[7,2,68,'hard'],
-    [7,2,72,'hard'],[7,2,76,'hard'],[7,2,80,'hard'],[7,2,84,'hard'],
-    [7,2,88,'hard'],[7,2,92,'hard'],
+    [7,0,'hard'],[7,0,'hard'],[7,0,'hard'],[7,0,'hard'],
+    [7,0,'hard'],[7,0,'hard'],[7,0,'hard'],[7,0,'hard'],
+    [7,0,'hard'],[7,0,'hard'],[7,0,'hard'],[7,0,'hard'],
+    [7,0,'hard'],[7,0,'hard'],
     // 8 colors × 12 levels — expert
-    [8,2,60,'expert'],[8,2,66,'expert'],[8,2,72,'expert'],[8,2,78,'expert'],
-    [8,2,84,'expert'],[8,2,90,'expert'],[8,2,96,'expert'],[8,2,102,'expert'],
-    [8,2,108,'expert'],[8,2,114,'expert'],[8,2,120,'expert'],[8,2,126,'expert']
+    [8,0,'expert'],[8,0,'expert'],[8,0,'expert'],[8,0,'expert'],
+    [8,0,'expert'],[8,0,'expert'],[8,0,'expert'],[8,0,'expert'],
+    [8,0,'expert'],[8,0,'expert'],[8,0,'expert'],[8,0,'expert']
   ];
   for(var li=0;li<SPEC.length;li++){
     var spec=SPEC[li];
-    var numColors=spec[0],extra=spec[1],depth=spec[2],diff=spec[3];
-    var t=scramble(numColors,depth);
-    // Sanity: reject any level that accidentally scrambled back to solved.
-    if(isSolved(t)){numColors--;t=scramble(numColors,depth);}
+    var numColors=spec[0],maxF=spec[1],diff=spec[2];
+    var t=shuffledState(numColors,maxF);
     levels.push({
       n:li+1,
       numColors:numColors,
-      extraEmpty:extra,
+      extraEmpty:2,
       difficulty:diff,
       tubes:t
     });
