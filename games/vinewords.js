@@ -1,179 +1,459 @@
 // ═══ LUCID WINDS — Vine Words (Boggle-style word finder) ═══
+// 4x4 grid. Drag or tap letters to chain adjacent cells (incl diagonal).
+// Each die is based on traditional Boggle distribution so games feel real.
+// Dictionary: ENABLE public-domain word list, 168,455 words of 3-15 letters.
+// Scoring: 3-4 letters 1pt, 5=2, 6=3, 7=5, 8+=11 (official Boggle scoring).
+// Timer 3 minutes (tournament standard). Pause button. Path drawing on
+// canvas overlay. End-of-round summary shows your words AND the words you
+// missed so the player actually learns vocabulary.
 (function(){
 'use strict';
 var G=window._G;
 var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G.sr;
 
+// ── Dictionary (loaded from vinewords-dict.js as sorted array) ─────────────
+// Build Set on first use for O(1) isWord, keep sorted array for prefix binary
+// search (needed by the solver that enumerates missed words at end of round).
+function getDictSet(){
+  if(window.LW_VINE_DICT_SET)return window.LW_VINE_DICT_SET;
+  var arr=window.LW_VINE_DICT_ARR||[];
+  var s={};
+  for(var i=0;i<arr.length;i++)s[arr[i]]=1;
+  window.LW_VINE_DICT_SET=s;
+  return s;
+}
+function isPrefix(p){
+  var arr=window.LW_VINE_DICT_ARR||[];
+  if(!arr.length)return false;
+  var lo=0,hi=arr.length-1;
+  while(lo<=hi){
+    var mid=(lo+hi)>>>1;
+    var w=arr[mid];
+    if(w<p){lo=mid+1;}
+    else if(w>p){
+      // w > p — is p a prefix of w?
+      if(w.indexOf(p)===0)return true;
+      hi=mid-1;
+    } else return true;
+  }
+  // Check neighbors (for when we narrowed to a word that's alphabetically just past p)
+  if(lo<arr.length&&arr[lo].indexOf(p)===0)return true;
+  return false;
+}
+
+// ── Traditional Boggle "New Generation" dice (2012 set, 16 dice × 6 faces) ──
+// Ensures realistic letter frequency + playable Q (includes Qu on one die).
+var DICE_NEW=[
+  ['A','A','E','E','G','N'], ['A','B','B','J','O','O'], ['A','C','H','O','P','S'],
+  ['A','F','F','K','P','S'], ['A','O','O','T','T','W'], ['C','I','M','O','T','U'],
+  ['D','E','I','L','R','X'], ['D','E','L','R','V','Y'], ['D','I','S','T','T','Y'],
+  ['E','E','G','H','N','W'], ['E','E','I','N','S','U'], ['E','H','R','T','V','W'],
+  ['E','I','O','S','S','T'], ['E','L','R','T','T','Y'], ['H','I','M','N','U','QU'],
+  ['H','L','N','N','R','Z']
+];
+
+// Helpers
+function shuffle(arr){for(var i=arr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=arr[i];arr[i]=arr[j];arr[j]=t;}return arr;}
+function padTime(n){return n<10?'0'+n:''+n;}
+function formatTime(sec){return Math.floor(sec/60)+':'+padTime(sec%60);}
+function scoreFor(len){return len<=4?1:len===5?2:len===6?3:len===7?5:len>=8?11:0;}
 
 window._gameFns=window._gameFns||{};
 window._gameFns.vinewords=function VW(a){
-  // Compact English 3-6 letter word list (~600 words) for validation.
-  var WORDS=('THE,AND,ARE,FOR,NOT,BUT,YOU,ALL,CAN,HER,WAS,ONE,OUR,OUT,DAY,GET,HAS,HIM,HIS,HOW,'+
-    'MAN,NEW,NOW,OLD,SEE,TWO,WAY,WHO,BOY,DID,ITS,LET,PUT,SAY,SHE,TOO,USE,DAD,MOM,ANT,ARM,ART,ASK,ATE,BAD,BAG,BAT,BED,BEE,BEG,BIG,BIT,BOX,BUG,BUS,BUY,CAP,CAR,CAT,COW,CRY,CUP,CUT,'+
-    'DIG,DOG,DRY,EAR,EAT,EGG,END,EYE,FAN,FAR,FAT,FEW,FIN,FIT,FIX,FLY,FOG,FUN,GAS,GOT,GUN,GYM,HAM,HAT,HAY,HEN,HIT,HOP,HOT,HUG,ICE,INK,JAM,JOB,JOG,JOY,KEY,KID,LAB,LAP,LAW,LEG,LET,LID,LIE,LIP,'+
-    'LOG,LOW,MAD,MAP,MAT,MEN,MET,MIX,MUD,NAP,NET,NUT,OAK,OFF,OIL,OWL,OWN,PAN,PEN,PET,PIE,PIG,PIN,POT,RAN,RAT,RED,RIB,RIM,ROW,RUB,RUG,RUN,SAD,SAT,SEA,SET,SIP,SIR,SIT,SIX,SKI,SKY,SON,SUN,TAN,'+
-    'TAP,TAR,TAX,TEA,TEN,TIE,TIN,TIP,TON,TOP,TOY,TRY,TUB,VAN,WAR,WAS,WAX,WEB,WET,WIN,YES,YET,YOU,ZIP,ZOO,'+
-    'ABLE,ACID,ACT,ACE,ACRE,AERO,AIDE,AIRY,AJAR,AKIN,ALBA,ALOE,ALPS,ALSO,AMID,AMUS,APEX,ARCH,AREA,ARMY,AUNT,AUTO,AVID,AWAY,AWES,AXES,AXIS,AXLE,BABE,BABY,BACK,BADE,BAIT,BAKE,BALD,BALE,BALL,BAND,'+
-    'BANE,BANG,BANK,BARB,BARD,BARE,BARK,BARN,BASE,BASH,BASS,BATH,BEAD,BEAK,BEAM,BEAN,BEAR,BEAT,BEEF,BEEN,BELL,BELT,BEND,BENT,BEST,BIAS,BIDE,BIKE,BILL,BIND,BIRD,BITE,BLED,BLEW,BLOB,BLOC,BLOT,'+
-    'BLOW,BLUE,BLUR,BOAR,BOAT,BODY,BOIL,BOLD,BOLT,BOMB,BOND,BONE,BONY,BOOK,BOOM,BOON,BOOR,BOOT,BORE,BORN,BOSS,BOTH,BOUT,BOWL,BRAN,BRAS,BRAT,BRAY,BRED,BREW,BRIM,BROW,BUCK,BUDS,BUFF,BULB,BULK,'+
-    'BULL,BUMP,BUNK,BURN,BURY,BUSH,BUSY,BYTE,CAFE,CAGE,CAKE,CALF,CALL,CALM,CAME,CAMP,CANE,CAPE,CARD,CARE,CARP,CART,CASE,CASH,CAST,CAVE,CEDE,CELL,CENT,CHAP,CHAR,CHAT,CHEW,CHIN,CHIP,CHOP,CHUB,'+
-    'CITE,CITY,CLAD,CLAM,CLAN,CLAP,CLAW,CLAY,CLEF,CLIP,CLOD,CLOG,CLOT,CLOY,CLUB,CLUE,COAL,COAT,COAX,CODE,COIL,COIN,COKE,COLD,COLT,COMB,COME,CONE,CONS,COOK,COOL,COPE,COPY,CORD,CORE,CORK,CORN,'+
-    'COST,COTS,COUP,COVE,CRAB,CRAG,CRAM,CRAP,CRAW,CREW,CRIB,CROP,CROW,CUBE,CUED,CUFF,CULT,CURB,CURD,CURE,CURL,CURT,CUSP,CYST,DAFT,DAIS,DALE,DAME,DAMP,DANK,DARE,DARK,DART,DASH,DATA,DATE,DAUB,'+
-    'DAZE,DEAD,DEAF,DEAL,DEAN,DEAR,DEBT,DECK,DEED,DEEM,DEEP,DEER,DELI,DELL,DELT,DEMO,DENS,DENT,DESK,DIAL,DICE,DIED,DIET,DIME,DINE,DINT,DIRE,DIRT,DISC,DISH,DIVE,DOCK,DOES,DOLE,DOLL,DOME,DONE,'+
-    'DOOR,DOPE,DOSE,DOTE,DOUR,DOVE,DOWN,DOZE,DRAB,DRAG,DRAM,DRAW,DREW,DRIP,DROP,DRUG,DRUM,DUAL,DUCK,DUCT,DUDE,DUEL,DUET,DUKE,DULL,DULY,DUMP,DUNE,DUNK,DUOS,DUPE,DUSK,DUST,DUTY,DYED,DYER,DYES,'+
-    'EACH,EARN,EARS,EASE,EAST,EASY,EATS,EBBS,ECHO,EDDY,EDEN,EDGE,EDGY,EDIT,EELS,EGGS,EGOS,EIRE,ELFS,ELKS,ELMS,ELSE,EMIR,EMIT,ENDS,EONS,EPIC,ERAS,ERGO,EROS,ERRS,EURO,EVEN,EVER,EVIL,EWES,EXAM,'+
-    'EXIT,EYED,EYES,FACE,FACT,FADE,FAIL,FAIN,FAIR,FAKE,FALL,FAME,FARE,FARM,FAST,FATE,FAWN,FEAR,FEAT,FEED,FEEL,FELL,FELT,FEND,FERN,FERS,FESS,FETA,FEUD,FIAT,FIEF,FIFE,FILE,FILL,FILM,FIND,FINE,'+
-    'FIRE,FIRM,FISH,FIST,FITS,FIVE,FLAG,FLAP,FLAT,FLAW,FLAX,FLED,FLEE,FLEW,FLEX,FLIP,FLIT,FLOE,FLOG,FLOP,FLOW,FLUB,FLUE,FLUX,FOAL,FOAM,FOCI,FOES,FOGY,FOIL,FOLD,FOLK,FOND,FONT,FOOD,FOOL,FOOT,'+
-    'FORD,FORE,FORK,FORM,FORT,FOUL,FOUR,FOWL,FRAY,FREE,FROG,FROM,FUEL,FULL,FUME,FUND,FUNK,FURL,FURS,FURY,FUSE,FUSS,FUZZ,GAFF,GAGE,GAIN,GAIT,GALA,GALE,GALL,GAME,GANG,GAPE,GAPS,GARB,GATE,GAVE,'+
-    'GAWK,GAZE,GEAR,GEES,GEMS,GENE,GENT,GERM,GETS,GIBE,GIFT,GILD,GILL,GILT,GINS,GIRD,GIRL,GIST,GIVE,GLAD,GLEN,GLIB,GLOB,GLOW,GLUE,GLUM,GLUT,GNAT,GOAD,GOAL,GOAT,GODS,GOES,GOLD,GOLF,GONE,GONG,'+
-    'GOOD,GOOF,GOOP,GORE,GORY,GOSH,GOUT,GOWN,GRAB,GRAD,GRAM,GRAY,GREW,GREY,GRID,GRIM,GRIN,GRIP,GRIT,GROG,GROW,GRUB,GULF,GULL,GULP,GUMS,GUNK,GURU,GUSH,GUST,GUTS,HACK,HAIR,HALE,HALF,HALL,HALO,'+
-    'HALT,HAND,HANG,HARD,HARE,HARK,HARM,HARP,HASH,HATE,HAUL,HAVE,HAWK,HAZE,HAZY,HEAD,HEAL,HEAP,HEAR,HEAT,HEED,HEEL,HELD,HELL,HELM,HELP,HEMP,HENS,HERB,HERD,HERE,HERO,HERS,HEWN,HIDE,HIGH,HIKE,'+
-    'HILL,HILT,HIND,HINT,HIRE,HITS,HIVE,HOAR,HOAX,HOBO,HOCK,HOES,HOLD,HOLE,HOLY,HOME,HONE,HOOD,HOOF,HOOK,HOOP,HOOT,HOPE,HORN,HOSE,HOST,HOUR,HOWL,HUBS,HUES,HUFF,HUGE,HULA,HULK,HULL,HUMP,HUMS,'+
-    'HUNG,HUNK,HUNT,HURL,HURT,HUSH,HUSK,HYMN,ICED,ICES,ICKY,IDEA,IDLE,IDLY,IDOL,IGLOO,INCH,INTO,IONS,IOTA,IRIS,IRON,ITCH,ITEM,IVES,IVORY,JABS,JACK,JADE,JAIL,JARS,JAVA,JAWS,JAZZ,JEEP,JEER,JELL,'+
-    'JERK,JEST,JETS,JIBE,JIFF,JIGS,JILT,JINX,JOBS,JOCK,JOEY,JOGS,JOIN,JOKE,JOLT,JOTS,JOWL,JUDO,JUGS,JUMP,JUNK,JURY,JUST,KALE,KAYO,KEEL,KEEN,KEEP,KEGS,KEPT,KEYS,KICK,KILL,KILN,KILO,KILT,KIND,KING,'+
-    'KINK,KISS,KITE,KITH,KITS,KIWI,KNEE,KNEW,KNIT,KNOB,KNOT,KNOW,KUDO,LACE,LACK,LADE,LADS,LADY,LAGS,LAID,LAIR,LAKE,LAMB,LAME,LAMP,LAND,LANE,LAPS,LARK,LASH,LAST,LATE,LAUD,LAVA,LAWN,LAWS,LAYS,LAZY,'+
-    'LEAD,LEAF,LEAK,LEAN,LEAP,LEAS,LED,LEES,LEFT,LEGS,LEND,LENS,LENT,LESS,LETS,LEVY,LEWD,LIAR,LICE,LICK,LIDS,LIED,LIES,LIEU,LIFE,LIFT,LIKE,LILY,LIMB,LIME,LIMP,LINE,LINK,LINT,LION,LIPS,LIRA,LISP,'+
-    'LIST,LITE,LIVE,LOAD,LOAF,LOAM,LOAN,LOBE,LOCK,LODE,LOFT,LOGO,LOGS,LOIN,LOLL,LONE,LONG,LOOK,LOOM,LOON,LOOP,LOOS,LOOT,LORD,LORE,LOSE,LOSS,LOST,LOTS,LOUD,LOVE,LOWS,LUCK,LULL,LUMP,LUNG,LURE,'+
-    'LURK,LUSH,LUST,LUTE,LYNX,LYRE,MACE,MADE,MAGI,MAID,MAIL,MAIN,MAKE,MALE,MALL,MALT,MAMA,MANE,MANS,MANY,MAPS,MARE,MARK,MARS,MART,MASH,MASK,MASS,MAST,MATH,MATS,MAUL,MAZE,MEAD,MEAL,MEAN,MEAT,'+
-    'MEEK,MEET,MELD,MELT,MEMO,MEND,MENU,MEOW,MERE,MESH,MESS,METE,MEWS,MICE,MIEN,MIFF,MILD,MILE,MILK,MILL,MIME,MIND,MINE,MINI,MINK,MINT,MIRE,MISO,MISS,MIST,MITE,MITT,MOAN,MOAT,MOBS,MOCK,MODE,'+
-    'MOIL,MOLD,MOLE,MOLT,MOMS,MONK,MOOD,MOON,MOOR,MOOS,MOOT,MOPE,MOPS,MORE,MOSS,MOST,MOTE,MOTH,MOVE,MOWN,MUCH,MUCK,MUFF,MULE,MULL,MUSE,MUSH,MUSK,MUSS,MUST,MUTE,MYTH,NAGS,NAIL,NAME,NAPE,NAPS,'+
-    'NARY,NAVE,NAVY,NEAR,NEAT,NECK,NEED,NEON,NERD,NESS,NEST,NEWS,NEXT,NICE,NICK,NIGH,NINE,NIPS,NODE,NODS,NOEL,NOEL,NONE,NOOK,NOON,NOPE,NORM,NOSE,NOSY,NOTE,NOUN,NOVA,NOWS,NUDE,NUMB,NUNS,NUTS,'+
-    'OAFS,OAKS,OARS,OATH,OATS,OBEY,OBOE,ODDS,ODES,ODOR,OFFS,OGLE,OGRE,OHMS,OILS,OILY,OINK,OKAY,OKRA,OLDS,OMEN,OMIT,ONCE,ONES,ONLY,ONTO,OOZE,OOZY,OPAL,OPEN,OPTS,OPUS,ORAL,ORBS,ORCA,ORES,ORGY,'+
-    'OURS,OUST,OUTS,OVAL,OVEN,OVER,OWED,OWES,OWLS,OWNS,PACE,PACK,PACT,PAGE,PAID,PAIL,PAIN,PAIR,PALE,PALL,PALM,PANG,PANS,PANT,PAPA,PARD,PARE,PARK,PART,PASS,PAST,PATE,PATH,PATS,PAVE,PAWN,PAWS,'+
-    'PEAK,PEAL,PEAR,PEAS,PECK,PEDS,PEEK,PEEL,PEEN,PEEP,PEER,PELT,PEND,PENS,PENT,PEPS,PERK,PERT,PESO,PEST,PEWS,PICA,PICK,PIED,PIER,PIES,PIGS,PIKE,PILE,PILL,PIMP,PINE,PING,PINK,PINS,PINT,PIPE,'+
-    'PITA,PITH,PITS,PITY,PLAN,PLAY,PLEA,PLED,PLOD,PLOP,PLOT,PLOW,PLOY,PLUG,PLUM,PLUS,POEM,POET,POGO,POKE,POLE,POLL,POLO,POMP,POND,PONY,POOL,POOP,POOR,POPE,POPS,PORE,PORK,PORT,POSE,POSH,POST,'+
-    'POUT,PRAY,PREP,PREY,PRIG,PRIM,PROD,PROM,PROP,PROS,PROW,PSIS,PUBS,PUCK,PUFF,PUGS,PUKE,PULL,PULP,PUMA,PUMP,PUNK,PUNS,PUNT,PUNY,PUPA,PUPS,PURE,PURL,PURR,PUSH,PUTS,PUTT,PYRE,QUAD,QUAY,QUIP,'+
-    'QUIT,QUIZ,RACE,RACK,RAFT,RAGE,RAGS,RAID,RAIL,RAIN,RAKE,RAMP,RAMS,RAND,RANG,RANK,RANT,RAPE,RAPS,RAPT,RARE,RASH,RASP,RATE,RATS,RAVE,RAYS,RAZE,READ,REAL,REAM,REAP,REAR,REDO,REDS,REED,REEF,'+
-    'REEK,REEL,REIN,RELY,RENT,REST,RICE,RICH,RIDE,RIFE,RIFF,RIFT,RIGS,RIME,RIMS,RIND,RING,RINK,RIOT,RIPE,RIPS,RISE,RISK,RITE,RIVE,ROAD,ROAM,ROAR,ROBE,ROBS,ROCK,RODE,RODS,ROIL,ROLE,ROLL,ROME,'+
-    'ROOF,ROOK,ROOM,ROOT,ROPE,ROSE,ROSY,ROTE,ROTS,ROUT,ROVE,ROWS,RUBS,RUBY,RUDE,RUFF,RUGS,RUIN,RULE,RUMP,RUNE,RUNG,RUNS,RUNT,RUSE,RUSH,RUSK,RUST,RUTS,SACK,SACS,SAFE,SAGA,SAGE,SAGS,SAID,SAIL,'+
-    'SAKE,SAKI,SALE,SALT,SAME,SAND,SANE,SANG,SANK,SAPS,SARI,SASH,SAT,SAUR,SAVE,SAWN,SAWS,SAYS,SCAB,SCAD,SCAM,SCAN,SCAR,SCAT,SCOW,SCUD,SCUM,SEAL,SEAM,SEAR,SEAS,SEAT,SECT,SEED,SEEK,SEEM,SEEN,'+
-    'SEEP,SEER,SEES,SELF,SELL,SEND,SENT,SERF,SETS,SEW,SEWN,SHAG,SHAH,SHAM,SHE,SHED,SHIM,SHIN,SHIP,SHOD,SHOE,SHOO,SHOP,SHOT,SHOW,SHUN,SHUT,SICK,SIDE,SIFT,SIGH,SIGN,SILK,SILL,SILO,SILT,SIMP,SINE,'+
-    'SING,SINK,SINS,SIPS,SIRE,SITE,SITS,SIZE,SKEW,SKID,SKIM,SKIN,SKIP,SKIS,SKIT,SLAB,SLAG,SLAM,SLAP,SLAT,SLAY,SLED,SLEW,SLID,SLIM,SLIP,SLIT,SLOB,SLOE,SLOG,SLOP,SLOT,SLOW,SLUG,SLUM,SLUR,SMOG,'+
-    'SMUG,SMUT,SNAG,SNAP,SNIP,SNIT,SNOB,SNOT,SNOW,SNUB,SNUG,SOAK,SOAP,SOAR,SOBS,SOCK,SODA,SODS,SOFA,SOFT,SOIL,SOLD,SOLE,SOLO,SOME,SONG,SONS,SOON,SOOT,SOPS,SORE,SORT,SOS,SOUL,SOUP,SOUR,SOWN,'+
-    'SOWS,SPAN,SPAR,SPAS,SPAT,SPAY,SPEC,SPED,SPEW,SPIN,SPIT,SPOT,SPRY,SPUD,SPUN,SPUR,STAB,STAG,STAR,STAY,STEM,STEP,STEW,STIR,STOP,STUB,STUD,STUN,STYE,SUBS,SUCH,SUCK,SUDS,SUED,SUES,SUET,SUIT,'+
-    'SULK,SUMS,SUNG,SUNK,SUNS,SURE,SURF,SWAB,SWAG,SWAM,SWAN,SWAP,SWAT,SWAY,SWIG,SWIM,SWOP,SWUM,TABS,TACK,TACT,TAIL,TAKE,TALE,TALK,TALL,TAME,TAMP,TANK,TANS,TAPE,TAPS,TARE,TARP,TART,TASK,TAUT,'+
-    'TAXI,TEAK,TEAL,TEAM,TEAR,TEAS,TECH,TEEM,TEEN,TELL,TEND,TENS,TENT,TERM,TERN,TEST,TEXT,THAN,THAT,THAW,THEE,THEM,THEN,THEY,THIN,THIS,THOU,THUD,THUG,TICK,TIDE,TIDY,TIED,TIER,TIES,TIFF,TIKE,'+
-    'TILE,TILL,TILT,TIME,TINE,TINS,TINT,TINY,TIPI,TIPS,TIRE,TOAD,TOED,TOES,TOFU,TOGA,TOIL,TOLD,TOLE,TOLL,TOMB,TOME,TONE,TONG,TONS,TOOK,TOOL,TOOT,TOPS,TORE,TORN,TORT,TOSS,TOTE,TOTS,TOUR,TOUT,'+
-    'TOWN,TOWS,TOYS,TRAD,TRAM,TRAP,TRAY,TREE,TREK,TRIM,TRIO,TRIP,TROD,TROT,TROY,TRUE,TUBA,TUBE,TUBS,TUCK,TUFT,TUGS,TUNA,TUNE,TUNS,TURD,TURF,TURN,TUSK,TUTU,TWAS,TWIG,TWIN,TWIT,TYKE,TYPE,TYPO,'+
-    'UGLY,UMPS,UNDO,UNIT,UNTO,UPON,UPPED,URGE,URNS,USED,USER,USES,VAIN,VALE,VAMP,VANE,VANS,VARY,VASE,VAST,VATS,VEAL,VEER,VEIL,VEIN,VEND,VENT,VERB,VERY,VEST,VETO,VETS,VEXT,VIAL,VIBE,VICE,VIED,'+
-    'VIES,VIEW,VILE,VIM,VINE,VISA,VISE,VOID,VOLE,VOTE,VOWS,VROW,WADE,WADS,WAFT,WAGE,WAGS,WAIF,WAIL,WAIT,WAKE,WALE,WALK,WALL,WAND,WANE,WANT,WARD,WARE,WARM,WARN,WARP,WARS,WART,WARY,WASH,WASP,'+
-    'WATT,WAVE,WAVY,WAXY,WEAK,WEAN,WEAR,WEBS,WEDS,WEED,WEEK,WEEP,WEES,WEFT,WEIR,WELD,WELL,WELT,WEND,WENT,WEPT,WERE,WEST,WETS,WHAM,WHAT,WHEN,WHET,WHEW,WHEY,WHIG,WHIM,WHIP,WHIR,WHIT,WHIZ,WHO,'+
-    'WHOA,WHOM,WHOP,WICK,WIDE,WIFE,WIGS,WILD,WILE,WILL,WILT,WILY,WIMP,WIND,WINE,WING,WINK,WINS,WINY,WIPE,WIRE,WIRY,WISE,WISH,WITH,WITS,WOES,WOKE,WOLF,WOMB,WON,WONT,WOOD,WOOF,WOOL,WORD,WORE,'+
-    'WORK,WORM,WORN,WRAP,WRIT,YANK,YARD,YARN,YAWL,YAWN,YAWS,YEAH,YEAR,YEAS,YEGG,YELL,YEN,YENS,YEPS,YETI,YOGA,YOKE,YOLK,YORE,YOU,YOUR,YOWL,YULE,YUMS,ZANY,ZAPS,ZEAL,ZEBU,ZERO,ZEST,ZINC,ZING,'+
-    'ZIPS,ZITS,ZOOM,ZOOS').split(',');
-  var DICT={};for(var wi=0;wi<WORDS.length;wi++){var w=WORDS[wi];if(w.length>=3)DICT[w]=1;}
+  var DICT=getDictSet();
+  var grid=[];                 // 4x4 of {letter:'A',display:'A'} — display handles 'QU'
+  var path=[];                 // [[r,c], ...]
+  var foundSet={},foundList=[];
+  var score=0,timeLeft=180,timerId=0,playing=false,paused=false;
+  var duration=180;            // seconds
+  var allWords=null;           // solver result at game end
+  var draggingFromCanvas=false;
 
-  var LETTER_POOL='EEEEEEEEEEEEEAAAAAAAAAIIIIIIIIOOOOOOOOTTTTTTTTTNNNNNNNSSSSSSSRRRRRRRHHHHHLLLLLDDDDCCCGGMMMBBPPFFWWYYKV';
-
-  var grid=[],path=[],foundSet={},foundList=[],score=0,timeLeft=120,timerId=0,playing=false;
-
-  ms(a,'<span style="color:var(--gold)">Score: <span id="VWs">0</span></span> · <span id="VWt">2:00</span>');
+  // UI chrome
+  ms(a,'<span style="color:var(--gold)">Score <span id="VWs">0</span></span> · <span id="VWwords">0</span> words · <span id="VWt">3:00</span>');
   mm(a);
   var pan=document.createElement('div');pan.id='VWpan';
-  pan.style.cssText='max-width:420px;margin:0 auto;padding:8px;user-select:none;-webkit-user-select:none;touch-action:none;';
+  pan.style.cssText='max-width:460px;margin:0 auto;padding:6px;user-select:none;-webkit-user-select:none;';
   a.appendChild(pan);
+
+  // Current word display + action buttons
+  var wordBar=document.createElement('div');
+  wordBar.style.cssText='text-align:center;font-family:DM Mono,monospace;font-size:1.5rem;color:var(--cream);min-height:44px;padding:6px 0;letter-spacing:0.08em;font-weight:700;';
+  wordBar.id='VWword';
+  wordBar.textContent='—';
+  pan.appendChild(wordBar);
+
+  var btnRow=document.createElement('div');
+  btnRow.style.cssText='display:flex;gap:6px;justify-content:center;padding:2px 0 8px;';
+  btnRow.innerHTML=''+
+    '<button id="VWsubmit" class="gb" style="min-height:44px;padding:8px 18px;font-size:0.82rem;letter-spacing:0.1em;">✓ SUBMIT</button>'+
+    '<button id="VWclear" class="gb" style="min-height:44px;padding:8px 18px;font-size:0.82rem;letter-spacing:0.1em;">✗ CLEAR</button>'+
+    '<button id="VWpause" class="gb" style="min-height:44px;padding:8px 18px;font-size:0.82rem;letter-spacing:0.1em;">⏸ PAUSE</button>';
+  pan.appendChild(btnRow);
+
+  // Board wrapper holds canvas for path drawing + cell grid
+  var boardWrap=document.createElement('div');
+  boardWrap.id='VWboard';
+  boardWrap.style.cssText='position:relative;width:100%;max-width:400px;margin:4px auto;aspect-ratio:1/1;touch-action:none;';
+  pan.appendChild(boardWrap);
+
+  var gridHost=document.createElement('div');
+  gridHost.style.cssText='position:absolute;inset:0;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:6px;padding:6px;';
+  boardWrap.appendChild(gridHost);
+
+  var overlay=document.createElement('canvas');
+  overlay.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;';
+  boardWrap.appendChild(overlay);
+
+  // Found words list
+  var foundBar=document.createElement('div');
+  foundBar.id='VWfound';
+  foundBar.style.cssText='margin-top:10px;padding:8px 10px;background:rgba(26,31,23,0.45);border:1px solid rgba(122,179,86,0.25);border-radius:8px;max-height:120px;overflow-y:auto;font-size:0.72rem;color:var(--cream);line-height:1.6;';
+  foundBar.innerHTML='<div style="font-family:Bebas Neue,sans-serif;color:var(--gold);font-size:0.8rem;letter-spacing:0.12em;margin-bottom:4px;">FOUND · <span id="VWfcount">0</span></div><div id="VWflist" style="font-family:DM Mono,monospace;letter-spacing:0.02em;">—</div>';
+  pan.appendChild(foundBar);
+
+  // Summary / missed-words host (hidden until game ends)
+  var summary=document.createElement('div');
+  summary.id='VWsum';
+  summary.style.cssText='display:none;margin-top:10px;padding:10px 12px;background:rgba(13,16,12,0.85);border:1.5px solid rgba(122,179,86,0.35);border-radius:10px;font-family:DM Mono,monospace;font-size:0.72rem;color:var(--cream);';
+  pan.appendChild(summary);
+
+  // Controls
   mc(a).innerHTML='<button class="gb" onclick="_VWN()">🌱 NEW</button>';
 
-  function newGrid(){
+  // Pointer coords helper
+  function boardRect(){return boardWrap.getBoundingClientRect();}
+  function cellAt(x,y){
+    var r=boardRect();
+    var dx=x-r.left,dy=y-r.top;
+    if(dx<0||dy<0||dx>r.width||dy>r.height)return null;
+    var col=Math.floor(dx/(r.width/4));
+    var row=Math.floor(dy/(r.height/4));
+    if(col<0||col>3||row<0||row>3)return null;
+    // Shrink hitbox a bit so you don't snag adjacent cells when dragging fast
+    var cw=r.width/4, ch=r.height/4;
+    var localX=dx-col*cw, localY=dy-row*ch;
+    var cx=cw/2,cy=ch/2;
+    var distSq=(localX-cx)*(localX-cx)+(localY-cy)*(localY-cy);
+    var radius=Math.min(cw,ch)*0.42;
+    if(distSq>radius*radius)return null;
+    return [row,col];
+  }
+
+  function buildGrid(){
     grid=[];
+    var dice=DICE_NEW.slice();shuffle(dice);
     for(var r=0;r<4;r++){
-      var row=[];
-      for(var c=0;c<4;c++)row.push(LETTER_POOL.charAt(Math.floor(Math.random()*LETTER_POOL.length)));
-      grid.push(row);
+      grid[r]=[];
+      for(var c=0;c<4;c++){
+        var die=dice[r*4+c];
+        var face=die[Math.floor(Math.random()*6)];
+        grid[r][c]={letter:face.toLowerCase(),display:face==='QU'?'Qu':face};
+      }
     }
   }
 
-  function adjacent(p1,p2){
-    return Math.abs(p1[0]-p2[0])<=1&&Math.abs(p1[1]-p2[1])<=1&&!(p1[0]===p2[0]&&p1[1]===p2[1]);
+  function renderCells(){
+    gridHost.innerHTML='';
+    for(var r=0;r<4;r++){
+      for(var c=0;c<4;c++){
+        var cell=document.createElement('div');
+        cell.setAttribute('data-r',r);
+        cell.setAttribute('data-c',c);
+        var inPath=isInPath(r,c);
+        var isLast=path.length>0&&path[path.length-1][0]===r&&path[path.length-1][1]===c;
+        cell.style.cssText='display:flex;align-items:center;justify-content:center;background:'+(isLast?'rgba(200,168,75,0.38)':(inPath?'rgba(122,179,86,0.32)':'linear-gradient(180deg,rgba(42,50,32,0.95),rgba(26,31,23,0.95))'))+';border:2px solid '+(isLast?'#c8a84b':(inPath?'#7ab356':'rgba(122,179,86,0.25)'))+';border-radius:12px;font-family:Bebas Neue,sans-serif;font-size:clamp(1.4rem,5.5vw,2.2rem);color:#e8dcc8;cursor:pointer;box-shadow:'+(isLast?'0 0 16px rgba(200,168,75,0.55)':(inPath?'0 0 10px rgba(122,179,86,0.35)':'0 2px 0 rgba(0,0,0,0.35)'))+';transition:background .15s ease,border-color .15s ease,transform .1s ease;letter-spacing:0.03em;';
+        cell.textContent=grid[r][c].display;
+        gridHost.appendChild(cell);
+      }
+    }
   }
 
+  function isInPath(r,c){for(var i=0;i<path.length;i++)if(path[i][0]===r&&path[i][1]===c)return true;return false;}
   function pathWord(){
-    var s='';for(var i=0;i<path.length;i++)s+=grid[path[i][0]][path[i][1]];return s;
+    var s='';
+    for(var i=0;i<path.length;i++)s+=grid[path[i][0]][path[i][1]].letter;
+    return s;
+  }
+  function adjacent(p1,p2){return Math.abs(p1[0]-p2[0])<=1&&Math.abs(p1[1]-p2[1])<=1&&!(p1[0]===p2[0]&&p1[1]===p2[1]);}
+
+  function drawPath(){
+    var r=boardRect();
+    overlay.width=r.width;overlay.height=r.height;
+    var ctx=overlay.getContext('2d');
+    ctx.clearRect(0,0,r.width,r.height);
+    if(path.length<2)return;
+    var cw=r.width/4,ch=r.height/4;
+    var curWord=pathWord();
+    var valid=curWord.length>=3&&DICT[curWord]&&!foundSet[curWord];
+    var stroke=valid?'rgba(200,168,75,0.85)':'rgba(122,179,86,0.75)';
+    ctx.strokeStyle=stroke;
+    ctx.lineWidth=Math.min(cw,ch)*0.14;
+    ctx.lineCap='round';
+    ctx.lineJoin='round';
+    ctx.beginPath();
+    for(var i=0;i<path.length;i++){
+      var p=path[i];
+      var x=p[1]*cw+cw/2,y=p[0]*ch+ch/2;
+      if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    // Draw node dots
+    for(var j=0;j<path.length;j++){
+      var pp=path[j];
+      var cx=pp[1]*cw+cw/2,cy=pp[0]*ch+ch/2;
+      ctx.fillStyle=j===path.length-1?'rgba(200,168,75,0.9)':stroke;
+      ctx.beginPath();ctx.arc(cx,cy,Math.min(cw,ch)*0.08,0,Math.PI*2);ctx.fill();
+    }
+  }
+
+  function updateWordBar(){
+    var w=pathWord();
+    var el=document.getElementById('VWword');
+    if(!el)return;
+    var canSubmit=w.length>=3&&DICT[w]&&!foundSet[w];
+    el.style.color=canSubmit?'var(--sage)':(w.length>=3&&foundSet[w]?'rgba(200,168,75,0.7)':'var(--cream)');
+    el.textContent=w?w.toUpperCase():'—';
+    var sb=document.getElementById('VWsubmit');
+    if(sb){sb.disabled=!canSubmit;sb.style.opacity=canSubmit?'1':'0.45';}
+    var cb=document.getElementById('VWclear');
+    if(cb){cb.disabled=w.length===0;cb.style.opacity=w.length>0?'1':'0.45';}
+  }
+
+  function render(){renderCells();drawPath();updateWordBar();}
+
+  function addToPath(r,c){
+    if(path.length===0){path.push([r,c]);return true;}
+    var last=path[path.length-1];
+    if(last[0]===r&&last[1]===c)return false;
+    // If already in path and not the last, step back to that position
+    for(var i=0;i<path.length-1;i++){
+      if(path[i][0]===r&&path[i][1]===c){path=path.slice(0,i+1);return true;}
+    }
+    if(adjacent(last,[r,c])){path.push([r,c]);return true;}
+    return false;
   }
 
   function submitWord(){
     var w=pathWord();
-    if(w.length>=3&&DICT[w]&&!foundSet[w]){
-      foundSet[w]=1;foundList.unshift(w);
-      var pts=w.length<=3?1:w.length===4?2:w.length===5?4:w.length===6?8:w.length===7?15:25;
-      score+=pts;
-      _e('progress');
-      if(foundList.length%5===0)_e('milestone');
-      sm('+'+pts+' '+w);
-    } else if(w.length>=3) {
-      sm(foundSet[w]?'Already found':'Not a word');
-    }
+    if(w.length<3){sm('3 letter min');path=[];render();return;}
+    if(!DICT[w]){sm('Not a word: '+w.toUpperCase());_play('lose');path=[];render();return;}
+    if(foundSet[w]){sm('Already found');path=[];render();return;}
+    foundSet[w]=1;foundList.unshift(w);
+    var pts=scoreFor(w.length);
+    score+=pts;
+    _e('progress');
+    if(foundList.length%5===0)_e('milestone');
+    sm('+'+pts+' '+w.toUpperCase());
+    _play('snap');
+    var el=document.getElementById('VWs');if(el)el.textContent=score;
+    var we=document.getElementById('VWwords');if(we)we.textContent=foundList.length;
+    renderFound();
     path=[];render();
   }
 
-  function onCell(r,c){
-    if(!playing)return;
-    var cell=[r,c];
-    // Tap within path: if last, submit; if in path, ignore; else if adjacent to last, add
-    if(path.length===0){path.push(cell);render();return;}
-    var last=path[path.length-1];
-    if(last[0]===r&&last[1]===c){submitWord();return;}
-    // In path?
-    for(var i=0;i<path.length;i++)if(path[i][0]===r&&path[i][1]===c){path=path.slice(0,i+1);render();return;}
-    if(adjacent(last,cell)){path.push(cell);render();}
-    else{path=[cell];render();}
+  function renderFound(){
+    var fc=document.getElementById('VWfcount');if(fc)fc.textContent=foundList.length;
+    var fl=document.getElementById('VWflist');
+    if(!fl)return;
+    if(foundList.length===0){fl.textContent='—';return;}
+    // Group by length for quick read
+    var parts=[];
+    for(var i=0;i<foundList.length;i++){
+      var w=foundList[i];
+      var col=w.length>=8?'#ffd86b':w.length===7?'#c8a84b':w.length===6?'#a8c978':w.length===5?'#7ab356':'rgba(232,220,200,0.7)';
+      parts.push('<span style="color:'+col+';">'+w.toUpperCase()+'</span>');
+    }
+    fl.innerHTML=parts.join(' · ');
   }
 
+  // ── Pointer handling ──
+  function onDown(e){
+    if(!playing||paused)return;
+    e.preventDefault();
+    var pt=getPoint(e);
+    var c=cellAt(pt.x,pt.y);
+    if(!c)return;
+    draggingFromCanvas=true;
+    // If this cell is already the last in path, treat as "submit"
+    if(path.length>0&&path[path.length-1][0]===c[0]&&path[path.length-1][1]===c[1]){
+      submitWord();draggingFromCanvas=false;return;
+    }
+    // If this cell is in path (not last), reset path to start fresh at this cell
+    if(isInPath(c[0],c[1])){
+      // Let user trim back rather than reset: slice to include this cell
+      for(var i=0;i<path.length;i++){
+        if(path[i][0]===c[0]&&path[i][1]===c[1]){path=path.slice(0,i+1);break;}
+      }
+    } else {
+      // Start a new path at this cell unless we can extend the current one
+      if(path.length>0){var last=path[path.length-1];if(adjacent(last,c))path.push(c);else path=[c];}
+      else path=[c];
+    }
+    render();
+  }
+  function onMove(e){
+    if(!playing||paused||!draggingFromCanvas)return;
+    if(path.length===0)return;
+    e.preventDefault();
+    var pt=getPoint(e);
+    var c=cellAt(pt.x,pt.y);
+    if(!c)return;
+    var last=path[path.length-1];
+    if(last[0]===c[0]&&last[1]===c[1])return;
+    if(addToPath(c[0],c[1]))render();
+  }
+  function onUp(e){
+    if(!draggingFromCanvas)return;
+    draggingFromCanvas=false;
+    // Auto-submit if valid on finger release, otherwise leave for manual clear
+    var w=pathWord();
+    if(w.length>=3&&DICT[w]&&!foundSet[w]){submitWord();}
+  }
+  function getPoint(e){
+    if(e.touches&&e.touches.length)return {x:e.touches[0].clientX,y:e.touches[0].clientY};
+    if(e.changedTouches&&e.changedTouches.length)return {x:e.changedTouches[0].clientX,y:e.changedTouches[0].clientY};
+    return {x:e.clientX,y:e.clientY};
+  }
+  boardWrap.addEventListener('mousedown',onDown);
+  boardWrap.addEventListener('mousemove',onMove);
+  window.addEventListener('mouseup',onUp);
+  boardWrap.addEventListener('touchstart',onDown,{passive:false});
+  boardWrap.addEventListener('touchmove',onMove,{passive:false});
+  window.addEventListener('touchend',onUp);
+
+  // Also allow tap-cell semantics (for accessibility; user clicks each letter)
+  gridHost.addEventListener('click',function(e){
+    if(!playing||paused)return;
+    if(draggingFromCanvas)return;
+    var t=e.target;
+    if(!t||!t.getAttribute)return;
+    var r=parseInt(t.getAttribute('data-r'),10);
+    var c=parseInt(t.getAttribute('data-c'),10);
+    if(isNaN(r)||isNaN(c))return;
+    if(path.length>0&&path[path.length-1][0]===r&&path[path.length-1][1]===c){submitWord();return;}
+    if(addToPath(r,c))render();
+  });
+
+  // Buttons
+  document.getElementById('VWsubmit').onclick=function(){submitWord();};
+  document.getElementById('VWclear').onclick=function(){path=[];render();};
+  document.getElementById('VWpause').onclick=function(){
+    if(!playing)return;
+    paused=!paused;
+    this.textContent=paused?'▶ RESUME':'⏸ PAUSE';
+    if(paused){sm('Paused');}else{sm('Go!');}
+  };
+
+  // ── Timer ──
   function tick(){
+    if(paused)return;
     timeLeft--;
     var t=document.getElementById('VWt');
-    if(t)t.textContent=Math.floor(timeLeft/60)+':'+(timeLeft%60<10?'0':'')+(timeLeft%60);
+    if(t)t.textContent=formatTime(timeLeft);
     if(timeLeft<=0){endGame();}
+  }
+
+  // ── Solver: find every findable word on the current board ──
+  function solveBoard(){
+    // DFS each cell, prune by isPrefix. Collect unique words of length >= 3.
+    var found={};
+    var prefixCache={};
+    function hasPref(p){if(prefixCache.hasOwnProperty(p))return prefixCache[p];var r=isPrefix(p);prefixCache[p]=r;return r;}
+    function dfs(r,c,visited,prefix){
+      // letter may be single char or "qu"
+      var lf=grid[r][c].letter;
+      var nextPrefix=prefix+lf;
+      if(!hasPref(nextPrefix))return;
+      if(nextPrefix.length>=3&&DICT[nextPrefix])found[nextPrefix]=1;
+      if(nextPrefix.length>=15)return;
+      visited[r*4+c]=1;
+      for(var dr=-1;dr<=1;dr++)for(var dc=-1;dc<=1;dc++){
+        if(dr===0&&dc===0)continue;
+        var nr=r+dr,nc=c+dc;
+        if(nr<0||nr>3||nc<0||nc>3)continue;
+        if(visited[nr*4+nc])continue;
+        dfs(nr,nc,visited,nextPrefix);
+      }
+      visited[r*4+c]=0;
+    }
+    for(var r=0;r<4;r++)for(var c=0;c<4;c++){dfs(r,c,{},'');}
+    var arr=[];for(var w in found)arr.push(w);
+    arr.sort(function(a,b){return b.length-a.length||a.localeCompare(b);});
+    return arr;
   }
 
   function endGame(){
     if(!playing)return;
     playing=false;
     if(timerId)clearInterval(timerId);
-    var won=score>=30;
-    if(won){_e('game_win');_playWin();}else{_e('game_loss');_play('lose');}
-    sm('Time! Score: '+score+' · '+foundList.length+' words');
+    var totalAvailable=null;
+    try{totalAvailable=solveBoard();}catch(e){console.error(e);}
+    allWords=totalAvailable;
+    var maxScore=0;
+    if(allWords){for(var i=0;i<allWords.length;i++)maxScore+=scoreFor(allWords[i].length);}
+    var won=score>=(maxScore*0.15); // 15% of max is "win" threshold — generous since max can be 500+
+    if(won){_e('game_win');if(_playWin)_playWin();}
+    else{_e('game_loss');_play('lose');}
+    sm('Time! Score '+score+' / '+maxScore);
     _sr('vinewords',{w:won,s:score});
-    render();
+    renderSummary(maxScore);
   }
 
-  function render(){
-    var h='';
-    var curWord=pathWord();
-    var canSubmit=curWord.length>=3&&DICT[curWord]&&!foundSet[curWord];
-    h+='<div style="text-align:center;font-family:DM Mono,monospace;font-size:1.4rem;color:'+(canSubmit?'var(--sage)':'var(--cream)')+';min-height:32px;margin:6px 0;letter-spacing:0.06em;font-weight:700;">'+(curWord||'—')+'</div>';
-    // Explicit submit + clear buttons (was hidden behind tap-last-letter-again)
-    h+='<div style="display:flex;gap:8px;justify-content:center;padding:4px 0 8px;">';
-    h+='<button class="gb" onclick="_VWsub()" '+(curWord.length===0?'disabled':'')+' style="min-height:48px;padding:10px 20px;background:'+(canSubmit?'rgba(122,179,86,0.3)':'rgba(26,31,23,0.6)')+';border-color:'+(canSubmit?'rgba(122,179,86,0.6)':'rgba(74,124,53,0.25)')+';color:'+(canSubmit?'var(--sage)':'var(--cream)')+';font-size:0.85rem;letter-spacing:0.08em;'+(curWord.length===0?'opacity:0.4;':'')+'">✓ SUBMIT</button>';
-    h+='<button class="gb" onclick="_VWclr()" '+(curWord.length===0?'disabled':'')+' style="min-height:48px;padding:10px 20px;font-size:0.85rem;letter-spacing:0.08em;'+(curWord.length===0?'opacity:0.4;':'')+'">✗ CLEAR</button>';
-    h+='</div>';
-    h+='<div style="display:flex;flex-direction:column;gap:4px;align-items:center;">';
-    for(var r=0;r<4;r++){
-      h+='<div style="display:flex;gap:4px;">';
-      for(var c=0;c<4;c++){
-        var inPath=false;for(var k=0;k<path.length;k++)if(path[k][0]===r&&path[k][1]===c){inPath=true;break;}
-        var bg=inPath?'rgba(122,179,86,0.4)':'rgba(26,31,23,0.5)';
-        var bc=inPath?'#7ab356':'rgba(122,179,86,0.2)';
-        h+='<div onclick="_VWC('+r+','+c+')" style="width:64px;height:64px;background:'+bg+';border:2px solid '+bc+';border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:1.8rem;color:var(--cream);cursor:pointer;">'+grid[r][c]+'</div>';
+  function renderSummary(maxScore){
+    if(!allWords)return;
+    var sumEl=document.getElementById('VWsum');
+    var missed=[];
+    for(var i=0;i<allWords.length;i++){if(!foundSet[allWords[i]])missed.push(allWords[i]);}
+    // group found/missed by length
+    function group(list){
+      var buckets={};
+      for(var i=0;i<list.length;i++){var L=list[i].length;if(!buckets[L])buckets[L]=[];buckets[L].push(list[i]);}
+      var keys=[];for(var k in buckets)keys.push(parseInt(k,10));
+      keys.sort(function(a,b){return b-a;});
+      var html='';
+      for(var ki=0;ki<keys.length;ki++){
+        var L=keys[ki];var ws=buckets[L];
+        var pts=scoreFor(L);
+        html+='<div style="margin:4px 0;"><span style="color:var(--gold);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;">'+L+' LETTERS · '+pts+' pt</span><br>';
+        var parts=[];
+        for(var wi=0;wi<ws.length;wi++){
+          var col=L>=8?'#ffd86b':L===7?'#c8a84b':L===6?'#a8c978':'rgba(232,220,200,0.85)';
+          parts.push('<span style="color:'+col+';">'+ws[wi].toUpperCase()+'</span>');
+        }
+        html+=parts.join(' · ')+'</div>';
       }
-      h+='</div>';
+      return html||'<div>—</div>';
     }
-    h+='</div>';
-    h+='<div style="margin-top:10px;padding:8px;background:rgba(26,31,23,0.4);border-radius:8px;max-height:90px;overflow-y:auto;font-size:0.7rem;color:var(--cream);">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;color:var(--gold);margin-bottom:4px;">FOUND: '+foundList.length+'</div>';
-    h+=foundList.slice(0,30).join(' · ');
-    h+='</div>';
-    pan.innerHTML=h;
-    var s=document.getElementById('VWs');if(s)s.textContent=score;
+    var html='';
+    html+='<div style="font-family:Bebas Neue,sans-serif;color:var(--gold);font-size:1rem;letter-spacing:0.14em;margin-bottom:6px;">TIME UP</div>';
+    html+='<div>Score <strong style="color:var(--gold);">'+score+'</strong> of <strong>'+maxScore+'</strong> possible · '+foundList.length+' of '+allWords.length+' findable words</div>';
+    var pct=maxScore?Math.round(score/maxScore*100):0;
+    html+='<div style="margin:4px 0 10px;height:6px;background:rgba(26,36,22,0.5);border-radius:3px;overflow:hidden;"><div style="height:100%;background:var(--sage);width:'+pct+'%;"></div></div>';
+    html+='<div style="font-family:Bebas Neue,sans-serif;color:var(--sage);font-size:0.88rem;letter-spacing:0.1em;margin-top:6px;">YOU FOUND ('+foundList.length+')</div>';
+    html+=group(foundList);
+    html+='<div style="font-family:Bebas Neue,sans-serif;color:#d08060;font-size:0.88rem;letter-spacing:0.1em;margin-top:10px;">MISSED ('+missed.length+')</div>';
+    html+='<div style="max-height:220px;overflow-y:auto;padding-right:4px;">'+group(missed)+'</div>';
+    sumEl.innerHTML=html;
+    sumEl.style.display='block';
   }
 
-  window._VWC=function(r,c){onCell(r,c);};
+  window._VWC=function(r,c){
+    if(!playing||paused)return;
+    if(path.length>0&&path[path.length-1][0]===r&&path[path.length-1][1]===c){submitWord();return;}
+    if(addToPath(r,c))render();
+  };
   window._VWsub=function(){if(playing)submitWord();};
   window._VWclr=function(){path=[];render();};
   window._VWN=function(){
     if(timerId)clearInterval(timerId);
-    newGrid();path=[];foundSet={};foundList=[];score=0;timeLeft=120;playing=true;
-    render();
+    document.getElementById('VWsum').style.display='none';
+    buildGrid();path=[];foundSet={};foundList=[];score=0;timeLeft=duration;playing=true;paused=false;
+    var pb=document.getElementById('VWpause');if(pb)pb.textContent='⏸ PAUSE';
+    var se=document.getElementById('VWs');if(se)se.textContent='0';
+    var we=document.getElementById('VWwords');if(we)we.textContent='0';
+    var te=document.getElementById('VWt');if(te)te.textContent=formatTime(duration);
+    renderFound();render();
     timerId=setInterval(tick,1000);
   };
 

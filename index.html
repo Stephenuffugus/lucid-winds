@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.23.37';
+  var LW_VERSION='2026.04.23.38';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -46190,6 +46190,7 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;window._a
     ag.innerHTML+='<div id="_gl" style="padding:3rem;text-align:center;color:var(--muted);font-family:DM Sans,sans-serif"><div style="font-size:1.4rem;margin-bottom:8px">🌱</div>Loading game...</div>';
     // Card games need shared card utilities loaded first
     var needCards=!!_solGames[id];
+    var needDict=(id==='vinewords');
     var loadGame=function(){
       var s=document.createElement('script');
       s.src='games/'+id+'.js?v='+LW_VERSION;
@@ -46211,6 +46212,13 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;window._a
       cs.onload=loadGame;
       cs.onerror=function(){ag.innerHTML='<div style="padding:2rem;text-align:center;color:#c75050">Failed to load card utilities.</div>'};
       document.head.appendChild(cs);
+    }else if(needDict&&!window.LW_VINE_DICT_ARR){
+      ag.innerHTML='<div id="_gl" style="padding:3rem;text-align:center;color:var(--muted);font-family:DM Sans,sans-serif"><div style="font-size:1.4rem;margin-bottom:8px">📖</div>Loading dictionary... (1.6MB, one time)</div>';
+      var ds=document.createElement('script');
+      ds.src='games/vinewords-dict.js?v='+LW_VERSION;
+      ds.onload=loadGame;
+      ds.onerror=function(){ag.innerHTML='<div style="padding:2rem;text-align:center;color:#c75050">Failed to load dictionary.</div>'};
+      document.head.appendChild(ds);
     }else{loadGame()}
   }
   _st();
