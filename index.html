@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.24.36';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.24.37';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5854,9 +5854,10 @@ window._addSwitchTabHook = function(fn){
 
   <!-- Trios-only content wrapper — hidden when playing other games -->
   <div id="trios-wrap">
-  <!-- Rules strip — always visible above cards -->
-  <div class="rules-strip" id="rules-strip">
-    <span class="rules-text">Tap 3 cards that share a pattern. Each feature — <strong>color</strong>, <strong>shape</strong>, <strong>count</strong>, <strong>shading</strong> — must be all same or all different.</span>
+  <!-- Rules strip — always visible above cards. Tappable to open
+       the full rules modal (catalog blurb was too brief per Stephen). -->
+  <div class="rules-strip" id="rules-strip" onclick="if(window._showGameRules)window._showGameRules('set');" style="cursor:pointer;">
+    <span class="rules-text">Tap 3 cards that share a pattern. Each feature — <strong>color</strong>, <strong>shape</strong>, <strong>count</strong>, <strong>shading</strong> — must be all same or all different. <span style="color:var(--gold);font-weight:700;white-space:nowrap">📖 Tap for full rules</span></span>
   </div>
 
   <!-- Proof of Attention — compact ticker -->
@@ -38313,21 +38314,43 @@ function _awardFeral(hash, parentA, parentB, zk, info) {
 
   _toast('\ud83c\udf30 Mystery seed pocketed. +' + dewReward + ' Dew \u00b7 sprout it to see what it is');
   // First-ever feral celebration — meatier than a toast.
+  // Guard against the flag being absent but the player clearly not
+  // being a first-timer (flag reset, dev-panel wipe, device swap).
+  // Treat anyone with 2+ ferals or wild-origin plants as returning.
   try {
-    if (!localStorage.getItem('lw_first_feral_v1')) {
-      localStorage.setItem('lw_first_feral_v1', '1');
-      setTimeout(function(){
-        if (window._lwConfirm) {
-          window._lwConfirm({
-            title: '\ud83c\udf30 YOUR FIRST WILD SEED',
-            body: 'This seed grew somewhere you walked. Not in any greenhouse, no keeper\u2019s hand on its pot. You don\u2019t know what it\u2019ll be yet, neither does it.<br><br>Water it three days in the <b>Nursery</b> to see what bloomed out of the wild for you.',
-            yes: 'CARRY IT HOME',
-            no: ''
-          }, function(){});
+    var _flagSet = !!localStorage.getItem('lw_first_feral_v1');
+    if (!_flagSet) {
+      var _isNewForager = true;
+      try {
+        var _feralsRaw = localStorage.getItem('fg_ferals');
+        var _feralsArr = _feralsRaw ? JSON.parse(_feralsRaw) : [];
+        // This new seed is already in _feralsArr; 2+ means they had at
+        // least one before this collection.
+        if (_feralsArr && _feralsArr.length >= 2) _isNewForager = false;
+      } catch(e2) {}
+      try {
+        if (_isNewForager && window.st && st.plants) {
+          for (var _pi=0; _pi<st.plants.length; _pi++) {
+            var _p=st.plants[_pi];
+            if (_p && _p.origin && /wild|feral/i.test(_p.origin)) { _isNewForager=false; break; }
+          }
         }
-      }, 800);
+      } catch(e3) {}
+      localStorage.setItem('lw_first_feral_v1', '1');
+      if (_isNewForager) {
+        setTimeout(function(){
+          if (window._lwConfirm) {
+            window._lwConfirm({
+              title: '\ud83c\udf30 YOUR FIRST WILD SEED',
+              body: 'This seed grew somewhere you walked. Not in any greenhouse, no keeper\u2019s hand on its pot. You don\u2019t know what it\u2019ll be yet, neither does it.<br><br>Water it three days in the <b>Nursery</b> to see what bloomed out of the wild for you.',
+              yes: 'CARRY IT HOME',
+              no: ''
+            }, function(){});
+          }
+        }, 800);
+      }
     }
-  } catch(e) {}
+    } catch(e) {}
   try { navigator.vibrate && navigator.vibrate([15, 30, 15]); } catch (e) {}
   if (typeof gtag !== 'undefined') gtag('event', 'feral_collected', { mystery: 1, zone: zk.slice(0, 10) });
   if(window._lwCompleteQuest)window._lwCompleteQuest('q_first_feral');
@@ -56065,6 +56088,9 @@ function render(){
   // boxes. i dont think we have a base and the other two should [not]
   // be accessible yet."
   h+='<div class="bp-extra-row" style="grid-column:1/-1;margin-top:8px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">';
+  // Dedicated CLOSE so the backpack never gets "stuck open" when the
+  // dim overlay behind it fails to catch the tap. Stephen flagged it.
+  h+='<button onclick="if(window.BP)BP.close();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--cream);background:linear-gradient(180deg,rgba(60,70,50,0.55),rgba(40,50,32,0.65));border:1.5px solid rgba(180,170,130,0.35);border-radius:10px;cursor:pointer;">✕ CLOSE</button>';
   h+='<button id="bp-rtb-inner" onclick="window.FG_Backpack&&FG_Backpack.returnToBase&&FG_Backpack.returnToBase();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(200,168,75,0.04));border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;cursor:pointer;">🏠 BASE</button>';
   var _itemTotal=0;try{if(window.LW_ITEMS)_itemTotal=window.LW_ITEMS.total();}catch(e){}
   h+='<button onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--sage);background:linear-gradient(180deg,rgba(122,179,86,0.18),rgba(122,179,86,0.05));border:1.5px solid rgba(122,179,86,0.4);border-radius:10px;cursor:pointer;">\ud83c\udf31 ITEMS'+(_itemTotal>0?' ('+_itemTotal+')':'')+'</button>';
