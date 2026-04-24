@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.24.12';
+  var LW_VERSION='2026.04.24.13';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3437,6 +3437,10 @@
     body.game-active #sws-debug-toggle{display:none!important}
     /* Three Sisters keeps its own rules strip visible — it has no inline gr rules div like the other games */
     body.game-active.game-set .rules-strip{display:block!important}
+    /* UNIVERSAL gp-strip hide (2026-04-24). The growth-progress strip
+       ("☀️ N · SEEDLING (N/30)") belongs on the game picker, not in
+       active gameplay. Hidden for every game during body.game-active. */
+    body.game-active .gp-strip{display:none!important;}
     /* Euchre / Cribbage / other trick-taking games need the vertical space — hide the sunbeam strip, attention-bar tutorial hint, and the inline 📖 rules row so the felt table gets to use the full screen. */
     body.game-active:has(#fg-ag[data-game="bowergarden"]) .gp-strip,
     body.game-active:has(#fg-ag[data-game="bowergarden"]) #ab,
