@@ -290,16 +290,32 @@ function GBS(a){
     if(_dragShip<0)return;
     var pt=ev.touches&&ev.touches[0]?ev.touches[0]:ev;
     if(pt.clientX===undefined)return;
-    var cell=_cellFromPoint(pt.clientX,pt.clientY);
-    // First detected move: lift the ship off the grid
+    // First detected move: lift the ship off the grid WITHOUT calling
+    // rn() (which causes a visible jerk). Update pGrid + placements
+    // directly, then strip the .placed class from the affected cells
+    // so the grid visually matches state. The full rn() runs only on
+    // drop.
     if(!_dragMoved){
       pickUp(_dragShip);
       selShip=_dragShip;
       _dragMoved=true;
-      rn();
-      // After re-render, re-resolve the cell under the finger
-      cell=_cellFromPoint(pt.clientX,pt.clientY);
+      var tbl=grids.querySelector('.th-grid[data-side="you"]');
+      if(tbl){
+        for(var ci=0;ci<tbl.children.length;ci++){
+          tbl.children[ci].classList.remove('placed');
+        }
+        for(var pi=0;pi<SHIPS.length;pi++){
+          var p=placements[pi];if(!p)continue;
+          for(var k=0;k<SHIPS[pi];k++){
+            var cr=p.dir==='h'?p.r:p.r+k;
+            var cc=p.dir==='h'?p.c+k:p.c;
+            var el=tbl.children[idx(cr,cc)];
+            if(el)el.classList.add('placed');
+          }
+        }
+      }
     }
+    var cell=_cellFromPoint(pt.clientX,pt.clientY);
     if(!cell)return;
     var i=parseInt(cell.getAttribute('data-i'),10);
     if(isNaN(i))return;
@@ -520,11 +536,14 @@ function GBS(a){
       var diffRow=renderDiffRow();
       var instr;
       if(selShip>=0){
-        instr='<div style="font-family:DM Sans,sans-serif;font-size:0.62rem;color:var(--cream);line-height:1.4">Tap to place <strong style="color:var(--gold)">'+SHIP_NAMES[selShip]+'</strong> '+(shipDirs[selShip]==='h'?'→':'↓')+', or tap Rotate</div>';
+        // No direction arrow in the instruction — rotating the ship
+        // used to change this text's width which shifted the board
+        // below. Direction is shown only on the ship tile itself.
+        instr='<div style="font-family:DM Sans,sans-serif;font-size:0.62rem;color:var(--cream);line-height:1.4">Tap grid or drag to place <strong style="color:var(--gold)">'+SHIP_NAMES[selShip]+'</strong></div>';
       }else if(allPlaced()){
         instr='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--sage);letter-spacing:0.08em">ALL PLACED, TAP "I\'M READY"</div>';
       }else{
-        instr='<div style="font-family:DM Sans,sans-serif;font-size:0.58rem;color:var(--muted);line-height:1.4">Tap a ship, then the grid. Tap Auto for random placement.</div>';
+        instr='<div style="font-family:DM Sans,sans-serif;font-size:0.58rem;color:var(--muted);line-height:1.4">Tap a ship, then the grid. Drag placed ships to reposition. Tap Auto for random.</div>';
       }
       lbl.innerHTML=diffRow+tray+instr;
       if(readyBtn){
@@ -833,7 +852,7 @@ function GBS(a){
     pShotsLeft=salvoMode?countAliveShips(eGrid):1;
     stats.turns++;
     pendingShot=-1;
-    document.getElementById('BSph').innerHTML='Your turn';
+    var _bsph1=document.getElementById('BSph');if(_bsph1)_bsph1.innerHTML='Your turn';
     rn();
   }
   function aiHuntTarget(useParity){
@@ -1056,7 +1075,7 @@ function GBS(a){
     eShipMeta=snapshotMeta(eGrid);
     pShipMeta=snapshotMeta(pGrid);
     stats.started=Date.now();
-    document.getElementById('BSph').innerHTML='Your turn, tap enemy waters';
+    var _bsph2=document.getElementById('BSph');if(_bsph2)_bsph2.innerHTML='Your turn, tap enemy waters';
     _play('win');
     rn();
   };
@@ -1106,7 +1125,7 @@ function GBS(a){
     armedSpecial=null;pendingShot=-1;
     pShotsLeft=1;aiShotsLeft=0;
     stats={started:0,finished:0,turns:0,playerShots:0,playerHits:0,playerStreak:0,playerBestStreak:0,aiShots:0,aiHits:0};
-    document.getElementById('BSph').innerHTML='Place your fleet';
+    var _bsph3=document.getElementById('BSph');if(_bsph3)_bsph3.innerHTML='Place your fleet';
     sm('New battle — place your fleet');
     _bsSyncCfm();
     rn();
