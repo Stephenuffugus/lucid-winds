@@ -20,8 +20,19 @@ var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G
 if(!document.getElementById('STstyle')){
   var stStyle=document.createElement('style');stStyle.id='STstyle';
   stStyle.textContent=[
+    // Per-game top-padding override — Stop at Ten's content is small, so the
+    // universal 120px #fg-ag padding read as a giant dead zone above the
+    // frame. Drop it to a more proportionate 78px just for this game; the
+    // GAMES back button still clears fine (it's ~60px tall + 8px inset).
+    'body.game-active:has(#fg-ag[data-game="stopten"]) #fg-ag{padding-top:calc(env(safe-area-inset-top,0px) + 78px)!important;}',
+    // Per-game control-row shrink — the universal .gb-new img clamps up to
+    // 180px wide, which dominates Stop at Ten's tight layout. Scale both the
+    // NEW GAME image and the RULES chip down so they stop covering content.
+    'body.game-active:has(#fg-ag[data-game="stopten"]) .gcr .gb-new img{width:clamp(80px,22vw,108px)!important;}',
+    'body.game-active:has(#fg-ag[data-game="stopten"]) .gcr .gb{min-height:40px!important;padding:6px 14px!important;font-size:0.68rem!important;letter-spacing:0.08em!important;}',
+    'body.game-active:has(#fg-ag[data-game="stopten"]) .gcr{gap:6px!important;padding:4px 8px!important;}',
     // Frame + panel
-    '#STpan{padding-top:8px;box-sizing:border-box;max-width:100%;overflow-x:hidden;}',
+    '#STpan{padding-top:4px;box-sizing:border-box;max-width:100%;overflow-x:hidden;}',
     '.st-frame{position:relative;width:calc(100% - 24px);max-width:360px;box-sizing:border-box;margin:8px auto;padding:18px 16px 20px;background:linear-gradient(180deg,rgba(28,34,22,0.9),rgba(16,20,12,0.96));border:3px solid transparent;border-radius:18px;box-shadow:0 14px 36px rgba(0,0,0,0.55),inset 0 2px 0 rgba(255,220,140,0.06),inset 0 -2px 6px rgba(0,0,0,0.3);background-clip:padding-box;}',
     // Decorative gradient border drawn INSIDE the frame footprint
     // (inset:0 rather than -3px). Previously the pseudo stuck 3px out
