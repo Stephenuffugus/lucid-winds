@@ -264,6 +264,26 @@ window._gameFns.stopten=function ST(a){
     sched();
   }
 
+  function playStartChime(){
+    // Three rising notes so BLIND / COUNTDOWN / TWO-STOP players hear
+    // a clear 'go!' cue even when the clock is hidden. Short and
+    // musical — not a harsh beep.
+    var ac=ensureAudio();if(!ac)return;
+    var t=ac.currentTime;
+    var notes=[523.25,659.25,783.99]; // C5, E5, G5
+    for(var n=0;n<notes.length;n++){
+      var o=ac.createOscillator(),g=ac.createGain();
+      o.type='sine';o.frequency.value=notes[n];
+      var st=t+n*0.09,en=st+0.16;
+      g.gain.setValueAtTime(0,st);
+      g.gain.linearRampToValueAtTime(0.18,st+0.02);
+      g.gain.exponentialRampToValueAtTime(0.001,en);
+      o.connect(g);g.connect(ac.destination);
+      o.start(st);o.stop(en+0.05);
+    }
+    try{if(navigator.vibrate)navigator.vibrate(20);}catch(e){}
+  }
+
   function start(){
     if(running||sessionDone)return;
     // Daily mode: check if today's attempt was already made
@@ -277,6 +297,11 @@ window._gameFns.stopten=function ST(a){
     target=currentTarget();
     startMs=Date.now();elapsed=0;running=true;
     chaosFakeDigit='';
+    // Start chime — especially critical for BLIND (no clock to watch)
+    // but helpful on every mode as a clear 'go!'. Skipped on BEAT
+    // because the first second-tick plays at t=1s which is already a
+    // cue and stacking chimes would fight.
+    if(mode!=='beat')playStartChime();
     if(mode==='beat')startBeats();
     else if(mode==='heartbeat')startHaptics();
     else if(mode==='chaos')startChaos();
@@ -381,7 +406,7 @@ window._gameFns.stopten=function ST(a){
     ];
     for(var m=0;m<modes.length;m++){
       var on=modes[m][0]===mode?' on':'';
-      h+='<div class="st-mode'+on+'" onclick="_STM(\''+modes[m][0]+'\')">'+modes[m][1]+'</div>';
+      h+='<div class="st-mode'+on+'" data-mode="'+modes[m][0]+'" onclick="_STM(\''+modes[m][0]+'\')">'+modes[m][1]+'</div>';
     }
     h+='</div>';
     // Framed play area
@@ -480,14 +505,58 @@ window._gameFns.stopten=function ST(a){
     var bb=document.getElementById('STb');if(bb)bb.textContent='—';
     renderStats();render();
   };
+  // Switch mode WITHOUT rebuilding the whole panel. Just flip the
+  // active tab and refresh the text bits that depend on mode — this
+  // kills the jump/reflow Stephen flagged when picking a mode.
   window._STM=function(m){
     if(running)return;
     if(MODES.indexOf(m)<0)return;
+    if(m===mode){return;}
     mode=m;
     try{localStorage.setItem('lw_st_mode',m);}catch(e){}
     attempts=0;best=Infinity;elapsed=0;sessionDone=false;
     twostopPhase=0;twostopDelta1=0;chaosFakeDigit='';
-    renderStats();render();
+    // Daily mode has a special layout (locked recap card vs Start
+    // button) — fall back to full render for that case to keep logic
+    // simple. All other mode switches patch in place.
+    if(m==='daily'){render();return;}
+    // Update active tab class in place via data-mode attr
+    var tabs=pan.querySelectorAll('.st-mode');
+    for(var i=0;i<tabs.length;i++){
+      var tab=tabs[i];
+      tab.classList.toggle('on',tab.getAttribute('data-mode')===m);
+    }
+    // Refresh only the frame contents — no tab/stats reflow
+    var frame=pan.querySelector('.st-frame');
+    if(!frame){render();return;}
+    // Update text bits
+    var descEl=frame.querySelector('div[style*="Cormorant"]');
+    if(descEl)descEl.textContent=modeDescription();
+    var tgtEl=frame.querySelector('.st-target');
+    if(tgtEl){
+      var tgtText;
+      if(mode==='twostop')tgtText=twostopPhase===0?'First stop at 5 seconds':'Now catch 10 seconds';
+      else if(mode==='countdown')tgtText='Stop when the clock hits zero';
+      else tgtText='Target, '+currentTarget()+' seconds';
+      tgtEl.textContent=tgtText;
+    }
+    var attEl=frame.querySelector('.st-attempts');
+    if(attEl)attEl.textContent='ATTEMPT 1 / '+MAX_ATTEMPTS;
+    var clk=document.getElementById('STclock');
+    if(clk){
+      clk.className='st-clock idle';
+      clk.textContent=elapsed.toFixed(2);
+    }
+    var buddy=document.getElementById('STbuddy');
+    if(buddy){buddy.classList.remove('focused','happy','sad');buddy.innerHTML=BUDDY('idle');}
+    var res=document.getElementById('STresult');if(res)res.innerHTML='';
+    // Ensure the start button is present (after a sessionDone state)
+    var btnRow=frame.querySelector('.st-btn-row');
+    if(btnRow){
+      btnRow.innerHTML='<button class="st-btn start" onclick="_STS()">▶ START</button>';
+    }
+    // Refresh stats strip (shows mode name)
+    renderStats();
   };
   window._STR=function(){
     var existing=document.getElementById('STrulesOV');
