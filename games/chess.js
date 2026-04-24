@@ -74,7 +74,14 @@ function GCH(a){
     epSquare=null;moveCount=0;halfmove=0;lastMove=null;
     selSq=null;legalMoves=[];capturedW=[];capturedB=[];
     gameOver=false;history=[];moveLog=[];posHistory={};
+    _lastAIComment='';_pieceMovedOnce={};
   }
+
+  // Commentary state: _lastAIComment is the tag shown next to "Your move"
+  // after each AI reply. _pieceMovedOnce tracks first-move development per
+  // piece-square so we can show "Develops" only on the first outing.
+  var _lastAIComment='';
+  var _pieceMovedOnce={};
 
   function cloneBoard(b){
     var nb=[];
@@ -382,6 +389,30 @@ function GCH(a){
   // 1.g3 d5 2.Bg2 → 2...Nf6
   _chBookMagnus['6656 1333 7566']={fr:0,fc:6,tr:2,tc:5};
 
+  // ── Magnus deeper lines (moves 4-8) ──
+  // Berlin main: 1.e4 e5 2.Nf3 Nc6 3.Bb5 Nf6 4.O-O → 4...Nxe4 (Berlin Wall)
+  _chBookMagnus['6444 1434 7655 0122 7531 0625 7476']={fr:2,fc:5,tr:4,tc:4};
+  // Berlin 5.d4 → 5...Nd6 (main defensive knight)
+  _chBookMagnus['6444 1434 7655 0122 7531 0625 7476 2544 6343']={fr:4,fc:4,tr:2,tc:3};
+  // Berlin 5.Re1 → 5...Nd6 (same knight retreat)
+  _chBookMagnus['6444 1434 7655 0122 7531 0625 7476 2544 7775']={fr:4,fc:4,tr:2,tc:3};
+  // Italian: 1.e4 e5 2.Nf3 Nc6 3.Bc4 Bc5 4.O-O → 4...Nf6 (main line)
+  _chBookMagnus['6444 1434 7655 0122 7542 0532 7476']={fr:0,fc:6,tr:2,tc:5};
+  // Italian 4.c3 (slow Italian) → 4...Nf6
+  _chBookMagnus['6444 1434 7655 0122 7542 0532 6252']={fr:0,fc:6,tr:2,tc:5};
+  // Italian 4.d3 → 4...Nf6 (quiet main line)
+  _chBookMagnus['6444 1434 7655 0122 7542 0532 6353']={fr:0,fc:6,tr:2,tc:5};
+  // Queen's Indian 4.g3 → 4...Bb7 (light-square bishop on long diagonal)
+  _chBookMagnus['6343 0625 6242 1424 7655 1121 6656']={fr:0,fc:2,tr:1,tc:1};
+  // Queen's Indian 4.a3 (Petrosian) → 4...Bb7
+  _chBookMagnus['6343 0625 6242 1424 7655 1121 6050']={fr:0,fc:2,tr:1,tc:1};
+  // Catalan response: 1.d4 Nf6 2.c4 e6 3.g3 → 3...d5 (challenge central light squares)
+  _chBookMagnus['6343 0625 6242 1424 6656']={fr:1,fc:3,tr:3,tc:3};
+  // Catalan deeper: 1.d4 Nf6 2.c4 e6 3.g3 d5 4.Bg2 → 4...Be7 (solid Catalan)
+  _chBookMagnus['6343 0625 6242 1424 6656 1333 7566']={fr:0,fc:5,tr:1,tc:4};
+  // London-reply: 1.d4 d5 2.Bf4 → 2...Nf6 (solid, don't rush)
+  _chBookMagnus['6343 1333 7225']={fr:0,fc:6,tr:2,tc:5};
+
   var _chBookAlireza={};
   // 1.e4 → 1...c5 (Sicilian — Alireza's weapon)
   _chBookAlireza['6444']={fr:1,fc:2,tr:3,tc:2};
@@ -428,6 +459,28 @@ function GCH(a){
   // 1.g3 → 1...d5
   _chBookAlireza['6656']={fr:1,fc:3,tr:3,tc:3};
 
+  // ── Alireza deeper lines (moves 6-8, sharpened) ──
+  // Najdorf English Attack: 6.Be3 e5 7.Nb3 → 7...Be6 (standard main)
+  _chBookAlireza['6444 1232 7655 1323 6343 3243 5543 0625 7152 1020 7254 1434 4351']={fr:0,fc:2,tr:2,tc:4};
+  // Najdorf: 6.Be3 e5 7.Nf3 → 7...Be7
+  _chBookAlireza['6444 1232 7655 1323 6343 3243 5543 0625 7152 1020 7254 1434 4355']={fr:0,fc:5,tr:1,tc:4};
+  // Najdorf Poisoned Pawn prep: 6.Bg5 e6 7.f4 → 7...Qb6 (live-dangerously)
+  _chBookAlireza['6444 1232 7655 1323 6343 3243 5543 0625 7152 1020 7236 1424 6545']={fr:0,fc:3,tr:2,tc:1};
+  // Grünfeld: 4.cxd5 → 4...Nxd5 (main exchange)
+  _chBookAlireza['6343 0625 6242 1626 7152 1333 4233']={fr:2,fc:5,tr:3,tc:3};
+  // Grünfeld exchange: 5.e4 → 5...Nxc3 (signature exchange)
+  _chBookAlireza['6343 0625 6242 1626 7152 1333 4233 2533 6444']={fr:3,fc:3,tr:5,tc:2};
+  // Grünfeld Russian: 4.Nf3 → 4...Bg7
+  _chBookAlireza['6343 0625 6242 1626 7655']={fr:0,fc:5,tr:1,tc:6};
+  // KID main: 1.d4 Nf6 2.c4 g6 3.Nc3 Bg7 4.e4 → 4...d6
+  _chBookAlireza['6343 0625 6242 1626 7152 0516 6444']={fr:1,fc:3,tr:2,tc:3};
+  // KID: 4.Nf3 Bg7 5.e4 → 5...O-O then d6
+  _chBookAlireza['6343 0625 6242 1626 7655 0516 6444']={fr:0,fc:4,tr:0,tc:6};
+  // Alapin: 1.e4 c5 2.c3 d5 3.exd5 → 3...Qxd5 (accept)
+  _chBookAlireza['6444 1232 6252 1333 4433']={fr:0,fc:3,tr:3,tc:3};
+  // Closed Sicilian: 2.Nc3 Nc6 3.g3 → 3...g6 (mirror fianchetto)
+  _chBookAlireza['6444 1232 7152 0122 6656']={fr:1,fc:6,tr:2,tc:6};
+
   var _chBookWeird={};
   // 1.h4 (Kadas — Magnus used this to beat Firouzja!) → 1...e5
   _chBookWeird['6747']={fr:1,fc:4,tr:3,tc:4};
@@ -461,6 +514,29 @@ function GCH(a){
   _chBookWeird['6353']={fr:1,fc:3,tr:3,tc:3};
   // 1.e4 e5 2.Ke2 (Bongcloud!) → 2...Ke7 (reverse-Bongcloud salute)
   _chBookWeird['6444 1434 7464']={fr:0,fc:4,tr:1,tc:4};
+
+  // ── Weird deeper lines (Seedling tier loves chaos) ──
+  // Kadas 1.h4 e5 2.d4 → 2...exd4 (take the pawn)
+  _chBookWeird['6747 1434 6343']={fr:3,fc:4,tr:4,tc:3};
+  // Kadas 1.h4 e5 2.Nf3 → 2...Nc6
+  _chBookWeird['6747 1434 7655']={fr:0,fc:1,tr:2,tc:2};
+  // Grob 1.g4 d5 2.Bg2 Bxg4 3.c4 → 3...c6 (keep the pawn, solid)
+  _chBookWeird['6646 1333 7566 0246 6242']={fr:1,fc:2,tr:2,tc:2};
+  // Grob 1.g4 d5 2.c4 → 2...dxc4 (take the c-pawn)
+  _chBookWeird['6646 1333 6242']={fr:3,fc:3,tr:4,tc:2};
+  // Sokolsky 1.b4 e5 2.Bb2 Bxb4 3.Bxe5 → 3...Nf6 (don't panic over tempo)
+  _chBookWeird['6141 1434 7261 0541 6134']={fr:0,fc:6,tr:2,tc:5};
+  // Sokolsky 1.b4 e5 2.a3 → 2...d5 (lock the center)
+  _chBookWeird['6141 1434 6050']={fr:1,fc:3,tr:3,tc:3};
+  // Nh3 1.Nh3 d5 2.g3 → 2...e5 (central)
+  _chBookWeird['7657 1333 6656']={fr:1,fc:4,tr:3,tc:4};
+  // Bird's 1.f4 d5 2.Nf3 Nf6 3.e3 → 3...g6 (Dutch-style setup)
+  _chBookWeird['6545 1333 7655 0625 6454']={fr:1,fc:6,tr:2,tc:6};
+  // Dunst 1.Nc3 d5 2.d4 → 2...Nf6 (into a Veresov)
+  _chBookWeird['7152 1333 6343']={fr:0,fc:6,tr:2,tc:5};
+  // Anti-h4 comeback: 1.h4 d5 (alternate response option)
+  // Note: primary response is ...e5 but adding ...Nf6 as backup diversity
+  _chBookWeird['6747 0625']={fr:1,fc:3,tr:3,tc:3};
   // 1.e4 Nf6 (Alekhine) transposition if we ever play it — fallback
 
   // Lookup: picks a book based on difficulty tier, falls back to Magnus.
@@ -474,6 +550,98 @@ function GCH(a){
     if(primary&&primary[key])return primary[key];
     if(fallback&&fallback[key])return fallback[key];
     return null;
+  }
+
+  // ── Commentary classifier ──
+  // After each AI move, classify it into a short readable tag so the
+  // player can see what the engine was *trying* to do. This is the
+  // differentiator — no other browser chess narrates its own moves.
+  //
+  // Priority order of detection (most dramatic first):
+  //   book  → the book flavor label
+  //   check → "Check!"
+  //   castle short/long
+  //   big capture / sacrifice / trade
+  //   knight lands on supported outpost (rank 4-6 white side, 3-5 black side)
+  //   rook to open file or 7th rank
+  //   queen maneuver
+  //   pawn pushes (center vs flank)
+  //   first move of minor piece → "Develops"
+  //   fallback → quiet-move flavor by tier
+  function _classifyMove(mv, preB, postB, piece, wasBook, bookLabel, tier){
+    // Tier flavor prefix
+    var prefix = tier===1 ? '🌱 ' : tier===2 ? '⚔️ ' : '🌳 ';
+    if(wasBook) return prefix + (bookLabel || 'Book line');
+    // Was the move a capture? Look at what was on the destination square
+    // before the move (preB).
+    var captured = preB[mv.tr][mv.tc];
+    var capturedVal = captured ? (PIECE_VAL[captured.type] || 0) : 0;
+    // Piece that moved
+    var ptype = piece ? piece.type : null;
+    var myVal = ptype ? (PIECE_VAL[ptype] || 0) : 0;
+    // Check detection — does postB leave the opponent's king in check?
+    var givesCheck = inCheck(postB, W);
+    if(givesCheck) return prefix + 'Check!';
+    // Castling: king moved 2 cols
+    if(ptype === KING && Math.abs(mv.tc - mv.fc) === 2){
+      return prefix + (mv.tc > mv.fc ? 'Castles short' : 'Castles long');
+    }
+    // Capture analysis
+    if(captured){
+      if(capturedVal >= myVal + 150) return prefix + 'Wins material';
+      if(capturedVal <= myVal - 200) return prefix + 'Sacrifice';
+      if(Math.abs(capturedVal - myVal) < 60) return prefix + 'Trade';
+      return prefix + 'Captures';
+    }
+    // Knight outpost: knight landed on rank 3-5 (black side) with our
+    // pawn diagonally behind supporting it. AI plays black so "behind"
+    // is row+1 (one rank toward row 7).
+    if(ptype === KNIGHT){
+      var outRank = mv.tr >= 3 && mv.tr <= 5;
+      if(outRank){
+        var sup = false;
+        for(var dc=-1; dc<=1; dc+=2){
+          var sr = mv.tr - 1, sc = mv.tc + dc;
+          if(sr>=0 && sr<8 && sc>=0 && sc<8){
+            var q = postB[sr][sc];
+            if(q && q.type===PAWN && q.color===B){ sup=true; break; }
+          }
+        }
+        if(sup) return prefix + 'Knight outpost';
+      }
+    }
+    // Rook to 7th rank (rank 6 from black's POV, row 6 on our array)
+    if(ptype === ROOK){
+      if(mv.tr === 6) return prefix + 'Rook slices the 7th';
+      // Rook to open file: no pawns of either color on the destination file
+      var openFile = true;
+      for(var rr=0; rr<8; rr++){
+        var pp = postB[rr][mv.tc];
+        if(pp && pp.type === PAWN){ openFile=false; break; }
+      }
+      if(openFile) return prefix + 'Rook takes the file';
+    }
+    // Queen move (not first move — queen moves are often noteworthy)
+    if(ptype === QUEEN) return prefix + 'Queen maneuver';
+    // Pawn pushes
+    if(ptype === PAWN){
+      var center = mv.tc >= 2 && mv.tc <= 5;
+      if(mv.tr >= 3 && mv.tr <= 4 && center) return prefix + 'Stakes the center';
+      if(!center) return prefix + 'Flank advance';
+      return prefix + 'Pawn push';
+    }
+    // Bishop development — first move off back rank (AI black, back rank=0)
+    var devKey = mv.fr + '' + mv.fc;
+    if((ptype === BISHOP || ptype === KNIGHT) && mv.fr === 0){
+      if(!_pieceMovedOnce[devKey]){
+        _pieceMovedOnce[devKey] = true;
+        return prefix + 'Develops';
+      }
+    }
+    // Fallback: tier-appropriate quiet-move tag
+    if(tier === 1) return prefix + 'Wanders';
+    if(tier === 2) return prefix + 'Builds pressure';
+    return prefix + 'Quiet strength';
   }
 
   // Endgame king PST (centralize king in endgame)
@@ -1015,7 +1183,11 @@ function GCH(a){
         for(var bi=0;bi<legal.length;bi++){
           if(legal[bi].fr===bm.fr&&legal[bi].fc===bm.fc&&legal[bi].tr===bm.tr&&legal[bi].tc===bm.tc){
             sm('🌳 Grove opening');
-            makeMove(legal[bi]);checkGameState();render();return;
+            var _sfPreBB=cloneBoard(board);
+            var _sfBp=board[legal[bi].fr][legal[bi].fc];
+            makeMove(legal[bi]);
+            _lastAIComment=_classifyMove(legal[bi],_sfPreBB,board,_sfBp,true,'Magnus line',3);
+            checkGameState();render();return;
           }
         }
       }
@@ -1034,7 +1206,16 @@ function GCH(a){
         if(turn!==B||gameOver)return;
         var mv=_uciToMove(uciMove);
         if(!mv){_aiMoveLocal();return;}
-        makeMove(mv);checkGameState();render();
+        var _sfPre=cloneBoard(board);
+        var _sfPc=board[mv.fr][mv.fc];
+        makeMove(mv);
+        // Stockfish tier gets a neutral "Engine" prefix but still shows
+        // the move shape so the player learns patterns.
+        var _sfTag=_classifyMove(mv,_sfPre,board,_sfPc,false,null,skill>=15?5:4);
+        // Override the 🌳 prefix for pure-engine tier (Old Growth)
+        if(skill>=15) _sfTag=_sfTag.replace(/^🌳 /,'♛ ');
+        _lastAIComment=_sfTag;
+        checkGameState();render();
       };
       _sfWorker.postMessage('go movetime '+(skill>=15?1500:800));
     });
@@ -1055,6 +1236,7 @@ function GCH(a){
 
   function _aiMoveLocal(){
     if(gameOver||turn!==B)return;
+    var _diffTier=parseInt((document.getElementById('CHd')||{}).value,10)||2;
     // Opening book lookup — flavor picked from current difficulty tier
     var bookKey=moveLog.join(' ');
     var bm=_pickBookLine(bookKey);
@@ -1065,7 +1247,12 @@ function GCH(a){
       var legal=getLegalMoves(board,B,castling,epSquare);
       for(var bi=0;bi<legal.length;bi++){
         if(legal[bi].fr===bm.fr&&legal[bi].fc===bm.fc&&legal[bi].tr===bm.tr&&legal[bi].tc===bm.tc){
-          makeMove(legal[bi]);checkGameState();render();return;
+          var _bookFlavor=_diffTier===1?'Offbeat':_diffTier===2?'Alireza line':'Magnus line';
+          var _preBB=cloneBoard(board);
+          var _bp=board[legal[bi].fr][legal[bi].fc];
+          makeMove(legal[bi]);
+          _lastAIComment=_classifyMove(legal[bi],_preBB,board,_bp,true,_bookFlavor,_diffTier);
+          checkGameState();render();return;
         }
       }
     }
@@ -1115,7 +1302,10 @@ function GCH(a){
       }
       if(Date.now()-t0>maxTime)break;
     }
+    var _preB=cloneBoard(board);
+    var _pc=board[bestMove.fr][bestMove.fc];
     makeMove(bestMove);
+    _lastAIComment=_classifyMove(bestMove,_preB,board,_pc,false,null,_diffTier);
     checkGameState();
     render();
   }
@@ -1140,9 +1330,19 @@ function GCH(a){
       if(posHistory[pk]&&posHistory[pk]>=3){
         gameOver=true;sm('Draw \u2014 Threefold repetition');_sr('chess',{w:false,s:moveCount});
       }else if(inCheck(board,turn)){
-        sm(turn===W?'Check!':'AI is in check');
+        if(turn===W){
+          // Player is in check — AI just delivered it. Show AI's comment
+          // alongside the check warning so they see what the engine did.
+          sm(_lastAIComment? _lastAIComment+' · Check!' : 'Check!');
+        } else {
+          sm('AI is in check');
+        }
       }else{
-        sm(turn===W?'Your move':'AI thinking...');
+        if(turn===W){
+          sm(_lastAIComment? _lastAIComment+' · Your move' : 'Your move');
+        } else {
+          sm('AI thinking...');
+        }
       }
     }
   }
@@ -1256,6 +1456,7 @@ function GCH(a){
 
   window._CHNew=function(){
     initBoard();
+    _lastAIComment='';_pieceMovedOnce={};
     sm('Your move');
     render();
   };
