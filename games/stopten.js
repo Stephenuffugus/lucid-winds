@@ -1,44 +1,199 @@
 // ═══ LUCID WINDS — Stop at Ten (reflex timing) ═══
+//
+// Researched from similar precision-timing games (r/gamedev, reaction
+// testers, JP arcade "Perfect 10" variants, Asian timing-game threads):
+// - CLASSIC: visible ticker, stop at 10.00 (original mode)
+// - BLIND: timer hidden while running, internal clock only (Stephen's ask)
+// - HEARTBEAT: audio pulse every second, stop at the 10th beat
+// - LADDER: target climbs 5 → 7 → 10 → 13 → 17 → 20 across 5 attempts
+//
+// Framed game area with a decorative border, a cute seed "buddy" that
+// reacts to your result, per-mode stats, and a rules book.
+// Art swap-in: replace the inline SVG in BUDDY with `<img src="…">` to
+// drop in custom artwork. Three expressions: idle, focused, happy/sad.
 (function(){
 'use strict';
 var G=window._G;
 var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G.sr;
 
+// Inject styles once
+if(!document.getElementById('STstyle')){
+  var stStyle=document.createElement('style');stStyle.id='STstyle';
+  stStyle.textContent=[
+    // Frame + panel
+    '#STpan{padding-top:8px;}',
+    '.st-frame{position:relative;max-width:380px;margin:8px auto;padding:18px 16px 20px;background:linear-gradient(180deg,rgba(28,34,22,0.9),rgba(16,20,12,0.96));border:3px solid transparent;border-radius:18px;box-shadow:0 14px 36px rgba(0,0,0,0.55),inset 0 2px 0 rgba(255,220,140,0.06),inset 0 -2px 6px rgba(0,0,0,0.3);background-clip:padding-box;}',
+    // Inset decorative border via pseudo
+    '.st-frame::before{content:"";position:absolute;inset:-3px;border-radius:21px;padding:3px;background:linear-gradient(135deg,#c8a84b,#7ab356 45%,#3b2a14 90%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;}',
+    '.st-frame::after{content:"";position:absolute;inset:4px;border-radius:14px;pointer-events:none;box-shadow:inset 0 0 30px rgba(200,168,75,0.08);}',
+    // Corner leaf ornaments (pure CSS — simple radial dots)
+    '.st-corner{position:absolute;width:14px;height:14px;z-index:2;pointer-events:none;background:radial-gradient(circle,#c8a84b 0%,transparent 65%);opacity:0.7;}',
+    '.st-c-tl{top:2px;left:2px}.st-c-tr{top:2px;right:2px}.st-c-bl{bottom:2px;left:2px}.st-c-br{bottom:2px;right:2px}',
+    // Clock
+    '.st-clock{font-family:DM Mono,monospace;font-size:clamp(3rem,13vw,4.4rem);font-weight:500;letter-spacing:0.04em;margin:8px 0;text-shadow:0 0 20px rgba(200,168,75,0.25);transition:color 0.15s,transform 0.15s;}',
+    '.st-clock.blind{color:rgba(200,168,75,0.15);letter-spacing:0.35em;}',
+    '.st-clock.running{color:var(--gold);}',
+    '.st-clock.idle{color:var(--cream);}',
+    // Buddy character
+    '.st-buddy{width:74px;height:74px;margin:0 auto 4px;position:relative;animation:stBuddyIdle 3.6s ease-in-out infinite;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);}',
+    '.st-buddy.focused{animation:none;transform:scale(0.94);}',
+    '.st-buddy.happy{animation:stBuddyBounce 0.6s ease;}',
+    '.st-buddy.sad{animation:stBuddyShake 0.6s ease;}',
+    '@keyframes stBuddyIdle{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}',
+    '@keyframes stBuddyBounce{0%,100%{transform:translateY(0) scale(1)}35%{transform:translateY(-10px) scale(1.15)}70%{transform:translateY(2px) scale(0.95)}}',
+    '@keyframes stBuddyShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px) rotate(-3deg)}60%{transform:translateX(4px) rotate(3deg)}}',
+    // Buttons
+    '.st-btn-row{display:flex;gap:8px;justify-content:center;padding:6px 0;flex-wrap:wrap;}',
+    '.st-btn{min-width:140px;min-height:60px;padding:12px 24px;font-family:Bebas Neue,sans-serif;font-size:1.05rem;letter-spacing:0.14em;border-radius:12px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.4);-webkit-tap-highlight-color:transparent;transition:transform 0.1s ease,box-shadow 0.15s ease;border-width:2px;border-style:solid;}',
+    '.st-btn:active{transform:translateY(1px) scale(0.97);}',
+    '.st-btn.start{background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.22));border-color:var(--sage);color:var(--sage);}',
+    '.st-btn.stop{background:linear-gradient(180deg,rgba(200,168,75,0.32),rgba(180,140,50,0.22));border-color:var(--gold);color:var(--gold);box-shadow:0 4px 18px rgba(200,168,75,0.35);}',
+    // Mode tabs
+    '.st-modes{display:flex;gap:4px;justify-content:center;padding:2px 0 10px;flex-wrap:wrap;}',
+    '.st-mode{padding:6px 12px;min-height:36px;font-family:DM Mono,monospace;font-size:0.65rem;letter-spacing:0.1em;background:rgba(26,31,23,0.6);border:1px solid rgba(122,179,86,0.22);border-radius:6px;color:rgba(232,220,200,0.7);cursor:pointer;transition:background 0.18s,border-color 0.18s,color 0.18s;}',
+    '.st-mode.on{background:rgba(200,168,75,0.18);border-color:var(--gold);color:var(--gold);}',
+    // Result + stats
+    '.st-result{min-height:58px;margin-top:14px;}',
+    '.st-tier{font-family:Bebas Neue,sans-serif;font-size:1.4rem;letter-spacing:0.12em;animation:stFadeIn 0.3s ease;}',
+    '@keyframes stFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}',
+    '.st-delta{font-family:DM Mono,monospace;font-size:0.75rem;color:var(--cream);opacity:0.8;margin-top:4px;}',
+    '.st-reward{font-family:DM Mono,monospace;font-size:0.68rem;color:var(--gold);margin-top:4px;}',
+    '.st-stats{display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:0.62rem;color:rgba(232,220,200,0.72);letter-spacing:0.06em;}',
+    '.st-stats strong{color:var(--gold);}',
+    '.st-attempts{font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);letter-spacing:0.08em;margin-bottom:2px;}',
+    '.st-target{font-family:Cormorant Garamond,serif;font-style:italic;font-size:0.88rem;color:rgba(200,168,75,0.88);margin-bottom:4px;}',
+    // Rules modal
+    '#STrulesOV{position:fixed;inset:0;z-index:200000;background:rgba(5,8,4,0.88);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:16px;animation:stFadeIn 0.25s ease;}',
+    '#STrulesOV .card{max-width:400px;width:100%;max-height:84vh;overflow-y:auto;padding:22px 20px;background:linear-gradient(180deg,rgba(18,22,14,0.98),rgba(10,12,8,0.98));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;box-shadow:0 32px 64px rgba(0,0,0,0.7);font-family:DM Mono,monospace;color:var(--cream);font-size:0.72rem;line-height:1.6;}',
+    '#STrulesOV h2{font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.14em;color:var(--gold);border-bottom:1px solid rgba(200,168,75,0.3);margin:14px 0 8px;padding-bottom:4px;}'
+  ].join('');
+  document.head.appendChild(stStyle);
+}
+
+// Cute seed-sprout buddy (swap for <img src="assets/games/stopten/buddy.png">
+// whenever Stephen ships art). Three faces: idle (default), focused
+// (eyes closed, concentrating), happy (smile + sparkle), sad (frown).
+function BUDDY(face){
+  face=face||'idle';
+  var eyes;
+  if(face==='focused')eyes='<path d="M18 32 q4 -2 8 0" stroke="#2a1f0a" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M46 32 q4 -2 8 0" stroke="#2a1f0a" stroke-width="2" stroke-linecap="round" fill="none"/>';
+  else if(face==='happy')eyes='<path d="M18 30 q4 -3 8 0" stroke="#2a1f0a" stroke-width="2.2" stroke-linecap="round" fill="none"/><path d="M46 30 q4 -3 8 0" stroke="#2a1f0a" stroke-width="2.2" stroke-linecap="round" fill="none"/>';
+  else if(face==='sad')eyes='<circle cx="22" cy="32" r="2.2" fill="#2a1f0a"/><circle cx="50" cy="32" r="2.2" fill="#2a1f0a"/>';
+  else eyes='<circle cx="22" cy="30" r="2.4" fill="#2a1f0a"/><circle cx="50" cy="30" r="2.4" fill="#2a1f0a"/>';
+  var mouth;
+  if(face==='happy')mouth='<path d="M28 42 q8 8 16 0" stroke="#2a1f0a" stroke-width="2.5" stroke-linecap="round" fill="none"/>';
+  else if(face==='sad')mouth='<path d="M28 46 q8 -6 16 0" stroke="#2a1f0a" stroke-width="2.2" stroke-linecap="round" fill="none"/>';
+  else if(face==='focused')mouth='<path d="M30 44 h12" stroke="#2a1f0a" stroke-width="2" stroke-linecap="round"/>';
+  else mouth='<path d="M28 42 q8 4 16 0" stroke="#2a1f0a" stroke-width="2" stroke-linecap="round" fill="none"/>';
+  var sparkle=(face==='happy')?'<circle cx="62" cy="14" r="2" fill="#fff"/><circle cx="10" cy="18" r="1.4" fill="#fff"/>':'';
+  return '<svg viewBox="0 0 72 72" width="100%" height="100%">'
+    // Leaf pair at top
+    +'<path d="M30 8 q-10 -4 -18 2 q6 8 18 8" fill="#4a7c35"/>'
+    +'<path d="M42 8 q10 -4 18 2 q-6 8 -18 8" fill="#4a7c35"/>'
+    +'<path d="M20 10 q6 0 12 6" stroke="#3a5e28" stroke-width="1" fill="none"/>'
+    +'<path d="M52 10 q-6 0 -12 6" stroke="#3a5e28" stroke-width="1" fill="none"/>'
+    // Body: seed pod
+    +'<ellipse cx="36" cy="44" rx="26" ry="22" fill="#d4a843"/>'
+    +'<ellipse cx="36" cy="42" rx="22" ry="18" fill="#e8c860"/>'
+    // Face
+    +eyes
+    +mouth
+    +'<ellipse cx="15" cy="48" rx="4" ry="3" fill="#e89a9a" opacity="0.6"/>'
+    +'<ellipse cx="57" cy="48" rx="4" ry="3" fill="#e89a9a" opacity="0.6"/>'
+    +sparkle
+    +'</svg>';
+}
+
 window._gameFns=window._gameFns||{};
 window._gameFns.stopten=function ST(a){
-  var MAX_ATTEMPTS=3;     // session = 3 attempts then summary
-  var AUTO_STOP_AT=15;    // force-stop if player walks away
+  var MAX_ATTEMPTS=3,AUTO_STOP_AT=25;
   var startMs=0,elapsed=0,running=false,rafId=0,attempts=0,best=Infinity;
   var sessionDone=false;
+  var mode='classic';   // 'classic' | 'blind' | 'beat' | 'ladder'
+  try{var _m=localStorage.getItem('lw_st_mode');if(_m==='classic'||_m==='blind'||_m==='beat'||_m==='ladder')mode=_m;}catch(e){}
+  var target=10;        // seconds
+  var audioCtx=null,beatTimer=0,beatCount=0;
+  var stats=_loadStats();
 
-  ms(a,'Stop at Ten · <span id="STa">0</span>/'+MAX_ATTEMPTS+' · best <span id="STb">, </span>');
+  function _loadStats(){
+    var d={w:0,l:0,streak:0,best:0};
+    try{var _s=localStorage.getItem('lw_st_stats');if(_s){var _p=JSON.parse(_s);for(var _k in _p)d[_k]=_p[_k];}}catch(e){}
+    return d;
+  }
+  function _saveStats(){try{localStorage.setItem('lw_st_stats',JSON.stringify(stats));}catch(e){}}
+
+  ms(a,'Stop at Ten · <span id="STa">0</span>/'+MAX_ATTEMPTS+' · best <span id="STb">—</span>');
   mm(a);
-  var pan=document.createElement('div');
-  pan.style.cssText='max-width:420px;margin:0 auto;padding:24px 16px;text-align:center;';
+  var statsRow=document.createElement('div');statsRow.className='st-stats';statsRow.id='STstats';a.appendChild(statsRow);
+  var pan=document.createElement('div');pan.id='STpan';
+  pan.style.cssText='max-width:440px;margin:0 auto;padding:6px;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb" onclick="_STN()">🌱 NEW ROUND</button>';
+  mc(a).innerHTML='<button class="gb" onclick="_STR()" style="min-height:48px;padding:8px 18px;font-size:0.75rem;letter-spacing:0.1em">📖 RULES</button>'
+    +'<button class="gb-new" onclick="_STN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   function tiers(delta){
-    if(delta<0.005)return {lbl:'PERFECT',col:'#c8a84b',reward:1,sb:3};
-    if(delta<=0.015)return {lbl:'SO CLOSE',col:'#7ab356',reward:1,sb:2};
-    if(delta<=0.035)return {lbl:'NICE',col:'#7ab356',reward:0,sb:1};
-    return {lbl:'MISS',col:'#c47a7a',reward:0,sb:0};
+    if(delta<0.005)return {lbl:'PERFECT',col:'#c8a84b',face:'happy',sb:3};
+    if(delta<=0.015)return {lbl:'SO CLOSE',col:'#7ab356',face:'happy',sb:2};
+    if(delta<=0.035)return {lbl:'NICE',col:'#7ab356',face:'happy',sb:1};
+    if(delta<=0.1)return {lbl:'CLOSE',col:'var(--cream)',face:'idle',sb:0};
+    return {lbl:'MISS',col:'#c47a7a',face:'sad',sb:0};
+  }
+  function currentTarget(){
+    if(mode==='ladder'){
+      // 5, 7, 10, 13, 17, 20 rotation
+      var seq=[5,7,10,13,17,20];
+      return seq[attempts%seq.length];
+    }
+    return 10;
+  }
+  function renderStats(){
+    var p=stats.w+stats.l;
+    var pct=p?Math.round(stats.w/p*100):0;
+    statsRow.innerHTML='mode <strong>'+mode.toUpperCase()+'</strong> · played <strong>'+p+'</strong> · hit <strong>'+pct+'%</strong> · streak <strong>'+stats.streak+'</strong> · best ±<strong>'+(stats.best?stats.best.toFixed(2)+'s':'—')+'</strong>';
   }
 
   function tick(){
     if(!running)return;
     elapsed=(Date.now()-startMs)/1000;
     var el=document.getElementById('STclock');
-    if(el)el.textContent=elapsed.toFixed(2);
-    // Force-stop if player abandoned the round so the clock can't
-    // run forever (and so the rAF loop releases CPU).
+    if(el){
+      if(mode==='blind')el.textContent='• • •';
+      else el.textContent=elapsed.toFixed(2);
+    }
     if(elapsed>=AUTO_STOP_AT){stop(true);return;}
     rafId=requestAnimationFrame(tick);
   }
 
+  function ensureAudio(){
+    if(audioCtx)return audioCtx;
+    try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}
+    return audioCtx;
+  }
+  function playBeat(){
+    var ac=ensureAudio();if(!ac)return;
+    var t=ac.currentTime;
+    var o=ac.createOscillator(),g=ac.createGain();
+    o.type='sine';o.frequency.value=beatCount===9?660:440;
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(0.22,t+0.01);
+    g.gain.exponentialRampToValueAtTime(0.001,t+0.12);
+    o.connect(g);g.connect(ac.destination);
+    o.start(t);o.stop(t+0.13);
+  }
+  function startBeats(){
+    beatCount=0;
+    beatTimer=setInterval(function(){
+      if(!running){clearInterval(beatTimer);return;}
+      beatCount++;
+      playBeat();
+    },1000);
+  }
+
   function start(){
     if(running||sessionDone)return;
+    target=currentTarget();
     startMs=Date.now();elapsed=0;running=true;
+    if(mode==='beat')startBeats();
     render();
     tick();
   }
@@ -46,8 +201,9 @@ window._gameFns.stopten=function ST(a){
   function stop(autoStop){
     if(!running)return;
     running=false;cancelAnimationFrame(rafId);
+    if(beatTimer){clearInterval(beatTimer);beatTimer=0;}
     elapsed=(Date.now()-startMs)/1000;
-    var delta=Math.abs(elapsed-10);
+    var delta=Math.abs(elapsed-target);
     var t=tiers(delta);
     attempts++;
     if(delta<best)best=delta;
@@ -55,45 +211,89 @@ window._gameFns.stopten=function ST(a){
     var bb=document.getElementById('STb');if(bb)bb.textContent=isFinite(best)?('±'+best.toFixed(2)+'s'):'—';
     // Reward — drip Sunbeam progress per tier
     if(t.sb>0){for(var i=0;i<t.sb;i++)_e('progress');}
-    if(t.lbl==='PERFECT'){_e('game_win');_playWin();_sr('stopten',{w:true,s:Math.round(delta*1000)});}
-    else if(t.reward>0){_e('milestone');}
+    if(t.lbl==='PERFECT'){_e('game_win');_playWin();_sr('stopten',{w:true,s:Math.round(delta*1000),mode:mode});}
+    else if(t.sb>0){_e('milestone');}
+    // Lifetime stats — tier NICE or better counts as a hit
+    if(t.sb>0){
+      stats.w++;stats.streak++;
+      if(!stats.best||delta<stats.best)stats.best=delta;
+    } else {
+      stats.l++;stats.streak=0;
+    }
+    _saveStats();renderStats();
     renderResult(delta,t,autoStop);
     if(autoStop)sm('Auto-stopped at '+AUTO_STOP_AT+'s · '+t.lbl);
-    else sm(t.lbl+' · '+elapsed.toFixed(2)+'s (±'+delta.toFixed(2)+')');
-    // Session complete?
+    else sm(t.lbl+' · '+elapsed.toFixed(2)+'s (±'+delta.toFixed(2)+' from '+target+')');
     if(attempts>=MAX_ATTEMPTS){
       sessionDone=true;
-      // If no PERFECT yet, log the session's best as a non-win record
-      // so attempts count toward stats instead of vanishing.
       if(isFinite(best)&&best>=0.005){
-        _sr('stopten',{w:false,s:Math.round(best*1000)});
+        _sr('stopten',{w:false,s:Math.round(best*1000),mode:mode});
       }
       setTimeout(function(){if(document.body.contains(pan))renderSessionSummary();},900);
     }
   }
 
+  function modeDescription(){
+    if(mode==='classic')return 'Stop the clock at exactly 10.00';
+    if(mode==='blind')return 'Timer hidden · count in your head to 10';
+    if(mode==='beat')return 'Stop on the 10th beat';
+    if(mode==='ladder')return 'Target climbs each round';
+    return '';
+  }
+
   function render(){
+    var face=running?'focused':'idle';
+    var clkCls='st-clock '+(mode==='blind'&&running?'blind':'')+' '+(running?'running':'idle');
+    var tgt=currentTarget();
+    var tgtLine=(mode==='ladder'||mode==='classic'||mode==='beat'||mode==='blind')?
+      '<div class="st-target">Target, '+tgt+' seconds</div>' : '';
     var h='';
-    h+='<div style="font-family:Cormorant Garamond,serif;font-size:clamp(0.85rem,3vw,1rem);color:var(--muted);letter-spacing:0.04em;margin-bottom:10px;">Stop the clock at exactly 10.00</div>';
-    h+='<div id="STclock" style="font-family:DM Mono,monospace;font-size:clamp(3.2rem,14vw,5rem);font-weight:500;color:'+(running?'var(--gold)':'var(--cream)')+';letter-spacing:0.04em;margin:18px 0;text-shadow:0 0 18px rgba(200,168,75,0.25);transition:color 0.15s;">'+elapsed.toFixed(2)+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);opacity:0.65;margin-bottom:20px;">SECONDS</div>';
-    if(!running){
-      h+='<button onclick="_STS()" style="min-width:140px;min-height:64px;padding:14px 28px;font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:0.14em;background:linear-gradient(180deg,rgba(122,179,86,0.25),rgba(74,124,53,0.2));border:2px solid var(--sage);color:var(--sage);border-radius:12px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,0.4);">▶ START</button>';
-    }else{
-      h+='<button onclick="_STX()" style="min-width:140px;min-height:64px;padding:14px 28px;font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:0.14em;background:linear-gradient(180deg,rgba(200,168,75,0.3),rgba(180,140,50,0.2));border:2px solid var(--gold);color:var(--gold);border-radius:12px;cursor:pointer;box-shadow:0 3px 16px rgba(200,168,75,0.35);">■ STOP</button>';
+    // Mode tabs
+    h+='<div class="st-modes">';
+    var modes=[['classic','CLASSIC'],['blind','BLIND'],['beat','BEAT'],['ladder','LADDER']];
+    for(var m=0;m<modes.length;m++){
+      var on=modes[m][0]===mode?' on':'';
+      h+='<div class="st-mode'+on+'" onclick="_STM(\''+modes[m][0]+'\')">'+modes[m][1]+'</div>';
     }
-    h+='<div id="STresult" style="min-height:56px;margin-top:18px;"></div>';
+    h+='</div>';
+    // Framed play area
+    h+='<div class="st-frame">';
+    h+='<div class="st-corner st-c-tl"></div><div class="st-corner st-c-tr"></div><div class="st-corner st-c-bl"></div><div class="st-corner st-c-br"></div>';
+    h+='<div style="font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--muted);letter-spacing:0.04em;margin-bottom:6px;">'+modeDescription()+'</div>';
+    h+=tgtLine;
+    h+='<div class="st-buddy'+(running?' focused':'')+'" id="STbuddy">'+BUDDY(face)+'</div>';
+    h+='<div class="st-attempts">ATTEMPT '+Math.min(attempts+1,MAX_ATTEMPTS)+' / '+MAX_ATTEMPTS+'</div>';
+    h+='<div id="STclock" class="'+clkCls+'">'+(mode==='blind'&&running?'• • •':elapsed.toFixed(2))+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);opacity:0.65;margin-bottom:14px;">SECONDS</div>';
+    h+='<div class="st-btn-row">';
+    if(!running){
+      var lbl=sessionDone?'▶ NEW SESSION':'▶ START';
+      var act=sessionDone?'_STN':'_STS';
+      h+='<button class="st-btn start" onclick="'+act+'()">'+lbl+'</button>';
+    }else{
+      h+='<button class="st-btn stop" onclick="_STX()">■ STOP</button>';
+    }
+    h+='</div>';
+    h+='<div id="STresult" class="st-result"></div>';
+    h+='</div>';
     pan.innerHTML=h;
   }
 
   function renderResult(delta,t,autoStop){
     var el=document.getElementById('STresult');if(!el)return;
-    var sign=elapsed>=10?'+':'-';
+    var sign=elapsed>=target?'+':'-';
     var label=autoStop?'TIME OUT':t.lbl;
     var col=autoStop?'#c47a7a':t.col;
-    el.innerHTML='<div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;letter-spacing:0.12em;color:'+col+';text-shadow:0 0 18px '+col+'33;">'+label+'</div>'
-      +'<div style="font-family:DM Mono,monospace;font-size:0.75rem;color:var(--cream);opacity:0.8;margin-top:4px;">'+sign+delta.toFixed(2)+'s from 10.00</div>'
-      +(t.sb>0?'<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--gold);margin-top:4px;">+'+t.sb+' Sunbeam progress</div>':'');
+    el.innerHTML='<div class="st-tier" style="color:'+col+';text-shadow:0 0 18px '+col+'33;">'+label+'</div>'
+      +'<div class="st-delta">'+sign+delta.toFixed(2)+'s from '+target+'.00</div>'
+      +(t.sb>0?'<div class="st-reward">+'+t.sb+' Sunbeam progress</div>':'');
+    // Update buddy face
+    var b=document.getElementById('STbuddy');
+    if(b){
+      b.classList.remove('focused','happy','sad');
+      b.classList.add(t.face==='happy'?'happy':(t.face==='sad'?'sad':''));
+      b.innerHTML=BUDDY(autoStop?'sad':t.face);
+    }
   }
 
   function renderSessionSummary(){
@@ -104,11 +304,11 @@ window._gameFns.stopten=function ST(a){
     else if(best<=0.05)ranking={lbl:'STEADY HAND',col:'#7ab356'};
     else if(best<=0.2)ranking={lbl:'GOOD TRY',col:'var(--cream)'};
     else ranking={lbl:'KEEP PRACTICING',col:'var(--muted)'};
-    el.innerHTML='<div style="margin-top:18px;padding:14px;background:rgba(26,31,23,0.6);border:1.5px solid rgba(74,124,53,0.25);border-radius:10px;">'
+    el.innerHTML='<div style="margin-top:10px;padding:14px;background:rgba(26,31,23,0.6);border:1.5px solid rgba(74,124,53,0.25);border-radius:10px;">'
       +'<div style="font-family:Cormorant Garamond,serif;font-size:0.7rem;color:var(--muted);letter-spacing:0.06em;">SESSION COMPLETE</div>'
       +'<div style="font-family:Bebas Neue,sans-serif;font-size:1.3rem;color:'+ranking.col+';letter-spacing:0.12em;margin:6px 0;">'+ranking.lbl+'</div>'
       +'<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--cream);opacity:0.85;">Best: ±'+best.toFixed(2)+'s</div>'
-      +'<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:8px;">Tap NEW ROUND to play again</div>'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:8px;">Tap NEW SESSION to play again</div>'
       +'</div>';
   }
 
@@ -116,22 +316,53 @@ window._gameFns.stopten=function ST(a){
   window._STX=function(){stop(false);};
   window._STN=function(){
     if(running){running=false;cancelAnimationFrame(rafId);}
+    if(beatTimer){clearInterval(beatTimer);beatTimer=0;}
     attempts=0;best=Infinity;elapsed=0;sessionDone=false;
     var ba=document.getElementById('STa');if(ba)ba.textContent=0;
     var bb=document.getElementById('STb');if(bb)bb.textContent='—';
-    render();
+    renderStats();render();
+  };
+  window._STM=function(m){
+    if(running)return;
+    mode=m;
+    try{localStorage.setItem('lw_st_mode',m);}catch(e){}
+    attempts=0;best=Infinity;elapsed=0;sessionDone=false;
+    renderStats();render();
+  };
+  window._STR=function(){
+    var existing=document.getElementById('STrulesOV');
+    if(existing){existing.remove();return;}
+    var ov=document.createElement('div');ov.id='STrulesOV';
+    ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
+    var h='<div class="card">';
+    h+='<div style="text-align:center;margin-bottom:10px;"><div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.1rem;color:var(--cream);">Stop at Ten</div><div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">A reflex-timing game</div></div>';
+    h+='<h2>🎯 Goal</h2>';
+    h+='<p>Hit ▶ START. Tap ■ STOP as close to the target as you can. 3 attempts per session. Personal best is the smallest difference you ever hit.</p>';
+    h+='<h2>📊 Scoring</h2>';
+    h+='<p>• <strong style="color:#c8a84b">PERFECT</strong> — within 0.005s (+3 sunbeams)<br>• <strong style="color:#7ab356">SO CLOSE</strong> — within 0.015s (+2)<br>• <strong style="color:#7ab356">NICE</strong> — within 0.035s (+1)<br>• <strong>CLOSE</strong> — within 0.1s (no reward, streak survives)<br>• <strong style="color:#c47a7a">MISS</strong> — further than 0.1s (streak resets)</p>';
+    h+='<h2>🎮 Modes</h2>';
+    h+='<p><strong style="color:var(--gold)">CLASSIC</strong> — visible clock, stop at 10.00s.</p>';
+    h+='<p><strong style="color:var(--gold)">BLIND</strong> — clock hidden mid-run. Count in your head. The only feedback is your result.</p>';
+    h+='<p><strong style="color:var(--gold)">BEAT</strong> — audio pulse every second. Stop on the 10th beat (the higher-pitch one).</p>';
+    h+='<p><strong style="color:var(--gold)">LADDER</strong> — target climbs across attempts: 5 → 7 → 10 → 13 → 17 → 20. Tests how your rhythm scales.</p>';
+    h+='<h2>💡 Tips</h2>';
+    h+='<p>• Breathe with a steady beat — many players count in "seconds Mississippi" or a mental metronome.<br>• BLIND is hardest on the first attempt. A few CLASSIC rounds first calibrate your inner clock.<br>• In BEAT, don\'t fight your reflex — listen, then let your finger fall on the 10th tick.</p>';
+    h+='<div style="text-align:center;margin-top:14px;"><button class="gb" onclick="document.getElementById(\'STrulesOV\').remove()" style="min-height:48px;padding:10px 22px;">CLOSE</button></div>';
+    h+='</div>';
+    ov.innerHTML=h;
+    document.body.appendChild(ov);
   };
 
-  // Cleanup — kill the rAF loop if player exits mid-round so we don't
-  // burn CPU running tick() forever on a detached panel.
+  // Cleanup — kill the rAF loop + beats when the panel detaches
   var _watchExit=setInterval(function(){
     if(!document.body.contains(pan)){
       running=false;
       if(rafId)cancelAnimationFrame(rafId);
+      if(beatTimer){clearInterval(beatTimer);beatTimer=0;}
       clearInterval(_watchExit);
     }
   },1000);
 
-  render();
+  renderStats();render();
 };
 })();
