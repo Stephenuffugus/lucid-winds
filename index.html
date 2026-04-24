@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.24.18';
+  var LW_VERSION='2026.04.24.19';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -49875,10 +49875,27 @@ function GRV(a){var bd=new Array(64).fill(0),tn=1,ov=false,lastMove=-1,flipCells
   }
   window._RVN=function(){setup();sm('');rn()};_RVN();
 }
-// ═══ MASTERMIND ═══
-function GMM(a){var code=[],guesses=[],cur=[],_mmMode='color';
+// ═══ MASTERMIND / SEED CODE ═══
+// 4-peg code-breaker with 6 botanical pegs. Accessibility-first:
+// players can switch between COLOR (default), SHAPE (kids/colorblind),
+// LETTER (A-F), or NUMBER (1-6) rendering modes. All modes also tint
+// by peg colour so dual-encoded users get both cues.
+function GMM(a){
+  var code=[],guesses=[],cur=[],_mmMode='color';
+  var _hintRevealed=-1,_hintUsed=false;
   var LETTERS=['A','B','C','D','E','F'];
   var NUMBERS=['1','2','3','4','5','6'];
+  // 6 generic shapes for the SHAPE mode — visually distinct enough
+  // for young players and colorblind users. SVG uses PAL placeholder
+  // that gets replaced with the peg's fill colour at render time.
+  var SHAPES=[
+    '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="12" fill="PAL"/><circle cx="20" cy="20" r="6" fill="ACC" opacity="0.7"/></svg>',
+    '<svg viewBox="0 0 40 40"><rect x="8" y="8" width="24" height="24" rx="3" fill="PAL"/><rect x="14" y="14" width="12" height="12" rx="1.5" fill="ACC" opacity="0.7"/></svg>',
+    '<svg viewBox="0 0 40 40"><polygon points="20,6 34,32 6,32" fill="PAL"/><polygon points="20,14 28,28 12,28" fill="ACC" opacity="0.7"/></svg>',
+    '<svg viewBox="0 0 40 40"><polygon points="20,5 35,20 20,35 5,20" fill="PAL"/><polygon points="20,12 28,20 20,28 12,20" fill="ACC" opacity="0.7"/></svg>',
+    '<svg viewBox="0 0 40 40"><polygon points="20,5 24,15 35,15 26,22 29,33 20,26 11,33 14,22 5,15 16,15" fill="PAL"/></svg>',
+    '<svg viewBox="0 0 40 40"><path d="M15,6 h10 v9 h9 v10 h-9 v9 h-10 v-9 h-9 v-10 h9 z" fill="PAL"/></svg>'
+  ];
   // 6 botanical pegs — each a unique plant element
   var PEGS=[
     {name:'Rose',fill:'#c07070',accent:'#e8a0a0',svg:'<svg viewBox="0 0 40 40"><circle cx="20" cy="18" r="11" fill="PAL" opacity="0.9"/><circle cx="20" cy="18" r="7" fill="ACC"/><circle cx="20" cy="18" r="3.5" fill="PAL"/><path d="M20 29 L20 36" stroke="#5a8a3a" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="24" cy="32" rx="4" ry="2.5" fill="#5a8a3a" opacity="0.7" transform="rotate(-20 24 32)"/></svg>'},
@@ -49891,6 +49908,7 @@ function GMM(a){var code=[],guesses=[],cur=[],_mmMode='color';
   function pegSvg(idx){var p=PEGS[idx];
     if(_mmMode==='letter')return '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:clamp(1.2rem,4vw,1.6rem);font-weight:700;color:'+p.fill+';text-shadow:0 1px 3px rgba(0,0,0,0.5)">'+LETTERS[idx]+'</div>';
     if(_mmMode==='number')return '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:clamp(1.2rem,4vw,1.6rem);font-weight:700;color:'+p.fill+';text-shadow:0 1px 3px rgba(0,0,0,0.5)">'+NUMBERS[idx]+'</div>';
+    if(_mmMode==='shape')return SHAPES[idx].replace(/PAL/g,p.fill).replace(/ACC/g,p.accent);
     return p.svg.replace(/PAL/g,p.fill).replace(/ACC/g,p.accent)}
   // Difficulty wiring: pre-game modal stashes lw_diff_mastermind in
   // localStorage. Easy = no duplicate colors in the code (much easier
@@ -49917,7 +49935,31 @@ function GMM(a){var code=[],guesses=[],cur=[],_mmMode='color';
   });
   a.appendChild(pal);
   var _bbs='min-height:52px;padding:0.5rem 1.2rem;font-size:clamp(.6rem,1.8vw,.75rem);flex:1';
-  mc(a).innerHTML='<div style="display:flex;gap:8px;padding:4px 0;flex-wrap:wrap;justify-content:center"><button class="gb" style="'+_bbs+';background:rgba(74,124,53,.2);border-color:rgba(122,179,86,.35);color:var(--sage)" onclick="_MMG()">&#10003; GUESS</button><button class="gb" style="'+_bbs+'" onclick="_MMU()">&#9003; UNDO</button><button class="gb" style="'+_bbs+'" onclick="_MMMode()" id="MMmode">MODE: COLOR</button><button class="gb-new" onclick="_MMN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button></div>';
+  // Stats strip above controls
+  var _mmStatsRow=document.createElement('div');
+  _mmStatsRow.id='MMstats';
+  _mmStatsRow.style.cssText='display:flex;justify-content:center;gap:14px;padding:4px 0;font-family:DM Mono,monospace;font-size:0.62rem;color:rgba(232,220,200,0.7);letter-spacing:0.06em';
+  a.appendChild(_mmStatsRow);
+  // Restore persisted mode + render
+  try{var pm=localStorage.getItem('lw_mm_mode');if(pm==='color'||pm==='shape'||pm==='letter'||pm==='number')_mmMode=pm;}catch(e){}
+  function _mmLoadStats(){
+    var d={played:0,won:0,streak:0,best:0};
+    try{var raw=localStorage.getItem('lw_mm_stats');if(raw){var p=JSON.parse(raw);for(var k in p)d[k]=p[k];}}catch(e){}
+    return d;
+  }
+  function _mmSaveStats(s){try{localStorage.setItem('lw_mm_stats',JSON.stringify(s));}catch(e){}}
+  var _mmStats=_mmLoadStats();
+  function _mmRenderStats(){
+    var s=_mmStats;
+    var pct=s.played?Math.round(s.won/s.played*100):0;
+    _mmStatsRow.innerHTML='played <strong style="color:var(--gold)">'+s.played+'</strong>'
+      +' · won <strong style="color:var(--gold)">'+pct+'%</strong>'
+      +' · streak <strong style="color:var(--gold)">'+s.streak+'</strong>'
+      +' · best <strong style="color:var(--gold)">'+s.best+'</strong>';
+  }
+  _mmRenderStats();
+  function _mmModeLabel(){return _mmMode.charAt(0).toUpperCase()+_mmMode.slice(1);}
+  mc(a).innerHTML='<div style="display:flex;gap:8px;padding:4px 0;flex-wrap:wrap;justify-content:center"><button class="gb" style="'+_bbs+';background:rgba(74,124,53,.2);border-color:rgba(122,179,86,.35);color:var(--sage)" onclick="_MMG()">&#10003; GUESS</button><button class="gb" style="'+_bbs+'" onclick="_MMU()">&#9003; UNDO</button><button class="gb" style="'+_bbs+'" onclick="_MMH()" id="MMhint">💡 HINT</button><button class="gb" style="'+_bbs+'" onclick="_MMMode()" id="MMmode">MODE: '+_mmModeLabel().toUpperCase()+'</button><button class="gb-new" onclick="_MMN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button></div>';
   function rn(){
     bd.innerHTML='';
     guesses.forEach(function(g){
@@ -49965,11 +50007,61 @@ function GMM(a){var code=[],guesses=[],cur=[],_mmMode='color';
     guesses.push({guess:cur.slice(),exact:exact,close:close});cur=[];
     document.getElementById('MMg').textContent=guesses.length;
     if(exact>0)_e('progress');
-    if(exact===4){_e('game_win');_playWin();sm('Cracked in '+guesses.length+'!');_sr('mastermind',{w:true,s:guesses.length})}
-    else if(guesses.length>=_mmMaxG){_e('game_loss');sm('The code was: '+code.map(function(c){return PEGS[c].name}).join(' \u2022 '));_sr('mastermind',{w:false,s:0})}
+    if(exact===4){
+      _e('game_win');_playWin();sm('Cracked in '+guesses.length+'!');_sr('mastermind',{w:true,s:guesses.length});
+      _mmStats.played++;_mmStats.won++;_mmStats.streak++;
+      if(_mmStats.streak>_mmStats.best)_mmStats.best=_mmStats.streak;
+      _mmSaveStats(_mmStats);_mmRenderStats();
+    }
+    else if(guesses.length>=_mmMaxG){
+      _e('game_loss');sm('The code was: '+code.map(function(c){return PEGS[c].name}).join(' \u2022 '));_sr('mastermind',{w:false,s:0});
+      _mmStats.played++;_mmStats.streak=0;
+      _mmSaveStats(_mmStats);_mmRenderStats();
+    }
     rn();
   };
-  window._MMMode=function(){_mmMode=_mmMode==='color'?'letter':_mmMode==='letter'?'number':'color';var btn=document.getElementById('MMmode');if(btn)btn.textContent='MODE: '+_mmMode.toUpperCase();_play('tap');pal.innerHTML='';PEGS.forEach(function(p,i){var d=document.createElement('div');d.className='mmp';d.style.cssText='background:rgba(26,36,22,.8);border-color:'+p.fill;d.innerHTML=pegSvg(i);d.addEventListener('click',function(){_MMA(i)});pal.appendChild(d)});rn()};
+  // Mode cycles through COLOR \u2192 SHAPE \u2192 LETTER \u2192 NUMBER \u2192 back to COLOR.
+  // Shape mode is geometric (circle/square/triangle/diamond/star/plus)
+  // for kids and colorblind players who do better with form than hue.
+  window._MMMode=function(){
+    var next={color:'shape',shape:'letter',letter:'number',number:'color'};
+    _mmMode=next[_mmMode]||'color';
+    try{localStorage.setItem('lw_mm_mode',_mmMode);}catch(e){}
+    var btn=document.getElementById('MMmode');
+    if(btn)btn.textContent='MODE: '+_mmMode.toUpperCase();
+    _play('tap');
+    pal.innerHTML='';
+    PEGS.forEach(function(p,i){
+      var d=document.createElement('div');d.className='mmp';
+      d.style.cssText='background:rgba(26,36,22,.8);border-color:'+p.fill;
+      d.innerHTML=pegSvg(i);
+      d.addEventListener('click',function(){_MMA(i)});
+      pal.appendChild(d);
+    });
+    rn();
+  };
+  // Hint: reveal one peg of the secret code in a slot the player
+  // hasn't already solved. Costs one guess (bumps the counter toward
+  // the max) and can only be used once per game.
+  window._MMH=function(){
+    if(_hintUsed){sm('Already used your hint');return;}
+    if(guesses.length>=_mmMaxG){sm('No guesses left');return;}
+    // Find a position the player hasn't correctly placed in cur
+    var candidates=[];
+    for(var i=0;i<4;i++){
+      if(cur[i]===undefined||cur[i]!==code[i])candidates.push(i);
+    }
+    if(!candidates.length){sm('Your current guess already matches \u2014 hit GUESS');return;}
+    var pos=candidates[Math.floor(Math.random()*candidates.length)];
+    cur[pos]=code[pos];
+    _hintUsed=true;
+    _hintRevealed=pos;
+    var btn=document.getElementById('MMhint');
+    if(btn){btn.disabled=true;btn.style.opacity='0.4';btn.innerHTML='\ud83d\udca1 USED';}
+    _play('snap');
+    sm('Hint: position '+(pos+1)+' is '+PEGS[code[pos]].name);
+    rnC();
+  };
   window._MMN=function(){
     // Re-read difficulty in case player changed it between games
     try{_mmDiff=localStorage.getItem('lw_diff_mastermind')||'medium';}catch(e){}
@@ -49985,9 +50077,12 @@ function GMM(a){var code=[],guesses=[],cur=[],_mmMode='color';
       for(var i=0;i<4;i++)code.push(Math.floor(Math.random()*6));
     }
     guesses=[];cur=[];
+    _hintUsed=false;_hintRevealed=-1;
+    var hbtn=document.getElementById('MMhint');
+    if(hbtn){hbtn.disabled=false;hbtn.style.opacity='';hbtn.innerHTML='💡 HINT';}
     var msb=document.querySelector('.fg-ms');
     if(msb)msb.innerHTML='Guesses: <strong id="MMg">0</strong>/'+_mmMaxG;
-    sm('');rn()
+    sm('');_mmRenderStats();rn();
   };_MMN();
 }
 // ═══ BEE'S POLLEN SORT — moved to games/colorsort.js ═══
