@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.24.17';
+  var LW_VERSION='2026.04.24.18';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -936,7 +936,30 @@
     @keyframes vtFadeOut{from{opacity:1;filter:none;}to{opacity:0;filter:blur(2px);}}
     @keyframes vtFadeIn{from{opacity:0;filter:blur(2px);}to{opacity:1;filter:none;}}
     html{background:var(--black);color:var(--cream);scroll-behavior:smooth;overflow-x:hidden;font-size:clamp(18px,4.5vw,22px);}
-    body{font-family:'DM Mono',monospace;font-size:1rem;line-height:1.6;min-height:100vh;overflow-x:hidden;}
+    body{font-family:'DM Mono',monospace;font-size:1rem;line-height:1.6;min-height:100vh;overflow-x:hidden;
+      -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;}
+    /* ── Smoothness pass (2026-04-24) ─────────────────────────────
+       Small touches that make every tap and state-change feel nicer
+       without changing layout. Applied globally. */
+    /* Touch-action + tap-highlight: predictable finger behaviour */
+    button,.fg-c,.th-cell,.greenhouse-plant,.c4-swatch,.nur-slot{
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+    }
+    /* GPU layer on anything that transforms during interaction so the
+       animation runs on the compositor instead of jank-causing paints */
+    .gb,.gb-new,.fg-c,.c4-swatch,.th-cell.clickable,.greenhouse-plant,
+    .game-back-btn,#game-exit-btn,.gb-close,.nur-slot{
+      will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden;
+    }
+    /* Subtle press-scale for any button that missed the .gb active style */
+    button:active:not(.gb):not(.gb-new):not(.gb-close):not([disabled]){
+      transform:scale(0.97);transition:transform 0.08s ease;
+    }
+    /* Smooth focus outlines for keyboard navigation without flickery
+       default rings */
+    :focus-visible{outline:2px solid rgba(200,168,75,0.55);outline-offset:2px;border-radius:4px;}
+    /* Kill double-tap zoom on interactive game content */
+    #fg-ag,.grove-panel{touch-action:pan-y;}
 
     /* ── NAV ── */
     nav{position:fixed;top:0;left:0;right:0;z-index:9999;display:flex;align-items:center;justify-content:space-between;padding:1rem 2.5rem;background:rgba(13,16,12,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(74,124,53,0.15);}
