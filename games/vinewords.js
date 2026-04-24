@@ -182,21 +182,44 @@ window._gameFns.vinewords=function VW(a){
     grid=JSON.parse(JSON.stringify(savedBoard));
   }
 
-  function renderCells(){
+  // Build the 16 cells ONCE per round, then mutate in-place. Rebuilding
+  // innerHTML every path change breaks iOS touch capture mid-drag — the
+  // element that captured touchstart gets removed and the browser stops
+  // dispatching further touchmove events. In-place class/style updates
+  // keep the same DOM nodes alive so the drag stream survives.
+  var cellEls=[]; // row-major array of the 16 cell DOM nodes
+  function buildCells(){
     gridHost.innerHTML='';
+    cellEls=[];
     for(var r=0;r<4;r++){
       for(var c=0;c<4;c++){
         var cell=document.createElement('div');
         cell.setAttribute('data-r',r);
         cell.setAttribute('data-c',c);
-        var inPath=isInPath(r,c);
-        var isLast=path.length>0&&path[path.length-1][0]===r&&path[path.length-1][1]===c;
-        cell.style.cssText='display:flex;align-items:center;justify-content:center;background:'+(isLast?'rgba(200,168,75,0.38)':(inPath?'rgba(122,179,86,0.32)':'linear-gradient(180deg,rgba(42,50,32,0.95),rgba(26,31,23,0.95))'))+';border:2px solid '+(isLast?'#c8a84b':(inPath?'#7ab356':'rgba(122,179,86,0.25)'))+';border-radius:12px;font-family:Bebas Neue,sans-serif;font-size:clamp(1.4rem,5.5vw,2.2rem);color:#e8dcc8;cursor:pointer;box-shadow:'+(isLast?'0 0 16px rgba(200,168,75,0.55)':(inPath?'0 0 10px rgba(122,179,86,0.35)':'0 2px 0 rgba(0,0,0,0.35)'))+';transition:background .15s ease,border-color .15s ease,transform .1s ease;letter-spacing:0.03em;';
+        cell.style.cssText='display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:clamp(1.4rem,5.5vw,2.2rem);color:#e8dcc8;cursor:pointer;border-radius:12px;transition:background .15s ease,border-color .15s ease,transform .1s ease,box-shadow .15s ease;letter-spacing:0.03em;border:2px solid rgba(122,179,86,0.25);background:linear-gradient(180deg,rgba(42,50,32,0.95),rgba(26,31,23,0.95));box-shadow:0 2px 0 rgba(0,0,0,0.35);';
         cell.textContent=grid[r][c].display;
         gridHost.appendChild(cell);
+        cellEls.push(cell);
       }
     }
   }
+  function renderCells(){
+    // Path-state is the only thing that changes between calls; just reapply
+    // the background/border/shadow on each of the 16 existing cells. Letters
+    // don't change until a full board rebuild (newGame / replay).
+    for(var r=0;r<4;r++){
+      for(var c=0;c<4;c++){
+        var cell=cellEls[r*4+c];
+        if(!cell)continue;
+        var inPath=isInPath(r,c);
+        var isLast=path.length>0&&path[path.length-1][0]===r&&path[path.length-1][1]===c;
+        cell.style.background=isLast?'rgba(200,168,75,0.38)':(inPath?'rgba(122,179,86,0.32)':'linear-gradient(180deg,rgba(42,50,32,0.95),rgba(26,31,23,0.95))');
+        cell.style.borderColor=isLast?'#c8a84b':(inPath?'#7ab356':'rgba(122,179,86,0.25)');
+        cell.style.boxShadow=isLast?'0 0 16px rgba(200,168,75,0.55)':(inPath?'0 0 10px rgba(122,179,86,0.35)':'0 2px 0 rgba(0,0,0,0.35)');
+      }
+    }
+  }
+  function rebuildBoardDOM(){buildCells();renderCells();}
 
   function isInPath(r,c){for(var i=0;i<path.length;i++)if(path[i][0]===r&&path[i][1]===c)return true;return false;}
   function pathWord(){
@@ -516,7 +539,9 @@ window._gameFns.vinewords=function VW(a){
     var se=document.getElementById('VWs');if(se)se.textContent='0';
     var we=document.getElementById('VWwords');if(we)we.textContent='0';
     var te=document.getElementById('VWt');if(te){te.textContent=formatTime(duration);te.classList.remove('vw-urgent');}
-    renderFound();render();
+    renderFound();
+    rebuildBoardDOM(); // reseat the 16 cell nodes with the new dice faces
+    drawPath();updateWordBar();
     timerId=setInterval(tick,1000);
   }
   window._VWN=function(){startRound(false);};

@@ -23,10 +23,10 @@ var EXTRA_GUESSES=('aahed aalii aargh abaca abaci aback abafts abamp abase abash
   if(document.getElementById('pw-petal-style'))return;
   var s=document.createElement('style');s.id='pw-petal-style';
   s.cssText=[
-    '.pw-stage{display:flex;flex-direction:column;align-items:center;gap:10px;padding:6px 6px 14px;max-width:520px;margin:0 auto;}',
-    '.pw-board{display:flex;flex-direction:column;gap:10px;align-items:center;padding:6px 0;}',
-    '.pw-row{display:flex;gap:10px;}',
-    '.pw-cell{width:clamp(60px,16.5vw,86px);height:clamp(60px,16.5vw,86px);border:2.5px solid rgba(74,124,53,0.45);background:rgba(13,16,12,0.6);color:var(--cream,#e8dcc8);font-family:Bebas Neue,sans-serif;font-size:clamp(2.1rem,8vw,3rem);display:flex;align-items:center;justify-content:center;text-transform:uppercase;border-radius:8px;transition:background .28s ease,border-color .28s ease,color .28s ease;line-height:1;user-select:none;}',
+    '.pw-stage{display:flex;flex-direction:column;align-items:center;gap:10px;padding:6px 6px 14px;max-width:520px;margin:0 auto;width:100%;box-sizing:border-box;}',
+    '.pw-board{display:grid;grid-template-columns:1fr;gap:8px;padding:6px 0;width:min(380px,94vw);margin:0 auto;}',
+    '.pw-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:100%;}',
+    '.pw-cell{aspect-ratio:1;width:100%;border:2.5px solid rgba(74,124,53,0.5);background:rgba(13,16,12,0.7);color:var(--cream,#e8dcc8);font-family:Bebas Neue,sans-serif;font-size:clamp(1.9rem,8vw,2.8rem);font-weight:400;display:flex;align-items:center;justify-content:center;text-transform:uppercase;border-radius:10px;transition:background .28s ease,border-color .28s ease,color .28s ease,transform .1s ease;line-height:1;user-select:none;box-shadow:inset 0 1px 0 rgba(255,255,255,0.05),0 2px 0 rgba(0,0,0,0.3);box-sizing:border-box;}',
     '.pw-cell.pw-typed{border-color:rgba(200,168,75,0.8);box-shadow:0 0 12px rgba(200,168,75,0.25);}',
     '.pw-cell.pw-active{border-color:rgba(200,168,75,0.65);box-shadow:inset 0 0 0 1px rgba(200,168,75,0.25);}',
     '.pw-cell.pw-hit{background:var(--sage,#7ab356);border-color:var(--sage,#7ab356);color:#0d100c;}',
@@ -105,6 +105,7 @@ window._gameFns.sprout=function GPW(a){
   var keyState={};
   var mode='daily';
   var rowStatuses=[]; // per submitted row: array of 'hit'|'near'|'miss'
+  var rowGuesses=[];  // per submitted row: the 5-letter guess as lowercase string
   var stats=loadStats();
 
   ms(a,'Guess: <strong id="PWg">0</strong>/6 · streak <strong id="PWstreak">'+stats.streak+'</strong>');
@@ -298,6 +299,7 @@ window._gameFns.sprout=function GPW(a){
       for(var k=0;k<5;k++){if(!taken[k]&&guess[c]===ansArr[k]){status[c]='near';taken[k]=true;break;}}
     }
     rowStatuses.push(status.slice());
+    rowGuesses.push(guess);
     // Freeze the hidden input during the flip reveal so late keystrokes
     // don't bleed into the next row.
     hiddenIn.blur();hiddenIn.value='';
@@ -362,12 +364,12 @@ window._gameFns.sprout=function GPW(a){
         }
         stats.lastDay=today;
         if(stats.streak>stats.best)stats.best=stats.streak;
-        saveDaily({day:today,won:true,guesses:guesses,answer:answer,rows:rowStatuses});
+        saveDaily({day:today,won:true,guesses:guesses,answer:answer,rows:rowStatuses,letters:rowGuesses});
       }
     } else {
       if(isDaily){
         stats.streak=0;
-        saveDaily({day:todayKey(),won:false,guesses:null,answer:answer,rows:rowStatuses});
+        saveDaily({day:todayKey(),won:false,guesses:null,answer:answer,rows:rowStatuses,letters:rowGuesses});
       }
     }
     saveStats(stats);
@@ -448,7 +450,7 @@ window._gameFns.sprout=function GPW(a){
   },1000);
 
   window._PWNew=function(){
-    answer=pickWord();row=0;col=0;done=false;keyState={};rowStatuses=[];
+    answer=pickWord();row=0;col=0;done=false;keyState={};rowStatuses=[];rowGuesses=[];
     var gEl=document.getElementById('PWg');if(gEl)gEl.textContent='0';
     showMsg('');document.getElementById('PWresult').innerHTML='';
     hiddenIn.value='';
@@ -459,11 +461,14 @@ window._gameFns.sprout=function GPW(a){
       if(saved){
         answer=saved.answer;
         rowStatuses=saved.rows||[];
-        // Replay the rows visually
+        rowGuesses=saved.letters||[];
+        // Replay the rows visually: write the letters AND the colors.
         for(var rr=0;rr<rowStatuses.length;rr++){
-          // We don't have the guess letters in saved daily; just mark rows with colors
+          var letters=rowGuesses[rr]||'';
           for(var cc=0;cc<5;cc++){
-            grid[rr][cc].classList.add('pw-'+rowStatuses[rr][cc]);
+            var cell=grid[rr][cc];
+            if(letters[cc])cell.textContent=letters[cc];
+            cell.classList.add('pw-'+rowStatuses[rr][cc]);
           }
         }
         done=true;
