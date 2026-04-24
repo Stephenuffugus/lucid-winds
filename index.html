@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.24.28';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.24.29';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3556,11 +3556,19 @@
        kills the "scroll on scroll" feel and the black box at the
        bottom (which was the empty padding reserved for a hidden nav). */
     body.game-active #fg-ag{
-      padding-top:calc(env(safe-area-inset-top,0px) + 84px)!important;
+      padding-top:calc(env(safe-area-inset-top,0px) + 96px)!important;
       padding-bottom:env(safe-area-inset-bottom,0px)!important;
       min-height:100dvh!important;
       max-height:100dvh!important;
       overscroll-behavior:contain;
+    }
+    /* Soft fade behind the fixed ← GAMES button so any scrolled content
+       underneath still reads clearly instead of fighting the button. */
+    body.game-active::before{
+      content:'';position:fixed;top:0;left:0;right:0;
+      height:calc(env(safe-area-inset-top,0px) + 60px);
+      background:linear-gradient(180deg,rgba(8,10,6,0.92) 0%,rgba(8,10,6,0.6) 70%,rgba(8,10,6,0) 100%);
+      z-index:999990;pointer-events:none;
     }
     /* Card-game containers — legacy allowlist kept for per-game bg
        overrides below. The universal rule above already handles the
